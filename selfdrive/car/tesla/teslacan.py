@@ -64,30 +64,30 @@ class TeslaCAN:
     values["DAS_steeringControlChecksum"] = self.checksum(0x488, data[:3])
     return self.packer.make_can_msg("DAS_steeringControl", CANBUS.chassis, values)
 
-  def create_ap1_long_control(self, vEgo, accel_limits_turns, jerk_limits, frame):
+  def create_ap1_long_control(self, speed, accel_limits, jerk_limits, counter):
     accState = 0
-    if vEgo == 0:
+    if speed == 0:
       accState = 3
     else:
       accState = 4
     values = {
-      "DAS_setSpeed" :  clip(vEgo*3.6,0,409), #kph
+      "DAS_setSpeed" :  clip(speed*3.6,0,200), #kph
       "DAS_accState" :  accState, # 4-ACC ON, 3-HOLD, 0-CANCEL
       "DAS_aebEvent" :  0, # 0 - AEB NOT ACTIVE
-      "DAS_jerkMin" :  clip(jerk_limits[0],-9.1,0.097), #m/s^3
-      "DAS_jerkMax" :  clip(jerk_limits[1],0,8.67), #m/s^3
-      "DAS_accelMin" : clip(accel_limits_turns[0],-15,5.44), #m/s^2
-      "DAS_accelMax" : clip(accel_limits_turns[1],-15,5.44), #m/s^2
-      "DAS_controlCounter": (frame % 16),
+      "DAS_jerkMin" :  clip(jerk_limits[0],-7.67,0), #m/s^3 -8.67,0
+      "DAS_jerkMax" :  clip(jerk_limits[1],0,7.67), #m/s^3 0,8.67
+      "DAS_accelMin" : clip(accel_limits[0],-12,3.44), #m/s^2 -15,5.44
+      "DAS_accelMax" : clip(accel_limits[1],-12,3.44), #m/s^2 -15,5.44
+      "DAS_controlCounter": (counter % 8),
       "DAS_controlChecksum" : 0,
     }
     data = self.packer.make_can_msg("DAS_control", CANBUS.chassis, values)[2]
     values["DAS_controlChecksum"] = self.checksum(0x2b9, data[:7])
     return self.packer.make_can_msg("DAS_control", CANBUS.chassis, values)
 
-  def create_ap2_long_control(self, vEgo, accel_limits_turns, jerk_limits, frame):
+  def create_ap2_long_control(self, speed, accel_limits, jerk_limits, counter):
     locRequest = 0
-    if vEgo == 0:
+    if speed == 0:
       locRequest = 3
     else:
       locRequest = 1
@@ -95,12 +95,12 @@ class TeslaCAN:
       "DAS_locMode" : 1, # 1- NORMAL
       "DAS_locState" : 0, # 0-HEALTHY
       "DAS_locRequest" : locRequest, # 0-IDLE,1-FORWARD,2-REVERSE,3-HOLD,4-PARK
-      "DAS_locJerkMin" : clip(jerk_limits[0],-8.67,0), #m/s^3
-      "DAS_locJerkMax" : clip(jerk_limits[1],0,8.67), #m/s^3
-      "DAS_locSpeed" : clip(vEgo*3.6,0,409), #kph
-      "DAS_locAccelMin" : clip(accel_limits_turns[0],-15,5.44), #m/s^2
-      "DAS_locAccelMax" : clip(accel_limits_turns[0],-15,5.44), #m/s^2
-      "DAS_longControlCounter" : (frame % 16), #
+      "DAS_locJerkMin" : clip(jerk_limits[0],-7.67,0), #m/s^3 -8.67,0
+      "DAS_locJerkMax" : clip(jerk_limits[1],0,7.67), #m/s^3 0,8.67
+      "DAS_locSpeed" : clip(speed*3.6,0,200), #kph
+      "DAS_locAccelMin" : clip(accel_limits[0],-12,3.44), #m/s^2 -15,5.44
+      "DAS_locAccelMax" : clip(accel_limits[1],-12,3.44), #m/s^2 -15,5.44
+      "DAS_longControlCounter" : (counter % 8), #
       "DAS_longControlChecksum" : 0, #
     }
     data = self.packer.make_can_msg("DAS_longControl", CANBUS.chassis, values)[2]

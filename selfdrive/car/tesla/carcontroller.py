@@ -20,6 +20,7 @@ class CarController():
       self.rS = messaging.sub_sock('radarState')
       self.v_target = None
       self.lead_1 = None
+      self.long_control_counter = 0
 
 
   def update(self, enabled, CS, frame, actuators, cruise_cancel):
@@ -50,30 +51,34 @@ class CarController():
     if enabled:
       can_sends.append(self.tesla_can.create_steering_control(apply_angle, lkas_enabled, frame))
 
-    if enabled and self.CP.openpilotLongitudinalControl:
+    if enabled and self.CP.openpilotLongitudinalControl and (frame %2 == 0):
       #we use the same logic from planner here to get the speed
       long_plan = messaging.recv_one_or_none(self.lP)
       radar_state = messaging.recv_one_or_none(self.rS)
       if radar_state is not None:
         self.lead_1 = radar_state.radarState.leadOne
       if long_plan is not None:
-        self.v_target = long_plan.longitudinalPlan.vTarget
+        self.v_target = long_plan.longitudinalPlan.vTargetFuture # to try vs vTarget
+        self.a_target = abs(long_plan.longitudinalPlan.aTarget) # to try vs aTarget
       if self.v_target is None:
         self.v_target = CS.out.vEgo
+        self.a_target = 1
       following = False
+      #TODO: see what works best for these
+      test_accel_limits = [-2*self.a_target,2*self.a_target]
+      test_jerk_limits = [-4*self.a_target,4*self.a_target]
       if _is_present(self.lead_1):
         following = self.lead_1.status and self.lead_1.dRel < 45.0 and self.lead_1.vLeadK > CS.out.vEgo and self.lead_1.aLeadK > 0.0
       
-      #we have OP long control, reinforce the same limits OP has
-      accel_limits = [float(x) for x in calc_cruise_accel_limits(CS.out.vEgo, following)]
-      jerk_limits = [min(-0.1, accel_limits[0]), max(0.1, accel_limits[1])]  # TODO: make a separate lookup for jerk tuning
-      accel_limits_turns = limit_accel_in_turns(CS.out.vEgo, CS.out.steeringAngleDeg, accel_limits, self.CP)
       #we now create the DAS_control for AP1 or DAS_longControl for AP2
       if self.CP.carFingerprint == CAR.AP2_MODELS:
-        can_sends.append(self.tesla_can.create_ap2_long_control(self.v_target, accel_limits_turns, jerk_limits, frame))
+        can_sends.append(self.tesla_can.create_ap2_long_control(self.v_target, accel_limits_turns, jerk_limits, self.long_control_counter))
       if self.CP.carFingerprint == CAR.AP1_MODELS:
-        can_sends.append(self.tesla_can.create_ap1_long_control(self.v_target, accel_limits_turns, jerk_limits, frame))
+        can_sends.append(self.tesla_can.create_ap1_long_control(self.v_target, test_accel_limits, test_jerk_limits, self.long_control_counter))
+      self.long_control_counter = (self.long_control_counter + 1) % 8
      
+    if (hands_on_fault):
+      enabled = False
 
     # Cancel when openpilot is not enabled anymore and no autopilot
     # BB: do we need to do this? AP/Tesla does not behave this way
