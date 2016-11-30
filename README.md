@@ -81,7 +81,7 @@ We welcome both pull requests and issues on
 [github](http://github.com/commaai/openpilot). See the TODO file for a list of
 good places to start.
 
-
+Want to get paid to work on openpilot? [comma.ai is hiring](http://comma.ai/hiring.html)
 
 Licensing
 ------
