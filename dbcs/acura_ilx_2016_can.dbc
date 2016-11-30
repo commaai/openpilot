@@ -1,0 +1,295 @@
+VERSION ""
+
+
+NS_ : 
+	NS_DESC_
+	CM_
+	BA_DEF_
+	BA_
+	VAL_
+	CAT_DEF_
+	CAT_
+	FILTER
+	BA_DEF_DEF_
+	EV_DATA_
+	ENVVAR_DATA_
+	SGTYPE_
+	SGTYPE_VAL_
+ 	BA_DEF_SGTYPE_
+	BA_SGTYPE_
+	SIG_TYPE_REF_
+	VAL_TABLE_
+	SIG_GROUP_
+	SIG_VALTYPE_
+	SIGTYPE_VALTYPE_
+	BO_TX_BU_
+	BA_DEF_REL_
+	BA_REL_
+	BA_DEF_DEF_REL_
+	BU_SG_REL_
+	BU_EV_REL_
+	BU_BO_REL_
+	SG_MUL_VAL_
+
+BS_:
+
+BO_ 0x039 XXX: 3 XXX
+
+BO_ 0x091 XXX: 8 XXX
+ SG_ LAT_ACCEL : 0|10@1+ (0.02,-512) [-20|20] "m/s2" Vector__XXX 
+
+BO_ 0x0E4 STEERING_CONTROL: 5 ADAS
+ SG_ STEER_TORQUE : 0|16@1- (1,0) [-3840|3840] "" Vector__XXX
+ SG_ STEER_TORQUE_REQUEST : 16|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ SET_ME_X00 : 17|7@1+ (1,0) [0|127] "" Vector__XXX
+ SG_ SET_ME_X00 : 24|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ COUNTER : 34|2@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ CHECKSUM : 36|4@1+ (1,0) [0|3] "" Vector__XXX
+
+BO_ 0x130 GAS_PEDAL2: 8 PCM
+ SG_ ENGINE_TORQUE_ESTIMATE : 0|16@1- (1,0) [-1000|1000] "Nm" Vector__XXX
+ SG_ ENGINE_TORQUE_REQUEST : 16|16@1- (1,0) [-1000|1000] "Nm" Vector__XXX
+ SG_ CAR_GAS : 32|8@1+ (1,0) [0|255] "" Vector__XXX
+
+BO_ 0x13C GAS_PEDAL: 8 PCM
+ SG_ CAR_GAS : 32|8@1+ (1,0) [0|255] "" Vector__XXX
+ 
+BO_ 0x156 STEERING_SENSORS: 6 EPS
+ SG_ STEER_ANGLE : 0|16@1- (-0.1,0) [-500|500] "deg" Vector__XXX
+ SG_ STEER_ANGLE_RATE : 16|16@1- (1,0) [-3000|3000] "deg/s" Vector__XXX
+ SG_ COUNTER : 42|2@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ CHECKSUM : 44|4@1+ (1,0) [0|3] "" Vector__XXX
+
+BO_ 0x158 POWERTRAIN_DATA: 8 PCM
+ SG_ XMISSION_SPEED : 0|16@1+ (0.002759506,0) [0|70] "m/s" Vector__XXX
+ SG_ ENGINE_RPM : 16|16@1+ (1,0) [0|15000] "rpm" Vector__XXX
+ SG_ XMISSION_SPEED2 : 32|16@1+ (0.002759506,0) [0|70] "m/s" Vector__XXX
+ SG_ COUNTER : 58|2@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ CHECKSUM : 60|4@1+ (1,0) [0|3] "" Vector__XXX
+
+BO_ 0x17C POWERTRAIN_DATA2: 8 PCM
+ SG_ PEDAL_GAS : 0|8@1+ (1,0) [0|255] "" Vector__XXX
+ SG_ ENGINE_RPM : 16|16@1+ (1,0) [0|15000] "rpm" Vector__XXX
+ SG_ GAS_PRESSED : 32|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ ACC_STATUS : 33|1@1+ (1,0) [0|1] "rpm" Vector__XXX
+ SG_ BOH_17C : 34|5@1+ (1,0) [0|1] "rpm" Vector__XXX
+ SG_ BRAKE_LIGHTS_ON : 39|1@1+ (1,0) [0|1] "rpm" Vector__XXX
+ SG_ BOH2_17C : 40|10@1+ (1,0) [0|1] "rpm" Vector__XXX
+ SG_ BRAKE_PRESSED : 50|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ BOH3_17C : 51|5@1+ (1,0) [0|1] "rpm" Vector__XXX
+ SG_ COUNTER : 58|2@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ CHECKSUM : 60|4@1+ (1,0) [0|3] "" Vector__XXX
+
+BO_ 0x18E XXX: 3 XXX
+
+BO_ 0x18F STEER_STATUS: 7 EPS
+ SG_ STEER_TORQUE_SENSOR : 0|16@1- (1,0) [-31000|31000] "tbd" Vector__XXX
+ SG_ STEER_TORQUE_MOTOR : 16|16@1- (1,0) [-31000|31000] "tbd" Vector__XXX
+ SG_ STEER_STATUS : 32|4@1+ (1,0) [0|15] "" Vector__XXX
+ SG_ STEER_CONTROL_ACTIVE : 36|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ COUNTER : 50|2@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ CHECKSUM : 52|4@1+ (1,0) [0|3] "" Vector__XXX
+
+BO_ 0x1A3 GEARBOX: 8 PCM
+ SG_ GEAR : 0|8@1+ (1,0) [0|256] "" Vector__XXX
+ SG_ GEAR_SHIFTER : 36|4@1+ (1,0) [0|15] "" Vector__XXX
+ SG_ COUNTER : 58|2@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ CHECKSUM : 60|4@1+ (1,0) [0|3] "" Vector__XXX
+
+BO_ 0x1A4 VSA_STATUS: 8 VSA
+ SG_ USER_BRAKE : 0|16@1+ (0.015625,-103) [0|1000] "" Vector__XXX
+ SG_ ESP_DISABLED : 27|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ COUNTER : 58|2@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ CHECKSUM : 60|4@1+ (1,0) [0|3] "" Vector__XXX
+
+BO_ 0x1A6 SCM_BUTTONS: 8 SCM
+ SG_ CRUISE_BUTTONS : 0|3@1+ (1,0) [0|7] "" Vector__XXX
+ SG_ LIGHTS_SETTING : 6|2@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ MAIN_ON : 40|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ CRUISE_SETTING : 44|2@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ COUNTER : 58|2@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ CHECKSUM : 60|4@1+ (1,0) [0|3] "" Vector__XXX
+
+BO_ 0x1AC XXX: 8 XXX
+
+BO_ 0x1B0 STANDSTILL: 7 VSA
+ SG_ WHEELS_MOVING : 11|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ BRAKE_ERROR_1 : 12|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ BRAKE_ERROR_2 : 14|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ COUNTER : 50|2@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ CHECKSUM : 52|4@1+ (1,0) [0|3] "" Vector__XXX
+
+BO_ 0x1D0 WHEEL_SPEEDS: 8 VSA
+ SG_ WHEEL_SPEED_FL : 0|15@1+ (0.002759506,0) [0|70] "m/s" Vector__XXX
+ SG_ WHEEL_SPEED_FR : 15|15@1+ (0.002759506,0) [0|70] "m/s" Vector__XXX
+ SG_ WHEEL_SPEED_RL : 30|15@1+ (0.002759506,0) [0|70] "m/s" Vector__XXX
+ SG_ WHEEL_SPEED_RR : 45|15@1+ (0.002759506,0) [0|70] "m/s" Vector__XXX
+ SG_ CHECKSUM : 60|4@1+ (1,0) [0|3] "" Vector__XXX
+
+BO_ 0x1DC XXX: 4 XXX
+
+BO_ 0x1EA VEHICLE_DYNAMICS: 8 VSA
+ SG_ LONG_ACCEL : 16|16@1- (0.0015384,0) [-20|20] "m/s2" Vector__XXX
+
+BO_ 0x1FA BRAKE_COMMAND: 8 ADAS
+ SG_ COMPUTER_BRAKE : 0|10@1+ (0.003906248,0) [0|1] "" Vector__XXX
+ SG_ ZEROS_BOH : 10|5@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ COMPUTER_BRAKE_REQUEST : 15|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ CRUISE_BOH2 : 16|3@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ CRUISE_OVERRIDE : 19|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ CRUISE_BOH3 : 20|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ CRUISE_FAULT_CMD : 21|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ CRUISE_CANCEL_CMD : 22|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ COMPUTER_BRAKE_REQUEST_2 : 23|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ CRUISE_BOH4 : 24|8@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ BRAKE_LIGHTS : 32|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ CRUISE_BOH5 : 33|7@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ CHIME : 40|3@1+ (1,0) [0|7] "" Vector__XXX
+ SG_ CRUISE_BOH6 : 43|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ FCW : 44|2@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ CRUISE_BOH7 : 46|10@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ COUNTER : 58|2@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ CHECKSUM : 60|4@1+ (1,0) [0|3] "" Vector__XXX
+
+BO_ 0x200 GAS_COMMAND: 3 ADAS
+ SG_ GAS_COMMAND : 0|16@1+ (0.253984064,-328) [0|1] "" Vector__XXX
+ SG_ COUNTER : 18|2@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ CHECKSUM : 20|4@1+ (1,0) [0|3] "" Vector__XXX
+
+BO_ 0x201 GAS_SENSOR: 5 ADAS
+ SG_ INTERCEPTOR_GAS : 0|16@1+ (0.253984064,-328) [0|1] "" Vector__XXX
+ SG_ INTERCEPTOR_GAS2 : 16|16@1+ (0.126992032,-656) [0|1] "" Vector__XXX
+ SG_ COUNTER : 34|2@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ CHECKSUM : 36|4@1+ (1,0) [0|3] "" Vector__XXX
+
+BO_ 0x21E XXX: 7 XXX
+BO_ 0x221 XXX: 4 XXX
+
+BO_ 0x255 ROUGH_WHEEL_SPEED: 8 VSA
+ SG_ WHEEL_SPEED_FL : 0|8@1+ (1,0) [0|255] "mph" Vector__XXX
+ SG_ WHEEL_SPEED_FR : 8|8@1+ (1,0) [0|255] "mph" Vector__XXX
+ SG_ WHEEL_SPEED_RL : 16|8@1+ (1,0) [0|255] "mph" Vector__XXX
+ SG_ WHEEL_SPEED_RR : 24|8@1+ (1,0) [0|255] "mph" Vector__XXX
+ SG_ SET_TO_X55 : 32|8@1+ (1,0) [0|255] "" Vector__XXX
+ SG_ SET_TO_X55 : 40|8@1+ (1,0) [0|255] "" Vector__XXX
+
+BO_ 0x294 SCM_COMMANDS: 8 SCM
+ SG_ RIGHT_BLINKER : 1|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ LEFT_BLINKER : 2|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ WIPERS_SPEED : 3|2@1+ (1,0) [0|3] "" Vector__XXX
+
+BO_ 0x305 SEATBELT_STATUS: 7 BDY
+ SG_ SEATBELT_DRIVER_LAMP : 0|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ SEATBELT_DRIVER_LATCHED : 10|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ COUNTER : 50|2@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ CHECKSUM : 52|4@1+ (1,0) [0|3] "" Vector__XXX
+
+BO_ 0x309 XXX: 8 XXX
+
+BO_ 0x30C ACC_HUD: 8 ADAS
+ SG_ PCM_SPEED : 0|16@1+ (0.002763889,0) [0|100] "m/s" Vector__XXX
+ SG_ PCM_GAS : 16|7@1+ (1,0) [0|127] "" Vector__XXX
+ SG_ ZEROS_BOH : 23|1@1+ (1,0) [0|255] "" Vector__XXX
+ SG_ CRUISE_SPEED : 24|8@1+ (1,0) [0|255] "" Vector__XXX
+ SG_ DTC_MODE : 32|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ BOH : 33|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ ACC_PROBLEM : 34|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ FCM_OFF : 35|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ BOH_2 : 36|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ FCM_PROBLEM : 37|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ RADAR_OBSTRUCTED : 38|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ ENABLE_MINI_CAR : 39|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ SET_ME_X03 : 40|2@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ HUD_LEAD : 42|2@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ BOH_3 : 44|1@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ BOH_4 : 45|1@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ BOH_5 : 46|1@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ CRUISE_CONTROL_LABEL : 47|1@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ HUD_DISTANCE_3 : 51|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ COUNTER : 58|2@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ CHECKSUM : 60|4@1+ (1,0) [0|3] "" Vector__XXX
+
+BO_ 0x320 XXX: 8 XXX
+
+BO_ 0x324 CRUISE: 8 PCM
+ SG_ ENGINE_TEMPERATURE : 0|8@1+ (1,0) [0|255] "" Vector__XXX
+ SG_ BOH : 8|8@1+ (1,0) [0|255] "" Vector__XXX 
+ SG_ TRIP_FUEL_CONSUMED : 16|16@1+ (1,0) [0|255] "" Vector__XXX
+ SG_ CRUISE_SPEED_PCM : 32|8@1+ (1,0) [0|255] "" Vector__XXX
+ SG_ BOH2 : 40|8@1- (1,0) [0|255] "" Vector__XXX
+ SG_ BOH3 : 48|8@1+ (1,0) [0|255] "" Vector__XXX
+ SG_ COUNTER : 58|2@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ CHECKSUM : 60|4@1+ (1,0) [0|3] "" Vector__XXX
+
+BO_ 0x328 XXX: 8 XXX
+BO_ 0x333 XXX: 7 XXX
+BO_ 0x335 XXX: 5 XXX
+
+BO_ 0x33D LKAS_HUD_2: 5 ADAS
+ SG_ CAM_TEMP_HIGH : 0|1@1+ (1,0) [0|255] "" Vector__XXX
+ SG_ BOH : 1|7@1+ (1,0) [0|127] "" Vector__XXX
+ SG_ DASHED_LANES : 9|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ DTC : 10|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ LKAS_PROBLEM : 11|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ LKAS_OFF : 12|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ SOLID_LANES : 13|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ LDW_RIGHT : 14|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ STEERING_REQUIRED : 15|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ BOH : 16|2@1+ (1,0) [0|4] "" Vector__XXX
+ SG_ LDW_PROBLEM : 18|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ BEEP : 22|2@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ LDW_ON : 27|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ LDW_OFF : 28|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ CLEAN_WINDSHIELD : 29|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ SET_ME_X48 : 24|8@1+ (1,0) [0|255] "" Vector__XXX
+ SG_ COUNTER : 34|2@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ CHECKSUM : 36|4@1+ (1,0) [0|3] "" Vector__XXX
+
+
+BO_ 0x372 XXX: 2 XXX
+
+BO_ 0x374 XXX: 7 XXX
+BO_ 0x377 XXX: 8 XXX
+BO_ 0x378 XXX: 8 XXX
+BO_ 0x37C XXX: 8 XXX
+BO_ 0x39B XXX: 2 XXX
+BO_ 0x3A1 XXX: 4 XXX
+BO_ 0x3D7 XXX: 8 XXX
+BO_ 0x3D9 XXX: 3 XXX
+BO_ 0x400 XXX: 5 XXX
+BO_ 0x403 XXX: 5 XXX
+
+BO_ 0x405 DOORS_STATUS: 8 BDY
+ SG_ DOOR_OPEN_FL : 34|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ DOOR_OPEN_FR : 33|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ DOOR_OPEN_RL : 32|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ DOOR_OPEN_RR : 47|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ COUNTER : 58|2@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ CHECKSUM : 60|4@1+ (1,0) [0|3] "" Vector__XXX
+
+BO_ 0x406 XXX: 5 VSA
+BO_ 0x40A XXX: 5 XXX
+BO_ 0x40C XXX: 8 XXX
+BO_ 0x40F XXX: 8 XXX
+BO_ 0x421 XXX: 5 EPS
+BO_ 0x428 XXX: 7 XXX
+BO_ 0x454 XXX: 8 XXX
+BO_ 0x555 XXX: 5 XXX
+BO_ 0x640 XXX: 5 XXX
+BO_ 0x641 XXX: 8 XXX
+
+VAL_ 0x1A6 CRUISE_BUTTONS 7 "tbd" 6 "tbd" 5 "tbd" 4 "accel_res" 3 "decel_set" 2 "cancel" 1 "main" 0 "none";
+VAL_ 0x1A6 CRUISE_SETTING 3 "distance_adj" 2 "tbd" 1 "lkas_button" 0 "none";
+VAL_ 0x30C HUD_LEAD 3 "no_car" 2 "solid_car" 1 "dashed_car" 0 "no_car";
+VAL_ 0x1A6 LIGHTS_SETTING 3 "high_beam" 2 "low_beam" 1 "position" 0 "no_lights";
+VAL_ 0x18F STEER_STATUS 5 "fault" 4 "no_torque_alert_2" 2 "no_torque_alert_1" 0 "normal";
+VAL_ 0x1A3 GEAR_SHIFTER 10 "S" 4 "D" 3 "N" 2 "R" 1 "P";
+VAL_ 0x33D BEEP 3 "single_beep" 2 "triple_beep" 1 "repeated_beep" 0 "no_beep";
+VAL_ 0x1FA CHIME 4 "double_chime" 3 "single_chime" 2 "continuous_chime" 1 "repeating_chime" 0 "no_chime";
+VAL_ 0x1FA FCW 3 "fcw" 2 "fcw" 1 "fcw" 0 "no_fcw";
+
+CM_ SG_ 0x1A3 GEAR "10 = reverse, 11 = transition";
+CM_ SG_ 0x324 CRUISE_SPEED_ECHO "255 = no speed";
+CM_ SG_ 0x33D CRUISE_SPEED "255 = no speed";
+CM_ SG_ 0x1EA LONG_ACCEL "wheel speed derivative, noisy and zero snapping";
+CM_ SG_ 0x33D BEEP "beeps are pleasant, chimes are for warnngs etc...";
