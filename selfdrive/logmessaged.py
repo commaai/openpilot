@@ -21,8 +21,6 @@ def main(gctx):
   while True:
     dat = ''.join(sock.recv_multipart())
 
-    # print "RECV", repr(dat)
-
     levelnum = ord(dat[0])
     dat = dat[1:]
 

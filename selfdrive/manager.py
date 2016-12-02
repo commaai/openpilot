@@ -29,7 +29,7 @@ managed_processes = {
   "calibrationd": "selfdrive.calibrationd.calibrationd",
   "loggerd": "selfdrive.loggerd.loggerd",
   "logmessaged": "selfdrive.logmessaged",
-  #"boardd": "selfdrive.boardd.boardd",
+  "boardd": "selfdrive.boardd.boardd",
   "logcatd": ("logcatd", ["./logcatd"]),
   "boardd": ("boardd", ["./boardd"]),   # switch to c++ boardd
   "ui": ("ui", ["./ui"]),
@@ -166,7 +166,7 @@ def manager_thread():
     for p in car_started_processes:
       start_managed_process(p)
 
-  while 1:
+  while True:
     # get health of board, log this in "thermal"
     td = messaging.recv_sock(health_sock, wait=True)
     print td
@@ -238,7 +238,7 @@ def manager_test():
   time.sleep(10)
 
 def wait_for_device():
-  while 1:
+  while True:
     try:
       context = usb1.USBContext()
       for device in context.getDeviceList(skip_on_error=True):
