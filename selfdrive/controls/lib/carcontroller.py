@@ -1,6 +1,6 @@
 from collections import namedtuple
 
-import common.numpy_fast as np
+import numpy as np
 import selfdrive.controls.lib.hondacan as hondacan
 from common.realtime import sec_since_boot
 from selfdrive.config import CruiseButtons

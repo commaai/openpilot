@@ -1,6 +1,6 @@
 import struct
 
-import common.numpy_fast as np
+import numpy as np
 from selfdrive.config import Conversions as CV
 
 
