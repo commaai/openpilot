@@ -23,7 +23,7 @@ def sub_sock(context, port, poller=None, addr="127.0.0.1"):
 
 def drain_sock(sock, wait_for_one=False):
   ret = []
-  while 1:
+  while True:
     try:
       if wait_for_one and len(ret) == 0:
         dat = sock.recv()
@@ -39,7 +39,7 @@ def drain_sock(sock, wait_for_one=False):
 # TODO: print when we drop packets?
 def recv_sock(sock, wait=False):
   dat = None
-  while 1:
+  while True:
     try:
       if wait and dat is None:
         dat = sock.recv()
