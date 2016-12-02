@@ -22,11 +22,10 @@ class LogMessageHandler(logging.Handler):
       self.connect()
 
     msg = self.format(record).rstrip('\n')
-    # print "SEND", repr(msg)
     try:
       self.sock.send(chr(record.levelno)+msg, zmq.NOBLOCK)
     except zmq.error.Again:
-      # drop :/
+      # If we are unable to send the message, we are as of now forced to drop it
       pass
 
 cloudlog = log = SwagLogger()

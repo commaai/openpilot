@@ -20,7 +20,7 @@ import numpy.matlib
 # update() should be called once per sensor, and can be called multiple times between predict steps.
 # Access and set the state of the filter directly with ekf.state and ekf.covar.
 
-class SensorReading:
+class SensorReading(object):
   # Given a perfect model and no noise, data = obs_model * state
   def __init__(self, data, covar, obs_model):
     self.data = data
@@ -33,7 +33,7 @@ class SensorReading:
 
 
 # A generic sensor class that does no pre-processing of data
-class SimpleSensor:
+class SimpleSensor(object):
   # obs_model can be 
   #   a full obesrvation model matrix, or
   #   an integer or tuple of indices into ekf.state, indicating which variables are being directly observed
@@ -68,7 +68,7 @@ class SimpleSensor:
       self.covar = covar
     return SensorReading(data, self.covar, self.obs_model)
 
-class GPS:
+class GPS(object):
   earth_r = 6371e3  # m, average earth radius
 
   def __init__(self, xy_idx=(0, 1), dims=2, var=1e4):

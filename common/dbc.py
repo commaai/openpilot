@@ -15,7 +15,10 @@ DBCSignal = namedtuple(
 
 class dbc(object):
   def __init__(self, fn):
-    self.txt = open(fn).read().split("\n")
+
+    with open(fn, 'r') as datafile:
+      self.txt = map(str.split, datafile.read().split("\n"))
+
     self._warned_addresses = set()
 
     # regexps from https://github.com/ebroecker/canmatrix/blob/master/canmatrix/importdbc.py
@@ -31,18 +34,17 @@ class dbc(object):
     self.msgs = {}
 
     self.bits = []
-    for i in range(0, 64, 8):
-      for j in range(7, -1, -1):
+    for i in xrange(0, 64, 8):
+      for j in xrange(7, -1, -1):
         self.bits.append(i+j)
 
     for l in self.txt:
-      l = l.strip()
 
       if l.startswith("BO_ "):
         # new group
         dat = bo_regexp.match(l)
 
-        if dat is None:
+        if not dat:
           print "bad BO", l
         name = dat.group(2)
         size = int(dat.group(3))
@@ -54,10 +56,10 @@ class dbc(object):
         # new signal
         dat = sg_regexp.match(l)
         go = 0
-        if dat is None:
+        if not dat:
           dat = sgm_regexp.match(l)
           go = 1
-        if dat is None:
+        if not dat:
           print "bad SG", l
 
         sgname = dat.group(1)
@@ -92,7 +94,7 @@ class dbc(object):
     bsf = bitstring.Bits(hex="00"*size)
     for s in msg_def[1]:
       ival = dd.get(s.name)
-      if ival is not None:
+      if ival:
         ival = (ival / s.factor) - s.offset
         ival = int(round(ival))
 
@@ -108,8 +110,8 @@ class dbc(object):
         else:
           tbs = bitstring.Bits(uint=ival, length=s.size)
 
-        lpad = bitstring.Bits(bin="0b"+"0"*ss)
-        rpad = bitstring.Bits(bin="0b"+"0"*(8*size-(ss+s.size)))
+        lpad = bitstring.Bits(bin=''.join("0b", "0"*ss))
+        rpad = bitstring.Bits(bin=''.join("0b", "0"*(8*size-(ss+s.size))))
         tbs = lpad+tbs+rpad
 
         bsf |= tbs
@@ -132,13 +134,13 @@ class dbc(object):
 
         Returns (None, None) if the message could not be decoded.
     """
-    if arr is None:
+    if not arr:
       out = {}
     else:
       out = [None]*len(arr)
 
     msg = self.msgs.get(x[0])
-    if msg is None:
+    if not msg:
       if x[0] not in self._warned_addresses:
         print("WARNING: Unknown message address {}".format(x[0]))
         self._warned_addresses.add(x[0])
@@ -152,7 +154,7 @@ class dbc(object):
     x2_int = int(x[2], 16)
 
     for s in msg[1]:
-      if arr is not None and s[0] not in arr:
+      if arr and s[0] not in arr:
         continue
 
       # big or little endian?
@@ -175,7 +177,7 @@ class dbc(object):
       if debug:
         print "%40s  %2d %2d  %7.2f %s" % (s[0], s[1], s[2], ival, s[-1])
 
-      if arr is None:
+      if not arr:
         out[s[0]] = ival
       else:
         out[arr.index(s[0])] = ival

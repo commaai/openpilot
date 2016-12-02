@@ -84,7 +84,7 @@ class Ratekeeper(object):
     if self._remaining > 0:
       time.sleep(self._remaining)
 
-  # this only monitor the cumulative lag, but does not enforce a rate
+  # This only monitors the cumulative lag, but does not enforce a rate
   def monitor_time(self):
     remaining = self._next_frame_time - sec_since_boot()
     self._next_frame_time += self._interval
