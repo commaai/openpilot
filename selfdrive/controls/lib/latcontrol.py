@@ -97,24 +97,24 @@ class LatControl(object):
   def reset(self):
     self.Ui_steer = 0.
 
-  def update(self, enabled, CS, d_poly, angle_offset):
+  def update(self, enabled, v_ego, angle_steers, steer_override, d_poly, angle_offset, VP):
     rate = 100
 
     steer_max = 1.0
 
     # how far we look ahead is function of speed
-    d_lookahead = calc_d_lookahead(CS.v_ego)
+    d_lookahead = calc_d_lookahead(v_ego)
 
     # calculate actual offset at the lookahead point
-    self.y_actual, _ = calc_lookahead_offset(CS.v_ego, CS.angle_steers,
-                                             d_lookahead, CS.VP, angle_offset)
+    self.y_actual, _ = calc_lookahead_offset(v_ego, angle_steers,
+                                             d_lookahead, VP, angle_offset)
 
     # desired lookahead offset
     self.y_des = np.polyval(d_poly, d_lookahead)
 
     output_steer, self.Up_steer, self.Ui_steer, self.lateral_control_sat, self.sat_count, sat_flag = pid_lateral_control(
-      CS.v_ego, self.y_actual, self.y_des, self.Ui_steer, steer_max,
-      CS.steer_override, self.sat_count, enabled, CS.torque_mod, rate)
+      v_ego, self.y_actual, self.y_des, self.Ui_steer, steer_max,
+      steer_override, self.sat_count, enabled, VP.torque_mod, rate)
 
     final_steer = np.clip(output_steer, -steer_max, steer_max)
     return final_steer, sat_flag

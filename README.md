@@ -42,25 +42,41 @@ Directory structure
   - assets        -- Fonts for ui
   - boardd        -- Daemon to talk to the board
   - calibrationd  -- Camera calibration server
+  - car           -- Code that talks to the car and implements CarInterface
   - common        -- Shared C/C++ code for the daemons
   - controls      -- Python controls (PID loops etc) for the car
   - logcatd       -- Android logcat as a service
   - loggerd       -- Logger and uploader of car data
+  - radar         -- Code that talks to the radar and implements RadarInterface
   - sensord       -- IMU / GPS interface code
+  - test/plant    -- Car simulator running code through virtual maneuvers
   - ui            -- The UI
   - visiond       -- embedded vision pipeline
 
 To understand how the services interact, see `common/services.py`
+
+Testing on PC
+------
+
+There is rudimentary infrastructure to run a basic simulation and generate a report of openpilot's behavior in different scenarios.
+
+```bash
+# Requires working docker
+./run_docker_tests.sh
+```
+
+The results are written to `selfdrive/test/plant/out/index.html`
+
+More extensive testing infrastructure and simulation environments are coming soon.
 
 Adding Car Support
 ------
 
 It should be relatively easy to add support for the Honda CR-V Touring. The brake message is the same. Steering has a slightly different message with a different message id. Sniff CAN while using LKAS to find it.
 
-The Honda Accord uses different signalling for the steering and probably requires new hardware.
+The Honda Accord uses different signaling for the steering and probably requires new hardware.
 
 Adding other manufacturers besides Honda/Acura is doable but will be more of an undertaking.
-
 
 User Data / chffr Account / Crash Reporting
 ------

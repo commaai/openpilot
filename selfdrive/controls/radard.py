@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import os
 import zmq
 import numpy as np
 import numpy.matlib
@@ -9,7 +10,6 @@ from fastcluster import linkage_vector
 import selfdrive.messaging as messaging
 from selfdrive.boardd.boardd import can_capnp_to_can_list_old
 from selfdrive.controls.lib.latcontrol import calc_lookahead_offset
-from selfdrive.controls.lib.can_parser import CANParser
 from selfdrive.controls.lib.pathplanner import PathPlanner
 from selfdrive.config import VehicleParams
 from selfdrive.controls.lib.radar_helpers import Track, Cluster, fcluster, RDR_TO_LDR
@@ -18,10 +18,16 @@ from common.services import service_list
 from common.realtime import sec_since_boot, set_realtime_priority, Ratekeeper
 from common.kalman.ekf import EKF, SimpleSensor
 
+radar_type = os.getenv("RADAR")
+if radar_type is not None:
+  exec('from selfdrive.radar.'+car_type+'.interface import RadarInterface')
+else:
+  from selfdrive.radar.nidec.interface import RadarInterface
+
 #vision point
 DIMSV = 2
 XV, SPEEDV = 0, 1
-VISION_POINT = 1
+VISION_POINT = -1
 
 class EKFV1D(EKF):
   def __init__(self):
@@ -41,30 +47,6 @@ class EKFV1D(EKF):
     return tf, tfj
 
 
-# nidec radar decoding
-def nidec_decode(cp, ar_pts):
-  for ii in cp.msgs_upd:
-    # filter points with very big distance, as fff (~255) is invalid. FIXME: use VAL tables from dbc
-    if cp.vl[ii]['LONG_DIST'] < 255:
-      ar_pts[ii] = [cp.vl[ii]['LONG_DIST'] + RDR_TO_LDR,
-                    -cp.vl[ii]['LAT_DIST'], cp.vl[ii]['REL_SPEED'], np.nan,
-                    cp.ts[ii], cp.vl[ii]['NEW_TRACK'], cp.ct[ii]]
-    elif ii in ar_pts:
-      del ar_pts[ii]
-  return ar_pts
-
-
-def _create_radard_can_parser():
-  dbc_f = 'acura_ilx_2016_nidec.dbc'
-  radar_messages = range(0x430, 0x43A) + range(0x440, 0x446)
-  signals = zip(['LONG_DIST'] * 16 + ['NEW_TRACK'] * 16 + ['LAT_DIST'] * 16 +
-                ['REL_SPEED'] * 16, radar_messages * 4,
-                [255] * 16 + [1] * 16 + [0] * 16 + [0] * 16)
-  checks = zip(radar_messages, [20]*16)
-
-  return CANParser(dbc_f, signals, checks)
-
-
 # fuses camera and radar data for best lead detection
 def radard_thread(gctx=None):
   set_realtime_priority(1)
@@ -73,10 +55,10 @@ def radard_thread(gctx=None):
 
   # *** subscribe to features and model from visiond
   model = messaging.sub_sock(context, service_list['model'].port)
-  logcan = messaging.sub_sock(context, service_list['can'].port)
   live100 = messaging.sub_sock(context, service_list['live100'].port)
 
   PP = PathPlanner(model)
+  RI = RadarInterface()
 
   # *** publish live20 and liveTracks
   live20 = messaging.pub_sock(context, service_list['live20'].port)
@@ -84,9 +66,8 @@ def radard_thread(gctx=None):
 
   # subscribe to stats about the car
   # TODO: move this to new style packet
-  VP = VehicleParams(False)  # same for ILX and civic
+  VP = VehicleParams(False, False)  # same for ILX and civic
 
-  ar_pts = {}
   path_x = np.arange(0.0, 140.0, 0.1)    # 140 meters is max
 
   # Time-alignment
@@ -100,9 +81,6 @@ def radard_thread(gctx=None):
 
   tracks = defaultdict(dict)
 
-  # Nidec
-  cp = _create_radard_can_parser()
-
   # Kalman filter stuff: 
   ekfv = EKFV1D()
   speedSensorV = SimpleSensor(XV, 1, 2)
@@ -114,23 +92,11 @@ def radard_thread(gctx=None):
 
   rk = Ratekeeper(rate, print_delay_threshold=np.inf)
   while 1:
-    canMonoTimes = []
-    can_pub_radar = []
-    for a in messaging.drain_sock(logcan, wait_for_one=True):
-      canMonoTimes.append(a.logMonoTime)
-      can_pub_radar.extend(can_capnp_to_can_list_old(a, [1, 3]))
+    rr = RI.update()
 
-    # only run on the 0x445 packets, used for timing
-    if not any(x[0] == 0x445 for x in can_pub_radar):
-      continue
-
-    cp.update_can(can_pub_radar)
-
-    if not cp.can_valid:
-      # TODO: handle this
-      pass
-
-    ar_pts = nidec_decode(cp, ar_pts)
+    ar_pts = {}
+    for pt in rr.points:
+      ar_pts[pt.trackId] = [pt.dRel + RDR_TO_LDR, pt.yRel, pt.vRel, pt.aRel, None, False, None]
 
     # receive the live100s
     l100 = messaging.recv_sock(live100)
@@ -184,7 +150,7 @@ def radard_thread(gctx=None):
       v_ego_t_aligned = np.interp(cur_time - rdr_delay, v_ego_array[1], v_ego_array[0])
       d_path = np.sqrt(np.amin((path_x - rpt[0]) ** 2 + (path_y - rpt[1]) ** 2))
 
-      # create the track
+      # create the track if it doesn't exist or it's a new track
       if ids not in tracks or rpt[5] == 1:
         tracks[ids] = Track()
       tracks[ids].update(rpt[0], rpt[1], rpt[2], d_path, v_ego_t_aligned)
@@ -246,7 +212,7 @@ def radard_thread(gctx=None):
     dat = messaging.new_message()
     dat.init('live20')
     dat.live20.mdMonoTime = PP.logMonoTime
-    dat.live20.canMonoTimes = canMonoTimes
+    dat.live20.canMonoTimes = list(rr.canMonoTimes)
     if lead_len > 0:
       lead_clusters[0].toLive20(dat.live20.leadOne)
       if lead2_len > 0:

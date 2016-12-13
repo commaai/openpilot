@@ -57,7 +57,7 @@ def set_realtime_priority(level):
     raise NotImplementedError
 
   tid = libc.syscall(NR_gettid)
-  subprocess.check_call(['chrt', '-f', '-p', str(level), str(tid)])
+  return subprocess.call(['chrt', '-f', '-p', str(level), str(tid)])
 
 
 class Ratekeeper(object):

@@ -84,6 +84,8 @@ class Uploader(object):
       cloudlog.exception("clean_dirs failed")
 
   def gen_upload_files(self):
+    if not os.path.isdir(self.root):
+      return
     for logname in listdir_by_creation_date(self.root):
       path = os.path.join(self.root, logname)
       names = os.listdir(path)

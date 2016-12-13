@@ -85,11 +85,11 @@ struct Live20Data {
   ftMonoTime @7 :UInt64;
 
   # all deprecated
-  warpMatrix @0 :List(Float32);
-  angleOffset @1 :Float32;
-  calStatus @2 :Int8;
-  calCycle @8 :Int32;
-  calPerc @9 :Int8;
+  warpMatrixDEPRECATED @0 :List(Float32);
+  angleOffsetDEPRECATED @1 :Float32;
+  calStatusDEPRECATED @2 :Int8;
+  calCycleDEPRECATED @8 :Int32;
+  calPercDEPRECATED @9 :Int8;
 
   leadOne @3 :LeadData;
   leadTwo @4 :LeadData;
@@ -138,7 +138,7 @@ struct Live100Data {
   mdMonoTime @18 :UInt64;
 
   vEgo @0 :Float32;
-  aEgo @1 :Float32;
+  aEgoDEPRECATED @1 :Float32;
   vPid @2 :Float32;
   vTargetLead @3 :Float32;
   upAccelCmd @4 :Float32;
@@ -151,7 +151,7 @@ struct Live100Data {
   aTargetMax @11 :Float32;
   jerkFactor @12 :Float32;
   angleSteers @13 :Float32;
-  hudLead @14 :Int32;
+  hudLeadDEPRECATED @14 :Int32;
   cumLagMs @15 :Float32;
 
   enabled @19: Bool;

@@ -39,13 +39,20 @@ service_list = {
 #   subscribes: health
 #   publishes:  thermal
 
+# **** processes that communicate with the outside world ****
+
 # boardd -- communicates with the car
 #   subscribes: sendcan
 #   publishes:  can, health
 
+# sensord -- publishes the IMU and GPS
+#   publishes:  sensorEvents, gpsNMEA
+
 # visiond -- talks to the cameras, runs the model, saves the videos
 #   subscribes: liveCalibration, sensorEvents
 #   publishes:  frame, encodeIdx, model, features
+
+# **** stateful data transformers ****
 
 # controlsd -- actually drives the car
 #   subscribes: can, thermal, model, live20
@@ -54,9 +61,6 @@ service_list = {
 # radard -- processes the radar data
 #   subscribes: can, live100, model
 #   publishes:  live20, liveTracks
-
-# sensord -- publishes the IMU and GPS
-#   publishes:  sensorEvents, gpsNMEA
 
 # calibrationd -- places the camera box
 #   subscribes: features, live100
@@ -80,3 +84,4 @@ service_list = {
 
 # logcatd -- fetches logcat info from android
 #   publishes:  androidLog
+

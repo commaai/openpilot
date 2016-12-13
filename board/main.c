@@ -2,6 +2,7 @@
 //#define CAN_LOOPBACK_MODE
 //#define USE_INTERNAL_OSC
 //#define OLD_BOARD
+//#define ENABLE_CURRENT_SENSOR
 
 #define USB_VID 0xbbaa
 #define USB_PID 0xddcc
@@ -257,7 +258,11 @@ int get_health_pkt(void *dat) {
     uint8_t gas_interceptor_detected;
   } *health = dat;
   health->voltage = adc_get(ADCCHAN_VOLTAGE);
+#ifdef ENABLE_CURRENT_SENSOR
   health->current = adc_get(ADCCHAN_CURRENT);
+#else
+  health->current = 0;
+#endif
   health->started = (GPIOC->IDR & (1 << 13)) != 0;
   health->controls_allowed = controls_allowed;
   health->gas_interceptor_detected = gas_interceptor_detected;

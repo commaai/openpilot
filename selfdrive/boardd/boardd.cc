@@ -27,6 +27,8 @@ libusb_context *ctx = NULL;
 libusb_device_handle *dev_handle;
 pthread_mutex_t usb_lock;
 
+bool spoofing_started = false;
+
 // double the FIFO size
 #define RECV_SIZE (0x1000)
 #define TIMEOUT 0
@@ -147,7 +149,11 @@ void can_health(void *s) {
   // set fields
   healthData.setVoltage(health.voltage);
   healthData.setCurrent(health.current);
-  healthData.setStarted(health.started);
+  if (spoofing_started) {
+    healthData.setStarted(1);
+  } else {
+    healthData.setStarted(health.started);
+  }
   healthData.setControlsAllowed(health.controls_allowed);
   healthData.setGasInterceptorDetected(health.gas_interceptor_detected);
 
@@ -177,7 +183,7 @@ void can_send(void *s) {
   memset(send, 0, msg_count*0x10);
 
   for (int i = 0; i < msg_count; i++) {
-    auto cmsg = event.getCan()[i];
+    auto cmsg = event.getSendcan()[i];
     if (cmsg.getAddress() >= 0x800) {
       // extended
       send[i*4] = (cmsg.getAddress() << 3) | 5;
@@ -269,6 +275,11 @@ int main() {
   // set process priority
   err = setpriority(PRIO_PROCESS, 0, -4);
   printf("boardd: setpriority returns %d\n", err);
+
+  // check the environment
+  if (getenv("STARTED")) {
+    spoofing_started = true;
+  }
 
   // connect to the board
   err = libusb_init(&ctx);
