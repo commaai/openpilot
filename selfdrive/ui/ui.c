@@ -133,10 +133,31 @@ typedef struct UIState {
   GLuint frame_front_tex;
 
   UIScene scene;
-
-
+  
+  bool awake;
+  int awake_timeout;
 } UIState;
 
+static void set_awake(UIState *s, bool awake) {
+  if (awake) {
+    // 30 second timeout
+    s->awake_timeout = 30;
+  }
+  if (s->awake != awake) {
+    s->awake = awake;
+
+    // TODO: actually turn off the screen and not just the backlight
+    FILE *f = fopen("/sys/class/leds/lcd-backlight/brightness", "wb");
+    if (f != NULL) {
+      if (awake) {
+        fprintf(f, "205");
+      } else {
+        fprintf(f, "0");
+      }
+      fclose(f);
+    }
+  }
+}
 
 static bool activity_running() {
   return system("dumpsys activity activities | grep mFocusedActivity > /dev/null") == 0;
@@ -173,13 +194,13 @@ typedef struct Button {
 static const Button buttons[] = {
   {
     .label = "wifi",
-    .x = 400, .y = 700, .w = 250, .h = 250,
+    .x = 400, .y = 730, .w = 250, .h = 250,
     .pressed = wifi_pressed,
     .enabled = wifi_enabled,
   },
   {
     .label = "ap",
-    .x = 1300, .y = 700, .w = 250, .h = 250,
+    .x = 1300, .y = 730, .w = 250, .h = 250,
     .pressed = ap_pressed,
     .enabled = ap_enabled,
   }
@@ -380,6 +401,9 @@ static void ui_init(UIState *s) {
   glDisable(GL_DEPTH_TEST);
 
   assert(glGetError() == GL_NO_ERROR);
+
+  // set awake
+  set_awake(s, true);
 }
 
 
@@ -1123,7 +1147,7 @@ static void ui_update(UIState *s) {
         s->scene.v_cruise = datad.vCruise;
         s->scene.v_ego = datad.vEgo;
         s->scene.angle_steers = datad.angleSteers;
-        s->scene.engaged = (datad.hudLead == 1) || (datad.hudLead == 2);
+        s->scene.engaged = datad.enabled;
         // printf("recv %f\n", datad.vEgo);
 
         s->scene.frontview = datad.rearViewCam;
@@ -1197,6 +1221,12 @@ static void ui_update(UIState *s) {
     if (rx_bytes) free(rx_bytes);
     if (tx_bytes) free(tx_bytes);
 
+    // TODO: do this properly
+    system("git rev-parse --abbrev-ref HEAD > /tmp/git_branch");
+    char *git_branch = read_file("/tmp/git_branch");
+    system("git rev-parse --short HEAD > /tmp/git_commit");
+    char *git_commit = read_file("/tmp/git_commit");
+
     int pending = pending_uploads();
 
     // service call wifi 20  # getWifiEnabledState
@@ -1210,14 +1240,29 @@ static void ui_update(UIState *s) {
     s->board_connected = !system("lsusb | grep bbaa > /dev/null");
 
     snprintf(s->base_text, sizeof(s->base_text),
-             "serial: %s\n dongle id: %s\n battery: %s %s\npending: %d\nrx %.1fkiB/s tx %.1fkiB/s\nboard: %s",
+             "version: %s (%s)\nserial: %s\n dongle id: %s\n battery: %s %s\npending: %d\nrx %.1fkiB/s tx %.1fkiB/s\nboard: %s",
+             git_commit, git_branch,
              s->serial, s->dongle_id, bat_cap ? bat_cap : "(null)", bat_stat ? bat_stat : "(null)",
              pending, rx_rate / 1024.0, tx_rate / 1024.0, s->board_connected ? "found" : "NOT FOUND");
 
     if (bat_cap) free(bat_cap);
     if (bat_stat) free(bat_stat);
 
+    if (git_branch) free(git_branch);
+    if (git_commit) free(git_commit);
+
     s->last_base_update = ts;
+
+    if (s->awake_timeout > 0) {
+      s->awake_timeout--;
+    } else {
+      set_awake(s, false);
+    }
+  }
+
+  if (s->vision_connected) {
+    // always awake if vision is connected
+    set_awake(s, true);
   }
 
   if (!s->vision_connected) {
@@ -1226,16 +1271,20 @@ static void ui_update(UIState *s) {
     int touch_x = -1, touch_y = -1;
     err = touch_poll(&s->touch, &touch_x, &touch_y);
     if (err == 1) {
-      // press buttons
-      for (int i=0; i<ARRAYSIZE(buttons); i++) {
-        const Button *b = &buttons[i];
-        if (touch_x >= b->x && touch_x < b->x+b->w
-            && touch_y >= b->y && touch_y < b->y+b->h) {
-          if (b->pressed && !activity_running()) {
-            b->pressed();
-            break;
+      if (s->awake) {
+        // press buttons
+        for (int i=0; i<ARRAYSIZE(buttons); i++) {
+          const Button *b = &buttons[i];
+          if (touch_x >= b->x && touch_x < b->x+b->w
+              && touch_y >= b->y && touch_y < b->y+b->h) {
+            if (b->pressed && !activity_running()) {
+              b->pressed();
+              break;
+            }
           }
         }
+      } else {
+        set_awake(s, true);
       }
     }
   }

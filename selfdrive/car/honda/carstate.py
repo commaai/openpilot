@@ -2,11 +2,11 @@ import numpy as np
 
 import selfdrive.messaging as messaging
 from selfdrive.boardd.boardd import can_capnp_to_can_list_old, can_capnp_to_can_list
-from selfdrive.controls.lib.can_parser import CANParser
-from selfdrive.controls.lib.fingerprints import fingerprints
 from selfdrive.config import VehicleParams
 from common.realtime import sec_since_boot
 
+from selfdrive.car.fingerprints import fingerprints
+from selfdrive.car.honda.can_parser import CANParser
 
 def get_can_parser(civic, brake_only):
   # this function generates lists for signal, messages and initial values
@@ -46,6 +46,7 @@ def get_can_parser(civic, brake_only):
       ("LEFT_BLINKER", 0x326, 0),
       ("RIGHT_BLINKER", 0x326, 0),
       ("COUNTER", 0x324, 0),
+      ("ENGINE_RPM", 0x17C, 0)
     ]
     checks = [
       (0x14a, 100),
@@ -97,6 +98,7 @@ def get_can_parser(civic, brake_only):
       ("LEFT_BLINKER", 0x294, 0),
       ("RIGHT_BLINKER", 0x294, 0),
       ("COUNTER", 0x324, 0),
+      ("ENGINE_RPM", 0x17C, 0)
     ]
     checks = [
       (0x156, 100),
@@ -153,6 +155,7 @@ def fingerprint(logcan):
     if len(possible_cars) == 1 and st is not None and (sec_since_boot()-st) > 0.1:
       break
     elif len(possible_cars) == 0:
+      print finger
       raise Exception("car doesn't match any fingerprints")
 
   print "fingerprinted", possible_cars[0]
@@ -183,6 +186,9 @@ class CarState(object):
     self.cruise_setting = 0
     self.blinker_on = 0
 
+    self.left_blinker_on = 0
+    self.right_blinker_on = 0
+
     # TODO: actually make this work
     self.a_ego = 0.
 
@@ -190,16 +196,9 @@ class CarState(object):
     self.ui_speed_fudge = 1.01 if self.civic else 1.025
 
     # load vehicle params
-    self.VP = VehicleParams(self.civic)
+    self.VP = VehicleParams(self.civic, self.brake_only, self.torque_mod)
 
-  def update(self, logcan):
-    # ******************* do can recv *******************
-    can_pub_main = []
-    canMonoTimes = []
-    for a in messaging.drain_sock(logcan):
-      canMonoTimes.append(a.logMonoTime)
-      can_pub_main.extend(can_capnp_to_can_list_old(a, [0,2]))
-
+  def update(self, can_pub_main):
     cp = self.cp
     cp.update_can(can_pub_main)
 
@@ -214,6 +213,11 @@ class CarState(object):
     self.prev_cruise_buttons = self.cruise_buttons
     self.prev_cruise_setting = self.cruise_setting
     self.prev_blinker_on = self.blinker_on
+
+    self.prev_left_blinker_on = self.left_blinker_on
+    self.prev_right_blinker_on = self.right_blinker_on
+
+    self.rpm = cp.vl[0x17C]['ENGINE_RPM']
 
     # ******************* parse out can *******************
     self.door_all_closed = not any([cp.vl[0x405]['DOOR_OPEN_FL'], cp.vl[0x405]['DOOR_OPEN_FR'],
@@ -252,6 +256,8 @@ class CarState(object):
       self.main_on = cp.vl[0x326]['MAIN_ON']
       self.gear_shifter_valid = self.gear_shifter in [1,8]  # TODO: 1/P allowed for debug
       self.blinker_on = cp.vl[0x326]['LEFT_BLINKER'] or cp.vl[0x326]['RIGHT_BLINKER']
+      self.left_blinker_on = cp.vl[0x326]['LEFT_BLINKER']
+      self.right_blinker_on = cp.vl[0x326]['RIGHT_BLINKER']
     else:
       self.gear_shifter = cp.vl[0x1A3]['GEAR_SHIFTER']
       self.angle_steers = cp.vl[0x156]['STEER_ANGLE']
@@ -261,6 +267,8 @@ class CarState(object):
       self.main_on = cp.vl[0x1A6]['MAIN_ON']
       self.gear_shifter_valid = self.gear_shifter in [1,4]  # TODO: 1/P allowed for debug
       self.blinker_on = cp.vl[0x294]['LEFT_BLINKER'] or cp.vl[0x294]['RIGHT_BLINKER']
+      self.left_blinker_on = cp.vl[0x294]['LEFT_BLINKER']
+      self.right_blinker_on = cp.vl[0x294]['RIGHT_BLINKER']
     self.car_gas = cp.vl[0x130]['CAR_GAS']
     self.brake_pressed = cp.vl[0x17C]['BRAKE_PRESSED']
     self.user_brake = cp.vl[0x1A4]['USER_BRAKE']
@@ -272,4 +280,3 @@ class CarState(object):
     self.hud_lead = cp.vl[0x30C]['HUD_LEAD']
     self.counter_pcm = cp.vl[0x324]['COUNTER']
 
-    return canMonoTimes

@@ -29,7 +29,6 @@ managed_processes = {
   "calibrationd": "selfdrive.calibrationd.calibrationd",
   "loggerd": "selfdrive.loggerd.loggerd",
   "logmessaged": "selfdrive.logmessaged",
-  #"boardd": "selfdrive.boardd.boardd",
   "logcatd": ("logcatd", ["./logcatd"]),
   "boardd": ("boardd", ["./boardd"]),   # switch to c++ boardd
   "ui": ("ui", ["./ui"]),
@@ -38,7 +37,13 @@ managed_processes = {
 
 running = {}
 
-car_started_processes = ['controlsd', 'loggerd', 'visiond', 'sensord', 'radard', 'calibrationd']
+# due to qualcomm kernel bugs SIGKILLing visiond sometimes causes page table corruption
+unkillable_processes = ['visiond']
+
+# processes to end with SIGINT instead of SIGTERM
+interrupt_processes = ['loggerd']
+
+car_started_processes = ['controlsd', 'loggerd', 'sensord', 'radard', 'calibrationd', 'visiond']
 
 
 # ****************** process management functions ******************
@@ -91,15 +96,30 @@ def kill_managed_process(name):
   if name not in running or name not in managed_processes:
     return
   cloudlog.info("killing %s" % name)
-  running[name].terminate()
+
+  if name in interrupt_processes:
+    os.kill(running[name].pid, signal.SIGINT)
+  else:
+    running[name].terminate()
+
+
+  # give it 5 seconds to die
   running[name].join(5.0)
   if running[name].exitcode is None:
-    cloudlog.info("killing %s with SIGKILL" % name)
-    os.kill(running[name].pid, signal.SIGKILL)
-    running[name].join()
-    cloudlog.info("%s is finally dead" % name)
-  else:
-    cloudlog.info("%s is dead with %d" % (name, running[name].exitcode))
+    if name in unkillable_processes:
+      cloudlog.critical("unkillable process %s failed to exit! rebooting in 15 if it doesn't die" % name)
+      running[name].join(15.0)
+      if running[name].exitcode is None:
+        cloudlog.critical("FORCE REBOOTING PHONE!")
+        os.system("date > /sdcard/unkillable_reboot")
+        os.system("reboot")
+        raise RuntimeError
+    else:
+      cloudlog.info("killing %s with SIGKILL" % name)
+      os.kill(running[name].pid, signal.SIGKILL)
+      running[name].join()
+
+  cloudlog.info("%s is dead with %d" % (name, running[name].exitcode))
   del running[name]
 
 def cleanup_all_processes(signal, frame):
@@ -125,6 +145,7 @@ def manager_init():
   os.environ['DONGLE_SECRET'] = dongle_secret
 
   cloudlog.bind_global(dongle_id=dongle_id)
+  common.crash.bind_user(dongle_id=dongle_id)
 
   # set gctx
   gctx = {
@@ -152,8 +173,9 @@ def manager_thread():
   start_managed_process("uploader")
   start_managed_process("ui")
 
-  # *** wait for the board ***
-  wait_for_device()
+  if os.getenv("NOBOARD") is None:
+    # *** wait for the board ***
+    wait_for_device()
 
   # flash the device
   if os.getenv("NOPROG") is None:
@@ -188,12 +210,13 @@ def manager_thread():
       start_managed_process("uploader")
 
     # start constellation of processes when the car starts
-    if td.health.started:
-      for p in car_started_processes:
-        start_managed_process(p)
-    else:
-      for p in car_started_processes:
-        kill_managed_process(p)
+    if not os.getenv("STARTALL"):
+      if td.health.started:
+        for p in car_started_processes:
+          start_managed_process(p)
+      else:
+        for p in car_started_processes:
+          kill_managed_process(p)
 
     # check the status of all processes, did any of them die?
     for p in running:
@@ -257,6 +280,8 @@ def wait_for_device():
 def main():
   if os.getenv("NOLOG") is not None:
     del managed_processes['loggerd']
+  if os.getenv("NOUPLOAD") is not None:
+    del managed_processes['uploader']
   if os.getenv("NOBOARD") is not None:
     del managed_processes['boardd']
 

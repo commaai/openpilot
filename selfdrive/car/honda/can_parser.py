@@ -2,7 +2,7 @@ import os
 import dbcs
 from collections import defaultdict
 
-from selfdrive.controls.lib.hondacan import fix
+from selfdrive.car.honda.hondacan import fix
 from common.realtime import sec_since_boot
 from common.dbc import dbc
 
@@ -112,7 +112,7 @@ class CANParser(object):
     # assess overall can validity: if there is one relevant message invalid, then set can validity flag to False
     self.can_valid = True
     if False in self.ok.values():
-      print "CAN INVALID!"
+      #print "CAN INVALID!"
       self.can_valid = False
 
   def _check_dead_msgs(self):

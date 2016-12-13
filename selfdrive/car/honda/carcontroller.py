@@ -1,12 +1,40 @@
 from collections import namedtuple
 
 import common.numpy_fast as np
-import selfdrive.controls.lib.hondacan as hondacan
 from common.realtime import sec_since_boot
 from selfdrive.config import CruiseButtons
 from selfdrive.boardd.boardd import can_list_to_can_capnp
-from selfdrive.controls.lib.alert_database import process_hud_alert
 from selfdrive.controls.lib.drive_helpers import actuator_hystereses, rate_limit
+
+class AH:
+  #[alert_idx, value]
+  # See dbc files for info on values"
+  NONE           = [0, 0]
+  FCW            = [1, 0x8]
+  STEER          = [2, 1]
+  BRAKE_PRESSED  = [3, 10]
+  GEAR_NOT_D     = [4, 6]
+  SEATBELT       = [5, 5]
+  SPEED_TOO_HIGH = [6, 8]
+
+
+def process_hud_alert(hud_alert):
+  # initialize to no alert
+  fcw_display = 0
+  steer_required = 0
+  acc_alert = 0
+  if hud_alert == AH.NONE:          # no alert 
+    pass
+  elif hud_alert == AH.FCW:         # FCW
+    fcw_display = hud_alert[1]
+  elif hud_alert == AH.STEER:       # STEER
+    steer_required = hud_alert[1]
+  else:                             # any other ACC alert
+    acc_alert = hud_alert[1]
+
+  return fcw_display, steer_required, acc_alert
+
+import selfdrive.car.honda.hondacan as hondacan
 
 HUDData = namedtuple("HUDData",
                      ["pcm_accel", "v_cruise", "X2", "car", "X4", "X5",
@@ -14,11 +42,12 @@ HUDData = namedtuple("HUDData",
 
 class CarController(object):
   def __init__(self):
-    self.controls_allowed = False
-    self.mismatch_start, self.pcm_mismatch_start = 0, 0
     self.braking = False
     self.brake_steady = 0.
     self.final_brake_last = 0.
+
+    # redundant safety check with the board
+    self.controls_allowed = False
 
   def update(self, sendcan, enabled, CS, frame, final_gas, final_brake, final_steer, \
              pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel, \
@@ -61,9 +90,9 @@ class CarController(object):
     #print chime, alert_id, hud_alert
     fcw_display, steer_required, acc_alert = process_hud_alert(hud_alert)
 
-    hud = HUDData(pcm_accel, hud_v_cruise, 0x41, hud_car,
+    hud = HUDData(int(pcm_accel), int(hud_v_cruise), 0x41, hud_car,
                   0xc1, 0x41, hud_lanes + steer_required,
-                  snd_beep, 0x48, (snd_chime << 5) + fcw_display, acc_alert)
+                  int(snd_beep), 0x48, (snd_chime << 5) + fcw_display, acc_alert)
 
     if not all(isinstance(x, int) and 0 <= x < 256 for x in hud):
       print "INVALID HUD", hud
@@ -71,14 +100,11 @@ class CarController(object):
 
     # **** process the car messages ****
 
-    user_brake_ctrl = CS.user_brake/0.015625  # FIXME: factor needed to convert to old scale
-
     # *** compute control surfaces ***
     tt = sec_since_boot()
     GAS_MAX = 1004
     BRAKE_MAX = 1024/4
-    #STEER_MAX = 0xF00 if not CS.torque_mod else 0xF00/4    # ilx has 8x steering torque limit, used as a 2x
-    STEER_MAX = 0xF00  # ilx has 8x steering torque limit, used as a 2x
+    STEER_MAX = 0xF00
     GAS_OFFSET = 328
 
     # steer torque is converted back to CAN reference (positive when steering right)
@@ -87,50 +113,36 @@ class CarController(object):
     apply_steer = int(np.clip(-final_steer*STEER_MAX, -STEER_MAX, STEER_MAX))
 
     # no gas if you are hitting the brake or the user is
-    if apply_gas > 0 and (apply_brake != 0 or user_brake_ctrl > 10):
-      print "CANCELLING GAS", apply_brake, user_brake_ctrl
+    if apply_gas > 0 and (apply_brake != 0 or CS.brake_pressed):
+      print "CANCELLING GAS", apply_brake
       apply_gas = 0
 
-    # no computer brake if the user is hitting the gas
-    # if the computer is trying to brake, it can't be hitting the gas
-    # TODO: car_gas can override brakes without canceling... this is bad 
+    # no computer brake if the gas is being pressed
     if CS.car_gas > 0 and apply_brake != 0:
+      print "CANCELLING BRAKE"
       apply_brake = 0
 
+    # any other cp.vl[0x18F]['STEER_STATUS'] is common and can happen during user override. sending 0 torque to avoid EPS sending error 5
+    if CS.steer_not_allowed:
+      print "STEER ALERT, TORQUE INHIBITED"
+      apply_steer = 0
+
+    # *** entry into controls state ***
     if (CS.prev_cruise_buttons == CruiseButtons.DECEL_SET or CS.prev_cruise_buttons == CruiseButtons.RES_ACCEL) and \
         CS.cruise_buttons == 0 and not self.controls_allowed:
       print "CONTROLS ARE LIVE"
       self.controls_allowed = True
 
-    # to avoid race conditions, check if control has been disabled for at least 0.2s
-    # keep resetting start timer if mismatch isn't true
-    if not (self.controls_allowed and not enabled):
-      self.mismatch_start = tt
-
-    # to avoid race conditions, check if control is disabled but pcm control is on for at least 0.2s
-    if not (not self.controls_allowed and CS.pcm_acc_status):
-      self.pcm_mismatch_start = tt
-
-    # something is very wrong, since pcm control is active but controls should not be allowed; TODO: send pcm fault cmd?
-    if (tt - self.pcm_mismatch_start) > 0.2:
-      pcm_cancel_cmd = True
-
-    # TODO: clean up gear condition, ideally only D (and P for debug) shall be valid gears
+    # *** exit from controls state on cancel, gas, or brake ***
     if (CS.cruise_buttons == CruiseButtons.CANCEL or CS.brake_pressed or
-        CS.user_gas_pressed or (tt - self.mismatch_start) > 0.2 or
-        not CS.main_on or not CS.gear_shifter_valid or
-        (CS.pedal_gas > 0 and CS.brake_only)) and self.controls_allowed:
+        CS.user_gas_pressed or (CS.pedal_gas > 0 and CS.brake_only)) and self.controls_allowed:
+      print "CONTROLS ARE DEAD"
       self.controls_allowed = False
 
-    # 5 is a permanent fault, no torque request will be fullfilled
+    # *** controls fail on steer error, brake error, or invalid can ***
     if CS.steer_error:
       print "STEER ERROR"
       self.controls_allowed = False
-
-    # any other cp.vl[0x18F]['STEER_STATUS'] is common and can happen during user override. sending 0 torque to avoid EPS sending error 5
-    elif CS.steer_not_allowed:
-      print "STEER ALERT, TORQUE INHIBITED"
-      apply_steer = 0
 
     if CS.brake_error:
       print "BRAKE ERROR"
@@ -139,13 +151,6 @@ class CarController(object):
     if not CS.can_valid and self.controls_allowed:   # 200 ms
       print "CAN INVALID"
       self.controls_allowed = False
-
-    if not self.controls_allowed:
-      apply_steer = 0
-      apply_gas = 0
-      apply_brake = 0
-      pcm_speed = 0          # make sure you send 0 target speed to pcm
-      #pcm_cancel_cmd = 1    # prevent pcm control from turning on. FIXME: we can't just do this
 
     # Send CAN commands.
     can_sends = []
@@ -160,7 +165,6 @@ class CarController(object):
       can_sends.append(
         hondacan.create_brake_command(apply_brake, pcm_override,
                                       pcm_cancel_cmd, hud.chime, idx))
-
       if not CS.brake_only:
         # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas. 
         # This prevents unexpected pedal range rescaling
@@ -182,4 +186,5 @@ class CarController(object):
       idx = (frame/radar_send_step) % 4
       can_sends.extend(hondacan.create_radar_commands(CS.v_ego, CS.civic, idx))
 
-    sendcan.send(can_list_to_can_capnp(can_sends).to_bytes())
+    sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
+

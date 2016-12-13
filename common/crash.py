@@ -5,6 +5,8 @@ import sys
 if os.getenv("NOLOG"):
   def capture_exception(*exc_info):
     pass
+  def bind_user(**kwargs):
+    pass
   def install():
     pass
 else:
@@ -15,6 +17,9 @@ else:
                   install_sys_hook=False, transport=HTTPTransport)
 
   capture_exception = client.captureException
+
+  def bind_user(**kwargs):
+    client.user_context(kwargs)
 
   def install():
     # installs a sys.excepthook

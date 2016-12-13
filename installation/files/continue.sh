@@ -7,16 +7,17 @@
 export GIT_SSH_COMMAND="ssh -i /data/data/com.termux/files/id_rsa_openpilot_ro"
 
 # check out the openpilot repo
-# TODO: release branch only
 if [ ! -d /data/openpilot ]; then
   cd /tmp
-  git clone git@github.com:commaai/openpilot.git
+  git clone git@github.com:commaai/openpilot.git -b release
   mv /tmp/openpilot /data/openpilot
 fi
 
-# update the openpilot repo
+# enter openpilot directory
 cd /data/openpilot
-git pull
+
+# removed automatic update from openpilot
+#git pull
 
 # start manager
 cd selfdrive
