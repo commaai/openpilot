@@ -14,7 +14,7 @@ import selfdrive.messaging as messaging
 from selfdrive.config import CruiseButtons
 from selfdrive.car.honda.hondacan import fix
 from selfdrive.car.honda.carstate import get_can_parser
-from selfdrive.boardd.boardd import can_capnp_to_can_list_old, can_capnp_to_can_list, can_list_to_can_capnp
+from selfdrive.boardd.boardd import can_capnp_to_can_list, can_list_to_can_capnp
 
 from selfdrive.car.honda.can_parser import CANParser
 
@@ -141,8 +141,7 @@ class Plant(object):
     # ******** get messages sent to the car ********
     can_msgs = []
     for a in messaging.drain_sock(Plant.sendcan):
-      can_msgs += can_capnp_to_can_list_old(a.sendcan, [0,2])
-    #print can_msgs
+      can_msgs.extend(can_capnp_to_can_list(a.sendcan, [0,2]))
     self.cp.update_can(can_msgs)
 
     # ******** get live100 messages for plotting ***

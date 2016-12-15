@@ -1,4 +1,6 @@
+import math
 import numpy as np
+from common.numpy_fast import clip
 
 def calc_curvature(v_ego, angle_steers, VP, angle_offset=0):
   deg_to_rad = np.pi/180.
@@ -14,7 +16,7 @@ def calc_d_lookahead(v_ego):
   # sqrt on speed is needed to keep, for a given curvature, the y_offset 
   # proportional to speed. Indeed, y_offset is prop to d_lookahead^2
   # 26m at 25m/s
-  d_lookahead = offset_lookahead + np.sqrt(np.maximum(v_ego, 0)) * coeff_lookahead
+  d_lookahead = offset_lookahead + math.sqrt(max(v_ego, 0)) * coeff_lookahead
   return d_lookahead
 
 def calc_lookahead_offset(v_ego, angle_steers, d_lookahead, VP, angle_offset):
@@ -53,7 +55,7 @@ def pid_lateral_control(v_ego, y_actual, y_des, Ui_steer, steer_max,
     Ui_steer -= Ui_unwind_speed * np.sign(Ui_steer)
 
   # still, intergral term should not be bigger then limits
-  Ui_steer = np.clip(Ui_steer, -steer_max, steer_max)
+  Ui_steer = clip(Ui_steer, -steer_max, steer_max)
 
   output_steer = Up_steer + Ui_steer
 
@@ -67,7 +69,7 @@ def pid_lateral_control(v_ego, y_actual, y_des, Ui_steer, steer_max,
   if abs(output_steer) > steer_max:
     lateral_control_sat = True
 
-  output_steer = np.clip(output_steer, -steer_max, steer_max)
+  output_steer = clip(output_steer, -steer_max, steer_max)
 
   # if lateral control is saturated for a certain period of time, send an alert for taking control of the car
   # wind
@@ -81,7 +83,7 @@ def pid_lateral_control(v_ego, y_actual, y_des, Ui_steer, steer_max,
   if sat_count >= sat_count_limit:
     sat_flag = True
 
-  sat_count = np.clip(sat_count, 0, 1)
+  sat_count = clip(sat_count, 0, 1)
 
   return output_steer, Up_steer, Ui_steer, lateral_control_sat, sat_count, sat_flag
 
@@ -116,5 +118,5 @@ class LatControl(object):
       v_ego, self.y_actual, self.y_des, self.Ui_steer, steer_max,
       steer_override, self.sat_count, enabled, VP.torque_mod, rate)
 
-    final_steer = np.clip(output_steer, -steer_max, steer_max)
+    final_steer = clip(output_steer, -steer_max, steer_max)
     return final_steer, sat_flag

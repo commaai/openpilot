@@ -282,8 +282,15 @@ def main():
     del managed_processes['loggerd']
   if os.getenv("NOUPLOAD") is not None:
     del managed_processes['uploader']
+  if os.getenv("NOVISION") is not None:
+    del managed_processes['visiond']
   if os.getenv("NOBOARD") is not None:
     del managed_processes['boardd']
+  if os.getenv("LEAN") is not None:
+    del managed_processes['uploader']
+    del managed_processes['loggerd']
+    del managed_processes['logmessaged']
+    del managed_processes['logcatd']
 
   manager_init()
 

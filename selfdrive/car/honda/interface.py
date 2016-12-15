@@ -5,7 +5,7 @@ import numpy as np
 from selfdrive.config import Conversions as CV
 from selfdrive.car.honda.carstate import CarState
 from selfdrive.car.honda.carcontroller import CarController, AH
-from selfdrive.boardd.boardd import can_capnp_to_can_list_old
+from selfdrive.boardd.boardd import can_capnp_to_can_list
 
 from cereal import car
 
@@ -42,6 +42,7 @@ class CarInterface(object):
     self.logcan = messaging.sub_sock(context, service_list['can'].port)
 
     self.frame = 0
+    self.can_invalid_count = 0
 
     # *** init the major players ***
     self.CS = CarState(self.logcan)
@@ -61,7 +62,7 @@ class CarInterface(object):
     canMonoTimes = []
     for a in messaging.drain_sock(self.logcan):
       canMonoTimes.append(a.logMonoTime)
-      can_pub_main.extend(can_capnp_to_can_list_old(a.can, [0,2]))
+      can_pub_main.extend(can_capnp_to_can_list(a.can, [0,2]))
     self.CS.update(can_pub_main)
 
     # create message
@@ -149,7 +150,11 @@ class CarInterface(object):
     # These strings aren't checked at compile time
     errors = []
     if not self.CS.can_valid:
-      errors.append('commIssue')
+      self.can_invalid_count += 1
+      if self.can_invalid_count >= 5:
+        errors.append('commIssue')
+    else:
+      self.can_invalid_count = 0
     if self.CS.steer_error:
       errors.append('steerUnavailable')
     elif self.CS.steer_not_allowed:

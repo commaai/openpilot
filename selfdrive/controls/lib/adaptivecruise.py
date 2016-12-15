@@ -1,41 +1,41 @@
-import selfdrive.messaging as messaging
+import math
 import numpy as np
+from common.numpy_fast import clip, interp
+import selfdrive.messaging as messaging
 
 # lookup tables VS speed to determine min and max accels in cruise
-_A_CRUISE_MIN_V  = np.asarray([-1.0, -.8, -.67, -.5, -.30])
-_A_CRUISE_MIN_BP = np.asarray([   0., 5.,  10., 20.,  40.])
+_A_CRUISE_MIN_V  = [-1.0, -.8, -.67, -.5, -.30]
+_A_CRUISE_MIN_BP = [   0., 5.,  10., 20.,  40.]
 
 # need fast accel at very low speed for stop and go
-_A_CRUISE_MAX_V  = np.asarray([1., 1., .8, .5, .30])
-_A_CRUISE_MAX_BP = np.asarray([0.,  5., 10., 20., 40.])
+_A_CRUISE_MAX_V  = [1., 1., .8, .5, .30]
+_A_CRUISE_MAX_BP = [0.,  5., 10., 20., 40.]
 
 def calc_cruise_accel_limits(v_ego):
-  a_cruise_min = np.interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V)
-  a_cruise_max = np.interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V)
+  a_cruise_min = interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V)
+  a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V)
+  return np.vstack([a_cruise_min, a_cruise_max])
 
-  a_pcm = 1.  # always 1 for now
-  return np.vstack([a_cruise_min, a_cruise_max]), a_pcm
-
-_A_TOTAL_MAX_V = np.asarray([1.5, 1.9, 3.2])
-_A_TOTAL_MAX_BP = np.asarray([0., 20., 40.])
+_A_TOTAL_MAX_V = [1.5, 1.9, 3.2]
+_A_TOTAL_MAX_BP = [0., 20., 40.]
 
 def limit_accel_in_turns(v_ego, angle_steers, a_target, a_pcm, VP):
   #*** this function returns a limited long acceleration allowed, depending on the existing lateral acceleration
   # this should avoid accelerating when losing the target in turns
   deg_to_rad = np.pi / 180.  # from can reading to rad
 
-  a_total_max = np.interp(v_ego, _A_TOTAL_MAX_BP, _A_TOTAL_MAX_V)
+  a_total_max = interp(v_ego, _A_TOTAL_MAX_BP, _A_TOTAL_MAX_V)
   a_y = v_ego**2 * angle_steers * deg_to_rad / (VP.steer_ratio * VP.wheelbase)
-  a_x_allowed = np.sqrt(np.maximum(a_total_max**2 - a_y**2, 0.))
+  a_x_allowed = math.sqrt(max(a_total_max**2 - a_y**2, 0.))
 
-  a_target[1] = np.minimum(a_target[1], a_x_allowed)
-  a_pcm = np.minimum(a_pcm, a_x_allowed)
+  a_target[1] = min(a_target[1], a_x_allowed)
+  a_pcm = min(a_pcm, a_x_allowed)
   return a_target, a_pcm
 
 def process_a_lead(a_lead):
   # soft threshold of 0.5m/s^2 applied to a_lead to reject noise, also not considered positive a_lead
   a_lead_threshold = 0.5
-  a_lead = np.minimum(a_lead + a_lead_threshold, 0)
+  a_lead = min(a_lead + a_lead_threshold, 0)
   return a_lead
 
 def calc_desired_distance(v_lead):
@@ -46,12 +46,12 @@ def calc_desired_distance(v_lead):
 
 
 #linear slope
-_L_SLOPE_V = np.asarray([0.40, 0.10])
-_L_SLOPE_BP = np.asarray([0.,  40])
+_L_SLOPE_V = [0.40, 0.10]
+_L_SLOPE_BP = [0.,  40]
 
 # parabola slope
-_P_SLOPE_V = np.asarray([1.0, 0.25])
-_P_SLOPE_BP = np.asarray([0., 40])
+_P_SLOPE_V = [1.0, 0.25]
+_P_SLOPE_BP = [0., 40]
 
 def calc_desired_speed(d_lead, d_des, v_lead, a_lead):
   #*** compute desired speed ***
@@ -64,8 +64,8 @@ def calc_desired_speed(d_lead, d_des, v_lead, a_lead):
   max_runaway_speed = -2. # no slower than 2m/s over the lead
 
   # interpolate the lookups to find the slopes for a give lead speed
-  l_slope = np.interp(v_lead, _L_SLOPE_BP, _L_SLOPE_V)
-  p_slope = np.interp(v_lead, _P_SLOPE_BP, _P_SLOPE_V)
+  l_slope = interp(v_lead, _L_SLOPE_BP, _L_SLOPE_V)
+  p_slope = interp(v_lead, _P_SLOPE_BP, _P_SLOPE_V)
 
   # this is where parabola and linear curves are tangents  
   x_linear_to_parabola = p_slope / l_slope**2
@@ -79,41 +79,41 @@ def calc_desired_speed(d_lead, d_des, v_lead, a_lead):
     # calculate v_rel_des on one third of the linear slope
     v_rel_des_2 = (d_lead - d_des) * l_slope / 3.
     # take the min of the 2 above
-    v_rel_des = np.minimum(v_rel_des_1, v_rel_des_2)
-    v_rel_des = np.maximum(v_rel_des, max_runaway_speed)
+    v_rel_des = min(v_rel_des_1, v_rel_des_2)
+    v_rel_des = max(v_rel_des, max_runaway_speed)
   elif d_lead < d_des + x_linear_to_parabola:
     v_rel_des = (d_lead - d_des) * l_slope
-    v_rel_des = np.maximum(v_rel_des, max_runaway_speed)
+    v_rel_des = max(v_rel_des, max_runaway_speed)
   else:
-    v_rel_des = np.sqrt(2 * (d_lead - d_des - x_parabola_offset) * p_slope)
+    v_rel_des = math.sqrt(2 * (d_lead - d_des - x_parabola_offset) * p_slope)
 
   # compute desired speed
   v_target = v_rel_des + v_lead
 
   # compute v_coast: above this speed we want to coast
   t_lookahead = 1.   # how far in time we consider a_lead to anticipate the coast region
-  v_coast_shift = np.maximum(a_lead * t_lookahead, - v_lead)   # don't consider projections that would make v_lead<0
+  v_coast_shift = max(a_lead * t_lookahead, - v_lead)   # don't consider projections that would make v_lead<0
   v_coast = (v_lead + v_target)/2 + v_coast_shift              # no accel allowed above this line
-  v_coast = np.minimum(v_coast, v_target)
+  v_coast = min(v_coast, v_target)
 
   return v_target, v_coast
 
 def calc_critical_decel(d_lead, v_rel, d_offset, v_offset):
   # this function computes the required decel to avoid crashing, given safety offsets
-  a_critical =  - np.maximum(0., v_rel + v_offset)**2/np.maximum(2*(d_lead - d_offset), 0.5)
+  a_critical =  - max(0., v_rel + v_offset)**2/max(2*(d_lead - d_offset), 0.5)
   return a_critical
 
 
 # maximum acceleration adjustment
-_A_CORR_BY_SPEED_V = np.asarray([0.4, 0.4, 0])
+_A_CORR_BY_SPEED_V = [0.4, 0.4, 0]
 # speeds
-_A_CORR_BY_SPEED_BP = np.asarray([0., 5., 20.])
+_A_CORR_BY_SPEED_BP = [0., 5., 20.]
 
 def calc_positive_accel_limit(d_lead, d_des, v_ego, v_rel, v_ref, v_rel_ref, v_coast, v_target, a_lead_contr, a_max):
   a_coast_min = -1.0   # never coast faster then -1m/s^2
   # coasting behavior above v_coast. Forcing a_max to be negative will force the pid_speed to decrease,
   # regardless v_target
-  if v_ref > np.minimum(v_coast, v_target):
+  if v_ref > min(v_coast, v_target):
     # for smooth coast we can be agrressive and target a point where car would actually crash
     v_offset_coast = 0.
     d_offset_coast = d_des/2. - 4.
@@ -123,31 +123,31 @@ def calc_positive_accel_limit(d_lead, d_des, v_ego, v_rel, v_ref, v_rel_ref, v_c
       a_coast = calc_critical_decel(d_lead, v_rel_ref, d_offset_coast, v_offset_coast)
       # if lead is decelerating, then offset the coast decel
       a_coast += a_lead_contr
-      a_max = np.maximum(a_coast, a_coast_min)
+      a_max = max(a_coast, a_coast_min)
     else:
       a_max = a_coast_min
   else:
     # same as cruise accel, but add a small correction based on lead acceleration at low speeds
     # when lead car accelerates faster, we can do the same, and vice versa
 
-    a_max = a_max + np.interp(v_ego, _A_CORR_BY_SPEED_BP, _A_CORR_BY_SPEED_V) \
-                  * np.clip(-v_rel / 4., -.5, 1)
+    a_max = a_max + interp(v_ego, _A_CORR_BY_SPEED_BP, _A_CORR_BY_SPEED_V) \
+                  * clip(-v_rel / 4., -.5, 1)
   return a_max
 
 # arbitrary limits to avoid too high accel being computed
-_A_SAT = np.asarray([-10., 5.])
+_A_SAT = [-10., 5.]
 
 # do not consider a_lead at 0m/s, fully consider it at 10m/s
-_A_LEAD_LOW_SPEED_V = np.asarray([0., 1.])
+_A_LEAD_LOW_SPEED_V = [0., 1.]
 
 # speed break points
-_A_LEAD_LOW_SPEED_BP = np.asarray([0., 10.])
+_A_LEAD_LOW_SPEED_BP = [0., 10.]
 
 # add a small offset to the desired decel, just for safety margin
-_DECEL_OFFSET_V = np.asarray([-0.3, -0.5, -0.5, -0.4, -0.3])
+_DECEL_OFFSET_V = [-0.3, -0.5, -0.5, -0.4, -0.3]
 
 # speed bp: different offset based on the likelyhood that lead decels abruptly
-_DECEL_OFFSET_BP = np.asarray([0., 4., 15., 30, 40.])
+_DECEL_OFFSET_BP = [0., 4., 15., 30, 40.]
 
 
 def calc_acc_accel_limits(d_lead, d_des, v_ego, v_pid, v_lead, v_rel, a_lead,
@@ -159,8 +159,8 @@ def calc_acc_accel_limits(d_lead, d_des, v_ego, v_pid, v_lead, v_rel, a_lead,
   v_rel_pid = v_pid - v_lead
 
   # this is how much lead accel we consider in assigning the desired decel
-  a_lead_contr = a_lead * np.interp(v_lead, _A_LEAD_LOW_SPEED_BP,
-                                    _A_LEAD_LOW_SPEED_V) * 0.8
+  a_lead_contr = a_lead * interp(v_lead, _A_LEAD_LOW_SPEED_BP,
+                                 _A_LEAD_LOW_SPEED_V) * 0.8
 
   # first call of calc_positive_accel_limit is used to shape v_pid
   a_target[1] = calc_positive_accel_limit(d_lead, d_des, v_ego, v_rel, v_pid,
@@ -178,15 +178,15 @@ def calc_acc_accel_limits(d_lead, d_des, v_ego, v_pid, v_lead, v_rel, a_lead,
     pass  # acc target speed is above vehicle speed, so we can use the cruise limits
   elif d_lead > d_offset + 0.01:  # add small value to avoid by zero divisions
     # compute needed accel to get to 1m distance with -1m/s rel speed
-    decel_offset = np.interp(v_lead, _DECEL_OFFSET_BP, _DECEL_OFFSET_V)
+    decel_offset = interp(v_lead, _DECEL_OFFSET_BP, _DECEL_OFFSET_V)
 
     critical_decel = calc_critical_decel(d_lead, v_rel, d_offset, v_offset)
-    a_target[0] = np.minimum(decel_offset + critical_decel + a_lead_contr,
-                             a_target[0])
+    a_target[0] = min(decel_offset + critical_decel + a_lead_contr,
+                      a_target[0])
   else:
     a_target[0] = _A_SAT[0]
   # a_min can't be higher than a_max
-  a_target[0] = np.minimum(a_target[0], a_target[1])
+  a_target[0] = min(a_target[0], a_target[1])
   # final check on limits
   a_target = np.clip(a_target, _A_SAT[0], _A_SAT[1])
   a_target = a_target.tolist()
@@ -208,8 +208,8 @@ def calc_jerk_factor(d_lead, v_rel):
   else:
     a_critical = - calc_critical_decel(d_lead, -v_rel, d_offset, v_offset)
     # increase Kp and Ki by 20% for every 1m/s2 of decel required above 1m/s2
-    jerk_factor = np.maximum(a_critical - a_offset, 0.)/5.
-    jerk_factor = np.minimum(jerk_factor, jerk_factor_max)
+    jerk_factor = max(a_critical - a_offset, 0.)/5.
+    jerk_factor = min(jerk_factor, jerk_factor_max)
   return jerk_factor
 
 
@@ -223,27 +223,27 @@ def calc_ttc(d_rel, v_rel, a_rel, v_lead):
   # assuming that closing gap a_rel comes from lead vehicle decel, then limit a_rel so that v_lead will get to zero in no sooner than t_decel
   # this helps overweighting a_rel when v_lead is close to zero.
   t_decel = 2.
-  a_rel = np.minimum(a_rel, v_lead/t_decel)
+  a_rel = min(a_rel, v_lead/t_decel)
 
   delta = v_rel**2 + 2 * d_rel * a_rel
   # assign an arbitrary high ttc value if there is no solution to ttc
   if delta < 0.1:
     ttc = 5.
-  elif np.sqrt(delta) + v_rel < 0.1:
+  elif math.sqrt(delta) + v_rel < 0.1:
     ttc = 5.
   else:
-    ttc = 2 * d_rel / (np.sqrt(delta) + v_rel)
+    ttc = 2 * d_rel / (math.sqrt(delta) + v_rel)
   return ttc
 
 
 def limit_accel_driver_awareness(v_ego, a_target, a_pcm, awareness_status):
   decel_bp = [0.  ,  40.]
   decel_v  = [-0.3, -0.2]
-  decel = np.interp(v_ego, decel_bp, decel_v)
+  decel = interp(v_ego, decel_bp, decel_v)
   # gives 18 seconds before decel begins (w 6 minute timeout)
   if awareness_status < -0.05:
-    a_target[1] = np.minimum(a_target[1], decel)
-    a_target[0] = np.minimum(a_target[1], a_target[0])
+    a_target[1] = min(a_target[1], decel)
+    a_target[0] = min(a_target[1], a_target[0])
     a_pcm = 0.
   return a_target, a_pcm
 
@@ -258,7 +258,10 @@ def compute_speed_with_leads(v_ego, angle_steers, v_pid, l1, l2, awareness_statu
   v_target_lead = MAX_SPEED_POSSIBLE
 
   #*** set accel limits as cruise accel/decel limits ***
-  a_target, a_pcm = calc_cruise_accel_limits(v_ego)
+  a_target = calc_cruise_accel_limits(v_ego)
+  # Always 1 for now.
+  a_pcm = 1
+
   #*** limit max accel in sharp turns
   a_target, a_pcm = limit_accel_in_turns(v_ego, angle_steers, a_target, a_pcm, VP)
   jerk_factor = 0.

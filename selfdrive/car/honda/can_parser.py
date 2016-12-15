@@ -59,21 +59,21 @@ class CANParser(object):
     cn_vl_max = 5   # no more than 5 wrong counter checks
 
     # we are subscribing to PID_XXX, else data from USB
-    for msg, ts, cdat in can_recv:
+    for msg, ts, cdat, _ in can_recv:
       idxs = self._message_indices[msg]
       if idxs:
-        self.msgs_upd += [msg]
+        self.msgs_upd.append(msg)
         # read the entire message
-        out = self.can_dbc.decode([msg, 0, cdat])[1]
+        out = self.can_dbc.decode((msg, 0, cdat))[1]
         # checksum check
         self.ck[msg] = True
         if "CHECKSUM" in out.keys() and msg in self.msgs_ck:
           # remove checksum (half byte)
-          ck_portion = (''.join((cdat[:-1], '0'))).decode('hex')
+          ck_portion = cdat[:-1] + chr(ord(cdat[-1]) & 0xF0)
           # recalculate checksum
           msg_vl = fix(ck_portion, msg)
           # compare recalculated vs received checksum
-          if msg_vl != cdat.decode('hex'):
+          if msg_vl != cdat:
             print hex(msg), "CHECKSUM FAIL"
             self.ck[msg] = False
             self.ok[msg] = False
