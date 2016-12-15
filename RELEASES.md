@@ -1,3 +1,9 @@
+Version 0.2.1  (2016-12-14)
+===========================
+  * Performance improvements, removal of more numpy
+  * Fix boardd process priority
+  * Make counter timer reset on use of steering wheel
+
 Version 0.2  (2016-12-12)
 =========================
   * Car/Radar abstraction layers have shipped, see cereal/car.capnp

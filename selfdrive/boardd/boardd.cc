@@ -4,6 +4,7 @@
 #include <string.h>
 #include <signal.h>
 #include <unistd.h>
+#include <sched.h>
 #include <sys/time.h>
 #include <sys/cdefs.h>
 #include <sys/types.h>
@@ -268,12 +269,20 @@ void *can_health_thread(void *crap) {
   return NULL;
 }
 
+int set_realtime_priority(int level) {
+  // should match python using chrt
+  struct sched_param sa;
+  memset(&sa, 0, sizeof(sa));
+  sa.sched_priority = level;
+  return sched_setscheduler(gettid(), SCHED_FIFO, &sa);
+}
+
 int main() {
   int err;
   printf("boardd: starting boardd\n");
 
   // set process priority
-  err = setpriority(PRIO_PROCESS, 0, -4);
+  err = set_realtime_priority(4);
   printf("boardd: setpriority returns %d\n", err);
 
   // check the environment

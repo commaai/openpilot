@@ -1,7 +1,7 @@
 import numpy as np
 
 import selfdrive.messaging as messaging
-from selfdrive.boardd.boardd import can_capnp_to_can_list_old, can_capnp_to_can_list
+from selfdrive.boardd.boardd import can_capnp_to_can_list
 from selfdrive.config import VehicleParams
 from common.realtime import sec_since_boot
 
@@ -132,7 +132,7 @@ def fingerprint(logcan):
     for a in messaging.drain_sock(logcan, wait_for_one=True):
       if st is None:
         st = sec_since_boot()
-      for adr, _, msg, idx in can_capnp_to_can_list(a):
+      for adr, _, msg, idx in can_capnp_to_can_list(a.can):
         # pedal
         if adr == 0x201 and idx == 0:
           brake_only = False

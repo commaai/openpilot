@@ -1,8 +1,10 @@
-import numpy as np
-import platform
 import os
 import sys
+import math
+import platform
+import numpy as np
 
+from common.numpy_fast import clip, interp
 from common.kalman.ekf import FastEKF1D, SimpleSensor
 
 # radar tracks
@@ -51,14 +53,14 @@ class Track(object):
     else:
       # estimate acceleration
       a_rel_unfilt = (self.vRel - self.vRelPrev) / ts
-      a_rel_unfilt = np.clip(a_rel_unfilt, -10., 10.)
+      a_rel_unfilt = clip(a_rel_unfilt, -10., 10.)
       self.aRel = k_a_lead * a_rel_unfilt + (1 - k_a_lead) * self.aRel
 
       v_lat_unfilt = (self.dPath - self.dPathPrev) / ts
       self.vLat = k_v_lat * v_lat_unfilt + (1 - k_v_lat) * self.vLat
 
       a_lead_unfilt = (self.vLead - self.vLeadPrev) / ts
-      a_lead_unfilt = np.clip(a_lead_unfilt, -10., 10.)
+      a_lead_unfilt = clip(a_lead_unfilt, -10., 10.)
       self.aLead = k_a_lead * a_lead_unfilt + (1 - k_a_lead) * self.aLead
 
     if self.stationary:
@@ -232,12 +234,12 @@ class Cluster(object):
     d_path = self.dPath
 
     if enabled:
-      t_lookahead = np.interp(self.dRel, t_lookahead_bp, t_lookahead_v)
+      t_lookahead = interp(self.dRel, t_lookahead_bp, t_lookahead_v)
       # correct d_path for lookahead time, considering only cut-ins and no more than 1m impact
-      lat_corr = np.clip(t_lookahead * self.vLat, -1, 0)
+      lat_corr = clip(t_lookahead * self.vLat, -1, 0)
     else:
       lat_corr = 0.
-    d_path = np.maximum(d_path + lat_corr, 0)
+    d_path = max(d_path + lat_corr, 0)
 
     if d_path < 1.5 and not self.stationary and not self.oncoming:
       return True

@@ -8,7 +8,6 @@ from collections import defaultdict
 from fastcluster import linkage_vector
 
 import selfdrive.messaging as messaging
-from selfdrive.boardd.boardd import can_capnp_to_can_list_old
 from selfdrive.controls.lib.latcontrol import calc_lookahead_offset
 from selfdrive.controls.lib.pathplanner import PathPlanner
 from selfdrive.config import VehicleParams
@@ -37,7 +36,6 @@ class EKFV1D(EKF):
     self.var_init = 1e2   # ~ model variance when probability is 70%, so good starting point
     self.covar = self.identity * self.var_init
 
-    # self.process_noise = np.asmatrix(np.diag([100, 10]))
     self.process_noise = np.matlib.diag([0.5, 1])
 
   def calc_transfer_fun(self, dt):

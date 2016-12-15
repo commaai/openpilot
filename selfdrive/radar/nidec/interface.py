@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import numpy as np
 from selfdrive.car.honda.can_parser import CANParser
-from selfdrive.boardd.boardd import can_capnp_to_can_list_old
+from selfdrive.boardd.boardd import can_capnp_to_can_list
 
 from cereal import car
 
@@ -39,7 +39,7 @@ class RadarInterface(object):
     while 1:
       for a in messaging.drain_sock(self.logcan, wait_for_one=True):
         canMonoTimes.append(a.logMonoTime)
-        can_pub_radar.extend(can_capnp_to_can_list_old(a.can, [1, 3]))
+        can_pub_radar.extend(can_capnp_to_can_list(a.can, [1, 3]))
 
       # only run on the 0x445 packets, used for timing
       if any(x[0] == 0x445 for x in can_pub_radar):

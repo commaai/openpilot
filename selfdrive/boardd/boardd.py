@@ -32,17 +32,11 @@ def can_list_to_can_capnp(can_msgs, msgtype='can'):
     cc.src = can_msg[3]
   return dat
 
-def can_capnp_to_can_list_old(dat, src_filter=[]):
+def can_capnp_to_can_list(can, src_filter=None):
   ret = []
-  for msg in dat:
-    if msg.src in src_filter:
-      ret.append([msg.address, msg.busTime, msg.dat.encode("hex")])
-  return ret
-
-def can_capnp_to_can_list(dat):
-  ret = []
-  for msg in dat.can:
-    ret.append([msg.address, msg.busTime, msg.dat, msg.src])
+  for msg in can:
+    if src_filter is None or msg.src in src_filter:
+      ret.append((msg.address, msg.busTime, msg.dat, msg.src))
   return ret
 
 # *** can driver ***

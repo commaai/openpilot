@@ -1,6 +1,7 @@
 import re
-from collections import namedtuple
 import bitstring
+from binascii import hexlify
+from collections import namedtuple
 
 def int_or_float(s):
   # return number, trying to maintain int format
@@ -148,8 +149,8 @@ class dbc(object):
     if debug:
       print name
 
-    blen = (len(x[2])/2)*8
-    x2_int = int(x[2], 16)
+    blen = 8*len(x[2])
+    x2_int = int(hexlify(x[2]), 16)
 
     for s in msg[1]:
       if arr is not None and s[0] not in arr:

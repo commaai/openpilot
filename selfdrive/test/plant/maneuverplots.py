@@ -59,6 +59,7 @@ class ManeuverPlot(object):
     self.a_target_min_array.append(a_target_min)
     self.a_target_max_array.append(a_target_max)
 
+
   def write_plot(self, path, maneuver_name):
     title = self.title or maneuver_name
     # TODO: Missing plots from the old one:

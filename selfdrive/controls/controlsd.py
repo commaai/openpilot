@@ -6,6 +6,8 @@ import selfdrive.messaging as messaging
 
 from cereal import car
 
+from common.numpy_fast import clip
+
 from selfdrive.config import Conversions as CV
 from common.services import service_list
 from common.realtime import sec_since_boot, set_realtime_priority, Ratekeeper
@@ -73,7 +75,7 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
   # start the loop
   set_realtime_priority(2)
 
-  rk = Ratekeeper(rate)
+  rk = Ratekeeper(rate, print_delay_threshold=2./1000)
   while 1:
     cur_time = sec_since_boot()
 
@@ -88,6 +90,10 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
       awareness_status -= 1.0/(100*60*6)
       if awareness_status <= 0.:
         AM.add("driverDistracted", enabled)
+
+    # reset awareness status on steering
+    if CS.steeringPressed:
+      awareness_status = 1.0
 
     # handle button presses
     for b in CS.buttonEvents:
@@ -111,7 +117,7 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
           v_cruise_kph = v_cruise_kph - (v_cruise_kph % V_CRUISE_DELTA) + V_CRUISE_DELTA
         elif b.type == "decelCruise":
           v_cruise_kph = v_cruise_kph - (v_cruise_kph % V_CRUISE_DELTA) - V_CRUISE_DELTA
-        v_cruise_kph = np.clip(v_cruise_kph, V_CRUISE_MIN, V_CRUISE_MAX)
+        v_cruise_kph = clip(v_cruise_kph, V_CRUISE_MIN, V_CRUISE_MAX)
 
       if not enabled and b.type in ["accelCruise", "decelCruise"] and not b.pressed:
         enable_request = True 
@@ -185,7 +191,7 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
       enabled = True
 
       # on activation, let's always set v_cruise from where we are, even if PCM ACC is active
-      v_cruise_kph = int(round(np.maximum(CS.vEgo * CV.MS_TO_KPH * VP.ui_speed_fudge, V_CRUISE_ENABLE_MIN)))
+      v_cruise_kph = int(round(max(CS.vEgo * CV.MS_TO_KPH * VP.ui_speed_fudge, V_CRUISE_ENABLE_MIN)))
 
       # 6 minutes driver you're on
       awareness_status = 1.0
