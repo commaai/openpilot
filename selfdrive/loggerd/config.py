@@ -1,8 +1,8 @@
 import os
 
 # fetch from environment
-DONGLE_ID = os.getenv("DONGLE_ID")
-DONGLE_SECRET = os.getenv("DONGLE_SECRET")
+def get_dongle_id_and_secret():
+  return os.getenv("DONGLE_ID"), os.getenv("DONGLE_SECRET") 
 
 ROOT = '/sdcard/realdata/'
 

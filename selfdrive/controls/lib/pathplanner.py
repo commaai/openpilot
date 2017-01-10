@@ -3,10 +3,17 @@ import numpy as np
 
 from common.numpy_fast import interp
 import selfdrive.messaging as messaging
-X_PATH = np.arange(0.0, 50.0)
 
-def model_polyfit(points):
-  return np.polyfit(X_PATH, map(float, points), 3)
+
+def compute_path_pinv():
+  deg = 3
+  x = np.arange(50.0)
+  X = np.vstack(tuple(x**n for n in range(deg, -1, -1))).T
+  pinv = np.linalg.pinv(X)
+  return pinv
+
+def model_polyfit(points, path_pinv):
+  return np.dot(path_pinv, map(float, points))
 
 # lane width http://safety.fhwa.dot.gov/geometric/pubs/mitigationstrategies/chapter3/3_lanewidth.cfm
 _LANE_WIDTH_V = [3., 3.8]
@@ -40,24 +47,26 @@ class PathPlanner(object):
     self.last_model = 0.
     self.logMonoTime = 0
     self.lead_dist, self.lead_prob, self.lead_var = 0, 0, 1
+    self._path_pinv = compute_path_pinv()
 
   def update(self, cur_time, v_ego):
     md = messaging.recv_sock(self.model)
 
     if md is not None:
       self.logMonoTime = md.logMonoTime
-      p_poly = model_polyfit(md.model.path.points)       # predicted path
-      p_prob = 1.                                        # model does not tell this probability yet, so set to 1 for now
-      l_poly = model_polyfit(md.model.leftLane.points)   # left line
-      l_prob = md.model.leftLane.prob                    # left line prob
-      r_poly = model_polyfit(md.model.rightLane.points)  # right line
-      r_prob = md.model.rightLane.prob                   # right line prob
+      p_poly = model_polyfit(md.model.path.points, self._path_pinv)       # predicted path
+      l_poly = model_polyfit(md.model.leftLane.points, self._path_pinv)   # left line
+      r_poly = model_polyfit(md.model.rightLane.points, self._path_pinv)  # right line
+
+      p_prob = 1.                       # model does not tell this probability yet, so set to 1 for now
+      l_prob = md.model.leftLane.prob   # left line prob
+      r_prob = md.model.rightLane.prob  # right line prob
 
       self.lead_dist = md.model.lead.dist
       self.lead_prob = md.model.lead.prob
       self.lead_var = md.model.lead.std**2
 
-      #*** compute target path ***
+      # compute target path
       self.d_poly, _, _ = calc_desired_path(l_poly, r_poly, p_poly, l_prob, r_prob, p_prob, v_ego)
 
       self.last_model = cur_time

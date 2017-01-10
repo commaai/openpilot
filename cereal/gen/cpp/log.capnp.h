@@ -158,7 +158,7 @@ struct ThermalData {
   class Pipeline;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(8d8231a40b7fe6e0, 2, 0)
+    CAPNP_DECLARE_STRUCT_HEADER(8d8231a40b7fe6e0, 3, 0)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand = &schema->defaultBrand;
     #endif  // !CAPNP_LITE
@@ -1109,6 +1109,8 @@ public:
 
   inline  ::uint32_t getBat() const;
 
+  inline float getFreeSpace() const;
+
 private:
   ::capnp::_::StructReader _reader;
   template <typename, ::capnp::Kind>
@@ -1157,6 +1159,9 @@ public:
 
   inline  ::uint32_t getBat();
   inline void setBat( ::uint32_t value);
+
+  inline float getFreeSpace();
+  inline void setFreeSpace(float value);
 
 private:
   ::capnp::_::StructBuilder _builder;
@@ -1211,6 +1216,8 @@ public:
 
   inline bool getGasInterceptorDetected() const;
 
+  inline bool getStartedSignalDetected() const;
+
 private:
   ::capnp::_::StructReader _reader;
   template <typename, ::capnp::Kind>
@@ -1253,6 +1260,9 @@ public:
 
   inline bool getGasInterceptorDetected();
   inline void setGasInterceptorDetected(bool value);
+
+  inline bool getStartedSignalDetected();
+  inline void setStartedSignalDetected(bool value);
 
 private:
   ::capnp::_::StructBuilder _builder;
@@ -1398,12 +1408,12 @@ public:
   }
 #endif  // !CAPNP_LITE
 
-  inline bool hasWarpMatrix() const;
-  inline  ::capnp::List<float>::Reader getWarpMatrix() const;
+  inline bool hasWarpMatrixDEPRECATED() const;
+  inline  ::capnp::List<float>::Reader getWarpMatrixDEPRECATED() const;
 
-  inline float getAngleOffset() const;
+  inline float getAngleOffsetDEPRECATED() const;
 
-  inline  ::int8_t getCalStatus() const;
+  inline  ::int8_t getCalStatusDEPRECATED() const;
 
   inline bool hasLeadOne() const;
   inline  ::cereal::Live20Data::LeadData::Reader getLeadOne() const;
@@ -1417,9 +1427,9 @@ public:
 
   inline  ::uint64_t getFtMonoTime() const;
 
-  inline  ::int32_t getCalCycle() const;
+  inline  ::int32_t getCalCycleDEPRECATED() const;
 
-  inline  ::int8_t getCalPerc() const;
+  inline  ::int8_t getCalPercDEPRECATED() const;
 
   inline bool hasCanMonoTimes() const;
   inline  ::capnp::List< ::uint64_t>::Reader getCanMonoTimes() const;
@@ -1452,19 +1462,19 @@ public:
   inline ::kj::StringTree toString() const { return asReader().toString(); }
 #endif  // !CAPNP_LITE
 
-  inline bool hasWarpMatrix();
-  inline  ::capnp::List<float>::Builder getWarpMatrix();
-  inline void setWarpMatrix( ::capnp::List<float>::Reader value);
-  inline void setWarpMatrix(::kj::ArrayPtr<const float> value);
-  inline  ::capnp::List<float>::Builder initWarpMatrix(unsigned int size);
-  inline void adoptWarpMatrix(::capnp::Orphan< ::capnp::List<float>>&& value);
-  inline ::capnp::Orphan< ::capnp::List<float>> disownWarpMatrix();
+  inline bool hasWarpMatrixDEPRECATED();
+  inline  ::capnp::List<float>::Builder getWarpMatrixDEPRECATED();
+  inline void setWarpMatrixDEPRECATED( ::capnp::List<float>::Reader value);
+  inline void setWarpMatrixDEPRECATED(::kj::ArrayPtr<const float> value);
+  inline  ::capnp::List<float>::Builder initWarpMatrixDEPRECATED(unsigned int size);
+  inline void adoptWarpMatrixDEPRECATED(::capnp::Orphan< ::capnp::List<float>>&& value);
+  inline ::capnp::Orphan< ::capnp::List<float>> disownWarpMatrixDEPRECATED();
 
-  inline float getAngleOffset();
-  inline void setAngleOffset(float value);
+  inline float getAngleOffsetDEPRECATED();
+  inline void setAngleOffsetDEPRECATED(float value);
 
-  inline  ::int8_t getCalStatus();
-  inline void setCalStatus( ::int8_t value);
+  inline  ::int8_t getCalStatusDEPRECATED();
+  inline void setCalStatusDEPRECATED( ::int8_t value);
 
   inline bool hasLeadOne();
   inline  ::cereal::Live20Data::LeadData::Builder getLeadOne();
@@ -1489,11 +1499,11 @@ public:
   inline  ::uint64_t getFtMonoTime();
   inline void setFtMonoTime( ::uint64_t value);
 
-  inline  ::int32_t getCalCycle();
-  inline void setCalCycle( ::int32_t value);
+  inline  ::int32_t getCalCycleDEPRECATED();
+  inline void setCalCycleDEPRECATED( ::int32_t value);
 
-  inline  ::int8_t getCalPerc();
-  inline void setCalPerc( ::int8_t value);
+  inline  ::int8_t getCalPercDEPRECATED();
+  inline void setCalPercDEPRECATED( ::int8_t value);
 
   inline bool hasCanMonoTimes();
   inline  ::capnp::List< ::uint64_t>::Builder getCanMonoTimes();
@@ -1899,7 +1909,7 @@ public:
 
   inline float getVEgo() const;
 
-  inline float getAEgo() const;
+  inline float getAEgoDEPRECATED() const;
 
   inline float getVPid() const;
 
@@ -1925,7 +1935,7 @@ public:
 
   inline float getAngleSteers() const;
 
-  inline  ::int32_t getHudLead() const;
+  inline  ::int32_t getHudLeadDEPRECATED() const;
 
   inline float getCumLagMs() const;
 
@@ -1985,8 +1995,8 @@ public:
   inline float getVEgo();
   inline void setVEgo(float value);
 
-  inline float getAEgo();
-  inline void setAEgo(float value);
+  inline float getAEgoDEPRECATED();
+  inline void setAEgoDEPRECATED(float value);
 
   inline float getVPid();
   inline void setVPid(float value);
@@ -2024,8 +2034,8 @@ public:
   inline float getAngleSteers();
   inline void setAngleSteers(float value);
 
-  inline  ::int32_t getHudLead();
-  inline void setHudLead( ::int32_t value);
+  inline  ::int32_t getHudLeadDEPRECATED();
+  inline void setHudLeadDEPRECATED( ::int32_t value);
 
   inline float getCumLagMs();
   inline void setCumLagMs(float value);
@@ -4106,6 +4116,20 @@ inline void ThermalData::Builder::setBat( ::uint32_t value) {
       3 * ::capnp::ELEMENTS, value);
 }
 
+inline float ThermalData::Reader::getFreeSpace() const {
+  return _reader.getDataField<float>(
+      4 * ::capnp::ELEMENTS);
+}
+
+inline float ThermalData::Builder::getFreeSpace() {
+  return _builder.getDataField<float>(
+      4 * ::capnp::ELEMENTS);
+}
+inline void ThermalData::Builder::setFreeSpace(float value) {
+  _builder.setDataField<float>(
+      4 * ::capnp::ELEMENTS, value);
+}
+
 inline  ::uint32_t HealthData::Reader::getVoltage() const {
   return _reader.getDataField< ::uint32_t>(
       0 * ::capnp::ELEMENTS);
@@ -4174,6 +4198,20 @@ inline bool HealthData::Builder::getGasInterceptorDetected() {
 inline void HealthData::Builder::setGasInterceptorDetected(bool value) {
   _builder.setDataField<bool>(
       66 * ::capnp::ELEMENTS, value);
+}
+
+inline bool HealthData::Reader::getStartedSignalDetected() const {
+  return _reader.getDataField<bool>(
+      67 * ::capnp::ELEMENTS);
+}
+
+inline bool HealthData::Builder::getStartedSignalDetected() {
+  return _builder.getDataField<bool>(
+      67 * ::capnp::ELEMENTS);
+}
+inline void HealthData::Builder::setStartedSignalDetected(bool value) {
+  _builder.setDataField<bool>(
+      67 * ::capnp::ELEMENTS, value);
 }
 
 inline bool LiveUI::Reader::getRearViewCam() const {
@@ -4268,66 +4306,66 @@ inline void LiveUI::Builder::setAwarenessStatus(float value) {
       1 * ::capnp::ELEMENTS, value);
 }
 
-inline bool Live20Data::Reader::hasWarpMatrix() const {
+inline bool Live20Data::Reader::hasWarpMatrixDEPRECATED() const {
   return !_reader.getPointerField(0 * ::capnp::POINTERS).isNull();
 }
-inline bool Live20Data::Builder::hasWarpMatrix() {
+inline bool Live20Data::Builder::hasWarpMatrixDEPRECATED() {
   return !_builder.getPointerField(0 * ::capnp::POINTERS).isNull();
 }
-inline  ::capnp::List<float>::Reader Live20Data::Reader::getWarpMatrix() const {
+inline  ::capnp::List<float>::Reader Live20Data::Reader::getWarpMatrixDEPRECATED() const {
   return ::capnp::_::PointerHelpers< ::capnp::List<float>>::get(
       _reader.getPointerField(0 * ::capnp::POINTERS));
 }
-inline  ::capnp::List<float>::Builder Live20Data::Builder::getWarpMatrix() {
+inline  ::capnp::List<float>::Builder Live20Data::Builder::getWarpMatrixDEPRECATED() {
   return ::capnp::_::PointerHelpers< ::capnp::List<float>>::get(
       _builder.getPointerField(0 * ::capnp::POINTERS));
 }
-inline void Live20Data::Builder::setWarpMatrix( ::capnp::List<float>::Reader value) {
+inline void Live20Data::Builder::setWarpMatrixDEPRECATED( ::capnp::List<float>::Reader value) {
   ::capnp::_::PointerHelpers< ::capnp::List<float>>::set(
       _builder.getPointerField(0 * ::capnp::POINTERS), value);
 }
-inline void Live20Data::Builder::setWarpMatrix(::kj::ArrayPtr<const float> value) {
+inline void Live20Data::Builder::setWarpMatrixDEPRECATED(::kj::ArrayPtr<const float> value) {
   ::capnp::_::PointerHelpers< ::capnp::List<float>>::set(
       _builder.getPointerField(0 * ::capnp::POINTERS), value);
 }
-inline  ::capnp::List<float>::Builder Live20Data::Builder::initWarpMatrix(unsigned int size) {
+inline  ::capnp::List<float>::Builder Live20Data::Builder::initWarpMatrixDEPRECATED(unsigned int size) {
   return ::capnp::_::PointerHelpers< ::capnp::List<float>>::init(
       _builder.getPointerField(0 * ::capnp::POINTERS), size);
 }
-inline void Live20Data::Builder::adoptWarpMatrix(
+inline void Live20Data::Builder::adoptWarpMatrixDEPRECATED(
     ::capnp::Orphan< ::capnp::List<float>>&& value) {
   ::capnp::_::PointerHelpers< ::capnp::List<float>>::adopt(
       _builder.getPointerField(0 * ::capnp::POINTERS), kj::mv(value));
 }
-inline ::capnp::Orphan< ::capnp::List<float>> Live20Data::Builder::disownWarpMatrix() {
+inline ::capnp::Orphan< ::capnp::List<float>> Live20Data::Builder::disownWarpMatrixDEPRECATED() {
   return ::capnp::_::PointerHelpers< ::capnp::List<float>>::disown(
       _builder.getPointerField(0 * ::capnp::POINTERS));
 }
 
-inline float Live20Data::Reader::getAngleOffset() const {
+inline float Live20Data::Reader::getAngleOffsetDEPRECATED() const {
   return _reader.getDataField<float>(
       0 * ::capnp::ELEMENTS);
 }
 
-inline float Live20Data::Builder::getAngleOffset() {
+inline float Live20Data::Builder::getAngleOffsetDEPRECATED() {
   return _builder.getDataField<float>(
       0 * ::capnp::ELEMENTS);
 }
-inline void Live20Data::Builder::setAngleOffset(float value) {
+inline void Live20Data::Builder::setAngleOffsetDEPRECATED(float value) {
   _builder.setDataField<float>(
       0 * ::capnp::ELEMENTS, value);
 }
 
-inline  ::int8_t Live20Data::Reader::getCalStatus() const {
+inline  ::int8_t Live20Data::Reader::getCalStatusDEPRECATED() const {
   return _reader.getDataField< ::int8_t>(
       4 * ::capnp::ELEMENTS);
 }
 
-inline  ::int8_t Live20Data::Builder::getCalStatus() {
+inline  ::int8_t Live20Data::Builder::getCalStatusDEPRECATED() {
   return _builder.getDataField< ::int8_t>(
       4 * ::capnp::ELEMENTS);
 }
-inline void Live20Data::Builder::setCalStatus( ::int8_t value) {
+inline void Live20Data::Builder::setCalStatusDEPRECATED( ::int8_t value) {
   _builder.setDataField< ::int8_t>(
       4 * ::capnp::ELEMENTS, value);
 }
@@ -4448,30 +4486,30 @@ inline void Live20Data::Builder::setFtMonoTime( ::uint64_t value) {
       3 * ::capnp::ELEMENTS, value);
 }
 
-inline  ::int32_t Live20Data::Reader::getCalCycle() const {
+inline  ::int32_t Live20Data::Reader::getCalCycleDEPRECATED() const {
   return _reader.getDataField< ::int32_t>(
       3 * ::capnp::ELEMENTS);
 }
 
-inline  ::int32_t Live20Data::Builder::getCalCycle() {
+inline  ::int32_t Live20Data::Builder::getCalCycleDEPRECATED() {
   return _builder.getDataField< ::int32_t>(
       3 * ::capnp::ELEMENTS);
 }
-inline void Live20Data::Builder::setCalCycle( ::int32_t value) {
+inline void Live20Data::Builder::setCalCycleDEPRECATED( ::int32_t value) {
   _builder.setDataField< ::int32_t>(
       3 * ::capnp::ELEMENTS, value);
 }
 
-inline  ::int8_t Live20Data::Reader::getCalPerc() const {
+inline  ::int8_t Live20Data::Reader::getCalPercDEPRECATED() const {
   return _reader.getDataField< ::int8_t>(
       5 * ::capnp::ELEMENTS);
 }
 
-inline  ::int8_t Live20Data::Builder::getCalPerc() {
+inline  ::int8_t Live20Data::Builder::getCalPercDEPRECATED() {
   return _builder.getDataField< ::int8_t>(
       5 * ::capnp::ELEMENTS);
 }
-inline void Live20Data::Builder::setCalPerc( ::int8_t value) {
+inline void Live20Data::Builder::setCalPercDEPRECATED( ::int8_t value) {
   _builder.setDataField< ::int8_t>(
       5 * ::capnp::ELEMENTS, value);
 }
@@ -4912,16 +4950,16 @@ inline void Live100Data::Builder::setVEgo(float value) {
       0 * ::capnp::ELEMENTS, value);
 }
 
-inline float Live100Data::Reader::getAEgo() const {
+inline float Live100Data::Reader::getAEgoDEPRECATED() const {
   return _reader.getDataField<float>(
       1 * ::capnp::ELEMENTS);
 }
 
-inline float Live100Data::Builder::getAEgo() {
+inline float Live100Data::Builder::getAEgoDEPRECATED() {
   return _builder.getDataField<float>(
       1 * ::capnp::ELEMENTS);
 }
-inline void Live100Data::Builder::setAEgo(float value) {
+inline void Live100Data::Builder::setAEgoDEPRECATED(float value) {
   _builder.setDataField<float>(
       1 * ::capnp::ELEMENTS, value);
 }
@@ -5094,16 +5132,16 @@ inline void Live100Data::Builder::setAngleSteers(float value) {
       13 * ::capnp::ELEMENTS, value);
 }
 
-inline  ::int32_t Live100Data::Reader::getHudLead() const {
+inline  ::int32_t Live100Data::Reader::getHudLeadDEPRECATED() const {
   return _reader.getDataField< ::int32_t>(
       14 * ::capnp::ELEMENTS);
 }
 
-inline  ::int32_t Live100Data::Builder::getHudLead() {
+inline  ::int32_t Live100Data::Builder::getHudLeadDEPRECATED() {
   return _builder.getDataField< ::int32_t>(
       14 * ::capnp::ELEMENTS);
 }
-inline void Live100Data::Builder::setHudLead( ::int32_t value) {
+inline void Live100Data::Builder::setHudLeadDEPRECATED( ::int32_t value) {
   _builder.setDataField< ::int32_t>(
       14 * ::capnp::ELEMENTS, value);
 }

@@ -193,13 +193,14 @@ struct cereal_ThermalData {
 	uint16_t mem;
 	uint16_t gpu;
 	uint32_t bat;
+	float freeSpace;
 };
 
-static const size_t cereal_ThermalData_word_count = 2;
+static const size_t cereal_ThermalData_word_count = 3;
 
 static const size_t cereal_ThermalData_pointer_count = 0;
 
-static const size_t cereal_ThermalData_struct_bytes_count = 16;
+static const size_t cereal_ThermalData_struct_bytes_count = 24;
 
 struct cereal_HealthData {
 	uint32_t voltage;
@@ -207,6 +208,7 @@ struct cereal_HealthData {
 	unsigned started : 1;
 	unsigned controlsAllowed : 1;
 	unsigned gasInterceptorDetected : 1;
+	unsigned startedSignalDetected : 1;
 };
 
 static const size_t cereal_HealthData_word_count = 2;
@@ -232,11 +234,11 @@ struct cereal_Live20Data {
 	capn_list64 canMonoTimes;
 	uint64_t mdMonoTime;
 	uint64_t ftMonoTime;
-	capn_list32 warpMatrix;
-	float angleOffset;
-	int8_t calStatus;
-	int32_t calCycle;
-	int8_t calPerc;
+	capn_list32 warpMatrixDEPRECATED;
+	float angleOffsetDEPRECATED;
+	int8_t calStatusDEPRECATED;
+	int32_t calCycleDEPRECATED;
+	int8_t calPercDEPRECATED;
 	cereal_Live20Data_LeadData_ptr leadOne;
 	cereal_Live20Data_LeadData_ptr leadTwo;
 	float cumLagMs;
@@ -307,7 +309,7 @@ struct cereal_Live100Data {
 	uint64_t l20MonoTime;
 	uint64_t mdMonoTime;
 	float vEgo;
-	float aEgo;
+	float aEgoDEPRECATED;
 	float vPid;
 	float vTargetLead;
 	float upAccelCmd;
@@ -320,7 +322,7 @@ struct cereal_Live100Data {
 	float aTargetMax;
 	float jerkFactor;
 	float angleSteers;
-	int32_t hudLead;
+	int32_t hudLeadDEPRECATED;
 	float cumLagMs;
 	unsigned enabled : 1;
 	unsigned steerOverride : 1;

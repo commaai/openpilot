@@ -1,3 +1,9 @@
+Version 0.2.2  (2017-01-10)
+===========================
+  * Board triggers started signal on CAN messages
+  * Improved autoexposure
+  * Handle out of space, improve upload status
+
 Version 0.2.1  (2016-12-14)
 ===========================
   * Performance improvements, removal of more numpy

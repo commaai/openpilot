@@ -21,6 +21,8 @@ from selfdrive.registration import register
 
 import common.crash
 
+from selfdrive.loggerd.config import ROOT
+
 # comment out anything you don't want to run
 managed_processes = {
   "uploader": "selfdrive.loggerd.uploader",
@@ -49,10 +51,6 @@ car_started_processes = ['controlsd', 'loggerd', 'sensord', 'radard', 'calibrati
 # ****************** process management functions ******************
 def launcher(proc, gctx):
   try:
-    # unset the signals
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
-    signal.signal(signal.SIGTERM, signal.SIG_DFL)
-
     # import the process
     mod = importlib.import_module(proc)
 
@@ -61,6 +59,8 @@ def launcher(proc, gctx):
 
     # exec the process
     mod.main(gctx)
+  except KeyboardInterrupt:
+    cloudlog.info("child %s got ctrl-c" % proc)
   except Exception:
     # can't install the crash handler becuase sys.excepthook doesn't play nice
     # with threads, so catch it here.
@@ -156,10 +156,6 @@ def manager_init():
     }
   }
 
-  # hook to kill all processes
-  signal.signal(signal.SIGINT, cleanup_all_processes)
-  signal.signal(signal.SIGTERM, cleanup_all_processes)
-
 def manager_thread():
   # now loop
   context = zmq.Context()
@@ -188,6 +184,8 @@ def manager_thread():
     for p in car_started_processes:
       start_managed_process(p)
 
+  logger_dead = False
+
   while 1:
     # get health of board, log this in "thermal"
     td = messaging.recv_sock(health_sock, wait=True)
@@ -195,6 +193,13 @@ def manager_thread():
 
     # replace thermald
     msg = read_thermal()
+
+    # loggerd is gated based on free space
+    statvfs = os.statvfs(ROOT)
+    avail = (statvfs.f_bavail * 1.0)/statvfs.f_blocks
+
+    # thermal message now also includes free space
+    msg.thermal.freeSpace = avail
     thermal_sock.send(msg.to_bytes())
     print msg
 
@@ -209,18 +214,26 @@ def manager_thread():
     elif max_temp < 70.0:
       start_managed_process("uploader")
 
+    if avail < 0.05:
+      logger_dead = True
+
     # start constellation of processes when the car starts
     if not os.getenv("STARTALL"):
-      if td.health.started:
+      # with 2% left, we killall, otherwise the phone is bricked
+      if td.health.started and avail > 0.02:
         for p in car_started_processes:
-          start_managed_process(p)
+          if p == "loggerd" and logger_dead:
+            kill_managed_process(p)
+          else:
+            start_managed_process(p)
       else:
+        logger_dead = False
         for p in car_started_processes:
           kill_managed_process(p)
 
     # check the status of all processes, did any of them die?
     for p in running:
-      cloudlog.info("   running %s %s" % (p, running[p]))
+      cloudlog.debug("   running %s %s" % (p, running[p]))
 
 
 # optional, build the c++ binaries and preimport the python for speed
