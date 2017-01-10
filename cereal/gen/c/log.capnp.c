@@ -235,12 +235,12 @@ void cereal_set_CanData(const struct cereal_CanData *s, cereal_CanData_list l, i
 
 cereal_ThermalData_ptr cereal_new_ThermalData(struct capn_segment *s) {
 	cereal_ThermalData_ptr p;
-	p.p = capn_new_struct(s, 16, 0);
+	p.p = capn_new_struct(s, 24, 0);
 	return p;
 }
 cereal_ThermalData_list cereal_new_ThermalData_list(struct capn_segment *s, int len) {
 	cereal_ThermalData_list p;
-	p.p = capn_new_list(s, len, 16, 0);
+	p.p = capn_new_list(s, len, 24, 0);
 	return p;
 }
 void cereal_read_ThermalData(struct cereal_ThermalData *s, cereal_ThermalData_ptr p) {
@@ -252,6 +252,7 @@ void cereal_read_ThermalData(struct cereal_ThermalData *s, cereal_ThermalData_pt
 	s->mem = capn_read16(p.p, 8);
 	s->gpu = capn_read16(p.p, 10);
 	s->bat = capn_read32(p.p, 12);
+	s->freeSpace = capn_to_f32(capn_read32(p.p, 16));
 }
 void cereal_write_ThermalData(const struct cereal_ThermalData *s, cereal_ThermalData_ptr p) {
 	capn_resolve(&p.p);
@@ -262,6 +263,7 @@ void cereal_write_ThermalData(const struct cereal_ThermalData *s, cereal_Thermal
 	capn_write16(p.p, 8, s->mem);
 	capn_write16(p.p, 10, s->gpu);
 	capn_write32(p.p, 12, s->bat);
+	capn_write32(p.p, 16, capn_from_f32(s->freeSpace));
 }
 void cereal_get_ThermalData(struct cereal_ThermalData *s, cereal_ThermalData_list l, int i) {
 	cereal_ThermalData_ptr p;
@@ -291,6 +293,7 @@ void cereal_read_HealthData(struct cereal_HealthData *s, cereal_HealthData_ptr p
 	s->started = (capn_read8(p.p, 8) & 1) != 0;
 	s->controlsAllowed = (capn_read8(p.p, 8) & 2) != 0;
 	s->gasInterceptorDetected = (capn_read8(p.p, 8) & 4) != 0;
+	s->startedSignalDetected = (capn_read8(p.p, 8) & 8) != 0;
 }
 void cereal_write_HealthData(const struct cereal_HealthData *s, cereal_HealthData_ptr p) {
 	capn_resolve(&p.p);
@@ -299,6 +302,7 @@ void cereal_write_HealthData(const struct cereal_HealthData *s, cereal_HealthDat
 	capn_write1(p.p, 64, s->started != 0);
 	capn_write1(p.p, 65, s->controlsAllowed != 0);
 	capn_write1(p.p, 66, s->gasInterceptorDetected != 0);
+	capn_write1(p.p, 67, s->startedSignalDetected != 0);
 }
 void cereal_get_HealthData(struct cereal_HealthData *s, cereal_HealthData_list l, int i) {
 	cereal_HealthData_ptr p;
@@ -361,11 +365,11 @@ void cereal_read_Live20Data(struct cereal_Live20Data *s, cereal_Live20Data_ptr p
 	s->canMonoTimes.p = capn_getp(p.p, 3, 0);
 	s->mdMonoTime = capn_read64(p.p, 16);
 	s->ftMonoTime = capn_read64(p.p, 24);
-	s->warpMatrix.p = capn_getp(p.p, 0, 0);
-	s->angleOffset = capn_to_f32(capn_read32(p.p, 0));
-	s->calStatus = (int8_t) ((int8_t)capn_read8(p.p, 4));
-	s->calCycle = (int32_t) ((int32_t)capn_read32(p.p, 12));
-	s->calPerc = (int8_t) ((int8_t)capn_read8(p.p, 5));
+	s->warpMatrixDEPRECATED.p = capn_getp(p.p, 0, 0);
+	s->angleOffsetDEPRECATED = capn_to_f32(capn_read32(p.p, 0));
+	s->calStatusDEPRECATED = (int8_t) ((int8_t)capn_read8(p.p, 4));
+	s->calCycleDEPRECATED = (int32_t) ((int32_t)capn_read32(p.p, 12));
+	s->calPercDEPRECATED = (int8_t) ((int8_t)capn_read8(p.p, 5));
 	s->leadOne.p = capn_getp(p.p, 1, 0);
 	s->leadTwo.p = capn_getp(p.p, 2, 0);
 	s->cumLagMs = capn_to_f32(capn_read32(p.p, 8));
@@ -375,11 +379,11 @@ void cereal_write_Live20Data(const struct cereal_Live20Data *s, cereal_Live20Dat
 	capn_setp(p.p, 3, s->canMonoTimes.p);
 	capn_write64(p.p, 16, s->mdMonoTime);
 	capn_write64(p.p, 24, s->ftMonoTime);
-	capn_setp(p.p, 0, s->warpMatrix.p);
-	capn_write32(p.p, 0, capn_from_f32(s->angleOffset));
-	capn_write8(p.p, 4, (uint8_t) (s->calStatus));
-	capn_write32(p.p, 12, (uint32_t) (s->calCycle));
-	capn_write8(p.p, 5, (uint8_t) (s->calPerc));
+	capn_setp(p.p, 0, s->warpMatrixDEPRECATED.p);
+	capn_write32(p.p, 0, capn_from_f32(s->angleOffsetDEPRECATED));
+	capn_write8(p.p, 4, (uint8_t) (s->calStatusDEPRECATED));
+	capn_write32(p.p, 12, (uint32_t) (s->calCycleDEPRECATED));
+	capn_write8(p.p, 5, (uint8_t) (s->calPercDEPRECATED));
 	capn_setp(p.p, 1, s->leadOne.p);
 	capn_setp(p.p, 2, s->leadTwo.p);
 	capn_write32(p.p, 8, capn_from_f32(s->cumLagMs));
@@ -545,7 +549,7 @@ void cereal_read_Live100Data(struct cereal_Live100Data *s, cereal_Live100Data_pt
 	s->l20MonoTime = capn_read64(p.p, 72);
 	s->mdMonoTime = capn_read64(p.p, 80);
 	s->vEgo = capn_to_f32(capn_read32(p.p, 0));
-	s->aEgo = capn_to_f32(capn_read32(p.p, 4));
+	s->aEgoDEPRECATED = capn_to_f32(capn_read32(p.p, 4));
 	s->vPid = capn_to_f32(capn_read32(p.p, 8));
 	s->vTargetLead = capn_to_f32(capn_read32(p.p, 12));
 	s->upAccelCmd = capn_to_f32(capn_read32(p.p, 16));
@@ -558,7 +562,7 @@ void cereal_read_Live100Data(struct cereal_Live100Data *s, cereal_Live100Data_pt
 	s->aTargetMax = capn_to_f32(capn_read32(p.p, 44));
 	s->jerkFactor = capn_to_f32(capn_read32(p.p, 48));
 	s->angleSteers = capn_to_f32(capn_read32(p.p, 52));
-	s->hudLead = (int32_t) ((int32_t)capn_read32(p.p, 56));
+	s->hudLeadDEPRECATED = (int32_t) ((int32_t)capn_read32(p.p, 56));
 	s->cumLagMs = capn_to_f32(capn_read32(p.p, 60));
 	s->enabled = (capn_read8(p.p, 88) & 1) != 0;
 	s->steerOverride = (capn_read8(p.p, 88) & 2) != 0;
@@ -575,7 +579,7 @@ void cereal_write_Live100Data(const struct cereal_Live100Data *s, cereal_Live100
 	capn_write64(p.p, 72, s->l20MonoTime);
 	capn_write64(p.p, 80, s->mdMonoTime);
 	capn_write32(p.p, 0, capn_from_f32(s->vEgo));
-	capn_write32(p.p, 4, capn_from_f32(s->aEgo));
+	capn_write32(p.p, 4, capn_from_f32(s->aEgoDEPRECATED));
 	capn_write32(p.p, 8, capn_from_f32(s->vPid));
 	capn_write32(p.p, 12, capn_from_f32(s->vTargetLead));
 	capn_write32(p.p, 16, capn_from_f32(s->upAccelCmd));
@@ -588,7 +592,7 @@ void cereal_write_Live100Data(const struct cereal_Live100Data *s, cereal_Live100
 	capn_write32(p.p, 44, capn_from_f32(s->aTargetMax));
 	capn_write32(p.p, 48, capn_from_f32(s->jerkFactor));
 	capn_write32(p.p, 52, capn_from_f32(s->angleSteers));
-	capn_write32(p.p, 56, (uint32_t) (s->hudLead));
+	capn_write32(p.p, 56, (uint32_t) (s->hudLeadDEPRECATED));
 	capn_write32(p.p, 60, capn_from_f32(s->cumLagMs));
 	capn_write1(p.p, 704, s->enabled != 0);
 	capn_write1(p.p, 705, s->steerOverride != 0);

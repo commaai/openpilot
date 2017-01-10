@@ -75,10 +75,17 @@ def main(gctx=None):
         rotate_msg = messaging.log.LogRotate.new_message()
         rotate_msg.segmentNum = cur_part
         rotate_msg.path = cur_dir
-
         vision_control_sock.send(rotate_msg.to_bytes())
-
   finally:
+    cloudlog.info("loggerd exiting...")
+
+    # tell visiond to stop logging
+    rotate_msg = messaging.log.LogRotate.new_message()
+    rotate_msg.segmentNum = -1
+    rotate_msg.path = "/dev/null"
+    vision_control_sock.send(rotate_msg.to_bytes())
+
+    # stop logging
     logger.stop()
 
 if __name__ == "__main__":

@@ -109,7 +109,7 @@ def boardd_mock_loop():
 
   while 1:
     tsc = messaging.drain_sock(logcan, wait_for_one=True)
-    snds = map(can_capnp_to_can_list, tsc)
+    snds = map(lambda x: can_capnp_to_can_list(x.can), tsc)
     snd = []
     for s in snds:
       snd += s
@@ -162,7 +162,7 @@ def boardd_loop(rate=200):
     # send can if we have a packet
     tsc = messaging.recv_sock(sendcan)
     if tsc is not None:
-      can_send_many(can_capnp_to_can_list(tsc))
+      can_send_many(can_capnp_to_can_list(tsc.sendcan))
 
     rk.keep_time()
 

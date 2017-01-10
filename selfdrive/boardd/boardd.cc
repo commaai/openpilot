@@ -36,7 +36,7 @@ bool spoofing_started = false;
 
 #define DEBUG_BOARDD
 #ifdef DEBUG_BOARDD
-#define DPRINTF(fmt, ...) printf("boardd: " fmt, ## __VA_ARGS__)
+#define DPRINTF(fmt, ...) printf("boardd(%lu): " fmt, time(NULL), ## __VA_ARGS__)
 #else
 #define DPRINTF(fmt, ...)
 #endif
@@ -129,6 +129,7 @@ void can_health(void *s) {
     uint8_t started;
     uint8_t controls_allowed;
     uint8_t gas_interceptor_detected;
+    uint8_t started_signal_detected;
   } health;
 
   // recv from board
@@ -157,6 +158,7 @@ void can_health(void *s) {
   }
   healthData.setControlsAllowed(health.controls_allowed);
   healthData.setGasInterceptorDetected(health.gas_interceptor_detected);
+  healthData.setStartedSignalDetected(health.started_signal_detected);
 
   // send to health
   auto words = capnp::messageToFlatArray(msg);
@@ -274,16 +276,16 @@ int set_realtime_priority(int level) {
   struct sched_param sa;
   memset(&sa, 0, sizeof(sa));
   sa.sched_priority = level;
-  return sched_setscheduler(gettid(), SCHED_FIFO, &sa);
+  return sched_setscheduler(getpid(), SCHED_FIFO, &sa);
 }
 
 int main() {
   int err;
-  printf("boardd: starting boardd\n");
+  DPRINTF("starting boardd\n");
 
   // set process priority
   err = set_realtime_priority(4);
-  printf("boardd: setpriority returns %d\n", err);
+  DPRINTF("setpriority returns %d\n", err);
 
   // check the environment
   if (getenv("STARTED")) {

@@ -25,7 +25,12 @@ USB_OTG_GlobalTypeDef *USBx = USB_OTG_FS;
 
 // debug safety check: is controls allowed?
 int controls_allowed = 0;
+int started = 0;
+int can_live = 0, pending_can_live = 0;
+
+// optional features
 int gas_interceptor_detected = 0;
+int started_signal_detected = 0;
 
 // ********************* instantiate queues *********************
 
@@ -147,6 +152,9 @@ void CAN2_TX_IRQHandler() {
 // CAN receive handlers
 void can_rx(CAN_TypeDef *CAN, int can_number) {
   while (CAN->RF0R & CAN_RF0R_FMP0) {
+    // can is live
+    pending_can_live = 1;
+
     // add to my fifo
     CAN_FIFOMailBox_TypeDef to_push;
     to_push.RIR = CAN->sFIFOMailBox[0].RIR;
@@ -256,6 +264,7 @@ int get_health_pkt(void *dat) {
     uint8_t started;
     uint8_t controls_allowed;
     uint8_t gas_interceptor_detected;
+    uint8_t started_signal_detected;
   } *health = dat;
   health->voltage = adc_get(ADCCHAN_VOLTAGE);
 #ifdef ENABLE_CURRENT_SENSOR
@@ -263,9 +272,12 @@ int get_health_pkt(void *dat) {
 #else
   health->current = 0;
 #endif
-  health->started = (GPIOC->IDR & (1 << 13)) != 0;
+  health->started = started;
+
   health->controls_allowed = controls_allowed;
+
   health->gas_interceptor_detected = gas_interceptor_detected;
+  health->started_signal_detected = started_signal_detected;
   return sizeof(*health);
 }
 
@@ -468,6 +480,9 @@ int main() {
 
   // LED should keep on blinking all the time
   while (1) {
+    can_live = pending_can_live;
+    pending_can_live = 0;
+
     #ifdef DEBUG
       puts("** blink ");
       puth(can_rx_q.r_ptr); puts(" "); puth(can_rx_q.w_ptr); puts("  ");
@@ -489,14 +504,21 @@ int main() {
     GPIOB->ODR &= ~(1 << 10);
     delay(1000000);
 
-    if (GPIOC->IDR & (1 << 13)) {
+    // started logic
+    int started_signal = (GPIOC->IDR & (1 << 13)) != 0;
+    if (started_signal) { started_signal_detected = 1; }
+
+    if (started_signal || (!started_signal_detected && can_live)) {
+      started = 1;
+
       // turn on fan at half speed
       set_fan_speed(32768);
     } else {
+      started = 0;
+
       // turn off fan
       set_fan_speed(0);
     }
-
   }
 
   return 0;

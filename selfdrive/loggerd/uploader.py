@@ -10,7 +10,7 @@ import traceback
 import threading
 
 from selfdrive.swaglog import cloudlog
-from selfdrive.loggerd.config import DONGLE_ID, DONGLE_SECRET, ROOT
+from selfdrive.loggerd.config import get_dongle_id_and_secret, ROOT
 
 from common.api import api_get
 
@@ -205,7 +205,13 @@ class Uploader(object):
 def uploader_fn(exit_event):
   cloudlog.info("uploader_fn")
 
-  uploader = Uploader(DONGLE_ID, DONGLE_SECRET, ROOT)
+  dongle_id, dongle_secret = get_dongle_id_and_secret()
+
+  if dongle_id is None or dongle_secret is None:
+    cloudlog.info("uploader MISSING DONGLE_ID or DONGLE_SECRET")
+    raise Exception("uploader can't start without dongle id and secret")
+
+  uploader = Uploader(dongle_id, dongle_secret, ROOT)
 
   while True:
     backoff = 0.1

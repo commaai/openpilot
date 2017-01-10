@@ -25,6 +25,8 @@
 #include "common/visionipc.h"
 #include "common/modeldata.h"
 
+#include "common/version.h"
+
 #include "cereal/gen/c/log.capnp.h"
 
 #include "touch.h"
@@ -95,7 +97,6 @@ typedef struct UIState {
 
   // base ui
   uint64_t last_base_update;
-  uint64_t last_rx_bytes;
   uint64_t last_tx_bytes;
   char serial[4096];
   const char* dongle_id;
@@ -861,6 +862,11 @@ static void ui_draw_vision(UIState *s) {
   }
 }
 
+static void ui_draw_blank(UIState *s) {
+  glClearColor(0.1, 0.1, 0.1, 1.0);
+  glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+}
+
 static void ui_draw_base(UIState *s) {
   glClearColor(0.1, 0.1, 0.1, 1.0);
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
@@ -910,8 +916,10 @@ static void ui_draw(UIState *s) {
 
   if (s->vision_connected) {
     ui_draw_vision(s);
-  } else {
+  } else if (s->awake) {
     ui_draw_base(s);
+  } else {
+    ui_draw_blank(s);
   }
 
   eglSwapBuffers(s->display, s->surface);
@@ -987,9 +995,20 @@ static int pending_uploads() {
   int cnt = 0;
   struct dirent *entry = NULL;
   while ((entry = readdir(dirp))) {
-    if (entry->d_name[0] != '.') {
+    if (entry->d_name[0] == '.') continue;
+
+    char subdirn[255];
+    snprintf(subdirn, 255, "/sdcard/realdata/%s", entry->d_name);
+    DIR *subdirp = opendir(subdirn);
+    if (!subdirp) continue;
+
+    struct dirent *subentry = NULL;
+    while ((subentry = readdir(subdirp))) {
+      if (subentry->d_name[0] == '.') continue;
+      //snprintf(subdirn, 255, "/sdcard/realdata/%s/%s", entry->d_name, subentry->d_name);
       cnt++;
     }
+    closedir(subdirp);
   }
   closedir(dirp);
   return cnt;
@@ -1206,20 +1225,19 @@ static void ui_update(UIState *s) {
     char* bat_stat = read_file("/sys/class/power_supply/battery/status");
 
     int tx_rate = 0;
-    int rx_rate = 0;
-    char* rx_bytes = read_file("/sys/class/net/rmnet_data0/statistics/rx_bytes");
-    char* tx_bytes = read_file("/sys/class/net/rmnet_data0/statistics/tx_bytes");
-    if (rx_bytes && tx_bytes) {
-      uint64_t rx_bytes_n = atoll(rx_bytes);
-      rx_rate = rx_bytes_n - s->last_rx_bytes;
-      s->last_rx_bytes = rx_bytes_n;
+    uint64_t tx_bytes_n = 0;
+    char *tx_bytes;
 
-      uint64_t tx_bytes_n = atoll(tx_bytes);
-      tx_rate = tx_bytes_n - s->last_tx_bytes;
-      s->last_tx_bytes = tx_bytes_n;
-    }
-    if (rx_bytes) free(rx_bytes);
-    if (tx_bytes) free(tx_bytes);
+    // cellular bytes
+    tx_bytes = read_file("/sys/class/net/rmnet_data0/statistics/tx_bytes");
+    if (tx_bytes) { tx_bytes_n += atoll(tx_bytes); free(tx_bytes); }
+
+    // wifi bytes
+    tx_bytes = read_file("/sys/class/net/wlan0/statistics/tx_bytes");
+    if (tx_bytes) { tx_bytes_n += atoll(tx_bytes); free(tx_bytes); }
+
+    tx_rate = tx_bytes_n - s->last_tx_bytes;
+    s->last_tx_bytes = tx_bytes_n;
 
     // TODO: do this properly
     system("git rev-parse --abbrev-ref HEAD > /tmp/git_branch");
@@ -1240,10 +1258,10 @@ static void ui_update(UIState *s) {
     s->board_connected = !system("lsusb | grep bbaa > /dev/null");
 
     snprintf(s->base_text, sizeof(s->base_text),
-             "version: %s (%s)\nserial: %s\n dongle id: %s\n battery: %s %s\npending: %d\nrx %.1fkiB/s tx %.1fkiB/s\nboard: %s",
-             git_commit, git_branch,
+             "version: v%s %s (%s)\nserial: %s\n dongle id: %s\n battery: %s %s\npending: %d -> %.1f kb/s\nboard: %s",
+             openpilot_version, git_commit, git_branch,
              s->serial, s->dongle_id, bat_cap ? bat_cap : "(null)", bat_stat ? bat_stat : "(null)",
-             pending, rx_rate / 1024.0, tx_rate / 1024.0, s->board_connected ? "found" : "NOT FOUND");
+             pending, tx_rate / 1024.0, s->board_connected ? "found" : "NOT FOUND");
 
     if (bat_cap) free(bat_cap);
     if (bat_stat) free(bat_stat);

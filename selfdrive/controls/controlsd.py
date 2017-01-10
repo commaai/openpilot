@@ -11,6 +11,7 @@ from common.numpy_fast import clip
 from selfdrive.config import Conversions as CV
 from common.services import service_list
 from common.realtime import sec_since_boot, set_realtime_priority, Ratekeeper
+from common.profiler import Profiler
 
 from selfdrive.controls.lib.drive_helpers import learn_angle_offset
 
@@ -72,15 +73,22 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
 
   soft_disable_timer = None
 
+  # Is cpu temp too high to enable?
+  overtemp = False
+  free_space = 1.0
+
   # start the loop
   set_realtime_priority(2)
 
   rk = Ratekeeper(rate, print_delay_threshold=2./1000)
   while 1:
+    prof = Profiler()
     cur_time = sec_since_boot()
 
     # read CAN
     CS = CI.update()
+
+    prof.checkpoint("CarInterface")
 
     # did it request to enable?
     enable_request, enable_condition = False, False
@@ -120,11 +128,13 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
         v_cruise_kph = clip(v_cruise_kph, V_CRUISE_MIN, V_CRUISE_MAX)
 
       if not enabled and b.type in ["accelCruise", "decelCruise"] and not b.pressed:
-        enable_request = True 
+        enable_request = True
 
       # do disable on button down
       if b.type == "cancel" and b.pressed:
         AM.add("disable", enabled)
+
+    prof.checkpoint("Buttons")
 
     # *** health checking logic ***
     hh = messaging.recv_sock(health)
@@ -138,11 +148,15 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
     # thermal data, checked every second
     td = messaging.recv_sock(thermal)
     if td is not None:
-      cpu_temps = [td.thermal.cpu0, td.thermal.cpu1, td.thermal.cpu2,
-                   td.thermal.cpu3, td.thermal.mem, td.thermal.gpu]
-      # check overtemp
-      if any(t > 950 for t in cpu_temps):
-        AM.add("overheat", enabled)
+      # Check temperature.
+      overtemp = any(
+          t > 950
+          for t in (td.thermal.cpu0, td.thermal.cpu1, td.thermal.cpu2,
+                    td.thermal.cpu3, td.thermal.mem, td.thermal.gpu))
+      # under 15% of space free
+      free_space = td.thermal.freeSpace
+
+    prof.checkpoint("Health")
 
     # *** getting model logic ***
     PP.update(cur_time, CS.vEgo)
@@ -165,6 +179,11 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
         print "enabled pressed at", cur_time
         last_enable_request = cur_time
 
+      # don't engage with less than 15% free
+      if free_space < 0.15:
+        AM.add("outOfSpace", enabled)
+        enable_request = False
+
     if VP.brake_only:
       enable_condition = ((cur_time - last_enable_request) < 0.2) and CS.cruiseState.enabled
     else:
@@ -180,6 +199,11 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
 
       if PP.dead:
         AM.add("modelCommIssue", enabled)
+
+      if overtemp:
+        AM.add("overheat", enabled)
+
+    prof.checkpoint("Model")
 
     if enable_condition and not enabled and not AM.alertPresent():
       print "*** enabling controls"
@@ -207,11 +231,15 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
     # *** put the adaptive in adaptive cruise control ***
     AC.update(cur_time, CS.vEgo, CS.steeringAngle, LoC.v_pid, awareness_status, VP)
 
+    prof.checkpoint("AdaptiveCruise")
+
     # *** gas/brake PID loop ***
     final_gas, final_brake = LoC.update(enabled, CS.vEgo, v_cruise_kph, AC.v_target_lead, AC.a_target, AC.jerk_factor, VP)
 
     # *** steering PID loop ***
     final_steer, sat_flag = LaC.update(enabled, CS.vEgo, CS.steeringAngle, CS.steeringPressed, PP.d_poly, angle_offset, VP)
+
+    prof.checkpoint("PID")
 
     # ***** handle alerts ****
     # send a "steering required alert" if saturation count has reached the limit
@@ -232,7 +260,6 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
         soft_disable_timer -= 1
     else:
       soft_disable_timer = None
-      
 
     # *** push the alerts to current ***
     alert_text_1, alert_text_2, visual_alert, audible_alert = AM.process_alerts(cur_time)
@@ -262,6 +289,8 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
     # this alert will apply next controls cycle
     if not CI.apply(CC):
       AM.add("controlsFailed", enabled)
+
+    prof.checkpoint("CarControl")
 
     # ***** publish state to logger *****
 
@@ -311,12 +340,14 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
 
     live100.send(dat.to_bytes())
 
+    prof.checkpoint("Live100")
+
     # *** run loop at fixed rate ***
-    rk.keep_time()
+    if rk.keep_time():
+      prof.display()
 
 def main(gctx=None):
   controlsd_thread(gctx, 100)
 
 if __name__ == "__main__":
   main()
-

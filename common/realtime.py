@@ -28,7 +28,7 @@ if libc is not None:
   libc.clock_gettime.argtypes = [ctypes.c_int, ctypes.POINTER(timespec)]
 
 def clock_gettime(clk_id):
-  if platform.system() == "darwin":
+  if platform.system().lower() == "darwin":
     # TODO: fix this
     return time.time()
   else:
@@ -47,7 +47,7 @@ def sec_since_boot():
 
 def set_realtime_priority(level):
   if os.getuid() != 0:
-    print "not setting priority, not root"
+    print("not setting priority, not root")
     return
   if platform.machine() == "x86_64":
     NR_gettid = 186
@@ -80,15 +80,19 @@ class Ratekeeper(object):
 
   # Maintain loop rate by calling this at the end of each loop
   def keep_time(self):
-    self.monitor_time()
+    lagged = self.monitor_time()
     if self._remaining > 0:
       time.sleep(self._remaining)
+    return lagged
 
   # this only monitor the cumulative lag, but does not enforce a rate
   def monitor_time(self):
+    lagged = False
     remaining = self._next_frame_time - sec_since_boot()
     self._next_frame_time += self._interval
     if remaining < -self._print_delay_threshold:
-      print self._process_name, "lagging by", round(-remaining * 1000, 2), "ms"
+      print(self._process_name, "lagging by", round(-remaining * 1000, 2), "ms")
+      lagged = True
     self._frame += 1
     self._remaining = remaining
+    return lagged
