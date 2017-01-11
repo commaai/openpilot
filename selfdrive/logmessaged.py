@@ -6,7 +6,7 @@ import selfdrive.messaging as messaging
 
 def main(gctx):
   # setup logentries. we forward log messages to it
-  le_token = "bc65354a-b887-4ef4-8525-15dd51230e8c"
+  le_token = "e8549616-0798-4d7e-a2ca-2513ae81fa17"
   le_handler = LogentriesHandler(le_token, use_tls=False)
 
   le_level = 20 #logging.INFO

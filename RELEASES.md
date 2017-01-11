@@ -1,3 +1,9 @@
+Version 0.2.3  (2017-01-11)
+===========================
+  * Reduce space usage by 80%
+  * Add better logging
+  * Add Travis CI
+
 Version 0.2.2  (2017-01-10)
 ===========================
   * Board triggers started signal on CAN messages

@@ -18,6 +18,7 @@ from selfdrive.swaglog import cloudlog
 import selfdrive.messaging as messaging
 from selfdrive.thermal import read_thermal
 from selfdrive.registration import register
+from selfdrive.loggerd.uploader import Uploader
 
 import common.crash
 
@@ -131,7 +132,7 @@ def cleanup_all_processes(signal, frame):
 # ****************** run loop ******************
 
 def manager_init():
-  global gctx
+  global gctx, fake_uploader
 
   reg_res = register()
   if reg_res:
@@ -146,6 +147,8 @@ def manager_init():
 
   cloudlog.bind_global(dongle_id=dongle_id)
   common.crash.bind_user(dongle_id=dongle_id)
+
+  fake_uploader = Uploader(dongle_id, dongle_secret, ROOT)
 
   # set gctx
   gctx = {
@@ -162,7 +165,10 @@ def manager_thread():
   thermal_sock = messaging.pub_sock(context, service_list['thermal'].port)
   health_sock = messaging.sub_sock(context, service_list['health'].port)
 
-  cloudlog.info("manager start")
+  version = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "common", "version.h")).read().split('"')[1]
+
+  cloudlog.info("manager start %s" % version)
+  cloudlog.info(dict(os.environ))
 
   start_managed_process("logmessaged")
   start_managed_process("logcatd")
@@ -185,6 +191,8 @@ def manager_thread():
       start_managed_process(p)
 
   logger_dead = False
+
+  count = 0
 
   while 1:
     # get health of board, log this in "thermal"
@@ -234,6 +242,13 @@ def manager_thread():
     # check the status of all processes, did any of them die?
     for p in running:
       cloudlog.debug("   running %s %s" % (p, running[p]))
+
+    # report to server once per minute
+    if (count%60) == 0:
+      names, total_size = fake_uploader.get_data_stats()
+      cloudlog.info({"names": names, "total_size": total_size, "running": running.keys(), "count": count, "health": td.to_dict(), "thermal": msg.to_dict(), "version": version, "nonce": "THIS_STATUS_PACKET"})
+
+    count += 1
 
 
 # optional, build the c++ binaries and preimport the python for speed

@@ -9,10 +9,13 @@ import requests
 import traceback
 import threading
 
+from collections import Counter
 from selfdrive.swaglog import cloudlog
 from selfdrive.loggerd.config import get_dongle_id_and_secret, ROOT
 
 from common.api import api_get
+
+fake_upload = os.getenv("FAKEUPLOAD") is not None
 
 def raise_on_thread(t, exctype):
   for ctid, tobj in threading._active.items():
@@ -98,6 +101,14 @@ class Uploader(object):
 
         yield (name, key, fn)
 
+  def get_data_stats(self):
+    name_counts = Counter()
+    total_size = 0
+    for name, key, fn in self.gen_upload_files():
+      name_counts[name] += 1
+      total_size += os.stat(fn).st_size
+    return dict(name_counts), total_size
+
   def next_file_to_upload(self):
     # try to upload log files first
     for name, key, fn in self.gen_upload_files():
@@ -120,8 +131,15 @@ class Uploader(object):
       url = url_resp.text
       cloudlog.info({"upload_url", url})
 
-      with open(fn, "rb") as f:
-        self.last_resp = requests.put(url, data=f)
+      if fake_upload:
+        print "*** WARNING, THIS IS A FAKE UPLOAD TO %s ***" % url
+        class FakeResponse(object):
+          def __init__(self):
+            self.status_code = 200
+        self.last_resp = FakeResponse()
+      else:
+        with open(fn, "rb") as f:
+          self.last_resp = requests.put(url, data=f)
     except Exception as e:
       self.last_exc = (e, traceback.format_exc())
       raise
