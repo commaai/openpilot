@@ -6,6 +6,9 @@ import subprocess
 import multiprocessing
 import os
 
+from ctypes.util import find_library
+
+
 CLOCK_MONOTONIC_RAW = 4 # see <linux/time.h>
 CLOCK_BOOTTIME = 7
 
@@ -15,28 +18,30 @@ class timespec(ctypes.Structure):
     ('tv_nsec', ctypes.c_long),
   ]
 
+libc_name = find_library('c')
+if libc_name is None:
+  platform_name = platform.system()
+  if platform_name.startswith('linux'):
+    libc_name = 'libc.so.6'
+  if platform_name.startswith(('freebsd', 'netbsd')):
+    libc_name = 'libc.so'
+  elif platform_name.lower() == 'darwin':
+    libc_name = 'libc.dylib'
 
 try:
-  libc = ctypes.CDLL('libc.so', use_errno=True)
+  libc = ctypes.CDLL(libc_name, use_errno=True)
 except OSError:
-  try:
-    libc = ctypes.CDLL('libc.so.6', use_errno=True)
-  except OSError:
-    libc = None
+  libc = None
 
 if libc is not None:
   libc.clock_gettime.argtypes = [ctypes.c_int, ctypes.POINTER(timespec)]
 
 def clock_gettime(clk_id):
-  if platform.system().lower() == "darwin":
-    # TODO: fix this
-    return time.time()
-  else:
-    t = timespec()
-    if libc.clock_gettime(clk_id, ctypes.pointer(t)) != 0:
-      errno_ = ctypes.get_errno()
-      raise OSError(errno_, os.strerror(errno_))
-    return t.tv_sec + t.tv_nsec * 1e-9
+  t = timespec()
+  if libc.clock_gettime(clk_id, ctypes.pointer(t)) != 0:
+    errno_ = ctypes.get_errno()
+    raise OSError(errno_, os.strerror(errno_))
+  return t.tv_sec + t.tv_nsec * 1e-9
 
 def monotonic_time():
   return clock_gettime(CLOCK_MONOTONIC_RAW)
