@@ -16,7 +16,8 @@ DBCSignal = namedtuple(
 
 class dbc(object):
   def __init__(self, fn):
-    self.txt = open(fn).read().split("\n")
+    with open(fn) as f:
+      self.txt = f.read().split("\n")
     self._warned_addresses = set()
 
     # regexps from https://github.com/ebroecker/canmatrix/blob/master/canmatrix/importdbc.py
