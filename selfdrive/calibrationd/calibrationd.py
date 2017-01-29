@@ -1,6 +1,9 @@
 #!/usr/bin/env python
+from __future__ import print_function
+
 import os
 import numpy as np
+import tempfile
 import zmq
 
 from common.services import service_list
@@ -8,6 +11,7 @@ import selfdrive.messaging as messaging
 from selfdrive.config import ImageParams, VehicleParams
 from selfdrive.calibrationd.calibration import ViewCalibrator, CalibStatus
 
+CALIBRATION_TMP_DIR = "/sdcard"
 CALIBRATION_FILE = "/sdcard/calibration_param"
 
 def load_calibration(gctx):
@@ -32,28 +36,33 @@ def load_calibration(gctx):
 
   # load calibration data
   if os.path.isfile(CALIBRATION_FILE):
-    # if the calibration file exist, start from the last cal values
-    with open(CALIBRATION_FILE, "r") as cal_file:
-      data = [float(l.strip()) for l in cal_file.readlines()]
-      calib = ViewCalibrator((I.X, I.Y),
-                             big_box_size,
-                             vp_img,
-                             warp_matrix_start,
-                             vp_f=[data[2], data[3]],
-                             cal_cycle=data[0],
-                             cal_status=data[1])
+    try:
+      # If the calibration file exist, start from the last cal values
+      with open(CALIBRATION_FILE, "r") as cal_file:
+        data = [float(l.strip()) for l in cal_file.readlines()]
+        return ViewCalibrator(
+            (I.X, I.Y),
+            big_box_size,
+            vp_img,
+            warp_matrix_start,
+            vp_f=[data[2], data[3]],
+            cal_cycle=data[0],
+            cal_status=data[1])
+    except Exception as e:
+      print("Could not load calibration file: {}".format(e))
 
-      if calib.cal_status == CalibStatus.INCOMPLETE:
-        print "CALIBRATION IN PROGRESS", calib.cal_cycle
-  else:
-    print "NO CALIBRATION FILE"
-    calib = ViewCalibrator((I.X, I.Y),
-                           big_box_size,
-                           vp_img,
-                           warp_matrix_start,
-                           vp_f=vp_guess)
+  return ViewCalibrator(
+    (I.X, I.Y), big_box_size, vp_img, warp_matrix_start, vp_f=vp_guess)
 
-  return calib
+def store_calibration(calib):
+  # Tempfile needs to be on the same device as the calbration file.
+  with tempfile.NamedTemporaryFile(delete=False, dir=CALIBRATION_TMP_DIR) as cal_file:
+    print(calib.cal_cycle, file=cal_file)
+    print(calib.cal_status, file=cal_file)
+    print(calib.vp_f[0], file=cal_file)
+    print(calib.vp_f[1], file=cal_file)
+    cal_file_name = cal_file.name
+  os.rename(cal_file_name, CALIBRATION_FILE)
 
 def calibrationd_thread(gctx):
   context = zmq.Context()
@@ -69,7 +78,7 @@ def calibrationd_thread(gctx):
   v_ego = None
 
   calib = load_calibration(gctx)
-  last_cal_cycle = calib.cal_cycle
+  last_write_cycle = calib.cal_cycle
 
   while 1:
     # calibration at the end so it does not delay radar processing above
@@ -91,14 +100,10 @@ def calibrationd_thread(gctx):
     calib.calibration(p0, p1, st, v_ego, steer_angle, VP)
 
     # write a new calibration every 100 cal cycle
-    if calib.cal_cycle - last_cal_cycle >= 100:
-      print "writing cal", calib.cal_cycle
-      with open(CALIBRATION_FILE, "w") as cal_file:
-        cal_file.write(str(calib.cal_cycle)+'\n')
-        cal_file.write(str(calib.cal_status)+'\n')
-        cal_file.write(str(calib.vp_f[0])+'\n')
-        cal_file.write(str(calib.vp_f[1])+'\n')
-      last_cal_cycle = calib.cal_cycle
+    if calib.cal_cycle - last_write_cycle >= 100:
+      print("writing cal", calib.cal_cycle)
+      store_calibration(calib)
+      last_write_cycle = calib.cal_cycle
 
     warp_matrix = map(float, calib.warp_matrix.reshape(9).tolist())
     dat = messaging.new_message()

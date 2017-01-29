@@ -194,6 +194,10 @@ def manager_thread():
 
   count = 0
 
+  # set 5 second timeout on health socket
+  # 5x slower than expected
+  health_sock.RCVTIMEO = 5000
+
   while 1:
     # get health of board, log this in "thermal"
     td = messaging.recv_sock(health_sock, wait=True)
@@ -208,6 +212,8 @@ def manager_thread():
 
     # thermal message now also includes free space
     msg.thermal.freeSpace = avail
+    with open("/sys/class/power_supply/battery/capacity") as f:
+      msg.thermal.batteryPercent = int(f.read())
     thermal_sock.send(msg.to_bytes())
     print msg
 
@@ -228,7 +234,7 @@ def manager_thread():
     # start constellation of processes when the car starts
     if not os.getenv("STARTALL"):
       # with 2% left, we killall, otherwise the phone is bricked
-      if td.health.started and avail > 0.02:
+      if td is not None and td.health.started and avail > 0.02:
         for p in car_started_processes:
           if p == "loggerd" and logger_dead:
             kill_managed_process(p)
@@ -246,7 +252,14 @@ def manager_thread():
     # report to server once per minute
     if (count%60) == 0:
       names, total_size = fake_uploader.get_data_stats()
-      cloudlog.info({"names": names, "total_size": total_size, "running": running.keys(), "count": count, "health": td.to_dict(), "thermal": msg.to_dict(), "version": version, "nonce": "THIS_STATUS_PACKET"})
+      cloudlog.event("STATUS_PACKET",
+        names=names,
+        total_size=total_size,
+        running=running.keys(),
+        count=count,
+        health=(td.to_dict() if td else None),
+        thermal=msg.to_dict(),
+        version=version)
 
     count += 1
 
@@ -269,24 +282,6 @@ def manager_prepare():
         cloudlog.info("building %s failed, make clean" % (proc, ))
         subprocess.check_call(["make", "clean"], cwd=proc[0])
         subprocess.check_call(["make", "-j4"], cwd=proc[0])
-
-def manager_test():
-  global managed_processes
-  managed_processes = {}
-  managed_processes["test1"] = ("test", ["./test.py"])
-  managed_processes["test2"] = ("test", ["./test.py"])
-  managed_processes["test3"] = "selfdrive.test.test"
-  manager_prepare()
-  start_managed_process("test1")
-  start_managed_process("test2")
-  start_managed_process("test3")
-  print running
-  time.sleep(3)
-  kill_managed_process("test1")
-  kill_managed_process("test2")
-  kill_managed_process("test3")
-  print running
-  time.sleep(10)
 
 def wait_for_device():
   while 1:
@@ -319,20 +314,23 @@ def main():
     del managed_processes['loggerd']
     del managed_processes['logmessaged']
     del managed_processes['logcatd']
+  if os.getenv("NOCONTROL") is not None:
+    del managed_processes['controlsd']
+    del managed_processes['radard']
 
   manager_init()
+  manager_prepare()
+  
+  if os.getenv("PREPAREONLY") is not None:
+    sys.exit(0)
 
-  if len(sys.argv) > 1 and sys.argv[1] == "test":
-    manager_test()
-  else:
-    manager_prepare()
-    try:
-      manager_thread()
-    except Exception:
-      traceback.print_exc()
-      common.crash.capture_exception()
-    finally:
-      cleanup_all_processes(None, None)
+  try:
+    manager_thread()
+  except Exception:
+    traceback.print_exc()
+    common.crash.capture_exception()
+  finally:
+    cleanup_all_processes(None, None)
 
 if __name__ == "__main__":
   main()

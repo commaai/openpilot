@@ -8,6 +8,7 @@
 #endif
 
 #include "c++.capnp.h"
+#include "car.capnp.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,6 +19,7 @@ struct cereal_FrameData;
 struct cereal_GPSNMEAData;
 struct cereal_SensorEventData;
 struct cereal_SensorEventData_SensorVec;
+struct cereal_GpsLocationData;
 struct cereal_CanData;
 struct cereal_ThermalData;
 struct cereal_HealthData;
@@ -43,6 +45,7 @@ typedef struct {capn_ptr p;} cereal_FrameData_ptr;
 typedef struct {capn_ptr p;} cereal_GPSNMEAData_ptr;
 typedef struct {capn_ptr p;} cereal_SensorEventData_ptr;
 typedef struct {capn_ptr p;} cereal_SensorEventData_SensorVec_ptr;
+typedef struct {capn_ptr p;} cereal_GpsLocationData_ptr;
 typedef struct {capn_ptr p;} cereal_CanData_ptr;
 typedef struct {capn_ptr p;} cereal_ThermalData_ptr;
 typedef struct {capn_ptr p;} cereal_HealthData_ptr;
@@ -68,6 +71,7 @@ typedef struct {capn_ptr p;} cereal_FrameData_list;
 typedef struct {capn_ptr p;} cereal_GPSNMEAData_list;
 typedef struct {capn_ptr p;} cereal_SensorEventData_list;
 typedef struct {capn_ptr p;} cereal_SensorEventData_SensorVec_list;
+typedef struct {capn_ptr p;} cereal_GpsLocationData_list;
 typedef struct {capn_ptr p;} cereal_CanData_list;
 typedef struct {capn_ptr p;} cereal_ThermalData_list;
 typedef struct {capn_ptr p;} cereal_HealthData_list;
@@ -87,6 +91,13 @@ typedef struct {capn_ptr p;} cereal_EncodeIndex_list;
 typedef struct {capn_ptr p;} cereal_AndroidLogEntry_list;
 typedef struct {capn_ptr p;} cereal_LogRotate_list;
 typedef struct {capn_ptr p;} cereal_Event_list;
+
+enum cereal_SensorEventData_SensorSource {
+	cereal_SensorEventData_SensorSource_android = 0,
+	cereal_SensorEventData_SensorSource_iOS = 1,
+	cereal_SensorEventData_SensorSource_fiber = 2,
+	cereal_SensorEventData_SensorSource_velodyne = 3
+};
 
 enum cereal_EncodeIndex_Type {
 	cereal_EncodeIndex_Type_bigBoxLossless = 0,
@@ -153,6 +164,7 @@ struct cereal_SensorEventData {
 		cereal_SensorEventData_SensorVec_ptr orientation;
 		cereal_SensorEventData_SensorVec_ptr gyro;
 	};
+	enum cereal_SensorEventData_SensorSource source;
 };
 
 static const size_t cereal_SensorEventData_word_count = 3;
@@ -171,6 +183,23 @@ static const size_t cereal_SensorEventData_SensorVec_word_count = 1;
 static const size_t cereal_SensorEventData_SensorVec_pointer_count = 1;
 
 static const size_t cereal_SensorEventData_SensorVec_struct_bytes_count = 16;
+
+struct cereal_GpsLocationData {
+	uint16_t flags;
+	double latitude;
+	double longitude;
+	double altitude;
+	float speed;
+	float bearing;
+	float accuracy;
+	int64_t timestamp;
+};
+
+static const size_t cereal_GpsLocationData_word_count = 6;
+
+static const size_t cereal_GpsLocationData_pointer_count = 0;
+
+static const size_t cereal_GpsLocationData_struct_bytes_count = 48;
 
 struct cereal_CanData {
 	uint32_t address;
@@ -194,6 +223,7 @@ struct cereal_ThermalData {
 	uint16_t gpu;
 	uint32_t bat;
 	float freeSpace;
+	int16_t batteryPercent;
 };
 
 static const size_t cereal_ThermalData_word_count = 3;
@@ -477,7 +507,9 @@ enum cereal_Event_which {
 	cereal_Event_sendcan = 16,
 	cereal_Event_logMessage = 17,
 	cereal_Event_liveCalibration = 18,
-	cereal_Event_androidLogEntry = 19
+	cereal_Event_androidLogEntry = 19,
+	cereal_Event_gpsLocation = 20,
+	cereal_Event_carState = 21
 };
 
 struct cereal_Event {
@@ -504,6 +536,8 @@ struct cereal_Event {
 		capn_text logMessage;
 		cereal_LiveCalibrationData_ptr liveCalibration;
 		cereal_AndroidLogEntry_ptr androidLogEntry;
+		cereal_GpsLocationData_ptr gpsLocation;
+		cereal_CarState_ptr carState;
 	};
 };
 
@@ -518,6 +552,7 @@ cereal_FrameData_ptr cereal_new_FrameData(struct capn_segment*);
 cereal_GPSNMEAData_ptr cereal_new_GPSNMEAData(struct capn_segment*);
 cereal_SensorEventData_ptr cereal_new_SensorEventData(struct capn_segment*);
 cereal_SensorEventData_SensorVec_ptr cereal_new_SensorEventData_SensorVec(struct capn_segment*);
+cereal_GpsLocationData_ptr cereal_new_GpsLocationData(struct capn_segment*);
 cereal_CanData_ptr cereal_new_CanData(struct capn_segment*);
 cereal_ThermalData_ptr cereal_new_ThermalData(struct capn_segment*);
 cereal_HealthData_ptr cereal_new_HealthData(struct capn_segment*);
@@ -543,6 +578,7 @@ cereal_FrameData_list cereal_new_FrameData_list(struct capn_segment*, int len);
 cereal_GPSNMEAData_list cereal_new_GPSNMEAData_list(struct capn_segment*, int len);
 cereal_SensorEventData_list cereal_new_SensorEventData_list(struct capn_segment*, int len);
 cereal_SensorEventData_SensorVec_list cereal_new_SensorEventData_SensorVec_list(struct capn_segment*, int len);
+cereal_GpsLocationData_list cereal_new_GpsLocationData_list(struct capn_segment*, int len);
 cereal_CanData_list cereal_new_CanData_list(struct capn_segment*, int len);
 cereal_ThermalData_list cereal_new_ThermalData_list(struct capn_segment*, int len);
 cereal_HealthData_list cereal_new_HealthData_list(struct capn_segment*, int len);
@@ -568,6 +604,7 @@ void cereal_read_FrameData(struct cereal_FrameData*, cereal_FrameData_ptr);
 void cereal_read_GPSNMEAData(struct cereal_GPSNMEAData*, cereal_GPSNMEAData_ptr);
 void cereal_read_SensorEventData(struct cereal_SensorEventData*, cereal_SensorEventData_ptr);
 void cereal_read_SensorEventData_SensorVec(struct cereal_SensorEventData_SensorVec*, cereal_SensorEventData_SensorVec_ptr);
+void cereal_read_GpsLocationData(struct cereal_GpsLocationData*, cereal_GpsLocationData_ptr);
 void cereal_read_CanData(struct cereal_CanData*, cereal_CanData_ptr);
 void cereal_read_ThermalData(struct cereal_ThermalData*, cereal_ThermalData_ptr);
 void cereal_read_HealthData(struct cereal_HealthData*, cereal_HealthData_ptr);
@@ -593,6 +630,7 @@ void cereal_write_FrameData(const struct cereal_FrameData*, cereal_FrameData_ptr
 void cereal_write_GPSNMEAData(const struct cereal_GPSNMEAData*, cereal_GPSNMEAData_ptr);
 void cereal_write_SensorEventData(const struct cereal_SensorEventData*, cereal_SensorEventData_ptr);
 void cereal_write_SensorEventData_SensorVec(const struct cereal_SensorEventData_SensorVec*, cereal_SensorEventData_SensorVec_ptr);
+void cereal_write_GpsLocationData(const struct cereal_GpsLocationData*, cereal_GpsLocationData_ptr);
 void cereal_write_CanData(const struct cereal_CanData*, cereal_CanData_ptr);
 void cereal_write_ThermalData(const struct cereal_ThermalData*, cereal_ThermalData_ptr);
 void cereal_write_HealthData(const struct cereal_HealthData*, cereal_HealthData_ptr);
@@ -618,6 +656,7 @@ void cereal_get_FrameData(struct cereal_FrameData*, cereal_FrameData_list, int i
 void cereal_get_GPSNMEAData(struct cereal_GPSNMEAData*, cereal_GPSNMEAData_list, int i);
 void cereal_get_SensorEventData(struct cereal_SensorEventData*, cereal_SensorEventData_list, int i);
 void cereal_get_SensorEventData_SensorVec(struct cereal_SensorEventData_SensorVec*, cereal_SensorEventData_SensorVec_list, int i);
+void cereal_get_GpsLocationData(struct cereal_GpsLocationData*, cereal_GpsLocationData_list, int i);
 void cereal_get_CanData(struct cereal_CanData*, cereal_CanData_list, int i);
 void cereal_get_ThermalData(struct cereal_ThermalData*, cereal_ThermalData_list, int i);
 void cereal_get_HealthData(struct cereal_HealthData*, cereal_HealthData_list, int i);
@@ -643,6 +682,7 @@ void cereal_set_FrameData(const struct cereal_FrameData*, cereal_FrameData_list,
 void cereal_set_GPSNMEAData(const struct cereal_GPSNMEAData*, cereal_GPSNMEAData_list, int i);
 void cereal_set_SensorEventData(const struct cereal_SensorEventData*, cereal_SensorEventData_list, int i);
 void cereal_set_SensorEventData_SensorVec(const struct cereal_SensorEventData_SensorVec*, cereal_SensorEventData_SensorVec_list, int i);
+void cereal_set_GpsLocationData(const struct cereal_GpsLocationData*, cereal_GpsLocationData_list, int i);
 void cereal_set_CanData(const struct cereal_CanData*, cereal_CanData_list, int i);
 void cereal_set_ThermalData(const struct cereal_ThermalData*, cereal_ThermalData_list, int i);
 void cereal_set_HealthData(const struct cereal_HealthData*, cereal_HealthData_list, int i);

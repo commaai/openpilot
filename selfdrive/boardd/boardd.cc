@@ -20,6 +20,7 @@
 #include <capnp/serialize.h>
 #include "cereal/gen/cpp/log.capnp.h"
 
+#include "common/swaglog.h"
 #include "common/timing.h"
 
 int do_exit = 0;
@@ -29,17 +30,11 @@ libusb_device_handle *dev_handle;
 pthread_mutex_t usb_lock;
 
 bool spoofing_started = false;
+bool fake_send = false;
 
 // double the FIFO size
 #define RECV_SIZE (0x1000)
 #define TIMEOUT 0
-
-#define DEBUG_BOARDD
-#ifdef DEBUG_BOARDD
-#define DPRINTF(fmt, ...) printf("boardd(%lu): " fmt, time(NULL), ## __VA_ARGS__)
-#else
-#define DPRINTF(fmt, ...)
-#endif
 
 bool usb_connect() {
   int err;
@@ -56,11 +51,17 @@ bool usb_connect() {
   return true;
 }
 
+void usb_retry_connect() {
+  LOG("attempting to connect");
+  while (!usb_connect()) { usleep(100*1000); }
+  LOGW("connected to board");
+}
 
 void handle_usb_issue(int err, const char func[]) {
-  DPRINTF("usb error %d \"%s\" in %s\n", err, libusb_strerror((enum libusb_error)err), func);
+  LOGE("usb error %d \"%s\" in %s", err, libusb_strerror((enum libusb_error)err), func);
   if (err == -4) {
-    while (!usb_connect()) { DPRINTF("attempting to connect\n"); usleep(100*1000); }
+    LOGE("lost connection");
+    usb_retry_connect();
   }
   // TODO: check other errors, is simply retrying okay?
 }
@@ -77,7 +78,7 @@ void can_recv(void *s) {
   do {
     err = libusb_bulk_transfer(dev_handle, 0x81, (uint8_t*)data, RECV_SIZE, &recv, TIMEOUT);
     if (err != 0) { handle_usb_issue(err, __func__); }
-    if (err == -8) { DPRINTF("overflow got 0x%x\n", recv); };
+    if (err == -8) { LOGE("overflow got 0x%x", recv); };
 
     // timeout is okay to exit, recv still happened
     if (err == -7) { break; }
@@ -199,8 +200,6 @@ void can_send(void *s) {
     memcpy(&send[i*4+2], cmsg.getDat().begin(), cmsg.getDat().size());
   }
 
-  //DPRINTF("got send message: %d\n", msg_count);
-
   // release msg
   zmq_msg_close(&msg);
 
@@ -208,10 +207,12 @@ void can_send(void *s) {
   int sent;
   pthread_mutex_lock(&usb_lock);
 
-  do {
-    err = libusb_bulk_transfer(dev_handle, 3, (uint8_t*)send, msg_count*0x10, &sent, TIMEOUT);
-    if (err != 0 || msg_count*0x10 != sent) { handle_usb_issue(err, __func__); }
-  } while(err != 0);
+  if (!fake_send) {
+    do {
+      err = libusb_bulk_transfer(dev_handle, 3, (uint8_t*)send, msg_count*0x10, &sent, TIMEOUT);
+      if (err != 0 || msg_count*0x10 != sent) { handle_usb_issue(err, __func__); }
+    } while(err != 0);
+  }
 
   pthread_mutex_unlock(&usb_lock);
 
@@ -223,7 +224,7 @@ void can_send(void *s) {
 // **** threads ****
 
 void *can_send_thread(void *crap) {
-  DPRINTF("start send thread\n");
+  LOGD("start send thread");
 
   // sendcan = 8017
   void *context = zmq_ctx_new();
@@ -239,7 +240,7 @@ void *can_send_thread(void *crap) {
 }
 
 void *can_recv_thread(void *crap) {
-  DPRINTF("start recv thread\n");
+  LOGD("start recv thread");
 
   // can = 8006
   void *context = zmq_ctx_new();
@@ -256,7 +257,7 @@ void *can_recv_thread(void *crap) {
 }
 
 void *can_health_thread(void *crap) {
-  DPRINTF("start health thread\n");
+  LOGD("start health thread");
 
   // health = 8011
   void *context = zmq_ctx_new();
@@ -281,35 +282,31 @@ int set_realtime_priority(int level) {
 
 int main() {
   int err;
-  DPRINTF("starting boardd\n");
+  LOGW("starting boardd");
 
   // set process priority
   err = set_realtime_priority(4);
-  DPRINTF("setpriority returns %d\n", err);
+  LOG("setpriority returns %d", err);
 
   // check the environment
   if (getenv("STARTED")) {
     spoofing_started = true;
   }
 
-  // connect to the board
+  if (getenv("FAKESEND")) {
+    fake_send = true;
+  }
+
+  // init libusb
   err = libusb_init(&ctx);
   assert(err == 0);
   libusb_set_debug(ctx, 3);
 
-  // TODO: duplicate code from error handling
-  while (!usb_connect()) { DPRINTF("attempting to connect\n"); usleep(100*1000); }
+  // connect to the board
+  usb_retry_connect();
 
-  /*int config;
-  err = libusb_get_configuration(dev_handle, &config);
-  assert(err == 0);
-  DPRINTF("configuration is %d\n", config);*/
-
-  /*err = libusb_set_interface_alt_setting(dev_handle, 0, 0);
-  assert(err == 0);*/
 
   // create threads
-
   pthread_t can_health_thread_handle;
   err = pthread_create(&can_health_thread_handle, NULL,
                        can_health_thread, NULL);

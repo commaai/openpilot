@@ -1,4 +1,13 @@
 void can_init(CAN_TypeDef *CAN) {
+  // enable CAN busses
+  if (CAN == CAN1) {
+    // CAN1_EN
+    GPIOB->ODR |= (1 << 3);
+  } else if (CAN == CAN2) {
+    // CAN2_EN
+    GPIOB->ODR |= (1 << 4);
+  }
+
   CAN->MCR = CAN_MCR_TTCM | CAN_MCR_INRQ;
   while((CAN->MSR & CAN_MSR_INAK) != CAN_MSR_INAK);
   puts("CAN initting\n");

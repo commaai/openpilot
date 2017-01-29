@@ -30,6 +30,7 @@ FRAMEBUFFER_LIBS = -lutils -lgui -lEGL
 
 OBJS = ui.o \
        touch.o \
+       ../common/glutil.o \
        ../common/visionipc.o \
        ../common/framebuffer.o \
        $(PHONELIBS)/nanovg/nanovg.o \

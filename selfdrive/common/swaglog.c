@@ -19,6 +19,7 @@ typedef struct LogState {
   JsonNode *ctx_j;
   void *zctx;
   void *sock;
+  int print_level;
 } LogState;
 
 static LogState s = {
@@ -31,6 +32,19 @@ static void cloudlog_init() {
   s.zctx = zmq_ctx_new();
   s.sock = zmq_socket(s.zctx, ZMQ_PUSH);
   zmq_connect(s.sock, "ipc:///tmp/logmessage");
+
+  s.print_level = CLOUDLOG_WARNING;
+  const char* print_level = getenv("LOGPRINT");
+  if (print_level) {
+    if (strcmp(print_level, "debug") == 0) {
+      s.print_level = CLOUDLOG_DEBUG;
+    } else if (strcmp(print_level, "info") == 0) {
+      s.print_level = CLOUDLOG_INFO;
+    } else if (strcmp(print_level, "warning") == 0) {
+      s.print_level = CLOUDLOG_WARNING;
+    }
+  }
+
   s.inited = true;
 }
 
@@ -50,7 +64,7 @@ void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func
     return;
   }
 
-  if (levelnum >= CLOUDLOG_PRINT_LEVEL) {
+  if (levelnum >= s.print_level) {
     printf("%s: %s\n", filename, msg_buf);
   }
 

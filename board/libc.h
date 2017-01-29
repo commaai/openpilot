@@ -13,19 +13,7 @@
 #define __DIVFRAQ(_PCLK_, _BAUD_)                    (((__DIV((_PCLK_), (_BAUD_)) - (__DIVMANT((_PCLK_), (_BAUD_)) * 100)) * 16 + 50) / 100)
 #define __USART_BRR(_PCLK_, _BAUD_)              ((__DIVMANT((_PCLK_), (_BAUD_)) << 4)|(__DIVFRAQ((_PCLK_), (_BAUD_)) & 0x0F))
 
-#define GPIO_AF2_TIM3          ((uint8_t)0x02)  /* TIM3 Alternate Function mapping */
-#define GPIO_AF7_USART2        ((uint8_t)0x07)  /* USART2 Alternate Function mapping     */
-#define GPIO_AF7_USART3        ((uint8_t)0x07)  /* USART3 Alternate Function mapping     */
-#define GPIO_AF9_CAN1          ((uint8_t)0x09)  /* CAN1 Alternate Function mapping  */
-#define GPIO_AF10_OTG_FS        ((uint8_t)0xA)  /* OTG_FS Alternate Function mapping */
-#define GPIO_AF12_OTG_HS_FS       ((uint8_t)0xC)  /* OTG HS configured in FS */
-
-#ifdef OLD_BOARD
-  #define USART USART2
-#else
-  #define USART USART3
-#endif
-
+#include "stm32f2xx_hal_gpio_ex.h"
 
 // **** shitty libc ****
 
@@ -68,15 +56,20 @@ void clock_init() {
   RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
   RCC->AHB1ENR |= RCC_AHB1ENR_GPIOBEN;
   RCC->AHB1ENR |= RCC_AHB1ENR_GPIOCEN;
+
+  RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN;
+
   RCC->APB1ENR |= RCC_APB1ENR_USART2EN;
   RCC->APB1ENR |= RCC_APB1ENR_USART3EN;
   RCC->APB1ENR |= RCC_APB1ENR_CAN1EN;
   RCC->APB1ENR |= RCC_APB1ENR_CAN2EN;
   RCC->APB1ENR |= RCC_APB1ENR_DACEN;
   RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
+  //RCC->APB1ENR |= RCC_APB1ENR_TIM4EN;
   RCC->AHB2ENR |= RCC_AHB2ENR_OTGFSEN;
-  //RCC->APB2ENR |= RCC_APB2ENR_TIM1EN;
+  RCC->APB2ENR |= RCC_APB2ENR_TIM1EN;
   RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
+  RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
 
   // turn on alt USB
   RCC->AHB1ENR |= RCC_AHB1ENR_OTGHSEN;
@@ -101,7 +94,7 @@ void gpio_init() {
   // IGNITION on C13
 
   // set mode for LEDs and CAN
-  GPIOB->MODER = GPIO_MODER_MODER10_0 | GPIO_MODER_MODER11_0;
+  GPIOB->MODER = GPIO_MODER_MODER10_0 | GPIO_MODER_MODER11_0 | GPIO_MODER_MODER12_0;
   // CAN 2
   GPIOB->MODER |= GPIO_MODER_MODER5_1 | GPIO_MODER_MODER6_1;
   // CAN 1
@@ -125,6 +118,12 @@ void gpio_init() {
 
   GPIOA->PUPDR = GPIO_PUPDR_PUPDR2_0 | GPIO_PUPDR_PUPDR3_0;
 
+  // setup SPI
+  GPIOA->MODER |= GPIO_MODER_MODER4_1 | GPIO_MODER_MODER5_1 |
+                  GPIO_MODER_MODER6_1 | GPIO_MODER_MODER7_1;
+  GPIOA->AFR[0] |= GPIO_AF5_SPI1 << (4*4) | GPIO_AF5_SPI1 << (5*4) |
+                   GPIO_AF5_SPI1 << (6*4) | GPIO_AF5_SPI1 << (7*4);
+
   // set mode for CAN / USB_HS pins
   GPIOB->AFR[0] = GPIO_AF9_CAN1 << (5*4) | GPIO_AF9_CAN1 << (6*4);
   GPIOB->AFR[1] = GPIO_AF9_CAN1 << ((8-8)*4) | GPIO_AF9_CAN1 << ((9-8)*4);
@@ -135,9 +134,6 @@ void gpio_init() {
   }
 
   GPIOB->OSPEEDR = GPIO_OSPEEDER_OSPEEDR14 | GPIO_OSPEEDER_OSPEEDR15;
-
-  // enable CAN busses
-  GPIOB->ODR |= (1 << 3) | (1 << 4);
 
   // enable OTG out tied to ground
   GPIOA->ODR = 0;
@@ -223,4 +219,13 @@ void *memcpy(void *dest, const void *src, unsigned int n) {
   return dest;
 }
 
+void set_led(int led_num, int state) {
+  if (state) {
+    // turn on
+    GPIOB->ODR &= ~(1 << (10 + led_num));
+  } else {
+    // turn off
+    GPIOB->ODR |= (1 << (10 + led_num));
+  }
+}
 

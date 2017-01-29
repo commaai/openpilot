@@ -10,6 +10,7 @@
 #error "Version mismatch between generated code and library headers.  You must use the same version of the Cap'n Proto compiler and library."
 #endif
 
+#include "car.capnp.h"
 
 namespace capnp {
 namespace schemas {
@@ -20,6 +21,15 @@ CAPNP_DECLARE_SCHEMA(ea0245f695ae0a33);
 CAPNP_DECLARE_SCHEMA(9d291d7813ba4a88);
 CAPNP_DECLARE_SCHEMA(a2b29a69d44529a1);
 CAPNP_DECLARE_SCHEMA(a43429bd2bfc24fc);
+CAPNP_DECLARE_SCHEMA(e49b3ce8f7f48d0d);
+enum class SensorSource_e49b3ce8f7f48d0d: uint16_t {
+  ANDROID,
+  I_O_S,
+  FIBER,
+  VELODYNE,
+};
+CAPNP_DECLARE_ENUM(SensorSource, e49b3ce8f7f48d0d);
+CAPNP_DECLARE_SCHEMA(e946524859add50e);
 CAPNP_DECLARE_SCHEMA(8785009a964c7c59);
 CAPNP_DECLARE_SCHEMA(8d8231a40b7fe6e0);
 CAPNP_DECLARE_SCHEMA(cfa2b0c2c82af1e4);
@@ -111,6 +121,8 @@ struct SensorEventData {
     GYRO,
   };
   struct SensorVec;
+  typedef ::capnp::schemas::SensorSource_e49b3ce8f7f48d0d SensorSource;
+
 
   struct _capnpPrivate {
     CAPNP_DECLARE_STRUCT_HEADER(a2b29a69d44529a1, 3, 1)
@@ -129,6 +141,21 @@ struct SensorEventData::SensorVec {
 
   struct _capnpPrivate {
     CAPNP_DECLARE_STRUCT_HEADER(a43429bd2bfc24fc, 1, 1)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand = &schema->defaultBrand;
+    #endif  // !CAPNP_LITE
+  };
+};
+
+struct GpsLocationData {
+  GpsLocationData() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(e946524859add50e, 6, 0)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand = &schema->defaultBrand;
     #endif  // !CAPNP_LITE
@@ -438,6 +465,8 @@ struct Event {
     LOG_MESSAGE,
     LIVE_CALIBRATION,
     ANDROID_LOG_ENTRY,
+    GPS_LOCATION,
+    CAR_STATE,
   };
 
   struct _capnpPrivate {
@@ -796,6 +825,8 @@ public:
   inline bool hasGyro() const;
   inline  ::cereal::SensorEventData::SensorVec::Reader getGyro() const;
 
+  inline  ::cereal::SensorEventData::SensorSource getSource() const;
+
 private:
   ::capnp::_::StructReader _reader;
   template <typename, ::capnp::Kind>
@@ -868,6 +899,9 @@ public:
   inline  ::cereal::SensorEventData::SensorVec::Builder initGyro();
   inline void adoptGyro(::capnp::Orphan< ::cereal::SensorEventData::SensorVec>&& value);
   inline ::capnp::Orphan< ::cereal::SensorEventData::SensorVec> disownGyro();
+
+  inline  ::cereal::SensorEventData::SensorSource getSource();
+  inline void setSource( ::cereal::SensorEventData::SensorSource value);
 
 private:
   ::capnp::_::StructBuilder _builder;
@@ -969,6 +1003,117 @@ private:
 class SensorEventData::SensorVec::Pipeline {
 public:
   typedef SensorVec Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
+class GpsLocationData::Reader {
+public:
+  typedef GpsLocationData Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand);
+  }
+#endif  // !CAPNP_LITE
+
+  inline  ::uint16_t getFlags() const;
+
+  inline double getLatitude() const;
+
+  inline double getLongitude() const;
+
+  inline double getAltitude() const;
+
+  inline float getSpeed() const;
+
+  inline float getBearing() const;
+
+  inline float getAccuracy() const;
+
+  inline  ::int64_t getTimestamp() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class GpsLocationData::Builder {
+public:
+  typedef GpsLocationData Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline  ::uint16_t getFlags();
+  inline void setFlags( ::uint16_t value);
+
+  inline double getLatitude();
+  inline void setLatitude(double value);
+
+  inline double getLongitude();
+  inline void setLongitude(double value);
+
+  inline double getAltitude();
+  inline void setAltitude(double value);
+
+  inline float getSpeed();
+  inline void setSpeed(float value);
+
+  inline float getBearing();
+  inline void setBearing(float value);
+
+  inline float getAccuracy();
+  inline void setAccuracy(float value);
+
+  inline  ::int64_t getTimestamp();
+  inline void setTimestamp( ::int64_t value);
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class GpsLocationData::Pipeline {
+public:
+  typedef GpsLocationData Pipelines;
 
   inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
   inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
@@ -1111,6 +1256,8 @@ public:
 
   inline float getFreeSpace() const;
 
+  inline  ::int16_t getBatteryPercent() const;
+
 private:
   ::capnp::_::StructReader _reader;
   template <typename, ::capnp::Kind>
@@ -1162,6 +1309,9 @@ public:
 
   inline float getFreeSpace();
   inline void setFreeSpace(float value);
+
+  inline  ::int16_t getBatteryPercent();
+  inline void setBatteryPercent( ::int16_t value);
 
 private:
   ::capnp::_::StructBuilder _builder;
@@ -3127,6 +3277,14 @@ public:
   inline bool hasAndroidLogEntry() const;
   inline  ::cereal::AndroidLogEntry::Reader getAndroidLogEntry() const;
 
+  inline bool isGpsLocation() const;
+  inline bool hasGpsLocation() const;
+  inline  ::cereal::GpsLocationData::Reader getGpsLocation() const;
+
+  inline bool isCarState() const;
+  inline bool hasCarState() const;
+  inline  ::cereal::CarState::Reader getCarState() const;
+
 private:
   ::capnp::_::StructReader _reader;
   template <typename, ::capnp::Kind>
@@ -3318,6 +3476,22 @@ public:
   inline  ::cereal::AndroidLogEntry::Builder initAndroidLogEntry();
   inline void adoptAndroidLogEntry(::capnp::Orphan< ::cereal::AndroidLogEntry>&& value);
   inline ::capnp::Orphan< ::cereal::AndroidLogEntry> disownAndroidLogEntry();
+
+  inline bool isGpsLocation();
+  inline bool hasGpsLocation();
+  inline  ::cereal::GpsLocationData::Builder getGpsLocation();
+  inline void setGpsLocation( ::cereal::GpsLocationData::Reader value);
+  inline  ::cereal::GpsLocationData::Builder initGpsLocation();
+  inline void adoptGpsLocation(::capnp::Orphan< ::cereal::GpsLocationData>&& value);
+  inline ::capnp::Orphan< ::cereal::GpsLocationData> disownGpsLocation();
+
+  inline bool isCarState();
+  inline bool hasCarState();
+  inline  ::cereal::CarState::Builder getCarState();
+  inline void setCarState( ::cereal::CarState::Reader value);
+  inline  ::cereal::CarState::Builder initCarState();
+  inline void adoptCarState(::capnp::Orphan< ::cereal::CarState>&& value);
+  inline ::capnp::Orphan< ::cereal::CarState> disownCarState();
 
 private:
   ::capnp::_::StructBuilder _builder;
@@ -3894,6 +4068,20 @@ inline ::capnp::Orphan< ::cereal::SensorEventData::SensorVec> SensorEventData::B
       _builder.getPointerField(0 * ::capnp::POINTERS));
 }
 
+inline  ::cereal::SensorEventData::SensorSource SensorEventData::Reader::getSource() const {
+  return _reader.getDataField< ::cereal::SensorEventData::SensorSource>(
+      7 * ::capnp::ELEMENTS);
+}
+
+inline  ::cereal::SensorEventData::SensorSource SensorEventData::Builder::getSource() {
+  return _builder.getDataField< ::cereal::SensorEventData::SensorSource>(
+      7 * ::capnp::ELEMENTS);
+}
+inline void SensorEventData::Builder::setSource( ::cereal::SensorEventData::SensorSource value) {
+  _builder.setDataField< ::cereal::SensorEventData::SensorSource>(
+      7 * ::capnp::ELEMENTS, value);
+}
+
 inline bool SensorEventData::SensorVec::Reader::hasV() const {
   return !_reader.getPointerField(0 * ::capnp::POINTERS).isNull();
 }
@@ -3942,6 +4130,118 @@ inline  ::int8_t SensorEventData::SensorVec::Builder::getStatus() {
 inline void SensorEventData::SensorVec::Builder::setStatus( ::int8_t value) {
   _builder.setDataField< ::int8_t>(
       0 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint16_t GpsLocationData::Reader::getFlags() const {
+  return _reader.getDataField< ::uint16_t>(
+      0 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint16_t GpsLocationData::Builder::getFlags() {
+  return _builder.getDataField< ::uint16_t>(
+      0 * ::capnp::ELEMENTS);
+}
+inline void GpsLocationData::Builder::setFlags( ::uint16_t value) {
+  _builder.setDataField< ::uint16_t>(
+      0 * ::capnp::ELEMENTS, value);
+}
+
+inline double GpsLocationData::Reader::getLatitude() const {
+  return _reader.getDataField<double>(
+      1 * ::capnp::ELEMENTS);
+}
+
+inline double GpsLocationData::Builder::getLatitude() {
+  return _builder.getDataField<double>(
+      1 * ::capnp::ELEMENTS);
+}
+inline void GpsLocationData::Builder::setLatitude(double value) {
+  _builder.setDataField<double>(
+      1 * ::capnp::ELEMENTS, value);
+}
+
+inline double GpsLocationData::Reader::getLongitude() const {
+  return _reader.getDataField<double>(
+      2 * ::capnp::ELEMENTS);
+}
+
+inline double GpsLocationData::Builder::getLongitude() {
+  return _builder.getDataField<double>(
+      2 * ::capnp::ELEMENTS);
+}
+inline void GpsLocationData::Builder::setLongitude(double value) {
+  _builder.setDataField<double>(
+      2 * ::capnp::ELEMENTS, value);
+}
+
+inline double GpsLocationData::Reader::getAltitude() const {
+  return _reader.getDataField<double>(
+      3 * ::capnp::ELEMENTS);
+}
+
+inline double GpsLocationData::Builder::getAltitude() {
+  return _builder.getDataField<double>(
+      3 * ::capnp::ELEMENTS);
+}
+inline void GpsLocationData::Builder::setAltitude(double value) {
+  _builder.setDataField<double>(
+      3 * ::capnp::ELEMENTS, value);
+}
+
+inline float GpsLocationData::Reader::getSpeed() const {
+  return _reader.getDataField<float>(
+      1 * ::capnp::ELEMENTS);
+}
+
+inline float GpsLocationData::Builder::getSpeed() {
+  return _builder.getDataField<float>(
+      1 * ::capnp::ELEMENTS);
+}
+inline void GpsLocationData::Builder::setSpeed(float value) {
+  _builder.setDataField<float>(
+      1 * ::capnp::ELEMENTS, value);
+}
+
+inline float GpsLocationData::Reader::getBearing() const {
+  return _reader.getDataField<float>(
+      8 * ::capnp::ELEMENTS);
+}
+
+inline float GpsLocationData::Builder::getBearing() {
+  return _builder.getDataField<float>(
+      8 * ::capnp::ELEMENTS);
+}
+inline void GpsLocationData::Builder::setBearing(float value) {
+  _builder.setDataField<float>(
+      8 * ::capnp::ELEMENTS, value);
+}
+
+inline float GpsLocationData::Reader::getAccuracy() const {
+  return _reader.getDataField<float>(
+      9 * ::capnp::ELEMENTS);
+}
+
+inline float GpsLocationData::Builder::getAccuracy() {
+  return _builder.getDataField<float>(
+      9 * ::capnp::ELEMENTS);
+}
+inline void GpsLocationData::Builder::setAccuracy(float value) {
+  _builder.setDataField<float>(
+      9 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int64_t GpsLocationData::Reader::getTimestamp() const {
+  return _reader.getDataField< ::int64_t>(
+      5 * ::capnp::ELEMENTS);
+}
+
+inline  ::int64_t GpsLocationData::Builder::getTimestamp() {
+  return _builder.getDataField< ::int64_t>(
+      5 * ::capnp::ELEMENTS);
+}
+inline void GpsLocationData::Builder::setTimestamp( ::int64_t value) {
+  _builder.setDataField< ::int64_t>(
+      5 * ::capnp::ELEMENTS, value);
 }
 
 inline  ::uint32_t CanData::Reader::getAddress() const {
@@ -4128,6 +4428,20 @@ inline float ThermalData::Builder::getFreeSpace() {
 inline void ThermalData::Builder::setFreeSpace(float value) {
   _builder.setDataField<float>(
       4 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int16_t ThermalData::Reader::getBatteryPercent() const {
+  return _reader.getDataField< ::int16_t>(
+      10 * ::capnp::ELEMENTS);
+}
+
+inline  ::int16_t ThermalData::Builder::getBatteryPercent() {
+  return _builder.getDataField< ::int16_t>(
+      10 * ::capnp::ELEMENTS);
+}
+inline void ThermalData::Builder::setBatteryPercent( ::int16_t value) {
+  _builder.setDataField< ::int16_t>(
+      10 * ::capnp::ELEMENTS, value);
 }
 
 inline  ::uint32_t HealthData::Reader::getVoltage() const {
@@ -7281,6 +7595,110 @@ inline ::capnp::Orphan< ::cereal::AndroidLogEntry> Event::Builder::disownAndroid
   KJ_IREQUIRE(which() == Event::ANDROID_LOG_ENTRY,
               "Must check which() before get()ing a union member.");
   return ::capnp::_::PointerHelpers< ::cereal::AndroidLogEntry>::disown(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+
+inline bool Event::Reader::isGpsLocation() const {
+  return which() == Event::GPS_LOCATION;
+}
+inline bool Event::Builder::isGpsLocation() {
+  return which() == Event::GPS_LOCATION;
+}
+inline bool Event::Reader::hasGpsLocation() const {
+  if (which() != Event::GPS_LOCATION) return false;
+  return !_reader.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline bool Event::Builder::hasGpsLocation() {
+  if (which() != Event::GPS_LOCATION) return false;
+  return !_builder.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline  ::cereal::GpsLocationData::Reader Event::Reader::getGpsLocation() const {
+  KJ_IREQUIRE(which() == Event::GPS_LOCATION,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::cereal::GpsLocationData>::get(
+      _reader.getPointerField(0 * ::capnp::POINTERS));
+}
+inline  ::cereal::GpsLocationData::Builder Event::Builder::getGpsLocation() {
+  KJ_IREQUIRE(which() == Event::GPS_LOCATION,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::cereal::GpsLocationData>::get(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void Event::Builder::setGpsLocation( ::cereal::GpsLocationData::Reader value) {
+  _builder.setDataField<Event::Which>(
+      4 * ::capnp::ELEMENTS, Event::GPS_LOCATION);
+  ::capnp::_::PointerHelpers< ::cereal::GpsLocationData>::set(
+      _builder.getPointerField(0 * ::capnp::POINTERS), value);
+}
+inline  ::cereal::GpsLocationData::Builder Event::Builder::initGpsLocation() {
+  _builder.setDataField<Event::Which>(
+      4 * ::capnp::ELEMENTS, Event::GPS_LOCATION);
+  return ::capnp::_::PointerHelpers< ::cereal::GpsLocationData>::init(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void Event::Builder::adoptGpsLocation(
+    ::capnp::Orphan< ::cereal::GpsLocationData>&& value) {
+  _builder.setDataField<Event::Which>(
+      4 * ::capnp::ELEMENTS, Event::GPS_LOCATION);
+  ::capnp::_::PointerHelpers< ::cereal::GpsLocationData>::adopt(
+      _builder.getPointerField(0 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::cereal::GpsLocationData> Event::Builder::disownGpsLocation() {
+  KJ_IREQUIRE(which() == Event::GPS_LOCATION,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::cereal::GpsLocationData>::disown(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+
+inline bool Event::Reader::isCarState() const {
+  return which() == Event::CAR_STATE;
+}
+inline bool Event::Builder::isCarState() {
+  return which() == Event::CAR_STATE;
+}
+inline bool Event::Reader::hasCarState() const {
+  if (which() != Event::CAR_STATE) return false;
+  return !_reader.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline bool Event::Builder::hasCarState() {
+  if (which() != Event::CAR_STATE) return false;
+  return !_builder.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline  ::cereal::CarState::Reader Event::Reader::getCarState() const {
+  KJ_IREQUIRE(which() == Event::CAR_STATE,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::cereal::CarState>::get(
+      _reader.getPointerField(0 * ::capnp::POINTERS));
+}
+inline  ::cereal::CarState::Builder Event::Builder::getCarState() {
+  KJ_IREQUIRE(which() == Event::CAR_STATE,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::cereal::CarState>::get(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void Event::Builder::setCarState( ::cereal::CarState::Reader value) {
+  _builder.setDataField<Event::Which>(
+      4 * ::capnp::ELEMENTS, Event::CAR_STATE);
+  ::capnp::_::PointerHelpers< ::cereal::CarState>::set(
+      _builder.getPointerField(0 * ::capnp::POINTERS), value);
+}
+inline  ::cereal::CarState::Builder Event::Builder::initCarState() {
+  _builder.setDataField<Event::Which>(
+      4 * ::capnp::ELEMENTS, Event::CAR_STATE);
+  return ::capnp::_::PointerHelpers< ::cereal::CarState>::init(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void Event::Builder::adoptCarState(
+    ::capnp::Orphan< ::cereal::CarState>&& value) {
+  _builder.setDataField<Event::Which>(
+      4 * ::capnp::ELEMENTS, Event::CAR_STATE);
+  ::capnp::_::PointerHelpers< ::cereal::CarState>::adopt(
+      _builder.getPointerField(0 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::cereal::CarState> Event::Builder::disownCarState() {
+  KJ_IREQUIRE(which() == Event::CAR_STATE,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::cereal::CarState>::disown(
       _builder.getPointerField(0 * ::capnp::POINTERS));
 }
 

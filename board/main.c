@@ -3,6 +3,11 @@
 //#define USE_INTERNAL_OSC
 //#define OLD_BOARD
 //#define ENABLE_CURRENT_SENSOR
+//#define ENABLE_SPI
+
+// choose serial port for debugging
+//#define USART USART2
+#define USART USART3
 
 #define USB_VID 0xbbaa
 #define USB_PID 0xddcc
@@ -22,6 +27,7 @@ USB_OTG_GlobalTypeDef *USBx = USB_OTG_FS;
 #include "timer.h"
 #include "usb.h"
 #include "can.h"
+#include "spi.h"
 
 // debug safety check: is controls allowed?
 int controls_allowed = 0;
@@ -394,6 +400,48 @@ void ADC_IRQHandler(void) {
   puts("ADC_IRQ\n");
 }
 
+#ifdef ENABLE_SPI
+
+#define SPI_BUF_SIZE 128
+uint8_t spi_buf[SPI_BUF_SIZE];
+int spi_buf_count = 0;
+uint8_t spi_tx_buf[0x10];
+
+void DMA2_Stream3_IRQHandler(void) {
+  #ifdef DEBUG
+    puts("DMA2\n");
+  #endif
+  DMA2->LIFCR = DMA_LIFCR_CTCIF3;
+
+  pop(&can_rx_q, spi_tx_buf);
+  spi_tx_dma(spi_tx_buf, 0x10);
+}
+
+void SPI1_IRQHandler(void) {
+  // status is 0x43
+  if (SPI1->SR & SPI_SR_RXNE) {
+    uint8_t dat = SPI1->DR;
+    /*spi_buf[spi_buf_count] = dat;
+    if (spi_buf_count < SPI_BUF_SIZE-1) {
+      spi_buf_count += 1;
+    }*/
+  }
+
+  if (SPI1->SR & SPI_SR_TXE) {
+    // all i send is U U U no matter what
+    //SPI1->DR = 'U';
+  }
+
+  int stat = SPI1->SR;
+  if (stat & ((~SPI_SR_RXNE) & (~SPI_SR_TXE) & (~SPI_SR_BSY))) {
+    puts("SPI status: ");
+    puth(stat);
+    puts("\n");
+  }
+}
+
+#endif
+
 // ***************************** main code *****************************
 
 void __initialize_hardware_early() {
@@ -428,17 +476,20 @@ int main() {
   // init devices
   clock_init();
 
-  // test the USB choice before GPIO init
-  if (GPIOA->IDR & (1 << 12)) {
-    USBx = USB_OTG_HS;
-  }
-
   gpio_init();
   uart_init();
   usb_init();
   can_init(CAN1);
   can_init(CAN2);
   adc_init();
+
+#ifdef ENABLE_SPI
+  spi_init();
+
+  // set up DMA
+  memset(spi_tx_buf, 0, 0x10);
+  spi_tx_dma(spi_tx_buf, 0x10);
+#endif
 
   // timer for fan PWM
   #ifdef OLD_BOARD
@@ -475,13 +526,21 @@ int main() {
   NVIC_EnableIRQ(CAN2_TX_IRQn);
   NVIC_EnableIRQ(CAN2_RX0_IRQn);
   NVIC_EnableIRQ(CAN2_SCE_IRQn);
+
+#ifdef ENABLE_SPI
+  NVIC_EnableIRQ(DMA2_Stream3_IRQn);
+  NVIC_EnableIRQ(SPI1_IRQn);
+#endif
   __enable_irq();
 
 
   // LED should keep on blinking all the time
-  while (1) {
+  int cnt;
+  for (cnt=0;;cnt++) {
     can_live = pending_can_live;
-    pending_can_live = 0;
+
+    // reset this every 16th pass
+    if ((cnt&0xF) == 0) pending_can_live = 0;
 
     #ifdef DEBUG
       puts("** blink ");
@@ -503,6 +562,13 @@ int main() {
     delay(1000000);
     GPIOB->ODR &= ~(1 << 10);
     delay(1000000);
+
+    #ifdef ENABLE_SPI
+      if (spi_buf_count > 0) {
+        hexdump(spi_buf, spi_buf_count);
+        spi_buf_count = 0;
+      }
+    #endif
 
     // started logic
     int started_signal = (GPIOC->IDR & (1 << 13)) != 0;

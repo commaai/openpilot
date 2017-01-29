@@ -83,6 +83,7 @@ void sensor_loop() {
 
       const sensors_event_t& data = buffer[i];
 
+      sensorEvents[i].setSource(cereal::SensorEventData::SensorSource::ANDROID);
       sensorEvents[i].setVersion(data.version);
       sensorEvents[i].setSensor(data.sensor);
       sensorEvents[i].setType(data.type);

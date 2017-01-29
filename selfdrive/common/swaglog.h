@@ -7,12 +7,18 @@
 #define CLOUDLOG_ERROR 40
 #define CLOUDLOG_CRITICAL 50
 
-#define CLOUDLOG_PRINT_LEVEL CLOUDLOG_WARNING
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func, const char* srctime, 
                 const char* fmt, ...) /*__attribute__ ((format (printf, 6, 7)))*/;
 
 void cloudlog_bind(const char* k, const char* v);
+
+#ifdef __cplusplus
+}
+#endif
 
 #define cloudlog(lvl, fmt, ...) cloudlog_e(lvl, __FILE__, __LINE__, \
                                            __func__, __DATE__ " " __TIME__, \
