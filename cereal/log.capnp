@@ -1,6 +1,8 @@
 using Cxx = import "c++.capnp";
 $Cxx.namespace("cereal");
 
+using Car = import "car.capnp";
+
 @0xf3b1f17e25a4285b;
 
 const logVersion :Int32 = 1;
@@ -39,11 +41,47 @@ struct SensorEventData {
     orientation @6 :SensorVec;
     gyro @7 :SensorVec;
   }
+  source @8 :SensorSource;
 
   struct SensorVec {
     v @0 :List(Float32);
     status @1 :Int8;
   }
+
+  enum SensorSource {
+    android @0;
+    iOS @1;
+    fiber @2;
+    velodyne @3;  # Velodyne IMU
+  }
+}
+
+# android struct GpsLocation
+struct GpsLocationData {
+  # Contains GpsLocationFlags bits.
+  flags @0 :UInt16;
+
+  # Represents latitude in degrees.
+  latitude @1 :Float64;
+
+  # Represents longitude in degrees.
+  longitude @2 :Float64;
+
+  # Represents altitude in meters above the WGS 84 reference ellipsoid.
+  altitude @3 :Float64;
+
+  # Represents speed in meters per second.
+  speed @4 :Float32;
+
+  # Represents heading in degrees.
+  bearing @5 :Float32;
+
+  # Represents expected accuracy in meters.
+  accuracy @6 :Float32;
+
+  # Timestamp for the location fix.
+  # Milliseconds since January 1, 1970.
+  timestamp @7 :Int64;
 }
 
 struct CanData {
@@ -64,6 +102,7 @@ struct ThermalData {
 
   # not thermal
   freeSpace @7 :Float32;
+  batteryPercent @8 :Int16;
 }
 
 struct HealthData {
@@ -272,5 +311,7 @@ struct Event {
     logMessage @18 :Text;
     liveCalibration @19 :LiveCalibrationData;
     androidLogEntry @20 :AndroidLogEntry;
+    gpsLocation @21 :GpsLocationData;
+    carState @22 :Car.CarState;
   }
 }

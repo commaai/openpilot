@@ -10,15 +10,9 @@ The openpilot codebase has been written to be concise and enable rapid prototypi
 Hardware
 ------
 
-Right now openpilot supports the [neo research platform](http://github.com/commaai/neo) for vehicle control. We'd like to support [Open Source Car Control](https://github.com/PolySync/OSCC) as well.
+Right now openpilot supports the [neo research platform](http://github.com/commaai/neo) for vehicle control. We'd like to support other platforms as well.
 
-To install it on the NEO:
-
-```bash
-# Requires working adb in PATH
-cd installation
-./install.sh
-```
+Install openpilot on a neo device by entering ``https://openpilot.comma.ai`` during NEOS setup.
 
 Supported Cars
 ------
@@ -36,7 +30,6 @@ Directory structure
 - cereal        -- The messaging spec used for all logs on the phone
 - common        -- Library like functionality we've developed here
 - dbcs          -- Files showing how to interpret data from cars
-- installation  -- Installation on the neo platform
 - phonelibs     -- Libraries used on the phone
 - selfdrive     -- Code needed to drive the car
   - assets        -- Fonts for ui

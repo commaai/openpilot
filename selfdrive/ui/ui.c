@@ -20,6 +20,7 @@
 #include "common/timing.h"
 #include "common/util.h"
 #include "common/mat.h"
+#include "common/glutil.h"
 
 #include "common/framebuffer.h"
 #include "common/visionipc.h"
@@ -250,70 +251,6 @@ static const char line_fragment_shader[] =
   "  gl_FragColor = vColor;\n"
   "}\n";
 
-static GLuint load_shader(GLenum shaderType, const char *src) {
-  GLint status = 0, len = 0;
-  GLuint shader;
-
-  if (!(shader = glCreateShader(shaderType)))
-    return 0;
-
-  glShaderSource(shader, 1, &src, NULL);
-  glCompileShader(shader);
-  glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
-
-  if (status)
-    return shader;
-
-  glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &len);
-  if (len) {
-    char *msg = malloc(len);
-    if (msg) {
-      glGetShaderInfoLog(shader, len, NULL, msg);
-      msg[len-1] = 0;
-      fprintf(stderr, "error compiling shader:\n%s\n", msg);
-      free(msg);
-    }
-  }
-  glDeleteShader(shader);
-  return 0;
-}
-
-static GLuint load_program(const char *vert_src, const char *frag_src) {
-  GLuint vert, frag, prog;
-  GLint status = 0, len = 0;
-
-  if (!(vert = load_shader(GL_VERTEX_SHADER, vert_src)))
-    return 0;
-  if (!(frag = load_shader(GL_FRAGMENT_SHADER, frag_src)))
-    goto fail_frag;
-  if (!(prog = glCreateProgram()))
-    goto fail_prog;
-
-  glAttachShader(prog, vert);
-  glAttachShader(prog, frag);
-  glLinkProgram(prog);
-
-  glGetProgramiv(prog, GL_LINK_STATUS, &status);
-  if (status)
-    return prog;
-
-  glGetProgramiv(prog, GL_INFO_LOG_LENGTH, &len);
-  if (len) {
-    char *buf = (char*) malloc(len);
-    if (buf) {
-      glGetProgramInfoLog(prog, len, NULL, buf);
-      buf[len-1] = 0;
-      fprintf(stderr, "error linking program:\n%s\n", buf);
-      free(buf);
-    }
-  }
-  glDeleteProgram(prog);
-fail_prog:
-  glDeleteShader(frag);
-fail_frag:
-  glDeleteShader(vert);
-  return 0;
-}
 
 static const mat4 device_transform = {{
   1.0,  0.0, 0.0, 0.0,
@@ -760,9 +697,9 @@ static void ui_draw_vision(UIState *s) {
   draw_frame(s);
 
   if (!scene->frontview) {
-    draw_rgb_box(s, scene->big_box_x, s->rgb_height-scene->big_box_height-scene->big_box_y,
+    /*draw_rgb_box(s, scene->big_box_x, s->rgb_height-scene->big_box_height-scene->big_box_y,
                     scene->big_box_width, scene->big_box_height,
-                    0xFF0000FF);
+                    0xFF0000FF);*/
 
     ui_draw_transformed_box(s, 0xFF00FF00);
 
@@ -843,7 +780,7 @@ static void ui_draw_vision(UIState *s) {
       if (strlen(scene->alert_text2) > 0) {
         nvgFillColor(s->vg, nvgRGBA(255,255,255,255));
         nvgFontSize(s->vg, 100.0f);
-        nvgText(s->vg, 100+1700/2, 200+500, scene->alert_text2, NULL);
+        nvgText(s->vg, 100+1700/2, 200+550, scene->alert_text2, NULL);
       }
     }
 
@@ -1271,10 +1208,12 @@ static void ui_update(UIState *s) {
 
     s->last_base_update = ts;
 
-    if (s->awake_timeout > 0) {
-      s->awake_timeout--;
-    } else {
-      set_awake(s, false);
+    if (!activity_running()) {
+      if (s->awake_timeout > 0) {
+        s->awake_timeout--;
+      } else {
+        set_awake(s, false);
+      }
     }
   }
 

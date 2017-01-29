@@ -137,6 +137,7 @@ void cereal_read_SensorEventData(struct cereal_SensorEventData *s, cereal_Sensor
 	default:
 		break;
 	}
+	s->source = (enum cereal_SensorEventData_SensorSource)(int) capn_read16(p.p, 14);
 }
 void cereal_write_SensorEventData(const struct cereal_SensorEventData *s, cereal_SensorEventData_ptr p) {
 	capn_resolve(&p.p);
@@ -155,6 +156,7 @@ void cereal_write_SensorEventData(const struct cereal_SensorEventData *s, cereal
 	default:
 		break;
 	}
+	capn_write16(p.p, 14, (uint16_t) (s->source));
 }
 void cereal_get_SensorEventData(struct cereal_SensorEventData *s, cereal_SensorEventData_list l, int i) {
 	cereal_SensorEventData_ptr p;
@@ -196,6 +198,49 @@ void cereal_set_SensorEventData_SensorVec(const struct cereal_SensorEventData_Se
 	cereal_SensorEventData_SensorVec_ptr p;
 	p.p = capn_getp(l.p, i, 0);
 	cereal_write_SensorEventData_SensorVec(s, p);
+}
+
+cereal_GpsLocationData_ptr cereal_new_GpsLocationData(struct capn_segment *s) {
+	cereal_GpsLocationData_ptr p;
+	p.p = capn_new_struct(s, 48, 0);
+	return p;
+}
+cereal_GpsLocationData_list cereal_new_GpsLocationData_list(struct capn_segment *s, int len) {
+	cereal_GpsLocationData_list p;
+	p.p = capn_new_list(s, len, 48, 0);
+	return p;
+}
+void cereal_read_GpsLocationData(struct cereal_GpsLocationData *s, cereal_GpsLocationData_ptr p) {
+	capn_resolve(&p.p);
+	s->flags = capn_read16(p.p, 0);
+	s->latitude = capn_to_f64(capn_read64(p.p, 8));
+	s->longitude = capn_to_f64(capn_read64(p.p, 16));
+	s->altitude = capn_to_f64(capn_read64(p.p, 24));
+	s->speed = capn_to_f32(capn_read32(p.p, 4));
+	s->bearing = capn_to_f32(capn_read32(p.p, 32));
+	s->accuracy = capn_to_f32(capn_read32(p.p, 36));
+	s->timestamp = (int64_t) ((int64_t)(capn_read64(p.p, 40)));
+}
+void cereal_write_GpsLocationData(const struct cereal_GpsLocationData *s, cereal_GpsLocationData_ptr p) {
+	capn_resolve(&p.p);
+	capn_write16(p.p, 0, s->flags);
+	capn_write64(p.p, 8, capn_from_f64(s->latitude));
+	capn_write64(p.p, 16, capn_from_f64(s->longitude));
+	capn_write64(p.p, 24, capn_from_f64(s->altitude));
+	capn_write32(p.p, 4, capn_from_f32(s->speed));
+	capn_write32(p.p, 32, capn_from_f32(s->bearing));
+	capn_write32(p.p, 36, capn_from_f32(s->accuracy));
+	capn_write64(p.p, 40, (uint64_t) (s->timestamp));
+}
+void cereal_get_GpsLocationData(struct cereal_GpsLocationData *s, cereal_GpsLocationData_list l, int i) {
+	cereal_GpsLocationData_ptr p;
+	p.p = capn_getp(l.p, i, 0);
+	cereal_read_GpsLocationData(s, p);
+}
+void cereal_set_GpsLocationData(const struct cereal_GpsLocationData *s, cereal_GpsLocationData_list l, int i) {
+	cereal_GpsLocationData_ptr p;
+	p.p = capn_getp(l.p, i, 0);
+	cereal_write_GpsLocationData(s, p);
 }
 
 cereal_CanData_ptr cereal_new_CanData(struct capn_segment *s) {
@@ -253,6 +298,7 @@ void cereal_read_ThermalData(struct cereal_ThermalData *s, cereal_ThermalData_pt
 	s->gpu = capn_read16(p.p, 10);
 	s->bat = capn_read32(p.p, 12);
 	s->freeSpace = capn_to_f32(capn_read32(p.p, 16));
+	s->batteryPercent = (int16_t) ((int16_t)capn_read16(p.p, 20));
 }
 void cereal_write_ThermalData(const struct cereal_ThermalData *s, cereal_ThermalData_ptr p) {
 	capn_resolve(&p.p);
@@ -264,6 +310,7 @@ void cereal_write_ThermalData(const struct cereal_ThermalData *s, cereal_Thermal
 	capn_write16(p.p, 10, s->gpu);
 	capn_write32(p.p, 12, s->bat);
 	capn_write32(p.p, 16, capn_from_f32(s->freeSpace));
+	capn_write16(p.p, 20, (uint16_t) (s->batteryPercent));
 }
 void cereal_get_ThermalData(struct cereal_ThermalData *s, cereal_ThermalData_list l, int i) {
 	cereal_ThermalData_ptr p;
@@ -969,7 +1016,9 @@ void cereal_read_Event(struct cereal_Event *s, cereal_Event_ptr p) {
 	case cereal_Event_sendcan:
 	case cereal_Event_liveCalibration:
 	case cereal_Event_androidLogEntry:
-		s->androidLogEntry.p = capn_getp(p.p, 0, 0);
+	case cereal_Event_gpsLocation:
+	case cereal_Event_carState:
+		s->carState.p = capn_getp(p.p, 0, 0);
 		break;
 	default:
 		break;
@@ -1002,7 +1051,9 @@ void cereal_write_Event(const struct cereal_Event *s, cereal_Event_ptr p) {
 	case cereal_Event_sendcan:
 	case cereal_Event_liveCalibration:
 	case cereal_Event_androidLogEntry:
-		capn_setp(p.p, 0, s->androidLogEntry.p);
+	case cereal_Event_gpsLocation:
+	case cereal_Event_carState:
+		capn_setp(p.p, 0, s->carState.p);
 		break;
 	default:
 		break;

@@ -1,15 +1,50 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include <stdbool.h>
+#include <assert.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <assert.h>
+#include <dirent.h>
 #include <sys/poll.h>
 #include <linux/input.h>
 
 #include "touch.h"
 
+static int find_dev() {
+  int err;
+
+  int ret = -1;
+
+  DIR *dir = opendir("/dev/input");
+  assert(dir);
+  struct dirent* de = NULL;
+  while ((de = readdir(dir))) {
+    if (strncmp(de->d_name, "event", 5)) continue;
+
+    int fd = openat(dirfd(dir), de->d_name, O_RDONLY);
+    assert(fd >= 0);
+
+    char name[128] = {0};
+    err = ioctl(fd, EVIOCGNAME(sizeof(name) - 1), &name);
+    assert(err >= 0);
+
+    unsigned long ev_bits[8] = {0};
+    err = ioctl(fd, EVIOCGBIT(0, sizeof(ev_bits)), ev_bits);
+    assert(err >= 0);
+
+    if (strncmp(name, "synaptics", 9) == 0 && ev_bits[0] == 0xb) {
+      ret = fd;
+      break;
+    }
+    close(fd);
+  }
+  closedir(dir);
+
+  return ret;
+}
+
 void touch_init(TouchState *s) {
-  // synaptics touch screen on oneplus 3
-  s->fd = open("/dev/input/event4", O_RDONLY);
+  s->fd = find_dev();
   assert(s->fd >= 0);
 }
 

@@ -196,7 +196,7 @@ def radard_thread(gctx=None):
 
     # *** extract the lead car ***
     lead_clusters = [c for c in clusters
-                     if c.is_potential_lead(v_ego, enabled)]
+                     if c.is_potential_lead(v_ego)]
     lead_clusters.sort(key=lambda x: x.dRel)
     lead_len = len(lead_clusters)
 

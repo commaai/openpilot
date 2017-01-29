@@ -38,6 +38,7 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
   # *** log ***
   context = zmq.Context()
   live100 = messaging.pub_sock(context, service_list['live100'].port)
+  carstate = messaging.pub_sock(context, service_list['carState'].port)
 
   thermal = messaging.sub_sock(context, service_list['thermal'].port)
   live20 = messaging.sub_sock(context, service_list['live20'].port)
@@ -87,6 +88,12 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
 
     # read CAN
     CS = CI.update()
+
+    # broadcast carState
+    cs_send = messaging.new_message()
+    cs_send.init('carState')
+    cs_send.carState = CS    # copy?
+    carstate.send(cs_send.to_bytes())
 
     prof.checkpoint("CarInterface")
 

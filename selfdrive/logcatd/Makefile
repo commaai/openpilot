@@ -17,17 +17,15 @@ ZMQ_LIBS = -L$(PHONELIBS)/zmq/aarch64/lib \
            -l:libczmq.a -l:libzmq.a \
            -lgnustl_shared
 
-CEREAL_FLAGS = -I$(PHONELIBS)/capnp-cpp/include
-CEREAL_LIBS = -L$(PHONELIBS)/capnp-cpp/aarch64/lib/ \
-              -l:libcapnp.a -l:libkj.a
-CEREAL_OBJS = ../../cereal/gen/c/log.capnp.o
+.PHONY: all
+all: logcatd
+
+-include ../common/cereal.mk
 
 OBJS = logcatd.o \
-       log.capnp.o
+       $(CEREAL_OBJS)
 
 DEPS := $(OBJS:.o=.d)
-
-all: logcatd
 
 logcatd: $(OBJS)
 	@echo "[ LINK ] $@"
@@ -40,15 +38,10 @@ logcatd: $(OBJS)
 	@echo "[ CXX ] $@"
 	$(CXX) $(CXXFLAGS) \
            -I$(PHONELIBS)/android_system_core/include \
-           $(CEREAL_FLAGS) \
+           $(CEREAL_CFLAGS) \
            $(ZMQ_FLAGS) \
            -I../ \
            -I../../ \
-           -c -o '$@' '$<'
-
-log.capnp.o: ../../cereal/gen/cpp/log.capnp.c++
-	@echo "[ CXX ] $@"
-	$(CXX) $(CXXFLAGS) $(CEREAL_FLAGS) \
            -c -o '$@' '$<'
 
 .PHONY: clean

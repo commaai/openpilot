@@ -1,3 +1,9 @@
+Version 0.2.4  (2017-01-27)
+===========================
+  * OnePlus 3T support
+  * Enable installation as NEOS app
+  * Various minor bugfixes
+
 Version 0.2.3  (2017-01-11)
 ===========================
   * Reduce space usage by 80%
