@@ -18,7 +18,6 @@ from selfdrive.swaglog import cloudlog
 import selfdrive.messaging as messaging
 from selfdrive.thermal import read_thermal
 from selfdrive.registration import register
-from selfdrive.loggerd.uploader import Uploader
 
 import common.crash
 
@@ -132,7 +131,7 @@ def cleanup_all_processes(signal, frame):
 # ****************** run loop ******************
 
 def manager_init():
-  global gctx, fake_uploader
+  global gctx
 
   reg_res = register()
   if reg_res:
@@ -147,8 +146,6 @@ def manager_init():
 
   cloudlog.bind_global(dongle_id=dongle_id)
   common.crash.bind_user(dongle_id=dongle_id)
-
-  fake_uploader = Uploader(dongle_id, dongle_secret, ROOT)
 
   # set gctx
   gctx = {
@@ -251,10 +248,7 @@ def manager_thread():
 
     # report to server once per minute
     if (count%60) == 0:
-      names, total_size = fake_uploader.get_data_stats()
       cloudlog.event("STATUS_PACKET",
-        names=names,
-        total_size=total_size,
         running=running.keys(),
         count=count,
         health=(td.to_dict() if td else None),

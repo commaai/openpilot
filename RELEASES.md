@@ -1,3 +1,7 @@
+Version 0.2.5  (2017-01-30)
+===========================
+  * Fix race condition in manager
+
 Version 0.2.4  (2017-01-27)
 ===========================
   * OnePlus 3T support
