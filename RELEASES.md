@@ -1,3 +1,7 @@
+Version 0.2.6  (2017-01-31)
+===========================
+  * Fix bug in visiond model execution
+
 Version 0.2.5  (2017-01-30)
 ===========================
   * Fix race condition in manager
