@@ -185,7 +185,7 @@ struct ThermalData {
   class Pipeline;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(8d8231a40b7fe6e0, 3, 0)
+    CAPNP_DECLARE_STRUCT_HEADER(8d8231a40b7fe6e0, 3, 1)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand = &schema->defaultBrand;
     #endif  // !CAPNP_LITE
@@ -467,6 +467,7 @@ struct Event {
     ANDROID_LOG_ENTRY,
     GPS_LOCATION,
     CAR_STATE,
+    CAR_CONTROL,
   };
 
   struct _capnpPrivate {
@@ -1258,6 +1259,9 @@ public:
 
   inline  ::int16_t getBatteryPercent() const;
 
+  inline bool hasBatteryStatus() const;
+  inline  ::capnp::Text::Reader getBatteryStatus() const;
+
 private:
   ::capnp::_::StructReader _reader;
   template <typename, ::capnp::Kind>
@@ -1312,6 +1316,13 @@ public:
 
   inline  ::int16_t getBatteryPercent();
   inline void setBatteryPercent( ::int16_t value);
+
+  inline bool hasBatteryStatus();
+  inline  ::capnp::Text::Builder getBatteryStatus();
+  inline void setBatteryStatus( ::capnp::Text::Reader value);
+  inline  ::capnp::Text::Builder initBatteryStatus(unsigned int size);
+  inline void adoptBatteryStatus(::capnp::Orphan< ::capnp::Text>&& value);
+  inline ::capnp::Orphan< ::capnp::Text> disownBatteryStatus();
 
 private:
   ::capnp::_::StructBuilder _builder;
@@ -3285,6 +3296,10 @@ public:
   inline bool hasCarState() const;
   inline  ::cereal::CarState::Reader getCarState() const;
 
+  inline bool isCarControl() const;
+  inline bool hasCarControl() const;
+  inline  ::cereal::CarControl::Reader getCarControl() const;
+
 private:
   ::capnp::_::StructReader _reader;
   template <typename, ::capnp::Kind>
@@ -3492,6 +3507,14 @@ public:
   inline  ::cereal::CarState::Builder initCarState();
   inline void adoptCarState(::capnp::Orphan< ::cereal::CarState>&& value);
   inline ::capnp::Orphan< ::cereal::CarState> disownCarState();
+
+  inline bool isCarControl();
+  inline bool hasCarControl();
+  inline  ::cereal::CarControl::Builder getCarControl();
+  inline void setCarControl( ::cereal::CarControl::Reader value);
+  inline  ::cereal::CarControl::Builder initCarControl();
+  inline void adoptCarControl(::capnp::Orphan< ::cereal::CarControl>&& value);
+  inline ::capnp::Orphan< ::cereal::CarControl> disownCarControl();
 
 private:
   ::capnp::_::StructBuilder _builder;
@@ -4442,6 +4465,38 @@ inline  ::int16_t ThermalData::Builder::getBatteryPercent() {
 inline void ThermalData::Builder::setBatteryPercent( ::int16_t value) {
   _builder.setDataField< ::int16_t>(
       10 * ::capnp::ELEMENTS, value);
+}
+
+inline bool ThermalData::Reader::hasBatteryStatus() const {
+  return !_reader.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline bool ThermalData::Builder::hasBatteryStatus() {
+  return !_builder.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::Text::Reader ThermalData::Reader::getBatteryStatus() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _reader.getPointerField(0 * ::capnp::POINTERS));
+}
+inline  ::capnp::Text::Builder ThermalData::Builder::getBatteryStatus() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void ThermalData::Builder::setBatteryStatus( ::capnp::Text::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::set(
+      _builder.getPointerField(0 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::Text::Builder ThermalData::Builder::initBatteryStatus(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(
+      _builder.getPointerField(0 * ::capnp::POINTERS), size);
+}
+inline void ThermalData::Builder::adoptBatteryStatus(
+    ::capnp::Orphan< ::capnp::Text>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(
+      _builder.getPointerField(0 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::Text> ThermalData::Builder::disownBatteryStatus() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
 }
 
 inline  ::uint32_t HealthData::Reader::getVoltage() const {
@@ -7699,6 +7754,58 @@ inline ::capnp::Orphan< ::cereal::CarState> Event::Builder::disownCarState() {
   KJ_IREQUIRE(which() == Event::CAR_STATE,
               "Must check which() before get()ing a union member.");
   return ::capnp::_::PointerHelpers< ::cereal::CarState>::disown(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+
+inline bool Event::Reader::isCarControl() const {
+  return which() == Event::CAR_CONTROL;
+}
+inline bool Event::Builder::isCarControl() {
+  return which() == Event::CAR_CONTROL;
+}
+inline bool Event::Reader::hasCarControl() const {
+  if (which() != Event::CAR_CONTROL) return false;
+  return !_reader.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline bool Event::Builder::hasCarControl() {
+  if (which() != Event::CAR_CONTROL) return false;
+  return !_builder.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline  ::cereal::CarControl::Reader Event::Reader::getCarControl() const {
+  KJ_IREQUIRE(which() == Event::CAR_CONTROL,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::cereal::CarControl>::get(
+      _reader.getPointerField(0 * ::capnp::POINTERS));
+}
+inline  ::cereal::CarControl::Builder Event::Builder::getCarControl() {
+  KJ_IREQUIRE(which() == Event::CAR_CONTROL,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::cereal::CarControl>::get(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void Event::Builder::setCarControl( ::cereal::CarControl::Reader value) {
+  _builder.setDataField<Event::Which>(
+      4 * ::capnp::ELEMENTS, Event::CAR_CONTROL);
+  ::capnp::_::PointerHelpers< ::cereal::CarControl>::set(
+      _builder.getPointerField(0 * ::capnp::POINTERS), value);
+}
+inline  ::cereal::CarControl::Builder Event::Builder::initCarControl() {
+  _builder.setDataField<Event::Which>(
+      4 * ::capnp::ELEMENTS, Event::CAR_CONTROL);
+  return ::capnp::_::PointerHelpers< ::cereal::CarControl>::init(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void Event::Builder::adoptCarControl(
+    ::capnp::Orphan< ::cereal::CarControl>&& value) {
+  _builder.setDataField<Event::Which>(
+      4 * ::capnp::ELEMENTS, Event::CAR_CONTROL);
+  ::capnp::_::PointerHelpers< ::cereal::CarControl>::adopt(
+      _builder.getPointerField(0 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::cereal::CarControl> Event::Builder::disownCarControl() {
+  KJ_IREQUIRE(which() == Event::CAR_CONTROL,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::cereal::CarControl>::disown(
       _builder.getPointerField(0 * ::capnp::POINTERS));
 }
 

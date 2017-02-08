@@ -280,12 +280,12 @@ void cereal_set_CanData(const struct cereal_CanData *s, cereal_CanData_list l, i
 
 cereal_ThermalData_ptr cereal_new_ThermalData(struct capn_segment *s) {
 	cereal_ThermalData_ptr p;
-	p.p = capn_new_struct(s, 24, 0);
+	p.p = capn_new_struct(s, 24, 1);
 	return p;
 }
 cereal_ThermalData_list cereal_new_ThermalData_list(struct capn_segment *s, int len) {
 	cereal_ThermalData_list p;
-	p.p = capn_new_list(s, len, 24, 0);
+	p.p = capn_new_list(s, len, 24, 1);
 	return p;
 }
 void cereal_read_ThermalData(struct cereal_ThermalData *s, cereal_ThermalData_ptr p) {
@@ -299,6 +299,7 @@ void cereal_read_ThermalData(struct cereal_ThermalData *s, cereal_ThermalData_pt
 	s->bat = capn_read32(p.p, 12);
 	s->freeSpace = capn_to_f32(capn_read32(p.p, 16));
 	s->batteryPercent = (int16_t) ((int16_t)capn_read16(p.p, 20));
+	s->batteryStatus = capn_get_text(p.p, 0, capn_val0);
 }
 void cereal_write_ThermalData(const struct cereal_ThermalData *s, cereal_ThermalData_ptr p) {
 	capn_resolve(&p.p);
@@ -311,6 +312,7 @@ void cereal_write_ThermalData(const struct cereal_ThermalData *s, cereal_Thermal
 	capn_write32(p.p, 12, s->bat);
 	capn_write32(p.p, 16, capn_from_f32(s->freeSpace));
 	capn_write16(p.p, 20, (uint16_t) (s->batteryPercent));
+	capn_set_text(p.p, 0, s->batteryStatus);
 }
 void cereal_get_ThermalData(struct cereal_ThermalData *s, cereal_ThermalData_list l, int i) {
 	cereal_ThermalData_ptr p;
@@ -1018,7 +1020,8 @@ void cereal_read_Event(struct cereal_Event *s, cereal_Event_ptr p) {
 	case cereal_Event_androidLogEntry:
 	case cereal_Event_gpsLocation:
 	case cereal_Event_carState:
-		s->carState.p = capn_getp(p.p, 0, 0);
+	case cereal_Event_carControl:
+		s->carControl.p = capn_getp(p.p, 0, 0);
 		break;
 	default:
 		break;
@@ -1053,7 +1056,8 @@ void cereal_write_Event(const struct cereal_Event *s, cereal_Event_ptr p) {
 	case cereal_Event_androidLogEntry:
 	case cereal_Event_gpsLocation:
 	case cereal_Event_carState:
-		capn_setp(p.p, 0, s->carState.p);
+	case cereal_Event_carControl:
+		capn_setp(p.p, 0, s->carControl.p);
 		break;
 	default:
 		break;

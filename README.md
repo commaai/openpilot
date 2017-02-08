@@ -20,7 +20,7 @@ Supported Cars
 - Acura ILX 2016 with AcuraWatch Plus
   - Limitations: Due to use of the cruise control for gas, it can only be enabled above 25 mph
 
-- Honda Civic 2016 Touring Edition
+- Honda Civic 2016 with Honda Sensing
   - Limitations: Due to limitations in steering firmware, steering is disabled below 18 mph
 
 Directory structure

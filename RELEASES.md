@@ -1,3 +1,9 @@
+Version 0.2.7  (2017-02-08)
+===========================
+  * Better performance and pictures at night
+  * Fix ptr alignment issue in boardd
+  * Fix brake error light, fix crash if too cold
+
 Version 0.2.6  (2017-01-31)
 ===========================
   * Fix bug in visiond model execution

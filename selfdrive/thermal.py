@@ -3,7 +3,7 @@ import selfdrive.messaging as messaging
 
 def read_tz(x):
   with open("/sys/devices/virtual/thermal/thermal_zone%d/temp" % x) as f:
-    ret = int(f.read())
+    ret = max(0, int(f.read()))
   return ret
 
 def read_thermal():

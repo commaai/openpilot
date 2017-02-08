@@ -177,8 +177,10 @@ void can_send(void *s) {
   err = zmq_msg_recv(&msg, s, 0);
   assert(err >= 0);
 
-  // format for board
-  auto amsg = kj::arrayPtr((const capnp::word*)zmq_msg_data(&msg), zmq_msg_size(&msg));
+  // format for board, make copy due to alignment issues, will be freed on out of scope
+  auto amsg = kj::heapArray<capnp::word>((zmq_msg_size(&msg) / sizeof(capnp::word)) + 1);
+  memcpy(amsg.begin(), zmq_msg_data(&msg), zmq_msg_size(&msg));
+
   capnp::FlatArrayMessageReader cmsg(amsg);
   cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
   int msg_count = event.getCan().size();
