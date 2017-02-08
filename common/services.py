@@ -34,6 +34,8 @@ service_list = {
   "liveCalibration": Service(8019, True),
   "androidLog": Service(8020, True),
   "carState": Service(8021, True),
+  # 8022 is reserved for sshd
+  "carControl": Service(8023, True),
 }
 
 # manager -- base process to manage starting and stopping of all others
@@ -57,7 +59,7 @@ service_list = {
 
 # controlsd -- actually drives the car
 #   subscribes: can, thermal, model, live20
-#   publishes:  carState, sendcan, live100
+#   publishes:  carState, carControl, sendcan, live100
 
 # radard -- processes the radar data
 #   subscribes: can, live100, model

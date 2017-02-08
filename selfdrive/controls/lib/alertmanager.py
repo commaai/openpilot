@@ -1,4 +1,5 @@
 from cereal import car
+from selfdrive.swaglog import cloudlog
 
 class ET:
   ENABLE = 0
@@ -24,7 +25,7 @@ class alert(object):
     tst = car.CarControl.new_message()
     tst.hudControl.visualAlert = self.visual_alert
     tst.hudControl.audibleAlert = self.audible_alert
-  
+
   def __str__(self):
     return self.alert_text_1 + "/" + self.alert_text_2 + " " + str(self.alert_type) + "  " + str(self.visual_alert) + " " + str(self.audible_alert)
 
@@ -74,7 +75,8 @@ class AlertManager(object):
     return len(self.activealerts) > 0 and self.activealerts[0].alert_type >= ET.IMMEDIATE_DISABLE
 
   def add(self, alert_type, enabled = True):
-    this_alert = self.alerts[str(alert_type)]
+    alert_type = str(alert_type)
+    this_alert = self.alerts[alert_type]
 
     # downgrade the alert if we aren't enabled
     if not enabled and this_alert.alert_type > ET.NO_ENTRY:
@@ -83,6 +85,12 @@ class AlertManager(object):
     # ignore no entries if we are enabled 
     if enabled and this_alert.alert_type < ET.WARNING:
       return
+
+    # if new alert is different, log it
+    if self.current_alert is None or self.current_alert.alert_text_2 != this_alert.alert_text_2:
+      cloudlog.event('alert_add',
+        alert_type=alert_type,
+        enabled=enabled)
 
     self.activealerts.append(this_alert)
     self.activealerts.sort()
@@ -109,6 +117,10 @@ class AlertManager(object):
       if self.alert_start_time + self.current_alert.duration_text > cur_time:
         alert_text_1 = self.current_alert.alert_text_1
         alert_text_2 = self.current_alert.alert_text_2
+
+      # disable current alert
+      if self.alert_start_time + max(self.current_alert.duration_sound, self.current_alert.duration_hud_alert, self.current_alert.duration_text) < cur_time:
+        self.current_alert = None
 
     # reset
     self.activealerts = []

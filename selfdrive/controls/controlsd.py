@@ -39,6 +39,7 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
   context = zmq.Context()
   live100 = messaging.pub_sock(context, service_list['live100'].port)
   carstate = messaging.pub_sock(context, service_list['carState'].port)
+  carcontrol = messaging.pub_sock(context, service_list['carControl'].port)
 
   thermal = messaging.sub_sock(context, service_list['thermal'].port)
   live20 = messaging.sub_sock(context, service_list['live20'].port)
@@ -296,6 +297,12 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
     # this alert will apply next controls cycle
     if not CI.apply(CC):
       AM.add("controlsFailed", enabled)
+
+    # broadcast carControl
+    cc_send = messaging.new_message()
+    cc_send.init('carControl')
+    cc_send.carControl = CC    # copy?
+    carcontrol.send(cc_send.to_bytes())
 
     prof.checkpoint("CarControl")
 

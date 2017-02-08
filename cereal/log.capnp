@@ -103,6 +103,7 @@ struct ThermalData {
   # not thermal
   freeSpace @7 :Float32;
   batteryPercent @8 :Int16;
+  batteryStatus @9: Text;
 }
 
 struct HealthData {
@@ -313,5 +314,6 @@ struct Event {
     androidLogEntry @20 :AndroidLogEntry;
     gpsLocation @21 :GpsLocationData;
     carState @22 :Car.CarState;
+    carControl @23 :Car.CarControl;
   }
 }

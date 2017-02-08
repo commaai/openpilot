@@ -90,7 +90,7 @@ class CarController(object):
     #print chime, alert_id, hud_alert
     fcw_display, steer_required, acc_alert = process_hud_alert(hud_alert)
 
-    hud = HUDData(int(pcm_accel), int(hud_v_cruise), 0x41, hud_car,
+    hud = HUDData(int(pcm_accel), int(hud_v_cruise), 0x01, hud_car,
                   0xc1, 0x41, hud_lanes + steer_required,
                   int(snd_beep), 0x48, (snd_chime << 5) + fcw_display, acc_alert)
 

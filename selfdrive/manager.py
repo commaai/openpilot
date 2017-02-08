@@ -211,6 +211,8 @@ def manager_thread():
     msg.thermal.freeSpace = avail
     with open("/sys/class/power_supply/battery/capacity") as f:
       msg.thermal.batteryPercent = int(f.read())
+    with open("/sys/class/power_supply/battery/status") as f:
+      msg.thermal.batteryStatus = f.read().strip()
     thermal_sock.send(msg.to_bytes())
     print msg
 
@@ -241,6 +243,10 @@ def manager_thread():
         logger_dead = False
         for p in car_started_processes:
           kill_managed_process(p)
+
+      # shutdown if the battery gets lower than 10%, we aren't running, and we are discharging
+      if msg.thermal.batteryPercent < 5 and msg.thermal.batteryStatus == "Discharging":
+        os.system('LD_LIBRARY_PATH="" svc power shutdown')
 
     # check the status of all processes, did any of them die?
     for p in running:

@@ -224,13 +224,14 @@ struct cereal_ThermalData {
 	uint32_t bat;
 	float freeSpace;
 	int16_t batteryPercent;
+	capn_text batteryStatus;
 };
 
 static const size_t cereal_ThermalData_word_count = 3;
 
-static const size_t cereal_ThermalData_pointer_count = 0;
+static const size_t cereal_ThermalData_pointer_count = 1;
 
-static const size_t cereal_ThermalData_struct_bytes_count = 24;
+static const size_t cereal_ThermalData_struct_bytes_count = 32;
 
 struct cereal_HealthData {
 	uint32_t voltage;
@@ -509,7 +510,8 @@ enum cereal_Event_which {
 	cereal_Event_liveCalibration = 18,
 	cereal_Event_androidLogEntry = 19,
 	cereal_Event_gpsLocation = 20,
-	cereal_Event_carState = 21
+	cereal_Event_carState = 21,
+	cereal_Event_carControl = 22
 };
 
 struct cereal_Event {
@@ -538,6 +540,7 @@ struct cereal_Event {
 		cereal_AndroidLogEntry_ptr androidLogEntry;
 		cereal_GpsLocationData_ptr gpsLocation;
 		cereal_CarState_ptr carState;
+		cereal_CarControl_ptr carControl;
 	};
 };
 
