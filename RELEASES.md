@@ -1,3 +1,7 @@
+Version 0.2.8  (2017-02-27)
+===========================
+  * Fix bug where frames were being dropped in minute 71
+
 Version 0.2.7  (2017-02-08)
 ===========================
   * Better performance and pictures at night
