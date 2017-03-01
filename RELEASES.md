@@ -1,3 +1,7 @@
+Version 0.2.9  (2017-03-01)
+===========================
+  * Retain compatibility with NEOS v1
+
 Version 0.2.8  (2017-02-27)
 ===========================
   * Fix bug where frames were being dropped in minute 71
