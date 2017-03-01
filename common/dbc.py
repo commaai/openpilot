@@ -134,6 +134,10 @@ class dbc(object):
 
         Returns (None, None) if the message could not be decoded.
     """
+    
+    def swap_order(d, wsz=4, gsz=2 ):
+      return "".join(["".join([m[i:i+gsz] for i in range(wsz-gsz,-gsz,-gsz)]) for m in [d[i:i+wsz] for i in range(0,len(d),wsz)]])
+    
     if arr is None:
       out = {}
     else:
@@ -151,7 +155,6 @@ class dbc(object):
       print name
 
     blen = 8*len(x[2])
-    x2_int = int(hexlify(x[2]), 16)
 
     for s in msg[1]:
       if arr is not None and s[0] not in arr:
@@ -160,11 +163,17 @@ class dbc(object):
       # big or little endian?
       #   see http://vi-firmware.openxcplatform.com/en/master/config/bit-numbering.html
       if s[3] is False:
+        endianness = "big"
         ss = self.bits.index(s[1])
+        x2_int = int(hexlify(x[2]), 16)
+        data_bit_pos = (blen - (ss + s[2]))
       else:
+        endianness = "little"
+        x2_int = int(swap_order(hexlify(x[2]), 16, 2), 16)
         ss = s[1]
+        data_bit_pos = ss
 
-      data_bit_pos = (blen - (ss + s[2]))
+      
       if data_bit_pos < 0:
         continue
       ival = (x2_int >> data_bit_pos) & ((1 << (s[2])) - 1)
@@ -173,12 +182,13 @@ class dbc(object):
         ival -= (1<<s[2])
 
       # control the offset
-      ival = (ival + s[6])*s[5]
-      if debug:
-        print "%40s  %2d %2d  %7.2f %s" % (s[0], s[1], s[2], ival, s[-1])
+      ival = (ival * s[5]) + s[6]
+      #if debug:
+      #  print "%40s  %2d %2d  %7.2f %s" % (s[0], s[1], s[2], ival, s[-1])
 
       if arr is None:
         out[s[0]] = ival
       else:
         out[arr.index(s[0])] = ival
     return name, out
+    
