@@ -163,12 +163,10 @@ class dbc(object):
       # big or little endian?
       #   see http://vi-firmware.openxcplatform.com/en/master/config/bit-numbering.html
       if s[3] is False:
-        endianness = "big"
         ss = self.bits.index(s[1])
         x2_int = int(hexlify(x[2]), 16)
         data_bit_pos = (blen - (ss + s[2]))
       else:
-        endianness = "little"
         x2_int = int(swap_order(hexlify(x[2]), 16, 2), 16)
         ss = s[1]
         data_bit_pos = ss
