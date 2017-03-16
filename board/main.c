@@ -5,29 +5,25 @@
 //#define ENABLE_CURRENT_SENSOR
 //#define ENABLE_SPI
 
-// choose serial port for debugging
-//#define USART USART2
-#define USART USART3
-
 #define USB_VID 0xbbaa
 #define USB_PID 0xddcc
 
+#define NULL ((void*)0)
+
 // *** end config ***
 
-#include "stm32f2xx.h"
+#ifdef STM32F4
+  #define PANDA
+  #include "stm32f4xx.h"
+#else
+  #include "stm32f2xx.h"
+#endif
+
 #include "obj/gitversion.h"
 
 #define ENTER_BOOTLOADER_MAGIC 0xdeadbeef
 uint32_t enter_bootloader_mode;
 
-USB_OTG_GlobalTypeDef *USBx = USB_OTG_FS;
-
-#include "libc.h"
-#include "adc.h"
-#include "timer.h"
-#include "usb.h"
-#include "can.h"
-#include "spi.h"
 
 // debug safety check: is controls allowed?
 int controls_allowed = 0;
@@ -38,9 +34,14 @@ int can_live = 0, pending_can_live = 0;
 int gas_interceptor_detected = 0;
 int started_signal_detected = 0;
 
+// detect high on UART
+// TODO: check for UART high
+int has_external_debug_serial = 1;
+
 // ********************* instantiate queues *********************
 
 #define FIFO_SIZE 0x100
+
 typedef struct {
   uint8_t w_ptr;
   uint8_t r_ptr;
@@ -50,6 +51,7 @@ typedef struct {
 can_ring can_rx_q = { .w_ptr = 0, .r_ptr = 0 };
 can_ring can_tx1_q = { .w_ptr = 0, .r_ptr = 0 };
 can_ring can_tx2_q = { .w_ptr = 0, .r_ptr = 0 };
+can_ring can_tx3_q = { .w_ptr = 0, .r_ptr = 0 };
 
 // ********************* interrupt safe queue *********************
 
@@ -71,6 +73,169 @@ inline int push(can_ring *q, CAN_FIFOMailBox_TypeDef *elem) {
   }
   return 0;
 }
+
+// ***************************** serial port queues *****************************
+
+typedef struct uart_ring {
+  uint8_t w_ptr_tx;
+  uint8_t r_ptr_tx;
+  uint8_t elems_tx[FIFO_SIZE];
+  uint8_t w_ptr_rx;
+  uint8_t r_ptr_rx;
+  uint8_t elems_rx[FIFO_SIZE];
+  USART_TypeDef *uart;
+  void (*callback)(struct uart_ring*);
+} uart_ring;
+
+inline int putc(uart_ring *q, char elem);
+
+// esp = USART1
+uart_ring esp_ring = { .w_ptr_tx = 0, .r_ptr_tx = 0,
+                       .w_ptr_rx = 0, .r_ptr_rx = 0,
+                       .uart = USART1 };
+
+// lin1, K-LINE = UART5
+// lin2, L-LINE = USART3
+uart_ring lin1_ring = { .w_ptr_tx = 0, .r_ptr_tx = 0,
+                        .w_ptr_rx = 0, .r_ptr_rx = 0,
+                        .uart = UART5 };
+uart_ring lin2_ring = { .w_ptr_tx = 0, .r_ptr_tx = 0,
+                        .w_ptr_rx = 0, .r_ptr_rx = 0,
+                        .uart = USART3 };
+
+// debug = USART2
+void debug_ring_callback(uart_ring *ring);
+uart_ring debug_ring = { .w_ptr_tx = 0, .r_ptr_tx = 0,
+                         .w_ptr_rx = 0, .r_ptr_rx = 0,
+                         .uart = USART2,
+                         .callback = debug_ring_callback};
+
+
+uart_ring *get_ring_by_number(int a) {
+  switch(a) {
+    case 0:
+      return &debug_ring;
+    case 1:
+      return &esp_ring;
+    case 2:
+      return &lin1_ring;
+    case 3:
+      return &lin2_ring;
+    default:
+      return NULL;
+  }
+}
+
+
+void debug_ring_callback(uart_ring *ring) {
+  char rcv;
+  while (getc(ring, &rcv)) {
+    putc(ring, rcv);
+
+    // jump to DFU flash
+    if (rcv == 'z') {
+      enter_bootloader_mode = ENTER_BOOTLOADER_MAGIC;
+      NVIC_SystemReset();
+    }
+  }
+}
+
+// ***************************** serial port *****************************
+
+void uart_ring_process(uart_ring *q) {
+  // TODO: check if external serial is connected
+  int sr = q->uart->SR;
+
+  if (q->w_ptr_tx != q->r_ptr_tx) {
+    if (sr & USART_SR_TXE) {
+      q->uart->DR = q->elems_tx[q->r_ptr_tx];
+      q->r_ptr_tx += 1;
+    } else {
+      // push on interrupt later
+      q->uart->CR1 |= USART_CR1_TXEIE;
+    }
+  } else {
+    // nothing to send
+    q->uart->CR1 &= ~USART_CR1_TXEIE;
+  }
+
+  if (sr & USART_SR_RXNE) {
+    uint8_t c = q->uart->DR;  // TODO: can drop packets
+    uint8_t next_w_ptr = q->w_ptr_rx + 1;
+    if (next_w_ptr != q->r_ptr_rx) {
+      q->elems_rx[q->w_ptr_rx] = c;
+      q->w_ptr_rx = next_w_ptr;
+      if (q->callback) q->callback(q);
+    }
+  }
+}
+
+// interrupt boilerplate
+
+void USART1_IRQHandler(void) {
+  NVIC_DisableIRQ(USART1_IRQn);
+  uart_ring_process(&esp_ring);
+  NVIC_EnableIRQ(USART1_IRQn);
+}
+
+void USART2_IRQHandler(void) {
+  NVIC_DisableIRQ(USART2_IRQn);
+  uart_ring_process(&debug_ring);
+  NVIC_EnableIRQ(USART2_IRQn);
+}
+
+void USART3_IRQHandler(void) {
+  NVIC_DisableIRQ(USART3_IRQn);
+  uart_ring_process(&lin2_ring);
+  NVIC_EnableIRQ(USART3_IRQn);
+}
+
+void UART5_IRQHandler(void) {
+  NVIC_DisableIRQ(UART5_IRQn);
+  uart_ring_process(&lin1_ring);
+  NVIC_EnableIRQ(UART5_IRQn);
+}
+
+inline int getc(uart_ring *q, char *elem) {
+  if (q->w_ptr_rx != q->r_ptr_rx) {
+    *elem = q->elems_rx[q->r_ptr_rx];
+    q->r_ptr_rx += 1;
+    return 1;
+  }
+  return 0;
+}
+
+inline int injectc(uart_ring *q, char elem) {
+  uint8_t next_w_ptr = q->w_ptr_rx + 1;
+  int ret = 0;
+  if (next_w_ptr != q->r_ptr_rx) {
+    q->elems_rx[q->w_ptr_rx] = elem;
+    q->w_ptr_rx = next_w_ptr;
+    ret = 1;
+  }
+  return ret;
+}
+
+inline int putc(uart_ring *q, char elem) {
+  uint8_t next_w_ptr = q->w_ptr_tx + 1;
+  int ret = 0;
+  if (next_w_ptr != q->r_ptr_tx) {
+    q->elems_tx[q->w_ptr_tx] = elem;
+    q->w_ptr_tx = next_w_ptr;
+    ret = 1;
+  }
+  uart_ring_process(q);
+  return ret;
+}
+
+// ********************* includes *********************
+
+#include "libc.h"
+#include "adc.h"
+#include "timer.h"
+#include "usb.h"
+#include "can.h"
+#include "spi.h"
 
 // ***************************** CAN *****************************
 
@@ -134,6 +299,7 @@ void process_can(CAN_TypeDef *CAN, can_ring *can_q, int can_number) {
 }
 
 // send more, possible for these to not trigger?
+// CAN2 = 0   CAN1 = 1   CAN3 = 4
 void CAN1_TX_IRQHandler() {
   process_can(CAN1, &can_tx1_q, 1);
 }
@@ -141,6 +307,12 @@ void CAN1_TX_IRQHandler() {
 void CAN2_TX_IRQHandler() {
   process_can(CAN2, &can_tx2_q, 0);
 }
+
+#ifdef CAN3
+void CAN3_TX_IRQHandler() {
+  process_can(CAN3, &can_tx3_q, 4);
+}
+#endif
 
 // board enforces
 //   in-state
@@ -225,6 +397,14 @@ void CAN2_RX0_IRQHandler() {
   can_rx(CAN2, 0);
 }
 
+#ifdef CAN3
+void CAN3_RX0_IRQHandler() {
+  //puts("CANRX0");
+  //delay(10000);
+  can_rx(CAN3, 4);
+}
+#endif
+
 void CAN1_SCE_IRQHandler() {
   //puts("CAN1_SCE\n");
   can_sce(CAN1);
@@ -235,31 +415,13 @@ void CAN2_SCE_IRQHandler() {
   can_sce(CAN2);
 }
 
-// ***************************** serial port *****************************
-
-void USART_IRQHandler(void) {
-  puts("S");
-
-  // echo characters
-  if (USART->SR & USART_SR_RXNE) {
-    char rcv = USART->DR;
-    putch(rcv);
-
-    // jump to DFU flash
-    if (rcv == 'z') {
-      enter_bootloader_mode = ENTER_BOOTLOADER_MAGIC;
-      NVIC_SystemReset();
-    }
-  }
+#ifdef CAN3
+void CAN3_SCE_IRQHandler() {
+  //puts("CAN3_SCE\n");
+  can_sce(CAN3);
 }
+#endif
 
-void USART2_IRQHandler(void) {
-  USART_IRQHandler();
-}
-
-void USART3_IRQHandler(void) {
-  USART_IRQHandler();
-}
 
 // ***************************** USB port *****************************
 
@@ -310,7 +472,13 @@ void usb_cb_ep1_in(int len) {
   USB_WritePacket((void *)reply, ilen*0x10, 1);
 }
 
+// send on serial, first byte to select
 void usb_cb_ep2_out(uint8_t *usbdata, int len) {
+  int i;
+  if (len == 0) return;
+  uart_ring *ur = get_ring_by_number(usbdata[0]);
+  if (!ur) return;
+  for (i = 1; i < len; i++) while (!putc(ur, usbdata[i]));
 }
 
 // send on CAN
@@ -319,17 +487,22 @@ void usb_cb_ep3_out(uint8_t *usbdata, int len) {
   for (dpkt = 0; dpkt < len; dpkt += 0x10) {
     uint32_t *tf = (uint32_t*)(&usbdata[dpkt]);
     
-    int flags = tf[1] >> 4;
+    int flags = (tf[1] >> 4) & 0xF;
     CAN_TypeDef *CAN;
     can_ring *can_q;
     int can_number = 0;
-    if (flags & 1)  {
+    if (flags == 1)  {
       CAN=CAN1;
       can_q = &can_tx1_q;
       can_number = 1;
-    } else {
+    } else if (flags == 0) {
       CAN=CAN2;
       can_q = &can_tx2_q;
+    #ifdef CAN3
+    } else if (flags == 4) {
+      CAN=CAN3;
+      can_q = &can_tx3_q;
+    #endif
     }
 
     // add CAN packet to send queue
@@ -345,9 +518,11 @@ void usb_cb_ep3_out(uint8_t *usbdata, int len) {
 }
 
 
+#define MAX_RESP_LEN 0x30
 void usb_cb_control_msg() {
-  uint8_t resp[0x20];
-  int resp_len;
+  uint8_t resp[MAX_RESP_LEN];
+  int resp_len = 0;
+  uart_ring *ur = NULL;
   switch (setup.b.bRequest) {
     case 0xd1:
       enter_bootloader_mode = ENTER_BOOTLOADER_MAGIC;
@@ -370,6 +545,30 @@ void usb_cb_control_msg() {
     case 0xd8: // RESET
       NVIC_SystemReset();
       break;
+    case 0xda: // ESP RESET
+      GPIOC->ODR &= ~(1 << 14);
+      delay(1000000);
+      GPIOC->ODR |= (1 << 14);
+      USB_WritePacket(0, 0, 0);
+      USBx_OUTEP(0)->DOEPCTL |= USB_OTG_DOEPCTL_CNAK;
+      break;
+    case 0xe0: // uart read
+      ur = get_ring_by_number(setup.b.wValue.w);
+      if (!ur) break;
+      if (setup.b.bRequest == 0xe0) {
+        // read
+        while (resp_len < min(setup.b.wLength.w, MAX_RESP_LEN) && getc(ur, &resp[resp_len])) {
+          ++resp_len;
+        }
+        /*puts("uart read: ");
+        puth(setup.b.wLength.w);
+        puts(" ");
+        puth(resp_len);
+        puts("\n");*/
+        USB_WritePacket(resp, resp_len, 0);
+        USBx_OUTEP(0)->DOEPCTL |= USB_OTG_DOEPCTL_CNAK;
+      }
+      break;
     default:
       puts("NO HANDLER ");
       puth(setup.b.bRequest);
@@ -380,15 +579,6 @@ void usb_cb_control_msg() {
 
 
 void OTG_FS_IRQHandler(void) {
-  NVIC_DisableIRQ(OTG_FS_IRQn);
-  //__disable_irq();
-  usb_irqhandler();
-  //__enable_irq();
-  NVIC_EnableIRQ(OTG_FS_IRQn);
-}
-
-void OTG_HS_IRQHandler(void) {
-  //puts("HS_IRQ\n");
   NVIC_DisableIRQ(OTG_FS_IRQn);
   //__disable_irq();
   usb_irqhandler();
@@ -445,20 +635,18 @@ void SPI1_IRQHandler(void) {
 // ***************************** main code *****************************
 
 void __initialize_hardware_early() {
-  // set USB power + and OTG mode
-  RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
+  // if wrong chip, reboot
+  volatile unsigned int id = DBGMCU->IDCODE;
+  #ifdef STM32F4
+    if ((id&0xFFF) != 0x463) enter_bootloader_mode = ENTER_BOOTLOADER_MAGIC;
+  #else
+    if ((id&0xFFF) != 0x411) enter_bootloader_mode = ENTER_BOOTLOADER_MAGIC;
+  #endif
 
-  // enable OTG out tied to ground
-  GPIOA->ODR = 0;
-  GPIOA->MODER |= GPIO_MODER_MODER1_0;
-
-  // enable USB power tied to +
-  GPIOA->ODR |= 1;
-  GPIOA->MODER |= GPIO_MODER_MODER0_0;
-
-  // enable pull DOWN on OTG_FS_DP
-  // must be done a while before reading it
-  GPIOA->PUPDR = GPIO_PUPDR_PUPDR12_1;
+  // enable the ESP
+  RCC->AHB1ENR = RCC_AHB1ENR_GPIOCEN;
+  GPIOC->ODR = (1 << 14);
+  GPIOC->MODER = GPIO_MODER_MODER14_0;
 
   if (enter_bootloader_mode == ENTER_BOOTLOADER_MAGIC) {
     enter_bootloader_mode = 0;
@@ -477,10 +665,25 @@ int main() {
   clock_init();
 
   gpio_init();
-  uart_init();
+
+  // enable main uart
+  uart_init(USART2, 115200);
+  
+  // enable ESP uart
+  uart_init(USART1, 115200);
+
+  // enable LIN
+  uart_init(UART5, 10400);
+  UART5->CR2 |= USART_CR2_LINEN;
+  uart_init(USART3, 10400);
+  USART3->CR2 |= USART_CR2_LINEN;
+
   usb_init();
   can_init(CAN1);
   can_init(CAN2);
+#ifdef CAN3
+  can_init(CAN3);
+#endif
   adc_init();
 
 #ifdef ENABLE_SPI
@@ -506,16 +709,21 @@ int main() {
 
   // 10 prescale makes it below the audible range
   timer_init(TIM3, 10);
+  puth(DBGMCU->IDCODE);
 
   // set PWM
   set_fan_speed(65535);
 
   puts("**** INTERRUPTS ON ****\n");
   __disable_irq();
+
+  // 4 uarts!
+  NVIC_EnableIRQ(USART1_IRQn);
   NVIC_EnableIRQ(USART2_IRQn);
   NVIC_EnableIRQ(USART3_IRQn);
+  NVIC_EnableIRQ(UART5_IRQn);
+
   NVIC_EnableIRQ(OTG_FS_IRQn);
-  NVIC_EnableIRQ(OTG_HS_IRQn);
   NVIC_EnableIRQ(ADC_IRQn);
   // CAN has so many interrupts!
 
@@ -527,12 +735,17 @@ int main() {
   NVIC_EnableIRQ(CAN2_RX0_IRQn);
   NVIC_EnableIRQ(CAN2_SCE_IRQn);
 
+#ifdef CAN3
+  NVIC_EnableIRQ(CAN3_TX_IRQn);
+  NVIC_EnableIRQ(CAN3_RX0_IRQn);
+  NVIC_EnableIRQ(CAN3_SCE_IRQn);
+#endif
+
 #ifdef ENABLE_SPI
   NVIC_EnableIRQ(DMA2_Stream3_IRQn);
   NVIC_EnableIRQ(SPI1_IRQn);
 #endif
   __enable_irq();
-
 
   // LED should keep on blinking all the time
   int cnt;
@@ -553,15 +766,13 @@ int main() {
     puts("current: "); puth(adc_get(ADCCHAN_CURRENT)); puts("\n");*/
 
     // set LED to be controls allowed
-    GPIOB->ODR = (GPIOB->ODR | (1 << 11)) & ~(controls_allowed << 11);
+    set_led(LED_GREEN, controls_allowed);
 
-    // blink the other LED if in FS mode
-    if (USBx == USB_OTG_FS) {
-      GPIOB->ODR |= (1 << 10);
-    }
-    delay(1000000);
-    GPIOB->ODR &= ~(1 << 10);
-    delay(1000000);
+    // blink the red LED
+    set_led(LED_RED, 0);
+    delay(2000000);
+    set_led(LED_RED, 1);
+    delay(2000000);
 
     #ifdef ENABLE_SPI
       if (spi_buf_count > 0) {
@@ -571,7 +782,11 @@ int main() {
     #endif
 
     // started logic
-    int started_signal = (GPIOC->IDR & (1 << 13)) != 0;
+    #ifdef PANDA
+      int started_signal = (GPIOB->IDR & (1 << 12)) == 0;
+    #else
+      int started_signal = (GPIOC->IDR & (1 << 13)) != 0;
+    #endif
     if (started_signal) { started_signal_detected = 1; }
 
     if (started_signal || (!started_signal_detected && can_live)) {

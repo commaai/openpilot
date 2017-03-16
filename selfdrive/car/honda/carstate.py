@@ -1,11 +1,9 @@
 import numpy as np
 
 import selfdrive.messaging as messaging
-from selfdrive.boardd.boardd import can_capnp_to_can_list
 from selfdrive.config import VehicleParams
 from common.realtime import sec_since_boot
 
-from selfdrive.car.fingerprints import fingerprints
 from selfdrive.car.honda.can_parser import CANParser
 
 def get_can_parser(civic, brake_only):
@@ -121,61 +119,16 @@ def get_can_parser(civic, brake_only):
 
   return CANParser(dbc_f, signals, checks)
 
-def fingerprint(logcan):
-  print "waiting for fingerprint..."
-  brake_only = True
-
-  finger = {}
-  st = None
-  while 1:
-    possible_cars = []
-    for a in messaging.drain_sock(logcan, wait_for_one=True):
-      if st is None:
-        st = sec_since_boot()
-      for adr, _, msg, idx in can_capnp_to_can_list(a.can):
-        # pedal
-        if adr == 0x201 and idx == 0:
-          brake_only = False
-        if idx == 0:
-          finger[adr] = len(msg)
-
-    # check for a single match
-    for f in fingerprints:
-      is_possible = True
-      for adr in finger:
-        # confirm all messages we have seen match
-        if adr not in fingerprints[f] or fingerprints[f][adr] != finger[adr]:
-          #print "mismatch", f, adr
-          is_possible = False
-          break
-      if is_possible:
-        possible_cars.append(f)
-
-    # if we only have one car choice and it's been 100ms since we got our first message, exit
-    if len(possible_cars) == 1 and st is not None and (sec_since_boot()-st) > 0.1:
-      break
-    elif len(possible_cars) == 0:
-      print finger
-      raise Exception("car doesn't match any fingerprints")
-
-  print "fingerprinted", possible_cars[0]
-  return brake_only, possible_cars[0]
-
 class CarState(object):
-  def __init__(self, logcan):
-    self.torque_mod = False
-    self.brake_only, self.car_type = fingerprint(logcan)
-
-    # assuming if you have a pedal interceptor you also have a torque mod
-    if not self.brake_only:
-      self.torque_mod = True
-
-    if self.car_type == "HONDA CIVIC 2016 TOURING":
+  def __init__(self, CP, logcan):
+    if CP.carFingerprint == "HONDA CIVIC 2016 TOURING":
       self.civic = True
-    elif self.car_type == "ACURA ILX 2016 ACURAWATCH PLUS":
+    elif CP.carFingerprint == "ACURA ILX 2016 ACURAWATCH PLUS":
       self.civic = False
     else:
-      raise ValueError("unsupported car %s" % self.car_type)
+      raise ValueError("unsupported car %s" % CP.carFingerprint)
+
+    self.brake_only = CP.enableCruise
 
     # initialize can parser
     self.cp = get_can_parser(self.civic, self.brake_only)
@@ -194,9 +147,6 @@ class CarState(object):
 
     # speed in UI is shown as few % higher
     self.ui_speed_fudge = 1.01 if self.civic else 1.025
-
-    # load vehicle params
-    self.VP = VehicleParams(self.civic, self.brake_only, self.torque_mod)
 
   def update(self, can_pub_main):
     cp = self.cp

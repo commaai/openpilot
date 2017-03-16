@@ -10,7 +10,7 @@ class Conversions:
   KNOTS_TO_MS = 1/1.9438
   MS_TO_KNOTS = 1.9438
 
-  # Car tecode decimal minutes into decimal degrees, can work with numpy arrays as input
+  # Car decode decimal minutes into decimal degrees, can work with numpy arrays as input
   @staticmethod
   def dm2d(dm):
     degs = np.round(dm/100.)

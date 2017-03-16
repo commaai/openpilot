@@ -33,11 +33,6 @@
 #include "touch.h"
 
 #define UI_BUF_COUNT 4
-typedef struct UIBuf {
-  int fd;
-  size_t len;
-  void* addr;
-} UIBuf;
 
 typedef struct UIScene {
 
@@ -112,9 +107,8 @@ typedef struct UIState {
   bool vision_connect_firstrun;
   int ipc_fd;
 
-  VisionUIBufs vision_bufs;
-  UIBuf bufs[UI_BUF_COUNT];
-  UIBuf front_bufs[UI_BUF_COUNT];
+  VisionBuf bufs[UI_BUF_COUNT];
+  VisionBuf front_bufs[UI_BUF_COUNT];
   int cur_vision_idx;
   int cur_vision_front_idx;
 
@@ -345,54 +339,32 @@ static void ui_init(UIState *s) {
 }
 
 
-static void ui_init_vision(UIState *s, const VisionUIBufs vision_bufs, const int* fds) {
-  assert(vision_bufs.num_bufs == UI_BUF_COUNT);
-  assert(vision_bufs.num_front_bufs == UI_BUF_COUNT);
+static void ui_init_vision(UIState *s,
+                           const VisionStreamBufs back_bufs, int num_back_fds, const int *back_fds,
+                           const VisionStreamBufs front_bufs, int num_front_fds, const int *front_fds) {
+  const VisionUIInfo ui_info = back_bufs.buf_info.ui_info;
 
-  for (int i=0; i<vision_bufs.num_bufs; i++) {
-    if (s->bufs[i].addr) {
-      munmap(s->bufs[i].addr, vision_bufs.buf_len);
-      s->bufs[i].addr = NULL;
-      close(s->bufs[i].fd);
-    }
-    s->bufs[i].fd = fds[i];
-    s->bufs[i].len = vision_bufs.buf_len;
-    s->bufs[i].addr = mmap(NULL, s->bufs[i].len,
-                   PROT_READ | PROT_WRITE,
-                   MAP_SHARED, s->bufs[i].fd, 0);
-    // printf("b %d %p\n", bufs[i].fd, bufs[i].addr);
-    assert(s->bufs[i].addr != MAP_FAILED);
-  }
-  for (int i=0; i<vision_bufs.num_front_bufs; i++) {
-    if (s->front_bufs[i].addr) {
-      munmap(s->front_bufs[i].addr, vision_bufs.buf_len);
-      s->front_bufs[i].addr = NULL;
-      close(s->front_bufs[i].fd);
-    }
-    s->front_bufs[i].fd = fds[vision_bufs.num_bufs + i];
-    s->front_bufs[i].len = vision_bufs.front_buf_len;
-    s->front_bufs[i].addr = mmap(NULL, s->front_bufs[i].len,
-                   PROT_READ | PROT_WRITE,
-                   MAP_SHARED, s->front_bufs[i].fd, 0);
-    // printf("f %d %p\n", front_bufs[i].fd, front_bufs[i].addr);
-    assert(s->front_bufs[i].addr != MAP_FAILED);
-  }
+  assert(num_back_fds == UI_BUF_COUNT);
+  assert(num_front_fds == UI_BUF_COUNT);
+
+  visionbufs_load(s->bufs, back_bufs, num_back_fds, back_fds);
+  visionbufs_load(s->front_bufs, front_bufs, num_front_fds, front_fds);
 
   s->cur_vision_idx = -1;
   s->cur_vision_front_idx = -1;
 
   s->scene = (UIScene){
     .frontview = 0,
-    .big_box_x = vision_bufs.big_box_x,
-    .big_box_y = vision_bufs.big_box_y,
-    .big_box_width = vision_bufs.big_box_width,
-    .big_box_height = vision_bufs.big_box_height,
-    .transformed_width = vision_bufs.transformed_width,
-    .transformed_height = vision_bufs.transformed_height,
-    .front_box_x = vision_bufs.front_box_x,
-    .front_box_y = vision_bufs.front_box_y,
-    .front_box_width = vision_bufs.front_box_width,
-    .front_box_height = vision_bufs.front_box_height,
+    .big_box_x = ui_info.big_box_x,
+    .big_box_y = ui_info.big_box_y,
+    .big_box_width = ui_info.big_box_width,
+    .big_box_height = ui_info.big_box_height,
+    .transformed_width = ui_info.transformed_width,
+    .transformed_height = ui_info.transformed_height,
+    .front_box_x = ui_info.front_box_x,
+    .front_box_y = ui_info.front_box_y,
+    .front_box_width = ui_info.front_box_width,
+    .front_box_height = ui_info.front_box_height,
 
     // only used when ran without controls. overwridden by liveCalibration messages.
     .big_box_transform = (mat3){{
@@ -402,13 +374,11 @@ static void ui_init_vision(UIState *s, const VisionUIBufs vision_bufs, const int
     }},
   };
 
-  s->vision_bufs = vision_bufs;
+  s->rgb_width = back_bufs.width;
+  s->rgb_height = back_bufs.height;
 
-  s->rgb_width = vision_bufs.width;
-  s->rgb_height = vision_bufs.height;
-
-  s->rgb_front_width = vision_bufs.front_width;
-  s->rgb_front_height = vision_bufs.front_height;
+  s->rgb_front_width = front_bufs.width;
+  s->rgb_front_height = front_bufs.height;
 
   s->rgb_transform = (mat4){{
     2.0/s->rgb_width, 0.0, 0.0, -1.0,
@@ -1031,9 +1001,10 @@ static void ui_update(UIState *s) {
         s->vision_connected = false;
         continue;
       }
-      if (rp.type == VISION_UI_ACQUIRE) {
-        bool front = rp.d.ui_acq.front;
-        int idx = rp.d.ui_acq.idx;
+      if (rp.type == VIPC_STREAM_ACQUIRE) {
+        bool front = rp.d.stream_acq.type == VISION_STREAM_UI_FRONT;
+        int idx = rp.d.stream_acq.idx;
+
         int release_idx;
         if (front) {
           release_idx = s->cur_vision_front_idx;
@@ -1042,9 +1013,9 @@ static void ui_update(UIState *s) {
         }
         if (release_idx >= 0) {
           VisionPacket rep = {
-            .type = VISION_UI_RELEASE,
-            .d = { .ui_rel = {
-              .front = front,
+            .type = VIPC_STREAM_RELEASE,
+            .d = { .stream_rel = {
+              .type = rp.d.stream_acq.type,
               .idx = release_idx,
             }},
           };
@@ -1052,11 +1023,11 @@ static void ui_update(UIState *s) {
         }
 
         if (front) {
-          assert(idx < s->vision_bufs.num_front_bufs);
+          assert(idx < UI_BUF_COUNT);
           s->cur_vision_front_idx = idx;
           s->scene.bgr_front_ptr = s->front_bufs[idx].addr;
         } else {
-          assert(idx < s->vision_bufs.num_bufs);
+          assert(idx < UI_BUF_COUNT);
           s->cur_vision_idx = idx;
           s->scene.bgr_ptr = s->bufs[idx].addr;
           // printf("v %d\n", ((uint8_t*)s->bufs[idx].addr)[0]);
@@ -1268,30 +1239,52 @@ static void* vision_connect_thread(void *args) {
     int fd = vipc_connect();
     if (fd < 0) continue;
 
-    VisionPacket p = {
-      .type = VISION_UI_SUBSCRIBE,
+
+
+    VisionPacket p1 = {
+      .type = VIPC_STREAM_SUBSCRIBE,
+      .d = { .stream_sub = { .type = VISION_STREAM_UI_BACK, }, },
     };
-    err = vipc_send(fd, p);
+    err = vipc_send(fd, p1);
+    if (err < 0) {
+      close(fd);
+      continue;
+    }
+    VisionPacket p2 = {
+      .type = VIPC_STREAM_SUBSCRIBE,
+      .d = { .stream_sub = { .type = VISION_STREAM_UI_FRONT, }, },
+    };
+    err = vipc_send(fd, p2);
     if (err < 0) {
       close(fd);
       continue;
     }
 
     // printf("init recv\n");
-    VisionPacket rp;
-    err = vipc_recv(fd, &rp);
+    VisionPacket back_rp;
+    err = vipc_recv(fd, &back_rp);
     if (err <= 0) {
       close(fd);
       continue;
     }
+    assert(back_rp.type == VIPC_STREAM_BUFS);
+    VisionPacket front_rp;
+    err = vipc_recv(fd, &front_rp);
+    if (err <= 0) {
+      close(fd);
+      continue;
+    }
+    assert(front_rp.type == VIPC_STREAM_BUFS);
 
-    assert(rp.type == VISION_UI_BUFS);
-    assert(rp.num_fds == rp.d.ui_bufs.num_bufs + rp.d.ui_bufs.num_front_bufs);
 
     pthread_mutex_lock(&s->lock);
     assert(!s->vision_connected);
     s->ipc_fd = fd;
-    ui_init_vision(s, rp.d.ui_bufs, rp.fds);
+
+    ui_init_vision(s,
+                   back_rp.d.stream_bufs, back_rp.num_fds, back_rp.fds,
+                   front_rp.d.stream_bufs, front_rp.num_fds, front_rp.fds);
+
     s->vision_connected = true;
     s->vision_connect_firstrun = true;
     pthread_mutex_unlock(&s->lock);

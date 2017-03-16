@@ -20,6 +20,7 @@ from selfdrive.thermal import read_thermal
 from selfdrive.registration import register
 
 import common.crash
+from common.params import Params
 
 from selfdrive.loggerd.config import ROOT
 
@@ -47,6 +48,12 @@ interrupt_processes = ['loggerd']
 
 car_started_processes = ['controlsd', 'loggerd', 'sensord', 'radard', 'calibrationd', 'visiond']
 
+def register_managed_process(name, desc, car_started=False):
+  global managed_processes, car_started_processes
+  print "registering", name
+  managed_processes[name] = desc
+  if car_started:
+    car_started_processes.append(name)
 
 # ****************** process management functions ******************
 def launcher(proc, gctx):
@@ -97,27 +104,27 @@ def kill_managed_process(name):
     return
   cloudlog.info("killing %s" % name)
 
-  if name in interrupt_processes:
-    os.kill(running[name].pid, signal.SIGINT)
-  else:
-    running[name].terminate()
-
-
-  # give it 5 seconds to die
-  running[name].join(5.0)
   if running[name].exitcode is None:
-    if name in unkillable_processes:
-      cloudlog.critical("unkillable process %s failed to exit! rebooting in 15 if it doesn't die" % name)
-      running[name].join(15.0)
-      if running[name].exitcode is None:
-        cloudlog.critical("FORCE REBOOTING PHONE!")
-        os.system("date > /sdcard/unkillable_reboot")
-        os.system("reboot")
-        raise RuntimeError
+    if name in interrupt_processes:
+      os.kill(running[name].pid, signal.SIGINT)
     else:
-      cloudlog.info("killing %s with SIGKILL" % name)
-      os.kill(running[name].pid, signal.SIGKILL)
-      running[name].join()
+      running[name].terminate()
+
+    # give it 5 seconds to die
+    running[name].join(5.0)
+    if running[name].exitcode is None:
+      if name in unkillable_processes:
+        cloudlog.critical("unkillable process %s failed to exit! rebooting in 15 if it doesn't die" % name)
+        running[name].join(15.0)
+        if running[name].exitcode is None:
+          cloudlog.critical("FORCE REBOOTING PHONE!")
+          os.system("date > /sdcard/unkillable_reboot")
+          os.system("reboot")
+          raise RuntimeError
+      else:
+        cloudlog.info("killing %s with SIGKILL" % name)
+        os.kill(running[name].pid, signal.SIGKILL)
+        running[name].join()
 
   cloudlog.info("%s is dead with %d" % (name, running[name].exitcode))
   del running[name]
@@ -142,10 +149,11 @@ def manager_init():
   # set dongle id
   cloudlog.info("dongle id is " + dongle_id)
   os.environ['DONGLE_ID'] = dongle_id
-  os.environ['DONGLE_SECRET'] = dongle_secret
 
-  cloudlog.bind_global(dongle_id=dongle_id)
-  common.crash.bind_user(dongle_id=dongle_id)
+  version = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "common", "version.h")).read().split('"')[1]
+
+  cloudlog.bind_global(dongle_id=dongle_id, version=version)
+  common.crash.bind_user(dongle_id=dongle_id, version=version)
 
   # set gctx
   gctx = {
@@ -157,14 +165,13 @@ def manager_init():
   }
 
 def manager_thread():
+
   # now loop
   context = zmq.Context()
   thermal_sock = messaging.pub_sock(context, service_list['thermal'].port)
   health_sock = messaging.sub_sock(context, service_list['health'].port)
 
-  version = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "common", "version.h")).read().split('"')[1]
-
-  cloudlog.info("manager start %s" % version)
+  cloudlog.info("manager start")
   cloudlog.info(dict(os.environ))
 
   start_managed_process("logmessaged")
@@ -172,23 +179,22 @@ def manager_thread():
   start_managed_process("uploader")
   start_managed_process("ui")
 
+  panda = False
   if os.getenv("NOBOARD") is None:
     # *** wait for the board ***
-    wait_for_device()
+    panda = wait_for_device() == 0x2300
 
   # flash the device
   if os.getenv("NOPROG") is None:
     boarddir = os.path.dirname(os.path.abspath(__file__))+"/../board/"
-    os.system("cd %s && make" % boarddir)
+    mkfile = "Makefile.panda" if panda else "Makefile"
+    print "using", mkfile
+    os.system("cd %s && make -f %s" % (boarddir, mkfile))
 
   start_managed_process("boardd")
 
-  if os.getenv("STARTALL") is not None:
-    for p in car_started_processes:
-      start_managed_process(p)
-
+  started = False
   logger_dead = False
-
   count = 0
 
   # set 5 second timeout on health socket
@@ -231,18 +237,21 @@ def manager_thread():
       logger_dead = True
 
     # start constellation of processes when the car starts
-    if not os.getenv("STARTALL"):
-      # with 2% left, we killall, otherwise the phone is bricked
-      if td is not None and td.health.started and avail > 0.02:
-        for p in car_started_processes:
-          if p == "loggerd" and logger_dead:
-            kill_managed_process(p)
-          else:
-            start_managed_process(p)
-      else:
-        logger_dead = False
-        for p in car_started_processes:
+    # with 2% left, we killall, otherwise the phone is bricked
+    if td is not None and td.health.started and avail > 0.02:
+      if not started:
+        Params().car_start()
+        started = True
+      for p in car_started_processes:
+        if p == "loggerd" and logger_dead:
           kill_managed_process(p)
+        else:
+          start_managed_process(p)
+    else:
+      started = False
+      logger_dead = False
+      for p in car_started_processes:
+        kill_managed_process(p)
 
       # shutdown if the battery gets lower than 10%, we aren't running, and we are discharging
       if msg.thermal.batteryPercent < 5 and msg.thermal.batteryStatus == "Discharging":
@@ -258,14 +267,17 @@ def manager_thread():
         running=running.keys(),
         count=count,
         health=(td.to_dict() if td else None),
-        thermal=msg.to_dict(),
-        version=version)
+        thermal=msg.to_dict())
 
     count += 1
 
 
 # optional, build the c++ binaries and preimport the python for speed
 def manager_prepare():
+  # build cereal first
+  subprocess.check_call(["make", "-j4"], cwd="../cereal")
+
+  os.chdir(os.path.dirname(os.path.abspath(__file__)))
   for p in managed_processes:
     proc = managed_processes[p]
     if isinstance(proc, basestring):
@@ -290,11 +302,12 @@ def wait_for_device():
       for device in context.getDeviceList(skip_on_error=True):
         if (device.getVendorID() == 0xbbaa and device.getProductID() == 0xddcc) or \
            (device.getVendorID() == 0x0483 and device.getProductID() == 0xdf11):
+          bcd = device.getbcdDevice()
           handle = device.open()
           handle.claimInterface(0)
           cloudlog.info("found board")
           handle.close()
-          return
+          return bcd
     except Exception as e:
       print "exception", e,
     print "waiting..."
@@ -318,6 +331,15 @@ def main():
     del managed_processes['controlsd']
     del managed_processes['radard']
 
+  # support additional internal only extensions
+  try:
+    import selfdrive.manager_extensions
+    selfdrive.manager_extensions.register(register_managed_process)
+  except ImportError:
+    pass
+
+  params = Params()
+  params.manager_start()
   manager_init()
   manager_prepare()
   

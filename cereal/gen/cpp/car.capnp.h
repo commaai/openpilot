@@ -79,6 +79,7 @@ enum class AudibleAlert_f5a5e26c954e339e: uint16_t {
   CHIME_CONTINUOUS,
 };
 CAPNP_DECLARE_ENUM(AudibleAlert, f5a5e26c954e339e);
+CAPNP_DECLARE_SCHEMA(8c69372490aaa9da);
 
 }  // namespace schemas
 }  // namespace capnp
@@ -230,6 +231,21 @@ struct CarControl::HUDControl {
 
   struct _capnpPrivate {
     CAPNP_DECLARE_STRUCT_HEADER(d895c87c4eb03a38, 2, 0)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand = &schema->defaultBrand;
+    #endif  // !CAPNP_LITE
+  };
+};
+
+struct CarParams {
+  CarParams() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(8c69372490aaa9da, 4, 3)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand = &schema->defaultBrand;
     #endif  // !CAPNP_LITE
@@ -1165,6 +1181,157 @@ private:
 };
 #endif  // !CAPNP_LITE
 
+class CarParams::Reader {
+public:
+  typedef CarParams Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand);
+  }
+#endif  // !CAPNP_LITE
+
+  inline bool hasCarName() const;
+  inline  ::capnp::Text::Reader getCarName() const;
+
+  inline bool hasRadarName() const;
+  inline  ::capnp::Text::Reader getRadarName() const;
+
+  inline bool getEnableSteer() const;
+
+  inline bool getEnableGas() const;
+
+  inline bool getEnableBrake() const;
+
+  inline bool getEnableCruise() const;
+
+  inline float getWheelBase() const;
+
+  inline float getSteerRatio() const;
+
+  inline float getUiSpeedFudge() const;
+
+  inline float getSlipFactor() const;
+
+  inline float getSteerKp() const;
+
+  inline float getSteerKi() const;
+
+  inline bool hasCarFingerprint() const;
+  inline  ::capnp::Text::Reader getCarFingerprint() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class CarParams::Builder {
+public:
+  typedef CarParams Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline bool hasCarName();
+  inline  ::capnp::Text::Builder getCarName();
+  inline void setCarName( ::capnp::Text::Reader value);
+  inline  ::capnp::Text::Builder initCarName(unsigned int size);
+  inline void adoptCarName(::capnp::Orphan< ::capnp::Text>&& value);
+  inline ::capnp::Orphan< ::capnp::Text> disownCarName();
+
+  inline bool hasRadarName();
+  inline  ::capnp::Text::Builder getRadarName();
+  inline void setRadarName( ::capnp::Text::Reader value);
+  inline  ::capnp::Text::Builder initRadarName(unsigned int size);
+  inline void adoptRadarName(::capnp::Orphan< ::capnp::Text>&& value);
+  inline ::capnp::Orphan< ::capnp::Text> disownRadarName();
+
+  inline bool getEnableSteer();
+  inline void setEnableSteer(bool value);
+
+  inline bool getEnableGas();
+  inline void setEnableGas(bool value);
+
+  inline bool getEnableBrake();
+  inline void setEnableBrake(bool value);
+
+  inline bool getEnableCruise();
+  inline void setEnableCruise(bool value);
+
+  inline float getWheelBase();
+  inline void setWheelBase(float value);
+
+  inline float getSteerRatio();
+  inline void setSteerRatio(float value);
+
+  inline float getUiSpeedFudge();
+  inline void setUiSpeedFudge(float value);
+
+  inline float getSlipFactor();
+  inline void setSlipFactor(float value);
+
+  inline float getSteerKp();
+  inline void setSteerKp(float value);
+
+  inline float getSteerKi();
+  inline void setSteerKi(float value);
+
+  inline bool hasCarFingerprint();
+  inline  ::capnp::Text::Builder getCarFingerprint();
+  inline void setCarFingerprint( ::capnp::Text::Reader value);
+  inline  ::capnp::Text::Builder initCarFingerprint(unsigned int size);
+  inline void adoptCarFingerprint(::capnp::Orphan< ::capnp::Text>&& value);
+  inline ::capnp::Orphan< ::capnp::Text> disownCarFingerprint();
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class CarParams::Pipeline {
+public:
+  typedef CarParams Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
 // =======================================================================================
 
 inline bool CarState::Reader::hasErrors() const {
@@ -2025,6 +2192,242 @@ inline  ::cereal::CarControl::HUDControl::AudibleAlert CarControl::HUDControl::B
 inline void CarControl::HUDControl::Builder::setAudibleAlert( ::cereal::CarControl::HUDControl::AudibleAlert value) {
   _builder.setDataField< ::cereal::CarControl::HUDControl::AudibleAlert>(
       4 * ::capnp::ELEMENTS, value);
+}
+
+inline bool CarParams::Reader::hasCarName() const {
+  return !_reader.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline bool CarParams::Builder::hasCarName() {
+  return !_builder.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::Text::Reader CarParams::Reader::getCarName() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _reader.getPointerField(0 * ::capnp::POINTERS));
+}
+inline  ::capnp::Text::Builder CarParams::Builder::getCarName() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void CarParams::Builder::setCarName( ::capnp::Text::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::set(
+      _builder.getPointerField(0 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::Text::Builder CarParams::Builder::initCarName(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(
+      _builder.getPointerField(0 * ::capnp::POINTERS), size);
+}
+inline void CarParams::Builder::adoptCarName(
+    ::capnp::Orphan< ::capnp::Text>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(
+      _builder.getPointerField(0 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::Text> CarParams::Builder::disownCarName() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+
+inline bool CarParams::Reader::hasRadarName() const {
+  return !_reader.getPointerField(1 * ::capnp::POINTERS).isNull();
+}
+inline bool CarParams::Builder::hasRadarName() {
+  return !_builder.getPointerField(1 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::Text::Reader CarParams::Reader::getRadarName() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _reader.getPointerField(1 * ::capnp::POINTERS));
+}
+inline  ::capnp::Text::Builder CarParams::Builder::getRadarName() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _builder.getPointerField(1 * ::capnp::POINTERS));
+}
+inline void CarParams::Builder::setRadarName( ::capnp::Text::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::set(
+      _builder.getPointerField(1 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::Text::Builder CarParams::Builder::initRadarName(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(
+      _builder.getPointerField(1 * ::capnp::POINTERS), size);
+}
+inline void CarParams::Builder::adoptRadarName(
+    ::capnp::Orphan< ::capnp::Text>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(
+      _builder.getPointerField(1 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::Text> CarParams::Builder::disownRadarName() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(
+      _builder.getPointerField(1 * ::capnp::POINTERS));
+}
+
+inline bool CarParams::Reader::getEnableSteer() const {
+  return _reader.getDataField<bool>(
+      0 * ::capnp::ELEMENTS);
+}
+
+inline bool CarParams::Builder::getEnableSteer() {
+  return _builder.getDataField<bool>(
+      0 * ::capnp::ELEMENTS);
+}
+inline void CarParams::Builder::setEnableSteer(bool value) {
+  _builder.setDataField<bool>(
+      0 * ::capnp::ELEMENTS, value);
+}
+
+inline bool CarParams::Reader::getEnableGas() const {
+  return _reader.getDataField<bool>(
+      1 * ::capnp::ELEMENTS);
+}
+
+inline bool CarParams::Builder::getEnableGas() {
+  return _builder.getDataField<bool>(
+      1 * ::capnp::ELEMENTS);
+}
+inline void CarParams::Builder::setEnableGas(bool value) {
+  _builder.setDataField<bool>(
+      1 * ::capnp::ELEMENTS, value);
+}
+
+inline bool CarParams::Reader::getEnableBrake() const {
+  return _reader.getDataField<bool>(
+      2 * ::capnp::ELEMENTS);
+}
+
+inline bool CarParams::Builder::getEnableBrake() {
+  return _builder.getDataField<bool>(
+      2 * ::capnp::ELEMENTS);
+}
+inline void CarParams::Builder::setEnableBrake(bool value) {
+  _builder.setDataField<bool>(
+      2 * ::capnp::ELEMENTS, value);
+}
+
+inline bool CarParams::Reader::getEnableCruise() const {
+  return _reader.getDataField<bool>(
+      3 * ::capnp::ELEMENTS);
+}
+
+inline bool CarParams::Builder::getEnableCruise() {
+  return _builder.getDataField<bool>(
+      3 * ::capnp::ELEMENTS);
+}
+inline void CarParams::Builder::setEnableCruise(bool value) {
+  _builder.setDataField<bool>(
+      3 * ::capnp::ELEMENTS, value);
+}
+
+inline float CarParams::Reader::getWheelBase() const {
+  return _reader.getDataField<float>(
+      1 * ::capnp::ELEMENTS);
+}
+
+inline float CarParams::Builder::getWheelBase() {
+  return _builder.getDataField<float>(
+      1 * ::capnp::ELEMENTS);
+}
+inline void CarParams::Builder::setWheelBase(float value) {
+  _builder.setDataField<float>(
+      1 * ::capnp::ELEMENTS, value);
+}
+
+inline float CarParams::Reader::getSteerRatio() const {
+  return _reader.getDataField<float>(
+      2 * ::capnp::ELEMENTS);
+}
+
+inline float CarParams::Builder::getSteerRatio() {
+  return _builder.getDataField<float>(
+      2 * ::capnp::ELEMENTS);
+}
+inline void CarParams::Builder::setSteerRatio(float value) {
+  _builder.setDataField<float>(
+      2 * ::capnp::ELEMENTS, value);
+}
+
+inline float CarParams::Reader::getUiSpeedFudge() const {
+  return _reader.getDataField<float>(
+      3 * ::capnp::ELEMENTS);
+}
+
+inline float CarParams::Builder::getUiSpeedFudge() {
+  return _builder.getDataField<float>(
+      3 * ::capnp::ELEMENTS);
+}
+inline void CarParams::Builder::setUiSpeedFudge(float value) {
+  _builder.setDataField<float>(
+      3 * ::capnp::ELEMENTS, value);
+}
+
+inline float CarParams::Reader::getSlipFactor() const {
+  return _reader.getDataField<float>(
+      4 * ::capnp::ELEMENTS);
+}
+
+inline float CarParams::Builder::getSlipFactor() {
+  return _builder.getDataField<float>(
+      4 * ::capnp::ELEMENTS);
+}
+inline void CarParams::Builder::setSlipFactor(float value) {
+  _builder.setDataField<float>(
+      4 * ::capnp::ELEMENTS, value);
+}
+
+inline float CarParams::Reader::getSteerKp() const {
+  return _reader.getDataField<float>(
+      5 * ::capnp::ELEMENTS);
+}
+
+inline float CarParams::Builder::getSteerKp() {
+  return _builder.getDataField<float>(
+      5 * ::capnp::ELEMENTS);
+}
+inline void CarParams::Builder::setSteerKp(float value) {
+  _builder.setDataField<float>(
+      5 * ::capnp::ELEMENTS, value);
+}
+
+inline float CarParams::Reader::getSteerKi() const {
+  return _reader.getDataField<float>(
+      6 * ::capnp::ELEMENTS);
+}
+
+inline float CarParams::Builder::getSteerKi() {
+  return _builder.getDataField<float>(
+      6 * ::capnp::ELEMENTS);
+}
+inline void CarParams::Builder::setSteerKi(float value) {
+  _builder.setDataField<float>(
+      6 * ::capnp::ELEMENTS, value);
+}
+
+inline bool CarParams::Reader::hasCarFingerprint() const {
+  return !_reader.getPointerField(2 * ::capnp::POINTERS).isNull();
+}
+inline bool CarParams::Builder::hasCarFingerprint() {
+  return !_builder.getPointerField(2 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::Text::Reader CarParams::Reader::getCarFingerprint() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _reader.getPointerField(2 * ::capnp::POINTERS));
+}
+inline  ::capnp::Text::Builder CarParams::Builder::getCarFingerprint() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _builder.getPointerField(2 * ::capnp::POINTERS));
+}
+inline void CarParams::Builder::setCarFingerprint( ::capnp::Text::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::set(
+      _builder.getPointerField(2 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::Text::Builder CarParams::Builder::initCarFingerprint(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(
+      _builder.getPointerField(2 * ::capnp::POINTERS), size);
+}
+inline void CarParams::Builder::adoptCarFingerprint(
+    ::capnp::Orphan< ::capnp::Text>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(
+      _builder.getPointerField(2 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::Text> CarParams::Builder::disownCarFingerprint() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(
+      _builder.getPointerField(2 * ::capnp::POINTERS));
 }
 
 }  // namespace

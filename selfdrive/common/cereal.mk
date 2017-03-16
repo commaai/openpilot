@@ -7,11 +7,11 @@ CEREAL_OBJS = ../../cereal/gen/c/log.capnp.o ../../cereal/gen/c/car.capnp.o
 
 log.capnp.o: ../../cereal/gen/cpp/log.capnp.c++
 	@echo "[ CXX ] $@"
-	$(CXX) $(CXXFLAGS) $(CEREAL_CFLAGS) \
+	$(CXX) $(CXXFLAGS) $(CEREAL_CXXFLAGS) \
            -c -o '$@' '$<'
 
 car.capnp.o: ../../cereal/gen/cpp/car.capnp.c++
 	@echo "[ CXX ] $@"
-	$(CXX) $(CXXFLAGS) $(CEREAL_CFLAGS) \
+	$(CXX) $(CXXFLAGS) $(CEREAL_CXXFLAGS) \
            -c -o '$@' '$<'
   

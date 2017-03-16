@@ -1,3 +1,9 @@
+Version 0.3.0  (2017-03-xx)
+===========================
+  * Add CarParams struct to improve the abstraction layer
+  * Refactor visiond IPC to support multiple clients
+  * Add raw GPS and beginning support for navigation
+
 Version 0.2.9  (2017-03-01)
 ===========================
   * Retain compatibility with NEOS v1

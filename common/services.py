@@ -36,6 +36,12 @@ service_list = {
   "carState": Service(8021, True),
   # 8022 is reserved for sshd
   "carControl": Service(8023, True),
+  "plan": Service(8024, True),
+  "liveLocation": Service(8025, True),
+  "gpsLocation": Service(8026, True),
+  "ethernetData": Service(8027, True),
+  "navUpdate": Service(8028, True),
+  "qcomGnss": Service(8029, True),
 }
 
 # manager -- base process to manage starting and stopping of all others
@@ -57,15 +63,21 @@ service_list = {
 
 # **** stateful data transformers ****
 
+# plannerd -- decides where to drive the car
+#   subscribes: carState, model, live20
+#   publishes:  plan
+
 # controlsd -- actually drives the car
-#   subscribes: can, thermal, model, live20
+#   subscribes: can, thermal, plan
 #   publishes:  carState, carControl, sendcan, live100
 
 # radard -- processes the radar data
+#   blocks:     CarParams
 #   subscribes: can, live100, model
 #   publishes:  live20, liveTracks
 
 # calibrationd -- places the camera box
+#   blocks:     CarParams
 #   subscribes: features, live100
 #   publishes:  liveCalibration
 

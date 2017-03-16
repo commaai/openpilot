@@ -37,23 +37,20 @@ class BP:
 
 
 class CarInterface(object):
-  def __init__(self, read_only=False):
-    context = zmq.Context()
-    self.logcan = messaging.sub_sock(context, service_list['can'].port)
+  def __init__(self, CP, logcan, sendcan=None):
+    self.logcan = logcan
+    self.CP = CP
 
     self.frame = 0
     self.can_invalid_count = 0
 
     # *** init the major players ***
-    self.CS = CarState(self.logcan)
+    self.CS = CarState(CP, self.logcan)
 
     # sending if read only is False
-    if not read_only:
-      self.sendcan = messaging.pub_sock(context, service_list['sendcan'].port)
+    if sendcan is not None:
+      self.sendcan = sendcan
       self.CC = CarController()
-
-  def getVehicleParams(self):
-    return self.CS.VP
 
   # returns a car.CarState
   def update(self):
@@ -77,7 +74,7 @@ class CarInterface(object):
 
     # gas pedal
     ret.gas = self.CS.car_gas / 256.0
-    if self.CS.VP.brake_only:
+    if not self.CP.enableGas:
       ret.gasPressed = self.CS.pedal_gas > 0
     else:
       ret.gasPressed = self.CS.user_gas_pressed

@@ -8,6 +8,7 @@
 #endif
 
 #include "c++.capnp.h"
+#include "java.capnp.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,6 +23,7 @@ struct cereal_RadarState_RadarPoint;
 struct cereal_CarControl;
 struct cereal_CarControl_CruiseControl;
 struct cereal_CarControl_HUDControl;
+struct cereal_CarParams;
 
 typedef struct {capn_ptr p;} cereal_CarState_ptr;
 typedef struct {capn_ptr p;} cereal_CarState_WheelSpeeds_ptr;
@@ -32,6 +34,7 @@ typedef struct {capn_ptr p;} cereal_RadarState_RadarPoint_ptr;
 typedef struct {capn_ptr p;} cereal_CarControl_ptr;
 typedef struct {capn_ptr p;} cereal_CarControl_CruiseControl_ptr;
 typedef struct {capn_ptr p;} cereal_CarControl_HUDControl_ptr;
+typedef struct {capn_ptr p;} cereal_CarParams_ptr;
 
 typedef struct {capn_ptr p;} cereal_CarState_list;
 typedef struct {capn_ptr p;} cereal_CarState_WheelSpeeds_list;
@@ -42,6 +45,7 @@ typedef struct {capn_ptr p;} cereal_RadarState_RadarPoint_list;
 typedef struct {capn_ptr p;} cereal_CarControl_list;
 typedef struct {capn_ptr p;} cereal_CarControl_CruiseControl_list;
 typedef struct {capn_ptr p;} cereal_CarControl_HUDControl_list;
+typedef struct {capn_ptr p;} cereal_CarParams_list;
 
 enum cereal_CarState_Error {
 	cereal_CarState_Error_commIssue = 0,
@@ -221,6 +225,28 @@ static const size_t cereal_CarControl_HUDControl_pointer_count = 0;
 
 static const size_t cereal_CarControl_HUDControl_struct_bytes_count = 16;
 
+struct cereal_CarParams {
+	capn_text carName;
+	capn_text radarName;
+	capn_text carFingerprint;
+	unsigned enableSteer : 1;
+	unsigned enableGas : 1;
+	unsigned enableBrake : 1;
+	unsigned enableCruise : 1;
+	float wheelBase;
+	float steerRatio;
+	float uiSpeedFudge;
+	float slipFactor;
+	float steerKp;
+	float steerKi;
+};
+
+static const size_t cereal_CarParams_word_count = 4;
+
+static const size_t cereal_CarParams_pointer_count = 3;
+
+static const size_t cereal_CarParams_struct_bytes_count = 56;
+
 cereal_CarState_ptr cereal_new_CarState(struct capn_segment*);
 cereal_CarState_WheelSpeeds_ptr cereal_new_CarState_WheelSpeeds(struct capn_segment*);
 cereal_CarState_CruiseState_ptr cereal_new_CarState_CruiseState(struct capn_segment*);
@@ -230,6 +256,7 @@ cereal_RadarState_RadarPoint_ptr cereal_new_RadarState_RadarPoint(struct capn_se
 cereal_CarControl_ptr cereal_new_CarControl(struct capn_segment*);
 cereal_CarControl_CruiseControl_ptr cereal_new_CarControl_CruiseControl(struct capn_segment*);
 cereal_CarControl_HUDControl_ptr cereal_new_CarControl_HUDControl(struct capn_segment*);
+cereal_CarParams_ptr cereal_new_CarParams(struct capn_segment*);
 
 cereal_CarState_list cereal_new_CarState_list(struct capn_segment*, int len);
 cereal_CarState_WheelSpeeds_list cereal_new_CarState_WheelSpeeds_list(struct capn_segment*, int len);
@@ -240,6 +267,7 @@ cereal_RadarState_RadarPoint_list cereal_new_RadarState_RadarPoint_list(struct c
 cereal_CarControl_list cereal_new_CarControl_list(struct capn_segment*, int len);
 cereal_CarControl_CruiseControl_list cereal_new_CarControl_CruiseControl_list(struct capn_segment*, int len);
 cereal_CarControl_HUDControl_list cereal_new_CarControl_HUDControl_list(struct capn_segment*, int len);
+cereal_CarParams_list cereal_new_CarParams_list(struct capn_segment*, int len);
 
 void cereal_read_CarState(struct cereal_CarState*, cereal_CarState_ptr);
 void cereal_read_CarState_WheelSpeeds(struct cereal_CarState_WheelSpeeds*, cereal_CarState_WheelSpeeds_ptr);
@@ -250,6 +278,7 @@ void cereal_read_RadarState_RadarPoint(struct cereal_RadarState_RadarPoint*, cer
 void cereal_read_CarControl(struct cereal_CarControl*, cereal_CarControl_ptr);
 void cereal_read_CarControl_CruiseControl(struct cereal_CarControl_CruiseControl*, cereal_CarControl_CruiseControl_ptr);
 void cereal_read_CarControl_HUDControl(struct cereal_CarControl_HUDControl*, cereal_CarControl_HUDControl_ptr);
+void cereal_read_CarParams(struct cereal_CarParams*, cereal_CarParams_ptr);
 
 void cereal_write_CarState(const struct cereal_CarState*, cereal_CarState_ptr);
 void cereal_write_CarState_WheelSpeeds(const struct cereal_CarState_WheelSpeeds*, cereal_CarState_WheelSpeeds_ptr);
@@ -260,6 +289,7 @@ void cereal_write_RadarState_RadarPoint(const struct cereal_RadarState_RadarPoin
 void cereal_write_CarControl(const struct cereal_CarControl*, cereal_CarControl_ptr);
 void cereal_write_CarControl_CruiseControl(const struct cereal_CarControl_CruiseControl*, cereal_CarControl_CruiseControl_ptr);
 void cereal_write_CarControl_HUDControl(const struct cereal_CarControl_HUDControl*, cereal_CarControl_HUDControl_ptr);
+void cereal_write_CarParams(const struct cereal_CarParams*, cereal_CarParams_ptr);
 
 void cereal_get_CarState(struct cereal_CarState*, cereal_CarState_list, int i);
 void cereal_get_CarState_WheelSpeeds(struct cereal_CarState_WheelSpeeds*, cereal_CarState_WheelSpeeds_list, int i);
@@ -270,6 +300,7 @@ void cereal_get_RadarState_RadarPoint(struct cereal_RadarState_RadarPoint*, cere
 void cereal_get_CarControl(struct cereal_CarControl*, cereal_CarControl_list, int i);
 void cereal_get_CarControl_CruiseControl(struct cereal_CarControl_CruiseControl*, cereal_CarControl_CruiseControl_list, int i);
 void cereal_get_CarControl_HUDControl(struct cereal_CarControl_HUDControl*, cereal_CarControl_HUDControl_list, int i);
+void cereal_get_CarParams(struct cereal_CarParams*, cereal_CarParams_list, int i);
 
 void cereal_set_CarState(const struct cereal_CarState*, cereal_CarState_list, int i);
 void cereal_set_CarState_WheelSpeeds(const struct cereal_CarState_WheelSpeeds*, cereal_CarState_WheelSpeeds_list, int i);
@@ -280,6 +311,7 @@ void cereal_set_RadarState_RadarPoint(const struct cereal_RadarState_RadarPoint*
 void cereal_set_CarControl(const struct cereal_CarControl*, cereal_CarControl_list, int i);
 void cereal_set_CarControl_CruiseControl(const struct cereal_CarControl_CruiseControl*, cereal_CarControl_CruiseControl_list, int i);
 void cereal_set_CarControl_HUDControl(const struct cereal_CarControl_HUDControl*, cereal_CarControl_HUDControl_list, int i);
+void cereal_set_CarParams(const struct cereal_CarParams*, cereal_CarParams_list, int i);
 
 #ifdef __cplusplus
 }

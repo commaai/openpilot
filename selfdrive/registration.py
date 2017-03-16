@@ -4,8 +4,7 @@ import subprocess
 
 from selfdrive.swaglog import cloudlog
 from common.api import api_get
-
-DONGLEAUTH_PATH = "/sdcard/dongleauth"
+from common.params import Params
 
 def get_imei():
   # Telephony.getDeviceId()
@@ -20,15 +19,16 @@ def get_serial():
   return subprocess.check_output(["getprop", "ro.serialno"]).strip()
 
 def register():
+  params = Params()
   try:
-    if os.path.exists(DONGLEAUTH_PATH):
-      dongleauth = json.load(open(DONGLEAUTH_PATH))
-    else:
+    dongle_id, dongle_secret = params.get("DongleId"), params.get("DongleSecret")
+    if dongle_id is None or dongle_secret is None:
       resp = api_get("pilot_auth", method='POST', imei=get_imei(), serial=get_serial())
-      resp = resp.text
-      dongleauth = json.loads(resp)
-      open(DONGLEAUTH_PATH, "w").write(resp)
-    return dongleauth["dongle_id"], dongleauth["dongle_secret"]
+      dongleauth = json.loads(resp.text)
+      dongle_id, dongle_secret = dongleauth["dongle_id"].encode('ascii'), dongleauth["dongle_secret"].encode('ascii')
+      params.put("DongleId", dongle_id)
+      params.put("DongleSecret", dongle_secret)
+    return dongle_id, dongle_secret
   except Exception:
     cloudlog.exception("failed to authenticate")
     return None

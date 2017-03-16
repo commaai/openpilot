@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <errno.h>
 
+#include <sys/mman.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 
@@ -125,3 +126,29 @@ int vipc_send(int fd, const VisionPacket p2) {
   return sendrecv_with_fds(true, fd, (void*)&p, sizeof(p), (int*)p2.fds, p2.num_fds, NULL);
 }
 
+int vipc_send_p(int fd, const VisionPacket *p) {
+  return vipc_send(fd, *p);
+}
+
+void visionbufs_load(VisionBuf *bufs, const VisionStreamBufs stream_bufs,
+                     int num_fds, const int* fds) {
+  for (int i=0; i<num_fds; i++) {
+    if (bufs[i].addr) {
+      munmap(bufs[i].addr, bufs[i].len);
+      bufs[i].addr = NULL;
+      close(bufs[i].fd);
+    }
+    bufs[i].fd = fds[i];
+    bufs[i].len = stream_bufs.buf_len;
+    bufs[i].addr = mmap(NULL, bufs[i].len,
+                        PROT_READ | PROT_WRITE,
+                        MAP_SHARED, bufs[i].fd, 0);
+    // printf("b %d %zu -> %p\n", bufs[i].fd, bufs[i].len, bufs[i].addr);
+    assert(bufs[i].addr != MAP_FAILED);
+  }
+}
+
+void visionbufs_load_p(VisionBuf *bufs, const VisionStreamBufs *stream_bufs,
+                     int num_fds, const int* fds) {
+  visionbufs_load(bufs, *stream_bufs, num_fds, fds);
+}

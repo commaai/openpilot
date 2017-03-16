@@ -16,8 +16,28 @@ namespace capnp {
 namespace schemas {
 
 CAPNP_DECLARE_SCHEMA(d578fb3372ed5043);
+CAPNP_DECLARE_SCHEMA(f8b13ce2183eb696);
+CAPNP_DECLARE_SCHEMA(a5dfdd084a6eea0e);
 CAPNP_DECLARE_SCHEMA(e71008caeb3fb65c);
+CAPNP_DECLARE_SCHEMA(9d5d7238eba86608);
+enum class DeviceType_9d5d7238eba86608: uint16_t {
+  UNKNOWN,
+  NEO,
+  CHFFR_ANDROID,
+};
+CAPNP_DECLARE_ENUM(DeviceType, 9d5d7238eba86608);
+CAPNP_DECLARE_SCHEMA(fe2919d5c21f426c);
+CAPNP_DECLARE_SCHEMA(9b513b93a887dbcd);
+CAPNP_DECLARE_SCHEMA(9cfb5d53a4f615a5);
 CAPNP_DECLARE_SCHEMA(ea0245f695ae0a33);
+CAPNP_DECLARE_SCHEMA(ddb169f01e102879);
+enum class FrameType_ddb169f01e102879: uint16_t {
+  UNKNOWN,
+  NEO,
+  CHFFR_ANDROID,
+};
+CAPNP_DECLARE_ENUM(FrameType, ddb169f01e102879);
+CAPNP_DECLARE_SCHEMA(bcc3efbac41d2048);
 CAPNP_DECLARE_SCHEMA(9d291d7813ba4a88);
 CAPNP_DECLARE_SCHEMA(a2b29a69d44529a1);
 CAPNP_DECLARE_SCHEMA(a43429bd2bfc24fc);
@@ -30,6 +50,16 @@ enum class SensorSource_e49b3ce8f7f48d0d: uint16_t {
 };
 CAPNP_DECLARE_ENUM(SensorSource, e49b3ce8f7f48d0d);
 CAPNP_DECLARE_SCHEMA(e946524859add50e);
+CAPNP_DECLARE_SCHEMA(d3ff79f25c734863);
+enum class SensorSource_d3ff79f25c734863: uint16_t {
+  ANDROID,
+  I_O_S,
+  CAR,
+  VELODYNE,
+  FUSION,
+  EXTERNAL,
+};
+CAPNP_DECLARE_ENUM(SensorSource, d3ff79f25c734863);
 CAPNP_DECLARE_SCHEMA(8785009a964c7c59);
 CAPNP_DECLARE_SCHEMA(8d8231a40b7fe6e0);
 CAPNP_DECLARE_SCHEMA(cfa2b0c2c82af1e4);
@@ -51,10 +81,127 @@ enum class Type_c0ad259ec157ccd3: uint16_t {
   BIG_BOX_LOSSLESS,
   FULL_H_E_V_C,
   BIG_BOX_H_E_V_C,
+  CHFFR_ANDROID_H264,
 };
 CAPNP_DECLARE_ENUM(Type, c0ad259ec157ccd3);
 CAPNP_DECLARE_SCHEMA(ea095da1894f7d85);
 CAPNP_DECLARE_SCHEMA(9811e1f38f62f2d1);
+CAPNP_DECLARE_SCHEMA(e00b5b3eba12876c);
+CAPNP_DECLARE_SCHEMA(b99b2bc7a57e8128);
+CAPNP_DECLARE_SCHEMA(943dc4625473b03f);
+CAPNP_DECLARE_SCHEMA(a99a9d5b33cf5859);
+CAPNP_DECLARE_SCHEMA(db98be6565516acb);
+CAPNP_DECLARE_SCHEMA(9eaef9187cadbb9b);
+CAPNP_DECLARE_SCHEMA(a5b39b4fc4d7da3f);
+CAPNP_DECLARE_SCHEMA(c5417a637451246f);
+enum class Instruction_c5417a637451246f: uint16_t {
+  TURN_LEFT,
+  TURN_RIGHT,
+  KEEP_LEFT,
+  KEEP_RIGHT,
+  STRAIGHT,
+  ROUNDABOUT_EXIT_NUMBER,
+  ROUNDABOUT_EXIT,
+  ROUNDABOUT_TURN_LEFT,
+  UNKN8,
+  ROUNDABOUT_STRAIGHT,
+  UNKN10,
+  ROUNDABOUT_TURN_RIGHT,
+  UNKN12,
+  ROUNDABOUT_UTURN,
+  UNKN14,
+  ARRIVE,
+  EXIT_LEFT,
+  EXIT_RIGHT,
+  UNKN18,
+  UTURN,
+};
+CAPNP_DECLARE_ENUM(Instruction, c5417a637451246f);
+CAPNP_DECLARE_SCHEMA(cff7566681c277ce);
+CAPNP_DECLARE_SCHEMA(d4df5a192382ba0b);
+CAPNP_DECLARE_SCHEMA(cb6a279f015f6b51);
+enum class ChannelWidth_cb6a279f015f6b51: uint16_t {
+  W20_MHZ,
+  W40_MHZ,
+  W80_MHZ,
+  W160_MHZ,
+  W80_PLUS80_MHZ,
+};
+CAPNP_DECLARE_ENUM(ChannelWidth, cb6a279f015f6b51);
+CAPNP_DECLARE_SCHEMA(dfdf30d03fc485bd);
+CAPNP_DECLARE_SCHEMA(a20710d4f428d6cd);
+CAPNP_DECLARE_SCHEMA(a0e27b453a38f450);
+CAPNP_DECLARE_SCHEMA(d949bf717d77614d);
+CAPNP_DECLARE_SCHEMA(9ef1f3ff0deb5ffb);
+enum class Constellation_9ef1f3ff0deb5ffb: uint16_t {
+  UNKNOWN,
+  GPS,
+  SBAS,
+  GLONASS,
+  QZSS,
+  BEIDOU,
+  GALILEO,
+};
+CAPNP_DECLARE_ENUM(Constellation, 9ef1f3ff0deb5ffb);
+CAPNP_DECLARE_SCHEMA(cbb9490adce12d72);
+enum class State_cbb9490adce12d72: uint16_t {
+  UNKNOWN,
+  CODE_LOCK,
+  BIT_SYNC,
+  SUBFRAME_SYNC,
+  TOW_DECODED,
+  MSEC_AMBIGUOUS,
+  SYMBOL_SYNC,
+  GLO_STRING_SYNC,
+  GLO_TOD_DECODED,
+  BDS_D2_BIT_SYNC,
+  BDS_D2_SUBFRAME_SYNC,
+  GAL_E1BC_CODE_LOCK,
+  GAL_E1C2ND_CODE_LOCK,
+  GAL_E1B_PAGE_SYNC,
+  SBAS_SYNC,
+};
+CAPNP_DECLARE_ENUM(State, cbb9490adce12d72);
+CAPNP_DECLARE_SCHEMA(c04e7b6231d4caa8);
+enum class MultipathIndicator_c04e7b6231d4caa8: uint16_t {
+  UNKNOWN,
+  DETECTED,
+  NOT_DETECTED,
+};
+CAPNP_DECLARE_ENUM(MultipathIndicator, c04e7b6231d4caa8);
+CAPNP_DECLARE_SCHEMA(e2517b083095fd4e);
+CAPNP_DECLARE_SCHEMA(ec1ff7996b35366f);
+enum class Status_ec1ff7996b35366f: uint16_t {
+  UNKNOWN,
+  PARITY_PASSED,
+  PARITY_REBUILT,
+};
+CAPNP_DECLARE_ENUM(Status, ec1ff7996b35366f);
+CAPNP_DECLARE_SCHEMA(de94674b07ae51c1);
+CAPNP_DECLARE_SCHEMA(f580d7d86b7b8692);
+CAPNP_DECLARE_SCHEMA(d71a12b6faada7ee);
+enum class Source_d71a12b6faada7ee: uint16_t {
+  GPS,
+  GLONASS,
+};
+CAPNP_DECLARE_ENUM(Source, d71a12b6faada7ee);
+CAPNP_DECLARE_SCHEMA(f10c595ae7bb2c27);
+CAPNP_DECLARE_SCHEMA(e501010e1bcae83b);
+CAPNP_DECLARE_SCHEMA(e81e829a0d6c83e9);
+enum class SVObservationState_e81e829a0d6c83e9: uint16_t {
+  IDLE,
+  SEARCH,
+  SEARCH_VERIFY,
+  BIT_EDGE,
+  TRACK_VERIFY,
+  TRACK,
+  RESTART,
+  DPO,
+  GLO10MS_BE,
+  GLO10MS_AT,
+};
+CAPNP_DECLARE_ENUM(SVObservationState, e81e829a0d6c83e9);
+CAPNP_DECLARE_SCHEMA(ca965e4add8f4f0b);
 CAPNP_DECLARE_SCHEMA(d314cfd957229c11);
 
 }  // namespace schemas
@@ -63,15 +210,105 @@ CAPNP_DECLARE_SCHEMA(d314cfd957229c11);
 namespace cereal {
 
 static constexpr  ::int32_t LOG_VERSION = 1;
-struct InitData {
-  InitData() = delete;
+template <typename Key = ::capnp::AnyPointer, typename Value = ::capnp::AnyPointer>
+struct Map {
+  Map() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+  struct Entry;
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(f8b13ce2183eb696, 0, 1)
+    #if !CAPNP_LITE
+    static const ::capnp::_::RawBrandedSchema::Scope brandScopes[];
+    static const ::capnp::_::RawBrandedSchema::Binding brandBindings[];
+    static const ::capnp::_::RawBrandedSchema::Dependency brandDependencies[];
+    static const ::capnp::_::RawBrandedSchema specificBrand;
+    static constexpr ::capnp::_::RawBrandedSchema const* brand = ::capnp::_::ChooseBrand<_capnpPrivate, Key, Value>::brand;
+    #endif  // !CAPNP_LITE
+  };
+};
+
+template <typename Key, typename Value>
+struct Map<Key, Value>::Entry {
+  Entry() = delete;
 
   class Reader;
   class Builder;
   class Pipeline;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(e71008caeb3fb65c, 0, 3)
+    CAPNP_DECLARE_STRUCT_HEADER(a5dfdd084a6eea0e, 0, 2)
+    #if !CAPNP_LITE
+    static const ::capnp::_::RawBrandedSchema::Scope brandScopes[];
+    static const ::capnp::_::RawBrandedSchema::Binding brandBindings[];
+    static const ::capnp::_::RawBrandedSchema specificBrand;
+    static constexpr ::capnp::_::RawBrandedSchema const* brand = ::capnp::_::ChooseBrand<_capnpPrivate, Key, Value>::brand;
+    #endif  // !CAPNP_LITE
+  };
+};
+
+struct InitData {
+  InitData() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+  typedef ::capnp::schemas::DeviceType_9d5d7238eba86608 DeviceType;
+
+  struct AndroidBuildInfo;
+  struct AndroidSensor;
+  struct ChffrAndroidExtra;
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(e71008caeb3fb65c, 1, 7)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand = &schema->defaultBrand;
+    #endif  // !CAPNP_LITE
+  };
+};
+
+struct InitData::AndroidBuildInfo {
+  AndroidBuildInfo() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(fe2919d5c21f426c, 2, 21)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand = &schema->defaultBrand;
+    #endif  // !CAPNP_LITE
+  };
+};
+
+struct InitData::AndroidSensor {
+  AndroidSensor() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(9b513b93a887dbcd, 6, 3)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand = &schema->defaultBrand;
+    #endif  // !CAPNP_LITE
+  };
+};
+
+struct InitData::ChffrAndroidExtra {
+  ChffrAndroidExtra() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(9cfb5d53a4f615a5, 0, 1)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand = &schema->defaultBrand;
     #endif  // !CAPNP_LITE
@@ -84,9 +321,27 @@ struct FrameData {
   class Reader;
   class Builder;
   class Pipeline;
+  typedef ::capnp::schemas::FrameType_ddb169f01e102879 FrameType;
+
+  struct AndroidCaptureResult;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(ea0245f695ae0a33, 4, 1)
+    CAPNP_DECLARE_STRUCT_HEADER(ea0245f695ae0a33, 5, 2)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand = &schema->defaultBrand;
+    #endif  // !CAPNP_LITE
+  };
+};
+
+struct FrameData::AndroidCaptureResult {
+  AndroidCaptureResult() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(bcc3efbac41d2048, 4, 2)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand = &schema->defaultBrand;
     #endif  // !CAPNP_LITE
@@ -153,6 +408,8 @@ struct GpsLocationData {
   class Reader;
   class Builder;
   class Pipeline;
+  typedef ::capnp::schemas::SensorSource_d3ff79f25c734863 SensorSource;
+
 
   struct _capnpPrivate {
     CAPNP_DECLARE_STRUCT_HEADER(e946524859add50e, 6, 0)
@@ -438,6 +695,326 @@ struct LogRotate {
   };
 };
 
+struct Plan {
+  Plan() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(e00b5b3eba12876c, 3, 1)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand = &schema->defaultBrand;
+    #endif  // !CAPNP_LITE
+  };
+};
+
+struct LiveLocationData {
+  LiveLocationData() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+  struct Accuracy;
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(b99b2bc7a57e8128, 6, 4)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand = &schema->defaultBrand;
+    #endif  // !CAPNP_LITE
+  };
+};
+
+struct LiveLocationData::Accuracy {
+  Accuracy() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(943dc4625473b03f, 3, 2)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand = &schema->defaultBrand;
+    #endif  // !CAPNP_LITE
+  };
+};
+
+struct EthernetPacket {
+  EthernetPacket() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(a99a9d5b33cf5859, 1, 1)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand = &schema->defaultBrand;
+    #endif  // !CAPNP_LITE
+  };
+};
+
+struct NavUpdate {
+  NavUpdate() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+  struct LatLng;
+  struct Segment;
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(db98be6565516acb, 1, 1)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand = &schema->defaultBrand;
+    #endif  // !CAPNP_LITE
+  };
+};
+
+struct NavUpdate::LatLng {
+  LatLng() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(9eaef9187cadbb9b, 2, 0)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand = &schema->defaultBrand;
+    #endif  // !CAPNP_LITE
+  };
+};
+
+struct NavUpdate::Segment {
+  Segment() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+  typedef ::capnp::schemas::Instruction_c5417a637451246f Instruction;
+
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(a5b39b4fc4d7da3f, 3, 3)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand = &schema->defaultBrand;
+    #endif  // !CAPNP_LITE
+  };
+};
+
+struct CellInfo {
+  CellInfo() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(cff7566681c277ce, 1, 1)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand = &schema->defaultBrand;
+    #endif  // !CAPNP_LITE
+  };
+};
+
+struct WifiScan {
+  WifiScan() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+  typedef ::capnp::schemas::ChannelWidth_cb6a279f015f6b51 ChannelWidth;
+
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(d4df5a192382ba0b, 5, 5)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand = &schema->defaultBrand;
+    #endif  // !CAPNP_LITE
+  };
+};
+
+struct AndroidGnss {
+  AndroidGnss() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+  enum Which: uint16_t {
+    MEASUREMENTS,
+    NAVIGATION_MESSAGE,
+  };
+  struct Measurements;
+  struct NavigationMessage;
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(dfdf30d03fc485bd, 1, 1)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand = &schema->defaultBrand;
+    #endif  // !CAPNP_LITE
+  };
+};
+
+struct AndroidGnss::Measurements {
+  Measurements() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+  struct Clock;
+  struct Measurement;
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(a20710d4f428d6cd, 0, 2)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand = &schema->defaultBrand;
+    #endif  // !CAPNP_LITE
+  };
+};
+
+struct AndroidGnss::Measurements::Clock {
+  Clock() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(a0e27b453a38f450, 9, 0)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand = &schema->defaultBrand;
+    #endif  // !CAPNP_LITE
+  };
+};
+
+struct AndroidGnss::Measurements::Measurement {
+  Measurement() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+  typedef ::capnp::schemas::Constellation_9ef1f3ff0deb5ffb Constellation;
+
+  typedef ::capnp::schemas::State_cbb9490adce12d72 State;
+
+  typedef ::capnp::schemas::MultipathIndicator_c04e7b6231d4caa8 MultipathIndicator;
+
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(d949bf717d77614d, 15, 0)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand = &schema->defaultBrand;
+    #endif  // !CAPNP_LITE
+  };
+};
+
+struct AndroidGnss::NavigationMessage {
+  NavigationMessage() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+  typedef ::capnp::schemas::Status_ec1ff7996b35366f Status;
+
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(e2517b083095fd4e, 3, 1)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand = &schema->defaultBrand;
+    #endif  // !CAPNP_LITE
+  };
+};
+
+struct QcomGnss {
+  QcomGnss() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+  enum Which: uint16_t {
+    MEASUREMENT_REPORT,
+    CLOCK_REPORT,
+  };
+  struct MeasurementReport;
+  struct ClockReport;
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(de94674b07ae51c1, 2, 1)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand = &schema->defaultBrand;
+    #endif  // !CAPNP_LITE
+  };
+};
+
+struct QcomGnss::MeasurementReport {
+  MeasurementReport() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+  typedef ::capnp::schemas::Source_d71a12b6faada7ee Source;
+
+  struct SV;
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(f580d7d86b7b8692, 4, 1)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand = &schema->defaultBrand;
+    #endif  // !CAPNP_LITE
+  };
+};
+
+struct QcomGnss::MeasurementReport::SV {
+  SV() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+  struct MeasurementStatus;
+  typedef ::capnp::schemas::SVObservationState_e81e829a0d6c83e9 SVObservationState;
+
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(f10c595ae7bb2c27, 8, 1)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand = &schema->defaultBrand;
+    #endif  // !CAPNP_LITE
+  };
+};
+
+struct QcomGnss::MeasurementReport::SV::MeasurementStatus {
+  MeasurementStatus() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(e501010e1bcae83b, 1, 0)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand = &schema->defaultBrand;
+    #endif  // !CAPNP_LITE
+  };
+};
+
+struct QcomGnss::ClockReport {
+  ClockReport() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(ca965e4add8f4f0b, 18, 0)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand = &schema->defaultBrand;
+    #endif  // !CAPNP_LITE
+  };
+};
+
 struct Event {
   Event() = delete;
 
@@ -468,6 +1045,14 @@ struct Event {
     GPS_LOCATION,
     CAR_STATE,
     CAR_CONTROL,
+    PLAN,
+    LIVE_LOCATION,
+    ETHERNET_DATA,
+    NAV_UPDATE,
+    CELL_INFO,
+    WIFI_SCAN,
+    ANDROID_GNSS,
+    QCOM_GNSS,
   };
 
   struct _capnpPrivate {
@@ -479,6 +1064,188 @@ struct Event {
 };
 
 // =======================================================================================
+
+template <typename Key, typename Value>
+class Map<Key, Value>::Reader {
+public:
+  typedef Map Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand);
+  }
+#endif  // !CAPNP_LITE
+
+  inline bool hasEntries() const;
+  inline typename  ::capnp::List<typename  ::cereal::Map<Key, Value>::Entry>::Reader getEntries() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+template <typename Key, typename Value>
+class Map<Key, Value>::Builder {
+public:
+  typedef Map Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline bool hasEntries();
+  inline typename  ::capnp::List<typename  ::cereal::Map<Key, Value>::Entry>::Builder getEntries();
+  inline void setEntries(typename  ::capnp::List<typename  ::cereal::Map<Key, Value>::Entry>::Reader value);
+  inline typename  ::capnp::List<typename  ::cereal::Map<Key, Value>::Entry>::Builder initEntries(unsigned int size);
+  inline void adoptEntries(::capnp::Orphan< ::capnp::List<typename  ::cereal::Map<Key, Value>::Entry>>&& value);
+  inline ::capnp::Orphan< ::capnp::List<typename  ::cereal::Map<Key, Value>::Entry>> disownEntries();
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+template <typename Key, typename Value>
+class Map<Key, Value>::Pipeline {
+public:
+  typedef Map Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
+template <typename Key, typename Value>
+class Map<Key, Value>::Entry::Reader {
+public:
+  typedef Entry Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand);
+  }
+#endif  // !CAPNP_LITE
+
+  inline bool hasKey() const;
+  inline  ::capnp::ReaderFor<Key> getKey() const;
+
+  inline bool hasValue() const;
+  inline  ::capnp::ReaderFor<Value> getValue() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+template <typename Key, typename Value>
+class Map<Key, Value>::Entry::Builder {
+public:
+  typedef Entry Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline bool hasKey();
+  inline  ::capnp::BuilderFor<Key> getKey();
+  inline void setKey( ::capnp::ReaderFor<Key> value);
+  inline  ::capnp::BuilderFor<Key> initKey();
+  inline  ::capnp::BuilderFor<Key> initKey(unsigned int size);
+  inline void adoptKey(::capnp::Orphan<Key>&& value);
+  inline ::capnp::Orphan<Key> disownKey();
+
+  inline bool hasValue();
+  inline  ::capnp::BuilderFor<Value> getValue();
+  inline void setValue( ::capnp::ReaderFor<Value> value);
+  inline  ::capnp::BuilderFor<Value> initValue();
+  inline  ::capnp::BuilderFor<Value> initValue(unsigned int size);
+  inline void adoptValue(::capnp::Orphan<Value>&& value);
+  inline ::capnp::Orphan<Value> disownValue();
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+template <typename Key, typename Value>
+class Map<Key, Value>::Entry::Pipeline {
+public:
+  typedef Entry Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+  inline  ::capnp::PipelineFor<Key> getKey();
+  inline  ::capnp::PipelineFor<Value> getValue();
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
 
 class InitData::Reader {
 public:
@@ -505,6 +1272,20 @@ public:
 
   inline bool hasDongleId() const;
   inline  ::capnp::Text::Reader getDongleId() const;
+
+  inline  ::cereal::InitData::DeviceType getDeviceType() const;
+
+  inline bool hasVersion() const;
+  inline  ::capnp::Text::Reader getVersion() const;
+
+  inline bool hasAndroidBuildInfo() const;
+  inline  ::cereal::InitData::AndroidBuildInfo::Reader getAndroidBuildInfo() const;
+
+  inline bool hasAndroidSensors() const;
+  inline  ::capnp::List< ::cereal::InitData::AndroidSensor>::Reader getAndroidSensors() const;
+
+  inline bool hasChffrAndroidExtra() const;
+  inline  ::cereal::InitData::ChffrAndroidExtra::Reader getChffrAndroidExtra() const;
 
 private:
   ::capnp::_::StructReader _reader;
@@ -556,6 +1337,37 @@ public:
   inline void adoptDongleId(::capnp::Orphan< ::capnp::Text>&& value);
   inline ::capnp::Orphan< ::capnp::Text> disownDongleId();
 
+  inline  ::cereal::InitData::DeviceType getDeviceType();
+  inline void setDeviceType( ::cereal::InitData::DeviceType value);
+
+  inline bool hasVersion();
+  inline  ::capnp::Text::Builder getVersion();
+  inline void setVersion( ::capnp::Text::Reader value);
+  inline  ::capnp::Text::Builder initVersion(unsigned int size);
+  inline void adoptVersion(::capnp::Orphan< ::capnp::Text>&& value);
+  inline ::capnp::Orphan< ::capnp::Text> disownVersion();
+
+  inline bool hasAndroidBuildInfo();
+  inline  ::cereal::InitData::AndroidBuildInfo::Builder getAndroidBuildInfo();
+  inline void setAndroidBuildInfo( ::cereal::InitData::AndroidBuildInfo::Reader value);
+  inline  ::cereal::InitData::AndroidBuildInfo::Builder initAndroidBuildInfo();
+  inline void adoptAndroidBuildInfo(::capnp::Orphan< ::cereal::InitData::AndroidBuildInfo>&& value);
+  inline ::capnp::Orphan< ::cereal::InitData::AndroidBuildInfo> disownAndroidBuildInfo();
+
+  inline bool hasAndroidSensors();
+  inline  ::capnp::List< ::cereal::InitData::AndroidSensor>::Builder getAndroidSensors();
+  inline void setAndroidSensors( ::capnp::List< ::cereal::InitData::AndroidSensor>::Reader value);
+  inline  ::capnp::List< ::cereal::InitData::AndroidSensor>::Builder initAndroidSensors(unsigned int size);
+  inline void adoptAndroidSensors(::capnp::Orphan< ::capnp::List< ::cereal::InitData::AndroidSensor>>&& value);
+  inline ::capnp::Orphan< ::capnp::List< ::cereal::InitData::AndroidSensor>> disownAndroidSensors();
+
+  inline bool hasChffrAndroidExtra();
+  inline  ::cereal::InitData::ChffrAndroidExtra::Builder getChffrAndroidExtra();
+  inline void setChffrAndroidExtra( ::cereal::InitData::ChffrAndroidExtra::Reader value);
+  inline  ::cereal::InitData::ChffrAndroidExtra::Builder initChffrAndroidExtra();
+  inline void adoptChffrAndroidExtra(::capnp::Orphan< ::cereal::InitData::ChffrAndroidExtra>&& value);
+  inline ::capnp::Orphan< ::cereal::InitData::ChffrAndroidExtra> disownChffrAndroidExtra();
+
 private:
   ::capnp::_::StructBuilder _builder;
   template <typename, ::capnp::Kind>
@@ -574,6 +1386,538 @@ public:
   inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
       : _typeless(kj::mv(typeless)) {}
 
+  inline  ::cereal::InitData::AndroidBuildInfo::Pipeline getAndroidBuildInfo();
+  inline  ::cereal::InitData::ChffrAndroidExtra::Pipeline getChffrAndroidExtra();
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
+class InitData::AndroidBuildInfo::Reader {
+public:
+  typedef AndroidBuildInfo Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand);
+  }
+#endif  // !CAPNP_LITE
+
+  inline bool hasBoard() const;
+  inline  ::capnp::Text::Reader getBoard() const;
+
+  inline bool hasBootloader() const;
+  inline  ::capnp::Text::Reader getBootloader() const;
+
+  inline bool hasBrand() const;
+  inline  ::capnp::Text::Reader getBrand() const;
+
+  inline bool hasDevice() const;
+  inline  ::capnp::Text::Reader getDevice() const;
+
+  inline bool hasDisplay() const;
+  inline  ::capnp::Text::Reader getDisplay() const;
+
+  inline bool hasFingerprint() const;
+  inline  ::capnp::Text::Reader getFingerprint() const;
+
+  inline bool hasHardware() const;
+  inline  ::capnp::Text::Reader getHardware() const;
+
+  inline bool hasHost() const;
+  inline  ::capnp::Text::Reader getHost() const;
+
+  inline bool hasId() const;
+  inline  ::capnp::Text::Reader getId() const;
+
+  inline bool hasManufacturer() const;
+  inline  ::capnp::Text::Reader getManufacturer() const;
+
+  inline bool hasModel() const;
+  inline  ::capnp::Text::Reader getModel() const;
+
+  inline bool hasProduct() const;
+  inline  ::capnp::Text::Reader getProduct() const;
+
+  inline bool hasRadioVersion() const;
+  inline  ::capnp::Text::Reader getRadioVersion() const;
+
+  inline bool hasSerial() const;
+  inline  ::capnp::Text::Reader getSerial() const;
+
+  inline bool hasSupportedAbis() const;
+  inline  ::capnp::List< ::capnp::Text>::Reader getSupportedAbis() const;
+
+  inline bool hasTags() const;
+  inline  ::capnp::Text::Reader getTags() const;
+
+  inline  ::int64_t getTime() const;
+
+  inline bool hasType() const;
+  inline  ::capnp::Text::Reader getType() const;
+
+  inline bool hasUser() const;
+  inline  ::capnp::Text::Reader getUser() const;
+
+  inline bool hasVersionCodename() const;
+  inline  ::capnp::Text::Reader getVersionCodename() const;
+
+  inline bool hasVersionRelease() const;
+  inline  ::capnp::Text::Reader getVersionRelease() const;
+
+  inline  ::int32_t getVersionSdk() const;
+
+  inline bool hasVersionSecurityPatch() const;
+  inline  ::capnp::Text::Reader getVersionSecurityPatch() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class InitData::AndroidBuildInfo::Builder {
+public:
+  typedef AndroidBuildInfo Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline bool hasBoard();
+  inline  ::capnp::Text::Builder getBoard();
+  inline void setBoard( ::capnp::Text::Reader value);
+  inline  ::capnp::Text::Builder initBoard(unsigned int size);
+  inline void adoptBoard(::capnp::Orphan< ::capnp::Text>&& value);
+  inline ::capnp::Orphan< ::capnp::Text> disownBoard();
+
+  inline bool hasBootloader();
+  inline  ::capnp::Text::Builder getBootloader();
+  inline void setBootloader( ::capnp::Text::Reader value);
+  inline  ::capnp::Text::Builder initBootloader(unsigned int size);
+  inline void adoptBootloader(::capnp::Orphan< ::capnp::Text>&& value);
+  inline ::capnp::Orphan< ::capnp::Text> disownBootloader();
+
+  inline bool hasBrand();
+  inline  ::capnp::Text::Builder getBrand();
+  inline void setBrand( ::capnp::Text::Reader value);
+  inline  ::capnp::Text::Builder initBrand(unsigned int size);
+  inline void adoptBrand(::capnp::Orphan< ::capnp::Text>&& value);
+  inline ::capnp::Orphan< ::capnp::Text> disownBrand();
+
+  inline bool hasDevice();
+  inline  ::capnp::Text::Builder getDevice();
+  inline void setDevice( ::capnp::Text::Reader value);
+  inline  ::capnp::Text::Builder initDevice(unsigned int size);
+  inline void adoptDevice(::capnp::Orphan< ::capnp::Text>&& value);
+  inline ::capnp::Orphan< ::capnp::Text> disownDevice();
+
+  inline bool hasDisplay();
+  inline  ::capnp::Text::Builder getDisplay();
+  inline void setDisplay( ::capnp::Text::Reader value);
+  inline  ::capnp::Text::Builder initDisplay(unsigned int size);
+  inline void adoptDisplay(::capnp::Orphan< ::capnp::Text>&& value);
+  inline ::capnp::Orphan< ::capnp::Text> disownDisplay();
+
+  inline bool hasFingerprint();
+  inline  ::capnp::Text::Builder getFingerprint();
+  inline void setFingerprint( ::capnp::Text::Reader value);
+  inline  ::capnp::Text::Builder initFingerprint(unsigned int size);
+  inline void adoptFingerprint(::capnp::Orphan< ::capnp::Text>&& value);
+  inline ::capnp::Orphan< ::capnp::Text> disownFingerprint();
+
+  inline bool hasHardware();
+  inline  ::capnp::Text::Builder getHardware();
+  inline void setHardware( ::capnp::Text::Reader value);
+  inline  ::capnp::Text::Builder initHardware(unsigned int size);
+  inline void adoptHardware(::capnp::Orphan< ::capnp::Text>&& value);
+  inline ::capnp::Orphan< ::capnp::Text> disownHardware();
+
+  inline bool hasHost();
+  inline  ::capnp::Text::Builder getHost();
+  inline void setHost( ::capnp::Text::Reader value);
+  inline  ::capnp::Text::Builder initHost(unsigned int size);
+  inline void adoptHost(::capnp::Orphan< ::capnp::Text>&& value);
+  inline ::capnp::Orphan< ::capnp::Text> disownHost();
+
+  inline bool hasId();
+  inline  ::capnp::Text::Builder getId();
+  inline void setId( ::capnp::Text::Reader value);
+  inline  ::capnp::Text::Builder initId(unsigned int size);
+  inline void adoptId(::capnp::Orphan< ::capnp::Text>&& value);
+  inline ::capnp::Orphan< ::capnp::Text> disownId();
+
+  inline bool hasManufacturer();
+  inline  ::capnp::Text::Builder getManufacturer();
+  inline void setManufacturer( ::capnp::Text::Reader value);
+  inline  ::capnp::Text::Builder initManufacturer(unsigned int size);
+  inline void adoptManufacturer(::capnp::Orphan< ::capnp::Text>&& value);
+  inline ::capnp::Orphan< ::capnp::Text> disownManufacturer();
+
+  inline bool hasModel();
+  inline  ::capnp::Text::Builder getModel();
+  inline void setModel( ::capnp::Text::Reader value);
+  inline  ::capnp::Text::Builder initModel(unsigned int size);
+  inline void adoptModel(::capnp::Orphan< ::capnp::Text>&& value);
+  inline ::capnp::Orphan< ::capnp::Text> disownModel();
+
+  inline bool hasProduct();
+  inline  ::capnp::Text::Builder getProduct();
+  inline void setProduct( ::capnp::Text::Reader value);
+  inline  ::capnp::Text::Builder initProduct(unsigned int size);
+  inline void adoptProduct(::capnp::Orphan< ::capnp::Text>&& value);
+  inline ::capnp::Orphan< ::capnp::Text> disownProduct();
+
+  inline bool hasRadioVersion();
+  inline  ::capnp::Text::Builder getRadioVersion();
+  inline void setRadioVersion( ::capnp::Text::Reader value);
+  inline  ::capnp::Text::Builder initRadioVersion(unsigned int size);
+  inline void adoptRadioVersion(::capnp::Orphan< ::capnp::Text>&& value);
+  inline ::capnp::Orphan< ::capnp::Text> disownRadioVersion();
+
+  inline bool hasSerial();
+  inline  ::capnp::Text::Builder getSerial();
+  inline void setSerial( ::capnp::Text::Reader value);
+  inline  ::capnp::Text::Builder initSerial(unsigned int size);
+  inline void adoptSerial(::capnp::Orphan< ::capnp::Text>&& value);
+  inline ::capnp::Orphan< ::capnp::Text> disownSerial();
+
+  inline bool hasSupportedAbis();
+  inline  ::capnp::List< ::capnp::Text>::Builder getSupportedAbis();
+  inline void setSupportedAbis( ::capnp::List< ::capnp::Text>::Reader value);
+  inline void setSupportedAbis(::kj::ArrayPtr<const  ::capnp::Text::Reader> value);
+  inline  ::capnp::List< ::capnp::Text>::Builder initSupportedAbis(unsigned int size);
+  inline void adoptSupportedAbis(::capnp::Orphan< ::capnp::List< ::capnp::Text>>&& value);
+  inline ::capnp::Orphan< ::capnp::List< ::capnp::Text>> disownSupportedAbis();
+
+  inline bool hasTags();
+  inline  ::capnp::Text::Builder getTags();
+  inline void setTags( ::capnp::Text::Reader value);
+  inline  ::capnp::Text::Builder initTags(unsigned int size);
+  inline void adoptTags(::capnp::Orphan< ::capnp::Text>&& value);
+  inline ::capnp::Orphan< ::capnp::Text> disownTags();
+
+  inline  ::int64_t getTime();
+  inline void setTime( ::int64_t value);
+
+  inline bool hasType();
+  inline  ::capnp::Text::Builder getType();
+  inline void setType( ::capnp::Text::Reader value);
+  inline  ::capnp::Text::Builder initType(unsigned int size);
+  inline void adoptType(::capnp::Orphan< ::capnp::Text>&& value);
+  inline ::capnp::Orphan< ::capnp::Text> disownType();
+
+  inline bool hasUser();
+  inline  ::capnp::Text::Builder getUser();
+  inline void setUser( ::capnp::Text::Reader value);
+  inline  ::capnp::Text::Builder initUser(unsigned int size);
+  inline void adoptUser(::capnp::Orphan< ::capnp::Text>&& value);
+  inline ::capnp::Orphan< ::capnp::Text> disownUser();
+
+  inline bool hasVersionCodename();
+  inline  ::capnp::Text::Builder getVersionCodename();
+  inline void setVersionCodename( ::capnp::Text::Reader value);
+  inline  ::capnp::Text::Builder initVersionCodename(unsigned int size);
+  inline void adoptVersionCodename(::capnp::Orphan< ::capnp::Text>&& value);
+  inline ::capnp::Orphan< ::capnp::Text> disownVersionCodename();
+
+  inline bool hasVersionRelease();
+  inline  ::capnp::Text::Builder getVersionRelease();
+  inline void setVersionRelease( ::capnp::Text::Reader value);
+  inline  ::capnp::Text::Builder initVersionRelease(unsigned int size);
+  inline void adoptVersionRelease(::capnp::Orphan< ::capnp::Text>&& value);
+  inline ::capnp::Orphan< ::capnp::Text> disownVersionRelease();
+
+  inline  ::int32_t getVersionSdk();
+  inline void setVersionSdk( ::int32_t value);
+
+  inline bool hasVersionSecurityPatch();
+  inline  ::capnp::Text::Builder getVersionSecurityPatch();
+  inline void setVersionSecurityPatch( ::capnp::Text::Reader value);
+  inline  ::capnp::Text::Builder initVersionSecurityPatch(unsigned int size);
+  inline void adoptVersionSecurityPatch(::capnp::Orphan< ::capnp::Text>&& value);
+  inline ::capnp::Orphan< ::capnp::Text> disownVersionSecurityPatch();
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class InitData::AndroidBuildInfo::Pipeline {
+public:
+  typedef AndroidBuildInfo Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
+class InitData::AndroidSensor::Reader {
+public:
+  typedef AndroidSensor Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand);
+  }
+#endif  // !CAPNP_LITE
+
+  inline  ::int32_t getId() const;
+
+  inline bool hasName() const;
+  inline  ::capnp::Text::Reader getName() const;
+
+  inline bool hasVendor() const;
+  inline  ::capnp::Text::Reader getVendor() const;
+
+  inline  ::int32_t getVersion() const;
+
+  inline  ::int32_t getHandle() const;
+
+  inline  ::int32_t getType() const;
+
+  inline float getMaxRange() const;
+
+  inline float getResolution() const;
+
+  inline float getPower() const;
+
+  inline  ::int32_t getMinDelay() const;
+
+  inline  ::uint32_t getFifoReservedEventCount() const;
+
+  inline  ::uint32_t getFifoMaxEventCount() const;
+
+  inline bool hasStringType() const;
+  inline  ::capnp::Text::Reader getStringType() const;
+
+  inline  ::int32_t getMaxDelay() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class InitData::AndroidSensor::Builder {
+public:
+  typedef AndroidSensor Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline  ::int32_t getId();
+  inline void setId( ::int32_t value);
+
+  inline bool hasName();
+  inline  ::capnp::Text::Builder getName();
+  inline void setName( ::capnp::Text::Reader value);
+  inline  ::capnp::Text::Builder initName(unsigned int size);
+  inline void adoptName(::capnp::Orphan< ::capnp::Text>&& value);
+  inline ::capnp::Orphan< ::capnp::Text> disownName();
+
+  inline bool hasVendor();
+  inline  ::capnp::Text::Builder getVendor();
+  inline void setVendor( ::capnp::Text::Reader value);
+  inline  ::capnp::Text::Builder initVendor(unsigned int size);
+  inline void adoptVendor(::capnp::Orphan< ::capnp::Text>&& value);
+  inline ::capnp::Orphan< ::capnp::Text> disownVendor();
+
+  inline  ::int32_t getVersion();
+  inline void setVersion( ::int32_t value);
+
+  inline  ::int32_t getHandle();
+  inline void setHandle( ::int32_t value);
+
+  inline  ::int32_t getType();
+  inline void setType( ::int32_t value);
+
+  inline float getMaxRange();
+  inline void setMaxRange(float value);
+
+  inline float getResolution();
+  inline void setResolution(float value);
+
+  inline float getPower();
+  inline void setPower(float value);
+
+  inline  ::int32_t getMinDelay();
+  inline void setMinDelay( ::int32_t value);
+
+  inline  ::uint32_t getFifoReservedEventCount();
+  inline void setFifoReservedEventCount( ::uint32_t value);
+
+  inline  ::uint32_t getFifoMaxEventCount();
+  inline void setFifoMaxEventCount( ::uint32_t value);
+
+  inline bool hasStringType();
+  inline  ::capnp::Text::Builder getStringType();
+  inline void setStringType( ::capnp::Text::Reader value);
+  inline  ::capnp::Text::Builder initStringType(unsigned int size);
+  inline void adoptStringType(::capnp::Orphan< ::capnp::Text>&& value);
+  inline ::capnp::Orphan< ::capnp::Text> disownStringType();
+
+  inline  ::int32_t getMaxDelay();
+  inline void setMaxDelay( ::int32_t value);
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class InitData::AndroidSensor::Pipeline {
+public:
+  typedef AndroidSensor Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
+class InitData::ChffrAndroidExtra::Reader {
+public:
+  typedef ChffrAndroidExtra Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand);
+  }
+#endif  // !CAPNP_LITE
+
+  inline bool hasAllCameraCharacteristics() const;
+  inline  ::cereal::Map< ::capnp::Text,  ::capnp::Text>::Reader getAllCameraCharacteristics() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class InitData::ChffrAndroidExtra::Builder {
+public:
+  typedef ChffrAndroidExtra Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline bool hasAllCameraCharacteristics();
+  inline  ::cereal::Map< ::capnp::Text,  ::capnp::Text>::Builder getAllCameraCharacteristics();
+  inline void setAllCameraCharacteristics( ::cereal::Map< ::capnp::Text,  ::capnp::Text>::Reader value);
+  inline  ::cereal::Map< ::capnp::Text,  ::capnp::Text>::Builder initAllCameraCharacteristics();
+  inline void adoptAllCameraCharacteristics(::capnp::Orphan< ::cereal::Map< ::capnp::Text,  ::capnp::Text>>&& value);
+  inline ::capnp::Orphan< ::cereal::Map< ::capnp::Text,  ::capnp::Text>> disownAllCameraCharacteristics();
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class InitData::ChffrAndroidExtra::Pipeline {
+public:
+  typedef ChffrAndroidExtra Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+  inline  ::cereal::Map< ::capnp::Text,  ::capnp::Text>::Pipeline getAllCameraCharacteristics();
 private:
   ::capnp::AnyPointer::Pipeline _typeless;
   friend class ::capnp::PipelineHook;
@@ -613,6 +1957,13 @@ public:
 
   inline bool hasImage() const;
   inline  ::capnp::Data::Reader getImage() const;
+
+  inline  ::cereal::FrameData::FrameType getFrameType() const;
+
+  inline  ::uint64_t getTimestampSof() const;
+
+  inline bool hasAndroidCaptureResult() const;
+  inline  ::cereal::FrameData::AndroidCaptureResult::Reader getAndroidCaptureResult() const;
 
 private:
   ::capnp::_::StructReader _reader;
@@ -667,6 +2018,19 @@ public:
   inline void adoptImage(::capnp::Orphan< ::capnp::Data>&& value);
   inline ::capnp::Orphan< ::capnp::Data> disownImage();
 
+  inline  ::cereal::FrameData::FrameType getFrameType();
+  inline void setFrameType( ::cereal::FrameData::FrameType value);
+
+  inline  ::uint64_t getTimestampSof();
+  inline void setTimestampSof( ::uint64_t value);
+
+  inline bool hasAndroidCaptureResult();
+  inline  ::cereal::FrameData::AndroidCaptureResult::Builder getAndroidCaptureResult();
+  inline void setAndroidCaptureResult( ::cereal::FrameData::AndroidCaptureResult::Reader value);
+  inline  ::cereal::FrameData::AndroidCaptureResult::Builder initAndroidCaptureResult();
+  inline void adoptAndroidCaptureResult(::capnp::Orphan< ::cereal::FrameData::AndroidCaptureResult>&& value);
+  inline ::capnp::Orphan< ::cereal::FrameData::AndroidCaptureResult> disownAndroidCaptureResult();
+
 private:
   ::capnp::_::StructBuilder _builder;
   template <typename, ::capnp::Kind>
@@ -680,6 +2044,120 @@ private:
 class FrameData::Pipeline {
 public:
   typedef FrameData Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+  inline  ::cereal::FrameData::AndroidCaptureResult::Pipeline getAndroidCaptureResult();
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
+class FrameData::AndroidCaptureResult::Reader {
+public:
+  typedef AndroidCaptureResult Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand);
+  }
+#endif  // !CAPNP_LITE
+
+  inline  ::int32_t getSensitivity() const;
+
+  inline  ::int64_t getFrameDuration() const;
+
+  inline  ::int64_t getExposureTime() const;
+
+  inline  ::uint64_t getRollingShutterSkew() const;
+
+  inline bool hasColorCorrectionTransform() const;
+  inline  ::capnp::List< ::int32_t>::Reader getColorCorrectionTransform() const;
+
+  inline bool hasColorCorrectionGains() const;
+  inline  ::capnp::List<float>::Reader getColorCorrectionGains() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class FrameData::AndroidCaptureResult::Builder {
+public:
+  typedef AndroidCaptureResult Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline  ::int32_t getSensitivity();
+  inline void setSensitivity( ::int32_t value);
+
+  inline  ::int64_t getFrameDuration();
+  inline void setFrameDuration( ::int64_t value);
+
+  inline  ::int64_t getExposureTime();
+  inline void setExposureTime( ::int64_t value);
+
+  inline  ::uint64_t getRollingShutterSkew();
+  inline void setRollingShutterSkew( ::uint64_t value);
+
+  inline bool hasColorCorrectionTransform();
+  inline  ::capnp::List< ::int32_t>::Builder getColorCorrectionTransform();
+  inline void setColorCorrectionTransform( ::capnp::List< ::int32_t>::Reader value);
+  inline void setColorCorrectionTransform(::kj::ArrayPtr<const  ::int32_t> value);
+  inline  ::capnp::List< ::int32_t>::Builder initColorCorrectionTransform(unsigned int size);
+  inline void adoptColorCorrectionTransform(::capnp::Orphan< ::capnp::List< ::int32_t>>&& value);
+  inline ::capnp::Orphan< ::capnp::List< ::int32_t>> disownColorCorrectionTransform();
+
+  inline bool hasColorCorrectionGains();
+  inline  ::capnp::List<float>::Builder getColorCorrectionGains();
+  inline void setColorCorrectionGains( ::capnp::List<float>::Reader value);
+  inline void setColorCorrectionGains(::kj::ArrayPtr<const float> value);
+  inline  ::capnp::List<float>::Builder initColorCorrectionGains(unsigned int size);
+  inline void adoptColorCorrectionGains(::capnp::Orphan< ::capnp::List<float>>&& value);
+  inline ::capnp::Orphan< ::capnp::List<float>> disownColorCorrectionGains();
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class FrameData::AndroidCaptureResult::Pipeline {
+public:
+  typedef AndroidCaptureResult Pipelines;
 
   inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
   inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
@@ -1050,6 +2528,8 @@ public:
 
   inline  ::int64_t getTimestamp() const;
 
+  inline  ::cereal::GpsLocationData::SensorSource getSource() const;
+
 private:
   ::capnp::_::StructReader _reader;
   template <typename, ::capnp::Kind>
@@ -1101,6 +2581,9 @@ public:
 
   inline  ::int64_t getTimestamp();
   inline void setTimestamp( ::int64_t value);
+
+  inline  ::cereal::GpsLocationData::SensorSource getSource();
+  inline void setSource( ::cereal::GpsLocationData::SensorSource value);
 
 private:
   ::capnp::_::StructBuilder _builder;
@@ -2917,6 +4400,8 @@ public:
 
   inline  ::uint32_t getSegmentId() const;
 
+  inline  ::uint32_t getSegmentIdEncode() const;
+
 private:
   ::capnp::_::StructReader _reader;
   template <typename, ::capnp::Kind>
@@ -2959,6 +4444,9 @@ public:
 
   inline  ::uint32_t getSegmentId();
   inline void setSegmentId( ::uint32_t value);
+
+  inline  ::uint32_t getSegmentIdEncode();
+  inline void setSegmentIdEncode( ::uint32_t value);
 
 private:
   ::capnp::_::StructBuilder _builder;
@@ -3188,6 +4676,2663 @@ private:
 };
 #endif  // !CAPNP_LITE
 
+class Plan::Reader {
+public:
+  typedef Plan Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand);
+  }
+#endif  // !CAPNP_LITE
+
+  inline bool getLateralValid() const;
+
+  inline bool hasDPoly() const;
+  inline  ::capnp::List<float>::Reader getDPoly() const;
+
+  inline bool getLongitudalValid() const;
+
+  inline float getVTarget() const;
+
+  inline float getATargetMin() const;
+
+  inline float getATargetMax() const;
+
+  inline float getJerkFactor() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class Plan::Builder {
+public:
+  typedef Plan Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline bool getLateralValid();
+  inline void setLateralValid(bool value);
+
+  inline bool hasDPoly();
+  inline  ::capnp::List<float>::Builder getDPoly();
+  inline void setDPoly( ::capnp::List<float>::Reader value);
+  inline void setDPoly(::kj::ArrayPtr<const float> value);
+  inline  ::capnp::List<float>::Builder initDPoly(unsigned int size);
+  inline void adoptDPoly(::capnp::Orphan< ::capnp::List<float>>&& value);
+  inline ::capnp::Orphan< ::capnp::List<float>> disownDPoly();
+
+  inline bool getLongitudalValid();
+  inline void setLongitudalValid(bool value);
+
+  inline float getVTarget();
+  inline void setVTarget(float value);
+
+  inline float getATargetMin();
+  inline void setATargetMin(float value);
+
+  inline float getATargetMax();
+  inline void setATargetMax(float value);
+
+  inline float getJerkFactor();
+  inline void setJerkFactor(float value);
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class Plan::Pipeline {
+public:
+  typedef Plan Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
+class LiveLocationData::Reader {
+public:
+  typedef LiveLocationData Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand);
+  }
+#endif  // !CAPNP_LITE
+
+  inline  ::uint8_t getStatus() const;
+
+  inline double getLat() const;
+
+  inline double getLon() const;
+
+  inline float getAlt() const;
+
+  inline float getSpeed() const;
+
+  inline bool hasVNED() const;
+  inline  ::capnp::List<float>::Reader getVNED() const;
+
+  inline float getRoll() const;
+
+  inline float getPitch() const;
+
+  inline float getHeading() const;
+
+  inline float getWanderAngle() const;
+
+  inline float getTrackAngle() const;
+
+  inline bool hasGyro() const;
+  inline  ::capnp::List<float>::Reader getGyro() const;
+
+  inline bool hasAccel() const;
+  inline  ::capnp::List<float>::Reader getAccel() const;
+
+  inline bool hasAccuracy() const;
+  inline  ::cereal::LiveLocationData::Accuracy::Reader getAccuracy() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class LiveLocationData::Builder {
+public:
+  typedef LiveLocationData Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline  ::uint8_t getStatus();
+  inline void setStatus( ::uint8_t value);
+
+  inline double getLat();
+  inline void setLat(double value);
+
+  inline double getLon();
+  inline void setLon(double value);
+
+  inline float getAlt();
+  inline void setAlt(float value);
+
+  inline float getSpeed();
+  inline void setSpeed(float value);
+
+  inline bool hasVNED();
+  inline  ::capnp::List<float>::Builder getVNED();
+  inline void setVNED( ::capnp::List<float>::Reader value);
+  inline void setVNED(::kj::ArrayPtr<const float> value);
+  inline  ::capnp::List<float>::Builder initVNED(unsigned int size);
+  inline void adoptVNED(::capnp::Orphan< ::capnp::List<float>>&& value);
+  inline ::capnp::Orphan< ::capnp::List<float>> disownVNED();
+
+  inline float getRoll();
+  inline void setRoll(float value);
+
+  inline float getPitch();
+  inline void setPitch(float value);
+
+  inline float getHeading();
+  inline void setHeading(float value);
+
+  inline float getWanderAngle();
+  inline void setWanderAngle(float value);
+
+  inline float getTrackAngle();
+  inline void setTrackAngle(float value);
+
+  inline bool hasGyro();
+  inline  ::capnp::List<float>::Builder getGyro();
+  inline void setGyro( ::capnp::List<float>::Reader value);
+  inline void setGyro(::kj::ArrayPtr<const float> value);
+  inline  ::capnp::List<float>::Builder initGyro(unsigned int size);
+  inline void adoptGyro(::capnp::Orphan< ::capnp::List<float>>&& value);
+  inline ::capnp::Orphan< ::capnp::List<float>> disownGyro();
+
+  inline bool hasAccel();
+  inline  ::capnp::List<float>::Builder getAccel();
+  inline void setAccel( ::capnp::List<float>::Reader value);
+  inline void setAccel(::kj::ArrayPtr<const float> value);
+  inline  ::capnp::List<float>::Builder initAccel(unsigned int size);
+  inline void adoptAccel(::capnp::Orphan< ::capnp::List<float>>&& value);
+  inline ::capnp::Orphan< ::capnp::List<float>> disownAccel();
+
+  inline bool hasAccuracy();
+  inline  ::cereal::LiveLocationData::Accuracy::Builder getAccuracy();
+  inline void setAccuracy( ::cereal::LiveLocationData::Accuracy::Reader value);
+  inline  ::cereal::LiveLocationData::Accuracy::Builder initAccuracy();
+  inline void adoptAccuracy(::capnp::Orphan< ::cereal::LiveLocationData::Accuracy>&& value);
+  inline ::capnp::Orphan< ::cereal::LiveLocationData::Accuracy> disownAccuracy();
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class LiveLocationData::Pipeline {
+public:
+  typedef LiveLocationData Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+  inline  ::cereal::LiveLocationData::Accuracy::Pipeline getAccuracy();
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
+class LiveLocationData::Accuracy::Reader {
+public:
+  typedef Accuracy Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand);
+  }
+#endif  // !CAPNP_LITE
+
+  inline bool hasPNEDError() const;
+  inline  ::capnp::List<float>::Reader getPNEDError() const;
+
+  inline bool hasVNEDError() const;
+  inline  ::capnp::List<float>::Reader getVNEDError() const;
+
+  inline float getRollError() const;
+
+  inline float getPitchError() const;
+
+  inline float getHeadingError() const;
+
+  inline float getEllipsoidSemiMajorError() const;
+
+  inline float getEllipsoidSemiMinorError() const;
+
+  inline float getEllipsoidOrientationError() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class LiveLocationData::Accuracy::Builder {
+public:
+  typedef Accuracy Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline bool hasPNEDError();
+  inline  ::capnp::List<float>::Builder getPNEDError();
+  inline void setPNEDError( ::capnp::List<float>::Reader value);
+  inline void setPNEDError(::kj::ArrayPtr<const float> value);
+  inline  ::capnp::List<float>::Builder initPNEDError(unsigned int size);
+  inline void adoptPNEDError(::capnp::Orphan< ::capnp::List<float>>&& value);
+  inline ::capnp::Orphan< ::capnp::List<float>> disownPNEDError();
+
+  inline bool hasVNEDError();
+  inline  ::capnp::List<float>::Builder getVNEDError();
+  inline void setVNEDError( ::capnp::List<float>::Reader value);
+  inline void setVNEDError(::kj::ArrayPtr<const float> value);
+  inline  ::capnp::List<float>::Builder initVNEDError(unsigned int size);
+  inline void adoptVNEDError(::capnp::Orphan< ::capnp::List<float>>&& value);
+  inline ::capnp::Orphan< ::capnp::List<float>> disownVNEDError();
+
+  inline float getRollError();
+  inline void setRollError(float value);
+
+  inline float getPitchError();
+  inline void setPitchError(float value);
+
+  inline float getHeadingError();
+  inline void setHeadingError(float value);
+
+  inline float getEllipsoidSemiMajorError();
+  inline void setEllipsoidSemiMajorError(float value);
+
+  inline float getEllipsoidSemiMinorError();
+  inline void setEllipsoidSemiMinorError(float value);
+
+  inline float getEllipsoidOrientationError();
+  inline void setEllipsoidOrientationError(float value);
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class LiveLocationData::Accuracy::Pipeline {
+public:
+  typedef Accuracy Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
+class EthernetPacket::Reader {
+public:
+  typedef EthernetPacket Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand);
+  }
+#endif  // !CAPNP_LITE
+
+  inline bool hasPkt() const;
+  inline  ::capnp::Data::Reader getPkt() const;
+
+  inline float getTs() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class EthernetPacket::Builder {
+public:
+  typedef EthernetPacket Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline bool hasPkt();
+  inline  ::capnp::Data::Builder getPkt();
+  inline void setPkt( ::capnp::Data::Reader value);
+  inline  ::capnp::Data::Builder initPkt(unsigned int size);
+  inline void adoptPkt(::capnp::Orphan< ::capnp::Data>&& value);
+  inline ::capnp::Orphan< ::capnp::Data> disownPkt();
+
+  inline float getTs();
+  inline void setTs(float value);
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class EthernetPacket::Pipeline {
+public:
+  typedef EthernetPacket Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
+class NavUpdate::Reader {
+public:
+  typedef NavUpdate Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand);
+  }
+#endif  // !CAPNP_LITE
+
+  inline bool getIsNavigating() const;
+
+  inline  ::int32_t getCurSegment() const;
+
+  inline bool hasSegments() const;
+  inline  ::capnp::List< ::cereal::NavUpdate::Segment>::Reader getSegments() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class NavUpdate::Builder {
+public:
+  typedef NavUpdate Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline bool getIsNavigating();
+  inline void setIsNavigating(bool value);
+
+  inline  ::int32_t getCurSegment();
+  inline void setCurSegment( ::int32_t value);
+
+  inline bool hasSegments();
+  inline  ::capnp::List< ::cereal::NavUpdate::Segment>::Builder getSegments();
+  inline void setSegments( ::capnp::List< ::cereal::NavUpdate::Segment>::Reader value);
+  inline  ::capnp::List< ::cereal::NavUpdate::Segment>::Builder initSegments(unsigned int size);
+  inline void adoptSegments(::capnp::Orphan< ::capnp::List< ::cereal::NavUpdate::Segment>>&& value);
+  inline ::capnp::Orphan< ::capnp::List< ::cereal::NavUpdate::Segment>> disownSegments();
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class NavUpdate::Pipeline {
+public:
+  typedef NavUpdate Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
+class NavUpdate::LatLng::Reader {
+public:
+  typedef LatLng Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand);
+  }
+#endif  // !CAPNP_LITE
+
+  inline double getLat() const;
+
+  inline double getLng() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class NavUpdate::LatLng::Builder {
+public:
+  typedef LatLng Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline double getLat();
+  inline void setLat(double value);
+
+  inline double getLng();
+  inline void setLng(double value);
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class NavUpdate::LatLng::Pipeline {
+public:
+  typedef LatLng Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
+class NavUpdate::Segment::Reader {
+public:
+  typedef Segment Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand);
+  }
+#endif  // !CAPNP_LITE
+
+  inline bool hasFrom() const;
+  inline  ::cereal::NavUpdate::LatLng::Reader getFrom() const;
+
+  inline bool hasTo() const;
+  inline  ::cereal::NavUpdate::LatLng::Reader getTo() const;
+
+  inline  ::int32_t getUpdateTime() const;
+
+  inline  ::int32_t getDistance() const;
+
+  inline  ::int32_t getCrossTime() const;
+
+  inline  ::int32_t getExitNo() const;
+
+  inline  ::cereal::NavUpdate::Segment::Instruction getInstruction() const;
+
+  inline bool hasParts() const;
+  inline  ::capnp::List< ::cereal::NavUpdate::LatLng>::Reader getParts() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class NavUpdate::Segment::Builder {
+public:
+  typedef Segment Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline bool hasFrom();
+  inline  ::cereal::NavUpdate::LatLng::Builder getFrom();
+  inline void setFrom( ::cereal::NavUpdate::LatLng::Reader value);
+  inline  ::cereal::NavUpdate::LatLng::Builder initFrom();
+  inline void adoptFrom(::capnp::Orphan< ::cereal::NavUpdate::LatLng>&& value);
+  inline ::capnp::Orphan< ::cereal::NavUpdate::LatLng> disownFrom();
+
+  inline bool hasTo();
+  inline  ::cereal::NavUpdate::LatLng::Builder getTo();
+  inline void setTo( ::cereal::NavUpdate::LatLng::Reader value);
+  inline  ::cereal::NavUpdate::LatLng::Builder initTo();
+  inline void adoptTo(::capnp::Orphan< ::cereal::NavUpdate::LatLng>&& value);
+  inline ::capnp::Orphan< ::cereal::NavUpdate::LatLng> disownTo();
+
+  inline  ::int32_t getUpdateTime();
+  inline void setUpdateTime( ::int32_t value);
+
+  inline  ::int32_t getDistance();
+  inline void setDistance( ::int32_t value);
+
+  inline  ::int32_t getCrossTime();
+  inline void setCrossTime( ::int32_t value);
+
+  inline  ::int32_t getExitNo();
+  inline void setExitNo( ::int32_t value);
+
+  inline  ::cereal::NavUpdate::Segment::Instruction getInstruction();
+  inline void setInstruction( ::cereal::NavUpdate::Segment::Instruction value);
+
+  inline bool hasParts();
+  inline  ::capnp::List< ::cereal::NavUpdate::LatLng>::Builder getParts();
+  inline void setParts( ::capnp::List< ::cereal::NavUpdate::LatLng>::Reader value);
+  inline  ::capnp::List< ::cereal::NavUpdate::LatLng>::Builder initParts(unsigned int size);
+  inline void adoptParts(::capnp::Orphan< ::capnp::List< ::cereal::NavUpdate::LatLng>>&& value);
+  inline ::capnp::Orphan< ::capnp::List< ::cereal::NavUpdate::LatLng>> disownParts();
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class NavUpdate::Segment::Pipeline {
+public:
+  typedef Segment Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+  inline  ::cereal::NavUpdate::LatLng::Pipeline getFrom();
+  inline  ::cereal::NavUpdate::LatLng::Pipeline getTo();
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
+class CellInfo::Reader {
+public:
+  typedef CellInfo Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand);
+  }
+#endif  // !CAPNP_LITE
+
+  inline  ::uint64_t getTimestamp() const;
+
+  inline bool hasRepr() const;
+  inline  ::capnp::Text::Reader getRepr() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class CellInfo::Builder {
+public:
+  typedef CellInfo Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline  ::uint64_t getTimestamp();
+  inline void setTimestamp( ::uint64_t value);
+
+  inline bool hasRepr();
+  inline  ::capnp::Text::Builder getRepr();
+  inline void setRepr( ::capnp::Text::Reader value);
+  inline  ::capnp::Text::Builder initRepr(unsigned int size);
+  inline void adoptRepr(::capnp::Orphan< ::capnp::Text>&& value);
+  inline ::capnp::Orphan< ::capnp::Text> disownRepr();
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class CellInfo::Pipeline {
+public:
+  typedef CellInfo Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
+class WifiScan::Reader {
+public:
+  typedef WifiScan Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand);
+  }
+#endif  // !CAPNP_LITE
+
+  inline bool hasBssid() const;
+  inline  ::capnp::Text::Reader getBssid() const;
+
+  inline bool hasSsid() const;
+  inline  ::capnp::Text::Reader getSsid() const;
+
+  inline bool hasCapabilities() const;
+  inline  ::capnp::Text::Reader getCapabilities() const;
+
+  inline  ::int32_t getFrequency() const;
+
+  inline  ::int32_t getLevel() const;
+
+  inline  ::int64_t getTimestamp() const;
+
+  inline  ::int32_t getCenterFreq0() const;
+
+  inline  ::int32_t getCenterFreq1() const;
+
+  inline  ::cereal::WifiScan::ChannelWidth getChannelWidth() const;
+
+  inline bool hasOperatorFriendlyName() const;
+  inline  ::capnp::Text::Reader getOperatorFriendlyName() const;
+
+  inline bool hasVenueName() const;
+  inline  ::capnp::Text::Reader getVenueName() const;
+
+  inline bool getIs80211mcResponder() const;
+
+  inline bool getPasspoint() const;
+
+  inline  ::int32_t getDistanceCm() const;
+
+  inline  ::int32_t getDistanceSdCm() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class WifiScan::Builder {
+public:
+  typedef WifiScan Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline bool hasBssid();
+  inline  ::capnp::Text::Builder getBssid();
+  inline void setBssid( ::capnp::Text::Reader value);
+  inline  ::capnp::Text::Builder initBssid(unsigned int size);
+  inline void adoptBssid(::capnp::Orphan< ::capnp::Text>&& value);
+  inline ::capnp::Orphan< ::capnp::Text> disownBssid();
+
+  inline bool hasSsid();
+  inline  ::capnp::Text::Builder getSsid();
+  inline void setSsid( ::capnp::Text::Reader value);
+  inline  ::capnp::Text::Builder initSsid(unsigned int size);
+  inline void adoptSsid(::capnp::Orphan< ::capnp::Text>&& value);
+  inline ::capnp::Orphan< ::capnp::Text> disownSsid();
+
+  inline bool hasCapabilities();
+  inline  ::capnp::Text::Builder getCapabilities();
+  inline void setCapabilities( ::capnp::Text::Reader value);
+  inline  ::capnp::Text::Builder initCapabilities(unsigned int size);
+  inline void adoptCapabilities(::capnp::Orphan< ::capnp::Text>&& value);
+  inline ::capnp::Orphan< ::capnp::Text> disownCapabilities();
+
+  inline  ::int32_t getFrequency();
+  inline void setFrequency( ::int32_t value);
+
+  inline  ::int32_t getLevel();
+  inline void setLevel( ::int32_t value);
+
+  inline  ::int64_t getTimestamp();
+  inline void setTimestamp( ::int64_t value);
+
+  inline  ::int32_t getCenterFreq0();
+  inline void setCenterFreq0( ::int32_t value);
+
+  inline  ::int32_t getCenterFreq1();
+  inline void setCenterFreq1( ::int32_t value);
+
+  inline  ::cereal::WifiScan::ChannelWidth getChannelWidth();
+  inline void setChannelWidth( ::cereal::WifiScan::ChannelWidth value);
+
+  inline bool hasOperatorFriendlyName();
+  inline  ::capnp::Text::Builder getOperatorFriendlyName();
+  inline void setOperatorFriendlyName( ::capnp::Text::Reader value);
+  inline  ::capnp::Text::Builder initOperatorFriendlyName(unsigned int size);
+  inline void adoptOperatorFriendlyName(::capnp::Orphan< ::capnp::Text>&& value);
+  inline ::capnp::Orphan< ::capnp::Text> disownOperatorFriendlyName();
+
+  inline bool hasVenueName();
+  inline  ::capnp::Text::Builder getVenueName();
+  inline void setVenueName( ::capnp::Text::Reader value);
+  inline  ::capnp::Text::Builder initVenueName(unsigned int size);
+  inline void adoptVenueName(::capnp::Orphan< ::capnp::Text>&& value);
+  inline ::capnp::Orphan< ::capnp::Text> disownVenueName();
+
+  inline bool getIs80211mcResponder();
+  inline void setIs80211mcResponder(bool value);
+
+  inline bool getPasspoint();
+  inline void setPasspoint(bool value);
+
+  inline  ::int32_t getDistanceCm();
+  inline void setDistanceCm( ::int32_t value);
+
+  inline  ::int32_t getDistanceSdCm();
+  inline void setDistanceSdCm( ::int32_t value);
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class WifiScan::Pipeline {
+public:
+  typedef WifiScan Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
+class AndroidGnss::Reader {
+public:
+  typedef AndroidGnss Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand);
+  }
+#endif  // !CAPNP_LITE
+
+  inline Which which() const;
+  inline bool isMeasurements() const;
+  inline bool hasMeasurements() const;
+  inline  ::cereal::AndroidGnss::Measurements::Reader getMeasurements() const;
+
+  inline bool isNavigationMessage() const;
+  inline bool hasNavigationMessage() const;
+  inline  ::cereal::AndroidGnss::NavigationMessage::Reader getNavigationMessage() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class AndroidGnss::Builder {
+public:
+  typedef AndroidGnss Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline Which which();
+  inline bool isMeasurements();
+  inline bool hasMeasurements();
+  inline  ::cereal::AndroidGnss::Measurements::Builder getMeasurements();
+  inline void setMeasurements( ::cereal::AndroidGnss::Measurements::Reader value);
+  inline  ::cereal::AndroidGnss::Measurements::Builder initMeasurements();
+  inline void adoptMeasurements(::capnp::Orphan< ::cereal::AndroidGnss::Measurements>&& value);
+  inline ::capnp::Orphan< ::cereal::AndroidGnss::Measurements> disownMeasurements();
+
+  inline bool isNavigationMessage();
+  inline bool hasNavigationMessage();
+  inline  ::cereal::AndroidGnss::NavigationMessage::Builder getNavigationMessage();
+  inline void setNavigationMessage( ::cereal::AndroidGnss::NavigationMessage::Reader value);
+  inline  ::cereal::AndroidGnss::NavigationMessage::Builder initNavigationMessage();
+  inline void adoptNavigationMessage(::capnp::Orphan< ::cereal::AndroidGnss::NavigationMessage>&& value);
+  inline ::capnp::Orphan< ::cereal::AndroidGnss::NavigationMessage> disownNavigationMessage();
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class AndroidGnss::Pipeline {
+public:
+  typedef AndroidGnss Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
+class AndroidGnss::Measurements::Reader {
+public:
+  typedef Measurements Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand);
+  }
+#endif  // !CAPNP_LITE
+
+  inline bool hasClock() const;
+  inline  ::cereal::AndroidGnss::Measurements::Clock::Reader getClock() const;
+
+  inline bool hasMeasurements() const;
+  inline  ::capnp::List< ::cereal::AndroidGnss::Measurements::Measurement>::Reader getMeasurements() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class AndroidGnss::Measurements::Builder {
+public:
+  typedef Measurements Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline bool hasClock();
+  inline  ::cereal::AndroidGnss::Measurements::Clock::Builder getClock();
+  inline void setClock( ::cereal::AndroidGnss::Measurements::Clock::Reader value);
+  inline  ::cereal::AndroidGnss::Measurements::Clock::Builder initClock();
+  inline void adoptClock(::capnp::Orphan< ::cereal::AndroidGnss::Measurements::Clock>&& value);
+  inline ::capnp::Orphan< ::cereal::AndroidGnss::Measurements::Clock> disownClock();
+
+  inline bool hasMeasurements();
+  inline  ::capnp::List< ::cereal::AndroidGnss::Measurements::Measurement>::Builder getMeasurements();
+  inline void setMeasurements( ::capnp::List< ::cereal::AndroidGnss::Measurements::Measurement>::Reader value);
+  inline  ::capnp::List< ::cereal::AndroidGnss::Measurements::Measurement>::Builder initMeasurements(unsigned int size);
+  inline void adoptMeasurements(::capnp::Orphan< ::capnp::List< ::cereal::AndroidGnss::Measurements::Measurement>>&& value);
+  inline ::capnp::Orphan< ::capnp::List< ::cereal::AndroidGnss::Measurements::Measurement>> disownMeasurements();
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class AndroidGnss::Measurements::Pipeline {
+public:
+  typedef Measurements Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+  inline  ::cereal::AndroidGnss::Measurements::Clock::Pipeline getClock();
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
+class AndroidGnss::Measurements::Clock::Reader {
+public:
+  typedef Clock Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand);
+  }
+#endif  // !CAPNP_LITE
+
+  inline  ::int64_t getTimeNanos() const;
+
+  inline  ::int32_t getHardwareClockDiscontinuityCount() const;
+
+  inline bool getHasTimeUncertaintyNanos() const;
+
+  inline double getTimeUncertaintyNanos() const;
+
+  inline bool getHasLeapSecond() const;
+
+  inline  ::int32_t getLeapSecond() const;
+
+  inline bool getHasFullBiasNanos() const;
+
+  inline  ::int64_t getFullBiasNanos() const;
+
+  inline bool getHasBiasNanos() const;
+
+  inline double getBiasNanos() const;
+
+  inline bool getHasBiasUncertaintyNanos() const;
+
+  inline double getBiasUncertaintyNanos() const;
+
+  inline bool getHasDriftNanosPerSecond() const;
+
+  inline double getDriftNanosPerSecond() const;
+
+  inline bool getHasDriftUncertaintyNanosPerSecond() const;
+
+  inline double getDriftUncertaintyNanosPerSecond() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class AndroidGnss::Measurements::Clock::Builder {
+public:
+  typedef Clock Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline  ::int64_t getTimeNanos();
+  inline void setTimeNanos( ::int64_t value);
+
+  inline  ::int32_t getHardwareClockDiscontinuityCount();
+  inline void setHardwareClockDiscontinuityCount( ::int32_t value);
+
+  inline bool getHasTimeUncertaintyNanos();
+  inline void setHasTimeUncertaintyNanos(bool value);
+
+  inline double getTimeUncertaintyNanos();
+  inline void setTimeUncertaintyNanos(double value);
+
+  inline bool getHasLeapSecond();
+  inline void setHasLeapSecond(bool value);
+
+  inline  ::int32_t getLeapSecond();
+  inline void setLeapSecond( ::int32_t value);
+
+  inline bool getHasFullBiasNanos();
+  inline void setHasFullBiasNanos(bool value);
+
+  inline  ::int64_t getFullBiasNanos();
+  inline void setFullBiasNanos( ::int64_t value);
+
+  inline bool getHasBiasNanos();
+  inline void setHasBiasNanos(bool value);
+
+  inline double getBiasNanos();
+  inline void setBiasNanos(double value);
+
+  inline bool getHasBiasUncertaintyNanos();
+  inline void setHasBiasUncertaintyNanos(bool value);
+
+  inline double getBiasUncertaintyNanos();
+  inline void setBiasUncertaintyNanos(double value);
+
+  inline bool getHasDriftNanosPerSecond();
+  inline void setHasDriftNanosPerSecond(bool value);
+
+  inline double getDriftNanosPerSecond();
+  inline void setDriftNanosPerSecond(double value);
+
+  inline bool getHasDriftUncertaintyNanosPerSecond();
+  inline void setHasDriftUncertaintyNanosPerSecond(bool value);
+
+  inline double getDriftUncertaintyNanosPerSecond();
+  inline void setDriftUncertaintyNanosPerSecond(double value);
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class AndroidGnss::Measurements::Clock::Pipeline {
+public:
+  typedef Clock Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
+class AndroidGnss::Measurements::Measurement::Reader {
+public:
+  typedef Measurement Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand);
+  }
+#endif  // !CAPNP_LITE
+
+  inline  ::int32_t getSvId() const;
+
+  inline  ::cereal::AndroidGnss::Measurements::Measurement::Constellation getConstellation() const;
+
+  inline double getTimeOffsetNanos() const;
+
+  inline  ::int32_t getState() const;
+
+  inline  ::int64_t getReceivedSvTimeNanos() const;
+
+  inline  ::int64_t getReceivedSvTimeUncertaintyNanos() const;
+
+  inline double getCn0DbHz() const;
+
+  inline double getPseudorangeRateMetersPerSecond() const;
+
+  inline double getPseudorangeRateUncertaintyMetersPerSecond() const;
+
+  inline  ::int32_t getAccumulatedDeltaRangeState() const;
+
+  inline double getAccumulatedDeltaRangeMeters() const;
+
+  inline double getAccumulatedDeltaRangeUncertaintyMeters() const;
+
+  inline bool getHasCarrierFrequencyHz() const;
+
+  inline float getCarrierFrequencyHz() const;
+
+  inline bool getHasCarrierCycles() const;
+
+  inline  ::int64_t getCarrierCycles() const;
+
+  inline bool getHasCarrierPhase() const;
+
+  inline double getCarrierPhase() const;
+
+  inline bool getHasCarrierPhaseUncertainty() const;
+
+  inline double getCarrierPhaseUncertainty() const;
+
+  inline bool getHasSnrInDb() const;
+
+  inline double getSnrInDb() const;
+
+  inline  ::cereal::AndroidGnss::Measurements::Measurement::MultipathIndicator getMultipathIndicator() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class AndroidGnss::Measurements::Measurement::Builder {
+public:
+  typedef Measurement Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline  ::int32_t getSvId();
+  inline void setSvId( ::int32_t value);
+
+  inline  ::cereal::AndroidGnss::Measurements::Measurement::Constellation getConstellation();
+  inline void setConstellation( ::cereal::AndroidGnss::Measurements::Measurement::Constellation value);
+
+  inline double getTimeOffsetNanos();
+  inline void setTimeOffsetNanos(double value);
+
+  inline  ::int32_t getState();
+  inline void setState( ::int32_t value);
+
+  inline  ::int64_t getReceivedSvTimeNanos();
+  inline void setReceivedSvTimeNanos( ::int64_t value);
+
+  inline  ::int64_t getReceivedSvTimeUncertaintyNanos();
+  inline void setReceivedSvTimeUncertaintyNanos( ::int64_t value);
+
+  inline double getCn0DbHz();
+  inline void setCn0DbHz(double value);
+
+  inline double getPseudorangeRateMetersPerSecond();
+  inline void setPseudorangeRateMetersPerSecond(double value);
+
+  inline double getPseudorangeRateUncertaintyMetersPerSecond();
+  inline void setPseudorangeRateUncertaintyMetersPerSecond(double value);
+
+  inline  ::int32_t getAccumulatedDeltaRangeState();
+  inline void setAccumulatedDeltaRangeState( ::int32_t value);
+
+  inline double getAccumulatedDeltaRangeMeters();
+  inline void setAccumulatedDeltaRangeMeters(double value);
+
+  inline double getAccumulatedDeltaRangeUncertaintyMeters();
+  inline void setAccumulatedDeltaRangeUncertaintyMeters(double value);
+
+  inline bool getHasCarrierFrequencyHz();
+  inline void setHasCarrierFrequencyHz(bool value);
+
+  inline float getCarrierFrequencyHz();
+  inline void setCarrierFrequencyHz(float value);
+
+  inline bool getHasCarrierCycles();
+  inline void setHasCarrierCycles(bool value);
+
+  inline  ::int64_t getCarrierCycles();
+  inline void setCarrierCycles( ::int64_t value);
+
+  inline bool getHasCarrierPhase();
+  inline void setHasCarrierPhase(bool value);
+
+  inline double getCarrierPhase();
+  inline void setCarrierPhase(double value);
+
+  inline bool getHasCarrierPhaseUncertainty();
+  inline void setHasCarrierPhaseUncertainty(bool value);
+
+  inline double getCarrierPhaseUncertainty();
+  inline void setCarrierPhaseUncertainty(double value);
+
+  inline bool getHasSnrInDb();
+  inline void setHasSnrInDb(bool value);
+
+  inline double getSnrInDb();
+  inline void setSnrInDb(double value);
+
+  inline  ::cereal::AndroidGnss::Measurements::Measurement::MultipathIndicator getMultipathIndicator();
+  inline void setMultipathIndicator( ::cereal::AndroidGnss::Measurements::Measurement::MultipathIndicator value);
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class AndroidGnss::Measurements::Measurement::Pipeline {
+public:
+  typedef Measurement Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
+class AndroidGnss::NavigationMessage::Reader {
+public:
+  typedef NavigationMessage Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand);
+  }
+#endif  // !CAPNP_LITE
+
+  inline  ::int32_t getType() const;
+
+  inline  ::int32_t getSvId() const;
+
+  inline  ::int32_t getMessageId() const;
+
+  inline  ::int32_t getSubmessageId() const;
+
+  inline bool hasData() const;
+  inline  ::capnp::Data::Reader getData() const;
+
+  inline  ::cereal::AndroidGnss::NavigationMessage::Status getStatus() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class AndroidGnss::NavigationMessage::Builder {
+public:
+  typedef NavigationMessage Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline  ::int32_t getType();
+  inline void setType( ::int32_t value);
+
+  inline  ::int32_t getSvId();
+  inline void setSvId( ::int32_t value);
+
+  inline  ::int32_t getMessageId();
+  inline void setMessageId( ::int32_t value);
+
+  inline  ::int32_t getSubmessageId();
+  inline void setSubmessageId( ::int32_t value);
+
+  inline bool hasData();
+  inline  ::capnp::Data::Builder getData();
+  inline void setData( ::capnp::Data::Reader value);
+  inline  ::capnp::Data::Builder initData(unsigned int size);
+  inline void adoptData(::capnp::Orphan< ::capnp::Data>&& value);
+  inline ::capnp::Orphan< ::capnp::Data> disownData();
+
+  inline  ::cereal::AndroidGnss::NavigationMessage::Status getStatus();
+  inline void setStatus( ::cereal::AndroidGnss::NavigationMessage::Status value);
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class AndroidGnss::NavigationMessage::Pipeline {
+public:
+  typedef NavigationMessage Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
+class QcomGnss::Reader {
+public:
+  typedef QcomGnss Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand);
+  }
+#endif  // !CAPNP_LITE
+
+  inline Which which() const;
+  inline  ::uint64_t getLogTs() const;
+
+  inline bool isMeasurementReport() const;
+  inline bool hasMeasurementReport() const;
+  inline  ::cereal::QcomGnss::MeasurementReport::Reader getMeasurementReport() const;
+
+  inline bool isClockReport() const;
+  inline bool hasClockReport() const;
+  inline  ::cereal::QcomGnss::ClockReport::Reader getClockReport() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class QcomGnss::Builder {
+public:
+  typedef QcomGnss Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline Which which();
+  inline  ::uint64_t getLogTs();
+  inline void setLogTs( ::uint64_t value);
+
+  inline bool isMeasurementReport();
+  inline bool hasMeasurementReport();
+  inline  ::cereal::QcomGnss::MeasurementReport::Builder getMeasurementReport();
+  inline void setMeasurementReport( ::cereal::QcomGnss::MeasurementReport::Reader value);
+  inline  ::cereal::QcomGnss::MeasurementReport::Builder initMeasurementReport();
+  inline void adoptMeasurementReport(::capnp::Orphan< ::cereal::QcomGnss::MeasurementReport>&& value);
+  inline ::capnp::Orphan< ::cereal::QcomGnss::MeasurementReport> disownMeasurementReport();
+
+  inline bool isClockReport();
+  inline bool hasClockReport();
+  inline  ::cereal::QcomGnss::ClockReport::Builder getClockReport();
+  inline void setClockReport( ::cereal::QcomGnss::ClockReport::Reader value);
+  inline  ::cereal::QcomGnss::ClockReport::Builder initClockReport();
+  inline void adoptClockReport(::capnp::Orphan< ::cereal::QcomGnss::ClockReport>&& value);
+  inline ::capnp::Orphan< ::cereal::QcomGnss::ClockReport> disownClockReport();
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class QcomGnss::Pipeline {
+public:
+  typedef QcomGnss Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
+class QcomGnss::MeasurementReport::Reader {
+public:
+  typedef MeasurementReport Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand);
+  }
+#endif  // !CAPNP_LITE
+
+  inline  ::cereal::QcomGnss::MeasurementReport::Source getSource() const;
+
+  inline  ::uint32_t getFCount() const;
+
+  inline  ::uint16_t getGpsWeek() const;
+
+  inline  ::uint8_t getGlonassCycleNumber() const;
+
+  inline  ::uint16_t getGlonassNumberOfDays() const;
+
+  inline  ::uint32_t getMilliseconds() const;
+
+  inline float getTimeBias() const;
+
+  inline float getClockTimeUncertainty() const;
+
+  inline float getClockFrequencyBias() const;
+
+  inline float getClockFrequencyUncertainty() const;
+
+  inline bool hasSv() const;
+  inline  ::capnp::List< ::cereal::QcomGnss::MeasurementReport::SV>::Reader getSv() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class QcomGnss::MeasurementReport::Builder {
+public:
+  typedef MeasurementReport Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline  ::cereal::QcomGnss::MeasurementReport::Source getSource();
+  inline void setSource( ::cereal::QcomGnss::MeasurementReport::Source value);
+
+  inline  ::uint32_t getFCount();
+  inline void setFCount( ::uint32_t value);
+
+  inline  ::uint16_t getGpsWeek();
+  inline void setGpsWeek( ::uint16_t value);
+
+  inline  ::uint8_t getGlonassCycleNumber();
+  inline void setGlonassCycleNumber( ::uint8_t value);
+
+  inline  ::uint16_t getGlonassNumberOfDays();
+  inline void setGlonassNumberOfDays( ::uint16_t value);
+
+  inline  ::uint32_t getMilliseconds();
+  inline void setMilliseconds( ::uint32_t value);
+
+  inline float getTimeBias();
+  inline void setTimeBias(float value);
+
+  inline float getClockTimeUncertainty();
+  inline void setClockTimeUncertainty(float value);
+
+  inline float getClockFrequencyBias();
+  inline void setClockFrequencyBias(float value);
+
+  inline float getClockFrequencyUncertainty();
+  inline void setClockFrequencyUncertainty(float value);
+
+  inline bool hasSv();
+  inline  ::capnp::List< ::cereal::QcomGnss::MeasurementReport::SV>::Builder getSv();
+  inline void setSv( ::capnp::List< ::cereal::QcomGnss::MeasurementReport::SV>::Reader value);
+  inline  ::capnp::List< ::cereal::QcomGnss::MeasurementReport::SV>::Builder initSv(unsigned int size);
+  inline void adoptSv(::capnp::Orphan< ::capnp::List< ::cereal::QcomGnss::MeasurementReport::SV>>&& value);
+  inline ::capnp::Orphan< ::capnp::List< ::cereal::QcomGnss::MeasurementReport::SV>> disownSv();
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class QcomGnss::MeasurementReport::Pipeline {
+public:
+  typedef MeasurementReport Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
+class QcomGnss::MeasurementReport::SV::Reader {
+public:
+  typedef SV Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand);
+  }
+#endif  // !CAPNP_LITE
+
+  inline  ::uint8_t getSvId() const;
+
+  inline  ::int8_t getGlonassFrequencyIndex() const;
+
+  inline  ::cereal::QcomGnss::MeasurementReport::SV::SVObservationState getObservationState() const;
+
+  inline  ::uint8_t getObservations() const;
+
+  inline  ::uint8_t getGoodObservations() const;
+
+  inline  ::uint16_t getGpsParityErrorCount() const;
+
+  inline  ::uint8_t getGlonassHemmingErrorCount() const;
+
+  inline  ::uint8_t getFilterStages() const;
+
+  inline  ::uint16_t getCarrierNoise() const;
+
+  inline  ::int16_t getLatency() const;
+
+  inline  ::uint8_t getPredetectIntegration() const;
+
+  inline  ::uint16_t getPostdetections() const;
+
+  inline  ::uint32_t getUnfilteredMeasurementIntegral() const;
+
+  inline float getUnfilteredMeasurementFraction() const;
+
+  inline float getUnfilteredTimeUncertainty() const;
+
+  inline float getUnfilteredSpeed() const;
+
+  inline float getUnfilteredSpeedUncertainty() const;
+
+  inline bool hasMeasurementStatus() const;
+  inline  ::cereal::QcomGnss::MeasurementReport::SV::MeasurementStatus::Reader getMeasurementStatus() const;
+
+  inline  ::uint32_t getMultipathEstimate() const;
+
+  inline float getAzimuth() const;
+
+  inline float getElevation() const;
+
+  inline  ::int32_t getCarrierPhaseCyclesIntegral() const;
+
+  inline  ::uint16_t getCarrierPhaseCyclesFraction() const;
+
+  inline float getFineSpeed() const;
+
+  inline float getFineSpeedUncertainty() const;
+
+  inline  ::uint8_t getCycleSlipCount() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class QcomGnss::MeasurementReport::SV::Builder {
+public:
+  typedef SV Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline  ::uint8_t getSvId();
+  inline void setSvId( ::uint8_t value);
+
+  inline  ::int8_t getGlonassFrequencyIndex();
+  inline void setGlonassFrequencyIndex( ::int8_t value);
+
+  inline  ::cereal::QcomGnss::MeasurementReport::SV::SVObservationState getObservationState();
+  inline void setObservationState( ::cereal::QcomGnss::MeasurementReport::SV::SVObservationState value);
+
+  inline  ::uint8_t getObservations();
+  inline void setObservations( ::uint8_t value);
+
+  inline  ::uint8_t getGoodObservations();
+  inline void setGoodObservations( ::uint8_t value);
+
+  inline  ::uint16_t getGpsParityErrorCount();
+  inline void setGpsParityErrorCount( ::uint16_t value);
+
+  inline  ::uint8_t getGlonassHemmingErrorCount();
+  inline void setGlonassHemmingErrorCount( ::uint8_t value);
+
+  inline  ::uint8_t getFilterStages();
+  inline void setFilterStages( ::uint8_t value);
+
+  inline  ::uint16_t getCarrierNoise();
+  inline void setCarrierNoise( ::uint16_t value);
+
+  inline  ::int16_t getLatency();
+  inline void setLatency( ::int16_t value);
+
+  inline  ::uint8_t getPredetectIntegration();
+  inline void setPredetectIntegration( ::uint8_t value);
+
+  inline  ::uint16_t getPostdetections();
+  inline void setPostdetections( ::uint16_t value);
+
+  inline  ::uint32_t getUnfilteredMeasurementIntegral();
+  inline void setUnfilteredMeasurementIntegral( ::uint32_t value);
+
+  inline float getUnfilteredMeasurementFraction();
+  inline void setUnfilteredMeasurementFraction(float value);
+
+  inline float getUnfilteredTimeUncertainty();
+  inline void setUnfilteredTimeUncertainty(float value);
+
+  inline float getUnfilteredSpeed();
+  inline void setUnfilteredSpeed(float value);
+
+  inline float getUnfilteredSpeedUncertainty();
+  inline void setUnfilteredSpeedUncertainty(float value);
+
+  inline bool hasMeasurementStatus();
+  inline  ::cereal::QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder getMeasurementStatus();
+  inline void setMeasurementStatus( ::cereal::QcomGnss::MeasurementReport::SV::MeasurementStatus::Reader value);
+  inline  ::cereal::QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder initMeasurementStatus();
+  inline void adoptMeasurementStatus(::capnp::Orphan< ::cereal::QcomGnss::MeasurementReport::SV::MeasurementStatus>&& value);
+  inline ::capnp::Orphan< ::cereal::QcomGnss::MeasurementReport::SV::MeasurementStatus> disownMeasurementStatus();
+
+  inline  ::uint32_t getMultipathEstimate();
+  inline void setMultipathEstimate( ::uint32_t value);
+
+  inline float getAzimuth();
+  inline void setAzimuth(float value);
+
+  inline float getElevation();
+  inline void setElevation(float value);
+
+  inline  ::int32_t getCarrierPhaseCyclesIntegral();
+  inline void setCarrierPhaseCyclesIntegral( ::int32_t value);
+
+  inline  ::uint16_t getCarrierPhaseCyclesFraction();
+  inline void setCarrierPhaseCyclesFraction( ::uint16_t value);
+
+  inline float getFineSpeed();
+  inline void setFineSpeed(float value);
+
+  inline float getFineSpeedUncertainty();
+  inline void setFineSpeedUncertainty(float value);
+
+  inline  ::uint8_t getCycleSlipCount();
+  inline void setCycleSlipCount( ::uint8_t value);
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class QcomGnss::MeasurementReport::SV::Pipeline {
+public:
+  typedef SV Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+  inline  ::cereal::QcomGnss::MeasurementReport::SV::MeasurementStatus::Pipeline getMeasurementStatus();
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
+class QcomGnss::MeasurementReport::SV::MeasurementStatus::Reader {
+public:
+  typedef MeasurementStatus Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand);
+  }
+#endif  // !CAPNP_LITE
+
+  inline bool getSubMillisecondIsValid() const;
+
+  inline bool getSubBitTimeIsKnown() const;
+
+  inline bool getSatelliteTimeIsKnown() const;
+
+  inline bool getBitEdgeConfirmedFromSignal() const;
+
+  inline bool getMeasuredVelocity() const;
+
+  inline bool getFineOrCoarseVelocity() const;
+
+  inline bool getLockPointValid() const;
+
+  inline bool getLockPointPositive() const;
+
+  inline bool getLastUpdateFromDifference() const;
+
+  inline bool getLastUpdateFromVelocityDifference() const;
+
+  inline bool getStrongIndicationOfCrossCorelation() const;
+
+  inline bool getTentativeMeasurement() const;
+
+  inline bool getMeasurementNotUsable() const;
+
+  inline bool getSirCheckIsNeeded() const;
+
+  inline bool getProbationMode() const;
+
+  inline bool getGlonassMeanderBitEdgeValid() const;
+
+  inline bool getGlonassTimeMarkValid() const;
+
+  inline bool getGpsRoundRobinRxDiversity() const;
+
+  inline bool getGpsRxDiversity() const;
+
+  inline bool getGpsLowBandwidthRxDiversityCombined() const;
+
+  inline bool getGpsHighBandwidthNu4() const;
+
+  inline bool getGpsHighBandwidthNu8() const;
+
+  inline bool getGpsHighBandwidthUniform() const;
+
+  inline bool getGpsMultipathIndicator() const;
+
+  inline bool getImdJammingIndicator() const;
+
+  inline bool getLteB13TxJammingIndicator() const;
+
+  inline bool getFreshMeasurementIndicator() const;
+
+  inline bool getMultipathEstimateIsValid() const;
+
+  inline bool getDirectionIsValid() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder {
+public:
+  typedef MeasurementStatus Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline bool getSubMillisecondIsValid();
+  inline void setSubMillisecondIsValid(bool value);
+
+  inline bool getSubBitTimeIsKnown();
+  inline void setSubBitTimeIsKnown(bool value);
+
+  inline bool getSatelliteTimeIsKnown();
+  inline void setSatelliteTimeIsKnown(bool value);
+
+  inline bool getBitEdgeConfirmedFromSignal();
+  inline void setBitEdgeConfirmedFromSignal(bool value);
+
+  inline bool getMeasuredVelocity();
+  inline void setMeasuredVelocity(bool value);
+
+  inline bool getFineOrCoarseVelocity();
+  inline void setFineOrCoarseVelocity(bool value);
+
+  inline bool getLockPointValid();
+  inline void setLockPointValid(bool value);
+
+  inline bool getLockPointPositive();
+  inline void setLockPointPositive(bool value);
+
+  inline bool getLastUpdateFromDifference();
+  inline void setLastUpdateFromDifference(bool value);
+
+  inline bool getLastUpdateFromVelocityDifference();
+  inline void setLastUpdateFromVelocityDifference(bool value);
+
+  inline bool getStrongIndicationOfCrossCorelation();
+  inline void setStrongIndicationOfCrossCorelation(bool value);
+
+  inline bool getTentativeMeasurement();
+  inline void setTentativeMeasurement(bool value);
+
+  inline bool getMeasurementNotUsable();
+  inline void setMeasurementNotUsable(bool value);
+
+  inline bool getSirCheckIsNeeded();
+  inline void setSirCheckIsNeeded(bool value);
+
+  inline bool getProbationMode();
+  inline void setProbationMode(bool value);
+
+  inline bool getGlonassMeanderBitEdgeValid();
+  inline void setGlonassMeanderBitEdgeValid(bool value);
+
+  inline bool getGlonassTimeMarkValid();
+  inline void setGlonassTimeMarkValid(bool value);
+
+  inline bool getGpsRoundRobinRxDiversity();
+  inline void setGpsRoundRobinRxDiversity(bool value);
+
+  inline bool getGpsRxDiversity();
+  inline void setGpsRxDiversity(bool value);
+
+  inline bool getGpsLowBandwidthRxDiversityCombined();
+  inline void setGpsLowBandwidthRxDiversityCombined(bool value);
+
+  inline bool getGpsHighBandwidthNu4();
+  inline void setGpsHighBandwidthNu4(bool value);
+
+  inline bool getGpsHighBandwidthNu8();
+  inline void setGpsHighBandwidthNu8(bool value);
+
+  inline bool getGpsHighBandwidthUniform();
+  inline void setGpsHighBandwidthUniform(bool value);
+
+  inline bool getGpsMultipathIndicator();
+  inline void setGpsMultipathIndicator(bool value);
+
+  inline bool getImdJammingIndicator();
+  inline void setImdJammingIndicator(bool value);
+
+  inline bool getLteB13TxJammingIndicator();
+  inline void setLteB13TxJammingIndicator(bool value);
+
+  inline bool getFreshMeasurementIndicator();
+  inline void setFreshMeasurementIndicator(bool value);
+
+  inline bool getMultipathEstimateIsValid();
+  inline void setMultipathEstimateIsValid(bool value);
+
+  inline bool getDirectionIsValid();
+  inline void setDirectionIsValid(bool value);
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class QcomGnss::MeasurementReport::SV::MeasurementStatus::Pipeline {
+public:
+  typedef MeasurementStatus Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
+class QcomGnss::ClockReport::Reader {
+public:
+  typedef ClockReport Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand);
+  }
+#endif  // !CAPNP_LITE
+
+  inline bool getHasFCount() const;
+
+  inline  ::uint32_t getFCount() const;
+
+  inline bool getHasGpsWeekNumber() const;
+
+  inline  ::uint16_t getGpsWeekNumber() const;
+
+  inline bool getHasGpsMilliseconds() const;
+
+  inline  ::uint32_t getGpsMilliseconds() const;
+
+  inline float getGpsTimeBias() const;
+
+  inline float getGpsClockTimeUncertainty() const;
+
+  inline  ::uint8_t getGpsClockSource() const;
+
+  inline bool getHasGlonassYear() const;
+
+  inline  ::uint8_t getGlonassYear() const;
+
+  inline bool getHasGlonassDay() const;
+
+  inline  ::uint16_t getGlonassDay() const;
+
+  inline bool getHasGlonassMilliseconds() const;
+
+  inline  ::uint32_t getGlonassMilliseconds() const;
+
+  inline float getGlonassTimeBias() const;
+
+  inline float getGlonassClockTimeUncertainty() const;
+
+  inline  ::uint8_t getGlonassClockSource() const;
+
+  inline  ::uint16_t getBdsWeek() const;
+
+  inline  ::uint32_t getBdsMilliseconds() const;
+
+  inline float getBdsTimeBias() const;
+
+  inline float getBdsClockTimeUncertainty() const;
+
+  inline  ::uint8_t getBdsClockSource() const;
+
+  inline  ::uint16_t getGalWeek() const;
+
+  inline  ::uint32_t getGalMilliseconds() const;
+
+  inline float getGalTimeBias() const;
+
+  inline float getGalClockTimeUncertainty() const;
+
+  inline  ::uint8_t getGalClockSource() const;
+
+  inline float getClockFrequencyBias() const;
+
+  inline float getClockFrequencyUncertainty() const;
+
+  inline  ::uint8_t getFrequencySource() const;
+
+  inline  ::uint8_t getGpsLeapSeconds() const;
+
+  inline  ::uint8_t getGpsLeapSecondsUncertainty() const;
+
+  inline  ::uint8_t getGpsLeapSecondsSource() const;
+
+  inline float getGpsToGlonassTimeBiasMilliseconds() const;
+
+  inline float getGpsToGlonassTimeBiasMillisecondsUncertainty() const;
+
+  inline float getGpsToBdsTimeBiasMilliseconds() const;
+
+  inline float getGpsToBdsTimeBiasMillisecondsUncertainty() const;
+
+  inline float getBdsToGloTimeBiasMilliseconds() const;
+
+  inline float getBdsToGloTimeBiasMillisecondsUncertainty() const;
+
+  inline float getGpsToGalTimeBiasMilliseconds() const;
+
+  inline float getGpsToGalTimeBiasMillisecondsUncertainty() const;
+
+  inline float getGalToGloTimeBiasMilliseconds() const;
+
+  inline float getGalToGloTimeBiasMillisecondsUncertainty() const;
+
+  inline float getGalToBdsTimeBiasMilliseconds() const;
+
+  inline float getGalToBdsTimeBiasMillisecondsUncertainty() const;
+
+  inline bool getHasRtcTime() const;
+
+  inline  ::uint32_t getSystemRtcTime() const;
+
+  inline  ::uint32_t getFCountOffset() const;
+
+  inline  ::uint32_t getLpmRtcCount() const;
+
+  inline  ::uint32_t getClockResets() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class QcomGnss::ClockReport::Builder {
+public:
+  typedef ClockReport Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline bool getHasFCount();
+  inline void setHasFCount(bool value);
+
+  inline  ::uint32_t getFCount();
+  inline void setFCount( ::uint32_t value);
+
+  inline bool getHasGpsWeekNumber();
+  inline void setHasGpsWeekNumber(bool value);
+
+  inline  ::uint16_t getGpsWeekNumber();
+  inline void setGpsWeekNumber( ::uint16_t value);
+
+  inline bool getHasGpsMilliseconds();
+  inline void setHasGpsMilliseconds(bool value);
+
+  inline  ::uint32_t getGpsMilliseconds();
+  inline void setGpsMilliseconds( ::uint32_t value);
+
+  inline float getGpsTimeBias();
+  inline void setGpsTimeBias(float value);
+
+  inline float getGpsClockTimeUncertainty();
+  inline void setGpsClockTimeUncertainty(float value);
+
+  inline  ::uint8_t getGpsClockSource();
+  inline void setGpsClockSource( ::uint8_t value);
+
+  inline bool getHasGlonassYear();
+  inline void setHasGlonassYear(bool value);
+
+  inline  ::uint8_t getGlonassYear();
+  inline void setGlonassYear( ::uint8_t value);
+
+  inline bool getHasGlonassDay();
+  inline void setHasGlonassDay(bool value);
+
+  inline  ::uint16_t getGlonassDay();
+  inline void setGlonassDay( ::uint16_t value);
+
+  inline bool getHasGlonassMilliseconds();
+  inline void setHasGlonassMilliseconds(bool value);
+
+  inline  ::uint32_t getGlonassMilliseconds();
+  inline void setGlonassMilliseconds( ::uint32_t value);
+
+  inline float getGlonassTimeBias();
+  inline void setGlonassTimeBias(float value);
+
+  inline float getGlonassClockTimeUncertainty();
+  inline void setGlonassClockTimeUncertainty(float value);
+
+  inline  ::uint8_t getGlonassClockSource();
+  inline void setGlonassClockSource( ::uint8_t value);
+
+  inline  ::uint16_t getBdsWeek();
+  inline void setBdsWeek( ::uint16_t value);
+
+  inline  ::uint32_t getBdsMilliseconds();
+  inline void setBdsMilliseconds( ::uint32_t value);
+
+  inline float getBdsTimeBias();
+  inline void setBdsTimeBias(float value);
+
+  inline float getBdsClockTimeUncertainty();
+  inline void setBdsClockTimeUncertainty(float value);
+
+  inline  ::uint8_t getBdsClockSource();
+  inline void setBdsClockSource( ::uint8_t value);
+
+  inline  ::uint16_t getGalWeek();
+  inline void setGalWeek( ::uint16_t value);
+
+  inline  ::uint32_t getGalMilliseconds();
+  inline void setGalMilliseconds( ::uint32_t value);
+
+  inline float getGalTimeBias();
+  inline void setGalTimeBias(float value);
+
+  inline float getGalClockTimeUncertainty();
+  inline void setGalClockTimeUncertainty(float value);
+
+  inline  ::uint8_t getGalClockSource();
+  inline void setGalClockSource( ::uint8_t value);
+
+  inline float getClockFrequencyBias();
+  inline void setClockFrequencyBias(float value);
+
+  inline float getClockFrequencyUncertainty();
+  inline void setClockFrequencyUncertainty(float value);
+
+  inline  ::uint8_t getFrequencySource();
+  inline void setFrequencySource( ::uint8_t value);
+
+  inline  ::uint8_t getGpsLeapSeconds();
+  inline void setGpsLeapSeconds( ::uint8_t value);
+
+  inline  ::uint8_t getGpsLeapSecondsUncertainty();
+  inline void setGpsLeapSecondsUncertainty( ::uint8_t value);
+
+  inline  ::uint8_t getGpsLeapSecondsSource();
+  inline void setGpsLeapSecondsSource( ::uint8_t value);
+
+  inline float getGpsToGlonassTimeBiasMilliseconds();
+  inline void setGpsToGlonassTimeBiasMilliseconds(float value);
+
+  inline float getGpsToGlonassTimeBiasMillisecondsUncertainty();
+  inline void setGpsToGlonassTimeBiasMillisecondsUncertainty(float value);
+
+  inline float getGpsToBdsTimeBiasMilliseconds();
+  inline void setGpsToBdsTimeBiasMilliseconds(float value);
+
+  inline float getGpsToBdsTimeBiasMillisecondsUncertainty();
+  inline void setGpsToBdsTimeBiasMillisecondsUncertainty(float value);
+
+  inline float getBdsToGloTimeBiasMilliseconds();
+  inline void setBdsToGloTimeBiasMilliseconds(float value);
+
+  inline float getBdsToGloTimeBiasMillisecondsUncertainty();
+  inline void setBdsToGloTimeBiasMillisecondsUncertainty(float value);
+
+  inline float getGpsToGalTimeBiasMilliseconds();
+  inline void setGpsToGalTimeBiasMilliseconds(float value);
+
+  inline float getGpsToGalTimeBiasMillisecondsUncertainty();
+  inline void setGpsToGalTimeBiasMillisecondsUncertainty(float value);
+
+  inline float getGalToGloTimeBiasMilliseconds();
+  inline void setGalToGloTimeBiasMilliseconds(float value);
+
+  inline float getGalToGloTimeBiasMillisecondsUncertainty();
+  inline void setGalToGloTimeBiasMillisecondsUncertainty(float value);
+
+  inline float getGalToBdsTimeBiasMilliseconds();
+  inline void setGalToBdsTimeBiasMilliseconds(float value);
+
+  inline float getGalToBdsTimeBiasMillisecondsUncertainty();
+  inline void setGalToBdsTimeBiasMillisecondsUncertainty(float value);
+
+  inline bool getHasRtcTime();
+  inline void setHasRtcTime(bool value);
+
+  inline  ::uint32_t getSystemRtcTime();
+  inline void setSystemRtcTime( ::uint32_t value);
+
+  inline  ::uint32_t getFCountOffset();
+  inline void setFCountOffset( ::uint32_t value);
+
+  inline  ::uint32_t getLpmRtcCount();
+  inline void setLpmRtcCount( ::uint32_t value);
+
+  inline  ::uint32_t getClockResets();
+  inline void setClockResets( ::uint32_t value);
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class QcomGnss::ClockReport::Pipeline {
+public:
+  typedef ClockReport Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
 class Event::Reader {
 public:
   typedef Event Reads;
@@ -3299,6 +7444,38 @@ public:
   inline bool isCarControl() const;
   inline bool hasCarControl() const;
   inline  ::cereal::CarControl::Reader getCarControl() const;
+
+  inline bool isPlan() const;
+  inline bool hasPlan() const;
+  inline  ::cereal::Plan::Reader getPlan() const;
+
+  inline bool isLiveLocation() const;
+  inline bool hasLiveLocation() const;
+  inline  ::cereal::LiveLocationData::Reader getLiveLocation() const;
+
+  inline bool isEthernetData() const;
+  inline bool hasEthernetData() const;
+  inline  ::capnp::List< ::cereal::EthernetPacket>::Reader getEthernetData() const;
+
+  inline bool isNavUpdate() const;
+  inline bool hasNavUpdate() const;
+  inline  ::cereal::NavUpdate::Reader getNavUpdate() const;
+
+  inline bool isCellInfo() const;
+  inline bool hasCellInfo() const;
+  inline  ::capnp::List< ::cereal::CellInfo>::Reader getCellInfo() const;
+
+  inline bool isWifiScan() const;
+  inline bool hasWifiScan() const;
+  inline  ::capnp::List< ::cereal::WifiScan>::Reader getWifiScan() const;
+
+  inline bool isAndroidGnss() const;
+  inline bool hasAndroidGnss() const;
+  inline  ::cereal::AndroidGnss::Reader getAndroidGnss() const;
+
+  inline bool isQcomGnss() const;
+  inline bool hasQcomGnss() const;
+  inline  ::cereal::QcomGnss::Reader getQcomGnss() const;
 
 private:
   ::capnp::_::StructReader _reader;
@@ -3516,6 +7693,70 @@ public:
   inline void adoptCarControl(::capnp::Orphan< ::cereal::CarControl>&& value);
   inline ::capnp::Orphan< ::cereal::CarControl> disownCarControl();
 
+  inline bool isPlan();
+  inline bool hasPlan();
+  inline  ::cereal::Plan::Builder getPlan();
+  inline void setPlan( ::cereal::Plan::Reader value);
+  inline  ::cereal::Plan::Builder initPlan();
+  inline void adoptPlan(::capnp::Orphan< ::cereal::Plan>&& value);
+  inline ::capnp::Orphan< ::cereal::Plan> disownPlan();
+
+  inline bool isLiveLocation();
+  inline bool hasLiveLocation();
+  inline  ::cereal::LiveLocationData::Builder getLiveLocation();
+  inline void setLiveLocation( ::cereal::LiveLocationData::Reader value);
+  inline  ::cereal::LiveLocationData::Builder initLiveLocation();
+  inline void adoptLiveLocation(::capnp::Orphan< ::cereal::LiveLocationData>&& value);
+  inline ::capnp::Orphan< ::cereal::LiveLocationData> disownLiveLocation();
+
+  inline bool isEthernetData();
+  inline bool hasEthernetData();
+  inline  ::capnp::List< ::cereal::EthernetPacket>::Builder getEthernetData();
+  inline void setEthernetData( ::capnp::List< ::cereal::EthernetPacket>::Reader value);
+  inline  ::capnp::List< ::cereal::EthernetPacket>::Builder initEthernetData(unsigned int size);
+  inline void adoptEthernetData(::capnp::Orphan< ::capnp::List< ::cereal::EthernetPacket>>&& value);
+  inline ::capnp::Orphan< ::capnp::List< ::cereal::EthernetPacket>> disownEthernetData();
+
+  inline bool isNavUpdate();
+  inline bool hasNavUpdate();
+  inline  ::cereal::NavUpdate::Builder getNavUpdate();
+  inline void setNavUpdate( ::cereal::NavUpdate::Reader value);
+  inline  ::cereal::NavUpdate::Builder initNavUpdate();
+  inline void adoptNavUpdate(::capnp::Orphan< ::cereal::NavUpdate>&& value);
+  inline ::capnp::Orphan< ::cereal::NavUpdate> disownNavUpdate();
+
+  inline bool isCellInfo();
+  inline bool hasCellInfo();
+  inline  ::capnp::List< ::cereal::CellInfo>::Builder getCellInfo();
+  inline void setCellInfo( ::capnp::List< ::cereal::CellInfo>::Reader value);
+  inline  ::capnp::List< ::cereal::CellInfo>::Builder initCellInfo(unsigned int size);
+  inline void adoptCellInfo(::capnp::Orphan< ::capnp::List< ::cereal::CellInfo>>&& value);
+  inline ::capnp::Orphan< ::capnp::List< ::cereal::CellInfo>> disownCellInfo();
+
+  inline bool isWifiScan();
+  inline bool hasWifiScan();
+  inline  ::capnp::List< ::cereal::WifiScan>::Builder getWifiScan();
+  inline void setWifiScan( ::capnp::List< ::cereal::WifiScan>::Reader value);
+  inline  ::capnp::List< ::cereal::WifiScan>::Builder initWifiScan(unsigned int size);
+  inline void adoptWifiScan(::capnp::Orphan< ::capnp::List< ::cereal::WifiScan>>&& value);
+  inline ::capnp::Orphan< ::capnp::List< ::cereal::WifiScan>> disownWifiScan();
+
+  inline bool isAndroidGnss();
+  inline bool hasAndroidGnss();
+  inline  ::cereal::AndroidGnss::Builder getAndroidGnss();
+  inline void setAndroidGnss( ::cereal::AndroidGnss::Reader value);
+  inline  ::cereal::AndroidGnss::Builder initAndroidGnss();
+  inline void adoptAndroidGnss(::capnp::Orphan< ::cereal::AndroidGnss>&& value);
+  inline ::capnp::Orphan< ::cereal::AndroidGnss> disownAndroidGnss();
+
+  inline bool isQcomGnss();
+  inline bool hasQcomGnss();
+  inline  ::cereal::QcomGnss::Builder getQcomGnss();
+  inline void setQcomGnss( ::cereal::QcomGnss::Reader value);
+  inline  ::cereal::QcomGnss::Builder initQcomGnss();
+  inline void adoptQcomGnss(::capnp::Orphan< ::cereal::QcomGnss>&& value);
+  inline ::capnp::Orphan< ::cereal::QcomGnss> disownQcomGnss();
+
 private:
   ::capnp::_::StructBuilder _builder;
   template <typename, ::capnp::Kind>
@@ -3543,6 +7784,212 @@ private:
 #endif  // !CAPNP_LITE
 
 // =======================================================================================
+
+template <typename Key, typename Value>
+inline bool Map<Key, Value>::Reader::hasEntries() const {
+  return !_reader.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+template <typename Key, typename Value>
+inline bool Map<Key, Value>::Builder::hasEntries() {
+  return !_builder.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+template <typename Key, typename Value>
+inline typename  ::capnp::List<typename  ::cereal::Map<Key, Value>::Entry>::Reader Map<Key, Value>::Reader::getEntries() const {
+  return ::capnp::_::PointerHelpers< ::capnp::List<typename  ::cereal::Map<Key, Value>::Entry>>::get(
+      _reader.getPointerField(0 * ::capnp::POINTERS));
+}
+template <typename Key, typename Value>
+inline typename  ::capnp::List<typename  ::cereal::Map<Key, Value>::Entry>::Builder Map<Key, Value>::Builder::getEntries() {
+  return ::capnp::_::PointerHelpers< ::capnp::List<typename  ::cereal::Map<Key, Value>::Entry>>::get(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+template <typename Key, typename Value>
+inline void Map<Key, Value>::Builder::setEntries(typename  ::capnp::List<typename  ::cereal::Map<Key, Value>::Entry>::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::List<typename  ::cereal::Map<Key, Value>::Entry>>::set(
+      _builder.getPointerField(0 * ::capnp::POINTERS), value);
+}
+template <typename Key, typename Value>
+inline typename  ::capnp::List<typename  ::cereal::Map<Key, Value>::Entry>::Builder Map<Key, Value>::Builder::initEntries(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::List<typename  ::cereal::Map<Key, Value>::Entry>>::init(
+      _builder.getPointerField(0 * ::capnp::POINTERS), size);
+}
+template <typename Key, typename Value>
+inline void Map<Key, Value>::Builder::adoptEntries(
+    ::capnp::Orphan< ::capnp::List<typename  ::cereal::Map<Key, Value>::Entry>>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::List<typename  ::cereal::Map<Key, Value>::Entry>>::adopt(
+      _builder.getPointerField(0 * ::capnp::POINTERS), kj::mv(value));
+}
+template <typename Key, typename Value>
+inline ::capnp::Orphan< ::capnp::List<typename  ::cereal::Map<Key, Value>::Entry>> Map<Key, Value>::Builder::disownEntries() {
+  return ::capnp::_::PointerHelpers< ::capnp::List<typename  ::cereal::Map<Key, Value>::Entry>>::disown(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+
+template <typename Key, typename Value>
+inline bool Map<Key, Value>::Entry::Reader::hasKey() const {
+  return !_reader.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+template <typename Key, typename Value>
+inline bool Map<Key, Value>::Entry::Builder::hasKey() {
+  return !_builder.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+template <typename Key, typename Value>
+inline  ::capnp::ReaderFor<Key> Map<Key, Value>::Entry::Reader::getKey() const {
+  return ::capnp::_::PointerHelpers<Key>::get(
+      _reader.getPointerField(0 * ::capnp::POINTERS));
+}
+template <typename Key, typename Value>
+inline  ::capnp::BuilderFor<Key> Map<Key, Value>::Entry::Builder::getKey() {
+  return ::capnp::_::PointerHelpers<Key>::get(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+#if !CAPNP_LITE
+template <typename Key, typename Value>
+inline  ::capnp::PipelineFor<Key> Map<Key, Value>::Entry::Pipeline::getKey() {
+  return  ::capnp::PipelineFor<Key>(_typeless.getPointerField(0));
+}
+#endif  // !CAPNP_LITE
+template <typename Key, typename Value>
+inline void Map<Key, Value>::Entry::Builder::setKey( ::capnp::ReaderFor<Key> value) {
+  ::capnp::_::PointerHelpers<Key>::set(
+      _builder.getPointerField(0 * ::capnp::POINTERS), value);
+}
+template <typename Key, typename Value>
+inline  ::capnp::BuilderFor<Key> Map<Key, Value>::Entry::Builder::initKey() {
+  return ::capnp::_::PointerHelpers<Key>::init(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+template <typename Key, typename Value>
+inline  ::capnp::BuilderFor<Key> Map<Key, Value>::Entry::Builder::initKey(unsigned int size) {
+  return ::capnp::_::PointerHelpers<Key>::init(
+      _builder.getPointerField(0 * ::capnp::POINTERS), size);
+}
+template <typename Key, typename Value>
+inline void Map<Key, Value>::Entry::Builder::adoptKey(
+    ::capnp::Orphan<Key>&& value) {
+  ::capnp::_::PointerHelpers<Key>::adopt(
+      _builder.getPointerField(0 * ::capnp::POINTERS), kj::mv(value));
+}
+template <typename Key, typename Value>
+inline ::capnp::Orphan<Key> Map<Key, Value>::Entry::Builder::disownKey() {
+  return ::capnp::_::PointerHelpers<Key>::disown(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+
+template <typename Key, typename Value>
+inline bool Map<Key, Value>::Entry::Reader::hasValue() const {
+  return !_reader.getPointerField(1 * ::capnp::POINTERS).isNull();
+}
+template <typename Key, typename Value>
+inline bool Map<Key, Value>::Entry::Builder::hasValue() {
+  return !_builder.getPointerField(1 * ::capnp::POINTERS).isNull();
+}
+template <typename Key, typename Value>
+inline  ::capnp::ReaderFor<Value> Map<Key, Value>::Entry::Reader::getValue() const {
+  return ::capnp::_::PointerHelpers<Value>::get(
+      _reader.getPointerField(1 * ::capnp::POINTERS));
+}
+template <typename Key, typename Value>
+inline  ::capnp::BuilderFor<Value> Map<Key, Value>::Entry::Builder::getValue() {
+  return ::capnp::_::PointerHelpers<Value>::get(
+      _builder.getPointerField(1 * ::capnp::POINTERS));
+}
+#if !CAPNP_LITE
+template <typename Key, typename Value>
+inline  ::capnp::PipelineFor<Value> Map<Key, Value>::Entry::Pipeline::getValue() {
+  return  ::capnp::PipelineFor<Value>(_typeless.getPointerField(1));
+}
+#endif  // !CAPNP_LITE
+template <typename Key, typename Value>
+inline void Map<Key, Value>::Entry::Builder::setValue( ::capnp::ReaderFor<Value> value) {
+  ::capnp::_::PointerHelpers<Value>::set(
+      _builder.getPointerField(1 * ::capnp::POINTERS), value);
+}
+template <typename Key, typename Value>
+inline  ::capnp::BuilderFor<Value> Map<Key, Value>::Entry::Builder::initValue() {
+  return ::capnp::_::PointerHelpers<Value>::init(
+      _builder.getPointerField(1 * ::capnp::POINTERS));
+}
+template <typename Key, typename Value>
+inline  ::capnp::BuilderFor<Value> Map<Key, Value>::Entry::Builder::initValue(unsigned int size) {
+  return ::capnp::_::PointerHelpers<Value>::init(
+      _builder.getPointerField(1 * ::capnp::POINTERS), size);
+}
+template <typename Key, typename Value>
+inline void Map<Key, Value>::Entry::Builder::adoptValue(
+    ::capnp::Orphan<Value>&& value) {
+  ::capnp::_::PointerHelpers<Value>::adopt(
+      _builder.getPointerField(1 * ::capnp::POINTERS), kj::mv(value));
+}
+template <typename Key, typename Value>
+inline ::capnp::Orphan<Value> Map<Key, Value>::Entry::Builder::disownValue() {
+  return ::capnp::_::PointerHelpers<Value>::disown(
+      _builder.getPointerField(1 * ::capnp::POINTERS));
+}
+
+// Map<Key, Value>::Entry
+#ifndef _MSC_VER
+template <typename Key, typename Value>
+constexpr uint16_t Map<Key, Value>::Entry::_capnpPrivate::dataWordSize;
+template <typename Key, typename Value>
+constexpr uint16_t Map<Key, Value>::Entry::_capnpPrivate::pointerCount;
+#endif
+#if !CAPNP_LITE
+template <typename Key, typename Value>
+constexpr ::capnp::Kind Map<Key, Value>::Entry::_capnpPrivate::kind;
+template <typename Key, typename Value>
+constexpr ::capnp::_::RawSchema const* Map<Key, Value>::Entry::_capnpPrivate::schema;
+template <typename Key, typename Value>
+constexpr ::capnp::_::RawBrandedSchema const* Map<Key, Value>::Entry::_capnpPrivate::brand;
+template <typename Key, typename Value>
+const ::capnp::_::RawBrandedSchema::Scope Map<Key, Value>::Entry::_capnpPrivate::brandScopes[] = {
+  { 0xf8b13ce2183eb696, brandBindings + 0, 2, false},
+};
+template <typename Key, typename Value>
+const ::capnp::_::RawBrandedSchema::Binding Map<Key, Value>::Entry::_capnpPrivate::brandBindings[] = {
+  ::capnp::_::brandBindingFor<Key>(),
+  ::capnp::_::brandBindingFor<Value>(),
+};
+template <typename Key, typename Value>
+const ::capnp::_::RawBrandedSchema Map<Key, Value>::Entry::_capnpPrivate::specificBrand = {
+  &::capnp::schemas::s_a5dfdd084a6eea0e, brandScopes, nullptr,
+  sizeof(brandScopes) / sizeof(brandScopes[0]), 0, nullptr
+};
+#endif  // !CAPNP_LITE
+
+// Map<Key, Value>
+#ifndef _MSC_VER
+template <typename Key, typename Value>
+constexpr uint16_t Map<Key, Value>::_capnpPrivate::dataWordSize;
+template <typename Key, typename Value>
+constexpr uint16_t Map<Key, Value>::_capnpPrivate::pointerCount;
+#endif
+#if !CAPNP_LITE
+template <typename Key, typename Value>
+constexpr ::capnp::Kind Map<Key, Value>::_capnpPrivate::kind;
+template <typename Key, typename Value>
+constexpr ::capnp::_::RawSchema const* Map<Key, Value>::_capnpPrivate::schema;
+template <typename Key, typename Value>
+constexpr ::capnp::_::RawBrandedSchema const* Map<Key, Value>::_capnpPrivate::brand;
+template <typename Key, typename Value>
+const ::capnp::_::RawBrandedSchema::Scope Map<Key, Value>::_capnpPrivate::brandScopes[] = {
+  { 0xf8b13ce2183eb696, brandBindings + 0, 2, false},
+};
+template <typename Key, typename Value>
+const ::capnp::_::RawBrandedSchema::Binding Map<Key, Value>::_capnpPrivate::brandBindings[] = {
+  ::capnp::_::brandBindingFor<Key>(),
+  ::capnp::_::brandBindingFor<Value>(),
+};
+template <typename Key, typename Value>
+const ::capnp::_::RawBrandedSchema::Dependency Map<Key, Value>::_capnpPrivate::brandDependencies[] = {
+  { 16777216,  ::cereal::Map<Key, Value>::Entry::_capnpPrivate::brand },
+};
+template <typename Key, typename Value>
+const ::capnp::_::RawBrandedSchema Map<Key, Value>::_capnpPrivate::specificBrand = {
+  &::capnp::schemas::s_f8b13ce2183eb696, brandScopes, brandDependencies,
+  sizeof(brandScopes) / sizeof(brandScopes[0]), sizeof(brandDependencies) / sizeof(brandDependencies[0]), nullptr
+};
+#endif  // !CAPNP_LITE
 
 inline bool InitData::Reader::hasKernelArgs() const {
   return !_reader.getPointerField(0 * ::capnp::POINTERS).isNull();
@@ -3642,6 +8089,1149 @@ inline void InitData::Builder::adoptDongleId(
 inline ::capnp::Orphan< ::capnp::Text> InitData::Builder::disownDongleId() {
   return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(
       _builder.getPointerField(2 * ::capnp::POINTERS));
+}
+
+inline  ::cereal::InitData::DeviceType InitData::Reader::getDeviceType() const {
+  return _reader.getDataField< ::cereal::InitData::DeviceType>(
+      0 * ::capnp::ELEMENTS);
+}
+
+inline  ::cereal::InitData::DeviceType InitData::Builder::getDeviceType() {
+  return _builder.getDataField< ::cereal::InitData::DeviceType>(
+      0 * ::capnp::ELEMENTS);
+}
+inline void InitData::Builder::setDeviceType( ::cereal::InitData::DeviceType value) {
+  _builder.setDataField< ::cereal::InitData::DeviceType>(
+      0 * ::capnp::ELEMENTS, value);
+}
+
+inline bool InitData::Reader::hasVersion() const {
+  return !_reader.getPointerField(3 * ::capnp::POINTERS).isNull();
+}
+inline bool InitData::Builder::hasVersion() {
+  return !_builder.getPointerField(3 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::Text::Reader InitData::Reader::getVersion() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _reader.getPointerField(3 * ::capnp::POINTERS));
+}
+inline  ::capnp::Text::Builder InitData::Builder::getVersion() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _builder.getPointerField(3 * ::capnp::POINTERS));
+}
+inline void InitData::Builder::setVersion( ::capnp::Text::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::set(
+      _builder.getPointerField(3 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::Text::Builder InitData::Builder::initVersion(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(
+      _builder.getPointerField(3 * ::capnp::POINTERS), size);
+}
+inline void InitData::Builder::adoptVersion(
+    ::capnp::Orphan< ::capnp::Text>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(
+      _builder.getPointerField(3 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::Text> InitData::Builder::disownVersion() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(
+      _builder.getPointerField(3 * ::capnp::POINTERS));
+}
+
+inline bool InitData::Reader::hasAndroidBuildInfo() const {
+  return !_reader.getPointerField(4 * ::capnp::POINTERS).isNull();
+}
+inline bool InitData::Builder::hasAndroidBuildInfo() {
+  return !_builder.getPointerField(4 * ::capnp::POINTERS).isNull();
+}
+inline  ::cereal::InitData::AndroidBuildInfo::Reader InitData::Reader::getAndroidBuildInfo() const {
+  return ::capnp::_::PointerHelpers< ::cereal::InitData::AndroidBuildInfo>::get(
+      _reader.getPointerField(4 * ::capnp::POINTERS));
+}
+inline  ::cereal::InitData::AndroidBuildInfo::Builder InitData::Builder::getAndroidBuildInfo() {
+  return ::capnp::_::PointerHelpers< ::cereal::InitData::AndroidBuildInfo>::get(
+      _builder.getPointerField(4 * ::capnp::POINTERS));
+}
+#if !CAPNP_LITE
+inline  ::cereal::InitData::AndroidBuildInfo::Pipeline InitData::Pipeline::getAndroidBuildInfo() {
+  return  ::cereal::InitData::AndroidBuildInfo::Pipeline(_typeless.getPointerField(4));
+}
+#endif  // !CAPNP_LITE
+inline void InitData::Builder::setAndroidBuildInfo( ::cereal::InitData::AndroidBuildInfo::Reader value) {
+  ::capnp::_::PointerHelpers< ::cereal::InitData::AndroidBuildInfo>::set(
+      _builder.getPointerField(4 * ::capnp::POINTERS), value);
+}
+inline  ::cereal::InitData::AndroidBuildInfo::Builder InitData::Builder::initAndroidBuildInfo() {
+  return ::capnp::_::PointerHelpers< ::cereal::InitData::AndroidBuildInfo>::init(
+      _builder.getPointerField(4 * ::capnp::POINTERS));
+}
+inline void InitData::Builder::adoptAndroidBuildInfo(
+    ::capnp::Orphan< ::cereal::InitData::AndroidBuildInfo>&& value) {
+  ::capnp::_::PointerHelpers< ::cereal::InitData::AndroidBuildInfo>::adopt(
+      _builder.getPointerField(4 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::cereal::InitData::AndroidBuildInfo> InitData::Builder::disownAndroidBuildInfo() {
+  return ::capnp::_::PointerHelpers< ::cereal::InitData::AndroidBuildInfo>::disown(
+      _builder.getPointerField(4 * ::capnp::POINTERS));
+}
+
+inline bool InitData::Reader::hasAndroidSensors() const {
+  return !_reader.getPointerField(5 * ::capnp::POINTERS).isNull();
+}
+inline bool InitData::Builder::hasAndroidSensors() {
+  return !_builder.getPointerField(5 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::List< ::cereal::InitData::AndroidSensor>::Reader InitData::Reader::getAndroidSensors() const {
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::InitData::AndroidSensor>>::get(
+      _reader.getPointerField(5 * ::capnp::POINTERS));
+}
+inline  ::capnp::List< ::cereal::InitData::AndroidSensor>::Builder InitData::Builder::getAndroidSensors() {
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::InitData::AndroidSensor>>::get(
+      _builder.getPointerField(5 * ::capnp::POINTERS));
+}
+inline void InitData::Builder::setAndroidSensors( ::capnp::List< ::cereal::InitData::AndroidSensor>::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::InitData::AndroidSensor>>::set(
+      _builder.getPointerField(5 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::List< ::cereal::InitData::AndroidSensor>::Builder InitData::Builder::initAndroidSensors(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::InitData::AndroidSensor>>::init(
+      _builder.getPointerField(5 * ::capnp::POINTERS), size);
+}
+inline void InitData::Builder::adoptAndroidSensors(
+    ::capnp::Orphan< ::capnp::List< ::cereal::InitData::AndroidSensor>>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::InitData::AndroidSensor>>::adopt(
+      _builder.getPointerField(5 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::List< ::cereal::InitData::AndroidSensor>> InitData::Builder::disownAndroidSensors() {
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::InitData::AndroidSensor>>::disown(
+      _builder.getPointerField(5 * ::capnp::POINTERS));
+}
+
+inline bool InitData::Reader::hasChffrAndroidExtra() const {
+  return !_reader.getPointerField(6 * ::capnp::POINTERS).isNull();
+}
+inline bool InitData::Builder::hasChffrAndroidExtra() {
+  return !_builder.getPointerField(6 * ::capnp::POINTERS).isNull();
+}
+inline  ::cereal::InitData::ChffrAndroidExtra::Reader InitData::Reader::getChffrAndroidExtra() const {
+  return ::capnp::_::PointerHelpers< ::cereal::InitData::ChffrAndroidExtra>::get(
+      _reader.getPointerField(6 * ::capnp::POINTERS));
+}
+inline  ::cereal::InitData::ChffrAndroidExtra::Builder InitData::Builder::getChffrAndroidExtra() {
+  return ::capnp::_::PointerHelpers< ::cereal::InitData::ChffrAndroidExtra>::get(
+      _builder.getPointerField(6 * ::capnp::POINTERS));
+}
+#if !CAPNP_LITE
+inline  ::cereal::InitData::ChffrAndroidExtra::Pipeline InitData::Pipeline::getChffrAndroidExtra() {
+  return  ::cereal::InitData::ChffrAndroidExtra::Pipeline(_typeless.getPointerField(6));
+}
+#endif  // !CAPNP_LITE
+inline void InitData::Builder::setChffrAndroidExtra( ::cereal::InitData::ChffrAndroidExtra::Reader value) {
+  ::capnp::_::PointerHelpers< ::cereal::InitData::ChffrAndroidExtra>::set(
+      _builder.getPointerField(6 * ::capnp::POINTERS), value);
+}
+inline  ::cereal::InitData::ChffrAndroidExtra::Builder InitData::Builder::initChffrAndroidExtra() {
+  return ::capnp::_::PointerHelpers< ::cereal::InitData::ChffrAndroidExtra>::init(
+      _builder.getPointerField(6 * ::capnp::POINTERS));
+}
+inline void InitData::Builder::adoptChffrAndroidExtra(
+    ::capnp::Orphan< ::cereal::InitData::ChffrAndroidExtra>&& value) {
+  ::capnp::_::PointerHelpers< ::cereal::InitData::ChffrAndroidExtra>::adopt(
+      _builder.getPointerField(6 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::cereal::InitData::ChffrAndroidExtra> InitData::Builder::disownChffrAndroidExtra() {
+  return ::capnp::_::PointerHelpers< ::cereal::InitData::ChffrAndroidExtra>::disown(
+      _builder.getPointerField(6 * ::capnp::POINTERS));
+}
+
+inline bool InitData::AndroidBuildInfo::Reader::hasBoard() const {
+  return !_reader.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline bool InitData::AndroidBuildInfo::Builder::hasBoard() {
+  return !_builder.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::Text::Reader InitData::AndroidBuildInfo::Reader::getBoard() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _reader.getPointerField(0 * ::capnp::POINTERS));
+}
+inline  ::capnp::Text::Builder InitData::AndroidBuildInfo::Builder::getBoard() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void InitData::AndroidBuildInfo::Builder::setBoard( ::capnp::Text::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::set(
+      _builder.getPointerField(0 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::Text::Builder InitData::AndroidBuildInfo::Builder::initBoard(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(
+      _builder.getPointerField(0 * ::capnp::POINTERS), size);
+}
+inline void InitData::AndroidBuildInfo::Builder::adoptBoard(
+    ::capnp::Orphan< ::capnp::Text>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(
+      _builder.getPointerField(0 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::Text> InitData::AndroidBuildInfo::Builder::disownBoard() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+
+inline bool InitData::AndroidBuildInfo::Reader::hasBootloader() const {
+  return !_reader.getPointerField(1 * ::capnp::POINTERS).isNull();
+}
+inline bool InitData::AndroidBuildInfo::Builder::hasBootloader() {
+  return !_builder.getPointerField(1 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::Text::Reader InitData::AndroidBuildInfo::Reader::getBootloader() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _reader.getPointerField(1 * ::capnp::POINTERS));
+}
+inline  ::capnp::Text::Builder InitData::AndroidBuildInfo::Builder::getBootloader() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _builder.getPointerField(1 * ::capnp::POINTERS));
+}
+inline void InitData::AndroidBuildInfo::Builder::setBootloader( ::capnp::Text::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::set(
+      _builder.getPointerField(1 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::Text::Builder InitData::AndroidBuildInfo::Builder::initBootloader(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(
+      _builder.getPointerField(1 * ::capnp::POINTERS), size);
+}
+inline void InitData::AndroidBuildInfo::Builder::adoptBootloader(
+    ::capnp::Orphan< ::capnp::Text>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(
+      _builder.getPointerField(1 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::Text> InitData::AndroidBuildInfo::Builder::disownBootloader() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(
+      _builder.getPointerField(1 * ::capnp::POINTERS));
+}
+
+inline bool InitData::AndroidBuildInfo::Reader::hasBrand() const {
+  return !_reader.getPointerField(2 * ::capnp::POINTERS).isNull();
+}
+inline bool InitData::AndroidBuildInfo::Builder::hasBrand() {
+  return !_builder.getPointerField(2 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::Text::Reader InitData::AndroidBuildInfo::Reader::getBrand() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _reader.getPointerField(2 * ::capnp::POINTERS));
+}
+inline  ::capnp::Text::Builder InitData::AndroidBuildInfo::Builder::getBrand() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _builder.getPointerField(2 * ::capnp::POINTERS));
+}
+inline void InitData::AndroidBuildInfo::Builder::setBrand( ::capnp::Text::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::set(
+      _builder.getPointerField(2 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::Text::Builder InitData::AndroidBuildInfo::Builder::initBrand(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(
+      _builder.getPointerField(2 * ::capnp::POINTERS), size);
+}
+inline void InitData::AndroidBuildInfo::Builder::adoptBrand(
+    ::capnp::Orphan< ::capnp::Text>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(
+      _builder.getPointerField(2 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::Text> InitData::AndroidBuildInfo::Builder::disownBrand() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(
+      _builder.getPointerField(2 * ::capnp::POINTERS));
+}
+
+inline bool InitData::AndroidBuildInfo::Reader::hasDevice() const {
+  return !_reader.getPointerField(3 * ::capnp::POINTERS).isNull();
+}
+inline bool InitData::AndroidBuildInfo::Builder::hasDevice() {
+  return !_builder.getPointerField(3 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::Text::Reader InitData::AndroidBuildInfo::Reader::getDevice() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _reader.getPointerField(3 * ::capnp::POINTERS));
+}
+inline  ::capnp::Text::Builder InitData::AndroidBuildInfo::Builder::getDevice() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _builder.getPointerField(3 * ::capnp::POINTERS));
+}
+inline void InitData::AndroidBuildInfo::Builder::setDevice( ::capnp::Text::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::set(
+      _builder.getPointerField(3 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::Text::Builder InitData::AndroidBuildInfo::Builder::initDevice(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(
+      _builder.getPointerField(3 * ::capnp::POINTERS), size);
+}
+inline void InitData::AndroidBuildInfo::Builder::adoptDevice(
+    ::capnp::Orphan< ::capnp::Text>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(
+      _builder.getPointerField(3 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::Text> InitData::AndroidBuildInfo::Builder::disownDevice() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(
+      _builder.getPointerField(3 * ::capnp::POINTERS));
+}
+
+inline bool InitData::AndroidBuildInfo::Reader::hasDisplay() const {
+  return !_reader.getPointerField(4 * ::capnp::POINTERS).isNull();
+}
+inline bool InitData::AndroidBuildInfo::Builder::hasDisplay() {
+  return !_builder.getPointerField(4 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::Text::Reader InitData::AndroidBuildInfo::Reader::getDisplay() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _reader.getPointerField(4 * ::capnp::POINTERS));
+}
+inline  ::capnp::Text::Builder InitData::AndroidBuildInfo::Builder::getDisplay() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _builder.getPointerField(4 * ::capnp::POINTERS));
+}
+inline void InitData::AndroidBuildInfo::Builder::setDisplay( ::capnp::Text::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::set(
+      _builder.getPointerField(4 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::Text::Builder InitData::AndroidBuildInfo::Builder::initDisplay(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(
+      _builder.getPointerField(4 * ::capnp::POINTERS), size);
+}
+inline void InitData::AndroidBuildInfo::Builder::adoptDisplay(
+    ::capnp::Orphan< ::capnp::Text>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(
+      _builder.getPointerField(4 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::Text> InitData::AndroidBuildInfo::Builder::disownDisplay() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(
+      _builder.getPointerField(4 * ::capnp::POINTERS));
+}
+
+inline bool InitData::AndroidBuildInfo::Reader::hasFingerprint() const {
+  return !_reader.getPointerField(5 * ::capnp::POINTERS).isNull();
+}
+inline bool InitData::AndroidBuildInfo::Builder::hasFingerprint() {
+  return !_builder.getPointerField(5 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::Text::Reader InitData::AndroidBuildInfo::Reader::getFingerprint() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _reader.getPointerField(5 * ::capnp::POINTERS));
+}
+inline  ::capnp::Text::Builder InitData::AndroidBuildInfo::Builder::getFingerprint() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _builder.getPointerField(5 * ::capnp::POINTERS));
+}
+inline void InitData::AndroidBuildInfo::Builder::setFingerprint( ::capnp::Text::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::set(
+      _builder.getPointerField(5 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::Text::Builder InitData::AndroidBuildInfo::Builder::initFingerprint(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(
+      _builder.getPointerField(5 * ::capnp::POINTERS), size);
+}
+inline void InitData::AndroidBuildInfo::Builder::adoptFingerprint(
+    ::capnp::Orphan< ::capnp::Text>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(
+      _builder.getPointerField(5 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::Text> InitData::AndroidBuildInfo::Builder::disownFingerprint() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(
+      _builder.getPointerField(5 * ::capnp::POINTERS));
+}
+
+inline bool InitData::AndroidBuildInfo::Reader::hasHardware() const {
+  return !_reader.getPointerField(6 * ::capnp::POINTERS).isNull();
+}
+inline bool InitData::AndroidBuildInfo::Builder::hasHardware() {
+  return !_builder.getPointerField(6 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::Text::Reader InitData::AndroidBuildInfo::Reader::getHardware() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _reader.getPointerField(6 * ::capnp::POINTERS));
+}
+inline  ::capnp::Text::Builder InitData::AndroidBuildInfo::Builder::getHardware() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _builder.getPointerField(6 * ::capnp::POINTERS));
+}
+inline void InitData::AndroidBuildInfo::Builder::setHardware( ::capnp::Text::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::set(
+      _builder.getPointerField(6 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::Text::Builder InitData::AndroidBuildInfo::Builder::initHardware(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(
+      _builder.getPointerField(6 * ::capnp::POINTERS), size);
+}
+inline void InitData::AndroidBuildInfo::Builder::adoptHardware(
+    ::capnp::Orphan< ::capnp::Text>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(
+      _builder.getPointerField(6 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::Text> InitData::AndroidBuildInfo::Builder::disownHardware() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(
+      _builder.getPointerField(6 * ::capnp::POINTERS));
+}
+
+inline bool InitData::AndroidBuildInfo::Reader::hasHost() const {
+  return !_reader.getPointerField(7 * ::capnp::POINTERS).isNull();
+}
+inline bool InitData::AndroidBuildInfo::Builder::hasHost() {
+  return !_builder.getPointerField(7 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::Text::Reader InitData::AndroidBuildInfo::Reader::getHost() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _reader.getPointerField(7 * ::capnp::POINTERS));
+}
+inline  ::capnp::Text::Builder InitData::AndroidBuildInfo::Builder::getHost() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _builder.getPointerField(7 * ::capnp::POINTERS));
+}
+inline void InitData::AndroidBuildInfo::Builder::setHost( ::capnp::Text::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::set(
+      _builder.getPointerField(7 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::Text::Builder InitData::AndroidBuildInfo::Builder::initHost(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(
+      _builder.getPointerField(7 * ::capnp::POINTERS), size);
+}
+inline void InitData::AndroidBuildInfo::Builder::adoptHost(
+    ::capnp::Orphan< ::capnp::Text>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(
+      _builder.getPointerField(7 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::Text> InitData::AndroidBuildInfo::Builder::disownHost() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(
+      _builder.getPointerField(7 * ::capnp::POINTERS));
+}
+
+inline bool InitData::AndroidBuildInfo::Reader::hasId() const {
+  return !_reader.getPointerField(8 * ::capnp::POINTERS).isNull();
+}
+inline bool InitData::AndroidBuildInfo::Builder::hasId() {
+  return !_builder.getPointerField(8 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::Text::Reader InitData::AndroidBuildInfo::Reader::getId() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _reader.getPointerField(8 * ::capnp::POINTERS));
+}
+inline  ::capnp::Text::Builder InitData::AndroidBuildInfo::Builder::getId() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _builder.getPointerField(8 * ::capnp::POINTERS));
+}
+inline void InitData::AndroidBuildInfo::Builder::setId( ::capnp::Text::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::set(
+      _builder.getPointerField(8 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::Text::Builder InitData::AndroidBuildInfo::Builder::initId(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(
+      _builder.getPointerField(8 * ::capnp::POINTERS), size);
+}
+inline void InitData::AndroidBuildInfo::Builder::adoptId(
+    ::capnp::Orphan< ::capnp::Text>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(
+      _builder.getPointerField(8 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::Text> InitData::AndroidBuildInfo::Builder::disownId() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(
+      _builder.getPointerField(8 * ::capnp::POINTERS));
+}
+
+inline bool InitData::AndroidBuildInfo::Reader::hasManufacturer() const {
+  return !_reader.getPointerField(9 * ::capnp::POINTERS).isNull();
+}
+inline bool InitData::AndroidBuildInfo::Builder::hasManufacturer() {
+  return !_builder.getPointerField(9 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::Text::Reader InitData::AndroidBuildInfo::Reader::getManufacturer() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _reader.getPointerField(9 * ::capnp::POINTERS));
+}
+inline  ::capnp::Text::Builder InitData::AndroidBuildInfo::Builder::getManufacturer() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _builder.getPointerField(9 * ::capnp::POINTERS));
+}
+inline void InitData::AndroidBuildInfo::Builder::setManufacturer( ::capnp::Text::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::set(
+      _builder.getPointerField(9 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::Text::Builder InitData::AndroidBuildInfo::Builder::initManufacturer(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(
+      _builder.getPointerField(9 * ::capnp::POINTERS), size);
+}
+inline void InitData::AndroidBuildInfo::Builder::adoptManufacturer(
+    ::capnp::Orphan< ::capnp::Text>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(
+      _builder.getPointerField(9 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::Text> InitData::AndroidBuildInfo::Builder::disownManufacturer() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(
+      _builder.getPointerField(9 * ::capnp::POINTERS));
+}
+
+inline bool InitData::AndroidBuildInfo::Reader::hasModel() const {
+  return !_reader.getPointerField(10 * ::capnp::POINTERS).isNull();
+}
+inline bool InitData::AndroidBuildInfo::Builder::hasModel() {
+  return !_builder.getPointerField(10 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::Text::Reader InitData::AndroidBuildInfo::Reader::getModel() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _reader.getPointerField(10 * ::capnp::POINTERS));
+}
+inline  ::capnp::Text::Builder InitData::AndroidBuildInfo::Builder::getModel() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _builder.getPointerField(10 * ::capnp::POINTERS));
+}
+inline void InitData::AndroidBuildInfo::Builder::setModel( ::capnp::Text::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::set(
+      _builder.getPointerField(10 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::Text::Builder InitData::AndroidBuildInfo::Builder::initModel(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(
+      _builder.getPointerField(10 * ::capnp::POINTERS), size);
+}
+inline void InitData::AndroidBuildInfo::Builder::adoptModel(
+    ::capnp::Orphan< ::capnp::Text>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(
+      _builder.getPointerField(10 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::Text> InitData::AndroidBuildInfo::Builder::disownModel() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(
+      _builder.getPointerField(10 * ::capnp::POINTERS));
+}
+
+inline bool InitData::AndroidBuildInfo::Reader::hasProduct() const {
+  return !_reader.getPointerField(11 * ::capnp::POINTERS).isNull();
+}
+inline bool InitData::AndroidBuildInfo::Builder::hasProduct() {
+  return !_builder.getPointerField(11 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::Text::Reader InitData::AndroidBuildInfo::Reader::getProduct() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _reader.getPointerField(11 * ::capnp::POINTERS));
+}
+inline  ::capnp::Text::Builder InitData::AndroidBuildInfo::Builder::getProduct() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _builder.getPointerField(11 * ::capnp::POINTERS));
+}
+inline void InitData::AndroidBuildInfo::Builder::setProduct( ::capnp::Text::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::set(
+      _builder.getPointerField(11 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::Text::Builder InitData::AndroidBuildInfo::Builder::initProduct(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(
+      _builder.getPointerField(11 * ::capnp::POINTERS), size);
+}
+inline void InitData::AndroidBuildInfo::Builder::adoptProduct(
+    ::capnp::Orphan< ::capnp::Text>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(
+      _builder.getPointerField(11 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::Text> InitData::AndroidBuildInfo::Builder::disownProduct() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(
+      _builder.getPointerField(11 * ::capnp::POINTERS));
+}
+
+inline bool InitData::AndroidBuildInfo::Reader::hasRadioVersion() const {
+  return !_reader.getPointerField(12 * ::capnp::POINTERS).isNull();
+}
+inline bool InitData::AndroidBuildInfo::Builder::hasRadioVersion() {
+  return !_builder.getPointerField(12 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::Text::Reader InitData::AndroidBuildInfo::Reader::getRadioVersion() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _reader.getPointerField(12 * ::capnp::POINTERS));
+}
+inline  ::capnp::Text::Builder InitData::AndroidBuildInfo::Builder::getRadioVersion() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _builder.getPointerField(12 * ::capnp::POINTERS));
+}
+inline void InitData::AndroidBuildInfo::Builder::setRadioVersion( ::capnp::Text::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::set(
+      _builder.getPointerField(12 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::Text::Builder InitData::AndroidBuildInfo::Builder::initRadioVersion(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(
+      _builder.getPointerField(12 * ::capnp::POINTERS), size);
+}
+inline void InitData::AndroidBuildInfo::Builder::adoptRadioVersion(
+    ::capnp::Orphan< ::capnp::Text>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(
+      _builder.getPointerField(12 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::Text> InitData::AndroidBuildInfo::Builder::disownRadioVersion() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(
+      _builder.getPointerField(12 * ::capnp::POINTERS));
+}
+
+inline bool InitData::AndroidBuildInfo::Reader::hasSerial() const {
+  return !_reader.getPointerField(13 * ::capnp::POINTERS).isNull();
+}
+inline bool InitData::AndroidBuildInfo::Builder::hasSerial() {
+  return !_builder.getPointerField(13 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::Text::Reader InitData::AndroidBuildInfo::Reader::getSerial() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _reader.getPointerField(13 * ::capnp::POINTERS));
+}
+inline  ::capnp::Text::Builder InitData::AndroidBuildInfo::Builder::getSerial() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _builder.getPointerField(13 * ::capnp::POINTERS));
+}
+inline void InitData::AndroidBuildInfo::Builder::setSerial( ::capnp::Text::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::set(
+      _builder.getPointerField(13 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::Text::Builder InitData::AndroidBuildInfo::Builder::initSerial(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(
+      _builder.getPointerField(13 * ::capnp::POINTERS), size);
+}
+inline void InitData::AndroidBuildInfo::Builder::adoptSerial(
+    ::capnp::Orphan< ::capnp::Text>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(
+      _builder.getPointerField(13 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::Text> InitData::AndroidBuildInfo::Builder::disownSerial() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(
+      _builder.getPointerField(13 * ::capnp::POINTERS));
+}
+
+inline bool InitData::AndroidBuildInfo::Reader::hasSupportedAbis() const {
+  return !_reader.getPointerField(14 * ::capnp::POINTERS).isNull();
+}
+inline bool InitData::AndroidBuildInfo::Builder::hasSupportedAbis() {
+  return !_builder.getPointerField(14 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::List< ::capnp::Text>::Reader InitData::AndroidBuildInfo::Reader::getSupportedAbis() const {
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::capnp::Text>>::get(
+      _reader.getPointerField(14 * ::capnp::POINTERS));
+}
+inline  ::capnp::List< ::capnp::Text>::Builder InitData::AndroidBuildInfo::Builder::getSupportedAbis() {
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::capnp::Text>>::get(
+      _builder.getPointerField(14 * ::capnp::POINTERS));
+}
+inline void InitData::AndroidBuildInfo::Builder::setSupportedAbis( ::capnp::List< ::capnp::Text>::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::List< ::capnp::Text>>::set(
+      _builder.getPointerField(14 * ::capnp::POINTERS), value);
+}
+inline void InitData::AndroidBuildInfo::Builder::setSupportedAbis(::kj::ArrayPtr<const  ::capnp::Text::Reader> value) {
+  ::capnp::_::PointerHelpers< ::capnp::List< ::capnp::Text>>::set(
+      _builder.getPointerField(14 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::List< ::capnp::Text>::Builder InitData::AndroidBuildInfo::Builder::initSupportedAbis(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::capnp::Text>>::init(
+      _builder.getPointerField(14 * ::capnp::POINTERS), size);
+}
+inline void InitData::AndroidBuildInfo::Builder::adoptSupportedAbis(
+    ::capnp::Orphan< ::capnp::List< ::capnp::Text>>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::List< ::capnp::Text>>::adopt(
+      _builder.getPointerField(14 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::List< ::capnp::Text>> InitData::AndroidBuildInfo::Builder::disownSupportedAbis() {
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::capnp::Text>>::disown(
+      _builder.getPointerField(14 * ::capnp::POINTERS));
+}
+
+inline bool InitData::AndroidBuildInfo::Reader::hasTags() const {
+  return !_reader.getPointerField(15 * ::capnp::POINTERS).isNull();
+}
+inline bool InitData::AndroidBuildInfo::Builder::hasTags() {
+  return !_builder.getPointerField(15 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::Text::Reader InitData::AndroidBuildInfo::Reader::getTags() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _reader.getPointerField(15 * ::capnp::POINTERS));
+}
+inline  ::capnp::Text::Builder InitData::AndroidBuildInfo::Builder::getTags() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _builder.getPointerField(15 * ::capnp::POINTERS));
+}
+inline void InitData::AndroidBuildInfo::Builder::setTags( ::capnp::Text::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::set(
+      _builder.getPointerField(15 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::Text::Builder InitData::AndroidBuildInfo::Builder::initTags(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(
+      _builder.getPointerField(15 * ::capnp::POINTERS), size);
+}
+inline void InitData::AndroidBuildInfo::Builder::adoptTags(
+    ::capnp::Orphan< ::capnp::Text>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(
+      _builder.getPointerField(15 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::Text> InitData::AndroidBuildInfo::Builder::disownTags() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(
+      _builder.getPointerField(15 * ::capnp::POINTERS));
+}
+
+inline  ::int64_t InitData::AndroidBuildInfo::Reader::getTime() const {
+  return _reader.getDataField< ::int64_t>(
+      0 * ::capnp::ELEMENTS);
+}
+
+inline  ::int64_t InitData::AndroidBuildInfo::Builder::getTime() {
+  return _builder.getDataField< ::int64_t>(
+      0 * ::capnp::ELEMENTS);
+}
+inline void InitData::AndroidBuildInfo::Builder::setTime( ::int64_t value) {
+  _builder.setDataField< ::int64_t>(
+      0 * ::capnp::ELEMENTS, value);
+}
+
+inline bool InitData::AndroidBuildInfo::Reader::hasType() const {
+  return !_reader.getPointerField(16 * ::capnp::POINTERS).isNull();
+}
+inline bool InitData::AndroidBuildInfo::Builder::hasType() {
+  return !_builder.getPointerField(16 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::Text::Reader InitData::AndroidBuildInfo::Reader::getType() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _reader.getPointerField(16 * ::capnp::POINTERS));
+}
+inline  ::capnp::Text::Builder InitData::AndroidBuildInfo::Builder::getType() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _builder.getPointerField(16 * ::capnp::POINTERS));
+}
+inline void InitData::AndroidBuildInfo::Builder::setType( ::capnp::Text::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::set(
+      _builder.getPointerField(16 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::Text::Builder InitData::AndroidBuildInfo::Builder::initType(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(
+      _builder.getPointerField(16 * ::capnp::POINTERS), size);
+}
+inline void InitData::AndroidBuildInfo::Builder::adoptType(
+    ::capnp::Orphan< ::capnp::Text>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(
+      _builder.getPointerField(16 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::Text> InitData::AndroidBuildInfo::Builder::disownType() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(
+      _builder.getPointerField(16 * ::capnp::POINTERS));
+}
+
+inline bool InitData::AndroidBuildInfo::Reader::hasUser() const {
+  return !_reader.getPointerField(17 * ::capnp::POINTERS).isNull();
+}
+inline bool InitData::AndroidBuildInfo::Builder::hasUser() {
+  return !_builder.getPointerField(17 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::Text::Reader InitData::AndroidBuildInfo::Reader::getUser() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _reader.getPointerField(17 * ::capnp::POINTERS));
+}
+inline  ::capnp::Text::Builder InitData::AndroidBuildInfo::Builder::getUser() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _builder.getPointerField(17 * ::capnp::POINTERS));
+}
+inline void InitData::AndroidBuildInfo::Builder::setUser( ::capnp::Text::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::set(
+      _builder.getPointerField(17 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::Text::Builder InitData::AndroidBuildInfo::Builder::initUser(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(
+      _builder.getPointerField(17 * ::capnp::POINTERS), size);
+}
+inline void InitData::AndroidBuildInfo::Builder::adoptUser(
+    ::capnp::Orphan< ::capnp::Text>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(
+      _builder.getPointerField(17 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::Text> InitData::AndroidBuildInfo::Builder::disownUser() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(
+      _builder.getPointerField(17 * ::capnp::POINTERS));
+}
+
+inline bool InitData::AndroidBuildInfo::Reader::hasVersionCodename() const {
+  return !_reader.getPointerField(18 * ::capnp::POINTERS).isNull();
+}
+inline bool InitData::AndroidBuildInfo::Builder::hasVersionCodename() {
+  return !_builder.getPointerField(18 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::Text::Reader InitData::AndroidBuildInfo::Reader::getVersionCodename() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _reader.getPointerField(18 * ::capnp::POINTERS));
+}
+inline  ::capnp::Text::Builder InitData::AndroidBuildInfo::Builder::getVersionCodename() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _builder.getPointerField(18 * ::capnp::POINTERS));
+}
+inline void InitData::AndroidBuildInfo::Builder::setVersionCodename( ::capnp::Text::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::set(
+      _builder.getPointerField(18 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::Text::Builder InitData::AndroidBuildInfo::Builder::initVersionCodename(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(
+      _builder.getPointerField(18 * ::capnp::POINTERS), size);
+}
+inline void InitData::AndroidBuildInfo::Builder::adoptVersionCodename(
+    ::capnp::Orphan< ::capnp::Text>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(
+      _builder.getPointerField(18 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::Text> InitData::AndroidBuildInfo::Builder::disownVersionCodename() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(
+      _builder.getPointerField(18 * ::capnp::POINTERS));
+}
+
+inline bool InitData::AndroidBuildInfo::Reader::hasVersionRelease() const {
+  return !_reader.getPointerField(19 * ::capnp::POINTERS).isNull();
+}
+inline bool InitData::AndroidBuildInfo::Builder::hasVersionRelease() {
+  return !_builder.getPointerField(19 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::Text::Reader InitData::AndroidBuildInfo::Reader::getVersionRelease() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _reader.getPointerField(19 * ::capnp::POINTERS));
+}
+inline  ::capnp::Text::Builder InitData::AndroidBuildInfo::Builder::getVersionRelease() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _builder.getPointerField(19 * ::capnp::POINTERS));
+}
+inline void InitData::AndroidBuildInfo::Builder::setVersionRelease( ::capnp::Text::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::set(
+      _builder.getPointerField(19 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::Text::Builder InitData::AndroidBuildInfo::Builder::initVersionRelease(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(
+      _builder.getPointerField(19 * ::capnp::POINTERS), size);
+}
+inline void InitData::AndroidBuildInfo::Builder::adoptVersionRelease(
+    ::capnp::Orphan< ::capnp::Text>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(
+      _builder.getPointerField(19 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::Text> InitData::AndroidBuildInfo::Builder::disownVersionRelease() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(
+      _builder.getPointerField(19 * ::capnp::POINTERS));
+}
+
+inline  ::int32_t InitData::AndroidBuildInfo::Reader::getVersionSdk() const {
+  return _reader.getDataField< ::int32_t>(
+      2 * ::capnp::ELEMENTS);
+}
+
+inline  ::int32_t InitData::AndroidBuildInfo::Builder::getVersionSdk() {
+  return _builder.getDataField< ::int32_t>(
+      2 * ::capnp::ELEMENTS);
+}
+inline void InitData::AndroidBuildInfo::Builder::setVersionSdk( ::int32_t value) {
+  _builder.setDataField< ::int32_t>(
+      2 * ::capnp::ELEMENTS, value);
+}
+
+inline bool InitData::AndroidBuildInfo::Reader::hasVersionSecurityPatch() const {
+  return !_reader.getPointerField(20 * ::capnp::POINTERS).isNull();
+}
+inline bool InitData::AndroidBuildInfo::Builder::hasVersionSecurityPatch() {
+  return !_builder.getPointerField(20 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::Text::Reader InitData::AndroidBuildInfo::Reader::getVersionSecurityPatch() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _reader.getPointerField(20 * ::capnp::POINTERS));
+}
+inline  ::capnp::Text::Builder InitData::AndroidBuildInfo::Builder::getVersionSecurityPatch() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _builder.getPointerField(20 * ::capnp::POINTERS));
+}
+inline void InitData::AndroidBuildInfo::Builder::setVersionSecurityPatch( ::capnp::Text::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::set(
+      _builder.getPointerField(20 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::Text::Builder InitData::AndroidBuildInfo::Builder::initVersionSecurityPatch(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(
+      _builder.getPointerField(20 * ::capnp::POINTERS), size);
+}
+inline void InitData::AndroidBuildInfo::Builder::adoptVersionSecurityPatch(
+    ::capnp::Orphan< ::capnp::Text>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(
+      _builder.getPointerField(20 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::Text> InitData::AndroidBuildInfo::Builder::disownVersionSecurityPatch() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(
+      _builder.getPointerField(20 * ::capnp::POINTERS));
+}
+
+inline  ::int32_t InitData::AndroidSensor::Reader::getId() const {
+  return _reader.getDataField< ::int32_t>(
+      0 * ::capnp::ELEMENTS);
+}
+
+inline  ::int32_t InitData::AndroidSensor::Builder::getId() {
+  return _builder.getDataField< ::int32_t>(
+      0 * ::capnp::ELEMENTS);
+}
+inline void InitData::AndroidSensor::Builder::setId( ::int32_t value) {
+  _builder.setDataField< ::int32_t>(
+      0 * ::capnp::ELEMENTS, value);
+}
+
+inline bool InitData::AndroidSensor::Reader::hasName() const {
+  return !_reader.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline bool InitData::AndroidSensor::Builder::hasName() {
+  return !_builder.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::Text::Reader InitData::AndroidSensor::Reader::getName() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _reader.getPointerField(0 * ::capnp::POINTERS));
+}
+inline  ::capnp::Text::Builder InitData::AndroidSensor::Builder::getName() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void InitData::AndroidSensor::Builder::setName( ::capnp::Text::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::set(
+      _builder.getPointerField(0 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::Text::Builder InitData::AndroidSensor::Builder::initName(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(
+      _builder.getPointerField(0 * ::capnp::POINTERS), size);
+}
+inline void InitData::AndroidSensor::Builder::adoptName(
+    ::capnp::Orphan< ::capnp::Text>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(
+      _builder.getPointerField(0 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::Text> InitData::AndroidSensor::Builder::disownName() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+
+inline bool InitData::AndroidSensor::Reader::hasVendor() const {
+  return !_reader.getPointerField(1 * ::capnp::POINTERS).isNull();
+}
+inline bool InitData::AndroidSensor::Builder::hasVendor() {
+  return !_builder.getPointerField(1 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::Text::Reader InitData::AndroidSensor::Reader::getVendor() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _reader.getPointerField(1 * ::capnp::POINTERS));
+}
+inline  ::capnp::Text::Builder InitData::AndroidSensor::Builder::getVendor() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _builder.getPointerField(1 * ::capnp::POINTERS));
+}
+inline void InitData::AndroidSensor::Builder::setVendor( ::capnp::Text::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::set(
+      _builder.getPointerField(1 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::Text::Builder InitData::AndroidSensor::Builder::initVendor(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(
+      _builder.getPointerField(1 * ::capnp::POINTERS), size);
+}
+inline void InitData::AndroidSensor::Builder::adoptVendor(
+    ::capnp::Orphan< ::capnp::Text>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(
+      _builder.getPointerField(1 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::Text> InitData::AndroidSensor::Builder::disownVendor() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(
+      _builder.getPointerField(1 * ::capnp::POINTERS));
+}
+
+inline  ::int32_t InitData::AndroidSensor::Reader::getVersion() const {
+  return _reader.getDataField< ::int32_t>(
+      1 * ::capnp::ELEMENTS);
+}
+
+inline  ::int32_t InitData::AndroidSensor::Builder::getVersion() {
+  return _builder.getDataField< ::int32_t>(
+      1 * ::capnp::ELEMENTS);
+}
+inline void InitData::AndroidSensor::Builder::setVersion( ::int32_t value) {
+  _builder.setDataField< ::int32_t>(
+      1 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int32_t InitData::AndroidSensor::Reader::getHandle() const {
+  return _reader.getDataField< ::int32_t>(
+      2 * ::capnp::ELEMENTS);
+}
+
+inline  ::int32_t InitData::AndroidSensor::Builder::getHandle() {
+  return _builder.getDataField< ::int32_t>(
+      2 * ::capnp::ELEMENTS);
+}
+inline void InitData::AndroidSensor::Builder::setHandle( ::int32_t value) {
+  _builder.setDataField< ::int32_t>(
+      2 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int32_t InitData::AndroidSensor::Reader::getType() const {
+  return _reader.getDataField< ::int32_t>(
+      3 * ::capnp::ELEMENTS);
+}
+
+inline  ::int32_t InitData::AndroidSensor::Builder::getType() {
+  return _builder.getDataField< ::int32_t>(
+      3 * ::capnp::ELEMENTS);
+}
+inline void InitData::AndroidSensor::Builder::setType( ::int32_t value) {
+  _builder.setDataField< ::int32_t>(
+      3 * ::capnp::ELEMENTS, value);
+}
+
+inline float InitData::AndroidSensor::Reader::getMaxRange() const {
+  return _reader.getDataField<float>(
+      4 * ::capnp::ELEMENTS);
+}
+
+inline float InitData::AndroidSensor::Builder::getMaxRange() {
+  return _builder.getDataField<float>(
+      4 * ::capnp::ELEMENTS);
+}
+inline void InitData::AndroidSensor::Builder::setMaxRange(float value) {
+  _builder.setDataField<float>(
+      4 * ::capnp::ELEMENTS, value);
+}
+
+inline float InitData::AndroidSensor::Reader::getResolution() const {
+  return _reader.getDataField<float>(
+      5 * ::capnp::ELEMENTS);
+}
+
+inline float InitData::AndroidSensor::Builder::getResolution() {
+  return _builder.getDataField<float>(
+      5 * ::capnp::ELEMENTS);
+}
+inline void InitData::AndroidSensor::Builder::setResolution(float value) {
+  _builder.setDataField<float>(
+      5 * ::capnp::ELEMENTS, value);
+}
+
+inline float InitData::AndroidSensor::Reader::getPower() const {
+  return _reader.getDataField<float>(
+      6 * ::capnp::ELEMENTS);
+}
+
+inline float InitData::AndroidSensor::Builder::getPower() {
+  return _builder.getDataField<float>(
+      6 * ::capnp::ELEMENTS);
+}
+inline void InitData::AndroidSensor::Builder::setPower(float value) {
+  _builder.setDataField<float>(
+      6 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int32_t InitData::AndroidSensor::Reader::getMinDelay() const {
+  return _reader.getDataField< ::int32_t>(
+      7 * ::capnp::ELEMENTS);
+}
+
+inline  ::int32_t InitData::AndroidSensor::Builder::getMinDelay() {
+  return _builder.getDataField< ::int32_t>(
+      7 * ::capnp::ELEMENTS);
+}
+inline void InitData::AndroidSensor::Builder::setMinDelay( ::int32_t value) {
+  _builder.setDataField< ::int32_t>(
+      7 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint32_t InitData::AndroidSensor::Reader::getFifoReservedEventCount() const {
+  return _reader.getDataField< ::uint32_t>(
+      8 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint32_t InitData::AndroidSensor::Builder::getFifoReservedEventCount() {
+  return _builder.getDataField< ::uint32_t>(
+      8 * ::capnp::ELEMENTS);
+}
+inline void InitData::AndroidSensor::Builder::setFifoReservedEventCount( ::uint32_t value) {
+  _builder.setDataField< ::uint32_t>(
+      8 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint32_t InitData::AndroidSensor::Reader::getFifoMaxEventCount() const {
+  return _reader.getDataField< ::uint32_t>(
+      9 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint32_t InitData::AndroidSensor::Builder::getFifoMaxEventCount() {
+  return _builder.getDataField< ::uint32_t>(
+      9 * ::capnp::ELEMENTS);
+}
+inline void InitData::AndroidSensor::Builder::setFifoMaxEventCount( ::uint32_t value) {
+  _builder.setDataField< ::uint32_t>(
+      9 * ::capnp::ELEMENTS, value);
+}
+
+inline bool InitData::AndroidSensor::Reader::hasStringType() const {
+  return !_reader.getPointerField(2 * ::capnp::POINTERS).isNull();
+}
+inline bool InitData::AndroidSensor::Builder::hasStringType() {
+  return !_builder.getPointerField(2 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::Text::Reader InitData::AndroidSensor::Reader::getStringType() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _reader.getPointerField(2 * ::capnp::POINTERS));
+}
+inline  ::capnp::Text::Builder InitData::AndroidSensor::Builder::getStringType() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _builder.getPointerField(2 * ::capnp::POINTERS));
+}
+inline void InitData::AndroidSensor::Builder::setStringType( ::capnp::Text::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::set(
+      _builder.getPointerField(2 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::Text::Builder InitData::AndroidSensor::Builder::initStringType(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(
+      _builder.getPointerField(2 * ::capnp::POINTERS), size);
+}
+inline void InitData::AndroidSensor::Builder::adoptStringType(
+    ::capnp::Orphan< ::capnp::Text>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(
+      _builder.getPointerField(2 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::Text> InitData::AndroidSensor::Builder::disownStringType() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(
+      _builder.getPointerField(2 * ::capnp::POINTERS));
+}
+
+inline  ::int32_t InitData::AndroidSensor::Reader::getMaxDelay() const {
+  return _reader.getDataField< ::int32_t>(
+      10 * ::capnp::ELEMENTS);
+}
+
+inline  ::int32_t InitData::AndroidSensor::Builder::getMaxDelay() {
+  return _builder.getDataField< ::int32_t>(
+      10 * ::capnp::ELEMENTS);
+}
+inline void InitData::AndroidSensor::Builder::setMaxDelay( ::int32_t value) {
+  _builder.setDataField< ::int32_t>(
+      10 * ::capnp::ELEMENTS, value);
+}
+
+inline bool InitData::ChffrAndroidExtra::Reader::hasAllCameraCharacteristics() const {
+  return !_reader.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline bool InitData::ChffrAndroidExtra::Builder::hasAllCameraCharacteristics() {
+  return !_builder.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline  ::cereal::Map< ::capnp::Text,  ::capnp::Text>::Reader InitData::ChffrAndroidExtra::Reader::getAllCameraCharacteristics() const {
+  return ::capnp::_::PointerHelpers< ::cereal::Map< ::capnp::Text,  ::capnp::Text>>::get(
+      _reader.getPointerField(0 * ::capnp::POINTERS));
+}
+inline  ::cereal::Map< ::capnp::Text,  ::capnp::Text>::Builder InitData::ChffrAndroidExtra::Builder::getAllCameraCharacteristics() {
+  return ::capnp::_::PointerHelpers< ::cereal::Map< ::capnp::Text,  ::capnp::Text>>::get(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+#if !CAPNP_LITE
+inline  ::cereal::Map< ::capnp::Text,  ::capnp::Text>::Pipeline InitData::ChffrAndroidExtra::Pipeline::getAllCameraCharacteristics() {
+  return  ::cereal::Map< ::capnp::Text,  ::capnp::Text>::Pipeline(_typeless.getPointerField(0));
+}
+#endif  // !CAPNP_LITE
+inline void InitData::ChffrAndroidExtra::Builder::setAllCameraCharacteristics( ::cereal::Map< ::capnp::Text,  ::capnp::Text>::Reader value) {
+  ::capnp::_::PointerHelpers< ::cereal::Map< ::capnp::Text,  ::capnp::Text>>::set(
+      _builder.getPointerField(0 * ::capnp::POINTERS), value);
+}
+inline  ::cereal::Map< ::capnp::Text,  ::capnp::Text>::Builder InitData::ChffrAndroidExtra::Builder::initAllCameraCharacteristics() {
+  return ::capnp::_::PointerHelpers< ::cereal::Map< ::capnp::Text,  ::capnp::Text>>::init(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void InitData::ChffrAndroidExtra::Builder::adoptAllCameraCharacteristics(
+    ::capnp::Orphan< ::cereal::Map< ::capnp::Text,  ::capnp::Text>>&& value) {
+  ::capnp::_::PointerHelpers< ::cereal::Map< ::capnp::Text,  ::capnp::Text>>::adopt(
+      _builder.getPointerField(0 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::cereal::Map< ::capnp::Text,  ::capnp::Text>> InitData::ChffrAndroidExtra::Builder::disownAllCameraCharacteristics() {
+  return ::capnp::_::PointerHelpers< ::cereal::Map< ::capnp::Text,  ::capnp::Text>>::disown(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
 }
 
 inline  ::uint32_t FrameData::Reader::getFrameId() const {
@@ -3758,6 +9348,199 @@ inline void FrameData::Builder::adoptImage(
 inline ::capnp::Orphan< ::capnp::Data> FrameData::Builder::disownImage() {
   return ::capnp::_::PointerHelpers< ::capnp::Data>::disown(
       _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+
+inline  ::cereal::FrameData::FrameType FrameData::Reader::getFrameType() const {
+  return _reader.getDataField< ::cereal::FrameData::FrameType>(
+      14 * ::capnp::ELEMENTS);
+}
+
+inline  ::cereal::FrameData::FrameType FrameData::Builder::getFrameType() {
+  return _builder.getDataField< ::cereal::FrameData::FrameType>(
+      14 * ::capnp::ELEMENTS);
+}
+inline void FrameData::Builder::setFrameType( ::cereal::FrameData::FrameType value) {
+  _builder.setDataField< ::cereal::FrameData::FrameType>(
+      14 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint64_t FrameData::Reader::getTimestampSof() const {
+  return _reader.getDataField< ::uint64_t>(
+      4 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint64_t FrameData::Builder::getTimestampSof() {
+  return _builder.getDataField< ::uint64_t>(
+      4 * ::capnp::ELEMENTS);
+}
+inline void FrameData::Builder::setTimestampSof( ::uint64_t value) {
+  _builder.setDataField< ::uint64_t>(
+      4 * ::capnp::ELEMENTS, value);
+}
+
+inline bool FrameData::Reader::hasAndroidCaptureResult() const {
+  return !_reader.getPointerField(1 * ::capnp::POINTERS).isNull();
+}
+inline bool FrameData::Builder::hasAndroidCaptureResult() {
+  return !_builder.getPointerField(1 * ::capnp::POINTERS).isNull();
+}
+inline  ::cereal::FrameData::AndroidCaptureResult::Reader FrameData::Reader::getAndroidCaptureResult() const {
+  return ::capnp::_::PointerHelpers< ::cereal::FrameData::AndroidCaptureResult>::get(
+      _reader.getPointerField(1 * ::capnp::POINTERS));
+}
+inline  ::cereal::FrameData::AndroidCaptureResult::Builder FrameData::Builder::getAndroidCaptureResult() {
+  return ::capnp::_::PointerHelpers< ::cereal::FrameData::AndroidCaptureResult>::get(
+      _builder.getPointerField(1 * ::capnp::POINTERS));
+}
+#if !CAPNP_LITE
+inline  ::cereal::FrameData::AndroidCaptureResult::Pipeline FrameData::Pipeline::getAndroidCaptureResult() {
+  return  ::cereal::FrameData::AndroidCaptureResult::Pipeline(_typeless.getPointerField(1));
+}
+#endif  // !CAPNP_LITE
+inline void FrameData::Builder::setAndroidCaptureResult( ::cereal::FrameData::AndroidCaptureResult::Reader value) {
+  ::capnp::_::PointerHelpers< ::cereal::FrameData::AndroidCaptureResult>::set(
+      _builder.getPointerField(1 * ::capnp::POINTERS), value);
+}
+inline  ::cereal::FrameData::AndroidCaptureResult::Builder FrameData::Builder::initAndroidCaptureResult() {
+  return ::capnp::_::PointerHelpers< ::cereal::FrameData::AndroidCaptureResult>::init(
+      _builder.getPointerField(1 * ::capnp::POINTERS));
+}
+inline void FrameData::Builder::adoptAndroidCaptureResult(
+    ::capnp::Orphan< ::cereal::FrameData::AndroidCaptureResult>&& value) {
+  ::capnp::_::PointerHelpers< ::cereal::FrameData::AndroidCaptureResult>::adopt(
+      _builder.getPointerField(1 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::cereal::FrameData::AndroidCaptureResult> FrameData::Builder::disownAndroidCaptureResult() {
+  return ::capnp::_::PointerHelpers< ::cereal::FrameData::AndroidCaptureResult>::disown(
+      _builder.getPointerField(1 * ::capnp::POINTERS));
+}
+
+inline  ::int32_t FrameData::AndroidCaptureResult::Reader::getSensitivity() const {
+  return _reader.getDataField< ::int32_t>(
+      0 * ::capnp::ELEMENTS);
+}
+
+inline  ::int32_t FrameData::AndroidCaptureResult::Builder::getSensitivity() {
+  return _builder.getDataField< ::int32_t>(
+      0 * ::capnp::ELEMENTS);
+}
+inline void FrameData::AndroidCaptureResult::Builder::setSensitivity( ::int32_t value) {
+  _builder.setDataField< ::int32_t>(
+      0 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int64_t FrameData::AndroidCaptureResult::Reader::getFrameDuration() const {
+  return _reader.getDataField< ::int64_t>(
+      1 * ::capnp::ELEMENTS);
+}
+
+inline  ::int64_t FrameData::AndroidCaptureResult::Builder::getFrameDuration() {
+  return _builder.getDataField< ::int64_t>(
+      1 * ::capnp::ELEMENTS);
+}
+inline void FrameData::AndroidCaptureResult::Builder::setFrameDuration( ::int64_t value) {
+  _builder.setDataField< ::int64_t>(
+      1 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int64_t FrameData::AndroidCaptureResult::Reader::getExposureTime() const {
+  return _reader.getDataField< ::int64_t>(
+      2 * ::capnp::ELEMENTS);
+}
+
+inline  ::int64_t FrameData::AndroidCaptureResult::Builder::getExposureTime() {
+  return _builder.getDataField< ::int64_t>(
+      2 * ::capnp::ELEMENTS);
+}
+inline void FrameData::AndroidCaptureResult::Builder::setExposureTime( ::int64_t value) {
+  _builder.setDataField< ::int64_t>(
+      2 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint64_t FrameData::AndroidCaptureResult::Reader::getRollingShutterSkew() const {
+  return _reader.getDataField< ::uint64_t>(
+      3 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint64_t FrameData::AndroidCaptureResult::Builder::getRollingShutterSkew() {
+  return _builder.getDataField< ::uint64_t>(
+      3 * ::capnp::ELEMENTS);
+}
+inline void FrameData::AndroidCaptureResult::Builder::setRollingShutterSkew( ::uint64_t value) {
+  _builder.setDataField< ::uint64_t>(
+      3 * ::capnp::ELEMENTS, value);
+}
+
+inline bool FrameData::AndroidCaptureResult::Reader::hasColorCorrectionTransform() const {
+  return !_reader.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline bool FrameData::AndroidCaptureResult::Builder::hasColorCorrectionTransform() {
+  return !_builder.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::List< ::int32_t>::Reader FrameData::AndroidCaptureResult::Reader::getColorCorrectionTransform() const {
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::int32_t>>::get(
+      _reader.getPointerField(0 * ::capnp::POINTERS));
+}
+inline  ::capnp::List< ::int32_t>::Builder FrameData::AndroidCaptureResult::Builder::getColorCorrectionTransform() {
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::int32_t>>::get(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void FrameData::AndroidCaptureResult::Builder::setColorCorrectionTransform( ::capnp::List< ::int32_t>::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::List< ::int32_t>>::set(
+      _builder.getPointerField(0 * ::capnp::POINTERS), value);
+}
+inline void FrameData::AndroidCaptureResult::Builder::setColorCorrectionTransform(::kj::ArrayPtr<const  ::int32_t> value) {
+  ::capnp::_::PointerHelpers< ::capnp::List< ::int32_t>>::set(
+      _builder.getPointerField(0 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::List< ::int32_t>::Builder FrameData::AndroidCaptureResult::Builder::initColorCorrectionTransform(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::int32_t>>::init(
+      _builder.getPointerField(0 * ::capnp::POINTERS), size);
+}
+inline void FrameData::AndroidCaptureResult::Builder::adoptColorCorrectionTransform(
+    ::capnp::Orphan< ::capnp::List< ::int32_t>>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::List< ::int32_t>>::adopt(
+      _builder.getPointerField(0 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::List< ::int32_t>> FrameData::AndroidCaptureResult::Builder::disownColorCorrectionTransform() {
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::int32_t>>::disown(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+
+inline bool FrameData::AndroidCaptureResult::Reader::hasColorCorrectionGains() const {
+  return !_reader.getPointerField(1 * ::capnp::POINTERS).isNull();
+}
+inline bool FrameData::AndroidCaptureResult::Builder::hasColorCorrectionGains() {
+  return !_builder.getPointerField(1 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::List<float>::Reader FrameData::AndroidCaptureResult::Reader::getColorCorrectionGains() const {
+  return ::capnp::_::PointerHelpers< ::capnp::List<float>>::get(
+      _reader.getPointerField(1 * ::capnp::POINTERS));
+}
+inline  ::capnp::List<float>::Builder FrameData::AndroidCaptureResult::Builder::getColorCorrectionGains() {
+  return ::capnp::_::PointerHelpers< ::capnp::List<float>>::get(
+      _builder.getPointerField(1 * ::capnp::POINTERS));
+}
+inline void FrameData::AndroidCaptureResult::Builder::setColorCorrectionGains( ::capnp::List<float>::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::List<float>>::set(
+      _builder.getPointerField(1 * ::capnp::POINTERS), value);
+}
+inline void FrameData::AndroidCaptureResult::Builder::setColorCorrectionGains(::kj::ArrayPtr<const float> value) {
+  ::capnp::_::PointerHelpers< ::capnp::List<float>>::set(
+      _builder.getPointerField(1 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::List<float>::Builder FrameData::AndroidCaptureResult::Builder::initColorCorrectionGains(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::List<float>>::init(
+      _builder.getPointerField(1 * ::capnp::POINTERS), size);
+}
+inline void FrameData::AndroidCaptureResult::Builder::adoptColorCorrectionGains(
+    ::capnp::Orphan< ::capnp::List<float>>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::List<float>>::adopt(
+      _builder.getPointerField(1 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::List<float>> FrameData::AndroidCaptureResult::Builder::disownColorCorrectionGains() {
+  return ::capnp::_::PointerHelpers< ::capnp::List<float>>::disown(
+      _builder.getPointerField(1 * ::capnp::POINTERS));
 }
 
 inline  ::int64_t GPSNMEAData::Reader::getTimestamp() const {
@@ -4265,6 +10048,20 @@ inline  ::int64_t GpsLocationData::Builder::getTimestamp() {
 inline void GpsLocationData::Builder::setTimestamp( ::int64_t value) {
   _builder.setDataField< ::int64_t>(
       5 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::cereal::GpsLocationData::SensorSource GpsLocationData::Reader::getSource() const {
+  return _reader.getDataField< ::cereal::GpsLocationData::SensorSource>(
+      1 * ::capnp::ELEMENTS);
+}
+
+inline  ::cereal::GpsLocationData::SensorSource GpsLocationData::Builder::getSource() {
+  return _builder.getDataField< ::cereal::GpsLocationData::SensorSource>(
+      1 * ::capnp::ELEMENTS);
+}
+inline void GpsLocationData::Builder::setSource( ::cereal::GpsLocationData::SensorSource value) {
+  _builder.setDataField< ::cereal::GpsLocationData::SensorSource>(
+      1 * ::capnp::ELEMENTS, value);
 }
 
 inline  ::uint32_t CanData::Reader::getAddress() const {
@@ -6412,6 +12209,20 @@ inline void EncodeIndex::Builder::setSegmentId( ::uint32_t value) {
       4 * ::capnp::ELEMENTS, value);
 }
 
+inline  ::uint32_t EncodeIndex::Reader::getSegmentIdEncode() const {
+  return _reader.getDataField< ::uint32_t>(
+      5 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint32_t EncodeIndex::Builder::getSegmentIdEncode() {
+  return _builder.getDataField< ::uint32_t>(
+      5 * ::capnp::ELEMENTS);
+}
+inline void EncodeIndex::Builder::setSegmentIdEncode( ::uint32_t value) {
+  _builder.setDataField< ::uint32_t>(
+      5 * ::capnp::ELEMENTS, value);
+}
+
 inline  ::uint8_t AndroidLogEntry::Reader::getId() const {
   return _reader.getDataField< ::uint8_t>(
       0 * ::capnp::ELEMENTS);
@@ -6590,6 +12401,3855 @@ inline void LogRotate::Builder::adoptPath(
 inline ::capnp::Orphan< ::capnp::Text> LogRotate::Builder::disownPath() {
   return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(
       _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+
+inline bool Plan::Reader::getLateralValid() const {
+  return _reader.getDataField<bool>(
+      0 * ::capnp::ELEMENTS);
+}
+
+inline bool Plan::Builder::getLateralValid() {
+  return _builder.getDataField<bool>(
+      0 * ::capnp::ELEMENTS);
+}
+inline void Plan::Builder::setLateralValid(bool value) {
+  _builder.setDataField<bool>(
+      0 * ::capnp::ELEMENTS, value);
+}
+
+inline bool Plan::Reader::hasDPoly() const {
+  return !_reader.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline bool Plan::Builder::hasDPoly() {
+  return !_builder.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::List<float>::Reader Plan::Reader::getDPoly() const {
+  return ::capnp::_::PointerHelpers< ::capnp::List<float>>::get(
+      _reader.getPointerField(0 * ::capnp::POINTERS));
+}
+inline  ::capnp::List<float>::Builder Plan::Builder::getDPoly() {
+  return ::capnp::_::PointerHelpers< ::capnp::List<float>>::get(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void Plan::Builder::setDPoly( ::capnp::List<float>::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::List<float>>::set(
+      _builder.getPointerField(0 * ::capnp::POINTERS), value);
+}
+inline void Plan::Builder::setDPoly(::kj::ArrayPtr<const float> value) {
+  ::capnp::_::PointerHelpers< ::capnp::List<float>>::set(
+      _builder.getPointerField(0 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::List<float>::Builder Plan::Builder::initDPoly(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::List<float>>::init(
+      _builder.getPointerField(0 * ::capnp::POINTERS), size);
+}
+inline void Plan::Builder::adoptDPoly(
+    ::capnp::Orphan< ::capnp::List<float>>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::List<float>>::adopt(
+      _builder.getPointerField(0 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::List<float>> Plan::Builder::disownDPoly() {
+  return ::capnp::_::PointerHelpers< ::capnp::List<float>>::disown(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+
+inline bool Plan::Reader::getLongitudalValid() const {
+  return _reader.getDataField<bool>(
+      1 * ::capnp::ELEMENTS);
+}
+
+inline bool Plan::Builder::getLongitudalValid() {
+  return _builder.getDataField<bool>(
+      1 * ::capnp::ELEMENTS);
+}
+inline void Plan::Builder::setLongitudalValid(bool value) {
+  _builder.setDataField<bool>(
+      1 * ::capnp::ELEMENTS, value);
+}
+
+inline float Plan::Reader::getVTarget() const {
+  return _reader.getDataField<float>(
+      1 * ::capnp::ELEMENTS);
+}
+
+inline float Plan::Builder::getVTarget() {
+  return _builder.getDataField<float>(
+      1 * ::capnp::ELEMENTS);
+}
+inline void Plan::Builder::setVTarget(float value) {
+  _builder.setDataField<float>(
+      1 * ::capnp::ELEMENTS, value);
+}
+
+inline float Plan::Reader::getATargetMin() const {
+  return _reader.getDataField<float>(
+      2 * ::capnp::ELEMENTS);
+}
+
+inline float Plan::Builder::getATargetMin() {
+  return _builder.getDataField<float>(
+      2 * ::capnp::ELEMENTS);
+}
+inline void Plan::Builder::setATargetMin(float value) {
+  _builder.setDataField<float>(
+      2 * ::capnp::ELEMENTS, value);
+}
+
+inline float Plan::Reader::getATargetMax() const {
+  return _reader.getDataField<float>(
+      3 * ::capnp::ELEMENTS);
+}
+
+inline float Plan::Builder::getATargetMax() {
+  return _builder.getDataField<float>(
+      3 * ::capnp::ELEMENTS);
+}
+inline void Plan::Builder::setATargetMax(float value) {
+  _builder.setDataField<float>(
+      3 * ::capnp::ELEMENTS, value);
+}
+
+inline float Plan::Reader::getJerkFactor() const {
+  return _reader.getDataField<float>(
+      4 * ::capnp::ELEMENTS);
+}
+
+inline float Plan::Builder::getJerkFactor() {
+  return _builder.getDataField<float>(
+      4 * ::capnp::ELEMENTS);
+}
+inline void Plan::Builder::setJerkFactor(float value) {
+  _builder.setDataField<float>(
+      4 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint8_t LiveLocationData::Reader::getStatus() const {
+  return _reader.getDataField< ::uint8_t>(
+      0 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint8_t LiveLocationData::Builder::getStatus() {
+  return _builder.getDataField< ::uint8_t>(
+      0 * ::capnp::ELEMENTS);
+}
+inline void LiveLocationData::Builder::setStatus( ::uint8_t value) {
+  _builder.setDataField< ::uint8_t>(
+      0 * ::capnp::ELEMENTS, value);
+}
+
+inline double LiveLocationData::Reader::getLat() const {
+  return _reader.getDataField<double>(
+      1 * ::capnp::ELEMENTS);
+}
+
+inline double LiveLocationData::Builder::getLat() {
+  return _builder.getDataField<double>(
+      1 * ::capnp::ELEMENTS);
+}
+inline void LiveLocationData::Builder::setLat(double value) {
+  _builder.setDataField<double>(
+      1 * ::capnp::ELEMENTS, value);
+}
+
+inline double LiveLocationData::Reader::getLon() const {
+  return _reader.getDataField<double>(
+      2 * ::capnp::ELEMENTS);
+}
+
+inline double LiveLocationData::Builder::getLon() {
+  return _builder.getDataField<double>(
+      2 * ::capnp::ELEMENTS);
+}
+inline void LiveLocationData::Builder::setLon(double value) {
+  _builder.setDataField<double>(
+      2 * ::capnp::ELEMENTS, value);
+}
+
+inline float LiveLocationData::Reader::getAlt() const {
+  return _reader.getDataField<float>(
+      1 * ::capnp::ELEMENTS);
+}
+
+inline float LiveLocationData::Builder::getAlt() {
+  return _builder.getDataField<float>(
+      1 * ::capnp::ELEMENTS);
+}
+inline void LiveLocationData::Builder::setAlt(float value) {
+  _builder.setDataField<float>(
+      1 * ::capnp::ELEMENTS, value);
+}
+
+inline float LiveLocationData::Reader::getSpeed() const {
+  return _reader.getDataField<float>(
+      6 * ::capnp::ELEMENTS);
+}
+
+inline float LiveLocationData::Builder::getSpeed() {
+  return _builder.getDataField<float>(
+      6 * ::capnp::ELEMENTS);
+}
+inline void LiveLocationData::Builder::setSpeed(float value) {
+  _builder.setDataField<float>(
+      6 * ::capnp::ELEMENTS, value);
+}
+
+inline bool LiveLocationData::Reader::hasVNED() const {
+  return !_reader.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline bool LiveLocationData::Builder::hasVNED() {
+  return !_builder.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::List<float>::Reader LiveLocationData::Reader::getVNED() const {
+  return ::capnp::_::PointerHelpers< ::capnp::List<float>>::get(
+      _reader.getPointerField(0 * ::capnp::POINTERS));
+}
+inline  ::capnp::List<float>::Builder LiveLocationData::Builder::getVNED() {
+  return ::capnp::_::PointerHelpers< ::capnp::List<float>>::get(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void LiveLocationData::Builder::setVNED( ::capnp::List<float>::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::List<float>>::set(
+      _builder.getPointerField(0 * ::capnp::POINTERS), value);
+}
+inline void LiveLocationData::Builder::setVNED(::kj::ArrayPtr<const float> value) {
+  ::capnp::_::PointerHelpers< ::capnp::List<float>>::set(
+      _builder.getPointerField(0 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::List<float>::Builder LiveLocationData::Builder::initVNED(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::List<float>>::init(
+      _builder.getPointerField(0 * ::capnp::POINTERS), size);
+}
+inline void LiveLocationData::Builder::adoptVNED(
+    ::capnp::Orphan< ::capnp::List<float>>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::List<float>>::adopt(
+      _builder.getPointerField(0 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::List<float>> LiveLocationData::Builder::disownVNED() {
+  return ::capnp::_::PointerHelpers< ::capnp::List<float>>::disown(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+
+inline float LiveLocationData::Reader::getRoll() const {
+  return _reader.getDataField<float>(
+      7 * ::capnp::ELEMENTS);
+}
+
+inline float LiveLocationData::Builder::getRoll() {
+  return _builder.getDataField<float>(
+      7 * ::capnp::ELEMENTS);
+}
+inline void LiveLocationData::Builder::setRoll(float value) {
+  _builder.setDataField<float>(
+      7 * ::capnp::ELEMENTS, value);
+}
+
+inline float LiveLocationData::Reader::getPitch() const {
+  return _reader.getDataField<float>(
+      8 * ::capnp::ELEMENTS);
+}
+
+inline float LiveLocationData::Builder::getPitch() {
+  return _builder.getDataField<float>(
+      8 * ::capnp::ELEMENTS);
+}
+inline void LiveLocationData::Builder::setPitch(float value) {
+  _builder.setDataField<float>(
+      8 * ::capnp::ELEMENTS, value);
+}
+
+inline float LiveLocationData::Reader::getHeading() const {
+  return _reader.getDataField<float>(
+      9 * ::capnp::ELEMENTS);
+}
+
+inline float LiveLocationData::Builder::getHeading() {
+  return _builder.getDataField<float>(
+      9 * ::capnp::ELEMENTS);
+}
+inline void LiveLocationData::Builder::setHeading(float value) {
+  _builder.setDataField<float>(
+      9 * ::capnp::ELEMENTS, value);
+}
+
+inline float LiveLocationData::Reader::getWanderAngle() const {
+  return _reader.getDataField<float>(
+      10 * ::capnp::ELEMENTS);
+}
+
+inline float LiveLocationData::Builder::getWanderAngle() {
+  return _builder.getDataField<float>(
+      10 * ::capnp::ELEMENTS);
+}
+inline void LiveLocationData::Builder::setWanderAngle(float value) {
+  _builder.setDataField<float>(
+      10 * ::capnp::ELEMENTS, value);
+}
+
+inline float LiveLocationData::Reader::getTrackAngle() const {
+  return _reader.getDataField<float>(
+      11 * ::capnp::ELEMENTS);
+}
+
+inline float LiveLocationData::Builder::getTrackAngle() {
+  return _builder.getDataField<float>(
+      11 * ::capnp::ELEMENTS);
+}
+inline void LiveLocationData::Builder::setTrackAngle(float value) {
+  _builder.setDataField<float>(
+      11 * ::capnp::ELEMENTS, value);
+}
+
+inline bool LiveLocationData::Reader::hasGyro() const {
+  return !_reader.getPointerField(1 * ::capnp::POINTERS).isNull();
+}
+inline bool LiveLocationData::Builder::hasGyro() {
+  return !_builder.getPointerField(1 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::List<float>::Reader LiveLocationData::Reader::getGyro() const {
+  return ::capnp::_::PointerHelpers< ::capnp::List<float>>::get(
+      _reader.getPointerField(1 * ::capnp::POINTERS));
+}
+inline  ::capnp::List<float>::Builder LiveLocationData::Builder::getGyro() {
+  return ::capnp::_::PointerHelpers< ::capnp::List<float>>::get(
+      _builder.getPointerField(1 * ::capnp::POINTERS));
+}
+inline void LiveLocationData::Builder::setGyro( ::capnp::List<float>::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::List<float>>::set(
+      _builder.getPointerField(1 * ::capnp::POINTERS), value);
+}
+inline void LiveLocationData::Builder::setGyro(::kj::ArrayPtr<const float> value) {
+  ::capnp::_::PointerHelpers< ::capnp::List<float>>::set(
+      _builder.getPointerField(1 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::List<float>::Builder LiveLocationData::Builder::initGyro(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::List<float>>::init(
+      _builder.getPointerField(1 * ::capnp::POINTERS), size);
+}
+inline void LiveLocationData::Builder::adoptGyro(
+    ::capnp::Orphan< ::capnp::List<float>>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::List<float>>::adopt(
+      _builder.getPointerField(1 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::List<float>> LiveLocationData::Builder::disownGyro() {
+  return ::capnp::_::PointerHelpers< ::capnp::List<float>>::disown(
+      _builder.getPointerField(1 * ::capnp::POINTERS));
+}
+
+inline bool LiveLocationData::Reader::hasAccel() const {
+  return !_reader.getPointerField(2 * ::capnp::POINTERS).isNull();
+}
+inline bool LiveLocationData::Builder::hasAccel() {
+  return !_builder.getPointerField(2 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::List<float>::Reader LiveLocationData::Reader::getAccel() const {
+  return ::capnp::_::PointerHelpers< ::capnp::List<float>>::get(
+      _reader.getPointerField(2 * ::capnp::POINTERS));
+}
+inline  ::capnp::List<float>::Builder LiveLocationData::Builder::getAccel() {
+  return ::capnp::_::PointerHelpers< ::capnp::List<float>>::get(
+      _builder.getPointerField(2 * ::capnp::POINTERS));
+}
+inline void LiveLocationData::Builder::setAccel( ::capnp::List<float>::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::List<float>>::set(
+      _builder.getPointerField(2 * ::capnp::POINTERS), value);
+}
+inline void LiveLocationData::Builder::setAccel(::kj::ArrayPtr<const float> value) {
+  ::capnp::_::PointerHelpers< ::capnp::List<float>>::set(
+      _builder.getPointerField(2 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::List<float>::Builder LiveLocationData::Builder::initAccel(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::List<float>>::init(
+      _builder.getPointerField(2 * ::capnp::POINTERS), size);
+}
+inline void LiveLocationData::Builder::adoptAccel(
+    ::capnp::Orphan< ::capnp::List<float>>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::List<float>>::adopt(
+      _builder.getPointerField(2 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::List<float>> LiveLocationData::Builder::disownAccel() {
+  return ::capnp::_::PointerHelpers< ::capnp::List<float>>::disown(
+      _builder.getPointerField(2 * ::capnp::POINTERS));
+}
+
+inline bool LiveLocationData::Reader::hasAccuracy() const {
+  return !_reader.getPointerField(3 * ::capnp::POINTERS).isNull();
+}
+inline bool LiveLocationData::Builder::hasAccuracy() {
+  return !_builder.getPointerField(3 * ::capnp::POINTERS).isNull();
+}
+inline  ::cereal::LiveLocationData::Accuracy::Reader LiveLocationData::Reader::getAccuracy() const {
+  return ::capnp::_::PointerHelpers< ::cereal::LiveLocationData::Accuracy>::get(
+      _reader.getPointerField(3 * ::capnp::POINTERS));
+}
+inline  ::cereal::LiveLocationData::Accuracy::Builder LiveLocationData::Builder::getAccuracy() {
+  return ::capnp::_::PointerHelpers< ::cereal::LiveLocationData::Accuracy>::get(
+      _builder.getPointerField(3 * ::capnp::POINTERS));
+}
+#if !CAPNP_LITE
+inline  ::cereal::LiveLocationData::Accuracy::Pipeline LiveLocationData::Pipeline::getAccuracy() {
+  return  ::cereal::LiveLocationData::Accuracy::Pipeline(_typeless.getPointerField(3));
+}
+#endif  // !CAPNP_LITE
+inline void LiveLocationData::Builder::setAccuracy( ::cereal::LiveLocationData::Accuracy::Reader value) {
+  ::capnp::_::PointerHelpers< ::cereal::LiveLocationData::Accuracy>::set(
+      _builder.getPointerField(3 * ::capnp::POINTERS), value);
+}
+inline  ::cereal::LiveLocationData::Accuracy::Builder LiveLocationData::Builder::initAccuracy() {
+  return ::capnp::_::PointerHelpers< ::cereal::LiveLocationData::Accuracy>::init(
+      _builder.getPointerField(3 * ::capnp::POINTERS));
+}
+inline void LiveLocationData::Builder::adoptAccuracy(
+    ::capnp::Orphan< ::cereal::LiveLocationData::Accuracy>&& value) {
+  ::capnp::_::PointerHelpers< ::cereal::LiveLocationData::Accuracy>::adopt(
+      _builder.getPointerField(3 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::cereal::LiveLocationData::Accuracy> LiveLocationData::Builder::disownAccuracy() {
+  return ::capnp::_::PointerHelpers< ::cereal::LiveLocationData::Accuracy>::disown(
+      _builder.getPointerField(3 * ::capnp::POINTERS));
+}
+
+inline bool LiveLocationData::Accuracy::Reader::hasPNEDError() const {
+  return !_reader.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline bool LiveLocationData::Accuracy::Builder::hasPNEDError() {
+  return !_builder.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::List<float>::Reader LiveLocationData::Accuracy::Reader::getPNEDError() const {
+  return ::capnp::_::PointerHelpers< ::capnp::List<float>>::get(
+      _reader.getPointerField(0 * ::capnp::POINTERS));
+}
+inline  ::capnp::List<float>::Builder LiveLocationData::Accuracy::Builder::getPNEDError() {
+  return ::capnp::_::PointerHelpers< ::capnp::List<float>>::get(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void LiveLocationData::Accuracy::Builder::setPNEDError( ::capnp::List<float>::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::List<float>>::set(
+      _builder.getPointerField(0 * ::capnp::POINTERS), value);
+}
+inline void LiveLocationData::Accuracy::Builder::setPNEDError(::kj::ArrayPtr<const float> value) {
+  ::capnp::_::PointerHelpers< ::capnp::List<float>>::set(
+      _builder.getPointerField(0 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::List<float>::Builder LiveLocationData::Accuracy::Builder::initPNEDError(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::List<float>>::init(
+      _builder.getPointerField(0 * ::capnp::POINTERS), size);
+}
+inline void LiveLocationData::Accuracy::Builder::adoptPNEDError(
+    ::capnp::Orphan< ::capnp::List<float>>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::List<float>>::adopt(
+      _builder.getPointerField(0 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::List<float>> LiveLocationData::Accuracy::Builder::disownPNEDError() {
+  return ::capnp::_::PointerHelpers< ::capnp::List<float>>::disown(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+
+inline bool LiveLocationData::Accuracy::Reader::hasVNEDError() const {
+  return !_reader.getPointerField(1 * ::capnp::POINTERS).isNull();
+}
+inline bool LiveLocationData::Accuracy::Builder::hasVNEDError() {
+  return !_builder.getPointerField(1 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::List<float>::Reader LiveLocationData::Accuracy::Reader::getVNEDError() const {
+  return ::capnp::_::PointerHelpers< ::capnp::List<float>>::get(
+      _reader.getPointerField(1 * ::capnp::POINTERS));
+}
+inline  ::capnp::List<float>::Builder LiveLocationData::Accuracy::Builder::getVNEDError() {
+  return ::capnp::_::PointerHelpers< ::capnp::List<float>>::get(
+      _builder.getPointerField(1 * ::capnp::POINTERS));
+}
+inline void LiveLocationData::Accuracy::Builder::setVNEDError( ::capnp::List<float>::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::List<float>>::set(
+      _builder.getPointerField(1 * ::capnp::POINTERS), value);
+}
+inline void LiveLocationData::Accuracy::Builder::setVNEDError(::kj::ArrayPtr<const float> value) {
+  ::capnp::_::PointerHelpers< ::capnp::List<float>>::set(
+      _builder.getPointerField(1 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::List<float>::Builder LiveLocationData::Accuracy::Builder::initVNEDError(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::List<float>>::init(
+      _builder.getPointerField(1 * ::capnp::POINTERS), size);
+}
+inline void LiveLocationData::Accuracy::Builder::adoptVNEDError(
+    ::capnp::Orphan< ::capnp::List<float>>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::List<float>>::adopt(
+      _builder.getPointerField(1 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::List<float>> LiveLocationData::Accuracy::Builder::disownVNEDError() {
+  return ::capnp::_::PointerHelpers< ::capnp::List<float>>::disown(
+      _builder.getPointerField(1 * ::capnp::POINTERS));
+}
+
+inline float LiveLocationData::Accuracy::Reader::getRollError() const {
+  return _reader.getDataField<float>(
+      0 * ::capnp::ELEMENTS);
+}
+
+inline float LiveLocationData::Accuracy::Builder::getRollError() {
+  return _builder.getDataField<float>(
+      0 * ::capnp::ELEMENTS);
+}
+inline void LiveLocationData::Accuracy::Builder::setRollError(float value) {
+  _builder.setDataField<float>(
+      0 * ::capnp::ELEMENTS, value);
+}
+
+inline float LiveLocationData::Accuracy::Reader::getPitchError() const {
+  return _reader.getDataField<float>(
+      1 * ::capnp::ELEMENTS);
+}
+
+inline float LiveLocationData::Accuracy::Builder::getPitchError() {
+  return _builder.getDataField<float>(
+      1 * ::capnp::ELEMENTS);
+}
+inline void LiveLocationData::Accuracy::Builder::setPitchError(float value) {
+  _builder.setDataField<float>(
+      1 * ::capnp::ELEMENTS, value);
+}
+
+inline float LiveLocationData::Accuracy::Reader::getHeadingError() const {
+  return _reader.getDataField<float>(
+      2 * ::capnp::ELEMENTS);
+}
+
+inline float LiveLocationData::Accuracy::Builder::getHeadingError() {
+  return _builder.getDataField<float>(
+      2 * ::capnp::ELEMENTS);
+}
+inline void LiveLocationData::Accuracy::Builder::setHeadingError(float value) {
+  _builder.setDataField<float>(
+      2 * ::capnp::ELEMENTS, value);
+}
+
+inline float LiveLocationData::Accuracy::Reader::getEllipsoidSemiMajorError() const {
+  return _reader.getDataField<float>(
+      3 * ::capnp::ELEMENTS);
+}
+
+inline float LiveLocationData::Accuracy::Builder::getEllipsoidSemiMajorError() {
+  return _builder.getDataField<float>(
+      3 * ::capnp::ELEMENTS);
+}
+inline void LiveLocationData::Accuracy::Builder::setEllipsoidSemiMajorError(float value) {
+  _builder.setDataField<float>(
+      3 * ::capnp::ELEMENTS, value);
+}
+
+inline float LiveLocationData::Accuracy::Reader::getEllipsoidSemiMinorError() const {
+  return _reader.getDataField<float>(
+      4 * ::capnp::ELEMENTS);
+}
+
+inline float LiveLocationData::Accuracy::Builder::getEllipsoidSemiMinorError() {
+  return _builder.getDataField<float>(
+      4 * ::capnp::ELEMENTS);
+}
+inline void LiveLocationData::Accuracy::Builder::setEllipsoidSemiMinorError(float value) {
+  _builder.setDataField<float>(
+      4 * ::capnp::ELEMENTS, value);
+}
+
+inline float LiveLocationData::Accuracy::Reader::getEllipsoidOrientationError() const {
+  return _reader.getDataField<float>(
+      5 * ::capnp::ELEMENTS);
+}
+
+inline float LiveLocationData::Accuracy::Builder::getEllipsoidOrientationError() {
+  return _builder.getDataField<float>(
+      5 * ::capnp::ELEMENTS);
+}
+inline void LiveLocationData::Accuracy::Builder::setEllipsoidOrientationError(float value) {
+  _builder.setDataField<float>(
+      5 * ::capnp::ELEMENTS, value);
+}
+
+inline bool EthernetPacket::Reader::hasPkt() const {
+  return !_reader.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline bool EthernetPacket::Builder::hasPkt() {
+  return !_builder.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::Data::Reader EthernetPacket::Reader::getPkt() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Data>::get(
+      _reader.getPointerField(0 * ::capnp::POINTERS));
+}
+inline  ::capnp::Data::Builder EthernetPacket::Builder::getPkt() {
+  return ::capnp::_::PointerHelpers< ::capnp::Data>::get(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void EthernetPacket::Builder::setPkt( ::capnp::Data::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Data>::set(
+      _builder.getPointerField(0 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::Data::Builder EthernetPacket::Builder::initPkt(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Data>::init(
+      _builder.getPointerField(0 * ::capnp::POINTERS), size);
+}
+inline void EthernetPacket::Builder::adoptPkt(
+    ::capnp::Orphan< ::capnp::Data>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Data>::adopt(
+      _builder.getPointerField(0 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::Data> EthernetPacket::Builder::disownPkt() {
+  return ::capnp::_::PointerHelpers< ::capnp::Data>::disown(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+
+inline float EthernetPacket::Reader::getTs() const {
+  return _reader.getDataField<float>(
+      0 * ::capnp::ELEMENTS);
+}
+
+inline float EthernetPacket::Builder::getTs() {
+  return _builder.getDataField<float>(
+      0 * ::capnp::ELEMENTS);
+}
+inline void EthernetPacket::Builder::setTs(float value) {
+  _builder.setDataField<float>(
+      0 * ::capnp::ELEMENTS, value);
+}
+
+inline bool NavUpdate::Reader::getIsNavigating() const {
+  return _reader.getDataField<bool>(
+      0 * ::capnp::ELEMENTS);
+}
+
+inline bool NavUpdate::Builder::getIsNavigating() {
+  return _builder.getDataField<bool>(
+      0 * ::capnp::ELEMENTS);
+}
+inline void NavUpdate::Builder::setIsNavigating(bool value) {
+  _builder.setDataField<bool>(
+      0 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int32_t NavUpdate::Reader::getCurSegment() const {
+  return _reader.getDataField< ::int32_t>(
+      1 * ::capnp::ELEMENTS);
+}
+
+inline  ::int32_t NavUpdate::Builder::getCurSegment() {
+  return _builder.getDataField< ::int32_t>(
+      1 * ::capnp::ELEMENTS);
+}
+inline void NavUpdate::Builder::setCurSegment( ::int32_t value) {
+  _builder.setDataField< ::int32_t>(
+      1 * ::capnp::ELEMENTS, value);
+}
+
+inline bool NavUpdate::Reader::hasSegments() const {
+  return !_reader.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline bool NavUpdate::Builder::hasSegments() {
+  return !_builder.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::List< ::cereal::NavUpdate::Segment>::Reader NavUpdate::Reader::getSegments() const {
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::NavUpdate::Segment>>::get(
+      _reader.getPointerField(0 * ::capnp::POINTERS));
+}
+inline  ::capnp::List< ::cereal::NavUpdate::Segment>::Builder NavUpdate::Builder::getSegments() {
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::NavUpdate::Segment>>::get(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void NavUpdate::Builder::setSegments( ::capnp::List< ::cereal::NavUpdate::Segment>::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::NavUpdate::Segment>>::set(
+      _builder.getPointerField(0 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::List< ::cereal::NavUpdate::Segment>::Builder NavUpdate::Builder::initSegments(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::NavUpdate::Segment>>::init(
+      _builder.getPointerField(0 * ::capnp::POINTERS), size);
+}
+inline void NavUpdate::Builder::adoptSegments(
+    ::capnp::Orphan< ::capnp::List< ::cereal::NavUpdate::Segment>>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::NavUpdate::Segment>>::adopt(
+      _builder.getPointerField(0 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::List< ::cereal::NavUpdate::Segment>> NavUpdate::Builder::disownSegments() {
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::NavUpdate::Segment>>::disown(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+
+inline double NavUpdate::LatLng::Reader::getLat() const {
+  return _reader.getDataField<double>(
+      0 * ::capnp::ELEMENTS);
+}
+
+inline double NavUpdate::LatLng::Builder::getLat() {
+  return _builder.getDataField<double>(
+      0 * ::capnp::ELEMENTS);
+}
+inline void NavUpdate::LatLng::Builder::setLat(double value) {
+  _builder.setDataField<double>(
+      0 * ::capnp::ELEMENTS, value);
+}
+
+inline double NavUpdate::LatLng::Reader::getLng() const {
+  return _reader.getDataField<double>(
+      1 * ::capnp::ELEMENTS);
+}
+
+inline double NavUpdate::LatLng::Builder::getLng() {
+  return _builder.getDataField<double>(
+      1 * ::capnp::ELEMENTS);
+}
+inline void NavUpdate::LatLng::Builder::setLng(double value) {
+  _builder.setDataField<double>(
+      1 * ::capnp::ELEMENTS, value);
+}
+
+inline bool NavUpdate::Segment::Reader::hasFrom() const {
+  return !_reader.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline bool NavUpdate::Segment::Builder::hasFrom() {
+  return !_builder.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline  ::cereal::NavUpdate::LatLng::Reader NavUpdate::Segment::Reader::getFrom() const {
+  return ::capnp::_::PointerHelpers< ::cereal::NavUpdate::LatLng>::get(
+      _reader.getPointerField(0 * ::capnp::POINTERS));
+}
+inline  ::cereal::NavUpdate::LatLng::Builder NavUpdate::Segment::Builder::getFrom() {
+  return ::capnp::_::PointerHelpers< ::cereal::NavUpdate::LatLng>::get(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+#if !CAPNP_LITE
+inline  ::cereal::NavUpdate::LatLng::Pipeline NavUpdate::Segment::Pipeline::getFrom() {
+  return  ::cereal::NavUpdate::LatLng::Pipeline(_typeless.getPointerField(0));
+}
+#endif  // !CAPNP_LITE
+inline void NavUpdate::Segment::Builder::setFrom( ::cereal::NavUpdate::LatLng::Reader value) {
+  ::capnp::_::PointerHelpers< ::cereal::NavUpdate::LatLng>::set(
+      _builder.getPointerField(0 * ::capnp::POINTERS), value);
+}
+inline  ::cereal::NavUpdate::LatLng::Builder NavUpdate::Segment::Builder::initFrom() {
+  return ::capnp::_::PointerHelpers< ::cereal::NavUpdate::LatLng>::init(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void NavUpdate::Segment::Builder::adoptFrom(
+    ::capnp::Orphan< ::cereal::NavUpdate::LatLng>&& value) {
+  ::capnp::_::PointerHelpers< ::cereal::NavUpdate::LatLng>::adopt(
+      _builder.getPointerField(0 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::cereal::NavUpdate::LatLng> NavUpdate::Segment::Builder::disownFrom() {
+  return ::capnp::_::PointerHelpers< ::cereal::NavUpdate::LatLng>::disown(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+
+inline bool NavUpdate::Segment::Reader::hasTo() const {
+  return !_reader.getPointerField(1 * ::capnp::POINTERS).isNull();
+}
+inline bool NavUpdate::Segment::Builder::hasTo() {
+  return !_builder.getPointerField(1 * ::capnp::POINTERS).isNull();
+}
+inline  ::cereal::NavUpdate::LatLng::Reader NavUpdate::Segment::Reader::getTo() const {
+  return ::capnp::_::PointerHelpers< ::cereal::NavUpdate::LatLng>::get(
+      _reader.getPointerField(1 * ::capnp::POINTERS));
+}
+inline  ::cereal::NavUpdate::LatLng::Builder NavUpdate::Segment::Builder::getTo() {
+  return ::capnp::_::PointerHelpers< ::cereal::NavUpdate::LatLng>::get(
+      _builder.getPointerField(1 * ::capnp::POINTERS));
+}
+#if !CAPNP_LITE
+inline  ::cereal::NavUpdate::LatLng::Pipeline NavUpdate::Segment::Pipeline::getTo() {
+  return  ::cereal::NavUpdate::LatLng::Pipeline(_typeless.getPointerField(1));
+}
+#endif  // !CAPNP_LITE
+inline void NavUpdate::Segment::Builder::setTo( ::cereal::NavUpdate::LatLng::Reader value) {
+  ::capnp::_::PointerHelpers< ::cereal::NavUpdate::LatLng>::set(
+      _builder.getPointerField(1 * ::capnp::POINTERS), value);
+}
+inline  ::cereal::NavUpdate::LatLng::Builder NavUpdate::Segment::Builder::initTo() {
+  return ::capnp::_::PointerHelpers< ::cereal::NavUpdate::LatLng>::init(
+      _builder.getPointerField(1 * ::capnp::POINTERS));
+}
+inline void NavUpdate::Segment::Builder::adoptTo(
+    ::capnp::Orphan< ::cereal::NavUpdate::LatLng>&& value) {
+  ::capnp::_::PointerHelpers< ::cereal::NavUpdate::LatLng>::adopt(
+      _builder.getPointerField(1 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::cereal::NavUpdate::LatLng> NavUpdate::Segment::Builder::disownTo() {
+  return ::capnp::_::PointerHelpers< ::cereal::NavUpdate::LatLng>::disown(
+      _builder.getPointerField(1 * ::capnp::POINTERS));
+}
+
+inline  ::int32_t NavUpdate::Segment::Reader::getUpdateTime() const {
+  return _reader.getDataField< ::int32_t>(
+      0 * ::capnp::ELEMENTS);
+}
+
+inline  ::int32_t NavUpdate::Segment::Builder::getUpdateTime() {
+  return _builder.getDataField< ::int32_t>(
+      0 * ::capnp::ELEMENTS);
+}
+inline void NavUpdate::Segment::Builder::setUpdateTime( ::int32_t value) {
+  _builder.setDataField< ::int32_t>(
+      0 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int32_t NavUpdate::Segment::Reader::getDistance() const {
+  return _reader.getDataField< ::int32_t>(
+      1 * ::capnp::ELEMENTS);
+}
+
+inline  ::int32_t NavUpdate::Segment::Builder::getDistance() {
+  return _builder.getDataField< ::int32_t>(
+      1 * ::capnp::ELEMENTS);
+}
+inline void NavUpdate::Segment::Builder::setDistance( ::int32_t value) {
+  _builder.setDataField< ::int32_t>(
+      1 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int32_t NavUpdate::Segment::Reader::getCrossTime() const {
+  return _reader.getDataField< ::int32_t>(
+      2 * ::capnp::ELEMENTS);
+}
+
+inline  ::int32_t NavUpdate::Segment::Builder::getCrossTime() {
+  return _builder.getDataField< ::int32_t>(
+      2 * ::capnp::ELEMENTS);
+}
+inline void NavUpdate::Segment::Builder::setCrossTime( ::int32_t value) {
+  _builder.setDataField< ::int32_t>(
+      2 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int32_t NavUpdate::Segment::Reader::getExitNo() const {
+  return _reader.getDataField< ::int32_t>(
+      3 * ::capnp::ELEMENTS);
+}
+
+inline  ::int32_t NavUpdate::Segment::Builder::getExitNo() {
+  return _builder.getDataField< ::int32_t>(
+      3 * ::capnp::ELEMENTS);
+}
+inline void NavUpdate::Segment::Builder::setExitNo( ::int32_t value) {
+  _builder.setDataField< ::int32_t>(
+      3 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::cereal::NavUpdate::Segment::Instruction NavUpdate::Segment::Reader::getInstruction() const {
+  return _reader.getDataField< ::cereal::NavUpdate::Segment::Instruction>(
+      8 * ::capnp::ELEMENTS);
+}
+
+inline  ::cereal::NavUpdate::Segment::Instruction NavUpdate::Segment::Builder::getInstruction() {
+  return _builder.getDataField< ::cereal::NavUpdate::Segment::Instruction>(
+      8 * ::capnp::ELEMENTS);
+}
+inline void NavUpdate::Segment::Builder::setInstruction( ::cereal::NavUpdate::Segment::Instruction value) {
+  _builder.setDataField< ::cereal::NavUpdate::Segment::Instruction>(
+      8 * ::capnp::ELEMENTS, value);
+}
+
+inline bool NavUpdate::Segment::Reader::hasParts() const {
+  return !_reader.getPointerField(2 * ::capnp::POINTERS).isNull();
+}
+inline bool NavUpdate::Segment::Builder::hasParts() {
+  return !_builder.getPointerField(2 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::List< ::cereal::NavUpdate::LatLng>::Reader NavUpdate::Segment::Reader::getParts() const {
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::NavUpdate::LatLng>>::get(
+      _reader.getPointerField(2 * ::capnp::POINTERS));
+}
+inline  ::capnp::List< ::cereal::NavUpdate::LatLng>::Builder NavUpdate::Segment::Builder::getParts() {
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::NavUpdate::LatLng>>::get(
+      _builder.getPointerField(2 * ::capnp::POINTERS));
+}
+inline void NavUpdate::Segment::Builder::setParts( ::capnp::List< ::cereal::NavUpdate::LatLng>::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::NavUpdate::LatLng>>::set(
+      _builder.getPointerField(2 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::List< ::cereal::NavUpdate::LatLng>::Builder NavUpdate::Segment::Builder::initParts(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::NavUpdate::LatLng>>::init(
+      _builder.getPointerField(2 * ::capnp::POINTERS), size);
+}
+inline void NavUpdate::Segment::Builder::adoptParts(
+    ::capnp::Orphan< ::capnp::List< ::cereal::NavUpdate::LatLng>>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::NavUpdate::LatLng>>::adopt(
+      _builder.getPointerField(2 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::List< ::cereal::NavUpdate::LatLng>> NavUpdate::Segment::Builder::disownParts() {
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::NavUpdate::LatLng>>::disown(
+      _builder.getPointerField(2 * ::capnp::POINTERS));
+}
+
+inline  ::uint64_t CellInfo::Reader::getTimestamp() const {
+  return _reader.getDataField< ::uint64_t>(
+      0 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint64_t CellInfo::Builder::getTimestamp() {
+  return _builder.getDataField< ::uint64_t>(
+      0 * ::capnp::ELEMENTS);
+}
+inline void CellInfo::Builder::setTimestamp( ::uint64_t value) {
+  _builder.setDataField< ::uint64_t>(
+      0 * ::capnp::ELEMENTS, value);
+}
+
+inline bool CellInfo::Reader::hasRepr() const {
+  return !_reader.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline bool CellInfo::Builder::hasRepr() {
+  return !_builder.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::Text::Reader CellInfo::Reader::getRepr() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _reader.getPointerField(0 * ::capnp::POINTERS));
+}
+inline  ::capnp::Text::Builder CellInfo::Builder::getRepr() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void CellInfo::Builder::setRepr( ::capnp::Text::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::set(
+      _builder.getPointerField(0 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::Text::Builder CellInfo::Builder::initRepr(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(
+      _builder.getPointerField(0 * ::capnp::POINTERS), size);
+}
+inline void CellInfo::Builder::adoptRepr(
+    ::capnp::Orphan< ::capnp::Text>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(
+      _builder.getPointerField(0 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::Text> CellInfo::Builder::disownRepr() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+
+inline bool WifiScan::Reader::hasBssid() const {
+  return !_reader.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline bool WifiScan::Builder::hasBssid() {
+  return !_builder.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::Text::Reader WifiScan::Reader::getBssid() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _reader.getPointerField(0 * ::capnp::POINTERS));
+}
+inline  ::capnp::Text::Builder WifiScan::Builder::getBssid() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void WifiScan::Builder::setBssid( ::capnp::Text::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::set(
+      _builder.getPointerField(0 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::Text::Builder WifiScan::Builder::initBssid(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(
+      _builder.getPointerField(0 * ::capnp::POINTERS), size);
+}
+inline void WifiScan::Builder::adoptBssid(
+    ::capnp::Orphan< ::capnp::Text>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(
+      _builder.getPointerField(0 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::Text> WifiScan::Builder::disownBssid() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+
+inline bool WifiScan::Reader::hasSsid() const {
+  return !_reader.getPointerField(1 * ::capnp::POINTERS).isNull();
+}
+inline bool WifiScan::Builder::hasSsid() {
+  return !_builder.getPointerField(1 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::Text::Reader WifiScan::Reader::getSsid() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _reader.getPointerField(1 * ::capnp::POINTERS));
+}
+inline  ::capnp::Text::Builder WifiScan::Builder::getSsid() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _builder.getPointerField(1 * ::capnp::POINTERS));
+}
+inline void WifiScan::Builder::setSsid( ::capnp::Text::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::set(
+      _builder.getPointerField(1 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::Text::Builder WifiScan::Builder::initSsid(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(
+      _builder.getPointerField(1 * ::capnp::POINTERS), size);
+}
+inline void WifiScan::Builder::adoptSsid(
+    ::capnp::Orphan< ::capnp::Text>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(
+      _builder.getPointerField(1 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::Text> WifiScan::Builder::disownSsid() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(
+      _builder.getPointerField(1 * ::capnp::POINTERS));
+}
+
+inline bool WifiScan::Reader::hasCapabilities() const {
+  return !_reader.getPointerField(2 * ::capnp::POINTERS).isNull();
+}
+inline bool WifiScan::Builder::hasCapabilities() {
+  return !_builder.getPointerField(2 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::Text::Reader WifiScan::Reader::getCapabilities() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _reader.getPointerField(2 * ::capnp::POINTERS));
+}
+inline  ::capnp::Text::Builder WifiScan::Builder::getCapabilities() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _builder.getPointerField(2 * ::capnp::POINTERS));
+}
+inline void WifiScan::Builder::setCapabilities( ::capnp::Text::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::set(
+      _builder.getPointerField(2 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::Text::Builder WifiScan::Builder::initCapabilities(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(
+      _builder.getPointerField(2 * ::capnp::POINTERS), size);
+}
+inline void WifiScan::Builder::adoptCapabilities(
+    ::capnp::Orphan< ::capnp::Text>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(
+      _builder.getPointerField(2 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::Text> WifiScan::Builder::disownCapabilities() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(
+      _builder.getPointerField(2 * ::capnp::POINTERS));
+}
+
+inline  ::int32_t WifiScan::Reader::getFrequency() const {
+  return _reader.getDataField< ::int32_t>(
+      0 * ::capnp::ELEMENTS);
+}
+
+inline  ::int32_t WifiScan::Builder::getFrequency() {
+  return _builder.getDataField< ::int32_t>(
+      0 * ::capnp::ELEMENTS);
+}
+inline void WifiScan::Builder::setFrequency( ::int32_t value) {
+  _builder.setDataField< ::int32_t>(
+      0 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int32_t WifiScan::Reader::getLevel() const {
+  return _reader.getDataField< ::int32_t>(
+      1 * ::capnp::ELEMENTS);
+}
+
+inline  ::int32_t WifiScan::Builder::getLevel() {
+  return _builder.getDataField< ::int32_t>(
+      1 * ::capnp::ELEMENTS);
+}
+inline void WifiScan::Builder::setLevel( ::int32_t value) {
+  _builder.setDataField< ::int32_t>(
+      1 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int64_t WifiScan::Reader::getTimestamp() const {
+  return _reader.getDataField< ::int64_t>(
+      1 * ::capnp::ELEMENTS);
+}
+
+inline  ::int64_t WifiScan::Builder::getTimestamp() {
+  return _builder.getDataField< ::int64_t>(
+      1 * ::capnp::ELEMENTS);
+}
+inline void WifiScan::Builder::setTimestamp( ::int64_t value) {
+  _builder.setDataField< ::int64_t>(
+      1 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int32_t WifiScan::Reader::getCenterFreq0() const {
+  return _reader.getDataField< ::int32_t>(
+      4 * ::capnp::ELEMENTS);
+}
+
+inline  ::int32_t WifiScan::Builder::getCenterFreq0() {
+  return _builder.getDataField< ::int32_t>(
+      4 * ::capnp::ELEMENTS);
+}
+inline void WifiScan::Builder::setCenterFreq0( ::int32_t value) {
+  _builder.setDataField< ::int32_t>(
+      4 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int32_t WifiScan::Reader::getCenterFreq1() const {
+  return _reader.getDataField< ::int32_t>(
+      5 * ::capnp::ELEMENTS);
+}
+
+inline  ::int32_t WifiScan::Builder::getCenterFreq1() {
+  return _builder.getDataField< ::int32_t>(
+      5 * ::capnp::ELEMENTS);
+}
+inline void WifiScan::Builder::setCenterFreq1( ::int32_t value) {
+  _builder.setDataField< ::int32_t>(
+      5 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::cereal::WifiScan::ChannelWidth WifiScan::Reader::getChannelWidth() const {
+  return _reader.getDataField< ::cereal::WifiScan::ChannelWidth>(
+      12 * ::capnp::ELEMENTS);
+}
+
+inline  ::cereal::WifiScan::ChannelWidth WifiScan::Builder::getChannelWidth() {
+  return _builder.getDataField< ::cereal::WifiScan::ChannelWidth>(
+      12 * ::capnp::ELEMENTS);
+}
+inline void WifiScan::Builder::setChannelWidth( ::cereal::WifiScan::ChannelWidth value) {
+  _builder.setDataField< ::cereal::WifiScan::ChannelWidth>(
+      12 * ::capnp::ELEMENTS, value);
+}
+
+inline bool WifiScan::Reader::hasOperatorFriendlyName() const {
+  return !_reader.getPointerField(3 * ::capnp::POINTERS).isNull();
+}
+inline bool WifiScan::Builder::hasOperatorFriendlyName() {
+  return !_builder.getPointerField(3 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::Text::Reader WifiScan::Reader::getOperatorFriendlyName() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _reader.getPointerField(3 * ::capnp::POINTERS));
+}
+inline  ::capnp::Text::Builder WifiScan::Builder::getOperatorFriendlyName() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _builder.getPointerField(3 * ::capnp::POINTERS));
+}
+inline void WifiScan::Builder::setOperatorFriendlyName( ::capnp::Text::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::set(
+      _builder.getPointerField(3 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::Text::Builder WifiScan::Builder::initOperatorFriendlyName(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(
+      _builder.getPointerField(3 * ::capnp::POINTERS), size);
+}
+inline void WifiScan::Builder::adoptOperatorFriendlyName(
+    ::capnp::Orphan< ::capnp::Text>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(
+      _builder.getPointerField(3 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::Text> WifiScan::Builder::disownOperatorFriendlyName() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(
+      _builder.getPointerField(3 * ::capnp::POINTERS));
+}
+
+inline bool WifiScan::Reader::hasVenueName() const {
+  return !_reader.getPointerField(4 * ::capnp::POINTERS).isNull();
+}
+inline bool WifiScan::Builder::hasVenueName() {
+  return !_builder.getPointerField(4 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::Text::Reader WifiScan::Reader::getVenueName() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _reader.getPointerField(4 * ::capnp::POINTERS));
+}
+inline  ::capnp::Text::Builder WifiScan::Builder::getVenueName() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(
+      _builder.getPointerField(4 * ::capnp::POINTERS));
+}
+inline void WifiScan::Builder::setVenueName( ::capnp::Text::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::set(
+      _builder.getPointerField(4 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::Text::Builder WifiScan::Builder::initVenueName(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(
+      _builder.getPointerField(4 * ::capnp::POINTERS), size);
+}
+inline void WifiScan::Builder::adoptVenueName(
+    ::capnp::Orphan< ::capnp::Text>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(
+      _builder.getPointerField(4 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::Text> WifiScan::Builder::disownVenueName() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(
+      _builder.getPointerField(4 * ::capnp::POINTERS));
+}
+
+inline bool WifiScan::Reader::getIs80211mcResponder() const {
+  return _reader.getDataField<bool>(
+      208 * ::capnp::ELEMENTS);
+}
+
+inline bool WifiScan::Builder::getIs80211mcResponder() {
+  return _builder.getDataField<bool>(
+      208 * ::capnp::ELEMENTS);
+}
+inline void WifiScan::Builder::setIs80211mcResponder(bool value) {
+  _builder.setDataField<bool>(
+      208 * ::capnp::ELEMENTS, value);
+}
+
+inline bool WifiScan::Reader::getPasspoint() const {
+  return _reader.getDataField<bool>(
+      209 * ::capnp::ELEMENTS);
+}
+
+inline bool WifiScan::Builder::getPasspoint() {
+  return _builder.getDataField<bool>(
+      209 * ::capnp::ELEMENTS);
+}
+inline void WifiScan::Builder::setPasspoint(bool value) {
+  _builder.setDataField<bool>(
+      209 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int32_t WifiScan::Reader::getDistanceCm() const {
+  return _reader.getDataField< ::int32_t>(
+      7 * ::capnp::ELEMENTS);
+}
+
+inline  ::int32_t WifiScan::Builder::getDistanceCm() {
+  return _builder.getDataField< ::int32_t>(
+      7 * ::capnp::ELEMENTS);
+}
+inline void WifiScan::Builder::setDistanceCm( ::int32_t value) {
+  _builder.setDataField< ::int32_t>(
+      7 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int32_t WifiScan::Reader::getDistanceSdCm() const {
+  return _reader.getDataField< ::int32_t>(
+      8 * ::capnp::ELEMENTS);
+}
+
+inline  ::int32_t WifiScan::Builder::getDistanceSdCm() {
+  return _builder.getDataField< ::int32_t>(
+      8 * ::capnp::ELEMENTS);
+}
+inline void WifiScan::Builder::setDistanceSdCm( ::int32_t value) {
+  _builder.setDataField< ::int32_t>(
+      8 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::cereal::AndroidGnss::Which AndroidGnss::Reader::which() const {
+  return _reader.getDataField<Which>(0 * ::capnp::ELEMENTS);
+}
+inline  ::cereal::AndroidGnss::Which AndroidGnss::Builder::which() {
+  return _builder.getDataField<Which>(0 * ::capnp::ELEMENTS);
+}
+
+inline bool AndroidGnss::Reader::isMeasurements() const {
+  return which() == AndroidGnss::MEASUREMENTS;
+}
+inline bool AndroidGnss::Builder::isMeasurements() {
+  return which() == AndroidGnss::MEASUREMENTS;
+}
+inline bool AndroidGnss::Reader::hasMeasurements() const {
+  if (which() != AndroidGnss::MEASUREMENTS) return false;
+  return !_reader.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline bool AndroidGnss::Builder::hasMeasurements() {
+  if (which() != AndroidGnss::MEASUREMENTS) return false;
+  return !_builder.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline  ::cereal::AndroidGnss::Measurements::Reader AndroidGnss::Reader::getMeasurements() const {
+  KJ_IREQUIRE(which() == AndroidGnss::MEASUREMENTS,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::cereal::AndroidGnss::Measurements>::get(
+      _reader.getPointerField(0 * ::capnp::POINTERS));
+}
+inline  ::cereal::AndroidGnss::Measurements::Builder AndroidGnss::Builder::getMeasurements() {
+  KJ_IREQUIRE(which() == AndroidGnss::MEASUREMENTS,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::cereal::AndroidGnss::Measurements>::get(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void AndroidGnss::Builder::setMeasurements( ::cereal::AndroidGnss::Measurements::Reader value) {
+  _builder.setDataField<AndroidGnss::Which>(
+      0 * ::capnp::ELEMENTS, AndroidGnss::MEASUREMENTS);
+  ::capnp::_::PointerHelpers< ::cereal::AndroidGnss::Measurements>::set(
+      _builder.getPointerField(0 * ::capnp::POINTERS), value);
+}
+inline  ::cereal::AndroidGnss::Measurements::Builder AndroidGnss::Builder::initMeasurements() {
+  _builder.setDataField<AndroidGnss::Which>(
+      0 * ::capnp::ELEMENTS, AndroidGnss::MEASUREMENTS);
+  return ::capnp::_::PointerHelpers< ::cereal::AndroidGnss::Measurements>::init(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void AndroidGnss::Builder::adoptMeasurements(
+    ::capnp::Orphan< ::cereal::AndroidGnss::Measurements>&& value) {
+  _builder.setDataField<AndroidGnss::Which>(
+      0 * ::capnp::ELEMENTS, AndroidGnss::MEASUREMENTS);
+  ::capnp::_::PointerHelpers< ::cereal::AndroidGnss::Measurements>::adopt(
+      _builder.getPointerField(0 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::cereal::AndroidGnss::Measurements> AndroidGnss::Builder::disownMeasurements() {
+  KJ_IREQUIRE(which() == AndroidGnss::MEASUREMENTS,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::cereal::AndroidGnss::Measurements>::disown(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+
+inline bool AndroidGnss::Reader::isNavigationMessage() const {
+  return which() == AndroidGnss::NAVIGATION_MESSAGE;
+}
+inline bool AndroidGnss::Builder::isNavigationMessage() {
+  return which() == AndroidGnss::NAVIGATION_MESSAGE;
+}
+inline bool AndroidGnss::Reader::hasNavigationMessage() const {
+  if (which() != AndroidGnss::NAVIGATION_MESSAGE) return false;
+  return !_reader.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline bool AndroidGnss::Builder::hasNavigationMessage() {
+  if (which() != AndroidGnss::NAVIGATION_MESSAGE) return false;
+  return !_builder.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline  ::cereal::AndroidGnss::NavigationMessage::Reader AndroidGnss::Reader::getNavigationMessage() const {
+  KJ_IREQUIRE(which() == AndroidGnss::NAVIGATION_MESSAGE,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::cereal::AndroidGnss::NavigationMessage>::get(
+      _reader.getPointerField(0 * ::capnp::POINTERS));
+}
+inline  ::cereal::AndroidGnss::NavigationMessage::Builder AndroidGnss::Builder::getNavigationMessage() {
+  KJ_IREQUIRE(which() == AndroidGnss::NAVIGATION_MESSAGE,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::cereal::AndroidGnss::NavigationMessage>::get(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void AndroidGnss::Builder::setNavigationMessage( ::cereal::AndroidGnss::NavigationMessage::Reader value) {
+  _builder.setDataField<AndroidGnss::Which>(
+      0 * ::capnp::ELEMENTS, AndroidGnss::NAVIGATION_MESSAGE);
+  ::capnp::_::PointerHelpers< ::cereal::AndroidGnss::NavigationMessage>::set(
+      _builder.getPointerField(0 * ::capnp::POINTERS), value);
+}
+inline  ::cereal::AndroidGnss::NavigationMessage::Builder AndroidGnss::Builder::initNavigationMessage() {
+  _builder.setDataField<AndroidGnss::Which>(
+      0 * ::capnp::ELEMENTS, AndroidGnss::NAVIGATION_MESSAGE);
+  return ::capnp::_::PointerHelpers< ::cereal::AndroidGnss::NavigationMessage>::init(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void AndroidGnss::Builder::adoptNavigationMessage(
+    ::capnp::Orphan< ::cereal::AndroidGnss::NavigationMessage>&& value) {
+  _builder.setDataField<AndroidGnss::Which>(
+      0 * ::capnp::ELEMENTS, AndroidGnss::NAVIGATION_MESSAGE);
+  ::capnp::_::PointerHelpers< ::cereal::AndroidGnss::NavigationMessage>::adopt(
+      _builder.getPointerField(0 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::cereal::AndroidGnss::NavigationMessage> AndroidGnss::Builder::disownNavigationMessage() {
+  KJ_IREQUIRE(which() == AndroidGnss::NAVIGATION_MESSAGE,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::cereal::AndroidGnss::NavigationMessage>::disown(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+
+inline bool AndroidGnss::Measurements::Reader::hasClock() const {
+  return !_reader.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline bool AndroidGnss::Measurements::Builder::hasClock() {
+  return !_builder.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline  ::cereal::AndroidGnss::Measurements::Clock::Reader AndroidGnss::Measurements::Reader::getClock() const {
+  return ::capnp::_::PointerHelpers< ::cereal::AndroidGnss::Measurements::Clock>::get(
+      _reader.getPointerField(0 * ::capnp::POINTERS));
+}
+inline  ::cereal::AndroidGnss::Measurements::Clock::Builder AndroidGnss::Measurements::Builder::getClock() {
+  return ::capnp::_::PointerHelpers< ::cereal::AndroidGnss::Measurements::Clock>::get(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+#if !CAPNP_LITE
+inline  ::cereal::AndroidGnss::Measurements::Clock::Pipeline AndroidGnss::Measurements::Pipeline::getClock() {
+  return  ::cereal::AndroidGnss::Measurements::Clock::Pipeline(_typeless.getPointerField(0));
+}
+#endif  // !CAPNP_LITE
+inline void AndroidGnss::Measurements::Builder::setClock( ::cereal::AndroidGnss::Measurements::Clock::Reader value) {
+  ::capnp::_::PointerHelpers< ::cereal::AndroidGnss::Measurements::Clock>::set(
+      _builder.getPointerField(0 * ::capnp::POINTERS), value);
+}
+inline  ::cereal::AndroidGnss::Measurements::Clock::Builder AndroidGnss::Measurements::Builder::initClock() {
+  return ::capnp::_::PointerHelpers< ::cereal::AndroidGnss::Measurements::Clock>::init(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void AndroidGnss::Measurements::Builder::adoptClock(
+    ::capnp::Orphan< ::cereal::AndroidGnss::Measurements::Clock>&& value) {
+  ::capnp::_::PointerHelpers< ::cereal::AndroidGnss::Measurements::Clock>::adopt(
+      _builder.getPointerField(0 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::cereal::AndroidGnss::Measurements::Clock> AndroidGnss::Measurements::Builder::disownClock() {
+  return ::capnp::_::PointerHelpers< ::cereal::AndroidGnss::Measurements::Clock>::disown(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+
+inline bool AndroidGnss::Measurements::Reader::hasMeasurements() const {
+  return !_reader.getPointerField(1 * ::capnp::POINTERS).isNull();
+}
+inline bool AndroidGnss::Measurements::Builder::hasMeasurements() {
+  return !_builder.getPointerField(1 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::List< ::cereal::AndroidGnss::Measurements::Measurement>::Reader AndroidGnss::Measurements::Reader::getMeasurements() const {
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::AndroidGnss::Measurements::Measurement>>::get(
+      _reader.getPointerField(1 * ::capnp::POINTERS));
+}
+inline  ::capnp::List< ::cereal::AndroidGnss::Measurements::Measurement>::Builder AndroidGnss::Measurements::Builder::getMeasurements() {
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::AndroidGnss::Measurements::Measurement>>::get(
+      _builder.getPointerField(1 * ::capnp::POINTERS));
+}
+inline void AndroidGnss::Measurements::Builder::setMeasurements( ::capnp::List< ::cereal::AndroidGnss::Measurements::Measurement>::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::AndroidGnss::Measurements::Measurement>>::set(
+      _builder.getPointerField(1 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::List< ::cereal::AndroidGnss::Measurements::Measurement>::Builder AndroidGnss::Measurements::Builder::initMeasurements(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::AndroidGnss::Measurements::Measurement>>::init(
+      _builder.getPointerField(1 * ::capnp::POINTERS), size);
+}
+inline void AndroidGnss::Measurements::Builder::adoptMeasurements(
+    ::capnp::Orphan< ::capnp::List< ::cereal::AndroidGnss::Measurements::Measurement>>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::AndroidGnss::Measurements::Measurement>>::adopt(
+      _builder.getPointerField(1 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::List< ::cereal::AndroidGnss::Measurements::Measurement>> AndroidGnss::Measurements::Builder::disownMeasurements() {
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::AndroidGnss::Measurements::Measurement>>::disown(
+      _builder.getPointerField(1 * ::capnp::POINTERS));
+}
+
+inline  ::int64_t AndroidGnss::Measurements::Clock::Reader::getTimeNanos() const {
+  return _reader.getDataField< ::int64_t>(
+      0 * ::capnp::ELEMENTS);
+}
+
+inline  ::int64_t AndroidGnss::Measurements::Clock::Builder::getTimeNanos() {
+  return _builder.getDataField< ::int64_t>(
+      0 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::Measurements::Clock::Builder::setTimeNanos( ::int64_t value) {
+  _builder.setDataField< ::int64_t>(
+      0 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int32_t AndroidGnss::Measurements::Clock::Reader::getHardwareClockDiscontinuityCount() const {
+  return _reader.getDataField< ::int32_t>(
+      2 * ::capnp::ELEMENTS);
+}
+
+inline  ::int32_t AndroidGnss::Measurements::Clock::Builder::getHardwareClockDiscontinuityCount() {
+  return _builder.getDataField< ::int32_t>(
+      2 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::Measurements::Clock::Builder::setHardwareClockDiscontinuityCount( ::int32_t value) {
+  _builder.setDataField< ::int32_t>(
+      2 * ::capnp::ELEMENTS, value);
+}
+
+inline bool AndroidGnss::Measurements::Clock::Reader::getHasTimeUncertaintyNanos() const {
+  return _reader.getDataField<bool>(
+      96 * ::capnp::ELEMENTS);
+}
+
+inline bool AndroidGnss::Measurements::Clock::Builder::getHasTimeUncertaintyNanos() {
+  return _builder.getDataField<bool>(
+      96 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::Measurements::Clock::Builder::setHasTimeUncertaintyNanos(bool value) {
+  _builder.setDataField<bool>(
+      96 * ::capnp::ELEMENTS, value);
+}
+
+inline double AndroidGnss::Measurements::Clock::Reader::getTimeUncertaintyNanos() const {
+  return _reader.getDataField<double>(
+      2 * ::capnp::ELEMENTS);
+}
+
+inline double AndroidGnss::Measurements::Clock::Builder::getTimeUncertaintyNanos() {
+  return _builder.getDataField<double>(
+      2 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::Measurements::Clock::Builder::setTimeUncertaintyNanos(double value) {
+  _builder.setDataField<double>(
+      2 * ::capnp::ELEMENTS, value);
+}
+
+inline bool AndroidGnss::Measurements::Clock::Reader::getHasLeapSecond() const {
+  return _reader.getDataField<bool>(
+      97 * ::capnp::ELEMENTS);
+}
+
+inline bool AndroidGnss::Measurements::Clock::Builder::getHasLeapSecond() {
+  return _builder.getDataField<bool>(
+      97 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::Measurements::Clock::Builder::setHasLeapSecond(bool value) {
+  _builder.setDataField<bool>(
+      97 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int32_t AndroidGnss::Measurements::Clock::Reader::getLeapSecond() const {
+  return _reader.getDataField< ::int32_t>(
+      6 * ::capnp::ELEMENTS);
+}
+
+inline  ::int32_t AndroidGnss::Measurements::Clock::Builder::getLeapSecond() {
+  return _builder.getDataField< ::int32_t>(
+      6 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::Measurements::Clock::Builder::setLeapSecond( ::int32_t value) {
+  _builder.setDataField< ::int32_t>(
+      6 * ::capnp::ELEMENTS, value);
+}
+
+inline bool AndroidGnss::Measurements::Clock::Reader::getHasFullBiasNanos() const {
+  return _reader.getDataField<bool>(
+      98 * ::capnp::ELEMENTS);
+}
+
+inline bool AndroidGnss::Measurements::Clock::Builder::getHasFullBiasNanos() {
+  return _builder.getDataField<bool>(
+      98 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::Measurements::Clock::Builder::setHasFullBiasNanos(bool value) {
+  _builder.setDataField<bool>(
+      98 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int64_t AndroidGnss::Measurements::Clock::Reader::getFullBiasNanos() const {
+  return _reader.getDataField< ::int64_t>(
+      4 * ::capnp::ELEMENTS);
+}
+
+inline  ::int64_t AndroidGnss::Measurements::Clock::Builder::getFullBiasNanos() {
+  return _builder.getDataField< ::int64_t>(
+      4 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::Measurements::Clock::Builder::setFullBiasNanos( ::int64_t value) {
+  _builder.setDataField< ::int64_t>(
+      4 * ::capnp::ELEMENTS, value);
+}
+
+inline bool AndroidGnss::Measurements::Clock::Reader::getHasBiasNanos() const {
+  return _reader.getDataField<bool>(
+      99 * ::capnp::ELEMENTS);
+}
+
+inline bool AndroidGnss::Measurements::Clock::Builder::getHasBiasNanos() {
+  return _builder.getDataField<bool>(
+      99 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::Measurements::Clock::Builder::setHasBiasNanos(bool value) {
+  _builder.setDataField<bool>(
+      99 * ::capnp::ELEMENTS, value);
+}
+
+inline double AndroidGnss::Measurements::Clock::Reader::getBiasNanos() const {
+  return _reader.getDataField<double>(
+      5 * ::capnp::ELEMENTS);
+}
+
+inline double AndroidGnss::Measurements::Clock::Builder::getBiasNanos() {
+  return _builder.getDataField<double>(
+      5 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::Measurements::Clock::Builder::setBiasNanos(double value) {
+  _builder.setDataField<double>(
+      5 * ::capnp::ELEMENTS, value);
+}
+
+inline bool AndroidGnss::Measurements::Clock::Reader::getHasBiasUncertaintyNanos() const {
+  return _reader.getDataField<bool>(
+      100 * ::capnp::ELEMENTS);
+}
+
+inline bool AndroidGnss::Measurements::Clock::Builder::getHasBiasUncertaintyNanos() {
+  return _builder.getDataField<bool>(
+      100 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::Measurements::Clock::Builder::setHasBiasUncertaintyNanos(bool value) {
+  _builder.setDataField<bool>(
+      100 * ::capnp::ELEMENTS, value);
+}
+
+inline double AndroidGnss::Measurements::Clock::Reader::getBiasUncertaintyNanos() const {
+  return _reader.getDataField<double>(
+      6 * ::capnp::ELEMENTS);
+}
+
+inline double AndroidGnss::Measurements::Clock::Builder::getBiasUncertaintyNanos() {
+  return _builder.getDataField<double>(
+      6 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::Measurements::Clock::Builder::setBiasUncertaintyNanos(double value) {
+  _builder.setDataField<double>(
+      6 * ::capnp::ELEMENTS, value);
+}
+
+inline bool AndroidGnss::Measurements::Clock::Reader::getHasDriftNanosPerSecond() const {
+  return _reader.getDataField<bool>(
+      101 * ::capnp::ELEMENTS);
+}
+
+inline bool AndroidGnss::Measurements::Clock::Builder::getHasDriftNanosPerSecond() {
+  return _builder.getDataField<bool>(
+      101 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::Measurements::Clock::Builder::setHasDriftNanosPerSecond(bool value) {
+  _builder.setDataField<bool>(
+      101 * ::capnp::ELEMENTS, value);
+}
+
+inline double AndroidGnss::Measurements::Clock::Reader::getDriftNanosPerSecond() const {
+  return _reader.getDataField<double>(
+      7 * ::capnp::ELEMENTS);
+}
+
+inline double AndroidGnss::Measurements::Clock::Builder::getDriftNanosPerSecond() {
+  return _builder.getDataField<double>(
+      7 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::Measurements::Clock::Builder::setDriftNanosPerSecond(double value) {
+  _builder.setDataField<double>(
+      7 * ::capnp::ELEMENTS, value);
+}
+
+inline bool AndroidGnss::Measurements::Clock::Reader::getHasDriftUncertaintyNanosPerSecond() const {
+  return _reader.getDataField<bool>(
+      102 * ::capnp::ELEMENTS);
+}
+
+inline bool AndroidGnss::Measurements::Clock::Builder::getHasDriftUncertaintyNanosPerSecond() {
+  return _builder.getDataField<bool>(
+      102 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::Measurements::Clock::Builder::setHasDriftUncertaintyNanosPerSecond(bool value) {
+  _builder.setDataField<bool>(
+      102 * ::capnp::ELEMENTS, value);
+}
+
+inline double AndroidGnss::Measurements::Clock::Reader::getDriftUncertaintyNanosPerSecond() const {
+  return _reader.getDataField<double>(
+      8 * ::capnp::ELEMENTS);
+}
+
+inline double AndroidGnss::Measurements::Clock::Builder::getDriftUncertaintyNanosPerSecond() {
+  return _builder.getDataField<double>(
+      8 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::Measurements::Clock::Builder::setDriftUncertaintyNanosPerSecond(double value) {
+  _builder.setDataField<double>(
+      8 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int32_t AndroidGnss::Measurements::Measurement::Reader::getSvId() const {
+  return _reader.getDataField< ::int32_t>(
+      0 * ::capnp::ELEMENTS);
+}
+
+inline  ::int32_t AndroidGnss::Measurements::Measurement::Builder::getSvId() {
+  return _builder.getDataField< ::int32_t>(
+      0 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::Measurements::Measurement::Builder::setSvId( ::int32_t value) {
+  _builder.setDataField< ::int32_t>(
+      0 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::cereal::AndroidGnss::Measurements::Measurement::Constellation AndroidGnss::Measurements::Measurement::Reader::getConstellation() const {
+  return _reader.getDataField< ::cereal::AndroidGnss::Measurements::Measurement::Constellation>(
+      2 * ::capnp::ELEMENTS);
+}
+
+inline  ::cereal::AndroidGnss::Measurements::Measurement::Constellation AndroidGnss::Measurements::Measurement::Builder::getConstellation() {
+  return _builder.getDataField< ::cereal::AndroidGnss::Measurements::Measurement::Constellation>(
+      2 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::Measurements::Measurement::Builder::setConstellation( ::cereal::AndroidGnss::Measurements::Measurement::Constellation value) {
+  _builder.setDataField< ::cereal::AndroidGnss::Measurements::Measurement::Constellation>(
+      2 * ::capnp::ELEMENTS, value);
+}
+
+inline double AndroidGnss::Measurements::Measurement::Reader::getTimeOffsetNanos() const {
+  return _reader.getDataField<double>(
+      1 * ::capnp::ELEMENTS);
+}
+
+inline double AndroidGnss::Measurements::Measurement::Builder::getTimeOffsetNanos() {
+  return _builder.getDataField<double>(
+      1 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::Measurements::Measurement::Builder::setTimeOffsetNanos(double value) {
+  _builder.setDataField<double>(
+      1 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int32_t AndroidGnss::Measurements::Measurement::Reader::getState() const {
+  return _reader.getDataField< ::int32_t>(
+      4 * ::capnp::ELEMENTS);
+}
+
+inline  ::int32_t AndroidGnss::Measurements::Measurement::Builder::getState() {
+  return _builder.getDataField< ::int32_t>(
+      4 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::Measurements::Measurement::Builder::setState( ::int32_t value) {
+  _builder.setDataField< ::int32_t>(
+      4 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int64_t AndroidGnss::Measurements::Measurement::Reader::getReceivedSvTimeNanos() const {
+  return _reader.getDataField< ::int64_t>(
+      3 * ::capnp::ELEMENTS);
+}
+
+inline  ::int64_t AndroidGnss::Measurements::Measurement::Builder::getReceivedSvTimeNanos() {
+  return _builder.getDataField< ::int64_t>(
+      3 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::Measurements::Measurement::Builder::setReceivedSvTimeNanos( ::int64_t value) {
+  _builder.setDataField< ::int64_t>(
+      3 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int64_t AndroidGnss::Measurements::Measurement::Reader::getReceivedSvTimeUncertaintyNanos() const {
+  return _reader.getDataField< ::int64_t>(
+      4 * ::capnp::ELEMENTS);
+}
+
+inline  ::int64_t AndroidGnss::Measurements::Measurement::Builder::getReceivedSvTimeUncertaintyNanos() {
+  return _builder.getDataField< ::int64_t>(
+      4 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::Measurements::Measurement::Builder::setReceivedSvTimeUncertaintyNanos( ::int64_t value) {
+  _builder.setDataField< ::int64_t>(
+      4 * ::capnp::ELEMENTS, value);
+}
+
+inline double AndroidGnss::Measurements::Measurement::Reader::getCn0DbHz() const {
+  return _reader.getDataField<double>(
+      5 * ::capnp::ELEMENTS);
+}
+
+inline double AndroidGnss::Measurements::Measurement::Builder::getCn0DbHz() {
+  return _builder.getDataField<double>(
+      5 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::Measurements::Measurement::Builder::setCn0DbHz(double value) {
+  _builder.setDataField<double>(
+      5 * ::capnp::ELEMENTS, value);
+}
+
+inline double AndroidGnss::Measurements::Measurement::Reader::getPseudorangeRateMetersPerSecond() const {
+  return _reader.getDataField<double>(
+      6 * ::capnp::ELEMENTS);
+}
+
+inline double AndroidGnss::Measurements::Measurement::Builder::getPseudorangeRateMetersPerSecond() {
+  return _builder.getDataField<double>(
+      6 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::Measurements::Measurement::Builder::setPseudorangeRateMetersPerSecond(double value) {
+  _builder.setDataField<double>(
+      6 * ::capnp::ELEMENTS, value);
+}
+
+inline double AndroidGnss::Measurements::Measurement::Reader::getPseudorangeRateUncertaintyMetersPerSecond() const {
+  return _reader.getDataField<double>(
+      7 * ::capnp::ELEMENTS);
+}
+
+inline double AndroidGnss::Measurements::Measurement::Builder::getPseudorangeRateUncertaintyMetersPerSecond() {
+  return _builder.getDataField<double>(
+      7 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::Measurements::Measurement::Builder::setPseudorangeRateUncertaintyMetersPerSecond(double value) {
+  _builder.setDataField<double>(
+      7 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int32_t AndroidGnss::Measurements::Measurement::Reader::getAccumulatedDeltaRangeState() const {
+  return _reader.getDataField< ::int32_t>(
+      5 * ::capnp::ELEMENTS);
+}
+
+inline  ::int32_t AndroidGnss::Measurements::Measurement::Builder::getAccumulatedDeltaRangeState() {
+  return _builder.getDataField< ::int32_t>(
+      5 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::Measurements::Measurement::Builder::setAccumulatedDeltaRangeState( ::int32_t value) {
+  _builder.setDataField< ::int32_t>(
+      5 * ::capnp::ELEMENTS, value);
+}
+
+inline double AndroidGnss::Measurements::Measurement::Reader::getAccumulatedDeltaRangeMeters() const {
+  return _reader.getDataField<double>(
+      8 * ::capnp::ELEMENTS);
+}
+
+inline double AndroidGnss::Measurements::Measurement::Builder::getAccumulatedDeltaRangeMeters() {
+  return _builder.getDataField<double>(
+      8 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::Measurements::Measurement::Builder::setAccumulatedDeltaRangeMeters(double value) {
+  _builder.setDataField<double>(
+      8 * ::capnp::ELEMENTS, value);
+}
+
+inline double AndroidGnss::Measurements::Measurement::Reader::getAccumulatedDeltaRangeUncertaintyMeters() const {
+  return _reader.getDataField<double>(
+      9 * ::capnp::ELEMENTS);
+}
+
+inline double AndroidGnss::Measurements::Measurement::Builder::getAccumulatedDeltaRangeUncertaintyMeters() {
+  return _builder.getDataField<double>(
+      9 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::Measurements::Measurement::Builder::setAccumulatedDeltaRangeUncertaintyMeters(double value) {
+  _builder.setDataField<double>(
+      9 * ::capnp::ELEMENTS, value);
+}
+
+inline bool AndroidGnss::Measurements::Measurement::Reader::getHasCarrierFrequencyHz() const {
+  return _reader.getDataField<bool>(
+      48 * ::capnp::ELEMENTS);
+}
+
+inline bool AndroidGnss::Measurements::Measurement::Builder::getHasCarrierFrequencyHz() {
+  return _builder.getDataField<bool>(
+      48 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::Measurements::Measurement::Builder::setHasCarrierFrequencyHz(bool value) {
+  _builder.setDataField<bool>(
+      48 * ::capnp::ELEMENTS, value);
+}
+
+inline float AndroidGnss::Measurements::Measurement::Reader::getCarrierFrequencyHz() const {
+  return _reader.getDataField<float>(
+      20 * ::capnp::ELEMENTS);
+}
+
+inline float AndroidGnss::Measurements::Measurement::Builder::getCarrierFrequencyHz() {
+  return _builder.getDataField<float>(
+      20 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::Measurements::Measurement::Builder::setCarrierFrequencyHz(float value) {
+  _builder.setDataField<float>(
+      20 * ::capnp::ELEMENTS, value);
+}
+
+inline bool AndroidGnss::Measurements::Measurement::Reader::getHasCarrierCycles() const {
+  return _reader.getDataField<bool>(
+      49 * ::capnp::ELEMENTS);
+}
+
+inline bool AndroidGnss::Measurements::Measurement::Builder::getHasCarrierCycles() {
+  return _builder.getDataField<bool>(
+      49 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::Measurements::Measurement::Builder::setHasCarrierCycles(bool value) {
+  _builder.setDataField<bool>(
+      49 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int64_t AndroidGnss::Measurements::Measurement::Reader::getCarrierCycles() const {
+  return _reader.getDataField< ::int64_t>(
+      11 * ::capnp::ELEMENTS);
+}
+
+inline  ::int64_t AndroidGnss::Measurements::Measurement::Builder::getCarrierCycles() {
+  return _builder.getDataField< ::int64_t>(
+      11 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::Measurements::Measurement::Builder::setCarrierCycles( ::int64_t value) {
+  _builder.setDataField< ::int64_t>(
+      11 * ::capnp::ELEMENTS, value);
+}
+
+inline bool AndroidGnss::Measurements::Measurement::Reader::getHasCarrierPhase() const {
+  return _reader.getDataField<bool>(
+      50 * ::capnp::ELEMENTS);
+}
+
+inline bool AndroidGnss::Measurements::Measurement::Builder::getHasCarrierPhase() {
+  return _builder.getDataField<bool>(
+      50 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::Measurements::Measurement::Builder::setHasCarrierPhase(bool value) {
+  _builder.setDataField<bool>(
+      50 * ::capnp::ELEMENTS, value);
+}
+
+inline double AndroidGnss::Measurements::Measurement::Reader::getCarrierPhase() const {
+  return _reader.getDataField<double>(
+      12 * ::capnp::ELEMENTS);
+}
+
+inline double AndroidGnss::Measurements::Measurement::Builder::getCarrierPhase() {
+  return _builder.getDataField<double>(
+      12 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::Measurements::Measurement::Builder::setCarrierPhase(double value) {
+  _builder.setDataField<double>(
+      12 * ::capnp::ELEMENTS, value);
+}
+
+inline bool AndroidGnss::Measurements::Measurement::Reader::getHasCarrierPhaseUncertainty() const {
+  return _reader.getDataField<bool>(
+      51 * ::capnp::ELEMENTS);
+}
+
+inline bool AndroidGnss::Measurements::Measurement::Builder::getHasCarrierPhaseUncertainty() {
+  return _builder.getDataField<bool>(
+      51 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::Measurements::Measurement::Builder::setHasCarrierPhaseUncertainty(bool value) {
+  _builder.setDataField<bool>(
+      51 * ::capnp::ELEMENTS, value);
+}
+
+inline double AndroidGnss::Measurements::Measurement::Reader::getCarrierPhaseUncertainty() const {
+  return _reader.getDataField<double>(
+      13 * ::capnp::ELEMENTS);
+}
+
+inline double AndroidGnss::Measurements::Measurement::Builder::getCarrierPhaseUncertainty() {
+  return _builder.getDataField<double>(
+      13 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::Measurements::Measurement::Builder::setCarrierPhaseUncertainty(double value) {
+  _builder.setDataField<double>(
+      13 * ::capnp::ELEMENTS, value);
+}
+
+inline bool AndroidGnss::Measurements::Measurement::Reader::getHasSnrInDb() const {
+  return _reader.getDataField<bool>(
+      52 * ::capnp::ELEMENTS);
+}
+
+inline bool AndroidGnss::Measurements::Measurement::Builder::getHasSnrInDb() {
+  return _builder.getDataField<bool>(
+      52 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::Measurements::Measurement::Builder::setHasSnrInDb(bool value) {
+  _builder.setDataField<bool>(
+      52 * ::capnp::ELEMENTS, value);
+}
+
+inline double AndroidGnss::Measurements::Measurement::Reader::getSnrInDb() const {
+  return _reader.getDataField<double>(
+      14 * ::capnp::ELEMENTS);
+}
+
+inline double AndroidGnss::Measurements::Measurement::Builder::getSnrInDb() {
+  return _builder.getDataField<double>(
+      14 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::Measurements::Measurement::Builder::setSnrInDb(double value) {
+  _builder.setDataField<double>(
+      14 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::cereal::AndroidGnss::Measurements::Measurement::MultipathIndicator AndroidGnss::Measurements::Measurement::Reader::getMultipathIndicator() const {
+  return _reader.getDataField< ::cereal::AndroidGnss::Measurements::Measurement::MultipathIndicator>(
+      42 * ::capnp::ELEMENTS);
+}
+
+inline  ::cereal::AndroidGnss::Measurements::Measurement::MultipathIndicator AndroidGnss::Measurements::Measurement::Builder::getMultipathIndicator() {
+  return _builder.getDataField< ::cereal::AndroidGnss::Measurements::Measurement::MultipathIndicator>(
+      42 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::Measurements::Measurement::Builder::setMultipathIndicator( ::cereal::AndroidGnss::Measurements::Measurement::MultipathIndicator value) {
+  _builder.setDataField< ::cereal::AndroidGnss::Measurements::Measurement::MultipathIndicator>(
+      42 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int32_t AndroidGnss::NavigationMessage::Reader::getType() const {
+  return _reader.getDataField< ::int32_t>(
+      0 * ::capnp::ELEMENTS);
+}
+
+inline  ::int32_t AndroidGnss::NavigationMessage::Builder::getType() {
+  return _builder.getDataField< ::int32_t>(
+      0 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::NavigationMessage::Builder::setType( ::int32_t value) {
+  _builder.setDataField< ::int32_t>(
+      0 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int32_t AndroidGnss::NavigationMessage::Reader::getSvId() const {
+  return _reader.getDataField< ::int32_t>(
+      1 * ::capnp::ELEMENTS);
+}
+
+inline  ::int32_t AndroidGnss::NavigationMessage::Builder::getSvId() {
+  return _builder.getDataField< ::int32_t>(
+      1 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::NavigationMessage::Builder::setSvId( ::int32_t value) {
+  _builder.setDataField< ::int32_t>(
+      1 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int32_t AndroidGnss::NavigationMessage::Reader::getMessageId() const {
+  return _reader.getDataField< ::int32_t>(
+      2 * ::capnp::ELEMENTS);
+}
+
+inline  ::int32_t AndroidGnss::NavigationMessage::Builder::getMessageId() {
+  return _builder.getDataField< ::int32_t>(
+      2 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::NavigationMessage::Builder::setMessageId( ::int32_t value) {
+  _builder.setDataField< ::int32_t>(
+      2 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int32_t AndroidGnss::NavigationMessage::Reader::getSubmessageId() const {
+  return _reader.getDataField< ::int32_t>(
+      3 * ::capnp::ELEMENTS);
+}
+
+inline  ::int32_t AndroidGnss::NavigationMessage::Builder::getSubmessageId() {
+  return _builder.getDataField< ::int32_t>(
+      3 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::NavigationMessage::Builder::setSubmessageId( ::int32_t value) {
+  _builder.setDataField< ::int32_t>(
+      3 * ::capnp::ELEMENTS, value);
+}
+
+inline bool AndroidGnss::NavigationMessage::Reader::hasData() const {
+  return !_reader.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline bool AndroidGnss::NavigationMessage::Builder::hasData() {
+  return !_builder.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::Data::Reader AndroidGnss::NavigationMessage::Reader::getData() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Data>::get(
+      _reader.getPointerField(0 * ::capnp::POINTERS));
+}
+inline  ::capnp::Data::Builder AndroidGnss::NavigationMessage::Builder::getData() {
+  return ::capnp::_::PointerHelpers< ::capnp::Data>::get(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void AndroidGnss::NavigationMessage::Builder::setData( ::capnp::Data::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Data>::set(
+      _builder.getPointerField(0 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::Data::Builder AndroidGnss::NavigationMessage::Builder::initData(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Data>::init(
+      _builder.getPointerField(0 * ::capnp::POINTERS), size);
+}
+inline void AndroidGnss::NavigationMessage::Builder::adoptData(
+    ::capnp::Orphan< ::capnp::Data>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Data>::adopt(
+      _builder.getPointerField(0 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::Data> AndroidGnss::NavigationMessage::Builder::disownData() {
+  return ::capnp::_::PointerHelpers< ::capnp::Data>::disown(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+
+inline  ::cereal::AndroidGnss::NavigationMessage::Status AndroidGnss::NavigationMessage::Reader::getStatus() const {
+  return _reader.getDataField< ::cereal::AndroidGnss::NavigationMessage::Status>(
+      8 * ::capnp::ELEMENTS);
+}
+
+inline  ::cereal::AndroidGnss::NavigationMessage::Status AndroidGnss::NavigationMessage::Builder::getStatus() {
+  return _builder.getDataField< ::cereal::AndroidGnss::NavigationMessage::Status>(
+      8 * ::capnp::ELEMENTS);
+}
+inline void AndroidGnss::NavigationMessage::Builder::setStatus( ::cereal::AndroidGnss::NavigationMessage::Status value) {
+  _builder.setDataField< ::cereal::AndroidGnss::NavigationMessage::Status>(
+      8 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::cereal::QcomGnss::Which QcomGnss::Reader::which() const {
+  return _reader.getDataField<Which>(4 * ::capnp::ELEMENTS);
+}
+inline  ::cereal::QcomGnss::Which QcomGnss::Builder::which() {
+  return _builder.getDataField<Which>(4 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint64_t QcomGnss::Reader::getLogTs() const {
+  return _reader.getDataField< ::uint64_t>(
+      0 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint64_t QcomGnss::Builder::getLogTs() {
+  return _builder.getDataField< ::uint64_t>(
+      0 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::Builder::setLogTs( ::uint64_t value) {
+  _builder.setDataField< ::uint64_t>(
+      0 * ::capnp::ELEMENTS, value);
+}
+
+inline bool QcomGnss::Reader::isMeasurementReport() const {
+  return which() == QcomGnss::MEASUREMENT_REPORT;
+}
+inline bool QcomGnss::Builder::isMeasurementReport() {
+  return which() == QcomGnss::MEASUREMENT_REPORT;
+}
+inline bool QcomGnss::Reader::hasMeasurementReport() const {
+  if (which() != QcomGnss::MEASUREMENT_REPORT) return false;
+  return !_reader.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline bool QcomGnss::Builder::hasMeasurementReport() {
+  if (which() != QcomGnss::MEASUREMENT_REPORT) return false;
+  return !_builder.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline  ::cereal::QcomGnss::MeasurementReport::Reader QcomGnss::Reader::getMeasurementReport() const {
+  KJ_IREQUIRE(which() == QcomGnss::MEASUREMENT_REPORT,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::cereal::QcomGnss::MeasurementReport>::get(
+      _reader.getPointerField(0 * ::capnp::POINTERS));
+}
+inline  ::cereal::QcomGnss::MeasurementReport::Builder QcomGnss::Builder::getMeasurementReport() {
+  KJ_IREQUIRE(which() == QcomGnss::MEASUREMENT_REPORT,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::cereal::QcomGnss::MeasurementReport>::get(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void QcomGnss::Builder::setMeasurementReport( ::cereal::QcomGnss::MeasurementReport::Reader value) {
+  _builder.setDataField<QcomGnss::Which>(
+      4 * ::capnp::ELEMENTS, QcomGnss::MEASUREMENT_REPORT);
+  ::capnp::_::PointerHelpers< ::cereal::QcomGnss::MeasurementReport>::set(
+      _builder.getPointerField(0 * ::capnp::POINTERS), value);
+}
+inline  ::cereal::QcomGnss::MeasurementReport::Builder QcomGnss::Builder::initMeasurementReport() {
+  _builder.setDataField<QcomGnss::Which>(
+      4 * ::capnp::ELEMENTS, QcomGnss::MEASUREMENT_REPORT);
+  return ::capnp::_::PointerHelpers< ::cereal::QcomGnss::MeasurementReport>::init(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void QcomGnss::Builder::adoptMeasurementReport(
+    ::capnp::Orphan< ::cereal::QcomGnss::MeasurementReport>&& value) {
+  _builder.setDataField<QcomGnss::Which>(
+      4 * ::capnp::ELEMENTS, QcomGnss::MEASUREMENT_REPORT);
+  ::capnp::_::PointerHelpers< ::cereal::QcomGnss::MeasurementReport>::adopt(
+      _builder.getPointerField(0 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::cereal::QcomGnss::MeasurementReport> QcomGnss::Builder::disownMeasurementReport() {
+  KJ_IREQUIRE(which() == QcomGnss::MEASUREMENT_REPORT,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::cereal::QcomGnss::MeasurementReport>::disown(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+
+inline bool QcomGnss::Reader::isClockReport() const {
+  return which() == QcomGnss::CLOCK_REPORT;
+}
+inline bool QcomGnss::Builder::isClockReport() {
+  return which() == QcomGnss::CLOCK_REPORT;
+}
+inline bool QcomGnss::Reader::hasClockReport() const {
+  if (which() != QcomGnss::CLOCK_REPORT) return false;
+  return !_reader.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline bool QcomGnss::Builder::hasClockReport() {
+  if (which() != QcomGnss::CLOCK_REPORT) return false;
+  return !_builder.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline  ::cereal::QcomGnss::ClockReport::Reader QcomGnss::Reader::getClockReport() const {
+  KJ_IREQUIRE(which() == QcomGnss::CLOCK_REPORT,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::cereal::QcomGnss::ClockReport>::get(
+      _reader.getPointerField(0 * ::capnp::POINTERS));
+}
+inline  ::cereal::QcomGnss::ClockReport::Builder QcomGnss::Builder::getClockReport() {
+  KJ_IREQUIRE(which() == QcomGnss::CLOCK_REPORT,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::cereal::QcomGnss::ClockReport>::get(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void QcomGnss::Builder::setClockReport( ::cereal::QcomGnss::ClockReport::Reader value) {
+  _builder.setDataField<QcomGnss::Which>(
+      4 * ::capnp::ELEMENTS, QcomGnss::CLOCK_REPORT);
+  ::capnp::_::PointerHelpers< ::cereal::QcomGnss::ClockReport>::set(
+      _builder.getPointerField(0 * ::capnp::POINTERS), value);
+}
+inline  ::cereal::QcomGnss::ClockReport::Builder QcomGnss::Builder::initClockReport() {
+  _builder.setDataField<QcomGnss::Which>(
+      4 * ::capnp::ELEMENTS, QcomGnss::CLOCK_REPORT);
+  return ::capnp::_::PointerHelpers< ::cereal::QcomGnss::ClockReport>::init(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void QcomGnss::Builder::adoptClockReport(
+    ::capnp::Orphan< ::cereal::QcomGnss::ClockReport>&& value) {
+  _builder.setDataField<QcomGnss::Which>(
+      4 * ::capnp::ELEMENTS, QcomGnss::CLOCK_REPORT);
+  ::capnp::_::PointerHelpers< ::cereal::QcomGnss::ClockReport>::adopt(
+      _builder.getPointerField(0 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::cereal::QcomGnss::ClockReport> QcomGnss::Builder::disownClockReport() {
+  KJ_IREQUIRE(which() == QcomGnss::CLOCK_REPORT,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::cereal::QcomGnss::ClockReport>::disown(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+
+inline  ::cereal::QcomGnss::MeasurementReport::Source QcomGnss::MeasurementReport::Reader::getSource() const {
+  return _reader.getDataField< ::cereal::QcomGnss::MeasurementReport::Source>(
+      0 * ::capnp::ELEMENTS);
+}
+
+inline  ::cereal::QcomGnss::MeasurementReport::Source QcomGnss::MeasurementReport::Builder::getSource() {
+  return _builder.getDataField< ::cereal::QcomGnss::MeasurementReport::Source>(
+      0 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::Builder::setSource( ::cereal::QcomGnss::MeasurementReport::Source value) {
+  _builder.setDataField< ::cereal::QcomGnss::MeasurementReport::Source>(
+      0 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint32_t QcomGnss::MeasurementReport::Reader::getFCount() const {
+  return _reader.getDataField< ::uint32_t>(
+      1 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint32_t QcomGnss::MeasurementReport::Builder::getFCount() {
+  return _builder.getDataField< ::uint32_t>(
+      1 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::Builder::setFCount( ::uint32_t value) {
+  _builder.setDataField< ::uint32_t>(
+      1 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint16_t QcomGnss::MeasurementReport::Reader::getGpsWeek() const {
+  return _reader.getDataField< ::uint16_t>(
+      1 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint16_t QcomGnss::MeasurementReport::Builder::getGpsWeek() {
+  return _builder.getDataField< ::uint16_t>(
+      1 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::Builder::setGpsWeek( ::uint16_t value) {
+  _builder.setDataField< ::uint16_t>(
+      1 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint8_t QcomGnss::MeasurementReport::Reader::getGlonassCycleNumber() const {
+  return _reader.getDataField< ::uint8_t>(
+      8 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint8_t QcomGnss::MeasurementReport::Builder::getGlonassCycleNumber() {
+  return _builder.getDataField< ::uint8_t>(
+      8 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::Builder::setGlonassCycleNumber( ::uint8_t value) {
+  _builder.setDataField< ::uint8_t>(
+      8 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint16_t QcomGnss::MeasurementReport::Reader::getGlonassNumberOfDays() const {
+  return _reader.getDataField< ::uint16_t>(
+      5 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint16_t QcomGnss::MeasurementReport::Builder::getGlonassNumberOfDays() {
+  return _builder.getDataField< ::uint16_t>(
+      5 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::Builder::setGlonassNumberOfDays( ::uint16_t value) {
+  _builder.setDataField< ::uint16_t>(
+      5 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint32_t QcomGnss::MeasurementReport::Reader::getMilliseconds() const {
+  return _reader.getDataField< ::uint32_t>(
+      3 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint32_t QcomGnss::MeasurementReport::Builder::getMilliseconds() {
+  return _builder.getDataField< ::uint32_t>(
+      3 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::Builder::setMilliseconds( ::uint32_t value) {
+  _builder.setDataField< ::uint32_t>(
+      3 * ::capnp::ELEMENTS, value);
+}
+
+inline float QcomGnss::MeasurementReport::Reader::getTimeBias() const {
+  return _reader.getDataField<float>(
+      4 * ::capnp::ELEMENTS);
+}
+
+inline float QcomGnss::MeasurementReport::Builder::getTimeBias() {
+  return _builder.getDataField<float>(
+      4 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::Builder::setTimeBias(float value) {
+  _builder.setDataField<float>(
+      4 * ::capnp::ELEMENTS, value);
+}
+
+inline float QcomGnss::MeasurementReport::Reader::getClockTimeUncertainty() const {
+  return _reader.getDataField<float>(
+      5 * ::capnp::ELEMENTS);
+}
+
+inline float QcomGnss::MeasurementReport::Builder::getClockTimeUncertainty() {
+  return _builder.getDataField<float>(
+      5 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::Builder::setClockTimeUncertainty(float value) {
+  _builder.setDataField<float>(
+      5 * ::capnp::ELEMENTS, value);
+}
+
+inline float QcomGnss::MeasurementReport::Reader::getClockFrequencyBias() const {
+  return _reader.getDataField<float>(
+      6 * ::capnp::ELEMENTS);
+}
+
+inline float QcomGnss::MeasurementReport::Builder::getClockFrequencyBias() {
+  return _builder.getDataField<float>(
+      6 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::Builder::setClockFrequencyBias(float value) {
+  _builder.setDataField<float>(
+      6 * ::capnp::ELEMENTS, value);
+}
+
+inline float QcomGnss::MeasurementReport::Reader::getClockFrequencyUncertainty() const {
+  return _reader.getDataField<float>(
+      7 * ::capnp::ELEMENTS);
+}
+
+inline float QcomGnss::MeasurementReport::Builder::getClockFrequencyUncertainty() {
+  return _builder.getDataField<float>(
+      7 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::Builder::setClockFrequencyUncertainty(float value) {
+  _builder.setDataField<float>(
+      7 * ::capnp::ELEMENTS, value);
+}
+
+inline bool QcomGnss::MeasurementReport::Reader::hasSv() const {
+  return !_reader.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline bool QcomGnss::MeasurementReport::Builder::hasSv() {
+  return !_builder.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::List< ::cereal::QcomGnss::MeasurementReport::SV>::Reader QcomGnss::MeasurementReport::Reader::getSv() const {
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::QcomGnss::MeasurementReport::SV>>::get(
+      _reader.getPointerField(0 * ::capnp::POINTERS));
+}
+inline  ::capnp::List< ::cereal::QcomGnss::MeasurementReport::SV>::Builder QcomGnss::MeasurementReport::Builder::getSv() {
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::QcomGnss::MeasurementReport::SV>>::get(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void QcomGnss::MeasurementReport::Builder::setSv( ::capnp::List< ::cereal::QcomGnss::MeasurementReport::SV>::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::QcomGnss::MeasurementReport::SV>>::set(
+      _builder.getPointerField(0 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::List< ::cereal::QcomGnss::MeasurementReport::SV>::Builder QcomGnss::MeasurementReport::Builder::initSv(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::QcomGnss::MeasurementReport::SV>>::init(
+      _builder.getPointerField(0 * ::capnp::POINTERS), size);
+}
+inline void QcomGnss::MeasurementReport::Builder::adoptSv(
+    ::capnp::Orphan< ::capnp::List< ::cereal::QcomGnss::MeasurementReport::SV>>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::QcomGnss::MeasurementReport::SV>>::adopt(
+      _builder.getPointerField(0 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::List< ::cereal::QcomGnss::MeasurementReport::SV>> QcomGnss::MeasurementReport::Builder::disownSv() {
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::QcomGnss::MeasurementReport::SV>>::disown(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+
+inline  ::uint8_t QcomGnss::MeasurementReport::SV::Reader::getSvId() const {
+  return _reader.getDataField< ::uint8_t>(
+      0 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint8_t QcomGnss::MeasurementReport::SV::Builder::getSvId() {
+  return _builder.getDataField< ::uint8_t>(
+      0 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::Builder::setSvId( ::uint8_t value) {
+  _builder.setDataField< ::uint8_t>(
+      0 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int8_t QcomGnss::MeasurementReport::SV::Reader::getGlonassFrequencyIndex() const {
+  return _reader.getDataField< ::int8_t>(
+      1 * ::capnp::ELEMENTS);
+}
+
+inline  ::int8_t QcomGnss::MeasurementReport::SV::Builder::getGlonassFrequencyIndex() {
+  return _builder.getDataField< ::int8_t>(
+      1 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::Builder::setGlonassFrequencyIndex( ::int8_t value) {
+  _builder.setDataField< ::int8_t>(
+      1 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::cereal::QcomGnss::MeasurementReport::SV::SVObservationState QcomGnss::MeasurementReport::SV::Reader::getObservationState() const {
+  return _reader.getDataField< ::cereal::QcomGnss::MeasurementReport::SV::SVObservationState>(
+      1 * ::capnp::ELEMENTS);
+}
+
+inline  ::cereal::QcomGnss::MeasurementReport::SV::SVObservationState QcomGnss::MeasurementReport::SV::Builder::getObservationState() {
+  return _builder.getDataField< ::cereal::QcomGnss::MeasurementReport::SV::SVObservationState>(
+      1 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::Builder::setObservationState( ::cereal::QcomGnss::MeasurementReport::SV::SVObservationState value) {
+  _builder.setDataField< ::cereal::QcomGnss::MeasurementReport::SV::SVObservationState>(
+      1 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint8_t QcomGnss::MeasurementReport::SV::Reader::getObservations() const {
+  return _reader.getDataField< ::uint8_t>(
+      4 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint8_t QcomGnss::MeasurementReport::SV::Builder::getObservations() {
+  return _builder.getDataField< ::uint8_t>(
+      4 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::Builder::setObservations( ::uint8_t value) {
+  _builder.setDataField< ::uint8_t>(
+      4 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint8_t QcomGnss::MeasurementReport::SV::Reader::getGoodObservations() const {
+  return _reader.getDataField< ::uint8_t>(
+      5 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint8_t QcomGnss::MeasurementReport::SV::Builder::getGoodObservations() {
+  return _builder.getDataField< ::uint8_t>(
+      5 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::Builder::setGoodObservations( ::uint8_t value) {
+  _builder.setDataField< ::uint8_t>(
+      5 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint16_t QcomGnss::MeasurementReport::SV::Reader::getGpsParityErrorCount() const {
+  return _reader.getDataField< ::uint16_t>(
+      3 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint16_t QcomGnss::MeasurementReport::SV::Builder::getGpsParityErrorCount() {
+  return _builder.getDataField< ::uint16_t>(
+      3 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::Builder::setGpsParityErrorCount( ::uint16_t value) {
+  _builder.setDataField< ::uint16_t>(
+      3 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint8_t QcomGnss::MeasurementReport::SV::Reader::getGlonassHemmingErrorCount() const {
+  return _reader.getDataField< ::uint8_t>(
+      8 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint8_t QcomGnss::MeasurementReport::SV::Builder::getGlonassHemmingErrorCount() {
+  return _builder.getDataField< ::uint8_t>(
+      8 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::Builder::setGlonassHemmingErrorCount( ::uint8_t value) {
+  _builder.setDataField< ::uint8_t>(
+      8 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint8_t QcomGnss::MeasurementReport::SV::Reader::getFilterStages() const {
+  return _reader.getDataField< ::uint8_t>(
+      9 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint8_t QcomGnss::MeasurementReport::SV::Builder::getFilterStages() {
+  return _builder.getDataField< ::uint8_t>(
+      9 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::Builder::setFilterStages( ::uint8_t value) {
+  _builder.setDataField< ::uint8_t>(
+      9 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint16_t QcomGnss::MeasurementReport::SV::Reader::getCarrierNoise() const {
+  return _reader.getDataField< ::uint16_t>(
+      5 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint16_t QcomGnss::MeasurementReport::SV::Builder::getCarrierNoise() {
+  return _builder.getDataField< ::uint16_t>(
+      5 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::Builder::setCarrierNoise( ::uint16_t value) {
+  _builder.setDataField< ::uint16_t>(
+      5 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int16_t QcomGnss::MeasurementReport::SV::Reader::getLatency() const {
+  return _reader.getDataField< ::int16_t>(
+      6 * ::capnp::ELEMENTS);
+}
+
+inline  ::int16_t QcomGnss::MeasurementReport::SV::Builder::getLatency() {
+  return _builder.getDataField< ::int16_t>(
+      6 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::Builder::setLatency( ::int16_t value) {
+  _builder.setDataField< ::int16_t>(
+      6 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint8_t QcomGnss::MeasurementReport::SV::Reader::getPredetectIntegration() const {
+  return _reader.getDataField< ::uint8_t>(
+      14 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint8_t QcomGnss::MeasurementReport::SV::Builder::getPredetectIntegration() {
+  return _builder.getDataField< ::uint8_t>(
+      14 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::Builder::setPredetectIntegration( ::uint8_t value) {
+  _builder.setDataField< ::uint8_t>(
+      14 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint16_t QcomGnss::MeasurementReport::SV::Reader::getPostdetections() const {
+  return _reader.getDataField< ::uint16_t>(
+      8 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint16_t QcomGnss::MeasurementReport::SV::Builder::getPostdetections() {
+  return _builder.getDataField< ::uint16_t>(
+      8 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::Builder::setPostdetections( ::uint16_t value) {
+  _builder.setDataField< ::uint16_t>(
+      8 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint32_t QcomGnss::MeasurementReport::SV::Reader::getUnfilteredMeasurementIntegral() const {
+  return _reader.getDataField< ::uint32_t>(
+      5 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint32_t QcomGnss::MeasurementReport::SV::Builder::getUnfilteredMeasurementIntegral() {
+  return _builder.getDataField< ::uint32_t>(
+      5 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::Builder::setUnfilteredMeasurementIntegral( ::uint32_t value) {
+  _builder.setDataField< ::uint32_t>(
+      5 * ::capnp::ELEMENTS, value);
+}
+
+inline float QcomGnss::MeasurementReport::SV::Reader::getUnfilteredMeasurementFraction() const {
+  return _reader.getDataField<float>(
+      6 * ::capnp::ELEMENTS);
+}
+
+inline float QcomGnss::MeasurementReport::SV::Builder::getUnfilteredMeasurementFraction() {
+  return _builder.getDataField<float>(
+      6 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::Builder::setUnfilteredMeasurementFraction(float value) {
+  _builder.setDataField<float>(
+      6 * ::capnp::ELEMENTS, value);
+}
+
+inline float QcomGnss::MeasurementReport::SV::Reader::getUnfilteredTimeUncertainty() const {
+  return _reader.getDataField<float>(
+      7 * ::capnp::ELEMENTS);
+}
+
+inline float QcomGnss::MeasurementReport::SV::Builder::getUnfilteredTimeUncertainty() {
+  return _builder.getDataField<float>(
+      7 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::Builder::setUnfilteredTimeUncertainty(float value) {
+  _builder.setDataField<float>(
+      7 * ::capnp::ELEMENTS, value);
+}
+
+inline float QcomGnss::MeasurementReport::SV::Reader::getUnfilteredSpeed() const {
+  return _reader.getDataField<float>(
+      8 * ::capnp::ELEMENTS);
+}
+
+inline float QcomGnss::MeasurementReport::SV::Builder::getUnfilteredSpeed() {
+  return _builder.getDataField<float>(
+      8 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::Builder::setUnfilteredSpeed(float value) {
+  _builder.setDataField<float>(
+      8 * ::capnp::ELEMENTS, value);
+}
+
+inline float QcomGnss::MeasurementReport::SV::Reader::getUnfilteredSpeedUncertainty() const {
+  return _reader.getDataField<float>(
+      9 * ::capnp::ELEMENTS);
+}
+
+inline float QcomGnss::MeasurementReport::SV::Builder::getUnfilteredSpeedUncertainty() {
+  return _builder.getDataField<float>(
+      9 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::Builder::setUnfilteredSpeedUncertainty(float value) {
+  _builder.setDataField<float>(
+      9 * ::capnp::ELEMENTS, value);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::Reader::hasMeasurementStatus() const {
+  return !_reader.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline bool QcomGnss::MeasurementReport::SV::Builder::hasMeasurementStatus() {
+  return !_builder.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline  ::cereal::QcomGnss::MeasurementReport::SV::MeasurementStatus::Reader QcomGnss::MeasurementReport::SV::Reader::getMeasurementStatus() const {
+  return ::capnp::_::PointerHelpers< ::cereal::QcomGnss::MeasurementReport::SV::MeasurementStatus>::get(
+      _reader.getPointerField(0 * ::capnp::POINTERS));
+}
+inline  ::cereal::QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder QcomGnss::MeasurementReport::SV::Builder::getMeasurementStatus() {
+  return ::capnp::_::PointerHelpers< ::cereal::QcomGnss::MeasurementReport::SV::MeasurementStatus>::get(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+#if !CAPNP_LITE
+inline  ::cereal::QcomGnss::MeasurementReport::SV::MeasurementStatus::Pipeline QcomGnss::MeasurementReport::SV::Pipeline::getMeasurementStatus() {
+  return  ::cereal::QcomGnss::MeasurementReport::SV::MeasurementStatus::Pipeline(_typeless.getPointerField(0));
+}
+#endif  // !CAPNP_LITE
+inline void QcomGnss::MeasurementReport::SV::Builder::setMeasurementStatus( ::cereal::QcomGnss::MeasurementReport::SV::MeasurementStatus::Reader value) {
+  ::capnp::_::PointerHelpers< ::cereal::QcomGnss::MeasurementReport::SV::MeasurementStatus>::set(
+      _builder.getPointerField(0 * ::capnp::POINTERS), value);
+}
+inline  ::cereal::QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder QcomGnss::MeasurementReport::SV::Builder::initMeasurementStatus() {
+  return ::capnp::_::PointerHelpers< ::cereal::QcomGnss::MeasurementReport::SV::MeasurementStatus>::init(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void QcomGnss::MeasurementReport::SV::Builder::adoptMeasurementStatus(
+    ::capnp::Orphan< ::cereal::QcomGnss::MeasurementReport::SV::MeasurementStatus>&& value) {
+  ::capnp::_::PointerHelpers< ::cereal::QcomGnss::MeasurementReport::SV::MeasurementStatus>::adopt(
+      _builder.getPointerField(0 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::cereal::QcomGnss::MeasurementReport::SV::MeasurementStatus> QcomGnss::MeasurementReport::SV::Builder::disownMeasurementStatus() {
+  return ::capnp::_::PointerHelpers< ::cereal::QcomGnss::MeasurementReport::SV::MeasurementStatus>::disown(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+
+inline  ::uint32_t QcomGnss::MeasurementReport::SV::Reader::getMultipathEstimate() const {
+  return _reader.getDataField< ::uint32_t>(
+      10 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint32_t QcomGnss::MeasurementReport::SV::Builder::getMultipathEstimate() {
+  return _builder.getDataField< ::uint32_t>(
+      10 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::Builder::setMultipathEstimate( ::uint32_t value) {
+  _builder.setDataField< ::uint32_t>(
+      10 * ::capnp::ELEMENTS, value);
+}
+
+inline float QcomGnss::MeasurementReport::SV::Reader::getAzimuth() const {
+  return _reader.getDataField<float>(
+      11 * ::capnp::ELEMENTS);
+}
+
+inline float QcomGnss::MeasurementReport::SV::Builder::getAzimuth() {
+  return _builder.getDataField<float>(
+      11 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::Builder::setAzimuth(float value) {
+  _builder.setDataField<float>(
+      11 * ::capnp::ELEMENTS, value);
+}
+
+inline float QcomGnss::MeasurementReport::SV::Reader::getElevation() const {
+  return _reader.getDataField<float>(
+      12 * ::capnp::ELEMENTS);
+}
+
+inline float QcomGnss::MeasurementReport::SV::Builder::getElevation() {
+  return _builder.getDataField<float>(
+      12 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::Builder::setElevation(float value) {
+  _builder.setDataField<float>(
+      12 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int32_t QcomGnss::MeasurementReport::SV::Reader::getCarrierPhaseCyclesIntegral() const {
+  return _reader.getDataField< ::int32_t>(
+      13 * ::capnp::ELEMENTS);
+}
+
+inline  ::int32_t QcomGnss::MeasurementReport::SV::Builder::getCarrierPhaseCyclesIntegral() {
+  return _builder.getDataField< ::int32_t>(
+      13 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::Builder::setCarrierPhaseCyclesIntegral( ::int32_t value) {
+  _builder.setDataField< ::int32_t>(
+      13 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint16_t QcomGnss::MeasurementReport::SV::Reader::getCarrierPhaseCyclesFraction() const {
+  return _reader.getDataField< ::uint16_t>(
+      9 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint16_t QcomGnss::MeasurementReport::SV::Builder::getCarrierPhaseCyclesFraction() {
+  return _builder.getDataField< ::uint16_t>(
+      9 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::Builder::setCarrierPhaseCyclesFraction( ::uint16_t value) {
+  _builder.setDataField< ::uint16_t>(
+      9 * ::capnp::ELEMENTS, value);
+}
+
+inline float QcomGnss::MeasurementReport::SV::Reader::getFineSpeed() const {
+  return _reader.getDataField<float>(
+      14 * ::capnp::ELEMENTS);
+}
+
+inline float QcomGnss::MeasurementReport::SV::Builder::getFineSpeed() {
+  return _builder.getDataField<float>(
+      14 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::Builder::setFineSpeed(float value) {
+  _builder.setDataField<float>(
+      14 * ::capnp::ELEMENTS, value);
+}
+
+inline float QcomGnss::MeasurementReport::SV::Reader::getFineSpeedUncertainty() const {
+  return _reader.getDataField<float>(
+      15 * ::capnp::ELEMENTS);
+}
+
+inline float QcomGnss::MeasurementReport::SV::Builder::getFineSpeedUncertainty() {
+  return _builder.getDataField<float>(
+      15 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::Builder::setFineSpeedUncertainty(float value) {
+  _builder.setDataField<float>(
+      15 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint8_t QcomGnss::MeasurementReport::SV::Reader::getCycleSlipCount() const {
+  return _reader.getDataField< ::uint8_t>(
+      15 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint8_t QcomGnss::MeasurementReport::SV::Builder::getCycleSlipCount() {
+  return _builder.getDataField< ::uint8_t>(
+      15 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::Builder::setCycleSlipCount( ::uint8_t value) {
+  _builder.setDataField< ::uint8_t>(
+      15 * ::capnp::ELEMENTS, value);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Reader::getSubMillisecondIsValid() const {
+  return _reader.getDataField<bool>(
+      0 * ::capnp::ELEMENTS);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::getSubMillisecondIsValid() {
+  return _builder.getDataField<bool>(
+      0 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::setSubMillisecondIsValid(bool value) {
+  _builder.setDataField<bool>(
+      0 * ::capnp::ELEMENTS, value);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Reader::getSubBitTimeIsKnown() const {
+  return _reader.getDataField<bool>(
+      1 * ::capnp::ELEMENTS);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::getSubBitTimeIsKnown() {
+  return _builder.getDataField<bool>(
+      1 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::setSubBitTimeIsKnown(bool value) {
+  _builder.setDataField<bool>(
+      1 * ::capnp::ELEMENTS, value);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Reader::getSatelliteTimeIsKnown() const {
+  return _reader.getDataField<bool>(
+      2 * ::capnp::ELEMENTS);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::getSatelliteTimeIsKnown() {
+  return _builder.getDataField<bool>(
+      2 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::setSatelliteTimeIsKnown(bool value) {
+  _builder.setDataField<bool>(
+      2 * ::capnp::ELEMENTS, value);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Reader::getBitEdgeConfirmedFromSignal() const {
+  return _reader.getDataField<bool>(
+      3 * ::capnp::ELEMENTS);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::getBitEdgeConfirmedFromSignal() {
+  return _builder.getDataField<bool>(
+      3 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::setBitEdgeConfirmedFromSignal(bool value) {
+  _builder.setDataField<bool>(
+      3 * ::capnp::ELEMENTS, value);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Reader::getMeasuredVelocity() const {
+  return _reader.getDataField<bool>(
+      4 * ::capnp::ELEMENTS);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::getMeasuredVelocity() {
+  return _builder.getDataField<bool>(
+      4 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::setMeasuredVelocity(bool value) {
+  _builder.setDataField<bool>(
+      4 * ::capnp::ELEMENTS, value);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Reader::getFineOrCoarseVelocity() const {
+  return _reader.getDataField<bool>(
+      5 * ::capnp::ELEMENTS);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::getFineOrCoarseVelocity() {
+  return _builder.getDataField<bool>(
+      5 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::setFineOrCoarseVelocity(bool value) {
+  _builder.setDataField<bool>(
+      5 * ::capnp::ELEMENTS, value);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Reader::getLockPointValid() const {
+  return _reader.getDataField<bool>(
+      6 * ::capnp::ELEMENTS);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::getLockPointValid() {
+  return _builder.getDataField<bool>(
+      6 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::setLockPointValid(bool value) {
+  _builder.setDataField<bool>(
+      6 * ::capnp::ELEMENTS, value);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Reader::getLockPointPositive() const {
+  return _reader.getDataField<bool>(
+      7 * ::capnp::ELEMENTS);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::getLockPointPositive() {
+  return _builder.getDataField<bool>(
+      7 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::setLockPointPositive(bool value) {
+  _builder.setDataField<bool>(
+      7 * ::capnp::ELEMENTS, value);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Reader::getLastUpdateFromDifference() const {
+  return _reader.getDataField<bool>(
+      8 * ::capnp::ELEMENTS);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::getLastUpdateFromDifference() {
+  return _builder.getDataField<bool>(
+      8 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::setLastUpdateFromDifference(bool value) {
+  _builder.setDataField<bool>(
+      8 * ::capnp::ELEMENTS, value);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Reader::getLastUpdateFromVelocityDifference() const {
+  return _reader.getDataField<bool>(
+      9 * ::capnp::ELEMENTS);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::getLastUpdateFromVelocityDifference() {
+  return _builder.getDataField<bool>(
+      9 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::setLastUpdateFromVelocityDifference(bool value) {
+  _builder.setDataField<bool>(
+      9 * ::capnp::ELEMENTS, value);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Reader::getStrongIndicationOfCrossCorelation() const {
+  return _reader.getDataField<bool>(
+      10 * ::capnp::ELEMENTS);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::getStrongIndicationOfCrossCorelation() {
+  return _builder.getDataField<bool>(
+      10 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::setStrongIndicationOfCrossCorelation(bool value) {
+  _builder.setDataField<bool>(
+      10 * ::capnp::ELEMENTS, value);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Reader::getTentativeMeasurement() const {
+  return _reader.getDataField<bool>(
+      11 * ::capnp::ELEMENTS);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::getTentativeMeasurement() {
+  return _builder.getDataField<bool>(
+      11 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::setTentativeMeasurement(bool value) {
+  _builder.setDataField<bool>(
+      11 * ::capnp::ELEMENTS, value);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Reader::getMeasurementNotUsable() const {
+  return _reader.getDataField<bool>(
+      12 * ::capnp::ELEMENTS);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::getMeasurementNotUsable() {
+  return _builder.getDataField<bool>(
+      12 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::setMeasurementNotUsable(bool value) {
+  _builder.setDataField<bool>(
+      12 * ::capnp::ELEMENTS, value);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Reader::getSirCheckIsNeeded() const {
+  return _reader.getDataField<bool>(
+      13 * ::capnp::ELEMENTS);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::getSirCheckIsNeeded() {
+  return _builder.getDataField<bool>(
+      13 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::setSirCheckIsNeeded(bool value) {
+  _builder.setDataField<bool>(
+      13 * ::capnp::ELEMENTS, value);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Reader::getProbationMode() const {
+  return _reader.getDataField<bool>(
+      14 * ::capnp::ELEMENTS);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::getProbationMode() {
+  return _builder.getDataField<bool>(
+      14 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::setProbationMode(bool value) {
+  _builder.setDataField<bool>(
+      14 * ::capnp::ELEMENTS, value);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Reader::getGlonassMeanderBitEdgeValid() const {
+  return _reader.getDataField<bool>(
+      15 * ::capnp::ELEMENTS);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::getGlonassMeanderBitEdgeValid() {
+  return _builder.getDataField<bool>(
+      15 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::setGlonassMeanderBitEdgeValid(bool value) {
+  _builder.setDataField<bool>(
+      15 * ::capnp::ELEMENTS, value);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Reader::getGlonassTimeMarkValid() const {
+  return _reader.getDataField<bool>(
+      16 * ::capnp::ELEMENTS);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::getGlonassTimeMarkValid() {
+  return _builder.getDataField<bool>(
+      16 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::setGlonassTimeMarkValid(bool value) {
+  _builder.setDataField<bool>(
+      16 * ::capnp::ELEMENTS, value);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Reader::getGpsRoundRobinRxDiversity() const {
+  return _reader.getDataField<bool>(
+      17 * ::capnp::ELEMENTS);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::getGpsRoundRobinRxDiversity() {
+  return _builder.getDataField<bool>(
+      17 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::setGpsRoundRobinRxDiversity(bool value) {
+  _builder.setDataField<bool>(
+      17 * ::capnp::ELEMENTS, value);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Reader::getGpsRxDiversity() const {
+  return _reader.getDataField<bool>(
+      18 * ::capnp::ELEMENTS);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::getGpsRxDiversity() {
+  return _builder.getDataField<bool>(
+      18 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::setGpsRxDiversity(bool value) {
+  _builder.setDataField<bool>(
+      18 * ::capnp::ELEMENTS, value);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Reader::getGpsLowBandwidthRxDiversityCombined() const {
+  return _reader.getDataField<bool>(
+      19 * ::capnp::ELEMENTS);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::getGpsLowBandwidthRxDiversityCombined() {
+  return _builder.getDataField<bool>(
+      19 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::setGpsLowBandwidthRxDiversityCombined(bool value) {
+  _builder.setDataField<bool>(
+      19 * ::capnp::ELEMENTS, value);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Reader::getGpsHighBandwidthNu4() const {
+  return _reader.getDataField<bool>(
+      20 * ::capnp::ELEMENTS);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::getGpsHighBandwidthNu4() {
+  return _builder.getDataField<bool>(
+      20 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::setGpsHighBandwidthNu4(bool value) {
+  _builder.setDataField<bool>(
+      20 * ::capnp::ELEMENTS, value);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Reader::getGpsHighBandwidthNu8() const {
+  return _reader.getDataField<bool>(
+      21 * ::capnp::ELEMENTS);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::getGpsHighBandwidthNu8() {
+  return _builder.getDataField<bool>(
+      21 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::setGpsHighBandwidthNu8(bool value) {
+  _builder.setDataField<bool>(
+      21 * ::capnp::ELEMENTS, value);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Reader::getGpsHighBandwidthUniform() const {
+  return _reader.getDataField<bool>(
+      22 * ::capnp::ELEMENTS);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::getGpsHighBandwidthUniform() {
+  return _builder.getDataField<bool>(
+      22 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::setGpsHighBandwidthUniform(bool value) {
+  _builder.setDataField<bool>(
+      22 * ::capnp::ELEMENTS, value);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Reader::getGpsMultipathIndicator() const {
+  return _reader.getDataField<bool>(
+      23 * ::capnp::ELEMENTS);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::getGpsMultipathIndicator() {
+  return _builder.getDataField<bool>(
+      23 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::setGpsMultipathIndicator(bool value) {
+  _builder.setDataField<bool>(
+      23 * ::capnp::ELEMENTS, value);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Reader::getImdJammingIndicator() const {
+  return _reader.getDataField<bool>(
+      24 * ::capnp::ELEMENTS);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::getImdJammingIndicator() {
+  return _builder.getDataField<bool>(
+      24 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::setImdJammingIndicator(bool value) {
+  _builder.setDataField<bool>(
+      24 * ::capnp::ELEMENTS, value);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Reader::getLteB13TxJammingIndicator() const {
+  return _reader.getDataField<bool>(
+      25 * ::capnp::ELEMENTS);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::getLteB13TxJammingIndicator() {
+  return _builder.getDataField<bool>(
+      25 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::setLteB13TxJammingIndicator(bool value) {
+  _builder.setDataField<bool>(
+      25 * ::capnp::ELEMENTS, value);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Reader::getFreshMeasurementIndicator() const {
+  return _reader.getDataField<bool>(
+      26 * ::capnp::ELEMENTS);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::getFreshMeasurementIndicator() {
+  return _builder.getDataField<bool>(
+      26 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::setFreshMeasurementIndicator(bool value) {
+  _builder.setDataField<bool>(
+      26 * ::capnp::ELEMENTS, value);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Reader::getMultipathEstimateIsValid() const {
+  return _reader.getDataField<bool>(
+      27 * ::capnp::ELEMENTS);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::getMultipathEstimateIsValid() {
+  return _builder.getDataField<bool>(
+      27 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::setMultipathEstimateIsValid(bool value) {
+  _builder.setDataField<bool>(
+      27 * ::capnp::ELEMENTS, value);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Reader::getDirectionIsValid() const {
+  return _reader.getDataField<bool>(
+      28 * ::capnp::ELEMENTS);
+}
+
+inline bool QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::getDirectionIsValid() {
+  return _builder.getDataField<bool>(
+      28 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::MeasurementReport::SV::MeasurementStatus::Builder::setDirectionIsValid(bool value) {
+  _builder.setDataField<bool>(
+      28 * ::capnp::ELEMENTS, value);
+}
+
+inline bool QcomGnss::ClockReport::Reader::getHasFCount() const {
+  return _reader.getDataField<bool>(
+      0 * ::capnp::ELEMENTS);
+}
+
+inline bool QcomGnss::ClockReport::Builder::getHasFCount() {
+  return _builder.getDataField<bool>(
+      0 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setHasFCount(bool value) {
+  _builder.setDataField<bool>(
+      0 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint32_t QcomGnss::ClockReport::Reader::getFCount() const {
+  return _reader.getDataField< ::uint32_t>(
+      1 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint32_t QcomGnss::ClockReport::Builder::getFCount() {
+  return _builder.getDataField< ::uint32_t>(
+      1 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setFCount( ::uint32_t value) {
+  _builder.setDataField< ::uint32_t>(
+      1 * ::capnp::ELEMENTS, value);
+}
+
+inline bool QcomGnss::ClockReport::Reader::getHasGpsWeekNumber() const {
+  return _reader.getDataField<bool>(
+      1 * ::capnp::ELEMENTS);
+}
+
+inline bool QcomGnss::ClockReport::Builder::getHasGpsWeekNumber() {
+  return _builder.getDataField<bool>(
+      1 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setHasGpsWeekNumber(bool value) {
+  _builder.setDataField<bool>(
+      1 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint16_t QcomGnss::ClockReport::Reader::getGpsWeekNumber() const {
+  return _reader.getDataField< ::uint16_t>(
+      1 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint16_t QcomGnss::ClockReport::Builder::getGpsWeekNumber() {
+  return _builder.getDataField< ::uint16_t>(
+      1 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setGpsWeekNumber( ::uint16_t value) {
+  _builder.setDataField< ::uint16_t>(
+      1 * ::capnp::ELEMENTS, value);
+}
+
+inline bool QcomGnss::ClockReport::Reader::getHasGpsMilliseconds() const {
+  return _reader.getDataField<bool>(
+      2 * ::capnp::ELEMENTS);
+}
+
+inline bool QcomGnss::ClockReport::Builder::getHasGpsMilliseconds() {
+  return _builder.getDataField<bool>(
+      2 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setHasGpsMilliseconds(bool value) {
+  _builder.setDataField<bool>(
+      2 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint32_t QcomGnss::ClockReport::Reader::getGpsMilliseconds() const {
+  return _reader.getDataField< ::uint32_t>(
+      2 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint32_t QcomGnss::ClockReport::Builder::getGpsMilliseconds() {
+  return _builder.getDataField< ::uint32_t>(
+      2 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setGpsMilliseconds( ::uint32_t value) {
+  _builder.setDataField< ::uint32_t>(
+      2 * ::capnp::ELEMENTS, value);
+}
+
+inline float QcomGnss::ClockReport::Reader::getGpsTimeBias() const {
+  return _reader.getDataField<float>(
+      3 * ::capnp::ELEMENTS);
+}
+
+inline float QcomGnss::ClockReport::Builder::getGpsTimeBias() {
+  return _builder.getDataField<float>(
+      3 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setGpsTimeBias(float value) {
+  _builder.setDataField<float>(
+      3 * ::capnp::ELEMENTS, value);
+}
+
+inline float QcomGnss::ClockReport::Reader::getGpsClockTimeUncertainty() const {
+  return _reader.getDataField<float>(
+      4 * ::capnp::ELEMENTS);
+}
+
+inline float QcomGnss::ClockReport::Builder::getGpsClockTimeUncertainty() {
+  return _builder.getDataField<float>(
+      4 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setGpsClockTimeUncertainty(float value) {
+  _builder.setDataField<float>(
+      4 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint8_t QcomGnss::ClockReport::Reader::getGpsClockSource() const {
+  return _reader.getDataField< ::uint8_t>(
+      1 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint8_t QcomGnss::ClockReport::Builder::getGpsClockSource() {
+  return _builder.getDataField< ::uint8_t>(
+      1 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setGpsClockSource( ::uint8_t value) {
+  _builder.setDataField< ::uint8_t>(
+      1 * ::capnp::ELEMENTS, value);
+}
+
+inline bool QcomGnss::ClockReport::Reader::getHasGlonassYear() const {
+  return _reader.getDataField<bool>(
+      3 * ::capnp::ELEMENTS);
+}
+
+inline bool QcomGnss::ClockReport::Builder::getHasGlonassYear() {
+  return _builder.getDataField<bool>(
+      3 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setHasGlonassYear(bool value) {
+  _builder.setDataField<bool>(
+      3 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint8_t QcomGnss::ClockReport::Reader::getGlonassYear() const {
+  return _reader.getDataField< ::uint8_t>(
+      20 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint8_t QcomGnss::ClockReport::Builder::getGlonassYear() {
+  return _builder.getDataField< ::uint8_t>(
+      20 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setGlonassYear( ::uint8_t value) {
+  _builder.setDataField< ::uint8_t>(
+      20 * ::capnp::ELEMENTS, value);
+}
+
+inline bool QcomGnss::ClockReport::Reader::getHasGlonassDay() const {
+  return _reader.getDataField<bool>(
+      4 * ::capnp::ELEMENTS);
+}
+
+inline bool QcomGnss::ClockReport::Builder::getHasGlonassDay() {
+  return _builder.getDataField<bool>(
+      4 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setHasGlonassDay(bool value) {
+  _builder.setDataField<bool>(
+      4 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint16_t QcomGnss::ClockReport::Reader::getGlonassDay() const {
+  return _reader.getDataField< ::uint16_t>(
+      11 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint16_t QcomGnss::ClockReport::Builder::getGlonassDay() {
+  return _builder.getDataField< ::uint16_t>(
+      11 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setGlonassDay( ::uint16_t value) {
+  _builder.setDataField< ::uint16_t>(
+      11 * ::capnp::ELEMENTS, value);
+}
+
+inline bool QcomGnss::ClockReport::Reader::getHasGlonassMilliseconds() const {
+  return _reader.getDataField<bool>(
+      5 * ::capnp::ELEMENTS);
+}
+
+inline bool QcomGnss::ClockReport::Builder::getHasGlonassMilliseconds() {
+  return _builder.getDataField<bool>(
+      5 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setHasGlonassMilliseconds(bool value) {
+  _builder.setDataField<bool>(
+      5 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint32_t QcomGnss::ClockReport::Reader::getGlonassMilliseconds() const {
+  return _reader.getDataField< ::uint32_t>(
+      6 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint32_t QcomGnss::ClockReport::Builder::getGlonassMilliseconds() {
+  return _builder.getDataField< ::uint32_t>(
+      6 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setGlonassMilliseconds( ::uint32_t value) {
+  _builder.setDataField< ::uint32_t>(
+      6 * ::capnp::ELEMENTS, value);
+}
+
+inline float QcomGnss::ClockReport::Reader::getGlonassTimeBias() const {
+  return _reader.getDataField<float>(
+      7 * ::capnp::ELEMENTS);
+}
+
+inline float QcomGnss::ClockReport::Builder::getGlonassTimeBias() {
+  return _builder.getDataField<float>(
+      7 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setGlonassTimeBias(float value) {
+  _builder.setDataField<float>(
+      7 * ::capnp::ELEMENTS, value);
+}
+
+inline float QcomGnss::ClockReport::Reader::getGlonassClockTimeUncertainty() const {
+  return _reader.getDataField<float>(
+      8 * ::capnp::ELEMENTS);
+}
+
+inline float QcomGnss::ClockReport::Builder::getGlonassClockTimeUncertainty() {
+  return _builder.getDataField<float>(
+      8 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setGlonassClockTimeUncertainty(float value) {
+  _builder.setDataField<float>(
+      8 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint8_t QcomGnss::ClockReport::Reader::getGlonassClockSource() const {
+  return _reader.getDataField< ::uint8_t>(
+      21 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint8_t QcomGnss::ClockReport::Builder::getGlonassClockSource() {
+  return _builder.getDataField< ::uint8_t>(
+      21 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setGlonassClockSource( ::uint8_t value) {
+  _builder.setDataField< ::uint8_t>(
+      21 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint16_t QcomGnss::ClockReport::Reader::getBdsWeek() const {
+  return _reader.getDataField< ::uint16_t>(
+      18 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint16_t QcomGnss::ClockReport::Builder::getBdsWeek() {
+  return _builder.getDataField< ::uint16_t>(
+      18 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setBdsWeek( ::uint16_t value) {
+  _builder.setDataField< ::uint16_t>(
+      18 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint32_t QcomGnss::ClockReport::Reader::getBdsMilliseconds() const {
+  return _reader.getDataField< ::uint32_t>(
+      10 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint32_t QcomGnss::ClockReport::Builder::getBdsMilliseconds() {
+  return _builder.getDataField< ::uint32_t>(
+      10 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setBdsMilliseconds( ::uint32_t value) {
+  _builder.setDataField< ::uint32_t>(
+      10 * ::capnp::ELEMENTS, value);
+}
+
+inline float QcomGnss::ClockReport::Reader::getBdsTimeBias() const {
+  return _reader.getDataField<float>(
+      11 * ::capnp::ELEMENTS);
+}
+
+inline float QcomGnss::ClockReport::Builder::getBdsTimeBias() {
+  return _builder.getDataField<float>(
+      11 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setBdsTimeBias(float value) {
+  _builder.setDataField<float>(
+      11 * ::capnp::ELEMENTS, value);
+}
+
+inline float QcomGnss::ClockReport::Reader::getBdsClockTimeUncertainty() const {
+  return _reader.getDataField<float>(
+      12 * ::capnp::ELEMENTS);
+}
+
+inline float QcomGnss::ClockReport::Builder::getBdsClockTimeUncertainty() {
+  return _builder.getDataField<float>(
+      12 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setBdsClockTimeUncertainty(float value) {
+  _builder.setDataField<float>(
+      12 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint8_t QcomGnss::ClockReport::Reader::getBdsClockSource() const {
+  return _reader.getDataField< ::uint8_t>(
+      38 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint8_t QcomGnss::ClockReport::Builder::getBdsClockSource() {
+  return _builder.getDataField< ::uint8_t>(
+      38 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setBdsClockSource( ::uint8_t value) {
+  _builder.setDataField< ::uint8_t>(
+      38 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint16_t QcomGnss::ClockReport::Reader::getGalWeek() const {
+  return _reader.getDataField< ::uint16_t>(
+      26 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint16_t QcomGnss::ClockReport::Builder::getGalWeek() {
+  return _builder.getDataField< ::uint16_t>(
+      26 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setGalWeek( ::uint16_t value) {
+  _builder.setDataField< ::uint16_t>(
+      26 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint32_t QcomGnss::ClockReport::Reader::getGalMilliseconds() const {
+  return _reader.getDataField< ::uint32_t>(
+      14 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint32_t QcomGnss::ClockReport::Builder::getGalMilliseconds() {
+  return _builder.getDataField< ::uint32_t>(
+      14 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setGalMilliseconds( ::uint32_t value) {
+  _builder.setDataField< ::uint32_t>(
+      14 * ::capnp::ELEMENTS, value);
+}
+
+inline float QcomGnss::ClockReport::Reader::getGalTimeBias() const {
+  return _reader.getDataField<float>(
+      15 * ::capnp::ELEMENTS);
+}
+
+inline float QcomGnss::ClockReport::Builder::getGalTimeBias() {
+  return _builder.getDataField<float>(
+      15 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setGalTimeBias(float value) {
+  _builder.setDataField<float>(
+      15 * ::capnp::ELEMENTS, value);
+}
+
+inline float QcomGnss::ClockReport::Reader::getGalClockTimeUncertainty() const {
+  return _reader.getDataField<float>(
+      16 * ::capnp::ELEMENTS);
+}
+
+inline float QcomGnss::ClockReport::Builder::getGalClockTimeUncertainty() {
+  return _builder.getDataField<float>(
+      16 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setGalClockTimeUncertainty(float value) {
+  _builder.setDataField<float>(
+      16 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint8_t QcomGnss::ClockReport::Reader::getGalClockSource() const {
+  return _reader.getDataField< ::uint8_t>(
+      39 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint8_t QcomGnss::ClockReport::Builder::getGalClockSource() {
+  return _builder.getDataField< ::uint8_t>(
+      39 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setGalClockSource( ::uint8_t value) {
+  _builder.setDataField< ::uint8_t>(
+      39 * ::capnp::ELEMENTS, value);
+}
+
+inline float QcomGnss::ClockReport::Reader::getClockFrequencyBias() const {
+  return _reader.getDataField<float>(
+      17 * ::capnp::ELEMENTS);
+}
+
+inline float QcomGnss::ClockReport::Builder::getClockFrequencyBias() {
+  return _builder.getDataField<float>(
+      17 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setClockFrequencyBias(float value) {
+  _builder.setDataField<float>(
+      17 * ::capnp::ELEMENTS, value);
+}
+
+inline float QcomGnss::ClockReport::Reader::getClockFrequencyUncertainty() const {
+  return _reader.getDataField<float>(
+      18 * ::capnp::ELEMENTS);
+}
+
+inline float QcomGnss::ClockReport::Builder::getClockFrequencyUncertainty() {
+  return _builder.getDataField<float>(
+      18 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setClockFrequencyUncertainty(float value) {
+  _builder.setDataField<float>(
+      18 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint8_t QcomGnss::ClockReport::Reader::getFrequencySource() const {
+  return _reader.getDataField< ::uint8_t>(
+      54 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint8_t QcomGnss::ClockReport::Builder::getFrequencySource() {
+  return _builder.getDataField< ::uint8_t>(
+      54 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setFrequencySource( ::uint8_t value) {
+  _builder.setDataField< ::uint8_t>(
+      54 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint8_t QcomGnss::ClockReport::Reader::getGpsLeapSeconds() const {
+  return _reader.getDataField< ::uint8_t>(
+      55 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint8_t QcomGnss::ClockReport::Builder::getGpsLeapSeconds() {
+  return _builder.getDataField< ::uint8_t>(
+      55 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setGpsLeapSeconds( ::uint8_t value) {
+  _builder.setDataField< ::uint8_t>(
+      55 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint8_t QcomGnss::ClockReport::Reader::getGpsLeapSecondsUncertainty() const {
+  return _reader.getDataField< ::uint8_t>(
+      76 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint8_t QcomGnss::ClockReport::Builder::getGpsLeapSecondsUncertainty() {
+  return _builder.getDataField< ::uint8_t>(
+      76 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setGpsLeapSecondsUncertainty( ::uint8_t value) {
+  _builder.setDataField< ::uint8_t>(
+      76 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint8_t QcomGnss::ClockReport::Reader::getGpsLeapSecondsSource() const {
+  return _reader.getDataField< ::uint8_t>(
+      77 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint8_t QcomGnss::ClockReport::Builder::getGpsLeapSecondsSource() {
+  return _builder.getDataField< ::uint8_t>(
+      77 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setGpsLeapSecondsSource( ::uint8_t value) {
+  _builder.setDataField< ::uint8_t>(
+      77 * ::capnp::ELEMENTS, value);
+}
+
+inline float QcomGnss::ClockReport::Reader::getGpsToGlonassTimeBiasMilliseconds() const {
+  return _reader.getDataField<float>(
+      20 * ::capnp::ELEMENTS);
+}
+
+inline float QcomGnss::ClockReport::Builder::getGpsToGlonassTimeBiasMilliseconds() {
+  return _builder.getDataField<float>(
+      20 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setGpsToGlonassTimeBiasMilliseconds(float value) {
+  _builder.setDataField<float>(
+      20 * ::capnp::ELEMENTS, value);
+}
+
+inline float QcomGnss::ClockReport::Reader::getGpsToGlonassTimeBiasMillisecondsUncertainty() const {
+  return _reader.getDataField<float>(
+      21 * ::capnp::ELEMENTS);
+}
+
+inline float QcomGnss::ClockReport::Builder::getGpsToGlonassTimeBiasMillisecondsUncertainty() {
+  return _builder.getDataField<float>(
+      21 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setGpsToGlonassTimeBiasMillisecondsUncertainty(float value) {
+  _builder.setDataField<float>(
+      21 * ::capnp::ELEMENTS, value);
+}
+
+inline float QcomGnss::ClockReport::Reader::getGpsToBdsTimeBiasMilliseconds() const {
+  return _reader.getDataField<float>(
+      22 * ::capnp::ELEMENTS);
+}
+
+inline float QcomGnss::ClockReport::Builder::getGpsToBdsTimeBiasMilliseconds() {
+  return _builder.getDataField<float>(
+      22 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setGpsToBdsTimeBiasMilliseconds(float value) {
+  _builder.setDataField<float>(
+      22 * ::capnp::ELEMENTS, value);
+}
+
+inline float QcomGnss::ClockReport::Reader::getGpsToBdsTimeBiasMillisecondsUncertainty() const {
+  return _reader.getDataField<float>(
+      23 * ::capnp::ELEMENTS);
+}
+
+inline float QcomGnss::ClockReport::Builder::getGpsToBdsTimeBiasMillisecondsUncertainty() {
+  return _builder.getDataField<float>(
+      23 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setGpsToBdsTimeBiasMillisecondsUncertainty(float value) {
+  _builder.setDataField<float>(
+      23 * ::capnp::ELEMENTS, value);
+}
+
+inline float QcomGnss::ClockReport::Reader::getBdsToGloTimeBiasMilliseconds() const {
+  return _reader.getDataField<float>(
+      24 * ::capnp::ELEMENTS);
+}
+
+inline float QcomGnss::ClockReport::Builder::getBdsToGloTimeBiasMilliseconds() {
+  return _builder.getDataField<float>(
+      24 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setBdsToGloTimeBiasMilliseconds(float value) {
+  _builder.setDataField<float>(
+      24 * ::capnp::ELEMENTS, value);
+}
+
+inline float QcomGnss::ClockReport::Reader::getBdsToGloTimeBiasMillisecondsUncertainty() const {
+  return _reader.getDataField<float>(
+      25 * ::capnp::ELEMENTS);
+}
+
+inline float QcomGnss::ClockReport::Builder::getBdsToGloTimeBiasMillisecondsUncertainty() {
+  return _builder.getDataField<float>(
+      25 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setBdsToGloTimeBiasMillisecondsUncertainty(float value) {
+  _builder.setDataField<float>(
+      25 * ::capnp::ELEMENTS, value);
+}
+
+inline float QcomGnss::ClockReport::Reader::getGpsToGalTimeBiasMilliseconds() const {
+  return _reader.getDataField<float>(
+      26 * ::capnp::ELEMENTS);
+}
+
+inline float QcomGnss::ClockReport::Builder::getGpsToGalTimeBiasMilliseconds() {
+  return _builder.getDataField<float>(
+      26 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setGpsToGalTimeBiasMilliseconds(float value) {
+  _builder.setDataField<float>(
+      26 * ::capnp::ELEMENTS, value);
+}
+
+inline float QcomGnss::ClockReport::Reader::getGpsToGalTimeBiasMillisecondsUncertainty() const {
+  return _reader.getDataField<float>(
+      27 * ::capnp::ELEMENTS);
+}
+
+inline float QcomGnss::ClockReport::Builder::getGpsToGalTimeBiasMillisecondsUncertainty() {
+  return _builder.getDataField<float>(
+      27 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setGpsToGalTimeBiasMillisecondsUncertainty(float value) {
+  _builder.setDataField<float>(
+      27 * ::capnp::ELEMENTS, value);
+}
+
+inline float QcomGnss::ClockReport::Reader::getGalToGloTimeBiasMilliseconds() const {
+  return _reader.getDataField<float>(
+      28 * ::capnp::ELEMENTS);
+}
+
+inline float QcomGnss::ClockReport::Builder::getGalToGloTimeBiasMilliseconds() {
+  return _builder.getDataField<float>(
+      28 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setGalToGloTimeBiasMilliseconds(float value) {
+  _builder.setDataField<float>(
+      28 * ::capnp::ELEMENTS, value);
+}
+
+inline float QcomGnss::ClockReport::Reader::getGalToGloTimeBiasMillisecondsUncertainty() const {
+  return _reader.getDataField<float>(
+      29 * ::capnp::ELEMENTS);
+}
+
+inline float QcomGnss::ClockReport::Builder::getGalToGloTimeBiasMillisecondsUncertainty() {
+  return _builder.getDataField<float>(
+      29 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setGalToGloTimeBiasMillisecondsUncertainty(float value) {
+  _builder.setDataField<float>(
+      29 * ::capnp::ELEMENTS, value);
+}
+
+inline float QcomGnss::ClockReport::Reader::getGalToBdsTimeBiasMilliseconds() const {
+  return _reader.getDataField<float>(
+      30 * ::capnp::ELEMENTS);
+}
+
+inline float QcomGnss::ClockReport::Builder::getGalToBdsTimeBiasMilliseconds() {
+  return _builder.getDataField<float>(
+      30 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setGalToBdsTimeBiasMilliseconds(float value) {
+  _builder.setDataField<float>(
+      30 * ::capnp::ELEMENTS, value);
+}
+
+inline float QcomGnss::ClockReport::Reader::getGalToBdsTimeBiasMillisecondsUncertainty() const {
+  return _reader.getDataField<float>(
+      31 * ::capnp::ELEMENTS);
+}
+
+inline float QcomGnss::ClockReport::Builder::getGalToBdsTimeBiasMillisecondsUncertainty() {
+  return _builder.getDataField<float>(
+      31 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setGalToBdsTimeBiasMillisecondsUncertainty(float value) {
+  _builder.setDataField<float>(
+      31 * ::capnp::ELEMENTS, value);
+}
+
+inline bool QcomGnss::ClockReport::Reader::getHasRtcTime() const {
+  return _reader.getDataField<bool>(
+      6 * ::capnp::ELEMENTS);
+}
+
+inline bool QcomGnss::ClockReport::Builder::getHasRtcTime() {
+  return _builder.getDataField<bool>(
+      6 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setHasRtcTime(bool value) {
+  _builder.setDataField<bool>(
+      6 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint32_t QcomGnss::ClockReport::Reader::getSystemRtcTime() const {
+  return _reader.getDataField< ::uint32_t>(
+      32 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint32_t QcomGnss::ClockReport::Builder::getSystemRtcTime() {
+  return _builder.getDataField< ::uint32_t>(
+      32 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setSystemRtcTime( ::uint32_t value) {
+  _builder.setDataField< ::uint32_t>(
+      32 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint32_t QcomGnss::ClockReport::Reader::getFCountOffset() const {
+  return _reader.getDataField< ::uint32_t>(
+      33 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint32_t QcomGnss::ClockReport::Builder::getFCountOffset() {
+  return _builder.getDataField< ::uint32_t>(
+      33 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setFCountOffset( ::uint32_t value) {
+  _builder.setDataField< ::uint32_t>(
+      33 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint32_t QcomGnss::ClockReport::Reader::getLpmRtcCount() const {
+  return _reader.getDataField< ::uint32_t>(
+      34 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint32_t QcomGnss::ClockReport::Builder::getLpmRtcCount() {
+  return _builder.getDataField< ::uint32_t>(
+      34 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setLpmRtcCount( ::uint32_t value) {
+  _builder.setDataField< ::uint32_t>(
+      34 * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint32_t QcomGnss::ClockReport::Reader::getClockResets() const {
+  return _reader.getDataField< ::uint32_t>(
+      35 * ::capnp::ELEMENTS);
+}
+
+inline  ::uint32_t QcomGnss::ClockReport::Builder::getClockResets() {
+  return _builder.getDataField< ::uint32_t>(
+      35 * ::capnp::ELEMENTS);
+}
+inline void QcomGnss::ClockReport::Builder::setClockResets( ::uint32_t value) {
+  _builder.setDataField< ::uint32_t>(
+      35 * ::capnp::ELEMENTS, value);
 }
 
 inline  ::cereal::Event::Which Event::Reader::which() const {
@@ -7806,6 +17466,422 @@ inline ::capnp::Orphan< ::cereal::CarControl> Event::Builder::disownCarControl()
   KJ_IREQUIRE(which() == Event::CAR_CONTROL,
               "Must check which() before get()ing a union member.");
   return ::capnp::_::PointerHelpers< ::cereal::CarControl>::disown(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+
+inline bool Event::Reader::isPlan() const {
+  return which() == Event::PLAN;
+}
+inline bool Event::Builder::isPlan() {
+  return which() == Event::PLAN;
+}
+inline bool Event::Reader::hasPlan() const {
+  if (which() != Event::PLAN) return false;
+  return !_reader.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline bool Event::Builder::hasPlan() {
+  if (which() != Event::PLAN) return false;
+  return !_builder.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline  ::cereal::Plan::Reader Event::Reader::getPlan() const {
+  KJ_IREQUIRE(which() == Event::PLAN,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::cereal::Plan>::get(
+      _reader.getPointerField(0 * ::capnp::POINTERS));
+}
+inline  ::cereal::Plan::Builder Event::Builder::getPlan() {
+  KJ_IREQUIRE(which() == Event::PLAN,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::cereal::Plan>::get(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void Event::Builder::setPlan( ::cereal::Plan::Reader value) {
+  _builder.setDataField<Event::Which>(
+      4 * ::capnp::ELEMENTS, Event::PLAN);
+  ::capnp::_::PointerHelpers< ::cereal::Plan>::set(
+      _builder.getPointerField(0 * ::capnp::POINTERS), value);
+}
+inline  ::cereal::Plan::Builder Event::Builder::initPlan() {
+  _builder.setDataField<Event::Which>(
+      4 * ::capnp::ELEMENTS, Event::PLAN);
+  return ::capnp::_::PointerHelpers< ::cereal::Plan>::init(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void Event::Builder::adoptPlan(
+    ::capnp::Orphan< ::cereal::Plan>&& value) {
+  _builder.setDataField<Event::Which>(
+      4 * ::capnp::ELEMENTS, Event::PLAN);
+  ::capnp::_::PointerHelpers< ::cereal::Plan>::adopt(
+      _builder.getPointerField(0 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::cereal::Plan> Event::Builder::disownPlan() {
+  KJ_IREQUIRE(which() == Event::PLAN,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::cereal::Plan>::disown(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+
+inline bool Event::Reader::isLiveLocation() const {
+  return which() == Event::LIVE_LOCATION;
+}
+inline bool Event::Builder::isLiveLocation() {
+  return which() == Event::LIVE_LOCATION;
+}
+inline bool Event::Reader::hasLiveLocation() const {
+  if (which() != Event::LIVE_LOCATION) return false;
+  return !_reader.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline bool Event::Builder::hasLiveLocation() {
+  if (which() != Event::LIVE_LOCATION) return false;
+  return !_builder.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline  ::cereal::LiveLocationData::Reader Event::Reader::getLiveLocation() const {
+  KJ_IREQUIRE(which() == Event::LIVE_LOCATION,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::cereal::LiveLocationData>::get(
+      _reader.getPointerField(0 * ::capnp::POINTERS));
+}
+inline  ::cereal::LiveLocationData::Builder Event::Builder::getLiveLocation() {
+  KJ_IREQUIRE(which() == Event::LIVE_LOCATION,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::cereal::LiveLocationData>::get(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void Event::Builder::setLiveLocation( ::cereal::LiveLocationData::Reader value) {
+  _builder.setDataField<Event::Which>(
+      4 * ::capnp::ELEMENTS, Event::LIVE_LOCATION);
+  ::capnp::_::PointerHelpers< ::cereal::LiveLocationData>::set(
+      _builder.getPointerField(0 * ::capnp::POINTERS), value);
+}
+inline  ::cereal::LiveLocationData::Builder Event::Builder::initLiveLocation() {
+  _builder.setDataField<Event::Which>(
+      4 * ::capnp::ELEMENTS, Event::LIVE_LOCATION);
+  return ::capnp::_::PointerHelpers< ::cereal::LiveLocationData>::init(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void Event::Builder::adoptLiveLocation(
+    ::capnp::Orphan< ::cereal::LiveLocationData>&& value) {
+  _builder.setDataField<Event::Which>(
+      4 * ::capnp::ELEMENTS, Event::LIVE_LOCATION);
+  ::capnp::_::PointerHelpers< ::cereal::LiveLocationData>::adopt(
+      _builder.getPointerField(0 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::cereal::LiveLocationData> Event::Builder::disownLiveLocation() {
+  KJ_IREQUIRE(which() == Event::LIVE_LOCATION,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::cereal::LiveLocationData>::disown(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+
+inline bool Event::Reader::isEthernetData() const {
+  return which() == Event::ETHERNET_DATA;
+}
+inline bool Event::Builder::isEthernetData() {
+  return which() == Event::ETHERNET_DATA;
+}
+inline bool Event::Reader::hasEthernetData() const {
+  if (which() != Event::ETHERNET_DATA) return false;
+  return !_reader.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline bool Event::Builder::hasEthernetData() {
+  if (which() != Event::ETHERNET_DATA) return false;
+  return !_builder.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::List< ::cereal::EthernetPacket>::Reader Event::Reader::getEthernetData() const {
+  KJ_IREQUIRE(which() == Event::ETHERNET_DATA,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::EthernetPacket>>::get(
+      _reader.getPointerField(0 * ::capnp::POINTERS));
+}
+inline  ::capnp::List< ::cereal::EthernetPacket>::Builder Event::Builder::getEthernetData() {
+  KJ_IREQUIRE(which() == Event::ETHERNET_DATA,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::EthernetPacket>>::get(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void Event::Builder::setEthernetData( ::capnp::List< ::cereal::EthernetPacket>::Reader value) {
+  _builder.setDataField<Event::Which>(
+      4 * ::capnp::ELEMENTS, Event::ETHERNET_DATA);
+  ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::EthernetPacket>>::set(
+      _builder.getPointerField(0 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::List< ::cereal::EthernetPacket>::Builder Event::Builder::initEthernetData(unsigned int size) {
+  _builder.setDataField<Event::Which>(
+      4 * ::capnp::ELEMENTS, Event::ETHERNET_DATA);
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::EthernetPacket>>::init(
+      _builder.getPointerField(0 * ::capnp::POINTERS), size);
+}
+inline void Event::Builder::adoptEthernetData(
+    ::capnp::Orphan< ::capnp::List< ::cereal::EthernetPacket>>&& value) {
+  _builder.setDataField<Event::Which>(
+      4 * ::capnp::ELEMENTS, Event::ETHERNET_DATA);
+  ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::EthernetPacket>>::adopt(
+      _builder.getPointerField(0 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::List< ::cereal::EthernetPacket>> Event::Builder::disownEthernetData() {
+  KJ_IREQUIRE(which() == Event::ETHERNET_DATA,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::EthernetPacket>>::disown(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+
+inline bool Event::Reader::isNavUpdate() const {
+  return which() == Event::NAV_UPDATE;
+}
+inline bool Event::Builder::isNavUpdate() {
+  return which() == Event::NAV_UPDATE;
+}
+inline bool Event::Reader::hasNavUpdate() const {
+  if (which() != Event::NAV_UPDATE) return false;
+  return !_reader.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline bool Event::Builder::hasNavUpdate() {
+  if (which() != Event::NAV_UPDATE) return false;
+  return !_builder.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline  ::cereal::NavUpdate::Reader Event::Reader::getNavUpdate() const {
+  KJ_IREQUIRE(which() == Event::NAV_UPDATE,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::cereal::NavUpdate>::get(
+      _reader.getPointerField(0 * ::capnp::POINTERS));
+}
+inline  ::cereal::NavUpdate::Builder Event::Builder::getNavUpdate() {
+  KJ_IREQUIRE(which() == Event::NAV_UPDATE,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::cereal::NavUpdate>::get(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void Event::Builder::setNavUpdate( ::cereal::NavUpdate::Reader value) {
+  _builder.setDataField<Event::Which>(
+      4 * ::capnp::ELEMENTS, Event::NAV_UPDATE);
+  ::capnp::_::PointerHelpers< ::cereal::NavUpdate>::set(
+      _builder.getPointerField(0 * ::capnp::POINTERS), value);
+}
+inline  ::cereal::NavUpdate::Builder Event::Builder::initNavUpdate() {
+  _builder.setDataField<Event::Which>(
+      4 * ::capnp::ELEMENTS, Event::NAV_UPDATE);
+  return ::capnp::_::PointerHelpers< ::cereal::NavUpdate>::init(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void Event::Builder::adoptNavUpdate(
+    ::capnp::Orphan< ::cereal::NavUpdate>&& value) {
+  _builder.setDataField<Event::Which>(
+      4 * ::capnp::ELEMENTS, Event::NAV_UPDATE);
+  ::capnp::_::PointerHelpers< ::cereal::NavUpdate>::adopt(
+      _builder.getPointerField(0 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::cereal::NavUpdate> Event::Builder::disownNavUpdate() {
+  KJ_IREQUIRE(which() == Event::NAV_UPDATE,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::cereal::NavUpdate>::disown(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+
+inline bool Event::Reader::isCellInfo() const {
+  return which() == Event::CELL_INFO;
+}
+inline bool Event::Builder::isCellInfo() {
+  return which() == Event::CELL_INFO;
+}
+inline bool Event::Reader::hasCellInfo() const {
+  if (which() != Event::CELL_INFO) return false;
+  return !_reader.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline bool Event::Builder::hasCellInfo() {
+  if (which() != Event::CELL_INFO) return false;
+  return !_builder.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::List< ::cereal::CellInfo>::Reader Event::Reader::getCellInfo() const {
+  KJ_IREQUIRE(which() == Event::CELL_INFO,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::CellInfo>>::get(
+      _reader.getPointerField(0 * ::capnp::POINTERS));
+}
+inline  ::capnp::List< ::cereal::CellInfo>::Builder Event::Builder::getCellInfo() {
+  KJ_IREQUIRE(which() == Event::CELL_INFO,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::CellInfo>>::get(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void Event::Builder::setCellInfo( ::capnp::List< ::cereal::CellInfo>::Reader value) {
+  _builder.setDataField<Event::Which>(
+      4 * ::capnp::ELEMENTS, Event::CELL_INFO);
+  ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::CellInfo>>::set(
+      _builder.getPointerField(0 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::List< ::cereal::CellInfo>::Builder Event::Builder::initCellInfo(unsigned int size) {
+  _builder.setDataField<Event::Which>(
+      4 * ::capnp::ELEMENTS, Event::CELL_INFO);
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::CellInfo>>::init(
+      _builder.getPointerField(0 * ::capnp::POINTERS), size);
+}
+inline void Event::Builder::adoptCellInfo(
+    ::capnp::Orphan< ::capnp::List< ::cereal::CellInfo>>&& value) {
+  _builder.setDataField<Event::Which>(
+      4 * ::capnp::ELEMENTS, Event::CELL_INFO);
+  ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::CellInfo>>::adopt(
+      _builder.getPointerField(0 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::List< ::cereal::CellInfo>> Event::Builder::disownCellInfo() {
+  KJ_IREQUIRE(which() == Event::CELL_INFO,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::CellInfo>>::disown(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+
+inline bool Event::Reader::isWifiScan() const {
+  return which() == Event::WIFI_SCAN;
+}
+inline bool Event::Builder::isWifiScan() {
+  return which() == Event::WIFI_SCAN;
+}
+inline bool Event::Reader::hasWifiScan() const {
+  if (which() != Event::WIFI_SCAN) return false;
+  return !_reader.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline bool Event::Builder::hasWifiScan() {
+  if (which() != Event::WIFI_SCAN) return false;
+  return !_builder.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::List< ::cereal::WifiScan>::Reader Event::Reader::getWifiScan() const {
+  KJ_IREQUIRE(which() == Event::WIFI_SCAN,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::WifiScan>>::get(
+      _reader.getPointerField(0 * ::capnp::POINTERS));
+}
+inline  ::capnp::List< ::cereal::WifiScan>::Builder Event::Builder::getWifiScan() {
+  KJ_IREQUIRE(which() == Event::WIFI_SCAN,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::WifiScan>>::get(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void Event::Builder::setWifiScan( ::capnp::List< ::cereal::WifiScan>::Reader value) {
+  _builder.setDataField<Event::Which>(
+      4 * ::capnp::ELEMENTS, Event::WIFI_SCAN);
+  ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::WifiScan>>::set(
+      _builder.getPointerField(0 * ::capnp::POINTERS), value);
+}
+inline  ::capnp::List< ::cereal::WifiScan>::Builder Event::Builder::initWifiScan(unsigned int size) {
+  _builder.setDataField<Event::Which>(
+      4 * ::capnp::ELEMENTS, Event::WIFI_SCAN);
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::WifiScan>>::init(
+      _builder.getPointerField(0 * ::capnp::POINTERS), size);
+}
+inline void Event::Builder::adoptWifiScan(
+    ::capnp::Orphan< ::capnp::List< ::cereal::WifiScan>>&& value) {
+  _builder.setDataField<Event::Which>(
+      4 * ::capnp::ELEMENTS, Event::WIFI_SCAN);
+  ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::WifiScan>>::adopt(
+      _builder.getPointerField(0 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::List< ::cereal::WifiScan>> Event::Builder::disownWifiScan() {
+  KJ_IREQUIRE(which() == Event::WIFI_SCAN,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::cereal::WifiScan>>::disown(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+
+inline bool Event::Reader::isAndroidGnss() const {
+  return which() == Event::ANDROID_GNSS;
+}
+inline bool Event::Builder::isAndroidGnss() {
+  return which() == Event::ANDROID_GNSS;
+}
+inline bool Event::Reader::hasAndroidGnss() const {
+  if (which() != Event::ANDROID_GNSS) return false;
+  return !_reader.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline bool Event::Builder::hasAndroidGnss() {
+  if (which() != Event::ANDROID_GNSS) return false;
+  return !_builder.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline  ::cereal::AndroidGnss::Reader Event::Reader::getAndroidGnss() const {
+  KJ_IREQUIRE(which() == Event::ANDROID_GNSS,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::cereal::AndroidGnss>::get(
+      _reader.getPointerField(0 * ::capnp::POINTERS));
+}
+inline  ::cereal::AndroidGnss::Builder Event::Builder::getAndroidGnss() {
+  KJ_IREQUIRE(which() == Event::ANDROID_GNSS,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::cereal::AndroidGnss>::get(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void Event::Builder::setAndroidGnss( ::cereal::AndroidGnss::Reader value) {
+  _builder.setDataField<Event::Which>(
+      4 * ::capnp::ELEMENTS, Event::ANDROID_GNSS);
+  ::capnp::_::PointerHelpers< ::cereal::AndroidGnss>::set(
+      _builder.getPointerField(0 * ::capnp::POINTERS), value);
+}
+inline  ::cereal::AndroidGnss::Builder Event::Builder::initAndroidGnss() {
+  _builder.setDataField<Event::Which>(
+      4 * ::capnp::ELEMENTS, Event::ANDROID_GNSS);
+  return ::capnp::_::PointerHelpers< ::cereal::AndroidGnss>::init(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void Event::Builder::adoptAndroidGnss(
+    ::capnp::Orphan< ::cereal::AndroidGnss>&& value) {
+  _builder.setDataField<Event::Which>(
+      4 * ::capnp::ELEMENTS, Event::ANDROID_GNSS);
+  ::capnp::_::PointerHelpers< ::cereal::AndroidGnss>::adopt(
+      _builder.getPointerField(0 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::cereal::AndroidGnss> Event::Builder::disownAndroidGnss() {
+  KJ_IREQUIRE(which() == Event::ANDROID_GNSS,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::cereal::AndroidGnss>::disown(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+
+inline bool Event::Reader::isQcomGnss() const {
+  return which() == Event::QCOM_GNSS;
+}
+inline bool Event::Builder::isQcomGnss() {
+  return which() == Event::QCOM_GNSS;
+}
+inline bool Event::Reader::hasQcomGnss() const {
+  if (which() != Event::QCOM_GNSS) return false;
+  return !_reader.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline bool Event::Builder::hasQcomGnss() {
+  if (which() != Event::QCOM_GNSS) return false;
+  return !_builder.getPointerField(0 * ::capnp::POINTERS).isNull();
+}
+inline  ::cereal::QcomGnss::Reader Event::Reader::getQcomGnss() const {
+  KJ_IREQUIRE(which() == Event::QCOM_GNSS,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::cereal::QcomGnss>::get(
+      _reader.getPointerField(0 * ::capnp::POINTERS));
+}
+inline  ::cereal::QcomGnss::Builder Event::Builder::getQcomGnss() {
+  KJ_IREQUIRE(which() == Event::QCOM_GNSS,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::cereal::QcomGnss>::get(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void Event::Builder::setQcomGnss( ::cereal::QcomGnss::Reader value) {
+  _builder.setDataField<Event::Which>(
+      4 * ::capnp::ELEMENTS, Event::QCOM_GNSS);
+  ::capnp::_::PointerHelpers< ::cereal::QcomGnss>::set(
+      _builder.getPointerField(0 * ::capnp::POINTERS), value);
+}
+inline  ::cereal::QcomGnss::Builder Event::Builder::initQcomGnss() {
+  _builder.setDataField<Event::Which>(
+      4 * ::capnp::ELEMENTS, Event::QCOM_GNSS);
+  return ::capnp::_::PointerHelpers< ::cereal::QcomGnss>::init(
+      _builder.getPointerField(0 * ::capnp::POINTERS));
+}
+inline void Event::Builder::adoptQcomGnss(
+    ::capnp::Orphan< ::cereal::QcomGnss>&& value) {
+  _builder.setDataField<Event::Which>(
+      4 * ::capnp::ELEMENTS, Event::QCOM_GNSS);
+  ::capnp::_::PointerHelpers< ::cereal::QcomGnss>::adopt(
+      _builder.getPointerField(0 * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::cereal::QcomGnss> Event::Builder::disownQcomGnss() {
+  KJ_IREQUIRE(which() == Event::QCOM_GNSS,
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::cereal::QcomGnss>::disown(
       _builder.getPointerField(0 * ::capnp::POINTERS));
 }
 

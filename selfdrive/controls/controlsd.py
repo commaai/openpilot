@@ -6,12 +6,15 @@ import selfdrive.messaging as messaging
 
 from cereal import car
 
+from selfdrive.swaglog import cloudlog
 from common.numpy_fast import clip
+from common.fingerprints import fingerprint
 
 from selfdrive.config import Conversions as CV
 from common.services import service_list
 from common.realtime import sec_since_boot, set_realtime_priority, Ratekeeper
 from common.profiler import Profiler
+from common.params import Params
 
 from selfdrive.controls.lib.drive_helpers import learn_angle_offset
 
@@ -22,12 +25,6 @@ from selfdrive.controls.lib.pathplanner import PathPlanner
 from selfdrive.controls.lib.adaptivecruise import AdaptiveCruise
 
 from selfdrive.controls.lib.alertmanager import AlertManager
-
-car_type = os.getenv("CAR")
-if car_type is not None:
-  exec('from selfdrive.car.'+car_type+'.interface import CarInterface')
-else:
-  from selfdrive.car.honda.interface import CarInterface
 
 V_CRUISE_MAX = 144
 V_CRUISE_MIN = 8
@@ -46,9 +43,20 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
   model = messaging.sub_sock(context, service_list['model'].port)
   health = messaging.sub_sock(context, service_list['health'].port)
 
-  # connects to can and sendcan
-  CI = CarInterface()
-  VP = CI.getVehicleParams()
+  logcan = messaging.sub_sock(context, service_list['can'].port)
+
+  # connects to can
+  CP = fingerprint(logcan)
+
+  # import the car from the fingerprint
+  cloudlog.info("controlsd is importing %s", CP.carName)
+  exec('from selfdrive.car.'+CP.carName+'.interface import CarInterface')
+
+  sendcan = messaging.pub_sock(context, service_list['sendcan'].port)
+  CI = CarInterface(CP, logcan, sendcan)
+
+  # write CarParams
+  Params().put("CarParams", CP.to_bytes())
 
   PP = PathPlanner(model)
   AC = AdaptiveCruise(live20)
@@ -128,7 +136,7 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
       if b.type == "altButton1" and b.pressed:
         rear_view_toggle = not rear_view_toggle
 
-      if not VP.brake_only and enabled and not b.pressed:
+      if not CP.enableCruise and enabled and not b.pressed:
         if b.type == "accelCruise":
           v_cruise_kph = v_cruise_kph - (v_cruise_kph % V_CRUISE_DELTA) + V_CRUISE_DELTA
         elif b.type == "decelCruise":
@@ -192,7 +200,7 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
         AM.add("outOfSpace", enabled)
         enable_request = False
 
-    if VP.brake_only:
+    if CP.enableCruise:
       enable_condition = ((cur_time - last_enable_request) < 0.2) and CS.cruiseState.enabled
     else:
       enable_condition = enable_request
@@ -223,7 +231,7 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
       enabled = True
 
       # on activation, let's always set v_cruise from where we are, even if PCM ACC is active
-      v_cruise_kph = int(round(max(CS.vEgo * CV.MS_TO_KPH * VP.ui_speed_fudge, V_CRUISE_ENABLE_MIN)))
+      v_cruise_kph = int(round(max(CS.vEgo * CV.MS_TO_KPH * CP.uiSpeedFudge, V_CRUISE_ENABLE_MIN)))
 
       # 6 minutes driver you're on
       awareness_status = 1.0
@@ -233,19 +241,19 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
       # start long control at actual speed
       LoC.reset(v_pid = CS.vEgo)
 
-    if VP.brake_only and CS.cruiseState.enabled:
+    if CP.enableCruise and CS.cruiseState.enabled:
       v_cruise_kph = CS.cruiseState.speed * CV.MS_TO_KPH
 
     # *** put the adaptive in adaptive cruise control ***
-    AC.update(cur_time, CS.vEgo, CS.steeringAngle, LoC.v_pid, awareness_status, VP)
+    AC.update(cur_time, CS.vEgo, CS.steeringAngle, LoC.v_pid, awareness_status, CP)
 
     prof.checkpoint("AdaptiveCruise")
 
     # *** gas/brake PID loop ***
-    final_gas, final_brake = LoC.update(enabled, CS.vEgo, v_cruise_kph, AC.v_target_lead, AC.a_target, AC.jerk_factor, VP)
+    final_gas, final_brake = LoC.update(enabled, CS.vEgo, v_cruise_kph, AC.v_target_lead, AC.a_target, AC.jerk_factor, CP)
 
     # *** steering PID loop ***
-    final_steer, sat_flag = LaC.update(enabled, CS.vEgo, CS.steeringAngle, CS.steeringPressed, PP.d_poly, angle_offset, VP)
+    final_steer, sat_flag = LaC.update(enabled, CS.vEgo, CS.steeringAngle, CS.steeringPressed, PP.d_poly, angle_offset, CP)
 
     prof.checkpoint("PID")
 
@@ -282,8 +290,8 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
     CC.steeringTorque = float(final_steer)
 
     CC.cruiseControl.override = True
-    CC.cruiseControl.cancel = bool((not VP.brake_only) or (not enabled and CS.cruiseState.enabled))    # always cancel if we have an interceptor
-    CC.cruiseControl.speedOverride = float((LoC.v_pid - .3) if (VP.brake_only and final_brake == 0.) else 0.0)
+    CC.cruiseControl.cancel = bool((not CP.enableCruise) or (not enabled and CS.cruiseState.enabled))    # always cancel if we have an interceptor
+    CC.cruiseControl.speedOverride = float((LoC.v_pid - .3) if (CP.enableCruise and final_brake == 0.) else 0.0)
     CC.cruiseControl.accelOverride = float(AC.a_pcm)
 
     CC.hudControl.setSpeed = float(v_cruise_kph * CV.KPH_TO_MS)

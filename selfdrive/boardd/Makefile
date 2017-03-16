@@ -34,7 +34,7 @@ endif
 .PHONY: all
 all: boardd
 
--include ../common/cereal.mk
+include ../common/cereal.mk
 
 OBJS = boardd.o \
        ../common/swaglog.o \

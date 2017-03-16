@@ -1,5 +1,6 @@
 #include "car.capnp.h"
 /* AUTO GENERATED - DO NOT EDIT */
+static const capn_text capn_val0 = {0,""};
 
 cereal_CarState_ptr cereal_new_CarState(struct capn_segment *s) {
 	cereal_CarState_ptr p;
@@ -334,4 +335,57 @@ void cereal_set_CarControl_HUDControl(const struct cereal_CarControl_HUDControl 
 	cereal_CarControl_HUDControl_ptr p;
 	p.p = capn_getp(l.p, i, 0);
 	cereal_write_CarControl_HUDControl(s, p);
+}
+
+cereal_CarParams_ptr cereal_new_CarParams(struct capn_segment *s) {
+	cereal_CarParams_ptr p;
+	p.p = capn_new_struct(s, 32, 3);
+	return p;
+}
+cereal_CarParams_list cereal_new_CarParams_list(struct capn_segment *s, int len) {
+	cereal_CarParams_list p;
+	p.p = capn_new_list(s, len, 32, 3);
+	return p;
+}
+void cereal_read_CarParams(struct cereal_CarParams *s, cereal_CarParams_ptr p) {
+	capn_resolve(&p.p);
+	s->carName = capn_get_text(p.p, 0, capn_val0);
+	s->radarName = capn_get_text(p.p, 1, capn_val0);
+	s->carFingerprint = capn_get_text(p.p, 2, capn_val0);
+	s->enableSteer = (capn_read8(p.p, 0) & 1) != 0;
+	s->enableGas = (capn_read8(p.p, 0) & 2) != 0;
+	s->enableBrake = (capn_read8(p.p, 0) & 4) != 0;
+	s->enableCruise = (capn_read8(p.p, 0) & 8) != 0;
+	s->wheelBase = capn_to_f32(capn_read32(p.p, 4));
+	s->steerRatio = capn_to_f32(capn_read32(p.p, 8));
+	s->uiSpeedFudge = capn_to_f32(capn_read32(p.p, 12));
+	s->slipFactor = capn_to_f32(capn_read32(p.p, 16));
+	s->steerKp = capn_to_f32(capn_read32(p.p, 20));
+	s->steerKi = capn_to_f32(capn_read32(p.p, 24));
+}
+void cereal_write_CarParams(const struct cereal_CarParams *s, cereal_CarParams_ptr p) {
+	capn_resolve(&p.p);
+	capn_set_text(p.p, 0, s->carName);
+	capn_set_text(p.p, 1, s->radarName);
+	capn_set_text(p.p, 2, s->carFingerprint);
+	capn_write1(p.p, 0, s->enableSteer != 0);
+	capn_write1(p.p, 1, s->enableGas != 0);
+	capn_write1(p.p, 2, s->enableBrake != 0);
+	capn_write1(p.p, 3, s->enableCruise != 0);
+	capn_write32(p.p, 4, capn_from_f32(s->wheelBase));
+	capn_write32(p.p, 8, capn_from_f32(s->steerRatio));
+	capn_write32(p.p, 12, capn_from_f32(s->uiSpeedFudge));
+	capn_write32(p.p, 16, capn_from_f32(s->slipFactor));
+	capn_write32(p.p, 20, capn_from_f32(s->steerKp));
+	capn_write32(p.p, 24, capn_from_f32(s->steerKi));
+}
+void cereal_get_CarParams(struct cereal_CarParams *s, cereal_CarParams_list l, int i) {
+	cereal_CarParams_ptr p;
+	p.p = capn_getp(l.p, i, 0);
+	cereal_read_CarParams(s, p);
+}
+void cereal_set_CarParams(const struct cereal_CarParams *s, cereal_CarParams_list l, int i) {
+	cereal_CarParams_ptr p;
+	p.p = capn_getp(l.p, i, 0);
+	cereal_write_CarParams(s, p);
 }

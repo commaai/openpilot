@@ -2,10 +2,10 @@ import math
 import numpy as np
 from common.numpy_fast import clip
 
-def calc_curvature(v_ego, angle_steers, VP, angle_offset=0):
+def calc_curvature(v_ego, angle_steers, CP, angle_offset=0):
   deg_to_rad = np.pi/180.
   angle_steers_rad = (angle_steers - angle_offset) * deg_to_rad
-  curvature = angle_steers_rad/(VP.steer_ratio * VP.wheelbase * (1. + VP.slip_factor * v_ego**2))
+  curvature = angle_steers_rad/(CP.steerRatio * CP.wheelBase * (1. + CP.slipFactor * v_ego**2))
   return curvature
 
 def calc_d_lookahead(v_ego):
@@ -19,26 +19,23 @@ def calc_d_lookahead(v_ego):
   d_lookahead = offset_lookahead + math.sqrt(max(v_ego, 0)) * coeff_lookahead
   return d_lookahead
 
-def calc_lookahead_offset(v_ego, angle_steers, d_lookahead, VP, angle_offset):
+def calc_lookahead_offset(v_ego, angle_steers, d_lookahead, CP, angle_offset):
   #*** this function return teh lateral offset given the steering angle, speed and the lookahead distance
-  curvature = calc_curvature(v_ego, angle_steers, VP, angle_offset)
+  curvature = calc_curvature(v_ego, angle_steers, CP, angle_offset)
 
   # clip is to avoid arcsin NaNs due to too sharp turns
   y_actual = d_lookahead * np.tan(np.arcsin(np.clip(d_lookahead * curvature, -0.999, 0.999))/2.)
   return y_actual, curvature
 
 def pid_lateral_control(v_ego, y_actual, y_des, Ui_steer, steer_max,
-                        steer_override, sat_count, enabled, half_pid, rate):
+                        steer_override, sat_count, enabled, Kp, Ki, rate):
 
   sat_count_rate = 1./rate
   sat_count_limit = 0.8       # after 0.8s of continuous saturation, an alert will be sent
 
   error_steer = y_des - y_actual
   Ui_unwind_speed = 0.3/rate   #.3 per second
-  if not half_pid:
-    Kp, Ki = 12.0, 1.0
-  else:
-    Kp, Ki = 6.0, .5           # 2x limit in ILX
+
   Up_steer = error_steer*Kp
   Ui_steer_new = Ui_steer + error_steer*Ki * 1./rate
   output_steer_new = Ui_steer_new + Up_steer
@@ -99,7 +96,7 @@ class LatControl(object):
   def reset(self):
     self.Ui_steer = 0.
 
-  def update(self, enabled, v_ego, angle_steers, steer_override, d_poly, angle_offset, VP):
+  def update(self, enabled, v_ego, angle_steers, steer_override, d_poly, angle_offset, CP):
     rate = 100
 
     steer_max = 1.0
@@ -109,14 +106,14 @@ class LatControl(object):
 
     # calculate actual offset at the lookahead point
     self.y_actual, _ = calc_lookahead_offset(v_ego, angle_steers,
-                                             d_lookahead, VP, angle_offset)
+                                             d_lookahead, CP, angle_offset)
 
     # desired lookahead offset
     self.y_des = np.polyval(d_poly, d_lookahead)
 
     output_steer, self.Up_steer, self.Ui_steer, self.lateral_control_sat, self.sat_count, sat_flag = pid_lateral_control(
       v_ego, self.y_actual, self.y_des, self.Ui_steer, steer_max,
-      steer_override, self.sat_count, enabled, VP.torque_mod, rate)
+      steer_override, self.sat_count, enabled, CP.steerKp, CP.steerKi, rate)
 
     final_steer = clip(output_steer, -steer_max, steer_max)
     return final_steer, sat_flag

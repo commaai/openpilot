@@ -2,6 +2,7 @@
 import os
 import struct
 import zmq
+import time
 
 import selfdrive.messaging as messaging
 from common.realtime import Ratekeeper
@@ -122,6 +123,17 @@ def boardd_mock_loop():
 
     #print can_msgs
 
+def boardd_test_loop():
+  can_init()
+  while 1:
+    can_send_many([[0xbb,0,"\xaa\xaa\xaa\xaa",0], [0xaa,0,"\xaa\xaa\xaa\xaa",1]])
+    #can_send_many([[0xaa,0,"\xaa\xaa\xaa\xaa",0]])
+    #can_send_many([[0xaa,0,"\xaa\xaa\xaa\xaa",1]])
+    # recv @ 100hz
+    can_msgs = can_recv()
+    print "got %d" % (len(can_msgs))
+    time.sleep(0.1)
+
 # *** main loop ***
 def boardd_loop(rate=200):
   rk = Ratekeeper(rate)
@@ -169,6 +181,8 @@ def boardd_loop(rate=200):
 def main(gctx=None):
   if os.getenv("MOCK") is not None:
     boardd_mock_loop()
+  elif os.getenv("BOARDTEST") is not None:
+    boardd_test_loop()
   else:
     boardd_loop()
 

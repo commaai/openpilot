@@ -75,10 +75,10 @@ class ViewCalibrator(object):
     self.cal_status = cal_status
     self.cal_perc = int(np.minimum(self.cal_cycle*100./self.calibration_threshold, 100))
 
-  def vanishing_point_process(self, old_ps, new_ps, v_ego, steer_angle, VP):
+  def vanishing_point_process(self, old_ps, new_ps, v_ego, steer_angle, CP):
     # correct diffs by yaw rate 
     cam_fov = 23.06*np.pi/180. # deg
-    curvature = calc_curvature(v_ego, steer_angle, VP)
+    curvature = calc_curvature(v_ego, steer_angle, CP)
     yaw_rate = curvature * v_ego
     hor_angle_shift = yaw_rate * self.dt * self.box_size[0] / cam_fov
     old_ps += [hor_angle_shift, 0]  # old points have moved in the image due to yaw rate
@@ -166,7 +166,7 @@ class ViewCalibrator(object):
     self.warp_matrix = np.dot(translation_matrix, self.warp_matrix_start)
     self.warp_matrix_inv = np.linalg.inv(self.warp_matrix)
 
-  def calibration(self, p0, p1, st, v_ego, steer_angle, VP):
+  def calibration(self, p0, p1, st, v_ego, steer_angle, CP):
     # convert to np array first thing
     p0 = np.asarray(p0)
     p1 = np.asarray(p1)
@@ -190,7 +190,7 @@ class ViewCalibrator(object):
     # print("good_idxs {}:".format(good_idxs))
 
     # get instantaneous vp
-    vp = self.vanishing_point_process(p0, p1, v_ego, steer_angle, VP)
+    vp = self.vanishing_point_process(p0, p1, v_ego, steer_angle, CP)
 
     if vp is not None:
       # filter the vanishing point

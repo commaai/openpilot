@@ -1,16 +1,30 @@
 void can_init(CAN_TypeDef *CAN) {
   // enable CAN busses
   if (CAN == CAN1) {
-    // CAN1_EN
-    GPIOB->ODR |= (1 << 3);
+    #ifdef PANDA
+      // CAN1_EN
+      GPIOC->ODR &= ~(1 << 1);
+    #else
+      // CAN1_EN
+      GPIOB->ODR |= (1 << 3);
+    #endif
   } else if (CAN == CAN2) {
-    // CAN2_EN
-    GPIOB->ODR |= (1 << 4);
+    #ifdef PANDA
+      // CAN2_EN
+      GPIOC->ODR &= ~(1 << 13);
+    #else
+      // CAN2_EN
+      GPIOB->ODR |= (1 << 4);
+    #endif
+  #ifdef CAN3
+  } else if (CAN == CAN3) {
+    // CAN3_EN
+    GPIOA->ODR &= ~(1 << 0);
+  #endif
   }
 
   CAN->MCR = CAN_MCR_TTCM | CAN_MCR_INRQ;
   while((CAN->MSR & CAN_MSR_INAK) != CAN_MSR_INAK);
-  puts("CAN initting\n");
 
   // PCLK = 24000000, 500000 is 48 clocks
   // from http://www.bittiming.can-wiki.ino/
@@ -23,8 +37,17 @@ void can_init(CAN_TypeDef *CAN) {
 
   // reset
   CAN->MCR = CAN_MCR_TTCM;
-  while((CAN->MSR & CAN_MSR_INAK) == CAN_MSR_INAK);
-  puts("CAN init done\n");
+
+  #define CAN_TIMEOUT 1000000
+  int tmp = 0;
+  while((CAN->MSR & CAN_MSR_INAK) == CAN_MSR_INAK && tmp < CAN_TIMEOUT) tmp++;
+
+  if (tmp == CAN_TIMEOUT) {
+    set_led(LED_BLUE, 1);
+    puts("CAN init FAILED!!!!!\n");
+  } else {
+    puts("CAN init done\n");
+  }
 
   // accept all filter
   CAN->FMR |= CAN_FMR_FINIT;
@@ -46,6 +69,8 @@ void can_init(CAN_TypeDef *CAN) {
 // CAN error
 void can_sce(CAN_TypeDef *CAN) {
   #ifdef DEBUG
+    if (CAN==CAN1) puts("CAN1:  ");
+    if (CAN==CAN2) puts("CAN2:  ");
     puts("MSR:");
     puth(CAN->MSR);
     puts(" TSR:");

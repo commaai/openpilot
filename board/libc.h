@@ -1,3 +1,9 @@
+#ifdef STM32F4
+  #include "stm32f4xx_hal_gpio_ex.h"
+#else
+  #include "stm32f2xx_hal_gpio_ex.h"
+#endif
+
 #define min(a,b) \
  ({ __typeof__ (a) _a = (a); \
      __typeof__ (b) _b = (b); \
@@ -12,8 +18,6 @@
 #define __DIVMANT(_PCLK_, _BAUD_)                    (__DIV((_PCLK_), (_BAUD_))/100)
 #define __DIVFRAQ(_PCLK_, _BAUD_)                    (((__DIV((_PCLK_), (_BAUD_)) - (__DIVMANT((_PCLK_), (_BAUD_)) * 100)) * 16 + 50) / 100)
 #define __USART_BRR(_PCLK_, _BAUD_)              ((__DIVMANT((_PCLK_), (_BAUD_)) << 4)|(__DIVFRAQ((_PCLK_), (_BAUD_)) & 0x0F))
-
-#include "stm32f2xx_hal_gpio_ex.h"
 
 // **** shitty libc ****
 
@@ -34,8 +38,13 @@ void clock_init() {
     RCC->PLLCFGR = RCC_PLLCFGR_PLLQ_2 | RCC_PLLCFGR_PLLM_3 |
                    RCC_PLLCFGR_PLLN_6 | RCC_PLLCFGR_PLLN_5 | RCC_PLLCFGR_PLLSRC_HSI;
   #else
-    RCC->PLLCFGR = RCC_PLLCFGR_PLLQ_2 | RCC_PLLCFGR_PLLM_3 |
-                   RCC_PLLCFGR_PLLN_7 | RCC_PLLCFGR_PLLN_6 | RCC_PLLCFGR_PLLSRC_HSE;
+    #ifdef PANDA
+      RCC->PLLCFGR = RCC_PLLCFGR_PLLQ_2 | RCC_PLLCFGR_PLLM_3 |
+                     RCC_PLLCFGR_PLLN_6 | RCC_PLLCFGR_PLLN_5 | RCC_PLLCFGR_PLLSRC_HSE;
+    #else
+      RCC->PLLCFGR = RCC_PLLCFGR_PLLQ_2 | RCC_PLLCFGR_PLLM_3 |
+                     RCC_PLLCFGR_PLLN_7 | RCC_PLLCFGR_PLLN_6 | RCC_PLLCFGR_PLLSRC_HSE;
+    #endif
   #endif
 
   // start PLL
@@ -56,32 +65,55 @@ void clock_init() {
   RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
   RCC->AHB1ENR |= RCC_AHB1ENR_GPIOBEN;
   RCC->AHB1ENR |= RCC_AHB1ENR_GPIOCEN;
+  RCC->AHB1ENR |= RCC_AHB1ENR_GPIODEN;
 
   RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN;
-
   RCC->APB1ENR |= RCC_APB1ENR_USART2EN;
   RCC->APB1ENR |= RCC_APB1ENR_USART3EN;
+  #ifdef PANDA
+    RCC->APB1ENR |= RCC_APB1ENR_UART5EN;
+  #endif
   RCC->APB1ENR |= RCC_APB1ENR_CAN1EN;
   RCC->APB1ENR |= RCC_APB1ENR_CAN2EN;
+  #ifdef CAN3
+    RCC->APB1ENR |= RCC_APB1ENR_CAN3EN;
+  #endif
   RCC->APB1ENR |= RCC_APB1ENR_DACEN;
   RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
   //RCC->APB1ENR |= RCC_APB1ENR_TIM4EN;
+  RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
   RCC->AHB2ENR |= RCC_AHB2ENR_OTGFSEN;
   RCC->APB2ENR |= RCC_APB2ENR_TIM1EN;
   RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
   RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
 
-  // turn on alt USB
-  RCC->AHB1ENR |= RCC_AHB1ENR_OTGHSEN;
+  // needed?
+  RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
 
   // fix interrupt vectors
 }
 
 // board specific
 void gpio_init() {
+  // pull low to hold ESP in reset??
+  // enable OTG out tied to ground
+  GPIOA->ODR = 0;
+  GPIOB->ODR = 0;
+  GPIOC->ODR = 0;
+  GPIOA->MODER = 0;
+  GPIOB->MODER = 0;
+  GPIOC->MODER = 0;
+
+  // enable USB power tied to +
+  GPIOA->MODER |= GPIO_MODER_MODER0_0;
+
+  // always set to zero, ESP in boot mode and reset
+ // GPIOB->ODR = 0;
+  GPIOB->MODER = GPIO_MODER_MODER0_0;
+
   // analog mode
-  GPIOC->MODER = GPIO_MODER_MODER3 | GPIO_MODER_MODER2 |
-                 GPIO_MODER_MODER1 | GPIO_MODER_MODER0;
+  GPIOC->MODER |= GPIO_MODER_MODER3 | GPIO_MODER_MODER2;
+  //GPIOC->MODER |= GPIO_MODER_MODER1 | GPIO_MODER_MODER0;
 
   // FAN on C9, aka TIM3_CH4
   #ifdef OLD_BOARD
@@ -93,30 +125,62 @@ void gpio_init() {
   #endif
   // IGNITION on C13
 
-  // set mode for LEDs and CAN
-  GPIOB->MODER = GPIO_MODER_MODER10_0 | GPIO_MODER_MODER11_0 | GPIO_MODER_MODER12_0;
+  #ifdef PANDA
+    // turn off LEDs and set mode
+    GPIOC->ODR |= (1 << 6) | (1 << 7) | (1 << 9);
+    GPIOC->MODER |= GPIO_MODER_MODER6_0 | GPIO_MODER_MODER7_0 | GPIO_MODER_MODER9_0;
+
+    // set mode for ESP_RST line and enable it
+    GPIOC->ODR |= (1 << 14);
+    GPIOC->MODER |= GPIO_MODER_MODER14_0;
+
+    // panda CAN enables
+    GPIOC->ODR |= (1 << 13) | (1 << 1);
+    GPIOC->MODER |= GPIO_MODER_MODER13_0 | GPIO_MODER_MODER1_0;
+  #else
+    // turn off LEDs and set mode
+    GPIOB->ODR = (1 << 10) | (1 << 11) | (1 << 12);
+    GPIOB->MODER = GPIO_MODER_MODER10_0 | GPIO_MODER_MODER11_0 | GPIO_MODER_MODER12_0;
+    
+    // non panda CAN enables
+    GPIOB->MODER |= GPIO_MODER_MODER3_0 | GPIO_MODER_MODER7_0;
+  #endif
+
   // CAN 2
   GPIOB->MODER |= GPIO_MODER_MODER5_1 | GPIO_MODER_MODER6_1;
+  GPIOB->AFR[0] = GPIO_AF9_CAN2 << (5*4) | GPIO_AF9_CAN2 << (6*4);
+
   // CAN 1
   GPIOB->MODER |= GPIO_MODER_MODER8_1 | GPIO_MODER_MODER9_1;
-  // CAN enables
-  GPIOB->MODER |= GPIO_MODER_MODER3_0 | GPIO_MODER_MODER4_0;
+#ifdef STM32F4
+  GPIOB->AFR[1] = GPIO_AF8_CAN1 << ((8-8)*4) | GPIO_AF8_CAN1 << ((9-8)*4);
+#else
+  GPIOB->AFR[1] = GPIO_AF9_CAN1 << ((8-8)*4) | GPIO_AF9_CAN1 << ((9-8)*4);
+#endif
 
-  // set mode for SERIAL and USB (DAC should be configured to in)
+  // K enable
+  GPIOB->MODER |= GPIO_MODER_MODER4_0;
+
+  // USART 2 for debugging
   GPIOA->MODER = GPIO_MODER_MODER2_1 | GPIO_MODER_MODER3_1;
   GPIOA->AFR[0] = GPIO_AF7_USART2 << (2*4) | GPIO_AF7_USART2 << (3*4);
 
-  // GPIOC USART3
+  // USART 1 for talking to the ESP
+  GPIOA->MODER |= GPIO_MODER_MODER9_1 | GPIO_MODER_MODER10_1;
+  GPIOA->AFR[1] = GPIO_AF7_USART1 << ((9-8)*4) | GPIO_AF7_USART1 << ((10-8)*4);
+
+  // USART 3 is L-Line
   GPIOC->MODER |= GPIO_MODER_MODER10_1 | GPIO_MODER_MODER11_1;
   GPIOC->AFR[1] |= GPIO_AF7_USART3 << ((10-8)*4) | GPIO_AF7_USART3 << ((11-8)*4);
 
-  if (USBx == USB_OTG_FS) {
-    GPIOA->MODER |= GPIO_MODER_MODER11_1 | GPIO_MODER_MODER12_1;
-    GPIOA->OSPEEDR = GPIO_OSPEEDER_OSPEEDR11 | GPIO_OSPEEDER_OSPEEDR12;
-    GPIOA->AFR[1] = GPIO_AF10_OTG_FS << ((11-8)*4) | GPIO_AF10_OTG_FS << ((12-8)*4);
-  }
-
+  // USB
+  GPIOA->MODER |= GPIO_MODER_MODER11_1 | GPIO_MODER_MODER12_1;
+  GPIOA->OSPEEDR = GPIO_OSPEEDER_OSPEEDR11 | GPIO_OSPEEDER_OSPEEDR12;
+  GPIOA->AFR[1] |= GPIO_AF10_OTG_FS << ((11-8)*4) | GPIO_AF10_OTG_FS << ((12-8)*4);
   GPIOA->PUPDR = GPIO_PUPDR_PUPDR2_0 | GPIO_PUPDR_PUPDR3_0;
+
+  // GMLAN, ignition sense
+  GPIOB->PUPDR = GPIO_PUPDR_PUPDR12_0;
 
   // setup SPI
   GPIOA->MODER |= GPIO_MODER_MODER4_1 | GPIO_MODER_MODER5_1 |
@@ -124,36 +188,38 @@ void gpio_init() {
   GPIOA->AFR[0] |= GPIO_AF5_SPI1 << (4*4) | GPIO_AF5_SPI1 << (5*4) |
                    GPIO_AF5_SPI1 << (6*4) | GPIO_AF5_SPI1 << (7*4);
 
-  // set mode for CAN / USB_HS pins
-  GPIOB->AFR[0] = GPIO_AF9_CAN1 << (5*4) | GPIO_AF9_CAN1 << (6*4);
-  GPIOB->AFR[1] = GPIO_AF9_CAN1 << ((8-8)*4) | GPIO_AF9_CAN1 << ((9-8)*4);
+  // CAN3 setup
+  #ifdef CAN3
+    GPIOA->MODER |= GPIO_MODER_MODER8_1 | GPIO_MODER_MODER15_1;
+    GPIOA->AFR[1] |= GPIO_AF11_CAN3 << ((8-8)*4) | GPIO_AF11_CAN3 << ((15-8)*4);
+  #endif
 
-  if (USBx == USB_OTG_HS) {
-    GPIOB->AFR[1] |= GPIO_AF12_OTG_HS_FS << ((15-8)*4) | GPIO_AF12_OTG_HS_FS << ((14-8)*4);
-    GPIOB->MODER |= GPIO_MODER_MODER14_1 | GPIO_MODER_MODER15_1;
-  }
-
-  GPIOB->OSPEEDR = GPIO_OSPEEDER_OSPEEDR14 | GPIO_OSPEEDER_OSPEEDR15;
-
-  // enable OTG out tied to ground
-  GPIOA->ODR = 0;
-  GPIOA->MODER |= GPIO_MODER_MODER1_0;
-
-  // enable USB power tied to +
-  GPIOA->ODR |= 1;
-  GPIOA->MODER |= GPIO_MODER_MODER0_0;
+  // K-Line setup
+  #ifdef PANDA
+    GPIOC->AFR[1] |= GPIO_AF8_UART5 << ((12-8)*4);
+    GPIOC->MODER |= GPIO_MODER_MODER12_1;
+    GPIOD->AFR[0] = GPIO_AF8_UART5 << (2*4);
+    GPIOD->MODER = GPIO_MODER_MODER2_1;
+  #endif
 }
 
-void uart_init() {
+void uart_init(USART_TypeDef *u, int baud) {
   // enable uart and tx+rx mode
-  USART->CR1 = USART_CR1_UE;
-  USART->BRR = __USART_BRR(24000000, 115200);
-  USART->CR1 |= USART_CR1_TE | USART_CR1_RE;
-  USART->CR2 = USART_CR2_STOP_0 | USART_CR2_STOP_1;
+  u->CR1 = USART_CR1_UE;
+  if (u == USART1) {
+    // USART1 is on APB2
+    u->BRR = __USART_BRR(48000000, baud);
+  } else {
+    u->BRR = __USART_BRR(24000000, baud);
+  }
+  
+  u->CR1 |= USART_CR1_TE | USART_CR1_RE;
+  //u->CR2 = USART_CR2_STOP_0 | USART_CR2_STOP_1;
+  //u->CR2 = USART_CR2_STOP_0;
   // ** UART is ready to work **
 
   // enable interrupts
-  USART->CR1 |= USART_CR1_RXNEIE;
+  u->CR1 |= USART_CR1_RXNEIE;
 }
 
 void delay(int a) {
@@ -162,8 +228,11 @@ void delay(int a) {
 }
 
 void putch(const char a) {
-  while (!(USART->SR & USART_SR_TXE));
-  USART->DR = a;
+  if (has_external_debug_serial) {
+    putc(&debug_ring, a);
+  } else {
+    injectc(&debug_ring, a);
+  }
 }
 
 int puts(const char *a) {
@@ -219,13 +288,32 @@ void *memcpy(void *dest, const void *src, unsigned int n) {
   return dest;
 }
 
-void set_led(int led_num, int state) {
-  if (state) {
+#ifdef PANDA
+  #define LED_RED 3
+  #define LED_GREEN 1
+  #define LED_BLUE 0
+#else
+  #define LED_RED 0
+  #define LED_GREEN 1
+  #define LED_BLUE -1
+#endif
+
+void set_led(int led_num, int on) {
+  if (led_num == -1) return;
+  if (on) {
     // turn on
-    GPIOB->ODR &= ~(1 << (10 + led_num));
+    #ifdef PANDA
+      GPIOC->ODR &= ~(1 << (6 + led_num));
+    #else
+      GPIOB->ODR &= ~(1 << (10 + led_num));
+    #endif
   } else {
     // turn off
-    GPIOB->ODR |= (1 << (10 + led_num));
+    #ifdef PANDA
+      GPIOC->ODR |= (1 << (6 + led_num));
+    #else
+      GPIOB->ODR |= (1 << (10 + led_num));
+    #endif
   }
 }
 

@@ -11,8 +11,9 @@ import threading
 
 from collections import Counter
 from selfdrive.swaglog import cloudlog
-from selfdrive.loggerd.config import get_dongle_id_and_secret, ROOT
+from selfdrive.loggerd.config import ROOT
 
+from common.params import Params
 from common.api import api_get
 
 fake_upload = os.getenv("FAKEUPLOAD") is not None
@@ -223,7 +224,8 @@ class Uploader(object):
 def uploader_fn(exit_event):
   cloudlog.info("uploader_fn")
 
-  dongle_id, dongle_secret = get_dongle_id_and_secret()
+  params = Params()
+  dongle_id, dongle_secret = params.get("DongleId"), params.get("DongleSecret")
 
   if dongle_id is None or dongle_secret is None:
     cloudlog.info("uploader MISSING DONGLE_ID or DONGLE_SECRET")

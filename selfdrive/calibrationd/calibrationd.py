@@ -5,14 +5,15 @@ import os
 import numpy as np
 import tempfile
 import zmq
+import json
 
+from selfdrive.swaglog import cloudlog
 from common.services import service_list
 import selfdrive.messaging as messaging
-from selfdrive.config import ImageParams, VehicleParams
+from selfdrive.config import ImageParams
+from cereal import car
+from common.params import Params
 from selfdrive.calibrationd.calibration import ViewCalibrator, CalibStatus
-
-CALIBRATION_TMP_DIR = "/sdcard"
-CALIBRATION_FILE = "/sdcard/calibration_param"
 
 def load_calibration(gctx):
   # calibration initialization
@@ -35,34 +36,27 @@ def load_calibration(gctx):
   vp_img = (vp_trans[0]/vp_trans[2], vp_trans[1]/vp_trans[2])
 
   # load calibration data
-  if os.path.isfile(CALIBRATION_FILE):
-    try:
-      # If the calibration file exist, start from the last cal values
-      with open(CALIBRATION_FILE, "r") as cal_file:
-        data = [float(l.strip()) for l in cal_file.readlines()]
-        return ViewCalibrator(
-            (I.X, I.Y),
-            big_box_size,
-            vp_img,
-            warp_matrix_start,
-            vp_f=[data[2], data[3]],
-            cal_cycle=data[0],
-            cal_status=data[1])
-    except Exception as e:
-      print("Could not load calibration file: {}".format(e))
+  try:
+    # If the calibration file exist, start from the last cal values
+    data = json.loads(Params().get("CalibrationParams"))
+    return ViewCalibrator(
+        (I.X, I.Y),
+        big_box_size,
+        vp_img,
+        warp_matrix_start,
+        vp_f=[data[2], data[3]],
+        cal_cycle=data[0],
+        cal_status=data[1])
+  except Exception as e:
+    print("Could not load calibration file: {}".format(e))
 
   return ViewCalibrator(
     (I.X, I.Y), big_box_size, vp_img, warp_matrix_start, vp_f=vp_guess)
 
 def store_calibration(calib):
-  # Tempfile needs to be on the same device as the calbration file.
-  with tempfile.NamedTemporaryFile(delete=False, dir=CALIBRATION_TMP_DIR) as cal_file:
-    print(calib.cal_cycle, file=cal_file)
-    print(calib.cal_status, file=cal_file)
-    print(calib.vp_f[0], file=cal_file)
-    print(calib.vp_f[1], file=cal_file)
-    cal_file_name = cal_file.name
-  os.rename(cal_file_name, CALIBRATION_FILE)
+  cal_string = json.dumps([calib.cal_cycle, calib.cal_status, calib.vp_f[0], calib.vp_f[1]])
+  cloudlog.event("store_calibration", cal_string=cal_string)
+  Params().put("CalibrationParams", cal_string)
 
 def calibrationd_thread(gctx):
   context = zmq.Context()
@@ -73,12 +67,14 @@ def calibrationd_thread(gctx):
   livecalibration = messaging.pub_sock(context, service_list['liveCalibration'].port)
 
   # subscribe to stats about the car
-  VP = VehicleParams(False)
+  cloudlog.info("calibrationd is waiting for CarParams")
+  CP = car.CarParams.from_bytes(Params().get("CarParams", block=True))
+  cloudlog.info("calibrationd got CarParams")
 
   v_ego = None
 
   calib = load_calibration(gctx)
-  last_write_cycle = calib.cal_cycle
+  last_write_cycle = None
 
   while 1:
     # calibration at the end so it does not delay radar processing above
@@ -97,10 +93,10 @@ def calibrationd_thread(gctx):
     p1 = ft.features.p1
     st = ft.features.status
 
-    calib.calibration(p0, p1, st, v_ego, steer_angle, VP)
+    calib.calibration(p0, p1, st, v_ego, steer_angle, CP)
 
     # write a new calibration every 100 cal cycle
-    if calib.cal_cycle - last_write_cycle >= 100:
+    if last_write_cycle is None or calib.cal_cycle - last_write_cycle >= 100:
       print("writing cal", calib.cal_cycle)
       store_calibration(calib)
       last_write_cycle = calib.cal_cycle
