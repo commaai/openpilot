@@ -2,6 +2,7 @@ import zmq
 import selfdrive.messaging as messaging
 from common.services import service_list
 import numpy as np
+from common.realtime import sec_since_boot, set_realtime_priority, Ratekeeper
 
 import time
 
