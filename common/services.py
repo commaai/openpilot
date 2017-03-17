@@ -36,6 +36,7 @@ service_list = {
   "carState": Service(8021, True),
   # 8022 is reserved for sshd
   "carControl": Service(8023, True),
+  "waveModel":Service(8024,True)
 }
 
 # manager -- base process to manage starting and stopping of all others
