@@ -46,7 +46,7 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
   model = messaging.sub_sock(context, service_list['model'].port)
   health = messaging.sub_sock(context, service_list['health'].port)
 
-  waveModel = messagine.sub_sock(contexst, service_list['waveModel'].port)
+  waveModel = messaging.sub_sock(contexst, service_list['waveModel'].port)
   
   # connects to can and sendcan
   CI = CarInterface()
