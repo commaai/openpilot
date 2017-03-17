@@ -25,7 +25,7 @@ def wavevisiond_thread(gctx,rate=100):
         msg.leftLane.std = 0.1
 
         waveModel.send(msg.to_bytes())
-        time.sleep(1)
+        time.sleep(6)
     
     
 def main(gctx=None):
