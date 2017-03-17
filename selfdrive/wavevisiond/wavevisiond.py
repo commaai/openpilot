@@ -29,4 +29,4 @@ def wavevisiond_thread(gctx,rate=100):
     
     
 def main(gctx=None):
-    wavevisiond_thread(gctx, rate)
+    wavevisiond_thread(gctx, 100)
