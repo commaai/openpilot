@@ -24,6 +24,7 @@ class Maneuver(object):
 
   def evaluate(self):
     """runs the plant sim and returns (score, run_data)"""
+    print "-" * 10 + self.title
     plant = Plant(
       lead_relevancy = self.lead_relevancy,
       speed = self.speed,
