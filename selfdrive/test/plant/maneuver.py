@@ -15,7 +15,7 @@ class Maneuver(object):
     self.grade_values = kwargs.get("grade_values", [0.0, 0.0])
     self.grade_breakpoints = kwargs.get("grade_breakpoints", [0.0, duration])
     self.speed_lead_values = kwargs.get("speed_lead_values", [0.0, 0.0])
-    self.speed_lead_breakpoints = kwargs.get("speed_lead_values", [0.0, duration])
+    self.speed_lead_breakpoints = kwargs.get("speed_lead_breakpoints", [0.0, duration])
 
     self.cruise_button_presses = kwargs.get("cruise_button_presses", [])
 
