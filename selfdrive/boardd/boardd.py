@@ -2,6 +2,7 @@
 import os
 import struct
 import zmq
+import logging
 
 import selfdrive.messaging as messaging
 from common.realtime import Ratekeeper
@@ -22,10 +23,9 @@ def can_list_to_can_capnp(can_msgs, msgtype='can'):
   dat = messaging.new_message()
   dat.init(msgtype, len(can_msgs))
   for i, can_msg in enumerate(can_msgs):
+    
     if msgtype == 'sendcan':
       cc = dat.sendcan[i]
-    else:
-      cc = dat.can[i]
     cc.address = can_msg[0]
     cc.busTime = can_msg[1]
     cc.dat = can_msg[2]
