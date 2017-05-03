@@ -181,7 +181,7 @@ class Plant(object):
 
     # *** radar model ***
     if self.lead_relevancy:
-      d_rel = np.maximum(0., self.distance_lead - distance)
+      d_rel = np.maximum(0., distance_lead - distance)
       v_rel = v_lead - speed
     else:
       d_rel = 200.
