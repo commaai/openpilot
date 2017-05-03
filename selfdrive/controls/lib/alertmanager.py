@@ -58,6 +58,7 @@ class AlertManager(object):
     "wrongCarMode":       alert("Comma Unavailable","Main Switch Off",             ET.NO_ENTRY,     None, "chimeDouble", .4, 0., 3.),
     "outOfSpace":         alert("Comma Unavailable","Out of Space",                ET.NO_ENTRY,     None, "chimeDouble", .4, 0., 3.),
     "ethicalDilemma":     alert("Take Control Immediately","Ethical Dilemma Detected", ET.IMMEDIATE_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
+    "waveModelSending":   alert("Wave Model Working", "Alls Good",                 ET.WARNING,       "steerRequired", "chimeRepeated",1., 2.,3.),
     "startup":            alert("Always Keep Hands on Wheel","Be Ready to Take Over Any Time", ET.NO_ENTRY, None, None, 0., 0., 15.),
   }
   def __init__(self):
@@ -82,7 +83,7 @@ class AlertManager(object):
     if not enabled and this_alert.alert_type > ET.NO_ENTRY:
       this_alert = alert("Comma Unavailable" if this_alert.alert_text_1 != "" else "", this_alert.alert_text_2, ET.NO_ENTRY, None, "chimeDouble", .4, 0., 3.)
 
-    # ignore no entries if we are enabled 
+    # ignore no entries if we are enabled
     if enabled and this_alert.alert_type < ET.WARNING:
       return
 
@@ -126,4 +127,3 @@ class AlertManager(object):
     self.activealerts = []
 
     return alert_text_1, alert_text_2, visual_alert, audible_alert
-

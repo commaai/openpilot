@@ -46,6 +46,8 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
   model = messaging.sub_sock(context, service_list['model'].port)
   health = messaging.sub_sock(context, service_list['health'].port)
 
+  waveModel = messaging.sub_sock(context, service_list['waveModel'].port)
+  
   # connects to can and sendcan
   CI = CarInterface()
   VP = CI.getVehicleParams()
@@ -144,6 +146,12 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
 
     prof.checkpoint("Buttons")
 
+    wave_model_data = messaging.recv_sock(waveModel)
+    if wave_model_data is not None:
+      if ( wave_model_data.path.prob == 0.743 ):
+        AM.add("waveModelSending",enabled)
+  
+    
     # *** health checking logic ***
     hh = messaging.recv_sock(health)
     if hh is not None:
