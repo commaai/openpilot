@@ -27,7 +27,7 @@ from selfdrive.loggerd.config import ROOT
 managed_processes = {
   "uploader": "selfdrive.loggerd.uploader",
   "controlsd": "selfdrive.controls.controlsd",
-  "radard": "selfdrive.controls.radard",
+  # "radard": "selfdrive.controls.radard",
   "calibrationd": "selfdrive.calibrationd.calibrationd",
   "loggerd": "selfdrive.loggerd.loggerd",
   "logmessaged": "selfdrive.logmessaged",

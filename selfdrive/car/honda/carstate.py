@@ -156,7 +156,8 @@ def fingerprint(logcan):
       break
     elif len(possible_cars) == 0:
       print finger
-      raise Exception("car doesn't match any fingerprints")
+
+      raise Exception("car doesn't match any fingerprints " + str(adr) + ' ' + str(f))
 
   print "fingerprinted", possible_cars[0]
   return brake_only, possible_cars[0]

@@ -118,15 +118,15 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
       # reset awareness on any user action
       awareness_status = 1.0
 
-      # button presses for rear view
-      if b.type == "leftBlinker" or b.type == "rightBlinker":
-        if b.pressed:
-          rear_view_toggle = True
-        else:
-          rear_view_toggle = False
+    # button presses for rear view
+    #   if b.type == "leftBlinker" or b.type == "rightBlinker":
+    #     if b.pressed:
+    #       rear_view_toggle = True
+    #     else:
+    #       rear_view_toggle = False
 
-      if b.type == "altButton1" and b.pressed:
-        rear_view_toggle = not rear_view_toggle
+    #   if b.type == "altButton1" and b.pressed:
+    #     rear_view_toggle = not rear_view_toggle
 
       if not VP.brake_only and enabled and not b.pressed:
         if b.type == "accelCruise":
