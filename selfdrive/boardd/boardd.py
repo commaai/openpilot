@@ -16,7 +16,14 @@ try:
 except Exception:
   pass
 
-# TODO: rewrite in C to save CPU
+# implicit dependency on boards not reporting
+# can src above 15
+src_offset_shift = 4
+
+keys = ['board_pid', 'options', 'src_offset', 'handle']
+boards = [dict(zip(keys, [0xddcc, {'health': True}, 0, None]))]
+
+num_boards = len(boards)
 
 # *** serialization functions ***
 def can_list_to_can_capnp(can_msgs, msgtype='can'):
@@ -42,6 +49,14 @@ def can_capnp_to_can_list(can, src_filter=None):
 
 # *** can driver ***
 def can_health():
+
+  # pick a first health check board
+  handle = None
+  for board in boards:
+    if 'health' in board['options']:
+      handle = board['handle']
+      break
+
   while 1:
     try:
       dat = handle.controlRead(usb1.TYPE_VENDOR | usb1.RECIPIENT_DEVICE, 0xd2, 0, 0, 0x10)
@@ -52,54 +67,101 @@ def can_health():
   # TODO: units
   return {"voltage": v, "current": i, "started": bool(started)}
 
-def __parse_can_buffer(dat):
+def __parse_can_buffer(dat, src_offset):
   ret = []
   for j in range(0, len(dat), 0x10):
     ddat = dat[j:j+0x10]
     f1, f2 = struct.unpack("II", ddat[0:8])
-    ret.append((f1 >> 21, f2>>16, ddat[8:8+(f2&0xF)], (f2>>4)&3))
+    extended = 4
+    if f1 & extended:
+      # Extended, 29-bit address
+      address = f1 >> 3
+      print "extended %x" % address
+    else:
+      # Normal, 11-bit address
+      address = f1 >> 21
+
+    ret.append((address, f2>>16, ddat[8:8+(f2&0xF)], src_offset + (((f2>>4)&0xf))))
   return ret
 
 def can_send_many(arr):
-  snds = []
+  snds = [[] for i in range(0, num_boards)]
   for addr, _, dat, alt in arr:
-    snd = struct.pack("II", ((addr << 21) | 1), len(dat) | (alt << 4)) + dat
+    transmit = 1
+    extended = 4
+    if addr >= 0x800:
+      # Extended
+      rir = (addr << 3) | transmit | extended
+    else:
+      # Normal
+      rir = (addr << 21) | transmit
+    board_num = alt >> src_offset_shift
+    alt -= board_num << src_offset_shift
+
+    snd = struct.pack("II", rir, len(dat) | (alt << 4)) + dat
     snd = snd.ljust(0x10, '\x00')
-    snds.append(snd)
-  while 1:
-    try:
-      handle.bulkWrite(3, ''.join(snds))
-      break
-    except (USBErrorIO, USBErrorOverflow):
-      cloudlog.exception("CAN: BAD SEND MANY, RETRYING")
+    snds[board_num].append(snd)
+
+  for board_num, board_snds in enumerate(snds):
+    while 1:
+      try:
+        if len(board_snds) > 0:
+          boards[board_num]['handle'].bulkWrite(3, ''.join(board_snds))
+        break
+      except (USBErrorIO, USBErrorOverflow):
+        cloudlog.exception("CAN: BAD SEND MANY, RETRYING")
 
 def can_recv():
-  dat = ""
-  while 1:
-    try:
-      dat = handle.bulkRead(1, 0x10*256)
-      break
-    except (USBErrorIO, USBErrorOverflow):
-      cloudlog.exception("CAN: BAD RECV, RETRYING")
-  return __parse_can_buffer(dat)
+  result = []
+  for board in boards:
+    if board['handle'] is None:
+      continue
+
+    while 1:
+      try:
+        dat = board['handle'].bulkRead(1, 0x10*256)
+        break
+      except (USBErrorIO, USBErrorOverflow):
+        cloudlog.exception("CAN: BAD RECV, RETRYING")
+    result += __parse_can_buffer(dat, board['src_offset'])
+
+  return result
 
 def can_init():
-  global handle, context
   cloudlog.info("attempting can init")
 
   context = usb1.USBContext()
   #context.setDebug(9)
 
+  pid_to_config = {}
+  pids = []
+  for i, board in enumerate(boards):
+    board['src_offset'] = i << src_offset_shift
+    pid = board['board_pid']
+    pids.append(pid)
+    pid_to_config[pid] = board
+
   for device in context.getDeviceList(skip_on_error=True):
-    if device.getVendorID() == 0xbbaa and device.getProductID() == 0xddcc:
+    pid = device.getProductID()
+    if device.getVendorID() == 0xbbaa and pid in pids:
       handle = device.open()
       handle.claimInterface(0)
 
-  if handle is None:
-    print "CAN NOT FOUND"
-    exit(-1)
+      board = pid_to_config[pid]
+      board['handle'] = handle
 
-  print "got handle"
+      # enable single-wire gmlan
+      if 'gmlan' in board['options']:
+        try:
+          handle.controlWrite(usb1.TYPE_VENDOR | usb1.RECIPIENT_DEVICE, 0xdb, 1, 0, '')
+        except (USBErrorIO, USBErrorOverflow):
+          cloudlog.exception("CAN: COULDN'T ENABLE GMLAN")
+
+  for board in boards:
+    if (not 'optional' in board['options']) and board['handle'] is None:
+      print "Required board %x not found" % board['board_pid']
+      exit(-1)
+
   cloudlog.info("can init done")
 
 def boardd_mock_loop():

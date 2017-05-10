@@ -26,8 +26,30 @@
 int do_exit = 0;
 
 libusb_context *ctx = NULL;
-libusb_device_handle *dev_handle;
 pthread_mutex_t usb_lock;
+
+enum board_options {
+  DO_HEALTH_CHECK = 1,
+  ENABLE_SW_GMLAN = 2,
+  OPTIONAL = 4
+};
+
+struct board_config {
+  // distinguish between boards by different pids
+  uint16_t board_pid;
+  int options;
+  // figure out destination board by target can src
+  int src_offset;
+  libusb_device_handle *dev_handle;
+};
+
+// implicit dependency on boards not reporting
+// can src above 15
+const int src_offset_shift = 4;
+
+board_config boards[] = {{0xddcc, DO_HEALTH_CHECK, 0, NULL}};
+
+const int num_boards = sizeof(boards) / sizeof(boards[0]);
 
 bool spoofing_started = false;
 bool fake_send = false;
@@ -37,16 +59,47 @@ bool fake_send = false;
 #define TIMEOUT 0
 
 bool usb_connect() {
+  libusb_device_handle *dev_handle;
   int err;
 
-  dev_handle = libusb_open_device_with_vid_pid(ctx, 0xbbaa, 0xddcc);
-  if (dev_handle == NULL) { return false; }
+  for (int i = 0; i < num_boards; i++) {
+    board_config *config = boards + i;
+    bool required = !(config->options & OPTIONAL);
+    bool gmlan = !!(config->options & ENABLE_SW_GMLAN);
+    uint16_t pid = config->board_pid;
 
-  err = libusb_set_configuration(dev_handle, 1);
-  if (err != 0) { return false; }
+    dev_handle = libusb_open_device_with_vid_pid(ctx, 0xbbaa, pid);
+    if (dev_handle != NULL) {
+      err = libusb_set_configuration(dev_handle, 1);
+      if (err == 0) {
+        err = libusb_claim_interface(dev_handle, 0);
+      }
+      if (err == 0 && gmlan) {
+        // enable single-wire GMLAN if needed
+        err = libusb_control_transfer(dev_handle, 0xc0, 0xdb, 1, 0, NULL, 0, TIMEOUT);
+      }
+      if (err != 0) {
+        LOGE("failed to connect to board %x, err %d", pid, err);
+        libusb_close(dev_handle);
+        dev_handle = NULL;
+      }
+    }
 
-  err = libusb_claim_interface(dev_handle, 0);
-  if (err != 0) { return false; }
+    if (config->dev_handle != NULL) {
+      libusb_close(config->dev_handle);
+    }
+    config->dev_handle = dev_handle;
+    config->src_offset = i << src_offset_shift;
+
+    if (dev_handle == NULL) {
+      if (required) {
+        return false;
+      } else {
+        // This board is optional, ignore
+        continue;
+      }
+    }
+  }
 
   return true;
 }
@@ -67,22 +120,41 @@ void handle_usb_issue(int err, const char func[]) {
 }
 
 void can_recv(void *s) {
+  libusb_device_handle *dev_handle;
   int err;
-  uint32_t data[RECV_SIZE/4];
-  int recv;
-  uint32_t f1, f2;
+  uint32_t data[RECV_SIZE/4 * num_boards];
+  int board_msgs[num_boards];
+  uint8_t *board_data;
+  int recv = 0;
+  int board_recv;
 
   // do recv
   pthread_mutex_lock(&usb_lock);
- 
-  do {
-    err = libusb_bulk_transfer(dev_handle, 0x81, (uint8_t*)data, RECV_SIZE, &recv, TIMEOUT);
-    if (err != 0) { handle_usb_issue(err, __func__); }
-    if (err == -8) { LOGE("overflow got 0x%x", recv); };
 
-    // timeout is okay to exit, recv still happened
-    if (err == -7) { break; }
-  } while(err != 0);
+  for (int i = 0; i < num_boards; i++) {
+    dev_handle = boards[i].dev_handle;
+    if (dev_handle == NULL) {
+      // skip over an optional board
+      continue;
+    }
+
+    board_data = (uint8_t*)data + recv;
+
+    do {
+      err = libusb_bulk_transfer(dev_handle, 0x81, board_data, RECV_SIZE, &board_recv, TIMEOUT);
+      if (err != 0) { handle_usb_issue(err, __func__); }
+      if (err == -8) { LOGE("overflow got 0x%x", board_recv); };
+
+      // timeout is okay to exit, recv still happened
+      if (err == -7) { break; }
+    } while(err != 0);
+
+    recv += board_recv;
+
+    // number of messages received from
+    // i-th and all prior boards
+    board_msgs[i] = recv / 0x10;
+  }
 
   pthread_mutex_unlock(&usb_lock);
 
@@ -96,22 +168,30 @@ void can_recv(void *s) {
   cereal::Event::Builder event = msg.initRoot<cereal::Event>();
   event.setLogMonoTime(nanos_since_boot());
 
-  auto canData = event.initCan(recv/0x10);
+  int num_msg = recv / 0x10;
+  auto canData = event.initCan(num_msg);
 
   // populate message
-  for (int i = 0; i<(recv/0x10); i++) {
+  int board_num = 0;
+  for (int i = 0; i < num_msg; i++) {
+    while (i >= board_msgs[board_num]) {
+      board_num++;
+    }
+    int src_offset = boards[board_num].src_offset;
+
+    uint32_t address;
     if (data[i*4] & 4) {
       // extended
-      canData[i].setAddress(data[i*4] >> 3);
-      //printf("got extended: %x\n", data[i*4] >> 3);
+      address = data[i*4] >> 3;
     } else {
       // normal
-      canData[i].setAddress(data[i*4] >> 21);
+      address = data[i*4] >> 21;
     }
+    canData[i].setAddress(address);
     canData[i].setBusTime(data[i*4+1] >> 16);
     int len = data[i*4+1]&0xF;
     canData[i].setDat(kj::arrayPtr((uint8_t*)&data[i*4+2], len));
-    canData[i].setSrc((data[i*4+1] >> 4) & 3);
+    canData[i].setSrc(src_offset + ((data[i*4+1] >> 4) & 0xf));
   }
 
   // send to can
@@ -132,6 +212,21 @@ void can_health(void *s) {
     uint8_t gas_interceptor_detected;
     uint8_t started_signal_detected;
   } health;
+
+  // pick a first health check board
+  libusb_device_handle *dev_handle = NULL;
+  for (int i = 0; i < num_boards; i++) {
+    board_config *config = boards + i;
+    if ((config->options & DO_HEALTH_CHECK) &&
+      config->dev_handle != NULL) {
+      dev_handle = config->dev_handle;
+      break;
+    }
+  }
+  if (dev_handle == NULL) {
+    LOGE("health check board is unavailable");
+    return;
+  }
 
   // recv from board
   pthread_mutex_lock(&usb_lock);
@@ -184,22 +279,45 @@ void can_send(void *s) {
   capnp::FlatArrayMessageReader cmsg(amsg);
   cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
   int msg_count = event.getCan().size();
+  if (msg_count == 0)
+    return;
 
-  uint32_t *send = (uint32_t*)malloc(msg_count*0x10);
-  memset(send, 0, msg_count*0x10);
+  // overallocate to not to deal with sorting messages
+  uint32_t *send = (uint32_t*)malloc(msg_count * 0x10 * num_boards);
+  memset(send, 0, msg_count * 0x10 * num_boards);
+  uint32_t *board_send[num_boards];
+  int board_msgs[num_boards];
+
+  for (int i = 0; i < num_boards; i++) {
+    // per-board send buffer, preserves
+    // original message order
+    board_send[i] = send + i * msg_count * 4;
+    // number of messages in per-board buffer
+    board_msgs[i] = 0;
+  }
 
   for (int i = 0; i < msg_count; i++) {
     auto cmsg = event.getSendcan()[i];
+
+    // route message to specific board based on src
+    int src = cmsg.getSrc();
+    int board_num = src >> src_offset_shift;
+    src -= board_num << src_offset_shift;
+    uint32_t *bsend = board_send[board_num];
+    int j = 4 * (board_msgs[board_num]++);
+
+    int transmit = 1;
+    int extended = 4;
     if (cmsg.getAddress() >= 0x800) {
       // extended
-      send[i*4] = (cmsg.getAddress() << 3) | 5;
+      bsend[j] = (cmsg.getAddress() << 3) | transmit | extended;
     } else {
       // normal
-      send[i*4] = (cmsg.getAddress() << 21) | 1;
+      bsend[j] = (cmsg.getAddress() << 21) | transmit;
     }
     assert(cmsg.getDat().size() <= 8);
-    send[i*4+1] = cmsg.getDat().size() | (cmsg.getSrc() << 4);
-    memcpy(&send[i*4+2], cmsg.getDat().begin(), cmsg.getDat().size());
+    bsend[j+1] = cmsg.getDat().size() | (src << 4);
+    memcpy(&bsend[j + 2], cmsg.getDat().begin(), cmsg.getDat().size());
   }
 
   // release msg
@@ -210,10 +328,23 @@ void can_send(void *s) {
   pthread_mutex_lock(&usb_lock);
 
   if (!fake_send) {
-    do {
-      err = libusb_bulk_transfer(dev_handle, 3, (uint8_t*)send, msg_count*0x10, &sent, TIMEOUT);
-      if (err != 0 || msg_count*0x10 != sent) { handle_usb_issue(err, __func__); }
-    } while(err != 0);
+    for (int i = 0; i < num_boards; i++) {
+      int msgs = board_msgs[i];
+      if (msgs == 0) {
+        continue;
+      }
+
+      libusb_device_handle *dev_handle = boards[i].dev_handle;
+      if (dev_handle == NULL) {
+        LOGE("target board %d (pid %x) unavailable", i, boards[i].board_pid);
+        continue;
+      }
+
+      do {
+        err = libusb_bulk_transfer(dev_handle, 3, (uint8_t*)board_send[i], msgs*0x10, &sent, TIMEOUT);
+        if (err != 0 || msgs*0x10 != sent) { handle_usb_issue(err, __func__); }
+      } while(err != 0);
+    }
   }
 
   pthread_mutex_unlock(&usb_lock);
@@ -337,7 +468,13 @@ int main() {
 
   // destruct libusb
 
-  libusb_close(dev_handle);
+  for (int i = 0; i < num_boards; i++) {
+    libusb_device_handle *dev_handle = boards[i].dev_handle;
+    if (dev_handle != NULL) {
+      libusb_close(dev_handle);
+    }
+  }
+
   libusb_exit(ctx);
 }
 
