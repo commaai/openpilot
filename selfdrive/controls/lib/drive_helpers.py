@@ -1,5 +1,5 @@
 import numpy as np
-from common.numpy_fast import clip, interp
+from common.numpy_fast import clip
 
 def rate_limit(new_value, last_value, dw_step, up_step):
   return clip(new_value, last_value + dw_step, last_value + up_step)
@@ -21,33 +21,3 @@ def learn_angle_offset(lateral_control, v_ego, angle_offset, d_poly, y_des, stee
 
   return angle_offset
 
-def actuator_hystereses(final_brake, braking, brake_steady, v_ego, civic):
-  # hyst params... TODO: move these to VehicleParams
-  brake_hyst_on = 0.055 if civic else 0.1    # to activate brakes exceed this value
-  brake_hyst_off = 0.005                     # to deactivate brakes below this value
-  brake_hyst_gap = 0.01                      # don't change brake command for small ocilalitons within this value
-
-  #*** histeresys logic to avoid brake blinking. go above 0.1 to trigger
-  if (final_brake < brake_hyst_on and not braking) or final_brake < brake_hyst_off:
-    final_brake = 0.
-  braking = final_brake > 0.
-
-  # for small brake oscillations within brake_hyst_gap, don't change the brake command
-  if final_brake == 0.:
-    brake_steady = 0.
-  elif final_brake > brake_steady + brake_hyst_gap:
-    brake_steady = final_brake - brake_hyst_gap
-  elif final_brake < brake_steady - brake_hyst_gap:
-    brake_steady = final_brake + brake_hyst_gap
-  final_brake = brake_steady
-
-  if not civic:
-    brake_on_offset_v  = [.25, .15]   # min brake command on brake activation. below this no decel is perceived
-    brake_on_offset_bp = [15., 30.]     # offset changes VS speed to not have too abrupt decels at high speeds
-    # offset the brake command for threshold in the brake system. no brake torque perceived below it
-    brake_on_offset = interp(v_ego, brake_on_offset_bp, brake_on_offset_v)
-    brake_offset = brake_on_offset - brake_hyst_on
-    if final_brake > 0.0:
-      final_brake += brake_offset
-
-  return final_brake, braking, brake_steady

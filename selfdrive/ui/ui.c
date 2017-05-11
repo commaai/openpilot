@@ -10,6 +10,7 @@
 #include <GLES3/gl3.h>
 #include <EGL/eglext.h>
 
+#include <json.h>
 #include <czmq.h>
 
 #include "nanovg.h"
@@ -22,25 +23,17 @@
 #include "common/mat.h"
 #include "common/glutil.h"
 
+#include "common/touch.h"
 #include "common/framebuffer.h"
 #include "common/visionipc.h"
 #include "common/modeldata.h"
-
-#include "common/version.h"
+#include "common/params.h"
 
 #include "cereal/gen/c/log.capnp.h"
 
-#include "touch.h"
-
 #define UI_BUF_COUNT 4
-typedef struct UIBuf {
-  int fd;
-  size_t len;
-  void* addr;
-} UIBuf;
 
 typedef struct UIScene {
-
   int frontview;
 
   uint8_t *bgr_ptr;
@@ -51,7 +44,10 @@ typedef struct UIScene {
   uint64_t model_ts;
   ModelData model;
 
-  mat3 big_box_transform; // transformed box -> big box
+  bool world_objects_visible;
+  // TODO(mgraczyk): Remove and use full frame for everything.
+  mat3 warp_matrix;           // transformed box -> big_box.
+  mat4 extrinsic_matrix;      // Last row is 0 so we can use mat4.
 
   float v_cruise;
   float v_ego;
@@ -70,7 +66,6 @@ typedef struct UIScene {
   float awareness_status;
 } UIScene;
 
-
 typedef struct UIState {
   pthread_mutex_t lock;
 
@@ -85,36 +80,22 @@ typedef struct UIState {
   NVGcontext *vg;
   int font;
 
-
-
   zsock_t *model_sock;
-  void* model_sock_raw;
+  void *model_sock_raw;
   zsock_t *live100_sock;
-  void* live100_sock_raw;
+  void *live100_sock_raw;
   zsock_t *livecalibration_sock;
-  void* livecalibration_sock_raw;
+  void *livecalibration_sock_raw;
   zsock_t *live20_sock;
-  void* live20_sock_raw;
-
-  // base ui
-  uint64_t last_base_update;
-  uint64_t last_tx_bytes;
-  char serial[4096];
-  const char* dongle_id;
-  char base_text[4096];
-  int wifi_enabled;
-  int ap_enabled;
-  int board_connected;
+  void *live20_sock_raw;
 
   // vision state
-
   bool vision_connected;
   bool vision_connect_firstrun;
   int ipc_fd;
 
-  VisionUIBufs vision_bufs;
-  UIBuf bufs[UI_BUF_COUNT];
-  UIBuf front_bufs[UI_BUF_COUNT];
+  VisionBuf bufs[UI_BUF_COUNT];
+  VisionBuf front_bufs[UI_BUF_COUNT];
   int cur_vision_idx;
   int cur_vision_front_idx;
 
@@ -134,86 +115,40 @@ typedef struct UIState {
   unsigned int rgb_front_width, rgb_front_height;
   GLuint frame_front_tex;
 
+  bool intrinsic_matrix_loaded;
+  mat3 intrinsic_matrix;
+
   UIScene scene;
-  
+
   bool awake;
   int awake_timeout;
 } UIState;
 
 static void set_awake(UIState *s, bool awake) {
   if (awake) {
-    // 30 second timeout
-    s->awake_timeout = 30;
+    // 15 second timeout at 30 fps
+    s->awake_timeout = 15*30;
   }
   if (s->awake != awake) {
     s->awake = awake;
 
-    // TODO: actually turn off the screen and not just the backlight
-    FILE *f = fopen("/sys/class/leds/lcd-backlight/brightness", "wb");
-    if (f != NULL) {
-      if (awake) {
+    if (awake) {
+      printf("awake normal\n");
+      framebuffer_set_power(s->fb, HWC_POWER_MODE_NORMAL);
+
+      // can't hurt
+      FILE *f = fopen("/sys/class/leds/lcd-backlight/brightness", "wb");
+      if (f != NULL) {
         fprintf(f, "205");
-      } else {
-        fprintf(f, "0");
+        fclose(f);
       }
-      fclose(f);
+    } else {
+      printf("awake off\n");
+      framebuffer_set_power(s->fb, HWC_POWER_MODE_OFF);
     }
   }
 }
 
-static bool activity_running() {
-  return system("dumpsys activity activities | grep mFocusedActivity > /dev/null") == 0;
-}
-
-static void start_settings_activity(const char* name) {
-  char launch_cmd[1024];
-  snprintf(launch_cmd, sizeof(launch_cmd),
-           "am start -W --ez :settings:show_fragment_as_subsetting true -n 'com.android.settings/.%s'", name);
-  system(launch_cmd);
-}
-
-static void wifi_pressed() {
-  start_settings_activity("Settings$WifiSettingsActivity");
-}
-static void ap_pressed() {
-  start_settings_activity("Settings$TetherSettingsActivity");
-}
-
-static int wifi_enabled(UIState *s) {
-  return s->wifi_enabled;
-}
-
-static int ap_enabled(UIState *s) {
-  return s->ap_enabled;
-}
-
-typedef struct Button {
-  const char* label;
-  int x, y, w, h;
-  void (*pressed)(void);
-  int (*enabled)(UIState *);
-} Button;
-static const Button buttons[] = {
-  {
-    .label = "wifi",
-    .x = 400, .y = 730, .w = 250, .h = 250,
-    .pressed = wifi_pressed,
-    .enabled = wifi_enabled,
-  },
-  {
-    .label = "ap",
-    .x = 1300, .y = 730, .w = 250, .h = 250,
-    .pressed = ap_pressed,
-    .enabled = ap_enabled,
-  }
-};
-
-// transform from road space into little-box (used for drawing path)
-static const mat3 path_transform = {{
-   1.29149378e+00, -2.30320967e-01, -3.02391994e+01,
-  -1.72449331e-15, -2.12045399e-02,  5.03539175e+01,
-  -3.24378996e-17, -1.38821089e-03,  1.06663412e+00,
-}};
 
 static const char frame_vertex_shader[] =
   "attribute vec4 aPosition;\n"
@@ -299,24 +234,15 @@ static void ui_init(UIState *s) {
   s->fb = framebuffer_init("ui", 0x00001000,
                            &s->display, &s->surface, &s->fb_w, &s->fb_h);
   assert(s->fb);
-
-
-  // init base
-  property_get("ro.serialno", s->serial, "");
-
-  s->dongle_id = getenv("DONGLE_ID");
-  if (!s->dongle_id) s->dongle_id = "(null)";
-
+  set_awake(s, true);
 
   // init drawing
   s->vg = nvgCreateGLES3(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
   assert(s->vg);
-  //s->font = nvgCreateFont(s->vg, "sans-bold", "../assets/Roboto-Bold.ttf");
   s->font = nvgCreateFont(s->vg, "Bold", "../assets/courbd.ttf");
   assert(s->font >= 0);
 
   // init gl
-
   s->frame_program = load_program(frame_vertex_shader, frame_fragment_shader);
   assert(s->frame_program);
 
@@ -325,7 +251,6 @@ static void ui_init(UIState *s) {
 
   s->frame_texture_loc = glGetUniformLocation(s->frame_program, "uTexture");
   s->frame_transform_loc = glGetUniformLocation(s->frame_program, "uTransform");
-
 
   s->line_program = load_program(line_vertex_shader, line_fragment_shader);
   assert(s->line_program);
@@ -339,76 +264,77 @@ static void ui_init(UIState *s) {
   glDisable(GL_DEPTH_TEST);
 
   assert(glGetError() == GL_NO_ERROR);
-
-  // set awake
-  set_awake(s, true);
 }
 
 
-static void ui_init_vision(UIState *s, const VisionUIBufs vision_bufs, const int* fds) {
-  assert(vision_bufs.num_bufs == UI_BUF_COUNT);
-  assert(vision_bufs.num_front_bufs == UI_BUF_COUNT);
+// If the intrinsics are in the params entry, this copies them to
+// intrinsic_matrix and returns true.  Otherwise returns false.
+static bool try_load_intrinsics(mat3 *intrinsic_matrix) {
+  char *value;
+  const int result =
+      read_db_value("/data/params", "CloudCalibration", &value, NULL);
 
-  for (int i=0; i<vision_bufs.num_bufs; i++) {
-    if (s->bufs[i].addr) {
-      munmap(s->bufs[i].addr, vision_bufs.buf_len);
-      s->bufs[i].addr = NULL;
-      close(s->bufs[i].fd);
+  if (result == 0) {
+    JsonNode* calibration_json = json_decode(value);
+    free(value);
+
+    JsonNode *intrinsic_json =
+        json_find_member(calibration_json, "intrinsic_matrix");
+
+    if (intrinsic_json == NULL || intrinsic_json->tag != JSON_ARRAY) {
+      json_delete(calibration_json);
+      return false;
     }
-    s->bufs[i].fd = fds[i];
-    s->bufs[i].len = vision_bufs.buf_len;
-    s->bufs[i].addr = mmap(NULL, s->bufs[i].len,
-                   PROT_READ | PROT_WRITE,
-                   MAP_SHARED, s->bufs[i].fd, 0);
-    // printf("b %d %p\n", bufs[i].fd, bufs[i].addr);
-    assert(s->bufs[i].addr != MAP_FAILED);
-  }
-  for (int i=0; i<vision_bufs.num_front_bufs; i++) {
-    if (s->front_bufs[i].addr) {
-      munmap(s->front_bufs[i].addr, vision_bufs.buf_len);
-      s->front_bufs[i].addr = NULL;
-      close(s->front_bufs[i].fd);
+
+    int i = 0;
+    JsonNode* json_num; 
+    json_foreach(json_num, intrinsic_json) {
+      intrinsic_matrix->v[i++] = json_num->number_;
     }
-    s->front_bufs[i].fd = fds[vision_bufs.num_bufs + i];
-    s->front_bufs[i].len = vision_bufs.front_buf_len;
-    s->front_bufs[i].addr = mmap(NULL, s->front_bufs[i].len,
-                   PROT_READ | PROT_WRITE,
-                   MAP_SHARED, s->front_bufs[i].fd, 0);
-    // printf("f %d %p\n", front_bufs[i].fd, front_bufs[i].addr);
-    assert(s->front_bufs[i].addr != MAP_FAILED);
+    json_delete(calibration_json);
+
+    return true;
+  } else {
+    return false;
   }
+}
+
+
+static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
+                           int num_back_fds, const int *back_fds,
+                           const VisionStreamBufs front_bufs, int num_front_fds,
+                           const int *front_fds) {
+  const VisionUIInfo ui_info = back_bufs.buf_info.ui_info;
+
+  assert(num_back_fds == UI_BUF_COUNT);
+  assert(num_front_fds == UI_BUF_COUNT);
+
+  visionbufs_load(s->bufs, &back_bufs, num_back_fds, back_fds);
+  visionbufs_load(s->front_bufs, &front_bufs, num_front_fds, front_fds);
 
   s->cur_vision_idx = -1;
   s->cur_vision_front_idx = -1;
 
   s->scene = (UIScene){
-    .frontview = 0,
-    .big_box_x = vision_bufs.big_box_x,
-    .big_box_y = vision_bufs.big_box_y,
-    .big_box_width = vision_bufs.big_box_width,
-    .big_box_height = vision_bufs.big_box_height,
-    .transformed_width = vision_bufs.transformed_width,
-    .transformed_height = vision_bufs.transformed_height,
-    .front_box_x = vision_bufs.front_box_x,
-    .front_box_y = vision_bufs.front_box_y,
-    .front_box_width = vision_bufs.front_box_width,
-    .front_box_height = vision_bufs.front_box_height,
-
-    // only used when ran without controls. overwridden by liveCalibration messages.
-    .big_box_transform = (mat3){{
-      1.16809241e+00,  -3.18601797e-02,   7.42513711e+01,
-      7.97437780e-02,   1.09117765e+00,   5.71824220e+01,
-      8.67937981e-05,  -7.68221181e-05,   1.00196836e+00,
-    }},
+      .frontview = 0,
+      .big_box_x = ui_info.big_box_x,
+      .big_box_y = ui_info.big_box_y,
+      .big_box_width = ui_info.big_box_width,
+      .big_box_height = ui_info.big_box_height,
+      .transformed_width = ui_info.transformed_width,
+      .transformed_height = ui_info.transformed_height,
+      .front_box_x = ui_info.front_box_x,
+      .front_box_y = ui_info.front_box_y,
+      .front_box_width = ui_info.front_box_width,
+      .front_box_height = ui_info.front_box_height,
+      .world_objects_visible = false,  // Invisible until we receive a calibration message.
   };
 
-  s->vision_bufs = vision_bufs;
+  s->rgb_width = back_bufs.width;
+  s->rgb_height = back_bufs.height;
 
-  s->rgb_width = vision_bufs.width;
-  s->rgb_height = vision_bufs.height;
-
-  s->rgb_front_width = vision_bufs.front_width;
-  s->rgb_front_height = vision_bufs.front_height;
+  s->rgb_front_width = front_bufs.width;
+  s->rgb_front_height = front_bufs.height;
 
   s->rgb_transform = (mat4){{
     2.0/s->rgb_width, 0.0, 0.0, -1.0,
@@ -442,37 +368,10 @@ static void ui_update_frame(UIState *s) {
   assert(glGetError() == GL_NO_ERROR);
 }
 
-static void draw_rgb_box(UIState *s, int x, int y, int w, int h, uint32_t color) {
-  const struct {
-    uint32_t x, y, color;
-  } verts[] = {
-    {x, y, color},
-    {x+w, y, color},
-    {x+w, y+h, color},
-    {x, y+h, color},
-    {x, y, color},
-  };
-
-  glUseProgram(s->line_program);
-
-  mat4 out_mat = matmul(device_transform,
-                        matmul(frame_transform, s->rgb_transform));
-  glUniformMatrix4fv(s->line_transform_loc, 1, GL_TRUE, out_mat.v);
-
-  glEnableVertexAttribArray(s->line_pos_loc);
-  glVertexAttribPointer(s->line_pos_loc, 2, GL_UNSIGNED_INT, GL_FALSE, sizeof(verts[0]), &verts[0].x);
-
-  glEnableVertexAttribArray(s->line_color_loc);
-  glVertexAttribPointer(s->line_color_loc, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(verts[0]), &verts[0].color);
-
-  assert(glGetError() == GL_NO_ERROR);
-  glDrawArrays(GL_LINE_STRIP, 0, ARRAYSIZE(verts));
-}
-
 static void ui_draw_transformed_box(UIState *s, uint32_t color) {
   const UIScene *scene = &s->scene;
 
-  const mat3 bbt = scene->big_box_transform;
+  const mat3 bbt = scene->warp_matrix;
 
   struct {
     vec3 pos;
@@ -487,8 +386,8 @@ static void ui_draw_transformed_box(UIState *s, uint32_t color) {
 
   for (int i=0; i<ARRAYSIZE(verts); i++) {
     verts[i].pos.v[0] = scene->big_box_x + verts[i].pos.v[0] / verts[i].pos.v[2];
-    verts[i].pos.v[1] = scene->big_box_y + verts[i].pos.v[1] / verts[i].pos.v[2];
-    verts[i].pos.v[1] = s->rgb_height - verts[i].pos.v[1];
+    verts[i].pos.v[1] = s->rgb_height - (scene->big_box_y +
+                                         verts[i].pos.v[1] / verts[i].pos.v[2]);
   }
 
   glUseProgram(s->line_program);
@@ -507,14 +406,29 @@ static void ui_draw_transformed_box(UIState *s, uint32_t color) {
   glDrawArrays(GL_LINE_STRIP, 0, ARRAYSIZE(verts));
 }
 
+// Projects a point in car to space to the corresponding point in full frame
+// image space.
+vec3 car_space_to_full_frame(const UIState *s, vec4 car_space_projective) {
+  const UIScene *scene = &s->scene;
+
+  // We'll call the car space point p.
+  // First project into normalized image coordinates with the extrinsics matrix.
+  const vec4 Ep4 = matvecmul(scene->extrinsic_matrix, car_space_projective);
+
+  // The last entry is zero because of how we store E (to use matvecmul).
+  const vec3 Ep = {{Ep4.v[0], Ep4.v[1], Ep4.v[2]}};
+  const vec3 KEp = matvecmul3(s->intrinsic_matrix, Ep);
+
+  // Project.
+  const vec3 p_image = {{KEp.v[0] / KEp.v[2], KEp.v[1] / KEp.v[2], 1.}};
+  return p_image;
+}
+
+
 // TODO: refactor with draw_path
 static void draw_cross(UIState *s, float x_in, float y_in, float sz, NVGcolor color) {
   const UIScene *scene = &s->scene;
 
-  const float meter_width = 20;
-  const float car_x = 160;
-  const float car_y = 570 + meter_width * 8;
-
   nvgSave(s->vg);
 
   // path coords are worked out in rgb-box space
@@ -530,33 +444,27 @@ static void draw_cross(UIState *s, float x_in, float y_in, float sz, NVGcolor co
   nvgStrokeColor(s->vg, color);
   nvgStrokeWidth(s->vg, 5);
 
-  float px = -y_in * meter_width + car_x;
-  float py = x_in * -meter_width + car_y;
+  const vec4 p_car_space = (vec4){{x_in, y_in, 0., 1.}};
+  const vec3 p_full_frame = car_space_to_full_frame(s, p_car_space);
 
-  vec3 dxy = matvecmul3(path_transform, (vec3){{px, py, 1.0}});
-  dxy.v[0] /= dxy.v[2]; dxy.v[1] /= dxy.v[2]; dxy.v[2] = 1.0f; //paranoia
-  vec3 bbpos = matvecmul3(scene->big_box_transform, dxy);
+  float x = p_full_frame.v[0];
+  float y = p_full_frame.v[1];
+  if (x >= 0 && y >= 0.) {
+    nvgMoveTo(s->vg, x-sz, y);
+    nvgLineTo(s->vg, x+sz, y);
 
-  float x = scene->big_box_x + bbpos.v[0]/bbpos.v[2];
-  float y = scene->big_box_y + bbpos.v[1]/bbpos.v[2];
+    nvgMoveTo(s->vg, x, y-sz);
+    nvgLineTo(s->vg, x, y+sz);
 
-  nvgMoveTo(s->vg, x-sz, y);
-  nvgLineTo(s->vg, x+sz, y);
-
-  nvgMoveTo(s->vg, x, y-sz);
-  nvgLineTo(s->vg, x, y+sz);
-
-  nvgStroke(s->vg);
+    nvgStroke(s->vg);
+  }
 
   nvgRestore(s->vg);
 }
 
-static void draw_path(UIState *s, const float* points, float off, NVGcolor color) {
+static void draw_path(UIState *s, const float *points, float off,
+                      NVGcolor color) {
   const UIScene *scene = &s->scene;
-
-  const float meter_width = 20;
-  const float car_x = 160;
-  const float car_y = 570 + meter_width * 8;
 
   nvgSave(s->vg);
 
@@ -569,24 +477,27 @@ static void draw_path(UIState *s, const float* points, float off, NVGcolor color
 
   nvgScale(s->vg, 1440.0f / s->rgb_width, 1080.0f / s->rgb_height);
 
-
   nvgBeginPath(s->vg);
   nvgStrokeColor(s->vg, color);
   nvgStrokeWidth(s->vg, 5);
+  bool started = false;
 
   for (int i=0; i<50; i++) {
-    float px = (-points[i] + off) * meter_width + car_x;
-    float py = (float)i * -meter_width + car_y;
+    float px = (float)i;
+    float py = points[i] + off;
 
-    vec3 dxy = matvecmul3(path_transform, (vec3){{px, py, 1.0}});
-    dxy.v[0] /= dxy.v[2]; dxy.v[1] /= dxy.v[2]; dxy.v[2] = 1.0f; //paranoia
-    vec3 bbpos = matvecmul3(scene->big_box_transform, dxy);
+    vec4 p_car_space = (vec4){{px, py, 0., 1.}};
+    vec3 p_full_frame = car_space_to_full_frame(s, p_car_space);
 
-    float x = scene->big_box_x + bbpos.v[0]/bbpos.v[2];
-    float y = scene->big_box_y + bbpos.v[1]/bbpos.v[2];
+    float x = p_full_frame.v[0];
+    float y = p_full_frame.v[1];
+    if (x < 0 || y < 0.) {
+      continue;
+    }
 
-    if (i == 0) {
+    if (!started) {
       nvgMoveTo(s->vg, x, y);
+      started = true;
     } else {
       nvgLineTo(s->vg, x, y);
     }
@@ -614,7 +525,8 @@ static double calc_curvature(float v_ego, float angle_steers) {
   const double angle_offset = 0.0;
 
   double angle_steers_rad = (angle_steers - angle_offset) * deg_to_rad;
-  double curvature = angle_steers_rad/(steer_ratio * wheel_base * (1. + slip_fator * v_ego*v_ego));
+  double curvature = angle_steers_rad / (steer_ratio * wheel_base *
+                                         (1. + slip_fator * v_ego * v_ego));
   return curvature;
 }
 
@@ -622,8 +534,8 @@ static void draw_steering(UIState *s, float v_ego, float angle_steers) {
   double curvature = calc_curvature(v_ego, angle_steers);
 
   float points[50];
-  for (int i=0; i<50; i++) {
-    float y_actual = i * tan(asin(clamp(i * curvature, -0.999, 0.999))/2.);
+  for (int i = 0; i < 50; i++) {
+    float y_actual = i * tan(asin(clamp(i * curvature, -0.999, 0.999)) / 2.);
     points[i] = y_actual;
   }
 
@@ -675,13 +587,52 @@ static void draw_frame(UIState *s) {
   glUniformMatrix4fv(s->frame_transform_loc, 1, GL_TRUE, out_mat.v);
 
   glEnableVertexAttribArray(s->frame_pos_loc);
-  glVertexAttribPointer(s->frame_pos_loc, 2, GL_FLOAT, GL_FALSE, sizeof(frame_coords[0]), frame_coords);
+  glVertexAttribPointer(s->frame_pos_loc, 2, GL_FLOAT, GL_FALSE,
+                        sizeof(frame_coords[0]), frame_coords);
 
   glEnableVertexAttribArray(s->frame_texcoord_loc);
-  glVertexAttribPointer(s->frame_texcoord_loc, 2, GL_FLOAT, GL_FALSE, sizeof(frame_coords[0]), &frame_coords[0][2]);
+  glVertexAttribPointer(s->frame_texcoord_loc, 2, GL_FLOAT, GL_FALSE,
+                        sizeof(frame_coords[0]), &frame_coords[0][2]);
 
   assert(glGetError() == GL_NO_ERROR);
   glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, &frame_indicies[0]);
+}
+
+// Draw all world space objects.
+static void ui_draw_world(UIState *s) {
+  const UIScene *scene = &s->scene;
+  if (!scene->world_objects_visible) {
+    return;
+  }
+
+  draw_steering(s, scene->v_ego, scene->angle_steers);
+
+  // draw paths
+  if ((nanos_since_boot() - scene->model_ts) < 1000000000ULL) {
+    draw_path(s, scene->model.path.points, 0.0f, nvgRGBA(128, 0, 255, 255));
+
+    draw_model_path(
+        s, scene->model.left_lane,
+        nvgRGBA(0, (int)(255 * scene->model.left_lane.prob), 0, 128));
+    draw_model_path(
+        s, scene->model.right_lane,
+        nvgRGBA(0, (int)(255 * scene->model.right_lane.prob), 0, 128));
+  }
+
+  if (scene->lead_status) {
+    char radar_str[16];
+    int lead_v_rel = (int)(2.236 * scene->lead_v_rel);
+    snprintf(radar_str, sizeof(radar_str), "%3d m %+d mph",
+             (int)(scene->lead_d_rel), lead_v_rel);
+    nvgFontSize(s->vg, 96.0f);
+    nvgFillColor(s->vg, nvgRGBA(128, 128, 0, 192));
+    nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
+    nvgText(s->vg, 1920 / 2, 150, radar_str, NULL);
+
+    // 2.7 m fudge factor
+    draw_cross(s, scene->lead_d_rel + 2.7, scene->lead_y_rel, 15,
+               nvgRGBA(255, 0, 0, 128));
+  }
 }
 
 static void ui_draw_vision(UIState *s) {
@@ -696,107 +647,80 @@ static void ui_draw_vision(UIState *s) {
 
   draw_frame(s);
 
+  // nvg drawings
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  // glEnable(GL_CULL_FACE);
+
+  glClear(GL_STENCIL_BUFFER_BIT);
+
+  nvgBeginFrame(s->vg, s->fb_w, s->fb_h, 1.0f);
+
   if (!scene->frontview) {
-    /*draw_rgb_box(s, scene->big_box_x, s->rgb_height-scene->big_box_height-scene->big_box_y,
-                    scene->big_box_width, scene->big_box_height,
-                    0xFF0000FF);*/
-
     ui_draw_transformed_box(s, 0xFF00FF00);
-
-    // nvg drawings
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    // glEnable(GL_CULL_FACE);
-
-
-    glClear(GL_STENCIL_BUFFER_BIT);
-
-    nvgBeginFrame(s->vg, s->fb_w, s->fb_h, 1.0f);
-
-    draw_steering(s, scene->v_ego, scene->angle_steers);
-
-    // draw paths
-
-    if ((nanos_since_boot() - scene->model_ts) < 1000000000ULL) {
-      draw_path(s, scene->model.path.points, 0.0f, nvgRGBA(128, 0, 255, 255));
-
-      draw_model_path(s, scene->model.left_lane, nvgRGBA(0, (int)(255 * scene->model.left_lane.prob), 0, 128));
-      draw_model_path(s, scene->model.right_lane, nvgRGBA(0, (int)(255 * scene->model.right_lane.prob), 0, 128));
-    }
+    ui_draw_world(s);
 
     // draw speed
     char speed_str[16];
     nvgFontSize(s->vg, 128.0f);
-
     if (scene->engaged) {
-      nvgFillColor(s->vg, nvgRGBA(255,128,0,192));
+      nvgFillColor(s->vg, nvgRGBA(255, 128, 0, 192));
     } else {
-      nvgFillColor(s->vg, nvgRGBA(64,64,64,192));
+      nvgFillColor(s->vg, nvgRGBA(64, 64, 64, 192));
     }
 
     if (scene->v_cruise != 255 && scene->v_cruise != 0) {
       // Convert KPH to MPH.
-      snprintf(speed_str, sizeof(speed_str), "%3d MPH", (int)(scene->v_cruise * 0.621371 + 0.5));
+      snprintf(speed_str, sizeof(speed_str), "%3d MPH",
+               (int)(scene->v_cruise * 0.621371 + 0.5));
       nvgTextAlign(s->vg, NVG_ALIGN_RIGHT | NVG_ALIGN_BASELINE);
       nvgText(s->vg, 500, 150, speed_str, NULL);
     }
 
-    nvgFillColor(s->vg, nvgRGBA(255,255,255,192));
-    snprintf(speed_str, sizeof(speed_str), "%3d MPH", (int)(scene->v_ego * 2.237 + 0.5));
+    nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 192));
+    snprintf(speed_str, sizeof(speed_str), "%3d MPH",
+             (int)(scene->v_ego * 2.237 + 0.5));
     nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
-    nvgText(s->vg, 1920-500, 150, speed_str, NULL);
+    nvgText(s->vg, 1920 - 500, 150, speed_str, NULL);
 
     /*nvgFontSize(s->vg, 64.0f);
     nvgTextAlign(s->vg, NVG_ALIGN_RIGHT | NVG_ALIGN_BASELINE);
     nvgText(s->vg, 100+450-20, 1080-100, "mph", NULL);*/
 
-    if (scene->lead_status) {
-      char radar_str[16];
-      int lead_v_rel = (int)(2.236 * scene->lead_v_rel);
-      snprintf(radar_str, sizeof(radar_str), "%3d m %+d mph", (int)(scene->lead_d_rel), lead_v_rel);
-      nvgFontSize(s->vg, 96.0f);
-      nvgFillColor(s->vg, nvgRGBA(128,128,0,192));
-      nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
-      nvgText(s->vg, 1920/2, 150, radar_str, NULL);
-
-      // 2.7 m fudge factor
-      draw_cross(s, scene->lead_d_rel + 2.7, scene->lead_y_rel, 15, nvgRGBA(255, 0, 0, 128));
-    }
-
-
-    // draw alert text
-    if (strlen(scene->alert_text1) > 0) {
-      nvgBeginPath(s->vg);
-      nvgRoundedRect(s->vg, 100, 200, 1700, 800, 40);
-      nvgFillColor(s->vg, nvgRGBA(10,10,10,220));
-      nvgFill(s->vg);
-
-      nvgFontSize(s->vg, 200.0f);
-      nvgFillColor(s->vg, nvgRGBA(255,0,0,255));
-      nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
-      nvgTextBox(s->vg, 100+50, 200+50, 1700-50, scene->alert_text1, NULL);
-
-      if (strlen(scene->alert_text2) > 0) {
-        nvgFillColor(s->vg, nvgRGBA(255,255,255,255));
-        nvgFontSize(s->vg, 100.0f);
-        nvgText(s->vg, 100+1700/2, 200+550, scene->alert_text2, NULL);
-      }
-    }
-
     if (scene->awareness_status > 0) {
       nvgBeginPath(s->vg);
-      int bar_height = scene->awareness_status*700;
-      nvgRect(s->vg, 100, 300+(700-bar_height), 50, bar_height);
-      nvgFillColor(s->vg, nvgRGBA(255*(1-scene->awareness_status),255*scene->awareness_status,0,128));
+      int bar_height = scene->awareness_status * 700;
+      nvgRect(s->vg, 100, 300 + (700 - bar_height), 50, bar_height);
+      nvgFillColor(s->vg, nvgRGBA(255 * (1 - scene->awareness_status),
+                                  255 * scene->awareness_status, 0, 128));
       nvgFill(s->vg);
     }
-
-    nvgEndFrame(s->vg);
-
-    glDisable(GL_BLEND);
-    glDisable(GL_CULL_FACE);
   }
+
+  // draw alert text
+  if (strlen(scene->alert_text1) > 0) {
+    nvgBeginPath(s->vg);
+    nvgRoundedRect(s->vg, 100, 200, 1700, 800, 40);
+    nvgFillColor(s->vg, nvgRGBA(10, 10, 10, 220));
+    nvgFill(s->vg);
+
+    nvgFontSize(s->vg, 200.0f);
+    nvgFillColor(s->vg, nvgRGBA(255, 0, 0, 255));
+    nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
+    nvgTextBox(s->vg, 100 + 50, 200 + 50, 1700 - 50, scene->alert_text1,
+                NULL);
+
+    if (strlen(scene->alert_text2) > 0) {
+      nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 255));
+      nvgFontSize(s->vg, 100.0f);
+      nvgTextBox(s->vg, 100 + 50, 200 + 550, 1700 - 2*50, scene->alert_text2, NULL);
+    }
+  }
+
+  nvgEndFrame(s->vg);
+
+  glDisable(GL_BLEND);
+  glDisable(GL_CULL_FACE);
 }
 
 static void ui_draw_blank(UIState *s) {
@@ -804,57 +728,9 @@ static void ui_draw_blank(UIState *s) {
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 }
 
-static void ui_draw_base(UIState *s) {
-  glClearColor(0.1, 0.1, 0.1, 1.0);
-  glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  nvgBeginFrame(s->vg, s->fb_w, s->fb_h, 1.0f);
-
-  nvgFontSize(s->vg, 96.0f);
-  nvgFillColor(s->vg, nvgRGBA(255,255,255,255));
-  nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
-  nvgTextBox(s->vg, 50, 100, s->fb_w, s->base_text, NULL);
-
-  // draw buttons
-  for (int i=0; i<ARRAYSIZE(buttons); i++) {
-    const Button *b = &buttons[i];
-
-
-    nvgBeginPath(s->vg);
-    nvgFillColor(s->vg, nvgRGBA(0, 0, 0, 255));
-    nvgRoundedRect(s->vg, b->x, b->y, b->w, b->h, 20);
-    nvgFill(s->vg);
-
-    if (b->label) {
-      if (b->enabled && b->enabled(s)) {
-        nvgFillColor(s->vg, nvgRGBA(0, 255, 0, 255));
-      } else {
-        nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 255));
-      }
-      nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-      nvgText(s->vg, b->x+b->w/2, b->y+b->h/2, b->label, NULL);
-    }
-
-    nvgBeginPath(s->vg);
-    nvgStrokeColor(s->vg, nvgRGBA(255, 255, 255, 255));
-    nvgStrokeWidth(s->vg, 5);
-    nvgRoundedRect(s->vg, b->x, b->y, b->w, b->h, 20);
-    nvgStroke(s->vg);
-  }
-
-  nvgEndFrame(s->vg);
-
-  glDisable(GL_BLEND);
-}
-
 static void ui_draw(UIState *s) {
-
   if (s->vision_connected) {
     ui_draw_vision(s);
-  } else if (s->awake) {
-    ui_draw_base(s);
   } else {
     ui_draw_blank(s);
   }
@@ -862,7 +738,6 @@ static void ui_draw(UIState *s) {
   eglSwapBuffers(s->display, s->surface);
   assert(glGetError() == GL_NO_ERROR);
 }
-
 
 static PathData read_path(cereal_ModelData_PathData_ptr pathp) {
   PathData ret = {0};
@@ -875,7 +750,7 @@ static PathData read_path(cereal_ModelData_PathData_ptr pathp) {
 
   capn_list32 pointl = pathd.points;
   capn_resolve(&pointl.p);
-  for (int i=0; i<50; i++) {
+  for (int i = 0; i < 50; i++) {
     ret.points[i] = capn_to_f32(capn_get32(pointl, i));
   }
 
@@ -895,65 +770,18 @@ static ModelData read_model(cereal_ModelData_ptr modelp) {
   struct cereal_ModelData_LeadData leadd;
   cereal_read_ModelData_LeadData(&leadd, modeld.lead);
   d.lead = (LeadData){
-    .dist = leadd.dist,
-    .prob = leadd.prob,
-    .std = leadd.std,
+      .dist = leadd.dist, .prob = leadd.prob, .std = leadd.std,
   };
 
   return d;
 }
 
-static char* read_file(const char* path) {
-  FILE* f = fopen(path, "r");
-  if (!f) {
-    return NULL;
-  }
-  fseek(f, 0, SEEK_END);
-  long f_len = ftell(f);
-  rewind(f);
-
-  char* buf = (char *)malloc(f_len+1);
-  assert(buf);
-  memset(buf, 0, f_len+1);
-  fread(buf, f_len, 1, f);
-  fclose(f);
-
-  for (int i=f_len; i>=0; i--) {
-    if (buf[i] == '\n') buf[i] = 0;
-    else if (buf[i] != 0) break;
-  }
-
-  return buf;
-}
-
-static int pending_uploads() {
-  DIR *dirp = opendir("/sdcard/realdata");
-  if (!dirp) return -1;
-  int cnt = 0;
-  struct dirent *entry = NULL;
-  while ((entry = readdir(dirp))) {
-    if (entry->d_name[0] == '.') continue;
-
-    char subdirn[255];
-    snprintf(subdirn, 255, "/sdcard/realdata/%s", entry->d_name);
-    DIR *subdirp = opendir(subdirn);
-    if (!subdirp) continue;
-
-    struct dirent *subentry = NULL;
-    while ((subentry = readdir(subdirp))) {
-      if (subentry->d_name[0] == '.') continue;
-      //snprintf(subdirn, 255, "/sdcard/realdata/%s/%s", entry->d_name, subentry->d_name);
-      cnt++;
-    }
-    closedir(subdirp);
-  }
-  closedir(dirp);
-  return cnt;
-}
-
-
 static void ui_update(UIState *s) {
   int err;
+
+  if (!s->intrinsic_matrix_loaded) {
+    s->intrinsic_matrix_loaded = try_load_intrinsics(&s->intrinsic_matrix);
+  }
 
   if (s->vision_connect_firstrun) {
     // cant run this in connector thread because opengl.
@@ -992,7 +820,6 @@ static void ui_update(UIState *s) {
 
   // poll for events
   while (true) {
-
     zmq_pollitem_t polls[5] = {{0}};
     polls[0].socket = s->live100_sock_raw;
     polls[0].events = ZMQ_POLLIN;
@@ -1031,9 +858,10 @@ static void ui_update(UIState *s) {
         s->vision_connected = false;
         continue;
       }
-      if (rp.type == VISION_UI_ACQUIRE) {
-        bool front = rp.d.ui_acq.front;
-        int idx = rp.d.ui_acq.idx;
+      if (rp.type == VIPC_STREAM_ACQUIRE) {
+        bool front = rp.d.stream_acq.type == VISION_STREAM_UI_FRONT;
+        int idx = rp.d.stream_acq.idx;
+
         int release_idx;
         if (front) {
           release_idx = s->cur_vision_front_idx;
@@ -1042,21 +870,21 @@ static void ui_update(UIState *s) {
         }
         if (release_idx >= 0) {
           VisionPacket rep = {
-            .type = VISION_UI_RELEASE,
-            .d = { .ui_rel = {
-              .front = front,
+            .type = VIPC_STREAM_RELEASE,
+            .d = { .stream_rel = {
+              .type = rp.d.stream_acq.type,
               .idx = release_idx,
             }},
           };
-          vipc_send(s->ipc_fd, rep);
+          vipc_send(s->ipc_fd, &rep);
         }
 
         if (front) {
-          assert(idx < s->vision_bufs.num_front_bufs);
+          assert(idx < UI_BUF_COUNT);
           s->cur_vision_front_idx = idx;
           s->scene.bgr_front_ptr = s->front_bufs[idx].addr;
         } else {
-          assert(idx < s->vision_bufs.num_bufs);
+          assert(idx < UI_BUF_COUNT);
           s->cur_vision_idx = idx;
           s->scene.bgr_ptr = s->bufs[idx].addr;
           // printf("v %d\n", ((uint8_t*)s->bufs[idx].addr)[0]);
@@ -1086,7 +914,6 @@ static void ui_update(UIState *s) {
       assert(err == 0);
       err = zmq_msg_recv(&msg, which, 0);
       assert(err >= 0);
-
 
       struct capn ctx;
       capn_init_mem(&ctx, zmq_msg_data(&msg), zmq_msg_size(&msg), 0);
@@ -1128,20 +955,23 @@ static void ui_update(UIState *s) {
         s->scene.lead_y_rel = leaddatad.yRel;
         s->scene.lead_v_rel = leaddatad.vRel;
       } else if (eventd.which == cereal_Event_liveCalibration) {
+        s->scene.world_objects_visible = s->intrinsic_matrix_loaded;
         struct cereal_LiveCalibrationData datad;
         cereal_read_LiveCalibrationData(&datad, eventd.liveCalibration);
 
         // should we still even have this?
-
         capn_list32 warpl = datad.warpMatrix;
-        capn_resolve(&warpl.p); //is this a bug?
-        // pthread_mutex_lock(&s->transform_lock);
-        for (int i=0; i<3*3; i++) {
-          s->scene.big_box_transform.v[i] = capn_to_f32(capn_get32(warpl, i));
+        capn_resolve(&warpl.p);  // is this a bug?
+        for (int i = 0; i < 3 * 3; i++) {
+          s->scene.warp_matrix.v[i] = capn_to_f32(capn_get32(warpl, i));
         }
-        // pthread_mutex_unlock(&s->transform_lock);
 
-        // printf("recv %f\n", datad.vEgo);
+        capn_list32 extrinsicl = datad.extrinsicMatrix;
+        capn_resolve(&extrinsicl.p);  // is this a bug?
+        for (int i = 0; i < 3 * 4; i++) {
+          s->scene.extrinsic_matrix.v[i] =
+              capn_to_f32(capn_get32(extrinsicl, i));
+        }
       } else if (eventd.which == cereal_Event_model) {
         s->scene.model_ts = eventd.logMonoTime;
         s->scene.model = read_model(eventd.model);
@@ -1151,98 +981,6 @@ static void ui_update(UIState *s) {
 
       zmq_msg_close(&msg);
 
-    }
-
-  }
-
-  // update base ui
-  uint64_t ts = nanos_since_boot();
-  if (!s->vision_connected && ts - s->last_base_update > 1000000000ULL) {
-    char* bat_cap = read_file("/sys/class/power_supply/battery/capacity");
-    char* bat_stat = read_file("/sys/class/power_supply/battery/status");
-
-    int tx_rate = 0;
-    uint64_t tx_bytes_n = 0;
-    char *tx_bytes;
-
-    // cellular bytes
-    tx_bytes = read_file("/sys/class/net/rmnet_data0/statistics/tx_bytes");
-    if (tx_bytes) { tx_bytes_n += atoll(tx_bytes); free(tx_bytes); }
-
-    // wifi bytes
-    tx_bytes = read_file("/sys/class/net/wlan0/statistics/tx_bytes");
-    if (tx_bytes) { tx_bytes_n += atoll(tx_bytes); free(tx_bytes); }
-
-    tx_rate = tx_bytes_n - s->last_tx_bytes;
-    s->last_tx_bytes = tx_bytes_n;
-
-    // TODO: do this properly
-    system("git rev-parse --abbrev-ref HEAD > /tmp/git_branch");
-    char *git_branch = read_file("/tmp/git_branch");
-    system("git rev-parse --short HEAD > /tmp/git_commit");
-    char *git_commit = read_file("/tmp/git_commit");
-
-    int pending = pending_uploads();
-
-    // service call wifi 20  # getWifiEnabledState
-    // Result: Parcel(00000000 00000003   '........') = enabled
-    s->wifi_enabled = !system("service call wifi 20 | grep 00000003 > /dev/null");
-
-    // service call wifi 38  # getWifiApEnabledState
-    // Result: Parcel(00000000 0000000d   '........') = enabled
-    s->ap_enabled = !system("service call wifi 38 | grep 0000000d > /dev/null");
-
-    s->board_connected = !system("lsusb | grep bbaa > /dev/null");
-
-    snprintf(s->base_text, sizeof(s->base_text),
-             "version: v%s %s (%s)\nserial: %s\n dongle id: %s\n battery: %s %s\npending: %d -> %.1f kb/s\nboard: %s",
-             openpilot_version, git_commit, git_branch,
-             s->serial, s->dongle_id, bat_cap ? bat_cap : "(null)", bat_stat ? bat_stat : "(null)",
-             pending, tx_rate / 1024.0, s->board_connected ? "found" : "NOT FOUND");
-
-    if (bat_cap) free(bat_cap);
-    if (bat_stat) free(bat_stat);
-
-    if (git_branch) free(git_branch);
-    if (git_commit) free(git_commit);
-
-    s->last_base_update = ts;
-
-    if (!activity_running()) {
-      if (s->awake_timeout > 0) {
-        s->awake_timeout--;
-      } else {
-        set_awake(s, false);
-      }
-    }
-  }
-
-  if (s->vision_connected) {
-    // always awake if vision is connected
-    set_awake(s, true);
-  }
-
-  if (!s->vision_connected) {
-    // baseui interaction
-
-    int touch_x = -1, touch_y = -1;
-    err = touch_poll(&s->touch, &touch_x, &touch_y);
-    if (err == 1) {
-      if (s->awake) {
-        // press buttons
-        for (int i=0; i<ARRAYSIZE(buttons); i++) {
-          const Button *b = &buttons[i];
-          if (touch_x >= b->x && touch_x < b->x+b->w
-              && touch_y >= b->y && touch_y < b->y+b->h) {
-            if (b->pressed && !activity_running()) {
-              b->pressed();
-              break;
-            }
-          }
-        }
-      } else {
-        set_awake(s, true);
-      }
     }
   }
 
@@ -1268,30 +1006,52 @@ static void* vision_connect_thread(void *args) {
     int fd = vipc_connect();
     if (fd < 0) continue;
 
-    VisionPacket p = {
-      .type = VISION_UI_SUBSCRIBE,
+
+
+    VisionPacket p1 = {
+      .type = VIPC_STREAM_SUBSCRIBE,
+      .d = { .stream_sub = { .type = VISION_STREAM_UI_BACK, .tbuffer = true, }, },
     };
-    err = vipc_send(fd, p);
+    err = vipc_send(fd, &p1);
+    if (err < 0) {
+      close(fd);
+      continue;
+    }
+    VisionPacket p2 = {
+      .type = VIPC_STREAM_SUBSCRIBE,
+      .d = { .stream_sub = { .type = VISION_STREAM_UI_FRONT, .tbuffer = true, }, },
+    };
+    err = vipc_send(fd, &p2);
     if (err < 0) {
       close(fd);
       continue;
     }
 
     // printf("init recv\n");
-    VisionPacket rp;
-    err = vipc_recv(fd, &rp);
+    VisionPacket back_rp;
+    err = vipc_recv(fd, &back_rp);
     if (err <= 0) {
       close(fd);
       continue;
     }
+    assert(back_rp.type == VIPC_STREAM_BUFS);
+    VisionPacket front_rp;
+    err = vipc_recv(fd, &front_rp);
+    if (err <= 0) {
+      close(fd);
+      continue;
+    }
+    assert(front_rp.type == VIPC_STREAM_BUFS);
 
-    assert(rp.type == VISION_UI_BUFS);
-    assert(rp.num_fds == rp.d.ui_bufs.num_bufs + rp.d.ui_bufs.num_front_bufs);
 
     pthread_mutex_lock(&s->lock);
     assert(!s->vision_connected);
     s->ipc_fd = fd;
-    ui_init_vision(s, rp.d.ui_bufs, rp.fds);
+
+    ui_init_vision(s,
+                   back_rp.d.stream_bufs, back_rp.num_fds, back_rp.fds,
+                   front_rp.d.stream_bufs, front_rp.num_fds, front_rp.fds);
+
     s->vision_connected = true;
     s->vision_connect_firstrun = true;
     pthread_mutex_unlock(&s->lock);
@@ -1315,10 +1075,31 @@ int main() {
   assert(err == 0);
 
   while (!do_exit) {
-    pthread_mutex_lock(&s->lock);
-    ui_update(s);
-    ui_draw(s);
-    pthread_mutex_unlock(&s->lock);
+    if (s->awake) {
+      pthread_mutex_lock(&s->lock);
+      ui_update(s);
+      ui_draw(s);
+      pthread_mutex_unlock(&s->lock);
+    }
+
+    // manage wakefulness
+    if (s->awake_timeout > 0) {
+      s->awake_timeout--;
+    } else {
+      set_awake(s, false);
+    }
+
+    // always awake if vision is connected
+    if (s->vision_connected) {
+      set_awake(s, true);
+    } else {
+      int touch_x = -1, touch_y = -1;
+      err = touch_poll(&s->touch, &touch_x, &touch_y);
+      if (err == 1) {
+        // touch event will still happen :(
+        set_awake(s, true);
+      }
+    }
 
     // no simple way to do 30fps vsync with surfaceflinger...
     usleep(30000);

@@ -1,6 +1,7 @@
 .DS_Store
 .tags
 .ipynb_checkpoints
+model2.png
 
 *.pyc
 .*.swp
@@ -11,12 +12,14 @@
 *.so
 *.a
 *.clb
+*.class
 config.json
 clcache
 
 board/obj/
 selfdrive/boardd/boardd
 selfdrive/logcatd/logcatd
-selfdrive/sensord/sensord
+selfdrive/proclogd/proclogd
 selfdrive/ui/ui
+/src/
 

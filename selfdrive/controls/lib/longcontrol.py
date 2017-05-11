@@ -96,7 +96,7 @@ def pid_long_control(v_ego, v_pid, Ui_accel_cmd, gas_max, brake_max, jerk_factor
   Kp = interp(v_ego, _KP_BP, _KP_V)
   Ki = interp(v_ego, _kI_BP, _kI_V)
 
-  # scle Kp and Ki by jerk factor drom drive_thread
+  # scale Kp and Ki by jerk factor from drive_thread
   Kp = (1. + jerk_factor)*Kp
   Ki = (1. + jerk_factor)*Ki
 
@@ -155,7 +155,7 @@ class LongControl(object):
     self.Ui_accel_cmd = 0.
     self.v_pid = v_pid
 
-  def update(self, enabled, v_ego, v_cruise, v_target_lead, a_target, jerk_factor, VP):
+  def update(self, enabled, v_ego, v_cruise, v_target_lead, a_target, jerk_factor, CP):
     brake_max_bp = [0., 5., 20., 100.]  # speeds     
     brake_max_v = [1.0, 1.0, 0.8, 0.8]  # values
 
@@ -163,12 +163,12 @@ class LongControl(object):
     brake_max = interp(v_ego, brake_max_bp, brake_max_v)
 
     # TODO: not every time
-    if VP.brake_only:
-      gas_max = 0
-    else:
+    if CP.enableGas:
       gas_max_bp = [0., 100.]             # speeds
       gas_max_v = [0.6, 0.6]            # values
       gas_max = interp(v_ego, gas_max_bp, gas_max_v)
+    else:
+      gas_max = 0
 
     overshoot_allowance = 2.0    # overshoot allowed when changing accel sign
 
@@ -177,7 +177,7 @@ class LongControl(object):
 
     # limit max target speed based on cruise setting:
     v_cruise_mph = round(v_cruise * CV.KPH_TO_MPH)   # what's displayed in mph on the IC
-    v_target = min(v_target_lead, v_cruise_mph * CV.MPH_TO_MS / VP.ui_speed_fudge)
+    v_target = min(v_target_lead, v_cruise_mph * CV.MPH_TO_MS)
 
     max_speed_delta_up = a_target[1]*1.0/rate
     max_speed_delta_down = a_target[0]*1.0/rate
@@ -211,7 +211,7 @@ class LongControl(object):
         self.v_pid = v_target
 
       # to avoid too much wind up on acceleration, limit positive speed error
-      if not VP.brake_only:
+      if CP.enableGas:
         max_speed_error = interp(v_ego, _MAX_SPEED_ERROR_BP, _MAX_SPEED_ERROR_V)
         self.v_pid = min(self.v_pid, v_ego + max_speed_error)
 

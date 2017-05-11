@@ -10,7 +10,7 @@ from selfdrive.boardd.boardd import can_capnp_to_can_list
 from cereal import car
 
 import zmq
-from common.services import service_list
+from selfdrive.services import service_list
 import selfdrive.messaging as messaging
 
 # Car button codes
@@ -37,32 +37,36 @@ class BP:
 
 
 class CarInterface(object):
-  def __init__(self, read_only=False):
-    context = zmq.Context()
-    self.logcan = messaging.sub_sock(context, service_list['can'].port)
+  def __init__(self, CP, logcan, sendcan=None):
+    self.logcan = logcan
+    self.CP = CP
 
     self.frame = 0
     self.can_invalid_count = 0
 
     # *** init the major players ***
-    self.CS = CarState(self.logcan)
+    self.CS = CarState(CP, self.logcan)
 
     # sending if read only is False
-    if not read_only:
-      self.sendcan = messaging.pub_sock(context, service_list['sendcan'].port)
+    if sendcan is not None:
+      self.sendcan = sendcan
       self.CC = CarController()
 
-  def getVehicleParams(self):
-    return self.CS.VP
+    if self.CS.accord:
+      self.accord_msg = []
 
   # returns a car.CarState
   def update(self):
     # ******************* do can recv *******************
     can_pub_main = []
     canMonoTimes = []
+
     for a in messaging.drain_sock(self.logcan):
       canMonoTimes.append(a.logMonoTime)
       can_pub_main.extend(can_capnp_to_can_list(a.can, [0,2]))
+      if self.CS.accord:
+        self.accord_msg.extend(can_capnp_to_can_list(a.can, [9]))
+        self.accord_msg = self.accord_msg[-1:]
     self.CS.update(can_pub_main)
 
     # create message
@@ -77,7 +81,7 @@ class CarInterface(object):
 
     # gas pedal
     ret.gas = self.CS.car_gas / 256.0
-    if self.CS.VP.brake_only:
+    if not self.CP.enableGas:
       ret.gasPressed = self.CS.pedal_gas > 0
     else:
       ret.gasPressed = self.CS.user_gas_pressed
@@ -89,8 +93,24 @@ class CarInterface(object):
     # steering wheel
     # TODO: units
     ret.steeringAngle = self.CS.angle_steers
-    ret.steeringTorque = self.CS.cp.vl[0x18F]['STEER_TORQUE_SENSOR']
-    ret.steeringPressed = self.CS.steer_override
+
+    if self.CS.accord:
+      # TODO: move this into the CAN parser
+      ret.steeringTorque = 0
+      if len(self.accord_msg) > 0:
+        aa = map(lambda x: ord(x)&0x7f, self.accord_msg[0][2])
+        if len(aa) != 5 or (-(aa[0]+aa[1]+aa[2]+aa[3]))&0x7f != aa[4]:
+          print "ACCORD MSG BAD LEN OR CHECKSUM!"
+          # TODO: throw an error here?
+        else:
+          st = ((aa[0]&0xF) << 5) + (aa[1]&0x1F)
+          if st >= 256:
+            st = -(512-st)
+          ret.steeringTorque = st
+      ret.steeringPressed = abs(ret.steeringTorque) > 20
+    else:
+      ret.steeringTorque = self.CS.cp.vl[0x18F]['STEER_TORQUE_SENSOR']
+      ret.steeringPressed = self.CS.steer_override
 
     # cruise state
     ret.cruiseState.enabled = self.CS.pcm_acc_status != 0
@@ -226,13 +246,4 @@ class CarInterface(object):
 
     self.frame += 1
     return not (c.enabled and not self.CC.controls_allowed)
-
-
-if __name__ == "__main__":
-  CI = CarInterface(read_only=True)
-  while 1:
-    cs = CI.update()
-    print(chr(27) + "[2J")
-    print cs
-    time.sleep(0.1)
 

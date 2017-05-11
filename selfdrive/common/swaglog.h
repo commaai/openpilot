@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func, const char* srctime, 
+void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func,
                 const char* fmt, ...) /*__attribute__ ((format (printf, 6, 7)))*/;
 
 void cloudlog_bind(const char* k, const char* v);
@@ -21,7 +21,7 @@ void cloudlog_bind(const char* k, const char* v);
 #endif
 
 #define cloudlog(lvl, fmt, ...) cloudlog_e(lvl, __FILE__, __LINE__, \
-                                           __func__, __DATE__ " " __TIME__, \
+                                           __func__, \
                                            fmt, ## __VA_ARGS__)
 
 #define LOGD(fmt, ...) cloudlog(CLOUDLOG_DEBUG, fmt, ## __VA_ARGS__)

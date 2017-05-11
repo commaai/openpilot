@@ -5,7 +5,7 @@ import zmq
 from hexdump import hexdump
 
 import selfdrive.messaging as messaging
-from common.services import service_list
+from selfdrive.services import service_list
 
 if __name__ == "__main__":
   context = zmq.Context()
@@ -13,11 +13,11 @@ if __name__ == "__main__":
 
   parser = argparse.ArgumentParser(description='Sniff a communcation socket')
   parser.add_argument('--raw', action='store_true')
-  parser.add_argument("socket", type=str,
-                      help="socket name")
+  parser.add_argument("socket", type=str, nargs='*', help="socket name")
   args = parser.parse_args()
 
-  messaging.sub_sock(context, service_list[args.socket].port, poller)
+  for m in args.socket if len(args.socket) > 0 else service_list:
+    messaging.sub_sock(context, service_list[m].port, poller)
 
   while 1:
     polld = poller.poll(timeout=1000)

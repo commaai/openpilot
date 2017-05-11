@@ -4,7 +4,39 @@ import common.numpy_fast as np
 from common.realtime import sec_since_boot
 from selfdrive.config import CruiseButtons
 from selfdrive.boardd.boardd import can_list_to_can_capnp
-from selfdrive.controls.lib.drive_helpers import actuator_hystereses, rate_limit
+from selfdrive.controls.lib.drive_helpers import rate_limit
+from common.numpy_fast import clip, interp
+
+def actuator_hystereses(final_brake, braking, brake_steady, v_ego, civic):
+  # hyst params... TODO: move these to VehicleParams
+  brake_hyst_on = 0.055 if civic else 0.1    # to activate brakes exceed this value
+  brake_hyst_off = 0.005                     # to deactivate brakes below this value
+  brake_hyst_gap = 0.01                      # don't change brake command for small ocilalitons within this value
+
+  #*** histeresys logic to avoid brake blinking. go above 0.1 to trigger
+  if (final_brake < brake_hyst_on and not braking) or final_brake < brake_hyst_off:
+    final_brake = 0.
+  braking = final_brake > 0.
+
+  # for small brake oscillations within brake_hyst_gap, don't change the brake command
+  if final_brake == 0.:
+    brake_steady = 0.
+  elif final_brake > brake_steady + brake_hyst_gap:
+    brake_steady = final_brake - brake_hyst_gap
+  elif final_brake < brake_steady - brake_hyst_gap:
+    brake_steady = final_brake + brake_hyst_gap
+  final_brake = brake_steady
+
+  if not civic:
+    brake_on_offset_v  = [.25, .15]   # min brake command on brake activation. below this no decel is perceived
+    brake_on_offset_bp = [15., 30.]     # offset changes VS speed to not have too abrupt decels at high speeds
+    # offset the brake command for threshold in the brake system. no brake torque perceived below it
+    brake_on_offset = interp(v_ego, brake_on_offset_bp, brake_on_offset_v)
+    brake_offset = brake_on_offset - brake_hyst_on
+    if final_brake > 0.0:
+      final_brake += brake_offset
+
+  return final_brake, braking, brake_steady
 
 class AH:
   #[alert_idx, value]
@@ -108,9 +140,9 @@ class CarController(object):
     GAS_OFFSET = 328
 
     # steer torque is converted back to CAN reference (positive when steering right)
-    apply_gas = int(np.clip(final_gas*GAS_MAX, 0, GAS_MAX-1))
-    apply_brake = int(np.clip(final_brake*BRAKE_MAX, 0, BRAKE_MAX-1))
-    apply_steer = int(np.clip(-final_steer*STEER_MAX, -STEER_MAX, STEER_MAX))
+    apply_gas = int(clip(final_gas*GAS_MAX, 0, GAS_MAX-1))
+    apply_brake = int(clip(final_brake*BRAKE_MAX, 0, BRAKE_MAX-1))
+    apply_steer = int(clip(-final_steer*STEER_MAX, -STEER_MAX, STEER_MAX))
 
     # no gas if you are hitting the brake or the user is
     if apply_gas > 0 and (apply_brake != 0 or CS.brake_pressed):
@@ -156,8 +188,12 @@ class CarController(object):
     can_sends = []
 
     # Send steering command.
-    idx = frame % 4
-    can_sends.append(hondacan.create_steering_control(apply_steer, idx))
+    if CS.accord:
+      idx = frame % 2
+      can_sends.append(hondacan.create_accord_steering_control(apply_steer, idx))
+    else:
+      idx = frame % 4
+      can_sends.append(hondacan.create_steering_control(apply_steer, idx))
 
     # Send gas and brake commands.
     if (frame % 2) == 0:
@@ -174,17 +210,17 @@ class CarController(object):
     # Send dashboard UI commands.
     if (frame % 10) == 0:
       idx = (frame/10) % 4
-      can_sends.extend(hondacan.create_ui_commands(pcm_speed, hud, CS.civic, idx))
+      can_sends.extend(hondacan.create_ui_commands(pcm_speed, hud, CS.civic, CS.accord, idx))
 
     # radar at 20Hz, but these msgs need to be sent at 50Hz on ilx (seems like an Acura bug)
-    if CS.civic:
+    if CS.civic or CS.accord:
       radar_send_step = 5
     else:
       radar_send_step = 2
 
     if (frame % radar_send_step) == 0:
       idx = (frame/radar_send_step) % 4
-      can_sends.extend(hondacan.create_radar_commands(CS.v_ego, CS.civic, idx))
+      can_sends.extend(hondacan.create_radar_commands(CS.v_ego, CS.civic, CS.accord, idx))
 
     sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
 

@@ -1,3 +1,5 @@
+#define _GNU_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -48,7 +50,7 @@ static void cloudlog_init() {
   s.inited = true;
 }
 
-void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func, const char* srctime, 
+void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func,
                 const char* fmt, ...) {
   pthread_mutex_lock(&s.lock);
   cloudlog_init();
@@ -77,7 +79,6 @@ void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func
   json_append_member(log_j, "filename", json_mkstring(filename));
   json_append_member(log_j, "lineno", json_mknumber(lineno));
   json_append_member(log_j, "funcname", json_mkstring(func));
-  json_append_member(log_j, "srctime", json_mkstring(srctime));
   json_append_member(log_j, "created", json_mknumber(seconds_since_epoch()));
 
   char* log_s = json_encode(log_j);

@@ -20,7 +20,7 @@ ZMQ_LIBS = -L$(PHONELIBS)/zmq/aarch64/lib \
 .PHONY: all
 all: logcatd
 
--include ../common/cereal.mk
+include ../common/cereal.mk
 
 OBJS = logcatd.o \
        $(CEREAL_OBJS)

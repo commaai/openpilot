@@ -3,9 +3,9 @@ import json
 import subprocess
 
 from selfdrive.swaglog import cloudlog
+from selfdrive.version import version
 from common.api import api_get
-
-DONGLEAUTH_PATH = "/sdcard/dongleauth"
+from common.params import Params
 
 def get_imei():
   # Telephony.getDeviceId()
@@ -19,16 +19,28 @@ def get_imei():
 def get_serial():
   return subprocess.check_output(["getprop", "ro.serialno"]).strip()
 
+def get_git_commit():
+  return subprocess.check_output(["git", "rev-parse", "HEAD"]).strip()
+
+def get_git_branch():
+  return subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"]).strip()
+
 def register():
+  params = Params()
   try:
-    if os.path.exists(DONGLEAUTH_PATH):
-      dongleauth = json.load(open(DONGLEAUTH_PATH))
-    else:
-      resp = api_get("pilot_auth", method='POST', imei=get_imei(), serial=get_serial())
-      resp = resp.text
-      dongleauth = json.loads(resp)
-      open(DONGLEAUTH_PATH, "w").write(resp)
-    return dongleauth["dongle_id"], dongleauth["dongle_secret"]
+    params.put("Version", version)
+    params.put("GitCommit", get_git_commit())
+    params.put("GitBranch", get_git_branch())
+
+    dongle_id, access_token = params.get("DongleId"), params.get("AccessToken")
+    if dongle_id is None or access_token is None:
+      resp = api_get("v1/pilotauth/", method='POST', imei=get_imei(), serial=get_serial())
+      dongleauth = json.loads(resp.text)
+      dongle_id, access_token = dongleauth["dongle_id"].encode('ascii'), dongleauth["access_token"].encode('ascii')
+
+      params.put("DongleId", dongle_id)
+      params.put("AccessToken", access_token)
+    return dongle_id, access_token
   except Exception:
     cloudlog.exception("failed to authenticate")
     return None

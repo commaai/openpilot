@@ -33,6 +33,10 @@ struct FramebufferState {
     EGLContext context;
 };
 
+extern "C" void framebuffer_set_power(FramebufferState *s, int mode) {
+  SurfaceComposerClient::setDisplayPowerMode(s->dtoken, mode);
+}
+
 extern "C" FramebufferState* framebuffer_init(
     const char* name, int32_t layer,
     EGLDisplay *out_display, EGLSurface *out_surface,
