@@ -2,6 +2,7 @@ CC = clang
 CXX = clang++
 
 ARCH := $(shell uname -m)
+OS := $(shell uname -o)
 
 PHONELIBS = ../../phonelibs
 
@@ -23,18 +24,25 @@ JSON_FLAGS = -I$(PHONELIBS)/json/src
 
 EXTRA_LIBS = -lusb
 
+ifeq ($(OS),GNU/Linux)
+# for Drive PX2
+ZMQ_LIBS = -lczmq -lzmq
+CEREAL_LIBS = -lcapnp -lkj -lcapnp_c
+EXTRA_LIBS = -lusb-1.0 -lpthread
+endif
+
 ifeq ($(ARCH),x86_64)
-ZMQ_LIBS = -L$(HOME)/drive/external/zmq/lib/ \
+ZMQ_LIBS = -L$(HOME)/one/external/zmq/lib/ \
            -l:libczmq.a -l:libzmq.a
-CEREAL_LIBS = -L$(HOME)/drive/external/capnp/lib/ \
-              -l:libcapnp.a -l:libkj.a
+CEREAL_LIBS = -L$(HOME)/one/external/capnp/lib/ \
+              -l:libcapnp.a -l:libcapnp_c.a -l:libkj.a
 EXTRA_LIBS = -lusb-1.0 -lpthread
 endif
 
 .PHONY: all
 all: boardd
 
--include ../common/cereal.mk
+include ../common/cereal.mk
 
 OBJS = boardd.o \
        ../common/swaglog.o \
@@ -55,6 +63,7 @@ boardd.o: boardd.cc
 	$(CXX) $(CXXFLAGS) \
            -I$(PHONELIBS)/android_system_core/include \
            $(CEREAL_CFLAGS) \
+           $(CEREAL_CXXFLAGS) \
            $(ZMQ_FLAGS) \
            -I../ \
            -I../../ \

@@ -26,27 +26,28 @@ Supported Cars
 Directory structure
 ------
 
-- board         -- Code that runs on the USB interface board
 - cereal        -- The messaging spec used for all logs on the phone
 - common        -- Library like functionality we've developed here
 - dbcs          -- Files showing how to interpret data from cars
+- panda         -- Code used to communicate on CAN and LIN
 - phonelibs     -- Libraries used on the phone
 - selfdrive     -- Code needed to drive the car
   - assets        -- Fonts for ui
   - boardd        -- Daemon to talk to the board
-  - calibrationd  -- Camera calibration server
   - car           -- Code that talks to the car and implements CarInterface
   - common        -- Shared C/C++ code for the daemons
   - controls      -- Python controls (PID loops etc) for the car
+  - debug         -- Tools to help you debug and do car ports
   - logcatd       -- Android logcat as a service
   - loggerd       -- Logger and uploader of car data
+  - proclogd      -- Logs information from proc
   - radar         -- Code that talks to the radar and implements RadarInterface
   - sensord       -- IMU / GPS interface code
   - test/plant    -- Car simulator running code through virtual maneuvers
   - ui            -- The UI
   - visiond       -- embedded vision pipeline
 
-To understand how the services interact, see `common/services.py`
+To understand how the services interact, see `selfdrive/service_list.yaml`
 
 Testing on PC
 ------

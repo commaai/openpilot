@@ -48,6 +48,19 @@ bool usb_connect() {
   err = libusb_claim_interface(dev_handle, 0);
   if (err != 0) { return false; }
 
+  // power off ESP
+  libusb_control_transfer(dev_handle, 0xc0, 0xd9, 0, 0, NULL, 0, TIMEOUT);
+  
+  // set UART modes for Honda Accord
+  for (int uart = 2; uart <= 3; uart++) {
+    // 9600 baud
+    libusb_control_transfer(dev_handle, 0xc0, 0xe1, uart, 9600, NULL, 0, TIMEOUT);
+    // even parity
+    libusb_control_transfer(dev_handle, 0xc0, 0xe2, uart, 1, NULL, 0, TIMEOUT);
+    // callback 1
+    libusb_control_transfer(dev_handle, 0xc0, 0xe3, uart, 1, NULL, 0, TIMEOUT);
+  }
+
   return true;
 }
 
@@ -111,7 +124,7 @@ void can_recv(void *s) {
     canData[i].setBusTime(data[i*4+1] >> 16);
     int len = data[i*4+1]&0xF;
     canData[i].setDat(kj::arrayPtr((uint8_t*)&data[i*4+2], len));
-    canData[i].setSrc((data[i*4+1] >> 4) & 3);
+    canData[i].setSrc((data[i*4+1] >> 4) & 0xf);
   }
 
   // send to can
@@ -124,13 +137,14 @@ void can_health(void *s) {
   int cnt;
 
   // copied from board/main.c
-  struct health {
+  struct __attribute__((packed)) health {
     uint32_t voltage;
     uint32_t current;
     uint8_t started;
     uint8_t controls_allowed;
     uint8_t gas_interceptor_detected;
     uint8_t started_signal_detected;
+    uint8_t started_alt;
   } health;
 
   // recv from board

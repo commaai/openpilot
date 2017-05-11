@@ -2,6 +2,7 @@
 import os
 import time
 import stat
+import json
 import random
 import ctypes
 import inspect
@@ -11,8 +12,9 @@ import threading
 
 from collections import Counter
 from selfdrive.swaglog import cloudlog
-from selfdrive.loggerd.config import get_dongle_id_and_secret, ROOT
+from selfdrive.loggerd.config import ROOT
 
+from common.params import Params
 from common.api import api_get
 
 fake_upload = os.getenv("FAKEUPLOAD") is not None
@@ -66,9 +68,9 @@ def clear_locks(root):
 
 
 class Uploader(object):
-  def __init__(self, dongle_id, dongle_secret, root):
+  def __init__(self, dongle_id, access_token, root):
     self.dongle_id = dongle_id
-    self.dongle_secret = dongle_secret
+    self.access_token = access_token
     self.root = root
 
     self.upload_thread = None
@@ -125,11 +127,11 @@ class Uploader(object):
 
   def do_upload(self, key, fn):
     try:
-      url_resp = api_get("upload_url", timeout=2,
-                         id=self.dongle_id, secret=self.dongle_secret,
-                         path=key)
-      url = url_resp.text
-      cloudlog.info({"upload_url", url})
+      url_resp = api_get("v1.1/"+self.dongle_id+"/upload_url/", timeout=2, path=key, access_token=self.access_token)
+      url_resp_json = json.loads(url_resp.text)
+      url = url_resp_json['url']
+      headers = url_resp_json['headers']
+      cloudlog.info({"upload_url v1.1", url, str(headers)})
 
       if fake_upload:
         print "*** WARNING, THIS IS A FAKE UPLOAD TO %s ***" % url
@@ -139,7 +141,7 @@ class Uploader(object):
         self.last_resp = FakeResponse()
       else:
         with open(fn, "rb") as f:
-          self.last_resp = requests.put(url, data=f)
+          self.last_resp = requests.put(url, data=f, headers=headers)
     except Exception as e:
       self.last_exc = (e, traceback.format_exc())
       raise
@@ -223,13 +225,14 @@ class Uploader(object):
 def uploader_fn(exit_event):
   cloudlog.info("uploader_fn")
 
-  dongle_id, dongle_secret = get_dongle_id_and_secret()
+  params = Params()
+  dongle_id, access_token = params.get("DongleId"), params.get("AccessToken")
 
-  if dongle_id is None or dongle_secret is None:
-    cloudlog.info("uploader MISSING DONGLE_ID or DONGLE_SECRET")
-    raise Exception("uploader can't start without dongle id and secret")
+  if dongle_id is None or access_token is None:
+    cloudlog.info("uploader MISSING DONGLE_ID or ACCESS_TOKEN")
+    raise Exception("uploader can't start without dongle id and access token")
 
-  uploader = Uploader(dongle_id, dongle_secret, ROOT)
+  uploader = Uploader(dongle_id, access_token, ROOT)
 
   while True:
     backoff = 0.1

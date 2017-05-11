@@ -7,6 +7,8 @@ if os.getenv("NOLOG"):
     pass
   def bind_user(**kwargs):
     pass
+  def bind_extra(**kwargs):
+    pass
   def install():
     pass
 else:
@@ -20,6 +22,9 @@ else:
 
   def bind_user(**kwargs):
     client.user_context(kwargs)
+
+  def bind_extra(**kwargs):
+    client.extra_context(kwargs)
 
   def install():
     # installs a sys.excepthook

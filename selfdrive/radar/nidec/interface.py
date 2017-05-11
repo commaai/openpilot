@@ -6,7 +6,7 @@ from selfdrive.boardd.boardd import can_capnp_to_can_list
 from cereal import car
 
 import zmq
-from common.services import service_list
+from selfdrive.services import service_list
 import selfdrive.messaging as messaging
 
 def _create_radard_can_parser():

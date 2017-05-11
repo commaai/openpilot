@@ -19,24 +19,19 @@ class timespec(ctypes.Structure):
   ]
 
 libc_name = find_library('c')
-if libc_name is None:
-  platform_name = platform.system()
-  if platform_name.startswith('linux'):
-    libc_name = 'libc.so.6'
-  if platform_name.startswith(('freebsd', 'netbsd')):
-    libc_name = 'libc.so'
-  elif platform_name.lower() == 'darwin':
-    libc_name = 'libc.dylib'
+libc = ctypes.CDLL(libc_name, use_errno=True)
 
-try:
-  libc = ctypes.CDLL(libc_name, use_errno=True)
-except OSError:
-  libc = None
-
-if libc is not None:
+if hasattr(libc, 'clock_gettime'):
   libc.clock_gettime.argtypes = [ctypes.c_int, ctypes.POINTER(timespec)]
+  has_clock_gettime = True
+else:
+  has_clock_gettime = False
 
 def clock_gettime(clk_id):
+  if not has_clock_gettime:
+    # hack. only for OS X < 10.12
+    return time.time()
+
   t = timespec()
   if libc.clock_gettime(clk_id, ctypes.pointer(t)) != 0:
     errno_ = ctypes.get_errno()

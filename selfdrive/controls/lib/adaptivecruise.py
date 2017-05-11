@@ -19,13 +19,13 @@ def calc_cruise_accel_limits(v_ego):
 _A_TOTAL_MAX_V = [1.5, 1.9, 3.2]
 _A_TOTAL_MAX_BP = [0., 20., 40.]
 
-def limit_accel_in_turns(v_ego, angle_steers, a_target, a_pcm, VP):
+def limit_accel_in_turns(v_ego, angle_steers, a_target, a_pcm, CP):
   #*** this function returns a limited long acceleration allowed, depending on the existing lateral acceleration
   # this should avoid accelerating when losing the target in turns
   deg_to_rad = np.pi / 180.  # from can reading to rad
 
   a_total_max = interp(v_ego, _A_TOTAL_MAX_BP, _A_TOTAL_MAX_V)
-  a_y = v_ego**2 * angle_steers * deg_to_rad / (VP.steer_ratio * VP.wheelbase)
+  a_y = v_ego**2 * angle_steers * deg_to_rad / (CP.steerRatio * CP.wheelBase)
   a_x_allowed = math.sqrt(max(a_total_max**2 - a_y**2, 0.))
 
   a_target[1] = min(a_target[1], a_x_allowed)
@@ -168,8 +168,9 @@ def calc_acc_accel_limits(d_lead, d_des, v_ego, v_pid, v_lead, v_rel, a_lead,
                                           a_lead_contr, a_target[1])
   # second call of calc_positive_accel_limit is used to limit the pcm throttle
   # control (only useful when we don't control throttle directly)
-  a_pcm = calc_positive_accel_limit(d_lead, d_des, v_ego, v_rel, v_ego, v_rel,
-                                    v_coast, v_target, a_lead_contr, a_pcm)
+  a_pcm = calc_positive_accel_limit(d_lead, d_des, v_ego, v_rel, v_ego,
+                                    v_rel, v_coast, v_target,
+                                    a_lead_contr, a_pcm)
 
   #*** compute max decel ***
   v_offset = 1.  # assume the car is 1m/s slower
@@ -236,20 +237,9 @@ def calc_ttc(d_rel, v_rel, a_rel, v_lead):
   return ttc
 
 
-def limit_accel_driver_awareness(v_ego, a_target, a_pcm, awareness_status):
-  decel_bp = [0.  ,  40.]
-  decel_v  = [-0.3, -0.2]
-  decel = interp(v_ego, decel_bp, decel_v)
-  # gives 18 seconds before decel begins (w 6 minute timeout)
-  if awareness_status < -0.05:
-    a_target[1] = min(a_target[1], decel)
-    a_target[0] = min(a_target[1], a_target[0])
-    a_pcm = 0.
-  return a_target, a_pcm
-
 MAX_SPEED_POSSIBLE = 55.
 
-def compute_speed_with_leads(v_ego, angle_steers, v_pid, l1, l2, awareness_status, VP):
+def compute_speed_with_leads(v_ego, angle_steers, v_pid, l1, l2, CP):
   # drive limits
   # TODO: Make lims function of speed (more aggressive at low speed).
   a_lim = [-3., 1.5]
@@ -263,7 +253,7 @@ def compute_speed_with_leads(v_ego, angle_steers, v_pid, l1, l2, awareness_statu
   a_pcm = 1
 
   #*** limit max accel in sharp turns
-  a_target, a_pcm = limit_accel_in_turns(v_ego, angle_steers, a_target, a_pcm, VP)
+  a_target, a_pcm = limit_accel_in_turns(v_ego, angle_steers, a_target, a_pcm, CP)
   jerk_factor = 0.
 
   if l1 is not None and l1.status:
@@ -305,8 +295,6 @@ def compute_speed_with_leads(v_ego, angle_steers, v_pid, l1, l2, awareness_statu
     jerk_factor = calc_jerk_factor(l1.dRel, l1.vRel)
 
   # force coasting decel if driver hasn't been controlling car in a while
-  a_target, a_pcm = limit_accel_driver_awareness(v_ego, a_target, a_pcm, awareness_status)
-
   return v_target_lead, a_target, a_pcm, jerk_factor
 
 
@@ -317,7 +305,7 @@ class AdaptiveCruise(object):
     self.l1, self.l2 = None, None
     self.logMonoTime = 0
     self.dead = True
-  def update(self, cur_time, v_ego, angle_steers, v_pid, awareness_status, VP):
+  def update(self, cur_time, v_ego, angle_steers, v_pid, CP):
     l20 = messaging.recv_sock(self.live20)
     if l20 is not None:
       self.l1 = l20.live20.leadOne
@@ -331,5 +319,5 @@ class AdaptiveCruise(object):
       self.dead = True
 
     self.v_target_lead, self.a_target, self.a_pcm, self.jerk_factor = \
-      compute_speed_with_leads(v_ego, angle_steers, v_pid, self.l1, self.l2, awareness_status, VP)
+      compute_speed_with_leads(v_ego, angle_steers, v_pid, self.l1, self.l2, CP)
     self.has_lead = self.v_target_lead != MAX_SPEED_POSSIBLE

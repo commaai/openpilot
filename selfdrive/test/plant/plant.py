@@ -8,9 +8,9 @@ import numpy as np
 from dbcs import DBC_PATH
 
 from common.realtime import Ratekeeper
-from common.services import service_list
 
 import selfdrive.messaging as messaging
+from selfdrive.services import service_list
 from selfdrive.config import CruiseButtons
 from selfdrive.car.honda.hondacan import fix
 from selfdrive.car.honda.carstate import get_can_parser
@@ -18,9 +18,30 @@ from selfdrive.boardd.boardd import can_capnp_to_can_list, can_list_to_can_capnp
 
 from selfdrive.car.honda.can_parser import CANParser
 
-
+from cereal import car
 from common.dbc import dbc
 acura = dbc(os.path.join(DBC_PATH, "acura_ilx_2016_can.dbc"))
+
+def fake_car_params():
+  ret = car.CarParams.new_message()
+
+  # largely copied from honda
+  ret.carName = "honda"
+  ret.radarName = "nidec"
+  ret.carFingerprint = "ACURA ILX 2016 ACURAWATCH PLUS"
+
+  ret.enableSteer = True
+  ret.enableBrake = True
+  ret.enableGas = True
+  ret.enableCruise = False
+
+  ret.wheelBase = 2.67
+  ret.steerRatio = 15.3
+  ret.slipFactor = 0.0014
+
+  ret.steerKp, ret.steerKi = 12.0, 1.0
+
+  return ret
 
 def car_plant(pos, speed, grade, gas, brake):
   # vehicle parameters
@@ -133,7 +154,7 @@ class Plant(object):
 
   def step(self, v_lead=0.0, cruise_buttons=None, grade=0.0):
     # dbc_f, sgs, ivs, msgs, cks_msgs, frqs = initialize_can_struct(self.civic, self.brake_only)
-    cp2 = get_can_parser(self.civic, self.brake_only)
+    cp2 = get_can_parser(fake_car_params())
     sgs = cp2._sgs
     msgs = cp2._msgs
     cks_msgs = cp2.msgs_ck

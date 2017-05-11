@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import zmq
 from logentries import LogentriesHandler
-from common.services import service_list
+from selfdrive.services import service_list
 import selfdrive.messaging as messaging
 
 def main(gctx):

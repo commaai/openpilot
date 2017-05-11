@@ -13,7 +13,13 @@ static inline uint64_t nanos_since_boot() {
 static inline double millis_since_boot() {
   struct timespec t;
   clock_gettime(CLOCK_BOOTTIME, &t);
-  return t.tv_sec * 1000.0 + t.tv_nsec / 1000000.0;
+  return t.tv_sec * 1000.0 + t.tv_nsec * 1e-6;
+}
+
+static inline double seconds_since_boot() {
+  struct timespec t;
+  clock_gettime(CLOCK_BOOTTIME, &t);
+  return (double)t.tv_sec + t.tv_nsec * 1e-9;;
 }
 
 static inline uint64_t nanos_since_epoch() {
@@ -25,7 +31,7 @@ static inline uint64_t nanos_since_epoch() {
 static inline double seconds_since_epoch() {
   struct timespec t;
   clock_gettime(CLOCK_REALTIME, &t);
-  return (double)t.tv_sec + t.tv_nsec / 1000000000.0;
+  return (double)t.tv_sec + t.tv_nsec * 1e-9;
 }
 
 #endif

@@ -8,20 +8,18 @@ from collections import defaultdict
 from fastcluster import linkage_vector
 
 import selfdrive.messaging as messaging
+from selfdrive.services import service_list
 from selfdrive.controls.lib.latcontrol import calc_lookahead_offset
 from selfdrive.controls.lib.pathplanner import PathPlanner
-from selfdrive.config import VehicleParams
 from selfdrive.controls.lib.radar_helpers import Track, Cluster, fcluster, RDR_TO_LDR
+from selfdrive.swaglog import cloudlog
 
-from common.services import service_list
+from cereal import car
+
+from common.params import Params
 from common.realtime import sec_since_boot, set_realtime_priority, Ratekeeper
 from common.kalman.ekf import EKF, SimpleSensor
 
-radar_type = os.getenv("RADAR")
-if radar_type is not None:
-  exec('from selfdrive.radar.'+car_type+'.interface import RadarInterface')
-else:
-  from selfdrive.radar.nidec.interface import RadarInterface
 
 #vision point
 DIMSV = 2
@@ -49,6 +47,15 @@ class EKFV1D(EKF):
 def radard_thread(gctx=None):
   set_realtime_priority(1)
 
+  # wait for stats about the car to come in from controls
+  cloudlog.info("radard is waiting for CarParams")
+  CP = car.CarParams.from_bytes(Params().get("CarParams", block=True))
+  cloudlog.info("radard got CarParams")
+
+  # import the radar from the fingerprint
+  cloudlog.info("radard is importing %s", CP.radarName)
+  exec('from selfdrive.radar.'+CP.radarName+'.interface import RadarInterface')
+
   context = zmq.Context()
 
   # *** subscribe to features and model from visiond
@@ -61,10 +68,6 @@ def radard_thread(gctx=None):
   # *** publish live20 and liveTracks
   live20 = messaging.pub_sock(context, service_list['live20'].port)
   liveTracks = messaging.pub_sock(context, service_list['liveTracks'].port)
-
-  # subscribe to stats about the car
-  # TODO: move this to new style packet
-  VP = VehicleParams(False, False)  # same for ILX and civic
 
   path_x = np.arange(0.0, 140.0, 0.1)    # 140 meters is max
 
@@ -129,7 +132,7 @@ def radard_thread(gctx=None):
     if enabled:    # use path from model path_poly
       path_y = np.polyval(PP.d_poly, path_x)
     else:          # use path from steer, set angle_offset to 0 since calibration does not exactly report the physical offset
-      path_y = calc_lookahead_offset(v_ego, steer_angle, path_x, VP, angle_offset=0)[0]
+      path_y = calc_lookahead_offset(v_ego, steer_angle, path_x, CP, angle_offset=0)[0]
 
     # *** remove missing points from meta data ***
     for ids in tracks.keys():

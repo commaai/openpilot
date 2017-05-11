@@ -1,3 +1,13 @@
+Version 0.3.0  (2017-03-xx)
+===========================
+  * Add CarParams struct to improve the abstraction layer
+  * Refactor visiond IPC to support multiple clients
+  * Add raw GPS and beginning support for navigation
+  * Improve model in visiond using crowdsourced data
+  * Add improved system logging to diagnose instability
+  * Rewrite baseui in React Native
+  * Moved calibration to the cloud
+
 Version 0.2.9  (2017-03-01)
 ===========================
   * Retain compatibility with NEOS v1

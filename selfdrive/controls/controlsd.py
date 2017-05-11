@@ -4,30 +4,24 @@ import zmq
 import numpy as np
 import selfdrive.messaging as messaging
 
-from cereal import car
+from cereal import car, log
 
+from selfdrive.swaglog import cloudlog
 from common.numpy_fast import clip
+from common.fingerprints import fingerprint
 
 from selfdrive.config import Conversions as CV
-from common.services import service_list
+from selfdrive.services import service_list
 from common.realtime import sec_since_boot, set_realtime_priority, Ratekeeper
 from common.profiler import Profiler
+from common.params import Params
 
 from selfdrive.controls.lib.drive_helpers import learn_angle_offset
 
 from selfdrive.controls.lib.longcontrol import LongControl
 from selfdrive.controls.lib.latcontrol import LatControl
 
-from selfdrive.controls.lib.pathplanner import PathPlanner
-from selfdrive.controls.lib.adaptivecruise import AdaptiveCruise
-
 from selfdrive.controls.lib.alertmanager import AlertManager
-
-car_type = os.getenv("CAR")
-if car_type is not None:
-  exec('from selfdrive.car.'+car_type+'.interface import CarInterface')
-else:
-  from selfdrive.car.honda.interface import CarInterface
 
 V_CRUISE_MAX = 144
 V_CRUISE_MIN = 8
@@ -42,21 +36,34 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
   carcontrol = messaging.pub_sock(context, service_list['carControl'].port)
 
   thermal = messaging.sub_sock(context, service_list['thermal'].port)
-  live20 = messaging.sub_sock(context, service_list['live20'].port)
-  model = messaging.sub_sock(context, service_list['model'].port)
   health = messaging.sub_sock(context, service_list['health'].port)
+  plan_sock = messaging.sub_sock(context, service_list['plan'].port)
 
-  # connects to can and sendcan
-  CI = CarInterface()
-  VP = CI.getVehicleParams()
+  logcan = messaging.sub_sock(context, service_list['can'].port)
 
-  PP = PathPlanner(model)
-  AC = AdaptiveCruise(live20)
+  # connects to can
+  CP = fingerprint(logcan)
+
+  # import the car from the fingerprint
+  cloudlog.info("controlsd is importing %s", CP.carName)
+  exec('from selfdrive.car.'+CP.carName+'.interface import CarInterface')
+
+  sendcan = messaging.pub_sock(context, service_list['sendcan'].port)
+  CI = CarInterface(CP, logcan, sendcan)
+
+  # write CarParams
+  Params().put("CarParams", CP.to_bytes())
 
   AM = AlertManager()
 
   LoC = LongControl()
   LaC = LatControl()
+
+  # fake plan
+  plan = log.Plan.new_message()
+  plan.lateralValid = False
+  plan.longitudinalValid = False
+  last_plan_time = 0
 
   # controls enabled state
   enabled = False
@@ -128,7 +135,7 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
       if b.type == "altButton1" and b.pressed:
         rear_view_toggle = not rear_view_toggle
 
-      if not VP.brake_only and enabled and not b.pressed:
+      if not CP.enableCruise and enabled and not b.pressed:
         if b.type == "accelCruise":
           v_cruise_kph = v_cruise_kph - (v_cruise_kph % V_CRUISE_DELTA) + V_CRUISE_DELTA
         elif b.type == "decelCruise":
@@ -166,13 +173,6 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
 
     prof.checkpoint("Health")
 
-    # *** getting model logic ***
-    PP.update(cur_time, CS.vEgo)
-
-    if rk.frame % 5 == 2:
-      # *** run this at 20hz again ***
-      angle_offset = learn_angle_offset(enabled, CS.vEgo, angle_offset, np.asarray(PP.d_poly), LaC.y_des, CS.steeringPressed)
-
     # disable if the pedals are pressed while engaged, this is a user disable
     if enabled:
       if CS.gasPressed or CS.brakePressed:
@@ -192,60 +192,63 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
         AM.add("outOfSpace", enabled)
         enable_request = False
 
-    if VP.brake_only:
+    if CP.enableCruise:
       enable_condition = ((cur_time - last_enable_request) < 0.2) and CS.cruiseState.enabled
     else:
       enable_condition = enable_request
+
+    if CP.enableCruise and CS.cruiseState.enabled:
+      v_cruise_kph = CS.cruiseState.speed * CV.MS_TO_KPH
+
+    prof.checkpoint("AdaptiveCruise")
+
+    # *** what's the plan ***
+    new_plan = messaging.recv_sock(plan_sock)
+    if new_plan is not None:
+      plan = new_plan.plan
+      plan = plan.as_builder()  # plan can change in controls
+      last_plan_time = cur_time
+
+    # check plan for timeout
+    if cur_time - last_plan_time > 0.5:
+      plan.lateralValid = False
+      plan.longitudinalValid = False
+
+    # gives 18 seconds before decel begins (w 6 minute timeout)
+    if awareness_status < -0.05:
+      plan.aTargetMax = min(plan.aTargetMax, -0.2)
+      plan.aTargetMin = min(plan.aTargetMin, plan.aTargetMax)
 
     if enable_request or enable_condition or enabled:
       # add all alerts from car
       for alert in CS.errors:
         AM.add(alert, enabled)
 
-      if AC.dead:
+      if not plan.longitudinalValid:
         AM.add("radarCommIssue", enabled)
 
-      if PP.dead:
-        AM.add("modelCommIssue", enabled)
+      if not plan.lateralValid:
+        # If the model is not broadcasting, assume that it is because
+        # the user has uploaded insufficient data for calibration.
+        # Other cases that would trigger this are rare and unactionable by the user.
+        AM.add("dataNeeded", enabled)
 
       if overtemp:
         AM.add("overheat", enabled)
 
-    prof.checkpoint("Model")
-
-    if enable_condition and not enabled and not AM.alertPresent():
-      print "*** enabling controls"
-
-      # beep for enabling
-      AM.add("enable", enabled)
-
-      # enable both lateral and longitudinal controls
-      enabled = True
-
-      # on activation, let's always set v_cruise from where we are, even if PCM ACC is active
-      v_cruise_kph = int(round(max(CS.vEgo * CV.MS_TO_KPH * VP.ui_speed_fudge, V_CRUISE_ENABLE_MIN)))
-
-      # 6 minutes driver you're on
-      awareness_status = 1.0
-
-      # reset the PID loops
-      LaC.reset()
-      # start long control at actual speed
-      LoC.reset(v_pid = CS.vEgo)
-
-    if VP.brake_only and CS.cruiseState.enabled:
-      v_cruise_kph = CS.cruiseState.speed * CV.MS_TO_KPH
-
-    # *** put the adaptive in adaptive cruise control ***
-    AC.update(cur_time, CS.vEgo, CS.steeringAngle, LoC.v_pid, awareness_status, VP)
-
-    prof.checkpoint("AdaptiveCruise")
+    # *** angle offset learning ***
+    if rk.frame % 5 == 2 and plan.lateralValid:
+      # *** run this at 20hz again ***
+      angle_offset = learn_angle_offset(enabled, CS.vEgo, angle_offset, np.asarray(plan.dPoly), LaC.y_des, CS.steeringPressed)
 
     # *** gas/brake PID loop ***
-    final_gas, final_brake = LoC.update(enabled, CS.vEgo, v_cruise_kph, AC.v_target_lead, AC.a_target, AC.jerk_factor, VP)
+    final_gas, final_brake = LoC.update(enabled, CS.vEgo, v_cruise_kph,
+                                        plan.vTarget,
+                                        [plan.aTargetMin, plan.aTargetMax],
+                                        plan.jerkFactor, CP)
 
     # *** steering PID loop ***
-    final_steer, sat_flag = LaC.update(enabled, CS.vEgo, CS.steeringAngle, CS.steeringPressed, PP.d_poly, angle_offset, VP)
+    final_steer, sat_flag = LaC.update(enabled, CS.vEgo, CS.steeringAngle, CS.steeringPressed, plan.dPoly, angle_offset, CP)
 
     prof.checkpoint("PID")
 
@@ -269,6 +272,26 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
     else:
       soft_disable_timer = None
 
+    if enable_condition and not enabled and not AM.alertPresent():
+      print "*** enabling controls"
+
+      # beep for enabling
+      AM.add("enable", enabled)
+
+      # enable both lateral and longitudinal controls
+      enabled = True
+
+      # on activation, let's always set v_cruise from where we are, even if PCM ACC is active
+      v_cruise_kph = int(round(max(CS.vEgo * CV.MS_TO_KPH, V_CRUISE_ENABLE_MIN)))
+
+      # 6 minutes driver you're on
+      awareness_status = 1.0
+
+      # reset the PID loops
+      LaC.reset()
+      # start long control at actual speed
+      LoC.reset(v_pid = CS.vEgo)
+
     # *** push the alerts to current ***
     alert_text_1, alert_text_2, visual_alert, audible_alert = AM.process_alerts(cur_time)
 
@@ -282,14 +305,22 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
     CC.steeringTorque = float(final_steer)
 
     CC.cruiseControl.override = True
-    CC.cruiseControl.cancel = bool((not VP.brake_only) or (not enabled and CS.cruiseState.enabled))    # always cancel if we have an interceptor
-    CC.cruiseControl.speedOverride = float((LoC.v_pid - .3) if (VP.brake_only and final_brake == 0.) else 0.0)
-    CC.cruiseControl.accelOverride = float(AC.a_pcm)
+    CC.cruiseControl.cancel = bool((not CP.enableCruise) or (not enabled and CS.cruiseState.enabled))    # always cancel if we have an interceptor
+
+    # brake discount removes a sharp nonlinearity
+    brake_discount = (1.0 - clip(final_brake*3., 0.0, 1.0))
+    CC.cruiseControl.speedOverride = float(max(0.0, ((LoC.v_pid - .5) * brake_discount)) if CP.enableCruise else 0.0)
+
+    #CC.cruiseControl.accelOverride = float(AC.a_pcm)
+    # TODO: fix this
+    CC.cruiseControl.accelOverride = float(1.0)
 
     CC.hudControl.setSpeed = float(v_cruise_kph * CV.KPH_TO_MS)
     CC.hudControl.speedVisible = enabled
     CC.hudControl.lanesVisible = enabled
-    CC.hudControl.leadVisible = bool(AC.has_lead)
+    #CC.hudControl.leadVisible = bool(AC.has_lead)
+    # TODO: fix this
+    CC.hudControl.leadVisible = False
 
     CC.hudControl.visualAlert = visual_alert
     CC.hudControl.audibleAlert = audible_alert
@@ -320,8 +351,8 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
 
     # what packets were used to process
     dat.live100.canMonoTimes = list(CS.canMonoTimes)
-    dat.live100.mdMonoTime = PP.logMonoTime
-    dat.live100.l20MonoTime = AC.logMonoTime
+    #dat.live100.mdMonoTime = PP.logMonoTime
+    #dat.live100.l20MonoTime = AC.logMonoTime
 
     # if controls is enabled
     dat.live100.enabled = enabled
@@ -344,10 +375,10 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
     dat.live100.uiSteer = float(LaC.Ui_steer)
 
     # processed radar state, should add a_pcm?
-    dat.live100.vTargetLead = float(AC.v_target_lead)
-    dat.live100.aTargetMin = float(AC.a_target[0])
-    dat.live100.aTargetMax = float(AC.a_target[1])
-    dat.live100.jerkFactor = float(AC.jerk_factor)
+    dat.live100.vTargetLead = float(plan.vTarget)
+    dat.live100.aTargetMin = float(plan.aTargetMin)
+    dat.live100.aTargetMax = float(plan.aTargetMax)
+    dat.live100.jerkFactor = float(plan.jerkFactor)
 
     # lag
     dat.live100.cumLagMs = -rk.remaining*1000.

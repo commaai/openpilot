@@ -19,4 +19,8 @@
 
 #define ARRAYSIZE(x) (sizeof(x)/sizeof(x[0]))
 
+// Returns NULL on failure, otherwise the NULL-terminated file contents.
+void* read_file(const char* path, size_t* out_len);
+
+
 #endif

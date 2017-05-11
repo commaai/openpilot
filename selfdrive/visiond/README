@@ -1,3 +1,3 @@
-visiond runs the openpilot vision pipeline. Everything running between the camera hardware and model outputs and video logs lives here.
+visiond runs the openpilot vision pipeline. Everything running between the camera hardware and model outputs lives here.
 
 Contact us if you'd like features added or support for your platform.

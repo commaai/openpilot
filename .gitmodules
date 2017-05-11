@@ -1,0 +1,3 @@
+[submodule "panda"]
+	path = panda
+	url = git@github.com:commaai/panda.git

@@ -1,6 +1,10 @@
 using Cxx = import "c++.capnp";
 $Cxx.namespace("cereal");
 
+using Java = import "java.capnp";
+$Java.package("ai.comma.openpilot.cereal");
+$Java.outerClassname("Car");
+
 @0x8e2af1e708af8b8d;
 
 # ******* main car state @ 100hz *******
@@ -168,5 +172,31 @@ struct CarControl {
       chimeContinuous @7;
     }
   }
+}
+
+# ****** car param ******
+
+struct CarParams {
+  carName @0: Text;
+  radarName @1: Text;
+  carFingerprint @11: Text;
+
+  enableSteer @2: Bool;
+  enableGas @3: Bool;
+  enableBrake @4: Bool;
+  enableCruise @5: Bool;
+
+  # things about the car in the manual
+  wheelBase @6: Float32;     # in meters
+  steerRatio @7: Float32;
+
+  # things we can derive
+  slipFactor @8: Float32;
+
+  # Kp and Ki for the lateral control
+  steerKp @9: Float32;
+  steerKi @10: Float32;
+
+  # TODO: Kp and Ki for long control, perhaps not needed?
 }
 

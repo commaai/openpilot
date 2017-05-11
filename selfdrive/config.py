@@ -10,7 +10,7 @@ class Conversions:
   KNOTS_TO_MS = 1/1.9438
   MS_TO_KNOTS = 1.9438
 
-  # Car tecode decimal minutes into decimal degrees, can work with numpy arrays as input
+  # Car decode decimal minutes into decimal degrees, can work with numpy arrays as input
   @staticmethod
   def dm2d(dm):
     degs = np.round(dm/100.)
@@ -55,20 +55,4 @@ class UIParams:
   car_front = 2.6924 * lidar_zoom
   car_back  = 1.8796 * lidar_zoom
   car_color = 110
-
-class VehicleParams:
-  def __init__(self, civic, brake_only=False, torque_mod=False):
-    if civic:
-      self.wheelbase = 2.67
-      self.steer_ratio = 15.3
-      self.slip_factor = 0.0014
-      self.civic = True
-    else:
-      self.wheelbase = 2.67      # from http://www.edmunds.com/acura/ilx/2016/sedan/features-specs/
-      self.steer_ratio = 15.3    # from http://www.edmunds.com/acura/ilx/2016/road-test-specs/
-      self.slip_factor = 0.0014
-      self.civic = False
-    self.brake_only = brake_only
-    self.torque_mod = torque_mod
-    self.ui_speed_fudge = 1.01 if self.civic else 1.025
 
