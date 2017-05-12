@@ -1,1 +1,1 @@
-const char *openpilot_version = "0.3.0-devel";
+const char *openpilot_version = "0.3.0";

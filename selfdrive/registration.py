@@ -8,13 +8,7 @@ from common.api import api_get
 from common.params import Params
 
 def get_imei():
-  # Telephony.getDeviceId()
-  result = subprocess.check_output(["service", "call", "phone", "130"]).strip().split("\n")
-  hex_data = ''.join(l[14:49] for l in result[1:]).replace(" ", "")
-  data = hex_data.decode("hex")
-
-  imei_str = data[8:-4].replace("\x00", "")
-  return imei_str
+  return subprocess.check_output(["getprop", "oem.device.imeicache"]).strip()
 
 def get_serial():
   return subprocess.check_output(["getprop", "ro.serialno"]).strip()

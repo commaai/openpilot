@@ -22,7 +22,6 @@ class CANParser(object):
     self.msgs_ck = [check[0] for check in checks]
     self.frqs = [check[1] for check in checks]
     self.can_valid = False  # start with False CAN assumption
-    self.msgs_upd = []      # list of updated messages
     # list of received msg we want to monitor counter and checksum for
     # read dbc file
     self.can_dbc = dbc(os.path.join(dbcs.DBC_PATH, dbc_f))
@@ -55,14 +54,14 @@ class CANParser(object):
       self._message_indices[x].append(i)
 
   def update_can(self, can_recv):
-    self.msgs_upd = []
+    msgs_upd = []
     cn_vl_max = 5   # no more than 5 wrong counter checks
 
     # we are subscribing to PID_XXX, else data from USB
     for msg, ts, cdat, _ in can_recv:
       idxs = self._message_indices[msg]
       if idxs:
-        self.msgs_upd.append(msg)
+        msgs_upd.append(msg)
         # read the entire message
         out = self.can_dbc.decode((msg, 0, cdat))[1]
         # checksum check
@@ -107,7 +106,7 @@ class CANParser(object):
           sg = self._sgs[ii]
           self.vl[msg][sg] = out[sg]
 
-  # for each message, check if it's too long since last time we received it
+    # for each message, check if it's too long since last time we received it
     self._check_dead_msgs()
 
     # assess overall can validity: if there is one relevant message invalid, then set can validity flag to False
@@ -115,6 +114,8 @@ class CANParser(object):
     if False in self.ok.values():
       #print "CAN INVALID!"
       self.can_valid = False
+
+    return msgs_upd
 
   def _check_dead_msgs(self):
     ### input:

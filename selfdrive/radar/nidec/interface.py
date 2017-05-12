@@ -45,7 +45,7 @@ class RadarInterface(object):
       if any(x[0] == 0x445 for x in can_pub_radar):
         break
 
-    self.rcp.update_can(can_pub_radar)
+    updated_messages = self.rcp.update_can(can_pub_radar)
 
     ret = car.RadarState.new_message()
     errors = []
@@ -54,7 +54,7 @@ class RadarInterface(object):
     ret.errors = errors
     ret.canMonoTimes = canMonoTimes
 
-    for ii in self.rcp.msgs_upd:
+    for ii in updated_messages:
       cpt = self.rcp.vl[ii]
       if cpt['LONG_DIST'] < 255:
         if ii not in self.pts or cpt['NEW_TRACK']:
