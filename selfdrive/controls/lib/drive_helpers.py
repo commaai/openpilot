@@ -1,4 +1,3 @@
-import numpy as np
 from common.numpy_fast import clip
 
 def rate_limit(new_value, last_value, dw_step, up_step):

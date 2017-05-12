@@ -160,9 +160,11 @@ baseui_running = False
 def manage_baseui(start):
   global baseui_running
   if start and not baseui_running:
+    cloudlog.info("starting baseui")
     os.system("am start -n com.baseui/.MainActivity")
     baseui_running = True
   elif not start and baseui_running:
+    cloudlog.info("stopping baseui")
     os.system("am force-stop com.baseui")
     baseui_running = False
 
