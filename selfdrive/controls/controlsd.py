@@ -380,6 +380,9 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
     dat.live100.aTargetMax = float(plan.aTargetMax)
     dat.live100.jerkFactor = float(plan.jerkFactor)
 
+    # log learned angle offset
+    dat.live100.angleOffset = float(angle_offset)
+
     # lag
     dat.live100.cumLagMs = -rk.remaining*1000.
 

@@ -219,12 +219,14 @@ def manager_thread():
   if os.getenv("NOPROG") is None:
     # checkout the matching panda repo
     rootdir = os.path.dirname(os.path.abspath(__file__))
-    os.system("cd %s && git submodule init && git submodule update" % rootdir)
+    ret = os.system("cd %s && git submodule init && git submodule update" % rootdir)
+    cloudlog.info("git submodule update panda returned %d" % ret)
     # flash the board
     boarddir = os.path.dirname(os.path.abspath(__file__))+"/../panda/board/"
     mkfile = "Makefile" if panda else "Makefile.legacy"
     print "using", mkfile
-    os.system("cd %s && make -f %s" % (boarddir, mkfile))
+    ret = os.system("cd %s && make -f %s" % (boarddir, mkfile))
+    cloudlog.info("flash board returned %d" % ret)
 
   start_managed_process("boardd")
 
