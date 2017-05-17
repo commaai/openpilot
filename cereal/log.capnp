@@ -315,6 +315,8 @@ struct Live100Data {
   alertText1 @24 :Text; 
   alertText2 @25 :Text; 
   awarenessStatus @26 :Float32;
+
+  angleOffset @27 :Float32;
 }
 
 struct LiveEventData {
