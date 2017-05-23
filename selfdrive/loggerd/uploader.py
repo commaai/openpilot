@@ -208,7 +208,7 @@ class Uploader(object):
       cloudlog.info("uploading %r", fn)
       # stat = self.killable_upload(key, fn)
       stat = self.normal_upload(key, fn)
-      if stat is not None and stat.status_code == 200:
+      if stat is not None and stat.status_code in (200, 201):
         cloudlog.event("upload_success", key=key, fn=fn, sz=sz)
         os.unlink(fn) # delete the file
         success = True
@@ -254,7 +254,7 @@ def uploader_fn(exit_event):
       else:
         cloudlog.info("backoff %r", backoff)
         time.sleep(backoff + random.uniform(0, backoff))
-        backoff *= 2
+        backoff = min(backoff*2, 120)
       cloudlog.info("upload done, success=%r", success)
 
     time.sleep(5)

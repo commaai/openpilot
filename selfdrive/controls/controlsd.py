@@ -52,7 +52,8 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
   CI = CarInterface(CP, logcan, sendcan)
 
   # write CarParams
-  Params().put("CarParams", CP.to_bytes())
+  params = Params()
+  params.put("CarParams", CP.to_bytes())
 
   AM = AlertManager()
 
@@ -74,6 +75,7 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
 
   # rear view camera state
   rear_view_toggle = False
+  rear_view_allowed = bool(params.get("IsRearViewMirror"))
 
   v_cruise_kph = 255
 
@@ -127,7 +129,7 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
 
       # button presses for rear view
       if b.type == "leftBlinker" or b.type == "rightBlinker":
-        if b.pressed:
+        if b.pressed and rear_view_allowed:
           rear_view_toggle = True
         else:
           rear_view_toggle = False
@@ -318,9 +320,7 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
     CC.hudControl.setSpeed = float(v_cruise_kph * CV.KPH_TO_MS)
     CC.hudControl.speedVisible = enabled
     CC.hudControl.lanesVisible = enabled
-    #CC.hudControl.leadVisible = bool(AC.has_lead)
-    # TODO: fix this
-    CC.hudControl.leadVisible = False
+    CC.hudControl.leadVisible = plan.hasLead
 
     CC.hudControl.visualAlert = visual_alert
     CC.hudControl.audibleAlert = audible_alert
@@ -344,7 +344,7 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
     dat.init('live100')
 
     # show rear view camera on phone if in reverse gear or when button is pressed
-    dat.live100.rearViewCam = ('reverseGear' in CS.errors) or rear_view_toggle
+    dat.live100.rearViewCam = ('reverseGear' in CS.errors and rear_view_allowed) or rear_view_toggle
     dat.live100.alertText1 = alert_text_1
     dat.live100.alertText2 = alert_text_2
     dat.live100.awarenessStatus = max(awareness_status, 0.0) if enabled else 0.0

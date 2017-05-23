@@ -52,6 +52,10 @@ keys = {
   "Version": TxType.PERSISTANT,
   "GitCommit": TxType.PERSISTANT,
   "GitBranch": TxType.PERSISTANT,
+# written: baseui
+# read:    ui, controls
+  "IsMetric": TxType.PERSISTANT,
+  "IsRearViewMirror": TxType.PERSISTANT,
 # written: visiond
 # read:    visiond
   "CalibrationParams": TxType.PERSISTANT,

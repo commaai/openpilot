@@ -31,6 +31,10 @@ struct InitData {
   androidSensors @6 :List(AndroidSensor);
   chffrAndroidExtra @7 :ChffrAndroidExtra;
 
+  pandaInfo @8 :PandaInfo;
+
+  dirty @9 :Bool;
+
   enum DeviceType {
     unknown @0;
     neo @1;
@@ -83,6 +87,13 @@ struct InitData {
 
   struct ChffrAndroidExtra {
     allCameraCharacteristics @0 :Map(Text, Text);
+  }
+
+  struct PandaInfo {
+    hasPanda @0: Bool;
+    dongleId @1: Text;
+    stVersion @2: Text;
+    espVersion @3: Text;
   }
 }
 
@@ -411,6 +422,7 @@ struct Plan {
   aTargetMin @4 :Float32;
   aTargetMax @5 :Float32;
   jerkFactor @6 :Float32;
+  hasLead @7 :Bool;
 }
 
 struct LiveLocationData {

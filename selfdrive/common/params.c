@@ -49,7 +49,12 @@ int write_db_value(const char* params_path, const char* key, const char* value,
 
   // Move temp into place.
   result = rename(tmp_path, path);
+  if (result < 0) {
+    goto cleanup;
+  }
 
+  // fsync to force persist the changes.
+  result = fsync(tmp_fd);
 cleanup:
   // Release lock.
   if (lock_fd >= 0) {

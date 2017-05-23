@@ -50,7 +50,7 @@ def create_accord_steering_control(apply_steer, idx):
     dat = [0, 0, 0x40, 0]
   else:
     dat = [0,0,0,0]
-    rp = clip(apply_steer/0xF, -0xFF, 0xFF)
+    rp = np.clip(apply_steer/0xF, -0xFF, 0xFF)
     if rp < 0:
       rp += 512
     dat[0] |= (rp >> 5) & 0xf

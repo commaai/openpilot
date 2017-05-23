@@ -3,7 +3,9 @@ import os
 
 # check if NEOS update is required
 while 1:
-  if (not os.path.isfile("/VERSION") or int(open("/VERSION").read()) < 3) and not os.path.isfile("/sdcard/noupdate"):
+  if ((not os.path.isfile("/VERSION")
+      or int(open("/VERSION").read()) < 3)
+      and not os.path.isfile("/data/media/0/noupdate")):
     os.system("curl -o /tmp/updater https://openpilot.comma.ai/updater && chmod +x /tmp/updater && /tmp/updater")
   else:
     break
@@ -183,14 +185,33 @@ def manager_init():
   cloudlog.info("dongle id is " + dongle_id)
   os.environ['DONGLE_ID'] = dongle_id
 
+  dirty = subprocess.call(["git", "diff-index", "--quiet", "origin/release", "--"]) != 0
+  cloudlog.info("dirty is %d" % dirty)
+  if not dirty:
+    os.environ['CLEAN'] = '1'
+
   cloudlog.bind_global(dongle_id=dongle_id, version=version)
   crash.bind_user(id=dongle_id)
-  crash.bind_extra(version=version)
+  crash.bind_extra(version=version, dirty=dirty)
 
-  os.system("mkdir -p "+ROOT)
+  os.umask(0)
+  try:
+    os.mkdir(ROOT, 0777)
+  except OSError:
+    pass
 
   # set gctx
   gctx = {}
+
+def system(cmd):
+  try:
+    cloudlog.info("running %s" % cmd)
+    subprocess.check_output(cmd, stderr=subprocess.STDOUT, shell=True)
+  except subprocess.CalledProcessError, e:
+    cloudlog.event("running failed",
+      cmd=e.cmd,
+      output=e.output,
+      returncode=e.returncode)
 
 def manager_thread():
   global baseui_running
@@ -219,14 +240,13 @@ def manager_thread():
   if os.getenv("NOPROG") is None:
     # checkout the matching panda repo
     rootdir = os.path.dirname(os.path.abspath(__file__))
-    ret = os.system("cd %s && git submodule init && git submodule update" % rootdir)
-    cloudlog.info("git submodule update panda returned %d" % ret)
+    system("cd %s && git submodule init" % rootdir)
+    system("cd %s && git submodule update" % rootdir)
     # flash the board
     boarddir = os.path.dirname(os.path.abspath(__file__))+"/../panda/board/"
     mkfile = "Makefile" if panda else "Makefile.legacy"
     print "using", mkfile
-    ret = os.system("cd %s && make -f %s" % (boarddir, mkfile))
-    cloudlog.info("flash board returned %d" % ret)
+    system("cd %s && make -f %s" % (boarddir, mkfile))
 
   start_managed_process("boardd")
 
@@ -421,6 +441,13 @@ def main():
 
   params = Params()
   params.manager_start()
+
+  # set unset params
+  if params.get("IsMetric") is None:
+    params.put("IsMetric", "0")
+  if params.get("IsRearViewMirror") is None:
+    params.put("IsRearViewMirror", "1")
+
   manager_init()
   manager_prepare()
   
