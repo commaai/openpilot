@@ -122,6 +122,8 @@ typedef struct UIState {
 
   bool awake;
   int awake_timeout;
+
+  bool is_metric;
 } UIState;
 
 static void set_awake(UIState *s, bool awake) {
@@ -342,6 +344,13 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
     0.0, 0.0, 1.0, 0.0,
     0.0, 0.0, 0.0, 1.0,
   }};
+
+  char *value;
+  const int result = read_db_value("/data/params", "IsMetric", &value, NULL);
+  if (result == 0) {
+    s->is_metric = value[0] == '1';
+    free(value);
+  }
 }
 
 static void ui_update_frame(UIState *s) {
@@ -621,9 +630,15 @@ static void ui_draw_world(UIState *s) {
 
   if (scene->lead_status) {
     char radar_str[16];
-    int lead_v_rel = (int)(2.236 * scene->lead_v_rel);
-    snprintf(radar_str, sizeof(radar_str), "%3d m %+d mph",
-             (int)(scene->lead_d_rel), lead_v_rel);
+    if (s->is_metric) {
+      int lead_v_rel = (int)(3.6 * scene->lead_v_rel);
+      snprintf(radar_str, sizeof(radar_str), "%3d m %+d kph",
+               (int)(scene->lead_d_rel), lead_v_rel);
+    } else {
+      int lead_v_rel = (int)(2.236 * scene->lead_v_rel);
+      snprintf(radar_str, sizeof(radar_str), "%3d m %+d mph",
+               (int)(scene->lead_d_rel), lead_v_rel);
+    }
     nvgFontSize(s->vg, 96.0f);
     nvgFillColor(s->vg, nvgRGBA(128, 128, 0, 192));
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
@@ -670,16 +685,26 @@ static void ui_draw_vision(UIState *s) {
     }
 
     if (scene->v_cruise != 255 && scene->v_cruise != 0) {
-      // Convert KPH to MPH.
-      snprintf(speed_str, sizeof(speed_str), "%3d MPH",
-               (int)(scene->v_cruise * 0.621371 + 0.5));
+      if (s->is_metric) {
+        snprintf(speed_str, sizeof(speed_str), "%3d KPH",
+                 (int)(scene->v_cruise + 0.5));
+      } else {
+        // Convert KPH to MPH.
+        snprintf(speed_str, sizeof(speed_str), "%3d MPH",
+                 (int)(scene->v_cruise * 0.621371 + 0.5));
+      }
       nvgTextAlign(s->vg, NVG_ALIGN_RIGHT | NVG_ALIGN_BASELINE);
       nvgText(s->vg, 500, 150, speed_str, NULL);
     }
 
     nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 192));
-    snprintf(speed_str, sizeof(speed_str), "%3d MPH",
-             (int)(scene->v_ego * 2.237 + 0.5));
+    if (s->is_metric) {
+      snprintf(speed_str, sizeof(speed_str), "%3d KPH",
+               (int)(scene->v_ego * 3.6 + 0.5));
+    } else {
+      snprintf(speed_str, sizeof(speed_str), "%3d MPH",
+               (int)(scene->v_ego * 2.237 + 0.5));
+    }
     nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
     nvgText(s->vg, 1920 - 500, 150, speed_str, NULL);
 

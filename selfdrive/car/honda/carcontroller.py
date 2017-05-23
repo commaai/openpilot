@@ -87,6 +87,10 @@ class CarController(object):
              snd_beep, snd_chime):
     """ Controls thread """
 
+    # TODO: Make the accord work.
+    if CS.accord:
+      return
+
     # *** apply brake hysteresis ***
     final_brake, self.braking, self.brake_steady = actuator_hystereses(final_brake, self.braking, self.brake_steady, CS.v_ego, CS.civic)
 

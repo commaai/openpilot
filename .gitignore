@@ -13,6 +13,7 @@ model2.png
 *.a
 *.clb
 *.class
+*.pyxbldc
 config.json
 clcache
 

@@ -1,4 +1,15 @@
-Version 0.3.0  (2017-03-xx)
+Version 0.3.2  (2017-05-22)
+===========================
+  * Minor stability bugfixes
+  * Added metrics and rear view mirror disable to settings
+  * Update model with more crowdsourced data
+
+Version 0.3.1  (2017-05-17)
+===========================
+  * visiond stability bugfix
+  * Add logging for angle and flashing
+
+Version 0.3.0  (2017-05-12)
 ===========================
   * Add CarParams struct to improve the abstraction layer
   * Refactor visiond IPC to support multiple clients

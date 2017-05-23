@@ -68,6 +68,7 @@ def plannerd_thread(gctx):
         plan_send.plan.aTargetMin = float(AC.a_target[0])
         plan_send.plan.aTargetMax = float(AC.a_target[1])
         plan_send.plan.jerkFactor = float(AC.jerk_factor)
+        plan_send.plan.hasLead = AC.has_lead
 
       plan.send(plan_send.to_bytes())
 

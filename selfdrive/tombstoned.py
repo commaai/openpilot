@@ -56,6 +56,7 @@ def report_tombstone(fn, client):
       'backtrace': parsedict.get('backtrace'),
       'logtail': logtail,
       'version': version,
+      'dirty': not bool(os.environ.get('CLEAN')),
     },
     user={'id': os.environ.get('DONGLE_ID')},
     message=message,
