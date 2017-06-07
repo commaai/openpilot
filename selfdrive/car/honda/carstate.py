@@ -7,7 +7,7 @@ from selfdrive.car.honda.can_parser import CANParser
 
 def get_can_parser(CP):
   # this function generates lists for signal, messages and initial values
-  if CP.carFingerprint == "HONDA CIVIC 2016 TOURING":
+  if CP.carFingerprint == "HONDA CIVIC 2016 TOURING" or CP.carFingerprint == "HONDA CIVIC HATCHBACK 2017 SPORT TOURING" :
     dbc_f = 'honda_civic_touring_2016_can.dbc'
     signals = [
       ("XMISSION_SPEED", 0x158, 0),
@@ -175,6 +175,8 @@ class CarState(object):
     self.civic = False
     self.accord = False
     if CP.carFingerprint == "HONDA CIVIC 2016 TOURING":
+      self.civic = True
+    if CP.carFingerprint == "HONDA CIVIC HATCHBACK 2017 SPORT TOURING":
       self.civic = True
     elif CP.carFingerprint == "ACURA ILX 2016 ACURAWATCH PLUS":
       self.civic = False

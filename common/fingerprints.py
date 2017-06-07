@@ -12,6 +12,9 @@ _FINGERPRINTS = {
   },
   "HONDA ACCORD 2016 TOURING": {
     1024L: 5, 929L: 8, 1027L: 5, 773L: 7, 1601L: 8, 777L: 8, 1036L: 8, 398L: 3, 1039L: 8, 401L: 8, 145L: 8, 1424L: 5, 660L: 8, 661L: 4, 918L: 7, 985L: 3, 923L: 2, 542L: 7, 927L: 8, 800L: 8, 545L: 4, 420L: 8, 422L: 8, 808L: 8, 426L: 8, 1029L: 8, 432L: 7, 57L: 3, 316L: 8, 829L: 5, 1600L: 5, 1089L: 8, 1057L: 5, 780L: 8, 1088L: 8, 464L: 8, 1108L: 8, 597L: 8, 342L: 6, 983L: 8, 344L: 8, 804L: 8, 476L: 4, 1296L: 3, 891L: 8, 1125L: 8, 487L: 4, 892L: 8, 490L: 8, 871L: 8, 1064L: 7, 882L: 2, 884L: 8, 506L: 8, 507L: 1, 380L: 8, 1365L: 5
+  },
+  "HONDA CIVIC HATCHBACK 2017 SPORT TOURING": {
+    800L: 8, 804L: 8, 476L: 7, 493L: 5, 304L: 8, 401L: 8, 148L: 8, 470L: 2, 344L: 8, 380L: 8, 477L: 8, 464L: 8, 450L: 8, 420L: 8, 427L: 3, 432L: 7, 507L: 1, 1092L: 1, 428L: 8, 846L: 8, 597L: 8, 983L: 8, 892L: 8, 545L: 6, 806L: 8, 777L: 8, 881L: 8, 882L: 4, 884L: 8, 662L: 4, 888L: 8, 891L: 8, 330L: 8, 495L: 8, 506L: 8, 479L: 8, 423L: 2, 57L: 3, 780L: 8, 927L: 8, 829L: 5, 862L: 8, 773L: 7, 795L: 8, 1115L: 2, 808L: 8, 918L: 7, 1296L: 8, 1029L: 8, 1064L: 7, 1302L: 8, 929L: 8, 1024L: 5, 815L: 8, 825L: 4, 1036L: 8, 1027L: 5, 1108L: 8, 1125L: 8, 1127L: 2, 1633L: 8, 1039L: 8
   }
 }
 
@@ -89,6 +92,9 @@ def fingerprint(logcan):
     if len(candidate_cars) == 1 and st is not None and (sec_since_boot()-st) > 0.1:
       break
     elif len(candidate_cars) == 0:
+      # outputs useful fingerprint data
+      for key, value in finger.items():
+        print str(key) + "L: " + str(value)
       print map(hex, finger.keys())
       raise Exception("car doesn't match any fingerprints")
 
@@ -120,6 +126,8 @@ def fingerprint(logcan):
     else:
       ret.steerKp, ret.steerKi = 12.0, 1.0
   elif candidate_cars[0] == "HONDA ACCORD 2016 TOURING":
+    ret.steerKp, ret.steerKi = 12.0, 1.0
+  elif candidate_cars[0] == "HONDA CIVIC HATCHBACK 2017 SPORT TOURING":
     ret.steerKp, ret.steerKi = 12.0, 1.0
   else:
     raise ValueError("unsupported car %s" % candidate_cars[0])
