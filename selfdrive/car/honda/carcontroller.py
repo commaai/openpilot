@@ -140,17 +140,17 @@ class CarController(object):
     tt = sec_since_boot()
     GAS_MAX = 1004
     BRAKE_MAX = 1024/4
-    STEER_MAX = 0xF00
+    if CS.crv:
+      STEER_MAX = 0xFFF/2
+    else:
+      STEER_MAX = 0xF00
     GAS_OFFSET = 328
 
     # steer torque is converted back to CAN reference (positive when steering right)
     apply_gas = int(clip(final_gas*GAS_MAX, 0, GAS_MAX-1))
     apply_brake = int(clip(final_brake*BRAKE_MAX, 0, BRAKE_MAX-1))
     # crvtodo: tweak steering to match precision of 0xE4 code.
-    if CS.crv:
-      apply_steer = int(clip((-final_steer*.996)*0x7F0, -0x7F0, 0x7F0))
-    else:
-      apply_steer = int(clip(-final_steer*STEER_MAX, -STEER_MAX, STEER_MAX))
+    apply_steer = int(clip(-final_steer*STEER_MAX, -STEER_MAX, STEER_MAX))
 
     # no gas if you are hitting the brake or the user is
     if apply_gas > 0 and (apply_brake != 0 or CS.brake_pressed):
