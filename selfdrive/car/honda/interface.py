@@ -181,7 +181,8 @@ class CarInterface(object):
       errors.append('steerTemporarilyUnavailable')
     if self.CS.brake_error:
       errors.append('brakeUnavailable')
-    if not self.CS.gear_shifter_valid:
+    # crvtodo: fix gearbox read.
+    if not self.CS.gear_shifter_valid and not self.CS.crv:
       errors.append('wrongGear')
     if not self.CS.door_all_closed:
       errors.append('doorOpen')
@@ -212,7 +213,7 @@ class CarInterface(object):
       hud_v_cruise = 255
 
     hud_alert = {
-      "none": AH.NONE, 
+      "none": AH.NONE,
       "fcw": AH.FCW,
       "steerRequired": AH.STEER,
       "brakePressed": AH.BRAKE_PRESSED,
@@ -246,4 +247,3 @@ class CarInterface(object):
 
     self.frame += 1
     return not (c.enabled and not self.CC.controls_allowed)
-
