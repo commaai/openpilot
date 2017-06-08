@@ -147,7 +147,7 @@ class CarController(object):
     apply_gas = int(clip(final_gas*GAS_MAX, 0, GAS_MAX-1))
     apply_brake = int(clip(final_brake*BRAKE_MAX, 0, BRAKE_MAX-1))
     # crvtodo: tweak steering to match precision of 0xE4 code.
-    if CS.crv
+    if CS.crv:
       apply_steer = int(clip((-final_steer*.996)*0x7F0, -0x7F0, 0x7F0))
     else:
       apply_steer = int(clip(-final_steer*STEER_MAX, -STEER_MAX, STEER_MAX))
