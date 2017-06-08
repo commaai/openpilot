@@ -55,7 +55,7 @@ def process_hud_alert(hud_alert):
   fcw_display = 0
   steer_required = 0
   acc_alert = 0
-  if hud_alert == AH.NONE:          # no alert 
+  if hud_alert == AH.NONE:          # no alert
     pass
   elif hud_alert == AH.FCW:         # FCW
     fcw_display = hud_alert[1]
@@ -146,7 +146,11 @@ class CarController(object):
     # steer torque is converted back to CAN reference (positive when steering right)
     apply_gas = int(clip(final_gas*GAS_MAX, 0, GAS_MAX-1))
     apply_brake = int(clip(final_brake*BRAKE_MAX, 0, BRAKE_MAX-1))
-    apply_steer = int(clip(-final_steer*STEER_MAX, -STEER_MAX, STEER_MAX))
+    # crvtodo: tweak steering to match precision of 0xE4 code.
+    if CS.crv
+      apply_steer = int(clip((-final_steer*.996)*0x7F0, -0x7F0, 0x7F0))
+    else:
+      apply_steer = int(clip(-final_steer*STEER_MAX, -STEER_MAX, STEER_MAX))
 
     # no gas if you are hitting the brake or the user is
     if apply_gas > 0 and (apply_brake != 0 or CS.brake_pressed):
@@ -180,7 +184,8 @@ class CarController(object):
       print "STEER ERROR"
       self.controls_allowed = False
 
-    if CS.brake_error:
+    # crvtodo, fix brake error, might be issue with dbc.
+    if CS.brake_error and not CS.crv:
       print "BRAKE ERROR"
       self.controls_allowed = False
 
@@ -197,7 +202,7 @@ class CarController(object):
       can_sends.append(hondacan.create_accord_steering_control(apply_steer, idx))
     else:
       idx = frame % 4
-      can_sends.append(hondacan.create_steering_control(apply_steer, idx))
+      can_sends.extend(hondacan.create_steering_control(apply_steer, CS.crv, idx))
 
     # Send gas and brake commands.
     if (frame % 2) == 0:
@@ -206,7 +211,7 @@ class CarController(object):
         hondacan.create_brake_command(apply_brake, pcm_override,
                                       pcm_cancel_cmd, hud.chime, idx))
       if not CS.brake_only:
-        # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas. 
+        # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
         # This prevents unexpected pedal range rescaling
         gas_amount = (apply_gas + GAS_OFFSET) * (apply_gas > 0)
         can_sends.append(hondacan.create_gas_command(gas_amount, idx))
@@ -214,17 +219,16 @@ class CarController(object):
     # Send dashboard UI commands.
     if (frame % 10) == 0:
       idx = (frame/10) % 4
-      can_sends.extend(hondacan.create_ui_commands(pcm_speed, hud, CS.civic, CS.accord, idx))
+      can_sends.extend(hondacan.create_ui_commands(pcm_speed, hud, CS.civic, CS.accord, CS.crv, idx))
 
     # radar at 20Hz, but these msgs need to be sent at 50Hz on ilx (seems like an Acura bug)
-    if CS.civic or CS.accord:
+    if CS.civic or CS.accord or CS.crv:
       radar_send_step = 5
     else:
       radar_send_step = 2
 
     if (frame % radar_send_step) == 0:
       idx = (frame/radar_send_step) % 4
-      can_sends.extend(hondacan.create_radar_commands(CS.v_ego, CS.civic, CS.accord, idx))
+      can_sends.extend(hondacan.create_radar_commands(CS.v_ego, CS.civic, CS.accord, CS.crv, idx))
 
     sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
-
