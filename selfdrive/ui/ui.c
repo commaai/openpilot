@@ -748,7 +748,6 @@ static void ui_draw_vision(UIState *s) {
                (int)(scene->v_ego * 2.237 + 0.5));
     }
     nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
-    //nvgText(s->vg, 1920 - 500, 150, speed_str, NULL);
     nvgText(s->vg, 1920 - 500, 95, speed_str, NULL);
 
     /*nvgFontSize(s->vg, 64.0f);
