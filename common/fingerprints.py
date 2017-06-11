@@ -127,7 +127,7 @@ def fingerprint(logcan):
   elif candidate_cars[0] == "HONDA ACCORD 2016 TOURING":
     ret.steerKp, ret.steerKi = 12.0, 1.0
   elif candidate_cars[0] == "HONDA CR-V 2016 TOURING":
-    ret.steerKp, ret.steerKi = 12.0, 1.0
+    ret.steerKp, ret.steerKi = 14.0, 1.67
   else:
     raise ValueError("unsupported car %s" % candidate_cars[0])
 

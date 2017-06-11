@@ -141,7 +141,7 @@ class CarController(object):
     GAS_MAX = 1004
     BRAKE_MAX = 1024/4
     if CS.crv:
-      STEER_MAX = 0xFFF/2
+      STEER_MAX = 0x380  # CR-V only uses 12-bits and requires a lower value
     else:
       STEER_MAX = 0xF00
     GAS_OFFSET = 328
