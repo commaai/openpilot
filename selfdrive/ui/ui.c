@@ -677,13 +677,37 @@ static void ui_draw_vision(UIState *s) {
 
     // draw speed
     char speed_str[16];
-    nvgFontSize(s->vg, 128.0f);
+    float defaultfontsize = 128.0f;
+    float labelfontsize = 65.0f;
+
+    /******************************************
+     * Add background rect so it's easier to see in 
+     * light background scenes 
+     ******************************************/
+    // Left side - ACC max speed
+    nvgBeginPath(s->vg);
+    nvgRoundedRect(s->vg, -15, 0, 535, 175, 30);
+    nvgFillColor(s->vg, nvgRGBA(10, 10, 10, 180));
+    nvgFill(s->vg);
+    /******************************************/
+
     if (scene->engaged) {
       nvgFillColor(s->vg, nvgRGBA(255, 128, 0, 192));
+
+      // Add label
+      nvgFontSize(s->vg, labelfontsize);
+      nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
+      nvgText(s->vg, 42, 175-30, "ACC: engaged", NULL);
     } else {
-      nvgFillColor(s->vg, nvgRGBA(64, 64, 64, 192));
+      nvgFillColor(s->vg, nvgRGBA(195, 195, 195, 192));
+
+      // Add label
+      nvgFontSize(s->vg, labelfontsize);
+      nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
+      nvgText(s->vg, 42, 175-30, "ACC: disabled", NULL);
     }
 
+    nvgFontSize(s->vg, defaultfontsize);
     if (scene->v_cruise != 255 && scene->v_cruise != 0) {
       if (s->is_metric) {
         snprintf(speed_str, sizeof(speed_str), "%3d KPH",
@@ -694,9 +718,27 @@ static void ui_draw_vision(UIState *s) {
                  (int)(scene->v_cruise * 0.621371 + 0.5));
       }
       nvgTextAlign(s->vg, NVG_ALIGN_RIGHT | NVG_ALIGN_BASELINE);
-      nvgText(s->vg, 500, 150, speed_str, NULL);
+      nvgText(s->vg, 500, 95, speed_str, NULL);
     }
 
+    /******************************************
+     * Add background rect so it's easier to see in 
+     * light background scenes 
+     ******************************************/
+    // Right side - Actual speed
+    nvgBeginPath(s->vg);
+    nvgRoundedRect(s->vg, 1920 - 500, 0, 1920, 175, 20);
+    nvgFillColor(s->vg, nvgRGBA(10, 10, 10, 180));
+    nvgFill(s->vg);
+
+    // Add label
+    nvgFontSize(s->vg, labelfontsize);
+    nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 192));
+    nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
+    nvgText(s->vg, 1920 - 475, 175-30, "Current Speed", NULL);
+    /******************************************/
+
+    nvgFontSize(s->vg, defaultfontsize);
     nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 192));
     if (s->is_metric) {
       snprintf(speed_str, sizeof(speed_str), "%3d KPH",
@@ -706,7 +748,8 @@ static void ui_draw_vision(UIState *s) {
                (int)(scene->v_ego * 2.237 + 0.5));
     }
     nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
-    nvgText(s->vg, 1920 - 500, 150, speed_str, NULL);
+    //nvgText(s->vg, 1920 - 500, 150, speed_str, NULL);
+    nvgText(s->vg, 1920 - 500, 95, speed_str, NULL);
 
     /*nvgFontSize(s->vg, 64.0f);
     nvgTextAlign(s->vg, NVG_ALIGN_RIGHT | NVG_ALIGN_BASELINE);
@@ -729,7 +772,7 @@ static void ui_draw_vision(UIState *s) {
     nvgFillColor(s->vg, nvgRGBA(10, 10, 10, 220));
     nvgFill(s->vg);
 
-    nvgFontSize(s->vg, 200.0f);
+     nvgFontSize(s->vg, 200.0f);
     nvgFillColor(s->vg, nvgRGBA(255, 0, 0, 255));
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
     nvgTextBox(s->vg, 100 + 50, 200 + 50, 1700 - 50, scene->alert_text1,
