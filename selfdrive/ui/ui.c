@@ -771,7 +771,7 @@ static void ui_draw_vision(UIState *s) {
     nvgFillColor(s->vg, nvgRGBA(10, 10, 10, 220));
     nvgFill(s->vg);
 
-     nvgFontSize(s->vg, 200.0f);
+    nvgFontSize(s->vg, 200.0f);
     nvgFillColor(s->vg, nvgRGBA(255, 0, 0, 255));
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
     nvgTextBox(s->vg, 100 + 50, 200 + 50, 1700 - 50, scene->alert_text1,
