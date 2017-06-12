@@ -31,7 +31,7 @@ def pid_lateral_control(v_ego, y_actual, y_des, Ui_steer, steer_max,
                         steer_override, sat_count, enabled, Kp, Ki, rate):
 
   sat_count_rate = 1./rate
-  sat_count_limit = 0.8       # after 0.8s of continuous saturation, an alert will be sent
+  sat_count_limit = 1.2       # after 0.8s of continuous saturation, an alert will be sent
 
   error_steer = y_des - y_actual
   Ui_unwind_speed = 0.3/rate   #.3 per second
