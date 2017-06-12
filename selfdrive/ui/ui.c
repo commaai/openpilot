@@ -761,7 +761,7 @@ static void ui_draw_vision(UIState *s) {
                  (int)(scene->v_cruise * 0.621371 + 0.5));
       }
       nvgTextAlign(s->vg, NVG_ALIGN_RIGHT | NVG_ALIGN_BASELINE);
-      nvgText(s->vg, 430, 95, speed_str, NULL);
+      nvgText(s->vg, 480, 95, speed_str, NULL);
     }
 
     // Add label
