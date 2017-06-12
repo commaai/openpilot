@@ -681,7 +681,7 @@ static void ui_draw_world(UIState *s) {
      * light background scenes 
      ******************************************/
     // Draw background for radar text
-    ui_draw_rounded_rect(s->vg, 580, 0, 195, 180, 20, nvgRGBA(10,10,10,170));
+    ui_draw_rounded_rect(s->vg, 578, 0, 195, 180, 20, nvgRGBA(10,10,10,170));
     /******************************************/
 
     if (s->is_metric) {
@@ -761,7 +761,7 @@ static void ui_draw_vision(UIState *s) {
                  (int)(scene->v_cruise * 0.621371 + 0.5));
       }
       nvgTextAlign(s->vg, NVG_ALIGN_RIGHT | NVG_ALIGN_BASELINE);
-      nvgText(s->vg, 480, 95, speed_str, NULL);
+      nvgText(s->vg, 430, 95, speed_str, NULL);
     }
 
     // Add label
