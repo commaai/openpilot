@@ -629,7 +629,7 @@ static void ui_draw_rounded_rect(
   nvgRoundedRect(c, x, y, bottom_x, bottom_y, radius);
 
   // Color the rect
-  nvgFillColor(c, nvgRGBA(10, 10, 10, 150));
+  nvgFillColor(c, color);
 
   // Draw the rect
   nvgFill(c);
