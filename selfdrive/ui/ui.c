@@ -607,12 +607,58 @@ static void draw_frame(UIState *s) {
   glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, &frame_indicies[0]);
 }
 
+/*
+ * Draw a rect at specific position with specific dimensions
+ */
+static void ui_draw_rounded_rect(
+    NVGcontext* c, 
+    int x,
+    int y,
+    int width,
+    int height,
+    int radius,
+    NVGcolor color
+) {
+
+  int bottom_x = x + width;
+  int bottom_y = y + height;
+
+  nvgBeginPath(c);
+
+  // Position the rect
+  nvgRoundedRect(c, x, y, bottom_x, bottom_y, radius);
+
+  // Color the rect
+  nvgFillColor(c, nvgRGBA(10, 10, 10, 150));
+
+  // Draw the rect
+  nvgFill(c);
+}
+
 // Draw all world space objects.
 static void ui_draw_world(UIState *s) {
   const UIScene *scene = &s->scene;
   if (!scene->world_objects_visible) {
     return;
   }
+
+  /******************************************
+   * Add background rect so it's easier to see in 
+   * light background scenes 
+   ******************************************/
+  // Draw background around speed text
+
+  // Left side
+  ui_draw_rounded_rect(s->vg, -15, 0, 570, 180, 20, nvgRGBA(10,10,10,170));
+  nvgStrokeColor(s->vg, nvgRGBA(255,255,255,200));
+  nvgStroke(s->vg);
+
+  // Right side
+  ui_draw_rounded_rect(s->vg, 1920-530, 0, 150, 180, 20, nvgRGBA(10,10,10,170));
+  nvgStrokeColor(s->vg, nvgRGBA(255,255,255,200));
+  nvgStroke(s->vg);
+
+  /******************************************/
 
   draw_steering(s, scene->v_ego, scene->angle_steers);
 
@@ -630,6 +676,17 @@ static void ui_draw_world(UIState *s) {
 
   if (scene->lead_status) {
     char radar_str[16];
+
+    /******************************************
+     * Add background rect so it's easier to see in 
+     * light background scenes 
+     ******************************************/
+    // Draw background for radar text
+    ui_draw_rounded_rect(s->vg, 580, 0, 195, 180, 20, nvgRGBA(10,10,10,170));
+    nvgStrokeColor(s->vg, nvgRGBA(255,255,255,200));
+    nvgStroke(s->vg);
+    /******************************************/
+
     if (s->is_metric) {
       int lead_v_rel = (int)(3.6 * scene->lead_v_rel);
       snprintf(radar_str, sizeof(radar_str), "%3d m %+d kph",
@@ -642,7 +699,7 @@ static void ui_draw_world(UIState *s) {
     nvgFontSize(s->vg, 96.0f);
     nvgFillColor(s->vg, nvgRGBA(128, 128, 0, 192));
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
-    nvgText(s->vg, 1920 / 2, 150, radar_str, NULL);
+    nvgText(s->vg, 1920 / 2 - 20, 40, radar_str, NULL);
 
     // 2.7 m fudge factor
     draw_cross(s, scene->lead_d_rel + 2.7, scene->lead_y_rel, 15,
@@ -680,31 +737,20 @@ static void ui_draw_vision(UIState *s) {
     float defaultfontsize = 128.0f;
     float labelfontsize = 65.0f;
 
-    /******************************************
-     * Add background rect so it's easier to see in 
-     * light background scenes 
-     ******************************************/
-    // Left side - ACC max speed
-    nvgBeginPath(s->vg);
-    nvgRoundedRect(s->vg, -15, 0, 535, 175, 30);
-    nvgFillColor(s->vg, nvgRGBA(10, 10, 10, 180));
-    nvgFill(s->vg);
-    /******************************************/
-
     if (scene->engaged) {
       nvgFillColor(s->vg, nvgRGBA(255, 128, 0, 192));
 
       // Add label
       nvgFontSize(s->vg, labelfontsize);
       nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
-      nvgText(s->vg, 42, 175-30, "ACC: engaged", NULL);
+      nvgText(s->vg, 20, 175-30, "OpenPilot: On", NULL);
     } else {
       nvgFillColor(s->vg, nvgRGBA(195, 195, 195, 192));
 
       // Add label
       nvgFontSize(s->vg, labelfontsize);
       nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
-      nvgText(s->vg, 42, 175-30, "ACC: disabled", NULL);
+      nvgText(s->vg, 20, 175-30, "OpenPilot: Off", NULL);
     }
 
     nvgFontSize(s->vg, defaultfontsize);
@@ -718,18 +764,8 @@ static void ui_draw_vision(UIState *s) {
                  (int)(scene->v_cruise * 0.621371 + 0.5));
       }
       nvgTextAlign(s->vg, NVG_ALIGN_RIGHT | NVG_ALIGN_BASELINE);
-      nvgText(s->vg, 500, 95, speed_str, NULL);
+      nvgText(s->vg, 480, 95, speed_str, NULL);
     }
-
-    /******************************************
-     * Add background rect so it's easier to see in 
-     * light background scenes 
-     ******************************************/
-    // Right side - Actual speed
-    nvgBeginPath(s->vg);
-    nvgRoundedRect(s->vg, 1920 - 500, 0, 1920, 175, 20);
-    nvgFillColor(s->vg, nvgRGBA(10, 10, 10, 180));
-    nvgFill(s->vg);
 
     // Add label
     nvgFontSize(s->vg, labelfontsize);
