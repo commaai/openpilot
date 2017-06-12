@@ -694,7 +694,7 @@ static void ui_draw_world(UIState *s) {
                (int)(scene->lead_d_rel), lead_v_rel);
     }
     nvgFontSize(s->vg, 96.0f);
-    nvgFillColor(s->vg, nvgRGBA(128, 128, 0, 192));
+    nvgFillColor(s->vg, nvgRGBA(200, 200, 0, 192));
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
     nvgText(s->vg, 1920 / 2 - 20, 40, radar_str, NULL);
 
