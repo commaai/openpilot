@@ -633,6 +633,10 @@ static void ui_draw_rounded_rect(
 
   // Draw the rect
   nvgFill(c);
+
+  // Draw white border around rect
+  nvgStrokeColor(c, nvgRGBA(255,255,255,200));
+  nvgStroke(c);
 }
 
 // Draw all world space objects.
@@ -650,14 +654,9 @@ static void ui_draw_world(UIState *s) {
 
   // Left side
   ui_draw_rounded_rect(s->vg, -15, 0, 570, 180, 20, nvgRGBA(10,10,10,170));
-  nvgStrokeColor(s->vg, nvgRGBA(255,255,255,200));
-  nvgStroke(s->vg);
 
   // Right side
   ui_draw_rounded_rect(s->vg, 1920-530, 0, 150, 180, 20, nvgRGBA(10,10,10,170));
-  nvgStrokeColor(s->vg, nvgRGBA(255,255,255,200));
-  nvgStroke(s->vg);
-
   /******************************************/
 
   draw_steering(s, scene->v_ego, scene->angle_steers);
@@ -683,8 +682,6 @@ static void ui_draw_world(UIState *s) {
      ******************************************/
     // Draw background for radar text
     ui_draw_rounded_rect(s->vg, 580, 0, 195, 180, 20, nvgRGBA(10,10,10,170));
-    nvgStrokeColor(s->vg, nvgRGBA(255,255,255,200));
-    nvgStroke(s->vg);
     /******************************************/
 
     if (s->is_metric) {
