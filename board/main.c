@@ -9,6 +9,25 @@
 //#define USART USART2
 #define USART USART3
 
+#define GPIO_PIN_6 (1 << 6)
+#define GPIO_PIN_7 (1 << 7)
+#define GPIO_PIN_14 (1 << 14)
+#define GPIO_PIN_15 (1 << 15)
+
+#define ENABLE_ROTARY_ENCODER
+#define ROTARY_ENCODER_EXTI_POSITION 15
+#define ROTARY_ENCODER_PIN_A GPIO_PIN_15
+#define ROTARY_ENCODER_PIN_B GPIO_PIN_14
+#define ROTARY_ENCODER_GPIO GPIOB
+#define ROTARY_ENCODER_EXTI_PIN ROTARY_ENCODER_PIN_A
+#define ROTARY_ENCODER_INTERRUPT EXTI15_10_IRQn
+
+#define DIRECTION_AND_PWM
+#define MOTOR_DRIVER_PWM_TIMER_CHANNEL (TIM3->CCR2)
+#define MOTOR_DRIVER_SPEED_PIN GPIO_PIN_7
+#define MOTOR_DRIVER_DIRECTION_PIN GPIO_PIN_6
+#define MOTOR_DRIVER_GPIO GPIOC
+
 #define USB_VID 0xbbaa
 #define USB_PID 0xddcc
 
@@ -37,6 +56,8 @@ int can_live = 0, pending_can_live = 0;
 // optional features
 int gas_interceptor_detected = 0;
 int started_signal_detected = 0;
+
+int idle_fan_speed = 0x7FFF;
 
 // ********************* instantiate queues *********************
 
@@ -261,7 +282,36 @@ void USART3_IRQHandler(void) {
   USART_IRQHandler();
 }
 
+int lastA = 0;
+int lastB = 0;
+int rotary_encoder_count = 0;
+
+void handle_rotary_encoder() {
+
+  if (!started)
+    return;
+
+  int currentA = (ROTARY_ENCODER_GPIO->IDR & ROTARY_ENCODER_PIN_A) != 0;
+  int currentB = (ROTARY_ENCODER_GPIO->IDR & ROTARY_ENCODER_PIN_B) != 0;
+  if (lastA != currentA) {
+    lastA = currentA;
+    if (lastA == 0) {
+      if (currentB) {
+        rotary_encoder_count++;
+      } else {
+        rotary_encoder_count--;
+      }
+    }
+  }
+}
+
 // ***************************** USB port *****************************
+void EXTI15_10_IRQHandler(void) {
+  if (EXTI->PR & ROTARY_ENCODER_EXTI_PIN) {
+    EXTI->PR |= ROTARY_ENCODER_EXTI_PIN;
+    handle_rotary_encoder();
+  }
+}
 
 int get_health_pkt(void *dat) {
   struct {
@@ -280,7 +330,7 @@ int get_health_pkt(void *dat) {
 #endif
   health->started = started;
 
-  health->controls_allowed = controls_allowed;
+  health->controls_allowed = 1; // controls_allowed;
 
   health->gas_interceptor_detected = gas_interceptor_detected;
   health->started_signal_detected = started_signal_detected;
@@ -294,6 +344,44 @@ void set_fan_speed(int fan_speed) {
     TIM3->CCR3 = fan_speed;
   #endif
 }
+
+void set_steering_torque(int16_t torque) {
+
+  if (!started)
+    return;
+
+  int clockwise = torque > 0;
+  // Spent one bit on sign, scale back up to 0xFFFF.
+  // With less than minimal cutoff, the motor doesn't spin at all.
+  int timerCCRx = min(0xFFFF, abs(torque) * 2);
+  if (timerCCRx <= 0xFFF) {
+    if (timerCCRx > 0x7FF)
+      timerCCRx = 0xFFF;
+    else
+      timerCCRx = 0;
+  }
+
+  timerCCRx = torque == 0 ? 0 : timerCCRx;
+
+  #ifdef DIRECTION_AND_PWM
+  MOTOR_DRIVER_PWM_TIMER_CHANNEL = timerCCRx;
+  if (clockwise) {
+    MOTOR_DRIVER_GPIO->ODR |= MOTOR_DRIVER_DIRECTION_PIN;
+  } else {
+    MOTOR_DRIVER_GPIO->ODR &= ~MOTOR_DRIVER_DIRECTION_PIN;
+  }
+  #else
+  // Cloclwise torque on channel 1, counterclockwise on channel 2.
+  if (clockwise) {
+    TIM3->CCR1 = timerCCRx;
+    TIM3->CCR2 = 0;
+  } else {
+    TIM3->CCR1 = 0;
+    TIM3->CCR2 = timerCCRx;
+  }
+  #endif
+}
+
 
 void usb_cb_ep1_in(int len) {
   CAN_FIFOMailBox_TypeDef reply[4];
@@ -315,6 +403,9 @@ void usb_cb_ep2_out(uint8_t *usbdata, int len) {
 
 // send on CAN
 void usb_cb_ep3_out(uint8_t *usbdata, int len) {
+
+  return;
+
   int dpkt = 0;
   for (dpkt = 0; dpkt < len; dpkt += 0x10) {
     uint32_t *tf = (uint32_t*)(&usbdata[dpkt]);
@@ -359,7 +450,8 @@ void usb_cb_control_msg() {
       USBx_OUTEP(0)->DOEPCTL |= USB_OTG_DOEPCTL_CNAK;
       break;
     case 0xd3:
-      set_fan_speed(setup.b.wValue.w);
+      idle_fan_speed = setup.b.wValue.w;
+      set_fan_speed(idle_fan_speed);
       USB_WritePacket(0, 0, 0);
       USBx_OUTEP(0)->DOEPCTL |= USB_OTG_DOEPCTL_CNAK;
       break;
@@ -369,6 +461,15 @@ void usb_cb_control_msg() {
       break;
     case 0xd8: // RESET
       NVIC_SystemReset();
+      break;
+    case 0xd9: // Steering torque
+      set_steering_torque(setup.b.wValue.w);
+      USB_WritePacket(0, 0, 0);
+      USBx_OUTEP(0)->DOEPCTL |= USB_OTG_DOEPCTL_CNAK;
+      break;
+    case 0xda: // Steering wheel angle data
+      USB_WritePacket((uint8_t*)&rotary_encoder_count, sizeof(rotary_encoder_count), 0);
+      USBx_OUTEP(0)->DOEPCTL |= USB_OTG_DOEPCTL_CNAK;
       break;
     default:
       puts("NO HANDLER ");
@@ -492,13 +593,9 @@ int main() {
 #endif
 
   // timer for fan PWM
-  #ifdef OLD_BOARD
-    TIM3->CCMR2 = TIM_CCMR2_OC4M_2 | TIM_CCMR2_OC4M_1;
-    TIM3->CCER = TIM_CCER_CC4E;
-  #else
-    TIM3->CCMR2 = TIM_CCMR2_OC3M_2 | TIM_CCMR2_OC3M_1;
-    TIM3->CCER = TIM_CCER_CC3E;
-  #endif
+  TIM3->CCMR2 = TIM_CCMR2_OC3M_2 | TIM_CCMR2_OC3M_1;
+  TIM3->CCMR1 = TIM_CCMR1_OC1M_2 | TIM_CCMR1_OC1M_1 | TIM_CCMR1_OC2M_2 | TIM_CCMR1_OC2M_1;
+  TIM3->CCER = TIM_CCER_CC1E | TIM_CCER_CC2E | TIM_CCER_CC3E;
 
   // max value of the timer
   // 64 makes it above the audible range
@@ -508,7 +605,8 @@ int main() {
   timer_init(TIM3, 10);
 
   // set PWM
-  set_fan_speed(65535);
+  set_fan_speed(0x7FFF);
+  set_steering_torque(0);
 
   puts("**** INTERRUPTS ON ****\n");
   __disable_irq();
@@ -531,8 +629,13 @@ int main() {
   NVIC_EnableIRQ(DMA2_Stream3_IRQn);
   NVIC_EnableIRQ(SPI1_IRQn);
 #endif
-  __enable_irq();
 
+#ifdef ENABLE_ROTARY_ENCODER
+  NVIC_SetPriority(EXTI15_10_IRQn, 3);
+  NVIC_EnableIRQ(ROTARY_ENCODER_INTERRUPT);
+#endif
+
+  __enable_irq();
 
   // LED should keep on blinking all the time
   int cnt;
@@ -551,9 +654,6 @@ int main() {
 
     /*puts("voltage: "); puth(adc_get(ADCCHAN_VOLTAGE)); puts("  ");
     puts("current: "); puth(adc_get(ADCCHAN_CURRENT)); puts("\n");*/
-
-    // set LED to be controls allowed
-    GPIOB->ODR = (GPIOB->ODR | (1 << 11)) & ~(controls_allowed << 11);
 
     // blink the other LED if in FS mode
     if (USBx == USB_OTG_FS) {
@@ -574,16 +674,17 @@ int main() {
     int started_signal = (GPIOC->IDR & (1 << 13)) != 0;
     if (started_signal) { started_signal_detected = 1; }
 
-    if (started_signal || (!started_signal_detected && can_live)) {
+    // set LED to be started signal // controls allowed
+    GPIOB->ODR = (GPIOB->ODR | (1 << 11)) & ~(started_signal << 11);
+
+    if (started_signal) {
       started = 1;
-
-      // turn on fan at half speed
-      set_fan_speed(32768);
+      set_fan_speed(0xFFFF);
     } else {
+      set_fan_speed(idle_fan_speed);
+      set_steering_torque(0);
+      rotary_encoder_count = 0;
       started = 0;
-
-      // turn off fan
-      set_fan_speed(0);
     }
   }
 

@@ -251,7 +251,7 @@ def uploader_fn(exit_event):
       else:
         cloudlog.info("backoff %r", backoff)
         time.sleep(backoff + random.uniform(0, backoff))
-        backoff *= 2
+        backoff = min(60, backoff * 2)
       cloudlog.info("upload done, success=%r", success)
 
     time.sleep(5)

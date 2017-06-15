@@ -97,7 +97,7 @@ def calibrationd_thread(gctx):
     p1 = ft.features.p1
     st = ft.features.status
 
-    calib.calibration(p0, p1, st, v_ego, steer_angle, VP)
+    # calib.calibration(p0, p1, st, v_ego, steer_angle, VP)
 
     # write a new calibration every 100 cal cycle
     if calib.cal_cycle - last_write_cycle >= 100:

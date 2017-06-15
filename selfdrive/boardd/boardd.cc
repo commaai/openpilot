@@ -66,15 +66,46 @@ void handle_usb_issue(int err, const char func[]) {
   // TODO: check other errors, is simply retrying okay?
 }
 
-void can_recv(void *s) {
+void can_recv(void *can_pub, void *sensor_pub) {
   int err;
   uint32_t data[RECV_SIZE/4];
   int recv;
-  uint32_t f1, f2;
+  int cnt;
+
+  struct status {
+    int32_t rotaryEncoderCount;
+  } status;
 
   // do recv
   pthread_mutex_lock(&usb_lock);
- 
+
+  do {
+    cnt = libusb_control_transfer(dev_handle, 0xc0, 0xda, 0, 0, (unsigned char*)&status, sizeof(status), TIMEOUT);
+    if (cnt != sizeof(status)) { handle_usb_issue(cnt, __func__); }
+  } while(cnt != sizeof(status));
+
+  pthread_mutex_unlock(&usb_lock);
+
+  // create message
+  capnp::MallocMessageBuilder msg;
+  cereal::Event::Builder event = msg.initRoot<cereal::Event>();
+  event.setLogMonoTime(nanos_since_boot());
+
+  auto carState = event.initCarState();
+
+  // 20-pulse rotary encoder with a 21-tooth sprocket,
+  // turning a 15-inch wheel (diameter) by 0.080" pitch MXL timing belt.
+  float encoderConversion = 0.6417; // = 360 * 21 * 0.080 / (15 * np.pi * 20)
+  carState.setSteeringAngle(encoderConversion * status.rotaryEncoderCount);
+
+  // send
+  auto words = capnp::messageToFlatArray(msg);
+  auto bytes = words.asBytes();
+  zmq_send(sensor_pub, bytes.begin(), bytes.size(), 0);
+
+  // do can recv
+  pthread_mutex_lock(&usb_lock);
+
   do {
     err = libusb_bulk_transfer(dev_handle, 0x81, (uint8_t*)data, RECV_SIZE, &recv, TIMEOUT);
     if (err != 0) { handle_usb_issue(err, __func__); }
@@ -92,11 +123,11 @@ void can_recv(void *s) {
   }
 
   // create message
-  capnp::MallocMessageBuilder msg;
-  cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-  event.setLogMonoTime(nanos_since_boot());
+  capnp::MallocMessageBuilder msg2;
+  cereal::Event::Builder event2 = msg2.initRoot<cereal::Event>();
+  event2.setLogMonoTime(nanos_since_boot());
 
-  auto canData = event.initCan(recv/0x10);
+  auto canData = event2.initCan(recv/0x10);
 
   // populate message
   for (int i = 0; i<(recv/0x10); i++) {
@@ -115,9 +146,9 @@ void can_recv(void *s) {
   }
 
   // send to can
-  auto words = capnp::messageToFlatArray(msg);
-  auto bytes = words.asBytes();
-  zmq_send(s, bytes.begin(), bytes.size(), 0); 
+  auto words2 = capnp::messageToFlatArray(msg2);
+  auto bytes2 = words2.asBytes();
+  zmq_send(can_pub, bytes2.begin(), bytes2.size(), 0);
 }
 
 void can_health(void *s) {
@@ -183,6 +214,32 @@ void can_send(void *s) {
 
   capnp::FlatArrayMessageReader cmsg(amsg);
   cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
+
+  if (event.isCarControl()) {
+
+    float steeringTorque = event.getCarControl().getSteeringTorque();
+
+    // Connert [-1.0,1.0] to 16-bit signed integer
+    // Don't need full speed at the motor, slow it down x4
+    int torqueScale = 0x8000 / 4;
+    int steeringTorqueControl = steeringTorque * torqueScale;
+    if (steeringTorqueControl > torqueScale)
+        steeringTorqueControl = torqueScale;
+    else if (steeringTorqueControl < -torqueScale)
+        steeringTorqueControl = -torqueScale;
+
+    // send to board
+    pthread_mutex_lock(&usb_lock);
+    do {
+      err = libusb_control_transfer(dev_handle, 0x40, 0xd9, (uint16_t)steeringTorqueControl, 0, NULL, 0, TIMEOUT);
+      if (err != 0) {
+        handle_usb_issue(err, __func__);
+      }
+    } while (err != 0);
+    pthread_mutex_unlock(&usb_lock);
+    return;
+  }
+
   int msg_count = event.getCan().size();
 
   uint32_t *send = (uint32_t*)malloc(msg_count*0x10);
@@ -246,12 +303,14 @@ void *can_recv_thread(void *crap) {
 
   // can = 8006
   void *context = zmq_ctx_new();
-  void *publisher = zmq_socket(context, ZMQ_PUB);
-  zmq_bind(publisher, "tcp://*:8006");
+  void *can_publisher = zmq_socket(context, ZMQ_PUB);
+  zmq_bind(can_publisher, "tcp://*:8006");
+  void *sensor_publisher = zmq_socket(context, ZMQ_PUB);
+  zmq_bind(sensor_publisher, "tcp://*:8024");
 
   // run at ~200hz
   while (!do_exit) {
-    can_recv(publisher);
+    can_recv(can_publisher, sensor_publisher);
     // 5ms
     usleep(5*1000);
   }

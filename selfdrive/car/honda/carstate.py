@@ -7,10 +7,16 @@ from common.realtime import sec_since_boot
 
 from selfdrive.car.fingerprints import fingerprints
 from selfdrive.car.honda.can_parser import CANParser
+from enum import Enum
+class CarType(Enum):
+  UNKNOWN = 0
+  CIVIC = 1
+  ILX = 2
+  GALANT = 3
 
-def get_can_parser(civic, brake_only):
+def get_can_parser(car_type, brake_only):
   # this function generates lists for signal, messages and initial values
-  if civic:
+  if car_type is CarType.CIVIC:
     dbc_f = 'honda_civic_touring_2016_can.dbc'
     signals = [
       ("XMISSION_SPEED", 0x158, 0),
@@ -61,8 +67,7 @@ def get_can_parser(civic, brake_only):
       (0x324, 10),
       (0x405, 3),
     ]
-
-  else:
+  elif car_type is CarType.ILX:
     dbc_f = 'acura_ilx_2016_can.dbc'
     signals = [
       ("XMISSION_SPEED", 0x158, 0),
@@ -113,6 +118,15 @@ def get_can_parser(civic, brake_only):
       (0x324, 10),
       (0x405, 3),
     ]
+  elif car_type is CarType.GALANT:
+    raise Exception("don't have a dbc for Galant yet")
+    dbc_f = 'mitsubishi_galant_2007.dbc'
+    signals = [
+    ]
+    checks = [
+    ]
+  else:
+    raise Exception("unrecognized car")
 
   # add gas interceptor reading if we are using it
   if not brake_only:
@@ -164,21 +178,28 @@ def fingerprint(logcan):
 class CarState(object):
   def __init__(self, logcan):
     self.torque_mod = False
+
     self.brake_only, self.car_type = fingerprint(logcan)
 
     # assuming if you have a pedal interceptor you also have a torque mod
-    if not self.brake_only:
-      self.torque_mod = True
+    #if not self.brake_only:
+    #  self.torque_mod = True
 
+    car_type = CarType.UNKNOWN
     if self.car_type == "HONDA CIVIC 2016 TOURING":
       self.civic = True
+      car_type = CarType.CIVIC
     elif self.car_type == "ACURA ILX 2016 ACURAWATCH PLUS":
       self.civic = False
+      car_type = CarType.ILX
+    elif self.car_type == "MITSUBISHI GALANT 2007":
+      self.civic = False
+      car_type = CarType.ILX
     else:
       raise ValueError("unsupported car %s" % self.car_type)
 
     # initialize can parser
-    self.cp = get_can_parser(self.civic, self.brake_only)
+    self.cp = get_can_parser(car_type, self.brake_only)
 
     self.user_gas, self.user_gas_pressed = 0., 0
 

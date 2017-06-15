@@ -68,6 +68,11 @@ class VehicleParams:
       self.steer_ratio = 15.3    # from http://www.edmunds.com/acura/ilx/2016/road-test-specs/
       self.slip_factor = 0.0014
       self.civic = False
+
+    # Galant 2007
+    self.wheelbase = 2.75 # meters
+    self.steer_ratio = 17.1
+
     self.brake_only = brake_only
     self.torque_mod = torque_mod
     self.ui_speed_fudge = 1.01 if self.civic else 1.025

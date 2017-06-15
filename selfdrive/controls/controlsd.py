@@ -40,11 +40,13 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
   live100 = messaging.pub_sock(context, service_list['live100'].port)
   carstate = messaging.pub_sock(context, service_list['carState'].port)
   carcontrol = messaging.pub_sock(context, service_list['carControl'].port)
+  sendcan = messaging.pub_sock(context, service_list['sendcan'].port)
 
   thermal = messaging.sub_sock(context, service_list['thermal'].port)
   live20 = messaging.sub_sock(context, service_list['live20'].port)
   model = messaging.sub_sock(context, service_list['model'].port)
   health = messaging.sub_sock(context, service_list['health'].port)
+  externalSensors = messaging.sub_sock(context, service_list['externalSensors'].port)
 
   # connects to can and sendcan
   CI = CarInterface()
@@ -88,7 +90,14 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
     cur_time = sec_since_boot()
 
     # read CAN
-    CS = CI.update()
+    # CS = CI.update()
+    CS = car.CarState.new_message()
+
+    # 60mph
+    CS.vEgo = 26.82
+
+    for a in messaging.drain_sock(externalSensors):
+      CS.steeringAngle = a.carState.steeringAngle
 
     # broadcast carState
     cs_send = messaging.new_message()
@@ -103,9 +112,10 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
 
     if enabled:
       # gives the user 6 minutes
-      awareness_status -= 1.0/(100*60*6)
+      # awareness_status -= 1.0/(100*60*6)
       if awareness_status <= 0.:
-        AM.add("driverDistracted", enabled)
+        # AM.add("driverDistracted", enabled)
+        awareness_status = 1.0
 
     # reset awareness status on steering
     if CS.steeringPressed:
@@ -142,6 +152,9 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
       if b.type == "cancel" and b.pressed:
         AM.add("disable", enabled)
 
+    if not enabled and os.getenv("ENABLE_LKAS") is not None:
+      enable_request = True
+
     prof.checkpoint("Buttons")
 
     # *** health checking logic ***
@@ -155,7 +168,7 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
 
     # thermal data, checked every second
     td = messaging.recv_sock(thermal)
-    if td is not None:
+    if False and td is not None:
       # Check temperature.
       overtemp = any(
           t > 950
@@ -192,7 +205,7 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
         AM.add("outOfSpace", enabled)
         enable_request = False
 
-    if VP.brake_only:
+    if False and VP.brake_only:
       enable_condition = ((cur_time - last_enable_request) < 0.2) and CS.cruiseState.enabled
     else:
       enable_condition = enable_request
@@ -202,7 +215,7 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
       for alert in CS.errors:
         AM.add(alert, enabled)
 
-      if AC.dead:
+      if False and AC.dead:
         AM.add("radarCommIssue", enabled)
 
       if PP.dead:
@@ -251,7 +264,7 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
 
     # ***** handle alerts ****
     # send a "steering required alert" if saturation count has reached the limit
-    if sat_flag:
+    if False and sat_flag:
       AM.add("steerSaturated", enabled)
 
     if enabled and AM.alertShouldDisable():
@@ -295,14 +308,15 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
     CC.hudControl.audibleAlert = audible_alert
 
     # this alert will apply next controls cycle
-    if not CI.apply(CC):
-      AM.add("controlsFailed", enabled)
+    #if not CI.apply(CC):
+    #  AM.add("controlsFailed", enabled)
 
     # broadcast carControl
     cc_send = messaging.new_message()
     cc_send.init('carControl')
     cc_send.carControl = CC    # copy?
-    carcontrol.send(cc_send.to_bytes())
+    #carcontrol.send(cc_send.to_bytes())
+    sendcan.send(cc_send.to_bytes())
 
     prof.checkpoint("CarControl")
 

@@ -26,6 +26,9 @@
 // zmq output
 static void *gps_publisher;
 
+bool refresh_only = false;
+bool got_gps_fix = false;
+
 #define SENSOR_ACCELEROMETER 1
 #define SENSOR_MAGNETOMETER 2
 #define SENSOR_GYRO 4
@@ -127,8 +130,17 @@ void sensor_loop() {
 static const GpsInterface* gGpsInterface = NULL;
 static const AGpsInterface* gAGpsInterface = NULL;
 static const GpsMeasurementInterface* gGpsMeasurementInterface = NULL;
+int last_gps_fix_report = 0;
 
 static void nmea_callback(GpsUtcTime timestamp, const char* nmea, int length) {
+
+  if (refresh_only) {
+    if (!got_gps_fix) {
+      got_gps_fix = true;
+      printf("got GPS fix, refresh complete\n");
+    }
+    return;
+  }
 
   uint64_t log_time = nanos_since_boot();
   uint64_t log_time_wall = nanos_since_epoch();
@@ -146,6 +158,15 @@ static void nmea_callback(GpsUtcTime timestamp, const char* nmea, int length) {
   auto bytes = words.asBytes();
   // printf("gps send %d\n", bytes.size());
   zmq_send(gps_publisher, bytes.begin(), bytes.size(), 0);
+
+  time_t now;
+  time(&now);
+  if (now - last_gps_fix_report > 1) {
+    FILE *f = fopen("/tmp/gpsfix", "w");
+    fwrite("+", 1, 1, f);
+    fclose(f);
+    last_gps_fix_report = now;
+  }
 }
 
 static pthread_t create_thread_callback(const char* name, void (*start)(void *), void* arg) {
@@ -205,13 +226,13 @@ static void gps_init() {
   gGpsInterface = gps_device->get_gps_interface(gps_device);
   gAGpsInterface = (const AGpsInterface*)gGpsInterface->get_extension(AGPS_INTERFACE);
 
-
-
   gGpsInterface->init(&gps_callbacks);
   gAGpsInterface->init(&agps_callbacks);
   gAGpsInterface->set_server(AGPS_TYPE_SUPL, "supl.google.com", 7276);
 
-  gGpsInterface->delete_aiding_data(GPS_DELETE_ALL);
+  if (refresh_only) {
+    gGpsInterface->delete_aiding_data(GPS_DELETE_ALL);
+  }
   gGpsInterface->start();
   gGpsInterface->set_position_mode(GPS_POSITION_MODE_MS_BASED,
                                    GPS_POSITION_RECURRENCE_PERIODIC,
@@ -221,8 +242,38 @@ static void gps_init() {
   zmq_bind(gps_publisher, "tcp://*:8004");
 }
 
+static void gps_clear() {
+  printf("*** clearing aiding data for GPS\n");
+  hw_module_t* module;
+  hw_get_module(GPS_HARDWARE_MODULE_ID, (hw_module_t const**)&module);
+
+  hw_device_t* device;
+  module->methods->open(module, GPS_HARDWARE_MODULE_ID, &device);
+
+  // ** get gps interface **
+  gps_device_t* gps_device = (gps_device_t *)device;
+  gGpsInterface = gps_device->get_gps_interface(gps_device);
+  gAGpsInterface = (const AGpsInterface*)gGpsInterface->get_extension(AGPS_INTERFACE);
+
+  gGpsInterface->init(&gps_callbacks);
+  gAGpsInterface->init(&agps_callbacks);
+  gAGpsInterface->set_server(AGPS_TYPE_SUPL, "supl.google.com", 7276);
+
+  gGpsInterface->delete_aiding_data(GPS_DELETE_ALL);
+}
+
 int main(int argc, char *argv[]) {
-  gps_init();
-  sensor_loop();
+  if (argc >= 2 and !strcmp(argv[1], "-clear")) {
+    gps_clear();
+  } else if (argc >= 2 and !strcmp(argv[1], "-refresh")) {
+    refresh_only = true;
+    gps_init();
+    while (!got_gps_fix) {
+      sleep(1);
+    }
+  } else {
+    gps_init();
+    sensor_loop();
+  }
 }
 

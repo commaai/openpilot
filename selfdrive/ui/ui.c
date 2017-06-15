@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <assert.h>
 #include <sys/mman.h>
+#include <sys/statvfs.h>
 
 #include <cutils/properties.h>
 
@@ -85,8 +86,6 @@ typedef struct UIState {
   NVGcontext *vg;
   int font;
 
-
-
   zsock_t *model_sock;
   void* model_sock_raw;
   zsock_t *live100_sock;
@@ -105,6 +104,10 @@ typedef struct UIState {
   int wifi_enabled;
   int ap_enabled;
   int board_connected;
+
+  // GPS status
+  bool has_gps_fix;
+  uint64_t last_gps_update;
 
   // vision state
 
@@ -792,6 +795,14 @@ static void ui_draw_vision(UIState *s) {
       nvgFill(s->vg);
     }
 
+    // GPS status
+    if (!s->has_gps_fix) {
+      nvgBeginPath(s->vg);
+      nvgCircle(s->vg, 43, 43, 40);
+      nvgFillColor(s->vg, nvgRGBA(s->has_gps_fix ? 0 : 255, s->has_gps_fix ? 255 : 0, 0, 128));
+      nvgFill(s->vg);
+    }
+
     nvgEndFrame(s->vg);
 
     glDisable(GL_BLEND);
@@ -1159,6 +1170,7 @@ static void ui_update(UIState *s) {
   uint64_t ts = nanos_since_boot();
   if (!s->vision_connected && ts - s->last_base_update > 1000000000ULL) {
     char* bat_cap = read_file("/sys/class/power_supply/battery/capacity");
+    char* bat_temp = read_file("/sys/class/power_supply/battery/temp");
     char* bat_stat = read_file("/sys/class/power_supply/battery/status");
 
     int tx_rate = 0;
@@ -1194,17 +1206,27 @@ static void ui_update(UIState *s) {
 
     s->board_connected = !system("lsusb | grep bbaa > /dev/null");
 
+    system("ifconfig | awk '/inet addr/{print substr($2,6)}' | sed -n 2p > /tmp/ipaddr");
+    char *ipaddr = read_file("/tmp/ipaddr");
+
+    struct statvfs info;
+    statvfs("/sdcard/realdata", &info);
+    int avail = (info.f_bavail * 100) / info.f_blocks;
+
     snprintf(s->base_text, sizeof(s->base_text),
-             "version: v%s %s (%s)\nserial: %s\n dongle id: %s\n battery: %s %s\npending: %d -> %.1f kb/s\nboard: %s",
-             openpilot_version, git_commit, git_branch,
-             s->serial, s->dongle_id, bat_cap ? bat_cap : "(null)", bat_stat ? bat_stat : "(null)",
-             pending, tx_rate / 1024.0, s->board_connected ? "found" : "NOT FOUND");
+             "battery: %s %s temp %s\npending: %d -> %.1f kb/s\nboard: %s net: %s\ndisk: %d%% free",
+             bat_cap ? bat_cap : "(null)", bat_stat ? bat_stat : "(null)",
+             bat_temp ? bat_temp : "(null)",
+             pending, tx_rate / 1024.0, s->board_connected ? "yes" : "no",
+             ipaddr ? ipaddr : "(null)", avail);
 
     if (bat_cap) free(bat_cap);
     if (bat_stat) free(bat_stat);
 
     if (git_branch) free(git_branch);
     if (git_commit) free(git_commit);
+
+    if (ipaddr) free(ipaddr);
 
     s->last_base_update = ts;
 
@@ -1220,6 +1242,22 @@ static void ui_update(UIState *s) {
   if (s->vision_connected) {
     // always awake if vision is connected
     set_awake(s, true);
+
+    // Do we have GPS? Check every 2 seconds
+    if (ts - s->last_gps_update > 2000000000ULL) {
+      int time_since_gps_fix = 10;
+      FILE *gpsfix = fopen("/tmp/gpsfix", "r");
+      if (gpsfix != NULL) {
+        struct stat filestat;
+        fstat(fileno(gpsfix), &filestat);
+        fclose(gpsfix);
+        time_t now;
+        time(&now);
+        time_since_gps_fix = now - filestat.st_mtime;
+      }
+      s->has_gps_fix = time_since_gps_fix < 5;
+      s->last_gps_update = ts;
+    }
   }
 
   if (!s->vision_connected) {

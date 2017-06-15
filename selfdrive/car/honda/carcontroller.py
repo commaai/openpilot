@@ -186,5 +186,5 @@ class CarController(object):
       idx = (frame/radar_send_step) % 4
       can_sends.extend(hondacan.create_radar_commands(CS.v_ego, CS.civic, idx))
 
-    sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
+    # sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
 

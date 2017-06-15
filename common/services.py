@@ -19,23 +19,25 @@ service_list = {
   "thermal": Service(8005, True),
   # List(CanData), list of can messages
   "can": Service(8006, True),
-  "live100": Service(8007, True),
+  "live100": Service(8007, False),
   # random events we want to log
   #"liveEvent": Service(8008, True),
   "model": Service(8009, True),
   "features": Service(8010, True),
   "health": Service(8011, True),
-  "live20": Service(8012, True),
+  "live20": Service(8012, False),
   #"liveUI": Service(8014, True),
   "encodeIdx": Service(8015, True),
-  "liveTracks": Service(8016, True),
-  "sendcan": Service(8017, True),
+  "liveTracks": Service(8016, False),
+  "sendcan": Service(8017, False),
   "logMessage": Service(8018, True),
   "liveCalibration": Service(8019, True),
   "androidLog": Service(8020, True),
-  "carState": Service(8021, True),
+  "carState": Service(8021, False),
   # 8022 is reserved for sshd
-  "carControl": Service(8023, True),
+  "carControl": Service(8023, False),
+  # rotary encoder reading, for steering wheel angle
+  "externalSensors": Service(8024, False),
 }
 
 # manager -- base process to manage starting and stopping of all others
@@ -46,7 +48,7 @@ service_list = {
 
 # boardd -- communicates with the car
 #   subscribes: sendcan
-#   publishes:  can, health
+#   publishes:  can, health, externalSensors
 
 # sensord -- publishes the IMU and GPS
 #   publishes:  sensorEvents, gpsNMEA
@@ -58,7 +60,7 @@ service_list = {
 # **** stateful data transformers ****
 
 # controlsd -- actually drives the car
-#   subscribes: can, thermal, model, live20
+#   subscribes: can, thermal, model, live20, externalSensors
 #   publishes:  carState, carControl, sendcan, live100
 
 # radard -- processes the radar data

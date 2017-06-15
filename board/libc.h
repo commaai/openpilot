@@ -71,6 +71,10 @@ void clock_init() {
   RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
   RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
 
+  #ifdef ENABLE_ROTARY_ENCODER
+  RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
+  #endif
+
   // turn on alt USB
   RCC->AHB1ENR |= RCC_AHB1ENR_OTGHSEN;
 
@@ -91,6 +95,7 @@ void gpio_init() {
     GPIOC->MODER |= GPIO_MODER_MODER8_1;
     GPIOC->AFR[1] = GPIO_AF2_TIM3 << ((8-8)*4);
   #endif
+
   // IGNITION on C13
 
   // set mode for LEDs and CAN
@@ -101,6 +106,29 @@ void gpio_init() {
   GPIOB->MODER |= GPIO_MODER_MODER8_1 | GPIO_MODER_MODER9_1;
   // CAN enables
   GPIOB->MODER |= GPIO_MODER_MODER3_0 | GPIO_MODER_MODER4_0;
+
+  // Rotary encoder for steering wheel angle measurement.
+  #ifdef ENABLE_ROTARY_ENCODER
+  // EXTI on PB15, input on PB14-PB15
+  int position = ROTARY_ENCODER_EXTI_POSITION;
+  int gpiobIndex = 1;
+  SYSCFG->EXTICR[position >> 2U] |= gpiobIndex << (4U * (position & 0x03U));
+
+  EXTI->IMR |= ROTARY_ENCODER_EXTI_PIN;
+  EXTI->RTSR |= ROTARY_ENCODER_EXTI_PIN;
+  EXTI->FTSR |= ROTARY_ENCODER_EXTI_PIN;
+  #endif
+
+  // Steering wheel motor
+  #ifdef DIRECTION_AND_PWM
+  // PC6 is direction, PC7 is PWM TIM3_CH2
+  GPIOC->MODER |= GPIO_MODER_MODER6_0 | GPIO_MODER_MODER7_1;
+  GPIOC->AFR[0] = GPIO_AF2_TIM3 << (7*4);
+  #else
+  // PC6 TIM3_CH1, PC7 TIM3_CH2 are PWM for CW and CCW
+  GPIOC->MODER |= GPIO_MODER_MODER6_1 | GPIO_MODER_MODER7_1;
+  GPIOC->AFR[0] = GPIO_AF2_TIM3 << (6*4) | GPIO_AF2_TIM3 << (7*4);
+  #endif
 
   // set mode for SERIAL and USB (DAC should be configured to in)
   GPIOA->MODER = GPIO_MODER_MODER2_1 | GPIO_MODER_MODER3_1;
