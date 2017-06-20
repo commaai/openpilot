@@ -183,8 +183,7 @@ class CarController(object):
       print "STEER ERROR"
       self.controls_allowed = False
 
-    # crvtodo, fix brake error, might be issue with dbc.
-    if CS.brake_error and not CS.crv:
+    if CS.brake_error:
       print "BRAKE ERROR"
       self.controls_allowed = False
 
