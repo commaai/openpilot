@@ -732,12 +732,12 @@ static void ui_draw_world(UIState *s) {
   char* thermal_val = read_file2("/sys/devices/virtual/thermal/thermal_zone5/temp");
   //int thermal_int = atoi(thermal_val);
   char thermal_str[8];
-  snprintf(thermal_str, sizeof(thermal_str), "Temp: %s", thermal_val);
+  snprintf(thermal_str, sizeof(thermal_val), "Temp: %s", thermal_val);
   ui_draw_rounded_rect(s->vg, -15, 1080-100, 550, 100, 20, nvgRGBA(10,10,10,170));
   nvgFontSize(s->vg, 65.0f);
   nvgFillColor(s->vg, nvgRGBA(200, 128, 0, 192));
   nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
-  nvgText(s->vg, 10, 1080-45, thermal_str, NULL);
+  nvgText(s->vg, 10, 1080-25, thermal_str, NULL);
   /******************************************/
 }
 
