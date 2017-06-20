@@ -607,29 +607,6 @@ static void draw_frame(UIState *s) {
   glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, &frame_indicies[0]);
 }
 
-static char* read_file2(const char* path) {
-  FILE* f = fopen(path, "r");
-  if (!f) {
-    return NULL;
-  }
-  fseek(f, 0, SEEK_END);
-  long f_len = ftell(f);
-  rewind(f);
-
-  char* buf = (char *)malloc(f_len+1);
-  assert(buf);
-  memset(buf, 0, f_len+1);
-  fread(buf, f_len, 1, f);
-  fclose(f);
-
-  for (int i=f_len; i>=0; i--) {
-    if (buf[i] == '\n') buf[i] = 0;
-    else if (buf[i] != 0) break;
-  }
-
-  return buf;
-}
-
 /*
  * Draw a rect at specific position with specific dimensions
  */
@@ -660,6 +637,29 @@ static void ui_draw_rounded_rect(
   // Draw white border around rect
   nvgStrokeColor(c, nvgRGBA(255,255,255,200));
   nvgStroke(c);
+}
+
+static void ui_draw_temperature(
+  NVGcontext* c
+) {
+  // Add thermal info to UI
+
+  // Use cpu0 as the reading for now
+  FILE* f = fopen("/sys/devices/virtual/thermal/thermal_zone5/temp", "r");
+
+  char thermal_val[30];
+
+  fgets(thermal_val, 30, f);
+  fclose(f);
+
+  int thermal_int = atoi(thermal_val);
+  char thermal_str[30];
+  snprintf(thermal_str, sizeof(thermal_val), "Temperature: %3.1f", (float)thermal_int/10);
+  ui_draw_rounded_rect(s->vg, -15, 1080-100, 650, 70, 20, nvgRGBA(10,10,10,170));
+  nvgFontSize(c, 65.0f);
+  nvgFillColor(c, nvgRGBA(200, 128, 0, 192));
+  nvgTextAlign(c, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
+  nvgText(c, 10, 1080-25, thermal_str, NULL);
 }
 
 // Draw all world space objects.
@@ -726,19 +726,7 @@ static void ui_draw_world(UIState *s) {
                nvgRGBA(255, 0, 0, 128));
   }
 
-  /******************************************/
-  // Add thermal info to UI
-  //size_t* thermal_val_t;
-  char* thermal_val = read_file2("/sys/devices/virtual/thermal/thermal_zone5/temp");
-  //int thermal_int = atoi(thermal_val);
-  char thermal_str[8];
-  snprintf(thermal_str, sizeof(thermal_val), "Temp: %s", thermal_val);
-  ui_draw_rounded_rect(s->vg, -15, 1080-100, 550, 100, 20, nvgRGBA(10,10,10,170));
-  nvgFontSize(s->vg, 65.0f);
-  nvgFillColor(s->vg, nvgRGBA(200, 128, 0, 192));
-  nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
-  nvgText(s->vg, 10, 1080-25, thermal_str, NULL);
-  /******************************************/
+  ui_draw_temperature(s->vg);
 }
 
 static void ui_draw_vision(UIState *s) {
