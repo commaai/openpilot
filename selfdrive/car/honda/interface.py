@@ -181,8 +181,7 @@ class CarInterface(object):
       errors.append('steerTemporarilyUnavailable')
     if self.CS.brake_error:
       errors.append('brakeUnavailable')
-    # crvtodo: fix gearbox read.
-    if not self.CS.gear_shifter_valid and not self.CS.crv:
+    if not self.CS.gear_shifter_valid:
       errors.append('wrongGear')
     if not self.CS.door_all_closed:
       errors.append('doorOpen')
