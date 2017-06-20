@@ -607,6 +607,29 @@ static void draw_frame(UIState *s) {
   glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, &frame_indicies[0]);
 }
 
+static char* read_file2(const char* path) {
+  FILE* f = fopen(path, "r");
+  if (!f) {
+    return NULL;
+  }
+  fseek(f, 0, SEEK_END);
+  long f_len = ftell(f);
+  rewind(f);
+
+  char* buf = (char *)malloc(f_len+1);
+  assert(buf);
+  memset(buf, 0, f_len+1);
+  fread(buf, f_len, 1, f);
+  fclose(f);
+
+  for (int i=f_len; i>=0; i--) {
+    if (buf[i] == '\n') buf[i] = 0;
+    else if (buf[i] != 0) break;
+  }
+
+  return buf;
+}
+
 /*
  * Draw a rect at specific position with specific dimensions
  */
@@ -702,6 +725,20 @@ static void ui_draw_world(UIState *s) {
     draw_cross(s, scene->lead_d_rel + 2.7, scene->lead_y_rel, 15,
                nvgRGBA(255, 0, 0, 128));
   }
+
+  /******************************************/
+  // Add thermal info to UI
+  //size_t* thermal_val_t;
+  char* thermal_val = read_file2("/sys/devices/virtual/thermal/thermal_zone5/temp");
+  //int thermal_int = atoi(thermal_val);
+  char thermal_str[8];
+  snprintf(thermal_str, sizeof(thermal_str), "Temp: %s", thermal_val);
+  ui_draw_rounded_rect(s->vg, -15, 1080-100, 550, 100, 20, nvgRGBA(10,10,10,170));
+  nvgFontSize(s->vg, 65.0f);
+  nvgFillColor(s->vg, nvgRGBA(200, 128, 0, 192));
+  nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
+  nvgText(s->vg, 10, 1080-45, thermal_str, NULL);
+  /******************************************/
 }
 
 static void ui_draw_vision(UIState *s) {
