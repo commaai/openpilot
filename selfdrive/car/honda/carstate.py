@@ -225,6 +225,7 @@ class CarState(object):
   def __init__(self, CP, logcan):
     self.civic = False
     self.accord = False
+    self.crv = False
     if CP.carFingerprint == "HONDA CIVIC 2016 TOURING":
       self.civic = True
     elif CP.carFingerprint == "ACURA ILX 2016 ACURAWATCH PLUS":
