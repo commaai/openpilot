@@ -644,8 +644,8 @@ static void ui_draw_temperature(
 ) {
   // Add thermal info to UI
 
-  // Use cpu0 as the reading for now
-  FILE* f = fopen("/sys/devices/virtual/thermal/thermal_zone5/temp", "r");
+  // Use battery as the reading for now
+  FILE* f = fopen("/sys/devices/virtual/thermal/thermal_zone29/temp", "r");
 
   char thermal_val[30];
 
@@ -654,7 +654,7 @@ static void ui_draw_temperature(
 
   int thermal_int = atoi(thermal_val);
   char thermal_str[30];
-  snprintf(thermal_str, sizeof(thermal_val), "Temperature: %3.1f", (float)thermal_int/10);
+  snprintf(thermal_str, sizeof(thermal_val), "Temperature: %3.1f", (float)thermal_int/1000);
   ui_draw_rounded_rect(s->vg, -15, 1080-100, 650, 70, 20, nvgRGBA(10,10,10,170));
   nvgFontSize(c, 65.0f);
   nvgFillColor(c, nvgRGBA(200, 128, 0, 192));
