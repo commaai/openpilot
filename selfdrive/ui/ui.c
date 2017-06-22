@@ -692,8 +692,8 @@ static void ui_draw_temperature(
 
   float thermal = get_average_thermal();
   char thermal_str[30];
-  snprintf(thermal_str, sizeof(thermal_str), "Temp.: %3.1f", thermal);
-  ui_draw_rounded_rect(c, -15, 1080-100, 450, 70, 20, nvgRGBA(10,10,10,170));
+  snprintf(thermal_str, sizeof(thermal_str), "Temp. %3.0f", thermal);
+  ui_draw_rounded_rect(c, -15, 1080-100, 390, 70, 20, nvgRGBA(10,10,10,170));
   nvgFontSize(c, 65.0f);
   nvgFillColor(c, nvgRGBA(200, 128, 0, 192));
   nvgTextAlign(c, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
