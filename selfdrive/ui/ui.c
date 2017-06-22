@@ -639,12 +639,47 @@ static void ui_draw_rounded_rect(
   nvgStroke(c);
 }
 
+/*
+ * Read sensor for specific zone
+ */
+static int read_thermal(int zone_id) {
+  char path[128];
+  snprintf(path, sizeof(path), "/sys/devices/virtual/thermal/thermal_zone%d/temp", zone_id);
+  FILE* f = fopen(path, "r");
+
+  char thermal_val[30];
+
+  fgets(thermal_val, 30, f);
+  fclose(f);
+
+  return atoi(thermal_val);
+}
+
+/*
+ * Read all sensors and calculate average temperature
+ */
+static float get_average_thermal() {
+  int cpu0 = read_thermal(5);
+  int cpu1 = read_thermal(7);
+  int cpu2 = read_thermal(10);
+  int cpu3 = read_thermal(12);
+  int mem = read_thermal(2);
+  int gpu = read_thermal(16);
+
+  int sum = cpu0 + cpu1 + cpu2 + cpu3 + mem + gpu;
+  int avg = sum / 6;
+  
+  // Readings are in 10th of a degree celsius
+  return avg / 10;
+}
+
 static void ui_draw_temperature(
   NVGcontext* c
 ) {
   // Add thermal info to UI
 
   // Use battery as the reading for now
+  /*
   FILE* f = fopen("/sys/devices/virtual/thermal/thermal_zone29/temp", "r");
 
   char thermal_val[30];
@@ -653,9 +688,12 @@ static void ui_draw_temperature(
   fclose(f);
 
   int thermal_int = atoi(thermal_val);
+  */
+
+  float thermal = get_average_thermal();
   char thermal_str[30];
-  snprintf(thermal_str, sizeof(thermal_val), "Temperature: %3.1f", (float)thermal_int/1000);
-  ui_draw_rounded_rect(s->vg, -15, 1080-100, 650, 70, 20, nvgRGBA(10,10,10,170));
+  snprintf(thermal_str, sizeof(thermal_str), "Temp.: %3.1f", thermal);
+  ui_draw_rounded_rect(c, -15, 1080-100, 450, 70, 20, nvgRGBA(10,10,10,170));
   nvgFontSize(c, 65.0f);
   nvgFillColor(c, nvgRGBA(200, 128, 0, 192));
   nvgTextAlign(c, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
