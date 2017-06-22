@@ -68,12 +68,18 @@ def create_accord_steering_control(apply_steer, idx):
 
   return [0,0,dat,8]
 
-def create_steering_control(apply_steer, idx):
+def create_steering_control(apply_steer, crv, idx):
   """Creates a CAN message for the Honda DBC STEERING_CONTROL."""
-  msg = struct.pack("!h", apply_steer) + ("\x80\x00" if apply_steer != 0 else "\x00\x00")
-  return make_can_msg(0xe4, msg, idx, 0)
+  commands = []
+  if crv:
+    msg_0x194 = struct.pack("!h", apply_steer << 4) + ("\x80" if apply_steer != 0 else "\x00")
+    commands.append(make_can_msg(0x194, msg_0x194, idx, 0))
+  else:
+    msg_0xe4 = struct.pack("!h", apply_steer) + ("\x80\x00" if apply_steer != 0 else "\x00\x00")
+    commands.append(make_can_msg(0xe4, msg_0xe4, idx, 0))
+  return commands
 
-def create_ui_commands(pcm_speed, hud, civic, accord, idx):
+def create_ui_commands(pcm_speed, hud, civic, accord, crv, idx):
   """Creates an iterable of CAN messages for the UIs."""
   commands = []
   pcm_speed_real = np.clip(int(round(pcm_speed / 0.002759506)), 0,
@@ -94,14 +100,15 @@ def create_ui_commands(pcm_speed, hud, civic, accord, idx):
     commands.append(make_can_msg(0x39f, msg_0x39f, idx, 0))
   return commands
 
-def create_radar_commands(v_ego, civic, accord, idx):
+def create_radar_commands(v_ego, civic, accord, crv, idx):
   """Creates an iterable of CAN messages for the radar system."""
   commands = []
   v_ego_kph = np.clip(int(round(v_ego * CV.MS_TO_KPH)), 0, 255)
   speed = struct.pack('!B', v_ego_kph)
+
   msg_0x300 = ("\xf9" + speed + "\x8a\xd0" +\
-              ("\x20" if idx == 0 or idx == 3 else "\x00") +\
-                "\x00\x00")
+                  ("\x20" if idx == 0 or idx == 3 else "\x00") +\
+                    "\x00\x00")
   if civic:
     msg_0x301 = "\x02\x38\x44\x32\x4f\x00\x00"
     # add 8 on idx.
@@ -112,6 +119,9 @@ def create_radar_commands(v_ego, civic, accord, idx):
     msg_0x301 = "\x0e\xd8\x52\x22\x56\x00\x00"
     # add 0xc on idx? WTF is this?
     commands.append(make_can_msg(0x300, msg_0x300, idx + 0xc, 1))
+  elif crv:
+    msg_0x301 = "\x00\x00\x50\x02\x51\x00\x00"
+    commands.append(make_can_msg(0x300, msg_0x300, idx, 1))
   else:
     msg_0x301 = "\x0f\x18\x51\x02\x5a\x00\x00"
     commands.append(make_can_msg(0x300, msg_0x300, idx, 1))
