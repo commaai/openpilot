@@ -692,12 +692,16 @@ static void ui_draw_temperature(
 
   float thermal = get_average_thermal();
   char thermal_str[30];
-  snprintf(thermal_str, sizeof(thermal_str), "Temp. %3.0f", thermal);
+  snprintf(thermal_str, sizeof(thermal_str), "Temp.%3.0f C", thermal);
   ui_draw_rounded_rect(c, -15, 1080-100, 390, 70, 20, nvgRGBA(10,10,10,170));
   nvgFontSize(c, 65.0f);
   nvgFillColor(c, nvgRGBA(200, 128, 0, 192));
   nvgTextAlign(c, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
   nvgText(c, 10, 1080-25, thermal_str, NULL);
+
+  // The font used in NEOS doesn't support the degree symbol so fake it for now
+  nvgFontSize(c, 45.0f);
+  nvgText(c, 285, 1080-45, "o", NULL);
 }
 
 // Draw all world space objects.
@@ -853,7 +857,7 @@ static void ui_draw_vision(UIState *s) {
     if (scene->awareness_status > 0) {
       nvgBeginPath(s->vg);
       int bar_height = scene->awareness_status * 700;
-      nvgRect(s->vg, 100, 300 + (700 - bar_height), 50, bar_height);
+      nvgRect(s->vg, 100, 290 + (700 - bar_height), 50, bar_height);
       nvgFillColor(s->vg, nvgRGBA(255 * (1 - scene->awareness_status),
                                   255 * scene->awareness_status, 0, 128));
       nvgFill(s->vg);
