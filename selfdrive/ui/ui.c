@@ -1263,14 +1263,16 @@ int main() {
 
   while (!do_exit) {
     int touch_x = -1, touch_y = -1;
+
+    // Add touch detection on vision for UI updates
+    err = touch_poll(&s->touch, &touch_x, &touch_y);
+
     if (s->awake) {
       pthread_mutex_lock(&s->lock);
       ui_update(s);
       ui_draw(s);
       pthread_mutex_unlock(&s->lock);
 
-      // Add touch detection on vision for UI updates
-      err = touch_poll(&s->touch, &touch_x, &touch_y);
       if (touch_x > 0 && touch_y > 0) {
         // User touched the screen
         // So toggle the UI elements that we want to toggle
@@ -1289,8 +1291,6 @@ int main() {
     if (s->vision_connected) {
       set_awake(s, true);
     } else {
-      //int touch_x = -1, touch_y = -1;
-      err = touch_poll(&s->touch, &touch_x, &touch_y);
       if (err == 1) {
         // touch event will still happen :(
         set_awake(s, true);
