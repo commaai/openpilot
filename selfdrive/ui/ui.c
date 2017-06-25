@@ -696,18 +696,6 @@ static void ui_draw_temperature(
 ) {
   // Add thermal info to UI
 
-  // Use battery as the reading for now
-  /*
-  FILE* f = fopen("/sys/devices/virtual/thermal/thermal_zone29/temp", "r");
-
-  char thermal_val[30];
-
-  fgets(thermal_val, 30, f);
-  fclose(f);
-
-  int thermal_int = atoi(thermal_val);
-  */
-
   float thermal = get_average_thermal();
   char thermal_str[30];
   snprintf(thermal_str, sizeof(thermal_str), "Temp.%3.0f C", thermal);
