@@ -64,6 +64,8 @@ typedef struct UIScene {
   char alert_text2[1024];
 
   float awareness_status;
+
+  bool show_temperature;
 } UIScene;
 
 typedef struct UIState {
@@ -125,6 +127,21 @@ typedef struct UIState {
 
   bool is_metric;
 } UIState;
+
+/*
+ * Toggles specific UI elements on or off when touching the screen
+  */
+static void ui_toggle_elements(UIScene *s) {
+  // Toggle the UI elements (hide|show)
+
+  // Currently, we only care about temperature display
+  if (s->show_temperature) {
+    s->show_temperature = false;
+  }
+  else {
+    s->show_temperature = true;
+  }
+}
 
 static void set_awake(UIState *s, bool awake) {
   if (awake) {
@@ -318,6 +335,7 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
   s->cur_vision_front_idx = -1;
 
   s->scene = (UIScene){
+      .show_temperature = false, // Default hide temperature
       .frontview = 0,
       .big_box_x = ui_info.big_box_x,
       .big_box_y = ui_info.big_box_y,
@@ -639,6 +657,59 @@ static void ui_draw_rounded_rect(
   nvgStroke(c);
 }
 
+/*
+ * Read sensor for specific zone
+ */
+static int read_thermal(int zone_id) {
+  char path[128];
+  snprintf(path, sizeof(path), "/sys/devices/virtual/thermal/thermal_zone%d/temp", zone_id);
+  FILE* f = fopen(path, "r");
+
+  char thermal_val[30];
+
+  fgets(thermal_val, 30, f);
+  fclose(f);
+
+  return atoi(thermal_val);
+}
+
+/*
+ * Read all sensors and calculate average temperature
+ */
+static float get_average_thermal() {
+  int cpu0 = read_thermal(5);
+  int cpu1 = read_thermal(7);
+  int cpu2 = read_thermal(10);
+  int cpu3 = read_thermal(12);
+  int mem = read_thermal(2);
+  int gpu = read_thermal(16);
+
+  int sum = cpu0 + cpu1 + cpu2 + cpu3 + mem + gpu;
+  int avg = sum / 6;
+  
+  // Readings are in 10th of a degree celsius
+  return avg / 10;
+}
+
+static void ui_draw_temperature(
+  NVGcontext* c
+) {
+  // Add thermal info to UI
+
+  float thermal = get_average_thermal();
+  char thermal_str[30];
+  snprintf(thermal_str, sizeof(thermal_str), "Temp.%3.0f C", thermal);
+  ui_draw_rounded_rect(c, -10, 1080-100, 410, 70, 20, nvgRGBA(10,10,10,170));
+  nvgFontSize(c, 65.0f);
+  nvgFillColor(c, nvgRGBA(200, 128, 0, 192));
+  nvgTextAlign(c, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
+  nvgText(c, 25, 1080-35, thermal_str, NULL);
+
+  // The font used in NEOS doesn't support the degree symbol so fake it for now
+  nvgFontSize(c, 45.0f);
+  nvgText(c, 295, 1080-55, "o", NULL);
+}
+
 // Draw all world space objects.
 static void ui_draw_world(UIState *s) {
   const UIScene *scene = &s->scene;
@@ -701,6 +772,10 @@ static void ui_draw_world(UIState *s) {
     // 2.7 m fudge factor
     draw_cross(s, scene->lead_d_rel + 2.7, scene->lead_y_rel, 15,
                nvgRGBA(255, 0, 0, 128));
+  }
+
+  if (scene->show_temperature) {
+    ui_draw_temperature(s->vg);
   }
 }
 
@@ -790,7 +865,7 @@ static void ui_draw_vision(UIState *s) {
     if (scene->awareness_status > 0) {
       nvgBeginPath(s->vg);
       int bar_height = scene->awareness_status * 700;
-      nvgRect(s->vg, 100, 300 + (700 - bar_height), 50, bar_height);
+      nvgRect(s->vg, 100, 290 + (700 - bar_height), 50, bar_height);
       nvgFillColor(s->vg, nvgRGBA(255 * (1 - scene->awareness_status),
                                   255 * scene->awareness_status, 0, 128));
       nvgFill(s->vg);
@@ -1175,11 +1250,22 @@ int main() {
   assert(err == 0);
 
   while (!do_exit) {
+    int touch_x = -1, touch_y = -1;
+
+    // Add touch detection on vision for UI updates
+    err = touch_poll(&s->touch, &touch_x, &touch_y);
+
     if (s->awake) {
       pthread_mutex_lock(&s->lock);
       ui_update(s);
       ui_draw(s);
       pthread_mutex_unlock(&s->lock);
+
+      if (touch_x > 0 && touch_y > 0) {
+        // User touched the screen
+        // So toggle the UI elements that we want to toggle
+        ui_toggle_elements(&s->scene);
+      }
     }
 
     // manage wakefulness
@@ -1193,8 +1279,6 @@ int main() {
     if (s->vision_connected) {
       set_awake(s, true);
     } else {
-      int touch_x = -1, touch_y = -1;
-      err = touch_poll(&s->touch, &touch_x, &touch_y);
       if (err == 1) {
         // touch event will still happen :(
         set_awake(s, true);
