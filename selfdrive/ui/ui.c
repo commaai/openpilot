@@ -64,6 +64,8 @@ typedef struct UIScene {
   char alert_text2[1024];
 
   float awareness_status;
+
+  bool show_temperature;
 } UIScene;
 
 typedef struct UIState {
@@ -125,6 +127,21 @@ typedef struct UIState {
 
   bool is_metric;
 } UIState;
+
+/*
+ * Toggles specific UI elements on or off when touching the screen
+  */
+static void ui_toggle_elements(UIScene *s) {
+  // Toggle the UI elements (hide|show)
+
+  // Currently, we only care about temperature display
+  if (s->show_temperature) {
+    s->show_temperature = false;
+  }
+  else {
+    s->show_temperature = true;
+  }
+}
 
 static void set_awake(UIState *s, bool awake) {
   if (awake) {
@@ -318,6 +335,7 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
   s->cur_vision_front_idx = -1;
 
   s->scene = (UIScene){
+      .show_temperature = false, // Default hide temperature
       .frontview = 0,
       .big_box_x = ui_info.big_box_x,
       .big_box_y = ui_info.big_box_y,
@@ -693,15 +711,15 @@ static void ui_draw_temperature(
   float thermal = get_average_thermal();
   char thermal_str[30];
   snprintf(thermal_str, sizeof(thermal_str), "Temp.%3.0f C", thermal);
-  ui_draw_rounded_rect(c, -15, 1080-100, 390, 70, 20, nvgRGBA(10,10,10,170));
+  ui_draw_rounded_rect(c, -10, 1080-100, 410, 70, 20, nvgRGBA(10,10,10,170));
   nvgFontSize(c, 65.0f);
   nvgFillColor(c, nvgRGBA(200, 128, 0, 192));
   nvgTextAlign(c, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
-  nvgText(c, 10, 1080-25, thermal_str, NULL);
+  nvgText(c, 25, 1080-35, thermal_str, NULL);
 
   // The font used in NEOS doesn't support the degree symbol so fake it for now
   nvgFontSize(c, 45.0f);
-  nvgText(c, 285, 1080-45, "o", NULL);
+  nvgText(c, 295, 1080-55, "o", NULL);
 }
 
 // Draw all world space objects.
@@ -768,7 +786,9 @@ static void ui_draw_world(UIState *s) {
                nvgRGBA(255, 0, 0, 128));
   }
 
-  ui_draw_temperature(s->vg);
+  if (scene->show_temperature) {
+    ui_draw_temperature(s->vg);
+  }
 }
 
 static void ui_draw_vision(UIState *s) {
@@ -1242,11 +1262,20 @@ int main() {
   assert(err == 0);
 
   while (!do_exit) {
+    int touch_x = -1, touch_y = -1;
     if (s->awake) {
       pthread_mutex_lock(&s->lock);
       ui_update(s);
       ui_draw(s);
       pthread_mutex_unlock(&s->lock);
+
+      // Add touch detection on vision for UI updates
+      err = touch_poll(&s->touch, &touch_x, &touch_y);
+      if (touch_x > 0 && touch_y > 0) {
+        // User touched the screen
+        // So toggle the UI elements that we want to toggle
+        ui_toggle_elements(&s->scene);
+      }
     }
 
     // manage wakefulness
@@ -1260,7 +1289,7 @@ int main() {
     if (s->vision_connected) {
       set_awake(s, true);
     } else {
-      int touch_x = -1, touch_y = -1;
+      //int touch_x = -1, touch_y = -1;
       err = touch_poll(&s->touch, &touch_x, &touch_y);
       if (err == 1) {
         // touch event will still happen :(
