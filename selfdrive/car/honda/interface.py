@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import time
-import numpy as np
+import common.numpy_fast as np
 
 from selfdrive.config import Conversions as CV
 from selfdrive.car.honda.carstate import CarState

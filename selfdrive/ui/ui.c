@@ -20,6 +20,7 @@
 
 #include "common/timing.h"
 #include "common/util.h"
+#include "common/swaglog.h"
 #include "common/mat.h"
 #include "common/glutil.h"
 
@@ -68,8 +69,6 @@ typedef struct UIScene {
 
 typedef struct UIState {
   pthread_mutex_t lock;
-
-  TouchState touch;
 
   FramebufferState *fb;
 
@@ -135,7 +134,7 @@ static void set_awake(UIState *s, bool awake) {
     s->awake = awake;
 
     if (awake) {
-      printf("awake normal\n");
+      LOG("awake normal");
       framebuffer_set_power(s->fb, HWC_POWER_MODE_NORMAL);
 
       // can't hurt
@@ -145,7 +144,7 @@ static void set_awake(UIState *s, bool awake) {
         fclose(f);
       }
     } else {
-      printf("awake off\n");
+      LOG("awake off");
       framebuffer_set_power(s->fb, HWC_POWER_MODE_OFF);
     }
   }
@@ -230,10 +229,8 @@ static void ui_init(UIState *s) {
 
   s->ipc_fd = -1;
 
-  touch_init(&s->touch);
-
   // init display
-  s->fb = framebuffer_init("ui", 0x00001000,
+  s->fb = framebuffer_init("ui", 0x00010000, true,
                            &s->display, &s->surface, &s->fb_w, &s->fb_h);
   assert(s->fb);
   set_awake(s, true);
@@ -707,11 +704,10 @@ static void ui_draw_world(UIState *s) {
 static void ui_draw_vision(UIState *s) {
   const UIScene *scene = &s->scene;
 
-  if (scene->engaged) {
-    glClearColor(1.0, 0.5, 0.0, 1.0);
-  } else {
-    glClearColor(0.1, 0.1, 0.1, 1.0);
-  }
+  // if (scene->engaged) {
+  //   glClearColor(1.0, 0.5, 0.0, 1.0);
+  // } else {
+  glClearColor(0.1, 0.1, 0.1, 1.0);
   glClear(GL_COLOR_BUFFER_BIT);
 
   draw_frame(s);
@@ -797,19 +793,33 @@ static void ui_draw_vision(UIState *s) {
     }
   }
 
+  nvgEndFrame(s->vg);
+
+  glDisable(GL_BLEND);
+  // glDisable(GL_CULL_FACE);
+}
+
+static void ui_draw_alerts(UIState *s) {
+  const UIScene *scene = &s->scene;
+
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+  glClear(GL_STENCIL_BUFFER_BIT);
+  
+  nvgBeginFrame(s->vg, s->fb_w, s->fb_h, 1.0f);
+
   // draw alert text
   if (strlen(scene->alert_text1) > 0) {
     nvgBeginPath(s->vg);
     nvgRoundedRect(s->vg, 100, 200, 1700, 800, 40);
     nvgFillColor(s->vg, nvgRGBA(10, 10, 10, 220));
     nvgFill(s->vg);
-
     nvgFontSize(s->vg, 200.0f);
     nvgFillColor(s->vg, nvgRGBA(255, 0, 0, 255));
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
     nvgTextBox(s->vg, 100 + 50, 200 + 50, 1700 - 50, scene->alert_text1,
                 NULL);
-
     if (strlen(scene->alert_text2) > 0) {
       nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 255));
       nvgFontSize(s->vg, 100.0f);
@@ -820,11 +830,10 @@ static void ui_draw_vision(UIState *s) {
   nvgEndFrame(s->vg);
 
   glDisable(GL_BLEND);
-  glDisable(GL_CULL_FACE);
 }
 
 static void ui_draw_blank(UIState *s) {
-  glClearColor(0.1, 0.1, 0.1, 1.0);
+  glClearColor(0.0, 0.0, 0.0, 0.0);
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 }
 
@@ -834,6 +843,8 @@ static void ui_draw(UIState *s) {
   } else {
     ui_draw_blank(s);
   }
+
+  ui_draw_alerts(s);
 
   eglSwapBuffers(s->display, s->surface);
   assert(glGetError() == GL_NO_ERROR);
@@ -940,19 +951,22 @@ static void ui_update(UIState *s) {
 
     int ret = zmq_poll(polls, num_polls, 0);
     if (ret < 0) {
-      printf("poll failed (%d)\n", ret);
+      LOGW("poll failed (%d)", ret);
       break;
     }
     if (ret == 0) {
       break;
     }
 
+    // awake on any activity
+    set_awake(s, true);
+
     if (s->vision_connected && polls[4].revents) {
       // vision ipc event
       VisionPacket rp;
       err = vipc_recv(s->ipc_fd, &rp);
       if (err <= 0) {
-        printf("vision disconnected\n");
+        LOGW("vision disconnected");
         close(s->ipc_fd);
         s->ipc_fd = -1;
         s->vision_connected = false;
@@ -1174,12 +1188,23 @@ int main() {
                        vision_connect_thread, s);
   assert(err == 0);
 
+  TouchState touch = {0};
+  touch_init(&touch);
+
   while (!do_exit) {
+    pthread_mutex_lock(&s->lock);
+    
+    ui_update(s);
     if (s->awake) {
-      pthread_mutex_lock(&s->lock);
-      ui_update(s);
       ui_draw(s);
-      pthread_mutex_unlock(&s->lock);
+    }
+
+    // awake on any touch
+    int touch_x = -1, touch_y = -1;
+    int touched = touch_poll(&touch, &touch_x, &touch_y);
+    if (touched == 1) {
+      // touch event will still happen :(
+      set_awake(s, true);
     }
 
     // manage wakefulness
@@ -1189,17 +1214,7 @@ int main() {
       set_awake(s, false);
     }
 
-    // always awake if vision is connected
-    if (s->vision_connected) {
-      set_awake(s, true);
-    } else {
-      int touch_x = -1, touch_y = -1;
-      err = touch_poll(&s->touch, &touch_x, &touch_y);
-      if (err == 1) {
-        // touch event will still happen :(
-        set_awake(s, true);
-      }
-    }
+    pthread_mutex_unlock(&s->lock);
 
     // no simple way to do 30fps vsync with surfaceflinger...
     usleep(30000);

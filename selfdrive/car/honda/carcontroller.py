@@ -140,7 +140,9 @@ class CarController(object):
     tt = sec_since_boot()
     GAS_MAX = 1004
     BRAKE_MAX = 1024/4
-    if CS.crv:
+    if CS.civic:
+      STEER_MAX = 0x1000
+    elif CS.crv:
       STEER_MAX = 0x300  # CR-V only uses 12-bits and requires a lower value
     else:
       STEER_MAX = 0xF00
