@@ -41,7 +41,7 @@ def report_tombstone(fn, client):
     message += parsedict.get('abort') or ''
   else:
     parsedict = {}
-    message = fn
+    message = fn+"\n"+dat[:1024]
 
   client.send(
     event_id=uuid.uuid4().hex,

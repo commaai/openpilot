@@ -1,4 +1,4 @@
-import numpy as np
+import common.numpy_fast as np
 
 import selfdrive.messaging as messaging
 from common.realtime import sec_since_boot

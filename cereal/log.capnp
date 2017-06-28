@@ -145,6 +145,7 @@ struct SensorEventData {
     magnetic @5 :SensorVec;
     orientation @6 :SensorVec;
     gyro @7 :SensorVec;
+    pressure @9 :SensorVec;
   }
   source @8 :SensorSource;
 
@@ -297,8 +298,8 @@ struct LiveTracks {
 struct Live100Data {
   canMonoTime @16 :UInt64;
   canMonoTimes @21 :List(UInt64);
-  l20MonoTime @17 :UInt64;
-  mdMonoTime @18 :UInt64;
+  l20MonoTimeDEPRECATED @17 :UInt64;
+  mdMonoTimeDEPRECATED @18 :UInt64;
 
   vEgo @0 :Float32;
   aEgoDEPRECATED @1 :Float32;
