@@ -1,42 +1,52 @@
 """Utilities for reading real time clocks and keeping soft real time constraints."""
+import os
 import time
 import ctypes
 import platform
+import threading
 import subprocess
 import multiprocessing
-import os
 
-from ctypes.util import find_library
+from cffi import FFI
+ffi = FFI()
+ffi.cdef("""
+
+typedef int clockid_t;
+struct timespec {
+    long tv_sec;   /* Seconds.  */
+    long tv_nsec;  /* Nanoseconds.  */
+};
+int clock_gettime (clockid_t clk_id, struct timespec *tp);
+
+long syscall(long number, ...);
+
+"""
+)
+libc = ffi.dlopen(None)
 
 
-CLOCK_MONOTONIC_RAW = 4 # see <linux/time.h>
+# see <linux/time.h>
+CLOCK_MONOTONIC_RAW = 4
 CLOCK_BOOTTIME = 7
 
-class timespec(ctypes.Structure):
-  _fields_ = [
-    ('tv_sec', ctypes.c_long),
-    ('tv_nsec', ctypes.c_long),
-  ]
-
-libc_name = find_library('c')
-libc = ctypes.CDLL(libc_name, use_errno=True)
-
 if hasattr(libc, 'clock_gettime'):
-  libc.clock_gettime.argtypes = [ctypes.c_int, ctypes.POINTER(timespec)]
-  has_clock_gettime = True
+  c_clock_gettime = libc.clock_gettime
+
+  tlocal = threading.local()
+  def clock_gettime(clk_id):
+    if not hasattr(tlocal, 'ts'):
+      tlocal.ts = ffi.new('struct timespec *')
+
+    ts = tlocal.ts
+
+    r = c_clock_gettime(clk_id, ts)
+    if r != 0:
+      raise OSError("clock_gettime")
+    return ts.tv_sec + ts.tv_nsec * 1e-9
 else:
-  has_clock_gettime = False
-
-def clock_gettime(clk_id):
-  if not has_clock_gettime:
-    # hack. only for OS X < 10.12
+  # hack. only for OS X < 10.12
+  def clock_gettime(clk_id):
     return time.time()
-
-  t = timespec()
-  if libc.clock_gettime(clk_id, ctypes.pointer(t)) != 0:
-    errno_ = ctypes.get_errno()
-    raise OSError(errno_, os.strerror(errno_))
-  return t.tv_sec + t.tv_nsec * 1e-9
 
 def monotonic_time():
   return clock_gettime(CLOCK_MONOTONIC_RAW)
@@ -96,3 +106,6 @@ class Ratekeeper(object):
     self._frame += 1
     self._remaining = remaining
     return lagged
+
+if __name__ == "__main__":
+  print sec_since_boot()

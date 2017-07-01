@@ -55,6 +55,7 @@ class AlertManager(object):
     "doorOpen":           alert("Take Control Immediately","Door Open",            ET.SOFT_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
     "seatbeltNotLatched": alert("Take Control Immediately","Seatbelt Unlatched",   ET.SOFT_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
     "espDisabled":        alert("Take Control Immediately","ESP Off",              ET.SOFT_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
+    "cruiseDisabled":     alert("Take Control Immediately","Cruise Is Off",        ET.IMMEDIATE_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
     "wrongCarMode":       alert("Comma Unavailable","Main Switch Off",             ET.NO_ENTRY,     None, "chimeDouble", .4, 0., 3.),
     "outOfSpace":         alert("Comma Unavailable","Out of Space",                ET.NO_ENTRY,     None, "chimeDouble", .4, 0., 3.),
     "dataNeeded":         alert("Comma Unavailable","Data needed for calibration. Upload drive, try again", ET.NO_ENTRY, None, "chimeDouble", .4, 0., 3.),

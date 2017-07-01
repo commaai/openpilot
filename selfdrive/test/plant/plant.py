@@ -5,7 +5,7 @@ import struct
 import zmq
 import numpy as np
 
-from dbcs import DBC_PATH
+from opendbc import DBC_PATH
 
 from common.realtime import Ratekeeper
 
@@ -143,6 +143,10 @@ class Plant(object):
 
     self.cp = get_car_can_parser()
 
+  def close(self):
+    Plant.logcan.close()
+    Plant.model.close()
+
   def speed_sensor(self, speed):
     if speed<0.3:
       return 0
@@ -152,7 +156,7 @@ class Plant(object):
   def current_time(self):
     return float(self.rk.frame) / self.rate
 
-  def step(self, v_lead=0.0, cruise_buttons=None, grade=0.0):
+  def step(self, v_lead=0.0, cruise_buttons=None, grade=0.0, publish_model = True):
     # dbc_f, sgs, ivs, msgs, cks_msgs, frqs = initialize_can_struct(self.civic, self.brake_only)
     cp2 = get_can_parser(fake_car_params())
     sgs = cp2._sgs
@@ -198,7 +202,7 @@ class Plant(object):
       acceleration = 0
 
     # ******** lateral ********
-    self.angle_steer -= steer_torque
+    self.angle_steer -= (steer_torque/10.0) * self.ts
 
     # *** radar model ***
     if self.lead_relevancy:
@@ -227,7 +231,6 @@ class Plant(object):
            0,0,0,
            # interceptor_gas
            0,0]
-
 
     # TODO: publish each message at proper frequency
     can_msgs = []
@@ -261,18 +264,22 @@ class Plant(object):
     Plant.logcan.send(can_list_to_can_capnp(can_msgs).to_bytes())
 
     # ******** publish a fake model going straight ********
-    md = messaging.new_message()
-    md.init('model')
-    md.model.frameId = 0
-    for x in [md.model.path, md.model.leftLane, md.model.rightLane]:
-      x.points = [0.0]*50
-      x.prob = 1.0
-      x.std = 1.0
-    # fake values?
-    Plant.model.send(md.to_bytes())
-
+    if publish_model:
+      md = messaging.new_message()
+      md.init('model')
+      md.model.frameId = 0
+      for x in [md.model.path, md.model.leftLane, md.model.rightLane]:
+        x.points = [0.0]*50
+        x.prob = 1.0
+        x.std = 1.0
+      # fake values?
+      Plant.model.send(md.to_bytes())
 
     # ******** update prevs ********
+    self.speed = speed
+    self.distance = distance
+    self.distance_lead = distance_lead
+
     self.speed_prev = speed
     self.distance_prev = distance
     self.distance_lead_prev = distance_lead

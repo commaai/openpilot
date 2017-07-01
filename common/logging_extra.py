@@ -8,6 +8,14 @@ from threading import local
 from collections import OrderedDict
 from contextlib import contextmanager
 
+def json_handler(obj):
+  # if isinstance(obj, (datetime.date, datetime.time)):
+  #   return obj.isoformat()
+  return repr(obj)
+
+def json_robust_dumps(obj):
+  return json.dumps(obj, default=json_handler)
+
 class SwagFormatter(logging.Formatter):
   def __init__(self, swaglogger):
     logging.Formatter.__init__(self, None, '%a %b %d %H:%M:%S %Z %Y')
@@ -15,12 +23,7 @@ class SwagFormatter(logging.Formatter):
     self.swaglogger = swaglogger
     self.host = socket.gethostname()
 
-  def json_handler(self, obj):
-    # if isinstance(obj, (datetime.date, datetime.time)):
-    #   return obj.isoformat()
-    return repr(obj)
-
-  def format(self, record):
+  def format_dict(self, record):
     record_dict = OrderedDict()
 
     if isinstance(record.msg, dict):
@@ -50,9 +53,10 @@ class SwagFormatter(logging.Formatter):
     record_dict['threadName'] = record.threadName
     record_dict['created'] = record.created
 
-    # asctime = self.formatTime(record, self.datefmt)
+    return record_dict
 
-    return json.dumps(record_dict, default=self.json_handler)
+  def format(self, record):
+    return json_robust_dumps(self.format_dict(record))
 
 _tmpfunc = lambda: 0
 _srcfile = os.path.normcase(_tmpfunc.__code__.co_filename)
