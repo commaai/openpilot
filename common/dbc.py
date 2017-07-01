@@ -1,6 +1,6 @@
 import re
 import bitstring
-from binascii import hexlify
+import struct
 from collections import namedtuple
 
 def int_or_float(s):
@@ -36,6 +36,7 @@ class dbc(object):
     for i in range(0, 64, 8):
       for j in range(7, -1, -1):
         self.bits.append(i+j)
+    self.bits_index = dict(zip(self.bits, range(64)))
 
     for l in self.txt:
       l = l.strip()
@@ -102,7 +103,7 @@ class dbc(object):
         if s.is_little_endian:
           ss = s.start_bit
         else:
-          ss = self.bits.index(s.start_bit)
+          ss = self.bits_index[s.start_bit]
 
 
         if s.is_signed:
@@ -135,9 +136,6 @@ class dbc(object):
         Returns (None, None) if the message could not be decoded.
     """
     
-    def swap_order(d, wsz=4, gsz=2 ):
-      return "".join(["".join([m[i:i+gsz] for i in range(wsz-gsz,-gsz,-gsz)]) for m in [d[i:i+wsz] for i in range(0,len(d),wsz)]])
-    
     if arr is None:
       out = {}
     else:
@@ -156,6 +154,9 @@ class dbc(object):
 
     blen = 8*len(x[2])
 
+    st = x[2].rjust(8, '\x00')
+    le, be = None, None
+
     for s in msg[1]:
       if arr is not None and s[0] not in arr:
         continue
@@ -163,15 +164,18 @@ class dbc(object):
       # big or little endian?
       #   see http://vi-firmware.openxcplatform.com/en/master/config/bit-numbering.html
       if s[3] is False:
-        ss = self.bits.index(s[1])
-        x2_int = int(hexlify(x[2]), 16)
+        ss = self.bits_index[s[1]]
+        if be is None:
+          be = struct.unpack(">Q", st)[0]
+        x2_int = be
         data_bit_pos = (blen - (ss + s[2]))
       else:
-        x2_int = int(swap_order(hexlify(x[2]), 16, 2), 16)
+        if le is None:
+          le = struct.unpack("<Q", st)[0]
+        x2_int = le
         ss = s[1]
         data_bit_pos = ss
 
-      
       if data_bit_pos < 0:
         continue
       ival = (x2_int >> data_bit_pos) & ((1 << (s[2])) - 1)

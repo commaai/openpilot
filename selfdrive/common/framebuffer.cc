@@ -38,7 +38,7 @@ extern "C" void framebuffer_set_power(FramebufferState *s, int mode) {
 }
 
 extern "C" FramebufferState* framebuffer_init(
-    const char* name, int32_t layer,
+    const char* name, int32_t layer, int alpha,
     EGLDisplay *out_display, EGLSurface *out_surface,
     int *out_w, int *out_h) {
   status_t status;
@@ -86,6 +86,7 @@ extern "C" FramebufferState* framebuffer_init(
     EGL_RED_SIZE,     8,
     EGL_GREEN_SIZE,   8,
     EGL_BLUE_SIZE,    8,
+    EGL_ALPHA_SIZE,   alpha ? 8 : 0,
     EGL_DEPTH_SIZE,   0,
     EGL_STENCIL_SIZE, 8,
     EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT_KHR,

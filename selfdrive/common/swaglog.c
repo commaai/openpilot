@@ -12,6 +12,7 @@
 #include <json.h>
 
 #include "common/timing.h"
+#include "common/version.h"
 
 #include "swaglog.h"
 
@@ -27,6 +28,10 @@ typedef struct LogState {
 static LogState s = {
   .lock = PTHREAD_MUTEX_INITIALIZER,
 };
+
+static void cloudlog_bind_locked(const char* k, const char* v) {
+  json_append_member(s.ctx_j, k, json_mkstring(v));
+}
 
 static void cloudlog_init() {
   if (s.inited) return;
@@ -46,6 +51,15 @@ static void cloudlog_init() {
       s.print_level = CLOUDLOG_WARNING;
     }
   }
+
+  // openpilot bindings
+  char* dongle_id = getenv("DONGLE_ID");
+  if (dongle_id) {
+    cloudlog_bind_locked("dongle_id", dongle_id);
+  }
+  cloudlog_bind_locked("version", OPENPILOT_VERSION);
+  bool dirty = !getenv("CLEAN");
+  json_append_member(s.ctx_j, "dirty", json_mkbool(dirty));
 
   s.inited = true;
 }
@@ -100,6 +114,6 @@ void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func
 void cloudlog_bind(const char* k, const char* v) {
   pthread_mutex_lock(&s.lock);
   cloudlog_init();
-  json_append_member(s.ctx_j, k, json_mkstring(v));
+  cloudlog_bind_locked(k, v);
   pthread_mutex_unlock(&s.lock);
 }
