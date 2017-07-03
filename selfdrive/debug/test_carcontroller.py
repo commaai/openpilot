@@ -60,7 +60,7 @@ if __name__ == "__main__":
     # **** handle car ****
 
     CS = CI.update()
-    print CS
+    #print CS
 
     CC = car.CarControl.new_message()
 
@@ -68,7 +68,7 @@ if __name__ == "__main__":
 
     CC.gas = float(np.clip(-axis_values[1], 0, 1.0))
     CC.brake = float(np.clip(axis_values[1], 0, 1.0))
-    CC.steeringTorque = float(axis_values[0])
+    CC.steeringTorque = float(-axis_values[0])
 
     CC.hudControl.speedVisible = bool(button_values[1])
     CC.hudControl.lanesVisible = bool(button_values[2])
@@ -83,7 +83,7 @@ if __name__ == "__main__":
     CC.hudControl.visualAlert = "none"
     CC.hudControl.audibleAlert = "none"
 
-    print CC
+    #print CC
 
     if not CI.apply(CC):
       print "CONTROLS FAILED"
