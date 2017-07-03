@@ -50,6 +50,9 @@ bool usb_connect() {
 
   // power off ESP
   libusb_control_transfer(dev_handle, 0xc0, 0xd9, 0, 0, NULL, 0, TIMEOUT);
+
+  // forward CAN1 to CAN3...soon
+  //libusb_control_transfer(dev_handle, 0xc0, 0xdd, 1, 2, NULL, 0, TIMEOUT);
   
   // set UART modes for Honda Accord
   for (int uart = 2; uart <= 3; uart++) {

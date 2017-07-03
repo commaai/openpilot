@@ -10,7 +10,7 @@ extern "C" {
 typedef struct FramebufferState FramebufferState;
 
 FramebufferState* framebuffer_init(
-    const char* name, int32_t layer,
+    const char* name, int32_t layer, int alpha,
     EGLDisplay *out_display, EGLSurface *out_surface,
     int *out_w, int *out_h);
 

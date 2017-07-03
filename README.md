@@ -7,6 +7,8 @@ Currently it performs the functions of Adaptive Cruise Control (ACC) and Lane Ke
 
 The openpilot codebase has been written to be concise and enable rapid prototyping. We look forward to your contributions - improving real vehicle automation has never been easier.
 
+Here are [some](https://www.youtube.com/watch?v=9OwTJFuDI7g) [videos](https://www.youtube.com/watch?v=64Wvt5pYQmE) [of](https://www.youtube.com/watch?v=6IW7Nejsr3A) [it](https://www.youtube.com/watch?v=-VN1YcC83nA) [running](https://www.youtube.com/watch?v=EQJZvVeihZk). And a really cool [tutorial](https://www.youtube.com/watch?v=PwOnsT2UW5o).
+
 Hardware
 ------
 
@@ -18,17 +20,20 @@ Supported Cars
 ------
 
 - Acura ILX 2016 with AcuraWatch Plus
-  - Limitations: Due to use of the cruise control for gas, it can only be enabled above 25 mph
+  - Due to use of the cruise control for gas, it can only be enabled above 25 mph
 
 - Honda Civic 2016 with Honda Sensing
-  - Limitations: Due to limitations in steering firmware, steering is disabled below 18 mph
+  - Due to limitations in steering firmware, steering is disabled below 12 mph
+
+- Honda CR-V Touring 2015-2016 (very alpha!)
+  - Can only be enabled above 25 mph
 
 Directory structure
 ------
 
 - cereal        -- The messaging spec used for all logs on the phone
 - common        -- Library like functionality we've developed here
-- dbcs          -- Files showing how to interpret data from cars
+- opendbc       -- Files showing how to interpret data from cars
 - panda         -- Code used to communicate on CAN and LIN
 - phonelibs     -- Libraries used on the phone
 - selfdrive     -- Code needed to drive the car
@@ -66,11 +71,9 @@ More extensive testing infrastructure and simulation environments are coming soo
 Adding Car Support
 ------
 
-It should be relatively easy to add support for the Honda CR-V Touring. The brake message is the same. Steering has a slightly different message with a different message id. Sniff CAN while using LKAS to find it.
+comma.ai offers [bounties](http://comma.ai/bounties.html) for adding additional car support.
 
-The Honda Accord uses different signaling for the steering and probably requires new hardware.
-
-Adding other manufacturers besides Honda/Acura is doable but will be more of an undertaking.
+CR-V Touring support came in through this program. Chevy Volt is close. Accord is close as well.
 
 User Data / chffr Account / Crash Reporting
 ------
@@ -91,7 +94,7 @@ We welcome both pull requests and issues on
 [github](http://github.com/commaai/openpilot). See the TODO file for a list of
 good places to start.
 
-Want to get paid to work on openpilot? [comma.ai is hiring](http://comma.ai/hiring.html)
+Want to get paid to work on openpilot? [comma.ai is hiring](http://comma.ai/positions.html)
 
 Licensing
 ------

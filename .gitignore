@@ -3,17 +3,19 @@
 .ipynb_checkpoints
 model2.png
 
+*.d
 *.pyc
+*.pyo
 .*.swp
 .*.swo
 .*.un~
 *.o
-*.d
 *.so
 *.a
 *.clb
 *.class
 *.pyxbldc
+*.vcd
 config.json
 clcache
 

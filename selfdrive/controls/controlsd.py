@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import os
 import zmq
-import numpy as np
 import selfdrive.messaging as messaging
 
 from cereal import car, log
@@ -93,11 +92,13 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
 
   rk = Ratekeeper(rate, print_delay_threshold=2./1000)
   while 1:
-    prof = Profiler()
     cur_time = sec_since_boot()
+    prof = Profiler()
 
     # read CAN
     CS = CI.update()
+
+    prof.checkpoint("CarInterface")
 
     # broadcast carState
     cs_send = messaging.new_message()
@@ -105,7 +106,7 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
     cs_send.carState = CS    # copy?
     carstate.send(cs_send.to_bytes())
 
-    prof.checkpoint("CarInterface")
+    prof.checkpoint("CarState")
 
     # did it request to enable?
     enable_request, enable_condition = False, False
@@ -180,6 +181,10 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
       if CS.gasPressed or CS.brakePressed:
         AM.add("disable", enabled)
 
+      # how did we get into this state?
+      if CP.enableCruise and not CS.cruiseState.enabled:
+        AM.add("cruiseDisabled", enabled)
+
     if enable_request:
       # check for pressed pedals
       if CS.gasPressed or CS.brakePressed:
@@ -241,7 +246,7 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
     # *** angle offset learning ***
     if rk.frame % 5 == 2 and plan.lateralValid:
       # *** run this at 20hz again ***
-      angle_offset = learn_angle_offset(enabled, CS.vEgo, angle_offset, np.asarray(plan.dPoly), LaC.y_des, CS.steeringPressed)
+      angle_offset = learn_angle_offset(enabled, CS.vEgo, angle_offset, plan.dPoly, LaC.y_des, CS.steeringPressed)
 
     # *** gas/brake PID loop ***
     final_gas, final_brake = LoC.update(enabled, CS.vEgo, v_cruise_kph,
@@ -351,8 +356,6 @@ def controlsd_thread(gctx, rate=100):  #rate in Hz
 
     # what packets were used to process
     dat.live100.canMonoTimes = list(CS.canMonoTimes)
-    #dat.live100.mdMonoTime = PP.logMonoTime
-    #dat.live100.l20MonoTime = AC.logMonoTime
 
     # if controls is enabled
     dat.live100.enabled = enabled

@@ -36,6 +36,7 @@ OBJS = ui.o \
        ../common/params.o \
        ../common/util.o \
        ../common/touch.o \
+       ../common/swaglog.o \
        $(PHONELIBS)/nanovg/nanovg.o \
        $(PHONELIBS)/json/src/json.o \
        $(CEREAL_OBJS)
