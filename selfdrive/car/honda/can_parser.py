@@ -1,5 +1,5 @@
 import os
-import dbcs
+import opendbc
 from collections import defaultdict
 
 from selfdrive.car.honda.hondacan import fix
@@ -19,12 +19,12 @@ class CANParser(object):
     #               monitored.
     #             - frequency is the frequency at which health should be monitored.
 
-    self.msgs_ck = [check[0] for check in checks]
-    self.frqs = [check[1] for check in checks]
+    self.msgs_ck = set([check[0] for check in checks])
+    self.frqs = dict(checks)
     self.can_valid = False  # start with False CAN assumption
     # list of received msg we want to monitor counter and checksum for
     # read dbc file
-    self.can_dbc = dbc(os.path.join(dbcs.DBC_PATH, dbc_f))
+    self.can_dbc = dbc(os.path.join(opendbc.DBC_PATH, dbc_f))
     # initialize variables to initial values
     self.vl = {}    # signal values
     self.ts = {}    # time stamp recorded in log
@@ -56,6 +56,8 @@ class CANParser(object):
   def update_can(self, can_recv):
     msgs_upd = []
     cn_vl_max = 5   # no more than 5 wrong counter checks
+
+    self.sec_since_boot_cached = sec_since_boot()
 
     # we are subscribing to PID_XXX, else data from USB
     for msg, ts, cdat, _ in can_recv:
@@ -93,7 +95,7 @@ class CANParser(object):
 
         # update msg time stamps and counter value
         self.ts[msg] = ts
-        self.ct[msg] = sec_since_boot()
+        self.ct[msg] = self.sec_since_boot_cached
         self.cn[msg] = cn
         self.cn_vl[msg] = min(max(self.cn_vl[msg], 0), cn_vl_max)
 
@@ -121,5 +123,5 @@ class CANParser(object):
     ### input:
     ## simple stuff for now: msg is not valid if a message isn't received for 10 consecutive steps
     for msg in set(self._msgs):
-      if msg in self.msgs_ck and sec_since_boot() - self.ct[msg] > 10./self.frqs[self.msgs_ck.index(msg)]:
+      if msg in self.msgs_ck and self.sec_since_boot_cached - self.ct[msg] > 10./self.frqs[msg]:
         self.ok[msg] = False

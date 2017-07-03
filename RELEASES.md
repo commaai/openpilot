@@ -1,3 +1,13 @@
+Version 0.3.3  (2017-06-28)
+===========================
+  * Improved model trained on more data
+  * Alpha CR-V support thanks to energee and johnnwvs!
+  * Using the opendbc project for DBC files
+  * Minor performance improvements
+  * UI update thanks to pjlao307
+  * Power off button
+  * 6% more torque on the Civic
+
 Version 0.3.2  (2017-05-22)
 ===========================
   * Minor stability bugfixes

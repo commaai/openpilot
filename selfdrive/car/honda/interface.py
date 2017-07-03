@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import time
-import numpy as np
+import common.numpy_fast as np
 
 from selfdrive.config import Conversions as CV
 from selfdrive.car.honda.carstate import CarState
@@ -212,7 +212,7 @@ class CarInterface(object):
       hud_v_cruise = 255
 
     hud_alert = {
-      "none": AH.NONE, 
+      "none": AH.NONE,
       "fcw": AH.FCW,
       "steerRequired": AH.STEER,
       "brakePressed": AH.BRAKE_PRESSED,
@@ -246,4 +246,3 @@ class CarInterface(object):
 
     self.frame += 1
     return not (c.enabled and not self.CC.controls_allowed)
-

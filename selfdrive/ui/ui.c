@@ -20,6 +20,7 @@
 
 #include "common/timing.h"
 #include "common/util.h"
+#include "common/swaglog.h"
 #include "common/mat.h"
 #include "common/glutil.h"
 
@@ -68,8 +69,6 @@ typedef struct UIScene {
 
 typedef struct UIState {
   pthread_mutex_t lock;
-
-  TouchState touch;
 
   FramebufferState *fb;
 
@@ -135,7 +134,7 @@ static void set_awake(UIState *s, bool awake) {
     s->awake = awake;
 
     if (awake) {
-      printf("awake normal\n");
+      LOG("awake normal");
       framebuffer_set_power(s->fb, HWC_POWER_MODE_NORMAL);
 
       // can't hurt
@@ -145,7 +144,7 @@ static void set_awake(UIState *s, bool awake) {
         fclose(f);
       }
     } else {
-      printf("awake off\n");
+      LOG("awake off");
       framebuffer_set_power(s->fb, HWC_POWER_MODE_OFF);
     }
   }
@@ -230,10 +229,8 @@ static void ui_init(UIState *s) {
 
   s->ipc_fd = -1;
 
-  touch_init(&s->touch);
-
   // init display
-  s->fb = framebuffer_init("ui", 0x00001000,
+  s->fb = framebuffer_init("ui", 0x00010000, true,
                            &s->display, &s->surface, &s->fb_w, &s->fb_h);
   assert(s->fb);
   set_awake(s, true);
@@ -607,12 +604,57 @@ static void draw_frame(UIState *s) {
   glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, &frame_indicies[0]);
 }
 
+/*
+ * Draw a rect at specific position with specific dimensions
+ */
+static void ui_draw_rounded_rect(
+    NVGcontext* c, 
+    int x,
+    int y,
+    int width,
+    int height,
+    int radius,
+    NVGcolor color
+) {
+
+  int bottom_x = x + width;
+  int bottom_y = y + height;
+
+  nvgBeginPath(c);
+
+  // Position the rect
+  nvgRoundedRect(c, x, y, bottom_x, bottom_y, radius);
+
+  // Color the rect
+  nvgFillColor(c, color);
+
+  // Draw the rect
+  nvgFill(c);
+
+  // Draw white border around rect
+  nvgStrokeColor(c, nvgRGBA(255,255,255,200));
+  nvgStroke(c);
+}
+
 // Draw all world space objects.
 static void ui_draw_world(UIState *s) {
   const UIScene *scene = &s->scene;
   if (!scene->world_objects_visible) {
     return;
   }
+
+  /******************************************
+   * Add background rect so it's easier to see in 
+   * light background scenes 
+   ******************************************/
+  // Draw background around speed text
+
+  // Left side
+  ui_draw_rounded_rect(s->vg, -15, 0, 570, 180, 20, nvgRGBA(10,10,10,170));
+
+  // Right side
+  ui_draw_rounded_rect(s->vg, 1920-530, 0, 150, 180, 20, nvgRGBA(10,10,10,170));
+  /******************************************/
 
   draw_steering(s, scene->v_ego, scene->angle_steers);
 
@@ -630,6 +672,15 @@ static void ui_draw_world(UIState *s) {
 
   if (scene->lead_status) {
     char radar_str[16];
+
+    /******************************************
+     * Add background rect so it's easier to see in 
+     * light background scenes 
+     ******************************************/
+    // Draw background for radar text
+    ui_draw_rounded_rect(s->vg, 578, 0, 195, 180, 20, nvgRGBA(10,10,10,170));
+    /******************************************/
+
     if (s->is_metric) {
       int lead_v_rel = (int)(3.6 * scene->lead_v_rel);
       snprintf(radar_str, sizeof(radar_str), "%3d m %+d kph",
@@ -640,9 +691,9 @@ static void ui_draw_world(UIState *s) {
                (int)(scene->lead_d_rel), lead_v_rel);
     }
     nvgFontSize(s->vg, 96.0f);
-    nvgFillColor(s->vg, nvgRGBA(128, 128, 0, 192));
+    nvgFillColor(s->vg, nvgRGBA(200, 200, 0, 192));
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
-    nvgText(s->vg, 1920 / 2, 150, radar_str, NULL);
+    nvgText(s->vg, 1920 / 2 - 20, 40, radar_str, NULL);
 
     // 2.7 m fudge factor
     draw_cross(s, scene->lead_d_rel + 2.7, scene->lead_y_rel, 15,
@@ -653,11 +704,10 @@ static void ui_draw_world(UIState *s) {
 static void ui_draw_vision(UIState *s) {
   const UIScene *scene = &s->scene;
 
-  if (scene->engaged) {
-    glClearColor(1.0, 0.5, 0.0, 1.0);
-  } else {
-    glClearColor(0.1, 0.1, 0.1, 1.0);
-  }
+  // if (scene->engaged) {
+  //   glClearColor(1.0, 0.5, 0.0, 1.0);
+  // } else {
+  glClearColor(0.1, 0.1, 0.1, 1.0);
   glClear(GL_COLOR_BUFFER_BIT);
 
   draw_frame(s);
@@ -677,13 +727,26 @@ static void ui_draw_vision(UIState *s) {
 
     // draw speed
     char speed_str[16];
-    nvgFontSize(s->vg, 128.0f);
+    float defaultfontsize = 128.0f;
+    float labelfontsize = 65.0f;
+
     if (scene->engaged) {
       nvgFillColor(s->vg, nvgRGBA(255, 128, 0, 192));
+
+      // Add label
+      nvgFontSize(s->vg, labelfontsize);
+      nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
+      nvgText(s->vg, 20, 175-30, "OpenPilot: On", NULL);
     } else {
-      nvgFillColor(s->vg, nvgRGBA(64, 64, 64, 192));
+      nvgFillColor(s->vg, nvgRGBA(195, 195, 195, 192));
+
+      // Add label
+      nvgFontSize(s->vg, labelfontsize);
+      nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
+      nvgText(s->vg, 20, 175-30, "OpenPilot: Off", NULL);
     }
 
+    nvgFontSize(s->vg, defaultfontsize);
     if (scene->v_cruise != 255 && scene->v_cruise != 0) {
       if (s->is_metric) {
         snprintf(speed_str, sizeof(speed_str), "%3d KPH",
@@ -694,9 +757,17 @@ static void ui_draw_vision(UIState *s) {
                  (int)(scene->v_cruise * 0.621371 + 0.5));
       }
       nvgTextAlign(s->vg, NVG_ALIGN_RIGHT | NVG_ALIGN_BASELINE);
-      nvgText(s->vg, 500, 150, speed_str, NULL);
+      nvgText(s->vg, 480, 95, speed_str, NULL);
     }
 
+    // Add label
+    nvgFontSize(s->vg, labelfontsize);
+    nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 192));
+    nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
+    nvgText(s->vg, 1920 - 475, 175-30, "Current Speed", NULL);
+    /******************************************/
+
+    nvgFontSize(s->vg, defaultfontsize);
     nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 192));
     if (s->is_metric) {
       snprintf(speed_str, sizeof(speed_str), "%3d KPH",
@@ -706,7 +777,7 @@ static void ui_draw_vision(UIState *s) {
                (int)(scene->v_ego * 2.237 + 0.5));
     }
     nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
-    nvgText(s->vg, 1920 - 500, 150, speed_str, NULL);
+    nvgText(s->vg, 1920 - 500, 95, speed_str, NULL);
 
     /*nvgFontSize(s->vg, 64.0f);
     nvgTextAlign(s->vg, NVG_ALIGN_RIGHT | NVG_ALIGN_BASELINE);
@@ -722,19 +793,33 @@ static void ui_draw_vision(UIState *s) {
     }
   }
 
+  nvgEndFrame(s->vg);
+
+  glDisable(GL_BLEND);
+  // glDisable(GL_CULL_FACE);
+}
+
+static void ui_draw_alerts(UIState *s) {
+  const UIScene *scene = &s->scene;
+
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+  glClear(GL_STENCIL_BUFFER_BIT);
+  
+  nvgBeginFrame(s->vg, s->fb_w, s->fb_h, 1.0f);
+
   // draw alert text
   if (strlen(scene->alert_text1) > 0) {
     nvgBeginPath(s->vg);
     nvgRoundedRect(s->vg, 100, 200, 1700, 800, 40);
     nvgFillColor(s->vg, nvgRGBA(10, 10, 10, 220));
     nvgFill(s->vg);
-
     nvgFontSize(s->vg, 200.0f);
     nvgFillColor(s->vg, nvgRGBA(255, 0, 0, 255));
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
     nvgTextBox(s->vg, 100 + 50, 200 + 50, 1700 - 50, scene->alert_text1,
                 NULL);
-
     if (strlen(scene->alert_text2) > 0) {
       nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 255));
       nvgFontSize(s->vg, 100.0f);
@@ -745,11 +830,10 @@ static void ui_draw_vision(UIState *s) {
   nvgEndFrame(s->vg);
 
   glDisable(GL_BLEND);
-  glDisable(GL_CULL_FACE);
 }
 
 static void ui_draw_blank(UIState *s) {
-  glClearColor(0.1, 0.1, 0.1, 1.0);
+  glClearColor(0.0, 0.0, 0.0, 0.0);
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 }
 
@@ -759,6 +843,8 @@ static void ui_draw(UIState *s) {
   } else {
     ui_draw_blank(s);
   }
+
+  ui_draw_alerts(s);
 
   eglSwapBuffers(s->display, s->surface);
   assert(glGetError() == GL_NO_ERROR);
@@ -865,19 +951,22 @@ static void ui_update(UIState *s) {
 
     int ret = zmq_poll(polls, num_polls, 0);
     if (ret < 0) {
-      printf("poll failed (%d)\n", ret);
+      LOGW("poll failed (%d)", ret);
       break;
     }
     if (ret == 0) {
       break;
     }
 
+    // awake on any activity
+    set_awake(s, true);
+
     if (s->vision_connected && polls[4].revents) {
       // vision ipc event
       VisionPacket rp;
       err = vipc_recv(s->ipc_fd, &rp);
       if (err <= 0) {
-        printf("vision disconnected\n");
+        LOGW("vision disconnected");
         close(s->ipc_fd);
         s->ipc_fd = -1;
         s->vision_connected = false;
@@ -1099,12 +1188,23 @@ int main() {
                        vision_connect_thread, s);
   assert(err == 0);
 
+  TouchState touch = {0};
+  touch_init(&touch);
+
   while (!do_exit) {
+    pthread_mutex_lock(&s->lock);
+    
+    ui_update(s);
     if (s->awake) {
-      pthread_mutex_lock(&s->lock);
-      ui_update(s);
       ui_draw(s);
-      pthread_mutex_unlock(&s->lock);
+    }
+
+    // awake on any touch
+    int touch_x = -1, touch_y = -1;
+    int touched = touch_poll(&touch, &touch_x, &touch_y);
+    if (touched == 1) {
+      // touch event will still happen :(
+      set_awake(s, true);
     }
 
     // manage wakefulness
@@ -1114,17 +1214,7 @@ int main() {
       set_awake(s, false);
     }
 
-    // always awake if vision is connected
-    if (s->vision_connected) {
-      set_awake(s, true);
-    } else {
-      int touch_x = -1, touch_y = -1;
-      err = touch_poll(&s->touch, &touch_x, &touch_y);
-      if (err == 1) {
-        // touch event will still happen :(
-        set_awake(s, true);
-      }
-    }
+    pthread_mutex_unlock(&s->lock);
 
     // no simple way to do 30fps vsync with surfaceflinger...
     usleep(30000);

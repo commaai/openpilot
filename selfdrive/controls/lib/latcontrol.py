@@ -13,7 +13,7 @@ def calc_d_lookahead(v_ego):
   # howfar we look ahead is function of speed
   offset_lookahead = 1.
   coeff_lookahead = 4.4
-  # sqrt on speed is needed to keep, for a given curvature, the y_offset 
+  # sqrt on speed is needed to keep, for a given curvature, the y_offset
   # proportional to speed. Indeed, y_offset is prop to d_lookahead^2
   # 26m at 25m/s
   d_lookahead = offset_lookahead + math.sqrt(max(v_ego, 0)) * coeff_lookahead
@@ -31,7 +31,7 @@ def pid_lateral_control(v_ego, y_actual, y_des, Ui_steer, steer_max,
                         steer_override, sat_count, enabled, Kp, Ki, rate):
 
   sat_count_rate = 1./rate
-  sat_count_limit = 0.8       # after 0.8s of continuous saturation, an alert will be sent
+  sat_count_limit = 0.8      # after 0.8s of continuous saturation, an alert will be sent
 
   error_steer = y_des - y_actual
   Ui_unwind_speed = 0.3/rate   #.3 per second
