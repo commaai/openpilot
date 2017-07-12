@@ -1,4 +1,4 @@
-"""Enable the DEBUG_WITH_PANDA_LOOPBACK define in boardd.cc before test."""
+"""Run boardd with the BOARDD_LOOPBACK envvar before running this test."""
 
 import os
 import random
