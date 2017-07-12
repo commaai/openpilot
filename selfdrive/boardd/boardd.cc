@@ -23,8 +23,6 @@
 #include "common/swaglog.h"
 #include "common/timing.h"
 
-//#define DEBUG_WITH_PANDA_LOOPBACK
-
 int do_exit = 0;
 
 libusb_context *ctx = NULL;
@@ -33,6 +31,7 @@ pthread_mutex_t usb_lock;
 
 bool spoofing_started = false;
 bool fake_send = false;
+bool loopback_can = false;
 
 // double the FIFO size
 #define RECV_SIZE (0x1000)
@@ -54,9 +53,9 @@ bool usb_connect() {
   err = libusb_claim_interface(dev_handle, 0);
   if (err != 0) { return false; }
 
-  #ifdef DEBUG_WITH_PANDA_LOOPBACK
-  libusb_control_transfer(dev_handle, 0xc0, 0xe5, 1, 0, NULL, 0, TIMEOUT);
-  #endif
+  if(loopback_can) {
+    libusb_control_transfer(dev_handle, 0xc0, 0xe5, 1, 0, NULL, 0, TIMEOUT);
+  }
 
   // power off ESP
   libusb_control_transfer(dev_handle, 0xc0, 0xd9, 0, 0, NULL, 0, TIMEOUT);
@@ -335,6 +334,10 @@ int main() {
 
   if (getenv("FAKESEND")) {
     fake_send = true;
+  }
+
+  if(getenv("BOARDD_LOOPBACK")){
+    loopback_can = true;
   }
 
   // init libusb
