@@ -205,7 +205,7 @@ struct CanData {
   address @0 :UInt32;
   busTime @1 :UInt16;
   dat     @2 :Data;
-  src     @3 :Int8;
+  src     @3 :UInt8;
 }
 
 struct ThermalData {
