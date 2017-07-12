@@ -74,7 +74,6 @@ bool usb_connect() {
   }
 
   // TODO: Boardd should be able to set the baud rate
-  // May need to set endianess.
   int baud = 500000;
   libusb_control_transfer(dev_handle, 0x40, 0xde, 0, 0,
                           (unsigned char *)&baud, sizeof(baud), TIMEOUT); // CAN1
