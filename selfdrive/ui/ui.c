@@ -29,10 +29,16 @@
 #include "common/visionipc.h"
 #include "common/modeldata.h"
 #include "common/params.h"
+#include "common/version.h"
 
 #include "cereal/gen/c/log.capnp.h"
 
+#define DEBUG false // Set to true to show mockup UI content for placement
+#define AWARENESS_BAR_WIDTH 1300 // Pixel width of awareness bar
+
 #define UI_BUF_COUNT 4
+
+#define MAX_AWARENESS_TIME 360 // 6 minutes 
 
 typedef struct UIScene {
   int frontview;
@@ -65,6 +71,10 @@ typedef struct UIScene {
   char alert_text2[1024];
 
   float awareness_status;
+
+  int display_offset; // Display element offset (so we can be on top or bottom)
+
+  int ui_elements[5];
 } UIScene;
 
 typedef struct UIState {
@@ -124,6 +134,16 @@ typedef struct UIState {
 
   bool is_metric;
 } UIState;
+
+static char* ui_convert_sec_to_time(int seconds) {
+  int remainder = seconds % 3600,
+      min = remainder / 60,
+      sec = remainder % 60;
+
+  static char time[16];
+  snprintf(time, sizeof(time), "%d:%02d", min,sec);
+  return time;
+}
 
 static void set_awake(UIState *s, bool awake) {
   if (awake) {
@@ -203,6 +223,27 @@ static const mat4 frame_transform = {{
                0.0, 0.0, 0.0, 1.0,
 }};
 
+static int ui_load_element(NVGcontext* vg, char* file) {
+  int image = nvgCreateImage(vg, file, 0);
+  //printf("Loaded %s: %d\n", file, image);
+  return image;
+}
+
+static void ui_draw_element(UIState* s, int image, int x_pos, int y_pos) {
+  int imgw, imgh;
+
+  //printf("drawing element: %d\n", image);
+  NVGpaint imgPaint;
+  float a = 1.0f; // Alpha value for draw
+
+  nvgImageSize(s->vg, image, &imgw, &imgh);
+  //printf("dim: %d x %d\n", imgw, imgh);
+  imgPaint = nvgImagePattern(s->vg, x_pos, y_pos, imgw, imgh, 0, image, a);
+  nvgBeginPath(s->vg);
+  nvgRect(s->vg, x_pos, y_pos, imgw,imgh);
+  nvgFillPaint(s->vg, imgPaint);
+  nvgFill(s->vg);
+}
 
 
 static void ui_init(UIState *s) {
@@ -238,7 +279,8 @@ static void ui_init(UIState *s) {
   // init drawing
   s->vg = nvgCreateGLES3(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
   assert(s->vg);
-  s->font = nvgCreateFont(s->vg, "Bold", "../assets/courbd.ttf");
+  //s->font = nvgCreateFont(s->vg, "Bold", "../assets/courbd.ttf");
+  s->font = nvgCreateFont(s->vg, "Bold", "../assets/arialbd.ttf");
   assert(s->font >= 0);
 
   // init gl
@@ -314,6 +356,12 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
   s->cur_vision_idx = -1;
   s->cur_vision_front_idx = -1;
 
+  float awareness_default = 0.0;
+
+  if (DEBUG) {
+    awareness_default = 1.0;
+  }
+
   s->scene = (UIScene){
       .frontview = 0,
       .big_box_x = ui_info.big_box_x,
@@ -327,6 +375,8 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
       .front_box_width = ui_info.front_box_width,
       .front_box_height = ui_info.front_box_height,
       .world_objects_visible = false,  // Invisible until we receive a calibration message.
+      .display_offset = 755,
+      .awareness_status = awareness_default,// Set this to non-zero to show the bar (for debugging)
   };
 
   s->rgb_width = back_bufs.width;
@@ -643,19 +693,6 @@ static void ui_draw_world(UIState *s) {
     return;
   }
 
-  /******************************************
-   * Add background rect so it's easier to see in 
-   * light background scenes 
-   ******************************************/
-  // Draw background around speed text
-
-  // Left side
-  ui_draw_rounded_rect(s->vg, -15, 0, 570, 180, 20, nvgRGBA(10,10,10,170));
-
-  // Right side
-  ui_draw_rounded_rect(s->vg, 1920-530, 0, 150, 180, 20, nvgRGBA(10,10,10,170));
-  /******************************************/
-
   draw_steering(s, scene->v_ego, scene->angle_steers);
 
   // draw paths
@@ -669,6 +706,9 @@ static void ui_draw_world(UIState *s) {
         s, scene->model.right_lane,
         nvgRGBA(0, (int)(255 * scene->model.right_lane.prob), 0, 128));
   }
+
+  // Draw the UI background
+  ui_draw_element(s, scene->ui_elements[2], 0, 0);
 
   if (scene->lead_status) {
     char radar_str[16];
@@ -704,6 +744,12 @@ static void ui_draw_world(UIState *s) {
 static void ui_draw_vision(UIState *s) {
   const UIScene *scene = &s->scene;
 
+  if (s->scene.ui_elements[0] <= 0) {
+    // For some reason, making this call in ui_init doesn't work on bootup
+    s->scene.ui_elements[0] = ui_load_element(s->vg, "images/ui_off.png");
+    s->scene.ui_elements[1] = ui_load_element(s->vg, "images/ui_on.png");
+  }
+
   // if (scene->engaged) {
   //   glClearColor(1.0, 0.5, 0.0, 1.0);
   // } else {
@@ -729,55 +775,81 @@ static void ui_draw_vision(UIState *s) {
     char speed_str[16];
     float defaultfontsize = 128.0f;
     float labelfontsize = 65.0f;
-
-    if (scene->engaged) {
-      nvgFillColor(s->vg, nvgRGBA(255, 128, 0, 192));
-
-      // Add label
-      nvgFontSize(s->vg, labelfontsize);
-      nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
-      nvgText(s->vg, 20, 175-30, "OpenPilot: On", NULL);
-    } else {
-      nvgFillColor(s->vg, nvgRGBA(195, 195, 195, 192));
-
-      // Add label
-      nvgFontSize(s->vg, labelfontsize);
-      nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
-      nvgText(s->vg, 20, 175-30, "OpenPilot: Off", NULL);
-    }
+    float smallfontsize = 45.0f;
 
     nvgFontSize(s->vg, defaultfontsize);
+    if (scene->engaged) {
+      ui_draw_element(s, scene->ui_elements[1], 0, 0);
+      //nvgFillColor(s->vg, nvgRGBA(255, 128, 0, 192));
+    } else {
+      ui_draw_element(s, scene->ui_elements[0], 0, 0);
+      //nvgFillColor(s->vg, nvgRGBA(195, 195, 195, 192));
+    }
+    nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 220));
+    nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
+
     if (scene->v_cruise != 255 && scene->v_cruise != 0) {
       if (s->is_metric) {
-        snprintf(speed_str, sizeof(speed_str), "%3d KPH",
+        snprintf(speed_str, sizeof(speed_str), "%3d",
                  (int)(scene->v_cruise + 0.5));
       } else {
         // Convert KPH to MPH.
-        snprintf(speed_str, sizeof(speed_str), "%3d MPH",
+        snprintf(speed_str, sizeof(speed_str), "%3d",
                  (int)(scene->v_cruise * 0.621371 + 0.5));
       }
-      nvgTextAlign(s->vg, NVG_ALIGN_RIGHT | NVG_ALIGN_BASELINE);
-      nvgText(s->vg, 480, 95, speed_str, NULL);
+
+      nvgFontSize(s->vg, defaultfontsize);
+      nvgText(s->vg, 160, 205+scene->display_offset, speed_str, NULL);
+    }
+
+    if (DEBUG) {
+      // For debugging
+      ui_draw_element(s, scene->ui_elements[1], 0, 0);
+      //nvgFillColor(s->vg, nvgRGBA(255, 128, 0, 192));
+      nvgFontSize(s->vg, defaultfontsize);
+      //nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
+      nvgText(s->vg, 160, 205+scene->display_offset, "75", NULL);
+      nvgText(s->vg, 1920 - 155, 200+scene->display_offset, "68", NULL);
+      //nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 220));
     }
 
     // Add label
-    nvgFontSize(s->vg, labelfontsize);
-    nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 192));
-    nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
-    nvgText(s->vg, 1920 - 475, 175-30, "Current Speed", NULL);
-    /******************************************/
+    //nvgFontSize(s->vg, labelfontsize);
+    //nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 220));
+    //nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
 
-    nvgFontSize(s->vg, defaultfontsize);
-    nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 192));
+    //nvgFontSize(s->vg, smallfontsize);
+    //nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 220));
+
     if (s->is_metric) {
-      snprintf(speed_str, sizeof(speed_str), "%3d KPH",
+      snprintf(speed_str, sizeof(speed_str), "%d",
                (int)(scene->v_ego * 3.6 + 0.5));
     } else {
-      snprintf(speed_str, sizeof(speed_str), "%3d MPH",
+      snprintf(speed_str, sizeof(speed_str), "%d",
                (int)(scene->v_ego * 2.237 + 0.5));
     }
-    nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
-    nvgText(s->vg, 1920 - 500, 95, speed_str, NULL);
+
+    //nvgFontSize(s->vg, defaultfontsize);
+    //nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
+    if (!DEBUG) {
+      nvgText(s->vg, 1920 - 155, 200+scene->display_offset, speed_str, NULL);
+    }
+
+    nvgFontSize(s->vg, smallfontsize);
+    nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 220));
+    //nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
+    if (s->is_metric) {
+      nvgText(s->vg, 225, 240+scene->display_offset, "KPH", NULL);
+      nvgText(s->vg, 1920-110, 240+scene->display_offset, "KPH", NULL);
+    }
+    else {
+      nvgText(s->vg, 162, 260+scene->display_offset, "MPH", NULL);
+      nvgText(s->vg, 1920-154, 260+scene->display_offset, "MPH", NULL);
+    }
+
+    nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 255));
+
+    nvgFontSize(s->vg, smallfontsize);
 
     /*nvgFontSize(s->vg, 64.0f);
     nvgTextAlign(s->vg, NVG_ALIGN_RIGHT | NVG_ALIGN_BASELINE);
@@ -785,11 +857,28 @@ static void ui_draw_vision(UIState *s) {
 
     if (scene->awareness_status > 0) {
       nvgBeginPath(s->vg);
-      int bar_height = scene->awareness_status * 700;
-      nvgRect(s->vg, 100, 300 + (700 - bar_height), 50, bar_height);
+      int bar_width = scene->awareness_status * AWARENESS_BAR_WIDTH;
+
+      //Draw full border
+      nvgRoundedRect(s->vg, (1920-bar_width)/2, 1010, bar_width, 70, 10);
+      nvgStrokeColor(s->vg, nvgRGBA(255,255,255,200));
+      nvgStrokeWidth(s->vg, 2);
+      nvgStroke(s->vg);
+      
+      nvgBeginPath(s->vg);
+      nvgRoundedRect(s->vg, (1920-bar_width)/2, 1010, bar_width, 70, 10);
       nvgFillColor(s->vg, nvgRGBA(255 * (1 - scene->awareness_status),
                                   255 * scene->awareness_status, 0, 128));
       nvgFill(s->vg);
+
+      int timeRemaining = MAX_AWARENESS_TIME * scene->awareness_status;
+      //printf("time: %d\n",timeRemaining);
+      char *timeLeft = ui_convert_sec_to_time(timeRemaining);
+      char timeLeft_str[16];
+      snprintf(timeLeft_str, sizeof(timeLeft_str), "%s", timeLeft);
+      nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 220));
+      nvgFontSize(s->vg, 65.0f);
+      nvgText(s->vg, (1920)/2, 310+scene->display_offset, timeLeft_str, NULL);
     }
   }
 
@@ -1218,6 +1307,11 @@ int main() {
 
     // no simple way to do 30fps vsync with surfaceflinger...
     usleep(30000);
+    
+    if (DEBUG) {
+      // For debugging only
+      s->scene.awareness_status -= 0.0001;
+    }
   }
 
   err = pthread_join(connect_thread_handle, NULL);
