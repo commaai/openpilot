@@ -790,11 +790,11 @@ static void ui_draw_vision(UIState *s) {
 
     if (scene->v_cruise != 255 && scene->v_cruise != 0) {
       if (s->is_metric) {
-        snprintf(speed_str, sizeof(speed_str), "%3d",
+        snprintf(speed_str, sizeof(speed_str), "%d",
                  (int)(scene->v_cruise + 0.5));
       } else {
         // Convert KPH to MPH.
-        snprintf(speed_str, sizeof(speed_str), "%3d",
+        snprintf(speed_str, sizeof(speed_str), "%d",
                  (int)(scene->v_cruise * 0.621371 + 0.5));
       }
 
