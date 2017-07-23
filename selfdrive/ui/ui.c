@@ -29,16 +29,18 @@
 #include "common/visionipc.h"
 #include "common/modeldata.h"
 #include "common/params.h"
-#include "common/version.h"
 
 #include "cereal/gen/c/log.capnp.h"
 
+#define MAX_AWARENESS_TIME 3600 // 6 minutes 
+#define DEFAULT_SKIN 1 // Determine which UI skin to use as a default
 #define DEBUG false // Set to true to show mockup UI content for placement
 #define AWARENESS_BAR_WIDTH 1300 // Pixel width of awareness bar
+#define ANIMATE_IN 1
+#define ANIMATE_OUT 2
+#define LEFT_ELEMENT_VISIBLE 3
 
 #define UI_BUF_COUNT 4
-
-#define MAX_AWARENESS_TIME 360 // 6 minutes 
 
 typedef struct UIScene {
   int frontview;
@@ -74,7 +76,18 @@ typedef struct UIScene {
 
   int display_offset; // Display element offset (so we can be on top or bottom)
 
-  int ui_elements[5];
+  int ui_elements[150];
+  int current_speed; // in MPH... used in rendering the notches on the speed dial
+  int cruise_speed; // in MPH... used in rendering the notches on the speed dial
+  int left_anim_offset; // Used to animate the left speed dial (cruise setting)
+  int bar_anim_offset; // Used to animate the left speed dial (cruise setting)
+  int left_anim_step; // How fast to animate
+  int left_anim_status; 
+  int left_anim_framecount; 
+  int left_anim_delta; 
+  char status[32]; 
+  float last_awareness; 
+  int ui_skin; 
 } UIScene;
 
 typedef struct UIState {
@@ -136,7 +149,7 @@ typedef struct UIState {
 } UIState;
 
 static char* ui_convert_sec_to_time(int seconds) {
-  int remainder = seconds % 3600,
+  int remainder = seconds % 36000,
       min = remainder / 60,
       sec = remainder % 60;
 
@@ -223,12 +236,54 @@ static const mat4 frame_transform = {{
                0.0, 0.0, 0.0, 1.0,
 }};
 
+static void read_state(UIState* s) {
+  UIScene *scene = &s->scene;
+
+  char* filename = "/data/openpilot/selfdrive/ui/state.txt";
+  FILE* f = fopen(filename,"r");
+  if (!f) {
+    printf("Could not open file: %s\n",filename);
+    return;
+  }
+
+  char state[32];
+  fgets(state, 32, f);
+
+  // remove newline
+  state[strlen(state)-1] = '\0';
+  fclose(f);
+
+  if (strcmp(scene->status,state) != 0) {
+    // Event changed so run it
+    snprintf(scene->status,sizeof(scene->status),"%s",state);
+    //printf("Got event: '%s'\n", state);
+    if (strcmp(state, "out") == 0 && scene->left_anim_status != ANIMATE_OUT) {
+      scene->engaged = false;
+      scene->awareness_status = 0;
+      scene->left_anim_status = ANIMATE_OUT;
+    }
+    else if (strcmp(state, "in") == 0 && scene->left_anim_status != ANIMATE_IN) {
+      scene->engaged = true;
+      scene->left_anim_status = ANIMATE_IN;
+    }
+  }
+  /*
+  */
+}
+
+/*
+ * Load external assets from a file
+ * for use in the UI
+ */
 static int ui_load_element(NVGcontext* vg, char* file) {
   int image = nvgCreateImage(vg, file, 0);
   //printf("Loaded %s: %d\n", file, image);
   return image;
 }
 
+/*
+ * Draw an element loaded from external file
+ */
 static void ui_draw_element(UIState* s, int image, int x_pos, int y_pos) {
   int imgw, imgh;
 
@@ -245,6 +300,30 @@ static void ui_draw_element(UIState* s, int image, int x_pos, int y_pos) {
   nvgFill(s->vg);
 }
 
+/*
+ * Draw the analog notch based on the speed
+ */
+static void ui_draw_speed_notch(UIState* s, int speed, int x_pos, int y_pos) {
+  const UIScene *scene = &s->scene;
+
+  // Notch assets start at index 3 and go up to 123 (0-120 mph)
+  if (speed > 120) {
+    speed = 120; 
+  }
+
+  //printf("img: %d, %d\n",speed+3,scene->ui_elements[speed+3]);
+  ui_draw_element(s, scene->ui_elements[speed+0], x_pos, y_pos);
+}
+
+/*
+ * Draw a circle at specific location with specific radius and color
+ */
+static void ui_draw_circle(UIState* s, int x, int y, int r, NVGcolor color) {
+  nvgBeginPath(s->vg);
+  nvgArc(s->vg, x, y, r, 0, 360*NVG_PI/180, NVG_CW);
+  nvgFillColor(s->vg, color);
+  nvgFill(s->vg);
+}
 
 static void ui_init(UIState *s) {
   memset(s, 0, sizeof(UIState));
@@ -279,9 +358,16 @@ static void ui_init(UIState *s) {
   // init drawing
   s->vg = nvgCreateGLES3(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
   assert(s->vg);
-  //s->font = nvgCreateFont(s->vg, "Bold", "../assets/courbd.ttf");
-  s->font = nvgCreateFont(s->vg, "Bold", "../assets/arialbd.ttf");
+
+  /*
+  if (UI_SKIN_VERSION == 1) {
+    s->font = nvgCreateFont(s->vg, "Bold", "../assets/courbd.ttf");
+  }
+  else {
+    s->font = nvgCreateFont(s->vg, "Bold", "../assets/arialbd.ttf");
+  }
   assert(s->font >= 0);
+  */
 
   // init gl
   s->frame_program = load_program(frame_vertex_shader, frame_fragment_shader);
@@ -363,6 +449,17 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
   }
 
   s->scene = (UIScene){
+      .ui_skin = DEFAULT_SKIN,
+      .last_awareness = 0,
+      .status = "out",
+      .left_anim_delta = 2,
+      .left_anim_framecount = 0,
+      .left_anim_status = 0,
+      .left_anim_step = 20,
+      .left_anim_offset = -282,
+      .bar_anim_offset = 200,
+      .current_speed = 0,
+      .cruise_speed = 0,
       .frontview = 0,
       .big_box_x = ui_info.big_box_x,
       .big_box_y = ui_info.big_box_y,
@@ -393,11 +490,26 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
   }};
 
   char *value;
-  const int result = read_db_value("/data/params", "IsMetric", &value, NULL);
+  int result = read_db_value("/data/params", "IsMetric", &value, NULL);
   if (result == 0) {
     s->is_metric = value[0] == '1';
     free(value);
   }
+
+  result = read_db_value("/data/params", "UISkin", &value, NULL);
+  if (result == 0) {
+    // If file exists use the skin set in this param otherwise use default
+    s->scene.ui_skin = atoi(value);
+    free(value);
+  }
+
+  if (s->scene.ui_skin == DEFAULT_SKIN) {
+    s->font = nvgCreateFont(s->vg, "Bold", "../assets/courbd.ttf");
+  }
+  else {
+    s->font = nvgCreateFont(s->vg, "Bold", "../assets/arialbd.ttf");
+  }
+  assert(s->font >= 0);
 }
 
 static void ui_update_frame(UIState *s) {
@@ -707,9 +819,6 @@ static void ui_draw_world(UIState *s) {
         nvgRGBA(0, (int)(255 * scene->model.right_lane.prob), 0, 128));
   }
 
-  // Draw the UI background
-  ui_draw_element(s, scene->ui_elements[2], 0, 0);
-
   if (scene->lead_status) {
     char radar_str[16];
 
@@ -741,13 +850,92 @@ static void ui_draw_world(UIState *s) {
   }
 }
 
+/*
+ * Animate specific UI elements into or out of the screen
+ */
+static void ui_animate(UIState *s) {
+  UIScene *scene = &s->scene;
+
+  if (scene->left_anim_status == ANIMATE_IN && scene->left_anim_offset == 0) {
+    // Init the starting position for the left speed circle and awareness bar
+    scene->left_anim_offset = -282;
+    scene->bar_anim_offset = 200;
+    scene->left_anim_delta = 4;
+    scene->left_anim_step = 20;
+  }
+  if (scene->left_anim_status == ANIMATE_IN && scene->left_anim_offset < 0) {
+      // Slide in animation
+      if (scene->left_anim_step > 1 && scene->left_anim_framecount%2==0) {
+        scene->left_anim_step -= scene->left_anim_delta;
+        if (scene->left_anim_step < 1) {
+          scene->left_anim_step  = 1;
+        }
+      }
+      scene->left_anim_offset += scene->left_anim_step;
+      scene->bar_anim_offset -= scene->left_anim_step-5;
+      //printf("offset: %d\n", scene->bar_anim_offset);
+      if (scene->left_anim_offset >= 0) {
+        scene->left_anim_offset = 0;
+      }
+      if (scene->bar_anim_offset <= 0) {
+        scene->bar_anim_offset = 0;
+      }
+      if (scene->left_anim_delta > 0) {
+        scene->left_anim_delta -= 2;
+      }
+      if (scene->left_anim_offset == 0 && scene->bar_anim_offset == 0) {
+        // Animation completed so stop the animation
+        scene->left_anim_status = LEFT_ELEMENT_VISIBLE;
+      }
+  }
+  else if (scene->left_anim_status == ANIMATE_OUT) {
+    // Slide off animation
+    if (scene->left_anim_offset == 0) {
+      // Slide out animation
+      scene->left_anim_offset = 0;
+      scene->bar_anim_offset = 0;
+      scene->left_anim_step = 20;
+      scene->left_anim_delta = 2;
+    }
+    if (scene->left_anim_step > 1 && scene->left_anim_framecount%2==0) {
+      scene->left_anim_step -= scene->left_anim_delta;
+      if (scene->left_anim_step < 1) {
+        scene->left_anim_step  = 1;
+      }
+    }
+    scene->left_anim_offset -= scene->left_anim_step;
+    scene->bar_anim_offset += scene->left_anim_step-5;
+    if (scene->left_anim_offset < -282) {
+      scene->left_anim_offset = -282;
+    }
+    if (scene->bar_anim_offset > 200) {
+      scene->bar_anim_offset = 200;
+    }
+    if (scene->left_anim_delta > 0) {
+      scene->left_anim_delta -= 2;
+    }
+    if (scene->left_anim_offset == -282 && scene->bar_anim_offset == 200) {
+      // Animation completed
+      scene->left_anim_status = 0;
+    }
+  }
+
+}
+
+
 static void ui_draw_vision(UIState *s) {
-  const UIScene *scene = &s->scene;
+  UIScene *scene = &s->scene;
 
   if (s->scene.ui_elements[0] <= 0) {
     // For some reason, making this call in ui_init doesn't work on bootup
-    s->scene.ui_elements[0] = ui_load_element(s->vg, "images/ui_off.png");
-    s->scene.ui_elements[1] = ui_load_element(s->vg, "images/ui_on.png");
+    // Load all the speed indicator PNGs
+
+    char filename[32];
+    for (int i=0; i <= 120; i++) {
+      snprintf(filename,sizeof(filename),"../assets/speed/%d.png",i);
+      //printf ("loading %d %s\n",i+3,filename);
+      s->scene.ui_elements[i+0] = ui_load_element(s->vg, filename);
+    }
   }
 
   // if (scene->engaged) {
@@ -766,6 +954,27 @@ static void ui_draw_vision(UIState *s) {
   glClear(GL_STENCIL_BUFFER_BIT);
 
   nvgBeginFrame(s->vg, s->fb_w, s->fb_h, 1.0f);
+  scene->left_anim_framecount++;
+
+/*
+  // For debugging, read state from file to trigger events
+  if (DEBUG) {
+    if (scene->left_anim_framecount % 20 == 0) {
+      read_state(s);
+    }
+  }
+*/
+
+  if (DEBUG && scene->ui_skin == 2) {
+    if (scene->left_anim_framecount == 100) {
+      scene->engaged = true;
+      scene->left_anim_status = ANIMATE_IN;
+    }
+    else if (scene->left_anim_framecount == 200) {
+      scene->engaged = false;
+      scene->left_anim_status = ANIMATE_OUT;
+    }
+  }
 
   if (!scene->frontview) {
     ui_draw_transformed_box(s, 0xFF00FF00);
@@ -778,107 +987,188 @@ static void ui_draw_vision(UIState *s) {
     float smallfontsize = 45.0f;
 
     nvgFontSize(s->vg, defaultfontsize);
-    if (scene->engaged) {
-      ui_draw_element(s, scene->ui_elements[1], 0, 0);
-      //nvgFillColor(s->vg, nvgRGBA(255, 128, 0, 192));
-    } else {
-      ui_draw_element(s, scene->ui_elements[0], 0, 0);
-      //nvgFillColor(s->vg, nvgRGBA(195, 195, 195, 192));
-    }
     nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 220));
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
 
-    if (scene->v_cruise != 255 && scene->v_cruise != 0) {
-      if (s->is_metric) {
-        snprintf(speed_str, sizeof(speed_str), "%d",
-                 (int)(scene->v_cruise + 0.5));
-      } else {
-        // Convert KPH to MPH.
-        snprintf(speed_str, sizeof(speed_str), "%d",
-                 (int)(scene->v_cruise * 0.621371 + 0.5));
+    if (scene->ui_skin == 1) {
+      // Left side
+      ui_draw_rounded_rect(s->vg, -15, 0, 570, 180, 20, nvgRGBA(10,10,10,170));
+      // Right side
+      ui_draw_rounded_rect(s->vg, 1920-530, 0, 150, 180, 20, nvgRGBA(10,10,10,170));
+
+      // Add label
+      nvgFontSize(s->vg, labelfontsize);
+      nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 220));
+      nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
+      nvgText(s->vg, 1920 - 475, 175-30, "Current Speed", NULL);
+
+      if (scene->engaged) {
+        nvgFillColor(s->vg, nvgRGBA(255, 128, 0, 192));
+
+        // Add label
+        nvgFontSize(s->vg, labelfontsize);
+        nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
+        nvgText(s->vg, 20, 175-30, "OpenPilot: On", NULL);
+      }
+      else {
+        nvgFillColor(s->vg, nvgRGBA(195, 195, 195, 192));
+
+        // Add label
+        nvgFontSize(s->vg, labelfontsize);
+        nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
+        nvgText(s->vg, 20, 175-30, "OpenPilot: Off", NULL);
       }
 
       nvgFontSize(s->vg, defaultfontsize);
-      nvgText(s->vg, 160, 205+scene->display_offset, speed_str, NULL);
-    }
-
-    if (DEBUG) {
-      // For debugging
-      ui_draw_element(s, scene->ui_elements[1], 0, 0);
-      //nvgFillColor(s->vg, nvgRGBA(255, 128, 0, 192));
-      nvgFontSize(s->vg, defaultfontsize);
-      //nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
-      nvgText(s->vg, 160, 205+scene->display_offset, "75", NULL);
-      nvgText(s->vg, 1920 - 155, 200+scene->display_offset, "68", NULL);
-      //nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 220));
-    }
-
-    // Add label
-    //nvgFontSize(s->vg, labelfontsize);
-    //nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 220));
-    //nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
-
-    //nvgFontSize(s->vg, smallfontsize);
-    //nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 220));
-
-    if (s->is_metric) {
-      snprintf(speed_str, sizeof(speed_str), "%d",
-               (int)(scene->v_ego * 3.6 + 0.5));
-    } else {
-      snprintf(speed_str, sizeof(speed_str), "%d",
-               (int)(scene->v_ego * 2.237 + 0.5));
-    }
-
-    //nvgFontSize(s->vg, defaultfontsize);
-    //nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
-    if (!DEBUG) {
-      nvgText(s->vg, 1920 - 155, 200+scene->display_offset, speed_str, NULL);
-    }
-
-    nvgFontSize(s->vg, smallfontsize);
-    nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 220));
-    //nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
-    if (s->is_metric) {
-      nvgText(s->vg, 225, 240+scene->display_offset, "KPH", NULL);
-      nvgText(s->vg, 1920-110, 240+scene->display_offset, "KPH", NULL);
     }
     else {
-      nvgText(s->vg, 162, 260+scene->display_offset, "MPH", NULL);
-      nvgText(s->vg, 1920-154, 260+scene->display_offset, "MPH", NULL);
+      if (scene->engaged) {
+        if (scene->left_anim_status != LEFT_ELEMENT_VISIBLE) {
+          scene->left_anim_status = ANIMATE_IN;
+        }
+      } else {
+        if (scene->left_anim_status == LEFT_ELEMENT_VISIBLE) {
+          scene->left_anim_status = ANIMATE_OUT;
+        }
+      }
+
+      // Do animation if needed
+      ui_animate(s);
+
+      // Right side background circle
+      ui_draw_circle(s, 1920-161, 1080-146, 112, nvgRGBA(10, 10, 10, 160));
     }
 
-    nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 255));
+    if ((scene->v_cruise != 255 && scene->v_cruise != 0) || DEBUG) {
+      // Save the speed in MPH so we can render the notches correctly
+      scene->cruise_speed = (int)(scene->v_cruise * 0.621371 + 0.5);
+      if (DEBUG) {
+        scene->cruise_speed = 75;
+      }
 
-    nvgFontSize(s->vg, smallfontsize);
+      if (scene->ui_skin == DEFAULT_SKIN) {
+        if (s->is_metric) {
+          snprintf(speed_str, sizeof(speed_str), "%3d KPH",
+                 (int)(scene->v_cruise + 0.5));
+        } else {
+          // Convert KPH to MPH.
+          snprintf(speed_str, sizeof(speed_str), "%3d MPH",
+                 scene->cruise_speed);
+        }
+        nvgText(s->vg, 0, 95, speed_str, NULL);
+      }
+      else {
+        if (s->is_metric) {
+          snprintf(speed_str, sizeof(speed_str), "%d",
+                 (int)(scene->v_cruise + 0.5));
+        } else {
+          // Convert KPH to MPH.
+          snprintf(speed_str, sizeof(speed_str), "%d",
+                 scene->cruise_speed);
+        }
 
-    /*nvgFontSize(s->vg, 64.0f);
-    nvgTextAlign(s->vg, NVG_ALIGN_RIGHT | NVG_ALIGN_BASELINE);
-    nvgText(s->vg, 100+450-20, 1080-100, "mph", NULL);*/
+        // Left side background circle
+        ui_draw_circle(s, 158+scene->left_anim_offset, 1080-146, 112, nvgRGBA(10, 100, 10, 120));
 
-    if (scene->awareness_status > 0) {
-      nvgBeginPath(s->vg);
+        // Left speed dial
+        ui_draw_speed_notch(s, scene->cruise_speed, 35+scene->left_anim_offset, 55+scene->display_offset);
+
+        nvgFontSize(s->vg, defaultfontsize);
+        nvgText(s->vg, 160+scene->left_anim_offset, 205+scene->display_offset, speed_str, NULL);
+      }
+    }
+    else if (scene->ui_skin == 2) {
+      ui_draw_speed_notch(s, 0, 35+scene->left_anim_offset, 55+scene->display_offset);
+      nvgText(s->vg, 160+scene->left_anim_offset, 205+scene->display_offset, "--", NULL);
+    }
+
+    // Current Speed
+
+    scene->current_speed = (int)(scene->v_ego * 2.237 + 0.5);
+
+    if (scene->ui_skin == DEFAULT_SKIN) {
+      if (s->is_metric) {
+        snprintf(speed_str, sizeof(speed_str), "%3d KPH",
+               (int)(scene->v_ego * 3.6 + 0.5));
+      } else {
+        snprintf(speed_str, sizeof(speed_str), "%3d MPH",
+               (int)(scene->v_ego * 2.237 + 0.5));
+      }
+
+      nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 220));
+      nvgText(s->vg, 1920 - 500, 95, speed_str, NULL);
+
+      if (scene->awareness_status > 0) {
+        nvgBeginPath(s->vg);
+        int bar_height = scene->awareness_status * 700;
+        nvgRect(s->vg, 100, 300 + (700 - bar_height), 50, bar_height);
+        nvgFillColor(s->vg, nvgRGBA(255 * (1 - scene->awareness_status),
+        255 * scene->awareness_status, 0, 128));
+        nvgFill(s->vg);
+      }
+    }
+    else {
+      if (s->is_metric) {
+        snprintf(speed_str, sizeof(speed_str), "%d",
+               (int)(scene->v_ego * 3.6 + 0.5));
+      } else {
+        snprintf(speed_str, sizeof(speed_str), "%d",
+               (int)(scene->v_ego * 2.237 + 0.5));
+      }
+
+      if (DEBUG) {
+        scene->current_speed = 68;
+        snprintf(speed_str, sizeof(speed_str), "%d", scene->current_speed);
+      }
+
+      // Right speed dial
+      ui_draw_speed_notch(s, scene->current_speed, 1920-285, 55+scene->display_offset);
+      nvgText(s->vg, 1920 - 157, 205+scene->display_offset, speed_str, NULL);
+
+      nvgFontSize(s->vg, smallfontsize);
+      nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 220));
+
+      if (s->is_metric) {
+        nvgText(s->vg, 165, 260+scene->display_offset, "KPH", NULL);
+        nvgText(s->vg, 1920-155, 255+scene->display_offset, "KPH", NULL);
+      }
+      else {
+        //if (scene->left_anim_started) {
+          nvgText(s->vg, 165+scene->left_anim_offset, 260+scene->display_offset, "MPH", NULL);
+        //}
+        nvgText(s->vg, 1920-155, 255+scene->display_offset, "MPH", NULL);
+      }
+
+      nvgFontSize(s->vg, smallfontsize);
+
+      if (scene->awareness_status > 0) {
+        // When disengaged the awareness_status goes to 0 so we use the last value so we can animate the bar
+        scene->last_awareness = scene->awareness_status;
+      }
+      else if (scene->left_anim_status != 0) {
+        scene->awareness_status = scene->last_awareness;
+      }
+    
       int bar_width = scene->awareness_status * AWARENESS_BAR_WIDTH;
 
       //Draw full border
-      nvgRoundedRect(s->vg, (1920-bar_width)/2, 1010, bar_width, 70, 10);
-      nvgStrokeColor(s->vg, nvgRGBA(255,255,255,200));
-      nvgStrokeWidth(s->vg, 2);
-      nvgStroke(s->vg);
-      
       nvgBeginPath(s->vg);
-      nvgRoundedRect(s->vg, (1920-bar_width)/2, 1010, bar_width, 70, 10);
+      nvgRoundedRect(s->vg, (1920-bar_width)/2, 1010+scene->bar_anim_offset, bar_width, 70, 10);
+      nvgStrokeColor(s->vg, nvgRGBA(255,255,255,200));
+      nvgStrokeWidth(s->vg, 4);
+      nvgStroke(s->vg);
       nvgFillColor(s->vg, nvgRGBA(255 * (1 - scene->awareness_status),
                                   255 * scene->awareness_status, 0, 128));
       nvgFill(s->vg);
 
       int timeRemaining = MAX_AWARENESS_TIME * scene->awareness_status;
-      //printf("time: %d\n",timeRemaining);
+      //printf("aware: %f time: %d\n",scene->awareness_status,timeRemaining);
       char *timeLeft = ui_convert_sec_to_time(timeRemaining);
       char timeLeft_str[16];
       snprintf(timeLeft_str, sizeof(timeLeft_str), "%s", timeLeft);
       nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 220));
       nvgFontSize(s->vg, 65.0f);
-      nvgText(s->vg, (1920)/2, 310+scene->display_offset, timeLeft_str, NULL);
+      nvgText(s->vg, (1920)/2, 310+scene->display_offset+scene->bar_anim_offset, timeLeft_str, NULL);
     }
   }
 
