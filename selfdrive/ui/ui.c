@@ -35,7 +35,7 @@
 #define MAX_AWARENESS_TIME 3600 // 6 minutes 
 #define DEFAULT_SKIN 1 // Determine which UI skin to use as a default
 #define DEBUG false // Set to true to show mockup UI content for placement
-#define AWARENESS_BAR_WIDTH 1300 // Pixel width of awareness bar
+#define AWARENESS_BAR_WIDTH 1300 // Pixel width of awareness bar for skin v2
 #define ANIMATE_IN 1
 #define ANIMATE_OUT 2
 #define LEFT_ELEMENT_VISIBLE 3
@@ -80,10 +80,11 @@ typedef struct UIScene {
   int current_speed; // in MPH... used in rendering the notches on the speed dial
   int cruise_speed; // in MPH... used in rendering the notches on the speed dial
   int left_anim_offset; // Used to animate the left speed dial (cruise setting)
-  int bar_anim_offset; // Used to animate the left speed dial (cruise setting)
+  int bar_anim_offset; // Used to animate the bar 
   int left_anim_step; // How fast to animate
   int left_anim_status; 
-  int left_anim_framecount; 
+  int anim_framecount; // Used in debugging to throttle file read in read_state() function and automatic trigger of events
+
   int left_anim_delta; 
   char status[32]; 
   float last_awareness; 
@@ -236,6 +237,10 @@ static const mat4 frame_transform = {{
                0.0, 0.0, 0.0, 1.0,
 }};
 
+/*
+ * For development/debugging purposes, read from file to trigger events
+ * to simulate car events
+ */
 static void read_state(UIState* s) {
   UIScene *scene = &s->scene;
 
@@ -258,17 +263,17 @@ static void read_state(UIState* s) {
     snprintf(scene->status,sizeof(scene->status),"%s",state);
     //printf("Got event: '%s'\n", state);
     if (strcmp(state, "out") == 0 && scene->left_anim_status != ANIMATE_OUT) {
+      // Animate out of view
       scene->engaged = false;
       scene->awareness_status = 0;
       scene->left_anim_status = ANIMATE_OUT;
     }
     else if (strcmp(state, "in") == 0 && scene->left_anim_status != ANIMATE_IN) {
+      // Animate into view
       scene->engaged = true;
       scene->left_anim_status = ANIMATE_IN;
     }
   }
-  /*
-  */
 }
 
 /*
@@ -453,7 +458,7 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
       .last_awareness = 0,
       .status = "out",
       .left_anim_delta = 2,
-      .left_anim_framecount = 0,
+      .anim_framecount = 0,
       .left_anim_status = 0,
       .left_anim_step = 20,
       .left_anim_offset = -282,
@@ -865,11 +870,9 @@ static void ui_animate(UIState *s) {
   }
   if (scene->left_anim_status == ANIMATE_IN && scene->left_anim_offset < 0) {
       // Slide in animation
-      if (scene->left_anim_step > 1 && scene->left_anim_framecount%2==0) {
-        scene->left_anim_step -= scene->left_anim_delta;
-        if (scene->left_anim_step < 1) {
-          scene->left_anim_step  = 1;
-        }
+      scene->left_anim_step -= scene->left_anim_delta;
+      if (scene->left_anim_step < 1) {
+        scene->left_anim_step  = 1;
       }
       scene->left_anim_offset += scene->left_anim_step;
       scene->bar_anim_offset -= scene->left_anim_step-5;
@@ -897,11 +900,9 @@ static void ui_animate(UIState *s) {
       scene->left_anim_step = 20;
       scene->left_anim_delta = 2;
     }
-    if (scene->left_anim_step > 1 && scene->left_anim_framecount%2==0) {
-      scene->left_anim_step -= scene->left_anim_delta;
-      if (scene->left_anim_step < 1) {
-        scene->left_anim_step  = 1;
-      }
+    scene->left_anim_step -= scene->left_anim_delta;
+    if (scene->left_anim_step < 1) {
+      scene->left_anim_step  = 1;
     }
     scene->left_anim_offset -= scene->left_anim_step;
     scene->bar_anim_offset += scene->left_anim_step-5;
@@ -954,23 +955,24 @@ static void ui_draw_vision(UIState *s) {
   glClear(GL_STENCIL_BUFFER_BIT);
 
   nvgBeginFrame(s->vg, s->fb_w, s->fb_h, 1.0f);
-  scene->left_anim_framecount++;
 
-/*
   // For debugging, read state from file to trigger events
   if (DEBUG) {
-    if (scene->left_anim_framecount % 20 == 0) {
+    scene->anim_framecount++;
+    if (scene->anim_framecount % 20 == 0) {
+      // Throttle reading from the file
       read_state(s);
     }
   }
-*/
 
   if (DEBUG && scene->ui_skin == 2) {
-    if (scene->left_anim_framecount == 100) {
+    // Automatically trigger events when debugging
+    scene->anim_framecount++;
+    if (scene->anim_framecount == 100) {
       scene->engaged = true;
       scene->left_anim_status = ANIMATE_IN;
     }
-    else if (scene->left_anim_framecount == 200) {
+    else if (scene->anim_framecount == 200) {
       scene->engaged = false;
       scene->left_anim_status = ANIMATE_OUT;
     }
