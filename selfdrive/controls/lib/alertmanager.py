@@ -38,7 +38,7 @@ class AlertManager(object):
     "disable":            alert("", "",                                            ET.USER_DISABLE, None,               "beepSingle", .2, 0., 0.),
     "pedalPressed":       alert("Comma Unavailable",        "Pedal Pressed",       ET.NO_ENTRY,     "brakePressed",     "chimeDouble", .4, 2., 3.),
     "driverDistracted":   alert("Take Control to Regain Speed", "User Distracted", ET.WARNING,      "steerRequired", "chimeRepeated", 1., 1., 1.),
-    "steerSaturated":     alert("Take Control", "Steer Control Saturated",         ET.WARNING,      "steerRequired", "chimeSingle", 1., 2., 3.),
+    "steerSaturated":     alert("Take Control", "Steering Limit Reached",         ET.WARNING,      "steerRequired", "chimeSingle", 1., 2., 3.),
     "overheat":           alert("Take Control Immediately", "System Overheated",   ET.SOFT_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
     "controlsMismatch":   alert("Take Control Immediately", "Controls Mismatch",   ET.IMMEDIATE_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
     "radarCommIssue":     alert("Take Control Immediately", "Radar Comm Issue",    ET.IMMEDIATE_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
