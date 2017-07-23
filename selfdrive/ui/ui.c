@@ -32,7 +32,7 @@
 
 #include "cereal/gen/c/log.capnp.h"
 
-#define MAX_AWARENESS_TIME 3600 // 6 minutes 
+#define MAX_AWARENESS_TIME 360 // 6 minutes 
 #define DEFAULT_SKIN 1 // Determine which UI skin to use as a default
 #define DEBUG false // Set to true to show mockup UI content for placement
 #define AWARENESS_BAR_WIDTH 1300 // Pixel width of awareness bar for skin v2
@@ -247,7 +247,7 @@ static void read_state(UIState* s) {
   char* filename = "/data/openpilot/selfdrive/ui/state.txt";
   FILE* f = fopen(filename,"r");
   if (!f) {
-    printf("Could not open file: %s\n",filename);
+    //printf("Could not open file: %s\n",filename);
     return;
   }
 
