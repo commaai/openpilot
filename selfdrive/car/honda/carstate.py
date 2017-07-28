@@ -1,15 +1,22 @@
-import common.numpy_fast as np
+import os
+import time
 
-import selfdrive.messaging as messaging
+import common.numpy_fast as np
 from common.realtime import sec_since_boot
 
+import selfdrive.messaging as messaging
+
 from selfdrive.car.honda.can_parser import CANParser
+from selfdrive.can.parser import CANParser as CANParserC
+
+NEW_CAN = os.getenv("OLD_CAN") is None
 
 def get_can_parser(CP):
   # this function generates lists for signal, messages and initial values
   if CP.carFingerprint == "HONDA CIVIC 2016 TOURING":
     dbc_f = 'honda_civic_touring_2016_can.dbc'
     signals = [
+      # sig_name, sig_address, default
       ("XMISSION_SPEED", 0x158, 0),
       ("WHEEL_SPEED_FL", 0x1d0, 0),
       ("WHEEL_SPEED_FR", 0x1d0, 0),
@@ -46,6 +53,7 @@ def get_can_parser(CP):
       ("ENGINE_RPM", 0x17C, 0)
     ]
     checks = [
+      # address, frequency
       (0x14a, 100),
       (0x158, 100),
       (0x17c, 100),
@@ -219,7 +227,10 @@ def get_can_parser(CP):
     signals.append(("INTERCEPTOR_GAS", 0x201, 0))
     checks.append((0x201, 50))
 
-  return CANParser(dbc_f, signals, checks)
+  if NEW_CAN:
+    return CANParserC(os.path.splitext(dbc_f)[0], signals, checks, 0)
+  else:
+    return CANParser(dbc_f, signals, checks)
 
 class CarState(object):
   def __init__(self, CP, logcan):
@@ -256,9 +267,12 @@ class CarState(object):
     # TODO: actually make this work
     self.a_ego = 0.
 
-  def update(self, can_pub_main):
+  def update(self, can_pub_main=None):
     cp = self.cp
-    cp.update_can(can_pub_main)
+    if NEW_CAN:
+      cp.update(int(sec_since_boot() * 1e9), False)
+    else:
+      cp.update_can(can_pub_main)
 
     # copy can_valid
     self.can_valid = cp.can_valid

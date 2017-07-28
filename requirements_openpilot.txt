@@ -9,4 +9,6 @@ requests==2.10.0
 setproctitle==1.1.10
 simplejson==3.8.2
 pyyaml==3.12
+cffi==1.7.0
+enum34==1.1.1
 -e git+https://github.com/commaai/le_python.git#egg=Logentries

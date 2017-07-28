@@ -31,10 +31,15 @@ pthread_mutex_t usb_lock;
 
 bool spoofing_started = false;
 bool fake_send = false;
+bool loopback_can = false;
 
 // double the FIFO size
 #define RECV_SIZE (0x1000)
 #define TIMEOUT 0
+
+#define SAFETY_NOOUTPUT  0x0000
+#define SAFETY_HONDA     0x0001
+#define SAFETY_ALLOUTPUT 0x1337
 
 bool usb_connect() {
   int err;
@@ -48,21 +53,35 @@ bool usb_connect() {
   err = libusb_claim_interface(dev_handle, 0);
   if (err != 0) { return false; }
 
+  if (loopback_can) {
+    libusb_control_transfer(dev_handle, 0xc0, 0xe5, 1, 0, NULL, 0, TIMEOUT);
+  }
+
   // power off ESP
   libusb_control_transfer(dev_handle, 0xc0, 0xd9, 0, 0, NULL, 0, TIMEOUT);
 
   // forward CAN1 to CAN3...soon
   //libusb_control_transfer(dev_handle, 0xc0, 0xdd, 1, 2, NULL, 0, TIMEOUT);
-  
+
   // set UART modes for Honda Accord
-  for (int uart = 2; uart <= 3; uart++) {
+  /*for (int uart = 2; uart <= 3; uart++) {
     // 9600 baud
-    libusb_control_transfer(dev_handle, 0xc0, 0xe1, uart, 9600, NULL, 0, TIMEOUT);
+    libusb_control_transfer(dev_handle, 0x40, 0xe1, uart, 9600, NULL, 0, TIMEOUT);
     // even parity
-    libusb_control_transfer(dev_handle, 0xc0, 0xe2, uart, 1, NULL, 0, TIMEOUT);
+    libusb_control_transfer(dev_handle, 0x40, 0xe2, uart, 1, NULL, 0, TIMEOUT);
     // callback 1
-    libusb_control_transfer(dev_handle, 0xc0, 0xe3, uart, 1, NULL, 0, TIMEOUT);
+    libusb_control_transfer(dev_handle, 0x40, 0xe3, uart, 1, NULL, 0, TIMEOUT);
   }
+
+  // TODO: Boardd should be able to set the baud rate
+  int baud = 500000;
+  libusb_control_transfer(dev_handle, 0x40, 0xde, 0, 0,
+                          (unsigned char *)&baud, sizeof(baud), TIMEOUT); // CAN1
+  libusb_control_transfer(dev_handle, 0x40, 0xde, 1, 0,
+                          (unsigned char *)&baud, sizeof(baud), TIMEOUT); // CAN2*/
+
+  // TODO: Boardd should be able to be told which safety model to use
+  libusb_control_transfer(dev_handle, 0x40, 0xdc, SAFETY_HONDA, 0, NULL, 0, TIMEOUT);
 
   return true;
 }
@@ -90,7 +109,7 @@ void can_recv(void *s) {
 
   // do recv
   pthread_mutex_lock(&usb_lock);
- 
+
   do {
     err = libusb_bulk_transfer(dev_handle, 0x81, (uint8_t*)data, RECV_SIZE, &recv, TIMEOUT);
     if (err != 0) { handle_usb_issue(err, __func__); }
@@ -127,13 +146,13 @@ void can_recv(void *s) {
     canData[i].setBusTime(data[i*4+1] >> 16);
     int len = data[i*4+1]&0xF;
     canData[i].setDat(kj::arrayPtr((uint8_t*)&data[i*4+2], len));
-    canData[i].setSrc((data[i*4+1] >> 4) & 0xf);
+    canData[i].setSrc((data[i*4+1] >> 4) & 0xff);
   }
 
   // send to can
   auto words = capnp::messageToFlatArray(msg);
   auto bytes = words.asBytes();
-  zmq_send(s, bytes.begin(), bytes.size(), 0); 
+  zmq_send(s, bytes.begin(), bytes.size(), 0);
 }
 
 void can_health(void *s) {
@@ -181,7 +200,7 @@ void can_health(void *s) {
   // send to health
   auto words = capnp::messageToFlatArray(msg);
   auto bytes = words.asBytes();
-  zmq_send(s, bytes.begin(), bytes.size(), 0); 
+  zmq_send(s, bytes.begin(), bytes.size(), 0);
 }
 
 
@@ -316,6 +335,10 @@ int main() {
     fake_send = true;
   }
 
+  if(getenv("BOARDD_LOOPBACK")){
+    loopback_can = true;
+  }
+
   // init libusb
   err = libusb_init(&ctx);
   assert(err == 0);
@@ -357,4 +380,3 @@ int main() {
   libusb_close(dev_handle);
   libusb_exit(ctx);
 }
-
