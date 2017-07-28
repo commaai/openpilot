@@ -1,17 +1,19 @@
 #!/usr/bin/env python
+import os
 import time
 import common.numpy_fast as np
 
 from selfdrive.config import Conversions as CV
-from selfdrive.car.honda.carstate import CarState
-from selfdrive.car.honda.carcontroller import CarController, AH
+from .carstate import CarState
+from .carcontroller import CarController, AH
 from selfdrive.boardd.boardd import can_capnp_to_can_list
 
 from cereal import car
 
-import zmq
 from selfdrive.services import service_list
 import selfdrive.messaging as messaging
+
+NEW_CAN = os.getenv("OLD_CAN") is None
 
 # Car button codes
 class CruiseButtons:
@@ -35,7 +37,6 @@ class BP:
   TRIPLE = 2
   REPEATED = 1
 
-
 class CarInterface(object):
   def __init__(self, CP, logcan, sendcan=None):
     self.logcan = logcan
@@ -55,19 +56,65 @@ class CarInterface(object):
     if self.CS.accord:
       self.accord_msg = []
 
+  @staticmethod
+  def get_params(candidate, fingerprint):
+
+    # pedal
+    brake_only = 0x201 not in fingerprint
+
+    ret = car.CarParams.new_message()
+
+    ret.carName = "honda"
+    ret.radarName = "nidec"
+    ret.carFingerprint = candidate
+
+    ret.enableSteer = True
+    ret.enableBrake = True
+    ret.enableGas = not brake_only
+    ret.enableCruise = brake_only
+    #ret.enableCruise = False
+
+    # TODO: those parameters should be platform dependent
+    ret.wheelBase = 2.67
+    ret.slipFactor = 0.0014
+
+    if candidate == "HONDA CIVIC 2016 TOURING":
+      ret.steerRatio = 13.0
+      ret.steerKp, ret.steerKi = 6.0, 1.4
+    elif candidate == "ACURA ILX 2016 ACURAWATCH PLUS":
+      ret.steerRatio = 15.3
+      if not brake_only:
+        # assuming if we have an interceptor we also have a torque mod
+        ret.steerKp, ret.steerKi = 3.0, 0.7
+      else:
+        ret.steerKp, ret.steerKi = 6.0, 1.4
+    elif candidate == "HONDA ACCORD 2016 TOURING":
+      ret.steerRatio = 15.3
+      ret.steerKp, ret.steerKi = 6.0, 1.4
+    elif candidate == "HONDA CR-V 2016 TOURING":
+      ret.steerRatio = 15.3
+      ret.steerKp, ret.steerKi = 3.0, 0.7
+    else:
+      raise ValueError("unsupported car %s" % candidate)
+
+    return ret
+
   # returns a car.CarState
   def update(self):
     # ******************* do can recv *******************
     can_pub_main = []
     canMonoTimes = []
 
-    for a in messaging.drain_sock(self.logcan):
-      canMonoTimes.append(a.logMonoTime)
-      can_pub_main.extend(can_capnp_to_can_list(a.can, [0,2]))
-      if self.CS.accord:
-        self.accord_msg.extend(can_capnp_to_can_list(a.can, [9]))
-        self.accord_msg = self.accord_msg[-1:]
-    self.CS.update(can_pub_main)
+    if NEW_CAN:
+      self.CS.update(can_pub_main)
+    else:
+      for a in messaging.drain_sock(self.logcan):
+        canMonoTimes.append(a.logMonoTime)
+        can_pub_main.extend(can_capnp_to_can_list(a.can, [0,0x80]))
+        if self.CS.accord:
+          self.accord_msg.extend(can_capnp_to_can_list(a.can, [9]))
+          self.accord_msg = self.accord_msg[-1:]
+      self.CS.update(can_pub_main)
 
     # create message
     ret = car.CarState.new_message()
@@ -115,6 +162,7 @@ class CarInterface(object):
     # cruise state
     ret.cruiseState.enabled = self.CS.pcm_acc_status != 0
     ret.cruiseState.speed = self.CS.v_cruise_pcm * CV.KPH_TO_MS
+    ret.cruiseState.mainOn = bool(self.CS.main_on)
 
     # TODO: button presses
     buttonEvents = []
@@ -178,7 +226,7 @@ class CarInterface(object):
     if self.CS.steer_error:
       errors.append('steerUnavailable')
     elif self.CS.steer_not_allowed:
-      errors.append('steerTemporarilyUnavailable')
+      errors.append('steerTempUnavailable')
     if self.CS.brake_error:
       errors.append('brakeUnavailable')
     if not self.CS.gear_shifter_valid:

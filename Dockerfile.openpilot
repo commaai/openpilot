@@ -1,15 +1,9 @@
-FROM ubuntu:14.04
+FROM ubuntu:16.04
 ENV PYTHONUNBUFFERED 1
 
-RUN apt-get update && apt-get install -y build-essential screen wget bzip2 git libglib2.0-0
+RUN apt-get update && apt-get install -y build-essential clang vim screen wget bzip2 git libglib2.0-0 python-pip capnproto libcapnp-dev libzmq5-dev libffi-dev
 
-RUN wget -nv -O /tmp/anaconda.sh https://repo.continuum.io/archive/Anaconda2-4.2.0-Linux-x86_64.sh && \
-  /bin/bash /tmp/anaconda.sh -b -p /opt/conda && \
-  rm /tmp/anaconda.sh
-
-ENV PATH /opt/conda/bin:$PATH
-
-RUN conda install numpy==1.11.2 && conda install scipy==0.18.1
+RUN pip install numpy==1.11.2 scipy==0.18.1 matplotlib
 
 COPY requirements_openpilot.txt /tmp/
 RUN pip install -r /tmp/requirements_openpilot.txt

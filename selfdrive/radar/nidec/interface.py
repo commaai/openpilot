@@ -1,13 +1,20 @@
 #!/usr/bin/env python
+import os
 import numpy as np
+
 from selfdrive.car.honda.can_parser import CANParser
+from selfdrive.can.parser import CANParser as CANParserC
+
 from selfdrive.boardd.boardd import can_capnp_to_can_list
 
 from cereal import car
+from common.realtime import sec_since_boot
 
 import zmq
 from selfdrive.services import service_list
 import selfdrive.messaging as messaging
+
+NEW_CAN = os.getenv("OLD_CAN") is None
 
 def _create_radard_can_parser():
   dbc_f = 'acura_ilx_2016_nidec.dbc'
@@ -17,7 +24,10 @@ def _create_radard_can_parser():
                 [255] * 16 + [1] * 16 + [0] * 16 + [0] * 16)
   checks = zip(radar_messages, [20]*16)
 
-  return CANParser(dbc_f, signals, checks)
+  if NEW_CAN:
+    return CANParserC(os.path.splitext(dbc_f)[0], signals, checks, 1)
+  else:
+    return CANParser(dbc_f, signals, checks)
 
 class RadarInterface(object):
   def __init__(self):
@@ -33,19 +43,28 @@ class RadarInterface(object):
 
   def update(self):
     canMonoTimes = []
-    can_pub_radar = []
 
-    # TODO: can hang if no packets show up
-    while 1:
-      for a in messaging.drain_sock(self.logcan, wait_for_one=True):
-        canMonoTimes.append(a.logMonoTime)
-        can_pub_radar.extend(can_capnp_to_can_list(a.can, [1, 3]))
+    if NEW_CAN:
+      updated_messages = set()
+      while 1:
+        tm = int(sec_since_boot() * 1e9)
+        updated_messages.update(self.rcp.update(tm, True))
+        if 0x445 in updated_messages:
+          break
+    else:
+      can_pub_radar = []
 
-      # only run on the 0x445 packets, used for timing
-      if any(x[0] == 0x445 for x in can_pub_radar):
-        break
+      # TODO: can hang if no packets show up
+      while 1:
+        for a in messaging.drain_sock(self.logcan, wait_for_one=True):
+          canMonoTimes.append(a.logMonoTime)
+          can_pub_radar.extend(can_capnp_to_can_list(a.can, [1, 3]))
 
-    updated_messages = self.rcp.update_can(can_pub_radar)
+        # only run on the 0x445 packets, used for timing
+        if any(x[0] == 0x445 for x in can_pub_radar):
+          break
+
+      updated_messages = self.rcp.update_can(can_pub_radar)
 
     ret = car.RadarState.new_message()
     errors = []
@@ -56,6 +75,7 @@ class RadarInterface(object):
 
     for ii in updated_messages:
       cpt = self.rcp.vl[ii]
+      #print cpt
       if cpt['LONG_DIST'] < 255:
         if ii not in self.pts or cpt['NEW_TRACK']:
           self.pts[ii] = car.RadarState.RadarPoint.new_message()

@@ -1,3 +1,11 @@
+Version 0.3.4 (2017-07-28)
+==========================
+ * Improved model trained on more data
+ * Much improved controls tuning
+ * Performance improvements
+ * Bugfixes and improvements to calibration
+ * Driving log can play back video
+
 Version 0.3.3  (2017-06-28)
 ===========================
   * Improved model trained on more data

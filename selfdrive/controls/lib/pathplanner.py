@@ -39,21 +39,35 @@ def calc_desired_path(l_poly, r_poly, p_poly, l_prob, r_prob, p_prob, speed):
   d_poly =  list((c_poly*c_prob + p_poly*p_prob*p_weight ) / (c_prob + p_prob*p_weight))
   return d_poly, c_poly, c_prob
 
-class PathPlanner(object):
+class OptPathPlanner(object):
   def __init__(self, model):
     self.model = model
     self.dead = True
     self.d_poly = [0., 0., 0., 0.]
     self.last_model = 0.
-    self.logMonoTime = 0
+    self._path_pinv = compute_path_pinv()
+
+  def update(self, cur_time, v_ego, md):
+    if md is not None:
+      # simple compute of the center of the lane
+      pts = [(x+y)/2 for x,y in zip(md.model.leftLane.points, md.model.rightLane.points)]
+      self.d_poly = model_polyfit(pts, self._path_pinv)
+
+      self.last_model = cur_time
+      self.dead = False
+    elif cur_time - self.last_model > 0.5:
+      self.dead = True
+
+class PathPlanner(object):
+  def __init__(self):
+    self.dead = True
+    self.d_poly = [0., 0., 0., 0.]
+    self.last_model = 0.
     self.lead_dist, self.lead_prob, self.lead_var = 0, 0, 1
     self._path_pinv = compute_path_pinv()
 
-  def update(self, cur_time, v_ego):
-    md = messaging.recv_sock(self.model)
-
+  def update(self, cur_time, v_ego, md):
     if md is not None:
-      self.logMonoTime = md.logMonoTime
       p_poly = model_polyfit(md.model.path.points, self._path_pinv)       # predicted path
       l_poly = model_polyfit(md.model.leftLane.points, self._path_pinv)   # left line
       r_poly = model_polyfit(md.model.rightLane.points, self._path_pinv)  # right line

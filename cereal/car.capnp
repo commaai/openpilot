@@ -50,6 +50,7 @@ struct CarState {
   struct CruiseState {
     enabled @0: Bool;
     speed @1: Float32;
+    mainOn @2: Bool;
   }
 
   enum Error {
@@ -63,7 +64,7 @@ struct CarState {
     seatbeltNotLatched @6;
     espDisabled @7;
     wrongCarMode @8;
-    steerTemporarilyUnavailable @9;
+    steerTempUnavailable @9;
     reverseGear @10;
     # ...
   }

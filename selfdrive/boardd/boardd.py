@@ -18,6 +18,10 @@ except Exception:
 
 # TODO: rewrite in C to save CPU
 
+SAFETY_NOOUTPUT = 0
+SAFETY_HONDA = 1
+SAFETY_ALLOUTPUT = 0x1337
+
 # *** serialization functions ***
 def can_list_to_can_capnp(can_msgs, msgtype='can'):
   dat = messaging.new_message()
@@ -85,6 +89,7 @@ def can_recv():
 
 def can_init():
   global handle, context
+  handle = None
   cloudlog.info("attempting can init")
 
   context = usb1.USBContext()
@@ -94,6 +99,7 @@ def can_init():
     if device.getVendorID() == 0xbbaa and device.getProductID() == 0xddcc:
       handle = device.open()
       handle.claimInterface(0)
+      handle.controlWrite(0x40, 0xdc, SAFETY_HONDA, 0, b'')
 
   if handle is None:
     print "CAN NOT FOUND"
@@ -190,4 +196,3 @@ def main(gctx=None):
 
 if __name__ == "__main__":
   main()
-
