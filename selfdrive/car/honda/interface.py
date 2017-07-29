@@ -162,7 +162,7 @@ class CarInterface(object):
     # cruise state
     ret.cruiseState.enabled = self.CS.pcm_acc_status != 0
     ret.cruiseState.speed = self.CS.v_cruise_pcm * CV.KPH_TO_MS
-    ret.cruiseState.mainOn = bool(self.CS.main_on)
+    ret.cruiseState.available = bool(self.CS.main_on)
 
     # TODO: button presses
     buttonEvents = []

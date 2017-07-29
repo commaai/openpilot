@@ -194,7 +194,7 @@ class Controls(object):
 
     # disable if the pedals are pressed while engaged, this is a user disable
     if self.enabled:
-      if self.CS.gasPressed or self.CS.brakePressed or not self.CS.cruiseState.mainOn:
+      if self.CS.gasPressed or self.CS.brakePressed or not self.CS.cruiseState.available:
         self.AM.add("disable", self.enabled)
 
       # it can happen that car cruise disables while comma system is enabled: need to

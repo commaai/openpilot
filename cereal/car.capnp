@@ -50,7 +50,7 @@ struct CarState {
   struct CruiseState {
     enabled @0: Bool;
     speed @1: Float32;
-    mainOn @2: Bool;
+    available @2: Bool;
   }
 
   enum Error {
