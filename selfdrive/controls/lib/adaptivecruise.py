@@ -214,28 +214,6 @@ def calc_jerk_factor(d_lead, v_rel):
   return jerk_factor
 
 
-def calc_ttc(d_rel, v_rel, a_rel, v_lead):
-  # this function returns the time to collision (ttc), assuming that a_rel will stay constant
-  # TODO: Review these assumptions.
-  # change sign to rel quantities as it's going to be easier for calculations
-  v_rel = -v_rel
-  a_rel = -a_rel
-
-  # assuming that closing gap a_rel comes from lead vehicle decel, then limit a_rel so that v_lead will get to zero in no sooner than t_decel
-  # this helps overweighting a_rel when v_lead is close to zero.
-  t_decel = 2.
-  a_rel = min(a_rel, v_lead/t_decel)
-
-  delta = v_rel**2 + 2 * d_rel * a_rel
-  # assign an arbitrary high ttc value if there is no solution to ttc
-  if delta < 0.1:
-    ttc = 5.
-  elif math.sqrt(delta) + v_rel < 0.1:
-    ttc = 5.
-  else:
-    ttc = 2 * d_rel / (math.sqrt(delta) + v_rel)
-  return ttc
-
 
 MAX_SPEED_POSSIBLE = 55.
 
@@ -299,18 +277,14 @@ def compute_speed_with_leads(v_ego, angle_steers, v_pid, l1, l2, CP):
 
 
 class AdaptiveCruise(object):
-  def __init__(self, live20):
-    self.live20 = live20
+  def __init__(self):
     self.last_cal = 0.
     self.l1, self.l2 = None, None
-    self.logMonoTime = 0
     self.dead = True
-  def update(self, cur_time, v_ego, angle_steers, v_pid, CP):
-    l20 = messaging.recv_sock(self.live20)
+  def update(self, cur_time, v_ego, angle_steers, v_pid, CP, l20):
     if l20 is not None:
       self.l1 = l20.live20.leadOne
       self.l2 = l20.live20.leadTwo
-      self.logMonoTime = l20.logMonoTime
 
       # TODO: no longer has anything to do with calibration
       self.last_cal = cur_time

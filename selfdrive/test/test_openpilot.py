@@ -6,7 +6,6 @@ from selfdrive.manager import manager_init, manager_prepare
 from selfdrive.manager import start_managed_process, kill_managed_process, get_running
 from selfdrive.manager import manage_baseui
 from selfdrive.config import CruiseButtons
-from selfdrive.test.plant.plant import Plant
 from functools import wraps
 import time
 
@@ -44,8 +43,10 @@ def with_processes(processes):
   return wrapper
 
 @phone_only
-@with_processes(['controlsd', 'radard', 'plannerd'])
+@with_processes(['controlsd', 'radard'])
 def test_controls():
+  from selfdrive.test.plant.plant import Plant
+
   # start the fake car for 2 seconds
   plant = Plant(100)
   for i in range(200):
