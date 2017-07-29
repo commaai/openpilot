@@ -1,6 +1,7 @@
 .DS_Store
 .tags
 .ipynb_checkpoints
+.idea
 model2.png
 
 *.d

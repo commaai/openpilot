@@ -20,6 +20,7 @@ from common.params import Params
 from common.realtime import sec_since_boot, set_realtime_priority, Ratekeeper
 from common.kalman.ekf import EKF, SimpleSensor
 
+VISION_ONLY = False
 
 #vision point
 DIMSV = 2
@@ -62,8 +63,11 @@ def radard_thread(gctx=None):
   model = messaging.sub_sock(context, service_list['model'].port)
   live100 = messaging.sub_sock(context, service_list['live100'].port)
 
-  PP = PathPlanner(model)
+  PP = PathPlanner()
   RI = RadarInterface()
+
+  last_md_ts = 0
+  last_l100_ts = 0
 
   # *** publish live20 and liveTracks
   live20 = messaging.pub_sock(context, service_list['live20'].port)
@@ -109,18 +113,24 @@ def radard_thread(gctx=None):
       v_ego_array = np.append(v_ego_array, [[v_ego], [float(rk.frame)/rate]], 1)
       v_ego_array = v_ego_array[:, 1:]
 
+      last_l100_ts = l100.logMonoTime
+
     if v_ego is None:
       continue
 
+    md = messaging.recv_sock(model)
+    if md is not None:
+      last_md_ts = md.logMonoTime
+
     # *** get path prediction from the model ***
-    PP.update(sec_since_boot(), v_ego)
+    PP.update(sec_since_boot(), v_ego, md)
 
     # run kalman filter only if prob is high enough
     if PP.lead_prob > 0.7:
       ekfv.update(speedSensorV.read(PP.lead_dist, covar=PP.lead_var))
       ekfv.predict(tsv)
       ar_pts[VISION_POINT] = (float(ekfv.state[XV]), np.polyval(PP.d_poly, float(ekfv.state[XV])),
-                              float(ekfv.state[SPEEDV]), np.nan, PP.logMonoTime, np.nan, sec_since_boot())
+                              float(ekfv.state[SPEEDV]), np.nan, last_md_ts, np.nan, sec_since_boot())
     else:
       ekfv.state[XV] = PP.lead_dist
       ekfv.covar = (np.diag([PP.lead_var, ekfv.var_init]))
@@ -142,7 +152,9 @@ def radard_thread(gctx=None):
     # *** compute the tracks ***
     for ids in ar_pts:
       # ignore the vision point for now
-      if ids == VISION_POINT:
+      if ids == VISION_POINT and not VISION_ONLY:
+        continue
+      elif ids != VISION_POINT and VISION_ONLY:
         continue
       rpt = ar_pts[ids]
 
@@ -212,8 +224,9 @@ def radard_thread(gctx=None):
     # *** publish live20 ***
     dat = messaging.new_message()
     dat.init('live20')
-    dat.live20.mdMonoTime = PP.logMonoTime
+    dat.live20.mdMonoTime = last_md_ts
     dat.live20.canMonoTimes = list(rr.canMonoTimes)
+    dat.live20.l100MonoTime = last_l100_ts
     if lead_len > 0:
       lead_clusters[0].toLive20(dat.live20.leadOne)
       if lead2_len > 0:

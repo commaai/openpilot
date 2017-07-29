@@ -4,6 +4,10 @@
 #include <stdint.h>
 #include <time.h>
 
+#ifdef __APPLE__
+#define CLOCK_BOOTTIME CLOCK_REALTIME
+#endif
+
 static inline uint64_t nanos_since_boot() {
   struct timespec t;
   clock_gettime(CLOCK_BOOTTIME, &t);

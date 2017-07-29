@@ -19,7 +19,10 @@
 
 #define ARRAYSIZE(x) (sizeof(x)/sizeof(x[0]))
 
+// Reads a file into a newly allocated buffer.
+//
 // Returns NULL on failure, otherwise the NULL-terminated file contents.
+// The result must be freed by the caller.
 void* read_file(const char* path, size_t* out_len);
 
 
