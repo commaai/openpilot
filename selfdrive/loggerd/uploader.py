@@ -117,7 +117,12 @@ class Uploader(object):
       if name in ["rlog", "rlog.bz2"]:
         return (key, fn, 0)
 
-    # then upload camera files no not on wifi
+    # then upload compressed camera file
+    for name, key, fn in self.gen_upload_files():
+      if name in ["fcamera.hevc"]:
+        return (key, fn, 1)
+
+    # then upload other files
     for name, key, fn in self.gen_upload_files():
       if not name.endswith('.lock') and not name.endswith(".tmp"):
         return (key, fn, 1)

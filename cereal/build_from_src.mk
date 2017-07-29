@@ -1,12 +1,19 @@
 SRCS := log.capnp car.capnp
 
-GENS := gen/c/car.capnp.c gen/c/log.capnp.c gen/c/c++.capnp.h gen/c/java.capnp.h \
-	      gen/cpp/car.capnp.c++ gen/cpp/log.capnp.c++
+GENS := gen/cpp/car.capnp.c++ gen/cpp/log.capnp.c++
+
+
+UNAME_M := $(shell uname -m)
+
+# only generate C++ for docker tests
+ifneq ($(OPTEST),1)
+	GENS += gen/c/car.capnp.c gen/c/log.capnp.c gen/c/c++.capnp.h gen/c/java.capnp.h
 
 # Dont build java on the phone...
-UNAME_M := $(shell uname -m)
 ifeq ($(UNAME_M),x86_64)
 	GENS += gen/java/Car.java gen/java/Log.java
+endif
+
 endif
 
 .PHONY: all

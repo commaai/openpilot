@@ -1,13 +1,14 @@
 from cereal import car
 from selfdrive.swaglog import cloudlog
+import copy
 
 class ET:
   ENABLE = 0
   NO_ENTRY = 1
   WARNING = 2
-  SOFT_DISABLE = 3
-  IMMEDIATE_DISABLE = 4
-  USER_DISABLE = 5
+  USER_DISABLE = 3
+  SOFT_DISABLE = 4
+  IMMEDIATE_DISABLE = 5
 
 class alert(object):
   def __init__(self, alert_text_1, alert_text_2, alert_type, visual_alert, audible_alert, duration_sound, duration_hud_alert, duration_text):
@@ -34,33 +35,37 @@ class alert(object):
 
 class AlertManager(object):
   alerts = {
-    "enable":             alert("", "",                                            ET.ENABLE,       None,               "beepSingle", .2, 0., 0.),
-    "disable":            alert("", "",                                            ET.USER_DISABLE, None,               "beepSingle", .2, 0., 0.),
-    "pedalPressed":       alert("Comma Unavailable",        "Pedal Pressed",       ET.NO_ENTRY,     "brakePressed",     "chimeDouble", .4, 2., 3.),
-    "driverDistracted":   alert("Take Control to Regain Speed", "User Distracted", ET.WARNING,      "steerRequired", "chimeRepeated", 1., 1., 1.),
-    "steerSaturated":     alert("Take Control", "Steering Limit Reached",         ET.WARNING,      "steerRequired", "chimeSingle", 1., 2., 3.),
-    "overheat":           alert("Take Control Immediately", "System Overheated",   ET.SOFT_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
-    "controlsMismatch":   alert("Take Control Immediately", "Controls Mismatch",   ET.IMMEDIATE_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
-    "radarCommIssue":     alert("Take Control Immediately", "Radar Comm Issue",    ET.IMMEDIATE_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
-    "modelCommIssue":     alert("Take Control Immediately", "Model Comm Issue",    ET.IMMEDIATE_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
-    "controlsFailed":     alert("Take Control Immediately", "Controls Failed",     ET.IMMEDIATE_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
+    "enable":                alert("", "",                                                    ET.ENABLE,       None,               "beepSingle", .2, 0., 0.),
+    "disable":               alert("", "",                                                    ET.USER_DISABLE, None,               "beepSingle", .2, 0., 0.),
+    "pedalPressed":          alert("Comma Unavailable",        "Pedal Pressed",               ET.NO_ENTRY,     "brakePressed",     "chimeDouble", .4, 2., 3.),
+    "preDriverDistracted":   alert("Take Control ",            "User Distracted",             ET.WARNING,      "steerRequired",    "chimeDouble", .4, 2., 3.),
+    "driverDistracted":      alert("Take Control to Regain Speed", "User Distracted",         ET.WARNING,      "steerRequired", "chimeRepeated", .5, .5, .5),
+    "steerSaturated":        alert("Take Control",             "Turn Exceeds Limit",          ET.WARNING,      "steerRequired", "chimeSingle", 1., 2., 3.),
+    "overheat":              alert("Take Control Immediately", "System Overheated",           ET.SOFT_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
+    "controlsMismatch":      alert("Take Control Immediately", "Controls Mismatch",           ET.IMMEDIATE_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
+    "radarCommIssue":        alert("Take Control Immediately", "Radar Error: Restart the Car",ET.IMMEDIATE_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
+    "calibrationInvalid":    alert("Take Control Immediately", "Calibration Invalid: Reposition Neo and Recalibrate", ET.SOFT_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
+    "calibrationInProgress": alert("Take Control Immediately", "Calibration in Progress: ",     ET.SOFT_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
+    "modelCommIssue":        alert("Take Control Immediately", "Model Error: Restart the Car",ET.IMMEDIATE_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
+    "controlsFailed":        alert("Take Control Immediately", "Controls Failed",             ET.IMMEDIATE_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
+    "fcw":                   alert("", "",                                                    ET.WARNING,           None,            None,            .1, .1, .1),
     # car errors
-    "commIssue":          alert("Take Control Immediately","Communication Issues", ET.IMMEDIATE_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
-    "steerUnavailable":   alert("Take Control Immediately","Steer Error",          ET.IMMEDIATE_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
-    "steerTemporarilyUnavailable": alert("Take Control", "Steer Temporarily Unavailable",  ET.WARNING,   "steerRequired", "chimeRepeated", 1., 2., 3.),
-    "brakeUnavailable":   alert("Take Control Immediately","Brake Error",          ET.IMMEDIATE_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
-    "gasUnavailable":     alert("Take Control Immediately","Gas Error",            ET.IMMEDIATE_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
-    "wrongGear":          alert("Take Control Immediately","Gear not D",           ET.SOFT_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
-    "reverseGear":        alert("Take Control Immediately","Car in Reverse",       ET.IMMEDIATE_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
-    "doorOpen":           alert("Take Control Immediately","Door Open",            ET.SOFT_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
-    "seatbeltNotLatched": alert("Take Control Immediately","Seatbelt Unlatched",   ET.SOFT_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
-    "espDisabled":        alert("Take Control Immediately","ESP Off",              ET.SOFT_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
-    "cruiseDisabled":     alert("Take Control Immediately","Cruise Is Off",        ET.IMMEDIATE_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
-    "wrongCarMode":       alert("Comma Unavailable","Main Switch Off",             ET.NO_ENTRY,     None, "chimeDouble", .4, 0., 3.),
-    "outOfSpace":         alert("Comma Unavailable","Out of Space",                ET.NO_ENTRY,     None, "chimeDouble", .4, 0., 3.),
-    "dataNeeded":         alert("Comma Unavailable","Data needed for calibration. Upload drive, try again", ET.NO_ENTRY, None, "chimeDouble", .4, 0., 3.),
-    "ethicalDilemma":     alert("Take Control Immediately","Ethical Dilemma Detected", ET.IMMEDIATE_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
-    "startup":            alert("Always Keep Hands on Wheel","Be Ready to Take Over Any Time", ET.NO_ENTRY, None, None, 0., 0., 15.),
+    "commIssue":             alert("Take Control Immediately","CAN Error: Restart the Car",   ET.IMMEDIATE_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
+    "steerUnavailable":      alert("Take Control Immediately","Steer Error: Restart the Car", ET.IMMEDIATE_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
+    "steerTempUnavailable":  alert("Take Control", "Steer Temporarily Unavailable",           ET.WARNING,           "steerRequired", "chimeDouble",   .4, 2., 3.),
+    "brakeUnavailable":      alert("Take Control Immediately","Brake Error: Restart the Car", ET.IMMEDIATE_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
+    "gasUnavailable":        alert("Take Control Immediately","Gas Error: Restart the Car",   ET.IMMEDIATE_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
+    "wrongGear":             alert("Take Control Immediately","Gear not D",                   ET.SOFT_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
+    "reverseGear":           alert("Take Control Immediately","Car in Reverse",               ET.IMMEDIATE_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
+    "doorOpen":              alert("Take Control Immediately","Door Open",                    ET.SOFT_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
+    "seatbeltNotLatched":    alert("Take Control Immediately","Seatbelt Unlatched",           ET.SOFT_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
+    "espDisabled":           alert("Take Control Immediately","ESP Off",                      ET.SOFT_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
+    "cruiseDisabled":        alert("Take Control Immediately","Cruise Is Off",                ET.IMMEDIATE_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
+    "wrongCarMode":          alert("Comma Unavailable","Main Switch Off",                     ET.NO_ENTRY,     None, "chimeDouble", .4, 0., 3.),
+    "outOfSpace":            alert("Comma Unavailable","Out of Space",                        ET.NO_ENTRY,     None, "chimeDouble", .4, 0., 3.),
+    "dataNeeded":            alert("Comma Unavailable","Data needed for calibration. Upload drive, try again", ET.NO_ENTRY, None, "chimeDouble", .4, 0., 3.),
+    "ethicalDilemma":        alert("Take Control Immediately","Ethical Dilemma Detected",     ET.IMMEDIATE_DISABLE, "steerRequired", "chimeRepeated", 1., 3., 3.),
+    "startup":               alert("Always Keep Hands on Wheel","Be Ready to Take Over Any Time", ET.NO_ENTRY, None, None, 0., 0., 15.),
   }
   def __init__(self):
     self.activealerts = []
@@ -71,25 +76,27 @@ class AlertManager(object):
     return len(self.activealerts) > 0
 
   def alertShouldSoftDisable(self):
-    return len(self.activealerts) > 0 and self.activealerts[0].alert_type == ET.SOFT_DISABLE
+    return len(self.activealerts) > 0 and any(a.alert_type == ET.SOFT_DISABLE for a in self.activealerts)
 
   def alertShouldDisable(self):
-    return len(self.activealerts) > 0 and self.activealerts[0].alert_type >= ET.IMMEDIATE_DISABLE
+    return len(self.activealerts) > 0 and any(a.alert_type in [ET.IMMEDIATE_DISABLE, ET.USER_DISABLE] for a in self.activealerts)
 
-  def add(self, alert_type, enabled = True):
+  def add(self, alert_type, enabled=True, extra_text=''):
     alert_type = str(alert_type)
-    this_alert = self.alerts[alert_type]
-
-    # downgrade the alert if we aren't enabled
-    if not enabled and this_alert.alert_type > ET.NO_ENTRY:
+    this_alert = copy.copy(self.alerts[alert_type])
+    this_alert.alert_text_2 += extra_text
+    # downgrade the alert if we aren't enabled, except if it's FCW, which remains the same 
+    # TODO: remove this 'if' by adding more alerts
+    if not enabled and this_alert.alert_type in [ET.WARNING, ET.SOFT_DISABLE, ET.IMMEDIATE_DISABLE] \
+      and this_alert != self.alerts['fcw']:
       this_alert = alert("Comma Unavailable" if this_alert.alert_text_1 != "" else "", this_alert.alert_text_2, ET.NO_ENTRY, None, "chimeDouble", .4, 0., 3.)
 
     # ignore no entries if we are enabled 
-    if enabled and this_alert.alert_type < ET.WARNING:
+    if enabled and this_alert.alert_type in [ET.ENABLE, ET.NO_ENTRY]:
       return
 
-    # if new alert is different, log it
-    if self.current_alert is None or self.current_alert.alert_text_2 != this_alert.alert_text_2:
+    # if new alert is higher priority, log it
+    if self.current_alert is None or this_alert > self.current_alert:
       cloudlog.event('alert_add',
         alert_type=alert_type,
         enabled=enabled)
@@ -102,7 +109,6 @@ class AlertManager(object):
       self.alert_start_time = cur_time
       self.current_alert = self.activealerts[0]
       print self.current_alert
-
     alert_text_1 = ""
     alert_text_2 = ""
     visual_alert = "none"

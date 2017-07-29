@@ -29,7 +29,7 @@ libc = ffi.dlopen(None)
 CLOCK_MONOTONIC_RAW = 4
 CLOCK_BOOTTIME = 7
 
-if hasattr(libc, 'clock_gettime'):
+if platform.system() != 'Darwin' and hasattr(libc, 'clock_gettime'):
   c_clock_gettime = libc.clock_gettime
 
   tlocal = threading.local()

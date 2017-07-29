@@ -1,11 +1,14 @@
 from collections import namedtuple
 
 import common.numpy_fast as np
+from common.numpy_fast import clip, interp
 from common.realtime import sec_since_boot
+
 from selfdrive.config import CruiseButtons
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.controls.lib.drive_helpers import rate_limit
-from common.numpy_fast import clip, interp
+from . import hondacan
+
 
 def actuator_hystereses(final_brake, braking, brake_steady, v_ego, civic):
   # hyst params... TODO: move these to VehicleParams
@@ -66,7 +69,6 @@ def process_hud_alert(hud_alert):
 
   return fcw_display, steer_required, acc_alert
 
-import selfdrive.car.honda.hondacan as hondacan
 
 HUDData = namedtuple("HUDData",
                      ["pcm_accel", "v_cruise", "X2", "car", "X4", "X5",
@@ -126,7 +128,7 @@ class CarController(object):
     #print chime, alert_id, hud_alert
     fcw_display, steer_required, acc_alert = process_hud_alert(hud_alert)
 
-    hud = HUDData(int(pcm_accel), int(hud_v_cruise), 0x01, hud_car,
+    hud = HUDData(int(pcm_accel), int(round(hud_v_cruise)), 0x01, hud_car,
                   0xc1, 0x41, hud_lanes + steer_required,
                   int(snd_beep), 0x48, (snd_chime << 5) + fcw_display, acc_alert)
 

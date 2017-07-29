@@ -1,6 +1,7 @@
 import re
-import bitstring
+import os
 import struct
+import bitstring
 from collections import namedtuple
 
 def int_or_float(s):
@@ -16,6 +17,7 @@ DBCSignal = namedtuple(
 
 class dbc(object):
   def __init__(self, fn):
+    self.name, _ = os.path.splitext(os.path.basename(fn))
     with open(fn) as f:
       self.txt = f.read().split("\n")
     self._warned_addresses = set()
@@ -32,11 +34,8 @@ class dbc(object):
     # signals is a list of DBCSignal in order of increasing start_bit.
     self.msgs = {}
 
-    self.bits = []
-    for i in range(0, 64, 8):
-      for j in range(7, -1, -1):
-        self.bits.append(i+j)
-    self.bits_index = dict(zip(self.bits, range(64)))
+    # lookup to bit reverse each byte
+    self.bits_index = [(i & ~0b111) + ((-i-1) & 0b111) for i in xrange(64)]
 
     for l in self.txt:
       l = l.strip()

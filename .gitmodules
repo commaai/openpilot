@@ -4,3 +4,6 @@
 [submodule "opendbc"]
 	path = opendbc
 	url = https://github.com/commaai/opendbc.git
+[submodule "pyextra"]
+	path = pyextra
+	url = https://github.com/commaai/openpilot-pyextra.git
