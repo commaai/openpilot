@@ -5,6 +5,7 @@ Version 0.3.4 (2017-07-28)
  * Performance improvements
  * Bugfixes and improvements to calibration
  * Driving log can play back video
+ * Acura only: system now stays engaged below 25mph as long as brakes are applied
 
 Version 0.3.3  (2017-06-28)
 ===========================
