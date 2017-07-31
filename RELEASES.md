@@ -1,3 +1,8 @@
+Version 0.3.5 (2017-07-30)
+==========================
+ * Fix bug where new devices would not begin calibration
+ * Minor robustness improvements
+
 Version 0.3.4 (2017-07-28)
 ==========================
  * Improved model trained on more data
