@@ -1,1 +1,1 @@
-#define OPENPILOT_VERSION "0.3.4"
+#define OPENPILOT_VERSION "0.3.5"
