@@ -5,7 +5,7 @@ import zmq
 import selfdrive.messaging as messaging
 from selfdrive.services import service_list
 
-from common.fingerprints import fingerprint
+from selfdrive.car import get_car
 
 def bpressed(CS, btype):
   for b in CS.buttonEvents:
@@ -17,10 +17,7 @@ def test_loop():
   context = zmq.Context()
   logcan = messaging.sub_sock(context, service_list['can'].port)
 
-  CP = fingerprint(logcan)
-  exec('from selfdrive.car.'+CP.carName+'.interface import CarInterface')
-
-  CI = CarInterface(CP, logcan, None)
+  CI, CP = get_car(logcan)
 
   state = 0
 

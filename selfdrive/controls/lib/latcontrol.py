@@ -1,6 +1,6 @@
 import math
 import numpy as np
-from common.numpy_fast import clip
+from common.numpy_fast import clip, interp
 
 def calc_curvature(v_ego, angle_steers, CP, angle_offset=0):
   deg_to_rad = np.pi/180.
@@ -8,15 +8,28 @@ def calc_curvature(v_ego, angle_steers, CP, angle_offset=0):
   curvature = angle_steers_rad/(CP.steerRatio * CP.wheelBase * (1. + CP.slipFactor * v_ego**2))
   return curvature
 
-def calc_d_lookahead(v_ego):
+_K_CURV_V = [1., 0.6]
+_K_CURV_BP = [0., 0.002]
+
+def calc_d_lookahead(v_ego, d_poly):
   #*** this function computes how far too look for lateral control
-  # howfar we look ahead is function of speed
+  # howfar we look ahead is function of speed and how much curvy is the path
   offset_lookahead = 1.
-  coeff_lookahead = 4.4
+  k_lookahead = 7.
+  # integrate abs value of second derivative of poly to get a measure of path curvature
+  pts_len = 50.  # m
+  if len(d_poly)>0:
+    pts = np.polyval([6*d_poly[0], 2*d_poly[1]], np.arange(0, pts_len))
+  else:
+    pts = 0.
+  curv = np.sum(np.abs(pts))/pts_len
+
+  k_curv = interp(curv, _K_CURV_BP, _K_CURV_V)
+
   # sqrt on speed is needed to keep, for a given curvature, the y_offset
   # proportional to speed. Indeed, y_offset is prop to d_lookahead^2
-  # 26m at 25m/s
-  d_lookahead = offset_lookahead + math.sqrt(max(v_ego, 0)) * coeff_lookahead
+  # 36m at 25m/s
+  d_lookahead = offset_lookahead + math.sqrt(max(v_ego, 0)) * k_lookahead * k_curv
   return d_lookahead
 
 def calc_lookahead_offset(v_ego, angle_steers, d_lookahead, CP, angle_offset):
@@ -101,8 +114,8 @@ class LatControl(object):
 
     steer_max = 1.0
 
-    # how far we look ahead is function of speed
-    d_lookahead = calc_d_lookahead(v_ego)
+    # how far we look ahead is function of speed and desired path
+    d_lookahead = calc_d_lookahead(v_ego, d_poly)
 
     # calculate actual offset at the lookahead point
     self.y_actual, _ = calc_lookahead_offset(v_ego, angle_steers,

@@ -42,7 +42,6 @@ BASEDIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
 managed_processes = {
   "uploader": "selfdrive.loggerd.uploader",
   "controlsd": "selfdrive.controls.controlsd",
-  "plannerd": "selfdrive.controls.plannerd",
   "radard": "selfdrive.controls.radard",
   "loggerd": ("loggerd", ["./loggerd"]),
   "logmessaged": "selfdrive.logmessaged",
@@ -66,7 +65,6 @@ interrupt_processes = []
 
 car_started_processes = [
   'controlsd',
-  'plannerd',
   'loggerd',
   'sensord',
   'radard',
@@ -345,8 +343,8 @@ def get_installed_apks():
 # optional, build the c++ binaries and preimport the python for speed
 def manager_prepare():
   # update submodules
-  system("cd %s && git submodule init" % BASEDIR)
-  system("cd %s && git submodule update" % BASEDIR)
+  system("cd %s && git submodule init panda opendbc pyextra" % BASEDIR)
+  system("cd %s && git submodule update panda opendbc pyextra" % BASEDIR)
 
   # build cereal first
   subprocess.check_call(["make", "-j4"], cwd=os.path.join(BASEDIR, "cereal"))
@@ -452,9 +450,20 @@ def main():
   if params.get("IsRearViewMirror") is None:
     params.put("IsRearViewMirror", "1")
 
-  manager_init()
-  manager_prepare()
-  
+  # put something on screen while we set things up
+  if os.getenv("PREPAREONLY") is not None:
+    spinner_proc = None
+  else:
+    spinner_proc = subprocess.Popen(["./spinner", "loading openpilot..."],
+      cwd=os.path.join(BASEDIR, "selfdrive", "ui", "spinner"),
+      close_fds=True)
+  try:
+    manager_init()
+    manager_prepare()
+  finally:
+    if spinner_proc:
+      spinner_proc.terminate()
+
   if os.getenv("PREPAREONLY") is not None:
     sys.exit(0)
 
