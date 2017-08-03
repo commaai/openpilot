@@ -518,7 +518,7 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
     free(value);
   }
 
-  if (s->scene.ui_skin == DEFAULT_SKIN) {
+  if (s->scene.ui_skin == 1) {
     s->font = nvgCreateFont(s->vg, "Bold", "../assets/courbd.ttf");
   }
   else {
@@ -973,21 +973,21 @@ static void ui_draw_vision(UIState *s) {
       // Throttle reading from the file
       read_state(s);
     }
-  }
 
-  if (DEBUG && scene->ui_skin == 2) {
-    // Automatically trigger events when debugging
-    scene->anim_framecount++;
-    if (scene->anim_framecount == 100) {
-      scene->engaged = true;
-      scene->left_anim_status = ANIMATE_IN;
+    if (scene->ui_skin == 2) {
+      // Automatically trigger events when debugging
+      scene->anim_framecount++;
+      if (scene->anim_framecount == 100) {
+        scene->engaged = true;
+        scene->left_anim_status = ANIMATE_IN;
+      }
+      /*
+      else if (scene->anim_framecount == 300) {
+        scene->engaged = false;
+        scene->left_anim_status = ANIMATE_OUT;
+      }
+      */
     }
-    /*
-    else if (scene->anim_framecount == 300) {
-      scene->engaged = false;
-      scene->left_anim_status = ANIMATE_OUT;
-    }
-    */
   }
 
   if (!scene->frontview) {
@@ -1065,7 +1065,7 @@ static void ui_draw_vision(UIState *s) {
         scene->cruise_speed = 75;
       }
 
-      if (scene->ui_skin == DEFAULT_SKIN) {
+      if (scene->ui_skin == 1) {
         if (s->is_metric) {
           snprintf(speed_str, sizeof(speed_str), "%3d KPH",
                  (int)(scene->v_cruise + 0.5));
@@ -1105,7 +1105,7 @@ static void ui_draw_vision(UIState *s) {
 
     scene->current_speed = (int)(scene->v_ego * 2.237 + 0.5);
 
-    if (scene->ui_skin == DEFAULT_SKIN) {
+    if (scene->ui_skin == 1) {
       if (s->is_metric) {
         snprintf(speed_str, sizeof(speed_str), "%3d KPH",
                (int)(scene->v_ego * 3.6 + 0.5));
@@ -1192,7 +1192,7 @@ static void ui_draw_vision(UIState *s) {
     if (scene->calStatus == UNCALIBRATED) {
       int rec_width = 880;
       int x_pos = 555;
-      if (scene->ui_skin == DEFAULT_SKIN) {
+      if (scene->ui_skin == 1) {
         rec_width = 1020;
         x_pos = 470;
       }
