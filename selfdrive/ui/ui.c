@@ -35,10 +35,15 @@
 #define MAX_AWARENESS_TIME 360 // 6 minutes 
 #define DEFAULT_SKIN 1 // Determine which UI skin to use as a default
 #define DEBUG false // Set to true to show mockup UI content for placement
-#define AWARENESS_BAR_WIDTH 1300 // Pixel width of awareness bar for skin v2
+#define AWARENESS_BAR_WIDTH 1130 // Pixel width of awareness bar for skin v2
 #define ANIMATE_IN 1
 #define ANIMATE_OUT 2
 #define LEFT_ELEMENT_VISIBLE 3
+
+// Calibration status values taken from controlsd.py
+#define UNCALIBRATED 0
+#define CALIBRATED 1
+#define INVALID 2
 
 #define UI_BUF_COUNT 4
 
@@ -90,6 +95,9 @@ typedef struct UIScene {
   char status[32]; 
   float last_awareness; 
   int ui_skin; 
+
+  int calStatus; 
+  int calPerc; // Used to display calibration percent (if it's in progress)
 } UIScene;
 
 typedef struct UIState {
@@ -280,10 +288,19 @@ static void read_state(UIState* s) {
 /*
  * Load external assets from a file
  * for use in the UI
+ * Files are stored in tar.gz and read into memory
  */
-static int ui_load_element(NVGcontext* vg, char* file) {
-  int image = nvgCreateImage(vg, file, 0);
-  //printf("Loaded %s: %d\n", file, image);
+static int ui_load_element_mem(NVGcontext* vg, char* cmd) {
+
+  int buffsize = 50000;
+  unsigned char buffer[buffsize];
+
+  FILE* fp = popen(cmd, "r");
+  size_t byte_count = fread(buffer, 1, buffsize - 1, fp);
+  buffer[byte_count] = 0;
+  pclose(fp);
+
+  int image = nvgCreateImageMem(vg, 0, buffer, byte_count);
   return image;
 }
 
@@ -365,16 +382,6 @@ static void ui_init(UIState *s) {
   s->vg = nvgCreateGLES3(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
   assert(s->vg);
 
-  /*
-  if (UI_SKIN_VERSION == 1) {
-    s->font = nvgCreateFont(s->vg, "Bold", "../assets/courbd.ttf");
-  }
-  else {
-    s->font = nvgCreateFont(s->vg, "Bold", "../assets/arialbd.ttf");
-  }
-  assert(s->font >= 0);
-  */
-
   // init gl
   s->frame_program = load_program(frame_vertex_shader, frame_fragment_shader);
   assert(s->frame_program);
@@ -455,6 +462,8 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
   }
 
   s->scene = (UIScene){
+      .calStatus = 0,
+      .calPerc = 0,
       .ui_skin = DEFAULT_SKIN,
       .last_awareness = 0,
       .status = "out",
@@ -928,15 +937,15 @@ static void ui_animate(UIState *s) {
 static void ui_draw_vision(UIState *s) {
   UIScene *scene = &s->scene;
 
-  if (s->scene.ui_elements[0] <= 0) {
+  if ( scene->ui_skin != 1 && s->scene.ui_elements[0] <= 0) {
     // For some reason, making this call in ui_init doesn't work on bootup
     // Load all the speed indicator PNGs
 
-    char filename[32];
+    char cmd[50]; // Command to extract the file and read it into memory
+    printf("Loading UI Assets...\n");
     for (int i=0; i <= 120; i++) {
-      snprintf(filename,sizeof(filename),"../assets/speed/%d.png",i);
-      //printf ("loading %d %s\n",i+3,filename);
-      s->scene.ui_elements[i+0] = ui_load_element(s->vg, filename);
+      snprintf(cmd,sizeof(cmd),"tar xOfz ../assets/speed.tar.gz %d.png",i);
+      s->scene.ui_elements[i+0] = ui_load_element_mem(s->vg, cmd);
     }
   }
 
@@ -973,14 +982,21 @@ static void ui_draw_vision(UIState *s) {
       scene->engaged = true;
       scene->left_anim_status = ANIMATE_IN;
     }
-    else if (scene->anim_framecount == 200) {
+    /*
+    else if (scene->anim_framecount == 300) {
       scene->engaged = false;
       scene->left_anim_status = ANIMATE_OUT;
     }
+    */
   }
 
   if (!scene->frontview) {
-    ui_draw_transformed_box(s, 0xFF00FF00);
+    if (scene->calStatus == UNCALIBRATED) {
+      ui_draw_transformed_box(s, 0xFFFFBA00);
+    }
+    else {
+      ui_draw_transformed_box(s, 0xFF00FF00);
+    }
     ui_draw_world(s);
 
     // draw speed
@@ -1071,13 +1087,13 @@ static void ui_draw_vision(UIState *s) {
         }
 
         // Left side background circle
-        ui_draw_circle(s, 158+scene->left_anim_offset, 1080-146, 112, nvgRGBA(10, 100, 10, 120));
+        ui_draw_circle(s, 158+scene->left_anim_offset, 1080-146, 112, nvgRGBA(10, 150, 10, 120));
 
         // Left speed dial
         ui_draw_speed_notch(s, scene->cruise_speed, 35+scene->left_anim_offset, 55+scene->display_offset);
 
         nvgFontSize(s->vg, defaultfontsize);
-        nvgText(s->vg, 160+scene->left_anim_offset, 205+scene->display_offset, speed_str, NULL);
+        nvgText(s->vg, 160+scene->left_anim_offset, 218+scene->display_offset, speed_str, NULL);
       }
     }
     else if (scene->ui_skin == 2) {
@@ -1126,20 +1142,18 @@ static void ui_draw_vision(UIState *s) {
 
       // Right speed dial
       ui_draw_speed_notch(s, scene->current_speed, 1920-285, 55+scene->display_offset);
-      nvgText(s->vg, 1920 - 157, 205+scene->display_offset, speed_str, NULL);
+      nvgText(s->vg, 1920 - 162, 218+scene->display_offset, speed_str, NULL);
 
       nvgFontSize(s->vg, smallfontsize);
       nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 220));
 
       if (s->is_metric) {
         nvgText(s->vg, 165, 260+scene->display_offset, "KPH", NULL);
-        nvgText(s->vg, 1920-155, 255+scene->display_offset, "KPH", NULL);
+        nvgText(s->vg, 1920-155, 265+scene->display_offset, "KPH", NULL);
       }
       else {
-        //if (scene->left_anim_started) {
-          nvgText(s->vg, 165+scene->left_anim_offset, 260+scene->display_offset, "MPH", NULL);
-        //}
-        nvgText(s->vg, 1920-155, 255+scene->display_offset, "MPH", NULL);
+        nvgText(s->vg, 162+scene->left_anim_offset, 265+scene->display_offset, "MPH", NULL);
+        nvgText(s->vg, 1920-155, 265+scene->display_offset, "MPH", NULL);
       }
 
       nvgFontSize(s->vg, smallfontsize);
@@ -1152,11 +1166,11 @@ static void ui_draw_vision(UIState *s) {
         scene->awareness_status = scene->last_awareness;
       }
     
-      int bar_width = scene->awareness_status * AWARENESS_BAR_WIDTH;
+      int bar_width = scene->awareness_status * AWARENESS_BAR_WIDTH + 170;
 
       //Draw full border
       nvgBeginPath(s->vg);
-      nvgRoundedRect(s->vg, (1920-bar_width)/2, 1010+scene->bar_anim_offset, bar_width, 70, 10);
+      nvgRoundedRect(s->vg, (1920-bar_width)/2, 1000+scene->bar_anim_offset, bar_width, 75, 10);
       nvgStrokeColor(s->vg, nvgRGBA(255,255,255,200));
       nvgStrokeWidth(s->vg, 4);
       nvgStroke(s->vg);
@@ -1170,8 +1184,31 @@ static void ui_draw_vision(UIState *s) {
       char timeLeft_str[16];
       snprintf(timeLeft_str, sizeof(timeLeft_str), "%s", timeLeft);
       nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 220));
-      nvgFontSize(s->vg, 65.0f);
+      nvgFontSize(s->vg, 85.0f);
       nvgText(s->vg, (1920)/2, 310+scene->display_offset+scene->bar_anim_offset, timeLeft_str, NULL);
+    }
+
+    // Draw calibration progress (if needed)
+    if (scene->calStatus == UNCALIBRATED) {
+      int rec_width = 880;
+      int x_pos = 555;
+      if (scene->ui_skin == DEFAULT_SKIN) {
+        rec_width = 1020;
+        x_pos = 470;
+      }
+      nvgBeginPath(s->vg);
+      nvgStrokeWidth(s->vg, 14);
+      nvgRoundedRect(s->vg, (1920-rec_width)/2, 970, rec_width, 100, 20);
+      nvgStroke(s->vg);
+      nvgFillColor(s->vg, nvgRGBA(10,100,220,180));
+      nvgFill(s->vg);
+
+      nvgFontSize(s->vg, labelfontsize);
+      nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
+      nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 220));
+      char calib_status_str[32];
+      snprintf(calib_status_str,sizeof(calib_status_str),"Calibration In Progress: %d%%", scene->calPerc);
+      nvgText(s->vg, x_pos, 1040, calib_status_str, NULL);
     }
   }
 
@@ -1462,6 +1499,10 @@ static void ui_update(UIState *s) {
         s->scene.world_objects_visible = s->intrinsic_matrix_loaded;
         struct cereal_LiveCalibrationData datad;
         cereal_read_LiveCalibrationData(&datad, eventd.liveCalibration);
+        
+        s->scene.calStatus= datad.calStatus;
+        s->scene.calPerc= datad.calPerc;
+        //printf("status: %d, percent:%d\n",s->scene.calStatus,s->scene.calPerc);
 
         // should we still even have this?
         capn_list32 warpl = datad.warpMatrix;
