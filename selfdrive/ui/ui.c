@@ -89,7 +89,7 @@ typedef struct UIScene {
   int bar_anim_offset; // Used to animate the bar 
   int left_anim_step; // How fast to animate
   int left_anim_status; 
-  int anim_framecount; // Used in debugging to throttle file read in read_state() function and automatic trigger of events
+  int framecount; // Used in debugging to throttle file read in read_state() function and automatic trigger of events
 
   int left_anim_delta; 
   char status[32]; 
@@ -468,7 +468,7 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
       .last_awareness = 0,
       .status = "out",
       .left_anim_delta = 2,
-      .anim_framecount = 0,
+      .framecount = 0,
       .left_anim_status = 0,
       .left_anim_step = 20,
       .left_anim_offset = -282,
@@ -947,6 +947,7 @@ static void ui_draw_vision(UIState *s) {
       snprintf(cmd,sizeof(cmd),"tar xOfz ../assets/speed.tar.gz %d.png",i);
       s->scene.ui_elements[i+0] = ui_load_element_mem(s->vg, cmd);
     }
+    printf("Done\n");
   }
 
   // if (scene->engaged) {
@@ -966,23 +967,24 @@ static void ui_draw_vision(UIState *s) {
 
   nvgBeginFrame(s->vg, s->fb_w, s->fb_h, 1.0f);
 
+  scene->framecount++;
+
   // For debugging, read state from file to trigger events
   if (DEBUG) {
-    scene->anim_framecount++;
-    if (scene->anim_framecount % 20 == 0) {
+    if (scene->framecount % 20 == 0) {
       // Throttle reading from the file
       read_state(s);
     }
 
     if (scene->ui_skin == 2) {
       // Automatically trigger events when debugging
-      scene->anim_framecount++;
-      if (scene->anim_framecount == 100) {
+      scene->framecount++;
+      if (scene->framecount == 100) {
         scene->engaged = true;
         scene->left_anim_status = ANIMATE_IN;
       }
       /*
-      else if (scene->anim_framecount == 300) {
+      else if (scene->framecount == 300) {
         scene->engaged = false;
         scene->left_anim_status = ANIMATE_OUT;
       }
@@ -1189,7 +1191,7 @@ static void ui_draw_vision(UIState *s) {
     }
 
     // Draw calibration progress (if needed)
-    if (scene->calStatus == UNCALIBRATED) {
+    if (scene->calStatus == UNCALIBRATED && scene->framecount > 100) {
       int rec_width = 880;
       int x_pos = 555;
       if (scene->ui_skin == 1) {
@@ -1600,6 +1602,7 @@ static void* vision_connect_thread(void *args) {
     s->vision_connected = true;
     s->vision_connect_firstrun = true;
     pthread_mutex_unlock(&s->lock);
+
   }
   return NULL;
 }
