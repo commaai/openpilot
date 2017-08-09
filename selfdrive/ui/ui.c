@@ -32,7 +32,7 @@
 
 #include "cereal/gen/c/log.capnp.h"
 
-#define MAX_AWARENESS_TIME 360 // 6 minutes 
+#define MAX_AWARENESS_TIME 3600 // 6 minutes 
 #define DEFAULT_SKIN 1 // Determine which UI skin to use as a default
 #define DEBUG false // Set to true to show mockup UI content for placement
 #define AWARENESS_BAR_WIDTH 1130 // Pixel width of awareness bar for skin v2
@@ -46,6 +46,10 @@
 #define INVALID 2
 
 #define UI_BUF_COUNT 4
+
+typedef struct UIAssets {
+  int ui_elements[150];
+} UIAssets;
 
 typedef struct UIScene {
   int frontview;
@@ -82,7 +86,6 @@ typedef struct UIScene {
 
   int display_offset; // Display element offset (so we can be on top or bottom)
 
-  int ui_elements[150];
   int current_speed; // in MPH... used in rendering the notches on the speed dial
   int cruise_speed; // in MPH... used in rendering the notches on the speed dial
   int left_anim_offset; // Used to animate the left speed dial (cruise setting)
@@ -151,6 +154,7 @@ typedef struct UIState {
   mat3 intrinsic_matrix;
 
   UIScene scene;
+  UIAssets uiassets;
 
   bool awake;
   int awake_timeout;
@@ -327,15 +331,15 @@ static void ui_draw_element(UIState* s, int image, int x_pos, int y_pos) {
  * Draw the analog notch based on the speed
  */
 static void ui_draw_speed_notch(UIState* s, int speed, int x_pos, int y_pos) {
-  const UIScene *scene = &s->scene;
+  const UIAssets *uiassets = &s->uiassets;
 
   // Notch assets start at index 3 and go up to 123 (0-120 mph)
   if (speed > 120) {
     speed = 120; 
   }
 
-  //printf("img: %d, %d\n",speed+3,scene->ui_elements[speed+3]);
-  ui_draw_element(s, scene->ui_elements[speed+0], x_pos, y_pos);
+  //printf("img: %d, %d\n",speed+3,uiassets->ui_elements[speed+3]);
+  ui_draw_element(s, uiassets->ui_elements[speed+0], x_pos, y_pos);
 }
 
 /*
@@ -936,8 +940,9 @@ static void ui_animate(UIState *s) {
 
 static void ui_draw_vision(UIState *s) {
   UIScene *scene = &s->scene;
+  UIAssets *uiassets = &s->uiassets;
 
-  if ( scene->ui_skin != 1 && s->scene.ui_elements[0] <= 0) {
+  if ( scene->ui_skin != 1 && uiassets->ui_elements[0] <= 0) {
     // For some reason, making this call in ui_init doesn't work on bootup
     // Load all the speed indicator PNGs
 
@@ -945,7 +950,7 @@ static void ui_draw_vision(UIState *s) {
     printf("Loading UI Assets...\n");
     for (int i=0; i <= 120; i++) {
       snprintf(cmd,sizeof(cmd),"tar xOfz ../assets/speed.tar.gz %d.png",i);
-      s->scene.ui_elements[i+0] = ui_load_element_mem(s->vg, cmd);
+      uiassets->ui_elements[i+0] = ui_load_element_mem(s->vg, cmd);
     }
     printf("Done\n");
   }
