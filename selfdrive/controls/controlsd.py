@@ -274,7 +274,8 @@ class Controls(object):
     if self.rk.frame % 5 == 2 and self.plan.lateralValid: 
       # *** run this at 20hz again *** 
       self.angle_offset = learn_angle_offset(self.enabled, self.CS.vEgo, self.angle_offset, 
-                                             self.plan.dPoly, self.LaC.y_des, self.CS.steeringPressed) 
+                                             self.PL.PP.c_poly, self.PL.PP.c_prob, self.LaC.y_des,
+                                             self.CS.steeringPressed) 
 
     # *** gas/brake PID loop *** 
     final_gas, final_brake = self.LoC.update(self.enabled, self.CS.vEgo, self.v_cruise_kph, 

@@ -62,6 +62,8 @@ class PathPlanner(object):
   def __init__(self):
     self.dead = True
     self.d_poly = [0., 0., 0., 0.]
+    self.c_poly = [0., 0., 0., 0.]
+    self.c_prob = 0.
     self.last_model = 0.
     self.lead_dist, self.lead_prob, self.lead_var = 0, 0, 1
     self._path_pinv = compute_path_pinv()
@@ -81,7 +83,7 @@ class PathPlanner(object):
       self.lead_var = md.model.lead.std**2
 
       # compute target path
-      self.d_poly, _, _ = calc_desired_path(l_poly, r_poly, p_poly, l_prob, r_prob, p_prob, v_ego)
+      self.d_poly, self.c_poly, self.c_prob = calc_desired_path(l_poly, r_poly, p_poly, l_prob, r_prob, p_prob, v_ego)
 
       self.last_model = cur_time
       self.dead = False
