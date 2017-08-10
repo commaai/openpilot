@@ -259,6 +259,8 @@ class CarState(object):
     self.cp = get_can_parser(CP)
 
     self.user_gas, self.user_gas_pressed = 0., 0
+    self.brake_switch_prev = 0
+    self.brake_switch_ts = 0
 
     self.cruise_buttons = 0
     self.cruise_setting = 0
@@ -311,8 +313,6 @@ class CarState(object):
     else:
       self.steer_error = cp.vl[0x18F]['STEER_STATUS'] not in [0,2,4,6]
       self.steer_not_allowed = cp.vl[0x18F]['STEER_STATUS'] != 0
-      if cp.vl[0x18F]['STEER_STATUS'] != 0:
-        print cp.vl[0x18F]['STEER_STATUS']
     self.brake_error = cp.vl[0x1B0]['BRAKE_ERROR_1'] or cp.vl[0x1B0]['BRAKE_ERROR_2']
     self.esp_disabled = cp.vl[0x1A4]['ESP_DISABLED']
     # calc best v_ego estimate, by averaging two opposite corners
@@ -371,6 +371,7 @@ class CarState(object):
       self.blinker_on = cp.vl[0x294]['LEFT_BLINKER'] or cp.vl[0x294]['RIGHT_BLINKER']
       self.left_blinker_on = cp.vl[0x294]['LEFT_BLINKER']
       self.right_blinker_on = cp.vl[0x294]['RIGHT_BLINKER']
+
     if self.accord:
       # on the accord, this doesn't seem to include cruise control
       self.car_gas = cp.vl[0x17C]['PEDAL_GAS']
@@ -382,7 +383,15 @@ class CarState(object):
     else:
       self.car_gas = cp.vl[0x130]['CAR_GAS']
       self.steer_override = abs(cp.vl[0x18F]['STEER_TORQUE_SENSOR']) > 1200
-    self.brake_pressed = cp.vl[0x17C]['BRAKE_PRESSED'] or cp.vl[0x17C]['BRAKE_SWITCH']
+
+    # brake switch has shown some single time step noise, so only considered when
+    # switch is on for at least 2 consecutive CAN samples
+    self.brake_pressed = cp.vl[0x17C]['BRAKE_PRESSED'] or \
+                         (cp.vl[0x17C]['BRAKE_SWITCH'] and self.brake_switch_prev and \
+                         cp.ts[0x17C]['BRAKE_SWITCH'] != self.brake_switch_ts)
+    self.brake_switch_prev = cp.vl[0x17C]['BRAKE_SWITCH']
+    self.brake_switch_ts = cp.ts[0x17C]['BRAKE_SWITCH']
+
     self.user_brake = cp.vl[0x1A4]['USER_BRAKE']
     self.standstill = not cp.vl[0x1B0]['WHEELS_MOVING']
     self.v_cruise_pcm = cp.vl[0x324]['CRUISE_SPEED_PCM']

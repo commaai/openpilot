@@ -25,6 +25,7 @@ typedef struct MessageParseOptions {
 
 typedef struct SignalValue {
   uint32_t address;
+  uint16_t ts;
   const char* name;
   double value;
 } SignalValue;
@@ -45,6 +46,7 @@ class CANParser(object):
   def __init__(self, dbc_name, signals, checks=[], bus=0):
     self.can_valid = True
     self.vl = defaultdict(dict)
+    self.ts = defaultdict(dict)
 
     sig_names = dict((name, ffi.new("char[]", name)) for name, _, _ in signals)
 
@@ -87,7 +89,9 @@ class CANParser(object):
       cv = self.can_values[i]
       address = cv.address
       # print hex(cv.address), ffi.string(cv.name)
-      self.vl[address][ffi.string(cv.name)] = cv.value
+      name = ffi.string(cv.name)
+      self.vl[address][name] = cv.value
+      self.ts[address][name] = cv.ts
       ret.add(address)
     return ret
 
@@ -161,6 +165,7 @@ if __name__ == "__main__":
 
   while True:
     cp.update(int(sec_since_boot()*1e9), True)
-    print cp.vl
+    # print cp.vl
+    print cp.ts
     print cp.can_valid
     time.sleep(0.01)
