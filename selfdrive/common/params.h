@@ -7,6 +7,8 @@
 extern "C" {
 #endif
 
+#define PARAMS_PATH "/data/params"
+
 int write_db_value(const char* params_path, const char* key, const char* value,
                    size_t value_size);
 

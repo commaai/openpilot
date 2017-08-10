@@ -753,9 +753,11 @@ static void ui_draw_vision(UIState *s) {
         snprintf(speed_str, sizeof(speed_str), "%3d KPH",
                  (int)(scene->v_cruise + 0.5));
       } else {
-        // Convert KPH to MPH.
+        /* Convert KPH to MPH. Using an approximated mph to kph 
+        conversion factor of 1.609 because this is what the Honda
+        hud seems to be using */
         snprintf(speed_str, sizeof(speed_str), "%3d MPH",
-                 (int)(scene->v_cruise * 0.621371 + 0.5));
+                 (int)(scene->v_cruise * 0.621504 + 0.5));
       }
       nvgTextAlign(s->vg, NVG_ALIGN_RIGHT | NVG_ALIGN_BASELINE);
       nvgText(s->vg, 480, 95, speed_str, NULL);

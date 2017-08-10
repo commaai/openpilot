@@ -3,7 +3,7 @@ SRCS := log.capnp car.capnp
 GENS := gen/cpp/car.capnp.c++ gen/cpp/log.capnp.c++
 
 
-UNAME_M := $(shell uname -m)
+UNAME_M ?= $(shell uname -m)
 
 # only generate C++ for docker tests
 ifneq ($(OPTEST),1)
