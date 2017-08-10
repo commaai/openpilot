@@ -1,3 +1,11 @@
+Version 0.3.6 (2017-08-08)
+==========================
+ * Fix alpha CR-V support
+ * Improved GPS
+ * Fix display of target speed not always matching HUD
+ * Increased acceleration after stop
+ * Mitigated some vehicles driving too close to the right line
+
 Version 0.3.5 (2017-07-30)
 ==========================
  * Fix bug where new devices would not begin calibration

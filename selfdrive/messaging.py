@@ -13,8 +13,10 @@ def pub_sock(context, port, addr="*"):
   sock.bind("tcp://%s:%d" % (addr, port))
   return sock
 
-def sub_sock(context, port, poller=None, addr="127.0.0.1"):
+def sub_sock(context, port, poller=None, addr="127.0.0.1", conflate=False):
   sock = context.socket(zmq.SUB)
+  if conflate:
+    sock.setsockopt(zmq.CONFLATE, 1)
   sock.connect("tcp://%s:%d" % (addr, port))
   sock.setsockopt(zmq.SUBSCRIBE, "")
   if poller is not None:
@@ -50,3 +52,12 @@ def recv_sock(sock, wait=False):
   if dat is not None:
     dat = log.Event.from_bytes(dat)
   return dat
+
+def recv_one(sock):
+  return log.Event.from_bytes(sock.recv())
+
+def recv_one_or_none(sock):
+  try:
+    return log.Event.from_bytes(sock.recv(zmq.NOBLOCK))
+  except zmq.error.Again:
+    return None

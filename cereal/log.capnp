@@ -26,6 +26,8 @@ struct InitData {
 
   deviceType @3 :DeviceType;
   version @4 :Text;
+  gitCommit @10 :Text;
+  gitBranch @11 :Text;
 
   androidBuildInfo @5 :AndroidBuildInfo;
   androidSensors @6 :List(AndroidSensor);
@@ -326,14 +328,15 @@ struct Live100Data {
   vTargetLead @3 :Float32;
   upAccelCmd @4 :Float32;
   uiAccelCmd @5 :Float32;
-  yActual @6 :Float32;
+  yActualDEPRECATED @6 :Float32;
   yDes @7 :Float32;
   upSteer @8 :Float32;
   uiSteer @9 :Float32;
   aTargetMin @10 :Float32;
   aTargetMax @11 :Float32;
   jerkFactor @12 :Float32;
-  angleSteers @13 :Float32;  # Steering angle in degrees.
+  angleSteers @13 :Float32;     # Steering angle in degrees.
+  angleSteersDes @29 :Float32;
   hudLeadDEPRECATED @14 :Int32;
   cumLagMs @15 :Float32;
 
@@ -701,10 +704,66 @@ struct QcomGnss {
   union {
     measurementReport @1 :MeasurementReport;
     clockReport @2 :ClockReport;
+    drMeasurementReport @3 :DrMeasurementReport;
+  }
+
+  enum MeasurementSource @0xd71a12b6faada7ee {
+    gps @0;
+    glonass @1;
+    beidou @2;
+  }
+
+  enum SVObservationState @0xe81e829a0d6c83e9 {
+    idle @0;
+    search @1;
+    searchVerify @2;
+    bitEdge @3;
+    trackVerify @4;
+    track @5;
+    restart @6;
+    dpo @7;
+    glo10msBe @8;
+    glo10msAt @9;
+  }
+
+  struct MeasurementStatus @0xe501010e1bcae83b {
+    subMillisecondIsValid @0 :Bool;
+    subBitTimeIsKnown @1 :Bool;
+    satelliteTimeIsKnown @2 :Bool;
+    bitEdgeConfirmedFromSignal @3 :Bool;
+    measuredVelocity @4 :Bool;
+    fineOrCoarseVelocity @5 :Bool;
+    lockPointValid @6 :Bool;
+    lockPointPositive @7 :Bool;
+    lastUpdateFromDifference @8 :Bool;
+    lastUpdateFromVelocityDifference @9 :Bool;
+    strongIndicationOfCrossCorelation @10 :Bool;
+    tentativeMeasurement @11 :Bool;
+    measurementNotUsable @12 :Bool;
+    sirCheckIsNeeded @13 :Bool;
+    probationMode @14 :Bool;
+    
+    glonassMeanderBitEdgeValid @15 :Bool;
+    glonassTimeMarkValid @16 :Bool;
+    
+    gpsRoundRobinRxDiversity @17 :Bool;
+    gpsRxDiversity @18 :Bool;
+    gpsLowBandwidthRxDiversityCombined @19 :Bool;
+    gpsHighBandwidthNu4 @20 :Bool;
+    gpsHighBandwidthNu8 @21 :Bool;
+    gpsHighBandwidthUniform @22 :Bool;
+    gpsMultipathIndicator @23 :Bool;
+    
+    imdJammingIndicator @24 :Bool;
+    lteB13TxJammingIndicator @25 :Bool;
+    freshMeasurementIndicator @26 :Bool;
+
+    multipathEstimateIsValid @27 :Bool;
+    directionIsValid @28 :Bool;
   }
 
   struct MeasurementReport {
-    source @0 :Source;
+    source @0 :MeasurementSource;
 
     fCount @1 :UInt32;
 
@@ -720,11 +779,6 @@ struct QcomGnss {
 
     sv @10 :List(SV);
 
-    enum Source {
-      gps @0;
-      glonass @1;
-    }
-
     struct SV {
       svId @0 :UInt8;
       observationState @2 :SVObservationState;
@@ -736,7 +790,7 @@ struct QcomGnss {
       filterStages @7 :UInt8;
       carrierNoise @8 :UInt16;
       latency @9 :Int16;
-      predetectIntegration @10 :UInt8;
+      predetectInterval @10 :UInt8;
       postdetections @11 :UInt16;
 
       unfilteredMeasurementIntegral @12 :UInt32;
@@ -753,55 +807,6 @@ struct QcomGnss {
       fineSpeed @23 :Float32;
       fineSpeedUncertainty @24 :Float32;
       cycleSlipCount @25 :UInt8;
-
-      struct MeasurementStatus {
-        subMillisecondIsValid @0 :Bool;
-        subBitTimeIsKnown @1 :Bool;
-        satelliteTimeIsKnown @2 :Bool;
-        bitEdgeConfirmedFromSignal @3 :Bool;
-        measuredVelocity @4 :Bool;
-        fineOrCoarseVelocity @5 :Bool;
-        lockPointValid @6 :Bool;
-        lockPointPositive @7 :Bool;
-        lastUpdateFromDifference @8 :Bool;
-        lastUpdateFromVelocityDifference @9 :Bool;
-        strongIndicationOfCrossCorelation @10 :Bool;
-        tentativeMeasurement @11 :Bool;
-        measurementNotUsable @12 :Bool;
-        sirCheckIsNeeded @13 :Bool;
-        probationMode @14 :Bool;
-        
-        glonassMeanderBitEdgeValid @15 :Bool;
-        glonassTimeMarkValid @16 :Bool;
-        
-        gpsRoundRobinRxDiversity @17 :Bool;
-        gpsRxDiversity @18 :Bool;
-        gpsLowBandwidthRxDiversityCombined @19 :Bool;
-        gpsHighBandwidthNu4 @20 :Bool;
-        gpsHighBandwidthNu8 @21 :Bool;
-        gpsHighBandwidthUniform @22 :Bool;
-        gpsMultipathIndicator @23 :Bool;
-        
-        imdJammingIndicator @24 :Bool;
-        lteB13TxJammingIndicator @25 :Bool;
-        freshMeasurementIndicator @26 :Bool;
-
-        multipathEstimateIsValid @27 :Bool;
-        directionIsValid @28 :Bool;
-      }
-
-      enum SVObservationState {
-        idle @0;
-        search @1;
-        searchVerify @2;
-        bitEdge @3;
-        trackVerify @4;
-        track @5;
-        restart @6;
-        dpo @7;
-        glo10msBe @8;
-        glo10msAt @9;
-      }
     }
 
   }
@@ -810,8 +815,8 @@ struct QcomGnss {
     hasFCount @0 :Bool;
     fCount @1 :UInt32;
 
-    hasGpsWeekNumber @2 :Bool;
-    gpsWeekNumber @3 :UInt16;
+    hasGpsWeek @2 :Bool;
+    gpsWeek @3 :UInt16;
     hasGpsMilliseconds @4 :Bool;
     gpsMilliseconds @5 :UInt32;
     gpsTimeBias @6 :Float32;
@@ -865,6 +870,88 @@ struct QcomGnss {
     fCountOffset @48 :UInt32;
     lpmRtcCount @49 :UInt32;
     clockResets @50 :UInt32;
+  }
+
+  struct DrMeasurementReport {
+
+    reason @0 :UInt8;
+    seqNum @1 :UInt8;
+    seqMax @2 :UInt8;
+    rfLoss @3 :UInt16;
+
+    systemRtcValid @4 :Bool;
+    fCount @5 :UInt32;
+    clockResets @6 :UInt32;
+    systemRtcTime @7 :UInt64;
+
+    gpsLeapSeconds @8 :UInt8;
+    gpsLeapSecondsUncertainty @9 :UInt8;
+    gpsToGlonassTimeBiasMilliseconds @10 :Float32;
+    gpsToGlonassTimeBiasMillisecondsUncertainty @11 :Float32;
+
+    gpsWeek @12 :UInt16;
+    gpsMilliseconds @13 :UInt32;
+    gpsTimeBiasMs @14 :UInt32;
+    gpsClockTimeUncertaintyMs @15 :UInt32;
+    gpsClockSource @16 :UInt8;
+
+    glonassClockSource @17 :UInt8;
+    glonassYear @18 :UInt8;
+    glonassDay @19 :UInt16;
+    glonassMilliseconds @20 :UInt32;
+    glonassTimeBias @21 :Float32;
+    glonassClockTimeUncertainty @22 :Float32;
+
+    clockFrequencyBias @23 :Float32;
+    clockFrequencyUncertainty @24 :Float32;
+    frequencySource @25 :UInt8;
+
+    source @26 :MeasurementSource;
+
+    sv @27 :List(SV);
+
+    struct SV {
+      svId @0 :UInt8;
+      glonassFrequencyIndex @1 :Int8;
+      observationState @2 :SVObservationState;
+      observations @3 :UInt8;
+      goodObservations @4 :UInt8;
+      filterStages @5 :UInt8;
+      predetectInterval @6 :UInt8;
+      cycleSlipCount @7 :UInt8;
+      postdetections @8 :UInt16;
+
+      measurementStatus @9 :MeasurementStatus;
+
+      carrierNoise @10 :UInt16;
+      rfLoss @11 :UInt16;
+      latency @12 :Int16;
+
+      filteredMeasurementFraction @13 :Float32;
+      filteredMeasurementIntegral @14 :UInt32;
+      filteredTimeUncertainty @15 :Float32;
+      filteredSpeed @16 :Float32;
+      filteredSpeedUncertainty @17 :Float32;
+
+      unfilteredMeasurementFraction @18 :Float32;
+      unfilteredMeasurementIntegral @19 :UInt32;
+      unfilteredTimeUncertainty @20 :Float32;
+      unfilteredSpeed @21 :Float32;
+      unfilteredSpeedUncertainty @22 :Float32;
+
+      multipathEstimate @23 :UInt32;
+      azimuth @24 :Float32;
+      elevation @25 :Float32;
+      dopplerAcceleration @26 :Float32;
+      fineSpeed @27 :Float32;
+      fineSpeedUncertainty @28 :Float32;
+
+      carrierPhase @29 :Float64;
+      fCount @30 :UInt32;
+
+      parityErrorCount @31 :UInt16;
+      goodParity @32 :Bool;
+    }
   }
 }
 

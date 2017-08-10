@@ -2,7 +2,10 @@
 
 #include "selfdrive/common/util.h"
 
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif  // _GNU_SOURCE
+
 #include <sys/file.h>
 #include <unistd.h>
 #include <stdlib.h>
