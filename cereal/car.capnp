@@ -180,23 +180,29 @@ struct CarControl {
 struct CarParams {
   carName @0: Text;
   radarName @1: Text;
-  carFingerprint @11: Text;
+  carFingerprint @2: Text;
 
-  enableSteer @2: Bool;
-  enableGas @3: Bool;
-  enableBrake @4: Bool;
-  enableCruise @5: Bool;
+  enableSteer @3: Bool;
+  enableGas @4: Bool;
+  enableBrake @5: Bool;
+  enableCruise @6: Bool;
 
   # things about the car in the manual
-  wheelBase @6: Float32;     # in meters
-  steerRatio @7: Float32;
+  m @7: Float32;     # [kg] running weight
+  l @8: Float32;     # [m] wheelbase
+  sR @9: Float32;    # [] steering ratio
+  aF @10: Float32;   # [m] GC distance to front axle
+  aR @11: Float32;   # [m] GC distance to rear axle
+  chi @12: Float32;  # [] rear steering ratio wrt front steering (usually 0)
 
   # things we can derive
-  slipFactor @8: Float32;
+  j @13: Float32;    # [kg*m2] body rot inertia
+  cF @14: Float32;   # [N/rad] front tire coeff of stiff
+  cR @15: Float32;   # [N/rad] rear tire coeff of stiff
 
   # Kp and Ki for the lateral control
-  steerKp @9: Float32;
-  steerKi @10: Float32;
+  steerKp @16: Float32;
+  steerKi @17: Float32;
 
   # TODO: Kp and Ki for long control, perhaps not needed?
 }

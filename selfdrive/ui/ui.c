@@ -1067,7 +1067,13 @@ static void ui_draw_vision(UIState *s) {
 
     if ((scene->v_cruise != 255 && scene->v_cruise != 0) || DEBUG) {
       // Save the speed in MPH so we can render the notches correctly
-      scene->cruise_speed = (int)(scene->v_cruise * 0.621371 + 0.5);
+
+      /* Convert KPH to MPH. Using an approximated mph to kph 
+      conversion factor of 1.609 because this is what the Honda
+      hud seems to be using */
+
+      scene->cruise_speed = (int)(scene->v_cruise * 0.621504 + 0.5);
+
       if (DEBUG) {
         scene->cruise_speed = 75;
       }

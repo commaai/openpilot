@@ -3,6 +3,8 @@ import numpy as np
 from common.numpy_fast import clip, interp
 import selfdrive.messaging as messaging
 
+# TODO: we compute a_pcm but we don't use it, as accelOverride is hardcoded in controlsd
+
 # lookup tables VS speed to determine min and max accels in cruise
 _A_CRUISE_MIN_V  = [-1.0, -.8, -.67, -.5, -.30]
 _A_CRUISE_MIN_BP = [   0., 5.,  10., 20.,  40.]
@@ -25,7 +27,7 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, a_pcm, CP):
   deg_to_rad = np.pi / 180.  # from can reading to rad
 
   a_total_max = interp(v_ego, _A_TOTAL_MAX_BP, _A_TOTAL_MAX_V)
-  a_y = v_ego**2 * angle_steers * deg_to_rad / (CP.steerRatio * CP.wheelBase)
+  a_y = v_ego**2 * angle_steers * deg_to_rad / (CP.sR * CP.l)
   a_x_allowed = math.sqrt(max(a_total_max**2 - a_y**2, 0.))
 
   a_target[1] = min(a_target[1], a_x_allowed)
@@ -109,12 +111,15 @@ _A_CORR_BY_SPEED_V = [0.4, 0.4, 0]
 # speeds
 _A_CORR_BY_SPEED_BP = [0., 5., 20.]
 
+# max acceleration allowed in acc, which happens in restart
+A_ACC_MAX = max(_A_CORR_BY_SPEED_V) + max(_A_CRUISE_MAX_V)
+
 def calc_positive_accel_limit(d_lead, d_des, v_ego, v_rel, v_ref, v_rel_ref, v_coast, v_target, a_lead_contr, a_max):
   a_coast_min = -1.0   # never coast faster then -1m/s^2
   # coasting behavior above v_coast. Forcing a_max to be negative will force the pid_speed to decrease,
   # regardless v_target
   if v_ref > min(v_coast, v_target):
-    # for smooth coast we can be agrressive and target a point where car would actually crash
+    # for smooth coast we can be aggressive and target a point where car would actually crash
     v_offset_coast = 0.
     d_offset_coast = d_des/2. - 4.
 
@@ -127,9 +132,8 @@ def calc_positive_accel_limit(d_lead, d_des, v_ego, v_rel, v_ref, v_rel_ref, v_c
     else:
       a_max = a_coast_min
   else:
-    # same as cruise accel, but add a small correction based on lead acceleration at low speeds
-    # when lead car accelerates faster, we can do the same, and vice versa
-
+    # same as cruise accel, plus add a small correction based on relative lead speed
+    # if the lead car is faster, we can accelerate more, if the car is slower, then we can reduce acceleration
     a_max = a_max + interp(v_ego, _A_CORR_BY_SPEED_BP, _A_CORR_BY_SPEED_V) \
                   * clip(-v_rel / 4., -.5, 1)
   return a_max
@@ -154,7 +158,7 @@ def calc_acc_accel_limits(d_lead, d_des, v_ego, v_pid, v_lead, v_rel, a_lead,
                           v_target, v_coast, a_target, a_pcm):
   #*** compute max accel ***
   # v_rel is now your velocity in lead car frame
-  v_rel = -v_rel  # this simplifiess things when thinking in d_rel-v_rel diagram
+  v_rel *= -1  # this simplifies things when thinking in d_rel-v_rel diagram
 
   v_rel_pid = v_pid - v_lead
 
@@ -227,8 +231,9 @@ def compute_speed_with_leads(v_ego, angle_steers, v_pid, l1, l2, CP):
 
   #*** set accel limits as cruise accel/decel limits ***
   a_target = calc_cruise_accel_limits(v_ego)
-  # Always 1 for now.
-  a_pcm = 1
+
+  # start with 1
+  a_pcm = 1.
 
   #*** limit max accel in sharp turns
   a_target, a_pcm = limit_accel_in_turns(v_ego, angle_steers, a_target, a_pcm, CP)

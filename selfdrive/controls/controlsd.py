@@ -1,29 +1,29 @@
 #!/usr/bin/env python
 import os
-import zmq
-import selfdrive.messaging as messaging
+import json
 from copy import copy
 
-from cereal import car, log
+import zmq
 
+from cereal import car, log
 from common.numpy_fast import clip
 from common.fingerprints import fingerprint
-
 from common.realtime import sec_since_boot, set_realtime_priority, Ratekeeper
 from common.profiler import Profiler
 from common.params import Params
 
+import selfdrive.messaging as messaging
 from selfdrive.swaglog import cloudlog
 from selfdrive.config import Conversions as CV
 from selfdrive.services import service_list
 from selfdrive.car import get_car
 from selfdrive.controls.lib.planner import Planner
 from selfdrive.controls.lib.drive_helpers import learn_angle_offset
-
 from selfdrive.controls.lib.longcontrol import LongControl
 from selfdrive.controls.lib.latcontrol import LatControl
-
 from selfdrive.controls.lib.alertmanager import AlertManager
+from selfdrive.controls.lib.vehicle_model import VehicleModel
+from selfdrive.controls.lib.adaptivecruise import A_ACC_MAX
 
 V_CRUISE_MAX = 144
 V_CRUISE_MIN = 8
@@ -71,6 +71,7 @@ class Controls(object):
     self.AM = AlertManager()
     self.LoC = LongControl()
     self.LaC = LatControl()
+    self.VM = VehicleModel(self.CP)
   
     # write CarParams
     params = Params()
@@ -88,6 +89,13 @@ class Controls(object):
   
     # learned angle offset
     self.angle_offset = 0
+    calibration_params = params.get("CalibrationParams")
+    if calibration_params:
+      try:
+        calibration_params = json.loads(calibration_params)
+        self.angle_offset = calibration_params["angle_offset"]
+      except (ValueError, KeyError):
+        pass
   
     # rear view camera state
     self.rear_view_toggle = False
@@ -276,7 +284,7 @@ class Controls(object):
 
     # *** steering PID loop *** 
     final_steer, sat_flag = self.LaC.update(self.enabled, self.CS.vEgo, self.CS.steeringAngle, 
-                                            self.CS.steeringPressed, self.plan.dPoly, self.angle_offset, self.CP) 
+                                            self.CS.steeringPressed, self.plan.dPoly, self.angle_offset, self.VM) 
  
     self.prof.checkpoint("PID") 
     
@@ -345,8 +353,10 @@ class Controls(object):
     self.CC.cruiseControl.speedOverride = float(max(0.0, ((self.LoC.v_pid - .5) * brake_discount)) if self.CP.enableCruise else 0.0)
 
     #CC.cruiseControl.accelOverride = float(AC.a_pcm)
-    # TODO: fix this
-    self.CC.cruiseControl.accelOverride = float(1.0)
+    # TODO: parametrize 0.714 in interface?
+    # accelOverride is more or less the max throttle allowed to pcm: usually set to a constant
+    # unless aTargetMax is very high and then we scale with it; this helpw in quicker restart
+    self.CC.cruiseControl.accelOverride = float(max(0.714, self.plan.aTargetMax/A_ACC_MAX))
 
     self.CC.hudControl.setSpeed = float(self.v_cruise_kph * CV.KPH_TO_MS)
     self.CC.hudControl.speedVisible = self.enabled
@@ -407,8 +417,8 @@ class Controls(object):
     dat.live100.uiAccelCmd = float(self.LoC.Ui_accel_cmd)
 
     # lateral control state
-    dat.live100.yActual = float(self.LaC.y_actual)
     dat.live100.yDes = float(self.LaC.y_des)
+    dat.live100.angleSteersDes = float(self.LaC.angle_steers_des)
     dat.live100.upSteer = float(self.LaC.Up_steer)
     dat.live100.uiSteer = float(self.LaC.Ui_steer)
 

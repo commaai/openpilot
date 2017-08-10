@@ -4,18 +4,15 @@ import zmq
 import numpy as np
 import numpy.matlib
 from collections import defaultdict
-
 from fastcluster import linkage_vector
-
 import selfdrive.messaging as messaging
 from selfdrive.services import service_list
 from selfdrive.controls.lib.latcontrol import calc_lookahead_offset
 from selfdrive.controls.lib.pathplanner import PathPlanner
 from selfdrive.controls.lib.radar_helpers import Track, Cluster, fcluster, RDR_TO_LDR
+from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.swaglog import cloudlog
-
 from cereal import car
-
 from common.params import Params
 from common.realtime import sec_since_boot, set_realtime_priority, Ratekeeper
 from common.kalman.ekf import EKF, SimpleSensor
@@ -51,6 +48,7 @@ def radard_thread(gctx=None):
   # wait for stats about the car to come in from controls
   cloudlog.info("radard is waiting for CarParams")
   CP = car.CarParams.from_bytes(Params().get("CarParams", block=True))
+  VM = VehicleModel(CP)
   cloudlog.info("radard got CarParams")
 
   # import the radar from the fingerprint
@@ -142,7 +140,7 @@ def radard_thread(gctx=None):
     if enabled:    # use path from model path_poly
       path_y = np.polyval(PP.d_poly, path_x)
     else:          # use path from steer, set angle_offset to 0 since calibration does not exactly report the physical offset
-      path_y = calc_lookahead_offset(v_ego, steer_angle, path_x, CP, angle_offset=0)[0]
+      path_y = calc_lookahead_offset(v_ego, steer_angle, path_x, VM, angle_offset=0)[0]
 
     # *** remove missing points from meta data ***
     for ids in tracks.keys():
