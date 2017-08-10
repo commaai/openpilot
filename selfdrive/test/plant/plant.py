@@ -17,31 +17,15 @@ from selfdrive.car.honda.carstate import get_can_parser
 from selfdrive.boardd.boardd import can_capnp_to_can_list, can_list_to_can_capnp
 
 from selfdrive.car.honda.can_parser import CANParser
+from selfdrive.car.honda.interface import CarInterface
 
 from cereal import car
 from common.dbc import dbc
 acura = dbc(os.path.join(DBC_PATH, "acura_ilx_2016_can.dbc"))
 
-def fake_car_params():
-  ret = car.CarParams.new_message()
+# Trick: set 0x201 (interceptor) in fingerprints for gas is controlled like if there was an interceptor
+CP = CarInterface.get_params("ACURA ILX 2016 ACURAWATCH PLUS", {0x201})
 
-  # largely copied from honda
-  ret.carName = "honda"
-  ret.radarName = "nidec"
-  ret.carFingerprint = "ACURA ILX 2016 ACURAWATCH PLUS"
-
-  ret.enableSteer = True
-  ret.enableBrake = True
-  ret.enableGas = True
-  ret.enableCruise = False
-
-  ret.wheelBase = 2.67
-  ret.steerRatio = 15.3
-  ret.slipFactor = 0.0014
-
-  ret.steerKp, ret.steerKi = 12.0, 1.0
-
-  return ret
 
 def car_plant(pos, speed, grade, gas, brake):
   # vehicle parameters
@@ -111,6 +95,7 @@ class Plant(object):
       Plant.logcan = messaging.pub_sock(context, service_list['can'].port)
       Plant.sendcan = messaging.sub_sock(context, service_list['sendcan'].port)
       Plant.model = messaging.pub_sock(context, service_list['model'].port)
+      Plant.cal = messaging.pub_sock(context, service_list['liveCalibration'].port)
       Plant.live100 = messaging.sub_sock(context, service_list['live100'].port)
       Plant.messaging_initialized = True
 
@@ -158,7 +143,7 @@ class Plant(object):
 
   def step(self, v_lead=0.0, cruise_buttons=None, grade=0.0, publish_model = True):
     # dbc_f, sgs, ivs, msgs, cks_msgs, frqs = initialize_can_struct(self.civic, self.brake_only)
-    cp2 = get_can_parser(fake_car_params())
+    cp2 = get_can_parser(CP)
     sgs = cp2._sgs
     msgs = cp2._msgs
     cks_msgs = cp2.msgs_ck
@@ -263,17 +248,22 @@ class Plant(object):
     can_msgs.append([0x445, 0, radar_msg.decode("hex"), 1])
     Plant.logcan.send(can_list_to_can_capnp(can_msgs).to_bytes())
 
-    # ******** publish a fake model going straight ********
+    # ******** publish a fake model going straight and fake calibration ********
     if publish_model:
       md = messaging.new_message()
+      cal = messaging.new_message()
       md.init('model')
+      cal.init('liveCalibration')
       md.model.frameId = 0
       for x in [md.model.path, md.model.leftLane, md.model.rightLane]:
         x.points = [0.0]*50
         x.prob = 1.0
         x.std = 1.0
+      cal.liveCalibration.calStatus = 1
+      cal.liveCalibration.calPerc = 100
       # fake values?
       Plant.model.send(md.to_bytes())
+      Plant.cal.send(cal.to_bytes())
 
     # ******** update prevs ********
     self.speed = speed

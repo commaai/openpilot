@@ -2,7 +2,10 @@
 
 #include "selfdrive/common/util.h"
 
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif  // _GNU_SOURCE
+
 #include <sys/file.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -47,14 +50,15 @@ int write_db_value(const char* params_path, const char* key, const char* value,
     goto cleanup;
   }
 
-  // Move temp into place.
-  result = rename(tmp_path, path);
+  // fsync to force persist the changes.
+  result = fsync(tmp_fd);
   if (result < 0) {
     goto cleanup;
   }
 
-  // fsync to force persist the changes.
-  result = fsync(tmp_fd);
+  // Move temp into place.
+  result = rename(tmp_path, path);
+
 cleanup:
   // Release lock.
   if (lock_fd >= 0) {

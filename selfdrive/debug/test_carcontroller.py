@@ -1,17 +1,17 @@
 #!/usr/bin/env python
-from evdev import InputDevice
-from select import select
 import time
 import numpy as np
 import zmq
+from evdev import InputDevice
+from select import select
 
 from cereal import car
+from common.realtime import Ratekeeper
 
 import selfdrive.messaging as messaging
 from selfdrive.services import service_list
-from common.realtime import Ratekeeper
+from selfdrive.car import get_car
 
-from common.fingerprints import fingerprint
 
 if __name__ == "__main__":
   # ***** connect to joystick *****
@@ -27,10 +27,7 @@ if __name__ == "__main__":
   logcan = messaging.sub_sock(context, service_list['can'].port)
   sendcan = messaging.pub_sock(context, service_list['sendcan'].port)
 
-  CP = fingerprint(logcan)
-  exec('from selfdrive.car.'+CP.carName+'.interface import CarInterface')
-
-  CI = CarInterface(CP, logcan, sendcan)
+  CI, CP = get_car(logcan, sendcan)
 
   rk = Ratekeeper(100)
 

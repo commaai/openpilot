@@ -1,3 +1,25 @@
+Version 0.3.6 (2017-08-08)
+==========================
+ * Fix alpha CR-V support
+ * Improved GPS
+ * Fix display of target speed not always matching HUD
+ * Increased acceleration after stop
+ * Mitigated some vehicles driving too close to the right line
+
+Version 0.3.5 (2017-07-30)
+==========================
+ * Fix bug where new devices would not begin calibration
+ * Minor robustness improvements
+
+Version 0.3.4 (2017-07-28)
+==========================
+ * Improved model trained on more data
+ * Much improved controls tuning
+ * Performance improvements
+ * Bugfixes and improvements to calibration
+ * Driving log can play back video
+ * Acura only: system now stays engaged below 25mph as long as brakes are applied
+
 Version 0.3.3  (2017-06-28)
 ===========================
   * Improved model trained on more data

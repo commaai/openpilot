@@ -61,6 +61,7 @@ typedef struct UIScene {
   uint8_t *bgr_front_ptr;
   int front_box_x, front_box_y, front_box_width, front_box_height;
 
+  uint64_t alert_ts;
   char alert_text1[1024];
   char alert_text2[1024];
 
@@ -752,9 +753,11 @@ static void ui_draw_vision(UIState *s) {
         snprintf(speed_str, sizeof(speed_str), "%3d KPH",
                  (int)(scene->v_cruise + 0.5));
       } else {
-        // Convert KPH to MPH.
+        /* Convert KPH to MPH. Using an approximated mph to kph 
+        conversion factor of 1.609 because this is what the Honda
+        hud seems to be using */
         snprintf(speed_str, sizeof(speed_str), "%3d MPH",
-                 (int)(scene->v_cruise * 0.621371 + 0.5));
+                 (int)(scene->v_cruise * 0.621504 + 0.5));
       }
       nvgTextAlign(s->vg, NVG_ALIGN_RIGHT | NVG_ALIGN_BASELINE);
       nvgText(s->vg, 480, 95, speed_str, NULL);
@@ -801,6 +804,11 @@ static void ui_draw_vision(UIState *s) {
 
 static void ui_draw_alerts(UIState *s) {
   const UIScene *scene = &s->scene;
+
+  // dont draw alerts that are outdated by > 20 secs
+  if ((nanos_since_boot() - scene->alert_ts) >= 20000000000ULL) {
+    return;
+  }
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -1059,6 +1067,9 @@ static void ui_update(UIState *s) {
           s->scene.alert_text2[0] = '\0';
         }
         s->scene.awareness_status = datad.awarenessStatus;
+
+        s->scene.alert_ts = eventd.logMonoTime;
+
       } else if (eventd.which == cereal_Event_live20) {
         struct cereal_Live20Data datad;
         cereal_read_Live20Data(&datad, eventd.live20);
@@ -1219,6 +1230,8 @@ int main() {
     // no simple way to do 30fps vsync with surfaceflinger...
     usleep(30000);
   }
+
+  set_awake(s, true);
 
   err = pthread_join(connect_thread_handle, NULL);
   assert(err == 0);

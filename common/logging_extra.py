@@ -16,6 +16,10 @@ def json_handler(obj):
 def json_robust_dumps(obj):
   return json.dumps(obj, default=json_handler)
 
+class NiceOrderedDict(OrderedDict):
+  def __str__(self):
+    return '{'+', '.join("%r: %r" % p for p in self.iteritems())+'}'
+
 class SwagFormatter(logging.Formatter):
   def __init__(self, swaglogger):
     logging.Formatter.__init__(self, None, '%a %b %d %H:%M:%S %Z %Y')
@@ -24,7 +28,7 @@ class SwagFormatter(logging.Formatter):
     self.host = socket.gethostname()
 
   def format_dict(self, record):
-    record_dict = OrderedDict()
+    record_dict = NiceOrderedDict()
 
     if isinstance(record.msg, dict):
       record_dict['msg'] = record.msg
@@ -119,7 +123,7 @@ class SwagLogger(logging.Logger):
     self.global_ctx.update(kwargs)
 
   def event(self, event_name, *args, **kwargs):
-    evt = OrderedDict()
+    evt = NiceOrderedDict()
     evt['event'] = event_name
     if args:
       evt['args'] = args
