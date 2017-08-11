@@ -66,13 +66,14 @@ struct MessageState {
   std::vector<Signal> parse_sigs;
   std::vector<double> vals;
 
+  uint16_t ts;
   uint64_t seen;
   uint64_t check_threshold;
 
   uint8_t counter;
   uint8_t counter_fail;
 
-  bool parse(uint64_t sec, uint64_t dat) {
+  bool parse(uint64_t sec, uint16_t ts_, uint64_t dat) {
     for (int i=0; i < parse_sigs.size(); i++) {
       auto& sig = parse_sigs[i];
 
@@ -96,6 +97,7 @@ struct MessageState {
 
       vals[i] = tmp * sig.factor + sig.offset;
     }
+    ts = ts_;
     seen = sec;
 
     return true;
@@ -222,7 +224,7 @@ class CANParser {
 
         DEBUG("  proc %X: %lx\n", cmsg.getAddress(), p);
 
-        state_it->second.parse(sec, p);
+        state_it->second.parse(sec, cmsg.getBusTime(), p);
       }
   }
 
@@ -285,6 +287,7 @@ class CANParser {
         const Signal &sig = state.parse_sigs[i];
         ret.push_back((SignalValue){
           .address = state.address,
+          .ts = state.ts,
           .name = sig.name,
           .value = state.vals[i],
         });
