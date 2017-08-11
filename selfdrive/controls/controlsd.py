@@ -30,7 +30,7 @@ V_CRUISE_MIN = 8
 V_CRUISE_DELTA = 8
 V_CRUISE_ENABLE_MIN = 40
 
-AWARENESS_TIME = 360.      # 6 minutes limit without user touching steering wheels
+AWARENESS_TIME = 86400.      # 24 hours limit without user touching steering wheels
 AWARENESS_PRE_TIME = 20.   # a first alert is issued 20s before start decelerating the car
 AWARENESS_DECEL = -0.2     # car smoothly decel at .2m/s^2 when user is distracted
 

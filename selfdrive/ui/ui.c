@@ -32,7 +32,7 @@
 
 #include "cereal/gen/c/log.capnp.h"
 
-#define MAX_AWARENESS_TIME 360 // 6 minutes 
+#define MAX_AWARENESS_TIME 86400 // 24 hours
 #define DEFAULT_SKIN 1 // Determine which UI skin to use as a default
 #define DEBUG false // Set to true to show mockup UI content for placement
 #define AWARENESS_BAR_WIDTH 1130 // Pixel width of awareness bar for skin v2
