@@ -204,12 +204,12 @@ class Plant(object):
       print "%6.2f m  %6.2f m/s  %6.2f m/s2   %.2f ang   gas: %.2f  brake: %.2f  steer: %5.2f     lead_rel: %6.2f m  %6.2f m/s" % (distance, speed, acceleration, self.angle_steer, gas, brake, steer_torque, d_rel, v_rel)
 
     # ******** publish the car ********
-    vls = [self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed),
+    vls = [self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed),
            self.angle_steer, 0, self.gear_choice, speed!=0,
            0, 0, 0, 0,
-           self.v_cruise, not self.seatbelt, self.seatbelt, self.brake_pressed,
+           self.v_cruise, not self.seatbelt, self.seatbelt, self.brake_pressed, 0.,
            self.user_gas, cruise_buttons, self.esp_disabled, 0,
-           self.user_brake, self.steer_error, self.speed_sensor(speed), self.brake_error,
+           self.user_brake, self.steer_error, self.brake_error,
            self.brake_error, self.gear_shifter, self.main_on, self.acc_status,
            self.pedal_gas, self.cruise_setting,
            # left_blinker, right_blinker, counter

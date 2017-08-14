@@ -3,20 +3,20 @@ from common.numpy_fast import clip
 def rate_limit(new_value, last_value, dw_step, up_step):
   return clip(new_value, last_value + dw_step, last_value + up_step)
 
-def learn_angle_offset(lateral_control, v_ego, angle_offset, d_poly, y_des, steer_override):
+def learn_angle_offset(lateral_control, v_ego, angle_offset, c_poly, c_prob, y_des, steer_override):
   # simple integral controller that learns how much steering offset to put to have the car going straight
+  # while being in the middle of the lane
   min_offset = -5.  # deg
   max_offset =  5.  # deg
   alpha = 1./36000. # correct by 1 deg in 2 mins, at 30m/s, with 50cm of error, at 20Hz
   min_learn_speed = 1.
 
   # learn less at low speed or when turning
-  alpha_v = alpha*(max(v_ego - min_learn_speed, 0.))/(1. + 0.5*abs(y_des))
+  alpha_v = alpha * c_prob * (max(v_ego - min_learn_speed, 0.)) / (1. + 0.5*abs(y_des))
 
   # only learn if lateral control is active and if driver is not overriding:
   if lateral_control and not steer_override:
-    angle_offset += d_poly[3] * alpha_v
+    angle_offset += c_poly[3] * alpha_v
     angle_offset = clip(angle_offset, min_offset, max_offset)
 
   return angle_offset
-
