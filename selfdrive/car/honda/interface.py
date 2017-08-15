@@ -90,7 +90,7 @@ class CarInterface(object):
       ret.l = l_civic
       ret.aF = aF_civic
       ret.sR = 13.0
-      ret.steerKp, ret.steerKi = 1.0, 0.24
+      ret.steerKp, ret.steerKi = 0.8, 0.24
     elif candidate == "ACURA ILX 2016 ACURAWATCH PLUS":
       ret.m = 3095./2.205 + std_cargo
       ret.l = 2.67
@@ -99,19 +99,19 @@ class CarInterface(object):
       # Acura at comma has modified steering FW, so different tuning for the Neo in that car
       # FIXME: using dongleId isn't great, better to identify the car than the Neo
       is_fw_modified = os.getenv("DONGLE_ID") == 'cb38263377b873ee'
-      ret.steerKp, ret.steerKi = [0.5, 0.12] if is_fw_modified else [1.0, 0.24]
+      ret.steerKp, ret.steerKi = [0.4, 0.12] if is_fw_modified else [0.8, 0.24]
     elif candidate == "HONDA ACCORD 2016 TOURING":
       ret.m = 3580./2.205 + std_cargo
       ret.l = 2.74
       ret.aF = ret.l * 0.38
       ret.sR = 15.3
-      ret.steerKp, ret.steerKi = 1.0, 0.24
+      ret.steerKp, ret.steerKi = 0.8, 0.24
     elif candidate == "HONDA CR-V 2016 TOURING":
       ret.m = 3572./2.205 + std_cargo
       ret.l = 2.62
       ret.aF = ret.l * 0.41
       ret.sR = 15.3
-      ret.steerKp, ret.steerKi = 0.5, 0.12
+      ret.steerKp, ret.steerKi = 0.8, 0.24
     else:
       raise ValueError("unsupported car %s" % candidate)
  
