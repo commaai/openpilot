@@ -1,7 +1,3 @@
-Version 0.3.6.1 (2017-08-15)
-============================
- * Mitigate low speed steering oscillations on some vehicles
-
 Version 0.3.6 (2017-08-08)
 ==========================
  * Fix alpha CR-V support
