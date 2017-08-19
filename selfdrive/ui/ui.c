@@ -1161,7 +1161,7 @@ static void ui_draw_vision(UIState *s) {
       nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 220));
 
       if (s->is_metric) {
-        nvgText(s->vg, 165, 260+scene->display_offset, "KPH", NULL);
+        nvgText(s->vg, 165+scene->left_anim_offset, 260+scene->display_offset, "KPH", NULL);
         nvgText(s->vg, 1920-155, 265+scene->display_offset, "KPH", NULL);
       }
       else {
