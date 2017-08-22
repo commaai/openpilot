@@ -99,7 +99,11 @@ class Controls(object):
   
     # rear view camera state
     self.rear_view_toggle = False
-    self.rear_view_allowed = bool(params.get("IsRearViewMirror"))
+    # in python values read from file are strings so bool(str) always returns true
+    IsRearViewMirror = params.get("IsRearViewMirror")
+    self.rear_view_allowed = False
+    if IsRearViewMirror == "1":
+      self.rear_view_allowed = True
   
     self.v_cruise_kph = 255
   
@@ -167,11 +171,13 @@ class Controls(object):
       print b
 
       # button presses for rear view
-      if b.type == "leftBlinker" or b.type == "rightBlinker":
+      if (b.type == "leftBlinker" or b.type == "rightBlinker"):
         if b.pressed and self.rear_view_allowed:
-          self.rear_view_toggle = True
+          self.rear_view_toggle = True 
         else:
-          self.rear_view_toggle = False
+          self.rear_view_toggle = False 
+      else:
+        self.rear_view_toggle = False 
 
       if b.type == "altButton1" and b.pressed:
         self.rear_view_toggle = not self.rear_view_toggle
