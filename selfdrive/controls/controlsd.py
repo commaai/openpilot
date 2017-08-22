@@ -176,8 +176,6 @@ class Controls(object):
           self.rear_view_toggle = True 
         else:
           self.rear_view_toggle = False 
-      else:
-        self.rear_view_toggle = False 
 
       if b.type == "altButton1" and b.pressed:
         self.rear_view_toggle = not self.rear_view_toggle
