@@ -4,22 +4,20 @@ import zmq
 import numpy as np
 import numpy.matlib
 from collections import defaultdict
-
 from fastcluster import linkage_vector
-
 import selfdrive.messaging as messaging
 from selfdrive.services import service_list
 from selfdrive.controls.lib.latcontrol import calc_lookahead_offset
 from selfdrive.controls.lib.pathplanner import PathPlanner
 from selfdrive.controls.lib.radar_helpers import Track, Cluster, fcluster, RDR_TO_LDR
+from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.swaglog import cloudlog
-
 from cereal import car
-
 from common.params import Params
 from common.realtime import sec_since_boot, set_realtime_priority, Ratekeeper
 from common.kalman.ekf import EKF, SimpleSensor
 
+VISION_ONLY = False
 
 #vision point
 DIMSV = 2
@@ -50,6 +48,7 @@ def radard_thread(gctx=None):
   # wait for stats about the car to come in from controls
   cloudlog.info("radard is waiting for CarParams")
   CP = car.CarParams.from_bytes(Params().get("CarParams", block=True))
+  VM = VehicleModel(CP)
   cloudlog.info("radard got CarParams")
 
   # import the radar from the fingerprint
@@ -62,8 +61,11 @@ def radard_thread(gctx=None):
   model = messaging.sub_sock(context, service_list['model'].port)
   live100 = messaging.sub_sock(context, service_list['live100'].port)
 
-  PP = PathPlanner(model)
+  PP = PathPlanner()
   RI = RadarInterface()
+
+  last_md_ts = 0
+  last_l100_ts = 0
 
   # *** publish live20 and liveTracks
   live20 = messaging.pub_sock(context, service_list['live20'].port)
@@ -109,18 +111,24 @@ def radard_thread(gctx=None):
       v_ego_array = np.append(v_ego_array, [[v_ego], [float(rk.frame)/rate]], 1)
       v_ego_array = v_ego_array[:, 1:]
 
+      last_l100_ts = l100.logMonoTime
+
     if v_ego is None:
       continue
 
+    md = messaging.recv_sock(model)
+    if md is not None:
+      last_md_ts = md.logMonoTime
+
     # *** get path prediction from the model ***
-    PP.update(sec_since_boot(), v_ego)
+    PP.update(sec_since_boot(), v_ego, md)
 
     # run kalman filter only if prob is high enough
     if PP.lead_prob > 0.7:
       ekfv.update(speedSensorV.read(PP.lead_dist, covar=PP.lead_var))
       ekfv.predict(tsv)
       ar_pts[VISION_POINT] = (float(ekfv.state[XV]), np.polyval(PP.d_poly, float(ekfv.state[XV])),
-                              float(ekfv.state[SPEEDV]), np.nan, PP.logMonoTime, np.nan, sec_since_boot())
+                              float(ekfv.state[SPEEDV]), np.nan, last_md_ts, np.nan, sec_since_boot())
     else:
       ekfv.state[XV] = PP.lead_dist
       ekfv.covar = (np.diag([PP.lead_var, ekfv.var_init]))
@@ -132,7 +140,7 @@ def radard_thread(gctx=None):
     if enabled:    # use path from model path_poly
       path_y = np.polyval(PP.d_poly, path_x)
     else:          # use path from steer, set angle_offset to 0 since calibration does not exactly report the physical offset
-      path_y = calc_lookahead_offset(v_ego, steer_angle, path_x, CP, angle_offset=0)[0]
+      path_y = calc_lookahead_offset(v_ego, steer_angle, path_x, VM, angle_offset=0)[0]
 
     # *** remove missing points from meta data ***
     for ids in tracks.keys():
@@ -142,7 +150,9 @@ def radard_thread(gctx=None):
     # *** compute the tracks ***
     for ids in ar_pts:
       # ignore the vision point for now
-      if ids == VISION_POINT:
+      if ids == VISION_POINT and not VISION_ONLY:
+        continue
+      elif ids != VISION_POINT and VISION_ONLY:
         continue
       rpt = ar_pts[ids]
 
@@ -212,8 +222,9 @@ def radard_thread(gctx=None):
     # *** publish live20 ***
     dat = messaging.new_message()
     dat.init('live20')
-    dat.live20.mdMonoTime = PP.logMonoTime
+    dat.live20.mdMonoTime = last_md_ts
     dat.live20.canMonoTimes = list(rr.canMonoTimes)
+    dat.live20.l100MonoTime = last_l100_ts
     if lead_len > 0:
       lead_clusters[0].toLive20(dat.live20.leadOne)
       if lead2_len > 0:

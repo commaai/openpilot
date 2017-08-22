@@ -1,11 +1,14 @@
 from collections import namedtuple
 
 import common.numpy_fast as np
+from common.numpy_fast import clip, interp
 from common.realtime import sec_since_boot
+
 from selfdrive.config import CruiseButtons
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.controls.lib.drive_helpers import rate_limit
-from common.numpy_fast import clip, interp
+from . import hondacan
+
 
 def actuator_hystereses(final_brake, braking, brake_steady, v_ego, civic):
   # hyst params... TODO: move these to VehicleParams
@@ -55,7 +58,7 @@ def process_hud_alert(hud_alert):
   fcw_display = 0
   steer_required = 0
   acc_alert = 0
-  if hud_alert == AH.NONE:          # no alert 
+  if hud_alert == AH.NONE:          # no alert
     pass
   elif hud_alert == AH.FCW:         # FCW
     fcw_display = hud_alert[1]
@@ -66,7 +69,6 @@ def process_hud_alert(hud_alert):
 
   return fcw_display, steer_required, acc_alert
 
-import selfdrive.car.honda.hondacan as hondacan
 
 HUDData = namedtuple("HUDData",
                      ["pcm_accel", "v_cruise", "X2", "car", "X4", "X5",
@@ -126,7 +128,7 @@ class CarController(object):
     #print chime, alert_id, hud_alert
     fcw_display, steer_required, acc_alert = process_hud_alert(hud_alert)
 
-    hud = HUDData(int(pcm_accel), int(hud_v_cruise), 0x01, hud_car,
+    hud = HUDData(int(pcm_accel), int(round(hud_v_cruise)), 0x01, hud_car,
                   0xc1, 0x41, hud_lanes + steer_required,
                   int(snd_beep), 0x48, (snd_chime << 5) + fcw_display, acc_alert)
 
@@ -140,7 +142,12 @@ class CarController(object):
     tt = sec_since_boot()
     GAS_MAX = 1004
     BRAKE_MAX = 1024/4
-    STEER_MAX = 0xF00
+    if CS.civic:
+      STEER_MAX = 0x1000
+    elif CS.crv:
+      STEER_MAX = 0x300  # CR-V only uses 12-bits and requires a lower value
+    else:
+      STEER_MAX = 0xF00
     GAS_OFFSET = 328
 
     # steer torque is converted back to CAN reference (positive when steering right)
@@ -197,7 +204,7 @@ class CarController(object):
       can_sends.append(hondacan.create_accord_steering_control(apply_steer, idx))
     else:
       idx = frame % 4
-      can_sends.append(hondacan.create_steering_control(apply_steer, idx))
+      can_sends.extend(hondacan.create_steering_control(apply_steer, CS.crv, idx))
 
     # Send gas and brake commands.
     if (frame % 2) == 0:
@@ -206,7 +213,7 @@ class CarController(object):
         hondacan.create_brake_command(apply_brake, pcm_override,
                                       pcm_cancel_cmd, hud.chime, idx))
       if not CS.brake_only:
-        # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas. 
+        # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
         # This prevents unexpected pedal range rescaling
         gas_amount = (apply_gas + GAS_OFFSET) * (apply_gas > 0)
         can_sends.append(hondacan.create_gas_command(gas_amount, idx))
@@ -214,17 +221,16 @@ class CarController(object):
     # Send dashboard UI commands.
     if (frame % 10) == 0:
       idx = (frame/10) % 4
-      can_sends.extend(hondacan.create_ui_commands(pcm_speed, hud, CS.civic, CS.accord, idx))
+      can_sends.extend(hondacan.create_ui_commands(pcm_speed, hud, CS.civic, CS.accord, CS.crv, idx))
 
     # radar at 20Hz, but these msgs need to be sent at 50Hz on ilx (seems like an Acura bug)
-    if CS.civic or CS.accord:
+    if CS.civic or CS.accord or CS.crv:
       radar_send_step = 5
     else:
       radar_send_step = 2
 
     if (frame % radar_send_step) == 0:
       idx = (frame/radar_send_step) % 4
-      can_sends.extend(hondacan.create_radar_commands(CS.v_ego, CS.civic, CS.accord, idx))
+      can_sends.extend(hondacan.create_radar_commands(CS.v_ego, CS.civic, CS.accord, CS.crv, idx))
 
     sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
-

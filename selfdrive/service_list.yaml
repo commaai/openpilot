@@ -41,6 +41,8 @@ navUpdate: [8028, true]
 qcomGnss: [8029, true]
 lidarPts: [8030, true]
 procLog: [8031, true]
+gpsLocationExternal: [8032, true]
+ubloxGnss: [8033, true]
 testModel: [8040, false]
 
 # manager -- base process to manage starting and stopping of all others

@@ -1,3 +1,40 @@
+Version 0.3.6.1 (2017-08-15)
+============================
+ * Mitigate low speed steering oscillations on some vehicles
+ * Include board steering check for CR-V
+
+Version 0.3.6 (2017-08-08)
+==========================
+ * Fix alpha CR-V support
+ * Improved GPS
+ * Fix display of target speed not always matching HUD
+ * Increased acceleration after stop
+ * Mitigated some vehicles driving too close to the right line
+
+Version 0.3.5 (2017-07-30)
+==========================
+ * Fix bug where new devices would not begin calibration
+ * Minor robustness improvements
+
+Version 0.3.4 (2017-07-28)
+==========================
+ * Improved model trained on more data
+ * Much improved controls tuning
+ * Performance improvements
+ * Bugfixes and improvements to calibration
+ * Driving log can play back video
+ * Acura only: system now stays engaged below 25mph as long as brakes are applied
+
+Version 0.3.3  (2017-06-28)
+===========================
+  * Improved model trained on more data
+  * Alpha CR-V support thanks to energee and johnnwvs!
+  * Using the opendbc project for DBC files
+  * Minor performance improvements
+  * UI update thanks to pjlao307
+  * Power off button
+  * 6% more torque on the Civic
+
 Version 0.3.2  (2017-05-22)
 ===========================
   * Minor stability bugfixes

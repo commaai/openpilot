@@ -36,11 +36,12 @@ from common.params import Params
 
 from selfdrive.loggerd.config import ROOT
 
+BASEDIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
+
 # comment out anything you don't want to run
 managed_processes = {
   "uploader": "selfdrive.loggerd.uploader",
   "controlsd": "selfdrive.controls.controlsd",
-  "plannerd": "selfdrive.controls.plannerd",
   "radard": "selfdrive.controls.radard",
   "loggerd": ("loggerd", ["./loggerd"]),
   "logmessaged": "selfdrive.logmessaged",
@@ -53,6 +54,8 @@ managed_processes = {
   "sensord": ("sensord", ["./sensord"]), }
 
 running = {}
+def get_running():
+  return running
 
 # due to qualcomm kernel bugs SIGKILLing visiond sometimes causes page table corruption
 unkillable_processes = ['visiond']
@@ -62,7 +65,6 @@ interrupt_processes = []
 
 car_started_processes = [
   'controlsd',
-  'plannerd',
   'loggerd',
   'sensord',
   'radard',
@@ -114,7 +116,7 @@ def start_managed_process(name):
     running[name] = Process(name=name, target=launcher, args=(proc, gctx))
   else:
     pdir, pargs = proc
-    cwd = os.path.dirname(os.path.realpath(__file__))
+    cwd = os.path.join(BASEDIR, "selfdrive")
     if pdir is not None:
       cwd = os.path.join(cwd, pdir)
     cloudlog.info("starting process %s" % name)
@@ -190,7 +192,7 @@ def manager_init():
   if not dirty:
     os.environ['CLEAN'] = '1'
 
-  cloudlog.bind_global(dongle_id=dongle_id, version=version)
+  cloudlog.bind_global(dongle_id=dongle_id, version=version, dirty=dirty)
   crash.bind_user(id=dongle_id)
   crash.bind_extra(version=version, dirty=dirty)
 
@@ -238,12 +240,8 @@ def manager_thread():
 
   # flash the device
   if os.getenv("NOPROG") is None:
-    # checkout the matching panda repo
-    rootdir = os.path.dirname(os.path.abspath(__file__))
-    system("cd %s && git submodule init" % rootdir)
-    system("cd %s && git submodule update" % rootdir)
     # flash the board
-    boarddir = os.path.dirname(os.path.abspath(__file__))+"/../panda/board/"
+    boarddir = os.path.join(BASEDIR, "panda/board/")
     mkfile = "Makefile" if panda else "Makefile.legacy"
     print "using", mkfile
     system("cd %s && make -f %s" % (boarddir, mkfile))
@@ -344,8 +342,12 @@ def get_installed_apks():
 
 # optional, build the c++ binaries and preimport the python for speed
 def manager_prepare():
+  # update submodules
+  system("cd %s && git submodule init panda opendbc pyextra" % BASEDIR)
+  system("cd %s && git submodule update panda opendbc pyextra" % BASEDIR)
+
   # build cereal first
-  subprocess.check_call(["make", "-j4"], cwd="../cereal")
+  subprocess.check_call(["make", "-j4"], cwd=os.path.join(BASEDIR, "cereal"))
 
   # build all processes
   os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -368,14 +370,14 @@ def manager_prepare():
 
   # install apks
   installed = get_installed_apks()
-  for app in os.listdir("../apk/"):
+  for app in os.listdir(os.path.join(BASEDIR, "apk/")):
     if ".apk" in app:
       app = app.split(".apk")[0]
       if app not in installed:
         installed[app] = None
   cloudlog.info("installed apks %s" % (str(installed), ))
   for app in installed:
-    apk_path = "../apk/"+app+".apk"
+    apk_path = os.path.join(BASEDIR, "apk/"+app+".apk")
     if os.path.isfile(apk_path):
       h1 = hashlib.sha1(open(apk_path).read()).hexdigest()
       h2 = None
@@ -448,9 +450,20 @@ def main():
   if params.get("IsRearViewMirror") is None:
     params.put("IsRearViewMirror", "1")
 
-  manager_init()
-  manager_prepare()
-  
+  # put something on screen while we set things up
+  if os.getenv("PREPAREONLY") is not None:
+    spinner_proc = None
+  else:
+    spinner_proc = subprocess.Popen(["./spinner", "loading openpilot..."],
+      cwd=os.path.join(BASEDIR, "selfdrive", "ui", "spinner"),
+      close_fds=True)
+  try:
+    manager_init()
+    manager_prepare()
+  finally:
+    if spinner_proc:
+      spinner_proc.terminate()
+
   if os.getenv("PREPAREONLY") is not None:
     sys.exit(0)
 

@@ -1,19 +1,27 @@
-import numpy as np
+import os
+import time
 
-import selfdrive.messaging as messaging
+import common.numpy_fast as np
 from common.realtime import sec_since_boot
 
+import selfdrive.messaging as messaging
+
 from selfdrive.car.honda.can_parser import CANParser
+from selfdrive.can.parser import CANParser as CANParserC
+
+NEW_CAN = os.getenv("OLD_CAN") is None
 
 def get_can_parser(CP):
   # this function generates lists for signal, messages and initial values
   if CP.carFingerprint == "HONDA CIVIC 2016 TOURING":
     dbc_f = 'honda_civic_touring_2016_can.dbc'
     signals = [
+      # sig_name, sig_address, default
       ("XMISSION_SPEED", 0x158, 0),
       ("WHEEL_SPEED_FL", 0x1d0, 0),
       ("WHEEL_SPEED_FR", 0x1d0, 0),
       ("WHEEL_SPEED_RL", 0x1d0, 0),
+      ("WHEEL_SPEED_RR", 0x1d0, 0),
       ("STEER_ANGLE", 0x14a, 0),
       ("STEER_TORQUE_SENSOR", 0x18f, 0),
       ("GEAR", 0x191, 0),
@@ -26,13 +34,13 @@ def get_can_parser(CP):
       ("SEATBELT_DRIVER_LAMP", 0x305, 1),
       ("SEATBELT_DRIVER_LATCHED", 0x305, 0),
       ("BRAKE_PRESSED", 0x17c, 0),
+      ("BRAKE_SWITCH", 0x17c, 0),
       ("CAR_GAS", 0x130, 0),
       ("CRUISE_BUTTONS", 0x296, 0),
       ("ESP_DISABLED", 0x1a4, 1),
       ("HUD_LEAD", 0x30c, 0),
       ("USER_BRAKE", 0x1a4, 0),
       ("STEER_STATUS", 0x18f, 5),
-      ("WHEEL_SPEED_RR", 0x1d0, 0),
       ("BRAKE_ERROR_1", 0x1b0, 1),
       ("BRAKE_ERROR_2", 0x1b0, 1),
       ("GEAR_SHIFTER", 0x191, 0),
@@ -46,6 +54,7 @@ def get_can_parser(CP):
       ("ENGINE_RPM", 0x17C, 0)
     ]
     checks = [
+      # address, frequency
       (0x14a, 100),
       (0x158, 100),
       (0x17c, 100),
@@ -66,6 +75,7 @@ def get_can_parser(CP):
       ("WHEEL_SPEED_FL", 0x1d0, 0),
       ("WHEEL_SPEED_FR", 0x1d0, 0),
       ("WHEEL_SPEED_RL", 0x1d0, 0),
+      ("WHEEL_SPEED_RR", 0x1d0, 0),
       ("STEER_ANGLE", 0x156, 0),
       ("STEER_TORQUE_SENSOR", 0x18f, 0),
       ("GEAR", 0x1a3, 0),
@@ -78,13 +88,13 @@ def get_can_parser(CP):
       ("SEATBELT_DRIVER_LAMP", 0x305, 1),
       ("SEATBELT_DRIVER_LATCHED", 0x305, 0),
       ("BRAKE_PRESSED", 0x17c, 0),
+      ("BRAKE_SWITCH", 0x17c, 0),
       ("CAR_GAS", 0x130, 0),
       ("CRUISE_BUTTONS", 0x1a6, 0),
       ("ESP_DISABLED", 0x1a4, 1),
       ("HUD_LEAD", 0x30c, 0),
       ("USER_BRAKE", 0x1a4, 0),
       ("STEER_STATUS", 0x18f, 5),
-      ("WHEEL_SPEED_RR", 0x1d0, 0),
       ("BRAKE_ERROR_1", 0x1b0, 1),
       ("BRAKE_ERROR_2", 0x1b0, 1),
       ("GEAR_SHIFTER", 0x1a3, 0),
@@ -117,6 +127,7 @@ def get_can_parser(CP):
       ("WHEEL_SPEED_FL", 0x1d0, 0),
       ("WHEEL_SPEED_FR", 0x1d0, 0),
       ("WHEEL_SPEED_RL", 0x1d0, 0),
+      ("WHEEL_SPEED_RR", 0x1d0, 0),
       ("STEER_ANGLE", 0x156, 0),
       #("STEER_TORQUE_SENSOR", 0x18f, 0),
       ("GEAR", 0x191, 0),
@@ -129,6 +140,7 @@ def get_can_parser(CP):
       ("SEATBELT_DRIVER_LAMP", 0x305, 1),
       ("SEATBELT_DRIVER_LATCHED", 0x305, 0),
       ("BRAKE_PRESSED", 0x17c, 0),
+      ("BRAKE_SWITCH", 0x17c, 0),
       #("CAR_GAS", 0x130, 0),
       ("PEDAL_GAS", 0x17C, 0),
       ("CRUISE_BUTTONS", 0x1a6, 0),
@@ -136,7 +148,6 @@ def get_can_parser(CP):
       ("HUD_LEAD", 0x30c, 0),
       ("USER_BRAKE", 0x1a4, 0),
       #("STEER_STATUS", 0x18f, 5),
-      ("WHEEL_SPEED_RR", 0x1d0, 0),
       ("BRAKE_ERROR_1", 0x1b0, 1),
       ("BRAKE_ERROR_2", 0x1b0, 1),
       ("GEAR_SHIFTER", 0x191, 0),
@@ -153,7 +164,7 @@ def get_can_parser(CP):
       (0x156, 100),
       (0x158, 100),
       (0x17c, 100),
-      #(0x1a3, 50),
+      (0x191, 100),
       (0x1a4, 50),
       (0x1a6, 50),
       (0x1b0, 50),
@@ -162,18 +173,73 @@ def get_can_parser(CP):
       (0x324, 10),
       (0x405, 3),
     ]
-
+  elif CP.carFingerprint == "HONDA CR-V 2016 TOURING":
+    dbc_f = 'honda_crv_touring_2016_can.dbc'
+    signals = [
+      ("XMISSION_SPEED", 0x158, 0),
+      ("WHEEL_SPEED_FL", 0x1d0, 0),
+      ("WHEEL_SPEED_FR", 0x1d0, 0),
+      ("WHEEL_SPEED_RL", 0x1d0, 0),
+      ("WHEEL_SPEED_RR", 0x1d0, 0),
+      ("STEER_ANGLE", 0x156, 0),
+      ("STEER_TORQUE_SENSOR", 0x18f, 0),
+      ("GEAR", 0x191, 0),
+      ("WHEELS_MOVING", 0x1b0, 1),
+      ("DOOR_OPEN_FL", 0x405, 1),
+      ("DOOR_OPEN_FR", 0x405, 1),
+      ("DOOR_OPEN_RL", 0x405, 1),
+      ("DOOR_OPEN_RR", 0x405, 1),
+      ("CRUISE_SPEED_PCM", 0x324, 0),
+      ("SEATBELT_DRIVER_LAMP", 0x305, 1),
+      ("SEATBELT_DRIVER_LATCHED", 0x305, 0),
+      ("BRAKE_PRESSED", 0x17c, 0),
+      ("BRAKE_SWITCH", 0x17c, 0),
+      #("CAR_GAS", 0x130, 0),
+      ("CRUISE_BUTTONS", 0x1a6, 0),
+      ("ESP_DISABLED", 0x1a4, 1),
+      ("HUD_LEAD", 0x30c, 0),
+      ("USER_BRAKE", 0x1a4, 0),
+      ("STEER_STATUS", 0x18f, 5),
+      ("BRAKE_ERROR_1", 0x1b0, 1),
+      ("BRAKE_ERROR_2", 0x1b0, 1),
+      ("GEAR_SHIFTER", 0x191, 0),
+      ("MAIN_ON", 0x1a6, 0),
+      ("ACC_STATUS", 0x17c, 0),
+      ("PEDAL_GAS", 0x17c, 0),
+      ("CRUISE_SETTING", 0x1a6, 0),
+      ("LEFT_BLINKER", 0x294, 0),
+      ("RIGHT_BLINKER", 0x294, 0),
+      ("COUNTER", 0x324, 0),
+      ("ENGINE_RPM", 0x17C, 0)
+    ]
+    checks = [
+      (0x156, 100),
+      (0x158, 100),
+      (0x17c, 100),
+      (0x191, 100),
+      (0x1a4, 50),
+      (0x1a6, 50),
+      (0x1b0, 50),
+      (0x1d0, 50),
+      (0x305, 10),
+      (0x324, 10),
+      (0x405, 3),
+    ]
   # add gas interceptor reading if we are using it
   if CP.enableGas:
     signals.append(("INTERCEPTOR_GAS", 0x201, 0))
     checks.append((0x201, 50))
 
-  return CANParser(dbc_f, signals, checks)
+  if NEW_CAN:
+    return CANParserC(os.path.splitext(dbc_f)[0], signals, checks, 0)
+  else:
+    return CANParser(dbc_f, signals, checks)
 
 class CarState(object):
   def __init__(self, CP, logcan):
     self.civic = False
     self.accord = False
+    self.crv = False
     if CP.carFingerprint == "HONDA CIVIC 2016 TOURING":
       self.civic = True
     elif CP.carFingerprint == "ACURA ILX 2016 ACURAWATCH PLUS":
@@ -181,6 +247,8 @@ class CarState(object):
     elif CP.carFingerprint == "HONDA ACCORD 2016 TOURING":
       # fake civic
       self.accord = True
+    elif CP.carFingerprint == "HONDA CR-V 2016 TOURING":
+      self.crv = True
     else:
       raise ValueError("unsupported car %s" % CP.carFingerprint)
 
@@ -191,6 +259,8 @@ class CarState(object):
     self.cp = get_can_parser(CP)
 
     self.user_gas, self.user_gas_pressed = 0., 0
+    self.brake_switch_prev = 0
+    self.brake_switch_ts = 0
 
     self.cruise_buttons = 0
     self.cruise_setting = 0
@@ -202,9 +272,12 @@ class CarState(object):
     # TODO: actually make this work
     self.a_ego = 0.
 
-  def update(self, can_pub_main):
+  def update(self, can_pub_main=None):
     cp = self.cp
-    cp.update_can(can_pub_main)
+    if NEW_CAN:
+      cp.update(int(sec_since_boot() * 1e9), False)
+    else:
+      cp.update_can(can_pub_main)
 
     # copy can_valid
     self.can_valid = cp.can_valid
@@ -240,8 +313,6 @@ class CarState(object):
     else:
       self.steer_error = cp.vl[0x18F]['STEER_STATUS'] not in [0,2,4,6]
       self.steer_not_allowed = cp.vl[0x18F]['STEER_STATUS'] != 0
-      if cp.vl[0x18F]['STEER_STATUS'] != 0:
-        print cp.vl[0x18F]['STEER_STATUS']
     self.brake_error = cp.vl[0x1B0]['BRAKE_ERROR_1'] or cp.vl[0x1B0]['BRAKE_ERROR_2']
     self.esp_disabled = cp.vl[0x1A4]['ESP_DISABLED']
     # calc best v_ego estimate, by averaging two opposite corners
@@ -278,6 +349,17 @@ class CarState(object):
       self.blinker_on = cp.vl[0x294]['LEFT_BLINKER'] or cp.vl[0x294]['RIGHT_BLINKER']
       self.left_blinker_on = cp.vl[0x294]['LEFT_BLINKER']
       self.right_blinker_on = cp.vl[0x294]['RIGHT_BLINKER']
+    elif self.crv:
+      self.gear_shifter = cp.vl[0x191]['GEAR_SHIFTER']
+      self.angle_steers = cp.vl[0x156]['STEER_ANGLE']
+      self.gear = cp.vl[0x191]['GEAR']
+      self.cruise_setting = cp.vl[0x1A6]['CRUISE_SETTING']
+      self.cruise_buttons = cp.vl[0x1A6]['CRUISE_BUTTONS']
+      self.main_on = cp.vl[0x1A6]['MAIN_ON']
+      self.gear_shifter_valid = self.gear_shifter in [1,8]  # TODO: 1/P allowed for debug
+      self.blinker_on = cp.vl[0x294]['LEFT_BLINKER'] or cp.vl[0x294]['RIGHT_BLINKER']
+      self.left_blinker_on = cp.vl[0x294]['LEFT_BLINKER']
+      self.right_blinker_on = cp.vl[0x294]['RIGHT_BLINKER']
     else:
       self.gear_shifter = cp.vl[0x1A3]['GEAR_SHIFTER']
       self.angle_steers = cp.vl[0x156]['STEER_ANGLE']
@@ -289,14 +371,27 @@ class CarState(object):
       self.blinker_on = cp.vl[0x294]['LEFT_BLINKER'] or cp.vl[0x294]['RIGHT_BLINKER']
       self.left_blinker_on = cp.vl[0x294]['LEFT_BLINKER']
       self.right_blinker_on = cp.vl[0x294]['RIGHT_BLINKER']
+
     if self.accord:
       # on the accord, this doesn't seem to include cruise control
       self.car_gas = cp.vl[0x17C]['PEDAL_GAS']
       self.steer_override = False
+    elif self.crv:
+      # like accord, crv doesn't include cruise control
+      self.car_gas = cp.vl[0x17C]['PEDAL_GAS']
+      self.steer_override = abs(cp.vl[0x18F]['STEER_TORQUE_SENSOR']) > 1200
     else:
       self.car_gas = cp.vl[0x130]['CAR_GAS']
       self.steer_override = abs(cp.vl[0x18F]['STEER_TORQUE_SENSOR']) > 1200
-    self.brake_pressed = cp.vl[0x17C]['BRAKE_PRESSED']
+
+    # brake switch has shown some single time step noise, so only considered when
+    # switch is on for at least 2 consecutive CAN samples
+    self.brake_pressed = cp.vl[0x17C]['BRAKE_PRESSED'] or \
+                         (cp.vl[0x17C]['BRAKE_SWITCH'] and self.brake_switch_prev and \
+                         cp.ts[0x17C]['BRAKE_SWITCH'] != self.brake_switch_ts)
+    self.brake_switch_prev = cp.vl[0x17C]['BRAKE_SWITCH']
+    self.brake_switch_ts = cp.ts[0x17C]['BRAKE_SWITCH']
+
     self.user_brake = cp.vl[0x1A4]['USER_BRAKE']
     self.standstill = not cp.vl[0x1B0]['WHEELS_MOVING']
     self.v_cruise_pcm = cp.vl[0x324]['CRUISE_SPEED_PCM']
@@ -304,4 +399,3 @@ class CarState(object):
     self.pedal_gas = cp.vl[0x17C]['PEDAL_GAS']
     self.hud_lead = cp.vl[0x30C]['HUD_LEAD']
     self.counter_pcm = cp.vl[0x324]['COUNTER']
-
