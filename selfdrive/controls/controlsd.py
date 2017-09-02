@@ -99,11 +99,7 @@ class Controls(object):
   
     # rear view camera state
     self.rear_view_toggle = False
-    # in python values read from file are strings so bool(str) always returns true
-    IsRearViewMirror = params.get("IsRearViewMirror")
-    self.rear_view_allowed = False
-    if IsRearViewMirror == "1":
-      self.rear_view_allowed = True
+    self.rear_view_allowed = (params.get("IsRearViewMirror") == "1")
   
     self.v_cruise_kph = 255
   
