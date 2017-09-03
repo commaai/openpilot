@@ -99,7 +99,7 @@ class Controls(object):
   
     # rear view camera state
     self.rear_view_toggle = False
-    self.rear_view_allowed = bool(params.get("IsRearViewMirror"))
+    self.rear_view_allowed = (params.get("IsRearViewMirror") == "1")
   
     self.v_cruise_kph = 255
   
