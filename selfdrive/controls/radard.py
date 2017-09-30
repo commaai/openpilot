@@ -7,7 +7,7 @@ from collections import defaultdict
 from fastcluster import linkage_vector
 import selfdrive.messaging as messaging
 from selfdrive.services import service_list
-from selfdrive.controls.lib.latcontrol import calc_lookahead_offset
+from selfdrive.controls.lib.latcontrol_helpers import calc_lookahead_offset
 from selfdrive.controls.lib.pathplanner import PathPlanner
 from selfdrive.controls.lib.radar_helpers import Track, Cluster, fcluster, RDR_TO_LDR
 from selfdrive.controls.lib.vehicle_model import VehicleModel
@@ -84,7 +84,7 @@ def radard_thread(gctx=None):
 
   tracks = defaultdict(dict)
 
-  # Kalman filter stuff: 
+  # Kalman filter stuff:
   ekfv = EKFV1D()
   speedSensorV = SimpleSensor(XV, 1, 2)
 
@@ -121,7 +121,7 @@ def radard_thread(gctx=None):
       last_md_ts = md.logMonoTime
 
     # *** get path prediction from the model ***
-    PP.update(sec_since_boot(), v_ego, md)
+    PP.update(v_ego, md)
 
     # run kalman filter only if prob is high enough
     if PP.lead_prob > 0.7:
@@ -156,7 +156,7 @@ def radard_thread(gctx=None):
         continue
       rpt = ar_pts[ids]
 
-      # align v_ego by a fixed time to align it with the radar measurement     
+      # align v_ego by a fixed time to align it with the radar measurement
       cur_time = float(rk.frame)/rate
       v_ego_t_aligned = np.interp(cur_time - rdr_delay, v_ego_array[1], v_ego_array[0])
       d_path = np.sqrt(np.amin((path_x - rpt[0]) ** 2 + (path_y - rpt[1]) ** 2))
@@ -224,6 +224,7 @@ def radard_thread(gctx=None):
     dat.init('live20')
     dat.live20.mdMonoTime = last_md_ts
     dat.live20.canMonoTimes = list(rr.canMonoTimes)
+    dat.live20.radarErrors = list(rr.errors)
     dat.live20.l100MonoTime = last_l100_ts
     if lead_len > 0:
       lead_clusters[0].toLive20(dat.live20.leadOne)

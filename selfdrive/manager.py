@@ -1,29 +1,35 @@
 #!/usr/bin/env python
 import os
+import time
 
-# check if NEOS update is required
-while 1:
-  if ((not os.path.isfile("/VERSION")
-      or int(open("/VERSION").read()) < 3)
-      and not os.path.isfile("/data/media/0/noupdate")):
-    os.system("curl -o /tmp/updater https://openpilot.comma.ai/updater && chmod +x /tmp/updater && /tmp/updater")
-  else:
-    break
+if os.path.isfile("/init.qcom.rc"):
+  # check if NEOS update is required
+  while 1:
+    if ((not os.path.isfile("/VERSION")
+        or int(open("/VERSION").read()) < 3)
+        and not os.path.isfile("/data/media/0/noupdate")):
+      os.system("curl -o /tmp/updater https://openpilot.comma.ai/updater && chmod +x /tmp/updater && /tmp/updater")
+    else:
+      break
+    time.sleep(10)
 
 import sys
-import time
 import importlib
 import subprocess
 import signal
 import traceback
-import usb1
 from multiprocessing import Process
-from selfdrive.services import service_list
+from common.basedir import BASEDIR
 
+sys.path.append(os.path.join(BASEDIR, "pyextra"))
+os.environ['BASEDIR'] = BASEDIR
+
+import usb1
 import hashlib
 import zmq
-
 from setproctitle import setproctitle
+
+from selfdrive.services import service_list
 
 from selfdrive.swaglog import cloudlog
 import selfdrive.messaging as messaging
@@ -36,22 +42,20 @@ from common.params import Params
 
 from selfdrive.loggerd.config import ROOT
 
-BASEDIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
-
 # comment out anything you don't want to run
 managed_processes = {
   "uploader": "selfdrive.loggerd.uploader",
   "controlsd": "selfdrive.controls.controlsd",
   "radard": "selfdrive.controls.radard",
-  "loggerd": ("loggerd", ["./loggerd"]),
+  "loggerd": ("selfdrive/loggerd", ["./loggerd"]),
   "logmessaged": "selfdrive.logmessaged",
   "tombstoned": "selfdrive.tombstoned",
-  "logcatd": ("logcatd", ["./logcatd"]),
-  "proclogd": ("proclogd", ["./proclogd"]),
-  "boardd": ("boardd", ["./boardd"]),   # switch to c++ boardd
-  "ui": ("ui", ["./ui"]),
-  "visiond": ("visiond", ["./visiond"]),
-  "sensord": ("sensord", ["./sensord"]), }
+  "logcatd": ("selfdrive/logcatd", ["./logcatd"]),
+  "proclogd": ("selfdrive/proclogd", ["./proclogd"]),
+  "boardd": ("selfdrive/boardd", ["./boardd"]),   # switch to c++ boardd
+  "ui": ("selfdrive/ui", ["./ui"]),
+  "visiond": ("selfdrive/visiond", ["./visiond"]),
+  "sensord": ("selfdrive/sensord", ["./sensord"]), }
 
 running = {}
 def get_running():
@@ -116,12 +120,27 @@ def start_managed_process(name):
     running[name] = Process(name=name, target=launcher, args=(proc, gctx))
   else:
     pdir, pargs = proc
-    cwd = os.path.join(BASEDIR, "selfdrive")
-    if pdir is not None:
-      cwd = os.path.join(cwd, pdir)
+    cwd = os.path.join(BASEDIR, pdir)
     cloudlog.info("starting process %s" % name)
     running[name] = Process(name=name, target=nativelauncher, args=(pargs, cwd))
   running[name].start()
+
+def prepare_managed_process(p):
+  proc = managed_processes[p]
+  if isinstance(proc, basestring):
+    # import this python
+    cloudlog.info("preimporting %s" % proc)
+    importlib.import_module(proc)
+  else:
+    # build this process
+    cloudlog.info("building %s" % (proc,))
+    try:
+      subprocess.check_call(["make", "-j4"], cwd=os.path.join(BASEDIR, proc[0]))
+    except subprocess.CalledProcessError:
+      # make clean if the build failed
+      cloudlog.info("building %s failed, make clean" % (proc, ))
+      subprocess.check_call(["make", "clean"], cwd=os.path.join(BASEDIR, proc[0]))
+      subprocess.check_call(["make", "-j4"], cwd=os.path.join(BASEDIR, proc[0]))
 
 def kill_managed_process(name):
   if name not in running or name not in managed_processes:
@@ -212,8 +231,66 @@ def system(cmd):
   except subprocess.CalledProcessError, e:
     cloudlog.event("running failed",
       cmd=e.cmd,
-      output=e.output,
+      output=e.output[-1024:],
       returncode=e.returncode)
+
+# TODO: this is not proper gating for EON
+try:
+  from smbus2 import SMBus
+  EON = True
+except ImportError:
+  EON = False
+
+def setup_eon_fan():
+  if not EON:
+    return
+
+  os.system("echo 2 > /sys/module/dwc3_msm/parameters/otg_switch")
+
+  bus = SMBus(7, force=True)
+  bus.write_byte_data(0x21, 0x10, 0xf)   # mask all interrupts
+  bus.write_byte_data(0x21, 0x03, 0x1)   # set drive current and global interrupt disable
+  bus.write_byte_data(0x21, 0x02, 0x2)   # needed?
+  bus.write_byte_data(0x21, 0x04, 0x4)   # manual override source
+  bus.close()
+
+last_eon_fan_val = None
+def set_eon_fan(val):
+  global last_eon_fan_val
+
+  if not EON:
+    return
+
+  if last_eon_fan_val is None or last_eon_fan_val != val:
+    bus = SMBus(7, force=True)
+    bus.write_byte_data(0x21, 0x04, 0x2)
+    bus.write_byte_data(0x21, 0x03, (val*2)+1)
+    bus.write_byte_data(0x21, 0x04, 0x4)
+    bus.close()
+    last_eon_fan_val = val
+
+
+# temp thresholds to control fan speed - high hysteresis
+_TEMP_THRS_H = [50., 65., 80., 10000]
+# temp thresholds to control fan speed - low hysteresis
+_TEMP_THRS_L = [42.5, 57.5, 72.5, 10000]
+# fan speed options
+_FAN_SPEEDS = [0, 16384, 32768, 65535]
+
+def handle_fan(max_temp, fan_speed):
+  new_speed_h = next(speed for speed, temp_h in zip(_FAN_SPEEDS, _TEMP_THRS_H) if temp_h > max_temp)
+  new_speed_l = next(speed for speed, temp_l in zip(_FAN_SPEEDS, _TEMP_THRS_L) if temp_l > max_temp)
+
+  if new_speed_h > fan_speed:
+    # update speed if using the high thresholds results in fan speed increment
+    fan_speed = new_speed_h
+  elif new_speed_l < fan_speed:
+    # update speed if using the low thresholds results in fan speed decrement
+    fan_speed = new_speed_l
+
+  set_eon_fan(fan_speed/16384)
+
+  return fan_speed
 
 def manager_thread():
   global baseui_running
@@ -233,24 +310,18 @@ def manager_thread():
   start_managed_process("ui")
   manage_baseui(True)
 
-  panda = False
+  # do this before panda flashing
+  setup_eon_fan()
+
   if os.getenv("NOBOARD") is None:
-    # *** wait for the board ***
-    panda = wait_for_device() == 0x2300
-
-  # flash the device
-  if os.getenv("NOPROG") is None:
-    # flash the board
-    boarddir = os.path.join(BASEDIR, "panda/board/")
-    mkfile = "Makefile" if panda else "Makefile.legacy"
-    print "using", mkfile
-    system("cd %s && make -f %s" % (boarddir, mkfile))
-
-  start_managed_process("boardd")
+    from panda import ensure_st_up_to_date
+    ensure_st_up_to_date()
+    start_managed_process("boardd")
 
   started = False
   logger_dead = False
   count = 0
+  fan_speed = 0
 
   # set 5 second timeout on health socket
   # 5x slower than expected
@@ -274,12 +345,15 @@ def manager_thread():
       msg.thermal.batteryPercent = int(f.read())
     with open("/sys/class/power_supply/battery/status") as f:
       msg.thermal.batteryStatus = f.read().strip()
-    thermal_sock.send(msg.to_bytes())
-    print msg
 
     # TODO: add car battery voltage check
     max_temp = max(msg.thermal.cpu0, msg.thermal.cpu1,
                    msg.thermal.cpu2, msg.thermal.cpu3) / 10.0
+    fan_speed = handle_fan(max_temp, fan_speed)
+    msg.thermal.fanSpeed = fan_speed
+
+    thermal_sock.send(msg.to_bytes())
+    print msg
 
     # uploader is gated based on the phone temperature
     if max_temp > 85.0:
@@ -352,21 +426,7 @@ def manager_prepare():
   # build all processes
   os.chdir(os.path.dirname(os.path.abspath(__file__)))
   for p in managed_processes:
-    proc = managed_processes[p]
-    if isinstance(proc, basestring):
-      # import this python
-      cloudlog.info("preimporting %s" % proc)
-      importlib.import_module(proc)
-    else:
-      # build this process
-      cloudlog.info("building %s" % (proc,))
-      try:
-        subprocess.check_call(["make", "-j4"], cwd=proc[0])
-      except subprocess.CalledProcessError:
-        # make clean if the build failed
-        cloudlog.info("building %s failed, make clean" % (proc, ))
-        subprocess.check_call(["make", "clean"], cwd=proc[0])
-        subprocess.check_call(["make", "-j4"], cwd=proc[0])
+    prepare_managed_process(p)
 
   # install apks
   installed = get_installed_apks()

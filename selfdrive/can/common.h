@@ -1,11 +1,18 @@
-#ifndef PARSER_COMMON_H
-#define PARSER_COMMON_H
+#ifndef SELFDRIVE_CAN_COMMON_H
+#define SELFDRIVE_CAN_COMMON_H
 
 #include <cstddef>
 #include <cstdint>
+#include <string>
 
 #define ARRAYSIZE(x) (sizeof(x)/sizeof(x[0]))
 
+
+
+struct SignalPackValue {
+  const char* name;
+  double value;
+};
 
 
 struct SignalParseOptions {
@@ -53,6 +60,8 @@ struct DBC {
   size_t num_msgs;
   const Msg *msgs;
 };
+
+const DBC* dbc_lookup(const std::string& dbc_name);
 
 void dbc_register(const DBC* dbc);
 

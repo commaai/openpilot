@@ -27,5 +27,5 @@ if __name__ == "__main__":
       if args.raw:
         hexdump(sock.recv())
       else:
-        print messaging.recv_sock(sock)
+        print messaging.recv_one(sock)
 

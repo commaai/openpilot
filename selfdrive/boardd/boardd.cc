@@ -19,7 +19,9 @@
 
 #include <capnp/serialize.h>
 #include "cereal/gen/cpp/log.capnp.h"
+#include "cereal/gen/cpp/car.capnp.h"
 
+#include "common/params.h"
 #include "common/swaglog.h"
 #include "common/timing.h"
 
@@ -38,20 +40,55 @@ bool loopback_can = false;
 #define TIMEOUT 0
 
 #define SAFETY_NOOUTPUT  0x0000
-#define SAFETY_HONDA     0x0001
-#define SAFETY_ALLOUTPUT 0x1337
 
+pthread_t safety_setter_thread_handle = -1;
+
+void *safety_setter_thread(void *s) {
+  char *value;
+  size_t value_sz = 0;
+
+  LOGW("waiting for params to set safety model");
+  while (1) {
+    const int result = read_db_value(NULL, "CarParams", &value, &value_sz);
+    if (value_sz > 0) break;
+    usleep(100*1000);
+  }
+  LOGW("got %d bytes CarParams", value_sz);
+
+  // format for board, make copy due to alignment issues, will be freed on out of scope
+  auto amsg = kj::heapArray<capnp::word>((value_sz / sizeof(capnp::word)) + 1);
+  memcpy(amsg.begin(), value, value_sz);
+
+  capnp::FlatArrayMessageReader cmsg(amsg);
+  cereal::CarParams::Reader car_params = cmsg.getRoot<cereal::CarParams>();
+
+  int safety_model = car_params.getSafetyModel();
+  LOGW("setting safety model: %d", safety_model);
+
+  pthread_mutex_lock(&usb_lock);
+
+  // set in the mutex to avoid race
+  safety_setter_thread_handle = -1;
+
+  libusb_control_transfer(dev_handle, 0x40, 0xdc, safety_model, 0, NULL, 0, TIMEOUT);
+
+  pthread_mutex_unlock(&usb_lock);
+
+  return NULL;
+}
+
+// must be called before threads or with mutex
 bool usb_connect() {
   int err;
 
   dev_handle = libusb_open_device_with_vid_pid(ctx, 0xbbaa, 0xddcc);
-  if (dev_handle == NULL) { return false; }
+  if (dev_handle == NULL) { goto fail; }
 
   err = libusb_set_configuration(dev_handle, 1);
-  if (err != 0) { return false; }
+  if (err != 0) { goto fail; }
 
   err = libusb_claim_interface(dev_handle, 0);
-  if (err != 0) { return false; }
+  if (err != 0) { goto fail; }
 
   if (loopback_can) {
     libusb_control_transfer(dev_handle, 0xc0, 0xe5, 1, 0, NULL, 0, TIMEOUT);
@@ -60,30 +97,23 @@ bool usb_connect() {
   // power off ESP
   libusb_control_transfer(dev_handle, 0xc0, 0xd9, 0, 0, NULL, 0, TIMEOUT);
 
-  // forward CAN1 to CAN3...soon
-  //libusb_control_transfer(dev_handle, 0xc0, 0xdd, 1, 2, NULL, 0, TIMEOUT);
+  // power on charging (may trigger a reconnection, should be okay)
+  #ifndef __x86_64__
+    libusb_control_transfer(dev_handle, 0xc0, 0xe6, 1, 0, NULL, 0, TIMEOUT);
+  #else
+    LOGW("not enabling charging on x86_64");
+  #endif
 
-  // set UART modes for Honda Accord
-  /*for (int uart = 2; uart <= 3; uart++) {
-    // 9600 baud
-    libusb_control_transfer(dev_handle, 0x40, 0xe1, uart, 9600, NULL, 0, TIMEOUT);
-    // even parity
-    libusb_control_transfer(dev_handle, 0x40, 0xe2, uart, 1, NULL, 0, TIMEOUT);
-    // callback 1
-    libusb_control_transfer(dev_handle, 0x40, 0xe3, uart, 1, NULL, 0, TIMEOUT);
+  // no output is the default
+  libusb_control_transfer(dev_handle, 0x40, 0xdc, SAFETY_NOOUTPUT, 0, NULL, 0, TIMEOUT);
+
+  if (safety_setter_thread_handle == -1) {
+    err = pthread_create(&safety_setter_thread_handle, NULL, safety_setter_thread, NULL);
   }
 
-  // TODO: Boardd should be able to set the baud rate
-  int baud = 500000;
-  libusb_control_transfer(dev_handle, 0x40, 0xde, 0, 0,
-                          (unsigned char *)&baud, sizeof(baud), TIMEOUT); // CAN1
-  libusb_control_transfer(dev_handle, 0x40, 0xde, 1, 0,
-                          (unsigned char *)&baud, sizeof(baud), TIMEOUT); // CAN2*/
-
-  // TODO: Boardd should be able to be told which safety model to use
-  libusb_control_transfer(dev_handle, 0x40, 0xdc, SAFETY_HONDA, 0, NULL, 0, TIMEOUT);
-
   return true;
+fail:
+  return false;
 }
 
 void usb_retry_connect() {
@@ -93,7 +123,7 @@ void usb_retry_connect() {
 }
 
 void handle_usb_issue(int err, const char func[]) {
-  LOGE("usb error %d \"%s\" in %s", err, libusb_strerror((enum libusb_error)err), func);
+  LOGE_100("usb error %d \"%s\" in %s", err, libusb_strerror((enum libusb_error)err), func);
   if (err == -4) {
     LOGE("lost connection");
     usb_retry_connect();
@@ -113,7 +143,7 @@ void can_recv(void *s) {
   do {
     err = libusb_bulk_transfer(dev_handle, 0x81, (uint8_t*)data, RECV_SIZE, &recv, TIMEOUT);
     if (err != 0) { handle_usb_issue(err, __func__); }
-    if (err == -8) { LOGE("overflow got 0x%x", recv); };
+    if (err == -8) { LOGE_100("overflow got 0x%x", recv); };
 
     // timeout is okay to exit, recv still happened
     if (err == -7) { break; }
@@ -261,6 +291,46 @@ void can_send(void *s) {
 
 // **** threads ****
 
+void *thermal_thread(void *crap) {
+  int err;
+  LOGD("start thermal thread");
+
+  // thermal = 8005
+  void *context = zmq_ctx_new();
+  void *subscriber = zmq_socket(context, ZMQ_SUB);
+  zmq_setsockopt(subscriber, ZMQ_SUBSCRIBE, "", 0);
+  zmq_connect(subscriber, "tcp://127.0.0.1:8005");
+
+  // run as fast as messages come in
+  while (!do_exit) {
+    // recv from thermal
+    zmq_msg_t msg;
+    zmq_msg_init(&msg);
+    err = zmq_msg_recv(&msg, subscriber, 0);
+    assert(err >= 0);
+
+    // format for board, make copy due to alignment issues, will be freed on out of scope
+    // copied from send thread...
+    auto amsg = kj::heapArray<capnp::word>((zmq_msg_size(&msg) / sizeof(capnp::word)) + 1);
+    memcpy(amsg.begin(), zmq_msg_data(&msg), zmq_msg_size(&msg));
+
+    capnp::FlatArrayMessageReader cmsg(amsg);
+    cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
+
+    uint16_t target_fan_speed = event.getThermal().getFanSpeed();
+    //LOGW("setting fan speed %d", target_fan_speed);
+
+    pthread_mutex_lock(&usb_lock);
+    libusb_control_transfer(dev_handle, 0xc0, 0xd3, target_fan_speed, 0, NULL, 0, TIMEOUT);
+    pthread_mutex_unlock(&usb_lock);
+  }
+
+  // turn the fan off when we exit
+  libusb_control_transfer(dev_handle, 0xc0, 0xd3, 0, 0, NULL, 0, TIMEOUT);
+
+  return NULL;
+}
+
 void *can_send_thread(void *crap) {
   LOGD("start send thread");
 
@@ -364,7 +434,15 @@ int main() {
                        can_recv_thread, NULL);
   assert(err == 0);
 
+  pthread_t thermal_thread_handle;
+  err = pthread_create(&thermal_thread_handle, NULL,
+                       thermal_thread, NULL);
+  assert(err == 0);
+
   // join threads
+
+  err = pthread_join(thermal_thread_handle, NULL);
+  assert(err == 0);
 
   err = pthread_join(can_recv_thread_handle, NULL);
   assert(err == 0);
