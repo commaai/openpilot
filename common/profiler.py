@@ -14,6 +14,12 @@ class Profiler(object):
     self.cp.append((name, tt - self.last_time))
     self.last_time = tt
 
+  def reset(self, enabled=False):
+    self.enabled = enabled
+    self.cp = []
+    self.start_time = sec_since_boot()
+    self.last_time = self.start_time
+
   def display(self):
     if not self.enabled:
       return

@@ -7,11 +7,59 @@ $Java.outerClassname("Car");
 
 @0x8e2af1e708af8b8d;
 
+# ******* events causing controls state machine transition *******
+
+struct CarEvent @0x9b1657f34caf3ad3 {
+  name @0 :EventName;
+  enable @1 :Bool;
+  preEnable @7 :Bool;
+  noEntry @2 :Bool;
+  warning @3 :Bool;
+  userDisable @4 :Bool;
+  softDisable @5 :Bool;
+  immediateDisable @6 :Bool;
+
+  enum EventName @0xbaa8c5d505f727de {
+    # TODO: copy from error list
+    commIssue @0;
+    steerUnavailable @1;
+    brakeUnavailable @2;
+    gasUnavailable @3;
+    wrongGear @4;
+    doorOpen @5;
+    seatbeltNotLatched @6;
+    espDisabled @7;
+    wrongCarMode @8;
+    steerTempUnavailable @9;
+    reverseGear @10;
+    buttonCancel @11;
+    buttonEnable @12;
+    pedalPressed @13;
+    cruiseDisabled @14;
+    radarCommIssue @15;
+    dataNeeded @16;
+    speedTooLow @17;
+    outOfSpace @18;
+    overheat @19;
+    calibrationInProgress @20;
+    calibrationInvalid @21;
+    controlsMismatch @22;
+    pcmEnable @23;
+    pcmDisable @24;
+    noTarget @25;
+    radarFault @26;
+    modelCommIssue @27;
+    brakeHold @28;
+    parkBrake @29;
+  }
+}
+
 # ******* main car state @ 100hz *******
 # all speeds in m/s
 
 struct CarState {
-  errors @0: List(Error);
+  errorsDEPRECATED @0 :List(CarEvent.EventName);
+  events @13 :List(CarEvent);
 
   # car speed
   vEgo @1 :Float32;       # best estimate of speed
@@ -33,6 +81,9 @@ struct CarState {
   # cruise state
   cruiseState @10 :CruiseState;
 
+  # gear
+  gearShifter @14 :GearShifter;
+
   # button presses
   buttonEvents @11 :List(ButtonEvent);
 
@@ -48,31 +99,28 @@ struct CarState {
   }
 
   struct CruiseState {
-    enabled @0: Bool;
-    speed @1: Float32;
-    available @2: Bool;
+    enabled @0 :Bool;
+    speed @1 :Float32;
+    available @2 :Bool;
+    speedOffset @3 :Float32;
   }
 
-  enum Error {
-    # TODO: copy from error list
-    commIssue @0;
-    steerUnavailable @1;
-    brakeUnavailable @2;
-    gasUnavailable @3;
-    wrongGear @4;
-    doorOpen @5;
-    seatbeltNotLatched @6;
-    espDisabled @7;
-    wrongCarMode @8;
-    steerTempUnavailable @9;
-    reverseGear @10;
-    # ...
+  enum GearShifter {
+    unknown @0;
+    park @1;
+    drive @2;
+    neutral @3;
+    reverse @4;
+    sport @5;
+    low @6;
+    brake @7;
   }
+
 
   # send on change
   struct ButtonEvent {
-    pressed @0: Bool;
-    type @1: Type;
+    pressed @0 :Bool;
+    type @1 :Type;
 
     enum Type {
       unknown @0;
@@ -91,29 +139,30 @@ struct CarState {
 # ******* radar state @ 20hz *******
 
 struct RadarState {
-  errors @0: List(Error);
-  points @1: List(RadarPoint);
+  errors @0 :List(Error);
+  points @1 :List(RadarPoint);
 
   # which packets this state came from
-  canMonoTimes @2: List(UInt64);
+  canMonoTimes @2 :List(UInt64);
 
   enum Error {
-    notValid @0;
+    commIssue @0;
+    fault @1;
   }
 
   # similar to LiveTracks
   # is one timestamp valid for all? I think so
   struct RadarPoint {
-    trackId @0: UInt64;  # no trackId reuse
+    trackId @0 :UInt64;  # no trackId reuse
 
     # these 3 are the minimum required
-    dRel @1: Float32; # m from the front bumper of the car
-    yRel @2: Float32; # m
-    vRel @3: Float32; # m/s
+    dRel @1 :Float32; # m from the front bumper of the car
+    yRel @2 :Float32; # m
+    vRel @3 :Float32; # m/s
 
     # these are optional and valid if they are not NaN
-    aRel @4: Float32; # m/s^2
-    yvRel @5: Float32; # m/s
+    aRel @4 :Float32; # m/s^2
+    yvRel @5 :Float32; # m/s
   }
 }
 
@@ -121,17 +170,24 @@ struct RadarState {
 
 struct CarControl {
   # must be true for any actuator commands to work
-  enabled @0: Bool;
+  enabled @0 :Bool;
 
-  # range from 0.0 - 1.0
-  gas @1: Float32;
-  brake @2: Float32;
+  gasDEPRECATED @1 :Float32;
+  brakeDEPRECATED @2 :Float32;
+  steeringTorqueDEPRECATED @3 :Float32;
 
-  # range from -1.0 - 1.0
-  steeringTorque @3 :Float32;
+  actuators @6 :Actuators;
 
-  cruiseControl @4: CruiseControl;
-  hudControl @5: HUDControl;
+  cruiseControl @4 :CruiseControl;
+  hudControl @5 :HUDControl;
+
+  struct Actuators {
+    # range from 0.0 - 1.0
+    gas @0: Float32;
+    brake @1: Float32;
+    # range from -1.0 - 1.0
+    steer @2: Float32;
+  }
 
   struct CruiseControl {
     cancel @0: Bool;
@@ -178,31 +234,48 @@ struct CarControl {
 # ****** car param ******
 
 struct CarParams {
-  carName @0: Text;
-  radarName @1: Text;
-  carFingerprint @2: Text;
+  carName @0 :Text;
+  radarName @1 :Text;
+  carFingerprint @2 :Text;
 
-  enableSteer @3: Bool;
-  enableGas @4: Bool;
-  enableBrake @5: Bool;
-  enableCruise @6: Bool;
+  enableSteer @3 :Bool;
+  enableGas @4 :Bool;
+  enableBrake @5 :Bool;
+  enableCruise @6 :Bool;
+
+  minEnableSpeed @18 :Float32;
+  safetyModel @19 :Int16;
+
+  steerMaxBP @20 :List(Float32);
+  steerMaxV @21 :List(Float32);
+  gasMaxBP @22 :List(Float32);
+  gasMaxV @23 :List(Float32);
+  brakeMaxBP @24 :List(Float32);
+  brakeMaxV @25 :List(Float32);
+
+  enum SafetyModels {
+    # from board
+    default @0;
+    honda @1;
+    toyota @2;
+  }
 
   # things about the car in the manual
-  m @7: Float32;     # [kg] running weight
-  l @8: Float32;     # [m] wheelbase
-  sR @9: Float32;    # [] steering ratio
-  aF @10: Float32;   # [m] GC distance to front axle
-  aR @11: Float32;   # [m] GC distance to rear axle
-  chi @12: Float32;  # [] rear steering ratio wrt front steering (usually 0)
+  m @7 :Float32;     # [kg] running weight
+  l @8 :Float32;     # [m] wheelbase
+  sR @9 :Float32;    # [] steering ratio
+  aF @10 :Float32;   # [m] GC distance to front axle
+  aR @11 :Float32;   # [m] GC distance to rear axle
+  chi @12 :Float32;  # [] rear steering ratio wrt front steering (usually 0)
 
   # things we can derive
-  j @13: Float32;    # [kg*m2] body rot inertia
-  cF @14: Float32;   # [N/rad] front tire coeff of stiff
-  cR @15: Float32;   # [N/rad] rear tire coeff of stiff
+  j @13 :Float32;    # [kg*m2] body rotational inertia
+  cF @14 :Float32;   # [N/rad] front tire coeff of stiff
+  cR @15 :Float32;   # [N/rad] rear tire coeff of stiff
 
   # Kp and Ki for the lateral control
-  steerKp @16: Float32;
-  steerKi @17: Float32;
+  steerKp @16 :Float32;
+  steerKi @17 :Float32;
 
   # TODO: Kp and Ki for long control, perhaps not needed?
 }

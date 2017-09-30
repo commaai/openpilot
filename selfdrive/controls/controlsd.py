@@ -2,24 +2,24 @@
 import os
 import json
 from copy import copy
-
 import zmq
-
 from cereal import car, log
 from common.numpy_fast import clip
 from common.fingerprints import fingerprint
 from common.realtime import sec_since_boot, set_realtime_priority, Ratekeeper
 from common.profiler import Profiler
 from common.params import Params
-
 import selfdrive.messaging as messaging
 from selfdrive.swaglog import cloudlog
 from selfdrive.config import Conversions as CV
 from selfdrive.services import service_list
 from selfdrive.car import get_car
 from selfdrive.controls.lib.planner import Planner
-from selfdrive.controls.lib.drive_helpers import learn_angle_offset
-from selfdrive.controls.lib.longcontrol import LongControl
+from selfdrive.controls.lib.drive_helpers import learn_angle_offset, \
+                                                 get_events, \
+                                                 create_event, \
+                                                 EventTypes as ET
+from selfdrive.controls.lib.longcontrol import LongControl, STARTING_TARGET_SPEED
 from selfdrive.controls.lib.latcontrol import LatControl
 from selfdrive.controls.lib.alertmanager import AlertManager
 from selfdrive.controls.lib.vehicle_model import VehicleModel
@@ -34,427 +34,472 @@ AWARENESS_TIME = 360.      # 6 minutes limit without user touching steering whee
 AWARENESS_PRE_TIME = 20.   # a first alert is issued 20s before start decelerating the car
 AWARENESS_DECEL = -0.2     # car smoothly decel at .2m/s^2 when user is distracted
 
-# class Cal
+
 class Calibration:
   UNCALIBRATED = 0
   CALIBRATED = 1
   INVALID = 2
 
-# to be used
-class State():
+
+class State:
   DISABLED = 0
   ENABLED = 1
-  SOFT_DISABLE = 2
+  PRE_ENABLED = 2
+  SOFT_DISABLING = 3
 
-class Controls(object):
-  def __init__(self, gctx, rate=100):
-    self.rate = rate
 
-    # *** log ***
-    context = zmq.Context()
+# True when actuators are controlled
+def isActive(state):
+  return state in [State.ENABLED, State.SOFT_DISABLING]
 
-    # pub
-    self.live100 = messaging.pub_sock(context, service_list['live100'].port)
-    self.carstate = messaging.pub_sock(context, service_list['carState'].port)
-    self.carcontrol = messaging.pub_sock(context, service_list['carControl'].port)
-    sendcan = messaging.pub_sock(context, service_list['sendcan'].port)
- 
-    # sub
-    self.thermal = messaging.sub_sock(context, service_list['thermal'].port)
-    self.health = messaging.sub_sock(context, service_list['health'].port)
-    logcan = messaging.sub_sock(context, service_list['can'].port)
-    self.cal = messaging.sub_sock(context, service_list['liveCalibration'].port)
-    
-    self.CC = car.CarControl.new_message()
-    self.CI, self.CP = get_car(logcan, sendcan)
-    self.PL = Planner(self.CP)
-    self.AM = AlertManager()
-    self.LoC = LongControl()
-    self.LaC = LatControl()
-    self.VM = VehicleModel(self.CP)
-  
-    # write CarParams
-    params = Params()
-    params.put("CarParams", self.CP.to_bytes())
-  
-    # fake plan
-    self.plan_ts = 0
-    self.plan = log.Plan.new_message()
-    self.plan.lateralValid = False
-    self.plan.longitudinalValid = False
-  
-    # controls enabled state
-    self.enabled = False
-    self.last_enable_request = 0
-  
-    # learned angle offset
-    self.angle_offset = 0
-    calibration_params = params.get("CalibrationParams")
-    if calibration_params:
-      try:
-        calibration_params = json.loads(calibration_params)
-        self.angle_offset = calibration_params["angle_offset"]
-      except (ValueError, KeyError):
-        pass
-  
-    # rear view camera state
-    self.rear_view_toggle = False
-    self.rear_view_allowed = (params.get("IsRearViewMirror") == "1")
-  
-    self.v_cruise_kph = 255
-  
-    # 0.0 - 1.0
-    self.awareness_status = 1.0
-  
-    self.soft_disable_timer = None
-  
-    self.overtemp = False
-    self.free_space = 1.0
-    self.cal_status = Calibration.UNCALIBRATED
-    self.cal_perc = 0
-  
-    self.rk = Ratekeeper(self.rate, print_delay_threshold=2./1000)
- 
-  def data_sample(self):
-    self.prof = Profiler()
-    self.cur_time = sec_since_boot()
-    # first read can and compute car states
-    self.CS = self.CI.update()
 
-    self.prof.checkpoint("CarInterface")
+# True if system is engaged
+def isEnabled(state):
+  return (isActive(state) or state == State.PRE_ENABLED)
 
-    # *** thermal checking logic ***
-    # thermal data, checked every second
-    td = messaging.recv_sock(self.thermal)
-    if td is not None:
-      # Check temperature.
-      self.overtemp = any(
-          t > 950
-          for t in (td.thermal.cpu0, td.thermal.cpu1, td.thermal.cpu2,
-                    td.thermal.cpu3, td.thermal.mem, td.thermal.gpu))
-      # under 15% of space free
-      self.free_space = td.thermal.freeSpace
 
-    # read calibration status
-    cal = messaging.recv_sock(self.cal)
-    if cal is not None:
-      self.cal_status = cal.liveCalibration.calStatus
-      self.cal_perc = cal.liveCalibration.calPerc
-    
+def data_sample(CI, CC, thermal, health, cal, cal_status, cal_perc):
 
-  def state_transition(self):
-    pass # for now
+  # *** read can and compute car states ***
+  CS = CI.update(CC)
+  events = list(CS.events)
 
-  def state_control(self):
-    
-    # did it request to enable?
-    enable_request, enable_condition = False, False
+  # *** thermal checking logic ***
+  # thermal data, checked every second
+  td = messaging.recv_sock(thermal)
+  if td is not None:
+    # Check temperature
+    overtemp = any(
+        t > 950
+        for t in (td.thermal.cpu0, td.thermal.cpu1, td.thermal.cpu2,
+                  td.thermal.cpu3, td.thermal.mem, td.thermal.gpu))
+    if overtemp:
+      events.append(create_event('overheat', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
 
-    # reset awareness status on steering
-    if self.CS.steeringPressed or not self.enabled:
-      self.awareness_status = 1.0
-    elif self.enabled:
-      # gives the user 6 minutes
-      self.awareness_status -= 1.0/(self.rate * AWARENESS_TIME)
-      if self.awareness_status <= 0.:
-        self.AM.add("driverDistracted", self.enabled)
-      elif self.awareness_status <= AWARENESS_PRE_TIME / AWARENESS_TIME and \
-           self.awareness_status >= (AWARENESS_PRE_TIME - 0.1) / AWARENESS_TIME:
-        self.AM.add("preDriverDistracted", self.enabled)
+    # under 15% of space free
+    if td.thermal.freeSpace < 0.15:
+      events.append(create_event('outOfSpace', [ET.NO_ENTRY]))
 
-    # handle button presses
-    for b in self.CS.buttonEvents:
-      print b
+  # *** read calibration status ***
+  cal = messaging.recv_sock(cal)
+  if cal is not None:
+    cal_status = cal.liveCalibration.calStatus
+    cal_perc = cal.liveCalibration.calPerc
 
-      # button presses for rear view
-      if b.type == "leftBlinker" or b.type == "rightBlinker":
-        if b.pressed and self.rear_view_allowed:
-          self.rear_view_toggle = True
-        else:
-          self.rear_view_toggle = False
-
-      if b.type == "altButton1" and b.pressed:
-        self.rear_view_toggle = not self.rear_view_toggle
-
-      if not self.CP.enableCruise and self.enabled and not b.pressed:
-        if b.type == "accelCruise":
-          self.v_cruise_kph -= (self.v_cruise_kph % V_CRUISE_DELTA) - V_CRUISE_DELTA
-        elif b.type == "decelCruise":
-          self.v_cruise_kph -= (self.v_cruise_kph % V_CRUISE_DELTA) + V_CRUISE_DELTA
-        self.v_cruise_kph = clip(self.v_cruise_kph, V_CRUISE_MIN, V_CRUISE_MAX)
-
-      if not self.enabled and b.type in ["accelCruise", "decelCruise"] and not b.pressed:
-        enable_request = True
-
-      # do disable on button down
-      if b.type == "cancel" and b.pressed:
-        self.AM.add("disable", self.enabled)
-
-    self.prof.checkpoint("Buttons")
-    
-    # *** health checking logic ***
-    hh = messaging.recv_sock(self.health)
-    if hh is not None:
-      # if the board isn't allowing controls but somehow we are enabled!
-      # TODO: this should be in state transition with a function follower logic
-      if not hh.health.controlsAllowed and self.enabled:
-        self.AM.add("controlsMismatch", self.enabled)
-
-    # disable if the pedals are pressed while engaged, this is a user disable
-    if self.enabled:
-      if self.CS.gasPressed or self.CS.brakePressed or not self.CS.cruiseState.available:
-        self.AM.add("disable", self.enabled)
-
-      # it can happen that car cruise disables while comma system is enabled: need to
-      # keep braking if needed or if the speed is very low
-      # TODO: for the Acura, cancellation below 25mph is normal. Issue a non loud alert
-      if self.CP.enableCruise and not self.CS.cruiseState.enabled and \
-         (self.CC.brake <= 0. or self.CS.vEgo < 0.3):
-        self.AM.add("cruiseDisabled", self.enabled)
-
-    if enable_request:
-      # check for pressed pedals
-      if self.CS.gasPressed or self.CS.brakePressed:
-        self.AM.add("pedalPressed", self.enabled)
-        enable_request = False
-      else:
-        print "enabled pressed at", self.cur_time
-        self.last_enable_request = self.cur_time
-
-      # don't engage with less than 15% free
-      if self.free_space < 0.15:
-        self.AM.add("outOfSpace", self.enabled)
-        enable_request = False
-
-    if self.CP.enableCruise:
-      enable_condition = ((self.cur_time - self.last_enable_request) < 0.2) and self.CS.cruiseState.enabled
+  if cal_status != Calibration.CALIBRATED:
+    if cal_status == Calibration.UNCALIBRATED:
+      events.append(create_event('calibrationInProgress', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     else:
-      enable_condition = enable_request
+      events.append(create_event('calibrationInvalid', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
 
-    if self.CP.enableCruise and self.CS.cruiseState.enabled:
-      self.v_cruise_kph = self.CS.cruiseState.speed * CV.MS_TO_KPH
+  # *** health checking logic ***
+  hh = messaging.recv_sock(health)
+  if hh is not None:
+    controls_allowed = hh.health.controlsAllowed
+    if not controls_allowed:
+      events.append(create_event('controlsMismatch', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
 
-    self.prof.checkpoint("AdaptiveCruise")
+  return CS, events, cal_status, cal_perc
 
-    # *** what's the plan ***
-    plan_packet = self.PL.update(self.CS, self.LoC)
-    self.plan = plan_packet.plan
-    self.plan_ts = plan_packet.logMonoTime
 
-    # if user is not responsive to awareness alerts, then start a smooth deceleration
-    if self.awareness_status < -0.:
-      self.plan.aTargetMax = min(self.plan.aTargetMax, AWARENESS_DECEL)
-      self.plan.aTargetMin = min(self.plan.aTargetMin, self.plan.aTargetMax)
+def calc_plan(CS, events, PL, LoC):
+   # plan runs always, independently of the state
+   plan_packet = PL.update(CS, LoC)
+   plan = plan_packet.plan
+   plan_ts = plan_packet.logMonoTime
 
-    if enable_request or enable_condition or self.enabled:
-      # add all alerts from car
-      for alert in self.CS.errors:
-        self.AM.add(alert, self.enabled)
+   # add events from planner
+   events += list(plan.events)
 
-      if not self.plan.longitudinalValid:
-        self.AM.add("radarCommIssue", self.enabled)
+   # disable if lead isn't close when system is active and brake is pressed to avoid
+   # unexpected vehicle accelerations
+   if CS.brakePressed and plan.vTarget >= STARTING_TARGET_SPEED:
+     events.append(create_event('noTarget', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
 
-      if self.cal_status != Calibration.CALIBRATED:
-        if self.cal_status == Calibration.UNCALIBRATED:
-          self.AM.add("calibrationInProgress", self.enabled, str(self.cal_perc) + '%')
-        else:
-          self.AM.add("calibrationInvalid", self.enabled)
+   return plan, plan_ts
 
-      if not self.plan.lateralValid:
-        # If the model is not broadcasting, assume that it is because
-        # the user has uploaded insufficient data for calibration.
-        # Other cases that would trigger this are rare and unactionable by the user.
-        self.AM.add("dataNeeded", self.enabled)
 
-      if self.overtemp:
-        self.AM.add("overheat", self.enabled)
+def state_transition(CS, CP, state, events, soft_disable_timer, v_cruise_kph, cal_perc, AM):
+  # compute conditional state transitions and execute actions on state transitions
+  enabled = isEnabled(state)
 
-    
-    # *** angle offset learning *** 
-    if self.rk.frame % 5 == 2 and self.plan.lateralValid: 
-      # *** run this at 20hz again *** 
-      self.angle_offset = learn_angle_offset(self.enabled, self.CS.vEgo, self.angle_offset, 
-                                             self.PL.PP.c_poly, self.PL.PP.c_prob, self.LaC.y_des,
-                                             self.CS.steeringPressed) 
+  # handle button presses. TODO: this should be in state_control, but a decelCruise press
+  # would have the effect of both enabling and changing speed is checked after the state transition
+  for b in CS.buttonEvents:
+    if not CP.enableCruise and enabled and not b.pressed:
+      if b.type == "accelCruise":
+        v_cruise_kph -= (v_cruise_kph % V_CRUISE_DELTA) - V_CRUISE_DELTA
+      elif b.type == "decelCruise":
+        v_cruise_kph -= (v_cruise_kph % V_CRUISE_DELTA) + V_CRUISE_DELTA
+      v_cruise_kph = clip(v_cruise_kph, V_CRUISE_MIN, V_CRUISE_MAX)
 
-    # *** gas/brake PID loop *** 
-    final_gas, final_brake = self.LoC.update(self.enabled, self.CS.vEgo, self.v_cruise_kph, 
-                                        self.plan.vTarget, 
-                                        [self.plan.aTargetMin, self.plan.aTargetMax], 
-                                        self.plan.jerkFactor, self.CP) 
+  # decrease the soft disable timer at every step, as it's reset on
+  # entrance in SOFT_DISABLING state
+  soft_disable_timer = max(0, soft_disable_timer - 1)
 
-    # *** steering PID loop *** 
-    final_steer, sat_flag = self.LaC.update(self.enabled, self.CS.vEgo, self.CS.steeringAngle, 
-                                            self.CS.steeringPressed, self.plan.dPoly, self.angle_offset, self.VM) 
- 
-    self.prof.checkpoint("PID") 
-    
-        # ***** handle alerts ****
-    # send FCW alert if triggered by planner
-    if self.plan.fcw:
-      self.AM.add("fcw", self.enabled)
+  # ***** handle state transitions *****
 
-    # send a "steering required alert" if saturation count has reached the limit
-    if sat_flag:
-      self.AM.add("steerSaturated", self.enabled)
-
-    if self.enabled and self.AM.alertShouldDisable():
-      print "DISABLING IMMEDIATELY ON ALERT"
-      self.enabled = False
-
-    if self.enabled and self.AM.alertShouldSoftDisable():
-      if self.soft_disable_timer is None:
-        self.soft_disable_timer = 3 * self.rate
-      elif self.soft_disable_timer == 0:
-        print "SOFT DISABLING ON ALERT"
-        self.enabled = False
+  # DISABLED
+  if state == State.DISABLED:
+    if get_events(events, [ET.ENABLE]):
+      if get_events(events, [ET.NO_ENTRY, ET.SOFT_DISABLE, ET.IMMEDIATE_DISABLE]):
+        for e in get_events(events, [ET.SOFT_DISABLE, ET.IMMEDIATE_DISABLE]):
+          AM.add(e, enabled)
+        for e in get_events(events, [ET.NO_ENTRY]):
+          txt =  str(cal_perc) + '%' if e == 'calibrationInProgress' else ''
+          AM.add(str(e) + "NoEntry", enabled, txt)
       else:
-        self.soft_disable_timer -= 1
-    else:
-      self.soft_disable_timer = None
+        if get_events(events, [ET.PRE_ENABLE]):
+          state = State.PRE_ENABLED
+        else:
+          state = State.ENABLED
+        AM.add("enable", enabled)
+        # on activation, let's always set v_cruise from where we are, even if PCM ACC is active
+        v_cruise_kph = int(round(max(CS.vEgo * CV.MS_TO_KPH, V_CRUISE_ENABLE_MIN)))
 
-    if enable_condition and not self.enabled and not self.AM.alertPresent():
-      print "*** enabling controls"
+  # ENABLED
+  elif state == State.ENABLED:
+    if get_events(events, [ET.USER_DISABLE]):
+      state = State.DISABLED
+      AM.add("disable", enabled)
 
-      # beep for enabling
-      self.AM.add("enable", self.enabled)
+    elif get_events(events, [ET.IMMEDIATE_DISABLE]):
+      state = State.DISABLED
+      for e in get_events(events, [ET.IMMEDIATE_DISABLE]):
+        AM.add(e, enabled)
 
-      # enable both lateral and longitudinal controls
-      self.enabled = True
+    elif get_events(events, [ET.SOFT_DISABLE]):
+      state = State.SOFT_DISABLING
+      soft_disable_timer = 300   # 3s TODO: use rate
+      for e in get_events(events, [ET.SOFT_DISABLE]):
+        AM.add(e, enabled)
 
-      # on activation, let's always set v_cruise from where we are, even if PCM ACC is active
-      self.v_cruise_kph = int(round(max(self.CS.vEgo * CV.MS_TO_KPH, V_CRUISE_ENABLE_MIN)))
+  # SOFT DISABLING
+  elif state == State.SOFT_DISABLING:
+    if get_events(events, [ET.USER_DISABLE]):
+      state = State.DISABLED
+      AM.add("disable", enabled)
 
-      # 6 minutes driver you're on
-      self.awareness_status = 1.0
+    elif get_events(events, [ET.IMMEDIATE_DISABLE]):
+      state = State.DISABLED
+      for e in get_events(events, [ET.IMMEDIATE_DISABLE]):
+        AM.add(e, enabled)
 
-      # reset the PID loops
-      self.LaC.reset()
-      # start long control at actual speed
-      self.LoC.reset(v_pid = self.CS.vEgo)
+    elif not get_events(events, [ET.SOFT_DISABLE]):
+      # no more soft disabling condition, so go back to ENABLED
+      state = State.ENABLED
 
-    # *** push the alerts to current ***
-    # TODO: remove output, store them inside AM class instead
-    self.alert_text_1, self.alert_text_2, self.visual_alert, self.audible_alert = self.AM.process_alerts(self.cur_time)
- 
-    # ***** control the car *****
-    self.CC.enabled = self.enabled
+    elif soft_disable_timer <= 0:
+      state = State.DISABLED
+  
+  # TODO: PRE ENABLING
+  elif state == State.PRE_ENABLED:
+    if get_events(events, [ET.USER_DISABLE]):
+      state = State.DISABLED
+      AM.add("disable", enabled)
 
-    self.CC.gas = float(final_gas)
-    self.CC.brake = float(final_brake)
-    self.CC.steeringTorque = float(final_steer)
+    elif get_events(events, [ET.IMMEDIATE_DISABLE, ET.SOFT_DISABLE]):
+      state = State.DISABLED
+      for e in get_events(events, [ET.IMMEDIATE_DISABLE, ET.SOFT_DISABLE]):
+        AM.add(e, enabled)
 
-    self.CC.cruiseControl.override = True
-    # always cancel if we have an interceptor
-    self.CC.cruiseControl.cancel = bool(not self.CP.enableCruise or 
-                                        (not self.enabled and self.CS.cruiseState.enabled))
+    elif not get_events(events, [ET.PRE_ENABLE]):
+      state = State.ENABLED
 
-    # brake discount removes a sharp nonlinearity
-    brake_discount = (1.0 - clip(final_brake*3., 0.0, 1.0))
-    self.CC.cruiseControl.speedOverride = float(max(0.0, ((self.LoC.v_pid - .5) * brake_discount)) if self.CP.enableCruise else 0.0)
+  return state, soft_disable_timer, v_cruise_kph
 
-    #CC.cruiseControl.accelOverride = float(AC.a_pcm)
-    # TODO: parametrize 0.714 in interface?
-    # accelOverride is more or less the max throttle allowed to pcm: usually set to a constant
-    # unless aTargetMax is very high and then we scale with it; this helpw in quicker restart
-    self.CC.cruiseControl.accelOverride = float(max(0.714, self.plan.aTargetMax/A_ACC_MAX))
 
-    self.CC.hudControl.setSpeed = float(self.v_cruise_kph * CV.KPH_TO_MS)
-    self.CC.hudControl.speedVisible = self.enabled
-    self.CC.hudControl.lanesVisible = self.enabled
-    self.CC.hudControl.leadVisible = self.plan.hasLead
-    self.CC.hudControl.visualAlert = self.visual_alert
-    self.CC.hudControl.audibleAlert = self.audible_alert
+def state_control(plan, CS, CP, state, events, v_cruise_kph, AM, rk, awareness_status,
+                  PL, LaC, LoC, VM, angle_offset, rear_view_allowed, rear_view_toggle):
+  # Given the state, this function returns the actuators
 
-    # TODO: remove it from here and put it in state_transition
-    # this alert will apply next controls cycle
-    if not self.CI.apply(self.CC):
-      self.AM.add("controlsFailed", self.enabled)
+  # reset actuators to zero
+  actuators = car.CarControl.Actuators.new_message()
 
-  def data_send(self):
-    
-    # broadcast carControl first
-    cc_send = messaging.new_message()
-    cc_send.init('carControl')
-    cc_send.carControl = copy(self.CC)
-    self.carcontrol.send(cc_send.to_bytes())
+  enabled = isEnabled(state)
+  active = isActive(state)
 
-    self.prof.checkpoint("CarControl")
+  for b in CS.buttonEvents:
+    # any button event resets awarenesss_status
+    awareness_status = 1.
 
-    # broadcast carState
-    cs_send = messaging.new_message()
-    cs_send.init('carState')
-    cs_send.carState = copy(self.CS)
-    self.carstate.send(cs_send.to_bytes())
-    
-    # ***** publish state to logger *****
+    # button presses for rear view
+    if b.type == "leftBlinker" or b.type == "rightBlinker":
+      if b.pressed and rear_view_allowed:
+        rear_view_toggle = True
+      else:
+        rear_view_toggle = False
 
-    # publish controls state at 100Hz
+    if b.type == "altButton1" and b.pressed:
+      rear_view_toggle = not rear_view_toggle
+
+
+  # send FCW alert if triggered by planner
+  if plan.fcw:
+    AM.add("fcw", enabled)
+
+  # ***** state specific actions *****
+
+  # DISABLED
+  if state in [State.PRE_ENABLED, State.DISABLED]:
+    awareness_status = 1.
+    LaC.reset()
+    LoC.reset(v_pid=CS.vEgo)
+
+  # ENABLED or SOFT_DISABLING
+  elif state in [State.ENABLED, State.SOFT_DISABLING]:
+
+    if CS.steeringPressed:
+      # reset awareness status on steering
+      awareness_status = 1.0
+
+    # 6 minutes driver you're on
+    awareness_status -= 0.01/(AWARENESS_TIME)
+    if awareness_status <= 0.:
+      AM.add("driverDistracted", enabled)
+    elif awareness_status <= AWARENESS_PRE_TIME / AWARENESS_TIME and \
+         awareness_status >= (AWARENESS_PRE_TIME - 0.1) / AWARENESS_TIME:
+      AM.add("preDriverDistracted", enabled)
+
+    # parse warnings from car specific interface
+    for e in get_events(events, [ET.WARNING]):
+      AM.add(e, enabled)
+
+  # if user is not responsive to awareness alerts, then start a smooth deceleration
+  if awareness_status < -0.:
+    plan.aTargetMax = min(plan.aTargetMax, AWARENESS_DECEL)
+    plan.aTargetMin = min(plan.aTargetMin, plan.aTargetMax)
+
+  # *** angle offset learning ***
+
+  if rk.frame % 5 == 2 and plan.lateralValid:
+    # *** run this at 20hz again ***
+    angle_offset = learn_angle_offset(active, CS.vEgo, angle_offset,
+                                      PL.PP.c_poly, PL.PP.c_prob, LaC.y_des,
+                                      CS.steeringPressed)
+
+  # *** gas/brake PID loop ***
+  actuators.gas, actuators.brake = LoC.update(active, CS.vEgo, CS.brakePressed,
+                                              v_cruise_kph, plan.vTarget,
+                                              [plan.aTargetMin, plan.aTargetMax],
+                                              plan.jerkFactor, CP)
+
+  # *** steering PID loop ***
+  actuators.steer = LaC.update(active, CS.vEgo, CS.steeringAngle,
+                               CS.steeringPressed, plan.dPoly, angle_offset, VM, PL)
+
+  # send a "steering required alert" if saturation count has reached the limit
+  if LaC.sat_flag:
+    AM.add("steerSaturated", enabled)
+
+  if CP.enableCruise and CS.cruiseState.enabled:
+    v_cruise_kph = CS.cruiseState.speed * CV.MS_TO_KPH
+
+  # *** process alerts ***
+
+  AM.process_alerts(sec_since_boot())
+
+  return actuators, v_cruise_kph, awareness_status, angle_offset, rear_view_toggle
+
+
+def data_send(plan, plan_ts, CS, CI, CP, state, events, actuators, v_cruise_kph, rk, carstate,
+              carcontrol, live100, livempc, AM, rear_view_allowed, rear_view_toggle, awareness_status,
+              LaC, LoC, angle_offset):
+
+  # ***** control the car *****
+
+  CC = car.CarControl.new_message()
+
+  CC.enabled = isEnabled(state)
+
+  CC.actuators = actuators
+
+  CC.cruiseControl.override = True
+  # always cancel if we have an interceptor
+  CC.cruiseControl.cancel = not CP.enableCruise or (not isEnabled(state) and CS.cruiseState.enabled)
+
+  # brake discount removes a sharp nonlinearity
+  brake_discount = (1.0 - clip(actuators.brake*3., 0.0, 1.0))
+  CC.cruiseControl.speedOverride = float(max(0.0, (LoC.v_pid + CS.cruiseState.speedOffset) * brake_discount) if CP.enableCruise else 0.0)
+
+  # TODO: parametrize 0.714 in interface?
+  # accelOverride is more or less the max throttle allowed to pcm: usually set to a constant
+  # unless aTargetMax is very high and then we scale with it; this helpw in quicker restart
+  CC.cruiseControl.accelOverride = float(max(0.714, plan.aTargetMax/A_ACC_MAX))
+
+  CC.hudControl.setSpeed = float(v_cruise_kph * CV.KPH_TO_MS)
+  CC.hudControl.speedVisible = isEnabled(state)
+  CC.hudControl.lanesVisible = isEnabled(state)
+  CC.hudControl.leadVisible = plan.hasLead
+  CC.hudControl.visualAlert = AM.visual_alert
+  CC.hudControl.audibleAlert = AM.audible_alert
+
+  # send car controls over can
+  CI.apply(CC)
+
+  # ***** publish state to logger *****
+  # publish controls state at 100Hz
+  dat = messaging.new_message()
+  dat.init('live100')
+
+  # show rear view camera on phone if in reverse gear or when button is pressed
+  dat.live100.rearViewCam = ('reverseGear' in [e.name for e in events] and rear_view_allowed) or rear_view_toggle
+  dat.live100.alertText1 = AM.alert_text_1
+  dat.live100.alertText2 = AM.alert_text_2
+  dat.live100.awarenessStatus = max(awareness_status, 0.0) if isEnabled(state) else 0.0
+
+  # what packets were used to process
+  dat.live100.canMonoTimes = list(CS.canMonoTimes)
+  dat.live100.planMonoTime = plan_ts
+
+  # if controls is enabled
+  dat.live100.enabled = isEnabled(state)
+
+  # car state
+  dat.live100.vEgo = CS.vEgo
+  dat.live100.angleSteers = CS.steeringAngle
+  dat.live100.steerOverride = CS.steeringPressed
+
+  # longitudinal control state
+  dat.live100.vPid = float(LoC.v_pid)
+  dat.live100.vCruise = float(v_cruise_kph)
+  dat.live100.upAccelCmd = float(LoC.pid.p)
+  dat.live100.uiAccelCmd = float(LoC.pid.i)
+
+  # lateral control state
+  dat.live100.yDes = float(LaC.y_des)
+  dat.live100.angleSteersDes = float(LaC.angle_steers_des)
+  dat.live100.upSteer = float(LaC.pid.p)
+  dat.live100.uiSteer = float(LaC.pid.i)
+
+  # processed radar state, should add a_pcm?
+  dat.live100.vTargetLead = float(plan.vTarget)
+  dat.live100.aTargetMin = float(plan.aTargetMin)
+  dat.live100.aTargetMax = float(plan.aTargetMax)
+  dat.live100.jerkFactor = float(plan.jerkFactor)
+
+  # log learned angle offset
+  dat.live100.angleOffset = float(angle_offset)
+
+  # lag
+  dat.live100.cumLagMs = -rk.remaining*1000.
+
+  live100.send(dat.to_bytes())
+
+  # broadcast carState
+  cs_send = messaging.new_message()
+  cs_send.init('carState')
+  # TODO: override CS.events with all the cumulated events
+  cs_send.carState = copy(CS)
+  carstate.send(cs_send.to_bytes())
+
+  # broadcast carControl
+  cc_send = messaging.new_message()
+  cc_send.init('carControl')
+  cc_send.carControl = copy(CC)
+  carcontrol.send(cc_send.to_bytes())
+  #print [i.name for i in events]
+
+  # publish mpc state at 20Hz
+  if hasattr(LaC, 'mpc_updated') and LaC.mpc_updated:
     dat = messaging.new_message()
-    dat.init('live100')
+    dat.init('liveMpc')
+    dat.liveMpc.x = list(LaC.mpc_solution[0].x)
+    dat.liveMpc.y = list(LaC.mpc_solution[0].y)
+    dat.liveMpc.psi = list(LaC.mpc_solution[0].psi)
+    dat.liveMpc.delta = list(LaC.mpc_solution[0].delta)
+    livempc.send(dat.to_bytes())
 
-    # show rear view camera on phone if in reverse gear or when button is pressed
-    dat.live100.rearViewCam = ('reverseGear' in self.CS.errors and self.rear_view_allowed) or self.rear_view_toggle
-    dat.live100.alertText1 = self.alert_text_1
-    dat.live100.alertText2 = self.alert_text_2
-    dat.live100.awarenessStatus = max(self.awareness_status, 0.0) if self.enabled else 0.0
-
-    # what packets were used to process
-    dat.live100.canMonoTimes = list(self.CS.canMonoTimes)
-    dat.live100.planMonoTime = self.plan_ts
-
-    # if controls is enabled
-    dat.live100.enabled = self.enabled
-
-    # car state
-    dat.live100.vEgo = self.CS.vEgo
-    dat.live100.angleSteers = self.CS.steeringAngle
-    dat.live100.steerOverride = self.CS.steeringPressed
-
-    # longitudinal control state
-    dat.live100.vPid = float(self.LoC.v_pid)
-    dat.live100.vCruise = float(self.v_cruise_kph)
-    dat.live100.upAccelCmd = float(self.LoC.Up_accel_cmd)
-    dat.live100.uiAccelCmd = float(self.LoC.Ui_accel_cmd)
-
-    # lateral control state
-    dat.live100.yDes = float(self.LaC.y_des)
-    dat.live100.angleSteersDes = float(self.LaC.angle_steers_des)
-    dat.live100.upSteer = float(self.LaC.Up_steer)
-    dat.live100.uiSteer = float(self.LaC.Ui_steer)
-
-    # processed radar state, should add a_pcm?
-    dat.live100.vTargetLead = float(self.plan.vTarget)
-    dat.live100.aTargetMin = float(self.plan.aTargetMin)
-    dat.live100.aTargetMax = float(self.plan.aTargetMax)
-    dat.live100.jerkFactor = float(self.plan.jerkFactor)
-
-    # log learned angle offset
-    dat.live100.angleOffset = float(self.angle_offset)
-
-    # lag
-    dat.live100.cumLagMs = -self.rk.remaining*1000.
-
-    self.live100.send(dat.to_bytes())
-
-    self.prof.checkpoint("Live100")
-
-  def wait(self):
-    # *** run loop at fixed rate ***
-    if self.rk.keep_time():
-      self.prof.display()
+  return CC
 
 
 def controlsd_thread(gctx, rate=100):
   # start the loop
   set_realtime_priority(2)
-  CTRLS = Controls(gctx, rate)
+
+  context = zmq.Context()
+
+  # pub
+  live100 = messaging.pub_sock(context, service_list['live100'].port)
+  carstate = messaging.pub_sock(context, service_list['carState'].port)
+  carcontrol = messaging.pub_sock(context, service_list['carControl'].port)
+  sendcan = messaging.pub_sock(context, service_list['sendcan'].port)
+  livempc = messaging.pub_sock(context, service_list['liveMpc'].port)
+
+  # sub
+  thermal = messaging.sub_sock(context, service_list['thermal'].port)
+  health = messaging.sub_sock(context, service_list['health'].port)
+  cal = messaging.sub_sock(context, service_list['liveCalibration'].port)
+  logcan = messaging.sub_sock(context, service_list['can'].port)
+
+  CC = car.CarControl.new_message()
+  CI, CP = get_car(logcan, sendcan)
+  PL = Planner(CP)
+  LoC = LongControl(CI.compute_gb)
+  VM = VehicleModel(CP)
+  LaC = LatControl(VM)
+  AM = AlertManager()
+
+  # write CarParams
+  params = Params()
+  params.put("CarParams", CP.to_bytes())
+
+  state = State.DISABLED
+  soft_disable_timer = 0
+  v_cruise_kph = 255
+  cal_perc = 0
+  cal_status = Calibration.UNCALIBRATED
+  rear_view_toggle = False
+  rear_view_allowed = params.get("IsRearViewMirror") == "1"
+
+  # 0.0 - 1.0
+  awareness_status = 0.
+
+  rk = Ratekeeper(rate, print_delay_threshold=2./1000)
+
+  # learned angle offset
+  angle_offset = 0.
+  calibration_params = params.get("CalibrationParams")
+  if calibration_params:
+    try:
+      calibration_params = json.loads(calibration_params)
+      angle_offset = calibration_params["angle_offset"]
+    except (ValueError, KeyError):
+      pass
+
+  prof = Profiler()
+
   while 1:
-    CTRLS.data_sample()
-    CTRLS.state_transition()
-    CTRLS.state_control()
-    CTRLS.data_send()
-    CTRLS.wait()
+
+    prof.reset()  # avoid memory leak
+
+    # sample data and compute car events
+    CS, events, cal_status, cal_perc = data_sample(CI, CC, thermal, health, cal, cal_status, cal_perc)
+    prof.checkpoint("Sample")
+
+    # define plan
+    plan, plan_ts = calc_plan(CS, events, PL, LoC)
+    prof.checkpoint("Plan")
+
+    # update control state
+    state, soft_disable_timer, v_cruise_kph = state_transition(CS, CP, state, events, soft_disable_timer, v_cruise_kph, cal_perc, AM)
+    prof.checkpoint("State transition")
+
+    # compute actuators
+    actuators, v_cruise_kph, awareness_status, angle_offset, rear_view_toggle = state_control(plan, CS, CP, state, events, v_cruise_kph,
+                                                                            AM, rk, awareness_status, PL, LaC, LoC, VM, angle_offset,
+                                                                            rear_view_allowed, rear_view_toggle)
+    prof.checkpoint("State Control")
+
+    # publish data
+    CC = data_send(plan, plan_ts, CS, CI, CP, state, events, actuators, v_cruise_kph,
+                   rk, carstate, carcontrol, live100, livempc, AM, rear_view_allowed,
+                   rear_view_toggle, awareness_status, LaC, LoC, angle_offset)
+    prof.checkpoint("Sent")
+
+    # *** run loop at fixed rate ***
+    if rk.keep_time():
+      prof.display()
 
 
 def main(gctx=None):
@@ -462,4 +507,3 @@ def main(gctx=None):
 
 if __name__ == "__main__":
   main()
- 

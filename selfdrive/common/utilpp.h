@@ -9,6 +9,10 @@
 #include <sstream>
 #include <fstream>
 
+#ifdef __x86_64
+#include <linux/limits.h>
+#endif
+
 namespace util {
 
 inline bool starts_with(std::string s, std::string prefix) {

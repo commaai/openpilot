@@ -20,6 +20,8 @@ except Exception:
 
 SAFETY_NOOUTPUT = 0
 SAFETY_HONDA = 1
+SAFETY_TOYOTA = 2
+SAFETY_TOYOTA_NOLIMITS = 0x1336
 SAFETY_ALLOUTPUT = 0x1337
 
 # *** serialization functions ***
@@ -33,7 +35,7 @@ def can_list_to_can_capnp(can_msgs, msgtype='can'):
       cc = dat.can[i]
     cc.address = can_msg[0]
     cc.busTime = can_msg[1]
-    cc.dat = can_msg[2]
+    cc.dat = str(can_msg[2])
     cc.src = can_msg[3]
   return dat
 
@@ -111,6 +113,7 @@ def can_init():
 def boardd_mock_loop():
   context = zmq.Context()
   can_init()
+  handle.controlWrite(0x40, 0xdc, SAFETY_ALLOUTPUT, 0, b'')
 
   logcan = messaging.sub_sock(context, service_list['can'].port)
 

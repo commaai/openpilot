@@ -22,11 +22,19 @@ Supported Cars
 - Acura ILX 2016 with AcuraWatch Plus
   - Due to use of the cruise control for gas, it can only be enabled above 25 mph
 
-- Honda Civic 2016 with Honda Sensing
+- Honda Civic 2016-2017 with Honda Sensing
   - Due to limitations in steering firmware, steering is disabled below 12 mph
+  - Note that the hatchback model is not supported
 
 - Honda CR-V Touring 2015-2016 (very alpha!)
   - Can only be enabled above 25 mph
+
+In Progress Cars
+------
+
+- Chevy Volt 2016-2018 Premier with Driver Confidence II
+
+- All 2017 Toyota Prius, Corolla, and RAV4
 
 Directory structure
 ------

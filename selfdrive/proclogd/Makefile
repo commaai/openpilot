@@ -2,6 +2,7 @@ CC = clang
 CXX = clang++
 
 PHONELIBS = ../../phonelibs
+BASEDIR = ../..
 
 WARN_FLAGS = -Werror=implicit-function-declaration \
              -Werror=incompatible-pointer-types \

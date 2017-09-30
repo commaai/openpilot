@@ -3,6 +3,11 @@ from common.fingerprints import fingerprint
 from .honda.interface import CarInterface as HondaInterface
 
 try:
+  from .toyota.interface import CarInterface as ToyotaInterface
+except ImportError:
+  ToyotaInterface = None
+
+try:
   from .simulator.interface import CarInterface as SimInterface
 except ImportError:
   SimInterface = None
@@ -17,6 +22,7 @@ interfaces = {
   "ACURA ILX 2016 ACURAWATCH PLUS": HondaInterface,
   "HONDA ACCORD 2016 TOURING": HondaInterface,
   "HONDA CR-V 2016 TOURING": HondaInterface,
+  "TOYOTA PRIUS 2017": ToyotaInterface,
 
   "simulator": SimInterface,
   "simulator2": Sim2Interface

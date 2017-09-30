@@ -3,6 +3,10 @@
 #include <string.h>
 #include <assert.h>
 
+#ifdef __linux__
+#include <sys/prctl.h>
+#endif
+
 void* read_file(const char* path, size_t* out_len) {
   FILE* f = fopen(path, "r");
   if (!f) {
@@ -27,4 +31,11 @@ void* read_file(const char* path, size_t* out_len) {
   }
 
   return buf;
+}
+
+void set_thread_name(const char* name) {
+#ifdef __linux__
+  // pthread_setname_np is dumb (fails instead of truncates)
+  prctl(PR_SET_NAME, (unsigned long)name, 0, 0, 0);
+#endif
 }
