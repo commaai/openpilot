@@ -862,12 +862,8 @@ static void ui_draw_vision(UIState *s) {
     // Draw calibration progress (if needed)
     //if (scene->calStatus == UNCALIBRATED && scene->framecount > 100) {
     if (scene->calStatus == UNCALIBRATED && scene->calPerc > 0) {
-      int rec_width = 880;
-      int x_pos = 555;
-      //if (scene->ui_skin == 1) {
-        rec_width = 1020;
-        x_pos = 470;
-      //}
+      int rec_width = 1020;
+      int x_pos = 470;
       nvgBeginPath(s->vg);
       nvgStrokeWidth(s->vg, 14);
       nvgRoundedRect(s->vg, (1920-rec_width)/2, 970, rec_width, 100, 20);
