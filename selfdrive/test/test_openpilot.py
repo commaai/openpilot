@@ -42,25 +42,25 @@ def with_processes(processes):
     return wrap
   return wrapper
 
-@phone_only
-@with_processes(['controlsd', 'radard'])
-def test_controls():
-  from selfdrive.test.plant.plant import Plant
-
-  # start the fake car for 2 seconds
-  plant = Plant(100)
-  for i in range(200):
-    if plant.rk.frame >= 20 and plant.rk.frame <= 25:
-      cruise_buttons = CruiseButtons.RES_ACCEL
-      # rolling forward
-      assert plant.speed > 0
-    else:
-      cruise_buttons = 0
-    plant.step(cruise_buttons = cruise_buttons)
-  plant.close()
-
-  # assert that we stopped
-  assert plant.speed == 0.0
+#@phone_only
+#@with_processes(['controlsd', 'radard'])
+#def test_controls():
+#  from selfdrive.test.plant.plant import Plant
+#
+#  # start the fake car for 2 seconds
+#  plant = Plant(100)
+#  for i in range(200):
+#    if plant.rk.frame >= 20 and plant.rk.frame <= 25:
+#      cruise_buttons = CruiseButtons.RES_ACCEL
+#      # rolling forward
+#      assert plant.speed > 0
+#    else:
+#      cruise_buttons = 0
+#    plant.step(cruise_buttons = cruise_buttons)
+#  plant.close()
+#
+#  # assert that we stopped
+#  assert plant.speed == 0.0
 
 @phone_only
 @with_processes(['loggerd', 'logmessaged', 'tombstoned', 'proclogd', 'logcatd'])

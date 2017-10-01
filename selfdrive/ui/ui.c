@@ -38,16 +38,18 @@ typedef struct UIScene {
   int frontview;
 
   uint8_t *bgr_ptr;
-  int big_box_x, big_box_y, big_box_width, big_box_height;
 
   int transformed_width, transformed_height;
 
   uint64_t model_ts;
   ModelData model;
 
+  float mpc_x[50];
+  float mpc_y[50];
+
   bool world_objects_visible;
   // TODO(mgraczyk): Remove and use full frame for everything.
-  mat3 warp_matrix;           // transformed box -> big_box.
+  mat3 warp_matrix;           // transformed box -> frame.
   mat4 extrinsic_matrix;      // Last row is 0 so we can use mat4.
 
   float v_cruise;
@@ -88,14 +90,16 @@ typedef struct UIState {
   void *livecalibration_sock_raw;
   zsock_t *live20_sock;
   void *live20_sock_raw;
+  zsock_t *livempc_sock;
+  void *livempc_sock_raw;
 
   // vision state
   bool vision_connected;
   bool vision_connect_firstrun;
   int ipc_fd;
 
-  VisionBuf bufs[UI_BUF_COUNT];
-  VisionBuf front_bufs[UI_BUF_COUNT];
+  VIPCBuf bufs[UI_BUF_COUNT];
+  VIPCBuf front_bufs[UI_BUF_COUNT];
   int cur_vision_idx;
   int cur_vision_front_idx;
 
@@ -228,6 +232,11 @@ static void ui_init(UIState *s) {
   assert(s->live20_sock);
   s->live20_sock_raw = zsock_resolve(s->live20_sock);
 
+  s->livempc_sock = zsock_new_sub(">tcp://127.0.0.1:8035", "");
+  assert(s->livempc_sock);
+  s->livempc_sock_raw = zsock_resolve(s->livempc_sock);
+
+
   s->ipc_fd = -1;
 
   // init display
@@ -271,8 +280,7 @@ static void ui_init(UIState *s) {
 // intrinsic_matrix and returns true.  Otherwise returns false.
 static bool try_load_intrinsics(mat3 *intrinsic_matrix) {
   char *value;
-  const int result =
-      read_db_value("/data/params", "CloudCalibration", &value, NULL);
+  const int result = read_db_value(NULL, "CloudCalibration", &value, NULL);
 
   if (result == 0) {
     JsonNode* calibration_json = json_decode(value);
@@ -309,18 +317,14 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
   assert(num_back_fds == UI_BUF_COUNT);
   assert(num_front_fds == UI_BUF_COUNT);
 
-  visionbufs_load(s->bufs, &back_bufs, num_back_fds, back_fds);
-  visionbufs_load(s->front_bufs, &front_bufs, num_front_fds, front_fds);
+  vipc_bufs_load(s->bufs, &back_bufs, num_back_fds, back_fds);
+  vipc_bufs_load(s->front_bufs, &front_bufs, num_front_fds, front_fds);
 
   s->cur_vision_idx = -1;
   s->cur_vision_front_idx = -1;
 
   s->scene = (UIScene){
       .frontview = 0,
-      .big_box_x = ui_info.big_box_x,
-      .big_box_y = ui_info.big_box_y,
-      .big_box_width = ui_info.big_box_width,
-      .big_box_height = ui_info.big_box_height,
       .transformed_width = ui_info.transformed_width,
       .transformed_height = ui_info.transformed_height,
       .front_box_x = ui_info.front_box_x,
@@ -344,7 +348,7 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
   }};
 
   char *value;
-  const int result = read_db_value("/data/params", "IsMetric", &value, NULL);
+  const int result = read_db_value(NULL, "IsMetric", &value, NULL);
   if (result == 0) {
     s->is_metric = value[0] == '1';
     free(value);
@@ -392,9 +396,8 @@ static void ui_draw_transformed_box(UIState *s, uint32_t color) {
   };
 
   for (int i=0; i<ARRAYSIZE(verts); i++) {
-    verts[i].pos.v[0] = scene->big_box_x + verts[i].pos.v[0] / verts[i].pos.v[2];
-    verts[i].pos.v[1] = s->rgb_height - (scene->big_box_y +
-                                         verts[i].pos.v[1] / verts[i].pos.v[2]);
+    verts[i].pos.v[0] = verts[i].pos.v[0] / verts[i].pos.v[2];
+    verts[i].pos.v[1] = s->rgb_height - verts[i].pos.v[1] / verts[i].pos.v[2];
   }
 
   glUseProgram(s->line_program);
@@ -465,6 +468,51 @@ static void draw_cross(UIState *s, float x_in, float y_in, float sz, NVGcolor co
 
     nvgStroke(s->vg);
   }
+
+  nvgRestore(s->vg);
+}
+
+static void draw_x_y(UIState *s, const float *x_coords, const float *y_coords, size_t num_points,
+                      NVGcolor color) {
+  const UIScene *scene = &s->scene;
+
+  nvgSave(s->vg);
+
+  // path coords are worked out in rgb-box space
+  nvgTranslate(s->vg, 240.0f, 0.0);
+
+  // zooom in 2x
+  nvgTranslate(s->vg, -1440.0f / 2, -1080.0f / 2);
+  nvgScale(s->vg, 2.0, 2.0);
+
+  nvgScale(s->vg, 1440.0f / s->rgb_width, 1080.0f / s->rgb_height);
+
+  nvgBeginPath(s->vg);
+  nvgStrokeColor(s->vg, color);
+  nvgStrokeWidth(s->vg, 2);
+  bool started = false;
+
+  for (int i=0; i<num_points; i++) {
+    float px = x_coords[i];
+    float py = y_coords[i];
+    vec4 p_car_space = (vec4){{px, py, 0., 1.}};
+    vec3 p_full_frame = car_space_to_full_frame(s, p_car_space);
+
+    float x = p_full_frame.v[0];
+    float y = p_full_frame.v[1];
+    if (x < 0 || y < 0.) {
+      continue;
+    }
+
+    if (!started) {
+      nvgMoveTo(s->vg, x, y);
+      started = true;
+    } else {
+      nvgLineTo(s->vg, x, y);
+    }
+  }
+
+  nvgStroke(s->vg);
 
   nvgRestore(s->vg);
 }
@@ -669,6 +717,8 @@ static void ui_draw_world(UIState *s) {
     draw_model_path(
         s, scene->model.right_lane,
         nvgRGBA(0, (int)(255 * scene->model.right_lane.prob), 0, 128));
+
+    draw_x_y(s, scene->mpc_x, scene->mpc_y, 50, nvgRGBA(255, 0, 0, 255));
   }
 
   if (scene->lead_status) {
@@ -939,7 +989,7 @@ static void ui_update(UIState *s) {
 
   // poll for events
   while (true) {
-    zmq_pollitem_t polls[5] = {{0}};
+    zmq_pollitem_t polls[6] = {{0}};
     polls[0].socket = s->live100_sock_raw;
     polls[0].events = ZMQ_POLLIN;
     polls[1].socket = s->livecalibration_sock_raw;
@@ -948,14 +998,18 @@ static void ui_update(UIState *s) {
     polls[2].events = ZMQ_POLLIN;
     polls[3].socket = s->live20_sock_raw;
     polls[3].events = ZMQ_POLLIN;
-
-    int num_polls = 4;
+    polls[4].socket = s->livempc_sock_raw;
+    polls[4].events = ZMQ_POLLIN;
+    
+    int num_polls = 5;
     if (s->vision_connected) {
       assert(s->ipc_fd >= 0);
-      polls[4].fd = s->ipc_fd;
-      polls[4].events = ZMQ_POLLIN;
+      polls[5].fd = s->ipc_fd;
+      polls[5].events = ZMQ_POLLIN;
       num_polls++;
     }
+
+
 
     int ret = zmq_poll(polls, num_polls, 0);
     if (ret < 0) {
@@ -969,7 +1023,7 @@ static void ui_update(UIState *s) {
     // awake on any activity
     set_awake(s, true);
 
-    if (s->vision_connected && polls[4].revents) {
+    if (s->vision_connected && polls[5].revents) {
       // vision ipc event
       VisionPacket rp;
       err = vipc_recv(s->ipc_fd, &rp);
@@ -1021,7 +1075,7 @@ static void ui_update(UIState *s) {
     } else {
       // zmq messages
       void* which = NULL;
-      for (int i=0; i<4; i++) {
+      for (int i=0; i<5; i++) {
         if (polls[i].revents) {
           which = polls[i].socket;
           break;
@@ -1085,7 +1139,7 @@ static void ui_update(UIState *s) {
         cereal_read_LiveCalibrationData(&datad, eventd.liveCalibration);
 
         // should we still even have this?
-        capn_list32 warpl = datad.warpMatrix;
+        capn_list32 warpl = datad.warpMatrix2;
         capn_resolve(&warpl.p);  // is this a bug?
         for (int i = 0; i < 3 * 3; i++) {
           s->scene.warp_matrix.v[i] = capn_to_f32(capn_get32(warpl, i));
@@ -1100,6 +1154,23 @@ static void ui_update(UIState *s) {
       } else if (eventd.which == cereal_Event_model) {
         s->scene.model_ts = eventd.logMonoTime;
         s->scene.model = read_model(eventd.model);
+      } else if (eventd.which == cereal_Event_liveMpc) {
+        struct cereal_LiveMpcData datad;
+        cereal_read_LiveMpcData(&datad, eventd.liveMpc);
+        
+        capn_list32 x_list = datad.x;
+        capn_resolve(&x_list.p);
+        
+        for (int i = 0; i < 50; i++){
+          s->scene.mpc_x[i] = capn_to_f32(capn_get32(x_list, i));
+        }
+
+        capn_list32 y_list = datad.y;
+        capn_resolve(&y_list.p);
+        
+        for (int i = 0; i < 50; i++){
+          s->scene.mpc_y[i] = capn_to_f32(capn_get32(y_list, i));
+        }
       }
 
       capn_free(&ctx);

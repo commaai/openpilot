@@ -1,5 +1,5 @@
 from collections import namedtuple
-
+import os
 import common.numpy_fast as np
 from common.numpy_fast import clip, interp
 from common.realtime import sec_since_boot
@@ -10,25 +10,25 @@ from selfdrive.controls.lib.drive_helpers import rate_limit
 from . import hondacan
 
 
-def actuator_hystereses(final_brake, braking, brake_steady, v_ego, civic):
+def actuator_hystereses(brake, braking, brake_steady, v_ego, civic):
   # hyst params... TODO: move these to VehicleParams
   brake_hyst_on = 0.055 if civic else 0.1    # to activate brakes exceed this value
   brake_hyst_off = 0.005                     # to deactivate brakes below this value
   brake_hyst_gap = 0.01                      # don't change brake command for small ocilalitons within this value
 
   #*** histeresys logic to avoid brake blinking. go above 0.1 to trigger
-  if (final_brake < brake_hyst_on and not braking) or final_brake < brake_hyst_off:
-    final_brake = 0.
-  braking = final_brake > 0.
+  if (brake < brake_hyst_on and not braking) or brake < brake_hyst_off:
+    brake = 0.
+  braking = brake > 0.
 
   # for small brake oscillations within brake_hyst_gap, don't change the brake command
-  if final_brake == 0.:
+  if brake == 0.:
     brake_steady = 0.
-  elif final_brake > brake_steady + brake_hyst_gap:
-    brake_steady = final_brake - brake_hyst_gap
-  elif final_brake < brake_steady - brake_hyst_gap:
-    brake_steady = final_brake + brake_hyst_gap
-  final_brake = brake_steady
+  elif brake > brake_steady + brake_hyst_gap:
+    brake_steady = brake - brake_hyst_gap
+  elif brake < brake_steady - brake_hyst_gap:
+    brake_steady = brake + brake_hyst_gap
+  brake = brake_steady
 
   if not civic:
     brake_on_offset_v  = [.25, .15]   # min brake command on brake activation. below this no decel is perceived
@@ -36,10 +36,10 @@ def actuator_hystereses(final_brake, braking, brake_steady, v_ego, civic):
     # offset the brake command for threshold in the brake system. no brake torque perceived below it
     brake_on_offset = interp(v_ego, brake_on_offset_bp, brake_on_offset_v)
     brake_offset = brake_on_offset - brake_hyst_on
-    if final_brake > 0.0:
-      final_brake += brake_offset
+    if brake > 0.0:
+      brake += brake_offset
 
-  return final_brake, braking, brake_steady
+  return brake, braking, brake_steady
 
 class AH:
   #[alert_idx, value]
@@ -78,12 +78,9 @@ class CarController(object):
   def __init__(self):
     self.braking = False
     self.brake_steady = 0.
-    self.final_brake_last = 0.
+    self.brake_last = 0.
 
-    # redundant safety check with the board
-    self.controls_allowed = False
-
-  def update(self, sendcan, enabled, CS, frame, final_gas, final_brake, final_steer, \
+  def update(self, sendcan, enabled, CS, frame, actuators, \
              pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel, \
              hud_v_cruise, hud_show_lanes, hud_show_car, hud_alert, \
              snd_beep, snd_chime):
@@ -94,20 +91,16 @@ class CarController(object):
       return
 
     # *** apply brake hysteresis ***
-    final_brake, self.braking, self.brake_steady = actuator_hystereses(final_brake, self.braking, self.brake_steady, CS.v_ego, CS.civic)
+    brake, self.braking, self.brake_steady = actuator_hystereses(actuators.brake, self.braking, self.brake_steady, CS.v_ego, CS.civic)
 
     # *** no output if not enabled ***
-    if not enabled:
-      final_gas = 0.
-      final_brake = 0.
-      final_steer = 0.
+    if not enabled and CS.pcm_acc_status:
       # send pcm acc cancel cmd if drive is disabled but pcm is still on, or if the system can't be activated
-      if CS.pcm_acc_status:
-        pcm_cancel_cmd = True
+      pcm_cancel_cmd = True
 
     # *** rate limit after the enable check ***
-    final_brake = rate_limit(final_brake, self.final_brake_last, -2., 1./100)
-    self.final_brake_last = final_brake
+    brake = rate_limit(brake, self.brake_last, -2., 1./100)
+    self.brake_last = brake
 
     # vehicle hud display, wait for one update from 10Hz 0x304 msg
     #TODO: use enum!!
@@ -143,7 +136,8 @@ class CarController(object):
     GAS_MAX = 1004
     BRAKE_MAX = 1024/4
     if CS.civic:
-      STEER_MAX = 0x1000
+      is_fw_modified = os.getenv("DONGLE_ID") in ['b0f5a01cf604185c']
+      STEER_MAX = 0x1FFF if is_fw_modified else 0x1000
     elif CS.crv:
       STEER_MAX = 0x300  # CR-V only uses 12-bits and requires a lower value
     else:
@@ -151,49 +145,21 @@ class CarController(object):
     GAS_OFFSET = 328
 
     # steer torque is converted back to CAN reference (positive when steering right)
-    apply_gas = int(clip(final_gas*GAS_MAX, 0, GAS_MAX-1))
-    apply_brake = int(clip(final_brake*BRAKE_MAX, 0, BRAKE_MAX-1))
-    apply_steer = int(clip(-final_steer*STEER_MAX, -STEER_MAX, STEER_MAX))
+    apply_gas = int(clip(actuators.gas * GAS_MAX, 0, GAS_MAX - 1))
+    apply_brake = int(clip(brake * BRAKE_MAX, 0, BRAKE_MAX - 1))
+    apply_steer = int(clip(-actuators.steer * STEER_MAX, -STEER_MAX, STEER_MAX))
 
     # no gas if you are hitting the brake or the user is
     if apply_gas > 0 and (apply_brake != 0 or CS.brake_pressed):
-      print "CANCELLING GAS", apply_brake
       apply_gas = 0
 
     # no computer brake if the gas is being pressed
     if CS.car_gas > 0 and apply_brake != 0:
-      print "CANCELLING BRAKE"
       apply_brake = 0
 
     # any other cp.vl[0x18F]['STEER_STATUS'] is common and can happen during user override. sending 0 torque to avoid EPS sending error 5
     if CS.steer_not_allowed:
-      print "STEER ALERT, TORQUE INHIBITED"
       apply_steer = 0
-
-    # *** entry into controls state ***
-    if (CS.prev_cruise_buttons == CruiseButtons.DECEL_SET or CS.prev_cruise_buttons == CruiseButtons.RES_ACCEL) and \
-        CS.cruise_buttons == 0 and not self.controls_allowed:
-      print "CONTROLS ARE LIVE"
-      self.controls_allowed = True
-
-    # *** exit from controls state on cancel, gas, or brake ***
-    if (CS.cruise_buttons == CruiseButtons.CANCEL or CS.brake_pressed or
-        CS.user_gas_pressed or (CS.pedal_gas > 0 and CS.brake_only)) and self.controls_allowed:
-      print "CONTROLS ARE DEAD"
-      self.controls_allowed = False
-
-    # *** controls fail on steer error, brake error, or invalid can ***
-    if CS.steer_error:
-      print "STEER ERROR"
-      self.controls_allowed = False
-
-    if CS.brake_error:
-      print "BRAKE ERROR"
-      self.controls_allowed = False
-
-    if not CS.can_valid and self.controls_allowed:   # 200 ms
-      print "CAN INVALID"
-      self.controls_allowed = False
 
     # Send CAN commands.
     can_sends = []

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import os
 import zmq
+from cereal import car
 
 import selfdrive.messaging as messaging
 from selfdrive.services import service_list
@@ -36,8 +37,9 @@ def test_loop():
     "False"]
 
   while 1:
+    CC = car.CarControl.new_message()
     # read CAN
-    CS = CI.update()
+    CS = CI.update(CC)
 
     while eval(states[state]) == True:
       state += 1

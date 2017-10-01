@@ -2,7 +2,7 @@
 import os
 import sys
 
-if os.getenv("NOLOG"):
+if os.getenv("NOLOG") or os.getenv("NOCRASH"):
   def capture_exception(*exc_info):
     pass
   def bind_user(**kwargs):

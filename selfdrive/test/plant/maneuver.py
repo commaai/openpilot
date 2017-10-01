@@ -66,6 +66,8 @@ class Maneuver(object):
           jerk_factor=last_live100.jerkFactor,
           a_target_min=last_live100.aTargetMin, a_target_max=last_live100.aTargetMax)
     
+    print "maneuver end"
+
     return (None, plot)
 
 
