@@ -32,6 +32,11 @@
 
 #include "cereal/gen/c/log.capnp.h"
 
+// Calibration status values taken from controlsd.py
+#define UNCALIBRATED 0
+#define CALIBRATED 1
+#define INVALID 2
+
 #define UI_BUF_COUNT 4
 
 typedef struct UIScene {
@@ -68,6 +73,9 @@ typedef struct UIScene {
   char alert_text2[1024];
 
   float awareness_status;
+
+  int calStatus;
+  int calPerc; // Used to display calibration percent (if it's in progress)
 } UIScene;
 
 typedef struct UIState {
@@ -324,6 +332,7 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
   s->cur_vision_front_idx = -1;
 
   s->scene = (UIScene){
+      .calStatus = 0,
       .frontview = 0,
       .transformed_width = ui_info.transformed_width,
       .transformed_height = ui_info.transformed_height,
@@ -773,7 +782,12 @@ static void ui_draw_vision(UIState *s) {
   nvgBeginFrame(s->vg, s->fb_w, s->fb_h, 1.0f);
 
   if (!scene->frontview) {
-    ui_draw_transformed_box(s, 0xFF00FF00);
+    if (scene->calStatus == UNCALIBRATED) {
+      ui_draw_transformed_box(s, 0xFFFFBA00);
+    }
+    else {
+      ui_draw_transformed_box(s, 0xFF00FF00);
+    }
     ui_draw_world(s);
 
     // draw speed
@@ -843,6 +857,29 @@ static void ui_draw_vision(UIState *s) {
       nvgFillColor(s->vg, nvgRGBA(255 * (1 - scene->awareness_status),
                                   255 * scene->awareness_status, 0, 128));
       nvgFill(s->vg);
+    }
+
+    // Draw calibration progress (if needed)
+    //if (scene->calStatus == UNCALIBRATED && scene->framecount > 100) {
+    if (scene->calStatus == UNCALIBRATED && scene->calPerc > 0) {
+      int rec_width = 880;
+      int x_pos = 555;
+      //if (scene->ui_skin == 1) {
+        rec_width = 1020;
+        x_pos = 470;
+      //}
+      nvgBeginPath(s->vg);
+      nvgStrokeWidth(s->vg, 14);
+      nvgRoundedRect(s->vg, (1920-rec_width)/2, 970, rec_width, 100, 20);
+      nvgStroke(s->vg);
+      nvgFillColor(s->vg, nvgRGBA(10,100,220,180));
+      nvgFill(s->vg);
+                                                                                               nvgFontSize(s->vg, labelfontsize);
+      nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
+      nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 220));
+      char calib_status_str[32];
+      snprintf(calib_status_str,sizeof(calib_status_str),"Calibration In Progress: %d%%", scene->calPerc);
+      nvgText(s->vg, x_pos, 1040, calib_status_str, NULL);
     }
   }
 
@@ -1137,6 +1174,9 @@ static void ui_update(UIState *s) {
         s->scene.world_objects_visible = s->intrinsic_matrix_loaded;
         struct cereal_LiveCalibrationData datad;
         cereal_read_LiveCalibrationData(&datad, eventd.liveCalibration);
+
+        s->scene.calStatus= datad.calStatus;
+        s->scene.calPerc= datad.calPerc;
 
         // should we still even have this?
         capn_list32 warpl = datad.warpMatrix2;
