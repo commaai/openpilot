@@ -1,6 +1,6 @@
 #include <cstdint>
 
-#include "parser_common.h"
+#include "common.h"
 
 namespace {
 

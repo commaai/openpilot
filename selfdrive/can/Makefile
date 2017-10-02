@@ -1,6 +1,7 @@
 CC = clang
 CXX = clang++
 
+BASEDIR = ../..
 PHONELIBS := ../../phonelibs
 
 UNAME_S := $(shell uname -s)
@@ -53,7 +54,7 @@ libdbc.so:: ../../cereal/gen/cpp/log.capnp.h
 ../../cereal/gen/cpp/log.capnp.h:
 	cd ../../cereal && make
 
-libdbc.so:: parser.cc $(DBC_CCS)
+libdbc.so:: dbc.cc parser.cc packer.cc $(DBC_CCS)
 	$(CXX) -fPIC -shared -o '$@' $^ \
 	  -I. \
 	  -I../.. \
@@ -63,7 +64,7 @@ libdbc.so:: parser.cc $(DBC_CCS)
     $(CEREAL_CXXFLAGS) \
     $(CEREAL_LIBS)
 
-dbc_out/%.cc: $(OPENDBC_PATH)/%.dbc
+dbc_out/%.cc: $(OPENDBC_PATH)/%.dbc process_dbc.py dbc_template.cc
 	PYTHONPATH=$(PYTHONPATH):$(CWD)/../../pyextra ./process_dbc.py '$<' '$@'
 
 .PHONY: clean

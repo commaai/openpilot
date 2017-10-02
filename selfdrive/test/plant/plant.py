@@ -13,10 +13,10 @@ import selfdrive.messaging as messaging
 from selfdrive.services import service_list
 from selfdrive.config import CruiseButtons
 from selfdrive.car.honda.hondacan import fix
-from selfdrive.car.honda.carstate import get_can_parser
+from selfdrive.car.honda.carstate import get_can_signals
 from selfdrive.boardd.boardd import can_capnp_to_can_list, can_list_to_can_capnp
 
-from selfdrive.car.honda.can_parser import CANParser
+from selfdrive.car.honda.old_can_parser import CANParser
 from selfdrive.car.honda.interface import CarInterface
 
 from cereal import car
@@ -81,6 +81,11 @@ def get_car_can_parser():
   ]
   return CANParser(dbc_f, signals, checks)
 
+def to_3_byte(x):
+  return struct.pack("!H", int(x)).encode("hex")[1:]
+
+def to_3s_byte(x):
+  return struct.pack("!h", int(x)).encode("hex")[1:]
 
 class Plant(object):
   messaging_initialized = False
@@ -142,11 +147,12 @@ class Plant(object):
     return float(self.rk.frame) / self.rate
 
   def step(self, v_lead=0.0, cruise_buttons=None, grade=0.0, publish_model = True):
-    # dbc_f, sgs, ivs, msgs, cks_msgs, frqs = initialize_can_struct(self.civic, self.brake_only)
-    cp2 = get_can_parser(CP)
-    sgs = cp2._sgs
-    msgs = cp2._msgs
-    cks_msgs = cp2.msgs_ck
+    gen_dbc, gen_signals, gen_checks = get_can_signals(CP)
+    sgs = [s[0] for s in gen_signals]
+    msgs = [s[1] for s in gen_signals]
+    cks_msgs = set(check[0] for check in gen_checks)
+    cks_msgs.add(0x18F)
+    cks_msgs.add(0x30C)
 
     # ******** get messages sent to the car ********
     can_msgs = []
@@ -212,10 +218,8 @@ class Plant(object):
            self.user_brake, self.steer_error, self.brake_error,
            self.brake_error, self.gear_shifter, self.main_on, self.acc_status,
            self.pedal_gas, self.cruise_setting,
-           # left_blinker, right_blinker, counter
-           0,0,0,
-           # interceptor_gas
-           0,0]
+           # append one more zero for gas interceptor
+           0,0,0,0]
 
     # TODO: publish each message at proper frequency
     can_msgs = []
@@ -236,15 +240,12 @@ class Plant(object):
 
     # add the radar message
     # TODO: use the DBC
-    def to_3_byte(x):
-      return struct.pack("!H", int(x)).encode("hex")[1:]
-
-    def to_3s_byte(x):
-      return struct.pack("!h", int(x)).encode("hex")[1:]
+    radar_state_msg = '\x79\x00\x00\x00\x00\x00\x00\x00'
     radar_msg = to_3_byte(d_rel*16.0) + \
                 to_3_byte(int(lateral_pos_rel*16.0)&0x3ff) + \
                 to_3s_byte(int(v_rel*32.0)) + \
                 "0f00000"
+    can_msgs.append([0x400, 0, radar_state_msg, 1])
     can_msgs.append([0x445, 0, radar_msg.decode("hex"), 1])
     Plant.logcan.send(can_list_to_can_capnp(can_msgs).to_bytes())
 

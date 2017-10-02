@@ -36,15 +36,16 @@ class CANParser(object):
 
     for _, addr, _ in signals:
       self.vl[addr] = {}
-      self.ts[addr] = 0
+      self.ts[addr] = {}
       self.ct[addr] = sec_since_boot()
-      self.ok[addr] = False
+      self.ok[addr] = True
       self.cn[addr] = 0
       self.cn_vl[addr] = 0
       self.ck[addr] = False
 
     for name, addr, ival in signals:
       self.vl[addr][name] = ival
+      self.ts[addr][name] = 0
 
     self._msgs = [s[1] for s in signals]
     self._sgs = [s[0] for s in signals]
@@ -94,7 +95,6 @@ class CANParser(object):
           self.ok[msg] = False
 
         # update msg time stamps and counter value
-        self.ts[msg] = ts
         self.ct[msg] = self.sec_since_boot_cached
         self.cn[msg] = cn
         self.cn_vl[msg] = min(max(self.cn_vl[msg], 0), cn_vl_max)
@@ -107,12 +107,14 @@ class CANParser(object):
         for ii in idxs:
           sg = self._sgs[ii]
           self.vl[msg][sg] = out[sg]
+          self.ts[msg][sg] = ts
 
     # for each message, check if it's too long since last time we received it
     self._check_dead_msgs()
 
     # assess overall can validity: if there is one relevant message invalid, then set can validity flag to False
     self.can_valid = True
+
     if False in self.ok.values():
       #print "CAN INVALID!"
       self.can_valid = False

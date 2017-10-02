@@ -1,14 +1,27 @@
 UNAME_M ?= $(shell uname -m)
-ifeq ($(UNAME_M),x86_64)
+UNAME_S ?= $(shell uname -s)
 
-CEREAL_CFLAGS = -I$(ONE)/external/capnp/include
+
+ifeq ($(UNAME_S),Darwin)
+
+CEREAL_CFLAGS = -I$(PHONELIBS)/capnp-c/include
+CEREAL_CXXFLAGS = -I$(PHONELIBS)/capnp-cpp/mac/include
+
+CEREAL_LIBS = $(PHONELIBS)/capnp-cpp/mac/lib/libcapnp.a \
+              $(PHONELIBS)/capnp-cpp/mac/lib/libkj.a \
+              $(PHONELIBS)/capnp-c/mac/lib/libcapnp_c.a
+
+else ifeq ($(UNAME_M),x86_64)
+
+CEREAL_CFLAGS = -I$(BASEDIR)/external/capnp/include
 CEREAL_CXXFLAGS = $(CEREAL_CFLAGS)
 ifeq ($(CEREAL_LIBS),)
-	CEREAL_LIBS = -L$(ONE)/external/capnp/lib \
+  CEREAL_LIBS = -L$(BASEDIR)/external/capnp/lib \
 	              -l:libcapnp.a -l:libkj.a -l:libcapnp_c.a
 endif
 
 else
+
 CEREAL_CFLAGS = -I$(PHONELIBS)/capnp-c/include
 CEREAL_CXXFLAGS = -I$(PHONELIBS)/capnp-cpp/include
 ifeq ($(CEREAL_LIBS),)
@@ -30,4 +43,3 @@ car.capnp.o: ../../cereal/gen/cpp/car.capnp.c++
 	@echo "[ CXX ] $@"
 	$(CXX) $(CXXFLAGS) $(CEREAL_CXXFLAGS) \
            -c -o '$@' '$<'
-  

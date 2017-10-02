@@ -4,6 +4,7 @@ CXX = clang++
 ARCH := $(shell uname -m)
 OS := $(shell uname -o)
 
+BASEDIR = ../..
 PHONELIBS = ../../phonelibs
 
 WARN_FLAGS = -Werror=implicit-function-declaration \
@@ -12,8 +13,8 @@ WARN_FLAGS = -Werror=implicit-function-declaration \
              -Werror=return-type \
              -Werror=format-extra-args
 
-CFLAGS = -std=gnu11 -g -fPIC -O2 $(WARN_FLAGS)
-CXXFLAGS = -std=c++11 -g -fPIC -O2 $(WARN_FLAGS)
+CFLAGS = -std=gnu11 -g -fPIC -I../../ -O2 $(WARN_FLAGS)
+CXXFLAGS = -std=c++11 -g -fPIC -I../../ -O2 $(WARN_FLAGS)
 
 ZMQ_FLAGS = -I$(PHONELIBS)/zmq/aarch64/include
 ZMQ_LIBS = -L$(PHONELIBS)/zmq/aarch64/lib \
@@ -37,6 +38,8 @@ ZMQ_LIBS = -L$(HOME)/one/external/zmq/lib/ \
 CEREAL_LIBS = -L$(HOME)/one/external/capnp/lib/ \
               -l:libcapnp.a -l:libcapnp_c.a -l:libkj.a
 EXTRA_LIBS = -lusb-1.0 -lpthread
+CXXFLAGS += -I/usr/include/libusb-1.0
+CFLAGS += -I/usr/include/libusb-1.0
 endif
 
 .PHONY: all
@@ -46,6 +49,8 @@ include ../common/cereal.mk
 
 OBJS = boardd.o \
        ../common/swaglog.o \
+       ../common/params.o \
+       ../common/util.o \
        $(PHONELIBS)/json/src/json.o \
        $(CEREAL_OBJS)
 

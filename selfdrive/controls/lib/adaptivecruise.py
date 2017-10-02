@@ -109,7 +109,7 @@ def calc_critical_decel(d_lead, v_rel, d_offset, v_offset):
 # maximum acceleration adjustment
 _A_CORR_BY_SPEED_V = [0.4, 0.4, 0]
 # speeds
-_A_CORR_BY_SPEED_BP = [0., 5., 20.]
+_A_CORR_BY_SPEED_BP = [0., 2., 10.]
 
 # max acceleration allowed in acc, which happens in restart
 A_ACC_MAX = max(_A_CORR_BY_SPEED_V) + max(_A_CRUISE_MAX_V)
@@ -283,19 +283,11 @@ def compute_speed_with_leads(v_ego, angle_steers, v_pid, l1, l2, CP):
 
 class AdaptiveCruise(object):
   def __init__(self):
-    self.last_cal = 0.
     self.l1, self.l2 = None, None
-    self.dead = True
-  def update(self, cur_time, v_ego, angle_steers, v_pid, CP, l20):
+  def update(self, v_ego, angle_steers, v_pid, CP, l20):
     if l20 is not None:
       self.l1 = l20.live20.leadOne
       self.l2 = l20.live20.leadTwo
-
-      # TODO: no longer has anything to do with calibration
-      self.last_cal = cur_time
-      self.dead = False
-    elif cur_time - self.last_cal > 0.5:
-      self.dead = True
 
     self.v_target_lead, self.a_target, self.a_pcm, self.jerk_factor = \
       compute_speed_with_leads(v_ego, angle_steers, v_pid, self.l1, self.l2, CP)

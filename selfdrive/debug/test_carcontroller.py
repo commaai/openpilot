@@ -28,6 +28,7 @@ if __name__ == "__main__":
   sendcan = messaging.pub_sock(context, service_list['sendcan'].port)
 
   CI, CP = get_car(logcan, sendcan)
+  CC = car.CarControl.new_message()
 
   rk = Ratekeeper(100)
 
@@ -56,10 +57,10 @@ if __name__ == "__main__":
     print axis_values, button_values
     # **** handle car ****
 
-    CS = CI.update()
+    CS = CI.update(CC)
     #print CS
-
     CC = car.CarControl.new_message()
+
 
     CC.enabled = True
 
