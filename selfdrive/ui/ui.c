@@ -103,8 +103,6 @@ typedef struct UIScene {
   // Used to display calibration progress
   int cal_status; 
   int cal_perc;
-
-  // Used to display calibration progress
 } UIScene;
 
 typedef struct UIState {
