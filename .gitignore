@@ -4,6 +4,7 @@
 .idea
 model2.png
 
+*.DSYM
 *.d
 *.pyc
 *.pyo
