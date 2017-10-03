@@ -40,10 +40,10 @@
 #define ANIMATE_OUT 2
 #define LEFT_ELEMENT_VISIBLE 3
 
-// Calibration status values taken from controlsd.py
-#define UNCALIBRATED 0
-#define CALIBRATED 1
-#define INVALID 2
+// Calibration status values from controlsd.py
+#define CALIBRATION_UNCALIBRATED 0
+#define CALIBRATION_CALIBRATED 1
+#define CALIBRATION_INVALID 2
 
 #define UI_BUF_COUNT 4
 
@@ -65,7 +65,6 @@ typedef struct UIScene {
   float mpc_y[50];
 
   bool world_objects_visible;
-  // TODO(mgraczyk): Remove and use full frame for everything.
   mat3 warp_matrix;           // transformed box -> frame.
   mat4 extrinsic_matrix;      // Last row is 0 so we can use mat4.
 
@@ -101,8 +100,11 @@ typedef struct UIScene {
   float last_awareness; 
   int ui_skin; 
 
+  // Used to display calibration progress
   int calStatus; 
-  int calPerc; // Used to display calibration percent (if it's in progress)
+  int calPerc;
+
+  // Used to display calibration progress
 } UIScene;
 
 typedef struct UIState {
@@ -1048,7 +1050,7 @@ static void ui_draw_vision(UIState *s) {
   }
 
   if (!scene->frontview) {
-    if (scene->calStatus == UNCALIBRATED) {
+    if (scene->calStatus == CALIBRATION_UNCALIBRATED) {
       ui_draw_transformed_box(s, 0xFFFFBA00);
     }
     else {
@@ -1252,7 +1254,7 @@ static void ui_draw_vision(UIState *s) {
     }
 
     // Draw calibration progress (if needed)
-    if (scene->calStatus == UNCALIBRATED && scene->framecount > 100) {
+    if (scene->calStatus == CALIBRATION_UNCALIBRATED && scene->framecount > 100) {
       int rec_width = 880;
       int x_pos = 555;
       if (scene->ui_skin == 1) {
@@ -1271,6 +1273,25 @@ static void ui_draw_vision(UIState *s) {
       nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 220));
       char calib_status_str[32];
       snprintf(calib_status_str,sizeof(calib_status_str),"Calibration In Progress: %d%%", scene->calPerc);
+      nvgText(s->vg, x_pos, 1040, calib_status_str, NULL);
+    }
+
+    // Draw calibration progress (if needed)
+    if (scene->cal_status == CALIBRATION_UNCALIBRATED && scene->cal_perc > 0) {
+      int rec_width = 1020;
+      int x_pos = 470;
+      nvgBeginPath(s->vg);
+      nvgStrokeWidth(s->vg, 14);
+      nvgRoundedRect(s->vg, (1920-rec_width)/2, 970, rec_width, 100, 20);
+      nvgStroke(s->vg);
+      nvgFillColor(s->vg, nvgRGBA(10,100,220,180));
+      nvgFill(s->vg);
+
+      nvgFontSize(s->vg, labelfontsize);
+      nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
+      nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 220));
+      char calib_status_str[32];
+      snprintf(calib_status_str, sizeof(calib_status_str), "Calibration In Progress: %d%%", scene->cal_perc);
       nvgText(s->vg, x_pos, 1040, calib_status_str, NULL);
     }
   }
@@ -1570,6 +1591,9 @@ static void ui_update(UIState *s) {
         s->scene.calStatus= datad.calStatus;
         s->scene.calPerc= datad.calPerc;
         //printf("status: %d, percent:%d\n",s->scene.calStatus,s->scene.calPerc);
+
+        s->scene.cal_status = datad.calStatus;
+        s->scene.cal_perc = datad.calPerc;
 
         // should we still even have this?
         capn_list32 warpl = datad.warpMatrix2;

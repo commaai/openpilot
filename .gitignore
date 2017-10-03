@@ -4,7 +4,7 @@
 .idea
 model2.png
 
-+*.DSYM
+*.DSYM
 *.d
 *.pyc
 *.pyo
@@ -27,4 +27,3 @@ selfdrive/logcatd/logcatd
 selfdrive/proclogd/proclogd
 selfdrive/ui/ui
 /src/
-

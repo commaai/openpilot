@@ -36,8 +36,8 @@ import selfdrive.messaging as messaging
 from selfdrive.thermal import read_thermal
 from selfdrive.registration import register
 from selfdrive.version import version
+import selfdrive.crash as crash
 
-import common.crash as crash
 from common.params import Params
 
 from selfdrive.loggerd.config import ROOT

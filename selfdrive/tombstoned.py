@@ -61,6 +61,7 @@ def report_tombstone(fn, client):
     user={'id': os.environ.get('DONGLE_ID')},
     message=message,
   )
+  cloudlog.error({"tombstone": message})
 
 
 def main(gctx):
