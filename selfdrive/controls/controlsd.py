@@ -86,11 +86,11 @@ def data_sample(CI, CC, thermal, health, cal, cal_status, cal_perc):
     cal_status = cal.liveCalibration.calStatus
     cal_perc = cal.liveCalibration.calPerc
 
-  if cal_status != Calibration.CALIBRATED:
-    if cal_status == Calibration.UNCALIBRATED:
-      events.append(create_event('calibrationInProgress', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    else:
-      events.append(create_event('calibrationInvalid', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+  # if cal_status != Calibration.CALIBRATED:
+  #   if cal_status == Calibration.UNCALIBRATED:
+  #     events.append(create_event('calibrationInProgress', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+  #   else:
+  #     events.append(create_event('calibrationInvalid', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
 
   # *** health checking logic ***
   hh = messaging.recv_sock(health)
