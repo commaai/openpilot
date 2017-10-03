@@ -101,8 +101,8 @@ typedef struct UIScene {
   int ui_skin; 
 
   // Used to display calibration progress
-  int calStatus; 
-  int calPerc;
+  int cal_status; 
+  int cal_perc;
 
   // Used to display calibration progress
 } UIScene;
@@ -476,8 +476,8 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
   }
 
   s->scene = (UIScene){
-      .calStatus = 0,
-      .calPerc = 0,
+      .cal_status = 0,
+      .cal_perc = 0,
       .ui_skin = DEFAULT_SKIN,
       .last_awareness = 0,
       .status = "out",
@@ -1050,7 +1050,7 @@ static void ui_draw_vision(UIState *s) {
   }
 
   if (!scene->frontview) {
-    if (scene->calStatus == CALIBRATION_UNCALIBRATED) {
+    if (scene->cal_status == CALIBRATION_UNCALIBRATED) {
       ui_draw_transformed_box(s, 0xFFFFBA00);
     }
     else {
@@ -1254,7 +1254,7 @@ static void ui_draw_vision(UIState *s) {
     }
 
     // Draw calibration progress (if needed)
-    if (scene->calStatus == CALIBRATION_UNCALIBRATED && scene->framecount > 100) {
+    if (scene->cal_status == CALIBRATION_UNCALIBRATED && scene->framecount > 100) {
       int rec_width = 880;
       int x_pos = 555;
       if (scene->ui_skin == 1) {
@@ -1272,7 +1272,7 @@ static void ui_draw_vision(UIState *s) {
       nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
       nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 220));
       char calib_status_str[32];
-      snprintf(calib_status_str,sizeof(calib_status_str),"Calibration In Progress: %d%%", scene->calPerc);
+      snprintf(calib_status_str,sizeof(calib_status_str),"Calibration In Progress: %d%%", scene->cal_perc);
       nvgText(s->vg, x_pos, 1040, calib_status_str, NULL);
     }
 
@@ -1588,12 +1588,12 @@ static void ui_update(UIState *s) {
         struct cereal_LiveCalibrationData datad;
         cereal_read_LiveCalibrationData(&datad, eventd.liveCalibration);
         
-        s->scene.calStatus= datad.calStatus;
-        s->scene.calPerc= datad.calPerc;
-        //printf("status: %d, percent:%d\n",s->scene.calStatus,s->scene.calPerc);
+        s->scene.cal_status= datad.cal_status;
+        s->scene.cal_perc= datad.cal_perc;
+        //printf("status: %d, percent:%d\n",s->scene.cal_status,s->scene.cal_perc);
 
-        s->scene.cal_status = datad.calStatus;
-        s->scene.cal_perc = datad.calPerc;
+        s->scene.cal_status = datad.cal_status;
+        s->scene.cal_perc = datad.cal_perc;
 
         // should we still even have this?
         capn_list32 warpl = datad.warpMatrix2;
