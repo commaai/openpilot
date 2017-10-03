@@ -1586,12 +1586,9 @@ static void ui_update(UIState *s) {
         struct cereal_LiveCalibrationData datad;
         cereal_read_LiveCalibrationData(&datad, eventd.liveCalibration);
         
-        s->scene.cal_status= datad.cal_status;
-        s->scene.cal_perc= datad.cal_perc;
+        s->scene.cal_status= datad.calStatus;
+        s->scene.cal_perc= datad.calPerc;
         //printf("status: %d, percent:%d\n",s->scene.cal_status,s->scene.cal_perc);
-
-        s->scene.cal_status = datad.cal_status;
-        s->scene.cal_perc = datad.cal_perc;
 
         // should we still even have this?
         capn_list32 warpl = datad.warpMatrix2;
