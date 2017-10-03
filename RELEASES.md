@@ -10,9 +10,9 @@ Version 0.3.7 (2017-09-30)
  * Fixed sporadic longitudinal pulsing in Civic
  * Cleanups to vehicle interface
 
-Version 0.3.6.1 (2017-08-15)
-============================
- * Mitigate low speed steering oscillations on some vehicles
+Version 0.3.6.1 (2017-08-15)   
+============================    
+ * Mitigate low speed steering oscillations on some vehicles    
  * Include board steering check for CR-V
 
 Version 0.3.6 (2017-08-08)
