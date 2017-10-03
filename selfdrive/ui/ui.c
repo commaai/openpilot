@@ -101,7 +101,7 @@ typedef struct UIScene {
   int ui_skin; 
 
   // Used to display calibration progress
-  int cal_status; 
+  int cal_status;
   int cal_perc;
 } UIScene;
 
