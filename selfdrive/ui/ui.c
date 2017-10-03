@@ -32,6 +32,11 @@
 
 #include "cereal/gen/c/log.capnp.h"
 
+// Calibration status values from controlsd.py
+#define CALIBRATION_UNCALIBRATED 0
+#define CALIBRATION_CALIBRATED 1
+#define CALIBRATION_INVALID 2
+
 #define UI_BUF_COUNT 4
 
 typedef struct UIScene {
@@ -48,7 +53,6 @@ typedef struct UIScene {
   float mpc_y[50];
 
   bool world_objects_visible;
-  // TODO(mgraczyk): Remove and use full frame for everything.
   mat3 warp_matrix;           // transformed box -> frame.
   mat4 extrinsic_matrix;      // Last row is 0 so we can use mat4.
 
@@ -68,6 +72,10 @@ typedef struct UIScene {
   char alert_text2[1024];
 
   float awareness_status;
+
+  // Used to display calibration progress
+  int cal_status;
+  int cal_perc;
 } UIScene;
 
 typedef struct UIState {
@@ -844,6 +852,25 @@ static void ui_draw_vision(UIState *s) {
                                   255 * scene->awareness_status, 0, 128));
       nvgFill(s->vg);
     }
+
+    // Draw calibration progress (if needed)
+    if (scene->cal_status == CALIBRATION_UNCALIBRATED && scene->cal_perc > 0) {
+      int rec_width = 1020;
+      int x_pos = 470;
+      nvgBeginPath(s->vg);
+      nvgStrokeWidth(s->vg, 14);
+      nvgRoundedRect(s->vg, (1920-rec_width)/2, 970, rec_width, 100, 20);
+      nvgStroke(s->vg);
+      nvgFillColor(s->vg, nvgRGBA(10,100,220,180));
+      nvgFill(s->vg);
+
+      nvgFontSize(s->vg, labelfontsize);
+      nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
+      nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 220));
+      char calib_status_str[32];
+      snprintf(calib_status_str, sizeof(calib_status_str), "Calibration In Progress: %d%%", scene->cal_perc);
+      nvgText(s->vg, x_pos, 1040, calib_status_str, NULL);
+    }
   }
 
   nvgEndFrame(s->vg);
@@ -1137,6 +1164,9 @@ static void ui_update(UIState *s) {
         s->scene.world_objects_visible = s->intrinsic_matrix_loaded;
         struct cereal_LiveCalibrationData datad;
         cereal_read_LiveCalibrationData(&datad, eventd.liveCalibration);
+
+        s->scene.cal_status = datad.calStatus;
+        s->scene.cal_perc = datad.calPerc;
 
         // should we still even have this?
         capn_list32 warpl = datad.warpMatrix2;
