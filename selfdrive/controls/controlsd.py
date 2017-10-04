@@ -58,7 +58,7 @@ def isEnabled(state):
   return (isActive(state) or state == State.PRE_ENABLED)
 
 
-def data_sample(CI, CC, thermal, health, cal, cal_status, cal_perc):
+def data_sample(CI, CC, thermal, health, cal, cal_status, overtemp, free_space):
 
   # *** read can and compute car states ***
   CS = CI.update(CC)
@@ -68,23 +68,25 @@ def data_sample(CI, CC, thermal, health, cal, cal_status, cal_perc):
   # thermal data, checked every second
   td = messaging.recv_sock(thermal)
   if td is not None:
-    # Check temperature
+    # overtemp above 95 deg
     overtemp = any(
         t > 950
         for t in (td.thermal.cpu0, td.thermal.cpu1, td.thermal.cpu2,
                   td.thermal.cpu3, td.thermal.mem, td.thermal.gpu))
-    if overtemp:
-      events.append(create_event('overheat', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
 
-    # under 15% of space free
-    if td.thermal.freeSpace < 0.15:
-      events.append(create_event('outOfSpace', [ET.NO_ENTRY]))
+    # under 15% of space free no enable allowed
+    free_space = td.thermal.freeSpace < 0.15
+
+  if overtemp:
+    events.append(create_event('overheat', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+
+  if free_space:
+    events.append(create_event('outOfSpace', [ET.NO_ENTRY]))
 
   # *** read calibration status ***
   cal = messaging.recv_sock(cal)
   if cal is not None:
     cal_status = cal.liveCalibration.calStatus
-    cal_perc = cal.liveCalibration.calPerc
 
   if cal_status != Calibration.CALIBRATED:
     if cal_status == Calibration.UNCALIBRATED:
@@ -99,7 +101,7 @@ def data_sample(CI, CC, thermal, health, cal, cal_status, cal_perc):
     if not controls_allowed:
       events.append(create_event('controlsMismatch', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
 
-  return CS, events, cal_status, cal_perc
+  return CS, events, cal_status, overtemp, free_space
 
 
 def calc_plan(CS, events, PL, LoC):
@@ -119,7 +121,7 @@ def calc_plan(CS, events, PL, LoC):
    return plan, plan_ts
 
 
-def state_transition(CS, CP, state, events, soft_disable_timer, v_cruise_kph, cal_perc, AM):
+def state_transition(CS, CP, state, events, soft_disable_timer, v_cruise_kph, AM):
   # compute conditional state transitions and execute actions on state transitions
   enabled = isEnabled(state)
 
@@ -146,8 +148,7 @@ def state_transition(CS, CP, state, events, soft_disable_timer, v_cruise_kph, ca
         for e in get_events(events, [ET.SOFT_DISABLE, ET.IMMEDIATE_DISABLE]):
           AM.add(e, enabled)
         for e in get_events(events, [ET.NO_ENTRY]):
-          txt =  str(cal_perc) + '%' if e == 'calibrationInProgress' else ''
-          AM.add(str(e) + "NoEntry", enabled, txt)
+          AM.add(str(e) + "NoEntry", enabled)
       else:
         if get_events(events, [ET.PRE_ENABLE]):
           state = State.PRE_ENABLED
@@ -191,7 +192,7 @@ def state_transition(CS, CP, state, events, soft_disable_timer, v_cruise_kph, ca
 
     elif soft_disable_timer <= 0:
       state = State.DISABLED
-  
+
   # TODO: PRE ENABLING
   elif state == State.PRE_ENABLED:
     if get_events(events, [ET.USER_DISABLE]):
@@ -447,7 +448,8 @@ def controlsd_thread(gctx, rate=100):
   state = State.DISABLED
   soft_disable_timer = 0
   v_cruise_kph = 255
-  cal_perc = 0
+  overtemp = False
+  free_space = False
   cal_status = Calibration.UNCALIBRATED
   rear_view_toggle = False
   rear_view_allowed = params.get("IsRearViewMirror") == "1"
@@ -474,7 +476,8 @@ def controlsd_thread(gctx, rate=100):
     prof.reset()  # avoid memory leak
 
     # sample data and compute car events
-    CS, events, cal_status, cal_perc = data_sample(CI, CC, thermal, health, cal, cal_status, cal_perc)
+    CS, events, cal_status, overtemp, free_space = data_sample(CI, CC, thermal, health, cal, cal_status,
+                                                               overtemp, free_space)
     prof.checkpoint("Sample")
 
     # define plan
@@ -482,7 +485,7 @@ def controlsd_thread(gctx, rate=100):
     prof.checkpoint("Plan")
 
     # update control state
-    state, soft_disable_timer, v_cruise_kph = state_transition(CS, CP, state, events, soft_disable_timer, v_cruise_kph, cal_perc, AM)
+    state, soft_disable_timer, v_cruise_kph = state_transition(CS, CP, state, events, soft_disable_timer, v_cruise_kph, AM)
     prof.checkpoint("State transition")
 
     # compute actuators
