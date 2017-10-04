@@ -249,7 +249,7 @@ class AlertManager(object):
 
     "calibrationInProgressNoEntry": Alert(
         "Comma Unavailable", 
-        "Calibration in Progress: ", 
+        "Calibration in Progress", 
         PT.LOW, None, "chimeDouble", .4, 2., 3.),
 
     "doorOpenNoEntry": Alert(

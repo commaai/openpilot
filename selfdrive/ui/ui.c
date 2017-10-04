@@ -333,6 +333,7 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
 
   s->scene = (UIScene){
       .frontview = 0,
+      .cal_status = CALIBRATION_CALIBRATED,
       .transformed_width = ui_info.transformed_width,
       .transformed_height = ui_info.transformed_height,
       .front_box_x = ui_info.front_box_x,
@@ -854,7 +855,7 @@ static void ui_draw_vision(UIState *s) {
     }
 
     // Draw calibration progress (if needed)
-    if (scene->cal_status == CALIBRATION_UNCALIBRATED && scene->cal_perc > 0) {
+    if (scene->cal_status == CALIBRATION_UNCALIBRATED) {
       int rec_width = 1020;
       int x_pos = 470;
       nvgBeginPath(s->vg);

@@ -175,7 +175,10 @@ def radard_thread(gctx=None):
     # publish tracks (debugging)
     dat = messaging.new_message()
     dat.init('liveTracks', len(tracks))
+    #print "NEW TRACKS"
     for cnt, ids in enumerate(tracks.keys()):
+      #print "%5s %5s %5s %5s" % \
+      #  (ids, round(tracks[ids].dRel, 2), round(tracks[ids].vRel, 2), round(tracks[ids].yRel, 2))
       dat.liveTracks[cnt].trackId = ids
       dat.liveTracks[cnt].dRel = float(tracks[ids].dRel)
       dat.liveTracks[cnt].yRel = float(tracks[ids].yRel)
