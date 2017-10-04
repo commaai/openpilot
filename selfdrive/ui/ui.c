@@ -32,7 +32,7 @@
 
 #include "cereal/gen/c/log.capnp.h"
 
-#define MAX_AWARENESS_TIME 86400 // 24 hours
+#define MAX_AWARENESS_TIME 360 // 6 minutes
 #define DEFAULT_SKIN 1 // Determine which UI skin to use as a default
 #define DEBUG false // Set to true to show mockup UI content for placement
 #define AWARENESS_BAR_WIDTH 1130 // Pixel width of awareness bar for skin v2
@@ -167,13 +167,13 @@ typedef struct UIState {
 } UIState;
 
 static char* ui_convert_sec_to_time(int seconds) {
-    int hour = seconds / 3600,
-        remainder = seconds % 3600,
-        min = remainder / 60,
-        sec = remainder % 60;
-    static char time[16];
-    snprintf(time, sizeof(time), "%02d:%02d:%02d", hour,min,sec);
-    return time;
+  int remainder = seconds % 36000,
+      min = remainder / 60,
+      sec = remainder % 60;
+
+  static char time[16];
+  snprintf(time, sizeof(time), "%d:%02d", min,sec);
+  return time;
 }
 
 static void set_awake(UIState *s, bool awake) {

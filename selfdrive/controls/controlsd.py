@@ -30,7 +30,7 @@ V_CRUISE_MIN = 8
 V_CRUISE_DELTA = 8
 V_CRUISE_ENABLE_MIN = 40
 
-AWARENESS_TIME = 86400.      # 24 hours limit without user touching steering wheels
+AWARENESS_TIME = 360.      # 6 minute limit without user touching steering wheels
 AWARENESS_PRE_TIME = 20.   # a first alert is issued 20s before start decelerating the car
 AWARENESS_DECEL = -0.2     # car smoothly decel at .2m/s^2 when user is distracted
 
@@ -88,11 +88,11 @@ def data_sample(CI, CC, thermal, health, cal, cal_status, overtemp, free_space):
   if cal is not None:
     cal_status = cal.liveCalibration.calStatus
 
-  # if cal_status != Calibration.CALIBRATED:
-  #   if cal_status == Calibration.UNCALIBRATED:
-  #     events.append(create_event('calibrationInProgress', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-  #   else:
-  #     events.append(create_event('calibrationInvalid', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+  if cal_status != Calibration.CALIBRATED:
+    if cal_status == Calibration.UNCALIBRATED:
+      events.append(create_event('calibrationInProgress', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+    else:
+      events.append(create_event('calibrationInvalid', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
 
   # *** health checking logic ***
   hh = messaging.recv_sock(health)
