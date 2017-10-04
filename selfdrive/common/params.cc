@@ -11,6 +11,18 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+namespace {
+
+template <typename T>
+T* null_coalesce(T* a, T* b) {
+  return a != NULL ? a : b;
+}
+
+static const char* default_params_path = null_coalesce(
+    const_cast<const char*>(getenv("PARAMS_PATH")), "/data/params");
+
+}  // namespace
+
 int write_db_value(const char* params_path, const char* key, const char* value,
                    size_t value_size) {
   int lock_fd = -1;
@@ -18,6 +30,11 @@ int write_db_value(const char* params_path, const char* key, const char* value,
   int result;
   char tmp_path[1024];
   char path[1024];
+  ssize_t bytes_written;
+
+  if (params_path == NULL) {
+    params_path = default_params_path;
+  }
 
   // Write value to temp.
   result =
@@ -27,7 +44,7 @@ int write_db_value(const char* params_path, const char* key, const char* value,
   }
 
   tmp_fd = mkstemp(tmp_path);
-  const ssize_t bytes_written = write(tmp_fd, value, value_size);
+  bytes_written = write(tmp_fd, value, value_size);
   if (bytes_written != value_size) {
     result = -20;
     goto cleanup;
@@ -79,6 +96,10 @@ int read_db_value(const char* params_path, const char* key, char** value,
   int result;
   char path[1024];
 
+  if (params_path == NULL) {
+    params_path = default_params_path;
+  }
+
   result = snprintf(path, sizeof(path), "%s/.lock", params_path);
   if (result < 0) {
     goto cleanup;
@@ -99,7 +120,7 @@ int read_db_value(const char* params_path, const char* key, char** value,
   // Read value.
   // TODO(mgraczyk): If there is a lot of contention, we can release the lock
   //                 after opening the file, before reading.
-  *value = read_file(path, value_sz);
+  *value = static_cast<char*>(read_file(path, value_sz));
   if (*value == NULL) {
     result = -22;
     goto cleanup;

@@ -47,9 +47,9 @@ typedef struct VisionStreamBufs {
   } buf_info;
 } VisionStreamBufs;
 
-typedef struct VisionBufExtra {
+typedef struct VIPCBufExtra {
   uint32_t frame_id; // only for yuv
-} VisionBufExtra;
+} VIPCBufExtra;
 
 typedef union VisionPacketData {
   struct {
@@ -60,7 +60,7 @@ typedef union VisionPacketData {
   struct {
     VisionStreamType type;
     int idx;
-    VisionBufExtra extra;
+    VIPCBufExtra extra;
   } stream_acq;
   struct {
     VisionStreamType type;
@@ -79,12 +79,12 @@ int vipc_connect(void);
 int vipc_recv(int fd, VisionPacket *out_p);
 int vipc_send(int fd, const VisionPacket *p);
 
-typedef struct VisionBuf {
+typedef struct VIPCBuf {
   int fd;
   size_t len;
   void* addr;
-} VisionBuf;
-void visionbufs_load(VisionBuf *bufs, const VisionStreamBufs *stream_bufs,
+} VIPCBuf;
+void vipc_bufs_load(VIPCBuf *bufs, const VisionStreamBufs *stream_bufs,
                      int num_fds, const int* fds);
 
 
@@ -94,11 +94,11 @@ typedef struct VisionStream {
   int last_idx;
   int num_bufs;
   VisionStreamBufs bufs_info;
-  VisionBuf *bufs;
+  VIPCBuf *bufs;
 } VisionStream;
 
 int visionstream_init(VisionStream *s, VisionStreamType type, bool tbuffer, VisionStreamBufs *out_bufs_info);
-VisionBuf* visionstream_get(VisionStream *s, VisionBufExtra *out_extra);
+VIPCBuf* visionstream_get(VisionStream *s, VIPCBufExtra *out_extra);
 void visionstream_destroy(VisionStream *s);
 
 #ifdef __cplusplus

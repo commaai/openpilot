@@ -1,7 +1,37 @@
 from common.numpy_fast import clip
+from cereal import car
+
+
+class EventTypes:
+  ENABLE = 'enable'
+  PRE_ENABLE = 'preEnable'
+  NO_ENTRY = 'noEntry'
+  WARNING = 'warning'
+  USER_DISABLE = 'userDisable'
+  SOFT_DISABLE = 'softDisable'
+  IMMEDIATE_DISABLE = 'immediateDisable'
+
+
+def create_event(name, types):
+  event = car.CarEvent.new_message()
+  event.name = name
+  for t in types:
+    setattr(event, t, True)
+  return event
+
+
+def get_events(events, types):
+  out = []
+  for e in events:
+    for t in types:
+      if getattr(e, t):
+        out.append(e.name)
+  return out
+
 
 def rate_limit(new_value, last_value, dw_step, up_step):
   return clip(new_value, last_value + dw_step, last_value + up_step)
+
 
 def learn_angle_offset(lateral_control, v_ego, angle_offset, c_poly, c_prob, y_des, steer_override):
   # simple integral controller that learns how much steering offset to put to have the car going straight
