@@ -1253,29 +1253,6 @@ static void ui_draw_vision(UIState *s) {
     }
 
     // Draw calibration progress (if needed)
-    if (scene->cal_status == CALIBRATION_UNCALIBRATED && scene->framecount > 100) {
-      int rec_width = 880;
-      int x_pos = 555;
-      if (scene->ui_skin == 1) {
-        rec_width = 1020;
-        x_pos = 470;
-      }
-      nvgBeginPath(s->vg);
-      nvgStrokeWidth(s->vg, 14);
-      nvgRoundedRect(s->vg, (1920-rec_width)/2, 970, rec_width, 100, 20);
-      nvgStroke(s->vg);
-      nvgFillColor(s->vg, nvgRGBA(10,100,220,180));
-      nvgFill(s->vg);
-
-      nvgFontSize(s->vg, labelfontsize);
-      nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
-      nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 220));
-      char calib_status_str[32];
-      snprintf(calib_status_str,sizeof(calib_status_str),"Calibration In Progress: %d%%", scene->cal_perc);
-      nvgText(s->vg, x_pos, 1040, calib_status_str, NULL);
-    }
-
-    // Draw calibration progress (if needed)
     if (scene->cal_status == CALIBRATION_UNCALIBRATED) {
       int rec_width = 1020;
       int x_pos = 470;
