@@ -34,7 +34,7 @@ class ForwardCollisionWarning(object):
   def __init__(self, dt):
     self.last_active = 0.
     self.violation_time = 0.
-    self.active = True
+    self.active = False
     self.dt = dt   # time step
 
   def process(self, CS, AC):
