@@ -514,13 +514,13 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
   }};
 
   char *value;
-  int result = read_db_value("/data/params", "IsMetric", &value, NULL);
+  int result = read_db_value(NULL, "IsMetric", &value, NULL);
   if (result == 0) {
     s->is_metric = value[0] == '1';
     free(value);
   }
 
-  result = read_db_value("/data/params", "UISkin", &value, NULL);
+  result = read_db_value(NULL, "UISkin", &value, NULL);
   if (result == 0) {
     // If file exists use the skin set in this param otherwise use default
     s->scene.ui_skin = atoi(value);
