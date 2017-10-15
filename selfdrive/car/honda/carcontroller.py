@@ -52,6 +52,11 @@ class AH:
   SEATBELT       = [5, 5]
   SPEED_TOO_HIGH = [6, 8]
 
+class HUD_STATUS:
+  SHOW_LANES = 0x04
+  HIDE_LANES = 0x00
+  SHOW_CAR = 0xe0
+  HIDE_CAR = 0xd0
 
 def process_hud_alert(hud_alert):
   # initialize to no alert
@@ -103,18 +108,17 @@ class CarController(object):
     self.brake_last = brake
 
     # vehicle hud display, wait for one update from 10Hz 0x304 msg
-    #TODO: use enum!!
     if hud_show_lanes:
-      hud_lanes = 0x04
+      hud_lanes = HUD.SHOW_LANES
     else:
-      hud_lanes = 0x00
+      hud_lanes = HUD.HIDE_LANES
 
     # TODO: factor this out better
     if enabled:
       if hud_show_car:
-        hud_car = 0xe0
+        hud_car = HUD.SHOW_CAR
       else:
-        hud_car = 0xd0
+        hud_car = HUD.HIDE_CAR
     else:
       hud_car = 0xc0
 
