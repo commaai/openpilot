@@ -61,22 +61,25 @@ def fingerprint(logcan):
   print "waiting for fingerprint..."
   candidate_cars = all_known_cars()
   finger = {}
-  st = None
-  while 1:
-    for a in messaging.drain_sock(logcan, wait_for_one=True):
-      if st is None:
-        st = sec_since_boot()
-      for can in a.can:
-        if can.src == 0:
-          finger[can.address] = len(can.dat)
-        candidate_cars = eliminate_incompatible_cars(can, candidate_cars)
+  
+  #st = None
+  #while 1:
+  #  for a in messaging.drain_sock(logcan, wait_for_one=True):
+  #    if st is None:
+  #      st = sec_since_boot()
+  #    for can in a.can:
+  #      if can.src == 0:
+  #        finger[can.address] = len(can.dat)
+  #      candidate_cars = eliminate_incompatible_cars(can, candidate_cars)
 
     # if we only have one car choice and it's been 100ms since we got our first message, exit
-    if len(candidate_cars) == 1 and st is not None and (sec_since_boot()-st) > 0.1:
-      break
-    elif len(candidate_cars) == 0:
-      print map(hex, finger.keys())
-      raise Exception("car doesn't match any fingerprints")
+  #  if len(candidate_cars) == 1 and st is not None and (sec_since_boot()-st) > 0.1:
+  #    break
+  #  elif len(candidate_cars) == 0:
+  #    print map(hex, finger.keys())
+  #    raise Exception("car doesn't match any fingerprints")
 
-  print "fingerprinted", candidate_cars[0]
-  return (candidate_cars[0], finger)
+  #print "fingerprinted", candidate_cars[0]
+  
+  #return (candidate_cars[0], finger)
+  return ("TESLA CLASSIC MODEL S", finger)

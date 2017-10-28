@@ -92,7 +92,8 @@ class Controls(object):
     # rear view camera state
     self.rear_view_toggle = False
     self.rear_view_allowed = bool(params.get("IsRearViewMirror"))
-  
+    self.rear_view_allowed = False
+
     self.v_cruise_kph = 255
   
     # 0.0 - 1.0
@@ -165,8 +166,11 @@ class Controls(object):
         else:
           self.rear_view_toggle = False
 
+    #  if b.type == "altButton1" and b.pressed:
+    #    self.rear_view_toggle = not self.rear_view_toggle
       if b.type == "altButton1" and b.pressed:
-        self.rear_view_toggle = not self.rear_view_toggle
+        print("Activating openpilot.")
+        enable_request = True
 
       if not self.CP.enableCruise and self.enabled and not b.pressed:
         if b.type == "accelCruise":
@@ -175,8 +179,8 @@ class Controls(object):
           self.v_cruise_kph -= (self.v_cruise_kph % V_CRUISE_DELTA) + V_CRUISE_DELTA
         self.v_cruise_kph = clip(self.v_cruise_kph, V_CRUISE_MIN, V_CRUISE_MAX)
 
-      if not self.enabled and b.type in ["accelCruise", "decelCruise"] and not b.pressed:
-        enable_request = True
+      #if not self.enabled and b.type in ["accelCruise", "decelCruise"] and not b.pressed:
+      #  enable_request = True
 
       # do disable on button down
       if b.type == "cancel" and b.pressed:
@@ -185,16 +189,17 @@ class Controls(object):
     self.prof.checkpoint("Buttons")
     
     # *** health checking logic ***
-    hh = messaging.recv_sock(self.health)
-    if hh is not None:
+    #hh = messaging.recv_sock(self.health)
+    #if hh is not None:
       # if the board isn't allowing controls but somehow we are enabled!
       # TODO: this should be in state transition with a function follower logic
-      if not hh.health.controlsAllowed and self.enabled:
-        self.AM.add("controlsMismatch", self.enabled)
+      #if not hh.health.controlsAllowed and self.enabled:
+      #  self.AM.add("controlsMismatch", self.enabled)
 
     # disable if the pedals are pressed while engaged, this is a user disable
     if self.enabled:
-      if self.CS.gasPressed or self.CS.brakePressed or not self.CS.cruiseState.available:
+      #if self.CS.gasPressed or self.CS.brakePressed or not self.CS.cruiseState.available:
+      if self.CS.brakePressed or not self.CS.cruiseState.available:
         self.AM.add("disable", self.enabled)
 
       # it can happen that car cruise disables while comma system is enabled: need to
@@ -223,8 +228,8 @@ class Controls(object):
     else:
       enable_condition = enable_request
 
-    if self.CP.enableCruise and self.CS.cruiseState.enabled:
-      self.v_cruise_kph = self.CS.cruiseState.speed * CV.MS_TO_KPH
+    #if self.CP.enableCruise and self.CS.cruiseState.enabled:
+    self.v_cruise_kph = self.CS.cruiseState.speed * CV.MS_TO_KPH
 
     self.prof.checkpoint("AdaptiveCruise")
 
@@ -243,8 +248,8 @@ class Controls(object):
       for alert in self.CS.errors:
         self.AM.add(alert, self.enabled)
 
-      if not self.plan.longitudinalValid:
-        self.AM.add("radarCommIssue", self.enabled)
+      #if not self.plan.longitudinalValid:
+      #  self.AM.add("radarCommIssue", self.enabled)
 
       if self.cal_status != Calibration.CALIBRATED:
         if self.cal_status == Calibration.UNCALIBRATED:
