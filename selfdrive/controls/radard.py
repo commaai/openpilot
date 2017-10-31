@@ -18,6 +18,7 @@ from common.realtime import sec_since_boot, set_realtime_priority, Ratekeeper
 from common.kalman.ekf import EKF, SimpleSensor
 
 VISION_ONLY = False
+DEBUG = False
 
 #vision point
 DIMSV = 2
@@ -76,7 +77,6 @@ def radard_thread(gctx=None):
   # Time-alignment
   rate = 20.   # model and radar are both at 20Hz
   tsv = 1./rate
-  rdr_delay = 0.10   # radar data delay in s
   v_len = 20         # how many speed data points to remember for t alignment with rdr data
 
   enabled = 0
@@ -158,7 +158,7 @@ def radard_thread(gctx=None):
 
       # align v_ego by a fixed time to align it with the radar measurement
       cur_time = float(rk.frame)/rate
-      v_ego_t_aligned = np.interp(cur_time - rdr_delay, v_ego_array[1], v_ego_array[0])
+      v_ego_t_aligned = np.interp(cur_time - RI.delay, v_ego_array[1], v_ego_array[0])
       d_path = np.sqrt(np.amin((path_x - rpt[0]) ** 2 + (path_y - rpt[1]) ** 2))
 
       # create the track if it doesn't exist or it's a new track
@@ -175,10 +175,17 @@ def radard_thread(gctx=None):
     # publish tracks (debugging)
     dat = messaging.new_message()
     dat.init('liveTracks', len(tracks))
-    #print "NEW TRACKS"
+
+    if DEBUG:
+      print "NEW CYCLE"
+      if VISION_POINT in ar_pts:
+        print "vision", ar_pts[VISION_POINT]
+
     for cnt, ids in enumerate(tracks.keys()):
-      #print "%5s %5s %5s %5s" % \
-      #  (ids, round(tracks[ids].dRel, 2), round(tracks[ids].vRel, 2), round(tracks[ids].yRel, 2))
+      if DEBUG:
+        print "id: %4.0f x:  %4.1f  y: %4.1f  v: %4.1f  d: %4.1f s: %1.0f" % \
+          (ids, tracks[ids].dRel, tracks[ids].yRel, tracks[ids].vRel,
+           tracks[ids].dPath, tracks[ids].stationary)
       dat.liveTracks[cnt].trackId = ids
       dat.liveTracks[cnt].dRel = float(tracks[ids].dRel)
       dat.liveTracks[cnt].yRel = float(tracks[ids].yRel)
@@ -210,6 +217,9 @@ def radard_thread(gctx=None):
     else:
       clusters = []
 
+    if DEBUG:
+      for i in clusters:
+        print i
     # *** extract the lead car ***
     lead_clusters = [c for c in clusters
                      if c.is_potential_lead(v_ego)]

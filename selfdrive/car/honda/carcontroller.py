@@ -7,7 +7,13 @@ from common.realtime import sec_since_boot
 from selfdrive.config import CruiseButtons
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.controls.lib.drive_helpers import rate_limit
+
 from . import hondacan
+from .values import AH
+
+# msgs sent for steering controller by camera module on can 0.
+# those messages are mutually exclusive on non-rav4 and rav4 cars
+CAMERA_MSGS = [0xe4, 0x194]
 
 
 def actuator_hystereses(brake, braking, brake_steady, v_ego, civic):
@@ -41,17 +47,6 @@ def actuator_hystereses(brake, braking, brake_steady, v_ego, civic):
 
   return brake, braking, brake_steady
 
-class AH:
-  #[alert_idx, value]
-  # See dbc files for info on values"
-  NONE           = [0, 0]
-  FCW            = [1, 0x8]
-  STEER          = [2, 1]
-  BRAKE_PRESSED  = [3, 10]
-  GEAR_NOT_D     = [4, 6]
-  SEATBELT       = [5, 5]
-  SPEED_TOO_HIGH = [6, 8]
-
 
 def process_hud_alert(hud_alert):
   # initialize to no alert
@@ -75,10 +70,11 @@ HUDData = namedtuple("HUDData",
                       "lanes", "beep", "X8", "chime", "acc_alert"])
 
 class CarController(object):
-  def __init__(self):
+  def __init__(self, enable_camera=True):
     self.braking = False
     self.brake_steady = 0.
     self.brake_last = 0.
+    self.enable_camera = enable_camera
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
              pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel, \
@@ -87,7 +83,7 @@ class CarController(object):
     """ Controls thread """
 
     # TODO: Make the accord work.
-    if CS.accord:
+    if CS.accord or not self.enable_camera:
       return
 
     # *** apply brake hysteresis ***

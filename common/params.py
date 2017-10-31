@@ -64,7 +64,10 @@ keys = {
   "CloudCalibration": TxType.PERSISTANT,
 # written: controlsd
 # read:    radard
-  "CarParams": TxType.CLEAR_ON_CAR_START}
+  "CarParams": TxType.CLEAR_ON_CAR_START,
+
+  "Passive": TxType.PERSISTANT,
+}
 
 def fsync_dir(path):
   fd = os.open(path, os.O_RDONLY)

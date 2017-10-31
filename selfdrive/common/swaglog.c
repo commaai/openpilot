@@ -57,7 +57,7 @@ static void cloudlog_init() {
   if (dongle_id) {
     cloudlog_bind_locked("dongle_id", dongle_id);
   }
-  cloudlog_bind_locked("version", OPENPILOT_VERSION);
+  cloudlog_bind_locked("version", COMMA_VERSION);
   bool dirty = !getenv("CLEAN");
   json_append_member(s.ctx_j, "dirty", json_mkbool(dirty));
 

@@ -12,7 +12,7 @@ Here are [some](https://www.youtube.com/watch?v=9OwTJFuDI7g) [videos](https://ww
 Hardware
 ------
 
-Right now openpilot supports the [neo research platform](http://github.com/commaai/neo) for vehicle control. We'd like to support other platforms as well.
+Right now openpilot supports the [NEO research platform](http://github.com/commaai/neo) and the [EON Dashcam DevKit](https://shop.comma.ai/products/eon-dashcam-devkit). We'd like to support other platforms as well.
 
 Install openpilot on a neo device by entering ``https://openpilot.comma.ai`` during NEOS setup.
 
@@ -26,15 +26,25 @@ Supported Cars
   - Due to limitations in steering firmware, steering is disabled below 12 mph
   - Note that the hatchback model is not supported
 
-- Honda CR-V Touring 2015-2016 (very alpha!)
+- Honda CR-V Touring 2015-2016
   - Can only be enabled above 25 mph
+
+- Toyota RAV-4 2016+ with TSS-P (alpha!)
+  - Can only be enabled above 20 mph
 
 In Progress Cars
 ------
 
+- Toyota Prius 2017
+
+- Probably all TSS-P Toyota
+
+Community Ported Cars
+------
+
 - Chevy Volt 2016-2018 Premier with Driver Confidence II
 
-- All 2017 Toyota Prius, Corolla, and RAV4
+- Classic Tesla Model S (pre-AP)
 
 Directory structure
 ------

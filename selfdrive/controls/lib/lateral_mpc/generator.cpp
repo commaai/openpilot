@@ -79,7 +79,7 @@ int main( )
 
   Q(3,3) = 1.0;
 
-  Q(4,4) = 1.0;
+  Q(4,4) = 0.5;
 
   // Terminal cost
   Function hN;
@@ -118,7 +118,8 @@ int main( )
   mpc.set( HESSIAN_APPROXIMATION, GAUSS_NEWTON );
   mpc.set( DISCRETIZATION_TYPE, MULTIPLE_SHOOTING );
   mpc.set( INTEGRATOR_TYPE, INT_RK4 );
-  mpc.set( NUM_INTEGRATOR_STEPS, 250 );
+  mpc.set( NUM_INTEGRATOR_STEPS, 1 * controlHorizon);
+  mpc.set( MAX_NUM_QP_ITERATIONS, 500);
 
   mpc.set( SPARSE_QP_SOLUTION, CONDENSING );
   mpc.set( QP_SOLVER, QP_QPOASES );
