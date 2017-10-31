@@ -25,7 +25,18 @@
 #include "common/swaglog.h"
 #include "common/timing.h"
 
-int do_exit = 0;
+// double the FIFO size
+#define RECV_SIZE (0x1000)
+#define TIMEOUT 0
+
+#define SAFETY_NOOUTPUT  0
+#define SAFETY_HONDA 1
+#define SAFETY_TOYOTA 2
+#define SAFETY_ELM327 0xE327
+
+namespace {
+
+volatile int do_exit = 0;
 
 libusb_context *ctx = NULL;
 libusb_device_handle *dev_handle;
@@ -35,12 +46,6 @@ bool spoofing_started = false;
 bool fake_send = false;
 bool loopback_can = false;
 
-// double the FIFO size
-#define RECV_SIZE (0x1000)
-#define TIMEOUT 0
-
-#define SAFETY_NOOUTPUT  0x0000
-
 pthread_t safety_setter_thread_handle = -1;
 
 void *safety_setter_thread(void *s) {
@@ -49,6 +54,8 @@ void *safety_setter_thread(void *s) {
 
   LOGW("waiting for params to set safety model");
   while (1) {
+    if (do_exit) return NULL;
+
     const int result = read_db_value(NULL, "CarParams", &value, &value_sz);
     if (value_sz > 0) break;
     usleep(100*1000);
@@ -62,15 +69,33 @@ void *safety_setter_thread(void *s) {
   capnp::FlatArrayMessageReader cmsg(amsg);
   cereal::CarParams::Reader car_params = cmsg.getRoot<cereal::CarParams>();
 
-  int safety_model = car_params.getSafetyModel();
+  auto safety_model = car_params.getSafetyModel();
   LOGW("setting safety model: %d", safety_model);
+
+  int safety_setting = 0;
+  switch (safety_model) {
+  case (int)cereal::CarParams::SafetyModels::NO_OUTPUT:
+    safety_setting = SAFETY_NOOUTPUT;
+    break;
+  case (int)cereal::CarParams::SafetyModels::HONDA:
+    safety_setting = SAFETY_HONDA;
+    break;
+  case (int)cereal::CarParams::SafetyModels::TOYOTA:
+    safety_setting = SAFETY_TOYOTA;
+    break;
+  case (int)cereal::CarParams::SafetyModels::ELM327:
+    safety_setting = SAFETY_ELM327;
+    break;
+  default:
+    LOGE("unknown safety model: %d", safety_model);
+  }
 
   pthread_mutex_lock(&usb_lock);
 
   // set in the mutex to avoid race
   safety_setter_thread_handle = -1;
 
-  libusb_control_transfer(dev_handle, 0x40, 0xdc, safety_model, 0, NULL, 0, TIMEOUT);
+  libusb_control_transfer(dev_handle, 0x40, 0xdc, safety_setting, 0, NULL, 0, TIMEOUT);
 
   pthread_mutex_unlock(&usb_lock);
 
@@ -386,6 +411,8 @@ int set_realtime_priority(int level) {
   memset(&sa, 0, sizeof(sa));
   sa.sched_priority = level;
   return sched_setscheduler(getpid(), SCHED_FIFO, &sa);
+}
+
 }
 
 int main() {

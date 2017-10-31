@@ -1,12 +1,12 @@
 import os
 import time
 from cereal import car
-import common.numpy_fast as np
+from common.numpy_fast import interp
 from common.realtime import sec_since_boot
 import selfdrive.messaging as messaging
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
-
+import numpy as np
 
 def parse_gear_shifter(can_gear_shifter, is_acura):
 
@@ -59,6 +59,7 @@ def get_can_signals(CP):
       ("WHEEL_SPEED_RL", 0x1d0, 0),
       ("WHEEL_SPEED_RR", 0x1d0, 0),
       ("STEER_ANGLE", 0x14a, 0),
+      ("STEER_ANGLE_RATE", 0x14a, 0),
       ("STEER_TORQUE_SENSOR", 0x18f, 0),
       ("GEAR", 0x191, 0),
       ("WHEELS_MOVING", 0x1b0, 1),
@@ -115,6 +116,7 @@ def get_can_signals(CP):
       ("WHEEL_SPEED_RL", 0x1d0, 0),
       ("WHEEL_SPEED_RR", 0x1d0, 0),
       ("STEER_ANGLE", 0x156, 0),
+      ("STEER_ANGLE_RATE", 0x156, 0),
       ("STEER_TORQUE_SENSOR", 0x18f, 0),
       ("GEAR", 0x1a3, 0),
       ("WHEELS_MOVING", 0x1b0, 1),
@@ -167,6 +169,7 @@ def get_can_signals(CP):
       ("WHEEL_SPEED_RL", 0x1d0, 0),
       ("WHEEL_SPEED_RR", 0x1d0, 0),
       ("STEER_ANGLE", 0x156, 0),
+      ("STEER_ANGLE_RATE", 0x156, 0),
       #("STEER_TORQUE_SENSOR", 0x18f, 0),
       ("GEAR", 0x191, 0),
       ("WHEELS_MOVING", 0x1b0, 1),
@@ -218,6 +221,7 @@ def get_can_signals(CP):
       ("WHEEL_SPEED_RL", 0x1d0, 0),
       ("WHEEL_SPEED_RR", 0x1d0, 0),
       ("STEER_ANGLE", 0x156, 0),
+      ("STEER_ANGLE_RATE", 0x156, 0),
       ("STEER_TORQUE_SENSOR", 0x18f, 0),
       ("GEAR", 0x191, 0),
       ("WHEELS_MOVING", 0x1b0, 1),
@@ -304,8 +308,17 @@ class CarState(object):
     self.left_blinker_on = 0
     self.right_blinker_on = 0
 
-    # TODO: actually make this work
-    self.a_ego = 0.
+    # vEgo kalman filter
+    dt = 0.01
+    self.v_ego_x = np.matrix([[0.0], [0.0]])
+    self.v_ego_A = np.matrix([[1.0, dt], [0.0, 1.0]])
+    self.v_ego_C = np.matrix([1.0, 0.0])
+    self.v_ego_Q = np.matrix([[10.0, 0.0], [0.0, 100.0]])
+    self.v_ego_R = 1e3
+    # import control
+    # (x, l, K) = control.dare(np.transpose(A), np.transpose(C), Q, R)
+    # self.v_ego_K = np.transpose(K)
+    self.v_ego_K = np.matrix([[0.12287673], [0.29666309]])
 
   def update(self, can_pub_main=None):
     cp = self.cp
@@ -351,9 +364,16 @@ class CarState(object):
     self.v_wheel_rl = cp.vl[0x1D0]['WHEEL_SPEED_RL']
     self.v_wheel_rr = cp.vl[0x1D0]['WHEEL_SPEED_RR']
     self.v_wheel = (self.v_wheel_fl + self.v_wheel_fr + self.v_wheel_rl + self.v_wheel_rr) / 4.
+
     # blend in transmission speed at low speed, since it has more low speed accuracy
-    self.v_weight = np.interp(self.v_wheel, v_weight_bp, v_weight_v)
-    self.v_ego = (1. - self.v_weight) * cp.vl[0x158]['XMISSION_SPEED'] + self.v_weight * self.v_wheel
+    self.v_weight = interp(self.v_wheel, v_weight_bp, v_weight_v)
+    speed = (1. - self.v_weight) * cp.vl[0x158]['XMISSION_SPEED'] + self.v_weight * self.v_wheel
+    self.v_ego_x = np.dot((self.v_ego_A - np.dot(self.v_ego_K, self.v_ego_C)), self.v_ego_x) + np.dot(self.v_ego_K, speed)
+
+    self.v_ego_raw = speed
+    self.v_ego = float(self.v_ego_x[0])
+    self.a_ego = float(self.v_ego_x[1])
+
     if self.CP.enableGas:
       # this is a hack
       self.user_gas = cp.vl[0x201]['INTERCEPTOR_GAS']
@@ -362,6 +382,7 @@ class CarState(object):
     if self.civic:
       can_gear_shifter = cp.vl[0x191]['GEAR_SHIFTER']
       self.angle_steers = cp.vl[0x14A]['STEER_ANGLE']
+      self.angle_steers_rate = cp.vl[0x14A]['STEER_ANGLE_RATE']
       self.gear = 0  # TODO: civic has CVT... needs rev engineering
       self.cruise_setting = cp.vl[0x296]['CRUISE_SETTING']
       self.cruise_buttons = cp.vl[0x296]['CRUISE_BUTTONS']
@@ -375,6 +396,7 @@ class CarState(object):
     elif self.accord:
       can_gear_shifter = cp.vl[0x191]['GEAR_SHIFTER']
       self.angle_steers = cp.vl[0x156]['STEER_ANGLE']
+      self.angle_steers_rate = cp.vl[0x156]['STEER_ANGLE_RATE']
       self.gear = 0  # TODO: accord has CVT... needs rev engineering
       self.cruise_setting = cp.vl[0x1A6]['CRUISE_SETTING']
       self.cruise_buttons = cp.vl[0x1A6]['CRUISE_BUTTONS']
@@ -388,6 +410,7 @@ class CarState(object):
     elif self.crv:
       can_gear_shifter = cp.vl[0x191]['GEAR_SHIFTER']
       self.angle_steers = cp.vl[0x156]['STEER_ANGLE']
+      self.angle_steers_rate = cp.vl[0x156]['STEER_ANGLE_RATE']
       self.gear = cp.vl[0x191]['GEAR']
       self.cruise_setting = cp.vl[0x1A6]['CRUISE_SETTING']
       self.cruise_buttons = cp.vl[0x1A6]['CRUISE_BUTTONS']
@@ -401,6 +424,7 @@ class CarState(object):
     elif self.acura:
       can_gear_shifter = cp.vl[0x1A3]['GEAR_SHIFTER']
       self.angle_steers = cp.vl[0x156]['STEER_ANGLE']
+      self.angle_steers_rate = cp.vl[0x156]['STEER_ANGLE_RATE']
       self.gear = cp.vl[0x1A3]['GEAR']
       self.cruise_setting = cp.vl[0x1A6]['CRUISE_SETTING']
       self.cruise_buttons = cp.vl[0x1A6]['CRUISE_BUTTONS']
@@ -448,7 +472,7 @@ if __name__ == '__main__':
   import time
   from selfdrive.services import service_list
   context = zmq.Context()
-  logcan = messaging.sub_sock(context, service_list['can'].port) 
+  logcan = messaging.sub_sock(context, service_list['can'].port)
 
   class CarParams(object):
     def __init__(self):
@@ -461,4 +485,3 @@ if __name__ == '__main__':
   while 1:
     CS.update()
     time.sleep(0.01)
-

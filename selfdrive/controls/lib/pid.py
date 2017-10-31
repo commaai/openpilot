@@ -3,9 +3,10 @@ from common.numpy_fast import clip, interp
 import numbers
 
 class PIController(object):
-  def __init__(self, k_p, k_i, pos_limit=None, neg_limit=None, rate=100, sat_limit=0.8, convert=None):
-    self._k_p = k_p
-    self._k_i = k_i
+  def __init__(self, k_p, k_i, k_f=0., pos_limit=None, neg_limit=None, rate=100, sat_limit=0.8, convert=None):
+    self._k_p = k_p # proportional gain
+    self._k_i = k_i # integrale gain
+    self.k_f = k_f  # feedforward gain
 
     self.pos_limit = pos_limit
     self.neg_limit = neg_limit
@@ -56,18 +57,19 @@ class PIController(object):
     self.saturated = False
     self.control = 0
 
-  def update(self, setpoint, measurement, speed=0.0, check_saturation=True, jerk_factor=0.0, override=False):
+  def update(self, setpoint, measurement, speed=0.0, check_saturation=True, jerk_factor=0.0, override=False, feedforward=0.):
     self.speed = speed
     self.jerk_factor = jerk_factor
 
     error = float(setpoint - measurement)
     self.p = error * self.k_p
+    f = feedforward * self.k_f
 
     if override:
       self.i -= self.i_unwind_rate * float(np.sign(self.i))
     else:
       i = self.i + error * self.k_i * self.i_rate
-      control = self.p + i
+      control = self.p + f + i
 
       if self.convert is not None:
         control = self.convert(control, speed=self.speed)
@@ -78,7 +80,7 @@ class PIController(object):
          (error <= 0 and (control >= self.neg_limit or i > 0.0)):
         self.i = i
 
-    control = self.p + self.i
+    control = self.p + f + self.i
     if self.convert is not None:
       control = self.convert(control, speed=self.speed)
 

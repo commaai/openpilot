@@ -4,17 +4,19 @@ import time
 import numpy as np
 from common.numpy_fast import clip
 from common.realtime import sec_since_boot
-
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET, get_events
-from .carstate import CarState
-from .carcontroller import CarController, AH
-from selfdrive.boardd.boardd import can_capnp_to_can_list
 from cereal import car
-
 from selfdrive.services import service_list
 import selfdrive.messaging as messaging
+from selfdrive.car.honda.carstate import CarState
+from selfdrive.car.honda.carcontroller import CAMERA_MSGS
+from selfdrive.car.honda.values import CruiseButtons, CM, BP, AH
 
+try:
+  from .carcontroller import CarController
+except ImportError:
+  CarController = None
 
 def get_compute_gb():
   # generate a function that takes in [desired_accel, current_speed] -> [-1.0, 1.0]
@@ -61,31 +63,6 @@ def get_compute_gb():
   return _compute_gb
 
 
-# Car button codes
-class CruiseButtons:
-  RES_ACCEL   = 4
-  DECEL_SET   = 3
-  CANCEL      = 2
-  MAIN        = 1
-
-
-#car chimes: enumeration from dbc file. Chimes are for alerts and warnings
-class CM:
-  MUTE = 0
-  SINGLE = 3
-  DOUBLE = 4
-  REPEATED = 1
-  CONTINUOUS = 2
-
-
-#car beepss: enumeration from dbc file. Beeps are for activ and deactiv
-class BP:
-  MUTE = 0
-  SINGLE = 3
-  TRIPLE = 2
-  REPEATED = 1
-
-
 class CarInterface(object):
   def __init__(self, CP, logcan, sendcan=None):
     self.logcan = logcan
@@ -104,7 +81,7 @@ class CarInterface(object):
     # sending if read only is False
     if sendcan is not None:
       self.sendcan = sendcan
-      self.CC = CarController()
+      self.CC = CarController(CP.enableCamera)
 
     if self.CS.accord:
       # self.accord_msg = []
@@ -127,11 +104,14 @@ class CarInterface(object):
     ret.enableSteer = True
     ret.enableBrake = True
 
-    # pedal
+    ret.enableCamera = not any(x for x in CAMERA_MSGS if x in fingerprint)
     ret.enableGas = 0x201 in fingerprint
+    print "ECU Camera Simulated: ", ret.enableCamera
+    print "ECU Gas Interceptor: ", ret.enableGas
+
     ret.enableCruise = not ret.enableGas
 
-    # FIXME: hardcoding honda civic 2016 touring params so they can be used to 
+    # FIXME: hardcoding honda civic 2016 touring params so they can be used to
     # scale unknown params for other cars
     m_civic = 2923./2.205 + std_cargo
     l_civic = 2.70
@@ -176,13 +156,15 @@ class CarInterface(object):
     else:
       raise ValueError("unsupported car %s" % candidate)
 
-    # min speed to enable ACC. if car can do stop and go, then set enabling speed 
-    # to a negative value, so it won't matter. Otherwise, add 0.5 mph margin to not 
+    ret.steerKf = 0. # TODO: investigate FF steer control for Honda
+
+    # min speed to enable ACC. if car can do stop and go, then set enabling speed
+    # to a negative value, so it won't matter. Otherwise, add 0.5 mph margin to not
     # conflict with PCM acc
     ret.minEnableSpeed = -1. if (stop_and_go or ret.enableGas) else 25.5 * CV.MPH_TO_MS
 
     ret.aR = ret.l - ret.aF
-    # TODO: get actual value, for now starting with reasonable value for 
+    # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
     ret.j = j_civic * ret.m * ret.l**2 / (m_civic * l_civic**2)
 
@@ -197,10 +179,13 @@ class CarInterface(object):
     # no max steer limit VS speed
     ret.steerMaxBP = [0.]  # m/s
     ret.steerMaxV = [1.]   # max steer allowed
+
     ret.gasMaxBP = [0.]  # m/s
     ret.gasMaxV = [0.6] if ret.enableGas else [0.] # max gas allowed
     ret.brakeMaxBP = [5., 20.]  # m/s
     ret.brakeMaxV = [1., 0.8]   # max brake allowed
+
+    ret.steerLimitAlert = True
 
     return ret
 
@@ -219,6 +204,9 @@ class CarInterface(object):
 
     # speeds
     ret.vEgo = self.CS.v_ego
+    ret.aEgo = self.CS.a_ego
+    ret.vEgoRaw = self.CS.v_ego_raw
+    ret.standstill = self.CS.standstill
     ret.wheelSpeeds.fl = self.CS.v_wheel_fl
     ret.wheelSpeeds.fr = self.CS.v_wheel_fr
     ret.wheelSpeeds.rl = self.CS.v_wheel_rl
@@ -236,8 +224,8 @@ class CarInterface(object):
     ret.brakePressed = self.CS.brake_pressed != 0
 
     # steering wheel
-    # TODO: units
     ret.steeringAngle = self.CS.angle_steers
+    ret.steeringRate = self.CS.angle_steers_rate
 
     # gear shifter lever
     ret.gearShifter = self.CS.gear_shifter
@@ -249,7 +237,7 @@ class CarInterface(object):
     ret.cruiseState.enabled = self.CS.pcm_acc_status != 0
     ret.cruiseState.speed = self.CS.v_cruise_pcm * CV.KPH_TO_MS
     ret.cruiseState.available = bool(self.CS.main_on)
-    ret.cruiseState.speedOffset = self.CS.cruise_speed_offset 
+    ret.cruiseState.speedOffset = self.CS.cruise_speed_offset
 
     # TODO: button presses
     buttonEvents = []
@@ -368,7 +356,7 @@ class CarInterface(object):
         events.append(create_event('buttonCancel', [ET.USER_DISABLE]))
 
     if self.CP.enableCruise:
-      # KEEP THIS EVENT LAST! send enable event if button is pressed and there are 
+      # KEEP THIS EVENT LAST! send enable event if button is pressed and there are
       # NO_ENTRY events, so controlsd will display alerts. Also not send enable events
       # too close in time, so a no_entry will not be followed by another one.
       # TODO: button press should be the only thing that triggers enble

@@ -192,4 +192,15 @@ class dbc(object):
       else:
         out[arr.index(s[0])] = ival
     return name, out
+
+
+  def get_signals(self, msg):
+    return [sgs.name for sgs in self.msgs[msg][1]]
     
+if __name__ == "__main__":
+   import sys
+   import os
+   from opendbc import DBC_PATH
+
+   dbc_test = dbc(os.path.join(DBC_PATH, sys.argv[1]))
+   print dbc_test.get_signals(0xe4)

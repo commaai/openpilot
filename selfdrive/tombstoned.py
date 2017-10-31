@@ -11,7 +11,8 @@ from selfdrive.version import version
 from selfdrive.swaglog import cloudlog
 
 def get_tombstones():
-  return [fn for fn in os.listdir("/data/tombstones") if fn.startswith("tombstone")]
+  return [("/data/tombstones/"+fn, int(os.stat("/data/tombstones/"+fn).st_ctime) )
+          for fn in os.listdir("/data/tombstones") if fn.startswith("tombstone")]
 
 def report_tombstone(fn, client):
   mtime = os.path.getmtime(fn)
@@ -73,8 +74,7 @@ def main(gctx):
   while True:
     now_tombstones = set(get_tombstones())
 
-    for ts in (now_tombstones - initial_tombstones):
-      fn = "/data/tombstones/"+ts
+    for fn, ctime in (now_tombstones - initial_tombstones):
       cloudlog.info("reporting new tombstone %s", fn)
       report_tombstone(fn, client)
 

@@ -1,1 +1,1 @@
-#define OPENPILOT_VERSION "0.3.7"
+#define COMMA_VERSION "0.3.8.2-openpilot"

@@ -51,6 +51,8 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     modelCommIssue @27;
     brakeHold @28;
     parkBrake @29;
+    manualRestart @30;
+    lowSpeedLockout @31;
   }
 }
 
@@ -63,6 +65,9 @@ struct CarState {
 
   # car speed
   vEgo @1 :Float32;       # best estimate of speed
+  aEgo @16 :Float32;       # best estimate of acceleration
+  vEgoRaw @17 :Float32;       # unfiltered speed
+  standstill @18 :Bool;
   wheelSpeeds @2 :WheelSpeeds;
 
   # gas pedal, 0.0-1.0
@@ -75,6 +80,7 @@ struct CarState {
 
   # steering wheel
   steeringAngle @7 :Float32;   # deg
+  steeringRate @15 :Float32;   # deg/s
   steeringTorque @8 :Float32;  # TODO: standardize units
   steeringPressed @9 :Bool;    # if the user is using the steering wheel
 
@@ -242,6 +248,9 @@ struct CarParams {
   enableGas @4 :Bool;
   enableBrake @5 :Bool;
   enableCruise @6 :Bool;
+  enableCamera @27 :Bool;
+  enableDsu @28 :Bool; # driving support unit
+  enableApgs @29 :Bool; # advanced parking guidance system
 
   minEnableSpeed @18 :Float32;
   safetyModel @19 :Int16;
@@ -254,10 +263,11 @@ struct CarParams {
   brakeMaxV @25 :List(Float32);
 
   enum SafetyModels {
-    # from board
-    default @0;
+    # does NOT match board setting
+    noOutput @0;
     honda @1;
     toyota @2;
+    elm327 @3;
   }
 
   # things about the car in the manual
@@ -276,7 +286,9 @@ struct CarParams {
   # Kp and Ki for the lateral control
   steerKp @16 :Float32;
   steerKi @17 :Float32;
+  steerKf @26 :Float32;
+
+  steerLimitAlert @30 :Bool;
 
   # TODO: Kp and Ki for long control, perhaps not needed?
 }
-

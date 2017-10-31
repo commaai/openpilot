@@ -95,13 +95,15 @@ class Track(object):
     # rel speed is very hard to estimate from vision
     if dist_to_vision < 4.0 and rel_speed_diff < 10.:
       # vision point is never stationary
-      self.stationary = False
-      self.vision = True
       self.vision_cnt += 1
+      # don't trust 1 or 2 fusions until model quality is much better
+      if self.vision_cnt >= 3:
+        self.vision = True
+        self.stationary = False
 
   def get_key_for_cluster(self):
     # Weigh y higher since radar is inaccurate in this dimension
-    return [self.dRel, self.dPath*2, self.vRel]
+    return [self.dRel, self.yRel*2, self.vRel]
 
 # ******************* Cluster *******************
 
@@ -208,7 +210,7 @@ class Cluster(object):
     lead.fcw = self.is_potential_fcw()
 
   def __str__(self):
-    ret = "x: %7.2f  y: %7.2f  v: %7.2f  a: %7.2f" % (self.dRel, self.yRel, self.vRel, self.aRel)
+    ret = "x: %4.1f  y: %4.1f  v: %4.1f  a: %4.1f  d: %4.2f" % (self.dRel, self.yRel, self.vRel, self.aRel, self.dPath)
     if self.stationary:
       ret += " stationary"
     if self.vision:

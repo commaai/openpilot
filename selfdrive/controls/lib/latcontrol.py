@@ -20,7 +20,7 @@ def get_steer_max(CP, v_ego):
 
 class LatControl(object):
   def __init__(self, VM):
-    self.pid = PIController(VM.CP.steerKp, VM.CP.steerKi, pos_limit=1.0)
+    self.pid = PIController(VM.CP.steerKp, VM.CP.steerKi, k_f=VM.CP.steerKf, pos_limit=1.0)
     self.setup_mpc()
 
     self.y_des = -1  # Legacy
@@ -57,14 +57,15 @@ class LatControl(object):
       # account for actuation delay
       self.cur_state = calc_states_after_delay(self.cur_state, v_ego, angle_steers, curvature_factor, VM.CP.sR)
 
+      v_ego_mpc = max(v_ego, 5.0)  # avoid mpc roughness due to low speed
       self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
                           l_poly, r_poly, p_poly,
-                          PL.PP.l_prob, PL.PP.r_prob, PL.PP.p_prob, curvature_factor, v_ego, PL.PP.lane_width)
+                          PL.PP.l_prob, PL.PP.r_prob, PL.PP.p_prob, curvature_factor, v_ego_mpc, PL.PP.lane_width)
 
       delta_desired = self.mpc_solution[0].delta[1]
       self.cur_state[0].delta = delta_desired
 
-      self.angle_steers_des = math.degrees(delta_desired * VM.CP.sR) + angle_offset
+      self.angle_steers_des = float(math.degrees(delta_desired * VM.CP.sR) + angle_offset)
       self.mpc_updated = True
 
     if v_ego < 0.3 or not active:
@@ -74,7 +75,8 @@ class LatControl(object):
       steer_max = get_steer_max(VM.CP, v_ego)
       self.pid.pos_limit = steer_max
       self.pid.neg_limit = -steer_max
-      output_steer = self.pid.update(self.angle_steers_des, angle_steers, check_saturation=(v_ego > 10), override=steer_override)
+      steer_feedforward = self.angle_steers_des * v_ego**2  # proportional to realigning tire momentum (~ lateral accel)
+      output_steer = self.pid.update(self.angle_steers_des, angle_steers, check_saturation=(v_ego > 10), override=steer_override, feedforward=steer_feedforward)
 
     self.sat_flag = self.pid.saturated
     return output_steer

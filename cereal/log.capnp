@@ -36,6 +36,7 @@ struct InitData {
   pandaInfo @8 :PandaInfo;
 
   dirty @9 :Bool;
+  passive @12 :Bool;
 
   enum DeviceType {
     unknown @0;
@@ -327,8 +328,11 @@ struct Live100Data {
   mdMonoTimeDEPRECATED @18 :UInt64;
   planMonoTime @28 :UInt64;
 
+  state @31 :ControlState;
   vEgo @0 :Float32;
+  vEgoRaw @32 :Float32;
   aEgoDEPRECATED @1 :Float32;
+  longControlState @30 :LongControlState;
   vPid @2 :Float32;
   vTargetLead @3 :Float32;
   upAccelCmd @4 :Float32;
@@ -356,6 +360,20 @@ struct Live100Data {
   awarenessStatus @26 :Float32;
 
   angleOffset @27 :Float32;
+
+  enum ControlState {
+    disabled @0;
+    preEnabled @1;
+    enabled @2;
+    softDisabling @3;
+  }
+
+  enum LongControlState {
+    off @0;
+    pid @1;
+    stopping @2;
+    starting @3;
+  }
 }
 
 struct LiveEventData {
@@ -370,6 +388,7 @@ struct ModelData {
   leftLane @2 :PathData;
   rightLane @3 :PathData;
   lead @4 :LeadData;
+  leadNew @6 :List(Float32);
 
   settings @5 :ModelSettings;
 
@@ -454,11 +473,13 @@ struct Plan {
   # longitudinal
   longitudinalValid @2 :Bool;
   vTarget @3 :Float32;
+  vTargetFuture @14 :Float32;
   aTargetMin @4 :Float32;
   aTargetMax @5 :Float32;
   jerkFactor @6 :Float32;
   hasLead @7 :Bool;
   fcw @8 :Bool;
+  longitudinalPlanSource @15 :LongitudinalPlanSource;
 
   # gps trajectory in car frame
   gpsTrajectory @12 :GpsTrajectory;
@@ -466,6 +487,12 @@ struct Plan {
   struct GpsTrajectory {
     x @0 :List(Float32);
     y @1 :List(Float32);
+  }
+
+  enum LongitudinalPlanSource {
+    cruise @0;
+    mpc1 @1;
+    mpc2 @2;
   }
 }
 
@@ -1073,6 +1100,7 @@ struct UbloxGnss {
   union {
     measurementReport @0 :MeasurementReport;
     ephemeris @1 :Ephemeris;
+    ionoData @2 :IonoData;
   }
 
   struct MeasurementReport {
@@ -1175,8 +1203,23 @@ struct UbloxGnss {
 
     transmissionTime @34 :Float64;
     fitInterval @35 :Float64;
+
+    toc @36 :Float64;
+  }
+
+  struct IonoData {
+    svHealth @0 :UInt32;
+    tow  @1 :Float64;
+    gpsWeek @2 :Float64;
+
+    ionoAlpha @3 :List(Float64);
+    ionoBeta @4 :List(Float64);
+
+    healthValid @5 :Bool;
+    ionoCoeffsValid @6 :Bool;
   }
 }
+
 
 struct Clocks {
   bootTimeNanos @0 :UInt64;
@@ -1191,6 +1234,21 @@ struct LiveMpcData {
   y @1 :List(Float32);
   psi @2 :List(Float32);
   delta @3 :List(Float32);
+  qpIterations @4 :UInt32;
+  calculationTime @5 :UInt64;
+}
+
+struct LiveLongitudinalMpcData {
+  xEgo @0 :List(Float32);
+  vEgo @1 :List(Float32);
+  aEgo @2 :List(Float32);
+  xLead @3 :List(Float32);
+  vLead @4 :List(Float32);
+  aLead @5 :List(Float32);
+  aLeadTau @6 :Float32;    # lead accel time constant
+  qpIterations @7 :UInt32;
+  mpcId @8 :UInt32;
+  calculationTime @9 :UInt64;
 }
 
 struct Event {
@@ -1234,5 +1292,6 @@ struct Event {
     ubloxGnss @34 :UbloxGnss;
     clocks @35 :Clocks;
     liveMpc @36 :LiveMpcData;
+    liveLongitudinalMpc @37 :LiveLongitudinalMpcData;
   }
 }

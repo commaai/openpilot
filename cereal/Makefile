@@ -1,7 +1,8 @@
+PWD := $(shell pwd)
+
 SRCS := log.capnp car.capnp
 
 GENS := gen/cpp/car.capnp.c++ gen/cpp/log.capnp.c++
-
 
 UNAME_M ?= $(shell uname -m)
 
@@ -16,6 +17,12 @@ endif
 
 endif
 
+ifeq ($(UNAME_M),aarch64)
+CAPNPC=PATH=$(PWD)/../phonelibs/capnp-cpp/aarch64/bin/:$$PATH capnpc
+else
+CAPNPC=capnpc
+endif
+
 .PHONY: all
 all: $(GENS)
 
@@ -26,17 +33,17 @@ clean:
 gen/c/%.capnp.c: %.capnp
 	@echo "[ CAPNPC C ] $@"
 	mkdir -p gen/c/
-	capnpc '$<' -o c:gen/c/
+	$(CAPNPC) '$<' -o c:gen/c/
 
 gen/cpp/%.capnp.c++: %.capnp
 	@echo "[ CAPNPC C++ ] $@"
 	mkdir -p gen/cpp/
-	capnpc '$<' -o c++:gen/cpp/
+	$(CAPNPC) '$<' -o c++:gen/cpp/
 
 gen/java/Car.java gen/java/Log.java: $(SRCS)
 	@echo "[ CAPNPC java ] $@"
 	mkdir -p gen/java/
-	capnpc $^ -o java:gen/java
+	$(CAPNPC) $^ -o java:gen/java
 
 # c-capnproto needs some empty headers
 gen/c/c++.capnp.h gen/c/java.capnp.h:

@@ -38,7 +38,7 @@ proclogd: $(OBJS)
 %.o: %.cc
 	@echo "[ CXX ] $@"
 	$(CXX) $(CXXFLAGS) \
-           $(CEREAL_CFLAGS) \
+           $(CEREAL_CXXFLAGS) \
            $(ZMQ_FLAGS) \
            -I../ \
            -I../../ \

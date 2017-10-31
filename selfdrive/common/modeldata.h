@@ -1,8 +1,10 @@
 #ifndef MODELDATA_H
 #define MODELDATA_H
 
+#define MODEL_PATH_DISTANCE 50
+
 typedef struct PathData {
-  float points[50];
+  float points[MODEL_PATH_DISTANCE];
   float prob;
   float std;
 } PathData;
