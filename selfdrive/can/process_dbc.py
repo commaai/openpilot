@@ -21,10 +21,15 @@ can_dbc = dbc(dbc_fn)
 with open(template_fn, "r") as template_f:
   template = jinja2.Template(template_f.read(), trim_blocks=True, lstrip_blocks=True)
 
-msgs = [(address, msg_name, sorted(msg_sigs, key=lambda s: s.name not in ("COUNTER", "CHECKSUM"))) # process counter and checksums first
-        for address, ((msg_name, _), msg_sigs) in sorted(can_dbc.msgs.iteritems()) if msg_sigs]
+msgs = [(address, msg_name, msg_size, sorted(msg_sigs, key=lambda s: s.name not in ("COUNTER", "CHECKSUM"))) # process counter and checksums first
+        for address, ((msg_name, msg_size), msg_sigs) in sorted(can_dbc.msgs.iteritems()) if msg_sigs]
 
-checksum_type = "honda" if can_dbc.name.startswith("honda") or can_dbc.name.startswith("acura") else None
+if can_dbc.name.startswith("honda") or can_dbc.name.startswith("acura"):
+  checksum_type = "honda"
+elif can_dbc.name.startswith("toyota"):
+  checksum_type = "toyota"
+else:
+  checksum_type = None
 
 parser_code = template.render(dbc=can_dbc, checksum_type=checksum_type, msgs=msgs, len=len)
 

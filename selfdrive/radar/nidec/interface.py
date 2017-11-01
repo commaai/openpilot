@@ -4,8 +4,6 @@ import numpy as np
 
 from selfdrive.can.parser import CANParser
 
-from selfdrive.boardd.boardd import can_capnp_to_can_list
-
 from cereal import car
 from common.realtime import sec_since_boot
 
@@ -13,10 +11,11 @@ import zmq
 from selfdrive.services import service_list
 import selfdrive.messaging as messaging
 
+
 def _create_nidec_can_parser():
   dbc_f = 'acura_ilx_2016_nidec.dbc'
   radar_messages = [0x400] + range(0x430, 0x43A) + range(0x440, 0x446)
-  signals = zip(['RADAR_STATE'] + 
+  signals = zip(['RADAR_STATE'] +
                 ['LONG_DIST'] * 16 + ['NEW_TRACK'] * 16 + ['LAT_DIST'] * 16 +
                 ['REL_SPEED'] * 16,
                 [0x400] + radar_messages[1:] * 4,
@@ -25,12 +24,15 @@ def _create_nidec_can_parser():
 
   return CANParser(os.path.splitext(dbc_f)[0], signals, checks, 1)
 
+
 class RadarInterface(object):
   def __init__(self):
     # radar
     self.pts = {}
     self.track_id = 0
     self.radar_fault = False
+
+    self.delay = 0.1  # Delay of radar
 
     # Nidec
     self.rcp = _create_nidec_can_parser()
@@ -79,11 +81,10 @@ class RadarInterface(object):
     ret.points = self.pts.values()
     return ret
 
+
 if __name__ == "__main__":
   RI = RadarInterface()
   while 1:
     ret = RI.update()
     print(chr(27) + "[2J")
     print ret
-
-

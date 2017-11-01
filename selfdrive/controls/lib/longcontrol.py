@@ -11,11 +11,11 @@ BRAKE_THRESHOLD_TO_PID = 0.2
 
 class LongCtrlState:
   #*** this function handles the long control state transitions
-  # long_control_state labels:
-  off = 0  # Off
-  pid = 1  # moving and tracking targets, with PID control running
-  stopping = 2  # stopping and changing controls to almost open loop as PID does not fit well at such a low speed
-  starting = 3  # starting and releasing brakes in open loop before giving back to PID
+  # long_control_state labels (see capnp enum):
+  off = 'off'  # Off
+  pid = 'pid'  # moving and tracking targets, with PID control running
+  stopping = 'stopping'  # stopping and changing controls to almost open loop as PID does not fit well at such a low speed
+  starting = 'starting'  # starting and releasing brakes in open loop before giving back to PID
 
 
 def long_control_state_trans(active, long_control_state, v_ego, v_target, v_pid,
@@ -57,7 +57,7 @@ _KI_BP = [0., 35.]
 _KI_V = [0.18, 0.12]
 
 stopping_brake_rate = 0.2  # brake_travel/s while trying to stop
-starting_brake_rate = 0.6  # brake_travel/s while releasing on restart
+starting_brake_rate = 0.8  # brake_travel/s while releasing on restart
 starting_Ui = 0.5  # Since we don't have much info about acceleration at this point, be conservative
 brake_stopping_target = 0.5  # apply at least this amount of brake to maintain the vehicle stationary
 
@@ -80,7 +80,7 @@ class LongControl(object):
     self.pid.reset()
     self.v_pid = v_pid
 
-  def update(self, active, v_ego, brake_pressed, v_cruise, v_target_lead, a_target,
+  def update(self, active, v_ego, brake_pressed, standstill, v_cruise, v_target_lead, a_target,
              jerk_factor, CP):
 
     # actuation limits
@@ -100,9 +100,11 @@ class LongControl(object):
     self.long_control_state = long_control_state_trans(active, self.long_control_state, v_ego,\
                                                        v_target, self.v_pid, output_gb, brake_pressed)
 
+    v_ego_pid = max(v_ego, 0.3)  # Without this we get jumps, CAN bus reports 0 when speed < 0.3
+
     # *** long control behavior based on state
     if self.long_control_state == LongCtrlState.off:
-      self.v_pid = v_ego  # do nothing
+      self.v_pid = v_ego_pid  # do nothing
       output_gb = 0.
       self.pid.reset()
 
@@ -129,13 +131,12 @@ class LongControl(object):
 
       self.pid.pos_limit = gas_max
       self.pid.neg_limit = - brake_max
-      v_ego_pid = max(v_ego, 0.3)  # Without this we get jumps, CAN bus reports 0 when speed < 0.3
       output_gb = self.pid.update(self.v_pid, v_ego_pid, speed=v_ego_pid, jerk_factor=jerk_factor)
 
     # intention is to stop, switch to a different brake control until we stop
     elif self.long_control_state == LongCtrlState.stopping:
       # TODO: use the standstill bit from CAN to detect movements, usually more accurate than looking at v_ego
-      if v_ego > 0. or output_gb > -brake_stopping_target:
+      if not standstill or output_gb > -brake_stopping_target:
         output_gb -= stopping_brake_rate / rate
       output_gb = clip(output_gb, -brake_max, gas_max)
 

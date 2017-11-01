@@ -40,26 +40,33 @@ uint64_t read_u64_be(const uint8_t* v) {
           | (uint64_t)v[7]);
 }
 
-bool honda_checksum(int address, uint64_t d, int l) {
-  int target = (d >> l) & 0xF;
-
-  DEBUG("check checksum %16lx %d", d, l);
-
-  // remove checksum from calculation
-  d &= ~(0xFLL << l);
+unsigned int honda_checksum(unsigned int address, uint64_t d, int l) {
+  d >>= ((8-l)*8); // remove padding
+  d >>= 4; // remove checksum
 
   int s = 0;
-  while (address > 0) { s += (address & 0xF); address >>= 4; }
-  while (d > 0) { s += (d & 0xF); d >>= 4; }
+  while (address) { s += (address & 0xF); address >>= 4; }
+  while (d) { s += (d & 0xF); d >>= 4; }
   s = 8-s;
   s &= 0xF;
 
-  DEBUG("   %d = %d\n", target, s);
-  return target == s;
+  return s;
+}
+
+unsigned int toyota_checksum(unsigned int address, uint64_t d, int l) {
+  d >>= ((8-l)*8); // remove padding
+  d >>= 8; // remove checksum
+
+  unsigned int s = l;
+  while (address) { s += address & 0xff; address >>= 8; }
+  while (d) { s += d & 0xff; d >>= 8; }
+  
+  return s & 0xFF;
 }
 
 struct MessageState {
   uint32_t address;
+  unsigned int size;
 
   std::vector<Signal> parse_sigs;
   std::vector<double> vals;
@@ -80,15 +87,22 @@ struct MessageState {
         tmp -= (tmp >> (sig.b2-1)) ? (1ULL << sig.b2) : 0; //signed
       }
 
-      DEBUG("parse %X %s -> %ld\n", address, sig.name, tmp);
+      DEBUG("parse %X %s -> %lld\n", address, sig.name, tmp);
 
       if (sig.type == SignalType::HONDA_CHECKSUM) {
-        if (!honda_checksum(address, dat, sig.bo)) {
+        if (honda_checksum(address, dat, size) != tmp) {
           INFO("%X CHECKSUM FAIL\n", address);
           return false;
         }
       } else if (sig.type == SignalType::HONDA_COUNTER) {
         if (!honda_update_counter(tmp)) {
+          return false;
+        }
+      } else if (sig.type == SignalType::TOYOTA_CHECKSUM) {
+        // DEBUG("CHECKSUM %d %d %018llX - %lld vs %d\n", address, size, dat, tmp, toyota_checksum(address, dat, size));
+
+        if (toyota_checksum(address, dat, size) != tmp) {
+          INFO("%X CHECKSUM FAIL\n", address);
           return false;
         }
       }
@@ -161,11 +175,12 @@ class CANParser {
         assert(false);
       }
 
-      // track checksums and for this message
+      state.size = msg->size;
+
+      // track checksums and counters for this message
       for (int i=0; i<msg->num_sigs; i++) {
         const Signal *sig = &msg->sigs[i];
-        if (sig->type == HONDA_CHECKSUM
-            || sig->type == HONDA_COUNTER) {
+        if (sig->type != SignalType::DEFAULT) {
           state.parse_sigs.push_back(*sig);
           state.vals.push_back(0);
         }
@@ -178,8 +193,7 @@ class CANParser {
         for (int i=0; i<msg->num_sigs; i++) {
           const Signal *sig = &msg->sigs[i];
           if (strcmp(sig->name, sigop.name) == 0
-              && sig->type != HONDA_CHECKSUM
-              && sig->type != HONDA_COUNTER) {
+              && sig->type == SignalType::DEFAULT) {
             state.parse_sigs.push_back(*sig);
             state.vals.push_back(sigop.default_value);
             break;
@@ -216,7 +230,7 @@ class CANParser {
 
         uint64_t p = read_u64_be(dat);
 
-        DEBUG("  proc %X: %lx\n", cmsg.getAddress(), p);
+        DEBUG("  proc %X: %llx\n", cmsg.getAddress(), p);
 
         state_it->second.parse(sec, cmsg.getBusTime(), p);
       }

@@ -25,18 +25,16 @@ JSON_FLAGS = -I$(PHONELIBS)/json/src
 
 EXTRA_LIBS = -lusb
 
-ifeq ($(OS),GNU/Linux)
-# for Drive PX2
-ZMQ_LIBS = -lczmq -lzmq
-CEREAL_LIBS = -lcapnp -lkj -lcapnp_c
-EXTRA_LIBS = -lusb-1.0 -lpthread
-endif
+# ifeq ($(OS),GNU/Linux)
+# # for Drive PX2
+# ZMQ_LIBS = -lczmq -lzmq
+# CEREAL_LIBS = -lcapnp -lkj -lcapnp_c
+# EXTRA_LIBS = -lusb-1.0 -lpthread
+# endif
 
 ifeq ($(ARCH),x86_64)
-ZMQ_LIBS = -L$(HOME)/one/external/zmq/lib/ \
+ZMQ_LIBS = -L$(BASEDIR)/external/zmq/lib/ \
            -l:libczmq.a -l:libzmq.a
-CEREAL_LIBS = -L$(HOME)/one/external/capnp/lib/ \
-              -l:libcapnp.a -l:libcapnp_c.a -l:libkj.a
 EXTRA_LIBS = -lusb-1.0 -lpthread
 CXXFLAGS += -I/usr/include/libusb-1.0
 CFLAGS += -I/usr/include/libusb-1.0

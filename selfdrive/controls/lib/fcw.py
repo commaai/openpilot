@@ -8,13 +8,13 @@ def calc_ttc(l1):
   # if l1 is None, return max ttc immediately
   if not l1:
     return MAX_TTC
-  # this function returns the time to collision (ttc), assuming that 
+  # this function returns the time to collision (ttc), assuming that
   # ARel will stay constant TODO: review this assumptions
   # change sign to rel quantities as it's going to be easier for calculations
   vRel = -l1.vRel
   aRel = -l1.aRel
 
-  # assuming that closing gap ARel comes from lead vehicle decel, 
+  # assuming that closing gap ARel comes from lead vehicle decel,
   # then limit ARel so that v_lead will get to zero in no sooner than t_decel.
   # This helps underweighting ARel when v_lead is close to zero.
   t_decel = 2.
@@ -44,10 +44,10 @@ class ForwardCollisionWarning(object):
     a_acc_on  = -2.0         # with system on, above this limit of desired decel, we should trigger fcw
     a_acc_off = -2.5         # with system off, above this limit of desired decel, we should trigger fcw
     ttc_thrs = 2.5           # ttc threshold for fcw
-    v_fcw_min = 2.           # no fcw below 2m/s
+    v_fcw_min = 5.           # no fcw below 5m/s
     steer_angle_th = 40.     # deg, no fcw above this steer angle
     cur_time = sec_since_boot()
- 
+
     ttc = calc_ttc(AC.l1)
     a_fcw = a_acc_on if CS.cruiseState.enabled else a_acc_off
 
@@ -59,8 +59,8 @@ class ForwardCollisionWarning(object):
       self.violation_time = np.minimum(self.violation_time + self.dt, violation_thrs)
     else:
       self.violation_time = np.maximum(self.violation_time - 2*self.dt, 0)
- 
-    # fire FCW  
+
+    # fire FCW
     self.active = self.violation_time >= violation_thrs and cur_time > (self.last_active + fcw_t_delta)
     if self.active:
       self.last_active = cur_time

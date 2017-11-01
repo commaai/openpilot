@@ -4,7 +4,7 @@
 
 namespace {
 
-{% for address, msg_name, sigs in msgs %}
+{% for address, msg_name, msg_size, sigs in msgs %}
 const Signal sigs_{{address}}[] = {
   {% for sig in sigs %}
     {
@@ -20,6 +20,8 @@ const Signal sigs_{{address}}[] = {
       .type = SignalType::HONDA_CHECKSUM,
       {% elif checksum_type == "honda" and sig.name == "COUNTER" %}
       .type = SignalType::HONDA_COUNTER,
+      {% elif checksum_type == "toyota" and sig.name == "CHECKSUM" %}
+      .type = SignalType::TOYOTA_CHECKSUM,
       {% else %}
       .type = SignalType::DEFAULT,
       {% endif %}
@@ -29,11 +31,12 @@ const Signal sigs_{{address}}[] = {
 {% endfor %}
 
 const Msg msgs[] = {
-{% for address, msg_name, sigs in msgs %}
+{% for address, msg_name, msg_size, sigs in msgs %}
   {% set address_hex = "0x%X" % address %}
   {
     .name = "{{msg_name}}",
     .address = {{address_hex}},
+    .size = {{msg_size}},
     .num_sigs = ARRAYSIZE(sigs_{{address}}),
     .sigs = sigs_{{address}},
   },

@@ -11,18 +11,22 @@ _FINGERPRINTS = {
     # sent messages
     0xe4: 5, 0x1fa: 8, 0x200: 3, 0x30c: 8, 0x33d: 5, 0x35e: 8, 0x39f: 8,
   },
-  "HONDA ACCORD 2016 TOURING": {
-    1024L: 5, 929L: 8, 1027L: 5, 773L: 7, 1601L: 8, 777L: 8, 1036L: 8, 398L: 3, 1039L: 8, 401L: 8, 145L: 8, 1424L: 5, 660L: 8, 661L: 4, 918L: 7, 985L: 3, 923L: 2, 542L: 7, 927L: 8, 800L: 8, 545L: 4, 420L: 8, 422L: 8, 808L: 8, 426L: 8, 1029L: 8, 432L: 7, 57L: 3, 316L: 8, 829L: 5, 1600L: 5, 1089L: 8, 1057L: 5, 780L: 8, 1088L: 8, 464L: 8, 1108L: 8, 597L: 8, 342L: 6, 983L: 8, 344L: 8, 804L: 8, 476L: 4, 1296L: 3, 891L: 8, 1125L: 8, 487L: 4, 892L: 8, 490L: 8, 871L: 8, 1064L: 7, 882L: 2, 884L: 8, 506L: 8, 507L: 1, 380L: 8, 1365L: 5
-  },
   "HONDA CR-V 2016 TOURING": {
     57L: 3, 145L: 8, 316L: 8, 340L: 8, 342L: 6, 344L: 8, 380L: 8, 398L: 3, 399L: 6, 401L: 8, 420L: 8, 422L: 8, 426L: 8, 432L: 7, 464L: 8, 474L: 5, 476L: 4, 487L: 4, 490L: 8, 493L: 3, 507L: 1, 542L: 7, 545L: 4, 597L: 8, 660L: 8, 661L: 4, 773L: 7, 777L: 8, 800L: 8, 804L: 8, 808L: 8, 882L: 2, 884L: 7, 888L: 8, 891L: 8, 892L: 8, 923L: 2, 929L: 8, 983L: 8, 985L: 3, 1024L: 5, 1027L: 5, 1029L: 8, 1033L: 5, 1036L: 8, 1039L: 8, 1057L: 5, 1064L: 7, 1108L: 8, 1125L: 8, 1296L: 8, 1365L: 5, 1424L: 5, 1600L: 5, 1601L: 8,
     # sent messages
     0x194: 4, 0x1fa: 8, 0x30c: 8, 0x33d: 5,
   },
-  "TOYOTA PRIUS 2017": {
-    896L: 8, 832L: 8, 898L: 8, 899L: 8, 577L: 8, 528L: 8, 529L: 8, 530L: 8, 531L: 8, 532L: 8, 533L: 8, 534L: 8, 535L: 8, 536L: 8, 537L: 8, 538L: 8, 539L: 8, 540L: 8, 541L: 8, 542L: 8, 543L: 8, 544L: 8, 545L: 8, 546L: 8, 547L: 8, 548L: 8, 549L: 8, 550L: 8, 551L: 8, 296L: 6, 553L: 6, 554L: 6, 555L: 6, 556L: 6, 557L: 6, 558L: 6, 559L: 6, 560L: 7, 561L: 8, 562L: 8, 883L: 8, 837L: 8, 833L: 8, 576L: 8, 321L: 4, 834L: 8, 835L: 8, 580L: 8, 581L: 8, 897L: 8, 584L: 8, 1136L: 4, 976L: 8, 977L: 8, 978L: 8, 291L: 7, 881L: 8, 352L: 8, 353L: 7, 867L: 8, 868L: 8, 869L: 8, 1126L: 3, 304L: 7, 880L: 8, 552L: 6, 882L: 8, 979L: 8, 884L: 8, 885L: 8, 836L: 8
-  }
+  "TOYOTA RAV4 2017": {
+    36L: 8, 37L: 8, 170L: 8, 180L: 8, 186L: 4, 426L: 6, 452L: 8, 464L: 8, 466L: 8, 467L: 8, 547L: 8, 548L: 8, 552L: 4, 562L: 4, 608L: 8, 610L: 5, 643L: 7, 705L: 8, 725L: 2, 740L: 5, 800L: 8, 835L: 8, 836L: 8, 849L: 4, 869L: 7, 870L: 7, 871L: 2, 896L: 8, 897L: 8, 900L: 6, 902L: 6, 905L: 8, 911L: 8, 916L: 3, 918L: 7, 921L: 8, 933L: 8, 944L: 8, 945L: 8, 951L: 8, 955L: 4, 956L: 8, 979L: 2, 998L: 5, 999L: 7, 1000L: 8, 1001L: 8, 1008L: 2, 1014L: 8, 1017L: 8, 1041L: 8, 1042L: 8, 1043L: 8, 1044L: 8, 1056L: 8, 1059L: 1, 1114L: 8, 1161L: 8, 1162L: 8, 1163L: 8, 1176L: 8, 1177L: 8, 1178L: 8, 1179L: 8, 1180L: 8, 1181L: 8, 1190L: 8, 1191L: 8, 1192L: 8, 1196L: 8, 1227L: 8, 1228L: 8, 1235L: 8, 1237L: 8, 1263L: 8, 1279L: 8, 1408L: 8, 1409L: 8, 1410L: 8, 1552L: 8, 1553L: 8, 1554L: 8, 1555L: 8, 1556L: 8, 1557L: 8, 1561L: 8, 1562L: 8, 1568L: 8, 1569L: 8, 1570L: 8, 1571L: 8, 1572L: 8, 1584L: 8, 1589L: 8, 1592L: 8, 1593L: 8, 1595L: 8, 1596L: 8, 1597L: 8, 1600L: 8, 1656L: 8, 1664L: 8, 1728L: 8, 1745L: 8, 1779L: 8, 1904L: 8, 1912L: 8, 1990L: 8, 1998L: 8
+  },
 }
+
+# support additional internal only fingerprints
+try:
+  from common.fingerprints_internal import add_additional_fingerprints
+  add_additional_fingerprints(_FINGERPRINTS)
+except ImportError:
+  pass
 
 def eliminate_incompatible_cars(msg, candidate_cars):
   """Removes cars that could not have sent msg.
@@ -50,36 +54,3 @@ def all_known_cars():
   """Returns a list of all known car strings."""
   return _FINGERPRINTS.keys()
 
-# **** for use live only ****
-def fingerprint(logcan):
-  import selfdrive.messaging as messaging
-  from cereal import car
-  from common.realtime import sec_since_boot
-
-  if os.getenv("SIMULATOR") is not None or logcan is None:
-    return ("simulator", None)
-  elif os.getenv("SIMULATOR2") is not None:
-    return ("simulator2", None)
-
-  print "waiting for fingerprint..."
-  candidate_cars = all_known_cars()
-  finger = {}
-  st = None
-  while 1:
-    for a in messaging.drain_sock(logcan, wait_for_one=True):
-      if st is None:
-        st = sec_since_boot()
-      for can in a.can:
-        if can.src == 0:
-          finger[can.address] = len(can.dat)
-        candidate_cars = eliminate_incompatible_cars(can, candidate_cars)
-
-    # if we only have one car choice and it's been 100ms since we got our first message, exit
-    if len(candidate_cars) == 1 and st is not None and (sec_since_boot()-st) > 0.1:
-      break
-    elif len(candidate_cars) == 0:
-      print map(hex, finger.keys())
-      raise Exception("car doesn't match any fingerprints")
-
-  print "fingerprinted", candidate_cars[0]
-  return (candidate_cars[0], finger)
