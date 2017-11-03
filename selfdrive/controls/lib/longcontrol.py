@@ -131,7 +131,8 @@ class LongControl(object):
 
       self.pid.pos_limit = gas_max
       self.pid.neg_limit = - brake_max
-      output_gb = self.pid.update(self.v_pid, v_ego_pid, speed=v_ego_pid, jerk_factor=jerk_factor)
+      deadzone = interp(v_ego_pid, CP.longPidDeadzoneBP, CP.longPidDeadzoneV)
+      output_gb = self.pid.update(self.v_pid, v_ego_pid, speed=v_ego_pid, jerk_factor=jerk_factor, deadzone=deadzone)
 
     # intention is to stop, switch to a different brake control until we stop
     elif self.long_control_state == LongCtrlState.stopping:

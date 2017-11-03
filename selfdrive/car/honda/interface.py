@@ -185,6 +185,9 @@ class CarInterface(object):
     ret.brakeMaxBP = [5., 20.]  # m/s
     ret.brakeMaxV = [1., 0.8]   # max brake allowed
 
+    ret.longPidDeadzoneBP = [0.]
+    ret.longPidDeadzoneV = [0.]
+
     ret.steerLimitAlert = True
 
     return ret

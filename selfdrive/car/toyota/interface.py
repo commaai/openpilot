@@ -65,11 +65,11 @@ class CarInterface(object):
     ret.l = 2.70
     ret.aF = ret.l * 0.44
     ret.sR = 14.5 #Rav4 2017, TODO: find exact value for Prius
-    if candidate == CAR.PRIUS:
-      ret.steerKp, ret.steerKi = 0.2, 0.01
-    elif candidate == CAR.RAV4:  # rav4 control seem to be ok with integrators
-      ret.steerKp, ret.steerKi = 0.2, 0.05
-    ret.steerKf = 0.00007818594    # full torque for 10 deg at 80mph
+    ret.steerKp, ret.steerKi = 0.6, 0.05
+    ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
+
+    ret.longPidDeadzoneBP = [0., 9.]
+    ret.longPidDeadzoneV = [0., .15]
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter.

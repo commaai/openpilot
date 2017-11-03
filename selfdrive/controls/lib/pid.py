@@ -2,6 +2,15 @@ import numpy as np
 from common.numpy_fast import clip, interp
 import numbers
 
+def apply_deadzone(error, deadzone):
+  if error > deadzone:
+    error -= deadzone
+  elif error < - deadzone:
+    error += deadzone
+  else:
+    error = 0.
+  return error
+
 class PIController(object):
   def __init__(self, k_p, k_i, k_f=0., pos_limit=None, neg_limit=None, rate=100, sat_limit=0.8, convert=None):
     self._k_p = k_p # proportional gain
@@ -57,11 +66,11 @@ class PIController(object):
     self.saturated = False
     self.control = 0
 
-  def update(self, setpoint, measurement, speed=0.0, check_saturation=True, jerk_factor=0.0, override=False, feedforward=0.):
+  def update(self, setpoint, measurement, speed=0.0, check_saturation=True, jerk_factor=0.0, override=False, feedforward=0., deadzone=0.):
     self.speed = speed
     self.jerk_factor = jerk_factor
 
-    error = float(setpoint - measurement)
+    error = float(apply_deadzone(setpoint - measurement, deadzone))
     self.p = error * self.k_p
     f = feedforward * self.k_f
 
