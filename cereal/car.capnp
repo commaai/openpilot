@@ -262,6 +262,9 @@ struct CarParams {
   brakeMaxBP @24 :List(Float32);
   brakeMaxV @25 :List(Float32);
 
+  longPidDeadzoneBP @33 :List(Float32);
+  longPidDeadzoneV @34 :List(Float32);
+
   enum SafetyModels {
     # does NOT match board setting
     noOutput @0;
@@ -289,6 +292,9 @@ struct CarParams {
   steerKf @26 :Float32;
 
   steerLimitAlert @30 :Bool;
+
+  vEgoStopping @31 :Float32; # Speed at which the car goes into stopping state
+  directAccelControl @32 :Bool; # Does the car have direct accel control or just gas/brake
 
   # TODO: Kp and Ki for long control, perhaps not needed?
 }

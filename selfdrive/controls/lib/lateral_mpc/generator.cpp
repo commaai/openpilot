@@ -79,7 +79,7 @@ int main( )
 
   Q(3,3) = 1.0;
 
-  Q(4,4) = 0.5;
+  Q(4,4) = 2.0;
 
   // Terminal cost
   Function hN;
