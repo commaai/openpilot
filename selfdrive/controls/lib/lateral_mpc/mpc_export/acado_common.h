@@ -82,7 +82,7 @@ extern "C"
 /** Total number of QP optimization variables. */
 #define ACADO_QP_NV 54
 /** Number of integration steps per shooting interval. */
-#define ACADO_RK_NIS 5
+#define ACADO_RK_NIS 1
 /** Number of Runge-Kutta stages per integration step. */
 #define ACADO_RK_NSTAGES 4
 /** Providing interface for arrival cost. */

@@ -213,22 +213,22 @@ tmpQ2[0] = + tmpFx[0];
 tmpQ2[1] = + tmpFx[4];
 tmpQ2[2] = + tmpFx[8];
 tmpQ2[3] = + tmpFx[12];
-tmpQ2[4] = + tmpFx[16];
+tmpQ2[4] = + tmpFx[16]*(real_t)5.0000000000000000e-01;
 tmpQ2[5] = + tmpFx[1];
 tmpQ2[6] = + tmpFx[5];
 tmpQ2[7] = + tmpFx[9];
 tmpQ2[8] = + tmpFx[13];
-tmpQ2[9] = + tmpFx[17];
+tmpQ2[9] = + tmpFx[17]*(real_t)5.0000000000000000e-01;
 tmpQ2[10] = + tmpFx[2];
 tmpQ2[11] = + tmpFx[6];
 tmpQ2[12] = + tmpFx[10];
 tmpQ2[13] = + tmpFx[14];
-tmpQ2[14] = + tmpFx[18];
+tmpQ2[14] = + tmpFx[18]*(real_t)5.0000000000000000e-01;
 tmpQ2[15] = + tmpFx[3];
 tmpQ2[16] = + tmpFx[7];
 tmpQ2[17] = + tmpFx[11];
 tmpQ2[18] = + tmpFx[15];
-tmpQ2[19] = + tmpFx[19];
+tmpQ2[19] = + tmpFx[19]*(real_t)5.0000000000000000e-01;
 tmpQ1[0] = + tmpQ2[0]*tmpFx[0] + tmpQ2[1]*tmpFx[4] + tmpQ2[2]*tmpFx[8] + tmpQ2[3]*tmpFx[12] + tmpQ2[4]*tmpFx[16];
 tmpQ1[1] = + tmpQ2[0]*tmpFx[1] + tmpQ2[1]*tmpFx[5] + tmpQ2[2]*tmpFx[9] + tmpQ2[3]*tmpFx[13] + tmpQ2[4]*tmpFx[17];
 tmpQ1[2] = + tmpQ2[0]*tmpFx[2] + tmpQ2[1]*tmpFx[6] + tmpQ2[2]*tmpFx[10] + tmpQ2[3]*tmpFx[14] + tmpQ2[4]*tmpFx[18];
@@ -253,7 +253,7 @@ tmpR2[0] = + tmpFu[0];
 tmpR2[1] = + tmpFu[1];
 tmpR2[2] = + tmpFu[2];
 tmpR2[3] = + tmpFu[3];
-tmpR2[4] = + tmpFu[4];
+tmpR2[4] = + tmpFu[4]*(real_t)5.0000000000000000e-01;
 tmpR1[0] = + tmpR2[0]*tmpFu[0] + tmpR2[1]*tmpFu[1] + tmpR2[2]*tmpFu[2] + tmpR2[3]*tmpFu[3] + tmpR2[4]*tmpFu[4];
 }
 
@@ -1965,7 +1965,7 @@ tmpDy[0] = + acadoWorkspace.Dy[lRun1 * 5];
 tmpDy[1] = + acadoWorkspace.Dy[lRun1 * 5 + 1];
 tmpDy[2] = + acadoWorkspace.Dy[lRun1 * 5 + 2];
 tmpDy[3] = + acadoWorkspace.Dy[lRun1 * 5 + 3];
-tmpDy[4] = + acadoWorkspace.Dy[lRun1 * 5 + 4];
+tmpDy[4] = + acadoWorkspace.Dy[lRun1 * 5 + 4]*(real_t)5.0000000000000000e-01;
 objVal += + acadoWorkspace.Dy[lRun1 * 5]*tmpDy[0] + acadoWorkspace.Dy[lRun1 * 5 + 1]*tmpDy[1] + acadoWorkspace.Dy[lRun1 * 5 + 2]*tmpDy[2] + acadoWorkspace.Dy[lRun1 * 5 + 3]*tmpDy[3] + acadoWorkspace.Dy[lRun1 * 5 + 4]*tmpDy[4];
 }
 

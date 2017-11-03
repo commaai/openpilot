@@ -51,7 +51,7 @@ class ImageParams:
     self.VPY = self.VPY_R + to_int(shift[1])  # current vanishing point with shift
 
 class UIParams:
-  lidar_x, lidar_y, lidar_zoom = 384, 960, 8
+  lidar_x, lidar_y, lidar_zoom = 384, 960, 6
   lidar_car_x, lidar_car_y = lidar_x/2., lidar_y/1.1
   car_hwidth = 1.7272/2 * lidar_zoom
   car_front = 2.6924 * lidar_zoom

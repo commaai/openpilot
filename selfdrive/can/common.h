@@ -38,6 +38,7 @@ enum SignalType {
   DEFAULT,
   HONDA_CHECKSUM,
   HONDA_COUNTER,
+  TOYOTA_CHECKSUM,
 };
 
 struct Signal {
@@ -51,6 +52,7 @@ struct Signal {
 struct Msg {
   const char* name;
   uint32_t address;
+  unsigned int size;
   size_t num_sigs;
   const Signal *sigs;
 };

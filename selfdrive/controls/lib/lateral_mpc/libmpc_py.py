@@ -4,7 +4,6 @@ import subprocess
 from cffi import FFI
 
 mpc_dir = os.path.dirname(os.path.abspath(__file__))
-
 libmpc_fn = os.path.join(mpc_dir, "libcommampc.so")
 subprocess.check_output(["make", "-j4"], cwd=mpc_dir)
 
@@ -22,7 +21,7 @@ typedef struct {
 } log_t;
 
 void init();
-void run_mpc(state_t * x0, log_t * solution,
+int run_mpc(state_t * x0, log_t * solution,
              double l_poly[4], double r_poly[4], double p_poly[4],
              double l_prob, double r_prob, double p_prob, double curvature_factor, double v_ref, double lane_width);
 """)

@@ -5,7 +5,6 @@ from copy import copy
 import zmq
 from cereal import car, log
 from common.numpy_fast import clip
-from common.fingerprints import fingerprint
 from common.realtime import sec_since_boot, set_realtime_priority, Ratekeeper
 from common.profiler import Profiler
 from common.params import Params
@@ -42,10 +41,10 @@ class Calibration:
 
 
 class State:
-  DISABLED = 0
-  ENABLED = 1
-  PRE_ENABLED = 2
-  SOFT_DISABLING = 3
+  DISABLED = 'disabled'
+  ENABLED = 'enabled'
+  PRE_ENABLED = 'preEnabled'
+  SOFT_DISABLING = 'softDisabling'
 
 
 # True when actuators are controlled
@@ -280,7 +279,7 @@ def state_control(plan, CS, CP, state, events, v_cruise_kph, AM, rk, awareness_s
                                       CS.steeringPressed)
 
   # *** gas/brake PID loop ***
-  actuators.gas, actuators.brake = LoC.update(active, CS.vEgo, CS.brakePressed,
+  actuators.gas, actuators.brake = LoC.update(active, CS.vEgo, CS.brakePressed, CS.standstill,
                                               v_cruise_kph, plan.vTarget,
                                               [plan.aTargetMin, plan.aTargetMax],
                                               plan.jerkFactor, CP)
@@ -290,7 +289,7 @@ def state_control(plan, CS, CP, state, events, v_cruise_kph, AM, rk, awareness_s
                                CS.steeringPressed, plan.dPoly, angle_offset, VM, PL)
 
   # send a "steering required alert" if saturation count has reached the limit
-  if LaC.sat_flag:
+  if LaC.sat_flag and CP.steerLimitAlert:
     AM.add("steerSaturated", enabled)
 
   if CP.enableCruise and CS.cruiseState.enabled:
@@ -305,38 +304,40 @@ def state_control(plan, CS, CP, state, events, v_cruise_kph, AM, rk, awareness_s
 
 def data_send(plan, plan_ts, CS, CI, CP, state, events, actuators, v_cruise_kph, rk, carstate,
               carcontrol, live100, livempc, AM, rear_view_allowed, rear_view_toggle, awareness_status,
-              LaC, LoC, angle_offset):
+              LaC, LoC, angle_offset, passive):
 
   # ***** control the car *****
 
   CC = car.CarControl.new_message()
 
-  CC.enabled = isEnabled(state)
+  if not passive:
 
-  CC.actuators = actuators
+    CC.enabled = isEnabled(state)
 
-  CC.cruiseControl.override = True
-  # always cancel if we have an interceptor
-  CC.cruiseControl.cancel = not CP.enableCruise or (not isEnabled(state) and CS.cruiseState.enabled)
+    CC.actuators = actuators
 
-  # brake discount removes a sharp nonlinearity
-  brake_discount = (1.0 - clip(actuators.brake*3., 0.0, 1.0))
-  CC.cruiseControl.speedOverride = float(max(0.0, (LoC.v_pid + CS.cruiseState.speedOffset) * brake_discount) if CP.enableCruise else 0.0)
+    CC.cruiseControl.override = True
+    # always cancel if we have an interceptor
+    CC.cruiseControl.cancel = not CP.enableCruise or (not isEnabled(state) and CS.cruiseState.enabled)
 
-  # TODO: parametrize 0.714 in interface?
-  # accelOverride is more or less the max throttle allowed to pcm: usually set to a constant
-  # unless aTargetMax is very high and then we scale with it; this helpw in quicker restart
-  CC.cruiseControl.accelOverride = float(max(0.714, plan.aTargetMax/A_ACC_MAX))
+    # brake discount removes a sharp nonlinearity
+    brake_discount = (1.0 - clip(actuators.brake*3., 0.0, 1.0))
+    CC.cruiseControl.speedOverride = float(max(0.0, (LoC.v_pid + CS.cruiseState.speedOffset) * brake_discount) if CP.enableCruise else 0.0)
 
-  CC.hudControl.setSpeed = float(v_cruise_kph * CV.KPH_TO_MS)
-  CC.hudControl.speedVisible = isEnabled(state)
-  CC.hudControl.lanesVisible = isEnabled(state)
-  CC.hudControl.leadVisible = plan.hasLead
-  CC.hudControl.visualAlert = AM.visual_alert
-  CC.hudControl.audibleAlert = AM.audible_alert
+    # TODO: parametrize 0.714 in interface?
+    # accelOverride is more or less the max throttle allowed to pcm: usually set to a constant
+    # unless aTargetMax is very high and then we scale with it; this helpw in quicker restart
+    CC.cruiseControl.accelOverride = float(max(0.714, plan.aTargetMax/A_ACC_MAX))
 
-  # send car controls over can
-  CI.apply(CC)
+    CC.hudControl.setSpeed = float(v_cruise_kph * CV.KPH_TO_MS)
+    CC.hudControl.speedVisible = isEnabled(state)
+    CC.hudControl.lanesVisible = isEnabled(state)
+    CC.hudControl.leadVisible = plan.hasLead
+    CC.hudControl.visualAlert = AM.visual_alert
+    CC.hudControl.audibleAlert = AM.audible_alert
+
+    # send car controls over can
+    CI.apply(CC)
 
   # ***** publish state to logger *****
   # publish controls state at 100Hz
@@ -358,10 +359,15 @@ def data_send(plan, plan_ts, CS, CI, CP, state, events, actuators, v_cruise_kph,
 
   # car state
   dat.live100.vEgo = CS.vEgo
+  dat.live100.vEgoRaw = CS.vEgoRaw
   dat.live100.angleSteers = CS.steeringAngle
   dat.live100.steerOverride = CS.steeringPressed
 
+  # high level control state
+  dat.live100.state = state
+
   # longitudinal control state
+  dat.live100.longControlState = LoC.long_control_state
   dat.live100.vPid = float(LoC.v_pid)
   dat.live100.vCruise = float(v_cruise_kph)
   dat.live100.upAccelCmd = float(LoC.pid.p)
@@ -420,12 +426,19 @@ def controlsd_thread(gctx, rate=100):
 
   context = zmq.Context()
 
+  params = Params()
+
   # pub
   live100 = messaging.pub_sock(context, service_list['live100'].port)
   carstate = messaging.pub_sock(context, service_list['carState'].port)
   carcontrol = messaging.pub_sock(context, service_list['carControl'].port)
-  sendcan = messaging.pub_sock(context, service_list['sendcan'].port)
   livempc = messaging.pub_sock(context, service_list['liveMpc'].port)
+
+  passive = params.get("Passive") != "0"
+  if not passive:
+    sendcan = messaging.pub_sock(context, service_list['sendcan'].port)
+  else:
+    sendcan = None
 
   # sub
   thermal = messaging.sub_sock(context, service_list['thermal'].port)
@@ -434,15 +447,28 @@ def controlsd_thread(gctx, rate=100):
   logcan = messaging.sub_sock(context, service_list['can'].port)
 
   CC = car.CarControl.new_message()
-  CI, CP = get_car(logcan, sendcan)
+
+  CI, CP = get_car(logcan, sendcan, 1.0 if passive else None)
+
+  if CI is None:
+    if passive:
+      return
+    else:
+      raise Exception("unsupported car")
+
+  if passive:
+    CP.safetyModel = car.CarParams.SafetyModels.noOutput
+
   PL = Planner(CP)
   LoC = LongControl(CI.compute_gb)
   VM = VehicleModel(CP)
   LaC = LatControl(VM)
   AM = AlertManager()
 
+  if not passive:
+    AM.add("startup", False)
+
   # write CarParams
-  params = Params()
   params.put("CarParams", CP.to_bytes())
 
   state = State.DISABLED
@@ -484,9 +510,10 @@ def controlsd_thread(gctx, rate=100):
     plan, plan_ts = calc_plan(CS, events, PL, LoC)
     prof.checkpoint("Plan")
 
-    # update control state
-    state, soft_disable_timer, v_cruise_kph = state_transition(CS, CP, state, events, soft_disable_timer, v_cruise_kph, AM)
-    prof.checkpoint("State transition")
+    if not passive:
+      # update control state
+      state, soft_disable_timer, v_cruise_kph = state_transition(CS, CP, state, events, soft_disable_timer, v_cruise_kph, AM)
+      prof.checkpoint("State transition")
 
     # compute actuators
     actuators, v_cruise_kph, awareness_status, angle_offset, rear_view_toggle = state_control(plan, CS, CP, state, events, v_cruise_kph,
@@ -497,7 +524,7 @@ def controlsd_thread(gctx, rate=100):
     # publish data
     CC = data_send(plan, plan_ts, CS, CI, CP, state, events, actuators, v_cruise_kph,
                    rk, carstate, carcontrol, live100, livempc, AM, rear_view_allowed,
-                   rear_view_toggle, awareness_status, LaC, LoC, angle_offset)
+                   rear_view_toggle, awareness_status, LaC, LoC, angle_offset, passive)
     prof.checkpoint("Sent")
 
     # *** run loop at fixed rate ***
