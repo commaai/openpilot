@@ -21,10 +21,10 @@ from selfdrive.car.honda.interface import CarInterface
 
 from cereal import car
 from common.dbc import dbc
-acura = dbc(os.path.join(DBC_PATH, "acura_ilx_2016_can.dbc"))
+honda = dbc(os.path.join(DBC_PATH, "honda_civic_touring_2016_can.dbc"))
 
 # Trick: set 0x201 (interceptor) in fingerprints for gas is controlled like if there was an interceptor
-CP = CarInterface.get_params("ACURA ILX 2016 ACURAWATCH PLUS", {0x201})
+CP = CarInterface.get_params("HONDA CIVIC 2016 TOURING", {0x201})
 
 
 def car_plant(pos, speed, grade, gas, brake):
@@ -41,7 +41,7 @@ def car_plant(pos, speed, grade, gas, brake):
   frontal_area = 2.2
   air_density = 1.225
   gas_to_peak_linear_slope = 3.33
-  brake_to_peak_linear_slope = 0.2
+  brake_to_peak_linear_slope = 0.3
   creep_accel_v = [1., 0.]
   creep_accel_bp = [0., 1.5]
 
@@ -66,7 +66,7 @@ def car_plant(pos, speed, grade, gas, brake):
   return speed, acceleration
 
 def get_car_can_parser():
-  dbc_f = 'acura_ilx_2016_can.dbc'
+  dbc_f = 'honda_civic_touring_2016_can.dbc'
   signals = [
     ("STEER_TORQUE", 0xe4, 0),
     ("STEER_TORQUE_REQUEST", 0xe4, 0),
@@ -92,7 +92,7 @@ class Plant(object):
 
   def __init__(self, lead_relevancy=False, rate=100, speed=0.0, distance_lead=2.0):
     self.rate = rate
-    self.civic = False
+    self.civic = True
     self.brake_only = False
 
     if not Plant.messaging_initialized:
@@ -113,10 +113,11 @@ class Plant(object):
     self.user_gas = 0
     self.computer_brake,self.user_brake = 0,0
     self.brake_pressed = 0
+    self.angle_steer_rate = 0
     self.distance, self.distance_prev = 0., 0.
     self.speed, self.speed_prev = speed, speed
     self.steer_error, self.brake_error, self.steer_not_allowed = 0, 0, 0
-    self.gear_shifter = 4   # D gear
+    self.gear_shifter = 8   # D gear
     self.pedal_gas = 0
     self.cruise_setting = 0
 
@@ -211,7 +212,7 @@ class Plant(object):
 
     # ******** publish the car ********
     vls = [self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed),
-           self.angle_steer, 0, self.gear_choice, speed!=0,
+           self.angle_steer, self.angle_steer_rate, 0, self.gear_choice, speed!=0,
            0, 0, 0, 0,
            self.v_cruise, not self.seatbelt, self.seatbelt, self.brake_pressed, 0.,
            self.user_gas, cruise_buttons, self.esp_disabled, 0,
@@ -219,7 +220,7 @@ class Plant(object):
            self.brake_error, self.gear_shifter, self.main_on, self.acc_status,
            self.pedal_gas, self.cruise_setting,
            # append one more zero for gas interceptor
-           0,0,0,0]
+           0,0,0,0,0,0]
 
     # TODO: publish each message at proper frequency
     can_msgs = []
@@ -228,25 +229,27 @@ class Plant(object):
       indxs = [i for i, x in enumerate(msgs) if msg == msgs[i]]
       for i in indxs:
         msg_struct[sgs[i]] = vls[i]
-      if msg in cks_msgs:
+
+      if "COUNTER" in honda.get_signals(msg):
         msg_struct["COUNTER"] = self.rk.frame % 4
 
-      msg_data = acura.encode(msg, msg_struct)
+      msg_data = honda.encode(msg, msg_struct)
 
-      if msg in cks_msgs:
+      if "CHECKSUM" in honda.get_signals(msg):
         msg_data = fix(msg_data, msg)
 
       can_msgs.append([msg, 0, msg_data, 0])
 
     # add the radar message
     # TODO: use the DBC
-    radar_state_msg = '\x79\x00\x00\x00\x00\x00\x00\x00'
-    radar_msg = to_3_byte(d_rel*16.0) + \
-                to_3_byte(int(lateral_pos_rel*16.0)&0x3ff) + \
-                to_3s_byte(int(v_rel*32.0)) + \
-                "0f00000"
-    can_msgs.append([0x400, 0, radar_state_msg, 1])
-    can_msgs.append([0x445, 0, radar_msg.decode("hex"), 1])
+    if self.rk.frame % 5 == 0:
+      radar_state_msg = '\x79\x00\x00\x00\x00\x00\x00\x00'
+      radar_msg = to_3_byte(d_rel*16.0) + \
+                  to_3_byte(int(lateral_pos_rel*16.0)&0x3ff) + \
+                  to_3s_byte(int(v_rel*32.0)) + \
+                  "0f00000"
+      can_msgs.append([0x400, 0, radar_state_msg, 1])
+      can_msgs.append([0x445, 0, radar_msg.decode("hex"), 1])
     Plant.logcan.send(can_list_to_can_capnp(can_msgs).to_bytes())
 
     # ******** publish a fake model going straight and fake calibration ********

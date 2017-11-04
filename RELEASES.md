@@ -1,3 +1,10 @@
+Version 0.3.8.2 (2017-10-30)
+==========================
+ * Add alpha support for 2017 Toyota RAV4
+ * Smoother lateral control
+ * Stay silent if stock system is connected through giraffe
+ * Minor bug fixes
+
 Version 0.3.7 (2017-09-30)
 ==========================
  * Improved lateral control using model predictive control
