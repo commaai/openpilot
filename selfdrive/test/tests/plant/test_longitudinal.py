@@ -157,6 +157,18 @@ maneuvers = [
                             (CB.RES_ACCEL, 1.6), (0.0, 1.7)]
   ),
   Maneuver(
+    "stop and go with 1.5m/s2 lead accel and 3.3m/s^2 lead decel, with full stops",
+    duration=45.,
+    initial_speed=0.,
+    lead_relevancy=True,
+    initial_distance_lead=20.,
+    speed_lead_values=[10., 0., 0., 10., 0., 0.] ,
+    speed_lead_breakpoints=[10., 13., 26., 33., 36., 45.],
+    cruise_button_presses = [(CB.DECEL_SET, 1.2), (0, 1.3),
+                            (CB.RES_ACCEL, 1.4), (0.0, 1.5),
+                            (CB.RES_ACCEL, 1.6), (0.0, 1.7)]
+  ),
+  Maneuver(
     "accelerate from 20 while lead vehicle decelerates from 40 to 20 at 1m/s2",
     duration=30.,
     initial_speed=10.,

@@ -30,21 +30,25 @@ Supported Cars
   - Can only be enabled above 25 mph
 
 - Toyota RAV-4 2016+ with TSS-P (alpha!)
-  - Can only be enabled above 20 mph
+  - By default it uses stock Toyota ACC for longitudinal control
+  - openpilot longitudinal control available after unplugging the Driving Support ECU and can be enabled above 20 mph
+
+- Toyota Prius 2017 (alpha!)
+  - By default it uses stock Toyota ACC for longitudinal control
+  - openpilot longitudinal control available after unplugging the Driving Support ECU
 
 In Progress Cars
 ------
+- Probably all TSS-P Toyota with Steering Assist.
+  - 'Full Speed Range Dynamic Radar Cruise Control' is required to enable stop-and-go. Only the Prius, Camry and C-HR have this option.
+  - Even though the Tundra, Sequoia and the Land Cruiser have TSS-P, they don't have Steering Assist and are not supported.
 
-- Toyota Prius 2017
-
-- Probably all TSS-P Toyota
-
-Community Ported Cars
+Community WIP Cars
 ------
 
-- Chevy Volt 2016-2018 Premier with Driver Confidence II
+- [Chevy Volt 2016-2018 Premier with Driver Confidence II](https://github.com/commaai/openpilot/pull/104)
 
-- Classic Tesla Model S (pre-AP)
+- [Classic Tesla Model S (pre-AP)](https://github.com/commaai/openpilot/pull/145)
 
 Directory structure
 ------
@@ -98,7 +102,7 @@ User Data / chffr Account / Crash Reporting
 
 By default openpilot creates an account and includes a client for chffr, our dashcam app. We use your data to train better models and improve openpilot for everyone.
 
-It's open source software, so you are free to disable it if you wish. 
+It's open source software, so you are free to disable it if you wish.
 
 It logs the road facing camera, CAN, GPS, IMU, magnetometer, thermal sensors, crashes, and operating system logs.
 It does not log the user facing camera or the microphone.

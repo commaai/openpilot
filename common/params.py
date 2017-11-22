@@ -56,6 +56,7 @@ keys = {
 # read:    ui, controls
   "IsMetric": TxType.PERSISTANT,
   "IsRearViewMirror": TxType.PERSISTANT,
+  "IsFcwEnabled": TxType.PERSISTANT,
 # written: visiond
 # read:    visiond, controlsd
   "CalibrationParams": TxType.PERSISTANT,

@@ -143,7 +143,7 @@ class dbc(object):
     msg = self.msgs.get(x[0])
     if msg is None:
       if x[0] not in self._warned_addresses:
-        print("WARNING: Unknown message address {}".format(x[0]))
+        #print("WARNING: Unknown message address {}".format(x[0]))
         self._warned_addresses.add(x[0])
       return None, None
 

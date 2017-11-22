@@ -79,8 +79,9 @@ def radard_thread(gctx=None):
   tsv = 1./rate
   v_len = 20         # how many speed data points to remember for t alignment with rdr data
 
-  enabled = 0
+  active = 0
   steer_angle = 0.
+  steer_override = False
 
   tracks = defaultdict(dict)
 
@@ -104,9 +105,10 @@ def radard_thread(gctx=None):
     # receive the live100s
     l100 = messaging.recv_sock(live100)
     if l100 is not None:
-      enabled = l100.live100.enabled
+      active = l100.live100.active
       v_ego = l100.live100.vEgo
       steer_angle = l100.live100.angleSteers
+      steer_override = l100.live100.steerOverride
 
       v_ego_array = np.append(v_ego_array, [[v_ego], [float(rk.frame)/rate]], 1)
       v_ego_array = v_ego_array[:, 1:]
@@ -137,7 +139,7 @@ def radard_thread(gctx=None):
         del ar_pts[VISION_POINT]
 
     # *** compute the likely path_y ***
-    if enabled:    # use path from model path_poly
+    if active and not steer_override:    # use path from model path_poly
       path_y = np.polyval(PP.d_poly, path_x)
     else:          # use path from steer, set angle_offset to 0 since calibration does not exactly report the physical offset
       path_y = calc_lookahead_offset(v_ego, steer_angle, path_x, VM, angle_offset=0)[0]

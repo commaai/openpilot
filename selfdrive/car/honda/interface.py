@@ -2,23 +2,34 @@
 import os
 import time
 import numpy as np
-from common.numpy_fast import clip
+from common.numpy_fast import clip, interp
 from common.realtime import sec_since_boot
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET, get_events
 from cereal import car
 from selfdrive.services import service_list
 import selfdrive.messaging as messaging
-from selfdrive.car.honda.carstate import CarState
+from selfdrive.car.honda.carstate import CarState, get_can_parser
 from selfdrive.car.honda.carcontroller import CAMERA_MSGS
 from selfdrive.car.honda.values import CruiseButtons, CM, BP, AH
+from selfdrive.controls.lib.planner import A_ACC_MAX
 
 try:
   from .carcontroller import CarController
 except ImportError:
   CarController = None
 
-def get_compute_gb():
+
+def compute_gb_honda(accel, speed):
+  creep_brake = 0.0
+  creep_speed = 2.3
+  creep_brake_value = 0.15
+  if speed < creep_speed:
+    creep_brake = (creep_speed - speed) / creep_speed * creep_brake_value
+  return float(accel) / 4.8 - creep_brake
+
+
+def get_compute_gb_acura():
   # generate a function that takes in [desired_accel, current_speed] -> [-1.0, 1.0]
   # where -1.0 is max brake and 1.0 is max gas
   # see debug/dump_accel_from_fiber.py to see how those parameters were generated
@@ -45,8 +56,8 @@ def get_compute_gb():
   def leakyrelu(x, alpha):
     return np.maximum(x, alpha * x)
 
-  def _compute_gb(accel, speed):
-    #linearly extrap below v1 using v1 and v2 data
+  def _compute_gb_acura(accel, speed):
+    # linearly extrap below v1 using v1 and v2 data
     v1 = 5.
     v2 = 10.
     dat = np.array([accel, speed])
@@ -60,12 +71,11 @@ def get_compute_gb():
       m4 = (speed - v1) * (m4v2 - m4v1) / (v2 - v1) + m4v1
     return float(m4)
 
-  return _compute_gb
+  return _compute_gb_acura
 
 
 class CarInterface(object):
-  def __init__(self, CP, logcan, sendcan=None):
-    self.logcan = logcan
+  def __init__(self, CP, sendcan=None):
     self.CP = CP
 
     self.frame = 0
@@ -75,8 +85,10 @@ class CarInterface(object):
     self.brake_pressed_prev = False
     self.can_invalid_count = 0
 
+    self.cp = get_can_parser(CP)
+
     # *** init the major players ***
-    self.CS = CarState(CP, self.logcan)
+    self.CS = CarState(CP)
 
     # sending if read only is False
     if sendcan is not None:
@@ -86,6 +98,25 @@ class CarInterface(object):
     if self.CS.accord:
       # self.accord_msg = []
       raise NotImplementedError
+
+    if not self.CS.civic:
+      self.compute_gb = get_compute_gb_acura()
+    else:
+      self.compute_gb = compute_gb_honda
+
+  @staticmethod
+  def calc_accel_override(a_ego, a_target, v_ego, v_target):
+    eA = a_ego - a_target
+    valuesA = [1.0, 0.1]
+    bpA = [0.0, 0.5]
+
+    eV = v_ego - v_target
+    valuesV = [1.0, 0.1]
+    bpV = [0.0, 0.5]
+
+    # accelOverride is more or less the max throttle allowed to pcm: usually set to a constant
+    # unless aTargetMax is very high and then we scale with it; this help in quicker restart
+    return float(max(0.714, a_target / A_ACC_MAX)) * min(interp(eA, bpA, valuesA), interp(eV, bpV, valuesV))
 
   @staticmethod
   def get_params(candidate, fingerprint):
@@ -130,6 +161,11 @@ class CarInterface(object):
       # Civic at comma has modified steering FW, so different tuning for the Neo in that car
       is_fw_modified = os.getenv("DONGLE_ID") in ['b0f5a01cf604185c']
       ret.steerKp, ret.steerKi = [0.4, 0.12] if is_fw_modified else [0.8, 0.24]
+
+      ret.longitudinalKpBP = [0., 5., 35.]
+      ret.longitudinalKpV = [3.6, 2.4, 1.5]
+      ret.longitudinalKiBP = [0., 35.]
+      ret.longitudinalKiV = [0.54, 0.36]
     elif candidate == "ACURA ILX 2016 ACURAWATCH PLUS":
       stop_and_go = False
       ret.m = 3095./2.205 + std_cargo
@@ -139,6 +175,11 @@ class CarInterface(object):
       # Acura at comma has modified steering FW, so different tuning for the Neo in that car
       is_fw_modified = os.getenv("DONGLE_ID") in ['cb38263377b873ee']
       ret.steerKp, ret.steerKi = [0.4, 0.12] if is_fw_modified else [0.8, 0.24]
+
+      ret.longitudinalKpBP = [0., 5., 35.]
+      ret.longitudinalKpV = [1.2, 0.8, 0.5]
+      ret.longitudinalKiBP = [0., 35.]
+      ret.longitudinalKiV = [0.18, 0.12]
     elif candidate == "HONDA ACCORD 2016 TOURING":
       stop_and_go = False
       ret.m = 3580./2.205 + std_cargo
@@ -146,6 +187,11 @@ class CarInterface(object):
       ret.aF = ret.l * 0.38
       ret.sR = 15.3
       ret.steerKp, ret.steerKi = 0.8, 0.24
+
+      ret.longitudinalKpBP = [0., 5., 35.]
+      ret.longitudinalKpV = [1.2, 0.8, 0.5]
+      ret.longitudinalKiBP = [0., 35.]
+      ret.longitudinalKiV = [0.18, 0.12]
     elif candidate == "HONDA CR-V 2016 TOURING":
       stop_and_go = False
       ret.m = 3572./2.205 + std_cargo
@@ -153,6 +199,11 @@ class CarInterface(object):
       ret.aF = ret.l * 0.41
       ret.sR = 15.3
       ret.steerKp, ret.steerKi = 0.8, 0.24
+
+      ret.longitudinalKpBP = [0., 5., 35.]
+      ret.longitudinalKpV = [1.2, 0.8, 0.5]
+      ret.longitudinalKiBP = [0., 35.]
+      ret.longitudinalKiV = [0.18, 0.12]
     else:
       raise ValueError("unsupported car %s" % candidate)
 
@@ -188,19 +239,20 @@ class CarInterface(object):
     ret.longPidDeadzoneBP = [0.]
     ret.longPidDeadzoneV = [0.]
 
+    ret.stoppingControl = True
     ret.steerLimitAlert = True
+    ret.startAccel = 0.5
 
     return ret
-
-  compute_gb = staticmethod(get_compute_gb())
 
   # returns a car.CarState
   def update(self, c):
     # ******************* do can recv *******************
-    can_pub_main = []
     canMonoTimes = []
 
-    self.CS.update(can_pub_main)
+    self.cp.update(int(sec_since_boot() * 1e9), False)
+
+    self.CS.update(self.cp)
 
     # create message
     ret = car.CarState.new_message()
@@ -225,6 +277,10 @@ class CarInterface(object):
     # brake pedal
     ret.brake = self.CS.user_brake
     ret.brakePressed = self.CS.brake_pressed != 0
+    # FIXME: read sendcan for brakelights
+    brakelights_threshold = 0.02 if self.CS.civic else 0.1
+    ret.brakeLights = bool(self.CS.brake_switch or
+                           c.actuators.brake > brakelights_threshold)
 
     # steering wheel
     ret.steeringAngle = self.CS.angle_steers
@@ -233,7 +289,7 @@ class CarInterface(object):
     # gear shifter lever
     ret.gearShifter = self.CS.gear_shifter
 
-    ret.steeringTorque = self.CS.cp.vl[0x18F]['STEER_TORQUE_SENSOR']
+    ret.steeringTorque = self.CS.steer_torque_driver
     ret.steeringPressed = self.CS.steer_override
 
     # cruise state
@@ -241,9 +297,12 @@ class CarInterface(object):
     ret.cruiseState.speed = self.CS.v_cruise_pcm * CV.KPH_TO_MS
     ret.cruiseState.available = bool(self.CS.main_on)
     ret.cruiseState.speedOffset = self.CS.cruise_speed_offset
+    ret.cruiseState.standstill = False
 
     # TODO: button presses
     buttonEvents = []
+    ret.leftBlinker = bool(self.CS.left_blinker_on)
+    ret.rightBlinker = bool(self.CS.right_blinker_on)
 
     if self.CS.left_blinker_on != self.CS.prev_left_blinker_on:
       be = car.CarState.ButtonEvent.new_message()
@@ -332,16 +391,16 @@ class CarInterface(object):
        (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001)):
       events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
 
-    #if (ret.brakePressed and ret.vEgo < 0.001) or ret.gasPressed:
     if ret.gasPressed:
       events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
 
     # it can happen that car cruise disables while comma system is enabled: need to
     # keep braking if needed or if the speed is very low
     # TODO: for the Acura, cancellation below 25mph is normal. Issue a non loud alert
-    if self.CP.enableCruise and not ret.cruiseState.enabled and \
-       (c.actuators.brake <= 0. or ret.vEgo < 0.3):
+    if self.CP.enableCruise and not ret.cruiseState.enabled and c.actuators.brake <= 0.:
       events.append(create_event("cruiseDisabled", [ET.IMMEDIATE_DISABLE]))
+    if not self.CS.civic and ret.vEgo < 0.001:
+      events.append(create_event('manualRestart', [ET.WARNING]))
 
     cur_time = sec_since_boot()
     enable_pressed = False
@@ -380,14 +439,11 @@ class CarInterface(object):
     self.brake_pressed_prev = ret.brakePressed
 
     # cast to reader so it can't be modified
-    #print ret
     return ret.as_reader()
 
   # pass in a car.CarControl
   # to be called @ 100hz
   def apply(self, c):
-    #print c
-
     if c.hudControl.speedVisible:
       hud_v_cruise = c.hudControl.setSpeed * CV.MS_TO_KPH
     else:

@@ -59,9 +59,9 @@ class AlertManager(object):
         PT.MID, None, "beepSingle", .2, 0., 0.),
 
     "fcw": Alert(
-        "", 
-        "", 
-        PT.LOW, None, None, .1, .1, .1),
+        "Brake", 
+        "Risk of Collision", 
+        PT.HIGH, "fcw", "chimeRepeated", 1., 2., 2.),
 
     "steerSaturated": Alert(
         "Take Control", 
