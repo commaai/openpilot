@@ -8,16 +8,18 @@ import zmq
 from selfdrive.services import service_list
 import selfdrive.messaging as messaging
 
+
+RADAR_MSGS = range(0x210, 0x220)
+
 def _create_radard_can_parser():
   dbc_f = 'toyota_prius_2017_adas.dbc'
-  radar_messages = range(0x210, 0x220)
-  msg_n = len(radar_messages)
-  msg_last = radar_messages[-1]
+  msg_n = len(RADAR_MSGS)
+  msg_last = RADAR_MSGS[-1]
   signals = zip(['LONG_DIST'] * msg_n + ['NEW_TRACK'] * msg_n + ['LAT_DIST'] * msg_n +
                 ['REL_SPEED'] * msg_n + ['VALID'] * msg_n,
-                radar_messages * 5,
+                RADAR_MSGS * 5,
                 [255] * msg_n + [1] * msg_n + [0] * msg_n + [0] * msg_n + [0] * msg_n)
-  checks = zip(radar_messages, [20]*msg_n)
+  checks = zip(RADAR_MSGS, [20]*msg_n)
 
   return CANParser(os.path.splitext(dbc_f)[0], signals, checks, 1)
 
@@ -25,6 +27,7 @@ class RadarInterface(object):
   def __init__(self):
     # radar
     self.pts = {}
+    self.ptsValid = {key: False for key in RADAR_MSGS}
     self.track_id = 0
 
     self.delay = 0.0  # Delay of radar
@@ -55,7 +58,17 @@ class RadarInterface(object):
     #print "NEW TRACKS"
     for ii in updated_messages:
       cpt = self.rcp.vl[ii]
-      if cpt['LONG_DIST'] < 255 and cpt['VALID']:
+
+      # a point needs one valid measurement before being considered
+      #if cpt['NEW_TRACK'] or cpt['LONG_DIST'] >= 255:
+      #  self.ptsValid[ii] = False    # reset validity
+      # TODO: find better way to eliminate both false positive and false negative
+      if cpt['VALID'] and cpt['LONG_DIST'] < 255:
+        self.ptsValid[ii] = True
+      else:
+        self.ptsValid[ii] = False
+
+      if self.ptsValid[ii]:
         #print "%5s %5s %5s" % (round(cpt['LONG_DIST'], 1), round(cpt['LAT_DIST'], 1), round(cpt['REL_SPEED'], 1))
         if ii not in self.pts or cpt['NEW_TRACK']:
           self.pts[ii] = car.RadarState.RadarPoint.new_message()

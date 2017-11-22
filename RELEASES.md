@@ -1,3 +1,10 @@
+Version 0.3.9 (2017-11-21)
+==========================
+ * Add alpha support for 2017 Toyota Prius
+ * Improved longitudinal control using model predictive control
+ * Enable Forward Collision Warning
+ * Acura ILX now maintains openpilot engaged at standstill when brakes are applied
+
 Version 0.3.8.2 (2017-10-30)
 ==========================
  * Add alpha support for 2017 Toyota RAV4
@@ -17,9 +24,9 @@ Version 0.3.7 (2017-09-30)
  * Fixed sporadic longitudinal pulsing in Civic
  * Cleanups to vehicle interface
 
-Version 0.3.6.1 (2017-08-15)   
-============================    
- * Mitigate low speed steering oscillations on some vehicles    
+Version 0.3.6.1 (2017-08-15)
+============================
+ * Mitigate low speed steering oscillations on some vehicles
  * Include board steering check for CR-V
 
 Version 0.3.6 (2017-08-08)
@@ -139,4 +146,3 @@ Version 0.1  (2016-11-29)
   * Lane keep assist is working
   * Support for Acura ILX 2016 with AcuraWatch Plus
   * Support for Honda Civic 2016 Touring Edition
-

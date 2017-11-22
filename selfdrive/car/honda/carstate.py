@@ -2,7 +2,6 @@ import os
 import time
 from cereal import car
 from common.numpy_fast import interp
-from common.realtime import sec_since_boot
 import selfdrive.messaging as messaging
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
@@ -275,7 +274,7 @@ def get_can_parser(CP):
   return CANParser(os.path.splitext(dbc_f)[0], signals, checks, 0)
 
 class CarState(object):
-  def __init__(self, CP, logcan):
+  def __init__(self, CP):
     self.acura = False
     self.civic = False
     self.accord = False
@@ -293,9 +292,6 @@ class CarState(object):
 
     self.brake_only = CP.enableCruise
     self.CP = CP
-
-    # initialize can parser
-    self.cp = get_can_parser(CP)
 
     self.user_gas, self.user_gas_pressed = 0., 0
     self.brake_switch_prev = 0
@@ -315,14 +311,13 @@ class CarState(object):
     self.v_ego_C = np.matrix([1.0, 0.0])
     self.v_ego_Q = np.matrix([[10.0, 0.0], [0.0, 100.0]])
     self.v_ego_R = 1e3
+    self.v_ego = 0.0
     # import control
     # (x, l, K) = control.dare(np.transpose(A), np.transpose(C), Q, R)
     # self.v_ego_K = np.transpose(K)
     self.v_ego_K = np.matrix([[0.12287673], [0.29666309]])
 
-  def update(self, can_pub_main=None):
-    cp = self.cp
-    cp.update(int(sec_since_boot() * 1e9), False)
+  def update(self, cp):
 
     # copy can_valid
     self.can_valid = cp.can_valid
@@ -368,6 +363,9 @@ class CarState(object):
     # blend in transmission speed at low speed, since it has more low speed accuracy
     self.v_weight = interp(self.v_wheel, v_weight_bp, v_weight_v)
     speed = (1. - self.v_weight) * cp.vl[0x158]['XMISSION_SPEED'] + self.v_weight * self.v_wheel
+
+    if abs(speed - self.v_ego) > 2.0:  # Prevent large accelerations when car starts at non zero speed
+      self.v_ego_x = np.matrix([[speed], [0.0]])
     self.v_ego_x = np.dot((self.v_ego_A - np.dot(self.v_ego_K, self.v_ego_C)), self.v_ego_x) + np.dot(self.v_ego_K, speed)
 
     self.v_ego_raw = speed
@@ -449,13 +447,15 @@ class CarState(object):
     else:
       self.car_gas = cp.vl[0x130]['CAR_GAS']
       self.steer_override = abs(cp.vl[0x18F]['STEER_TORQUE_SENSOR']) > 1200
+    self.steer_torque_driver = cp.vl[0x18F]['STEER_TORQUE_SENSOR']
 
     # brake switch has shown some single time step noise, so only considered when
     # switch is on for at least 2 consecutive CAN samples
+    self.brake_switch = cp.vl[0x17C]['BRAKE_SWITCH']
     self.brake_pressed = cp.vl[0x17C]['BRAKE_PRESSED'] or \
-                         (cp.vl[0x17C]['BRAKE_SWITCH'] and self.brake_switch_prev and \
+                         (self.brake_switch and self.brake_switch_prev and \
                          cp.ts[0x17C]['BRAKE_SWITCH'] != self.brake_switch_ts)
-    self.brake_switch_prev = cp.vl[0x17C]['BRAKE_SWITCH']
+    self.brake_switch_prev = self.brake_switch
     self.brake_switch_ts = cp.ts[0x17C]['BRAKE_SWITCH']
 
     self.user_brake = cp.vl[0x1A4]['USER_BRAKE']
@@ -472,7 +472,6 @@ if __name__ == '__main__':
   import time
   from selfdrive.services import service_list
   context = zmq.Context()
-  logcan = messaging.sub_sock(context, service_list['can'].port)
 
   class CarParams(object):
     def __init__(self):
@@ -480,7 +479,7 @@ if __name__ == '__main__':
       self.enableGas = 0
       self.enableCruise = 0
   CP = CarParams()
-  CS = CarState(CP, logcan)
+  CS = CarState(CP)
 
   while 1:
     CS.update()

@@ -33,7 +33,7 @@ def rate_limit(new_value, last_value, dw_step, up_step):
   return clip(new_value, last_value + dw_step, last_value + up_step)
 
 
-def learn_angle_offset(lateral_control, v_ego, angle_offset, c_poly, c_prob, y_des, steer_override):
+def learn_angle_offset(lateral_control, v_ego, angle_offset, c_poly, c_prob, angle_steers, steer_override):
   # simple integral controller that learns how much steering offset to put to have the car going straight
   # while being in the middle of the lane
   min_offset = -5.  # deg
@@ -42,7 +42,7 @@ def learn_angle_offset(lateral_control, v_ego, angle_offset, c_poly, c_prob, y_d
   min_learn_speed = 1.
 
   # learn less at low speed or when turning
-  alpha_v = alpha * c_prob * (max(v_ego - min_learn_speed, 0.)) / (1. + 0.5*abs(y_des))
+  alpha_v = alpha * c_prob * (max(v_ego - min_learn_speed, 0.)) / (1. + 0.2 * abs(angle_steers))
 
   # only learn if lateral control is active and if driver is not overriding:
   if lateral_control and not steer_override:

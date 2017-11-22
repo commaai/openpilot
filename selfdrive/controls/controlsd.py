@@ -1,15 +1,13 @@
 #!/usr/bin/env python
-import os
 import json
 from copy import copy
 import zmq
-from cereal import car, log
+from cereal import car
 from common.numpy_fast import clip
 from common.realtime import sec_since_boot, set_realtime_priority, Ratekeeper
 from common.profiler import Profiler
 from common.params import Params
 import selfdrive.messaging as messaging
-from selfdrive.swaglog import cloudlog
 from selfdrive.config import Conversions as CV
 from selfdrive.services import service_list
 from selfdrive.car import get_car
@@ -22,7 +20,7 @@ from selfdrive.controls.lib.longcontrol import LongControl, STARTING_TARGET_SPEE
 from selfdrive.controls.lib.latcontrol import LatControl
 from selfdrive.controls.lib.alertmanager import AlertManager
 from selfdrive.controls.lib.vehicle_model import VehicleModel
-from selfdrive.controls.lib.adaptivecruise import A_ACC_MAX
+
 
 V_CRUISE_MAX = 144
 V_CRUISE_MIN = 8
@@ -31,7 +29,6 @@ V_CRUISE_ENABLE_MIN = 40
 
 AWARENESS_TIME = 360.      # 6 minutes limit without user touching steering wheels
 AWARENESS_PRE_TIME = 20.   # a first alert is issued 20s before start decelerating the car
-AWARENESS_DECEL = -0.2     # car smoothly decel at .2m/s^2 when user is distracted
 
 
 class Calibration:
@@ -103,9 +100,9 @@ def data_sample(CI, CC, thermal, health, cal, cal_status, overtemp, free_space):
   return CS, events, cal_status, overtemp, free_space
 
 
-def calc_plan(CS, events, PL, LoC):
+def calc_plan(CS, events, PL, LoC, v_cruise_kph, awareness_status):
    # plan runs always, independently of the state
-   plan_packet = PL.update(CS, LoC)
+   plan_packet = PL.update(CS, LoC, v_cruise_kph, awareness_status < -0.)
    plan = plan_packet.plan
    plan_ts = plan_packet.logMonoTime
 
@@ -114,7 +111,7 @@ def calc_plan(CS, events, PL, LoC):
 
    # disable if lead isn't close when system is active and brake is pressed to avoid
    # unexpected vehicle accelerations
-   if CS.brakePressed and plan.vTarget >= STARTING_TARGET_SPEED:
+   if CS.brakePressed and plan.vTargetFuture >= STARTING_TARGET_SPEED:
      events.append(create_event('noTarget', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
 
    return plan, plan_ts
@@ -265,24 +262,18 @@ def state_control(plan, CS, CP, state, events, v_cruise_kph, AM, rk, awareness_s
     for e in get_events(events, [ET.WARNING]):
       AM.add(e, enabled)
 
-  # if user is not responsive to awareness alerts, then start a smooth deceleration
-  if awareness_status < -0.:
-    plan.aTargetMax = min(plan.aTargetMax, AWARENESS_DECEL)
-    plan.aTargetMin = min(plan.aTargetMin, plan.aTargetMax)
-
   # *** angle offset learning ***
 
   if rk.frame % 5 == 2 and plan.lateralValid:
     # *** run this at 20hz again ***
     angle_offset = learn_angle_offset(active, CS.vEgo, angle_offset,
-                                      PL.PP.c_poly, PL.PP.c_prob, LaC.y_des,
+                                      PL.PP.c_poly, PL.PP.c_prob, CS.steeringAngle,
                                       CS.steeringPressed)
 
   # *** gas/brake PID loop ***
-  actuators.gas, actuators.brake = LoC.update(active, CS.vEgo, CS.brakePressed, CS.standstill,
-                                              v_cruise_kph, plan.vTarget,
-                                              [plan.aTargetMin, plan.aTargetMax],
-                                              plan.jerkFactor, CP)
+  actuators.gas, actuators.brake = LoC.update(active, CS.vEgo, CS.brakePressed, CS.standstill, CS.cruiseState.standstill,
+                                              v_cruise_kph, plan.vTarget, plan.vTargetFuture, plan.aTarget,
+                                              CP, PL.lead_1)
 
   # *** steering PID loop ***
   actuators.steer = LaC.update(active, CS.vEgo, CS.steeringAngle,
@@ -323,11 +314,7 @@ def data_send(plan, plan_ts, CS, CI, CP, state, events, actuators, v_cruise_kph,
     # brake discount removes a sharp nonlinearity
     brake_discount = (1.0 - clip(actuators.brake*3., 0.0, 1.0))
     CC.cruiseControl.speedOverride = float(max(0.0, (LoC.v_pid + CS.cruiseState.speedOffset) * brake_discount) if CP.enableCruise else 0.0)
-
-    # TODO: parametrize 0.714 in interface?
-    # accelOverride is more or less the max throttle allowed to pcm: usually set to a constant
-    # unless aTargetMax is very high and then we scale with it; this helpw in quicker restart
-    CC.cruiseControl.accelOverride = float(max(0.714, plan.aTargetMax/A_ACC_MAX))
+    CC.cruiseControl.accelOverride = CI.calc_accel_override(CS.aEgo, plan.aTarget, CS.vEgo, plan.vTarget)
 
     CC.hudControl.setSpeed = float(v_cruise_kph * CV.KPH_TO_MS)
     CC.hudControl.speedVisible = isEnabled(state)
@@ -356,6 +343,7 @@ def data_send(plan, plan_ts, CS, CI, CP, state, events, actuators, v_cruise_kph,
 
   # if controls is enabled
   dat.live100.enabled = isEnabled(state)
+  dat.live100.active = isActive(state)
 
   # car state
   dat.live100.vEgo = CS.vEgo
@@ -372,17 +360,17 @@ def data_send(plan, plan_ts, CS, CI, CP, state, events, actuators, v_cruise_kph,
   dat.live100.vCruise = float(v_cruise_kph)
   dat.live100.upAccelCmd = float(LoC.pid.p)
   dat.live100.uiAccelCmd = float(LoC.pid.i)
+  dat.live100.ufAccelCmd = float(LoC.pid.f)
 
   # lateral control state
-  dat.live100.yDes = float(LaC.y_des)
   dat.live100.angleSteersDes = float(LaC.angle_steers_des)
   dat.live100.upSteer = float(LaC.pid.p)
   dat.live100.uiSteer = float(LaC.pid.i)
+  dat.live100.ufSteer = float(LaC.pid.f)
 
   # processed radar state, should add a_pcm?
   dat.live100.vTargetLead = float(plan.vTarget)
-  dat.live100.aTargetMin = float(plan.aTargetMin)
-  dat.live100.aTargetMax = float(plan.aTargetMax)
+  dat.live100.aTarget = float(plan.aTarget)
   dat.live100.jerkFactor = float(plan.jerkFactor)
 
   # log learned angle offset
@@ -459,8 +447,10 @@ def controlsd_thread(gctx, rate=100):
   if passive:
     CP.safetyModel = car.CarParams.SafetyModels.noOutput
 
-  PL = Planner(CP)
-  LoC = LongControl(CI.compute_gb)
+  fcw_enabled = params.get("IsFcwEnabled") == "1"
+
+  PL = Planner(CP, fcw_enabled)
+  LoC = LongControl(CP, CI.compute_gb)
   VM = VehicleModel(CP)
   LaC = LatControl(VM)
   AM = AlertManager()
@@ -481,7 +471,7 @@ def controlsd_thread(gctx, rate=100):
   rear_view_allowed = params.get("IsRearViewMirror") == "1"
 
   # 0.0 - 1.0
-  awareness_status = 0.
+  awareness_status = 1.
 
   rk = Ratekeeper(rate, print_delay_threshold=2./1000)
 
@@ -507,7 +497,7 @@ def controlsd_thread(gctx, rate=100):
     prof.checkpoint("Sample")
 
     # define plan
-    plan, plan_ts = calc_plan(CS, events, PL, LoC)
+    plan, plan_ts = calc_plan(CS, events, PL, LoC, v_cruise_kph, awareness_status)
     prof.checkpoint("Plan")
 
     if not passive:

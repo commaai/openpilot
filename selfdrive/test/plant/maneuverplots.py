@@ -29,8 +29,7 @@ class ManeuverPlot(object):
     self.cruise_speed_array = []
     self.jerk_factor_array = []
 
-    self.a_target_min_array = []
-    self.a_target_max_array = []
+    self.a_target_array = []
 
     self.v_target_array = []
 
@@ -38,8 +37,7 @@ class ManeuverPlot(object):
     
   def add_data(self, time, gas, brake, steer_torque, distance, speed, 
     acceleration, up_accel_cmd, ui_accel_cmd, d_rel, v_rel, v_lead, 
-    v_target_lead, pid_speed, cruise_speed, jerk_factor, a_target_min, 
-    a_target_max):
+    v_target_lead, pid_speed, cruise_speed, jerk_factor, a_target):
     self.time_array.append(time)
     self.gas_array.append(gas)
     self.brake_array.append(brake)
@@ -56,8 +54,7 @@ class ManeuverPlot(object):
     self.pid_speed_array.append(pid_speed)
     self.cruise_speed_array.append(cruise_speed)
     self.jerk_factor_array.append(jerk_factor)
-    self.a_target_min_array.append(a_target_min)
-    self.a_target_max_array.append(a_target_max)
+    self.a_target_array.append(a_target)
 
 
   def write_plot(self, path, maneuver_name):
@@ -90,12 +87,11 @@ class ManeuverPlot(object):
     plt.figure(plt_num)
     plt.plot(
       np.array(self.time_array), np.array(self.acceleration_array), 'g',
-      np.array(self.time_array), np.array(self.a_target_min_array), 'k--',
-      np.array(self.time_array), np.array(self.a_target_max_array), 'k--',
+      np.array(self.time_array), np.array(self.a_target_array), 'k--',
     )
     plt.xlabel('Time [s]')
     plt.ylabel('Acceleration [m/s^2]')
-    plt.legend(['accel', 'max', 'min'], loc=0)
+    plt.legend(['ego-plant', 'target'], loc=0)
     plt.grid()
     pylab.savefig("/".join([path, maneuver_name, 'acceleration.svg']), dpi=1000)
 

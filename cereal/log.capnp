@@ -337,12 +337,15 @@ struct Live100Data {
   vTargetLead @3 :Float32;
   upAccelCmd @4 :Float32;
   uiAccelCmd @5 :Float32;
+  ufAccelCmd @33 :Float32;
   yActualDEPRECATED @6 :Float32;
-  yDes @7 :Float32;
+  yDesDEPRECATED @7 :Float32;
   upSteer @8 :Float32;
   uiSteer @9 :Float32;
-  aTargetMin @10 :Float32;
-  aTargetMax @11 :Float32;
+  ufSteer @34 :Float32;
+  aTargetMinDEPRECATED @10 :Float32;
+  aTargetMaxDEPRECATED @11 :Float32;
+  aTarget @35 :Float32;
   jerkFactor @12 :Float32;
   angleSteers @13 :Float32;     # Steering angle in degrees.
   angleSteersDes @29 :Float32;
@@ -350,6 +353,7 @@ struct Live100Data {
   cumLagMs @15 :Float32;
 
   enabled @19 :Bool;
+  active @36 :Bool;
   steerOverride @20 :Bool;
 
   vCruise @22 :Float32;
@@ -388,7 +392,7 @@ struct ModelData {
   leftLane @2 :PathData;
   rightLane @3 :PathData;
   lead @4 :LeadData;
-  leadNew @6 :List(Float32);
+  freePath @6 :List(Float32);
 
   settings @5 :ModelSettings;
 
@@ -472,10 +476,13 @@ struct Plan {
 
   # longitudinal
   longitudinalValid @2 :Bool;
+  vCruise @16 :Float32;
+  aCruise @17 :Float32;
   vTarget @3 :Float32;
   vTargetFuture @14 :Float32;
-  aTargetMin @4 :Float32;
-  aTargetMax @5 :Float32;
+  aTargetMinDEPRECATED @4 :Float32;
+  aTargetMaxDEPRECATED @5 :Float32;
+  aTarget @18 :Float32;
   jerkFactor @6 :Float32;
   hasLead @7 :Bool;
   fcw @8 :Bool;

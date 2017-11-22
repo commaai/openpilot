@@ -68,16 +68,24 @@ def create_steer_command(steer, raw_cnt):
   return make_can_msg(0x2e4, msg, 0, True)
 
 
-def create_accel_command(accel, pcm_cancel):
+def create_accel_command(accel, pcm_cancel, standstill_req):
   # TODO: find the exact canceling bit
-  state = 0xc0 + pcm_cancel # this allows automatic restart from hold without driver cmd
+  state = 0x40 if standstill_req else 0xC0
+  state += pcm_cancel # this allows automatic restart from hold without driver cmd
 
   msg = struct.pack("!hBBBBB", accel, 0x63, state, 0x00, 0x00, 0x00)
 
   return make_can_msg(0x343, msg, 0, True)
 
+def create_fcw_command(fcw):
 
-def create_ui_command(hud1, hud2):
-  msg = struct.pack('!BBBBBBBB', 0x54, 0x04 + hud1 + (hud2 << 4), 0x0C, 
-                                 0x00, 0x00, 0x2C, 0x38, 0x02) 
+  msg = struct.pack("!BBBBBBBB", fcw<<4, 0x20, 0x00, 0x00, 0x10, 0x00, 0x80, 0x00)
+
+  return make_can_msg(0x411, msg, 0, False)
+
+
+def create_ui_command(steer, sound1, sound2):
+
+  msg = struct.pack("!BBBBBBBB", 0x54, 0x04 + steer + (sound2<<4), 0x0C, 0x00, 
+                                 sound1, 0x2C, 0x38, 0x02)
   return make_can_msg(0x412, msg, 0, False)

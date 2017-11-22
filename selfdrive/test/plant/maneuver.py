@@ -64,7 +64,7 @@ class Maneuver(object):
           v_target_lead=last_live100.vTargetLead, pid_speed=last_live100.vPid,
           cruise_speed=last_live100.vCruise,
           jerk_factor=last_live100.jerkFactor,
-          a_target_min=last_live100.aTargetMin, a_target_max=last_live100.aTargetMax)
+          a_target=last_live100.aTarget)
     
     print "maneuver end"
 

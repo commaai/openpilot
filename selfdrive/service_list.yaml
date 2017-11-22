@@ -45,6 +45,7 @@ gpsLocationExternal: [8032, true]
 ubloxGnss: [8033, true]
 clocks: [8034, true]
 liveMpc: [8035, true]
+liveLongitudinalMpc: [8036, true]
 
 testModel: [8040, false]
 

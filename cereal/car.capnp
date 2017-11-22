@@ -77,6 +77,7 @@ struct CarState {
   # brake pedal, 0.0-1.0
   brake @5 :Float32;      # this is user pedal only
   brakePressed @6 :Bool;  # this is user pedal only
+  brakeLights @19 :Bool;
 
   # steering wheel
   steeringAngle @7 :Float32;   # deg
@@ -92,6 +93,8 @@ struct CarState {
 
   # button presses
   buttonEvents @11 :List(ButtonEvent);
+  leftBlinker @20 :Bool;
+  rightBlinker @21 :Bool;
 
   # which packets this state came from
   canMonoTimes @12: List(UInt64);
@@ -109,6 +112,7 @@ struct CarState {
     speed @1 :Float32;
     available @2 :Bool;
     speedOffset @3 :Float32;
+    standstill @4 :Bool;
   }
 
   enum GearShifter {
@@ -291,10 +295,16 @@ struct CarParams {
   steerKi @17 :Float32;
   steerKf @26 :Float32;
 
+  # Kp and Ki for the longitudinal control
+  longitudinalKpBP @37 :List(Float32);
+  longitudinalKpV @38 :List(Float32);
+  longitudinalKiBP @39 :List(Float32);
+  longitudinalKiV @40 :List(Float32);
+
   steerLimitAlert @30 :Bool;
 
   vEgoStopping @31 :Float32; # Speed at which the car goes into stopping state
   directAccelControl @32 :Bool; # Does the car have direct accel control or just gas/brake
-
-  # TODO: Kp and Ki for long control, perhaps not needed?
+  stoppingControl @35 :Bool; # Does the car allows full control even at lows speeds when stopping
+  startAccel @36 :Float32; # Required acceleraton to overcome creep braking
 }

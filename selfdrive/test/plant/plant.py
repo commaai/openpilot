@@ -253,7 +253,8 @@ class Plant(object):
     Plant.logcan.send(can_list_to_can_capnp(can_msgs).to_bytes())
 
     # ******** publish a fake model going straight and fake calibration ********
-    if publish_model:
+    # note that this is worst case for MPC, since model will delay long mpc by one time step
+    if publish_model and self.rk.frame % 5 == 0:
       md = messaging.new_message()
       cal = messaging.new_message()
       md.init('model')

@@ -4,7 +4,9 @@ from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.controls.lib.drive_helpers import rate_limit
 from selfdrive.car.toyota.toyotacan import make_can_msg, create_video_target,\
                                            create_steer_command, create_ui_command, \
-                                           create_ipas_steer_command, create_accel_command
+                                           create_ipas_steer_command, create_accel_command, \
+                                           create_fcw_command
+from selfdrive.car.toyota.values import CAR, ECU
 
 
 ACCEL_HYST_GAP = 0.02  # don't change accel command for small oscilalitons within this value
@@ -14,21 +16,11 @@ ACCEL_SCALE = max(ACCEL_MAX, -ACCEL_MIN)
 
 STEER_MAX = 1500
 STEER_DELTA_UP = 10        # 1.5s time to peak torque
-STEER_DELTA_DOWN = 45      # lower than 50 otherwise the Rav4 faults (Prius seems ok though)
+STEER_DELTA_DOWN = 25      # always lower than 45 otherwise the Rav4 faults (Prius seems ok with 50)
 STEER_ERROR_MAX = 500      # max delta between torque cmd and torque motor
 
 STEER_IPAS_MAX = 340
 STEER_IPAS_DELTA_MAX = 3
-
-class CAR:
-  PRIUS = "TOYOTA PRIUS 2017"
-  RAV4 = "TOYOTA RAV4 2017"
-
-class ECU:
-  CAM = 0 # camera
-  DSU = 1 # driving support unit
-  APGS = 2 # advanced parking guidance system
-
 
 TARGET_IDS = [0x340, 0x341, 0x342, 0x343, 0x344, 0x345,
               0x363, 0x364, 0x365, 0x370, 0x371, 0x372,
@@ -75,7 +67,6 @@ STATIC_MSGS = {0x141: (ECU.DSU, (CAR.PRIUS, CAR.RAV4), 1,   2, '\x00\x00\x00\x46
                0x43B: (ECU.APGS, (CAR.PRIUS, CAR.RAV4), 0, 100, '\x00\x00\x00\x00\x00\x00\x00\x00'),
                0x497: (ECU.APGS, (CAR.PRIUS, CAR.RAV4), 0, 100, '\x00\x00\x00\x00\x00\x00\x00\x00'),
                0x4CC: (ECU.APGS, (CAR.PRIUS, CAR.RAV4), 0, 100, '\x0D\x00\x00\x00\x00\x00\x00\x00'),
-               0x411: (ECU.DSU, (CAR.PRIUS, CAR.RAV4), 0, 100, '\x00\x20\x00\x00\x10\x00\x80\x00'),
                0x4CB: (ECU.DSU, (CAR.PRIUS, CAR.RAV4), 0, 100, '\x0c\x00\x00\x00\x00\x00\x00\x00'),
                0x470: (ECU.DSU, (CAR.PRIUS,), 1, 100, '\x00\x00\x02\x7a'),
               }
@@ -107,18 +98,23 @@ def accel_hysteresis(accel, accel_steady, enabled):
 
 def process_hud_alert(hud_alert, audible_alert):
   # initialize to no alert
-  hud1 = 0
-  hud2 = 0
-  if hud_alert in ['steerRequired', 'fcw']:
-    if audible_alert == 'chimeRepeated':
-      hud1 = 3
-    else:
-      hud1 = 1
-  if audible_alert in ['beepSingle', 'chimeSingle', 'chimeDouble']:
-    # TODO: find a way to send single chimes
-    hud2 = 1
+  steer = 0
+  fcw = 0
+  sound1 = 0
+  sound2 = 0
 
-  return hud1, hud2
+  if hud_alert == 'fcw':
+    fcw = 1
+  elif hud_alert == 'steerRequired':
+    steer = 1
+
+  if audible_alert == 'chimeRepeated':
+    sound1 = 1
+  elif audible_alert in ['beepSingle', 'chimeSingle', 'chimeDouble']:
+    # TODO: find a way to send single chimes
+    sound2 = 1
+
+  return steer, fcw, sound1, sound2
 
 
 class CarController(object):
@@ -130,6 +126,8 @@ class CarController(object):
     self.accel_steady = 0.
     self.car_fingerprint = car_fingerprint
     self.alert_active = False
+    self.last_standstill = False
+    self.standstill_req = False
 
     self.fake_ecus = set()
     if enable_camera: self.fake_ecus.add(ECU.CAM)
@@ -140,7 +138,7 @@ class CarController(object):
              pcm_cancel_cmd, hud_alert, audible_alert):
 
     # *** compute control surfaces ***
-    tt = sec_since_boot()
+    ts = sec_since_boot()
 
     # steer torque is converted back to CAN reference (positive when steering right)
     apply_accel = actuators.gas - actuators.brake
@@ -170,8 +168,16 @@ class CarController(object):
     if not enabled or CS.steer_error:
       apply_steer = 0
 
+    # on entering standstill, send standstill request
+    if CS.standstill and not self.last_standstill:
+      self.standstill_req = True
+    if CS.pcm_acc_status != 8:
+      # pcm entered standstill or it's disabled
+      self.standstill_req = False
+
     self.last_steer = apply_steer
     self.last_accel = apply_accel
+    self.last_standstill = CS.standstill
 
     can_sends = []
 
@@ -190,9 +196,9 @@ class CarController(object):
     # accel cmd comes from DSU, but we can spam can to cancel the system even if we are using lat only control
     if (frame % 3 == 0 and ECU.DSU in self.fake_ecus) or (pcm_cancel_cmd and ECU.CAM in self.fake_ecus):
       if ECU.DSU in self.fake_ecus:
-        can_sends.append(create_accel_command(apply_accel, pcm_cancel_cmd))
+        can_sends.append(create_accel_command(apply_accel, pcm_cancel_cmd, self.standstill_req))
       else:
-        can_sends.append(create_accel_command(0, pcm_cancel_cmd))
+        can_sends.append(create_accel_command(0, pcm_cancel_cmd, False))
 
     if frame % 10 == 0 and ECU.CAM in self.fake_ecus:
       for addr in TARGET_IDS:
@@ -201,24 +207,25 @@ class CarController(object):
     # ui mesg is at 100Hz but we send asap if:
     # - there is something to display
     # - there is something to stop displaying
-    hud1, hud2 = process_hud_alert(hud_alert, audible_alert)
-    if ((hud1 or hud2) and not self.alert_active) or \
-       (not (hud1 or hud2) and self.alert_active):
+    alert_out = process_hud_alert(hud_alert, audible_alert)
+    steer, fcw, sound1, sound2 = alert_out
+
+    if (any(alert_out) and not self.alert_active) or \
+       (not any(alert_out) and self.alert_active):
       send_ui = True
       self.alert_active = not self.alert_active
     else:
       send_ui = False
 
     if (frame % 100 == 0 or send_ui) and ECU.CAM in self.fake_ecus:
-      can_sends.append(create_ui_command(hud1, hud2))
+      can_sends.append(create_ui_command(steer, sound1, sound2))
+      can_sends.append(create_fcw_command(fcw))
 
     #*** static msgs ***
 
     for addr, (ecu, cars, bus, fr_step, vl) in STATIC_MSGS.iteritems():
       if frame % fr_step == 0 and ecu in self.fake_ecus and self.car_fingerprint in cars:
-        # send msg!
         # special cases
-
         if fr_step == 5 and ecu == ECU.CAM and bus == 1:
           cnt = (((frame / 5) % 7) + 1) << 5
           vl = chr(cnt) + vl

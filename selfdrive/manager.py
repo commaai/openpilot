@@ -581,6 +581,8 @@ def main():
     params.put("IsMetric", "0")
   if params.get("IsRearViewMirror") is None:
     params.put("IsRearViewMirror", "1")
+  if params.get("IsFcwEnabled") is None:
+    params.put("IsFcwEnabled", "1")
 
   params.put("Passive", "1" if os.getenv("PASSIVE") else "0")
 
