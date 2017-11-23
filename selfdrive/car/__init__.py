@@ -26,6 +26,7 @@ interfaces = {
   "ACURA ILX 2016 ACURAWATCH PLUS": HondaInterface,
   "HONDA ACCORD 2016 TOURING": HondaInterface,
   "HONDA CR-V 2016 TOURING": HondaInterface,
+  "HONDA ODYSSEY 2018 EX-L": HondaInterface,
   "TOYOTA PRIUS 2017": ToyotaInterface,
   "TOYOTA RAV4 2017": ToyotaInterface,
   "TOYOTA RAV4 2017 HYBRID": ToyotaInterface,
@@ -59,7 +60,7 @@ def fingerprint(logcan, timeout):
         candidate_cars = eliminate_incompatible_cars(can, candidate_cars)
 
     ts = sec_since_boot()
-    # if we only have one car choice and the time_fingerprint since we got our first 
+    # if we only have one car choice and the time_fingerprint since we got our first
     # message has elapsed, exit. Toyota needs higher time_fingerprint, since DSU does not
     # broadcast immediately
     if len(candidate_cars) == 1 and st is not None:
