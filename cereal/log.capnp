@@ -287,7 +287,7 @@ struct Live20Data {
     vRel @2 :Float32;
     aRel @3 :Float32;
     vLead @4 :Float32;
-    aLead @5 :Float32;
+    aLeadDEPRECATED @5 :Float32;
     dPath @6 :Float32;
     vLat @7 :Float32;
     vLeadK @8 :Float32;

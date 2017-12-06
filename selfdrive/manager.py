@@ -448,7 +448,8 @@ def manager_thread():
     ignition = td is not None and td.health.started
     ignition_seen = ignition_seen or ignition
 
-    should_start = ignition
+    params = Params()
+    should_start = ignition and (params.get("HasAcceptedTerms") == "1")
 
     # start on gps in passive mode
     if passive and not ignition_seen:
@@ -460,7 +461,7 @@ def manager_thread():
 
     if should_start:
       if not started_ts:
-        Params().car_start()
+        params.car_start()
         started_ts = sec_since_boot()
       for p in car_started_processes:
         if p == "loggerd" and logger_dead:
@@ -583,6 +584,8 @@ def main():
     params.put("IsRearViewMirror", "1")
   if params.get("IsFcwEnabled") is None:
     params.put("IsFcwEnabled", "1")
+  if params.get("HasAcceptedTerms") is None:
+    params.put("HasAcceptedTerms", "0")
 
   params.put("Passive", "1" if os.getenv("PASSIVE") else "0")
 

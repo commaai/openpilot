@@ -313,7 +313,7 @@ static bool try_load_intrinsics(mat3 *intrinsic_matrix) {
     }
 
     int i = 0;
-    JsonNode* json_num; 
+    JsonNode* json_num;
     json_foreach(json_num, intrinsic_json) {
       intrinsic_matrix->v[i++] = json_num->number_;
     }
@@ -676,7 +676,7 @@ static void draw_frame(UIState *s) {
  * Draw a rect at specific position with specific dimensions
  */
 static void ui_draw_rounded_rect(
-    NVGcontext* c, 
+    NVGcontext* c,
     int x,
     int y,
     int width,
@@ -725,7 +725,7 @@ static void ui_draw_world(UIState *s) {
     if (!s->passive) {
       draw_path(s, scene->model.path.points, 0.0f, nvgRGBA(128, 0, 255, 255));
 
-      draw_x_y(s, scene->mpc_x, scene->mpc_y, 50, nvgRGBA(255, 0, 0, 255));
+      draw_x_y(s, &scene->mpc_x[1], &scene->mpc_y[1], 49, nvgRGBA(255, 0, 0, 255));
     }
   }
 
@@ -811,7 +811,7 @@ static void ui_draw_vision(UIState *s) {
           snprintf(speed_str, sizeof(speed_str), "%3d KPH",
                    (int)(scene->v_cruise + 0.5));
         } else {
-          /* Convert KPH to MPH. Using an approximated mph to kph 
+          /* Convert KPH to MPH. Using an approximated mph to kph
           conversion factor of 1.609 because this is what the Honda
           hud seems to be using */
           snprintf(speed_str, sizeof(speed_str), "%3d MPH",
@@ -896,7 +896,7 @@ static void ui_draw_alerts(UIState *s) {
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   glClear(GL_STENCIL_BUFFER_BIT);
-  
+
   nvgBeginFrame(s->vg, s->fb_w, s->fb_h, 1.0f);
 
   // draw alert text
@@ -1032,7 +1032,7 @@ static void ui_update(UIState *s) {
     polls[3].events = ZMQ_POLLIN;
     polls[4].socket = s->livempc_sock_raw;
     polls[4].events = ZMQ_POLLIN;
-    
+
     int num_polls = 5;
     if (s->vision_connected) {
       assert(s->ipc_fd >= 0);
@@ -1192,17 +1192,17 @@ static void ui_update(UIState *s) {
       } else if (eventd.which == cereal_Event_liveMpc) {
         struct cereal_LiveMpcData datad;
         cereal_read_LiveMpcData(&datad, eventd.liveMpc);
-        
+
         capn_list32 x_list = datad.x;
         capn_resolve(&x_list.p);
-        
+
         for (int i = 0; i < 50; i++){
           s->scene.mpc_x[i] = capn_to_f32(capn_get32(x_list, i));
         }
 
         capn_list32 y_list = datad.y;
         capn_resolve(&y_list.p);
-        
+
         for (int i = 0; i < 50; i++){
           s->scene.mpc_y[i] = capn_to_f32(capn_get32(y_list, i));
         }
@@ -1310,7 +1310,7 @@ int main() {
 
   while (!do_exit) {
     pthread_mutex_lock(&s->lock);
-    
+
     ui_update(s);
     if (s->awake) {
       ui_draw(s);
