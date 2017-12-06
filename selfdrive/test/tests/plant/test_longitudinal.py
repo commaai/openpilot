@@ -197,8 +197,50 @@ maneuvers = [
                             (CB.RES_ACCEL, 1.8), (0.0, 1.9),
                             (CB.RES_ACCEL, 2.0), (0.0, 2.1),
                             (CB.RES_ACCEL, 2.2), (0.0, 2.3)]
+  ),
+  Maneuver(
+    "fcw: traveling at 30 m/s and approaching lead traveling at 20m/s",
+    duration=15.,
+    initial_speed=30.,
+    lead_relevancy=True,
+    initial_distance_lead=100.,
+    speed_lead_values=[20.],
+    speed_lead_breakpoints=[1.],
+    cruise_button_presses = []
+  ),
+  Maneuver(
+    "fcw: traveling at 20 m/s following a lead that decels from 20m/s to 0 at 1m/s2",
+    duration=18.,
+    initial_speed=20.,
+    lead_relevancy=True,
+    initial_distance_lead=35.,
+    speed_lead_values=[20., 0.],
+    speed_lead_breakpoints=[3., 23.],
+    cruise_button_presses = []
+  ),
+  Maneuver(
+    "fcw: traveling at 20 m/s following a lead that decels from 20m/s to 0 at 3m/s2",
+    duration=13.,
+    initial_speed=20.,
+    lead_relevancy=True,
+    initial_distance_lead=35.,
+    speed_lead_values=[20., 0.],
+    speed_lead_breakpoints=[3., 9.6],
+    cruise_button_presses = []
+  ),
+  Maneuver(
+    "fcw: traveling at 20 m/s following a lead that decels from 20m/s to 0 at 5m/s2",
+    duration=8.,
+    initial_speed=20.,
+    lead_relevancy=True,
+    initial_distance_lead=35.,
+    speed_lead_values=[20., 0.],
+    speed_lead_breakpoints=[3., 7.],
+    cruise_button_presses = []
   )
 ]
+
+#maneuvers = [maneuvers[-1]]
 
 def setup_output():
   output_dir = os.path.join(os.getcwd(), 'out/longitudinal')
@@ -235,6 +277,7 @@ class LongitudinalControl(unittest.TestCase):
     shutil.rmtree('/data/params', ignore_errors=True)
     params = Params()
     params.put("Passive", "1" if os.getenv("PASSIVE") else "0")
+    params.put("IsFcwEnabled", "1")
 
     manager.gctx = {}
     manager.prepare_managed_process('radard')

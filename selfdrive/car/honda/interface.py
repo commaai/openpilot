@@ -10,7 +10,6 @@ from cereal import car
 from selfdrive.services import service_list
 import selfdrive.messaging as messaging
 from selfdrive.car.honda.carstate import CarState, get_can_parser
-from selfdrive.car.honda.carcontroller import CAMERA_MSGS
 from selfdrive.car.honda.values import CruiseButtons, CM, BP, AH
 from selfdrive.controls.lib.planner import A_ACC_MAX
 
@@ -18,6 +17,11 @@ try:
   from .carcontroller import CarController
 except ImportError:
   CarController = None
+
+
+# msgs sent for steering controller by camera module on can 0.
+# those messages are mutually exclusive on CRV and non-CRV cars
+CAMERA_MSGS = [0xe4, 0x194]
 
 
 def compute_gb_honda(accel, speed):
@@ -108,7 +112,7 @@ class CarInterface(object):
   def calc_accel_override(a_ego, a_target, v_ego, v_target):
     eA = a_ego - a_target
     valuesA = [1.0, 0.1]
-    bpA = [0.0, 0.5]
+    bpA = [0.3, 1.1]
 
     eV = v_ego - v_target
     valuesV = [1.0, 0.1]
@@ -144,22 +148,22 @@ class CarInterface(object):
 
     # FIXME: hardcoding honda civic 2016 touring params so they can be used to
     # scale unknown params for other cars
-    m_civic = 2923./2.205 + std_cargo
-    l_civic = 2.70
-    aF_civic = l_civic * 0.4
-    aR_civic = l_civic - aF_civic
-    j_civic = 2500
-    cF_civic = 85400
-    cR_civic = 90000
+    mass_civic = 2923./2.205 + std_cargo
+    wheelbase_civic = 2.70
+    centerToFront_civic = wheelbase_civic * 0.4
+    centerToRear_civic = wheelbase_civic - centerToFront_civic
+    rotationalInertia_civic = 2500
+    tireStiffnessFront_civic = 85400
+    tireStiffnessRear_civic = 90000
 
     if candidate == "HONDA CIVIC 2016 TOURING":
       stop_and_go = True
-      ret.m = m_civic
-      ret.l = l_civic
-      ret.aF = aF_civic
-      ret.sR = 13.0
+      ret.mass = mass_civic
+      ret.wheelbase = wheelbase_civic
+      ret.centerToFront = centerToFront_civic
+      ret.steerRatio = 13.0
       # Civic at comma has modified steering FW, so different tuning for the Neo in that car
-      is_fw_modified = os.getenv("DONGLE_ID") in ['b0f5a01cf604185c']
+      is_fw_modified = os.getenv("DONGLE_ID") in ['b0f5a01cf604185cxxx']
       ret.steerKp, ret.steerKi = [0.4, 0.12] if is_fw_modified else [0.8, 0.24]
 
       ret.longitudinalKpBP = [0., 5., 35.]
@@ -168,10 +172,10 @@ class CarInterface(object):
       ret.longitudinalKiV = [0.54, 0.36]
     elif candidate == "ACURA ILX 2016 ACURAWATCH PLUS":
       stop_and_go = False
-      ret.m = 3095./2.205 + std_cargo
-      ret.l = 2.67
-      ret.aF = ret.l * 0.37
-      ret.sR = 15.3
+      ret.mass = 3095./2.205 + std_cargo
+      ret.wheelbase = 2.67
+      ret.centerToFront = ret.wheelbase * 0.37
+      ret.steerRatio = 15.3
       # Acura at comma has modified steering FW, so different tuning for the Neo in that car
       is_fw_modified = os.getenv("DONGLE_ID") in ['cb38263377b873ee']
       ret.steerKp, ret.steerKi = [0.4, 0.12] if is_fw_modified else [0.8, 0.24]
@@ -182,10 +186,10 @@ class CarInterface(object):
       ret.longitudinalKiV = [0.18, 0.12]
     elif candidate == "HONDA ACCORD 2016 TOURING":
       stop_and_go = False
-      ret.m = 3580./2.205 + std_cargo
-      ret.l = 2.74
-      ret.aF = ret.l * 0.38
-      ret.sR = 15.3
+      ret.mass = 3580./2.205 + std_cargo
+      ret.wheelbase = 2.74
+      ret.centerToFront = ret.wheelbase * 0.38
+      ret.steerRatio = 15.3
       ret.steerKp, ret.steerKi = 0.8, 0.24
 
       ret.longitudinalKpBP = [0., 5., 35.]
@@ -194,10 +198,10 @@ class CarInterface(object):
       ret.longitudinalKiV = [0.18, 0.12]
     elif candidate == "HONDA CR-V 2016 TOURING":
       stop_and_go = False
-      ret.m = 3572./2.205 + std_cargo
-      ret.l = 2.62
-      ret.aF = ret.l * 0.41
-      ret.sR = 15.3
+      ret.mass = 3572./2.205 + std_cargo
+      ret.wheelbase = 2.62
+      ret.centerToFront = ret.wheelbase * 0.41
+      ret.steerRatio = 15.3
       ret.steerKp, ret.steerKi = 0.8, 0.24
 
       ret.longitudinalKpBP = [0., 5., 35.]
@@ -214,18 +218,23 @@ class CarInterface(object):
     # conflict with PCM acc
     ret.minEnableSpeed = -1. if (stop_and_go or ret.enableGas) else 25.5 * CV.MPH_TO_MS
 
-    ret.aR = ret.l - ret.aF
+    centerToRear = ret.wheelbase - ret.centerToFront
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
-    ret.j = j_civic * ret.m * ret.l**2 / (m_civic * l_civic**2)
+    ret.rotationalInertia = rotationalInertia_civic * \
+                            ret.mass * ret.wheelbase**2 / (mass_civic * wheelbase_civic**2)
 
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
-    ret.cF = cF_civic * ret.m / m_civic * (ret.aR / ret.l) / (aR_civic / l_civic)
-    ret.cR = cR_civic * ret.m / m_civic * (ret.aF / ret.l) / (aF_civic / l_civic)
+    ret.tireStiffnessFront = tireStiffnessFront_civic * \
+                             ret.mass / mass_civic * \
+                             (centerToRear / ret.wheelbase) / (centerToRear_civic / wheelbase_civic)
+    ret.tireStiffnessRear = tireStiffnessRear_civic * \
+                            ret.mass / mass_civic * \
+                            (ret.centerToFront / ret.wheelbase) / (centerToFront_civic / wheelbase_civic)
 
     # no rear steering, at least on the listed cars above
-    ret.chi = 0.
+    ret.steerRatioRear = 0.
 
     # no max steer limit VS speed
     ret.steerMaxBP = [0.]  # m/s

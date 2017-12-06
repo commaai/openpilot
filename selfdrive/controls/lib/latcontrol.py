@@ -1,11 +1,14 @@
 import math
+import numpy as np
+
 from selfdrive.controls.lib.pid import PIController
 from selfdrive.controls.lib.lateral_mpc import libmpc_py
-from common.numpy_fast import clip, interp
+from common.numpy_fast import interp
 from common.realtime import sec_since_boot
+from selfdrive.swaglog import cloudlog
 
 # 100ms is a rule of thumb estimation of lag from image processing to actuator command
-ACTUATORS_DELAY = 0.1
+ACTUATORS_DELAY = 0.2
 
 _DT = 0.01    # 100Hz
 _DT_MPC = 0.05  # 20Hz
@@ -24,6 +27,7 @@ def get_steer_max(CP, v_ego):
 class LatControl(object):
   def __init__(self, VM):
     self.pid = PIController(VM.CP.steerKp, VM.CP.steerKi, k_f=VM.CP.steerKf, pos_limit=1.0)
+    self.last_cloudlog_t = 0.0
     self.setup_mpc()
 
   def setup_mpc(self):
@@ -61,7 +65,7 @@ class LatControl(object):
       p_poly = libmpc_py.ffi.new("double[4]", list(PL.PP.p_poly))
 
       # account for actuation delay
-      self.cur_state = calc_states_after_delay(self.cur_state, v_ego, angle_steers, curvature_factor, VM.CP.sR)
+      self.cur_state = calc_states_after_delay(self.cur_state, v_ego, angle_steers, curvature_factor, VM.CP.steerRatio)
 
       v_ego_mpc = max(v_ego, 5.0)  # avoid mpc roughness due to low speed
       self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
@@ -71,9 +75,20 @@ class LatControl(object):
       delta_desired = self.mpc_solution[0].delta[1]
       self.cur_state[0].delta = delta_desired
 
-      self.angle_steers_des_mpc = float(math.degrees(delta_desired * VM.CP.sR) + angle_offset)
+      self.angle_steers_des_mpc = float(math.degrees(delta_desired * VM.CP.steerRatio) + angle_offset)
       self.angle_steers_des_time = cur_time
       self.mpc_updated = True
+
+      #  Check for infeasable MPC solution
+      nans = np.any(np.isnan(list(self.mpc_solution[0].delta)))
+      t = sec_since_boot()
+      if nans:
+        self.libmpc.init()
+        self.cur_state[0].delta = math.radians(angle_steers) / VM.CP.steerRatio
+
+        if t > self.last_cloudlog_t + 5.0:
+          self.last_cloudlog_t = t
+          cloudlog.warning("Lateral mpc - nan: True")
 
     if v_ego < 0.3 or not active:
       output_steer = 0.0

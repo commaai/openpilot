@@ -3,6 +3,7 @@ import zmq
 
 import numpy as np
 import math
+from collections import defaultdict
 
 from common.realtime import sec_since_boot
 from common.params import Params
@@ -39,6 +40,9 @@ _A_CRUISE_MAX_BP = [0.,  5., 10., 20., 40.]
 _A_TOTAL_MAX_V = [1.5, 1.9, 3.2]
 _A_TOTAL_MAX_BP = [0., 20., 40.]
 
+_FCW_A_ACT_V = [-3., -2.]
+_FCW_A_ACT_BP = [0., 30.]
+
 # max acceleration allowed in acc, which happens in restart
 A_ACC_MAX = max(_A_CRUISE_MAX_V_FOLLOWING)
 
@@ -61,7 +65,7 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   deg_to_rad = np.pi / 180.  # from can reading to rad
 
   a_total_max = interp(v_ego, _A_TOTAL_MAX_BP, _A_TOTAL_MAX_V)
-  a_y = v_ego**2 * angle_steers * deg_to_rad / (CP.sR * CP.l)
+  a_y = v_ego**2 * angle_steers * deg_to_rad / (CP.steerRatio * CP.wheelbase)
   a_x_allowed = math.sqrt(max(a_total_max**2 - a_y**2, 0.))
 
   a_target[1] = min(a_target[1], a_x_allowed)
@@ -70,36 +74,64 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
 
 class FCWChecker(object):
   def __init__(self):
-    self.fcw_count = 0
-    self.last_fcw_a = 0.0
-    self.v_lead_max = 0.0
-    self.lead_seen_t = 0.0
-    self.last_fcw_time = 0.0
+    self.reset_lead(0.0)
 
   def reset_lead(self, cur_time):
+    self.last_fcw_a = 0.0
     self.v_lead_max = 0.0
     self.lead_seen_t = cur_time
+    self.last_fcw_time = 0.0
+    self.last_min_a = 0.0
 
-  def update(self, mpc_solution, cur_time, v_ego, v_lead, y_lead, vlat_lead, fcw_lead, blinkers):
-    min_a_mpc = min(list(mpc_solution[0].a_ego)[1:])
+    self.counters = defaultdict(lambda: 0)
+
+  @staticmethod
+  def calc_ttc(v_ego, a_ego, x_lead, v_lead, a_lead):
+    max_ttc = 5.0
+
+    v_rel = v_ego - v_lead
+    a_rel = a_ego - a_lead
+
+    # assuming that closing gap ARel comes from lead vehicle decel,
+    # then limit ARel so that v_lead will get to zero in no sooner than t_decel.
+    # This helps underweighting ARel when v_lead is close to zero.
+    t_decel = 2.
+    a_rel = np.minimum(a_rel, v_lead/t_decel)
+
+    # delta of the quadratic equation to solve for ttc
+    delta = v_rel**2 + 2 * x_lead * a_rel
+
+    # assign an arbitrary high ttc value if there is no solution to ttc
+    if delta < 0.1 or (np.sqrt(delta) + v_rel < 0.1):
+      ttc = max_ttc
+    else:
+      ttc = np.minimum(2 * x_lead / (np.sqrt(delta) + v_rel), max_ttc)
+    return ttc
+
+  def update(self, mpc_solution, cur_time, v_ego, a_ego, x_lead, v_lead, a_lead, y_lead, vlat_lead, fcw_lead, blinkers):
+    mpc_solution_a = list(mpc_solution[0].a_ego)
+    self.last_min_a = min(mpc_solution_a[1:])
     self.v_lead_max = max(self.v_lead_max, v_lead)
 
-    if (fcw_lead > 0.99
-        and v_ego > 5.0
-        and min_a_mpc < -4.0
-        and self.v_lead_max > 2.5
-        and v_ego > v_lead
-        and self.lead_seen_t < cur_time - 2.0
-        and abs(y_lead) < 1.0
-        and abs(vlat_lead) < 0.3
-        and not blinkers):
-      self.fcw_count += 1
-      if self.fcw_count > 10 and self.last_fcw_time + 5.0 < cur_time:
+    if (fcw_lead > 0.99):
+      ttc = self.calc_ttc(v_ego, a_ego, x_lead, v_lead, a_lead)
+      self.counters['v_ego'] = self.counters['v_ego'] + 1 if v_ego > 5.0 else 0
+      self.counters['ttc'] = self.counters['ttc'] + 1 if ttc < 2.5 else 0
+      self.counters['v_lead_max'] = self.counters['v_lead_max'] + 1 if self.v_lead_max > 2.5 else 0
+      self.counters['v_ego_lead'] = self.counters['v_ego_lead'] + 1 if v_ego > v_lead else 0
+      self.counters['lead_seen'] = self.counters['lead_seen'] + 0.33
+      self.counters['y_lead'] = self.counters['y_lead'] + 1 if abs(y_lead) < 1.0 else 0
+      self.counters['vlat_lead'] = self.counters['vlat_lead'] + 1 if abs(vlat_lead) < 0.4 else 0
+      self.counters['blinkers'] = self.counters['blinkers'] + 10.0 / (20 * 3.0) if not blinkers else 0
+
+      a_thr = interp(v_lead, _FCW_A_ACT_BP, _FCW_A_ACT_V)
+      a_delta = min(mpc_solution_a[1:15]) - min(0.0, a_ego)
+
+      fcw_allowed = all(c >= 10 for c in self.counters.values())
+      if (self.last_min_a < -3.0 or a_delta < a_thr) and fcw_allowed and self.last_fcw_time + 5.0 < cur_time:
         self.last_fcw_time = cur_time
-        self.last_fcw_a = min_a_mpc
+        self.last_fcw_a = self.last_min_a
         return True
-    else:
-      self.fcw_count = 0
 
     return False
 
@@ -214,6 +246,8 @@ class LongitudinalMpc(object):
       self.libmpc.init()
       self.cur_state[0].v_ego = CS.vEgo
       self.cur_state[0].a_ego = 0.0
+      self.v_mpc = CS.vEgo
+      self.a_mpc = CS.aEgo
       self.prev_lead_status = False
 
 
@@ -257,32 +291,33 @@ class Planner(object):
     self.fcw_checker = FCWChecker()
     self.fcw_enabled = fcw_enabled
 
-  def choose_solution(self, v_cruise_setpoint):
-    solutions = {'cruise': self.v_cruise}
-    if self.mpc1.prev_lead_status:
-      solutions['mpc1'] = self.mpc1.v_mpc
-    if self.mpc2.prev_lead_status:
-      solutions['mpc2'] = self.mpc2.v_mpc
+  def choose_solution(self, v_cruise_setpoint, enabled):
+    if enabled:
+      solutions = {'cruise': self.v_cruise}
+      if self.mpc1.prev_lead_status:
+        solutions['mpc1'] = self.mpc1.v_mpc
+      if self.mpc2.prev_lead_status:
+        solutions['mpc2'] = self.mpc2.v_mpc
 
-    slowest = min(solutions, key=solutions.get)
+      slowest = min(solutions, key=solutions.get)
 
-    if _DEBUG:
-      print "D_SOL", solutions, slowest, self.v_acc_sol, self.a_acc_sol
-      print "D_V", self.mpc1.v_mpc, self.mpc2.v_mpc, self.v_cruise
-      print "D_A", self.mpc1.a_mpc, self.mpc2.a_mpc, self.a_cruise
+      if _DEBUG:
+        print "D_SOL", solutions, slowest, self.v_acc_sol, self.a_acc_sol
+        print "D_V", self.mpc1.v_mpc, self.mpc2.v_mpc, self.v_cruise
+        print "D_A", self.mpc1.a_mpc, self.mpc2.a_mpc, self.a_cruise
 
-    self.longitudinalPlanSource = slowest
+      self.longitudinalPlanSource = slowest
 
-    # Choose lowest of MPC and cruise
-    if slowest == 'mpc1':
-      self.v_acc = self.mpc1.v_mpc
-      self.a_acc = self.mpc1.a_mpc
-    elif slowest == 'mpc2':
-      self.v_acc = self.mpc2.v_mpc
-      self.a_acc = self.mpc2.a_mpc
-    elif slowest == 'cruise':
-      self.v_acc = self.v_cruise
-      self.a_acc = self.a_cruise
+      # Choose lowest of MPC and cruise
+      if slowest == 'mpc1':
+        self.v_acc = self.mpc1.v_mpc
+        self.a_acc = self.mpc1.a_mpc
+      elif slowest == 'mpc2':
+        self.v_acc = self.mpc2.v_mpc
+        self.a_acc = self.mpc2.a_mpc
+      elif slowest == 'cruise':
+        self.v_acc = self.v_cruise
+        self.a_acc = self.a_cruise
 
     self.v_acc_future = min([self.mpc1.v_mpc_future, self.mpc2.v_mpc_future, v_cruise_setpoint])
 
@@ -331,19 +366,19 @@ class Planner(object):
         self.v_cruise, self.a_cruise = speed_smoother(self.v_acc_start, self.a_acc_start,
                                                       v_cruise_setpoint,
                                                       accel_limits[1], accel_limits[0],
-                                                      jerk_limits[1],
-                                                      jerk_limits[0],
+                                                      jerk_limits[1], jerk_limits[0],
                                                       _DT_MPC)
       else:
         starting = LoC.long_control_state == LongCtrlState.starting
+        a_ego = min(CS.aEgo, 0.0)
         self.v_cruise = CS.vEgo
-        self.a_cruise = self.CP.startAccel if starting else CS.aEgo
+        self.a_cruise = self.CP.startAccel if starting else a_ego
         self.v_acc_start = CS.vEgo
-        self.a_acc_start = self.CP.startAccel if starting else CS.aEgo
+        self.a_acc_start = self.CP.startAccel if starting else a_ego
         self.v_acc = CS.vEgo
-        self.a_acc = self.CP.startAccel if starting else CS.aEgo
+        self.a_acc = self.CP.startAccel if starting else a_ego
         self.v_acc_sol = CS.vEgo
-        self.a_acc_sol = self.CP.startAccel if starting else CS.aEgo
+        self.a_acc_sol = self.CP.startAccel if starting else a_ego
 
       self.mpc1.set_cur_state(self.v_acc_start, self.a_acc_start)
       self.mpc2.set_cur_state(self.v_acc_start, self.a_acc_start)
@@ -351,15 +386,16 @@ class Planner(object):
       self.mpc1.update(CS, self.lead_1, v_cruise_setpoint)
       self.mpc2.update(CS, self.lead_2, v_cruise_setpoint)
 
-      self.choose_solution(v_cruise_setpoint)
+      self.choose_solution(v_cruise_setpoint, enabled)
 
       # determine fcw
       if self.mpc1.new_lead:
         self.fcw_checker.reset_lead(cur_time)
 
       blinkers = CS.leftBlinker or CS.rightBlinker
-      self.fcw = self.fcw_checker.update(self.mpc1.mpc_solution, cur_time, CS.vEgo,
-                                         self.lead_1.vLead, self.lead_1.yRel, self.lead_1.vLat,
+      self.fcw = self.fcw_checker.update(self.mpc1.mpc_solution, cur_time, CS.vEgo, CS.aEgo,
+                                         self.lead_1.dRel, self.lead_1.vLead, self.lead_1.aLeadK,
+                                         self.lead_1.yRel, self.lead_1.vLat,
                                          self.lead_1.fcw, blinkers) \
                  and not CS.brakePressed
       if self.fcw:

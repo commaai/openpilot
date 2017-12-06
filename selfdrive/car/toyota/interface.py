@@ -62,19 +62,19 @@ class CarInterface(object):
 
     # FIXME: hardcoding honda civic 2016 touring params so they can be used to
     # scale unknown params for other cars
-    m_civic = 2923./2.205 + std_cargo
-    l_civic = 2.70
-    aF_civic = l_civic * 0.4
-    aR_civic = l_civic - aF_civic
-    j_civic = 2500
-    cF_civic = 85400
-    cR_civic = 90000
+    mass_civic = 2923./2.205 + std_cargo
+    wheelbase_civic = 2.70
+    centerToFront_civic = wheelbase_civic * 0.4
+    centerToRear_civic = wheelbase_civic - centerToFront_civic
+    rotationalInertia_civic = 2500
+    tireStiffnessFront_civic = 85400
+    tireStiffnessRear_civic = 90000
 
     stop_and_go = True
-    ret.m = 3045./2.205 + std_cargo
-    ret.l = 2.70
-    ret.aF = ret.l * 0.44
-    ret.sR = 14.5 #Rav4 2017, TODO: find exact value for Prius
+    ret.mass = 3045./2.205 + std_cargo
+    ret.wheelbase = 2.70
+    ret.centerToFront = ret.wheelbase * 0.44
+    ret.steerRatio = 14.5 #Rav4 2017, TODO: find exact value for Prius
     ret.steerKp, ret.steerKi = 0.6, 0.05
     ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
 
@@ -88,18 +88,23 @@ class CarInterface(object):
     elif candidate == CAR.RAV4:   # TODO: hack Rav4 to do stop and go
       ret.minEnableSpeed = 19. * CV.MPH_TO_MS
 
-    ret.aR = ret.l - ret.aF
+    centerToRear = ret.wheelbase - ret.centerToFront
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
-    ret.j = j_civic * ret.m * ret.l**2 / (m_civic * l_civic**2)
+    ret.rotationalInertia = rotationalInertia_civic * \
+                            ret.mass * ret.wheelbase**2 / (mass_civic * wheelbase_civic**2)
 
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
-    ret.cF = cF_civic * ret.m / m_civic * (ret.aR / ret.l) / (aR_civic / l_civic)
-    ret.cR = cR_civic * ret.m / m_civic * (ret.aF / ret.l) / (aF_civic / l_civic)
+    ret.tireStiffnessFront = tireStiffnessFront_civic * \
+                             ret.mass / mass_civic * \
+                             (centerToRear / ret.wheelbase) / (centerToRear_civic / wheelbase_civic)
+    ret.tireStiffnessRear = tireStiffnessRear_civic * \
+                            ret.mass / mass_civic * \
+                            (ret.centerToFront / ret.wheelbase) / (centerToFront_civic / wheelbase_civic)
 
     # no rear steering, at least on the listed cars above
-    ret.chi = 0.
+    ret.steerRatioRear = 0.
 
     # steer, gas, brake limitations VS speed
     ret.steerMaxBP = [16. * CV.KPH_TO_MS, 45. * CV.KPH_TO_MS]  # breakpoints at 1 and 40 kph

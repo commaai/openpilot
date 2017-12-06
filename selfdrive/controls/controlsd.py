@@ -476,7 +476,7 @@ def controlsd_thread(gctx, rate=100):
   rk = Ratekeeper(rate, print_delay_threshold=2./1000)
 
   # learned angle offset
-  angle_offset = 0.
+  angle_offset = 1.5  # Default model bias
   calibration_params = params.get("CalibrationParams")
   if calibration_params:
     try:

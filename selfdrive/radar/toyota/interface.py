@@ -27,13 +27,14 @@ class RadarInterface(object):
   def __init__(self):
     # radar
     self.pts = {}
-    self.ptsValid = {key: False for key in RADAR_MSGS}
+    self.validCnt = {key: 0 for key in RADAR_MSGS}
     self.track_id = 0
 
     self.delay = 0.0  # Delay of radar
 
     # Nidec
     self.rcp = _create_radard_can_parser()
+    self.cutin_prediction = False
 
     context = zmq.Context()
     self.logcan = messaging.sub_sock(context, service_list['can'].port)
@@ -55,21 +56,21 @@ class RadarInterface(object):
       errors.append("commIssue")
     ret.errors = errors
     ret.canMonoTimes = canMonoTimes
-    #print "NEW TRACKS"
+
     for ii in updated_messages:
       cpt = self.rcp.vl[ii]
 
-      # a point needs one valid measurement before being considered
-      #if cpt['NEW_TRACK'] or cpt['LONG_DIST'] >= 255:
-      #  self.ptsValid[ii] = False    # reset validity
-      # TODO: find better way to eliminate both false positive and false negative
-      if cpt['VALID'] and cpt['LONG_DIST'] < 255:
-        self.ptsValid[ii] = True
-      else:
-        self.ptsValid[ii] = False
+      if cpt['LONG_DIST'] >=255 or cpt['NEW_TRACK']:
+        self.validCnt[ii] = 0    # reset counter
 
-      if self.ptsValid[ii]:
-        #print "%5s %5s %5s" % (round(cpt['LONG_DIST'], 1), round(cpt['LAT_DIST'], 1), round(cpt['REL_SPEED'], 1))
+      if cpt['VALID'] and cpt['LONG_DIST'] < 255:
+        self.validCnt[ii] += 1
+      else:
+        self.validCnt[ii] = max(self.validCnt[ii] -1, 0)
+      #print ii, self.validCnt[ii], cpt['VALID'], cpt['LONG_DIST'], cpt['LAT_DIST']
+
+      # radar point only valid if there have been enough valid measurements
+      if self.validCnt[ii] > 0:
         if ii not in self.pts or cpt['NEW_TRACK']:
           self.pts[ii] = car.RadarState.RadarPoint.new_message()
           self.pts[ii].trackId = self.track_id
@@ -79,6 +80,7 @@ class RadarInterface(object):
         self.pts[ii].vRel = cpt['REL_SPEED']
         self.pts[ii].aRel = float('nan')
         self.pts[ii].yvRel = float('nan')
+        self.pts[ii].measured = bool(cpt['VALID'])
       else:
         if ii in self.pts:
           del self.pts[ii]
