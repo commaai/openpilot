@@ -79,7 +79,7 @@ def create_steering_control(apply_steer, crv, idx):
     commands.append(make_can_msg(0xe4, msg_0xe4, idx, 0))
   return commands
 
-def create_ui_commands(pcm_speed, hud, civic, accord, crv, odyssey, pilot, idx):
+def create_ui_commands(pcm_speed, hud, civic, accord, crv, odyssey, idx):
   """Creates an iterable of CAN messages for the UIs."""
   commands = []
   pcm_speed_real = np.clip(int(round(pcm_speed / 0.002759506)), 0,
@@ -90,17 +90,17 @@ def create_ui_commands(pcm_speed, hud, civic, accord, crv, odyssey, pilot, idx):
 
   msg_0x33d = chr(hud.X5) + chr(hud.lanes) + chr(hud.beep) + chr(hud.X8)
   commands.append(make_can_msg(0x33d, msg_0x33d, idx, 0))
-  if civic or odyssey or pilot:  # 2 more msgs
+  if civic or odyssey:  # 2 more msgs
     msg_0x35e = chr(0) * 7
     commands.append(make_can_msg(0x35e, msg_0x35e, idx, 0))
-  if civic or accord or odyssey or pilot:
+  if civic or accord or odyssey:
     msg_0x39f = (
       chr(0) * 2 + chr(hud.acc_alert) + chr(0) + chr(0xff) + chr(0x7f) + chr(0)
     )
     commands.append(make_can_msg(0x39f, msg_0x39f, idx, 0))
   return commands
 
-def create_radar_commands(v_ego, civic, accord, crv, odyssey, pilot, idx):
+def create_radar_commands(v_ego, civic, accord, crv, odyssey, idx):
   """Creates an iterable of CAN messages for the radar system."""
   commands = []
   v_ego_kph = np.clip(int(round(v_ego * CV.MS_TO_KPH)), 0, 255)
