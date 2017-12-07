@@ -333,6 +333,7 @@ class CarState(object):
     self.accord = False
     self.crv = False
     self.odyssey = False
+    self.pilot = False
     if CP.carFingerprint == "HONDA CIVIC 2016 TOURING":
       self.civic = True
     elif CP.carFingerprint == "ACURA ILX 2016 ACURAWATCH PLUS":
@@ -343,6 +344,8 @@ class CarState(object):
       self.crv = True
     elif CP.carFingerprint == "HONDA ODYSSEY 2018 EX-L":
       self.odyssey = True
+    elif CP.carFingerprint == "HONDA PILOT 2017 TOURING":
+      self.pilot = True
     else:
       raise ValueError("unsupported car %s" % CP.carFingerprint)
 
