@@ -217,6 +217,19 @@ class CarInterface(object):
       ret.longitudinalKpV = [1.2, 0.8, 0.5]
       ret.longitudinalKiBP = [0., 35.]
       ret.longitudinalKiV = [0.18, 0.12]
+      
+elif candidate == "HONDA PILOT 2017 TOURING":
+      stop_and_go = False
+      ret.m = 4303./2.205 + std_cargo
+      ret.l = 3.00
+      ret.aF = ret.l * 0.41
+      ret.sR = 15.3
+      ret.steerKp, ret.steerKi = 0.8, 0.24
+
+      ret.longitudinalKpBP = [0., 5., 35.]
+      ret.longitudinalKpV = [1.2, 0.8, 0.5]
+      ret.longitudinalKiBP = [0., 35.]
+      ret.longitudinalKiV = [0.18, 0.12]      
     else:
       raise ValueError("unsupported car %s" % candidate)
 
