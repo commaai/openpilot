@@ -21,12 +21,14 @@ class Conversions:
 
 
 # Car button codes
+# TODO: this is Honda specific, move to honda/interface.py
 class CruiseButtons:
   RES_ACCEL   = 4
   DECEL_SET   = 3
   CANCEL      = 2
   MAIN        = 1
 
+RADAR_TO_CENTER = 2.7   # RADAR is ~ 2.7m ahead from center of car
 
 # Image params for color cam on acura, calibrated on pre las vegas drive (2016-05-21)
 class ImageParams:

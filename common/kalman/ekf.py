@@ -19,6 +19,7 @@ import numpy.matlib
 # update() should be called once per sensor, and can be called multiple times between predict steps.
 # Access and set the state of the filter directly with ekf.state and ekf.covar.
 
+
 class SensorReading:
   # Given a perfect model and no noise, data = obs_model * state
   def __init__(self, data, covar, obs_model):
@@ -33,7 +34,7 @@ class SensorReading:
 
 # A generic sensor class that does no pre-processing of data
 class SimpleSensor:
-  # obs_model can be 
+  # obs_model can be
   #   a full obesrvation model matrix, or
   #   an integer or tuple of indices into ekf.state, indicating which variables are being directly observed
   # covar can be
@@ -131,11 +132,11 @@ class EKF:
     # like update but knowing that measurment is a scalar
     # this avoids matrix inversions and speeds up (surprisingly) drived.py a lot
 
-    # innovation = reading.data - np.matmul(reading.obs_model, self.state)   
-    # innovation_covar = np.matmul(np.matmul(reading.obs_model, self.covar), reading.obs_model.T) + reading.covar    
-    # kalman_gain = np.matmul(self.covar, reading.obs_model.T)/innovation_covar   
-    # self.state += np.matmul(kalman_gain, innovation)   
-    # aux_mtrx = self.identity - np.matmul(kalman_gain, reading.obs_model)    
+    # innovation = reading.data - np.matmul(reading.obs_model, self.state)
+    # innovation_covar = np.matmul(np.matmul(reading.obs_model, self.covar), reading.obs_model.T) + reading.covar
+    # kalman_gain = np.matmul(self.covar, reading.obs_model.T)/innovation_covar
+    # self.state += np.matmul(kalman_gain, innovation)
+    # aux_mtrx = self.identity - np.matmul(kalman_gain, reading.obs_model)
     # self.covar =  np.matmul(aux_mtrx, np.matmul(self.covar, aux_mtrx.T)) + np.matmul(kalman_gain, np.matmul(reading.covar, kalman_gain.T))
 
     # written without np.matmul
@@ -174,7 +175,7 @@ class EKF:
 
     #! Clip covariance to avoid explosions
     self.covar = np.clip(self.covar,-1e10,1e10)
-    
+
   @abc.abstractmethod
   def calc_transfer_fun(self, dt):
     """Return a tuple with the transfer function and transfer function jacobian
@@ -189,6 +190,7 @@ class EKF:
       can be added trivially by adding a control parameter to predict() and calc_tranfer_update(),
       and using it during calcualtion of A and J
     """
+
 
 class FastEKF1D(EKF):
   """Fast version of EKF for 1D problems with scalar readings."""

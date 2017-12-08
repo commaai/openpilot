@@ -1,19 +1,19 @@
 #!/usr/bin/env python
 import os
 import time
+from common.realtime import sec_since_boot
 import common.numpy_fast as np
 from selfdrive.config import Conversions as CV
-from selfdrive.car.toyota.carstate import CarState, CAR
-from selfdrive.car.toyota.carcontroller import CarController, ECU, check_ecu_msgs
+from selfdrive.car.toyota.carstate import CarState, get_can_parser
+from selfdrive.car.toyota.values import CAR, ECU
+from selfdrive.car.toyota.carcontroller import CarController, check_ecu_msgs
 from cereal import car
 from selfdrive.services import service_list
 import selfdrive.messaging as messaging
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 
-
 class CarInterface(object):
-  def __init__(self, CP, logcan, sendcan=None):
-    self.logcan = logcan
+  def __init__(self, CP, sendcan=None):
     self.CP = CP
 
     self.frame = 0
@@ -23,12 +23,22 @@ class CarInterface(object):
     self.cruise_enabled_prev = False
 
     # *** init the major players ***
-    self.CS = CarState(CP, self.logcan)
+    self.CS = CarState(CP)
+
+    self.cp = get_can_parser(CP)
 
     # sending if read only is False
     if sendcan is not None:
       self.sendcan = sendcan
       self.CC = CarController(CP.carFingerprint, CP.enableCamera, CP.enableDsu, CP.enableApgs)
+
+  @staticmethod
+  def compute_gb(accel, speed):
+    return float(accel) / 3.0
+
+  @staticmethod
+  def calc_accel_override(a_ego, a_target, v_ego, v_target):
+    return 1.0
 
   @staticmethod
   def get_params(candidate, fingerprint):
@@ -52,19 +62,19 @@ class CarInterface(object):
 
     # FIXME: hardcoding honda civic 2016 touring params so they can be used to
     # scale unknown params for other cars
-    m_civic = 2923./2.205 + std_cargo
-    l_civic = 2.70
-    aF_civic = l_civic * 0.4
-    aR_civic = l_civic - aF_civic
-    j_civic = 2500
-    cF_civic = 85400
-    cR_civic = 90000
+    mass_civic = 2923./2.205 + std_cargo
+    wheelbase_civic = 2.70
+    centerToFront_civic = wheelbase_civic * 0.4
+    centerToRear_civic = wheelbase_civic - centerToFront_civic
+    rotationalInertia_civic = 2500
+    tireStiffnessFront_civic = 85400
+    tireStiffnessRear_civic = 90000
 
     stop_and_go = True
-    ret.m = 3045./2.205 + std_cargo
-    ret.l = 2.70
-    ret.aF = ret.l * 0.44
-    ret.sR = 14.5 #Rav4 2017, TODO: find exact value for Prius
+    ret.mass = 3045./2.205 + std_cargo
+    ret.wheelbase = 2.70
+    ret.centerToFront = ret.wheelbase * 0.44
+    ret.steerRatio = 14.5 #Rav4 2017, TODO: find exact value for Prius
     ret.steerKp, ret.steerKi = 0.6, 0.05
     ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
 
@@ -78,18 +88,23 @@ class CarInterface(object):
     elif candidate == CAR.RAV4:   # TODO: hack Rav4 to do stop and go
       ret.minEnableSpeed = 19. * CV.MPH_TO_MS
 
-    ret.aR = ret.l - ret.aF
+    centerToRear = ret.wheelbase - ret.centerToFront
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
-    ret.j = j_civic * ret.m * ret.l**2 / (m_civic * l_civic**2)
+    ret.rotationalInertia = rotationalInertia_civic * \
+                            ret.mass * ret.wheelbase**2 / (mass_civic * wheelbase_civic**2)
 
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
-    ret.cF = cF_civic * ret.m / m_civic * (ret.aR / ret.l) / (aR_civic / l_civic)
-    ret.cR = cR_civic * ret.m / m_civic * (ret.aF / ret.l) / (aF_civic / l_civic)
+    ret.tireStiffnessFront = tireStiffnessFront_civic * \
+                             ret.mass / mass_civic * \
+                             (centerToRear / ret.wheelbase) / (centerToRear_civic / wheelbase_civic)
+    ret.tireStiffnessRear = tireStiffnessRear_civic * \
+                            ret.mass / mass_civic * \
+                            (ret.centerToFront / ret.wheelbase) / (centerToFront_civic / wheelbase_civic)
 
     # no rear steering, at least on the listed cars above
-    ret.chi = 0.
+    ret.steerRatioRear = 0.
 
     # steer, gas, brake limitations VS speed
     ret.steerMaxBP = [16. * CV.KPH_TO_MS, 45. * CV.KPH_TO_MS]  # breakpoints at 1 and 40 kph
@@ -108,13 +123,15 @@ class CarInterface(object):
     ret.enableGas = True
 
     ret.steerLimitAlert = False
+    ret.stoppingControl = False
+    ret.startAccel = 0.0
+
+    ret.longitudinalKpBP = [0., 5., 35.]
+    ret.longitudinalKpV = [3.6, 2.4, 1.5]
+    ret.longitudinalKiBP = [0., 35.]
+    ret.longitudinalKiV = [0.54, 0.36]
 
     return ret
-
-  @staticmethod
-  def compute_gb(accel, speed):
-    # toyota interface is already in accelration cmd, so conversion to gas-brake it's a pass-through.
-    return accel
 
   # returns a car.CarState
   def update(self, c):
@@ -122,7 +139,9 @@ class CarInterface(object):
     can_pub_main = []
     canMonoTimes = []
 
-    self.CS.update()
+    self.cp.update(int(sec_since_boot() * 1e9), False)
+
+    self.CS.update(self.cp)
 
     # create message
     ret = car.CarState.new_message()
@@ -147,6 +166,7 @@ class CarInterface(object):
     # brake pedal
     ret.brake = self.CS.user_brake
     ret.brakePressed = self.CS.brake_pressed != 0
+    ret.brakeLights = self.CS.brake_lights
 
     # steering wheel
     ret.steeringAngle = self.CS.angle_steers
@@ -160,6 +180,7 @@ class CarInterface(object):
     ret.cruiseState.speed = self.CS.v_cruise_pcm * CV.KPH_TO_MS
     ret.cruiseState.available = bool(self.CS.main_on)
     ret.cruiseState.speedOffset = 0.
+    ret.cruiseState.standstill = self.CS.pcm_acc_status == 7
 
     # TODO: button presses
     buttonEvents = []
@@ -177,6 +198,8 @@ class CarInterface(object):
       buttonEvents.append(be)
 
     ret.buttonEvents = buttonEvents
+    ret.leftBlinker = bool(self.CS.left_blinker_on)
+    ret.rightBlinker = bool(self.CS.right_blinker_on)
 
     # events
     events = []

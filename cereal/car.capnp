@@ -77,6 +77,7 @@ struct CarState {
   # brake pedal, 0.0-1.0
   brake @5 :Float32;      # this is user pedal only
   brakePressed @6 :Bool;  # this is user pedal only
+  brakeLights @19 :Bool;
 
   # steering wheel
   steeringAngle @7 :Float32;   # deg
@@ -92,6 +93,8 @@ struct CarState {
 
   # button presses
   buttonEvents @11 :List(ButtonEvent);
+  leftBlinker @20 :Bool;
+  rightBlinker @21 :Bool;
 
   # which packets this state came from
   canMonoTimes @12: List(UInt64);
@@ -109,6 +112,7 @@ struct CarState {
     speed @1 :Float32;
     available @2 :Bool;
     speedOffset @3 :Float32;
+    standstill @4 :Bool;
   }
 
   enum GearShifter {
@@ -169,6 +173,9 @@ struct RadarState {
     # these are optional and valid if they are not NaN
     aRel @4 :Float32; # m/s^2
     yvRel @5 :Float32; # m/s
+
+    # some radars flag measurements VS estimates
+    measured @6 :Bool;
   }
 }
 
@@ -248,22 +255,22 @@ struct CarParams {
   enableGas @4 :Bool;
   enableBrake @5 :Bool;
   enableCruise @6 :Bool;
-  enableCamera @27 :Bool;
-  enableDsu @28 :Bool; # driving support unit
-  enableApgs @29 :Bool; # advanced parking guidance system
+  enableCamera @26 :Bool;
+  enableDsu @27 :Bool; # driving support unit
+  enableApgs @28 :Bool; # advanced parking guidance system
 
-  minEnableSpeed @18 :Float32;
-  safetyModel @19 :Int16;
+  minEnableSpeed @17 :Float32;
+  safetyModel @18 :Int16;
 
-  steerMaxBP @20 :List(Float32);
-  steerMaxV @21 :List(Float32);
-  gasMaxBP @22 :List(Float32);
-  gasMaxV @23 :List(Float32);
-  brakeMaxBP @24 :List(Float32);
-  brakeMaxV @25 :List(Float32);
+  steerMaxBP @19 :List(Float32);
+  steerMaxV @20 :List(Float32);
+  gasMaxBP @21 :List(Float32);
+  gasMaxV @22 :List(Float32);
+  brakeMaxBP @23 :List(Float32);
+  brakeMaxV @24 :List(Float32);
 
-  longPidDeadzoneBP @33 :List(Float32);
-  longPidDeadzoneV @34 :List(Float32);
+  longPidDeadzoneBP @32 :List(Float32);
+  longPidDeadzoneV @33 :List(Float32);
 
   enum SafetyModels {
     # does NOT match board setting
@@ -274,27 +281,32 @@ struct CarParams {
   }
 
   # things about the car in the manual
-  m @7 :Float32;     # [kg] running weight
-  l @8 :Float32;     # [m] wheelbase
-  sR @9 :Float32;    # [] steering ratio
-  aF @10 :Float32;   # [m] GC distance to front axle
-  aR @11 :Float32;   # [m] GC distance to rear axle
-  chi @12 :Float32;  # [] rear steering ratio wrt front steering (usually 0)
+  mass @7 :Float32;             # [kg] running weight
+  wheelbase @8 :Float32;        # [m] distance from rear to front axle
+  centerToFront @9 :Float32;   # [m] GC distance to front axle
+  steerRatio @10 :Float32;       # [] ratio between front wheels and steering wheel angles
+  steerRatioRear @11 :Float32;  # [] rear steering ratio wrt front steering (usually 0)
 
   # things we can derive
-  j @13 :Float32;    # [kg*m2] body rotational inertia
-  cF @14 :Float32;   # [N/rad] front tire coeff of stiff
-  cR @15 :Float32;   # [N/rad] rear tire coeff of stiff
+  rotationalInertia @12 :Float32;    # [kg*m2] body rotational inertia
+  tireStiffnessFront @13 :Float32;   # [N/rad] front tire coeff of stiff
+  tireStiffnessRear @14 :Float32;    # [N/rad] rear tire coeff of stiff
 
   # Kp and Ki for the lateral control
-  steerKp @16 :Float32;
-  steerKi @17 :Float32;
-  steerKf @26 :Float32;
+  steerKp @15 :Float32;
+  steerKi @16 :Float32;
+  steerKf @25 :Float32;
 
-  steerLimitAlert @30 :Bool;
+  # Kp and Ki for the longitudinal control
+  longitudinalKpBP @36 :List(Float32);
+  longitudinalKpV @37 :List(Float32);
+  longitudinalKiBP @38 :List(Float32);
+  longitudinalKiV @39 :List(Float32);
 
-  vEgoStopping @31 :Float32; # Speed at which the car goes into stopping state
-  directAccelControl @32 :Bool; # Does the car have direct accel control or just gas/brake
+  steerLimitAlert @29 :Bool;
 
-  # TODO: Kp and Ki for long control, perhaps not needed?
+  vEgoStopping @30 :Float32; # Speed at which the car goes into stopping state
+  directAccelControl @31 :Bool; # Does the car have direct accel control or just gas/brake
+  stoppingControl @34 :Bool; # Does the car allows full control even at lows speeds when stopping
+  startAccel @35 :Float32; # Required acceleraton to overcome creep braking
 }

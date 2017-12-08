@@ -11,14 +11,10 @@ from selfdrive.controls.lib.drive_helpers import rate_limit
 from . import hondacan
 from .values import AH
 
-# msgs sent for steering controller by camera module on can 0.
-# those messages are mutually exclusive on non-rav4 and rav4 cars
-CAMERA_MSGS = [0xe4, 0x194]
-
 
 def actuator_hystereses(brake, braking, brake_steady, v_ego, civic):
   # hyst params... TODO: move these to VehicleParams
-  brake_hyst_on = 0.055 if civic else 0.1    # to activate brakes exceed this value
+  brake_hyst_on = 0.02     # to activate brakes exceed this value
   brake_hyst_off = 0.005                     # to deactivate brakes below this value
   brake_hyst_gap = 0.01                      # don't change brake command for small ocilalitons within this value
 
@@ -36,14 +32,8 @@ def actuator_hystereses(brake, braking, brake_steady, v_ego, civic):
     brake_steady = brake + brake_hyst_gap
   brake = brake_steady
 
-  if not civic:
-    brake_on_offset_v  = [.25, .15]   # min brake command on brake activation. below this no decel is perceived
-    brake_on_offset_bp = [15., 30.]     # offset changes VS speed to not have too abrupt decels at high speeds
-    # offset the brake command for threshold in the brake system. no brake torque perceived below it
-    brake_on_offset = interp(v_ego, brake_on_offset_bp, brake_on_offset_v)
-    brake_offset = brake_on_offset - brake_hyst_on
-    if brake > 0.0:
-      brake += brake_offset
+  if not civic and brake > 0.0:
+    brake += 0.15
 
   return brake, braking, brake_steady
 
@@ -68,6 +58,7 @@ def process_hud_alert(hud_alert):
 HUDData = namedtuple("HUDData",
                      ["pcm_accel", "v_cruise", "X2", "car", "X4", "X5",
                       "lanes", "beep", "X8", "chime", "acc_alert"])
+
 
 class CarController(object):
   def __init__(self, enable_camera=True):
@@ -95,8 +86,7 @@ class CarController(object):
       pcm_cancel_cmd = True
 
     # *** rate limit after the enable check ***
-    brake = rate_limit(brake, self.brake_last, -2., 1./100)
-    self.brake_last = brake
+    self.brake_last = rate_limit(brake, self.brake_last, -2., 1./100)
 
     # vehicle hud display, wait for one update from 10Hz 0x304 msg
     #TODO: use enum!!
@@ -132,7 +122,7 @@ class CarController(object):
     GAS_MAX = 1004
     BRAKE_MAX = 1024/4
     if CS.civic:
-      is_fw_modified = os.getenv("DONGLE_ID") in ['b0f5a01cf604185c']
+      is_fw_modified = os.getenv("DONGLE_ID") in ['b0f5a01cf604185cxxx']
       STEER_MAX = 0x1FFF if is_fw_modified else 0x1000
     elif CS.crv:
       STEER_MAX = 0x300  # CR-V only uses 12-bits and requires a lower value
@@ -142,16 +132,8 @@ class CarController(object):
 
     # steer torque is converted back to CAN reference (positive when steering right)
     apply_gas = int(clip(actuators.gas * GAS_MAX, 0, GAS_MAX - 1))
-    apply_brake = int(clip(brake * BRAKE_MAX, 0, BRAKE_MAX - 1))
+    apply_brake = int(clip(self.brake_last * BRAKE_MAX, 0, BRAKE_MAX - 1))
     apply_steer = int(clip(-actuators.steer * STEER_MAX, -STEER_MAX, STEER_MAX))
-
-    # no gas if you are hitting the brake or the user is
-    if apply_gas > 0 and (apply_brake != 0 or CS.brake_pressed):
-      apply_gas = 0
-
-    # no computer brake if the gas is being pressed
-    if CS.car_gas > 0 and apply_brake != 0:
-      apply_brake = 0
 
     # any other cp.vl[0x18F]['STEER_STATUS'] is common and can happen during user override. sending 0 torque to avoid EPS sending error 5
     if CS.steer_not_allowed:

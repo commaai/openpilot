@@ -102,6 +102,7 @@ class Plant(object):
       Plant.model = messaging.pub_sock(context, service_list['model'].port)
       Plant.cal = messaging.pub_sock(context, service_list['liveCalibration'].port)
       Plant.live100 = messaging.sub_sock(context, service_list['live100'].port)
+      Plant.plan = messaging.sub_sock(context, service_list['plan'].port)
       Plant.messaging_initialized = True
 
     self.angle_steer = 0.
@@ -162,10 +163,14 @@ class Plant(object):
     self.cp.update_can(can_msgs)
 
     # ******** get live100 messages for plotting ***
-    live_msgs = []
+    live100_msgs = []
     for a in messaging.drain_sock(Plant.live100):
-      live_msgs.append(a.live100)
+      live100_msgs.append(a.live100)
 
+    fcw = None
+    for a in messaging.drain_sock(Plant.plan):
+      if a.plan.fcw:
+        fcw = True
 
     if self.cp.vl[0x1fa]['COMPUTER_BRAKE_REQUEST']:
       brake = self.cp.vl[0x1fa]['COMPUTER_BRAKE']
@@ -253,7 +258,8 @@ class Plant(object):
     Plant.logcan.send(can_list_to_can_capnp(can_msgs).to_bytes())
 
     # ******** publish a fake model going straight and fake calibration ********
-    if publish_model:
+    # note that this is worst case for MPC, since model will delay long mpc by one time step
+    if publish_model and self.rk.frame % 5 == 0:
       md = messaging.new_message()
       cal = messaging.new_message()
       md.init('model')
@@ -263,6 +269,9 @@ class Plant(object):
         x.points = [0.0]*50
         x.prob = 1.0
         x.std = 1.0
+      md.model.lead.dist = float(d_rel)
+      md.model.lead.prob = 1.
+      md.model.lead.std = 0.1
       cal.liveCalibration.calStatus = 1
       cal.liveCalibration.calPerc = 100
       # fake values?
@@ -279,7 +288,7 @@ class Plant(object):
     self.distance_lead_prev = distance_lead
 
     self.rk.keep_time()
-    return (distance, speed, acceleration, distance_lead, brake, gas, steer_torque, live_msgs)
+    return (distance, speed, acceleration, distance_lead, brake, gas, steer_torque, fcw, live100_msgs)
 
 # simple engage in standalone mode
 def plant_thread(rate=100):
