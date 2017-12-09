@@ -50,6 +50,10 @@ Community WIP Cars
 
 - [Classic Tesla Model S (pre-AP)](https://github.com/commaai/openpilot/pull/145)
 
+- [Honda Odyssey 2018 EX-L with Honda Sensing](https://github.com/commaai/openpilot/pull/155)
+
+- [Honda Pilot 2017 Touring](https://github.com/commaai/openpilot/pull/159)
+
 Directory structure
 ------
 

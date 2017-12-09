@@ -165,16 +165,16 @@ class CarController(object):
     # Send dashboard UI commands.
     if (frame % 10) == 0:
       idx = (frame/10) % 4
-      can_sends.extend(hondacan.create_ui_commands(pcm_speed, hud, CS.civic, CS.accord, CS.crv, idx))
+      can_sends.extend(hondacan.create_ui_commands(pcm_speed, hud, CS.civic, CS.accord, CS.crv, CS.odyssey, idx))
 
     # radar at 20Hz, but these msgs need to be sent at 50Hz on ilx (seems like an Acura bug)
-    if CS.civic or CS.accord or CS.crv:
-      radar_send_step = 5
-    else:
+    if CS.acura:
       radar_send_step = 2
+    else:
+      radar_send_step = 5
 
     if (frame % radar_send_step) == 0:
       idx = (frame/radar_send_step) % 4
-      can_sends.extend(hondacan.create_radar_commands(CS.v_ego, CS.civic, CS.accord, CS.crv, idx))
+      can_sends.extend(hondacan.create_radar_commands(CS.v_ego, CS.civic, CS.accord, CS.crv, CS.odyssey, idx))
 
     sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
