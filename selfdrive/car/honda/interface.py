@@ -218,7 +218,7 @@ class CarInterface(object):
       ret.longitudinalKiBP = [0., 35.]
       ret.longitudinalKiV = [0.18, 0.12]
       
-elif candidate == "HONDA PILOT 2017 TOURING":
+    elif candidate == "HONDA PILOT 2017 TOURING":
       stop_and_go = False
       ret.m = 4303./2.205 + std_cargo
       ret.l = 3.00
