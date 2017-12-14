@@ -106,7 +106,7 @@ def get_can_signals(CP):
       (0x405, 3),
     ]
 
-  elif CP.carFingerprint == "ACURA ILX 2016 ACURAWATCH PLUS":
+  elif CP.carFingerprint == "ACURA ILX 2016 ACURAWATCH PLUS" or "HONDA PILOT 2017 TOURING":
     dbc_f = 'acura_ilx_2016_can.dbc'
     signals = [
       ("XMISSION_SPEED", 0x158, 0),
@@ -279,6 +279,7 @@ class CarState(object):
     self.civic = False
     self.accord = False
     self.crv = False
+    self.pilot = False
     if CP.carFingerprint == "HONDA CIVIC 2016 TOURING":
       self.civic = True
     elif CP.carFingerprint == "ACURA ILX 2016 ACURAWATCH PLUS":
