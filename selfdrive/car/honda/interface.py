@@ -196,6 +196,18 @@ class CarInterface(object):
       ret.longitudinalKpV = [1.2, 0.8, 0.5]
       ret.longitudinalKiBP = [0., 35.]
       ret.longitudinalKiV = [0.18, 0.12]
+    elif candidate == "ACURA RDX 2018 ACURAWATCH PLUS":
+      stop_and_go = False
+      ret.mass = 3935./2.205 + std_cargo
+      ret.wheelbase = 3.00
+      ret.centerToFront = ret.wheelbase * 0.38
+      ret.steerRatio = 15.3
+      ret.steerKp, ret.steerKi = 0.8, 0.24
+
+      ret.longitudinalKpBP = [0., 5., 35.]
+      ret.longitudinalKpV = [1.2, 0.8, 0.5]
+      ret.longitudinalKiBP = [0., 35.]
+      ret.longitudinalKiV = [0.18, 0.12]  
     elif candidate == "HONDA CR-V 2016 TOURING":
       stop_and_go = False
       ret.mass = 3572./2.205 + std_cargo
