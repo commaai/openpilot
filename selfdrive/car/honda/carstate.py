@@ -280,7 +280,6 @@ class CarState(object):
     self.accord = False
     self.crv = False
     self.pilot = False
-    self.rdx = False
     if CP.carFingerprint == "HONDA CIVIC 2016 TOURING":
       self.civic = True
     elif CP.carFingerprint == "ACURA ILX 2016 ACURAWATCH PLUS":
