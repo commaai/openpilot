@@ -282,6 +282,8 @@ class CarState(object):
     self.pilot = False
     if CP.carFingerprint == "HONDA CIVIC 2016 TOURING":
       self.civic = True
+    if CP.carFingerprint == "HONDA PILOT 2017 TOURING":
+      self.pilot = True  
     elif CP.carFingerprint == "ACURA ILX 2016 ACURAWATCH PLUS":
       self.acura = True
     elif CP.carFingerprint == "HONDA ACCORD 2016 TOURING":
