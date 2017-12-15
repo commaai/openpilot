@@ -121,10 +121,7 @@ def create_radar_commands(v_ego, civic, accord, crv, idx):
     commands.append(make_can_msg(0x300, msg_0x300, idx + 0xc, 1))
   elif crv:
     msg_0x301 = "\x00\x00\x50\x02\x51\x00\x00"
-    commands.append(make_can_msg(0x300, msg_0x300, idx, 1))
-  elif rdx:
-    msg_0x301 = " \x0f\x57\x4f\x02\x5a\x00\x00"
-    commands.append(make_can_msg(0x300, msg_0x300, idx, 1))  
+    commands.append(make_can_msg(0x300, msg_0x300, idx, 1)) 
   elif pilot:
     msg_0x301 = "\x00\x00\x56\x02\x58\x00\x00"
     commands.append(make_can_msg(0x300, msg_0x300, idx, 1))
