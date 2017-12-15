@@ -262,57 +262,6 @@ def get_can_signals(CP):
       (0x324, 10),
       (0x405, 3),
     ]
-  elif CP.carFingerprint == "ACURA RDX 2018 ACURAWATCH PLUS":
-    dbc_f = 'acura_rdx_2018_can.dbc'
-    signals = [
-      ("XMISSION_SPEED", 0x158, 0),
-      ("WHEEL_SPEED_FL", 0x1d0, 0),
-      ("WHEEL_SPEED_FR", 0x1d0, 0),
-      ("WHEEL_SPEED_RL", 0x1d0, 0),
-      ("WHEEL_SPEED_RR", 0x1d0, 0),
-      ("STEER_ANGLE", 0x156, 0),
-      ("STEER_ANGLE_RATE", 0x156, 0),
-      ("STEER_TORQUE_SENSOR", 0x18f, 0),
-      ("GEAR", 0x188, 0),
-      ("WHEELS_MOVING", 0x1b0, 1),
-      ("DOOR_OPEN_FL", 0x405, 1),
-      ("DOOR_OPEN_FR", 0x405, 1),
-      ("DOOR_OPEN_RL", 0x405, 1),
-      ("DOOR_OPEN_RR", 0x405, 1),
-      ("CRUISE_SPEED_PCM", 0x324, 0),
-      ("SEATBELT_DRIVER_LAMP", 0x305, 1),
-      ("SEATBELT_DRIVER_LATCHED", 0x305, 0),
-      ("BRAKE_PRESSED", 0x17c, 0),
-      ("BRAKE_SWITCH", 0x17c, 0),
-      #("CAR_GAS", 0x130, 0),
-      ("CRUISE_BUTTONS", 0x1a6, 0),
-      ("ESP_DISABLED", 0x1a4, 1),
-      ("HUD_LEAD", 0x30c, 0),
-      ("USER_BRAKE", 0x1a4, 0),
-      ("STEER_STATUS", 0x18f, 5),
-      ("BRAKE_ERROR_1", 0x1b0, 1),
-      ("BRAKE_ERROR_2", 0x1b0, 1),
-      ("GEAR_SHIFTER", 0x188, 0),
-      ("MAIN_ON", 0x1a6, 0),
-      ("ACC_STATUS", 0x17c, 0),
-      ("PEDAL_GAS", 0x17c, 0),
-      ("CRUISE_SETTING", 0x1a6, 0),
-      ("LEFT_BLINKER", 0x294, 0),
-      ("RIGHT_BLINKER", 0x294, 0),
-    ]
-    checks = [
-      (0x156, 100),
-      (0x158, 100),
-      (0x17c, 100),
-      (0x188, 100),
-      (0x1a4, 50),
-      (0x1a6, 50),
-      (0x1b0, 50),
-      (0x1d0, 50),
-      (0x305, 10),
-      (0x324, 10),
-      (0x405, 3),
-    ]      
   # add gas interceptor reading if we are using it
   if CP.enableGas:
     signals.append(("INTERCEPTOR_GAS", 0x201, 0))
