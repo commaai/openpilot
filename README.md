@@ -50,6 +50,8 @@ Community WIP Cars
 
 - [Classic Tesla Model S (pre-AP)](https://github.com/commaai/openpilot/pull/145)
 
+- [Acura RDX 2018 with AcuraWatch Plus](https://github.com/commaai/openpilot/pull/162)
+
 Directory structure
 ------
 
