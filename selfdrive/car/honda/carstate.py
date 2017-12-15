@@ -291,8 +291,6 @@ class CarState(object):
       self.crv = True
     elif CP.carFingerprint == "HONDA PILOT 2017 TOURING":
       self.pilot = True  
-    elif CP.carFingerprint == "ACURA RDX 2018 ACURAWATCH PLUS":
-      self.rdx = True  
     else:
       raise ValueError("unsupported car %s" % CP.carFingerprint)
 
@@ -439,20 +437,6 @@ class CarState(object):
       self.cruise_speed_offset = calc_cruise_offset(cp.vl[0x37c]['CRUISE_SPEED_OFFSET'], self.v_ego)
       self.park_brake = 0  # TODO
       self.brake_hold = 0
-    elif self.rdx:
-      can_gear_shifter = cp.vl[0x188]['GEAR_SHIFTER']
-      self.angle_steers = cp.vl[0x156]['STEER_ANGLE']
-      self.angle_steers_rate = cp.vl[0x156]['STEER_ANGLE_RATE']
-      self.gear = cp.vl[0x188]['GEAR']
-      self.cruise_setting = cp.vl[0x1A6]['CRUISE_SETTING']
-      self.cruise_buttons = cp.vl[0x1A6]['CRUISE_BUTTONS']
-      self.main_on = cp.vl[0x1A6]['MAIN_ON']
-      self.blinker_on = cp.vl[0x294]['LEFT_BLINKER'] or cp.vl[0x294]['RIGHT_BLINKER']
-      self.left_blinker_on = cp.vl[0x294]['LEFT_BLINKER']
-      self.right_blinker_on = cp.vl[0x294]['RIGHT_BLINKER']
-      self.cruise_speed_offset = -0.3
-      self.park_brake = 0  # TODO
-      self.brake_hold = 0  # RDX doesn't have EPB
     elif self.pilot:
       can_gear_shifter = cp.vl[0x1A3]['GEAR_SHIFTER']
       self.angle_steers = cp.vl[0x156]['STEER_ANGLE']
