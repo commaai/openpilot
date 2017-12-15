@@ -50,7 +50,7 @@ Community WIP Cars
 
 - [Classic Tesla Model S (pre-AP)](https://github.com/commaai/openpilot/pull/145)
 
-- [Honda Pilot 2017 Touring](https://github.com/commaai/openpilot/pull/160)
+- [Honda Pilot 2017 Touring](https://github.com/commaai/openpilot/pull/161)
 
 Directory structure
 ------
