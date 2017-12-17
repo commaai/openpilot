@@ -312,7 +312,7 @@ def get_can_signals(CP):
       (0x305, 10),
       (0x324, 10),
       (0x405, 3),
-    ]      
+    ]
   # add gas interceptor reading if we are using it
   if CP.enableGas:
     signals.append(("INTERCEPTOR_GAS", 0x201, 0))
@@ -340,7 +340,7 @@ class CarState(object):
     elif CP.carFingerprint == "HONDA CR-V 2016 TOURING":
       self.crv = True
     elif CP.carFingerprint == "ACURA RDX 2018 ACURAWATCH PLUS":
-      self.rdx = True  
+      self.rdx = True
     else:
       raise ValueError("unsupported car %s" % CP.carFingerprint)
 
@@ -508,7 +508,7 @@ class CarState(object):
       # on the accord, this doesn't seem to include cruise control
       self.car_gas = cp.vl[0x17C]['PEDAL_GAS']
       self.steer_override = False
-    elif self.crv:
+    elif self.crv or self.rdx:
       # like accord, crv doesn't include cruise control
       self.car_gas = cp.vl[0x17C]['PEDAL_GAS']
       self.steer_override = abs(cp.vl[0x18F]['STEER_TORQUE_SENSOR']) > 1200
