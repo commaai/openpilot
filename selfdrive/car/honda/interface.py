@@ -195,7 +195,7 @@ class CarInterface(object):
       ret.longitudinalKpBP = [0., 5., 35.]
       ret.longitudinalKpV = [1.2, 0.8, 0.5]
       ret.longitudinalKiBP = [0., 35.]
-      ret.longitudinalKiV = [0.18, 0.12] 
+      ret.longitudinalKiV = [0.18, 0.12]
     elif candidate == "HONDA CR-V 2016 TOURING":
       stop_and_go = False
       ret.mass = 3572./2.205 + std_cargo
