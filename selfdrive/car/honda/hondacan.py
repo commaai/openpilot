@@ -68,7 +68,7 @@ def create_accord_steering_control(apply_steer, idx):
 
   return [0,0,dat,8]
 
-def create_steering_control(apply_steer, crv, idx):
+def create_steering_control(apply_steer, crv, rdx, idx):
   """Creates a CAN message for the Honda DBC STEERING_CONTROL."""
   commands = []
   if crv or rdx:
