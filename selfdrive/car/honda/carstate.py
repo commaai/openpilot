@@ -7,7 +7,7 @@ from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 import numpy as np
 
-def parse_gear_shifter(can_gear_shifter, is_acura):
+def parse_gear_shifter(can_gear_shifter, is_acura, is_pilot):
 
   if can_gear_shifter == 0x1:
     return "park"
@@ -21,7 +21,15 @@ def parse_gear_shifter(can_gear_shifter, is_acura):
       return "drive"
     elif can_gear_shifter == 0xa:
       return "sport"
-
+  
+  elif is_pilot:
+     if can_gear_shifter == 0x8:
+       return "reverse"
+     elif can_gear_shifter == 0x4:
+       return "park"
+     elif can_gear_shifter == 0x20:
+       return "drive"
+ 
   else:
     if can_gear_shifter == 0x4:
       return "neutral"
@@ -504,7 +512,7 @@ class CarState(object):
       self.park_brake = 0  # TODO
       self.brake_hold = 0    
 
-    self.gear_shifter = parse_gear_shifter(can_gear_shifter, self.acura)
+    self.gear_shifter = parse_gear_shifter(can_gear_shifter, self.acura, self.pilot)
 
     if self.accord:
       # on the accord, this doesn't seem to include cruise control
