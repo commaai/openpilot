@@ -148,7 +148,7 @@ class CarController(object):
       can_sends.append(hondacan.create_accord_steering_control(apply_steer, idx))
     else:
       idx = frame % 4
-      can_sends.extend(hondacan.create_steering_control(apply_steer, CS.crv, cs.rdx, idx))
+      can_sends.extend(hondacan.create_steering_control(apply_steer, CS.crv, CS.rdx, idx))
 
     # Send gas and brake commands.
     if (frame % 2) == 0:
