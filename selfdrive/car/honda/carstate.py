@@ -486,7 +486,8 @@ class CarState(object):
       self.left_blinker_on = cp.vl[0x326]['LEFT_BLINKER']
       self.right_blinker_on = cp.vl[0x326]['RIGHT_BLINKER']
       self.cruise_speed_offset = calc_cruise_offset(cp.vl[0x37c]['CRUISE_SPEED_OFFSET'], self.v_ego)
-      self.park_brake = cp.vl[0x1c2]['EPB_STATE'] != 0
+      # self.park_brake = cp.vl[0x1c2]['EPB_STATE'] != 0
+      self.park_brake = 0  # This should work but not in release dbc yet!
       self.brake_hold = cp.vl[0x1A4]['BRAKE_HOLD_ACTIVE']
     elif self.acura:
       can_gear_shifter = cp.vl[0x1A3]['GEAR_SHIFTER']
@@ -501,7 +502,7 @@ class CarState(object):
       self.right_blinker_on = cp.vl[0x294]['RIGHT_BLINKER']
       self.cruise_speed_offset = calc_cruise_offset(cp.vl[0x37c]['CRUISE_SPEED_OFFSET'], self.v_ego)
       self.park_brake = 0  # TODO
-      self.brake_hold = 0
+      self.brake_hold = 0  # TODO
 
     self.gear_shifter = parse_gear_shifter(can_gear_shifter, self.acura)
 
