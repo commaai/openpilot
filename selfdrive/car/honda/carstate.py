@@ -488,7 +488,8 @@ class CarState(object):
       self.cruise_speed_offset = calc_cruise_offset(cp.vl[0x37c]['CRUISE_SPEED_OFFSET'], self.v_ego)
       # self.park_brake = cp.vl[0x1c2]['EPB_STATE'] != 0
       self.park_brake = 0  # This should work but not in release dbc yet!
-      self.brake_hold = cp.vl[0x1A4]['BRAKE_HOLD_ACTIVE']
+      # self.brake_hold = cp.vl[0x1A4]['BRAKE_HOLD_ACTIVE']
+      self.brake_hold = 0  # This might work but not in release dbc yet!
     elif self.acura:
       can_gear_shifter = cp.vl[0x1A3]['GEAR_SHIFTER']
       self.angle_steers = cp.vl[0x156]['STEER_ANGLE']
