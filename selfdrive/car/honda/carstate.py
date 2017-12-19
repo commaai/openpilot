@@ -291,7 +291,7 @@ def get_can_signals(CP):
       ("BRAKE_ERROR_1", 0x1b0, 1),
       ("BRAKE_ERROR_2", 0x1b0, 1),
       ("GEAR_SHIFTER", 0x1a3, 0),
-      ("MAIN_ON", 0x1a6, 0),
+      ("MAIN_ON", 0x326, 0),
       ("ACC_STATUS", 0x17c, 0),
       ("PEDAL_GAS", 0x17c, 0),
       ("CRUISE_SETTING", 0x296, 0),
