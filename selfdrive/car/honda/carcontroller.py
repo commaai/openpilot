@@ -12,7 +12,7 @@ from . import hondacan
 from .values import AH
 
 
-def actuator_hystereses(brake, braking, brake_steady, v_ego, civic):
+def actuator_hystereses(brake, braking, brake_steady, v_ego, civic, odyssey):
   # hyst params... TODO: move these to VehicleParams
   brake_hyst_on = 0.02     # to activate brakes exceed this value
   brake_hyst_off = 0.005                     # to deactivate brakes below this value
@@ -32,7 +32,7 @@ def actuator_hystereses(brake, braking, brake_steady, v_ego, civic):
     brake_steady = brake + brake_hyst_gap
   brake = brake_steady
 
-  if not civic and brake > 0.0:
+  if (not civic and not odyssey) and brake > 0.0:
     brake += 0.15
 
   return brake, braking, brake_steady
@@ -78,7 +78,7 @@ class CarController(object):
       return
 
     # *** apply brake hysteresis ***
-    brake, self.braking, self.brake_steady = actuator_hystereses(actuators.brake, self.braking, self.brake_steady, CS.v_ego, CS.civic)
+    brake, self.braking, self.brake_steady = actuator_hystereses(actuators.brake, self.braking, self.brake_steady, CS.v_ego, CS.civic, CS.odyssey)
 
     # *** no output if not enabled ***
     if not enabled and CS.pcm_acc_status:
@@ -121,8 +121,8 @@ class CarController(object):
     tt = sec_since_boot()
     GAS_MAX = 1004
     BRAKE_MAX = 1024/4
-    if CS.civic:
-      is_fw_modified = os.getenv("DONGLE_ID") in ['b0f5a01cf604185c']
+    if CS.civic or CS.odyssey:
+      is_fw_modified = os.getenv("DONGLE_ID") in ['b0f5a01cf604185cxxx']
       STEER_MAX = 0x1FFF if is_fw_modified else 0x1000
     elif CS.crv:
       STEER_MAX = 0x300  # CR-V only uses 12-bits and requires a lower value

@@ -104,7 +104,7 @@ class CarInterface(object):
       # self.accord_msg = []
       raise NotImplementedError
 
-    if not self.CS.civic:
+    if not self.CS.civic and not self.CS.odyssey:
       self.compute_gb = get_compute_gb_acura()
     else:
       self.compute_gb = compute_gb_honda
@@ -215,7 +215,7 @@ class CarInterface(object):
       ret.wheelbase = 3.00
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 15.3
-      ret.steerKp, ret.steerKi = 0.8, 0.24
+      ret.steerKp, ret.steerKi = 0.6, 0.18
 
       ret.longitudinalKpBP = [0., 5., 35.]
       ret.longitudinalKpV = [1.2, 0.8, 0.5]
