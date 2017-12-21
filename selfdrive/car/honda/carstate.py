@@ -297,7 +297,9 @@ def get_can_signals(CP):
       ("CRUISE_SETTING", 0x296, 0),
       ("LEFT_BLINKER", 0x326, 0),
       ("RIGHT_BLINKER", 0x326, 0),
-      ("CRUISE_SPEED_OFFSET", 0x37c, 0)
+      ("CRUISE_SPEED_OFFSET", 0x37c, 0),
+      ("EPB_STATE", 0x1c2, 0),
+      ("BRAKE_HOLD_ACTIVE", 0x1a4, 0),
     ]
     checks = [
       (0x156, 100),
@@ -306,6 +308,7 @@ def get_can_signals(CP):
       (0x1a3, 50),
       (0x1a4, 50),
       (0x1b0, 50),
+      (0x1c2, 50),
       (0x1d0, 50),
       (0x296, 25),
       (0x305, 10),
@@ -486,10 +489,8 @@ class CarState(object):
       self.left_blinker_on = cp.vl[0x326]['LEFT_BLINKER']
       self.right_blinker_on = cp.vl[0x326]['RIGHT_BLINKER']
       self.cruise_speed_offset = calc_cruise_offset(cp.vl[0x37c]['CRUISE_SPEED_OFFSET'], self.v_ego)
-      # self.park_brake = cp.vl[0x1c2]['EPB_STATE'] != 0
-      self.park_brake = 0  # This should work but not in release dbc yet!
-      # self.brake_hold = cp.vl[0x1A4]['BRAKE_HOLD_ACTIVE']
-      self.brake_hold = 0  # This might work but not in release dbc yet!
+      self.park_brake = cp.vl[0x1c2]['EPB_STATE'] != 0
+      self.brake_hold = cp.vl[0x1a4]['BRAKE_HOLD_ACTIVE']
     elif self.acura:
       can_gear_shifter = cp.vl[0x1A3]['GEAR_SHIFTER']
       self.angle_steers = cp.vl[0x156]['STEER_ANGLE']
