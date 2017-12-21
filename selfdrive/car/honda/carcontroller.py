@@ -126,6 +126,8 @@ class CarController(object):
       STEER_MAX = 0x1FFF if is_fw_modified else 0x1000
     elif CS.crv:
       STEER_MAX = 0x300  # CR-V only uses 12-bits and requires a lower value
+    elif CS.pilot:
+      STEER_MAX = 0x1000
     else:
       STEER_MAX = 0xF00
     GAS_OFFSET = 328
