@@ -1,5 +1,4 @@
 import os
-import time
 import selfdrive.messaging as messaging
 from selfdrive.car.toyota.values import CAR
 from selfdrive.can.parser import CANParser
@@ -19,7 +18,7 @@ def parse_gear_shifter(can_gear, car_fingerprint):
       return "drive"
     elif can_gear == 0x4:
       return "brake"
-  elif car_fingerprint == CAR.RAV4:
+  elif car_fingerprint in [CAR.RAV4, CAR.RAV4H]:
     if can_gear == 0x20:
       return "park"
     elif can_gear == 0x10:
@@ -40,6 +39,17 @@ def get_can_parser(CP):
     dbc_f = 'toyota_prius_2017_pt.dbc'
     signals = [
       ("GEAR", 295, 0),
+      ("BRAKE_PRESSED", 550, 0),
+      ("GAS_PEDAL", 581, 0),
+    ]
+    checks = [
+      (550, 40),
+      (581, 33)
+    ]
+  elif CP.carFingerprint == CAR.RAV4H:
+    dbc_f = 'toyota_rav4_hybrid_2017_pt.dbc'
+    signals = [
+      ("GEAR", 956, 0),
       ("BRAKE_PRESSED", 550, 0),
       ("GAS_PEDAL", 581, 0),
     ]
@@ -129,6 +139,10 @@ class CarState(object):
 
     if self.car_fingerprint == CAR.PRIUS:
       can_gear = cp.vl[295]['GEAR']
+      self.brake_pressed = cp.vl[550]['BRAKE_PRESSED']
+      self.pedal_gas = cp.vl[581]['GAS_PEDAL']
+    elif self.car_fingerprint == CAR.RAV4H:
+      can_gear = cp.vl[956]['GEAR']
       self.brake_pressed = cp.vl[550]['BRAKE_PRESSED']
       self.pedal_gas = cp.vl[581]['GAS_PEDAL']
     elif self.car_fingerprint == CAR.RAV4:

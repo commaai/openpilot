@@ -1,20 +1,24 @@
 #!/usr/bin/env python
 import os
-import time
 from common.realtime import sec_since_boot
 import common.numpy_fast as np
-from selfdrive.config import Conversions as CV
-from selfdrive.car.toyota.carstate import CarState, get_can_parser
-from selfdrive.car.toyota.values import CAR, ECU
-from selfdrive.car.toyota.carcontroller import CarController, check_ecu_msgs
 from cereal import car
+from selfdrive.config import Conversions as CV
 from selfdrive.services import service_list
 import selfdrive.messaging as messaging
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
+from selfdrive.controls.lib.vehicle_model import VehicleModel
+from selfdrive.car.toyota.carstate import CarState, get_can_parser
+from selfdrive.car.toyota.values import CAR, ECU, check_ecu_msgs
+try:
+  from selfdrive.car.toyota.carcontroller import CarController
+except ImportError:
+  CarController = None
 
 class CarInterface(object):
   def __init__(self, CP, sendcan=None):
     self.CP = CP
+    self.VM = VehicleModel(CP)
 
     self.frame = 0
     self.can_invalid_count = 0
@@ -70,9 +74,8 @@ class CarInterface(object):
     tireStiffnessFront_civic = 85400
     tireStiffnessRear_civic = 90000
 
-    stop_and_go = True
     ret.mass = 3045./2.205 + std_cargo
-    ret.wheelbase = 2.70
+    ret.wheelbase = 2.70 if candidate == CAR.PRIUS else 2.65
     ret.centerToFront = ret.wheelbase * 0.44
     ret.steerRatio = 14.5 #Rav4 2017, TODO: find exact value for Prius
     ret.steerKp, ret.steerKi = 0.6, 0.05
@@ -83,9 +86,9 @@ class CarInterface(object):
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter.
-    if candidate == CAR.PRIUS:
+    if candidate in [CAR.PRIUS, CAR.RAV4H]: # rav4 hybrid can do stop and go
       ret.minEnableSpeed = -1.
-    elif candidate == CAR.RAV4:   # TODO: hack Rav4 to do stop and go
+    elif candidate == CAR.RAV4:   # TODO: hack ICE Rav4 to do stop and go
       ret.minEnableSpeed = 19. * CV.MPH_TO_MS
 
     centerToRear = ret.wheelbase - ret.centerToFront
@@ -131,6 +134,11 @@ class CarInterface(object):
     ret.longitudinalKiBP = [0., 35.]
     ret.longitudinalKiV = [0.54, 0.36]
 
+    if candidate == CAR.PRIUS:
+      ret.steerRateCost = 2.
+    elif candidate in [CAR.RAV4, CAR.RAV4H]:
+      ret.steerRateCost = 1.
+
     return ret
 
   # returns a car.CarState
@@ -150,6 +158,7 @@ class CarInterface(object):
     ret.vEgo = self.CS.v_ego
     ret.vEgoRaw = self.CS.v_ego_raw
     ret.aEgo = self.CS.a_ego
+    ret.yawRate = self.VM.yaw_rate(self.CS.angle_steers * CV.DEG_TO_RAD, self.CS.v_ego)
     ret.standstill = self.CS.standstill
     ret.wheelSpeeds.fl = self.CS.v_wheel_fl
     ret.wheelSpeeds.fr = self.CS.v_wheel_fr
@@ -180,7 +189,12 @@ class CarInterface(object):
     ret.cruiseState.speed = self.CS.v_cruise_pcm * CV.KPH_TO_MS
     ret.cruiseState.available = bool(self.CS.main_on)
     ret.cruiseState.speedOffset = 0.
-    ret.cruiseState.standstill = self.CS.pcm_acc_status == 7
+    if self.CP.carFingerprint == CAR.RAV4H:
+      # ignore standstill in hybrid rav4, since pcm allows to restart without
+      # receiving any special command
+      ret.cruiseState.standstill = False
+    else:
+      ret.cruiseState.standstill = self.CS.pcm_acc_status == 7  
 
     # TODO: button presses
     buttonEvents = []
@@ -223,8 +237,8 @@ class CarInterface(object):
       events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     if self.CS.steer_error:
       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
-    if self.CS.low_speed_lockout:
-      events.append(create_event('lowSpeedLockout', [ET.NO_ENTRY]))
+    if self.CS.low_speed_lockout and self.CP.enableDsu:
+      events.append(create_event('lowSpeedLockout', [ET.NO_ENTRY, ET.PERMANENT]))
     if ret.vEgo < self.CP.minEnableSpeed and self.CP.enableDsu:
       events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
       if c.actuators.gas > 0.1:

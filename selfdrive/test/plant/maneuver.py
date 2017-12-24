@@ -60,6 +60,7 @@ class Maneuver(object):
           gas=gas, brake=brake, steer_torque=steer_torque,
           distance=distance, speed=speed, acceleration=acceleration,
           up_accel_cmd=last_live100.upAccelCmd, ui_accel_cmd=last_live100.uiAccelCmd,
+          uf_accel_cmd=last_live100.ufAccelCmd,
           d_rel=d_rel, v_rel=v_rel, v_lead=speed_lead,
           v_target_lead=last_live100.vTargetLead, pid_speed=last_live100.vPid,
           cruise_speed=last_live100.vCruise,

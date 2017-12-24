@@ -44,11 +44,8 @@ int main( )
   h << a_ego * (1.0 + v_ego / 10.0);
   h << j_ego * (1.0 + v_ego / 10.0);
 
-  DMatrix Q(4,4);
-  Q(0,0) = 5.0;
-  Q(1,1) = 0.1;
-  Q(2,2) = 10.0;
-  Q(3,3) = 20.0;
+  // Weights are defined in mpc.
+  BMatrix Q(4,4); Q.setAll(true);
 
   // Terminal cost
   Function hN;
@@ -56,16 +53,24 @@ int main( )
   hN << (d_l - desired) / (0.1 * v_ego + 0.5);
   hN << a_ego * (1.0 + v_ego / 10.0);
 
-  DMatrix QN(3,3);
-  QN(0,0) = 5.0;
-  QN(1,1) = 0.1;
-  QN(2,2) = 10.0;
+  // Weights are defined in mpc.
+  BMatrix QN(3,3); QN.setAll(true);
+
+  // Non uniform time grid
+  // First 5 timesteps are 0.2, after that it's 0.6
+  DMatrix numSteps(20, 1);
+  for (int i = 0; i < 5; i++){
+    numSteps(i) = 1;
+  }
+  for (int i = 5; i < 20; i++){
+    numSteps(i) = 3;
+  }
 
   // Setup Optimal Control Problem
   const double tStart = 0.0;
-  const double tEnd   = samplingTime * controlHorizon;
+  const double tEnd   = 10.0;
 
-  OCP ocp( tStart, tEnd, controlHorizon );
+  OCP ocp( tStart, tEnd, numSteps);
   ocp.subjectTo(f);
 
   ocp.minimizeLSQ(Q, h);
@@ -78,8 +83,9 @@ int main( )
   mpc.set( HESSIAN_APPROXIMATION, GAUSS_NEWTON );
   mpc.set( DISCRETIZATION_TYPE, MULTIPLE_SHOOTING );
   mpc.set( INTEGRATOR_TYPE, INT_RK4 );
-  mpc.set( NUM_INTEGRATOR_STEPS, 1 * controlHorizon);
+  mpc.set( NUM_INTEGRATOR_STEPS, controlHorizon);
   mpc.set( MAX_NUM_QP_ITERATIONS, 500);
+  mpc.set( CG_USE_VARIABLE_WEIGHTING_MATRIX, YES);
 
   mpc.set( SPARSE_QP_SOLUTION, CONDENSING );
   mpc.set( QP_SOLVER, QP_QPOASES );

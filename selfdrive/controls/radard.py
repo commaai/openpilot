@@ -44,11 +44,12 @@ class EKFV1D(EKF):
 
 # fuses camera and radar data for best lead detection
 def radard_thread(gctx=None):
-  set_realtime_priority(1)
+  set_realtime_priority(2)
 
   # wait for stats about the car to come in from controls
   cloudlog.info("radard is waiting for CarParams")
   CP = car.CarParams.from_bytes(Params().get("CarParams", block=True))
+  mocked= CP.radarName == "mock"
   VM = VehicleModel(CP)
   cloudlog.info("radard got CarParams")
 
@@ -59,8 +60,9 @@ def radard_thread(gctx=None):
   context = zmq.Context()
 
   # *** subscribe to features and model from visiond
-  model = messaging.sub_sock(context, service_list['model'].port)
-  live100 = messaging.sub_sock(context, service_list['live100'].port)
+  poller = zmq.Poller()
+  model = messaging.sub_sock(context, service_list['model'].port, conflate=True, poller=poller)
+  live100 = messaging.sub_sock(context, service_list['live100'].port, conflate=True, poller=poller)
 
   PP = PathPlanner()
   RI = RadarInterface()
@@ -96,7 +98,6 @@ def radard_thread(gctx=None):
 
   rk = Ratekeeper(rate, print_delay_threshold=np.inf)
   while 1:
-
     rr = RI.update()
 
     ar_pts = {}
@@ -104,7 +105,15 @@ def radard_thread(gctx=None):
       ar_pts[pt.trackId] = [pt.dRel + RDR_TO_LDR, pt.yRel, pt.vRel, pt.measured]
 
     # receive the live100s
-    l100 = messaging.recv_sock(live100)
+    l100 = None
+    md = None
+
+    for socket, event in poller.poll(0):
+      if socket is live100:
+        l100 = messaging.recv_one(socket)
+      elif socket is model:
+        md = messaging.recv_one(socket)
+
     if l100 is not None:
       active = l100.live100.active
       v_ego = l100.live100.vEgo
@@ -119,7 +128,6 @@ def radard_thread(gctx=None):
     if v_ego is None:
       continue
 
-    md = messaging.recv_sock(model)
     if md is not None:
       last_md_ts = md.logMonoTime
 
@@ -140,9 +148,11 @@ def radard_thread(gctx=None):
         del ar_pts[VISION_POINT]
 
     # *** compute the likely path_y ***
-    if active and not steer_override:    # use path from model path_poly
+    if (active and not steer_override) or mocked:
+      # use path from model (always when mocking as steering is too noisy)
       path_y = np.polyval(PP.d_poly, path_x)
-    else:          # use path from steer, set angle_offset to 0 since calibration does not exactly report the physical offset
+    else:
+      # use path from steer, set angle_offset to 0 it does not only report the physical offset
       path_y = calc_lookahead_offset(v_ego, steer_angle, path_x, VM, angle_offset=0)[0]
 
     # *** remove missing points from meta data ***
@@ -152,8 +162,8 @@ def radard_thread(gctx=None):
 
     # *** compute the tracks ***
     for ids in ar_pts:
-      # ignore the vision point for now
-      if ids == VISION_POINT:
+      # ignore standalone vision point, unless we are mocking the radar
+      if ids == VISION_POINT and not mocked:
         continue
       rpt = ar_pts[ids]
 
@@ -185,32 +195,10 @@ def radard_thread(gctx=None):
         tracks[fused_id].vision_cnt += 1
         tracks[fused_id].update_vision_fusion()
 
-
-    # publish tracks (debugging)
-    dat = messaging.new_message()
-    dat.init('liveTracks', len(tracks))
-
     if DEBUG:
       print "NEW CYCLE"
       if VISION_POINT in ar_pts:
         print "vision", ar_pts[VISION_POINT]
-
-    for cnt, ids in enumerate(tracks.keys()):
-      if DEBUG:
-        print "id: %4.0f x:  %4.1f  y: %4.1f  vr: %4.1f d: %4.1f  va: %4.1f  vl: %4.1f  vlk: %4.1f alk: %4.1f  s: %1.0f" % \
-          (ids, tracks[ids].dRel, tracks[ids].yRel, tracks[ids].vRel,
-           tracks[ids].dPath, tracks[ids].vLat, 
-           tracks[ids].vLead, tracks[ids].vLeadK, 
-           tracks[ids].aLeadK, 
-           tracks[ids].stationary)
-      dat.liveTracks[cnt].trackId = ids
-      dat.liveTracks[cnt].dRel = float(tracks[ids].dRel)
-      dat.liveTracks[cnt].yRel = float(tracks[ids].yRel)
-      dat.liveTracks[cnt].vRel = float(tracks[ids].vRel)
-      dat.liveTracks[cnt].aRel = float(tracks[ids].aRel)
-      dat.liveTracks[cnt].stationary = tracks[ids].stationary
-      dat.liveTracks[cnt].oncoming = tracks[ids].oncoming
-    liveTracks.send(dat.to_bytes())
 
     idens = tracks.keys()
     track_pts = np.array([tracks[iden].get_key_for_cluster() for iden in idens])
@@ -267,6 +255,27 @@ def radard_thread(gctx=None):
 
     dat.live20.cumLagMs = -rk.remaining*1000.
     live20.send(dat.to_bytes())
+
+    # *** publish tracks for UI debugging (keep last) ***
+    dat = messaging.new_message()
+    dat.init('liveTracks', len(tracks))
+
+    for cnt, ids in enumerate(tracks.keys()):
+      if DEBUG:
+        print "id: %4.0f x:  %4.1f  y: %4.1f  vr: %4.1f d: %4.1f  va: %4.1f  vl: %4.1f  vlk: %4.1f alk: %4.1f  s: %1.0f" % \
+          (ids, tracks[ids].dRel, tracks[ids].yRel, tracks[ids].vRel,
+           tracks[ids].dPath, tracks[ids].vLat,
+           tracks[ids].vLead, tracks[ids].vLeadK,
+           tracks[ids].aLeadK,
+           tracks[ids].stationary)
+      dat.liveTracks[cnt].trackId = ids
+      dat.liveTracks[cnt].dRel = float(tracks[ids].dRel)
+      dat.liveTracks[cnt].yRel = float(tracks[ids].yRel)
+      dat.liveTracks[cnt].vRel = float(tracks[ids].vRel)
+      dat.liveTracks[cnt].aRel = float(tracks[ids].aRel)
+      dat.liveTracks[cnt].stationary = tracks[ids].stationary
+      dat.liveTracks[cnt].oncoming = tracks[ids].oncoming
+    liveTracks.send(dat.to_bytes())
 
     rk.monitor_time()
 

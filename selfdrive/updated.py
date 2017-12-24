@@ -7,9 +7,6 @@ import time
 import subprocess
 
 def main(gctx=None):
-  if not os.getenv("CLEAN"):
-    return
-
   while True:
     # try network
     r = subprocess.call(["ping", "-W", "4", "-c", "1", "8.8.8.8"])

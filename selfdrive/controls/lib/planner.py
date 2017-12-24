@@ -16,7 +16,7 @@ from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from selfdrive.controls.lib.pathplanner import PathPlanner
 from selfdrive.controls.lib.longitudinal_mpc import libmpc_py
 from selfdrive.controls.lib.speed_smoother import speed_smoother
-from selfdrive.controls.lib.longcontrol import LongCtrlState
+from selfdrive.controls.lib.longcontrol import LongCtrlState, MIN_CAN_SPEED
 
 _DT = 0.01    # 100Hz
 _DT_MPC = 0.2  # 5Hz
@@ -255,8 +255,9 @@ class Planner(object):
   def __init__(self, CP, fcw_enabled):
     context = zmq.Context()
     self.CP = CP
-    self.live20 = messaging.sub_sock(context, service_list['live20'].port)
-    self.model = messaging.sub_sock(context, service_list['model'].port)
+    self.poller = zmq.Poller()
+    self.live20 = messaging.sub_sock(context, service_list['live20'].port, conflate=True, poller=self.poller)
+    self.model = messaging.sub_sock(context, service_list['model'].port, conflate=True, poller=self.poller)
     self.plan = messaging.pub_sock(context, service_list['plan'].port)
     self.live_longitudinal_mpc = messaging.pub_sock(context, service_list['liveLongitudinalMpc'].port)
 
@@ -326,7 +327,15 @@ class Planner(object):
     cur_time = sec_since_boot()
     v_cruise_setpoint = v_cruise_kph * CV.KPH_TO_MS
 
-    md = messaging.recv_sock(self.model)
+    md = None
+    l20 = None
+
+    for socket, event in self.poller.poll(0):
+      if socket is self.model:
+        md = messaging.recv_one(socket)
+      elif socket is self.live20:
+        l20 = messaging.recv_one(socket)
+
     if md is not None:
       self.last_md_ts = md.logMonoTime
       self.last_model = cur_time
@@ -334,7 +343,6 @@ class Planner(object):
 
       self.PP.update(CS.vEgo, md)
 
-    l20 = messaging.recv_sock(self.live20) if md is None else None
     if l20 is not None:
       self.last_l20_ts = l20.logMonoTime
       self.last_l20 = cur_time
@@ -368,17 +376,21 @@ class Planner(object):
                                                       accel_limits[1], accel_limits[0],
                                                       jerk_limits[1], jerk_limits[0],
                                                       _DT_MPC)
+        # cruise speed can't be negative even is user is distracted
+        self.v_cruise = max(self.v_cruise, 0.)
       else:
         starting = LoC.long_control_state == LongCtrlState.starting
         a_ego = min(CS.aEgo, 0.0)
-        self.v_cruise = CS.vEgo
-        self.a_cruise = self.CP.startAccel if starting else a_ego
-        self.v_acc_start = CS.vEgo
-        self.a_acc_start = self.CP.startAccel if starting else a_ego
-        self.v_acc = CS.vEgo
-        self.a_acc = self.CP.startAccel if starting else a_ego
-        self.v_acc_sol = CS.vEgo
-        self.a_acc_sol = self.CP.startAccel if starting else a_ego
+        reset_speed = MIN_CAN_SPEED if starting else CS.vEgo
+        reset_accel = self.CP.startAccel if starting else a_ego
+        self.v_acc = reset_speed
+        self.a_acc = reset_accel
+        self.v_acc_start = reset_speed
+        self.a_acc_start = reset_accel
+        self.v_cruise = reset_speed
+        self.a_cruise = reset_accel
+        self.v_acc_sol = reset_speed
+        self.a_acc_sol = reset_accel
 
       self.mpc1.set_cur_state(self.v_acc_start, self.a_acc_start)
       self.mpc2.set_cur_state(self.v_acc_start, self.a_acc_start)
@@ -399,7 +411,7 @@ class Planner(object):
                                          self.lead_1.fcw, blinkers) \
                  and not CS.brakePressed
       if self.fcw:
-        cloudlog.info("FCW triggered")
+        cloudlog.info("FCW triggered %s", self.fcw_checker.counters)
 
     if cur_time - self.last_model > 0.5:
       self.model_dead = True
