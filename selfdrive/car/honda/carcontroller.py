@@ -127,7 +127,7 @@ class CarController(object):
     elif CS.crv:
       STEER_MAX = 0x300  # CR-V only uses 12-bits and requires a lower value
     elif CS.rdx:
-      STEER_MAX = 0x3E8 #Alpha Support value for now, will update 
+      STEER_MAX = 0x3E8  
     else:
       STEER_MAX = 0xF00
     GAS_OFFSET = 328
