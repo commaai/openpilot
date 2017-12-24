@@ -1,11 +1,12 @@
 import os
+import sys
 import subprocess
 
 from cffi import FFI
 
 can_dir = os.path.dirname(os.path.abspath(__file__))
 libdbc_fn = os.path.join(can_dir, "libdbc.so")
-subprocess.check_output(["make"], cwd=can_dir)
+subprocess.check_call(["make"], stdout=sys.stderr, cwd=can_dir)
 
 ffi = FFI()
 ffi.cdef("""

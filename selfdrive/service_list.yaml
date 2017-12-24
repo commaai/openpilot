@@ -46,6 +46,8 @@ ubloxGnss: [8033, true]
 clocks: [8034, true]
 liveMpc: [8035, true]
 liveLongitudinalMpc: [8036, true]
+plusFrame: [8037, false]
+navStatus: [8038, true]
 
 testModel: [8040, false]
 

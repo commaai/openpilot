@@ -1,5 +1,4 @@
 import os
-import time
 from cereal import car
 from common.numpy_fast import interp
 import selfdrive.messaging as messaging

@@ -19,16 +19,23 @@ def get_git_commit():
 def get_git_branch():
   return subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"]).strip()
 
+def get_git_remote():
+  return subprocess.check_output(["git", "config", "--get", "remote.origin.url"]).strip()
+
 def register():
   params = Params()
-  try:
-    params.put("Version", version)
-    params.put("GitCommit", get_git_commit())
-    params.put("GitBranch", get_git_branch())
+  params.put("Version", version)
+  params.put("GitCommit", get_git_commit())
+  params.put("GitBranch", get_git_branch())
+  params.put("GitRemote", get_git_remote())
 
-    dongle_id, access_token = params.get("DongleId"), params.get("AccessToken")
+  dongle_id, access_token = params.get("DongleId"), params.get("AccessToken")
+
+  try:
     if dongle_id is None or access_token is None:
-      resp = api_get("v1/pilotauth/", method='POST', imei=get_imei(), serial=get_serial())
+      cloudlog.info("getting pilotauth")
+      resp = api_get("v1/pilotauth/", method='POST', timeout=15,
+                     imei=get_imei(), serial=get_serial())
       dongleauth = json.loads(resp.text)
       dongle_id, access_token = dongleauth["dongle_id"].encode('ascii'), dongleauth["access_token"].encode('ascii')
 

@@ -1,3 +1,12 @@
+Version 0.4.0.1 (2017-12-21)
+==========================
+ * New UI to match chffrplus
+ * Improved lateral control tuning to fix oscillations on Civic
+ * Add alpha support for 2017 Toyota Rav4 Hybrid
+ * Reduced CPU usage
+ * Removed unnecessary utilization of fan at max speed
+ * Minor bug fixes
+
 Version 0.3.9 (2017-11-21)
 ==========================
  * Add alpha support for 2017 Toyota Prius

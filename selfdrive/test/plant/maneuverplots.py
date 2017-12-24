@@ -20,6 +20,7 @@ class ManeuverPlot(object):
 
     self.up_accel_cmd_array = []
     self.ui_accel_cmd_array = []
+    self.uf_accel_cmd_array = []
 
     self.d_rel_array = []
     self.v_rel_array = []
@@ -38,8 +39,8 @@ class ManeuverPlot(object):
     self.title = title
     
   def add_data(self, time, gas, brake, steer_torque, distance, speed, 
-    acceleration, up_accel_cmd, ui_accel_cmd, d_rel, v_rel, v_lead, 
-    v_target_lead, pid_speed, cruise_speed, jerk_factor, a_target, fcw):
+    acceleration, up_accel_cmd, ui_accel_cmd, uf_accel_cmd, d_rel, v_rel, 
+    v_lead, v_target_lead, pid_speed, cruise_speed, jerk_factor, a_target, fcw):
     self.time_array.append(time)
     self.gas_array.append(gas)
     self.brake_array.append(brake)
@@ -49,6 +50,7 @@ class ManeuverPlot(object):
     self.acceleration_array.append(acceleration)
     self.up_accel_cmd_array.append(up_accel_cmd)
     self.ui_accel_cmd_array.append(ui_accel_cmd)
+    self.uf_accel_cmd_array.append(uf_accel_cmd)
     self.d_rel_array.append(d_rel)
     self.v_rel_array.append(v_rel)
     self.v_lead_array.append(v_lead)
@@ -117,12 +119,13 @@ class ManeuverPlot(object):
     plt.figure(plt_num)
     plt.plot(
       np.array(self.time_array), np.array(self.up_accel_cmd_array), 'g',
-      np.array(self.time_array), np.array(self.ui_accel_cmd_array), 'b'
+      np.array(self.time_array), np.array(self.ui_accel_cmd_array), 'b',
+      np.array(self.time_array), np.array(self.uf_accel_cmd_array), 'r'
     )
     plt.xlabel("Time, [s]")
     plt.ylabel("Accel Cmd [m/s^2]")
     plt.grid()
-    plt.legend(["Proportional", "Integral"], loc=0)
+    plt.legend(["Proportional", "Integral", "feedforward"], loc=0)
     pylab.savefig("/".join([path, maneuver_name, "pid.svg"]), dpi=1000)
 
     # relative distances chart =======

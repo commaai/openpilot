@@ -52,6 +52,7 @@ ui: $(OBJS)
 	      $(CEREAL_LIBS) \
 	      $(ZMQ_LIBS) \
         -L/system/vendor/lib64 \
+        -lhardware \
         $(OPENGL_LIBS) \
         -lcutils -lm -llog
 

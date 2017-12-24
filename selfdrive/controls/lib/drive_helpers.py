@@ -10,6 +10,7 @@ class EventTypes:
   USER_DISABLE = 'userDisable'
   SOFT_DISABLE = 'softDisable'
   IMMEDIATE_DISABLE = 'immediateDisable'
+  PERMANENT = 'permanent'
 
 
 def create_event(name, types):

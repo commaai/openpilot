@@ -67,15 +67,20 @@ def speed_smoother(vEgo, aEgo, vT, aMax, aMin, jMax, jMin, ts):
   if aPeak > aMax:
     aPeak = aMax
     t1 = (aPeak - aEgo) / jMax
-    vChange = dV - 0.5 * (aPeak**2 - aEgo**2) / jMax + 0.5 * aPeak**2 / jMin
-    if vChange < aPeak * ts:
-      t2 = t1 + vChange / aPeak
+    if aPeak <= 0: # there is no solution, so stop after t1
+      t2 = t1 + ts + 1e-9
+      t3 = t2
     else:
-      t2 = t1 + ts
+      vChange = dV - 0.5 * (aPeak**2 - aEgo**2) / jMax + 0.5 * aPeak**2 / jMin
+      if vChange < aPeak * ts:
+        t2 = t1 + vChange / aPeak
+      else:
+        t2 = t1 + ts
+      t3 = t2 - aPeak / jMin
   else:
     t1 = (aPeak - aEgo) / jMax
     t2 = t1
-  t3 = t2 - aPeak / jMin
+    t3 = t2 - aPeak / jMin
 
   dt1 = min(ts, t1)
   dt2 = max(min(ts, t2) - t1, 0.)

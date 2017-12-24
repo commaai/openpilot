@@ -1,0 +1,20 @@
+language: python
+
+cache:
+  directories:
+    - build/commaai/panda/boardesp/esp-open-sdk/crosstool-NG
+
+addons:
+  apt:
+    packages:
+    - gcc-arm-none-eabi
+    - libnewlib-arm-none-eabi
+    - gperf
+    - texinfo
+    - help2man
+
+script:
+  - python setup.py install
+  - pushd board && make bin && popd
+  - pushd boardesp && git clone --recursive https://github.com/pfalcon/esp-open-sdk.git && pushd esp-open-sdk && git checkout 03f5e898a059451ec5f3de30e7feff30455f7cec && LD_LIBRARY_PATH="" make STANDALONE=y && popd && popd
+  - pushd boardesp && make user1.bin && popd
