@@ -28,7 +28,7 @@ typedef struct {
 	double delta[N];
 } log_t;
 
-void init(){
+void init(double steerRateCost){
   acado_initializeSolver();
   int    i;
 
@@ -42,6 +42,22 @@ void init(){
 
   /* MPC: initialize the current state feedback. */
   for (i = 0; i < NX; ++i) acadoVariables.x0[ i ] = 0.0;
+
+  for (i = 0; i < N; i++) {
+    int f = 1;
+    if (i > 4){
+      f = 3;
+    }
+    acadoVariables.W[25 * i + 0] = 1.0 * f;
+    acadoVariables.W[25 * i + 6] = 1.0 * f;
+    acadoVariables.W[25 * i + 12] = 1.0 * f;
+    acadoVariables.W[25 * i + 18] = 1.0 * f;
+    acadoVariables.W[25 * i + 24] = steerRateCost * f;
+  }
+  acadoVariables.WN[0] = 1.0;
+  acadoVariables.WN[5] = 1.0;
+  acadoVariables.WN[10] = 1.0;
+  acadoVariables.WN[15] = 1.0;
 }
 
 int run_mpc(state_t * x0, log_t * solution,

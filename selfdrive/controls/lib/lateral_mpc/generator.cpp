@@ -72,14 +72,12 @@ int main( )
   // Angular rate error
   h << (v_ref + 1.0 ) * t;
 
-  DMatrix Q(5,5);
-  Q(0,0) = 1.0;
-  Q(1,1) = 1.0;
-  Q(2,2) = 1.0;
-
-  Q(3,3) = 1.0;
-
-  Q(4,4) = 1.0;
+  BMatrix Q(5,5); Q.setAll(true);
+  // Q(0,0) = 1.0;
+  // Q(1,1) = 1.0;
+  // Q(2,2) = 1.0;
+  // Q(3,3) = 1.0;
+  // Q(4,4) = 2.0;
 
   // Terminal cost
   Function hN;
@@ -92,18 +90,27 @@ int main( )
   // Heading errors
   hN << (2.0 * v_ref + 1.0 ) * (angle - psi);
 
-  DMatrix QN(4,4);
-  QN(0,0) = 1.0;
-  QN(1,1) = 1.0;
-  QN(2,2) = 1.0;
+  BMatrix QN(4,4); QN.setAll(true);
+  // QN(0,0) = 1.0;
+  // QN(1,1) = 1.0;
+  // QN(2,2) = 1.0;
+  // QN(3,3) = 1.0;
 
-  QN(3,3) = 1.0;
+  // Non uniform time grid
+  // First 5 timesteps are 0.05, after that it's 0.15
+  DMatrix numSteps(20, 1);
+  for (int i = 0; i < 5; i++){
+    numSteps(i) = 1;
+  }
+  for (int i = 5; i < 20; i++){
+    numSteps(i) = 3;
+  }
 
   // Setup Optimal Control Problem
   const double tStart = 0.0;
-  const double tEnd   = samplingTime * controlHorizon;
+  const double tEnd   = 2.5;
 
-  OCP ocp( tStart, tEnd, controlHorizon );
+  OCP ocp( tStart, tEnd, numSteps);
   ocp.subjectTo(f);
 
   ocp.minimizeLSQ(Q, h);
@@ -120,6 +127,7 @@ int main( )
   mpc.set( INTEGRATOR_TYPE, INT_RK4 );
   mpc.set( NUM_INTEGRATOR_STEPS, 1 * controlHorizon);
   mpc.set( MAX_NUM_QP_ITERATIONS, 500);
+  mpc.set( CG_USE_VARIABLE_WEIGHTING_MATRIX, YES);
 
   mpc.set( SPARSE_QP_SOLUTION, CONDENSING );
   mpc.set( QP_SOLVER, QP_QPOASES );

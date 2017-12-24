@@ -34,7 +34,6 @@ class RadarInterface(object):
 
     # Nidec
     self.rcp = _create_radard_can_parser()
-    self.cutin_prediction = False
 
     context = zmq.Context()
     self.logcan = messaging.sub_sock(context, service_list['can'].port)

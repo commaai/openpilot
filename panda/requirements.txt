@@ -1,0 +1,4 @@
+libusb1
+hexdump
+pycrypto
+tqdm

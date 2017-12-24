@@ -6,12 +6,9 @@ from common.fingerprints import eliminate_incompatible_cars, all_known_cars
 
 from selfdrive.swaglog import cloudlog
 import selfdrive.messaging as messaging
-from .honda.interface import CarInterface as HondaInterface
-
-try:
-  from .toyota.interface import CarInterface as ToyotaInterface
-except ImportError:
-  ToyotaInterface = None
+from selfdrive.car.honda.interface import CarInterface as HondaInterface
+from selfdrive.car.toyota.interface import CarInterface as ToyotaInterface
+from selfdrive.car.mock.interface import CarInterface as MockInterface
 
 try:
   from .simulator.interface import CarInterface as SimInterface
@@ -29,12 +26,15 @@ interfaces = {
   "ACURA ILX 2016 ACURAWATCH PLUS": HondaInterface,
   "HONDA ACCORD 2016 TOURING": HondaInterface,
   "HONDA CR-V 2016 TOURING": HondaInterface,
+  "ACURA RDX 2018 ACURAWATCH PLUS": HondaInterface,
   "TOYOTA PRIUS 2017": ToyotaInterface,
   "TOYOTA RAV4 2017": ToyotaInterface,
-  "ACURA RDX 2018 ACURAWATCH PLUS": HondaInterface,
+  "TOYOTA RAV4 2017 HYBRID": ToyotaInterface,
 
   "simulator": SimInterface,
-  "simulator2": Sim2Interface
+  "simulator2": Sim2Interface,
+
+  "mock": MockInterface
 }
 
 # **** for use live only ****
@@ -76,12 +76,18 @@ def fingerprint(logcan, timeout):
   return (candidate_cars[0], finger)
 
 
-def get_car(logcan, sendcan=None, timeout=None):
+def get_car(logcan, sendcan=None, passive=True):
+
+  # TODO: timeout only useful for replays so controlsd can start before unlogger
+  timeout = 1. if passive else None
   candidate, fingerprints = fingerprint(logcan, timeout)
 
   if candidate is None:
     cloudlog.warning("car doesn't match any fingerprints: %r", fingerprints)
-    return None, None
+    if passive:
+      candidate = "mock"
+    else:
+      return None, None
 
   interface_cls = interfaces[candidate]
   params = interface_cls.get_params(candidate, fingerprints)

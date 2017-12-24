@@ -7,13 +7,9 @@ import errno
 import signal
 
 if __name__ == "__main__":
-  if os.path.isfile("/init.qcom.rc"):
-    # check if NEOS update is required
-    while ((not os.path.isfile("/VERSION")
-            or int(open("/VERSION").read()) < 3)
-            and not os.path.isfile("/data/media/0/noupdate")):
-      os.system("curl -o /tmp/updater https://neos.comma.ai/updater && chmod +x /tmp/updater && /tmp/updater")
-      time.sleep(10)
+  if os.path.isfile("/init.qcom.rc") \
+      and (not os.path.isfile("/VERSION") or int(open("/VERSION").read()) < 4):
+    raise Exception("NEOS outdated")
 
   # get a non-blocking stdout
   child_pid, child_pty = os.forkpty()
@@ -44,6 +40,7 @@ if __name__ == "__main__":
 
     os._exit(os.wait()[1])
 
+import shutil
 import hashlib
 import importlib
 import subprocess
@@ -219,22 +216,13 @@ def kill_managed_process(name):
 
 def cleanup_all_processes(signal, frame):
   cloudlog.info("caught ctrl-c %s %s" % (signal, frame))
-  manage_baseui(False)
+
+  for p in ("com.waze", "com.spotify.music", "ai.comma.plus.offroad", "ai.comma.plus.frame"):
+    system("am force-stop %s" % p)
+
   for name in running.keys():
     kill_managed_process(name)
-  sys.exit(0)
-
-baseui_running = False
-def manage_baseui(start):
-  global baseui_running
-  if start and not baseui_running:
-    cloudlog.info("starting baseui")
-    os.system("am start -n com.baseui/.MainActivity")
-    baseui_running = True
-  elif not start and baseui_running:
-    cloudlog.info("stopping baseui")
-    os.system("am force-stop com.baseui")
-    baseui_running = False
+  cloudlog.info("everything is dead")
 
 
 # ****************** run loop ******************
@@ -252,7 +240,11 @@ def manager_init():
   cloudlog.info("dongle id is " + dongle_id)
   os.environ['DONGLE_ID'] = dongle_id
 
-  dirty = subprocess.call(["git", "diff-index", "--quiet", "origin/release", "--"]) != 0
+  if "-private" in subprocess.check_output(["git", "config", "--get", "remote.origin.url"]):
+    upstream = "origin/master"
+  else:
+    upstream = "origin/release"
+  dirty = subprocess.call(["git", "diff-index", "--quiet", upstream, "--"]) != 0
   cloudlog.info("dirty is %d" % dirty)
   if not dirty:
     os.environ['CLEAN'] = '1'
@@ -280,12 +272,9 @@ def system(cmd):
       output=e.output[-1024:],
       returncode=e.returncode)
 
-# TODO: this is not proper gating for EON
-try:
+EON = os.path.exists("/EON")
+if EON:
   from smbus2 import SMBus
-  EON = True
-except ImportError:
-  EON = False
 
 def setup_eon_fan():
   if not EON:
@@ -322,8 +311,10 @@ _TEMP_THRS_H = [50., 65., 80., 10000]
 _TEMP_THRS_L = [42.5, 57.5, 72.5, 10000]
 # fan speed options
 _FAN_SPEEDS = [0, 16384, 32768, 65535]
+# max fan speed only allowed if battery if hot
+_BAT_TEMP_THERSHOLD = 45.
 
-def handle_fan(max_temp, fan_speed):
+def handle_fan(max_temp, bat_temp, fan_speed):
   new_speed_h = next(speed for speed, temp_h in zip(_FAN_SPEEDS, _TEMP_THRS_H) if temp_h > max_temp)
   new_speed_l = next(speed for speed, temp_l in zip(_FAN_SPEEDS, _TEMP_THRS_L) if temp_l > max_temp)
 
@@ -333,6 +324,10 @@ def handle_fan(max_temp, fan_speed):
   elif new_speed_l < fan_speed:
     # update speed if using the low thresholds results in fan speed decrement
     fan_speed = new_speed_l
+
+  if bat_temp < _BAT_TEMP_THERSHOLD:
+    # no max fan speed unless battery is hot
+    fan_speed = min(fan_speed, _FAN_SPEEDS[-2])
 
   set_eon_fan(fan_speed/16384)
 
@@ -369,8 +364,6 @@ class LocationStarter(object):
       return location.speed*3.6 > 10
 
 def manager_thread():
-  global baseui_running
-
   # now loop
   context = zmq.Context()
   thermal_sock = messaging.pub_sock(context, service_list['thermal'].port)
@@ -383,7 +376,8 @@ def manager_thread():
   for p in persistent_processes:
     start_managed_process(p)
 
-  manage_baseui(True)
+  # start frame
+  system("am start -n ai.comma.plus.frame/.MainActivity")
 
   # do this before panda flashing
   setup_eon_fan()
@@ -391,7 +385,9 @@ def manager_thread():
   if os.getenv("NOBOARD") is None:
     start_managed_process("pandad")
 
-  passive = bool(os.getenv("PASSIVE"))
+  params = Params()
+
+  passive = params.get("Passive") == "1"
   passive_starter = LocationStarter()
 
   started_ts = None
@@ -399,6 +395,7 @@ def manager_thread():
   count = 0
   fan_speed = 0
   ignition_seen = False
+  battery_was_high = False
 
   health_sock.RCVTIMEO = 1500
 
@@ -424,12 +421,18 @@ def manager_thread():
       msg.thermal.batteryPercent = int(f.read())
     with open("/sys/class/power_supply/battery/status") as f:
       msg.thermal.batteryStatus = f.read().strip()
+    with open("/sys/class/power_supply/usb/online") as f:
+      msg.thermal.usbOnline = bool(int(f.read()))
 
     # TODO: add car battery voltage check
     max_temp = max(msg.thermal.cpu0, msg.thermal.cpu1,
                    msg.thermal.cpu2, msg.thermal.cpu3) / 10.0
-    fan_speed = handle_fan(max_temp, fan_speed)
+    bat_temp = msg.thermal.bat/1000.
+    fan_speed = handle_fan(max_temp, bat_temp, fan_speed)
     msg.thermal.fanSpeed = fan_speed
+
+    msg.thermal.started = started_ts is not None
+    msg.thermal.startedTs = int(1e9*(started_ts or 0))
 
     thermal_sock.send(msg.to_bytes())
     print msg
@@ -448,8 +451,10 @@ def manager_thread():
     ignition = td is not None and td.health.started
     ignition_seen = ignition_seen or ignition
 
-    params = Params()
-    should_start = ignition and (params.get("HasAcceptedTerms") == "1")
+    do_uninstall = params.get("DoUninstall") == "1"
+    accepted_terms = params.get("HasAcceptedTerms") == "1"
+
+    should_start = ignition
 
     # start on gps in passive mode
     if passive and not ignition_seen:
@@ -458,6 +463,15 @@ def manager_thread():
     # with 2% left, we killall, otherwise the phone is bricked
     should_start = should_start and avail > 0.02
 
+    # require usb power
+    should_start = should_start and msg.thermal.usbOnline
+
+    should_start = should_start and accepted_terms and (not do_uninstall)
+
+    # if any CPU gets above 107 or the battery gets above 53, kill all processes
+    # controls will warn with CPU above 95 or battery above 50
+    if max_temp > 107.0 or msg.thermal.bat >= 53000:
+      should_start = False
 
     if should_start:
       if not started_ts:
@@ -468,20 +482,17 @@ def manager_thread():
           kill_managed_process(p)
         else:
           start_managed_process(p)
-      manage_baseui(False)
     else:
-      manage_baseui(True)
       started_ts = None
       logger_dead = False
       for p in car_started_processes:
         kill_managed_process(p)
 
-      # shutdown if the battery gets lower than 10%, we aren't running, and we are discharging
-      if msg.thermal.batteryPercent < 5 and msg.thermal.batteryStatus == "Discharging":
+      # shutdown if the battery gets lower than 5%, we aren't running, and we are discharging
+      if msg.thermal.batteryPercent < 5 and msg.thermal.batteryStatus == "Discharging" and battery_was_high:
         os.system('LD_LIBRARY_PATH="" svc power shutdown')
-
-    # check the status of baseui
-    baseui_running = 'com.baseui' in subprocess.check_output(["ps"])
+      if msg.thermal.batteryPercent > 10:
+        battery_was_high = True
 
     # check the status of all processes, did any of them die?
     for p in running:
@@ -495,10 +506,13 @@ def manager_thread():
         health=(td.to_dict() if td else None),
         thermal=msg.to_dict())
 
+    if do_uninstall:
+      break
+
     count += 1
 
 def get_installed_apks():
-  dat = subprocess.check_output(["pm", "list", "packages", "-3", "-f"]).strip().split("\n")
+  dat = subprocess.check_output(["pm", "list", "packages", "-f"]).strip().split("\n")
   ret = {}
   for x in dat:
     if x.startswith("package:"):
@@ -506,12 +520,49 @@ def get_installed_apks():
       ret[k] = v
   return ret
 
-# optional, build the c++ binaries and preimport the python for speed
+def install_apk(path):
+  # can only install from world readable path
+  install_path = "/sdcard/%s" % os.path.basename(path)
+  shutil.copyfile(path, install_path)
+
+  ret = subprocess.call(["pm", "install", "-r", install_path])
+  os.remove(install_path)
+  return ret == 0
+
+def update_apks():
+  # install apks
+  installed = get_installed_apks()
+  for app in os.listdir(os.path.join(BASEDIR, "apk/")):
+    if ".apk" in app:
+      app = app.split(".apk")[0]
+      if app not in installed:
+        installed[app] = None
+  cloudlog.info("installed apks %s" % (str(installed), ))
+
+  for app in installed.iterkeys():
+    apk_path = os.path.join(BASEDIR, "apk/"+app+".apk")
+    if os.path.isfile(apk_path):
+      h1 = hashlib.sha1(open(apk_path).read()).hexdigest()
+      h2 = None
+      if installed[app] is not None:
+        h2 = hashlib.sha1(open(installed[app]).read()).hexdigest()
+        cloudlog.info("comparing version of %s  %s vs %s" % (app, h1, h2))
+
+      if h2 is None or h1 != h2:
+        cloudlog.info("installing %s" % app)
+
+        success = install_apk(apk_path)
+        if not success:
+          cloudlog.info("needing to uninstall %s" % app)
+          system("pm uninstall %s" % app)
+          success = install_apk(apk_path)
+
+        assert success
+
+def manager_update():
+  update_apks()
+
 def manager_prepare():
-  if os.path.exists(os.path.join(BASEDIR, ".gitmodules")):
-    # update submodules
-    system("cd %s && git submodule init panda opendbc pyextra" % BASEDIR)
-    system("cd %s && git submodule update panda opendbc pyextra" % BASEDIR)
 
   # build cereal first
   subprocess.check_call(["make", "-j4"], cwd=os.path.join(BASEDIR, "cereal"))
@@ -521,32 +572,12 @@ def manager_prepare():
   for p in managed_processes:
     prepare_managed_process(p)
 
-  # install apks
-  installed = get_installed_apks()
-  for app in os.listdir(os.path.join(BASEDIR, "apk/")):
-    if ".apk" in app:
-      app = app.split(".apk")[0]
-      if app not in installed:
-        installed[app] = None
-  cloudlog.info("installed apks %s" % (str(installed), ))
-  for app in installed:
-    apk_path = os.path.join(BASEDIR, "apk/"+app+".apk")
-    if os.path.isfile(apk_path):
-      h1 = hashlib.sha1(open(apk_path).read()).hexdigest()
-      h2 = None
-      if installed[app] is not None:
-        h2 = hashlib.sha1(open(installed[app]).read()).hexdigest()
-        cloudlog.info("comparing version of %s  %s vs %s" % (app, h1, h2))
-      if h2 is None or h1 != h2:
-        cloudlog.info("installing %s" % app)
-        for do_uninstall in [False, True]:
-          if do_uninstall:
-            cloudlog.info("needing to uninstall %s" % app)
-            os.system("pm uninstall %s" % app)
-          ret = os.system("cp %s /sdcard/%s.apk && pm install -r /sdcard/%s.apk && rm /sdcard/%s.apk" % (apk_path, app, app, app))
-          if ret == 0:
-            break
-        assert ret == 0
+def uninstall():
+  cloudlog.warning("uninstalling")
+  with open('/cache/recovery/command', 'w') as f:
+    f.write('--wipe_data\n')
+  # IPowerManager.reboot(confirm=false, reason="recovery", wait=true)
+  os.system("service call power 16 i32 0 s16 recovery i32 1")  
 
 def main():
   if os.getenv("NOLOG") is not None:
@@ -581,11 +612,13 @@ def main():
   if params.get("IsMetric") is None:
     params.put("IsMetric", "0")
   if params.get("IsRearViewMirror") is None:
-    params.put("IsRearViewMirror", "1")
+    params.put("IsRearViewMirror", "0")
   if params.get("IsFcwEnabled") is None:
     params.put("IsFcwEnabled", "1")
   if params.get("HasAcceptedTerms") is None:
     params.put("HasAcceptedTerms", "0")
+  if params.get("IsUploadVideoOverCellularEnabled") is None:
+    params.put("IsUploadVideoOverCellularEnabled", "1")
 
   params.put("Passive", "1" if os.getenv("PASSIVE") else "0")
 
@@ -597,6 +630,7 @@ def main():
       cwd=os.path.join(BASEDIR, "selfdrive", "ui", "spinner"),
       close_fds=True)
   try:
+    manager_update()
     manager_init()
     manager_prepare()
   finally:
@@ -606,6 +640,9 @@ def main():
   if os.getenv("PREPAREONLY") is not None:
     return
 
+  # SystemExit on sigterm
+  signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(1))
+
   try:
     manager_thread()
   except Exception:
@@ -613,6 +650,9 @@ def main():
     crash.capture_exception()
   finally:
     cleanup_all_processes(None, None)
+
+  if params.get("DoUninstall") == "1":
+    uninstall()
 
 if __name__ == "__main__":
   main()

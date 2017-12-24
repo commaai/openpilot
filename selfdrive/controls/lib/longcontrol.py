@@ -4,7 +4,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.pid import PIController
 
 STOPPING_EGO_SPEED = 0.5
-MIN_CAN_SPEED = 0.3
+MIN_CAN_SPEED = 0.3  #TODO: parametrize this in car interface
 STOPPING_TARGET_SPEED = MIN_CAN_SPEED + 0.01
 STARTING_TARGET_SPEED = 0.5
 BRAKE_THRESHOLD_TO_PID = 0.2
@@ -101,7 +101,7 @@ class LongControl(object):
     elif self.long_control_state == LongCtrlState.pid:
       prevent_overshoot = not CP.stoppingControl and v_ego < 1.5 and v_target_future < 0.7
 
-      self.v_pid = max(v_target, MIN_CAN_SPEED)
+      self.v_pid = v_target
       self.pid.pos_limit = gas_max
       self.pid.neg_limit = - brake_max
       deadzone = interp(v_ego_pid, CP.longPidDeadzoneBP, CP.longPidDeadzoneV)

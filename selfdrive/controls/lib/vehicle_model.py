@@ -89,6 +89,8 @@ class VehicleModel(object):
     A, B = create_dyn_state_matrices(u, self)
     return np.matmul((A * self.dt + np.identity(2)), self.state) + B * sa * self.dt
 
+  def yaw_rate(self, sa, u):
+    return self.calc_curvature(sa, u) * u
 
 if __name__ == '__main__':
   from selfdrive.car.honda.interface import CarInterface
