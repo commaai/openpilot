@@ -1,10 +1,11 @@
 import os
+import sys
 import subprocess
 
 from cffi import FFI
 
 mpc_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)))
-subprocess.check_output(["make", "-j4"], cwd=mpc_dir)
+subprocess.check_call(["make", "-j4"], stdout=sys.stderr, cwd=mpc_dir)
 
 
 def _get_libmpc(mpc_id):
@@ -18,13 +19,13 @@ def _get_libmpc(mpc_id):
 
 
     typedef struct {
-    double x_ego[50];
-    double v_ego[50];
-    double a_ego[50];
-    double j_ego[50];
-    double x_l[50];
-    double v_l[50];
-    double a_l[50];
+    double x_ego[20];
+    double v_ego[20];
+    double a_ego[20];
+    double j_ego[20];
+    double x_l[20];
+    double v_l[20];
+    double a_l[20];
     } log_t;
 
     void init();

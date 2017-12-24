@@ -242,7 +242,7 @@ class CANParser {
       const auto& state = kv.second;
       if (state.check_threshold > 0 && (sec - state.seen) > state.check_threshold) {
         if (state.seen > 0) {
-          INFO("%X TIMEOUT\n", state.address);
+          DEBUG("%X TIMEOUT\n", state.address);
         }
         can_valid = false;
       }

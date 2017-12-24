@@ -4,7 +4,6 @@ os.environ['FAKEUPLOAD'] = "1"
 from common.testing import phone_only
 from selfdrive.manager import manager_init, manager_prepare
 from selfdrive.manager import start_managed_process, kill_managed_process, get_running
-from selfdrive.manager import manage_baseui
 from selfdrive.config import CruiseButtons
 from functools import wraps
 import time
@@ -93,10 +92,3 @@ def test_ui():
 def test_uploader():
   print "UPLOADER"
   time.sleep(10.0)
-
-@phone_only
-def test_baseui():
-  manage_baseui(True)
-  time.sleep(10.0)
-  manage_baseui(False)
-

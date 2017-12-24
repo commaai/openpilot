@@ -9,6 +9,7 @@ import inspect
 import requests
 import traceback
 import threading
+import subprocess
 
 from collections import Counter
 from selfdrive.swaglog import cloudlog
@@ -66,6 +67,13 @@ def clear_locks(root):
     except OSError:
       cloudlog.exception("clear_locks failed")
 
+def is_on_wifi():
+  # ConnectivityManager.getActiveNetworkInfo()
+  result = subprocess.check_output(["service", "call", "connectivity", "2"]).strip().split("\n")
+  data = ''.join(''.join(w.decode("hex")[::-1] for w in l[14:49].split()) for l in result[1:]) 
+
+  return "\x00".join("WIFI") in data
+
 
 class Uploader(object):
   def __init__(self, dongle_id, access_token, root):
@@ -111,21 +119,22 @@ class Uploader(object):
       total_size += os.stat(fn).st_size
     return dict(name_counts), total_size
 
-  def next_file_to_upload(self):
+  def next_file_to_upload(self, with_video):
     # try to upload log files first
     for name, key, fn in self.gen_upload_files():
       if name in ["rlog", "rlog.bz2"]:
         return (key, fn, 0)
 
-    # then upload compressed camera file
-    for name, key, fn in self.gen_upload_files():
-      if name in ["fcamera.hevc"]:
-        return (key, fn, 1)
+    if with_video:
+      # then upload compressed camera file
+      for name, key, fn in self.gen_upload_files():
+        if name in ["fcamera.hevc"]:
+          return (key, fn, 1)
 
-    # then upload other files
-    for name, key, fn in self.gen_upload_files():
-      if not name.endswith('.lock') and not name.endswith(".tmp"):
-        return (key, fn, 1)
+      # then upload other files
+      for name, key, fn in self.gen_upload_files():
+        if not name.endswith('.lock') and not name.endswith(".tmp"):
+          return (key, fn, 1)
 
     return None
 
@@ -240,13 +249,16 @@ def uploader_fn(exit_event):
   uploader = Uploader(dongle_id, access_token, ROOT)
 
   while True:
+
+    upload_video = (params.get("IsUploadVideoOverCellularEnabled") != "0") or is_on_wifi()
+
     backoff = 0.1
     while True:
 
       if exit_event.is_set():
         return
 
-      d = uploader.next_file_to_upload()
+      d = uploader.next_file_to_upload(upload_video)
       if d is None:
         break
 

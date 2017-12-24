@@ -28,6 +28,7 @@ struct InitData {
   version @4 :Text;
   gitCommit @10 :Text;
   gitBranch @11 :Text;
+  gitRemote @13 :Text;
 
   androidBuildInfo @5 :AndroidBuildInfo;
   androidSensors @6 :List(AndroidSensor);
@@ -154,6 +155,8 @@ struct SensorEventData {
     pressure @9 :SensorVec;
     magneticUncalibrated @11 :SensorVec;
     gyroUncalibrated @12 :SensorVec;
+    proximity @13: Float32;
+    light @14: Float32;
   }
   source @8 :SensorSource;
 
@@ -242,8 +245,11 @@ struct ThermalData {
   freeSpace @7 :Float32;
   batteryPercent @8 :Int16;
   batteryStatus @9 :Text;
+  usbOnline @12 :Bool;
 
   fanSpeed @10 :UInt16;
+  started @11 :Bool;
+  startedTs @13 :UInt64;
 }
 
 struct HealthData {
@@ -349,6 +355,7 @@ struct Live100Data {
   jerkFactor @12 :Float32;
   angleSteers @13 :Float32;     # Steering angle in degrees.
   angleSteersDes @29 :Float32;
+  curvature @37 :Float32;       # path curvature from vehicle model
   hudLeadDEPRECATED @14 :Int32;
   cumLagMs @15 :Float32;
 
@@ -361,6 +368,8 @@ struct Live100Data {
   rearViewCam @23 :Bool;
   alertText1 @24 :Text;
   alertText2 @25 :Text;
+  alertStatus @38 :AlertStatus;
+  alertSize @39 :AlertSize;
   awarenessStatus @26 :Float32;
 
   angleOffset @27 :Float32;
@@ -378,6 +387,20 @@ struct Live100Data {
     stopping @2;
     starting @3;
   }
+
+  enum AlertStatus {
+    normal @0;       # low priority alert for user's convenience
+    userPrompt @1;   # mid piority alert that might require user intervention
+    critical @2;     # high priority alert that needs immediate user intervention
+  }
+
+  enum AlertSize {
+    none @0;    # don't display the alert
+    small @1;   # small box
+    mid @2;     # mid screen
+    full @3;    # full screen
+  }
+
 }
 
 struct LiveEventData {
@@ -597,6 +620,23 @@ struct NavUpdate {
       uturn @19;
       # ...
     }
+  }
+}
+
+struct NavStatus {
+  isNavigating @0 :Bool;
+  currentAddress @1 :Address;
+
+  struct Address {
+    title @0 :Text;
+    lat @1 :Float64;
+    lng @2 :Float64;
+    house @3 :Text;
+    address @4 :Text;
+    street @5 :Text;
+    city @6 :Text;
+    state @7 :Text;
+    country @8 :Text;
   }
 }
 
@@ -1300,5 +1340,6 @@ struct Event {
     clocks @35 :Clocks;
     liveMpc @36 :LiveMpcData;
     liveLongitudinalMpc @37 :LiveLongitudinalMpcData;
+    navStatus @38 :NavStatus;
   }
 }
