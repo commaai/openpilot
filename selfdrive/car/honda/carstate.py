@@ -507,10 +507,13 @@ class CarState(object):
       # on the accord, this doesn't seem to include cruise control
       self.car_gas = cp.vl[0x17C]['PEDAL_GAS']
       self.steer_override = False
-    elif self.crv or self.rdx:
+    elif self.crv:
       # like accord, crv doesn't include cruise control
       self.car_gas = cp.vl[0x17C]['PEDAL_GAS']
       self.steer_override = abs(cp.vl[0x18F]['STEER_TORQUE_SENSOR']) > 1200
+    elif self.rdx:
+      self.car_gas = cp.vl[0x17C]['PEDAL_GAS']
+      self.steer_override = abs(cp.vl[0x18F]['STEER_TORQUE_SENSOR']) > 400    
     else:
       self.car_gas = cp.vl[0x130]['CAR_GAS']
       self.steer_override = abs(cp.vl[0x18F]['STEER_TORQUE_SENSOR']) > 1200
