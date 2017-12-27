@@ -18,6 +18,17 @@ def parse_gear_shifter(can_gear, car_fingerprint):
       return "drive"
     elif can_gear == 0x4:
       return "brake"
+  elif car_fingerprint == CAR.PRIUS_PRIME:
+    if can_gear == 0x0:
+      return "park"
+    elif can_gear == 0x1:
+      return "reverse"
+    elif can_gear == 0x2:
+      return "neutral"
+    elif can_gear == 0x3:
+      return "drive"
+    elif can_gear == 0x4:
+      return "brake"
   elif car_fingerprint in [CAR.RAV4, CAR.RAV4H]:
     if can_gear == 0x20:
       return "park"
@@ -36,6 +47,17 @@ def parse_gear_shifter(can_gear, car_fingerprint):
 def get_can_parser(CP):
   # this function generates lists for signal, messages and initial values
   if CP.carFingerprint == CAR.PRIUS:
+    dbc_f = 'toyota_prius_2017_pt.dbc'
+    signals = [
+      ("GEAR", 295, 0),
+      ("BRAKE_PRESSED", 550, 0),
+      ("GAS_PEDAL", 581, 0),
+    ]
+    checks = [
+      (550, 40),
+      (581, 33)
+    ]
+  elif CP.carFingerprint == CAR.PRIUS_PRIME:
     dbc_f = 'toyota_prius_2017_pt.dbc'
     signals = [
       ("GEAR", 295, 0),
@@ -138,6 +160,10 @@ class CarState(object):
     self.can_valid = cp.can_valid
 
     if self.car_fingerprint == CAR.PRIUS:
+      can_gear = cp.vl[295]['GEAR']
+      self.brake_pressed = cp.vl[550]['BRAKE_PRESSED']
+      self.pedal_gas = cp.vl[581]['GAS_PEDAL']
+    elif self.car_fingerprint == CAR.PRIUS_PRIME:
       can_gear = cp.vl[295]['GEAR']
       self.brake_pressed = cp.vl[550]['BRAKE_PRESSED']
       self.pedal_gas = cp.vl[581]['GAS_PEDAL']
