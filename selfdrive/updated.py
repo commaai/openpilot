@@ -6,6 +6,9 @@ import os
 import time
 import subprocess
 
+from common.basedir import BASEDIR
+from selfdrive.swaglog import cloudlog
+
 def main(gctx=None):
   while True:
     # try network
@@ -14,11 +17,15 @@ def main(gctx=None):
       time.sleep(60)
       continue
 
-    # try fetch
     r = subprocess.call(["nice", "-n", "19", "git", "fetch", "--depth=1"])
+    cloudlog.info("git fetch: %r", r)
     if r:
       time.sleep(60)
       continue
+
+    # download apks
+    r = subprocess.call(["nice", "-n", "19", os.path.join(BASEDIR, "apk/external/patcher.py"), "download"])
+    cloudlog.info("patcher download: %r", r)
 
     time.sleep(60*60*3)
 
