@@ -35,7 +35,7 @@ class SensorReading:
 # A generic sensor class that does no pre-processing of data
 class SimpleSensor:
   # obs_model can be
-  #   a full obesrvation model matrix, or
+  #   a full observation model matrix, or
   #   an integer or tuple of indices into ekf.state, indicating which variables are being directly observed
   # covar can be
   #   a full covariance matrix
@@ -129,7 +129,7 @@ class EKF:
       print "covar:\n",self.covar
 
   def update_scalar(self, reading):
-    # like update but knowing that measurment is a scalar
+    # like update but knowing that measurement is a scalar
     # this avoids matrix inversions and speeds up (surprisingly) drived.py a lot
 
     # innovation = reading.data - np.matmul(reading.obs_model, self.state)
@@ -188,7 +188,7 @@ class EKF:
 
     Current implementations calculate A and J as functions of state. Control input
       can be added trivially by adding a control parameter to predict() and calc_tranfer_update(),
-      and using it during calcualtion of A and J
+      and using it during calculation of A and J
     """
 
 

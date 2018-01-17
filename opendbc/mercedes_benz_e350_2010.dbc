@@ -1,0 +1,62 @@
+VERSION ""
+
+
+NS_ :
+    NS_DESC_
+    CM_
+    BA_DEF_
+    BA_
+    VAL_
+    CAT_DEF_
+    CAT_
+    FILTER
+    BA_DEF_DEF_
+    EV_DATA_
+    ENVVAR_DATA_
+    SGTYPE_
+    SGTYPE_VAL_
+    BA_DEF_SGTYPE_
+    BA_SGTYPE_
+    SIG_TYPE_REF_
+    VAL_TABLE_
+    SIG_GROUP_
+    SIG_VALTYPE_
+    SIGTYPE_VALTYPE_
+    BO_TX_BU_
+    BA_DEF_REL_
+    BA_REL_
+    BA_DEF_DEF_REL_
+    BU_SG_REL_
+    BU_EV_REL_
+    BU_BO_REL_
+    SG_MUL_VAL_
+
+BS_:
+
+BU_: XXX
+
+
+BO_ 3 NEW_MSG_1: 8 XXX
+ SG_ STEERING_ANGLE : 7|32@0- (1,0) [0|4294967295] "" XXX
+ SG_ NEW_SIGNAL_1 : 55|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 5 NEW_MSG_2: 8 XXX
+ SG_ BRAKE_POSITION : 23|16@0+ (1,0) [0|65535] "" XXX
+ SG_ BRAKE_PRESSED : 0|8@1+ (1,0) [0|17] "" XXX
+
+BO_ 69 NEW_MSG_3: 8 XXX
+ SG_ TURN_SIGNAL_LEVER : 16|8@1+ (1,0) [0|255] "" XXX
+ SG_ CRUISE_CONTROL_LEVER : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_2 : 55|8@0+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_1 : 63|8@0+ (1,0) [0|255] "" XXX
+ SG_ STEERING_WHEEL_BUTTONS : 32|8@1+ (1,0) [0|255] "4 directional, 2 volume control, & 2 phone buttons" XXX
+ SG_ MORE_STEERING_WHEELS_BUTTONS : 40|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 1 NEW_MSG_4: 8 XXX
+ SG_ DOOR_LOCK_STATUS : 31|16@0+ (1,0) [0|65535] "" XXX
+
+
+
+
+CM_ SG_ 5 BRAKE_PRESSED "appears to be boolean (brake pressed)";
+CM_ SG_ 69 MORE_STEERING_WHEELS_BUTTONS "back, ok, voice assistance, and mute buttons";

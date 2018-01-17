@@ -122,7 +122,7 @@ class CarController(object):
     GAS_MAX = 1004
     BRAKE_MAX = 1024/4
     if CS.civic:
-      is_fw_modified = os.getenv("DONGLE_ID") in ['b0f5a01cf604185cxxx']
+      is_fw_modified = os.getenv("DONGLE_ID") in ['b0f5a01cf604185c']
       STEER_MAX = 0x1FFF if is_fw_modified else 0x1000
     elif CS.crv:
       STEER_MAX = 0x300  # CR-V only uses 12-bits and requires a lower value

@@ -130,7 +130,11 @@ bool usb_connect() {
   #endif
 
   // no output is the default
-  libusb_control_transfer(dev_handle, 0x40, 0xdc, SAFETY_NOOUTPUT, 0, NULL, 0, TIMEOUT);
+  if (getenv("RECVMOCK")) {
+    libusb_control_transfer(dev_handle, 0x40, 0xdc, SAFETY_ELM327, 0, NULL, 0, TIMEOUT);
+  } else {
+    libusb_control_transfer(dev_handle, 0x40, 0xdc, SAFETY_NOOUTPUT, 0, NULL, 0, TIMEOUT);
+  }
 
   if (safety_setter_thread_handle == -1) {
     err = pthread_create(&safety_setter_thread_handle, NULL, safety_setter_thread, NULL);

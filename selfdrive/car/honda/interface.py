@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 import os
-import time
 import numpy as np
 from common.numpy_fast import clip, interp
 from common.realtime import sec_since_boot
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET, get_events
+from selfdrive.controls.lib.vehicle_model import VehicleModel
 from cereal import car
 from selfdrive.services import service_list
 import selfdrive.messaging as messaging
@@ -93,6 +93,7 @@ class CarInterface(object):
 
     # *** init the major players ***
     self.CS = CarState(CP)
+    self.VM = VehicleModel(CP)
 
     # sending if read only is False
     if sendcan is not None:
@@ -163,7 +164,7 @@ class CarInterface(object):
       ret.centerToFront = centerToFront_civic
       ret.steerRatio = 13.0
       # Civic at comma has modified steering FW, so different tuning for the Neo in that car
-      is_fw_modified = os.getenv("DONGLE_ID") in ['b0f5a01cf604185cxxx']
+      is_fw_modified = os.getenv("DONGLE_ID") in ['b0f5a01cf604185c']
       ret.steerKp, ret.steerKi = [0.4, 0.12] if is_fw_modified else [0.8, 0.24]
 
       ret.longitudinalKpBP = [0., 5., 35.]
@@ -252,6 +253,8 @@ class CarInterface(object):
     ret.steerLimitAlert = True
     ret.startAccel = 0.5
 
+    ret.steerRateCost = 0.5
+
     return ret
 
   # returns a car.CarState
@@ -270,6 +273,7 @@ class CarInterface(object):
     ret.vEgo = self.CS.v_ego
     ret.aEgo = self.CS.a_ego
     ret.vEgoRaw = self.CS.v_ego_raw
+    ret.yawRate = self.VM.yaw_rate(self.CS.angle_steers * CV.DEG_TO_RAD, self.CS.v_ego)
     ret.standstill = self.CS.standstill
     ret.wheelSpeeds.fl = self.CS.v_wheel_fl
     ret.wheelSpeeds.fr = self.CS.v_wheel_fr
@@ -370,11 +374,11 @@ class CarInterface(object):
     else:
       self.can_invalid_count = 0
     if self.CS.steer_error:
-      events.append(create_event('steerUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
+      events.append(create_event('steerUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
     elif self.CS.steer_not_allowed:
       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
     if self.CS.brake_error:
-      events.append(create_event('brakeUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
+      events.append(create_event('brakeUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
     if not ret.gearShifter == 'drive':
       events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if not self.CS.door_all_closed:

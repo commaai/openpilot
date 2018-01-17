@@ -45,6 +45,22 @@ void init(){
 
   /* MPC: initialize the current state feedback. */
   for (i = 0; i < NX; ++i) acadoVariables.x0[ i ] = 0.0;
+  // Set weights
+
+  for (i = 0; i < N; i++) {
+    int f = 1;
+    if (i > 4){
+      f = 3;
+    }
+    acadoVariables.W[16 * i + 0] = 5.0 * f; // exponential cost for danger zone
+    acadoVariables.W[16 * i + 5] = 0.1 * f; // desired distance
+    acadoVariables.W[16 * i + 10] = 10.0 * f; // acceleration
+    acadoVariables.W[16 * i + 15] = 20.0 * f; // jerk
+  }
+  acadoVariables.WN[0] = 5.0; // exponential cost for danger zone
+  acadoVariables.WN[4] = 0.1; // desired distance
+  acadoVariables.WN[8] = 10.0; // acceleration
+
 }
 
 void init_with_simulation(double v_ego, double x_l, double v_l, double a_l, double l){
@@ -58,6 +74,9 @@ void init_with_simulation(double v_ego, double x_l, double v_l, double a_l, doub
   double dt = 0.2;
 
   for (i = 0; i < N + 1; ++i){
+    if (i > 4){
+      dt = 0.6;
+    }
     acadoVariables.x[i*NX] = x_ego;
     acadoVariables.x[i*NX+1] = v_ego;
     acadoVariables.x[i*NX+2] = a_ego;
