@@ -44,7 +44,7 @@ def remove(path):
   except OSError:
     pass
 
-def process(download, patch):
+def process(updates):
   # clean up any junk apks
   for out_apk in glob.glob(os.path.join(EXTERNAL_PATH, 'out/*.apk')):
     app = os.path.basename(out_apk)[:-4]
@@ -66,7 +66,7 @@ def process(download, patch):
 
     src_path = os.path.join(EXTERNAL_PATH, 'src', v['src_sha256'])
     if not os.path.exists(src_path) or sha256_path(src_path) != v['src_sha256']:
-      if not download:
+      if "patch" in updates:
         continue
 
       print "downloading", v['src'], "to", src_path
@@ -80,7 +80,7 @@ def process(download, patch):
         print "download was corrupted..."
         continue
 
-    if not patch:
+    if "download" in updates:
       continue
 
     # ignoring lots of TOCTTOU here...
@@ -113,10 +113,9 @@ def process(download, patch):
 
 if __name__ == "__main__":
   ret = True
-  if len(sys.argv) == 2 and sys.argv[1] == "download":
-    ret = process(True, False)
-  elif len(sys.argv) == 2 and sys.argv[1] == "patch":
-    ret = process(False, True)
-  else:
-    ret = process(True, True)
+  update_list = ["download", "patch"]
+  if sys.argv[1] in update_list:
+    update_list = sys.argv[1] 
+
+  ret = process(update_list)
   sys.exit(0 if ret else 1)
