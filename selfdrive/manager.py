@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
+
 import os
 import sys
 import time
@@ -40,6 +41,7 @@ if __name__ == "__main__":
 
     os._exit(os.wait()[1])
 
+import glob
 import shutil
 import hashlib
 import importlib
@@ -54,6 +56,7 @@ os.environ['BASEDIR'] = BASEDIR
 import usb1
 import zmq
 from setproctitle import setproctitle
+from smbus2 import SMBus
 
 from common.params import Params
 from common.realtime import sec_since_boot
@@ -67,6 +70,8 @@ from selfdrive.version import version
 import selfdrive.crash as crash
 
 from selfdrive.loggerd.config import ROOT
+
+EON = os.path.exists("/EON")
 
 # comment out anything you don't want to run
 managed_processes = {
@@ -271,10 +276,6 @@ def system(cmd):
       cmd=e.cmd,
       output=e.output[-1024:],
       returncode=e.returncode)
-
-EON = os.path.exists("/EON")
-if EON:
-  from smbus2 import SMBus
 
 def setup_eon_fan():
   if not EON:
@@ -530,34 +531,50 @@ def install_apk(path):
   return ret == 0
 
 def update_apks():
+  # patch apks
+  if os.getenv("PREPAREONLY"):
+    # assume we have internet, download too
+    patched = subprocess.call([os.path.join(BASEDIR, "apk/external/patcher.py")])
+  else:
+    patched = subprocess.call([os.path.join(BASEDIR, "apk/external/patcher.py"), "patch"])
+  cloudlog.info("patcher: %r" % (patched,))
+
   # install apks
   installed = get_installed_apks()
-  for app in os.listdir(os.path.join(BASEDIR, "apk/")):
-    if ".apk" in app:
-      app = app.split(".apk")[0]
-      if app not in installed:
-        installed[app] = None
+
+  install_apks = (glob.glob(os.path.join(BASEDIR, "apk/*.apk"))
+                  + glob.glob(os.path.join(BASEDIR, "apk/external/out/*.apk")))
+  for apk in install_apks:
+    app = os.path.basename(apk)[:-4]
+    if app not in installed:
+      installed[app] = None
+
   cloudlog.info("installed apks %s" % (str(installed), ))
 
   for app in installed.iterkeys():
+    
     apk_path = os.path.join(BASEDIR, "apk/"+app+".apk")
-    if os.path.isfile(apk_path):
-      h1 = hashlib.sha1(open(apk_path).read()).hexdigest()
-      h2 = None
-      if installed[app] is not None:
-        h2 = hashlib.sha1(open(installed[app]).read()).hexdigest()
-        cloudlog.info("comparing version of %s  %s vs %s" % (app, h1, h2))
+    if not os.path.exists(apk_path):
+      apk_path = os.path.join(BASEDIR, "apk/external/out/"+app+".apk")
+    if not os.path.exists(apk_path):
+      continue
 
-      if h2 is None or h1 != h2:
-        cloudlog.info("installing %s" % app)
+    h1 = hashlib.sha1(open(apk_path).read()).hexdigest()
+    h2 = None
+    if installed[app] is not None:
+      h2 = hashlib.sha1(open(installed[app]).read()).hexdigest()
+      cloudlog.info("comparing version of %s  %s vs %s" % (app, h1, h2))
 
+    if h2 is None or h1 != h2:
+      cloudlog.info("installing %s" % app)
+
+      success = install_apk(apk_path)
+      if not success:
+        cloudlog.info("needing to uninstall %s" % app)
+        system("pm uninstall %s" % app)
         success = install_apk(apk_path)
-        if not success:
-          cloudlog.info("needing to uninstall %s" % app)
-          system("pm uninstall %s" % app)
-          success = install_apk(apk_path)
 
-        assert success
+      assert success
 
 def manager_update():
   update_apks()
@@ -577,7 +594,7 @@ def uninstall():
   with open('/cache/recovery/command', 'w') as f:
     f.write('--wipe_data\n')
   # IPowerManager.reboot(confirm=false, reason="recovery", wait=true)
-  os.system("service call power 16 i32 0 s16 recovery i32 1")  
+  os.system("service call power 16 i32 0 s16 recovery i32 1")
 
 def main():
   if os.getenv("NOLOG") is not None:
