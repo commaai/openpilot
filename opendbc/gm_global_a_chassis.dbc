@@ -52,7 +52,7 @@ BO_ 789 EBCMFrictionBrakeCmd: 5 K17_EBCM
  SG_ RollingCounter : 33|2@0+ (1,0) [0|0] ""  NEO
  SG_ FrictionBrakeMode : 7|4@0+ (1,0) [0|0] ""  NEO
  SG_ FrictionBrakeChecksum : 23|16@0+ (1,0) [0|0] ""  NEO
- SG_ FirctionBrakeCmd : 3|12@0+ (1,0) [0|0] ""  NEO
+ SG_ FirctionBrakeCmd : 3|12@0- (1,0) [0|0] ""  NEO
 
 BO_TX_BU_ 823 : K43_PSCM,NEO;
 BO_TX_BU_ 789 : NEO,K17_EBCM;

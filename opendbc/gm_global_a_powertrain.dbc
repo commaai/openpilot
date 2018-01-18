@@ -101,7 +101,7 @@ BO_ 384 ASCMLKASteeringCmd: 4 NEO
  SG_ RollingCounter : 5|2@0+ (1,0) [0|0] ""  NEO
  SG_ LKASteeringCmdChecksum : 19|12@0+ (1,0) [0|0] ""  NEO
  SG_ LKASteeringCmdActive : 3|1@0+ (1,0) [0|0] ""  NEO
- SG_ LKASteeringCmd : 2|11@0+ (1,0) [0|0] ""  NEO
+ SG_ LKASteeringCmd : 2|11@0- (1,0) [0|0] ""  NEO
 
 BO_ 880 ASCMActiveCruiseControlStatus: 6 K124_ASCM
  SG_ ACCLeadCar : 44|1@0+ (1,0) [0|0] "" Vector__XXX
@@ -155,7 +155,8 @@ BO_ 715 ASCMGasRegenCmd: 8 K124_ASCM
  SG_ GasRegenFullStopActive : 13|1@0+ (1,0) [0|0] ""  NEO
  SG_ GasRegenCmdActive : 0|1@0+ (1,0) [0|0] ""  NEO
  SG_ RollingCounter : 7|2@0+ (1,0) [0|0] ""  NEO
- SG_ GasRegenCmd : 23|16@0+ (1,0) [0|0] ""  NEO
+ SG_ GasRegenAlwaysOne3 : 23|1@0+ (1,0) [0|1] ""  NEO
+ SG_ GasRegenCmd : 22|12@0+ (1,0) [0|0] ""  NEO
 
 BO_ 840 EBCMWheelSpdFront: 4 K17_EBCM
  SG_ FLWheelSpd : 7|16@0+ (0.0305,0) [0|255] "km/h"  NEO
