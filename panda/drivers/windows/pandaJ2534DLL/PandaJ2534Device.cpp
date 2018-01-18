@@ -112,7 +112,7 @@ DWORD PandaJ2534Device::can_recv_thread() {
 				}
 			} else {
 				for (auto& conn : this->connections)
-					if (conn->isProtoCan() && conn->getPort() == msg_in.bus)
+					if (conn != nullptr && conn->isProtoCan() && conn->getPort() == msg_in.bus)
 						conn->processMessage(msg_out);
 			}
 		}
