@@ -12,6 +12,7 @@ from dfu import PandaDFU
 from esptool import ESPROM, CesantaFlasher
 from flash_release import flash_release
 from update import ensure_st_up_to_date
+from serial import PandaSerial
 
 __version__ = '0.0.6'
 

@@ -5,16 +5,19 @@
 // esp = USART1
 uart_ring esp_ring = { .w_ptr_tx = 0, .r_ptr_tx = 0,
                        .w_ptr_rx = 0, .r_ptr_rx = 0,
-                       .uart = USART1 };
+                       .uart = USART1,
+                       .callback = NULL};
 
 // lin1, K-LINE = UART5
 // lin2, L-LINE = USART3
 uart_ring lin1_ring = { .w_ptr_tx = 0, .r_ptr_tx = 0,
                         .w_ptr_rx = 0, .r_ptr_rx = 0,
-                        .uart = UART5 };
+                        .uart = UART5,
+                        .callback = NULL};
 uart_ring lin2_ring = { .w_ptr_tx = 0, .r_ptr_tx = 0,
                         .w_ptr_rx = 0, .r_ptr_rx = 0,
-                        .uart = USART3 };
+                        .uart = USART3,
+                        .callback = NULL};
 
 // debug = USART2
 void debug_ring_callback(uart_ring *ring);
@@ -59,7 +62,7 @@ void uart_ring_process(uart_ring *q) {
     q->uart->CR1 &= ~USART_CR1_TXEIE;
   }
 
-  if (sr & USART_SR_RXNE) {
+  if (sr & USART_SR_RXNE || sr & USART_SR_ORE) {
     uint8_t c = q->uart->DR;  // TODO: can drop packets
     uint8_t next_w_ptr = q->w_ptr_rx + 1;
     if (next_w_ptr != q->r_ptr_rx) {
@@ -68,6 +71,11 @@ void uart_ring_process(uart_ring *q) {
       if (q->callback) q->callback(q);
     }
   }
+
+  if (sr & USART_SR_ORE) {
+    // set dropped packet flag?
+  }
+
   exit_critical_section();
 }
 
