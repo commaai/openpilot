@@ -13,6 +13,7 @@ if __name__ == "__main__":
   poller = zmq.Poller()
 
   parser = argparse.ArgumentParser(description='Sniff a communcation socket')
+  parser.add_argument('--pipe', action='store_true')
   parser.add_argument('--raw', action='store_true')
   parser.add_argument('--json', action='store_true')
   parser.add_argument('--addr', default='127.0.0.1')
@@ -33,7 +34,10 @@ if __name__ == "__main__":
     for sock, mode in polld:
       if mode != zmq.POLLIN:
         continue
-      if args.raw:
+      if args.pipe:
+        sys.stdout.write(sock.recv())
+        sys.stdout.flush()
+      elif args.raw:
         hexdump(sock.recv())
       elif args.json:
         print(json.loads(sock.recv()))
