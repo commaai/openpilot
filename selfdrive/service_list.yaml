@@ -48,8 +48,15 @@ liveMpc: [8035, true]
 liveLongitudinalMpc: [8036, true]
 plusFrame: [8037, false]
 navStatus: [8038, true]
+gpsLocationTrimble: [8039, true]
+trimbleGnss: [8041, true]
+ubloxRaw: [8042, true]
+gpsPlannerPoints: [8043, true]
+gpsPlannerPlan: [8044, true]
 
 testModel: [8040, false]
+testLiveLocation: [8045, false]
+
 
 # manager -- base process to manage starting and stopping of all others
 #   subscribes: health
@@ -59,7 +66,7 @@ testModel: [8040, false]
 
 # boardd -- communicates with the car
 #   subscribes: sendcan
-#   publishes:  can, health
+#   publishes:  can, health, ubloxRaw
 
 # sensord -- publishes the IMU and GPS
 #   publishes:  sensorEvents, gpsNMEA

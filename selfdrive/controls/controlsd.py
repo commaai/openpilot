@@ -210,7 +210,7 @@ def state_transition(CS, CP, state, events, soft_disable_timer, v_cruise_kph, AM
   return state, soft_disable_timer, v_cruise_kph, v_cruise_kph_last
 
 
-def state_control(plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, AM, rk, 
+def state_control(plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, AM, rk,
                   awareness_status, PL, LaC, LoC, VM, angle_offset, rear_view_allowed, rear_view_toggle):
   # Given the state, this function returns the actuators
 
@@ -387,6 +387,9 @@ def data_send(plan, plan_ts, CS, CI, CP, VM, state, events, actuators, v_cruise_
   # log learned angle offset
   dat.live100.angleOffset = float(angle_offset)
 
+  # Save GPS planner status
+  dat.live100.gpsPlannerActive = plan.gpsPlannerActive
+
   # lag
   dat.live100.cumLagMs = -rk.remaining*1000.
 
@@ -513,7 +516,7 @@ def controlsd_thread(gctx, rate=100):
 
     if not passive:
       # update control state
-      state, soft_disable_timer, v_cruise_kph, v_cruise_kph_last = state_transition(CS, CP, state, events, soft_disable_timer, 
+      state, soft_disable_timer, v_cruise_kph, v_cruise_kph_last = state_transition(CS, CP, state, events, soft_disable_timer,
                                                                                     v_cruise_kph, AM)
       prof.checkpoint("State transition")
 

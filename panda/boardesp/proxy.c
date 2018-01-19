@@ -225,8 +225,8 @@ void ICACHE_FLASH_ATTR wifi_init() {
   char password[] = "testing123";
 
   // fetch secure ssid and password
-  // update, try 3 times
-  for (int i = 0; i < 3; i++) {
+  // update, try 20 times, for 1 second
+  for (int i = 0; i < 20; i++) {
     uint8_t digest[SHA_DIGEST_SIZE];
     char resp[0x20];
     __spi_comm("\x00\x00\x00\x00\x40\xD0\x00\x00\x00\x00\x20\x00", 0xC, recvData, 0x40);
@@ -251,7 +251,7 @@ void ICACHE_FLASH_ATTR wifi_init() {
   config.ssid_len = strlen(ssid);
   config.authmode = AUTH_WPA2_PSK;
   config.beacon_interval = 100;
-  config.max_connection = 10;
+  config.max_connection = 4;
   wifi_softap_set_config(&config);
 
   //set IP
@@ -353,7 +353,6 @@ void ICACHE_FLASH_ATTR user_init() {
   system_os_task(loop, LOOP_PRIO, my_queue, QUEUE_SIZE);
   system_os_post(LOOP_PRIO, 0, 0);
 }
-
 
 void ICACHE_FLASH_ATTR loop(os_event_t *events) {
   system_os_post(LOOP_PRIO, 0, 0);
