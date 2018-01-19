@@ -6,14 +6,14 @@ from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 import numpy as np
 
-def parse_gear_shifter(can_gear_shifter, is_acura):
+def parse_gear_shifter(can_gear_shifter, is_acura, is_odyssey):
 
   if can_gear_shifter == 0x1:
     return "park"
   elif can_gear_shifter == 0x2:
     return "reverse"
 
-  if is_acura:
+  if is_acura or is_odyssey:
     if can_gear_shifter == 0x3:
       return "neutral"
     elif can_gear_shifter == 0x4:
@@ -261,6 +261,62 @@ def get_can_signals(CP):
       (0x324, 10),
       (0x405, 3),
     ]
+  elif CP.carFingerprint == "HONDA ODYSSEY 2018 EX-L":
+    dbc_f = 'honda_odyssey_exl_2018.dbc'
+    signals = [
+      ("XMISSION_SPEED", 0x158, 0),
+      ("WHEEL_SPEED_FL", 0x1d0, 0),
+      ("WHEEL_SPEED_FR", 0x1d0, 0),
+      ("WHEEL_SPEED_RL", 0x1d0, 0),
+      ("WHEEL_SPEED_RR", 0x1d0, 0),
+      ("STEER_ANGLE", 0x156, 0),
+      ("STEER_ANGLE_RATE", 0x156, 0),
+      ("STEER_TORQUE_SENSOR", 0x18f, 0),
+      ("GEAR", 0x1a3, 0),
+      ("WHEELS_MOVING", 0x1b0, 1),
+      ("DOOR_OPEN_FL", 0x405, 1),
+      ("DOOR_OPEN_FR", 0x405, 1),
+      ("DOOR_OPEN_RL", 0x405, 1),
+      ("DOOR_OPEN_RR", 0x405, 1),
+      ("CRUISE_SPEED_PCM", 0x324, 0),
+      ("SEATBELT_DRIVER_LAMP", 0x305, 1),
+      ("SEATBELT_DRIVER_LATCHED", 0x305, 0),
+      ("BRAKE_PRESSED", 0x17c, 0),
+      ("BRAKE_SWITCH", 0x17c, 0),
+      ("CRUISE_BUTTONS", 0x296, 0),
+      ("ESP_DISABLED", 0x1a4, 1),
+      ("HUD_LEAD", 0x30c, 0),
+      ("USER_BRAKE", 0x1a4, 0),
+      ("STEER_STATUS", 0x18f, 5),
+      ("BRAKE_ERROR_1", 0x1b0, 1),
+      ("BRAKE_ERROR_2", 0x1b0, 1),
+      ("GEAR_SHIFTER", 0x1a3, 0),
+      ("MAIN_ON", 0x326, 0),
+      ("ACC_STATUS", 0x17c, 0),
+      ("PEDAL_GAS", 0x17c, 0),
+      ("CRUISE_SETTING", 0x296, 0),
+      ("LEFT_BLINKER", 0x326, 0),
+      ("RIGHT_BLINKER", 0x326, 0),
+      ("CRUISE_SPEED_OFFSET", 0x37c, 0),
+      ("EPB_STATE", 0x1c2, 0),
+      ("BRAKE_HOLD_ACTIVE", 0x1a4, 0),
+    ]
+    checks = [
+      (0x156, 100),
+      (0x158, 100),
+      (0x17c, 100),
+      (0x1a3, 50),
+      (0x1a4, 50),
+      (0x1b0, 50),
+      (0x1c2, 50),
+      (0x1d0, 50),
+      (0x296, 25),
+      (0x305, 10),
+      (0x324, 10),
+      (0x326, 10),
+      (0x37c, 10),
+      (0x405, 3),
+    ]
   # add gas interceptor reading if we are using it
   if CP.enableGas:
     signals.append(("INTERCEPTOR_GAS", 0x201, 0))
@@ -278,6 +334,7 @@ class CarState(object):
     self.civic = False
     self.accord = False
     self.crv = False
+    self.odyssey = False
     if CP.carFingerprint == "HONDA CIVIC 2016 TOURING":
       self.civic = True
     elif CP.carFingerprint == "ACURA ILX 2016 ACURAWATCH PLUS":
@@ -286,6 +343,8 @@ class CarState(object):
       self.accord = True
     elif CP.carFingerprint == "HONDA CR-V 2016 TOURING":
       self.crv = True
+    elif CP.carFingerprint == "HONDA ODYSSEY 2018 EX-L":
+      self.odyssey = True
     else:
       raise ValueError("unsupported car %s" % CP.carFingerprint)
 
@@ -418,6 +477,20 @@ class CarState(object):
       self.cruise_speed_offset = -0.3
       self.park_brake = 0  # TODO
       self.brake_hold = 0  # TODO
+    elif self.odyssey:
+      can_gear_shifter = cp.vl[0x1A3]['GEAR_SHIFTER']
+      self.angle_steers = cp.vl[0x156]['STEER_ANGLE']
+      self.angle_steers_rate = cp.vl[0x156]['STEER_ANGLE_RATE']
+      self.gear = cp.vl[0x1A3]['GEAR']
+      self.cruise_setting = cp.vl[0x296]['CRUISE_SETTING']
+      self.cruise_buttons = cp.vl[0x296]['CRUISE_BUTTONS']
+      self.main_on = cp.vl[0x326]['MAIN_ON']
+      self.blinker_on = cp.vl[0x326]['LEFT_BLINKER'] or cp.vl[0x326]['RIGHT_BLINKER']
+      self.left_blinker_on = cp.vl[0x326]['LEFT_BLINKER']
+      self.right_blinker_on = cp.vl[0x326]['RIGHT_BLINKER']
+      self.cruise_speed_offset = calc_cruise_offset(cp.vl[0x37c]['CRUISE_SPEED_OFFSET'], self.v_ego)
+      self.park_brake = cp.vl[0x1c2]['EPB_STATE'] != 0
+      self.brake_hold = cp.vl[0x1a4]['BRAKE_HOLD_ACTIVE']
     elif self.acura:
       can_gear_shifter = cp.vl[0x1A3]['GEAR_SHIFTER']
       self.angle_steers = cp.vl[0x156]['STEER_ANGLE']
@@ -431,15 +504,15 @@ class CarState(object):
       self.right_blinker_on = cp.vl[0x294]['RIGHT_BLINKER']
       self.cruise_speed_offset = calc_cruise_offset(cp.vl[0x37c]['CRUISE_SPEED_OFFSET'], self.v_ego)
       self.park_brake = 0  # TODO
-      self.brake_hold = 0
+      self.brake_hold = 0  # TODO
 
-    self.gear_shifter = parse_gear_shifter(can_gear_shifter, self.acura)
+    self.gear_shifter = parse_gear_shifter(can_gear_shifter, self.acura, self.odyssey)
 
     if self.accord:
       # on the accord, this doesn't seem to include cruise control
       self.car_gas = cp.vl[0x17C]['PEDAL_GAS']
       self.steer_override = False
-    elif self.crv:
+    elif self.crv or self.odyssey:
       # like accord, crv doesn't include cruise control
       self.car_gas = cp.vl[0x17C]['PEDAL_GAS']
       self.steer_override = abs(cp.vl[0x18F]['STEER_TORQUE_SENSOR']) > 1200

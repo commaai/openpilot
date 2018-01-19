@@ -12,7 +12,7 @@ from . import hondacan
 from .values import AH
 
 
-def actuator_hystereses(brake, braking, brake_steady, v_ego, civic):
+def actuator_hystereses(brake, braking, brake_steady, v_ego, civic, odyssey):
   # hyst params... TODO: move these to VehicleParams
   brake_hyst_on = 0.02     # to activate brakes exceed this value
   brake_hyst_off = 0.005                     # to deactivate brakes below this value
@@ -32,7 +32,7 @@ def actuator_hystereses(brake, braking, brake_steady, v_ego, civic):
     brake_steady = brake + brake_hyst_gap
   brake = brake_steady
 
-  if not civic and brake > 0.0:
+  if (not civic and not odyssey) and brake > 0.0:
     brake += 0.15
 
   return brake, braking, brake_steady
@@ -78,7 +78,7 @@ class CarController(object):
       return
 
     # *** apply brake hysteresis ***
-    brake, self.braking, self.brake_steady = actuator_hystereses(actuators.brake, self.braking, self.brake_steady, CS.v_ego, CS.civic)
+    brake, self.braking, self.brake_steady = actuator_hystereses(actuators.brake, self.braking, self.brake_steady, CS.v_ego, CS.civic, CS.odyssey)
 
     # *** no output if not enabled ***
     if not enabled and CS.pcm_acc_status:
@@ -121,7 +121,7 @@ class CarController(object):
     tt = sec_since_boot()
     GAS_MAX = 1004
     BRAKE_MAX = 1024/4
-    if CS.civic:
+    if CS.civic or CS.odyssey:
       is_fw_modified = os.getenv("DONGLE_ID") in ['b0f5a01cf604185c']
       STEER_MAX = 0x1FFF if is_fw_modified else 0x1000
     elif CS.crv:
@@ -165,16 +165,16 @@ class CarController(object):
     # Send dashboard UI commands.
     if (frame % 10) == 0:
       idx = (frame/10) % 4
-      can_sends.extend(hondacan.create_ui_commands(pcm_speed, hud, CS.civic, CS.accord, CS.crv, idx))
+      can_sends.extend(hondacan.create_ui_commands(pcm_speed, hud, CS.civic, CS.accord, CS.crv, CS.odyssey, idx))
 
     # radar at 20Hz, but these msgs need to be sent at 50Hz on ilx (seems like an Acura bug)
-    if CS.civic or CS.accord or CS.crv:
-      radar_send_step = 5
-    else:
+    if CS.acura:
       radar_send_step = 2
+    else:
+      radar_send_step = 5
 
     if (frame % radar_send_step) == 0:
       idx = (frame/radar_send_step) % 4
-      can_sends.extend(hondacan.create_radar_commands(CS.v_ego, CS.civic, CS.accord, CS.crv, idx))
+      can_sends.extend(hondacan.create_radar_commands(CS.v_ego, CS.civic, CS.accord, CS.crv, CS.odyssey, idx))
 
     sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
