@@ -461,6 +461,7 @@ class CarState(object):
                                cp.vl[0x405]['DOOR_OPEN_RL'], cp.vl[0x405]['DOOR_OPEN_RR']])
     self.seatbelt = not cp.vl[0x305]['SEATBELT_DRIVER_LAMP'] and cp.vl[0x305]['SEATBELT_DRIVER_LATCHED']
     # error 2 = temporary
+    # error 3 = 
     # error 4 = temporary, hit a bump
     # error 5 (permanent)
     # error 6 = temporary
@@ -471,7 +472,7 @@ class CarState(object):
       self.steer_error = False
       self.steer_not_allowed = False
     else:
-      self.steer_error = cp.vl[0x18F]['STEER_STATUS'] not in [0,2,4,6]
+      self.steer_error = cp.vl[0x18F]['STEER_STATUS'] not in [0,2,3,4,6]
       self.steer_not_allowed = cp.vl[0x18F]['STEER_STATUS'] != 0
     self.brake_error = cp.vl[0x1B0]['BRAKE_ERROR_1'] or cp.vl[0x1B0]['BRAKE_ERROR_2']
     self.esp_disabled = cp.vl[0x1A4]['ESP_DISABLED']
