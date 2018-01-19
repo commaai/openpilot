@@ -200,9 +200,9 @@ class CarInterface(object):
     elif candidate == "ACURA RDX 2018 ACURAWATCH PLUS":
       stop_and_go = False
       ret.mass = 3935./2.205 + std_cargo
-      ret.wheelbase = 3.00
+      ret.wheelbase = 2.68
       ret.centerToFront = ret.wheelbase * 0.38
-      ret.steerRatio = 15.3
+      ret.steerRatio = 15.0
       ret.steerKp, ret.steerKi = 0.8, 0.24
 
       ret.longitudinalKpBP = [0., 5., 35.]
