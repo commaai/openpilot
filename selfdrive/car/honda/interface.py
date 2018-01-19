@@ -212,9 +212,9 @@ class CarInterface(object):
     elif candidate == "HONDA PILOT 2017 TOURING":
       stop_and_go = False
       ret.mass = 4303./2.205 + std_cargo
-      ret.wheelbase = 3.00
+      ret.wheelbase = 2.81
       ret.centerToFront = ret.wheelbase * 0.41
-      ret.steerRatio = 15.3
+      ret.steerRatio = 16.0
       ret.steerKp, ret.steerKi = 0.38, 0.24
 
       ret.longitudinalKpBP = [0., 5., 35.]
