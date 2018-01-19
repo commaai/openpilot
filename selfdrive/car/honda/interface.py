@@ -214,7 +214,7 @@ class CarInterface(object):
       ret.mass = 4354./2.205 + std_cargo
       ret.wheelbase = 3.00
       ret.centerToFront = ret.wheelbase * 0.41
-      ret.steerRatio = 15.3
+      ret.steerRatio = 14.35
       ret.steerKp, ret.steerKi = 0.6, 0.18
 
       ret.longitudinalKpBP = [0., 5., 35.]
