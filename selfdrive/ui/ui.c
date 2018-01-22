@@ -109,6 +109,11 @@ typedef struct UIScene {
   // Used to display calibration progress
   int cal_status;
   int cal_perc;
+
+
+  // Used to show gps planner status
+  bool gps_planner_active;
+
 } UIScene;
 
 typedef struct UIState {
@@ -421,6 +426,7 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
       .front_box_width = ui_info.front_box_width,
       .front_box_height = ui_info.front_box_height,
       .world_objects_visible = false,  // Invisible until we receive a calibration message.
+      .gps_planner_active = false,
   };
 
   s->rgb_width = back_bufs.width;
@@ -879,6 +885,21 @@ static void ui_draw_vision(UIState *s) {
       } else {
         nvgText(s->vg, x_pos + 120, 1110, "Drive above 45 mph", NULL);
       }
+    } else if (scene->gps_planner_active) {
+      int rec_width = 1120;
+      int x_pos = 500;
+      nvgBeginPath(s->vg);
+      nvgStrokeWidth(s->vg, 14);
+      nvgRoundedRect(s->vg, (1920-rec_width)/2, 920, rec_width, 225, 20);
+      nvgStroke(s->vg);
+      nvgFillColor(s->vg, nvgRGBA(0,0,0,180));
+      nvgFill(s->vg);
+
+      nvgFontSize(s->vg, 40*2.5);
+      nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
+      nvgFontFace(s->vg, "sans-semibold");
+      nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 220));
+      nvgText(s->vg, x_pos, 1010, "GPS planner active", NULL);
     }
   }
 
@@ -1361,6 +1382,7 @@ static void ui_update(UIState *s) {
         s->scene.v_ego = datad.vEgo;
         s->scene.curvature = datad.curvature;
         s->scene.engaged = datad.enabled;
+        s->scene.gps_planner_active = datad.gpsPlannerActive;
         // printf("recv %f\n", datad.vEgo);
 
         s->scene.frontview = datad.rearViewCam;

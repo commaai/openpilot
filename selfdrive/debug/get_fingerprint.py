@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 
 # simple script to get a vehicle fingerprint.
-# keep this script running for few seconds: some messages are published every few seconds
 
 # Instructions:
 # - connect to a Panda
 # - run selfdrive/boardd/boardd
 # - launching this script
-# - since some messages are published at low frequency, keep this script running for few seconds, 
-#   until all messages are received at least once
+# - since some messages are published at low frequency, keep this script running for few
+#   seconds, until all messages are received at least once
 
 import zmq
 import selfdrive.messaging as messaging

@@ -33,6 +33,7 @@ struct InitData {
   androidBuildInfo @5 :AndroidBuildInfo;
   androidSensors @6 :List(AndroidSensor);
   chffrAndroidExtra @7 :ChffrAndroidExtra;
+  iosBuildInfo @14 :IosBuildInfo;
 
   pandaInfo @8 :PandaInfo;
 
@@ -43,6 +44,7 @@ struct InitData {
     unknown @0;
     neo @1;
     chffrAndroid @2;
+    chffrIos @3;
   }
 
   struct AndroidBuildInfo {
@@ -91,6 +93,13 @@ struct InitData {
 
   struct ChffrAndroidExtra {
     allCameraCharacteristics @0 :Map(Text, Text);
+  }
+
+  struct IosBuildInfo {
+    appVersion @0 :Text;
+    appBuild @1 :UInt32;
+    osVersion @2 :Text;
+    deviceModel @3 :Text;
   }
 
   struct PandaInfo {
@@ -222,6 +231,7 @@ struct GpsLocationData {
     fusion @4;
     external @5;
     ublox @6;
+    trimble @7;
   }
 }
 
@@ -374,6 +384,8 @@ struct Live100Data {
 
   angleOffset @27 :Float32;
 
+  gpsPlannerActive @40 :Bool;
+
   enum ControlState {
     disabled @0;
     preEnabled @1;
@@ -513,6 +525,8 @@ struct Plan {
 
   # gps trajectory in car frame
   gpsTrajectory @12 :GpsTrajectory;
+
+  gpsPlannerActive @19 :Bool;
 
   struct GpsTrajectory {
     x @0 :List(Float32);
@@ -1298,6 +1312,27 @@ struct LiveLongitudinalMpcData {
   calculationTime @9 :UInt64;
 }
 
+
+struct ECEFPoint {
+  x @0 :Float32;
+  y @1 :Float32;
+  z @2 :Float32;
+}
+
+struct GPSPlannerPoints {
+  curPos @0 :ECEFPoint;
+  points @1 :List(ECEFPoint);
+  valid @2 :Bool;
+  trackName @3 :Text;
+  instructionProgress @4 :Float32;
+}
+
+struct GPSPlannerPlan {
+  valid @0 :Bool;
+  poly @1 :List(Float32);
+  trackName @2 :Text;
+}
+
 struct Event {
   # in nanoseconds?
   logMonoTime @0 :UInt64;
@@ -1341,5 +1376,8 @@ struct Event {
     liveMpc @36 :LiveMpcData;
     liveLongitudinalMpc @37 :LiveLongitudinalMpcData;
     navStatus @38 :NavStatus;
+    ubloxRaw @39 :Data;
+    gpsPlannerPoints @40 :GPSPlannerPoints;
+    gpsPlannerPlan @41 :GPSPlannerPlan;
   }
 }

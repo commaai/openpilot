@@ -43,8 +43,12 @@ def recv(panda, cnt, addr, nbus):
     kmsgs = nmsgs
   return map(str, ret)
 
-def isotp_recv(panda, addr, bus=0):
+def isotp_recv(panda, addr, bus=0, sendaddr=None):
   msg = recv(panda, 1, addr, bus)[0]
+
+  if sendaddr is None:
+    sendaddr = addr-8
+    
 
   if ord(msg[0])&0xf0 == 0x10:
     # first
@@ -54,7 +58,7 @@ def isotp_recv(panda, addr, bus=0):
     # 0 block size?
     CONTINUE = "\x30" + "\x00"*7
 
-    panda.can_send(addr-8, CONTINUE, bus)
+    panda.can_send(sendaddr, CONTINUE, bus)
 
     idx = 1
     for mm in recv(panda, (tlen-len(dat) + 7)/8, addr, bus):

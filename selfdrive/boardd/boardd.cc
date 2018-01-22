@@ -25,6 +25,8 @@
 #include "common/swaglog.h"
 #include "common/timing.h"
 
+#include <algorithm>
+
 // double the FIFO size
 #define RECV_SIZE (0x1000)
 #define TIMEOUT 0
@@ -45,6 +47,7 @@ pthread_mutex_t usb_lock;
 bool spoofing_started = false;
 bool fake_send = false;
 bool loopback_can = false;
+bool has_pigeon = false;
 
 pthread_t safety_setter_thread_handle = -1;
 
@@ -102,6 +105,8 @@ void *safety_setter_thread(void *s) {
   return NULL;
 }
 
+void pigeon_init();
+
 // must be called before threads or with mutex
 bool usb_connect() {
   int err;
@@ -139,6 +144,8 @@ bool usb_connect() {
   if (safety_setter_thread_handle == -1) {
     err = pthread_create(&safety_setter_thread_handle, NULL, safety_setter_thread, NULL);
   }
+
+  if (has_pigeon) pigeon_init();
 
   return true;
 fail:
@@ -409,6 +416,100 @@ void *can_health_thread(void *crap) {
   return NULL;
 }
 
+#define pigeon_send(x) _pigeon_send(x, sizeof(x)-1)
+
+void _pigeon_send(const char *dat, int len) {
+  int sent;
+  unsigned char a[0x20];
+  int err;
+  a[0] = 1;
+  for (int i=0; i<len; i+=0x1f) {
+    int ll = std::max(0x1f, len-i);
+    memcpy(&a[1], &dat[i], ll);
+    err = libusb_bulk_transfer(dev_handle, 2, a, ll+1, &sent, TIMEOUT);
+  }
+}
+
+void pigeon_set_baud(int baud) {
+  libusb_control_transfer(dev_handle, 0xc0, 0xe4, 1, baud/300, NULL, 0, TIMEOUT);
+}
+
+void pigeon_init() {
+  // power on pigeon
+  libusb_control_transfer(dev_handle, 0xc0, 0xd9, 0, 0, NULL, 0, TIMEOUT);
+  usleep(100*1000);
+  libusb_control_transfer(dev_handle, 0xc0, 0xd9, 1, 0, NULL, 0, TIMEOUT);
+  usleep(500*1000);
+
+  // baud rate upping
+  pigeon_set_baud(9600);
+  pigeon_send("$PUBX,41,1,0007,0003,230400,0*1A\r\n");
+  usleep(200*1000);
+
+  // set baud rate to 230400
+  pigeon_set_baud(230400);
+
+  // init from ubloxd
+  pigeon_send("\xB5\x62\x06\x00\x14\x00\x03\xFF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x01\x00\x00\x00\x00\x00\x1E\x7F");
+  pigeon_send("\xB5\x62\x06\x3E\x00\x00\x44\xD2");
+  pigeon_send("\xB5\x62\x06\x00\x14\x00\x00\xFF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x19\x35");
+  pigeon_send("\xB5\x62\x06\x00\x14\x00\x01\x00\x00\x00\xC0\x08\x00\x00\x00\x08\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\xF2\x72");
+  pigeon_send("\xB5\x62\x06\x00\x14\x00\x04\xFF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x1D\x85");
+  pigeon_send("\xB5\x62\x06\x00\x00\x00\x06\x18");
+  pigeon_send("\xB5\x62\x06\x00\x01\x00\x01\x08\x22");
+  pigeon_send("\xB5\x62\x06\x00\x01\x00\x02\x09\x23");
+  pigeon_send("\xB5\x62\x06\x00\x01\x00\x03\x0A\x24");
+  pigeon_send("\xB5\x62\x06\x08\x06\x00\x64\x00\x01\x00\x00\x00\x79\x10");
+  pigeon_send("\xB5\x62\x06\x24\x24\x00\x05\x00\x04\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x5A\x63");
+  pigeon_send("\xB5\x62\x06\x1E\x14\x00\x00\x00\x00\x00\x01\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x3C\x37");
+  pigeon_send("\xB5\x62\x06\x24\x00\x00\x2A\x84");
+  pigeon_send("\xB5\x62\x06\x23\x00\x00\x29\x81");
+  pigeon_send("\xB5\x62\x06\x1E\x00\x00\x24\x72");
+  pigeon_send("\xB5\x62\x06\x01\x03\x00\x01\x07\x01\x13\x51");
+  pigeon_send("\xB5\x62\x06\x01\x03\x00\x02\x15\x01\x22\x70");
+
+  LOGW("pigeon is ready to fly");
+
+}
+
+void *pigeon_thread(void *crap) {
+  // ubloxRaw = 8042
+  void *context = zmq_ctx_new();
+  void *publisher = zmq_socket(context, ZMQ_PUB);
+  zmq_bind(publisher, "tcp://*:8042");
+
+  // run at ~200hz
+  unsigned char dat[0x40];
+  while (!do_exit) {
+    while (1) {
+      pthread_mutex_lock(&usb_lock);
+      int len = libusb_control_transfer(dev_handle, 0xc0, 0xe0, 1, 0, dat, 0x40, TIMEOUT);
+      pthread_mutex_unlock(&usb_lock);
+
+      if (len <= 0) break;
+
+      // create message
+      capnp::MallocMessageBuilder msg;
+      cereal::Event::Builder event = msg.initRoot<cereal::Event>();
+      event.setLogMonoTime(nanos_since_boot());
+      auto ublox_raw = event.initUbloxRaw(len);
+      memcpy(ublox_raw.begin(), dat, len);
+
+      // send to ubloxRaw
+      auto words = capnp::messageToFlatArray(msg);
+      auto bytes = words.asBytes();
+      zmq_send(publisher, bytes.begin(), bytes.size(), 0);
+
+      if (len < 0x40) break;
+    }
+
+    // 10ms
+    usleep(10*1000);
+  }
+
+  return NULL;
+}
+
 int set_realtime_priority(int level) {
   // should match python using chrt
   struct sched_param sa;
@@ -436,8 +537,12 @@ int main() {
     fake_send = true;
   }
 
-  if(getenv("BOARDD_LOOPBACK")){
+  if (getenv("BOARDD_LOOPBACK")){
     loopback_can = true;
+  }
+
+  if (getenv("PIGEON")) {
+    has_pigeon = true;
   }
 
   // init libusb
@@ -469,6 +574,15 @@ int main() {
   err = pthread_create(&thermal_thread_handle, NULL,
                        thermal_thread, NULL);
   assert(err == 0);
+
+  if (has_pigeon) {
+    pthread_t pigeon_thread_handle;
+    err = pthread_create(&pigeon_thread_handle, NULL,
+                         pigeon_thread, NULL);
+    assert(err == 0);
+    err = pthread_join(pigeon_thread_handle, NULL);
+    assert(err == 0);
+  }
 
   // join threads
 

@@ -90,6 +90,7 @@ managed_processes = {
   "sensord": ("selfdrive/sensord", ["./sensord"]),
   "gpsd": ("selfdrive/sensord", ["./gpsd"]),
   "updated": "selfdrive.updated",
+  #"gpsplanner": "selfdrive.controls.gps_plannerd",
 }
 
 running = {}
@@ -119,6 +120,7 @@ car_started_processes = [
   'radard',
   'visiond',
   'proclogd',
+  # 'gpsplanner,
 ]
 
 def register_managed_process(name, desc, car_started=False):
