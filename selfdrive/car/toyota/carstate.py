@@ -1,73 +1,27 @@
 import os
 import selfdrive.messaging as messaging
-from selfdrive.car.toyota.values import CAR
+from selfdrive.car.toyota.values import CAR,CAN_GEAR_DICT,CAR_DETAILS,CAN_PEDALS_DICT
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 import numpy as np
 
 def parse_gear_shifter(can_gear, car_fingerprint):
 
-  if car_fingerprint == CAR.PRIUS:
-    if can_gear == 0x0:
-      return "park"
-    elif can_gear == 0x1:
-      return "reverse"
-    elif can_gear == 0x2:
-      return "neutral"
-    elif can_gear == 0x3:
-      return "drive"
-    elif can_gear == 0x4:
-      return "brake"
-  elif car_fingerprint in [CAR.RAV4, CAR.RAV4H]:
-    if can_gear == 0x20:
-      return "park"
-    elif can_gear == 0x10:
-      return "reverse"
-    elif can_gear == 0x8:
-      return "neutral"
-    elif can_gear == 0x0:
-      return "drive"
-    elif can_gear == 0x1:
-      return "sport"
-
-  return "unknown"
+  # TODO: This is called often, perhaps just save the lookup results
+  if car_fingerprint in CAN_GEAR_DICT:
+    return CAN_GEAR_DICT[car_fingerprint][can_gear]
+  else: return "unknwon"
 
 
 def get_can_parser(CP):
   # this function generates lists for signal, messages and initial values
-  if CP.carFingerprint == CAR.PRIUS:
-    dbc_f = 'toyota_prius_2017_pt.dbc'
-    signals = [
-      ("GEAR", 295, 0),
-      ("BRAKE_PRESSED", 550, 0),
-      ("GAS_PEDAL", 581, 0),
-    ]
-    checks = [
-      (550, 40),
-      (581, 33)
-    ]
-  elif CP.carFingerprint == CAR.RAV4H:
-    dbc_f = 'toyota_rav4_hybrid_2017_pt.dbc'
-    signals = [
-      ("GEAR", 956, 0),
-      ("BRAKE_PRESSED", 550, 0),
-      ("GAS_PEDAL", 581, 0),
-    ]
-    checks = [
-      (550, 40),
-      (581, 33)
-    ]
-  elif CP.carFingerprint == CAR.RAV4:
-    dbc_f = 'toyota_rav4_2017_pt.dbc'
-    signals = [
-      ("GEAR", 956, 0x20),
-      ("BRAKE_PRESSED", 548, 0),
-      ("GAS_PEDAL", 705, 0),
-    ]
-    checks = [
-      (548, 40),
-      (705, 33)
-    ]
+  if CP.carFingerprint in CAR_DETAILS:
+    dbc_f = CAR_DETAILS[CP.carFingerprint]["dbc_f"]
+    signals = CAR_DETAILS[CP.carFingerprint]["signals"]
+    checks = CAR_DETAILS[CP.carFingerprint]["checks"]
+    print "dbc_f {}".format(dbc_f)
+    print "signals {}".format(signals)
+    print "checks {}".format(checks)
 
   # TODO: DOORS, GAS_PEDAL, BRAKE_PRESSED for RAV4
   signals += [
@@ -132,23 +86,23 @@ class CarState(object):
     # self.v_ego_K = np.transpose(K)
     self.v_ego_K = np.matrix([[0.12287673], [0.29666309]])
 
+    # Set up car specific values
+    self.GEAR_ID = CAN_PEDALS_DICT[self.car_fingerprint]["GEAR_ID"]
+    self.GEAR_STRING = CAN_PEDALS_DICT[self.car_fingerprint]["GEAR_STRING"]
+    self.BRAKE_PRESSED_ID = CAN_PEDALS_DICT[self.car_fingerprint]["BRAKE_PRESSED_ID"]
+    self.BRAKE_PRESSED_STRING = CAN_PEDALS_DICT[self.car_fingerprint]["BRAKE_PRESSED_STRING"]
+    self.PEDAL_GAS_ID = CAN_PEDALS_DICT[self.car_fingerprint]["PEDAL_GAS_ID"]
+    self.PEDAL_GAS_STRING = CAN_PEDALS_DICT[self.car_fingerprint]["PEDAL_GAS_STRING"]
+    print "GEAR_ID = {}, GEAR_STRING = {}".format(self.GEAR_ID, self.GEAR_STRING)
+
   def update(self, cp):
 
     # copy can_valid
     self.can_valid = cp.can_valid
 
-    if self.car_fingerprint == CAR.PRIUS:
-      can_gear = cp.vl[295]['GEAR']
-      self.brake_pressed = cp.vl[550]['BRAKE_PRESSED']
-      self.pedal_gas = cp.vl[581]['GAS_PEDAL']
-    elif self.car_fingerprint == CAR.RAV4H:
-      can_gear = cp.vl[956]['GEAR']
-      self.brake_pressed = cp.vl[550]['BRAKE_PRESSED']
-      self.pedal_gas = cp.vl[581]['GAS_PEDAL']
-    elif self.car_fingerprint == CAR.RAV4:
-      can_gear = cp.vl[956]['GEAR']
-      self.brake_pressed = cp.vl[548]['BRAKE_PRESSED']
-      self.pedal_gas = cp.vl[705]['GAS_PEDAL']
+    can_gear = cp.vl[self.GEAR_ID][self.GEAR_STRING]
+    self.brake_pressed = cp.vl[self.BRAKE_PRESSED_ID][self.BRAKE_PRESSED_STRING]
+    self.pedal_gas = cp.vl[self.PEDAL_GAS_ID][self.PEDAL_GAS_STRING]
 
     # update prevs, update must run once per loop
     self.prev_left_blinker_on = self.left_blinker_on
