@@ -19,9 +19,6 @@ def get_can_parser(CP):
     dbc_f = CAR_DETAILS[CP.carFingerprint]["dbc_f"]
     signals = CAR_DETAILS[CP.carFingerprint]["signals"]
     checks = CAR_DETAILS[CP.carFingerprint]["checks"]
-    print "dbc_f {}".format(dbc_f)
-    print "signals {}".format(signals)
-    print "checks {}".format(checks)
 
   # TODO: DOORS, GAS_PEDAL, BRAKE_PRESSED for RAV4
   signals += [
@@ -93,7 +90,6 @@ class CarState(object):
     self.BRAKE_PRESSED_STRING = CAN_PEDALS_DICT[self.car_fingerprint]["BRAKE_PRESSED_STRING"]
     self.PEDAL_GAS_ID = CAN_PEDALS_DICT[self.car_fingerprint]["PEDAL_GAS_ID"]
     self.PEDAL_GAS_STRING = CAN_PEDALS_DICT[self.car_fingerprint]["PEDAL_GAS_STRING"]
-    print "GEAR_ID = {}, GEAR_STRING = {}".format(self.GEAR_ID, self.GEAR_STRING)
 
   def update(self, cp):
 

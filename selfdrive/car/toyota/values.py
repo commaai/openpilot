@@ -1,3 +1,12 @@
+#
+# Adding a car:
+#   Add CAR (name used most everywhere)
+#   Add STATIC_MSGS the car uses (refactoring soon)
+#   Add CAN_GEAR_DICT (may be able to copy an existing one, like Prius Prime does)
+#   Add CAR_DETAILS (may be able to base on another, like Prius Prime)
+#   --- Don't forget to add the Fingerprint
+#
+
 class CAR: 
   PRIUS = "TOYOTA PRIUS 2017"
   RAV4H = "TOYOTA RAV4 2017 HYBRID"
@@ -11,6 +20,9 @@ class ECU:
 
 
 # addr, [ecu, bus, 1/freq*100, vl]
+#   TODO: Refactor the list of cars to come from the car, and say car has signals 0x141, 0x128, etc. then iterate signals and add to the list for that signal
+#         I think that's easier for a human to read / understand
+
 STATIC_MSGS = {0x141: (ECU.DSU, (CAR.PRIUS, CAR.PRIUSP, CAR.RAV4H, CAR.RAV4), 1,   2, '\x00\x00\x00\x46'),
                0x128: (ECU.DSU, (CAR.PRIUS, CAR.PRIUSP, CAR.RAV4H, CAR.RAV4), 1,   3, '\xf4\x01\x90\x83\x00\x37'),
 
@@ -54,7 +66,7 @@ STATIC_MSGS = {0x141: (ECU.DSU, (CAR.PRIUS, CAR.PRIUSP, CAR.RAV4H, CAR.RAV4), 1,
                0x470: (ECU.DSU, (CAR.PRIUS, CAR.PRIUSP, CAR.RAV4H,), 1, 100, '\x00\x00\x02\x7a'),
               }
 
-# CAN_GEAR Dictionary:
+# CAN_GEAR Dictionary - Get this from DBC soon:
 CAN_GEAR_DICT = {}
 
 CAN_GEAR_DICT[CAR.PRIUS] = {
@@ -79,39 +91,9 @@ CAN_GEAR_DICT[CAR.RAV4] = {
 # For this RAV4H - Hybrid - seems same as RAV4:
 CAN_GEAR_DICT[CAR.RAV4H] = CAN_GEAR_DICT[CAR.RAV4]
 
-# What is this called:
-CAN_PEDALS_DICT = {}
-
-CAN_PEDALS_DICT[CAR.PRIUS] = {
-  "GEAR_ID": 295,
-  "GEAR_STRING": 'GEAR',
-  "BRAKE_PRESSED_ID": 550,
-  "BRAKE_PRESSED_STRING":  'BRAKE_PRESSED',
-  "PEDAL_GAS_ID": 581,
-  "PEDAL_GAS_STRING": 'GAS_PEDAL'
-  }
-
-CAN_PEDALS_DICT[CAR.RAV4H] = {
-  "GEAR_ID": 956,
-  "GEAR_STRING": 'GEAR',
-  "BRAKE_PRESSED_ID": 550,
-  "BRAKE_PRESSED_STRING":  'BRAKE_PRESSED',
-  "PEDAL_GAS_ID": 581,
-  "PEDAL_GAS_STRING": 'GAS_PEDAL'
-  }
-
-CAN_PEDALS_DICT[CAR.RAV4] = {
-  "GEAR_ID": 956,
-  "GEAR_STRING": 'GEAR',
-  "BRAKE_PRESSED_ID": 548,
-  "BRAKE_PRESSED_STRING":  'BRAKE_PRESSED',
-  "PEDAL_GAS_ID": 705,
-  "PEDAL_GAS_STRING": 'GAS PEDAL'
-  }
-
-CAN_PEDALS_DICT[CAR.PRIUSP] = CAN_PEDALS_DICT[CAR.PRIUS]
-
-# CAR_DETAILS: 
+# CAR_DETAILS - Get this from DBC soon: 
+# Maybe iterate all DBC files and load?
+# Ideally even add Fingerprint from comment in DBC?
 
 CAR_DETAILS = {}
 
@@ -156,6 +138,25 @@ CAR_DETAILS[CAR.RAV4] = {
 
 CAR_DETAILS[CAR.PRIUSP] = CAR_DETAILS[CAR.PRIUS]
 CAR_DETAILS[CAR.PRIUSP]["dbc_f"] = 'toyota_prius_2017_pt.dbc'  # TODO: This had worked, but we should have a new dbc file
+
+
+# This really is just spinning the CAR_DETAILS into a different lookup format
+CAN_PEDALS_DICT = {}
+
+for key in CAR_DETAILS:
+  CAN_PEDAL = {}
+  for signal in CAR_DETAILS[key]["signals"]:
+    if signal[0] in ['GEAR', 'BRAKE_PRESSED']:
+      CAN_PEDAL["{}_ID".format(signal[0])] = signal[1]
+      # This is redundant? Keeping for now for backwards compat, check later if needed
+      CAN_PEDAL["{}_STRING".format(signal[0])] = signal[0]
+    elif signal[0] == 'GAS_PEDAL':
+      CAN_PEDAL["PEDAL_GAS_ID"] = signal[1]
+      # This is redundant? Keeping for now for backwards compat, check later if needed
+      CAN_PEDAL["PEDAL_GAS_STRING"] = signal[0]
+
+  CAN_PEDALS_DICT[key] = CAN_PEDAL
+
 
 
 def check_ecu_msgs(fingerprint, candidate, ecu):
