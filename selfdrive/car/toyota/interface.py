@@ -75,7 +75,7 @@ class CarInterface(object):
     tireStiffnessRear_civic = 90000
 
     ret.mass = 3045./2.205 + std_cargo
-    ret.wheelbase = 2.70 if candidate == CAR.PRIUS else 2.65
+    ret.wheelbase = 2.70 if candidate in [CAR.PRIUS, CAR.PRIUSP] else 2.65
     ret.centerToFront = ret.wheelbase * 0.44
     ret.steerRatio = 14.5 #Rav4 2017, TODO: find exact value for Prius
     ret.steerKp, ret.steerKi = 0.6, 0.05
@@ -86,7 +86,7 @@ class CarInterface(object):
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter.
-    if candidate in [CAR.PRIUS, CAR.RAV4H]: # rav4 hybrid can do stop and go
+    if candidate in [CAR.PRIUS, CAR.PRIUSP, CAR.RAV4H]: # rav4 hybrid can do stop and go
       ret.minEnableSpeed = -1.
     elif candidate == CAR.RAV4:   # TODO: hack ICE Rav4 to do stop and go
       ret.minEnableSpeed = 19. * CV.MPH_TO_MS
@@ -134,7 +134,7 @@ class CarInterface(object):
     ret.longitudinalKiBP = [0., 35.]
     ret.longitudinalKiV = [0.54, 0.36]
 
-    if candidate == CAR.PRIUS:
+    if candidate in [CAR.PRIUS, CAR.PRIUSP]:
       ret.steerRateCost = 2.
     elif candidate in [CAR.RAV4, CAR.RAV4H]:
       ret.steerRateCost = 1.

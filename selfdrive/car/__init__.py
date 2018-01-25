@@ -3,39 +3,10 @@ from cereal import car
 
 from common.realtime import sec_since_boot
 from common.fingerprints import eliminate_incompatible_cars, all_known_cars
+from selfdrive.car.interfaces import interfaces
 
 from selfdrive.swaglog import cloudlog
 import selfdrive.messaging as messaging
-from selfdrive.car.honda.interface import CarInterface as HondaInterface
-from selfdrive.car.toyota.interface import CarInterface as ToyotaInterface
-from selfdrive.car.mock.interface import CarInterface as MockInterface
-
-try:
-  from .simulator.interface import CarInterface as SimInterface
-except ImportError:
-  SimInterface = None
-
-try:
-  from .simulator2.interface import CarInterface as Sim2Interface
-except ImportError:
-  Sim2Interface = None
-
-
-interfaces = {
-  "HONDA CIVIC 2016 TOURING": HondaInterface,
-  "ACURA ILX 2016 ACURAWATCH PLUS": HondaInterface,
-  "HONDA ACCORD 2016 TOURING": HondaInterface,
-  "HONDA CR-V 2016 TOURING": HondaInterface,
-  "HONDA ODYSSEY 2018 EX-L": HondaInterface,
-  "TOYOTA PRIUS 2017": ToyotaInterface,
-  "TOYOTA RAV4 2017": ToyotaInterface,
-  "TOYOTA RAV4 2017 HYBRID": ToyotaInterface,
-
-  "simulator": SimInterface,
-  "simulator2": Sim2Interface,
-
-  "mock": MockInterface
-}
 
 # **** for use live only ****
 def fingerprint(logcan, timeout):
