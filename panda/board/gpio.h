@@ -15,6 +15,7 @@ int has_external_debug_serial = 0;
 int is_giant_panda = 0;
 int is_entering_bootmode = 0;
 int revision = PANDA_REV_AB;
+int is_grey_panda = 0;
 
 int detect_with_pull(GPIO_TypeDef *GPIO, int pin, int mode) {
   set_gpio_mode(GPIO, pin, MODE_INPUT);
@@ -45,9 +46,14 @@ void detect() {
 
   // check if the ESP is trying to put me in boot mode
   is_entering_bootmode = !detect_with_pull(GPIOB, 0, PULL_UP);
+
+  // check if it's a grey panda by seeing if the SPI lines are floating
+  // TODO: is this reliable?
+  is_grey_panda = !(detect_with_pull(GPIOA, 4, PULL_DOWN) | detect_with_pull(GPIOA, 5, PULL_DOWN) | detect_with_pull(GPIOA, 6, PULL_DOWN) | detect_with_pull(GPIOA, 7, PULL_DOWN));
 #else
   // need to do this for early detect
   is_giant_panda = 0;
+  is_grey_panda = 0;
   revision = PANDA_REV_AB;
   is_entering_bootmode = 0;
 #endif

@@ -27,7 +27,7 @@ static int elm327_tx_lin_hook(int lin_num, uint8_t *data, int len) {
   return true;
 }
 
-static void elm327_init() {
+static void elm327_init(int16_t param) {
   controls_allowed = 1;
 }
 
