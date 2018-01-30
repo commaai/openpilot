@@ -1,0 +1,74 @@
+CM_ "IMPORT _honda_2017.dbc"
+
+BO_ 342 STEERING_SENSORS: 6 EPS
+ SG_ STEER_ANGLE : 7|16@0- (-0.1,0) [-500|500] "deg" EON
+ SG_ STEER_ANGLE_RATE : 23|16@0- (1,0) [-3000|3000] "deg/s" EON
+ SG_ COUNTER : 45|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 43|4@0+ (1,0) [0|15] "" EON
+
+BO_ 399 STEER_STATUS: 6 EPS
+ SG_ STEER_TORQUE_SENSOR : 7|12@0- (1,0) [-2047.5|2047.5] "tbd"  EON
+ SG_ STEER_TORQUE_MOTOR : 23|16@0- (1,0) [-31000|31000] "tbd"  EON
+ SG_ STEER_CONTROL_ACTIVE : 36|1@0+ (1,0) [0|1] ""  EON
+ SG_ STEER_STATUS : 35|4@0+ (1,0) [0|15] ""  EON
+ SG_ COUNTER : 45|2@0+ (1,0) [0|3] ""  EON
+ SG_ CHECKSUM : 43|4@0+ (1,0) [0|15] ""  EON
+
+BO_ 401 GEARBOX: 8 PCM
+ SG_ GEAR_SHIFTER : 5|6@0+ (1,0) [0|63] ""  EON
+ SG_ GEAR : 35|4@0+ (1,0) [0|15] ""  EON
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] ""  EON
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] ""  EON
+
+BO_ 404 STEERING_CONTROL: 4 EON
+ SG_ STEER_TORQUE : 7|12@0- (1,0) [-768|768] "" EPS
+ SG_ SET_ME_X00 : 11|4@0+ (1,0) [0|15] "" EPS
+ SG_ STEER_TORQUE_REQUEST : 23|1@0+ (1,0) [0|1] "" EPS
+ SG_ SET_ME_X00 : 22|7@0+ (1,0) [0|127] "" EPS
+ SG_ COUNTER : 29|2@0+ (1,0) [0|15] "" EPS
+ SG_ CHECKSUM : 27|4@0+ (1,0) [0|3] "" EPS
+
+BO_ 420 VSA_STATUS: 8 VSA
+ SG_ USER_BRAKE : 7|16@0+ (0.015625,-1.609375) [0|1000] "" EON
+ SG_ ESP_DISABLED : 28|1@0+ (1,0) [0|1] "" EON
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" EON
+
+BO_ 422 SCM_BUTTONS: 8 SCM
+ SG_ CRUISE_BUTTONS : 7|3@0+ (1,0) [0|7] "" EON
+ SG_ LIGHTS_SETTING : 1|2@0+ (1,0) [0|3] "" EON
+ SG_ MAIN_ON : 47|1@0+ (1,0) [0|1] "" EON
+ SG_ CRUISE_SETTING : 43|2@0+ (1,0) [0|3] "" EON
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" EON
+
+BO_ 487 BRAKE_PRESSURE: 4 VSA
+ SG_ BRAKE_PRESSURE1 : 7|10@0+ (0.015625,-103) [0|1000] "" EON
+ SG_ BRAKE_PRESSURE2 : 9|10@0+ (0.015625,-103) [0|1000] "" EON
+ SG_ COUNTER : 29|2@0+ (1,0) [0|15] "" EON
+ SG_ CHECKSUM : 27|4@0+ (1,0) [0|3] "" EON
+
+BO_ 660 SCM_FEEDBACK: 8 SCM
+ SG_ RIGHT_BLINKER : 6|1@0+ (1,0) [0|1] "" EON
+ SG_ LEFT_BLINKER : 5|1@0+ (1,0) [0|1] "" EON
+ SG_ WIPERS_SPEED : 4|2@0+ (1,0) [0|3] "" EON
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" EON
+
+BO_ 891 WIPERS: 8 XXX
+ SG_ WIPERS : 17|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
+
+
+CM_ SG_ 401 GEAR "10 = reverse, 11 = transition";
+
+VAL_ 399 STEER_STATUS 5 "fault" 4 "no_torque_alert_2" 2 "no_torque_alert_1" 0 "normal" ;
+VAL_ 401 GEAR_SHIFTER 32 "L" 16 "S" 8 "D" 4 "N" 2 "R" 1 "P" ;
+VAL_ 401 GEAR 7 "L" 10 "S" 4 "D" 3 "N" 2 "R" 1 "P" ;
+VAL_ 422 CRUISE_BUTTONS 7 "tbd" 6 "tbd" 5 "tbd" 4 "accel_res" 3 "decel_set" 2 "cancel" 1 "main" 0 "none" ;
+VAL_ 422 LIGHTS_SETTING 3 "high_beam" 2 "low_beam" 1 "position" 0 "no_lights" ;
+VAL_ 422 CRUISE_SETTING 3 "distance_adj" 2 "tbd" 1 "lkas_button" 0 "none" ;
+VAL_ 891 WIPERS 4 "High" 2 "Low" 0 "Off" ;
+
+CM_ "CHFFR_METRIC 342 STEER_ANGLE STEER_ANGLE 0.36 180; CHFFR_METRIC 380 ENGINE_RPM ENGINE_RPM 1 0; CHFFR_METRIC 804 ENGINE_TEMPERATURE ENGINE_TEMPERATURE 1 0";
