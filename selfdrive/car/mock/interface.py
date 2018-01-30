@@ -47,7 +47,6 @@ class CarInterface(object):
     ret = car.CarParams.new_message()
 
     ret.carName = "mock"
-    ret.radarName = "mock"
     ret.carFingerprint = candidate
 
     ret.safetyModel = car.CarParams.SafetyModels.noOutput

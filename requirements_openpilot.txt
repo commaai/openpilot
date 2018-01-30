@@ -11,5 +11,7 @@ simplejson==3.8.2
 pyyaml==3.12
 cffi==1.7.0
 enum34==1.1.1
+sympy==1.1.1
+filterpy==1.0.0
 smbus2==0.2.0
 -e git+https://github.com/commaai/le_python.git#egg=Logentries

@@ -2,6 +2,8 @@ import re
 import os
 import struct
 import bitstring
+import sys
+import numbers
 from collections import namedtuple
 
 def int_or_float(s):
@@ -49,6 +51,8 @@ class dbc(object):
         name = dat.group(2)
         size = int(dat.group(3))
         ids = int(dat.group(1), 0) # could be hex
+        if ids in self.msgs:
+          sys.exit("Duplicate address detected %d %s" % (ids, self.name))
 
         self.msgs[ids] = ((name, size), [])
 
@@ -80,6 +84,16 @@ class dbc(object):
     for msg in self.msgs.viewvalues():
       msg[1].sort(key=lambda x: x.start_bit)
 
+    self.msg_name_to_address = {}
+    for address, m in self.msgs.items():
+      name = m[0][0]
+      self.msg_name_to_address[name] = address
+
+  def lookup_msg_id(self, msg_id):
+    if not isinstance(msg_id, numbers.Number):
+      msg_id = self.msg_name_to_address[msg_id]
+    return msg_id
+
   def encode(self, msg_id, dd):
     """Encode a CAN message using the dbc.
 
@@ -87,6 +101,8 @@ class dbc(object):
         msg_id: The message ID.
         dd: A dictionary mapping signal name to signal data.
     """
+    msg_id = self.lookup_msg_id(msg_id)
+
     # TODO: Stop using bitstring, which is super slow.
     msg_def = self.msgs[msg_id]
     size = msg_def[0][1]
@@ -134,7 +150,7 @@ class dbc(object):
 
         Returns (None, None) if the message could not be decoded.
     """
-    
+
     if arr is None:
       out = {}
     else:
@@ -193,10 +209,10 @@ class dbc(object):
         out[arr.index(s[0])] = ival
     return name, out
 
-
   def get_signals(self, msg):
+    msg = self.lookup_msg_id(msg)
     return [sgs.name for sgs in self.msgs[msg][1]]
-    
+
 if __name__ == "__main__":
    import sys
    import os
