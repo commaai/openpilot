@@ -175,6 +175,11 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, int hardwired) {
       puts(" err: "); puth(can_err_cnt);
       puts("\n");
       break;
+    // **** 0xc1: is grey panda
+    case 0xc1:
+      resp[0] = is_grey_panda;
+      resp_len = 1;
+      break;
     // **** 0xd0: fetch serial number
     case 0xd0:
       #ifdef PANDA
@@ -229,6 +234,8 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, int hardwired) {
     case 0xd9:
       if (setup->b.wValue.w == 1) {
         set_esp_mode(ESP_ENABLED);
+      } else if (setup->b.wValue.w == 2) {
+        set_esp_mode(ESP_BOOTMODE);
       } else {
         set_esp_mode(ESP_DISABLED);
       }
@@ -267,7 +274,7 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, int hardwired) {
       // and it's blocked over WiFi
       // Allow ELM security mode to be set over wifi.
       if (hardwired || setup->b.wValue.w == SAFETY_NOOUTPUT || setup->b.wValue.w == SAFETY_ELM327) {
-        safety_set_mode(setup->b.wValue.w);
+        safety_set_mode(setup->b.wValue.w, (int16_t)setup->b.wIndex.w);
         switch (setup->b.wValue.w) {
           case SAFETY_NOOUTPUT:
             can_silent = ALL_CAN_SILENT;
@@ -304,6 +311,7 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, int hardwired) {
     case 0xe0:
       ur = get_ring_by_number(setup->b.wValue.w);
       if (!ur) break;
+      if (ur == &esp_ring) uart_dma_drain();
       // read
       while ((resp_len < min(setup->b.wLength.w, MAX_RESP_LEN)) &&
                          getc(ur, (char*)&resp[resp_len])) {
@@ -489,6 +497,7 @@ int main() {
   #endif
   puts(has_external_debug_serial ? "  real serial\n" : "  USB serial\n");
   puts(is_giant_panda ? "  GIANTpanda detected\n" : "  not GIANTpanda\n");
+  puts(is_grey_panda ? "  gray panda detected!\n" : "  white panda\n");
   puts(is_entering_bootmode ? "  ESP wants bootmode\n" : "  no bootmode\n");
   gpio_init();
 
@@ -500,9 +509,12 @@ int main() {
   }
 
 #ifdef PANDA
-  // enable ESP uart
-  uart_init(USART1, 115200);
-
+  if (is_grey_panda) {
+    uart_init(USART1, 9600);
+  } else {
+    // enable ESP uart
+    uart_init(USART1, 115200);
+  }
   // enable LIN
   uart_init(UART5, 10400);
   UART5->CR2 |= USART_CR2_LINEN;
@@ -522,7 +534,7 @@ int main() {
   usb_init();
 
   // default to silent mode to prevent issues with Ford
-  safety_set_mode(SAFETY_NOOUTPUT);
+  safety_set_mode(SAFETY_NOOUTPUT, 0);
   can_silent = ALL_CAN_SILENT;
   can_init_all();
 
@@ -551,6 +563,8 @@ int main() {
 
   for (cnt=0;;cnt++) {
     can_live = pending_can_live;
+
+    //puth(usart1_dma); puts(" "); puth(DMA2_Stream5->M0AR); puts(" "); puth(DMA2_Stream5->NDTR); puts("\n");
 
     #ifdef PANDA
       int current = adc_get(ADCCHAN_CURRENT);
