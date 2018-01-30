@@ -62,31 +62,12 @@ BO_ 466 PCM_CRUISE: 8 XXX
  SG_ CRUISE_STATE : 55|4@0+ (1,0) [0|15] "" XXX
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
 
-BO_ 548 BRAKE_MODULE: 8 XXX
- SG_ BRAKE_PRESSURE : 43|12@0+ (1,0) [0|4047] "" XXX
- SG_ BRAKE_PRESSED : 5|1@0+ (1,0) [0|1] "" XXX
-
 BO_ 552 ACCELEROMETER: 8 XXX
  SG_ ACCEL_Z : 22|15@0- (1,0) [0|32767] "" XXX
  SG_ ACCEL_X : 6|15@0- (0.001,0) [-20|20] "m/s2" XXX
 
 BO_ 560 BRAKE_MODULE2: 7 XXX
  SG_ BRAKE_PRESSED : 26|1@0+ (1,0) [0|1] "" XXX
-
-BO_ 705 GAS_PEDAL: 8 XXX
- SG_ GAS_RELEASED : 3|1@0+ (1,0) [0|1] "" XXX
- SG_ GAS_PEDAL : 55|8@0+ (0.005,0) [0|1] "" XXX
-
-BO_ 608 STEER_TORQUE_SENSOR: 8 XXX
- SG_ STEER_TORQUE_EPS : 47|16@0- (0.66,0) [-20000|20000] "" XXX
- SG_ STEER_TORQUE_DRIVER : 15|16@0- (1,0) [-32768|32767] "" XXX
- SG_ STEER_OVERRIDE : 0|1@0+ (1,0) [0|1] "" XXX
- SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
-
-BO_ 610 EPS_STATUS: 5 EPS
- SG_ STATE : 3|4@0+ (1,0) [0|15] "" XXX
- SG_ LKA_STATE : 31|8@0+ (1,0) [0|255] "" XXX
- SG_ CHECKSUM : 39|8@0+ (1,0) [0|255] "" XXX
 
 BO_ 614 STEERING_IPAS: 8 IPAS
  SG_ STATE : 7|4@0+ (1,0) [0|15] "" XXX
@@ -138,10 +119,6 @@ BO_ 951 ESP_CONTROL: 8 ESP
  SG_ TC_DISABLED : 13|1@0+ (1,0) [0|1] "" XXX
  SG_ BRAKE_LIGHTS_ACC : 18|1@0+ (1,0) [0|1] "" XXX
 
-
-BO_ 956 GEAR_PACKET: 8 XXX
- SG_ GEAR : 13|6@0+ (1,0) [0|63] "" XXX
-
 BO_ 1041 ACC_HUD: 8 DSU
  SG_ FCW : 4|1@0+ (1,0) [0|1] "" XXX
 
@@ -173,11 +150,8 @@ CM_ SG_ 36 ACCEL_Y "unit is tbd";
 CM_ SG_ 36 YAW_RATE "verify";
 CM_ SG_ 36 STEERING_TORQUE "does not seem the steer torque, tbd";
 CM_ SG_ 466 ACCEL_NET "net acceleration produced by the system, given ACCEL_CMD, road grade and other factors";
-CM_ SG_ 548 BRAKE_PRESSURE "seems prop to pedal force";
-CM_ SG_ 548 BRAKE_POSITION "seems proportional to pedal displacement, unclear the max value of 0x1c8";
-CM_ SG_ 560 BRAKE_PRESSED "another brake press?";
+CM_ SG_ 560 BRAKE_PRESSED "another brake pressed?";
 CM_ SG_ 951 BRAKE_LIGHTS_ACC "brake lights when ACC commands decel";
-CM_ SG_ 581 GAS_PEDAL "it seems slightly filtered";
 CM_ SG_ 608 STEER_TORQUE_DRIVER "driver torque";
 CM_ SG_ 608 STEER_OVERRIDE "set when driver torque exceeds a certain value";
 CM_ SG_ 614 ANGLE "set to measured angle when ipas control isn't active";
@@ -188,11 +162,8 @@ CM_ SG_ 467 LOW_SPEED_LOCKOUT "in low speed lockout, system would always disenga
 CM_ SG_ 921 UI_SET_SPEED "set speed shown in UI with user set unit";
 CM_ SG_ 1042 SET_ME_1 "unclear what this is, but it's always 1 in drive traces";
 CM_ SG_ 1042 REPEATED_BEEPS "recommended for fcw and other important alerts";
-VAL_ 956 GEAR 0 "D" 1 "S" 8 "N" 16 "R" 32 "P";
 VAL_ 466 CRUISE_STATE 8 "active" 7 "standstill" 1 "off" ;
 VAL_ 467 LOW_SPEED_LOCKOUT 2 "low speed locked" 1 "ok" ;
-VAL_ 610 STATE 5 "override" 3 "enabled" 1 "disabled";
-VAL_ 610 LKA_STATE 50 "temporary_fault";
 VAL_ 614 STATE 3 "enabled" 1 "disabled";
 VAL_ 614 DIRECTION_CMD 3 "right" 2 "center" 1 "left";
 VAL_ 1553 UNITS 1 "km" 2 "miles";
