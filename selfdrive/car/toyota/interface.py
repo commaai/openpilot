@@ -9,11 +9,14 @@ import selfdrive.messaging as messaging
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.toyota.carstate import CarState, get_can_parser
-from selfdrive.car.toyota.values import CAR, ECU, check_ecu_msgs
+from selfdrive.car.toyota.values import ECU, check_ecu_msgs
+from common.fingerprints import TOYOTA as CAR
+
 try:
   from selfdrive.car.toyota.carcontroller import CarController
 except ImportError:
   CarController = None
+
 
 class CarInterface(object):
   def __init__(self, CP, sendcan=None):
@@ -53,7 +56,6 @@ class CarInterface(object):
     ret = car.CarParams.new_message()
 
     ret.carName = "toyota"
-    ret.radarName = "toyota"
     ret.carFingerprint = candidate
 
     ret.safetyModel = car.CarParams.SafetyModels.toyota
@@ -74,12 +76,30 @@ class CarInterface(object):
     tireStiffnessFront_civic = 85400
     tireStiffnessRear_civic = 90000
 
-    ret.mass = 3045./2.205 + std_cargo
-    ret.wheelbase = 2.70 if candidate == CAR.PRIUS else 2.65
+    if candidate == CAR.PRIUS:
+      ret.safetyParam = 66  # see conversion factor for STEER_TORQUE_EPS in dbc file
+      ret.wheelbase = 2.70
+      ret.steerRatio = 14.5 #TODO: find exact value for Prius
+      ret.mass = 3045./2.205 + std_cargo
+    elif candidate in [CAR.RAV4, CAR.RAV4H]:
+      ret.safetyParam = 73  # see conversion factor for STEER_TORQUE_EPS in dbc file
+      ret.wheelbase = 2.65
+      ret.steerRatio = 14.5 # Rav4 2017
+      ret.mass = 3650./2.205 + std_cargo  # mean between normal and hybrid
+    elif candidate == CAR.COROLLA:
+      ret.safetyParam = 100 # see conversion factor for STEER_TORQUE_EPS in dbc file
+      ret.wheelbase = 2.70
+      ret.steerRatio = 17.8
+      ret.mass = 2860./2.205 + std_cargo  # mean between normal and hybrid
+
     ret.centerToFront = ret.wheelbase * 0.44
-    ret.steerRatio = 14.5 #Rav4 2017, TODO: find exact value for Prius
-    ret.steerKp, ret.steerKi = 0.6, 0.05
-    ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
+
+    if candidate == CAR.COROLLA:
+      ret.steerKp, ret.steerKi = 0.2, 0.05
+      ret.steerKf = 0.00003   # full torque for 20 deg at 80mph means 0.00007818594
+    else:
+      ret.steerKp, ret.steerKi = 0.6, 0.05
+      ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
 
     ret.longPidDeadzoneBP = [0., 9.]
     ret.longPidDeadzoneV = [0., .15]
@@ -88,7 +108,7 @@ class CarInterface(object):
     # to a negative value, so it won't matter.
     if candidate in [CAR.PRIUS, CAR.RAV4H]: # rav4 hybrid can do stop and go
       ret.minEnableSpeed = -1.
-    elif candidate == CAR.RAV4:   # TODO: hack ICE Rav4 to do stop and go
+    elif candidate in [CAR.RAV4, CAR.COROLLA]: # TODO: hack ICE to do stop and go
       ret.minEnableSpeed = 19. * CV.MPH_TO_MS
 
     centerToRear = ret.wheelbase - ret.centerToFront
@@ -134,9 +154,9 @@ class CarInterface(object):
     ret.longitudinalKiBP = [0., 35.]
     ret.longitudinalKiV = [0.54, 0.36]
 
-    if candidate == CAR.PRIUS:
+    if candidate in [CAR.PRIUS]:
       ret.steerRateCost = 2.
-    elif candidate in [CAR.RAV4, CAR.RAV4H]:
+    elif candidate in [CAR.RAV4, CAR.RAV4H, CAR.COROLLA]:
       ret.steerRateCost = 1.
 
     return ret
@@ -194,7 +214,7 @@ class CarInterface(object):
       # receiving any special command
       ret.cruiseState.standstill = False
     else:
-      ret.cruiseState.standstill = self.CS.pcm_acc_status == 7  
+      ret.cruiseState.standstill = self.CS.pcm_acc_status == 7
 
     # TODO: button presses
     buttonEvents = []
@@ -215,6 +235,9 @@ class CarInterface(object):
     ret.leftBlinker = bool(self.CS.left_blinker_on)
     ret.rightBlinker = bool(self.CS.right_blinker_on)
 
+    ret.doorOpen = not self.CS.door_all_closed
+    ret.seatbeltUnlatched = not self.CS.seatbelt
+
     # events
     events = []
     if not self.CS.can_valid:
@@ -225,9 +248,9 @@ class CarInterface(object):
       self.can_invalid_count = 0
     if not ret.gearShifter == 'drive' and self.CP.enableDsu:
       events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if not self.CS.door_all_closed:
+    if ret.doorOpen:
       events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if not self.CS.seatbelt:
+    if ret.seatbeltUnlatched:
       events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if self.CS.esp_disabled and self.CP.enableDsu:
       events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
