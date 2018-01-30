@@ -2,7 +2,7 @@ void default_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {}
 
 // *** no output safety mode ***
 
-static void nooutput_init() {
+static void nooutput_init(int16_t param) {
   controls_allowed = 0;
 }
 
@@ -23,7 +23,7 @@ const safety_hooks nooutput_hooks = {
 
 // *** all output safety mode ***
 
-static void alloutput_init() {
+static void alloutput_init(int16_t param) {
   controls_allowed = 1;
 }
 

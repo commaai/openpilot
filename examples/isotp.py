@@ -9,7 +9,27 @@ def msg(x):
     assert False
   return ret.ljust(8, "\x00")
 
-def isotp_send(panda, x, addr, bus=0):
+kmsgs = []
+def recv(panda, cnt, addr, nbus):
+  global kmsgs
+  ret = []
+
+  while len(ret) < cnt:
+    kmsgs += panda.can_recv()
+    nmsgs = []
+    for ids, ts, dat, bus in kmsgs:
+      if ids == addr and bus == nbus and len(ret) < cnt:
+        ret.append(dat)
+      else:
+        # leave around
+        nmsgs.append((ids, ts, dat, bus))
+    kmsgs = nmsgs[-256:]
+  return map(str, ret)
+
+def isotp_send(panda, x, addr, bus=0, recvaddr=None):
+  if recvaddr is None:
+    recvaddr = addr+8
+
   if len(x) <= 7:
     panda.can_send(addr, msg(x), bus)
   else:
@@ -24,24 +44,8 @@ def isotp_send(panda, x, addr, bus=0):
 
     # actually send
     panda.can_send(addr, ss, bus)
-    rr = recv(panda, 1, addr+8, bus)[0]
+    rr = recv(panda, 1, recvaddr, bus)[0]
     panda.can_send_many([(addr, None, s, 0) for s in sends])
-
-kmsgs = []
-def recv(panda, cnt, addr, nbus):
-  global kmsgs
-  ret = []
-
-  while len(ret) < cnt:
-    kmsgs += panda.can_recv()
-    nmsgs = []
-    for ids, ts, dat, bus in kmsgs:
-      if ids == addr and bus == nbus and len(ret) < cnt:
-        ret.append(dat)
-      else:
-        pass
-    kmsgs = nmsgs
-  return map(str, ret)
 
 def isotp_recv(panda, addr, bus=0, sendaddr=None):
   msg = recv(panda, 1, addr, bus)[0]
