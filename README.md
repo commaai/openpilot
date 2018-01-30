@@ -16,15 +16,19 @@ Wondering what's the DBC file format? [Here](http://www.socialledge.com/sjsu/ind
 
 Use [panda](https://github.com/commaai/panda) to connect your car to a computer.
 
+### DBC file preprocessor
+
+DBC files for different models of the same brand have a lot of overlap. Therefore, we wrote a preprocessor to create DBC files from a brand DBC file and a model specific DBC file. The source DBC files can be found in the generator folder. After changing one of the files run the generator.py script to regenerate the output files. These output files will be placed in the root of the opendbc repository and are suffixed by _generated.
+
 ### Good practices for contributing to opendbc
 
-- Comments: the best way to store comments is to add them directly to the DBC files. For example: 
+- Comments: the best way to store comments is to add them directly to the DBC files. For example:
     ```
     CM_ SG_ 490 LONG_ACCEL "wheel speed derivative, noisy and zero snapping";
     ```
     is a comment that refers to signal `LONG_ACCEL` in message `490`. Using comments is highly recommended, especially for doubts and uncertainties. [cabana](https://community.comma.ai/cabana/) can easily display/add/edit comments to signals and messages.
 
-- Units: when applicable, it's recommended to convert signals into physical units, by using a proper signal factor. Using a SI unit is preferred, unless a non-SI unit rounds the signal factor much better. 
+- Units: when applicable, it's recommended to convert signals into physical units, by using a proper signal factor. Using a SI unit is preferred, unless a non-SI unit rounds the signal factor much better.
 For example:
     ```
     SG_ VEHICLE_SPEED : 7|15@0+ (0.00278,0) [0|70] "m/s" PCM
@@ -36,7 +40,7 @@ For example:
     However, the cleanest option is really:
     ```
     SG_ VEHICLE_SPEED : 7|15@0+ (0.01,0) [0|250] "kph" PCM
-    ``` 
+    ```
 
 - Signal's size: always use the smallest amount of bits possible. For example, let's say I'm reverse engineering the gas pedal position and I've determined that it's in a 3 bytes message. For 0% pedal position I read a message value of `0x00 0x00 0x00`, while for 100% of pedal position I read `0x64 0x00 0x00`: clearly, the gas pedal position is within the first byte of the message and I might be tempted to define the signal `GAS_POS` as:
     ```
