@@ -52,7 +52,7 @@ void uart_ring_process(uart_ring *q) {
   if (q->w_ptr_tx != q->r_ptr_tx) {
     if (sr & USART_SR_TXE) {
       q->uart->DR = q->elems_tx[q->r_ptr_tx];
-      q->r_ptr_tx += 1;
+      q->r_ptr_tx = (q->r_ptr_tx + 1) % FIFO_SIZE;
     } else {
       // push on interrupt later
       q->uart->CR1 |= USART_CR1_TXEIE;
@@ -64,11 +64,13 @@ void uart_ring_process(uart_ring *q) {
 
   if (sr & USART_SR_RXNE || sr & USART_SR_ORE) {
     uint8_t c = q->uart->DR;  // TODO: can drop packets
-    uint8_t next_w_ptr = q->w_ptr_rx + 1;
-    if (next_w_ptr != q->r_ptr_rx) {
-      q->elems_rx[q->w_ptr_rx] = c;
-      q->w_ptr_rx = next_w_ptr;
-      if (q->callback) q->callback(q);
+    if (q != &esp_ring) {
+      uint16_t next_w_ptr = (q->w_ptr_rx + 1) % FIFO_SIZE;
+      if (next_w_ptr != q->r_ptr_rx) {
+        q->elems_rx[q->w_ptr_rx] = c;
+        q->w_ptr_rx = next_w_ptr;
+        if (q->callback) q->callback(q);
+      }
     }
   }
 
@@ -92,7 +94,7 @@ int getc(uart_ring *q, char *elem) {
   enter_critical_section();
   if (q->w_ptr_rx != q->r_ptr_rx) {
     *elem = q->elems_rx[q->r_ptr_rx];
-    q->r_ptr_rx += 1;
+    q->r_ptr_rx = (q->r_ptr_rx + 1) % FIFO_SIZE;
     ret = 1;
   }
   exit_critical_section();
@@ -102,10 +104,10 @@ int getc(uart_ring *q, char *elem) {
 
 int injectc(uart_ring *q, char elem) {
   int ret = 0;
-  uint8_t next_w_ptr;
+  uint16_t next_w_ptr;
 
   enter_critical_section();
-  next_w_ptr = q->w_ptr_rx + 1;
+  next_w_ptr = (q->w_ptr_rx + 1) % FIFO_SIZE;
   if (next_w_ptr != q->r_ptr_rx) {
     q->elems_rx[q->w_ptr_rx] = elem;
     q->w_ptr_rx = next_w_ptr;
@@ -118,10 +120,10 @@ int injectc(uart_ring *q, char elem) {
 
 int putc(uart_ring *q, char elem) {
   int ret = 0;
-  uint8_t next_w_ptr;
+  uint16_t next_w_ptr;
 
   enter_critical_section();
-  next_w_ptr = q->w_ptr_tx + 1;
+  next_w_ptr = (q->w_ptr_tx + 1) % FIFO_SIZE;
   if (next_w_ptr != q->r_ptr_tx) {
     q->elems_tx[q->w_ptr_tx] = elem;
     q->w_ptr_tx = next_w_ptr;
@@ -159,6 +161,51 @@ void uart_set_baud(USART_TypeDef *u, int baud) {
   }
 }
 
+#define USART1_DMA_LEN 0x20
+char usart1_dma[USART1_DMA_LEN];
+
+void uart_dma_drain() {
+  uart_ring *q = &esp_ring;
+
+  enter_critical_section();
+
+  if (DMA2->HISR & DMA_HISR_TCIF5 || DMA2->HISR & DMA_HISR_HTIF5 || DMA2_Stream5->NDTR != USART1_DMA_LEN) {
+    // disable DMA
+    q->uart->CR3 &= ~USART_CR3_DMAR;
+    DMA2_Stream5->CR &= ~DMA_SxCR_EN;
+    while (DMA2_Stream5->CR & DMA_SxCR_EN);
+
+    int i;
+    for (i = 0; i < USART1_DMA_LEN - DMA2_Stream5->NDTR; i++) {
+      char c = usart1_dma[i];
+      uint16_t next_w_ptr = (q->w_ptr_rx + 1) % FIFO_SIZE;
+      if (next_w_ptr != q->r_ptr_rx) {
+        q->elems_rx[q->w_ptr_rx] = c;
+        q->w_ptr_rx = next_w_ptr;
+      }
+    }
+
+    // reset DMA len
+    DMA2_Stream5->NDTR = USART1_DMA_LEN;
+
+    // clear interrupts
+    DMA2->HIFCR = DMA_HIFCR_CTCIF5 | DMA_HIFCR_CHTIF5;
+    //DMA2->HIFCR = DMA_HIFCR_CTEIF5 | DMA_HIFCR_CDMEIF5 | DMA_HIFCR_CFEIF5;
+
+    // enable DMA
+    DMA2_Stream5->CR |= DMA_SxCR_EN;
+    q->uart->CR3 |= USART_CR3_DMAR;
+  }
+
+  exit_critical_section();
+}
+
+void DMA2_Stream5_IRQHandler(void) {
+  //set_led(LED_BLUE, 1);
+  uart_dma_drain();
+  //set_led(LED_BLUE, 0);
+}
+
 void uart_init(USART_TypeDef *u, int baud) {
   // enable uart and tx+rx mode
   u->CR1 = USART_CR1_UE;
@@ -170,9 +217,23 @@ void uart_init(USART_TypeDef *u, int baud) {
   // ** UART is ready to work **
 
   // enable interrupts
-  u->CR1 |= USART_CR1_RXNEIE;
+  if (u != USART1) {
+    u->CR1 |= USART_CR1_RXNEIE;
+  }
 
   if (u == USART1) {
+    // DMA2, stream 2, channel 3
+    DMA2_Stream5->M0AR = (uint32_t)usart1_dma;
+    DMA2_Stream5->NDTR = USART1_DMA_LEN;
+    DMA2_Stream5->PAR = (uint32_t)&(USART1->DR);
+
+    // channel4, increment memory, periph -> memory, enable
+    DMA2_Stream5->CR = DMA_SxCR_CHSEL_2 | DMA_SxCR_MINC | DMA_SxCR_HTIE | DMA_SxCR_TCIE | DMA_SxCR_EN;
+
+    // this one uses DMA receiver
+    u->CR3 = USART_CR3_DMAR;
+
+    NVIC_EnableIRQ(DMA2_Stream5_IRQn);
     NVIC_EnableIRQ(USART1_IRQn);
   } else if (u == USART2) {
     NVIC_EnableIRQ(USART2_IRQn);

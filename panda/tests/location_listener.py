@@ -27,7 +27,6 @@ if __name__ == "__main__":
   print ser.read(1024)
 
   # upping baud rate
-  # 460800 has issues
   baudrate = 460800
 
   print "upping baud rate"

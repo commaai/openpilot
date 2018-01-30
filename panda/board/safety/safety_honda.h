@@ -115,7 +115,7 @@ static int honda_tx_lin_hook(int lin_num, uint8_t *data, int len) {
   return true;
 }
 
-static void honda_init() {
+static void honda_init(int16_t param) {
   controls_allowed = 0;
 }
 
