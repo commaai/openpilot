@@ -2,7 +2,7 @@ void safety_rx_hook(CAN_FIFOMailBox_TypeDef *to_push);
 int safety_tx_hook(CAN_FIFOMailBox_TypeDef *to_send);
 int safety_tx_lin_hook(int lin_num, uint8_t *data, int len);
 
-typedef void (*safety_hook_init)();
+typedef void (*safety_hook_init)(int16_t param);
 typedef void (*rx_hook)(CAN_FIFOMailBox_TypeDef *to_push);
 typedef int (*tx_hook)(CAN_FIFOMailBox_TypeDef *to_send);
 typedef int (*tx_lin_hook)(int lin_num, uint8_t *data, int len);
@@ -60,11 +60,11 @@ const safety_hook_config safety_hook_registry[] = {
 
 #define HOOK_CONFIG_COUNT (sizeof(safety_hook_registry)/sizeof(safety_hook_config))
 
-int safety_set_mode(uint16_t mode) {
+int safety_set_mode(uint16_t mode, int16_t param) {
   for (int i = 0; i < HOOK_CONFIG_COUNT; i++) {
     if (safety_hook_registry[i].id == mode) {
       current_hooks = safety_hook_registry[i].hooks;
-      if (current_hooks->init) current_hooks->init();
+      if (current_hooks->init) current_hooks->init(param);
       return 0;
     }
   }

@@ -4,7 +4,7 @@ import sys
 
 import jinja2
 
-import opendbc
+from collections import Counter
 from common.dbc import dbc
 
 if len(sys.argv) != 3:
@@ -30,6 +30,13 @@ elif can_dbc.name.startswith("toyota"):
   checksum_type = "toyota"
 else:
   checksum_type = None
+
+
+# Fail on duplicate messgae names
+c = Counter([msg_name for address, msg_name, msg_size, sigs in msgs])
+for name, count in c.items():
+  if count > 1:
+    sys.exit("Duplicate message name in DBC file %s" % name)
 
 parser_code = template.render(dbc=can_dbc, checksum_type=checksum_type, msgs=msgs, len=len)
 

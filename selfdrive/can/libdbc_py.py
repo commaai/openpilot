@@ -11,23 +11,59 @@ subprocess.check_call(["make"], stdout=sys.stderr, cwd=can_dir)
 ffi = FFI()
 ffi.cdef("""
 
-typedef struct SignalParseOptions {
+typedef struct {
+  const char* name;
+  double value;
+} SignalPackValue;
+
+typedef struct {
   uint32_t address;
   const char* name;
   double default_value;
 } SignalParseOptions;
 
-typedef struct MessageParseOptions {
+typedef struct {
   uint32_t address;
   int check_frequency;
 } MessageParseOptions;
 
-typedef struct SignalValue {
+typedef struct {
   uint32_t address;
   uint16_t ts;
   const char* name;
   double value;
 } SignalValue;
+
+
+typedef enum {
+  DEFAULT,
+  HONDA_CHECKSUM,
+  HONDA_COUNTER,
+  TOYOTA_CHECKSUM,
+} SignalType;
+
+typedef struct {
+  const char* name;
+  int b1, b2, bo;
+  bool is_signed;
+  double factor, offset;
+  SignalType type;
+} Signal;
+
+typedef struct {
+  const char* name;
+  uint32_t address;
+  unsigned int size;
+  size_t num_sigs;
+  const Signal *sigs;
+} Msg;
+
+typedef struct {
+  const char* name;
+  size_t num_msgs;
+  const Msg *msgs;
+} DBC;
+
 
 void* can_init(int bus, const char* dbc_name,
               size_t num_message_options, const MessageParseOptions* message_options,
@@ -37,11 +73,7 @@ void can_update(void* can, uint64_t sec, bool wait);
 
 size_t can_query(void* can, uint64_t sec, bool *out_can_valid, size_t out_values_size, SignalValue* out_values);
 
-
-typedef struct SignalPackValue {
-  const char* name;
-  double value;
-} SignalPackValue;
+const DBC* dbc_lookup(const char* dbc_name);
 
 void* canpack_init(const char* dbc_name);
 

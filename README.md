@@ -29,6 +29,9 @@ Supported Cars
 - Honda CR-V Touring 2015-2016
   - Can only be enabled above 25 mph
 
+- Honda Odyssey 2018 with Honda Sensing (alpha!)
+  - Can only be enabled above 25 mph
+
 - Toyota RAV-4 2016+ non-hybrid with TSS-P
   - By default it uses stock Toyota ACC for longitudinal control
   - openpilot longitudinal control available after unplugging the [Driving Support ECU](https://community.comma.ai/wiki/index.php/Toyota#Rav4_.28for_openpilot.29) and can be enabled above 20 mph
@@ -42,6 +45,10 @@ Supported Cars
   - By default it uses stock Toyota ACC for longitudinal control
   - openpilot longitudinal control available after unplugging the [Driving Support ECU](https://community.comma.ai/wiki/index.php/Toyota#Rav4_.28for_openpilot.29) and can do stop and go
 
+- Toyota Corolla 2017 (alpha!)
+  - By default it uses stock Toyota ACC for longitudinal control
+  - openpilot longitudinal control available after unplugging the [Driving Support ECU](https://community.comma.ai/wiki/index.php/Toyota#Corolla_.28for_openpilot.29) and can be enabled above 20 mph
+
 In Progress Cars
 ------
 - Probably all TSS-P Toyota with Steering Assist.
@@ -54,8 +61,6 @@ Community WIP Cars
 - [Chevy Volt 2016-2018 Premier with Driver Confidence II](https://github.com/commaai/openpilot/pull/104)
 
 - [Classic Tesla Model S (pre-AP)](https://github.com/commaai/openpilot/pull/145)
-
-- [Honda Odyssey 2018 with Honda Sensing](https://github.com/commaai/openpilot/pull/155)
 
 - [Honda Pilot 2017 with Honda Sensing](https://github.com/commaai/openpilot/pull/161)
 
@@ -79,7 +84,6 @@ Directory structure
   - logcatd       -- Android logcat as a service
   - loggerd       -- Logger and uploader of car data
   - proclogd      -- Logs information from proc
-  - radar         -- Code that talks to the radar and implements RadarInterface
   - sensord       -- IMU / GPS interface code
   - test/plant    -- Car simulator running code through virtual maneuvers
   - ui            -- The UI

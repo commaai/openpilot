@@ -573,6 +573,16 @@ struct LiveLocationData {
 
   accuracy @13 :Accuracy;
 
+  source @14 :SensorSource;
+  # if we are fixing a location in the past
+  fixMonoTime @15 :UInt64;
+  
+  gpsWeek @16 :Int32;
+  timeOfWeek @17 :Float64;
+
+  positionECEF @18 :List(Float64);
+  poseQuatECEF @19 :List(Float32);
+
   struct Accuracy {
     pNEDError @0 :List(Float32);
     vNEDError @1 :List(Float32);
@@ -582,6 +592,13 @@ struct LiveLocationData {
     ellipsoidSemiMajorError @5 :Float32;
     ellipsoidSemiMinorError @6 :Float32;
     ellipsoidOrientationError @7 :Float32;
+  }
+
+  enum SensorSource {
+    applanix @0;
+    kalman @1;
+    orbslam @2;
+    timing @3;
   }
 }
 
@@ -1331,6 +1348,34 @@ struct GPSPlannerPlan {
   valid @0 :Bool;
   poly @1 :List(Float32);
   trackName @2 :Text;
+  speed @3 :Float32;
+}
+
+struct TrafficSigns {
+  type @0 :Type;
+  distance @1 :Float32;
+  action @2 :Action;
+  resuming @3 :Bool;
+
+  enum Type {
+    light @0;
+  }
+
+  enum Action {
+    none @0;
+    yield @1;
+    stop @2;
+  }
+
+}
+
+struct OrbslamCorrection {
+  correctionMonoTime @0 :UInt64;
+  prePositionECEF @1 :List(Float64);
+  postPositionECEF @2 :List(Float64);
+  prePoseQuatECEF @3 :List(Float32);
+  postPoseQuatECEF @4 :List(Float32);
+  numInliers @5 :UInt32;
 }
 
 struct Event {
@@ -1379,5 +1424,10 @@ struct Event {
     ubloxRaw @39 :Data;
     gpsPlannerPoints @40 :GPSPlannerPoints;
     gpsPlannerPlan @41 :GPSPlannerPlan;
+    applanixRaw @42 :Data;
+    trafficSigns @43 :List(TrafficSigns);
+    liveLocationTiming @44 :LiveLocationData;
+    orbslamCorrection @45 :OrbslamCorrection;
+    liveLocationCorrected @46 :LiveLocationData;
   }
 }
