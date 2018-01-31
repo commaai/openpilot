@@ -74,6 +74,7 @@ def get_can_parser(CP):
     ("TURN_SIGNALS", "STEERING_LEVERS", 3),   # 3 is no blinkers
     ("LKA_STATE", "EPS_STATUS", 0),
     ("BRAKE_LIGHTS_ACC", "ESP_CONTROL", 0),
+    ("AUTO_HIGH_BEAM", "LIGHT_STALK", 0),
   ]
 
   checks = [
@@ -167,3 +168,4 @@ class CarState(object):
     self.gas_pressed = not cp.vl["PCM_CRUISE"]['GAS_RELEASED']
     self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]['LOW_SPEED_LOCKOUT'] == 2
     self.brake_lights = bool(cp.vl["ESP_CONTROL"]['BRAKE_LIGHTS_ACC'] or self.brake_pressed)
+    self.generic_toggle = bool(cp.vl["LIGHT_STALK"]['AUTO_HIGH_BEAM'])

@@ -201,7 +201,7 @@ class CarInterface(object):
     ret.steeringAngle = self.CS.angle_steers
     ret.steeringRate = self.CS.angle_steers_rate
 
-    ret.steeringTorque = 0
+    ret.steeringTorque = self.CS.steer_torque_driver
     ret.steeringPressed = self.CS.steer_override
 
     # cruise state
@@ -237,6 +237,8 @@ class CarInterface(object):
 
     ret.doorOpen = not self.CS.door_all_closed
     ret.seatbeltUnlatched = not self.CS.seatbelt
+
+    ret.genericToggle = self.CS.generic_toggle
 
     # events
     events = []
