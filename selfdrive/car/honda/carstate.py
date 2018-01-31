@@ -246,12 +246,16 @@ class CarState(object):
 
     self.pedal_gas = cp.vl["POWERTRAIN_DATA"]['PEDAL_GAS']
     # crv doesn't include cruise control
-    if self.CP.carFingerprint != CAR.CRV:
+    if self.CP.carFingerprint != CAR.CRV or CAR.ACURA_RDX:
       self.car_gas = cp.vl["GAS_PEDAL_2"]['CAR_GAS']
     else:
       self.car_gas = self.pedal_gas
-
-    self.steer_override = abs(cp.vl["STEER_STATUS"]['STEER_TORQUE_SENSOR']) > 1200
+    
+    #rdx has different steer override threshold 
+    if self.CP.carFingerprint = CAR.ACURA_RDX:
+      self.steer_override = abs(cp.vl["STEER_STATUS"]['STEER_TORQUE_SENSOR']) > 400
+    else:
+      self.steer_override = abs(cp.vl["STEER_STATUS"]['STEER_TORQUE_SENSOR']) > 1200
     self.steer_torque_driver = cp.vl["STEER_STATUS"]['STEER_TORQUE_SENSOR']
 
     # brake switch has shown some single time step noise, so only considered when
