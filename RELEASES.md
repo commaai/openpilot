@@ -1,3 +1,9 @@
+Version 0.4.1 (2018-01-30)
+==========================
+ * Add alpha support for 2017 Toyota Corolla
+ * Add alpha support for Grey Panda
+ * Refactored car abstraction layer to make car ports easier
+
 Version 0.4.0.2 (2018-01-18)
 ==========================
  * Add focus adjustment slider
