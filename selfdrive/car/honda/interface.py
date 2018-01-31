@@ -203,7 +203,7 @@ class CarInterface(object):
       ret.longitudinalKpV = [1.2, 0.8, 0.5]
       ret.longitudinalKiBP = [0., 35.]
       ret.longitudinalKiV = [0.18, 0.12]
-    elif candidate == "HONDA PILOT 2017 TOURING":
+    elif candidate == CAR.PILOT:
       stop_and_go = False
       ret.mass = 4303./2.205 + std_cargo
       ret.wheelbase = 2.81
