@@ -65,3 +65,5 @@ dbc_out/%.cc: $(OPENDBC_PATH)/%.dbc process_dbc.py dbc_template.cc
 clean:
 	rm -rf libdbc.so*
 	rm -f dbc_out/*.cc
+	rm -f dbcs.txt
+	rm -f dbcs.csv

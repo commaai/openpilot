@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import os
 import zmq
 
 import numpy as np
@@ -24,6 +25,8 @@ MAX_SPEED_ERROR = 2.0
 AWARENESS_DECEL = -0.2     # car smoothly decel at .2m/s^2 when user is distracted
 _DEBUG = False
 _LEAD_ACCEL_TAU = 1.5
+
+GPS_PLANNER_ADDR = "192.168.5.1"
 
 # lookup tables VS speed to determine min and max accels in cruise
 # make sure these accelerations are smaller than mpc limits
@@ -258,6 +261,12 @@ class Planner(object):
     self.poller = zmq.Poller()
     self.live20 = messaging.sub_sock(context, service_list['live20'].port, conflate=True, poller=self.poller)
     self.model = messaging.sub_sock(context, service_list['model'].port, conflate=True, poller=self.poller)
+
+    if os.environ.get('GPS_PLANNER_ACTIVE', False):
+      self.gps_planner_plan = messaging.sub_sock(context, service_list['gpsPlannerPlan'].port, conflate=True, poller=self.poller, addr=GPS_PLANNER_ADDR)
+    else:
+      self.gps_planner_plan = None
+
     self.plan = messaging.pub_sock(context, service_list['plan'].port)
     self.live_longitudinal_mpc = messaging.pub_sock(context, service_list['liveLongitudinalMpc'].port)
 
@@ -291,6 +300,9 @@ class Planner(object):
     self.fcw = False
     self.fcw_checker = FCWChecker()
     self.fcw_enabled = fcw_enabled
+
+    self.last_gps_planner_plan = None
+    self.gps_planner_active = False
 
   def choose_solution(self, v_cruise_setpoint, enabled):
     if enabled:
@@ -329,12 +341,18 @@ class Planner(object):
 
     md = None
     l20 = None
+    gps_planner_plan = None
 
     for socket, event in self.poller.poll(0):
       if socket is self.model:
         md = messaging.recv_one(socket)
       elif socket is self.live20:
         l20 = messaging.recv_one(socket)
+      elif socket is self.gps_planner_plan:
+        gps_planner_plan = messaging.recv_one(socket)
+
+    if gps_planner_plan is not None:
+      self.last_gps_planner_plan = gps_planner_plan
 
     if md is not None:
       self.last_md_ts = md.logMonoTime
@@ -342,6 +360,17 @@ class Planner(object):
       self.model_dead = False
 
       self.PP.update(CS.vEgo, md)
+
+      if self.last_gps_planner_plan is not None:
+        plan = self.last_gps_planner_plan.gpsPlannerPlan
+        self.gps_planner_active = plan.valid
+        if plan.valid:
+          self.PP.d_poly = plan.poly
+          self.PP.p_poly = plan.poly
+          self.PP.c_poly = plan.poly
+          self.PP.l_prob = 0.0
+          self.PP.r_prob = 0.0
+          self.PP.c_prob = 1.0
 
     if l20 is not None:
       self.last_l20_ts = l20.logMonoTime
@@ -453,6 +482,8 @@ class Planner(object):
     plan_send.plan.vTargetFuture = self.v_acc_future
     plan_send.plan.hasLead = self.mpc1.prev_lead_status
     plan_send.plan.longitudinalPlanSource = self.longitudinalPlanSource
+
+    plan_send.plan.gpsPlannerActive = self.gps_planner_active
 
     # Send out fcw
     fcw = self.fcw and (self.fcw_enabled or LoC.long_control_state != LongCtrlState.off)

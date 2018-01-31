@@ -29,7 +29,7 @@ class CANPacker(object):
 
 
 if __name__ == "__main__":
-  cp = CANPacker("honda_civic_touring_2016_can")
+  cp = CANPacker("honda_civic_touring_2016_can_generated")
   s = cp.pack_bytes(0x30c, [
     ("PCM_SPEED", 123),
     ("PCM_GAS", 10),
