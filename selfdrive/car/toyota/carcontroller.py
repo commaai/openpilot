@@ -6,7 +6,8 @@ from selfdrive.car.toyota.toyotacan import make_can_msg, create_video_target,\
                                            create_steer_command, create_ui_command, \
                                            create_ipas_steer_command, create_accel_command, \
                                            create_fcw_command
-from selfdrive.car.toyota.values import CAR, ECU, STATIC_MSGS
+from selfdrive.car.toyota.values import ECU, STATIC_MSGS
+from common.fingerprints import TOYOTA as CAR
 
 
 ACCEL_HYST_GAP = 0.02  # don't change accel command for small oscilalitons within this value
@@ -17,10 +18,7 @@ ACCEL_SCALE = max(ACCEL_MAX, -ACCEL_MIN)
 STEER_MAX = 1500
 STEER_DELTA_UP = 10        # 1.5s time to peak torque
 STEER_DELTA_DOWN = 25      # always lower than 45 otherwise the Rav4 faults (Prius seems ok with 50)
-STEER_ERROR_MAX = 500      # max delta between torque cmd and torque motor
-
-STEER_IPAS_MAX = 340
-STEER_IPAS_DELTA_MAX = 3
+STEER_ERROR_MAX = 350      # max delta between torque cmd and torque motor
 
 TARGET_IDS = [0x340, 0x341, 0x342, 0x343, 0x344, 0x345,
               0x363, 0x364, 0x365, 0x370, 0x371, 0x372,

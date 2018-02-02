@@ -1,3 +1,7 @@
+def int_rnd(x):
+  return int(round(x))
+
+
 def clip(x, lo, hi):
   return max(lo, min(hi, x))
 

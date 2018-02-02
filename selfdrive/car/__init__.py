@@ -9,6 +9,7 @@ import selfdrive.messaging as messaging
 from selfdrive.car.honda.interface import CarInterface as HondaInterface
 from selfdrive.car.toyota.interface import CarInterface as ToyotaInterface
 from selfdrive.car.mock.interface import CarInterface as MockInterface
+from common.fingerprints import HONDA, TOYOTA
 
 try:
   from .simulator.interface import CarInterface as SimInterface
@@ -22,26 +23,23 @@ except ImportError:
 
 
 interfaces = {
-  "HONDA CIVIC 2016 TOURING": HondaInterface,
-  "ACURA ILX 2016 ACURAWATCH PLUS": HondaInterface,
-  "HONDA ACCORD 2016 TOURING": HondaInterface,
-  "HONDA CR-V 2016 TOURING": HondaInterface,
-  "HONDA ODYSSEY 2018 EX-L": HondaInterface,
-  "TOYOTA PRIUS 2017": ToyotaInterface,
-  "TOYOTA RAV4 2017": ToyotaInterface,
-  "TOYOTA RAV4 2017 HYBRID": ToyotaInterface,
+  HONDA.CIVIC: HondaInterface,
+  HONDA.ACURA_ILX: HondaInterface,
+  HONDA.CRV: HondaInterface,
+  HONDA.ODYSSEY: HondaInterface,
 
-  "simulator": SimInterface,
+  TOYOTA.PRIUS: ToyotaInterface,
+  TOYOTA.RAV4: ToyotaInterface,
+  TOYOTA.RAV4H: ToyotaInterface,
+  TOYOTA.COROLLA: ToyotaInterface,
+
   "simulator2": Sim2Interface,
-
   "mock": MockInterface
 }
 
 # **** for use live only ****
 def fingerprint(logcan, timeout):
-  if os.getenv("SIMULATOR") is not None or logcan is None:
-    return ("simulator", None)
-  elif os.getenv("SIMULATOR2") is not None:
+  if os.getenv("SIMULATOR2") is not None:
     return ("simulator2", None)
 
   finger_st = sec_since_boot()
@@ -77,7 +75,6 @@ def fingerprint(logcan, timeout):
 
 
 def get_car(logcan, sendcan=None, passive=True):
-
   # TODO: timeout only useful for replays so controlsd can start before unlogger
   timeout = 1. if passive else None
   candidate, fingerprints = fingerprint(logcan, timeout)
