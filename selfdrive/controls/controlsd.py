@@ -27,7 +27,7 @@ V_CRUISE_MIN = 8
 V_CRUISE_DELTA = 8
 V_CRUISE_ENABLE_MIN = 40
 
-AWARENESS_TIME = 360.      # 6 minutes limit without user touching steering wheels
+AWARENESS_TIME = 3600.      # 6 minutes limit without user touching steering wheels
 AWARENESS_PRE_TIME = 20.   # a first alert is issued 20s before start decelerating the car
 
 State = log.Live100Data.ControlState
