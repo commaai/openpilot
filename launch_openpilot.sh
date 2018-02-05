@@ -15,9 +15,10 @@ function launch {
   echo 0-3 > /dev/cpuset/foreground/cpus
   echo 0-3 > /dev/cpuset/android/cpus
 
-  # wait for network
+  # wait for network or time out at 30 tries
+  counter=0
   (cd selfdrive/ui/spinner && exec ./spinner 'waiting for network...') & spin_pid=$!
-  until ping -W 1 -c 1 8.8.8.8; do sleep 1; done
+  until ping -W 1 -c 1 8.8.8.8; do sleep 1; $counter=$((counter++)); if [ $counter -gt 30 ]; then break; fi; done
   kill $spin_pid
 
   # check if NEOS update is required
