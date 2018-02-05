@@ -52,7 +52,7 @@ def create_gas_command(gas_amount, idx):
 def create_steering_control(apply_steer, car_fingerprint, idx):
   """Creates a CAN message for the Honda DBC STEERING_CONTROL."""
   commands = []
-  if car_fingerprint == CAR.CRV or CAR.ACURA_RDX:
+  if car_fingerprint in (CAR.CRV, CAR.ACURA_RDX):
     msg_0x194 = struct.pack("!h", apply_steer << 4) + ("\x80" if apply_steer != 0 else "\x00")
     commands.append(make_can_msg(0x194, msg_0x194, idx, 0))
   else:
