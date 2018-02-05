@@ -243,10 +243,10 @@ class CarState(object):
 
     self.pedal_gas = cp.vl["POWERTRAIN_DATA"]['PEDAL_GAS']
     # crv doesn't include cruise control
-    if self.CP.carFingerprint != CAR.CRV or CAR.ACURA_RDX:
-      self.car_gas = cp.vl["GAS_PEDAL_2"]['CAR_GAS']
+    if CS.CP.carFingerprint in (CAR.CRV, CAR.ACURA_RDX):
+     self.car_gas = self.pedal_gas
     else:
-      self.car_gas = self.pedal_gas
+     self.car_gas = cp.vl["GAS_PEDAL_2"]['CAR_GAS']
     
     #rdx has different steer override threshold 
     if self.CP.carFingerprint = CAR.ACURA_RDX:
