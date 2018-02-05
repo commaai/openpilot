@@ -249,7 +249,7 @@ class CarState(object):
      self.car_gas = cp.vl["GAS_PEDAL_2"]['CAR_GAS']
     
     #rdx has different steer override threshold 
-    if self.CP.carFingerprint = CAR.ACURA_RDX:
+    if self.CP.carFingerprint in (CAR.ACURA_RDX):
       self.steer_override = abs(cp.vl["STEER_STATUS"]['STEER_TORQUE_SENSOR']) > 400
     else:
       self.steer_override = abs(cp.vl["STEER_STATUS"]['STEER_TORQUE_SENSOR']) > 1200
