@@ -214,8 +214,6 @@ class dbc(object):
     return [sgs.name for sgs in self.msgs[msg][1]]
 
 if __name__ == "__main__":
-   import sys
-   import os
    from opendbc import DBC_PATH
 
    dbc_test = dbc(os.path.join(DBC_PATH, sys.argv[1]))

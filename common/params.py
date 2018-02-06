@@ -227,7 +227,7 @@ class DBWriter(DBAccessor):
         data_path = self._data_path()
         try:
           old_data_path = os.path.join(self._path, os.readlink(data_path))
-        except (OSError, IOError) as e:
+        except (OSError, IOError):
           # NOTE(mgraczyk): If other DB implementations have bugs, this could cause
           #                 copies to be left behind, but we still want to overwrite.
           pass

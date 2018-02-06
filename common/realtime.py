@@ -1,7 +1,6 @@
 """Utilities for reading real time clocks and keeping soft real time constraints."""
 import os
 import time
-import ctypes
 import platform
 import threading
 import subprocess

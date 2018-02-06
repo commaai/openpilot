@@ -1,4 +1,3 @@
-import os
 import time
 from collections import defaultdict
 import numbers
@@ -6,7 +5,7 @@ import numbers
 from selfdrive.can.libdbc_py import libdbc, ffi
 
 class CANParser(object):
-  def __init__(self, dbc_name, signals, checks=[], bus=0):
+  def __init__(self, dbc_name, signals, checks=[], bus=0, sendcan=False):
     self.can_valid = True
     self.vl = defaultdict(dict)
     self.ts = defaultdict(dict)
@@ -56,12 +55,12 @@ class CANParser(object):
 
     message_options_c = ffi.new("MessageParseOptions[]", [
       {
-        'address': address,
+        'address': msg_address,
         'check_frequency': freq,
-      } for address, freq in message_options.iteritems()])
+      } for msg_address, freq in message_options.iteritems()])
 
     self.can = libdbc.can_init(bus, dbc_name, len(message_options_c), message_options_c,
-                               len(signal_options_c), signal_options_c)
+                               len(signal_options_c), signal_options_c, sendcan)
 
     self.p_can_valid = ffi.new("bool*")
 

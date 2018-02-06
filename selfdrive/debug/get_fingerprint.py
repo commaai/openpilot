@@ -19,7 +19,8 @@ msgs = {}
 while True:
   lc = messaging.recv_sock(logcan, True)
   for c in lc.can:
-    if c.src == 0:
+    # read also msgs sent by EON on CAN bus 0x80
+    if c.src%0x80 == 0:
       msgs[c.address] = len(c.dat)
 
   fingerprint = ', '.join("%d: %d" % v for v in sorted(msgs.items()))

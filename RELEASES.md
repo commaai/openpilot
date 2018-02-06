@@ -1,8 +1,17 @@
+Version 0.4.2 (2018-02-05)
+==========================
+ * Add alpha support for 2017 Lexus RX Hybrid
+ * Add alpha support for 2018 ACURA RDX
+ * Updated fingerprint to include Toyota Rav4 SE and Prius Prime
+ * Bugfixes for Acura ILX and Honda Odyssey
+
 Version 0.4.1 (2018-01-30)
 ==========================
  * Add alpha support for 2017 Toyota Corolla
+ * Add alpha support for 2018 Honda Odyssey with Honda Sensing
  * Add alpha support for Grey Panda
  * Refactored car abstraction layer to make car ports easier
+ * Increased steering torque limit on Honda CR-V by 30%
 
 Version 0.4.0.2 (2018-01-18)
 ==========================

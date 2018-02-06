@@ -1,5 +1,4 @@
 import os
-from cereal import car
 
 from common.realtime import sec_since_boot
 from common.fingerprints import eliminate_incompatible_cars, all_known_cars
@@ -33,6 +32,7 @@ interfaces = {
   TOYOTA.RAV4: ToyotaInterface,
   TOYOTA.RAV4H: ToyotaInterface,
   TOYOTA.COROLLA: ToyotaInterface,
+  TOYOTA.LEXUS_RXH: ToyotaInterface,
 
   "simulator2": Sim2Interface,
   "mock": MockInterface
@@ -63,7 +63,8 @@ def fingerprint(logcan, timeout):
     # message has elapsed, exit. Toyota needs higher time_fingerprint, since DSU does not
     # broadcast immediately
     if len(candidate_cars) == 1 and st is not None:
-      time_fingerprint = 1.0 if "TOYOTA" in candidate_cars[0] else 0.1
+      # TODO: better way to decide to wait more if Toyota
+      time_fingerprint = 1.0 if ("TOYOTA" in candidate_cars[0] or "LEXUS" in candidate_cars[0]) else 0.1
       if (ts-st) > time_fingerprint:
         break
 

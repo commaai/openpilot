@@ -11,7 +11,6 @@ from common.realtime import Ratekeeper
 from selfdrive.config import Conversions as CV
 import selfdrive.messaging as messaging
 from selfdrive.services import service_list
-from selfdrive.config import CruiseButtons
 from selfdrive.car.honda.hondacan import fix
 from common.fingerprints import HONDA as CAR
 from selfdrive.car.honda.carstate import get_can_signals
@@ -20,7 +19,6 @@ from selfdrive.boardd.boardd import can_capnp_to_can_list, can_list_to_can_capnp
 from selfdrive.car.honda.old_can_parser import CANParser
 from selfdrive.car.honda.interface import CarInterface
 
-from cereal import car
 from common.dbc import dbc
 honda = dbc(os.path.join(DBC_PATH, "honda_civic_touring_2016_can_generated.dbc"))
 
@@ -38,8 +36,7 @@ def car_plant(pos, speed, grade, gas, brake):
   speed_base = power_peak/force_peak
   rolling_res = 0.01
   g = 9.81
-  wheel_r = 0.31
-  frontal_area = 2.2
+  #frontal_area = 2.2  TODO: use it!
   air_density = 1.225
   gas_to_peak_linear_slope = 3.33
   brake_to_peak_linear_slope = 0.3
@@ -191,7 +188,6 @@ class Plant(object):
 
     # ******** run the car ********
     speed, acceleration = car_plant(self.distance_prev, self.speed_prev, grade, gas, brake)
-    standstill = (speed == 0)
     distance = self.distance_prev + speed * self.ts
     speed = self.speed_prev + self.ts * acceleration
     if speed <= 0:
@@ -208,7 +204,6 @@ class Plant(object):
     else:
       d_rel = 200.
       v_rel = 0.
-      a_rel = 0
     lateral_pos_rel = 0.
 
     # print at 5hz
@@ -312,10 +307,6 @@ class Plant(object):
 def plant_thread(rate=100):
   plant = Plant(rate)
   while 1:
-    if plant.rk.frame%100 >= 20 and plant.rk.frame%100 <= 25:
-      cruise_buttons = CruiseButtons.RES_ACCEL
-    else:
-      cruise_buttons = 0
     plant.step()
 
 if __name__ == "__main__":
