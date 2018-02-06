@@ -246,7 +246,7 @@ class CarState(object):
 
     self.pedal_gas = cp.vl["POWERTRAIN_DATA"]['PEDAL_GAS']
     # crv doesn't include cruise control
-    if CS.CP.carFingerprint in (CAR.CRV, CAR.ACURA_RDX):
+    if self.CP.carFingerprint in (CAR.CRV, CAR.ACURA_RDX):
      self.car_gas = self.pedal_gas
     else:
      self.car_gas = cp.vl["GAS_PEDAL_2"]['CAR_GAS']
