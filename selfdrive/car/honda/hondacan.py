@@ -49,11 +49,10 @@ def create_gas_command(gas_amount, idx):
   msg = struct.pack("!H", gas_amount)
   return make_can_msg(0x200, msg, idx, 0)
 
-
 def create_steering_control(apply_steer, car_fingerprint, idx):
   """Creates a CAN message for the Honda DBC STEERING_CONTROL."""
   commands = []
-  if car_fingerprint == CAR.CRV:
+  if car_fingerprint in (CAR.CRV, CAR.ACURA_RDX):
     msg_0x194 = struct.pack("!h", apply_steer << 4) + ("\x80" if apply_steer != 0 else "\x00")
     commands.append(make_can_msg(0x194, msg_0x194, idx, 0))
   else:
@@ -80,7 +79,6 @@ def create_ui_commands(pcm_speed, hud, car_fingerprint, idx):
     commands.append(make_can_msg(0x39f, msg_0x39f, idx, 0))
   return commands
 
-
 def create_radar_commands(v_ego, car_fingerprint, idx):
   """Creates an iterable of CAN messages for the radar system."""
   commands = []
@@ -96,6 +94,9 @@ def create_radar_commands(v_ego, car_fingerprint, idx):
     commands.append(make_can_msg(0x300, msg_0x300, idx + 8, 1))  # add 8 on idx.
   elif car_fingerprint == CAR.CRV:
     msg_0x301 = "\x00\x00\x50\x02\x51\x00\x00"
+    commands.append(make_can_msg(0x300, msg_0x300, idx, 1))
+  elif car_fingerprint == CAR.ACURA_RDX:
+    msg_0x301 = "\x0f\x57\x4f\x02\x5a\x00\x00"
     commands.append(make_can_msg(0x300, msg_0x300, idx, 1))
   elif car_fingerprint == CAR.ODYSSEY:
     msg_0x301 = "\x00\x00\x56\x02\x55\x00\x00"

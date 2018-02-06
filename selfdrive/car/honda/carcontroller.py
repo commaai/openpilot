@@ -121,7 +121,7 @@ class CarController(object):
     if CS.CP.carFingerprint in (CAR.CIVIC, CAR.ODYSSEY):
       is_fw_modified = os.getenv("DONGLE_ID") in ['b0f5a01cf604185c']
       STEER_MAX = 0x1FFF if is_fw_modified else 0x1000
-    elif CS.crv:
+    elif CS.CP.carFingerprint in (CAR.CRV, CAR.ACURA_RDX):
       STEER_MAX = 0x3e8  # CR-V only uses 12-bits and requires a lower value (max value from energee)
     else:
       STEER_MAX = 0xF00
