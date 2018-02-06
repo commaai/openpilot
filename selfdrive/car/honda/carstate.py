@@ -23,7 +23,7 @@ def parse_gear_shifter(can_gear_shifter, car_fingerprint):
       return "drive"
     elif can_gear_shifter == 0xa:
       return "sport"
-  elif car_fingerprint in (CAR.CIVIC, CAR.CRV):
+  elif car_fingerprint in (CAR.CIVIC, CAR.CRV, CAR.ACURA_RDX):
     if can_gear_shifter == 0x4:
       return "neutral"
     elif can_gear_shifter == 0x8:
