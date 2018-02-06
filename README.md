@@ -32,6 +32,9 @@ Supported Cars
 - Honda Odyssey 2018 with Honda Sensing (alpha!)
   - Can only be enabled above 25 mph
 
+- Acura RDX 2018 with AcuraWatch Plus (alpha!)
+  - Can only be enabled above 25 mph
+
 - Toyota RAV-4 2016+ non-hybrid with TSS-P
   - By default it uses stock Toyota ACC for longitudinal control
   - openpilot longitudinal control available after unplugging the [Driving Support ECU](https://community.comma.ai/wiki/index.php/Toyota#Rav4_.28for_openpilot.29) and can be enabled above 20 mph
@@ -63,8 +66,6 @@ Community WIP Cars
 - [Classic Tesla Model S (pre-AP)](https://github.com/commaai/openpilot/pull/145)
 
 - [Honda Pilot 2017 with Honda Sensing](https://github.com/commaai/openpilot/pull/161)
-
-- [Acura RDX 2018 with AcuraWatch Plus](https://github.com/commaai/openpilot/pull/162)
 
 Directory structure
 ------
