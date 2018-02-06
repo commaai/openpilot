@@ -1,21 +1,10 @@
+CM_ "IMPORT _honda_2017.dbc"
+
 BO_ 342 STEERING_SENSORS: 6 EPS
  SG_ STEER_ANGLE : 7|16@0- (-0.1,0) [-500|500] "deg" EON
  SG_ STEER_ANGLE_RATE : 23|16@0- (1,0) [-3000|3000] "deg/s" EON
  SG_ COUNTER : 45|2@0+ (1,0) [0|3] "" EON
  SG_ CHECKSUM : 43|4@0+ (1,0) [0|15] "" EON
-
-BO_ 380 POWERTRAIN_DATA: 8 PCM
- SG_ PEDAL_GAS : 7|8@0+ (1,0) [0|255] "" EON
- SG_ ENGINE_RPM : 23|16@0+ (1,0) [0|15000] "rpm" EON
- SG_ GAS_PRESSED : 39|1@0+ (1,0) [0|1] "" EON
- SG_ ACC_STATUS : 38|1@0+ (1,0) [0|1] "rpm" EON
- SG_ BOH_17C : 37|5@0+ (1,0) [0|1] "rpm" EON
- SG_ BRAKE_SWITCH : 32|1@0+ (1,0) [0|1] "rpm" EON
- SG_ BOH2_17C : 47|10@0+ (1,0) [0|1] "rpm" EON
- SG_ BRAKE_PRESSED : 53|1@0+ (1,0) [0|1] "" EON
- SG_ BOH3_17C : 52|5@0+ (1,0) [0|1] "rpm" EON
- SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
- SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" EON
 
 BO_ 392 GEARBOX: 6 XXX
  SG_ CHECKSUM : 43|4@0+ (1,0) [0|15] "" XXX
@@ -47,13 +36,13 @@ BO_ 420 VSA_STATUS: 8 VSA
 BO_ 422 SCM_BUTTONS: 8 SCM
  SG_ CRUISE_BUTTONS : 7|3@0+ (1,0) [0|7] "" EON
  SG_ LIGHTS_SETTING : 1|2@0+ (1,0) [0|3] "" EON
- SG_ PARKING_BREAK_LIGHT : 2|1@0+ (1,0) [0|1] "" EON
+ SG_ PARKING_BRAKE_LIGHT : 2|1@0+ (1,0) [0|1] "" EON
  SG_ MAIN_ON : 47|1@0+ (1,0) [0|1] "" EON
  SG_ CRUISE_SETTING : 43|2@0+ (1,0) [0|3] "" EON
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" EON
 
-BO_ 487 XXX_9: 4 VSA
+BO_ 487 BRAKE_PRESSURE: 4 VSA
  SG_ BRAKE_PRESSURE1 : 7|10@0+ (0.015625,-103) [0|1000] "" EON
  SG_ BRAKE_PRESSURE2 : 9|10@0+ (0.015625,-103) [0|1000] "" EON
  SG_ COUNTER : 29|2@0+ (1,0) [0|15] "" EON
@@ -66,7 +55,7 @@ BO_ 660 SCM_FEEDBACK: 8 SCM
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" EON
 
-CM_ SG_ 422 PARKING_BREAK_LIGHT "Believe this is just the dash light for the parking break";
+CM_ SG_ 422 PARKING_BRAKE_LIGHT "Believe this is just the dash light for the parking break";
 VAL_ 392 GEAR_SHIFTER 0 "S" 1 "P" 2 "R" 4 "N" 8 "D" ;
 VAL_ 392 GEAR 26 "S" 4 "D" 3 "N" 2 "R" 1 "P" ;
 VAL_ 422 CRUISE_BUTTONS 7 "tbd" 6 "tbd" 5 "tbd" 4 "accel_res" 3 "decel_set" 2 "cancel" 1 "main" 0 "none" ;
