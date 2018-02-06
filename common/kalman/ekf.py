@@ -1,6 +1,5 @@
 import abc
 import numpy as np
-import numpy.matlib
 # The EKF class contains the framework for an Extended Kalman Filter, but must be subclassed to use.
 # A subclass must implement:
 #   1) calc_transfer_fun(); see bottom of file for more info.

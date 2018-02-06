@@ -1,8 +1,6 @@
 #!/usr/bin/env python
-import os
 import zmq
 import numpy as np
-import numpy.matlib
 import importlib
 from collections import defaultdict
 from fastcluster import linkage_vector
@@ -16,7 +14,7 @@ from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.swaglog import cloudlog
 from cereal import car
 from common.params import Params
-from common.realtime import sec_since_boot, set_realtime_priority, Ratekeeper
+from common.realtime import set_realtime_priority, Ratekeeper
 from common.kalman.ekf import EKF, SimpleSensor
 
 DEBUG = False
