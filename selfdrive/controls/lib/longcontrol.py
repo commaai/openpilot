@@ -1,6 +1,4 @@
-import numpy as np
 from common.numpy_fast import clip, interp
-from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.pid import PIController
 
 STOPPING_EGO_SPEED = 0.5

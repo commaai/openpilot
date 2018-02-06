@@ -2,7 +2,6 @@ from collections import namedtuple
 import os
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.controls.lib.drive_helpers import rate_limit
-from common.realtime import sec_since_boot
 from common.numpy_fast import clip
 from . import hondacan
 from .values import AH
@@ -115,11 +114,10 @@ class CarController(object):
     # **** process the car messages ****
 
     # *** compute control surfaces ***
-    tt = sec_since_boot()
     GAS_MAX = 1004
     BRAKE_MAX = 1024/4
     if CS.CP.carFingerprint in (CAR.CIVIC, CAR.ODYSSEY):
-      is_fw_modified = os.getenv("DONGLE_ID") in ['b0f5a01cf604185c']
+      is_fw_modified = os.getenv("DONGLE_ID") in ['99c94dc769b5d96e']
       STEER_MAX = 0x1FFF if is_fw_modified else 0x1000
     elif CS.CP.carFingerprint in (CAR.CRV, CAR.ACURA_RDX):
       STEER_MAX = 0x3e8  # CR-V only uses 12-bits and requires a lower value (max value from energee)

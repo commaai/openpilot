@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 import os
-import time
 import subprocess
 from cffi import FFI
-import ctypes
 
 import numpy as np
 
