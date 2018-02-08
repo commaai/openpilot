@@ -1,7 +1,9 @@
 from selfdrive.car.honda.interface import CarInterface as HondaInterface
 from selfdrive.car.toyota.interface import CarInterface as ToyotaInterface
 from selfdrive.car.mock.interface import CarInterface as MockInterface
+from selfdrive.car.tesla.interface import CarInterface as TeslaInterface
 from selfdrive.car.toyota.values import CAR as TOYOTA
+from selfdrive.car.tesla.values import CAR as TESLA
 
 try:
   from .simulator.interface import CarInterface as SimInterface
@@ -24,6 +26,7 @@ interfaces = {
   TOYOTA.PRIUSP: ToyotaInterface,
   TOYOTA.RAV4: ToyotaInterface,
   TOYOTA.RAV4H: ToyotaInterface,
+  TESLA.S_CLASSIC: TeslaInterface,
 
   "simulator": SimInterface,
   "simulator2": Sim2Interface,
