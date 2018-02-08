@@ -62,9 +62,10 @@ def eliminate_incompatible_cars(msg, candidate_cars):
                         _FINGERPRINTS[car_name][adr] == len(msg.dat)):
       compatible_cars.append(car_name)
     else:
-      pass
-      #isin = adr in _FINGERPRINTS[car_name]
-      #print "eliminate", car_name, hex(adr), isin, len(msg.dat), msg.dat.encode("hex")
+      #pass
+      isin = adr in _FINGERPRINTS[car_name]
+      print "eliminate", car_name, hex(adr), isin, len(msg.dat), msg.dat.encode("hex")
+  print compatible_cars
   return compatible_cars
 
 def all_known_cars():
