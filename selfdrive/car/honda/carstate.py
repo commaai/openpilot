@@ -131,6 +131,8 @@ def get_can_signals(CP):
                 ("EPB_STATE", "EPB_STATUS", 0),
                 ("BRAKE_HOLD_ACTIVE", "VSA_STATUS", 0)]
     checks += [("EPB_STATUS", 50)]
+  elif CP.carFingerprint == CAR.ODYSSEY:
+    dbc_f = 'honda_pilot_touring_2017_can_generated.dbc'    
 
   # add gas interceptor reading if we are using it
   if CP.enableGas:
