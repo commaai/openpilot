@@ -73,7 +73,7 @@ def data_sample(CI, CC, thermal, calibration, health, poller, cal_status, overte
     overtemp_proc = any(t > 950 for t in
                         (td.thermal.cpu0, td.thermal.cpu1, td.thermal.cpu2,
                          td.thermal.cpu3, td.thermal.mem, td.thermal.gpu))
-    overtemp_bat = td.thermal.bat > 50000 # 50c
+    overtemp_bat = td.thermal.bat > 60000 # 60c
     overtemp = overtemp_proc or overtemp_bat
 
     # under 15% of space free no enable allowed

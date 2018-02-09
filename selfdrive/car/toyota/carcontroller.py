@@ -1,14 +1,10 @@
-from common.numpy_fast import clip, interp
-from common.realtime import sec_since_boot
+from common.numpy_fast import clip
 from selfdrive.boardd.boardd import can_list_to_can_capnp
-from selfdrive.controls.lib.drive_helpers import rate_limit
 from selfdrive.car.toyota.toyotacan import make_can_msg, create_video_target,\
                                            create_steer_command, create_ui_command, \
                                            create_ipas_steer_command, create_accel_command, \
                                            create_fcw_command
 from selfdrive.car.toyota.values import ECU, STATIC_MSGS
-from common.fingerprints import TOYOTA as CAR
-
 
 ACCEL_HYST_GAP = 0.02  # don't change accel command for small oscilalitons within this value
 ACCEL_MAX = 1500  # 1.5 m/s2
@@ -82,7 +78,6 @@ class CarController(object):
              pcm_cancel_cmd, hud_alert, audible_alert):
 
     # *** compute control surfaces ***
-    ts = sec_since_boot()
 
     # steer torque is converted back to CAN reference (positive when steering right)
     apply_accel = actuators.gas - actuators.brake

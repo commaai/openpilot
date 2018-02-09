@@ -1,5 +1,3 @@
-import os
-from enum import Enum
 from maneuverplots import ManeuverPlot
 from plant import Plant
 import numpy as np
@@ -31,7 +29,6 @@ class Maneuver(object):
     )
 
     last_live100 = None
-    event_queue = sorted(self.cruise_button_presses, key=lambda a: a[1])[::-1]
     plot = ManeuverPlot(self.title)
 
     buttons_sorted = sorted(self.cruise_button_presses, key=lambda a: a[1])

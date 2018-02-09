@@ -1,11 +1,7 @@
 #!/usr/bin/env python
-import os
 from common.realtime import sec_since_boot
-import common.numpy_fast as np
 from cereal import car
 from selfdrive.config import Conversions as CV
-from selfdrive.services import service_list
-import selfdrive.messaging as messaging
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.toyota.carstate import CarState, get_can_parser
@@ -79,34 +75,44 @@ class CarInterface(object):
     if candidate == CAR.PRIUS:
       ret.safetyParam = 66  # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.70
-      ret.steerRatio = 14.5 #TODO: find exact value for Prius
+      ret.steerRatio = 14.5  # TODO: find exact value for Prius
       ret.mass = 3045./2.205 + std_cargo
+      ret.steerKp, ret.steerKi = 0.6, 0.05
+      ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
+      ret.steerRateCost = 2.
     elif candidate in [CAR.RAV4, CAR.RAV4H]:
       ret.safetyParam = 73  # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.65
       ret.steerRatio = 14.5 # Rav4 2017
       ret.mass = 3650./2.205 + std_cargo  # mean between normal and hybrid
+      ret.steerKp, ret.steerKi = 0.6, 0.05
+      ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
+      ret.steerRateCost = 1.
     elif candidate == CAR.COROLLA:
       ret.safetyParam = 100 # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.70
       ret.steerRatio = 17.8
       ret.mass = 2860./2.205 + std_cargo  # mean between normal and hybrid
-
-    ret.centerToFront = ret.wheelbase * 0.44
-
-    if candidate == CAR.COROLLA:
       ret.steerKp, ret.steerKi = 0.2, 0.05
       ret.steerKf = 0.00003   # full torque for 20 deg at 80mph means 0.00007818594
-    else:
-      ret.steerKp, ret.steerKi = 0.6, 0.05
+      ret.steerRateCost = 1.
+    elif candidate == CAR.LEXUS_RXH:
+      ret.safetyParam = 100 # see conversion factor for STEER_TORQUE_EPS in dbc file
+      ret.wheelbase = 2.79
+      ret.steerRatio = 16.  # official specs say 14.8, but it does not seem right
+      ret.mass = 4481./2.205 + std_cargo  # mean between min and max
+      ret.steerKp, ret.steerKi = 0.6, 0.1
       ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
+      ret.steerRateCost = .8
+
+    ret.centerToFront = ret.wheelbase * 0.44
 
     ret.longPidDeadzoneBP = [0., 9.]
     ret.longPidDeadzoneV = [0., .15]
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter.
-    if candidate in [CAR.PRIUS, CAR.RAV4H]: # rav4 hybrid can do stop and go
+    if candidate in [CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH]: # rav4 hybrid can do stop and go
       ret.minEnableSpeed = -1.
     elif candidate in [CAR.RAV4, CAR.COROLLA]: # TODO: hack ICE to do stop and go
       ret.minEnableSpeed = 19. * CV.MPH_TO_MS
@@ -154,17 +160,11 @@ class CarInterface(object):
     ret.longitudinalKiBP = [0., 35.]
     ret.longitudinalKiV = [0.54, 0.36]
 
-    if candidate in [CAR.PRIUS]:
-      ret.steerRateCost = 2.
-    elif candidate in [CAR.RAV4, CAR.RAV4H, CAR.COROLLA]:
-      ret.steerRateCost = 1.
-
     return ret
 
   # returns a car.CarState
   def update(self, c):
     # ******************* do can recv *******************
-    can_pub_main = []
     canMonoTimes = []
 
     self.cp.update(int(sec_since_boot() * 1e9), False)
@@ -189,7 +189,7 @@ class CarInterface(object):
     ret.gearShifter = self.CS.gear_shifter
 
     # gas pedal
-    ret.gas = self.CS.car_gas / 256.0
+    ret.gas = self.CS.car_gas
     ret.gasPressed = self.CS.pedal_gas > 0
 
     # brake pedal

@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import os
 import sys
-import struct
 from collections import defaultdict
 from common.realtime import sec_since_boot
 import zmq

@@ -451,6 +451,7 @@ void _pigeon_send(const char *dat, int len) {
     memcpy(&a[1], &dat[i], ll);
     pthread_mutex_lock(&usb_lock);
     err = libusb_bulk_transfer(dev_handle, 2, a, ll+1, &sent, TIMEOUT);
+    if (err < 0) { handle_usb_issue(err, __func__); }
     assert(err == 0);
     assert(sent == ll+1);
     //hexdump(a, ll+1);
@@ -460,20 +461,24 @@ void _pigeon_send(const char *dat, int len) {
 
 void pigeon_set_power(int power) {
   pthread_mutex_lock(&usb_lock);
-  libusb_control_transfer(dev_handle, 0xc0, 0xd9, power, 0, NULL, 0, TIMEOUT);
+  int err = libusb_control_transfer(dev_handle, 0xc0, 0xd9, power, 0, NULL, 0, TIMEOUT);
+  if (err < 0) { handle_usb_issue(err, __func__); }
   pthread_mutex_unlock(&usb_lock);
 }
 
 void pigeon_set_baud(int baud) {
+  int err;
   pthread_mutex_lock(&usb_lock);
-  libusb_control_transfer(dev_handle, 0xc0, 0xe2, 1, 0, NULL, 0, TIMEOUT);
-  libusb_control_transfer(dev_handle, 0xc0, 0xe4, 1, baud/300, NULL, 0, TIMEOUT);
+  err = libusb_control_transfer(dev_handle, 0xc0, 0xe2, 1, 0, NULL, 0, TIMEOUT);
+  if (err < 0) { handle_usb_issue(err, __func__); }
+  err = libusb_control_transfer(dev_handle, 0xc0, 0xe4, 1, baud/300, NULL, 0, TIMEOUT);
+  if (err < 0) { handle_usb_issue(err, __func__); }
   pthread_mutex_unlock(&usb_lock);
 }
 
 void pigeon_init() {
   usleep(1000*1000);
-  LOGW("pigeon start");
+  LOGW("grey panda start");
 
   // power off pigeon
   pigeon_set_power(0);
@@ -513,7 +518,7 @@ void pigeon_init() {
   pigeon_send("\xB5\x62\x06\x01\x03\x00\x01\x07\x01\x13\x51");
   pigeon_send("\xB5\x62\x06\x01\x03\x00\x02\x15\x01\x22\x70");
 
-  LOGW("pigeon is ready to fly");
+  LOGW("grey panda is ready to fly");
 }
 
 
@@ -551,6 +556,7 @@ void *pigeon_thread(void *crap) {
     while (alen < 0xfc0) {
       pthread_mutex_lock(&usb_lock);
       int len = libusb_control_transfer(dev_handle, 0xc0, 0xe0, 1, 0, dat+alen, 0x40, TIMEOUT);
+      if (len < 0) { handle_usb_issue(len, __func__); }
       pthread_mutex_unlock(&usb_lock);
       if (len <= 0) break;
 
