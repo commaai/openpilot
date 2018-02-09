@@ -1,8 +1,6 @@
 #!/usr/bin/env python2.7
-
 import os
 import sys
-import time
 import fcntl
 import errno
 import signal
@@ -53,7 +51,6 @@ from common.basedir import BASEDIR
 sys.path.append(os.path.join(BASEDIR, "pyextra"))
 os.environ['BASEDIR'] = BASEDIR
 
-import usb1
 import zmq
 from setproctitle import setproctitle
 from smbus2 import SMBus
@@ -250,15 +247,19 @@ def manager_init():
   if "-private" in subprocess.check_output(["git", "config", "--get", "remote.origin.url"]):
     upstream = "origin/master"
   else:
-    upstream = "origin/release"
+    if 'chffrplus' in version:
+      upstream = "origin/release"
+    else:
+      upstream = "origin/release2"
+
   dirty = subprocess.call(["git", "diff-index", "--quiet", upstream, "--"]) != 0
   cloudlog.info("dirty is %d" % dirty)
   if not dirty:
     os.environ['CLEAN'] = '1'
 
-  cloudlog.bind_global(dongle_id=dongle_id, version=version, dirty=dirty)
+  cloudlog.bind_global(dongle_id=dongle_id, version=version, dirty=dirty, is_eon=EON)
   crash.bind_user(id=dongle_id)
-  crash.bind_extra(version=version, dirty=dirty)
+  crash.bind_extra(version=version, dirty=dirty, is_eon=EON)
 
   os.umask(0)
   try:
@@ -463,7 +464,7 @@ def manager_thread():
     if passive and not ignition_seen:
       should_start = should_start or passive_starter.update(started_ts, location)
 
-    # with 2% left, we killall, otherwise the phone is bricked
+    # with 2% left, we killall, otherwise the phone will take a long time to boot
     should_start = should_start and avail > 0.02
 
     # require usb power
@@ -471,9 +472,10 @@ def manager_thread():
 
     should_start = should_start and accepted_terms and (not do_uninstall)
 
-    # if any CPU gets above 107 or the battery gets above 53, kill all processes
-    # controls will warn with CPU above 95 or battery above 50
-    if max_temp > 107.0 or msg.thermal.bat >= 53000:
+    # if any CPU gets above 107 or the battery gets above 63, kill all processes
+    # controls will warn with CPU above 95 or battery above 60
+    if max_temp > 107.0 or msg.thermal.bat >= 63000:
+      # TODO: Add a better warning when this is happening
       should_start = False
 
     if should_start:
@@ -554,7 +556,7 @@ def update_apks():
   cloudlog.info("installed apks %s" % (str(installed), ))
 
   for app in installed.iterkeys():
-    
+
     apk_path = os.path.join(BASEDIR, "apk/"+app+".apk")
     if not os.path.exists(apk_path):
       apk_path = os.path.join(BASEDIR, "apk/external/out/"+app+".apk")

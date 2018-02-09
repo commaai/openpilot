@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import os
-import numpy as np
 
 from selfdrive.can.parser import CANParser
 

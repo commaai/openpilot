@@ -31,8 +31,12 @@ Supported Cars
 
 - Honda Odyssey 2018 with Honda Sensing (alpha!)
   - Can only be enabled above 25 mph
+
+- Acura RDX 2018 with AcuraWatch Plus (alpha!)
+  - Can only be enabled above 25 mph
   
-- Honda Pilot 2017 with Honda Sensing (alpha!) 
+- Honda Pilot 2017 with Honda Sensing (alpha!)
+  - Can only be enabled above 27 mph 
 
 - Toyota RAV-4 2016+ non-hybrid with TSS-P
   - By default it uses stock Toyota ACC for longitudinal control
@@ -51,11 +55,18 @@ Supported Cars
   - By default it uses stock Toyota ACC for longitudinal control
   - openpilot longitudinal control available after unplugging the [Driving Support ECU](https://community.comma.ai/wiki/index.php/Toyota#Corolla_.28for_openpilot.29) and can be enabled above 20 mph
 
+- Lexus RX 2017 hybrid (alpha!)
+  - By default it uses stock Lexus ACC for longitudinal control
+  - openpilot longitudinal control available after unplugging the [Driving Support ECU](https://community.comma.ai/wiki/index.php/Toyota#Lexus_RX_hybrid)
+
 In Progress Cars
 ------
-- Probably all TSS-P Toyota with Steering Assist.
+- All TSS-P Toyota with Steering Assist.
   - 'Full Speed Range Dynamic Radar Cruise Control' is required to enable stop-and-go. Only the Prius, Camry and C-HR have this option.
   - Even though the Tundra, Sequoia and the Land Cruiser have TSS-P, they don't have Steering Assist and are not supported.
+- All LSS-P Lexus with Steering Assist or Lane Keep Assist.
+  - 'All-Speed Range Dynamic Radar Cruise Control' is required to enable stop-and-go. Only the GS, GSH, GS, F, RX, RXH, LX, NX, NXH, LC, LCH, LS, LSH have this option.
+  - Even though the LX have TSS-P, it does not have Steering Assist and is not supported.
 
 Community WIP Cars
 ------
@@ -63,8 +74,6 @@ Community WIP Cars
 - [Chevy Volt 2016-2018 Premier with Driver Confidence II](https://github.com/commaai/openpilot/pull/104)
 
 - [Classic Tesla Model S (pre-AP)](https://github.com/commaai/openpilot/pull/145)
-
-- [Acura RDX 2018 with AcuraWatch Plus](https://github.com/commaai/openpilot/pull/162)
 
 Directory structure
 ------

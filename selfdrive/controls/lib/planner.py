@@ -7,7 +7,6 @@ import math
 from collections import defaultdict
 
 from common.realtime import sec_since_boot
-from common.params import Params
 from common.numpy_fast import interp
 import selfdrive.messaging as messaging
 from selfdrive.swaglog import cloudlog

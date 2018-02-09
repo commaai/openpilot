@@ -1,5 +1,4 @@
 import os
-import selfdrive.messaging as messaging
 from common.fingerprints import TOYOTA as CAR
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
@@ -20,7 +19,8 @@ def parse_gear_shifter(can_gear, car_fingerprint):
       return "drive"
     elif can_gear == 0x4:
       return "brake"
-  elif car_fingerprint in [CAR.RAV4, CAR.RAV4H, CAR.COROLLA]:
+  elif car_fingerprint in [CAR.RAV4, CAR.RAV4H, 
+                           CAR.LEXUS_RXH, CAR.COROLLA]:
     if can_gear == 0x20:
       return "park"
     elif can_gear == 0x10:
@@ -45,6 +45,8 @@ def get_can_parser(CP):
     dbc_f = 'toyota_rav4_2017_pt_generated.dbc'
   elif CP.carFingerprint == CAR.COROLLA:
     dbc_f = 'toyota_corolla_2017_pt_generated.dbc'
+  elif CP.carFingerprint == CAR.LEXUS_RXH:
+    dbc_f = 'lexus_rx_hybrid_2017_pt_generated.dbc'
 
   signals = [
     # sig_name, sig_address, default
@@ -74,6 +76,7 @@ def get_can_parser(CP):
     ("TURN_SIGNALS", "STEERING_LEVERS", 3),   # 3 is no blinkers
     ("LKA_STATE", "EPS_STATUS", 0),
     ("BRAKE_LIGHTS_ACC", "ESP_CONTROL", 0),
+    ("AUTO_HIGH_BEAM", "LIGHT_STALK", 0),
   ]
 
   checks = [
@@ -167,3 +170,4 @@ class CarState(object):
     self.gas_pressed = not cp.vl["PCM_CRUISE"]['GAS_RELEASED']
     self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]['LOW_SPEED_LOCKOUT'] == 2
     self.brake_lights = bool(cp.vl["ESP_CONTROL"]['BRAKE_LIGHTS_ACC'] or self.brake_pressed)
+    self.generic_toggle = bool(cp.vl["LIGHT_STALK"]['AUTO_HIGH_BEAM'])
