@@ -133,7 +133,8 @@ def get_can_signals(CP):
     checks += [("EPB_STATUS", 50)]
   elif CP.carFingerprint == CAR.PILOT:
     dbc_f = 'honda_pilot_touring_2017_can_generated.dbc'
-    signals += [("MAIN_ON", "SCM_BUTTONS", 0)]
+    signals += [("MAIN_ON", "SCM_BUTTONS", 0),
+                ("CAR_GAS", "GAS_PEDAL_2", 0)]
 
   # add gas interceptor reading if we are using it
   if CP.enableGas:
