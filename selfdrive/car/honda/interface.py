@@ -215,6 +215,18 @@ class CarInterface(object):
       ret.longitudinalKpV = [1.2, 0.8, 0.5]
       ret.longitudinalKiBP = [0., 35.]
       ret.longitudinalKiV = [0.18, 0.12]
+    elif candidate == CAR.PILOT:
+      stop_and_go = False
+      ret.mass = 4303./2.205 + std_cargo
+      ret.wheelbase = 2.81
+      ret.centerToFront = ret.wheelbase * 0.41
+      ret.steerRatio = 16.0
+      ret.steerKp, ret.steerKi = 0.38, 0.11
+
+      ret.longitudinalKpBP = [0., 5., 35.]
+      ret.longitudinalKpV = [1.2, 0.8, 0.5]
+      ret.longitudinalKiBP = [0., 35.]
+      ret.longitudinalKiV = [0.18, 0.12]
     else:
       raise ValueError("unsupported car %s" % candidate)
 
