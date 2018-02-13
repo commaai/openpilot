@@ -70,6 +70,14 @@ class CarInterface(object):
       self.CC = CarController()
 
   @staticmethod
+  def compute_gb(accel, speed):
+    return float(accel) / 3.0
+
+  @staticmethod
+  def calc_accel_override(a_ego, a_target, v_ego, v_target):
+    return 1.0
+
+  @staticmethod
   def get_params(candidate, fingerprint):
 
     # pedal
@@ -98,7 +106,7 @@ class CarInterface(object):
     return ret
 
   # returns a car.CarState
-  def update(self):
+  def update(self, c):
     # ******************* do can recv *******************
     can_pub_main = []
     canMonoTimes = []
