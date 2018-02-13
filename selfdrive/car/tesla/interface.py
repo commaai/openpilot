@@ -96,7 +96,8 @@ class CarInterface(object):
     
     if candidate == "TESLA CLASSIC MODEL S":
         ret.wheelbase = 2.959
-        ret.slipFactor = 0.000713841
+        # This isn't in OP 0.4 (?)
+        # ret.slipFactor = 0.000713841
         ret.steerRatio = 12
         #ret.steerKp, ret.steerKi = 2.5, 0.15 # 2017-07-11am was at 2.5/0.25
         ret.steerKp, ret.steerKi = 1.25, 0.2 # 2017-07-11am was at 2.5/0.25
