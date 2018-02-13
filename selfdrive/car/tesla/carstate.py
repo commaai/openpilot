@@ -142,10 +142,10 @@ class CarState(object):
   def update(self, can_pub_main=None):
     cp = self.cp
 
-    if NEW_CAN:
-      cp.update(int(sec_since_boot() * 1e9), False)
-    else:
-      cp.update_can(can_pub_main)
+#    if NEW_CAN:
+#      cp.update(int(sec_since_boot() * 1e9), False)
+#    else:
+#      cp.update_can(can_pub_main)
     
     # copy can_valid
     self.can_valid = cp.can_valid
