@@ -4,7 +4,7 @@ import time
 import common.numpy_fast as np
 
 from selfdrive.config import Conversions as CV
-from .carstate import CarState
+from .carstate import CarState, get_can_parser
 from .carcontroller import CarController, AH
 from selfdrive.boardd.boardd import can_capnp_to_can_list
 
