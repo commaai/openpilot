@@ -62,6 +62,7 @@ class CarInterface(object):
 
     # *** init the major players ***
     self.CS = CarState(CP)
+    self.cp = get_can_parser(CP)
 
     # sending if read only is False
     if sendcan is not None:
