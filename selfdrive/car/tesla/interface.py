@@ -54,15 +54,14 @@ class AH:
   SPEED_TOO_HIGH = [6, 8]
 
 class CarInterface(object):
-  def __init__(self, CP, logcan, sendcan=None):
-    self.logcan = logcan
+  def __init__(self, CP, sendcan=None):
     self.CP = CP
 
     self.frame = 0
     self.can_invalid_count = 0
 
     # *** init the major players ***
-    self.CS = CarState(CP, self.logcan)
+    self.CS = CarState(CP)
 
     # sending if read only is False
     if sendcan is not None:
@@ -114,13 +113,9 @@ class CarInterface(object):
     can_pub_main = []
     canMonoTimes = []
 
-    if NEW_CAN:
-      self.CS.update(can_pub_main)
-    else:
-      for a in messaging.drain_sock(self.logcan):
-        canMonoTimes.append(a.logMonoTime)
-        can_pub_main.extend(can_capnp_to_can_list(a.can, [0,2]))
-      self.CS.update(can_pub_main)
+    self.cp.update(int(sec_since_boot() * 1e9), False)
+
+    self.CS.update(self.cp)
 
     # create message
     ret = car.CarState.new_message()
