@@ -86,7 +86,9 @@ class CarInterface(object):
     ret = car.CarParams.new_message()
 
     ret.carName = "tesla"
-    ret.radarName = "bosch"
+    # This causes an error in OP 0.4
+    # ret.radarName = "bosch"
+    ret.radarName = "mock"
     ret.carFingerprint = candidate
 
     ret.enableSteer = True
