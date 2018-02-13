@@ -114,7 +114,8 @@ class CarInterface(object):
     can_pub_main = []
     canMonoTimes = []
 
-    self.cp.update(int(sec_since_boot() * 1e9), False)
+    # This causes error - THIS SEEMS NECESSARY!
+    # self.cp.update(int(sec_since_boot() * 1e9), False)
 
     self.CS.update(self.cp)
 
