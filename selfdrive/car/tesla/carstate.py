@@ -109,7 +109,7 @@ def get_can_parser(CP):
     return CANParser(dbc_f, signals, checks)
 
 class CarState(object):
-  def __init__(self, CP, logcan):
+  def __init__(self, CP):
     # robertc: got rid of all the Honda/Acura-specific stuff
     self.brake_only = CP.enableCruise
     self.CP = CP
