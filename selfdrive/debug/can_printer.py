@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+root_dir = "/data/openpilot/"
+
 import os
 import sys
 import struct
