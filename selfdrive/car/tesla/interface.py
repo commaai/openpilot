@@ -349,18 +349,24 @@ class CarInterface(object):
 
     read_only = False
     # sending if read only is False
-    if not read_only:
-        self.CC.update(self.sendcan, c.enabled, self.CS, self.frame, \
-          c.gas, c.brake, c.steeringTorque, \
-          c.cruiseControl.speedOverride, \
-          c.cruiseControl.override, \
-          c.cruiseControl.cancel, \
-          pcm_accel, \
-          hud_v_cruise, c.hudControl.lanesVisible, \
-          hud_show_car = c.hudControl.leadVisible, \
-          hud_alert = hud_alert, \
-          snd_beep = snd_beep, \
-          snd_chime = snd_chime)
+#    if not read_only:
+    # Toyota Version is different: 
+    # self.CC.update(self.sendcan, c.enabled, self.CS, self.frame,
+    #   c.actuators, c.cruiseControl.cancel, c.hudControl.visualAlert,
+    #   c.hudControl.audibleAlert)
+
+# From Tesla PR:
+#        self.CC.update(self.sendcan, c.enabled, self.CS, self.frame, \
+#          c.gas, c.brake, c.steeringTorque, \
+#          c.cruiseControl.speedOverride, \
+#          c.cruiseControl.override, \
+#          c.cruiseControl.cancel, \
+#          pcm_accel, \
+#          hud_v_cruise, c.hudControl.lanesVisible, \
+#          hud_show_car = c.hudControl.leadVisible, \
+#          hud_alert = hud_alert, \
+#          snd_beep = snd_beep, \
+#          snd_chime = snd_chime)
         
     self.frame += 1
     return not (c.enabled and not self.CC.controls_allowed)
