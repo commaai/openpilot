@@ -105,6 +105,7 @@ class CarInterface(object):
     # FIXME: hardcoding honda civic 2016 touring params so they can be used to
     # scale unknown params for other cars
     mass_civic = 2923./2.205 + std_cargo
+    wheelbase_civic = 2.70
     centerToFront_civic = wheelbase_civic * 0.4
     centerToRear_civic = wheelbase_civic - centerToFront_civic
     rotationalInertia_civic = 2500
@@ -112,7 +113,7 @@ class CarInterface(object):
     tireStiffnessRear_civic = 90000
 
     ret.mass = 3045./2.205 + std_cargo
-    ret.wheelbase = 2.70 if candidate in [CAR.PRIUS, CAR.PRIUSP] else 2.65
+    ret.wheelbase = 2.70
     ret.centerToFront = ret.wheelbase * 0.44
     ret.steerRatio = 14.5 #Rav4 2017, TODO: find exact value for Prius
     ret.steerKp, ret.steerKi = 0.6, 0.05
@@ -123,10 +124,7 @@ class CarInterface(object):
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter.
-    if candidate in [CAR.PRIUS, CAR.PRIUSP, CAR.RAV4H]: # rav4 hybrid can do stop and go
-      ret.minEnableSpeed = -1.
-    elif candidate == CAR.RAV4:   # TODO: hack ICE Rav4 to do stop and go
-      ret.minEnableSpeed = 19. * CV.MPH_TO_MS
+    ret.minEnableSpeed = 17. * CV.MPH_TO_MS
 
     centerToRear = ret.wheelbase - ret.centerToFront
     # TODO: get actual value, for now starting with reasonable value for
@@ -174,7 +172,7 @@ class CarInterface(object):
     ret.longitudinalKiV = [0.54, 0.36]
 
     ret.steerRateCost = 1.
-    
+
     return ret
 
   # returns a car.CarState
