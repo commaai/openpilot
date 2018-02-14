@@ -83,6 +83,8 @@ class CarInterface(object):
   @staticmethod
   def get_params(candidate, fingerprint):
 
+    # kg of standard extra cargo to count for drive, gas, etc...
+    std_cargo = 136
     # pedal
     brake_only = True
 
@@ -93,12 +95,65 @@ class CarInterface(object):
     # ret.radarName = "bosch"
     ret.radarName = "mock"
     ret.carFingerprint = candidate
+    ret.safetyModel = car.CarParams.SafetyModels.noOutput
 
     ret.enableSteer = True
     ret.enableBrake = True
     ret.enableGas = not brake_only
-    ret.enableCruise = brake_only
+    ret.enableCruise = brake_only # Shouldn't this be True (like Toyota)
     
+    # FIXME: hardcoding honda civic 2016 touring params so they can be used to
+    # scale unknown params for other cars
+    mass_civic = 2923./2.205 + std_cargo
+    centerToFront_civic = wheelbase_civic * 0.4
+    centerToRear_civic = wheelbase_civic - centerToFront_civic
+    rotationalInertia_civic = 2500
+    tireStiffnessFront_civic = 85400
+    tireStiffnessRear_civic = 90000
+
+    ret.mass = 3045./2.205 + std_cargo
+    ret.wheelbase = 2.70 if candidate in [CAR.PRIUS, CAR.PRIUSP] else 2.65
+    ret.centerToFront = ret.wheelbase * 0.44
+    ret.steerRatio = 14.5 #Rav4 2017, TODO: find exact value for Prius
+    ret.steerKp, ret.steerKi = 0.6, 0.05
+    ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
+
+    ret.longPidDeadzoneBP = [0., 9.]
+    ret.longPidDeadzoneV = [0., .15]
+
+    # min speed to enable ACC. if car can do stop and go, then set enabling speed
+    # to a negative value, so it won't matter.
+    if candidate in [CAR.PRIUS, CAR.PRIUSP, CAR.RAV4H]: # rav4 hybrid can do stop and go
+      ret.minEnableSpeed = -1.
+    elif candidate == CAR.RAV4:   # TODO: hack ICE Rav4 to do stop and go
+      ret.minEnableSpeed = 19. * CV.MPH_TO_MS
+
+    centerToRear = ret.wheelbase - ret.centerToFront
+    # TODO: get actual value, for now starting with reasonable value for
+    # civic and scaling by mass and wheelbase
+    ret.rotationalInertia = rotationalInertia_civic * \
+                            ret.mass * ret.wheelbase**2 / (mass_civic * wheelbase_civic**2)
+
+    # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
+    # mass and CG position, so all cars will have approximately similar dyn behaviors
+    ret.tireStiffnessFront = tireStiffnessFront_civic * \
+                             ret.mass / mass_civic * \
+                             (centerToRear / ret.wheelbase) / (centerToRear_civic / wheelbase_civic)
+    ret.tireStiffnessRear = tireStiffnessRear_civic * \
+                            ret.mass / mass_civic * \
+                            (ret.centerToFront / ret.wheelbase) / (centerToFront_civic / wheelbase_civic)
+
+    # no rear steering, at least on the listed cars above
+    ret.steerRatioRear = 0.
+
+    # steer, gas, brake limitations VS speed
+    ret.steerMaxBP = [16. * CV.KPH_TO_MS, 45. * CV.KPH_TO_MS]  # breakpoints at 1 and 40 kph
+    ret.steerMaxV = [1., 1.]  # 2/3rd torque allowed above 45 kph
+    ret.gasMaxBP = [0.]
+    ret.gasMaxV = [0.5]
+    ret.brakeMaxBP = [5., 20.]
+    ret.brakeMaxV = [1., 0.8]
+
     if candidate == "TESLA CLASSIC MODEL S":
         ret.wheelbase = 2.959
         # This isn't in OP 0.4 (?)
@@ -109,6 +164,17 @@ class CarInterface(object):
     else:
         raise ValueError("unsupported car %s" % candidate)
 
+    ret.steerLimitAlert = False
+    ret.stoppingControl = False
+    ret.startAccel = 0.0
+
+    ret.longitudinalKpBP = [0., 5., 35.]
+    ret.longitudinalKpV = [3.6, 2.4, 1.5]
+    ret.longitudinalKiBP = [0., 35.]
+    ret.longitudinalKiV = [0.54, 0.36]
+
+    ret.steerRateCost = 1.
+    
     return ret
 
   # returns a car.CarState
