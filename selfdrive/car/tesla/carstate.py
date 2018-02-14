@@ -205,7 +205,9 @@ class CarState(object):
     #self.tunnel = cp.vl[643]['LgtSens_Tunnel']
     #self.LgtSens_Twlgt = cp.vl[643]['LgtSens_Twlgt']
 
-
+    #this is a bad idea since in the update loop, but I can't see these values in UI..
+    print ("Speed  Meters/Second: {}".format(self.v_ego))
+    print ("Steering Wheel Angle: {}".format(self.angle_steers))
     ## JCT Action every 1 sec
     if (sec_since_boot() - self.log_interval) > 1:
       
