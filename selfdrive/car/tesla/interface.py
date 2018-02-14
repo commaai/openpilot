@@ -8,6 +8,9 @@ from .carstate import CarState, get_can_parser
 from .carcontroller import CarController, AH
 from selfdrive.boardd.boardd import can_capnp_to_can_list
 
+from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
+from selfdrive.controls.lib.vehicle_model import VehicleModel
+
 from cereal import car
 
 from selfdrive.services import service_list
