@@ -213,10 +213,8 @@ class CarInterface(object):
     #  buttonEvents.append(be)
     ret.buttonEvents = buttonEvents
 
-    # errors
-    # TODO: I don't like the way capnp does enums
-    # These strings aren't checked at compile time
-    errors = []
+    # errors - replaced with events
+    events = []
     if not self.CS.can_valid:
       self.can_invalid_count =0#+= 1
       #print "interface.py line 165, can_invalid_count = " + str(self.can_invalid_count)
@@ -225,25 +223,26 @@ class CarInterface(object):
     else:
       self.can_invalid_count = 0
     if self.CS.steer_error:
-      errors.append('steerUnavailable')
+      events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
     elif self.CS.steer_not_allowed:
-      errors.append('steerTempUnavailable')
+      events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
     if self.CS.brake_error:
-      errors.append('brakeUnavailable')
+      events.append(create_event('brakeUnavailable', [ET.NO_ENTRY, ET.WARNING]))
+      # errors.append('brakeUnavailable') - Maybe wrong new message? 
     if not self.CS.gear_shifter_valid:
-      errors.append('wrongGear')
+      events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if not self.CS.door_all_closed:
-      errors.append('doorOpen')
+      events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if not self.CS.seatbelt:
-      errors.append('seatbeltNotLatched')
+      events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if self.CS.esp_disabled:
-      errors.append('espDisabled')
+      events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if not self.CS.main_on:
-      errors.append('wrongCarMode')
+      events.append(create_event('wrongCarMode', [ET.NO_ENTRY, ET.USER_DISABLE]))
     if self.CS.gear_shifter == 2:
-      errors.append('reverseGear')
+      events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
 
-    ret.errors = errors
+    ret.events = events
     ret.canMonoTimes = canMonoTimes
 
     # cast to reader so it can't be modified
