@@ -36,6 +36,7 @@ interfaces = {
   TOYOTA.COROLLA: ToyotaInterface,
   TOYOTA.LEXUS_RXH: ToyotaInterface,
   TOYOTA.CAMRYH: ToyotaInterface,
+  TOYOTA.CAMRY: ToyotaInterface,
 
   "simulator2": Sim2Interface,
   "mock": MockInterface
