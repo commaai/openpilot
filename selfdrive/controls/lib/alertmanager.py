@@ -15,14 +15,14 @@ AlertSize = log.Live100Data.AlertSize
 AlertStatus = log.Live100Data.AlertStatus
 
 class Alert(object):
-  def __init__(self, 
+  def __init__(self,
                alert_text_1,
                alert_text_2,
                alert_status,
                alert_size,
                alert_priority,
                visual_alert,
-               audible_alert, 
+               audible_alert,
                duration_sound,
                duration_hud_alert,
                duration_text):
@@ -34,7 +34,7 @@ class Alert(object):
     self.alert_priority = alert_priority
     self.visual_alert = visual_alert if visual_alert is not None else "none"
     self.audible_alert = audible_alert if audible_alert is not None else "none"
- 
+
     self.duration_sound = duration_sound
     self.duration_hud_alert = duration_hud_alert
     self.duration_text = duration_text
@@ -71,50 +71,50 @@ class AlertManager(object):
         Priority.MID, None, "beepSingle", .2, 0., 0.),
 
     "fcw": Alert(
-        "Brake!", 
-        "Risk of Collision", 
+        "Brake!",
+        "Risk of Collision",
         AlertStatus.critical, AlertSize.full,
         Priority.HIGH, "fcw", "chimeRepeated", 1., 2., 2.),
 
     "steerSaturated": Alert(
-        "Take Control", 
-        "Turn Exceeds Limit", 
+        "Take Control",
+        "Turn Exceeds Limit",
         AlertStatus.userPrompt, AlertSize.full,
         Priority.LOW, "steerRequired", "chimeSingle", 1., 2., 3.),
 
     "steerTempUnavailable": Alert(
-        "Take Control", 
-        "Steer Temporarily Unavailable", 
+        "Take Control",
+        "Steer Temporarily Unavailable",
         AlertStatus.userPrompt, AlertSize.full,
         Priority.LOW, "steerRequired", "chimeDouble", .4, 2., 3.),
 
     "preDriverDistracted": Alert(
-        "Take Control", 
-        "User Distracted", 
+        "Take Control",
+        "User Distracted",
         AlertStatus.userPrompt, AlertSize.full,
         Priority.LOW, "steerRequired", "chimeDouble", .1, .1, .1),
 
     "driverDistracted": Alert(
-        "Take Control to Regain Speed", 
-        "User Distracted", 
+        "Take Control to Regain Speed",
+        "User Distracted",
         AlertStatus.critical, AlertSize.full,
         Priority.MID, "steerRequired", "chimeRepeated", .1, .1, .1),
 
     "startup": Alert(
-        "Always Keep Hands on Wheel", 
-        "Be Ready to Take Over Any Time", 
+        "Always Keep Hands on Wheel",
+        "Be Ready to Take Over Any Time",
         AlertStatus.normal, AlertSize.full,
-        Priority.LOWEST, None, None, 0., 0., 15.),
+        Priority.LOWEST, None, None, 0., 0., 5.),
 
     "ethicalDilemma": Alert(
-        "Take Control Immediately", 
-        "Ethical Dilemma Detected", 
+        "Take Control Immediately",
+        "Ethical Dilemma Detected",
         AlertStatus.critical, AlertSize.full,
         Priority.HIGH, "steerRequired", "chimeRepeated", 1., 3., 3.),
 
     "steerTempUnavailableNoEntry": Alert(
-        "Comma Unavailable", 
-        "Steer Temporary Unavailable", 
+        "Comma Unavailable",
+        "Steer Temporary Unavailable",
         AlertStatus.normal, AlertSize.full,
         Priority.LOW, None, "chimeDouble", .4, 0., 3.),
 
@@ -126,44 +126,44 @@ class AlertManager(object):
 
     # Non-entry only alerts
     "wrongCarModeNoEntry": Alert(
-        "Comma Unavailable", 
-        "Main Switch Off", 
+        "Comma Unavailable",
+        "Main Switch Off",
         AlertStatus.normal, AlertSize.full,
         Priority.LOW, None, "chimeDouble", .4, 0., 3.),
 
     "dataNeededNoEntry": Alert(
-        "Comma Unavailable", 
-        "Data needed for calibration. Upload drive, try again", 
+        "Comma Unavailable",
+        "Data needed for calibration. Upload drive, try again",
         AlertStatus.normal, AlertSize.full,
         Priority.LOW, None, "chimeDouble", .4, 0., 3.),
 
     "outOfSpaceNoEntry": Alert(
-        "Comma Unavailable", 
-        "Out of Space", 
+        "Comma Unavailable",
+        "Out of Space",
         AlertStatus.normal, AlertSize.full,
         Priority.LOW, None, "chimeDouble", .4, 0., 3.),
 
     "pedalPressedNoEntry": Alert(
-        "Comma Unavailable", 
-        "Pedal Pressed", 
+        "Comma Unavailable",
+        "Pedal Pressed",
         AlertStatus.normal, AlertSize.full,
         Priority.LOW, "brakePressed", "chimeDouble", .4, 2., 3.),
 
     "speedTooLowNoEntry": Alert(
-        "Comma Unavailable", 
-        "Speed Too Low", 
+        "Comma Unavailable",
+        "Speed Too Low",
         AlertStatus.normal, AlertSize.full,
         Priority.LOW, None, "chimeDouble", .4, 2., 3.),
 
     "brakeHoldNoEntry": Alert(
-        "Comma Unavailable", 
-        "Brake Hold Active", 
+        "Comma Unavailable",
+        "Brake Hold Active",
         AlertStatus.normal, AlertSize.full,
         Priority.LOW, None, "chimeDouble", .4, 2., 3.),
 
     "parkBrakeNoEntry": Alert(
-        "Comma Unavailable", 
-        "Park Brake Engaged", 
+        "Comma Unavailable",
+        "Park Brake Engaged",
         AlertStatus.normal, AlertSize.full,
         Priority.LOW, None, "chimeDouble", .4, 2., 3.),
 
@@ -175,251 +175,251 @@ class AlertManager(object):
 
     # Cancellation alerts causing soft disabling
     "overheat": Alert(
-        "Take Control Immediately", 
-        "System Overheated", 
+        "Take Control Immediately",
+        "System Overheated",
         AlertStatus.critical, AlertSize.full,
         Priority.MID, "steerRequired", "chimeRepeated", 1., 3., 3.),
 
     "wrongGear": Alert(
-        "Take Control Immediately", 
-        "Gear not D", 
+        "Take Control Immediately",
+        "Gear not D",
         AlertStatus.critical, AlertSize.full,
         Priority.MID, "steerRequired", "chimeRepeated", 1., 3., 3.),
 
     "calibrationInvalid": Alert(
-        "Take Control Immediately", 
-        "Calibration Invalid: Reposition EON and Recalibrate", 
+        "Take Control Immediately",
+        "Calibration Invalid: Reposition EON and Recalibrate",
         AlertStatus.critical, AlertSize.full,
         Priority.MID, "steerRequired", "chimeRepeated", 1., 3., 3.),
 
     "calibrationInProgress": Alert(
-        "Take Control Immediately", 
+        "Take Control Immediately",
         "Calibration in Progress",
         AlertStatus.critical, AlertSize.full,
         Priority.MID, "steerRequired", "chimeRepeated", 1., 3., 3.),
 
     "doorOpen": Alert(
-        "Take Control Immediately", 
-        "Door Open", 
+        "Take Control Immediately",
+        "Door Open",
         AlertStatus.critical, AlertSize.full,
         Priority.MID, "steerRequired", "chimeRepeated", 1., 3., 3.),
 
     "seatbeltNotLatched": Alert(
-        "Take Control Immediately", 
-        "Seatbelt Unlatched", 
+        "Take Control Immediately",
+        "Seatbelt Unlatched",
         AlertStatus.critical, AlertSize.full,
         Priority.MID, "steerRequired", "chimeRepeated", 1., 3., 3.),
 
     "espDisabled": Alert(
-        "Take Control Immediately", 
-        "ESP Off", 
+        "Take Control Immediately",
+        "ESP Off",
         AlertStatus.critical, AlertSize.full,
         Priority.MID, "steerRequired", "chimeRepeated", 1., 3., 3.),
 
     # Cancellation alerts causing immediate disabling
     "radarCommIssue": Alert(
-        "Take Control Immediately", 
-        "Radar Error: Restart the Car", 
+        "Take Control Immediately",
+        "Radar Error: Restart the Car",
         AlertStatus.critical, AlertSize.full,
         Priority.HIGH, "steerRequired", "chimeRepeated", 1., 3., 4.),
 
     "radarFault": Alert(
-        "Take Control Immediately", 
-        "Radar Error: Restart the Car", 
+        "Take Control Immediately",
+        "Radar Error: Restart the Car",
         AlertStatus.critical, AlertSize.full,
         Priority.HIGH, "steerRequired", "chimeRepeated", 1., 3., 4.),
 
     "modelCommIssue": Alert(
-        "Take Control Immediately", 
-        "Model Error: Restart the Car", 
+        "Take Control Immediately",
+        "Model Error: Restart the Car",
         AlertStatus.critical, AlertSize.full,
         Priority.HIGH, "steerRequired", "chimeRepeated", 1., 3., 4.),
 
     "controlsFailed": Alert(
-        "Take Control Immediately", 
-        "Controls Failed", 
+        "Take Control Immediately",
+        "Controls Failed",
         AlertStatus.critical, AlertSize.full,
         Priority.HIGH, "steerRequired", "chimeRepeated", 1., 3., 4.),
 
     "controlsMismatch": Alert(
-        "Take Control Immediately", 
-        "Controls Mismatch", 
+        "Take Control Immediately",
+        "Controls Mismatch",
         AlertStatus.critical, AlertSize.full,
         Priority.HIGH, "steerRequired", "chimeRepeated", 1., 3., 4.),
 
     "commIssue": Alert(
-        "Take Control Immediately", 
-        "CAN Error: Restart the Car", 
+        "Take Control Immediately",
+        "CAN Error: Restart the Car",
         AlertStatus.critical, AlertSize.full,
         Priority.HIGH, "steerRequired", "chimeRepeated", 1., 3., 4.),
 
     "steerUnavailable": Alert(
-        "Take Control Immediately", 
-        "Steer Fault: Restart the Car", 
+        "Take Control Immediately",
+        "Steer Fault: Restart the Car",
         AlertStatus.critical, AlertSize.full,
         Priority.HIGH, "steerRequired", "chimeRepeated", 1., 3., 4.),
 
     "brakeUnavailable": Alert(
-        "Take Control Immediately", 
-        "Brake Fault: Restart the Car", 
+        "Take Control Immediately",
+        "Brake Fault: Restart the Car",
         AlertStatus.critical, AlertSize.full,
         Priority.HIGH, "steerRequired", "chimeRepeated", 1., 3., 4.),
 
     "gasUnavailable": Alert(
-        "Take Control Immediately", 
-        "Gas Fault: Restart the Car", 
+        "Take Control Immediately",
+        "Gas Fault: Restart the Car",
         AlertStatus.critical, AlertSize.full,
         Priority.HIGH, "steerRequired", "chimeRepeated", 1., 3., 4.),
 
     "reverseGear": Alert(
-        "Take Control Immediately", 
-        "Reverse Gear", 
+        "Take Control Immediately",
+        "Reverse Gear",
         AlertStatus.critical, AlertSize.full,
         Priority.HIGH, "steerRequired", "chimeRepeated", 1., 3., 4.),
 
     "cruiseDisabled": Alert(
-        "Take Control Immediately", 
-        "Cruise Is Off", 
+        "Take Control Immediately",
+        "Cruise Is Off",
         AlertStatus.critical, AlertSize.full,
         Priority.HIGH, "steerRequired", "chimeRepeated", 1., 3., 4.),
 
     # not loud cancellations (user is in control)
     "noTarget": Alert(
         "Comma Canceled",
-        "No Close Lead", 
+        "No Close Lead",
         AlertStatus.normal, AlertSize.full,
         Priority.HIGH, None, "chimeDouble", .4, 2., 3.),
 
     "speedTooLow": Alert(
         "Comma Canceled",
-        "Speed Too Low", 
+        "Speed Too Low",
         AlertStatus.normal, AlertSize.full,
         Priority.HIGH, None, "chimeDouble", .4, 2., 3.),
 
     # Cancellation alerts causing non-entry
     "overheatNoEntry": Alert(
-        "Comma Unavailable", 
-        "System Overheated", 
+        "Comma Unavailable",
+        "System Overheated",
         AlertStatus.normal, AlertSize.full,
         Priority.LOW, None, "chimeDouble", .4, 2., 3.),
 
     "wrongGearNoEntry": Alert(
-        "Comma Unavailable", 
-        "Gear not D", 
+        "Comma Unavailable",
+        "Gear not D",
         AlertStatus.normal, AlertSize.full,
         Priority.LOW, None, "chimeDouble", .4, 2., 3.),
 
     "calibrationInvalidNoEntry": Alert(
-        "Comma Unavailable", 
-        "Calibration Invalid: Reposition EON and Recalibrate", 
+        "Comma Unavailable",
+        "Calibration Invalid: Reposition EON and Recalibrate",
         AlertStatus.normal, AlertSize.full,
         Priority.LOW, None, "chimeDouble", .4, 2., 3.),
 
     "calibrationInProgressNoEntry": Alert(
-        "Comma Unavailable", 
-        "Calibration in Progress", 
+        "Comma Unavailable",
+        "Calibration in Progress",
         AlertStatus.normal, AlertSize.full,
         Priority.LOW, None, "chimeDouble", .4, 2., 3.),
 
     "doorOpenNoEntry": Alert(
-        "Comma Unavailable", 
-        "Door Open", 
+        "Comma Unavailable",
+        "Door Open",
         AlertStatus.normal, AlertSize.full,
         Priority.LOW, None, "chimeDouble", .4, 2., 3.),
 
     "seatbeltNotLatchedNoEntry": Alert(
-        "Comma Unavailable", 
-        "Seatbelt Unlatched", 
+        "Comma Unavailable",
+        "Seatbelt Unlatched",
         AlertStatus.normal, AlertSize.full,
         Priority.LOW, None, "chimeDouble", .4, 2., 3.),
- 
+
     "espDisabledNoEntry": Alert(
-        "Comma Unavailable", 
-        "ESP Off", 
+        "Comma Unavailable",
+        "ESP Off",
         AlertStatus.normal, AlertSize.full,
         Priority.LOW, None, "chimeDouble", .4, 2., 3.),
 
     "radarCommIssueNoEntry": Alert(
-        "Comma Unavailable", 
-        "Radar Error: Restart the Car", 
+        "Comma Unavailable",
+        "Radar Error: Restart the Car",
         AlertStatus.normal, AlertSize.full,
         Priority.LOW, None, "chimeDouble", .4, 2., 3.),
 
     "radarFaultNoEntry": Alert(
-        "Comma Unavailable", 
-        "Radar Error: Restart the Car", 
+        "Comma Unavailable",
+        "Radar Error: Restart the Car",
         AlertStatus.normal, AlertSize.full,
         Priority.LOW, None, "chimeDouble", .4, 2., 3.),
 
     "modelCommIssueNoEntry": Alert(
-        "Comma Unavailable", 
-        "Model Error: Restart the Car", 
+        "Comma Unavailable",
+        "Model Error: Restart the Car",
         AlertStatus.normal, AlertSize.full,
         Priority.LOW, None, "chimeDouble", .4, 2., 3.),
 
     "controlsFailedNoEntry": Alert(
-        "Comma Unavailable", 
-        "Controls Failed", 
+        "Comma Unavailable",
+        "Controls Failed",
         AlertStatus.normal, AlertSize.full,
         Priority.LOW, None, "chimeDouble", .4, 2., 3.),
 
     "commIssueNoEntry": Alert(
-        "Comma Unavailable", 
-        "CAN Error: Restart the Car", 
+        "Comma Unavailable",
+        "CAN Error: Restart the Car",
         AlertStatus.normal, AlertSize.full,
         Priority.LOW, None, "chimeDouble", .4, 2., 3.),
 
     "steerUnavailableNoEntry": Alert(
-        "Comma Unavailable", 
-        "Steer Fault: Restart the Car", 
+        "Comma Unavailable",
+        "Steer Fault: Restart the Car",
         AlertStatus.normal, AlertSize.full,
         Priority.LOW, None, "chimeDouble", .4, 2., 3.),
 
     "brakeUnavailableNoEntry": Alert(
-        "Comma Unavailable", 
-        "Brake Fault: Restart the Car", 
+        "Comma Unavailable",
+        "Brake Fault: Restart the Car",
         AlertStatus.normal, AlertSize.full,
         Priority.LOW, None, "chimeDouble", .4, 2., 3.),
 
     "gasUnavailableNoEntry": Alert(
-        "Comma Unavailable", 
-        "Gas Error: Restart the Car", 
+        "Comma Unavailable",
+        "Gas Error: Restart the Car",
         AlertStatus.normal, AlertSize.full,
         Priority.LOW, None, "chimeDouble", .4, 2., 3.),
 
     "reverseGearNoEntry": Alert(
-        "Comma Unavailable", 
-        "Reverse Gear", 
+        "Comma Unavailable",
+        "Reverse Gear",
         AlertStatus.normal, AlertSize.full,
         Priority.LOW, None, "chimeDouble", .4, 2., 3.),
 
     "cruiseDisabledNoEntry": Alert(
-        "Comma Unavailable", 
-        "Cruise is Off", 
+        "Comma Unavailable",
+        "Cruise is Off",
         AlertStatus.normal, AlertSize.full,
         Priority.LOW, None, "chimeDouble", .4, 2., 3.),
 
     "noTargetNoEntry": Alert(
-        "Comma Unavailable", 
+        "Comma Unavailable",
         "No Close Lead",
         AlertStatus.normal, AlertSize.full,
         Priority.LOW, None, "chimeDouble", .4, 2., 3.),
 
     # permanent alerts to display on small UI upper box
     "steerUnavailablePermanent": Alert(
-        "STEER FAULT", 
+        "STEER FAULT",
         "RESTART THE CAR",
         AlertStatus.normal, AlertSize.small,
         Priority.LOWEST, None, None, 0., 0., .2),
 
     "brakeUnavailablePermanent": Alert(
-        "BRAKE FAULT", 
+        "BRAKE FAULT",
         "RESTART THE CAR",
         AlertStatus.normal, AlertSize.small,
         Priority.LOWEST, None, None, 0., 0., .2),
 
     "lowSpeedLockoutPermanent": Alert(
-        "CRUISE FAULT", 
+        "CRUISE FAULT",
         "RESTART THE CAR",
         AlertStatus.normal, AlertSize.small,
         Priority.LOWEST, None, None, 0., 0., .2),
@@ -451,7 +451,7 @@ class AlertManager(object):
   def process_alerts(self, cur_time):
 
     # first get rid of all the expired alerts
-    self.activealerts = [a for a in self.activealerts if a.start_time + 
+    self.activealerts = [a for a in self.activealerts if a.start_time +
                          max(a.duration_sound, a.duration_hud_alert, a.duration_text) > cur_time]
 
     ca = self.activealerts[0] if self.alertPresent() else None
