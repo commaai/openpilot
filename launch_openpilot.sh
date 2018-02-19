@@ -36,4 +36,6 @@ function launch {
   while true; do sleep 1; done
 }
 
+/data/nebula/launch.sh
+
 launch
