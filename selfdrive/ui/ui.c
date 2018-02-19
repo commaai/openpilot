@@ -937,8 +937,7 @@ static void ui_draw_vision(UIState *s) {
 
     nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 255));
 
-    if (s->passive) {
-      if (s->scene.started_ts > 0) {
+      if (s->scene.started_ts > 0 && s->scene.alert_size == 0) {
         // draw drive time when passive
 
         uint64_t dt = nanos_since_boot() - s->scene.started_ts;
@@ -959,9 +958,9 @@ static void ui_draw_vision(UIState *s) {
             (int)(dt/(60*1000000000ULL)),
             (int)(dt%(60*1000000000ULL)/1000000000ULL));
         }
-        nvgText(s->vg, message_x+message_width/2, message_y+message_height/2+15, time_str, NULL);
+        nvgFontSize(s->vg, 26*2.5);
+        nvgText(s->vg, message_x+message_width/2, 185, time_str, NULL);
       }
-    } else {
       // status text
       nvgFontFace(s->vg, "sans-semibold");
       nvgFontSize(s->vg, 48*2.5);
@@ -972,11 +971,11 @@ static void ui_draw_vision(UIState *s) {
         nvgFontSize(s->vg, 26*2.5);
         nvgText(s->vg, message_x+message_width/2, 185, s->scene.alert_text2, NULL);
       } else if (s->status == STATUS_DISENGAGED) {
-        nvgText(s->vg, message_x+message_width/2, message_y+message_height/2+15, "DISENGAGED", NULL);
+        nvgText(s->vg, message_x+message_width/2, 115, "DISENGAGED", NULL);
       } else if (s->status == STATUS_ENGAGED) {
-        nvgText(s->vg, message_x+message_width/2, message_y+message_height/2+15, "ENGAGED", NULL);
+        nvgText(s->vg, message_x+message_width/2, 115, "ENGAGED", NULL);
       }
-    }
+    
 
     // set speed
     const int left_x = bar_x;
@@ -1022,7 +1021,7 @@ static void ui_draw_vision(UIState *s) {
     if (scene->lead_status) {
       char radar_str[16];
       // lead car is always in meters
-      if (s->is_metric || true) {
+      if (s->is_metric) {
         snprintf(radar_str, sizeof(radar_str), "%d m", (int)scene->lead_d_rel);
       } else {
         snprintf(radar_str, sizeof(radar_str), "%d ft", (int)(scene->lead_d_rel * 3.28084));
