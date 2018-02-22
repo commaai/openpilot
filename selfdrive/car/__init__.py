@@ -26,7 +26,7 @@ interfaces = {
   HONDA.ACURA_ILX: HondaInterface,
   HONDA.CRV: HondaInterface,
   HONDA.ODYSSEY: HondaInterface,
-  HONDA.ACURA_RDX: HondaInterface,  
+  HONDA.ACURA_RDX: HondaInterface,
   HONDA.PILOT: HondaInterface,
 
 
@@ -35,6 +35,7 @@ interfaces = {
   TOYOTA.RAV4H: ToyotaInterface,
   TOYOTA.COROLLA: ToyotaInterface,
   TOYOTA.LEXUS_RXH: ToyotaInterface,
+  TOYOTA.CHR: ToyotaInterface,
 
   "simulator2": Sim2Interface,
   "mock": MockInterface
