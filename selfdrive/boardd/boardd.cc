@@ -35,6 +35,7 @@
 #define SAFETY_HONDA 1
 #define SAFETY_TOYOTA 2
 #define SAFETY_ELM327 0xE327
+#define SAFETY_GM 3
 
 namespace {
 
@@ -94,6 +95,9 @@ void *safety_setter_thread(void *s) {
     break;
   case (int)cereal::CarParams::SafetyModels::ELM327:
     safety_setting = SAFETY_ELM327;
+    break;
+  case (int)cereal::CarParams::SafetyModels::GM:
+    safety_setting = SAFETY_GM;
     break;
   default:
     LOGE("unknown safety model: %d", safety_model);
