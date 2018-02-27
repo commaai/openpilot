@@ -1,7 +1,5 @@
 import os
-from cereal import car
 from common.numpy_fast import interp
-import selfdrive.messaging as messaging
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from common.kalman.simple_kalman import KF1D
@@ -23,7 +21,8 @@ def parse_gear_shifter(can_gear_shifter, car_fingerprint):
       return "drive"
     elif can_gear_shifter == 0xa:
       return "sport"
-  elif car_fingerprint in (CAR.CIVIC, CAR.CRV):
+
+  elif car_fingerprint in (CAR.CIVIC, CAR.CRV, CAR.ACURA_RDX):
     if can_gear_shifter == 0x4:
       return "neutral"
     elif can_gear_shifter == 0x8:
@@ -32,6 +31,16 @@ def parse_gear_shifter(can_gear_shifter, car_fingerprint):
       return "sport"
     elif can_gear_shifter == 0x20:
       return "low"
+    
+  elif car_fingerprint in (CAR.PILOT):
+     if can_gear_shifter == 0x8:
+       return "reverse"
+     elif can_gear_shifter == 0x4:
+       return "park"
+     elif can_gear_shifter == 0x20:
+       return "drive"
+     elif can_gear_shifter == 0x2:
+        return "sport"
 
   return "unknown"
 
@@ -115,13 +124,19 @@ def get_can_signals(CP):
   elif CP.carFingerprint == CAR.CRV:
     dbc_f = 'honda_crv_touring_2016_can_generated.dbc'
     signals += [("MAIN_ON", "SCM_BUTTONS", 0)]
+  elif CP.carFingerprint == CAR.ACURA_RDX:
+    dbc_f = 'acura_rdx_2018_can_generated.dbc'
+    signals += [("MAIN_ON", "SCM_BUTTONS", 0)]
   elif CP.carFingerprint == CAR.ODYSSEY:
     dbc_f = 'honda_odyssey_exl_2018_generated.dbc'
-    signals += [("CAR_GAS", "GAS_PEDAL_2", 0),
-                ("MAIN_ON", "SCM_FEEDBACK", 0),
+    signals += [("MAIN_ON", "SCM_FEEDBACK", 0),
                 ("EPB_STATE", "EPB_STATUS", 0),
                 ("BRAKE_HOLD_ACTIVE", "VSA_STATUS", 0)]
     checks += [("EPB_STATUS", 50)]
+  elif CP.carFingerprint == CAR.PILOT:
+    dbc_f = 'honda_pilot_touring_2017_can_generated.dbc'
+    signals += [("MAIN_ON", "SCM_BUTTONS", 0),
+                ("CAR_GAS", "GAS_PEDAL_2", 0)]
 
   # add gas interceptor reading if we are using it
   if CP.enableGas:
@@ -184,9 +199,9 @@ class CarState(object):
                                     cp.vl["DOORS_STATUS"]['DOOR_OPEN_RL'], cp.vl["DOORS_STATUS"]['DOOR_OPEN_RR']])
     self.seatbelt = not cp.vl["SEATBELT_STATUS"]['SEATBELT_DRIVER_LAMP'] and cp.vl["SEATBELT_STATUS"]['SEATBELT_DRIVER_LATCHED']
 
-    # 2 = temporary 4 = temporary, hit a bump 5 (permanent) 6 = temporary 7 (permanent)
+    # 2 = temporary 3= TBD 4 = temporary, hit a bump 5 (permanent) 6 = temporary 7 (permanent)
     # TODO: Use values from DBC to parse this field
-    self.steer_error = cp.vl["STEER_STATUS"]['STEER_STATUS'] not in [0, 2, 4, 6]
+    self.steer_error = cp.vl["STEER_STATUS"]['STEER_STATUS'] not in [0, 2, 3, 4, 6]
     self.steer_not_allowed = cp.vl["STEER_STATUS"]['STEER_STATUS'] != 0
     self.brake_error = cp.vl["STANDSTILL"]['BRAKE_ERROR_1'] or cp.vl["STANDSTILL"]['BRAKE_ERROR_2']
     self.esp_disabled = cp.vl["VSA_STATUS"]['ESP_DISABLED']
@@ -235,6 +250,7 @@ class CarState(object):
     else:
       self.park_brake = 0  # TODO
       self.brake_hold = 0  # TODO
+
       self.main_on = cp.vl["SCM_BUTTONS"]['MAIN_ON']
 
     self.cruise_speed_offset = calc_cruise_offset(cp.vl["CRUISE_PARAMS"]['CRUISE_SPEED_OFFSET'], self.v_ego)
@@ -242,12 +258,16 @@ class CarState(object):
 
     self.pedal_gas = cp.vl["POWERTRAIN_DATA"]['PEDAL_GAS']
     # crv doesn't include cruise control
-    if self.CP.carFingerprint != CAR.CRV:
-      self.car_gas = cp.vl["GAS_PEDAL_2"]['CAR_GAS']
-    else:
+    if self.CP.carFingerprint in (CAR.CRV, CAR.ODYSSEY, CAR.ACURA_RDX):
       self.car_gas = self.pedal_gas
+    else:
+      self.car_gas = cp.vl["GAS_PEDAL_2"]['CAR_GAS']
 
-    self.steer_override = abs(cp.vl["STEER_STATUS"]['STEER_TORQUE_SENSOR']) > 1200
+    #rdx has different steer override threshold
+    if self.CP.carFingerprint in (CAR.ACURA_RDX):
+      self.steer_override = abs(cp.vl["STEER_STATUS"]['STEER_TORQUE_SENSOR']) > 400
+    else:
+      self.steer_override = abs(cp.vl["STEER_STATUS"]['STEER_TORQUE_SENSOR']) > 1200
     self.steer_torque_driver = cp.vl["STEER_STATUS"]['STEER_TORQUE_SENSOR']
 
     # brake switch has shown some single time step noise, so only considered when
@@ -270,7 +290,6 @@ class CarState(object):
 if __name__ == '__main__':
   import zmq
   import time
-  from selfdrive.services import service_list
   context = zmq.Context()
 
   class CarParams(object):

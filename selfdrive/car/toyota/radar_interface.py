@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import os
-import numpy as np
 from selfdrive.can.parser import CANParser
 from cereal import car
 from common.realtime import sec_since_boot
@@ -14,7 +13,6 @@ RADAR_MSGS = range(0x210, 0x220)
 def _create_radard_can_parser():
   dbc_f = 'toyota_prius_2017_adas.dbc'
   msg_n = len(RADAR_MSGS)
-  msg_last = RADAR_MSGS[-1]
   signals = zip(['LONG_DIST'] * msg_n + ['NEW_TRACK'] * msg_n + ['LAT_DIST'] * msg_n +
                 ['REL_SPEED'] * msg_n + ['VALID'] * msg_n,
                 RADAR_MSGS * 5,
@@ -45,7 +43,7 @@ class RadarInterface(object):
     while 1:
       tm = int(sec_since_boot() * 1e9)
       updated_messages.update(self.rcp.update(tm, True))
-      # TODO: use msg_last
+      # TODO: do not hardcode last msg
       if 0x21f in updated_messages:
         break
 

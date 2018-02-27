@@ -4,7 +4,6 @@ os.environ['FAKEUPLOAD'] = "1"
 from common.testing import phone_only
 from selfdrive.manager import manager_init, manager_prepare
 from selfdrive.manager import start_managed_process, kill_managed_process, get_running
-from selfdrive.config import CruiseButtons
 from functools import wraps
 import time
 

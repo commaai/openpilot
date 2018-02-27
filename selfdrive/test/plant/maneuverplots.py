@@ -63,7 +63,7 @@ class ManeuverPlot(object):
 
 
   def write_plot(self, path, maneuver_name):
-    title = self.title or maneuver_name
+    # title = self.title or maneuver_name
     # TODO: Missing plots from the old one:
     # long_control_state
     # proportional_gb, intergral_gb

@@ -67,7 +67,7 @@ typedef struct {
 
 void* can_init(int bus, const char* dbc_name,
               size_t num_message_options, const MessageParseOptions* message_options,
-              size_t num_signal_options, const SignalParseOptions* signal_options);
+              size_t num_signal_options, const SignalParseOptions* signal_options, bool sendcan);
 
 void can_update(void* can, uint64_t sec, bool wait);
 
@@ -77,8 +77,7 @@ const DBC* dbc_lookup(const char* dbc_name);
 
 void* canpack_init(const char* dbc_name);
 
-uint64_t canpack_pack(void* inst, uint32_t address, size_t num_vals, const SignalPackValue *vals);
-
+uint64_t canpack_pack(void* inst, uint32_t address, size_t num_vals, const SignalPackValue *vals, int counter);
 """)
 
 libdbc = ffi.dlopen(libdbc_fn)

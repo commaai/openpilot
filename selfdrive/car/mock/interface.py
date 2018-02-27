@@ -1,14 +1,9 @@
 #!/usr/bin/env python
-import os
-import time
 import zmq
-from common.realtime import sec_since_boot
-import common.numpy_fast as np
 from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.services import service_list
 import selfdrive.messaging as messaging
-from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 
 # mocked car interface to work with chffrplus
 TS = 0.01  # 100Hz
@@ -110,7 +105,6 @@ class CarInterface(object):
     ret.steeringAngle = curvature * self.CP.steerRatio * self.CP.wheelbase * CV.RAD_TO_DEG
 
     events = []
-    #events.append(create_event('passive', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     ret.events = events
 
     return ret.as_reader()

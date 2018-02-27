@@ -42,7 +42,7 @@ Honda/Acura
   - Honda CAN uses both a counter and a checksum to ensure integrity and prevent
     replay of the same message.
 
-Toyota
+Toyota/Lexus
 ------
 
   - While the system is engaged, gas, brake and steer limits are subject to the same limits used by
@@ -59,7 +59,7 @@ Toyota
     software to a value of -1500 and 1500. In addition, the vehicle EPS unit will not respond to
     commands outside these limits.  A steering torque rate limit is enforced by the board and in
     software so that the commanded steering torque must rise from 0 to max value no faster than
-    1.5s. Commanded steering torque is limited by the board and in software to be no more than 500
+    1.5s. Commanded steering torque is limited by the board and in software to be no more than 350
     units above the actual EPS generated motor torque to ensure limited differences between
     commanded and actual torques.
 
