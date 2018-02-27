@@ -21,10 +21,10 @@ function launch {
   #kill $spin_pid
 
   # check if NEOS update is required
-  while [ "$(cat /VERSION)" -lt 4 ] && [ ! -e /data/media/0/noupdate ]; do
-    curl -o /tmp/updater https://neos.comma.ai/updater && chmod +x /tmp/updater && /tmp/updater
-    sleep 10
-  done
+  #while [ "$(cat /VERSION)" -lt 4 ] && [ ! -e /data/media/0/noupdate ]; do
+  #  curl -o /tmp/updater https://neos.comma.ai/updater && chmod +x /tmp/updater && /tmp/updater
+  #  sleep 10
+  #done
 
   export PYTHONPATH="$PWD"
 
