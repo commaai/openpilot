@@ -25,7 +25,7 @@ CAMERA_MSGS = [0xe4, 0x194]
 
 def compute_gb_honda(accel, speed):
   creep_brake = 0.0
-  creep_speed = 4.6
+  creep_speed = 4.8
   creep_brake_value = 0.15
   if speed < creep_speed:
     creep_brake = (creep_speed - speed) / creep_speed * creep_brake_value
@@ -202,7 +202,7 @@ class CarInterface(object):
       ret.longitudinalKpBP = [0., 5., 35.]
       ret.longitudinalKpV = [1.2, 0.8, 0.5]
       ret.longitudinalKiBP = [0., 35.]
-      ret.longitudinalKiV = [0.18, 0.12]  
+      ret.longitudinalKiV = [0.18, 0.12]
     elif candidate == CAR.ODYSSEY:
       stop_and_go = False
       ret.mass = 4354./2.205 + std_cargo
