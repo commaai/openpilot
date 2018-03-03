@@ -494,9 +494,9 @@ def manager_thread():
         kill_managed_process(p)
 
       # shutdown if the battery gets lower than 5%, we aren't running, and we are discharging
-      if msg.thermal.batteryPercent < 5 and msg.thermal.batteryStatus == "Discharging" and battery_was_high:
+      if msg.thermal.batteryPercent < 50 and msg.thermal.batteryStatus == "Discharging" and battery_was_high:
         os.system('LD_LIBRARY_PATH="" svc power shutdown')
-      if msg.thermal.batteryPercent > 10:
+      if msg.thermal.batteryPercent > 60:
         battery_was_high = True
 
     # check the status of all processes, did any of them die?
