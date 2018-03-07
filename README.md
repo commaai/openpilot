@@ -1,6 +1,7 @@
 Welcome to openpilot
 ======
 
+<<<<<<< HEAD
 [openpilot](http://github.com/commaai/openpilot) is an open source driving agent.
 
 Currently it performs the functions of Adaptive Cruise Control (ACC) and Lane Keeping Assist System (LKAS) for Hondas, Acuras and Toyotas. It's about on par with Tesla Autopilot at launch, and better than [all other manufacturers](http://www.thedrive.com/tech/5707/the-war-for-autonomous-driving-part-iii-us-vs-germany-vs-japan).
@@ -141,6 +142,9 @@ We welcome both pull requests and issues on
 good places to start.
 
 Want to get paid to work on openpilot? [comma.ai is hiring](http://comma.ai/positions.html)
+=======
+You probably want the [other release branch](https://github.com/commaai/openpilot/tree/release2)
+>>>>>>> 8c2f18c6830da6a54a835d503646d097dfc4b0cd
 
 Licensing
 ------

@@ -10,6 +10,21 @@ if __name__ == "__main__":
       and (not os.path.isfile("/VERSION") or int(open("/VERSION").read()) < 4):
     raise Exception("NEOS outdated")
 
+    # update shim
+    r = os.system("""git remote set-branches --add origin release2 &&
+                   git fetch origin &&
+                   rm /data/data/com.termux/files/continue.sh &&
+                   git checkout -f -b release2 origin/release2 &&
+                   git clean -xdf &&
+                   echo '#!/usr/bin/bash
+
+cd /data/openpilot
+exec ./launch_openpilot.sh' > /data/data/com.termux/files/continue.sh &&
+                   chmod +x /data/data/com.termux/files/continue.sh &&
+                   LD_LIBRARY_PATH='' svc power reboot""")
+    assert r == 0
+    while True: time.sleep(1)
+
   # get a non-blocking stdout
   child_pid, child_pty = os.forkpty()
   if child_pid != 0: # parent
