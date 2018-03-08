@@ -58,4 +58,4 @@ def check_ecu_msgs(fingerprint, candidate, ecu):
                                             candidate in x[2] and
                                             x[3] == 0)]
 
-return any(msg for msg in fingerprint if msg in ecu_msgs)
+ return any(msg for msg in fingerprint if msg in ecu_msgs)
