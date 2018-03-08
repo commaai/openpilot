@@ -47,10 +47,6 @@ def get_can_parser(CP):
     dbc_f = 'toyota_corolla_2017_pt_generated.dbc'
   elif CP.carFingerprint == CAR.LEXUS_RXH:
     dbc_f = 'lexus_rx_hybrid_2017_pt_generated.dbc'
-  elif CP.carFingerprint == CAR.CAMRYH:
-    dbc_f = 'toyota_camry_hybrid_2018_pt_generated.dbc'
-  elif CP.carFingerprint == CAR.CAMRY:
-    dbc_f = 'toyota_camry_2018_pt_generated.dbc'
   elif CP.carFingerprint == CAR.HIGHLANDERH:
     dbc_f = 'toyota_rav4_hybrid_2017_pt_generated.dbc'
 
