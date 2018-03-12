@@ -83,7 +83,7 @@ class CarInterface(object):
     elif candidate in [CAR.RAV4, CAR.RAV4H]:
       ret.safetyParam = 73  # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.65
-      ret.steerRatio = 14.5 # Rav4 2017
+      ret.steerRatio = 14. # Rav4 2018
       ret.mass = 4100./2.205 + std_cargo  # mean between normal and hybrid
       ret.steerKp, ret.steerKi = 0.6, 0.05
       ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
