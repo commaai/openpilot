@@ -129,7 +129,10 @@ class CarInterface(object):
     ret.carName = "honda"
     ret.carFingerprint = candidate
 
-    ret.safetyModel = car.CarParams.SafetyModels.honda
+    if 0x1ef in fingerprint:
+      ret.safetyModel = car.CarParams.SafetyModels.hondaBosch
+    else:
+      ret.safetyModel = car.CarParams.SafetyModels.honda
 
     ret.enableSteer = True
     ret.enableBrake = True
@@ -151,21 +154,7 @@ class CarInterface(object):
     tireStiffnessFront_civic = 85400
     tireStiffnessRear_civic = 90000
 
-    if candidate == CAR.CIVIC:
-      stop_and_go = True
-      ret.mass = mass_civic
-      ret.wheelbase = wheelbase_civic
-      ret.centerToFront = centerToFront_civic
-      ret.steerRatio = 13.0
-      # Civic at comma has modified steering FW, so different tuning for the Neo in that car
-      is_fw_modified = os.getenv("DONGLE_ID") in ['99c94dc769b5d96e']
-      ret.steerKp, ret.steerKi = [0.4, 0.12] if is_fw_modified else [0.8, 0.24]
-
-      ret.longitudinalKpBP = [0., 5., 35.]
-      ret.longitudinalKpV = [3.6, 2.4, 1.5]
-      ret.longitudinalKiBP = [0., 35.]
-      ret.longitudinalKiV = [0.54, 0.36]
-    elif candidate == CAR.ACURA_ILX:
+    if candidate == CAR.ACURA_ILX:
       stop_and_go = False
       ret.mass = 3095./2.205 + std_cargo
       ret.wheelbase = 2.67
@@ -174,18 +163,6 @@ class CarInterface(object):
       # Acura at comma has modified steering FW, so different tuning for the Neo in that car
       is_fw_modified = os.getenv("DONGLE_ID") in ['85a6c74d4ad9c310']
       ret.steerKp, ret.steerKi = [0.4, 0.12] if is_fw_modified else [0.8, 0.24]
-
-      ret.longitudinalKpBP = [0., 5., 35.]
-      ret.longitudinalKpV = [1.2, 0.8, 0.5]
-      ret.longitudinalKiBP = [0., 35.]
-      ret.longitudinalKiV = [0.18, 0.12]
-    elif candidate == CAR.CRV:
-      stop_and_go = False
-      ret.mass = 3572./2.205 + std_cargo
-      ret.wheelbase = 2.62
-      ret.centerToFront = ret.wheelbase * 0.41
-      ret.steerRatio = 15.3
-      ret.steerKp, ret.steerKi = 0.8, 0.24
 
       ret.longitudinalKpBP = [0., 5., 35.]
       ret.longitudinalKpV = [1.2, 0.8, 0.5]
@@ -202,7 +179,59 @@ class CarInterface(object):
       ret.longitudinalKpBP = [0., 5., 35.]
       ret.longitudinalKpV = [1.2, 0.8, 0.5]
       ret.longitudinalKiBP = [0., 35.]
-      ret.longitudinalKiV = [0.18, 0.12]  
+      ret.longitudinalKiV = [0.18, 0.12]
+    elif candidate == CAR.ACCORD:
+      stop_and_go = True
+      ret.enableCamera = True
+      ret.mass = 3298./2.205 + std_cargo
+      ret.wheelbase = 2.67
+      ret.centerToFront = ret.wheelbase * 0.39
+      ret.steerRatio = 11.82
+      ret.steerKp, ret.steerKi = 0.8, 0.24
+
+      ret.longitudinalKpBP = [0., 5., 35.]
+      ret.longitudinalKpV = [1.2, 0.8, 0.5]
+      ret.longitudinalKiBP = [0., 35.]
+      ret.longitudinalKiV = [0.18, 0.12]
+    elif candidate == CAR.CIVIC:
+      stop_and_go = True
+      ret.mass = mass_civic
+      ret.wheelbase = wheelbase_civic
+      ret.centerToFront = centerToFront_civic
+      ret.steerRatio = 13.0
+      # Civic at comma has modified steering FW, so different tuning for the Neo in that car
+      is_fw_modified = os.getenv("DONGLE_ID") in ['99c94dc769b5d96e']
+      ret.steerKp, ret.steerKi = [0.4, 0.12] if is_fw_modified else [0.8, 0.24]
+
+      ret.longitudinalKpBP = [0., 5., 35.]
+      ret.longitudinalKpV = [3.6, 2.4, 1.5]
+      ret.longitudinalKiBP = [0., 35.]
+      ret.longitudinalKiV = [0.54, 0.36]
+    elif candidate == CAR.CRV_4G:
+      stop_and_go = False
+      ret.mass = 3572./2.205 + std_cargo
+      ret.wheelbase = 2.62
+      ret.centerToFront = ret.wheelbase * 0.41
+      ret.steerRatio = 15.3
+      ret.steerKp, ret.steerKi = 0.8, 0.24
+
+      ret.longitudinalKpBP = [0., 5., 35.]
+      ret.longitudinalKpV = [1.2, 0.8, 0.5]
+      ret.longitudinalKiBP = [0., 35.]
+      ret.longitudinalKiV = [0.18, 0.12]
+    elif candidate == CAR.CRV_5G:
+      stop_and_go = True
+      ret.enableCamera = True
+      ret.mass = 3358./2.205 + std_cargo
+      ret.wheelbase = 2.67
+      ret.centerToFront = ret.wheelbase * 0.41
+      ret.steerRatio = 12.30
+      ret.steerKp, ret.steerKi = 0.8, 0.24
+
+      ret.longitudinalKpBP = [0., 5., 35.]
+      ret.longitudinalKpV = [1.2, 0.8, 0.5]
+      ret.longitudinalKiBP = [0., 35.]
+      ret.longitudinalKiV = [0.18, 0.12]
     elif candidate == CAR.ODYSSEY:
       stop_and_go = False
       ret.mass = 4354./2.205 + std_cargo
