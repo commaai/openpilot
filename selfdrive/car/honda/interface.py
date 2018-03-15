@@ -136,6 +136,9 @@ class CarInterface(object):
     # kg of standard extra cargo to count for drive, gas, etc...
     std_cargo = 136
 
+    # Ridgeline reqires scaled tire stiffness
+    ts_factor = 1
+
     ret = car.CarParams.new_message()
 
     ret.carName = "honda"
@@ -242,6 +245,7 @@ class CarInterface(object):
       ret.longitudinalKiV = [0.18, 0.12]
     elif candidate == CAR.RIDGELINE:
       stop_and_go = False
+      ts_factor = 1.5
       ret.mass = 4515./2.205 + std_cargo
       ret.wheelbase = 3.18
       ret.centerToFront = ret.wheelbase * 0.41
@@ -270,10 +274,10 @@ class CarInterface(object):
 
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
-    ret.tireStiffnessFront = tireStiffnessFront_civic * \
+    ret.tireStiffnessFront = (tireStiffnessFront_civic * ts_factor) * \
                              ret.mass / mass_civic * \
                              (centerToRear / ret.wheelbase) / (centerToRear_civic / wheelbase_civic)
-    ret.tireStiffnessRear = tireStiffnessRear_civic * \
+    ret.tireStiffnessRear = (tireStiffnessRear_civic * ts_factor) * \
                             ret.mass / mass_civic * \
                             (ret.centerToFront / ret.wheelbase) / (centerToFront_civic / wheelbase_civic)
 
