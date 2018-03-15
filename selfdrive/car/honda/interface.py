@@ -151,6 +151,7 @@ class CarInterface(object):
     tireStiffnessFront_civic = 85400
     tireStiffnessRear_civic = 90000
 
+    ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
     if candidate == CAR.CIVIC:
       stop_and_go = True
       ret.mass = mass_civic
@@ -159,7 +160,7 @@ class CarInterface(object):
       ret.steerRatio = 13.0
       # Civic at comma has modified steering FW, so different tuning for the Neo in that car
       is_fw_modified = os.getenv("DONGLE_ID") in ['99c94dc769b5d96e']
-      ret.steerKp, ret.steerKi = [0.4, 0.12] if is_fw_modified else [0.8, 0.24]
+      ret.steerKpV, ret.steerKiV = [[0.4], [0.12]] if is_fw_modified else [[0.8], [0.24]]
 
       ret.longitudinalKpBP = [0., 5., 35.]
       ret.longitudinalKpV = [3.6, 2.4, 1.5]
@@ -173,7 +174,7 @@ class CarInterface(object):
       ret.steerRatio = 15.3
       # Acura at comma has modified steering FW, so different tuning for the Neo in that car
       is_fw_modified = os.getenv("DONGLE_ID") in ['85a6c74d4ad9c310']
-      ret.steerKp, ret.steerKi = [0.4, 0.12] if is_fw_modified else [0.8, 0.24]
+      ret.steerKpV, ret.steerKiV = [[0.4], [0.12]] if is_fw_modified else [[0.8], [0.24]]
 
       ret.longitudinalKpBP = [0., 5., 35.]
       ret.longitudinalKpV = [1.2, 0.8, 0.5]
@@ -185,7 +186,7 @@ class CarInterface(object):
       ret.wheelbase = 2.62
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 15.3
-      ret.steerKp, ret.steerKi = 0.8, 0.24
+      ret.steerKpV, ret.steerKiV = [[0.8], [0.24]]
 
       ret.longitudinalKpBP = [0., 5., 35.]
       ret.longitudinalKpV = [1.2, 0.8, 0.5]
@@ -197,7 +198,7 @@ class CarInterface(object):
       ret.wheelbase = 2.68
       ret.centerToFront = ret.wheelbase * 0.38
       ret.steerRatio = 15.0
-      ret.steerKp, ret.steerKi = 0.8, 0.24
+      ret.steerKpV, ret.steerKiV = [[0.8], [0.24]]
 
       ret.longitudinalKpBP = [0., 5., 35.]
       ret.longitudinalKpV = [1.2, 0.8, 0.5]
@@ -209,7 +210,7 @@ class CarInterface(object):
       ret.wheelbase = 3.00
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 14.35
-      ret.steerKp, ret.steerKi = 0.6, 0.18
+      ret.steerKpV, ret.steerKiV = [[0.6], [0.18]]
 
       ret.longitudinalKpBP = [0., 5., 35.]
       ret.longitudinalKpV = [1.2, 0.8, 0.5]
@@ -221,7 +222,7 @@ class CarInterface(object):
       ret.wheelbase = 2.81
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 16.0
-      ret.steerKp, ret.steerKi = 0.38, 0.11
+      ret.steerKpV, ret.steerKiV = [[0.38], [0.11]]
 
       ret.longitudinalKpBP = [0., 5., 35.]
       ret.longitudinalKpV = [1.2, 0.8, 0.5]
