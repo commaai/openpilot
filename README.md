@@ -34,6 +34,9 @@ Supported Cars
 
 - Acura RDX 2018 with AcuraWatch Plus (alpha!)
   - Can only be enabled above 25 mph
+  
+- Honda Pilot 2017 with Honda Sensing (alpha!)
+  - Can only be enabled above 27 mph 
 
 - Toyota RAV-4 2016+ non-hybrid with TSS-P
   - By default it uses stock Toyota ACC for longitudinal control
@@ -71,8 +74,6 @@ Community WIP Cars
 - [Chevy Volt 2016-2018 Premier with Driver Confidence II](https://github.com/commaai/openpilot/pull/104)
 
 - [Classic Tesla Model S (pre-AP)](https://github.com/commaai/openpilot/pull/145)
-
-- [Honda Pilot 2017 with Honda Sensing](https://github.com/commaai/openpilot/pull/161)
 
 Directory structure
 ------

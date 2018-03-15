@@ -286,6 +286,8 @@ struct CarParams {
     honda @1;
     toyota @2;
     elm327 @3;
+    gm @4;
+    hondaBosch @5;
   }
 
   # things about the car in the manual
@@ -301,8 +303,12 @@ struct CarParams {
   tireStiffnessRear @14 :Float32;    # [N/rad] rear tire coeff of stiff
 
   # Kp and Ki for the lateral control
-  steerKp @15 :Float32;
-  steerKi @16 :Float32;
+  steerKpBP @42 :List(Float32);
+  steerKpV @43 :List(Float32);
+  steerKiBP @44 :List(Float32);
+  steerKiV @45 :List(Float32);
+  steerKpDEPRECATED @15 :Float32;
+  steerKiDEPRECATED @16 :Float32;
   steerKf @25 :Float32;
 
   # Kp and Ki for the longitudinal control
