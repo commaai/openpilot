@@ -6,7 +6,11 @@ from common.numpy_fast import clip
 from . import hondacan
 from .values import AH
 from common.fingerprints import HONDA as CAR
+from enum import Enum
 
+class HudLanes:
+  ENABLED = 0x0
+  DISABLED = 0x4
 
 def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
   # hyst params... TODO: move these to VehicleParams
@@ -87,9 +91,9 @@ class CarController(object):
     # vehicle hud display, wait for one update from 10Hz 0x304 msg
     #TODO: use enum!!
     if hud_show_lanes:
-      hud_lanes = 0x04
+      hud_lanes = HudLanes.ENABLED
     else:
-      hud_lanes = 0x00
+      hud_lanes = HudLanes.DISABLED
 
     # TODO: factor this out better
     if enabled:
