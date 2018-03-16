@@ -104,22 +104,14 @@ class CarInterface(object):
       ret.steerKp, ret.steerKi = 0.6, 0.1
       ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
       ret.steerRateCost = .8
-    elif candidate == CAR.CAMRYH:
+    elif candidate == CAR.HIGHLANDER:
       ret.safetyParam = 100 # see conversion factor for STEER_TORQUE_EPS in dbc file
-      ret.wheelbase = 2.82
-      ret.steerRatio = 13.7  # official specs say 13.7 (L, LE) 13.8 (SE, XLE, XSE)
-      ret.mass = 3579./2.205 + std_cargo  # using heaviest trim
-      ret.steerKp, ret.steerKi = 0.6, 0.1
+      ret.wheelbase = 2.78
+      ret.steerRatio = 16.0 
+      ret.mass = 4244./2.205 + std_cargo  # mean between min and max
+      ret.steerKp, ret.steerKi = 0.6, 0.05
       ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
-      ret.steerRateCost = .8
-    elif candidate == CAR.CAMRY:
-      ret.safetyParam = 100 # see conversion factor for STEER_TORQUE_EPS in dbc file
-      ret.wheelbase = 2.82
-      ret.steerRatio = 13.7 #13.7 L,LE; 13.8 SE,XLE,XSE
-      ret.mass = 3406./2.205 + std_cargo  # mean between min and max
-      ret.steerKp, ret.steerKi = 0.6, 0.1
-      ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
-      ret.steerRateCost = .8      
+      ret.steerRateCost = 1.
 
     ret.centerToFront = ret.wheelbase * 0.44
 
@@ -128,9 +120,9 @@ class CarInterface(object):
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter.
-    if candidate in [CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH, CAR.CAMRYH]: # rav4 hybrid can do stop and go
+    if candidate in [CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH]: # rav4 hybrid can do stop and go
       ret.minEnableSpeed = -1.
-    elif candidate in [CAR.RAV4, CAR.COROLLA, CAR.CAMRY]: # TODO: hack ICE to do stop and go
+    elif candidate in [CAR.RAV4, CAR.COROLLA, CAR.HIGHLANDER]: # TODO: hack ICE to do stop and go
       ret.minEnableSpeed = 19. * CV.MPH_TO_MS
 
     centerToRear = ret.wheelbase - ret.centerToFront
