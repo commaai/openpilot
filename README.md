@@ -34,9 +34,9 @@ Supported Cars
 
 - Acura RDX 2018 with AcuraWatch Plus (alpha!)
   - Can only be enabled above 25 mph
-  
+
 - Honda Pilot 2017 with Honda Sensing (alpha!)
-  - Can only be enabled above 27 mph 
+  - Can only be enabled above 27 mph
 
 - Toyota RAV-4 2016+ non-hybrid with TSS-P
   - By default it uses stock Toyota ACC for longitudinal control
@@ -58,6 +58,9 @@ Supported Cars
 - Lexus RX 2017 hybrid (alpha!)
   - By default it uses stock Lexus ACC for longitudinal control
   - openpilot longitudinal control available after unplugging the [Driving Support ECU](https://community.comma.ai/wiki/index.php/Toyota#Lexus_RX_hybrid)
+
+- Toyota C-HR 2018 (alpha!)
+  - Currently uses stock Toyota ACC for longitudinal control
 
 In Progress Cars
 ------
