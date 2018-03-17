@@ -33,7 +33,7 @@ class CarInterface(object):
     # sending if read only is False
     if sendcan is not None:
       self.sendcan = sendcan
-      self.CC = CarController(CP.carFingerprint, CP.enableCamera, CP.enableDsu, CP.enableApgs)
+      self.CC = CarController(self.cp.dbc_name, CP.carFingerprint, CP.enableCamera, CP.enableDsu, CP.enableApgs)
 
   @staticmethod
   def compute_gb(accel, speed):
@@ -76,11 +76,15 @@ class CarInterface(object):
     if candidate == CAR.PRIUS:
       ret.safetyParam = 66  # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.70
-      ret.steerRatio = 14.5  # TODO: find exact value for Prius
+      ret.steerRatio = 15.0
       ret.mass = 3045./2.205 + std_cargo
-      ret.steerKpV, ret.steerKiV = [[0.6], [0.05]]
+      ret.steerKpV, ret.steerKiV = [[0.4], [0.01]]
       ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
-      ret.steerRateCost = 2.
+      ret.steerRateCost = 1.5
+
+      f = 1.43353663
+      tireStiffnessFront_civic *= f
+      tireStiffnessRear_civic *= f
     elif candidate in [CAR.RAV4, CAR.RAV4H]:
       ret.safetyParam = 73  # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.65
@@ -146,11 +150,10 @@ class CarInterface(object):
 
     ret.enableCamera = not check_ecu_msgs(fingerprint, candidate, ECU.CAM)
     ret.enableDsu = not check_ecu_msgs(fingerprint, candidate, ECU.DSU)
-    ret.enableApgs = False # not check_ecu_msgs(fingerprint, candidate, ECU.APGS)
+    ret.enableApgs = False #not check_ecu_msgs(fingerprint, candidate, ECU.APGS)
     print "ECU Camera Simulated: ", ret.enableCamera
     print "ECU DSU Simulated: ", ret.enableDsu
     print "ECU APGS Simulated: ", ret.enableApgs
-    ret.enableGas = True
 
     ret.steerLimitAlert = False
     ret.stoppingControl = False

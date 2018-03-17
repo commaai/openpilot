@@ -273,8 +273,8 @@ def state_control(plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, 
                                               CP, PL.lead_1)
 
   # *** steering PID loop ***
-  actuators.steer = LaC.update(active, CS.vEgo, CS.steeringAngle,
-                               CS.steeringPressed, plan.dPoly, angle_offset, VM, PL)
+  actuators.steer, actuators.steerAngle = LaC.update(active, CS.vEgo, CS.steeringAngle,
+                                                     CS.steeringPressed, plan.dPoly, angle_offset, VM, PL)
 
   # send a "steering required alert" if saturation count has reached the limit
   if LaC.sat_flag and CP.steerLimitAlert:
@@ -453,6 +453,11 @@ def controlsd_thread(gctx, rate=100):
   CC = car.CarControl.new_message()
 
   CI, CP = get_car(logcan, sendcan, 1.0 if passive else None)
+
+  # if stock camera is connected, then force passive behavior
+  if not CP.enableCamera:
+    passive = True
+    sendcan = None
 
   if CI is None:
     raise Exception("unsupported car")
