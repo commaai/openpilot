@@ -194,7 +194,7 @@ VAL_ 921 CRUISE_CONTROL_STATE 2 "disabled" 11 "hold" 10 "hold_waiting_user_cmd" 
 
 CM_ "CHFFR_METRIC 37 STEER_ANGLE STEER_ANGLE 0.36 180";
 
-CM_ "toyota_prius_2017_pt.dbc starts here"
+CM_ "toyota_camry_hybrid_2018_pt.dbc starts here"
 
 
 BO_ 295 GEAR_PACKET: 8 XXX

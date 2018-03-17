@@ -1,4 +1,5 @@
 CM_ "IMPORT _honda_2017.dbc"
+CM_ "IMPORT _comma.dbc"
 
 BO_ 148 KINEMATICS: 8 XXX
  SG_ LAT_ACCEL : 7|10@0+ (0.02,-512) [-20|20] "m/s2" EON
