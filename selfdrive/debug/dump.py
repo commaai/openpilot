@@ -4,9 +4,14 @@ import argparse
 import zmq
 import json
 from hexdump import hexdump
+from threading import Thread
 
+from cereal import log
 import selfdrive.messaging as messaging
 from selfdrive.services import service_list
+
+def run_server(socketio):
+  socketio.run(app, host='0.0.0.0', port=4000)
 
 if __name__ == "__main__":
   context = zmq.Context()
@@ -17,33 +22,63 @@ if __name__ == "__main__":
   parser.add_argument('--raw', action='store_true')
   parser.add_argument('--json', action='store_true')
   parser.add_argument('--dump-json', action='store_true')
+  parser.add_argument('--no-print', action='store_true')
+  parser.add_argument('--proxy', action='store_true', help='republish on localhost')
+  parser.add_argument('--map', action='store_true')
   parser.add_argument('--addr', default='127.0.0.1')
   parser.add_argument("socket", type=str, nargs='*', help="socket name")
   args = parser.parse_args()
 
+  republish_socks = {}
+
   for m in args.socket if len(args.socket) > 0 else service_list:
     if m in service_list:
-      messaging.sub_sock(context, service_list[m].port, poller, addr=args.addr)
+      port = service_list[m].port
     elif m.isdigit():
-      messaging.sub_sock(context, int(m), poller, addr=args.addr)
+      port = int(m)
     else:
       print("service not found")
       exit(-1)
+    sock = messaging.sub_sock(context, port, poller, addr=args.addr)
+    if args.proxy:
+      republish_socks[sock] = messaging.pub_sock(context, port)
+
+  if args.map:
+    from flask.ext.socketio import SocketIO
+    from flask import Flask
+    app = Flask(__name__)
+    socketio = SocketIO(app, async_mode='threading')
+    server_thread = Thread(target=run_server, args=(socketio,))
+    server_thread.daemon = True
+    server_thread.start()
+    print 'server running'
 
   while 1:
     polld = poller.poll(timeout=1000)
     for sock, mode in polld:
       if mode != zmq.POLLIN:
         continue
-      if args.pipe:
-        sys.stdout.write(sock.recv())
-        sys.stdout.flush()
-      elif args.raw:
-        hexdump(sock.recv())
-      elif args.json:
-        print(json.loads(sock.recv()))
-      elif args.dump_json:
-        print json.dumps(messaging.recv_one(sock).to_dict())
-      else:
-        print messaging.recv_one(sock)
+      msg = sock.recv()
+      evt = log.Event.from_bytes(msg)
+      if sock in republish_socks:
+        republish_socks[sock].send(msg)
+      if args.map and evt.which() == 'liveLocation':
+        print 'send loc'
+        socketio.emit('location', { 
+          'lat': evt.liveLocation.lat,
+          'lon': evt.liveLocation.lon,
+          'alt': evt.liveLocation.alt,
+        })
+      if not args.no_print:
+        if args.pipe:
+          sys.stdout.write(msg)
+          sys.stdout.flush()
+        elif args.raw:
+          hexdump(msg)
+        elif args.json:
+          print(json.loads(msg))
+        elif args.dump_json:
+          print json.dumps(evt.to_dict())
+        else:
+          print evt
 

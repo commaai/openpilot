@@ -8,22 +8,25 @@ import numpy as np
 
 
 def parse_gear_shifter(can_gear_shifter, car_fingerprint):
-  # TODO: Use values from DBC to parse this field
-  if can_gear_shifter == 0x1:
-    return "park"
-  elif can_gear_shifter == 0x2:
-    return "reverse"
 
+  # TODO: Use VAL from DBC to parse this field
   if car_fingerprint in (CAR.ACURA_ILX, CAR.ODYSSEY):
-    if can_gear_shifter == 0x3:
+    if can_gear_shifter == 0x1:
+      return "park"
+    elif can_gear_shifter == 0x2:
+      return "reverse"
+    elif can_gear_shifter == 0x3:
       return "neutral"
     elif can_gear_shifter == 0x4:
       return "drive"
     elif can_gear_shifter == 0xa:
       return "sport"
-
   elif car_fingerprint in (CAR.CIVIC, CAR.CRV, CAR.ACURA_RDX):
-    if can_gear_shifter == 0x4:
+    if can_gear_shifter == 0x1:
+      return "park"
+    elif can_gear_shifter == 0x2:
+      return "reverse"
+    elif can_gear_shifter == 0x4:
       return "neutral"
     elif can_gear_shifter == 0x8:
       return "drive"
@@ -31,8 +34,8 @@ def parse_gear_shifter(can_gear_shifter, car_fingerprint):
       return "sport"
     elif can_gear_shifter == 0x20:
       return "low"
-    
   elif car_fingerprint in (CAR.PILOT):
+     # TODO: neutral?
      if can_gear_shifter == 0x8:
        return "reverse"
      elif can_gear_shifter == 0x4:
@@ -215,7 +218,7 @@ class CarState(object):
 
     # blend in transmission speed at low speed, since it has more low speed accuracy
     self.v_weight = interp(self.v_wheel, v_weight_bp, v_weight_v)
-    speed = (1. - self.v_weight) * cp.vl["ENGINE_DATA"]['XMISSION_SPEED'] + self.v_weight * self.v_wheel
+    speed = (1. - self.v_weight) * cp.vl["ENGINE_DATA"]['XMISSION_SPEED'] * CV.KPH_TO_MS + self.v_weight * self.v_wheel
 
     if abs(speed - self.v_ego) > 2.0:  # Prevent large accelerations when car starts at non zero speed
       self.v_ego_x = np.matrix([[speed], [0.0]])

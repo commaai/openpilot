@@ -21,7 +21,7 @@ if __name__ == "__main__":
   t2 = time.time()
   print("100 requests took %.2f ms" % ((t2-t1)*1000))
 
-  p.set_controls_allowed(True)
+  p.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
 
   a = 0
   while True:

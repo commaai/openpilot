@@ -1,11 +1,10 @@
 import os
-import sys
 import subprocess
 
 from cffi import FFI
 
 mpc_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)))
-subprocess.check_call(["make", "-j4"], stdout=sys.stderr, cwd=mpc_dir)
+subprocess.check_call(["make", "-j4"], cwd=mpc_dir)
 
 
 def _get_libmpc(mpc_id):
@@ -28,7 +27,7 @@ def _get_libmpc(mpc_id):
     double a_l[20];
     } log_t;
 
-    void init();
+    void init(double ttcCost, double distanceCost, double accelerationCost, double jerkCost);
     void init_with_simulation(double v_ego, double x_l, double v_l, double a_l, double l);
     int run_mpc(state_t * x0, log_t * solution,
                 double l);

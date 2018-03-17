@@ -213,7 +213,7 @@ class Cluster(object):
     lead.fcw = self.is_potential_fcw()
 
   def __str__(self):
-    ret = "x: %4.1f  y: %4.1f  v: %4.1f  a: %4.1f  d: %4.2f" % (self.dRel, self.yRel, self.vRel, self.aRel, self.dPath)
+    ret = "x: %4.1f  y: %4.1f  v: %4.1f  a: %4.1f  d: %4.2f" % (self.dRel, self.yRel, self.vRel, self.aLeadK, self.dPath)
     if self.stationary:
       ret += " stationary"
     if self.vision:
