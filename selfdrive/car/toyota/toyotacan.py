@@ -28,62 +28,73 @@ def create_video_target(frame, addr):
   return make_can_msg(addr, msg, 1, True)
 
 
-def create_ipas_steer_command(steer):
-
+def create_ipas_steer_command(packer, steer, enabled):
   """Creates a CAN message for the Toyota Steer Command."""
   if steer < 0:
-    move = 0x60
-    steer = 0xfff + steer + 1
+    direction = 3
   elif steer > 0:
-    move = 0x20
+    direction = 1
   else:
-    move = 0x40
+    direction = 2
 
-  mode = 0x30 if steer else 0x10
+  mode = 3 if enabled else 1
 
-  steer_h = (steer & 0xF00) >> 8
-  steer_l = steer & 0xff
+  values = {
+    "STATE": mode,
+    "DIRECTION_CMD": direction,
+    "ANGLE": steer,
+    "SET_ME_X10": 0x10,
+    "SET_ME_X40": 0x40
+  }
+  return packer.make_can_msg("STEERING_IPAS", 0, values)
 
-  msg = struct.pack("!BBBBBBB", mode | steer_h, steer_l, 0x10, 0x00, move, 0x40, 0x00)
 
-  return make_can_msg(0x266, msg, 0, True)
-
-def create_steer_command(steer, raw_cnt):
+def create_steer_command(packer, steer, raw_cnt):
   """Creates a CAN message for the Toyota Steer Command."""
-  # from 0x80 to 0xff
-  counter = ((raw_cnt & 0x3f) << 1) | 0x80
-  if steer != 0:
-    counter |= 1
 
-  # hud
-  # 00 => Regular
-  # 40 => Actively Steering (with beep)
-  # 80 => Actively Steering (without beep)
-  hud = 0x00
-
-  msg = struct.pack("!BhB", counter, steer, hud)
-
-  return make_can_msg(0x2e4, msg, 0, True)
+  values = {
+    "STEER_REQUEST": abs(steer) > 0.001,
+    "STEER_TORQUE_CMD": steer,
+    "COUNTER": raw_cnt,
+    "SET_ME_1": 1,
+  }
+  return packer.make_can_msg("STEERING_LKA", 0, values)
 
 
-def create_accel_command(accel, pcm_cancel, standstill_req):
+def create_accel_command(packer, accel, pcm_cancel, standstill_req):
   # TODO: find the exact canceling bit
-  state = 0x40 if standstill_req else 0xC0
-  state += pcm_cancel # this allows automatic restart from hold without driver cmd
-
-  msg = struct.pack("!hBBBBB", accel, 0x63, state, 0x00, 0x00, 0x00)
-
-  return make_can_msg(0x343, msg, 0, True)
-
-def create_fcw_command(fcw):
-
-  msg = struct.pack("!BBBBBBBB", fcw<<4, 0x20, 0x00, 0x00, 0x10, 0x00, 0x80, 0x00)
-
-  return make_can_msg(0x411, msg, 0, False)
+  values = {
+    "ACCEL_CMD": accel,
+    "SET_ME_X63": 0x63,
+    "SET_ME_1": 1,
+    "RELEASE_STANDSTILL": not standstill_req,
+    "CANCEL_REQ": pcm_cancel,
+  }
+  return packer.make_can_msg("ACC_CONTROL", 0, values)
 
 
-def create_ui_command(steer, sound1, sound2):
+def create_fcw_command(packer, fcw):
+  values = {
+    "FCW": fcw,
+    "SET_ME_X20": 0x20,
+    "SET_ME_X10": 0x10,
+    "SET_ME_X80": 0x80,
+  }
+  return packer.make_can_msg("ACC_HUD", 0, values)
 
-  msg = struct.pack("!BBBBBBBB", 0x54, 0x04 + steer + (sound2<<4), 0x0C, 0x00,
-                                 sound1, 0x2C, 0x38, 0x02)
-  return make_can_msg(0x412, msg, 0, False)
+
+def create_ui_command(packer, steer, sound1, sound2):
+  values = {
+    "RIGHT_LINE": 1,
+    "LEFT_LINE": 1,
+    "SET_ME_X0C": 0x0c,
+    "SET_ME_X2C": 0x2c,
+    "SET_ME_X38": 0x38,
+    "SET_ME_X02": 0x02,
+    "SET_ME_X01": 1,
+    "SET_ME_X01_2": 1,
+    "REPEATED_BEEPS": sound1,
+    "TWO_BEEPS": sound2,
+    "LDA_ALERT": steer,
+  }
+  return packer.make_can_msg("LKAS_HUD", 0, values)

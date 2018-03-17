@@ -48,7 +48,9 @@ typedef struct VisionStreamBufs {
 } VisionStreamBufs;
 
 typedef struct VIPCBufExtra {
-  uint32_t frame_id; // only for yuv
+  // only for yuv
+  uint32_t frame_id;
+  uint64_t timestamp_eof;
 } VIPCBufExtra;
 
 typedef union VisionPacketData {

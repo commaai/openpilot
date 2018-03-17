@@ -75,6 +75,7 @@ def get_can_parser(CP):
     ("STEER_TORQUE_EPS", "STEER_TORQUE_SENSOR", 0),
     ("TURN_SIGNALS", "STEERING_LEVERS", 3),   # 3 is no blinkers
     ("LKA_STATE", "EPS_STATUS", 0),
+    ("IPAS_STATE", "EPS_STATUS", 1),
     ("BRAKE_LIGHTS_ACC", "ESP_CONTROL", 0),
     ("AUTO_HIGH_BEAM", "LIGHT_STALK", 0),
   ]
@@ -125,9 +126,6 @@ class CarState(object):
                                     cp.vl["SEATS_DOORS"]['DOOR_OPEN_RL'], cp.vl["SEATS_DOORS"]['DOOR_OPEN_RR']])
     self.seatbelt = not cp.vl["SEATS_DOORS"]['SEATBELT_DRIVER_UNLATCHED']
 
-    self.steer_error = False
-    self.brake_error = 0
-
     can_gear = cp.vl["GEAR_PACKET"]['GEAR']
     self.brake_pressed = cp.vl["BRAKE_MODULE"]['BRAKE_PRESSED']
     self.pedal_gas = cp.vl["GAS_PEDAL"]['GAS_PEDAL']
@@ -160,7 +158,11 @@ class CarState(object):
 
     # we could use the override bit from dbc, but it's triggered at too high torque values
     self.steer_override = abs(cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_DRIVER']) > 100
-    self.steer_error = cp.vl["EPS_STATUS"]['LKA_STATE'] == 50
+    # 2 is standby, 10 is active. TODO: check that everything else is really a faulty state
+    self.steer_state = cp.vl["EPS_STATUS"]['LKA_STATE']
+    self.steer_error = cp.vl["EPS_STATUS"]['LKA_STATE'] not in [2, 10]
+    self.ipas_state = cp.vl['EPS_STATUS']['IPAS_STATE']
+    self.brake_error = 0
     self.steer_torque_driver = cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_DRIVER']
     self.steer_torque_motor = cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_EPS']
 
