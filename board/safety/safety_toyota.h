@@ -32,10 +32,10 @@ uint32_t ts_last = 0;
 static void toyota_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   // get eps motor torque (0.66 factor in dbc)
   if ((to_push->RIR>>21) == 0x260) {
-    int torque_meas_new = (((to_push->RDHR) & 0xFF00) | ((to_push->RDHR >> 16) & 0xFF));
+    int16_t torque_meas_new_16 = (((to_push->RDHR) & 0xFF00) | ((to_push->RDHR >> 16) & 0xFF));
 
     // increase torque_meas by 1 to be conservative on rounding
-    torque_meas_new = (torque_meas_new * dbc_eps_torque_factor / 100) + (torque_meas_new > 0 ? 1 : -1);
+    int torque_meas_new = ((int)(torque_meas_new_16) * dbc_eps_torque_factor / 100) + (torque_meas_new_16 > 0 ? 1 : -1);
 
     // shift the array
     for (int i = sizeof(torque_meas)/sizeof(torque_meas[0]) - 1; i > 0; i--) {
@@ -161,11 +161,16 @@ static void toyota_init(int16_t param) {
   dbc_eps_torque_factor = param;
 }
 
+static int toyota_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
+  return -1;
+}
+
 const safety_hooks toyota_hooks = {
   .init = toyota_init,
   .rx = toyota_rx_hook,
   .tx = toyota_tx_hook,
   .tx_lin = toyota_tx_lin_hook,
+  .fwd = toyota_fwd_hook,
 };
 
 static void toyota_nolimits_init(int16_t param) {
@@ -179,4 +184,5 @@ const safety_hooks toyota_nolimits_hooks = {
   .rx = toyota_rx_hook,
   .tx = toyota_tx_hook,
   .tx_lin = toyota_tx_lin_hook,
+  .fwd = toyota_fwd_hook,
 };
