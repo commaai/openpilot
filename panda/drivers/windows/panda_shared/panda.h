@@ -9,7 +9,7 @@
 #ifdef PANDA_EXPORTS
 #define PANDA_API __declspec(dllexport)
 #else
-#define PANDA_API __declspec(dllimport)
+#define PANDA_API
 #endif
 
 #include <vector>
@@ -31,6 +31,8 @@
 #endif
 
 #define LIN_MSG_MAX_LEN 10
+#define CAN_RX_QUEUE_LEN 10000
+#define CAN_RX_MSG_LEN 1000
 
 //template class __declspec(dllexport) std::basic_string<char>;
 
@@ -139,6 +141,7 @@ namespace panda {
 		std::string get_usb_sn();
 		bool set_alt_setting(UCHAR alt_setting);
 		UCHAR get_current_alt_setting();
+		bool Panda::set_raw_io(bool val);
 
 		PANDA_HEALTH get_health();
 		bool enter_bootloader();
@@ -160,9 +163,9 @@ namespace panda {
 
 		bool can_send_many(const std::vector<PANDA_CAN_MSG>& can_msgs);
 		bool can_send(uint32_t addr, bool addr_29b, const uint8_t *dat, uint8_t len, PANDA_CAN_PORT bus);
-		void parse_can_recv(std::vector<PANDA_CAN_MSG>& msg_recv, char *buff, int retcount);
-		bool can_recv_async(HANDLE kill_event, std::vector<PANDA_CAN_MSG>& msg_buff, DWORD timeoutms = INFINITE);
 		std::vector<PANDA_CAN_MSG> can_recv();
+		bool can_rx_q_push(HANDLE kill_event, DWORD timeoutms = INFINITE);
+		void can_rx_q_pop(PANDA_CAN_MSG msg_out[], int &count);
 		bool can_clear(PANDA_CAN_PORT_CLEAR bus);
 
 		std::string serial_read(PANDA_SERIAL_PORT port_number);
@@ -202,6 +205,23 @@ namespace panda {
 			ULONG timeout
 		);
 
+		#pragma pack(1)
+		typedef struct _PANDA_CAN_MSG_INTERNAL {
+			uint32_t rir;
+			uint32_t f2;
+			uint8_t dat[8];
+		} PANDA_CAN_MSG_INTERNAL;
+
+		typedef struct _CAN_RX_PIPE_READ {
+			unsigned char data[sizeof(PANDA_CAN_MSG_INTERNAL) * CAN_RX_MSG_LEN];
+			unsigned long count;
+			OVERLAPPED overlapped;
+			HANDLE complete;
+			DWORD error;
+		} CAN_RX_PIPE_READ;
+
+		PANDA_CAN_MSG parse_can_recv(PANDA_CAN_MSG_INTERNAL *in_msg_raw);
+
 		WINUSB_INTERFACE_HANDLE usbh;
 		HANDLE devh;
 		tstring devPath;
@@ -209,6 +229,9 @@ namespace panda {
 		bool loopback;
 
 		Timer runningTime;
+		CAN_RX_PIPE_READ can_rx_q[CAN_RX_QUEUE_LEN];
+		unsigned long w_ptr = 0;
+		unsigned long r_ptr = 0;
 	};
 
 }
