@@ -1,9 +1,12 @@
 #include "stdafx.h"
+
 #include <SetupAPI.h>
 #include <Devpkey.h>
 
 #include <unordered_map>
 #include <string>
+
+#include <winusb.h>
 
 #include "device.h"
 

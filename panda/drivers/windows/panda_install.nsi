@@ -1,5 +1,5 @@
 !define J2534_Reg_Path "Software\PassThruSupport.04.04\comma.ai - panda"
-!define Install_Name "panda J2534 Drivers"
+!define Install_Name "panda J2534 driver"
 
 ;NOTE! The panda software requires a VC runtime to be installed in order to work.
 ;This installer must be bundled with the appropriate runtime installer, and have
@@ -21,10 +21,10 @@
 Unicode true
 
 # Set the installer display name
-Name "panda Driver"
+Name "${Install_Name}"
 
 # set the name of the installer
-Outfile "panda install.exe"
+Outfile "${Install_Name} install.exe"
 
 ; The default installation directory
 InstallDir $PROGRAMFILES\comma.ai\panda
@@ -63,18 +63,19 @@ VIProductVersion "1.0.0.0"
 
 ;--------------------------------
 ; Install Sections
-Section "panda driver (required)"
+Section "prerequisites"
 
   SectionIn RO
 
   SetOutPath "$INSTDIR"
 
+  File "panda.ico"
 
   ;If the visual studio version this project is compiled with changes, this section
   ;must be revisited. The registry key must be changed, and the VS redistributable
   ;binary must be updated to the VS version used.
   ClearErrors
-  ReadRegStr $0 HKLM ${VCRuntimeRegKey} "Version"
+  ReadRegStr $0 HKCR ${VCRuntimeRegKey} "Version"
   ${If} ${Errors}
     DetailPrint "Installing Visual Studio C Runtime..."
     File "${VCRuntimeSetupPath}\${VCRuntimeSetupFile}"
@@ -87,35 +88,22 @@ Section "panda driver (required)"
   Delete "$INSTDIR\${VCRuntimeSetupFile}"
 
   ;Do the rest of the install
-  SetOutPath "$INSTDIR\driver"
+  ; SetOutPath "$INSTDIR\driver"
 
   ; The inf file works for both 32 and 64 bit.
-  File "Debug_x86\panda Driver Package\panda.inf"
-  File "Debug_x86\panda Driver Package\panda.cat"
-  ${DisableX64FSRedirection}
-  nsExec::ExecToLog '"$SYSDIR\PnPutil.exe" /a "$INSTDIR\driver\panda.inf"'
-  ${EnableX64FSRedirection}
-
-  SetOutPath $SYSDIR
-
-  File Release_x86\panda.dll
-
-  ${If} ${RunningX64}
-    ${DisableX64FSRedirection}
-      ;Note that the x64 VS redistributable is not installed to prevent bloat.
-      ;If you are the rare person who uses the 64 bit raw panda driver, please
-      ;install the correct x64 VS runtime manually.
-      File Release_x64\panda.dll
-    ${EnableX64FSRedirection}
-  ${EndIf}
+  ; File "Debug_x86\panda Driver Package\panda.inf"
+  ; File "Debug_x86\panda Driver Package\panda.cat"
+  ; ${DisableX64FSRedirection}
+  ; nsExec::ExecToLog '"$SYSDIR\PnPutil.exe" /a "$INSTDIR\driver\panda.inf"'
+  ; ${EnableX64FSRedirection}
 
   ; Write the installation path into the registry
-  WriteRegStr HKLM "SOFTWARE\panda J2534 Drivers" "Install_Dir" "$INSTDIR"
+  WriteRegStr HKLM "SOFTWARE\${Install_Name}" "Install_Dir" "$INSTDIR"
 
   ; Write the uninstall keys for Windows
-  ;WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${Install_Name}" "DisplayVersion" ""
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${Install_Name}" "DisplayIcon" '"$SYSDIR\panda.dll",0'
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${Install_Name}" "DisplayName" "panda J2534 Drivers"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${Install_Name}" "DisplayVersion" ""
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${Install_Name}" "DisplayIcon" '"$INSTDIR\panda.ico",0'
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${Install_Name}" "DisplayName" "${Install_Name}"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${Install_Name}" "Publisher" "comma.ai"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${Install_Name}" "UninstallString" '"$INSTDIR\uninstall.exe"'
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${Install_Name}" "URLInfoAbout" "https://github.com/commaai/panda/"
@@ -124,19 +112,6 @@ Section "panda driver (required)"
 
   SetOutPath $INSTDIR
   WriteUninstaller "uninstall.exe"
-
-SectionEnd
-
-Section "panda devel lib/header"
-
-  SetOutPath "$INSTDIR\devel"
-  File panda\panda.h
-
-  SetOutPath "$INSTDIR\devel\x86"
-  File Release_x86\panda.lib
-
-  SetOutPath "$INSTDIR\devel\x64"
-  File Release_x64\panda.lib
 
 SectionEnd
 
@@ -165,6 +140,32 @@ Section "J2534 Driver"
 
 SectionEnd
 
+Section /o "Development lib/header"
+
+  SetOutPath $SYSDIR
+
+  File Release_x86\panda.dll
+
+  ${If} ${RunningX64}
+    ${DisableX64FSRedirection}
+      ;Note that the x64 VS redistributable is not installed to prevent bloat.
+      ;If you are the rare person who uses the 64 bit raw panda driver, please
+      ;install the correct x64 VS runtime manually.
+      File Release_x64\panda.dll
+    ${EnableX64FSRedirection}
+  ${EndIf}
+
+  SetOutPath "$INSTDIR\devel"
+  File panda_shared\panda.h
+
+  SetOutPath "$INSTDIR\devel\x86"
+  File Release_x86\panda.lib
+
+  SetOutPath "$INSTDIR\devel\x64"
+  File Release_x64\panda.lib
+
+SectionEnd
+
 ;--------------------------------
 ; Uninstaller
 Section "Uninstall"
@@ -176,9 +177,9 @@ Section "Uninstall"
   ; if Microsoft wants these inf files to be removed.
   ; Consider https://blog.sverrirs.com/2015/12/creating-windows-installer-and.html
   ; These lines just remove the inf backups.
-  Delete "$INSTDIR\driver\panda.inf"
-  Delete "$INSTDIR\driver\panda.cat"
-  RMDir "$INSTDIR\driver"
+  ; Delete "$INSTDIR\driver\panda.inf"
+  ; Delete "$INSTDIR\driver\panda.cat"
+  ; RMDir "$INSTDIR\driver"
 
   ; Remove WinUSB driver library
   Delete $SYSDIR\panda.dll
@@ -204,6 +205,7 @@ Section "Uninstall"
   ; Remove files and uninstaller
   Delete "$INSTDIR\uninstall.exe"
   Delete "$INSTDIR\pandaJ2534_0404_32.dll"
+  Delete "$INSTDIR\panda.ico"
 
   ; Remove directories used
   RMDir "$INSTDIR"

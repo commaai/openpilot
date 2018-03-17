@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include "panda\panda.h"
+#include "panda_shared/panda.h"
 #include <queue>
 
 // The following ifdef block is the standard way of creating macros which make exporting

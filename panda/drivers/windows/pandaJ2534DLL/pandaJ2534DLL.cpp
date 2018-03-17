@@ -5,7 +5,7 @@
 
 #include "stdafx.h"
 #include "J2534_v0404.h"
-#include "panda/panda.h"
+#include "panda_shared/panda.h"
 #include "J2534Connection.h"
 #include "J2534Connection_CAN.h"
 #include "J2534Connection_ISO15765.h"
@@ -57,7 +57,7 @@ long ret_code(long code) {
 	return code;
 }
 
-#define EXTRACT_DID(CID) (CID & 0xFFFF)
+#define EXTRACT_DID(CID) ((CID & 0xFFFF) - 1)
 #define EXTRACT_CID(CID) ((CID >> 16) & 0xFFFF)
 
 long check_valid_DeviceID(unsigned long DeviceID) {
@@ -68,7 +68,7 @@ long check_valid_DeviceID(unsigned long DeviceID) {
 }
 
 long check_valid_ChannelID(unsigned long ChannelID) {
-	uint16_t dev_id = EXTRACT_DID(ChannelID);;
+	uint16_t dev_id = EXTRACT_DID(ChannelID);
 	uint16_t con_id = EXTRACT_CID(ChannelID);
 
 	if (pandas.size() <= dev_id || pandas[dev_id] == nullptr)
@@ -117,7 +117,7 @@ PANDAJ2534DLL_API long PTAPI    PassThruOpen(void *pName, unsigned long *pDevice
 		panda_index = pandas.size()-1;
 	}
 
-	*pDeviceID = panda_index;
+	*pDeviceID = panda_index + 1; // TIS doesn't like it when ID == 0
 	return ret_code(STATUS_NOERROR);
 }
 PANDAJ2534DLL_API long PTAPI	PassThruClose(unsigned long DeviceID) {
@@ -140,14 +140,12 @@ PANDAJ2534DLL_API long PTAPI	PassThruConnect(unsigned long DeviceID, unsigned lo
 		switch (ProtocolID) {
 			//SW seems to refer to Single Wire. https://www.nxp.com/files-static/training_pdf/20451_BUS_COMM_WBT.pdf
 			//SW_ protocols may be touched on here: https://www.iso.org/obp/ui/#iso:std:iso:22900:-2:ed-1:v1:en
-		case J1850VPW: //These protocols are outdated and will not be supported. HDS wants them to not fail to open.
-		case J1850PWM:
-		case J1850VPW_PS:
-		case J1850PWM_PS:
+		//case J1850VPW: // These protocols are outdated and will not be supported. HDS wants them to not fail to open.
+		//case J1850PWM: // ^-- it appears HDS no longer needs this, and TIS needs it disabled --^
+		//case J1850VPW_PS:
+		//case J1850PWM_PS:
 		case ISO9141: //This protocol could be implemented if 5 BAUD init support is added to the panda.
 		case ISO9141_PS:
-			conn = std::make_shared<J2534Connection>(panda, ProtocolID, Flags, BaudRate);
-			break;
 		case ISO14230: //Only supporting Fast init until panda adds support for 5 BAUD init.
 		case ISO14230_PS:
 			conn = std::make_shared<J2534Connection>(panda, ProtocolID, Flags, BaudRate);
@@ -263,8 +261,7 @@ PANDAJ2534DLL_API long PTAPI	PassThruReadVersion(unsigned long DeviceID, char *p
 	} else {
 		j2534dll_ver = GetProductAndVersion(pandalib_filename);
 	}
-	std::string pandalib_ver = GetProductAndVersion(_T("panda.dll"));
-	std::string fullver = "(" + j2534dll_ver + "; " + pandalib_ver + ")";
+	std::string fullver = "(" + j2534dll_ver + ")";
 	strcpy_s(pDllVersion, 80, fullver.c_str());
 
 	strcpy_s(pApiVersion, 80, J2534_APIVER_NOVEMBER_2004);

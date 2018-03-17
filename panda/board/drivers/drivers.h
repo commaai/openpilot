@@ -88,7 +88,7 @@ uint32_t adc_get(int channel);
 // ********************* DAC *********************
 
 void dac_init();
-uint32_t dac_set(int channel, uint32_t value);
+void dac_set(int channel, uint32_t value);
 
 
 // ********************* TIMER *********************
