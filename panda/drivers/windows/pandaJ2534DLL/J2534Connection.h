@@ -1,5 +1,5 @@
 #pragma once
-#include "panda/panda.h"
+#include "panda_shared/panda.h"
 #include "J2534_v0404.h"
 #include "synchronize.h"
 #include "J2534Frame.h"

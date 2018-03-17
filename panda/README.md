@@ -45,7 +45,7 @@ As a universal car interface, it should support every reasonable software interf
 - User space ([done](https://github.com/commaai/panda/tree/master/python))
 - socketcan in kernel ([alpha](https://github.com/commaai/panda/tree/master/drivers/linux))
 - ELM327 ([done](https://github.com/commaai/panda/blob/master/boardesp/elm327.c))
-- Windows J2534 ([alpha](https://github.com/commaai/panda/tree/master/drivers/windows))
+- Windows J2534 ([done](https://github.com/commaai/panda/tree/master/drivers/windows))
 
 Directory structure
 ------
