@@ -260,12 +260,13 @@ def radard_thread(gctx=None):
 
     for cnt, ids in enumerate(tracks.keys()):
       if DEBUG:
-        print "id: %4.0f x:  %4.1f  y: %4.1f  vr: %4.1f d: %4.1f  va: %4.1f  vl: %4.1f  vlk: %4.1f alk: %4.1f  s: %1.0f" % \
+        print "id: %4.0f x:  %4.1f  y: %4.1f  vr: %4.1f d: %4.1f  va: %4.1f  vl: %4.1f  vlk: %4.1f alk: %4.1f  s: %1.0f  v: %1.0f" % \
           (ids, tracks[ids].dRel, tracks[ids].yRel, tracks[ids].vRel,
            tracks[ids].dPath, tracks[ids].vLat,
            tracks[ids].vLead, tracks[ids].vLeadK,
            tracks[ids].aLeadK,
-           tracks[ids].stationary)
+           tracks[ids].stationary,
+           tracks[ids].measured)
       dat.liveTracks[cnt].trackId = ids
       dat.liveTracks[cnt].dRel = float(tracks[ids].dRel)
       dat.liveTracks[cnt].yRel = float(tracks[ids].yRel)

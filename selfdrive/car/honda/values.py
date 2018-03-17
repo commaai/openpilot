@@ -26,7 +26,7 @@ class AH:
   #[alert_idx, value]
   # See dbc files for info on values"
   NONE           = [0, 0]
-  FCW            = [1, 0x8]
+  FCW            = [1, 1]
   STEER          = [2, 1]
   BRAKE_PRESSED  = [3, 10]
   GEAR_NOT_D     = [4, 6]

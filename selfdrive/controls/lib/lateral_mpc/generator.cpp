@@ -4,7 +4,6 @@
 #define deg2rad(d) (d/180.0*PI)
 
 const int controlHorizon = 50;
-const double samplingTime = 0.05; // 20 Hz
 
 using namespace std;
 

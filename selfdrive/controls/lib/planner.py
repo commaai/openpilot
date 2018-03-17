@@ -12,7 +12,7 @@ import selfdrive.messaging as messaging
 from selfdrive.swaglog import cloudlog
 from selfdrive.config import Conversions as CV
 from selfdrive.services import service_list
-from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
+from selfdrive.controls.lib.drive_helpers import create_event, MPC_COST_LONG, EventTypes as ET
 from selfdrive.controls.lib.pathplanner import PathPlanner
 from selfdrive.controls.lib.longitudinal_mpc import libmpc_py
 from selfdrive.controls.lib.speed_smoother import speed_smoother
@@ -34,8 +34,8 @@ _A_CRUISE_MIN_BP = [   0., 5.,  10., 20.,  40.]
 
 # need fast accel at very low speed for stop and go
 # make sure these accelerations are smaller than mpc limits
-_A_CRUISE_MAX_V = [1., 1., .8, .5, .3]
-_A_CRUISE_MAX_V_FOLLOWING = [1.5, 1.5, 1.2, .7, .3]
+_A_CRUISE_MAX_V = [1.1, 1.1, .8, .5, .3]
+_A_CRUISE_MAX_V_FOLLOWING = [1.6, 1.6, 1.2, .7, .3]
 _A_CRUISE_MAX_BP = [0.,  5., 10., 20., 40.]
 
 # Lookup table for turns
@@ -172,7 +172,8 @@ class LongitudinalMpc(object):
 
   def setup_mpc(self):
     ffi, self.libmpc = libmpc_py.get_libmpc(self.mpc_id)
-    self.libmpc.init()
+    self.libmpc.init(MPC_COST_LONG.TTC, MPC_COST_LONG.DISTANCE,
+                     MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
 
     self.mpc_solution = ffi.new("log_t *")
     self.cur_state = ffi.new("state_t *")
@@ -245,7 +246,8 @@ class LongitudinalMpc(object):
         cloudlog.warning("Longitudinal mpc %d reset - backwards: %s crashing: %s nan: %s" % (
                           self.mpc_id, backwards, crashing, nans))
 
-      self.libmpc.init()
+      self.libmpc.init(MPC_COST_LONG.TTC, MPC_COST_LONG.DISTANCE,
+                       MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
       self.cur_state[0].v_ego = CS.vEgo
       self.cur_state[0].a_ego = 0.0
       self.v_mpc = CS.vEgo

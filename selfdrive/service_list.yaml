@@ -55,13 +55,22 @@ gpsPlannerPoints: [8043, true]
 gpsPlannerPlan: [8044, true]
 applanixRaw: [8046, true]
 orbLocation: [8047, true]
-trafficSigns: [8048, true]
+trafficEvents: [8048, true]
 liveLocationTiming: [8049, true]
 orbslamCorrection: [8050, true]
 liveLocationCorrected: [8051, true]
+orbObservation: [8052, true]
+applanixLocation: [8053, true]
+liveLocationKalman: [8054, true]
+uiNavigationEvent: [8055, true]
+orbOdometry: [8057, true]
+orbFeatures: [8058, true]
+orbKeyFrame: [8059, true]
+uiLayoutState: [8060, true]
 
 testModel: [8040, false]
 testLiveLocation: [8045, false]
+testJoystick: [8056, false]
 
 
 # manager -- base process to manage starting and stopping of all others

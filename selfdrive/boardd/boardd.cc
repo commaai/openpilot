@@ -525,8 +525,23 @@ void pigeon_init() {
   pigeon_send("\xB5\x62\x06\x1E\x00\x00\x24\x72");
   pigeon_send("\xB5\x62\x06\x01\x03\x00\x01\x07\x01\x13\x51");
   pigeon_send("\xB5\x62\x06\x01\x03\x00\x02\x15\x01\x22\x70");
+  pigeon_send("\xB5\x62\x06\x01\x03\x00\x02\x13\x01\x20\x6C");
 
   LOGW("grey panda is ready to fly");
+}
+
+static void pigeon_publish_raw(void *publisher, unsigned char *dat, int alen) {
+  // create message
+  capnp::MallocMessageBuilder msg;
+  cereal::Event::Builder event = msg.initRoot<cereal::Event>();
+  event.setLogMonoTime(nanos_since_boot());
+  auto ublox_raw = event.initUbloxRaw(alen);
+  memcpy(ublox_raw.begin(), dat, alen);
+
+  // send to ubloxRaw
+  auto words = capnp::messageToFlatArray(msg);
+  auto bytes = words.asBytes();
+  zmq_send(publisher, bytes.begin(), bytes.size(), 0);
 }
 
 
@@ -543,22 +558,6 @@ void *pigeon_thread(void *crap) {
     if (pigeon_needs_init) {
       pigeon_needs_init = false;
       pigeon_init();
-    } else {
-      // send periodic messages
-      if (cnt%3000 == 0) {
-        for (unsigned char sv = 1; sv < 33; ++sv){
-          const unsigned char buffer[5] = {0x0B, 0x31, 0x01, 0x00, sv};
-          unsigned char CK_A = 0;
-          unsigned char CK_B = 0;
-          for(int i=0;i<5;i++) {
-            CK_A = CK_A + buffer[i];
-            CK_B = CK_B + CK_A;
-          }
-	  const unsigned char msg[9] = {0xB5, 0x62, 0x0B, 0x31, 0x01, 0x00, sv, CK_A, CK_B};
-          _pigeon_send((const char *)msg, 9);
-        }
-        pigeon_send("\xB5\x62\x0b\x02\x00\x00\x0d\x32");
-      }
     }
     int alen = 0;
     while (alen < 0xfc0) {
@@ -572,17 +571,7 @@ void *pigeon_thread(void *crap) {
       alen += len;
     }
     if (alen > 0) {
-      // create message
-      capnp::MallocMessageBuilder msg;
-      cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-      event.setLogMonoTime(nanos_since_boot());
-      auto ublox_raw = event.initUbloxRaw(alen);
-      memcpy(ublox_raw.begin(), dat, alen);
-
-      // send to ubloxRaw
-      auto words = capnp::messageToFlatArray(msg);
-      auto bytes = words.asBytes();
-      zmq_send(publisher, bytes.begin(), bytes.size(), 0);
+      pigeon_publish_raw(publisher, dat, alen);
     }
 
     // 10ms
