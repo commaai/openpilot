@@ -15,7 +15,7 @@ BO_ 608 STEER_TORQUE_SENSOR: 8 XXX
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
 
 BO_ 610 EPS_STATUS: 5 EPS
- SG_ STATE : 3|4@0+ (1,0) [0|15] "" XXX
+ SG_ IPAS_STATE : 3|4@0+ (1,0) [0|15] "" XXX
  SG_ LKA_STATE : 31|8@0+ (1,0) [0|255] "" XXX
  SG_ CHECKSUM : 39|8@0+ (1,0) [0|255] "" XXX
 
@@ -25,6 +25,6 @@ BO_ 956 GEAR_PACKET: 8 XXX
 CM_ SG_ 550 BRAKE_PRESSURE "seems prop to pedal force";
 CM_ SG_ 550 BRAKE_POSITION "seems proportional to pedal displacement, unclear the max value of 0x1c8";
 CM_ SG_ 581 GAS_PEDAL "it seems slightly filtered";
-VAL_ 610 STATE 5 "override" 3 "enabled" 1 "disabled";
-VAL_ 610 LKA_STATE 50 "temporary_fault";
+VAL_ 610 IPAS_STATE 5 "override" 3 "enabled" 1 "disabled";
+VAL_ 610 LKA_STATE 50 "temporary_fault" 10 "active" 2 "standby";
 VAL_ 956 GEAR 0 "D" 1 "S" 8 "N" 16 "R" 32 "P";
