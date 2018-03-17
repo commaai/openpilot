@@ -1,7 +1,7 @@
 // panda.cpp : Defines the exported functions for the DLL application.
 //
-
 #include "stdafx.h"
+
 #include "device.h"
 #include "panda.h"
 
@@ -13,13 +13,6 @@
 
 using namespace panda;
 
-#pragma pack(1)
-typedef struct _PANDA_CAN_MSG_INTERNAL {
-	uint32_t rir;
-	uint32_t f2;
-	uint8_t dat[8];
-} PANDA_CAN_MSG_INTERNAL;
-
 Panda::Panda(
 	WINUSB_INTERFACE_HANDLE WinusbHandle,
 	HANDLE DeviceHandle,
@@ -28,6 +21,7 @@ Panda::Panda(
 ) : usbh(WinusbHandle), devh(DeviceHandle), devPath(devPath_), sn(sn_) {
 	printf("CREATED A PANDA %s\n", this->sn.c_str());
 	this->set_can_loopback(FALSE);
+	this->set_raw_io(TRUE);
 	this->set_alt_setting(0);
 }
 
@@ -167,7 +161,8 @@ bool Panda::set_alt_setting(UCHAR alt_setting) {
 	this->set_can_loopback(TRUE);
 	Sleep(20); // Give time for any sent messages to appear in the RX buffer.
 	this->can_clear(PANDA_CAN_RX);
-	for (int i = 0; i < 2; i++) {
+	// send 4 messages becaus can_recv reads 4 messages at a time
+	for (int i = 0; i < 4; i++) {
 		printf("Sending PAD %d\n", i);
 		if (this->can_send(0x7FF, FALSE, {}, 0, PANDA_CAN1) == FALSE) {
 			auto err = GetLastError();
@@ -177,14 +172,8 @@ bool Panda::set_alt_setting(UCHAR alt_setting) {
 	Sleep(10);
 	//this->can_clear(PANDA_CAN_RX);
 
-	std::vector<PANDA_CAN_MSG> msg_recv;
-	if (alt_setting == 1) {
-		//Read the messages so they do not contaimnate the real message stream.
-		auto err = this->can_recv_async(NULL, msg_recv, 1000);
-	}
-	else {
-		msg_recv = this->can_recv();
-	}
+	//Read the messages so they do not contaimnate the real message stream.
+	this->can_recv();
 
 	//this->set_can_loopback(FALSE);
 	this->set_can_loopback(loopback_backup);
@@ -201,6 +190,17 @@ UCHAR Panda::get_current_alt_setting() {
 	}
 
 	return alt_setting;
+}
+
+bool Panda::set_raw_io(bool val) {
+	UCHAR raw_io = val;
+	if (!WinUsb_SetPipePolicy(this->usbh, 0x81, RAW_IO, sizeof(raw_io), &raw_io)) {
+		_tprintf(_T("    Error setting usb raw I/O pipe policy %d, Msg: '%s'\n"),
+			GetLastError(), GetLastErrorAsString().c_str());
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
 PANDA_HEALTH Panda::get_health()
@@ -351,69 +351,85 @@ bool Panda::can_send(uint32_t addr, bool addr_29b, const uint8_t *dat, uint8_t l
 	return this->can_send_many(std::vector<PANDA_CAN_MSG>{msg});
 }
 
-void Panda::parse_can_recv(std::vector<PANDA_CAN_MSG>& msg_recv, char *buff, int retcount) {
-	for (int i = 0; i < retcount; i += sizeof(PANDA_CAN_MSG_INTERNAL)) {
-		PANDA_CAN_MSG_INTERNAL *in_msg_raw = (PANDA_CAN_MSG_INTERNAL *)(buff + i);
-		PANDA_CAN_MSG in_msg;
+PANDA_CAN_MSG Panda::parse_can_recv(PANDA_CAN_MSG_INTERNAL *in_msg_raw) {
+	PANDA_CAN_MSG in_msg;
 
-		in_msg.addr_29b = (bool)(in_msg_raw->rir & CAN_EXTENDED);
-		in_msg.addr = (in_msg.addr_29b) ? (in_msg_raw->rir >> 3) : (in_msg_raw->rir >> 21);
-		in_msg.recv_time = this->runningTime.getTimePassedUS();
-		in_msg.recv_time_point = std::chrono::steady_clock::now();
-		//The timestamp from the device is (in_msg_raw->f2 >> 16),
-		//but this 16 bit value is a little hard to use. Using a
-		//timer since the initialization of this device.
-		in_msg.len = in_msg_raw->f2 & 0xF;
-		memcpy(in_msg.dat, in_msg_raw->dat, 8);
+	in_msg.addr_29b = (bool)(in_msg_raw->rir & CAN_EXTENDED);
+	in_msg.addr = (in_msg.addr_29b) ? (in_msg_raw->rir >> 3) : (in_msg_raw->rir >> 21);
+	in_msg.recv_time = this->runningTime.getTimePassedUS();
+	in_msg.recv_time_point = std::chrono::steady_clock::now();
+	//The timestamp from the device is (in_msg_raw->f2 >> 16),
+	//but this 16 bit value is a little hard to use. Using a
+	//timer since the initialization of this device.
+	in_msg.len = in_msg_raw->f2 & 0xF;
+	memcpy(in_msg.dat, in_msg_raw->dat, 8);
 
-		in_msg.is_receipt = ((in_msg_raw->f2 >> 4) & 0x80) == 0x80;
-		switch ((in_msg_raw->f2 >> 4) & 0x7F) {
-		case PANDA_CAN1:
-			in_msg.bus = PANDA_CAN1;
-			break;
-		case PANDA_CAN2:
-			in_msg.bus = PANDA_CAN2;
-			break;
-		case PANDA_CAN3:
-			in_msg.bus = PANDA_CAN3;
-			break;
-		default:
-			in_msg.bus = PANDA_CAN_UNK;
-		}
-		msg_recv.push_back(in_msg);
+	in_msg.is_receipt = ((in_msg_raw->f2 >> 4) & 0x80) == 0x80;
+	switch ((in_msg_raw->f2 >> 4) & 0x7F) {
+	case PANDA_CAN1:
+		in_msg.bus = PANDA_CAN1;
+		break;
+	case PANDA_CAN2:
+		in_msg.bus = PANDA_CAN2;
+		break;
+	case PANDA_CAN3:
+		in_msg.bus = PANDA_CAN3;
+		break;
+	default:
+		in_msg.bus = PANDA_CAN_UNK;
 	}
+	return in_msg;
 }
 
-bool Panda::can_recv_async(HANDLE kill_event, std::vector<PANDA_CAN_MSG>& msg_buff, DWORD timeoutms) {
-	int retcount;
-	char buff[sizeof(PANDA_CAN_MSG_INTERNAL) * 4];
+bool Panda::can_rx_q_push(HANDLE kill_event, DWORD timeoutms) {
+	while (1) {
+		auto w_ptr = this->w_ptr;
+		auto n_ptr = w_ptr + 1;
+		if (n_ptr == CAN_RX_QUEUE_LEN) {
+			n_ptr = 0;
+		}
 
-	// Overlapped structure required for async read.
-	HANDLE m_hReadFinishedEvent = CreateEvent(NULL, TRUE, TRUE, NULL);
-	OVERLAPPED m_overlappedData;
-	memset(&m_overlappedData, sizeof(OVERLAPPED), 0);
-	m_overlappedData.hEvent = m_hReadFinishedEvent;
+		// Pause if there is not a slot available in the queue
+		if (n_ptr == this->r_ptr) {
+			printf("RX queue full!\n");
+			Sleep(1);
+			continue;
+		}
 
-	HANDLE phSignals[2] = { m_hReadFinishedEvent, kill_event };
+		if (this->can_rx_q[n_ptr].complete) {
+			// TODO: is ResetEvent() faster?
+			CloseHandle(this->can_rx_q[n_ptr].complete);
+		}
 
-	if (!WinUsb_ReadPipe(this->usbh, 0x81, (PUCHAR)buff, sizeof(buff), (PULONG)&retcount, &m_overlappedData)) {
-		// An overlapped read will return true if done, or false with an
-		// error of ERROR_IO_PENDING if the transfer is still in process.
-		DWORD dwError = GetLastError();
-		if (dwError == ERROR_IO_PENDING) {
-			dwError = WaitForMultipleObjects(kill_event ? 2 : 1, phSignals, FALSE, timeoutms);
+		// Overlapped structure required for async read.
+		this->can_rx_q[n_ptr].complete = CreateEvent(NULL, TRUE, TRUE, NULL);
+		memset(&this->can_rx_q[n_ptr].overlapped, sizeof(OVERLAPPED), 0);
+		this->can_rx_q[n_ptr].overlapped.hEvent = this->can_rx_q[n_ptr].complete;
+		this->can_rx_q[n_ptr].error = 0;
+
+		if (!WinUsb_ReadPipe(this->usbh, 0x81, this->can_rx_q[n_ptr].data, sizeof(this->can_rx_q[n_ptr].data), &this->can_rx_q[n_ptr].count, &this->can_rx_q[n_ptr].overlapped)) {
+			// An overlapped read will return true if done, or false with an
+			// error of ERROR_IO_PENDING if the transfer is still in process.
+			this->can_rx_q[n_ptr].error = GetLastError();
+		}
+
+		// Process the pipe read call from the previous invocation of this function
+		if (this->can_rx_q[w_ptr].error == ERROR_IO_PENDING) {
+			HANDLE phSignals[2] = { this->can_rx_q[w_ptr].complete, kill_event };
+			auto dwError = WaitForMultipleObjects(kill_event ? 2 : 1, phSignals, FALSE, timeoutms);
 
 			// Check if packet, timeout (nope), or break
 			if (dwError == WAIT_OBJECT_0) {
 				// Signal came from our usb object. Read the returned data.
-				if (!GetOverlappedResult(this->usbh, &m_overlappedData, (PULONG)&retcount, FALSE)) {
+				if (!GetOverlappedResult(this->usbh, &this->can_rx_q[w_ptr].overlapped, &this->can_rx_q[w_ptr].count, TRUE)) {
 					// TODO: handle other error cases better.
 					dwError = GetLastError();
 					printf("Got overlap error %d\n", dwError);
 
-					return TRUE;
+					continue;
 				}
-			} else {
+			}
+			else {
 				WinUsb_AbortPipe(this->usbh, 0x81);
 
 				// Return FALSE to show that the optional signal
@@ -422,15 +438,38 @@ bool Panda::can_recv_async(HANDLE kill_event, std::vector<PANDA_CAN_MSG>& msg_bu
 				if (dwError == (WAIT_OBJECT_0 + 1)) {
 					return FALSE;
 				}
-				return TRUE;
+				continue;
 			}
-		} else { // ERROR_BAD_COMMAND happens when device is unplugged.
+		}
+		else if (this->can_rx_q[w_ptr].error != 0) { // ERROR_BAD_COMMAND happens when device is unplugged.
 			return FALSE;
 		}
+
+		this->w_ptr = n_ptr;
 	}
 
-	parse_can_recv(msg_buff, buff, retcount);
 	return TRUE;
+}
+
+void Panda::can_rx_q_pop(PANDA_CAN_MSG msg_out[], int &count) {
+	count = 0;
+
+	// No data left in queue
+	if (this->r_ptr == this->w_ptr) {
+		Sleep(1);
+		return;
+	}
+
+	auto r_ptr = this->r_ptr;
+	for (int i = 0; i < this->can_rx_q[r_ptr].count; i += sizeof(PANDA_CAN_MSG_INTERNAL)) {
+		auto in_msg_raw = (PANDA_CAN_MSG_INTERNAL *)(this->can_rx_q[r_ptr].data + i);
+		msg_out[count] = parse_can_recv(in_msg_raw);
+		++count;
+	}
+
+	// Advance read pointer (wrap around if needed)
+	++r_ptr;
+	this->r_ptr = (r_ptr == CAN_RX_QUEUE_LEN ? 0 : r_ptr);
 }
 
 std::vector<PANDA_CAN_MSG> Panda::can_recv() {
@@ -441,7 +480,11 @@ std::vector<PANDA_CAN_MSG> Panda::can_recv() {
 	if (this->bulk_read(0x81, buff, sizeof(buff), (PULONG)&retcount, 0) == FALSE)
 		return msg_recv;
 
-	parse_can_recv(msg_recv, buff, retcount);
+	for (int i = 0; i < retcount; i += sizeof(PANDA_CAN_MSG_INTERNAL)) {
+		PANDA_CAN_MSG_INTERNAL *in_msg_raw = (PANDA_CAN_MSG_INTERNAL *)(buff + i);
+		auto in_msg = parse_can_recv(in_msg_raw);
+		msg_recv.push_back(in_msg);
+	}
 
 	return msg_recv;
 }

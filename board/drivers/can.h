@@ -199,6 +199,7 @@ void can_init_all() {
 }
 
 void can_set_gmlan(int bus) {
+  #ifdef PANDA
   if (bus == -1 || bus != can_num_lookup[3]) {
     // GMLAN OFF
     switch (can_num_lookup[3]) {
@@ -238,6 +239,7 @@ void can_set_gmlan(int bus) {
     can_num_lookup[3] = 2;
     can_init(2);
   }
+  #endif
 }
 
 // CAN error
@@ -346,13 +348,14 @@ void can_rx(uint8_t can_number) {
 
     // forwarding (panda only)
     #ifdef PANDA
-      if (can_forwarding[bus_number] != -1) {
+      int bus_fwd_num = can_forwarding[bus_number] != -1 ? can_forwarding[bus_number] : safety_fwd_hook(bus_number, &to_push);
+      if (bus_fwd_num != -1) {
         CAN_FIFOMailBox_TypeDef to_send;
         to_send.RIR = to_push.RIR | 1; // TXRQ
         to_send.RDTR = to_push.RDTR;
         to_send.RDLR = to_push.RDLR;
         to_send.RDHR = to_push.RDHR;
-        can_send(&to_send, can_forwarding[bus_number]);
+        can_send(&to_send, bus_fwd_num);
       }
     #endif
 
@@ -370,6 +373,8 @@ void can_rx(uint8_t can_number) {
   }
 }
 
+#ifndef CUSTOM_CAN_INTERRUPTS
+
 void CAN1_TX_IRQHandler() { process_can(0); }
 void CAN1_RX0_IRQHandler() { can_rx(0); }
 void CAN1_SCE_IRQHandler() { can_sce(CAN1); }
@@ -382,6 +387,8 @@ void CAN2_SCE_IRQHandler() { can_sce(CAN2); }
 void CAN3_TX_IRQHandler() { process_can(2); }
 void CAN3_RX0_IRQHandler() { can_rx(2); }
 void CAN3_SCE_IRQHandler() { can_sce(CAN3); }
+#endif
+
 #endif
 
 void can_send(CAN_FIFOMailBox_TypeDef *to_push, uint8_t bus_number) {

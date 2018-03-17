@@ -33,6 +33,7 @@ long J2534Connection::PassThruReadMsgs(PASSTHRU_MSG *pMsg, unsigned long *pNumMs
 			messageRxBuff_mutex.unlock();
 			if (Timeout == 0)
 				break;
+			Sleep(2);
 			continue;
 		}
 
@@ -146,16 +147,35 @@ long J2534Connection::PassThruIoctl(unsigned long IoctlID, void *pInput, void *p
 	return STATUS_NOERROR;
 }
 
-long J2534Connection::init5b(SBYTE_ARRAY* pInput, SBYTE_ARRAY* pOutput) { return STATUS_NOERROR; }
-long J2534Connection::initFast(PASSTHRU_MSG* pInput, PASSTHRU_MSG* pOutput) { return STATUS_NOERROR; }
-long J2534Connection::clearTXBuff() { return STATUS_NOERROR; }
-long J2534Connection::clearRXBuff() {
-	synchronized(messageRxBuff_mutex) {
-		this->messageRxBuff = {};
+long J2534Connection::init5b(SBYTE_ARRAY* pInput, SBYTE_ARRAY* pOutput) { return ERR_FAILED; }
+long J2534Connection::initFast(PASSTHRU_MSG* pInput, PASSTHRU_MSG* pOutput) { return ERR_FAILED; }
+long J2534Connection::clearTXBuff() {
+	if (auto panda_ps = this->panda_dev.lock()) {
+		synchronized(staged_writes_lock) {
+			this->txbuff = {};
+			panda_ps->panda->can_clear(panda::PANDA_CAN1_TX);
+		}
 	}
 	return STATUS_NOERROR;
 }
-long J2534Connection::clearPeriodicMsgs() { return STATUS_NOERROR; }
+long J2534Connection::clearRXBuff() {
+	if (auto panda_ps = this->panda_dev.lock()) {
+		synchronized(messageRxBuff_mutex) {
+			this->messageRxBuff = {};
+			panda_ps->panda->can_clear(panda::PANDA_CAN_RX);
+		}
+	}
+	return STATUS_NOERROR;
+}
+long J2534Connection::clearPeriodicMsgs() {
+	for (int i = 0; i < this->periodicMessages.size(); i++) {
+		if (periodicMessages[i] == nullptr) continue;
+		this->periodicMessages[i]->cancel();
+		this->periodicMessages[i] = nullptr;
+	}
+
+	return STATUS_NOERROR;
+}
 long J2534Connection::clearMsgFilters() {
 	for (auto& filter : this->filters) filter = nullptr;
 	return STATUS_NOERROR;
@@ -202,6 +222,7 @@ void J2534Connection::processIOCTLSetConfig(unsigned long Parameter, unsigned lo
 	switch (Parameter) {
 	case DATA_RATE:			// 5-500000
 		this->setBaud(Value);
+		break;
 	case LOOPBACK:			// 0 (OFF), 1 (ON) [0]
 		this->loopback = (Value != 0);
 		break;
@@ -235,6 +256,11 @@ void J2534Connection::processIOCTLSetConfig(unsigned long Parameter, unsigned lo
 		break;				// Just smile and nod.
 	default:
 		printf("Got unknown SET code %X\n", Parameter);
+	}
+
+	// reserved parameters usually mean special equiptment is required
+	if (Parameter >= 0x20) {
+		throw ERR_NOT_SUPPORTED;
 	}
 }
 

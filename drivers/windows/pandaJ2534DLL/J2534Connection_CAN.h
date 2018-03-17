@@ -1,7 +1,7 @@
 #pragma once
 
 #include "J2534Connection.h"
-#include "panda/panda.h"
+#include "panda_shared/panda.h"
 
 #define val_is_29bit(num) check_bmask(num, CAN_29BIT_ID)
 
