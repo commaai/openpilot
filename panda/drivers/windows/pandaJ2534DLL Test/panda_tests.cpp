@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "panda/panda.h"
+#include "panda_shared/panda.h"
 #include "TestHelpers.h"
 
 #include <tchar.h>

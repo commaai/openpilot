@@ -101,7 +101,7 @@ def can_init():
     if device.getVendorID() == 0xbbaa and device.getProductID() == 0xddcc:
       handle = device.open()
       handle.claimInterface(0)
-      handle.controlWrite(0x40, 0xdc, SAFETY_HONDA, 0, b'')
+      handle.controlWrite(0x40, 0xdc, SAFETY_ALLOUTPUT, 0, b'')
 
   if handle is None:
     print "CAN NOT FOUND"

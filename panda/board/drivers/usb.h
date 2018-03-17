@@ -71,12 +71,15 @@ uint8_t resp[MAX_RESP_LEN];
 #define ENDPOINT_TYPE_BULK 2
 #define ENDPOINT_TYPE_INT 3
 
+// This is an arbitrary value used in bRequest
+#define  MS_VENDOR_CODE 0x20
+
 //Convert machine byte order to USB byte order
 #define TOUSBORDER(num)\
   (num&0xFF), ((num>>8)&0xFF)
 
 uint8_t device_desc[] = {
-  DSCR_DEVICE_LEN, DSCR_DEVICE_TYPE, 0x00, 0x01, //Length, Type, bcdUSB
+  DSCR_DEVICE_LEN, DSCR_DEVICE_TYPE, 0x00, 0x02, //Length, Type, bcdUSB
   0xFF, 0xFF, 0xFF, 0x40, // Class, Subclass, Protocol, Max Packet Size
   TOUSBORDER(USB_VID), // idVendor
   TOUSBORDER(USB_PID), // idProduct
@@ -165,9 +168,47 @@ uint16_t string_3_desc[] = {
   'n', 'o', 'n', 'e'
 };
 
+#ifdef PANDA
+// WCID (auto install WinUSB driver)
+// https://github.com/pbatard/libwdi/wiki/WCID-Devices
+// https://docs.microsoft.com/en-us/windows-hardware/drivers/usbcon/winusb-installation#automatic-installation-of--winusb-without-an-inf-file
+uint8_t string_238_desc[] = {
+  0x12, 0x03, // bLength, bDescriptorType
+  'M',0, 'S',0, 'F',0, 'T',0, '1',0, '0',0, '0',0, // qwSignature (MSFT100)
+  MS_VENDOR_CODE, 0x00 // bMS_VendorCode, bPad
+};
+uint8_t winusb_ext_compatid_os_desc[] = {
+  0x28, 0x00, 0x00, 0x00, // dwLength
+  0x00, 0x01, // bcdVersion
+  0x04, 0x00, // wIndex
+  0x01, // bCount
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Reserved
+  0x00, // bFirstInterfaceNumber
+  0x00, // Reserved
+  'W', 'I', 'N', 'U', 'S', 'B', 0x00, 0x00, // compatible ID (WINUSB)
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // subcompatible ID (none)
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00 // Reserved
+};
+uint8_t winusb_ext_prop_os_desc[] = {
+  0x8e, 0x00, 0x00, 0x00, // dwLength
+  0x00, 0x01, // bcdVersion
+  0x05, 0x00, // wIndex
+  0x01, 0x00, // wCount
+  // first property
+  0x84, 0x00, 0x00, 0x00, // dwSize
+  0x01, 0x00, 0x00, 0x00, // dwPropertyDataType
+  0x28, 0x00, // wPropertyNameLength
+  'D',0, 'e',0, 'v',0, 'i',0, 'c',0, 'e',0, 'I',0, 'n',0, 't',0, 'e',0, 'r',0, 'f',0, 'a',0, 'c',0, 'e',0, 'G',0, 'U',0, 'I',0, 'D',0, 0, 0, // bPropertyName (DeviceInterfaceGUID)
+  0x4e, 0x00, 0x00, 0x00, // dwPropertyDataLength
+  '{',0, 'c',0, 'c',0, 'e',0, '5',0, '2',0, '9',0, '1',0, 'c',0, '-',0, 'a',0, '6',0, '9',0, 'f',0, '-',0, '4',0 ,'9',0 ,'9',0 ,'5',0 ,'-',0, 'a',0, '4',0, 'c',0, '2',0, '-',0, '2',0, 'a',0, 'e',0, '5',0, '7',0, 'a',0, '5',0, '1',0, 'a',0, 'd',0, 'e',0, '9',0, '}',0, 0, 0, // bPropertyData ({CCE5291C-A69F-4995-A4C2-2AE57A51ADE9})
+};
+#endif
+
 // current packet
 USB_Setup_TypeDef setup;
 uint8_t usbdata[0x100];
+uint8_t* ep0_txdata = NULL;
+uint16_t ep0_txlen = 0;
 
 // Store the current interface alt setting.
 int current_int0_alt_setting = 0;
@@ -203,6 +244,26 @@ void USB_WritePacket(const uint8_t *src, uint16_t len, uint32_t ep) {
   // load the FIFO
   for (i = 0; i < count32b; i++, src += 4) {
     USBx_DFIFO(ep) = *((__attribute__((__packed__)) uint32_t *)src);
+  }
+}
+
+// IN EP 0 TX FIFO has a max size of 127 bytes (much smaller than the rest)
+// so use TX FIFO empty interrupt to send larger amounts of data
+void USB_WritePacket_EP0(uint8_t *src, uint16_t len) {
+  #ifdef DEBUG_USB
+  puts("writing ");
+  hexdump(src, len);
+  #endif
+
+  uint16_t wplen = min(len, 0x40);
+  USB_WritePacket(src, wplen, 0);
+
+  if (wplen < len) {
+    ep0_txdata = src + wplen;
+    ep0_txlen = len - wplen;
+    USBx_DEVICE->DIEPEMPMSK |= 1;
+  } else {
+    USBx_OUTEP(0)->DOEPCTL |= USB_OTG_DOEPCTL_CNAK;
   }
 }
 
@@ -345,6 +406,11 @@ void usb_setup() {
                 USB_WritePacket((const uint8_t *)string_3_desc, min(sizeof(string_3_desc), setup.b.wLength.w), 0);
               #endif
               break;
+            #ifdef PANDA
+            case 238:
+              USB_WritePacket((uint8_t*)string_238_desc, min(sizeof(string_238_desc), setup.b.wLength.w), 0);
+              break;
+            #endif
             default:
               // nothing
               USB_WritePacket(0, 0, 0);
@@ -372,6 +438,22 @@ void usb_setup() {
       USB_WritePacket(0, 0, 0);
       USBx_OUTEP(0)->DOEPCTL |= USB_OTG_DOEPCTL_CNAK;
       break;
+    #ifdef PANDA
+    case MS_VENDOR_CODE:
+      switch (setup.b.wIndex.w) {
+        // Extended Compat ID OS Descriptor
+        case 4:
+          USB_WritePacket_EP0((uint8_t*)winusb_ext_compatid_os_desc, min(sizeof(winusb_ext_compatid_os_desc), setup.b.wLength.w));
+          break;
+        // Extended Properties OS Descriptor
+        case 5:
+          USB_WritePacket_EP0((uint8_t*)winusb_ext_prop_os_desc, min(sizeof(winusb_ext_prop_os_desc), setup.b.wLength.w));
+          break;
+        default:
+          USB_WritePacket_EP0(0, 0);
+      }
+      break;
+    #endif
     default:
       resp_len = usb_cb_control_msg(&setup, resp, 1);
       USB_WritePacket(resp, min(resp_len, setup.b.wLength.w), 0);
@@ -680,6 +762,24 @@ void usb_irqhandler(void) {
           }
         }
         break;
+    }
+
+    if (USBx_INEP(0)->DIEPINT & USB_OTG_DIEPMSK_ITTXFEMSK) {
+      #ifdef DEBUG_USB
+      puts("  IN PACKET QUEUE\n");
+      #endif
+
+      if (ep0_txlen != 0 && (USBx_INEP(0)->DTXFSTS & USB_OTG_DTXFSTS_INEPTFSAV) >= 0x40) {
+        uint16_t len = min(ep0_txlen, 0x40);
+        USB_WritePacket(ep0_txdata, len, 0);
+        ep0_txdata += len;
+        ep0_txlen -= len;
+        if (ep0_txlen == 0) {
+          ep0_txdata = NULL;
+          USBx_DEVICE->DIEPEMPMSK &= ~1;
+          USBx_OUTEP(0)->DOEPCTL |= USB_OTG_DOEPCTL_CNAK;
+        }
+      }
     }
 
     // clear interrupts

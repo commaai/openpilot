@@ -95,7 +95,7 @@ BOOL MessageTx_ISO15765::checkTxReceipt(J2534Frame frame) {
 
 				J2534Frame outframe(ISO15765);
 				outframe.Timestamp = frame.Timestamp;
-				outframe.RxStatus = TX_INDICATION | (flags & (ISO15765_ADDR_TYPE | CAN_29BIT_ID));
+				outframe.RxStatus = TX_MSG_TYPE | TX_INDICATION | (flags & (ISO15765_ADDR_TYPE | CAN_29BIT_ID));
 				outframe.Data = frame.Data.substr(0, addressLength());
 				conn_sp->addMsgToRxQueue(outframe);
 
