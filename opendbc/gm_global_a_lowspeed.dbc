@@ -37,7 +37,7 @@ BU_: GMLAN NEO
 VAL_TABLE_ GearShifter 3 "Park" 0 "Drive/Low" ;
 VAL_TABLE_ DriverDoorStatus 1 "Opened" 0 "Closed" ;
 VAL_TABLE_ LKAGapButton 2 "???" 1 "??" 0 "None" ;
-VAL_TABLE_ CruiseButtons 12 "Cancel" 10 "Enabled" 6 "Set" 4 "Resume" 2 "None" ;
+VAL_TABLE_ CruiseButtons 6 "Cancel" 5 "Main" 3 "Set" 2 "Resume" 1 "None" ;
 VAL_TABLE_ CruiseControlActive 1 "Active" 0 "Inactive" ;
 VAL_TABLE_ BlinkerStatus 1 "Active" 0 "Inactive" ;
 
@@ -84,7 +84,7 @@ BO_ 270598144 VehicleSpeed: 8 GMLAN
  SG_ VehicleSpeed2 : 39|16@0+ (0.01,0) [0|100] "mph"  NEO
 
 BO_ 276135936 CruiseButtons: 3 GMLAN
- SG_ CruiseButtons : 3|4@0+ (1,0) [0|12] ""  NEO
+ SG_ CruiseButtons : 3|3@0+ (1,0) [0|12] ""  NEO
 
 BO_ 276127744 CruiseButtons2: 1 GMLAN
  SG_ LKAGapButton : 1|2@0+ (1,0) [0|2] ""  NEO
@@ -105,6 +105,6 @@ VAL_ 270581760 LeftBlinker 1 "Active" 0 "Inactive" ;
 VAL_ 270581760 BlinkerLight 1 "Active" 0 "Inactive" ;
 VAL_ 271368192 GearShifter 3 "Park" 0 "Drive/Low" ;
 VAL_ 271360000 CruiseControlActive 1 "Active" 0 "Inactive" ;
-VAL_ 276135936 CruiseButtons 12 "Cancel" 10 "Enabled" 6 "Set" 4 "Resume" 2 "None" ;
+VAL_ 276135936 CruiseButtons 6 "Cancel" 5 "Main" 3 "Set" 2 "Resume" 1 "None" ;
 VAL_ 276127744 LKAGapButton 2 "???" 1 "??" 0 "None" ;
 
