@@ -1,9 +1,13 @@
 #!/usr/bin/bash
 
-export PASSIVE="0"
-exec ./launch_chffrplus.sh
+function launch {
+  # apply update
+  if [ "$(git rev-parse HEAD)" != "$(git rev-parse @{u})" ]; then
+     git reset --hard @{u} &&
+     git clean -xdf &&
+     exec "${BASH_SOURCE[0]}"
+  fi
 
-<<<<<<< HEAD
   # no cpu rationing for now
   echo 0-3 > /dev/cpuset/background/cpus
   echo 0-3 > /dev/cpuset/system-background/cpus
@@ -35,5 +39,3 @@ exec ./launch_chffrplus.sh
 /data/nebula/launch.sh
 
 launch
-=======
->>>>>>> upstream/devel
