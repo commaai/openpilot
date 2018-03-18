@@ -121,7 +121,7 @@ class AlertManager(object):
     "manualRestart": Alert(
         "TAKE CONTROL",
         "Resume driving manually",
-        AlertStatus.userPrompt, AlertSize.full,
+        AlertStatus.userPrompt, AlertSize.mid,
         Priority.LOW, None, None, 0., 0., .2),
 
     # Non-entry only alerts

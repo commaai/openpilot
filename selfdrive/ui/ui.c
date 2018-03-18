@@ -309,7 +309,7 @@ static const mat4 device_transform = {{
 
 // frame from 4/3 to box size with a 2x zoon
 static const mat4 frame_transform = {{
-  2*(4./3.)/((float)(box_w+sbr_w-(bdr_s*2))/viz_h), 0.0, 0.0, 0.0,
+  2*(4./3.)/((float)box_w/viz_h), 0.0, 0.0, 0.0,
                                            0.0, 2.0, 0.0, 0.0,
                                            0.0, 0.0, 1.0, 0.0,
                                            0.0, 0.0, 0.0, 1.0,
@@ -1310,10 +1310,10 @@ static void ui_draw_vision(UIState *s) {
   glClearColor(0.0, 0.0, 0.0, 0.0);
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
+  // scissor for EON UI
   glEnable(GL_SCISSOR_TEST);
-  const int viewport_rw = (box_w+sbr_w-(bdr_s*2));
-  glViewport(ui_viz_rx + scene->ui_frame_offset, s->fb_h-(viz_y+viz_h), viewport_rw - scene->ui_frame_offset, viz_h);
   glScissor(ui_viz_rx, s->fb_h-(viz_y+viz_h), ui_viz_rw, viz_h);
+  glViewport(ui_viz_rx, s->fb_h-(viz_y+viz_h), ui_viz_rw, viz_h);
   draw_frame(s);
   glViewport(0, 0, s->fb_w, s->fb_h);
   glDisable(GL_SCISSOR_TEST);
@@ -1326,10 +1326,10 @@ static void ui_draw_vision(UIState *s) {
   nvgSave(s->vg);
 
   // hack for eon
-  const int inner_height = viewport_rw*9/16;
+  const int inner_height = ui_viz_rw*9/16;
   nvgScissor(s->vg, ui_viz_rx, viz_y, ui_viz_rw, viz_h);
-  nvgTranslate(s->vg, ui_viz_rx + scene->ui_world_offset, viz_y + (viz_h-inner_height)/2.0);
-  nvgScale(s->vg, (float)viewport_rw / s->fb_w, (float)inner_height / s->fb_h);
+  nvgTranslate(s->vg, ui_viz_rx, viz_y + (viz_h-inner_height)/2.0);
+  nvgScale(s->vg, (float)ui_viz_rw / s->fb_w, (float)inner_height / s->fb_h);
 
   if (!scene->frontview) {
     ui_draw_world(s);
@@ -1342,14 +1342,11 @@ static void ui_draw_vision(UIState *s) {
 
   nvgRestore(s->vg);
 
-  // draw vision elements
   ui_draw_vision_header(s);
-  ui_draw_vision_alert(s);
-
-  // Draw calibration progress (if needed)
   if (scene->cal_status == CALIBRATION_UNCALIBRATED) {
     ui_draw_calibration_status(s);
   }
+  ui_draw_vision_alert(s);
 
   nvgEndFrame(s->vg);
   glDisable(GL_BLEND);
@@ -1828,6 +1825,43 @@ static void ui_update(UIState *s) {
 
 }
 
+static int vision_subscribe(int fd, VisionPacket *rp, int type) {
+  int err;
+  LOGW("vision_subscribe type:%d", type);
+
+  VisionPacket p1 = {
+    .type = VIPC_STREAM_SUBSCRIBE,
+    .d = { .stream_sub = { .type = type, .tbuffer = true, }, },
+  };
+  err = vipc_send(fd, &p1);
+  if (err < 0) {
+    close(fd);
+    return 0;
+  }
+
+  do {
+    err = vipc_recv(fd, rp);
+    if (err <= 0) {
+      close(fd);
+      return 0;
+    }
+
+    // release what we aren't ready for yet
+    if (rp->type == VIPC_STREAM_ACQUIRE) {
+      VisionPacket rep = {
+        .type = VIPC_STREAM_RELEASE,
+        .d = { .stream_rel = {
+          .type = rp->d.stream_acq.type,
+          .idx = rp->d.stream_acq.idx,
+        }},
+      };
+      vipc_send(fd, &rep);
+    }
+  } while (rp->type != VIPC_STREAM_BUFS || rp->d.stream_bufs.type != type);
+
+  return 1;
+}
+
 static void* vision_connect_thread(void *args) {
   int err;
 
@@ -1842,43 +1876,9 @@ static void* vision_connect_thread(void *args) {
     int fd = vipc_connect();
     if (fd < 0) continue;
 
-
-
-    VisionPacket p1 = {
-      .type = VIPC_STREAM_SUBSCRIBE,
-      .d = { .stream_sub = { .type = VISION_STREAM_UI_BACK, .tbuffer = true, }, },
-    };
-    err = vipc_send(fd, &p1);
-    if (err < 0) {
-      close(fd);
-      continue;
-    }
-    VisionPacket p2 = {
-      .type = VIPC_STREAM_SUBSCRIBE,
-      .d = { .stream_sub = { .type = VISION_STREAM_UI_FRONT, .tbuffer = true, }, },
-    };
-    err = vipc_send(fd, &p2);
-    if (err < 0) {
-      close(fd);
-      continue;
-    }
-
-    // printf("init recv\n");
-    VisionPacket back_rp;
-    err = vipc_recv(fd, &back_rp);
-    if (err <= 0) {
-      close(fd);
-      continue;
-    }
-    assert(back_rp.type == VIPC_STREAM_BUFS);
-    VisionPacket front_rp;
-    err = vipc_recv(fd, &front_rp);
-    if (err <= 0) {
-      close(fd);
-      continue;
-    }
-    assert(front_rp.type == VIPC_STREAM_BUFS);
-
+    VisionPacket back_rp, front_rp;
+    if (!vision_subscribe(fd, &back_rp, VISION_STREAM_UI_BACK)) continue;
+    if (!vision_subscribe(fd, &front_rp, VISION_STREAM_UI_FRONT)) continue;
 
     pthread_mutex_lock(&s->lock);
     assert(!s->vision_connected);

@@ -211,7 +211,8 @@ def state_transition(CS, CP, state, events, soft_disable_timer, v_cruise_kph, AM
 
 
 def state_control(plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, AM, rk,
-                  awareness_status, PL, LaC, LoC, VM, angle_offset, rear_view_allowed, rear_view_toggle):
+                  awareness_status, PL, LaC, LoC, VM, angle_offset, rear_view_allowed, 
+                  rear_view_toggle, passive):
   # Given the state, this function returns the actuators
 
   # reset actuators to zero
@@ -228,7 +229,7 @@ def state_control(plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, 
       else:
         rear_view_toggle = False
 
-    if b.type == "altButton1" and b.pressed:
+    if (b.type == "altButton1" and b.pressed) and not passive:
       rear_view_toggle = not rear_view_toggle
 
 
@@ -454,13 +455,13 @@ def controlsd_thread(gctx, rate=100):
 
   CI, CP = get_car(logcan, sendcan, 1.0 if passive else None)
 
+  if CI is None:
+    raise Exception("unsupported car")
+
   # if stock camera is connected, then force passive behavior
   if not CP.enableCamera:
     passive = True
     sendcan = None
-
-  if CI is None:
-    raise Exception("unsupported car")
 
   if passive:
     CP.safetyModel = car.CarParams.SafetyModels.noOutput
@@ -528,7 +529,7 @@ def controlsd_thread(gctx, rate=100):
     # compute actuators
     actuators, v_cruise_kph, awareness_status, angle_offset, rear_view_toggle = state_control(plan, CS, CP, state, events, v_cruise_kph,
                                                                             v_cruise_kph_last, AM, rk, awareness_status, PL, LaC, LoC, VM,
-                                                                            angle_offset, rear_view_allowed, rear_view_toggle)
+                                                                            angle_offset, rear_view_allowed, rear_view_toggle, passive)
     prof.checkpoint("State Control")
 
     # publish data
