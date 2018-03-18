@@ -28,6 +28,10 @@ Supported Cars
 
 - Honda CR-V Touring 2015-2016
   - Can only be enabled above 25 mph
+  
+- Honda CR-V 2017-2018 with Honda Sensing (alpha!)
+  - Due to limitations in steering firmware, steering is disabled below 12 mph
+  - Uses stock Honda Sensing for longitudinal control
 
 - Honda Odyssey 2018 with Honda Sensing (alpha!)
   - Can only be enabled above 25 mph

@@ -101,6 +101,10 @@ class CarController(object):
     else:
       hud_car = 0
 
+    # For lateral control-only, send chimes as a beep since we don't send 0x1fa
+    if CS.CP.carFingerprint == CAR.CRV_5G:
+      snd_beep = snd_beep if snd_beep is not 0 else snd_chime
+
     #print chime, alert_id, hud_alert
     fcw_display, steer_required, acc_alert = process_hud_alert(hud_alert)
 
@@ -115,7 +119,7 @@ class CarController(object):
 
     # *** compute control surfaces ***
     BRAKE_MAX = 1024/4
-    if CS.CP.carFingerprint in (CAR.CIVIC, CAR.ODYSSEY, CAR.PILOT):
+    if CS.CP.carFingerprint in (CAR.CIVIC, CAR.ODYSSEY, CAR.PILOT, CAR.CRV_5G):
       is_fw_modified = os.getenv("DONGLE_ID") in ['99c94dc769b5d96e']
       STEER_MAX = 0x1FFF if is_fw_modified else 0x1000
     elif CS.CP.carFingerprint in (CAR.CRV, CAR.ACURA_RDX):
@@ -139,30 +143,35 @@ class CarController(object):
     idx = frame % 4
     can_sends.append(hondacan.create_steering_control(self.packer, apply_steer, CS.CP.carFingerprint, idx))
 
-    # Send gas and brake commands.
-    if (frame % 2) == 0:
-      idx = (frame / 2) % 4
-      can_sends.append(
-        hondacan.create_brake_command(self.packer, apply_brake, pcm_override,
-                                      pcm_cancel_cmd, hud.chime, hud.fcw, idx))
-      if not CS.brake_only:
-        # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
-        # This prevents unexpected pedal range rescaling
-        can_sends.append(hondacan.create_gas_command(self.packer, apply_gas, idx))
-
     # Send dashboard UI commands.
     if (frame % 10) == 0:
       idx = (frame/10) % 4
       can_sends.extend(hondacan.create_ui_commands(self.packer, pcm_speed, hud, CS.CP.carFingerprint, idx))
 
-    # radar at 20Hz, but these msgs need to be sent at 50Hz on ilx (seems like an Acura bug)
-    if CS.CP.carFingerprint == CAR.ACURA_ILX:
-      radar_send_step = 2
-    else:
-      radar_send_step = 5
+    if CS.CP.carFingerprint not in (CAR.CRV_5G):
+      # Send gas and brake commands.
+      if (frame % 2) == 0:
+        idx = (frame / 2) % 4
+        can_sends.append(
+          hondacan.create_brake_command(self.packer, apply_brake, pcm_override,
+                                      pcm_cancel_cmd, hud.chime, hud.fcw, idx))
+        if not CS.brake_only:
+          # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
+          # This prevents unexpected pedal range rescaling
+          can_sends.append(hondacan.create_gas_command(self.packer, apply_gas, idx))
 
-    if (frame % radar_send_step) == 0:
-      idx = (frame/radar_send_step) % 4
-      can_sends.extend(hondacan.create_radar_commands(CS.v_ego, CS.CP.carFingerprint, idx))
+      # radar at 20Hz, but these msgs need to be sent at 50Hz on ilx (seems like an Acura bug)
+      if CS.CP.carFingerprint == CAR.ACURA_ILX:
+        radar_send_step = 2
+      else:
+        radar_send_step = 5
+
+      if (frame % radar_send_step) == 0:
+        idx = (frame/radar_send_step) % 4
+        can_sends.extend(hondacan.create_radar_commands(CS.v_ego, CS.CP.carFingerprint, idx))
+    # If using stock ACC, send a cancel command to kill gas when OP disengages.
+    else:
+      if pcm_cancel_cmd:
+        can_sends.append(hondacan.create_cancel_command(idx))
 
     sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
