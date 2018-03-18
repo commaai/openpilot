@@ -128,21 +128,6 @@ class CarController(object):
     apply_brake = int(clip(self.brake_last * BRAKE_MAX, 0, BRAKE_MAX - 1))
     apply_steer = int(clip(-actuators.steer * STEER_MAX, -STEER_MAX, STEER_MAX))
 
-    if enabled:
-      apply_gas = GAS_MAX - 1
-    else:
-      apply_gas = 0
-
-    # if enabled:
-    #   apply_brake = BRAKE_MAX - 1
-    # else:
-    #   apply_brake = 0
-    #
-    # if enabled:
-    #   apply_steer = STEER_MAX
-    # else:
-    #   apply_steer = 0
-
     # any other cp.vl[0x18F]['STEER_STATUS'] is common and can happen during user override. sending 0 torque to avoid EPS sending error 5
     if CS.steer_not_allowed:
       apply_steer = 0
