@@ -598,7 +598,7 @@ static void draw_cross(UIState *s, float x_in, float y_in, float sz, NVGcolor co
 
   nvgBeginPath(s->vg);
   nvgStrokeColor(s->vg, color);
-  nvgStrokeWidth(s->vg, 10);
+  nvgStrokeWidth(s->vg, 6);
 
   const vec4 p_car_space = (vec4){{x_in, y_in, 0., 1.}};
   const vec3 p_full_frame = car_space_to_full_frame(s, p_car_space);
@@ -1262,10 +1262,11 @@ static void ui_draw_vision_lead(UIState *s) {
     nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 255));
     // lead car is always in meters
     if (s->is_metric || true) {
-      snprintf(radar_str, sizeof(radar_str), "%d m", (int)scene->lead_d_rel);
-    } else {
-      snprintf(radar_str, sizeof(radar_str), "%d ft", (int)(scene->lead_d_rel * 3.28084));
+      snprintf(radar_str, sizeof(radar_str), "%dm", (int)scene->lead_d_rel);
+    } /*else {
+      snprintf(radar_str, sizeof(radar_str), "%dft", (int)(scene->lead_d_rel * 3.28084));
     }
+    */
     nvgText(s->vg, viz_leaddistance_x+viz_leaddistance_w/2, 242, radar_str, NULL);
   } /* else {
     nvgFontSize(s->vg, 42*2.5);
