@@ -1306,7 +1306,7 @@ static void ui_draw_vision_grid(UIState *s) {
     nvgLineTo(s->vg, ((ui_viz_rw + ui_viz_rx) / 2)+ 10, i);
   }
 
-  for (int i=ui_viz_rx - 2; i <= ui_viz_rw; i+=grid_spacing) {
+  for (int i=ui_viz_rx + 12; i <= ui_viz_rw; i+=grid_spacing) {
     nvgMoveTo(s->vg, i, 0);
     nvgLineTo(s->vg, i, 1000);
   }
