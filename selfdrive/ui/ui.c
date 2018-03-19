@@ -1239,7 +1239,7 @@ static void ui_draw_vision_lead(UIState *s) {
 
     const int viz_leaddistance_x = (ui_viz_rx + 210 + (bdr_s*2));
     const int viz_leaddistance_y = (viz_y + (bdr_s*1.5));
-    const int viz_leaddistance_w = 240;
+    const int viz_leaddistance_w = 290;
     const int viz_leaddistance_h = 202;
     char radar_str[16];
     bool is_cruise_set = (leaddistance != 0 && leaddistance != 255);
