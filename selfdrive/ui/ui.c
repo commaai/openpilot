@@ -1281,6 +1281,7 @@ static void ui_draw_vision_lead(UIState *s) {
 
 static void ui_draw_vision_grid(UIState *s) {
   const UIScene *scene = &s->scene;
+  const int grid_spacing = 30;
   int ui_viz_rx = scene->ui_viz_rx;
   int ui_viz_rw = scene->ui_viz_rw;
 
@@ -1296,38 +1297,16 @@ static void ui_draw_vision_grid(UIState *s) {
   nvgScale(s->vg, 1440.0f / s->rgb_width, 1080.0f / s->rgb_height);
 
   nvgBeginPath(s->vg);
-  nvgStrokeColor(s->vg, nvgRGBA(255,255,255,220));
+  nvgStrokeColor(s->vg, nvgRGBA(255,255,255,128));
   nvgStrokeWidth(s->vg, 1);
-  bool started = false;
 
-  /*for (int i=0; i<50; i++) {
-    float px = (float)i;
-    float py = points[i] + off;
-
-    vec4 p_car_space = (vec4){{px, py, 0., 1.}};
-    vec3 p_full_frame = car_space_to_full_frame(s, p_car_space);
-
-    float x = p_full_frame.v[0];
-    float y = p_full_frame.v[1];
-    if (x < 0 || y < 0.) {
-      continue;
-    }
-
-    if (!started) {
-      nvgMoveTo(s->vg, x, y);
-      started = true;
-    } else {
-      nvgLineTo(s->vg, x, y);
-    }
-  }
-  */
-
-  for (int i=0; i < 1000; i+=20) {
+  for (int i=viz_y; i < viz_h; i+=grid_spacing) {
     nvgMoveTo(s->vg, ui_viz_rx, i);
-    nvgLineTo(s->vg, 1000, i);
+    //nvgLineTo(s->vg, ui_viz_rx, i);
+    nvgLineTo(s->vg, ((ui_viz_rw + ui_viz_rx) / 2)+ 10, i);
   }
 
-  for (int i=ui_viz_rx; i < 1000; i+=20) {
+  for (int i=ui_viz_rx; i < 1000; i+=grid_spacing) {
     nvgMoveTo(s->vg, i, 0);
     nvgLineTo(s->vg, i, 1000);
   }
