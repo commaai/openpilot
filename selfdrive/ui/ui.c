@@ -1281,37 +1281,41 @@ static void ui_draw_vision_lead(UIState *s) {
 
 static void ui_draw_vision_grid(UIState *s) {
   const UIScene *scene = &s->scene;
-  const int grid_spacing = 30;
-  int ui_viz_rx = scene->ui_viz_rx;
-  int ui_viz_rw = scene->ui_viz_rw;
+  bool is_cruise_set = (s->scene.v_cruise != 0 && s->scene.v_cruise != 255);
+  if (!is_cruise_set) {
+    const int grid_spacing = 30;
 
-  nvgSave(s->vg);
+    int ui_viz_rx = scene->ui_viz_rx;
+    int ui_viz_rw = scene->ui_viz_rw;
 
-  // path coords are worked out in rgb-box space
-  nvgTranslate(s->vg, 240.0f, 0.0);
+    nvgSave(s->vg);
 
-  // zooom in 2x
-  nvgTranslate(s->vg, -1440.0f / 2, -1080.0f / 2);
-  nvgScale(s->vg, 2.0, 2.0);
+    // path coords are worked out in rgb-box space
+    nvgTranslate(s->vg, 240.0f, 0.0);
 
-  nvgScale(s->vg, 1440.0f / s->rgb_width, 1080.0f / s->rgb_height);
+    // zooom in 2x
+    nvgTranslate(s->vg, -1440.0f / 2, -1080.0f / 2);
+    nvgScale(s->vg, 2.0, 2.0);
 
-  nvgBeginPath(s->vg);
-  nvgStrokeColor(s->vg, nvgRGBA(255,255,255,128));
-  nvgStrokeWidth(s->vg, 1);
+    nvgScale(s->vg, 1440.0f / s->rgb_width, 1080.0f / s->rgb_height);
 
-  for (int i=viz_y; i < viz_h; i+=grid_spacing) {
-    nvgMoveTo(s->vg, ui_viz_rx, i);
-    //nvgLineTo(s->vg, ui_viz_rx, i);
-    nvgLineTo(s->vg, ((ui_viz_rw + ui_viz_rx) / 2)+ 10, i);
+    nvgBeginPath(s->vg);
+    nvgStrokeColor(s->vg, nvgRGBA(255,255,255,128));
+    nvgStrokeWidth(s->vg, 1);
+
+    for (int i=viz_y; i < viz_h; i+=grid_spacing) {
+      nvgMoveTo(s->vg, ui_viz_rx, i);
+      //nvgLineTo(s->vg, ui_viz_rx, i);
+      nvgLineTo(s->vg, ((ui_viz_rw + ui_viz_rx) / 2)+ 10, i);
+    }
+
+    for (int i=ui_viz_rx + 12; i <= ui_viz_rw; i+=grid_spacing) {
+      nvgMoveTo(s->vg, i, 0);
+      nvgLineTo(s->vg, i, 1000);
+    }
+    nvgStroke(s->vg);
+    nvgRestore(s->vg);
   }
-
-  for (int i=ui_viz_rx + 12; i <= ui_viz_rw; i+=grid_spacing) {
-    nvgMoveTo(s->vg, i, 0);
-    nvgLineTo(s->vg, i, 1000);
-  }
-  nvgStroke(s->vg);
-  nvgRestore(s->vg);
 }
 
 
