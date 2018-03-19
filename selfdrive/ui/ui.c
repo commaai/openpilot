@@ -787,6 +787,7 @@ static void draw_frame(UIState *s) {
   glVertexAttribPointer(s->frame_texcoord_loc, 2, GL_FLOAT, GL_FALSE,
                         sizeof(frame_coords[0]), &frame_coords[0][2]);
 
+  //comment next line out to debug ui
   assert(glGetError() == GL_NO_ERROR);
   glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, &frame_indicies[0]);
 }
@@ -1230,6 +1231,48 @@ static void ui_draw_vision_wheel(UIState *s) {
   nvgFill(s->vg);
 }
 
+static void ui_draw_vision_lead(UIState *s) {
+  const UIScene *scene = &s->scene;
+  int ui_viz_rx = scene->ui_viz_rx;
+  int ui_viz_rw = scene->ui_viz_rw;
+  float leaddistance = s->scene.v_cruise;
+
+  const int viz_leaddistance_x = (ui_viz_rx + 200 + (bdr_s*2));
+  const int viz_leaddistance_y = (viz_y + (bdr_s*1.5));
+  const int viz_leaddistance_w = 180;
+  const int viz_leaddistance_h = 202;
+  char radar_str[16];
+  bool is_cruise_set = (leaddistance != 0 && leaddistance != 255);
+
+  nvgBeginPath(s->vg);
+  nvgRoundedRect(s->vg, viz_leaddistance_x, viz_leaddistance_y, viz_leaddistance_w, viz_leaddistance_h, 20);
+  nvgStrokeColor(s->vg, nvgRGBA(255,255,255,80));
+  nvgStrokeWidth(s->vg, 6);
+  nvgStroke(s->vg);
+
+  nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
+  nvgFontFace(s->vg, "sans-regular");
+  nvgFontSize(s->vg, 26*2.5);
+  nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 200));
+  nvgText(s->vg, viz_leaddistance_x+viz_leaddistance_w/2, 148, "LEAD", NULL);
+
+  nvgFontFace(s->vg, "sans-semibold");
+  nvgFontSize(s->vg, 52*2.5);
+  nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 255));
+  if (is_cruise_set) {
+    // lead car is always in meters
+    if (s->is_metric || true) {
+      snprintf(radar_str, sizeof(radar_str), "%d m", (int)scene->lead_d_rel);
+    } else {
+      snprintf(radar_str, sizeof(radar_str), "%d ft", (int)(scene->lead_d_rel * 3.28084));
+    }
+    nvgText(s->vg, viz_leaddistance_x+viz_leaddistance_w/2, 242, radar_str, NULL);
+  } else {
+    nvgFontSize(s->vg, 42*2.5);
+    nvgText(s->vg, viz_leaddistance_x+viz_leaddistance_w/2, 242, "N/A", NULL);
+  }
+}
+
 static void ui_draw_vision_header(UIState *s) {
   const UIScene *scene = &s->scene;
   int ui_viz_rx = scene->ui_viz_rx;
@@ -1247,6 +1290,7 @@ static void ui_draw_vision_header(UIState *s) {
   ui_draw_vision_maxspeed(s);
   ui_draw_vision_speed(s);
   ui_draw_vision_wheel(s);
+  ui_draw_vision_lead(s);
 }
 
 static void ui_draw_vision_alert(UIState *s) {
@@ -1543,6 +1587,7 @@ static void ui_update(UIState *s) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
 
+    //comment next line out to debug ui
     assert(glGetError() == GL_NO_ERROR);
 
     // Default UI Measurements (Assumes sidebar visible)
@@ -1576,6 +1621,7 @@ static void ui_update(UIState *s) {
 
     int num_polls = 8;
     if (s->vision_connected) {
+      //comment next line out to debug ui
       assert(s->ipc_fd >= 0);
       polls[8].fd = s->ipc_fd;
       polls[8].events = ZMQ_POLLIN;
@@ -1870,6 +1916,9 @@ static void* vision_connect_thread(void *args) {
     usleep(100000);
     pthread_mutex_lock(&s->lock);
     bool connected = s->vision_connected;
+    //uncomment next two lines to debug ui
+    //s->vision_connected = true;
+    //s->vision_connect_firstrun = true;
     pthread_mutex_unlock(&s->lock);
     if (connected) continue;
 
