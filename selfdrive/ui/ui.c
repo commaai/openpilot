@@ -598,7 +598,7 @@ static void draw_cross(UIState *s, float x_in, float y_in, float sz, NVGcolor co
 
   nvgBeginPath(s->vg);
   nvgStrokeColor(s->vg, color);
-  nvgStrokeWidth(s->vg, 5);
+  nvgStrokeWidth(s->vg, 10);
 
   const vec4 p_car_space = (vec4){{x_in, y_in, 0., 1.}};
   const vec3 p_full_frame = car_space_to_full_frame(s, p_car_space);
@@ -1233,33 +1233,33 @@ static void ui_draw_vision_wheel(UIState *s) {
 
 static void ui_draw_vision_lead(UIState *s) {
   const UIScene *scene = &s->scene;
-  int ui_viz_rx = scene->ui_viz_rx;
-  int ui_viz_rw = scene->ui_viz_rw;
-  float leaddistance = s->scene.v_cruise;
+    int ui_viz_rx = scene->ui_viz_rx;
+    int ui_viz_rw = scene->ui_viz_rw;
+    float leaddistance = s->scene.v_cruise;
 
-  const int viz_leaddistance_x = (ui_viz_rx + 200 + (bdr_s*2));
-  const int viz_leaddistance_y = (viz_y + (bdr_s*1.5));
-  const int viz_leaddistance_w = 180;
-  const int viz_leaddistance_h = 202;
-  char radar_str[16];
-  bool is_cruise_set = (leaddistance != 0 && leaddistance != 255);
+    const int viz_leaddistance_x = (ui_viz_rx + 210 + (bdr_s*2));
+    const int viz_leaddistance_y = (viz_y + (bdr_s*1.5));
+    const int viz_leaddistance_w = 240;
+    const int viz_leaddistance_h = 202;
+    char radar_str[16];
+    bool is_cruise_set = (leaddistance != 0 && leaddistance != 255);
 
-  nvgBeginPath(s->vg);
-  nvgRoundedRect(s->vg, viz_leaddistance_x, viz_leaddistance_y, viz_leaddistance_w, viz_leaddistance_h, 20);
-  nvgStrokeColor(s->vg, nvgRGBA(255,255,255,80));
-  nvgStrokeWidth(s->vg, 6);
-  nvgStroke(s->vg);
+  if (scene->lead_status) {
+    nvgBeginPath(s->vg);
+    nvgRoundedRect(s->vg, viz_leaddistance_x, viz_leaddistance_y, viz_leaddistance_w, viz_leaddistance_h, 20);
+    nvgStrokeColor(s->vg, nvgRGBA(255,255,255,80));
+    nvgStrokeWidth(s->vg, 6);
+    nvgStroke(s->vg);
 
-  nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
-  nvgFontFace(s->vg, "sans-regular");
-  nvgFontSize(s->vg, 26*2.5);
-  nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 200));
-  nvgText(s->vg, viz_leaddistance_x+viz_leaddistance_w/2, 148, "LEAD", NULL);
+    nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
+    nvgFontFace(s->vg, "sans-regular");
+    nvgFontSize(s->vg, 26*2.5);
+    nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 200));
+    nvgText(s->vg, viz_leaddistance_x+viz_leaddistance_w/2, 148, "LEAD", NULL);
 
-  nvgFontFace(s->vg, "sans-semibold");
-  nvgFontSize(s->vg, 52*2.5);
-  nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 255));
-  if (is_cruise_set) {
+    nvgFontFace(s->vg, "sans-semibold");
+    nvgFontSize(s->vg, 52*2.5);
+    nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 255));
     // lead car is always in meters
     if (s->is_metric || true) {
       snprintf(radar_str, sizeof(radar_str), "%d m", (int)scene->lead_d_rel);
@@ -1267,10 +1267,12 @@ static void ui_draw_vision_lead(UIState *s) {
       snprintf(radar_str, sizeof(radar_str), "%d ft", (int)(scene->lead_d_rel * 3.28084));
     }
     nvgText(s->vg, viz_leaddistance_x+viz_leaddistance_w/2, 242, radar_str, NULL);
-  } else {
+  } /* else {
     nvgFontSize(s->vg, 42*2.5);
+    //nvgText(s->vg, viz_leaddistance_x+viz_leaddistance_w/2, 242, "222m", NULL);
     nvgText(s->vg, viz_leaddistance_x+viz_leaddistance_w/2, 242, "N/A", NULL);
   }
+  */
 }
 
 static void ui_draw_vision_header(UIState *s) {
@@ -1291,6 +1293,8 @@ static void ui_draw_vision_header(UIState *s) {
   ui_draw_vision_speed(s);
   ui_draw_vision_wheel(s);
   ui_draw_vision_lead(s);
+  //test crosshair
+  //draw_cross(s, 20, 5, 30, nvgRGBA(0, 255, 0, 255));
 }
 
 static void ui_draw_vision_alert(UIState *s) {
