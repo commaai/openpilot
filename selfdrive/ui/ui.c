@@ -1384,7 +1384,7 @@ static void ui_draw_vision(UIState *s) {
 
     if (scene->lead_status) {
       draw_cross(s, scene->lead_d_rel + 2.7, scene->lead_y_rel, 30,
-                   nvgRGBA(255, 0, 0, 128));
+                   nvgRGBA(0, 255, 0, 255));
     }
   }
 
