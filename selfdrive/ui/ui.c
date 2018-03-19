@@ -1196,55 +1196,58 @@ static void ui_draw_vision_speed(UIState *s) {
 
 static void ui_draw_vision_wheel(UIState *s) {
   const UIScene *scene = &s->scene;
-  const int ui_viz_rx = scene->ui_viz_rx;
-  const int ui_viz_rw = scene->ui_viz_rw;
-  const int viz_event_w = 220;
-  const int viz_event_x = ((ui_viz_rx + ui_viz_rw) - (viz_event_w + (bdr_s*2)));
-  const int viz_event_y = (viz_y + (bdr_s*1.5));
-  const int viz_event_h = (viz_header_h - (bdr_s*1.5));
-  // draw steering wheel
-  const int viz_wheel_size = 96;
-  const int viz_wheel_x = viz_event_x + (viz_event_w-viz_wheel_size);
-  const int viz_wheel_y = viz_event_y + (viz_wheel_size/2);
-  const int img_wheel_size = viz_wheel_size*1.5;
-  const int img_wheel_x = viz_wheel_x-(img_wheel_size/2);
-  const int img_wheel_y = viz_wheel_y-25;
-  float img_wheel_alpha = 0.5f;
-  bool is_engaged = (s->status == STATUS_ENGAGED);
-  bool is_warning = (s->status == STATUS_WARNING);
-  if (is_engaged || is_warning) {
-    nvgBeginPath(s->vg);
-    nvgCircle(s->vg, viz_wheel_x, (viz_wheel_y + (bdr_s*1.5)), viz_wheel_size);
-    if (is_engaged) {
-      nvgFillColor(s->vg, nvgRGBA(23, 134, 68, 255));
-    } else if (is_warning) {
-      nvgFillColor(s->vg, nvgRGBA(218, 111, 37, 255));
+  if (!scene->lead_status) {
+    const int ui_viz_rx = scene->ui_viz_rx;
+    const int ui_viz_rw = scene->ui_viz_rw;
+    const int viz_event_w = 220;
+    const int viz_event_x = ((ui_viz_rx + ui_viz_rw) - (viz_event_w + (bdr_s*2)));
+    const int viz_event_y = (viz_y + (bdr_s*1.5));
+    const int viz_event_h = (viz_header_h - (bdr_s*1.5));
+    // draw steering wheel
+    const int viz_wheel_size = 96;
+    const int viz_wheel_x = viz_event_x + (viz_event_w-viz_wheel_size);
+    const int viz_wheel_y = viz_event_y + (viz_wheel_size/2);
+    const int img_wheel_size = viz_wheel_size*1.5;
+    const int img_wheel_x = viz_wheel_x-(img_wheel_size/2);
+    const int img_wheel_y = viz_wheel_y-25;
+    float img_wheel_alpha = 0.5f;
+    bool is_engaged = (s->status == STATUS_ENGAGED);
+    bool is_warning = (s->status == STATUS_WARNING);
+    if (is_engaged || is_warning) {
+      nvgBeginPath(s->vg);
+      nvgCircle(s->vg, viz_wheel_x, (viz_wheel_y + (bdr_s*1.5)), viz_wheel_size);
+      if (is_engaged) {
+        nvgFillColor(s->vg, nvgRGBA(23, 134, 68, 255));
+      } else if (is_warning) {
+        nvgFillColor(s->vg, nvgRGBA(218, 111, 37, 255));
+      }
+      nvgFill(s->vg);
+      img_wheel_alpha = 1.0f;
     }
+    nvgBeginPath(s->vg);
+    NVGpaint imgPaint = nvgImagePattern(s->vg, img_wheel_x, img_wheel_y,
+      img_wheel_size, img_wheel_size, 0, s->img_wheel, img_wheel_alpha);
+    nvgRect(s->vg, img_wheel_x, img_wheel_y, img_wheel_size, img_wheel_size);
+    nvgFillPaint(s->vg, imgPaint);
     nvgFill(s->vg);
-    img_wheel_alpha = 1.0f;
   }
-  nvgBeginPath(s->vg);
-  NVGpaint imgPaint = nvgImagePattern(s->vg, img_wheel_x, img_wheel_y,
-    img_wheel_size, img_wheel_size, 0, s->img_wheel, img_wheel_alpha);
-  nvgRect(s->vg, img_wheel_x, img_wheel_y, img_wheel_size, img_wheel_size);
-  nvgFillPaint(s->vg, imgPaint);
-  nvgFill(s->vg);
 }
 
 static void ui_draw_vision_lead(UIState *s) {
   const UIScene *scene = &s->scene;
+  if (scene->lead_status) {
     int ui_viz_rx = scene->ui_viz_rx;
     int ui_viz_rw = scene->ui_viz_rw;
     float leaddistance = s->scene.v_cruise;
 
-    const int viz_leaddistance_x = (ui_viz_rx + 210 + (bdr_s*2));
-    const int viz_leaddistance_y = (viz_y + (bdr_s*1.5));
     const int viz_leaddistance_w = 290;
     const int viz_leaddistance_h = 202;
+    const int viz_leaddistance_x = ((ui_viz_rx + ui_viz_rw) - (viz_leaddistance_w + (bdr_s*2)));
+    //const int viz_leaddistance_x = (ui_viz_rx + 210 + (bdr_s*2));
+    const int viz_leaddistance_y = (viz_y + (bdr_s*1.5));
     char radar_str[16];
     bool is_cruise_set = (leaddistance != 0 && leaddistance != 255);
 
-  if (scene->lead_status) {
     nvgBeginPath(s->vg);
     nvgRoundedRect(s->vg, viz_leaddistance_x, viz_leaddistance_y, viz_leaddistance_w, viz_leaddistance_h, 20);
     nvgStrokeColor(s->vg, nvgRGBA(255,255,255,80));
