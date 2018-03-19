@@ -1279,6 +1279,63 @@ static void ui_draw_vision_lead(UIState *s) {
   */
 }
 
+static void ui_draw_vision_grid(UIState *s) {
+  const UIScene *scene = &s->scene;
+  int ui_viz_rx = scene->ui_viz_rx;
+  int ui_viz_rw = scene->ui_viz_rw;
+
+  nvgSave(s->vg);
+
+  // path coords are worked out in rgb-box space
+  nvgTranslate(s->vg, 240.0f, 0.0);
+
+  // zooom in 2x
+  nvgTranslate(s->vg, -1440.0f / 2, -1080.0f / 2);
+  nvgScale(s->vg, 2.0, 2.0);
+
+  nvgScale(s->vg, 1440.0f / s->rgb_width, 1080.0f / s->rgb_height);
+
+  nvgBeginPath(s->vg);
+  nvgStrokeColor(s->vg, nvgRGBA(255,255,255,220));
+  nvgStrokeWidth(s->vg, 1);
+  bool started = false;
+
+  /*for (int i=0; i<50; i++) {
+    float px = (float)i;
+    float py = points[i] + off;
+
+    vec4 p_car_space = (vec4){{px, py, 0., 1.}};
+    vec3 p_full_frame = car_space_to_full_frame(s, p_car_space);
+
+    float x = p_full_frame.v[0];
+    float y = p_full_frame.v[1];
+    if (x < 0 || y < 0.) {
+      continue;
+    }
+
+    if (!started) {
+      nvgMoveTo(s->vg, x, y);
+      started = true;
+    } else {
+      nvgLineTo(s->vg, x, y);
+    }
+  }
+  */
+
+  for (int i=0; i < 1000; i+=20) {
+    nvgMoveTo(s->vg, ui_viz_rx, i);
+    nvgLineTo(s->vg, 1000, i);
+  }
+
+  for (int i=ui_viz_rx; i < 1000; i+=20) {
+    nvgMoveTo(s->vg, i, 0);
+    nvgLineTo(s->vg, i, 1000);
+  }
+  nvgStroke(s->vg);
+  nvgRestore(s->vg);
+}
+
+
 static void ui_draw_vision_header(UIState *s) {
   const UIScene *scene = &s->scene;
   int ui_viz_rx = scene->ui_viz_rx;
@@ -1297,6 +1354,7 @@ static void ui_draw_vision_header(UIState *s) {
   ui_draw_vision_speed(s);
   ui_draw_vision_wheel(s);
   ui_draw_vision_lead(s);
+  ui_draw_vision_grid(s);
   //test crosshair
   //draw_cross(s, 20, 5, 30, nvgRGBA(0, 255, 0, 255));
 }
