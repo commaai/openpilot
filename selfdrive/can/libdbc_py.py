@@ -1,12 +1,11 @@
 import os
-import sys
 import subprocess
 
 from cffi import FFI
 
 can_dir = os.path.dirname(os.path.abspath(__file__))
 libdbc_fn = os.path.join(can_dir, "libdbc.so")
-subprocess.check_call(["make"], stdout=sys.stderr, cwd=can_dir)
+subprocess.check_call(["make"], cwd=can_dir)
 
 ffi = FFI()
 ffi.cdef("""
@@ -67,7 +66,8 @@ typedef struct {
 
 void* can_init(int bus, const char* dbc_name,
               size_t num_message_options, const MessageParseOptions* message_options,
-              size_t num_signal_options, const SignalParseOptions* signal_options, bool sendcan);
+              size_t num_signal_options, const SignalParseOptions* signal_options, bool sendcan,
+              const char* tcp_addr);
 
 void can_update(void* can, uint64_t sec, bool wait);
 

@@ -24,7 +24,7 @@ APKS = {
     'src': 'https://apkcache.s3.amazonaws.com/com.waze_1021278.apk',
     'src_sha256': 'f00957e93e2389f9e30502ac54994b98ac769314b0963c263d4e8baa625ab0c2',
     'patch': 'com.waze.apkpatch',
-    'out_sha256': '9ec8b0ea3c78c666342865b1bfb66e368a3f5c911df2ad12835206ec8b19f444'
+    'out_sha256': 'fee880a91a44c738442cd05fd1b6d9b5817cbf755aa61c86325ada2bc443d5cf'
   },
   'com.spotify.music': {
     'src': 'https://apkcache.s3.amazonaws.com/com.spotify.music_24382006.apk',

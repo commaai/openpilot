@@ -1,6 +1,5 @@
 import numpy as np
 from common.numpy_fast import clip, interp
-import numbers
 
 def apply_deadzone(error, deadzone):
   if error > deadzone:
@@ -30,21 +29,11 @@ class PIController(object):
 
   @property
   def k_p(self):
-    if isinstance(self._k_p, numbers.Number):
-      kp = self._k_p
-    else:
-      kp = interp(self.speed, self._k_p[0], self._k_p[1])
-
-    return kp
+    return interp(self.speed, self._k_p[0], self._k_p[1])
 
   @property
   def k_i(self):
-    if isinstance(self._k_i, numbers.Number):
-      ki = self._k_i
-    else:
-      ki = interp(self.speed, self._k_i[0], self._k_i[1])
-
-    return ki
+    return interp(self.speed, self._k_i[0], self._k_i[1])
 
   def _check_saturation(self, control, override, error):
     saturated = (control < self.neg_limit) or (control > self.pos_limit)

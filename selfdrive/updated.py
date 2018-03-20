@@ -8,6 +8,7 @@ import subprocess
 
 from common.basedir import BASEDIR
 from selfdrive.swaglog import cloudlog
+from selfdrive.version import dirty
 
 def main(gctx=None):
   while True:
@@ -17,7 +18,13 @@ def main(gctx=None):
       time.sleep(60)
       continue
 
-    r = subprocess.call(["nice", "-n", "19", "git", "fetch", "--depth=1"])
+    # If there are modifications we want to full history
+    # otherwise only store head to save space
+    if dirty:
+      r = subprocess.call(["nice", "-n", "19", "git", "fetch", "--unshallow"])
+    else:
+      r = subprocess.call(["nice", "-n", "19", "git", "fetch", "--depth=1"])
+
     cloudlog.info("git fetch: %r", r)
     if r:
       time.sleep(60)

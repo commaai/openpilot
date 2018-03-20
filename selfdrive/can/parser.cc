@@ -142,18 +142,23 @@ class CANParser {
   CANParser(int abus, const std::string& dbc_name,
             const std::vector<MessageParseOptions> &options,
             const std::vector<SignalParseOptions> &sigoptions,
-            bool sendcan)
+            bool sendcan, const std::string& tcp_addr)
     : bus(abus) {
     // connect to can on 8006
     context = zmq_ctx_new();
     subscriber = zmq_socket(context, ZMQ_SUB);
     zmq_setsockopt(subscriber, ZMQ_SUBSCRIBE, "", 0);
 
+    std::string tcp_addr_str;
+
     if (sendcan) {
-      zmq_connect(subscriber, "tcp://127.0.0.1:8017");
+      tcp_addr_str = "tcp://" + tcp_addr + ":8017";
     } else {
-      zmq_connect(subscriber, "tcp://127.0.0.1:8006");
+      tcp_addr_str = "tcp://" + tcp_addr + ":8006";
     }
+    const char *tcp_addr_char = tcp_addr_str.c_str();
+
+    zmq_connect(subscriber, tcp_addr_char);
 
     dbc = dbc_lookup(dbc_name);
     assert(dbc);
@@ -331,12 +336,12 @@ extern "C" {
 void* can_init(int bus, const char* dbc_name,
                size_t num_message_options, const MessageParseOptions* message_options,
                size_t num_signal_options, const SignalParseOptions* signal_options,
-               bool sendcan) {
+               bool sendcan, const char* tcp_addr) {
   CANParser* ret = new CANParser(bus, std::string(dbc_name),
                                  (message_options ? std::vector<MessageParseOptions>(message_options, message_options+num_message_options)
                                   : std::vector<MessageParseOptions>{}),
                                  (signal_options ? std::vector<SignalParseOptions>(signal_options, signal_options+num_signal_options)
-                                  : std::vector<SignalParseOptions>{}), sendcan);
+                                  : std::vector<SignalParseOptions>{}), sendcan, std::string(tcp_addr));
   return (void*)ret;
 }
 
