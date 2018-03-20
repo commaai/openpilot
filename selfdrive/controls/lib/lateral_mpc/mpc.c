@@ -22,10 +22,11 @@ typedef struct {
 
 
 typedef struct {
-  double x[N];
-  double y[N];
-  double psi[N];
-	double delta[N];
+  double x[N+1];
+  double y[N+1];
+  double psi[N+1];
+  double delta[N+1];
+  double cost;
 } log_t;
 
 void init(double pathCost, double laneCost, double headingCost, double steerRateCost){
@@ -102,18 +103,22 @@ int run_mpc(state_t * x0, log_t * solution,
 
   acado_preparationStep();
   acado_feedbackStep();
-  /* printf("lat its: %d\n", acado_getNWSR()); */
+  
+  /* printf("lat its: %d\n", acado_getNWSR());  // n iterations
+  printf("Objective: %.6f\n", acado_getObjective());  // solution cost */
 
-	for (i = 0; i <= N; i++){
-		solution->x[i] = acadoVariables.x[i*NX];
-		solution->y[i] = acadoVariables.x[i*NX+1];
-		solution->psi[i] = acadoVariables.x[i*NX+2];
-		solution->delta[i] = acadoVariables.x[i*NX+3];
-	}
+  for (i = 0; i <= N; i++){
+    solution->x[i] = acadoVariables.x[i*NX];
+    solution->y[i] = acadoVariables.x[i*NX+1];
+    solution->psi[i] = acadoVariables.x[i*NX+2];
+    solution->delta[i] = acadoVariables.x[i*NX+3];
+  }
+  solution->cost = acado_getObjective();
 
-  acado_shiftStates(2, 0, 0);
-  acado_shiftControls( 0 );
-
+  // Dont shift states here. Current solution is closer to next timestep than if
+  // we use the old solution as a starting point
+  //acado_shiftStates(2, 0, 0);
+  //acado_shiftControls( 0 );
 
   return acado_getNWSR();
 }

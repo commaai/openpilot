@@ -18,13 +18,14 @@ def _get_libmpc(mpc_id):
 
 
     typedef struct {
-    double x_ego[20];
-    double v_ego[20];
-    double a_ego[20];
-    double j_ego[20];
-    double x_l[20];
-    double v_l[20];
-    double a_l[20];
+    double x_ego[21];
+    double v_ego[21];
+    double a_ego[21];
+    double j_ego[21];
+    double x_l[21];
+    double v_l[21];
+    double a_l[21];
+    double cost;
     } log_t;
 
     void init(double ttcCost, double distanceCost, double accelerationCost, double jerkCost);
