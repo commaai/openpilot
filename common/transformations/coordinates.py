@@ -89,9 +89,11 @@ class LocalCoord(object):
 
 
   def ecef2ned(self, ecef):
+    ecef = np.array(ecef)
     return np.dot(self.ecef2ned_matrix, (ecef - self.init_ecef).T).T
 
   def ned2ecef(self, ned):
+    ned = np.array(ned)
     # Transpose so that init_ecef will broadcast correctly for 1d or 2d ned.
     return (np.dot(self.ned2ecef_matrix, ned.T).T + self.init_ecef)
 

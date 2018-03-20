@@ -466,9 +466,10 @@ def manager_thread():
     # have we seen a panda?
     panda_seen = panda_seen or td is not None
 
-    # start on gps if we have no connection to a panda
-    if not panda_seen:
-      should_start = should_start or passive_starter.update(started_ts, location)
+    # start on gps movement if we haven't seen ignition and are in passive mode
+    should_start = should_start or (not (ignition_seen and td) # seen ignition and panda is connected
+                                    and params.get("Passive") == "1"
+                                    and passive_starter.update(started_ts, location))
 
     # with 2% left, we killall, otherwise the phone will take a long time to boot
     should_start = should_start and avail > 0.02
