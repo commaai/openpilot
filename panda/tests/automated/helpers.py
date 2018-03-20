@@ -3,6 +3,7 @@ import sys
 import time
 import random
 import subprocess
+import requests
 from panda import Panda
 from nose.tools import timed, assert_equal, assert_less, assert_greater
 
@@ -25,27 +26,46 @@ def connect_wifi():
   assert(dongle_id.isalnum())
   _connect_wifi(dongle_id, pw)
 
-def _connect_wifi(dongle_id, pw):
+def _connect_wifi(dongle_id, pw, insecure_okay=False):
   ssid = str("panda-" + dongle_id)
 
   print("WIFI: connecting to %s" % ssid)
 
-  if sys.platform == "darwin":
-    os.system("networksetup -setairportnetwork en0 %s %s" % (ssid, pw))
-  else:
-    cnt = 0
-    MAX_TRIES = 10
-    while cnt < MAX_TRIES:
-      print "WIFI: scanning %d" % cnt
-      os.system("nmcli device wifi rescan")
-      wifi_scan = filter(lambda x: ssid in x, subprocess.check_output(["nmcli","dev", "wifi", "list"]).split("\n"))
-      if len(wifi_scan) != 0:
+  while 1:
+    if sys.platform == "darwin":
+      os.system("networksetup -setairportnetwork en0 %s %s" % (ssid, pw))
+    else:
+      cnt = 0
+      MAX_TRIES = 10
+      while cnt < MAX_TRIES:
+        print "WIFI: scanning %d" % cnt
+        if os.system("ifconfig | grep wlp3s0") == 0:
+          os.system("sudo iwlist wlp3s0 scanning > /dev/null")
+        os.system("nmcli device wifi rescan")
+        wifi_scan = filter(lambda x: ssid in x, subprocess.check_output(["nmcli","dev", "wifi", "list"]).split("\n"))
+        if len(wifi_scan) != 0:
+          break
+        time.sleep(0.1)
+        # MAX_TRIES tries, ~10 seconds max
+        cnt += 1
+      assert cnt < MAX_TRIES
+      if "-pair" in wifi_scan[0]:
+        os.system("nmcli d wifi connect %s-pair" % (ssid))
+        if insecure_okay:
+          break
+        # fetch webpage
+        print "connecting to insecure network to secure"
+        r = requests.get("http://192.168.0.10/")
+        assert r.status_code==200
+
+        print "securing"
+        try:
+          r = requests.get("http://192.168.0.10/secure", timeout=0.01)
+        except requests.exceptions.Timeout:
+          pass
+      else:
+        os.system("nmcli d wifi connect %s password %s" % (ssid, pw))
         break
-      time.sleep(0.1)
-      # MAX_TRIES tries, ~10 seconds max
-      cnt += 1
-    assert cnt < MAX_TRIES
-    os.system("nmcli d wifi connect %s password %s" % (ssid, pw))
   
   # TODO: confirm that it's connected to the right panda
 

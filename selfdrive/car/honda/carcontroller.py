@@ -6,6 +6,7 @@ from common.numpy_fast import clip
 from . import hondacan
 from .values import AH
 from common.fingerprints import HONDA as CAR
+from selfdrive.can.packer import CANPacker
 
 
 def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
@@ -52,16 +53,17 @@ def process_hud_alert(hud_alert):
 
 
 HUDData = namedtuple("HUDData",
-                     ["pcm_accel", "v_cruise", "X2", "car", "X4", "X5",
-                      "lanes", "beep", "X8", "chime", "acc_alert"])
+                     ["pcm_accel", "v_cruise", "mini_car", "car", "X4",
+                      "lanes", "beep", "chime", "fcw", "acc_alert", "steer_required"])
 
 
 class CarController(object):
-  def __init__(self, enable_camera=True):
+  def __init__(self, dbc_name, enable_camera=True):
     self.braking = False
     self.brake_steady = 0.
     self.brake_last = 0.
     self.enable_camera = enable_camera
+    self.packer = CANPacker(dbc_name)
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
              pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel, \
@@ -85,36 +87,33 @@ class CarController(object):
     self.brake_last = rate_limit(brake, self.brake_last, -2., 1./100)
 
     # vehicle hud display, wait for one update from 10Hz 0x304 msg
-    #TODO: use enum!!
     if hud_show_lanes:
-      hud_lanes = 0x04
+      hud_lanes = 1
     else:
-      hud_lanes = 0x00
+      hud_lanes = 0
 
     # TODO: factor this out better
     if enabled:
       if hud_show_car:
-        hud_car = 0xe0
+        hud_car = 2
       else:
-        hud_car = 0xd0
+        hud_car = 1
     else:
-      hud_car = 0xc0
+      hud_car = 0
 
     #print chime, alert_id, hud_alert
     fcw_display, steer_required, acc_alert = process_hud_alert(hud_alert)
 
-    hud = HUDData(int(pcm_accel), int(round(hud_v_cruise)), 0x01, hud_car,
-                  0xc1, 0x41, hud_lanes + steer_required,
-                  int(snd_beep), 0x48, (snd_chime << 5) + fcw_display, acc_alert)
+    hud = HUDData(int(pcm_accel), int(round(hud_v_cruise)), 1, hud_car,
+                  0xc1, hud_lanes, int(snd_beep), snd_chime, fcw_display, acc_alert, steer_required)
 
     if not all(isinstance(x, int) and 0 <= x < 256 for x in hud):
       print "INVALID HUD", hud
-      hud = HUDData(0xc6, 255, 64, 0xc0, 209, 0x41, 0x40, 0, 0x48, 0, 0)
+      hud = HUDData(0xc6, 255, 64, 0xc0, 209, 0x40, 0, 0, 0, 0)
 
     # **** process the car messages ****
 
     # *** compute control surfaces ***
-    GAS_MAX = 1004
     BRAKE_MAX = 1024/4
     if CS.CP.carFingerprint in (CAR.CIVIC, CAR.ODYSSEY, CAR.PILOT):
       is_fw_modified = os.getenv("DONGLE_ID") in ['99c94dc769b5d96e']
@@ -123,10 +122,9 @@ class CarController(object):
       STEER_MAX = 0x3e8  # CR-V only uses 12-bits and requires a lower value (max value from energee)
     else:
       STEER_MAX = 0xF00
-    GAS_OFFSET = 328
 
     # steer torque is converted back to CAN reference (positive when steering right)
-    apply_gas = int(clip(actuators.gas * GAS_MAX, 0, GAS_MAX - 1))
+    apply_gas = clip(actuators.gas, 0., 1.)
     apply_brake = int(clip(self.brake_last * BRAKE_MAX, 0, BRAKE_MAX - 1))
     apply_steer = int(clip(-actuators.steer * STEER_MAX, -STEER_MAX, STEER_MAX))
 
@@ -139,24 +137,23 @@ class CarController(object):
 
     # Send steering command.
     idx = frame % 4
-    can_sends.extend(hondacan.create_steering_control(apply_steer, CS.CP.carFingerprint, idx))
+    can_sends.append(hondacan.create_steering_control(self.packer, apply_steer, CS.CP.carFingerprint, idx))
 
     # Send gas and brake commands.
     if (frame % 2) == 0:
       idx = (frame / 2) % 4
       can_sends.append(
-        hondacan.create_brake_command(apply_brake, pcm_override,
-                                      pcm_cancel_cmd, hud.chime, idx))
+        hondacan.create_brake_command(self.packer, apply_brake, pcm_override,
+                                      pcm_cancel_cmd, hud.chime, hud.fcw, idx))
       if not CS.brake_only:
         # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
         # This prevents unexpected pedal range rescaling
-        gas_amount = (apply_gas + GAS_OFFSET) * (apply_gas > 0)
-        can_sends.append(hondacan.create_gas_command(gas_amount, idx))
+        can_sends.append(hondacan.create_gas_command(self.packer, apply_gas, idx))
 
     # Send dashboard UI commands.
     if (frame % 10) == 0:
       idx = (frame/10) % 4
-      can_sends.extend(hondacan.create_ui_commands(pcm_speed, hud, CS.CP.carFingerprint, idx))
+      can_sends.extend(hondacan.create_ui_commands(self.packer, pcm_speed, hud, CS.CP.carFingerprint, idx))
 
     # radar at 20Hz, but these msgs need to be sent at 50Hz on ilx (seems like an Acura bug)
     if CS.CP.carFingerprint == CAR.ACURA_ILX:

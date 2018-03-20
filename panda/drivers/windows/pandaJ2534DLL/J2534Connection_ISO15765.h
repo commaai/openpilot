@@ -25,7 +25,7 @@ public:
 
 	int get_matching_out_fc_filter_id(const std::string & msgdata, unsigned long flags, unsigned long flagmask);
 
-	int get_matching_in_fc_filter_id(const J2534Frame& msg, unsigned long flagmask = CAN_29BIT_ID);
+	int get_matching_in_fc_filter_id(const J2534Frame& msg, unsigned long flagmask);
 
 	virtual unsigned long validateTxMsg(PASSTHRU_MSG* msg);
 

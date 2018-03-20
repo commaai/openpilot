@@ -115,9 +115,6 @@
     <ProjectReference Include="..\pandaJ2534DLL\pandaJ2534DLL.vcxproj">
       <Project>{a2bb18a5-f26b-48d6-bbb5-b83d64473c77}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\panda\panda.vcxproj">
-      <Project>{5528aefb-638d-49af-b9d4-965154e7d531}</Project>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

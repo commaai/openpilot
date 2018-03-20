@@ -1,0 +1,107 @@
+VERSION ""
+
+
+NS_ :
+    NS_DESC_
+    CM_
+    BA_DEF_
+    BA_
+    VAL_
+    CAT_DEF_
+    CAT_
+    FILTER
+    BA_DEF_DEF_
+    EV_DATA_
+    ENVVAR_DATA_
+    SGTYPE_
+    SGTYPE_VAL_
+    BA_DEF_SGTYPE_
+    BA_SGTYPE_
+    SIG_TYPE_REF_
+    VAL_TABLE_
+    SIG_GROUP_
+    SIG_VALTYPE_
+    SIGTYPE_VALTYPE_
+    BO_TX_BU_
+    BA_DEF_REL_
+    BA_REL_
+    BA_DEF_DEF_REL_
+    BU_SG_REL_
+    BU_EV_REL_
+    BU_BO_REL_
+    SG_MUL_VAL_
+
+BS_:
+
+BU_: XXX
+
+
+BO_ 258 STEERING: 8 XXX
+ SG_ STEER_ANGLE : 4|13@0+ (0.3187251,-1307.888) [-360|360] "deg" XXX
+ SG_ STEERING_RATE : 20|13@0+ (1,-4096) [0|8191] "" XXX
+
+BO_ 514 SPEED: 4 XXX
+ SG_ SPEED_LEFT : 7|16@0+ (0.07,0) [0|65535] "m/s" XXX
+ SG_ SPEED_RIGHT : 23|16@0+ (0.07,0) [0|1023] "m/s" XXX
+
+BO_ 653 BRAKE_MODULE: 2 XXX
+ SG_ BRAKE_PRESSURE : 15|8@0+ (1,0) [0|255] "" XXX
+ SG_ BRAKE_PRESSED : 4|1@0+ (1,0) [0|4] "" XXX
+
+BO_ 820 DOORS: 8 XXX
+ SG_ DOOR_OPEN_FR : 18|1@0+ (1,0) [0|1] "" XXX
+ SG_ DOOR_OPEN_RL : 19|1@0+ (1,0) [0|1] "" XXX
+ SG_ DOOR_OPEN_RR : 20|1@0+ (1,0) [0|1] "" XXX
+ SG_ DOOR_OPEN_TRUNK : 22|1@0+ (1,0) [0|1] "" XXX
+ SG_ DOOR_OPEN_FL : 17|1@0+ (1,0) [0|1] "" XXX
+ SG_ TURN_LIGHT_LEFT : 31|1@0+ (1,0) [0|1] "" XXX
+ SG_ TURN_LIGHT_RIGHT : 30|1@0+ (1,0) [0|1] "" XXX
+ SG_ HIGH_BEAM_DISPLAY : 58|1@1+ (1,0) [0|1] "" XXX
+
+BO_ 746 GEAR: 5 XXX
+ SG_ PRNDL : 0|3@1+ (1,0) [0|7] "" XXX
+
+BO_ 284 NEW_MSG_1: 8 XXX
+ SG_ BRAKE_RELATED : 3|12@0+ (1,0) [0|255] "" XXX
+ SG_ BRAKE_RELATED_2 : 17|10@0+ (1,0) [0|255] "" XXX
+ SG_ SPEED : 37|14@0+ (1,0) [0|255] "" XXX
+
+BO_ 320 NEW_MSG_2: 8 XXX
+ SG_ SPEED_RELATED : 47|8@0+ (1,0) [0|63] "" XXX
+ SG_ BRAKE_PRESSED : 2|3@0+ (1,0) [0|7] "" XXX
+
+BO_ 736 TRIP: 8 XXX
+ SG_ DISTANCE_COUNTER : 7|16@0+ (0,0) [0|65535] "Meters" XXX
+ SG_ DISTANCE_COUNTER_2 : 23|16@0+ (1,0) [0|65535] "Meters" XXX
+
+BO_ 344 WHEEL_SPEEDS: 8 XXX
+ SG_ WHEEL_SPEED_FL : 1|10@0+ (1,0) [0|65535] "" XXX
+ SG_ WHEEL_SPEED_FR : 17|10@0+ (1,0) [0|255] "" XXX
+ SG_ WHEEL_SPEED_RL : 33|10@0+ (1,0) [0|3] "" XXX
+ SG_ WHEEL_SPEED_RR : 49|10@0+ (1,0) [0|255] "" XXX
+
+BO_ 792 STEERING_LEVERS: 8 XXX
+ SG_ TURN_SIGNALS : 1|2@0+ (1,0) [0|3] "" XXX
+ SG_ HIGH_BEAM_PUSHED_IN : 2|1@1+ (1,0) [0|3] "" XXX
+ SG_ HIGH_BEAM_FLASH : 3|1@1+ (1,0) [0|3] "" XXX
+
+BO_ 264 ACCEL_PEDAL_MSG: 8 XXX
+ SG_ ACCEL_PEDAL : 32|4@1+ (1,-7) [0|15] "" XXX
+
+
+
+
+CM_ SG_ 258 STEER_ANGLE "positive is left (counter-clockwise)";
+CM_ SG_ 514 SPEED_LEFT "TODO find upper limit";
+CM_ SG_ 653 BRAKE_PRESSURE "max seems to be 148";
+CM_ SG_ 820 TURN_LIGHT_LEFT "oscillates with the light blinking";
+CM_ SG_ 820 TURN_LIGHT_RIGHT "hazard blinks both right and left lights";
+CM_ SG_ 746 PRNDL "4=D, 3=N, 2=R, 1=P";
+CM_ SG_ 284 BRAKE_RELATED "Correlates with braking";
+CM_ SG_ 284 SPEED "Another Speed Signal, Maybe RPMs?";
+CM_ SG_ 320 BRAKE_PRESSED "Value is 5 when brake is pressed";
+CM_ SG_ 792 TURN_SIGNALS "1=Left, 2=Right";
+CM_ SG_ 792 HIGH_BEAM_FLASH "use this for genericToggle";
+CM_ SG_ 264 ACCEL_PEDAL "not in ACC so seems to be actual pedal. Use for gasPressed";
+VAL_ 746 PRNDL 4 "Drive" 3 "Neutral" 2 "Reverse" 1 "Park" ;
+VAL_ 792 TURN_SIGNALS 2 "Right" 1 "Left" ;

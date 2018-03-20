@@ -43,7 +43,7 @@ std::shared_ptr<MessageTx> J2534Connection_ISO15765::parseMessageTx(PASSTHRU_MSG
 void J2534Connection_ISO15765::processMessage(const J2534Frame& msg) {
 	if (msg.ProtocolID != CAN) return;
 
-	int fid = get_matching_in_fc_filter_id(msg);
+	int fid = get_matching_in_fc_filter_id(msg, this->Flags);
 	if (fid == -1) return;
 
 	auto filter = this->filters[fid];
@@ -136,6 +136,9 @@ void J2534Connection_ISO15765::processMessage(const J2534Frame& msg) {
 			if (flowfilter.size() > 4)
 				flowstrlresp += flowfilter[4];
 			flowstrlresp += std::string("\x30\x00\x00", 3);
+			if (check_bmask(filter->flags, ISO15765_FRAME_PAD)) {
+				flowstrlresp += std::string(8 - flowstrlresp.size(), '\x00');
+			}
 
 			if (auto panda_dev_sp = this->panda_dev.lock()) {
 				panda_dev_sp->panda->can_send(flow_addr, val_is_29bit(msg.RxStatus), (const uint8_t *)flowstrlresp.c_str(), (uint8_t)flowstrlresp.size(), panda::PANDA_CAN1);
