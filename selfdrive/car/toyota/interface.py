@@ -88,9 +88,15 @@ class CarInterface(object):
     elif candidate in [CAR.RAV4, CAR.RAV4H]:
       ret.safetyParam = 73  # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.65
+<<<<<<< HEAD
       ret.steerRatio = 14.5 # Rav4 2017
       ret.mass = 3650./2.205 + std_cargo  # mean between normal and hybrid
       ret.steerKpV, ret.steerKiV = [[0.6], [0.05]]
+=======
+      ret.steerRatio = 13. # Rav4 2018
+      ret.mass = 4100./2.205 + std_cargo  # mean between normal and hybrid
+      ret.steerKp, ret.steerKi = 0.45, 0.045
+>>>>>>> 7c31c6b125a8eca3035318ef4115eda39fbf9b2b
       ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
       ret.steerRateCost = 1.
     elif candidate == CAR.COROLLA:
@@ -112,7 +118,7 @@ class CarInterface(object):
 
     ret.centerToFront = ret.wheelbase * 0.44
 
-    ret.longPidDeadzoneBP = [0., 9.]
+    ret.longPidDeadzoneBP = [0., 12.]
     ret.longPidDeadzoneV = [0., .15]
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
@@ -144,8 +150,8 @@ class CarInterface(object):
     ret.steerMaxBP = [16. * CV.KPH_TO_MS, 45. * CV.KPH_TO_MS]  # breakpoints at 1 and 40 kph
     ret.steerMaxV = [1., 1.]  # 2/3rd torque allowed above 45 kph
     ret.gasMaxBP = [0.]
-    ret.gasMaxV = [0.5]
-    ret.brakeMaxBP = [5., 20.]
+    ret.gasMaxV = [0.2]
+    ret.brakeMaxBP = [7., 20.]
     ret.brakeMaxV = [1., 0.8]
 
     ret.enableCamera = not check_ecu_msgs(fingerprint, candidate, ECU.CAM)
