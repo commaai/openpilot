@@ -104,9 +104,9 @@ def data_sample(CI, CC, thermal, calibration, health, poller, cal_status, overte
   return CS, events, cal_status, overtemp, free_space
 
 
-def calc_plan(CS, events, PL, LoC, v_cruise_kph, awareness_status):
+def calc_plan(CS, events, PL, LaC, LoC, v_cruise_kph, awareness_status):
    # plan runs always, independently of the state
-   plan_packet = PL.update(CS, LoC, v_cruise_kph, awareness_status < -0.)
+   plan_packet = PL.update(CS, LaC, LoC, v_cruise_kph, awareness_status < -0.)
    plan = plan_packet.plan
    plan_ts = plan_packet.logMonoTime
 
@@ -401,6 +401,7 @@ def data_send(plan, plan_ts, CS, CI, CP, VM, state, events, actuators, v_cruise_
   cs_send.init('carState')
   # TODO: override CS.events with all the cumulated events
   cs_send.carState = copy(CS)
+  cs_send.carState.events = events
   carstate.send(cs_send.to_bytes())
 
   # broadcast carControl
@@ -408,7 +409,6 @@ def data_send(plan, plan_ts, CS, CI, CP, VM, state, events, actuators, v_cruise_
   cc_send.init('carControl')
   cc_send.carControl = copy(CC)
   carcontrol.send(cc_send.to_bytes())
-  #print [i.name for i in events]
 
   # publish mpc state at 20Hz
   if hasattr(LaC, 'mpc_updated') and LaC.mpc_updated:
@@ -418,6 +418,7 @@ def data_send(plan, plan_ts, CS, CI, CP, VM, state, events, actuators, v_cruise_
     dat.liveMpc.y = list(LaC.mpc_solution[0].y)
     dat.liveMpc.psi = list(LaC.mpc_solution[0].psi)
     dat.liveMpc.delta = list(LaC.mpc_solution[0].delta)
+    dat.liveMpc.cost = LaC.mpc_solution[0].cost
     livempc.send(dat.to_bytes())
 
   return CC
@@ -517,7 +518,7 @@ def controlsd_thread(gctx, rate=100):
     prof.checkpoint("Sample")
 
     # define plan
-    plan, plan_ts = calc_plan(CS, events, PL, LoC, v_cruise_kph, awareness_status)
+    plan, plan_ts = calc_plan(CS, events, PL, LaC, LoC, v_cruise_kph, awareness_status)
     prof.checkpoint("Plan")
 
     if not passive:

@@ -76,7 +76,6 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, idx):
   """Creates an iterable of CAN messages for the UIs."""
   commands = []
 
-  # TODO: Why is X4 always 0xc1? Not implemented yet in canpacker
   acc_hud_values = {
     'PCM_SPEED': pcm_speed * CV.MS_TO_KPH,
     'PCM_GAS': hud.pcm_accel,
