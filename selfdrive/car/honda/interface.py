@@ -186,7 +186,7 @@ class CarInterface(object):
       ret.steerRatio = 15.3
       # Acura at comma has modified steering FW, so different tuning for the Neo in that car
       is_fw_modified = os.getenv("DONGLE_ID") in ['85a6c74d4ad9c310']
-      ret.steerKpV, ret.steerKiV = [[0.1], [0.03]] if is_fw_modified else [[0.8], [0.24]]
+      ret.steerKpV, ret.steerKiV = [[0.4], [0.12]] if is_fw_modified else [[0.8], [0.24]]
 
       ret.longitudinalKpBP = [0., 5., 35.]
       ret.longitudinalKpV = [1.2, 0.8, 0.5]
@@ -449,7 +449,7 @@ class CarInterface(object):
         events.append(create_event('speedTooLow', [ET.IMMEDIATE_DISABLE]))
       else:
         events.append(create_event("cruiseDisabled", [ET.IMMEDIATE_DISABLE]))
-    if self.CS.CP.carFingerprint != CAR.CIVIC and ret.vEgo < 0.001:
+    if self.CS.CP.minEnableSpeed > 0 and ret.vEgo < 0.001:
       events.append(create_event('manualRestart', [ET.WARNING]))
 
     cur_time = sec_since_boot()

@@ -1,3 +1,9 @@
+Version 0.4.3.1 (2018-03-19)
+============================
+ * Improve autofocus
+ * Add check for MPC solution error
+ * Make first distracted warning visual only
+
 Version 0.4.3 (2018-03-13)
 ==========================
  * Add HDR and autofocus
