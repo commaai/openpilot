@@ -87,16 +87,10 @@ class CarInterface(object):
       tireStiffnessRear_civic *= f
     elif candidate in [CAR.RAV4, CAR.RAV4H]:
       ret.safetyParam = 73  # see conversion factor for STEER_TORQUE_EPS in dbc file
-      ret.wheelbase = 2.65
-<<<<<<< HEAD
-      ret.steerRatio = 14.5 # Rav4 2017
-      ret.mass = 3650./2.205 + std_cargo  # mean between normal and hybrid
-      ret.steerKpV, ret.steerKiV = [[0.6], [0.05]]
-=======
-      ret.steerRatio = 13. # Rav4 2018
+      ret.wheelbase = 2.66
+      ret.steerRatio = 13 # Rav4 2018
       ret.mass = 4100./2.205 + std_cargo  # mean between normal and hybrid
-      ret.steerKp, ret.steerKi = 0.45, 0.045
->>>>>>> 7c31c6b125a8eca3035318ef4115eda39fbf9b2b
+      ret.steerKpV, ret.steerKiV = [[0.45], [0.045]]
       ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
       ret.steerRateCost = 1.
     elif candidate == CAR.COROLLA:
