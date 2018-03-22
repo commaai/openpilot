@@ -85,7 +85,7 @@ def ipas_state_transition(steer_angle_enabled, enabled, ipas_state, ipas_reset_c
     if ipas_reset_counter > 10:  # try every 0.1s
       steer_angle_enabled = False
     return steer_angle_enabled, ipas_reset_counter
-      
+
   else:
     return False, 0
 
@@ -200,7 +200,7 @@ class CarController(object):
       if ECU.DSU in self.fake_ecus:
         can_sends.append(create_accel_command(self.packer, apply_accel, pcm_cancel_cmd, self.standstill_req))
       else:
-        can_sends.append(create_accel_command(0, pcm_cancel_cmd, False))
+        can_sends.append(create_accel_command(self.packer, 0, pcm_cancel_cmd, False))
 
     if frame % 10 == 0 and ECU.CAM in self.fake_ecus:
       for addr in TARGET_IDS:
