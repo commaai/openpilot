@@ -160,7 +160,7 @@ class CarState(object):
     self.steer_override = abs(cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_DRIVER']) > 100
     # 2 is standby, 10 is active. TODO: check that everything else is really a faulty state
     self.steer_state = cp.vl["EPS_STATUS"]['LKA_STATE']
-    self.steer_error = cp.vl["EPS_STATUS"]['LKA_STATE'] not in [2, 10]
+    self.steer_error = cp.vl["EPS_STATUS"]['LKA_STATE'] not in [2, 3, 10, 11]
     self.ipas_state = cp.vl['EPS_STATUS']['IPAS_STATE']
     self.brake_error = 0
     self.steer_torque_driver = cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_DRIVER']
