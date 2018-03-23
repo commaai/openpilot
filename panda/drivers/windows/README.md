@@ -56,10 +56,8 @@ features.
 
 # Building the Project:
 
-This project was developed with Visual Studio 2015, the Windows SDK,
-and the Windows Driver Kit (WDK). At the time of writing, there is not
-a stable WDK for Visual Studio 2017, but this project should build
-with the new WDK and Visual Studio when it is available.
+This project is developed with Visual Studio 2017, the Windows SDK,
+and the Windows Driver Kit (WDK).
 
 The WDK is only required for creating the signed WinUSB inf file. The
 WDK may also provide the headers for WinUSB.
@@ -102,50 +100,18 @@ A simple tool for testing J2534 drivers is DrewTech's 'J2534-1 Bus Analysis
 Tool' available in the 'Other Support Applications' section of their
 [Download Page](http://www.drewtech.com/downloads/).
 
-# Dealing with self signed drivers:
+# Installing WinUSB driver:
 
-Installation would be straightforward were it not for the USB Driver
-that needs to be setup. The driver itself is only a WinUSB inf file
-(no actual driver), but it still needs to be signed.
+Installation automatically happens for Windows 8 and Windows 10 because the panda
+firmware contains the USB descriptors necessary to auto-install the WinUSB driver.
 
-Driver signing is a requirement of Windows starting in 8 (64 bit
-versions only for some reason). If your Windows refuses to install
-the driver, there are three choices:
+Windows 7 will not auto-install the WinUSB driver. You can use Zadig to install
+the WinUSB driver. This software is not tested on anything before 7.
 
-- Self Sign the Driver.
-- Disable Driver Signature Verification
-- Purchase a certificate signed by a trusted authority.
-
-Since self signed certificates have no chain of trust to a known
-certificate authority, if you self sign, you will have to add your
-cert to the root certificate store of your Windows' installation. This
-is dangerous because it means anything signed with your cert will be
-trusted. If you make your own cert, add a password so someone can't
-copy it and screw with your computer's trust.
-
-Disabling Signature Verification allows you to temporarily install
-drivers without a trusted signature. Once you reboot, new drivers will
-need to be verified again, but any installed drivers will stay where
-they are. This option is irritating if you are installing and
-uninstalling the inf driver multiple times, but overall, is safer than
-the custom root certificate described above.
-
-Purchasing a signed certificate is the best long term option, but it
-is not useful for open source contributors, since the certificate will
-be kept safe by the comma.ai team. Developers should use one of the
-other two options.
-
-**Note that certificate issues apply no matter if you are building
-  from source or running an insaller .exe file.**
-
-Some people have reported that the driver installs without needing to
-disable driver signing, or that visual studio correctly sets up a
-temporary signing key for them. I call witchcraft because I have not
-had that happen to me. The signed certificate is still the correct
-thing to do in the end.
-
-Windows 7 will not force driver signing. This software is not tested
-on anything before 7.
+More details here:
+[WinUSB (Winusb.sys) Installation](https://docs.microsoft.com/en-us/windows-hardware/drivers/usbcon/winusb-installation)
+[WCID Devices](https://github.com/pbatard/libwdi/wiki/WCID-Devices)
+[Zadig for installing libusb compatible driver](https://github.com/pbatard/libwdi/wiki/Zadig)
 
 # Developing:
 
@@ -154,8 +120,6 @@ on anything before 7.
 
 # ToDo Items:
 
-- Get official signing key for WinUSB driver inf file.
-- Implement TxClear and RxClear. (Requires reading vague specifications).
 - Apply a style-guide and consistent naming convention for Classes/Functions/Variables.
 - Send multiple messages (each with a different address) from a given connection at the same time.
 - Implement ISO14230/KWP2000 FAST (LIN communication is already supported with the raw panda USB driver).
@@ -172,6 +136,15 @@ on anything before 7.
 - All Tx messages from a single Connection are serialized. This can be
   relaxed to allow serialization of messages based on their address
   (making multiple queues, effectively one queue per address).
+
+# Troubleshooting:
+troubleshooting:
+1. Install DrewTech J2534-1 Bus Analysis Tool
+http://www.drewtech.com/downloads/tools/Drew%20Technologies%20Tool%20for%20J2534-1%20API%20v1.07.msi
+2. Open DrewTech tool and make sure it shows "panda" as a device listed (this means registry settings are correct)
+3. When DrewTech tool attempts to load the driver it will show an error if it fails
+4. To figure out why the driver fails to load install Process Monitor and filter by the appropriate process name
+https://docs.microsoft.com/en-us/sysinternals/downloads/procmon
 
 # Other:
 Panda head ASCII art by dcau

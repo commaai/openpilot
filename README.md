@@ -22,7 +22,7 @@ Supported Cars
 - Acura ILX 2016 with AcuraWatch Plus
   - Due to use of the cruise control for gas, it can only be enabled above 25 mph
 
-- Honda Civic 2016-2017 with Honda Sensing
+- Honda Civic 2016-2018 with Honda Sensing
   - Due to limitations in steering firmware, steering is disabled below 12 mph
   - Note that the hatchback model is not supported
 
@@ -34,6 +34,9 @@ Supported Cars
 
 - Acura RDX 2018 with AcuraWatch Plus (alpha!)
   - Can only be enabled above 25 mph
+  
+- Honda Pilot 2017 with Honda Sensing (alpha!)
+  - Can only be enabled above 27 mph 
 
 - Toyota RAV-4 2016+ non-hybrid with TSS-P
   - By default it uses stock Toyota ACC for longitudinal control
@@ -71,8 +74,6 @@ Community WIP Cars
 - [Chevy Volt 2016-2018 Premier with Driver Confidence II](https://github.com/commaai/openpilot/pull/104)
 
 - [Classic Tesla Model S (pre-AP)](https://github.com/commaai/openpilot/pull/145)
-
-- [Honda Pilot 2017 with Honda Sensing](https://github.com/commaai/openpilot/pull/161)
 
 Directory structure
 ------

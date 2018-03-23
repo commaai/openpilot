@@ -38,14 +38,14 @@ VAL_TABLE_ TurnSignals 2 "Right Turn" 1 "Left Turn" 0 "None" ;
 VAL_TABLE_ ACCLeadCar 1 "Present" 0 "Not Present" ;
 VAL_TABLE_ ACCCmdActive 1 "Active" 0 "Inactive" ;
 VAL_TABLE_ BrakePedalPressed 1 "Pressed" 0 "Depressed" ;
-VAL_TABLE_ ACCGapButton 1 "Active" 0 "Inactive" ;
+VAL_TABLE_ DistanceButton 1 "Active" 0 "Inactive" ;
 VAL_TABLE_ LKAButton 1 "Active" 0 "Inactive" ;
-VAL_TABLE_ ACCCancelButton 1 "Active" 0 "Inactive" ;
+VAL_TABLE_ ACCButtons 6 "Cancel" 5 "Main" 3 "Set" 2 "Resume" 1 "None" ;
 VAL_TABLE_ PRNDL 3 "Reverse" 2 "Drive" 1 "Neutral" 0 "Park" ;
-VAL_TABLE_ DriverDoorStatus 1 "Opened" 0 "Closed" ;
+VAL_TABLE_ DoorStatus 1 "Opened" 0 "Closed" ;
+VAL_TABLE_ SeatBeltStatus 1 "Latched" 0 "Unlatched" ;
 VAL_TABLE_ LKASteeringCmdActive 1 "Active" 0 "Inactive" ;
 VAL_TABLE_ ACCGapLevel 3 "Far" 2 "Med" 1 "Near" 0 "Inactive" ;
-VAL_TABLE_ ACCButton 1 "Pressed" 0 "Depressed" ;
 VAL_TABLE_ GasRegenCmdActiveInv 1 "Inactive" 0 "Active" ;
 VAL_TABLE_ GasRegenCmdActive 1 "Active" 0 "Inactive" ;
 VAL_TABLE_ LKATorqueDeliveredStatus 3 "Failed" 2 "Temp. Limited" 1 "Active" 0 "Inactive" ;
@@ -66,9 +66,9 @@ BO_ 1300 VIN_Part1: 8 K20_ECM
  SG_ VINPart1 : 7|64@0+ (1,0) [0|0] ""  NEO
 
 BO_ 481 ASCMSteeringButton: 7 K124_ASCM
- SG_ ACCGapButton : 22|1@0+ (1,0) [0|0] ""  NEO
+ SG_ DistanceButton : 22|1@0+ (1,0) [0|0] ""  NEO
  SG_ LKAButton : 23|1@0+ (1,0) [0|0] ""  NEO
- SG_ ACCCancelButton : 7|1@0+ (1,0) [0|0] ""  NEO
+ SG_ ACCButtons : 46|3@0+ (1,0) [0|0] ""  NEO
 
 BO_ 1912 PSCM_778: 8 K43_PSCM
 
@@ -84,8 +84,13 @@ BO_ 810 TCICOnStarGPSPosition: 8 K73_TCIC
 BO_ 1001 ECMVehicleSpeed: 8 K20_ECM
  SG_ VehicleSpeed : 7|16@0+ (0.01,0) [0|0] "mph"  NEO
 
-BO_ 298 BCMDoorStatus: 8 K9_BCM
- SG_ DriverDoorStatus : 55|1@0+ (1,0) [0|0] ""  NEO
+BO_ 298 BCMDoorBeltStatus: 8 K9_BCM
+ SG_ RearLeftDoor : 8|1@0+ (1,0) [0|0] ""  NEO
+ SG_ FrontLeftDoor : 9|1@0+ (1,0) [0|0] ""  NEO
+ SG_ FrontRightDoor : 10|1@0+ (1,0) [0|0] ""  NEO
+ SG_ RearRightDoor : 23|1@0+ (1,0) [0|0] ""  NEO
+ SG_ LeftSeatBelt : 12|1@0+ (1,0) [0|0] ""  NEO
+ SG_ RightSeatBelt : 53|1@0+ (1,0) [0|0] ""  NEO
 
 BO_ 381 MSG_17D: 6 K20_ECM
  SG_ MSG17D_AccPower : 35|12@0- (1,0) [0|0] ""  NEO
@@ -145,7 +150,8 @@ BO_ 189 EBCMRegenPaddle: 7 K17_EBCM
  SG_ RegenPaddle : 7|4@0+ (1,0) [0|0] ""  NEO
 
 BO_ 190 ECMAcceleratorPos: 6 K20_ECM
- SG_ AcceleratorPos : 23|8@0+ (1,0) [0|0] ""  NEO
+ SG_ BrakePedalPos : 15|8@0+ (1,0) [0|0] "sticky"  NEO
+ SG_ GasPedalAndAcc : 23|8@0+ (1,0) [0|0] ""  NEO
 
 BO_ 715 ASCMGasRegenCmd: 8 K124_ASCM
  SG_ GasRegenAlwaysOne2 : 9|1@0+ (1,1) [1|1] ""  NEO
@@ -159,19 +165,28 @@ BO_ 715 ASCMGasRegenCmd: 8 K124_ASCM
  SG_ GasRegenCmd : 22|12@0+ (1,0) [0|0] ""  NEO
 
 BO_ 840 EBCMWheelSpdFront: 4 K17_EBCM
- SG_ FLWheelSpd : 7|16@0+ (0.0305,0) [0|255] "km/h"  NEO
- SG_ FRWheelSpd : 23|16@0+ (0.0305,0) [0|255] "km/h"  NEO
+ SG_ FLWheelSpd : 7|16@0+ (0.0311,0) [0|255] "km/h"  NEO
+ SG_ FRWheelSpd : 23|16@0+ (0.0311,0) [0|255] "km/h"  NEO
 
 BO_ 842 EBCMWheelSpdRear: 4 K17_EBCM
- SG_ RLWheelSpd : 7|16@0+ (0.0305,0) [0|255] "km/h"  NEO
- SG_ RRWheelSpd : 23|16@0+ (0.0305,0) [0|255] "km/h"  NEO
+ SG_ RLWheelSpd : 7|16@0+ (0.0311,0) [0|255] "km/h"  NEO
+ SG_ RRWheelSpd : 23|16@0+ (0.0311,0) [0|255] "km/h"  NEO
 
 BO_ 241 EBCMBrakePedalPosition: 6 K17_EBCM
- SG_ BrakePedalPosition : 15|8@0+ (0.392157,0) [0|255] "%"  NEO
+ SG_ BrakePedalPosition : 15|8@0+ (1,0) [0|255] ""  NEO
 
 BO_ 711 BECMBatteryVoltageCurrent: 6 K17_EBCM
  SG_ HVBatteryVoltage : 31|12@0+ (0.125,0) [0|511.875] "V"  NEO
  SG_ HVBatteryCurrent : 12|13@0- (0.15,0) [-614.4|614.25] "A"  NEO
+
+BO_ 417 AcceleratorPedal: 8 XXX
+ SG_ AcceleratorPedal : 55|8@0+ (1,0) [0|0] ""  NEO
+
+BO_ 451 GasAndAcc: 8 XXX
+ SG_ GasPedalAndAcc2 : 55|8@0+ (1,0) [0|0] ""  NEO
+
+BO_ 452 AcceleratorPedal2: 8 XXX
+ SG_ AcceleratorPedal2 : 47|8@0+ (1,0) [0|0] ""  NEO
 
 BO_TX_BU_ 384 : K124_ASCM,NEO;
 BO_TX_BU_ 880 : NEO,K124_ASCM;
@@ -189,6 +204,8 @@ CM_ BU_ K114B_HPCM "Hybrid Powertrain Control Module";
 CM_ BU_ NEO "Comma NEO";
 CM_ BU_ K124_ASCM "Active Safety Control Module";
 CM_ SG_ 381 MSG17D_AccPower "Need to investigate";
+CM_ SG_ 190 GasPedalAndAcc "ACC baseline is 62";
+CM_ SG_ 451 GasPedalAndAcc2 "ACC baseline is 62";
 BA_DEF_  "UseGMParameterIDs" INT 0 0;
 BA_DEF_  "ProtocolType" STRING ;
 BA_DEF_  "BusType" STRING ;
@@ -198,11 +215,10 @@ BA_DEF_DEF_  "BusType" "";
 BA_ "BusType" "CAN";
 BA_ "ProtocolType" "GMLAN";
 BA_ "UseGMParameterIDs" 0;
-VAL_ 481 ACCGapButton 1 "Active" 0 "Inactive" ;
+VAL_ 481 DistanceButton 1 "Active" 0 "Inactive" ;
 VAL_ 481 LKAButton 1 "Active" 0 "Inactive" ;
-VAL_ 481 ACCCancelButton 1 "Active" 0 "Inactive" ;
+VAL_ 481 ACCButtons 6 "Cancel" 5 "Main" 3 "Set" 2 "Resume" 1 "None" ;
 VAL_ 309 PRNDL 3 "Reverse" 2 "Drive" 1 "Neutral" 0 "Park" ;
-VAL_ 298 DriverDoorStatus 1 "Opened" 0 "Closed" ;
 VAL_ 384 LKASteeringCmdActive 1 "Active" 0 "Inactive" ;
 VAL_ 880 ACCLeadCar 1 "Present" 0 "Not Present" ;
 VAL_ 880 ACCGapLevel 3 "Far" 2 "Med" 1 "Near" 0 "Inactive" ;

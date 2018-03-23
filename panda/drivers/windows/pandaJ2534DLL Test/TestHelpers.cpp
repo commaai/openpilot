@@ -2,7 +2,7 @@
 #include "TestHelpers.h"
 #include "Loader4.h"
 #include "pandaJ2534DLL/J2534_v0404.h"
-#include "panda/panda.h"
+#include "panda_shared/panda.h"
 #include "Timer.h"
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;

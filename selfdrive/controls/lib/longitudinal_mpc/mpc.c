@@ -22,18 +22,20 @@ typedef struct {
 
 
 typedef struct {
-  double x_ego[N];
-  double v_ego[N];
-  double a_ego[N];
-  double j_ego[N];
-	double x_l[N];
-	double v_l[N];
-	double a_l[N];
+  double x_ego[N+1];
+  double v_ego[N+1];
+  double a_ego[N+1];
+  double j_ego[N+1];
+	double x_l[N+1];
+	double v_l[N+1];
+	double a_l[N+1];
+	double cost;
 } log_t;
 
-void init(){
+void init(double ttcCost, double distanceCost, double accelerationCost, double jerkCost){
   acado_initializeSolver();
   int    i;
+  const int STEP_MULTIPLIER = 3;
 
   /* Initialize the states and controls. */
   for (i = 0; i < NX * (N + 1); ++i)  acadoVariables.x[ i ] = 0.0;
@@ -50,16 +52,16 @@ void init(){
   for (i = 0; i < N; i++) {
     int f = 1;
     if (i > 4){
-      f = 3;
+      f = STEP_MULTIPLIER;
     }
-    acadoVariables.W[16 * i + 0] = 5.0 * f; // exponential cost for danger zone
-    acadoVariables.W[16 * i + 5] = 0.1 * f; // desired distance
-    acadoVariables.W[16 * i + 10] = 10.0 * f; // acceleration
-    acadoVariables.W[16 * i + 15] = 20.0 * f; // jerk
+    acadoVariables.W[16 * i + 0] = ttcCost * f; // exponential cost for time-to-collision (ttc)
+    acadoVariables.W[16 * i + 5] = distanceCost * f; // desired distance
+    acadoVariables.W[16 * i + 10] = accelerationCost * f; // acceleration
+    acadoVariables.W[16 * i + 15] = jerkCost * f; // jerk
   }
-  acadoVariables.WN[0] = 5.0; // exponential cost for danger zone
-  acadoVariables.WN[4] = 0.1; // desired distance
-  acadoVariables.WN[8] = 10.0; // acceleration
+  acadoVariables.WN[0] = ttcCost * STEP_MULTIPLIER; // exponential cost for danger zone
+  acadoVariables.WN[4] = distanceCost * STEP_MULTIPLIER; // desired distance
+  acadoVariables.WN[8] = accelerationCost * STEP_MULTIPLIER; // acceleration
 
 }
 
@@ -129,6 +131,7 @@ int run_mpc(state_t * x0, log_t * solution, double l){
 
     solution->j_ego[i] = acadoVariables.u[i];
 	}
+  solution->cost = acado_getObjective();
 
   // Dont shift states here. Current solution is closer to next timestep than if
   // we shift by 0.2 seconds.

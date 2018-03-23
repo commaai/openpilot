@@ -20,6 +20,9 @@
    _a > _b ? _a : _b; })
 
 char ssid[32];
+char password[] = "testing123";
+int wifi_secure_mode = 0;
+
 static const int pin = 2;
 
 // Structure holding the TCP connection information.
@@ -218,11 +221,50 @@ void ICACHE_FLASH_ATTR inter_recv_cb(void *arg, char *pusrdata, unsigned short l
   }
 }
 
+void ICACHE_FLASH_ATTR wifi_configure(int secure) {
+  wifi_secure_mode = secure;
+
+  // start wifi AP
+  wifi_set_opmode(SOFTAP_MODE);
+  struct softap_config config = {0};
+  wifi_softap_get_config(&config);
+  strcpy(config.ssid, ssid);
+  if (wifi_secure_mode == 0) strcat(config.ssid, "-pair");
+  strcpy(config.password, password);
+  config.ssid_len = strlen(config.ssid);
+  config.authmode = wifi_secure_mode ? AUTH_WPA2_PSK : AUTH_OPEN;
+  config.beacon_interval = 100;
+  config.max_connection = 4;
+  wifi_softap_set_config(&config);
+
+  if (wifi_secure_mode) {
+    // setup tcp server
+    tcp_proto.local_port = 1337;
+    tcp_conn.type = ESPCONN_TCP;
+    tcp_conn.state = ESPCONN_NONE;
+    tcp_conn.proto.tcp = &tcp_proto;
+    espconn_regist_connectcb(&tcp_conn, tcp_connect_cb);
+    espconn_accept(&tcp_conn);
+    espconn_regist_time(&tcp_conn, 60, 0); // 60s timeout for all connections
+
+    // setup inter server
+    inter_proto.local_port = 1338;
+    const char udp_remote_ip[4] = {255, 255, 255, 255};
+    os_memcpy(inter_proto.remote_ip, udp_remote_ip, 4);
+    inter_proto.remote_port = 1338;
+
+    inter_conn.type = ESPCONN_UDP;
+    inter_conn.proto.udp = &inter_proto;
+
+    espconn_regist_recvcb(&inter_conn, inter_recv_cb);
+    espconn_create(&inter_conn);
+  }
+}
+
 void ICACHE_FLASH_ATTR wifi_init() {
   // default ssid and password
   memset(ssid, 0, 32);
   os_sprintf(ssid, "panda-%08x-BROKEN", system_get_chip_id()); 
-  char password[] = "testing123";
 
   // fetch secure ssid and password
   // update, try 20 times, for 1 second
@@ -242,19 +284,7 @@ void ICACHE_FLASH_ATTR wifi_init() {
     os_delay_us(50000);
   }
 
-  // start wifi AP
-  wifi_set_opmode(SOFTAP_MODE);
-  struct softap_config config;
-  wifi_softap_get_config(&config);
-  strcpy(config.ssid, ssid); 
-  strcpy(config.password, password);
-  config.ssid_len = strlen(ssid);
-  config.authmode = AUTH_WPA2_PSK;
-  config.beacon_interval = 100;
-  config.max_connection = 4;
-  wifi_softap_set_config(&config);
-
-  //set IP
+  // set IP
   wifi_softap_dhcps_stop(); //stop DHCP before setting static IP
   struct ip_info ip_config;
   IP4_ADDR(&ip_config.ip, 192, 168, 0, 10);
@@ -265,27 +295,7 @@ void ICACHE_FLASH_ATTR wifi_init() {
   wifi_softap_set_dhcps_offer_option(OFFER_ROUTER, &stupid_gateway);
   wifi_softap_dhcps_start();
 
-  // setup tcp server
-  tcp_proto.local_port = 1337;
-  tcp_conn.type = ESPCONN_TCP;
-  tcp_conn.state = ESPCONN_NONE;
-  tcp_conn.proto.tcp = &tcp_proto;
-  espconn_regist_connectcb(&tcp_conn, tcp_connect_cb);
-  espconn_accept(&tcp_conn);
-  espconn_regist_time(&tcp_conn, 60, 0); // 60s timeout for all connections
-
-  // setup inter server
-  inter_proto.local_port = 1338;
-  const char udp_remote_ip[4] = {255, 255, 255, 255};
-  os_memcpy(inter_proto.remote_ip, udp_remote_ip, 4);
-  inter_proto.remote_port = 1338;
-
-  inter_conn.type = ESPCONN_UDP;
-  inter_conn.proto.udp = &inter_proto;
-
-  espconn_regist_recvcb(&inter_conn, inter_recv_cb);
-
-  espconn_create(&inter_conn);
+  wifi_configure(0);
 }
 
 #define LOOP_PRIO 2
