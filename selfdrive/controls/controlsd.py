@@ -25,7 +25,7 @@ from selfdrive.controls.lib.vehicle_model import VehicleModel
 V_CRUISE_MAX = 144
 V_CRUISE_MIN = 8
 V_CRUISE_DELTA = 8
-V_CRUISE_ENABLE_MIN = 40
+V_CRUISE_ENABLE_MIN = 30
 
 AWARENESS_TIME = 360.      # 6 minutes limit without user touching steering wheels
 AWARENESS_PRE_TIME = 20.   # a first alert is issued 20s before start decelerating the car
