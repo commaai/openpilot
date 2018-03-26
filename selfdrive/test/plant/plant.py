@@ -170,7 +170,7 @@ class Plant(object):
         fcw = True
 
     if self.cp.vl[0x1fa]['COMPUTER_BRAKE_REQUEST']:
-      brake = self.cp.vl[0x1fa]['COMPUTER_BRAKE'] * 0.003906248
+      brake = self.cp.vl[0x1fa]['COMPUTER_BRAKE']
     else:
       brake = 0.0
 

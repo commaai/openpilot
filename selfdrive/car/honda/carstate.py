@@ -8,25 +8,21 @@ import numpy as np
 
 
 def parse_gear_shifter(can_gear_shifter, car_fingerprint):
+  # TODO: Use values from DBC to parse this field
+  if can_gear_shifter == 0x1:
+    return "park"
+  elif can_gear_shifter == 0x2:
+    return "reverse"
 
-  # TODO: Use VAL from DBC to parse this field
   if car_fingerprint in (CAR.ACURA_ILX, CAR.ODYSSEY):
-    if can_gear_shifter == 0x1:
-      return "park"
-    elif can_gear_shifter == 0x2:
-      return "reverse"
-    elif can_gear_shifter == 0x3:
+    if can_gear_shifter == 0x3:
       return "neutral"
     elif can_gear_shifter == 0x4:
       return "drive"
     elif can_gear_shifter == 0xa:
       return "sport"
   elif car_fingerprint in (CAR.CIVIC, CAR.CRV, CAR.ACURA_RDX):
-    if can_gear_shifter == 0x1:
-      return "park"
-    elif can_gear_shifter == 0x2:
-      return "reverse"
-    elif can_gear_shifter == 0x4:
+    if can_gear_shifter == 0x4:
       return "neutral"
     elif can_gear_shifter == 0x8:
       return "drive"
@@ -34,16 +30,6 @@ def parse_gear_shifter(can_gear_shifter, car_fingerprint):
       return "sport"
     elif can_gear_shifter == 0x20:
       return "low"
-  elif car_fingerprint in (CAR.PILOT):
-     # TODO: neutral?
-     if can_gear_shifter == 0x8:
-       return "reverse"
-     elif can_gear_shifter == 0x4:
-       return "park"
-     elif can_gear_shifter == 0x20:
-       return "drive"
-     elif can_gear_shifter == 0x2:
-        return "sport"
 
   return "unknown"
 
@@ -136,10 +122,6 @@ def get_can_signals(CP):
                 ("EPB_STATE", "EPB_STATUS", 0),
                 ("BRAKE_HOLD_ACTIVE", "VSA_STATUS", 0)]
     checks += [("EPB_STATUS", 50)]
-  elif CP.carFingerprint == CAR.PILOT:
-    dbc_f = 'honda_pilot_touring_2017_can_generated.dbc'
-    signals += [("MAIN_ON", "SCM_BUTTONS", 0),
-                ("CAR_GAS", "GAS_PEDAL_2", 0)]
 
   # add gas interceptor reading if we are using it
   if CP.enableGas:
@@ -202,9 +184,9 @@ class CarState(object):
                                     cp.vl["DOORS_STATUS"]['DOOR_OPEN_RL'], cp.vl["DOORS_STATUS"]['DOOR_OPEN_RR']])
     self.seatbelt = not cp.vl["SEATBELT_STATUS"]['SEATBELT_DRIVER_LAMP'] and cp.vl["SEATBELT_STATUS"]['SEATBELT_DRIVER_LATCHED']
 
-    # 2 = temporary 3= TBD 4 = temporary, hit a bump 5 (permanent) 6 = temporary 7 (permanent)
+    # 2 = temporary 4 = temporary, hit a bump 5 (permanent) 6 = temporary 7 (permanent)
     # TODO: Use values from DBC to parse this field
-    self.steer_error = cp.vl["STEER_STATUS"]['STEER_STATUS'] not in [0, 2, 3, 4, 6]
+    self.steer_error = cp.vl["STEER_STATUS"]['STEER_STATUS'] not in [0, 2, 4, 6]
     self.steer_not_allowed = cp.vl["STEER_STATUS"]['STEER_STATUS'] != 0
     self.brake_error = cp.vl["STANDSTILL"]['BRAKE_ERROR_1'] or cp.vl["STANDSTILL"]['BRAKE_ERROR_2']
     self.esp_disabled = cp.vl["VSA_STATUS"]['ESP_DISABLED']
@@ -218,7 +200,7 @@ class CarState(object):
 
     # blend in transmission speed at low speed, since it has more low speed accuracy
     self.v_weight = interp(self.v_wheel, v_weight_bp, v_weight_v)
-    speed = (1. - self.v_weight) * cp.vl["ENGINE_DATA"]['XMISSION_SPEED'] * CV.KPH_TO_MS + self.v_weight * self.v_wheel
+    speed = (1. - self.v_weight) * cp.vl["ENGINE_DATA"]['XMISSION_SPEED'] + self.v_weight * self.v_wheel
 
     if abs(speed - self.v_ego) > 2.0:  # Prevent large accelerations when car starts at non zero speed
       self.v_ego_x = np.matrix([[speed], [0.0]])

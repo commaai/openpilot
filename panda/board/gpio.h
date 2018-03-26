@@ -72,15 +72,8 @@ void clock_init() {
     RCC->PLLCFGR = RCC_PLLCFGR_PLLQ_2 | RCC_PLLCFGR_PLLM_3 |
                    RCC_PLLCFGR_PLLN_6 | RCC_PLLCFGR_PLLN_5 | RCC_PLLCFGR_PLLSRC_HSE;
   #else
-    #ifdef PEDAL
-      // comma pedal has a 16mhz crystal
-      RCC->PLLCFGR = RCC_PLLCFGR_PLLQ_2 | RCC_PLLCFGR_PLLM_3 |
-                     RCC_PLLCFGR_PLLN_6 | RCC_PLLCFGR_PLLN_5 | RCC_PLLCFGR_PLLSRC_HSE;
-    #else
-      // NEO board has a 8mhz crystal
-      RCC->PLLCFGR = RCC_PLLCFGR_PLLQ_2 | RCC_PLLCFGR_PLLM_3 |
-                     RCC_PLLCFGR_PLLN_7 | RCC_PLLCFGR_PLLN_6 | RCC_PLLCFGR_PLLSRC_HSE;
-    #endif
+    RCC->PLLCFGR = RCC_PLLCFGR_PLLQ_2 | RCC_PLLCFGR_PLLM_3 |
+                   RCC_PLLCFGR_PLLN_7 | RCC_PLLCFGR_PLLN_6 | RCC_PLLCFGR_PLLSRC_HSE;
   #endif
 
   // start PLL
@@ -139,13 +132,8 @@ void set_can_enable(CAN_TypeDef *CAN, int enabled) {
       // CAN1_EN
       set_gpio_output(GPIOC, 1, !enabled);
     #else
-      #ifdef PEDAL
-        // CAN1_EN (not flipped)
-        set_gpio_output(GPIOB, 3, !enabled);
-      #else
-        // CAN1_EN
-        set_gpio_output(GPIOB, 3, enabled);
-      #endif
+      // CAN1_EN
+      set_gpio_output(GPIOB, 3, enabled);
     #endif
   } else if (CAN == CAN2) {
     #ifdef PANDA
@@ -296,14 +284,6 @@ void gpio_init() {
   // C2,C3: analog mode, voltage and current sense
   set_gpio_mode(GPIOC, 2, MODE_ANALOG);
   set_gpio_mode(GPIOC, 3, MODE_ANALOG);
-
-#ifdef PEDAL
-  // comma pedal has inputs on C0 and C1
-  set_gpio_mode(GPIOC, 0, MODE_ANALOG);
-  set_gpio_mode(GPIOC, 1, MODE_ANALOG);
-  // DAC outputs on A4 and A5
-  //   apparently they don't need GPIO setup
-#endif
 
   // C8: FAN aka TIM3_CH4
   set_gpio_alternate(GPIOC, 8, GPIO_AF2_TIM3);
@@ -463,10 +443,9 @@ void early() {
 
 
   if (enter_bootloader_mode == ENTER_BOOTLOADER_MAGIC) {
-  #ifdef PANDA
     set_esp_mode(ESP_DISABLED);
-  #endif
     set_led(LED_GREEN, 1);
+
     jump_to_bootloader();
   }
 

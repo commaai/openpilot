@@ -54,7 +54,6 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     parkBrake @29;
     manualRestart @30;
     lowSpeedLockout @31;
-    plannerError @32;
   }
 }
 
@@ -208,7 +207,6 @@ struct CarControl {
     brake @1: Float32;
     # range from -1.0 - 1.0
     steer @2: Float32;
-    steerAngle @3: Float32;
   }
 
   struct CruiseControl {
@@ -288,8 +286,6 @@ struct CarParams {
     honda @1;
     toyota @2;
     elm327 @3;
-    gm @4;
-    hondaBosch @5;
   }
 
   # things about the car in the manual
@@ -305,12 +301,8 @@ struct CarParams {
   tireStiffnessRear @14 :Float32;    # [N/rad] rear tire coeff of stiff
 
   # Kp and Ki for the lateral control
-  steerKpBP @42 :List(Float32);
-  steerKpV @43 :List(Float32);
-  steerKiBP @44 :List(Float32);
-  steerKiV @45 :List(Float32);
-  steerKpDEPRECATED @15 :Float32;
-  steerKiDEPRECATED @16 :Float32;
+  steerKp @15 :Float32;
+  steerKi @16 :Float32;
   steerKf @25 :Float32;
 
   # Kp and Ki for the longitudinal control

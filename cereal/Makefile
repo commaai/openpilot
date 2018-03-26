@@ -1,6 +1,6 @@
 PWD := $(shell pwd)
 
-SRCS := log.capnp car.capnp map.capnp
+SRCS := log.capnp car.capnp
 
 GENS := gen/cpp/car.capnp.c++ gen/cpp/log.capnp.c++
 

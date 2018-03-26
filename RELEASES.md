@@ -1,21 +1,3 @@
-Version 0.4.3.1 (2018-03-19)
-============================
- * Improve autofocus
- * Add check for MPC solution error
- * Make first distracted warning visual only
-
-Version 0.4.3 (2018-03-13)
-==========================
- * Add HDR and autofocus
- * Update UI aesthetic
- * Grey panda works in Waze
- * Add alpha support for 2017 Honda Pilot
- * Slight increase in acceleration response from stop
- * Switch CAN sending to use CANPacker
- * Fix pulsing acceleration regression on Honda
- * Fix openpilot bugs when stock system is in use
- * Change starting logic for chffrplus to use battery voltage
-
 Version 0.4.2 (2018-02-05)
 ==========================
  * Add alpha support for 2017 Lexus RX Hybrid

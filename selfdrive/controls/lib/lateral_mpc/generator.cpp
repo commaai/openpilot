@@ -4,6 +4,7 @@
 #define deg2rad(d) (d/180.0*PI)
 
 const int controlHorizon = 50;
+const double samplingTime = 0.05; // 20 Hz
 
 using namespace std;
 
@@ -115,10 +116,9 @@ int main( )
   ocp.minimizeLSQ(Q, h);
   ocp.minimizeLSQEndTerm(QN, hN);
 
-  // car can't go backward to avoid "circles"
   ocp.subjectTo( deg2rad(-90) <= psi <= deg2rad(90));
-  // more than absolute max steer angle
-  ocp.subjectTo( deg2rad(-50) <= delta <= deg2rad(50));
+  ocp.subjectTo( deg2rad(-25) <= delta <= deg2rad(25));
+  ocp.subjectTo( -0.1 <= t <= 0.1);
   ocp.setNOD(18);
 
   OCPexport mpc(ocp);
