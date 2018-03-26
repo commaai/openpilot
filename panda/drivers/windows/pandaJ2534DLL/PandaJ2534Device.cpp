@@ -8,15 +8,11 @@ PandaJ2534Device::PandaJ2534Device(std::unique_ptr<panda::Panda> new_panda) : tx
 	this->panda->set_esp_power(FALSE);
 	this->panda->set_safety_mode(panda::SAFETY_ALLOUTPUT);
 	this->panda->set_can_loopback(FALSE);
-	this->panda->set_alt_setting(0);
-
-	this->thread_kill_event = CreateEvent(NULL, TRUE, FALSE, NULL);
+	this->panda->set_alt_setting(1);
 
 	DWORD canListenThreadID;
-	this->can_recv_handle = CreateThread(NULL, 0, _can_recv_threadBootstrap, (LPVOID)this, 0, &canListenThreadID);
-
-	DWORD canProcessThreadID;
-	this->can_process_handle = CreateThread(NULL, 0, _can_process_threadBootstrap, (LPVOID)this, 0, &canProcessThreadID);
+	this->thread_kill_event = CreateEvent(NULL, TRUE, FALSE, NULL);
+	this->can_thread_handle = CreateThread(NULL, 0, _can_recv_threadBootstrap, (LPVOID)this, 0, &canListenThreadID);
 
 	DWORD flowControlSendThreadID;
 	this->flow_control_wakeup_event = CreateEvent(NULL, TRUE, FALSE, NULL);
@@ -25,11 +21,8 @@ PandaJ2534Device::PandaJ2534Device(std::unique_ptr<panda::Panda> new_panda) : tx
 
 PandaJ2534Device::~PandaJ2534Device() {
 	SetEvent(this->thread_kill_event);
-	DWORD res = WaitForSingleObject(this->can_recv_handle, INFINITE);
-	CloseHandle(this->can_recv_handle);
-
-	res = WaitForSingleObject(this->can_process_handle, INFINITE);
-	CloseHandle(this->can_process_handle);
+	DWORD res = WaitForSingleObject(this->can_thread_handle, INFINITE);
+	CloseHandle(this->can_thread_handle);
 
 	res = WaitForSingleObject(this->flow_control_thread_handle, INFINITE);
 	CloseHandle(this->flow_control_thread_handle);
@@ -74,28 +67,11 @@ DWORD PandaJ2534Device::addChannel(std::shared_ptr<J2534Connection>& conn, unsig
 }
 
 DWORD PandaJ2534Device::can_recv_thread() {
-	this->panda->can_clear(panda::PANDA_CAN_RX);
-	this->panda->can_rx_q_push(this->thread_kill_event);
-
-	return 0;
-}
-
-DWORD PandaJ2534Device::can_process_thread() {
-	panda::PANDA_CAN_MSG msg_recv[CAN_RX_MSG_LEN];
-
-	while (true) {
-		if (!WaitForSingleObject(this->thread_kill_event, 0)) {
-			break;
-		}
-
-		int count = 0;
-		this->panda->can_rx_q_pop(msg_recv, count);
-		if (count == 0) {
-			continue;
-		}
-		
-		for (int i = 0; i < count; i++) {
-			auto msg_in = msg_recv[i];
+	DWORD err = TRUE;
+	while (err) {
+		std::vector<panda::PANDA_CAN_MSG> msg_recv;
+		err = this->panda->can_recv_async(this->thread_kill_event, msg_recv);
+		for (auto msg_in : msg_recv) {
 			J2534Frame msg_out(msg_in);
 
 			if (msg_in.is_receipt) {

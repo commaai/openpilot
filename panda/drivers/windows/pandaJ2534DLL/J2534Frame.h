@@ -1,6 +1,6 @@
 #pragma once
 #include "J2534_v0404.h"
-#include "panda_shared/panda.h"
+#include "panda/panda.h"
 
 /*A move convenient container for J2534 Messages than the static buffer provided by default.*/
 class J2534Frame {
@@ -10,7 +10,7 @@ public:
 
 	J2534Frame(const panda::PANDA_CAN_MSG& msg_in) {
 		ProtocolID = CAN;
-		ExtraDataIndex = msg_in.len + 4;
+		ExtraDataIndex = 0;
 		Data.reserve(msg_in.len + 4);
 		Data += msg_in.addr >> 24;
 		Data += (msg_in.addr >> 16) & 0xFF;

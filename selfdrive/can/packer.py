@@ -3,7 +3,6 @@ import numbers
 
 from selfdrive.can.libdbc_py import libdbc, ffi
 
-
 class CANPacker(object):
   def __init__(self, dbc_name):
     self.packer = libdbc.canpack_init(dbc_name)
@@ -25,9 +24,6 @@ class CANPacker(object):
     # values: [(signal_name, signal_value)]
 
     values_thing = []
-    if isinstance(values, dict):
-      values = values.items()
-
     for name, value in values:
       if name not in self.sig_names:
         self.sig_names[name] = ffi.new("char[]", name)
@@ -46,9 +42,7 @@ class CANPacker(object):
       size = self.address_to_size[addr]
     else:
       addr, size = self.name_to_address_and_size[addr]
-
-    val = self.pack(addr, values, counter)
-    r = struct.pack(">Q", val)
+    r = struct.pack(">Q", self.pack(addr, values, counter))
     return addr, r[:size]
 
   def make_can_msg(self, addr, bus, values, counter=-1):

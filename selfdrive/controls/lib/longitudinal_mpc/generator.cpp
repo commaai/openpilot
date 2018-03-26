@@ -1,6 +1,7 @@
 #include <acado_code_generation.hpp>
 
 const int controlHorizon = 50;
+const double samplingTime = 0.2;
 
 using namespace std;
 
