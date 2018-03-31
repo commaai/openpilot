@@ -7,7 +7,7 @@ from common.realtime import sec_since_boot
 from common.dbc import dbc
 
 class CANParser(object):
-  def __init__(self, dbc_f, signals, checks=[]):
+  def __init__(self, dbc_f, signals, checks=None):
     ### input:
     # dbc_f   : dbc file
     # signals : List of tuples (name, address, ival) where
@@ -19,6 +19,7 @@ class CANParser(object):
     #               monitored.
     #             - frequency is the frequency at which health should be monitored.
 
+    checks = [] if checks is None else checks
     self.msgs_ck = set([check[0] for check in checks])
     self.frqs = dict(checks)
     self.can_valid = False  # start with False CAN assumption
