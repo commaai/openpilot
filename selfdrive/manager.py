@@ -52,7 +52,7 @@ sys.path.append(os.path.join(BASEDIR, "pyextra"))
 os.environ['BASEDIR'] = BASEDIR
 
 import zmq
-from setproctitle import setproctitle
+from setproctitle import setproctitle  #pylint: disable=no-name-in-module
 
 from common.params import Params
 from common.realtime import sec_since_boot

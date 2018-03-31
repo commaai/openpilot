@@ -12,7 +12,7 @@ from selfdrive.swaglog import cloudlog
 # USB is optional
 try:
   import usb1
-  from usb1 import USBErrorIO, USBErrorOverflow
+  from usb1 import USBErrorIO, USBErrorOverflow  #pylint: disable=no-name-in-module
 except Exception:
   pass
 

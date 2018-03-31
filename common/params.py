@@ -72,6 +72,8 @@ keys = {
 
   "Passive": TxType.PERSISTANT,
   "DoUninstall": TxType.CLEAR_ON_MANAGER_START,
+  "ShouldDoUpdate": TxType.CLEAR_ON_MANAGER_START,
+  "IsUpdateAvailable": TxType.PERSISTANT,
 }
 
 def fsync_dir(path):
