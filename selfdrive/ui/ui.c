@@ -1225,7 +1225,6 @@ static void ui_draw_vision_lead(UIState *s) {
   */
 }
 
-/*
 static void ui_draw_vision_grid(UIState *s) {
   const UIScene *scene = &s->scene;
   bool is_cruise_set = (s->scene.v_cruise != 0 && s->scene.v_cruise != 255);
@@ -1250,7 +1249,7 @@ static void ui_draw_vision_grid(UIState *s) {
     nvgStrokeColor(s->vg, nvgRGBA(255,255,255,128));
     nvgStrokeWidth(s->vg, 1);
 
-    for (int i=viz_y; i < viz_h; i+=grid_spacing) {
+    for (int i=box_y; i < box_h; i+=grid_spacing) {
       nvgMoveTo(s->vg, ui_viz_rx, i);
       //nvgLineTo(s->vg, ui_viz_rx, i);
       nvgLineTo(s->vg, ((ui_viz_rw + ui_viz_rx) / 2)+ 10, i);
@@ -1264,7 +1263,6 @@ static void ui_draw_vision_grid(UIState *s) {
     nvgRestore(s->vg);
   }
 }
-*/
 
 
 static void ui_draw_vision_header(UIState *s) {
