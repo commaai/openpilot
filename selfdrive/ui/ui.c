@@ -1223,6 +1223,7 @@ static void ui_draw_vision_lead(UIState *s) {
   */
 }
 
+/*
 static void ui_draw_vision_grid(UIState *s) {
   const UIScene *scene = &s->scene;
   bool is_cruise_set = (s->scene.v_cruise != 0 && s->scene.v_cruise != 255);
@@ -1261,6 +1262,7 @@ static void ui_draw_vision_grid(UIState *s) {
     nvgRestore(s->vg);
   }
 }
+*/
 
 
 static void ui_draw_vision_header(UIState *s) {
@@ -1281,7 +1283,7 @@ static void ui_draw_vision_header(UIState *s) {
   ui_draw_vision_speed(s);
   ui_draw_vision_wheel(s);
   ui_draw_vision_lead(s);
-  ui_draw_vision_grid(s);
+  //ui_draw_vision_grid(s);
   //test crosshair
   //draw_cross(s, 20, 5, 30, nvgRGBA(0, 255, 0, 255));
 }
