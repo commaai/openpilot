@@ -292,7 +292,6 @@ class CarState(object):
 # carstate standalone tester
 if __name__ == '__main__':
   import zmq
-  import time
   context = zmq.Context()
 
   class CarParams(object):
@@ -303,6 +302,6 @@ if __name__ == '__main__':
   CP = CarParams()
   CS = CarState(CP)
 
-  while 1:
-    CS.update()
-    time.sleep(0.01)
+  # while 1:
+  #   CS.update()
+  #   time.sleep(0.01)

@@ -1,4 +1,4 @@
-from common.numpy_fast import clip, interp, int_rnd
+from common.numpy_fast import clip, interp
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car.toyota.toyotacan import make_can_msg, create_video_target,\
                                            create_steer_command, create_ui_command, \
@@ -19,11 +19,12 @@ STEER_DELTA_UP = 10       # 1.5s time to peak torque
 STEER_DELTA_DOWN = 25     # always lower than 45 otherwise the Rav4 faults (Prius seems ok with 50)
 STEER_ERROR_MAX = 350     # max delta between torque cmd and torque motor
 
-# Steer angle limits
+# Steer angle limits (tested at the Crows Landing track and considered ok)
 ANGLE_MAX_BP = [0., 5.]
 ANGLE_MAX_V = [510., 300.]
-ANGLE_DELTA_BP = [0., 5.]
-ANGLE_DELTA_V = [3., 1.]
+ANGLE_DELTA_BP = [0., 5., 15.]
+ANGLE_DELTA_V = [5., .8, .15]     # windup limit
+ANGLE_DELTA_VU = [5., 3.5, 0.4]   # unwind limit
 
 TARGET_IDS = [0x340, 0x341, 0x342, 0x343, 0x344, 0x345,
               0x363, 0x364, 0x365, 0x370, 0x371, 0x372,
@@ -66,7 +67,7 @@ def process_hud_alert(hud_alert, audible_alert):
 
   return steer, fcw, sound1, sound2
 
-def ipas_state_transition(steer_angle_enabled, enabled, ipas_state, ipas_reset_counter):
+def ipas_state_transition(steer_angle_enabled, enabled, ipas_active, ipas_reset_counter):
 
   if enabled and not steer_angle_enabled:
     #ipas_reset_counter = max(0, ipas_reset_counter - 1)
@@ -78,7 +79,7 @@ def ipas_state_transition(steer_angle_enabled, enabled, ipas_state, ipas_reset_c
     return True, 0
 
   elif enabled and steer_angle_enabled:
-    if steer_angle_enabled and ipas_state != 3:
+    if steer_angle_enabled and not ipas_active:
       ipas_reset_counter += 1
     else:
       ipas_reset_counter = 0
@@ -141,20 +142,25 @@ class CarController(object):
     # dropping torque immediately might cause eps to temp fault. On the other hand, safety_toyota
     # cuts steer torque immediately anyway TODO: monitor if this is a real issue
     # only cut torque when steer state is a known fault
-    if not enabled or CS.steer_state in [18, 50]:
+    if not enabled or CS.steer_state in [9, 25]:
       apply_steer = 0
 
     self.steer_angle_enabled, self.ipas_reset_counter = \
-      ipas_state_transition(self.steer_angle_enabled, enabled, CS.ipas_state, self.ipas_reset_counter)
-    #print self.steer_angle_enabled, self.ipas_reset_counter, CS.ipas_state
+      ipas_state_transition(self.steer_angle_enabled, enabled, CS.ipas_active, self.ipas_reset_counter)
+    #print self.steer_angle_enabled, self.ipas_reset_counter, CS.ipas_active
 
     # steer angle
-    if self.steer_angle_enabled:
+    if self.steer_angle_enabled and CS.ipas_active:
       apply_angle = actuators.steerAngle
-      angle_lim = int_rnd(interp(CS.v_ego, ANGLE_MAX_BP, ANGLE_MAX_V))
+      angle_lim = interp(CS.v_ego, ANGLE_MAX_BP, ANGLE_MAX_V)
       apply_angle = clip(apply_angle, -angle_lim, angle_lim)
 
-      angle_rate_lim = int_rnd(interp(CS.v_ego, ANGLE_DELTA_BP, ANGLE_DELTA_V))
+      # windup slower
+      if self.last_angle * apply_angle > 0. and abs(apply_angle) > abs(self.last_angle):
+        angle_rate_lim = interp(CS.v_ego, ANGLE_MAX_BP, ANGLE_DELTA_V)
+      else:
+        angle_rate_lim = interp(CS.v_ego, ANGLE_MAX_BP, ANGLE_DELTA_VU)
+
       apply_angle = clip(apply_angle, self.last_angle - angle_rate_lim, self.last_angle + angle_rate_lim)
     else:
       apply_angle = CS.angle_steers
