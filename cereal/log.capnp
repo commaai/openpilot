@@ -1487,6 +1487,11 @@ struct OrbFeatures {
   ys @2 :List(Float32);
   descriptors @3 :Data;
   octaves @4 :List(Int8);
+
+  # match index to last OrbFeatures
+  # -1 if no match
+  timestampLastEof @5 :UInt64;
+  matches @6: List(Int16);
 }
 
 struct OrbKeyFrame {

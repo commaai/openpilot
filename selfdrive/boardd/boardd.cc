@@ -37,6 +37,8 @@
 #define SAFETY_ELM327 0xE327
 #define SAFETY_GM 3
 #define SAFETY_HONDA_BOSCH 4
+#define SAFETY_TOYOTA_NOLIMITS 0x1336
+#define SAFETY_ALLOUTPUT 0x1337
 
 namespace {
 
@@ -570,8 +572,13 @@ void *pigeon_thread(void *crap) {
       //printf("got %d\n", len);
       alen += len;
     }
-    if (alen > 0) {
-      pigeon_publish_raw(publisher, dat, alen);
+    if (alen > 0) { 
+      if (dat[0] == (char)0x00){
+        LOGW("received invalid ublox message, resetting pigeon");
+        pigeon_init();
+      } else {
+        pigeon_publish_raw(publisher, dat, alen);
+      }
     }
 
     // 10ms

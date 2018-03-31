@@ -45,25 +45,29 @@ int main( )
   auto angle_r = atan(3*r_poly_r0*xx*xx + 2*r_poly_r1*xx + r_poly_r2);
   auto angle_p = atan(3*p_poly_r0*xx*xx + 2*p_poly_r1*xx + p_poly_r2);
 
-  auto c_left_lane = exp(-(poly_l - yy));
-  auto c_right_lane = exp(poly_r - yy);
+  // given the lane width estimate, this is where we estimate the path given lane lines
+  auto l_phantom = poly_l - lane_width/2.0;
+  auto r_phantom = poly_r + lane_width/2.0;
 
-  auto r_phantom = poly_l - lane_width/2.0;
-  auto l_phantom = poly_r + lane_width/2.0;
-
-  auto path = lr_prob       * (l_prob * r_phantom + r_prob * l_phantom) / (l_prob + r_prob + 0.0001)
+  // best path estimate path is a linear combination of poly_p and the path estimate
+  // given the lane lines
+  auto path = lr_prob       * (l_prob * l_phantom + r_prob * r_phantom) / (l_prob + r_prob + 0.0001)
               + (1-lr_prob) * poly_p;
 
   auto angle = lr_prob      * (l_prob * angle_l + r_prob * angle_r) / (l_prob + r_prob + 0.0001)
                + (1-lr_prob) * angle_p;
+
+  // instead of using actual lane lines, use their estimated distance from path given lane_width
+  auto c_left_lane = exp(-(path + lane_width/2.0 - yy));
+  auto c_right_lane = exp(path - lane_width/2.0 - yy);
 
   // Running cost
   Function h;
 
   // Distance errors
   h << path - yy;
-  h << l_prob * c_left_lane;
-  h << r_prob * c_right_lane;
+  h << lr_prob * c_left_lane;
+  h << lr_prob * c_right_lane;
 
   // Heading error
   h << (v_ref + 1.0 ) * (angle - psi);
