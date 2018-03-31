@@ -1283,7 +1283,7 @@ static void ui_draw_vision_header(UIState *s) {
   ui_draw_vision_speed(s);
   ui_draw_vision_wheel(s);
   ui_draw_vision_lead(s);
-  //ui_draw_vision_grid(s);
+  ui_draw_vision_grid(s);
   //test crosshair
   //draw_cross(s, 20, 5, 30, nvgRGBA(0, 255, 0, 255));
 }
