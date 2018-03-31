@@ -78,12 +78,12 @@ class LocalCoord(object):
     self.ecef2ned_matrix = self.ned2ecef_matrix.T
 
   @classmethod
-  def from_geodetic(self, init_geodetic):
+  def from_geodetic(cls, init_geodetic):
     init_ecef = geodetic2ecef(init_geodetic)
     return LocalCoord(init_geodetic, init_ecef)
 
   @classmethod
-  def from_ecef(self, init_ecef):
+  def from_ecef(cls, init_ecef):
     init_geodetic = ecef2geodetic(init_ecef)
     return LocalCoord(init_geodetic, init_ecef)
 

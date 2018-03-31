@@ -41,6 +41,7 @@ class Track(object):
 
   def update(self, d_rel, y_rel, v_rel, d_path, v_ego_t_aligned, measured, steer_override):
     if self.initted:
+      # pylint: disable=access-member-before-definition
       self.dPathPrev = self.dPath
       self.vLeadPrev = self.vLead
       self.vRelPrev = self.vRel
@@ -117,7 +118,7 @@ if platform.machine() == 'aarch64':
     if os.path.isfile(os.path.join(pp, "_hierarchy.so")):
       sys.path.append(pp)
       break
-  import _hierarchy
+  import _hierarchy  #pylint: disable=import-error
 else:
   from scipy.cluster import _hierarchy
 

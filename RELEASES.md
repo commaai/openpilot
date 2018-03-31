@@ -1,3 +1,12 @@
+Version 0.4.3.2 (2018-03-29)
+============================
+ * Improve autofocus
+ * Improve driving when only one lane line is detected
+ * Added fingerprint for Toyota Corolla LE
+ * Fixed Toyota Corolla steer error
+ * Full-screen driving UI
+ * Improved path drawing
+
 Version 0.4.3.1 (2018-03-19)
 ============================
  * Improve autofocus

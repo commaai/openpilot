@@ -25,9 +25,9 @@ class dbc(object):
     self._warned_addresses = set()
 
     # regexps from https://github.com/ebroecker/canmatrix/blob/master/canmatrix/importdbc.py
-    bo_regexp = re.compile("^BO\_ (\w+) (\w+) *: (\w+) (\w+)")
-    sg_regexp = re.compile("^SG\_ (\w+) : (\d+)\|(\d+)@(\d+)([\+|\-]) \(([0-9.+\-eE]+),([0-9.+\-eE]+)\) \[([0-9.+\-eE]+)\|([0-9.+\-eE]+)\] \"(.*)\" (.*)")
-    sgm_regexp = re.compile("^SG\_ (\w+) (\w+) *: (\d+)\|(\d+)@(\d+)([\+|\-]) \(([0-9.+\-eE]+),([0-9.+\-eE]+)\) \[([0-9.+\-eE]+)\|([0-9.+\-eE]+)\] \"(.*)\" (.*)")
+    bo_regexp = re.compile(r"^BO\_ (\w+) (\w+) *: (\w+) (\w+)")
+    sg_regexp = re.compile(r"^SG\_ (\w+) : (\d+)\|(\d+)@(\d+)([\+|\-]) \(([0-9.+\-eE]+),([0-9.+\-eE]+)\) \[([0-9.+\-eE]+)\|([0-9.+\-eE]+)\] \"(.*)\" (.*)")
+    sgm_regexp = re.compile(r"^SG\_ (\w+) (\w+) *: (\d+)\|(\d+)@(\d+)([\+|\-]) \(([0-9.+\-eE]+),([0-9.+\-eE]+)\) \[([0-9.+\-eE]+)\|([0-9.+\-eE]+)\] \"(.*)\" (.*)")
 
     # A dictionary which maps message ids to tuples ((name, size), signals).
     #   name is the ASCII name of the message.
