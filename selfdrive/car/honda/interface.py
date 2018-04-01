@@ -250,7 +250,7 @@ class CarInterface(object):
       ret.wheelbase = 3.18
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 15.59
-      ret.steerKp, ret.steerKi = [[0.38, 0.11]]
+      ret.steerKpV, ret.steerKiV = [[0.38], [0.11]]
 
       ret.longitudinalKpBP = [0., 5., 35.]
       ret.longitudinalKpV = [1.2, 0.8, 0.5]
