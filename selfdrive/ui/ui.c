@@ -1211,17 +1211,13 @@ static void ui_draw_vision_lead(UIState *s) {
     // lead car is always in meters
     if (s->is_metric || true) {
       snprintf(radar_str, sizeof(radar_str), "%dm", (int)scene->lead_d_rel);
-    } /*else {
+    } /* Commented out because this seems to be unreachable code...
+    else {
       snprintf(radar_str, sizeof(radar_str), "%dft", (int)(scene->lead_d_rel * 3.28084));
     }
     */
     nvgText(s->vg, viz_leaddistance_x+viz_leaddistance_w/2, 242, radar_str, NULL);
-  } /* else {
-    nvgFontSize(s->vg, 42*2.5);
-    //nvgText(s->vg, viz_leaddistance_x+viz_leaddistance_w/2, 242, "222m", NULL);
-    nvgText(s->vg, viz_leaddistance_x+viz_leaddistance_w/2, 242, "N/A", NULL);
   }
-  */
 }
 
 static void ui_draw_vision_header(UIState *s) {
