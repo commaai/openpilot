@@ -76,6 +76,12 @@ class AlertManager(object):
         AlertStatus.critical, AlertSize.full,
         Priority.HIGH, "fcw", "chimeRepeated", 1., 2., 2.),
 
+    "pathUncertain": Alert(
+        "CAUTION",
+        "Model uncertain of lines",
+        AlertStatus.userPrompt, AlertSize.mid,
+        Priority.LOW, "steerRequired", None, 0., .1, .1),
+
     "steerSaturated": Alert(
         "TAKE CONTROL",
         "Turn exceeds steering limit",

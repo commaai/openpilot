@@ -380,6 +380,9 @@ class Planner(object):
       self.last_model = cur_time
       self.model_dead = False
 
+      if md.model.leftLane.prob < 0.20 or md.model.RightLane.prob < 0.20:
+        events.append(create_event('pathUncertain', [ET.NO_ENTRY]))
+
       self.PP.update(CS.vEgo, md)
 
       if self.last_gps_planner_plan is not None:
