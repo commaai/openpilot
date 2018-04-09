@@ -245,7 +245,7 @@ class CarInterface(object):
       ret.longitudinalKiV = [0.18, 0.12]
     elif candidate == CAR.RIDGELINE:
       stop_and_go = False
-      ts_factor = 1.5
+      ts_factor = 1.4
       ret.mass = 4515./2.205 + std_cargo
       ret.wheelbase = 3.18
       ret.centerToFront = ret.wheelbase * 0.41
