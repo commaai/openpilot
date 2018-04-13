@@ -34,8 +34,8 @@ def parse_gear_shifter(can_gear_shifter, car_fingerprint):
       return "sport"
     elif can_gear_shifter == 0x20:
       return "low"
-  elif car_fingerprint in (CAR.PILOT):
-     # TODO: neutral?
+
+  elif car_fingerprint in (CAR.PILOT, CAR.RIDGELINE):
      if can_gear_shifter == 0x8:
        return "reverse"
      elif can_gear_shifter == 0x4:
@@ -140,6 +140,9 @@ def get_can_signals(CP):
     dbc_f = 'honda_pilot_touring_2017_can_generated.dbc'
     signals += [("MAIN_ON", "SCM_BUTTONS", 0),
                 ("CAR_GAS", "GAS_PEDAL_2", 0)]
+  elif CP.carFingerprint == CAR.RIDGELINE:
+    dbc_f = 'honda_ridgeline_black_edition_2017_can_generated.dbc'
+    signals += [("MAIN_ON", "SCM_BUTTONS", 0)]
 
   # add gas interceptor reading if we are using it
   if CP.enableGas:
@@ -261,7 +264,7 @@ class CarState(object):
 
     self.pedal_gas = cp.vl["POWERTRAIN_DATA"]['PEDAL_GAS']
     # crv doesn't include cruise control
-    if self.CP.carFingerprint in (CAR.CRV, CAR.ODYSSEY, CAR.ACURA_RDX):
+    if self.CP.carFingerprint in (CAR.CRV, CAR.ODYSSEY, CAR.ACURA_RDX, CAR.RIDGELINE):
       self.car_gas = self.pedal_gas
     else:
       self.car_gas = cp.vl["GAS_PEDAL_2"]['CAR_GAS']
