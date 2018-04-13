@@ -78,6 +78,8 @@ Community WIP Cars
 
 - [Classic Tesla Model S (pre-AP)](https://github.com/commaai/openpilot/pull/145)
 
+- [Toyota Camry Hybrid 2018](https://github.com/commaai/openpilot/pull/195)
+
 Directory structure
 ------
 
