@@ -115,7 +115,7 @@ class CarController(object):
 
     # *** compute control surfaces ***
     BRAKE_MAX = 1024/4
-    if CS.CP.carFingerprint in (CAR.CIVIC, CAR.ODYSSEY, CAR.PILOT):
+    if CS.CP.carFingerprint in (CAR.CIVIC, CAR.ODYSSEY, CAR.PILOT, CAR.RIDGELINE):
       is_fw_modified = os.getenv("DONGLE_ID") in ['99c94dc769b5d96e']
       STEER_MAX = 0x1FFF if is_fw_modified else 0x1000
     elif CS.CP.carFingerprint in (CAR.CRV, CAR.ACURA_RDX):

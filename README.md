@@ -34,9 +34,12 @@ Supported Cars
 
 - Acura RDX 2018 with AcuraWatch Plus (alpha!)
   - Can only be enabled above 25 mph
-  
+
 - Honda Pilot 2017 with Honda Sensing (alpha!)
-  - Can only be enabled above 27 mph 
+  - Can only be enabled above 27 mph
+
+- Honda Ridgeline 2017 with Honda Sensing (alpha!)
+  - Can only be enabled above 27 mph
 
 - Toyota RAV-4 2016+ non-hybrid with TSS-P
   - By default it uses stock Toyota ACC for longitudinal control
