@@ -157,9 +157,9 @@ class CarController(object):
 
       # windup slower
       if self.last_angle * apply_angle > 0. and abs(apply_angle) > abs(self.last_angle):
-        angle_rate_lim = interp(CS.v_ego, ANGLE_MAX_BP, ANGLE_DELTA_V)
+        angle_rate_lim = interp(CS.v_ego, ANGLE_DELTA_BP, ANGLE_DELTA_V)
       else:
-        angle_rate_lim = interp(CS.v_ego, ANGLE_MAX_BP, ANGLE_DELTA_VU)
+        angle_rate_lim = interp(CS.v_ego, ANGLE_DELTA_BP, ANGLE_DELTA_VU)
 
       apply_angle = clip(apply_angle, self.last_angle - angle_rate_lim, self.last_angle + angle_rate_lim)
     else:
@@ -195,11 +195,11 @@ class CarController(object):
       else:
         can_sends.append(create_steer_command(self.packer, apply_steer, frame))
 
-    if ECU.APGS in self.fake_ecus:
-      if self.angle_control:
-        can_sends.append(create_ipas_steer_command(self.packer, apply_angle, self.steer_angle_enabled))
-      else:
-        can_sends.append(create_ipas_steer_command(self.packer, 0, 0))
+    if self.angle_control:
+      can_sends.append(create_ipas_steer_command(self.packer, apply_angle, self.steer_angle_enabled, 
+                                                 ECU.APGS in self.fake_ecus))
+    elif ECU.APGS in self.fake_ecus:
+      can_sends.append(create_ipas_steer_command(self.packer, 0, 0, True))
 
     # accel cmd comes from DSU, but we can spam can to cancel the system even if we are using lat only control
     if (frame % 3 == 0 and ECU.DSU in self.fake_ecus) or (pcm_cancel_cmd and ECU.CAM in self.fake_ecus):

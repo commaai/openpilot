@@ -1,3 +1,13 @@
+Version 0.4.4 (2018-04-13)
+==========================
+ * EON are flipped! Flip your EON's mount!
+ * Alpha Honda Ridgeline support thanks to energee!
+ * Support optional front camera recording
+ * Upload over cellular toggle now applies to all files, not just video
+ * Increase acceleration when closing lead gap
+ * User now prompted for future updates
+ * NEO no longer supported :(
+
 Version 0.4.3.2 (2018-03-29)
 ============================
  * Improve autofocus

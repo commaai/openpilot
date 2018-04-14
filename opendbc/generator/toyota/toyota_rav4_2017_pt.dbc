@@ -1,4 +1,5 @@
 CM_ "IMPORT _toyota_2017.dbc"
+CM_ "IMPORT _comma.dbc"
 
 BO_ 548 BRAKE_MODULE: 8 XXX
  SG_ BRAKE_PRESSURE : 43|12@0+ (1,0) [0|4047] "" XXX

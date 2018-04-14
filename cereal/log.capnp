@@ -485,6 +485,7 @@ struct EncodeIndex {
     bigBoxHEVC @2;       # bcamera.hevc
     chffrAndroidH264 @3; # acamera
     fullLosslessClip @4; # prcamera.mkv
+    front @5;            # dcamera.hevc
   }
 }
 
@@ -542,6 +543,7 @@ struct Plan {
     cruise @0;
     mpc1 @1;
     mpc2 @2;
+    mpc3 @3;
   }
 }
 
@@ -1376,6 +1378,7 @@ struct GPSPlannerPlan {
   acceleration @4 :Float32;
   pointsDEPRECATED @5 :List(ECEFPointDEPRECATED);
   points @6 :List(ECEFPoint);
+  xLookahead @7 :Float32;
 }
 
 struct TrafficEvent @0xacfa74a094e62626 {

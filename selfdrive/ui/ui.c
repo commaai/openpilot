@@ -762,7 +762,7 @@ static void ui_draw_track(UIState *s, bool is_mpc) {
     if (!started) {
       nvgMoveTo(s->vg, x, y);
       track_start_x = x;
-      track_start_y = y;
+      track_start_y = vwp_h;
       started = true;
     } else {
       nvgLineTo(s->vg, x, y);
@@ -770,7 +770,7 @@ static void ui_draw_track(UIState *s, bool is_mpc) {
   }
 
   // right side down
-  for (int i=path_height; i>0; i--) {
+  for (int i=path_height-1; i>0; i--) {
     float px, py;
     if (is_mpc) {
       px = mpc_x_coords[i];
@@ -790,7 +790,7 @@ static void ui_draw_track(UIState *s, bool is_mpc) {
 
     if (!started) {
       nvgMoveTo(s->vg, x, y);
-      track_end_y = y;
+      track_end_y = vwp_h;
       track_end_x = x;
       started = true;
     } else {
@@ -833,10 +833,10 @@ static void draw_frame(UIState *s) {
   if (s->scene.frontview) {
     out_mat = device_transform; // full 16/9
     // flip horizontally so it looks like a mirror
-    x2 = (float)scene->front_box_x / s->rgb_front_width;
-    x1 = (float)(scene->front_box_x + scene->front_box_width) / s->rgb_front_width;
-    y1 = (float)scene->front_box_y / s->rgb_front_height;
-    y2 = (float)(scene->front_box_y + scene->front_box_height) / s->rgb_front_height;
+    x1 = (float)scene->front_box_x / s->rgb_front_width;
+    x2 = (float)(scene->front_box_x + scene->front_box_width) / s->rgb_front_width;
+    y2 = (float)scene->front_box_y / s->rgb_front_height;
+    y1 = (float)(scene->front_box_y + scene->front_box_height) / s->rgb_front_height;
   } else {
     out_mat = matmul(device_transform, frame_transform);
     x1 = 1.0;

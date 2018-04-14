@@ -28,7 +28,7 @@ def create_video_target(frame, addr):
   return make_can_msg(addr, msg, 1, True)
 
 
-def create_ipas_steer_command(packer, steer, enabled):
+def create_ipas_steer_command(packer, steer, enabled, apgs_enabled):
   """Creates a CAN message for the Toyota Steer Command."""
   if steer < 0:
     direction = 3
@@ -46,7 +46,10 @@ def create_ipas_steer_command(packer, steer, enabled):
     "SET_ME_X10": 0x10,
     "SET_ME_X40": 0x40
   }
-  return packer.make_can_msg("STEERING_IPAS", 0, values)
+  if apgs_enabled:
+    return packer.make_can_msg("STEERING_IPAS", 0, values)
+  else:
+    return packer.make_can_msg("STEERING_IPAS_COMMA", 0, values)
 
 
 def create_steer_command(packer, steer, raw_cnt):
