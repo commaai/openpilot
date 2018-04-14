@@ -104,7 +104,14 @@ int get_health_pkt(void *dat) {
 
 #ifdef PANDA
   health->current = adc_get(ADCCHAN_CURRENT);
-  health->started = (GPIOA->IDR & (1 << 1)) == 0;
+  int safety_ignition = safety_ignition_hook();
+  if (safety_ignition < 0) {
+    //Use the GPIO pin to determine ignition
+    health->started = (GPIOA->IDR & (1 << 1)) == 0;
+  } else {
+    //Current safety hooks want to determine ignition (ex: GM)
+    health->started = safety_ignition;
+  }
 #else
   health->current = 0;
   health->started = (GPIOC->IDR & (1 << 13)) != 0;
@@ -281,9 +288,15 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, int hardwired) {
             break;
           case SAFETY_ELM327:
             can_silent = ALL_CAN_BUT_MAIN_SILENT;
+            can_autobaud_enabled[0] = false;
             break;
           default:
             can_silent = ALL_CAN_LIVE;
+            can_autobaud_enabled[0] = false;
+            can_autobaud_enabled[1] = false;
+            #ifdef PANDA
+              can_autobaud_enabled[2] = false;
+            #endif
             break;
         }
         can_init_all();
@@ -303,6 +316,7 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, int hardwired) {
     // **** 0xde: set can bitrate
     case 0xde:
       if (setup->b.wValue.w < BUS_MAX) {
+        can_autobaud_enabled[setup->b.wValue.w] = false;
         can_speed[setup->b.wValue.w] = setup->b.wIndex.w;
         can_init(CAN_NUM_FROM_BUS_NUM(setup->b.wValue.w));
       }
@@ -476,6 +490,11 @@ void __initialize_hardware_early() {
   early();
 }
 
+void __attribute__ ((noinline)) enable_fpu() {
+  // enable the FPU
+  SCB->CPACR |= ((3UL << 10*2) | (3UL << 11*2));
+}
+
 int main() {
   // shouldn't have interrupts here, but just in case
   __disable_irq();
@@ -500,6 +519,11 @@ int main() {
   puts(is_grey_panda ? "  gray panda detected!\n" : "  white panda\n");
   puts(is_entering_bootmode ? "  ESP wants bootmode\n" : "  no bootmode\n");
   gpio_init();
+
+#ifdef PANDA
+  // panda has an FPU, let's use it!
+  enable_fpu();
+#endif
 
   // enable main uart if it's connected
   if (has_external_debug_serial) {
@@ -551,6 +575,11 @@ int main() {
   puts("**** INTERRUPTS ON ****\n");
 
   __enable_irq();
+
+  // if the error interrupt is enabled to quickly when the CAN bus is active
+  // something bad happens and you can't connect to the device over USB
+  delay(10000000);
+  CAN1->IER |= CAN_IER_ERRIE | CAN_IER_LECIE;
 
   // LED should keep on blinking all the time
   uint64_t cnt = 0;

@@ -134,11 +134,16 @@ static int honda_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
   return -1;
 }
 
+static int honda_ign_hook() {
+  return -1;
+}
+
 const safety_hooks honda_hooks = {
   .init = honda_init,
   .rx = honda_rx_hook,
   .tx = honda_tx_hook,
   .tx_lin = honda_tx_lin_hook,
+  .ignition = honda_ign_hook,
   .fwd = honda_fwd_hook,
 };
 
@@ -160,5 +165,6 @@ const safety_hooks honda_bosch_hooks = {
   .rx = honda_rx_hook,
   .tx = honda_tx_hook,
   .tx_lin = honda_tx_lin_hook,
+  .ignition = honda_ign_hook,
   .fwd = honda_bosch_fwd_hook,
 };

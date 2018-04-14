@@ -35,12 +35,12 @@ def _connect_wifi(dongle_id, pw, insecure_okay=False):
     if sys.platform == "darwin":
       os.system("networksetup -setairportnetwork en0 %s %s" % (ssid, pw))
     else:
+      wlan_interface = subprocess.check_output(["sh", "-c", "iw dev | awk '/Interface/ {print $2}'"]).strip()
       cnt = 0
       MAX_TRIES = 10
       while cnt < MAX_TRIES:
         print "WIFI: scanning %d" % cnt
-        if os.system("ifconfig | grep wlp3s0") == 0:
-          os.system("sudo iwlist wlp3s0 scanning > /dev/null")
+        os.system("sudo iwlist %s scanning > /dev/null" % wlan_interface)
         os.system("nmcli device wifi rescan")
         wifi_scan = filter(lambda x: ssid in x, subprocess.check_output(["nmcli","dev", "wifi", "list"]).split("\n"))
         if len(wifi_scan) != 0:
