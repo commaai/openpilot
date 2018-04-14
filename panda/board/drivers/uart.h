@@ -266,6 +266,17 @@ int puts(const char *a) {
   return 0;
 }
 
+void putui(uint32_t i) {
+  char str[11];
+  uint8_t idx = 10;
+  str[idx--] = '\0';
+  do {
+    str[idx--] = (i % 10) + 0x30;
+    i /= 10;
+  } while (i);
+  puts(str + idx + 1);
+}
+
 void puth(unsigned int i) {
   int pos;
   char c[] = "0123456789abcdef";
