@@ -3,7 +3,7 @@ $Cxx.namespace("cereal");
 
 using Java = import "java.capnp";
 $Java.package("ai.comma.openpilot.cereal");
-$Java.outerClassname("Log");
+$Java.outerClassname("Map");
 
 using Log = import "log.capnp";
 

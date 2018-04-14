@@ -12,7 +12,7 @@ Here are [some](https://www.youtube.com/watch?v=9OwTJFuDI7g) [videos](https://ww
 Hardware
 ------
 
-Right now openpilot supports the [NEO research platform](http://github.com/commaai/neo) and the [EON Dashcam DevKit](https://shop.comma.ai/products/eon-dashcam-devkit). We'd like to support other platforms as well.
+Right now openpilot supports the [EON Dashcam DevKit](https://shop.comma.ai/products/eon-dashcam-devkit). We'd like to support other platforms as well.
 
 Install openpilot on a neo device by entering ``https://openpilot.comma.ai`` during NEOS setup.
 
