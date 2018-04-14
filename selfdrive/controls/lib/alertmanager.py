@@ -80,7 +80,7 @@ class AlertManager(object):
         "CAUTION",
         "Model uncertain of lines",
         AlertStatus.userPrompt, AlertSize.mid,
-        Priority.LOW, "steerRequired", None, 0., .1, .1),
+        Priority.LOW, "steerRequired", "chimeSingle", 0., .1, .1),
 
     "steerSaturated": Alert(
         "TAKE CONTROL",
