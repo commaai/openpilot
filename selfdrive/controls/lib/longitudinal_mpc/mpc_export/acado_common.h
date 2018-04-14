@@ -1,6 +1,6 @@
 /*
  *    This file was auto-generated using the ACADO Toolkit.
- *    
+ *
  *    While ACADO Toolkit is free software released under the terms of
  *    the GNU Lesser General Public License (LGPL), the generated code
  *    as such remains the property of the user who used ACADO Toolkit
@@ -9,11 +9,11 @@
  *    generated code that are a direct copy of source code from the
  *    ACADO Toolkit or the software tools it is based on, remain, as derived
  *    work, automatically covered by the LGPL license.
- *    
+ *
  *    ACADO Toolkit is distributed in the hope that it will be useful,
  *    but WITHOUT ANY WARRANTY; without even the implied warranty of
  *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *    
+ *
  */
 
 
@@ -96,38 +96,38 @@ extern "C"
  */
 
 /** The structure containing the user data.
- * 
+ *
  *  Via this structure the user "communicates" with the solver code.
  */
 typedef struct ACADOvariables_
 {
 int dummy;
 /** Matrix of size: 21 x 6 (row major format)
- * 
+ *
  *  Matrix containing 21 differential variable vectors.
  */
 real_t x[ 126 ];
 
 /** Column vector of size: 20
- * 
+ *
  *  Matrix containing 20 control variable vectors.
  */
 real_t u[ 20 ];
 
 /** Column vector of size: 21
- * 
+ *
  *  Matrix containing 21 online data vectors.
  */
 real_t od[ 21 ];
 
 /** Column vector of size: 80
- * 
+ *
  *  Matrix containing 20 reference/measurement vectors of size 4 for first 20 nodes.
  */
 real_t y[ 80 ];
 
 /** Column vector of size: 3
- * 
+ *
  *  Reference/measurement vector for the 21. node.
  */
 real_t yN[ 3 ];
@@ -139,7 +139,7 @@ real_t W[ 320 ];
 real_t WN[ 9 ];
 
 /** Column vector of size: 6
- * 
+ *
  *  Current state feedback vector.
  */
 real_t x0[ 6 ];
@@ -148,10 +148,10 @@ real_t x0[ 6 ];
 } ACADOvariables;
 
 /** Private workspace used by the auto-generated code.
- * 
+ *
  *  Data members of this structure are private to the solver.
- *  In other words, the user code should not modify values of this 
- *  structure. 
+ *  In other words, the user code should not modify values of this
+ *  structure.
  */
 typedef struct ACADOworkspace_
 {
@@ -181,8 +181,11 @@ real_t evGx[ 720 ];
 /** Column vector of size: 120 */
 real_t evGu[ 120 ];
 
-/** Column vector of size: 32 */
-real_t objAuxVar[ 32 ];
+/** Column vector of size: 30 */
+real_t objAuxVar[ 30 ];
+///** Column vector of size: 32 */
+//real_t objAuxVar[ 32 ];
+
 
 /** Row vector of size: 8 */
 real_t objValueIn[ 8 ];
@@ -265,8 +268,8 @@ real_t y[ 46 ];
 
 } ACADOworkspace;
 
-/* 
- * Forward function declarations. 
+/*
+ * Forward function declarations.
  */
 
 
@@ -336,8 +339,8 @@ real_t acado_getKKT(  );
 real_t acado_getObjective(  );
 
 
-/* 
- * Extern declarations. 
+/*
+ * Extern declarations.
  */
 
 extern ACADOworkspace acadoWorkspace;
