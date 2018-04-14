@@ -55,6 +55,8 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     manualRestart @30;
     lowSpeedLockout @31;
     plannerError @32;
+    ipasOverride @33;
+    debugAlert @34;
   }
 }
 
@@ -192,6 +194,7 @@ struct RadarState {
 struct CarControl {
   # must be true for any actuator commands to work
   enabled @0 :Bool;
+  active @7 :Bool;
 
   gasDEPRECATED @1 :Float32;
   brakeDEPRECATED @2 :Float32;

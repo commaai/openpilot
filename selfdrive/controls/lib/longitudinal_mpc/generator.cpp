@@ -39,9 +39,9 @@ int main( )
   // Running cost
   Function h;
   h << exp(0.3 * NORM_RW_ERROR(v_ego, v_l, d_l)) - exp(0.3 * NORM_RW_ERROR(v_ego, v_l, desired));
-  h << (d_l - desired) / (0.1 * v_ego + 0.5);
-  h << a_ego * (1.0 + v_ego / 10.0);
-  h << j_ego * (1.0 + v_ego / 10.0);
+  h << (d_l - desired) / (0.05 * v_ego + 0.5);
+  h << a_ego * (0.1 * v_ego + 1.0);
+  h << j_ego * (0.1 * v_ego + 1.0);
 
   // Weights are defined in mpc.
   BMatrix Q(4,4); Q.setAll(true);
@@ -49,8 +49,8 @@ int main( )
   // Terminal cost
   Function hN;
   hN << exp(0.3 * NORM_RW_ERROR(v_ego, v_l, d_l)) - exp(0.3 * NORM_RW_ERROR(v_ego, v_l, desired));
-  hN << (d_l - desired) / (0.1 * v_ego + 0.5);
-  hN << a_ego * (1.0 + v_ego / 10.0);
+  hN << (d_l - desired) / (0.05 * v_ego + 0.5);
+  hN << a_ego * (0.1 * v_ego + 1.0);
 
   // Weights are defined in mpc.
   BMatrix QN(3,3); QN.setAll(true);
