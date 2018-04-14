@@ -1,4 +1,5 @@
 CM_ "IMPORT _toyota_2017.dbc"
+CM_ "IMPORT _comma.dbc"
 
 BO_ 295 GEAR_PACKET: 8 XXX
  SG_ CAR_MOVEMENT : 39|8@0- (1,0) [0|255] "" XXX
@@ -26,10 +27,14 @@ BO_ 610 EPS_STATUS: 8 EPS
  SG_ TYPE : 24|1@0+ (1,0) [0|1] "" XXX
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
 
+BO_ 1083 AUTOPARK_STATUS: 8 IPAS
+ SG_ STATE : 7|4@0+ (1,0) [0|15] "" XXX
+
 CM_ SG_ 550 BRAKE_PRESSURE "seems prop to pedal force";
 CM_ SG_ 550 BRAKE_POSITION "seems proportional to pedal displacement, unclear the max value of 0x1c8";
 CM_ SG_ 581 GAS_PEDAL "it seems slightly filtered";
 CM_ SG_ 610 TYPE "seems 1 on Corolla, 0 on all others";
+CM_ SG_ 1083 STATE "when the dashboard button is pressed, the value changes from zero to non-zero";
 VAL_ 295 GEAR 0 "P" 1 "R" 2 "N" 3 "D" 4 "B";
 VAL_ 610 IPAS_STATE 5 "override" 3 "enabled" 1 "disabled";
 VAL_ 610 LKA_STATE 25 "temporary_fault" 9 "temporary_fault2" 5 "active" 1 "standby";
