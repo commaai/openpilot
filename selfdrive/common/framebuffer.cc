@@ -56,8 +56,8 @@ extern "C" FramebufferState* framebuffer_init(
   status = SurfaceComposerClient::getDisplayInfo(s->dtoken, &s->dinfo);
   assert(status == 0);
 
-  int orientation = 3; // rotate framebuffer 270 degrees
-  //int orientation = 1; // rotate framebuffer 90 degrees
+  //int orientation = 3; // rotate framebuffer 270 degrees
+  int orientation = 1; // rotate framebuffer 90 degrees
   if(orientation == 1 || orientation == 3) {
       int temp = s->dinfo.h;
       s->dinfo.h = s->dinfo.w;
