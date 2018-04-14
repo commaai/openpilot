@@ -264,7 +264,7 @@ void ICACHE_FLASH_ATTR wifi_configure(int secure) {
 void ICACHE_FLASH_ATTR wifi_init() {
   // default ssid and password
   memset(ssid, 0, 32);
-  os_sprintf(ssid, "panda-%08x-BROKEN", system_get_chip_id()); 
+  os_sprintf(ssid, "panda-%08x-BROKEN", system_get_chip_id());
 
   // fetch secure ssid and password
   // update, try 20 times, for 1 second
@@ -283,6 +283,9 @@ void ICACHE_FLASH_ATTR wifi_init() {
     }
     os_delay_us(50000);
   }
+  os_printf("Finished getting SID\n");
+  os_printf(ssid);
+  os_printf("\n");
 
   // set IP
   wifi_softap_dhcps_stop(); //stop DHCP before setting static IP
@@ -311,7 +314,7 @@ void ICACHE_FLASH_ATTR user_init() {
   gpio_init();
 
   // configure UART TXD to be GPIO1, set as output
-  PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0TXD_U, FUNC_GPIO1); 
+  PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0TXD_U, FUNC_GPIO1);
   gpio_output_set(0, 0, (1 << pin), 0);
 
   // configure SPI
@@ -331,7 +334,7 @@ void ICACHE_FLASH_ATTR user_init() {
   //SPICsPinSelect(SpiNum_HSPI, SpiPinCS_1);
 
   // configure UART TXD to be GPIO1, set as output
-  PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO5_U, FUNC_GPIO5); 
+  PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO5_U, FUNC_GPIO5);
   gpio_output_set(0, 0, (1 << 5), 0);
   gpio_output_set((1 << 5), 0, 0, 0);
 
