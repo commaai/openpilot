@@ -52,7 +52,7 @@ sys.path.append(os.path.join(BASEDIR, "pyextra"))
 os.environ['BASEDIR'] = BASEDIR
 
 import zmq
-from setproctitle import setproctitle
+from setproctitle import setproctitle  #pylint: disable=no-name-in-module
 
 from common.params import Params
 from common.realtime import sec_since_boot
@@ -466,9 +466,10 @@ def manager_thread():
     # have we seen a panda?
     panda_seen = panda_seen or td is not None
 
-    # start on gps if we have no connection to a panda
-    if not panda_seen:
-      should_start = should_start or passive_starter.update(started_ts, location)
+    # start on gps movement if we haven't seen ignition and are in passive mode
+    should_start = should_start or (not (ignition_seen and td) # seen ignition and panda is connected
+                                    and params.get("Passive") == "1"
+                                    and passive_starter.update(started_ts, location))
 
     # with 2% left, we killall, otherwise the phone will take a long time to boot
     should_start = should_start and avail > 0.02
@@ -608,6 +609,9 @@ def uninstall():
   os.system("service call power 16 i32 0 s16 recovery i32 1")
 
 def main():
+  # the flippening!
+  os.system('LD_LIBRARY_PATH="" content insert --uri content://settings/system --bind name:s:user_rotation --bind value:i:1')
+
   if os.getenv("NOLOG") is not None:
     del managed_processes['loggerd']
     del managed_processes['tombstoned']
@@ -639,6 +643,8 @@ def main():
   # set unset params
   if params.get("IsMetric") is None:
     params.put("IsMetric", "0")
+  if params.get("RecordFront") is None:
+    params.put("RecordFront", "0")
   if params.get("IsRearViewMirror") is None:
     params.put("IsRearViewMirror", "0")
   if params.get("IsFcwEnabled") is None:

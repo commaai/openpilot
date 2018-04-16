@@ -92,7 +92,7 @@ class AlertManager(object):
         "TAKE CONTROL",
         "User appears distracted",
         AlertStatus.userPrompt, AlertSize.mid,
-        Priority.LOW, "steerRequired", "chimeDouble", .1, .1, .1),
+        Priority.LOW, "steerRequired", None, 0., .1, .1),
 
     "driverDistracted": Alert(
         "TAKE CONTROL TO REGAIN SPEED",
@@ -101,8 +101,8 @@ class AlertManager(object):
         Priority.MID, "steerRequired", "chimeRepeated", .1, .1, .1),
 
     "startup": Alert(
-        "Always keep hands on wheel",
         "Be ready to take over at any time",
+        "Always keep hands on wheel and eyes on road",
         AlertStatus.normal, AlertSize.mid,
         Priority.LOWEST, None, None, 0., 0., 15.),
 
@@ -121,7 +121,7 @@ class AlertManager(object):
     "manualRestart": Alert(
         "TAKE CONTROL",
         "Resume driving manually",
-        AlertStatus.userPrompt, AlertSize.full,
+        AlertStatus.userPrompt, AlertSize.mid,
         Priority.LOW, None, None, 0., 0., .2),
 
     # Non-entry only alerts
@@ -283,6 +283,12 @@ class AlertManager(object):
         AlertStatus.critical, AlertSize.full,
         Priority.HIGH, "steerRequired", "chimeRepeated", 1., 3., 4.),
 
+    "plannerError": Alert(
+        "TAKE CONTROL IMMEDIATELY",
+        "Planner Solution Error",
+        AlertStatus.critical, AlertSize.full,
+        Priority.HIGH, "steerRequired", "chimeRepeated", 1., 3., 4.),
+
     # not loud cancellations (user is in control)
     "noTarget": Alert(
         "Comma Canceled",
@@ -402,6 +408,12 @@ class AlertManager(object):
     "noTargetNoEntry": Alert(
         "Comma Unavailable",
         "No close lead car",
+        AlertStatus.normal, AlertSize.mid,
+        Priority.LOW, None, "chimeDouble", .4, 2., 3.),
+
+    "plannerErrorNoEntry": Alert(
+        "Comma Unavailable",
+        "Planner Solution Error",
         AlertStatus.normal, AlertSize.mid,
         Priority.LOW, None, "chimeDouble", .4, 2., 3.),
 

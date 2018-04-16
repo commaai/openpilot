@@ -44,7 +44,7 @@ if __name__ == "__main__":
       republish_socks[sock] = messaging.pub_sock(context, port)
 
   if args.map:
-    from flask.ext.socketio import SocketIO
+    from flask.ext.socketio import SocketIO  #pylint: disable=no-name-in-module, import-error
     from flask import Flask
     app = Flask(__name__)
     socketio = SocketIO(app, async_mode='threading')
@@ -64,7 +64,7 @@ if __name__ == "__main__":
         republish_socks[sock].send(msg)
       if args.map and evt.which() == 'liveLocation':
         print 'send loc'
-        socketio.emit('location', { 
+        socketio.emit('location', {
           'lat': evt.liveLocation.lat,
           'lon': evt.liveLocation.lon,
           'alt': evt.liveLocation.alt,
@@ -81,4 +81,3 @@ if __name__ == "__main__":
           print json.dumps(evt.to_dict())
         else:
           print evt
-

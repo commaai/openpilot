@@ -78,20 +78,22 @@ class LocalCoord(object):
     self.ecef2ned_matrix = self.ned2ecef_matrix.T
 
   @classmethod
-  def from_geodetic(self, init_geodetic):
+  def from_geodetic(cls, init_geodetic):
     init_ecef = geodetic2ecef(init_geodetic)
     return LocalCoord(init_geodetic, init_ecef)
 
   @classmethod
-  def from_ecef(self, init_ecef):
+  def from_ecef(cls, init_ecef):
     init_geodetic = ecef2geodetic(init_ecef)
     return LocalCoord(init_geodetic, init_ecef)
 
 
   def ecef2ned(self, ecef):
+    ecef = np.array(ecef)
     return np.dot(self.ecef2ned_matrix, (ecef - self.init_ecef).T).T
 
   def ned2ecef(self, ned):
+    ned = np.array(ned)
     # Transpose so that init_ecef will broadcast correctly for 1d or 2d ned.
     return (np.dot(self.ned2ecef_matrix, ned.T).T + self.init_ecef)
 

@@ -119,6 +119,8 @@ struct FrameData {
   globalGain @5 :Int32;
   lensPos @11 :Int32;
   lensSag @12 :Float32;
+  lensErr @13 :Float32;
+  lensTruePos @14 :Float32;
   image @6 :Data;
 
   frameType @7 :FrameType;
@@ -483,6 +485,7 @@ struct EncodeIndex {
     bigBoxHEVC @2;       # bcamera.hevc
     chffrAndroidH264 @3; # acamera
     fullLosslessClip @4; # prcamera.mkv
+    front @5;            # dcamera.hevc
   }
 }
 
@@ -540,6 +543,7 @@ struct Plan {
     cruise @0;
     mpc1 @1;
     mpc2 @2;
+    mpc3 @3;
   }
 }
 
@@ -1325,6 +1329,7 @@ struct LiveMpcData {
   delta @3 :List(Float32);
   qpIterations @4 :UInt32;
   calculationTime @5 :UInt64;
+  cost @6 :Float64;
 }
 
 struct LiveLongitudinalMpcData {
@@ -1338,18 +1343,27 @@ struct LiveLongitudinalMpcData {
   qpIterations @7 :UInt32;
   mpcId @8 :UInt32;
   calculationTime @9 :UInt64;
+  cost @10 :Float64;
 }
 
 
-struct ECEFPoint {
+struct ECEFPointDEPRECATED @0xe10e21168db0c7f7 {
   x @0 :Float32;
   y @1 :Float32;
   z @2 :Float32;
 }
 
+struct ECEFPoint @0xc25bbbd524983447 {
+  x @0 :Float64;
+  y @1 :Float64;
+  z @2 :Float64;
+}
+
 struct GPSPlannerPoints {
-  curPos @0 :ECEFPoint;
-  points @1 :List(ECEFPoint);
+  curPosDEPRECATED @0 :ECEFPointDEPRECATED;
+  pointsDEPRECATED @1 :List(ECEFPointDEPRECATED);
+  curPos @6 :ECEFPoint;
+  points @7 :List(ECEFPoint);
   valid @2 :Bool;
   trackName @3 :Text;
   speedLimit @4 :Float32;
@@ -1362,7 +1376,9 @@ struct GPSPlannerPlan {
   trackName @2 :Text;
   speed @3 :Float32;
   acceleration @4 :Float32;
-  points @5 :List(ECEFPoint);
+  pointsDEPRECATED @5 :List(ECEFPointDEPRECATED);
+  points @6 :List(ECEFPoint);
+  xLookahead @7 :Float32;
 }
 
 struct TrafficEvent @0xacfa74a094e62626 {
@@ -1408,7 +1424,8 @@ struct UiNavigationEvent {
   type @0: Type;
   status @1: Status;
   distanceTo @2: Float32;
-  endRoadPoint @3: ECEFPoint;
+  endRoadPointDEPRECATED @3: ECEFPointDEPRECATED;
+  endRoadPoint @4: ECEFPoint;
 
   enum Type {
     none @0;
@@ -1473,6 +1490,11 @@ struct OrbFeatures {
   ys @2 :List(Float32);
   descriptors @3 :Data;
   octaves @4 :List(Int8);
+
+  # match index to last OrbFeatures
+  # -1 if no match
+  timestampLastEof @5 :UInt64;
+  matches @6: List(Int16);
 }
 
 struct OrbKeyFrame {

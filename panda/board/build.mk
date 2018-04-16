@@ -1,4 +1,5 @@
 CFLAGS += -I inc -I ../ -nostdlib -fno-builtin -std=gnu11 -O2
+
 CFLAGS += -Tstm32_flash.ld
 
 CC = arm-none-eabi-gcc

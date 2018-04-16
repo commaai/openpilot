@@ -8,6 +8,7 @@
 //      brake > 0mph
 
 // these are set in the Honda safety hooks...this is the wrong place
+const int gas_interceptor_threshold = 328;
 int gas_interceptor_detected = 0;
 int brake_prev = 0;
 int gas_prev = 0;
@@ -55,7 +56,8 @@ static void honda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   if ((to_push->RIR>>21) == 0x201 && (to_push->RDTR & 0xf) == 6) {
     gas_interceptor_detected = 1;
     int gas_interceptor = ((to_push->RDLR & 0xFF) << 8) | ((to_push->RDLR & 0xFF00) >> 8);
-    if ((gas_interceptor > 328) && (gas_interceptor_prev <= 328)) {
+    if ((gas_interceptor > gas_interceptor_threshold) &&
+        (gas_interceptor_prev <= gas_interceptor_threshold)) {
       controls_allowed = 0;
     }
     gas_interceptor_prev = gas_interceptor;
@@ -83,7 +85,8 @@ static int honda_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 
   // disallow actuator commands if gas or brake (with vehicle moving) are pressed
   // and the the latching controls_allowed flag is True
-  int pedal_pressed =  gas_prev || gas_interceptor_prev || (brake_prev && ego_speed);
+  int pedal_pressed = gas_prev || (gas_interceptor_prev > gas_interceptor_threshold) ||
+                      (brake_prev && ego_speed);
   int current_controls_allowed = controls_allowed && !(pedal_pressed);
 
   // BRAKE: safety check
@@ -131,11 +134,16 @@ static int honda_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
   return -1;
 }
 
+static int honda_ign_hook() {
+  return -1;
+}
+
 const safety_hooks honda_hooks = {
   .init = honda_init,
   .rx = honda_rx_hook,
   .tx = honda_tx_hook,
   .tx_lin = honda_tx_lin_hook,
+  .ignition = honda_ign_hook,
   .fwd = honda_fwd_hook,
 };
 
@@ -157,5 +165,6 @@ const safety_hooks honda_bosch_hooks = {
   .rx = honda_rx_hook,
   .tx = honda_tx_hook,
   .tx_lin = honda_tx_lin_hook,
+  .ignition = honda_ign_hook,
   .fwd = honda_bosch_fwd_hook,
 };

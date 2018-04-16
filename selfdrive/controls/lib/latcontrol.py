@@ -39,6 +39,7 @@ class LatControl(object):
     self.mpc_solution = libmpc_py.ffi.new("log_t *")
     self.cur_state = libmpc_py.ffi.new("state_t *")
     self.mpc_updated = False
+    self.mpc_nans = False
     self.cur_state[0].x = 0.0
     self.cur_state[0].y = 0.0
     self.cur_state[0].psi = 0.0
@@ -56,6 +57,7 @@ class LatControl(object):
   def update(self, active, v_ego, angle_steers, steer_override, d_poly, angle_offset, VM, PL):
     cur_time = sec_since_boot()
     self.mpc_updated = False
+    # TODO: this creates issues in replay when rewinding time: mpc won't run
     if self.last_mpc_ts < PL.last_md_ts:
       self.last_mpc_ts = PL.last_md_ts
       self.angle_steers_des_prev = self.angle_steers_des_mpc
@@ -87,9 +89,9 @@ class LatControl(object):
       self.mpc_updated = True
 
       #  Check for infeasable MPC solution
-      nans = np.any(np.isnan(list(self.mpc_solution[0].delta)))
+      self.mpc_nans = np.any(np.isnan(list(self.mpc_solution[0].delta)))
       t = sec_since_boot()
-      if nans:
+      if self.mpc_nans:
         self.libmpc.init(MPC_COST_LAT.PATH, MPC_COST_LAT.LANE, MPC_COST_LAT.HEADING, VM.CP.steerRateCost)
         self.cur_state[0].delta = math.radians(angle_steers) / VM.CP.steerRatio
 

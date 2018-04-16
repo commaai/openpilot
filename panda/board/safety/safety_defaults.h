@@ -14,6 +14,9 @@ static int nooutput_tx_lin_hook(int lin_num, uint8_t *data, int len) {
   return false;
 }
 
+static int nooutput_ign_hook() {
+  return -1;
+}
 static int nooutput_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
   return -1;
 }
@@ -23,6 +26,7 @@ const safety_hooks nooutput_hooks = {
   .rx = default_rx_hook,
   .tx = nooutput_tx_hook,
   .tx_lin = nooutput_tx_lin_hook,
+  .ignition = nooutput_ign_hook,
   .fwd = nooutput_fwd_hook,
 };
 
@@ -40,6 +44,10 @@ static int alloutput_tx_lin_hook(int lin_num, uint8_t *data, int len) {
   return true;
 }
 
+static int alloutput_ign_hook() {
+  return -1;
+}
+
 static int alloutput_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
   return -1;
 }
@@ -49,6 +57,7 @@ const safety_hooks alloutput_hooks = {
   .rx = default_rx_hook,
   .tx = alloutput_tx_hook,
   .tx_lin = alloutput_tx_lin_hook,
+  .ignition = alloutput_ign_hook,
   .fwd = alloutput_fwd_hook,
 };
 

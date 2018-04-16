@@ -104,9 +104,9 @@ def data_sample(CI, CC, thermal, calibration, health, poller, cal_status, overte
   return CS, events, cal_status, overtemp, free_space
 
 
-def calc_plan(CS, events, PL, LoC, v_cruise_kph, awareness_status):
+def calc_plan(CS, events, PL, LaC, LoC, v_cruise_kph, awareness_status):
    # plan runs always, independently of the state
-   plan_packet = PL.update(CS, LoC, v_cruise_kph, awareness_status < -0.)
+   plan_packet = PL.update(CS, LaC, LoC, v_cruise_kph, awareness_status < -0.)
    plan = plan_packet.plan
    plan_ts = plan_packet.logMonoTime
 
@@ -211,7 +211,8 @@ def state_transition(CS, CP, state, events, soft_disable_timer, v_cruise_kph, AM
 
 
 def state_control(plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, AM, rk,
-                  awareness_status, PL, LaC, LoC, VM, angle_offset, rear_view_allowed, rear_view_toggle):
+                  awareness_status, PL, LaC, LoC, VM, angle_offset, rear_view_allowed, 
+                  rear_view_toggle, passive):
   # Given the state, this function returns the actuators
 
   # reset actuators to zero
@@ -223,12 +224,9 @@ def state_control(plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, 
   for b in CS.buttonEvents:
     # button presses for rear view
     if b.type == "leftBlinker" or b.type == "rightBlinker":
-      if b.pressed and rear_view_allowed:
-        rear_view_toggle = True
-      else:
-        rear_view_toggle = False
+      rear_view_toggle = b.pressed and rear_view_allowed
 
-    if b.type == "altButton1" and b.pressed:
+    if (b.type == "altButton1" and b.pressed) and not passive:
       rear_view_toggle = not rear_view_toggle
 
 
@@ -400,6 +398,7 @@ def data_send(plan, plan_ts, CS, CI, CP, VM, state, events, actuators, v_cruise_
   cs_send.init('carState')
   # TODO: override CS.events with all the cumulated events
   cs_send.carState = copy(CS)
+  cs_send.carState.events = events
   carstate.send(cs_send.to_bytes())
 
   # broadcast carControl
@@ -407,7 +406,6 @@ def data_send(plan, plan_ts, CS, CI, CP, VM, state, events, actuators, v_cruise_
   cc_send.init('carControl')
   cc_send.carControl = copy(CC)
   carcontrol.send(cc_send.to_bytes())
-  #print [i.name for i in events]
 
   # publish mpc state at 20Hz
   if hasattr(LaC, 'mpc_updated') and LaC.mpc_updated:
@@ -417,6 +415,7 @@ def data_send(plan, plan_ts, CS, CI, CP, VM, state, events, actuators, v_cruise_
     dat.liveMpc.y = list(LaC.mpc_solution[0].y)
     dat.liveMpc.psi = list(LaC.mpc_solution[0].psi)
     dat.liveMpc.delta = list(LaC.mpc_solution[0].delta)
+    dat.liveMpc.cost = LaC.mpc_solution[0].cost
     livempc.send(dat.to_bytes())
 
   return CC
@@ -454,13 +453,13 @@ def controlsd_thread(gctx, rate=100):
 
   CI, CP = get_car(logcan, sendcan, 1.0 if passive else None)
 
+  if CI is None:
+    raise Exception("unsupported car")
+
   # if stock camera is connected, then force passive behavior
   if not CP.enableCamera:
     passive = True
     sendcan = None
-
-  if CI is None:
-    raise Exception("unsupported car")
 
   if passive:
     CP.safetyModel = car.CarParams.SafetyModels.noOutput
@@ -516,7 +515,7 @@ def controlsd_thread(gctx, rate=100):
     prof.checkpoint("Sample")
 
     # define plan
-    plan, plan_ts = calc_plan(CS, events, PL, LoC, v_cruise_kph, awareness_status)
+    plan, plan_ts = calc_plan(CS, events, PL, LaC, LoC, v_cruise_kph, awareness_status)
     prof.checkpoint("Plan")
 
     if not passive:
@@ -528,7 +527,7 @@ def controlsd_thread(gctx, rate=100):
     # compute actuators
     actuators, v_cruise_kph, awareness_status, angle_offset, rear_view_toggle = state_control(plan, CS, CP, state, events, v_cruise_kph,
                                                                             v_cruise_kph_last, AM, rk, awareness_status, PL, LaC, LoC, VM,
-                                                                            angle_offset, rear_view_allowed, rear_view_toggle)
+                                                                            angle_offset, rear_view_allowed, rear_view_toggle, passive)
     prof.checkpoint("State Control")
 
     # publish data

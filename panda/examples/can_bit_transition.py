@@ -45,7 +45,7 @@ class Info():
           message_id = row[1][2:]  # remove leading '0x'
         else:
           message_id = hex(int(row[1]))[2:]  # old message IDs are in decimal
-
+        message_id = '%s:%s' % (bus, message_id)
         if row[3].startswith('0x'):
           data = row[3][2:]  # remove leading '0x'
         else:
@@ -74,7 +74,7 @@ def PrintUnique(log_file, low_range, high_range):
   high.load(log_file, start, end)
   # print messages that go from low to high
   found = False
-  for message_id in high.messages:
+  for message_id in sorted(high.messages):
     if message_id in low.messages:
       high.messages[message_id].printBitDiff(low.messages[message_id])
       found = True

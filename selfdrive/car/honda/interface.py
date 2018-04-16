@@ -136,6 +136,9 @@ class CarInterface(object):
     # kg of standard extra cargo to count for drive, gas, etc...
     std_cargo = 136
 
+    # Ridgeline reqires scaled tire stiffness
+    ts_factor = 1
+
     ret = car.CarParams.new_message()
 
     ret.carName = "honda"
@@ -186,7 +189,7 @@ class CarInterface(object):
       ret.steerRatio = 15.3
       # Acura at comma has modified steering FW, so different tuning for the Neo in that car
       is_fw_modified = os.getenv("DONGLE_ID") in ['85a6c74d4ad9c310']
-      ret.steerKpV, ret.steerKiV = [[0.1], [0.03]] if is_fw_modified else [[0.8], [0.24]]
+      ret.steerKpV, ret.steerKiV = [[0.4], [0.12]] if is_fw_modified else [[0.8], [0.24]]
 
       ret.longitudinalKpBP = [0., 5., 35.]
       ret.longitudinalKpV = [1.2, 0.8, 0.5]
@@ -240,6 +243,19 @@ class CarInterface(object):
       ret.longitudinalKpV = [1.2, 0.8, 0.5]
       ret.longitudinalKiBP = [0., 35.]
       ret.longitudinalKiV = [0.18, 0.12]
+    elif candidate == CAR.RIDGELINE:
+      stop_and_go = False
+      ts_factor = 1.4
+      ret.mass = 4515./2.205 + std_cargo
+      ret.wheelbase = 3.18
+      ret.centerToFront = ret.wheelbase * 0.41
+      ret.steerRatio = 15.59
+      ret.steerKpV, ret.steerKiV = [[0.38], [0.11]]
+
+      ret.longitudinalKpBP = [0., 5., 35.]
+      ret.longitudinalKpV = [1.2, 0.8, 0.5]
+      ret.longitudinalKiBP = [0., 35.]
+      ret.longitudinalKiV = [0.18, 0.12]
     else:
       raise ValueError("unsupported car %s" % candidate)
 
@@ -258,10 +274,10 @@ class CarInterface(object):
 
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
-    ret.tireStiffnessFront = tireStiffnessFront_civic * \
+    ret.tireStiffnessFront = (tireStiffnessFront_civic * ts_factor) * \
                              ret.mass / mass_civic * \
                              (centerToRear / ret.wheelbase) / (centerToRear_civic / wheelbase_civic)
-    ret.tireStiffnessRear = tireStiffnessRear_civic * \
+    ret.tireStiffnessRear = (tireStiffnessRear_civic * ts_factor) * \
                             ret.mass / mass_civic * \
                             (ret.centerToFront / ret.wheelbase) / (centerToFront_civic / wheelbase_civic)
 
@@ -449,7 +465,7 @@ class CarInterface(object):
         events.append(create_event('speedTooLow', [ET.IMMEDIATE_DISABLE]))
       else:
         events.append(create_event("cruiseDisabled", [ET.IMMEDIATE_DISABLE]))
-    if self.CS.CP.carFingerprint != CAR.CIVIC and ret.vEgo < 0.001:
+    if self.CS.CP.minEnableSpeed > 0 and ret.vEgo < 0.001:
       events.append(create_event('manualRestart', [ET.WARNING]))
 
     cur_time = sec_since_boot()

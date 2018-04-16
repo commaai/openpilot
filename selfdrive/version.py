@@ -4,14 +4,15 @@ with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "common", "ve
   version = _versionf.read().split('"')[1]
 
 try:
-  if "-private" in subprocess.check_output(["git", "config", "--get", "remote.origin.url"]):
-    upstream = "origin/master"
-  else:
-    if 'chffrplus' in version:
-      upstream = "origin/release"
+  origin = subprocess.check_output(["git", "config", "--get", "remote.origin.url"])
+  if origin.startswith('git@github.com:commaai'):
+    if origin.endswith('/one.git'):
+      dirty = True
     else:
-      upstream = "origin/release2"
-
-  dirty = subprocess.call(["git", "diff-index", "--quiet", upstream, "--"]) != 0
+      branch = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"]).rstrip()
+      branch = 'origin/' + branch
+      dirty = subprocess.call(["git", "diff-index", "--quiet", branch, "--"]) != 0
+  else:
+    dirty = True
 except subprocess.CalledProcessError:
   dirty = True

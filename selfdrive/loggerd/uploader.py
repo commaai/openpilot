@@ -155,7 +155,7 @@ class Uploader(object):
         self.last_resp = FakeResponse()
       else:
         with open(fn, "rb") as f:
-          self.last_resp = requests.put(url, data=f, headers=headers)
+          self.last_resp = requests.put(url, data=f, headers=headers, timeout=10)
     except Exception as e:
       self.last_exc = (e, traceback.format_exc())
       raise
@@ -248,33 +248,34 @@ def uploader_fn(exit_event):
 
   uploader = Uploader(dongle_id, access_token, ROOT)
 
+  backoff = 0.1
   while True:
 
-    upload_video = (params.get("IsUploadVideoOverCellularEnabled") != "0") or is_on_wifi()
+    should_upload = (params.get("IsUploadVideoOverCellularEnabled") != "0") or is_on_wifi()
 
-    backoff = 0.1
-    while True:
+    if exit_event.is_set():
+      return
 
-      if exit_event.is_set():
-        return
+    if not should_upload:
+      time.sleep(5)
+      continue
 
-      d = uploader.next_file_to_upload(upload_video)
-      if d is None:
-        break
+    d = uploader.next_file_to_upload(with_video=True)
+    if d is None:
+      time.sleep(5)
+      continue
 
-      key, fn, _ = d
+    key, fn, _ = d
 
-      cloudlog.info("to upload %r", d)
-      success = uploader.upload(key, fn)
-      if success:
-        backoff = 0.1
-      else:
-        cloudlog.info("backoff %r", backoff)
-        time.sleep(backoff + random.uniform(0, backoff))
-        backoff = min(backoff*2, 120)
-      cloudlog.info("upload done, success=%r", success)
-
-    time.sleep(5)
+    cloudlog.info("to upload %r", d)
+    success = uploader.upload(key, fn)
+    if success:
+      backoff = 0.1
+    else:
+      cloudlog.info("backoff %r", backoff)
+      time.sleep(backoff + random.uniform(0, backoff))
+      backoff = min(backoff*2, 120)
+    cloudlog.info("upload done, success=%r", success)
 
 def main(gctx=None):
   uploader_fn(threading.Event())
