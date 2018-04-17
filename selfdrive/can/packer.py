@@ -62,4 +62,4 @@ if __name__ == "__main__":
     ("PCM_SPEED", 123),
     ("PCM_GAS", 10),
   ])
-  print s.encode("hex")
+  print s[1].encode("hex")

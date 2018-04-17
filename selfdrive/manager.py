@@ -67,7 +67,7 @@ sys.path.append(os.path.join(BASEDIR, "pyextra"))
 os.environ['BASEDIR'] = BASEDIR
 
 import zmq
-from setproctitle import setproctitle
+from setproctitle import setproctitle  #pylint: disable=no-name-in-module
 
 from common.params import Params
 from common.realtime import sec_since_boot
@@ -624,6 +624,9 @@ def uninstall():
   os.system("service call power 16 i32 0 s16 recovery i32 1")
 
 def main():
+  # the flippening!
+  os.system('LD_LIBRARY_PATH="" content insert --uri content://settings/system --bind name:s:user_rotation --bind value:i:1')
+
   if os.getenv("NOLOG") is not None:
     del managed_processes['loggerd']
     del managed_processes['tombstoned']
@@ -655,6 +658,8 @@ def main():
   # set unset params
   if params.get("IsMetric") is None:
     params.put("IsMetric", "0")
+  if params.get("RecordFront") is None:
+    params.put("RecordFront", "0")
   if params.get("IsRearViewMirror") is None:
     params.put("IsRearViewMirror", "0")
   if params.get("IsFcwEnabled") is None:

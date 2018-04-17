@@ -155,7 +155,7 @@ class Uploader(object):
         self.last_resp = FakeResponse()
       else:
         with open(fn, "rb") as f:
-          self.last_resp = requests.put(url, data=f, headers=headers)
+          self.last_resp = requests.put(url, data=f, headers=headers, timeout=10)
     except Exception as e:
       self.last_exc = (e, traceback.format_exc())
       raise
@@ -251,12 +251,16 @@ def uploader_fn(exit_event):
   backoff = 0.1
   while True:
 
-    upload_video = (params.get("IsUploadVideoOverCellularEnabled") != "0") or is_on_wifi()
+    should_upload = (params.get("IsUploadVideoOverCellularEnabled") != "0") or is_on_wifi()
 
     if exit_event.is_set():
       return
 
-    d = uploader.next_file_to_upload(upload_video)
+    if not should_upload:
+      time.sleep(5)
+      continue
+
+    d = uploader.next_file_to_upload(with_video=True)
     if d is None:
       time.sleep(5)
       continue

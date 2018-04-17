@@ -1,0 +1,41 @@
+version: 2
+jobs:
+  safety:
+    machine:
+      docker_layer_caching: true
+    steps:
+      - checkout
+      - run:
+          name: Build image
+          command: "docker build -t panda_safety -f tests/safety/Dockerfile ."
+      - run:
+          name: Run safety test
+          command: |
+            docker run panda_safety /bin/bash -c "cd /panda/tests/safety; ./test.sh"
+  build:
+    machine:
+      docker_layer_caching: true
+    steps:
+      - checkout
+      - run:
+          name: Build image
+          command: "docker build -t panda_build -f tests/build/Dockerfile ."
+      - run:
+          name: Test python package installer
+          command: |
+            docker run panda_build /bin/bash -c "cd /panda; python setup.py install"
+      - run:
+          name: Build STM image
+          command: |
+            docker run panda_build /bin/bash -c "cd /panda/board; make bin"
+      - run:
+          name: Build ESP image
+          command: |
+            docker run panda_build /bin/bash -c "cd /panda/boardesp; make user1.bin"
+
+workflows:
+  version: 2
+  main:
+    jobs:
+      - safety
+      - build

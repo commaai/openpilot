@@ -101,8 +101,8 @@ class AlertManager(object):
         Priority.MID, "steerRequired", "chimeRepeated", .1, .1, .1),
 
     "startup": Alert(
-        "Always keep hands on wheel",
         "Be ready to take over at any time",
+        "Always keep hands on wheel and eyes on road",
         AlertStatus.normal, AlertSize.mid,
         Priority.LOWEST, None, None, 0., 0., 15.),
 

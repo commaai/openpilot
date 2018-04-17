@@ -1,3 +1,4 @@
+# pylint: skip-file
 import abc
 import numpy as np
 # The EKF class contains the framework for an Extended Kalman Filter, but must be subclassed to use.

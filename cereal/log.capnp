@@ -485,6 +485,7 @@ struct EncodeIndex {
     bigBoxHEVC @2;       # bcamera.hevc
     chffrAndroidH264 @3; # acamera
     fullLosslessClip @4; # prcamera.mkv
+    front @5;            # dcamera.hevc
   }
 }
 
@@ -542,6 +543,7 @@ struct Plan {
     cruise @0;
     mpc1 @1;
     mpc2 @2;
+    mpc3 @3;
   }
 }
 
@@ -1376,6 +1378,7 @@ struct GPSPlannerPlan {
   acceleration @4 :Float32;
   pointsDEPRECATED @5 :List(ECEFPointDEPRECATED);
   points @6 :List(ECEFPoint);
+  xLookahead @7 :Float32;
 }
 
 struct TrafficEvent @0xacfa74a094e62626 {
@@ -1487,6 +1490,11 @@ struct OrbFeatures {
   ys @2 :List(Float32);
   descriptors @3 :Data;
   octaves @4 :List(Int8);
+
+  # match index to last OrbFeatures
+  # -1 if no match
+  timestampLastEof @5 :UInt64;
+  matches @6: List(Int16);
 }
 
 struct OrbKeyFrame {

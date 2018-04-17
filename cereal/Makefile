@@ -1,14 +1,14 @@
 PWD := $(shell pwd)
 
-SRCS := log.capnp car.capnp map.capnp
+SRCS := log.capnp car.capnp mapd.capnp
 
-GENS := gen/cpp/car.capnp.c++ gen/cpp/log.capnp.c++
+GENS := gen/cpp/car.capnp.c++ gen/cpp/log.capnp.c++ gen/cpp/mapd.capnp.c++
 
 UNAME_M ?= $(shell uname -m)
 
 # only generate C++ for docker tests
 ifneq ($(OPTEST),1)
-	GENS += gen/c/car.capnp.c gen/c/log.capnp.c gen/c/c++.capnp.h gen/c/java.capnp.h
+	GENS += gen/c/car.capnp.c gen/c/log.capnp.c gen/c/mapd.capnp.c gen/c/c++.capnp.h gen/c/java.capnp.h
 
 # Dont build java on the phone...
 ifeq ($(UNAME_M),x86_64)
