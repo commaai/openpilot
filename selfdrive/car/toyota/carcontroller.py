@@ -26,11 +26,26 @@ ANGLE_DELTA_BP = [0., 5., 15.]
 ANGLE_DELTA_V = [5., .8, .15]     # windup limit
 ANGLE_DELTA_VU = [5., 3.5, 0.4]   # unwind limit
 
+# Blindspot codes
+LEFT_BLINDSPOT = '\x41'
+RIGHT_BLINDSPOT = '\x42'
+BLINDSPOTDEBUG = True
+
 TARGET_IDS = [0x340, 0x341, 0x342, 0x343, 0x344, 0x345,
               0x363, 0x364, 0x365, 0x370, 0x371, 0x372,
               0x373, 0x374, 0x375, 0x380, 0x381, 0x382,
               0x383]
 
+def set_blindspot_debug_mode(lr,enable):
+  if enable:
+    m = lr + "\x02\x10\x60\x00\x00\x00\x00"
+  else:
+    m = lr + "\x02\x10\x5F\x00\x00\x00\x00"
+  return make_can_msg(1872, m, 0, False)
+
+def poll_blindspot_status(lr):
+  m = lr + "\x02\x21\x69\x00\x00\x00\x00"
+  return make_can_msg(1872, m, 0, False)
 
 def accel_hysteresis(accel, accel_steady, enabled):
 
@@ -104,15 +119,17 @@ class CarController(object):
     self.last_standstill = False
     self.standstill_req = False
     self.angle_control = False
-
+    self.blindspot_poll_counter = 0
     self.steer_angle_enabled = False
     self.ipas_reset_counter = 0
+    self.blindspot_debug_enabled_left = False
+    self.blindspot_debug_enabled_right = False
 
     self.fake_ecus = set()
     if enable_camera: self.fake_ecus.add(ECU.CAM)
     if enable_dsu: self.fake_ecus.add(ECU.DSU)
     if enable_apg: self.fake_ecus.add(ECU.APGS)
-
+        
     self.packer = CANPacker(dbc_name)
 
   def update(self, sendcan, enabled, CS, frame, actuators,
@@ -182,6 +199,22 @@ class CarController(object):
     self.last_standstill = CS.standstill
 
     can_sends = []
+
+# Enable blindspot debug mode once
+#    if BLINDSPOTDEBUG:
+#      self.blindspot_poll_counter += 1
+#    if self.blindspot_poll_counter > 1000 and not self.blindspot_debug_enabled_left:
+#      can_sends.append(set_blindspot_debug_mode(LEFT_BLINDSPOT, BLINDSPOTDEBUG))
+#      self.blindspot_debug_enabled_left = True
+#      print "Left blindspot debug enabled"
+#    if self.blindspot_poll_counter > 1200 and not self.blindspot_debug_enabled_right:
+#      can_sends.append(set_blindspot_debug_mode(RIGHT_BLINDSPOT, BLINDSPOTDEBUG))
+#      self.blindspot_debug_enabled_right = True
+#      print "Right blindspot debug enabled"
+#    if self.blindspot_poll_counter % 20 == 0 and self.blindspot_poll_counter > 1000:  # Poll blindspots at 5 Hz
+#      can_sends.append(poll_blindspot_status(LEFT_BLINDSPOT))
+#    if self.blindspot_poll_counter % 20 == 10 and self.blindspot_poll_counter > 1200:  # Poll blindspots at 5 Hz
+#      can_sends.append(poll_blindspot_status(RIGHT_BLINDSPOT))
 
     #*** control msgs ***
     #print "steer", apply_steer, min_lim, max_lim, CS.steer_torque_motor
