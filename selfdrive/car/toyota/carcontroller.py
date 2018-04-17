@@ -120,6 +120,7 @@ class CarController(object):
     self.standstill_req = False
     self.angle_control = False
     self.blindspot_poll_counter = 0
+    self.blindspot_blink_counter_left = 0
     self.steer_angle_enabled = False
     self.ipas_reset_counter = 0
     self.blindspot_debug_enabled_left = False
@@ -201,11 +202,29 @@ class CarController(object):
     can_sends = []
 
 # Enable blindspot debug mode once
-#    if BLINDSPOTDEBUG:
-#      self.blindspot_poll_counter += 1
-#    if self.blindspot_poll_counter > 1000 and not self.blindspot_debug_enabled_left:
-#      can_sends.append(set_blindspot_debug_mode(LEFT_BLINDSPOT, BLINDSPOTDEBUG))
-#      self.blindspot_debug_enabled_left = True
+    if BLINDSPOTDEBUG:
+      self.blindspot_poll_counter += 1
+    if self.blindspot_poll_counter > 1000:
+      for b in CS.buttonEvents:
+        # button presses for lane chnage
+        if b.type == "leftBlinker":
+          self.blindspot_blink_counter_left += 1
+          print "Left Blinker on"
+        else:
+          self.blindspot_blink_counter_left = 0
+          print "Left Blinker off"
+          if self.blindspot_debug_enabled_left:
+            can_sends.append(set_blindspot_debug_mode(LEFT_BLINDSPOT, False))
+            self.blindspot_debug_enabled_left = False
+            print "Left blindspot debug disabled"
+      if self.blindspot_blink_counter_left > 500 and not self.blindspot_debug_enabled_left:
+        can_sends.append(set_blindspot_debug_mode(LEFT_BLINDSPOT, True))
+        print "Left blindspot debug enabled"
+        self.blindspot_debug_enabled_left = True
+    if self.blindspot_debug_enabled_left:
+      if self.blindspot_poll_counter % 20 == 0:  # Poll blindspots at 5 Hz
+        can_sends.append(poll_blindspot_status(LEFT_BLINDSPOT))
+          # or b.type == "rightBlinker"
 #      print "Left blindspot debug enabled"
 #    if self.blindspot_poll_counter > 1200 and not self.blindspot_debug_enabled_right:
 #      can_sends.append(set_blindspot_debug_mode(RIGHT_BLINDSPOT, BLINDSPOTDEBUG))
