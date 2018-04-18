@@ -29,7 +29,7 @@ ANGLE_DELTA_VU = [5., 3.5, 0.4]   # unwind limit
 # Blindspot codes
 LEFT_BLINDSPOT = '\x41'
 RIGHT_BLINDSPOT = '\x42'
-BLINDSPOTDEBUG = True
+BLINDSPOTDEBUG = False
 
 TARGET_IDS = [0x340, 0x341, 0x342, 0x343, 0x344, 0x345,
               0x363, 0x364, 0x365, 0x370, 0x371, 0x372,
