@@ -114,7 +114,7 @@ class CarInterface(object):
       ret.wheelbase = 2.78
       ret.steerRatio = 16.0 
       ret.mass = 4244./2.205 + std_cargo  # mean between min and max
-      ret.steerKp, ret.steerKi = 0.6, 0.05
+      ret.steerKpV, ret.steerKiV = [[0.6], [0.05]]
       ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
       ret.steerRateCost = 1.
 
