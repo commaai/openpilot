@@ -208,21 +208,22 @@ class CarController(object):
       for b in CS.buttonEvents:
         # button presses for lane chnage
         if b.type == "leftBlinker":
-          self.blindspot_blink_counter_left += 1
-          print "Left Blinker on"
-        else:
-          self.blindspot_blink_counter_left = 0
-          print "Left Blinker off"
-          if self.blindspot_debug_enabled_left:
-            can_sends.append(set_blindspot_debug_mode(LEFT_BLINDSPOT, False))
-            self.blindspot_debug_enabled_left = False
-            print "Left blindspot debug disabled"
+          if b.pressed:
+            self.blindspot_blink_counter_left += 1
+            print "Left Blinker on"
+          else:
+            self.blindspot_blink_counter_left = 0
+            print "Left Blinker off"
+            if self.blindspot_debug_enabled_left:
+              can_sends.append(set_blindspot_debug_mode(LEFT_BLINDSPOT, False))
+              self.blindspot_debug_enabled_left = False
+              print "Left blindspot debug disabled"
       if self.blindspot_blink_counter_left > 500 and not self.blindspot_debug_enabled_left:
         can_sends.append(set_blindspot_debug_mode(LEFT_BLINDSPOT, True))
         print "Left blindspot debug enabled"
         self.blindspot_debug_enabled_left = True
     if self.blindspot_debug_enabled_left:
-      if self.blindspot_poll_counter % 20 == 0:  # Poll blindspots at 5 Hz
+      if self.blindspot_poll_counter % 20 == 0 and self.blindspot_poll_counter > 1010:  # Poll blindspots at 5 Hz
         can_sends.append(poll_blindspot_status(LEFT_BLINDSPOT))
           # or b.type == "rightBlinker"
 #      print "Left blindspot debug enabled"
