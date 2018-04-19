@@ -20,7 +20,7 @@ def parse_gear_shifter(can_gear, car_fingerprint):
     elif can_gear == 0x4:
       return "brake"
   elif car_fingerprint in [CAR.RAV4, CAR.RAV4H, 
-                           CAR.LEXUS_RXH, CAR.COROLLA]:
+                           CAR.LEXUS_RXH, CAR.COROLLA, CAR.HIGHLANDER]:
     if can_gear == 0x20:
       return "park"
     elif can_gear == 0x10:
