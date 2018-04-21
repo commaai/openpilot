@@ -40,7 +40,7 @@ def set_blindspot_debug_mode(lr,enable):
   if enable:
     m = lr + "\x02\x10\x60\x00\x00\x00\x00"
   else:
-    m = lr + "\x02\x10\x5F\x00\x00\x00\x00"
+    m = lr + "\x02\x10\x60\x00\x00\x00\x00"
   return make_can_msg(1872, m, 0, False)
 
 def poll_blindspot_status(lr):
@@ -207,21 +207,22 @@ class CarController(object):
     if self.blindspot_poll_counter > 1000:
       if CS.left_blinker_on:
         self.blindspot_blink_counter_left += 1
-        print "Left Blinker on"
+        print "debug Left Blinker on"
       else:
         self.blindspot_blink_counter_left = 0
-        print "Left Blinker off"
+        print "debug Left Blinker off"
         if self.blindspot_debug_enabled_left:
           can_sends.append(set_blindspot_debug_mode(LEFT_BLINDSPOT, False))
           self.blindspot_debug_enabled_left = False
-          print "Left blindspot debug disabled"
+          print "debug Left blindspot debug disabled"
       if self.blindspot_blink_counter_left > 500 and not self.blindspot_debug_enabled_left:
         can_sends.append(set_blindspot_debug_mode(LEFT_BLINDSPOT, True))
-        print "Left blindspot debug enabled"
+        print "debug Left blindspot debug enabled"
         self.blindspot_debug_enabled_left = True
     if self.blindspot_debug_enabled_left:
       if self.blindspot_poll_counter % 20 == 0 and self.blindspot_poll_counter > 1010:  # Poll blindspots at 5 Hz
         can_sends.append(poll_blindspot_status(LEFT_BLINDSPOT))
+        print "debug poll status"
           # or b.type == "rightBlinker"
 #      print "Left blindspot debug enabled"
 #    if self.blindspot_poll_counter > 1200 and not self.blindspot_debug_enabled_right:
