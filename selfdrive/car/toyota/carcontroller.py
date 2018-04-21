@@ -29,7 +29,7 @@ ANGLE_DELTA_VU = [5., 3.5, 0.4]   # unwind limit
 # Blindspot codes
 LEFT_BLINDSPOT = '\x41'
 RIGHT_BLINDSPOT = '\x42'
-BLINDSPOTDEBUG = False
+BLINDSPOTDEBUG = True
 
 TARGET_IDS = [0x340, 0x341, 0x342, 0x343, 0x344, 0x345,
               0x363, 0x364, 0x365, 0x370, 0x371, 0x372,
@@ -205,19 +205,16 @@ class CarController(object):
     if BLINDSPOTDEBUG:
       self.blindspot_poll_counter += 1
     if self.blindspot_poll_counter > 1000:
-      for b in CS.buttonEvents:
-        # button presses for lane chnage
-        if b.type == "leftBlinker":
-          if b.pressed:
-            self.blindspot_blink_counter_left += 1
-            print "Left Blinker on"
-          else:
-            self.blindspot_blink_counter_left = 0
-            print "Left Blinker off"
-            if self.blindspot_debug_enabled_left:
-              can_sends.append(set_blindspot_debug_mode(LEFT_BLINDSPOT, False))
-              self.blindspot_debug_enabled_left = False
-              print "Left blindspot debug disabled"
+      if CS.left_blinker_on:
+        self.blindspot_blink_counter_left += 1
+        print "Left Blinker on"
+      else:
+        self.blindspot_blink_counter_left = 0
+        print "Left Blinker off"
+        if self.blindspot_debug_enabled_left:
+          can_sends.append(set_blindspot_debug_mode(LEFT_BLINDSPOT, False))
+          self.blindspot_debug_enabled_left = False
+          print "Left blindspot debug disabled"
       if self.blindspot_blink_counter_left > 500 and not self.blindspot_debug_enabled_left:
         can_sends.append(set_blindspot_debug_mode(LEFT_BLINDSPOT, True))
         print "Left blindspot debug enabled"
