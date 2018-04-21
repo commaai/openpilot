@@ -8,11 +8,11 @@
 //      brake > 0mph
 
 // these are set in the Honda safety hooks...this is the wrong place
-const int gas_interceptor_threshold = 328;
-int gas_interceptor_detected = 0;
+const int gas_interceptor_threshold = 900;
+int gas_interceptor_detected = 1;
 int brake_prev = 0;
 int gas_prev = 0;
-int gas_interceptor_prev = 0;
+//int gas_interceptor_prev = 0;
 int ego_speed = 0;
 // TODO: auto-detect bosch hardware based on CAN messages?
 bool bosch_hardware = false;
@@ -56,11 +56,11 @@ static void honda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   if ((to_push->RIR>>21) == 0x201 && (to_push->RDTR & 0xf) == 6) {
     gas_interceptor_detected = 1;
     int gas_interceptor = ((to_push->RDLR & 0xFF) << 8) | ((to_push->RDLR & 0xFF00) >> 8);
-    if ((gas_interceptor > gas_interceptor_threshold) &&
-        (gas_interceptor_prev <= gas_interceptor_threshold)) {
-      controls_allowed = 0;
-    }
-    gas_interceptor_prev = gas_interceptor;
+    //if ((gas_interceptor > gas_interceptor_threshold) &&
+    //    (gas_interceptor_prev <= gas_interceptor_threshold)) {
+    //  controls_allowed = 0;
+    //}
+    //gas_interceptor_prev = gas_interceptor;
   }
 
   // exit controls on rising edge of gas press if no interceptor
@@ -68,7 +68,7 @@ static void honda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     if ((to_push->RIR>>21) == 0x17C) {
       int gas = to_push->RDLR & 0xFF;
       if (gas && !(gas_prev)) {
-        controls_allowed = 0;
+        controls_allowed = 1;
       }
       gas_prev = gas;
     }
@@ -85,9 +85,10 @@ static int honda_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 
   // disallow actuator commands if gas or brake (with vehicle moving) are pressed
   // and the the latching controls_allowed flag is True
-  int pedal_pressed = gas_prev || (gas_interceptor_prev > gas_interceptor_threshold) ||
-                      (brake_prev && ego_speed);
-  int current_controls_allowed = controls_allowed && !(pedal_pressed);
+  //int pedal_pressed = gas_prev || (gas_interceptor_prev > gas_interceptor_threshold) ||
+  //                    (brake_prev && ego_speed);
+  //int current_controls_allowed = controls_allowed && !(pedal_pressed);
+  int current_controls_allowed = controls_allowed;
 
   // BRAKE: safety check
   if ((to_send->RIR>>21) == 0x1FA) {
@@ -126,7 +127,7 @@ static int honda_tx_lin_hook(int lin_num, uint8_t *data, int len) {
 }
 
 static void honda_init(int16_t param) {
-  controls_allowed = 0;
+  controls_allowed = 1;
   bosch_hardware = false;
 }
 
@@ -148,7 +149,7 @@ const safety_hooks honda_hooks = {
 };
 
 static void honda_bosch_init(int16_t param) {
-  controls_allowed = 0;
+  controls_allowed = 1;
   bosch_hardware = true;
 }
 
