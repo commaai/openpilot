@@ -221,7 +221,7 @@ class CarController(object):
         self.blindspot_debug_enabled_left = True
     if self.blindspot_debug_enabled_left:
       if self.blindspot_poll_counter % 20 == 0 and self.blindspot_poll_counter > 1010:  # Poll blindspots at 5 Hz
-        #can_sends.append(poll_blindspot_status(LEFT_BLINDSPOT))
+        can_sends.append(poll_blindspot_status(LEFT_BLINDSPOT))
         print "debug poll status"
           # or b.type == "rightBlinker"
 #      print "Left blindspot debug enabled"
