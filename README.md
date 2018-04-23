@@ -12,7 +12,7 @@ Here are [some](https://www.youtube.com/watch?v=9OwTJFuDI7g) [videos](https://ww
 Hardware
 ------
 
-Right now openpilot supports the [NEO research platform](http://github.com/commaai/neo) and the [EON Dashcam DevKit](https://shop.comma.ai/products/eon-dashcam-devkit). We'd like to support other platforms as well.
+Right now openpilot supports the [EON Dashcam DevKit](https://shop.comma.ai/products/eon-dashcam-devkit). We'd like to support other platforms as well.
 
 Install openpilot on a neo device by entering ``https://openpilot.comma.ai`` during NEOS setup.
 
@@ -34,9 +34,12 @@ Supported Cars
 
 - Acura RDX 2018 with AcuraWatch Plus (alpha!)
   - Can only be enabled above 25 mph
-  
+
 - Honda Pilot 2017 with Honda Sensing (alpha!)
-  - Can only be enabled above 27 mph 
+  - Can only be enabled above 27 mph
+
+- Honda Ridgeline 2017 with Honda Sensing (alpha!)
+  - Can only be enabled above 27 mph
 
 - Toyota RAV-4 2016+ non-hybrid with TSS-P
   - By default it uses stock Toyota ACC for longitudinal control

@@ -1157,7 +1157,7 @@ static const elm_protocol_t elm_protocols[] = {
   {false, NA,    104,  elm_process_obd_cmd_J1850,    NULL,              "SAE J1850 VPW",           },
   {false, LIN,   104,  elm_process_obd_cmd_LIN5baud, NULL,              "ISO 9141-2",              },
   {false, LIN,   104,  elm_process_obd_cmd_LIN5baud, NULL,              "ISO 14230-4 (KWP 5BAUD)", },
-  {true,  LIN,   104,  elm_process_obd_cmd_LINFast,  elm_init_LINFast,  "ISO 14230-4 (KWP FAST)",  },
+  {true,  LIN,   104,  elm_process_obd_cmd_LINFast,  NULL,              "ISO 14230-4 (KWP FAST)",  },
   {true,  CAN11, 5000, elm_process_obd_cmd_ISO15765, elm_init_ISO15765, "ISO 15765-4 (CAN 11/500)",},
   {true,  CAN29, 5000, elm_process_obd_cmd_ISO15765, elm_init_ISO15765, "ISO 15765-4 (CAN 29/500)",},
   {true,  CAN11, 2500, elm_process_obd_cmd_ISO15765, elm_init_ISO15765, "ISO 15765-4 (CAN 11/250)",},

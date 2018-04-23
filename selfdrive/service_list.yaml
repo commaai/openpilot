@@ -67,6 +67,7 @@ orbOdometry: [8057, true]
 orbFeatures: [8058, true]
 orbKeyFrame: [8059, true]
 uiLayoutState: [8060, true]
+frontEncodeIdx: [8061, true]
 
 testModel: [8040, false]
 testLiveLocation: [8045, false]

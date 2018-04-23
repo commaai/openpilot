@@ -155,6 +155,7 @@ class Panda(object):
               if self._serial is None or this_serial == self._serial:
                 self._serial = this_serial
                 print("opening device", self._serial, hex(device.getProductID()))
+                time.sleep(1)
                 self.bootstub = device.getProductID() == 0xddee
                 self.legacy = (device.getbcdDevice() != 0x2300)
                 self._handle = device.open()
