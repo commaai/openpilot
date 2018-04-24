@@ -215,11 +215,9 @@ class Plant(object):
            self.angle_steer, self.angle_steer_rate, 0,
            0, 0, 0, 0,  # Doors
            0, 0,  # Blinkers
-           0,  # Cruise speed offset
            self.gear_choice,
            speed != 0,
            self.brake_error, self.brake_error,
-           self.v_cruise,
            not self.seatbelt, self.seatbelt,  # Seatbelt
            self.brake_pressed, 0.,
            cruise_buttons,
@@ -231,6 +229,8 @@ class Plant(object):
            self.pedal_gas,
            self.cruise_setting,
            self.acc_status,
+           self.v_cruise,
+           0,  # Cruise speed offset
            self.user_gas,
            self.main_on,
            0,  # EPB State
