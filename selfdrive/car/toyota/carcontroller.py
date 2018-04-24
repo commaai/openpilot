@@ -204,7 +204,7 @@ class CarController(object):
 # Enable blindspot debug mode once
     if BLINDSPOTDEBUG:
       self.blindspot_poll_counter += 1
-    if self.blindspot_poll_counter > 1000:
+    if self.blindspot_poll_counter > 1000: # 10 seconds after start
       if CS.left_blinker_on:
         self.blindspot_blink_counter_left += 1
         print "debug Left Blinker on"
@@ -215,12 +215,12 @@ class CarController(object):
           can_sends.append(set_blindspot_debug_mode(LEFT_BLINDSPOT, False))
           self.blindspot_debug_enabled_left = False
           print "debug Left blindspot debug disabled"
-      if self.blindspot_blink_counter_left > 500 and not self.blindspot_debug_enabled_left:
+      if self.blindspot_blink_counter_left > 299 and not self.blindspot_debug_enabled_left: #After 3 seconds of blinking check blindspot
         can_sends.append(set_blindspot_debug_mode(LEFT_BLINDSPOT, True))
         print "debug Left blindspot debug enabled"
         self.blindspot_debug_enabled_left = True
     if self.blindspot_debug_enabled_left:
-      if self.blindspot_poll_counter % 20 == 0 and self.blindspot_poll_counter > 1010:  # Poll blindspots at 5 Hz
+      if self.blindspot_poll_counter % 20 == 0 and self.blindspot_poll_counter > 1001:  # Poll blindspots at 5 Hz
         can_sends.append(poll_blindspot_status(LEFT_BLINDSPOT))
         print "debug poll status"
           # or b.type == "rightBlinker"
