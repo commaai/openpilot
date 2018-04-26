@@ -158,7 +158,7 @@ class CarState(object):
     self.main_on = cp.vl["PCM_CRUISE_2"]['MAIN_ON']
     self.left_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 1
     self.right_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 2
-    self.blind_spot_on = cp.vl["DEBUG"]['BLINDSPOT']
+    self.blind_spot_on = bool(cp.vl["DEBUG"]['BLINDSPOT'])
     
     # we could use the override bit from dbc, but it's triggered at too high torque values
     self.steer_override = abs(cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_DRIVER']) > 100
