@@ -234,6 +234,9 @@ BO_ 610 EPS_STATUS: 5 EPS
 
 BO_ 956 GEAR_PACKET: 8 XXX
  SG_ GEAR : 13|6@0+ (1,0) [0|63] "" XXX
+ 
+BO_ 1880 DEBUG: 8 XXX
+ SG_ BLINDSPOT : 38|1@0+ (1,0) [0|15] "" XXX
 
 CM_ SG_ 550 BRAKE_PRESSURE "seems prop to pedal force";
 CM_ SG_ 550 BRAKE_POSITION "seems proportional to pedal displacement, unclear the max value of 0x1c8";
