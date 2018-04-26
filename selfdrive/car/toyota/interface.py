@@ -238,7 +238,7 @@ class CarInterface(object):
     ret.buttonEvents = buttonEvents
     ret.leftBlinker = bool(self.CS.left_blinker_on)
     ret.rightBlinker = bool(self.CS.right_blinker_on)
-
+    ret.blindspot = self.CS.blind_spot_on
     ret.doorOpen = not self.CS.door_all_closed
     ret.seatbeltUnlatched = not self.CS.seatbelt
 
