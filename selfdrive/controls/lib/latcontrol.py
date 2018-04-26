@@ -54,7 +54,7 @@ class LatControl(object):
   def reset(self):
     self.pid.reset()
 
-  def update(self, active, v_ego, angle_steers, steer_override, d_poly, angle_offset, VM, PL):
+  def update(self, active, v_ego, angle_steers, steer_override, d_poly, angle_offset, VM, PL,blindspot):
     cur_time = sec_since_boot()
     self.mpc_updated = False
     # TODO: this creates issues in replay when rewinding time: mpc won't run
@@ -75,8 +75,8 @@ class LatControl(object):
       self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
                           l_poly, r_poly, p_poly,
                           PL.PP.l_prob, PL.PP.r_prob, PL.PP.p_prob, curvature_factor, v_ego_mpc, PL.PP.lane_width)
-      if VM.CP.blindspot:
-        print "blindpot_on=", VM.CP.blindspot
+      if blindspot:
+        print "blindpot_on=", blindspot
       # reset to current steer angle if not active or overriding
       if active:
         delta_desired = self.mpc_solution[0].delta[1]
