@@ -18,9 +18,9 @@ class TestHondaSafety(unittest.TestCase):
 
     return to_send
 
-  def _button_msg(self, buttons):
+  def _button_msg(self, buttons, msg):
     to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_send[0].RIR = 0x1A6 << 21
+    to_send[0].RIR = msg << 21
     to_send[0].RDLR = buttons << 5
 
     return to_send
@@ -29,6 +29,13 @@ class TestHondaSafety(unittest.TestCase):
     to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
     to_send[0].RIR = 0x17C << 21
     to_send[0].RDHR = 0x200000 if brake else 0
+
+    return to_send
+
+  def _alt_brake_msg(self, brake):
+    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
+    to_send[0].RIR = 0x1BE << 21
+    to_send[0].RDLR = 0x10 if brake else 0
 
     return to_send
 
@@ -65,18 +72,18 @@ class TestHondaSafety(unittest.TestCase):
 
   def test_resume_button(self):
     RESUME_BTN = 4
-    self.safety.honda_rx_hook(self._button_msg(RESUME_BTN))
+    self.safety.honda_rx_hook(self._button_msg(RESUME_BTN, 0x1A6))
     self.assertTrue(self.safety.get_controls_allowed())
 
   def test_set_button(self):
     SET_BTN = 3
-    self.safety.honda_rx_hook(self._button_msg(SET_BTN))
+    self.safety.honda_rx_hook(self._button_msg(SET_BTN, 0x1A6))
     self.assertTrue(self.safety.get_controls_allowed())
 
   def test_cancel_button(self):
     CANCEL_BTN = 2
     self.safety.set_controls_allowed(1)
-    self.safety.honda_rx_hook(self._button_msg(CANCEL_BTN))
+    self.safety.honda_rx_hook(self._button_msg(CANCEL_BTN, 0x1A6))
     self.assertFalse(self.safety.get_controls_allowed())
 
   def test_sample_speed(self):
@@ -92,6 +99,12 @@ class TestHondaSafety(unittest.TestCase):
   def test_disengage_on_brake(self):
     self.safety.set_controls_allowed(1)
     self.safety.honda_rx_hook(self._brake_msg(1))
+    self.assertFalse(self.safety.get_controls_allowed())
+
+  def test_alt_disengage_on_brake(self):
+    self.safety.set_alt_brake_signal(1)
+    self.safety.set_controls_allowed(1)
+    self.safety.honda_rx_hook(self._alt_brake_msg(1))
     self.assertFalse(self.safety.get_controls_allowed())
 
   def test_allow_brake_at_zero_speed(self):
@@ -142,6 +155,16 @@ class TestHondaSafety(unittest.TestCase):
   def test_steer_safety_check(self):
     self.assertTrue(self.safety.honda_tx_hook(self._send_steer_msg(0x0000)))
     self.assertFalse(self.safety.honda_tx_hook(self._send_steer_msg(0x1000)))
+
+  def test_spam_cancel_safety_check(self):
+    RESUME_BTN = 4
+    SET_BTN = 3
+    CANCEL_BTN = 2
+    BUTTON_MSG = 0x296
+    self.safety.set_bosch_hardware(1)
+    self.assertTrue(self.safety.honda_tx_hook(self._button_msg(CANCEL_BTN, BUTTON_MSG)))
+    self.assertFalse(self.safety.honda_tx_hook(self._button_msg(RESUME_BTN, BUTTON_MSG)))
+    self.assertFalse(self.safety.honda_tx_hook(self._button_msg(SET_BTN, BUTTON_MSG)))
 
 
 if __name__ == "__main__":

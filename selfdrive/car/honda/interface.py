@@ -213,12 +213,13 @@ class CarInterface(object):
     elif candidate == CAR.CRV_5G:
       stop_and_go = True
       ret.enableCamera = True
+      ret.safetyParam = 1 # Informs fw that this car uses an alternate user brake msg
       ret.mass = 3358./2.205 + std_cargo
       ret.wheelbase = 2.67
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 12.30
       ret.steerKpV, ret.steerKiV = [[0.8], [0.24]]
- 
+
       ret.longitudinalKpBP = [0., 5., 35.]
       ret.longitudinalKpV = [1.2, 0.8, 0.5]
       ret.longitudinalKiBP = [0., 35.]

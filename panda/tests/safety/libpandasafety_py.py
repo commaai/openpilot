@@ -51,6 +51,8 @@ void honda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push);
 int honda_tx_hook(CAN_FIFOMailBox_TypeDef *to_send);
 int get_brake_prev(void);
 int get_gas_prev(void);
+void set_alt_brake_signal(bool);
+void set_bosch_hardware(bool);
 
 void toyota_ipas_rx_hook(CAN_FIFOMailBox_TypeDef *to_push);
 int toyota_ipas_tx_hook(CAN_FIFOMailBox_TypeDef *to_send);
