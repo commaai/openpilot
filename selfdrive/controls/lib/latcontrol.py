@@ -75,8 +75,8 @@ class LatControl(object):
       self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
                           l_poly, r_poly, p_poly,
                           PL.PP.l_prob, PL.PP.r_prob, PL.PP.p_prob, curvature_factor, v_ego_mpc, PL.PP.lane_width)
-      if VM.CP.blind_spot_on:
-        print "blind_spot_on=", VM.CP.blind_spot_on
+      if VM.CP.blindspot:
+        print "blindpot_on=", VM.CP.blindspot
       # reset to current steer angle if not active or overriding
       if active:
         delta_desired = self.mpc_solution[0].delta[1]
