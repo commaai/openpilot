@@ -40,6 +40,7 @@ void spi_tx_dma(void *addr, int len) {
 
   // channel3, increment memory, memory -> periph, enable
   DMA2_Stream3->CR = DMA_SxCR_CHSEL_1 | DMA_SxCR_CHSEL_0 | DMA_SxCR_MINC | DMA_SxCR_DIR_0 | DMA_SxCR_EN;
+  delay(0);
   DMA2_Stream3->CR |= DMA_SxCR_TCIE;
 
   SPI1->CR2 |= SPI_CR2_TXDMAEN;
@@ -65,6 +66,7 @@ void spi_rx_dma(void *addr, int len) {
 
   // channel3, increment memory, periph -> memory, enable
   DMA2_Stream2->CR = DMA_SxCR_CHSEL_1 | DMA_SxCR_CHSEL_0 | DMA_SxCR_MINC | DMA_SxCR_EN;
+  delay(0);
   DMA2_Stream2->CR |= DMA_SxCR_TCIE;
 
   SPI1->CR2 |= SPI_CR2_RXDMAEN;
@@ -95,7 +97,7 @@ void DMA2_Stream2_IRQHandler(void) {
 void DMA2_Stream3_IRQHandler(void) {
   #ifdef DEBUG_SPI
     puts("SPI handshake\n");
-  #endif  
+  #endif
 
   // reset handshake back to pull up
   set_gpio_mode(GPIOB, 0, MODE_INPUT);

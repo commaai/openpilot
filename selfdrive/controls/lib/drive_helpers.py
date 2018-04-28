@@ -2,6 +2,20 @@ from common.numpy_fast import clip
 from cereal import car
 
 
+class MPC_COST_LAT:
+  PATH = 1.0
+  LANE = 3.0
+  HEADING = 1.0
+  STEER_RATE = 1.0
+
+
+class MPC_COST_LONG:
+  TTC = 5.0
+  DISTANCE = 0.1
+  ACCELERATION = 10.0
+  JERK = 20.0
+
+
 class EventTypes:
   ENABLE = 'enable'
   PRE_ENABLE = 'preEnable'

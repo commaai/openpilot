@@ -95,6 +95,16 @@ maneuvers = [
     cruise_button_presses = [(CB.DECEL_SET, 1.2), (0, 1.3)]
   ),
   Maneuver(
+    'steady state following a car at 20m/s, then lead decel to 0mph at 3m/s^2',
+    duration=50.,
+    initial_speed = 20.,
+    lead_relevancy=True,
+    initial_distance_lead=35.,
+    speed_lead_values = [20., 20., 0.],
+    speed_lead_breakpoints = [0., 15., 21.66],
+    cruise_button_presses = [(CB.DECEL_SET, 1.2), (0, 1.3)]
+  ),
+  Maneuver(
     'starting at 0mph, approaching a stopped car 100m away',
     duration=30.,
     initial_speed = 0.,

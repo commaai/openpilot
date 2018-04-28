@@ -14,4 +14,5 @@ enum34==1.1.1
 sympy==1.1.1
 filterpy==1.0.0
 smbus2==0.2.0
+pyflakes==1.5.0
 -e git+https://github.com/commaai/le_python.git#egg=Logentries
