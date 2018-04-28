@@ -1,7 +1,7 @@
-using Cxx = import "c++.capnp";
+using Cxx = import "./include/c++.capnp";
 $Cxx.namespace("cereal");
 
-using Java = import "java.capnp";
+using Java = import "./include/java.capnp";
 $Java.package("ai.comma.openpilot.cereal");
 $Java.outerClassname("Log");
 
@@ -1497,6 +1497,15 @@ struct OrbFeatures {
   matches @6: List(Int16);
 }
 
+struct OrbFeaturesSummary {
+  timestampEof @0 :UInt64;
+  timestampLastEof @1 :UInt64;
+
+  featureCount @2 :UInt16;
+  matchCount @3 :UInt16;
+  computeNs @4 :UInt64;
+}
+
 struct OrbKeyFrame {
   # this is a globally unique id for the KeyFrame
   id @0: UInt64;
@@ -1572,5 +1581,6 @@ struct Event {
     applanixLocation @55 :LiveLocationData;
     orbKeyFrame @56 :OrbKeyFrame;
     uiLayoutState @57 :UiLayoutState;
+    orbFeaturesSummary @58 :OrbFeaturesSummary;
   }
 }

@@ -211,6 +211,7 @@ class Plant(object):
       print "%6.2f m  %6.2f m/s  %6.2f m/s2   %.2f ang   gas: %.2f  brake: %.2f  steer: %5.2f     lead_rel: %6.2f m  %6.2f m/s" % (distance, speed, acceleration, self.angle_steer, gas, brake, steer_torque, d_rel, v_rel)
 
     # ******** publish the car ********
+    # TODO: the order is this list should not matter, but currently everytime we change carstate we break this test. Fix it!
     vls = [self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed),
            self.angle_steer, self.angle_steer_rate, 0,
            0, 0, 0, 0,  # Doors
