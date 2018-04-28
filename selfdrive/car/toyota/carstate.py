@@ -93,7 +93,8 @@ def get_can_parser(CP):
   elif CP.carFingerprint == CAR.LEXUS_RXH:
     dbc_f = 'lexus_rx_hybrid_2017_pt_generated.dbc'
   elif CP.carFingerprint == CAR.HIGHLANDER:
-    dbc_f = 'toyota_highlander_2017_pt_generated.dbc'    
+    dbc_f = 'toyota_highlander_2017_pt_generated.dbc' 
+    signals += [("LKA_STATE", "EPS_STATUS", 1)]
 
   return CANParser(os.path.splitext(dbc_f)[0], signals, checks, 0)
 
