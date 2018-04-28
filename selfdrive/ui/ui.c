@@ -1465,10 +1465,10 @@ static void ui_update(UIState *s) {
 
     assert(glGetError() == GL_NO_ERROR);
 
-    // Default UI Measurements (Assumes sidebar visible)
-    s->scene.ui_viz_rx = box_x;
-    s->scene.ui_viz_rw = box_w;
-    s->scene.ui_viz_ro = -(sbr_w - 4*bdr_s);
+    // Default UI Measurements (Assumes sidebar collapsed)
+    s->scene.ui_viz_rx = (box_x-sbr_w+bdr_s*2);
+    s->scene.ui_viz_rw = (box_w+sbr_w-(bdr_s*2));
+    s->scene.ui_viz_ro = 0;
 
     s->vision_connect_firstrun = false;
   }

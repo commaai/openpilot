@@ -16,3 +16,7 @@ try:
     dirty = True
 except subprocess.CalledProcessError:
   dirty = True
+
+# put this here
+training_version = "0.1.0"
+
