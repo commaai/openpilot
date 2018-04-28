@@ -71,7 +71,7 @@ class LocalCoord(object):
   """
   def __init__(self, init_geodetic, init_ecef):
     self.init_ecef = init_ecef
-    lat, lon, _ = (np.pi/180)*init_geodetic
+    lat, lon, _ = (np.pi/180)*np.array(init_geodetic)
     self.ned2ecef_matrix = np.array([[-np.sin(lat)*np.cos(lon), -np.sin(lon), -np.cos(lat)*np.cos(lon)],
                                      [-np.sin(lat)*np.sin(lon), np.cos(lon), -np.cos(lat)*np.sin(lon)],
                                      [np.cos(lat), 0, -np.sin(lat)]])

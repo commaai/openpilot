@@ -188,7 +188,7 @@ class CarInterface(object):
       ret.centerToFront = ret.wheelbase * 0.37
       ret.steerRatio = 15.3
       # Acura at comma has modified steering FW, so different tuning for the Neo in that car
-      is_fw_modified = os.getenv("DONGLE_ID") in ['85a6c74d4ad9c310']
+      is_fw_modified = os.getenv("DONGLE_ID") in ['ff83f397542ab647']
       ret.steerKpV, ret.steerKiV = [[0.4], [0.12]] if is_fw_modified else [[0.8], [0.24]]
 
       ret.longitudinalKpBP = [0., 5., 35.]

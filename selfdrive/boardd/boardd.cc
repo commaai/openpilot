@@ -384,6 +384,8 @@ void *thermal_thread(void *crap) {
     pthread_mutex_lock(&usb_lock);
     libusb_control_transfer(dev_handle, 0xc0, 0xd3, target_fan_speed, 0, NULL, 0, TIMEOUT);
     pthread_mutex_unlock(&usb_lock);
+
+    zmq_msg_close(&msg);
   }
 
   // turn the fan off when we exit
@@ -462,8 +464,8 @@ void _pigeon_send(const char *dat, int len) {
     pthread_mutex_lock(&usb_lock);
     err = libusb_bulk_transfer(dev_handle, 2, a, ll+1, &sent, TIMEOUT);
     if (err < 0) { handle_usb_issue(err, __func__); }
-    assert(err == 0);
-    assert(sent == ll+1);
+    /*assert(err == 0);
+    assert(sent == ll+1);*/
     //hexdump(a, ll+1);
     pthread_mutex_unlock(&usb_lock);
   }
