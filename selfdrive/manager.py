@@ -72,7 +72,7 @@ EON = os.path.exists("/EON")
 # comment out anything you don't want to run
 managed_processes = {
   "uploader": "selfdrive.loggerd.uploader",
-  "controlsd": "selfdrive.controls.controlsd",
+  #"controlsd": "selfdrive.controls.controlsd",
   "radard": "selfdrive.controls.radard",
   "ubloxd": "selfdrive.locationd.ubloxd",
   "locationd_dummy": "selfdrive.locationd.locationd_dummy",
