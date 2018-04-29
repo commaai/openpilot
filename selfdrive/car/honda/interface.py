@@ -84,7 +84,6 @@ class CarInterface(object):
     self.frame = 0
     self.last_enable_pressed = 0
     self.last_enable_sent = 0
-    self.gas_pressed_prev = False
     self.brake_pressed_prev = False
     self.can_invalid_count = 0
 
@@ -328,8 +327,6 @@ class CarInterface(object):
     ret.gas = self.CS.car_gas / 256.0
     if not self.CP.enableGasInterceptor:
       ret.gasPressed = self.CS.pedal_gas > 0
-    else:
-      ret.gasPressed = self.CS.user_gas_pressed
 
     # brake pedal
     ret.brake = self.CS.user_brake
@@ -447,12 +444,9 @@ class CarInterface(object):
       events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
 
     # disable on pedals rising edge or when brake is pressed and speed isn't zero
-    if (ret.gasPressed and not self.gas_pressed_prev) or \
-       (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001)):
+    if (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001)):
       events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
 
-    if ret.gasPressed:
-      events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
 
     # it can happen that car cruise disables while comma system is enabled: need to
     # keep braking if needed or if the speed is very low
@@ -498,7 +492,6 @@ class CarInterface(object):
     ret.canMonoTimes = canMonoTimes
 
     # update previous brake/gas pressed
-    self.gas_pressed_prev = ret.gasPressed
     self.brake_pressed_prev = ret.brakePressed
 
     # cast to reader so it can't be modified
