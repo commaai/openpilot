@@ -1,6 +1,12 @@
-from common.numpy_fast import clip
 from cereal import car
+from common.numpy_fast import clip
+from selfdrive.config import Conversions as CV
 
+# kph
+V_CRUISE_MAX = 144
+V_CRUISE_MIN = 8
+V_CRUISE_DELTA = 8
+V_CRUISE_ENABLE_MIN = 40
 
 class MPC_COST_LAT:
   PATH = 1.0
@@ -66,3 +72,21 @@ def learn_angle_offset(lateral_control, v_ego, angle_offset, c_poly, c_prob, ang
     angle_offset = clip(angle_offset, min_offset, max_offset)
 
   return angle_offset
+
+
+def update_v_cruise(v_cruise_kph, buttonEvents, enabled):
+  # handle button presses. TODO: this should be in state_control, but a decelCruise press
+  # would have the effect of both enabling and changing speed is checked after the state transition
+  for b in buttonEvents:
+    if enabled and not b.pressed:
+      if b.type == "accelCruise":
+        v_cruise_kph += V_CRUISE_DELTA - (v_cruise_kph % V_CRUISE_DELTA)
+      elif b.type == "decelCruise":
+        v_cruise_kph -= V_CRUISE_DELTA - ((V_CRUISE_DELTA - v_cruise_kph) % V_CRUISE_DELTA)
+      v_cruise_kph = clip(v_cruise_kph, V_CRUISE_MIN, V_CRUISE_MAX)
+
+  return v_cruise_kph
+
+
+def initialize_v_cruise(v_ego):
+  return int(round(max(v_ego * CV.MS_TO_KPH, V_CRUISE_ENABLE_MIN)))

@@ -15,17 +15,14 @@ from selfdrive.controls.lib.planner import Planner
 from selfdrive.controls.lib.drive_helpers import learn_angle_offset, \
                                                  get_events, \
                                                  create_event, \
-                                                 EventTypes as ET
+                                                 EventTypes as ET, \
+                                                 update_v_cruise, \
+                                                 initialize_v_cruise
 from selfdrive.controls.lib.longcontrol import LongControl, STARTING_TARGET_SPEED
 from selfdrive.controls.lib.latcontrol import LatControl
 from selfdrive.controls.lib.alertmanager import AlertManager
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 
-
-V_CRUISE_MAX = 144
-V_CRUISE_MIN = 8
-V_CRUISE_DELTA = 8
-V_CRUISE_ENABLE_MIN = 40
 
 AWARENESS_TIME = 360.      # 6 minutes limit without user touching steering wheels
 AWARENESS_PRE_TIME = 20.   # a first alert is issued 20s before start decelerating the car
@@ -125,16 +122,11 @@ def state_transition(CS, CP, state, events, soft_disable_timer, v_cruise_kph, AM
   # compute conditional state transitions and execute actions on state transitions
   enabled = isEnabled(state)
 
-  # handle button presses. TODO: this should be in state_control, but a decelCruise press
-  # would have the effect of both enabling and changing speed is checked after the state transition
   v_cruise_kph_last = v_cruise_kph
-  for b in CS.buttonEvents:
-    if not CP.enableCruise and enabled and not b.pressed:
-      if b.type == "accelCruise":
-        v_cruise_kph -= (v_cruise_kph % V_CRUISE_DELTA) - V_CRUISE_DELTA
-      elif b.type == "decelCruise":
-        v_cruise_kph -= (v_cruise_kph % V_CRUISE_DELTA) + V_CRUISE_DELTA
-      v_cruise_kph = clip(v_cruise_kph, V_CRUISE_MIN, V_CRUISE_MAX)
+
+  # if stock cruise is completely disabled, then we can use our own set speed logic
+  if not CP.enableCruise:
+    v_cruise_kph = update_v_cruise(v_cruise_kph, CS.buttonEvents, enabled)
 
   # decrease the soft disable timer at every step, as it's reset on
   # entrance in SOFT_DISABLING state
@@ -155,8 +147,7 @@ def state_transition(CS, CP, state, events, soft_disable_timer, v_cruise_kph, AM
         else:
           state = State.enabled
         AM.add("enable", enabled)
-        # on activation, let's always set v_cruise from where we are, even if PCM ACC is active
-        v_cruise_kph = int(round(max(CS.vEgo * CV.MS_TO_KPH, V_CRUISE_ENABLE_MIN)))
+        v_cruise_kph = initialize_v_cruise(CS.vEgo)
 
   # ENABLED
   elif state == State.enabled:
@@ -274,10 +265,6 @@ def state_control(plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, 
   actuators.steer, actuators.steerAngle = LaC.update(active, CS.vEgo, CS.steeringAngle,
                                                      CS.steeringPressed, plan.dPoly, angle_offset, VM, PL)
 
-  # send a "steering required alert" if saturation count has reached the limit
-  if LaC.sat_flag and CP.steerLimitAlert:
-    AM.add("steerSaturated", enabled)
-
   if CP.enableCruise and CS.cruiseState.enabled:
     v_cruise_kph = CS.cruiseState.speed * CV.MS_TO_KPH
 
@@ -287,6 +274,10 @@ def state_control(plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, 
      CS.steeringPressed or \
      state in [State.preEnabled, State.disabled]:
     awareness_status = 1.
+
+  # send a "steering required alert" if saturation count has reached the limit
+  if LaC.sat_flag and CP.steerLimitAlert:
+    AM.add("steerSaturated", enabled)
 
   # parse permanent warnings to display constantly
   for e in get_events(events, [ET.PERMANENT]):
