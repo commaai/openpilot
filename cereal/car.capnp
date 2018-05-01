@@ -263,9 +263,9 @@ struct CarParams {
   radarNameDEPRECATED @1 :Text;
   carFingerprint @2 :Text;
 
-  enableSteer @3 :Bool;
-  enableGas @4 :Bool;
-  enableBrake @5 :Bool;
+  enableSteerDEPRECATED @3 :Bool;
+  enableGasInterceptor @4 :Bool;
+  enableBrakeDEPRECATED @5 :Bool;
   enableCruise @6 :Bool;
   enableCamera @26 :Bool;
   enableDsu @27 :Bool; # driving support unit
