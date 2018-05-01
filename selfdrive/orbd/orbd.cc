@@ -36,17 +36,19 @@ int main(int argc, char *argv[]) {
 
 #ifdef DSP
   char my_path[PATH_MAX+1];
-  readlink("/proc/self/exe", my_path, PATH_MAX);
-  my_path[strlen(my_path)-4] = '\0';
-  LOGW("running from %s", my_path);
+  ssize_t len = readlink("/proc/self/exe", my_path, sizeof(my_path));
+  assert(len > 5);
+  my_path[len-5] = '\0';
+  LOGW("running from %s with PATH_MAX %d", my_path, PATH_MAX);
 
   char adsp_path[PATH_MAX+1];
-  snprintf(adsp_path, PATH_MAX, "ADSP_LIBRARY_PATH=%s/dsp/gen;/dsp;/system/lib/rfsa/adsp;/system/vendor/lib/rfsa/adsp", my_path);
-  putenv(adsp_path);
+  snprintf(adsp_path, PATH_MAX, "ADSP_LIBRARY_PATH=%s/dsp/gen", my_path);
+  assert(putenv(adsp_path) == 0);
 
   uint32_t test_leet = 0; 
   assert(calculator_init(&test_leet) == 0);
   assert(test_leet == 0x1337);
+  LOGW("orbd init complete");
 #else
   init_gpyrs();
 #endif

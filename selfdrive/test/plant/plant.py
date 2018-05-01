@@ -90,7 +90,6 @@ class Plant(object):
 
   def __init__(self, lead_relevancy=False, rate=100, speed=0.0, distance_lead=2.0):
     self.rate = rate
-    self.brake_only = False
 
     if not Plant.messaging_initialized:
       context = zmq.Context()
