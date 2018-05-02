@@ -13,7 +13,7 @@ It uses an [STM32F413](http://www.st.com/en/microcontrollers/stm32f413-423.html?
 
 It is 2nd gen hardware, reusing code and parts from the [NEO](https://github.com/commaai/neo) interface board.
 
-[![Build Status](https://travis-ci.org/commaai/panda.svg?branch=master)](https://travis-ci.org/commaai/panda)
+[![CircleCI](https://circleci.com/gh/commaai/panda.svg?style=svg)](https://circleci.com/gh/commaai/panda)
 
 Usage
 ------
@@ -35,7 +35,7 @@ And to send one on bus 0:
 ```
 >>> panda.can_send(0x1aa, "message", 0)
 ```
-More examples coming soon
+Find user made scripts on the [wiki](https://community.comma.ai/wiki/index.php/Panda_scripts)
 
 Software interface support
 ------
@@ -45,7 +45,7 @@ As a universal car interface, it should support every reasonable software interf
 - User space ([done](https://github.com/commaai/panda/tree/master/python))
 - socketcan in kernel ([alpha](https://github.com/commaai/panda/tree/master/drivers/linux))
 - ELM327 ([done](https://github.com/commaai/panda/blob/master/boardesp/elm327.c))
-- Windows J2534 ([alpha](https://github.com/commaai/panda/tree/master/drivers/windows))
+- Windows J2534 ([done](https://github.com/commaai/panda/tree/master/drivers/windows))
 
 Directory structure
 ------

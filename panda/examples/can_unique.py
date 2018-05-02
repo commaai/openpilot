@@ -51,10 +51,12 @@ class Info():
       reader = csv.reader(input)
       next(reader, None)  # skip the CSV header
       for row in reader:
+        bus = row[0]
         if row[1].startswith('0x'):
           message_id = row[1][2:]  # remove leading '0x'
         else:
           message_id = hex(int(row[1]))[2:]  # old message IDs are in decimal
+        message_id = '%s:%s' % (bus, message_id)
         if row[1].startswith('0x'):
           data = row[2][2:]  # remove leading '0x'
         else:
@@ -76,7 +78,7 @@ def PrintUnique(interesting_file, background_files):
     background.load(background_file)
   interesting = Info()
   interesting.load(interesting_file)
-  for message_id in interesting.messages:
+  for message_id in sorted(interesting.messages):
     if message_id not in background.messages:
       print 'New message_id: %s' % message_id
     else:

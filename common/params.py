@@ -46,10 +46,11 @@ class UnknownKeyName(Exception):
 
 keys = {
 # written: manager
-# read:    loggerd, uploaderd, baseui
+# read:    loggerd, uploaderd, offroad
   "DongleId": TxType.PERSISTANT,
   "AccessToken": TxType.PERSISTANT,
   "Version": TxType.PERSISTANT,
+  "TrainingVersion": TxType.PERSISTANT,
   "GitCommit": TxType.PERSISTANT,
   "GitBranch": TxType.PERSISTANT,
   "GitRemote": TxType.PERSISTANT,
@@ -59,6 +60,7 @@ keys = {
   "IsRearViewMirror": TxType.PERSISTANT,
   "IsFcwEnabled": TxType.PERSISTANT,
   "HasAcceptedTerms": TxType.PERSISTANT,
+  "CompletedTrainingVersion": TxType.PERSISTANT,
   "IsUploadVideoOverCellularEnabled": TxType.PERSISTANT,
 # written: visiond
 # read:    visiond, controlsd
@@ -72,6 +74,10 @@ keys = {
 
   "Passive": TxType.PERSISTANT,
   "DoUninstall": TxType.CLEAR_ON_MANAGER_START,
+  "ShouldDoUpdate": TxType.CLEAR_ON_MANAGER_START,
+  "IsUpdateAvailable": TxType.PERSISTANT,
+
+  "RecordFront": TxType.PERSISTANT,
 }
 
 def fsync_dir(path):

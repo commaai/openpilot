@@ -12,7 +12,7 @@ from selfdrive.swaglog import cloudlog
 # USB is optional
 try:
   import usb1
-  from usb1 import USBErrorIO, USBErrorOverflow
+  from usb1 import USBErrorIO, USBErrorOverflow  #pylint: disable=no-name-in-module
 except Exception:
   pass
 
@@ -101,7 +101,7 @@ def can_init():
     if device.getVendorID() == 0xbbaa and device.getProductID() == 0xddcc:
       handle = device.open()
       handle.claimInterface(0)
-      handle.controlWrite(0x40, 0xdc, SAFETY_HONDA, 0, b'')
+      handle.controlWrite(0x40, 0xdc, SAFETY_ALLOUTPUT, 0, b'')
 
   if handle is None:
     print "CAN NOT FOUND"

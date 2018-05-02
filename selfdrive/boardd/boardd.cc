@@ -35,6 +35,10 @@
 #define SAFETY_HONDA 1
 #define SAFETY_TOYOTA 2
 #define SAFETY_ELM327 0xE327
+#define SAFETY_GM 3
+#define SAFETY_HONDA_BOSCH 4
+#define SAFETY_TOYOTA_NOLIMITS 0x1336
+#define SAFETY_ALLOUTPUT 0x1337
 
 namespace {
 
@@ -94,6 +98,12 @@ void *safety_setter_thread(void *s) {
     break;
   case (int)cereal::CarParams::SafetyModels::ELM327:
     safety_setting = SAFETY_ELM327;
+    break;
+  case (int)cereal::CarParams::SafetyModels::GM:
+    safety_setting = SAFETY_GM;
+    break;
+  case (int)cereal::CarParams::SafetyModels::HONDA_BOSCH:
+    safety_setting = SAFETY_HONDA_BOSCH;
     break;
   default:
     LOGE("unknown safety model: %d", safety_model);
@@ -374,6 +384,8 @@ void *thermal_thread(void *crap) {
     pthread_mutex_lock(&usb_lock);
     libusb_control_transfer(dev_handle, 0xc0, 0xd3, target_fan_speed, 0, NULL, 0, TIMEOUT);
     pthread_mutex_unlock(&usb_lock);
+
+    zmq_msg_close(&msg);
   }
 
   // turn the fan off when we exit
@@ -452,8 +464,8 @@ void _pigeon_send(const char *dat, int len) {
     pthread_mutex_lock(&usb_lock);
     err = libusb_bulk_transfer(dev_handle, 2, a, ll+1, &sent, TIMEOUT);
     if (err < 0) { handle_usb_issue(err, __func__); }
-    assert(err == 0);
-    assert(sent == ll+1);
+    /*assert(err == 0);
+    assert(sent == ll+1);*/
     //hexdump(a, ll+1);
     pthread_mutex_unlock(&usb_lock);
   }
@@ -517,8 +529,23 @@ void pigeon_init() {
   pigeon_send("\xB5\x62\x06\x1E\x00\x00\x24\x72");
   pigeon_send("\xB5\x62\x06\x01\x03\x00\x01\x07\x01\x13\x51");
   pigeon_send("\xB5\x62\x06\x01\x03\x00\x02\x15\x01\x22\x70");
+  pigeon_send("\xB5\x62\x06\x01\x03\x00\x02\x13\x01\x20\x6C");
 
   LOGW("grey panda is ready to fly");
+}
+
+static void pigeon_publish_raw(void *publisher, unsigned char *dat, int alen) {
+  // create message
+  capnp::MallocMessageBuilder msg;
+  cereal::Event::Builder event = msg.initRoot<cereal::Event>();
+  event.setLogMonoTime(nanos_since_boot());
+  auto ublox_raw = event.initUbloxRaw(alen);
+  memcpy(ublox_raw.begin(), dat, alen);
+
+  // send to ubloxRaw
+  auto words = capnp::messageToFlatArray(msg);
+  auto bytes = words.asBytes();
+  zmq_send(publisher, bytes.begin(), bytes.size(), 0);
 }
 
 
@@ -535,22 +562,6 @@ void *pigeon_thread(void *crap) {
     if (pigeon_needs_init) {
       pigeon_needs_init = false;
       pigeon_init();
-    } else {
-      // send periodic messages
-      if (cnt%3000 == 0) {
-        for (unsigned char sv = 1; sv < 33; ++sv){
-          const unsigned char buffer[5] = {0x0B, 0x31, 0x01, 0x00, sv};
-          unsigned char CK_A = 0;
-          unsigned char CK_B = 0;
-          for(int i=0;i<5;i++) {
-            CK_A = CK_A + buffer[i];
-            CK_B = CK_B + CK_A;
-          }
-	  const unsigned char msg[9] = {0xB5, 0x62, 0x0B, 0x31, 0x01, 0x00, sv, CK_A, CK_B};
-          _pigeon_send((const char *)msg, 9);
-        }
-        pigeon_send("\xB5\x62\x0b\x02\x00\x00\x0d\x32");
-      }
     }
     int alen = 0;
     while (alen < 0xfc0) {
@@ -563,18 +574,13 @@ void *pigeon_thread(void *crap) {
       //printf("got %d\n", len);
       alen += len;
     }
-    if (alen > 0) {
-      // create message
-      capnp::MallocMessageBuilder msg;
-      cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-      event.setLogMonoTime(nanos_since_boot());
-      auto ublox_raw = event.initUbloxRaw(alen);
-      memcpy(ublox_raw.begin(), dat, alen);
-
-      // send to ubloxRaw
-      auto words = capnp::messageToFlatArray(msg);
-      auto bytes = words.asBytes();
-      zmq_send(publisher, bytes.begin(), bytes.size(), 0);
+    if (alen > 0) { 
+      if (dat[0] == (char)0x00){
+        LOGW("received invalid ublox message, resetting pigeon");
+        pigeon_init();
+      } else {
+        pigeon_publish_raw(publisher, dat, alen);
+      }
     }
 
     // 10ms
