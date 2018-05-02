@@ -56,9 +56,6 @@ class CarInterface(object):
 
     ret.safetyModel = car.CarParams.SafetyModels.toyota
 
-    ret.enableSteer = True
-    ret.enableBrake = True
-
     # pedal
     ret.enableCruise = True
 

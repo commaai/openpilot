@@ -1,7 +1,7 @@
-using Cxx = import "c++.capnp";
+using Cxx = import "./include/c++.capnp";
 $Cxx.namespace("cereal");
 
-using Java = import "java.capnp";
+using Java = import "./include/java.capnp";
 $Java.package("ai.comma.openpilot.cereal");
 $Java.outerClassname("Car");
 
@@ -263,9 +263,9 @@ struct CarParams {
   radarNameDEPRECATED @1 :Text;
   carFingerprint @2 :Text;
 
-  enableSteer @3 :Bool;
-  enableGas @4 :Bool;
-  enableBrake @5 :Bool;
+  enableSteerDEPRECATED @3 :Bool;
+  enableGasInterceptor @4 :Bool;
+  enableBrakeDEPRECATED @5 :Bool;
   enableCruise @6 :Bool;
   enableCamera @26 :Bool;
   enableDsu @27 :Bool; # driving support unit
@@ -293,6 +293,7 @@ struct CarParams {
     elm327 @3;
     gm @4;
     hondaBosch @5;
+    ford @6;
   }
 
   # things about the car in the manual

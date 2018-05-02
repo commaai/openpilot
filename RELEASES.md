@@ -1,3 +1,13 @@
+Version 0.4.5 (2018-04-27)
+==========================
+ * Release notes added to the update popup
+ * Improve auto shut-off logic to disallow empty battery
+ * Added onboarding instructions
+ * Include orbd, the first piece of new calibration algorithm
+ * Show remaining upload data instead of file numbers
+ * Fix UI bugs
+ * Fix memory leaks
+
 Version 0.4.4 (2018-04-13)
 ==========================
  * EON are flipped! Flip your EON's mount!
