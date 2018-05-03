@@ -143,7 +143,7 @@ def state_transition(CS, CP, state, events, soft_disable_timer, v_cruise_kph, AM
 
       else:
         if get_events(events, [ET.PRE_ENABLE]):
-          state = State.enabled
+          state = State.preEnabled
         else:
           state = State.enabled
         AM.add("enable", enabled)
