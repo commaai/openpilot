@@ -62,7 +62,7 @@ from selfdrive.swaglog import cloudlog
 import selfdrive.messaging as messaging
 from selfdrive.thermal import read_thermal
 from selfdrive.registration import register
-from selfdrive.version import version, dirty
+from selfdrive.version import version, dirty, training_version
 import selfdrive.crash as crash
 
 from selfdrive.loggerd.config import ROOT
@@ -87,6 +87,7 @@ managed_processes = {
   "visiond": ("selfdrive/visiond", ["./visiond"]),
   "sensord": ("selfdrive/sensord", ["./sensord"]),
   "gpsd": ("selfdrive/sensord", ["./gpsd"]),
+  "orbd": ("selfdrive/orbd", ["./orbd"]),
   "updated": "selfdrive.updated",
   #"gpsplanner": "selfdrive.controls.gps_plannerd",
 }
@@ -120,6 +121,7 @@ car_started_processes = [
   'radard',
   'visiond',
   'proclogd',
+  'orbd',
   # 'gpsplanner,
 ]
 
@@ -393,11 +395,12 @@ def manager_thread():
   passive_starter = LocationStarter()
 
   started_ts = None
+  off_ts = None
   logger_dead = False
   count = 0
   fan_speed = 0
   ignition_seen = False
-  battery_was_high = False
+  started_seen = False
   panda_seen = False
 
   health_sock.RCVTIMEO = 1500
@@ -460,6 +463,7 @@ def manager_thread():
 
     do_uninstall = params.get("DoUninstall") == "1"
     accepted_terms = params.get("HasAcceptedTerms") == "1"
+    completed_training = params.get("CompletedTrainingVersion") == training_version
 
     should_start = ignition
 
@@ -477,7 +481,7 @@ def manager_thread():
     # require usb power
     should_start = should_start and msg.thermal.usbOnline
 
-    should_start = should_start and accepted_terms and (not do_uninstall)
+    should_start = should_start and accepted_terms and completed_training and (not do_uninstall)
 
     # if any CPU gets above 107 or the battery gets above 63, kill all processes
     # controls will warn with CPU above 95 or battery above 60
@@ -486,9 +490,11 @@ def manager_thread():
       should_start = False
 
     if should_start:
-      if not started_ts:
+      off_ts = None
+      if started_ts is None:
         params.car_start()
         started_ts = sec_since_boot()
+        started_seen = True
       for p in car_started_processes:
         if p == "loggerd" and logger_dead:
           kill_managed_process(p)
@@ -496,15 +502,17 @@ def manager_thread():
           start_managed_process(p)
     else:
       started_ts = None
+      if off_ts is None:
+        off_ts = sec_since_boot()
       logger_dead = False
       for p in car_started_processes:
         kill_managed_process(p)
 
-      # shutdown if the battery gets lower than 5%, we aren't running, and we are discharging
-      if msg.thermal.batteryPercent < 5 and msg.thermal.batteryStatus == "Discharging" and battery_was_high:
+      # shutdown if the battery gets lower than 3%, t's discharging, we aren't running for
+      # more than a minute but we were running
+      if msg.thermal.batteryPercent < 3 and msg.thermal.batteryStatus == "Discharging" and \
+         started_seen and (sec_since_boot() - off_ts) > 60:
         os.system('LD_LIBRARY_PATH="" svc power shutdown')
-      if msg.thermal.batteryPercent > 10:
-        battery_was_high = True
 
     # check the status of all processes, did any of them die?
     for p in running:
