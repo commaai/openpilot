@@ -21,7 +21,7 @@ def load_interfaces(x):
 # imports from directory selfdrive/car/<name>/
 interfaces = load_interfaces({
   'honda': [HONDA.CIVIC, HONDA.ACURA_ILX, HONDA.CRV, HONDA.ODYSSEY, HONDA.ACURA_RDX, HONDA.PILOT, HONDA.RIDGELINE],
-  'toyota': [TOYOTA.PRIUS, TOYOTA.RAV4, TOYOTA.RAV4H, TOYOTA.COROLLA, TOYOTA.LEXUS_RXH],
+  'toyota': [TOYOTA.PRIUS, TOYOTA.RAV4, TOYOTA.RAV4H, TOYOTA.COROLLA, TOYOTA.LEXUS_RXH, TOYOTA.HIGHLANDER],
   'gm': [GM.VOLT],
   'simulator2': ['simulator2'],
   'mock': ['mock']})

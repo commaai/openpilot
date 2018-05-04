@@ -106,6 +106,14 @@ class CarInterface(object):
       ret.steerKpV, ret.steerKiV = [[0.6], [0.1]]
       ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
       ret.steerRateCost = .8
+    elif candidate == CAR.HIGHLANDER:
+      ret.safetyParam = 100 # see conversion factor for STEER_TORQUE_EPS in dbc file
+      ret.wheelbase = 2.78
+      ret.steerRatio = 16.0 
+      ret.mass = 4244./2.205 + std_cargo  # mean between min and max
+      ret.steerKpV, ret.steerKiV = [[0.6], [0.05]]
+      ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
+      ret.steerRateCost = 1.
 
     ret.centerToFront = ret.wheelbase * 0.44
 
@@ -116,7 +124,7 @@ class CarInterface(object):
     # to a negative value, so it won't matter.
     if candidate in [CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH]: # rav4 hybrid can do stop and go
       ret.minEnableSpeed = -1.
-    elif candidate in [CAR.RAV4, CAR.COROLLA]: # TODO: hack ICE to do stop and go
+    elif candidate in [CAR.RAV4, CAR.COROLLA, CAR.HIGHLANDER]: # TODO: hack ICE to do stop and go
       ret.minEnableSpeed = 19. * CV.MPH_TO_MS
 
     centerToRear = ret.wheelbase - ret.centerToFront
