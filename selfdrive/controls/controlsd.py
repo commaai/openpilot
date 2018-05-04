@@ -22,7 +22,7 @@ from selfdrive.controls.lib.alertmanager import AlertManager
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 
 
-V_CRUISE_MAX = 144
+V_CRUISE_MAX = 180
 V_CRUISE_MIN = 8
 V_CRUISE_DELTA = 8
 V_CRUISE_ENABLE_MIN = 30
