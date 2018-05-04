@@ -70,7 +70,7 @@ def clear_locks(root):
 def is_on_wifi():
   # ConnectivityManager.getActiveNetworkInfo()
   result = subprocess.check_output(["service", "call", "connectivity", "2"]).strip().split("\n")
-  data = ''.join(''.join(w.decode("hex")[::-1] for w in l[14:49].split()) for l in result[1:]) 
+  data = ''.join(''.join(w.decode("hex")[::-1] for w in l[14:49].split()) for l in result[1:])
 
   return "\x00".join("WIFI") in data
 
@@ -219,16 +219,16 @@ class Uploader(object):
       os.unlink(fn) # delete the file
       success = True
     else:
-      cloudlog.info("uploading %r", fn)
+      cloudlog.info("not uploading %r", fn)
       # stat = self.killable_upload(key, fn)
-      stat = self.normal_upload(key, fn)
-      if stat is not None and stat.status_code in (200, 201):
-        cloudlog.event("upload_success", key=key, fn=fn, sz=sz)
-        os.unlink(fn) # delete the file
-        success = True
-      else:
-        cloudlog.event("upload_failed", stat=stat, exc=self.last_exc, key=key, fn=fn, sz=sz)
-        success = False
+      #stat = self.normal_upload(key, fn)
+      #if stat is not None and stat.status_code in (200, 201):
+      #  cloudlog.event("upload_success", key=key, fn=fn, sz=sz)
+      os.unlink(fn) # delete the file
+      success = True
+      #else:
+      #  cloudlog.event("upload_failed", stat=stat, exc=self.last_exc, key=key, fn=fn, sz=sz)
+      #  success = False
 
     self.clean_dirs()
 
