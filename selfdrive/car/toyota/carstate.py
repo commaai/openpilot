@@ -68,6 +68,8 @@ def get_can_parser(CP):
     ("BRAKE_LIGHTS_ACC", "ESP_CONTROL", 0),
     ("AUTO_HIGH_BEAM", "LIGHT_STALK", 0),
     ("BLINDSPOT","DEBUG", 0),
+    ("ACC_DISTANCE", "JOEL_ID", 0),
+    ("LANE_WARNING", "JOEL_ID", 0),
   ]
 
   checks = [
@@ -171,7 +173,7 @@ class CarState(object):
     self.steer_torque_motor = cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_EPS']
 
     self.user_brake = 0
-    self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED']
+    self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED'] - 11
     self.pcm_acc_status = cp.vl["PCM_CRUISE"]['CRUISE_STATE']
     self.gas_pressed = not cp.vl["PCM_CRUISE"]['GAS_RELEASED']
     self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]['LOW_SPEED_LOCKOUT'] == 2
@@ -180,3 +182,5 @@ class CarState(object):
       self.generic_toggle = cp.vl["AUTOPARK_STATUS"]['STATE'] != 0
     else:
       self.generic_toggle = bool(cp.vl["LIGHT_STALK"]['AUTO_HIGH_BEAM'])
+    self.lane_departure_toggle = bool(cp.vl["JOEL_ID"]['LANE_WARNING'])
+    self.distance_toggle = bool(cp.vl["JOEL_ID"]['ACC_DISTANCE'])
