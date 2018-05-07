@@ -1,3 +1,5 @@
+![logotype_horizontcal_blue](https://user-images.githubusercontent.com/34600369/39725803-e7768f50-5244-11e8-9e12-d76a8ebe2fd9.png)
+
 Welcome to openpilot
 ======
 
