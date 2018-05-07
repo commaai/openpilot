@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import os
 import struct
+import math
 
 import zmq
 import numpy as np
@@ -28,6 +29,7 @@ CP = CarInterface.get_params(CAR.CIVIC, {0x201})
 
 def car_plant(pos, speed, grade, gas, brake):
   # vehicle parameters
+  wheelbase = 2.70002
   mass = 1700
   aero_cd = 0.3
   force_peak = mass*3.
@@ -36,7 +38,7 @@ def car_plant(pos, speed, grade, gas, brake):
   speed_base = power_peak/force_peak
   rolling_res = 0.01
   g = 9.81
-  #frontal_area = 2.2  TODO: use it!
+  frontal_area = 2.2
   air_density = 1.225
   gas_to_peak_linear_slope = 3.33
   brake_to_peak_linear_slope = 0.3
@@ -56,12 +58,15 @@ def car_plant(pos, speed, grade, gas, brake):
   creep_accel = np.interp(speed, creep_accel_bp, creep_accel_v)
   force_creep = creep_accel * mass
 
-  force_resistance = -(rolling_res * mass * g + 0.5 * speed**2 * aero_cd * air_density)
+  force_resistance = -(rolling_res * mass * g + 0.5 * speed**2 * aero_cd * air_density * frontal_area)
   force = force_gas + force_brake + force_resistance + force_grade + force_creep
   acceleration = force / mass
 
   # TODO: lateral model
-  return speed, acceleration
+  turn_radius = wheelbase / math.sin(math.pi/180 * steering_angle)
+  lateral_acceleration = speed**2/turn_radius
+
+  return speed, acceleration, lateral_acceleration
 
 def get_car_can_parser():
   dbc_f = 'honda_civic_touring_2016_can_generated.dbc'
@@ -185,16 +190,16 @@ class Plant(object):
 
     distance_lead = self.distance_lead_prev + v_lead * self.ts
 
+    # ******** lateral ********
+    self.angle_steer -= (steer_torque/10.0) * self.ts
+
     # ******** run the car ********
-    speed, acceleration = car_plant(self.distance_prev, self.speed_prev, grade, gas, brake)
+    speed, acceleration, lateral_acceleration = car_plant(self.distance_prev, self.speed_prev, grade, gas, brake)
     distance = self.distance_prev + speed * self.ts
     speed = self.speed_prev + self.ts * acceleration
     if speed <= 0:
       speed = 0
       acceleration = 0
-
-    # ******** lateral ********
-    self.angle_steer -= (steer_torque/10.0) * self.ts
 
     # *** radar model ***
     if self.lead_relevancy:
@@ -207,7 +212,7 @@ class Plant(object):
 
     # print at 5hz
     if (self.rk.frame%(self.rate/5)) == 0:
-      print "%6.2f m  %6.2f m/s  %6.2f m/s2   %.2f ang   gas: %.2f  brake: %.2f  steer: %5.2f     lead_rel: %6.2f m  %6.2f m/s" % (distance, speed, acceleration, self.angle_steer, gas, brake, steer_torque, d_rel, v_rel)
+      print "%6.2f m  %6.2f m/s  %6.2f m/s2 %6.2f m/s2  %.2f ang   gas: %.2f  brake: %.2f  steer: %5.2f     lead_rel: %6.2f m  %6.2f m/s" % (distance, speed, acceleration, lateral_acceleration, self.angle_steer, gas, brake, steer_torque, d_rel, v_rel)
 
     # ******** publish the car ********
     # TODO: the order is this list should not matter, but currently everytime we change carstate we break this test. Fix it!
