@@ -145,7 +145,7 @@ def get_can_signals(CP):
     signals += [("MAIN_ON", "SCM_BUTTONS", 0)]
 
   # add gas interceptor reading if we are using it
-  if CP.enableGas:
+  if CP.enableGasInterceptor:
     signals.append(("INTERCEPTOR_GAS", "GAS_SENSOR", 0))
     checks.append(("GAS_SENSOR", 50))
 
@@ -159,7 +159,6 @@ def get_can_parser(CP):
 
 class CarState(object):
   def __init__(self, CP):
-    self.brake_only = CP.enableCruise
     self.CP = CP
 
     self.user_gas, self.user_gas_pressed = 0., 0
@@ -233,7 +232,7 @@ class CarState(object):
 
     # this is a hack for the interceptor. This is now only used in the simulation
     # TODO: Replace tests by toyota so this can go away
-    if self.CP.enableGas:
+    if self.CP.enableGasInterceptor:
       self.user_gas = cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS']
       self.user_gas_pressed = self.user_gas > 0 # this works because interceptor read < 0 when pedal position is 0. Once calibrated, this will change
 
@@ -300,8 +299,7 @@ if __name__ == '__main__':
   class CarParams(object):
     def __init__(self):
       self.carFingerprint = "HONDA CIVIC 2016 TOURING"
-      self.enableGas = 0
-      self.enableCruise = 0
+      self.enableGasInterceptor = 0
   CP = CarParams()
   CS = CarState(CP)
 
