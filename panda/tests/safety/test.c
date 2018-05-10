@@ -106,3 +106,13 @@ void init_tests_honda(void){
   brake_prev = 0;
   gas_prev = 0;
 }
+
+void init_tests_chrysler(void){
+  torque_meas.min = 0;
+  torque_meas.max = 0;
+  desired_torque_last = 0;
+  rt_torque_last = 0;
+  ts_last = 0;
+  set_timer(0);
+}
+
