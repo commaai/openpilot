@@ -88,7 +88,9 @@ struct MessageState {
         tmp -= (tmp >> (sig.b2-1)) ? (1ULL << sig.b2) : 0; //signed
       }
 
-      DEBUG("parse %X %s -> %lld\n", address, sig.name, tmp);
+      if (address == 0x118) {
+        INFO("parse %X %s -> %lld\n", address, sig.name, tmp);
+      }
 
       if (sig.type == SignalType::HONDA_CHECKSUM) {
         if (honda_checksum(address, dat, size) != tmp) {
