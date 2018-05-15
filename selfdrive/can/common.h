@@ -48,6 +48,7 @@ struct Signal {
   int b1, b2, bo;
   bool is_signed;
   double factor, offset;
+  bool is_little_endian;
   SignalType type;
 };
 

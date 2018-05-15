@@ -64,6 +64,17 @@ uint64_t read_u64_be(const uint8_t* v) {
           | (uint64_t)v[7]);
 }
 
+uint64_t read_u64_le(const uint8_t* v) {
+  return ((uint64_t)v[0] 
+          | ((uint64_t)v[1] << 8)
+          | ((uint64_t)v[2] << 16)
+          | ((uint64_t)v[3] << 24)
+          | ((uint64_t)v[4] << 32)
+          | ((uint64_t)v[5] << 40)
+          | ((uint64_t)v[6] << 48)
+          | ((uint64_t)v[7] << 56));
+}
+
 
 struct MessageState {
   uint32_t address;
@@ -82,13 +93,24 @@ struct MessageState {
   bool parse(uint64_t sec, uint16_t ts_, uint64_t dat) {
     for (int i=0; i < parse_sigs.size(); i++) {
       auto& sig = parse_sigs[i];
+      int64_t tmp;
 
-      int64_t tmp = (dat >> sig.bo) & ((1ULL << sig.b2)-1);
+      if (sig.is_little_endian){
+        tmp = (dat >> sig.b1) & ((1ULL << sig.b2)-1);  
+      } else {
+        tmp = (dat >> sig.bo) & ((1ULL << sig.b2)-1);
+      }
+      
       if (sig.is_signed) {
         tmp -= (tmp >> (sig.b2-1)) ? (1ULL << sig.b2) : 0; //signed
       }
 
-      DEBUG("parse %X %s -> %lld\n", address, sig.name, tmp);
+      // Testing both little and big endian signals (Tesla messages)
+      //if ( (address == 0x318) || (address == 0x118)) {
+      //  INFO("parse %X %s -> %f, dat -> %lX\n", address, sig.name, tmp * sig.factor + sig.offset, dat);
+      //}
+
+			DEBUG("parse %X %s -> %lld\n", address, sig.name, tmp);
 
       if (sig.type == SignalType::HONDA_CHECKSUM) {
         if (honda_checksum(address, dat, size) != tmp) {
@@ -220,6 +242,7 @@ class CANParser {
 
   void UpdateCans(uint64_t sec, const capnp::List<cereal::CanData>::Reader& cans) {
       int msg_count = cans.size();
+      uint64_t p;
 
       DEBUG("got %d messages\n", msg_count);
 
@@ -240,7 +263,13 @@ class CANParser {
         uint8_t dat[8] = {0};
         memcpy(dat, cmsg.getDat().begin(), cmsg.getDat().size());
 
-        uint64_t p = read_u64_be(dat);
+        // Assumes all signals in the message are of the same type (little or big endian)
+        auto& sig = message_states[cmsg.getAddress()].parse_sigs[0];
+        if (sig.is_little_endian) {
+            p = read_u64_le(dat);
+        } else {
+            p = read_u64_be(dat);
+        }
 
         DEBUG("  proc %X: %llx\n", cmsg.getAddress(), p);
 
