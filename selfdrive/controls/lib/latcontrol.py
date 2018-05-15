@@ -50,6 +50,7 @@ class LatControl(object):
     self.angle_steers_des_mpc = 0.0
     self.angle_steers_des_prev = 0.0
     self.angle_steers_des_time = 0.0
+    self.blindspot_blink_counter_left_check = 0
 
   def reset(self):
     self.pid.reset()
@@ -75,8 +76,7 @@ class LatControl(object):
       self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
                           l_poly, r_poly, p_poly,
                           PL.PP.l_prob, PL.PP.r_prob, PL.PP.p_prob, curvature_factor, v_ego_mpc, PL.PP.lane_width)
-      if blindspot:
-        print "blindpot_on=", blindspot
+
       # reset to current steer angle if not active or overriding
       if active:
         delta_desired = self.mpc_solution[0].delta[1]
@@ -114,6 +114,12 @@ class LatControl(object):
       self.pid.neg_limit = -steers_max
       steer_feedforward = self.angle_steers_des * v_ego**2  # proportional to realigning tire momentum (~ lateral accel)
       output_steer = self.pid.update(self.angle_steers_des, angle_steers, check_saturation=(v_ego > 10), override=steer_override, feedforward=steer_feedforward, speed=v_ego)
-
+      
+      if blindspot:
+        self.blindspot_blink_counter_left_check += 1
+        if self.blindspot_blink_counter_left_check > 100:
+          print "output_steer= ", output_steer, "self.angle_steers_des= ", float(self.angle_steers_des)
+      else:
+        self.blindspot_blink_counter_left_check = 0
     self.sat_flag = self.pid.saturated
     return output_steer, float(self.angle_steers_des)
