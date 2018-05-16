@@ -78,6 +78,8 @@ Community WIP Cars
 
 - [Classic Tesla Model S (pre-AP)](https://github.com/commaai/openpilot/pull/145)
 
+- Chrysler Pacifica Hybrid 2017
+
 Directory structure
 ------
 
