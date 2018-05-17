@@ -13,9 +13,9 @@ QPOASES_FLAGS = -I$(PHONELIBS)/qpoases -I$(PHONELIBS)/qpoases/INCLUDE -I$(PHONEL
 ACADO_FLAGS = -I$(PHONELIBS)/acado/include -I$(PHONELIBS)/acado/include/acado
 
 ifeq ($(UNAME_M),aarch64)
-ACADO_LIBS := -L $(PHONELIBS)/acado/aarch64/lib -l:libacado_toolkit.a -l:libacado_casadi.a -l:libacado_csparse.a
+ACADO_LIBS := -L $(PHONELIBS)/acado/aarch64/lib -l:libacado_toolkit_s -l:libacado_casadi.a -l:libacado_csparse.a
 else
-ACADO_LIBS := -L $(PHONELIBS)/acado/x64/lib -l:libacado_toolkit.a -l:libacado_casadi.a -l:libacado_csparse.a
+ACADO_LIBS := -L $(PHONELIBS)/acado/x64/lib -l:libacado_toolkit_s -l:libacado_casadi.a -l:libacado_csparse.a
 endif
 
 OBJS = \
