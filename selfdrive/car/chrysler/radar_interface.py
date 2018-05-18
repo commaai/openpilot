@@ -46,7 +46,7 @@ class RadarInterface(object):
   def __init__(self):
     # radar
     self.pts = {}
-    self.validCnt = {key: 0 for key in RADAR_MSGS}
+    self.validCnt = {key: 0 for key in RADAR_MSGS_C}
     self.track_id = 0
 
     self.delay = 0.0  # Delay of radar  #TUNE

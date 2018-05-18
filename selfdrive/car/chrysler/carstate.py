@@ -89,9 +89,9 @@ class CarState(object):
     self.seatbelt = True  # TODO
 
     self.brake_pressed = cp.vl["BRAKE_2"]['BRAKE_PRESSED_2'] == 5 # human-only
-    self.pedal_gas = cp.vl["ACCEL_PEDAL"]['ACCEL_PEDAL']
+    self.pedal_gas = cp.vl["ACCEL_PEDAL_MSG"]['ACCEL_PEDAL']
     self.car_gas = self.pedal_gas
-    self.esp_disabled = cp.vl["ESP_CONTROL"]['TC_DISABLED']
+    # self.esp_disabled = cp.vl["ESP_CONTROL"]['TC_DISABLED']
 
     self.v_wheel = (cp.vl['SPEED_1']['SPEED_LEFT'] + cp.vl['SPEED_1']['SPEED_RIGHT']) / 2.
 
@@ -106,7 +106,7 @@ class CarState(object):
     self.standstill = not self.v_wheel > 0.001
 
     self.angle_steers = cp.vl["STEERING"]['STEER_ANGLE']  # TODO verify units op wants.
-    self.angle_steers_rate = cp.vl["STEERING"]['STEER_RATE']  # TODO verify units op wants.
+    self.angle_steers_rate = cp.vl["STEERING"]['STEERING_RATE']  # TODO verify units op wants.
     self.gear_shifter = parse_gear_shifter(cp.vl['GEAR']['PRNDL'])
     self.main_on = cp.vl["ACC_2"]['ACC_STATUS_2'] == 7  # ACC is green.
     self.left_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 1
