@@ -5,7 +5,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.chrysler.carstate import CarState, get_can_parser
-# from selfdrive.car.toyota.values import ECU, check_ecu_msgs
+from selfdrive.car.chrysler.values import ECU, check_ecu_msgs
 
 try:
   from selfdrive.car.chrysler.carcontroller import CarController
@@ -113,7 +113,7 @@ class CarInterface(object):
     ret.brakeMaxV = [1., 0.8]
 
     ret.enableCamera = not check_ecu_msgs(fingerprint, candidate, ECU.CAM)
-    ret.enableDsu = not check_ecu_msgs(fingerprint, candidate, ECU.DSU)
+    ret.enableDsu = False #not check_ecu_msgs(fingerprint, candidate, ECU.DSU)
     ret.enableApgs = False #not check_ecu_msgs(fingerprint, candidate, ECU.APGS)
     print "ECU Camera Simulated: ", ret.enableCamera
     print "ECU DSU Simulated: ", ret.enableDsu

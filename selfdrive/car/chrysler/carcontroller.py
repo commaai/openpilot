@@ -4,7 +4,7 @@ from selfdrive.car.toyota.toyotacan import make_can_msg, create_video_target,\
                                            create_steer_command, create_ui_command, \
                                            create_ipas_steer_command, create_accel_command, \
                                            create_fcw_command
-# from selfdrive.car.toyota.values import ECU, STATIC_MSGS
+from selfdrive.car.chrysler.values import ECU, STATIC_MSGS
 from selfdrive.can.packer import CANPacker
 
 # Accel limits
@@ -90,8 +90,8 @@ class CarController(object):
 
     self.fake_ecus = set()
     if enable_camera: self.fake_ecus.add(ECU.CAM)
-    if enable_dsu: self.fake_ecus.add(ECU.DSU)
-    if enable_apg: self.fake_ecus.add(ECU.APGS)
+    #if enable_dsu: self.fake_ecus.add(ECU.DSU)
+    #if enable_apg: self.fake_ecus.add(ECU.APGS)
 
     self.packer = CANPacker(dbc_name)
 
