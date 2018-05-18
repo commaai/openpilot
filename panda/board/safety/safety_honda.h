@@ -8,7 +8,7 @@
 //      brake > 0mph
 
 // these are set in the Honda safety hooks...this is the wrong place
-const int gas_interceptor_threshold = 328;
+const int gas_interceptor_threshold = 800;
 int gas_interceptor_detected = 0;
 int brake_prev = 0;
 int gas_prev = 0;
