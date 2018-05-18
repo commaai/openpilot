@@ -118,7 +118,7 @@ class LatControl(object):
       if blindspot:
         self.blindspot_blink_counter_left_check += 1
         if self.blindspot_blink_counter_left_check > 100:
-          print "output_steer= ", output_steer, "self.angle_steers_des= ", float(self.angle_steers_des)
+          print "debug: output_steer= ", output_steer, "self.angle_steers_des= ", float(self.angle_steers_des)
       else:
         self.blindspot_blink_counter_left_check = 0
     self.sat_flag = self.pid.saturated
