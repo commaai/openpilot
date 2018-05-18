@@ -27,25 +27,26 @@ def get_can_parser(CP):
     ("DOOR_OPEN_RL", "DOORS", 0),
     ("DOOR_OPEN_RR", "DOORS", 0),
     ("BRAKE_PRESSED_2", "BRAKE_2", 0),
-    ("ACCEL_PEDAL", "ACCEL_PEDAL", 0),
+    ("ACCEL_PEDAL", "ACCEL_PEDAL_MSG", 0),
     ("SPEED_LEFT", "SPEED_1", 0),
     ("SPEED_RIGHT", "SPEED_1", 0),
     ("STEER_ANGLE", "STEERING", 0),
-    ("STEER_RATE", "STEERING", 0),
+    ("STEERING_RATE", "STEERING", 0),
     ("TURN_SIGNALS", "STEERING_LEVERS", 0),
     ("ACC_STATUS_2", "ACC_2", 0),
     ("HIGH_BEAM_FLASH", "STEERING_LEVERS", 0),
   ]
 
   checks = [
-    ("BRAKE_MODULE", 40),
-    ("GAS_PEDAL", 33),
-    ("WHEEL_SPEEDS", 80),
-    ("STEER_ANGLE_SENSOR", 80),
-    ("PCM_CRUISE", 33),
-    ("PCM_CRUISE_2", 33),
-    ("STEER_TORQUE_SENSOR", 50),
-    ("EPS_STATUS", 25),
+    # TODO what are checks used for?
+    # ("BRAKE_MODULE", 40),
+    # ("GAS_PEDAL", 33),
+    # ("WHEEL_SPEEDS", 80),
+    # ("STEER_ANGLE_SENSOR", 80),
+    # ("PCM_CRUISE", 33),
+    # ("PCM_CRUISE_2", 33),
+    # ("STEER_TORQUE_SENSOR", 50),
+    # ("EPS_STATUS", 25),
   ]
 
   dbc_f = 'chrysler_pacifica_2017_hybrid.dbc'
