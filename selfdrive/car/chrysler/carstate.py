@@ -35,6 +35,7 @@ def get_can_parser(CP):
     ("TURN_SIGNALS", "STEERING_LEVERS", 0),
     ("ACC_STATUS_2", "ACC_2", 0),
     ("HIGH_BEAM_FLASH", "STEERING_LEVERS", 0),
+    ("ACC_SPEED_CONFIG_KPH", "DASHBOARD", 0),
   ]
 
   checks = [
@@ -91,7 +92,7 @@ class CarState(object):
     self.brake_pressed = cp.vl["BRAKE_2"]['BRAKE_PRESSED_2'] == 5 # human-only
     self.pedal_gas = cp.vl["ACCEL_PEDAL_MSG"]['ACCEL_PEDAL']
     self.car_gas = self.pedal_gas
-    # self.esp_disabled = cp.vl["ESP_CONTROL"]['TC_DISABLED']
+    self.esp_disabled = False # cp.vl["ESP_CONTROL"]['TC_DISABLED']  # TODO
 
     self.v_wheel = (cp.vl['SPEED_1']['SPEED_LEFT'] + cp.vl['SPEED_1']['SPEED_RIGHT']) / 2.
 
@@ -114,20 +115,20 @@ class CarState(object):
 
     # TODO continue here with these values and see which ones we need.
     # # we could use the override bit from dbc, but it's triggered at too high torque values
-    # self.steer_override = abs(cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_DRIVER']) > 100
+    self.steer_override = 0  # abs(cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_DRIVER']) > 100  # TODO
     # # 2 is standby, 10 is active. TODO: check that everything else is really a faulty state
     # self.steer_state = cp.vl["EPS_STATUS"]['LKA_STATE']
-    # self.steer_error = cp.vl["EPS_STATUS"]['LKA_STATE'] not in [1, 5]
+    self.steer_error = False # cp.vl["EPS_STATUS"]['LKA_STATE'] not in [1, 5] # TODO
     # self.ipas_active = cp.vl['EPS_STATUS']['IPAS_STATE'] == 3
     # self.brake_error = 0
-    # self.steer_torque_driver = cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_DRIVER']
+    self.steer_torque_driver = 0 # cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_DRIVER'] # TODO
     # self.steer_torque_motor = cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_EPS']
 
-    # self.user_brake = 0
-    # self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED']
-    # self.pcm_acc_status = cp.vl["PCM_CRUISE"]['CRUISE_STATE']
+    self.user_brake = 0  # TODO perhaps just use brake_pressed
+    self.v_cruise_pcm = cp.vl["DASHBOARD"]['ACC_SPEED_CONFIG_KPH']
+    self.pcm_acc_status = self.main_on # cp.vl["PCM_CRUISE"]['CRUISE_STATE']
     # self.gas_pressed = not cp.vl["PCM_CRUISE"]['GAS_RELEASED']
-    # self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]['LOW_SPEED_LOCKOUT'] == 2
-    # self.brake_lights = bool(cp.vl["ESP_CONTROL"]['BRAKE_LIGHTS_ACC'] or self.brake_pressed)
+    self.low_speed_lockout = False  # cp.vl["PCM_CRUISE_2"]['LOW_SPEED_LOCKOUT'] == 2 # TODO
+    self.brake_lights = self.brake_pressed # bool(cp.vl["ESP_CONTROL"]['BRAKE_LIGHTS_ACC'] or self.brake_pressed)  # TODO
 
     self.generic_toggle = bool(cp.vl["STEERING_LEVERS"]['HIGH_BEAM_FLASH'])
