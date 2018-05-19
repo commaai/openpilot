@@ -68,8 +68,8 @@ def get_can_parser(CP):
     ("BRAKE_LIGHTS_ACC", "ESP_CONTROL", 0),
     ("AUTO_HIGH_BEAM", "LIGHT_STALK", 0),
     ("BLINDSPOT","DEBUG", 0),
-    ("ACC_DISTANCE", "JOEL_ID", 0),
-    ("LANE_WARNING", "JOEL_ID", 0),
+    #("ACC_DISTANCE", "JOEL_ID", 0),
+    #("LANE_WARNING", "JOEL_ID", 0),
   ]
 
   checks = [
