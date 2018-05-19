@@ -37,11 +37,11 @@ BU_: XXX
 
 
 BO_ 258 STEERING: 8 XXX
- SG_ STEER_ANGLE : 4|13@0+ (0.3187251,-1307.888) [-360|360] "deg" XXX
  SG_ INCREMENTING_STEERING : 55|4@0+ (1,0) [0|15] "" XXX
  SG_ CHECKSUM_STEERING : 63|8@0+ (1,0) [0|255] "" XXX
  SG_ UNKNOWN_STEERING : 48|3@1+ (1,0) [0|15] "" XXX
  SG_ STEERING_RATE : 20|13@0+ (0.3187251,-1305.498) [0|8191] "deg/s" XXX
+ SG_ STEER_ANGLE : 4|13@0+ (0.3187251,-1307.888) [-360|360] "deg" XXX
 
 BO_ 514 SPEED_1: 4 XXX
  SG_ SPEED_LEFT : 7|16@0+ (0.0045,0) [0|65535] "m/s" XXX
@@ -91,14 +91,14 @@ BO_ 344 WHEEL_SPEEDS: 8 XXX
  SG_ WHEEL_SPEED_FL : 3|12@0+ (1,0) [0|65535] "" XXX
 
 BO_ 792 STEERING_LEVERS: 8 XXX
+ SG_ HIGH_BEAM_PUSHED_IN : 2|1@0+ (1,0) [0|3] "" XXX
  SG_ TURN_SIGNALS : 1|2@0+ (1,0) [0|3] "" XXX
- SG_ HIGH_BEAM_PUSHED_IN : 2|1@1+ (1,0) [0|3] "" XXX
- SG_ HIGH_BEAM_FLASH : 3|1@1+ (1,0) [0|3] "" XXX
+ SG_ HIGH_BEAM_FLASH : 3|1@0+ (1,0) [0|3] "" XXX
 
 BO_ 264 ACCEL_PEDAL_MSG: 8 XXX
  SG_ INCREMENTING_ACCEL_PEDAL : 55|4@0+ (1,0) [0|15] "" XXX
  SG_ CHECKSUM_ACCEL_PEDAL : 63|8@0+ (1,0) [0|255] "" XXX
- SG_ ACCEL_PEDAL : 35|1@1+ (1,0) [0|1] "" XXX
+ SG_ ACCEL_PEDAL : 35|1@0+ (1,0) [0|1] "" XXX
 
 BO_ 464 SEATBELT_STATUS: 8 XXX
  SG_ SEATBELT_DRIVER_UNLATCHED : 13|1@0+ (1,0) [0|1] "" XXX
@@ -291,11 +291,11 @@ BO_ 324 SPEED_2: 8 XXX
  SG_ SPEED_2 : 31|16@0+ (0.01,0) [0|255] "m/s" XXX
 
 BO_ 501 DASHBOARD: 8 XXX
- SG_ SPEED_DIGITAL : 56|8@1+ (1,0) [0|255] "mph" XXX
- SG_ ACC_DISTANCE_CONFIG_2 : 40|2@1+ (1,0) [0|3] "" XXX
- SG_ ACC_DISTANCE_CONFIG_1 : 0|2@1+ (1,0) [0|3] "" XXX
- SG_ ACC_SPEED_CONFIG_KPH : 8|8@1+ (1,0) [0|3] "km/h" XXX
- SG_ ACC_SPEED_CONFIG_MPH : 16|8@1+ (1,0) [0|3] "mph" XXX
+ SG_ ACC_SPEED_CONFIG_KPH : 15|8@0+ (1,0) [0|3] "km/h" XXX
+ SG_ ACC_SPEED_CONFIG_MPH : 23|8@0+ (1,0) [0|3] "mph" XXX
+ SG_ ACC_DISTANCE_CONFIG_1 : 1|2@0+ (1,0) [0|3] "" XXX
+ SG_ ACC_DISTANCE_CONFIG_2 : 41|2@0+ (1,0) [0|3] "" XXX
+ SG_ SPEED_DIGITAL : 63|8@0+ (1,0) [0|255] "mph" XXX
 
 BO_ 639 NEW_MSG_27f: 8 XXX
  SG_ INCREASING : 40|8@1+ (1,0) [0|255] "" XXX
@@ -327,12 +327,12 @@ BO_ 941 NEW_MSG_3ad: 8 XXX
  SG_ INCREASING_2 : 56|8@1+ (1,0) [0|255] "" XXX
 
 BO_ 500 ACC_2: 8 XXX
- SG_ BRAKE_BOOL_1 : 36|1@0+ (1,0) [0|3] "" XXX
- SG_ BRAKE_MAYBE : 18|11@0+ (1,0) [0|255] "" XXX
- SG_ ACC_STATUS_1 : 7|3@0+ (1,0) [0|255] "" XXX
- SG_ ACC_STATUS_2 : 19|3@1+ (1,0) [0|255] "" XXX
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
  SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
+ SG_ ACC_STATUS_1 : 7|3@0+ (1,0) [0|255] "" XXX
+ SG_ BRAKE_MAYBE : 18|11@0+ (1,0) [0|255] "" XXX
+ SG_ ACC_STATUS_2 : 21|3@0+ (1,0) [0|255] "" XXX
+ SG_ BRAKE_BOOL_1 : 36|1@0+ (1,0) [0|3] "" XXX
 
 BO_ 625 ACC_1: 8 XXX
  SG_ SPEED : 24|8@1+ (1,0) [0|255] "km/h" XXX
@@ -363,8 +363,8 @@ BO_ 512 NEW_MSG_200: 8 XXX
 
 
 
-CM_ SG_ 258 STEER_ANGLE "positive is left (counter-clockwise)";
 CM_ SG_ 258 UNKNOWN_STEERING "never goes above 4. see if human-applied torque";
+CM_ SG_ 258 STEER_ANGLE "positive is left (counter-clockwise)";
 CM_ SG_ 514 SPEED_LEFT "TODO find upper limit";
 CM_ SG_ 653 BRAKE_PRESSURE "max seems to be 148";
 CM_ SG_ 820 TURN_LIGHT_LEFT "oscillates with the light blinking";
@@ -414,10 +414,10 @@ CM_ SG_ 639 INCREASING "perhaps number of seconds divided by two for this drive"
 CM_ SG_ 848 INCREASING_LSB "lower part of time counter";
 CM_ SG_ 848 INCREASING_MSB "upper part of time counter";
 CM_ SG_ 908 INCREASING_MSB "time based";
-CM_ SG_ 500 BRAKE_BOOL_1 "set to 1 when ACC decel. 0 on non-ACC and accel.";
-CM_ SG_ 500 BRAKE_MAYBE "2046 in non-ACC and non-decel. Signal on deceleration. 818 for already stopped break.";
 CM_ SG_ 500 ACC_STATUS_1 "2 briefly (9 packets) when ACC goes to green, 1 help when ACC coming to a stop and at a stop";
+CM_ SG_ 500 BRAKE_MAYBE "2046 in non-ACC and non-decel. Signal on deceleration. 818 for already stopped break.";
 CM_ SG_ 500 ACC_STATUS_2 "set to 1 in non-ACC, 3 when ACC enabled (white icon), and 7 when ACC in use (green icon)";
+CM_ SG_ 500 BRAKE_BOOL_1 "set to 1 when ACC decel. 0 on non-ACC and accel.";
 CM_ SG_ 625 SPEED "zero on non-acc drives";
 CM_ SG_ 625 ACCEL_PERHAPS "set to 7767 on non-ACC drives. ACC drive 40k is constant speed, 42k is accelerating";
 CM_ SG_ 268 BRAKE_PERHAPS "triggers only on ACC braking";
