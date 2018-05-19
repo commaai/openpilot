@@ -11,6 +11,7 @@ import selfdrive.messaging as messaging
 RADAR_MSGS_C = range(0x2c2, 0x2d4+2, 2)  # c_ messages 706,...,724
 RADAR_MSGS_D = range(0x2a2, 0x2b4+2, 2)  # d_ messages
 LAST_MSG = max(RADAR_MSGS_C + RADAR_MSGS_D)
+NUMBER_MSGS = len(RADAR_MSGS_C) + len(RADAR_MSGS_D)
 
 def _create_radard_can_parser():
   dbc_f = 'chrysler_pacifica_2017_hybrid_private_fusion.dbc'
@@ -42,30 +43,29 @@ def _create_radard_can_parser():
 
   return CANParser(os.path.splitext(dbc_f)[0], signals, checks, 1)
 
+def _address_to_track(address):
+  if address in RADAR_MSGS_C:
+    return (address - RADAR_MSGS_C[0]) / 2
+  if address in RADAR_MSGS_D:
+    return (address - RADAR_MSGS_D[0]) / 2
+  raise ValueError("radar received unexpected address %d" % address)
+
 class RadarInterface(object):
   def __init__(self):
-    # radar
     self.pts = {}
-    self.validCnt = {key: 0 for key in RADAR_MSGS_C}
-    self.track_id = 0
-
     self.delay = 0.0  # Delay of radar  #TUNE
-
-    # Nidec
     self.rcp = _create_radard_can_parser()
-
     context = zmq.Context()
     self.logcan = messaging.sub_sock(context, service_list['can'].port)
 
   def update(self):
     canMonoTimes = []
 
-    updated_messages = set()
+    updated_messages = set()  # set of message IDs (sig_addresses) we've seen
     while 1:
       tm = int(sec_since_boot() * 1e9)
       updated_messages.update(self.rcp.update(tm, True))
-      # TODO: do not hardcode last msg
-      if LAST_MSG in updated_messages:
+      if len(updated_messages) == NUMBER_MSGS:  # got at least one of each message
         break
 
     ret = car.RadarState.new_message()
@@ -75,38 +75,27 @@ class RadarInterface(object):
     ret.errors = errors
     ret.canMonoTimes = canMonoTimes
 
-    for ii in updated_messages:
+    for ii in updated_messages:  # ii should be the message ID as a number
       cpt = self.rcp.vl[ii]
+      trackId = _address_to_track(ii)
 
-      if cpt['LONG_DIST'] == 0:
-        self.validCnt[ii] = 0    # reset counter, new track.
+      if trackId not in self.pts:
+        self.pts[trackId] = car.RadarState.RadarPoint.new_message()
+        self.pts[trackId].trackId = trackId
+        self.pts[trackId].aRel = float('nan')
+        self.pts[trackId].yvRel = float('nan')
+        self.pts[trackId].measured = True
 
-      if cpt['LONG_DIST'] > 0:
-        self.validCnt[ii] += 1
-      else:
-        self.validCnt[ii] = max(self.validCnt[ii] -1, 0)
-      #print ii, self.validCnt[ii], cpt['VALID'], cpt['LONG_DIST'], cpt['LAT_DIST']
-
-      # radar point only valid if there have been enough valid measurements
-      if self.validCnt[ii] > 0:
-        if ii not in self.pts:
-          self.pts[ii] = car.RadarState.RadarPoint.new_message()
-          # TODO instead get trackId from the c_* d_* message ID.
-          self.pts[ii].trackId = self.track_id
-          self.track_id += 1
-        self.pts[ii].dRel = cpt['LONG_DIST']  # from front of car
+      if 'LONG_DIST' in cpt:  # c_* message
+        self.pts[trackId].dRel = cpt['LONG_DIST']  # from front of car
         # our lat_dist is positive to the right in car's frame.
         # TODO what does yRel want?
-        self.pts[ii].yRel = cpt['LAT_DIST']  # in car frame's y axis, left is positive
-        self.pts[ii].vRel = cpt['REL_SPEED']
-        self.pts[ii].aRel = float('nan')
-        self.pts[ii].yvRel = float('nan')
-        self.pts[ii].measured = True
-      else:
-        if ii in self.pts:
-          del self.pts[ii]
+        self.pts[trackId].yRel = cpt['LAT_DIST']  # in car frame's y axis, left is positive
+      else:  # d_* message
+        self.pts[trackId].vRel = cpt['REL_SPEED']
 
-    ret.points = self.pts.values()
+    # We want a list, not a dictionary. Filter out LONG_DIST==0 because that means it's not valid.
+    ret.points = [x for x in self.pts.values() if x.dRel != 0]
     return ret
 
 if __name__ == "__main__":
