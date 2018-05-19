@@ -162,7 +162,7 @@ class CarInterface(object):
 
     # brake pedal
     ret.brake = self.CS.user_brake
-    ret.brakePressed = self.CS.brake_pressed != 0
+    ret.brakePressed = self.CS.brake_pressed
     ret.brakeLights = self.CS.brake_lights
 
     # steering wheel
