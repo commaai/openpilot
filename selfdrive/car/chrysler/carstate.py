@@ -30,6 +30,10 @@ def get_can_parser(CP):
     ("ACCEL_PEDAL", "ACCEL_PEDAL_MSG", 0),
     ("SPEED_LEFT", "SPEED_1", 0),
     ("SPEED_RIGHT", "SPEED_1", 0),
+    ("WHEEL_SPEED_FL", "WHEEL_SPEEDS", 0),
+    ("WHEEL_SPEED_RR", "WHEEL_SPEEDS", 0),
+    ("WHEEL_SPEED_RL", "WHEEL_SPEEDS", 0),
+    ("WHEEL_SPEED_FR", "WHEEL_SPEEDS", 0),
     ("STEER_ANGLE", "STEERING", 0),
     ("STEERING_RATE", "STEERING", 0),
     ("TURN_SIGNALS", "STEERING_LEVERS", 0),
@@ -94,6 +98,10 @@ class CarState(object):
     self.car_gas = self.pedal_gas
     self.esp_disabled = False # cp.vl["ESP_CONTROL"]['TC_DISABLED']  # TODO
 
+    self.v_wheel_fl = cp.vl['WHEEL_SPEEDS']['WHEEL_SPEED_FL']
+    self.v_wheel_rr = cp.vl['WHEEL_SPEEDS']['WHEEL_SPEED_RR']
+    self.v_wheel_rl = cp.vl['WHEEL_SPEEDS']['WHEEL_SPEED_RL']
+    self.v_wheel_fr = cp.vl['WHEEL_SPEEDS']['WHEEL_SPEED_FR']
     self.v_wheel = (cp.vl['SPEED_1']['SPEED_LEFT'] + cp.vl['SPEED_1']['SPEED_RIGHT']) / 2.
 
     # Kalman filter
