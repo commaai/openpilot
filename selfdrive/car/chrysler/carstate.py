@@ -115,7 +115,7 @@ class CarState(object):
 
     # TODO continue here with these values and see which ones we need.
     # # we could use the override bit from dbc, but it's triggered at too high torque values
-    self.steer_override = 0  # abs(cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_DRIVER']) > 100  # TODO
+    self.steer_override = False  # abs(cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_DRIVER']) > 100  # TODO
     # # 2 is standby, 10 is active. TODO: check that everything else is really a faulty state
     # self.steer_state = cp.vl["EPS_STATUS"]['LKA_STATE']
     self.steer_error = False # cp.vl["EPS_STATUS"]['LKA_STATE'] not in [1, 5] # TODO
