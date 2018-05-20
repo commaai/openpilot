@@ -87,10 +87,10 @@ class CarController(object):
     # TODO use these values to decide if we should use apply_steer or apply_angle
     print 'carcontroller apply_steer %s  actuators.steerAngle %s' % (apply_steer, actuators.steerAngle)
 
-    max_lim = min(max(CS.steer_torque_motor + STEER_ERROR_MAX, STEER_ERROR_MAX), STEER_MAX)
-    min_lim = max(min(CS.steer_torque_motor - STEER_ERROR_MAX, -STEER_ERROR_MAX), -STEER_MAX)
+    # max_lim = min(max(CS.steer_torque_motor + STEER_ERROR_MAX, STEER_ERROR_MAX), STEER_MAX)
+    # min_lim = max(min(CS.steer_torque_motor - STEER_ERROR_MAX, -STEER_ERROR_MAX), -STEER_MAX)
 
-    apply_steer = clip(apply_steer, min_lim, max_lim)
+    # apply_steer = clip(apply_steer, min_lim, max_lim)
 
     # slow rate if steer torque increases in magnitude
     if self.last_steer > 0:
