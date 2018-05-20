@@ -62,7 +62,7 @@ def create_2a6(gear, steering):
     msg = '0200060000000000'.decode('hex') # moving fast, display green.
   if steering:
     msg = '03000a0000000000'.decode('hex')  # when torqueing, display yellow.
-  return make_can_msg(0x2d9, msg, 1)
+  return make_can_msg(0x2a6, msg, 1)
 
 def create_292(apply_angle, frame):
   combined_torque = apply_angle + 1024  # 1024 is straight. more is left, less is right.
@@ -70,5 +70,5 @@ def create_292(apply_angle, frame):
   counter = (frame % 0x10) << 4
   dat = start + [counter]
   dat = dat + [calc_checksum(dat)]  # this calc_checksum does not include the length
-  return make_can_msg(0x292, dat, 1)
+  return make_can_msg(0x292, str(bytearray(dat)), 1)
   
