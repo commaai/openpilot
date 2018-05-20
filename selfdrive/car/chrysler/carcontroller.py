@@ -144,13 +144,12 @@ class CarController(object):
     #*** static msgs ***
     # TODO send the static messages here:
     if (frame % 10 == 0):  # 0.1s period
-      can_sends.append(chryslercan.create_2d9())
+      can_sends.append(create_2d9())
     if (frame % 25 == 0):  # 0.25s period
-      can_sends.append(chryslercan.create_2a6(CS.gear_shifter,
-                                              (apply_steer != 0)))
+      can_sends.append(create_2a6(CS.gear_shifter, (apply_steer != 0)))
     #####!!!! TODO sending apply_angle=0 until we verify units
     apply_angle = 0
-    can_sends.append(chryslercan.create_292(apply_angle, frame))
+    can_sends.append(create_292(apply_angle, frame))
 
 
     sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
