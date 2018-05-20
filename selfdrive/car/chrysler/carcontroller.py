@@ -1,9 +1,10 @@
 from common.numpy_fast import clip, interp
 from selfdrive.boardd.boardd import can_list_to_can_capnp
-from selfdrive.car.toyota.toyotacan import make_can_msg, create_video_target,\
-                                           create_steer_command, create_ui_command, \
-                                           create_ipas_steer_command, create_accel_command, \
-                                           create_fcw_command
+# from selfdrive.car.toyota.toyotacan import make_can_msg, create_video_target,\
+#                                            create_steer_command, create_ui_command, \
+#                                            create_ipas_steer_command, create_accel_command, \
+#                                            create_fcw_command
+from selfdrive.car.chrysler.chryslercan import create_2d9, create_2a6, create_292
 from selfdrive.car.chrysler.values import ECU, STATIC_MSGS
 from selfdrive.can.packer import CANPacker
 
@@ -13,10 +14,10 @@ ACCEL_MAX = 1.5  # 1.5 m/s2
 ACCEL_MIN = -3.0 # 3   m/s2
 ACCEL_SCALE = max(ACCEL_MAX, -ACCEL_MIN)
 
-# Steer torque limits
-STEER_MAX = 1500
-STEER_DELTA_UP = 10       # 1.5s time to peak torque
-STEER_DELTA_DOWN = 25     # always lower than 45 otherwise the Rav4 faults (Prius seems ok with 50)
+# Steer torque range is 1024+-230. The 1024 is added by our library.
+STEER_MAX = 230
+STEER_DELTA_UP = 4
+STEER_DELTA_DOWN = 5
 STEER_ERROR_MAX = 350     # max delta between torque cmd and torque motor
 
 # Steer angle limits (tested at the Crows Landing track and considered ok)
@@ -45,30 +46,6 @@ def accel_hysteresis(accel, accel_steady, enabled):
   accel = accel_steady
 
   return accel, accel_steady
-
-
-def ipas_state_transition(steer_angle_enabled, enabled, ipas_active, ipas_reset_counter):
-
-  if enabled and not steer_angle_enabled:
-    #ipas_reset_counter = max(0, ipas_reset_counter - 1)
-    #if ipas_reset_counter == 0:
-    #  steer_angle_enabled = True
-    #else:
-    #  steer_angle_enabled = False
-    #return steer_angle_enabled, ipas_reset_counter
-    return True, 0
-
-  elif enabled and steer_angle_enabled:
-    if steer_angle_enabled and not ipas_active:
-      ipas_reset_counter += 1
-    else:
-      ipas_reset_counter = 0
-    if ipas_reset_counter > 10:  # try every 0.1s
-      steer_angle_enabled = False
-    return steer_angle_enabled, ipas_reset_counter
-
-  else:
-    return False, 0
 
 
 class CarController(object):
@@ -107,9 +84,8 @@ class CarController(object):
 
     # steer torque
     apply_steer = int(round(actuators.steer * STEER_MAX))
-    print 'carcontroller initial apply_steer ', apply_steer
-    print 'cancontroller initial actuators.steerAngle', actuators.steerAngle
-    return ################!!!!!!!!!!!!!!!!
+    # TODO use these values to decide if we should use apply_steer or apply_angle
+    print 'carcontroller apply_steer %s  actuators.steerAngle %s' % (apply_steer, actuators.steerAngle)
 
     max_lim = min(max(CS.steer_torque_motor + STEER_ERROR_MAX, STEER_ERROR_MAX), STEER_MAX)
     min_lim = max(min(CS.steer_torque_motor - STEER_ERROR_MAX, -STEER_ERROR_MAX), -STEER_MAX)
@@ -123,11 +99,12 @@ class CarController(object):
       apply_steer = clip(apply_steer, self.last_steer - STEER_DELTA_UP, min(self.last_steer + STEER_DELTA_DOWN, STEER_DELTA_UP))
 
 
-    self.steer_angle_enabled, self.ipas_reset_counter = \
-      ipas_state_transition(self.steer_angle_enabled, enabled, CS.ipas_active, self.ipas_reset_counter)
+    #self.steer_angle_enabled, self.ipas_reset_counter = \
+    #  ipas_state_transition(self.steer_angle_enabled, enabled, CS.ipas_active, self.ipas_reset_counter)
     #print self.steer_angle_enabled, self.ipas_reset_counter, CS.ipas_active
 
     # steer angle
+    self.steer_angle_enabled = True  #!!! TODO use if we are doing apply_angle (instead of apply_steer)
     if self.steer_angle_enabled:
       apply_angle = actuators.steerAngle
       angle_lim = interp(CS.v_ego, ANGLE_MAX_BP, ANGLE_MAX_V)
@@ -160,14 +137,20 @@ class CarController(object):
     # sending it at 100Hz seem to allow a higher rate limit, as the rate limit seems imposed
     # on consecutive messages
     # We could try this higher message rate to turn wheel more. but we're just sending angle?
-    can_sends.append(create_steer_command(self.packer, apply_steer, frame))
+    # can_sends.append(create_steer_command(self.packer, apply_steer, frame))
     # TODO verify units and see if we want apply_steer or apply_angle
     # TODO verify frame is the counter we want. 
 
     #*** static msgs ***
     # TODO send the static messages here:
-    # if (frame % 100 == 0):
-    #   can_sends.append(create_ui_command(self.packer, steer, sound1, sound2))
+    if (frame % 10 == 0):  # 0.1s period
+      can_sends.append(chryslercan.create_2d9())
+    if (frame % 25 == 0):  # 0.25s period
+      can_sends.append(chryslercan.create_2a6(CS.gear_shifter,
+                                              (apply_steer != 0)))
+    #####!!!! TODO sending apply_angle=0 until we verify units
+    apply_angle = 0
+    can_sends.append(chryslercan.create_292(apply_angle, frame))
 
 
     sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
