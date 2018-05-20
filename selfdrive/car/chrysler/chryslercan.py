@@ -47,7 +47,7 @@ def make_can_msg(addr, dat, alt, cks=False, counter=None):
     dat = dat  # TODO!!! verify 0..15 and put counter in as high nibble
   if cks:
     dat = dat + struct.pack("B", calc_checksum(dat))
-  print 'make_can_msg:%s  len:%d  %s' % ('0x{:02x}'.format(addr), len(dat), binascii.hexlify(dat))
+  print 'make_can_msg:%s  len:%d  %s' % ('0x{:02x}'.format(addr), len(dat), dat)
   return [addr, 0, dat, alt]
   # TODO what is alt? look at can_list_to_can_capnp. looks like messaging.new_message() .src
 
