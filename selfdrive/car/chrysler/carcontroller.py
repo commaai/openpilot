@@ -151,7 +151,7 @@ class CarController(object):
       can_sends.append(create_2a6(CS.gear_shifter, (apply_angle != 0)))
     if CS.v_ego < 3:  # don't steer if going under 6mph to not lock out LKAS 
       apply_angle = 0
-    can_sends.append(create_292(apply_angle * 5.1, frame))  # degrees * 5.1 -> car steering units
+    can_sends.append(create_292(int(apply_angle * 5.1), frame))  # degrees * 5.1 -> car steering units
 
 
     sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
