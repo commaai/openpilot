@@ -38,14 +38,20 @@ static void chrysler_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   }
 
   // check if stock LKAS ECU is still online
-  if (bus_number == 0 && addr == 658) {
-    chrysler_lkas_detected = 1;
-    controls_allowed = 0;
-  }
+  // TODO enable this once ours works.
+  /* if (bus_number == 0 && addr == 658) { */
+  /*   chrysler_lkas_detected = 1; */
+  /*   controls_allowed = 0; */
+  /* } */
 
   // high-beam flash to enable. TODO: switch to ACC steering wheel buttons
   if (addr == 0x318) {
     if (to_push->RDLR == 8) {
+      controls_allowed = 1;
+    }
+  }
+  if (addr == 0x1f4) {// ["ACC_2"]['ACC_STATUS_2'] == 7 for green ACC
+    if ((to_push->RDLR & 0x000038000)  == 0x000038000) { // TODO RDLR this order might be wrong.
       controls_allowed = 1;
     }
   }
@@ -56,6 +62,10 @@ static void chrysler_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       controls_allowed = 0;
     }
   }
+
+  // TODO remove after figuring out RDLR nibble ordering.
+  chrysler_ignition_started = 1;
+  controls_allowed = 1;
 
 }
 

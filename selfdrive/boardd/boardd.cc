@@ -107,9 +107,8 @@ void *safety_setter_thread(void *s) {
     safety_setting = SAFETY_HONDA_BOSCH;
     break;
   case (int)cereal::CarParams::SafetyModels::CHRYSLER:
-    safety_setting = SAFETY_ALLOUTPUT;
-    // TODO switch to this safety after flashing the panda:
-    // safety_setting = SAFETY_CHRYSLER;
+    // safety_setting = SAFETY_ALLOUTPUT;
+    safety_setting = SAFETY_CHRYSLER;
     break;
   default:
     LOGE("unknown safety model: %d", safety_model);
