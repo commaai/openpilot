@@ -139,10 +139,9 @@ class CarController(object):
     # We could try this higher message rate to turn wheel more. but we're just sending angle?
     # can_sends.append(create_steer_command(self.packer, apply_steer, frame))
     # TODO verify units and see if we want apply_steer or apply_angle
-    # TODO verify frame is the counter we want. 
 
     #*** static msgs ***
-    # TODO send the static messages here:
+    # frame is 100Hz (0.01s period)
     if (frame % 10 == 0):  # 0.1s period
       can_sends.append(create_2d9())
     if (frame % 25 == 0):  # 0.25s period
