@@ -8,7 +8,11 @@ namespace {
 const Signal sigs_{{address}}[] = {
   {% for sig in sigs %}
     {
-      {% set b1 = (sig.start_bit//8)*8  + (-sig.start_bit-1) % 8 %}
+      {% if sig.is_little_endian %}
+        {% set b1 = sig.start_bit %}
+      {% else %}
+        {% set b1 = (sig.start_bit//8)*8  + (-sig.start_bit-1) % 8 %}
+      {% endif %}
       .name = "{{sig.name}}",
       .b1 = {{b1}},
       .b2 = {{sig.size}},
