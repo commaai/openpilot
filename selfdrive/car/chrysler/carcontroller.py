@@ -15,7 +15,8 @@ ACCEL_MIN = -3.0 # 3   m/s2
 ACCEL_SCALE = max(ACCEL_MAX, -ACCEL_MIN)
 
 # Steer torque range is 1024+-230. The 1024 is added by our library.
-STEER_MAX = 230
+# degrees * 5.1 = car units 
+STEER_MAX = 230 / 5.1
 STEER_DELTA_UP = 4
 STEER_DELTA_DOWN = 5
 STEER_ERROR_MAX = 350     # max delta between torque cmd and torque motor
@@ -117,8 +118,10 @@ class CarController(object):
         angle_rate_lim = interp(CS.v_ego, ANGLE_DELTA_BP, ANGLE_DELTA_VU)
 
       apply_angle = clip(apply_angle, self.last_angle - angle_rate_lim, self.last_angle + angle_rate_lim)
+      print '  apply_angle:%s angle_lim:%s angle_rate_lim:%s' % (apply_angle, angle_lim, angle_rate_lim)
+      print '  CS.angle_steers:%s  CS.v_ego:%s' % (CS.angle_steers, CS.v_ego)
 #    else:
-#      apply_angle = CS.angle_steers  # just sets it to the current steering angle?
+#      apply_angle = CS.angle_steers  # just sets it to the current steering angle
 
 
     self.standstill_req = False #?
@@ -145,10 +148,10 @@ class CarController(object):
     if (frame % 10 == 0):  # 0.1s period
       can_sends.append(create_2d9())
     if (frame % 25 == 0):  # 0.25s period
-      can_sends.append(create_2a6(CS.gear_shifter, (apply_steer != 0)))
-    #####!!!! TODO sending apply_angle=0 until we verify units
-    apply_angle = 0
-    can_sends.append(create_292(apply_angle, frame))
+      can_sends.append(create_2a6(CS.gear_shifter, (apply_angle != 0)))
+    if CS.v_ego < 3:  # don't steer if going under 6mph to not lock out LKAS 
+      apply_angle = 0
+    can_sends.append(create_292(apply_angle * 5.1, frame))  # degrees * 5.1 -> car steering units
 
 
     sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
