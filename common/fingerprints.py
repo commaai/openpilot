@@ -19,7 +19,7 @@ class GM:
   VOLT = "CHEVROLET VOLT PREMIER 2017"
 
 class TESLA:
-  VOLT = "TESLA MODEL S"
+  MODELS = "TESLA MODEL S"
 
 _DEBUG_ADDRESS = {1880: 8}   # reserved for debug purposes
 
