@@ -77,6 +77,8 @@ static void chrysler_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
 static int chrysler_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 
+  return 1;  // TODO remove after figuring out RDLR nibble ordering.   
+    
   // There can be only one! (LKAS)
   if (chrysler_lkas_detected) {
     return 0;
