@@ -49,7 +49,9 @@ def make_can_msg(addr, dat, alt=0, cks=False, counter=None):
     dat = dat  # TODO!!! verify 0..15 and put counter in as high nibble
   if cks:
     dat = dat + struct.pack("B", calc_checksum(dat))
-  # print 'make_can_msg:%s  len:%d  %s' % ('0x{:02x}'.format(addr), len(dat), dat)
+  if addr == 0x292:
+    print '  make_can_msg:%s  len:%d  %s' % ('0x{:02x}'.format(addr), len(dat),
+                                             " ".join("{:02x}".format(ord(c)) for c in dat)
   return [addr, 0, dat, alt]
 
 def create_2d9():

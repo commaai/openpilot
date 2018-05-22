@@ -118,7 +118,7 @@ class CarController(object):
         angle_rate_lim = interp(CS.v_ego, ANGLE_DELTA_BP, ANGLE_DELTA_VU)
 
       apply_angle = clip(apply_angle, self.last_angle - angle_rate_lim, self.last_angle + angle_rate_lim)
-      print '  apply_angle:%s angle_lim:%s angle_rate_lim:%s' % (apply_angle, angle_lim, angle_rate_lim)
+      print '  apply_angle:%s  angle_lim:%s  angle_rate_lim:%s  apply_steer:%s' % (apply_angle, angle_lim, angle_rate_lim, apply_steer)
       print '  CS.angle_steers:%s  CS.v_ego:%s' % (CS.angle_steers, CS.v_ego)
 #    else:
 #      apply_angle = CS.angle_steers  # just sets it to the current steering angle
