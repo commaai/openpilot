@@ -17,9 +17,9 @@ ACCEL_SCALE = max(ACCEL_MAX, -ACCEL_MIN)
 
 # Steer torque range is 1024+-230. The 1024 is added by our library.
 # degrees * 5.1 = car units 
-STEER_MAX = 230 / 5.1
-STEER_DELTA_UP = 4
-STEER_DELTA_DOWN = 5
+STEER_MAX = 230 / 5.1  # degrees
+STEER_DELTA_UP = 1  # degrees
+STEER_DELTA_DOWN = 1  # degrees
 STEER_ERROR_MAX = 350     # max delta between torque cmd and torque motor
 
 # Steer angle limits (tested at the Crows Landing track and considered ok)
@@ -93,6 +93,7 @@ class CarController(object):
     # min_lim = max(min(CS.steer_torque_motor - STEER_ERROR_MAX, -STEER_ERROR_MAX), -STEER_MAX)
 
     # apply_steer = clip(apply_steer, min_lim, max_lim)
+    apply_steer = clip(apply_steer, -STEER_MAX, STEER_MAX)
 
     # slow rate if steer torque increases in magnitude
     if self.last_steer > 0:
@@ -156,7 +157,8 @@ class CarController(object):
       can_sends.append(create_2a6(CS.gear_shifter, (apply_angle != 0)))
     if CS.v_ego < 3:  # don't steer if going under 6mph to not lock out LKAS 
       apply_angle = 0
-    new_msg = create_292(int(apply_angle * 5.1), frame)
+      apply_steer = 0
+    new_msg = create_292(int(apply_steer * 5.1), frame)
     can_sends.append(new_msg)  # degrees * 5.1 -> car steering units
     [addr, _, dat, _] = new_msg
     outp  = ('make_can_msg:%s  len:%d  %s' % ('0x{:02x}'.format(addr), len(dat),
