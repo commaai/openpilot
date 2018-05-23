@@ -67,6 +67,7 @@ def process_hud_alert(hud_alert, audible_alert):
 
   return steer, fcw, sound1, sound2
 
+
 def ipas_state_transition(steer_angle_enabled, enabled, ipas_active, ipas_reset_counter):
 
   if enabled and not steer_angle_enabled:

@@ -22,6 +22,7 @@
 #define PATCH_OLD "\x40\x3f\x20\x50"
 #define PATCH_NEW "\x40\x3f\x00\x5a"
 #define PATCH_LEN (sizeof(PATCH_OLD)-1)
+#define _BITS_IOCTL_H_
 
 // under 100 lines of code begins now
 #include <stdio.h>
