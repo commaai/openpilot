@@ -2,7 +2,7 @@ Cython==0.24.1
 bitstring==3.1.5
 fastcluster==1.1.21
 libusb1==1.5.0
-pycapnp==0.5.9
+pycapnp==0.6.3
 pyzmq==15.4.0
 raven==5.23.0
 requests==2.10.0
@@ -16,3 +16,4 @@ filterpy==1.0.0
 smbus2==0.2.0
 pyflakes==1.5.0
 -e git+https://github.com/commaai/le_python.git#egg=Logentries
+Flask==1.0.1

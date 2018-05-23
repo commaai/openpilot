@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import zmq
 import numpy as np
+import numpy.matlib
 import importlib
 from collections import defaultdict
 from fastcluster import linkage_vector
@@ -27,7 +28,7 @@ VISION_POINT = -1
 class EKFV1D(EKF):
   def __init__(self):
     super(EKFV1D, self).__init__(False)
-    self.identity = np.matlib.identity(DIMSV)
+    self.identity = numpy.matlib.identity(DIMSV)
     self.state = np.matlib.zeros((DIMSV, 1))
     self.var_init = 1e2   # ~ model variance when probability is 70%, so good starting point
     self.covar = self.identity * self.var_init
