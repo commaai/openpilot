@@ -15,7 +15,7 @@ It is 2nd gen hardware, reusing code and parts from the [NEO](https://github.com
 
 [![CircleCI](https://circleci.com/gh/commaai/panda.svg?style=svg)](https://circleci.com/gh/commaai/panda)
 
-Usage
+Usage (Python)
 ------
 
 To install the library:
@@ -36,6 +36,12 @@ And to send one on bus 0:
 >>> panda.can_send(0x1aa, "message", 0)
 ```
 Find user made scripts on the [wiki](https://community.comma.ai/wiki/index.php/Panda_scripts)
+
+Usage (JavaScript)
+-------
+
+See [PandaJS](https://github.com/commaai/pandajs)
+
 
 Software interface support
 ------
