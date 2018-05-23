@@ -58,13 +58,15 @@ def create_2d9():
   msg = '0000000820'.decode('hex')
   return make_can_msg(0x2d9, msg)
 
-def create_2a6(gear, steering):
+def create_2a6(gear, apply_steer):
   msg = '0000000000000000'.decode('hex')  # park or neutral
   if (gear == 'drive' or gear == 'reverse'):
     # msg = '0100010000000000'.decode('hex') # moving slowly, display white.
     msg = '0200060000000000'.decode('hex') # moving fast, display green.
-  if steering:
+  if apply_steer > 0:  # steering left
     msg = '03000a0000000000'.decode('hex')  # when torqueing, display yellow.
+  elif apply_steer < 0:  # steering right
+    msg = '0300080000000000'.decode('hex')  # when torqueing, display yellow.
   return make_can_msg(0x2a6, msg)
 
 def create_292(apply_angle, frame):
