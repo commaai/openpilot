@@ -1,3 +1,4 @@
+import logging
 from common.numpy_fast import clip, interp
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 # from selfdrive.car.toyota.toyotacan import make_can_msg, create_video_target,\
@@ -27,11 +28,6 @@ ANGLE_MAX_V = [510., 300.]
 ANGLE_DELTA_BP = [0., 5., 15.]
 ANGLE_DELTA_V = [5., .8, .15]     # windup limit
 ANGLE_DELTA_VU = [5., 3.5, 0.4]   # unwind limit
-
-TARGET_IDS = [0x340, 0x341, 0x342, 0x343, 0x344, 0x345,
-              0x363, 0x364, 0x365, 0x370, 0x371, 0x372,
-              0x373, 0x374, 0x375, 0x380, 0x381, 0x382,
-              0x383]
 
 
 def accel_hysteresis(accel, accel_steady, enabled):
@@ -73,6 +69,9 @@ class CarController(object):
 
     self.packer = CANPacker(dbc_name)
 
+    logging.basicConfig(level=logging.DEBUG, filename="/tmp/chrylog", filemode="a+",
+                        format="%(asctime)-15s %(levelname)-8s %(message)s")
+
   def update(self, sendcan, enabled, CS, frame, actuators,
              pcm_cancel_cmd, hud_alert, audible_alert):
 
@@ -86,7 +85,9 @@ class CarController(object):
     # steer torque
     apply_steer = int(round(actuators.steer * STEER_MAX))
     # TODO use these values to decide if we should use apply_steer or apply_angle
-    print 'carcontroller apply_steer %s  actuators.steerAngle %s' % (apply_steer, actuators.steerAngle)
+    outp = 'carcontroller apply_steer %s  actuators.steerAngle %s' % (apply_steer, actuators.steerAngle)
+    print outp
+    logging.info(outp)
 
     # max_lim = min(max(CS.steer_torque_motor + STEER_ERROR_MAX, STEER_ERROR_MAX), STEER_MAX)
     # min_lim = max(min(CS.steer_torque_motor - STEER_ERROR_MAX, -STEER_ERROR_MAX), -STEER_MAX)
@@ -118,8 +119,12 @@ class CarController(object):
         angle_rate_lim = interp(CS.v_ego, ANGLE_DELTA_BP, ANGLE_DELTA_VU)
 
       apply_angle = clip(apply_angle, self.last_angle - angle_rate_lim, self.last_angle + angle_rate_lim)
-      print '  apply_angle:%s  angle_lim:%s  angle_rate_lim:%s  apply_steer:%s' % (apply_angle, angle_lim, angle_rate_lim, apply_steer)
-      print '  CS.angle_steers:%s  CS.v_ego:%s' % (CS.angle_steers, CS.v_ego)
+      outp = '  apply_angle:%s  angle_lim:%s  angle_rate_lim:%s  apply_steer:%s' % (apply_angle, angle_lim, angle_rate_lim, apply_steer)
+      print outp
+      logging.info(outp)
+      outp = '  CS.angle_steers:%s  CS.v_ego:%s' % (CS.angle_steers, CS.v_ego)
+      print outp
+      logging.info(outp)
 #    else:
 #      apply_angle = CS.angle_steers  # just sets it to the current steering angle
 
@@ -151,7 +156,13 @@ class CarController(object):
       can_sends.append(create_2a6(CS.gear_shifter, (apply_angle != 0)))
     if CS.v_ego < 3:  # don't steer if going under 6mph to not lock out LKAS 
       apply_angle = 0
-    can_sends.append(create_292(int(apply_angle * 5.1), frame))  # degrees * 5.1 -> car steering units
+    new_msg = create_292(int(apply_angle * 5.1), frame)
+    can_sends.append(new_msg)  # degrees * 5.1 -> car steering units
+    [addr, _, dat, _] = new_msg
+    outp  = ('make_can_msg:%s  len:%d  %s' % ('0x{:02x}'.format(addr), len(dat),
+                                              ' '.join('{:02x}'.format(ord(c)) for c in dat)))
+    print outp
+    logging.info(outp)
 
 
     sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
