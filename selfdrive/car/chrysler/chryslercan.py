@@ -68,10 +68,6 @@ def create_2a6(gear, steering):
   return make_can_msg(0x2a6, msg)
 
 def create_292(apply_angle, frame):
-  if apply_angle > 230:
-    apply_angle = 230
-  if apply_angle < -230:
-    apply_angle = -230                                             
   combined_torque = apply_angle + 1024  # 1024 is straight. more is left, less is right.
   start = [0x10 | (combined_torque >> 8), combined_torque & 0xff, 00, 00]
   counter = (frame % 0x10) << 4
