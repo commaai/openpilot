@@ -4,6 +4,7 @@ import sys
 import fcntl
 import errno
 import signal
+import subprocess
 
 from common.basedir import BASEDIR
 sys.path.append(os.path.join(BASEDIR, "pyextra"))
@@ -19,6 +20,8 @@ if __name__ == "__main__":
       copyfile(os.path.join(BASEDIR, "scripts", "continue.sh"), "/data/data/com.termux/files/continue.sh")
 
     # run the updater
+    print "Starting NEOS updater"
+    subprocess.check_call(["git", "clean", "-xdf"], cwd=BASEDIR)
     os.system(os.path.join(BASEDIR, "installer", "updater", "updater"))
     raise Exception("NEOS outdated")
 
