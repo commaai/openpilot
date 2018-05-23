@@ -1,3 +1,11 @@
+Version 0.4.6 (2018-05-18)
+==========================
+ * NEOSv6 required! Will autoupdate
+ * Stability improvements
+ * Fix all memory leaks
+ * Update C++ compiler to clang6
+ * Improve front camera exposure
+
 Version 0.4.5 (2018-04-27)
 ==========================
  * Release notes added to the update popup

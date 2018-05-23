@@ -96,6 +96,7 @@ int main(int argc, char *argv[]) {
 #endif
       uint64_t end = nanos_since_boot();
       LOGD("total(%d): %6.2f ms to get %4d features on %d", ret, (end-start)/1000000.0, features->n_corners, extra.frame_id);
+      assert(ret == 0);
 
       if (last_frame_id+1 != extra.frame_id) {
         LOGW("dropped frame!");
