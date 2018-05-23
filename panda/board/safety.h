@@ -30,6 +30,7 @@ int controls_allowed = 0;
 #include "safety/safety_toyota_ipas.h"
 #endif
 #include "safety/safety_gm.h"
+#include "safety/safety_ford.h"
 #include "safety/safety_elm327.h"
 
 const safety_hooks *current_hooks = &nooutput_hooks;
@@ -64,10 +65,11 @@ typedef struct {
 #define SAFETY_NOOUTPUT 0
 #define SAFETY_HONDA 1
 #define SAFETY_TOYOTA 2
-#define SAFETY_TOYOTA_IPAS 0x1335
-#define SAFETY_TOYOTA_NOLIMITS 0x1336
 #define SAFETY_GM 3
 #define SAFETY_HONDA_BOSCH 4
+#define SAFETY_FORD 5
+#define SAFETY_TOYOTA_IPAS 0x1335
+#define SAFETY_TOYOTA_NOLIMITS 0x1336
 #define SAFETY_ALLOUTPUT 0x1337
 #define SAFETY_ELM327 0xE327
 
@@ -76,11 +78,12 @@ const safety_hook_config safety_hook_registry[] = {
   {SAFETY_HONDA, &honda_hooks},
   {SAFETY_HONDA_BOSCH, &honda_bosch_hooks},
   {SAFETY_TOYOTA, &toyota_hooks},
+  {SAFETY_GM, &gm_hooks},
+  {SAFETY_FORD, &ford_hooks},
   {SAFETY_TOYOTA_NOLIMITS, &toyota_nolimits_hooks},
 #ifdef PANDA
   {SAFETY_TOYOTA_IPAS, &toyota_ipas_hooks},
 #endif
-  {SAFETY_GM, &gm_hooks},
   {SAFETY_ALLOUTPUT, &alloutput_hooks},
   {SAFETY_ELM327, &elm327_hooks},
 };
