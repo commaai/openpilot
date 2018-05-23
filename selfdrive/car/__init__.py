@@ -5,7 +5,7 @@ from common.fingerprints import eliminate_incompatible_cars, all_known_cars
 
 from selfdrive.swaglog import cloudlog
 import selfdrive.messaging as messaging
-from common.fingerprints import HONDA, TOYOTA, GM, FORD
+from common.fingerprints import HONDA, TOYOTA, GM, FORD, TESLA
 
 def load_interfaces(x):
   ret = {}
