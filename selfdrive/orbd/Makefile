@@ -3,10 +3,16 @@
 CC = clang
 CXX = clang++
 
+WARN_FLAGS = -Werror=implicit-function-declaration \
+             -Werror=incompatible-pointer-types \
+             -Werror=int-conversion \
+             -Werror=return-type \
+             -Werror=format-extra-args
+
 JSON_FLAGS = -I$(PHONELIBS)/json/src
 
-CFLAGS = -std=gnu11 -g -fPIC -O2 $(WARN_FLAGS) -Iinclude $(JSON_FLAGS) -I.
-CXXFLAGS = -std=c++11 -g -fPIC -O2 $(WARN_FLAGS) -Iinclude $(JSON_FLAGS) -I.
+CFLAGS = -std=gnu11 -g -O2 -fPIC $(WARN_FLAGS) -Iinclude $(JSON_FLAGS) -I.
+CXXFLAGS = -std=c++11 -g -O2 -fPIC $(WARN_FLAGS) -Iinclude $(JSON_FLAGS) -I.
 LDFLAGS =
 
 # profile
@@ -64,6 +70,7 @@ orbd: orbd_dsp.o $(DEP_OBJS) calculator_stub.o freethedsp.o
 %.o: %.c
 	@echo "[ CC ] $@"
 	$(CC) $(CFLAGS) \
+		$(ZMQ_FLAGS) \
 		-I../ \
 		-I../../ \
 		-c -o '$@' '$<'

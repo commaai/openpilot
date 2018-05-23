@@ -88,6 +88,12 @@ class AlertManager(object):
         AlertStatus.userPrompt, AlertSize.mid,
         Priority.LOW, "steerRequired", "chimeDouble", .4, 2., 3.),
 
+    "steerTempUnavailableMute": Alert(
+        "TAKE CONTROL",
+        "Steering Temporarily Unavailable",
+        AlertStatus.userPrompt, AlertSize.mid,
+        Priority.LOW, None, None, .2, .2, .2),
+
     "preDriverDistracted": Alert(
         "TAKE CONTROL",
         "User Appears Distracted",
@@ -123,6 +129,12 @@ class AlertManager(object):
         "Resume Driving Manually",
         AlertStatus.userPrompt, AlertSize.mid,
         Priority.LOW, None, None, 0., 0., .2),
+
+    "debugAlert": Alert( 
+        "DEBUG ALERT", 
+        "", 
+        AlertStatus.userPrompt, AlertSize.mid, 
+        Priority.LOW, None, None, .1, .1, .1), 
 
     # Non-entry only alerts
     "wrongCarModeNoEntry": Alert(

@@ -5,9 +5,21 @@ import fcntl
 import errno
 import signal
 
+from common.basedir import BASEDIR
+sys.path.append(os.path.join(BASEDIR, "pyextra"))
+os.environ['BASEDIR'] = BASEDIR
+
 if __name__ == "__main__":
   if os.path.isfile("/init.qcom.rc") \
-      and (not os.path.isfile("/VERSION") or int(open("/VERSION").read()) < 4):
+      and (not os.path.isfile("/VERSION") or int(open("/VERSION").read()) < 6):
+
+    # update continue.sh before updating NEOS
+    if os.path.isfile(os.path.join(BASEDIR, "scripts", "continue.sh")):
+      from shutil import copyfile
+      copyfile(os.path.join(BASEDIR, "scripts", "continue.sh"), "/data/data/com.termux/files/continue.sh")
+
+    # run the updater
+    os.system(os.path.join(BASEDIR, "installer", "updater", "updater"))
     raise Exception("NEOS outdated")
 
   # get a non-blocking stdout
@@ -47,9 +59,9 @@ import subprocess
 import traceback
 from multiprocessing import Process
 
-from common.basedir import BASEDIR
-sys.path.append(os.path.join(BASEDIR, "pyextra"))
-os.environ['BASEDIR'] = BASEDIR
+if os.path.exists(os.path.join(BASEDIR, "vpn")):
+  print "installing vpn"
+  os.system(os.path.join(BASEDIR, "vpn", "install.sh"))
 
 import zmq
 from setproctitle import setproctitle  #pylint: disable=no-name-in-module
@@ -617,9 +629,6 @@ def uninstall():
   os.system("service call power 16 i32 0 s16 recovery i32 1")
 
 def main():
-  # the flippening!
-  os.system('LD_LIBRARY_PATH="" content insert --uri content://settings/system --bind name:s:user_rotation --bind value:i:1')
-
   if os.getenv("NOLOG") is not None:
     del managed_processes['loggerd']
     del managed_processes['tombstoned']
@@ -637,6 +646,10 @@ def main():
   if os.getenv("NOCONTROL") is not None:
     del managed_processes['controlsd']
     del managed_processes['radard']
+
+  if os.path.isfile('logserver/logserver.py'):
+    managed_processes["logserver"] = "selfdrive.logserver.wsgi"
+    persistent_processes.append("logserver")
 
   # support additional internal only extensions
   try:
@@ -673,7 +686,8 @@ def main():
   if os.getenv("PREPAREONLY") is not None:
     spinner_proc = None
   else:
-    spinner_proc = subprocess.Popen(["./spinner", "loading..."],
+    spinner_text = "chffrplus" if params.get("Passive")=="1" else "openpilot"
+    spinner_proc = subprocess.Popen(["./spinner", "loading %s"%spinner_text],
       cwd=os.path.join(BASEDIR, "selfdrive", "ui", "spinner"),
       close_fds=True)
   try:

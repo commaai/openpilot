@@ -18,7 +18,7 @@ def json_robust_dumps(obj):
 
 class NiceOrderedDict(OrderedDict):
   def __str__(self):
-    return '{'+', '.join("%r: %r" % p for p in self.iteritems())+'}'
+    return json_robust_dumps(self)
 
 class SwagFormatter(logging.Formatter):
   def __init__(self, swaglogger):
@@ -61,6 +61,10 @@ class SwagFormatter(logging.Formatter):
 
   def format(self, record):
     return json_robust_dumps(self.format_dict(record))
+
+class SwagErrorFilter(logging.Filter):
+  def filter(self, record):
+    return record.levelno < logging.ERROR
 
 _tmpfunc = lambda: 0
 _srcfile = os.path.normcase(_tmpfunc.__code__.co_filename)
@@ -128,15 +132,40 @@ class SwagLogger(logging.Logger):
     if args:
       evt['args'] = args
     evt.update(kwargs)
-    self.info(evt)
+    if 'error' in kwargs:
+      self.error(evt)
+    else:
+      self.info(evt)
 
 if __name__ == "__main__":
   log = SwagLogger()
 
+  stdout_handler = logging.StreamHandler(sys.stdout)
+  stdout_handler.setLevel(logging.INFO)
+  stdout_handler.addFilter(SwagErrorFilter())
+  log.addHandler(stdout_handler)
+
+  stderr_handler = logging.StreamHandler(sys.stderr)
+  stderr_handler.setLevel(logging.ERROR)
+  log.addHandler(stderr_handler)
+
   log.info("asdasd %s", "a")
   log.info({'wut': 1})
+  log.warning("warning")
+  log.error("error")
+  log.critical("critical")
+  log.event("test", x="y")
 
   with log.ctx():
+    stdout_handler.setFormatter(SwagFormatter(log))
+    stderr_handler.setFormatter(SwagFormatter(log))
     log.bind(user="some user")
     log.info("in req")
-    log.event("do_req")
+    print("")
+    log.warning("warning")
+    print("")
+    log.error("error")
+    print("")
+    log.critical("critical")
+    print("")
+    log.event("do_req", a=1, b="c")

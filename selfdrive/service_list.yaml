@@ -74,6 +74,8 @@ testModel: [8040, false]
 testLiveLocation: [8045, false]
 testJoystick: [8056, false]
 
+# 8080 is reserved for slave testing daemon
+# 8762 is reserved for logserver
 
 # manager -- base process to manage starting and stopping of all others
 #   subscribes: health
