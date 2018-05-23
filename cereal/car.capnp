@@ -57,6 +57,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     plannerError @32;
     ipasOverride @33;
     debugAlert @34;
+    steerTempUnavailableMute @35;
   }
 }
 
@@ -330,4 +331,10 @@ struct CarParams {
   stoppingControl @34 :Bool; # Does the car allows full control even at lows speeds when stopping
   startAccel @35 :Float32; # Required acceleraton to overcome creep braking
   steerRateCost @40 :Float32; # Lateral MPC cost on steering rate
+  steerControlType @46 :SteerControlType;
+
+  enum SteerControlType {
+    torque @0;
+    angle @1;
+  }
 }
