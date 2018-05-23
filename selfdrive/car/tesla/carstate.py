@@ -178,9 +178,8 @@ class CarState(object):
     
     # this is a hack for the interceptor. This is now only used in the simulation
     # TODO: Replace tests by toyota so this can go away
-    if self.CP.enableGas:
-      self.user_gas = 0 #for now
-      self.user_gas_pressed = self.user_gas > 0 # this works because interceptor read < 0 when pedal position is 0. Once calibrated, this will change
+    self.user_gas = 0 #for now
+    self.user_gas_pressed = self.user_gas > 0 # this works because interceptor read < 0 when pedal position is 0. Once calibrated, this will change
 
     can_gear_shifter = cp.vl["DI_torque2"]['DI_gear']
     self.gear = 0 # JCT
@@ -233,7 +232,6 @@ if __name__ == '__main__':
   class CarParams(object):
     def __init__(self):
       self.carFingerprint = "TESLA MODEL S"
-      self.enableGas = 0
       self.enableCruise = 0
   CP = CarParams()
   CS = CarState(CP)

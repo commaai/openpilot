@@ -24,6 +24,7 @@ interfaces = load_interfaces({
   'toyota': [TOYOTA.PRIUS, TOYOTA.RAV4, TOYOTA.RAV4H, TOYOTA.COROLLA, TOYOTA.LEXUS_RXH],
   'gm': [GM.VOLT, GM.CADILLAC_CT6],
   'ford': [FORD.FUSION],
+  'tesla': [TESLA.MODELS],
   'simulator2': ['simulator2'],
   'mock': ['mock']})
 

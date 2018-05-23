@@ -11,16 +11,19 @@ from selfdrive.car.tesla.carstate import CarState, get_can_parser
 from selfdrive.car.tesla.values import CruiseButtons, CM, BP, AH
 from selfdrive.controls.lib.planner import A_ACC_MAX
 from common.fingerprints import TESLA as CAR
-from selfdrive.swaglog import cloudlog
 
 try:
-  from selfdrive.car.tesla.carcontroller import CarController
+  from .carcontroller import CarController
 except ImportError:
-  cloudlog.warning("In tesla/interface.py, cannot load car controller")
   CarController = None
 
 
-def compute_gb_honda(accel, speed):
+# msgs sent for steering controller by camera module on can 0.
+# those messages are mutually exclusive on CRV and non-CRV cars
+CAMERA_MSGS = [0xe4, 0x194]
+
+
+def get_compute_gb_models(accel, speed):
   creep_brake = 0.0
   creep_speed = 2.3
   creep_brake_value = 0.15
@@ -29,54 +32,8 @@ def compute_gb_honda(accel, speed):
   return float(accel) / 4.8 - creep_brake
 
 
-def get_compute_gb_acura():
-  # generate a function that takes in [desired_accel, current_speed] -> [-1.0, 1.0]
-  # where -1.0 is max brake and 1.0 is max gas
-  # see debug/dump_accel_from_fiber.py to see how those parameters were generated
-  w0 = np.array([[ 1.22056961, -0.39625418,  0.67952657],
-                 [ 1.03691769,  0.78210306, -0.41343188]])
-  b0 = np.array([ 0.01536703, -0.14335321, -0.26932889])
-  w2 = np.array([[-0.59124422,  0.42899439,  0.38660881],
-                 [ 0.79973811,  0.13178682,  0.08550351],
-                 [-0.15651935, -0.44360259,  0.76910877]])
-  b2 = np.array([ 0.15624429,  0.02294923, -0.0341086 ])
-  w4 = np.array([[-0.31521443],
-                 [-0.38626176],
-                 [ 0.52667892]])
-  b4 = np.array([-0.02922216])
-
-  def compute_output(dat, w0, b0, w2, b2, w4, b4):
-    m0 = np.dot(dat, w0) + b0
-    m0 = leakyrelu(m0, 0.1)
-    m2 = np.dot(m0, w2) + b2
-    m2 = leakyrelu(m2, 0.1)
-    m4 = np.dot(m2, w4) + b4
-    return m4
-
-  def leakyrelu(x, alpha):
-    return np.maximum(x, alpha * x)
-
-  def _compute_gb_acura(accel, speed):
-    # linearly extrap below v1 using v1 and v2 data
-    v1 = 5.
-    v2 = 10.
-    dat = np.array([accel, speed])
-    if speed > 5.:
-      m4 = compute_output(dat, w0, b0, w2, b2, w4, b4)
-    else:
-      dat[1] = v1
-      m4v1 = compute_output(dat, w0, b0, w2, b2, w4, b4)
-      dat[1] = v2
-      m4v2 = compute_output(dat, w0, b0, w2, b2, w4, b4)
-      m4 = (speed - v1) * (m4v2 - m4v1) / (v2 - v1) + m4v1
-    return float(m4)
-
-  return _compute_gb_acura
-
-
 class CarInterface(object):
   def __init__(self, CP, sendcan=None):
-    cloudlog.warning("########################################################################## In tesla/interface.py, init CarInterface()...")
     self.CP = CP
 
     self.frame = 0
@@ -97,7 +54,7 @@ class CarInterface(object):
       self.sendcan = sendcan
       self.CC = CarController(self.cp.dbc_name, CP.enableCamera)
 
-    self.compute_gb = compute_gb_honda
+    self.compute_gb = get_compute_gb_models
 
   @staticmethod
   def calc_accel_override(a_ego, a_target, v_ego, v_target):
@@ -141,15 +98,12 @@ class CarInterface(object):
 
     ret.safetyModel = car.CarParams.SafetyModels.tesla
 
-    ret.enableSteer = True
-    ret.enableBrake = False
-
-    ret.enableCamera = True
-    ret.enableGas = False
+    ret.enableCamera = not any(x for x in CAMERA_MSGS if x in fingerprint)
+    ret.enableGasInterceptor = 0x201 in fingerprint
     print "ECU Camera Simulated: ", ret.enableCamera
-    print "ECU Gas Interceptor: ", ret.enableGas
+    print "ECU Gas Interceptor: ", ret.enableGasInterceptor
 
-    ret.enableCruise = not ret.enableGas
+    ret.enableCruise = not ret.enableGasInterceptor
 
     # FIXME: hardcoding honda civic 2016 touring params so they can be used to
     # scale unknown params for other cars
@@ -163,26 +117,29 @@ class CarInterface(object):
 
     ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
     if candidate == CAR.MODELS:
-      stop_and_go = False
-      ret.mass = 3572./2.205 + std_cargo
-      ret.wheelbase = 2.62
-      ret.centerToFront = ret.wheelbase * 0.41
-      ret.steerRatio = 15.3
-      ret.steerKpV, ret.steerKiV = [[0.8], [0.24]]
+      stop_and_go = True
+      ret.mass = mass_civic
+      ret.wheelbase = wheelbase_civic
+      ret.centerToFront = centerToFront_civic
+      ret.steerRatio = 13.0
+      # Civic at comma has modified steering FW, so different tuning for the Neo in that car
+      is_fw_modified = os.getenv("DONGLE_ID") in ['99c94dc769b5d96e']
+      ret.steerKpV, ret.steerKiV = [[0.4], [0.12]] if is_fw_modified else [[0.8], [0.24]]
 
       ret.longitudinalKpBP = [0., 5., 35.]
-      ret.longitudinalKpV = [1.2, 0.8, 0.5]
+      ret.longitudinalKpV = [3.6, 2.4, 1.5]
       ret.longitudinalKiBP = [0., 35.]
-      ret.longitudinalKiV = [0.18, 0.12]
+      ret.longitudinalKiV = [0.54, 0.36]
     else:
       raise ValueError("unsupported car %s" % candidate)
 
     ret.steerKf = 0. # TODO: investigate FF steer control for Honda
+    ret.steerControlType = car.CarParams.SteerControlType.torque
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter. Otherwise, add 0.5 mph margin to not
     # conflict with PCM acc
-    ret.minEnableSpeed = -1. 
+    ret.minEnableSpeed = -1. if (stop_and_go or ret.enableGasInterceptor) else 25.5 * CV.MPH_TO_MS
 
     centerToRear = ret.wheelbase - ret.centerToFront
     # TODO: get actual value, for now starting with reasonable value for
@@ -207,14 +164,14 @@ class CarInterface(object):
     ret.steerMaxV = [1.]   # max steer allowed
 
     ret.gasMaxBP = [0.]  # m/s
-    ret.gasMaxV = [0.6] if ret.enableGas else [0.] # max gas allowed
+    ret.gasMaxV = [0.6] if ret.enableGasInterceptor else [0.] # max gas allowed
     ret.brakeMaxBP = [5., 20.]  # m/s
     ret.brakeMaxV = [1., 0.8]   # max brake allowed
 
     ret.longPidDeadzoneBP = [0.]
     ret.longPidDeadzoneV = [0.]
 
-    ret.stoppingControl = False
+    ret.stoppingControl = True
     ret.steerLimitAlert = True
     ret.startAccel = 0.5
 
@@ -247,7 +204,7 @@ class CarInterface(object):
 
     # gas pedal
     ret.gas = self.CS.car_gas / 256.0
-    if not self.CP.enableGas:
+    if not self.CP.enableGasInterceptor:
       ret.gasPressed = self.CS.pedal_gas > 0
     else:
       ret.gasPressed = self.CS.user_gas_pressed
