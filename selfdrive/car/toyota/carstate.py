@@ -68,8 +68,8 @@ def get_can_parser(CP):
     ("BRAKE_LIGHTS_ACC", "ESP_CONTROL", 0),
     ("AUTO_HIGH_BEAM", "LIGHT_STALK", 0),
     ("BLINDSPOT","DEBUG", 0),
-    #("ACC_DISTANCE", "JOEL_ID", 0),
-    #("LANE_WARNING", "JOEL_ID", 0),
+    # ("ACC_DISTANCE", "JOEL_ID", 0),
+    # ("LANE_WARNING", "JOEL_ID", 0),
   ]
 
   checks = [
@@ -182,5 +182,5 @@ class CarState(object):
       self.generic_toggle = cp.vl["AUTOPARK_STATUS"]['STATE'] != 0
     else:
       self.generic_toggle = bool(cp.vl["LIGHT_STALK"]['AUTO_HIGH_BEAM'])
-    self.lane_departure_toggle = bool(cp.vl["JOEL_ID"]['LANE_WARNING'])
-    self.distance_toggle = bool(cp.vl["JOEL_ID"]['ACC_DISTANCE'])
+    # self.lane_departure_toggle = bool(cp.vl["JOEL_ID"]['LANE_WARNING'])
+    # self.distance_toggle = bool(cp.vl["JOEL_ID"]['ACC_DISTANCE'])
