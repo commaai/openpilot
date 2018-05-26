@@ -62,6 +62,8 @@ class CarController(object):
     self.steer_angle_enabled = False
     self.ipas_reset_counter = 0
 
+    self.first_time = True
+
     self.fake_ecus = set()
     if enable_camera: self.fake_ecus.add(ECU.CAM)
     #if enable_dsu: self.fake_ecus.add(ECU.DSU)
@@ -149,22 +151,26 @@ class CarController(object):
     # can_sends.append(create_steer_command(self.packer, apply_steer, frame))
     # TODO verify units and see if we want apply_steer or apply_angle
 
+    moving_fast = True  # for status message
     if CS.v_ego < 3:  # don't steer if going under 6mph to not lock out LKAS 
       apply_angle = 0
       apply_steer = 0
+      moving_fast = False
       
     # frame is 100Hz (0.01s period)
-    if (frame % 10 == 0):  # 0.1s period
+    if (frame % 10 == 0) or first_time:  # 0.1s period
       can_sends.append(create_2d9())
-    if (frame % 25 == 0):  # 0.25s period
-      can_sends.append(create_2a6(CS.gear_shifter, apply_steer))
-    new_msg = create_292(int(apply_steer * 5.1), frame)
+    if (frame % 25 == 0) or first_time:  # 0.25s period
+      can_sends.append(create_2a6(CS.gear_shifter, apply_steer, moving_fast))
+    new_msg = create_292(int(apply_steer * 5.1), frame, moving_fast)
     can_sends.append(new_msg)  # degrees * 5.1 -> car steering units
     [addr, _, dat, _] = new_msg
     outp  = ('make_can_msg:%s  len:%d  %s' % ('0x{:02x}'.format(addr), len(dat),
                                               ' '.join('{:02x}'.format(ord(c)) for c in dat)))
     print outp
     logging.info(outp)
+
+    first_time = False
 
 
     sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())

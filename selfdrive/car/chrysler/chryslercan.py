@@ -58,25 +58,30 @@ def create_2d9():
   msg = '0000000820'.decode('hex')
   return make_can_msg(0x2d9, msg)
 
-def create_2a6(gear, apply_steer):
+def create_2a6(gear, apply_steer, moving_fast):
   msg = '0000000000000000'.decode('hex')  # park or neutral
   if (gear == 'drive' or gear == 'reverse'):
-    # msg = '0100010000000000'.decode('hex') # moving slowly, display white.
-    msg = '0200060000000000'.decode('hex') # moving fast, display green.
+    if moving_fast:
+      msg = '0200060000000000'.decode('hex') # moving fast, display green.
+    else:
+      msg = '0100010000000000'.decode('hex') # moving slowly, display white.
   if apply_steer > 0:  # steering left
     msg = '03000a0000000000'.decode('hex')  # when torqueing, display yellow.
   elif apply_steer < 0:  # steering right
     msg = '0300080000000000'.decode('hex')  # when torqueing, display yellow.
   return make_can_msg(0x2a6, msg)
 
-def create_292(apply_angle, frame):
+def create_292(apply_angle, frame, moving_fast):
   apply_angle = int(apply_angle)
   if apply_angle > 230:
     apply_angle = 230
   if apply_angle < -230:
     apply_angle = -230
   combined_torque = apply_angle + 1024  # 1024 is straight. more is left, less is right.
-  start = [0x10 | (combined_torque >> 8), combined_torque & 0xff, 00, 00]
+  high_status = 0x00
+  if moving_fast:
+    high_status = 0x10
+  start = [high_status | (combined_torque >> 8), combined_torque & 0xff, 00, 00]
   counter = (frame % 0x10) << 4
   dat = start + [counter]
   dat = dat + [calc_checksum(dat)]  # this calc_checksum does not include the length
