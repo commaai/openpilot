@@ -63,28 +63,26 @@ def create_gas_command(packer, gas_amount, idx):
   return packer.make_can_msg("GAS_COMMAND", 0, values, idx)
 
 
-def create_steering_control(packer, apply_steer, car_fingerprint, idx):
+def create_steering_control(packer, apply_steer, enabled, car_fingerprint, idx):
   """Creates a CAN message for the Honda DBC STEERING_CONTROL."""
   values = {
     "STEER_TORQUE": apply_steer,
-    "STEER_TORQUE_REQUEST": apply_steer != 0,
+    "STEER_TORQUE_REQUEST": enabled,
   }
   # Set bus 2 for accord and new crv.
-  bus = (0,2)[car_fingerprint in (CAR.CRV_5G)]
+  bus = (0,2)[car_fingerprint in (CAR.CRV_5G, CAR.ACCORD)]
   return packer.make_can_msg("STEERING_CONTROL", bus, values, idx)
 
 
 def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, idx):
   """Creates an iterable of CAN messages for the UIs."""
   commands = []
-
   bus = 0
-  
-  # CRV_5G sends commands to bus 2.
-  if car_fingerprint in (CAR.CRV_5G):
+
+  # Bosch sends commands to bus 2.
+  if car_fingerprint in (CAR.CRV_5G, CAR.ACCORD):
     bus = 2
-  else:  
-    # TODO: Why is X4 always 0xc1? Not implemented yet in canpacker
+  else:
     acc_hud_values = {
       'PCM_SPEED': pcm_speed * CV.MS_TO_KPH,
       'PCM_GAS': hud.pcm_accel,
@@ -96,7 +94,7 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, idx):
       'SET_ME_X01': 0x01,
     }
     commands.append(packer.make_can_msg("ACC_HUD", 0, acc_hud_values, idx))
-  
+
   lkas_hud_values = {
     'SET_ME_X41': 0x41,
     'SET_ME_X48': 0x48,

@@ -102,7 +102,7 @@ class CarController(object):
       hud_car = 0
 
     # For lateral control-only, send chimes as a beep since we don't send 0x1fa
-    if CS.CP.carFingerprint == CAR.CRV_5G:
+    if CS.CP.carFingerprint in (CAR.CRV_5G, CAR.ACCORD):
       snd_beep = snd_beep if snd_beep is not 0 else snd_chime
 
     #print chime, alert_id, hud_alert
@@ -119,13 +119,13 @@ class CarController(object):
 
     # *** compute control surfaces ***
     BRAKE_MAX = 1024/4
-    if CS.CP.carFingerprint in (CAR.CIVIC, CAR.ODYSSEY, CAR.PILOT, CAR.CRV_5G, CAR.RIDGELINE):
-      is_fw_modified = os.getenv("DONGLE_ID") in ['99c94dc769b5d96e']
-      STEER_MAX = 0x1FFF if is_fw_modified else 0x1000
+    if CS.CP.carFingerprint in (CAR.ACURA_ILX):
+      STEER_MAX = 0xF00
     elif CS.CP.carFingerprint in (CAR.CRV, CAR.ACURA_RDX):
       STEER_MAX = 0x3e8  # CR-V only uses 12-bits and requires a lower value (max value from energee)
     else:
-      STEER_MAX = 0xF00
+      is_fw_modified = os.getenv("DONGLE_ID") in ['99c94dc769b5d96e']
+      STEER_MAX = 0x1FFF if is_fw_modified else 0x1000
 
     # steer torque is converted back to CAN reference (positive when steering right)
     apply_gas = clip(actuators.gas, 0., 1.)
@@ -141,14 +141,18 @@ class CarController(object):
 
     # Send steering command.
     idx = frame % 4
-    can_sends.append(hondacan.create_steering_control(self.packer, apply_steer, CS.CP.carFingerprint, idx))
+    can_sends.append(hondacan.create_steering_control(self.packer, apply_steer, enabled, CS.CP.carFingerprint, idx))
 
     # Send dashboard UI commands.
     if (frame % 10) == 0:
       idx = (frame/10) % 4
       can_sends.extend(hondacan.create_ui_commands(self.packer, pcm_speed, hud, CS.CP.carFingerprint, idx))
 
-    if CS.CP.carFingerprint not in (CAR.CRV_5G):
+    if CS.CP.carFingerprint in (CAR.CRV_5G, CAR.ACCORD):
+      # If using stock ACC, spam cancel command to kill gas when OP disengages.
+      if pcm_cancel_cmd:
+        can_sends.append(hondacan.create_cancel_command(idx))
+    else:
       # Send gas and brake commands.
       if (frame % 2) == 0:
         idx = (frame / 2) % 4
@@ -169,9 +173,5 @@ class CarController(object):
       if (frame % radar_send_step) == 0:
         idx = (frame/radar_send_step) % 4
         can_sends.extend(hondacan.create_radar_commands(CS.v_ego, CS.CP.carFingerprint, idx))
-    # If using stock ACC, send a cancel command to kill gas when OP disengages.
-    else:
-      if pcm_cancel_cmd:
-        can_sends.append(hondacan.create_cancel_command(idx))
 
     sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
