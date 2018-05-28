@@ -11,6 +11,8 @@
 int tesla_brake_prev = 0;
 int tesla_gas_prev = 0;
 int tesla_speed = 0;
+int current_car_time = -1;
+int time_at_last_stalk_pull = -1;
 
 int tesla_ignition_started = 0;
 
@@ -26,6 +28,30 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     // Normal
     addr = to_push->RIR >> 21;
   }
+
+   // Record the current car time in current_car_time (for use with double-pulling cruise stalk)
+  if (addr == 0x318) {
+    int hour = (to_push.RDLR & 0x1F000000) >> 24;
+    int minute = (to_push.RDHR & 0x3F00) >> 8;
+    int second = (to_push.RDLR & 0x3F0000) >> 16;
+    current_car_time = (hour * 3600) + (minute * 60) + second;
+  }
+  
+  if (addr == 0x45) {
+    // 6 bits starting at position 0
+    int lever_position = (to_push->RDLR & 0x3F);
+    if (lever_position == 1) { // pull forward
+      // activate openpilot
+      // TODO: uncomment the if to use double pull to activate
+      //if (current_car_time <= time_at_last_stalk_pull + 1 && current_car_time != -1 && time_at_last_stalk_pull != -1) {
+          controls_allowed = 1;
+      //}
+      time_at_last_stalk_pull = current_car_time;
+    } else if (lever_position == 2) { // push towards the back
+      // deactivate openpilot
+      controls_allowed = 0;
+    }
+  }  
   
   // Detect gear in drive (start recording when in drive)
   //if (addr == 0x118 && bus_number == 0) {
@@ -35,6 +61,25 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     tesla_ignition_started = current_gear > 1; //Park = 1. If out of park, we're "on."
     //tesla_ignition_started = 1; //TEMPORARY TEST
   }
+  
+  // exit controls on brake press
+  // DI_torque2::DI_brakePedal 0x118
+  if (addr == 0x118) {
+    // 1 bit at position 16
+    if (((to_push->RDLR & 0x8000)) >> 15 == 1) {
+      controls_allowed = 0;
+    }
+  }  
+  
+  // exit controls on EPAS error
+  // EPAS_sysStatus::EPAS_eacStatus 0x370
+  if (addr == 0x370) {
+    // if EPAS_eacStatus is not 1 or 2, disable control
+    eac_status = ((to_push->RDHR >> 21)) & 0x7;
+    if (eac_status != 1 && eac_status != 2) {
+      controls_allowed = 0;
+    }
+  }  
   
   
   // ACC steering wheel buttons
@@ -101,7 +146,13 @@ static int tesla_ign_hook() {
 }
 
 static int tesla_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
-  return -1;
+  if (bus_num == 0) {
+    // TODO: modify the disable bits and generate an EPB packet here
+    return 3; // Custom EPAS bus
+  }
+  if (bus_num == 3) {
+    return 0; // Chassis CAN
+  }
 }
 
 const safety_hooks tesla_hooks = {
