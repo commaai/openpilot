@@ -128,7 +128,19 @@ static int tesla_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   //}
 
   // 1 allows the message through
-  return false;
+  addr = to_push->RIR >> 21;
+  
+  // do not transmit CAN message if steering angle too high
+  // DAS_steeringControl::DAS_steeringAngleRequest
+  if (addr == 0x488) {
+    angle_raw = to_push->RDLR & 0x7F;
+    angle_steer = abs(angle_raw / 10 - 1638.35);
+    if (angle_steer > 20) {
+      return 0;
+    }
+  }  
+  
+  return true;
 }
 
 static int tesla_tx_lin_hook(int lin_num, uint8_t *data, int len) {
