@@ -63,17 +63,17 @@ def make_can_msg(addr, dat, idx, alt):
 #  return packer.make_can_msg("GAS_COMMAND", 0, values, idx)
 
 
-def create_steering_control(packer, apply_steer, car_fingerprint, idx):
+def create_steering_control(packer, enabled, apply_steer, car_fingerprint, idx):
   """Creates a CAN message for the Tesla DBC DAS_steeringControl."""
   
-  if controls_allowed == False:
+  if enabled == False:
     steering_type = 0
   else:
     steering_type = 1
   type_counter = steering_type << 6
   type_counter += idx
   checksum = ((apply_steer & 0xFF) + ((apply_steer >> 8) & 0xFF) + type_counter + 0x8C) & 0xFF  
-  #msg = struct.pack("!hBB", apply_steer, type_counter, checksum)
+  msg = struct.pack("!hBB", apply_steer, type_counter, checksum)
   
   values = {
     "DAS_steeringHapticRequest": 0,
@@ -83,7 +83,8 @@ def create_steering_control(packer, apply_steer, car_fingerprint, idx):
     "DAS_steeringControlType": steering_type,
   }
   
-  return packer.make_can_msg("DAS_steeringControl", 0, values, idx)
+  #return packer.make_can_msg("DAS_steeringControl", 0, values, idx)
+  return [0x488, 0, msg, 1]
 
 #def create_steering_control(packer, apply_steer, idx, controls_allowed):
 #  """Creates a CAN message for the Tesla EPAS STEERING_CONTROL."""

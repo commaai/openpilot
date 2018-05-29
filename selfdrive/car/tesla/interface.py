@@ -93,7 +93,7 @@ class CarInterface(object):
 
     ret.safetyModel = car.CarParams.SafetyModels.tesla
 
-    ret.enableCamera = False
+    ret.enableCamera = True
     ret.enableGasInterceptor = 0x201 in fingerprint
     print "ECU Camera Simulated: ", ret.enableCamera
     print "ECU Gas Interceptor: ", ret.enableGasInterceptor

@@ -129,7 +129,7 @@ class CarController(object):
 
     # Send steering command.
     idx = frame % 4
-    can_sends.append(teslacan.create_steering_control(self.packer, apply_steer, CS.CP.carFingerprint, idx))
+    can_sends.append(teslacan.create_steering_control(self.packer, enabled ,apply_steer, CS.CP.carFingerprint, idx))
 
     # Send gas and brake commands.
     #if (frame % 2) == 0:
@@ -151,7 +151,7 @@ class CarController(object):
 
     if (frame % radar_send_step) == 0:
       idx = (frame/radar_send_step) % 4
-      print "Steer command", apply_steer
+      #print "Steer command", apply_steer
      # can_sends.extend(teslacan.create_radar_commands(CS.v_ego, CS.CP.carFingerprint, idx))
 
     sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
