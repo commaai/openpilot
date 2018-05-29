@@ -18,6 +18,9 @@ int current_car_time = -1;
 int time_at_last_stalk_pull = -1;
 int eac_status = 0;
 
+// used when faking the epb epas enable signal
+int epb_control_counter = 0;
+
 int tesla_ignition_started = 0;
 
 static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
@@ -158,6 +161,35 @@ static int tesla_ign_hook() {
 static int tesla_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
   if (bus_num == 0) {
     // TODO: modify the disable bits and generate an EPB packet here
+    addr = to_fwd->RIR >> 21;
+    
+    // change inhibit of GTW_epasControl to WITH_BOTH
+    if (addr == 0x101) {
+      to_fwd->RDLR = to_fwd->RDLR | 0xC000;
+      int checksum = (((to_fwd->RDLR & 0xFF00) >> 8) + (to_fwd->RDLR & 0xFF) + 2) & 0xFF;
+      to_fwd->RDLR = to_fwd->RDLR & 0xFFFF;
+      to_fwd->RDLR = to_fwd->RDLR + (checksum << 16);
+    }     
+    
+    // now create a fake EPB_epasControl signal in order to enable control on the EPAS
+    CAN_FIFOMailBox_TypeDef tx_to_push_epb;
+    tx_to_push_epb.RDHR = to_fwd->RDHR;
+    tx_to_push_epb.RDLR = to_fwd->RDLR;
+    tx_to_push_epb.RDTR = to_fwd->RDTR;
+    tx_to_push_epb.RIR = to_fwd->RIR;
+
+    tx_to_push_epb.RIR = tx_to_push_epb.RIR & ~(0x7FF<<21);
+    tx_to_push_epb.RIR = tx_to_push_epb.RIR | (0x214 << 21);
+    tx_to_push_epb.RDLR = 1 + (epb_control_counter << 8);
+    checksum = (((tx_to_push_epb.RDLR & 0xFF00) >> 8) + (tx_to_push_epb.RDLR & 0xFF) + 0x16) & 0xFF;
+    tx_to_push_epb.RDLR = tx_to_push_epb.RDLR & 0xFFFF;
+    tx_to_push_epb.RDLR = tx_to_push_epb.RDLR + (checksum << 16);          
+    
+    // send fake EPB_epasControl signal
+    can_send(&tx_to_push_epb, 3);          
+    if (epb_control_counter >= 15) epb_control_counter = 0;
+    else epb_control_counter++;    
+
     return 3; // Custom EPAS bus
   }
   if (bus_num == 3) {
