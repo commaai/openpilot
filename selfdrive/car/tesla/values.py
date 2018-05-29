@@ -1,9 +1,10 @@
 # Car button codes
 class CruiseButtons:
-  RES_ACCEL   = 4
-  DECEL_SET   = 3
-  CANCEL      = 2
-  MAIN        = 1
+  # VAL_ 69 SpdCtrlLvr_Stat 32 "DN_1ST" 16 "UP_1ST" 8 "DN_2ND" 4 "UP_2ND" 2 "RWD" 1 "FWD" 0 "IDLE" ;
+  RES_ACCEL   = 16
+  DECEL_SET   = 32
+  CANCEL      = 1
+  MAIN        = 2
 
 
 #car chimes: enumeration from dbc file. Chimes are for alerts and warnings

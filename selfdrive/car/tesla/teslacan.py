@@ -65,12 +65,45 @@ def make_can_msg(addr, dat, idx, alt):
 
 def create_steering_control(packer, apply_steer, car_fingerprint, idx):
   """Creates a CAN message for the Tesla DBC DAS_steeringControl."""
+  
+  if controls_allowed == False:
+    steering_type = 0
+  else:
+    steering_type = 1
+  type_counter = steering_type << 6
+  type_counter += idx
+  checksum = ((apply_steer & 0xFF) + ((apply_steer >> 8) & 0xFF) + type_counter + 0x8C) & 0xFF  
+  #msg = struct.pack("!hBB", apply_steer, type_counter, checksum)
+  
   values = {
-    "DAS_steeringControlType": apply_steer,
+    "DAS_steeringHapticRequest": 0,
     "DAS_steeringAngleRequest": apply_steer,
-    "DAS_steeringControlType": apply_steer != 0,
+    "DAS_steeringControlCounter": idx,
+    "DAS_steeringControlChecksum": checksum,
+    "DAS_steeringControlType": steering_type,
   }
+  
   return packer.make_can_msg("DAS_steeringControl", 0, values, idx)
+
+#def create_steering_control(packer, apply_steer, idx, controls_allowed):
+#  """Creates a CAN message for the Tesla EPAS STEERING_CONTROL."""
+#  """BO_ 1160 DAS_steeringControl: 4 NEO
+#      SG_ DAS_steeringControlType : 23|2@0+ (1,0) [0|0] "" EPAS
+#      SG_ DAS_steeringControlChecksum : 31|8@0+ (1,0) [0|0] "" EPAS
+#      SG_ DAS_steeringControlCounter : 19|4@0+ (1,0) [0|0] "" EPAS
+#      SG_ DAS_steeringAngleRequest : 6|15@0+ (0.1,-1638.35) [-1638.35|1638.35] "deg" EPAS
+#      SG_ DAS_steeringHapticRequest : 7|1@0+ (1,0) [0|0] "" EPAS
+#  """
+#  if controls_allowed == False:
+#    steering_type = 0
+#  else:
+#    steering_type = 1
+#  type_counter = steering_type << 6
+#  type_counter += idx
+#  checksum = ((apply_steer & 0xFF) + ((apply_steer >> 8) & 0xFF) + type_counter + 0x8C) & 0xFF  
+#  msg = struct.pack("!hBB", apply_steer, type_counter, checksum)
+#  #TODO: change 0x489 to 0x488 for production
+#  return [0x488, 0, msg, 1]
 
 
 #def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, idx):

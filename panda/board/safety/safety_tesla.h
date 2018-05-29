@@ -44,14 +44,14 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   if (addr == 0x45) {
     // 6 bits starting at position 0
     int lever_position = (to_push->RDLR & 0x3F);
-    if (lever_position == 1) { // pull forward
+    if (lever_position == 2) { // pull forward
       // activate openpilot
       // TODO: uncomment the if to use double pull to activate
       //if (current_car_time <= time_at_last_stalk_pull + 1 && current_car_time != -1 && time_at_last_stalk_pull != -1) {
           controls_allowed = 1;
       //}
       time_at_last_stalk_pull = current_car_time;
-    } else if (lever_position == 2) { // push towards the back
+    } else if (lever_position == 1) { // push towards the back
       // deactivate openpilot
       controls_allowed = 0;
     }
@@ -63,7 +63,6 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     // DI_torque2
     int current_gear = (to_push->RDLR & 0x7000) >> 12;
     tesla_ignition_started = current_gear > 1; //Park = 1. If out of park, we're "on."
-    //tesla_ignition_started = 1; //TEMPORARY TEST
   }
   
   // exit controls on brake press
@@ -80,9 +79,9 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   if (addr == 0x370) {
     // if EPAS_eacStatus is not 1 or 2, disable control
     eac_status = ((to_push->RDHR >> 21)) & 0x7;
-    if (eac_status != 1 && eac_status != 2) {
-      controls_allowed = 0;
-    }
+    //if (eac_status != 1 && eac_status != 2) {
+    //  controls_allowed = 0;
+    //}
   }  
   
   

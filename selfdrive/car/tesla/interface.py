@@ -18,11 +18,6 @@ except ImportError:
   CarController = None
 
 
-# msgs sent for steering controller by camera module on can 0.
-# those messages are mutually exclusive on CRV and non-CRV cars
-CAMERA_MSGS = [0xe4, 0x194]
-
-
 def get_compute_gb_models(accel, speed):
   creep_brake = 0.0
   creep_speed = 2.3
@@ -98,7 +93,7 @@ class CarInterface(object):
 
     ret.safetyModel = car.CarParams.SafetyModels.tesla
 
-    ret.enableCamera = not any(x for x in CAMERA_MSGS if x in fingerprint)
+    ret.enableCamera = False
     ret.enableGasInterceptor = 0x201 in fingerprint
     print "ECU Camera Simulated: ", ret.enableCamera
     print "ECU Gas Interceptor: ", ret.enableGasInterceptor
@@ -282,8 +277,8 @@ class CarInterface(object):
       else:
         be.pressed = False
         but = self.CS.prev_cruise_setting
-      if but == 1:
-        be.type = 'altButton1'
+      #if but == 1:
+      #  be.type = 'altButton1'
       # TODO: more buttons?
       buttonEvents.append(be)
     ret.buttonEvents = buttonEvents
@@ -349,7 +344,7 @@ class CarInterface(object):
     for b in ret.buttonEvents:
 
       # do enable on both accel and decel buttons
-      if b.type in ["accelCruise", "decelCruise"] and not b.pressed:
+      if b.type == "altButton3" and not b.pressed:
         print "enabled pressed at", cur_time
         self.last_enable_pressed = cur_time
         enable_pressed = True
