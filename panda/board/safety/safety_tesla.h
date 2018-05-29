@@ -8,11 +8,15 @@
 //      brake rising edge
 //      brake > 0mph
 
+// lateral limits
+const int16_t MAX_ANGLE = 20; //Degrees
+
 int tesla_brake_prev = 0;
 int tesla_gas_prev = 0;
 int tesla_speed = 0;
 int current_car_time = -1;
 int time_at_last_stalk_pull = -1;
+int eac_status = 0;
 
 int tesla_ignition_started = 0;
 
@@ -31,9 +35,9 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
    // Record the current car time in current_car_time (for use with double-pulling cruise stalk)
   if (addr == 0x318) {
-    int hour = (to_push.RDLR & 0x1F000000) >> 24;
-    int minute = (to_push.RDHR & 0x3F00) >> 8;
-    int second = (to_push.RDLR & 0x3F0000) >> 16;
+    int hour = (to_push->RDLR & 0x1F000000) >> 24;
+    int minute = (to_push->RDHR & 0x3F00) >> 8;
+    int second = (to_push->RDLR & 0x3F0000) >> 16;
     current_car_time = (hour * 3600) + (minute * 60) + second;
   }
   
@@ -118,24 +122,19 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
 static int tesla_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 
-  //uint32_t addr;
-  //if (to_send->RIR & 4) {
-  //  // Extended
-  //  addr = to_send->RIR >> 3;
-  //} else {
-  //  // Normal
-  //  addr = to_send->RIR >> 21;
-  //}
+  uint32_t addr;
+  int angle_raw;
+  int angle_steer;
 
   // 1 allows the message through
-  addr = to_push->RIR >> 21;
+  addr = to_send->RIR >> 21;
   
   // do not transmit CAN message if steering angle too high
   // DAS_steeringControl::DAS_steeringAngleRequest
   if (addr == 0x488) {
-    angle_raw = to_push->RDLR & 0x7F;
-    angle_steer = abs(angle_raw / 10 - 1638.35);
-    if (angle_steer > 20) {
+    angle_raw = to_send->RDLR & 0x7F;
+    angle_steer = angle_raw / 10 - 1638.35;
+    if ( (angle_steer > MAX_ANGLE) || (angle_steer < -MAX_ANGLE) ) {
       return 0;
     }
   }  
@@ -165,6 +164,7 @@ static int tesla_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
   if (bus_num == 3) {
     return 0; // Chassis CAN
   }
+  return false;
 }
 
 const safety_hooks tesla_hooks = {
