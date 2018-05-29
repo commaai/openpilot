@@ -94,7 +94,8 @@ class CarInterface(object):
     ret.safetyModel = car.CarParams.SafetyModels.tesla
 
     ret.enableCamera = True
-    ret.enableGasInterceptor = 0x201 in fingerprint
+    # ret.enableGasInterceptor = 0x201 in fingerprint
+    ret.enableGasInterceptor = False
     print "ECU Camera Simulated: ", ret.enableCamera
     print "ECU Gas Interceptor: ", ret.enableGasInterceptor
 
@@ -102,24 +103,23 @@ class CarInterface(object):
 
     # FIXME: hardcoding honda civic 2016 touring params so they can be used to
     # scale unknown params for other cars
-    mass_civic = 2923./2.205 + std_cargo
-    wheelbase_civic = 2.70
-    centerToFront_civic = wheelbase_civic * 0.4
-    centerToRear_civic = wheelbase_civic - centerToFront_civic
-    rotationalInertia_civic = 2500
-    tireStiffnessFront_civic = 85400
-    tireStiffnessRear_civic = 90000
+    mass_models = 4647./2.205 + std_cargo
+    wheelbase_models = 2.959
+    # RC: I'm assuming center means center of mass, and I think Model S is pretty even between two axles
+    centerToFront_models = wheelbase_models * 0.5
+    centerToRear_models = wheelbase_models - centerToFront_models
+    rotationalInertia_models = 2500
+    tireStiffnessFront_models = 85400
+    tireStiffnessRear_models = 90000
 
     ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
     if candidate == CAR.MODELS:
       stop_and_go = True
-      ret.mass = mass_civic
-      ret.wheelbase = wheelbase_civic
-      ret.centerToFront = centerToFront_civic
-      ret.steerRatio = 13.0
-      # Civic at comma has modified steering FW, so different tuning for the Neo in that car
-      is_fw_modified = os.getenv("DONGLE_ID") in ['99c94dc769b5d96e']
-      ret.steerKpV, ret.steerKiV = [[0.4], [0.12]] if is_fw_modified else [[0.8], [0.24]]
+      ret.mass = mass_models
+      ret.wheelbase = wheelbase_models
+      ret.centerToFront = centerToFront_models
+      ret.steerRatio = 12.0
+      ret.steerKpV, ret.steerKiV = [[1.25], [0.2]]
 
       ret.longitudinalKpBP = [0., 5., 35.]
       ret.longitudinalKpV = [3.6, 2.4, 1.5]
@@ -128,8 +128,8 @@ class CarInterface(object):
     else:
       raise ValueError("unsupported car %s" % candidate)
 
-    ret.steerKf = 0. # TODO: investigate FF steer control for Honda
-    ret.steerControlType = car.CarParams.SteerControlType.torque
+    ret.steerKf = 0. # TODO: investigate FF steer control for Model S?
+    ret.steerControlType = car.CarParams.SteerControlType.angle
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter. Otherwise, add 0.5 mph margin to not
@@ -137,19 +137,18 @@ class CarInterface(object):
     ret.minEnableSpeed = -1. if (stop_and_go or ret.enableGasInterceptor) else 25.5 * CV.MPH_TO_MS
 
     centerToRear = ret.wheelbase - ret.centerToFront
-    # TODO: get actual value, for now starting with reasonable value for
-    # civic and scaling by mass and wheelbase
-    ret.rotationalInertia = rotationalInertia_civic * \
-                            ret.mass * ret.wheelbase**2 / (mass_civic * wheelbase_civic**2)
+    # TODO: get actual value, for now starting with reasonable value for Model S
+    ret.rotationalInertia = rotationalInertia_models * \
+                            ret.mass * ret.wheelbase**2 / (mass_models * wheelbase_models**2)
 
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
-    ret.tireStiffnessFront = (tireStiffnessFront_civic * ts_factor) * \
-                             ret.mass / mass_civic * \
-                             (centerToRear / ret.wheelbase) / (centerToRear_civic / wheelbase_civic)
+    ret.tireStiffnessFront = (tireStiffnessFront_models * ts_factor) * \
+                             ret.mass / mass_models * \
+                             (centerToRear / ret.wheelbase) / (centerToRear_models / wheelbase_models)
     ret.tireStiffnessRear = (tireStiffnessRear_civic * ts_factor) * \
-                            ret.mass / mass_civic * \
-                            (ret.centerToFront / ret.wheelbase) / (centerToFront_civic / wheelbase_civic)
+                            ret.mass / mass_models * \
+                            (ret.centerToFront / ret.wheelbase) / (centerToFront_models / wheelbase_models)
 
     # no rear steering, at least on the listed cars above
     ret.steerRatioRear = 0.
