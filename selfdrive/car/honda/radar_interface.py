@@ -2,12 +2,14 @@
 import os
 
 from selfdrive.can.parser import CANParser
+from common.fingerprints import HONDA as CAR
 
 from cereal import car
 from common.realtime import sec_since_boot
 from common.params import Params
 
 import zmq
+import time
 from selfdrive.services import service_list
 import selfdrive.messaging as messaging
 
@@ -26,11 +28,12 @@ def _create_nidec_can_parser():
 
 
 class RadarInterface(object):
-  def __init__(self):
+  def __init__(self, CP):
     # radar
     self.pts = {}
     self.track_id = 0
     self.radar_fault = False
+    self.CP = CP
 
     self.delay = 0.1  # Delay of radar
 
@@ -45,16 +48,18 @@ class RadarInterface(object):
 
     updated_messages = set()
     ret = car.RadarState.new_message()
-    
-    CP = car.CarParams.from_bytes(Params().get("CarParams", block=True))
-    # When camera is enabled, we assume messages are being forwarded to the bosch radar
-    if not CP.enableCamera:
+
+    # When camera is enabled, we assume messages are being forwarded to the
+    # bosch radar and we are only steering.
+    if self.CP.carFingerprint in (CAR.CRV_5G, CAR.ACCORD, CAR.CIVIC_HATCH):
+      time.sleep(0.05)
+    else:
       while 1:
         tm = int(sec_since_boot() * 1e9)
         updated_messages.update(self.rcp.update(tm, True))
         if 0x445 in updated_messages:
           break
-  
+
       for ii in updated_messages:
         cpt = self.rcp.vl[ii]
         if ii == 0x400:
@@ -74,7 +79,7 @@ class RadarInterface(object):
         else:
           if ii in self.pts:
             del self.pts[ii]
-  
+
       errors = []
       if not self.rcp.can_valid:
         errors.append("commIssue")
