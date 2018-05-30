@@ -146,7 +146,7 @@ class CarInterface(object):
     ret.tireStiffnessFront = (tireStiffnessFront_models * ts_factor) * \
                              ret.mass / mass_models * \
                              (centerToRear / ret.wheelbase) / (centerToRear_models / wheelbase_models)
-    ret.tireStiffnessRear = (tireStiffnessRear_civic * ts_factor) * \
+    ret.tireStiffnessRear = (tireStiffnessRear_models * ts_factor) * \
                             ret.mass / mass_models * \
                             (ret.centerToFront / ret.wheelbase) / (centerToFront_models / wheelbase_models)
 

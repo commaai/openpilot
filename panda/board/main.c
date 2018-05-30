@@ -300,6 +300,7 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, int hardwired) {
             #endif
             can_set_forwarding(0,3);
             can_set_forwarding(3,0);
+            // MISSING: setup GMLAN pin as output and high level to switch EPAS CAN on Tesla Giraffe
             break;
           default:
             can_silent = ALL_CAN_LIVE;
