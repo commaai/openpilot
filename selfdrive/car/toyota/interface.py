@@ -136,6 +136,7 @@ class CarInterface(object):
 
     # no rear steering, at least on the listed cars above
     ret.steerRatioRear = 0.
+    ret.steerControlType = car.CarParams.SteerControlType.torque
 
     # steer, gas, brake limitations VS speed
     ret.steerMaxBP = [16. * CV.KPH_TO_MS, 45. * CV.KPH_TO_MS]  # breakpoints at 1 and 40 kph
