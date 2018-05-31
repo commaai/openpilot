@@ -89,9 +89,9 @@ int touch_poll(TouchState *s, int* out_x, int* out_y) {
     }
   }
   if (up) {
-    // adjust for landscape
-    *out_x = 1920 - s->last_y;
-    *out_y = s->last_x;
+    // adjust for flippening
+    *out_x = s->last_y;
+    *out_y = 1080 - s->last_x;
   }
   return up;
 }

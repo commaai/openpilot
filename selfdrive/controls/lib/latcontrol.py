@@ -6,6 +6,7 @@ from selfdrive.controls.lib.lateral_mpc import libmpc_py
 from common.numpy_fast import interp
 from common.realtime import sec_since_boot
 from selfdrive.swaglog import cloudlog
+from cereal import car
 
 # 100ms is a rule of thumb estimation of lag from image processing to actuator command
 ACTUATORS_DELAY = 0.1
@@ -111,7 +112,9 @@ class LatControl(object):
       steers_max = get_steer_max(VM.CP, v_ego)
       self.pid.pos_limit = steers_max
       self.pid.neg_limit = -steers_max
-      steer_feedforward = self.angle_steers_des * v_ego**2  # proportional to realigning tire momentum (~ lateral accel)
+      steer_feedforward = self.angle_steers_des   # feedforward desired angle
+      if VM.CP.steerControlType == car.CarParams.SteerControlType.torque:
+        steer_feedforward *= v_ego**2  # proportional to realigning tire momentum (~ lateral accel)
       output_steer = self.pid.update(self.angle_steers_des, angle_steers, check_saturation=(v_ego > 10), override=steer_override, feedforward=steer_feedforward, speed=v_ego)
 
     self.sat_flag = self.pid.saturated
