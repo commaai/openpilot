@@ -133,13 +133,13 @@ static int tesla_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   
   // do not transmit CAN message if steering angle too high
   // DAS_steeringControl::DAS_steeringAngleRequest
-  if (addr == 0x488) {
-    angle_raw = to_send->RDLR & 0x7F;
-    angle_steer = angle_raw / 10 - 1638.35;
-    if ( (angle_steer > MAX_ANGLE) || (angle_steer < -MAX_ANGLE) ) {
-      return 0;
-    }
-  }  
+  //if (addr == 0x488) {
+  //  angle_raw = to_send->RDLR & 0x7F;
+  //  angle_steer = angle_raw * 0.1 - 1638.35;
+  //  if ( (angle_steer > MAX_ANGLE) || (angle_steer < -MAX_ANGLE) ) {
+  //    return 0;
+  //  }
+  //}  
   
   return true;
 }
@@ -190,9 +190,9 @@ static int tesla_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
     //if (epb_control_counter >= 15) epb_control_counter = 0;
     //else epb_control_counter++;    
 
-    return 3; // Custom EPAS bus
+    return 2; // Custom EPAS bus
   }
-  if (bus_num == 3) {
+  if (bus_num == 2) {
     return 0; // Chassis CAN
   }
   return false;
