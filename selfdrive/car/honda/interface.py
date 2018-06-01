@@ -196,7 +196,7 @@ class CarInterface(object):
       stop_and_go = False
       ret.mass = 3572 * CV.LB_TO_KG + std_cargo
       ret.wheelbase = 103.1 * CV.IN_TO_M
-      ret.centerToFront = ret.wheelbase * 0.41
+      ret.centerToFront = ret.wheelbase * 0.42
       ret.steerRatio = 15.3
       ret.steerKpV, ret.steerKiV = [[0.8], [0.24]]
 
@@ -208,7 +208,7 @@ class CarInterface(object):
       stop_and_go = False
       ret.mass = 3935 * CV.LB_TO_KG + std_cargo
       ret.wheelbase = 108.3 * CV.IN_TO_M
-      ret.centerToFront = ret.wheelbase * 0.38
+      ret.centerToFront = ret.wheelbase * 0.42
       ret.steerRatio = 15.0
       ret.steerKpV, ret.steerKiV = [[0.8], [0.24]]
 
@@ -220,7 +220,7 @@ class CarInterface(object):
       stop_and_go = False
       ret.mass = 4354 * CV.LB_TO_KG + std_cargo
       ret.wheelbase = 118.1 * CV.IN_TO_M
-      ret.centerToFront = ret.wheelbase * 0.41
+      ret.centerToFront = ret.wheelbase * 0.45
       ret.steerRatio = 14.35
       ret.steerKpV, ret.steerKiV = [[0.6], [0.18]]
 
@@ -232,7 +232,7 @@ class CarInterface(object):
       stop_and_go = False
       ret.mass = 4303 * CV.LB_TO_KG + std_cargo
       ret.wheelbase = 111.0 * CV.IN_TO_M
-      ret.centerToFront = ret.wheelbase * 0.41
+      ret.centerToFront = ret.wheelbase * 0.436
       ret.steerRatio = 16.0
       ret.steerKpV, ret.steerKiV = [[0.38], [0.11]]
 
@@ -245,7 +245,7 @@ class CarInterface(object):
       ts_factor = 1.4
       ret.mass = 4515 * CV.LB_TO_KG + std_cargo
       ret.wheelbase = 125.2 * CV.IN_TO_M
-      ret.centerToFront = ret.wheelbase * 0.41
+      ret.centerToFront = ret.wheelbase * 0.424
       ret.steerRatio = 15.59
       ret.steerKpV, ret.steerKiV = [[0.38], [0.11]]
 
