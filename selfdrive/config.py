@@ -16,13 +16,6 @@ class Conversions:
   #Mass
   LB_TO_KG = 0.453592
 
-  # Car decode decimal minutes into decimal degrees, can work with numpy arrays as input
-  @staticmethod
-  def dm2d(dm):
-    degs = np.round(dm/100.)
-    mins = dm - degs*100.
-    return degs + mins/60.
-
 
 # Car button codes
 # TODO: this is Honda specific, move to honda/interface.py
