@@ -13,8 +13,6 @@ class Conversions:
   #Angle
   DEG_TO_RAD = np.pi/180.
   RAD_TO_DEG = 1. / DEG_TO_RAD
-  #Distance
-  IN_TO_M = 0.0254
   #Mass
   LB_TO_KG = 0.453592
 
