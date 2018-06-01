@@ -1,6 +1,7 @@
 import numpy as np
 
 class Conversions:
+  #Speed
   MPH_TO_KPH = 1.609344
   KPH_TO_MPH = 1. / MPH_TO_KPH
   MS_TO_KPH = 3.6
@@ -9,8 +10,13 @@ class Conversions:
   MPH_TO_MS = MPH_TO_KPH * KPH_TO_MS
   MS_TO_KNOTS = 1.9438
   KNOTS_TO_MS = 1. / MS_TO_KNOTS
+  #Angle
   DEG_TO_RAD = np.pi/180.
   RAD_TO_DEG = 1. / DEG_TO_RAD
+  #Distance
+  IN_TO_M = 0.0254
+  #Mass
+  LB_TO_KG = 0.453592
 
   # Car decode decimal minutes into decimal degrees, can work with numpy arrays as input
   @staticmethod
