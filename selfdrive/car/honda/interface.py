@@ -156,7 +156,7 @@ class CarInterface(object):
     # FIXME: hardcoding honda civic 2016 touring params so they can be used to
     # scale unknown params for other cars
     mass_civic = 2923 * CV.LB_TO_KG + std_cargo
-    wheelbase_civic = 106.3 * CV.IN_TO_M
+    wheelbase_civic = 2.70
     centerToFront_civic = wheelbase_civic * 0.4
     centerToRear_civic = wheelbase_civic - centerToFront_civic
     rotationalInertia_civic = 2500
@@ -181,7 +181,7 @@ class CarInterface(object):
     elif candidate == CAR.ACURA_ILX:
       stop_and_go = False
       ret.mass = 3095 * CV.LB_TO_KG + std_cargo
-      ret.wheelbase = 105.1 * CV.IN_TO_M
+      ret.wheelbase = 2.67
       ret.centerToFront = ret.wheelbase * 0.37
       ret.steerRatio = 15.3
       # Acura at comma has modified steering FW, so different tuning for the Neo in that car
@@ -195,7 +195,7 @@ class CarInterface(object):
     elif candidate == CAR.CRV:
       stop_and_go = False
       ret.mass = 3572 * CV.LB_TO_KG + std_cargo
-      ret.wheelbase = 103.1 * CV.IN_TO_M
+      ret.wheelbase = 2.62
       ret.centerToFront = ret.wheelbase * 0.42
       ret.steerRatio = 15.3
       ret.steerKpV, ret.steerKiV = [[0.8], [0.24]]
@@ -207,7 +207,7 @@ class CarInterface(object):
     elif candidate == CAR.ACURA_RDX:
       stop_and_go = False
       ret.mass = 3935 * CV.LB_TO_KG + std_cargo
-      ret.wheelbase = 108.3 * CV.IN_TO_M
+      ret.wheelbase = 2.685
       ret.centerToFront = ret.wheelbase * 0.42
       ret.steerRatio = 15.0
       ret.steerKpV, ret.steerKiV = [[0.8], [0.24]]
@@ -219,7 +219,7 @@ class CarInterface(object):
     elif candidate == CAR.ODYSSEY:
       stop_and_go = False
       ret.mass = 4354 * CV.LB_TO_KG + std_cargo
-      ret.wheelbase = 118.1 * CV.IN_TO_M
+      ret.wheelbase = 3.00
       ret.centerToFront = ret.wheelbase * 0.45
       ret.steerRatio = 14.35
       ret.steerKpV, ret.steerKiV = [[0.6], [0.18]]
@@ -231,7 +231,7 @@ class CarInterface(object):
     elif candidate == CAR.PILOT:
       stop_and_go = False
       ret.mass = 4303 * CV.LB_TO_KG + std_cargo
-      ret.wheelbase = 111.0 * CV.IN_TO_M
+      ret.wheelbase = 2.82
       ret.centerToFront = ret.wheelbase * 0.436
       ret.steerRatio = 16.0
       ret.steerKpV, ret.steerKiV = [[0.38], [0.11]]
@@ -244,7 +244,7 @@ class CarInterface(object):
       stop_and_go = False
       ts_factor = 1.4
       ret.mass = 4515 * CV.LB_TO_KG + std_cargo
-      ret.wheelbase = 125.2 * CV.IN_TO_M
+      ret.wheelbase = 3.18
       ret.centerToFront = ret.wheelbase * 0.424
       ret.steerRatio = 15.59
       ret.steerKpV, ret.steerKiV = [[0.38], [0.11]]
