@@ -119,8 +119,12 @@ class CarInterface(object):
       ret.wheelbase = wheelbase_models
       ret.centerToFront = centerToFront_models
       ret.steerRatio = 12.0
-      ret.steerKpV, ret.steerKiV = [[1.25], [0.2]]
-
+      # Kp and Ki for the lateral control
+      ret.steerKpV, ret.steerKiV = [[0.09], [0.15]] # From [[1.25], [0.2]] dividing by 4 initially, then 0.09,0.15 from Rob
+      ret.steerKf = 0.00003 # Initial test value TODO: investigate FF steer control for Model S?
+      ret.steerRateCost = 0.5 # Lateral MPC cost on steering rate
+      
+      # Kp and Ki for the longitudinal control
       ret.longitudinalKpBP = [0., 5., 35.]
       ret.longitudinalKpV = [3.6, 2.4, 1.5]
       ret.longitudinalKiBP = [0., 35.]
@@ -128,7 +132,6 @@ class CarInterface(object):
     else:
       raise ValueError("unsupported car %s" % candidate)
 
-    ret.steerKf = 0. # TODO: investigate FF steer control for Model S?
     ret.steerControlType = car.CarParams.SteerControlType.angle
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
@@ -168,8 +171,6 @@ class CarInterface(object):
     ret.stoppingControl = True
     ret.steerLimitAlert = True
     ret.startAccel = 0.5
-
-    ret.steerRateCost = 0.5
 
     return ret
 

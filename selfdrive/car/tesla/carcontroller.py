@@ -115,7 +115,7 @@ class CarController(object):
     STEER_MAX = 0x4000 #16384
 
     if CS.v_ego < 16.7: #60.12 km/h divided by 3.6 = 16.7 meter per sec
-      USER_STEER_MAX = 180 # 180 degrees
+      USER_STEER_MAX = 1800 # 180 degrees
     elif CS.v_ego < 28: # 100.8 km/h 
       USER_STEER_MAX = 900 # 90 degrees
     else:
