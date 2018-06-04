@@ -298,8 +298,6 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, int hardwired) {
             #ifdef PANDA
               can_autobaud_enabled[2] = false;
             #endif
-            can_set_forwarding(0,2);
-            can_set_forwarding(2,0);
             // MISSING: setup GMLAN pin as output and high level to switch EPAS CAN on Tesla Giraffe
             break;
           default:
