@@ -33,7 +33,7 @@ class RadarInterface(object):
     self.pts = {}
     self.track_id = 0
     self.radar_fault = False
-    self.CP = CP
+    self.fingerprint = CP.carFingerprint
 
     self.delay = 0.1  # Delay of radar
 
@@ -49,46 +49,47 @@ class RadarInterface(object):
     updated_messages = set()
     ret = car.RadarState.new_message()
 
-    # When camera is enabled, we assume messages are being forwarded to the
-    # bosch radar and we are only steering.
-    if self.CP.carFingerprint in (CAR.CRV_5G, CAR.ACCORD, CAR.CIVIC_HATCH):
+    # in Bosch radar and we are only steering for now, so sleep 0.05s to keep
+    # radard at 20Hz and return no points
+    if self.fingerprint in (CAR.CRV_5G, CAR.ACCORD, CAR.CIVIC_HATCH):
       time.sleep(0.05)
-    else:
-      while 1:
-        tm = int(sec_since_boot() * 1e9)
-        updated_messages.update(self.rcp.update(tm, True))
-        if 0x445 in updated_messages:
-          break
+      return ret
 
-      for ii in updated_messages:
-        cpt = self.rcp.vl[ii]
-        if ii == 0x400:
-          # check for radar faults
-          self.radar_fault = cpt['RADAR_STATE'] != 0x79
-        elif cpt['LONG_DIST'] < 255:
-          if ii not in self.pts or cpt['NEW_TRACK']:
-            self.pts[ii] = car.RadarState.RadarPoint.new_message()
-            self.pts[ii].trackId = self.track_id
-            self.track_id += 1
-          self.pts[ii].dRel = cpt['LONG_DIST']  # from front of car
-          self.pts[ii].yRel = -cpt['LAT_DIST']  # in car frame's y axis, left is positive
-          self.pts[ii].vRel = cpt['REL_SPEED']
-          self.pts[ii].aRel = float('nan')
-          self.pts[ii].yvRel = float('nan')
-          self.pts[ii].measured = True
-        else:
-          if ii in self.pts:
-            del self.pts[ii]
+    while 1:
+      tm = int(sec_since_boot() * 1e9)
+      updated_messages.update(self.rcp.update(tm, True))
+      if 0x445 in updated_messages:
+        break
 
-      errors = []
-      if not self.rcp.can_valid:
-        errors.append("commIssue")
-      if self.radar_fault:
-        errors.append("fault")
-      ret.errors = errors
-      ret.canMonoTimes = canMonoTimes
+    for ii in updated_messages:
+      cpt = self.rcp.vl[ii]
+      if ii == 0x400:
+        # check for radar faults
+        self.radar_fault = cpt['RADAR_STATE'] != 0x79
+      elif cpt['LONG_DIST'] < 255:
+        if ii not in self.pts or cpt['NEW_TRACK']:
+          self.pts[ii] = car.RadarState.RadarPoint.new_message()
+          self.pts[ii].trackId = self.track_id
+          self.track_id += 1
+        self.pts[ii].dRel = cpt['LONG_DIST']  # from front of car
+        self.pts[ii].yRel = -cpt['LAT_DIST']  # in car frame's y axis, left is positive
+        self.pts[ii].vRel = cpt['REL_SPEED']
+        self.pts[ii].aRel = float('nan')
+        self.pts[ii].yvRel = float('nan')
+        self.pts[ii].measured = True
+      else:
+        if ii in self.pts:
+          del self.pts[ii]
 
-      ret.points = self.pts.values()
+    errors = []
+    if not self.rcp.can_valid:
+      errors.append("commIssue")
+    if self.radar_fault:
+      errors.append("fault")
+    ret.errors = errors
+    ret.canMonoTimes = canMonoTimes
+
+    ret.points = self.pts.values()
 
     return ret
 
