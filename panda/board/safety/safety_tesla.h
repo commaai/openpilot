@@ -164,11 +164,16 @@ static int tesla_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
     int32_t addr = to_fwd->RIR >> 21;
     
     // change inhibit of GTW_epasControl to WITH_BOTH
+    //if (addr == 0x101) {
+    //  to_fwd->RDLR = to_fwd->RDLR | 0xC000;
+    //  int checksum = (((to_fwd->RDLR & 0xFF00) >> 8) + (to_fwd->RDLR & 0xFF) + 2) & 0xFF;
+    //  to_fwd->RDLR = to_fwd->RDLR & 0xFFFF;
+    //  to_fwd->RDLR = to_fwd->RDLR + (checksum << 16);
+    //}     
+    
+    // remove GTW_epasControl in forwards to EPAS (generated in carcontroller.py)
     if (addr == 0x101) {
-      to_fwd->RDLR = to_fwd->RDLR | 0xC000;
-      int checksum = (((to_fwd->RDLR & 0xFF00) >> 8) + (to_fwd->RDLR & 0xFF) + 2) & 0xFF;
-      to_fwd->RDLR = to_fwd->RDLR & 0xFFFF;
-      to_fwd->RDLR = to_fwd->RDLR + (checksum << 16);
+      return false;
     }     
     
     // now create a fake EPB_epasControl signal in order to enable control on the EPAS

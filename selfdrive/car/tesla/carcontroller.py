@@ -114,12 +114,21 @@ class CarController(object):
     # *** compute control surfaces ***
     STEER_MAX = 0x4000 #16384
 
-    # steer torque is converted back to CAN reference (positive when steering right)
-    apply_steer = int(clip(-actuators.steer * STEER_MAX, -STEER_MAX, STEER_MAX))
+    if CS.v_ego < 16.7: #60.12 km/h divided by 3.6 = 16.7 meter per sec
+      USER_STEER_MAX = 180 # 180 degrees
+    elif CS.v_ego < 28: # 100.8 km/h 
+      USER_STEER_MAX = 900 # 90 degrees
+    else:
+      USER_STEER_MAX = 300 # 30 degrees 
 
     # During user override. sending 0 torque to avoid EPS sending error
-    if CS.steer_not_allowed:
-      apply_steer = 0
+    #if CS.steer_not_allowed:
+    #  steer_correction = 0
+    #else:
+    #  steer_correction = actuators.steer
+
+    # steer torque is converted back to CAN reference (positive when steering right)
+    apply_steer = int(clip((-actuators.steer * 100) + STEER_MAX - (CS.angle_steers * 10), STEER_MAX - USER_STEER_MAX, STEER_MAX + USER_STEER_MAX))
 
     # Send CAN commands.
     can_sends = []
@@ -127,7 +136,9 @@ class CarController(object):
 
     if (frame % send_step) == 0:
       idx = (frame/send_step) % 16 
-      can_sends.append(teslacan.create_steering_control(enabled ,apply_steer, idx))
-      can_sends.append(teslacan.create_epb_enable_signal(idx));
+      can_sends.append(teslacan.create_steering_control(enabled, apply_steer, idx))
+      can_sends.append(teslacan.create_epb_enable_signal(idx))
+      if idx != 15:
+        can_sends.append(teslacan.create_gtw_enable_signal(idx))
 
       sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())

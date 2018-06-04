@@ -90,7 +90,7 @@ def get_can_signals(CP):
       ("GTW_carState", 16), #JCT Actual message freq is 3.3 Hz (0.3 sec)
       ("GTW_status", 2), #JCT Actual message freq is 0.5 Hz (2 sec)
       ("DI_state", 5), #JCT Actual message freq is 1 Hz (1 sec)
-      ("EPAS_sysStatus", 5), #JCT Actual message freq is 1.3 Hz (0.76 sec)
+      ("EPAS_sysStatus", 0), #JCT Actual message freq is 1.3 Hz (0.76 sec)
       ("MCU_locationStatus", 5), #JCT Actual message freq is 1.3 Hz (0.76 sec)
   ]
 
