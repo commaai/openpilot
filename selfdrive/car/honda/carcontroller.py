@@ -1,5 +1,6 @@
-from collections import namedtuple
 import os
+from collections import namedtuple
+from cereal import car
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.controls.lib.drive_helpers import rate_limit
 from common.numpy_fast import clip
@@ -102,7 +103,7 @@ class CarController(object):
       hud_car = 0
 
     # For lateral control-only, send chimes as a beep since we don't send 0x1fa
-    if CS.CP.carFingerprint in (CAR.CRV_5G, CAR.CIVIC_HATCH, CAR.ACCORD):
+    if CS.CP.safetyModel == car.CarParams.SafetyModels.hondaBosch:
       snd_beep = snd_beep if snd_beep is not 0 else snd_chime
 
     #print chime, alert_id, hud_alert
@@ -148,7 +149,7 @@ class CarController(object):
       idx = (frame/10) % 4
       can_sends.extend(hondacan.create_ui_commands(self.packer, pcm_speed, hud, CS.CP.carFingerprint, idx))
 
-    if CS.CP.carFingerprint in (CAR.CRV_5G, CAR.CIVIC_HATCH, CAR.ACCORD):
+    if CS.CP.safetyModel == car.CarParams.SafetyModels.hondaBosch:
       # If using stock ACC, spam cancel command to kill gas when OP disengages.
       if pcm_cancel_cmd:
         can_sends.append(hondacan.create_cancel_command(idx))

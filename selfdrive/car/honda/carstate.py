@@ -106,7 +106,7 @@ def get_can_signals(CP):
       ("SCM_BUTTONS", 25),
   ]
 
-  if CP.carFingerprint in (CAR.CRV_5G, CAR.ACCORD, CAR.CIVIC_HATCH):
+  if CP.safetyModel == car.CarParams.SafetyModels.hondaBosch:
     # Civic is only bosch to use the same brake message as other hondas.
     if CP.carFingerprint != CAR.CIVIC_HATCH:
       signals += [("BRAKE_PRESSED", "BRAKE_MODULE", 0)]
@@ -300,7 +300,8 @@ class CarState(object):
     self.steer_torque_driver = cp.vl["STEER_STATUS"]['STEER_TORQUE_SENSOR']
 
     self.brake_switch = cp.vl["POWERTRAIN_DATA"]['BRAKE_SWITCH']
-    if self.CP.carFingerprint in (CAR.CRV_5G, CAR.ACCORD, CAR.CIVIC_HATCH):
+
+    if self.CP.safetyModel == car.CarParams.SafetyModels.hondaBosch:
       self.cruise_speed_offset = calc_cruise_offset(0, self.v_ego)
       if self.CP.carFingerprint == CAR.CIVIC_HATCH:
         self.brake_switch = cp.vl["POWERTRAIN_DATA"]['BRAKE_SWITCH']
