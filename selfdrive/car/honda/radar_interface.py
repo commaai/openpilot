@@ -1,15 +1,10 @@
 #!/usr/bin/env python
 import os
-
-from selfdrive.can.parser import CANParser
-from common.fingerprints import HONDA as CAR
-
-from cereal import car
-from common.realtime import sec_since_boot
-from common.params import Params
-
 import zmq
 import time
+from cereal import car
+from selfdrive.can.parser import CANParser
+from common.realtime import sec_since_boot
 from selfdrive.services import service_list
 import selfdrive.messaging as messaging
 
@@ -33,7 +28,7 @@ class RadarInterface(object):
     self.pts = {}
     self.track_id = 0
     self.radar_fault = False
-    self.fingerprint = CP.carFingerprint
+    self.bosch_radar = CP.safetyModel == car.CarParams.SafetyModels.hondaBosch
 
     self.delay = 0.1  # Delay of radar
 
@@ -51,7 +46,7 @@ class RadarInterface(object):
 
     # in Bosch radar and we are only steering for now, so sleep 0.05s to keep
     # radard at 20Hz and return no points
-    if self.fingerprint in (CAR.CRV_5G, CAR.ACCORD, CAR.CIVIC_HATCH):
+    if self.bosch_radar:
       time.sleep(0.05)
       return ret
 
