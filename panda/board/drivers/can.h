@@ -86,7 +86,7 @@ int can_err_cnt = 0;
   uint8_t can_num_lookup[] = {0,1,2,-1};
   int8_t can_forwarding[] = {-1,-1,-1,-1};
   uint32_t can_speed[] = {5000, 5000, 5000, 333};
-  bool can_autobaud_enabled[] = {true, true, true, false};
+  bool can_autobaud_enabled[] = {false, false, false, false};
   #define CAN_MAX 3
 #else
   CAN_TypeDef *cans[] = {CAN1, CAN2};
@@ -94,7 +94,7 @@ int can_err_cnt = 0;
   uint8_t can_num_lookup[] = {1,0};
   int8_t can_forwarding[] = {-1,-1};
   uint32_t can_speed[] = {5000, 5000};
-  bool can_autobaud_enabled[] = {true, true};
+  bool can_autobaud_enabled[] = {false, false};
   #define CAN_MAX 2
 #endif
 
