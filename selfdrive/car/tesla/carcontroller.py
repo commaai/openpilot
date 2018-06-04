@@ -112,46 +112,22 @@ class CarController(object):
     # **** process the car messages ****
 
     # *** compute control surfaces ***
-    BRAKE_MAX = 1024/4
     STEER_MAX = 0x4000 #16384
 
     # steer torque is converted back to CAN reference (positive when steering right)
-    apply_gas = clip(actuators.gas, 0., 1.)
-    apply_brake = int(clip(self.brake_last * BRAKE_MAX, 0, BRAKE_MAX - 1))
     apply_steer = int(clip(-actuators.steer * STEER_MAX, -STEER_MAX, STEER_MAX))
 
-    # any other cp.vl[0x18F]['STEER_STATUS'] is common and can happen during user override. sending 0 torque to avoid EPS sending error 5
+    # During user override. sending 0 torque to avoid EPS sending error
     if CS.steer_not_allowed:
       apply_steer = 0
 
     # Send CAN commands.
     can_sends = []
+    send_step = 5
 
-    # Send steering command.
-    idx = frame % 4
-    can_sends.append(teslacan.create_steering_control(self.packer, enabled ,apply_steer, CS.CP.carFingerprint, idx))
+    if (frame % send_step) == 0:
+      idx = (frame/send_step) % 16 
+      can_sends.append(teslacan.create_steering_control(enabled ,apply_steer, idx))
+      can_sends.append(teslacan.create_epb_enable_signal(idx));
 
-    # Send gas and brake commands.
-    #if (frame % 2) == 0:
-    #  idx = (frame / 2) % 4
-    #  can_sends.append(
-    #    teslacan.create_brake_command(self.packer, apply_brake, pcm_override,
-    #                                  pcm_cancel_cmd, hud.chime, hud.fcw, idx))
-    #  if not CS.brake_only:
-    #    # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
-    #    # This prevents unexpected pedal range rescaling
-    #    can_sends.append(teslacan.create_gas_command(self.packer, apply_gas, idx))
-    #
-    # Send dashboard UI commands.
-    #if (frame % 10) == 0:
-    #  idx = (frame/10) % 4
-    #  can_sends.extend(teslacan.create_ui_commands(self.packer, pcm_speed, hud, CS.CP.carFingerprint, idx))
-
-    radar_send_step = 5
-
-    if (frame % radar_send_step) == 0:
-      idx = (frame/radar_send_step) % 4
-      #print "Steer command", apply_steer
-     # can_sends.extend(teslacan.create_radar_commands(CS.v_ego, CS.CP.carFingerprint, idx))
-
-    sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
+      sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
