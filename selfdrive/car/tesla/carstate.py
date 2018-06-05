@@ -170,6 +170,7 @@ class CarState(object):
     self.v_wheel = 0 #JCT
     self.v_weight = 0 #JCT
     speed = (cp.vl["DI_torque2"]['DI_vehicleSpeed'])*1.609/3.6 #JCT MPH_TO_MS. Tesla is in MPH, v_ego is expected in M/S
+    speed = speed * 1.01 # To match car's displayed speed
     self.v_ego_x = np.matrix([[speed], [0.0]])
     self.v_ego_raw = speed
     v_ego_x = self.v_ego_kf.update(speed)
