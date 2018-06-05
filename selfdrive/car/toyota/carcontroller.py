@@ -40,7 +40,7 @@ def set_blindspot_debug_mode(lr,enable):
   if enable:
     m = lr + "\x02\x10\x60\x00\x00\x00\x00"
   else:
-    m = lr + "\x02\x10\x5F\x00\x00\x00\x00"
+    m = lr + "\x02\x10\x01\x00\x00\x00\x00"
   return make_can_msg(1872, m, 0, False)
 
 def poll_blindspot_status(lr):
