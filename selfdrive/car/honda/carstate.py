@@ -1,4 +1,5 @@
 import os
+from cereal import car
 from common.numpy_fast import interp
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
