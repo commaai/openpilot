@@ -114,12 +114,17 @@ class CarController(object):
     # *** compute control surfaces ***
     STEER_MAX = 0x4000 #16384
 
-    if CS.v_ego < 16.7: #60.12 km/h divided by 3.6 = 16.7 meter per sec
-      USER_STEER_MAX = 1800 # 180 degrees
-    elif CS.v_ego < 28: # 100.8 km/h 
-      USER_STEER_MAX = 900 # 90 degrees
-    else:
-      USER_STEER_MAX = 300 # 30 degrees 
+    # Prototype Angle Max. slope of 180 degree at 8.3 m/s (30 km/h) and 25 degree at 33.3 m/s (120 KM/h)
+    # = -62x + 2314.6
+    #   Angle max = -62*V(m/s) + 2314.6
+    # Gives for example: 
+    #                    180 degree at  30 km/h
+    #                    145 degree at  50 km/h
+    #                     94 degree at  80 km/h
+    #                     59 degree at 100 km/h
+    #                     42 degree at 110 km/h
+    #                     25 degree at 120 km/h
+    USER_STEER_MAX = (-62.0 * CS.v_ego) + 2314.6
 
     # During user override. sending 0 torque to avoid EPS sending error
     #if CS.steer_not_allowed:
