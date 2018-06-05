@@ -62,12 +62,20 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   
   // Detect gear in drive (start recording when in drive)
   //if (addr == 0x118 && bus_number == 0) {
-  if (addr == 0x118) {
-    // DI_torque2
-    int current_gear = (to_push->RDLR & 0x7000) >> 12;
-    tesla_ignition_started = current_gear > 1; //Park = 1. If out of park, we're "on."
+  //if (addr == 0x118) {
+  //  // DI_torque2
+  //  int current_gear = (to_push->RDLR & 0x7000) >> 12;
+  //  tesla_ignition_started = current_gear > 1; //Park = 1. If out of park, we're "on."
+  // }
+ 
+  // Detect drive rail on (ignition) (start recording)
+  if (addr == 0x348) {
+    // GTW_status
+    int drive_rail_on = (to_push->RDLR & 0x0001);
+    tesla_ignition_started = drive_rail_on == 1;
   }
-  
+
+
   // exit controls on brake press
   // DI_torque2::DI_brakePedal 0x118
   if (addr == 0x118) {
@@ -124,12 +132,12 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
 static int tesla_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 
-  uint32_t addr;
-  int angle_raw;
-  int angle_steer;
+  //uint32_t addr;
+  //int angle_raw;
+  //int angle_steer;
 
   // 1 allows the message through
-  addr = to_send->RIR >> 21;
+  //addr = to_send->RIR >> 21;
   
   // do not transmit CAN message if steering angle too high
   // DAS_steeringControl::DAS_steeringAngleRequest
@@ -160,44 +168,19 @@ static int tesla_ign_hook() {
 
 static int tesla_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
   
+  int32_t addr = to_fwd->RIR >> 21;
+  
+  // remove GTW_epasControl in forwards
+  if (addr == 0x101) {
+    return false;
+  }
+  
   if (bus_num == 0) {
-    int32_t addr = to_fwd->RIR >> 21;
     
-    // change inhibit of GTW_epasControl to WITH_BOTH
-    //if (addr == 0x101) {
-    //  to_fwd->RDLR = to_fwd->RDLR | 0xC000;
-    //  int checksum = (((to_fwd->RDLR & 0xFF00) >> 8) + (to_fwd->RDLR & 0xFF) + 2) & 0xFF;
-    //  to_fwd->RDLR = to_fwd->RDLR & 0xFFFF;
-    //  to_fwd->RDLR = to_fwd->RDLR + (checksum << 16);
-    //}     
-    
-    // remove GTW_epasControl in forwards to EPAS (generated in carcontroller.py)
-    if (addr == 0x101) {
-      return false;
-    }     
-    
-    // now create a fake EPB_epasControl signal in order to enable control on the EPAS
-    //CAN_FIFOMailBox_TypeDef tx_to_push_epb;
-    //tx_to_push_epb.RDHR = to_fwd->RDHR;
-    //tx_to_push_epb.RDLR = to_fwd->RDLR;
-    //tx_to_push_epb.RDTR = to_fwd->RDTR;
-    //tx_to_push_epb.RIR = to_fwd->RIR;
-    //
-    //tx_to_push_epb.RIR = tx_to_push_epb.RIR & ~(0x7FF<<21);
-    //tx_to_push_epb.RIR = tx_to_push_epb.RIR | (0x214 << 21);
-    //tx_to_push_epb.RDLR = 1 + (epb_control_counter << 8);
-    //checksum = (((tx_to_push_epb.RDLR & 0xFF00) >> 8) + (tx_to_push_epb.RDLR & 0xFF) + 0x16) & 0xFF;
-    //tx_to_push_epb.RDLR = tx_to_push_epb.RDLR & 0xFFFF;
-    //tx_to_push_epb.RDLR = tx_to_push_epb.RDLR + (checksum << 16);          
-    //
-    //// send fake EPB_epasControl signal
-    //can_send(tx_to_push_epb, 3);          
-    //if (epb_control_counter >= 15) epb_control_counter = 0;
-    //else epb_control_counter++;    
-
     return 2; // Custom EPAS bus
   }
   if (bus_num == 2) {
+    
     return 0; // Chassis CAN
   }
   return false;
