@@ -234,6 +234,7 @@ class CarInterface(object):
       ret.longitudinalKiV = [0.18, 0.12]
     elif candidate == CAR.CRV_5G:
       stop_and_go = True
+      ret.safetyParam = 1 # Alternate user brake msg
       ret.mass = 3358. * CV.LB_TO_KG + std_cargo
       ret.wheelbase = 2.67
       ret.centerToFront = ret.wheelbase * 0.41
