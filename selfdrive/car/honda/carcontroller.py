@@ -153,6 +153,8 @@ class CarController(object):
       # If using stock ACC, spam cancel command to kill gas when OP disengages.
       if pcm_cancel_cmd:
         can_sends.append(hondacan.create_cancel_command(idx))
+      if CS.stopped:
+        can_sends.append(hondacan.create_resume_command(idx))
     else:
       # Send gas and brake commands.
       if (frame % 2) == 0:

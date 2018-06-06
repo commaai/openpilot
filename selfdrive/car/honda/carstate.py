@@ -196,6 +196,8 @@ class CarState(object):
     self.left_blinker_on = 0
     self.right_blinker_on = 0
 
+    self.stopped = 0
+
     # vEgo kalman filter
     dt = 0.01
     # Q = np.matrix([[10.0, 0.0], [0.0, 100.0]])
@@ -301,8 +303,8 @@ class CarState(object):
     self.steer_torque_driver = cp.vl["STEER_STATUS"]['STEER_TORQUE_SENSOR']
 
     self.brake_switch = cp.vl["POWERTRAIN_DATA"]['BRAKE_SWITCH']
-
     if self.CP.safetyModel == car.CarParams.SafetyModels.hondaBosch:
+      self.stopped = cp.vl["ACC_HUD"]['CRUISE_SPEED'] == 252.
       self.cruise_speed_offset = calc_cruise_offset(0, self.v_ego)
       if self.CP.carFingerprint == CAR.CIVIC_HATCH:
         self.brake_switch = cp.vl["POWERTRAIN_DATA"]['BRAKE_SWITCH']
