@@ -63,30 +63,37 @@ def create_gas_command(packer, gas_amount, idx):
   return packer.make_can_msg("GAS_COMMAND", 0, values, idx)
 
 
-def create_steering_control(packer, apply_steer, car_fingerprint, idx):
+def create_steering_control(packer, apply_steer, enabled, car_fingerprint, idx):
   """Creates a CAN message for the Honda DBC STEERING_CONTROL."""
   values = {
     "STEER_TORQUE": apply_steer,
-    "STEER_TORQUE_REQUEST": apply_steer != 0,
+    "STEER_TORQUE_REQUEST": enabled,
   }
-  return packer.make_can_msg("STEERING_CONTROL", 0, values, idx)
+  # Set bus 2 for accord and new crv.
+  bus = (0,2)[car_fingerprint in (CAR.CRV_5G, CAR.ACCORD, CAR.CIVIC_HATCH)]
+  return packer.make_can_msg("STEERING_CONTROL", bus, values, idx)
 
 
 def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, idx):
   """Creates an iterable of CAN messages for the UIs."""
   commands = []
+  bus = 0
 
-  acc_hud_values = {
-    'PCM_SPEED': pcm_speed * CV.MS_TO_KPH,
-    'PCM_GAS': hud.pcm_accel,
-    'CRUISE_SPEED': hud.v_cruise,
-    'ENABLE_MINI_CAR': hud.mini_car,
-    'HUD_LEAD': hud.car,
-    'SET_ME_X03': 0x03,
-    'SET_ME_X03_2': 0x03,
-    'SET_ME_X01': 0x01,
-  }
-  commands.append(packer.make_can_msg("ACC_HUD", 0, acc_hud_values, idx))
+  # Bosch sends commands to bus 2.
+  if car_fingerprint in (CAR.CRV_5G, CAR.ACCORD, CAR.CIVIC_HATCH):
+    bus = 2
+  else:
+    acc_hud_values = {
+      'PCM_SPEED': pcm_speed * CV.MS_TO_KPH,
+      'PCM_GAS': hud.pcm_accel,
+      'CRUISE_SPEED': hud.v_cruise,
+      'ENABLE_MINI_CAR': hud.mini_car,
+      'HUD_LEAD': hud.car,
+      'SET_ME_X03': 0x03,
+      'SET_ME_X03_2': 0x03,
+      'SET_ME_X01': 0x01,
+    }
+    commands.append(packer.make_can_msg("ACC_HUD", 0, acc_hud_values, idx))
 
   lkas_hud_values = {
     'SET_ME_X41': 0x41,
@@ -95,7 +102,7 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, idx):
     'SOLID_LANES': hud.lanes,
     'BEEP': hud.beep,
   }
-  commands.append(packer.make_can_msg('LKAS_HUD', 0, lkas_hud_values, idx))
+  commands.append(packer.make_can_msg('LKAS_HUD', bus, lkas_hud_values, idx))
 
   if car_fingerprint in (CAR.CIVIC, CAR.ODYSSEY):
     commands.append(packer.make_can_msg('HIGHBEAM_CONTROL', 0, {'HIGHBEAMS_ON': False}, idx))
@@ -140,3 +147,9 @@ def create_radar_commands(v_ego, car_fingerprint, idx):
 
   commands.append(make_can_msg(0x301, msg_0x301, idx, 1))
   return commands
+
+def create_cancel_command(idx):
+  return make_can_msg(0x296, "\x40\x00\x00", idx, 0)
+
+def create_resume_command(idx):
+  return make_can_msg(0x296, "\x80\x00\x00", idx, 0)
