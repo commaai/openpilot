@@ -55,7 +55,7 @@ class LatControl(object):
   def reset(self):
     self.pid.reset()
 
-  def update(self, active, v_ego, angle_steers, steer_override, d_poly, angle_offset, VM, PL,blindspot):
+  def update(self, active, v_ego, angle_steers, steer_override, d_poly, angle_offset, VM, PL,blindspot,leftBlinker):
     cur_time = sec_since_boot()
     self.mpc_updated = False
     # TODO: this creates issues in replay when rewinding time: mpc won't run
@@ -115,10 +115,12 @@ class LatControl(object):
       steer_feedforward = self.angle_steers_des * v_ego**2  # proportional to realigning tire momentum (~ lateral accel)
       output_steer = self.pid.update(self.angle_steers_des, angle_steers, check_saturation=(v_ego > 10), override=steer_override, feedforward=steer_feedforward, speed=v_ego)
       
-      if blindspot:
+      if leftBlinker:
         self.blindspot_blink_counter_left_check += 1
-        if self.blindspot_blink_counter_left_check > 100:
+        if self.blindspot_blink_counter_left_check > 500:
           print "debug: output_steer= ", output_steer, "self.angle_steers_des= ", float(self.angle_steers_des)
+          if blindspot:
+            print "blindspot detected"
       else:
         self.blindspot_blink_counter_left_check = 0
     self.sat_flag = self.pid.saturated
