@@ -263,7 +263,7 @@ def state_control(plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, 
 
   # *** steering PID loop ***
   actuators.steer, actuators.steerAngle = LaC.update(active, CS.vEgo, CS.steeringAngle,
-                                                     CS.steeringPressed, plan.dPoly, angle_offset, VM, PL,CS.blindspot)
+                                                     CS.steeringPressed, plan.dPoly, angle_offset, VM, PL,CS.blindspot,CS.leftBlinker)
 
   if CP.enableCruise and CS.cruiseState.enabled:
     v_cruise_kph = CS.cruiseState.speed * CV.MS_TO_KPH
