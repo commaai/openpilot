@@ -18,9 +18,6 @@ int current_car_time = -1;
 int time_at_last_stalk_pull = -1;
 int eac_status = 0;
 
-// used when faking the epb epas enable signal
-int epb_control_counter = 0;
-
 int tesla_ignition_started = 0;
 
 static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
@@ -60,21 +57,12 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     }
   }  
   
-  // Detect gear in drive (start recording when in drive)
-  //if (addr == 0x118 && bus_number == 0) {
-  //if (addr == 0x118) {
-  //  // DI_torque2
-  //  int current_gear = (to_push->RDLR & 0x7000) >> 12;
-  //  tesla_ignition_started = current_gear > 1; //Park = 1. If out of park, we're "on."
-  // }
- 
   // Detect drive rail on (ignition) (start recording)
   if (addr == 0x348) {
     // GTW_status
     int drive_rail_on = (to_push->RDLR & 0x0001);
     tesla_ignition_started = drive_rail_on == 1;
   }
-
 
   // exit controls on brake press
   // DI_torque2::DI_brakePedal 0x118
@@ -95,33 +83,6 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     }
   }  
   
-  
-  // ACC steering wheel buttons
-  //if (addr == 69) {
-  //  int buttons = (to_push->RDHR >> 12) & 0x7;
-  //  // res/set - enable, cancel button - disable
-  //  if (buttons == 2 || buttons == 3) {
-  //    controls_allowed = 1;
-  //  } else if (buttons == 6) {
-  //    controls_allowed = 0;
-  //  }
-  //}
-
-  // exit controls on rising edge of brake press or on brake press when
-  // speed > 0
-  //if (addr == 241) {
-  //  int brake = (to_push->RDLR & 0xFF00) >> 8;
-  //  // Brake pedal's potentiometer returns near-zero reading
-  //  // even when pedal is not pressed
-  //  if (brake < 10) {
-  //    brake = 0;
-  //  }
-  //  if (brake && (!tesla_brake_prev || tesla_speed)) {
-  //     controls_allowed = 0;
-  //  }
-  //  tesla_brake_prev = brake;
-  //}
-
 }
 
 // all commands: gas/regen, friction brake and steering
@@ -170,17 +131,25 @@ static int tesla_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
   
   int32_t addr = to_fwd->RIR >> 21;
   
-  // remove GTW_epasControl in forwards
-  if (addr == 0x101) {
-    return false;
-  }
-  
   if (bus_num == 0) {
     
+    // change inhibit of GTW_epasControl to WITH_BOTH
+    if (addr == 0x101) {
+      to_fwd->RDLR = to_fwd->RDLR | 0xC000;
+      int checksum = (((to_fwd->RDLR & 0xFF00) >> 8) + (to_fwd->RDLR & 0xFF) + 2) & 0xFF;
+      to_fwd->RDLR = to_fwd->RDLR & 0xFFFF;
+      to_fwd->RDLR = to_fwd->RDLR + (checksum << 16);
+    }
+
     return 2; // Custom EPAS bus
   }
   if (bus_num == 2) {
     
+    // remove GTW_epasControl in forwards
+   if (addr == 0x101) {
+     return false;
+   }
+
     return 0; // Chassis CAN
   }
   return false;

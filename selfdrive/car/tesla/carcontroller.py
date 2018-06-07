@@ -69,7 +69,7 @@ class CarController(object):
 
     """ Controls thread """
 
-    ## Todo add code to detect Tesla DAS (camera) and go into listen and record mode only
+    ## Todo add code to detect Tesla DAS (camera) and go into listen and record mode only (for AP1 / AP2 cars)
     if not self.enable_camera:
       return
 
@@ -126,11 +126,8 @@ class CarController(object):
     #                     25 degree at 120 km/h
     USER_STEER_MAX = (-62.0 * CS.v_ego) + 2314.6
 
-    # During user override. sending 0 torque to avoid EPS sending error
-    #if CS.steer_not_allowed:
-    #  steer_correction = 0
-    #else:
-    #  steer_correction = actuators.steer
+    # Basic highway lane change logic
+    enable_steer_control = (not CS.right_blinker_on and not CS.left_blinker_on and enabled)
 
     # steer torque is converted back to CAN reference (positive when steering right)
     apply_steer = int(clip((-actuators.steer * 100) + STEER_MAX - (CS.angle_steers * 10), STEER_MAX - USER_STEER_MAX, STEER_MAX + USER_STEER_MAX))
@@ -141,9 +138,7 @@ class CarController(object):
 
     if (frame % send_step) == 0:
       idx = (frame/send_step) % 16 
-      can_sends.append(teslacan.create_steering_control(enabled, apply_steer, idx))
+      can_sends.append(teslacan.create_steering_control(enable_steer_control, apply_steer, idx))
       can_sends.append(teslacan.create_epb_enable_signal(idx))
-      if idx != 15:
-        can_sends.append(teslacan.create_gtw_enable_signal(idx))
 
       sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())

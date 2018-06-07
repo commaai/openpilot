@@ -48,6 +48,7 @@ def get_can_signals(CP):
       ("EPAS_torsionBarTorque", "EPAS_sysStatus", 0), # Used in interface.py
       ("EPAS_eacStatus", "EPAS_sysStatus", 0),
       ("EPAS_handsOnLevel", "EPAS_sysStatus", 0),
+      ("EPAS_steeringFault", "EPAS_sysStatus", 0),
       ("DI_gear", "DI_torque2", 3),
       ("DOOR_STATE_FL", "GTW_carState", 1),
       ("DOOR_STATE_FR", "GTW_carState", 1),
@@ -156,8 +157,8 @@ class CarState(object):
 
     # 2 = temporary 3= TBD 4 = temporary, hit a bump 5 (permanent) 6 = temporary 7 (permanent)
     # TODO: Use values from DBC to parse this field
-    self.steer_error = 0 #cp.vl["EPAS_sysStatus"]['EPAS_eacStatus'] not in [2,1]
-    self.steer_not_allowed = 0 #cp.vl["EPAS_sysStatus"]['EPAS_eacErrorCode'] != 0
+    self.steer_error = cp.vl["EPAS_sysStatus"]['EPAS_steeringFault'] == 1
+    self.steer_not_allowed = 0 # RETURN ALWAYS 0, NEED TO INVESTIGATE cp.vl["EPAS_sysStatus"]['EPAS_eacStatus'] not in [2,1] # 2 "EAC_ACTIVE" 1 "EAC_AVAILABLE" 3 "EAC_FAULT" 0 "EAC_INHIBITED"
     self.brake_error = 0 #NOT WORKINGcp.vl[309]['ESP_brakeLamp'] #JCT
     # JCT More ESP errors available, these needs to be added once car steers on its own to disable / alert driver
     self.esp_disabled = 0 #NEED TO CORRECT DBC cp.vl[309]['ESP_espOffLamp'] or cp.vl[309]['ESP_tcOffLamp'] or cp.vl[309]['ESP_tcLampFlash'] or cp.vl[309]['ESP_espFaultLamp'] #JCT
@@ -210,7 +211,7 @@ class CarState(object):
     self.pedal_gas = 0 #cp.vl["DI_torque1"]['DI_pedalPos']
     self.car_gas = self.pedal_gas
 
-    self.steer_override = abs(cp.vl["EPAS_sysStatus"]['EPAS_handsOnLevel']) > 0 #JCT need to be tested and adjusted. 8=38.7% of range as george uses. Range -20.4 to 20.4 Nm
+    self.steer_override = abs(cp.vl["EPAS_sysStatus"]['EPAS_handsOnLevel']) > 0
     self.steer_torque_driver = 0 #JCT
 
     # brake switch has shown some single time step noise, so only considered when
