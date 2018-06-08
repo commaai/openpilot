@@ -172,9 +172,11 @@ class CarState(object):
     self.brake_error = 0
     self.steer_torque_driver = cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_DRIVER']
     self.steer_torque_motor = cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_EPS']
-
+    self.lane_departure_toggle_on = bool(cp.vl["JOEL_ID"]['LANE_WARNING'])
+    self.distance_toggle = cp.vl["JOEL_ID"]['ACC_DISTANCE']
+    self.acc_slow_on = bool(cp.vl["JOEL_ID"]['LANE_WARNING'])
     self.user_brake = 0
-    self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED']
+    self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED'] - 34 * self.acc_slow_on
     self.pcm_acc_status = cp.vl["PCM_CRUISE"]['CRUISE_STATE']
     self.gas_pressed = not cp.vl["PCM_CRUISE"]['GAS_RELEASED']
     self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]['LOW_SPEED_LOCKOUT'] == 2
@@ -183,6 +185,4 @@ class CarState(object):
       self.generic_toggle = cp.vl["AUTOPARK_STATUS"]['STATE'] != 0
     else:
       self.generic_toggle = bool(cp.vl["LIGHT_STALK"]['AUTO_HIGH_BEAM'])
-      self.lane_departure_toggle_on = bool(cp.vl["JOEL_ID"]['LANE_WARNING'])
-      self.distance_toggle = cp.vl["JOEL_ID"]['ACC_DISTANCE']
-      self.acc_slow_on = bool(cp.vl["JOEL_ID"]['LANE_WARNING'])
+      
