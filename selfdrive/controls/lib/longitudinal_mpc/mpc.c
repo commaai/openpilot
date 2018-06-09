@@ -104,7 +104,7 @@ void init_with_simulation(double v_ego, double x_l, double v_l, double a_l, doub
   for (i = 0; i < NYN; ++i)  acadoVariables.yN[ i ] = 0.0;
 }
 
-int run_mpc(state_t * x0, log_t * solution, double l){
+int run_mpc(state_t * x0, log_t * solution, double l, double TR){
   int i;
 
   for (i = 0; i <= NOD * N; i+= NOD){
@@ -118,7 +118,7 @@ int run_mpc(state_t * x0, log_t * solution, double l){
   acadoVariables.x[4] = acadoVariables.x0[4] = x0->v_l;
   acadoVariables.x[5] = acadoVariables.x0[5] = x0->a_l;
 
-  acado_preparationStep();
+  acado_preparationStep(TR);
   acado_feedbackStep();
 
 	for (i = 0; i <= N; i++){
@@ -131,7 +131,7 @@ int run_mpc(state_t * x0, log_t * solution, double l){
 
     solution->j_ego[i] = acadoVariables.u[i];
 	}
-  solution->cost = acado_getObjective();
+  solution->cost = acado_getObjective(TR);
 
   // Dont shift states here. Current solution is closer to next timestep than if
   // we shift by 0.2 seconds.
