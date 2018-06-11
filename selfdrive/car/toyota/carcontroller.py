@@ -246,7 +246,7 @@ class CarController(object):
         print "Everywhere"
       else:
         can_sends.append(create_steer_command(self.packer, apply_steer, frame))
-        print "Somewhere"
+        #print "Somewhere" rav4h with dsu disconnected
 
     if self.angle_control:
       can_sends.append(create_ipas_steer_command(self.packer, apply_angle, self.steer_angle_enabled, 
