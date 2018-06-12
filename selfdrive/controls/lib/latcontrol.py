@@ -86,6 +86,9 @@ class LatControl(object):
       self.cur_state[0].delta = delta_desired
 
       self.angle_steers_des_mpc = float(math.degrees(delta_desired * VM.CP.steerRatio) + angle_offset)
+      if leftBlinker:
+        if self.blindspot_blink_counter_left_check > 500:
+          self.angle_steers_des_mpc += 1
       self.angle_steers_des_time = cur_time
       self.mpc_updated = True
 
@@ -122,7 +125,7 @@ class LatControl(object):
         self.blindspot_blink_counter_left_check += 1
         if self.blindspot_blink_counter_left_check > 500:
           print "debug: output_steer= ", output_steer, "self.angle_steers_des= ", float(self.angle_steers_des)
-          self.angle_steers_des += 10
+          self.angle_steers_des += 1
       else:
         self.blindspot_blink_counter_left_check = 0
     self.sat_flag = self.pid.saturated
