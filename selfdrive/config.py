@@ -1,6 +1,7 @@
 import numpy as np
 
 class Conversions:
+  #Speed
   MPH_TO_KPH = 1.609344
   KPH_TO_MPH = 1. / MPH_TO_KPH
   MS_TO_KPH = 3.6
@@ -9,24 +10,12 @@ class Conversions:
   MPH_TO_MS = MPH_TO_KPH * KPH_TO_MS
   MS_TO_KNOTS = 1.9438
   KNOTS_TO_MS = 1. / MS_TO_KNOTS
+  #Angle
   DEG_TO_RAD = np.pi/180.
   RAD_TO_DEG = 1. / DEG_TO_RAD
+  #Mass
+  LB_TO_KG = 0.453592
 
-  # Car decode decimal minutes into decimal degrees, can work with numpy arrays as input
-  @staticmethod
-  def dm2d(dm):
-    degs = np.round(dm/100.)
-    mins = dm - degs*100.
-    return degs + mins/60.
-
-
-# Car button codes
-# TODO: this is Honda specific, move to honda/interface.py
-class CruiseButtons:
-  RES_ACCEL   = 4
-  DECEL_SET   = 3
-  CANCEL      = 2
-  MAIN        = 1
 
 RADAR_TO_CENTER = 2.7   # RADAR is ~ 2.7m ahead from center of car
 
