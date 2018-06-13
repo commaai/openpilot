@@ -174,7 +174,7 @@ class CarState(object):
     self.steer_torque_motor = cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_EPS']
     self.lane_departure_toggle_on = bool(cp.vl["JOEL_ID"]['LANE_WARNING'])
     self.distance_toggle = cp.vl["JOEL_ID"]['ACC_DISTANCE']
-    self.acc_slow_on = bool(cp.vl["JOEL_ID"]['LANE_WARNING'])
+    self.acc_slow_on = bool(cp.vl["JOEL_ID"]['ACC_SLOW'])
     self.user_brake = 0
     self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED'] - 34 * self.acc_slow_on
     self.pcm_acc_status = cp.vl["PCM_CRUISE"]['CRUISE_STATE']
