@@ -118,7 +118,7 @@ class CarController(object):
     self.alert_active = False
     self.last_standstill = False
     self.standstill_req = False
-    self.angle_control = False
+    self.angle_control = True
     self.blindspot_poll_counter = 0
     self.blindspot_blink_counter_left = 0
     self.steer_angle_enabled = False
