@@ -232,6 +232,7 @@ class LongitudinalMpc(object):
 #      TR=1.5 # 15m at 40km/hr
 #    elif CS.distanceToggle == 3:
 #      TR=2.3 # 25m at 40km/hr
+    TR=1.8
     n_its = self.libmpc.run_mpc(self.cur_state, self.mpc_solution, l,TR)
     duration = int((sec_since_boot() - t) * 1e9)
     self.send_mpc_solution(n_its, duration)
