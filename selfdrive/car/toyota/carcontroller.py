@@ -215,7 +215,7 @@ class CarController(object):
           can_sends.append(set_blindspot_debug_mode(LEFT_BLINDSPOT, False))
           self.blindspot_debug_enabled_left = False
           #print "debug Left blindspot debug disabled"
-      if self.blindspot_blink_counter_left > 299 and not self.blindspot_debug_enabled_left: #After 3 seconds of blinking check blindspot
+      if self.blindspot_blink_counter_left > 199 and not self.blindspot_debug_enabled_left: #After 2 seconds of blinking check blindspot
         can_sends.append(set_blindspot_debug_mode(LEFT_BLINDSPOT, True))
         #print "debug Left blindspot debug enabled"
         self.blindspot_debug_enabled_left = True
