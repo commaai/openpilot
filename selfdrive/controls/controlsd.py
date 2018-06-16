@@ -237,7 +237,7 @@ def state_control(plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, 
   elif state in [State.enabled, State.softDisabling]:
 
     # decrease awareness status
-    awareness_status -= 0.01/(AWARENESS_TIME)
+    #awareness_status -= 0.01/(AWARENESS_TIME)
     if awareness_status <= 0.:
       AM.add("driverDistracted", enabled)
     elif awareness_status <= AWARENESS_PRE_TIME / AWARENESS_TIME and \
@@ -276,8 +276,8 @@ def state_control(plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, 
     awareness_status = 1.
 
   # send a "steering required alert" if saturation count has reached the limit
-  if LaC.sat_flag and CP.steerLimitAlert:
-    AM.add("steerSaturated", enabled)
+  #if LaC.sat_flag and CP.steerLimitAlert:
+  #  AM.add("steerSaturated", enabled)
 
   # parse permanent warnings to display constantly
   for e in get_events(events, [ET.PERMANENT]):
