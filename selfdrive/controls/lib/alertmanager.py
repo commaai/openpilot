@@ -130,6 +130,12 @@ class AlertManager(object):
         AlertStatus.userPrompt, AlertSize.mid,
         Priority.LOW, None, None, 0., 0., .2),
 
+    "resumeRequired": Alert(
+        "STOPPED",
+        "Press Resume to Move",
+        AlertStatus.userPrompt, AlertSize.mid,
+        Priority.LOW, None, None, 0., 0., .2),
+
     "debugAlert": Alert( 
         "DEBUG ALERT", 
         "", 
