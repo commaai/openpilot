@@ -49,6 +49,7 @@ int controls_allowed = 0;
 #include "safety/safety_gm.h"
 #include "safety/safety_ford.h"
 #include "safety/safety_cadillac.h"
+#include "safety/safety_tesla.h"
 #include "safety/safety_elm327.h"
 
 const safety_hooks *current_hooks = &nooutput_hooks;
@@ -87,6 +88,7 @@ typedef struct {
 #define SAFETY_HONDA_BOSCH 4
 #define SAFETY_FORD 5
 #define SAFETY_CADILLAC 6
+#define SAFETY_TESLA 7
 #define SAFETY_TOYOTA_IPAS 0x1335
 #define SAFETY_TOYOTA_NOLIMITS 0x1336
 #define SAFETY_ALLOUTPUT 0x1337
