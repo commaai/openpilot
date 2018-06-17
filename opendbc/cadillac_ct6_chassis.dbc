@@ -45,11 +45,29 @@ BO_ 823 PACMParkAssitCmd: 7 NEO
 BO_ 560 EBCMRegen: 6 K17_EBCM
  SG_ Regen : 1|10@0+ (1,0) [0|0] ""  NEO
 
+BO_ 338 ASCMLKASteeringCmd: 6 NEO
+ SG_ LKASteeringCmdActive : 7|1@0+ (1,0) [0|0] ""  NEO
+ SG_ LKASteeringCmd : 5|14@0- (1,0) [0|0] ""  NEO
+ SG_ RollingCounter : 23|2@0+ (1,0) [0|0] ""  NEO
+ SG_ SetMe1 : 21|1@0+ (1,0) [0|0] ""  NEO
+ SG_ LKASVehicleSpeed : 20|13@0+ (0.22,0) [0|0] "kph" NEO
+ SG_ LKASMode : 36|2@0+ (1,0) [0|0] ""  NEO
+ SG_ LKASteeringCmdChecksum : 33|10@0+ (1,0) [0|0] ""  NEO
+
+BO_ 340 ASCMBLKASteeringCmd: 6 NEO
+ SG_ LKASteeringCmdActive : 7|1@0+ (1,0) [0|0] ""  NEO
+ SG_ LKASteeringCmd : 5|14@0- (1,0) [0|0] ""  NEO
+ SG_ RollingCounter : 23|2@0+ (1,0) [0|0] ""  NEO
+ SG_ SetMe1 : 21|1@0+ (1,0) [0|0] ""  NEO
+ SG_ LKASVehicleSpeed : 20|13@0+ (0.22,0) [0|0] "kph" NEO
+ SG_ LKASteeringCmdActive2 : 35|1@0+ (1,0) [0|0] ""  NEO
+ SG_ LKASteeringCmdChecksum : 33|10@0+ (1,0) [0|0] ""  NEO
+
 BO_ 368 EBCMFrictionBrakeStatus: 8 K17_EBCM
  SG_ FrictionBrakePressure : 23|16@0+ (1,0) [0|0] ""  NEO
 
 BO_ 789 EBCMFrictionBrakeCmd: 5 K17_EBCM
- SG_ RollingCounter : 33|2@0+ (1,0) [0|0] ""  NEO
+ SG_ RollingCounter : 37|6@0+ (1,0) [0|0] ""  NEO
  SG_ FrictionBrakeMode : 7|4@0+ (1,0) [0|0] ""  NEO
  SG_ FrictionBrakeChecksum : 23|16@0+ (1,0) [0|0] ""  NEO
  SG_ FrictionBrakeCmd : 3|12@0- (1,0) [0|0] ""  NEO
@@ -73,3 +91,5 @@ BA_ "UseGMParameterIDs" 0;
 BA_ "BusType" "CAN";
 BA_ "ProtocolType" "GMLAN";
 
+VAL_ 338 LKASteeringCmdActive 1 "Active" 0 "Inactive" ;
+VAL_ 338 LKASMode 2 "supercruise" 1 "lkas" 0 "Inactive" ;
