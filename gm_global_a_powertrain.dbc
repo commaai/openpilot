@@ -33,7 +33,7 @@ NS_ :
 
 BS_:
 
-BU_: K16_BECM K73_TCIC K9_BCM K43_PSCM K17_EBCM K20_ECM K114B_HPCM NEO K124_ASCM
+BU_: K16_BECM K73_TCIC K9_BCM K43_PSCM K17_EBCM K20_ECM K114B_HPCM NEO K124_ASCM EPB
 VAL_TABLE_ TurnSignals 2 "Right Turn" 1 "Left Turn" 0 "None" ;
 VAL_TABLE_ ACCLeadCar 1 "Present" 0 "Not Present" ;
 VAL_TABLE_ ACCCmdActive 1 "Active" 0 "Inactive" ;
@@ -63,6 +63,7 @@ BO_ 190 ECMAcceleratorPos: 6 K20_ECM
 BO_ 201 ECMEngineStatus: 8 K20_ECM
  SG_ EngineTPS : 39|8@0+ (0.392156863,0) [0|100.000000065] "%"  NEO
  SG_ EngineRPM : 15|16@0+ (0.25,0) [0|0] "RPM"  NEO
+ SG_ CruiseMainOn : 29|1@0+ (1,0) [0|1] ""  NEO
 
 BO_ 209 EBCMBrakePedalTorque: 7 K17_EBCM
  SG_ BrakePedalTorque : 3|12@0+ (1,0) [0|0] ""  NEO
@@ -86,7 +87,8 @@ BO_ 320 BCMTurnSignals: 3 K9_BCM
 
 BO_ 328 PSCM_148: 1 K43_PSCM
 
-BO_ 381 MSG_17D: 6 K20_ECM
+BO_ 381 ESPStatus: 6 K20_ECM
+ SG_ TractionControlOn : 5|1@0+ (1,0) [0|0] ""  NEO
  SG_ MSG17D_AccPower : 35|12@0- (1,0) [0|0] ""  NEO
 
 BO_ 384 ASCMLKASteeringCmd: 4 NEO
@@ -109,6 +111,7 @@ BO_ 451 GasAndAcc: 8 XXX
  SG_ GasPedalAndAcc2 : 55|8@0+ (1,0) [0|0] ""  NEO
 
 BO_ 452 AcceleratorPedal2: 8 XXX
+ SG_ CruiseState : 15|3@0+ (1,0) [0|7] ""  NEO
  SG_ AcceleratorPedal2 : 47|8@0+ (1,0) [0|0] ""  NEO
 
 BO_ 481 ASCMSteeringButton: 7 K124_ASCM
@@ -125,13 +128,16 @@ BO_ 489 EBCMVehicleDynamic: 8 K17_EBCM
  SG_ LateralAcceleration : 3|12@0- (0.0161,0) [-2047|2047] "m/s2"  NEO
  SG_ BrakePedalPressed : 6|1@0+ (1,0) [0|0] ""  NEO
 
+BO_ 560 EPBStatus: 8 EPB
+ SG_ EPBClosed : 12|1@0+ (1,0) [0|1] ""  NEO
+
 BO_ 711 BECMBatteryVoltageCurrent: 6 K17_EBCM
  SG_ HVBatteryVoltage : 31|12@0+ (0.125,0) [0|511.875] "V"  NEO
  SG_ HVBatteryCurrent : 12|13@0- (0.15,0) [-614.4|614.25] "A"  NEO
 
 BO_ 715 ASCMGasRegenCmd: 8 K124_ASCM
- SG_ GasRegenAlwaysOne2 : 9|1@0+ (1,1) [1|1] ""  NEO
- SG_ GasRegenAlwaysOne : 14|1@0+ (1,1) [1|1] ""  NEO
+ SG_ GasRegenAlwaysOne2 : 9|1@0+ (1,0) [0|1] ""  NEO
+ SG_ GasRegenAlwaysOne : 14|1@0+ (1,0) [0|1] ""  NEO
  SG_ GasRegenChecksum : 47|24@0+ (1,0) [0|0] ""  NEO
  SG_ GasRegenCmdActiveInv : 32|1@0+ (1,0) [0|0] ""  NEO
  SG_ GasRegenFullStopActive : 13|1@0+ (1,0) [0|0] ""  NEO
@@ -218,6 +224,7 @@ BA_ "UseGMParameterIDs" 0;
 VAL_ 481 DistanceButton 1 "Active" 0 "Inactive" ;
 VAL_ 481 LKAButton 1 "Active" 0 "Inactive" ;
 VAL_ 481 ACCButtons 6 "Cancel" 5 "Main" 3 "Set" 2 "Resume" 1 "None" ;
+VAL_ 452 CruiseState 4 "Standstill" 3 "Faulted" 1 "Active" 0 "Off" ;
 VAL_ 309 PRNDL 3 "Reverse" 2 "Drive" 1 "Neutral" 0 "Park" ;
 VAL_ 384 LKASteeringCmdActive 1 "Active" 0 "Inactive" ;
 VAL_ 880 ACCLeadCar 1 "Present" 0 "Not Present" ;
