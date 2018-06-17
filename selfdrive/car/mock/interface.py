@@ -71,6 +71,7 @@ class CarInterface(object):
     ret.longitudinalKpV = [0.]
     ret.longitudinalKiBP = [0.]
     ret.longitudinalKiV = [0.]
+    ret.steerActuatorDelay = 0.
 
     return ret
 

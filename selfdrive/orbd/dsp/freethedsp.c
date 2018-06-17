@@ -85,8 +85,8 @@ int ioctl(int fd, unsigned long request, void *arg) {
     struct fastrpc_ioctl_init *init = (struct fastrpc_ioctl_init *)arg;
 
     // confirm patch is correct and do the patch
-    assert(memcmp((void*)(init->mem+PATCH_ADDR), PATCH_OLD, 4) == 0);
-    memcpy((void*)(init->mem+PATCH_ADDR), PATCH_NEW, 4);
+    assert(memcmp((void*)(init->mem+PATCH_ADDR), PATCH_OLD, PATCH_LEN) == 0);
+    memcpy((void*)(init->mem+PATCH_ADDR), PATCH_NEW, PATCH_LEN);
 
     // flush cache
     int ionfd = open("/dev/ion", O_RDONLY);
@@ -100,8 +100,8 @@ int ioctl(int fd, unsigned long request, void *arg) {
     struct ion_flush_data flush_data;
     flush_data.handle  = fd_data.handle;
     flush_data.vaddr   = (void*)init->mem;
-    flush_data.offset  = PATCH_ADDR;
-    flush_data.length  = PATCH_LEN;
+    flush_data.offset  = 0;
+    flush_data.length  = init->memlen;
     ret = ioctl(ionfd, ION_IOC_CLEAN_INV_CACHES, &flush_data);
     assert(ret == 0);
 
