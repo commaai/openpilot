@@ -49,7 +49,7 @@ int controls_allowed = 0;
 #include "safety/safety_gm.h"
 #include "safety/safety_ford.h"
 #include "safety/safety_cadillac.h"
-#include "safety/safety_tesla.h"
+#include "safety/safety_tesla.h" 
 #include "safety/safety_elm327.h"
 
 const safety_hooks *current_hooks = &nooutput_hooks;
