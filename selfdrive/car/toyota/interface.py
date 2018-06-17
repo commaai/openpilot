@@ -5,8 +5,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.toyota.carstate import CarState, get_can_parser
-from selfdrive.car.toyota.values import ECU, check_ecu_msgs
-from common.fingerprints import TOYOTA as CAR
+from selfdrive.car.toyota.values import ECU, check_ecu_msgs, CAR
 
 try:
   from selfdrive.car.toyota.carcontroller import CarController
@@ -20,9 +19,9 @@ class CarInterface(object):
     self.VM = VehicleModel(CP)
 
     self.frame = 0
-    self.can_invalid_count = 0
     self.gas_pressed_prev = False
     self.brake_pressed_prev = False
+    self.can_invalid_count = 0
     self.cruise_enabled_prev = False
 
     # *** init the major players ***
@@ -70,6 +69,8 @@ class CarInterface(object):
     tireStiffnessRear_civic = 90000
 
     ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
+    ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
+
     if candidate == CAR.PRIUS:
       ret.safetyParam = 66  # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.70
@@ -82,6 +83,9 @@ class CarInterface(object):
       f = 1.43353663
       tireStiffnessFront_civic *= f
       tireStiffnessRear_civic *= f
+
+      # Prius has a very bad actuator
+      ret.steerActuatorDelay = 0.25
     elif candidate in [CAR.RAV4, CAR.RAV4H]:
       ret.safetyParam = 73  # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.65

@@ -10,7 +10,7 @@ from common.params import Params
 import selfdrive.messaging as messaging
 from selfdrive.config import Conversions as CV
 from selfdrive.services import service_list
-from selfdrive.car import get_car
+from selfdrive.car.car_helpers import get_car
 from selfdrive.controls.lib.planner import Planner
 from selfdrive.controls.lib.drive_helpers import learn_angle_offset, \
                                                  get_events, \
@@ -101,7 +101,7 @@ def data_sample(CI, CC, thermal, calibration, health, poller, cal_status, overte
   return CS, events, cal_status, overtemp, free_space
 
 
-def calc_plan(CS, events, PL, LaC, LoC, v_cruise_kph, awareness_status):
+def calc_plan(CS, CP, events, PL, LaC, LoC, v_cruise_kph, awareness_status):
    # plan runs always, independently of the state
    plan_packet = PL.update(CS, LaC, LoC, v_cruise_kph, awareness_status < -0.)
    plan = plan_packet.plan
@@ -112,7 +112,7 @@ def calc_plan(CS, events, PL, LaC, LoC, v_cruise_kph, awareness_status):
 
    # disable if lead isn't close when system is active and brake is pressed to avoid
    # unexpected vehicle accelerations
-   if CS.brakePressed and plan.vTargetFuture >= STARTING_TARGET_SPEED:
+   if CS.brakePressed and plan.vTargetFuture >= STARTING_TARGET_SPEED and not CP.radarOffCan and CS.vEgo < 0.3:
      events.append(create_event('noTarget', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
 
    return plan, plan_ts
@@ -202,7 +202,7 @@ def state_transition(CS, CP, state, events, soft_disable_timer, v_cruise_kph, AM
 
 
 def state_control(plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, AM, rk,
-                  awareness_status, PL, LaC, LoC, VM, angle_offset, rear_view_allowed, 
+                  awareness_status, PL, LaC, LoC, VM, angle_offset, rear_view_allowed,
                   rear_view_toggle, passive):
   # Given the state, this function returns the actuators
 
@@ -412,7 +412,7 @@ def data_send(plan, plan_ts, CS, CI, CP, VM, state, events, actuators, v_cruise_
   return CC
 
 
-def controlsd_thread(gctx, rate=100):
+def controlsd_thread(gctx=None, rate=100, default_bias=0.):
   # start the loop
   set_realtime_priority(3)
 
@@ -485,12 +485,12 @@ def controlsd_thread(gctx, rate=100):
   rk = Ratekeeper(rate, print_delay_threshold=2./1000)
 
   # learned angle offset
-  angle_offset = 1.5  # Default model bias
+  angle_offset = default_bias
   calibration_params = params.get("CalibrationParams")
   if calibration_params:
     try:
       calibration_params = json.loads(calibration_params)
-      angle_offset = calibration_params["angle_offset"]
+      angle_offset = calibration_params["angle_offset2"]
     except (ValueError, KeyError):
       pass
 
@@ -498,7 +498,7 @@ def controlsd_thread(gctx, rate=100):
 
   while 1:
 
-    prof.checkpoint("Ratekeeper", ignore=True)  # rk is here
+    prof.checkpoint("Ratekeeper", ignore=True)
 
     # sample data and compute car events
     CS, events, cal_status, overtemp, free_space = data_sample(CI, CC, thermal, cal, health, poller, cal_status,
@@ -506,7 +506,7 @@ def controlsd_thread(gctx, rate=100):
     prof.checkpoint("Sample")
 
     # define plan
-    plan, plan_ts = calc_plan(CS, events, PL, LaC, LoC, v_cruise_kph, awareness_status)
+    plan, plan_ts = calc_plan(CS, CP, events, PL, LaC, LoC, v_cruise_kph, awareness_status)
     prof.checkpoint("Plan")
 
     if not passive:
