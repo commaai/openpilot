@@ -1,7 +1,24 @@
+// sample struct that keeps 3 samples in memory
+struct sample_t {
+  int values[6];
+  int min;
+  int max;
+} sample_t_default = {{0}, 0, 0};
+
 void safety_rx_hook(CAN_FIFOMailBox_TypeDef *to_push);
 int safety_tx_hook(CAN_FIFOMailBox_TypeDef *to_send);
 int safety_tx_lin_hook(int lin_num, uint8_t *data, int len);
 int safety_ignition_hook();
+uint32_t get_ts_elapsed(uint32_t ts, uint32_t ts_last);
+int to_signed(int d, int bits);
+void update_sample(struct sample_t *sample, int sample_new);
+int max_limit_check(int val, const int MAX);
+int dist_to_meas_check(int val, int val_last, struct sample_t *val_meas,
+  const int MAX_RATE_UP, const int MAX_RATE_DOWN, const int MAX_ERROR);
+int driver_limit_check(int val, int val_last, struct sample_t *val_driver,
+  const int MAX, const int MAX_RATE_UP, const int MAX_RATE_DOWN, 
+  const int MAX_ALLOWANCE, const int DRIVER_FACTOR);
+int rt_rate_limit_check(int val, int val_last, const int MAX_RT_DELTA);
 
 typedef void (*safety_hook_init)(int16_t param);
 typedef void (*rx_hook)(CAN_FIFOMailBox_TypeDef *to_push);
@@ -31,6 +48,7 @@ int controls_allowed = 0;
 #endif
 #include "safety/safety_gm.h"
 #include "safety/safety_ford.h"
+#include "safety/safety_cadillac.h"
 #include "safety/safety_elm327.h"
 
 const safety_hooks *current_hooks = &nooutput_hooks;
@@ -68,6 +86,7 @@ typedef struct {
 #define SAFETY_GM 3
 #define SAFETY_HONDA_BOSCH 4
 #define SAFETY_FORD 5
+#define SAFETY_CADILLAC 6
 #define SAFETY_TOYOTA_IPAS 0x1335
 #define SAFETY_TOYOTA_NOLIMITS 0x1336
 #define SAFETY_ALLOUTPUT 0x1337
@@ -80,6 +99,7 @@ const safety_hook_config safety_hook_registry[] = {
   {SAFETY_TOYOTA, &toyota_hooks},
   {SAFETY_GM, &gm_hooks},
   {SAFETY_FORD, &ford_hooks},
+  {SAFETY_CADILLAC, &cadillac_hooks},
   {SAFETY_TOYOTA_NOLIMITS, &toyota_nolimits_hooks},
 #ifdef PANDA
   {SAFETY_TOYOTA_IPAS, &toyota_ipas_hooks},
@@ -101,3 +121,83 @@ int safety_set_mode(uint16_t mode, int16_t param) {
   return -1;
 }
 
+// compute the time elapsed (in microseconds) from 2 counter samples
+uint32_t get_ts_elapsed(uint32_t ts, uint32_t ts_last) {
+  return ts > ts_last ? ts - ts_last : (0xFFFFFFFF - ts_last) + 1 + ts;
+}
+
+// convert a trimmed integer to signed 32 bit int
+int to_signed(int d, int bits) {
+  if (d >= (1 << (bits - 1))) {
+    d -= (1 << bits);
+  }
+  return d;
+}
+
+// given a new sample, update the smaple_t struct
+void update_sample(struct sample_t *sample, int sample_new) {
+  for (int i = sizeof(sample->values)/sizeof(sample->values[0]) - 1; i > 0; i--) {
+    sample->values[i] = sample->values[i-1];
+  }
+  sample->values[0] = sample_new;
+
+  // get the minimum and maximum measured samples
+  sample->min = sample->max = sample->values[0];
+  for (int i = 1; i < sizeof(sample->values)/sizeof(sample->values[0]); i++) {
+    if (sample->values[i] < sample->min) sample->min = sample->values[i];
+    if (sample->values[i] > sample->max) sample->max = sample->values[i];
+  }
+}
+
+int max_limit_check(int val, const int MAX) {
+  return (val > MAX) | (val < -MAX);
+}
+
+// check that commanded value isn't too far from measured
+int dist_to_meas_check(int val, int val_last, struct sample_t *val_meas,
+  const int MAX_RATE_UP, const int MAX_RATE_DOWN, const int MAX_ERROR) {
+
+  // *** val rate limit check ***
+  int16_t highest_allowed_val = max(val_last, 0) + MAX_RATE_UP;
+  int16_t lowest_allowed_val = min(val_last, 0) - MAX_RATE_UP;
+
+  // if we've exceeded the meas val, we must start moving toward 0
+  highest_allowed_val = min(highest_allowed_val, max(val_last - MAX_RATE_DOWN, max(val_meas->max, 0) + MAX_ERROR));
+  lowest_allowed_val = max(lowest_allowed_val, min(val_last + MAX_RATE_DOWN, min(val_meas->min, 0) - MAX_ERROR));
+
+  // check for violation
+  return (val < lowest_allowed_val) || (val > highest_allowed_val);
+}
+
+// check that commanded value isn't fighting against driver
+int driver_limit_check(int val, int val_last, struct sample_t *val_driver,
+  const int MAX, const int MAX_RATE_UP, const int MAX_RATE_DOWN,
+  const int MAX_ALLOWANCE, const int DRIVER_FACTOR) {
+
+  int highest_allowed = max(val_last, 0) + MAX_RATE_UP;
+  int lowest_allowed = min(val_last, 0) - MAX_RATE_UP;
+
+  int driver_max_limit = MAX + (MAX_ALLOWANCE + val_driver->max) * DRIVER_FACTOR;
+  int driver_min_limit = -MAX + (-MAX_ALLOWANCE + val_driver->min) * DRIVER_FACTOR;
+
+  // if we've exceeded the applied torque, we must start moving toward 0
+  highest_allowed = min(highest_allowed, max(val_last - MAX_RATE_DOWN,
+                                             max(driver_max_limit, 0)));
+  lowest_allowed = max(lowest_allowed, min(val_last + MAX_RATE_DOWN,
+                                           min(driver_min_limit, 0)));
+
+  // check for violation
+  return (val < lowest_allowed) || (val > highest_allowed);
+}
+
+
+// real time check, mainly used for steer torque rate limiter
+int rt_rate_limit_check(int val, int val_last, const int MAX_RT_DELTA) {
+
+  // *** torque real time rate limit check ***
+  int16_t highest_val = max(val_last, 0) + MAX_RT_DELTA;
+  int16_t lowest_val = min(val_last, 0) - MAX_RT_DELTA;
+
+  // check for violation
+  return (val < lowest_val) || (val > highest_val);
+}
