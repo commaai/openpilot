@@ -1,3 +1,20 @@
+Version 0.4.7 (2018-06-15)
+==========================
+ * New model!
+ * GM Volt (and CT6 lateral) support!
+ * Honda Bosch lateral support!
+ * Improve actuator modeling to reduce lateral wobble
+ * Minor refactor of car abstraction layer
+ * Hack around orbd startup issue
+
+Version 0.4.6 (2018-05-18)
+==========================
+ * NEOSv6 required! Will autoupdate
+ * Stability improvements
+ * Fix all memory leaks
+ * Update C++ compiler to clang6
+ * Improve front camera exposure
+
 Version 0.4.5 (2018-04-27)
 ==========================
  * Release notes added to the update popup

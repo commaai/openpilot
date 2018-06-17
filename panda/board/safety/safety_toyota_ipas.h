@@ -35,13 +35,6 @@ uint32_t ts_angle_last = 0;
 
 int controls_allowed_last = 0;
 
-int to_signed(int d, int bits) {
-  if (d >= (1 << (bits - 1))) {
-    d -= (1 << bits);
-  }
-  return d;
-}
-
 // interp function that holds extreme values
 float interpolate(struct lookup_t xy, float x) {
   int size = sizeof(xy.x) / sizeof(xy.x[0]);
@@ -187,7 +180,7 @@ const safety_hooks toyota_ipas_hooks = {
   .rx = toyota_ipas_rx_hook,
   .tx = toyota_ipas_tx_hook,
   .tx_lin = toyota_tx_lin_hook,
-  .ignition = toyota_ign_hook,
+  .ignition = default_ign_hook,
   .fwd = toyota_fwd_hook,
 };
 
