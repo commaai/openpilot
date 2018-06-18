@@ -51,11 +51,13 @@ class LatControl(object):
     self.angle_steers_des_prev = 0.0
     self.angle_steers_des_time = 0.0
     self.blindspot_blink_counter_left_check = 0
+    self.blindspot_blink_counter_right_check = 0
+    
 
   def reset(self):
     self.pid.reset()
 
-  def update(self, active, v_ego, angle_steers, steer_override, d_poly, angle_offset, VM, PL,blindspot,leftBlinker):
+  def update(self, active, v_ego, angle_steers, steer_override, d_poly, angle_offset, VM, PL,blindspot,leftBlinker,rightBlinker):
     cur_time = sec_since_boot()
     self.mpc_updated = False
     # TODO: this creates issues in replay when rewinding time: mpc won't run
@@ -89,6 +91,9 @@ class LatControl(object):
       if leftBlinker:
         if self.blindspot_blink_counter_left_check > 300:
           self.angle_steers_des_mpc += 10
+      if rightBlinker:
+        if self.blindspot_blink_counter_right_check > 300:
+          self.angle_steers_des_mpc -= 10
       self.angle_steers_des_time = cur_time
       self.mpc_updated = True
 
@@ -117,6 +122,15 @@ class LatControl(object):
       self.pid.neg_limit = -steers_max
       steer_feedforward = self.angle_steers_des * v_ego**2  # proportional to realigning tire momentum (~ lateral accel)
       output_steer = self.pid.update(self.angle_steers_des, angle_steers, check_saturation=(v_ego > 10), override=steer_override, feedforward=steer_feedforward, speed=v_ego)
+      if rightBlinker:
+        if blindspot:
+          self.blindspot_blink_counter_right_check = 0
+          print "debug: blindspot detected"
+        self.blindspot_blink_counter_right_check += 1
+        if self.blindspot_blink_counter_right_check > 300:
+          self.angle_steers_des -= 10
+      else:
+        self.blindspot_blink_counter_right_check = 0
       
       if leftBlinker:
         if blindspot:
@@ -124,7 +138,6 @@ class LatControl(object):
           print "debug: blindspot detected"
         self.blindspot_blink_counter_left_check += 1
         if self.blindspot_blink_counter_left_check > 300:
-          print "debug: output_steer= ", output_steer, "self.angle_steers_des= ", float(self.angle_steers_des)
           self.angle_steers_des += 10
       else:
         self.blindspot_blink_counter_left_check = 0
