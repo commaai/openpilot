@@ -121,6 +121,7 @@ class CarController(object):
     self.angle_control = False
     self.blindspot_poll_counter = 0
     self.blindspot_blink_counter_left = 0
+    self.blindspot_blink_counter_right = 0
     self.steer_angle_enabled = False
     self.ipas_reset_counter = 0
     self.blindspot_debug_enabled_left = False
@@ -208,31 +209,34 @@ class CarController(object):
       if CS.left_blinker_on:
         self.blindspot_blink_counter_left += 1
         #print "debug Left Blinker on"
+      elif CS.right_blinker_on:
+        self.blindspot_blink_counter_right += 1
       else:
         self.blindspot_blink_counter_left = 0
+        self.blindspot_blink_counter_right = 0
         #print "debug Left Blinker off"
         if self.blindspot_debug_enabled_left:
           can_sends.append(set_blindspot_debug_mode(LEFT_BLINDSPOT, False))
           self.blindspot_debug_enabled_left = False
           #print "debug Left blindspot debug disabled"
+        if self.blindspot_debug_enabled_right:
+          can_sends.append(set_blindspot_debug_mode(RIGHT_BLINDSPOT, False))
+          self.blindspot_debug_enabled_right = False
+          #print "debug Right blindspot debug disabled"
       if self.blindspot_blink_counter_left > 199 and not self.blindspot_debug_enabled_left: #After 2 seconds of blinking check blindspot
         can_sends.append(set_blindspot_debug_mode(LEFT_BLINDSPOT, True))
         #print "debug Left blindspot debug enabled"
         self.blindspot_debug_enabled_left = True
+      if self.blindspot_blink_counter_right > 195 and not self.blindspot_debug_enabled_left: #After 2 seconds of blinking check blindspot
+        can_sends.append(set_blindspot_debug_mode(RIGHT_BLINDSPOT, True))
+        #print "debug Left blindspot debug enabled"
+        self.blindspot_debug_enabled_right = True
     if self.blindspot_debug_enabled_left:
       if self.blindspot_poll_counter % 20 == 0 and self.blindspot_poll_counter > 1001:  # Poll blindspots at 5 Hz
         can_sends.append(poll_blindspot_status(LEFT_BLINDSPOT))
-        # print "debug poll status"
-          # or b.type == "rightBlinker"
-#      print "Left blindspot debug enabled"
-#    if self.blindspot_poll_counter > 1200 and not self.blindspot_debug_enabled_right:
-#      can_sends.append(set_blindspot_debug_mode(RIGHT_BLINDSPOT, BLINDSPOTDEBUG))
-#      self.blindspot_debug_enabled_right = True
-#      print "Right blindspot debug enabled"
-#    if self.blindspot_poll_counter % 20 == 0 and self.blindspot_poll_counter > 1000:  # Poll blindspots at 5 Hz
-#      can_sends.append(poll_blindspot_status(LEFT_BLINDSPOT))
-#    if self.blindspot_poll_counter % 20 == 10 and self.blindspot_poll_counter > 1200:  # Poll blindspots at 5 Hz
-#      can_sends.append(poll_blindspot_status(RIGHT_BLINDSPOT))
+    if self.blindspot_debug_enabled_right:
+      if self.blindspot_poll_counter % 20 == 10 and self.blindspot_poll_counter > 1005:  # Poll blindspots at 5 Hz
+        can_sends.append(poll_blindspot_status(RIGHT_BLINDSPOT))
 
     #*** control msgs ***
     #print "steer", apply_steer, min_lim, max_lim, CS.steer_torque_motor
