@@ -68,6 +68,7 @@ def get_can_parser(CP):
     ("BRAKE_LIGHTS_ACC", "ESP_CONTROL", 0),
     ("AUTO_HIGH_BEAM", "LIGHT_STALK", 0),
     ("BLINDSPOT","DEBUG", 0),
+    ("BLINDSPOTSIDE","DEBUG",65),
     ("ACC_DISTANCE", "JOEL_ID", 2),
     ("LANE_WARNING", "JOEL_ID", 1),
     ("ACC_SLOW", "JOEL_ID", 0),
@@ -161,6 +162,7 @@ class CarState(object):
     self.main_on = cp.vl["PCM_CRUISE_2"]['MAIN_ON']
     self.left_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 1
     self.right_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 2
+    self.blind_spot_side = cp.vl["DEBUG"]['BLINDSPOTSIDE']
     self.blind_spot_on = bool(cp.vl["DEBUG"]['BLINDSPOT'])
     
     # we could use the override bit from dbc, but it's triggered at too high torque values
