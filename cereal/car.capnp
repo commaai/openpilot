@@ -105,6 +105,7 @@ struct CarState {
   distanceToggle @27 :Float32;
   laneDepartureToggle @28 :Bool;
   accSlowToggle @29 :Bool;
+  blindspotside @30 :Float32;
 
   # lock info
   doorOpen @24 :Bool;
