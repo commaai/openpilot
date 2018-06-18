@@ -131,9 +131,9 @@ class CarController(object):
     apply_brake = int(clip(self.brake_last * BRAKE_MAX, 0, BRAKE_MAX - 1))
     apply_steer = int(clip(-actuators.steer * STEER_MAX, -STEER_MAX, STEER_MAX))
 
-    # any other cp.vl[0x18F]['STEER_STATUS'] is common and can happen during user override. sending 0 torque to avoid EPS sending error 5
-    if CS.steer_not_allowed:
-      apply_steer = 0
+    # any other cp.vl[0x18F]['STEER_STATUS'] is common and can happen during user override. sending 0 torque to avoid EPS sending error 5 on ILX
+    if CS.CP.carFingerprint in (CAR.ACURA_ILX) && CS.steer_not_allowed:
+      apply_steer, enabled = 0, 0
 
     # Send CAN commands.
     can_sends = []
