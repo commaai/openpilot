@@ -1,5 +1,4 @@
-import os
-from common.fingerprints import TOYOTA as CAR
+from selfdrive.car.toyota.values import CAR, DBC
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from common.kalman.simple_kalman import KF1D
@@ -80,20 +79,10 @@ def get_can_parser(CP):
     ("EPS_STATUS", 25),
   ]
 
-  # this function generates lists for signal, messages and initial values
   if CP.carFingerprint == CAR.PRIUS:
-    dbc_f = 'toyota_prius_2017_pt_generated.dbc'
     signals += [("STATE", "AUTOPARK_STATUS", 0)]
-  elif CP.carFingerprint == CAR.RAV4H:
-    dbc_f = 'toyota_rav4_hybrid_2017_pt_generated.dbc'
-  elif CP.carFingerprint == CAR.RAV4:
-    dbc_f = 'toyota_rav4_2017_pt_generated.dbc'
-  elif CP.carFingerprint == CAR.COROLLA:
-    dbc_f = 'toyota_corolla_2017_pt_generated.dbc'
-  elif CP.carFingerprint == CAR.LEXUS_RXH:
-    dbc_f = 'lexus_rx_hybrid_2017_pt_generated.dbc'
 
-  return CANParser(os.path.splitext(dbc_f)[0], signals, checks, 0)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
 
 class CarState(object):

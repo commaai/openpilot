@@ -16,6 +16,7 @@ int gas_interceptor_prev = 0;
 int ego_speed = 0;
 // TODO: auto-detect bosch hardware based on CAN messages?
 bool bosch_hardware = false;
+bool honda_alt_brake_msg = false;
 
 static void honda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
@@ -36,11 +37,14 @@ static void honda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     }
   }
 
-  // user brake signal is different for nidec vs bosch hardware
-  // nidec hardware: 0x17C bit 53
-  // bosch hardware: 0x1BE bit 4
-  #define IS_USER_BRAKE_MSG(to_push) (!bosch_hardware ? to_push->RIR>>21 == 0x17C : to_push->RIR>>21 == 0x1BE)
-  #define USER_BRAKE_VALUE(to_push)  (!bosch_hardware ? to_push->RDHR & 0x200000  : to_push->RDLR & 0x10)
+  // user brake signal on 0x17C reports applied brake from computer brake on accord
+  // and crv, which prevents the usual brake safety from working correctly. these
+  // cars have a signal on 0x1BE which only detects user's brake being applied so
+  // in these cases, this is used instead.
+  // most hondas: 0x17C bit 53
+  // accord, crv: 0x1BE bit 4
+  #define IS_USER_BRAKE_MSG(to_push) (!honda_alt_brake_msg ? to_push->RIR>>21 == 0x17C : to_push->RIR>>21 == 0x1BE)
+  #define USER_BRAKE_VALUE(to_push)  (!honda_alt_brake_msg ? to_push->RDHR & 0x200000  : to_push->RDLR & 0x10)
   // exit controls on rising edge of brake press or on brake press when
   // speed > 0
   if (IS_USER_BRAKE_MSG(to_push)) {
@@ -115,6 +119,14 @@ static int honda_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
       if ((to_send->RDLR & 0xFFFF0000) != to_send->RDLR) return 0;
     }
   }
+  
+  // FORCE CANCEL: safety check only relevant when spamming the cancel button in Bosch HW
+  // ensuring that only the cancel button press is sent (VAL 2) when controls are off.
+  // This avoids unintended engagements while still allowing resume spam
+  if (((to_send->RIR>>21) == 0x296) && bosch_hardware &&
+      !current_controls_allowed && ((to_send->RDTR >> 4) & 0xFF) == 0) {
+    if (((to_send->RDLR >> 5) & 0x7) != 2) return 0;
+  }
 
   // 1 allows the message through
   return true;
@@ -128,13 +140,10 @@ static int honda_tx_lin_hook(int lin_num, uint8_t *data, int len) {
 static void honda_init(int16_t param) {
   controls_allowed = 0;
   bosch_hardware = false;
+  honda_alt_brake_msg = false;
 }
 
 static int honda_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
-  return -1;
-}
-
-static int honda_ign_hook() {
   return -1;
 }
 
@@ -143,13 +152,15 @@ const safety_hooks honda_hooks = {
   .rx = honda_rx_hook,
   .tx = honda_tx_hook,
   .tx_lin = honda_tx_lin_hook,
-  .ignition = honda_ign_hook,
+  .ignition = default_ign_hook,
   .fwd = honda_fwd_hook,
 };
 
 static void honda_bosch_init(int16_t param) {
   controls_allowed = 0;
   bosch_hardware = true;
+  // Checking for alternate brake override from safety parameter
+  honda_alt_brake_msg = param == 1 ? true : false;
 }
 
 static int honda_bosch_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
@@ -165,6 +176,6 @@ const safety_hooks honda_bosch_hooks = {
   .rx = honda_rx_hook,
   .tx = honda_tx_hook,
   .tx_lin = honda_tx_lin_hook,
-  .ignition = honda_ign_hook,
+  .ignition = default_ign_hook,
   .fwd = honda_bosch_fwd_hook,
 };

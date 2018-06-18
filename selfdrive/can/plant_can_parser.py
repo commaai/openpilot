@@ -1,3 +1,4 @@
+### old can parser just used by plant.py for regression tests
 import os
 import opendbc
 from collections import defaultdict

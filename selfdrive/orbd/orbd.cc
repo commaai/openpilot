@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <assert.h>
+#include <sys/resource.h>
 
 #include "common/visionipc.h"
 #include "common/swaglog.h"
@@ -32,10 +33,14 @@ static void set_do_exit(int sig) {
 
 int main(int argc, char *argv[]) {
   int err;
+  setpriority(PRIO_PROCESS, 0, -13);
   printf("starting orbd\n");
 
 #ifdef DSP
+  uint32_t test_leet = 0;
   char my_path[PATH_MAX+1];
+  memset(my_path, 0, sizeof(my_path));
+
   ssize_t len = readlink("/proc/self/exe", my_path, sizeof(my_path));
   assert(len > 5);
   my_path[len-5] = '\0';
@@ -45,7 +50,6 @@ int main(int argc, char *argv[]) {
   snprintf(adsp_path, PATH_MAX, "ADSP_LIBRARY_PATH=%s/dsp/gen", my_path);
   assert(putenv(adsp_path) == 0);
 
-  uint32_t test_leet = 0; 
   assert(calculator_init(&test_leet) == 0);
   assert(test_leet == 0x1337);
   LOGW("orbd init complete");

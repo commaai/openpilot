@@ -1,29 +1,32 @@
-class HONDA:
-  CIVIC = "HONDA CIVIC 2016 TOURING"
-  ACURA_ILX = "ACURA ILX 2016 ACURAWATCH PLUS"
-  CRV = "HONDA CR-V 2016 TOURING"
-  ODYSSEY = "HONDA ODYSSEY 2018 EX-L"
-  ACURA_RDX = "ACURA RDX 2018 ACURAWATCH PLUS"
-  PILOT = "HONDA PILOT 2017 TOURING"
-  RIDGELINE = "HONDA RIDGELINE 2017 BLACK EDITION"
+import os
+from common.basedir import BASEDIR
+
+def get_fingerprint_list():
+  # read all the folders in selfdrive/car and return a dict where:
+  # - keys are all the car models for which we have a fingerprint
+  # - values are lists dicts of messages that constitute the unique 
+  #   CAN fingerprint of each car model and all its variants
+  fingerprints = {}
+  for car_folder in [x[0] for x in os.walk(BASEDIR + '/selfdrive/car')]:
+    try:
+      car_name = car_folder.split('/')[-1]
+      values = __import__('selfdrive.car.%s.values' % car_name, fromlist=['FINGERPRINTS'])
+      if hasattr(values, 'FINGERPRINTS'):
+        car_fingerprints = values.FINGERPRINTS
+      else:
+        continue
+      for f, v in car_fingerprints.iteritems():
+        fingerprints[f] = v
+    except (ImportError, IOError):
+      pass
+  return fingerprints
 
 
-class TOYOTA:
-  PRIUS = "TOYOTA PRIUS 2017"
-  RAV4H = "TOYOTA RAV4 2017 HYBRID"
-  RAV4 = "TOYOTA RAV4 2017"
-  COROLLA = "TOYOTA COROLLA 2017"
-  LEXUS_RXH = "LEXUS RX HYBRID 2017"
-
-class GM:
-  VOLT = "CHEVROLET VOLT PREMIER 2017"
-  CADILLAC_CT6 = "CADILLAC CT6 SUPERCRUISE 2018"
-
-class FORD:
-  FUSION = "FORD FUSION 2018"
+_FINGERPRINTS = get_fingerprint_list()
 
 _DEBUG_ADDRESS = {1880: 8}   # reserved for debug purposes
 
+<<<<<<< HEAD
 _FINGERPRINTS = {
   HONDA.ACURA_ILX: [{
     57L: 3, 145L: 8, 228L: 5, 304L: 8, 316L: 8, 342L: 6, 344L: 8, 380L: 8, 398L: 3, 399L: 7, 419L: 8, 420L: 8, 422L: 8, 428L: 8, 432L: 7, 464L: 8, 476L: 4, 490L: 8, 506L: 8, 512L: 6, 513L: 6, 542L: 7, 545L: 4, 597L: 8, 660L: 8, 773L: 7, 777L: 8, 780L: 8, 800L: 8, 804L: 8, 808L: 8, 819L: 7, 821L: 5, 829L: 5, 882L: 2, 884L: 7, 887L: 8, 888L: 8, 892L: 8, 923L: 2, 929L: 4, 983L: 8, 985L: 3, 1024L: 5, 1027L: 5, 1029L: 8, 1030L: 5, 1034L: 5, 1036L: 8, 1039L: 8, 1057L: 5, 1064L: 7, 1108L: 8, 1365L: 5,
@@ -96,9 +99,14 @@ except ImportError:
   pass
 
 
+=======
+>>>>>>> comma_devel
 def is_valid_for_fingerprint(msg, car_fingerprint):
   adr = msg.address
-  return msg.src != 0 or (adr in car_fingerprint and car_fingerprint[adr] == len(msg.dat))
+  bus = msg.src
+  # ignore addresses that are more than 11 bits
+  return (adr in car_fingerprint and car_fingerprint[adr] == len(msg.dat)) or \
+         bus != 0 or adr >= 0x800
 
 
 def eliminate_incompatible_cars(msg, candidate_cars):
@@ -112,6 +120,7 @@ def eliminate_incompatible_cars(msg, candidate_cars):
       A list containing the subset of candidate_cars that could have sent msg.
   """
   compatible_cars = []
+
   for car_name in candidate_cars:
     car_fingerprints = _FINGERPRINTS[car_name]
 

@@ -222,8 +222,8 @@ typedef struct UIState {
 } UIState;
 
 static int last_brightness = -1;
-static void set_brightness(int brightness) {
-  if (last_brightness != brightness) {
+static void set_brightness(UIState *s, int brightness) {
+  if (last_brightness != brightness && (s->awake || brightness == 0)) {
     FILE *f = fopen("/sys/class/leds/lcd-backlight/brightness", "wb");
     if (f != NULL) {
       fprintf(f, "%d", brightness);
@@ -246,6 +246,7 @@ static void set_awake(UIState *s, bool awake) {
       framebuffer_set_power(s->fb, HWC_POWER_MODE_NORMAL);
     } else {
       LOG("awake off");
+      set_brightness(s, 0);
       framebuffer_set_power(s->fb, HWC_POWER_MODE_OFF);
     }
   }
@@ -454,7 +455,7 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
   s->cur_vision_front_idx = -1;
 
   s->scene = (UIScene){
-      .frontview = 0,
+      .frontview = getenv("FRONTVIEW") != NULL,
       .cal_status = CALIBRATION_CALIBRATED,
       .transformed_width = ui_info.transformed_width,
       .transformed_height = ui_info.transformed_height,
@@ -1587,10 +1588,9 @@ static void* vision_connect_thread(void *args) {
   return NULL;
 }
 
+
 #include <hardware/sensors.h>
 #include <utils/Timers.h>
-
-#define SENSOR_LIGHT 7
 
 static void* light_sensor_thread(void *args) {
   int err;
@@ -1608,6 +1608,14 @@ static void* light_sensor_thread(void *args) {
   struct sensor_t const* list;
   int count = module->get_sensors_list(module, &list);
 
+  int SENSOR_LIGHT = 7;
+
+  struct stat buffer;
+  if (stat("/sys/bus/i2c/drivers/cyccg", &buffer) == 0) {
+    LOGD("LeEco light sensor detected");
+    SENSOR_LIGHT = 5;
+  }
+
   device->activate(device, SENSOR_LIGHT, 0);
   device->activate(device, SENSOR_LIGHT, 1);
   device->setDelay(device, SENSOR_LIGHT, ms2ns(100));
@@ -1621,7 +1629,8 @@ static void* light_sensor_thread(void *args) {
       LOG_100("light_sensor_poll failed: %d", n);
     }
     if (n > 0) {
-      s->light_sensor = buffer[0].light;
+      if (SENSOR_LIGHT == 5) s->light_sensor = buffer[0].light * 2;
+      else s->light_sensor = buffer[0].light;
       //printf("new light sensor value: %f\n", s->light_sensor);
     }
   }
@@ -1715,10 +1724,10 @@ int main() {
       float clipped_light_sensor = (s->light_sensor*LIGHT_SENSOR_M) + LIGHT_SENSOR_B;
       if (clipped_light_sensor > 255) clipped_light_sensor = 255;
       smooth_light_sensor = clipped_light_sensor * 0.01 + smooth_light_sensor * 0.99;
-      set_brightness((int)smooth_light_sensor);
+      set_brightness(s, (int)smooth_light_sensor);
     } else {
       // compromise for bright and dark envs
-      set_brightness(NEO_BRIGHTNESS);
+      set_brightness(s, NEO_BRIGHTNESS);
     }
 
     ui_update(s);

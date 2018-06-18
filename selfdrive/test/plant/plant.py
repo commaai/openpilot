@@ -12,11 +12,11 @@ from selfdrive.config import Conversions as CV
 import selfdrive.messaging as messaging
 from selfdrive.services import service_list
 from selfdrive.car.honda.hondacan import fix
-from common.fingerprints import HONDA as CAR
+from selfdrive.car.honda.values import CAR
 from selfdrive.car.honda.carstate import get_can_signals
 from selfdrive.boardd.boardd import can_capnp_to_can_list, can_list_to_can_capnp
 
-from selfdrive.car.honda.old_can_parser import CANParser
+from selfdrive.can.plant_can_parser import CANParser
 from selfdrive.car.honda.interface import CarInterface
 
 from common.dbc import dbc
@@ -145,7 +145,7 @@ class Plant(object):
     return float(self.rk.frame) / self.rate
 
   def step(self, v_lead=0.0, cruise_buttons=None, grade=0.0, publish_model = True):
-    gen_dbc, gen_signals, gen_checks = get_can_signals(CP)
+    gen_signals, gen_checks = get_can_signals(CP)
     sgs = [s[0] for s in gen_signals]
     msgs = [s[1] for s in gen_signals]
     cks_msgs = set(check[0] for check in gen_checks)
@@ -213,13 +213,10 @@ class Plant(object):
     # TODO: the order is this list should not matter, but currently everytime we change carstate we break this test. Fix it!
     vls = [self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed),
            self.angle_steer, self.angle_steer_rate, 0,
-           0, 0, 0, 0,  # Doors
            0, 0,  # Blinkers
-           0,  # Cruise speed offset
            self.gear_choice,
            speed != 0,
            self.brake_error, self.brake_error,
-           self.v_cruise,
            not self.seatbelt, self.seatbelt,  # Seatbelt
            self.brake_pressed, 0.,
            cruise_buttons,
@@ -231,12 +228,20 @@ class Plant(object):
            self.pedal_gas,
            self.cruise_setting,
            self.acc_status,
+
+           self.v_cruise,
+           0,  # Cruise speed offset
+
+           0, 0, 0, 0,  # Doors
+
            self.user_gas,
            self.main_on,
            0,  # EPB State
            0,  # Brake hold
            0,  # Interceptor feedback
            # 0,
+
+
     ]
 
     # TODO: publish each message at proper frequency
