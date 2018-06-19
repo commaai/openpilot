@@ -249,7 +249,7 @@ class AlertManager(object):
 
     "modelCommIssue": Alert(
         "TAKE CONTROL IMMEDIATELY",
-        "Model Error: Restart the Car",
+        "Model Error: Check Internet Connection",
         AlertStatus.critical, AlertSize.full,
         Priority.HIGH, "steerRequired", "chimeRepeated", 1., 3., 4.),
 
@@ -377,7 +377,7 @@ class AlertManager(object):
 
     "modelCommIssueNoEntry": Alert(
         "openpilot Unavailable",
-        "Model Error: Restart the Car",
+        "Model Error: Check Internet Connection",
         AlertStatus.normal, AlertSize.mid,
         Priority.LOW, None, "chimeDouble", .4, 2., 3.),
 
