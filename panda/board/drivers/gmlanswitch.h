@@ -14,7 +14,7 @@ void TIM4_IRQHandler(void) {
   if (TIM4->SR & TIM_SR_UIF && gmlan_switch_enabled != -1) {
     if (can_timeout_counter == 0) {
       //it has been more than 1 second since receiving a CAN message in tesla safety. Assume we are in a different safety mode, disable timer and restore the GMLAN output
-      //set_gpio_output(GPIOB, 13, GMLAN_LOW);
+      set_gpio_output(GPIOB, 13, GMLAN_LOW);
       //set_gpio_mode(GPIOB, 13, MODE_INPUT);
       //TIM4->DIER = 0;  // no update interrupt
       //TIM4->CR1 = 0;   // disable timer
