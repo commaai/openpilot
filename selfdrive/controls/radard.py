@@ -64,7 +64,7 @@ def radard_thread(gctx=None):
   live100 = messaging.sub_sock(context, service_list['live100'].port, conflate=True, poller=poller)
 
   PP = PathPlanner()
-  RI = RadarInterface()
+  RI = RadarInterface(CP)
 
   last_md_ts = 0
   last_l100_ts = 0

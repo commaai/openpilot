@@ -3,6 +3,7 @@
 .ipynb_checkpoints
 .idea
 model2.png
+a.out
 
 *.DSYM
 *.d
@@ -28,3 +29,4 @@ selfdrive/proclogd/proclogd
 selfdrive/ui/ui
 /src/
 
+one
