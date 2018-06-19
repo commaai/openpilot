@@ -4,7 +4,7 @@ import time
 
 
 class RadarInterface(object):
-  def __init__(self):
+  def __init__(self, CP):
     # radar
     self.pts = {}
     self.delay = 0.1
@@ -17,7 +17,7 @@ class RadarInterface(object):
     return ret
 
 if __name__ == "__main__":
-  RI = RadarInterface()
+  RI = RadarInterface(None)
   while 1:
     ret = RI.update()
     print(chr(27) + "[2J")

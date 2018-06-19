@@ -106,3 +106,5 @@ DBC = {
   CAR.PILOT: dbc_dict('honda_pilot_touring_2017_can_generated', 'acura_ilx_2016_nidec'),
   CAR.RIDGELINE: dbc_dict('honda_ridgeline_black_edition_2017_can_generated', 'acura_ilx_2016_nidec'),
 }
+
+HONDA_BOSCH = [CAR.ACCORD, CAR.CIVIC_HATCH, CAR.CRV_5G]
