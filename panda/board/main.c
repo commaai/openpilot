@@ -4,13 +4,13 @@
 // ********************* includes *********************
 
 #include "libc.h"
-#include "safety.h"
 #include "provision.h"
 
 #include "drivers/drivers.h"
 
 #include "drivers/llgpio.h"
 #include "gpio.h"
+#include "safety.h"
 
 #include "drivers/uart.h"
 #include "drivers/adc.h"
