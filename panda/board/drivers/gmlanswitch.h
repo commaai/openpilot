@@ -19,6 +19,7 @@ void TIM4_IRQHandler(void) {
       //TIM4->DIER = 0;  // no update interrupt
       //TIM4->CR1 = 0;   // disable timer
       gmlan_switch_enabled = -1;
+      gmlan_timeout_counter = GMLAN_TICKS_PER_TIMEOUT_TICKLE;
     }
     else {
       can_timeout_counter--;
