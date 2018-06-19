@@ -10,11 +10,10 @@
 
 // lateral limits
 const int16_t MAX_ANGLE = 20; //Degrees
-const int16_t MAX_STEER = 16384; // CAN units
 
 int tesla_brake_prev = 0;
 int tesla_gas_prev = 0;
-float tesla_speed = 0;
+int tesla_speed = 0;
 int current_car_time = -1;
 int time_at_last_stalk_pull = -1;
 int eac_status = 0;
@@ -34,17 +33,6 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     addr = to_push->RIR >> 21;
   }
 
-  // Record current speed for use in tx hook (max steering angle request)
-  if (addr == 0x118) {
-    int speed = (to_push->RDLR >> 16) & 0xFFF;
-    // flip bits (Intel)
-    int speed = ~speed;
-    // apply factor and offset
-    tesla_speed = (speed * 0.05) - 25;
-    // convert to km/h
-    tesla_speed = tesla_speed * 1.609 / 3.6;
-  }
-  
    // Record the current car time in current_car_time (for use with double-pulling cruise stalk)
   if (addr == 0x318) {
     int hour = (to_push->RDLR & 0x1F000000) >> 24;
@@ -105,28 +93,24 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
 static int tesla_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 
-  uint32_t addr;
-  int angle_raw;
-  int angle_steer;
+  //uint32_t addr;
+  //int angle_raw;
+  //int angle_steer;
 
   // 1 allows the message through
-  addr = to_send->RIR >> 21;
+  //addr = to_send->RIR >> 21;
   
   // do not transmit CAN message if steering angle too high
   // DAS_steeringControl::DAS_steeringAngleRequest
-  if (addr == 0x488) {
-    angle_raw = to_send->RDLR & 0x7FFF;
-    angle_steer = (angle_raw * 0.1) - 1638.35;
-    if ( (angle_steer > MAX_ANGLE) || (angle_steer < -MAX_ANGLE) ) {
-      return 0;
-    }
-    user_max = (-62.0 * tesla_speed) + 2314.6;
-    if (angle_raw < (MAX_STEER - user_max) || angle_raw > (MAX_STEER + user_max)) {
-        return 0;
-    }
-  }  
+  //if (addr == 0x488) {
+  //  angle_raw = to_send->RDLR & 0x7F;
+  //  angle_steer = angle_raw * 0.1 - 1638.35;
+  //  if ( (angle_steer > MAX_ANGLE) || (angle_steer < -MAX_ANGLE) ) {
+  //    return 0;
+  //  }
+  //}  
   
-  return 1;
+  return true;
 }
 
 static int tesla_tx_lin_hook(int lin_num, uint8_t *data, int len) {
