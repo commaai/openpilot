@@ -24,7 +24,7 @@ MAX_SPEED_ERROR = 2.0
 AWARENESS_DECEL = -0.2     # car smoothly decel at .2m/s^2 when user is distracted
 _DEBUG = False
 _LEAD_ACCEL_TAU = 1.5
-TR=1.5 # CS.distance_toggle
+TR=1.8 # CS.distance_toggle
 GPS_PLANNER_ADDR = "192.168.5.1"
 
 # lookup tables VS speed to determine min and max accels in cruise
@@ -229,9 +229,9 @@ class LongitudinalMpc(object):
     if CS.distanceToggle == 2:
      TR=1.8 # 20m at 40km/hr
     elif CS.distanceToggle == 1:
-      TR=1.5 # 15m at 40km/hr
+      TR=0.9 # 10m at 40km/hr
     elif CS.distanceToggle == 3:
-      TR=2.3 # 25m at 40km/hr
+      TR=2.7 # 30m at 40km/hr
     print TR
     n_its = self.libmpc.run_mpc(self.cur_state, self.mpc_solution, l,TR)
     duration = int((sec_since_boot() - t) * 1e9)
