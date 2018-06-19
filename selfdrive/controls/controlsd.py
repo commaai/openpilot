@@ -237,7 +237,7 @@ def state_control(plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, 
   elif state in [State.enabled, State.softDisabling]:
 
     # decrease awareness status
-    awareness_status -= 0.01/(AWARENESS_TIME)
+    #awareness_status -= 0.01/(AWARENESS_TIME) ## TEMPORARY disabled (Tesla has no decel control for now)
     if awareness_status <= 0.:
       AM.add("driverDistracted", enabled)
     elif awareness_status <= AWARENESS_PRE_TIME / AWARENESS_TIME and \

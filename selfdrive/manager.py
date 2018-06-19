@@ -439,7 +439,7 @@ def manager_thread():
 
     location = location.gpsLocation if location else None
 
-    print td
+    #print td
 
     # replace thermald
     msg = read_thermal()
@@ -468,7 +468,7 @@ def manager_thread():
     msg.thermal.startedTs = int(1e9*(started_ts or 0))
 
     thermal_sock.send(msg.to_bytes())
-    print msg
+    #print msg
 
     # uploader is gated based on the phone temperature
     if max_temp > 85.0:
@@ -506,7 +506,7 @@ def manager_thread():
     should_start = should_start and avail > 0.02
 
     # require usb power
-    should_start = should_start and msg.thermal.usbOnline
+    #should_start = should_start and msg.thermal.usbOnline
 
     should_start = should_start and accepted_terms and completed_training and (not do_uninstall)
 
@@ -542,8 +542,8 @@ def manager_thread():
         os.system('LD_LIBRARY_PATH="" svc power shutdown')
 
     # check the status of all processes, did any of them die?
-    for p in running:
-      cloudlog.debug("   running %s %s" % (p, running[p]))
+    #for p in running:
+    #  cloudlog.debug("   running %s %s" % (p, running[p]))
 
     # report to server once per minute
     if (count%60) == 0:
