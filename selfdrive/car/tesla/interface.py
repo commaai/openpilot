@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-import os
 import numpy as np
+from common.kalman.simple_kalman import KF1D
 from cereal import car
 from common.numpy_fast import clip, interp
 from common.realtime import sec_since_boot
@@ -8,12 +8,11 @@ from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET, get_events
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.tesla.carstate import CarState, get_can_parser
-from selfdrive.car.tesla.values import CruiseButtons, CM, BP, AH
+from selfdrive.car.tesla.values import CruiseButtons, CM, BP, AH, CAR
 from selfdrive.controls.lib.planner import A_ACC_MAX
-from common.fingerprints import TESLA as CAR
 
 try:
-  from .carcontroller import CarController
+  from selfdrive.car.tesla.carcontroller import CarController
 except ImportError:
   CarController = None
 
@@ -120,8 +119,9 @@ class CarInterface(object):
       ret.centerToFront = centerToFront_models
       ret.steerRatio = 12.0
       # Kp and Ki for the lateral control
-      ret.steerKpV, ret.steerKiV = [[0.18], [0.025]] # From [[1.25], [0.2]] dividing by 4 initially, then 0.09,0.15 from Rob, then div by 2: 0.045,0.075
+      ret.steerKpV, ret.steerKiV = [[0.18], [0.025]]
       ret.steerKf = 0.00003 # Initial test value TODO: investigate FF steer control for Model S?
+      ret.steerActuatorDelay = 0.09
       ret.steerRateCost = 0.5 # Lateral MPC cost on steering rate
       
       # Kp and Ki for the longitudinal control
@@ -169,7 +169,7 @@ class CarInterface(object):
     ret.longPidDeadzoneV = [0.]
 
     ret.stoppingControl = True
-    ret.steerLimitAlert = True
+    ret.steerLimitAlert = False
     ret.startAccel = 0.5
 
     return ret
@@ -295,7 +295,7 @@ class CarInterface(object):
       self.can_invalid_count = 0
     if self.CS.steer_error:
       events.append(create_event('steerUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
-    elif self.CS.steer_not_allowed:
+    elif self.CS.steer_warning:
       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
     if self.CS.brake_error:
       events.append(create_event('brakeUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))

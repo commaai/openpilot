@@ -96,15 +96,11 @@ static int ford_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
   return -1;
 }
 
-static int ford_ign_hook() {
-  return -1;
-}
-
 const safety_hooks ford_hooks = {
   .init = ford_init,
   .rx = ford_rx_hook,
   .tx = ford_tx_hook,
   .tx_lin = ford_tx_lin_hook,
-  .ignition = ford_ign_hook,
+  .ignition = default_ign_hook,
   .fwd = ford_fwd_hook,
 };

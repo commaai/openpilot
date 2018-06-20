@@ -8,12 +8,11 @@ from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET, get_events
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.honda.carstate import CarState, get_can_parser
-from selfdrive.car.honda.values import CruiseButtons, CM, BP, AH
+from selfdrive.car.honda.values import CruiseButtons, CM, BP, AH, CAR, HONDA_BOSCH
 from selfdrive.controls.lib.planner import A_ACC_MAX
-from common.fingerprints import HONDA as CAR
 
 try:
-  from .carcontroller import CarController
+  from selfdrive.car.honda.carcontroller import CarController
 except ImportError:
   CarController = None
 
@@ -144,10 +143,14 @@ class CarInterface(object):
     ret.carName = "honda"
     ret.carFingerprint = candidate
 
-    ret.safetyModel = car.CarParams.SafetyModels.honda
-
-    ret.enableCamera = not any(x for x in CAMERA_MSGS if x in fingerprint)
-    ret.enableGasInterceptor = 0x201 in fingerprint
+    if candidate in HONDA_BOSCH:
+      ret.safetyModel = car.CarParams.SafetyModels.hondaBosch
+      ret.enableCamera = True
+      ret.radarOffCan = True
+    else:
+      ret.safetyModel = car.CarParams.SafetyModels.honda
+      ret.enableCamera = not any(x for x in CAMERA_MSGS if x in fingerprint)
+      ret.enableGasInterceptor = 0x201 in fingerprint
     print "ECU Camera Simulated: ", ret.enableCamera
     print "ECU Gas Interceptor: ", ret.enableGasInterceptor
 
@@ -155,7 +158,7 @@ class CarInterface(object):
 
     # FIXME: hardcoding honda civic 2016 touring params so they can be used to
     # scale unknown params for other cars
-    mass_civic = 2923./2.205 + std_cargo
+    mass_civic = 2923 * CV.LB_TO_KG + std_cargo
     wheelbase_civic = 2.70
     centerToFront_civic = wheelbase_civic * 0.4
     centerToRear_civic = wheelbase_civic - centerToFront_civic
@@ -178,9 +181,34 @@ class CarInterface(object):
       ret.longitudinalKpV = [3.6, 2.4, 1.5]
       ret.longitudinalKiBP = [0., 35.]
       ret.longitudinalKiV = [0.54, 0.36]
+    elif candidate == CAR.CIVIC_HATCH:
+      stop_and_go = True
+      ret.mass = 2916. * CV.LB_TO_KG + std_cargo
+      ret.wheelbase = wheelbase_civic
+      ret.centerToFront = centerToFront_civic
+      ret.steerRatio = 10.93
+      ret.steerKpV, ret.steerKiV = [[0.8], [0.24]]
+
+      ret.longitudinalKpBP = [0., 5., 35.]
+      ret.longitudinalKpV = [1.2, 0.8, 0.5]
+      ret.longitudinalKiBP = [0., 35.]
+      ret.longitudinalKiV = [0.18, 0.12]
+    elif candidate == CAR.ACCORD:
+      stop_and_go = True
+      ret.safetyParam = 1 # Accord and CRV 5G use an alternate user brake msg
+      ret.mass = 3279. * CV.LB_TO_KG + std_cargo
+      ret.wheelbase = 2.83
+      ret.centerToFront = ret.wheelbase * 0.39
+      ret.steerRatio = 11.82
+      ret.steerKpV, ret.steerKiV = [[0.8], [0.24]]
+
+      ret.longitudinalKpBP = [0., 5., 35.]
+      ret.longitudinalKpV = [1.2, 0.8, 0.5]
+      ret.longitudinalKiBP = [0., 35.]
+      ret.longitudinalKiV = [0.18, 0.12]
     elif candidate == CAR.ACURA_ILX:
       stop_and_go = False
-      ret.mass = 3095./2.205 + std_cargo
+      ret.mass = 3095 * CV.LB_TO_KG + std_cargo
       ret.wheelbase = 2.67
       ret.centerToFront = ret.wheelbase * 0.37
       ret.steerRatio = 15.3
@@ -194,7 +222,7 @@ class CarInterface(object):
       ret.longitudinalKiV = [0.18, 0.12]
     elif candidate == CAR.CRV:
       stop_and_go = False
-      ret.mass = 3572./2.205 + std_cargo
+      ret.mass = 3572 * CV.LB_TO_KG + std_cargo
       ret.wheelbase = 2.62
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 15.3
@@ -204,9 +232,22 @@ class CarInterface(object):
       ret.longitudinalKpV = [1.2, 0.8, 0.5]
       ret.longitudinalKiBP = [0., 35.]
       ret.longitudinalKiV = [0.18, 0.12]
+    elif candidate == CAR.CRV_5G:
+      stop_and_go = True
+      ret.safetyParam = 1 # Accord and CRV 5G use an alternate user brake msg
+      ret.mass = 3410. * CV.LB_TO_KG + std_cargo
+      ret.wheelbase = 2.66
+      ret.centerToFront = ret.wheelbase * 0.41
+      ret.steerRatio = 12.30
+      ret.steerKpV, ret.steerKiV = [[0.8], [0.24]]
+
+      ret.longitudinalKpBP = [0., 5., 35.]
+      ret.longitudinalKpV = [1.2, 0.8, 0.5]
+      ret.longitudinalKiBP = [0., 35.]
+      ret.longitudinalKiV = [0.18, 0.12]
     elif candidate == CAR.ACURA_RDX:
       stop_and_go = False
-      ret.mass = 3935./2.205 + std_cargo
+      ret.mass = 3935 * CV.LB_TO_KG + std_cargo
       ret.wheelbase = 2.68
       ret.centerToFront = ret.wheelbase * 0.38
       ret.steerRatio = 15.0
@@ -218,7 +259,7 @@ class CarInterface(object):
       ret.longitudinalKiV = [0.18, 0.12]
     elif candidate == CAR.ODYSSEY:
       stop_and_go = False
-      ret.mass = 4354./2.205 + std_cargo
+      ret.mass = 4354 * CV.LB_TO_KG + std_cargo
       ret.wheelbase = 3.00
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 14.35
@@ -230,7 +271,7 @@ class CarInterface(object):
       ret.longitudinalKiV = [0.18, 0.12]
     elif candidate == CAR.PILOT:
       stop_and_go = False
-      ret.mass = 4303./2.205 + std_cargo
+      ret.mass = 4303 * CV.LB_TO_KG + std_cargo
       ret.wheelbase = 2.81
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 16.0
@@ -243,7 +284,7 @@ class CarInterface(object):
     elif candidate == CAR.RIDGELINE:
       stop_and_go = False
       ts_factor = 1.4
-      ret.mass = 4515./2.205 + std_cargo
+      ret.mass = 4515 * CV.LB_TO_KG + std_cargo
       ret.wheelbase = 3.18
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 15.59
@@ -298,6 +339,7 @@ class CarInterface(object):
     ret.steerLimitAlert = True
     ret.startAccel = 0.5
 
+    ret.steerActuatorDelay = 0.09
     ret.steerRateCost = 0.5
 
     return ret
@@ -423,7 +465,7 @@ class CarInterface(object):
       self.can_invalid_count = 0
     if self.CS.steer_error:
       events.append(create_event('steerUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
-    elif self.CS.steer_not_allowed:
+    elif self.CS.steer_warning:
       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
     if self.CS.brake_error:
       events.append(create_event('brakeUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))

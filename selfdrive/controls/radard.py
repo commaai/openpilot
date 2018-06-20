@@ -49,7 +49,7 @@ def radard_thread(gctx=None):
   # wait for stats about the car to come in from controls
   cloudlog.info("radard is waiting for CarParams")
   CP = car.CarParams.from_bytes(Params().get("CarParams", block=True))
-  mocked = CP.carName == "mock"
+  mocked = CP.carName == "mock" or CP.carName == "tesla"
   VM = VehicleModel(CP)
   cloudlog.info("radard got CarParams")
 
@@ -64,7 +64,7 @@ def radard_thread(gctx=None):
   live100 = messaging.sub_sock(context, service_list['live100'].port, conflate=True, poller=poller)
 
   PP = PathPlanner()
-  RI = RadarInterface()
+  RI = RadarInterface(CP)
 
   last_md_ts = 0
   last_l100_ts = 0

@@ -1,11 +1,10 @@
-from collections import namedtuple
 import os
+from collections import namedtuple
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.controls.lib.drive_helpers import rate_limit
 from common.numpy_fast import clip
-from . import teslacan
-from .values import AH
-from common.fingerprints import TESLA as CAR
+from selfdrive.car.tesla import teslacan
+from selfdrive.car.tesla.values import AH, CruiseButtons, CAR
 from selfdrive.can.packer import CANPacker
 
 
@@ -98,6 +97,9 @@ class CarController(object):
         hud_car = 1
     else:
       hud_car = 0
+    
+    # For lateral control-only, send chimes as a beep since we don't send 0x1fa
+    #if CS.CP.radarOffCan:
 
     #print chime, alert_id, hud_alert
     fcw_display, steer_required, acc_alert = process_hud_alert(hud_alert)

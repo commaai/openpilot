@@ -2,7 +2,6 @@ import struct
 
 import common.numpy_fast as np
 from selfdrive.config import Conversions as CV
-from common.fingerprints import TESLA as CAR
 
 
 def create_steering_control(enabled, apply_steer, idx):

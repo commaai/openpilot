@@ -27,7 +27,7 @@ msgs = [(address, msg_name, msg_size, sorted(msg_sigs, key=lambda s: s.name not 
 if can_dbc.name.startswith("honda") or can_dbc.name.startswith("acura"):
   checksum_type = "honda"
   checksum_size = 4
-elif can_dbc.name.startswith("toyota"):
+elif can_dbc.name.startswith("toyota") or can_dbc.name.startswith("lexus"):
   checksum_type = "toyota"
   checksum_size = 8
 else:

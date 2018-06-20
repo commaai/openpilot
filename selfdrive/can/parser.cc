@@ -65,7 +65,7 @@ uint64_t read_u64_be(const uint8_t* v) {
 }
 
 uint64_t read_u64_le(const uint8_t* v) {
-  return ((uint64_t)v[0] 
+  return ((uint64_t)v[0]
           | ((uint64_t)v[1] << 8)
           | ((uint64_t)v[2] << 16)
           | ((uint64_t)v[3] << 24)
@@ -96,11 +96,11 @@ struct MessageState {
       int64_t tmp;
 
       if (sig.is_little_endian){
-        tmp = (dat >> sig.b1) & ((1ULL << sig.b2)-1);  
+        tmp = (dat >> sig.b1) & ((1ULL << sig.b2)-1);
       } else {
         tmp = (dat >> sig.bo) & ((1ULL << sig.b2)-1);
       }
-      
+
       if (sig.is_signed) {
         tmp -= (tmp >> (sig.b2-1)) ? (1ULL << sig.b2) : 0; //signed
       }

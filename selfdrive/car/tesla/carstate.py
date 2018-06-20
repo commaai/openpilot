@@ -1,9 +1,8 @@
-import os
 from common.numpy_fast import interp
+from common.kalman.simple_kalman import KF1D
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
-from common.kalman.simple_kalman import KF1D
-from common.fingerprints import TESLA as CAR
+from selfdrive.car.tesla.values import CAR, DBC
 import numpy as np
 
 
@@ -96,15 +95,11 @@ def get_can_signals(CP):
   ]
 
 
-  # this function generates lists for signal, messages and initial values
-  if CP.carFingerprint == CAR.MODELS:
-    dbc_f = 'tesla_can.dbc'
-
-  return dbc_f, signals, checks
+  return signals, checks
   
 def get_can_parser(CP):
-  dbc_f, signals, checks = get_can_signals(CP)
-  return CANParser(os.path.splitext(dbc_f)[0], signals, checks, 0)
+  signals, checks = get_can_signals(CP)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
 
 class CarState(object):
@@ -122,6 +117,9 @@ class CarState(object):
 
     self.left_blinker_on = 0
     self.right_blinker_on = 0
+    self.steer_warning = 0
+    
+    self.stopped = 0
 
     # vEgo kalman filter
     dt = 0.01
