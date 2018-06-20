@@ -131,8 +131,11 @@ class CarController(object):
     # Basic highway lane change logic
     enable_steer_control = (not CS.right_blinker_on and not CS.left_blinker_on and enabled)
 
+    steer_correction = actuators.steer if enable_steer_control else 0
+    #steer_correction = actuators.steerAngle if enable_steer_control else 0 # NOT WORKING always turns right, need to investigate (value, deg/rad, polarity, scaling)
+
     # steer torque is converted back to CAN reference (positive when steering right)
-    apply_steer = int(clip((-actuators.steer * 100) + STEER_MAX - (CS.angle_steers * 10), STEER_MAX - USER_STEER_MAX, STEER_MAX + USER_STEER_MAX))
+    apply_steer = int(clip((-steer_correction * 100) + STEER_MAX - (CS.angle_steers * 10), STEER_MAX - USER_STEER_MAX, STEER_MAX + USER_STEER_MAX))
 
     # Send CAN commands.
     can_sends = []
