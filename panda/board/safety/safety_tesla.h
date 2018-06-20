@@ -66,12 +66,12 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
   // exit controls on brake press
   // DI_torque2::DI_brakePedal 0x118
-  if (addr == 0x118) {
+  //if (addr == 0x118) {
     // 1 bit at position 16
-    if (((to_push->RDLR & 0x8000)) >> 15 == 1) {
-      controls_allowed = 0;
-    }
-  }  
+  //  if (((to_push->RDLR & 0x8000)) >> 15 == 1) {
+  //    controls_allowed = 0;
+  //  }
+  //}  
   
   // exit controls on EPAS error
   // EPAS_sysStatus::EPAS_eacStatus 0x370
