@@ -147,19 +147,18 @@ BO_ 309 ESP_135h: 5 ESP
  SG_ ESP_espOffLamp : 31|1@0+ (1,0) [-1|2] ""  NEO
  SG_ ESP_stabilityControlSts : 14|3@0+ (1,0) [6|7] ""  NEO
  SG_ ESP_tcLampFlash : 5|1@0+ (1,0) [-1|2] ""  NEO
- SG_ ESP_tcOffLamp : 15|1@0+ (1,0) [0|1] ""  NEOBO_ 341 ESP_B: 8 ESP 
- SG_ ESP_BChecksum : 39|8@0+ (1,0) [0|255] ""  NEO,EPAS 
- SG_ ESP_BCounter : 62|4@0+ (1,0) [1|15] ""  NEO,EPAS 
- SG_ ESP_vehicleSpeed : 47|16@0+ (0.00999999978,0) [0|0] "kph"  NEO,EPAS 
- SG_ ESP_vehicleSpeedQF : 57|2@0+ (1,0) [1|2] ""  NEO,EPAS 
- SG_ ESP_wheelPulseCountFrL : 7|8@0+ (1,0) [0|254] ""  NEO,EPAS 
- SG_ ESP_wheelPulseCountFrR : 15|8@0+ (1,0) [0|254] ""  NEO,EPAS 
- SG_ ESP_wheelPulseCountReL : 23|8@0+ (1,0) [0|254] ""  NEO,EPAS 
+ SG_ ESP_tcOffLamp : 15|1@0+ (1,0) [0|1] ""  NEOBO_ 341 ESP_B: 8 ESP SG_ ESP_BChecksum : 39|8@0+ (1,0) [0|255] ""  NEO,EPAS
+ SG_ ESP_BCounter : 62|4@0+ (1,0) [1|15] ""  NEO,EPAS
+ SG_ ESP_vehicleSpeed : 47|16@0+ (0.00999999978,0) [0|0] "kph"  NEO,EPAS
+ SG_ ESP_vehicleSpeedQF : 57|2@0+ (1,0) [1|2] ""  NEO,EPAS
+ SG_ ESP_wheelPulseCountFrL : 7|8@0+ (1,0) [0|254] ""  NEO,EPAS 
+ SG_ ESP_wheelPulseCountFrR : 15|8@0+ (1,0) [0|254] ""  NEO,EPAS
+ SG_ ESP_wheelPulseCountReL : 23|8@0+ (1,0) [0|254] ""  NEO,EPAS 
  SG_ ESP_wheelPulseCountReR : 31|8@0+ (1,0) [0|254] ""  NEO,EPAS
 
-BO_ 532 EPB_epasControl: 3 EPB 
- SG_ EPB_epasControlChecksum : 23|8@0+ (1,0) [0|255] ""  NEO,EPAS 
- SG_ EPB_epasControlCounter : 11|4@0+ (1,0) [0|15] ""  NEO,EPAS 
+BO_ 532 EPB_epasControl: 3 EPB
+ SG_ EPB_epasControlChecksum : 23|8@0+ (1,0) [0|255] ""  NEO,EPAS 
+ SG_ EPB_epasControlCounter : 11|4@0+ (1,0) [0|15] ""  NEO,EPAS
  SG_ EPB_epasEACAllow : 2|3@0+ (1,0) [4|7] ""  NEO,EPAS
 
 BO_ 792 GTW_carState: 8 GTW
