@@ -232,7 +232,7 @@ class LongitudinalMpc(object):
       TR=0.9 # 10m at 40km/hr
     elif CS.distanceToggle == 3:
       TR=2.7 # 30m at 40km/hr
-    if CS.vEgo < 11.4
+    if CS.vEgo < 11.4:
       TR=1.8 # under 41km/hr use a TR of 1.8 seconds
     print TR
     n_its = self.libmpc.run_mpc(self.cur_state, self.mpc_solution, l,TR)
