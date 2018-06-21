@@ -77,6 +77,7 @@ def get_can_signals(CP):
       ("TSL_P_Psd_StW","SBW_RQ_SCCM" , 0),
       ("TurnIndLvr_Stat", "STW_ACTN_RQ", 0),
       ("DI_motorRPM", "DI_torque1", 0),
+      ("DI_speedUnits", "DI_state", 0),
       
   ]
 
