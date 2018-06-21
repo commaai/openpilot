@@ -219,7 +219,10 @@ class CarState(object):
 
     self.user_brake = cp.vl["DI_torque2"]['DI_brakePedal']
     self.standstill = cp.vl["DI_torque2"]['DI_vehicleSpeed'] == 0
-    self.v_cruise_pcm = cp.vl["DI_state"]['DI_cruiseSet']
+    if cp.vl["DI_state"]['DI_speedUnits'] == 0:
+      self.v_cruise_pcm = (cp.vl["DI_state"]['DI_cruiseSet'])*1.609 # Reported in MPH, expected in KPH??
+    else:
+      self.v_cruise_pcm = cp.vl["DI_state"]['DI_cruiseSet']
     self.pcm_acc_status = cp.vl["DI_state"]['DI_cruiseState']
     self.hud_lead = 0 #JCT
 
