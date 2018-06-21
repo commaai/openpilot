@@ -129,7 +129,15 @@ class CarController(object):
     USER_STEER_MAX = (-62.0 * CS.v_ego) + 2314.6
 
     # Basic highway lane change logic
-    enable_steer_control = (not CS.right_blinker_on and not CS.left_blinker_on and enabled)
+    changing_lanes = CS.right_blinker_on or CS.left_blinker_on
+
+    # Prevent steering while stopped
+    MIN_STEERING_VEHICLE_VELOCITY = 0.05 # m/s
+    vehicle_moving = (CS.v_ego >= MIN_STEERING_VEHICLE_VELOCITY)
+    
+    enable_steer_control = (enabled
+                            and vehicle_moving
+                            and not changing_lanes)
 
     steer_correction = actuators.steer if enable_steer_control else 0
     #steer_correction = actuators.steerAngle if enable_steer_control else 0 # NOT WORKING always turns right, need to investigate (value, deg/rad, polarity, scaling)
