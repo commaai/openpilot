@@ -136,14 +136,15 @@ class CarController(object):
     vehicle_moving = (CS.v_ego >= MIN_STEERING_VEHICLE_VELOCITY)
     
     enable_steer_control = (enabled
-                            and vehicle_moving
                             and not changing_lanes)
+    
+    # Torque
+    #steer_correction = actuators.steer if enable_steer_control else 0
+    #apply_steer = int(clip((-steer_correction * 100) + STEER_MAX - (CS.angle_steers * 10), STEER_MAX - USER_STEER_MAX, STEER_MAX + USER_STEER_MAX)) # steer torque is converted back to CAN reference (positive when steering right)
 
-    steer_correction = actuators.steer if enable_steer_control else 0
-    #steer_correction = actuators.steerAngle if enable_steer_control else 0 # NOT WORKING always turns right, need to investigate (value, deg/rad, polarity, scaling)
-
-    # steer torque is converted back to CAN reference (positive when steering right)
-    apply_steer = int(clip((-steer_correction * 100) + STEER_MAX - (CS.angle_steers * 10), STEER_MAX - USER_STEER_MAX, STEER_MAX + USER_STEER_MAX))
+    # Angle
+    steer_correction = actuators.steerAngle if enable_steer_control else CS.angle_steers
+    apply_steer = int(clip((-actuators.steerAngle * 10) + STEER_MAX, STEER_MAX - USER_STEER_MAX, STEER_MAX + USER_STEER_MAX)) # steer torque is converted back to CAN reference (positive when steering right)
 
     # Send CAN commands.
     can_sends = []
