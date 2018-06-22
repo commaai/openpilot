@@ -248,5 +248,4 @@ class CarController(object):
     #
     #     can_sends.append(make_can_msg(addr, vl, bus, False))
 
-
     sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
