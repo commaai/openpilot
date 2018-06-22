@@ -91,13 +91,11 @@ class CarController(object):
     else:
       hud_lanes = 0
 
-    # TODO: factor this out better
-    if enabled:
-      if hud_show_car:
-        hud_car = 2
-      else:
-        hud_car = 1
-    else:
+    if enabled and hud_show_car:
+      hud_car = 2
+    elif enabled and not hud_show_car:
+      hud_car = 1  	
+    else: 
       hud_car = 0
 
     # For lateral control-only, send chimes as a beep since we don't send 0x1fa
