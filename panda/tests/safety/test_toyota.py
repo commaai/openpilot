@@ -62,7 +62,7 @@ class TestToyotaSafety(unittest.TestCase):
     return to_send
 
   def _torque_driver_msg_array(self, torque):
-    for i in range(3):
+    for i in range(6):
       self.safety.toyota_ipas_rx_hook(self._torque_driver_msg(torque))
 
   def _angle_meas_msg(self, angle):
@@ -74,7 +74,7 @@ class TestToyotaSafety(unittest.TestCase):
     return to_send
 
   def _angle_meas_msg_array(self, angle):
-    for i in range(3):
+    for i in range(6):
       self.safety.toyota_ipas_rx_hook(self._angle_meas_msg(angle))
 
   def _torque_msg(self, torque):
@@ -228,6 +228,9 @@ class TestToyotaSafety(unittest.TestCase):
   def test_torque_measurements(self):
     self.safety.toyota_rx_hook(self._torque_meas_msg(50))
     self.safety.toyota_rx_hook(self._torque_meas_msg(-50))
+    self.safety.toyota_rx_hook(self._torque_meas_msg(0))
+    self.safety.toyota_rx_hook(self._torque_meas_msg(0))
+    self.safety.toyota_rx_hook(self._torque_meas_msg(0))
     self.safety.toyota_rx_hook(self._torque_meas_msg(0))
 
     self.assertEqual(-51, self.safety.get_torque_meas_min())

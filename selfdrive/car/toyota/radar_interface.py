@@ -22,7 +22,7 @@ def _create_radard_can_parser():
   return CANParser(os.path.splitext(dbc_f)[0], signals, checks, 1)
 
 class RadarInterface(object):
-  def __init__(self):
+  def __init__(self, CP):
     # radar
     self.pts = {}
     self.validCnt = {key: 0 for key in RADAR_MSGS}
@@ -86,7 +86,7 @@ class RadarInterface(object):
     return ret
 
 if __name__ == "__main__":
-  RI = RadarInterface()
+  RI = RadarInterface(None)
   while 1:
     ret = RI.update()
     print(chr(27) + "[2J")

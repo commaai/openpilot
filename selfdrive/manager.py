@@ -4,10 +4,25 @@ import sys
 import fcntl
 import errno
 import signal
+import subprocess
+
+from common.basedir import BASEDIR
+sys.path.append(os.path.join(BASEDIR, "pyextra"))
+os.environ['BASEDIR'] = BASEDIR
 
 if __name__ == "__main__":
   if os.path.isfile("/init.qcom.rc") \
-      and (not os.path.isfile("/VERSION") or int(open("/VERSION").read()) < 4):
+      and (not os.path.isfile("/VERSION") or int(open("/VERSION").read()) < 6):
+
+    # update continue.sh before updating NEOS
+    if os.path.isfile(os.path.join(BASEDIR, "scripts", "continue.sh")):
+      from shutil import copyfile
+      copyfile(os.path.join(BASEDIR, "scripts", "continue.sh"), "/data/data/com.termux/files/continue.sh")
+
+    # run the updater
+    print "Starting NEOS updater"
+    subprocess.check_call(["git", "clean", "-xdf"], cwd=BASEDIR)
+    os.system(os.path.join(BASEDIR, "installer", "updater", "updater"))
     raise Exception("NEOS outdated")
 
     # update shim
@@ -62,9 +77,10 @@ import subprocess
 import traceback
 from multiprocessing import Process
 
-from common.basedir import BASEDIR
-sys.path.append(os.path.join(BASEDIR, "pyextra"))
-os.environ['BASEDIR'] = BASEDIR
+EON = os.path.exists("/EON")
+if EON and os.path.exists(os.path.join(BASEDIR, "vpn")):
+  print "installing vpn"
+  os.system(os.path.join(BASEDIR, "vpn", "install.sh"))
 
 import zmq
 from setproctitle import setproctitle  #pylint: disable=no-name-in-module
@@ -82,7 +98,6 @@ import selfdrive.crash as crash
 
 from selfdrive.loggerd.config import ROOT
 
-EON = os.path.exists("/EON")
 
 # comment out anything you don't want to run
 managed_processes = {
@@ -102,7 +117,7 @@ managed_processes = {
   "visiond": ("selfdrive/visiond", ["./visiond"]),
   "sensord": ("selfdrive/sensord", ["./sensord"]),
   "gpsd": ("selfdrive/sensord", ["./gpsd"]),
-  "orbd": ("selfdrive/orbd", ["./orbd"]),
+  "orbd": ("selfdrive/orbd", ["./orbd_wrapper.sh"]),
   "updated": "selfdrive.updated",
   #"gpsplanner": "selfdrive.controls.gps_plannerd",
 }
@@ -294,7 +309,10 @@ def system(cmd):
       output=e.output[-1024:],
       returncode=e.returncode)
 
+LEON = False
 def setup_eon_fan():
+  global LEON
+
   if not EON:
     return
 
@@ -302,15 +320,20 @@ def setup_eon_fan():
 
   from smbus2 import SMBus
   bus = SMBus(7, force=True)
-  bus.write_byte_data(0x21, 0x10, 0xf)   # mask all interrupts
-  bus.write_byte_data(0x21, 0x03, 0x1)   # set drive current and global interrupt disable
-  bus.write_byte_data(0x21, 0x02, 0x2)   # needed?
-  bus.write_byte_data(0x21, 0x04, 0x4)   # manual override source
+  try:
+    bus.write_byte_data(0x21, 0x10, 0xf)   # mask all interrupts
+    bus.write_byte_data(0x21, 0x03, 0x1)   # set drive current and global interrupt disable
+    bus.write_byte_data(0x21, 0x02, 0x2)   # needed?
+    bus.write_byte_data(0x21, 0x04, 0x4)   # manual override source
+  except IOError:
+    print "LEON detected"
+    #os.system("echo 1 > /sys/devices/soc/6a00000.ssusb/power_supply/usb/usb_otg")
+    LEON = True
   bus.close()
 
 last_eon_fan_val = None
 def set_eon_fan(val):
-  global last_eon_fan_val
+  global LEON, last_eon_fan_val
 
   if not EON:
     return
@@ -318,9 +341,13 @@ def set_eon_fan(val):
   from smbus2 import SMBus
   if last_eon_fan_val is None or last_eon_fan_val != val:
     bus = SMBus(7, force=True)
-    bus.write_byte_data(0x21, 0x04, 0x2)
-    bus.write_byte_data(0x21, 0x03, (val*2)+1)
-    bus.write_byte_data(0x21, 0x04, 0x4)
+    if LEON:
+      i = [0x1, 0x3 | 0, 0x3 | 0x08, 0x3 | 0x10][val]
+      bus.write_i2c_block_data(0x3d, 0, [i])
+    else:
+      bus.write_byte_data(0x21, 0x04, 0x2)
+      bus.write_byte_data(0x21, 0x03, (val*2)+1)
+      bus.write_byte_data(0x21, 0x04, 0x4)
     bus.close()
     last_eon_fan_val = val
 
@@ -653,6 +680,10 @@ def main():
     del managed_processes['controlsd']
     del managed_processes['radard']
 
+  if os.path.isfile('logserver/logserver.py'):
+    managed_processes["logserver"] = "selfdrive.logserver.wsgi"
+    persistent_processes.append("logserver")
+
   # support additional internal only extensions
   try:
     import selfdrive.manager_extensions
@@ -688,7 +719,8 @@ def main():
   if os.getenv("PREPAREONLY") is not None:
     spinner_proc = None
   else:
-    spinner_proc = subprocess.Popen(["./spinner", "loading..."],
+    spinner_text = "chffrplus" if params.get("Passive")=="1" else "openpilot"
+    spinner_proc = subprocess.Popen(["./spinner", "loading %s"%spinner_text],
       cwd=os.path.join(BASEDIR, "selfdrive", "ui", "spinner"),
       close_fds=True)
   try:
