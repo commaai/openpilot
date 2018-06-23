@@ -30,7 +30,7 @@ def get_can_parser(CP):
     ("WHL_SPD_RL", "WHL_SPD11", 0),
     ("WHL_SPD_RR", "WHL_SPD11", 0),
     ("SAS_Angle", "SAS11", 0),
-    ("SAS_Speed", "SAS11, 0),
+    ("SAS_Speed", "SAS11", 0),
     ("CR_Lkas_StrToqReq", "LKAS11", 0),
     ("GEAR_TYPE", "TCU11", 0),
     #("WHEELS_MOVING", 0x1b0, 1),
