@@ -132,7 +132,7 @@ class CarState(object):
     self.a_ego = float(v_ego_x[1])
     self.standstill = not self.v_wheel > 0.001
 
-    self.angle_steers = = cp.vl["SAS11"]['SAS_Angle']
+    self.angle_steers = cp.vl["SAS11"]['SAS_Angle']
     self.angle_steers_rate = cp.vl["SAS11"]['SAS_Speed']
     self.gear_shifter = cp.vl["TCU11"]['GEAR_TYPE']
     self.main_on = cp.vl["CLU11"]['CF_Clu_CruiseSwMain']
