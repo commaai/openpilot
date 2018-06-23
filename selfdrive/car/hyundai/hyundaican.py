@@ -28,30 +28,6 @@ def create_video_target(frame, addr):
   return make_can_msg(addr, msg, 1, True)
 
 
-def create_ipas_steer_command(packer, steer, enabled, apgs_enabled):
-  """Creates a CAN message for the Toyota Steer Command."""
-  if steer < 0:
-    direction = 3
-  elif steer > 0:
-    direction = 1
-  else:
-    direction = 2
-
-  mode = 3 if enabled else 1
-
-  values = {
-    "STATE": mode,
-    "DIRECTION_CMD": direction,
-    "ANGLE": steer,
-    "SET_ME_X10": 0x10,
-    "SET_ME_X40": 0x40
-  }
-  if apgs_enabled:
-    return packer.make_can_msg("STEERING_IPAS", 0, values)
-  else:
-    return packer.make_can_msg("STEERING_IPAS_COMMA", 0, values)
-
-
 def create_steer_command(packer, steer, raw_cnt):
   """Creates a CAN message for the Toyota Steer Command."""
 
@@ -62,6 +38,31 @@ def create_steer_command(packer, steer, raw_cnt):
     "SET_ME_1": 1,
   }
   return packer.make_can_msg("STEERING_LKA", 0, values)
+
+def create_steer_command(packer, steer, car_fingerprint, idx):
+  """Creates a CAN message for the Hyundai  Steering and LKAS UI command."""
+  lkas_hud_values = {
+    #checksum and counter are calculated elsewhere
+    'CF_Lkas_LdwsSysState' : hud.lanes,
+    'CF_Lkas_SysWarning' : hud.steer_required,
+    'CF_Lkas_LdwsLHWarning' : 0x0,
+    'CF_Lkas_LdwsRHWarning' : 0x0,
+    'CF_Lkas_HbaLamp' : 0x0,
+    'CF_Lkas_FcwBasReq' : 0x0,
+    'CR_Lkas_StrToqReq' : steer, #actual torque request
+    'CF_Lkas_ActToi': steer != 0, #the torque request bit
+    'CF_Lkas_ToiFlt' : 0x0,
+    'CF_Lkas_HbaSysState' : 0x1,
+    'CF_Lkas_FcwOpt' : 0x0,
+    'CF_Lkas_HbaOpt' : 0x1,
+    'CF_Lkas_FcwSysState' : 0x0,
+    'CF_Lkas_FcwCollisionWarning' : 0x0,
+    'CF_Lkas_FusionState' : 0x0,
+    'CF_Lkas_FcwOpt_USM' : 0x0,
+    'CF_Lkas_LdwsOpt_USM' : 0x3,
+  }
+
+  return packer.make_can_msg("LKAS11", 0, lkas_hud_values, idx)
 
 
 def create_accel_command(packer, accel, pcm_cancel, standstill_req):
@@ -84,20 +85,3 @@ def create_fcw_command(packer, fcw):
     "SET_ME_X80": 0x80,
   }
   return packer.make_can_msg("ACC_HUD", 0, values)
-
-
-def create_ui_command(packer, steer, sound1, sound2):
-  values = {
-    "RIGHT_LINE": 1,
-    "LEFT_LINE": 1,
-    "SET_ME_X0C": 0x0c,
-    "SET_ME_X2C": 0x2c,
-    "SET_ME_X38": 0x38,
-    "SET_ME_X02": 0x02,
-    "SET_ME_X01": 1,
-    "SET_ME_X01_2": 1,
-    "REPEATED_BEEPS": sound1,
-    "TWO_BEEPS": sound2,
-    "LDA_ALERT": steer,
-  }
-  return packer.make_can_msg("LKAS_HUD", 0, values)

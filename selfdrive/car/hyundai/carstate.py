@@ -64,7 +64,7 @@ def get_can_parser(CP):
   ]
 
   checks = [
-    ("BRAKE_MODULE", 40),
+    ("BRAKE_MODULE", 40), ## TODO: DO THESE
     ("GAS_PEDAL", 33),
     ("WHEEL_SPEEDS", 80),
     ("STEER_ANGLE_SENSOR", 80),
@@ -73,9 +73,6 @@ def get_can_parser(CP):
     ("STEER_TORQUE_SENSOR", 50),
     ("EPS_STATUS", 25),
   ]
-
-  if CP.carFingerprint == CAR.PRIUS:
-    signals += [("STATE", "AUTOPARK_STATUS", 0)]
 
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
@@ -108,21 +105,21 @@ class CarState(object):
     self.prev_left_blinker_on = self.left_blinker_on
     self.prev_right_blinker_on = self.right_blinker_on
 
-    self.door_all_closed = not any([cp.vl["SEATS_DOORS"]['DOOR_OPEN_FL'], cp.vl["SEATS_DOORS"]['DOOR_OPEN_FR'],
-                                    cp.vl["SEATS_DOORS"]['DOOR_OPEN_RL'], cp.vl["SEATS_DOORS"]['DOOR_OPEN_RR']])
-    self.seatbelt = not cp.vl["SEATS_DOORS"]['SEATBELT_DRIVER_UNLATCHED']
+    self.door_all_closed = not any ([cp.vl["CGW1"]['CF_Gway_DrvDrSw'], cp.vl["CGW1"]['CF_Gway_AstDrSw'],
+      cp.vl["CGW2"]['CF_Gway_RlDrSw'], cp.vl["CGW2"]['CF_Gway_RrDrSw']])
+    self.seatbelt = ["CGW1"]['CF_Gway_DrvSeatBeltSw']
 
     can_gear = cp.vl["GEAR_PACKET"]['GEAR']
-    self.brake_pressed = cp.vl["BRAKE_MODULE"]['BRAKE_PRESSED']
-    self.pedal_gas = cp.vl["GAS_PEDAL"]['GAS_PEDAL']
+    self.brake_pressed = cp.vl["TCS13"]['DriverBraking']
+    self.pedal_gas = cp.vl["GAS_PEDAL"]['GAS_PEDAL'] ## TODO: find this that is idle when acc accels
     self.car_gas = self.pedal_gas
-    self.esp_disabled = cp.vl["ESP_CONTROL"]['TC_DISABLED']
+    self.esp_disabled = cp.vl["TCS15"]['ESC_Off_Step']
 
     # calc best v_ego estimate, by averaging two opposite corners
-    self.v_wheel_fl = cp.vl["WHEEL_SPEEDS"]['WHEEL_SPEED_FL'] * CV.KPH_TO_MS
-    self.v_wheel_fr = cp.vl["WHEEL_SPEEDS"]['WHEEL_SPEED_FR'] * CV.KPH_TO_MS
-    self.v_wheel_rl = cp.vl["WHEEL_SPEEDS"]['WHEEL_SPEED_RL'] * CV.KPH_TO_MS
-    self.v_wheel_rr = cp.vl["WHEEL_SPEEDS"]['WHEEL_SPEED_RR'] * CV.KPH_TO_MS
+    self.v_wheel_fl = cp.vl["WHL_SPD11"]['WHL_SPD_FL'] * CV.KPH_TO_MS
+    self.v_wheel_fr = cp.vl["WHL_SPD11"]['WHL_SPD_FR'] * CV.KPH_TO_MS
+    self.v_wheel_rl = cp.vl["WHL_SPD11"]['WHL_SPD_RL'] * CV.KPH_TO_MS
+    self.v_wheel_rr = cp.vl["WHL_SPD11"]['WHL_SPD_RR'] * CV.KPH_TO_MS
     self.v_wheel = (self.v_wheel_fl + self.v_wheel_fr + self.v_wheel_rl + self.v_wheel_rr) / 4.
 
     # Kalman filter
@@ -135,25 +132,25 @@ class CarState(object):
     self.a_ego = float(v_ego_x[1])
     self.standstill = not self.v_wheel > 0.001
 
-    self.angle_steers = cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']
-    self.angle_steers_rate = cp.vl["STEER_ANGLE_SENSOR"]['STEER_RATE']
-    self.gear_shifter = parse_gear_shifter(can_gear, self.car_fingerprint)
-    self.main_on = cp.vl["PCM_CRUISE_2"]['MAIN_ON']
-    self.left_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 1
-    self.right_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 2
+    self.angle_steers = = cp.vl["SAS11"]['SAS_Angle']
+    self.angle_steers_rate = cp.vl["SAS11"]['SAS_Speed']
+    self.gear_shifter = cp.vl["TCU11"]['GEAR_TYPE']
+    self.main_on = cp.vl["CLU11"]['CF_Clu_CruiseSwMain']
+    self.left_blinker_on = cp.vl["CGW1"]['CF_Gway_TurnSigLh']
+    self.right_blinker_on = cp.vl["CGW1"]['CF_Gway_TurnSigRh']
 
     # we could use the override bit from dbc, but it's triggered at too high torque values
-    self.steer_override = abs(cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_DRIVER']) > 100
+    self.steer_override = abs(cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_DRIVER']) > 100 ## TODO: FIND THIS
     # 2 is standby, 10 is active. TODO: check that everything else is really a faulty state
-    self.steer_state = cp.vl["EPS_STATUS"]['LKA_STATE']
-    self.steer_error = cp.vl["EPS_STATUS"]['LKA_STATE'] not in [1, 5]
-    self.ipas_active = cp.vl['EPS_STATUS']['IPAS_STATE'] == 3
+    self.steer_state = cp.vl["MDPS12"]['CF_Mdps_ToiActive'] #0 NOT ACTIVE, 1 ACTIVE
+    self.steer_error = not cp.vl["MDPS12"]['CF_Mdps_FailStat'] or cp.vl["MDPS12"]['CF_Mdps_ToiUnavail'] ## TODO: VERIFY THIS
+    # self.ipas_active = cp.vl['EPS_STATUS']['IPAS_STATE'] == 3
     self.brake_error = 0
-    self.steer_torque_driver = cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_DRIVER']
+    self.steer_torque_driver = cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_DRIVER'] ## TODO: FIND THIS
     self.steer_torque_motor = cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_EPS']
 
     self.user_brake = 0
-    self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED']
+    self.v_cruise_pcm = cp.vl["SCC11"]['VSetDis'] ## TODO: find the unit
     self.pcm_acc_status = cp.vl["PCM_CRUISE"]['CRUISE_STATE']
     self.gas_pressed = not cp.vl["PCM_CRUISE"]['GAS_RELEASED']
     self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]['LOW_SPEED_LOCKOUT'] == 2
