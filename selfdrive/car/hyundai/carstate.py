@@ -24,34 +24,43 @@ def get_can_parser(CP):
 
   signals = [
     # sig_name, sig_address, default
-    ("GEAR", "GEAR_PACKET", 0),
-    ("BRAKE_PRESSED", "BRAKE_MODULE", 0),
-    ("GAS_PEDAL", "GAS_PEDAL", 0),
-    ("WHEEL_SPEED_FL", "WHEEL_SPEEDS", 0),
-    ("WHEEL_SPEED_FR", "WHEEL_SPEEDS", 0),
-    ("WHEEL_SPEED_RL", "WHEEL_SPEEDS", 0),
-    ("WHEEL_SPEED_RR", "WHEEL_SPEEDS", 0),
-    ("DOOR_OPEN_FL", "SEATS_DOORS", 1),
-    ("DOOR_OPEN_FR", "SEATS_DOORS", 1),
-    ("DOOR_OPEN_RL", "SEATS_DOORS", 1),
-    ("DOOR_OPEN_RR", "SEATS_DOORS", 1),
-    ("SEATBELT_DRIVER_UNLATCHED", "SEATS_DOORS", 1),
-    ("TC_DISABLED", "ESP_CONTROL", 1),
-    ("STEER_ANGLE", "STEER_ANGLE_SENSOR", 0),
-    ("STEER_FRACTION", "STEER_ANGLE_SENSOR", 0),
-    ("STEER_RATE", "STEER_ANGLE_SENSOR", 0),
-    ("GAS_RELEASED", "PCM_CRUISE", 0),
-    ("CRUISE_STATE", "PCM_CRUISE", 0),
-    ("MAIN_ON", "PCM_CRUISE_2", 0),
-    ("SET_SPEED", "PCM_CRUISE_2", 0),
-    ("LOW_SPEED_LOCKOUT", "PCM_CRUISE_2", 0),
-    ("STEER_TORQUE_DRIVER", "STEER_TORQUE_SENSOR", 0),
-    ("STEER_TORQUE_EPS", "STEER_TORQUE_SENSOR", 0),
-    ("TURN_SIGNALS", "STEERING_LEVERS", 3),   # 3 is no blinkers
-    ("LKA_STATE", "EPS_STATUS", 0),
-    ("IPAS_STATE", "EPS_STATUS", 1),
-    ("BRAKE_LIGHTS_ACC", "ESP_CONTROL", 0),
-    ("AUTO_HIGH_BEAM", "LIGHT_STALK", 0),
+    #("XMISSION_SPEED", 0x158, 0),
+    ("WHL_SPD_FL", "WHL_SPD11", 0),
+    ("WHL_SPD_FR", "WHL_SPD11", 0),
+    ("WHL_SPD_RL", "WHL_SPD11", 0),
+    ("WHL_SPD_RR", "WHL_SPD11", 0),
+    ("SAS_Angle", "SAS11", 0),
+    ("SAS_Speed", "SAS11, 0),
+    ("CR_Lkas_StrToqReq", "LKAS11", 0),
+    ("GEAR_TYPE", "TCU11", 0),
+    #("WHEELS_MOVING", 0x1b0, 1),
+    # ("C_DRVDoorStatus", 0x521, 1), # not on elantra
+    # ("C_ASTDoorStatus", 0x521, 1), # not on elantra
+    # ("C_RLDoorStatus", 0x521, 1), # not on elantra
+    # ("C_RRDoorStatus", 0x521, 1), # not on elantra
+    #("CRUISE_SPEED_PCM", 0x324, 0), # not on elantra
+    ("CF_Gway_DrvSeatBeltInd", "CGW4", 1),
+    ("CF_Gway_DrvSeatBeltSw", "CGW1", 0),
+    ("BRAKE_ACT", "EMS12", 0),
+    #("BRAKE_SWITCH", 0x17c, 0),
+    #("CAR_GAS", 0x130, 0),
+    ("CF_Clu_CruiseSwState", "CLU11", 0),
+    #("ESP_DISABLED", 0x1a4, 1),
+    #("HUD_LEAD", 0x30c, 0),
+    ("CYL_PRES", "ESP12", 0),
+    #("STEER_STATUS", 0x18f, 5),
+    #("BRAKE_ERROR_1", 0x1b0, 1),
+    #("BRAKE_ERROR_2", 0x1b0, 1),
+    # ("CF_Lvr_GearInf", 0x354, 0), # not on elantra
+    ("CF_Clu_CruiseSwMain", "CLU11", 0),
+    ("ACCEnable", "TCS13", 0),
+    ("PV_AV_CAN", "EMS12", 0),
+    #("CRUISE_SETTING", 0x296, 0),
+    ("CF_Gway_TurnSigLh", "CGW1", 0),
+    ("CF_Gway_TurnSigRh", "CGW1", 0),
+    #("CRUISE_SPEED_OFFSET", 0x37c, 0),
+    # ("EPB_SWITCH", 0x490, 0),
+    ("C_parkingBrakeSW", "GW_IPM_PE_1", 0),
   ]
 
   checks = [
