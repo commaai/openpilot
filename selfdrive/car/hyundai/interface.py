@@ -89,9 +89,9 @@ class CarInterface(object):
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter.
-    if candidate in [CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH]: # rav4 hybrid can do stop and go
+    if candidate in [CAR.ELANTRA]:
       ret.minEnableSpeed = -1.
-    elif candidate in [CAR.RAV4, CAR.COROLLA]: # TODO: hack ICE to do stop and go
+    else:
       ret.minEnableSpeed = 19. * CV.MPH_TO_MS
 
     centerToRear = ret.wheelbase - ret.centerToFront
@@ -186,7 +186,8 @@ class CarInterface(object):
     ret.cruiseState.speed = self.CS.v_cruise_pcm * CV.KPH_TO_MS
     ret.cruiseState.available = bool(self.CS.main_on)
     ret.cruiseState.speedOffset = 0.
-    if self.CP.carFingerprint == CAR.RAV4H:
+
+    if self.CP.carFingerprint == CAR.ELANTRA:
       # ignore standstill in hybrid rav4, since pcm allows to restart without
       # receiving any special command
       ret.cruiseState.standstill = False
