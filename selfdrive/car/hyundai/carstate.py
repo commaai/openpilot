@@ -7,29 +7,15 @@ import numpy as np
 
 def parse_gear_shifter(can_gear, car_fingerprint):
   # TODO: Use values from DBC to parse this field
-  if car_fingerprint == CAR.PRIUS:
-    if can_gear == 0x0:
+  if car_fingerprint == CAR.ELANTRA:
+    if can_gear_shifter == 0x0:
       return "park"
-    elif can_gear == 0x1:
-      return "reverse"
-    elif can_gear == 0x2:
-      return "neutral"
-    elif can_gear == 0x3:
+    elif can_gear_shifter == 0x5:
       return "drive"
-    elif can_gear == 0x4:
-      return "brake"
-  elif car_fingerprint in [CAR.RAV4, CAR.RAV4H,
-                           CAR.LEXUS_RXH, CAR.COROLLA]:
-    if can_gear == 0x20:
-      return "park"
-    elif can_gear == 0x10:
-      return "reverse"
-    elif can_gear == 0x8:
+    elif can_gear_shifter == 0x6:
       return "neutral"
-    elif can_gear == 0x0:
-      return "drive"
-    elif can_gear == 0x1:
-      return "sport"
+    elif can_gear_shifter == 0x7:
+      return "reverse"
 
   return "unknown"
 
