@@ -167,7 +167,10 @@ class CarState(object):
     self.distance_toggle = cp.vl["JOEL_ID"]['ACC_DISTANCE']
     self.acc_slow_on = bool(cp.vl["JOEL_ID"]['ACC_SLOW'])
     self.user_brake = 0
-    self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED'] - 34 * self.acc_slow_on
+    if self.acc_slow_on:
+      self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED'] - 34.0
+    else:
+      self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED']
     self.pcm_acc_status = cp.vl["PCM_CRUISE"]['CRUISE_STATE']
     self.gas_pressed = not cp.vl["PCM_CRUISE"]['GAS_RELEASED']
     self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]['LOW_SPEED_LOCKOUT'] == 2
