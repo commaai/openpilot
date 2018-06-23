@@ -8,7 +8,7 @@ class CAR:
 class ECU:
   CAM = 0 # camera
 
-addr: (ecu, cars, bus, 1/freq*100, vl)
+#addr: (ecu, cars, bus, 1/freq*100, vl)
 STATIC_MSGS = [(0x141, ECU.CAM, (CAR.ELANTRA), 0,   2, '\x00\x00\x00\x46'),
               ]
 
