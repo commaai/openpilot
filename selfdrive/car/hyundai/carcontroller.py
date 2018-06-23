@@ -69,7 +69,7 @@ def process_hud_alert(hud_alert, audible_alert):
 
 
 class CarController(object):
-  def __init__(self, dbc_name, car_fingerprint, enable_camera, enable_dsu, enable_apg):
+  def __init__(self, dbc_name, car_fingerprint, enable_camera):
     self.braking = False
     # redundant safety check with the board
     self.controls_allowed = True
