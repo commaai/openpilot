@@ -1,17 +1,19 @@
 struct sample_t torque_meas;           // last 3 motor torques produced by the eps
 
 // global torque limit
-const int MAX_TORQUE = 1500;       // max torque cmd allowed ever
+// Range is +1024 to -1024 ..  Default LKAS is +102 to -102
+// And default LKAS is pathetic, but start with that for the start
+const int MAX_TORQUE = 102;       // max torque cmd allowed ever
 
 // rate based torque limit + stay within actually applied
 // packet is sent at 100hz, so this limit is 1000/sec
-const int MAX_RATE_UP = 10;        // ramp up slow
-const int MAX_RATE_DOWN = 25;      // ramp down fast
-const int MAX_TORQUE_ERROR = 350;  // max torque cmd in excess of torque motor
+const int MAX_RATE_UP = 2;        // ramp up slow
+const int MAX_RATE_DOWN = 4;      // ramp down fast
+const int MAX_TORQUE_ERROR = 50;  // max torque cmd in excess of torque motor
 
 // real time torque limit to prevent controls spamming
 // the real time limit is 1500/sec
-const int MAX_RT_DELTA = 375;      // max delta torque allowed for real time checks
+const int MAX_RT_DELTA = 50;      // max delta torque allowed for real time checks
 const int RT_INTERVAL = 250000;    // 250ms between real time checks
 
 // longitudinal limits
@@ -20,7 +22,7 @@ const int MIN_ACCEL = -3000;       // 3.0 m/s2
 
 // global actuation limit state
 int actuation_limits = 1;              // by default steer limits are imposed
-int dbc_eps_torque_factor = 100;   // conversion factor for STEER_TORQUE_EPS in %: see dbc file
+int dbc_eps_torque_factor = 128;   // conversion factor for STEER_TORQUE_EPS in %: see dbc file
 
 // state of torque limits
 int desired_torque_last = 0;       // last desired steer torque

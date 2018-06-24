@@ -46,7 +46,7 @@ class CarInterface(object):
   def get_params(candidate, fingerprint):
 
     # kg of standard extra cargo to count for drive, gas, etc...
-    std_cargo = 136
+    std_cargo = 250
 
     ret = car.CarParams.new_message()
 
@@ -81,6 +81,12 @@ class CarInterface(object):
       ret.steerKf = 0.00003   # full torque for 20 deg at 80mph means 0.00007818594
       ret.steerRateCost = 1.
       #ret.steerActuatorDelay = 0.25 ## TODO: is this needed?
+    elif candidate == CAR.SORENTO:
+      stop_and_go = True
+      ret.mass = 2976./2.205 + std_cargo
+      ret.wheelbase = 2.70\
+      ret.steerRatio = 14.4
+      ret.steerKpV, ret.steerKiV = [[0.8], [0.24]]
 
     ret.centerToFront = ret.wheelbase * 0.44
 
