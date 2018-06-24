@@ -28,7 +28,7 @@ def parse_gear_shifter(can_gear, car_fingerprint):
 
 def get_can_parser(CP):
 
-  if car_fingerprint == CAR.ELANTRA:
+  if CP.carFingerprint == CAR.ELANTRA:
       signals = [
         # sig_name, sig_address, default
         ("WHL_SPD_FL", "WHL_SPD11", 0),
@@ -62,7 +62,7 @@ def get_can_parser(CP):
         ("STEER_TORQUE_SENSOR", 50),
         ("EPS_STATUS", 25),
       ]
-  elif car_fingerprint == CAR.SORENTO:
+  elif CP.carFingerprint == CAR.SORENTO:
       signals = [
         # sig_name, sig_address, default
         ("WHL_SPD_FL", "WHL_SPD11", 0),

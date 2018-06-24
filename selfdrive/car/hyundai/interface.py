@@ -30,6 +30,7 @@ class CarInterface(object):
     self.cp = get_can_parser(CP)
 
     # sending if read only is False
+    sendcan = None
     if sendcan is not None:
       self.sendcan = sendcan
       self.CC = CarController(self.cp.dbc_name, CP.carFingerprint, CP.enableCamera, CP.enableDsu, CP.enableApgs)
