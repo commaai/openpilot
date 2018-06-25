@@ -102,7 +102,7 @@ managed_processes = {
   "visiond": ("selfdrive/visiond", ["./visiond"]),
   "sensord": ("selfdrive/sensord", ["./sensord"]),
   "gpsd": ("selfdrive/sensord", ["./gpsd"]),
-  "orbd": ("selfdrive/orbd", ["./orbd_wrapper.sh"]),
+  #"orbd": ("selfdrive/orbd", ["./orbd_wrapper.sh"]),
   "updated": "selfdrive.updated",
   #"gpsplanner": "selfdrive.controls.gps_plannerd",
 }
@@ -665,9 +665,12 @@ def main():
     del managed_processes['controlsd']
     del managed_processes['radard']
 
+  # disable this until we use it
+  """
   if os.path.isfile('logserver/logserver.py'):
     managed_processes["logserver"] = "selfdrive.logserver.wsgi"
     persistent_processes.append("logserver")
+  """
 
   # support additional internal only extensions
   try:

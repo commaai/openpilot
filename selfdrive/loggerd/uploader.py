@@ -69,7 +69,11 @@ def clear_locks(root):
 
 def is_on_wifi():
   # ConnectivityManager.getActiveNetworkInfo()
-  result = subprocess.check_output(["service", "call", "connectivity", "2"]).strip().split("\n")
+  try:
+    result = subprocess.check_output(["service", "call", "connectivity", "2"]).strip().split("\n")
+  except subprocess.CalledProcessError:
+    return False
+
   data = ''.join(''.join(w.decode("hex")[::-1] for w in l[14:49].split()) for l in result[1:])
 
   return "\x00".join("WIFI") in data
