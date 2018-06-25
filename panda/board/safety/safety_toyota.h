@@ -71,9 +71,8 @@ static int toyota_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
       int desired_accel = ((to_send->RDLR & 0xFF) << 8) | ((to_send->RDLR >> 8) & 0xFF);
       desired_accel = to_signed(desired_accel, 16);
       if (controls_allowed && actuation_limits) {
-        if ((desired_accel > MAX_ACCEL) || (desired_accel < MIN_ACCEL)) {
-          return 0;
-        }
+        int violation = max_limit_check(desired_accel, MAX_ACCEL, MIN_ACCEL);
+        if (violation) return 0;
       } else if (!controls_allowed && (desired_accel != 0)) {
         return 0;
       }
@@ -91,7 +90,7 @@ static int toyota_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
       if (controls_allowed && actuation_limits) {
 
         // *** global torque limit check ***
-        violation |= max_limit_check(desired_torque, MAX_TORQUE);
+        violation |= max_limit_check(desired_torque, MAX_TORQUE, -MAX_TORQUE);
 
         // *** torque rate limit check ***
         violation |= dist_to_meas_check(desired_torque, desired_torque_last, &torque_meas, MAX_RATE_UP, MAX_RATE_DOWN, MAX_TORQUE_ERROR);
