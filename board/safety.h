@@ -12,7 +12,7 @@ int safety_ignition_hook();
 uint32_t get_ts_elapsed(uint32_t ts, uint32_t ts_last);
 int to_signed(int d, int bits);
 void update_sample(struct sample_t *sample, int sample_new);
-int max_limit_check(int val, const int MAX);
+int max_limit_check(int val, const int MAX, const int MIN);
 int dist_to_meas_check(int val, int val_last, struct sample_t *val_meas,
   const int MAX_RATE_UP, const int MAX_RATE_DOWN, const int MAX_ERROR);
 int driver_limit_check(int val, int val_last, struct sample_t *val_driver,
@@ -149,8 +149,8 @@ void update_sample(struct sample_t *sample, int sample_new) {
   }
 }
 
-int max_limit_check(int val, const int MAX) {
-  return (val > MAX) | (val < -MAX);
+int max_limit_check(int val, const int MAX, const int MIN) {
+  return (val > MAX) || (val < MIN);
 }
 
 // check that commanded value isn't too far from measured
@@ -158,8 +158,8 @@ int dist_to_meas_check(int val, int val_last, struct sample_t *val_meas,
   const int MAX_RATE_UP, const int MAX_RATE_DOWN, const int MAX_ERROR) {
 
   // *** val rate limit check ***
-  int16_t highest_allowed_val = max(val_last, 0) + MAX_RATE_UP;
-  int16_t lowest_allowed_val = min(val_last, 0) - MAX_RATE_UP;
+  int highest_allowed_val = max(val_last, 0) + MAX_RATE_UP;
+  int lowest_allowed_val = min(val_last, 0) - MAX_RATE_UP;
 
   // if we've exceeded the meas val, we must start moving toward 0
   highest_allowed_val = min(highest_allowed_val, max(val_last - MAX_RATE_DOWN, max(val_meas->max, 0) + MAX_ERROR));
@@ -195,8 +195,8 @@ int driver_limit_check(int val, int val_last, struct sample_t *val_driver,
 int rt_rate_limit_check(int val, int val_last, const int MAX_RT_DELTA) {
 
   // *** torque real time rate limit check ***
-  int16_t highest_val = max(val_last, 0) + MAX_RT_DELTA;
-  int16_t lowest_val = min(val_last, 0) - MAX_RT_DELTA;
+  int highest_val = max(val_last, 0) + MAX_RT_DELTA;
+  int lowest_val = min(val_last, 0) - MAX_RT_DELTA;
 
   // check for violation
   return (val < lowest_val) || (val > highest_val);
