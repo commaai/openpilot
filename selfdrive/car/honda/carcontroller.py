@@ -14,7 +14,7 @@ def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
   brake_hyst_off = 0.005                     # to deactivate brakes below this value
   brake_hyst_gap = 0.01                      # don't change brake command for small ocilalitons within this value
 
-  #*** histeresys logic to avoid brake blinking. go above 0.1 to trigger
+  #*** histeresis logic to avoid brake blinking. go above 0.1 to trigger
   if (brake < brake_hyst_on and not braking) or brake < brake_hyst_off:
     brake = 0.
   braking = brake > 0.
