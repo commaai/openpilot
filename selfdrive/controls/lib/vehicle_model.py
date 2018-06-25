@@ -101,3 +101,4 @@ if __name__ == '__main__':
   VM = VehicleModel(CP)
   print VM.steady_state_sol(.1, 0.15)
   print calc_slip_factor(VM)
+  print VM.yaw_rate(0.2*np.pi/180, 32.) * 180./np.pi
