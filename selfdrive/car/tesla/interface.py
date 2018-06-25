@@ -117,9 +117,9 @@ class CarInterface(object):
       ret.mass = mass_models
       ret.wheelbase = wheelbase_models
       ret.centerToFront = centerToFront_models
-      ret.steerRatio = 12.0
+      ret.steerRatio = 13.0
       # Kp and Ki for the lateral control
-      ret.steerKpV, ret.steerKiV = [[0.18], [0.025]]
+      ret.steerKpV, ret.steerKiV = [[0.09], [0.0125]]
       ret.steerKf = 0.00003 # Initial test value TODO: investigate FF steer control for Model S?
       ret.steerActuatorDelay = 0.09
       ret.steerRateCost = 0.5 # Lateral MPC cost on steering rate

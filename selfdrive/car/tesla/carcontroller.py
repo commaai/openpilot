@@ -144,7 +144,7 @@ class CarController(object):
 
     # Angle
     steer_correction = actuators.steerAngle if enable_steer_control else CS.angle_steers
-    apply_steer = int(clip((-actuators.steerAngle * 10) + STEER_MAX, STEER_MAX - USER_STEER_MAX, STEER_MAX + USER_STEER_MAX)) # steer torque is converted back to CAN reference (positive when steering right)
+    apply_steer = int(clip((-actuators.steerAngle * 10) + STEER_MAX, STEER_MAX - (USER_STEER_MAX*2), STEER_MAX + (USER_STEER_MAX*2))) # steer torque is converted back to CAN reference (positive when steering right)
 
     # Send CAN commands.
     can_sends = []
