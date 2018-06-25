@@ -505,9 +505,6 @@ def manager_thread():
     # with 2% left, we killall, otherwise the phone will take a long time to boot
     should_start = should_start and avail > 0.02
 
-    # require usb power
-    should_start = should_start and msg.thermal.usbOnline
-
     should_start = should_start and accepted_terms and completed_training and (not do_uninstall)
 
     # if any CPU gets above 107 or the battery gets above 63, kill all processes
