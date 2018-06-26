@@ -47,21 +47,43 @@ Supported Cars
 
 - Honda CR-V Touring 2015-2016
   - Can only be enabled above 25 mph
+  - *Optionally supports [Comma Pedal](https://community.comma.ai/wiki/index.php/Comma_Pedal)  (alpha!)*
 
 - Honda Odyssey 2018 with Honda Sensing (alpha!)
   - Can only be enabled above 25 mph
+  - *Optionally supports [Comma Pedal](https://community.comma.ai/wiki/index.php/Comma_Pedal)  (alpha!)*
+
 
 - Honda Pilot 2017 with Honda Sensing (alpha!)
   - Can only be enabled above 27 mph
+  - *Optionally supports [Comma Pedal](https://community.comma.ai/wiki/index.php/Comma_Pedal)  (alpha!)*
 
 - Honda Ridgeline 2017 with Honda Sensing (alpha!)
   - Can only be enabled above 27 mph
+  - *Optionally supports [Comma Pedal](https://community.comma.ai/wiki/index.php/Comma_Pedal)  (alpha!)*
 
 - Acura ILX 2016 with AcuraWatch Plus
   - Due to use of the cruise control for gas, it can only be enabled above 25 mph
+  - *Optionally supports [Comma Pedal](https://community.comma.ai/wiki/index.php/Comma_Pedal)  (alpha!)*
 
 - Acura RDX 2018 with AcuraWatch Plus (alpha!)
   - Can only be enabled above 25 mph
+  - *Optionally supports [Comma Pedal](https://community.comma.ai/wiki/index.php/Comma_Pedal)  (alpha!)*
+
+**What is Comma Pedal?**
+
+[Comma Pedal](https://community.comma.ai/wiki/index.php/Comma_Pedal) is used to provide stop-and-go capability to openpilot-supported cars that don't currently support it.
+
+For Honda Vehicles:
+  - Openpilot may be enabled at 0 mph with lead car (instead of 25mph+)
+  - Accelerates / decelerates down to 0 mph with lead car
+  - Due to current steering firmware limitations, manual steering required below 12 mph
+  
+***NOTE: The Comma Pedal is not officially supported by Comma.ai, Inc.***
+
+[About Comma Pedal](https://community.comma.ai/wiki/index.php/Comma_Pedal)
+
+[Build Comma Pedal](https://medium.com/@jfrux/comma-pedal-building-with-macrofab-6328bea791e8)
 
 ### Toyota + Lexus ###
 
