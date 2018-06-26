@@ -226,10 +226,8 @@ class CarState(object):
     self.steer_not_allowed = cp.vl["STEER_STATUS"]['STEER_STATUS'] != 0
     self.steer_warning = cp.vl["STEER_STATUS"]['STEER_STATUS'] not in [0, 3]  # 3 is low speed lockout, not worth a warning
     
-    # Adds Steering Warning for Low Speed Lockout on Interceptor-Enabled Vehicles
-    #
-    # For safety, it's best we warn the driver that the steering is 
-    # disabled on cars requiring interceptor for stop and go.
+    # Adds steering warning for low speed lockout on interceptor-enabled vehicles
+    # For safety, it's best we warn the driver that the steering is disabled on cars requiring interceptor for stop and go.
     if self.CP.enableGasInterceptor and self.CP.carFingerprint in (CAR.ACURA_RDX, CAR.ODYSSEY, CAR.PILOT, CAR.RIDGELINE):
       self.steer_warning = cp.vl["STEER_STATUS"]['STEER_STATUS'] != 0
 
@@ -286,7 +284,7 @@ class CarState(object):
 
     self.pedal_gas = cp.vl["POWERTRAIN_DATA"]['PEDAL_GAS']
 
-    # crv doesn't include cruise control
+    # if doesn't include cruise control
     if self.CP.carFingerprint in (CAR.CRV, CAR.ODYSSEY, CAR.ACURA_RDX, CAR.RIDGELINE):
       self.car_gas = self.pedal_gas
     else:
