@@ -227,9 +227,9 @@ class LongitudinalMpc(object):
     t = sec_since_boot()
     if CS.vEgo < 11.4:
       TR=1.8 # under 41km/hr use a TR of 1.8 seconds
-      if self.lastTR > 0:
-        self.libmpc.init(MPC_COST_LONG.TTC, 0.1, PC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
-        self.lastTR = 0
+      #if self.lastTR > 0:
+        #self.libmpc.init(MPC_COST_LONG.TTC, 0.1, PC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
+        #self.lastTR = 0
     else:
       if CS.distanceToggle == 2:
         if CS.distanceToggle == self.lastTR:
