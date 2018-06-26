@@ -37,11 +37,11 @@ def create_brake_command(packer, apply_brake, pcm_override, pcm_cancel_cmd, chim
 
   values = {
     "COMPUTER_BRAKE": apply_brake,
-    "COMPUTER_BRAKE_REQUEST": pump_on,
+    "BRAKE_PUMP_REQUEST": pump_on,
     "CRUISE_OVERRIDE": pcm_override,
     "CRUISE_FAULT_CMD": pcm_fault_cmd,
     "CRUISE_CANCEL_CMD": pcm_cancel_cmd,
-    "COMPUTER_BRAKE_REQUEST_2": brake_rq,
+    "COMPUTER_BRAKE_REQUEST": brake_rq,
     "SET_ME_0X80": 0x80,
     "BRAKE_LIGHTS": brakelights,
     "CHIME": chime,
