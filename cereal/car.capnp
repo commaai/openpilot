@@ -170,6 +170,7 @@ struct RadarState {
   enum Error {
     commIssue @0;
     fault @1;
+    wrongConfig @2;
   }
 
   # similar to LiveTracks
@@ -332,7 +333,7 @@ struct CarParams {
   directAccelControl @31 :Bool; # Does the car have direct accel control or just gas/brake
   stoppingControl @34 :Bool; # Does the car allows full control even at lows speeds when stopping
   startAccel @35 :Float32; # Required acceleraton to overcome creep braking
-  steerRateCost @40 :Float32; # Lateral MPC cost on steering rate
+  steerRateCostDEPRECATED @40 :Float32; # Lateral MPC cost on steering rate
   steerControlType @46 :SteerControlType;
   radarOffCan @47 :Bool; # True when radar objects aren't visible on CAN
 
