@@ -75,9 +75,9 @@ Supported Cars
 [Comma Pedal](https://community.comma.ai/wiki/index.php/Comma_Pedal) is used to provide stop-and-go capability to openpilot-supported cars that don't currently support it.
 
 For Honda Vehicles:
-  - Openpilot may be enabled at 0 mph with lead car (instead of 25mph+)
+  - Openpilot may be enabled at > 12mph (instead of 25mph+)
   - Accelerates / decelerates down to 0 mph with lead car
-  - Due to current steering firmware limitations, manual steering required below 12 mph
+  - Due to current steering firmware limitations, manual steering required <= 12 mph
   
 ***NOTE: The Comma Pedal is not officially supported by Comma.ai, Inc.***
 
