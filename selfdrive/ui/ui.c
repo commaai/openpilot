@@ -132,7 +132,8 @@ typedef struct UIScene {
   float awareness_status;
 
   uint64_t started_ts;
-
+  uint16_t maxCpuTemp;
+  float gpsAccuracy;
   // Used to display calibration progress
   int cal_status;
   int cal_perc;
@@ -173,6 +174,8 @@ typedef struct UIState {
   void *livempc_sock_raw;
   zsock_t *plus_sock;
   void *plus_sock_raw;
+  zsock_t *gps_sock;
+  void *gps_sock_raw;
 
   zsock_t *uilayout_sock;
   void *uilayout_sock_raw;
@@ -321,6 +324,10 @@ static void ui_init(UIState *s) {
   s->thermal_sock = zsock_new_sub(">tcp://127.0.0.1:8005", "");
   assert(s->thermal_sock);
   s->thermal_sock_raw = zsock_resolve(s->thermal_sock);
+
+  s->gps_sock = zsock_new_sub(">tcp://127.0.0.1:8032", "");
+  assert(s->gps_sock);
+  s->gps_sock_raw = zsock_resolve(s->gps_sock);
 
   s->model_sock = zsock_new_sub(">tcp://127.0.0.1:8009", "");
   assert(s->model_sock);
@@ -891,7 +898,7 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   const int viz_maxspeed_y = (box_y + (bdr_s*1.5));
   const int viz_maxspeed_w = 180;
   const int viz_maxspeed_h = 202;
-  char maxspeed_str[32];
+  char maxspeed_str[64];
   bool is_cruise_set = (maxspeed != 0 && maxspeed != 255);
 
   nvgBeginPath(s->vg);
@@ -920,6 +927,35 @@ static void ui_draw_vision_maxspeed(UIState *s) {
     nvgFontSize(s->vg, 42*2.5);
     nvgText(s->vg, viz_maxspeed_x+viz_maxspeed_w/2, 242, "N/A", NULL);
   }
+
+  nvgBeginPath(s->vg);
+  nvgRoundedRect(s->vg, viz_maxspeed_x, viz_maxspeed_y+220, viz_maxspeed_w, viz_maxspeed_h, 20);
+  nvgStrokeColor(s->vg, nvgRGBA(255,255,255,80));
+  nvgStrokeWidth(s->vg, 6);
+  nvgStroke(s->vg);
+
+  // show max cpu temp
+  nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
+  nvgFontFace(s->vg, "sans-regular");
+  nvgFontSize(s->vg, 30*2.5);
+  
+  if((int)(s->scene.maxCpuTemp/10) > 30){
+  	nvgFillColor(s->vg, nvgRGBA(255, 0, 0, 200));
+  }else{
+  	nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 200));
+  }
+  
+  snprintf(maxspeed_str, sizeof(maxspeed_str), "%d \u00b0", (int)(s->scene.maxCpuTemp/10));
+  nvgText(s->vg, viz_maxspeed_x+viz_maxspeed_w/2, 148+220, maxspeed_str, NULL);
+
+  // show gps accuracy
+  nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
+  nvgFontFace(s->vg, "sans-regular");
+  nvgFontSize(s->vg, 29*2.5);
+  nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 200));
+  snprintf(maxspeed_str, sizeof(maxspeed_str), "%.2fm", (s->scene.gpsAccuracy));
+  nvgText(s->vg, viz_maxspeed_x+viz_maxspeed_w/2, 148+220+100, maxspeed_str, NULL);
+
 }
 
 static void ui_draw_vision_speed(UIState *s) {
@@ -1249,7 +1285,7 @@ static void ui_update(UIState *s) {
 
   // poll for events
   while (true) {
-    zmq_pollitem_t polls[9] = {{0}};
+    zmq_pollitem_t polls[10] = {{0}};
     polls[0].socket = s->live100_sock_raw;
     polls[0].events = ZMQ_POLLIN;
     polls[1].socket = s->livecalibration_sock_raw;
@@ -1266,12 +1302,14 @@ static void ui_update(UIState *s) {
     polls[6].events = ZMQ_POLLIN;
     polls[7].socket = s->plus_sock_raw;
     polls[7].events = ZMQ_POLLIN;
+    polls[8].socket = s->gps_sock_raw;
+    polls[8].events = ZMQ_POLLIN;
 
-    int num_polls = 8;
+    int num_polls = 9;
     if (s->vision_connected) {
       assert(s->ipc_fd >= 0);
-      polls[8].fd = s->ipc_fd;
-      polls[8].events = ZMQ_POLLIN;
+      polls[9].fd = s->ipc_fd;
+      polls[9].events = ZMQ_POLLIN;
       num_polls++;
     }
 
@@ -1290,7 +1328,7 @@ static void ui_update(UIState *s) {
       set_awake(s, true);
     }
 
-    if (s->vision_connected && polls[8].revents) {
+    if (s->vision_connected && polls[9].revents) {
       // vision ipc event
       VisionPacket rp;
       err = vipc_recv(s->ipc_fd, &rp);
@@ -1354,10 +1392,45 @@ static void ui_update(UIState *s) {
 
       zmq_msg_close(&msg);
 
-    } else {
+    } 
+    else if (polls[8].revents) 
+    {
+      // gps socket
+
+      zmq_msg_t msg;
+      err = zmq_msg_init(&msg);
+      assert(err == 0);
+      err = zmq_msg_recv(&msg, s->gps_sock_raw, 0);
+      assert(err >= 0);
+
+      struct capn ctx;
+      capn_init_mem(&ctx, zmq_msg_data(&msg), zmq_msg_size(&msg), 0);
+
+      cereal_Event_ptr eventp;
+      eventp.p = capn_getp(capn_root(&ctx), 0, 1);
+      struct cereal_Event eventd;
+      cereal_read_Event(&eventd, eventp);
+
+      struct cereal_GpsLocationData datad;
+      cereal_read_GpsLocationData(&datad, eventd.gpsLocation);
+
+      s->scene.gpsAccuracy= datad.accuracy;
+      if (s->scene.gpsAccuracy>100)
+      {
+          s->scene.gpsAccuracy=99.99;
+      }
+      else if (s->scene.gpsAccuracy==0)
+      {
+          s->scene.gpsAccuracy=99.8;
+      }
+      capn_free(&ctx);
+      zmq_msg_close(&msg);
+    } 
+    else 
+    {
       // zmq messages
       void* which = NULL;
-      for (int i=0; i<num_polls - 1; i++) {
+      for (int i=0; i<7; i++) {
         if (polls[i].revents) {
           which = polls[i].socket;
           break;
@@ -1493,7 +1566,22 @@ static void ui_update(UIState *s) {
         }
 
         s->scene.started_ts = datad.startedTs;
-      } else if (eventd.which == cereal_Event_uiLayoutState) {
+        s->scene.maxCpuTemp=datad.cpu0;
+        if (s->scene.maxCpuTemp<datad.cpu1)
+        {
+            s->scene.maxCpuTemp=datad.cpu1;
+        }
+        else if (s->scene.maxCpuTemp<datad.cpu2)
+        {
+            s->scene.maxCpuTemp=datad.cpu2;
+        }
+        else if (s->scene.maxCpuTemp<datad.cpu3)
+        {
+            s->scene.maxCpuTemp=datad.cpu3;
+        }
+
+      }
+      else if (eventd.which == cereal_Event_uiLayoutState) {
           struct cereal_UiLayoutState datad;
           cereal_read_UiLayoutState(&datad, eventd.uiLayoutState);
           s->scene.uilayout_sidebarcollapsed = datad.sidebarCollapsed;
