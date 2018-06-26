@@ -106,7 +106,6 @@ class CarInterface(object):
       ret.mass = 4481 * CV.LB_TO_KG + std_cargo  # mean between min and max
       ret.steerKpV, ret.steerKiV = [[0.6], [0.1]]
       ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
-      ret.steerRateCost = .8
     elif candidate == CAR.CHR:
       ret.safetyParam = 100
       ret.wheelbase = 2.63906
@@ -114,7 +113,6 @@ class CarInterface(object):
       ret.mass = 3300./2.205 + std_cargo
       ret.steerKpV, ret.steerKiV = [[0.723], [0.0428]]
       ret.steerKf = 0.00006
-      ret.steerRateCost = 1.
 
     ret.centerToFront = ret.wheelbase * 0.44
 
