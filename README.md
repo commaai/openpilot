@@ -47,41 +47,41 @@ Supported Cars
 
 - Honda CR-V Touring 2015-2016 with Honda Sensing
   - Can only be enabled above 25 mph
-  - *With optional [Comma Pedal](https://community.comma.ai/wiki/index.php/Comma_Pedal):*
+  - *With optional [Comma Pedal](#what-is-comma-pedal):*
     - Can only be enabled above 12 mph (due to steering firmware limitations)
     - Enables stop and go (gas / brake) all the way to 0 mph
     - Steering warning under 12 mph
 
 - Honda Odyssey 2018 with Honda Sensing (alpha!)
   - Can only be enabled above 25 mph
-  - *With optional [Comma Pedal](https://community.comma.ai/wiki/index.php/Comma_Pedal):*
+  - *With optional [Comma Pedal](#what-is-comma-pedal):*
     - Can be enabled at any speed.
     - Enables stop-and-go steering, gas, and brake all the way to 0 mph.
 
 - Honda Pilot 2016-2017 with Honda Sensing (alpha!)
   - Can only be enabled above 27 mph
-  - *With optional [Comma Pedal](https://community.comma.ai/wiki/index.php/Comma_Pedal):*
+  - *With optional [Comma Pedal](#what-is-comma-pedal):*
       - Can only be enabled above 12 mph (due to steering firmware limitations)
       - Enables stop and go (gas / brake) all the way to 0 mph
       - Steering warning under 12 mph
 
 - Honda Ridgeline 2017 with Honda Sensing (alpha!)
   - Can only be enabled above 27 mph
-  - *With optional [Comma Pedal](https://community.comma.ai/wiki/index.php/Comma_Pedal):*
+  - *With optional [Comma Pedal](#what-is-comma-pedal):*
     - Can only be enabled above 12 mph (due to steering firmware limitations)
     - Enables stop and go (gas / brake) all the way to 0 mph
     - Steering warning under 12 mph
 
 - Acura ILX 2016 with AcuraWatch Plus
   - Due to use of the cruise control for gas, it can only be enabled above 25 mph
-  - *With optional [Comma Pedal](https://community.comma.ai/wiki/index.php/Comma_Pedal):*
+  - *With optional [Comma Pedal](#what-is-comma-pedal):*
     - Can only be enabled above 12 mph (due to steering firmware limitations)
     - Enables stop and go (gas / brake) all the way to 0 mph
     - Steering warning under 12 mph
 
 - Acura RDX 2018 with AcuraWatch Plus (alpha!)
   - Can only be enabled above 25 mph
-  - *With optional [Comma Pedal](https://community.comma.ai/wiki/index.php/Comma_Pedal):*
+  - *With optional [Comma Pedal](#what-is-comma-pedal):*
     - Can be enabled at any speed.
     - Enables stop-and-go steering, gas, and brake all the way to 0 mph.
 
