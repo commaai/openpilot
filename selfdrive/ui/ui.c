@@ -940,7 +940,7 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   nvgFontFace(s->vg, "sans-regular");
   nvgFontSize(s->vg, 30*2.5);
   nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 200));
-  snprintf(maxspeed_str, sizeof(maxspeed_str), "%d", (int)(s->scene.maxCpuTemp/10));
+  snprintf(maxspeed_str, sizeof(maxspeed_str), "%d \u00b0", (int)(s->scene.maxCpuTemp/10));
   nvgText(s->vg, viz_maxspeed_x+viz_maxspeed_w/2, 148+220, maxspeed_str, NULL);
 
   // show gps accuracy
@@ -948,7 +948,7 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   nvgFontFace(s->vg, "sans-regular");
   nvgFontSize(s->vg, 29*2.5);
   nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 200));
-  snprintf(maxspeed_str, sizeof(maxspeed_str), "%.2f", (s->scene.gpsAccuracy));
+  snprintf(maxspeed_str, sizeof(maxspeed_str), "%.2fm", (s->scene.gpsAccuracy));
   nvgText(s->vg, viz_maxspeed_x+viz_maxspeed_w/2, 148+220+100, maxspeed_str, NULL);
 
 }
