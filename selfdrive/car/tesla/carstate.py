@@ -98,9 +98,29 @@ def get_can_signals(CP):
 
   return signals, checks
   
+def get_epas_can_signals(CP):
+# this function generates lists for signal, messages and initial values
+  signals = [
+      ("EPAS_torsionBarTorque", "EPAS_sysStatus", 0), # Used in interface.py
+      ("EPAS_eacStatus", "EPAS_sysStatus", 0),
+      ("EPAS_handsOnLevel", "EPAS_sysStatus", 0),
+      ("EPAS_steeringFault", "EPAS_sysStatus", 0),
+  ]
+
+  checks = [
+      ("EPAS_sysStatus", 5), #JCT Actual message freq is 1.3 Hz (0.76 sec)
+  ]
+
+
+  return signals, checks
+  
 def get_can_parser(CP):
   signals, checks = get_can_signals(CP)
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
+
+def get_epas_parser(CP):
+  signals, checks = get_epas_can_signals(CP)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
 
 
 class CarState(object):
@@ -132,7 +152,7 @@ class CarState(object):
                          K=np.matrix([[0.12287673], [0.29666309]]))
     self.v_ego = 0.0
 
-  def update(self, cp):
+  def update(self, cp, epas_cp):
 
     # copy can_valid
     self.can_valid = cp.can_valid
@@ -210,7 +230,7 @@ class CarState(object):
     self.pedal_gas = 0 #cp.vl["DI_torque1"]['DI_pedalPos']
     self.car_gas = self.pedal_gas
 
-    self.steer_override = abs(cp.vl["EPAS_sysStatus"]['EPAS_handsOnLevel']) > 0
+    self.steer_override = abs(epas_cp.vl["EPAS_sysStatus"]['EPAS_handsOnLevel']) > 0
     self.steer_torque_driver = 0 #JCT
 
     # brake switch has shown some single time step noise, so only considered when
