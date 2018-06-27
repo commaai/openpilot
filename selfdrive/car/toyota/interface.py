@@ -5,8 +5,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.toyota.carstate import CarState, get_can_parser
-from selfdrive.car.toyota.values import ECU, check_ecu_msgs
-from common.fingerprints import TOYOTA as CAR
+from selfdrive.car.toyota.values import ECU, check_ecu_msgs, CAR
 
 try:
   from selfdrive.car.toyota.carcontroller import CarController
@@ -20,9 +19,9 @@ class CarInterface(object):
     self.VM = VehicleModel(CP)
 
     self.frame = 0
-    self.can_invalid_count = 0
     self.gas_pressed_prev = False
     self.brake_pressed_prev = False
+    self.can_invalid_count = 0
     self.cruise_enabled_prev = False
 
     # *** init the major players ***
@@ -61,7 +60,7 @@ class CarInterface(object):
 
     # FIXME: hardcoding honda civic 2016 touring params so they can be used to
     # scale unknown params for other cars
-    mass_civic = 2923./2.205 + std_cargo
+    mass_civic = 2923 * CV.LB_TO_KG + std_cargo
     wheelbase_civic = 2.70
     centerToFront_civic = wheelbase_civic * 0.4
     centerToRear_civic = wheelbase_civic - centerToFront_civic
@@ -70,42 +69,43 @@ class CarInterface(object):
     tireStiffnessRear_civic = 90000
 
     ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
+    ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
+
     if candidate == CAR.PRIUS:
       ret.safetyParam = 66  # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.70
       ret.steerRatio = 15.0
-      ret.mass = 3045./2.205 + std_cargo
+      ret.mass = 3045 * CV.LB_TO_KG + std_cargo
       ret.steerKpV, ret.steerKiV = [[0.4], [0.01]]
       ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
-      ret.steerRateCost = 1.5
 
       f = 1.43353663
       tireStiffnessFront_civic *= f
       tireStiffnessRear_civic *= f
+
+      # Prius has a very bad actuator
+      ret.steerActuatorDelay = 0.25
     elif candidate in [CAR.RAV4, CAR.RAV4H]:
       ret.safetyParam = 73  # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.65
       ret.steerRatio = 14.5 # Rav4 2017
-      ret.mass = 3650./2.205 + std_cargo  # mean between normal and hybrid
+      ret.mass = 3650 * CV.LB_TO_KG + std_cargo  # mean between normal and hybrid
       ret.steerKpV, ret.steerKiV = [[0.6], [0.05]]
       ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
-      ret.steerRateCost = 1.
     elif candidate == CAR.COROLLA:
       ret.safetyParam = 100 # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.70
       ret.steerRatio = 17.8
-      ret.mass = 2860./2.205 + std_cargo  # mean between normal and hybrid
+      ret.mass = 2860 * CV.LB_TO_KG + std_cargo  # mean between normal and hybrid
       ret.steerKpV, ret.steerKiV = [[0.2], [0.05]]
       ret.steerKf = 0.00003   # full torque for 20 deg at 80mph means 0.00007818594
-      ret.steerRateCost = 1.
     elif candidate == CAR.LEXUS_RXH:
       ret.safetyParam = 100 # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.79
       ret.steerRatio = 16.  # official specs say 14.8, but it does not seem right
-      ret.mass = 4481./2.205 + std_cargo  # mean between min and max
+      ret.mass = 4481 * CV.LB_TO_KG + std_cargo  # mean between min and max
       ret.steerKpV, ret.steerKiV = [[0.6], [0.1]]
       ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
-      ret.steerRateCost = .8
 
     ret.centerToFront = ret.wheelbase * 0.44
 
@@ -136,6 +136,7 @@ class CarInterface(object):
 
     # no rear steering, at least on the listed cars above
     ret.steerRatioRear = 0.
+    ret.steerControlType = car.CarParams.SteerControlType.torque
 
     # steer, gas, brake limitations VS speed
     ret.steerMaxBP = [16. * CV.KPH_TO_MS, 45. * CV.KPH_TO_MS]  # breakpoints at 1 and 40 kph

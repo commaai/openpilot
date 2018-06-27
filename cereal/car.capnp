@@ -57,6 +57,8 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     plannerError @32;
     ipasOverride @33;
     debugAlert @34;
+    steerTempUnavailableMute @35;
+    resumeRequired @36;
   }
 }
 
@@ -168,6 +170,7 @@ struct RadarState {
   enum Error {
     commIssue @0;
     fault @1;
+    wrongConfig @2;
   }
 
   # similar to LiveTracks
@@ -294,6 +297,7 @@ struct CarParams {
     gm @4;
     hondaBosch @5;
     ford @6;
+    cadillac @7;
   }
 
   # things about the car in the manual
@@ -329,5 +333,14 @@ struct CarParams {
   directAccelControl @31 :Bool; # Does the car have direct accel control or just gas/brake
   stoppingControl @34 :Bool; # Does the car allows full control even at lows speeds when stopping
   startAccel @35 :Float32; # Required acceleraton to overcome creep braking
-  steerRateCost @40 :Float32; # Lateral MPC cost on steering rate
+  steerRateCostDEPRECATED @40 :Float32; # Lateral MPC cost on steering rate
+  steerControlType @46 :SteerControlType;
+  radarOffCan @47 :Bool; # True when radar objects aren't visible on CAN
+
+  steerActuatorDelay @48 :Float32; # Steering wheel actuator delay in seconds
+
+  enum SteerControlType {
+    torque @0;
+    angle @1;
+  }
 }

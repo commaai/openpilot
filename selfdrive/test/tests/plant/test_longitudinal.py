@@ -9,7 +9,8 @@ import shutil
 import matplotlib
 matplotlib.use('svg')
 
-from selfdrive.config import Conversions as CV, CruiseButtons as CB
+from selfdrive.config import Conversions as CV
+from selfdrive.car.honda.values import CruiseButtons as CB
 from selfdrive.test.plant.maneuver import Maneuver
 import selfdrive.manager as manager
 from common.params import Params

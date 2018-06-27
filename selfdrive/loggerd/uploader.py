@@ -69,7 +69,11 @@ def clear_locks(root):
 
 def is_on_wifi():
   # ConnectivityManager.getActiveNetworkInfo()
-  result = subprocess.check_output(["service", "call", "connectivity", "2"]).strip().split("\n")
+  try:
+    result = subprocess.check_output(["service", "call", "connectivity", "2"]).strip().split("\n")
+  except subprocess.CalledProcessError:
+    return False
+
   data = ''.join(''.join(w.decode("hex")[::-1] for w in l[14:49].split()) for l in result[1:])
 
   return "\x00".join("WIFI") in data
@@ -143,11 +147,11 @@ class Uploader(object):
 
   def do_upload(self, key, fn):
     try:
-      url_resp = api_get("v1.1/"+self.dongle_id+"/upload_url/", timeout=2, path=key, access_token=self.access_token)
+      url_resp = api_get("v1.2/"+self.dongle_id+"/upload_url/", timeout=2, path=key, access_token=self.access_token)
       url_resp_json = json.loads(url_resp.text)
       url = url_resp_json['url']
       headers = url_resp_json['headers']
-      cloudlog.info("upload_url v1.1 %s %s", url, str(headers))
+      cloudlog.info("upload_url v1.2 %s %s", url, str(headers))
 
       if fake_upload:
         cloudlog.info("*** WARNING, THIS IS A FAKE UPLOAD TO %s ***" % url)

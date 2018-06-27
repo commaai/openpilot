@@ -4,8 +4,8 @@ with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "common", "ve
   version = _versionf.read().split('"')[1]
 
 try:
-  origin = subprocess.check_output(["git", "config", "--get", "remote.origin.url"])
-  if origin.startswith('git@github.com:commaai'):
+  origin = subprocess.check_output(["git", "config", "--get", "remote.origin.url"]).rstrip()
+  if origin.startswith('git@github.com:commaai') or origin.startswith('https://github.com/commaai'):
     if origin.endswith('/one.git'):
       dirty = True
     else:
@@ -19,4 +19,3 @@ except subprocess.CalledProcessError:
 
 # put this here
 training_version = "0.1.0"
-
