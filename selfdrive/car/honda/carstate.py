@@ -279,8 +279,8 @@ class CarState(object):
     self.car_gas = cp.vl.get("GAS_PEDAL_2",{"empty" : None}).get('CAR_GAS', self.pedal_gas)
 
     #rdx has different steer override threshold
-    steer_limit = 400 if self.CP.carFingerprint in (CAR.ACURA_RDX) else 1200
-    self.steer_override = abs(cp.vl["STEER_STATUS"]['STEER_TORQUE_SENSOR']) > steer_limit
+    steer_thresh = 400 if self.CP.carFingerprint in (CAR.ACURA_RDX) else 1200
+    self.steer_override = abs(cp.vl["STEER_STATUS"]['STEER_TORQUE_SENSOR']) > steer_thresh
 
     self.steer_torque_driver = cp.vl["STEER_STATUS"]['STEER_TORQUE_SENSOR']
 
@@ -313,7 +313,7 @@ class CarState(object):
       self.cruise_speed_offset = calc_cruise_offset(cp.vl["CRUISE_PARAMS"]['CRUISE_SPEED_OFFSET'], self.v_ego)
       self.v_cruise_pcm = cp.vl["CRUISE"]['CRUISE_SPEED_PCM']
 
-    self.user_brake = cp.vl['VSA_STATUS']['USER_BRAKE']
+    self.user_brake = cp.vl["VSA_STATUS"]['USER_BRAKE']
     self.standstill = not cp.vl["STANDSTILL"]['WHEELS_MOVING']
     self.pcm_acc_status = cp.vl["POWERTRAIN_DATA"]['ACC_STATUS']
     self.hud_lead = cp.vl["ACC_HUD"]['HUD_LEAD']
