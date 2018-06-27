@@ -107,7 +107,6 @@ def get_can_signals(CP):
 
   # Civic is only bosch to use the same brake message as other hondas.
   if CP.radarOffCan and (CP.carFingerprint != CAR.CIVIC_HATCH):
-
     signals += [("BRAKE_PRESSED", "BRAKE_MODULE", 0)]
     checks += [("BRAKE_MODULE", 50)]
 
@@ -214,7 +213,7 @@ class CarState(object):
     self.door_all_closed = not any([cp.vl.get("DOORS_STATUS",{"empty" : None}).get('DOOR_OPEN_FL'),
                                     cp.vl.get("DOORS_STATUS",{"empty" : None}).get('DOOR_OPEN_FR'),
                                     cp.vl.get("DOORS_STATUS",{"empty" : None}).get('DOOR_OPEN_RL'),
-                                    cp.vl.get("DOORS_STATUS",{"empty" : None}).get('DOOR_OPEN_FR'),
+                                    cp.vl.get("DOORS_STATUS",{"empty" : None}).get('DOOR_OPEN_RR'),
                                     cp.vl.get("SCM_FEEDBACK",{"empty" : None}).get('DRIVERS_DOOR_OPEN')]) #(CAR.ACCORD)
 
     self.seatbelt = not cp.vl["SEATBELT_STATUS"]['SEATBELT_DRIVER_LAMP'] and cp.vl["SEATBELT_STATUS"]['SEATBELT_DRIVER_LATCHED']
