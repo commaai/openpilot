@@ -138,7 +138,7 @@ Sadly, BMW, Audi, Volvo, and Mercedes all use [FlexRay](https://en.wikipedia.org
 
 ### What is Comma Pedal?
 
-[Comma Pedal](https://community.comma.ai/wiki/index.php/Comma_Pedal) is used to provide stop-and-go capability to openpilot-supported cars that don't currently support it.
+[Comma Pedal](https://community.comma.ai/wiki/index.php/Comma_Pedal) is used to provide stop-and-go capability to openpilot-supported cars that don't currently support stop-and-go.
   - [About the Comma Pedal](https://community.comma.ai/wiki/index.php/Comma_Pedal)
   - [Build a Comma Pedal](https://medium.com/@jfrux/comma-pedal-building-with-macrofab-6328bea791e8)
   
