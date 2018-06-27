@@ -939,7 +939,13 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
   nvgFontFace(s->vg, "sans-regular");
   nvgFontSize(s->vg, 30*2.5);
-  nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 200));
+  
+  if((int)(s->scene.maxCpuTemp/10) > 85){
+  	nvgFillColor(s->vg, nvgRGBA(255, 0, 0, 200));
+  }else{
+  	nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 200));
+  }
+  
   snprintf(maxspeed_str, sizeof(maxspeed_str), "%d \u00b0", (int)(s->scene.maxCpuTemp/10));
   nvgText(s->vg, viz_maxspeed_x+viz_maxspeed_w/2, 148+220, maxspeed_str, NULL);
 
