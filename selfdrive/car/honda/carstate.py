@@ -264,7 +264,7 @@ class CarState(object):
     self.right_blinker_on = cp.vl["SCM_FEEDBACK"]['RIGHT_BLINKER']
 
     #if parking brake is not in DBC, default to 0 #TODO:add to DBC 
-    self.park_brake = cp.vl.get("EPB_STATUS",{"empty" : None}).get('EPB_STATE', 0)
+    self.park_brake = cp.vl.get("EPB_STATUS",{"empty" : None}).get('EPB_STATE', 0) != 0
     self.brake_hold = cp.vl.get("VSA_STATUS",{"empty" : None}).get('BRAKE_HOLD_ACTIVE', 0)
 
     self.main_on = any([cp.vl.get("SCM_FEEDBACK",{"empty" : None}).get('MAIN_ON'), #Bosch signal 
