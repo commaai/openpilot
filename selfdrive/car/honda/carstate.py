@@ -104,6 +104,7 @@ def get_can_signals(CP):
       ("VSA_STATUS", 50),
       ("SCM_BUTTONS", 25),
   ]
+
   # Civic is only bosch to use the same brake message as other hondas.
   if CP.radarOffCan and (CP.carFingerprint != CAR.CIVIC_HATCH):
 
@@ -294,25 +295,25 @@ class CarState(object):
       self.v_cruise_pcm_prev = self.v_cruise_pcm
 
     #Bosch and not Civic Hatch
-    if self.radarOffCan and self.CP.carFingerprint != CAR.CIVIC_HATCH:
+    if self.CP.radarOffCan and self.CP.carFingerprint != CAR.CIVIC_HATCH:
       self.brake_pressed = cp.vl["BRAKE_MODULE"]['BRAKE_PRESSED']
 
     #Nidec or Civic Hatch(Bosch but uses same brake messages)
-    if not self.radarOffCan or (self.radarOffCan and self.CP.carFingerprint == CAR.CIVIC_HATCH):
+    if (not self.CP.radarOffCan) or (self.CP.radarOffCan and self.CP.carFingerprint == CAR.CIVIC_HATCH):
       # brake switch has shown some single time step noise, so only considered when
       # switch is on for at least 2 consecutive CAN samples
-      self.brake_pressed = cp.vl["POWERTRAIN_DATA"]['BRAKE_PRESSED'] or \
-                          (self.brake_switch and self.brake_switch_prev and \
-                          cp.ts["POWERTRAIN_DATA"]['BRAKE_SWITCH'] != self.brake_switch_ts)
+      self.brake_pressed = (cp.vl["POWERTRAIN_DATA"]['BRAKE_PRESSED'] or \
+                           (self.brake_switch and self.brake_switch_prev and \
+                           cp.ts["POWERTRAIN_DATA"]['BRAKE_SWITCH'] != self.brake_switch_ts))
       self.brake_switch_prev = self.brake_switch
       self.brake_switch_ts = cp.ts["POWERTRAIN_DATA"]['BRAKE_SWITCH']  
 
     #Nidec  
-    if not self.radarOffCan:
+    if not self.CP.radarOffCan:
       self.cruise_speed_offset = calc_cruise_offset(cp.vl["CRUISE_PARAMS"]['CRUISE_SPEED_OFFSET'], self.v_ego)
       self.v_cruise_pcm = cp.vl["CRUISE"]['CRUISE_SPEED_PCM']
 
-    self.user_brake = cp.vl["VSA_STATUS"]['USER_BRAKE']
+    self.user_brake = cp.vl['VSA_STATUS']['USER_BRAKE']
     self.standstill = not cp.vl["STANDSTILL"]['WHEELS_MOVING']
     self.pcm_acc_status = cp.vl["POWERTRAIN_DATA"]['ACC_STATUS']
     self.hud_lead = cp.vl["ACC_HUD"]['HUD_LEAD']
