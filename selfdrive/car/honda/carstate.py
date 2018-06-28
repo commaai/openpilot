@@ -108,7 +108,7 @@ def get_can_signals(CP):
 
   # Bosch signals
   if CP.radarOffCan:
-    # Civic is only bosch to use the same brake message as other hondas.
+    # Civic Hatch is only bosch to use the same brake message as nidec hondas.
     if CP.carFingerprint != CAR.CIVIC_HATCH:
       signals += [("BRAKE_PRESSED", "BRAKE_MODULE", 0)]
       checks += [("BRAKE_MODULE", 50)]
@@ -143,8 +143,7 @@ def get_can_signals(CP):
   if CP.carFingerprint in (CAR.ACURA_RDX, CAR.ACURA_ILX, CAR.PILOT, CAR.CRV, CAR.RIDGELINE):
     signals += [("MAIN_ON", "SCM_BUTTONS", 0)]
 
-  # use same signals from bosch.dbc 
-  if CP.carFingerprint in (CAR.ODYSSEY, CAR.CIVIC):
+  elif CP.carFingerprint in (CAR.ODYSSEY, CAR.CIVIC):
     signals += [("MAIN_ON", "SCM_FEEDBACK", 0),
                 ("EPB_STATE", "EPB_STATUS", 0),
                 ("BRAKE_HOLD_ACTIVE", "VSA_STATUS", 0)]
@@ -294,9 +293,14 @@ class CarState(object):
       self.v_cruise_pcm = self.v_cruise_pcm_prev if cp.vl["ACC_HUD"]['CRUISE_SPEED'] > 160.0 else cp.vl["ACC_HUD"]['CRUISE_SPEED']
       self.v_cruise_pcm_prev = self.v_cruise_pcm
 
-      #Bosch and not Civic Hatch
+      #All Bosch except Civic Hatch
       if self.CP.carFingerprint != CAR.CIVIC_HATCH:
         self.brake_pressed = cp.vl["BRAKE_MODULE"]['BRAKE_PRESSED']
+		
+    #Nidec
+    else:
+      self.cruise_speed_offset = calc_cruise_offset(cp.vl["CRUISE_PARAMS"]['CRUISE_SPEED_OFFSET'], self.v_ego)
+      self.v_cruise_pcm = cp.vl["CRUISE"]['CRUISE_SPEED_PCM']
 
     #Nidec or Civic Hatch(Bosch but uses same brake messages)
     if (not self.CP.radarOffCan) or (self.CP.radarOffCan and self.CP.carFingerprint == CAR.CIVIC_HATCH):
@@ -307,11 +311,6 @@ class CarState(object):
                            cp.ts["POWERTRAIN_DATA"]['BRAKE_SWITCH'] != self.brake_switch_ts))
       self.brake_switch_prev = self.brake_switch
       self.brake_switch_ts = cp.ts["POWERTRAIN_DATA"]['BRAKE_SWITCH']  
-
-    #Nidec  
-    if not self.CP.radarOffCan:
-      self.cruise_speed_offset = calc_cruise_offset(cp.vl["CRUISE_PARAMS"]['CRUISE_SPEED_OFFSET'], self.v_ego)
-      self.v_cruise_pcm = cp.vl["CRUISE"]['CRUISE_SPEED_PCM']
 
     self.user_brake = cp.vl["VSA_STATUS"]['USER_BRAKE']
     self.standstill = not cp.vl["STANDSTILL"]['WHEELS_MOVING']
