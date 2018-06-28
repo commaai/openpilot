@@ -105,13 +105,14 @@ def get_can_signals(CP):
       ("SCM_BUTTONS", 25),
   ]
 
-  # Civic is only bosch to use the same brake message as other hondas.
-  if CP.radarOffCan and (CP.carFingerprint != CAR.CIVIC_HATCH):
-    signals += [("BRAKE_PRESSED", "BRAKE_MODULE", 0)]
-    checks += [("BRAKE_MODULE", 50)]
 
   # Bosch signals
   if CP.radarOffCan:
+    # Civic is only bosch to use the same brake message as other hondas.
+    if CP.carFingerprint != CAR.CIVIC_HATCH:
+      signals += [("BRAKE_PRESSED", "BRAKE_MODULE", 0)]
+      checks += [("BRAKE_MODULE", 50)]
+	  
     signals += [("CAR_GAS", "GAS_PEDAL_2", 0),
                 ("MAIN_ON", "SCM_FEEDBACK", 0),
                 ("EPB_STATE", "EPB_STATUS", 0),
@@ -293,9 +294,9 @@ class CarState(object):
       self.v_cruise_pcm = self.v_cruise_pcm_prev if cp.vl["ACC_HUD"]['CRUISE_SPEED'] > 160.0 else cp.vl["ACC_HUD"]['CRUISE_SPEED']
       self.v_cruise_pcm_prev = self.v_cruise_pcm
 
-    #Bosch and not Civic Hatch
-    if self.CP.radarOffCan and self.CP.carFingerprint != CAR.CIVIC_HATCH:
-      self.brake_pressed = cp.vl["BRAKE_MODULE"]['BRAKE_PRESSED']
+      #Bosch and not Civic Hatch
+      if self.CP.carFingerprint != CAR.CIVIC_HATCH:
+        self.brake_pressed = cp.vl["BRAKE_MODULE"]['BRAKE_PRESSED']
 
     #Nidec or Civic Hatch(Bosch but uses same brake messages)
     if (not self.CP.radarOffCan) or (self.CP.radarOffCan and self.CP.carFingerprint == CAR.CIVIC_HATCH):
