@@ -25,7 +25,7 @@ class CANParser(object):
       self.msg_name_to_addres[name] = address
       self.address_to_msg_name[address] = name
 
-    # Convert message names into adresses
+    # Convert message names into addresses
     for i in range(len(signals)):
       s = signals[i]
       if not isinstance(s[1], numbers.Number):
