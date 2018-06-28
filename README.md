@@ -21,7 +21,7 @@ Also, we have a 3500+ person [community on slack](https://slack.comma.ai).
 Hardware
 ------
 
-Right now openpilot supports the [EON Dashcam DevKit](https://shop.comma.ai/products/eon-dashcam-devkit). We'd like to support other platforms as well.
+Right now openpilot supports the [EON Dashcam DevKit](https://comma.ai/shop/products/eon-dashcam-devkit). We'd like to support other platforms as well.
 
 Install openpilot on a neo device by entering ``https://openpilot.comma.ai`` during NEOS setup.
 
@@ -108,7 +108,7 @@ Community Maintained Cars
 How can I add support for my car?
 ------
 
-If your car has adaptive cruise control and lane keep assist, you are in luck. Using a [panda](https://panda.comma.ai) and [cabana](https://community.comma.ai/cabana/), you can understand how to make your car drive by wire.
+If your car has adaptive cruise control and lane keep assist, you are in luck. Using a [panda](https://comma.ai/shop/products/panda-obd-ii-dongle/) and [cabana](https://community.comma.ai/cabana/), you can understand how to make your car drive by wire.
 
 We've written a [porting guide](https://medium.com/@comma_ai/openpilot-port-guide-for-toyota-models-e5467f4b5fe6) for Toyota that might help you after you have the basics figured out.
 
@@ -150,7 +150,7 @@ There is rudimentary infrastructure to run a basic simulation and generate a rep
 ./run_docker_tests.sh
 ```
 
-The results are written to `selfdrive/test/plant/out/index.html`
+The results are written to `selfdrive/test/tests/plant/out/longitudinal/index.html`
 
 More extensive testing infrastructure and simulation environments are coming soon.
 
@@ -164,7 +164,7 @@ It's open source software, so you are free to disable it if you wish.
 It logs the road facing camera, CAN, GPS, IMU, magnetometer, thermal sensors, crashes, and operating system logs.
 It does not log the user facing camera or the microphone.
 
-By using it, you agree to [our privacy policy](https://beta.comma.ai/privacy.html). You understand that use of this software or its related services will generate certain types of user data, which may be logged and stored at the sole discretion of comma.ai. By accepting this agreement, you grant an irrevocable, perpetual, worldwide right to comma.ai for the use of this data.
+By using it, you agree to [our privacy policy](https://community.comma.ai/privacy.html). You understand that use of this software or its related services will generate certain types of user data, which may be logged and stored at the sole discretion of comma.ai. By accepting this agreement, you grant an irrevocable, perpetual, worldwide right to comma.ai for the use of this data.
 
 Contributing
 ------
@@ -173,7 +173,7 @@ We welcome both pull requests and issues on
 [github](http://github.com/commaai/openpilot). See the TODO file for a list of
 good places to start.
 
-Want to get paid to work on openpilot? [comma.ai is hiring](http://comma.ai/positions.html)
+Want to get paid to work on openpilot? [comma.ai is hiring](https://comma.ai/jobs/)
 
 Licensing
 ------
