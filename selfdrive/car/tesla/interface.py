@@ -123,7 +123,6 @@ class CarInterface(object):
       ret.steerKpV, ret.steerKiV = [[0.09], [0.0125]]
       ret.steerKf = 0.00003 # Initial test value TODO: investigate FF steer control for Model S?
       ret.steerActuatorDelay = 0.09
-      ret.steerRateCost = 0.5 # Lateral MPC cost on steering rate
       
       # Kp and Ki for the longitudinal control
       ret.longitudinalKpBP = [0., 5., 35.]
