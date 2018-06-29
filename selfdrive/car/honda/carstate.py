@@ -229,7 +229,7 @@ class CarState(object):
     # Adds steering warning for low speed lockout on interceptor-enabled vehicles
     # For safety, it's best we warn the driver that the steering is disabled on cars requiring interceptor for stop and go.
     # Although for most of the vehicles that steer to zero this is pointless, for some like the 2016 / 2017 Pilot and Ridgeline they only steer to 12mph with Pedal, they need the warnings.
-    if self.CP.enableGasInterceptor and self.CP.carFingerprint in (CAR.PILOT, CAR.RIDGELINE):
+    if self.CP.enableGasInterceptor and self.CP.carFingerprint in (CAR.PILOT, CAR.ACURA_RDX, CAR.RIDGELINE):
       self.steer_warning = cp.vl["STEER_STATUS"]['STEER_STATUS'] != 0
 
     self.brake_error = cp.vl["STANDSTILL"]['BRAKE_ERROR_1'] or cp.vl["STANDSTILL"]['BRAKE_ERROR_2']
