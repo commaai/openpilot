@@ -1,3 +1,9 @@
+Version 0.4.7.2 (2018-06-25)
+==========================
+ * Fix loggerd lag issue
+ * No longer prompt for updates
+ * Mitigate right lane hugging for properly mounted EON (procedure on wiki)
+
 Version 0.4.7.1 (2018-06-18)
 ==========================
  * Fix Acura ILX steer faults
