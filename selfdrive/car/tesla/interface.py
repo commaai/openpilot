@@ -7,7 +7,7 @@ from common.realtime import sec_since_boot
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET, get_events
 from selfdrive.controls.lib.vehicle_model import VehicleModel
-from selfdrive.car.tesla.carstate import CarState, get_can_parser
+from selfdrive.car.tesla.carstate import CarState, get_can_parser, get_epas_parser
 from selfdrive.car.tesla.values import CruiseButtons, CM, BP, AH, CAR
 from selfdrive.controls.lib.planner import A_ACC_MAX
 
@@ -38,6 +38,7 @@ class CarInterface(object):
     self.can_invalid_count = 0
 
     self.cp = get_can_parser(CP)
+    self.epas_cp = get_epas_parser(CP)
 
     # *** init the major players ***
     self.CS = CarState(CP)
@@ -180,8 +181,9 @@ class CarInterface(object):
     canMonoTimes = []
 
     self.cp.update(int(sec_since_boot() * 1e9), False)
+    self.epas_cp.update(int(sec_since_boot() * 1e9), False)
 
-    self.CS.update(self.cp)
+    self.CS.update(self.cp, self.epas_cp)
 
     # create message
     ret = car.CarState.new_message()
