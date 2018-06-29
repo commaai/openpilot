@@ -103,6 +103,7 @@ def get_epas_can_signals(CP):
   signals = [
       ("EPAS_torsionBarTorque", "EPAS_sysStatus", 0), # Used in interface.py
       ("EPAS_eacStatus", "EPAS_sysStatus", 0),
+      ("EPAS_eacErrorCode", "EPAS_sysStatus", 0),
       ("EPAS_handsOnLevel", "EPAS_sysStatus", 0),
       ("EPAS_steeringFault", "EPAS_sysStatus", 0),
   ]
@@ -176,8 +177,8 @@ class CarState(object):
 
     # 2 = temporary 3= TBD 4 = temporary, hit a bump 5 (permanent) 6 = temporary 7 (permanent)
     # TODO: Use values from DBC to parse this field
-    self.steer_error = cp.vl["EPAS_sysStatus"]['EPAS_steeringFault'] == 1
-    self.steer_not_allowed = 0 # RETURN ALWAYS 0, NEED TO INVESTIGATE cp.vl["EPAS_sysStatus"]['EPAS_eacStatus'] not in [2,1] # 2 "EAC_ACTIVE" 1 "EAC_AVAILABLE" 3 "EAC_FAULT" 0 "EAC_INHIBITED"
+    self.steer_error = epas_cp.vl["EPAS_sysStatus"]['EPAS_steeringFault'] == 1
+    self.steer_not_allowed = epas_cp.vl["EPAS_sysStatus"]['EPAS_eacStatus'] not in [2,1] # 2 "EAC_ACTIVE" 1 "EAC_AVAILABLE" 3 "EAC_FAULT" 0 "EAC_INHIBITED"
     self.brake_error = 0 #NOT WORKINGcp.vl[309]['ESP_brakeLamp'] #JCT
     # JCT More ESP errors available, these needs to be added once car steers on its own to disable / alert driver
     self.esp_disabled = 0 #NEED TO CORRECT DBC cp.vl[309]['ESP_espOffLamp'] or cp.vl[309]['ESP_tcOffLamp'] or cp.vl[309]['ESP_tcLampFlash'] or cp.vl[309]['ESP_espFaultLamp'] #JCT
@@ -235,8 +236,8 @@ class CarState(object):
 
     # brake switch has shown some single time step noise, so only considered when
     # switch is on for at least 2 consecutive CAN samples
-    self.brake_switch = 0 #cp.vl["DI_torque2"]['DI_brakePedal']
-    self.brake_pressed = 0 #cp.vl["DI_torque2"]['DI_brakePedal']
+    self.brake_switch = epas_cp.vl["EPAS_sysStatus"]['EPAS_eacErrorCode'] == 3 and epas_cp.vl["EPAS_sysStatus"]['EPAS_eacStatus'] == 0 #cp.vl["DI_torque2"]['DI_brakePedal']
+    self.brake_pressed = epas_cp.vl["EPAS_sysStatus"]['EPAS_eacErrorCode'] == 3 and epas_cp.vl["EPAS_sysStatus"]['EPAS_eacStatus'] == 0  #cp.vl["DI_torque2"]['DI_brakePedal']
 
     self.user_brake = cp.vl["DI_torque2"]['DI_brakePedal']
     self.standstill = cp.vl["DI_torque2"]['DI_vehicleSpeed'] == 0
