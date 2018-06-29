@@ -237,7 +237,8 @@ class CarController(object):
         can_sends.append(poll_blindspot_status(LEFT_BLINDSPOT))
     if self.blindspot_debug_enabled_right:
       if self.blindspot_poll_counter % 20 == 10 and self.blindspot_poll_counter > 1005:  # Poll blindspots at 5 Hz
-        can_sends.append(poll_blindspot_status(RIGHT_BLINDSPOT))
+        if CS.v_ego > 6: #polling at low speeds switches camera off
+          can_sends.append(poll_blindspot_status(RIGHT_BLINDSPOT))
 
     #*** control msgs ***
     #print "steer", apply_steer, min_lim, max_lim, CS.steer_torque_motor
