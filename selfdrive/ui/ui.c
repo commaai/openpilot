@@ -132,8 +132,12 @@ typedef struct UIScene {
   float awareness_status;
 
   uint64_t started_ts;
+  //BB CPU TEMP
   uint16_t maxCpuTemp;
+  uint32_t maxBatTemp;
   float gpsAccuracy;
+  float freeSpace;
+  //BB END CPU TEMP
   // Used to display calibration progress
   int cal_status;
   int cal_perc;
@@ -328,7 +332,7 @@ static void ui_init(UIState *s) {
   s->gps_sock = zsock_new_sub(">tcp://127.0.0.1:8032", "");
   assert(s->gps_sock);
   s->gps_sock_raw = zsock_resolve(s->gps_sock);
-
+  
   s->model_sock = zsock_new_sub(">tcp://127.0.0.1:8009", "");
   assert(s->model_sock);
   s->model_sock_raw = zsock_resolve(s->model_sock);
@@ -888,6 +892,243 @@ static void ui_draw_world(UIState *s) {
   }
 }
 
+//BB START: functions added for the display of various items
+static int bb_ui_draw_measure(UIState *s,  const char* bb_value, const char* bb_uom, const char* bb_label, 
+		int bb_x, int bb_y, int bb_uom_dx,
+		NVGcolor bb_valueColor, NVGcolor bb_labelColor, NVGcolor bb_uomColor, 
+		int bb_valueFontSize, int bb_labelFontSize, int bb_uomFontSize )  {
+  const UIScene *scene = &s->scene;	
+  nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
+  int dx = 0;
+  if (strlen(bb_uom) > 0) {
+  	dx = (int)(bb_uomFontSize*2.5/2);
+   }
+  //print value
+  nvgFontFace(s->vg, "sans-semibold");
+  nvgFontSize(s->vg, bb_valueFontSize*2.5);
+  nvgFillColor(s->vg, bb_valueColor);
+  nvgText(s->vg, bb_x-dx/2, bb_y+ (int)(bb_valueFontSize*2.5)+5, bb_value, NULL);
+  //print label
+  nvgFontFace(s->vg, "sans-regular");
+  nvgFontSize(s->vg, bb_labelFontSize*2.5);
+  nvgFillColor(s->vg, bb_labelColor);
+  nvgText(s->vg, bb_x, bb_y + (int)(bb_valueFontSize*2.5)+5 + (int)(bb_labelFontSize*2.5)+5, bb_label, NULL);
+  //print uom
+  if (strlen(bb_uom) > 0) {
+      nvgSave(s->vg);
+	  int rx =bb_x + bb_uom_dx + bb_valueFontSize -3;
+	  int ry = bb_y + (int)(bb_valueFontSize*2.5/2)+25;
+	  nvgTranslate(s->vg,rx,ry);
+	  nvgRotate(s->vg, -1.5708); //-90deg in radians
+	  nvgFontFace(s->vg, "sans-regular");
+	  nvgFontSize(s->vg, (int)(bb_uomFontSize*2.5));
+	  nvgFillColor(s->vg, bb_uomColor);
+	  nvgText(s->vg, 0, 0, bb_uom, NULL);
+	  nvgRestore(s->vg);
+  }
+  return (int)((bb_valueFontSize + bb_labelFontSize)*2.5) + 5;
+}
+
+static void bb_ui_draw_measures(UIState *s, int bb_x, int bb_y, int bb_w ) {
+	const UIScene *scene = &s->scene;		
+	int bb_rx = bb_x + (int)(bb_w/2);
+	int bb_ry = bb_y;
+	int bb_h = 5; 
+	NVGcolor lab_color = nvgRGBA(255, 255, 255, 200);
+	NVGcolor uom_color = nvgRGBA(255, 255, 255, 200);
+	int value_fontSize=30;
+	int label_fontSize=15;
+	int uom_fontSize = 15;
+	int bb_uom_dx =  (int)(bb_w /2 - uom_fontSize*2.5) ;
+	
+	//add visual radar relative distance
+	if (true) {
+		char val_str[16];
+		char uom_str[6];
+		NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
+		if (scene->lead_status) {
+			//show RED if less than 5 meters
+			//show orange if less than 15 meters
+			if((int)(scene->lead_d_rel) < 15) {
+				val_color = nvgRGBA(255, 188, 3, 200);
+			}
+			if((int)(scene->lead_d_rel) < 5) {
+				val_color = nvgRGBA(255, 0, 0, 200);
+			}
+			// lead car relative distance is always in meters
+			if (s->is_metric) {
+				 snprintf(val_str, sizeof(val_str), "%d", (int)scene->lead_d_rel);
+			} else {
+				 snprintf(val_str, sizeof(val_str), "%d", (int)(scene->lead_d_rel * 3.28084));
+			}
+		} else {
+		   snprintf(val_str, sizeof(val_str), "N/A");
+		}
+		if (s->is_metric) {
+			snprintf(uom_str, sizeof(uom_str), "m   ");
+		} else {
+			snprintf(uom_str, sizeof(uom_str), "ft");
+		}
+		bb_h +=bb_ui_draw_measure(s,  val_str, uom_str, "REL DIST", 
+				bb_rx, bb_ry, bb_uom_dx,
+				val_color, lab_color, uom_color, 
+				value_fontSize, label_fontSize, uom_fontSize );
+		bb_ry = bb_y + bb_h;
+	}
+	
+	//add visual radar relative speed
+	if (true) {
+		char val_str[16];
+		char uom_str[6];
+		NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
+		if (scene->lead_status) {
+			//show Orange if negative speed (approaching)
+			//show Orange if negative speed faster than 5mph (approaching fast)
+			if((int)(scene->lead_v_rel) < 0) {
+				val_color = nvgRGBA(255, 188, 3, 200);
+			}
+			if((int)(scene->lead_v_rel) < -5) {
+				val_color = nvgRGBA(255, 0, 0, 200);
+			}
+			// lead car relative speed is always in meters
+			if (s->is_metric) {
+				 snprintf(val_str, sizeof(val_str), "%d", (int)(scene->lead_v_rel * 3.6 + 0.5));
+			} else {
+				 snprintf(val_str, sizeof(val_str), "%d", (int)(scene->lead_v_rel * 2.2374144 + 0.5));
+			}
+		} else {
+		   snprintf(val_str, sizeof(val_str), "N/A");
+		}
+		if (s->is_metric) {
+			snprintf(uom_str, sizeof(uom_str), "km/h");;
+		} else {
+			snprintf(uom_str, sizeof(uom_str), "mph");
+		}
+		bb_h +=bb_ui_draw_measure(s,  val_str, uom_str, "REL SPD", 
+				bb_rx, bb_ry, bb_uom_dx,
+				val_color, lab_color, uom_color, 
+				value_fontSize, label_fontSize, uom_fontSize );
+		bb_ry = bb_y + bb_h;
+	}
+	
+	//add CPU temperature
+	if (true) {
+	    	char val_str[16];
+		char uom_str[6];
+		NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
+			if((int)(scene->maxCpuTemp/10) > 80) {
+				val_color = nvgRGBA(255, 188, 3, 200);
+			}
+			if((int)(scene->maxCpuTemp/10) > 92) {
+				val_color = nvgRGBA(255, 0, 0, 200);
+			}
+			// temp is alway in C * 10
+			if (s->is_metric) {
+				 snprintf(val_str, sizeof(val_str), "%d C", (int)(scene->maxCpuTemp/10));
+			} else {
+				 snprintf(val_str, sizeof(val_str), "%d F", (int)(32+9*(scene->maxCpuTemp/10)/5));
+			}
+		snprintf(uom_str, sizeof(uom_str), "");
+		bb_h +=bb_ui_draw_measure(s,  val_str, uom_str, "CPU TEMP", 
+				bb_rx, bb_ry, bb_uom_dx,
+				val_color, lab_color, uom_color, 
+				value_fontSize, label_fontSize, uom_fontSize );
+		bb_ry = bb_y + bb_h;
+	}
+
+   //add battery temperature
+	if (true) {
+		char val_str[16];
+		char uom_str[6];
+		NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
+		if((int)(scene->maxBatTemp/1000) > 40) {
+			val_color = nvgRGBA(255, 188, 3, 200);
+		}
+		if((int)(scene->maxBatTemp/1000) > 50) {
+			val_color = nvgRGBA(255, 0, 0, 200);
+		}
+		// temp is alway in C * 1000
+		if (s->is_metric) {
+			 snprintf(val_str, sizeof(val_str), "%d C", (int)(scene->maxBatTemp/1000));
+		} else {
+			 snprintf(val_str, sizeof(val_str), "%d F", (int)(32+9*(scene->maxBatTemp/1000)/5));
+		}
+		snprintf(uom_str, sizeof(uom_str), "");
+		bb_h +=bb_ui_draw_measure(s,  val_str, uom_str, "BAT TEMP", 
+				bb_rx, bb_ry, bb_uom_dx,
+				val_color, lab_color, uom_color, 
+				value_fontSize, label_fontSize, uom_fontSize );
+		bb_ry = bb_y + bb_h;
+	}
+	
+	//add grey panda GPS accuracy
+	if (true) {
+		char val_str[16];
+		char uom_str[3];
+		NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
+
+		//show red/orange if gps accuracy is high
+	    if(scene->gpsAccuracy > 0.59) {
+	       val_color = nvgRGBA(255, 188, 3, 200);
+	    }
+	    if(scene->gpsAccuracy > 0.8) {
+	       val_color = nvgRGBA(255, 0, 0, 200);
+	    }
+
+
+		// lead car relative speed is always in meters
+		if (s->is_metric) {
+			 snprintf(val_str, sizeof(val_str), "%d", (int)(s->scene.gpsAccuracy*100.0));
+		} else {
+			 snprintf(val_str, sizeof(val_str), "%.2f", s->scene.gpsAccuracy* 3.28084);
+		}
+		if (s->is_metric) {
+			snprintf(uom_str, sizeof(uom_str), "cm");;
+		} else {
+			snprintf(uom_str, sizeof(uom_str), "ft");
+		}
+		bb_h +=bb_ui_draw_measure(s,  val_str, uom_str, "GPS PREC", 
+				bb_rx, bb_ry, bb_uom_dx,
+				val_color, lab_color, uom_color, 
+				value_fontSize, label_fontSize, uom_fontSize );
+		bb_ry = bb_y + bb_h;
+	}
+	
+	//add free space
+	if (true) {
+		char val_str[16];
+		char uom_str[3];
+		NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
+
+		//show red/orange if free space is low
+		if(scene->freeSpace < 0.4) {
+			val_color = nvgRGBA(255, 188, 3, 200);
+		}
+		if(scene->freeSpace < 0.2) {
+			val_color = nvgRGBA(255, 0, 0, 200);
+		}
+
+		snprintf(val_str, sizeof(val_str), "%.1f %%", s->scene.freeSpace* 100);
+		snprintf(uom_str, sizeof(uom_str), "");
+
+		bb_h +=bb_ui_draw_measure(s, val_str, uom_str, "FREE", 
+			bb_rx, bb_ry, bb_uom_dx,
+			val_color, lab_color, uom_color, 
+			value_fontSize, label_fontSize, uom_fontSize );
+		bb_ry = bb_y + bb_h;
+	}
+
+	//finally draw the frame
+	bb_h += 20;
+	nvgBeginPath(s->vg);
+  	nvgRoundedRect(s->vg, bb_x, bb_y, bb_w, bb_h, 20);
+  	nvgStrokeColor(s->vg, nvgRGBA(255,255,255,80));
+  	nvgStrokeWidth(s->vg, 6);
+  	nvgStroke(s->vg);
+}
+//BB END: functions added for the display of various items
+
+
 static void ui_draw_vision_maxspeed(UIState *s) {
   const UIScene *scene = &s->scene;
   int ui_viz_rx = scene->ui_viz_rx;
@@ -898,7 +1139,7 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   const int viz_maxspeed_y = (box_y + (bdr_s*1.5));
   const int viz_maxspeed_w = 180;
   const int viz_maxspeed_h = 202;
-  char maxspeed_str[64];
+  char maxspeed_str[32];
   bool is_cruise_set = (maxspeed != 0 && maxspeed != 255);
 
   nvgBeginPath(s->vg);
@@ -928,34 +1169,9 @@ static void ui_draw_vision_maxspeed(UIState *s) {
     nvgText(s->vg, viz_maxspeed_x+viz_maxspeed_w/2, 242, "N/A", NULL);
   }
 
-  nvgBeginPath(s->vg);
-  nvgRoundedRect(s->vg, viz_maxspeed_x, viz_maxspeed_y+220, viz_maxspeed_w, viz_maxspeed_h, 20);
-  nvgStrokeColor(s->vg, nvgRGBA(255,255,255,80));
-  nvgStrokeWidth(s->vg, 6);
-  nvgStroke(s->vg);
-
-  // show max cpu temp
-  nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
-  nvgFontFace(s->vg, "sans-regular");
-  nvgFontSize(s->vg, 30*2.5);
-  
-  if((int)(s->scene.maxCpuTemp/10) > 85){
-  	nvgFillColor(s->vg, nvgRGBA(255, 0, 0, 200));
-  }else{
-  	nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 200));
-  }
-  
-  snprintf(maxspeed_str, sizeof(maxspeed_str), "%d \u00b0", (int)(s->scene.maxCpuTemp/10));
-  nvgText(s->vg, viz_maxspeed_x+viz_maxspeed_w/2, 148+220, maxspeed_str, NULL);
-
-  // show gps accuracy
-  nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
-  nvgFontFace(s->vg, "sans-regular");
-  nvgFontSize(s->vg, 29*2.5);
-  nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 200));
-  snprintf(maxspeed_str, sizeof(maxspeed_str), "%.2fm", (s->scene.gpsAccuracy));
-  nvgText(s->vg, viz_maxspeed_x+viz_maxspeed_w/2, 148+220+100, maxspeed_str, NULL);
-
+  //BB START: add new measures panel
+ bb_ui_draw_measures(s,viz_maxspeed_x, viz_maxspeed_y+220,(int)(viz_maxspeed_w) );
+  //BB END: add new measures panel
 }
 
 static void ui_draw_vision_speed(UIState *s) {
@@ -1144,6 +1360,7 @@ static void ui_draw_vision(UIState *s) {
   nvgScale(s->vg, (float)viz_w / s->fb_w, (float)inner_height / s->fb_h);
   if (!scene->frontview) {
     ui_draw_world(s);
+    
   }
 
   nvgRestore(s->vg);
@@ -1392,8 +1609,7 @@ static void ui_update(UIState *s) {
 
       zmq_msg_close(&msg);
 
-    } 
-    else if (polls[8].revents) 
+    } else if (polls[8].revents) 
     {
       // gps socket
 
@@ -1425,12 +1641,10 @@ static void ui_update(UIState *s) {
       }
       capn_free(&ctx);
       zmq_msg_close(&msg);
-    } 
-    else 
-    {
+    } else {
       // zmq messages
       void* which = NULL;
-      for (int i=0; i<7; i++) {
+      for (int i=0; i<num_polls - 1; i++) {
         if (polls[i].revents) {
           which = polls[i].socket;
           break;
@@ -1566,7 +1780,9 @@ static void ui_update(UIState *s) {
         }
 
         s->scene.started_ts = datad.startedTs;
-        s->scene.maxCpuTemp=datad.cpu0;
+
+	   //BBB CPU TEMP
+		s->scene.maxCpuTemp=datad.cpu0;
         if (s->scene.maxCpuTemp<datad.cpu1)
         {
             s->scene.maxCpuTemp=datad.cpu1;
@@ -1579,9 +1795,10 @@ static void ui_update(UIState *s) {
         {
             s->scene.maxCpuTemp=datad.cpu3;
         }
-
-      }
-      else if (eventd.which == cereal_Event_uiLayoutState) {
+      s->scene.maxBatTemp=datad.bat;
+	  s->scene.freeSpace=datad.freeSpace;
+	   //BBB END CPU TEMP
+      } else if (eventd.which == cereal_Event_uiLayoutState) {
           struct cereal_UiLayoutState datad;
           cereal_read_UiLayoutState(&datad, eventd.uiLayoutState);
           s->scene.uilayout_sidebarcollapsed = datad.sidebarCollapsed;
