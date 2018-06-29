@@ -328,6 +328,10 @@ static void ui_init(UIState *s) {
   assert(s->thermal_sock);
   s->thermal_sock_raw = zsock_resolve(s->thermal_sock);
 
+  s->gps_sock = zsock_new_sub(">tcp://127.0.0.1:8032", "");
+  assert(s->gps_sock);
+  s->gps_sock_raw = zsock_resolve(s->gps_sock);
+  
   s->model_sock = zsock_new_sub(">tcp://127.0.0.1:8009", "");
   assert(s->model_sock);
   s->model_sock_raw = zsock_resolve(s->model_sock);
@@ -912,7 +916,7 @@ static int bb_ui_draw_measure(UIState *s,  const char* bb_value, const char* bb_
   if (strlen(bb_uom) > 0) {
       nvgSave(s->vg);
 	  int rx =bb_x + bb_uom_dx + bb_valueFontSize -3;
-	  int ry = bb_y + (int)(bb_valueFontSize*2.5/2)+5;
+	  int ry = bb_y + (int)(bb_valueFontSize*2.5/2)+25;
 	  nvgTranslate(s->vg,rx,ry);
 	  nvgRotate(s->vg, -1.5708); //-90deg in radians
 	  nvgFontFace(s->vg, "sans-regular");
@@ -960,7 +964,7 @@ static void bb_ui_draw_measures(UIState *s, int bb_x, int bb_y, int bb_w ) {
 		   snprintf(val_str, sizeof(val_str), "N/A");
 		}
 		if (s->is_metric) {
-			snprintf(uom_str, sizeof(uom_str), "m");
+			snprintf(uom_str, sizeof(uom_str), "m   ");
 		} else {
 			snprintf(uom_str, sizeof(uom_str), "ft");
 		}
@@ -1019,7 +1023,7 @@ static void bb_ui_draw_measures(UIState *s, int bb_x, int bb_y, int bb_w ) {
 			}
 			// temp is alway in C * 10
 			if (s->is_metric) {
-				 snprintf(val_str, sizeof(val_str), "%d \u00b0", (int)(scene->maxCpuTemp/10));
+				 snprintf(val_str, sizeof(val_str), "%d C", (int)(scene->maxCpuTemp/10));
 			} else {
 				 snprintf(val_str, sizeof(val_str), "%d F", (int)(32+9*(scene->maxCpuTemp/10)/5));
 			}
@@ -1036,18 +1040,18 @@ static void bb_ui_draw_measures(UIState *s, int bb_x, int bb_y, int bb_w ) {
 		char val_str[16];
 		char uom_str[6];
 		NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
-			if((int)(scene->maxBatTemp/1000) > 40) {
-				val_color = nvgRGBA(255, 188, 3, 200);
-			}
-			if((int)(scene->maxBatTemp/1000) > 50) {
-				val_color = nvgRGBA(255, 0, 0, 200);
-			}
-			// temp is alway in C * 1000
-			if (s->is_metric) {
-				 snprintf(val_str, sizeof(val_str), "%d \u00b0", (int)(scene->maxBatTemp/1000));
-			} else {
-				 snprintf(val_str, sizeof(val_str), "%d F", (int)(32+9*(scene->maxBatTemp/1000)/5));
-			}
+		if((int)(scene->maxBatTemp/1000) > 40) {
+			val_color = nvgRGBA(255, 188, 3, 200);
+		}
+		if((int)(scene->maxBatTemp/1000) > 50) {
+			val_color = nvgRGBA(255, 0, 0, 200);
+		}
+		// temp is alway in C * 1000
+		if (s->is_metric) {
+			 snprintf(val_str, sizeof(val_str), "%d C", (int)(scene->maxBatTemp/1000));
+		} else {
+			 snprintf(val_str, sizeof(val_str), "%d F", (int)(32+9*(scene->maxBatTemp/1000)/5));
+		}
 		snprintf(uom_str, sizeof(uom_str), "");
 		bb_h +=bb_ui_draw_measure(s,  val_str, uom_str, "BAT TEMP", 
 				bb_rx, bb_ry, bb_uom_dx,
@@ -1059,20 +1063,25 @@ static void bb_ui_draw_measures(UIState *s, int bb_x, int bb_y, int bb_w ) {
 	//add grey panda GPS accuracy
 	if (true) {
 		char val_str[16];
-		char uom_str[6];
+		char uom_str[3];
 		NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
-			//show RED if negative speed (approaching)
-			if((int)(scene->lead_v_rel) < 0) {
-				val_color = nvgRGBA(255, 0, 0, 200);
-			}
-			// lead car relative speed is always in meters
-			if (s->is_metric) {
-				 snprintf(val_str, sizeof(val_str), "%.2f", s->scene.gpsAccuracy);
-			} else {
-				 snprintf(val_str, sizeof(val_str), "%.2f", s->scene.gpsAccuracy* 3.28084);
-			}
+		//show red/orange if gps accuracy is high
+    if(scene->gpsAccuracy > 0.59) {
+       val_color = nvgRGBA(255, 188, 3, 200);
+    }
+    if(scene->gpsAccuracy > 0.8) {
+       val_color = nvgRGBA(255, 0, 0, 200);
+    }
+
+
+		// lead car relative speed is always in meters
 		if (s->is_metric) {
-			snprintf(uom_str, sizeof(uom_str), "m");;
+			 snprintf(val_str, sizeof(val_str), "%d", (int)(s->scene.gpsAccuracy*100.0));
+		} else {
+			 snprintf(val_str, sizeof(val_str), "%.2f", s->scene.gpsAccuracy* 3.28084);
+		}
+		if (s->is_metric) {
+			snprintf(uom_str, sizeof(uom_str), "cm");;
 		} else {
 			snprintf(uom_str, sizeof(uom_str), "ft");
 		}
@@ -1467,7 +1476,7 @@ static void ui_update(UIState *s) {
 
   // poll for events
   while (true) {
-    zmq_pollitem_t polls[9] = {{0}};
+    zmq_pollitem_t polls[10] = {{0}};
     polls[0].socket = s->live100_sock_raw;
     polls[0].events = ZMQ_POLLIN;
     polls[1].socket = s->livecalibration_sock_raw;
@@ -1484,12 +1493,14 @@ static void ui_update(UIState *s) {
     polls[6].events = ZMQ_POLLIN;
     polls[7].socket = s->plus_sock_raw;
     polls[7].events = ZMQ_POLLIN;
+    polls[8].socket = s->gps_sock_raw;
+    polls[8].events = ZMQ_POLLIN;
 
-    int num_polls = 8;
+    int num_polls = 9;
     if (s->vision_connected) {
       assert(s->ipc_fd >= 0);
-      polls[8].fd = s->ipc_fd;
-      polls[8].events = ZMQ_POLLIN;
+      polls[9].fd = s->ipc_fd;
+      polls[9].events = ZMQ_POLLIN;
       num_polls++;
     }
 
@@ -1508,7 +1519,7 @@ static void ui_update(UIState *s) {
       set_awake(s, true);
     }
 
-    if (s->vision_connected && polls[8].revents) {
+    if (s->vision_connected && polls[9].revents) {
       // vision ipc event
       VisionPacket rp;
       err = vipc_recv(s->ipc_fd, &rp);
