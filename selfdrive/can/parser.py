@@ -93,6 +93,28 @@ class CANParser(object):
     libdbc.can_update(self.can, sec, wait)
     return self.update_vl(sec)
 
+
+class CANDefine(object):
+  def __init__(self, dbc_name):
+    self.dv = defaultdict(dict)
+    self.dbc_name = dbc_name
+    self.dbc = libdbc.dbc_lookup(dbc_name)
+
+    num_vals = self.dbc[0].num_vals
+    for i in range(num_vals):
+      val = self.dbc[0].vals[i]
+
+      sgname = ffi.string(val.name)
+      def_val = ffi.string(val.def_val)
+
+      #separate definition/value pairs
+      def_val = def_val.split()
+      values = [int(v) for v in def_val[::2]]
+      defs = def_val[1::2]
+
+      self.dv[sgname] = {d: v for d, v in zip(defs, values)} #build dict
+
+
 if __name__ == "__main__":
   from common.realtime import sec_since_boot
 
