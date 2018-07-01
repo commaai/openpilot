@@ -105,26 +105,32 @@ def get_can_signals(CP):
       ("SCM_BUTTONS", 25),
   ]
 
-
   # Bosch signals
   if CP.radarOffCan:
-    # Civic Hatch is only bosch to use the same brake message as nidec hondas.
+    signals += [("CRUISE_SPEED", "ACC_HUD", 0)]
+    # Civic Hatch is only bosch to use the same brake message as nidec hondas
     if CP.carFingerprint != CAR.CIVIC_HATCH:
       signals += [("BRAKE_PRESSED", "BRAKE_MODULE", 0)]
       checks += [("BRAKE_MODULE", 50)]
-	  
-    signals += [("CAR_GAS", "GAS_PEDAL_2", 0),
-                ("MAIN_ON", "SCM_FEEDBACK", 0),
-                ("EPB_STATE", "EPB_STATUS", 0),
-                ("BRAKE_HOLD_ACTIVE", "VSA_STATUS", 0),
-                ("CRUISE_SPEED", "ACC_HUD", 0)]
-    checks += [("GAS_PEDAL_2", 100)]
-
-  # Nidec signals.
+  # Nidec signals
   else:
     signals += [("CRUISE_SPEED_PCM", "CRUISE", 0),
                 ("CRUISE_SPEED_OFFSET", "CRUISE_PARAMS", 0)]
     checks += [("CRUISE_PARAMS", 50)]
+
+  # Bosch or uses signals common to bosch.dbc
+  if CP.radarOffCan or CP.carFingerprint in (CAR.CIVIC, CAR.ODYSSEY):
+    signals += [("MAIN_ON", "SCM_FEEDBACK", 0),
+                ("EPB_STATE", "EPB_STATUS", 0),
+                ("BRAKE_HOLD_ACTIVE", "VSA_STATUS", 0)]
+    checks += [("EPB_STATUS", 50)]
+  else:
+    signals += [("MAIN_ON", "SCM_BUTTONS", 0)]
+
+  # Bosch or uses signals common to bosch.dbc
+  if CP.radarOffCan or CP.carFingerprint in (CAR.ACURA_ILX, CAR.CIVIC, CAR.PILOT):
+    signals += [("CAR_GAS", "GAS_PEDAL_2", 0)]
+    checks += [("GAS_PEDAL_2", 100)]
 
   if CP.carFingerprint == CAR.ACCORD:
     signals += [("DRIVERS_DOOR_OPEN", "SCM_FEEDBACK", 1)]
@@ -134,22 +140,6 @@ def get_can_signals(CP):
                 ("DOOR_OPEN_RL", "DOORS_STATUS", 1),
                 ("DOOR_OPEN_RR", "DOORS_STATUS", 1)]
     checks += [("DOORS_STATUS", 3)]
-
-  # use same signal from bosch.dbc 
-  if CP.carFingerprint in (CAR.ACURA_ILX, CAR.PILOT, CAR.CIVIC):
-    signals += [("CAR_GAS", "GAS_PEDAL_2", 0)]
-
-  # use same signal from bosch.dbc 
-  if CP.carFingerprint in (CAR.ACURA_RDX, CAR.ACURA_ILX, CAR.PILOT, CAR.CRV, CAR.RIDGELINE):
-    signals += [("MAIN_ON", "SCM_BUTTONS", 0)]
-
-  elif CP.carFingerprint in (CAR.ODYSSEY, CAR.CIVIC):
-    signals += [("MAIN_ON", "SCM_FEEDBACK", 0),
-                ("EPB_STATE", "EPB_STATUS", 0),
-                ("BRAKE_HOLD_ACTIVE", "VSA_STATUS", 0)]
-
-  if CP.carFingerprint == CAR.ODYSSEY:
-    checks += [("EPB_STATUS", 50)]
 
   # add gas interceptor reading if we are using it
   if CP.enableGasInterceptor:
@@ -263,12 +253,12 @@ class CarState(object):
     self.left_blinker_on = cp.vl["SCM_FEEDBACK"]['LEFT_BLINKER']
     self.right_blinker_on = cp.vl["SCM_FEEDBACK"]['RIGHT_BLINKER']
 
-    #if parking brake is not in DBC, default to 0 #TODO:add to DBC 
+    #if parking brake is not in DBC, default to 0 #TODO:add to DBC
     self.park_brake = cp.vl.get("EPB_STATUS",{"empty" : None}).get('EPB_STATE', 0) != 0
     self.brake_hold = cp.vl.get("VSA_STATUS",{"empty" : None}).get('BRAKE_HOLD_ACTIVE', 0)
 
-    self.main_on = any([cp.vl.get("SCM_FEEDBACK",{"empty" : None}).get('MAIN_ON'), #Bosch signal 
-                        cp.vl.get("SCM_BUTTONS",{"empty" : None}).get('MAIN_ON')]) 
+    self.main_on = any([cp.vl.get("SCM_FEEDBACK",{"empty" : None}).get('MAIN_ON'), #Bosch signal
+                        cp.vl.get("SCM_BUTTONS",{"empty" : None}).get('MAIN_ON')])
 
     self.gear_shifter = parse_gear_shifter(can_gear_shifter, self.CP.carFingerprint)
 
@@ -296,7 +286,7 @@ class CarState(object):
       #All Bosch except Civic Hatch
       if self.CP.carFingerprint != CAR.CIVIC_HATCH:
         self.brake_pressed = cp.vl["BRAKE_MODULE"]['BRAKE_PRESSED']
-		
+
     #Nidec
     else:
       self.cruise_speed_offset = calc_cruise_offset(cp.vl["CRUISE_PARAMS"]['CRUISE_SPEED_OFFSET'], self.v_ego)
@@ -310,7 +300,7 @@ class CarState(object):
                            (self.brake_switch and self.brake_switch_prev and \
                            cp.ts["POWERTRAIN_DATA"]['BRAKE_SWITCH'] != self.brake_switch_ts))
       self.brake_switch_prev = self.brake_switch
-      self.brake_switch_ts = cp.ts["POWERTRAIN_DATA"]['BRAKE_SWITCH']  
+      self.brake_switch_ts = cp.ts["POWERTRAIN_DATA"]['BRAKE_SWITCH']
 
     self.user_brake = cp.vl["VSA_STATUS"]['USER_BRAKE']
     self.standstill = not cp.vl["STANDSTILL"]['WHEELS_MOVING']
