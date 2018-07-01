@@ -20,6 +20,7 @@ const Signal sigs_{{address}}[] = {
       .is_signed = {{"true" if sig.is_signed else "false"}},
       .factor = {{sig.factor}},
       .offset = {{sig.offset}},
+	  .is_little_endian = {{"true" if sig.is_little_endian else "false"}},
       {% if checksum_type == "honda" and sig.name == "CHECKSUM" %}
       .type = SignalType::HONDA_CHECKSUM,
       {% elif checksum_type == "honda" and sig.name == "COUNTER" %}
@@ -64,10 +65,10 @@ const Val vals[] = {
 }
 const DBC {{dbc.name}} = {
   .name = "{{dbc.name}}",
-  .num_msgs = ARRAYSIZE(msgs),   
+  .num_msgs = ARRAYSIZE(msgs),
   .msgs = msgs,
   .vals = vals,
-  .num_vals = ARRAYSIZE(vals)
+  .num_vals = ARRAYSIZE(vals),
 };
 
 dbc_init({{dbc.name}})
