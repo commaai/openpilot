@@ -102,7 +102,7 @@ managed_processes = {
   "visiond": ("selfdrive/visiond", ["./visiond"]),
   "sensord": ("selfdrive/sensord", ["./sensord"]),
   "gpsd": ("selfdrive/sensord", ["./gpsd"]),
-  "orbd": ("selfdrive/orbd", ["./orbd_wrapper.sh"]),
+  "orbd": ("selfdrive/orbd", ["./orbd"]),
   "updated": "selfdrive.updated",
   #"gpsplanner": "selfdrive.controls.gps_plannerd",
 }
