@@ -118,20 +118,6 @@ def get_can_signals(CP):
                 ("CRUISE_SPEED_OFFSET", "CRUISE_PARAMS", 0)]
     checks += [("CRUISE_PARAMS", 50)]
 
-  # Bosch or uses signals common to bosch.dbc
-  if CP.radarOffCan or CP.carFingerprint in (CAR.CIVIC, CAR.ODYSSEY):
-    signals += [("MAIN_ON", "SCM_FEEDBACK", 0),
-                ("EPB_STATE", "EPB_STATUS", 0),
-                ("BRAKE_HOLD_ACTIVE", "VSA_STATUS", 0)]
-    checks += [("EPB_STATUS", 50)]
-  else:
-    signals += [("MAIN_ON", "SCM_BUTTONS", 0)]
-
-  # Bosch or uses signals common to bosch.dbc
-  if CP.radarOffCan or CP.carFingerprint in (CAR.ACURA_ILX, CAR.CIVIC, CAR.PILOT):
-    signals += [("CAR_GAS", "GAS_PEDAL_2", 0)]
-    checks += [("GAS_PEDAL_2", 100)]
-
   if CP.carFingerprint == CAR.ACCORD:
     signals += [("DRIVERS_DOOR_OPEN", "SCM_FEEDBACK", 1)]
   else:
@@ -140,6 +126,20 @@ def get_can_signals(CP):
                 ("DOOR_OPEN_RL", "DOORS_STATUS", 1),
                 ("DOOR_OPEN_RR", "DOORS_STATUS", 1)]
     checks += [("DOORS_STATUS", 3)]
+
+  # Bosch or uses signals common to bosch.dbc
+  if CP.radarOffCan or CP.carFingerprint in (CAR.ACURA_ILX, CAR.CIVIC, CAR.PILOT):
+    signals += [("CAR_GAS", "GAS_PEDAL_2", 0)]
+    checks += [("GAS_PEDAL_2", 100)]
+
+  # Bosch or uses signals common to bosch.dbc
+  if CP.radarOffCan or CP.carFingerprint in (CAR.CIVIC, CAR.ODYSSEY):
+    signals += [("MAIN_ON", "SCM_FEEDBACK", 0),
+                ("EPB_STATE", "EPB_STATUS", 0),
+                ("BRAKE_HOLD_ACTIVE", "VSA_STATUS", 0)]
+    checks += [("EPB_STATUS", 50)]
+  else:
+    signals += [("MAIN_ON", "SCM_BUTTONS", 0)]
 
   # add gas interceptor reading if we are using it
   if CP.enableGasInterceptor:
