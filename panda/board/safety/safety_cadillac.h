@@ -70,7 +70,7 @@ static int cadillac_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
     if (controls_allowed) {
 
       // *** global torque limit check ***
-      violation |= max_limit_check(desired_torque, CADILLAC_MAX_STEER);
+      violation |= max_limit_check(desired_torque, CADILLAC_MAX_STEER, -CADILLAC_MAX_STEER);
 
       // *** torque rate limit check ***
       int desired_torque_last = cadillac_desired_torque_last[idx];
