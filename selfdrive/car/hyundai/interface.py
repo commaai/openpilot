@@ -33,6 +33,12 @@ class CarInterface(object):
     sendcan = None
     if sendcan is not None:
       self.sendcan = sendcan
+      print("SendCan %s", sendcan)
+      print("\ndbc_name: %s", self.cp.dbc_name)
+      print("\nFingerprint: %s", CP.carFingerprint)
+      print("\sCamera: %s", CP.enableCamera)
+      print("\nDSU: %s", CP.enableDsu)
+      print("\nApgs: %s", CP.enableApgs)
       self.CC = CarController(self.cp.dbc_name, CP.carFingerprint, CP.enableCamera, CP.enableDsu, CP.enableApgs)
 
   @staticmethod
@@ -53,6 +59,9 @@ class CarInterface(object):
 
     ret.carName = "hyundai"
     ret.carFingerprint = candidate
+
+    
+    #ret.safetyModel = car.CarParams.SafetyModels.hyundai
 
     ret.safetyModel = car.CarParams.SafetyModels.hyundai
 
@@ -146,14 +155,10 @@ class CarInterface(object):
   def update(self, c):
     # ******************* do can recv *******************
     canMonoTimes = []
-
     self.cp.update(int(sec_since_boot() * 1e9), False)
-
     self.CS.update(self.cp)
-
     # create message
     ret = car.CarState.new_message()
-
     # speeds
     ret.vEgo = self.CS.v_ego
     ret.vEgoRaw = self.CS.v_ego_raw
@@ -185,17 +190,17 @@ class CarInterface(object):
     ret.steeringPressed = self.CS.steer_override
 
     # cruise state
-    ret.cruiseState.enabled = self.CS.pcm_acc_status != 0
-    ret.cruiseState.speed = self.CS.v_cruise_pcm * CV.KPH_TO_MS
-    ret.cruiseState.available = bool(self.CS.main_on)
-    ret.cruiseState.speedOffset = 0.
+    #ret.cruiseState.enabled = self.CS.pcm_acc_status != 0
+    #ret.cruiseState.speed = self.CS.v_cruise_pcm * CV.KPH_TO_MS
+    #ret.cruiseState.available = bool(self.CS.main_on)
+    #ret.cruiseState.speedOffset = 0.
 
     if self.CP.carFingerprint == CAR.ELANTRA:
       # ignore standstill in hybrid rav4, since pcm allows to restart without
       # receiving any special command
       ret.cruiseState.standstill = False
     else:
-      ret.cruiseState.standstill = self.CS.pcm_acc_status == 7
+      ret.cruiseState.standstill = False #self.CS.pcm_acc_status == 7
 
     # TODO: button presses
     buttonEvents = []
@@ -219,7 +224,7 @@ class CarInterface(object):
     ret.doorOpen = not self.CS.door_all_closed
     ret.seatbeltUnlatched = not self.CS.seatbelt
 
-    ret.genericToggle = self.CS.generic_toggle
+    #ret.genericToggle = self.CS.generic_toggle
 
     # events
     events = []
@@ -235,7 +240,7 @@ class CarInterface(object):
       events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if ret.seatbeltUnlatched:
       events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if self.CS.esp_disabled:
+    if False: #self.CS.esp_disabled:
       events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if not self.CS.main_on:
       events.append(create_event('wrongCarMode', [ET.NO_ENTRY, ET.USER_DISABLE]))
@@ -243,7 +248,7 @@ class CarInterface(object):
       events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     if self.CS.steer_error:
       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
-    if self.CS.low_speed_lockout:
+    if False:# self.CS.low_speed_lockout:
       events.append(create_event('lowSpeedLockout', [ET.NO_ENTRY, ET.PERMANENT]))
     if ret.vEgo < self.CP.minEnableSpeed:
       events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
@@ -281,9 +286,9 @@ class CarInterface(object):
   # to be called @ 100hz
   def apply(self, c):
 
-    self.CC.update(self.sendcan, c.enabled, self.CS, self.frame,
-                   c.actuators, c.cruiseControl.cancel, c.hudControl.visualAlert,
-                   c.hudControl.audibleAlert)
+    #self.CC.update(self.sendcan, c.enabled, self.CS, self.frame,
+    #               c.actuators, c.cruiseControl.cancel, c.hudControl.visualAlert,
+    #               c.hudControl.audibleAlert)
 
     self.frame += 1
     return False

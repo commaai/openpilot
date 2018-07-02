@@ -91,11 +91,11 @@ def get_can_parser(CP):
         ("CF_Clu_CruiseSwMain", "CLU11", 0),
 
         ("ACCEnable", "TCS13", 0),
-        ("ACC_REQ", "TCS13",0),
+        ("ACC_REQ", "TCS13", 0),
         ("DriverBraking", "TCS13", 0),
         ("DriverOverride", "TCS13", 0),
 
-        ("ECS_OFF_STEP", "TCS15",0),
+        ("ESC_Off_Step", "TCS15", 0),
 
         ("Gear", "AT01", 0),        #Transmission Gear (0 = N or P, 1-8 = Fwd, 14 = Rev)
 
@@ -109,6 +109,15 @@ def get_can_parser(CP):
         # address, frequency
         ## TODO - DO THIS PROPERLY
         ("LKAS11", 100),
+        ("MDPS12", 50),
+        ("TCS15", 10),
+        ("TCS13", 50),
+        ("CLU11", 50),
+        ("ESP12", 100), 
+        ("EMS12", 100),
+        ("CGW1", 10),
+        ("CGW4", 5),
+        ("WHL_SPD11", 50),
       ]
 
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
@@ -142,9 +151,8 @@ class CarState(object):
     self.prev_left_blinker_on = self.left_blinker_on
     self.prev_right_blinker_on = self.right_blinker_on
 
-    self.door_all_closed = 1 #:not any ([cp.vl["CGW1"]['CF_Gway_DrvDrSw'], cp.vl["CGW1"]['CF_Gway_AstDrSw'],
-      #cp.vl["CGW2"]['CF_Gway_RlDrSw'], cp.vl["CGW2"]['CF_Gway_RrDrSw']])
-    self.seatbelt = 1 #["CGW1"]['CF_Gway_DrvSeatBeltSw']
+    self.door_all_closed = True #not any ([cp.vl["CGW1"]['CF_Gway_DrvDrSw'], cp.vl["CGW1"]['CF_Gway_AstDrSw'], cp.vl["CGW2"]['CF_Gway_RlDrSw'], cp.vl["CGW2"]['CF_Gway_RrDrSw']])
+    self.seatbelt = cp.vl["CGW1"]['CF_Gway_DrvSeatBeltSw']
 
     
     self.brake_pressed = cp.vl["TCS13"]['DriverBraking']
@@ -178,15 +186,14 @@ class CarState(object):
     # 2 is standby, 10 is active. TODO: check that everything else is really a faulty state
     self.steer_state = cp.vl["MDPS12"]['CF_Mdps_ToiActive'] #0 NOT ACTIVE, 1 ACTIVE
     self.steer_error = not cp.vl["MDPS12"]['CF_Mdps_FailStat'] or cp.vl["MDPS12"]['CF_Mdps_ToiUnavail'] ## TODO: VERIFY THIS
-    # self.ipas_active = cp.vl['EPS_STATUS']['IPAS_STATE'] == 3
     self.brake_error = 0
     self.steer_torque_driver = cp.vl["MDPS12"]['CR_Mdps_StrColTq'] ## TODO: FIND THIS
     self.steer_torque_motor = cp.vl["MDPS12"]['CR_Mdps_OutTq']
 
     self.user_brake = 0
-    self.brake_lights = bool(cp.vl["ESP_CONTROL"]['BRAKE_LIGHTS_ACC'] or self.brake_pressed)
+    self.brake_lights = bool(self.brake_pressed)
 
-    if car_fingerprint == CAR.ELANTRA:
+    if False:
         can_gear = cp.vl["GEAR_PACKET"]['GEAR']
         self.pedal_gas = cp.vl["GAS_PEDAL"]['GAS_PEDAL'] ## TODO: find this that is idle when acc accels
         self.car_gas = self.pedal_gas
@@ -195,7 +202,7 @@ class CarState(object):
         self.pcm_acc_status = cp.vl["PCM_CRUISE"]['CRUISE_STATE']
         self.gas_pressed = not cp.vl["PCM_CRUISE"]['GAS_RELEASED']
         self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]['LOW_SPEED_LOCKOUT'] == 2
-    elif car_fingerprint == CAR.SORENTO:
+    elif True:
         can_gear = cp.vl["AT01"]['Gear']
         self.brake_pressed = cp.vl["TCS13"]['DriverBraking']
         if (cp.vl["TCS13"]["DriverOverride"] == 0 and cp.vl["TCS13"]['ACC_REQ'] == 1):
@@ -203,5 +210,5 @@ class CarState(object):
         else: 
           self.pedal_gas = cp.vl["EMS12"]['TPS']
         self.car_gas = cp.vl["EMS12"]['TPS']
-        self.gear_shifter = can_gear     
+        self.gear_shifter = parse_gear_shifter(can_gear, self.car_fingerprint)
 
