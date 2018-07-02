@@ -940,9 +940,11 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   nvgFontFace(s->vg, "sans-regular");
   nvgFontSize(s->vg, 30*2.5);
   
-  if((int)(s->scene.maxCpuTemp/10) > 75){
+  if((int)(s->scene.maxCpuTemp/10) > 85){
   	nvgFillColor(s->vg, nvgRGBA(255, 0, 0, 200));
-  }else{
+  } else if((int)(s->scene.maxCpuTemp/10) > 65){
+  	nvgFillColor(s->vg, nvgRGBA(255, 255, 0, 200));
+  } else  {
   	nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 200));
   }
   
