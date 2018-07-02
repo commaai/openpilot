@@ -50,7 +50,6 @@ def data_sample(CI, CC, thermal, calibration, health, poller, cal_status, overte
   # *** read can and compute car states ***
   CS = CI.update(CC)
   events = list(CS.events)
-
   td = None
   cal = None
   hh = None
@@ -415,7 +414,7 @@ def data_send(plan, plan_ts, CS, CI, CP, VM, state, events, actuators, v_cruise_
 def controlsd_thread(gctx=None, rate=100, default_bias=0.):
   # start the loop
   set_realtime_priority(3)
-
+  
   context = zmq.Context()
 
   params = Params()
@@ -425,6 +424,7 @@ def controlsd_thread(gctx=None, rate=100, default_bias=0.):
   carstate = messaging.pub_sock(context, service_list['carState'].port)
   carcontrol = messaging.pub_sock(context, service_list['carControl'].port)
   livempc = messaging.pub_sock(context, service_list['liveMpc'].port)
+
 
   passive = params.get("Passive") != "0"
   if not passive:
@@ -469,6 +469,7 @@ def controlsd_thread(gctx=None, rate=100, default_bias=0.):
   # write CarParams
   params.put("CarParams", CP.to_bytes())
 
+
   state = State.disabled
   soft_disable_timer = 0
   v_cruise_kph = 255
@@ -477,6 +478,7 @@ def controlsd_thread(gctx=None, rate=100, default_bias=0.):
   cal_status = Calibration.UNCALIBRATED
   rear_view_toggle = False
   rear_view_allowed = params.get("IsRearViewMirror") == "1"
+
 
   # 0.0 - 1.0
   awareness_status = 1.
@@ -496,13 +498,13 @@ def controlsd_thread(gctx=None, rate=100, default_bias=0.):
 
   prof = Profiler(False)  # off by default
 
+
   while 1:
 
     prof.checkpoint("Ratekeeper", ignore=True)
 
     # sample data and compute car events
-    CS, events, cal_status, overtemp, free_space = data_sample(CI, CC, thermal, cal, health, poller, cal_status,
-                                                               overtemp, free_space)
+    CS, events, cal_status, overtemp, free_space = data_sample(CI, CC, thermal, cal, health, poller, cal_status, overtemp, free_space)
     prof.checkpoint("Sample")
 
     # define plan

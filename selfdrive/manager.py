@@ -87,7 +87,7 @@ from selfdrive.loggerd.config import ROOT
 # comment out anything you don't want to run
 managed_processes = {
   "uploader": "selfdrive.loggerd.uploader",
-#  "controlsd": "selfdrive.controls.controlsd",
+  "controlsd": "selfdrive.controls.controlsd",
   "radard": "selfdrive.controls.radard",
   "ubloxd": "selfdrive.locationd.ubloxd",
   "locationd_dummy": "selfdrive.locationd.locationd_dummy",
@@ -102,7 +102,7 @@ managed_processes = {
   "visiond": ("selfdrive/visiond", ["./visiond"]),
   "sensord": ("selfdrive/sensord", ["./sensord"]),
   "gpsd": ("selfdrive/sensord", ["./gpsd"]),
-  #"orbd": ("selfdrive/orbd", ["./orbd_wrapper.sh"]),
+  "orbd": ("selfdrive/orbd", ["./orbd"]),
   "updated": "selfdrive.updated",
   #"gpsplanner": "selfdrive.controls.gps_plannerd",
 }
