@@ -211,18 +211,18 @@ class Plant(object):
 
     # ******** publish the car ********
     vls_tuple = namedtuple('vls', [
-           'XMISSION_SPEED', 
+           'XMISSION_SPEED',
            'WHEEL_SPEED_FL', 'WHEEL_SPEED_FR', 'WHEEL_SPEED_RL', 'WHEEL_SPEED_RR',
            'STEER_ANGLE', 'STEER_ANGLE_RATE', 'STEER_TORQUE_SENSOR',
-           'LEFT_BLINKER', 'RIGHT_BLINKER',  # Blinkers
+           'LEFT_BLINKER', 'RIGHT_BLINKER',
            'GEAR',
            'WHEELS_MOVING',
            'BRAKE_ERROR_1', 'BRAKE_ERROR_2',
-           'SEATBELT_DRIVER_LAMP', 'SEATBELT_DRIVER_LATCHED',  # Seatbelt
+           'SEATBELT_DRIVER_LAMP', 'SEATBELT_DRIVER_LATCHED',
            'BRAKE_PRESSED', 'BRAKE_SWITCH',
            'CRUISE_BUTTONS',
            'ESP_DISABLED',
-           'HUD_LEAD',  # HUD lead
+           'HUD_LEAD',
            'USER_BRAKE',
            'STEER_STATUS',
            'GEAR_SHIFTER',
@@ -231,26 +231,26 @@ class Plant(object):
            'ACC_STATUS',
 
            'CRUISE_SPEED_PCM',
-           'CRUISE_SPEED_OFFSET',  # Cruise speed offset
+           'CRUISE_SPEED_OFFSET',
 
-           'DOOR_OPEN_FL', 'DOOR_OPEN_FR', 'DOOR_OPEN_RL', 'DOOR_OPEN_RR',  # Doors
+           'DOOR_OPEN_FL', 'DOOR_OPEN_FR', 'DOOR_OPEN_RL', 'DOOR_OPEN_RR',
 
            'CAR_GAS',
            'MAIN_ON',
-           'EPB_STATE',  # EPB State
-           'BRAKE_HOLD_ACTIVE',  # Brake hold
+           'EPB_STATE',
+           'BRAKE_HOLD_ACTIVE',
            'INTERCEPTOR_GAS',
            ])
     vls = vls_tuple(
            self.speed_sensor(speed), 
            self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed),
-           self.angle_steer, self.angle_steer_rate, 0,
+           self.angle_steer, self.angle_steer_rate, 0, #Steer torque sensor
            0, 0,  # Blinkers
            self.gear_choice,
            speed != 0,
            self.brake_error, self.brake_error,
            not self.seatbelt, self.seatbelt,  # Seatbelt
-           self.brake_pressed, 0.,
+           self.brake_pressed, 0., #Brake pressed, Brake switch
            cruise_buttons,
            self.esp_disabled,
            0,  # HUD lead
@@ -270,7 +270,7 @@ class Plant(object):
            self.main_on,
            0,  # EPB State
            0,  # Brake hold
-           0  # Interceptor feedback
+           0   # Interceptor feedback
            )
 
     # TODO: publish each message at proper frequency
