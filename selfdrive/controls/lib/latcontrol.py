@@ -87,10 +87,10 @@ class LatControl(object):
 
       self.angle_steers_des_mpc = float(math.degrees(delta_desired * VM.CP.steerRatio) + angle_offset)
       if leftBlinker:
-        if self.blindspot_blink_counter_left_check > 300:
+        if self.blindspot_blink_counter_left_check > 150:
           self.angle_steers_des_mpc += 10
       if rightBlinker:
-        if self.blindspot_blink_counter_right_check > 300:
+        if self.blindspot_blink_counter_right_check > 150:
           self.angle_steers_des_mpc -= 10
       self.angle_steers_des_time = cur_time
       self.mpc_updated = True
@@ -127,7 +127,7 @@ class LatControl(object):
           self.blindspot_blink_counter_right_check = 0
           print "debug: blindspot detected"
         self.blindspot_blink_counter_right_check += 1
-        if self.blindspot_blink_counter_right_check > 300:
+        if self.blindspot_blink_counter_right_check > 150:
           self.angle_steers_des -= 10
       else:
         self.blindspot_blink_counter_right_check = 0
@@ -137,7 +137,7 @@ class LatControl(object):
           self.blindspot_blink_counter_left_check = 0
           print "debug: blindspot detected"
         self.blindspot_blink_counter_left_check += 1
-        if self.blindspot_blink_counter_left_check > 300:
+        if self.blindspot_blink_counter_left_check > 150:
           self.angle_steers_des += 10
       else:
         self.blindspot_blink_counter_left_check = 0
