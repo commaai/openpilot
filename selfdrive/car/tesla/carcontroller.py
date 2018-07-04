@@ -129,10 +129,22 @@ class CarController(object):
     USER_STEER_MAX = (-62.0 * CS.v_ego) + 2314.6
 
     # Basic highway lane change logic
-    enable_steer_control = (not CS.right_blinker_on and not CS.left_blinker_on and enabled)
+    changing_lanes = CS.right_blinker_on or CS.left_blinker_on
 
-    # steer torque is converted back to CAN reference (positive when steering right)
-    apply_steer = int(clip((-actuators.steer * 100) + STEER_MAX - (CS.angle_steers * 10), STEER_MAX - USER_STEER_MAX, STEER_MAX + USER_STEER_MAX))
+    # Prevent steering while stopped
+    MIN_STEERING_VEHICLE_VELOCITY = 0.05 # m/s
+    vehicle_moving = (CS.v_ego >= MIN_STEERING_VEHICLE_VELOCITY)
+    
+    enable_steer_control = (enabled
+                            and not changing_lanes)
+    
+    # Torque
+    #steer_correction = actuators.steer if enable_steer_control else 0
+    #apply_steer = int(clip((-steer_correction * 100) + STEER_MAX - (CS.angle_steers * 10), STEER_MAX - USER_STEER_MAX, STEER_MAX + USER_STEER_MAX)) # steer torque is converted back to CAN reference (positive when steering right)
+
+    # Angle
+    steer_correction = actuators.steerAngle if enable_steer_control else CS.angle_steers
+    apply_steer = int(clip((-actuators.steerAngle * 10) + STEER_MAX, STEER_MAX - (USER_STEER_MAX*2), STEER_MAX + (USER_STEER_MAX*2))) # steer torque is converted back to CAN reference (positive when steering right)
 
     # Send CAN commands.
     can_sends = []

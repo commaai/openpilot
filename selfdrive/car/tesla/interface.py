@@ -7,7 +7,7 @@ from common.realtime import sec_since_boot
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET, get_events
 from selfdrive.controls.lib.vehicle_model import VehicleModel
-from selfdrive.car.tesla.carstate import CarState, get_can_parser
+from selfdrive.car.tesla.carstate import CarState, get_can_parser, get_epas_parser
 from selfdrive.car.tesla.values import CruiseButtons, CM, BP, AH, CAR
 from selfdrive.controls.lib.planner import A_ACC_MAX
 
@@ -38,6 +38,7 @@ class CarInterface(object):
     self.can_invalid_count = 0
 
     self.cp = get_can_parser(CP)
+    self.epas_cp = get_epas_parser(CP)
 
     # *** init the major players ***
     self.CS = CarState(CP)
@@ -117,12 +118,11 @@ class CarInterface(object):
       ret.mass = mass_models
       ret.wheelbase = wheelbase_models
       ret.centerToFront = centerToFront_models
-      ret.steerRatio = 12.0
+      ret.steerRatio = 13.0
       # Kp and Ki for the lateral control
-      ret.steerKpV, ret.steerKiV = [[0.18], [0.025]]
+      ret.steerKpV, ret.steerKiV = [[0.09], [0.0125]]
       ret.steerKf = 0.00003 # Initial test value TODO: investigate FF steer control for Model S?
       ret.steerActuatorDelay = 0.09
-      ret.steerRateCost = 0.5 # Lateral MPC cost on steering rate
       
       # Kp and Ki for the longitudinal control
       ret.longitudinalKpBP = [0., 5., 35.]
@@ -180,8 +180,9 @@ class CarInterface(object):
     canMonoTimes = []
 
     self.cp.update(int(sec_since_boot() * 1e9), False)
+    self.epas_cp.update(int(sec_since_boot() * 1e9), False)
 
-    self.CS.update(self.cp)
+    self.CS.update(self.cp, self.epas_cp)
 
     # create message
     ret = car.CarState.new_message()
@@ -322,7 +323,8 @@ class CarInterface(object):
     # disable on pedals rising edge or when brake is pressed and speed isn't zero
     if (ret.gasPressed and not self.gas_pressed_prev) or \
        (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001)):
-      events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
+      #events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
+      events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
 
     if ret.gasPressed:
       events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))

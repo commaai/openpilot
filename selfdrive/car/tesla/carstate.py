@@ -77,6 +77,7 @@ def get_can_signals(CP):
       ("TSL_P_Psd_StW","SBW_RQ_SCCM" , 0),
       ("TurnIndLvr_Stat", "STW_ACTN_RQ", 0),
       ("DI_motorRPM", "DI_torque1", 0),
+      ("DI_speedUnits", "DI_state", 0),
       
   ]
 
@@ -97,9 +98,30 @@ def get_can_signals(CP):
 
   return signals, checks
   
+def get_epas_can_signals(CP):
+# this function generates lists for signal, messages and initial values
+  signals = [
+      ("EPAS_torsionBarTorque", "EPAS_sysStatus", 0), # Used in interface.py
+      ("EPAS_eacStatus", "EPAS_sysStatus", 0),
+      ("EPAS_eacErrorCode", "EPAS_sysStatus", 0),
+      ("EPAS_handsOnLevel", "EPAS_sysStatus", 0),
+      ("EPAS_steeringFault", "EPAS_sysStatus", 0),
+  ]
+
+  checks = [
+      ("EPAS_sysStatus", 5), #JCT Actual message freq is 1.3 Hz (0.76 sec)
+  ]
+
+
+  return signals, checks
+  
 def get_can_parser(CP):
   signals, checks = get_can_signals(CP)
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
+
+def get_epas_parser(CP):
+  signals, checks = get_epas_can_signals(CP)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
 
 
 class CarState(object):
@@ -131,7 +153,7 @@ class CarState(object):
                          K=np.matrix([[0.12287673], [0.29666309]]))
     self.v_ego = 0.0
 
-  def update(self, cp):
+  def update(self, cp, epas_cp):
 
     # copy can_valid
     self.can_valid = cp.can_valid
@@ -155,8 +177,8 @@ class CarState(object):
 
     # 2 = temporary 3= TBD 4 = temporary, hit a bump 5 (permanent) 6 = temporary 7 (permanent)
     # TODO: Use values from DBC to parse this field
-    self.steer_error = cp.vl["EPAS_sysStatus"]['EPAS_steeringFault'] == 1
-    self.steer_not_allowed = 0 # RETURN ALWAYS 0, NEED TO INVESTIGATE cp.vl["EPAS_sysStatus"]['EPAS_eacStatus'] not in [2,1] # 2 "EAC_ACTIVE" 1 "EAC_AVAILABLE" 3 "EAC_FAULT" 0 "EAC_INHIBITED"
+    self.steer_error = epas_cp.vl["EPAS_sysStatus"]['EPAS_steeringFault'] == 1
+    self.steer_not_allowed = epas_cp.vl["EPAS_sysStatus"]['EPAS_eacStatus'] not in [2,1] # 2 "EAC_ACTIVE" 1 "EAC_AVAILABLE" 3 "EAC_FAULT" 0 "EAC_INHIBITED"
     self.brake_error = 0 #NOT WORKINGcp.vl[309]['ESP_brakeLamp'] #JCT
     # JCT More ESP errors available, these needs to be added once car steers on its own to disable / alert driver
     self.esp_disabled = 0 #NEED TO CORRECT DBC cp.vl[309]['ESP_espOffLamp'] or cp.vl[309]['ESP_tcOffLamp'] or cp.vl[309]['ESP_tcLampFlash'] or cp.vl[309]['ESP_espFaultLamp'] #JCT
@@ -209,17 +231,20 @@ class CarState(object):
     self.pedal_gas = 0 #cp.vl["DI_torque1"]['DI_pedalPos']
     self.car_gas = self.pedal_gas
 
-    self.steer_override = abs(cp.vl["EPAS_sysStatus"]['EPAS_handsOnLevel']) > 0
+    self.steer_override = abs(epas_cp.vl["EPAS_sysStatus"]['EPAS_handsOnLevel']) > 0
     self.steer_torque_driver = 0 #JCT
 
     # brake switch has shown some single time step noise, so only considered when
     # switch is on for at least 2 consecutive CAN samples
-    self.brake_switch = cp.vl["DI_torque2"]['DI_brakePedal']
-    self.brake_pressed = cp.vl["DI_torque2"]['DI_brakePedal']
+    self.brake_switch = epas_cp.vl["EPAS_sysStatus"]['EPAS_eacErrorCode'] == 3 and epas_cp.vl["EPAS_sysStatus"]['EPAS_eacStatus'] == 0 #cp.vl["DI_torque2"]['DI_brakePedal']
+    self.brake_pressed = epas_cp.vl["EPAS_sysStatus"]['EPAS_eacErrorCode'] == 3 and epas_cp.vl["EPAS_sysStatus"]['EPAS_eacStatus'] == 0  #cp.vl["DI_torque2"]['DI_brakePedal']
 
     self.user_brake = cp.vl["DI_torque2"]['DI_brakePedal']
     self.standstill = cp.vl["DI_torque2"]['DI_vehicleSpeed'] == 0
-    self.v_cruise_pcm = cp.vl["DI_state"]['DI_cruiseSet']
+    if cp.vl["DI_state"]['DI_speedUnits'] == 0:
+      self.v_cruise_pcm = (cp.vl["DI_state"]['DI_cruiseSet'])*1.609 # Reported in MPH, expected in KPH??
+    else:
+      self.v_cruise_pcm = cp.vl["DI_state"]['DI_cruiseSet']
     self.pcm_acc_status = cp.vl["DI_state"]['DI_cruiseState']
     self.hud_lead = 0 #JCT
 

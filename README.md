@@ -88,14 +88,8 @@ Supported Cars
 
 ### GM (Chevrolet + Cadillac) ###
 
-- Chevrolet Volt Premier 2017+
-  - Driver Confidence II package (adaptive cruise control) required
-  - Can only be enabled above 18 mph
+- Chevrolet Volt Premier 2017+ with Driver Confidence II package
   - Read the [installation guide](https://www.zoneos.com/volt.htm)
-
-- Cadillac CT6
-  - Uses stock ACC for longitudinal control
-  - Requires multiple panda for proxying the ASCMs
 
 In Progress Cars
 ------

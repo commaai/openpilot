@@ -1,3 +1,5 @@
+#include "../drivers/gmlanswitch.h"
+
 // board enforces
 //   in-state
 //      accel set/resume
@@ -21,6 +23,8 @@ int eac_status = 0;
 int tesla_ignition_started = 0;
 
 static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
+  enable_gmlan_switch(); //we're still in tesla safety mode, reset the timeout counter and make sure our output is enabled
+  
   //int bus_number = (to_push->RDTR >> 4) & 0xFF;
   uint32_t addr;
   if (to_push->RIR & 4) {
@@ -66,12 +70,12 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
   // exit controls on brake press
   // DI_torque2::DI_brakePedal 0x118
-  if (addr == 0x118) {
+  //if (addr == 0x118) {
     // 1 bit at position 16
-    if (((to_push->RDLR & 0x8000)) >> 15 == 1) {
-      controls_allowed = 0;
-    }
-  }  
+  //  if (((to_push->RDLR & 0x8000)) >> 15 == 1) {
+  //    controls_allowed = 0;
+  //  }
+  //}  
   
   // exit controls on EPAS error
   // EPAS_sysStatus::EPAS_eacStatus 0x370
@@ -121,6 +125,7 @@ static int tesla_tx_lin_hook(int lin_num, uint8_t *data, int len) {
 static void tesla_init(int16_t param) {
   controls_allowed = 0;
   tesla_ignition_started = 0;
+  gmlan_switch_init();
 }
 
 static int tesla_ign_hook() {
