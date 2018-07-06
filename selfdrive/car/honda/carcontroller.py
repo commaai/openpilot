@@ -1,4 +1,3 @@
-import os
 from collections import namedtuple
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.controls.lib.drive_helpers import rate_limit
@@ -123,8 +122,7 @@ class CarController(object):
     elif CS.CP.carFingerprint in (CAR.CRV, CAR.ACURA_RDX):
       STEER_MAX = 0x3e8  # CR-V only uses 12-bits and requires a lower value (max value from energee)
     else:
-      is_fw_modified = os.getenv("DONGLE_ID") in ['99c94dc769b5d96e']
-      STEER_MAX = 0x1FFF if is_fw_modified else 0x1000
+      STEER_MAX = 0x1000
 
     # steer torque is converted back to CAN reference (positive when steering right)
     apply_gas = clip(actuators.gas, 0., 1.)
