@@ -959,39 +959,83 @@ static void ui_draw_vision_speed(UIState *s) {
 
 static void ui_draw_vision_wheel(UIState *s) {
   const UIScene *scene = &s->scene;
-  const int ui_viz_rx = scene->ui_viz_rx;
-  const int ui_viz_rw = scene->ui_viz_rw;
-  const int viz_event_w = 220;
-  const int viz_event_x = ((ui_viz_rx + ui_viz_rw) - (viz_event_w + (bdr_s*2)));
-  const int viz_event_y = (box_y + (bdr_s*1.5));
-  const int viz_event_h = (header_h - (bdr_s*1.5));
-  // draw steering wheel
-  const int bg_wheel_size = 96;
-  const int bg_wheel_x = viz_event_x + (viz_event_w-bg_wheel_size);
-  const int bg_wheel_y = viz_event_y + (bg_wheel_size/2);
-  const int img_wheel_size = bg_wheel_size*1.5;
-  const int img_wheel_x = bg_wheel_x-(img_wheel_size/2);
-  const int img_wheel_y = bg_wheel_y-25;
-  float img_wheel_alpha = 0.5f;
-  bool is_engaged = (s->status == STATUS_ENGAGED);
-  bool is_warning = (s->status == STATUS_WARNING);
-  if (is_engaged || is_warning) {
-    nvgBeginPath(s->vg);
-    nvgCircle(s->vg, bg_wheel_x, (bg_wheel_y + (bdr_s*1.5)), bg_wheel_size);
-    if (is_engaged) {
-      nvgFillColor(s->vg, nvgRGBA(23, 134, 68, 255));
-    } else if (is_warning) {
-      nvgFillColor(s->vg, nvgRGBA(218, 111, 37, 255));
+  if (!scene->lead_status) {
+    const int ui_viz_rx = scene->ui_viz_rx;
+    const int ui_viz_rw = scene->ui_viz_rw;
+    const int viz_event_w = 220;
+    const int viz_event_x = ((ui_viz_rx + ui_viz_rw) - (viz_event_w + (bdr_s*2)));
+    const int viz_event_y = (box_y + (bdr_s*1.5));
+    const int viz_event_h = (header_h - (bdr_s*1.5));
+    // draw steering wheel
+    const int bg_wheel_size = 96;
+    const int bg_wheel_x = viz_event_x + (viz_event_w-bg_wheel_size);
+    const int bg_wheel_y = viz_event_y + (bg_wheel_size/2);
+    const int img_wheel_size = bg_wheel_size*1.5;
+    const int img_wheel_x = bg_wheel_x-(img_wheel_size/2);
+    const int img_wheel_y = bg_wheel_y-25;
+    float img_wheel_alpha = 0.5f;
+    bool is_engaged = (s->status == STATUS_ENGAGED);
+    bool is_warning = (s->status == STATUS_WARNING);
+    if (is_engaged || is_warning) {
+      nvgBeginPath(s->vg);
+      nvgCircle(s->vg, bg_wheel_x, (bg_wheel_y + (bdr_s*1.5)), bg_wheel_size);
+      if (is_engaged) {
+        nvgFillColor(s->vg, nvgRGBA(23, 134, 68, 255));
+      } else if (is_warning) {
+        nvgFillColor(s->vg, nvgRGBA(218, 111, 37, 255));
+      }
+      nvgBeginPath(s->vg);
+      NVGpaint imgPaint = nvgImagePattern(s->vg, img_wheel_x, img_wheel_y,
+        img_wheel_size, img_wheel_size, 0, s->img_wheel, img_wheel_alpha);
+      nvgRect(s->vg, img_wheel_x, img_wheel_y, img_wheel_size, img_wheel_size);
+      nvgFillPaint(s->vg, imgPaint);
+      nvgFill(s->vg);
     }
-    nvgFill(s->vg);
-    img_wheel_alpha = 1.0f;
   }
-  nvgBeginPath(s->vg);
-  NVGpaint imgPaint = nvgImagePattern(s->vg, img_wheel_x, img_wheel_y,
-    img_wheel_size, img_wheel_size, 0, s->img_wheel, img_wheel_alpha);
-  nvgRect(s->vg, img_wheel_x, img_wheel_y, img_wheel_size, img_wheel_size);
-  nvgFillPaint(s->vg, imgPaint);
-  nvgFill(s->vg);
+}
+
+static void ui_draw_vision_lead(UIState *s) {
+  const UIScene *scene = &s->scene;
+  if (scene->lead_status) {
+    int ui_viz_rx = scene->ui_viz_rx;
+    int ui_viz_rw = scene->ui_viz_rw;
+    float leaddistance = s->scene.v_cruise;
+
+    const int viz_leaddistance_w = 290;
+    const int viz_leaddistance_h = 202;
+    const int viz_leaddistance_x = ((ui_viz_rx + ui_viz_rw) - (viz_leaddistance_w + (bdr_s*2)));
+    //const int viz_leaddistance_x = (ui_viz_rx + 210 + (bdr_s*2));
+    //
+    //const int viz_leaddistance_y = (viz_y + (bdr_s*1.5));
+    const int viz_leaddistance_y = (box_y + (bdr_s*1.5));
+    char radar_str[16];
+    bool is_cruise_set = (leaddistance != 0 && leaddistance != 255);
+
+    nvgBeginPath(s->vg);
+    nvgRoundedRect(s->vg, viz_leaddistance_x, viz_leaddistance_y, viz_leaddistance_w, viz_leaddistance_h, 20);
+    nvgStrokeColor(s->vg, nvgRGBA(255,255,255,80));
+    nvgStrokeWidth(s->vg, 6);
+    nvgStroke(s->vg);
+
+    nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
+    nvgFontFace(s->vg, "sans-regular");
+    nvgFontSize(s->vg, 26*2.5);
+    nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 200));
+    nvgText(s->vg, viz_leaddistance_x+viz_leaddistance_w/2, 148, "LEAD", NULL);
+
+    nvgFontFace(s->vg, "sans-semibold");
+    nvgFontSize(s->vg, 52*2.5);
+    nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 255));
+    // lead car is always in meters
+    if (s->is_metric || true) {
+      snprintf(radar_str, sizeof(radar_str), "%dm", (int)scene->lead_d_rel);
+    } /* Commented out because this seems to be unreachable code...
+    else {
+      snprintf(radar_str, sizeof(radar_str), "%dft", (int)(scene->lead_d_rel * 3.28084));
+    }
+    */
+    nvgText(s->vg, viz_leaddistance_x+viz_leaddistance_w/2, 242, radar_str, NULL);
+  }
 }
 
 static void ui_draw_vision_header(UIState *s) {
@@ -1011,6 +1055,7 @@ static void ui_draw_vision_header(UIState *s) {
   ui_draw_vision_maxspeed(s);
   ui_draw_vision_speed(s);
   ui_draw_vision_wheel(s);
+  ui_draw_vision_lead(s);
 }
 
 static void ui_draw_vision_alert(UIState *s, int va_size, int va_color,
