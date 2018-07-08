@@ -82,7 +82,7 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   if (addr == 0x370) {
     // if EPAS_eacStatus is not 1 or 2, disable control
     eac_status = ((to_push->RDHR >> 21)) & 0x7;
-    if (eac_status != 1 && eac_status != 2) {
+    if (eac_status != 0 && eac_status != 1 && eac_status != 2) {
       controls_allowed = 0;
     }
   }  
