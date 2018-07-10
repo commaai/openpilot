@@ -135,8 +135,10 @@ typedef struct UIScene {
   //BB CPU TEMP
   uint16_t maxCpuTemp;
   uint32_t maxBatTemp;
-  float gpsAccuracy;
+  float gpsAccuracy ;
   float freeSpace;
+  float angleSteers;
+  float angleSteersDes;
   //BB END CPU TEMP
   // Used to display calibration progress
   int cal_status;
@@ -929,7 +931,7 @@ static int bb_ui_draw_measure(UIState *s,  const char* bb_value, const char* bb_
   return (int)((bb_valueFontSize + bb_labelFontSize)*2.5) + 5;
 }
 
-static void bb_ui_draw_measures(UIState *s, int bb_x, int bb_y, int bb_w ) {
+static void bb_ui_draw_measures_left(UIState *s, int bb_x, int bb_y, int bb_w ) {
 	const UIScene *scene = &s->scene;		
 	int bb_rx = bb_x + (int)(bb_w/2);
 	int bb_ry = bb_y;
@@ -940,76 +942,6 @@ static void bb_ui_draw_measures(UIState *s, int bb_x, int bb_y, int bb_w ) {
 	int label_fontSize=15;
 	int uom_fontSize = 15;
 	int bb_uom_dx =  (int)(bb_w /2 - uom_fontSize*2.5) ;
-	
-	//add visual radar relative distance
-	if (true) {
-		char val_str[16];
-		char uom_str[6];
-		NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
-		if (scene->lead_status) {
-			//show RED if less than 5 meters
-			//show orange if less than 15 meters
-			if((int)(scene->lead_d_rel) < 15) {
-				val_color = nvgRGBA(255, 188, 3, 200);
-			}
-			if((int)(scene->lead_d_rel) < 5) {
-				val_color = nvgRGBA(255, 0, 0, 200);
-			}
-			// lead car relative distance is always in meters
-			if (s->is_metric) {
-				 snprintf(val_str, sizeof(val_str), "%d", (int)scene->lead_d_rel);
-			} else {
-				 snprintf(val_str, sizeof(val_str), "%d", (int)(scene->lead_d_rel * 3.28084));
-			}
-		} else {
-		   snprintf(val_str, sizeof(val_str), "N/A");
-		}
-		if (s->is_metric) {
-			snprintf(uom_str, sizeof(uom_str), "m   ");
-		} else {
-			snprintf(uom_str, sizeof(uom_str), "ft");
-		}
-		bb_h +=bb_ui_draw_measure(s,  val_str, uom_str, "REL DIST", 
-				bb_rx, bb_ry, bb_uom_dx,
-				val_color, lab_color, uom_color, 
-				value_fontSize, label_fontSize, uom_fontSize );
-		bb_ry = bb_y + bb_h;
-	}
-	
-	//add visual radar relative speed
-	if (true) {
-		char val_str[16];
-		char uom_str[6];
-		NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
-		if (scene->lead_status) {
-			//show Orange if negative speed (approaching)
-			//show Orange if negative speed faster than 5mph (approaching fast)
-			if((int)(scene->lead_v_rel) < 0) {
-				val_color = nvgRGBA(255, 188, 3, 200);
-			}
-			if((int)(scene->lead_v_rel) < -5) {
-				val_color = nvgRGBA(255, 0, 0, 200);
-			}
-			// lead car relative speed is always in meters
-			if (s->is_metric) {
-				 snprintf(val_str, sizeof(val_str), "%d", (int)(scene->lead_v_rel * 3.6 + 0.5));
-			} else {
-				 snprintf(val_str, sizeof(val_str), "%d", (int)(scene->lead_v_rel * 2.2374144 + 0.5));
-			}
-		} else {
-		   snprintf(val_str, sizeof(val_str), "N/A");
-		}
-		if (s->is_metric) {
-			snprintf(uom_str, sizeof(uom_str), "km/h");;
-		} else {
-			snprintf(uom_str, sizeof(uom_str), "mph");
-		}
-		bb_h +=bb_ui_draw_measure(s,  val_str, uom_str, "REL SPD", 
-				bb_rx, bb_ry, bb_uom_dx,
-				val_color, lab_color, uom_color, 
-				value_fontSize, label_fontSize, uom_fontSize );
-		bb_ry = bb_y + bb_h;
-	}
 	
 	//add CPU temperature
 	if (true) {
@@ -1066,26 +998,25 @@ static void bb_ui_draw_measures(UIState *s, int bb_x, int bb_y, int bb_w ) {
 		char val_str[16];
 		char uom_str[3];
 		NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
-
 		//show red/orange if gps accuracy is high
-	    if(scene->gpsAccuracy > 0.59) {
-	       val_color = nvgRGBA(255, 188, 3, 200);
-	    }
-	    if(scene->gpsAccuracy > 0.8) {
-	       val_color = nvgRGBA(255, 0, 0, 200);
-	    }
+    if(scene->gpsAccuracy > 0.59) {
+       val_color = nvgRGBA(255, 188, 3, 200);
+    }
+    if(scene->gpsAccuracy > 0.8) {
+       val_color = nvgRGBA(255, 0, 0, 200);
+    }
 
 
-		// lead car relative speed is always in meters
+		// gps accuracy is always in meters
 		if (s->is_metric) {
 			 snprintf(val_str, sizeof(val_str), "%d", (int)(s->scene.gpsAccuracy*100.0));
 		} else {
-			 snprintf(val_str, sizeof(val_str), "%.2f", s->scene.gpsAccuracy* 3.28084);
+			 snprintf(val_str, sizeof(val_str), "%.1f", s->scene.gpsAccuracy* 3.28084/12);
 		}
 		if (s->is_metric) {
 			snprintf(uom_str, sizeof(uom_str), "cm");;
 		} else {
-			snprintf(uom_str, sizeof(uom_str), "ft");
+			snprintf(uom_str, sizeof(uom_str), "in");
 		}
 		bb_h +=bb_ui_draw_measure(s,  val_str, uom_str, "GPS PREC", 
 				bb_rx, bb_ry, bb_uom_dx,
@@ -1093,8 +1024,7 @@ static void bb_ui_draw_measures(UIState *s, int bb_x, int bb_y, int bb_w ) {
 				value_fontSize, label_fontSize, uom_fontSize );
 		bb_ry = bb_y + bb_h;
 	}
-	
-	//add free space
+  //add free space - from bthaler1
 	if (true) {
 		char val_str[16];
 		char uom_str[3];
@@ -1108,16 +1038,15 @@ static void bb_ui_draw_measures(UIState *s, int bb_x, int bb_y, int bb_w ) {
 			val_color = nvgRGBA(255, 0, 0, 200);
 		}
 
-		snprintf(val_str, sizeof(val_str), "%.1f %%", s->scene.freeSpace* 100);
-		snprintf(uom_str, sizeof(uom_str), "");
+		snprintf(val_str, sizeof(val_str), "%.1f", s->scene.freeSpace* 100);
+		snprintf(uom_str, sizeof(uom_str), "%%");
 
 		bb_h +=bb_ui_draw_measure(s, val_str, uom_str, "FREE", 
 			bb_rx, bb_ry, bb_uom_dx,
 			val_color, lab_color, uom_color, 
 			value_fontSize, label_fontSize, uom_fontSize );
 		bb_ry = bb_y + bb_h;
-	}
-
+	}	
 	//finally draw the frame
 	bb_h += 20;
 	nvgBeginPath(s->vg);
@@ -1126,6 +1055,222 @@ static void bb_ui_draw_measures(UIState *s, int bb_x, int bb_y, int bb_w ) {
   	nvgStrokeWidth(s->vg, 6);
   	nvgStroke(s->vg);
 }
+
+
+static void bb_ui_draw_measures_right(UIState *s, int bb_x, int bb_y, int bb_w ) {
+	const UIScene *scene = &s->scene;		
+	int bb_rx = bb_x + (int)(bb_w/2);
+	int bb_ry = bb_y;
+	int bb_h = 5; 
+	NVGcolor lab_color = nvgRGBA(255, 255, 255, 200);
+	NVGcolor uom_color = nvgRGBA(255, 255, 255, 200);
+	int value_fontSize=30;
+	int label_fontSize=15;
+	int uom_fontSize = 15;
+	int bb_uom_dx =  (int)(bb_w /2 - uom_fontSize*2.5) ;
+	
+	//add visual radar relative distance
+	if (true) {
+		char val_str[16];
+		char uom_str[6];
+		NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
+		if (scene->lead_status) {
+			//show RED if less than 5 meters
+			//show orange if less than 15 meters
+			if((int)(scene->lead_d_rel) < 15) {
+				val_color = nvgRGBA(255, 188, 3, 200);
+			}
+			if((int)(scene->lead_d_rel) < 5) {
+				val_color = nvgRGBA(255, 0, 0, 200);
+			}
+			// lead car relative distance is always in meters
+			if (s->is_metric) {
+				 snprintf(val_str, sizeof(val_str), "%d", (int)scene->lead_d_rel);
+			} else {
+				 snprintf(val_str, sizeof(val_str), "%d", (int)(scene->lead_d_rel * 3.28084));
+			}
+		} else {
+		   snprintf(val_str, sizeof(val_str), "-");
+		}
+		if (s->is_metric) {
+			snprintf(uom_str, sizeof(uom_str), "m   ");
+		} else {
+			snprintf(uom_str, sizeof(uom_str), "ft");
+		}
+		bb_h +=bb_ui_draw_measure(s,  val_str, uom_str, "REL DIST", 
+				bb_rx, bb_ry, bb_uom_dx,
+				val_color, lab_color, uom_color, 
+				value_fontSize, label_fontSize, uom_fontSize );
+		bb_ry = bb_y + bb_h;
+	}
+	
+	//add visual radar relative speed
+	if (true) {
+		char val_str[16];
+		char uom_str[6];
+		NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
+		if (scene->lead_status) {
+			//show Orange if negative speed (approaching)
+			//show Orange if negative speed faster than 5mph (approaching fast)
+			if((int)(scene->lead_v_rel) < 0) {
+				val_color = nvgRGBA(255, 188, 3, 200);
+			}
+			if((int)(scene->lead_v_rel) < -5) {
+				val_color = nvgRGBA(255, 0, 0, 200);
+			}
+			// lead car relative speed is always in meters
+			if (s->is_metric) {
+				 snprintf(val_str, sizeof(val_str), "%d", (int)(scene->lead_v_rel * 3.6 + 0.5));
+			} else {
+				 snprintf(val_str, sizeof(val_str), "%d", (int)(scene->lead_v_rel * 2.2374144 + 0.5));
+			}
+		} else {
+		   snprintf(val_str, sizeof(val_str), "-");
+		}
+		if (s->is_metric) {
+			snprintf(uom_str, sizeof(uom_str), "km/h");;
+		} else {
+			snprintf(uom_str, sizeof(uom_str), "mph");
+		}
+		bb_h +=bb_ui_draw_measure(s,  val_str, uom_str, "REL SPD", 
+				bb_rx, bb_ry, bb_uom_dx,
+				val_color, lab_color, uom_color, 
+				value_fontSize, label_fontSize, uom_fontSize );
+		bb_ry = bb_y + bb_h;
+	}
+	
+	//add  steering angle
+	if (true) {
+		char val_str[16];
+		char uom_str[6];
+		NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
+			//show Orange if more than 6 degrees
+			//show red if  more than 12 degrees
+			if(((int)(scene->angleSteers) < -6) || ((int)(scene->angleSteers) > 6)) {
+				val_color = nvgRGBA(255, 188, 3, 200);
+			}
+			if(((int)(scene->angleSteers) < -12) || ((int)(scene->angleSteers) > 12)) {
+				val_color = nvgRGBA(255, 0, 0, 200);
+			}
+			// steering is in degrees
+			snprintf(val_str, sizeof(val_str), "%.1f",(scene->angleSteers));
+
+	    snprintf(uom_str, sizeof(uom_str), "deg");
+		bb_h +=bb_ui_draw_measure(s,  val_str, uom_str, "STEER", 
+				bb_rx, bb_ry, bb_uom_dx,
+				val_color, lab_color, uom_color, 
+				value_fontSize, label_fontSize, uom_fontSize );
+		bb_ry = bb_y + bb_h;
+	}
+	
+	//add  desired steering angle
+	if (true) {
+		char val_str[16];
+		char uom_str[6];
+		NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
+			//show Orange if more than 6 degrees
+			//show red if  more than 12 degrees
+			if(((int)(scene->angleSteersDes) < -6) || ((int)(scene->angleSteersDes) > 6)) {
+				val_color = nvgRGBA(255, 188, 3, 200);
+			}
+			if(((int)(scene->angleSteersDes) < -12) || ((int)(scene->angleSteersDes) > 12)) {
+				val_color = nvgRGBA(255, 0, 0, 200);
+			}
+			// steering is in degrees
+			snprintf(val_str, sizeof(val_str), "%.1f",(scene->angleSteersDes));
+
+	    snprintf(uom_str, sizeof(uom_str), "deg");
+		bb_h +=bb_ui_draw_measure(s,  val_str, uom_str, "DES STEER", 
+				bb_rx, bb_ry, bb_uom_dx,
+				val_color, lab_color, uom_color, 
+				value_fontSize, label_fontSize, uom_fontSize );
+		bb_ry = bb_y + bb_h;
+	}
+	
+	
+	//finally draw the frame
+	bb_h += 20;
+	nvgBeginPath(s->vg);
+  	nvgRoundedRect(s->vg, bb_x, bb_y, bb_w, bb_h, 20);
+  	nvgStrokeColor(s->vg, nvgRGBA(255,255,255,80));
+  	nvgStrokeWidth(s->vg, 6);
+  	nvgStroke(s->vg);
+}
+
+//draw grid from wiki
+static void ui_draw_vision_grid(UIState *s) {
+  const UIScene *scene = &s->scene;
+  bool is_cruise_set = (s->scene.v_cruise != 0 && s->scene.v_cruise != 255);
+  if (!is_cruise_set) {
+    const int grid_spacing = 30;
+
+    int ui_viz_rx = scene->ui_viz_rx;
+    int ui_viz_rw = scene->ui_viz_rw;
+
+    nvgSave(s->vg);
+
+    // path coords are worked out in rgb-box space
+    nvgTranslate(s->vg, 240.0f, 0.0);
+
+    // zooom in 2x
+    nvgTranslate(s->vg, -1440.0f / 2, -1080.0f / 2);
+    nvgScale(s->vg, 2.0, 2.0);
+
+    nvgScale(s->vg, 1440.0f / s->rgb_width, 1080.0f / s->rgb_height);
+
+    nvgBeginPath(s->vg);
+    nvgStrokeColor(s->vg, nvgRGBA(255,255,255,128));
+    nvgStrokeWidth(s->vg, 1);
+
+    for (int i=box_y; i < box_h; i+=grid_spacing) {
+      nvgMoveTo(s->vg, ui_viz_rx, i);
+      //nvgLineTo(s->vg, ui_viz_rx, i);
+      nvgLineTo(s->vg, ((ui_viz_rw + ui_viz_rx) / 2)+ 10, i);
+    }
+
+    for (int i=ui_viz_rx + 12; i <= ui_viz_rw; i+=grid_spacing) {
+      nvgMoveTo(s->vg, i, 0);
+      nvgLineTo(s->vg, i, 1000);
+    }
+    nvgStroke(s->vg);
+    nvgRestore(s->vg);
+  }
+}
+
+static void bb_ui_draw_UI(UIState *s) {
+  //get 3-state switch position
+  int tri_state_fd;
+  int tri_state_switch;
+  char buffer[10];
+  tri_state_switch = 0;
+  tri_state_fd = open ("/sys/devices/virtual/switch/tri-state-key/state", O_RDONLY);
+  //if we can't open then switch should be considered in the middle, nothing done
+  if (tri_state_fd == -1) {
+            tri_state_switch = 2;
+  } else {
+  	read (tri_state_fd, &buffer, 10);
+	tri_state_switch = buffer[0] -48;
+	close(tri_state_fd);
+  }
+  if (tri_state_switch == 1) {
+	  const UIScene *scene = &s->scene;
+	  const int bb_dml_w = 180;
+	  const int bb_dml_x =  (scene->ui_viz_rx + (bdr_s*2));
+	  const int bb_dml_y = (box_y + (bdr_s*1.5))+220;
+	  
+	  const int bb_dmr_w = 180;
+	  const int bb_dmr_x = scene->ui_viz_rx + scene->ui_viz_rw - bb_dmr_w - (bdr_s*2) ; 
+	  const int bb_dmr_y = (box_y + (bdr_s*1.5))+220;
+
+	 bb_ui_draw_measures_left(s,bb_dml_x, bb_dml_y, bb_dml_w );
+	 bb_ui_draw_measures_right(s,bb_dmr_x, bb_dmr_y, bb_dmr_w );
+	 }
+	 if (tri_state_switch ==3) {
+	 	ui_draw_vision_grid(s);
+	 }
+ }
+ 
+ 
 //BB END: functions added for the display of various items
 
 
@@ -1169,8 +1314,8 @@ static void ui_draw_vision_maxspeed(UIState *s) {
     nvgText(s->vg, viz_maxspeed_x+viz_maxspeed_w/2, 242, "N/A", NULL);
   }
 
-  //BB START: add new measures panel
- bb_ui_draw_measures(s,viz_maxspeed_x, viz_maxspeed_y+220,(int)(viz_maxspeed_w) );
+  //BB START: add new measures panel  const int bb_dml_w = 180;
+	bb_ui_draw_UI(s) ;
   //BB END: add new measures panel
 }
 
@@ -1677,6 +1822,8 @@ static void ui_update(UIState *s) {
         }
         s->scene.v_cruise = datad.vCruise;
         s->scene.v_ego = datad.vEgo;
+		s->scene.angleSteers = datad.angleSteers;
+		s->scene.angleSteersDes = datad.angleSteersDes;
         s->scene.curvature = datad.curvature;
         s->scene.engaged = datad.enabled;
         s->scene.gps_planner_active = datad.gpsPlannerActive;
