@@ -157,7 +157,7 @@ class CarController(object):
         # If OP steering > 5 degrees different from human than count that as human still steering..
         # Tesla rack doesn't report accurate enough, i.e. lane switch we show no human steering when they
         # still are crossing road at an angle clearly they don't want OP to take over
-        if (angle > 50):
+        if angle > 50:
           self.human_steered_frame = frame
 
     # Send CAN commands.
