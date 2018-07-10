@@ -149,12 +149,13 @@ class CarController(object):
       enable_steer_control = False
     else:
       if (self.human_steered_frame - frame < 500): # Need more human testing of handoff timing
-        # Find steering difference between model and human (no need to do every frame):
-        steer_current=16384-(CS.angle_steers*10)  # Formula to convert current steering angle to match apply_steer calculated number
+        # Find steering difference between visiond model and human (no need to do every frame if we run out of CPU):
+        steer_current=STEER_MAX-(CS.angle_steers*10)  # Formula to convert current steering angle to match apply_steer calculated number
         angle = abs(apply_steer-steer_current)
 
-        # If suggested steering > 2 degrees different from human than count that as human still steering..
-        # Tesla rack doesn't report accurate enough, i.e. lane switch we show no human steering when they clearly are expecting control
+        # If OP steering > 7 degrees different from human than count that as human still steering..
+        # Tesla rack doesn't report accurate enough, i.e. lane switch we show no human steering when they
+        # still are crossing road at an angle clearly they don't want OP to take over
         if (angle > 70):
           self.human_steered_frame = frame
           enable_steer_control = False
