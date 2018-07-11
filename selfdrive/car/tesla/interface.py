@@ -330,7 +330,7 @@ class CarInterface(object):
       if (self.frame - self.human_steered_frame < 50): # Need more human testing of handoff timing
         # Find steering difference between visiond model and human (no need to do every frame if we run out of CPU):
         steer_current=(self.CS.angle_steers*10)  # Formula to convert current steering angle to match apply_steer calculated number
-        apply_steer = -int(clip(-actuators.steerAngle * 10))
+        apply_steer = -int(clip(-c.actuators.steerAngle * 10))
         angle = abs(apply_steer-steer_current)
         if (self.frame % 20) == 0:
           print "Angle: " + string(angle)
