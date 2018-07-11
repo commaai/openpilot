@@ -199,19 +199,19 @@ class CarController(object):
     if self.angle_control:
       can_sends.append(create_ipas_steer_command(self.packer, apply_angle, self.steer_angle_enabled, 
                                                  ECU.APGS in self.fake_ecus))
-    elif ECU.APGS in self.fake_ecus:
-      can_sends.append(create_ipas_steer_command(self.packer, 0, 0, True))
+    # elif ECU.APGS in self.fake_ecus:
+    #   can_sends.append(create_ipas_steer_command(self.packer, 0, 0, True))
 
     # accel cmd comes from DSU, but we can spam can to cancel the system even if we are using lat only control
-    if (frame % 3 == 0 and ECU.DSU in self.fake_ecus) or (pcm_cancel_cmd and ECU.CAM in self.fake_ecus):
-      if ECU.DSU in self.fake_ecus:
-        can_sends.append(create_accel_command(self.packer, apply_accel, pcm_cancel_cmd, self.standstill_req))
-      else:
-        can_sends.append(create_accel_command(self.packer, 0, pcm_cancel_cmd, False))
+    # if (frame % 3 == 0 and ECU.DSU in self.fake_ecus) or (pcm_cancel_cmd and ECU.CAM in self.fake_ecus):
+    #   if ECU.DSU in self.fake_ecus:
+    #     can_sends.append(create_accel_command(self.packer, apply_accel, pcm_cancel_cmd, self.standstill_req))
+    #   else:
+    #     can_sends.append(create_accel_command(self.packer, 0, pcm_cancel_cmd, False))
 
-    if frame % 10 == 0 and ECU.CAM in self.fake_ecus:
-      for addr in TARGET_IDS:
-        can_sends.append(create_video_target(frame/10, addr))
+    # if frame % 10 == 0 and ECU.CAM in self.fake_ecus:
+    #   for addr in TARGET_IDS:
+    #     can_sends.append(create_video_target(frame/10, addr))
 
     # ui mesg is at 100Hz but we send asap if:
     # - there is something to display
@@ -232,21 +232,21 @@ class CarController(object):
 
     #*** static msgs ***
 
-    for (addr, ecu, cars, bus, fr_step, vl) in STATIC_MSGS:
-      if frame % fr_step == 0 and ecu in self.fake_ecus and self.car_fingerprint in cars:
-        # special cases
-        if fr_step == 5 and ecu == ECU.CAM and bus == 1:
-          cnt = (((frame / 5) % 7) + 1) << 5
-          vl = chr(cnt) + vl
-        elif addr in (0x489, 0x48a) and bus == 0:
-          # add counter for those 2 messages (last 4 bits)
-          cnt = ((frame/100)%0xf) + 1
-          if addr == 0x48a:
-            # 0x48a has a 8 preceding the counter
-            cnt += 1 << 7
-          vl += chr(cnt)
-
-        can_sends.append(make_can_msg(addr, vl, bus, False))
+    # for (addr, ecu, cars, bus, fr_step, vl) in STATIC_MSGS:
+    #   if frame % fr_step == 0 and ecu in self.fake_ecus and self.car_fingerprint in cars:
+    #     # special cases
+    #     if fr_step == 5 and ecu == ECU.CAM and bus == 1:
+    #       cnt = (((frame / 5) % 7) + 1) << 5
+    #       vl = chr(cnt) + vl
+    #     elif addr in (0x489, 0x48a) and bus == 0:
+    #       # add counter for those 2 messages (last 4 bits)
+    #       cnt = ((frame/100)%0xf) + 1
+    #       if addr == 0x48a:
+    #         # 0x48a has a 8 preceding the counter
+    #         cnt += 1 << 7
+    #       vl += chr(cnt)
+    #
+    #     can_sends.append(make_can_msg(addr, vl, bus, False))
 
 
     sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
