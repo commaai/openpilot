@@ -58,7 +58,6 @@ class CarController(object):
     self.braking = False
     self.brake_steady = 0.
     self.brake_last = 0.
-    self.human_steered_frame = 0
     self.enable_camera = enable_camera
     self.packer = CANPacker(dbc_name)
 
@@ -105,6 +104,9 @@ class CarController(object):
     #print chime, alert_id, hud_alert
     fcw_display, steer_required, acc_alert = process_hud_alert(hud_alert)
 
+    hud = HUDData(int(pcm_accel), int(round(hud_v_cruise)), 1, hud_car,
+                  0xc1, hud_lanes, int(snd_beep), snd_chime, fcw_display, acc_alert, steer_required)
+
     if not all(isinstance(x, int) and 0 <= x < 256 for x in hud):
       print "INVALID HUD", hud
       hud = HUDData(0xc6, 255, 64, 0xc0, 209, 0x40, 0, 0, 0, 0)
@@ -134,29 +136,6 @@ class CarController(object):
     
     # Angle
     apply_steer = int(clip((-actuators.steerAngle * 10) + STEER_MAX, STEER_MAX - (USER_STEER_MAX*2), STEER_MAX + (USER_STEER_MAX*2))) # steer torque is converted back to CAN reference (positive when steering right)
-
-    # If we were previously disengaged via CS.steer_override>0 then we want [x] in a row where our planned steering is within 3 degrees of where we are steering
-    if (CS.steer_override>0): 
-      steer_required = True
-      self.human_steered_frame = frame
-      enable_steer_control = False
-    else:
-      if (frame - self.human_steered_frame < 50): # Need more human testing of handoff timing
-        # Find steering difference between visiond model and human (no need to do every frame if we run out of CPU):
-        steer_current=STEER_MAX-(CS.angle_steers*10)  # Formula to convert current steering angle to match apply_steer calculated number
-        angle = abs(apply_steer-steer_current)
-        steer_required = True
-        enable_steer_control = False
-
-        # If OP steering > 5 degrees different from human than count that as human still steering..
-        # Tesla rack doesn't report accurate enough, i.e. lane switch we show no human steering when they
-        # still are crossing road at an angle clearly they don't want OP to take over
-        if angle > 50:
-          self.human_steered_frame = frame
-          steer_required = True
-
-    hud = HUDData(int(pcm_accel), int(round(hud_v_cruise)), 1, hud_car,
-                  0xc1, hud_lanes, int(snd_beep), snd_chime, fcw_display, acc_alert, steer_required)
 
     # Send CAN commands.
     can_sends = []
