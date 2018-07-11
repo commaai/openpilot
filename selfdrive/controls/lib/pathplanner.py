@@ -1,7 +1,8 @@
 from common.numpy_fast import interp
 from selfdrive.controls.lib.latcontrol_helpers import model_polyfit, calc_desired_path, compute_path_pinv
 
-CAMERA_OFFSET = 0.12  # ~12cm from center car to camera
+# CAMERA_OFFSET = 0.12  # ~12cm from center car to camera
+CAMERA_OFFSET = -0.05 # negative since we're on the other side with flipped Eon
 
 class PathPlanner(object):
   def __init__(self):
