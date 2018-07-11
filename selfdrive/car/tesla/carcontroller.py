@@ -60,6 +60,7 @@ class CarController(object):
     self.brake_last = 0.
     self.enable_camera = enable_camera
     self.packer = CANPacker(dbc_name)
+    self.epas_disabled = True
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
              pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel, \
@@ -143,8 +144,8 @@ class CarController(object):
 
     if (frame % send_step) == 0:
       idx = (frame/send_step) % 16 
+      can_sends.append(teslacan.create_steering_control(enable_steer_control, apply_steer, idx))
       if enable_steer_control:
-        can_sends.append(teslacan.create_steering_control(enable_steer_control, apply_steer, idx))
         can_sends.append(teslacan.create_epb_enable_signal(idx))
 
-        sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
+      sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
