@@ -323,16 +323,16 @@ class CarInterface(object):
 
         # If we were previously disengaged via CS.steer_override>0 then we want [x] in a row where our planned steering is within 3 degrees of where we are steering
     if (self.CS.steer_override>0): 
-      self.human_steered_frame = frame
+      self.human_steered_frame = self.frame
       enable_steer_control = False
       events.append(create_event('steerTempUnavailableMute', [ET.NO_ENTRY, ET.WARNING]))
     else:
-      if (frame - self.human_steered_frame < 50): # Need more human testing of handoff timing
+      if (self.frame - self.human_steered_frame < 50): # Need more human testing of handoff timing
         # Find steering difference between visiond model and human (no need to do every frame if we run out of CPU):
         steer_current=(self.CS.angle_steers*10)  # Formula to convert current steering angle to match apply_steer calculated number
         apply_steer = -int(clip(-actuators.steerAngle * 10))
         angle = abs(apply_steer-steer_current)
-        if (frame % 20) == 0:
+        if (self.frame % 20) == 0:
           print "Angle: " + string(angle)
         enable_steer_control = False
         events.append(create_event('steerTempUnavailableMute', [ET.NO_ENTRY, ET.WARNING]))
@@ -341,7 +341,7 @@ class CarInterface(object):
         # Tesla rack doesn't report accurate enough, i.e. lane switch we show no human steering when they
         # still are crossing road at an angle clearly they don't want OP to take over
         if angle > 50:
-          self.human_steered_frame = frame
+          self.human_steered_frame = self.frame
           events.append(create_event('steerTempUnavailableMute', [ET.NO_ENTRY, ET.WARNING]))
 
 #    if self.CS.steer_override:
