@@ -322,14 +322,14 @@ class CarInterface(object):
     # The Frame # is available here.. so let's move when the user counter to here..
 
         # If we were previously disengaged via CS.steer_override>0 then we want [x] in a row where our planned steering is within 3 degrees of where we are steering
-    if (CS.steer_override>0): 
+    if (self.CS.steer_override>0): 
       self.human_steered_frame = frame
       enable_steer_control = False
       events.append(create_event('steerTempUnavailableMute', [ET.NO_ENTRY, ET.WARNING]))
     else:
       if (frame - self.human_steered_frame < 50): # Need more human testing of handoff timing
         # Find steering difference between visiond model and human (no need to do every frame if we run out of CPU):
-        steer_current=(CS.angle_steers*10)  # Formula to convert current steering angle to match apply_steer calculated number
+        steer_current=(self.CS.angle_steers*10)  # Formula to convert current steering angle to match apply_steer calculated number
         apply_steer = -int(clip(-actuators.steerAngle * 10))
         angle = abs(apply_steer-steer_current)
         if (frame % 20) == 0:
