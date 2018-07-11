@@ -45,45 +45,23 @@ Supported Cars
   - Due to limitations in steering firmware, steering is disabled below 12 mph
   - Uses stock Honda Sensing for longitudinal control
 
-- Honda CR-V Touring 2015-2016 with Honda Sensing
+- Honda CR-V Touring 2015-2016
   - Can only be enabled above 25 mph
-  - *With optional [Comma Pedal](#what-is-comma-pedal):*
-    - Can only be enabled above 12 mph (due to steering firmware limitations)
-    - Enables stop and go (gas / brake) all the way to 0 mph
-    - Steering warning under 12 mph
 
 - Honda Odyssey 2018 with Honda Sensing (alpha!)
   - Can only be enabled above 25 mph
-  - *With optional [Comma Pedal](#what-is-comma-pedal):*
-    - Can be enabled at any speed.
-    - Enables stop-and-go steering, gas, and brake all the way to 0 mph.
 
-- Honda Pilot 2016-2017 with Honda Sensing (alpha!)
+- Honda Pilot 2017 with Honda Sensing (alpha!)
   - Can only be enabled above 27 mph
-  - *With optional [Comma Pedal](#what-is-comma-pedal):*
-      - Can only be enabled above 12 mph (due to steering firmware limitations)
-      - Enables stop and go (gas / brake) all the way to 0 mph
-      - Steering warning under 12 mph
 
 - Honda Ridgeline 2017 with Honda Sensing (alpha!)
   - Can only be enabled above 27 mph
-  - *With optional [Comma Pedal](#what-is-comma-pedal):*
-    - Can only be enabled above 12 mph (due to steering firmware limitations)
-    - Enables stop and go (gas / brake) all the way to 0 mph
-    - Steering warning under 12 mph
 
 - Acura ILX 2016 with AcuraWatch Plus
   - Due to use of the cruise control for gas, it can only be enabled above 25 mph
-  - *With optional [Comma Pedal](#what-is-comma-pedal):*
-    - Can only be enabled above 12 mph (due to steering firmware limitations)
-    - Enables stop and go (gas / brake) all the way to 0 mph
-    - Steering warning under 12 mph
 
 - Acura RDX 2018 with AcuraWatch Plus (alpha!)
   - Can only be enabled above 25 mph
-  - *With optional [Comma Pedal](#what-is-comma-pedal):*
-    - Can be enabled at any speed.
-    - Enables stop-and-go steering, gas, and brake all the way to 0 mph.
 
 ### Toyota + Lexus ###
 
@@ -135,14 +113,6 @@ If your car has adaptive cruise control and lane keep assist, you are in luck. U
 We've written a [porting guide](https://medium.com/@comma_ai/openpilot-port-guide-for-toyota-models-e5467f4b5fe6) for Toyota that might help you after you have the basics figured out.
 
 Sadly, BMW, Audi, Volvo, and Mercedes all use [FlexRay](https://en.wikipedia.org/wiki/FlexRay) and are unlikely to be supported any time soon. We also put time into a Ford port, but the steering has a 10 second cutout limitation that makes it unusable.
-
-### What is Comma Pedal?
-
-[Comma Pedal](https://community.comma.ai/wiki/index.php/Comma_Pedal) is used to provide stop-and-go capability to openpilot-supported cars that don't currently support stop-and-go.
-  - [About the Comma Pedal](https://community.comma.ai/wiki/index.php/Comma_Pedal)
-  - [Build a Comma Pedal](https://medium.com/@jfrux/comma-pedal-building-with-macrofab-6328bea791e8)
-  
-***NOTE: The Comma Pedal is not officially supported by [Comma.ai, Inc.](https://comma.ai)***
 
 Directory structure
 ------
