@@ -30,16 +30,9 @@ class CarInterface(object):
     self.cp = get_can_parser(CP)
 
     # sending if read only is False
-    sendcan = None
     if sendcan is not None:
       self.sendcan = sendcan
-      print("SendCan %s", sendcan)
-      print("\ndbc_name: %s", self.cp.dbc_name)
-      print("\nFingerprint: %s", CP.carFingerprint)
-      print("\sCamera: %s", CP.enableCamera)
-      print("\nDSU: %s", CP.enableDsu)
-      print("\nApgs: %s", CP.enableApgs)
-      self.CC = CarController(self.cp.dbc_name, CP.carFingerprint, CP.enableCamera, CP.enableDsu, CP.enableApgs)
+      self.CC = CarController(self.cp.dbc_name, CP.carFingerprint, CP.enableCamera)
 
   @staticmethod
   def compute_gb(accel, speed):
@@ -105,10 +98,7 @@ class CarInterface(object):
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter.
-    if candidate in [CAR.ELANTRA]:
-      ret.minEnableSpeed = -1.
-    else:
-      ret.minEnableSpeed = 19. * CV.MPH_TO_MS
+    ret.minEnableSpeed = -1.
 
     centerToRear = ret.wheelbase - ret.centerToFront
     # TODO: get actual value, for now starting with reasonable value for
@@ -286,9 +276,9 @@ class CarInterface(object):
   # to be called @ 100hz
   def apply(self, c):
 
-    #self.CC.update(self.sendcan, c.enabled, self.CS, self.frame,
-    #               c.actuators, c.cruiseControl.cancel, c.hudControl.visualAlert,
-    #               c.hudControl.audibleAlert)
+    self.CC.update(self.sendcan, c.enabled, self.CS, self.frame,
+                   c.actuators, c.cruiseControl.cancel, c.hudControl.visualAlert,
+                   c.hudControl.audibleAlert)
 
     self.frame += 1
     return False

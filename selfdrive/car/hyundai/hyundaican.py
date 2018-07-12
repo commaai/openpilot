@@ -67,21 +67,23 @@ def create_steer_command(packer, steer, car_fingerprint, idx):
 
 def create_accel_command(packer, accel, pcm_cancel, standstill_req):
   # TODO: find the exact canceling bit
-  values = {
-    "ACCEL_CMD": accel,
-    "SET_ME_X63": 0x63,
-    "SET_ME_1": 1,
-    "RELEASE_STANDSTILL": not standstill_req,
-    "CANCEL_REQ": pcm_cancel,
-  }
-  return packer.make_can_msg("ACC_CONTROL", 0, values)
+  #values = {
+  #  "ACCEL_CMD": accel,
+  #  "SET_ME_X63": 0x63,
+  #  "SET_ME_1": 1,
+  #  "RELEASE_STANDSTILL": not standstill_req,
+  #  "CANCEL_REQ": pcm_cancel,
+  #}
+  #return packer.make_can_msg("ACC_CONTROL", 0, values)
+  return -1
 
 
 def create_fcw_command(packer, fcw):
-  values = {
-    "FCW": fcw,
-    "SET_ME_X20": 0x20,
-    "SET_ME_X10": 0x10,
-    "SET_ME_X80": 0x80,
-  }
-  return packer.make_can_msg("ACC_HUD", 0, values)
+ # values = {
+ #   "FCW": fcw,
+ #   "SET_ME_X20": 0x20,
+ #   "SET_ME_X10": 0x10,
+ #   "SET_ME_X80": 0x80,
+ # }
+ # return packer.make_can_msg("ACC_HUD", 0, values)
+ return -1

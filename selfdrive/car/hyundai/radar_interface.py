@@ -17,7 +17,7 @@ def _create_radard_can_parser():
                 ['ACC_ObjRelSpeed'] * msg_n + ['ObjValid'] * msg_n,
                 RADAR_MSGS * 5,
                 [255] * msg_n + [1] * msg_n + [0] * msg_n + [0] * msg_n + [0] * msg_n)
-  checks = zip(RADAR_MSGS, [20]*msg_n)
+  checks = [] #zip(RADAR_MSGS, [20]*msg_n)
 
   return CANParser(os.path.splitext(dbc_f)[0], signals, checks, 1)
 
