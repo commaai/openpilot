@@ -325,7 +325,7 @@ class CarInterface(object):
       self.CS.frame_humanSteered = self.frame
       events.append(create_event('steerTempUnavailableMute', [ET.NO_ENTRY, ET.WARNING]))
     else:
-      if (self.frame - self.human_steered_frame < 50): # Need more human testing of handoff timing
+      if (self.frame - self.CS.frame_humanSteered < 50): # Need more human testing of handoff timing
         # Find steering difference between visiond model and human (no need to do every frame if we run out of CPU):
         steer_current=(self.CS.angle_steers*10)  # Formula to convert current steering angle to match apply_steer calculated number
         apply_steer = -int(-c.actuators.steerAngle * 10)
@@ -433,10 +433,6 @@ class CarInterface(object):
       "chimeContinuous": (BP.MUTE, CM.CONTINUOUS)}[str(c.hudControl.audibleAlert)]
 
     pcm_accel = int(clip(c.cruiseControl.accelOverride,0,1)*0xc6)
-
-    # Because multiple threads seem to be updating CS I can't set in update (?)
-    if (self.frame - self.human_steered_frame < 50):
-        self.CS.steer_not_allowed = True
 
     self.CC.update(self.sendcan, c.enabled, self.CS, self.frame, \
       c.actuators, \
