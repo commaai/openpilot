@@ -31,7 +31,6 @@ class CarInterface(object):
     self.CP = CP
 
     self.frame = 0
-    self.human_steered_frame = 0
     self.last_enable_pressed = 0
     self.last_enable_sent = 0
     self.gas_pressed_prev = False
@@ -323,8 +322,7 @@ class CarInterface(object):
 
         # If we were previously disengaged via CS.steer_override>0 then we want [x] in a row where our planned steering is within 3 degrees of where we are steering
     if (self.CS.steer_override>0): 
-      self.human_steered_frame = self.frame
-      enable_steer_control = False
+      self.CS.frame_humanSteered = self.frame
       events.append(create_event('steerTempUnavailableMute', [ET.NO_ENTRY, ET.WARNING]))
     else:
       if (self.frame - self.human_steered_frame < 50): # Need more human testing of handoff timing
@@ -332,16 +330,13 @@ class CarInterface(object):
         steer_current=(self.CS.angle_steers*10)  # Formula to convert current steering angle to match apply_steer calculated number
         apply_steer = -int(-c.actuators.steerAngle * 10)
         angle = abs(apply_steer-steer_current)
-        if (self.frame % 20) == 0:
-          print "Angle: " + str(angle)
-        enable_steer_control = False
         events.append(create_event('steerTempUnavailableMute', [ET.NO_ENTRY, ET.WARNING]))
 
         # If OP steering > 5 degrees different from human than count that as human still steering..
         # Tesla rack doesn't report accurate enough, i.e. lane switch we show no human steering when they
         # still are crossing road at an angle clearly they don't want OP to take over
         if angle > 50:
-          self.human_steered_frame = self.frame
+          self.CS.frame_humanSteered = self.frame
           events.append(create_event('steerTempUnavailableMute', [ET.NO_ENTRY, ET.WARNING]))
 
 #    if self.CS.steer_override:
@@ -438,6 +433,10 @@ class CarInterface(object):
       "chimeContinuous": (BP.MUTE, CM.CONTINUOUS)}[str(c.hudControl.audibleAlert)]
 
     pcm_accel = int(clip(c.cruiseControl.accelOverride,0,1)*0xc6)
+
+    # Because multiple threads seem to be updating CS I can't set in update (?)
+    if (self.frame - self.human_steered_frame < 50):
+        self.CS.steer_not_allowed = True
 
     self.CC.update(self.sendcan, c.enabled, self.CS, self.frame, \
       c.actuators, \
