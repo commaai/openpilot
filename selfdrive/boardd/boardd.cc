@@ -54,7 +54,7 @@ pthread_mutex_t usb_lock;
 bool spoofing_started = false;
 bool fake_send = false;
 bool loopback_can = false;
-bool has_pigeon = false;
+bool is_grey_panda = false;
 
 pthread_t safety_setter_thread_handle = -1;
 pthread_t pigeon_thread_handle = -1;
@@ -177,6 +177,7 @@ bool usb_connect() {
 
   if (is_pigeon[0]) {
     LOGW("grey panda detected");
+    is_grey_panda = true;
     pigeon_needs_init = true;
     if (pigeon_thread_handle == -1) {
       err = pthread_create(&pigeon_thread_handle, NULL, pigeon_thread, NULL);
@@ -299,6 +300,7 @@ void can_health(void *s) {
   healthData.setControlsAllowed(health.controls_allowed);
   healthData.setGasInterceptorDetected(health.gas_interceptor_detected);
   healthData.setStartedSignalDetected(health.started_signal_detected);
+  healthData.setIsGreyPanda(is_grey_panda);
 
   // send to health
   auto words = capnp::messageToFlatArray(msg);

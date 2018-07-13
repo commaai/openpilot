@@ -1,12 +1,9 @@
 #!/usr/bin/env python
 
-# simple service that waits for network access and tries to update every 3 hours
+# simple service that waits for network access and tries to update every hour
 
-import os
 import time
 import subprocess
-
-from common.basedir import BASEDIR
 from selfdrive.swaglog import cloudlog
 
 NICE_LOW_PRIORITY = ["nice", "-n", "19"]
@@ -19,17 +16,18 @@ def main(gctx=None):
       continue
 
     # download application update
-    r = subprocess.call(NICE_LOW_PRIORITY + ["git", "fetch"])
-    cloudlog.info("git fetch: %r", r)
-    if r:
+    try:
+      r = subprocess.check_output(NICE_LOW_PRIORITY + ["git", "fetch"], stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError, e:
+      cloudlog.event("git fetch failed",
+        cmd=e.cmd,
+        output=e.output,
+        returncode=e.returncode)
       time.sleep(60)
       continue
+    cloudlog.info("git fetch success: %s", r)
 
-    # download apks
-    r = subprocess.call(NICE_LOW_PRIORITY + [os.path.join(BASEDIR, "apk/external/patcher.py"), "download"])
-    cloudlog.info("patcher download: %r", r)
-
-    time.sleep(60*60*3)
+    time.sleep(60*60)
 
 if __name__ == "__main__":
   main()

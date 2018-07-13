@@ -22,7 +22,6 @@ _DT = 0.01    # 100Hz
 _DT_MPC = 0.2  # 5Hz
 MAX_SPEED_ERROR = 2.0
 AWARENESS_DECEL = -0.2     # car smoothly decel at .2m/s^2 when user is distracted
-_DEBUG = False
 _LEAD_ACCEL_TAU = 1.5
 
 GPS_PLANNER_ADDR = "192.168.5.1"
@@ -315,10 +314,11 @@ class Planner(object):
 
       slowest = min(solutions, key=solutions.get)
 
-      if _DEBUG:
-        print "D_SOL", solutions, slowest, self.v_acc_sol, self.a_acc_sol
-        print "D_V", self.mpc1.v_mpc, self.mpc2.v_mpc, self.v_cruise
-        print "D_A", self.mpc1.a_mpc, self.mpc2.a_mpc, self.a_cruise
+      """
+      print "D_SOL", solutions, slowest, self.v_acc_sol, self.a_acc_sol
+      print "D_V", self.mpc1.v_mpc, self.mpc2.v_mpc, self.v_cruise
+      print "D_A", self.mpc1.a_mpc, self.mpc2.a_mpc, self.a_cruise
+      """
 
       self.longitudinalPlanSource = slowest
 
@@ -336,7 +336,7 @@ class Planner(object):
     self.v_acc_future = min([self.mpc1.v_mpc_future, self.mpc2.v_mpc_future, v_cruise_setpoint])
 
   # this runs whenever we get a packet that can change the plan
-  def update(self, CS, LaC, LoC, v_cruise_kph, user_distracted):
+  def update(self, CS, LaC, LoC, v_cruise_kph, force_slow_decel):
     cur_time = sec_since_boot()
     v_cruise_setpoint = v_cruise_kph * CV.KPH_TO_MS
 
@@ -396,8 +396,9 @@ class Planner(object):
         # TODO: make a separate lookup for jerk tuning
         jerk_limits = [min(-0.1, accel_limits[0]), max(0.1, accel_limits[1])]
         accel_limits = limit_accel_in_turns(CS.vEgo, CS.steeringAngle, accel_limits, self.CP)
-        if user_distracted:
-          # if user is not responsive to awareness alerts, then start a smooth deceleration
+
+        if force_slow_decel:
+          # if required so, force a smooth deceleration
           accel_limits[1] = min(accel_limits[1], AWARENESS_DECEL)
           accel_limits[0] = min(accel_limits[0], accel_limits[1])
 
