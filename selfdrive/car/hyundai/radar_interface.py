@@ -8,7 +8,7 @@ from selfdrive.services import service_list
 import selfdrive.messaging as messaging
 
 
-RADAR_MSGS = range(0x420, 0x421)
+RADAR_MSGS = list(range(0x420, 0x421))
 
 def _create_radard_can_parser():
   dbc_f = 'kia_sorento_2018.dbc'
@@ -90,4 +90,4 @@ if __name__ == "__main__":
   while 1:
     ret = RI.update()
     print(chr(27) + "[2J")
-    print ret
+    print(ret)
