@@ -15,5 +15,5 @@ sympy==1.1.1
 filterpy==1.0.0
 smbus2==0.2.0
 pyflakes==1.5.0
--e git+https://github.com/commaai/le_python.git#egg=Logentries
+-e git+https://github.com/commaai/le_python.git@5eef8f5be5929d33973e1b10e686fa0cdcd6792f#egg=Logentries
 Flask==1.0.1
