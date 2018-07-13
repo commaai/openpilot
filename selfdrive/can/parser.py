@@ -203,6 +203,6 @@ if __name__ == "__main__":
   while True:
     cp.update(int(sec_since_boot()*1e9), True)
     # print cp.vl
-    print cp.ts
-    print cp.can_valid
+    print(cp.ts)
+    print(cp.can_valid)
     time.sleep(0.01)

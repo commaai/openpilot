@@ -59,6 +59,10 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     debugAlert @34;
     steerTempUnavailableMute @35;
     resumeRequired @36;
+    preDriverDistracted @37;
+    promptDriverDistracted @38;
+    driverDistracted @39;
+    geofence @40;
   }
 }
 
@@ -333,7 +337,7 @@ struct CarParams {
   directAccelControl @31 :Bool; # Does the car have direct accel control or just gas/brake
   stoppingControl @34 :Bool; # Does the car allows full control even at lows speeds when stopping
   startAccel @35 :Float32; # Required acceleraton to overcome creep braking
-  steerRateCostDEPRECATED @40 :Float32; # Lateral MPC cost on steering rate
+  steerRateCost @40 :Float32; # Lateral MPC cost on steering rate
   steerControlType @46 :SteerControlType;
   radarOffCan @47 :Bool; # True when radar objects aren't visible on CAN
 

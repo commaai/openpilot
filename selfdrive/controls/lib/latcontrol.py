@@ -28,12 +28,11 @@ class LatControl(object):
                             (VM.CP.steerKiBP, VM.CP.steerKiV),
                             k_f=VM.CP.steerKf, pos_limit=1.0)
     self.last_cloudlog_t = 0.0
-    self.setup_mpc()
+    self.setup_mpc(VM.CP.steerRateCost)
 
-  def setup_mpc(self):
+  def setup_mpc(self, steer_rate_cost):
     self.libmpc = libmpc_py.libmpc
-    self.libmpc.init(MPC_COST_LAT.PATH, MPC_COST_LAT.LANE,
-                     MPC_COST_LAT.HEADING, MPC_COST_LAT.STEER_RATE)
+    self.libmpc.init(MPC_COST_LAT.PATH, MPC_COST_LAT.LANE, MPC_COST_LAT.HEADING, steer_rate_cost)
 
     self.mpc_solution = libmpc_py.ffi.new("log_t *")
     self.cur_state = libmpc_py.ffi.new("state_t *")
@@ -91,7 +90,7 @@ class LatControl(object):
       self.mpc_nans = np.any(np.isnan(list(self.mpc_solution[0].delta)))
       t = sec_since_boot()
       if self.mpc_nans:
-        self.libmpc.init(MPC_COST_LAT.PATH, MPC_COST_LAT.LANE, MPC_COST_LAT.HEADING, MPC_COST_LAT.STEER_RATE)
+        self.libmpc.init(MPC_COST_LAT.PATH, MPC_COST_LAT.LANE, MPC_COST_LAT.HEADING, VM.CP.steerRateCost)
         self.cur_state[0].delta = math.radians(angle_steers) / VM.CP.steerRatio
 
         if t > self.last_cloudlog_t + 5.0:
@@ -113,7 +112,9 @@ class LatControl(object):
       steer_feedforward = self.angle_steers_des   # feedforward desired angle
       if VM.CP.steerControlType == car.CarParams.SteerControlType.torque:
         steer_feedforward *= v_ego**2  # proportional to realigning tire momentum (~ lateral accel)
-      output_steer = self.pid.update(self.angle_steers_des, angle_steers, check_saturation=(v_ego > 10), override=steer_override, feedforward=steer_feedforward, speed=v_ego)
+      deadzone = 0.0
+      output_steer = self.pid.update(self.angle_steers_des, angle_steers, check_saturation=(v_ego > 10), override=steer_override,
+                                     feedforward=steer_feedforward, speed=v_ego, deadzone=deadzone)
 
     self.sat_flag = self.pid.saturated
     return output_steer, float(self.angle_steers_des)
