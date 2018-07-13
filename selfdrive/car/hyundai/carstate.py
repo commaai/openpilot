@@ -35,8 +35,7 @@ def get_can_parser(CP):
         ("WHL_SPD_FR", "WHL_SPD11", 0),
         ("WHL_SPD_RL", "WHL_SPD11", 0),
         ("WHL_SPD_RR", "WHL_SPD11", 0),
-        ("SAS_Angle", "SAS11", 0),
-        ("SAS_Speed", "SAS11", 0),
+        ("YAW_RATE", "ESP12", 0),
         ("CR_Lkas_StrToqReq", "LKAS11", 0),
         ("GEAR_TYPE", "TCU11", 0),
         ("CF_Gway_DrvSeatBeltInd", "CGW4", 1),
@@ -53,16 +52,18 @@ def get_can_parser(CP):
       ]
 
       checks = [
-        ("BRAKE_MODULE", 40), ## TODO: DO THESE
-        ("GAS_PEDAL", 33),
-        ("WHEEL_SPEEDS", 80),
-        ("STEER_ANGLE_SENSOR", 80),
-        ("PCM_CRUISE", 33),
-        ("PCM_CRUISE_2", 33),
-        ("STEER_TORQUE_SENSOR", 50),
-        ("EPS_STATUS", 25),
+        ("LKAS11", 100),
+        ("MDPS12", 50),
+        ("TCS15", 10),
+        ("TCS13", 50),
+        ("CLU11", 50),
+        ("ESP12", 100), 
+        ("EMS12", 100),
+        ("CGW1", 10),
+        ("CGW4", 5),
+        ("WHL_SPD11", 50),
       ]
-  elif CP.carFingerprint == CAR.SORENTO:
+  elif CP.carFingerprint == CAR.SORENTO or CP.carFingerprint == CAR.STINGER:
       signals = [
         # sig_name, sig_address, default
         ("WHL_SPD_FL", "WHL_SPD11", 0),
@@ -70,9 +71,8 @@ def get_can_parser(CP):
         ("WHL_SPD_RL", "WHL_SPD11", 0),
         ("WHL_SPD_RR", "WHL_SPD11", 0),
 
-        ("SAS_Angle", "SAS11", 0),
-        ("SAS_Speed", "SAS11", 0),
-
+        ("YAW_RATE", "ESP12", 0),
+        
         ("CR_Lkas_StrToqReq", "LKAS11", 0),
 
         ("CF_Gway_DrvSeatBeltInd", "CGW4", 1),
@@ -164,6 +164,8 @@ class CarState(object):
     self.v_wheel_rl = cp.vl["WHL_SPD11"]['WHL_SPD_RL'] * CV.KPH_TO_MS
     self.v_wheel_rr = cp.vl["WHL_SPD11"]['WHL_SPD_RR'] * CV.KPH_TO_MS
     self.v_wheel = (self.v_wheel_fl + self.v_wheel_fr + self.v_wheel_rl + self.v_wheel_rr) / 4.
+    if CP.carFingerprint == CAR.SORENTO:
+      self.v_wheel = self.v_wheel * 1.02 # There is a 2 percent error on Sorento GT due to slightly larger wheel diameter compared to poverty packs.  Dash assumes about 4% which is excessive
 
     # Kalman filter
     if abs(self.v_wheel - self.v_ego) > 2.0:  # Prevent large accelerations when car starts at non zero speed
@@ -175,8 +177,7 @@ class CarState(object):
     self.a_ego = float(v_ego_x[1])
     self.standstill = not self.v_wheel > 0.001
 
-    self.angle_steers = cp.vl["SAS11"]['SAS_Angle']
-    self.angle_steers_rate = cp.vl["SAS11"]['SAS_Speed']
+    self.angle_steers = cp.vl["ESP12"]['YAW_RATE']
     self.main_on = cp.vl["CLU11"]['CF_Clu_CruiseSwMain']
     self.left_blinker_on = cp.vl["CGW1"]['CF_Gway_TurnSigLh']
     self.right_blinker_on = cp.vl["CGW1"]['CF_Gway_TurnSigRh']
