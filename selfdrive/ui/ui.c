@@ -4,12 +4,12 @@
 #include <unistd.h>
 #include <assert.h>
 #include <sys/mman.h>
+#include <sys/resource.h>
 
 #include <cutils/properties.h>
 
 #include <GLES3/gl3.h>
 #include <EGL/egl.h>
-#include <EGL/eglext.h>
 
 #include <json.h>
 #include <czmq.h>
@@ -28,6 +28,7 @@
 #include "common/touch.h"
 #include "common/framebuffer.h"
 #include "common/visionipc.h"
+#include "common/visionimg.h"
 #include "common/modeldata.h"
 #include "common/params.h"
 
@@ -91,8 +92,6 @@ const int alert_sizes[] = {
 typedef struct UIScene {
   int frontview;
 
-  uint8_t *bgr_ptr;
-
   int transformed_width, transformed_height;
 
   uint64_t model_ts;
@@ -110,6 +109,7 @@ typedef struct UIScene {
   float v_ego;
   float curvature;
   int engaged;
+  bool engageable;
 
   bool uilayout_sidebarcollapsed;
   bool uilayout_mapenabled;
@@ -121,13 +121,13 @@ typedef struct UIScene {
   int lead_status;
   float lead_d_rel, lead_y_rel, lead_v_rel;
 
-  uint8_t *bgr_front_ptr;
   int front_box_x, front_box_y, front_box_width, front_box_height;
 
   uint64_t alert_ts;
   char alert_text1[1024];
   char alert_text2[1024];
   uint8_t alert_size;
+  float alert_blinkingrate;
 
   float awareness_status;
 
@@ -190,8 +190,9 @@ typedef struct UIState {
   int cur_vision_front_idx;
 
   GLuint frame_program;
+  GLuint frame_texs[UI_BUF_COUNT];
+  GLuint frame_front_texs[UI_BUF_COUNT];
 
-  GLuint frame_tex;
   GLint frame_pos_loc, frame_texcoord_loc;
   GLint frame_texture_loc, frame_transform_loc;
 
@@ -199,11 +200,12 @@ typedef struct UIState {
   GLint line_pos_loc, line_color_loc;
   GLint line_transform_loc;
 
-  unsigned int rgb_width, rgb_height;
+  unsigned int rgb_width, rgb_height, rgb_stride;
+  size_t rgb_buf_len;
   mat4 rgb_transform;
 
-  unsigned int rgb_front_width, rgb_front_height;
-  GLuint frame_front_tex;
+  unsigned int rgb_front_width, rgb_front_height, rgb_front_stride;
+  size_t rgb_front_buf_len;
 
   bool intrinsic_matrix_loaded;
   mat3 intrinsic_matrix;
@@ -217,6 +219,8 @@ typedef struct UIState {
   bool is_metric;
   bool passive;
   int alert_size;
+  float alert_blinking_alpha;
+  bool alert_blinked;
 
   float light_sensor;
 } UIState;
@@ -469,9 +473,13 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
 
   s->rgb_width = back_bufs.width;
   s->rgb_height = back_bufs.height;
+  s->rgb_stride = back_bufs.stride;
+  s->rgb_buf_len = back_bufs.buf_len;
 
   s->rgb_front_width = front_bufs.width;
   s->rgb_front_height = front_bufs.height;
+  s->rgb_front_stride = front_bufs.stride;
+  s->rgb_front_buf_len = front_bufs.buf_len;
 
   s->rgb_transform = (mat4){{
     2.0/s->rgb_width, 0.0, 0.0, -1.0,
@@ -486,30 +494,6 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
     s->is_metric = value[0] == '1';
     free(value);
   }
-}
-
-static void ui_update_frame(UIState *s) {
-  assert(glGetError() == GL_NO_ERROR);
-
-  UIScene *scene = &s->scene;
-
-  if (scene->frontview && scene->bgr_front_ptr) {
-    // load front frame texture
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, s->frame_front_tex);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
-                    s->rgb_front_width, s->rgb_front_height,
-                    GL_RGB, GL_UNSIGNED_BYTE, scene->bgr_front_ptr);
-  } else if (!scene->frontview && scene->bgr_ptr) {
-    // load frame texture
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, s->frame_tex);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
-                    s->rgb_width, s->rgb_height,
-                    GL_RGB, GL_UNSIGNED_BYTE, scene->bgr_ptr);
-  }
-
-  assert(glGetError() == GL_NO_ERROR);
 }
 
 static void ui_draw_transformed_box(UIState *s, uint32_t color) {
@@ -808,10 +792,10 @@ static void draw_frame(UIState *s) {
   };
 
   glActiveTexture(GL_TEXTURE0);
-  if (s->scene.frontview) {
-    glBindTexture(GL_TEXTURE_2D, s->frame_front_tex);
-  } else {
-    glBindTexture(GL_TEXTURE_2D, s->frame_tex);
+  if (s->scene.frontview && s->cur_vision_front_idx >= 0) {
+    glBindTexture(GL_TEXTURE_2D, s->frame_front_texs[s->cur_vision_front_idx]);
+  } else if (!scene->frontview && s->cur_vision_idx >= 0) {
+    glBindTexture(GL_TEXTURE_2D, s->frame_texs[s->cur_vision_idx]);
   }
 
   glUseProgram(s->frame_program);
@@ -972,16 +956,19 @@ static void ui_draw_vision_wheel(UIState *s) {
   const int img_wheel_size = bg_wheel_size*1.5;
   const int img_wheel_x = bg_wheel_x-(img_wheel_size/2);
   const int img_wheel_y = bg_wheel_y-25;
-  float img_wheel_alpha = 0.5f;
+  float img_wheel_alpha = 0.1f;
   bool is_engaged = (s->status == STATUS_ENGAGED);
   bool is_warning = (s->status == STATUS_WARNING);
-  if (is_engaged || is_warning) {
+  bool is_engageable = scene->engageable;
+  if (is_engaged || is_warning || is_engageable) {
     nvgBeginPath(s->vg);
     nvgCircle(s->vg, bg_wheel_x, (bg_wheel_y + (bdr_s*1.5)), bg_wheel_size);
     if (is_engaged) {
       nvgFillColor(s->vg, nvgRGBA(23, 134, 68, 255));
     } else if (is_warning) {
       nvgFillColor(s->vg, nvgRGBA(218, 111, 37, 255));
+    } else if (is_engageable) {
+      nvgFillColor(s->vg, nvgRGBA(23, 51, 73, 255));
     }
     nvgFill(s->vg);
     img_wheel_alpha = 1.0f;
@@ -1031,7 +1018,7 @@ static void ui_draw_vision_alert(UIState *s, int va_size, int va_color,
 
   nvgBeginPath(s->vg);
   nvgRect(s->vg, alr_x, alr_y, alr_w, alr_h);
-  nvgFillColor(s->vg, nvgRGBA(color[0],color[1],color[2],color[3]));
+  nvgFillColor(s->vg, nvgRGBA(color[0],color[1],color[2],(color[3]*s->alert_blinking_alpha)));
   nvgFill(s->vg);
 
   nvgBeginPath(s->vg);
@@ -1151,7 +1138,6 @@ static void ui_draw(UIState *s) {
     glDisable(GL_BLEND);
   }
 
-  eglSwapBuffers(s->display, s->surface);
   assert(glGetError() == GL_NO_ERROR);
 }
 
@@ -1211,31 +1197,53 @@ static void ui_update(UIState *s) {
     // cant run this in connector thread because opengl.
     // do this here for now in lieu of a run_on_main_thread event
 
-    // setup frame texture
-    glDeleteTextures(1, &s->frame_tex); //silently ignores a 0 texture
-    glGenTextures(1, &s->frame_tex);
-    glBindTexture(GL_TEXTURE_2D, s->frame_tex);
-    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB8, s->rgb_width, s->rgb_height);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    for (int i=0; i<UI_BUF_COUNT; i++) {
+      glDeleteTextures(1, &s->frame_texs[i]);
 
-    // BGR
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
+      VisionImg img = {
+        .fd = s->bufs[i].fd,
+        .format = VISIONIMG_FORMAT_RGB24,
+        .width = s->rgb_width,
+        .height = s->rgb_height,
+        .stride = s->rgb_stride,
+        .bpp = 3,
+        .size = s->rgb_buf_len,
+      };
+      s->frame_texs[i] = visionimg_to_gl(&img);
 
-    // front
-    glDeleteTextures(1, &s->frame_front_tex);
-    glGenTextures(1, &s->frame_front_tex);
-    glBindTexture(GL_TEXTURE_2D, s->frame_front_tex);
-    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB8, s->rgb_front_width, s->rgb_front_height);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+      glBindTexture(GL_TEXTURE_2D, s->frame_texs[i]);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-    // BGR
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
+      // BGR
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
+    }
+
+    for (int i=0; i<UI_BUF_COUNT; i++) {
+      glDeleteTextures(1, &s->frame_front_texs[i]);
+
+      VisionImg img = {
+        .fd = s->front_bufs[i].fd,
+        .format = VISIONIMG_FORMAT_RGB24,
+        .width = s->rgb_front_width,
+        .height = s->rgb_front_height,
+        .stride = s->rgb_front_stride,
+        .bpp = 3,
+        .size = s->rgb_front_buf_len,
+      };
+      s->frame_front_texs[i] = visionimg_to_gl(&img);
+
+      glBindTexture(GL_TEXTURE_2D, s->frame_front_texs[i]);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+      // BGR
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
+    }
 
     assert(glGetError() == GL_NO_ERROR);
 
@@ -1245,6 +1253,9 @@ static void ui_update(UIState *s) {
     s->scene.ui_viz_ro = 0;
 
     s->vision_connect_firstrun = false;
+
+    s->alert_blinking_alpha = 1.0;
+    s->alert_blinked = false;
   }
 
   // poll for events
@@ -1302,7 +1313,7 @@ static void ui_update(UIState *s) {
         continue;
       }
       if (rp.type == VIPC_STREAM_ACQUIRE) {
-        bool front = rp.d.stream_acq.type == VISION_STREAM_UI_FRONT;
+        bool front = rp.d.stream_acq.type == VISION_STREAM_RGB_FRONT;
         int idx = rp.d.stream_acq.idx;
 
         int release_idx;
@@ -1325,17 +1336,11 @@ static void ui_update(UIState *s) {
         if (front) {
           assert(idx < UI_BUF_COUNT);
           s->cur_vision_front_idx = idx;
-          s->scene.bgr_front_ptr = s->front_bufs[idx].addr;
         } else {
           assert(idx < UI_BUF_COUNT);
           s->cur_vision_idx = idx;
-          s->scene.bgr_ptr = s->bufs[idx].addr;
           // printf("v %d\n", ((uint8_t*)s->bufs[idx].addr)[0]);
         }
-        if (front == s->scene.frontview) {
-          ui_update_frame(s);
-        }
-
       } else {
         assert(false);
       }
@@ -1392,6 +1397,7 @@ static void ui_update(UIState *s) {
         s->scene.v_ego = datad.vEgo;
         s->scene.curvature = datad.curvature;
         s->scene.engaged = datad.enabled;
+        s->scene.engageable = datad.engageable;
         s->scene.gps_planner_active = datad.gpsPlannerActive;
         // printf("recv %f\n", datad.vEgo);
 
@@ -1429,6 +1435,24 @@ static void ui_update(UIState *s) {
           update_status(s, STATUS_ENGAGED);
         } else {
           update_status(s, STATUS_DISENGAGED);
+        }
+
+        s->scene.alert_blinkingrate = datad.alertBlinkingRate;
+        if (datad.alertBlinkingRate > 0.) {
+          if (s->alert_blinked) {
+            if (s->alert_blinking_alpha > 0.0 && s->alert_blinking_alpha < 1.0) {
+              s->alert_blinking_alpha += (0.05*datad.alertBlinkingRate);
+            } else {
+              s->alert_blinked = false;
+            }
+          } else {
+            if (s->alert_blinking_alpha > 0.25) {
+              s->alert_blinking_alpha -= (0.05*datad.alertBlinkingRate);
+            } else {
+              s->alert_blinking_alpha += 0.25;
+              s->alert_blinked = true;
+            }
+          }
         }
 
       } else if (eventd.which == cereal_Event_live20) {
@@ -1570,8 +1594,8 @@ static void* vision_connect_thread(void *args) {
     if (fd < 0) continue;
 
     VisionPacket back_rp, front_rp;
-    if (!vision_subscribe(fd, &back_rp, VISION_STREAM_UI_BACK)) continue;
-    if (!vision_subscribe(fd, &front_rp, VISION_STREAM_UI_FRONT)) continue;
+    if (!vision_subscribe(fd, &back_rp, VISION_STREAM_RGB_BACK)) continue;
+    if (!vision_subscribe(fd, &front_rp, VISION_STREAM_RGB_FRONT)) continue;
 
     pthread_mutex_lock(&s->lock);
     assert(!s->vision_connected);
@@ -1649,28 +1673,24 @@ static void* bg_thread(void* args) {
                               &bg_display, &bg_surface, NULL, NULL);
   assert(bg_fb);
 
-  bool first = true;
+  int bg_status = -1;
   while(!do_exit) {
     pthread_mutex_lock(&s->lock);
-
-    if (first) {
-      first = false;
-    } else {
+    if (bg_status == s->status) {
+      // will always be signaled if it changes?
       pthread_cond_wait(&s->bg_cond, &s->lock);
     }
-
-    assert(s->status < ARRAYSIZE(bg_colors));
-    const uint8_t *color = bg_colors[s->status];
-
+    bg_status = s->status;
     pthread_mutex_unlock(&s->lock);
+
+    assert(bg_status < ARRAYSIZE(bg_colors));
+    const uint8_t *color = bg_colors[bg_status];
 
     glClearColor(color[0]/256.0, color[1]/256.0, color[2]/256.0, 0.0);
     glClear(GL_COLOR_BUFFER_BIT);
 
-
     eglSwapBuffers(bg_display, bg_surface);
     assert(glGetError() == GL_NO_ERROR);
-
   }
 
   return NULL;
@@ -1679,6 +1699,7 @@ static void* bg_thread(void* args) {
 
 int main() {
   int err;
+  setpriority(PRIO_PROCESS, 0, -14);
 
   zsys_handler_set(NULL);
   signal(SIGINT, (sighandler_t)set_do_exit);
@@ -1716,6 +1737,7 @@ int main() {
   const int EON = (access("/EON", F_OK) != -1);
 
   while (!do_exit) {
+    bool should_swap = false;
     pthread_mutex_lock(&s->lock);
 
     if (EON) {
@@ -1731,13 +1753,10 @@ int main() {
     }
 
     ui_update(s);
-    if (s->awake) {
-      ui_draw(s);
-    }
 
     // awake on any touch
     int touch_x = -1, touch_y = -1;
-    int touched = touch_poll(&touch, &touch_x, &touch_y);
+    int touched = touch_poll(&touch, &touch_x, &touch_y, s->awake ? 0 : 100);
     if (touched == 1) {
       // touch event will still happen :(
       set_awake(s, true);
@@ -1750,10 +1769,19 @@ int main() {
       set_awake(s, false);
     }
 
+    if (s->awake) {
+      ui_draw(s);
+      glFinish();
+      should_swap = true;
+    }
+
     pthread_mutex_unlock(&s->lock);
 
-    // no simple way to do 30fps vsync with surfaceflinger...
-    usleep(30000);
+    // the bg thread needs to be scheduled, so the main thread needs time without the lock
+    // safe to do this outside the lock?
+    if (should_swap) {
+      eglSwapBuffers(s->display, s->surface);
+    }
   }
 
   set_awake(s, true);

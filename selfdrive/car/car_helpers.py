@@ -1,4 +1,5 @@
 import os
+import time
 from common.basedir import BASEDIR
 from common.realtime import sec_since_boot
 from common.fingerprints import eliminate_incompatible_cars, all_known_cars
@@ -49,18 +50,20 @@ def fingerprint(logcan, timeout):
   candidate_cars = all_known_cars()
   finger = {}
   st = None
+  st_passive = sec_since_boot()  # only relevant when passive
+  can_seen = False
   while 1:
-    for a in messaging.drain_sock(logcan, wait_for_one=True):
+    for a in messaging.drain_sock(logcan):
       for can in a.can:
+        can_seen = True
         # ignore everything not on bus 0 and with more than 11 bits,
         # which are ussually sporadic and hard to include in fingerprints
         if can.src == 0 and can.address < 0x800:
           finger[can.address] = len(can.dat)
           candidate_cars = eliminate_incompatible_cars(can, candidate_cars)
 
-    if st is None:
+    if st is None and can_seen:
       st = sec_since_boot()          # start time
-      st_passive = sec_since_boot()  # only relevant when passive
     ts = sec_since_boot()
     # if we only have one car choice and the time_fingerprint since we got our first
     # message has elapsed, exit. Toyota needs higher time_fingerprint, since DSU does not
@@ -75,13 +78,15 @@ def fingerprint(logcan, timeout):
     elif len(candidate_cars) == 0 or (timeout and (ts - st_passive) > timeout):
       return None, finger
 
+    time.sleep(0.01)
+
   cloudlog.warning("fingerprinted %s", candidate_cars[0])
   return (candidate_cars[0], finger)
 
 
 def get_car(logcan, sendcan=None, passive=True):
   # TODO: timeout only useful for replays so controlsd can start before unlogger
-  timeout = 1. if passive else None
+  timeout = 2. if passive else None
   candidate, fingerprints = fingerprint(logcan, timeout)
 
   if candidate is None:
@@ -93,7 +98,7 @@ def get_car(logcan, sendcan=None, passive=True):
 
   interface_cls = interfaces[candidate]
   if interface_cls is None:
-    cloudlog.warning("car matched %s, but interface wasn't available" % candidate)
+    cloudlog.warning("car matched %s, but interface wasn't available or failed to import" % candidate)
     return None, None
 
   params = interface_cls.get_params(candidate, fingerprints)
