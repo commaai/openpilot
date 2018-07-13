@@ -338,4 +338,3 @@ if __name__ == '__main__':
   # while 1:
   #   CS.update()
   #   time.sleep(0.01)
-  
