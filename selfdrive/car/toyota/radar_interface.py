@@ -8,7 +8,7 @@ from selfdrive.services import service_list
 import selfdrive.messaging as messaging
 
 
-RADAR_MSGS = range(0x210, 0x220)
+RADAR_MSGS = list(range(0x210, 0x220))
 
 def _create_radard_can_parser():
   dbc_f = 'toyota_prius_2017_adas.dbc'
@@ -90,4 +90,4 @@ if __name__ == "__main__":
   while 1:
     ret = RI.update()
     print(chr(27) + "[2J")
-    print ret
+    print(ret)

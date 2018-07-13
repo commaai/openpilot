@@ -1,6 +1,4 @@
 import struct
-import numbers
-
 from selfdrive.can.libdbc_py import libdbc, ffi
 
 
@@ -10,7 +8,6 @@ class CANPacker(object):
     self.dbc = libdbc.dbc_lookup(dbc_name)
     self.sig_names = {}
     self.name_to_address_and_size = {}
-    self.address_to_size = {}
 
     num_msgs = self.dbc[0].num_msgs
     for i in range(num_msgs):
@@ -19,16 +16,11 @@ class CANPacker(object):
       name = ffi.string(msg.name)
       address = msg.address
       self.name_to_address_and_size[name] = (address, msg.size)
-      self.address_to_size[address] = msg.size
+      self.name_to_address_and_size[address] = (address, msg.size)
 
   def pack(self, addr, values, counter):
-    # values: [(signal_name, signal_value)]
-
     values_thing = []
-    if isinstance(values, dict):
-      values = values.items()
-
-    for name, value in values:
+    for name, value in values.iteritems():
       if name not in self.sig_names:
         self.sig_names[name] = ffi.new("char[]", name)
 
@@ -42,10 +34,7 @@ class CANPacker(object):
     return libdbc.canpack_pack(self.packer, addr, len(values_thing), values_c, counter)
 
   def pack_bytes(self, addr, values, counter=-1):
-    if isinstance(addr, numbers.Number):
-      size = self.address_to_size[addr]
-    else:
-      addr, size = self.name_to_address_and_size[addr]
+    addr, size = self.name_to_address_and_size[addr]
 
     val = self.pack(addr, values, counter)
     r = struct.pack(">Q", val)
@@ -62,4 +51,4 @@ if __name__ == "__main__":
     ("PCM_SPEED", 123),
     ("PCM_GAS", 10),
   ])
-  print s[1].encode("hex")
+  print(s[1].encode("hex"))

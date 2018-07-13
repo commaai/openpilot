@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import gc
 import zmq
 import numpy as np
 import numpy.matlib
@@ -44,6 +45,7 @@ class EKFV1D(EKF):
 
 # fuses camera and radar data for best lead detection
 def radard_thread(gctx=None):
+  gc.disable()
   set_realtime_priority(2)
 
   # wait for stats about the car to come in from controls
@@ -195,9 +197,9 @@ def radard_thread(gctx=None):
         tracks[fused_id].update_vision_fusion()
 
     if DEBUG:
-      print "NEW CYCLE"
+      print("NEW CYCLE")
       if VISION_POINT in ar_pts:
-        print "vision", ar_pts[VISION_POINT]
+        print("vision", ar_pts[VISION_POINT])
 
     idens = tracks.keys()
     track_pts = np.array([tracks[iden].get_key_for_cluster() for iden in idens])
@@ -223,7 +225,7 @@ def radard_thread(gctx=None):
 
     if DEBUG:
       for i in clusters:
-        print i
+        print(i)
     # *** extract the lead car ***
     lead_clusters = [c for c in clusters
                      if c.is_potential_lead(v_ego)]
@@ -244,9 +246,9 @@ def radard_thread(gctx=None):
     dat.live20.radarErrors = list(rr.errors)
     dat.live20.l100MonoTime = last_l100_ts
     if lead_len > 0:
-      lead_clusters[0].toLive20(dat.live20.leadOne)
+      dat.live20.leadOne = lead_clusters[0].toLive20()
       if lead2_len > 0:
-        lead2_clusters[0].toLive20(dat.live20.leadTwo)
+        dat.live20.leadTwo = lead2_clusters[0].toLive20()
       else:
         dat.live20.leadTwo.status = False
     else:
@@ -261,20 +263,22 @@ def radard_thread(gctx=None):
 
     for cnt, ids in enumerate(tracks.keys()):
       if DEBUG:
-        print "id: %4.0f x:  %4.1f  y: %4.1f  vr: %4.1f d: %4.1f  va: %4.1f  vl: %4.1f  vlk: %4.1f alk: %4.1f  s: %1.0f  v: %1.0f" % \
+        print("id: %4.0f x:  %4.1f  y: %4.1f  vr: %4.1f d: %4.1f  va: %4.1f  vl: %4.1f  vlk: %4.1f alk: %4.1f  s: %1.0f  v: %1.0f" % \
           (ids, tracks[ids].dRel, tracks[ids].yRel, tracks[ids].vRel,
            tracks[ids].dPath, tracks[ids].vLat,
            tracks[ids].vLead, tracks[ids].vLeadK,
            tracks[ids].aLeadK,
            tracks[ids].stationary,
-           tracks[ids].measured)
-      dat.liveTracks[cnt].trackId = ids
-      dat.liveTracks[cnt].dRel = float(tracks[ids].dRel)
-      dat.liveTracks[cnt].yRel = float(tracks[ids].yRel)
-      dat.liveTracks[cnt].vRel = float(tracks[ids].vRel)
-      dat.liveTracks[cnt].aRel = float(tracks[ids].aRel)
-      dat.liveTracks[cnt].stationary = tracks[ids].stationary
-      dat.liveTracks[cnt].oncoming = tracks[ids].oncoming
+           tracks[ids].measured))
+      dat.liveTracks[cnt] = {
+        "trackId": ids,
+        "dRel": float(tracks[ids].dRel),
+        "yRel": float(tracks[ids].yRel),
+        "vRel": float(tracks[ids].vRel),
+        "aRel": float(tracks[ids].aRel),
+        "stationary": tracks[ids].stationary,
+        "oncoming": tracks[ids].oncoming,
+      }
     liveTracks.send(dat.to_bytes())
 
     rk.monitor_time()

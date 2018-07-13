@@ -6,14 +6,13 @@ from selfdrive.car.honda import hondacan
 from selfdrive.car.honda.values import AH, CruiseButtons, CAR
 from selfdrive.can.packer import CANPacker
 
-
 def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
   # hyst params... TODO: move these to VehicleParams
   brake_hyst_on = 0.02     # to activate brakes exceed this value
   brake_hyst_off = 0.005                     # to deactivate brakes below this value
   brake_hyst_gap = 0.01                      # don't change brake command for small ocilalitons within this value
 
-  #*** histeresys logic to avoid brake blinking. go above 0.1 to trigger
+  #*** histeresis logic to avoid brake blinking. go above 0.1 to trigger
   if (brake < brake_hyst_on and not braking) or brake < brake_hyst_off:
     brake = 0.
   braking = brake > 0.
@@ -90,7 +89,6 @@ class CarController(object):
     else:
       hud_lanes = 0
 
-    # TODO: factor this out better
     if enabled:
       if hud_show_car:
         hud_car = 2
@@ -110,7 +108,6 @@ class CarController(object):
                   0xc1, hud_lanes, int(snd_beep), snd_chime, fcw_display, acc_alert, steer_required)
 
     if not all(isinstance(x, int) and 0 <= x < 256 for x in hud):
-      print "INVALID HUD", hud
       hud = HUDData(0xc6, 255, 64, 0xc0, 209, 0x40, 0, 0, 0, 0)
 
     # **** process the car messages ****
