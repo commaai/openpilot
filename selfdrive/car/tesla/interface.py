@@ -297,7 +297,7 @@ class CarInterface(object):
     if self.CS.steer_error:
       events.append(create_event('steerUnavailable', [ET.NO_ENTRY, ET.WARNING]))
     elif self.CS.steer_warning:
-      events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
+      events.append(create_event('steerTempUnavailableMute', [ET.NO_ENTRY, ET.WARNING]))
     if self.CS.brake_error:
       events.append(create_event('brakeUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
     if not ret.gearShifter == 'drive':
@@ -316,8 +316,31 @@ class CarInterface(object):
       events.append(create_event('brakeHold', [ET.NO_ENTRY, ET.USER_DISABLE]))
     if self.CS.park_brake:
       events.append(create_event('parkBrake', [ET.NO_ENTRY, ET.USER_DISABLE]))
-    if self.CS.steer_override:
-      events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
+
+
+    # The Frame # is available here.. so let's move when the user counter to here..
+
+        # If we were previously disengaged via CS.steer_override>0 then we want [x] in a row where our planned steering is within 3 degrees of where we are steering
+    if (self.CS.steer_override>0): 
+      self.CS.frame_humanSteered = self.frame
+      events.append(create_event('steerTempUnavailableMute', [ET.NO_ENTRY, ET.WARNING]))
+    else:
+      if (self.frame - self.CS.frame_humanSteered < 50): # Need more human testing of handoff timing
+        # Find steering difference between visiond model and human (no need to do every frame if we run out of CPU):
+        steer_current=(self.CS.angle_steers*10)  # Formula to convert current steering angle to match apply_steer calculated number
+        apply_steer = -int(-c.actuators.steerAngle * 10)
+        angle = abs(apply_steer-steer_current)
+        events.append(create_event('steerTempUnavailableMute', [ET.NO_ENTRY, ET.WARNING]))
+
+        # If OP steering > 5 degrees different from human than count that as human still steering..
+        # Tesla rack doesn't report accurate enough, i.e. lane switch we show no human steering when they
+        # still are crossing road at an angle clearly they don't want OP to take over
+        if angle > 50:
+          self.CS.frame_humanSteered = self.frame
+          events.append(create_event('steerTempUnavailableMute', [ET.NO_ENTRY, ET.WARNING]))
+
+#    if self.CS.steer_override:
+#      events.append(create_event('steerTempUnavailableMute', [[ET.NO_ENTRY, ET.WARNING]))
 
     if self.CP.enableCruise and ret.vEgo < self.CP.minEnableSpeed:
       events.append(create_event('speedTooLow', [ET.NO_ENTRY]))

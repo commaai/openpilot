@@ -58,9 +58,9 @@ class CarController(object):
     self.braking = False
     self.brake_steady = 0.
     self.brake_last = 0.
-    self.human_steered_frame = 0
     self.enable_camera = enable_camera
     self.packer = CANPacker(dbc_name)
+    self.epas_disabled = True
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
              pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel, \
@@ -134,31 +134,13 @@ class CarController(object):
     vehicle_moving = (CS.v_ego >= MIN_STEERING_VEHICLE_VELOCITY)
     
     enable_steer_control = (enabled and not CS.steer_not_allowed) # See below for human override logic
-    
-    # Torque
-    #steer_correction = actuators.steer if enable_steer_control else 0
-    #apply_steer = int(clip((-steer_correction * 100) + STEER_MAX - (CS.angle_steers * 10), STEER_MAX - USER_STEER_MAX, STEER_MAX + USER_STEER_MAX)) # steer torque is converted back to CAN reference (positive when steering right)
-
-    # Angle
-    steer_correction = actuators.steerAngle if enable_steer_control  else CS.angle_steers
-    apply_steer = int(clip((-actuators.steerAngle * 10) + STEER_MAX, STEER_MAX - (USER_STEER_MAX*2), STEER_MAX + (USER_STEER_MAX*2))) # steer torque is converted back to CAN reference (positive when steering right)
-
-    # If we were previously disengaged via CS.steer_override>0 then we want [x] in a row where our planned steering is within 3 degrees of where we are steering
-    if (CS.steer_override>0): 
-      self.human_steered_frame = frame
+    humanControl = False
+    if (frame - CS.frame_humanSteered < 50):
       enable_steer_control = False
-    else:
-      if (self.human_steered_frame - frame < 500): # Need more human testing of handoff timing
-        # Find steering difference between visiond model and human (no need to do every frame if we run out of CPU):
-        steer_current=STEER_MAX-(CS.angle_steers*10)  # Formula to convert current steering angle to match apply_steer calculated number
-        angle = abs(apply_steer-steer_current)
-
-        # If OP steering > 7 degrees different from human than count that as human still steering..
-        # Tesla rack doesn't report accurate enough, i.e. lane switch we show no human steering when they
-        # still are crossing road at an angle clearly they don't want OP to take over
-        if (angle > 70):
-          self.human_steered_frame = frame
-          enable_steer_control = False
+      humanControl = True
+    
+    # Angle
+    apply_steer = int(clip((-actuators.steerAngle * 10) + STEER_MAX, STEER_MAX - (USER_STEER_MAX*2), STEER_MAX + (USER_STEER_MAX*2))) # steer torque is converted back to CAN reference (positive when steering right)
 
     # Send CAN commands.
     can_sends = []
@@ -167,6 +149,7 @@ class CarController(object):
     if (frame % send_step) == 0:
       idx = (frame/send_step) % 16 
       can_sends.append(teslacan.create_steering_control(enable_steer_control, apply_steer, idx))
-      can_sends.append(teslacan.create_epb_enable_signal(idx))
+      if (not humanControl):
+        can_sends.append(teslacan.create_epb_enable_signal(idx))
 
       sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
