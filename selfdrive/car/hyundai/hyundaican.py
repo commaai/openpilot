@@ -1,8 +1,5 @@
 import struct
 
-
-# *** Toyota specific ***
-
 def fix(msg, addr):
   checksum = 0
   idh = (addr & 0xff00) >> 8
@@ -22,22 +19,6 @@ def make_can_msg(addr, dat, alt, cks=False):
   return [addr, 0, dat, alt]
 
 
-def create_video_target(frame, addr):
-  counter = frame & 0xff
-  msg = struct.pack("!BBBBBBB", counter, 0x03, 0xff, 0x00, 0x00, 0x00, 0x00)
-  return make_can_msg(addr, msg, 1, True)
-
-
-def create_steer_command(packer, steer, raw_cnt):
-  """Creates a CAN message for the Toyota Steer Command."""
-
-  values = {
-    "STEER_REQUEST": abs(steer) > 0.001,
-    "STEER_TORQUE_CMD": steer,
-    "COUNTER": raw_cnt,
-    "SET_ME_1": 1,
-  }
-  return packer.make_can_msg("STEERING_LKA", 0, values)
 
 def create_steer_command(packer, steer, car_fingerprint, idx):
   """Creates a CAN message for the Hyundai  Steering and LKAS UI command."""
@@ -86,4 +67,4 @@ def create_fcw_command(packer, fcw):
  #   "SET_ME_X80": 0x80,
  # }
  # return packer.make_can_msg("ACC_HUD", 0, values)
- return -1
+  return -1
