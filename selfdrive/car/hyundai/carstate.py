@@ -164,7 +164,7 @@ class CarState(object):
     self.v_wheel_rl = cp.vl["WHL_SPD11"]['WHL_SPD_RL'] * CV.KPH_TO_MS
     self.v_wheel_rr = cp.vl["WHL_SPD11"]['WHL_SPD_RR'] * CV.KPH_TO_MS
     self.v_wheel = (self.v_wheel_fl + self.v_wheel_fr + self.v_wheel_rl + self.v_wheel_rr) / 4.
-    if CP.carFingerprint == CAR.SORENTO:
+    if self.car_fingerprint == CAR.SORENTO:
       self.v_wheel = self.v_wheel * 1.02 # There is a 2 percent error on Sorento GT due to slightly larger wheel diameter compared to poverty packs.  Dash assumes about 4% which is excessive
 
     # Kalman filter
@@ -194,7 +194,7 @@ class CarState(object):
     self.user_brake = 0
     self.brake_lights = bool(self.brake_pressed)
 
-    if False:
+    if self.car_fingerprint == CAR.ELANTRA:
         can_gear = cp.vl["GEAR_PACKET"]['GEAR']
         self.pedal_gas = cp.vl["GAS_PEDAL"]['GAS_PEDAL'] ## TODO: find this that is idle when acc accels
         self.car_gas = self.pedal_gas
@@ -203,7 +203,7 @@ class CarState(object):
         self.pcm_acc_status = cp.vl["PCM_CRUISE"]['CRUISE_STATE']
         self.gas_pressed = not cp.vl["PCM_CRUISE"]['GAS_RELEASED']
         self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]['LOW_SPEED_LOCKOUT'] == 2
-    elif True:
+    elif self.car_fingerprint == CAR.SORENTO or self.car_fingerprint == CAR.STINGER:
         can_gear = cp.vl["AT01"]['Gear']
         self.brake_pressed = cp.vl["TCS13"]['DriverBraking']
         if (cp.vl["TCS13"]["DriverOverride"] == 0 and cp.vl["TCS13"]['ACC_REQ'] == 1):
