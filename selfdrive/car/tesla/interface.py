@@ -173,6 +173,8 @@ class CarInterface(object):
     ret.startAccel = 0.5
     ret.steerRateCost = 1.
 
+    return ret
+
   # returns a car.CarState
   def update(self, c):
     # ******************* do can recv *******************
