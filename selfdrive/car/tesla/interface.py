@@ -171,14 +171,14 @@ class CarInterface(object):
     ret.stoppingControl = True
     ret.steerLimitAlert = False
     ret.startAccel = 0.5
-
-    return ret
+    ret.steerRateCost = 1.
 
   # returns a car.CarState
   def update(self, c):
     # ******************* do can recv *******************
     canMonoTimes = []
 
+    print "c.actuators.SteerAngle = " + str(c.actuators.steerAngle)
     self.cp.update(int(sec_since_boot() * 1e9), False)
     self.epas_cp.update(int(sec_since_boot() * 1e9), False)
 
