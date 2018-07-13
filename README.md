@@ -43,16 +43,16 @@ Supported Cars
 
 | Make    | Model                  | Supported Package    | Lateral | Longitudinal | No Accel Below  | No Steer Below |
 | ------- | ---------------------- | -------------------- | ------- | ------------ | --------------  | -------------- |
-| Acura   | ILX 2016               | AcuraWatch Plus      | Yes     | Yes          | 25mph*          | 12mph          |
-| Acura   | ILX 2017               | AcuraWatch Plus      | Yes     | Yes          | 25mph*          | 12mph          |
+| Acura   | ILX 2016               | AcuraWatch Plus      | Yes     | Yes          | 25mph*          | 25mph          |
+| Acura   | ILX 2017               | AcuraWatch Plus      | Yes     | Yes          | 25mph*          | 25mph          |
 | Acura   | RDX 2018               | AcuraWatch Plus      | Yes     | Yes          | 25mph*          | 12mph          |
 | GM      | Volt 2017              | Driver Confidence II | Yes     | Yes          | 0mph            | 0mph           |
 | GM      | Volt 2018              | Driver Confidence II | Yes     | Yes          | 0mph            | 0mph           |
 | Honda   | Accord 2018            | All                  | Yes     | Stock        | 0mph            | 3mph           |
-| Honda   | Civic 2016 *(Sedan)*   | Honda Sensing        | Yes     | Yes          | 0mph            | 12mph          |
-| Honda   | Civic 2017 *(Sedan)*   | Honda Sensing        | Yes     | Yes          | 0mph            | 12mph          |
+| Honda   | Civic 2016             | Honda Sensing        | Yes     | Yes          | 0mph            | 12mph          |
+| Honda   | Civic 2017             | Honda Sensing        | Yes     | Yes          | 0mph            | 12mph          |
 | Honda   | Civic 2017 *(Hatch)*   | Honda Sensing        | Yes     | Stock        | 0mph            | 12mph          |
-| Honda   | Civic 2018 *(Sedan)*   | Honda Sensing        | Yes     | Yes          | 0mph            | 12mph          |
+| Honda   | Civic 2018             | Honda Sensing        | Yes     | Yes          | 0mph            | 12mph          |
 | Honda   | CR-V 2015              | Honda Sensing        | Yes     | Yes          | 25mph*          | 12mph          |
 | Honda   | CR-V 2016              | Honda Sensing        | Yes     | Yes          | 25mph*          | 12mph          |
 | Honda   | CR-V 2017              | Honda Sensing        | Yes     | Stock        | 0mph            | 12mph          |
