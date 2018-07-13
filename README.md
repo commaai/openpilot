@@ -1,4 +1,4 @@
-[![](https://i.imgur.com/RTQYufz.jpg)](#)
+[![](https://i.imgur.com/ww96cNo.png)](#)
 
 Welcome to openpilot
 ======
