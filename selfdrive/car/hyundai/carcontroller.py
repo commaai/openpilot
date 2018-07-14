@@ -1,6 +1,6 @@
 from common.numpy_fast import clip, interp
 from selfdrive.boardd.boardd import can_list_to_can_capnp
-from selfdrive.car.hyundai.hyundaican import make_can_msg, create_video_target, create_steer_command
+from selfdrive.car.hyundai.hyundaican import make_can_msg, create_lkas11, create_lkas12, create_steer_command
 from selfdrive.car.hyundai.values import ECU, STATIC_MSGS
 from selfdrive.can.packer import CANPacker
 
