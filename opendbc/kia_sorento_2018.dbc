@@ -961,13 +961,20 @@ BO_ 832 LKAS11: 8 LDWS_LKAS
  SG_ CF_Lkas_Chksum : 48|8@1+ (1,0) [0|255] "" MDPS
  SG_ CF_Lkas_FcwOpt_USM : 56|3@1+ (1,0) [0|7] "" CLU
  SG_ CF_Lkas_LdwsOpt_USM : 59|3@1+ (1,0) [0|7] "" CLU,MDPS
+ SG_ Byte0 : 0|8@1+ (1,0) [0|3] "" XXX
+ SG_ Byte1 : 8|8@1+ (1,0) [0|3] "" XXX
+ SG_ Nibble5 : 28|4@1+ (1,0) [0|3] "" XXX
+ SG_ Nibble6 : 32|4@1+ (1,0) [0|7] "" XXX
+ SG_ Byte5 : 40|8@1+ (1,0) [0|3] "" XXX
+ SG_ Byte7 : 63|8@0+ (1,0) [0|3] "" XXX
 
 BO_ 1342 LKAS12: 6 LDWS_LKAS
- SG_ CF_Lkas_TsrSlifOpt : 10|2@1+ (1,0) [0|3] "" CLU
- SG_ CF_LkasTsrStatus : 12|2@1+ (1,0) [0|3] "" CLU
- SG_ CF_Lkas_TsrSpeed_Display_Clu : 16|8@1+ (1,0) [0|255] "" CLU
- SG_ CF_LkasTsrSpeed_Display_Navi : 24|8@1+ (1,0) [0|255] "" BCM,CLU
- SG_ CF_Lkas_TsrAddinfo_Display : 32|2@1+ (1,0) [0|3] "" CLU
+ SG_ Byte0 : 0|8@1+ (1,0) [0|3] "" XXX
+ SG_ Byte1 : 8|8@1+ (1,0) [0|3] "" XXX
+ SG_ Byte2 : 16|8@1+ (1,0) [0|3] "" XXX
+ SG_ Byte3 : 24|8@1+ (1,0) [0|3] "" XXX
+ SG_ Byte4 : 32|8@1+ (1,0) [0|3] "" XXX
+ SG_ Byte5 : 40|8@1+ (1,0) [0|3] "" XXX
 
 BO_ 1338 TMU_GW_E_01: 8 CLU
  SG_ CF_Gway_TeleReqDrLock : 0|2@1+ (1,0) [0|3] "" BCM

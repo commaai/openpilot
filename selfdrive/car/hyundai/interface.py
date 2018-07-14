@@ -54,44 +54,27 @@ class CarInterface(object):
     ret.carName = "hyundai"
     ret.carFingerprint = candidate
 
-    
-    #ret.safetyModel = car.CarParams.SafetyModels.hyundai
-
     ret.safetyModel = car.CarParams.SafetyModels.hyundai
 
     # pedal
     ret.enableCruise = True
 
-    # FIXME: hardcoding honda civic 2016 touring params so they can be used to
-    # scale unknown params for other cars
-    mass_civic = 2923 * CV.LB_TO_KG + std_cargo
-    wheelbase_civic = 2.70
-    centerToFront_civic = wheelbase_civic * 0.4
-    centerToRear_civic = wheelbase_civic - centerToFront_civic
-    rotationalInertia_civic = 2500
-    tireStiffnessFront_civic = 85400
-    tireStiffnessRear_civic = 90000
+    rotationalInertia = 2500
+
+    tireStiffnessFront = 85400
+    tireStiffnessRear = 90000
 
     ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
     ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
 
     #borrowing a lot from corolla, given similar car size
-    if candidate == CAR.ELANTRA:
-      #ret.safetyParam = 1 ## TODO: use this
-      ret.wheelbase = 2.70
-      ret.steerRatio = 16.0
-      ret.mass = 2976 * CV.LB_TO_KG + std_cargo
-      ret.steerKpV, ret.steerKiV = [[0.2], [0.05]]
-      ret.steerKf = 0.00003   # full torque for 20 deg at 80mph means 0.00007818594
-      ret.steerRateCost = 1.
-      #ret.steerActuatorDelay = 0.25 ## TODO: is this needed?
-    elif candidate == CAR.SORENTO:
-      stop_and_go = True
-      ret.mass = 1985 + std_cargo
-      ret.wheelbase = 2.78
-      ret.steerRatio = 14.4
-      ret.steerKpV, ret.steerKiV = [[0.8], [0.24]]
-
+    ret.steerKf = 0.00003   # full torque for 20 deg at 80mph means 0.00007818594
+    ret.steerRateCost = 1.
+    stop_and_go = True
+    ret.mass = 1985 + std_cargo
+    ret.wheelbase = 2.78
+    ret.steerRatio = 14.4
+    ret.steerKpV, ret.steerKiV = [[0.8], [0.24]]
     ret.centerToFront = ret.wheelbase * 0.44
 
     ret.longPidDeadzoneBP = [0., 9.]
@@ -104,17 +87,12 @@ class CarInterface(object):
     centerToRear = ret.wheelbase - ret.centerToFront
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
-    ret.rotationalInertia = rotationalInertia_civic * \
-                            ret.mass * ret.wheelbase**2 / (mass_civic * wheelbase_civic**2)
+    ret.rotationalInertia = rotationalInertia * ret.mass * ret.wheelbase**2
 
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
-    ret.tireStiffnessFront = tireStiffnessFront_civic * \
-                             ret.mass / mass_civic * \
-                             (centerToRear / ret.wheelbase) / (centerToRear_civic / wheelbase_civic)
-    ret.tireStiffnessRear = tireStiffnessRear_civic * \
-                            ret.mass / mass_civic * \
-                            (ret.centerToFront / ret.wheelbase) / (centerToFront_civic / wheelbase_civic)
+    ret.tireStiffnessFront = tireStiffnessFront * ret.mass * (centerToRear / ret.wheelbase)
+    ret.tireStiffnessRear = tireStiffnessRear * ret.mass * (ret.centerToFront / ret.wheelbase)
 
     # no rear steering, at least on the listed cars above
     ret.steerRatioRear = 0.
@@ -186,13 +164,8 @@ class CarInterface(object):
     #ret.cruiseState.available = bool(self.CS.main_on)
     #ret.cruiseState.speedOffset = 0.
 
-    if self.CP.carFingerprint == CAR.ELANTRA:
-      # ignore standstill in hybrid rav4, since pcm allows to restart without
-      # receiving any special command
-      ret.cruiseState.standstill = False
-    else:
-      ret.cruiseState.standstill = False #self.CS.pcm_acc_status == 7
-
+    ret.cruiseState.standstill = False
+    
     # TODO: button presses
     buttonEvents = []
 

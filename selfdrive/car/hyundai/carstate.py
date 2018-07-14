@@ -28,97 +28,61 @@ def parse_gear_shifter(can_gear, car_fingerprint):
 
 def get_can_parser(CP):
 
-  if CP.carFingerprint == CAR.ELANTRA:
-      signals = [
-        # sig_name, sig_address, default
-        ("WHL_SPD_FL", "WHL_SPD11", 0),
-        ("WHL_SPD_FR", "WHL_SPD11", 0),
-        ("WHL_SPD_RL", "WHL_SPD11", 0),
-        ("WHL_SPD_RR", "WHL_SPD11", 0),
-        ("YAW_RATE", "ESP12", 0),
-        ("CR_Lkas_StrToqReq", "LKAS11", 0),
-        ("GEAR_TYPE", "TCU11", 0),
-        ("CF_Gway_DrvSeatBeltInd", "CGW4", 1),
-        ("CF_Gway_DrvSeatBeltSw", "CGW1", 0),
-        ("BRAKE_ACT", "EMS12", 0),
-        ("CF_Clu_CruiseSwState", "CLU11", 0),
-        ("CYL_PRES", "ESP12", 0),
-        ("CF_Clu_CruiseSwMain", "CLU11", 0),
-        ("ACCEnable", "TCS13", 0),
-        ("PV_AV_CAN", "EMS12", 0),
-        ("CF_Gway_TurnSigLh", "CGW1", 0),
-        ("CF_Gway_TurnSigRh", "CGW1", 0),
-        ("C_parkingBrakeSW", "GW_IPM_PE_1", 0),
-      ]
+  signals = [
+    # sig_name, sig_address, default
+    ("WHL_SPD_FL", "WHL_SPD11", 0),
+    ("WHL_SPD_FR", "WHL_SPD11", 0),
+    ("WHL_SPD_RL", "WHL_SPD11", 0),
+    ("WHL_SPD_RR", "WHL_SPD11", 0),
 
-      checks = [
-        ("LKAS11", 100),
-        ("MDPS12", 50),
-        ("TCS15", 10),
-        ("TCS13", 50),
-        ("CLU11", 50),
-        ("ESP12", 100), 
-        ("EMS12", 100),
-        ("CGW1", 10),
-        ("CGW4", 5),
-        ("WHL_SPD11", 50),
-      ]
-  elif CP.carFingerprint == CAR.SORENTO or CP.carFingerprint == CAR.STINGER:
-      signals = [
-        # sig_name, sig_address, default
-        ("WHL_SPD_FL", "WHL_SPD11", 0),
-        ("WHL_SPD_FR", "WHL_SPD11", 0),
-        ("WHL_SPD_RL", "WHL_SPD11", 0),
-        ("WHL_SPD_RR", "WHL_SPD11", 0),
+    ("YAW_RATE", "ESP12", 0),
+    
+    ("CR_Lkas_StrToqReq", "LKAS11", 0),
 
-        ("YAW_RATE", "ESP12", 0),
-        
-        ("CR_Lkas_StrToqReq", "LKAS11", 0),
+    ("CF_Gway_DrvSeatBeltInd", "CGW4", 1),
 
-        ("CF_Gway_DrvSeatBeltInd", "CGW4", 1),
+    ("CF_Gway_DrvSeatBeltSw", "CGW1", 0),
+    ("CF_Gway_TurnSigLh", "CGW1", 0),
+    ("CF_Gway_TurnSigRh", "CGW1", 0),
 
-        ("CF_Gway_DrvSeatBeltSw", "CGW1", 0),
-        ("CF_Gway_TurnSigLh", "CGW1", 0),
-        ("CF_Gway_TurnSigRh", "CGW1", 0),
+    ("BRAKE_ACT", "EMS12", 0),
+    ("PV_AV_CAN", "EMS12", 0),
+    ("TPS", "EMS12", 0),
 
-        ("BRAKE_ACT", "EMS12", 0),
-        ("PV_AV_CAN", "EMS12", 0),
-        ("TPS", "EMS12", 0),
+    ("CYL_PRES", "ESP12", 0),
 
-        ("CYL_PRES", "ESP12", 0),
+    ("CF_Clu_CruiseSwState", "CLU11", 0),
+    ("CF_Clu_CruiseSwMain", "CLU11", 0),
 
-        ("CF_Clu_CruiseSwState", "CLU11", 0),
-        ("CF_Clu_CruiseSwMain", "CLU11", 0),
+    ("ACCEnable", "TCS13", 0),
+    ("ACC_REQ", "TCS13", 0),
+    ("DriverBraking", "TCS13", 0),
+    ("DriverOverride", "TCS13", 0),
 
-        ("ACCEnable", "TCS13", 0),
-        ("ACC_REQ", "TCS13", 0),
-        ("DriverBraking", "TCS13", 0),
-        ("DriverOverride", "TCS13", 0),
+    ("ESC_Off_Step", "TCS15", 0),
 
-        ("ESC_Off_Step", "TCS15", 0),
+    ("Gear", "AT01", 0),        #Transmission Gear (0 = N or P, 1-8 = Fwd, 14 = Rev)
 
-        ("Gear", "AT01", 0),        #Transmission Gear (0 = N or P, 1-8 = Fwd, 14 = Rev)
+    ("CR_Mdps_StrColTq", "MDPS12", 0),
+    ("CF_Mdps_ToiActive", "MDPS12", 0),
+    ("CF_Mdps_FailStat", "MDPS12", 0),
+    ("CR_Mdps_OutTq", "MDPS12", 0),
 
-        ("CR_Mdps_StrColTq", "MDPS12", 0),
-        ("CF_Mdps_ToiActive", "MDPS12", 0),
-        ("CF_Mdps_FailStat", "MDPS12", 0),
-        ("CR_Mdps_OutTq", "MDPS12", 0),
-
-      ]
-      checks = [
-        # address, frequency
-        ## TODO - DO THIS PROPERLY
-        ("LKAS11", 100),
-        ("MDPS12", 50),
-        ("TCS15", 10),
-        ("TCS13", 50),
-        ("CLU11", 50),
-        ("ESP12", 100), 
-        ("EMS12", 100),
-        ("CGW1", 10),
-        ("CGW4", 5),
-        ("WHL_SPD11", 50),
-      ]
+  ]
+  checks = [
+    # address, frequency
+    ## TODO - DO THIS PROPERLY
+    ("LKAS11", 100),
+    ("MDPS12", 50),
+    ("TCS15", 10),
+    ("TCS13", 50),
+    ("CLU11", 50),
+    ("ESP12", 100), 
+    ("EMS12", 100),
+    ("CGW1", 10),
+    ("CGW4", 5),
+    ("WHL_SPD11", 50),
+  ]
 
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
@@ -194,22 +158,12 @@ class CarState(object):
     self.user_brake = 0
     self.brake_lights = bool(self.brake_pressed)
 
-    if self.car_fingerprint == CAR.ELANTRA:
-        can_gear = cp.vl["GEAR_PACKET"]['GEAR']
-        self.pedal_gas = cp.vl["GAS_PEDAL"]['GAS_PEDAL'] ## TODO: find this that is idle when acc accels
-        self.car_gas = self.pedal_gas
-        self.gear_shifter = cp.vl["TCU11"]['GEAR_TYPE']
-        self.v_cruise_pcm = cp.vl["SCC11"]['VSetDis'] ## TODO: find the unit
-        self.pcm_acc_status = cp.vl["PCM_CRUISE"]['CRUISE_STATE']
-        self.gas_pressed = not cp.vl["PCM_CRUISE"]['GAS_RELEASED']
-        self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]['LOW_SPEED_LOCKOUT'] == 2
-    elif self.car_fingerprint == CAR.SORENTO or self.car_fingerprint == CAR.STINGER:
-        can_gear = cp.vl["AT01"]['Gear']
-        self.brake_pressed = cp.vl["TCS13"]['DriverBraking']
-        if (cp.vl["TCS13"]["DriverOverride"] == 0 and cp.vl["TCS13"]['ACC_REQ'] == 1):
-          self.pedal_gas = 0
-        else: 
-          self.pedal_gas = cp.vl["EMS12"]['TPS']
-        self.car_gas = cp.vl["EMS12"]['TPS']
-        self.gear_shifter = parse_gear_shifter(can_gear, self.car_fingerprint)
+    can_gear = cp.vl["AT01"]['Gear']
+    self.brake_pressed = cp.vl["TCS13"]['DriverBraking']
+    if (cp.vl["TCS13"]["DriverOverride"] == 0 and cp.vl["TCS13"]['ACC_REQ'] == 1):
+      self.pedal_gas = 0
+    else: 
+      self.pedal_gas = cp.vl["EMS12"]['TPS']
+    self.car_gas = cp.vl["EMS12"]['TPS']
+    self.gear_shifter = parse_gear_shifter(can_gear, self.car_fingerprint)
 

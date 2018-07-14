@@ -20,7 +20,7 @@ def make_can_msg(addr, dat, alt, cks=False):
 
 
 
-def create_steer_command(packer, steer, car_fingerprint, idx):
+def create_steer_command(packer, car_fingerprint, steer, idx, checksum):
   """Creates a CAN message for the Hyundai  Steering and LKAS UI command."""
   lkas_hud_values = {
     #checksum and counter are calculated elsewhere
@@ -45,26 +45,34 @@ def create_steer_command(packer, steer, car_fingerprint, idx):
 
   return packer.make_can_msg("LKAS11", 0, lkas_hud_values, idx)
 
+def create_lkas11(packer, steer, idx, checksum):
+  """Creates a CAN message for the Hyundai LKAS11."""
+  values = {
+    'Byte0' : 0x0c,
+    'Byte1' : 0x00,
+    'CR_Lkas_StrToqReq' : steer, #actual torque request
+    'CF_Lkas_ActToi': steer != 0, #the torque request bit
+    'Nibble5' : 0x0,
+    'Nibble6' : 0x0,
+    'CF_Lkas_MsgCount' : idx,
+    'Byte5' : 0x00,
+    'CF_Lkas_Chksum' : checksum,
+    'Byte7' : 0x18,
+  }
 
-def create_accel_command(packer, accel, pcm_cancel, standstill_req):
-  # TODO: find the exact canceling bit
-  #values = {
-  #  "ACCEL_CMD": accel,
-  #  "SET_ME_X63": 0x63,
-  #  "SET_ME_1": 1,
-  #  "RELEASE_STANDSTILL": not standstill_req,
-  #  "CANCEL_REQ": pcm_cancel,
-  #}
-  #return packer.make_can_msg("ACC_CONTROL", 0, values)
-  return -1
+  return packer.make_can_msg("LKAS11", 1, values)
 
 
-def create_fcw_command(packer, fcw):
- # values = {
- #   "FCW": fcw,
- #   "SET_ME_X20": 0x20,
- #   "SET_ME_X10": 0x10,
- #   "SET_ME_X80": 0x80,
- # }
- # return packer.make_can_msg("ACC_HUD", 0, values)
-  return -1
+
+
+def create_lkas12(packer):
+  values = {
+    'Byte0' : 0x00,
+    'Byte1' : 0x00,
+    'Byte2' : 0x00,
+    'Byte3' : 0x00,
+    'Byte4' : 0x20,
+    'Byte5' : 0x00,
+  }
+
+  return packer.make_can_msg("LKAS12", 0, values)

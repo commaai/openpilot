@@ -1,17 +1,9 @@
 from common.numpy_fast import clip, interp
 from selfdrive.boardd.boardd import can_list_to_can_capnp
-from selfdrive.car.hyundai.hyundaican import make_can_msg, create_video_target,\
-                                           create_steer_command, create_ui_command, \
-                                           create_accel_command, \
-                                           create_fcw_command
+from selfdrive.car.hyundai.hyundaican import make_can_msg, create_video_target, create_steer_command
 from selfdrive.car.hyundai.values import ECU, STATIC_MSGS
 from selfdrive.can.packer import CANPacker
 
-# Accel limits
-ACCEL_HYST_GAP = 0.02  # don't change accel command for small oscilalitons within this value
-ACCEL_MAX = 1.5  # 1.5 m/s2
-ACCEL_MIN = -3.0 # 3   m/s2
-ACCEL_SCALE = max(ACCEL_MAX, -ACCEL_MIN)
 
 # Steer torque limits
 STEER_MAX = 1500
@@ -26,43 +18,8 @@ ANGLE_DELTA_BP = [0., 5., 15.]
 ANGLE_DELTA_V = [5., .8, .15]     # windup limit
 ANGLE_DELTA_VU = [5., 3.5, 0.4]   # unwind limit
 
-TARGET_IDS = [0x340, 0x381, 0x386]
+TARGET_IDS = [0x340]
 
-
-def accel_hysteresis(accel, accel_steady, enabled):
-
-  # for small accel oscillations within ACCEL_HYST_GAP, don't change the accel command
-  if not enabled:
-    # send 0 when disabled, otherwise acc faults
-    accel_steady = 0.
-  elif accel > accel_steady + ACCEL_HYST_GAP:
-    accel_steady = accel - ACCEL_HYST_GAP
-  elif accel < accel_steady - ACCEL_HYST_GAP:
-    accel_steady = accel + ACCEL_HYST_GAP
-  accel = accel_steady
-
-  return accel, accel_steady
-
-
-def process_hud_alert(hud_alert, audible_alert):
-  # initialize to no alert
-  steer = 0
-  fcw = 0
-  sound1 = 0
-  sound2 = 0
-
-  if hud_alert == 'fcw':
-    fcw = 1
-  elif hud_alert == 'steerRequired':
-    steer = 1
-
-  if audible_alert == 'chimeRepeated':
-    sound1 = 1
-  elif audible_alert in ['beepSingle', 'chimeSingle', 'chimeDouble']:
-    # TODO: find a way to send single chimes
-    sound2 = 1
-
-  return steer, fcw, sound1, sound2
 
 
 class CarController(object):
@@ -71,12 +28,7 @@ class CarController(object):
     # redundant safety check with the board
     self.controls_allowed = False
     self.last_steer = 0
-    self.last_angle = 0
-    self.accel_steady = 0.
     self.car_fingerprint = car_fingerprint
-    self.alert_active = False
-    self.last_standstill = False
-    self.standstill_req = False
     self.angle_control = False
 
     self.steer_angle_enabled = False
@@ -86,15 +38,9 @@ class CarController(object):
     if enable_camera: self.fake_ecus.add(ECU.CAM)
     self.packer = CANPacker(dbc_name)
 
-  def update(self, sendcan, enabled, CS, frame, actuators,
-             pcm_cancel_cmd, hud_alert, audible_alert):
+  def update(self, sendcan, enabled, CS, frame, actuators):
 
     # *** compute control surfaces ***
-
-    # gas and brake
-    apply_accel = actuators.gas - actuators.brake
-    apply_accel, self.accel_steady = accel_hysteresis(apply_accel, self.accel_steady, enabled)
-    apply_accel = clip(apply_accel * ACCEL_SCALE, ACCEL_MIN, ACCEL_MAX)
 
     # steer torque
     apply_steer = int(round(actuators.steer * STEER_MAX))
@@ -113,110 +59,37 @@ class CarController(object):
     # dropping torque immediately might cause eps to temp fault. On the other hand, safety_toyota
     # cuts steer torque immediately anyway TODO: monitor if this is a real issue
     # only cut torque when steer state is a known fault
-    if not enabled or CS.steer_state in [9, 25]:
+    if not enabled:
       apply_steer = 0
 
-    self.steer_angle_enabled, self.ipas_reset_counter = \
-      ipas_state_transition(self.steer_angle_enabled, enabled, CS.ipas_active, self.ipas_reset_counter)
-    #print self.steer_angle_enabled, self.ipas_reset_counter, CS.ipas_active
-
-    # steer angle
-    if self.steer_angle_enabled and CS.ipas_active:
-      apply_angle = actuators.steerAngle
-      angle_lim = interp(CS.v_ego, ANGLE_MAX_BP, ANGLE_MAX_V)
-      apply_angle = clip(apply_angle, -angle_lim, angle_lim)
-
-      # windup slower
-      if self.last_angle * apply_angle > 0. and abs(apply_angle) > abs(self.last_angle):
-        angle_rate_lim = interp(CS.v_ego, ANGLE_DELTA_BP, ANGLE_DELTA_V)
-      else:
-        angle_rate_lim = interp(CS.v_ego, ANGLE_DELTA_BP, ANGLE_DELTA_VU)
-
-      apply_angle = clip(apply_angle, self.last_angle - angle_rate_lim, self.last_angle + angle_rate_lim)
-    else:
-      apply_angle = CS.angle_steers
-
-    if not enabled and CS.pcm_acc_status:
-      # send pcm acc cancel cmd if drive is disabled but pcm is still on, or if the system can't be activated
-      pcm_cancel_cmd = 1
-
-    # on entering standstill, send standstill request
-    if CS.standstill and not self.last_standstill:
-      self.standstill_req = True
-    if CS.pcm_acc_status != 8:
-      # pcm entered standstill or it's disabled
-      self.standstill_req = False
 
     self.last_steer = apply_steer
-    self.last_angle = apply_angle
-    self.last_accel = apply_accel
-    self.last_standstill = CS.standstill
 
     can_sends = []
 
     #*** control msgs ***
     #print "steer", apply_steer, min_lim, max_lim, CS.steer_torque_motor
 
-    # toyota can trace shows this message at 42Hz, with counter adding alternatively 1 and 2;
-    # sending it at 100Hz seem to allow a higher rate limit, as the rate limit seems imposed
-    # on consecutive messages
-    if ECU.CAM in self.fake_ecus:
-      if self.angle_control:
-        can_sends.append(create_steer_command(self.packer, 0., frame))
-      else:
-        can_sends.append(create_steer_command(self.packer, apply_steer, frame))
+    #counts from 0 to 15 then back to 0
+    idx = (frame / P.STEER_STEP) % 16
 
-    if self.angle_control:
-      can_sends.append(create_ipas_steer_command(self.packer, apply_angle, self.steer_angle_enabled,
-                                                 ECU.APGS in self.fake_ecus))
-    elif ECU.APGS in self.fake_ecus:
-      can_sends.append(create_ipas_steer_command(self.packer, 0, 0, True))
+    if not lkas_enabled:
+      apply_steer = 0
 
-    # accel cmd comes from DSU, but we can spam can to cancel the system even if we are using lat only control
-    if (frame % 3 == 0 and ECU.DSU in self.fake_ecus) or (pcm_cancel_cmd and ECU.CAM in self.fake_ecus):
-      if ECU.DSU in self.fake_ecus:
-        can_sends.append(create_accel_command(self.packer, apply_accel, pcm_cancel_cmd, self.standstill_req))
-      else:
-        can_sends.append(create_accel_command(self.packer, 0, pcm_cancel_cmd, False))
-
-    if frame % 10 == 0 and ECU.CAM in self.fake_ecus:
-      for addr in TARGET_IDS:
-        can_sends.append(create_video_target(frame/10, addr))
-
-    # ui mesg is at 100Hz but we send asap if:
-    # - there is something to display
-    # - there is something to stop displaying
-    alert_out = process_hud_alert(hud_alert, audible_alert)
-    steer, fcw, sound1, sound2 = alert_out
-
-    if (any(alert_out) and not self.alert_active) or \
-       (not any(alert_out) and self.alert_active):
-      send_ui = True
-      self.alert_active = not self.alert_active
+     
+    #Max steer = 1023
+    if actuators.steer < 0:
+      chksm_steer = 1024-abs(apply_steer)
     else:
-      send_ui = False
+      chksm_steer = apply_steer
+      
+    steer2 = (chksm_steer >> 8) & 0x7
+    steer1 =  chksm_steer - (steer2 << 8)
+    checksum = (idx + steer1 + steer2 + lkas_request) % 256
 
-    if (frame % 100 == 0 or send_ui) and ECU.CAM in self.fake_ecus:
-      can_sends.append(create_ui_command(self.packer, steer, sound1, sound2))
-      can_sends.append(create_fcw_command(self.packer, fcw))
 
-    #*** static msgs ***
-
-    for (addr, ecu, cars, bus, fr_step, vl) in STATIC_MSGS:
-      if frame % fr_step == 0 and ecu in self.fake_ecus and self.car_fingerprint in cars:
-        # special cases
-        if fr_step == 5 and ecu == ECU.CAM and bus == 1:
-          cnt = (((frame / 5) % 7) + 1) << 5
-          vl = chr(cnt) + vl
-        elif addr in (0x489, 0x48a) and bus == 0:
-          # add counter for those 2 messages (last 4 bits)
-          cnt = ((frame/100)%0xf) + 1
-          if addr == 0x48a:
-            # 0x48a has a 8 preceding the counter
-            cnt += 1 << 7
-          vl += chr(cnt)
-
-        can_sends.append(make_can_msg(addr, vl, bus, False))
+    can_sends.append(hyundaican.create_lkas11(self.packer, apply_steer, idx, checksum))
+    can_sends.append(hyundaican.create_lkas12(self.packer))
 
 
     sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
