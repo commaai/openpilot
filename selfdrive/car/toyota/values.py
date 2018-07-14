@@ -112,3 +112,5 @@ DBC = {
   CAR.LEXUS_RXH: dbc_dict('lexus_rx_hybrid_2017_pt_generated', 'toyota_prius_2017_adas'),
   CAR.CHR: dbc_dict('toyota_chr_2018_pt_generated', 'toyota_prius_2017_adas'),
 }
+
+NO_DSU_CAR = [CAR.CHR]
