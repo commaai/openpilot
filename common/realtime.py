@@ -106,5 +106,3 @@ class Ratekeeper(object):
     self._remaining = remaining
     return lagged
 
-if __name__ == "__main__":
-  print sec_since_boot()

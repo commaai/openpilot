@@ -3,6 +3,7 @@ import zmq
 from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.services import service_list
+from selfdrive.swaglog import cloudlog
 import selfdrive.messaging as messaging
 
 # mocked car interface to work with chffrplus
@@ -17,7 +18,7 @@ class CarInterface(object):
 
     self.CP = CP
 
-    print "Using Mock Car Interface"
+    cloudlog.debug("Using Mock Car Interface")
     context = zmq.Context()
 
     # TODO: subscribe to phone sensor
