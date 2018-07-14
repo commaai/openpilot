@@ -198,6 +198,7 @@ class CarState(object):
     self.prev_right_blinker_on = self.right_blinker_on
 
     # ******************* parse out can *******************
+
     if self.CP.carFingerprint == CAR.ACCORD: # TODO: find wheels moving bit in dbc
       self.standstill = cp.vl["ENGINE_DATA"]['XMISSION_SPEED'] < 0.1
       self.door_all_closed = not cp.vl["SCM_FEEDBACK"]['DRIVERS_DOOR_OPEN']
@@ -221,7 +222,6 @@ class CarState(object):
     self.v_wheel_fr = cp.vl["WHEEL_SPEEDS"]['WHEEL_SPEED_FR'] * CV.KPH_TO_MS
     self.v_wheel_rl = cp.vl["WHEEL_SPEEDS"]['WHEEL_SPEED_RL'] * CV.KPH_TO_MS
     self.v_wheel_rr = cp.vl["WHEEL_SPEEDS"]['WHEEL_SPEED_RR'] * CV.KPH_TO_MS
-
     self.v_wheel = (self.v_wheel_fl + self.v_wheel_fr + self.v_wheel_rl + self.v_wheel_rr) / 4.
 
     # blend in transmission speed at low speed, since it has more low speed accuracy
@@ -286,15 +286,13 @@ class CarState(object):
       # On set, cruise set speed pulses between 254~255 and the set speed prev is set to avoid this.
       self.v_cruise_pcm = self.v_cruise_pcm_prev if cp.vl["ACC_HUD"]['CRUISE_SPEED'] > 160.0 else cp.vl["ACC_HUD"]['CRUISE_SPEED']
       self.v_cruise_pcm_prev = self.v_cruise_pcm
-    #Nidec cruise
     else:
       self.cruise_speed_offset = calc_cruise_offset(cp.vl["CRUISE_PARAMS"]['CRUISE_SPEED_OFFSET'], self.v_ego)
       self.v_cruise_pcm = cp.vl["CRUISE"]['CRUISE_SPEED_PCM']
 
-    #Bosch brake: all Bosch except Civic Hatch
+    #Bosch brake: exclude Civic Hatch
     if self.CP.radarOffCan and self.CP.carFingerprint != CAR.CIVIC_HATCH:
       self.brake_pressed = cp.vl["BRAKE_MODULE"]['BRAKE_PRESSED']
-    #Nidec brake: all Nidec and Civic Hatch
     else:
       # brake switch has shown some single time step noise, so only considered when
       # switch is on for at least 2 consecutive CAN samples
