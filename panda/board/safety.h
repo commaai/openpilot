@@ -102,7 +102,7 @@ const safety_hook_config safety_hook_registry[] = {
   {SAFETY_GM, &gm_hooks},
   {SAFETY_FORD, &ford_hooks},
   {SAFETY_CADILLAC, &cadillac_hooks},
-  {SAFETY_HYUNDAI, &hyundai_hooks},
+  {SAFETY_HYUNDAI, &alloutput_hooks},
   {SAFETY_TOYOTA_NOLIMITS, &toyota_nolimits_hooks},
 #ifdef PANDA
   {SAFETY_TOYOTA_IPAS, &toyota_ipas_hooks},

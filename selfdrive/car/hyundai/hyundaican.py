@@ -45,19 +45,19 @@ def create_steer_command(packer, car_fingerprint, steer, idx, checksum):
 
   return packer.make_can_msg("LKAS11", 0, lkas_hud_values, idx)
 
-def create_lkas11(packer, steer, idx, checksum):
+def create_lkas11(packer, byte0, byte1, steer, steer_required, nibble5, \
+  byte4, byte5, checksum, byte7):
   """Creates a CAN message for the Hyundai LKAS11."""
   values = {
-    'Byte0' : 0x0c,
-    'Byte1' : 0x00,
+    'Byte0' : byte0,
+    'Byte1' : byte1,
     'CR_Lkas_StrToqReq' : steer, #actual torque request
-    'CF_Lkas_ActToi': steer != 0, #the torque request bit
-    'Nibble5' : 0x0,
-    'Nibble6' : 0x0,
-    'CF_Lkas_MsgCount' : idx,
-    'Byte5' : 0x00,
+    'CF_Lkas_ActToi': steer_required, #the torque request bit
+    'Nibble5' : nibble5,
+    'Byte4' : byte4,
+    'Byte5' : byte5,
     'CF_Lkas_Chksum' : checksum,
-    'Byte7' : 0x18,
+    'Byte7' : byte7,
   }
 
   return packer.make_can_msg("LKAS11", 1, values)

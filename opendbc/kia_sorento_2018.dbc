@@ -964,7 +964,7 @@ BO_ 832 LKAS11: 8 LDWS_LKAS
  SG_ Byte0 : 0|8@1+ (1,0) [0|3] "" XXX
  SG_ Byte1 : 8|8@1+ (1,0) [0|3] "" XXX
  SG_ Nibble5 : 28|4@1+ (1,0) [0|3] "" XXX
- SG_ Nibble6 : 32|4@1+ (1,0) [0|7] "" XXX
+ SG_ Byte4 : 32|8@1+ (1,0) [0|7] "" XXX
  SG_ Byte5 : 40|8@1+ (1,0) [0|3] "" XXX
  SG_ Byte7 : 63|8@0+ (1,0) [0|3] "" XXX
 

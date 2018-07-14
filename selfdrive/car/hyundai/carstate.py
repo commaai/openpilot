@@ -7,23 +7,13 @@ import numpy as np
 
 def parse_gear_shifter(can_gear, car_fingerprint):
   # TODO: Use values from DBC to parse this field
-  if car_fingerprint == CAR.ELANTRA:
-    if can_gear_shifter == 0x0:
-      return "park"
-    elif can_gear_shifter == 0x5:
-      return "drive"
-    elif can_gear_shifter == 0x6:
-      return "neutral"
-    elif can_gear_shifter == 0x7:
-      return "reverse"
-  elif car_fingerprint == CAR.SORENTO:
-    if can_gear == 0:
-      return "park"
-    elif can_gear == 14:
-      return "reverse"
-    else:
-      return "drive"
-  return "unknown"
+  # 8 Speed Auto's hack since I haven't found the shifter
+  if can_gear == 0:
+    return "park"
+  elif can_gear == 14:
+    return "reverse"
+  else:
+    return "drive"
 
 
 def get_can_parser(CP):
@@ -38,6 +28,19 @@ def get_can_parser(CP):
     ("YAW_RATE", "ESP12", 0),
     
     ("CR_Lkas_StrToqReq", "LKAS11", 0),
+    ("Byte0", "LKAS11", 0),
+    ("Byte1", "LKAS11", 0),
+    ("Nibble5", "LKAS11", 0),
+    ("Byte4", "LKAS11", 0),
+    ("Byte5", "LKAS11", 0),
+    ("Byte7", "LKAS11", 0),
+
+    ("Byte0", "LKAS12", 0),
+    ("Byte1", "LKAS12", 0),
+    ("Byte2", "LKAS12", 0),
+    ("Byte3", "LKAS12", 0),
+    ("Byte4", "LKAS12", 0),
+    ("Byte5", "LKAS12", 0),
 
     ("CF_Gway_DrvSeatBeltInd", "CGW4", 1),
 
@@ -68,6 +71,8 @@ def get_can_parser(CP):
     ("CF_Mdps_FailStat", "MDPS12", 0),
     ("CR_Mdps_OutTq", "MDPS12", 0),
 
+    ("ACCMode", "SCC12", 1),
+
   ]
   checks = [
     # address, frequency
@@ -80,8 +85,10 @@ def get_can_parser(CP):
     ("ESP12", 100), 
     ("EMS12", 100),
     ("CGW1", 10),
+    ("LKAS12", 10),
     ("CGW4", 5),
     ("WHL_SPD11", 50),
+    ("SCC12", 50),
   ]
 
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
@@ -121,6 +128,11 @@ class CarState(object):
     
     self.brake_pressed = cp.vl["TCS13"]['DriverBraking']
     self.esp_disabled = cp.vl["TCS15"]['ESC_Off_Step']
+
+    self.park_brake = False
+    self.main_on = False
+    self.acc_active = pt_cp.vl["SCC12"]['ACCMode'] == 1
+    self.pcm_acc_status = int(self.acc_active)
 
     # calc best v_ego estimate, by averaging two opposite corners
     self.v_wheel_fl = cp.vl["WHL_SPD11"]['WHL_SPD_FL'] * CV.KPH_TO_MS
@@ -166,4 +178,19 @@ class CarState(object):
       self.pedal_gas = cp.vl["EMS12"]['TPS']
     self.car_gas = cp.vl["EMS12"]['TPS']
     self.gear_shifter = parse_gear_shifter(can_gear, self.car_fingerprint)
+
+    #For LKAS Passthrough
+    self.lkas11_byte0 = ["LKAS11"]['Byte0']
+    self.lkas11_byte1 = ["LKAS11"]['Byte1']
+    self.lkas11_nibble5 = ["LKAS11"]['Nibble5']
+    self.lkas11_byte4 = ["LKAS11"]['Byte4']
+    self.lkas11_byte5 = ["LKAS11"]['Byte5']
+    self.lkas11_byte7 = ["LKAS11"]['Byte7']
+
+    self.lkas12_byte0 = ["LKAS12"]['Byte0']
+    self.lkas12_byte1 = ["LKAS12"]['Byte1']
+    self.lkas12_byte2 = ["LKAS12"]['Byte2']
+    self.lkas12_byte3 = ["LKAS12"]['Byte3']
+    self.lkas12_byte4 = ["LKAS12"]['Byte4']
+    self.lkas12_byte5 = ["LKAS12"]['Byte5']
 

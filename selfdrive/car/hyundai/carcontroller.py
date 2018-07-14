@@ -82,14 +82,24 @@ class CarController(object):
       chksm_steer = 1024-abs(apply_steer)
     else:
       chksm_steer = apply_steer
+
+    if abs(actuators.steer) > 0.001:
+      lkas_request = 1
+    else :
+      lkas_request = 0
       
     steer2 = (chksm_steer >> 8) & 0x7
     steer1 =  chksm_steer - (steer2 << 8)
-    checksum = (idx + steer1 + steer2 + lkas_request) % 256
+    checksum = (CS.lkas11_byte0 + CS.lkas11_byte1 + steer1 + steer2 + \
+      lkas_request + CS.lkas11_nibble5 + CS.lkas11_byte4 + CS.lkas11_byte5) % 256
 
 
-    can_sends.append(hyundaican.create_lkas11(self.packer, apply_steer, idx, checksum))
-    can_sends.append(hyundaican.create_lkas12(self.packer))
+    can_sends.append(hyundaican.create_lkas11(self.packer, CS.lkas11_byte0, \
+      CS.lkas11_byte1, apply_steer, lkas_request, CS.lkas11_nibble5, \
+      CS.lkas11_byte4, CS.lkas11_byte5, checksum, CS.lkas11_byte7))
+
+    if (frame % 10) == 0:
+      can_sends.append(hyundaican.create_lkas12(self.packer))
 
 
     sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
