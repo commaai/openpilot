@@ -3,8 +3,6 @@ from common.kalman.simple_kalman import KF1D
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from selfdrive.car.honda.values import CAR, DBC
-import numpy as np
-
 
 def parse_gear_shifter(can_gear_shifter, car_fingerprint):
 
@@ -73,7 +71,6 @@ def get_can_signals(CP):
       ("LEFT_BLINKER", "SCM_FEEDBACK", 0),
       ("RIGHT_BLINKER", "SCM_FEEDBACK", 0),
       ("GEAR", "GEARBOX", 0),
-      ("WHEELS_MOVING", "STANDSTILL", 1),
       ("BRAKE_ERROR_1", "STANDSTILL", 1),
       ("BRAKE_ERROR_2", "STANDSTILL", 1),
       ("SEATBELT_DRIVER_LAMP", "SEATBELT_STATUS", 1),
@@ -124,7 +121,8 @@ def get_can_signals(CP):
     signals += [("DOOR_OPEN_FL", "DOORS_STATUS", 1),
                 ("DOOR_OPEN_FR", "DOORS_STATUS", 1),
                 ("DOOR_OPEN_RL", "DOORS_STATUS", 1),
-                ("DOOR_OPEN_RR", "DOORS_STATUS", 1)]
+                ("DOOR_OPEN_RR", "DOORS_STATUS", 1),
+                ("WHEELS_MOVING", "STANDSTILL", 1)]
     checks += [("DOORS_STATUS", 3)]
 
   # Bosch or uses signals common to bosch.dbc
@@ -176,10 +174,10 @@ class CarState(object):
     dt = 0.01
     # Q = np.matrix([[10.0, 0.0], [0.0, 100.0]])
     # R = 1e3
-    self.v_ego_kf = KF1D(x0=np.matrix([[0.0], [0.0]]),
-                         A=np.matrix([[1.0, dt], [0.0, 1.0]]),
-                         C=np.matrix([1.0, 0.0]),
-                         K=np.matrix([[0.12287673], [0.29666309]]))
+    self.v_ego_kf = KF1D(x0=[[0.0], [0.0]],
+                         A=[[1.0, dt], [0.0, 1.0]],
+                         C=[[1.0, 0.0]],
+                         K=[[0.12287673], [0.29666309]])
     self.v_ego = 0.0
 
   def update(self, cp):
@@ -200,11 +198,13 @@ class CarState(object):
     self.prev_right_blinker_on = self.right_blinker_on
 
     # ******************* parse out can *******************
-    self.door_all_closed = not any([cp.vl.get("DOORS_STATUS",{"empty" : None}).get('DOOR_OPEN_FL'),
-                                    cp.vl.get("DOORS_STATUS",{"empty" : None}).get('DOOR_OPEN_FR'),
-                                    cp.vl.get("DOORS_STATUS",{"empty" : None}).get('DOOR_OPEN_RL'),
-                                    cp.vl.get("DOORS_STATUS",{"empty" : None}).get('DOOR_OPEN_RR'),
-                                    cp.vl.get("SCM_FEEDBACK",{"empty" : None}).get('DRIVERS_DOOR_OPEN')]) #(CAR.ACCORD)
+    if self.CP.carFingerprint == CAR.ACCORD: # TODO: find wheels moving bit in dbc
+      self.standstill = cp.vl["ENGINE_DATA"]['XMISSION_SPEED'] < 0.1
+      self.door_all_closed = not cp.vl["SCM_FEEDBACK"]['DRIVERS_DOOR_OPEN']
+    else:
+      self.standstill = not cp.vl["STANDSTILL"]['WHEELS_MOVING']
+      self.door_all_closed = not any([cp.vl["DOORS_STATUS"]['DOOR_OPEN_FL'], cp.vl["DOORS_STATUS"]['DOOR_OPEN_FR'],
+                                      cp.vl["DOORS_STATUS"]['DOOR_OPEN_RL'], cp.vl["DOORS_STATUS"]['DOOR_OPEN_RR']])
 
     self.seatbelt = not cp.vl["SEATBELT_STATUS"]['SEATBELT_DRIVER_LAMP'] and cp.vl["SEATBELT_STATUS"]['SEATBELT_DRIVER_LATCHED']
 
@@ -221,6 +221,7 @@ class CarState(object):
     self.v_wheel_fr = cp.vl["WHEEL_SPEEDS"]['WHEEL_SPEED_FR'] * CV.KPH_TO_MS
     self.v_wheel_rl = cp.vl["WHEEL_SPEEDS"]['WHEEL_SPEED_RL'] * CV.KPH_TO_MS
     self.v_wheel_rr = cp.vl["WHEEL_SPEEDS"]['WHEEL_SPEED_RR'] * CV.KPH_TO_MS
+
     self.v_wheel = float(np.mean([self.v_wheel_fl, self.v_wheel_fr, self.v_wheel_rl, self.v_wheel_rr]))
 
     # blend in transmission speed at low speed, since it has more low speed accuracy
@@ -228,7 +229,7 @@ class CarState(object):
     speed = (1. - self.v_weight) * cp.vl["ENGINE_DATA"]['XMISSION_SPEED'] * CV.KPH_TO_MS + self.v_weight * self.v_wheel
 
     if abs(speed - self.v_ego) > 2.0:  # Prevent large accelerations when car starts at non zero speed
-      self.v_ego_x = np.matrix([[speed], [0.0]])
+      self.v_ego_x = [[speed], [0.0]]
 
     self.v_ego_raw = speed
     v_ego_x = self.v_ego_kf.update(speed)
@@ -268,8 +269,8 @@ class CarState(object):
     self.car_gas = cp.vl.get("GAS_PEDAL_2",{"empty" : None}).get('CAR_GAS', self.pedal_gas)
 
     #rdx has different steer override threshold
-    steer_thresh = 400 if self.CP.carFingerprint in (CAR.ACURA_RDX) else 1200
-    self.steer_override = abs(cp.vl["STEER_STATUS"]['STEER_TORQUE_SENSOR']) > steer_thresh
+    steer_thrsld = 400 if self.CP.carFingerprint == CAR.ACURA_RDX else 1200
+    self.steer_override = abs(cp.vl["STEER_STATUS"]['STEER_TORQUE_SENSOR']) > steer_thrsld
 
     self.steer_torque_driver = cp.vl["STEER_STATUS"]['STEER_TORQUE_SENSOR']
 
@@ -303,7 +304,6 @@ class CarState(object):
       self.brake_switch_ts = cp.ts["POWERTRAIN_DATA"]['BRAKE_SWITCH']
 
     self.user_brake = cp.vl["VSA_STATUS"]['USER_BRAKE']
-    self.standstill = not cp.vl["STANDSTILL"]['WHEELS_MOVING']
     self.pcm_acc_status = cp.vl["POWERTRAIN_DATA"]['ACC_STATUS']
     self.hud_lead = cp.vl["ACC_HUD"]['HUD_LEAD']
 
