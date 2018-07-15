@@ -1,212 +1,205 @@
-import numpy as np
+from common.numpy_fast import interp
+from common.kalman.simple_kalman import KF1D
+from selfdrive.can.parser import CANParser
+from selfdrive.config import Conversions as CV
+from selfdrive.car.honda.values import CAR, DBC
 
-import selfdrive.messaging as messaging
-from selfdrive.boardd.boardd import can_capnp_to_can_list
-from selfdrive.config import VehicleParams
-from common.realtime import sec_since_boot
+def parse_gear_shifter(can_gear_shifter, car_fingerprint):
 
-from selfdrive.car.fingerprints import fingerprints
-from selfdrive.car.honda.can_parser import CANParser
+  # TODO: Use VAL from DBC to parse this field
+  if car_fingerprint in (CAR.ACURA_ILX, CAR.ODYSSEY):
+    if can_gear_shifter == 0x1:
+      return "park"
+    elif can_gear_shifter == 0x2:
+      return "reverse"
+    elif can_gear_shifter == 0x3:
+      return "neutral"
+    elif can_gear_shifter == 0x4:
+      return "drive"
+    elif can_gear_shifter == 0xa:
+      return "sport"
+  elif car_fingerprint in (CAR.CIVIC, CAR.CRV, CAR.ACURA_RDX, CAR.CRV_5G, CAR.CIVIC_HATCH):
+    if can_gear_shifter == 0x1:
+      return "park"
+    elif can_gear_shifter == 0x2:
+      return "reverse"
+    elif can_gear_shifter == 0x4:
+      return "neutral"
+    elif can_gear_shifter == 0x8:
+      return "drive"
+    elif can_gear_shifter == 0x10:
+      return "sport"
+    elif can_gear_shifter == 0x20:
+      return "low"
 
-def get_can_parser(civic, brake_only):
-  # this function generates lists for signal, messages and initial values
-  if civic:
-    dbc_f = 'honda_civic_touring_2016_can.dbc'
-    signals = [
-      ("XMISSION_SPEED", 0x158, 0),
-      ("WHEEL_SPEED_FL", 0x1d0, 0),
-      ("WHEEL_SPEED_FR", 0x1d0, 0),
-      ("WHEEL_SPEED_RL", 0x1d0, 0),
-      ("STEER_ANGLE", 0x14a, 0),
-      ("STEER_TORQUE_SENSOR", 0x18f, 0),
-      ("GEAR", 0x191, 0),
-      ("WHEELS_MOVING", 0x1b0, 1),
-      ("DOOR_OPEN_FL", 0x405, 1),
-      ("DOOR_OPEN_FR", 0x405, 1),
-      ("DOOR_OPEN_RL", 0x405, 1),
-      ("DOOR_OPEN_RR", 0x405, 1),
-      ("CRUISE_SPEED_PCM", 0x324, 0),
-      ("SEATBELT_DRIVER_LAMP", 0x305, 1),
-      ("SEATBELT_DRIVER_LATCHED", 0x305, 0),
-      ("BRAKE_PRESSED", 0x17c, 0),
-      ("CAR_GAS", 0x130, 0),
-      ("CRUISE_BUTTONS", 0x296, 0),
-      ("ESP_DISABLED", 0x1a4, 1),
-      ("HUD_LEAD", 0x30c, 0),
-      ("USER_BRAKE", 0x1a4, 0),
-      ("STEER_STATUS", 0x18f, 5),
-      ("WHEEL_SPEED_RR", 0x1d0, 0),
-      ("BRAKE_ERROR_1", 0x1b0, 1),
-      ("BRAKE_ERROR_2", 0x1b0, 1),
-      ("GEAR_SHIFTER", 0x191, 0),
-      ("MAIN_ON", 0x326, 0),
-      ("ACC_STATUS", 0x17c, 0),
-      ("PEDAL_GAS", 0x17c, 0),
-      ("CRUISE_SETTING", 0x296, 0),
-      ("LEFT_BLINKER", 0x326, 0),
-      ("RIGHT_BLINKER", 0x326, 0),
-      ("COUNTER", 0x324, 0),
-      ("ENGINE_RPM", 0x17C, 0)
-    ]
-    checks = [
-      (0x14a, 100),
-      (0x158, 100),
-      (0x17c, 100),
-      (0x191, 100),
-      (0x1a4, 50),
-      (0x326, 10),
-      (0x1b0, 50),
-      (0x1d0, 50),
-      (0x305, 10),
-      (0x324, 10),
-      (0x405, 3),
-    ]
+  elif car_fingerprint in (CAR.ACCORD, CAR.PILOT, CAR.RIDGELINE):
+     if can_gear_shifter == 0x8:
+       return "reverse"
+     elif can_gear_shifter == 0x4:
+       return "park"
+     elif can_gear_shifter == 0x20:
+       return "drive"
+     elif can_gear_shifter == 0x2:
+        return "sport"
 
+  return "unknown"
+
+
+def calc_cruise_offset(offset, speed):
+  # euristic formula so that speed is controlled to ~ 0.3m/s below pid_speed
+  # constraints to solve for _K0, _K1, _K2 are:
+  # - speed = 0m/s, out = -0.3
+  # - speed = 34m/s, offset = 20, out = -0.25
+  # - speed = 34m/s, offset = -2.5, out = -1.8
+  _K0 = -0.3
+  _K1 = -0.01879
+  _K2 = 0.01013
+  return min(_K0 + _K1 * speed + _K2 * speed * offset, 0.)
+
+
+def get_can_signals(CP):
+# this function generates lists for signal, messages and initial values
+  signals = [
+      ("XMISSION_SPEED", "ENGINE_DATA", 0),
+      ("WHEEL_SPEED_FL", "WHEEL_SPEEDS", 0),
+      ("WHEEL_SPEED_FR", "WHEEL_SPEEDS", 0),
+      ("WHEEL_SPEED_RL", "WHEEL_SPEEDS", 0),
+      ("WHEEL_SPEED_RR", "WHEEL_SPEEDS", 0),
+      ("STEER_ANGLE", "STEERING_SENSORS", 0),
+      ("STEER_ANGLE_RATE", "STEERING_SENSORS", 0),
+      ("STEER_TORQUE_SENSOR", "STEER_STATUS", 0),
+      ("LEFT_BLINKER", "SCM_FEEDBACK", 0),
+      ("RIGHT_BLINKER", "SCM_FEEDBACK", 0),
+      ("GEAR", "GEARBOX", 0),
+      ("BRAKE_ERROR_1", "STANDSTILL", 1),
+      ("BRAKE_ERROR_2", "STANDSTILL", 1),
+      ("SEATBELT_DRIVER_LAMP", "SEATBELT_STATUS", 1),
+      ("SEATBELT_DRIVER_LATCHED", "SEATBELT_STATUS", 0),
+      ("BRAKE_PRESSED", "POWERTRAIN_DATA", 0),
+      ("BRAKE_SWITCH", "POWERTRAIN_DATA", 0),
+      ("CRUISE_BUTTONS", "SCM_BUTTONS", 0),
+      ("ESP_DISABLED", "VSA_STATUS", 1),
+      ("HUD_LEAD", "ACC_HUD", 0),
+      ("USER_BRAKE", "VSA_STATUS", 0),
+      ("STEER_STATUS", "STEER_STATUS", 5),
+      ("GEAR_SHIFTER", "GEARBOX", 0),
+      ("PEDAL_GAS", "POWERTRAIN_DATA", 0),
+      ("CRUISE_SETTING", "SCM_BUTTONS", 0),
+      ("ACC_STATUS", "POWERTRAIN_DATA", 0),
+  ]
+
+  checks = [
+      ("ENGINE_DATA", 100),
+      ("WHEEL_SPEEDS", 50),
+      ("STEERING_SENSORS", 100),
+      ("SCM_FEEDBACK", 10),
+      ("GEARBOX", 100),
+      ("STANDSTILL", 50),
+      ("SEATBELT_STATUS", 10),
+      ("CRUISE", 10),
+      ("POWERTRAIN_DATA", 100),
+      ("VSA_STATUS", 50),
+      ("SCM_BUTTONS", 25),
+  ]
+
+  if CP.radarOffCan:
+    # Civic is only bosch to use the same brake message as other hondas.
+    if CP.carFingerprint != CAR.CIVIC_HATCH:
+      signals += [("BRAKE_PRESSED", "BRAKE_MODULE", 0)]
+      checks += [("BRAKE_MODULE", 50)]
+    signals += [("CAR_GAS", "GAS_PEDAL_2", 0),
+                ("MAIN_ON", "SCM_FEEDBACK", 0),
+                ("EPB_STATE", "EPB_STATUS", 0),
+                ("BRAKE_HOLD_ACTIVE", "VSA_STATUS", 0),
+                ("CRUISE_SPEED", "ACC_HUD", 0)]
+    checks += [("GAS_PEDAL_2", 100)]
   else:
-    dbc_f = 'acura_ilx_2016_can.dbc'
-    signals = [
-      ("XMISSION_SPEED", 0x158, 0),
-      ("WHEEL_SPEED_FL", 0x1d0, 0),
-      ("WHEEL_SPEED_FR", 0x1d0, 0),
-      ("WHEEL_SPEED_RL", 0x1d0, 0),
-      ("STEER_ANGLE", 0x156, 0),
-      ("STEER_TORQUE_SENSOR", 0x18f, 0),
-      ("GEAR", 0x1a3, 0),
-      ("WHEELS_MOVING", 0x1b0, 1),
-      ("DOOR_OPEN_FL", 0x405, 1),
-      ("DOOR_OPEN_FR", 0x405, 1),
-      ("DOOR_OPEN_RL", 0x405, 1),
-      ("DOOR_OPEN_RR", 0x405, 1),
-      ("CRUISE_SPEED_PCM", 0x324, 0),
-      ("SEATBELT_DRIVER_LAMP", 0x305, 1),
-      ("SEATBELT_DRIVER_LATCHED", 0x305, 0),
-      ("BRAKE_PRESSED", 0x17c, 0),
-      ("CAR_GAS", 0x130, 0),
-      ("CRUISE_BUTTONS", 0x1a6, 0),
-      ("ESP_DISABLED", 0x1a4, 1),
-      ("HUD_LEAD", 0x30c, 0),
-      ("USER_BRAKE", 0x1a4, 0),
-      ("STEER_STATUS", 0x18f, 5),
-      ("WHEEL_SPEED_RR", 0x1d0, 0),
-      ("BRAKE_ERROR_1", 0x1b0, 1),
-      ("BRAKE_ERROR_2", 0x1b0, 1),
-      ("GEAR_SHIFTER", 0x1a3, 0),
-      ("MAIN_ON", 0x1a6, 0),
-      ("ACC_STATUS", 0x17c, 0),
-      ("PEDAL_GAS", 0x17c, 0),
-      ("CRUISE_SETTING", 0x1a6, 0),
-      ("LEFT_BLINKER", 0x294, 0),
-      ("RIGHT_BLINKER", 0x294, 0),
-      ("COUNTER", 0x324, 0),
-      ("ENGINE_RPM", 0x17C, 0)
-    ]
-    checks = [
-      (0x156, 100),
-      (0x158, 100),
-      (0x17c, 100),
-      (0x1a3, 50),
-      (0x1a4, 50),
-      (0x1a6, 50),
-      (0x1b0, 50),
-      (0x1d0, 50),
-      (0x305, 10),
-      (0x324, 10),
-      (0x405, 3),
-    ]
+    # Nidec signals.
+    signals += [("CRUISE_SPEED_PCM", "CRUISE", 0),
+                ("CRUISE_SPEED_OFFSET", "CRUISE_PARAMS", 0)]
+    checks += [("CRUISE_PARAMS", 50)]
+
+  if CP.carFingerprint == CAR.ACCORD:
+    signals += [("DRIVERS_DOOR_OPEN", "SCM_FEEDBACK", 1)]
+  else:
+    signals += [("DOOR_OPEN_FL", "DOORS_STATUS", 1),
+                ("DOOR_OPEN_FR", "DOORS_STATUS", 1),
+                ("DOOR_OPEN_RL", "DOORS_STATUS", 1),
+                ("DOOR_OPEN_RR", "DOORS_STATUS", 1),
+                ("WHEELS_MOVING", "STANDSTILL", 1)]
+    checks += [("DOORS_STATUS", 3)]
+
+  if CP.carFingerprint == CAR.CIVIC:
+    signals += [("CAR_GAS", "GAS_PEDAL_2", 0),
+                ("MAIN_ON", "SCM_FEEDBACK", 0),
+                ("EPB_STATE", "EPB_STATUS", 0),
+                ("BRAKE_HOLD_ACTIVE", "VSA_STATUS", 0)]
+  elif CP.carFingerprint == CAR.ACURA_ILX:
+    signals += [("CAR_GAS", "GAS_PEDAL_2", 0),
+                ("MAIN_ON", "SCM_BUTTONS", 0)]
+  elif CP.carFingerprint == CAR.CRV:
+    signals += [("MAIN_ON", "SCM_BUTTONS", 0)]
+  elif CP.carFingerprint == CAR.ACURA_RDX:
+    signals += [("MAIN_ON", "SCM_BUTTONS", 0)]
+  elif CP.carFingerprint == CAR.ODYSSEY:
+    signals += [("MAIN_ON", "SCM_FEEDBACK", 0),
+                ("EPB_STATE", "EPB_STATUS", 0),
+                ("BRAKE_HOLD_ACTIVE", "VSA_STATUS", 0)]
+    checks += [("EPB_STATUS", 50)]
+  elif CP.carFingerprint == CAR.PILOT:
+    signals += [("MAIN_ON", "SCM_BUTTONS", 0),
+                ("CAR_GAS", "GAS_PEDAL_2", 0)]
+  elif CP.carFingerprint == CAR.RIDGELINE:
+    signals += [("MAIN_ON", "SCM_BUTTONS", 0)]
 
   # add gas interceptor reading if we are using it
-  if not brake_only:
-    signals.append(("INTERCEPTOR_GAS", 0x201, 0))
-    checks.append((0x201, 50))
+  if CP.enableGasInterceptor:
+    signals.append(("INTERCEPTOR_GAS", "GAS_SENSOR", 0))
+    checks.append(("GAS_SENSOR", 50))
 
-  return CANParser(dbc_f, signals, checks)
+  return signals, checks
 
-def fingerprint(logcan):
-  print "waiting for fingerprint..."
-  brake_only = True
 
-  finger = {}
-  st = None
-  while 1:
-    possible_cars = []
-    for a in messaging.drain_sock(logcan, wait_for_one=True):
-      if st is None:
-        st = sec_since_boot()
-      for adr, _, msg, idx in can_capnp_to_can_list(a.can):
-        # pedal
-        if adr == 0x201 and idx == 0:
-          brake_only = False
-        if idx == 0:
-          finger[adr] = len(msg)
+def get_can_parser(CP):
+  signals, checks = get_can_signals(CP)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
-    # check for a single match
-    for f in fingerprints:
-      is_possible = True
-      for adr in finger:
-        # confirm all messages we have seen match
-        if adr not in fingerprints[f] or fingerprints[f][adr] != finger[adr]:
-          #print "mismatch", f, adr
-          is_possible = False
-          break
-      if is_possible:
-        possible_cars.append(f)
-
-    # if we only have one car choice and it's been 100ms since we got our first message, exit
-    if len(possible_cars) == 1 and st is not None and (sec_since_boot()-st) > 0.1:
-      break
-    elif len(possible_cars) == 0:
-      print finger
-      raise Exception("car doesn't match any fingerprints")
-
-  print "fingerprinted", possible_cars[0]
-  return brake_only, possible_cars[0]
 
 class CarState(object):
-  def __init__(self, logcan):
-    self.torque_mod = False
-    self.brake_only, self.car_type = fingerprint(logcan)
-
-    # assuming if you have a pedal interceptor you also have a torque mod
-    if not self.brake_only:
-      self.torque_mod = True
-
-    if self.car_type == "HONDA CIVIC 2016 TOURING":
-      self.civic = True
-    elif self.car_type == "ACURA ILX 2016 ACURAWATCH PLUS":
-      self.civic = False
-    else:
-      raise ValueError("unsupported car %s" % self.car_type)
-
-    # initialize can parser
-    self.cp = get_can_parser(self.civic, self.brake_only)
+  def __init__(self, CP):
+    self.CP = CP
 
     self.user_gas, self.user_gas_pressed = 0., 0
+    self.brake_switch_prev = 0
+    self.brake_switch_ts = 0
 
     self.cruise_buttons = 0
     self.cruise_setting = 0
+    self.v_cruise_pcm_prev = 0
     self.blinker_on = 0
 
     self.left_blinker_on = 0
     self.right_blinker_on = 0
 
-    # TODO: actually make this work
-    self.a_ego = 0.
+    self.stopped = 0
 
-    # speed in UI is shown as few % higher
-    self.ui_speed_fudge = 1.01 if self.civic else 1.025
+    # vEgo kalman filter
+    dt = 0.01
+    # Q = np.matrix([[10.0, 0.0], [0.0, 100.0]])
+    # R = 1e3
+    self.v_ego_kf = KF1D(x0=[[0.0], [0.0]],
+                         A=[[1.0, dt], [0.0, 1.0]],
+                         C=[[1.0, 0.0]],
+                         K=[[0.12287673], [0.29666309]])
+    self.v_ego = 0.0
 
-    # load vehicle params
-    self.VP = VehicleParams(self.civic, self.brake_only, self.torque_mod)
-
-  def update(self, can_pub_main):
-    cp = self.cp
-    cp.update_can(can_pub_main)
+  def update(self, cp):
 
     # copy can_valid
     self.can_valid = cp.can_valid
 
     # car params
-    v_weight_v  = [0., 1. ]  # don't trust smooth speed at low values to avoid premature zero snapping
+    v_weight_v = [0., 1.]  # don't trust smooth speed at low values to avoid premature zero snapping
     v_weight_bp = [1., 6.]   # smooth blending, below ~0.6m/s the smooth speed snaps to zero
 
     # update prevs, update must run once per loop
@@ -217,66 +210,131 @@ class CarState(object):
     self.prev_left_blinker_on = self.left_blinker_on
     self.prev_right_blinker_on = self.right_blinker_on
 
-    self.rpm = cp.vl[0x17C]['ENGINE_RPM']
-
     # ******************* parse out can *******************
-    self.door_all_closed = not any([cp.vl[0x405]['DOOR_OPEN_FL'], cp.vl[0x405]['DOOR_OPEN_FR'],
-                               cp.vl[0x405]['DOOR_OPEN_RL'], cp.vl[0x405]['DOOR_OPEN_RR']])
-    self.seatbelt = not cp.vl[0x305]['SEATBELT_DRIVER_LAMP'] and cp.vl[0x305]['SEATBELT_DRIVER_LATCHED']
-    # error 2 = temporary
-    # error 4 = temporary, hit a bump
-    # error 5 (permanent)
-    # error 6 = temporary
-    # error 7 (permanent)
-    #self.steer_error = cp.vl[0x18F]['STEER_STATUS'] in [5,7]
-    # whitelist instead of blacklist, safer at the expense of disengages
-    self.steer_error = cp.vl[0x18F]['STEER_STATUS'] not in [0,2,4,6]
-    self.steer_not_allowed = cp.vl[0x18F]['STEER_STATUS'] != 0
-    if cp.vl[0x18F]['STEER_STATUS'] != 0:
-      print cp.vl[0x18F]['STEER_STATUS']
-    self.brake_error = cp.vl[0x1B0]['BRAKE_ERROR_1'] or cp.vl[0x1B0]['BRAKE_ERROR_2']
-    self.esp_disabled = cp.vl[0x1A4]['ESP_DISABLED']
-    # calc best v_ego estimate, by averaging two opposite corners
-    self.v_wheel = (
-      cp.vl[0x1D0]['WHEEL_SPEED_FL'] + cp.vl[0x1D0]['WHEEL_SPEED_FR'] +
-      cp.vl[0x1D0]['WHEEL_SPEED_RL'] + cp.vl[0x1D0]['WHEEL_SPEED_RR']) / 4.
-    # blend in transmission speed at low speed, since it has more low speed accuracy
-    self.v_weight = np.interp(self.v_wheel, v_weight_bp, v_weight_v)
-    self.v_ego = (1. - self.v_weight) * cp.vl[0x158]['XMISSION_SPEED'] + self.v_weight * self.v_wheel
-    if not self.brake_only:
-      self.user_gas = cp.vl[0x201]['INTERCEPTOR_GAS']
-      self.user_gas_pressed = self.user_gas > 0 # this works because interceptor read < 0 when pedal position is 0. Once calibrated, this will change
-      #print user_gas, user_gas_pressed
-    if self.civic:
-      self.gear_shifter = cp.vl[0x191]['GEAR_SHIFTER']
-      self.angle_steers = cp.vl[0x14A]['STEER_ANGLE']
-      self.gear = 0  # TODO: civic has CVT... needs rev engineering
-      self.cruise_setting = cp.vl[0x296]['CRUISE_SETTING']
-      self.cruise_buttons = cp.vl[0x296]['CRUISE_BUTTONS']
-      self.main_on = cp.vl[0x326]['MAIN_ON']
-      self.gear_shifter_valid = self.gear_shifter in [1,8]  # TODO: 1/P allowed for debug
-      self.blinker_on = cp.vl[0x326]['LEFT_BLINKER'] or cp.vl[0x326]['RIGHT_BLINKER']
-      self.left_blinker_on = cp.vl[0x326]['LEFT_BLINKER']
-      self.right_blinker_on = cp.vl[0x326]['RIGHT_BLINKER']
-    else:
-      self.gear_shifter = cp.vl[0x1A3]['GEAR_SHIFTER']
-      self.angle_steers = cp.vl[0x156]['STEER_ANGLE']
-      self.gear = cp.vl[0x1A3]['GEAR']
-      self.cruise_setting = cp.vl[0x1A6]['CRUISE_SETTING']
-      self.cruise_buttons = cp.vl[0x1A6]['CRUISE_BUTTONS']
-      self.main_on = cp.vl[0x1A6]['MAIN_ON']
-      self.gear_shifter_valid = self.gear_shifter in [1,4]  # TODO: 1/P allowed for debug
-      self.blinker_on = cp.vl[0x294]['LEFT_BLINKER'] or cp.vl[0x294]['RIGHT_BLINKER']
-      self.left_blinker_on = cp.vl[0x294]['LEFT_BLINKER']
-      self.right_blinker_on = cp.vl[0x294]['RIGHT_BLINKER']
-    self.car_gas = cp.vl[0x130]['CAR_GAS']
-    self.brake_pressed = cp.vl[0x17C]['BRAKE_PRESSED']
-    self.user_brake = cp.vl[0x1A4]['USER_BRAKE']
-    self.standstill = not cp.vl[0x1B0]['WHEELS_MOVING']
-    self.steer_override = abs(cp.vl[0x18F]['STEER_TORQUE_SENSOR']) > 1200
-    self.v_cruise_pcm = cp.vl[0x324]['CRUISE_SPEED_PCM']
-    self.pcm_acc_status = cp.vl[0x17C]['ACC_STATUS']
-    self.pedal_gas = cp.vl[0x17C]['PEDAL_GAS']
-    self.hud_lead = cp.vl[0x30C]['HUD_LEAD']
-    self.counter_pcm = cp.vl[0x324]['COUNTER']
 
+    if self.CP.carFingerprint == CAR.ACCORD: # TODO: find wheels moving bit in dbc
+      self.standstill = cp.vl["ENGINE_DATA"]['XMISSION_SPEED'] < 0.1
+      self.door_all_closed = not cp.vl["SCM_FEEDBACK"]['DRIVERS_DOOR_OPEN']
+    else:
+      self.standstill = not cp.vl["STANDSTILL"]['WHEELS_MOVING']
+      self.door_all_closed = not any([cp.vl["DOORS_STATUS"]['DOOR_OPEN_FL'], cp.vl["DOORS_STATUS"]['DOOR_OPEN_FR'],
+                                      cp.vl["DOORS_STATUS"]['DOOR_OPEN_RL'], cp.vl["DOORS_STATUS"]['DOOR_OPEN_RR']])
+    self.seatbelt = not cp.vl["SEATBELT_STATUS"]['SEATBELT_DRIVER_LAMP'] and cp.vl["SEATBELT_STATUS"]['SEATBELT_DRIVER_LATCHED']
+
+    # 2 = temporary; 3 = TBD; 4 = temporary, hit a bump; 5 = (permanent); 6 = temporary; 7 = (permanent)
+    # TODO: Use values from DBC to parse this field
+    self.steer_error = cp.vl["STEER_STATUS"]['STEER_STATUS'] not in [0, 2, 3, 4, 6]
+    self.steer_not_allowed = cp.vl["STEER_STATUS"]['STEER_STATUS'] != 0
+    self.steer_warning = cp.vl["STEER_STATUS"]['STEER_STATUS'] not in [0, 3]   # 3 is low speed lockout, not worth a warning
+    self.brake_error = cp.vl["STANDSTILL"]['BRAKE_ERROR_1'] or cp.vl["STANDSTILL"]['BRAKE_ERROR_2']
+    self.esp_disabled = cp.vl["VSA_STATUS"]['ESP_DISABLED']
+
+    # calc best v_ego estimate, by averaging two opposite corners
+    self.v_wheel_fl = cp.vl["WHEEL_SPEEDS"]['WHEEL_SPEED_FL'] * CV.KPH_TO_MS
+    self.v_wheel_fr = cp.vl["WHEEL_SPEEDS"]['WHEEL_SPEED_FR'] * CV.KPH_TO_MS
+    self.v_wheel_rl = cp.vl["WHEEL_SPEEDS"]['WHEEL_SPEED_RL'] * CV.KPH_TO_MS
+    self.v_wheel_rr = cp.vl["WHEEL_SPEEDS"]['WHEEL_SPEED_RR'] * CV.KPH_TO_MS
+    self.v_wheel = (self.v_wheel_fl+self.v_wheel_fr+self.v_wheel_rl+self.v_wheel_rr)/4.
+
+    # blend in transmission speed at low speed, since it has more low speed accuracy
+    self.v_weight = interp(self.v_wheel, v_weight_bp, v_weight_v)
+    speed = (1. - self.v_weight) * cp.vl["ENGINE_DATA"]['XMISSION_SPEED'] * CV.KPH_TO_MS + self.v_weight * self.v_wheel
+
+    if abs(speed - self.v_ego) > 2.0:  # Prevent large accelerations when car starts at non zero speed
+      self.v_ego_x = [[speed], [0.0]]
+
+    self.v_ego_raw = speed
+    v_ego_x = self.v_ego_kf.update(speed)
+    self.v_ego = float(v_ego_x[0])
+    self.a_ego = float(v_ego_x[1])
+
+    # this is a hack for the interceptor. This is now only used in the simulation
+    # TODO: Replace tests by toyota so this can go away
+    if self.CP.enableGasInterceptor:
+      self.user_gas = cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS']
+      self.user_gas_pressed = self.user_gas > 0 # this works because interceptor read < 0 when pedal position is 0. Once calibrated, this will change
+
+    can_gear_shifter = cp.vl["GEARBOX"]['GEAR_SHIFTER']
+    self.gear = 0 if self.CP.carFingerprint == CAR.CIVIC else cp.vl["GEARBOX"]['GEAR']
+    self.angle_steers = cp.vl["STEERING_SENSORS"]['STEER_ANGLE']
+    self.angle_steers_rate = cp.vl["STEERING_SENSORS"]['STEER_ANGLE_RATE']
+
+    self.cruise_setting = cp.vl["SCM_BUTTONS"]['CRUISE_SETTING']
+    self.cruise_buttons = cp.vl["SCM_BUTTONS"]['CRUISE_BUTTONS']
+
+    self.blinker_on = cp.vl["SCM_FEEDBACK"]['LEFT_BLINKER'] or cp.vl["SCM_FEEDBACK"]['RIGHT_BLINKER']
+    self.left_blinker_on = cp.vl["SCM_FEEDBACK"]['LEFT_BLINKER']
+    self.right_blinker_on = cp.vl["SCM_FEEDBACK"]['RIGHT_BLINKER']
+
+    if self.CP.carFingerprint in (CAR.CIVIC, CAR.ODYSSEY, CAR.CRV_5G, CAR.ACCORD, CAR.CIVIC_HATCH):
+      self.park_brake = cp.vl["EPB_STATUS"]['EPB_STATE'] != 0
+      self.brake_hold = cp.vl["VSA_STATUS"]['BRAKE_HOLD_ACTIVE']
+      self.main_on = cp.vl["SCM_FEEDBACK"]['MAIN_ON']
+    else:
+      self.park_brake = 0  # TODO
+      self.brake_hold = 0  # TODO
+      self.main_on = cp.vl["SCM_BUTTONS"]['MAIN_ON']
+
+    self.gear_shifter = parse_gear_shifter(can_gear_shifter, self.CP.carFingerprint)
+
+    self.pedal_gas = cp.vl["POWERTRAIN_DATA"]['PEDAL_GAS']
+    # crv doesn't include cruise control
+    if self.CP.carFingerprint in (CAR.CRV, CAR.ODYSSEY, CAR.ACURA_RDX, CAR.RIDGELINE):
+      self.car_gas = self.pedal_gas
+    else:
+      self.car_gas = cp.vl["GAS_PEDAL_2"]['CAR_GAS']
+
+    #rdx has different steer override threshold
+    steer_thrsld = 400 if self.CP.carFingerprint == CAR.ACURA_RDX else 1200
+    self.steer_override = abs(cp.vl["STEER_STATUS"]['STEER_TORQUE_SENSOR']) > steer_thrsld
+    self.steer_torque_driver = cp.vl["STEER_STATUS"]['STEER_TORQUE_SENSOR']
+
+    self.brake_switch = cp.vl["POWERTRAIN_DATA"]['BRAKE_SWITCH']
+
+    if self.CP.radarOffCan:
+      self.stopped = cp.vl["ACC_HUD"]['CRUISE_SPEED'] == 252.
+      self.cruise_speed_offset = calc_cruise_offset(0, self.v_ego)
+      if self.CP.carFingerprint == CAR.CIVIC_HATCH:
+        self.brake_switch = cp.vl["POWERTRAIN_DATA"]['BRAKE_SWITCH']
+        self.brake_pressed = cp.vl["POWERTRAIN_DATA"]['BRAKE_PRESSED'] or \
+                          (self.brake_switch and self.brake_switch_prev and \
+                          cp.ts["POWERTRAIN_DATA"]['BRAKE_SWITCH'] != self.brake_switch_ts)
+        self.brake_switch_prev = self.brake_switch
+        self.brake_switch_ts = cp.ts["POWERTRAIN_DATA"]['BRAKE_SWITCH']
+      else:
+        self.brake_pressed = cp.vl["BRAKE_MODULE"]['BRAKE_PRESSED']
+      # On set, cruise set speed pulses between 254~255 and the set speed prev is set to avoid this.
+      self.v_cruise_pcm = self.v_cruise_pcm_prev if cp.vl["ACC_HUD"]['CRUISE_SPEED'] > 160.0 else cp.vl["ACC_HUD"]['CRUISE_SPEED']
+      self.v_cruise_pcm_prev = self.v_cruise_pcm
+    else:
+      self.brake_switch = cp.vl["POWERTRAIN_DATA"]['BRAKE_SWITCH']
+      self.cruise_speed_offset = calc_cruise_offset(cp.vl["CRUISE_PARAMS"]['CRUISE_SPEED_OFFSET'], self.v_ego)
+      self.v_cruise_pcm = cp.vl["CRUISE"]['CRUISE_SPEED_PCM']
+      # brake switch has shown some single time step noise, so only considered when
+      # switch is on for at least 2 consecutive CAN samples
+      self.brake_pressed = cp.vl["POWERTRAIN_DATA"]['BRAKE_PRESSED'] or \
+                         (self.brake_switch and self.brake_switch_prev and \
+                         cp.ts["POWERTRAIN_DATA"]['BRAKE_SWITCH'] != self.brake_switch_ts)
+      self.brake_switch_prev = self.brake_switch
+      self.brake_switch_ts = cp.ts["POWERTRAIN_DATA"]['BRAKE_SWITCH']
+
+    self.user_brake = cp.vl["VSA_STATUS"]['USER_BRAKE']
+    self.pcm_acc_status = cp.vl["POWERTRAIN_DATA"]['ACC_STATUS']
+    self.hud_lead = cp.vl["ACC_HUD"]['HUD_LEAD']
+
+
+# carstate standalone tester
+if __name__ == '__main__':
+  import zmq
+  context = zmq.Context()
+
+  class CarParams(object):
+    def __init__(self):
+      self.carFingerprint = "HONDA CIVIC 2016 TOURING"
+      self.enableGasInterceptor = 0
+  CP = CarParams()
+  CS = CarState(CP)
+
+  # while 1:
+  #   CS.update()
+  #   time.sleep(0.01)

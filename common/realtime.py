@@ -1,42 +1,51 @@
 """Utilities for reading real time clocks and keeping soft real time constraints."""
+import os
 import time
-import ctypes
 import platform
+import threading
 import subprocess
 import multiprocessing
-import os
 
-CLOCK_MONOTONIC_RAW = 4 # see <linux/time.h>
+from cffi import FFI
+ffi = FFI()
+ffi.cdef("""
+
+typedef int clockid_t;
+struct timespec {
+    long tv_sec;   /* Seconds.  */
+    long tv_nsec;  /* Nanoseconds.  */
+};
+int clock_gettime (clockid_t clk_id, struct timespec *tp);
+
+long syscall(long number, ...);
+
+"""
+)
+libc = ffi.dlopen(None)
+
+
+# see <linux/time.h>
+CLOCK_MONOTONIC_RAW = 4
 CLOCK_BOOTTIME = 7
 
-class timespec(ctypes.Structure):
-  _fields_ = [
-    ('tv_sec', ctypes.c_long),
-    ('tv_nsec', ctypes.c_long),
-  ]
+if platform.system() != 'Darwin' and hasattr(libc, 'clock_gettime'):
+  c_clock_gettime = libc.clock_gettime
 
+  tlocal = threading.local()
+  def clock_gettime(clk_id):
+    if not hasattr(tlocal, 'ts'):
+      tlocal.ts = ffi.new('struct timespec *')
 
-try:
-  libc = ctypes.CDLL('libc.so', use_errno=True)
-except OSError:
-  try:
-    libc = ctypes.CDLL('libc.so.6', use_errno=True)
-  except OSError:
-    libc = None
+    ts = tlocal.ts
 
-if libc is not None:
-  libc.clock_gettime.argtypes = [ctypes.c_int, ctypes.POINTER(timespec)]
-
-def clock_gettime(clk_id):
-  if platform.system().lower() == "darwin":
-    # TODO: fix this
+    r = c_clock_gettime(clk_id, ts)
+    if r != 0:
+      raise OSError("clock_gettime")
+    return ts.tv_sec + ts.tv_nsec * 1e-9
+else:
+  # hack. only for OS X < 10.12
+  def clock_gettime(clk_id):
     return time.time()
-  else:
-    t = timespec()
-    if libc.clock_gettime(clk_id, ctypes.pointer(t)) != 0:
-      errno_ = ctypes.get_errno()
-      raise OSError(errno_, os.strerror(errno_))
-    return t.tv_sec + t.tv_nsec * 1e-9
 
 def monotonic_time():
   return clock_gettime(CLOCK_MONOTONIC_RAW)
@@ -91,8 +100,9 @@ class Ratekeeper(object):
     remaining = self._next_frame_time - sec_since_boot()
     self._next_frame_time += self._interval
     if remaining < -self._print_delay_threshold:
-      print(self._process_name, "lagging by", round(-remaining * 1000, 2), "ms")
+      print("%s lagging by %.2f ms" % (self._process_name, -remaining * 1000))
       lagged = True
     self._frame += 1
     self._remaining = remaining
     return lagged
+

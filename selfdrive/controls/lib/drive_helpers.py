@@ -1,53 +1,108 @@
-import numpy as np
-from common.numpy_fast import clip, interp
+import os
+import signal
+from cereal import car
+from common.numpy_fast import clip
+from selfdrive.config import Conversions as CV
+
+# kph
+V_CRUISE_MAX = 144
+V_CRUISE_MIN = 8
+V_CRUISE_DELTA = 8
+V_CRUISE_ENABLE_MIN = 40
+
+class MPC_COST_LAT:
+  PATH = 1.0
+  LANE = 3.0
+  HEADING = 1.0
+  STEER_RATE = 1.0
+
+
+class MPC_COST_LONG:
+  TTC = 5.0
+  DISTANCE = 0.1
+  ACCELERATION = 10.0
+  JERK = 20.0
+
+
+class EventTypes:
+  ENABLE = 'enable'
+  PRE_ENABLE = 'preEnable'
+  NO_ENTRY = 'noEntry'
+  WARNING = 'warning'
+  USER_DISABLE = 'userDisable'
+  SOFT_DISABLE = 'softDisable'
+  IMMEDIATE_DISABLE = 'immediateDisable'
+  PERMANENT = 'permanent'
+
+
+def create_event(name, types):
+  event = car.CarEvent.new_message()
+  event.name = name
+  for t in types:
+    setattr(event, t, True)
+  return event
+
+
+def get_events(events, types):
+  out = []
+  for e in events:
+    for t in types:
+      if getattr(e, t):
+        out.append(e.name)
+  return out
+
 
 def rate_limit(new_value, last_value, dw_step, up_step):
   return clip(new_value, last_value + dw_step, last_value + up_step)
 
-def learn_angle_offset(lateral_control, v_ego, angle_offset, d_poly, y_des, steer_override):
+
+def learn_angle_offset(lateral_control, v_ego, angle_offset, c_poly, c_prob, angle_steers, steer_override):
   # simple integral controller that learns how much steering offset to put to have the car going straight
-  min_offset = -1.  # deg
-  max_offset =  1.  # deg
+  # while being in the middle of the lane
+  min_offset = -5.  # deg
+  max_offset =  5.  # deg
   alpha = 1./36000. # correct by 1 deg in 2 mins, at 30m/s, with 50cm of error, at 20Hz
   min_learn_speed = 1.
 
   # learn less at low speed or when turning
-  alpha_v = alpha*(max(v_ego - min_learn_speed, 0.))/(1. + 0.5*abs(y_des))
+  slow_factor = 1. / (1. + 0.02 * abs(angle_steers) * v_ego)
+  alpha_v = alpha * c_prob * (max(v_ego - min_learn_speed, 0.)) * slow_factor
 
   # only learn if lateral control is active and if driver is not overriding:
   if lateral_control and not steer_override:
-    angle_offset += d_poly[3] * alpha_v
+    angle_offset += c_poly[3] * alpha_v
     angle_offset = clip(angle_offset, min_offset, max_offset)
 
   return angle_offset
 
-def actuator_hystereses(final_brake, braking, brake_steady, v_ego, civic):
-  # hyst params... TODO: move these to VehicleParams
-  brake_hyst_on = 0.055 if civic else 0.1    # to activate brakes exceed this value
-  brake_hyst_off = 0.005                     # to deactivate brakes below this value
-  brake_hyst_gap = 0.01                      # don't change brake command for small ocilalitons within this value
 
-  #*** histeresys logic to avoid brake blinking. go above 0.1 to trigger
-  if (final_brake < brake_hyst_on and not braking) or final_brake < brake_hyst_off:
-    final_brake = 0.
-  braking = final_brake > 0.
+def update_v_cruise(v_cruise_kph, buttonEvents, enabled):
+  # handle button presses. TODO: this should be in state_control, but a decelCruise press
+  # would have the effect of both enabling and changing speed is checked after the state transition
+  for b in buttonEvents:
+    if enabled and not b.pressed:
+      if b.type == "accelCruise":
+        v_cruise_kph += V_CRUISE_DELTA - (v_cruise_kph % V_CRUISE_DELTA)
+      elif b.type == "decelCruise":
+        v_cruise_kph -= V_CRUISE_DELTA - ((V_CRUISE_DELTA - v_cruise_kph) % V_CRUISE_DELTA)
+      v_cruise_kph = clip(v_cruise_kph, V_CRUISE_MIN, V_CRUISE_MAX)
 
-  # for small brake oscillations within brake_hyst_gap, don't change the brake command
-  if final_brake == 0.:
-    brake_steady = 0.
-  elif final_brake > brake_steady + brake_hyst_gap:
-    brake_steady = final_brake - brake_hyst_gap
-  elif final_brake < brake_steady - brake_hyst_gap:
-    brake_steady = final_brake + brake_hyst_gap
-  final_brake = brake_steady
+  return v_cruise_kph
 
-  if not civic:
-    brake_on_offset_v  = [.25, .15]   # min brake command on brake activation. below this no decel is perceived
-    brake_on_offset_bp = [15., 30.]     # offset changes VS speed to not have too abrupt decels at high speeds
-    # offset the brake command for threshold in the brake system. no brake torque perceived below it
-    brake_on_offset = interp(v_ego, brake_on_offset_bp, brake_on_offset_v)
-    brake_offset = brake_on_offset - brake_hyst_on
-    if final_brake > 0.0:
-      final_brake += brake_offset
 
-  return final_brake, braking, brake_steady
+def initialize_v_cruise(v_ego, buttonEvents, v_cruise_last):
+  for b in buttonEvents:
+    # 250kph or above probably means we never had a set speed
+    if b.type == "accelCruise" and v_cruise_last < 250:
+      return v_cruise_last
+
+  return int(round(clip(v_ego * CV.MS_TO_KPH, V_CRUISE_ENABLE_MIN, V_CRUISE_MAX)))
+
+
+def kill_defaultd():
+  # defaultd is used to send can messages when controlsd is off to make car test easier
+  if os.path.isfile("/tmp/defaultd_pid"):
+    with open("/tmp/defaultd_pid") as f:
+      ddpid = int(f.read())
+    print("signalling defaultd with pid %d" % ddpid)
+    os.kill(ddpid, signal.SIGUSR1)

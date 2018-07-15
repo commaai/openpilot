@@ -65,4 +65,24 @@ static inline vec4 matvecmul(const mat4 a, const vec4 b) {
   return ret;
 }
 
+// scales the input and output space of a transformation matrix
+// that assumes pixel-center origin.
+static inline mat3 transform_scale_buffer(const mat3 in, float s) {
+  // in_pt = ( transform(out_pt/s + 0.5) - 0.5) * s
+
+  mat3 transform_out = {{
+    1.0f/s, 0.0f, 0.5f,
+    0.0f, 1.0f/s, 0.5f,
+    0.0f, 0.0f, 1.0f,
+  }};
+
+  mat3 transform_in = {{
+    s,  0.0f, -0.5f*s,
+    0.0f, s, -0.5f*s,
+    0.0f, 0.0f, 1.0f,
+  }};
+
+  return matmul3(transform_in, matmul3(in, transform_out));
+}
+
 #endif

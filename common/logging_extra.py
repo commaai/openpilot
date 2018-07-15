@@ -8,6 +8,18 @@ from threading import local
 from collections import OrderedDict
 from contextlib import contextmanager
 
+def json_handler(obj):
+  # if isinstance(obj, (datetime.date, datetime.time)):
+  #   return obj.isoformat()
+  return repr(obj)
+
+def json_robust_dumps(obj):
+  return json.dumps(obj, default=json_handler)
+
+class NiceOrderedDict(OrderedDict):
+  def __str__(self):
+    return json_robust_dumps(self)
+
 class SwagFormatter(logging.Formatter):
   def __init__(self, swaglogger):
     logging.Formatter.__init__(self, None, '%a %b %d %H:%M:%S %Z %Y')
@@ -15,13 +27,8 @@ class SwagFormatter(logging.Formatter):
     self.swaglogger = swaglogger
     self.host = socket.gethostname()
 
-  def json_handler(self, obj):
-    # if isinstance(obj, (datetime.date, datetime.time)):
-    #   return obj.isoformat()
-    return repr(obj)
-
-  def format(self, record):
-    record_dict = OrderedDict()
+  def format_dict(self, record):
+    record_dict = NiceOrderedDict()
 
     if isinstance(record.msg, dict):
       record_dict['msg'] = record.msg
@@ -50,9 +57,14 @@ class SwagFormatter(logging.Formatter):
     record_dict['threadName'] = record.threadName
     record_dict['created'] = record.created
 
-    # asctime = self.formatTime(record, self.datefmt)
+    return record_dict
 
-    return json.dumps(record_dict, default=self.json_handler)
+  def format(self, record):
+    return json_robust_dumps(self.format_dict(record))
+
+class SwagErrorFilter(logging.Filter):
+  def filter(self, record):
+    return record.levelno < logging.ERROR
 
 _tmpfunc = lambda: 0
 _srcfile = os.path.normcase(_tmpfunc.__code__.co_filename)
@@ -66,7 +78,7 @@ class SwagLogger(logging.Logger):
     self.log_local = local()
     self.log_local.ctx = {}
 
-  def findCaller(self):
+  def findCaller(self, stack_info=None):
     """
       Find the stack frame of the caller so that we can note the source
       file name, line number and function name.
@@ -115,20 +127,48 @@ class SwagLogger(logging.Logger):
     self.global_ctx.update(kwargs)
 
   def event(self, event_name, *args, **kwargs):
-    evt = OrderedDict()
+    evt = NiceOrderedDict()
     evt['event'] = event_name
     if args:
       evt['args'] = args
     evt.update(kwargs)
-    self.info(evt)
+    ctx = self.get_ctx()
+    if ctx:
+      evt['ctx'] = self.get_ctx()
+    if 'error' in kwargs:
+      self.error(evt)
+    else:
+      self.info(evt)
 
 if __name__ == "__main__":
   log = SwagLogger()
 
+  stdout_handler = logging.StreamHandler(sys.stdout)
+  stdout_handler.setLevel(logging.INFO)
+  stdout_handler.addFilter(SwagErrorFilter())
+  log.addHandler(stdout_handler)
+
+  stderr_handler = logging.StreamHandler(sys.stderr)
+  stderr_handler.setLevel(logging.ERROR)
+  log.addHandler(stderr_handler)
+
   log.info("asdasd %s", "a")
   log.info({'wut': 1})
+  log.warning("warning")
+  log.error("error")
+  log.critical("critical")
+  log.event("test", x="y")
 
   with log.ctx():
+    stdout_handler.setFormatter(SwagFormatter(log))
+    stderr_handler.setFormatter(SwagFormatter(log))
     log.bind(user="some user")
     log.info("in req")
-    log.event("do_req")
+    print("")
+    log.warning("warning")
+    print("")
+    log.error("error")
+    print("")
+    log.critical("critical")
+    print("")
+    log.event("do_req", a=1, b="c")

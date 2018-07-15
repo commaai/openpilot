@@ -1,59 +1,160 @@
+[![](https://i.imgur.com/VlKV6V8.png)](#)
+
 Welcome to openpilot
 ======
 
-[openpilot](http://github.com/commaai/openpilot) is an open source driving agent.
-
-Currently it performs the functions of Adaptive Cruise Control (ACC) and Lane Keeping Assist System (LKAS) for Hondas and Acuras. It's about on par with Tesla Autopilot at launch, and better than [all other manufacturers](http://www.thedrive.com/tech/5707/the-war-for-autonomous-driving-part-iii-us-vs-germany-vs-japan).
+[openpilot](http://github.com/commaai/openpilot) is an open source driving agent. Currently it performs the functions of Adaptive Cruise Control (ACC) and Lane Keeping Assist System (LKAS) for Hondas, Acuras, Toyotas, and a Chevy. It's about on par with Tesla Autopilot and GM Super Cruise, and better than [all other manufacturers](http://www.thedrive.com/tech/5707/the-war-for-autonomous-driving-part-iii-us-vs-germany-vs-japan).
 
 The openpilot codebase has been written to be concise and enable rapid prototyping. We look forward to your contributions - improving real vehicle automation has never been easier.
+
+Community
+------
+
+openpilot is supported by [comma.ai](https://comma.ai/).
+
+We have a [Twitter you should follow](https://twitter.com/comma_ai).
+
+Also, we have a 3500+ person [community on slack](https://slack.comma.ai).
+
+<table>
+  <tr>
+    <td><a href="https://www.youtube.com/watch?v=9TDi0BHgXyo" title="YouTube" rel="noopener"><img src="https://i.imgur.com/gBTo7yB.png"></a></td>
+    <td><a href="https://www.youtube.com/watch?v=1zCtj3ckGFo" title="YouTube" rel="noopener"><img src="https://i.imgur.com/gNhhcep.png"></a></td>
+    <td><a href="https://www.youtube.com/watch?v=Qd2mjkBIRx0" title="YouTube" rel="noopener"><img src="https://i.imgur.com/tFnSexp.png"></a></td>
+    <td><a href="https://www.youtube.com/watch?v=ju12vlBm59E" title="YouTube" rel="noopener"><img src="https://i.imgur.com/3BKiJVy.png"></a></td>
+  </tr>
+  <tr>
+    <td><a href="https://www.youtube.com/watch?v=Z5VY5FzgNt4" title="YouTube" rel="noopener"><img src="https://i.imgur.com/3I9XOK2.png"></a></td>
+    <td><a href="https://www.youtube.com/watch?v=blnhZC7OmMg" title="YouTube" rel="noopener"><img src="https://i.imgur.com/f9IgX6s.png"></a></td>
+    <td><a href="https://www.youtube.com/watch?v=iRkz7FuJsA8" title="YouTube" rel="noopener"><img src="https://i.imgur.com/Vo5Zvmn.png"></a></td>
+    <td><a href="https://www.youtube.com/watch?v=IHjEqAKDqjM" title="YouTube" rel="noopener"><img src="https://i.imgur.com/V9Zd81n.png"></a></td>
+  </tr>
+</table>
 
 Hardware
 ------
 
-Right now openpilot supports the [neo research platform](http://github.com/commaai/neo) for vehicle control. We'd like to support [Open Source Car Control](https://github.com/PolySync/OSCC) as well.
+Right now openpilot supports the [EON Dashcam DevKit](https://comma.ai/shop/products/eon-dashcam-devkit). We'd like to support other platforms as well.
 
-To install it on the NEO:
-
-```bash
-# Requires working adb in PATH
-cd installation
-./install.sh
-```
+Install openpilot on a neo device by entering ``https://openpilot.comma.ai`` during NEOS setup.
 
 Supported Cars
 ------
 
-- Acura ILX 2016 with AcuraWatch Plus
-  - Limitations: Due to use of the cruise control for gas, it can only be enabled above 25 mph
+| Make    | Model                  | Supported Package    | Lateral | Longitudinal | No Accel Below  | No Steer Below |
+| ------- | ---------------------- | -------------------- | ------- | ------------ | --------------  | -------------- |
+| Acura   | ILX 2016               | AcuraWatch Plus      | Yes     | Yes          | 25mph*          | 25mph          |
+| Acura   | ILX 2017               | AcuraWatch Plus      | Yes     | Yes          | 25mph*          | 25mph          |
+| Acura   | RDX 2018               | AcuraWatch Plus      | Yes     | Yes          | 25mph*          | 12mph          |
+| GM      | Volt 2017              | Driver Confidence II | Yes     | Yes          | 0mph            | 0mph           |
+| GM      | Volt 2018              | Driver Confidence II | Yes     | Yes          | 0mph            | 0mph           |
+| Honda   | Accord 2018            | All                  | Yes     | Stock        | 0mph            | 3mph           |
+| Honda   | Civic 2016             | Honda Sensing        | Yes     | Yes          | 0mph            | 12mph          |
+| Honda   | Civic 2017             | Honda Sensing        | Yes     | Yes          | 0mph            | 12mph          |
+| Honda   | Civic 2017 *(Hatch)*   | Honda Sensing        | Yes     | Stock        | 0mph            | 12mph          |
+| Honda   | Civic 2018             | Honda Sensing        | Yes     | Yes          | 0mph            | 12mph          |
+| Honda   | CR-V 2015              | Honda Sensing        | Yes     | Yes          | 25mph*          | 12mph          |
+| Honda   | CR-V 2016              | Honda Sensing        | Yes     | Yes          | 25mph*          | 12mph          |
+| Honda   | CR-V 2017              | Honda Sensing        | Yes     | Stock        | 0mph            | 12mph          |
+| Honda   | CR-V 2018              | Honda Sensing        | Yes     | Stock        | 0mph            | 12mph          |
+| Honda   | Odyssey 2017           | Honda Sensing        | Yes     | Yes          | 25mph*          | 12mph          |
+| Honda   | Odyssey 2018           | Honda Sensing        | Yes     | Yes          | 25mph*          | 12mph          |
+| Honda   | Pilot 2017             | Honda Sensing        | Yes     | Yes          | 25mph*          | 12mph          |
+| Honda   | Pilot 2018             | Honda Sensing        | Yes     | Yes          | 25mph*          | 12mph          |
+| Honda   | Ridgeline 2017         | Honda Sensing        | Yes     | Yes          | 25mph*          | 12mph          |
+| Honda   | Ridgeline 2018         | Honda Sensing        | Yes     | Yes          | 25mph*          | 12mph          |
+| Lexus   | RX Hybrid 2017         | All                  | Yes     | Yes          | 0mph            | 0mph           |
+| Lexus   | RX Hybrid 2018         | All                  | Yes     | Yes          | 0mph            | 0mph           |
+| Toyota  | Corolla 2017           | All                  | Yes     | Yes          | 20mph           | 0mph           |
+| Toyota  | Corolla 2018           | All                  | Yes     | Yes          | 20mph           | 0mph           |
+| Toyota  | Prius 2016             | TSS-P                | Yes     | Yes          | 0mph            | 0mph           |
+| Toyota  | Prius 2017             | All                  | Yes     | Yes          | 0mph            | 0mph           |
+| Toyota  | Prius 2018             | All                  | Yes     | Yes          | 0mph            | 0mph           |
+| Toyota  | Prius Prime 2017       | All                  | Yes     | Yes          | 0mph            | 0mph           |
+| Toyota  | Prius Prime 2018       | All                  | Yes     | Yes          | 0mph            | 0mph           |
+| Toyota  | Rav4 2016              | TSS-P                | Yes     | Yes          | 20mph           | 0mph           |
+| Toyota  | Rav4 2017              | All                  | Yes     | Yes          | 20mph           | 0mph           |
+| Toyota  | Rav4 2018              | All                  | Yes     | Yes          | 20mph           | 0mph           |
+| Toyota  | Rav4 Hybrid 2017       | All                  | Yes     | Yes          | 0mph            | 0mph           |
+| Toyota  | Rav4 Hybrid 2018       | All                  | Yes     | Yes          | 0mph            | 0mph           |
 
-- Honda Civic 2016 Touring Edition
-  - Limitations: Due to limitations in steering firmware, steering is disabled below 18 mph
+
+*[Comma Pedal](https://community.comma.ai/wiki/index.php/Comma_Pedal) is used to provide stop-and-go capability to some of the openpilot-supported cars that don't currently support stop-and-go. Here is how to [build a Comma Pedal](https://medium.com/@jfrux/comma-pedal-building-with-macrofab-6328bea791e8). ***NOTE: The Comma Pedal is not officially supported by [comma.ai](https://comma.ai)***
+
+Community Maintained Cars
+------
+
+| Make    | Model                  | Supported Package    | Lateral | Longitudinal | No Accel Below  | No Steer Below	|
+| ------- | -----------------------| -------------------- | ------- | ------------ | -----------     | ------------ |
+| Tesla   | Model S 2012           | All                  | Yes     | Not yet      | Not applicable  | 0mph         |
+| Tesla   | Model S 2013           | All                  | Yes     | Not yet      | Not applicable  | 0mph         |
+
+[[Tesla Pull Request]](https://github.com/commaai/openpilot/pull/246)
+
+*Community Maintained Cars are not confirmed by comma.ai to meet our safety model. Be extra cautious using them.
+
+In Progress Cars
+------
+- All TSS-P Toyota with Steering Assist.
+  - 'Full Speed Range Dynamic Radar Cruise Control' is required to enable stop-and-go. Only the Prius, Camry and C-HR have this option.
+  - Even though the Tundra, Sequoia and the Land Cruiser have TSS-P, they don't have Steering Assist and are not supported.
+- All LSS-P Lexus with Steering Assist or Lane Keep Assist.
+  - 'All-Speed Range Dynamic Radar Cruise Control' is required to enable stop-and-go. Only the GS, GSH, F, RX, RXH, LX, NX, NXH, LC, LCH, LS, LSH have this option.
+  - Even though the LX have TSS-P, it does not have Steering Assist and is not supported.
+
+How can I add support for my car?
+------
+
+If your car has adaptive cruise control and lane keep assist, you are in luck. Using a [panda](https://comma.ai/shop/products/panda-obd-ii-dongle/) and [cabana](https://community.comma.ai/cabana/), you can understand how to make your car drive by wire.
+
+We've written a [porting guide](https://medium.com/@comma_ai/openpilot-port-guide-for-toyota-models-e5467f4b5fe6) for Toyota that might help you after you have the basics figured out.
+
+- BMW, Audi, Volvo, and Mercedes all use [FlexRay](https://en.wikipedia.org/wiki/FlexRay) and are unlikely to be supported any time soon.
+- We put time into a Ford port, but the steering has a 10 second cutout limitation that makes it unusable.
+- The 2016-2017 Honda Accord use a custom signaling protocol for steering that's unlikely to ever be upstreamed.
 
 Directory structure
 ------
+    .
+    ├── apk                 # The apk files used for the UI
+    ├── cereal              # The messaging spec used for all logs on EON
+    ├── common              # Library like functionality we've developed here
+    ├── installer/updater   # Manages auto-updates of openpilot
+    ├── opendbc             # Files showing how to interpret data from cars
+    ├── panda               # Code used to communicate on CAN and LIN
+    ├── phonelibs           # Libraries used on EON
+    ├── pyextra             # Libraries used on EON
+    └── selfdrive           # Code needed to drive the car
+        ├── assets          # Fonts and images for UI
+        ├── boardd          # Daemon to talk to the board
+        ├── can             # Helpers for parsing CAN messages
+        ├── car             # Car specific code to read states and control actuators
+        ├── common          # Shared C/C++ code for the daemons
+        ├── controls        # Perception, planning and controls
+        ├── debug           # Tools to help you debug and do car ports
+        ├── locationd       # Soon to be home of precise location
+        ├── logcatd         # Android logcat as a service
+        ├── loggerd         # Logger and uploader of car data
+        ├── proclogd        # Logs information from proc
+        ├── sensord         # IMU / GPS interface code
+        ├── test            # Car simulator running code through virtual maneuvers
+        ├── ui              # The UI
+        └── visiond         # Embedded vision pipeline
 
-- board         -- Code that runs on the USB interface board
-- cereal        -- The messaging spec used for all logs on the phone
-- common        -- Library like functionality we've developed here
-- dbcs          -- Files showing how to interpret data from cars
-- installation  -- Installation on the neo platform
-- phonelibs     -- Libraries used on the phone
-- selfdrive     -- Code needed to drive the car
-  - assets        -- Fonts for ui
-  - boardd        -- Daemon to talk to the board
-  - calibrationd  -- Camera calibration server
-  - car           -- Code that talks to the car and implements CarInterface
-  - common        -- Shared C/C++ code for the daemons
-  - controls      -- Python controls (PID loops etc) for the car
-  - logcatd       -- Android logcat as a service
-  - loggerd       -- Logger and uploader of car data
-  - radar         -- Code that talks to the radar and implements RadarInterface
-  - sensord       -- IMU / GPS interface code
-  - test/plant    -- Car simulator running code through virtual maneuvers
-  - ui            -- The UI
-  - visiond       -- embedded vision pipeline
+To understand how the services interact, see `selfdrive/service_list.yaml`
 
-To understand how the services interact, see `common/services.py`
+User Data / chffr Account / Crash Reporting
+------
+
+By default openpilot creates an account and includes a client for chffr, our dashcam app. We use your data to train better models and improve openpilot for everyone.
+
+It's open source software, so you are free to disable it if you wish.
+
+It logs the road facing camera, CAN, GPS, IMU, magnetometer, thermal sensors, crashes, and operating system logs.
+The user facing camera is only logged if you explicitly opt-in in settings.
+It does not log the microphone.
+
+By using it, you agree to [our privacy policy](https://community.comma.ai/privacy.html). You understand that use of this software or its related services will generate certain types of user data, which may be logged and stored at the sole discretion of comma.ai. By accepting this agreement, you grant an irrevocable, perpetual, worldwide right to comma.ai for the use of this data.
 
 Testing on PC
 ------
@@ -65,44 +166,24 @@ There is rudimentary infrastructure to run a basic simulation and generate a rep
 ./run_docker_tests.sh
 ```
 
-The results are written to `selfdrive/test/plant/out/index.html`
+The resulting plots are displayed in `selfdrive/test/tests/plant/out/longitudinal/index.html`
 
 More extensive testing infrastructure and simulation environments are coming soon.
-
-Adding Car Support
-------
-
-It should be relatively easy to add support for the Honda CR-V Touring. The brake message is the same. Steering has a slightly different message with a different message id. Sniff CAN while using LKAS to find it.
-
-The Honda Accord uses different signaling for the steering and probably requires new hardware.
-
-Adding other manufacturers besides Honda/Acura is doable but will be more of an undertaking.
-
-User Data / chffr Account / Crash Reporting
-------
-
-By default openpilot creates an account and includes a client for chffr, our dashcam app. We use your data to train better models and improve openpilot for everyone.
-
-It's open source software, so you are free to disable it if you wish. 
-
-It logs the road facing camera, CAN, GPS, IMU, magnetometer, thermal sensors, crashes, and operating system logs.
-It does not log the user facing camera or the microphone.
-
-By using it, you agree to [our privacy policy](https://beta.comma.ai/privacy.html). You understand that use of this software or its related services will generate certain types of user data, which may be logged and stored at the sole discretion of comma.ai. By accepting this agreement, you grant an irrevocable, perpetual, worldwide right to comma.ai for the use of this data.
 
 Contributing
 ------
 
 We welcome both pull requests and issues on
-[github](http://github.com/commaai/openpilot). See the TODO file for a list of
-good places to start.
+[github](http://github.com/commaai/openpilot). Bug fixes and new car support encouraged.
 
-Want to get paid to work on openpilot? [comma.ai is hiring](http://comma.ai/hiring.html)
+Want to get paid to work on openpilot? [comma.ai is hiring](https://comma.ai/jobs/)
 
 Licensing
 ------
 
-openpilot is released under the MIT license.
+openpilot is released under the MIT license. Some parts of the software are released under other licenses as specified.
+
+Any user of this software shall indemnify and hold harmless Comma.ai, Inc. and its directors, officers, employees, agents, stockholders, affiliates, subcontractors and customers from and against all allegations, claims, actions, suits, demands, damages, liabilities, obligations, losses, settlements, judgments, costs and expenses (including without limitation attorneys’ fees and costs) which arise out of, relate to or result from any use of this software by user.
 
 **THIS IS ALPHA QUALITY SOFTWARE FOR RESEARCH PURPOSES ONLY. THIS IS NOT A PRODUCT.
 YOU ARE RESPONSIBLE FOR COMPLYING WITH LOCAL LAWS AND REGULATIONS.

@@ -33,8 +33,12 @@ struct FramebufferState {
     EGLContext context;
 };
 
+extern "C" void framebuffer_set_power(FramebufferState *s, int mode) {
+  SurfaceComposerClient::setDisplayPowerMode(s->dtoken, mode);
+}
+
 extern "C" FramebufferState* framebuffer_init(
-    const char* name, int32_t layer,
+    const char* name, int32_t layer, int alpha,
     EGLDisplay *out_display, EGLSurface *out_surface,
     int *out_w, int *out_h) {
   status_t status;
@@ -52,7 +56,8 @@ extern "C" FramebufferState* framebuffer_init(
   status = SurfaceComposerClient::getDisplayInfo(s->dtoken, &s->dinfo);
   assert(status == 0);
 
-  int orientation = 3; // rotate framebuffer 270 degrees
+  //int orientation = 3; // rotate framebuffer 270 degrees
+  int orientation = 1; // rotate framebuffer 90 degrees
   if(orientation == 1 || orientation == 3) {
       int temp = s->dinfo.h;
       s->dinfo.h = s->dinfo.w;
@@ -81,6 +86,7 @@ extern "C" FramebufferState* framebuffer_init(
     EGL_RED_SIZE,     8,
     EGL_GREEN_SIZE,   8,
     EGL_BLUE_SIZE,    8,
+    EGL_ALPHA_SIZE,   alpha ? 8 : 0,
     EGL_DEPTH_SIZE,   0,
     EGL_STENCIL_SIZE, 8,
     EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT_KHR,

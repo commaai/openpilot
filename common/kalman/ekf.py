@@ -1,7 +1,7 @@
+# pylint: skip-file
+from __future__ import print_function
 import abc
 import numpy as np
-import numpy.matlib
-
 # The EKF class contains the framework for an Extended Kalman Filter, but must be subclassed to use.
 # A subclass must implement:
 #   1) calc_transfer_fun(); see bottom of file for more info.
@@ -20,6 +20,7 @@ import numpy.matlib
 # update() should be called once per sensor, and can be called multiple times between predict steps.
 # Access and set the state of the filter directly with ekf.state and ekf.covar.
 
+
 class SensorReading:
   # Given a perfect model and no noise, data = obs_model * state
   def __init__(self, data, covar, obs_model):
@@ -34,8 +35,8 @@ class SensorReading:
 
 # A generic sensor class that does no pre-processing of data
 class SimpleSensor:
-  # obs_model can be 
-  #   a full obesrvation model matrix, or
+  # obs_model can be
+  #   a full observation model matrix, or
   #   an integer or tuple of indices into ekf.state, indicating which variables are being directly observed
   # covar can be
   #   a full covariance matrix
@@ -68,55 +69,6 @@ class SimpleSensor:
       self.covar = covar
     return SensorReading(data, self.covar, self.obs_model)
 
-class GPS:
-  earth_r = 6371e3  # m, average earth radius
-
-  def __init__(self, xy_idx=(0, 1), dims=2, var=1e4):
-    self.obs_model = np.matlib.zeros((2, dims))
-    self.obs_model[:, tuple(xy_idx)] = np.matlib.identity(2)
-    self.covar = np.matlib.identity(2) * var
-
-  # [lat, lon] in decimal degrees
-  def init_pos(self, latlon):
-    self.init_lat, self.init_lon = np.radians(np.asarray(latlon[:2]))
-
-  # Compute straight-line distance, in meters, between two lat/long coordinates
-  # Input in radians
-  def haversine(self, lat1, lon1, lat2, lon2):
-    lat_diff = lat2 - lat1
-    lon_diff = lon2 - lon1
-    d = np.sin(lat_diff * 0.5)**2 + np.cos(lat1) * np.cos(lat2) * np.sin(
-      lon_diff * 0.5)**2
-    h = 2 * GPS.earth_r * np.arcsin(np.sqrt(d))
-    return h
-
-  # Convert decimal degrees into meters
-  def convert_deg2m(self, lat, lon):
-    lat, lon = np.radians([lat, lon])
-
-    xs = (lon - self.init_lon) * np.cos(self.init_lat) * GPS.earth_r
-    ys = (lat - self.init_lat) * GPS.earth_r
-
-    return xs, ys
-
-  # Convert meters into decimal degrees
-  def convert_m2deg(self, xs, ys):
-    lat = ys / GPS.earth_r + self.init_lat
-    lon = xs / (GPS.earth_r * np.cos(self.init_lat)) + self.init_lon
-
-    return np.degrees(lat), np.degrees(lon)
-
-  # latlon is [lat, long,] as decimal degrees
-  # accuracy is as given by Android location service: radius of 68% confidence
-  def read(self, latlon, accuracy=None):
-    x_dist, y_dist = self.convert_deg2m(latlon[0], latlon[1])
-    if not accuracy:
-      covar = self.covar
-    else:
-      covar = np.matlib.identity(2) * accuracy**2
-
-    return SensorReading(
-      np.asmatrix([x_dist, y_dist]).T, covar, self.obs_model)
 
 class EKF:
   __metaclass__ = abc.ABCMeta
@@ -141,8 +93,8 @@ class EKF:
     innovation = reading.data - reading.obs_model * self.state
 
     if self.DEBUG:
-      print "reading:\n",reading.data
-      print "innovation:\n",innovation
+      print("reading:\n",reading.data)
+      print("innovation:\n",innovation)
 
     # S = H*P*H' + R
     innovation_covar = reading.obs_model * self.covar * reading.obs_model.T + reading.covar
@@ -152,12 +104,12 @@ class EKF:
       innovation_covar)
 
     if self.DEBUG:
-      print "gain:\n", kalman_gain
-      print "innovation_covar:\n", innovation_covar
-      print "innovation: ", innovation
-      print "test: ", self.covar * reading.obs_model.T * (
+      print("gain:\n", kalman_gain)
+      print("innovation_covar:\n", innovation_covar)
+      print("innovation: ", innovation)
+      print("test: ", self.covar * reading.obs_model.T * (
         reading.obs_model * self.covar * reading.obs_model.T + reading.covar *
-        0).I
+        0).I)
 
     # x = x + K*y
     self.state += kalman_gain*innovation
@@ -173,19 +125,19 @@ class EKF:
     self.covar = aux_mtrx * self.covar * aux_mtrx.T + kalman_gain * reading.covar * kalman_gain.T
 
     if self.DEBUG:
-      print "After update"
-      print "state\n", self.state
-      print "covar:\n",self.covar
+      print("After update")
+      print("state\n", self.state)
+      print("covar:\n",self.covar)
 
   def update_scalar(self, reading):
-    # like update but knowing that measurment is a scalar
+    # like update but knowing that measurement is a scalar
     # this avoids matrix inversions and speeds up (surprisingly) drived.py a lot
 
-    # innovation = reading.data - np.matmul(reading.obs_model, self.state)   
-    # innovation_covar = np.matmul(np.matmul(reading.obs_model, self.covar), reading.obs_model.T) + reading.covar    
-    # kalman_gain = np.matmul(self.covar, reading.obs_model.T)/innovation_covar   
-    # self.state += np.matmul(kalman_gain, innovation)   
-    # aux_mtrx = self.identity - np.matmul(kalman_gain, reading.obs_model)    
+    # innovation = reading.data - np.matmul(reading.obs_model, self.state)
+    # innovation_covar = np.matmul(np.matmul(reading.obs_model, self.covar), reading.obs_model.T) + reading.covar
+    # kalman_gain = np.matmul(self.covar, reading.obs_model.T)/innovation_covar
+    # self.state += np.matmul(kalman_gain, innovation)
+    # aux_mtrx = self.identity - np.matmul(kalman_gain, reading.obs_model)
     # self.covar =  np.matmul(aux_mtrx, np.matmul(self.covar, aux_mtrx.T)) + np.matmul(kalman_gain, np.matmul(reading.covar, kalman_gain.T))
 
     # written without np.matmul
@@ -237,8 +189,9 @@ class EKF:
 
     Current implementations calculate A and J as functions of state. Control input
       can be added trivially by adding a control parameter to predict() and calc_tranfer_update(),
-      and using it during calcualtion of A and J
+      and using it during calculation of A and J
     """
+
 
 class FastEKF1D(EKF):
   """Fast version of EKF for 1D problems with scalar readings."""
