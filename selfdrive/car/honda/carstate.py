@@ -135,7 +135,7 @@ def get_can_signals(CP):
     checks += [("CRUISE_PARAMS", 50)]
 
   # bosch brake signals
-  if self.CP.radarOffCan and self.CP.carFingerprint != CAR.CIVIC_HATCH:
+  if CP.radarOffCan and CP.carFingerprint != CAR.CIVIC_HATCH:
     signals += [("BRAKE_PRESSED", "BRAKE_MODULE", 0)]
     checks += [("BRAKE_MODULE", 50)]
 
@@ -253,7 +253,7 @@ class CarState(object):
     self.left_blinker_on = cp.vl["SCM_FEEDBACK"]['LEFT_BLINKER']
     self.right_blinker_on = cp.vl["SCM_FEEDBACK"]['RIGHT_BLINKER']
 
-    if CP.radarOffCan or CP.carFingerprint in (CAR.CIVIC, CAR.ODYSSEY):
+    if self.CP.radarOffCan or self.CP.carFingerprint in (CAR.CIVIC, CAR.ODYSSEY):
       self.main_on = cp.vl["SCM_FEEDBACK"]['MAIN_ON']
       self.park_brake = cp.vl["EPB_STATUS"]['EPB_STATE'] != 0
       self.brake_hold = cp.vl["VSA_STATUS"]['BRAKE_HOLD_ACTIVE']
@@ -267,7 +267,7 @@ class CarState(object):
 
     self.pedal_gas = cp.vl["POWERTRAIN_DATA"]['PEDAL_GAS']
 
-    if CP.radarOffCan or CP.carFingerprint in (CAR.ACURA_ILX, CAR.CIVIC, CAR.PILOT):
+    if self.CP.radarOffCan or self.CP.carFingerprint in (CAR.ACURA_ILX, CAR.CIVIC, CAR.PILOT):
       self.car_gas = cp.vl["GAS_PEDAL_2"]['CAR_GAS']
     else:
       self.car_gas = self.pedal_gas
