@@ -33,7 +33,7 @@ class CarInterface(object):
     # sending if read only is False
     if sendcan is not None:
       self.sendcan = sendcan
-     # self.CC = CarController(self.cp.dbc_name) #, CP.carFingerprint) #, CP.enableCamera)
+      self.CC = CarController(self.cp.dbc_name, CP.carFingerprint, CP.enableCamera)
 
   @staticmethod
   def compute_gb(accel, speed):
@@ -250,8 +250,7 @@ class CarInterface(object):
   # to be called @ 100hz
   def apply(self, c):
 
-    #self.CC.update(self.sendcan, c.enabled, self.CS, self.frame,
-    #               c.actuators, c.cruiseControl.cancel, c.hudControl.visualAlert,
+    self.CC.update(self.sendcan, c.enabled, self.CS, self.frame, c.actuators) # , c.cruiseControl.cancel, c.hudControl.visualAlert,
     #               c.hudControl.audibleAlert)
 
     self.frame += 1

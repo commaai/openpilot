@@ -60,7 +60,7 @@ def create_lkas11(packer, byte0, byte1, steer, steer_required, nibble5, \
     'Byte7' : byte7,
   }
 
-  return packer.make_can_msg("LKAS11", 1, values)
+  return packer.make_can_msg("LKAS11", 0, values)
 
 
 

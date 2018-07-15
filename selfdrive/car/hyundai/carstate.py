@@ -131,7 +131,7 @@ class CarState(object):
 
     self.park_brake = False
     self.main_on = False
-    self.acc_active = pt_cp.vl["SCC12"]['ACCMode'] == 1
+    self.acc_active = cp.vl["SCC12"]['ACCMode'] == 1
     self.pcm_acc_status = int(self.acc_active)
 
     # calc best v_ego estimate, by averaging two opposite corners
@@ -162,7 +162,7 @@ class CarState(object):
     self.steer_override = abs(cp.vl["MDPS12"]['CR_Mdps_StrColTq']) > 100  ## TODO: FIND THIS
     # 2 is standby, 10 is active. TODO: check that everything else is really a faulty state
     self.steer_state = cp.vl["MDPS12"]['CF_Mdps_ToiActive'] #0 NOT ACTIVE, 1 ACTIVE
-    self.steer_error = not cp.vl["MDPS12"]['CF_Mdps_FailStat'] or cp.vl["MDPS12"]['CF_Mdps_ToiUnavail'] ## TODO: VERIFY THIS
+    self.steer_error = 0 #not cp.vl["MDPS12"]['CF_Mdps_FailStat'] or cp.vl["MDPS12"]['CF_Mdps_ToiUnavail'] ## TODO: VERIFY THIS
     self.brake_error = 0
     self.steer_torque_driver = cp.vl["MDPS12"]['CR_Mdps_StrColTq'] ## TODO: FIND THIS
     self.steer_torque_motor = cp.vl["MDPS12"]['CR_Mdps_OutTq']
@@ -180,17 +180,17 @@ class CarState(object):
     self.gear_shifter = parse_gear_shifter(can_gear, self.car_fingerprint)
 
     #For LKAS Passthrough
-    self.lkas11_byte0 = ["LKAS11"]['Byte0']
-    self.lkas11_byte1 = ["LKAS11"]['Byte1']
-    self.lkas11_nibble5 = ["LKAS11"]['Nibble5']
-    self.lkas11_byte4 = ["LKAS11"]['Byte4']
-    self.lkas11_byte5 = ["LKAS11"]['Byte5']
-    self.lkas11_byte7 = ["LKAS11"]['Byte7']
+    self.lkas11_byte0 = cp.vl["LKAS11"]['Byte0']
+    self.lkas11_byte1 = cp.vl["LKAS11"]['Byte1']
+    self.lkas11_nibble5 = cp.vl["LKAS11"]['Nibble5']
+    self.lkas11_byte4 = cp.vl["LKAS11"]['Byte4']
+    self.lkas11_byte5 = cp.vl["LKAS11"]['Byte5']
+    self.lkas11_byte7 = cp.vl["LKAS11"]['Byte7']
 
-    self.lkas12_byte0 = ["LKAS12"]['Byte0']
-    self.lkas12_byte1 = ["LKAS12"]['Byte1']
-    self.lkas12_byte2 = ["LKAS12"]['Byte2']
-    self.lkas12_byte3 = ["LKAS12"]['Byte3']
-    self.lkas12_byte4 = ["LKAS12"]['Byte4']
-    self.lkas12_byte5 = ["LKAS12"]['Byte5']
+    self.lkas12_byte0 = cp.vl["LKAS12"]['Byte0']
+    self.lkas12_byte1 = cp.vl["LKAS12"]['Byte1']
+    self.lkas12_byte2 = cp.vl["LKAS12"]['Byte2']
+    self.lkas12_byte3 = cp.vl["LKAS12"]['Byte3']
+    self.lkas12_byte4 = cp.vl["LKAS12"]['Byte4']
+    self.lkas12_byte5 = cp.vl["LKAS12"]['Byte5']
 

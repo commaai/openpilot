@@ -1,5 +1,9 @@
 // *** all output safety mode ***
 
+
+static int hyundai_ign_hook() {
+  return true;
+}
 static void hyundai_init(int16_t param) {
   controls_allowed = 1;
 }
