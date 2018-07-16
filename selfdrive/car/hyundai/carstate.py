@@ -127,7 +127,7 @@ class CarState(object):
     self.esp_disabled = cp.vl["TCS15"]['ESC_Off_Step']
 
     self.park_brake = False
-    self.main_on = False
+    self.main_on = True
     self.acc_active = cp.vl["SCC12"]['ACCMode'] == 1
     self.pcm_acc_status = int(self.acc_active)
 
