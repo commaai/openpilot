@@ -942,25 +942,9 @@ BO_ 64 DATC14: 8 DATC
  SG_ DATC_ADSDisp : 28|2@1+ (1,0) [0|3] "" CLU
 
 BO_ 832 LKAS11: 8 LDWS_LKAS
- SG_ CF_Lkas_LdwsSysState : 2|4@1+ (1,0) [0|15] "" CLU,IBOX,PSB
- SG_ CF_Lkas_SysWarning : 6|4@1+ (1,0) [0|15] "" BCM,CLU
- SG_ CF_Lkas_LdwsLHWarning : 10|2@1+ (1,0) [0|3] "" BCM,CLU,PSB
- SG_ CF_Lkas_LdwsRHWarning : 12|2@1+ (1,0) [0|3] "" BCM,CLU,PSB
- SG_ CF_Lkas_HbaLamp : 14|1@1+ (1,0) [0|1] "" CLU
- SG_ CF_Lkas_FcwBasReq : 15|1@1+ (1,0) [0|1] "" ABS,ESC
  SG_ CR_Lkas_StrToqReq : 16|11@1+ (0.0078125,-8) [-8|8] "Nm" MDPS
  SG_ CF_Lkas_ActToi : 27|1@1+ (1,0) [0|1] "" MDPS
- SG_ CF_Lkas_ToiFlt : 28|1@1+ (1,0) [0|1] "" MDPS
- SG_ CF_Lkas_HbaSysState : 29|3@1+ (1,0) [0|7] "" BCM,CLU
- SG_ CF_Lkas_FcwOpt : 32|2@1+ (1,0) [0|3] "" CLU
- SG_ CF_Lkas_HbaOpt : 34|1@1+ (1,0) [0|1] "" BCM,CGW
- SG_ CF_Lkas_MsgCount : 36|4@1+ (1,0) [0|15] "" CLU,MDPS
- SG_ CF_Lkas_FcwSysState : 40|3@1+ (1,0) [0|7] "" CLU
- SG_ CF_Lkas_FcwCollisionWarning : 43|2@1+ (1,0) [0|3] "" CLU
- SG_ CF_Lkas_FusionState : 45|2@1+ (1,0) [0|3] "" SCC
  SG_ CF_Lkas_Chksum : 48|8@1+ (1,0) [0|255] "" MDPS
- SG_ CF_Lkas_FcwOpt_USM : 56|3@1+ (1,0) [0|7] "" CLU
- SG_ CF_Lkas_LdwsOpt_USM : 59|3@1+ (1,0) [0|7] "" CLU,MDPS
  SG_ Byte0 : 0|8@1+ (1,0) [0|3] "" XXX
  SG_ Byte1 : 8|8@1+ (1,0) [0|3] "" XXX
  SG_ Nibble5 : 28|4@1+ (1,0) [0|3] "" XXX

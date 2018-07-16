@@ -46,7 +46,9 @@ class CarController(object):
     apply_steer = int(round(actuators.steer * STEER_MAX))
 
     max_lim = min(max(CS.steer_torque_motor + STEER_ERROR_MAX, STEER_ERROR_MAX), STEER_MAX)
+    max_lim = STEER_MAX
     min_lim = max(min(CS.steer_torque_motor - STEER_ERROR_MAX, -STEER_ERROR_MAX), -STEER_MAX)
+    min_lim = -STEER_MAX
 
     apply_steer = clip(apply_steer, min_lim, max_lim)
 
@@ -83,10 +85,12 @@ class CarController(object):
     else :
       lkas_request = 0
     
-    
+    steer_chksum = apply_steer + (lkas_request * 0x800)
+    steer_chksum_a = steer_chksum & 0xFF
+    steer_chksum_b = (steer_chksum >> 8) & 0xFF
 
-    checksum = (CS.lkas11_byte0 + CS.lkas11_byte1 + apply_steer + \
-      lkas_request + CS.lkas11_nibble5 + CS.lkas11_byte4 + CS.lkas11_byte5) % 256
+    checksum = (CS.lkas11_byte0 + CS.lkas11_byte1 + steer_chksum_a + steer_chksum_b + \
+       CS.lkas11_nibble5 + CS.lkas11_byte4 + CS.lkas11_byte5) % 256
 
 
     can_sends.append(create_lkas11(self.packer, CS.lkas11_byte0, \

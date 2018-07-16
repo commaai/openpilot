@@ -27,7 +27,6 @@ def get_can_parser(CP):
 
     ("YAW_RATE", "ESP12", 0),
     
-    ("CR_Lkas_StrToqReq", "LKAS11", 0),
     ("Byte0", "LKAS11", 0),
     ("Byte1", "LKAS11", 0),
     ("Nibble5", "LKAS11", 0),
@@ -76,7 +75,6 @@ def get_can_parser(CP):
   ]
   checks = [
     # address, frequency
-    ## TODO - DO THIS PROPERLY
     ("LKAS11", 100),
     ("MDPS12", 50),
     ("TCS15", 10),
@@ -124,7 +122,6 @@ class CarState(object):
 
     self.door_all_closed = True #not any ([cp.vl["CGW1"]['CF_Gway_DrvDrSw'], cp.vl["CGW1"]['CF_Gway_AstDrSw'], cp.vl["CGW2"]['CF_Gway_RlDrSw'], cp.vl["CGW2"]['CF_Gway_RrDrSw']])
     self.seatbelt = cp.vl["CGW1"]['CF_Gway_DrvSeatBeltSw']
-
     
     self.brake_pressed = cp.vl["TCS13"]['DriverBraking']
     self.esp_disabled = cp.vl["TCS15"]['ESC_Off_Step']
@@ -141,7 +138,7 @@ class CarState(object):
     self.v_wheel_rr = cp.vl["WHL_SPD11"]['WHL_SPD_RR'] * CV.KPH_TO_MS
     self.v_wheel = (self.v_wheel_fl + self.v_wheel_fr + self.v_wheel_rl + self.v_wheel_rr) / 4.
     if self.car_fingerprint == CAR.SORENTO:
-      self.v_wheel = self.v_wheel * 1.02 # There is a 2 percent error on Sorento GT due to slightly larger wheel diameter compared to poverty packs.  Dash assumes about 4% which is excessive
+      self.v_wheel = self.v_wheel * 1.03 # There is a 2 percent error on Sorento GT due to slightly larger wheel diameter compared to poverty packs.  Dash assumes about 4% which is excessive
 
     # Kalman filter
     if abs(self.v_wheel - self.v_ego) > 2.0:  # Prevent large accelerations when car starts at non zero speed
@@ -154,24 +151,25 @@ class CarState(object):
     self.standstill = not self.v_wheel > 0.001
 
     self.angle_steers = cp.vl["ESP12"]['YAW_RATE']
-    self.main_on = cp.vl["CLU11"]['CF_Clu_CruiseSwMain']
+    self.main_on = True #cp.vl["CLU11"]['CF_Clu_CruiseSwMain']
     self.left_blinker_on = cp.vl["CGW1"]['CF_Gway_TurnSigLh']
     self.right_blinker_on = cp.vl["CGW1"]['CF_Gway_TurnSigRh']
 
     # we could use the override bit from dbc, but it's triggered at too high torque values
-    self.steer_override = abs(cp.vl["MDPS12"]['CR_Mdps_StrColTq']) > 100  ## TODO: FIND THIS
+    self.steer_override = abs(cp.vl["MDPS12"]['CR_Mdps_StrColTq']) > 1. 
     # 2 is standby, 10 is active. TODO: check that everything else is really a faulty state
     self.steer_state = cp.vl["MDPS12"]['CF_Mdps_ToiActive'] #0 NOT ACTIVE, 1 ACTIVE
-    self.steer_error = 0 #not cp.vl["MDPS12"]['CF_Mdps_FailStat'] or cp.vl["MDPS12"]['CF_Mdps_ToiUnavail'] ## TODO: VERIFY THIS
+    self.steer_error = False  #not cp.vl["MDPS12"]['CF_Mdps_FailStat'] or cp.vl["MDPS12"]['CF_Mdps_ToiUnavail'] ## TODO: VERIFY THIS
     self.brake_error = 0
     self.steer_torque_driver = cp.vl["MDPS12"]['CR_Mdps_StrColTq'] ## TODO: FIND THIS
     self.steer_torque_motor = cp.vl["MDPS12"]['CR_Mdps_OutTq']
 
     self.user_brake = 0
-    self.brake_lights = bool(self.brake_pressed)
+
 
     can_gear = cp.vl["AT01"]['Gear']
     self.brake_pressed = cp.vl["TCS13"]['DriverBraking']
+    self.brake_lights = bool(self.brake_pressed)
     if (cp.vl["TCS13"]["DriverOverride"] == 0 and cp.vl["TCS13"]['ACC_REQ'] == 1):
       self.pedal_gas = 0
     else: 

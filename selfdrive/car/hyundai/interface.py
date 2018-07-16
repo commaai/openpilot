@@ -57,7 +57,7 @@ class CarInterface(object):
     ret.safetyModel = car.CarParams.SafetyModels.hyundai
 
     # pedal
-    ret.enableCruise = True
+    ret.enableCruise = False
 
     rotationalInertia = 2500
 
