@@ -116,7 +116,8 @@ class CarState(object):
     self.can_valid = cp.can_valid
     msg = messaging.recv_one_or_none(gps_ext_sock)
     gps_pkt = msg.gpsLocationExternal
-    print gps_pkt
+    print gps_pkt.latitude
+    print gps_pkt.longitude
     # update prevs, update must run once per loop
     self.prev_left_blinker_on = self.left_blinker_on
     self.prev_right_blinker_on = self.right_blinker_on
