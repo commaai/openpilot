@@ -7,7 +7,7 @@ import numpy as np
 
 def parse_gear_shifter(can_gear, car_fingerprint):
   # TODO: Use values from DBC to parse this field
-  if car_fingerprint in [CAR.PRIUS, CAR.PRIME]:
+  if car_fingerprint in [CAR.PRIUS, CAR.PRIUS_PRIME]:
     if can_gear == 0x0:
       return "park"
     elif can_gear == 0x1:
@@ -79,7 +79,7 @@ def get_can_parser(CP):
     ("EPS_STATUS", 25),
   ]
 
-  if CP.carFingerprint in [CAR.PRIUS, CAR.PRIME]:
+  if CP.carFingerprint in [CAR.PRIUS, CAR.PRIUS_PRIME]:
     signals += [("STATE", "AUTOPARK_STATUS", 0)]
 
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
@@ -163,7 +163,7 @@ class CarState(object):
     self.gas_pressed = not cp.vl["PCM_CRUISE"]['GAS_RELEASED']
     self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]['LOW_SPEED_LOCKOUT'] == 2
     self.brake_lights = bool(cp.vl["ESP_CONTROL"]['BRAKE_LIGHTS_ACC'] or self.brake_pressed)
-    if self.CP.carFingerprint in [CAR.PRIUS, CAR.PRIME]:
+    if self.CP.carFingerprint in [CAR.PRIUS, CAR.PRIUS_PRIME]:
       self.generic_toggle = cp.vl["AUTOPARK_STATUS"]['STATE'] != 0
     else:
       self.generic_toggle = bool(cp.vl["LIGHT_STALK"]['AUTO_HIGH_BEAM'])
