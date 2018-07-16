@@ -1,7 +1,0 @@
-#!/system/bin/sh
-
-DIR="$(cd "$(dirname "$0")" && pwd)"
-
-export LD_LIBRARY_PATH=/system/lib64
-export CLASSPATH="$DIR"/signapk.android.jar
-exec app_process "$DIR" com.android.signapk.SignApk "$@"
