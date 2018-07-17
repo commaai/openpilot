@@ -1,0 +1,272 @@
+#!/usr/bin/env python2.7
+import os
+import zmq
+from smbus2 import SMBus
+
+from selfdrive.version import training_version
+from selfdrive.swaglog import cloudlog
+import selfdrive.messaging as messaging
+from selfdrive.services import service_list
+from selfdrive.loggerd.config import ROOT
+from common.params import Params
+from common.realtime import sec_since_boot
+
+import cereal
+ThermalStatus = cereal.log.ThermalData.ThermalStatus
+
+def read_tz(x):
+  with open("/sys/devices/virtual/thermal/thermal_zone%d/temp" % x) as f:
+    ret = max(0, int(f.read()))
+  return ret
+
+def read_thermal():
+  dat = messaging.new_message()
+  dat.init('thermal')
+  dat.thermal.cpu0 = read_tz(5)
+  dat.thermal.cpu1 = read_tz(7)
+  dat.thermal.cpu2 = read_tz(10)
+  dat.thermal.cpu3 = read_tz(12)
+  dat.thermal.mem = read_tz(2)
+  dat.thermal.gpu = read_tz(16)
+  dat.thermal.bat = read_tz(29)
+  return dat
+
+LEON = False
+def setup_eon_fan():
+  global LEON
+
+  os.system("echo 2 > /sys/module/dwc3_msm/parameters/otg_switch")
+
+  bus = SMBus(7, force=True)
+  try:
+    bus.write_byte_data(0x21, 0x10, 0xf)   # mask all interrupts
+    bus.write_byte_data(0x21, 0x03, 0x1)   # set drive current and global interrupt disable
+    bus.write_byte_data(0x21, 0x02, 0x2)   # needed?
+    bus.write_byte_data(0x21, 0x04, 0x4)   # manual override source
+  except IOError:
+    print "LEON detected"
+    #os.system("echo 1 > /sys/devices/soc/6a00000.ssusb/power_supply/usb/usb_otg")
+    LEON = True
+  bus.close()
+
+last_eon_fan_val = None
+def set_eon_fan(val):
+  global LEON, last_eon_fan_val
+
+  if last_eon_fan_val is None or last_eon_fan_val != val:
+    bus = SMBus(7, force=True)
+    if LEON:
+      i = [0x1, 0x3 | 0, 0x3 | 0x08, 0x3 | 0x10][val]
+      bus.write_i2c_block_data(0x3d, 0, [i])
+    else:
+      bus.write_byte_data(0x21, 0x04, 0x2)
+      bus.write_byte_data(0x21, 0x03, (val*2)+1)
+      bus.write_byte_data(0x21, 0x04, 0x4)
+    bus.close()
+    last_eon_fan_val = val
+
+# temp thresholds to control fan speed - high hysteresis
+_TEMP_THRS_H = [50., 65., 80., 10000]
+# temp thresholds to control fan speed - low hysteresis
+_TEMP_THRS_L = [42.5, 57.5, 72.5, 10000]
+# fan speed options
+_FAN_SPEEDS = [0, 16384, 32768, 65535]
+# max fan speed only allowed if battery if hot
+_BAT_TEMP_THERSHOLD = 45.
+
+def handle_fan(max_temp, bat_temp, fan_speed):
+  new_speed_h = next(speed for speed, temp_h in zip(_FAN_SPEEDS, _TEMP_THRS_H) if temp_h > max_temp)
+  new_speed_l = next(speed for speed, temp_l in zip(_FAN_SPEEDS, _TEMP_THRS_L) if temp_l > max_temp)
+
+  if new_speed_h > fan_speed:
+    # update speed if using the high thresholds results in fan speed increment
+    fan_speed = new_speed_h
+  elif new_speed_l < fan_speed:
+    # update speed if using the low thresholds results in fan speed decrement
+    fan_speed = new_speed_l
+
+  if bat_temp < _BAT_TEMP_THERSHOLD:
+    # no max fan speed unless battery is hot
+    fan_speed = min(fan_speed, _FAN_SPEEDS[-2])
+
+  set_eon_fan(fan_speed/16384)
+
+  return fan_speed
+
+class LocationStarter(object):
+  def __init__(self):
+    self.last_good_loc = 0
+  def update(self, started_ts, location):
+    rt = sec_since_boot()
+
+    if location is None or location.accuracy > 50 or location.speed < 2:
+      # bad location, stop if we havent gotten a location in a while
+      # dont stop if we're been going for less than a minute
+      if started_ts:
+        if rt-self.last_good_loc > 60. and rt-started_ts > 60:
+          cloudlog.event("location_stop",
+            ts=rt,
+            started_ts=started_ts,
+            last_good_loc=self.last_good_loc,
+            location=location.to_dict() if location else None)
+          return False
+        else:
+          return True
+      else:
+        return False
+
+    self.last_good_loc = rt
+
+    if started_ts:
+      return True
+    else:
+      cloudlog.event("location_start", location=location.to_dict() if location else None)
+      return location.speed*3.6 > 10
+
+def thermald_thread():
+  setup_eon_fan()
+
+  # now loop
+  context = zmq.Context()
+  thermal_sock = messaging.pub_sock(context, service_list['thermal'].port)
+  health_sock = messaging.sub_sock(context, service_list['health'].port)
+  location_sock = messaging.sub_sock(context, service_list['gpsLocation'].port)
+  fan_speed = 0
+  count = 0
+
+  off_ts = None
+  started_ts = None
+  ignition_seen = False
+  started_seen = False
+  passive_starter = LocationStarter()
+  thermal_status = ThermalStatus.green
+  health_sock.RCVTIMEO = 1500
+
+  params = Params()
+
+  while 1:
+    td = messaging.recv_sock(health_sock, wait=True)
+    location = messaging.recv_sock(location_sock)
+    location = location.gpsLocation if location else None
+    msg = read_thermal()
+
+    # loggerd is gated based on free space
+    statvfs = os.statvfs(ROOT)
+    avail = (statvfs.f_bavail * 1.0)/statvfs.f_blocks
+
+    # thermal message now also includes free space
+    msg.thermal.freeSpace = avail
+    with open("/sys/class/power_supply/battery/capacity") as f:
+      msg.thermal.batteryPercent = int(f.read())
+    with open("/sys/class/power_supply/battery/status") as f:
+      msg.thermal.batteryStatus = f.read().strip()
+    with open("/sys/class/power_supply/usb/online") as f:
+      msg.thermal.usbOnline = bool(int(f.read()))
+
+    # TODO: add car battery voltage check
+    max_temp = max(msg.thermal.cpu0, msg.thermal.cpu1,
+                   msg.thermal.cpu2, msg.thermal.cpu3) / 10.0
+    bat_temp = msg.thermal.bat/1000.
+    fan_speed = handle_fan(max_temp, bat_temp, fan_speed)
+    msg.thermal.fanSpeed = fan_speed
+
+    # thermal logic here
+
+    if max_temp < 70.0:
+      thermal_status = ThermalStatus.green
+    if max_temp > 85.0:
+      cloudlog.warning("over temp: %r", max_temp)
+      thermal_status = ThermalStatus.yellow
+
+    # from controls
+    overtemp_proc = any(t > 950 for t in
+                        (msg.thermal.cpu0, msg.thermal.cpu1, msg.thermal.cpu2,
+                         msg.thermal.cpu3, msg.thermal.mem, msg.thermal.gpu))
+    overtemp_bat = msg.thermal.bat > 60000 # 60c
+    if overtemp_proc or overtemp_bat:
+      # TODO: hysteresis
+      thermal_status = ThermalStatus.red
+
+    if max_temp > 107.0 or msg.thermal.bat >= 63000:
+      thermal_status = ThermalStatus.danger
+
+    # **** starting logic ****
+
+    # start constellation of processes when the car starts
+    ignition = td is not None and td.health.started
+    ignition_seen = ignition_seen or ignition
+
+    # add voltage check for ignition
+    if not ignition_seen and td is not None and td.health.voltage > 13500:
+      ignition = True
+
+    do_uninstall = params.get("DoUninstall") == "1"
+    accepted_terms = params.get("HasAcceptedTerms") == "1"
+    completed_training = params.get("CompletedTrainingVersion") == training_version
+
+    should_start = ignition
+
+    # have we seen a panda?
+    passive = (params.get("Passive") == "1")
+
+    # start on gps movement if we haven't seen ignition and are in passive mode
+    should_start = should_start or (not (ignition_seen and td) # seen ignition and panda is connected
+                                    and passive
+                                    and passive_starter.update(started_ts, location))
+
+    # with 2% left, we killall, otherwise the phone will take a long time to boot
+    should_start = should_start and msg.thermal.freeSpace > 0.02
+
+    # require usb power in passive mode
+    should_start = should_start and (not passive or msg.thermal.usbOnline)
+
+    # confirm we have completed training and aren't uninstalling
+    should_start = should_start and accepted_terms and (passive or completed_training) and (not do_uninstall)
+
+    # if any CPU gets above 107 or the battery gets above 63, kill all processes
+    # controls will warn with CPU above 95 or battery above 60
+    if msg.thermal.thermalStatus >= ThermalStatus.danger:
+      # TODO: Add a better warning when this is happening
+      should_start = False
+
+    if should_start:
+      off_ts = None
+      if started_ts is None:
+        params.car_start()
+        started_ts = sec_since_boot()
+        started_seen = True
+    else:
+      started_ts = None
+      if off_ts is None:
+        off_ts = sec_since_boot()
+
+      # shutdown if the battery gets lower than 3%, it's discharging, we aren't running for
+      # more than a minute but we were running
+      if msg.thermal.batteryPercent < 3 and msg.thermal.batteryStatus == "Discharging" and \
+         started_seen and (sec_since_boot() - off_ts) > 60:
+        os.system('LD_LIBRARY_PATH="" svc power shutdown')
+
+    msg.thermal.started = started_ts is not None
+    msg.thermal.startedTs = int(1e9*(started_ts or 0))
+
+    msg.thermal.thermalStatus = thermal_status
+    thermal_sock.send(msg.to_bytes())
+    print msg
+
+    # report to server once per minute
+    if (count%60) == 0:
+      cloudlog.event("STATUS_PACKET",
+        count=count,
+        health=(td.to_dict() if td else None),
+        location=(location.to_dict() if location else None),
+        thermal=msg.to_dict())
+
+    count += 1
+
+
+def main(gctx=None):
+  thermald_thread()
+
+if __name__ == "__main__":
+  main()
+

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from common.realtime import sec_since_boot
 from cereal import car
+from selfdrive.swaglog import cloudlog
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
@@ -60,7 +61,7 @@ class CarInterface(object):
 
     # FIXME: hardcoding honda civic 2016 touring params so they can be used to
     # scale unknown params for other cars
-    mass_civic = 2923./2.205 + std_cargo
+    mass_civic = 2923. * CV.LB_TO_KG + std_cargo
     wheelbase_civic = 2.70
     centerToFront_civic = wheelbase_civic * 0.4
     centerToRear_civic = wheelbase_civic - centerToFront_civic
@@ -71,10 +72,11 @@ class CarInterface(object):
     ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
     ret.wheelbase = 2.85
     ret.steerRatio = 14.8
-    ret.mass = 3045./2.205 + std_cargo
+    ret.mass = 3045. * CV.LB_TO_KG + std_cargo
     ret.steerKpV, ret.steerKiV = [[0.01], [0.005]]     # TODO: tune this
     ret.steerKf = 1. / MAX_ANGLE   # MAX Steer angle to normalize FF
     ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
+    ret.steerRateCost = 1.0
 
     f = 1.2
     tireStiffnessFront_civic *= f
@@ -117,7 +119,7 @@ class CarInterface(object):
     ret.brakeMaxV = [1., 0.8]
 
     ret.enableCamera = not any(x for x in [970, 973, 984] if x in fingerprint)
-    print "ECU Camera Simulated: ", ret.enableCamera
+    cloudlog.warn("ECU Camera Simulated: %r", ret.enableCamera)
 
     ret.steerLimitAlert = False
     ret.stoppingControl = False

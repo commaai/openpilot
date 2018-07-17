@@ -49,7 +49,7 @@ for address, msg_name, msg_size, sigs in msgs:
         sys.exit("COUNTER starts at wrong bit %s" % msg_name)
 
 
-# Fail on duplicate messgae names
+# Fail on duplicate message names
 c = Counter([msg_name for address, msg_name, msg_size, sigs in msgs])
 for name, count in c.items():
   if count > 1:

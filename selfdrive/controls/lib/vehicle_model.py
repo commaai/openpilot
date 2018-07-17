@@ -97,8 +97,9 @@ if __name__ == '__main__':
   # load car params
   #CP = CarInterface.get_params("TOYOTA PRIUS 2017", {})
   CP = CarInterface.get_params("HONDA CIVIC 2016 TOURING", {})
-  print CP
+  #print CP
   VM = VehicleModel(CP)
-  print VM.steady_state_sol(.1, 0.15)
-  print calc_slip_factor(VM)
-  print VM.yaw_rate(0.2*np.pi/180, 32.) * 180./np.pi
+  #print VM.steady_state_sol(.1, 0.15)
+  #print calc_slip_factor(VM)
+  #print VM.yaw_rate(3.*np.pi/180, 32.) * 180./np.pi
+  #print VM.curvature_factor(32)

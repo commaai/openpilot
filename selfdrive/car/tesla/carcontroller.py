@@ -60,6 +60,7 @@ class CarController(object):
     self.brake_last = 0.
     self.enable_camera = enable_camera
     self.packer = CANPacker(dbc_name)
+    self.epas_disabled = True
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
              pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel, \
@@ -116,35 +117,21 @@ class CarController(object):
     # *** compute control surfaces ***
     STEER_MAX = 0x4000 #16384
 
-    # Prototype Angle Max. slope of 180 degree at 8.3 m/s (30 km/h) and 25 degree at 33.3 m/s (120 KM/h)
-    # = -62x + 2314.6
-    #   Angle max = -62*V(m/s) + 2314.6
-    # Gives for example: 
-    #                    180 degree at  30 km/h
-    #                    145 degree at  50 km/h
-    #                     94 degree at  80 km/h
-    #                     59 degree at 100 km/h
-    #                     42 degree at 110 km/h
-    #                     25 degree at 120 km/h
-    USER_STEER_MAX = (-62.0 * CS.v_ego) + 2314.6
-
+    # Angle Max. slope versus car speed
+    # Graphical view: https://slack-files.com/T02Q83UUV-FBQFZR5PW-7962eb2adb
+    # and https://slack-files.com/T02Q83UUV-FBQ6SPPRP-b110efb723
+    # Model 1: USER_STEER_MAX = (-62.0 * CS.v_ego) + 2314.6
+    # Model 2: USER_STEER_MAX  = 2.43 * CS.v_ego * CS.v_ego - 193.52 * CS.v_ego + 4000
+    # Model 3: USER_STEER_MAX  = 1.485 * CS.v_ego * CS.v_ego - 154.51 * CS.v_ego + 4000
+    USER_STEER_MAX  = 1.485 * CS.v_ego * CS.v_ego - 154.51 * CS.v_ego + 4000
+    
     # Basic highway lane change logic
     changing_lanes = CS.right_blinker_on or CS.left_blinker_on
-
-    # Prevent steering while stopped
-    MIN_STEERING_VEHICLE_VELOCITY = 0.05 # m/s
-    vehicle_moving = (CS.v_ego >= MIN_STEERING_VEHICLE_VELOCITY)
     
-    enable_steer_control = (enabled
-                            and not changing_lanes)
-    
-    # Torque
-    #steer_correction = actuators.steer if enable_steer_control else 0
-    #apply_steer = int(clip((-steer_correction * 100) + STEER_MAX - (CS.angle_steers * 10), STEER_MAX - USER_STEER_MAX, STEER_MAX + USER_STEER_MAX)) # steer torque is converted back to CAN reference (positive when steering right)
-
+    enable_steer_control = (enabled and not changing_lanes)
+        
     # Angle
-    steer_correction = actuators.steerAngle if enable_steer_control else CS.angle_steers
-    apply_steer = int(clip((-actuators.steerAngle * 10) + STEER_MAX, STEER_MAX - (USER_STEER_MAX*2), STEER_MAX + (USER_STEER_MAX*2))) # steer torque is converted back to CAN reference (positive when steering right)
+    apply_steer = int(clip((-actuators.steerAngle * 10) + STEER_MAX, STEER_MAX - USER_STEER_MAX, STEER_MAX + USER_STEER_MAX)) # steer angle is converted back to CAN reference (positive when steering right)
 
     # Send CAN commands.
     can_sends = []

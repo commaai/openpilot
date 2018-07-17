@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import os
 import struct
-
+from collections import namedtuple
 import zmq
 import numpy as np
 
@@ -210,15 +210,47 @@ class Plant(object):
       print "%6.2f m  %6.2f m/s  %6.2f m/s2   %.2f ang   gas: %.2f  brake: %.2f  steer: %5.2f     lead_rel: %6.2f m  %6.2f m/s" % (distance, speed, acceleration, self.angle_steer, gas, brake, steer_torque, d_rel, v_rel)
 
     # ******** publish the car ********
-    # TODO: the order is this list should not matter, but currently everytime we change carstate we break this test. Fix it!
-    vls = [self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed),
-           self.angle_steer, self.angle_steer_rate, 0,
+    vls_tuple = namedtuple('vls', [
+           'XMISSION_SPEED',
+           'WHEEL_SPEED_FL', 'WHEEL_SPEED_FR', 'WHEEL_SPEED_RL', 'WHEEL_SPEED_RR',
+           'STEER_ANGLE', 'STEER_ANGLE_RATE', 'STEER_TORQUE_SENSOR',
+           'LEFT_BLINKER', 'RIGHT_BLINKER',
+           'GEAR',
+           'WHEELS_MOVING',
+           'BRAKE_ERROR_1', 'BRAKE_ERROR_2',
+           'SEATBELT_DRIVER_LAMP', 'SEATBELT_DRIVER_LATCHED',
+           'BRAKE_PRESSED', 'BRAKE_SWITCH',
+           'CRUISE_BUTTONS',
+           'ESP_DISABLED',
+           'HUD_LEAD',
+           'USER_BRAKE',
+           'STEER_STATUS',
+           'GEAR_SHIFTER',
+           'PEDAL_GAS',
+           'CRUISE_SETTING',
+           'ACC_STATUS',
+
+           'CRUISE_SPEED_PCM',
+           'CRUISE_SPEED_OFFSET',
+
+           'DOOR_OPEN_FL', 'DOOR_OPEN_FR', 'DOOR_OPEN_RL', 'DOOR_OPEN_RR',
+
+           'CAR_GAS',
+           'MAIN_ON',
+           'EPB_STATE',
+           'BRAKE_HOLD_ACTIVE',
+           'INTERCEPTOR_GAS',
+           ])
+    vls = vls_tuple(
+           self.speed_sensor(speed), 
+           self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed),
+           self.angle_steer, self.angle_steer_rate, 0, #Steer torque sensor
            0, 0,  # Blinkers
            self.gear_choice,
            speed != 0,
            self.brake_error, self.brake_error,
            not self.seatbelt, self.seatbelt,  # Seatbelt
-           self.brake_pressed, 0.,
+           self.brake_pressed, 0., #Brake pressed, Brake switch
            cruise_buttons,
            self.esp_disabled,
            0,  # HUD lead
@@ -238,11 +270,8 @@ class Plant(object):
            self.main_on,
            0,  # EPB State
            0,  # Brake hold
-           0,  # Interceptor feedback
-           # 0,
-
-
-    ]
+           0   # Interceptor feedback
+           )
 
     # TODO: publish each message at proper frequency
     can_msgs = []
@@ -250,7 +279,7 @@ class Plant(object):
       msg_struct = {}
       indxs = [i for i, x in enumerate(msgs) if msg == msgs[i]]
       for i in indxs:
-        msg_struct[sgs[i]] = vls[i]
+        msg_struct[sgs[i]] = getattr(vls, sgs[i])
 
       if "COUNTER" in honda.get_signals(msg):
         msg_struct["COUNTER"] = self.rk.frame % 4

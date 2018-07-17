@@ -47,5 +47,5 @@ def register():
     return None
 
 if __name__ == "__main__":
-  print api_get("").text
-  print register()
+  print(api_get("").text)
+  print(register())
