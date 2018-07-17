@@ -57,11 +57,12 @@ keys = {
 # written: baseui
 # read:    ui, controls
   "IsMetric": TxType.PERSISTENT,
-  "IsRearViewMirror": TxType.PERSISTENT,
   "IsFcwEnabled": TxType.PERSISTENT,
   "HasAcceptedTerms": TxType.PERSISTENT,
   "CompletedTrainingVersion": TxType.PERSISTENT,
   "IsUploadVideoOverCellularEnabled": TxType.PERSISTENT,
+  "IsDriverMonitoringEnabled": TxType.PERSISTENT,
+  "IsGeofenceEnabled": TxType.PERSISTENT,
 # written: visiond
 # read:    visiond, controlsd
   "CalibrationParams": TxType.PERSISTENT,
@@ -315,7 +316,6 @@ class Params(object):
 
     with self.env.begin(write=True) as txn:
       txn.put(key, dat)
-    print "set", key
 
 if __name__ == "__main__":
   params = Params()
@@ -325,11 +325,11 @@ if __name__ == "__main__":
     for k in keys:
       pp = params.get(k)
       if pp is None:
-        print k, "is None"
+        print("%s is None" % k)
       elif all(ord(c) < 128 and ord(c) >= 32 for c in pp):
-        print k, pp
+        print("%s = %s" % (k, pp))
       else:
-        print k, pp.encode("hex")
+        print("%s = %s" % (k, pp.encode("hex")))
 
   # Test multiprocess:
   # seq 0 100000 | xargs -P20 -I{} python common/params.py DongleId {} && sleep 0.05

@@ -142,6 +142,7 @@ class CarState(object):
     self.steer_warning = 0
     
     self.stopped = 0
+    self.frame_humanSteered = 0    # Last frame human steered
 
     # vEgo kalman filter
     dt = 0.01

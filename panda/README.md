@@ -3,7 +3,7 @@ Welcome to panda
 
 [panda](http://github.com/commaai/panda) is the nicest universal car interface ever.
 
-<a href="https://panda.comma.ai"><img src="https://github.com/commaai/panda/blob/master/panda.png">
+<a href="https://www.amazon.com/chffr-panda-OBD-II-Interface/dp/B07D6Y3GN2/"><img src="https://github.com/commaai/panda/blob/master/panda.png">
 
 <img src="https://github.com/commaai/panda/blob/master/buy.png"></a>
 
@@ -48,10 +48,10 @@ Software interface support
 
 As a universal car interface, it should support every reasonable software interface.
 
-- User space ([done](https://github.com/commaai/panda/tree/master/python))
-- socketcan in kernel ([alpha](https://github.com/commaai/panda/tree/master/drivers/linux))
-- ELM327 ([done](https://github.com/commaai/panda/blob/master/boardesp/elm327.c))
-- Windows J2534 ([done](https://github.com/commaai/panda/tree/master/drivers/windows))
+- [User space](https://github.com/commaai/panda/tree/master/python)
+- [socketcan in kernel](https://github.com/commaai/panda/tree/master/drivers/linux) (alpha)
+- [ELM327](https://github.com/commaai/panda/blob/master/boardesp/elm327.c)
+- [Windows J2534](https://github.com/commaai/panda/tree/master/drivers/windows)
 
 Directory structure
 ------

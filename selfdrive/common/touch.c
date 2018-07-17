@@ -48,7 +48,7 @@ void touch_init(TouchState *s) {
   assert(s->fd >= 0);
 }
 
-int touch_poll(TouchState *s, int* out_x, int* out_y) {
+int touch_poll(TouchState *s, int* out_x, int* out_y, int timeout) {
   assert(out_x && out_y);
   bool up = false;
   while (true) {
@@ -56,7 +56,7 @@ int touch_poll(TouchState *s, int* out_x, int* out_y) {
       .fd = s->fd,
       .events = POLLIN,
     }};
-    int err = poll(polls, 1, 0);
+    int err = poll(polls, 1, timeout);
     if (err < 0) {
       return -1;
     }
