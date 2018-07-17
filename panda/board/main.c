@@ -4,13 +4,13 @@
 // ********************* includes *********************
 
 #include "libc.h"
-#include "safety.h"
 #include "provision.h"
 
 #include "drivers/drivers.h"
 
 #include "drivers/llgpio.h"
 #include "gpio.h"
+#include "safety.h"
 
 #include "drivers/uart.h"
 #include "drivers/adc.h"
@@ -108,6 +108,7 @@ int get_health_pkt(void *dat) {
   if (safety_ignition < 0) {
     //Use the GPIO pin to determine ignition
     health->started = (GPIOA->IDR & (1 << 1)) == 0;
+    //health->started = 1; // Needed for Tesla only. Another way needs to be found
   } else {
     //Current safety hooks want to determine ignition (ex: GM)
     health->started = safety_ignition;
@@ -289,6 +290,15 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, int hardwired) {
           case SAFETY_ELM327:
             can_silent = ALL_CAN_BUT_MAIN_SILENT;
             can_autobaud_enabled[0] = false;
+            break;
+          case SAFETY_TESLA:
+            can_silent = ALL_CAN_LIVE;
+            can_autobaud_enabled[0] = false;
+            can_autobaud_enabled[1] = false;
+            #ifdef PANDA
+              can_autobaud_enabled[2] = false;
+            #endif
+            // MISSING: setup GMLAN pin as output and high level to switch EPAS CAN on Tesla Giraffe
             break;
           default:
             can_silent = ALL_CAN_LIVE;
