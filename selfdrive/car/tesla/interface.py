@@ -180,7 +180,7 @@ class CarInterface(object):
     # ******************* do can recv *******************
     canMonoTimes = []
 
-    print "c.actuators.SteerAngle = " + str(c.actuators.steerAngle)
+    # print "c.actuators.SteerAngle = " + str(c.actuators.steerAngle)
     self.cp.update(int(sec_since_boot() * 1e9), False)
     self.epas_cp.update(int(sec_since_boot() * 1e9), False)
 
