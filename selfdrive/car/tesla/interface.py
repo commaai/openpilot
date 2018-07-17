@@ -169,7 +169,7 @@ class CarInterface(object):
     ret.longPidDeadzoneV = [0.]
 
     ret.stoppingControl = True
-    ret.steerLimitAlert = False
+    ret.steerLimitAlert = True
     ret.startAccel = 0.5
     ret.steerRateCost = 1.
 
