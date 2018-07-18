@@ -123,11 +123,10 @@ class CarController(object):
     MIN_STEERING_VEHICLE_VELOCITY = 0.05 # m/s
     vehicle_moving = (CS.v_ego >= MIN_STEERING_VEHICLE_VELOCITY)
     
-    enable_steer_control = (enabled and not CS.steer_not_allowed) # See below for human override logic
-    humanControl = False
-    if (frame - CS.frame_humanSteered < 50):
-      enable_steer_control = False
-      humanControl = True
+    # Basic highway lane change logic
+    changing_lanes = CS.right_blinker_on or CS.left_blinker_on
+
+    enable_steer_control = (enabled and not changing_lanes)
     
     # Angle
     apply_steer = clip(-actuators.steerAngle , -USER_STEER_MAX, USER_STEER_MAX) # steer torque is converted back to CAN reference (positive when steering right)
@@ -138,6 +137,5 @@ class CarController(object):
     if  (True): #(frame % send_step) == 0:
       idx = frame #(frame/send_step) % 16 
       can_sends.append(teslacan.create_steering_control(enable_steer_control, apply_steer, idx))
-      if (not humanControl):
-        can_sends.append(teslacan.create_epb_enable_signal(idx))
+      can_sends.append(teslacan.create_epb_enable_signal(idx))
       sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
