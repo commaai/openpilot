@@ -140,14 +140,10 @@ class CarState(object):
     self.left_blinker_on = 0
     self.right_blinker_on = 0
     self.steer_warning = 0
-    # TODO - Replace with a default value:
-    self.last_cruise_message = create_string_buffer(8) 
     
     self.stopped = 0
     self.frame_humanSteered = 0    # Last frame human steered
 
-    self.v_cruise_pcm = 20 * CV.MPH_TO_KPH
-    self.v_cruise_car = 20 * CV.MPH_TO_KPH
     # vEgo kalman filter
     dt = 0.01
     # Q = np.matrix([[10.0, 0.0], [0.0, 100.0]])
@@ -215,7 +211,6 @@ class CarState(object):
 
     self.cruise_setting = cp.vl["STW_ACTN_RQ"]['SpdCtrlLvr_Stat']
     self.cruise_buttons = cp.vl["STW_ACTN_RQ"]['SpdCtrlLvr_Stat']
-    self.last_cruise_message = cp.vl["STW_ACTN_RQ"]
     self.blinker_on = (cp.vl["STW_ACTN_RQ"]['TurnIndLvr_Stat'] == 1) or (cp.vl["STW_ACTN_RQ"]['TurnIndLvr_Stat'] == 2)
     self.left_blinker_on = cp.vl["STW_ACTN_RQ"]['TurnIndLvr_Stat'] == 1
     self.right_blinker_on = cp.vl["STW_ACTN_RQ"]['TurnIndLvr_Stat'] == 2
@@ -229,7 +224,7 @@ class CarState(object):
     self.brake_hold = 0  # TODO
 
     self.main_on = 1 #cp.vl["SCM_BUTTONS"]['MAIN_ON']
-
+    self.cruise_speed_offset = calc_cruise_offset(cp.vl["DI_state"]['DI_cruiseSet'], self.v_ego)
     self.gear_shifter = parse_gear_shifter(can_gear_shifter, self.CP.carFingerprint)
 
     self.pedal_gas = 0 #cp.vl["DI_torque1"]['DI_pedalPos']
