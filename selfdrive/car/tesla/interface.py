@@ -84,7 +84,7 @@ class CarInterface(object):
     std_cargo = 136
 
     # Ridgeline reqires scaled tire stiffness
-    ts_factor = 1
+    ts_factor = 5 
 
     ret = car.CarParams.new_message()
 
@@ -103,10 +103,10 @@ class CarInterface(object):
 
     # FIXME: hardcoding honda civic 2016 touring params so they can be used to
     # scale unknown params for other cars
-    mass_models = 4647./2.205 + std_cargo
+    mass_models = 4722./2.205 + std_cargo
     wheelbase_models = 2.959
     # RC: I'm assuming center means center of mass, and I think Model S is pretty even between two axles
-    centerToFront_models = wheelbase_models * 0.5
+    centerToFront_models = wheelbase_models * 0.48
     centerToRear_models = wheelbase_models - centerToFront_models
     rotationalInertia_models = 2500
     tireStiffnessFront_models = 85400
@@ -118,10 +118,10 @@ class CarInterface(object):
       ret.mass = mass_models
       ret.wheelbase = wheelbase_models
       ret.centerToFront = centerToFront_models
-      ret.steerRatio = 13.0
+      ret.steerRatio = 17.0
       # Kp and Ki for the lateral control
-      ret.steerKpV, ret.steerKiV = [[0.09], [0.0125]]
-      ret.steerKf = 0.00003 # Initial test value TODO: investigate FF steer control for Model S?
+      ret.steerKpV, ret.steerKiV = [[0.6], [0.24]]
+      ret.steerKf = 0.00006 # Initial test value TODO: investigate FF steer control for Model S?
       ret.steerActuatorDelay = 0.09
       
       # Kp and Ki for the longitudinal control
@@ -157,8 +157,8 @@ class CarInterface(object):
     ret.steerRatioRear = 0.
 
     # no max steer limit VS speed
-    ret.steerMaxBP = [0.]  # m/s
-    ret.steerMaxV = [1.]   # max steer allowed
+    ret.steerMaxBP = [0.,15.]  # m/s
+    ret.steerMaxV = [1.,1.]   # max steer allowed
 
     ret.gasMaxBP = [0.]  # m/s
     ret.gasMaxV = [0.6] if ret.enableGasInterceptor else [0.] # max gas allowed
@@ -169,7 +169,7 @@ class CarInterface(object):
     ret.longPidDeadzoneV = [0.]
 
     ret.stoppingControl = True
-    ret.steerLimitAlert = True
+    ret.steerLimitAlert = False
     ret.startAccel = 0.5
     ret.steerRateCost = 1.
 
@@ -180,7 +180,6 @@ class CarInterface(object):
     # ******************* do can recv *******************
     canMonoTimes = []
 
-    # print "c.actuators.SteerAngle = " + str(c.actuators.steerAngle)
     self.cp.update(int(sec_since_boot() * 1e9), False)
     self.epas_cp.update(int(sec_since_boot() * 1e9), False)
 
@@ -236,6 +235,7 @@ class CarInterface(object):
     buttonEvents = []
     ret.leftBlinker = bool(self.CS.left_blinker_on)
     ret.rightBlinker = bool(self.CS.right_blinker_on)
+
 
     ret.doorOpen = not self.CS.door_all_closed
     ret.seatbeltUnlatched = not self.CS.seatbelt
@@ -319,14 +319,44 @@ class CarInterface(object):
     if self.CS.park_brake:
       events.append(create_event('parkBrake', [ET.NO_ENTRY, ET.USER_DISABLE]))
 
+
+    # The Frame # is available here.. so let's move when the user counter to here..
+
+    # Basic highway lane change logic - Regard turn signal as human in control
+    if (self.CS.right_blinker_on or self.CS.left_blinker_on):
+      self.CS.frame_humanSteered = self.frame
+
+    # If we were previously disengaged via CS.steer_override>0 then we want [x] in a row where our planned steering is within 3 degrees of where we are steering
+    if (self.CS.steer_override>0): 
+      self.CS.frame_humanSteered = self.frame
+      events.append(create_event('steerTempUnavailableMute', [ET.NO_ENTRY, ET.WARNING]))
+    else:
+      if (self.frame - self.CS.frame_humanSteered < 50): # Need more human testing of handoff timing
+        # Find steering difference between visiond model and human (no need to do every frame if we run out of CPU):
+        steer_current=(self.CS.angle_steers*10)  # Formula to convert current steering angle to match apply_steer calculated number
+        apply_steer = -int(-c.actuators.steerAngle * 10)
+        angle = abs(apply_steer-steer_current)
+        events.append(create_event('steerTempUnavailableMute', [ET.NO_ENTRY, ET.WARNING]))
+
+        # If OP steering > 5 degrees different from human than count that as human still steering..
+        # Tesla rack doesn't report accurate enough, i.e. lane switch we show no human steering when they
+        # still are crossing road at an angle clearly they don't want OP to take over
+        if angle > 50:
+          self.CS.frame_humanSteered = self.frame
+          events.append(create_event('steerTempUnavailableMute', [ET.NO_ENTRY, ET.WARNING]))
+
+#    if self.CS.steer_override:
+#      events.append(create_event('steerTempUnavailableMute', [[ET.NO_ENTRY, ET.WARNING]))
+
     if self.CP.enableCruise and ret.vEgo < self.CP.minEnableSpeed:
       events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
 
     # disable on pedals rising edge or when brake is pressed and speed isn't zero
     if (ret.gasPressed and not self.gas_pressed_prev) or \
        (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001)):
-      events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
+      #events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
       #Note: This event is thrown for steering override (needs more refactoring)
+      events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
 
     if ret.gasPressed:
       events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
@@ -367,9 +397,13 @@ class CarInterface(object):
           ret.cruiseState.enabled) or \
          (enable_pressed and get_events(events, [ET.NO_ENTRY])):
         events.append(create_event('buttonEnable', [ET.ENABLE]))
+        events.append(create_event('pcmEnable', [ET.ENABLE]))
+        self.CS.v_cruise_pcm = self.CS.v_ego * CV.MS_TO_KPH
         self.last_enable_sent = cur_time
     elif enable_pressed:
       events.append(create_event('buttonEnable', [ET.ENABLE]))
+      events.append(create_event('pcmEnable', [ET.ENABLE]))
+      self.CS.v_cruise_pcm = self.CS.v_ego * CV.MS_TO_KPH
 
     ret.events = events
     ret.canMonoTimes = canMonoTimes

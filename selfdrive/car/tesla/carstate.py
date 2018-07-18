@@ -4,7 +4,7 @@ from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from selfdrive.car.tesla.values import CAR, DBC
 import numpy as np
-
+from ctypes import create_string_buffer
 
 def parse_gear_shifter(can_gear_shifter, car_fingerprint):
 
@@ -140,10 +140,14 @@ class CarState(object):
     self.left_blinker_on = 0
     self.right_blinker_on = 0
     self.steer_warning = 0
+    # TODO - Replace with a default value:
+    self.last_cruise_message = create_string_buffer(8) 
     
     self.stopped = 0
     self.frame_humanSteered = 0    # Last frame human steered
 
+    self.v_cruise_pcm = 20 * CV.MPH_TO_KPH
+    self.v_cruise_car = 20 * CV.MPH_TO_KPH
     # vEgo kalman filter
     dt = 0.01
     # Q = np.matrix([[10.0, 0.0], [0.0, 100.0]])
@@ -191,7 +195,7 @@ class CarState(object):
     self.v_wheel_rr = 0 #JCT
     self.v_wheel = 0 #JCT
     self.v_weight = 0 #JCT
-    speed = (cp.vl["DI_torque2"]['DI_vehicleSpeed'])*1.609/3.6 #JCT MPH_TO_MS. Tesla is in MPH, v_ego is expected in M/S
+    speed = (cp.vl["DI_torque2"]['DI_vehicleSpeed'])*CV.MPH_TO_KPH/3.6 #JCT MPH_TO_MS. Tesla is in MPH, v_ego is expected in M/S
     speed = speed * 1.01 # To match car's displayed speed
     self.v_ego_x = np.matrix([[speed], [0.0]])
     self.v_ego_raw = speed
@@ -211,7 +215,7 @@ class CarState(object):
 
     self.cruise_setting = cp.vl["STW_ACTN_RQ"]['SpdCtrlLvr_Stat']
     self.cruise_buttons = cp.vl["STW_ACTN_RQ"]['SpdCtrlLvr_Stat']
-
+    self.last_cruise_message = cp.vl["STW_ACTN_RQ"]
     self.blinker_on = (cp.vl["STW_ACTN_RQ"]['TurnIndLvr_Stat'] == 1) or (cp.vl["STW_ACTN_RQ"]['TurnIndLvr_Stat'] == 2)
     self.left_blinker_on = cp.vl["STW_ACTN_RQ"]['TurnIndLvr_Stat'] == 1
     self.right_blinker_on = cp.vl["STW_ACTN_RQ"]['TurnIndLvr_Stat'] == 2
@@ -226,7 +230,6 @@ class CarState(object):
 
     self.main_on = 1 #cp.vl["SCM_BUTTONS"]['MAIN_ON']
 
-    self.cruise_speed_offset = calc_cruise_offset(cp.vl["DI_state"]['DI_cruiseSet'], self.v_ego)
     self.gear_shifter = parse_gear_shifter(can_gear_shifter, self.CP.carFingerprint)
 
     self.pedal_gas = 0 #cp.vl["DI_torque1"]['DI_pedalPos']
@@ -243,11 +246,13 @@ class CarState(object):
     self.user_brake = cp.vl["DI_torque2"]['DI_brakePedal']
     self.standstill = cp.vl["DI_torque2"]['DI_vehicleSpeed'] == 0
     if cp.vl["DI_state"]['DI_speedUnits'] == 0:
-      self.v_cruise_pcm = (cp.vl["DI_state"]['DI_cruiseSet'])*1.609 # Reported in MPH, expected in KPH??
+      self.v_cruise_car = (cp.vl["DI_state"]['DI_cruiseSet'])*CV.MPH_TO_KPH # Reported in MPH, expected in KPH??
     else:
-      self.v_cruise_pcm = cp.vl["DI_state"]['DI_cruiseSet']
+      self.v_cruise_car = cp.vl["DI_state"]['DI_cruiseSet']
+    
     self.pcm_acc_status = cp.vl["DI_state"]['DI_cruiseState']
     self.hud_lead = 0 #JCT
+    self.cruise_speed_offset = calc_cruise_offset(self.v_cruise_pcm, self.v_ego)
 
 
 # carstate standalone tester
