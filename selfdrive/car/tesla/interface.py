@@ -368,13 +368,9 @@ class CarInterface(object):
           ret.cruiseState.enabled) or \
          (enable_pressed and get_events(events, [ET.NO_ENTRY])):
         events.append(create_event('buttonEnable', [ET.ENABLE]))
-        events.append(create_event('pcmEnable', [ET.ENABLE]))
-        self.CS.v_cruise_pcm = self.CS.v_ego * CV.MS_TO_KPH
         self.last_enable_sent = cur_time
     elif enable_pressed:
       events.append(create_event('buttonEnable', [ET.ENABLE]))
-      events.append(create_event('pcmEnable', [ET.ENABLE]))
-      self.CS.v_cruise_pcm = self.CS.v_ego * CV.MS_TO_KPH
 
     ret.events = events
     ret.canMonoTimes = canMonoTimes
