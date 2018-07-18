@@ -135,7 +135,7 @@ class CarController(object):
     send_step = 5
 
     if  (True): #(frame % send_step) == 0:
-      idx = frame #(frame/send_step) % 16 
+      idx = frame % 16 #(frame/send_step) % 16 
       can_sends.append(teslacan.create_steering_control(enable_steer_control, apply_steer, idx))
       can_sends.append(teslacan.create_epb_enable_signal(idx))
       sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
