@@ -1,106 +1,111 @@
 from common.numpy_fast import clip, interp
 from selfdrive.boardd.boardd import can_list_to_can_capnp
-from selfdrive.car.hyundai.hyundaican import make_can_msg, create_lkas11, create_lkas12, create_steer_command
+from selfdrive.car.hyundai.hyundaican import make_can_msg, create_lkas11, create_lkas12
 from selfdrive.car.hyundai.values import ECU, STATIC_MSGS
 from selfdrive.can.packer import CANPacker
 
 
 # Steer torque limits
-STEER_MAX = 200
-STEER_DELTA_UP = 2       # 1.5s time to peak torque
-STEER_DELTA_DOWN = 4     # always lower than 45 otherwise the Rav4 faults (Prius seems ok with 50)
-STEER_ERROR_MAX = 150     # max delta between torque cmd and torque motor
-
-# Steer angle limits (tested at the Crows Landing track and considered ok)
-ANGLE_MAX_BP = [0., 5.]
-ANGLE_MAX_V = [510., 300.]
-ANGLE_DELTA_BP = [0., 5., 15.]
-ANGLE_DELTA_V = [5., .8, .15]     # windup limit
-ANGLE_DELTA_VU = [5., 3.5, 0.4]   # unwind limit
+STEER_MAX = 240
+STEER_DELTA = 25      
 
 TARGET_IDS = [0x340]
-
 
 
 class CarController(object):
   def __init__(self, dbc_name, car_fingerprint, enable_camera):
     self.braking = False
-    # redundant safety check with the board
     self.controls_allowed = True
     self.last_steer = 0
     self.car_fingerprint = car_fingerprint
     self.angle_control = False
-
+    self.idx = 0
+    self.lkas_request = 0
+    self.lanes = 0
     self.steer_angle_enabled = False
     self.ipas_reset_counter = 0
+    self.turning_inhibit = 0
 
     self.fake_ecus = set()
     if enable_camera: self.fake_ecus.add(ECU.CAM)
     self.packer = CANPacker(dbc_name)
 
   def update(self, sendcan, enabled, CS, frame, actuators):
+    # Steering Torque Scaling
+    apply_steer = int(round((actuators.steer * STEER_MAX) + 1024))
 
-    # *** compute control surfaces ***
-
-    # steer torque
-    apply_steer = int(round(actuators.steer * STEER_MAX))
-
-    max_lim = min(max(CS.steer_torque_motor + STEER_ERROR_MAX, STEER_ERROR_MAX), STEER_MAX)
-    max_lim = STEER_MAX
-    min_lim = max(min(CS.steer_torque_motor - STEER_ERROR_MAX, -STEER_ERROR_MAX), -STEER_MAX)
-    min_lim = -STEER_MAX
-
+    # This is redundant clipping code, kept in case it needs to be advanced
+    max_lim = 1024 + STEER_MAX
+    min_lim = 1024 - STEER_MAX
     apply_steer = clip(apply_steer, min_lim, max_lim)
 
-    # slow rate if steer torque increases in magnitude
-    if self.last_steer > 0:
-      apply_steer = clip(apply_steer, max(self.last_steer - STEER_DELTA_DOWN, - STEER_DELTA_UP), self.last_steer + STEER_DELTA_UP)
+    # Very basic Rate Limiting
+    # TODO: Revisit this
+    if (apply_steer - self.last_steer) > STEER_DELTA:
+      apply_steer = self.last_steer + STEER_DELTA
+    elif (self.last_steer - apply_steer) > STEER_DELTA:
+      apply_steer = self.last_steer - STEER_DELTA
+
+
+    # Inhibits *outside of* alerts
+    #    Because the Turning Indicator Status is based on Lights and not Stalk, latching is 
+    #    needed for the disable to work.
+    if CS.left_blinker_on == 1 or CS.right_blinker_on == 1:
+      self.turning_inhibit = 150  # Disable for 1.5 Seconds after blinker turned off
+
+    if self.turning_inhibit > 0:
+      self.turning_inhibit = self.turning_inhibit - 1
+
+
+
+    if not enabled or self.turning_inhibit > 0:
+      apply_steer = 1024
+      self.last_steer = 1024
+      self.lanes = 0         # Lanes is shown on the LKAS screen on the Dash
     else:
-      apply_steer = clip(apply_steer, self.last_steer - STEER_DELTA_UP, min(self.last_steer + STEER_DELTA_DOWN, STEER_DELTA_UP))
-
-    # dropping torque immediately might cause eps to temp fault. On the other hand, safety_toyota
-    # cuts steer torque immediately anyway TODO: monitor if this is a real issue
-    # only cut torque when steer state is a known fault
-    if not enabled:
-      apply_steer = 0
-
-    apply_steer = apply_steer + 1024
+      self.lanes = 3 * 4     # bit 0 = Right Lane, bit 1 = Left Lane, Offset by 2 bits in byte.
 
     self.last_steer = apply_steer
 
     can_sends = []
 
-    #*** control msgs ***
-    #print "steer", apply_steer, min_lim, max_lim, CS.steer_torque_motor
+    # Limit Terminal Debugging to 5Hz
+    if (frame % 20) == 0:
+      print "controlsdDebug steer", actuators.steer, "bi", self.turning_inhibit, "spd", \
+        CS.v_ego, "strAng", CS.angle_steers, "strToq", CS.steer_torque_driver
 
-    #counts from 0 to 15 then back to 0
-    # idx = (frame / P.STEER_STEP) % 16
+    # Index is 4 bits long, this is the counter
+    self.idx = self.idx + 1
+    if self.idx >= 16:
+      self.idx = 0
 
-    #if not lkas_enabled:
-    #  apply_steer = 0
+    # Split apply steer Word into 2 Bytes
+    apply_steer_a = apply_steer & 0xFF
+    apply_steer_b = (apply_steer >> 8) & 0xFF
+    apply_steer_b = apply_steer_b
 
-     
-    if abs(actuators.steer) > 0.001:
-      lkas_request = 1
-    else :
-      lkas_request = 0
+    #print "check", steer_chksum_a, steer_chksum_b
+
+    # If requested to steer, turn on ActToi
+    if apply_steer != 1024:
+      apply_steer_b = apply_steer_b + 0x08
+
+
+    # Create Checksum
+    checksum = (self.lanes + 0x00 + apply_steer_a + apply_steer_b + \
+      (self.idx * 16) + 0x00) % 256
     
-    steer_chksum = apply_steer + (lkas_request * 0x800)
-    steer_chksum_a = steer_chksum & 0xFF
-    steer_chksum_b = (steer_chksum >> 8) & 0xFF
 
-    checksum = (CS.lkas11_byte0 + CS.lkas11_byte1 + steer_chksum_a + steer_chksum_b + \
-       CS.lkas11_nibble5 + CS.lkas11_byte4 + CS.lkas11_byte5) % 256
-
-
-    can_sends.append(create_lkas11(self.packer, CS.lkas11_byte0, \
-      CS.lkas11_byte1, apply_steer, lkas_request, CS.lkas11_nibble5, \
-      CS.lkas11_byte4, CS.lkas11_byte5, checksum, CS.lkas11_byte7))
-
+    # Creake LKAS11 Message at 100Hz
+    can_sends.append(create_lkas11(self.packer, self.lanes, \
+      0x00, apply_steer_a, apply_steer_b, (self.idx * 16), \
+      0x00, checksum, 0x18))
    
 
+    # Create LKAS12 Message at 10Hz
     if (frame % 10) == 0:
       can_sends.append(create_lkas12(self.packer))
 
 
+    # Send messages to canbus
     sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())

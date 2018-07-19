@@ -18,7 +18,10 @@ class CarInterface(object):
   def __init__(self, CP, sendcan=None):
     self.CP = CP
     self.VM = VehicleModel(CP)
-
+    self.idx = 0
+    self.lanes = 0
+    self.lkas_request = 0
+    
     self.frame = 0
     self.gas_pressed_prev = False
     self.brake_pressed_prev = False
@@ -65,7 +68,7 @@ class CarInterface(object):
     tireStiffnessRear = 90000
 
     ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
-    ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
+    ret.steerActuatorDelay = 0.10  # Default delay, Prius has larger delay
 
     #borrowing a lot from corolla, given similar car size
     ret.steerKf = 0.00003   # full torque for 20 deg at 80mph means 0.00007818594
@@ -74,7 +77,7 @@ class CarInterface(object):
     ret.mass = 1985 + std_cargo
     ret.wheelbase = 2.78
     ret.steerRatio = 14.4
-    ret.steerKpV, ret.steerKiV = [[0.8], [0.24]]
+    ret.steerKpV, ret.steerKiV = [[0.13], [0.0]]
     ret.centerToFront = ret.wheelbase * 0.44
 
     ret.longPidDeadzoneBP = [0., 9.]
@@ -100,7 +103,7 @@ class CarInterface(object):
 
     # steer, gas, brake limitations VS speed
     ret.steerMaxBP = [16. * CV.KPH_TO_MS, 45. * CV.KPH_TO_MS]  # breakpoints at 1 and 40 kph
-    ret.steerMaxV = [1., 1.]  # 2/3rd torque allowed above 45 kph
+    ret.steerMaxV = [0.3, 0.4]  # 2/3rd torque allowed above 45 kph
     ret.gasMaxBP = [0.]
     ret.gasMaxV = [0.5]
     ret.brakeMaxBP = [5., 20.]
@@ -207,7 +210,7 @@ class CarInterface(object):
       events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if ret.seatbeltUnlatched:
       events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if False: #self.CS.esp_disabled:
+    if self.CS.esp_disabled:
       events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if not self.CS.main_on:
       events.append(create_event('wrongCarMode', [ET.NO_ENTRY, ET.USER_DISABLE]))
@@ -253,8 +256,7 @@ class CarInterface(object):
   # to be called @ 100hz
   def apply(self, c):
 
-    self.CC.update(self.sendcan, c.enabled, self.CS, self.frame, c.actuators) # , c.cruiseControl.cancel, c.hudControl.visualAlert,
-    #               c.hudControl.audibleAlert)
+    self.CC.update(self.sendcan, c.enabled, self.CS, self.frame, c.actuators)
 
     self.frame += 1
     return False

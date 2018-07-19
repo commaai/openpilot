@@ -27,20 +27,6 @@ def get_can_parser(CP):
 
     ("YAW_RATE", "ESP12", 0),
     
-    ("Byte0", "LKAS11", 0),
-    ("Byte1", "LKAS11", 0),
-    ("Nibble5", "LKAS11", 0),
-    ("Byte4", "LKAS11", 0),
-    ("Byte5", "LKAS11", 0),
-    ("Byte7", "LKAS11", 0),
-
-    ("Byte0", "LKAS12", 0),
-    ("Byte1", "LKAS12", 0),
-    ("Byte2", "LKAS12", 0),
-    ("Byte3", "LKAS12", 0),
-    ("Byte4", "LKAS12", 0),
-    ("Byte5", "LKAS12", 0),
-
     ("CF_Gway_DrvSeatBeltInd", "CGW4", 1),
 
     ("CF_Gway_DrvSeatBeltSw", "CGW1", 0),
@@ -75,7 +61,6 @@ def get_can_parser(CP):
   ]
   checks = [
     # address, frequency
-    ("LKAS11", 100),
     ("MDPS12", 50),
     ("TCS15", 10),
     ("TCS13", 50),
@@ -83,7 +68,6 @@ def get_can_parser(CP):
     ("ESP12", 100), 
     ("EMS12", 100),
     ("CGW1", 10),
-    ("LKAS12", 10),
     ("CGW4", 5),
     ("WHL_SPD11", 50),
     ("SCC12", 50),
@@ -138,7 +122,7 @@ class CarState(object):
     self.v_wheel_rr = cp.vl["WHL_SPD11"]['WHL_SPD_RR'] * CV.KPH_TO_MS
     self.v_wheel = (self.v_wheel_fl + self.v_wheel_fr + self.v_wheel_rl + self.v_wheel_rr) / 4.
     if self.car_fingerprint == CAR.SORENTO:
-      self.v_wheel = self.v_wheel * 1.03 # There is a 2 percent error on Sorento GT due to slightly larger wheel diameter compared to poverty packs.  Dash assumes about 4% which is excessive
+      self.v_wheel = self.v_wheel * 1.03 # There is a 2 percent error on Sorento GT due to slightly larger wheel diameter compared to poverty packs.  Dash assumes about 4% which is excessive. Using 3% to be safe
 
     # Kalman filter
     if abs(self.v_wheel - self.v_ego) > 2.0:  # Prevent large accelerations when car starts at non zero speed
@@ -151,12 +135,12 @@ class CarState(object):
     self.standstill = not self.v_wheel > 0.001
 
     self.angle_steers = cp.vl["ESP12"]['YAW_RATE']
-    self.main_on = True #cp.vl["CLU11"]['CF_Clu_CruiseSwMain']
+    self.main_on = True #cp.vl["CLU11"]['CF_Clu_CruiseSwMain'] #TODO: This is not correct
     self.left_blinker_on = cp.vl["CGW1"]['CF_Gway_TurnSigLh']
     self.right_blinker_on = cp.vl["CGW1"]['CF_Gway_TurnSigRh']
 
     # we could use the override bit from dbc, but it's triggered at too high torque values
-    self.steer_override = abs(cp.vl["MDPS12"]['CR_Mdps_StrColTq']) > 1. 
+    self.steer_override = abs(cp.vl["MDPS12"]['CR_Mdps_StrColTq']) > 0.2 
     # 2 is standby, 10 is active. TODO: check that everything else is really a faulty state
     self.steer_state = cp.vl["MDPS12"]['CF_Mdps_ToiActive'] #0 NOT ACTIVE, 1 ACTIVE
     self.steer_error = False  #not cp.vl["MDPS12"]['CF_Mdps_FailStat'] or cp.vl["MDPS12"]['CF_Mdps_ToiUnavail'] ## TODO: VERIFY THIS
@@ -178,17 +162,3 @@ class CarState(object):
     self.gear_shifter = parse_gear_shifter(can_gear, self.car_fingerprint)
 
     #For LKAS Passthrough
-    self.lkas11_byte0 = cp.vl["LKAS11"]['Byte0']
-    self.lkas11_byte1 = cp.vl["LKAS11"]['Byte1']
-    self.lkas11_nibble5 = cp.vl["LKAS11"]['Nibble5']
-    self.lkas11_byte4 = cp.vl["LKAS11"]['Byte4']
-    self.lkas11_byte5 = cp.vl["LKAS11"]['Byte5']
-    self.lkas11_byte7 = cp.vl["LKAS11"]['Byte7']
-
-    self.lkas12_byte0 = cp.vl["LKAS12"]['Byte0']
-    self.lkas12_byte1 = cp.vl["LKAS12"]['Byte1']
-    self.lkas12_byte2 = cp.vl["LKAS12"]['Byte2']
-    self.lkas12_byte3 = cp.vl["LKAS12"]['Byte3']
-    self.lkas12_byte4 = cp.vl["LKAS12"]['Byte4']
-    self.lkas12_byte5 = cp.vl["LKAS12"]['Byte5']
-

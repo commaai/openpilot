@@ -942,15 +942,16 @@ BO_ 64 DATC14: 8 DATC
  SG_ DATC_ADSDisp : 28|2@1+ (1,0) [0|3] "" CLU
 
 BO_ 832 LKAS11: 8 LDWS_LKAS
- SG_ CR_Lkas_StrToqReq : 16|11@1+ (0.0078125,-8) [-8|8] "Nm" MDPS
- SG_ CF_Lkas_ActToi : 27|1@1+ (1,0) [0|1] "" MDPS
- SG_ CF_Lkas_Chksum : 48|8@1+ (1,0) [0|255] "" MDPS
  SG_ Byte0 : 0|8@1+ (1,0) [0|3] "" XXX
  SG_ Byte1 : 8|8@1+ (1,0) [0|3] "" XXX
- SG_ Nibble5 : 28|4@1+ (1,0) [0|3] "" XXX
- SG_ Byte4 : 32|8@1+ (1,0) [0|7] "" XXX
+ SG_ Byte2 : 16|8@1+ (1,0) [0|3] "" XXX
+ SG_ Byte3 : 24|8@1+ (1,0) [0|3] "" XXX
+ SG_ Byte4 : 32|8@1+ (1,0) [0|3] "" XXX
  SG_ Byte5 : 40|8@1+ (1,0) [0|3] "" XXX
- SG_ Byte7 : 63|8@0+ (1,0) [0|3] "" XXX
+ SG_ Byte6 : 48|8@1+ (1,0) [0|3] "" XXX
+ SG_ Byte7 : 56|8@1+ (1,0) [0|3] "" XXX
+
+
 
 BO_ 1342 LKAS12: 6 LDWS_LKAS
  SG_ Byte0 : 0|8@1+ (1,0) [0|3] "" XXX
