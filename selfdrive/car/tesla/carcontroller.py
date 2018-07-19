@@ -11,8 +11,8 @@ from selfdrive.can.packer import CANPacker
 def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
   # hyst params... TODO: move these to VehicleParams
   brake_hyst_on = 0.02     # to activate brakes exceed this value
-  brake_hyst_off = 0.005                     # to deactivate brakes below this value
-  brake_hyst_gap = 0.01                      # don't change brake command for small ocilalitons within this value
+  brake_hyst_off = 0.005   # to deactivate brakes below this value
+  brake_hyst_gap = 0.01    # don't change brake command for small ocilalitons within this value
 
   #*** histeresys logic to avoid brake blinking. go above 0.1 to trigger
   if (brake < brake_hyst_on and not braking) or brake < brake_hyst_off:
@@ -26,7 +26,6 @@ def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
     brake_steady = brake - brake_hyst_gap
   elif brake < brake_steady - brake_hyst_gap:
     brake_steady = brake + brake_hyst_gap
-  brake = brake_steady
 
   return brake, braking, brake_steady
 
@@ -141,5 +140,20 @@ class CarController(object):
       idx = (frame/send_step) % 16 
       can_sends.append(teslacan.create_steering_control(enable_steer_control, apply_steer, idx))
       can_sends.append(teslacan.create_epb_enable_signal(idx))
+      
+      # Adaptive cruise control
+      if (enable_steer_control and CS.pcm_acc_status == 2):
+        if (idx == 0):
+          print "Brakes: %s, Gas: %s, v_cruise_car: %s, v_cruise_pcm:%s" % (
+            str(brake),
+            str(actuators.gas),
+            str(CS.v_cruise_car),
+            str(CS.v_cruise_pcm))
+        # reduce cruise speed if necessary
+        if (brake > 0.7):
+          cruise_reduce_msg = teslacan.create_cruise_adjust_msg(8, idx, CS.steering_wheel_stalk)
+          if cruise_reduce_msg:
+            can_sends.append(cruise_reduce_msg)
+            print "Send slow down"
 
       sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())

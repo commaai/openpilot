@@ -4,6 +4,7 @@ from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from selfdrive.car.tesla.values import CAR, DBC
 import numpy as np
+from ctypes import create_string_buffer
 
 
 def parse_gear_shifter(can_gear_shifter, car_fingerprint):
@@ -133,6 +134,7 @@ class CarState(object):
     self.brake_switch_prev = 0
     self.brake_switch_ts = 0
 
+    self.steering_wheel_stalk = None
     self.cruise_buttons = 0
     self.cruise_setting = 0
     self.blinker_on = 0
@@ -164,8 +166,8 @@ class CarState(object):
     v_weight_bp = [1., 6.]   # smooth blending, below ~0.6m/s the smooth speed snaps to zero
 
     # update prevs, update must run once per loop
+    self.prev_steering_wheel_stalk = self.steering_wheel_stalk
     self.prev_cruise_buttons = self.cruise_buttons
-    self.prev_cruise_setting = self.cruise_setting
     self.prev_blinker_on = self.blinker_on
 
     self.prev_left_blinker_on = self.left_blinker_on
@@ -209,12 +211,13 @@ class CarState(object):
     self.angle_steers = -(cp.vl["STW_ANGLHP_STAT"]['StW_AnglHP']) #JCT polarity reversed from Honda/Acura
     self.angle_steers_rate = 0 #JCT
 
-    self.cruise_setting = cp.vl["STW_ACTN_RQ"]['SpdCtrlLvr_Stat']
-    self.cruise_buttons = cp.vl["STW_ACTN_RQ"]['SpdCtrlLvr_Stat']
+    self.steering_wheel_stalk = cp.vl["STW_ACTN_RQ"]
+    self.cruise_setting = self.steering_wheel_stalk['SpdCtrlLvr_Stat']
+    self.cruise_buttons = self.steering_wheel_stalk['SpdCtrlLvr_Stat']
 
-    self.blinker_on = (cp.vl["STW_ACTN_RQ"]['TurnIndLvr_Stat'] == 1) or (cp.vl["STW_ACTN_RQ"]['TurnIndLvr_Stat'] == 2)
-    self.left_blinker_on = cp.vl["STW_ACTN_RQ"]['TurnIndLvr_Stat'] == 1
-    self.right_blinker_on = cp.vl["STW_ACTN_RQ"]['TurnIndLvr_Stat'] == 2
+    self.blinker_on = (self.steering_wheel_stalk['TurnIndLvr_Stat'] == 1) or (cp.vl["STW_ACTN_RQ"]['TurnIndLvr_Stat'] == 2)
+    self.left_blinker_on = self.steering_wheel_stalk['TurnIndLvr_Stat'] == 1
+    self.right_blinker_on = self.steering_wheel_stalk['TurnIndLvr_Stat'] == 2
 
     #if self.CP.carFingerprint in (CAR.CIVIC, CAR.ODYSSEY):
     #  self.park_brake = cp.vl["EPB_STATUS"]['EPB_STATE'] != 0
