@@ -78,6 +78,8 @@ class CarController(object):
     self.idx = self.idx + 1
     if self.idx >= 16:
       self.idx = 0
+    
+    lkas11_byte4 = self.idx * 16
 
     # Split apply steer Word into 2 Bytes
     apply_steer_a = apply_steer & 0xFF
@@ -90,21 +92,30 @@ class CarController(object):
     if apply_steer != 1024:
       apply_steer_b = apply_steer_b + 0x08
 
+    # High Beam Assist State
+    if self.car_fingerprint == CAR.STINGER or self.car_fingerprint == CAR.ELANTRA:
+      # HBA Sys State
+      apply_steer_b = apply_steer_b + 0x20
+      lkas11_byte4 = lkas11_byte4 + 0x04
+
 
     # Create Checksum
     checksum = (self.lanes + 0x00 + apply_steer_a + apply_steer_b + \
-      (self.idx * 16) + 0x00) % 256
+      lkas11_byte4 + 0x00) % 256
     
 
     # Creake LKAS11 Message at 100Hz
     can_sends.append(create_lkas11(self.packer, self.lanes, \
-      0x00, apply_steer_a, apply_steer_b, (self.idx * 16), \
+      0x00, apply_steer_a, apply_steer_b, lkas11_byte4, \
       0x00, checksum, 0x18))
    
 
     # Create LKAS12 Message at 10Hz
     if (frame % 10) == 0:
-      can_sends.append(create_lkas12(self.packer))
+      if self.car_fingerprint == CAR.SORENTO:
+        can_sends.append(create_lkas12(self.packer, 0x20, 0x00))
+      if self.car_fingerprint == CAR.STINGER:
+        can_sends.append(create_lkas12(self.packer, 0x80, 0x05))
 
 
     # Send messages to canbus
