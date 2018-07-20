@@ -61,7 +61,7 @@ def create_epb_enable_signal(idx):
   return [msg_id, 0, msg.raw, 2]
   
 
-def create_cruise_adjust_msg(spdCtrlLvr_stat, idx, real_steering_wheel_stalk):
+def create_cruise_adjust_msg(spdCtrlLvr_stat, real_steering_wheel_stalk):
   """Creates a CAN message from the cruise control stalk.
 
   Simluates pressing the cruise control stalk (STW_ACTN_RQ.SpdCtrlLvr_Stat
@@ -72,7 +72,6 @@ def create_cruise_adjust_msg(spdCtrlLvr_stat, idx, real_steering_wheel_stalk):
   Args:
     spdCtrlLvr_stat: Int value of dbc entry STW_ACTN_RQ.SpdCtrlLvr_Stat
       (allowing us to simulate pressing the cruise stalk up or down)
-    idx: Int message count, 0-15
     real_steering_wheel_stalk: Previous STW_ACTN_RQ message sent by the real stalk. When
       sending these artifical messages for cruise control, we want to mimic
       whatever windshield wiper and highbeam settings the car is currently

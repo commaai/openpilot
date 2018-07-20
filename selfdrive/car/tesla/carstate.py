@@ -168,6 +168,7 @@ class CarState(object):
     # update prevs, update must run once per loop
     self.prev_steering_wheel_stalk = self.steering_wheel_stalk
     self.prev_cruise_buttons = self.cruise_buttons
+    self.prev_cruise_setting = self.cruise_setting
     self.prev_blinker_on = self.blinker_on
 
     self.prev_left_blinker_on = self.left_blinker_on
