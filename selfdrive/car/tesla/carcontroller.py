@@ -150,7 +150,7 @@ class CarController(object):
         #    str(CS.v_cruise_car),
         #    str(CS.v_cruise_pcm))
         # reduce cruise speed if necessary
-        if (brake > 0.7):
+        if (brake > 0.6):
           cruise_reduce_msg = teslacan.create_cruise_adjust_msg(8, CS.steering_wheel_stalk)
           if cruise_reduce_msg:
             can_sends.append(cruise_reduce_msg)

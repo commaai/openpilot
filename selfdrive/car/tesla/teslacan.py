@@ -87,12 +87,13 @@ def create_cruise_adjust_msg(spdCtrlLvr_stat, real_steering_wheel_stalk):
     fake_stalk['DTR_Dist_Rq'] = 255  # 8 bits of ones in all my observations.
     fake_stalk['spdCtrlLvr_stat'] = spdCtrlLvr_stat
     # message count should be 1 more than the previous.
-    fake_stalk['MC_STW_ACTN_RQ'] = (fake_stalk['MC_STW_ACTN_RQ'] + 1) % 16
+    # TODO: figure out whu mc_stw_actn_rq is a float 
+    fake_stalk['MC_STW_ACTN_RQ'] = (int(fake_stalk['MC_STW_ACTN_RQ']) + 1) % 16
     # CRC should initially be 0 before a new one is calculated.
     fake_stalk['CRC_STW_ACTN_RQ'] = 0
     
     # set VSL_Enbl_Rq and SpdCtrlLvr_Stat
-    struct.pack_into('B', msg, 0,  fake_stalk['VSL_Enbl_Rq'] << 6 + fake_stalk['spdCtrlLvr_stat'])
+    struct.pack_into('B', msg, 0,  (fake_stalk['VSL_Enbl_Rq'] << 6) + fake_stalk['spdCtrlLvr_stat'])
     
     # set DTR_Dist_Rq
     struct.pack_into('B', msg, 1,  fake_stalk['DTR_Dist_Rq'])
