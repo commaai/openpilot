@@ -140,7 +140,7 @@ static int tesla_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
     
     // change inhibit of GTW_epasControl to WITH_BOTH
     if (addr == 0x101) {
-      to_fwd->RDLR = to_fwd->RDLR | 0xC000;
+      to_fwd->RDLR = to_fwd->RDLR | 0x4000;
       int checksum = (((to_fwd->RDLR & 0xFF00) >> 8) + (to_fwd->RDLR & 0xFF) + 2) & 0xFF;
       to_fwd->RDLR = to_fwd->RDLR & 0xFFFF;
       to_fwd->RDLR = to_fwd->RDLR + (checksum << 16);
