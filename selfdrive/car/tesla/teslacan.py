@@ -2,7 +2,7 @@ import struct
 from ctypes import create_string_buffer
 
 
-def add_tesla_crc(msg,msg_len):
+def add_tesla_crc(msg, msg_len):
   """Calculate CRC8 using 1D poly, FF start, FF end"""
   crc_lookup = [0x00, 0x1D, 0x3A, 0x27, 0x74, 0x69, 0x4E, 0x53, 0xE8, 0xF5, 0xD2, 0xCF, 0x9C, 0x81, 0xA6, 0xBB, 
 0xCD, 0xD0, 0xF7, 0xEA, 0xB9, 0xA4, 0x83, 0x9E, 0x25, 0x38, 0x1F, 0x02, 0x51, 0x4C, 0x6B, 0x76, 
@@ -27,7 +27,7 @@ def add_tesla_crc(msg,msg_len):
   return crc
 
 
-def add_tesla_checksum(msg_id,msg):
+def add_tesla_checksum(msg_id, msg):
  """Calculates the checksum for the data part of the Tesla message"""
  checksum = ((msg_id) & 0xFF) + ((msg_id >> 8) & 0xFF)
  for i in range(0,len(msg),1):
@@ -82,17 +82,44 @@ def create_cruise_adjust_msg(spdCtrlLvr_stat, real_steering_wheel_stalk):
   msg_len = 8
   msg = create_string_buffer(msg_len)
   if real_steering_wheel_stalk:
-    #b0 = ( ord(real_steering_wheel_stalk[0]) & 0xC0 ) + spdCtrlLvr_stat
-    b0 = ( ord(real_steering_wheel_stalk[0]) & 0x80 ) + ( 1 << 6 ) + spdCtrlLvr_stat
-    b1 = ord(real_steering_wheel_stalk[1])
-    b2 = ord(real_steering_wheel_stalk[2])
-    b3 = ord(real_steering_wheel_stalk[3])
-    b4 = ord(real_steering_wheel_stalk[4])
-    b5 = ord(real_steering_wheel_stalk[5])
-    idx = ((((ord(real_steering_wheel_stalk[6]) & 0xF0) >> 4) + 1 ) & 0x0F)
-    b6 = ord(real_steering_wheel_stalk[6]) & 0x0F + (idx << 4)
-    struct.pack_into('BBBBBBB', msg, 0, b0, b1, b2, b3, b4, b5, b6)
-    struct.pack_into('B', msg, msg_len-1, add_tesla_crc(msg,7))
+    fake_stalk = real_steering_wheel_stalk.copy()
+    fake_stalk['VSL_Enbl_Rq'] = 1
+    fake_stalk['DTR_Dist_Rq'] = 255  # 8 bits of ones in all my observations.
+    fake_stalk['spdCtrlLvr_stat'] = spdCtrlLvr_stat
+    # message count should be 1 more than the previous.
+    fake_stalk['MC_STW_ACTN_RQ'] = (fake_stalk['MC_STW_ACTN_RQ'] + 1) % 16
+    # CRC should initially be 0 before a new one is calculated.
+    fake_stalk['CRC_STW_ACTN_RQ'] = 0
+    
+    # set VSL_Enbl_Rq and SpdCtrlLvr_Stat
+    struct.pack_into('B', msg, 0,  fake_stalk['VSL_Enbl_Rq'] << 6 + fake_stalk['spdCtrlLvr_stat'])
+    
+    # set DTR_Dist_Rq
+    struct.pack_into('B', msg, 1,  fake_stalk['DTR_Dist_Rq'])
+    
+    # TODO: TurnIndLvr_Stat, HiBmLvr_Stat, and wiper position stuff
+    # Without these there will be potential stutters in lights and wipers.
+    
+    # set message counter. The counter appears 5 bits into the 7th byte,
+    # but everything is 0 based.
+    struct.pack_into('B', msg, 6, fake_stalk['MC_STW_ACTN_RQ'] << 4)
+    
+    fake_stalk['CRC_STW_ACTN_RQ'] = add_tesla_crc(msg=msg, msg_len=7)
+    struct.pack_into('B', msg, msg_len-1, fake_stalk['CRC_STW_ACTN_RQ'])
+
+    
+    
+    ##b0 = ( ord(real_steering_wheel_stalk[0]) & 0xC0 ) + spdCtrlLvr_stat
+    #b0 = ( ord(real_steering_wheel_stalk[0]) & 0x80 ) + ( 1 << 6 ) + spdCtrlLvr_stat
+    #b1 = ord(real_steering_wheel_stalk[1])
+    #b2 = ord(real_steering_wheel_stalk[2])
+    #b3 = ord(real_steering_wheel_stalk[3])
+    #b4 = ord(real_steering_wheel_stalk[4])
+    #b5 = ord(real_steering_wheel_stalk[5])
+    #idx = ((((ord(real_steering_wheel_stalk[6]) & 0xF0) >> 4) + 1 ) & 0x0F)
+    #b6 = ord(real_steering_wheel_stalk[6]) & 0x0F + (idx << 4)
+    #struct.pack_into('BBBBBBB', msg, 0, b0, b1, b2, b3, b4, b5, b6)
+    #struct.pack_into('B', msg, msg_len-1, add_tesla_crc(msg,7))
     return [msg_id, 0, msg.raw, 0]
   else:
-   return None
+    return None

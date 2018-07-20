@@ -70,13 +70,44 @@ def get_can_signals(CP):
       ("DI_stateCounter", "DI_state", 0),
       ("GTW_driverPresent", "GTW_status", 0),
       ("DI_brakePedal", "DI_torque2", 0),
-      ("SpdCtrlLvr_Stat", "STW_ACTN_RQ", 0),
       ("DI_cruiseSet", "DI_state", 0),
       ("DI_cruiseState", "DI_state", 0),
-      ("VSL_Enbl_Rq", "STW_ACTN_RQ", 0), # Used in interface.py
       ("TSL_RND_Posn_StW","SBW_RQ_SCCM" , 0),
       ("TSL_P_Psd_StW","SBW_RQ_SCCM" , 0),
+      
+      # Steering wheel stalk signals (useful for managing cruise control)
+      ("SpdCtrlLvr_Stat", "STW_ACTN_RQ", 0),
+      ("VSL_Enbl_Rq", "STW_ACTN_RQ", 0),
+      ("SpdCtrlLvrStat_Inv", "STW_ACTN_RQ", 0),
+      ("DTR_Dist_Rq", "STW_ACTN_RQ", 0),
       ("TurnIndLvr_Stat", "STW_ACTN_RQ", 0),
+      ("HiBmLvr_Stat", "STW_ACTN_RQ", 0),
+      ("WprWashSw_Psd", "STW_ACTN_RQ", 0),
+      ("WprWash_R_Sw_Posn_V2", "STW_ACTN_RQ", 0),
+      ("StW_Lvr_Stat", "STW_ACTN_RQ", 0),
+      ("StW_Cond_Flt", "STW_ACTN_RQ", 0),
+      ("StW_Cond_Psd", "STW_ACTN_RQ", 0),
+      ("HrnSw_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw00_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw01_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw02_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw03_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw04_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw05_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw06_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw07_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw08_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw09_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw10_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw11_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw12_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw13_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw14_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw15_Psd", "STW_ACTN_RQ", 0),
+      ("WprSw6Posn", "STW_ACTN_RQ", 0),
+      ("MC_STW_ACTN_RQ", "STW_ACTN_RQ", 0),
+      ("CRC_STW_ACTN_RQ", "STW_ACTN_RQ", 0),
+      
       ("DI_motorRPM", "DI_torque1", 0),
       ("DI_speedUnits", "DI_state", 0),
       
@@ -216,7 +247,7 @@ class CarState(object):
     self.cruise_setting = self.steering_wheel_stalk['SpdCtrlLvr_Stat']
     self.cruise_buttons = self.steering_wheel_stalk['SpdCtrlLvr_Stat']
 
-    self.blinker_on = (self.steering_wheel_stalk['TurnIndLvr_Stat'] == 1) or (cp.vl["STW_ACTN_RQ"]['TurnIndLvr_Stat'] == 2)
+    self.blinker_on = (self.steering_wheel_stalk['TurnIndLvr_Stat'] == 1) or (self.steering_wheel_stalk['TurnIndLvr_Stat'] == 2)
     self.left_blinker_on = self.steering_wheel_stalk['TurnIndLvr_Stat'] == 1
     self.right_blinker_on = self.steering_wheel_stalk['TurnIndLvr_Stat'] == 2
 

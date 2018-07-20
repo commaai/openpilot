@@ -155,5 +155,7 @@ class CarController(object):
           if cruise_reduce_msg:
             can_sends.append(cruise_reduce_msg)
             print "Send slow down"
+          else:
+            print "! Unable to create cruise down message !"
 
       sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
