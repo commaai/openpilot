@@ -88,6 +88,8 @@ Community Maintained Cars
 | ------- | -----------------------| -------------------- | ------- | ------------ | -----------     | ------------ |
 | Tesla   | Model S 2012           | All                  | Yes     | Not yet      | Not applicable  | 0mph         |
 | Tesla   | Model S 2013           | All                  | Yes     | Not yet      | Not applicable  | 0mph         |
+| Tesla   | Model S 2014 (pre-AP*) | All                  | Yes     | Not yet      | Not applicable  | 0mph         |
+ *Cars made before October 28, 2014
 
 [[Tesla Pull Request]](https://github.com/commaai/openpilot/pull/246)
 
