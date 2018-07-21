@@ -81,7 +81,12 @@ def create_cruise_adjust_msg(spdCtrlLvr_stat, real_steering_wheel_stalk):
   msg_id = 0x045  # 69 in hex, STW_ACTN_RQ
   msg_len = 8
   msg = create_string_buffer(msg_len)
-  if real_steering_wheel_stalk:
+  # Do not send messages that conflict with the driver's actual actions on the
+  # steering wheel stalk. To ensure this, only send messages when the last
+  # message from the car indicates that the stalk is not being used, and copy
+  # all the fields you can from the last message.
+  if (real_steering_wheel_stalk
+      and real_steering_wheel_stalk['spdCtrlLvr_stat'] == 0):
     fake_stalk = real_steering_wheel_stalk.copy()
     fake_stalk['VSL_Enbl_Rq'] = 1
     fake_stalk['DTR_Dist_Rq'] = 255  # 8 bits of ones in all my observations.
@@ -92,21 +97,23 @@ def create_cruise_adjust_msg(spdCtrlLvr_stat, real_steering_wheel_stalk):
     # CRC should initially be 0 before a new one is calculated.
     fake_stalk['CRC_STW_ACTN_RQ'] = 0
     
-    # set the first byte, containing SpdCtrlLvr_Stat and VSL_Enbl_Rq
+    # set the first byte, containing cruise control
     struct.pack_into('B', msg, 0,
                      (fake_stalk['spdCtrlLvr_stat']) +
                      (fake_stalk['VSL_Enbl_Rq'] << 6))
     # set the 2nd byte, containing DTR_Dist_Rq
     struct.pack_into('B', msg, 1,  fake_stalk['DTR_Dist_Rq'])
-    # Set the 3rd byte, containing turn indicator, highbeams, and wipers.
+    # Set the 3rd byte, containing turn indicator, highbeams, and wiper wash
     struct.pack_into('B', msg, 2,
                      fake_stalk['TurnIndLvr_Stat'] +
                      (fake_stalk['HiBmLvr_Stat'] << 2) +
                      (fake_stalk['WprWashSw_Psd'] << 4) +
                      (fake_stalk['WprWash_R_Sw_Posn_V2'] << 6)
                     )
-    # Set the 7th byte, containing the message counter.
-    struct.pack_into('B', msg, 6, fake_stalk['MC_STW_ACTN_RQ'] << 4)
+    # Set the 7th byte, containing the wipers and message counter.
+    struct.pack_into('B', msg, 6,
+                     fake_stalk['WprSw6Posn'] +
+                     (fake_stalk['MC_STW_ACTN_RQ'] << 4))
     
     # Finally, set the CRC for the message. Must be calculated last!
     fake_stalk['CRC_STW_ACTN_RQ'] = add_tesla_crc(msg=msg, msg_len=7)
