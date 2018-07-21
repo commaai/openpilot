@@ -99,11 +99,12 @@ def create_cruise_adjust_msg(spdCtrlLvr_stat, real_steering_wheel_stalk):
     # set the 2nd byte, containing DTR_Dist_Rq
     struct.pack_into('B', msg, 1,  fake_stalk['DTR_Dist_Rq'])
     # Set the 3rd byte, containing turn indicator, highbeams, and wipers.
+    # TODO: why are wipers not int?
     struct.pack_into('B', msg, 2,
                      fake_stalk['TurnIndLvr_Stat'] +
                      (fake_stalk['HiBmLvr_Stat'] << 2) +
-                     (fake_stalk['WprWashSw_Psd'] << 4) +
-                     (fake_stalk['WprWash_R_Sw_Posn_V2'] << 6)
+                     (int(fake_stalk['WprWashSw_Psd']) << 4) +
+                     (int(fake_stalk['WprWash_R_Sw_Posn_V2']) << 6)
                     )
     # Set the 7th byte, containing the message counter.
     struct.pack_into('B', msg, 6, fake_stalk['MC_STW_ACTN_RQ'] << 4)
