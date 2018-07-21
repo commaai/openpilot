@@ -88,7 +88,9 @@ def create_cruise_adjust_msg(spdCtrlLvr_stat, real_steering_wheel_stalk):
   if (real_steering_wheel_stalk
       and real_steering_wheel_stalk['spdCtrlLvr_stat'] == 0):
     fake_stalk = real_steering_wheel_stalk.copy()
-    fake_stalk['VSL_Enbl_Rq'] = 1
+    # if accelerating, override VSL_Enbl_Rq to 1.
+    if spdCtrlLvr_stat in [4, 16]:
+      fake_stalk['VSL_Enbl_Rq'] = 1
     fake_stalk['DTR_Dist_Rq'] = 255  # 8 bits of ones in all my observations.
     fake_stalk['spdCtrlLvr_stat'] = spdCtrlLvr_stat
     # message count should be 1 more than the previous.
@@ -106,7 +108,7 @@ def create_cruise_adjust_msg(spdCtrlLvr_stat, real_steering_wheel_stalk):
     # Set the 3rd byte, containing turn indicator, highbeams, and wiper wash
     # TODO: why are wipers not int?
     struct.pack_into('B', msg, 2,
-                     fake_stalk['TurnIndLvr_Stat'] +
+                     int(round(fake_stalk['TurnIndLvr_Stat'])) +
                      (int(round(fake_stalk['HiBmLvr_Stat'])) << 2) +
                      (int(round(fake_stalk['WprWashSw_Psd'])) << 4) +
                      (int(round(fake_stalk['WprWash_R_Sw_Posn_V2'])) << 6)
