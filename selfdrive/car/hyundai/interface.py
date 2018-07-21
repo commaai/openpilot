@@ -75,10 +75,10 @@ class CarInterface(object):
     ret.steerRateCost = 1.
     stop_and_go = True
     ret.mass = 1985 + std_cargo
-    ret.wheelbase = 2.78 - 0.00  #Cuts Corners....naughty
-    ret.steerRatio = 14.4
+    ret.wheelbase = 2.78 
+    ret.steerRatio = 16
     ret.steerKpV, ret.steerKiV = [[0.09], [0.005]]
-    ret.centerToFront = ret.wheelbase * 0.44
+    ret.centerToFront = ret.wheelbase * 0.4
 
     ret.longPidDeadzoneBP = [0., 9.]
     ret.longPidDeadzoneV = [0., .15]
@@ -103,7 +103,7 @@ class CarInterface(object):
 
     # steer, gas, brake limitations VS speed
     ret.steerMaxBP = [16. * CV.KPH_TO_MS, 70. * CV.KPH_TO_MS]  # breakpoints at 1 and 40 kph
-    ret.steerMaxV = [0.4, 0.6]  # 2/3rd torque allowed above 45 kph
+    ret.steerMaxV = [0.6, 1.0]  # 2/3rd torque allowed above 45 kph
     ret.gasMaxBP = [0.]
     ret.gasMaxV = [0.5]
     ret.brakeMaxBP = [5., 20.]

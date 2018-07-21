@@ -6,7 +6,7 @@ from selfdrive.can.packer import CANPacker
 
 
 # Steer torque limits
-STEER_MAX = 250
+STEER_MAX = 175
 STEER_DELTA = 10      
 
 TARGET_IDS = [0x340]
