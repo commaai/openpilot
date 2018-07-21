@@ -102,7 +102,7 @@ def create_cruise_adjust_msg(spdCtrlLvr_stat, real_steering_wheel_stalk):
     # TODO: why are wipers not int?
     struct.pack_into('B', msg, 2,
                      fake_stalk['TurnIndLvr_Stat'] +
-                     (fake_stalk['HiBmLvr_Stat'] << 2) +
+                     (int(fake_stalk['HiBmLvr_Stat']) << 2) +
                      (int(fake_stalk['WprWashSw_Psd']) << 4) +
                      (int(fake_stalk['WprWash_R_Sw_Posn_V2']) << 6)
                     )
