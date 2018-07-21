@@ -114,8 +114,9 @@ class CarState(object):
   def update(self, cp):
     # copy can_valid
     self.can_valid = cp.can_valid
-    msg = messaging.recv_one_or_none(gps_ext_sock)
-    if gps_pkt = msg.gpsLocationExternal:
+    msg = messagirecv_one_or_noneng.recv_one_or_none(gps_ext_sock)
+    if msg is not none:
+      gps_pkt = msg.gpsLocationExternal
       print gps_pkt.latitude
       print gps_pkt.longitude
     # update prevs, update must run once per loop
