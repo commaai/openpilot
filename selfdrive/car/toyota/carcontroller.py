@@ -4,7 +4,7 @@ from selfdrive.car.toyota.toyotacan import make_can_msg, create_video_target,\
                                            create_steer_command, create_ui_command, \
                                            create_ipas_steer_command, create_accel_command, \
                                            create_fcw_command
-from selfdrive.car.toyota.values import ECU, STATIC_MSGS. NO_DSU_CAR
+from selfdrive.car.toyota.values import ECU, STATIC_MSGS, NO_DSU_CAR
 from selfdrive.can.packer import CANPacker
 
 # Accel limits
