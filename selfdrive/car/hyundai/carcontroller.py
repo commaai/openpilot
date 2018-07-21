@@ -101,8 +101,12 @@ class CarController(object):
 
 
     # Create Checksum
-    checksum = (self.lanes + 0x00 + apply_steer_a + apply_steer_b + \
-      lkas11_byte4 + 0x00) % 256
+    if CS.car_fingerprint == CAR.SORENTO:
+      checksum = (self.lanes + apply_steer_a + apply_steer_b + \
+        lkas11_byte4) % 256
+    else:
+      checksum = (self.lanes + apply_steer_a + apply_steer_b + \
+        lkas11_byte4 + 0x18) % 256
     
 
     # Creake LKAS11 Message at 100Hz
