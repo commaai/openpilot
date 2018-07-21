@@ -72,10 +72,10 @@ def create_cruise_adjust_msg(spdCtrlLvr_stat, real_steering_wheel_stalk):
   Args:
     spdCtrlLvr_stat: Int value of dbc entry STW_ACTN_RQ.SpdCtrlLvr_Stat
       (allowing us to simulate pressing the cruise stalk up or down)
-    real_steering_wheel_stalk: Previous STW_ACTN_RQ message sent by the real stalk. When
-      sending these artifical messages for cruise control, we want to mimic
-      whatever windshield wiper and highbeam settings the car is currently
-      sending.
+    real_steering_wheel_stalk: Previous STW_ACTN_RQ message sent by the real
+      stalk. When sending these artifical messages for cruise control, we want
+      to mimic whatever windshield wiper and highbeam settings the car is
+      currently sending.
     
   """
   msg_id = 0x045  # 69 in hex, STW_ACTN_RQ
@@ -87,40 +87,31 @@ def create_cruise_adjust_msg(spdCtrlLvr_stat, real_steering_wheel_stalk):
     fake_stalk['DTR_Dist_Rq'] = 255  # 8 bits of ones in all my observations.
     fake_stalk['spdCtrlLvr_stat'] = spdCtrlLvr_stat
     # message count should be 1 more than the previous.
-    # TODO: figure out whu mc_stw_actn_rq is a float 
+    # TODO: figure out why mc_stw_actn_rq is a float 
     fake_stalk['MC_STW_ACTN_RQ'] = (int(fake_stalk['MC_STW_ACTN_RQ']) + 1) % 16
     # CRC should initially be 0 before a new one is calculated.
     fake_stalk['CRC_STW_ACTN_RQ'] = 0
     
-    # set VSL_Enbl_Rq and SpdCtrlLvr_Stat
-    struct.pack_into('B', msg, 0,  (fake_stalk['VSL_Enbl_Rq'] << 6) + fake_stalk['spdCtrlLvr_stat'])
-    
-    # set DTR_Dist_Rq
+    # set the first byte, containing SpdCtrlLvr_Stat and VSL_Enbl_Rq
+    struct.pack_into('B', msg, 0,
+                     (fake_stalk['spdCtrlLvr_stat']) +
+                     (fake_stalk['VSL_Enbl_Rq'] << 6))
+    # set the 2nd byte, containing DTR_Dist_Rq
     struct.pack_into('B', msg, 1,  fake_stalk['DTR_Dist_Rq'])
-    
-    # TODO: TurnIndLvr_Stat, HiBmLvr_Stat, and wiper position stuff
-    # Without these there will be potential stutters in lights and wipers.
-    
-    # set message counter. The counter appears 5 bits into the 7th byte,
-    # but everything is 0 based.
+    # Set the 3rd byte, containing turn indicator, highbeams, and wipers.
+    struct.pack_into('B', msg, 2,
+                     fake_stalk['TurnIndLvr_Stat'] +
+                     (fake_stalk['HiBmLvr_Stat'] << 2) +
+                     (fake_stalk['WprWashSw_Psd'] << 4) +
+                     (fake_stalk['WprWash_R_Sw_Posn_V2'] << 6)
+                    )
+    # Set the 7th byte, containing the message counter.
     struct.pack_into('B', msg, 6, fake_stalk['MC_STW_ACTN_RQ'] << 4)
     
+    # Finally, set the CRC for the message. Must be calculated last!
     fake_stalk['CRC_STW_ACTN_RQ'] = add_tesla_crc(msg=msg, msg_len=7)
     struct.pack_into('B', msg, msg_len-1, fake_stalk['CRC_STW_ACTN_RQ'])
 
-    
-    
-    ##b0 = ( ord(real_steering_wheel_stalk[0]) & 0xC0 ) + spdCtrlLvr_stat
-    #b0 = ( ord(real_steering_wheel_stalk[0]) & 0x80 ) + ( 1 << 6 ) + spdCtrlLvr_stat
-    #b1 = ord(real_steering_wheel_stalk[1])
-    #b2 = ord(real_steering_wheel_stalk[2])
-    #b3 = ord(real_steering_wheel_stalk[3])
-    #b4 = ord(real_steering_wheel_stalk[4])
-    #b5 = ord(real_steering_wheel_stalk[5])
-    #idx = ((((ord(real_steering_wheel_stalk[6]) & 0xF0) >> 4) + 1 ) & 0x0F)
-    #b6 = ord(real_steering_wheel_stalk[6]) & 0x0F + (idx << 4)
-    #struct.pack_into('BBBBBBB', msg, 0, b0, b1, b2, b3, b4, b5, b6)
-    #struct.pack_into('B', msg, msg_len-1, add_tesla_crc(msg,7))
     return [msg_id, 0, msg.raw, 0]
   else:
     return None
