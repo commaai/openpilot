@@ -1,7 +1,7 @@
 from common.numpy_fast import clip, interp
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car.hyundai.hyundaican import make_can_msg, create_lkas11, create_lkas12
-from selfdrive.car.hyundai.values import ECU, STATIC_MSGS
+from selfdrive.car.hyundai.values import ECU, STATIC_MSGS, CAR
 from selfdrive.can.packer import CANPacker
 
 
@@ -25,6 +25,7 @@ class CarController(object):
     self.steer_angle_enabled = False
     self.ipas_reset_counter = 0
     self.turning_inhibit = 0
+    print self.car_fingerprint
 
     self.fake_ecus = set()
     if enable_camera: self.fake_ecus.add(ECU.CAM)
@@ -93,7 +94,7 @@ class CarController(object):
       apply_steer_b = apply_steer_b + 0x08
 
     # High Beam Assist State
-    if self.car_fingerprint == CAR.STINGER or self.car_fingerprint == CAR.ELANTRA:
+    if CS.car_fingerprint == CAR.STINGER or CS.car_fingerprint == CAR.ELANTRA:
       # HBA Sys State
       apply_steer_b = apply_steer_b + 0x20
       lkas11_byte4 = lkas11_byte4 + 0x04
@@ -112,9 +113,9 @@ class CarController(object):
 
     # Create LKAS12 Message at 10Hz
     if (frame % 10) == 0:
-      if self.car_fingerprint == CAR.SORENTO:
+      if CS.car_fingerprint == CAR.SORENTO:
         can_sends.append(create_lkas12(self.packer, 0x20, 0x00))
-      if self.car_fingerprint == CAR.STINGER:
+      if CS.car_fingerprint == CAR.STINGER:
         can_sends.append(create_lkas12(self.packer, 0x80, 0x05))
 
 
