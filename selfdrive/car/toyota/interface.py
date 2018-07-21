@@ -5,7 +5,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.toyota.carstate import CarState, get_can_parser
-from selfdrive.car.toyota.values import ECU, check_ecu_msgs, CAR
+from selfdrive.car.toyota.values import ECU, check_ecu_msgs, CAR, NO_DSU_CAR
 from selfdrive.swaglog import cloudlog
 
 try:
@@ -159,7 +159,7 @@ class CarInterface(object):
     ret.brakeMaxV = [1., 0.8]
 
     ret.enableCamera = not check_ecu_msgs(fingerprint, candidate, ECU.CAM)
-    ret.enableDsu = not check_ecu_msgs(fingerprint, candidate, ECU.DSU)
+    ret.enableDsu = not check_ecu_msgs(fingerprint, candidate, ECU.DSU) and candidate not in NO_DSU_CAR
     ret.enableApgs = False #not check_ecu_msgs(fingerprint, candidate, ECU.APGS)
     cloudlog.warn("ECU Camera Simulated: %r", ret.enableCamera)
     cloudlog.warn("ECU DSU Simulated: %r", ret.enableDsu)
