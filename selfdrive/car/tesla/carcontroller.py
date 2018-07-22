@@ -6,6 +6,7 @@ from common.numpy_fast import clip
 from selfdrive.car.tesla import teslacan
 from selfdrive.car.tesla.values import AH, CruiseButtons, CAR
 from selfdrive.can.packer import CANPacker
+from selfdrive.config import Conversions as CV
 
 
 def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
