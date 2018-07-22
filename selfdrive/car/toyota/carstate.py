@@ -1,6 +1,7 @@
 from selfdrive.car.toyota.values import CAR, DBC
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
+import zmq
 from selfdrive import messaging
 from common.kalman.simple_kalman import KF1D
 import numpy as np
@@ -93,6 +94,8 @@ def get_can_parser(CP):
 
 class CarState(object):
   def __init__(self, CP):
+    context = zmq.Context()	
+    poller = zmq.Poller()
     gps_ext_sock = messaging.sub_sock(context, service_list['gpsLocationExternal'].port, poller)
     self.CP = CP
     self.left_blinker_on = 0
