@@ -88,23 +88,17 @@ def create_cruise_adjust_msg(spdCtrlLvr_stat, real_steering_wheel_stalk):
   if (real_steering_wheel_stalk
       and real_steering_wheel_stalk['SpdCtrlLvr_Stat'] == 0):
     fake_stalk = real_steering_wheel_stalk.copy()
-<<<<<<< HEAD
     # if accelerating, override VSL_Enbl_Rq to 1.
     if spdCtrlLvr_stat in [4, 16]:
       fake_stalk['VSL_Enbl_Rq'] = 1
-    fake_stalk['spdCtrlLvr_stat'] = spdCtrlLvr_stat
-=======
-    fake_stalk['VSL_Enbl_Rq'] = 1
-    fake_stalk['DTR_Dist_Rq'] = 255  # 8 bits of ones in all my observations.
     fake_stalk['SpdCtrlLvr_Stat'] = spdCtrlLvr_stat
->>>>>>> 565c90f5691279f7e332ffb6b245b2b964271cc0
     # message count should be 1 more than the previous.
     # TODO: figure out why mc_stw_actn_rq is a float 
     fake_stalk['MC_STW_ACTN_RQ'] = (int(fake_stalk['MC_STW_ACTN_RQ']) + 1) % 16
     # CRC should initially be 0 before a new one is calculated.
     fake_stalk['CRC_STW_ACTN_RQ'] = 0
     
-    # et the first byte, containing cruise control
+    # Set the first byte, containing cruise control
     struct.pack_into('B', msg, 0,
                      (fake_stalk['SpdCtrlLvr_Stat']) +
                      (fake_stalk['VSL_Enbl_Rq'] << 6))
