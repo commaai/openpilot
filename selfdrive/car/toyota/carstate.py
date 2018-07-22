@@ -117,7 +117,7 @@ class CarState(object):
   def update(self, cp):
     # copy can_valid
     self.can_valid = cp.can_valid
-    msg = messaging.recv_one_or_none(self.gps_location)
+    msg = messaging.recv_one_or_none()
     if msg is not none:
       gps_pkt = msg.gpsLocationExternal
       print gps_pkt.latitude
