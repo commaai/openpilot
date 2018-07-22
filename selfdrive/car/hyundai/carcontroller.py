@@ -6,8 +6,9 @@ from selfdrive.can.packer import CANPacker
 
 
 # Steer torque limits
-STEER_MAX = 175
-STEER_DELTA = 10      
+STEER_MAX = 175   # Actual limit is about 1023, but not tested, and not needed
+STEER_DELTA = 2   # We have no Panda Safety, don't be silly here!   Good idea, YOU add Panda Safety!
+
 
 TARGET_IDS = [0x340]
 
@@ -32,6 +33,7 @@ class CarController(object):
     self.packer = CANPacker(dbc_name)
 
   def update(self, sendcan, enabled, CS, frame, actuators):
+
     # Steering Torque Scaling
     apply_steer = int(round((actuators.steer * STEER_MAX) + 1024))
 
@@ -60,7 +62,7 @@ class CarController(object):
 
 
     if not enabled or self.turning_inhibit > 0:
-      apply_steer = 1024
+      apply_steer = 1024     # 1024 is midpoint (no steer)
       self.last_steer = 1024
       self.lanes = 0         # Lanes is shown on the LKAS screen on the Dash
     else:
@@ -80,6 +82,7 @@ class CarController(object):
     if self.idx >= 16:
       self.idx = 0
     
+    # Byte 4 is used for Index and HBA
     lkas11_byte4 = self.idx * 16
 
     # Split apply steer Word into 2 Bytes
@@ -95,12 +98,12 @@ class CarController(object):
 
     # High Beam Assist State
     if CS.car_fingerprint == CAR.STINGER or CS.car_fingerprint == CAR.ELANTRA:
-      # HBA Sys State
       apply_steer_b = apply_steer_b + 0x20
       lkas11_byte4 = lkas11_byte4 + 0x04
 
 
-    # Create Checksum
+    # Create Checksum - Sorento checksum ignores the last byte, others do not.
+    # TODO Check if Sorento will accept the other checksum
     if CS.car_fingerprint == CAR.SORENTO:
       checksum = (self.lanes + apply_steer_a + apply_steer_b + \
         lkas11_byte4) % 256

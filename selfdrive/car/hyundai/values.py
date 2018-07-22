@@ -2,7 +2,7 @@ from selfdrive.car import dbc_dict
 
 class CAR:
   ELANTRA = "Hyundai Elantra 2017 Limited Ultimate"
-  GENESIS = "HYUNDAI GENESIS 2018"
+  GENESIS = "Hyundai Genesis 2018 Unknown Trim"
   SORENTO = "Kia Sorento 2018 GT Line"
   STINGER = "Kia Stinger 2018 GT2"
 

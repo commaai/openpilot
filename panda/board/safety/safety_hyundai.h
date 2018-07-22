@@ -1,4 +1,6 @@
-// *** all output safety mode ***
+// Kia Hyundai Safety
+
+const int MAX_STEER = 
 
 
 static int hyundai_ign_hook() {
@@ -9,6 +11,8 @@ static void hyundai_init(int16_t param) {
 }
 
 static int hyundai_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
+  // Steering Value Safety Check
+  
   return true;
 }
 

@@ -51,6 +51,8 @@ def get_can_parser(CP):
 
     ("Gear", "AT01", 0),        #Transmission Gear (0 = N or P, 1-8 = Fwd, 14 = Rev)
 
+    ("CR_Mdps_DrvTq", "MDPS11", 0)
+
     ("CR_Mdps_StrColTq", "MDPS12", 0),
     ("CF_Mdps_ToiActive", "MDPS12", 0),
     ("CF_Mdps_FailStat", "MDPS12", 0),
@@ -58,10 +60,14 @@ def get_can_parser(CP):
 
     ("ACCMode", "SCC12", 1),
 
+    ("SAS_Angle", "SAS11", 0)
+    ("SAS_Speed", "SAS11", 0)
+
   ]
   checks = [
     # address, frequency
     ("MDPS12", 50),
+    ("MDPS11", 100),
     ("TCS15", 10),
     ("TCS13", 50),
     ("CLU11", 50),
@@ -71,6 +77,7 @@ def get_can_parser(CP):
     ("CGW4", 5),
     ("WHL_SPD11", 50),
     ("SCC12", 50),
+    ("SAS11", 100)
   ]
 
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
@@ -100,7 +107,7 @@ class CarState(object):
     # copy can_valid
     self.can_valid = cp.can_valid
 
-    # update prevs, update must run once per loop
+    # update prevs, update must run once per Fop
     self.prev_left_blinker_on = self.left_blinker_on
     self.prev_right_blinker_on = self.right_blinker_on
 
@@ -123,6 +130,7 @@ class CarState(object):
     self.v_wheel = (self.v_wheel_fl + self.v_wheel_fr + self.v_wheel_rl + self.v_wheel_rr) / 4.
     if self.car_fingerprint == CAR.SORENTO:
       self.v_wheel = self.v_wheel * 1.03 # There is a 2 percent error on Sorento GT due to slightly larger wheel diameter compared to poverty packs.  Dash assumes about 4% which is excessive. Using 3% to be safe
+    self.low_speed_lockout = self.v_wheel < 1.0
 
     # Kalman filter
     if abs(self.v_wheel - self.v_ego) > 2.0:  # Prevent large accelerations when car starts at non zero speed
@@ -134,18 +142,20 @@ class CarState(object):
     self.a_ego = float(v_ego_x[1])
     self.standstill = not self.v_wheel > 0.001
 
-    self.angle_steers = cp.vl["ESP12"]['YAW_RATE']
+    self.angle_steers = cp.vl["SAS11"]['SAS_Angle']
+    self.angle_steers_rate = cp.vl["SAS11"]['SAS_Rate']
+    self.yaw_rate = cp.vl["ESP12"]['YAW_RATE']
     self.main_on = True #cp.vl["CLU11"]['CF_Clu_CruiseSwMain'] #TODO: This is not correct
     self.left_blinker_on = cp.vl["CGW1"]['CF_Gway_TurnSigLh']
     self.right_blinker_on = cp.vl["CGW1"]['CF_Gway_TurnSigRh']
 
     # we could use the override bit from dbc, but it's triggered at too high torque values
-    self.steer_override = abs(cp.vl["MDPS12"]['CR_Mdps_StrColTq']) > 0.2 
+    self.steer_override = abs(cp.vl["MDPS11"]['CR_Mdps_DrvTq']) > 1.0
     # 2 is standby, 10 is active. TODO: check that everything else is really a faulty state
     self.steer_state = cp.vl["MDPS12"]['CF_Mdps_ToiActive'] #0 NOT ACTIVE, 1 ACTIVE
     self.steer_error = False  #not cp.vl["MDPS12"]['CF_Mdps_FailStat'] or cp.vl["MDPS12"]['CF_Mdps_ToiUnavail'] ## TODO: VERIFY THIS
     self.brake_error = 0
-    self.steer_torque_driver = cp.vl["MDPS12"]['CR_Mdps_StrColTq'] ## TODO: FIND THIS
+    self.steer_torque_driver = cp.vl["MDPS11"]['CR_Mdps_DrvTq'] 
     self.steer_torque_motor = cp.vl["MDPS12"]['CR_Mdps_OutTq']
 
     self.user_brake = 0

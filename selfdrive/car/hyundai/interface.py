@@ -71,7 +71,7 @@ class CarInterface(object):
     ret.steerActuatorDelay = 0.10  # Default delay, Prius has larger delay
 
     #borrowing a lot from corolla, given similar car size
-    ret.steerKf = 0.00003   # full torque for 20 deg at 80mph means 0.00007818594
+    ret.steerKf = 0.00005   # full torque for 20 deg at 80mph means 0.00007818594
     ret.steerRateCost = 1.
     stop_and_go = True
     ret.mass = 1985 + std_cargo
@@ -135,7 +135,7 @@ class CarInterface(object):
     ret.vEgo = self.CS.v_ego
     ret.vEgoRaw = self.CS.v_ego_raw
     ret.aEgo = self.CS.a_ego
-    ret.yawRate = self.VM.yaw_rate(self.CS.angle_steers * CV.DEG_TO_RAD, self.CS.v_ego)
+    ret.yawRate = self.CS.yaw_rate
     ret.standstill = self.CS.standstill
     ret.wheelSpeeds.fl = self.CS.v_wheel_fl
     ret.wheelSpeeds.fr = self.CS.v_wheel_fr
@@ -218,7 +218,7 @@ class CarInterface(object):
       events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     if self.CS.steer_error:
       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
-    if False:# self.CS.low_speed_lockout:
+    if self.CS.low_speed_lockout:
       events.append(create_event('lowSpeedLockout', [ET.NO_ENTRY, ET.PERMANENT]))
     if ret.vEgo < self.CP.minEnableSpeed:
       events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
