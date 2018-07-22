@@ -47,7 +47,7 @@ class CarInterface(object):
   def get_params(candidate, fingerprint):
 
     # kg of standard extra cargo to count for drive, gas, etc...
-    std_cargo = 136
+    std_cargo = 75
 
     ret = car.CarParams.new_message()
 
@@ -115,7 +115,7 @@ class CarInterface(object):
       ret.wheelbase = 2.63906
       ret.steerRatio = 13.6
       tire_stiffness_factor = 0.7933
-      ret.mass = 3300./2.205 + std_cargo
+      ret.mass = 3300 * CV.LB_TO_KG + std_cargo
       ret.steerKpV, ret.steerKiV = [[0.723], [0.0428]]
       ret.steerKf = 0.00006
 
