@@ -1,3 +1,4 @@
+import zmq
 from selfdrive.car.toyota.values import CAR, DBC
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
