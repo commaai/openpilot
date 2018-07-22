@@ -6,8 +6,8 @@ from selfdrive.can.packer import CANPacker
 
 
 # Steer torque limits
-STEER_MAX = 175   # Actual limit is about 1023, but not tested, and not needed
-STEER_DELTA = 2   # We have no Panda Safety, don't be silly here!   Good idea, YOU add Panda Safety!
+STEER_MAX = 200   # Actual limit is about 1023, but not tested, and not needed
+STEER_DELTA = 5   # We have no Panda Safety, don't be silly here!   Good idea, YOU add Panda Safety!
 
 
 TARGET_IDS = [0x340]

@@ -51,7 +51,7 @@ def get_can_parser(CP):
 
     ("Gear", "AT01", 0),        #Transmission Gear (0 = N or P, 1-8 = Fwd, 14 = Rev)
 
-    ("CR_Mdps_DrvTq", "MDPS11", 0)
+    ("CR_Mdps_DrvTq", "MDPS11", 0),
 
     ("CR_Mdps_StrColTq", "MDPS12", 0),
     ("CF_Mdps_ToiActive", "MDPS12", 0),
@@ -60,8 +60,8 @@ def get_can_parser(CP):
 
     ("ACCMode", "SCC12", 1),
 
-    ("SAS_Angle", "SAS11", 0)
-    ("SAS_Speed", "SAS11", 0)
+    ("SAS_Angle", "SAS11", 0),
+    ("SAS_Speed", "SAS11", 0),
 
   ]
   checks = [
@@ -143,7 +143,7 @@ class CarState(object):
     self.standstill = not self.v_wheel > 0.001
 
     self.angle_steers = cp.vl["SAS11"]['SAS_Angle']
-    self.angle_steers_rate = cp.vl["SAS11"]['SAS_Rate']
+    self.angle_steers_rate = cp.vl["SAS11"]['SAS_Speed']
     self.yaw_rate = cp.vl["ESP12"]['YAW_RATE']
     self.main_on = True #cp.vl["CLU11"]['CF_Clu_CruiseSwMain'] #TODO: This is not correct
     self.left_blinker_on = cp.vl["CGW1"]['CF_Gway_TurnSigLh']
