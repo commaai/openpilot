@@ -143,12 +143,12 @@ class CarController(object):
       
       # Adaptive cruise control
       if (enable_steer_control and CS.pcm_acc_status == 2):
-        #if (idx == 0):
-        #  print "Brakes: %s, Gas: %s, v_cruise_car: %s, v_cruise_pcm:%s" % (
-        #    str(brake),
-        #    str(actuators.gas),
-        #    str(CS.v_cruise_car),
-        #    str(CS.v_cruise_pcm))
+        if (idx == 0):
+          print "Brakes: %s, Gas: %s, v_ego: %s, v_cruise_pcm:%s" % (
+            str(brake),
+            str(actuators.gas),
+            str(CS.v_ego),
+            str(CS.v_cruise_pcm))
         # reduce cruise speed if necessary
         if (brake > 0.6):
           cruise_reduce_msg = teslacan.create_cruise_adjust_msg(8, CS.steering_wheel_stalk)
