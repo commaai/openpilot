@@ -154,8 +154,17 @@ class CarController(object):
           cruise_reduce_msg = teslacan.create_cruise_adjust_msg(8, CS.steering_wheel_stalk)
           if cruise_reduce_msg:
             can_sends.append(cruise_reduce_msg)
-            print "Send slow down"
+            print "Cruise speed DOWN"
           else:
-            print "! Unable to create cruise down message !"
+            print "! Unable to create cruise DOWN message !"
+        elif (CS.v_ego > (18 * CV.MPH_TO_KPH)  # cruise only works >18mph
+              and CS.v_ego >= (CS.v_cruise_pcm - 1)  # only accel if current cruise is too low
+              and actuators.gas > 0.6):
+          cruise_increase_msg = teslacan.create_cruise_adjust_msg(16, CS.steering_wheel_stalk)
+          if cruise_increase_msg:
+            can_sends.append(cruise_increase_msg)
+            print "Cruise speed UP"
+          else:
+            print "! Unable to create cruise UP message !"
 
       sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
