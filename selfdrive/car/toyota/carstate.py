@@ -1,7 +1,7 @@
 from selfdrive.car.toyota.values import CAR, DBC
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
-from selfdrive import messaging
+import selfdrive.messaging as messaging
 from common.kalman.simple_kalman import KF1D
 import numpy as np
 
@@ -116,7 +116,7 @@ class CarState(object):
   def update(self, cp):
     # copy can_valid
     self.can_valid = cp.can_valid
-    msg = recv_one_or_none(gps_ext_sock)
+    msg = messaging.recv_one_or_none(gps_ext_sock)
     if msg is not none:
       gps_pkt = msg.gpsLocationExternal
       print gps_pkt.latitude
