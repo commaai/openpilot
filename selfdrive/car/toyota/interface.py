@@ -47,7 +47,7 @@ class CarInterface(object):
   def get_params(candidate, fingerprint):
 
     # kg of standard extra cargo to count for drive, gas, etc...
-    std_cargo = 75
+    std_cargo = 136
 
     ret = car.CarParams.new_message()
 
