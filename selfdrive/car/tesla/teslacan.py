@@ -101,7 +101,7 @@ def create_cruise_adjust_msg(spdCtrlLvr_stat, real_steering_wheel_stalk):
     # Set the first byte, containing cruise control
     struct.pack_into('B', msg, 0,
                      (fake_stalk['SpdCtrlLvr_Stat']) +
-                     (fake_stalk['VSL_Enbl_Rq'] << 6))
+                     (int(round(fake_stalk['VSL_Enbl_Rq'])) << 6))
     # Set the 2nd byte, containing DTR_Dist_Rq
     struct.pack_into('B', msg, 1,  fake_stalk['DTR_Dist_Rq'])
     # Set the 3rd byte, containing turn indicator, highbeams, and wiper wash
