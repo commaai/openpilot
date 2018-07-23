@@ -361,16 +361,20 @@ class CarInterface(object):
       # KEEP THIS EVENT LAST! send enable event if button is pressed and there are
       # NO_ENTRY events, so controlsd will display alerts. Also not send enable events
       # too close in time, so a no_entry will not be followed by another one.
-      # TODO: button press should be the only thing that triggers enble
+      # TODO: button press should be the only thing that triggers enable
       if ((cur_time - self.last_enable_pressed) < 0.2 and
           (cur_time - self.last_enable_sent) > 0.2 and
           ret.cruiseState.enabled) or \
          (enable_pressed and get_events(events, [ET.NO_ENTRY])):
         events.append(create_event('buttonEnable', [ET.ENABLE]))
         self.last_enable_sent = cur_time
+        events.append(create_event('pcmEnable', [ET.ENABLE]))
+        self.CS.v_cruise_pcm = self.CS.v_ego * CV.MS_TO_KPH
     elif enable_pressed:
       events.append(create_event('buttonEnable', [ET.ENABLE]))
-
+      events.append(create_event('pcmEnable', [ET.ENABLE]))
+      self.CS.v_cruise_pcm = self.CS.v_ego * CV.MS_TO_KPH
+        
     ret.events = events
     ret.canMonoTimes = canMonoTimes
 

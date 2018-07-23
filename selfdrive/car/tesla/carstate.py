@@ -186,6 +186,12 @@ class CarState(object):
                          C=np.matrix([1.0, 0.0]),
                          K=np.matrix([[0.12287673], [0.29666309]]))
     self.v_ego = 0.0
+    
+    # The current max allowed cruise speed. Actual cruise speed sent to the car
+    # may be lower, depending on traffic.
+    self.v_cruise_pcm = 0.0
+    # Actual cruise speed currently active on the car.
+    self.v_cruise_actual = 0.0
 
   def update(self, cp, epas_cp):
 
@@ -278,9 +284,9 @@ class CarState(object):
     self.user_brake = cp.vl["DI_torque2"]['DI_brakePedal']
     self.standstill = cp.vl["DI_torque2"]['DI_vehicleSpeed'] == 0
     if cp.vl["DI_state"]['DI_speedUnits'] == 0:
-      self.v_cruise_pcm = (cp.vl["DI_state"]['DI_cruiseSet'])*1.609 # Reported in MPH, expected in KPH??
+      self.v_cruise_actual = (cp.vl["DI_state"]['DI_cruiseSet'])*1.609 # Reported in MPH, expected in KPH??
     else:
-      self.v_cruise_pcm = cp.vl["DI_state"]['DI_cruiseSet']
+      self.v_cruise_actual = cp.vl["DI_state"]['DI_cruiseSet']
     self.pcm_acc_status = cp.vl["DI_state"]['DI_cruiseState']
     self.hud_lead = 0 #JCT
 
