@@ -143,9 +143,9 @@ class CarController(object):
       can_sends.append(teslacan.create_epb_enable_signal(idx))
       
       # Adaptive cruise control
-      if (enable_steer_control and CS.pcm_acc_status == 2):
+      if enable_steer_control and CS.pcm_acc_status == 2:
         # debug looging
-        if (idx == 0):
+        if idx == 0:
           print "Brakes: %s, Gas: %s, v_ego: %s, v_cruise_pcm:%s, v_cruise_actual:%s" % (
             str(brake),
             str(actuators.gas),
@@ -153,22 +153,22 @@ class CarController(object):
             str(CS.v_cruise_pcm),
             str(CS.v_cruise_actual))
         # reduce cruise speed if necessary
-        if (brake > 0.6):
+        if brake > 0.6:
           cruise_reduce_msg = teslacan.create_cruise_adjust_msg(8, CS.steering_wheel_stalk)
           if cruise_reduce_msg:
             can_sends.append(cruise_reduce_msg)
             print "Cruise speed DOWN"
           else:
             print "! Unable to create cruise DOWN message !"
-        # Increase cruise speed if necessary
-        elif (CS.v_ego > (18 * CV.MPH_TO_KPH)  # cruise only works >18mph
-              # don't add cruise speed if real speed is well below cruise speed
-              and CS.v_ego >= (CS.v_cruise_actual - 1)
+        # Increase cruise speed if necessary.
+        elif (CS.v_ego > 18 * CV.MPH_TO_KPH  # cruise only works >18mph.
+              # don't add cruise speed if real speed is well below cruise speed.
+              and CS.v_ego >= CS.v_cruise_actual - 1
               # TODO: figure out why gas actuator is 0 and use that rather
               # than relying on the lack of brakes as a signal.
               # and actuators.gas > 0.6):
               and brakes < 0.1
-              # check that the current cruise speed is below the allowed max
+              # check that the current cruise speed is below the allowed max.
               and CS.v_cruise_actual <= CS.v_cruise_pcm - 2):
           cruise_increase_msg = teslacan.create_cruise_adjust_msg(16, CS.steering_wheel_stalk)
           if cruise_increase_msg:
