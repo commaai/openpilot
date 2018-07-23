@@ -152,8 +152,9 @@ class CarController(object):
             str(CS.v_ego),
             str(CS.v_cruise_pcm),
             str(CS.v_cruise_actual))
-        # reduce cruise speed if necessary
-        if brake > 0.6:
+        # rReduce cruise speed if necessary.
+        if brake > 0.5:
+          # Send cruise stalk dn_2nd.
           cruise_reduce_msg = teslacan.create_cruise_adjust_msg(8, CS.steering_wheel_stalk)
           if cruise_reduce_msg:
             can_sends.append(cruise_reduce_msg)
@@ -168,8 +169,9 @@ class CarController(object):
               # than relying on the lack of brakes as a signal.
               # and actuators.gas > 0.6):
               and brakes < 0.1
-              # check that the current cruise speed is below the allowed max.
+              # Check that the current cruise speed is below the allowed max.
               and CS.v_cruise_actual <= CS.v_cruise_pcm - 2):
+          # Send cruise stalk up_1st
           cruise_increase_msg = teslacan.create_cruise_adjust_msg(16, CS.steering_wheel_stalk)
           if cruise_increase_msg:
             can_sends.append(cruise_increase_msg)

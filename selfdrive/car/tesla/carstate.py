@@ -287,6 +287,9 @@ class CarState(object):
       self.v_cruise_actual = (cp.vl["DI_state"]['DI_cruiseSet'])*1.609 # Reported in MPH, expected in KPH??
     else:
       self.v_cruise_actual = cp.vl["DI_state"]['DI_cruiseSet']
+    # The user may manually increase cruise speed. If they push it above the max
+    # cruise speed, update the max.
+    self.v_cruise_pcm = max(self.v_cruise_actual, self.v_cruise_pcm)
     self.pcm_acc_status = cp.vl["DI_state"]['DI_cruiseState']
     self.hud_lead = 0 #JCT
 
