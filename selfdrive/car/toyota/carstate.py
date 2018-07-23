@@ -1,4 +1,5 @@
 import zmq
+from math import acos,sin,cos,radians
 from selfdrive.car.toyota.values import CAR, DBC
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
@@ -121,8 +122,7 @@ class CarState(object):
     msg = messaging.recv_one_or_none(self.gps_location)
     if msg is not None:
       gps_pkt = msg.gpsLocationExternal
-      print gps_pkt.latitude
-      print gps_pkt.longitude
+      print 6371010*acos(sin(radians(gps_pkt.latitude))*sin(radians(48.12893908))+cos(radians(gps_pkt.latitude))*cos(radians(48.12893908))*cos(radians(gps_pkt.longitude-9.797879048)))
     # update prevs, update must run once per loop
     self.prev_left_blinker_on = self.left_blinker_on
     self.prev_right_blinker_on = self.right_blinker_on
