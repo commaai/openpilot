@@ -102,6 +102,8 @@ class CarState(object):
     self.CP = CP
     self.left_blinker_on = 0
     self.right_blinker_on = 0
+    self.distance = 999
+    self.inaccuracy = 1.01
 
     # initialize can parser
     self.car_fingerprint = CP.carFingerprint
@@ -122,7 +124,9 @@ class CarState(object):
     msg = messaging.recv_one_or_none(self.gps_location)
     if msg is not None:
       gps_pkt = msg.gpsLocationExternal
-      print 6371010*acos(sin(radians(gps_pkt.latitude))*sin(radians(48.12893908))+cos(radians(gps_pkt.latitude))*cos(radians(48.12893908))*cos(radians(gps_pkt.longitude-9.797879048)))
+      self.inaccuracy = gps_pkt.accuracy
+      self.prev_distance = self.distance
+      self.distance = 6371010*acos(sin(radians(gps_pkt.latitude))*sin(radians(48.12893908))+cos(radians(gps_pkt.latitude))*cos(radians(48.12893908))*cos(radians(gps_pkt.longitude-9.797879048)))
     # update prevs, update must run once per loop
     self.prev_left_blinker_on = self.left_blinker_on
     self.prev_right_blinker_on = self.right_blinker_on
@@ -180,6 +184,13 @@ class CarState(object):
       self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED'] - 34.0
     else:
       self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED']
+    if self.inaccuracy < 1:
+      if self.distance < 100+17:
+        if self.prev_distance - self.distance > 0.08:
+          clip(self.v_cruise_pcm, 7, 30)
+      elif self.distance < 5+17:
+        clip(self.v_cruise_pcm, 7, 30)
+      
     self.pcm_acc_status = cp.vl["PCM_CRUISE"]['CRUISE_STATE']
     self.gas_pressed = not cp.vl["PCM_CRUISE"]['GAS_RELEASED']
     self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]['LOW_SPEED_LOCKOUT'] == 2
