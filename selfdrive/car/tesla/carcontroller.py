@@ -165,8 +165,7 @@ class CarController(object):
         # Increase cruise speed if necessary.
         elif (CS.v_ego > 18 * CV.MPH_TO_KPH  # cruise only works >18mph.
               # don't add cruise speed if real speed is well below cruise speed.
-              # TODO: are these measured in the same units?
-              and CS.v_ego >= CS.v_cruise_actual - 1
+              and CS.v_ego * MS_TO_KPH >= CS.v_cruise_actual - 1
               # TODO: figure out why gas actuator is 0 and use that rather
               # than relying on the lack of brakes as a signal.
               # and actuators.gas > 0.6):
