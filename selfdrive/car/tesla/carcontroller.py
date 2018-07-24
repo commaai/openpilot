@@ -1,4 +1,8 @@
 import os
+import subprocess
+import threading
+import traceback
+import shlex
 from collections import namedtuple
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.controls.lib.drive_helpers import rate_limit
@@ -47,6 +51,37 @@ def process_hud_alert(hud_alert):
     acc_alert = hud_alert[1]
 
   return fcw_display, steer_required, acc_alert
+
+def tesla_snd(snd_beep,snd_chime):
+  "call the snd library"""
+  base_fld_code = "/data/openpilot/selfdrive/car/tesla/snd/"
+  base_fld_wav = "/data/openpilot/selfdrive/car/tesla/snd/"
+  snd_command = base_fld_wav
+  gen_snd = True
+  if (snd_beep == 0): #no beep
+    if (snd_chime == 0): #no snd; do nothing
+      gen_snd = False
+    elif (snd_chime == 3):
+      snd_command += "enable.wav"
+    elif (snd_chime == 2):
+      snd_command += "disable.wav"
+    elif (snd_chime == 1):
+      snd_command += "error.wav"
+    else:
+      snd_command += "error.wav"
+  elif (snd_beep == 3):
+    snd_command += "info.wav"
+  elif (snd_beep == 2):
+    snd_command += "attention.wav"
+  else:
+    snd_command += "error.wav"
+  if (gen_snd):
+    env = dict(os.environ)
+    env['LD_LIBRARY_PATH'] = base_fld_code + "."
+    args = [base_fld_code + "mediaplayer", snd_command]
+    #subprocess.Popen(args, shell = False, stdin=None, stdout=None, stderr=None, env = env, close_fds=True)
+  return 0
+
 
 
 HUDData = namedtuple("HUDData",
@@ -109,6 +144,7 @@ class CarController(object):
     hud = HUDData(int(pcm_accel), int(round(hud_v_cruise)), 1, hud_car,
                   0xc1, hud_lanes, int(snd_beep), snd_chime, fcw_display, acc_alert, steer_required)
 
+    tesla_snd(int(snd_beep),int(snd_chime))
     if not all(isinstance(x, int) and 0 <= x < 256 for x in hud):
       print "INVALID HUD", hud
       hud = HUDData(0xc6, 255, 64, 0xc0, 209, 0x40, 0, 0, 0, 0)
