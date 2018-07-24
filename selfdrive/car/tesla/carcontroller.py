@@ -62,17 +62,17 @@ def tesla_snd(snd_beep,snd_chime):
     if (snd_chime == 0): #no snd; do nothing
       gen_snd = False
     elif (snd_chime == 3):
-      snd_command += "enable.wav"
+      snd_command += "info.wav"
     elif (snd_chime == 2):
-      snd_command += "disable.wav"
+      snd_command += "attention.wav"
     elif (snd_chime == 1):
       snd_command += "error.wav"
     else:
       snd_command += "error.wav"
   elif (snd_beep == 3):
-    snd_command += "info.wav"
+    snd_command += "enable.wav"
   elif (snd_beep == 2):
-    snd_command += "attention.wav"
+    snd_command += "disable.wav"
   else:
     snd_command += "error.wav"
   if (gen_snd):
