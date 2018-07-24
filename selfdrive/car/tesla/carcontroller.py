@@ -143,13 +143,13 @@ class CarController(object):
       can_sends.append(teslacan.create_epb_enable_signal(idx))
       
       # debug looging
-      if idx == 0:
-        print "Brakes: %s, Gas: %s, v_ego: %s, v_cruise_pcm: %s, v_cruise_actual: %s" % (
-          str(brake),
-          str(actuators.gas),
-          str(CS.v_ego),
-          str(CS.v_cruise_pcm),
-          str(CS.v_cruise_actual))
+      #if idx == 0:
+      #  print "Brakes: %s, Gas: %s, v_ego: %s, v_cruise_pcm: %s, v_cruise_actual: %s" % (
+      #    str(brake),
+      #    str(actuators.gas),
+      #    str(CS.v_ego),
+      #    str(CS.v_cruise_pcm),
+      #    str(CS.v_cruise_actual))
       
       # Adaptive cruise control
       if enable_steer_control and CS.pcm_acc_status == 2:
