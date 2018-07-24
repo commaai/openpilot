@@ -153,31 +153,26 @@ class CarController(object):
       
       # Adaptive cruise control
       if enable_steer_control and CS.pcm_acc_status == 2:
+        cruise_msg = None
         # Reduce cruise speed if necessary.
-        if brake > 0.5:
+        if brake > 0.4:
+          # Send cruise stalk dn_1st.
+          cruise_msg = teslacan.create_cruise_adjust_msg(32, CS.steering_wheel_stalk)
+        elif brake > 0.6:
           # Send cruise stalk dn_2nd.
-          cruise_reduce_msg = teslacan.create_cruise_adjust_msg(8, CS.steering_wheel_stalk)
-          if cruise_reduce_msg:
-            can_sends.append(cruise_reduce_msg)
-            print "Cruise speed DOWN"
-          else:
-            print "! Unable to create cruise DOWN message !"
+          cruise_msg = teslacan.create_cruise_adjust_msg(8, CS.steering_wheel_stalk)
         # Increase cruise speed if necessary.
         elif (CS.v_ego > 18 * CV.MPH_TO_MS  # cruise only works >18mph.
               # don't add cruise speed if real speed is well below cruise speed.
               and CS.v_ego * CV.MS_TO_KPH >= CS.v_cruise_actual - 1
-              # TODO: figure out why gas actuator is 0 and use that rather
+              # TODO: figure out why actuator.gas is 0 and use that rather
               # than relying on the lack of brakes as a signal.
-              # and actuators.gas > 0.6):
               and not brake
               # Check that the current cruise speed is below the allowed max.
               and CS.v_cruise_actual <= CS.v_cruise_pcm - 1):
           # Send cruise stalk up_1st
-          cruise_increase_msg = teslacan.create_cruise_adjust_msg(16, CS.steering_wheel_stalk)
-          if cruise_increase_msg:
-            can_sends.append(cruise_increase_msg)
-            print "Cruise speed UP"
-          else:
-            print "! Unable to create cruise UP message !"
+          cruise_msg = teslacan.create_cruise_adjust_msg(16, CS.steering_wheel_stalk)
+        if cruise_msg:
+          can_sends.append(cruise_msg)
 
       sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
