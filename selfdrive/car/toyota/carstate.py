@@ -185,11 +185,19 @@ class CarState(object):
     else:
       self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED']
     if self.inaccuracy < 1:
+      print "distane"
+      print self.distance
+
       if self.distance < 100+17:
+        print "speed"
+        print self.prev_distance - self.distance
         if self.prev_distance - self.distance > 0.08:
-          clip(self.v_cruise_pcm, 7, 30)
-      elif self.distance < 5+17:
-        clip(self.v_cruise_pcm, 7, 30)
+         if self.v_cruise_pcm>30.0:
+           self.v_cruise_pcm = 30.0
+      if self.distance < 5+17:
+        print "inside"
+        if self.v_cruise_pcm > 30.0:
+          self.v_cruise_pcm =  30.0
       
     self.pcm_acc_status = cp.vl["PCM_CRUISE"]['CRUISE_STATE']
     self.gas_pressed = not cp.vl["PCM_CRUISE"]['GAS_RELEASED']
