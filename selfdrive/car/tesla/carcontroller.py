@@ -142,28 +142,20 @@ class CarController(object):
       can_sends.append(teslacan.create_steering_control(enable_steer_control, apply_steer, idx))
       can_sends.append(teslacan.create_epb_enable_signal(idx))
       
-      # debug looging
-      #if idx == 0:
-      #  print "Brakes: %s, Gas: %s, v_ego: %s, v_cruise_pcm: %s, v_cruise_actual: %s" % (
-      #    str(brake),
-      #    str(actuators.gas),
-      #    str(CS.v_ego),
-      #    str(CS.v_cruise_pcm),
-      #    str(CS.v_cruise_actual))
-      
       # Adaptive cruise control
       if enable_steer_control and CS.pcm_acc_status == 2:
         cruise_msg = None
         # Reduce cruise speed if necessary.
-        if brake > 0.4:
-          # Send cruise stalk dn_1st.
-          cruise_msg = teslacan.create_cruise_adjust_msg(32, CS.steering_wheel_stalk)
-        elif brake > 0.6:
+        if brake > 0.6:
           # Send cruise stalk dn_2nd.
           cruise_msg = teslacan.create_cruise_adjust_msg(8, CS.steering_wheel_stalk)
-        # Increase cruise speed if necessary.
+        # Reduce cruise speed slightly.
+        elif brake > 0.4:
+          # Send cruise stalk dn_1st.
+          cruise_msg = teslacan.create_cruise_adjust_msg(32, CS.steering_wheel_stalk)
+        # Increase cruise speed if possible.
         elif (CS.v_ego > 18 * CV.MPH_TO_MS  # cruise only works >18mph.
-              # don't add cruise speed if real speed is well below cruise speed.
+              # only add cruise speed if real speed is near cruise speed.
               and CS.v_ego * CV.MS_TO_KPH >= CS.v_cruise_actual - 1
               # TODO: figure out why actuator.gas is 0 and use that rather
               # than relying on the lack of brakes as a signal.
