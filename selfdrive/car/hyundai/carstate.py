@@ -42,6 +42,8 @@ def get_can_parser(CP):
     ("CF_Clu_CruiseSwState", "CLU11", 0),
     ("CF_Clu_CruiseSwMain", "CLU11", 0),
 
+    ("CF_Clu_InhibitD", "CLU15", 0),
+
     ("ACCEnable", "TCS13", 0),
     ("ACC_REQ", "TCS13", 0),
     ("DriverBraking", "TCS13", 0),
@@ -71,6 +73,7 @@ def get_can_parser(CP):
     ("TCS15", 10),
     ("TCS13", 50),
     ("CLU11", 50),
+    ("CLU15", 10),
     ("ESP12", 100), 
     ("EMS12", 100),
     ("CGW1", 10),
@@ -169,4 +172,10 @@ class CarState(object):
     else: 
       self.pedal_gas = cp.vl["EMS12"]['TPS']
     self.car_gas = cp.vl["EMS12"]['TPS']
-    self.gear_shifter = parse_gear_shifter(can_gear, self.car_fingerprint)
+    if self.car_fingerprint == CAR.ELANTRA:
+      if cp.vl["CLU15"]["CF_Clu_InhibitD"] == 1:
+        self.gear_shifter = "drive"
+      else:
+        self.gear_shifter = "other"
+    else:
+      self.gear_shifter = parse_gear_shifter(can_gear, self.car_fingerprint)
