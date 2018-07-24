@@ -26,6 +26,7 @@ class CarController(object):
     self.steer_angle_enabled = False
     self.ipas_reset_counter = 0
     self.turning_inhibit = 0
+    self.limited_steer = 0
     print self.car_fingerprint
 
     self.fake_ecus = set()
@@ -33,9 +34,16 @@ class CarController(object):
     self.packer = CANPacker(dbc_name)
 
   def update(self, sendcan, enabled, CS, frame, actuators):
+    # When the driver starts inputting torque, reduce the requested torque
+    #  We do not want to remove torque because we want to know if OP is still steering
+    #  And how we do it, meh, who cares, this might do.
+    if abs(CS.steer_torque_driver) > 1:
+      self.limited_steer = actuators.steer / (abs(CS.steer_torque_driver) * 2)
+    else:
+      self.limited_steer = actuators.steer
 
-    # Steering Torque Scaling
-    apply_steer = int(round((actuators.steer * STEER_MAX) + 1024))
+    # Steering Torque Scaling is to STEER_MAX, + 1024 for center
+    apply_steer = int(round((self.limited_steer * STEER_MAX) + 1024))
 
     # This is redundant clipping code, kept in case it needs to be advanced
     max_lim = 1024 + STEER_MAX
@@ -54,7 +62,7 @@ class CarController(object):
     #    Because the Turning Indicator Status is based on Lights and not Stalk, latching is 
     #    needed for the disable to work.
     if CS.left_blinker_on == 1 or CS.right_blinker_on == 1:
-      self.turning_inhibit = 150  # Disable for 1.5 Seconds after blinker turned off
+      self.turning_inhibit = 180  # Disable for 1.8 Seconds after blinker turned off
 
     if self.turning_inhibit > 0:
       self.turning_inhibit = self.turning_inhibit - 1
@@ -74,7 +82,7 @@ class CarController(object):
 
     # Limit Terminal Debugging to 5Hz
     if (frame % 20) == 0:
-      print "controlsdDebug steer", actuators.steer, "bi", self.turning_inhibit, "spd", \
+      print "controlsdDebug steer", actuators.steer, "lim steer", self.limited_steer, "bi", self.turning_inhibit, "spd", \
         CS.v_ego, "strAng", CS.angle_steers, "strToq", CS.steer_torque_driver
 
     # Index is 4 bits long, this is the counter
