@@ -163,13 +163,13 @@ class CarController(object):
           else:
             print "! Unable to create cruise DOWN message !"
         # Increase cruise speed if necessary.
-        elif (CS.v_ego > 18 * CV.MPH_TO_KPH  # cruise only works >18mph.
+        elif (CS.v_ego > 18 * CV.MPH_TO_MS  # cruise only works >18mph.
               # don't add cruise speed if real speed is well below cruise speed.
               and CS.v_ego * CV.MS_TO_KPH >= CS.v_cruise_actual - 1
               # TODO: figure out why gas actuator is 0 and use that rather
               # than relying on the lack of brakes as a signal.
               # and actuators.gas > 0.6):
-              and brakes < 0.2
+              and not brake
               # Check that the current cruise speed is below the allowed max.
               and CS.v_cruise_actual <= CS.v_cruise_pcm - 1):
           # Send cruise stalk up_1st
