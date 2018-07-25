@@ -141,12 +141,12 @@ class CarController(object):
       if (frame % 4) == 0:
         idx = (frame / 4) % 4
 
-        at_full_stop = enabled and CS.standstill
+        want_full_stop = enabled and CS.standstill
         near_stop = enabled and (CS.v_ego < P.NEAR_STOP_BRAKE_PHASE)
-        can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, canbus.chassis, apply_brake, idx, near_stop, at_full_stop))
+        can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, canbus.chassis, apply_brake, idx, near_stop, want_full_stop))
 
-        at_full_stop = enabled and CS.standstill
-        can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, canbus.powertrain, apply_gas, idx, enabled, at_full_stop))
+        want_full_stop = enabled and CS.standstill
+        can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, canbus.powertrain, apply_gas, idx, enabled, want_full_stop))
 
       # Send dashboard UI commands (ACC status), 25hz
       if (frame % 4) == 0:
