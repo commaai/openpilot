@@ -174,8 +174,8 @@ class CarController(object):
               and CS.v_cruise_actual <= CS.v_cruise_pcm - 1):
           if accel > 0.6:
             # Send cruise stalk up_2nd
-            accel = teslacan.create_cruise_adjust_msg(4, CS.steering_wheel_stalk)
-          elif actuators.gas > 0.3:
+            cruise_msg = teslacan.create_cruise_adjust_msg(4, CS.steering_wheel_stalk)
+          elif accel > 0.3:
             # Send cruise stalk up_1st
             cruise_msg = teslacan.create_cruise_adjust_msg(16, CS.steering_wheel_stalk)
         if cruise_msg:
