@@ -95,11 +95,12 @@ class CarInterface(object):
 
     ret.enableCamera = True
     # ret.enableGasInterceptor = 0x201 in fingerprint
-    ret.enableGasInterceptor = False
+    ret.enableGasInterceptor = True
     print "ECU Camera Simulated: ", ret.enableCamera
     print "ECU Gas Interceptor: ", ret.enableGasInterceptor
 
-    ret.enableCruise = not ret.enableGasInterceptor
+    #ret.enableCruise = not ret.enableGasInterceptor
+    ret.enableCruise = True
 
     # FIXME: hardcoding honda civic 2016 touring params so they can be used to
     # scale unknown params for other cars
@@ -137,7 +138,7 @@ class CarInterface(object):
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter. Otherwise, add 0.5 mph margin to not
     # conflict with PCM acc
-    ret.minEnableSpeed = -1. if (stop_and_go or ret.enableGasInterceptor) else 25.5 * CV.MPH_TO_MS
+    ret.minEnableSpeed = 18 * CV.MPH_TO_MS
 
     centerToRear = ret.wheelbase - ret.centerToFront
     # TODO: get actual value, for now starting with reasonable value for Model S
@@ -161,7 +162,8 @@ class CarInterface(object):
     ret.steerMaxV = [1.]   # max steer allowed
 
     ret.gasMaxBP = [0.]  # m/s
-    ret.gasMaxV = [0.6] if ret.enableGasInterceptor else [0.] # max gas allowed
+    #ret.gasMaxV = [0.6] if ret.enableGasInterceptor else [0.] # max gas allowed
+    ret.gasMaxV = [1.]
     ret.brakeMaxBP = [5., 20.]  # m/s
     ret.brakeMaxV = [1., 0.8]   # max brake allowed
 
