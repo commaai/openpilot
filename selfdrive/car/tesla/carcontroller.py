@@ -58,6 +58,9 @@ class CarController(object):
     self.braking = False
     self.brake_steady = 0.
     self.brake_last = 0.
+    self.accelerating = False
+    self.accel_steady = 0.
+    self.accel_last = 0.
     self.enable_camera = enable_camera
     self.packer = CANPacker(dbc_name)
     self.epas_disabled = True
@@ -75,7 +78,7 @@ class CarController(object):
 
     # *** apply brake hysteresis ***
     brake, self.braking, self.brake_steady = actuator_hystereses(actuators.brake, self.braking, self.brake_steady, CS.v_ego, CS.CP.carFingerprint)
-
+    accel, self.accelerating, self.accel_steady =  actuator_hystereses(actuators.gas, self.accelerating, self.accel_steady, CS.v_ego, CS.CP.carFingerprint)
     # *** no output if not enabled ***
     if not enabled and CS.pcm_acc_status:
       # send pcm acc cancel cmd if drive is disabled but pcm is still on, or if the system can't be activated
@@ -156,19 +159,23 @@ class CarController(object):
       if enable_steer_control and CS.pcm_acc_status == 2:
         cruise_msg = None
         # Reduce cruise speed if necessary.
-        if brake > 0.5:
+        if accel > 0.5:
           # Send cruise stalk dn_2nd.
           cruise_msg = teslacan.create_cruise_adjust_msg(8, CS.steering_wheel_stalk)
+        # Reduce speed more slightly if necessary.
+        elif accel > 0.3:
+          # Send cruise stalk dn_1st.
+          cruise_msg = teslacan.create_cruise_adjust_msg(32, CS.steering_wheel_stalk)
         # Increase cruise speed if possible.
         elif (CS.v_ego > 18 * CV.MPH_TO_MS  # cruise only works >18mph.
               # only add cruise speed if real speed is near cruise speed.
               and CS.v_ego * CV.MS_TO_KPH >= CS.v_cruise_actual - 1
               # Check that the current cruise speed is below the allowed max.
               and CS.v_cruise_actual <= CS.v_cruise_pcm - 1):
-          if actuators.gas > 0.5:
+          if actuators.gas > 0.6:
             # Send cruise stalk up_2nd
             cruise_msg = teslacan.create_cruise_adjust_msg(4, CS.steering_wheel_stalk)
-          elif actuators.gas > 0.2:
+          elif actuators.gas > 0.3:
             # Send cruise stalk up_1st
             cruise_msg = teslacan.create_cruise_adjust_msg(16, CS.steering_wheel_stalk)
         if cruise_msg:
