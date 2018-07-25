@@ -156,14 +156,23 @@ class CarController(object):
         str(pcm_accel))
       
       # Adaptive cruise control
+      # OpenPilot specifies how hard to press the brake and accelerator pedals
+      # (from 0 to 1). We translate this into small (1mph) or large (5mph)
+      # adjustments to cruise control speed based on the following constants.
+      _HARD_BRAKE_PEDAL = 0.5
+      _SOFT_BRAKE_PEDAL = 0.3
+      _SOFT_ACCEL_PEDAL = 0.3
+      _HARD_ACCEL_PEDAL = 0.6
+      # Only do adaptive cruise control while OpenPilot is steering and cruise
+      # control is active.
       if enable_steer_control and CS.pcm_acc_status == 2:
         cruise_msg = None
         # Reduce cruise speed significantly if necessary.
-        if brake > 0.5:
+        if brake > _HARD_BRAKE_PEDAL:
           # Send cruise stalk dn_2nd.
           cruise_msg = teslacan.create_cruise_adjust_msg(8, CS.steering_wheel_stalk)
         # Reduce speed slightly if necessary.
-        elif brake > 0.3:
+        elif brake > _SOFT_BRAKE_PEDAL:
           # Send cruise stalk dn_1st.
           cruise_msg = teslacan.create_cruise_adjust_msg(32, CS.steering_wheel_stalk)
         # Increase cruise speed if possible.
@@ -173,10 +182,10 @@ class CarController(object):
               and CS.v_ego * CV.MS_TO_KPH >= CS.v_cruise_actual - 1
               # Check that the current cruise speed is below the allowed max.
               and CS.v_cruise_actual <= CS.v_cruise_pcm - 1):
-          if accel > 0.6:
+          if accel > _HARD_ACCEL_PEDAL:
             # Send cruise stalk up_2nd
             cruise_msg = teslacan.create_cruise_adjust_msg(4, CS.steering_wheel_stalk)
-          elif accel > 0.3:
+          elif accel > _SOFT_ACCEL_PEDAL:
             # Send cruise stalk up_1st
             cruise_msg = teslacan.create_cruise_adjust_msg(16, CS.steering_wheel_stalk)
         if cruise_msg:

@@ -92,7 +92,7 @@ def create_cruise_adjust_msg(spdCtrlLvr_stat, real_steering_wheel_stalk):
     if spdCtrlLvr_stat in [4, 16]:
       fake_stalk['VSL_Enbl_Rq'] = 1
     fake_stalk['SpdCtrlLvr_Stat'] = spdCtrlLvr_stat
-    # message count should be 1 more than the previous.
+    # message count should be 1 more than the previous (and loop after 16)
     fake_stalk['MC_STW_ACTN_RQ'] = (int(round(
       fake_stalk['MC_STW_ACTN_RQ'])) + 1) % 16
     # CRC should initially be 0 before a new one is calculated.
@@ -105,7 +105,6 @@ def create_cruise_adjust_msg(spdCtrlLvr_stat, real_steering_wheel_stalk):
     # Set the 2nd byte, containing DTR_Dist_Rq
     struct.pack_into('B', msg, 1,  fake_stalk['DTR_Dist_Rq'])
     # Set the 3rd byte, containing turn indicator, highbeams, and wiper wash
-    # TODO: why are wipers not int?
     struct.pack_into('B', msg, 2,
                      int(round(fake_stalk['TurnIndLvr_Stat'])) +
                      (int(round(fake_stalk['HiBmLvr_Stat'])) << 2) +
