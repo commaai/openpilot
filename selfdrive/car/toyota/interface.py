@@ -110,13 +110,22 @@ class CarInterface(object):
       ret.steerKpV, ret.steerKiV = [[0.6], [0.1]]
       ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
 
-    elif candidate == [CAR.CHR, CAR.CAMRY]: #TODO: make camry-specific values here
+    elif candidate == CAR.CHR: #TODO: make camry-specific values here
       ret.safetyParam = 100
       ret.wheelbase = 2.63906
       ret.steerRatio = 13.6
       tire_stiffness_factor = 0.7933
       ret.mass = 3300 * CV.LB_TO_KG + std_cargo
       ret.steerKpV, ret.steerKiV = [[0.723], [0.0428]]
+      ret.steerKf = 0.00006
+	
+	elif candidate == CAR.CAMRY:
+      ret.safetyParam = 100
+      ret.wheelbase = 2.82448
+      ret.steerRatio = 13.7
+      tire_stiffness_factor = 0.7933
+      ret.mass = 3400 * CV.LB_TO_KG + std_cargo #mean between normal and hybrid
+      ret.steerKpV, ret.steerKiV = [[0.6], [0.1]]
       ret.steerKf = 0.00006
 
     ret.steerRateCost = 1.
