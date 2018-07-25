@@ -146,13 +146,9 @@ class CarController(object):
       if enable_steer_control and CS.pcm_acc_status == 2:
         cruise_msg = None
         # Reduce cruise speed if necessary.
-        if brake > 0.6:
+        if brake > 0.5:
           # Send cruise stalk dn_2nd.
           cruise_msg = teslacan.create_cruise_adjust_msg(8, CS.steering_wheel_stalk)
-        # Reduce cruise speed slightly.
-        elif brake > 0.4:
-          # Send cruise stalk dn_1st.
-          cruise_msg = teslacan.create_cruise_adjust_msg(32, CS.steering_wheel_stalk)
         # Increase cruise speed if possible.
         elif (CS.v_ego > 18 * CV.MPH_TO_MS  # cruise only works >18mph.
               # only add cruise speed if real speed is near cruise speed.
