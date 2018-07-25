@@ -41,19 +41,19 @@ class CamState(object):
   def update(self, cp):
     # copy can_valid
     self.can_valid = cp.can_valid
-
-    self.lkas11_b0 = cp.vl["LKAS11"]['Byte0']
-    self.lkas11_b1 = cp.vl["LKAS11"]['Byte1']
-    self.lkas11_b2 = cp.vl["LKAS11"]['Byte2']
-    self.lkas11_b3 = cp.vl["LKAS11"]['Byte3']
-    self.lkas11_b4 = cp.vl["LKAS11"]['Byte4']
-    self.lkas11_b5 = cp.vl["LKAS11"]['Byte5']
-    self.lkas11_b6 = cp.vl["LKAS11"]['Byte6']
-    self.lkas11_b7 = cp.vl["LKAS11"]['Byte7']
     
-    self.lkas12_b0 = cp.vl["LKAS12"]['Byte0']
-    self.lkas12_b1 = cp.vl["LKAS12"]['Byte1']
-    self.lkas12_b2 = cp.vl["LKAS12"]['Byte2']
-    self.lkas12_b3 = cp.vl["LKAS12"]['Byte3']
-    self.lkas12_b4 = cp.vl["LKAS12"]['Byte4']
-    self.lkas12_b5 = cp.vl["LKAS12"]['Byte5']
+    self.lkas11_b0 = int(cp.vl["LKAS11"]['Byte0'])
+    self.lkas11_b1 = int(cp.vl["LKAS11"]['Byte1'])
+    self.lkas11_b2 = int(cp.vl["LKAS11"]['Byte2'])
+    self.lkas11_b3 = int(cp.vl["LKAS11"]['Byte3'])
+    self.lkas11_b4 = int(cp.vl["LKAS11"]['Byte4'])
+    self.lkas11_b5 = int(cp.vl["LKAS11"]['Byte5'])
+    self.lkas11_b6 = int(cp.vl["LKAS11"]['Byte6'])
+    self.lkas11_b7 = int(cp.vl["LKAS11"]['Byte7'])
+    
+    self.lkas12_b0 = int(cp.vl["LKAS12"]['Byte0'])
+    self.lkas12_b1 = int(cp.vl["LKAS12"]['Byte1'])
+    self.lkas12_b2 = int(cp.vl["LKAS12"]['Byte2'])
+    self.lkas12_b3 = int(cp.vl["LKAS12"]['Byte3'])
+    self.lkas12_b4 = int(cp.vl["LKAS12"]['Byte4'])
+    self.lkas12_b5 = int(cp.vl["LKAS12"]['Byte5'])

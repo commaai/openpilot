@@ -111,14 +111,13 @@ class CarController(object):
 
 
     # PassThrough
-    lkas11_byte0 = self.lanes + (CamS.lkas11_b0 & 0xC3)
+    lkas11_byte0 = int(self.lanes) + (CamS.lkas11_b0 & 0xC3)
     lkas11_byte1 = CamS.lkas11_b1 & 0xFC
     lkas11_byte2 = apply_steer_a
     lkas11_byte3 = apply_steer_b + (CamS.lkas11_b3 & 0xF0)
     lkas11_byte4 = CamS.lkas11_b4
     lkas11_byte5 = CamS.lkas11_b5
     lkas11_byte7 = CamS.lkas11_b7
-
 
 
     # Create Checksum - Sorento checksum ignores the last byte, others do not.
