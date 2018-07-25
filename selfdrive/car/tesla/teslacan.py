@@ -93,8 +93,8 @@ def create_cruise_adjust_msg(spdCtrlLvr_stat, real_steering_wheel_stalk):
       fake_stalk['VSL_Enbl_Rq'] = 1
     fake_stalk['SpdCtrlLvr_Stat'] = spdCtrlLvr_stat
     # message count should be 1 more than the previous.
-    # TODO: figure out why mc_stw_actn_rq is a float 
-    fake_stalk['MC_STW_ACTN_RQ'] = (int(fake_stalk['MC_STW_ACTN_RQ']) + 1) % 16
+    fake_stalk['MC_STW_ACTN_RQ'] = (int(round(
+      fake_stalk['MC_STW_ACTN_RQ'])) + 1) % 16
     # CRC should initially be 0 before a new one is calculated.
     fake_stalk['CRC_STW_ACTN_RQ'] = 0
     
