@@ -163,13 +163,14 @@ class CarController(object):
         elif (CS.v_ego > 18 * CV.MPH_TO_MS  # cruise only works >18mph.
               # only add cruise speed if real speed is near cruise speed.
               and CS.v_ego * CV.MS_TO_KPH >= CS.v_cruise_actual - 1
-              # TODO: figure out why actuator.gas is 0 and use that rather
-              # than relying on the lack of brakes as a signal.
-              and not brake
               # Check that the current cruise speed is below the allowed max.
               and CS.v_cruise_actual <= CS.v_cruise_pcm - 1):
-          # Send cruise stalk up_1st
-          cruise_msg = teslacan.create_cruise_adjust_msg(16, CS.steering_wheel_stalk)
+          if actuators.gas > 0.5:
+            # Send cruise stalk up_2nd
+            cruise_msg = teslacan.create_cruise_adjust_msg(4, CS.steering_wheel_stalk)
+          elif actuators.gas > 0.2:
+            # Send cruise stalk up_1st
+            cruise_msg = teslacan.create_cruise_adjust_msg(16, CS.steering_wheel_stalk)
         if cruise_msg:
           can_sends.append(cruise_msg)
 
