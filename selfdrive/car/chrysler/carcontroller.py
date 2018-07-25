@@ -52,6 +52,7 @@ class CarController(object):
     self.controls_allowed = True
     self.last_steer = 0
     self.last_angle = 0
+    self.send_new_status = False
     self.accel_steady = 0.
     self.car_fingerprint = car_fingerprint
     self.alert_active = False
@@ -134,6 +135,14 @@ class CarController(object):
 
     self.standstill_req = False #?
 
+    moving_fast = True  # for status message
+    if CS.v_ego < 3:  # don't steer if going under 6mph to not lock out LKAS
+      apply_angle = 0
+      apply_steer = 0
+      moving_fast = False
+
+    if self.last_steer == 0 and apply_steer != 0:
+      self.send_new_status = True
     self.last_steer = apply_steer
     self.last_angle = apply_angle
     self.last_accel = apply_accel
@@ -143,25 +152,15 @@ class CarController(object):
 
     #*** control msgs ***
     #print "steer", apply_steer, min_lim, max_lim, CS.steer_torque_motor
-
-    # toyota can trace shows this message at 42Hz, with counter adding alternatively 1 and 2;
-    # sending it at 100Hz seem to allow a higher rate limit, as the rate limit seems imposed
-    # on consecutive messages
-    # We could try this higher message rate to turn wheel more. but we're just sending angle?
     # can_sends.append(create_steer_command(self.packer, apply_steer, frame))
     # TODO verify units and see if we want apply_steer or apply_angle
 
-    moving_fast = True  # for status message
-    if CS.v_ego < 3:  # don't steer if going under 6mph to not lock out LKAS 
-      apply_angle = 0
-      apply_steer = 0
-      moving_fast = False
-      
     # frame is 100Hz (0.01s period)
     if (frame % 10 == 0) or self.first_time:  # 0.1s period
       can_sends.append(create_2d9())
-    if (frame % 25 == 0) or self.first_time:  # 0.25s period
+    if (frame % 25 == 0) or self.first_time or self.send_new_status:  # 0.25s period
       can_sends.append(create_2a6(CS.gear_shifter, apply_steer, moving_fast))
+      self.send_new_status = False
     new_msg = create_292(int(apply_steer * 5.1), frame, moving_fast)
     can_sends.append(new_msg)  # degrees * 5.1 -> car steering units
     [addr, _, dat, _] = new_msg

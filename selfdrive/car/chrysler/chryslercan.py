@@ -71,14 +71,17 @@ def create_2a6(gear, apply_steer, moving_fast):
     msg = '0300080000000000'.decode('hex')  # when torqueing, display yellow.
   return make_can_msg(0x2a6, msg)
 
+LIMIT = 230-6  # 230 is documented limit # 171 is max from main example
+STEP = 3  # 3 is stock. originally 20. 100 is fine. 200 is too much it seems.
+
 def create_292(apply_angle, frame, moving_fast):
   apply_angle = int(apply_angle)
-  if apply_angle > 230:
-    apply_angle = 230
-  if apply_angle < -230:
-    apply_angle = -230
+  if apply_angle > LIMIT:
+    apply_angle = LIMIT
+  if apply_angle < -LIMIT:
+    apply_angle = -LIMIT
   combined_torque = apply_angle + 1024  # 1024 is straight. more is left, less is right.
-  high_status = 0x00
+  high_status = 0x10  #!!  0x00 here is more correct, but can_game_sticky uses 0x10
   if moving_fast:
     high_status = 0x10
   start = [high_status | (combined_torque >> 8), combined_torque & 0xff, 00, 00]
