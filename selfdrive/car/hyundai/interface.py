@@ -5,6 +5,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.hyundai.carstate import CarState, get_can_parser
+from selfdrive.car.hyundai.camstate import CamState, get_can_parser2
 from selfdrive.car.hyundai.values import ECU, check_ecu_msgs, CAR
 from selfdrive.swaglog import cloudlog
 
@@ -30,8 +31,10 @@ class CarInterface(object):
 
     # *** init the major players ***
     self.CS = CarState(CP)
+    self.CamS = CamState(CP)
 
     self.cp = get_can_parser(CP)
+    self.cp2 = get_can_parser2(CP)
 
     # sending if read only is False
     if sendcan is not None:
@@ -129,6 +132,7 @@ class CarInterface(object):
     canMonoTimes = []
     self.cp.update(int(sec_since_boot() * 1e9), False)
     self.CS.update(self.cp)
+    self.CamS.update(self.cp2)
     # create message
     ret = car.CarState.new_message()
     # speeds
@@ -256,7 +260,7 @@ class CarInterface(object):
   # to be called @ 100hz
   def apply(self, c):
 
-    self.CC.update(self.sendcan, c.enabled, self.CS, self.frame, c.actuators)
+    self.CC.update(self.sendcan, c.enabled, self.CS, self.frame, c.actuators, self.CamS)
 
     self.frame += 1
     return False

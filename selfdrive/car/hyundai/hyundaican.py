@@ -50,7 +50,17 @@ def create_lkas11(packer, byte0, byte1, byte2, byte3, \
 
   return packer.make_can_msg("LKAS11", 0, values)
 
+def create_lkas12b(packer, byte0, byte1, byte2, byte3, byte4, byte5):
+  values = {
+    'Byte0' : byte0,
+    'Byte1' : byte1,
+    'Byte2' : byte2,
+    'Byte3' : byte3,
+    'Byte4' : byte4,
+    'Byte5' : byte5,
+  }
 
+  return packer.make_can_msg("LKAS12", 0, values)
 
 
 def create_lkas12(packer, byte4, byte5):
