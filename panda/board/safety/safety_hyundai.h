@@ -1,8 +1,5 @@
 // Kia Hyundai Safety
 
-const int MAX_STEER = 
-
-
 static int hyundai_ign_hook() {
   return true;
 }
