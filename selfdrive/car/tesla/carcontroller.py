@@ -164,13 +164,11 @@ class CarController(object):
           # Send cruise stalk dn_1st.
           cruise_msg = teslacan.create_cruise_adjust_msg(32, CS.steering_wheel_stalk)
         # Increase cruise speed if possible.
-        elif (CS.v_ego > 18 * CV.MPH_TO_MS  # cruise only works >18mph.
-              # Check that the current cruise speed is below the allowed max.
-              and CS.v_cruise_actual <= CS.v_cruise_pcm - 1):
-          if speed_offset > 5:
+        elif CS.v_ego > 18 * CV.MPH_TO_MS:  # cruise only works >18mph.
+          if speed_offset > 5 and CS.v_cruise_actual <= CS.v_cruise_pcm - 5:
             # Send cruise stalk up_2nd
             cruise_msg = teslacan.create_cruise_adjust_msg(4, CS.steering_wheel_stalk)
-          elif speed_offset > 1:
+          elif speed_offset > 1 and CS.v_cruise_actual <= CS.v_cruise_pcm - 1:
             # Send cruise stalk up_1st
             cruise_msg = teslacan.create_cruise_adjust_msg(16, CS.steering_wheel_stalk)
         if cruise_msg:
