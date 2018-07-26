@@ -118,6 +118,7 @@ void *safety_setter_thread(void *s) {
   case (int)cereal::CarParams::SafetyModels::CHRYSLER:
     // safety_setting = SAFETY_ALLOUTPUT;
     safety_setting = SAFETY_CHRYSLER;
+    break;
   default:
     LOGE("unknown safety model: %d", safety_model);
   }
