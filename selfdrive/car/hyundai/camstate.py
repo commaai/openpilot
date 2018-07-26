@@ -23,8 +23,8 @@ def get_can_parser2(CP):
   ]
 
   checks = [
-    ("LKAS11", 100),
-    ("LKAS12", 10)
+    ("LKAS11", 100),    # LKAS11 = 100Hz
+    ("LKAS12", 10)      # LKAS12 = 10Hz
   ]
 
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 1)
@@ -42,6 +42,7 @@ class CamState(object):
     # copy can_valid
     self.can_valid = cp.can_valid
     
+    # LKAS11 From Camera
     self.lkas11_b0 = int(cp.vl["LKAS11"]['Byte0'])
     self.lkas11_b1 = int(cp.vl["LKAS11"]['Byte1'])
     self.lkas11_b2 = int(cp.vl["LKAS11"]['Byte2'])
@@ -50,7 +51,8 @@ class CamState(object):
     self.lkas11_b5 = int(cp.vl["LKAS11"]['Byte5'])
     self.lkas11_b6 = int(cp.vl["LKAS11"]['Byte6'])
     self.lkas11_b7 = int(cp.vl["LKAS11"]['Byte7'])
-    
+
+    # LKAS10 From Camera    
     self.lkas12_b0 = int(cp.vl["LKAS12"]['Byte0'])
     self.lkas12_b1 = int(cp.vl["LKAS12"]['Byte1'])
     self.lkas12_b2 = int(cp.vl["LKAS12"]['Byte2'])

@@ -71,7 +71,7 @@ class CarInterface(object):
     tireStiffnessRear = 90000
 
     ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
-    ret.steerActuatorDelay = 0.10  # Default delay, Prius has larger delay
+    ret.steerActuatorDelay = 0.15  # Default delay, Prius has larger delay
 
     #borrowing a lot from corolla, given similar car size
     ret.steerKf = 0.00008   # full torque for 20 deg at 80mph means 0.00007818594
@@ -169,7 +169,7 @@ class CarInterface(object):
     # cruise state
     ret.cruiseState.enabled = self.CS.pcm_acc_status != 0
     if self.CS.pcm_acc_status != 0:
-      ret.cruiseState.speed = self.CS.v_ego * CV.KPH_TO_MS
+      ret.cruiseState.speed = self.CS.cruise_set_speed
     else:
       ret.cruiseState.speed = 0
     ret.cruiseState.available = bool(self.CS.main_on)

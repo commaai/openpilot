@@ -68,12 +68,9 @@ class CarController(object):
     if self.turning_inhibit > 0:
       self.turning_inhibit = self.turning_inhibit - 1
 
-
-
     if not enabled or self.turning_inhibit > 0:
       apply_steer = 1024     # 1024 is midpoint (no steer)
-      self.last_steer = 1024
-      self.lanes = 2         # Lanes is shown on the LKAS screen on the Dash
+      self.last_steer = 1024 # Reset Last Steer
     else:
       self.lanes = 3 * 4     # bit 0 = Right Lane, bit 1 = Left Lane, Offset by 2 bits in byte.
 
@@ -81,80 +78,80 @@ class CarController(object):
 
     can_sends = []
 
-    # Limit Terminal Debugging to 5Hz
-    if (frame % 20) == 0:
-      print "controlsdDebug steer", actuators.steer, "lim steer", self.limited_steer, "bi", self.turning_inhibit, "spd", \
-        CS.v_ego, "strAng", CS.angle_steers, "strToq", CS.steer_torque_driver
-
     # Index is 4 bits long, this is the counter
     self.idx = self.idx + 1
     if self.idx >= 16:
       self.idx = 0
     
     # Byte 4 is used for Index and HBA
+    #   We generate the Index, but pass through HBA
     lkas11_byte4 = self.idx * 16
 
     # Split apply steer Word into 2 Bytes
     apply_steer_a = apply_steer & 0xFF
     apply_steer_b = (apply_steer >> 8) & 0xFF
 
-    #print "check", steer_chksum_a, steer_chksum_b
 
-    # If requested to steer, turn on ActToi
+    # If Request to Steer is anything but 0 torque, turn on ActToi
     if apply_steer != 1024:
       apply_steer_b = apply_steer_b + 0x08
 
-    # High Beam Assist State
-    if CS.car_fingerprint == CAR.STINGER or CS.car_fingerprint == CAR.ELANTRA:
-      apply_steer_b = apply_steer_b + 0x20
-      lkas11_byte4 = lkas11_byte4 + 0x04
+
+    if enabled:
+      # When we send Torque signals that the camera does not expet, it faults.
+      #   This masks the fault for 500ms after bringing stock back on.
+      #   This does NOT mean that the factory system will be enabled, it will still be off.
+      self.hide_lkas_fault = 50
+
+      # Generate the 7 bytes as needed for OP Control.
+      #   Anything we don't generate, pass through from camera
+      lkas11_byte0 = int(self.lanes) + (CamS.lkas11_b0 & 0xC3)
+      lkas11_byte1 = CamS.lkas11_b1
+      lkas11_byte2 = apply_steer_a
+      lkas11_byte3 = apply_steer_b + (CamS.lkas11_b3 & 0xE0)   # ToiFlt always comes on, don't pass it
+      lkas11_byte4 = lkas11_byte4 + (CamS.lkas11_b4 & 0x0F)    # Always use our counter
+      lkas11_byte5 = CamS.lkas11_b5
+      lkas11_byte7 = CamS.lkas11_b7
+    else:
+      # Pass Through the 7 bytes so that Factory LKAS is in control
+      #   We still use our counter, because otherwise duplicates and missed messages from the camera
+      #   is possible due to the implementation method.  As such, we recreate the checksum as well
+      # Byte 0 defined below due to Fault Masking
+      lkas11_byte1 = CamS.lkas11_b1
+      lkas11_byte2 = CamS.lkas11_b2
+      # Byte 3 defined below due to Fault Masking
+      lkas11_byte4 = lkas11_byte4 + (CamS.lkas11_b4 & 0x0F)    # Always use our counter
+      lkas11_byte5 = CamS.lkas11_b5
+      lkas11_byte7 = CamS.lkas11_b7
+      # This is the Fault Masking needed in byte 0 and byte 3
+      if self.hide_lkas_fault > 0:
+        lkas11_byte0 = int(self.lanes) + (CamS.lkas11_b0 & 0xC3)
+        lkas11_byte3 = CamS.lkas11_b3 & 0xE7
+        self.hide_lkas_fault = self.hide_lkas_fault - 1
+      else:
+        lkas11_byte0 = CamS.lkas11_b0
+        lkas11_byte3 = CamS.lkas11_b3
+        
 
 
-    # PassThrough
-    lkas11_byte0 = int(self.lanes) + (CamS.lkas11_b0 & 0xC3)
-    lkas11_byte1 = CamS.lkas11_b1
-    lkas11_byte2 = apply_steer_a
-    lkas11_byte3 = apply_steer_b + (CamS.lkas11_b3 & 0xE0) # ToiFlt always comes on, don't pass it
-    lkas11_byte4 = CamS.lkas11_b4
-    lkas11_byte5 = CamS.lkas11_b5
-    lkas11_byte7 = CamS.lkas11_b7
-
-
-    # Create Checksum - Sorento checksum ignores the last byte, others do not.
-    # TODO Check if Sorento will accept the other checksum
+    # Create Checksum
+    #   Sorento checksum is Byte 0 to 5
+    #   Other models appear to be Byte 0 to Byte 5 as well as Byte 7
     if CS.car_fingerprint == CAR.SORENTO:
+      # 6 Byte Checksum
       checksum = (lkas11_byte0 + lkas11_byte1 + lkas11_byte2 + lkas11_byte3 + \
         lkas11_byte4 + lkas11_byte5) % 256
     else:
+      # 7 Byte Checksum
       checksum = (lkas11_byte0 + lkas11_byte1 + lkas11_byte2 + lkas11_byte3 + \
         lkas11_byte4 + lkas11_byte5 + lkas11_byte7) % 256
     
 
-    # Creake LKAS11 Message at 100Hz
-    #can_sends.append(create_lkas11(self.packer, lkas11_byte0. + lkas11_byte1, \
-    #  0x00, lkas11_byte2, lkas11_byte3, lkas11_byte4, \
-    #  0x00, checksum, 0x18))
 
-    # LKAS11 Message, Full Passthrough if disabled
-    if enabled:
-      can_sends.append(create_lkas11(self.packer, lkas11_byte0, \
-        lkas11_byte1, lkas11_byte2, lkas11_byte3, lkas11_byte4, \
-        lkas11_byte5, checksum, lkas11_byte7))
-      self.hide_lkas_fault = 100
-    else:
-      # When we send Torque signals that the camera does not expet, it faults.
-      #   This masks the factory fault for 1 second after bringing it back on.
-      #   This does NOT mean that the factory system will be enabled.
-      if self.hide_lkas_fault > 0:
-        lkas11_byte3 = CamS.lkas11_b3 & 0xE7
-        self.hide_lkas_fault = self.hide_lkas_fault - 1
-      else:
-        lkas11_byte3 = CamS.lkas11_b3
-        lkas11_byte0 = CamS.lkas11_b0
-
-      can_sends.append(create_lkas11(self.packer, lkas11_byte0, \
-        CamS.lkas11_b1, CamS.lkas11_b2, lkas11_byte3, CamS.lkas11_b4, \
-        CamS.lkas11_b5, CamS.lkas11_b6, CamS.lkas11_b7))
+    # Create LKAS11 Message at 100Hz
+    can_sends.append(create_lkas11(self.packer, lkas11_byte0, \
+      lkas11_byte1, lkas11_byte2, lkas11_byte3, lkas11_byte4, \
+      lkas11_byte5, checksum, lkas11_byte7))
 
    
 
@@ -162,11 +159,15 @@ class CarController(object):
     if (frame % 10) == 0:
       can_sends.append(create_lkas12b(self.packer, CamS.lkas12_b0, CamS.lkas12_b1, \
         CamS.lkas12_b2, CamS.lkas12_b3, CamS.lkas12_b4, CamS.lkas12_b5))
-      # if CS.car_fingerprint == CAR.SORENTO:
-      #   can_sends.append(create_lkas12(self.packer, 0x20, 0x00))
-      # if CS.car_fingerprint == CAR.STINGER:
-      #   can_sends.append(create_lkas12(self.packer, 0x80, 0x05))
 
 
+
+    # Limit Terminal Debugging to 5Hz
+    if (frame % 20) == 0:
+      print "controlsdDebug steer", actuators.steer, "strToq", CS.steer_torque_driver, "lim steer", self.limited_steer, "v_ego", \
+        CS.v_ego, "strAng", CS.angle_steers
+
+
+    
     # Send messages to canbus
     sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
