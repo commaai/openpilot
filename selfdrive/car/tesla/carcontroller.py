@@ -147,11 +147,13 @@ class CarController(object):
       
       # Adaptive cruise control
       # Only do adaptive cruise control while OpenPilot is steering and cruise
-      # control is active. And check less frequently, since sending frequent
+      # control is active. And check infrequently, since sending frequent
       # adjustments makes the car thing we are doing a 'long press' on the
       # cruise stalk, resulting in small jerky speed adjustments.
       if enable_steer_control and CS.pcm_acc_status == 2 and idx == 0:
         cruise_msg = None
+        # The difference between OP's target speed and the current cruise
+        # control speed, in MPH.
         speed_offset = (pcm_speed * CV.MS_TO_KPH - CS.v_cruise_actual) * CV.KPH_TO_MPH
         # Reduce cruise speed significantly if necessary.
         if speed_offset < -5:
