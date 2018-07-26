@@ -89,7 +89,7 @@ class CarController(object):
     apply_steer = int(round(actuators.steer * STEER_MAX))
     # TODO use these values to decide if we should use apply_steer or apply_angle
     outp = 'carcontroller apply_steer %s  actuators.steerAngle %s' % (apply_steer, actuators.steerAngle)
-    print outp
+    # print outp
     logging.info(outp)
 
     # max_lim = min(max(CS.steer_torque_motor + STEER_ERROR_MAX, STEER_ERROR_MAX), STEER_MAX)
@@ -124,10 +124,10 @@ class CarController(object):
 
       apply_angle = clip(apply_angle, self.last_angle - angle_rate_lim, self.last_angle + angle_rate_lim)
       outp = '  apply_angle:%s  angle_lim:%s  angle_rate_lim:%s  apply_steer:%s' % (apply_angle, angle_lim, angle_rate_lim, apply_steer)
-      print outp
+      # print outp
       logging.info(outp)
       outp = '  CS.angle_steers:%s  CS.v_ego:%s' % (CS.angle_steers, CS.v_ego)
-      print outp
+      # print outp
       logging.info(outp)
 #    else:
 #      apply_angle = CS.angle_steers  # just sets it to the current steering angle
@@ -166,7 +166,7 @@ class CarController(object):
     [addr, _, dat, _] = new_msg
     outp  = ('make_can_msg:%s  len:%d  %s' % ('0x{:02x}'.format(addr), len(dat),
                                               ' '.join('{:02x}'.format(ord(c)) for c in dat)))
-    print outp
+    # print outp
     logging.info(outp)
 
     self.first_time = False
