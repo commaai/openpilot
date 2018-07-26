@@ -147,28 +147,35 @@ class CarController(object):
       
       # Adaptive cruise control
       # Only do adaptive cruise control while OpenPilot is steering and cruise
-      # control is active. And check infrequently, since sending frequent
+      # control is active. And check infrequently, since sending repeated
       # adjustments makes the car thing we are doing a 'long press' on the
       # cruise stalk, resulting in small jerky speed adjustments.
+      short_press_kph = 1  # KPH
+      long_press_kph = 5  # KPH
+      # Imperial unit cars adjust in MPH.
+      if CS.CP.vl["DI_state"]['DI_speedUnits'] == 0:
+        short_press_kph = short_press_kph * CV.MPH_TO_KPH
+        long_press_kph = long_press_kph * CV.MPH_TO_KPH
+        
       if enable_steer_control and CS.pcm_acc_status == 2 and idx == 0:
         cruise_msg = None
         # The difference between OP's target speed and the current cruise
-        # control speed, in MPH.
-        speed_offset = (pcm_speed * CV.MS_TO_KPH - CS.v_cruise_actual) * CV.KPH_TO_MPH
+        # control speed, in KPH.
+        speed_offset = (pcm_speed * CV.MS_TO_KPH - CS.v_cruise_actual)
         # Reduce cruise speed significantly if necessary.
-        if speed_offset < -5:
+        if speed_offset < (-1 * long_press_kph):
           # Send cruise stalk dn_2nd.
           cruise_msg = teslacan.create_cruise_adjust_msg(8, CS.steering_wheel_stalk)
         # Reduce speed slightly if necessary.
-        elif speed_offset < -1:
+        elif speed_offset < (-1 * short_press_kph):
           # Send cruise stalk dn_1st.
           cruise_msg = teslacan.create_cruise_adjust_msg(32, CS.steering_wheel_stalk)
         # Increase cruise speed if possible.
         elif CS.v_ego > 18 * CV.MPH_TO_MS:  # cruise only works >18mph.
-          if speed_offset > 5 and CS.v_cruise_actual <= CS.v_cruise_pcm - 5:
+          if speed_offset > long_press_kph and CS.v_cruise_actual <= CS.v_cruise_pcm - long_press_kph:
             # Send cruise stalk up_2nd
             cruise_msg = teslacan.create_cruise_adjust_msg(4, CS.steering_wheel_stalk)
-          elif speed_offset > 1 and CS.v_cruise_actual <= CS.v_cruise_pcm - 1:
+          elif speed_offset > short_press_kph and CS.v_cruise_actual <= CS.v_cruise_pcm - short_press_kph:
             # Send cruise stalk up_1st
             cruise_msg = teslacan.create_cruise_adjust_msg(16, CS.steering_wheel_stalk)
         if cruise_msg:
