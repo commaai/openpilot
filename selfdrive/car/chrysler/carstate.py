@@ -1,6 +1,6 @@
-import os
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
+from selfdrive.car.chrysler.values import DBC
 from common.kalman.simple_kalman import KF1D
 import numpy as np
 
@@ -43,19 +43,8 @@ def get_can_parser(CP):
   ]
 
   checks = [
-    # TODO what are checks used for?
-    # ("BRAKE_MODULE", 40),
-    # ("GAS_PEDAL", 33),
-    # ("WHEEL_SPEEDS", 80),
-    # ("STEER_ANGLE_SENSOR", 80),
-    # ("PCM_CRUISE", 33),
-    # ("PCM_CRUISE_2", 33),
-    # ("STEER_TORQUE_SENSOR", 50),
-    # ("EPS_STATUS", 25),
   ]
 
-  # dbc_f = 'chrysler_pacifica_2017_hybrid.dbc'
-  #return CANParser(os.path.splitext(dbc_f)[0], signals, checks, 0)
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
 
