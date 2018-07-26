@@ -150,8 +150,9 @@ class CarController(object):
         self.hide_lkas_fault = self.hide_lkas_fault - 1
       else:
         lkas11_byte3 = CamS.lkas11_b3
+        lkas11_byte0 = CamS.lkas11_b0
 
-      can_sends.append(create_lkas11(self.packer, CamS.lkas11_b0, \
+      can_sends.append(create_lkas11(self.packer, lkas11_byte0, \
         CamS.lkas11_b1, CamS.lkas11_b2, lkas11_byte3, CamS.lkas11_b4, \
         CamS.lkas11_b5, CamS.lkas11_b6, CamS.lkas11_b7))
 
