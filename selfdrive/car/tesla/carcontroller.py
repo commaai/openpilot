@@ -150,14 +150,15 @@ class CarController(object):
       # control is active. And check infrequently, since sending repeated
       # adjustments makes the car thing we are doing a 'long press' on the
       # cruise stalk, resulting in small jerky speed adjustments.
-      short_press_kph = 1  # KPH
-      long_press_kph = 5  # KPH
-      # Imperial unit cars adjust in MPH.
-      if CS.CP.vl["DI_state"]['DI_speedUnits'] == 0:
-        short_press_kph = short_press_kph * CV.MPH_TO_KPH
-        long_press_kph = long_press_kph * CV.MPH_TO_KPH
-        
       if enable_steer_control and CS.pcm_acc_status == 2 and idx == 0:
+        # Metric cars adjust cruise in units of 1 and 5 kph
+        short_press_kph = 1
+        long_press_kph = 5
+        # Imperial unit cars adjust cruise in units of 1 and 5 mph
+        if CS.CP.vl["DI_state"]['DI_speedUnits'] == 0:
+          short_press_kph = short_press_kph * CV.MPH_TO_KPH
+          long_press_kph = long_press_kph * CV.MPH_TO_KPH
+        
         cruise_msg = None
         # The difference between OP's target speed and the current cruise
         # control speed, in KPH.
