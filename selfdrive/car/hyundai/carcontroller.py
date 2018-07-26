@@ -27,6 +27,7 @@ class CarController(object):
     self.ipas_reset_counter = 0
     self.turning_inhibit = 0
     self.limited_steer = 0
+    self.hide_lkas_fault = 100
     print self.car_fingerprint
 
     self.fake_ecus = set()
@@ -96,7 +97,6 @@ class CarController(object):
     # Split apply steer Word into 2 Bytes
     apply_steer_a = apply_steer & 0xFF
     apply_steer_b = (apply_steer >> 8) & 0xFF
-    apply_steer_b = apply_steer_b
 
     #print "check", steer_chksum_a, steer_chksum_b
 
@@ -112,9 +112,9 @@ class CarController(object):
 
     # PassThrough
     lkas11_byte0 = int(self.lanes) + (CamS.lkas11_b0 & 0xC3)
-    lkas11_byte1 = CamS.lkas11_b1 & 0xFC
+    lkas11_byte1 = CamS.lkas11_b1
     lkas11_byte2 = apply_steer_a
-    lkas11_byte3 = apply_steer_b #+ (CamS.lkas11_b3 & 0xF0)
+    lkas11_byte3 = apply_steer_b + (CamS.lkas11_b3 & 0xE0) # ToiFlt always comes on, don't pass it
     lkas11_byte4 = CamS.lkas11_b4
     lkas11_byte5 = CamS.lkas11_b5
     lkas11_byte7 = CamS.lkas11_b7
@@ -140,10 +140,21 @@ class CarController(object):
       can_sends.append(create_lkas11(self.packer, lkas11_byte0, \
         lkas11_byte1, lkas11_byte2, lkas11_byte3, lkas11_byte4, \
         lkas11_byte5, checksum, lkas11_byte7))
+      self.hide_lkas_fault = 100
     else:
+      # When we send Torque signals that the camera does not expet, it faults.
+      #   This masks the factory fault for 1 second after bringing it back on.
+      #   This does NOT mean that the factory system will be enabled.
+      if self.hide_lkas_fault > 0:
+        lkas11_byte3 = CamS.lkas11_b3 & 0xEF
+        self.hide_lkas_fault = self.hide_lkas_fault - 1
+      else:
+        lkas11_byte3 = CamS.lkas11_b3
+
       can_sends.append(create_lkas11(self.packer, CamS.lkas11_b0, \
-        CamS.lkas11_b1, CamS.lkas11_b2, CamS.lkas11_b3, CamS.lkas11_b4, \
+        CamS.lkas11_b1, CamS.lkas11_b2, lkas11_byte3, CamS.lkas11_b4, \
         CamS.lkas11_b5, CamS.lkas11_b6, CamS.lkas11_b7))
+
    
 
     # Create LKAS12 Message at 10Hz
