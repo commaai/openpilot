@@ -114,7 +114,7 @@ class CarController(object):
     lkas11_byte0 = int(self.lanes) + (CamS.lkas11_b0 & 0xC3)
     lkas11_byte1 = CamS.lkas11_b1 & 0xFC
     lkas11_byte2 = apply_steer_a
-    lkas11_byte3 = apply_steer_b + (CamS.lkas11_b3 & 0xF0)
+    lkas11_byte3 = apply_steer_b #+ (CamS.lkas11_b3 & 0xF0)
     lkas11_byte4 = CamS.lkas11_b4
     lkas11_byte5 = CamS.lkas11_b5
     lkas11_byte7 = CamS.lkas11_b7
@@ -138,8 +138,8 @@ class CarController(object):
     # LKAS11 Message, Full Passthrough if disabled
     if enabled:
       can_sends.append(create_lkas11(self.packer, lkas11_byte0, \
-        lkas11_byte1, lkas11_byte2, lkas11_byte3, CamS.lkas11_b4, \
-        CamS.lkas11_b5, checksum, CamS.lkas11_b7))
+        lkas11_byte1, lkas11_byte2, lkas11_byte3, lkas11_byte4, \
+        lkas11_byte5, checksum, lkas11_byte7))
     else:
       can_sends.append(create_lkas11(self.packer, CamS.lkas11_b0, \
         CamS.lkas11_b1, CamS.lkas11_b2, CamS.lkas11_b3, CamS.lkas11_b4, \
