@@ -39,8 +39,7 @@
 #define SAFETY_HONDA_BOSCH 4
 #define SAFETY_FORD 5
 #define SAFETY_CADILLAC 6
-// TODO(adhintz) give Chrysler its own safety value and flash Panda.
-#define SAFETY_CHRYSLER 6
+#define SAFETY_CHRYSLER 7
 #define SAFETY_TOYOTA_NOLIMITS 0x1336
 #define SAFETY_ALLOUTPUT 0x1337
 
