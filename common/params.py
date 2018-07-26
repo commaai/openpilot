@@ -37,7 +37,7 @@ def mkdirs_exists_ok(path):
       raise
 
 class TxType(Enum):
-  PERSISTANT = 1
+  PERSISTENT = 1
   CLEAR_ON_MANAGER_START = 2
   CLEAR_ON_CAR_START = 3
 
@@ -47,37 +47,38 @@ class UnknownKeyName(Exception):
 keys = {
 # written: manager
 # read:    loggerd, uploaderd, offroad
-  "DongleId": TxType.PERSISTANT,
-  "AccessToken": TxType.PERSISTANT,
-  "Version": TxType.PERSISTANT,
-  "TrainingVersion": TxType.PERSISTANT,
-  "GitCommit": TxType.PERSISTANT,
-  "GitBranch": TxType.PERSISTANT,
-  "GitRemote": TxType.PERSISTANT,
+  "DongleId": TxType.PERSISTENT,
+  "AccessToken": TxType.PERSISTENT,
+  "Version": TxType.PERSISTENT,
+  "TrainingVersion": TxType.PERSISTENT,
+  "GitCommit": TxType.PERSISTENT,
+  "GitBranch": TxType.PERSISTENT,
+  "GitRemote": TxType.PERSISTENT,
 # written: baseui
 # read:    ui, controls
-  "IsMetric": TxType.PERSISTANT,
-  "IsRearViewMirror": TxType.PERSISTANT,
-  "IsFcwEnabled": TxType.PERSISTANT,
-  "HasAcceptedTerms": TxType.PERSISTANT,
-  "CompletedTrainingVersion": TxType.PERSISTANT,
-  "IsUploadVideoOverCellularEnabled": TxType.PERSISTANT,
+  "IsMetric": TxType.PERSISTENT,
+  "IsFcwEnabled": TxType.PERSISTENT,
+  "HasAcceptedTerms": TxType.PERSISTENT,
+  "CompletedTrainingVersion": TxType.PERSISTENT,
+  "IsUploadVideoOverCellularEnabled": TxType.PERSISTENT,
+  "IsDriverMonitoringEnabled": TxType.PERSISTENT,
+  "IsGeofenceEnabled": TxType.PERSISTENT,
 # written: visiond
 # read:    visiond, controlsd
-  "CalibrationParams": TxType.PERSISTANT,
+  "CalibrationParams": TxType.PERSISTENT,
 # written: visiond
 # read:    visiond, ui
-  "CloudCalibration": TxType.PERSISTANT,
+  "CloudCalibration": TxType.PERSISTENT,
 # written: controlsd
 # read:    radard
   "CarParams": TxType.CLEAR_ON_CAR_START,
 
-  "Passive": TxType.PERSISTANT,
+  "Passive": TxType.PERSISTENT,
   "DoUninstall": TxType.CLEAR_ON_MANAGER_START,
   "ShouldDoUpdate": TxType.CLEAR_ON_MANAGER_START,
-  "IsUpdateAvailable": TxType.PERSISTANT,
+  "IsUpdateAvailable": TxType.PERSISTENT,
 
-  "RecordFront": TxType.PERSISTANT,
+  "RecordFront": TxType.PERSISTENT,
 }
 
 def fsync_dir(path):
@@ -315,7 +316,6 @@ class Params(object):
 
     with self.env.begin(write=True) as txn:
       txn.put(key, dat)
-    print "set", key
 
 if __name__ == "__main__":
   params = Params()
@@ -325,11 +325,11 @@ if __name__ == "__main__":
     for k in keys:
       pp = params.get(k)
       if pp is None:
-        print k, "is None"
+        print("%s is None" % k)
       elif all(ord(c) < 128 and ord(c) >= 32 for c in pp):
-        print k, pp
+        print("%s = %s" % (k, pp))
       else:
-        print k, pp.encode("hex")
+        print("%s = %s" % (k, pp.encode("hex")))
 
   # Test multiprocess:
   # seq 0 100000 | xargs -P20 -I{} python common/params.py DongleId {} && sleep 0.05

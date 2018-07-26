@@ -51,7 +51,7 @@ def _address_to_track(address):
   raise ValueError("radar received unexpected address %d" % address)
 
 class RadarInterface(object):
-  def __init__(self):
+  def __init__(self, CP):
     self.pts = {}
     self.delay = 0.0  # Delay of radar  #TUNE
     self.rcp = _create_radard_can_parser()
@@ -99,7 +99,7 @@ class RadarInterface(object):
     return ret
 
 if __name__ == "__main__":
-  RI = RadarInterface()
+  RI = RadarInterface(None)
   while 1:
     ret = RI.update()
     print(chr(27) + "[2J")  # clear screen

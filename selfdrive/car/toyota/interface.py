@@ -5,8 +5,8 @@ from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.toyota.carstate import CarState, get_can_parser
-from selfdrive.car.toyota.values import ECU, check_ecu_msgs
-from common.fingerprints import TOYOTA as CAR
+from selfdrive.car.toyota.values import ECU, check_ecu_msgs, CAR
+from selfdrive.swaglog import cloudlog
 
 try:
   from selfdrive.car.toyota.carcontroller import CarController
@@ -20,9 +20,9 @@ class CarInterface(object):
     self.VM = VehicleModel(CP)
 
     self.frame = 0
-    self.can_invalid_count = 0
     self.gas_pressed_prev = False
     self.brake_pressed_prev = False
+    self.can_invalid_count = 0
     self.cruise_enabled_prev = False
 
     # *** init the major players ***
@@ -61,52 +61,56 @@ class CarInterface(object):
 
     # FIXME: hardcoding honda civic 2016 touring params so they can be used to
     # scale unknown params for other cars
-    mass_civic = 2923./2.205 + std_cargo
+    mass_civic = 2923 * CV.LB_TO_KG + std_cargo
     wheelbase_civic = 2.70
     centerToFront_civic = wheelbase_civic * 0.4
     centerToRear_civic = wheelbase_civic - centerToFront_civic
     rotationalInertia_civic = 2500
-    tireStiffnessFront_civic = 85400
-    tireStiffnessRear_civic = 90000
+    tireStiffnessFront_civic = 192150
+    tireStiffnessRear_civic = 202500
 
     ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
+    ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
+
     if candidate == CAR.PRIUS:
       ret.safetyParam = 66  # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.70
-      ret.steerRatio = 15.0
-      ret.mass = 3045./2.205 + std_cargo
+      ret.steerRatio = 15.59   # unknown end-to-end spec
+      tire_stiffness_factor = 0.7933
+      ret.mass = 3045 * CV.LB_TO_KG + std_cargo
       ret.steerKpV, ret.steerKiV = [[0.4], [0.01]]
       ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
-      ret.steerRateCost = 1.5
+      # TODO: Prius seem to have very laggy actuators. Understand if it is lag or hysteresis
+      ret.steerActuatorDelay = 0.25
 
-      f = 1.43353663
-      tireStiffnessFront_civic *= f
-      tireStiffnessRear_civic *= f
     elif candidate in [CAR.RAV4, CAR.RAV4H]:
       ret.safetyParam = 73  # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.65
-      ret.steerRatio = 14.5 # Rav4 2017
-      ret.mass = 3650./2.205 + std_cargo  # mean between normal and hybrid
+      ret.steerRatio = 16.30   # 14.5 is spec end-to-end
+      tire_stiffness_factor = 0.5533
+      ret.mass = 3650 * CV.LB_TO_KG + std_cargo  # mean between normal and hybrid
       ret.steerKpV, ret.steerKiV = [[0.6], [0.05]]
       ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
-      ret.steerRateCost = 1.
+
     elif candidate == CAR.COROLLA:
       ret.safetyParam = 100 # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.70
       ret.steerRatio = 17.8
-      ret.mass = 2860./2.205 + std_cargo  # mean between normal and hybrid
+      tire_stiffness_factor = 0.444
+      ret.mass = 2860 * CV.LB_TO_KG + std_cargo  # mean between normal and hybrid
       ret.steerKpV, ret.steerKiV = [[0.2], [0.05]]
       ret.steerKf = 0.00003   # full torque for 20 deg at 80mph means 0.00007818594
-      ret.steerRateCost = 1.
+
     elif candidate == CAR.LEXUS_RXH:
       ret.safetyParam = 100 # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.79
-      ret.steerRatio = 16.  # official specs say 14.8, but it does not seem right
-      ret.mass = 4481./2.205 + std_cargo  # mean between min and max
+      ret.steerRatio = 16.  # 14.8 is spec end-to-end
+      tire_stiffness_factor = 0.444  # not optimized yet
+      ret.mass = 4481 * CV.LB_TO_KG + std_cargo  # mean between min and max
       ret.steerKpV, ret.steerKiV = [[0.6], [0.1]]
       ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
-      ret.steerRateCost = .8
 
+    ret.steerRateCost = 1.
     ret.centerToFront = ret.wheelbase * 0.44
 
     ret.longPidDeadzoneBP = [0., 9.]
@@ -127,15 +131,16 @@ class CarInterface(object):
 
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
-    ret.tireStiffnessFront = tireStiffnessFront_civic * \
+    ret.tireStiffnessFront = (tireStiffnessFront_civic * tire_stiffness_factor) * \
                              ret.mass / mass_civic * \
                              (centerToRear / ret.wheelbase) / (centerToRear_civic / wheelbase_civic)
-    ret.tireStiffnessRear = tireStiffnessRear_civic * \
+    ret.tireStiffnessRear = (tireStiffnessRear_civic * tire_stiffness_factor) * \
                             ret.mass / mass_civic * \
                             (ret.centerToFront / ret.wheelbase) / (centerToFront_civic / wheelbase_civic)
 
     # no rear steering, at least on the listed cars above
     ret.steerRatioRear = 0.
+    ret.steerControlType = car.CarParams.SteerControlType.torque
 
     # steer, gas, brake limitations VS speed
     ret.steerMaxBP = [16. * CV.KPH_TO_MS, 45. * CV.KPH_TO_MS]  # breakpoints at 1 and 40 kph
@@ -148,9 +153,9 @@ class CarInterface(object):
     ret.enableCamera = not check_ecu_msgs(fingerprint, candidate, ECU.CAM)
     ret.enableDsu = not check_ecu_msgs(fingerprint, candidate, ECU.DSU)
     ret.enableApgs = False #not check_ecu_msgs(fingerprint, candidate, ECU.APGS)
-    print "ECU Camera Simulated: ", ret.enableCamera
-    print "ECU DSU Simulated: ", ret.enableDsu
-    print "ECU APGS Simulated: ", ret.enableApgs
+    cloudlog.warn("ECU Camera Simulated: %r", ret.enableCamera)
+    cloudlog.warn("ECU DSU Simulated: %r", ret.enableDsu)
+    cloudlog.warn("ECU APGS Simulated: %r", ret.enableApgs)
 
     ret.steerLimitAlert = False
     ret.stoppingControl = False

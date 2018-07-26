@@ -28,6 +28,7 @@ else ifeq ($(UNAME_M),x86_64)
 else ifeq ($(UNAME_M),aarch64)
 	ZMQ_FLAGS = -I$(PHONELIBS)/zmq/aarch64/include
 	ZMQ_LIBS = -L$(PHONELIBS)/zmq/aarch64/lib -l:libzmq.a
+	CXXFLAGS += -lgnustl_shared
 endif
 
 OPENDBC_PATH := $(shell python -c 'import opendbc; print opendbc.DBC_PATH')

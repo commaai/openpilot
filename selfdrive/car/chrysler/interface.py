@@ -75,6 +75,7 @@ class CarInterface(object):
     ret.mass = 3650./2.205 + std_cargo  # mean between normal and hybrid
     ret.steerKpV, ret.steerKiV = [[0.6], [0.05]]
     ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
+    ret.steerActuatorDelay = 0.1
     ret.steerRateCost = 1.
 
     ret.centerToFront = ret.wheelbase * 0.44

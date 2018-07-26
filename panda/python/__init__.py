@@ -15,7 +15,7 @@ from update import ensure_st_up_to_date
 from serial import PandaSerial
 from isotp import isotp_send, isotp_recv
 
-__version__ = '0.0.7'
+__version__ = '0.0.8'
 
 BASEDIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
 

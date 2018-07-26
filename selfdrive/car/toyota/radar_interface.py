@@ -8,7 +8,7 @@ from selfdrive.services import service_list
 import selfdrive.messaging as messaging
 
 
-RADAR_MSGS = range(0x210, 0x220)
+RADAR_MSGS = list(range(0x210, 0x220))
 
 def _create_radard_can_parser():
   dbc_f = 'toyota_prius_2017_adas.dbc'
@@ -22,7 +22,7 @@ def _create_radard_can_parser():
   return CANParser(os.path.splitext(dbc_f)[0], signals, checks, 1)
 
 class RadarInterface(object):
-  def __init__(self):
+  def __init__(self, CP):
     # radar
     self.pts = {}
     self.validCnt = {key: 0 for key in RADAR_MSGS}
@@ -86,8 +86,8 @@ class RadarInterface(object):
     return ret
 
 if __name__ == "__main__":
-  RI = RadarInterface()
+  RI = RadarInterface(None)
   while 1:
     ret = RI.update()
     print(chr(27) + "[2J")
-    print ret
+    print(ret)

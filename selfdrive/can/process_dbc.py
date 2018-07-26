@@ -27,7 +27,7 @@ msgs = [(address, msg_name, msg_size, sorted(msg_sigs, key=lambda s: s.name not 
 if can_dbc.name.startswith("honda") or can_dbc.name.startswith("acura"):
   checksum_type = "honda"
   checksum_size = 4
-elif can_dbc.name.startswith("toyota"):
+elif can_dbc.name.startswith("toyota") or can_dbc.name.startswith("lexus"):
   checksum_type = "toyota"
   checksum_size = 8
 else:
@@ -49,7 +49,7 @@ for address, msg_name, msg_size, sigs in msgs:
         sys.exit("COUNTER starts at wrong bit %s" % msg_name)
 
 
-# Fail on duplicate messgae names
+# Fail on duplicate message names
 c = Counter([msg_name for address, msg_name, msg_size, sigs in msgs])
 for name, count in c.items():
   if count > 1:

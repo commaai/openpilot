@@ -54,9 +54,9 @@ def get_can_parser(CP):
     # ("EPS_STATUS", 25),
   ]
 
-  dbc_f = 'chrysler_pacifica_2017_hybrid.dbc'
-
-  return CANParser(os.path.splitext(dbc_f)[0], signals, checks, 0)
+  # dbc_f = 'chrysler_pacifica_2017_hybrid.dbc'
+  #return CANParser(os.path.splitext(dbc_f)[0], signals, checks, 0)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
 
 class CarState(object):
