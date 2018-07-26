@@ -83,7 +83,7 @@ class CarInterface(object):
     # kg of standard extra cargo to count for drive, gas, etc...
     std_cargo = 136
 
-    # Ridgeline reqires scaled tire stiffness
+    # Scaled tire stiffness
     ts_factor = 5 
 
     ret = car.CarParams.new_message()
@@ -101,8 +101,6 @@ class CarInterface(object):
 
     ret.enableCruise = not ret.enableGasInterceptor
 
-    # FIXME: hardcoding honda civic 2016 touring params so they can be used to
-    # scale unknown params for other cars
     mass_models = 4722./2.205 + std_cargo
     wheelbase_models = 2.959
     # RC: I'm assuming center means center of mass, and I think Model S is pretty even between two axles
@@ -144,7 +142,7 @@ class CarInterface(object):
     ret.rotationalInertia = rotationalInertia_models * \
                             ret.mass * ret.wheelbase**2 / (mass_models * wheelbase_models**2)
 
-    # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
+    # TODO: start from empirically derived lateral slip stiffness and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
     ret.tireStiffnessFront = (tireStiffnessFront_models * ts_factor) * \
                              ret.mass / mass_models * \
