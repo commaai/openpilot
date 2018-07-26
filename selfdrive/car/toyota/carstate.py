@@ -8,6 +8,20 @@ from selfdrive.services import service_list
 from common.kalman.simple_kalman import KF1D
 import numpy as np
 
+def gps_distance(gpsLon, gpsLat, gpsAlt, gpsAcc):
+  dist = 999
+  lat=48.12893908
+  lon=9.797879048
+  lonlatacc=1
+  alt=575.5
+  altacc=5
+  includeradius = 22
+  approachradius = 100
+  speedlimit = 30
+  if abs(gpsAlt -alt) < altacc:
+    if gpsAcc<lonlatacc:
+      dist = 6371010*acos(sin(radians(gpsLat))*sin(radians(lat))+cos(radians(gpsLat))*cos(radians(lat))*cos(radians(gpsLon-lon)))
+  return dist, includeradius, approachradius, speedlimit
 
 def parse_gear_shifter(can_gear, car_fingerprint):
   # TODO: Use values from DBC to parse this field
@@ -126,7 +140,8 @@ class CarState(object):
       gps_pkt = msg.gpsLocationExternal
       self.inaccuracy = gps_pkt.accuracy
       self.prev_distance = self.distance
-      self.distance = 6371010*acos(sin(radians(gps_pkt.latitude))*sin(radians(48.12893908))+cos(radians(gps_pkt.latitude))*cos(radians(48.12893908))*cos(radians(gps_pkt.longitude-9.797879048)))
+      self.distance, includeradius, approachradius, speedlimit = gps_distance(gps_pkt.latitude,gps_pkt.longitude,gps_pkt.altitude,gps_pkt.accuracy)
+      #self.distance = 6371010*acos(sin(radians(gps_pkt.latitude))*sin(radians(48.12893908))+cos(radians(gps_pkt.latitude))*cos(radians(48.12893908))*cos(radians(gps_pkt.longitude-9.797879048)))
     # update prevs, update must run once per loop
     self.prev_left_blinker_on = self.left_blinker_on
     self.prev_right_blinker_on = self.right_blinker_on
@@ -184,21 +199,20 @@ class CarState(object):
       self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED'] - 34.0
     else:
       self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED']
-    if self.inaccuracy < 1:
+    if self.distance < approachradius+includeradius:
       print "distane"
       print self.distance
-
-      if self.distance < 100+17:
-        print "speed"
-        print self.prev_distance - self.distance
-        if self.prev_distance - self.distance > 0.08:
-         if self.v_cruise_pcm>30.0:
-           self.v_cruise_pcm = 30.0
-      if self.distance < 5+17:
-        print "inside"
-        if self.v_cruise_pcm > 30.0:
-          self.v_cruise_pcm =  30.0
-      
+      print "speed"
+      print self.prev_distance - self.distance
+      #if speed is 5% higher than the speedlimit
+      if self.prev_distance - self.distance > speedlimit*0.00263889:
+       if self.v_cruise_pcm>speedlimit:
+         self.v_cruise_pcm = speedlimit
+    if self.distance < includeradius:
+      print "inside"
+      if self.v_cruise_pcm > speedlimit:
+        self.v_cruise_pcm =  speedlimit
+    
     self.pcm_acc_status = cp.vl["PCM_CRUISE"]['CRUISE_STATE']
     self.gas_pressed = not cp.vl["PCM_CRUISE"]['GAS_RELEASED']
     self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]['LOW_SPEED_LOCKOUT'] == 2
