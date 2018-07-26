@@ -146,7 +146,7 @@ class CarController(object):
       #   This masks the factory fault for 1 second after bringing it back on.
       #   This does NOT mean that the factory system will be enabled.
       if self.hide_lkas_fault > 0:
-        lkas11_byte3 = CamS.lkas11_b3 & 0xEF
+        lkas11_byte3 = CamS.lkas11_b3 & 0xE7
         self.hide_lkas_fault = self.hide_lkas_fault - 1
       else:
         lkas11_byte3 = CamS.lkas11_b3
