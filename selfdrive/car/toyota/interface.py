@@ -110,6 +110,24 @@ class CarInterface(object):
       ret.steerKpV, ret.steerKiV = [[0.6], [0.1]]
       ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
 
+    elif candidate == CAR.CHR:
+      ret.safetyParam = 100
+      ret.wheelbase = 2.63906
+      ret.steerRatio = 13.6
+      tire_stiffness_factor = 0.7933
+      ret.mass = 3300 * CV.LB_TO_KG + std_cargo
+      ret.steerKpV, ret.steerKiV = [[0.723], [0.0428]]
+      ret.steerKf = 0.00006
+	
+    elif candidate in [CAR.CAMRY, CAR.CAMRYH]:
+      ret.safetyParam = 100
+      ret.wheelbase = 2.82448
+      ret.steerRatio = 13.7
+      tire_stiffness_factor = 0.7933
+      ret.mass = 3400 * CV.LB_TO_KG + std_cargo #mean between normal and hybrid
+      ret.steerKpV, ret.steerKiV = [[0.6], [0.1]]
+      ret.steerKf = 0.00006
+
     ret.steerRateCost = 1.
     ret.centerToFront = ret.wheelbase * 0.44
 
@@ -118,7 +136,7 @@ class CarInterface(object):
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter.
-    if candidate in [CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH]: # rav4 hybrid can do stop and go
+    if candidate in [CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH, CAR.CHR, CAR.CAMRY, CAR.CAMRYH]: # rav4 hybrid can do stop and go
       ret.minEnableSpeed = -1.
     elif candidate in [CAR.RAV4, CAR.COROLLA]: # TODO: hack ICE to do stop and go
       ret.minEnableSpeed = 19. * CV.MPH_TO_MS
@@ -150,9 +168,9 @@ class CarInterface(object):
     ret.brakeMaxBP = [5., 20.]
     ret.brakeMaxV = [1., 0.8]
 
-    ret.enableCamera = not check_ecu_msgs(fingerprint, candidate, ECU.CAM)
-    ret.enableDsu = not check_ecu_msgs(fingerprint, candidate, ECU.DSU)
-    ret.enableApgs = False #not check_ecu_msgs(fingerprint, candidate, ECU.APGS)
+    ret.enableCamera = not check_ecu_msgs(fingerprint, ECU.CAM)
+    ret.enableDsu = not check_ecu_msgs(fingerprint, ECU.DSU)
+    ret.enableApgs = False #not check_ecu_msgs(fingerprint, ECU.APGS)
     cloudlog.warn("ECU Camera Simulated: %r", ret.enableCamera)
     cloudlog.warn("ECU DSU Simulated: %r", ret.enableDsu)
     cloudlog.warn("ECU APGS Simulated: %r", ret.enableApgs)
