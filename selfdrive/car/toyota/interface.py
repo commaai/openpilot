@@ -119,7 +119,7 @@ class CarInterface(object):
       ret.steerKpV, ret.steerKiV = [[0.723], [0.0428]]
       ret.steerKf = 0.00006
 	
-    elif candidate == CAR.CAMRY:
+    elif candidate in [CAR.CAMRY, CAR.CAMRYH]:
       ret.safetyParam = 100
       ret.wheelbase = 2.82448
       ret.steerRatio = 13.7
@@ -136,7 +136,7 @@ class CarInterface(object):
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter.
-    if candidate in [CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH, CAR.CHR, CAR.CAMRY]: # rav4 hybrid can do stop and go
+    if candidate in [CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH, CAR.CHR, CAR.CAMRY, CAR.CAMRYH]: # rav4 hybrid can do stop and go
       ret.minEnableSpeed = -1.
     elif candidate in [CAR.RAV4, CAR.COROLLA]: # TODO: hack ICE to do stop and go
       ret.minEnableSpeed = 19. * CV.MPH_TO_MS
