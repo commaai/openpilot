@@ -99,9 +99,10 @@ class CarController(object):
 
     if enabled:
       # When we send Torque signals that the camera does not expet, it faults.
-      #   This masks the fault for 500ms after bringing stock back on.
+      #   This masks the fault for 750ms after bringing stock back on.
       #   This does NOT mean that the factory system will be enabled, it will still be off.
-      self.hide_lkas_fault = 50
+      #      This was tested at 500ms, and 1 in 10 disables, a fault was still seen.
+      self.hide_lkas_fault = 75
 
       # Generate the 7 bytes as needed for OP Control.
       #   Anything we don't generate, pass through from camera
