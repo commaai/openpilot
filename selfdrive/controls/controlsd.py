@@ -53,7 +53,7 @@ def data_sample(CI, CC, thermal, calibration, health, driver_monitor, gps_locati
   CS = CI.update(CC)
   events = list(CS.events)
   enabled = isEnabled(state)
-
+  
   td = None
   cal = None
   hh = None
@@ -155,7 +155,7 @@ def state_transition(CS, CP, state, events, soft_disable_timer, v_cruise_kph, AM
   soft_disable_timer = max(0, soft_disable_timer - 1)
 
   # ***** handle state transitions *****
-
+  
   # DISABLED
   if state == State.disabled:
     if get_events(events, [ET.ENABLE]):
@@ -399,7 +399,7 @@ def controlsd_thread(gctx=None, rate=100, default_bias=0.):
 
   # start the loop
   set_realtime_priority(3)
-
+  
   context = zmq.Context()
   params = Params()
 
@@ -408,6 +408,7 @@ def controlsd_thread(gctx=None, rate=100, default_bias=0.):
   carstate = messaging.pub_sock(context, service_list['carState'].port)
   carcontrol = messaging.pub_sock(context, service_list['carControl'].port)
   livempc = messaging.pub_sock(context, service_list['liveMpc'].port)
+
 
   passive = params.get("Passive") != "0"
   if not passive:
@@ -468,6 +469,7 @@ def controlsd_thread(gctx=None, rate=100, default_bias=0.):
   # write CarParams
   params.put("CarParams", CP.to_bytes())
 
+
   state = State.disabled
   soft_disable_timer = 0
   v_cruise_kph = 255
@@ -490,6 +492,7 @@ def controlsd_thread(gctx=None, rate=100, default_bias=0.):
       pass
 
   prof = Profiler(False)  # off by default
+
 
   while 1:
 

@@ -302,6 +302,7 @@ struct CarParams {
     hondaBosch @5;
     ford @6;
     cadillac @7;
+    hyundai @8;
   }
 
   # things about the car in the manual

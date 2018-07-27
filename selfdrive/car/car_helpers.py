@@ -12,6 +12,7 @@ def load_interfaces(x):
     try:
       imp = __import__('selfdrive.car.%s.interface' % interface, fromlist=['CarInterface']).CarInterface
     except ImportError:
+      cloudlog.warning("Import Error %s", ImportError)
       imp = None
     for car in x[interface]:
       ret[car] = imp
@@ -70,7 +71,7 @@ def fingerprint(logcan, timeout):
     # broadcast immediately
     if len(candidate_cars) == 1 and st is not None:
       # TODO: better way to decide to wait more if Toyota
-      time_fingerprint = 1.0 if ("TOYOTA" in candidate_cars[0] or "LEXUS" in candidate_cars[0]) else 0.1
+      time_fingerprint = 1.0 if ("TOYOTA" in candidate_cars[0] or "LEXUS" in candidate_cars[0] or "HYUNDAI" in candidate_cars[0]) else 0.1
       if (ts-st) > time_fingerprint:
         break
 
