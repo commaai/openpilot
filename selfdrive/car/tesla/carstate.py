@@ -176,6 +176,8 @@ class CarState(object):
     
     self.stopped = 0
     self.frame_humanSteered = 0    # Last frame human steered
+    
+    self.imperial_speed_units = True
 
     # vEgo kalman filter
     dt = 0.01
@@ -283,7 +285,8 @@ class CarState(object):
 
     self.user_brake = cp.vl["DI_torque2"]['DI_brakePedal']
     self.standstill = cp.vl["DI_torque2"]['DI_vehicleSpeed'] == 0
-    if cp.vl["DI_state"]['DI_speedUnits'] == 0:
+    self.imperial_speed_units = cp.vl["DI_state"]['DI_speedUnits'] == 0
+    if self.imperial_speed_units:
       self.v_cruise_actual = (cp.vl["DI_state"]['DI_cruiseSet'])*1.609 # Reported in MPH, expected in KPH??
     else:
       self.v_cruise_actual = cp.vl["DI_state"]['DI_cruiseSet']

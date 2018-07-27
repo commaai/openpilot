@@ -155,7 +155,7 @@ class CarController(object):
         short_press_kph = 1
         long_press_kph = 5
         # Imperial unit cars adjust cruise in units of 1 and 5 mph
-        if CS.CP.vl["DI_state"]['DI_speedUnits'] == 0:
+        if CS.imperial_speed_units:
           short_press_kph = short_press_kph * CV.MPH_TO_KPH
           long_press_kph = long_press_kph * CV.MPH_TO_KPH
         
