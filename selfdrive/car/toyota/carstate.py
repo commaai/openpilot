@@ -14,13 +14,15 @@ def gps_distance(gpsLon, gpsLat, gpsAlt, gpsAcc):
   lon=9.797879048
   lonlatacc=1
   alt=575.5
-  altacc=5
+  altacc=15
   includeradius = 22
   approachradius = 100
   speedlimit = 25
   if abs(gpsAlt -alt) < altacc:
     if gpsAcc<lonlatacc:
       dist = 6371010*acos(sin(radians(gpsLat))*sin(radians(lat))+cos(radians(gpsLat))*cos(radians(lat))*cos(radians(gpsLon-lon)))
+  else:
+    print "Altitude inacurate"
   return dist, includeradius, approachradius, speedlimit
 
 def parse_gear_shifter(can_gear, car_fingerprint):
