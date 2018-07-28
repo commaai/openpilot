@@ -84,7 +84,7 @@ class CarInterface(object):
     std_cargo = 136
 
     # Scaled tire stiffness
-    ts_factor = 5 
+    ts_factor = 8 
 
     ret = car.CarParams.new_message()
 
@@ -109,16 +109,19 @@ class CarInterface(object):
     rotationalInertia_models = 2500
     tireStiffnessFront_models = 85400
     tireStiffnessRear_models = 90000
-
-    ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
+    # will create Kp and Ki for 0, 20, 40, 60 mph
+    ret.steerKiBP, ret.steerKpBP = [[0., 8.94, 17.88, 26.82 ], [0., 8.94, 17.88, 26.82]]
+    #ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
     if candidate == CAR.MODELS:
       stop_and_go = True
       ret.mass = mass_models
       ret.wheelbase = wheelbase_models
       ret.centerToFront = centerToFront_models
-      ret.steerRatio = 17.0
-      # Kp and Ki for the lateral control
-      ret.steerKpV, ret.steerKiV = [[0.15], [0.02]]
+      ret.steerRatio = 16.75
+      # Kp and Ki for the lateral control for 0, 20, 40, 60 mph
+      ret.steerKpV, ret.steerKiV = [[0.60, 0.40, 0.30, 0.15], [0.08, 0.06, 0.04, 0.02]]
+      #ret.steerKpV, ret.steerKiV = [[0.15], [0.02]]
+      #ret.steerKpV, ret.steerKiV = [[0.6], [0.1]]
       ret.steerKf = 0.00006 # Initial test value TODO: investigate FF steer control for Model S?
       ret.steerActuatorDelay = 0.09
       
@@ -156,7 +159,7 @@ class CarInterface(object):
 
     # no max steer limit VS speed
     ret.steerMaxBP = [0.,15.]  # m/s
-    ret.steerMaxV = [1.,1.]   # max steer allowed
+    ret.steerMaxV = [17.,17.]   # max steer allowed
 
     ret.gasMaxBP = [0.]  # m/s
     ret.gasMaxV = [0.6] if ret.enableGasInterceptor else [0.] # max gas allowed

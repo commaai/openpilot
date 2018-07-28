@@ -11,7 +11,7 @@
 //      brake > 0mph
 
 // lateral limits
-const int16_t MAX_ANGLE = 20; //Degrees
+const int16_t MAX_ANGLE = 400; //Degrees
 
 int tesla_brake_prev = 0;
 int tesla_gas_prev = 0;
@@ -144,7 +144,24 @@ static int tesla_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
       int checksum = (((to_fwd->RDLR & 0xFF00) >> 8) + (to_fwd->RDLR & 0xFF) + 2) & 0xFF;
       to_fwd->RDLR = to_fwd->RDLR & 0xFFFF;
       to_fwd->RDLR = to_fwd->RDLR + (checksum << 16);
+      return 2;
     }
+
+    //do not send speed to EPAS to see if we can steer more
+    if (addr == 0x116) {
+      return false;
+
+    }
+    
+    if (addr == 0x368) {
+      to_fwd->RDLR = to_fwd->RDLR & 0x0000FFFF;
+      to_fwd->RDHR = to_fwd->RDHR & 0x0000FFFF;
+      int checksum = (((to_fwd->RDLR & 0xFF00) >> 8) + (to_fwd->RDLR & 0xFF) + 0x6B) & 0xFF;
+      checksum = ( checksum + ((to_fwd->RDHR & 0xFF00) >> 8) + (to_fwd->RDHR & 0xFF)) & 0xFF;
+      to_fwd->RDHR = to_fwd->RDHR + (checksum << 24);
+      return false;
+    }
+   
 
     return 2; // Custom EPAS bus
   }

@@ -6,12 +6,19 @@ import shlex
 from collections import namedtuple
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.controls.lib.drive_helpers import rate_limit
-from common.numpy_fast import clip
+from common.numpy_fast import clip, interp
 from selfdrive.car.tesla import teslacan
 from selfdrive.car.tesla.values import AH, CruiseButtons, CAR
 from selfdrive.can.packer import CANPacker
 from selfdrive.config import Conversions as CV
 
+# Steer angle limits
+ANGLE_MAX_BP = [0., 27., 36.]
+ANGLE_MAX_V = [410., 92., 36.]
+
+ANGLE_DELTA_BP = [0., 5., 15.]
+ANGLE_DELTA_V = [5., .8, .15]     # windup limit
+ANGLE_DELTA_VU = [5., 3.5, 0.4]   # unwind limit
 
 def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
   # hyst params... TODO: move these to VehicleParams
@@ -66,6 +73,7 @@ class CarController(object):
     self.enable_camera = enable_camera
     self.packer = CANPacker(dbc_name)
     self.epas_disabled = True
+    self.last_angle = 0.
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
              pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel, \
@@ -121,7 +129,6 @@ class CarController(object):
 
     # *** compute control surfaces ***
 
-    USER_STEER_MAX  = 0.1485 * CS.v_ego * CS.v_ego - 15.451 * CS.v_ego + 400
     STEER_MAX = 420
     # Prevent steering while stopped
     MIN_STEERING_VEHICLE_VELOCITY = 0.05 # m/s
@@ -133,13 +140,23 @@ class CarController(object):
     enable_steer_control = (enabled and not changing_lanes)
     
     # Angle
-    apply_steer = clip(-actuators.steerAngle , -USER_STEER_MAX, USER_STEER_MAX) # steer torque is converted back to CAN reference (positive when steering right)
+    apply_angle = -actuators.steerAngle
+    angle_lim = interp(CS.v_ego, ANGLE_MAX_BP, ANGLE_MAX_V)
+    apply_angle = clip(apply_angle, -angle_lim, angle_lim)
+    # windup slower
+    if self.last_angle * apply_angle > 0. and abs(apply_angle) > abs(self.last_angle):
+      angle_rate_lim = interp(CS.v_ego, ANGLE_DELTA_BP, ANGLE_DELTA_V)
+    else:
+      angle_rate_lim = interp(CS.v_ego, ANGLE_DELTA_BP, ANGLE_DELTA_VU)
+
+    apply_angle = clip(apply_angle, self.last_angle - angle_rate_lim, self.last_angle + angle_rate_lim)
     # Send CAN commands.
     can_sends = []
     send_step = 5
 
     if  (True): #(frame % send_step) == 0:
       idx = frame % 16 #(frame/send_step) % 16 
-      can_sends.append(teslacan.create_steering_control(enable_steer_control, apply_steer, idx))
+      can_sends.append(teslacan.create_steering_control(enable_steer_control, apply_angle, idx))
       can_sends.append(teslacan.create_epb_enable_signal(idx))
+      self.last_angle = apply_angle
       sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
