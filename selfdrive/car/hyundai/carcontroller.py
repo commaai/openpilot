@@ -1,7 +1,7 @@
 from common.numpy_fast import clip, interp
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car.hyundai.hyundaican import make_can_msg, create_lkas11, create_lkas12b
-from selfdrive.car.hyundai.values import ECU, STATIC_MSGS, CAR
+from selfdrive.car.hyundai.values import CAR
 from selfdrive.can.packer import CANPacker
 
 
@@ -30,8 +30,6 @@ class CarController(object):
     self.hide_lkas_fault = 100
     print self.car_fingerprint
 
-    self.fake_ecus = set()
-    if enable_camera: self.fake_ecus.add(ECU.CAM)
     self.packer = CANPacker(dbc_name)
 
   def update(self, sendcan, enabled, CS, frame, actuators, CamS):

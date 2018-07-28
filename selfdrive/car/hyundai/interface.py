@@ -6,7 +6,7 @@ from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.hyundai.carstate import CarState, get_can_parser
 from selfdrive.car.hyundai.camstate import CamState, get_can_parser2
-from selfdrive.car.hyundai.values import ECU, check_ecu_msgs, CAR
+from selfdrive.car.hyundai.values import CAR
 from selfdrive.swaglog import cloudlog
 
 try:
@@ -112,8 +112,7 @@ class CarInterface(object):
     ret.brakeMaxBP = [5., 20.]
     ret.brakeMaxV = [1., 0.8]
 
-    ret.enableCamera = not check_ecu_msgs(fingerprint, candidate, ECU.CAM)
-    cloudlog.warn("ECU Camera Simulated: %r", ret.enableCamera)
+    ret.enableCamera = True
 
     ret.steerLimitAlert = False
     ret.stoppingControl = False
