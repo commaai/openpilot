@@ -10,9 +10,6 @@ STEER_MAX = 200   # Actual limit is about 1023, but not tested, and not needed
 STEER_DELTA = 5   # We have no Panda Safety, don't be silly here!   Good idea, YOU add Panda Safety!
 
 
-TARGET_IDS = [0x340]
-
-
 class CarController(object):
   def __init__(self, dbc_name, car_fingerprint, enable_camera):
     self.braking = False
@@ -60,7 +57,8 @@ class CarController(object):
     # Inhibits *outside of* alerts
     #    Because the Turning Indicator Status is based on Lights and not Stalk, latching is 
     #    needed for the disable to work.
-    if CS.left_blinker_on == 1 or CS.right_blinker_on == 1:
+    if CS.left_blinker_on == 1 or CS.right_blinker_on == 1 or \
+            CS.left_blinker_flash == 1 or CS.right_blinker_flash == 1:
       self.turning_inhibit = 180  # Disable for 1.8 Seconds after blinker turned off
 
     if self.turning_inhibit > 0:

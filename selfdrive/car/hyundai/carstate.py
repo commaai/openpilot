@@ -19,7 +19,9 @@ def get_can_parser(CP):
     ("CF_Gway_DrvSeatBeltInd", "CGW4", 1),
     ("CF_Gway_DrvSeatBeltSw", "CGW1", 0),
     ("CF_Gway_TSigLHSw", "CGW1", 0),
+    ("CF_Gway_TurnSigLh", "CGW1", 0),
     ("CF_Gway_TSigRHSw", "CGW1", 0),
+    ("CF_Gway_TurnSigRh", "CGW1", 0),
 
     ("BRAKE_ACT", "EMS12", 0),
     ("PV_AV_CAN", "EMS12", 0),
@@ -84,8 +86,6 @@ class CarState(object):
   def __init__(self, CP):
 
     self.CP = CP
-    self.left_blinker_on = 0
-    self.right_blinker_on = 0
 
     # initialize can parser
     self.car_fingerprint = CP.carFingerprint
@@ -148,7 +148,9 @@ class CarState(object):
     self.yaw_rate = cp.vl["ESP12"]['YAW_RATE']
     self.main_on = True
     self.left_blinker_on = cp.vl["CGW1"]['CF_Gway_TSigLHSw']
+    self.left_blinker_flash = cp.vl["CGW1"]['CF_Gway_TurnSigLh']
     self.right_blinker_on = cp.vl["CGW1"]['CF_Gway_TSigRHSw']
+    self.right_blinker_flash = cp.vl["CGW1"]['CF_Gway_TurnSigRh']
     self.steer_override = abs(cp.vl["MDPS11"]['CR_Mdps_DrvTq']) > 1.0
     self.steer_state = cp.vl["MDPS12"]['CF_Mdps_ToiActive'] #0 NOT ACTIVE, 1 ACTIVE
     self.steer_error = cp.vl["MDPS12"]['CF_Mdps_ToiUnavail']
