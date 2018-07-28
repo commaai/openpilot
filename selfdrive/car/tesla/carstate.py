@@ -2,9 +2,10 @@ from common.numpy_fast import interp
 from common.kalman.simple_kalman import KF1D
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
-from selfdrive.car.tesla.values import CAR, DBC
+from selfdrive.car.tesla.values import CAR, CruiseButtons, DBC
 import numpy as np
 from ctypes import create_string_buffer
+import time
 
 
 def parse_gear_shifter(can_gear_shifter, car_fingerprint):
@@ -22,6 +23,10 @@ def parse_gear_shifter(can_gear_shifter, car_fingerprint):
       return "drive"
 
   return "unknown"
+  
+  
+def _current_time_millis():
+  return int(round(time.time() * 1000))
 
 
 def calc_cruise_offset(offset, speed):
@@ -159,6 +164,8 @@ def get_epas_parser(CP):
 class CarState(object):
   def __init__(self, CP):
     self.brake_only = CP.enableCruise
+    self.enable_adaptive_cruise = False
+    self.last_cruise_stalk_pull_time = 0
     self.CP = CP
 
     self.user_gas, self.user_gas_pressed = 0., 0
@@ -166,8 +173,9 @@ class CarState(object):
     self.brake_switch_ts = 0
 
     self.steering_wheel_stalk = None
-    self.cruise_buttons = 0
-    self.cruise_setting = 0
+    self.cruise_buttons = CruiseButtons.IDLE
+    self.prev_cruise_buttons = CruiseButtons.IDLE
+    self.cruise_setting = CruiseButtons.IDLE
     self.blinker_on = 0
 
     self.left_blinker_on = 0
@@ -203,6 +211,21 @@ class CarState(object):
     # car params
     v_weight_v = [0., 1.]  # don't trust smooth speed at low values to avoid premature zero snapping
     v_weight_bp = [1., 6.]   # smooth blending, below ~0.6m/s the smooth speed snaps to zero
+    
+    self.steering_wheel_stalk = cp.vl["STW_ACTN_RQ"]
+    self.cruise_setting = self.steering_wheel_stalk['SpdCtrlLvr_Stat']
+    self.cruise_buttons = self.steering_wheel_stalk['SpdCtrlLvr_Stat']
+    # Check if the cruise stalk was double pulled, indicating that adaptive
+    # cruise control should be enabled. Twice in one second counts as a double
+    # pull.
+    if self.prev_cruise_buttons == CruiseButtons.IDLE and self.cruise_buttons == CruiseButtons.MAIN:
+      curr_time_ms = _current_time_millis()
+      if curr_time_ms - self.last_cruise_stalk_pull_time < 1000:
+        self.enable_adaptive_cruise = True
+      self.last_cruise_stalk_pull_time = curr_time_ms
+    elif self.prev_cruise_buttons == CruiseButtons.IDLE and self.cruise_buttons == CruiseButtons.CANCEL:
+      self.enable_adaptive_cruise = False
+      self.last_cruise_stalk_pull_time = 0
 
     # update prevs, update must run once per loop
     self.prev_steering_wheel_stalk = self.steering_wheel_stalk
@@ -250,10 +273,6 @@ class CarState(object):
     self.gear = 0 # JCT
     self.angle_steers = -(cp.vl["STW_ANGLHP_STAT"]['StW_AnglHP']) #JCT polarity reversed from Honda/Acura
     self.angle_steers_rate = 0 #JCT
-
-    self.steering_wheel_stalk = cp.vl["STW_ACTN_RQ"]
-    self.cruise_setting = self.steering_wheel_stalk['SpdCtrlLvr_Stat']
-    self.cruise_buttons = self.steering_wheel_stalk['SpdCtrlLvr_Stat']
 
     self.blinker_on = (self.steering_wheel_stalk['TurnIndLvr_Stat'] == 1) or (self.steering_wheel_stalk['TurnIndLvr_Stat'] == 2)
     self.left_blinker_on = self.steering_wheel_stalk['TurnIndLvr_Stat'] == 1

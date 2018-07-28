@@ -19,10 +19,13 @@ DBC = {
 # Car button codes
 class CruiseButtons:
   # VAL_ 69 SpdCtrlLvr_Stat 32 "DN_1ST" 16 "UP_1ST" 8 "DN_2ND" 4 "UP_2ND" 2 "RWD" 1 "FWD" 0 "IDLE" ;
-  RES_ACCEL   = 16
-  DECEL_SET   = 32
-  CANCEL      = 1
-  MAIN        = 2
+  RES_ACCEL     = 16
+  RES_ACCEL_2ND = 4
+  DECEL_SET     = 32
+  DECEL_2ND     = 8
+  CANCEL        = 1
+  MAIN          = 2
+  IDLE          = 0
 
 
 #car chimes: enumeration from dbc file. Chimes are for alerts and warnings
