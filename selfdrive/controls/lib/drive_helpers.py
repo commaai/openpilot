@@ -1,3 +1,5 @@
+import os
+import signal
 from cereal import car
 from common.numpy_fast import clip
 from selfdrive.config import Conversions as CV
@@ -88,5 +90,19 @@ def update_v_cruise(v_cruise_kph, buttonEvents, enabled):
   return v_cruise_kph
 
 
-def initialize_v_cruise(v_ego):
-  return int(round(max(v_ego * CV.MS_TO_KPH, V_CRUISE_ENABLE_MIN)))
+def initialize_v_cruise(v_ego, buttonEvents, v_cruise_last):
+  for b in buttonEvents:
+    # 250kph or above probably means we never had a set speed
+    if b.type == "accelCruise" and v_cruise_last < 250:
+      return v_cruise_last
+
+  return int(round(clip(v_ego * CV.MS_TO_KPH, V_CRUISE_ENABLE_MIN, V_CRUISE_MAX)))
+
+
+def kill_defaultd():
+  # defaultd is used to send can messages when controlsd is off to make car test easier
+  if os.path.isfile("/tmp/defaultd_pid"):
+    with open("/tmp/defaultd_pid") as f:
+      ddpid = int(f.read())
+    print("signalling defaultd with pid %d" % ddpid)
+    os.kill(ddpid, signal.SIGUSR1)

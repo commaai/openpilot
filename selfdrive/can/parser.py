@@ -25,7 +25,7 @@ class CANParser(object):
       self.msg_name_to_addres[name] = address
       self.address_to_msg_name[address] = name
 
-    # Convert message names into adresses
+    # Convert message names into addresses
     for i in range(len(signals)):
       s = signals[i]
       if not isinstance(s[1], numbers.Number):
@@ -203,6 +203,6 @@ if __name__ == "__main__":
   while True:
     cp.update(int(sec_since_boot()*1e9), True)
     # print cp.vl
-    print cp.ts
-    print cp.can_valid
+    print(cp.ts)
+    print(cp.can_valid)
     time.sleep(0.01)

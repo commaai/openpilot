@@ -15,7 +15,7 @@ def get_fingerprint_list():
         car_fingerprints = values.FINGERPRINTS
       else:
         continue
-      for f, v in car_fingerprints.iteritems():
+      for f, v in car_fingerprints.items():
         fingerprints[f] = v
     except (ImportError, IOError):
       pass
