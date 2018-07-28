@@ -211,6 +211,15 @@ class CarState(object):
     # car params
     v_weight_v = [0., 1.]  # don't trust smooth speed at low values to avoid premature zero snapping
     v_weight_bp = [1., 6.]   # smooth blending, below ~0.6m/s the smooth speed snaps to zero
+
+    # update prevs, update must run once per loop
+    self.prev_steering_wheel_stalk = self.steering_wheel_stalk
+    self.prev_cruise_buttons = self.cruise_buttons
+    self.prev_cruise_setting = self.cruise_setting
+    self.prev_blinker_on = self.blinker_on
+
+    self.prev_left_blinker_on = self.left_blinker_on
+    self.prev_right_blinker_on = self.right_blinker_on
     
     self.steering_wheel_stalk = cp.vl["STW_ACTN_RQ"]
     self.cruise_setting = self.steering_wheel_stalk['SpdCtrlLvr_Stat']
@@ -226,15 +235,6 @@ class CarState(object):
     elif self.prev_cruise_buttons == CruiseButtons.IDLE and self.cruise_buttons == CruiseButtons.CANCEL:
       self.enable_adaptive_cruise = False
       self.last_cruise_stalk_pull_time = 0
-
-    # update prevs, update must run once per loop
-    self.prev_steering_wheel_stalk = self.steering_wheel_stalk
-    self.prev_cruise_buttons = self.cruise_buttons
-    self.prev_cruise_setting = self.cruise_setting
-    self.prev_blinker_on = self.blinker_on
-
-    self.prev_left_blinker_on = self.left_blinker_on
-    self.prev_right_blinker_on = self.right_blinker_on
 
     # ******************* parse out can *******************
     self.door_all_closed = not any([cp.vl["GTW_carState"]['DOOR_STATE_FL'], cp.vl["GTW_carState"]['DOOR_STATE_FR'],
