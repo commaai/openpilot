@@ -138,7 +138,7 @@ class CarController(object):
     # Create Checksum
     #   Sorento checksum is Byte 0 to 5
     #   Other models appear to be Byte 0 to Byte 5 as well as Byte 7
-    if CS.car_fingerprint == CAR.SORENTO:
+    if CS.car_fingerprint == CAR.SORENTO or CS.car_fingerprint == CAR.GENESIS:
       # 6 Byte Checksum
       checksum = (lkas11_byte0 + lkas11_byte1 + lkas11_byte2 + lkas11_byte3 + \
         lkas11_byte4 + lkas11_byte5) % 256
