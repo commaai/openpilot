@@ -17,7 +17,7 @@ def gps_distance(gpsLon, gpsLat, gpsAlt, gpsAcc):
   altacc=5
   includeradius = 22
   approachradius = 100
-  speedlimit = 30
+  speedlimit = 25
   if abs(gpsAlt -alt) < altacc:
     if gpsAcc<lonlatacc:
       dist = 6371010*acos(sin(radians(gpsLat))*sin(radians(lat))+cos(radians(gpsLat))*cos(radians(lat))*cos(radians(gpsLon-lon)))
@@ -118,6 +118,9 @@ class CarState(object):
     self.right_blinker_on = 0
     self.distance = 999
     self.inaccuracy = 1.01
+    self.speedlimit = 25
+    self.approachradius = 100
+    self.includeradius = 22
 
     # initialize can parser
     self.car_fingerprint = CP.carFingerprint
@@ -140,7 +143,7 @@ class CarState(object):
       gps_pkt = msg.gpsLocationExternal
       self.inaccuracy = gps_pkt.accuracy
       self.prev_distance = self.distance
-      self.distance, includeradius, approachradius, speedlimit = gps_distance(gps_pkt.latitude,gps_pkt.longitude,gps_pkt.altitude,gps_pkt.accuracy)
+      self.distance, self.includeradius, self.approachradius, self.speedlimit = gps_distance(gps_pkt.latitude,gps_pkt.longitude,gps_pkt.altitude,gps_pkt.accuracy)
       #self.distance = 6371010*acos(sin(radians(gps_pkt.latitude))*sin(radians(48.12893908))+cos(radians(gps_pkt.latitude))*cos(radians(48.12893908))*cos(radians(gps_pkt.longitude-9.797879048)))
     # update prevs, update must run once per loop
     self.prev_left_blinker_on = self.left_blinker_on
@@ -199,19 +202,19 @@ class CarState(object):
       self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED'] - 34.0
     else:
       self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED']
-    if self.distance < approachradius+includeradius:
-      print "distane"
-      print self.distance
+    print "distane"
+    print self.distance
+    if self.distance < self.approachradius + self.includeradius:
       print "speed"
       print self.prev_distance - self.distance
       #if speed is 5% higher than the speedlimit
-      if self.prev_distance - self.distance > speedlimit*0.00263889:
-       if self.v_cruise_pcm>speedlimit:
-         self.v_cruise_pcm = speedlimit
-    if self.distance < includeradius:
+      if self.prev_distance - self.distance > self.speedlimit*0.00263889:
+       if self.v_cruise_pcm > self.speedlimit:
+         self.v_cruise_pcm = self.speedlimit
+    if self.distance < self.includeradius:
       print "inside"
-      if self.v_cruise_pcm > speedlimit:
-        self.v_cruise_pcm =  speedlimit
+      if self.v_cruise_pcm > self.speedlimit:
+        self.v_cruise_pcm =  self.speedlimit
     
     self.pcm_acc_status = cp.vl["PCM_CRUISE"]['CRUISE_STATE']
     self.gas_pressed = not cp.vl["PCM_CRUISE"]['GAS_RELEASED']
