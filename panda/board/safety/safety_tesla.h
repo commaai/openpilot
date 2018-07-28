@@ -148,7 +148,7 @@ static int tesla_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
     }
 
     //do not send speed to EPAS to see if we can steer more
-    if (addr == 0x116) {
+    if (addr == 0x118) {
       return false;
 
     }
