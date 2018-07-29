@@ -141,7 +141,7 @@ class CarController(object):
       if (frame % 4) == 0:
         idx = (frame / 4) % 4
 
-        want_full_stop = enabled and CS.standstill and apply_gas < P.ZERO_GAS
+        want_full_stop = enabled and CS.standstill and apply_gas < 2048
         near_stop = enabled and (CS.v_ego < P.NEAR_STOP_BRAKE_PHASE)
         can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, canbus.chassis, apply_brake, idx, near_stop, want_full_stop))
 
