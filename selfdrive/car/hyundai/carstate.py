@@ -99,6 +99,10 @@ class CarState(object):
                          C=np.matrix([1.0, 0.0]),
                          K=np.matrix([[0.12287673], [0.29666309]]))
     self.v_ego = 0.0
+    self.left_blinker_on = 0
+    self.left_blinker_flash = 0
+    self.right_blinker_on = 0
+    self.right_blinker_flash = 0
 
   def update(self, cp):
     # copy can_valid

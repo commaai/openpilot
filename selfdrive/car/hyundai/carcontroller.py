@@ -74,6 +74,7 @@ class CarController(object):
     else:
       self.lanes = 3 * 4     # bit 0 = Right Lane, bit 1 = Left Lane, Offset by 2 bits in byte.
 
+    apply_steer = int(apply_steer)
     self.apply_steer_last = apply_steer
 
     can_sends = []
