@@ -6,15 +6,21 @@ from selfdrive.can.packer import CANPacker
 
 
 # Steer torque limits
-STEER_MAX = 200   # Actual limit is about 1023, but not tested, and not needed
-STEER_DELTA = 5   # We have no Panda Safety, don't be silly here!   Good idea, YOU add Panda Safety!
+STEER_MAX = 200   # Actual integer limit is 1023, but ignores >767
+STEER_MAX_ZERO = 1024
+STEER_DELTA_UP = 5
+STEER_DELTA_DOWN = 10
+
+STEER_DRIVER_ALLOWANCE = 100
+STEER_DRIVER_MULTIPLIER = 1
+STEER_DRIVER_FACTOR = 100
 
 
 class CarController(object):
   def __init__(self, dbc_name, car_fingerprint, enable_camera):
     self.braking = False
     self.controls_allowed = True
-    self.last_steer = 0
+    self.apply_steer_last = 0
     self.car_fingerprint = car_fingerprint
     self.angle_control = False
     self.idx = 0
@@ -23,35 +29,33 @@ class CarController(object):
     self.steer_angle_enabled = False
     self.ipas_reset_counter = 0
     self.turning_inhibit = 0
-    self.limited_steer = 0
-    self.hide_lkas_fault = 100
+    self.hide_lkas_fault = 180
     print self.car_fingerprint
 
     self.packer = CANPacker(dbc_name)
 
   def update(self, sendcan, enabled, CS, frame, actuators, CamS):
-    # When the driver starts inputting torque, reduce the requested torque
-    #  We do not want to remove torque because we want to know if OP is still steering
-    #  And how we do it, meh, who cares, this might do.
-    if abs(CS.steer_torque_driver) > 1:
-      self.limited_steer = actuators.steer / (abs(CS.steer_torque_driver) * 2)
+
+    # Steering Torque Scaling is to STEER_MAX, + STEER_MAX_ZERO for center
+    apply_steer = int(round((actuators.steer * STEER_MAX) + STEER_MAX_ZERO))
+
+    # Driver Torque Limits - based from GM Port
+    driver_max_torque = STEER_MAX + (STEER_DRIVER_ALLOWANCE + CS.steer_torque_driver * STEER_DRIVER_FACTOR) * STEER_DRIVER_MULTIPLIER
+    driver_min_torque = -STEER_MAX + (-STEER_DRIVER_ALLOWANCE + CS.steer_torque_driver * STEER_DRIVER_FACTOR) * STEER_DRIVER_MULTIPLIER
+    max_steer_allowed = max(min(STEER_MAX, driver_max_torque), 0) + STEER_MAX_ZERO
+    min_steer_allowed = min(max(-STEER_MAX, driver_min_torque), 0) + STEER_MAX_ZERO
+    apply_steer = clip(apply_steer, min_steer_allowed, max_steer_allowed)
+
+    # Torque Rate Limiting - based from GM Port
+    if self.apply_steer_last > 0:
+      apply_steer = clip(apply_steer, max(self.apply_steer_last - STEER_DELTA_DOWN, -STEER_DELTA_UP),
+                                      self.apply_steer_last + STEER_DELTA_UP)
     else:
-      self.limited_steer = actuators.steer
+      apply_steer = clip(apply_steer, self.apply_steer_last - STEER_DELTA_UP,
+                                      min(self.apply_steer_last + STEER_DELTA_DOWN, STEER_DELTA_UP))
 
-    # Steering Torque Scaling is to STEER_MAX, + 1024 for center
-    apply_steer = int(round((self.limited_steer * STEER_MAX) + 1024))
-
-    # This is redundant clipping code, kept in case it needs to be advanced
-    max_lim = 1024 + STEER_MAX
-    min_lim = 1024 - STEER_MAX
-    apply_steer = clip(apply_steer, min_lim, max_lim)
-
-    # Very basic Rate Limiting
-    # TODO: Revisit this
-    if (apply_steer - self.last_steer) > STEER_DELTA:
-      apply_steer = self.last_steer + STEER_DELTA
-    elif (self.last_steer - apply_steer) > STEER_DELTA:
-      apply_steer = self.last_steer - STEER_DELTA
+    # Redundant Min/Max Clipping
+    apply_steer = clip(apply_steer, STEER_MAX_ZERO - STEER_MAX, STEER_MAX_ZERO + STEER_MAX)
 
 
     # Inhibits *outside of* alerts
@@ -65,12 +69,12 @@ class CarController(object):
       self.turning_inhibit = self.turning_inhibit - 1
 
     if not enabled or self.turning_inhibit > 0:
-      apply_steer = 1024     # 1024 is midpoint (no steer)
-      self.last_steer = 1024 # Reset Last Steer
+      apply_steer = STEER_MAX_ZERO     # STEER_MAX_ZERO is midpoint (no steer)
+      self.apply_steer_last = STEER_MAX_ZERO # Reset Last Steer
     else:
       self.lanes = 3 * 4     # bit 0 = Right Lane, bit 1 = Left Lane, Offset by 2 bits in byte.
 
-    self.last_steer = apply_steer
+    self.apply_steer_last = apply_steer
 
     can_sends = []
 
@@ -89,7 +93,7 @@ class CarController(object):
 
 
     # If Request to Steer is anything but 0 torque, turn on ActToi
-    if apply_steer != 1024:
+    if apply_steer != STEER_MAX_ZERO:
       apply_steer_b = apply_steer_b + 0x08
 
 
@@ -161,7 +165,7 @@ class CarController(object):
 
     # Limit Terminal Debugging to 5Hz
     if (frame % 20) == 0:
-      print "controlsdDebug steer", actuators.steer, "strToq", CS.steer_torque_driver, "lim steer", self.limited_steer, "v_ego", \
+      print "controlsdDebug steer", actuators.steer, "strToq", CS.steer_torque_driver, "v_ego", \
         CS.v_ego, "strAng", CS.angle_steers
 
 
