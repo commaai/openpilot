@@ -1,7 +1,7 @@
 from common.numpy_fast import clip, interp
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car.hyundai.hyundaican import make_can_msg, create_lkas11, create_lkas12b
-from selfdrive.car.hyundai.values import CAR
+from selfdrive.car.hyundai.values import CAR, CHECKSUM, LKAS_FORWARD
 from selfdrive.can.packer import CANPacker
 
 
@@ -137,9 +137,9 @@ class CarController(object):
 
 
     # Create Checksum
-    #   Sorento checksum is Byte 0 to 5
+    #   Sorento and Genesis checksum is Byte 0 to 5
     #   Other models appear to be Byte 0 to Byte 5 as well as Byte 7
-    if CS.car_fingerprint == CAR.SORENTO or CS.car_fingerprint == CAR.GENESIS:
+    if CHECKSUM[CP.carFingerprint]
       # 6 Byte Checksum
       checksum = (lkas11_byte0 + lkas11_byte1 + lkas11_byte2 + lkas11_byte3 + \
         lkas11_byte4 + lkas11_byte5) % 256
