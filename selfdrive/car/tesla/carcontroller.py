@@ -153,7 +153,7 @@ class CarController(object):
       can_sends.append(teslacan.create_epb_enable_signal(idx))
       
       # Adaptive cruise control
-      if CS.cruise_buttons != CruiseButtons.IDLE:
+      if CS.cruise_buttons not in [CruiseButtons.IDLE, CruiseButtons.MAIN]:
         self.human_cruise_action_time = _current_time_millis()
       if (
           # Only do adaptive cruise control while OpenPilot is steering and cruise
@@ -164,8 +164,8 @@ class CarController(object):
           # cruise stalk, resulting in small, jerky speed adjustments.
           and idx == 0
           # And don't make adjustments if a human has manually done so in the
-          # last half second. Human intention should not be overriden.
-          and _current_time_millis() > self.human_cruise_action_time + 500):
+          # last 2 seconds. Human intention should not be overriden.
+          and _current_time_millis() > self.human_cruise_action_time + 2000):
         # Metric cars adjust cruise in units of 1 and 5 kph
         half_press_kph = 1
         full_press_kph = 5
