@@ -227,12 +227,15 @@ class CarState(object):
     # Check if the cruise stalk was double pulled, indicating that adaptive
     # cruise control should be enabled. Twice in one second counts as a double
     # pull.
-    if self.prev_cruise_buttons == CruiseButtons.IDLE and self.cruise_buttons == CruiseButtons.MAIN:
+    if (self.cruise_buttons == CruiseButtons.MAIN and
+        self.prev_cruise_buttons != CruiseButtons.MAIN):
       curr_time_ms = _current_time_millis()
+      self.enable_adaptive_cruise = False
       if curr_time_ms - self.last_cruise_stalk_pull_time < 1000:
         self.enable_adaptive_cruise = True
       self.last_cruise_stalk_pull_time = curr_time_ms
-    elif self.prev_cruise_buttons == CruiseButtons.IDLE and self.cruise_buttons == CruiseButtons.CANCEL:
+    elif (self.cruise_buttons == CruiseButtons.CANCEL and
+          self.prev_cruise_buttons != CruiseButtons.CANCEL):
       self.enable_adaptive_cruise = False
       self.last_cruise_stalk_pull_time = 0
 
