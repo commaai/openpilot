@@ -162,7 +162,7 @@ class CarController(object):
           # resulting in small, jerky speed adjustments.
           and current_time_ms > self.automated_cruise_action_time + 1000
           # And don't make adjustments if a human has manually done so in the
-          # last 2 seconds. Human intention should not be overriden.
+          # last 2 seconds. Human intention should not be overridden.
           and current_time_ms > self.human_cruise_action_time + 2000):
         # Metric cars adjust cruise in units of 1 and 5 kph
         half_press_kph = 1
