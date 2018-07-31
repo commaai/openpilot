@@ -82,44 +82,39 @@ def create_cruise_adjust_msg(spdCtrlLvr_stat, real_steering_wheel_stalk):
   msg_len = 8
   msg = create_string_buffer(msg_len)
   # Do not send messages that conflict with the driver's actual actions on the
-  # steering wheel stalk. To ensure this, only send messages when the last
-  # message from the car indicates that the stalk is not being used, and copy
-  # all the fields you can from the last message.
-  if (real_steering_wheel_stalk
-      and real_steering_wheel_stalk['SpdCtrlLvr_Stat'] == 0):
-    fake_stalk = real_steering_wheel_stalk.copy()
-    # if accelerating, override VSL_Enbl_Rq to 1.
-    if spdCtrlLvr_stat in [4, 16]:
-      fake_stalk['VSL_Enbl_Rq'] = 1
-    fake_stalk['SpdCtrlLvr_Stat'] = spdCtrlLvr_stat
-    # message count should be 1 more than the previous (and loop after 16)
-    fake_stalk['MC_STW_ACTN_RQ'] = (int(round(
-      fake_stalk['MC_STW_ACTN_RQ'])) + 1) % 16
-    # CRC should initially be 0 before a new one is calculated.
-    fake_stalk['CRC_STW_ACTN_RQ'] = 0
-    
-    # Set the first byte, containing cruise control
-    struct.pack_into('B', msg, 0,
-                     (fake_stalk['SpdCtrlLvr_Stat']) +
-                     (int(round(fake_stalk['VSL_Enbl_Rq'])) << 6))
-    # Set the 2nd byte, containing DTR_Dist_Rq
-    struct.pack_into('B', msg, 1,  fake_stalk['DTR_Dist_Rq'])
-    # Set the 3rd byte, containing turn indicator, highbeams, and wiper wash
-    struct.pack_into('B', msg, 2,
-                     int(round(fake_stalk['TurnIndLvr_Stat'])) +
-                     (int(round(fake_stalk['HiBmLvr_Stat'])) << 2) +
-                     (int(round(fake_stalk['WprWashSw_Psd'])) << 4) +
-                     (int(round(fake_stalk['WprWash_R_Sw_Posn_V2'])) << 6)
-                    )
-    # Set the 7th byte, containing the wipers and message counter.
-    struct.pack_into('B', msg, 6,
-                     int(round(fake_stalk['WprSw6Posn'])) +
-                     (fake_stalk['MC_STW_ACTN_RQ'] << 4))
-    
-    # Finally, set the CRC for the message. Must be calculated last!
-    fake_stalk['CRC_STW_ACTN_RQ'] = add_tesla_crc(msg=msg, msg_len=7)
-    struct.pack_into('B', msg, msg_len-1, fake_stalk['CRC_STW_ACTN_RQ'])
+  # steering wheel stalk. To ensure this, copy all the fields you can from the
+  # real cruise stalk message.
+  fake_stalk = real_steering_wheel_stalk.copy()
+  # if accelerating, override VSL_Enbl_Rq to 1.
+  if spdCtrlLvr_stat in [4, 16]:
+    fake_stalk['VSL_Enbl_Rq'] = 1
+  fake_stalk['SpdCtrlLvr_Stat'] = spdCtrlLvr_stat
+  # message count should be 1 more than the previous (and loop after 16)
+  fake_stalk['MC_STW_ACTN_RQ'] = (int(round(
+    fake_stalk['MC_STW_ACTN_RQ'])) + 1) % 16
+  # CRC should initially be 0 before a new one is calculated.
+  fake_stalk['CRC_STW_ACTN_RQ'] = 0
+  
+  # Set the first byte, containing cruise control
+  struct.pack_into('B', msg, 0,
+                   (fake_stalk['SpdCtrlLvr_Stat']) +
+                   (int(round(fake_stalk['VSL_Enbl_Rq'])) << 6))
+  # Set the 2nd byte, containing DTR_Dist_Rq
+  struct.pack_into('B', msg, 1,  fake_stalk['DTR_Dist_Rq'])
+  # Set the 3rd byte, containing turn indicator, highbeams, and wiper wash
+  struct.pack_into('B', msg, 2,
+                   int(round(fake_stalk['TurnIndLvr_Stat'])) +
+                   (int(round(fake_stalk['HiBmLvr_Stat'])) << 2) +
+                   (int(round(fake_stalk['WprWashSw_Psd'])) << 4) +
+                   (int(round(fake_stalk['WprWash_R_Sw_Posn_V2'])) << 6)
+                  )
+  # Set the 7th byte, containing the wipers and message counter.
+  struct.pack_into('B', msg, 6,
+                   int(round(fake_stalk['WprSw6Posn'])) +
+                   (fake_stalk['MC_STW_ACTN_RQ'] << 4))
+  
+  # Finally, set the CRC for the message. Must be calculated last!
+  fake_stalk['CRC_STW_ACTN_RQ'] = add_tesla_crc(msg=msg, msg_len=7)
+  struct.pack_into('B', msg, msg_len-1, fake_stalk['CRC_STW_ACTN_RQ'])
 
-    return [msg_id, 0, msg.raw, 0]
-  else:
-    return None
+  return [msg_id, 0, msg.raw, 0]

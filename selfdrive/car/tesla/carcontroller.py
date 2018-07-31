@@ -8,6 +8,8 @@ from selfdrive.car.tesla.values import AH, CruiseButtons, CAR
 from selfdrive.can.packer import CANPacker
 from selfdrive.config import Conversions as CV
 
+import time
+
 
 def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
   # hyst params... TODO: move these to VehicleParams
@@ -53,6 +55,10 @@ HUDData = namedtuple("HUDData",
                       "lanes", "beep", "chime", "fcw", "acc_alert", "steer_required"])
 
 
+def _current_time_millis():
+  return int(round(time.time() * 1000))
+
+
 class CarController(object):
   def __init__(self, dbc_name, enable_camera=True):
     self.braking = False
@@ -64,6 +70,7 @@ class CarController(object):
     self.enable_camera = enable_camera
     self.packer = CANPacker(dbc_name)
     self.epas_disabled = True
+    self.human_cruise_action_time = 0
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
              pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel, \
@@ -146,11 +153,19 @@ class CarController(object):
       can_sends.append(teslacan.create_epb_enable_signal(idx))
       
       # Adaptive cruise control
-      # Only do adaptive cruise control while OpenPilot is steering and cruise
-      # control is active. And check infrequently, since sending repeated
-      # adjustments makes the car think we're doing a 'long press' on the
-      # cruise stalk, resulting in small, jerky speed adjustments.
-      if enable_steer_control and CS.enable_adaptive_cruise and CS.pcm_acc_status == 2 and idx == 0:
+      if CS.cruise_buttons != CruiseButtons.IDLE:
+        self.human_cruise_action_time = _current_time_millis()
+      if (
+          # Only do adaptive cruise control while OpenPilot is steering and cruise
+          # control is active.
+          enable_steer_control and CS.enable_adaptive_cruise and CS.pcm_acc_status == 2
+          # And check infrequently, since sending repeated
+          # adjustments makes the car think we're doing a 'long press' on the
+          # cruise stalk, resulting in small, jerky speed adjustments.
+          and idx == 0
+          # And don't make adjustments if a human has manually done so in the
+          # last half second. Human intention should not be overriden.
+          and _current_time_millis() > self.human_cruise_action_time + 500):
         # Metric cars adjust cruise in units of 1 and 5 kph
         half_press_kph = 1
         full_press_kph = 5
