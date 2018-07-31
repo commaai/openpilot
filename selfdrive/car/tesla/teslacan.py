@@ -2,7 +2,7 @@ import struct
 from ctypes import create_string_buffer
 
 
-def add_tesla_crc(msg, msg_len):
+def add_tesla_crc(msg,msg_len):
   """Calculate CRC8 using 1D poly, FF start, FF end"""
   crc_lookup = [0x00, 0x1D, 0x3A, 0x27, 0x74, 0x69, 0x4E, 0x53, 0xE8, 0xF5, 0xD2, 0xCF, 0x9C, 0x81, 0xA6, 0xBB, 
 0xCD, 0xD0, 0xF7, 0xEA, 0xB9, 0xA4, 0x83, 0x9E, 0x25, 0x38, 0x1F, 0x02, 0x51, 0x4C, 0x6B, 0x76, 
@@ -34,7 +34,6 @@ def add_tesla_checksum(msg_id, msg):
   checksum = (checksum + ord(msg[i])) & 0xFF
  return checksum
 
-
 def create_steering_control(enabled, apply_steer, idx):
  """Creates a CAN message for the Tesla DBC DAS_steeringControl."""
  msg_id = 0x488
@@ -46,6 +45,8 @@ def create_steering_control(enabled, apply_steer, idx):
   steering_type = 1
  type_counter = steering_type << 6
  type_counter += idx
+ #change angle to the Tesla * 10 + 0x4000
+ apply_steer = int( apply_steer * 10 + 0x4000 ) & 0xFFFF
  struct.pack_into('!hB', msg, 0,  apply_steer, type_counter)
  struct.pack_into('B', msg, msg_len-1, add_tesla_checksum(msg_id,msg))
  return [msg_id, 0, msg.raw, 2]
@@ -117,4 +118,14 @@ def create_cruise_adjust_msg(spdCtrlLvr_stat, real_steering_wheel_stalk):
   fake_stalk['CRC_STW_ACTN_RQ'] = add_tesla_crc(msg=msg, msg_len=7)
   struct.pack_into('B', msg, msg_len-1, fake_stalk['CRC_STW_ACTN_RQ'])
 
+  return [msg_id, 0, msg.raw, 0]
+  
+  
+def create_das_status_msg(autopilotState,idx):
+  """Create DAS_status (0x399) message to generate AP sounds"""
+  msg_id = 0x399
+  msg_len = 8
+  msg = create_string_buffer(msg_len)
+  struct.pack_into('BBBBBBB', msg, 0,  (autopilotState << 4) & 0xFF, 0, 0, 0, 0, 0, idx)
+  struct.pack_into('B', msg, msg_len-1, add_tesla_checksum(msg_id,msg))
   return [msg_id, 0, msg.raw, 0]

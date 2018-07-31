@@ -1581,6 +1581,10 @@ static void update_status(UIState *s, int status) {
     s->status = status;
     // wake up bg thread to change
     pthread_cond_signal(&s->bg_cond);
+    //if tesla call the sound command
+    char* snd_command;
+    asprintf(&snd_command, "python /data/openpilot/selfdrive/car/tesla/snd/playsound.py %d &", status);
+    system(snd_command);
   }
 }
 
