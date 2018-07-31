@@ -150,6 +150,9 @@ class CarController(object):
       angle_rate_lim = interp(CS.v_ego, ANGLE_DELTA_BP, ANGLE_DELTA_VU)
 
     apply_angle = clip(apply_angle, self.last_angle - angle_rate_lim, self.last_angle + angle_rate_lim)
+    #if blinker is on send the actual angle
+    if (changing_lanes):
+      apply_angle = CS.angle_steers
     # Send CAN commands.
     can_sends = []
     send_step = 5
