@@ -21,7 +21,7 @@ const struct lookup_t TESLA_LOOKUP_ANGLE_RATE_DOWN = {
   {5., 3.5, .4}};
 
 const struct lookup_t TESLA_LOOKUP_MAX_ANGLE = {
-  {0., 29., 38.},
+  {2., 29., 38.},
   {410.,92.,36.}};
 
 
@@ -122,7 +122,8 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   if (addr == 0x118) {
     // 1 bit at position 16
     if (((to_push->RDLR & 0x8000)) >> 15 == 1) {
-      controls_allowed = 0;
+      //disable break cancel by commenting line below
+      //controls_allowed = 0;
     }
     //get vehicle speed in m/2. Tesla gives MPH
     tesla_speed = ((((((to_push->RDLR >> 24) & 0x0F) << 8) + (( to_push->RDLR >> 16) & 0xFF)) * 0.05 -25)*1.609/3.6);
