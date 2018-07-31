@@ -83,8 +83,8 @@ class CarInterface(object):
     # kg of standard extra cargo to count for drive, gas, etc...
     std_cargo = 136
 
-    # Ridgeline reqires scaled tire stiffness
-    ts_factor = 1
+    # Scaled tire stiffness
+    ts_factor = 8 
 
     ret = car.CarParams.new_message()
 
@@ -101,27 +101,28 @@ class CarInterface(object):
 
     ret.enableCruise = not ret.enableGasInterceptor
 
-    # FIXME: hardcoding honda civic 2016 touring params so they can be used to
-    # scale unknown params for other cars
-    mass_models = 4647./2.205 + std_cargo
+    mass_models = 4722./2.205 + std_cargo
     wheelbase_models = 2.959
     # RC: I'm assuming center means center of mass, and I think Model S is pretty even between two axles
-    centerToFront_models = wheelbase_models * 0.5
+    centerToFront_models = wheelbase_models * 0.48
     centerToRear_models = wheelbase_models - centerToFront_models
     rotationalInertia_models = 2500
     tireStiffnessFront_models = 85400
     tireStiffnessRear_models = 90000
-
-    ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
+    # will create Kp and Ki for 0, 20, 40, 60 mph
+    ret.steerKiBP, ret.steerKpBP = [[0., 8.94, 17.88, 26.82 ], [0., 8.94, 17.88, 26.82]]
+    #ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
     if candidate == CAR.MODELS:
       stop_and_go = True
       ret.mass = mass_models
       ret.wheelbase = wheelbase_models
       ret.centerToFront = centerToFront_models
-      ret.steerRatio = 13.0
-      # Kp and Ki for the lateral control
-      ret.steerKpV, ret.steerKiV = [[0.09], [0.0125]]
-      ret.steerKf = 0.00003 # Initial test value TODO: investigate FF steer control for Model S?
+      ret.steerRatio = 16.75
+      # Kp and Ki for the lateral control for 0, 20, 40, 60 mph
+      ret.steerKpV, ret.steerKiV = [[0.60, 0.40, 0.30, 0.15], [0.08, 0.06, 0.04, 0.02]]
+      #ret.steerKpV, ret.steerKiV = [[0.15], [0.02]]
+      #ret.steerKpV, ret.steerKiV = [[0.6], [0.1]]
+      ret.steerKf = 0.00006 # Initial test value TODO: investigate FF steer control for Model S?
       ret.steerActuatorDelay = 0.09
       
       # Kp and Ki for the longitudinal control
@@ -144,7 +145,7 @@ class CarInterface(object):
     ret.rotationalInertia = rotationalInertia_models * \
                             ret.mass * ret.wheelbase**2 / (mass_models * wheelbase_models**2)
 
-    # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
+    # TODO: start from empirically derived lateral slip stiffness and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
     ret.tireStiffnessFront = (tireStiffnessFront_models * ts_factor) * \
                              ret.mass / mass_models * \
@@ -157,8 +158,8 @@ class CarInterface(object):
     ret.steerRatioRear = 0.
 
     # no max steer limit VS speed
-    ret.steerMaxBP = [0.]  # m/s
-    ret.steerMaxV = [1.]   # max steer allowed
+    ret.steerMaxBP = [0.,15.]  # m/s
+    ret.steerMaxV = [17.,17.]   # max steer allowed
 
     ret.gasMaxBP = [0.]  # m/s
     ret.gasMaxV = [0.6] if ret.enableGasInterceptor else [0.] # max gas allowed
@@ -180,7 +181,6 @@ class CarInterface(object):
     # ******************* do can recv *******************
     canMonoTimes = []
 
-    # print "c.actuators.SteerAngle = " + str(c.actuators.steerAngle)
     self.cp.update(int(sec_since_boot() * 1e9), False)
     self.epas_cp.update(int(sec_since_boot() * 1e9), False)
 
@@ -236,6 +236,7 @@ class CarInterface(object):
     buttonEvents = []
     ret.leftBlinker = bool(self.CS.left_blinker_on)
     ret.rightBlinker = bool(self.CS.right_blinker_on)
+
 
     ret.doorOpen = not self.CS.door_all_closed
     ret.seatbeltUnlatched = not self.CS.seatbelt
@@ -318,6 +319,7 @@ class CarInterface(object):
       events.append(create_event('brakeHold', [ET.NO_ENTRY, ET.USER_DISABLE]))
     if self.CS.park_brake:
       events.append(create_event('parkBrake', [ET.NO_ENTRY, ET.USER_DISABLE]))
+
 
     if self.CP.enableCruise and ret.vEgo < self.CP.minEnableSpeed:
       events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
