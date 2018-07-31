@@ -153,9 +153,9 @@ class CarController(object):
       current_time_ms = int(round(time.time() * 1000))
       if CS.cruise_buttons not in [CruiseButtons.IDLE, CruiseButtons.MAIN]:
         self.human_cruise_action_time = current_time_ms
-      if (# Only do adaptive cruise control while cruise control is enabled
+      if (# Only do adaptive cruise control while cruise control is enabled.
           CS.enable_adaptive_cruise and CS.pcm_acc_status == 2
-          # And OpenPilot is steering
+          # And OpenPilot is steering.
           and enable_steer_control
           # And adjust infrequently, since sending repeated adjustments makes
           # the car think we're doing a 'long press' on the cruise stalk,
@@ -164,10 +164,10 @@ class CarController(object):
           # And don't make adjustments if a human has manually done so in the
           # last 2 seconds. Human intention should not be overridden.
           and current_time_ms > self.human_cruise_action_time + 2000):
-        # Metric cars adjust cruise in units of 1 and 5 kph
+        # Metric cars adjust cruise in units of 1 and 5 kph.
         half_press_kph = 1
         full_press_kph = 5
-        # Imperial unit cars adjust cruise in units of 1 and 5 mph
+        # Imperial unit cars adjust cruise in units of 1 and 5 mph.
         if CS.imperial_speed_units:
           half_press_kph = 1 * CV.MPH_TO_KPH
           full_press_kph = 5 * CV.MPH_TO_KPH
@@ -189,10 +189,10 @@ class CarController(object):
           # How much we can accelerate without exceeding the max allowed speed.
           available_speed = CS.v_cruise_pcm - CS.v_cruise_actual
           if full_press_kph < speed_offset and full_press_kph < available_speed:
-            # Send cruise stalk up_2nd
+            # Send cruise stalk up_2nd.
             cruise_msg = teslacan.create_cruise_adjust_msg(CruiseButtons.RES_ACCEL_2ND, CS.steering_wheel_stalk)
           elif half_press_kph < speed_offset and half_press_kph < available_speed:
-            # Send cruise stalk up_1st
+            # Send cruise stalk up_1st.
             cruise_msg = teslacan.create_cruise_adjust_msg(CruiseButtons.RES_ACCEL, CS.steering_wheel_stalk)
         if cruise_msg:
           self.automated_cruise_action_time = current_time_ms
