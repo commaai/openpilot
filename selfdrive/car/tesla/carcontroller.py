@@ -55,10 +55,6 @@ HUDData = namedtuple("HUDData",
                       "lanes", "beep", "chime", "fcw", "acc_alert", "steer_required"])
 
 
-def _current_time_millis():
-  return int(round(time.time() * 1000))
-
-
 class CarController(object):
   def __init__(self, dbc_name, enable_camera=True):
     self.braking = False
@@ -71,6 +67,7 @@ class CarController(object):
     self.packer = CANPacker(dbc_name)
     self.epas_disabled = True
     self.human_cruise_action_time = 0
+    self.automated_cruise_action_time = 0
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
              pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel, \
@@ -153,19 +150,20 @@ class CarController(object):
       can_sends.append(teslacan.create_epb_enable_signal(idx))
       
       # Adaptive cruise control
+      current_time_ms = int(round(time.time() * 1000))
       if CS.cruise_buttons not in [CruiseButtons.IDLE, CruiseButtons.MAIN]:
-        self.human_cruise_action_time = _current_time_millis()
-      if (
-          # Only do adaptive cruise control while OpenPilot is steering and cruise
-          # control is active.
-          enable_steer_control and CS.enable_adaptive_cruise and CS.pcm_acc_status == 2
-          # And check infrequently, since sending repeated
-          # adjustments makes the car think we're doing a 'long press' on the
-          # cruise stalk, resulting in small, jerky speed adjustments.
-          and idx == 0
+        self.human_cruise_action_time = current_time_ms
+      if (# Only do adaptive cruise control while cruise control is enabled
+          CS.enable_adaptive_cruise and CS.pcm_acc_status == 2
+          # And OpenPilot is steering
+          and enable_steer_control
+          # And adjust infrequently, since sending repeated adjustments makes
+          # the car think we're doing a 'long press' on the cruise stalk,
+          # resulting in small, jerky speed adjustments.
+          and current_time_ms > self.automated_cruise_action_time + 1000
           # And don't make adjustments if a human has manually done so in the
           # last 2 seconds. Human intention should not be overriden.
-          and _current_time_millis() > self.human_cruise_action_time + 2000):
+          and current_time_ms > self.human_cruise_action_time + 2000):
         # Metric cars adjust cruise in units of 1 and 5 kph
         half_press_kph = 1
         full_press_kph = 5
@@ -197,6 +195,7 @@ class CarController(object):
             # Send cruise stalk up_1st
             cruise_msg = teslacan.create_cruise_adjust_msg(CruiseButtons.RES_ACCEL, CS.steering_wheel_stalk)
         if cruise_msg:
+          self.automated_cruise_action_time = current_time_ms
           can_sends.append(cruise_msg)
 
       sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
