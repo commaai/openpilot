@@ -29,7 +29,7 @@ struct sample_t tesla_angle_meas;            // last 3 steer angles
 
 // state of angle limits
 int16_t tesla_desired_angle_last = 0;        // last desired steer angle
-float  tesla_rt_angle_last = 0.;             // last real time angle
+int16_t  tesla_rt_angle_last = 0.;             // last real time angle
 uint32_t tesla_ts_angle_last = 0;
 
 
@@ -38,7 +38,7 @@ int tesla_controls_allowed_last = 0;
 
 int tesla_brake_prev = 0;
 int tesla_gas_prev = 0;
-float tesla_speed = 0;
+int tesla_speed = 0;
 int current_car_time = -1;
 int time_at_last_stalk_pull = -1;
 int eac_status = 0;
@@ -151,8 +151,8 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     // add 1 to not false trigger the violation and multiply by 20 since the check is done every 250 ms and steer angle is updated at     80Hz
     int rt_delta_angle_up = ((int)((tesla_interpolate(TESLA_LOOKUP_ANGLE_RATE_UP, tesla_speed) * 20. + 1.)));
     int rt_delta_angle_down = ((int)( (tesla_interpolate(TESLA_LOOKUP_ANGLE_RATE_DOWN, tesla_speed) * 20. + 1.)));
-    int highest_rt_angle = tesla_rt_angle_last + (tesla_rt_angle_last > 0? rt_delta_angle_up:rt_delta_angle_down);
-    int lowest_rt_angle = tesla_rt_angle_last - (tesla_rt_angle_last > 0? rt_delta_angle_down:rt_delta_angle_up);
+    int highest_rt_angle = tesla_rt_angle_last + (tesla_rt_angle_last > 0 ? rt_delta_angle_up:rt_delta_angle_down);
+    int lowest_rt_angle = tesla_rt_angle_last - (tesla_rt_angle_last > 0 ? rt_delta_angle_down:rt_delta_angle_up);
 
     if ((ts_elapsed > RT_INTERVAL) || (controls_allowed && !tesla_controls_allowed_last)) {
 	    tesla_rt_angle_last = angle_meas_now;
@@ -164,15 +164,13 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
     
     // check for violation
-    if (angle_control &&
-        ((angle_meas_now < lowest_rt_angle) ||
-         (angle_meas_now > highest_rt_angle))) {
+    if (max_limit_check(angle_meas_now, highest_rt_angle, lowest_rt_angle)) {
       controls_allowed = 0;
     }
 
     tesla_controls_allowed_last = controls_allowed;   
  
-  }  
+  }
 }
 
 // all commands: gas/regen, friction brake and steering
@@ -197,27 +195,25 @@ static int tesla_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
     int16_t violation = 0;
 
     if (controls_allowed) {
+
 			 // add 1 to not false trigger the violation
        int delta_angle_up = (int) (tesla_interpolate(TESLA_LOOKUP_ANGLE_RATE_UP, tesla_speed)  + 1.);
        int delta_angle_down = (int) (tesla_interpolate(TESLA_LOOKUP_ANGLE_RATE_DOWN, tesla_speed) + 1.);
-       int highest_desired_angle = tesla_desired_angle_last + (tesla_desired_angle_last > 0? delta_angle_up:delta_angle_down);
-       int lowest_desired_angle = tesla_desired_angle_last - (tesla_desired_angle_last > 0? delta_angle_down:delta_angle_up);
+       int highest_desired_angle = tesla_desired_angle_last + (tesla_desired_angle_last > 0 ? delta_angle_up:delta_angle_down);
+       int lowest_desired_angle = tesla_desired_angle_last - (tesla_desired_angle_last > 0 ? delta_angle_down:delta_angle_up);
        int TESLA_MAX_ANGLE = (int) (tesla_interpolate(TESLA_LOOKUP_MAX_ANGLE, tesla_speed) +1.);
-       int TESLA_MIN_ANGLE = - TESLA_MAX_ANGLE;
-       if ((desired_angle > highest_desired_angle) ||
-           (desired_angle < lowest_desired_angle)){
+
+       if (max_limit_check(desired_angle, highest_desired_angle, lowest_desired_angle)){
          violation = 1;
          controls_allowed = 0;
        }
-       if ((desired_angle > TESLA_MAX_ANGLE) || (desired_angle < TESLA_MIN_ANGLE) ) {
+       if (max_limit_check(desired_angle, TESLA_MAX_ANGLE, -TESLA_MAX_ANGLE)) {
 			     violation =1;
            controls_allowed = 0;
        }
 	  }
 
-    if ((!controls_allowed) &&
-             ((desired_angle < (tesla_angle_meas.min - 1)) ||
-             (desired_angle > (tesla_angle_meas.max + 1)))) {
+    if ((!controls_allowed) && max_limit_check(desired_angle, tesla_angle_meas.max + 1, tesla_angle_meas.min -1)) {
        violation = 1;
     }
 
