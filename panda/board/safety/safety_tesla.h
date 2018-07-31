@@ -28,7 +28,7 @@ const struct lookup_t TESLA_LOOKUP_MAX_ANGLE = {
 struct sample_t tesla_angle_meas;            // last 3 steer angles
 
 // state of angle limits
-int16_t tesla_desired_angle_last = 0;        // last desired steer angle
+int tesla_desired_angle_last = 0;        // last desired steer angle
 int16_t  tesla_rt_angle_last = 0.;             // last real time angle
 uint32_t tesla_ts_angle_last = 0;
 
@@ -137,8 +137,9 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   if (addr == 0x370) {
     // if EPAS_eacStatus is not 1 or 2, disable control
     eac_status = ((to_push->RDHR >> 21)) & 0x7;
-    if (eac_status != 1 && eac_status != 2) {
+    if ((controls_allowed == 1) && (eac_status != 1) && (eac_status != 2)) {
       controls_allowed = 0;
+      puts("EPAS error! \n");
     }
   }  
   //get latest steering wheel angle
@@ -148,9 +149,9 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     uint32_t ts_elapsed = get_ts_elapsed(ts, ts_angle_last);
 
     // *** angle real time check
-    // add 1 to not false trigger the violation and multiply by 20 since the check is done every 250 ms and steer angle is updated at     80Hz
-    int rt_delta_angle_up = ((int)((tesla_interpolate(TESLA_LOOKUP_ANGLE_RATE_UP, tesla_speed) * 20. + 1.)));
-    int rt_delta_angle_down = ((int)( (tesla_interpolate(TESLA_LOOKUP_ANGLE_RATE_DOWN, tesla_speed) * 20. + 1.)));
+    // add 1 to not false trigger the violation and multiply by 25 since the check is done every 250 ms and steer angle is updated at     100Hz
+    int rt_delta_angle_up = ((int)((tesla_interpolate(TESLA_LOOKUP_ANGLE_RATE_UP, tesla_speed) * 25. + 1.)));
+    int rt_delta_angle_down = ((int)( (tesla_interpolate(TESLA_LOOKUP_ANGLE_RATE_DOWN, tesla_speed) * 25. + 1.)));
     int highest_rt_angle = tesla_rt_angle_last + (tesla_rt_angle_last > 0 ? rt_delta_angle_up:rt_delta_angle_down);
     int lowest_rt_angle = tesla_rt_angle_last - (tesla_rt_angle_last > 0 ? rt_delta_angle_down:rt_delta_angle_up);
 
@@ -163,9 +164,10 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     update_sample(&tesla_angle_meas, angle_meas_now);
 
     
-    // check for violation
+    // check for violation;
     if (max_limit_check(angle_meas_now, highest_rt_angle, lowest_rt_angle)) {
       controls_allowed = 0;
+      puts("RT Angle Error! \n");
     }
 
     tesla_controls_allowed_last = controls_allowed;   
@@ -197,8 +199,8 @@ static int tesla_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
     if (controls_allowed) {
 
 			 // add 1 to not false trigger the violation
-       int delta_angle_up = (int) (tesla_interpolate(TESLA_LOOKUP_ANGLE_RATE_UP, tesla_speed)  + 1.);
-       int delta_angle_down = (int) (tesla_interpolate(TESLA_LOOKUP_ANGLE_RATE_DOWN, tesla_speed) + 1.);
+       int delta_angle_up = (int) (tesla_interpolate(TESLA_LOOKUP_ANGLE_RATE_UP, tesla_speed)* 25.  + 1.);
+       int delta_angle_down = (int) (tesla_interpolate(TESLA_LOOKUP_ANGLE_RATE_DOWN, tesla_speed)* 25. + 1.);
        int highest_desired_angle = tesla_desired_angle_last + (tesla_desired_angle_last > 0 ? delta_angle_up:delta_angle_down);
        int lowest_desired_angle = tesla_desired_angle_last - (tesla_desired_angle_last > 0 ? delta_angle_down:delta_angle_up);
        int TESLA_MAX_ANGLE = (int) (tesla_interpolate(TESLA_LOOKUP_MAX_ANGLE, tesla_speed) +1.);
@@ -206,16 +208,20 @@ static int tesla_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
        if (max_limit_check(desired_angle, highest_desired_angle, lowest_desired_angle)){
          violation = 1;
          controls_allowed = 0;
+         puts("Angle limit - delta! \n");
        }
        if (max_limit_check(desired_angle, TESLA_MAX_ANGLE, -TESLA_MAX_ANGLE)) {
 			     violation =1;
            controls_allowed = 0;
+           puts("Angle limit - max! \n");
        }
 	  }
 
-    if ((!controls_allowed) && max_limit_check(desired_angle, tesla_angle_meas.max + 1, tesla_angle_meas.min -1)) {
-       violation = 1;
-    }
+// makes no sense to have angle limits when not engaged
+//    if ((!controls_allowed) && max_limit_check(desired_angle, tesla_angle_meas.max + 1, tesla_angle_meas.min -1)) {
+//       violation = 1;
+//       puts("Angle limit when not engaged! \n");
+//    }
 
     tesla_desired_angle_last = desired_angle;
 
