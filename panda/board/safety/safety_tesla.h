@@ -149,9 +149,10 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     uint32_t ts_elapsed = get_ts_elapsed(ts, ts_angle_last);
 
     // *** angle real time check
-    // add 1 to not false trigger the violation and multiply by 25 since the check is done every 250 ms and steer angle is updated at     100Hz
-    int rt_delta_angle_up = ((int)((tesla_interpolate(TESLA_LOOKUP_ANGLE_RATE_UP, tesla_speed) * 25. + 1.)));
-    int rt_delta_angle_down = ((int)( (tesla_interpolate(TESLA_LOOKUP_ANGLE_RATE_DOWN, tesla_speed) * 25. + 1.)));
+    // add 1 to not false trigger the violation and multiply by 25 since the check is done every 250 ms and steer angle is updated at  100Hz
+    //we will also allow 1.5x max delta for manual steer
+    int rt_delta_angle_up = ((int)((tesla_interpolate(TESLA_LOOKUP_ANGLE_RATE_UP, tesla_speed) * 25. * 1.5 + 1.)));
+    int rt_delta_angle_down = ((int)( (tesla_interpolate(TESLA_LOOKUP_ANGLE_RATE_DOWN, tesla_speed) * 25. * 1.5 + 1.)));
     int highest_rt_angle = tesla_rt_angle_last + (tesla_rt_angle_last > 0 ? rt_delta_angle_up:rt_delta_angle_down);
     int lowest_rt_angle = tesla_rt_angle_last - (tesla_rt_angle_last > 0 ? rt_delta_angle_down:rt_delta_angle_up);
 
