@@ -159,7 +159,7 @@ class CarController(object):
 
     if  (True): #(frame % send_step) == 0:
       #first we emulate DAS
-      if (CS.DAS_info_frm == -1):
+      """if (CS.DAS_info_frm == -1):
         #initialize all frames
         CS.DAS_info_frm = frame # 1.00 s interval
         CS.DAS_status_frm = (frame + 10) % 100 # 0.50 s interval
@@ -202,7 +202,7 @@ class CarController(object):
         CS.DAS_objects_idx += 1
         CS.DAS_objects_idx = CS.DAS_objects_idx % 16
         CS.DAS_objects_frm = (CS.DAS_objects_frm + 3) % 100
-      # end of DAS emulation
+      # end of DAS emulation """
       idx = frame % 16 #(frame/send_step) % 16 
       can_sends.append(teslacan.create_steering_control(enable_steer_control, apply_angle, idx))
       can_sends.append(teslacan.create_epb_enable_signal(idx))
