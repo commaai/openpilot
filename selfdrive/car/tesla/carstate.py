@@ -231,9 +231,8 @@ class CarState(object):
     if (self.cruise_buttons == CruiseButtons.MAIN and
         self.prev_cruise_buttons != CruiseButtons.MAIN):
       curr_time_ms = _current_time_millis()
-      self.enable_adaptive_cruise = False
-      if curr_time_ms - self.last_cruise_stalk_pull_time < 1000:
-        self.enable_adaptive_cruise = True
+      self.enable_adaptive_cruise = (
+        curr_time_ms - self.last_cruise_stalk_pull_time < 1000)
       self.last_cruise_stalk_pull_time = curr_time_ms
     elif (self.cruise_buttons == CruiseButtons.CANCEL and
           self.prev_cruise_buttons != CruiseButtons.CANCEL):
@@ -316,7 +315,8 @@ class CarState(object):
     self.v_cruise_pcm = max(self.v_cruise_actual, self.v_cruise_pcm)
     self.pcm_acc_status = cp.vl["DI_state"]['DI_cruiseState']
     self.hud_lead = 0 #JCT
-    self.cruise_speed_offset = calc_cruise_offset(self.v_cruise_pcm, self.v_ego)
+    self.cruise_speed_offset = calc_cruise_offset(self.v_cruise_actual,
+                                                  self.v_ego)
 
 
 # carstate standalone tester
