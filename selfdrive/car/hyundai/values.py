@@ -40,6 +40,18 @@ LKAS_FORWARD = {
   CAR.STINGER: True, 
 }
 
+# LKAS 12 Message
+# 0 = No Message 
+# 1 = Forward from Factory Camera
+# 2 = 0x00 0x00 0x00 0x00 0x20 0x00 <-- Sorento
+# 3 = 0x00 0x00 0x00 0x00 0x80 0x05 <-- Stinger
+LKAS_12 = {
+  CAR.ELANTRA: 1,
+  CAR.GENESIS: 1,
+  CAR.SORENTO: 1,
+  CAR.STINGER: 1,
+}
+
 
 DBC = {
   CAR.ELANTRA: dbc_dict('kia_sorento_2018', None),
