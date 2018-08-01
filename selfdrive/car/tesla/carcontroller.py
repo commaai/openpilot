@@ -217,6 +217,6 @@ class CarController(object):
             cruise_msg = teslacan.create_cruise_adjust_msg(CruiseButtons.RES_ACCEL, CS.steering_wheel_stalk)
         if cruise_msg:
           self.automated_cruise_action_time = current_time_ms
-          can_sends.append(cruise_msg)
+          can_sends.insert(0, cruise_msg)
 
       sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
