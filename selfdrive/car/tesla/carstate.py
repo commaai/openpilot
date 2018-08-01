@@ -291,7 +291,6 @@ class CarState(object):
     self.brake_hold = 0  # TODO
 
     self.main_on = 1 #cp.vl["SCM_BUTTONS"]['MAIN_ON']
-    self.cruise_speed_offset = calc_cruise_offset(cp.vl["DI_state"]['DI_cruiseSet'], self.v_ego)
     self.gear_shifter = parse_gear_shifter(can_gear_shifter, self.CP.carFingerprint)
 
     self.pedal_gas = 0 #cp.vl["DI_torque1"]['DI_pedalPos']
