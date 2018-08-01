@@ -1,7 +1,7 @@
 from common.numpy_fast import clip, interp
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car.hyundai.hyundaican import make_can_msg, create_lkas11, create_lkas12b
-from selfdrive.car.hyundai.values import CAR, CHECKSUM, LKAS_FORWARD
+from selfdrive.car.hyundai.values import CAR, CHECKSUM, LKAS_FORWARD, LKAS_12
 from selfdrive.can.packer import CANPacker
 
 
@@ -57,7 +57,6 @@ class CarController(object):
     # Redundant Min/Max Clipping
     apply_steer = clip(apply_steer, STEER_MAX_ZERO - STEER_MAX, STEER_MAX_ZERO + STEER_MAX)
 
-
     # Inhibits *outside of* alerts
     #    Because the Turning Indicator Status is based on Lights and not Stalk, latching is 
     #    needed for the disable to work.
@@ -98,10 +97,10 @@ class CarController(object):
       apply_steer_b = apply_steer_b + 0x08
 
 
-    if enabled:
+    if LKAS_FORWARD[self.car_fingerprint]:
       # LKAS Forward keeps as much of the factory camera features enabled as possible at 
       #  any given time
-      if LKAS_FORWARD(self.car_fingerprint):
+      if enabled:
         # When we send Torque signals that the camera does not expet, it faults.
         #   This masks the fault for 750ms after bringing stock back on.
         #   This does NOT mean that the factory system will be enabled, it will still be off.
@@ -137,14 +136,14 @@ class CarController(object):
           lkas11_byte0 = CamS.lkas11_b0
           lkas11_byte3 = CamS.lkas11_b3
       # When LKAS Forward is disabled, we generate the entire LKAS message
-      else:
-        lkas11_byte0 = self.lanes + 0x2
-        lkas11_byte1 = 0x00
-        lkas11_byte2 = apply_steer_a
-        lkas11_byte3 = apply_steer_b
-        lkas11_byte4 = (self.idx * 16) + 0x04
-        lkas11_byte5 = 0x00
-        lkas11_byte6 = 0x18
+    else:
+      lkas11_byte0 = self.lanes + 0x2
+      lkas11_byte1 = 0x00
+      lkas11_byte2 = apply_steer_a
+      lkas11_byte3 = apply_steer_b
+      lkas11_byte4 = (self.idx * 16) + 0x04
+      lkas11_byte5 = 0x00
+      lkas11_byte7 = 0x18
         
 
 
