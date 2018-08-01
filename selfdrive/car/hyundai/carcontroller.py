@@ -8,8 +8,8 @@ from selfdrive.can.packer import CANPacker
 # Steer torque limits
 STEER_MAX = 200   # Actual integer limit is 1023, but ignores >767
 STEER_MAX_ZERO = 1024
-STEER_DELTA_UP = 5
-STEER_DELTA_DOWN = 10
+STEER_DELTA_UP = 3
+STEER_DELTA_DOWN = 6
 
 STEER_DRIVER_ALLOWANCE = 100
 STEER_DRIVER_MULTIPLIER = 1

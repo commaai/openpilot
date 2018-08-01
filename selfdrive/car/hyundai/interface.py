@@ -71,16 +71,16 @@ class CarInterface(object):
     tireStiffnessRear = 90000
 
     ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
-    ret.steerActuatorDelay = 0.08  # Default delay, Prius has larger delay
+    ret.steerActuatorDelay = 0.09  # Default delay, Prius has larger delay
 
     #borrowing a lot from corolla, given similar car size
-    ret.steerKf = 0.00008   # full torque for 20 deg at 80mph means 0.00007818594
+    ret.steerKf = 0.000078   # full torque for 20 deg at 80mph means 0.00007818594
     ret.steerRateCost = 1.
     stop_and_go = True
     ret.mass = 1985 + std_cargo
     ret.wheelbase = 2.78 
-    ret.steerRatio = 15
-    ret.steerKpV, ret.steerKiV = [[0.17], [0.005]]
+    ret.steerRatio = 15.5
+    ret.steerKpV, ret.steerKiV = [[0.16], [0.005]]
     ret.centerToFront = ret.wheelbase * 0.38
 
     ret.longPidDeadzoneBP = [0., 9.]
