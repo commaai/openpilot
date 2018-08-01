@@ -22,6 +22,10 @@ ANGLE_DELTA_BP = [0., 5., 15.]
 ANGLE_DELTA_V = [5., .8, .15]     # windup limit
 ANGLE_DELTA_VU = [5., 3.5, 0.4]   # unwind limit
 
+#change lane delta angles
+CL_MAXD_BP = [0., 44.]
+CL_MAXD_A = [30., 0.1]
+
 def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
   # hyst params... TODO: move these to VehicleParams
   brake_hyst_on = 0.02     # to activate brakes exceed this value
@@ -144,10 +148,10 @@ class CarController(object):
     laneChange_angle = 0
 
     if ((not CS.prev_right_blinker_on) and CS.right_blinker_on) or ((not CS.prev_left_blinker_on) and CS.left_blinker_on):
-      laneChange_direction = -1
+      laneChange_direction = 1
       #changing lanes
       if CS.left_blinker_on:
-        laneChange_direction = 1
+        laneChange_direction = -1
       if (CS.laneChange_enabled > 1) and (CS.laneChange_direction <> laneChange_direction):
         #something is not right; signal in oposite direction; cancel
         print "AutoLaneChange canceled by conflicting turn signals"
@@ -157,7 +161,9 @@ class CarController(object):
       elif (CS.laneChange_enabled == 1) and (CS.v_ego > 1.): 
         #compute angle delta for lane change
         print "AutoChangeLane initiated"
-        CS.laneChange_angled = laneChange_direction * CS.laneChange_steerr * mth.degrees(np.arcsin((CS.laneChange_lw / CS.laneChange_duration)/CS.v_ego))
+        CS.laneChange_angled = laneChange_direction * CS.laneChange_steerr * interp(CS.v_ego, CL_MAXD_BP, CL_MAXD_A)
+
+        #laneChange_direction * CS.laneChange_steerr * (np.arcsin((CS.laneChange_lw / CS.laneChange_duration)/CS.v_ego))
         CS.laneChange_enabled = 5 
         CS.laneChange_counter = 1
         CS.laneChange_angle = -actuators.steerAngle
@@ -166,13 +172,15 @@ class CarController(object):
     #lane change in process
     if CS.laneChange_enabled > 1:
       if CS.steer_override:
-        print "AutoLaneChange Canceled by user interaction"
+        if CS.laneChange_counter == 1:
+          print "AutoLaneChange Canceled by user interaction"
         #if any steer override cancel process
         CS.laneChange_counter = 0
         CS.laneChange_enabled = 1
         CS.laneChange_direction = 0
       if CS.laneChange_enabled == 2:
-        print"Entering stage 2: slow turn back"
+        if CS.laneChange_counter == 1:
+          print"Entering stage 2: slow turn back"
         laneChange_angle = CS.laneChange_angled * (50 - CS.laneChange_counter )/ 50
         CS.laneChange_counter += 1
         if CS.laneChange_counter == 50:
@@ -180,21 +188,24 @@ class CarController(object):
           CS.laneChange_counter = 0
           CS.laneChange_direction = 0
       if CS.laneChange_enabled ==3:
-        print "Entering stage 3: change lanes"
+        if CS.laneChange_counter == 1:
+          print "Entering stage 3: change lanes"
         CS.laneChange_counter += 1
         langeChange_angle = CS.laneChange_angled
         if CS.laneChange_counter == (CS.laneChange_duration - 2) * 100:
           CS.laneChange_enabled = 2
           CS.laneChange_counter = 1
       if CS.laneChange_enabled == 4:
-        print "Entering stage 4: slow turn"
+        if CS.laneChange_counter == 1:
+          print "Entering stage 4: slow turn"
         laneChange_angle = CS.laneChange_angled *  CS.laneChange_counter / 50
         CS.laneChange_counter += 1
         if CS.laneChange_counter == 50:
           CS.laneChange_enabled = 3
           CS.laneChange_counter = 1
       if CS.laneChange_enabled == 5:
-        print "Entering stage 5: Countdown"
+        if CS.laneChange_counter == 1:
+          print "Entering stage 5: Countdown"
         CS.laneChange_counter += 1
         if CS.laneChange_counter == CS.laneChange_wait * 100:
           CS.laneChange_enabled = 4
@@ -203,7 +214,7 @@ class CarController(object):
     apply_angle = 0
     # Angle
     if (CS.laneChange_enabled > 1) and (CS.laneChange_enabled < 5): 
-      apply_angle = CS.self.laneChange_angle + laneChange_angle
+      apply_angle = CS.laneChange_angle + clip(laneChange_angle, -20, 20)
     else:
       apply_angle = -actuators.steerAngle
     angle_lim = interp(CS.v_ego, ANGLE_MAX_BP, ANGLE_MAX_V)
