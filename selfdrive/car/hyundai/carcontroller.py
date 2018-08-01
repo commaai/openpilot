@@ -1,15 +1,15 @@
 from common.numpy_fast import clip, interp
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car.hyundai.hyundaican import make_can_msg, create_lkas11, create_lkas12b
-from selfdrive.car.hyundai.values import CAR
+from selfdrive.car.hyundai.values import CAR, CHECKSUM, LKAS_FORWARD, LKAS_12
 from selfdrive.can.packer import CANPacker
 
 
 # Steer torque limits
 STEER_MAX = 200   # Actual integer limit is 1023, but ignores >767
 STEER_MAX_ZERO = 1024
-STEER_DELTA_UP = 5
-STEER_DELTA_DOWN = 10
+STEER_DELTA_UP = 3
+STEER_DELTA_DOWN = 6
 
 STEER_DRIVER_ALLOWANCE = 100
 STEER_DRIVER_MULTIPLIER = 1
@@ -57,7 +57,6 @@ class CarController(object):
     # Redundant Min/Max Clipping
     apply_steer = clip(apply_steer, STEER_MAX_ZERO - STEER_MAX, STEER_MAX_ZERO + STEER_MAX)
 
-
     # Inhibits *outside of* alerts
     #    Because the Turning Indicator Status is based on Lights and not Stalk, latching is 
     #    needed for the disable to work.
@@ -98,48 +97,60 @@ class CarController(object):
       apply_steer_b = apply_steer_b + 0x08
 
 
-    if enabled:
-      # When we send Torque signals that the camera does not expet, it faults.
-      #   This masks the fault for 750ms after bringing stock back on.
-      #   This does NOT mean that the factory system will be enabled, it will still be off.
-      #      This was tested at 500ms, and 1 in 10 disables, a fault was still seen.
-      self.hide_lkas_fault = 75
+    if LKAS_FORWARD[self.car_fingerprint]:
+      # LKAS Forward keeps as much of the factory camera features enabled as possible at 
+      #  any given time
+      if enabled:
+        # When we send Torque signals that the camera does not expet, it faults.
+        #   This masks the fault for 750ms after bringing stock back on.
+        #   This does NOT mean that the factory system will be enabled, it will still be off.
+        #      This was tested at 500ms, and 1 in 10 disables, a fault was still seen.
+        self.hide_lkas_fault = 75
 
-      # Generate the 7 bytes as needed for OP Control.
-      #   Anything we don't generate, pass through from camera
-      lkas11_byte0 = int(self.lanes) + (CamS.lkas11_b0 & 0xC3)
-      lkas11_byte1 = CamS.lkas11_b1
-      lkas11_byte2 = apply_steer_a
-      lkas11_byte3 = apply_steer_b + (CamS.lkas11_b3 & 0xE0)   # ToiFlt always comes on, don't pass it
-      lkas11_byte4 = lkas11_byte4 + (CamS.lkas11_b4 & 0x0F)    # Always use our counter
-      lkas11_byte5 = CamS.lkas11_b5
-      lkas11_byte7 = CamS.lkas11_b7
-    else:
-      # Pass Through the 7 bytes so that Factory LKAS is in control
-      #   We still use our counter, because otherwise duplicates and missed messages from the camera
-      #   is possible due to the implementation method.  As such, we recreate the checksum as well
-      # Byte 0 defined below due to Fault Masking
-      lkas11_byte1 = CamS.lkas11_b1
-      lkas11_byte2 = CamS.lkas11_b2
-      # Byte 3 defined below due to Fault Masking
-      lkas11_byte4 = lkas11_byte4 + (CamS.lkas11_b4 & 0x0F)    # Always use our counter
-      lkas11_byte5 = CamS.lkas11_b5
-      lkas11_byte7 = CamS.lkas11_b7
-      # This is the Fault Masking needed in byte 0 and byte 3
-      if self.hide_lkas_fault > 0:
+        # Generate the 7 bytes as needed for OP Control.
+        #   Anything we don't generate, pass through from camera
         lkas11_byte0 = int(self.lanes) + (CamS.lkas11_b0 & 0xC3)
-        lkas11_byte3 = CamS.lkas11_b3 & 0xE7
-        self.hide_lkas_fault = self.hide_lkas_fault - 1
+        lkas11_byte1 = CamS.lkas11_b1
+        lkas11_byte2 = apply_steer_a
+        lkas11_byte3 = apply_steer_b + (CamS.lkas11_b3 & 0xE0)   # ToiFlt always comes on, don't pass it
+        lkas11_byte4 = lkas11_byte4 + (CamS.lkas11_b4 & 0x0F)    # Always use our counter
+        lkas11_byte5 = CamS.lkas11_b5
+        lkas11_byte7 = CamS.lkas11_b7
       else:
-        lkas11_byte0 = CamS.lkas11_b0
-        lkas11_byte3 = CamS.lkas11_b3
+        # Pass Through the 7 bytes so that Factory LKAS is in control
+        #   We still use our counter, because otherwise duplicates and missed messages from the camera
+        #   is possible due to the implementation method.  As such, we recreate the checksum as well
+        # Byte 0 defined below due to Fault Masking
+        lkas11_byte1 = CamS.lkas11_b1
+        lkas11_byte2 = CamS.lkas11_b2
+        # Byte 3 defined below due to Fault Masking
+        lkas11_byte4 = lkas11_byte4 + (CamS.lkas11_b4 & 0x0F)    # Always use our counter
+        lkas11_byte5 = CamS.lkas11_b5
+        lkas11_byte7 = CamS.lkas11_b7
+        # This is the Fault Masking needed in byte 0 and byte 3
+        if self.hide_lkas_fault > 0:
+          lkas11_byte0 = int(self.lanes) + (CamS.lkas11_b0 & 0xC3)
+          lkas11_byte3 = CamS.lkas11_b3 & 0xE7
+          self.hide_lkas_fault = self.hide_lkas_fault - 1
+        else:
+          lkas11_byte0 = CamS.lkas11_b0
+          lkas11_byte3 = CamS.lkas11_b3
+      # When LKAS Forward is disabled, we generate the entire LKAS message
+    else:
+      lkas11_byte0 = self.lanes + 0x2
+      lkas11_byte1 = 0x00
+      lkas11_byte2 = apply_steer_a
+      lkas11_byte3 = apply_steer_b
+      lkas11_byte4 = (self.idx * 16) + 0x04
+      lkas11_byte5 = 0x00
+      lkas11_byte7 = 0x18
         
 
 
     # Create Checksum
-    #   Sorento checksum is Byte 0 to 5
+    #   Sorento and Genesis checksum is Byte 0 to 5
     #   Other models appear to be Byte 0 to Byte 5 as well as Byte 7
-    if CS.car_fingerprint == CAR.SORENTO or CS.car_fingerprint == CAR.GENESIS:
+    if CHECKSUM[self.car_fingerprint]:
       # 6 Byte Checksum
       checksum = (lkas11_byte0 + lkas11_byte1 + lkas11_byte2 + lkas11_byte3 + \
         lkas11_byte4 + lkas11_byte5) % 256
@@ -159,8 +170,13 @@ class CarController(object):
 
     # Create LKAS12 Message at 10Hz
     if (frame % 10) == 0:
-      can_sends.append(create_lkas12b(self.packer, CamS.lkas12_b0, CamS.lkas12_b1, \
-        CamS.lkas12_b2, CamS.lkas12_b3, CamS.lkas12_b4, CamS.lkas12_b5))
+      if LKAS_12[self.car_fingerprint] == 1:
+        can_sends.append(create_lkas12b(self.packer, CamS.lkas12_b0, CamS.lkas12_b1, \
+          CamS.lkas12_b2, CamS.lkas12_b3, CamS.lkas12_b4, CamS.lkas12_b5))
+      if LKAS_12[self.car_fingerprint] == 2:
+        can_sends.append(create_lkas12b(self.packer, 0x00, 0x00, 0x00, 0x00, 0x20, 0x00))
+      if LKAS_12[self.car_fingerprint] == 3:
+        can_sends.append(create_lkas12b(self.packer, 0x00, 0x00, 0x00, 0x00, 0x80, 0x05))
 
 
 
