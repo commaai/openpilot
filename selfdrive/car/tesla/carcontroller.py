@@ -150,65 +150,59 @@ class CarController(object):
         laneChange_direction = 1
       if (CS.laneChange_enabled > 1) and (CS.laneChange_direction <> laneChange_direction):
         #something is not right; signal in oposite direction; cancel
+        print "AutoLaneChange canceled by conflicting turn signals"
         CS.laneChange_enabled = 1
         CS.laneChange_counter = 0
         CS.laneChange_direction = 0
-      elif CS.laneChange_enabled == 1: 
+      elif (CS.laneChange_enabled == 1) and (CS.v_ego > 1.): 
         #compute angle delta for lane change
+        print "AutoChangeLane initiated"
         CS.laneChange_angled = laneChange_direction * CS.laneChange_steerr * mth.degrees(np.arcsin((CS.laneChange_lw / CS.laneChange_duration)/CS.v_ego))
-        CS.laneChange_enabled = 7
+        CS.laneChange_enabled = 5 
         CS.laneChange_counter = 1
         CS.laneChange_angle = -actuators.steerAngle
         CS.laneChange_direction = laneChange_direction
 
     #lane change in process
     if CS.laneChange_enabled > 1:
-      CS.laneChange_counter -= 1
       if CS.steer_override:
+        print "AutoLaneChange Canceled by user interaction"
         #if any steer override cancel process
         CS.laneChange_counter = 0
         CS.laneChange_enabled = 1
         CS.laneChange_direction = 0
-      if CS.laneChage_enabled == 2:
-        laneChange_angle = - CS.laneChange_angled * (50 - CS.laneChange_counter)
+      if CS.laneChange_enabled == 2:
+        print"Entering stage 2: slow turn back"
+        laneChange_angle = CS.laneChange_angled * (50 - CS.laneChange_counter )/ 50
         CS.laneChange_counter += 1
         if CS.laneChange_counter == 50:
           CS.laneChange_enabled = 1
           CS.laneChange_counter = 0
           CS.laneChange_direction = 0
-      if CS.laneChage_enabled == 3:
-        laneChange_angle = - CS.laneChange_angled * CS.laneChange_counter
+      if CS.laneChange_enabled ==3:
+        print "Entering stage 3: change lanes"
         CS.laneChange_counter += 1
-        if CS.laneChange_counter == 50:
+        langeChange_angle = CS.laneChange_angled
+        if CS.laneChange_counter == (CS.laneChange_duration - 2) * 100:
           CS.laneChange_enabled = 2
           CS.laneChange_counter = 1
-      if CS.laneChange_enabled ==4:
+      if CS.laneChange_enabled == 4:
+        print "Entering stage 4: slow turn"
+        laneChange_angle = CS.laneChange_angled *  CS.laneChange_counter / 50
         CS.laneChange_counter += 1
-        langeChange_angle = 0
-        if CS.laneChange_counter == (CS.laneChange_duration - 2) * 100:
+        if CS.laneChange_counter == 50:
           CS.laneChange_enabled = 3
           CS.laneChange_counter = 1
-      if CS.laneChage_enabled == 5:
-        laneChange_angle = CS.laneChange_angled * (50 - CS.laneChange_counter)
-        CS.laneChange_counter += 1
-        if CS.laneChange_counter == 50:
-          CS.laneChange_enabled = 4
-          CS.laneChange_counter = 1
-      if CS.laneChage_enabled == 6:
-        laneChange_angle = CS.laneChange_angled * CS.laneChange_counter
-        CS.laneChange_counter += 1
-        if CS.laneChange_counter == 50:
-          CS.laneChange_enabled = 5
-          CS.laneChange_counter = 1
-      if CS.laneChange_enabled == 7:
+      if CS.laneChange_enabled == 5:
+        print "Entering stage 5: Countdown"
         CS.laneChange_counter += 1
         if CS.laneChange_counter == CS.laneChange_wait * 100:
-          CS.laneChange_enabled = 6
+          CS.laneChange_enabled = 4
           CS.laneChange_counter = 1
     enable_steer_control = (enabled and ((not changing_lanes) or (CS.laneChange_enabled > 1)))
     apply_angle = 0
     # Angle
-    if (CS.laneChange_enabled > 1) and (CS.laneChange_enabled < 7):
+    if (CS.laneChange_enabled > 1) and (CS.laneChange_enabled < 5): 
       apply_angle = CS.self.laneChange_angle + laneChange_angle
     else:
       apply_angle = -actuators.steerAngle
@@ -222,8 +216,8 @@ class CarController(object):
 
     apply_angle = clip(apply_angle, self.last_angle - angle_rate_lim, self.last_angle + angle_rate_lim)
     #if blinker is on send the actual angle
-    if (changing_lanes and (CS.laneChange_enabled < 2)):
-      apply_angle = CS.angle_steers
+    #if (changing_lanes and (CS.laneChange_enabled < 2)):
+    #  apply_angle = CS.angle_steers
     # Send CAN commands.
     can_sends = []
     send_step = 5
