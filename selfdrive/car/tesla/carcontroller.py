@@ -7,6 +7,8 @@ from collections import namedtuple
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.controls.lib.drive_helpers import rate_limit
 from common.numpy_fast import clip, interp
+import numpy as np
+import math as mth
 from selfdrive.car.tesla import teslacan
 from selfdrive.car.tesla.values import AH, CruiseButtons, CAR
 from selfdrive.can.packer import CANPacker
@@ -138,9 +140,78 @@ class CarController(object):
     changing_lanes = CS.right_blinker_on or CS.left_blinker_on
 
     enable_steer_control = (enabled and not changing_lanes)
-    
+     
+    laneChange_angle = 0
+
+    if ((not CS.prev_right_blinker_on) and CS.right_blinker_on) or ((not CS.prev_left_blinker_on) and CS.left_blinker_on):
+      laneChange_direction = -1
+      #changing lanes
+      if CS.left_blinker_on:
+        laneChange_direction = 1
+      if (CS.laneChange_enabled > 1) and (CS.laneChange_direction <> laneChange_direction):
+        #something is not right; signal in oposite direction; cancel
+        CS.laneChange_enabled = 1
+        CS.laneChange_counter = 0
+        CS.laneChange_direction = 0
+      elif CS.laneChange_enabled == 1: 
+        #compute angle delta for lane change
+        CS.laneChange_angled = laneChange_direction * CS.laneChange_steerr * mth.degrees(np.arcsin((CS.laneChange_lw / CS.laneChange_duration)/CS.v_ego))
+        CS.laneChange_enabled = 7
+        CS.laneChange_counter = 1
+        CS.laneChange_angle = -actuators.steerAngle
+        CS.laneChange_direction = laneChange_direction
+
+    #lane change in process
+    if CS.laneChange_enabled > 1:
+      CS.laneChange_counter -= 1
+      if CS.steer_override:
+        #if any steer override cancel process
+        CS.laneChange_counter = 0
+        CS.laneChange_enabled = 1
+        CS.laneChange_direction = 0
+      if CS.laneChage_enabled == 2:
+        laneChange_angle = - CS.laneChange_angled * (50 - CS.laneChange_counter)
+        CS.laneChange_counter += 1
+        if CS.laneChange_counter == 50:
+          CS.laneChange_enabled = 1
+          CS.laneChange_counter = 0
+          CS.laneChange_direction = 0
+      if CS.laneChage_enabled == 3:
+        laneChange_angle = - CS.laneChange_angled * CS.laneChange_counter
+        CS.laneChange_counter += 1
+        if CS.laneChange_counter == 50:
+          CS.laneChange_enabled = 2
+          CS.laneChange_counter = 1
+      if CS.laneChange_enabled ==4:
+        CS.laneChange_counter += 1
+        langeChange_angle = 0
+        if CS.laneChange_counter == (CS.laneChange_duration - 2) * 100:
+          CS.laneChange_enabled = 3
+          CS.laneChange_counter = 1
+      if CS.laneChage_enabled == 5:
+        laneChange_angle = CS.laneChange_angled * (50 - CS.laneChange_counter)
+        CS.laneChange_counter += 1
+        if CS.laneChange_counter == 50:
+          CS.laneChange_enabled = 4
+          CS.laneChange_counter = 1
+      if CS.laneChage_enabled == 6:
+        laneChange_angle = CS.laneChange_angled * CS.laneChange_counter
+        CS.laneChange_counter += 1
+        if CS.laneChange_counter == 50:
+          CS.laneChange_enabled = 5
+          CS.laneChange_counter = 1
+      if CS.laneChange_enabled == 7:
+        CS.laneChange_counter += 1
+        if CS.laneChange_counter == CS.laneChange_wait * 100:
+          CS.laneChange_enabled = 6
+          CS.laneChange_counter = 1
+    enable_steer_control = (enabled and ((not changing_lanes) or (CS.laneChange_enabled > 1)))
+    apply_angle = 0
     # Angle
-    apply_angle = -actuators.steerAngle
+    if (CS.laneChange_enabled > 1) and (CS.laneChange_enabled < 7):
+      apply_angle = CS.self.laneChange_angle + laneChange_angle
+    else:
+      apply_angle = -actuators.steerAngle
     angle_lim = interp(CS.v_ego, ANGLE_MAX_BP, ANGLE_MAX_V)
     apply_angle = clip(apply_angle, -angle_lim, angle_lim)
     # windup slower
@@ -151,15 +222,15 @@ class CarController(object):
 
     apply_angle = clip(apply_angle, self.last_angle - angle_rate_lim, self.last_angle + angle_rate_lim)
     #if blinker is on send the actual angle
-    if (changing_lanes):
+    if (changing_lanes and (CS.laneChange_enabled < 2)):
       apply_angle = CS.angle_steers
     # Send CAN commands.
     can_sends = []
     send_step = 5
 
     if  (True): #(frame % send_step) == 0:
-      #first we emulate DAS
-      """if (CS.DAS_info_frm == -1):
+      """#first we emulate DAS
+      if (CS.DAS_info_frm == -1):
         #initialize all frames
         CS.DAS_info_frm = frame # 1.00 s interval
         CS.DAS_status_frm = (frame + 10) % 100 # 0.50 s interval

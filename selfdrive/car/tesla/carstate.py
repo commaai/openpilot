@@ -144,6 +144,38 @@ class CarState(object):
     self.stopped = 0
     self.frame_humanSteered = 0    # Last frame human steered
 
+    # variables used for the fake DAS creation
+    self.DAS_info_frm = -1
+    self.DAS_info_msg = 0
+    self.DAS_status_frm = 0
+    self.DAS_status_idx = 0
+    self.DAS_status2_frm = 0
+    self.DAS_status2_idx = 0
+    self.DAS_bodyControls_frm = 0
+    self.DAS_bodyControls_idx = 0
+    self.DAS_lanes_frm = 0
+    self.DAS_lanes_idx = 0
+    self.DAS_objects_frm = 0
+    self.DAS_objects_idx = 0
+    self.DAS_pscControl_frm = 0
+    self.DAS_pscControl_idx = 0
+
+    #variables for pedal CC
+    self.pedal_speed_kph = 0.
+    self.pedal_enabled = 0
+
+    #variables for lane change
+    self.laneChange_enabled=1 #set to zero for no lane change
+    self.laneChange_counter=0
+    self.laneChange_duration=6 #how many seconds to actually do the move
+    self.laneChange_wait=2 #how many seconds to wait before it starts the change
+    self.laneChange_lw = 3.3 #lane width in meters
+    self.laneChange_angle = 0.
+    self.laneChange_angled = 0. #angle delta
+    self.laneChange_steerr = 13 #steer ratio for lane changes : ck if we can use the same
+    self.laneChange_direction = 0
+
+
     # vEgo kalman filter
     dt = 0.01
     # Q = np.matrix([[10.0, 0.0], [0.0, 100.0]])
@@ -199,22 +231,6 @@ class CarState(object):
     self.v_ego = float(v_ego_x[0])
     self.a_ego = float(v_ego_x[1])
 
-    # variables used for the fake DAS creation
-    self.DAS_info_frm = -1 
-    self.DAS_info_msg = 0
-    self.DAS_status_frm = 0
-    self.DAS_status_idx = 0
-    self.DAS_status2_frm = 0
-    self.DAS_status2_idx = 0
-    self.DAS_bodyControls_frm = 0
-    self.DAS_bodyControls_idx = 0
-    self.DAS_lanes_frm = 0
-    self.DAS_lanes_idx = 0
-    self.DAS_objects_frm = 0
-    self.DAS_objects_idx = 0
-    self.DAS_pscControl_frm = 0
-    self.DAS_pscControl_idx = 0
-    
     # this is a hack for the interceptor. This is now only used in the simulation
     # TODO: Replace tests by toyota so this can go away
     self.user_gas = 0 #for now
@@ -256,12 +272,19 @@ class CarState(object):
 
     self.user_brake = cp.vl["DI_torque2"]['DI_brakePedal']
     self.standstill = cp.vl["DI_torque2"]['DI_vehicleSpeed'] == 0
-    if cp.vl["DI_state"]['DI_speedUnits'] == 0:
-      self.v_cruise_pcm = (cp.vl["DI_state"]['DI_cruiseSet'])*CV.MPH_TO_KPH # Reported in MPH, expected in KPH??
-    else:
-      self.v_cruise_pcm = cp.vl["DI_state"]['DI_cruiseSet']
-    
     self.pcm_acc_status = cp.vl["DI_state"]['DI_cruiseState']
+    if self.pcm_acc_status == 0:
+      #no cruise, we set our own speed for cruise
+      if self.pedal_enabled == 0:
+        self.pedal_enabled = 1
+      self.v_cruise_pcm = self.pedal_speed_kph
+    else:
+      #disable pedal CC if real CC is on
+      self.pedal_enabled = 0
+      if cp.vl["DI_state"]['DI_speedUnits'] == 0:
+        self.v_cruise_pcm = (cp.vl["DI_state"]['DI_cruiseSet'])*CV.MPH_TO_KPH # Reported in MPH, expected in KPH??
+      else:
+        self.v_cruise_pcm = cp.vl["DI_state"]['DI_cruiseSet']
     self.hud_lead = 0 #JCT
     self.cruise_speed_offset = calc_cruise_offset(self.v_cruise_pcm, self.v_ego)
 

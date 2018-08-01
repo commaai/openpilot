@@ -227,7 +227,10 @@ class CarInterface(object):
 
     # cruise state
     ret.cruiseState.enabled = True #self.CS.pcm_acc_status != 0
-    ret.cruiseState.speed = self.CS.v_cruise_pcm * CV.KPH_TO_MS
+    if self.CS.pcm_acc_status > 0:
+      ret.cruiseState.speed = self.CS.v_cruise_pcm * CV.KPH_TO_MS
+    else:
+      ret.cruiseState.speed = self.CS.pedal_speed_kph * CV.KPH_TO_MS
     ret.cruiseState.available = bool(self.CS.main_on)
     ret.cruiseState.speedOffset = self.CS.cruise_speed_offset
     ret.cruiseState.standstill = False
@@ -278,12 +281,46 @@ class CarInterface(object):
       if self.CS.cruise_setting != 0:
         be.pressed = True
         but = self.CS.cruise_setting
+        if (self.CS.pcm_acc_status == 0 ):
+          #BBTODO: use metric/imperial based on settings of OP
+          #no car cruise control, use commands to set pedal speed
+          speed_uom = 1.609
+          if but == 0x01:
+            #forward: set speed to car speed and enabled pedal
+            self.CS.pedal_speed_kph = self.CS.v_ego_raw
+            self.CS.v_cruise_pcm = self.CS.pedal_speed_kph
+            self.CS.pedal_enabled = 2
+          elif but == 0x02:
+            #reverse: disable pedal
+            self.CS.pedal_enabled = 1
+          elif but == 0x10:
+            #up one
+            self.CS.pedal_speed_kph += speed_uom
+            self.CS.v_cruise_pcm = self.CS.pedal_speed_kph
+          elif but == 0x04:
+            #up five
+            self.CS.pedal_speed_kph += 5 * speed_uom
+            self.CS.v_cruise_pcm = self.CS.pedal_speed_kph
+          elif but == 0x20:
+            #down one
+            self.CS.pedal_speed_kph -= speed_uom
+            if self.CS.pedal_speed_kph < 0:
+              self.CS.pedal_speed_kph = 0
+            self.CS.v_cruise_pcm = self.CS.pedal_speed_kph
+          elif but == 0x08:
+            #down five
+            self.CS.pedal_speed_kph -= 5 * speed_uom
+            if self.CS.pedal_speed_kph < 0:
+              self.CS.pedal_speed_kph = 0
+            self.CS.v_cruise_pcm = self.CS.pedal_speed_kph
+          else:
+            #do nothing
+            self.CS.pedal_enabled = 1
+        else:
+          self.CS.pedal_enabled = 0
       else:
         be.pressed = False
         but = self.CS.prev_cruise_setting
-      #if but == 1:
-      #  be.type = 'altButton1'
-      # TODO: more buttons?
       buttonEvents.append(be)
     ret.buttonEvents = buttonEvents
 
