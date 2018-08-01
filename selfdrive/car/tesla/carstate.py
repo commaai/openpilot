@@ -198,6 +198,22 @@ class CarState(object):
     v_ego_x = self.v_ego_kf.update(speed)
     self.v_ego = float(v_ego_x[0])
     self.a_ego = float(v_ego_x[1])
+
+    # variables used for the fake DAS creation
+    self.DAS_info_frm = -1 
+    self.DAS_info_msg = 0
+    self.DAS_status_frm = 0
+    self.DAS_status_idx = 0
+    self.DAS_status2_frm = 0
+    self.DAS_status2_idx = 0
+    self.DAS_bodyControls_frm = 0
+    self.DAS_bodyControls_idx = 0
+    self.DAS_lanes_frm = 0
+    self.DAS_lanes_idx = 0
+    self.DAS_objects_frm = 0
+    self.DAS_objects_idx = 0
+    self.DAS_pscControl_frm = 0
+    self.DAS_pscControl_idx = 0
     
     # this is a hack for the interceptor. This is now only used in the simulation
     # TODO: Replace tests by toyota so this can go away
