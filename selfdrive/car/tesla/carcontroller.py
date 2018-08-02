@@ -24,7 +24,7 @@ ANGLE_DELTA_VU = [5., 3.5, 0.4]   # unwind limit
 
 #change lane delta angles
 CL_MAXD_BP = [0., 44.]
-CL_MAXD_A = [30., 0.1]
+CL_MAXD_A = [3., 0.1]
 
 def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
   # hyst params... TODO: move these to VehicleParams
@@ -162,7 +162,7 @@ class CarController(object):
         #compute angle delta for lane change
         print "AutoChangeLane initiated"
         CS.laneChange_angled = laneChange_direction * CS.laneChange_steerr * interp(CS.v_ego, CL_MAXD_BP, CL_MAXD_A)
-
+        print CS.laneChange_angled
         #laneChange_direction * CS.laneChange_steerr * (np.arcsin((CS.laneChange_lw / CS.laneChange_duration)/CS.v_ego))
         CS.laneChange_enabled = 5 
         CS.laneChange_counter = 1
@@ -190,7 +190,7 @@ class CarController(object):
         if CS.laneChange_counter == 1:
           print "Entering stage 3: change lanes"
         CS.laneChange_counter += 1
-        langeChange_angle = CS.laneChange_angled
+        laneChange_angle = CS.laneChange_angled
         if CS.laneChange_counter == (CS.laneChange_duration - 2) * 100:
           CS.laneChange_enabled = 2
           CS.laneChange_counter = 1
