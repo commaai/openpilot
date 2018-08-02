@@ -47,6 +47,7 @@ FINGERPRINTS = {
   }],
 }
 
+STEER_THRESHOLD = 1.0
 
 DBC = {
   CAR.VOLT: dbc_dict('gm_global_a_powertrain', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
