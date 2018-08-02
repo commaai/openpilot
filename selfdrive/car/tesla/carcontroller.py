@@ -24,7 +24,7 @@ ANGLE_DELTA_VU = [5., 3.5, 0.4]   # unwind limit
 
 #change lane delta angles
 CL_MAXD_BP = [0., 44.]
-CL_MAXD_A = [3., 0.1]
+CL_MAXD_A = [1., 0.01]
 
 def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
   # hyst params... TODO: move these to VehicleParams
@@ -213,7 +213,7 @@ class CarController(object):
     apply_angle = 0.
     # Angle
     if (CS.laneChange_enabled > 1) and (CS.laneChange_enabled < 5): 
-      apply_angle = CS.laneChange_angle + clip(laneChange_angle, -20, 20)
+      apply_angle = CS.laneChange_angle + laneChange_angle
     else:
       apply_angle = -actuators.steerAngle
     angle_lim = interp(CS.v_ego, ANGLE_MAX_BP, ANGLE_MAX_V)
