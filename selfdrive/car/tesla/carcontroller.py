@@ -26,7 +26,7 @@ ANGLE_DELTA_VU = [5., 3.5, 0.4]   # unwind limit
 
 #change lane delta angles and other params
 CL_MAXD_BP = [1., 44.]
-CL_MAXD_A = [.4, 0.01] #delta angle based on speed; needs fine tune
+CL_MAXD_A = [.6, 0.005] #delta angle based on speed; needs fine tune
 CL_MIN_V = 8.9 # do not turn if speed less than x m/2; 20 mph = 8.9 m/s
 CL_MAX_A = 2. # do not turn if actuator wants more than x deg for going straight 
 
@@ -196,7 +196,7 @@ class CarController(object):
           CS.custom_alert_counter = 100
         laneChange_angle = CS.laneChange_angled * (50 - CS.laneChange_counter )/ 50
         CS.laneChange_counter += 1
-        if CS.laneChange_counter == 50:
+        if CS.laneChange_counter == 5:
           CS.laneChange_enabled = 7
           CS.laneChange_counter = 1 
           CS.laneChange_direction = 0
