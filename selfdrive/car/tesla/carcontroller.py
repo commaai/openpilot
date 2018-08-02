@@ -23,8 +23,8 @@ ANGLE_DELTA_V = [5., .8, .15]     # windup limit
 ANGLE_DELTA_VU = [5., 3.5, 0.4]   # unwind limit
 
 #change lane delta angles and other params
-CL_MAXD_BP = [0., 44.]
-CL_MAXD_A = [.5, 0.005] #delta angle based on speed
+CL_MAXD_BP = [1., 44.]
+CL_MAXD_A = [.35, 0.008] #delta angle based on speed; needs fine tune
 CL_MIN_V = 9. # do not turn if speed less than x m/2; 20 mph = 8.9 m/s
 CL_MAX_A = 3. # do not turn if actuator wants more than x deg for going straight 
 
