@@ -175,10 +175,11 @@ class CarController(object):
       if CS.cruise_buttons not in [CruiseButtons.IDLE, CruiseButtons.MAIN]:
         self.human_cruise_action_time = current_time_ms
       cruise_msg = None
+      # If ACC was just enabled, also enable traditional cruise control if
+      # possible.
       if (CS.enable_adaptive_cruise and not CS.prev_enable_adaptive_cruise
           and CS.pcm_acc_status == 1 and CS.v_ego > 18 * CV.MPH_TO_MS):
-        # ACC was just enabled but traditional cruise control is idle. Kick it
-        # on with cruise stalk up_2nd.
+        self.automated_cruise_action_time = current_time_ms
         cruise_msg = teslacan.create_cruise_adjust_msg(CruiseButtons.RES_ACCEL_2ND, CS.steering_wheel_stalk)
       elif (# Only do adaptive cruise control while cruise control is enabled.
           CS.enable_adaptive_cruise and CS.pcm_acc_status == 2
