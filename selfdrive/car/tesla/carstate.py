@@ -165,15 +165,15 @@ class CarState(object):
     self.pedal_enabled = 0
 
     #variables for lane change
-    self.laneChange_enabled=1 #set to zero for no lane change
-    self.laneChange_counter=0
-    self.laneChange_duration=4 #how many seconds to actually do the move
-    self.laneChange_wait=2 #how many seconds to wait before it starts the change
-    self.laneChange_lw = 3.3 #lane width in meters
-    self.laneChange_angle = 0.
+    self.laneChange_enabled = 1 #set to zero for no lane change
+    self.laneChange_counter = 0 #used to count frames during lane change
+    self.laneChange_duration = 3 #how many seconds to actually do the move
+    self.laneChange_wait = 3 #how many seconds to wait before it starts the change
+    self.laneChange_lw = 3.7 #lane width in meters
+    self.laneChange_angle = 0. #saves the last angle from actuators before lane change starts
     self.laneChange_angled = 0. #angle delta
-    self.laneChange_steerr = 13 #steer ratio for lane changes : ck if we can use the same
-    self.laneChange_direction = 0
+    self.laneChange_steerr = 10 #steer ratio for lane changes : ck if we can use the same
+    self.laneChange_direction = 0 #direction of the lane change
 
 
     # vEgo kalman filter
