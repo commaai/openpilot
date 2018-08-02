@@ -229,7 +229,7 @@ class CarController(object):
       if CS.laneChange_enabled == 5:
         if CS.laneChange_counter == 1:
           tcm.custom_alert_message("Auto Lane Change Engaged! (2)")
-          CS.custom_alert_counter = 100
+          CS.custom_alert_counter = 200
         CS.laneChange_counter += 1
         if CS.laneChange_counter == CS.laneChange_wait * 100:
           CS.laneChange_enabled = 4

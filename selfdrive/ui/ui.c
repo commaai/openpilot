@@ -143,7 +143,6 @@ typedef struct UIScene {
   // Used to display calibration progress
   int cal_status;
   int cal_perc;
-
   // Used to show gps planner status
   bool gps_planner_active;
 
@@ -159,7 +158,9 @@ typedef struct UIState {
   EGLSurface surface;
 
   NVGcontext *vg;
-
+  //BB
+  int custom_alert_playsound;
+  //BB END
   int font_courbd;
   int font_sans_regular;
   int font_sans_semibold;
@@ -368,6 +369,7 @@ static void ui_init(UIState *s) {
   s->plus_sock_raw = zsock_resolve(s->plus_sock);
 
   s->ipc_fd = -1;
+  s->custom_alert_playsound=0;
 
   // init display
   s->fb = framebuffer_init("ui", 0x00010000, true,
@@ -878,6 +880,24 @@ static void ui_draw_world(UIState *s) {
   }
 }
 
+static void update_status(UIState *s, int status) {
+  if (s->status != status) {
+    s->status = status;
+    // wake up bg thread to change
+    pthread_cond_signal(&s->bg_cond);
+    //if tesla call the sound command
+    if ((status ==3 ) && (s->custom_alert_playsound == 2)) {
+      return;
+    }
+    char* snd_command;
+    if ((status ==3 ) && (s->custom_alert_playsound == 1)) {
+      s->custom_alert_playsound = 2;
+    }
+    asprintf(&snd_command, "python /data/openpilot/selfdrive/car/tesla/snd/playsound.py %d &", status);
+    system(snd_command);
+  }
+}
+
 //BB START: functions added for the display of various items
 static int bb_ui_draw_measure(UIState *s,  const char* bb_value, const char* bb_uom, const char* bb_label, 
 		int bb_x, int bb_y, int bb_uom_dx,
@@ -929,12 +949,17 @@ static void bb_ui_draw_custom_alert(UIState *s,char *car_model) {
   alert_msg_fd = open (filepath, O_RDONLY);
   //if we can't open then done
   if (alert_msg_fd == -1) {
+    s->custom_alert_playsound = 0;
     return;
   } else {
     int rd = read(alert_msg_fd, &(s->scene.alert_text1), 1000);
     if ((rd > 1) && (s->scene.alert_text1[rd-1] == '^')) {
       //^ as last character means warning
-      s->status = 3; //ALERT_WARNING
+      update_status(s,3); //ALERT_WARNING
+      if (s->custom_alert_playsound==0) {
+        //sound never played, request sound
+        s->custom_alert_playsound=1;
+      }
       rd --;
     }
     s->scene.alert_text1[rd] = '\0';
@@ -944,9 +969,9 @@ static void bb_ui_draw_custom_alert(UIState *s,char *car_model) {
     } else {
       s->scene.alert_size = ALERTSIZE_NONE;
       s->scene.alert_text1[0]=0;
+      s->custom_alert_playsound = 0;
     }
   }
-
 }
 
 static void bb_ui_draw_measures_left(UIState *s, int bb_x, int bb_y, int bb_w ) {
@@ -1609,18 +1634,6 @@ static ModelData read_model(cereal_ModelData_ptr modelp) {
   };
 
   return d;
-}
-
-static void update_status(UIState *s, int status) {
-  if (s->status != status) {
-    s->status = status;
-    // wake up bg thread to change
-    pthread_cond_signal(&s->bg_cond);
-    //if tesla call the sound command
-    char* snd_command;
-    asprintf(&snd_command, "python /data/openpilot/selfdrive/car/tesla/snd/playsound.py %d &", status);
-    system(snd_command);
-  }
 }
 
 static void ui_update(UIState *s) {
