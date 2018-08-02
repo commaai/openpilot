@@ -181,7 +181,8 @@ class CarController(object):
       # If ACC was just enabled, also enable traditional cruise control if
       # possible.
       if (CS.enable_adaptive_cruise and CS.pcm_acc_status == 1
-          and CS.v_ego > 18 * CV.MPH_TO_MS and speed_offset >= 0):
+          and CS.v_ego > 18 * CV.MPH_TO_MS
+          and current_time_ms > self.automated_cruise_action_time + 1000):
         self.automated_cruise_action_time = current_time_ms
         cruise_msg = teslacan.create_cruise_adjust_msg(CruiseButtons.DECEL_2ND, CS.steering_wheel_stalk)
       elif (# Only do adaptive cruise control while cruise control is enabled.
