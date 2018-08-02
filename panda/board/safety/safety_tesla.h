@@ -1,5 +1,3 @@
-#include "../drivers/gmlanswitch.h"
-
 // board enforces
 //   in-state
 //      accel set/resume
@@ -72,7 +70,8 @@ float tesla_interpolate(struct lookup_t xy, float x) {
 
 
 static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
-  enable_gmlan_switch(); //we're still in tesla safety mode, reset the timeout counter and make sure our output is enabled
+  set_gmlan_digital_output(GMLAN_HIGH);
+  reset_gmlan_switch_timeout(); //we're still in tesla safety mode, reset the timeout counter and make sure our output is enabled
   
   //int bus_number = (to_push->RDTR >> 4) & 0xFF;
   uint32_t addr;
@@ -241,7 +240,7 @@ static int tesla_tx_lin_hook(int lin_num, uint8_t *data, int len) {
 static void tesla_init(int16_t param) {
   controls_allowed = 0;
   tesla_ignition_started = 0;
-  gmlan_switch_init();
+  gmlan_switch_init(1); //init the gmlan switch with 1s timeout enabled
 }
 
 static int tesla_ign_hook() {
@@ -261,6 +260,11 @@ static int tesla_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
       to_fwd->RDLR = to_fwd->RDLR & 0xFFFF;
       to_fwd->RDLR = to_fwd->RDLR + (checksum << 16);
       return 2;
+    }
+	  
+    // remove EPB_epasControl
+    if (addr == 0x214) {
+      return false;
     }
 
     return 2; // Custom EPAS bus
