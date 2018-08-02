@@ -226,13 +226,13 @@ class CarState(object):
     self.cruise_setting = self.steering_wheel_stalk['SpdCtrlLvr_Stat']
     self.cruise_buttons = self.steering_wheel_stalk['SpdCtrlLvr_Stat']
     # Check if the cruise stalk was double pulled, indicating that adaptive
-    # cruise control should be enabled. Twice in one second counts as a double
+    # cruise control should be enabled. Twice in .75 seconds counts as a double
     # pull.
     if (self.cruise_buttons == CruiseButtons.MAIN and
         self.prev_cruise_buttons != CruiseButtons.MAIN):
       curr_time_ms = _current_time_millis()
       self.enable_adaptive_cruise = (
-        curr_time_ms - self.last_cruise_stalk_pull_time < 1000)
+        curr_time_ms - self.last_cruise_stalk_pull_time < 750)
       self.last_cruise_stalk_pull_time = curr_time_ms
     elif (self.cruise_buttons == CruiseButtons.CANCEL and
           self.prev_cruise_buttons != CruiseButtons.CANCEL):
