@@ -146,9 +146,9 @@ class CarController(object):
     enable_steer_control = (enabled and not changing_lanes)
      
     laneChange_angle = 0.
-     if (CS.prev_right_blinker_on and (not CS.right_blinker_on)) or ( CS.prev_left_blinker_on and (not CS.left_blinker_on)):
-       if CS.laneChange_enabled ==7:
-         CS.laneChange_enabled =1
+    if (CS.prev_right_blinker_on and (not CS.right_blinker_on)) or ( CS.prev_left_blinker_on and (not CS.left_blinker_on)):
+      if CS.laneChange_enabled ==7:
+        CS.laneChange_enabled =1
     if ((not CS.prev_right_blinker_on) and CS.right_blinker_on) or ((not CS.prev_left_blinker_on) and CS.left_blinker_on):
       laneChange_direction = 1
       #changing lanes
