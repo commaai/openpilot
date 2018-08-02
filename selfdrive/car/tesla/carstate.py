@@ -167,7 +167,7 @@ class CarState(object):
     #variables for lane change
     self.laneChange_enabled = 1 #set to zero for no lane change
     self.laneChange_counter = 0 #used to count frames during lane change
-    self.laneChange_duration = 4 #how many seconds to actually do the move
+    self.laneChange_duration = 3.5 #how many seconds to actually do the move
     self.laneChange_wait = 2 #how many seconds to wait before it starts the change
     self.laneChange_lw = 3.7 #lane width in meters
     self.laneChange_angle = 0. #saves the last angle from actuators before lane change starts
