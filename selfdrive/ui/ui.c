@@ -886,7 +886,7 @@ static void update_status(UIState *s, int status) {
     // wake up bg thread to change
     pthread_cond_signal(&s->bg_cond);
     //if tesla call the sound command
-    if ((status ==3 ) && (s->custom_alert_playsound == 2)) {
+    if ((status ==3 ) && (s->custom_alert_playsound > 0)) {
       return;
     }
     char* snd_command;
@@ -955,11 +955,12 @@ static void bb_ui_draw_custom_alert(UIState *s,char *car_model) {
     int rd = read(alert_msg_fd, &(s->scene.alert_text1), 1000);
     if ((rd > 1) && (s->scene.alert_text1[rd-1] == '^')) {
       //^ as last character means warning
-      update_status(s,3); //ALERT_WARNING
       if (s->custom_alert_playsound==0) {
         //sound never played, request sound
         s->custom_alert_playsound=1;
       }
+      //update_status(s,3); //ALERT_WARNINGa
+      s->status = 3; //ALERT_WARNING
       rd --;
     }
     s->scene.alert_text1[rd] = '\0';

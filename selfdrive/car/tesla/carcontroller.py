@@ -27,8 +27,8 @@ ANGLE_DELTA_VU = [5., 3.5, 0.4]   # unwind limit
 #change lane delta angles and other params
 CL_MAXD_BP = [1., 44.]
 CL_MAXD_A = [.4, 0.01] #delta angle based on speed; needs fine tune
-CL_MIN_V = 0. # do not turn if speed less than x m/2; 20 mph = 8.9 m/s
-CL_MAX_A = 3. # do not turn if actuator wants more than x deg for going straight 
+CL_MIN_V = 8.9 # do not turn if speed less than x m/2; 20 mph = 8.9 m/s
+CL_MAX_A = 2. # do not turn if actuator wants more than x deg for going straight 
 
 def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
   # hyst params... TODO: move these to VehicleParams
@@ -168,7 +168,7 @@ class CarController(object):
         laneChange_direction = -1
       if (CS.laneChange_enabled > 1) and (CS.laneChange_direction <> laneChange_direction):
         #something is not right; signal in oposite direction; cancel
-        tcm.custom_alert_message("Auto Lane Change Canceled! (s)^")
+        tcm.custom_alert_message("Auto Lane Change Canceled! (s)")
         CS.custom_alert_counter = 200
         CS.laneChange_enabled = 1
         CS.laneChange_counter = 0
@@ -184,7 +184,7 @@ class CarController(object):
     if CS.laneChange_enabled > 1:
       CS.laneChange_angled = CS.laneChange_direction * CS.laneChange_steerr *  interp(CS.v_ego, CL_MAXD_BP, CL_MAXD_A)
       if (CS.steer_override or (CS.v_ego < CL_MIN_V)):
-        tcm.custom_alert_message("Auto Lane Change Canceled! (u)^")
+        tcm.custom_alert_message("Auto Lane Change Canceled! (u)")
         CS.custom_alert_counter = 200
         #if any steer override cancel process or if speed less than min speed
         CS.laneChange_counter = 0
@@ -216,7 +216,7 @@ class CarController(object):
           CS.custom_alert_counter=100
           #if angle more than max angle allowed cancel; last chance to cancel on road curvature
           if (abs(CS.laneChange_angle) > CL_MAX_A):
-            tcm.custom_alert_message("Auto Lane Change Canceled! (a)^")
+            tcm.custom_alert_message("Auto Lane Change Canceled! (a)")
             CS.custom_alert_counter = 200
             CS.laneChange_enabled = 1
             CS.laneChange_counter = 0
