@@ -461,15 +461,19 @@ void CAN3_SCE_IRQHandler() { can_sce(CAN3); }
 
 #endif
 
-
 void can_send(CAN_FIFOMailBox_TypeDef *to_push, uint8_t bus_number) {
   if (safety_tx_hook(to_push) && !can_autobaud_enabled[bus_number]) {
     if (bus_number < BUS_MAX) {
       // add CAN packet to send queue
       // bus number isn't passed through
       to_push->RDTR &= 0xF;
-      can_push(can_queues[bus_number], to_push);
-      process_can(CAN_NUM_FROM_BUS_NUM(bus_number));
+      if (bus_number == 3 && can_num_lookup[3] == 0xFF) {
+        // TODO: why uint8 bro? only int8?
+        bitbang_gmlan(to_push);
+      } else {
+        can_push(can_queues[bus_number], to_push);
+        process_can(CAN_NUM_FROM_BUS_NUM(bus_number));
+      }
     }
   }
 }
