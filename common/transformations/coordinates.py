@@ -12,12 +12,14 @@ esq = 6.69437999014 * 0.001
 e1sq = 6.73949674228 * 0.001
 
 
-def geodetic2ecef(geodetic):
+def geodetic2ecef(geodetic, radians=False):
   geodetic = np.array(geodetic)
   input_shape = geodetic.shape
   geodetic = np.atleast_2d(geodetic)
-  lat = (np.pi/180)*geodetic[:,0]
-  lon = (np.pi/180)*geodetic[:,1]
+
+  ratio = 1.0 if radians else (np.pi / 180.0)
+  lat = ratio*geodetic[:,0]
+  lon = ratio*geodetic[:,1]
   alt = geodetic[:,2]
 
   xi = np.sqrt(1 - esq * np.sin(lat)**2)
@@ -28,40 +30,40 @@ def geodetic2ecef(geodetic):
   return ecef.reshape(input_shape)
 
 
-def ecef2geodetic(ecef):
+def ecef2geodetic(ecef, radians=False):
   """
   Convert ECEF coordinates to geodetic using ferrari's method
   """
-  def ferrari(x, y, z):
-    # ferrari's method
-    r = np.sqrt(x * x + y * y)
-    Esq = a * a - b * b
-    F = 54 * b * b * z * z
-    G = r * r + (1 - esq) * z * z - esq * Esq
-    C = (esq * esq * F * r * r) / (pow(G, 3))
-    S = np.cbrt(1 + C + np.sqrt(C * C + 2 * C))
-    P = F / (3 * pow((S + 1 / S + 1), 2) * G * G)
-    Q = np.sqrt(1 + 2 * esq * esq * P)
-    r_0 =  -(P * esq * r) / (1 + Q) + np.sqrt(0.5 * a * a*(1 + 1.0 / Q) - \
-          P * (1 - esq) * z * z / (Q * (1 + Q)) - 0.5 * P * r * r)
-    U = np.sqrt(pow((r - esq * r_0), 2) + z * z)
-    V = np.sqrt(pow((r - esq * r_0), 2) + (1 - esq) * z * z)
-    Z_0 = b * b * z / (a * V)
-    h = U * (1 - b * b / (a * V))
-    lat = (180/np.pi)*np.arctan((z + e1sq * Z_0) / r)
-    lon = (180/np.pi)*np.arctan2(y, x)
-    return lat, lon, h
-
-  geodetic = []
-  ecef = np.array(ecef)
+  # Save shape and export column
+  ecef = np.atleast_1d(ecef)
   input_shape = ecef.shape
   ecef = np.atleast_2d(ecef)
-  for p in ecef:
-    geodetic.append(ferrari(*p))
-  geodetic = np.array(geodetic)
+  x, y, z = ecef[:, 0], ecef[:, 1], ecef[:, 2]
+
+  ratio = 1.0 if radians else (180.0 / np.pi)
+
+  # Conver from ECEF to geodetic using Ferrari's methods
+  # https://en.wikipedia.org/wiki/Geographic_coordinate_conversion#Ferrari.27s_solution
+  r = np.sqrt(x * x + y * y)
+  Esq = a * a - b * b
+  F = 54 * b * b * z * z
+  G = r * r + (1 - esq) * z * z - esq * Esq
+  C = (esq * esq * F * r * r) / (pow(G, 3))
+  S = np.cbrt(1 + C + np.sqrt(C * C + 2 * C))
+  P = F / (3 * pow((S + 1 / S + 1), 2) * G * G)
+  Q = np.sqrt(1 + 2 * esq * esq * P)
+  r_0 =  -(P * esq * r) / (1 + Q) + np.sqrt(0.5 * a * a*(1 + 1.0 / Q) - \
+        P * (1 - esq) * z * z / (Q * (1 + Q)) - 0.5 * P * r * r)
+  U = np.sqrt(pow((r - esq * r_0), 2) + z * z)
+  V = np.sqrt(pow((r - esq * r_0), 2) + (1 - esq) * z * z)
+  Z_0 = b * b * z / (a * V)
+  h = U * (1 - b * b / (a * V))
+  lat = ratio*np.arctan((z + e1sq * Z_0) / r)
+  lon = ratio*np.arctan2(y, x)
+
+  # stack the new columns and return to the original shape
+  geodetic = np.column_stack((lat, lon, h))
   return geodetic.reshape(input_shape)
-
-
 
 class LocalCoord(object):
   """

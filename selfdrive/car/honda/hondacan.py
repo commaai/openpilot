@@ -117,7 +117,7 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, idx):
   return commands
 
 
-def create_radar_commands(v_ego, car_fingerprint, idx):
+def create_radar_commands(v_ego, car_fingerprint, new_radar_config, idx):
   """Creates an iterable of CAN messages for the radar system."""
   commands = []
   v_ego_kph = np.clip(int(round(v_ego * CV.MS_TO_KPH)), 0, 255)
@@ -129,7 +129,8 @@ def create_radar_commands(v_ego, car_fingerprint, idx):
 
   if car_fingerprint == CAR.CIVIC:
     msg_0x301 = "\x02\x38\x44\x32\x4f\x00\x00"
-    commands.append(make_can_msg(0x300, msg_0x300, idx + 8, 1))  # add 8 on idx.
+    idx_offset = 0xc if new_radar_config else 0x8   # radar in civic 2018 requires 0xc
+    commands.append(make_can_msg(0x300, msg_0x300, idx + idx_offset, 1))
   else:
     if car_fingerprint == CAR.CRV:
       msg_0x301 = "\x00\x00\x50\x02\x51\x00\x00"

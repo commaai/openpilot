@@ -65,6 +65,8 @@ const int box_w = vwp_w-sbr_w-(bdr_s*2);
 const int box_h = vwp_h-(bdr_s*2);
 const int viz_w = vwp_w-(bdr_s*2);
 const int header_h = 420;
+const int footer_h = 280;
+const int footer_y = vwp_h-bdr_s-footer_h;
 
 const uint8_t bg_colors[][4] = {
   [STATUS_STOPPED] = {0x07, 0x23, 0x39, 0xff},
@@ -110,6 +112,7 @@ typedef struct UIScene {
   float curvature;
   int engaged;
   bool engageable;
+  bool monitoring_active;
 
   bool uilayout_sidebarcollapsed;
   bool uilayout_mapenabled;
@@ -158,6 +161,7 @@ typedef struct UIState {
   int font_sans_semibold;
   int font_sans_bold;
   int img_wheel;
+  int img_face;
 
   zsock_t *thermal_sock;
   void *thermal_sock_raw;
@@ -378,6 +382,9 @@ static void ui_init(UIState *s) {
 
   assert(s->img_wheel >= 0);
   s->img_wheel = nvgCreateImage(s->vg, "../assets/img_chffr_wheel.png", 1);
+
+  assert(s->img_face >= 0);
+  s->img_face = nvgCreateImage(s->vg, "../assets/img_driver_face.png", 1);
 
   // init gl
   s->frame_program = load_program(frame_vertex_shader, frame_fragment_shader);
@@ -981,6 +988,31 @@ static void ui_draw_vision_wheel(UIState *s) {
   nvgFill(s->vg);
 }
 
+static void ui_draw_vision_face(UIState *s) {
+  const UIScene *scene = &s->scene;
+  const int face_size = 96;
+  const int face_x = (scene->ui_viz_rx + face_size + (bdr_s * 2));
+  const int face_y = (footer_y + ((footer_h - face_size) / 2));
+  const int face_img_size = (face_size * 1.5);
+  const int face_img_x = (face_x - (face_img_size / 2));
+  const int face_img_y = (face_y - (face_size / 4));
+  float face_img_alpha = scene->monitoring_active ? 1.0f : 0.15f;
+  float face_bg_alpha = scene->monitoring_active ? 0.3f : 0.1f;
+  NVGcolor face_bg = nvgRGBA(0, 0, 0, (255 * face_bg_alpha));
+  NVGpaint face_img = nvgImagePattern(s->vg, face_img_x, face_img_y,
+    face_img_size, face_img_size, 0, s->img_face, face_img_alpha);
+
+  nvgBeginPath(s->vg);
+  nvgCircle(s->vg, face_x, (face_y + (bdr_s * 1.5)), face_size);
+  nvgFillColor(s->vg, face_bg);
+  nvgFill(s->vg);
+
+  nvgBeginPath(s->vg);
+  nvgRect(s->vg, face_img_x, face_img_y, face_img_size, face_img_size);
+  nvgFillPaint(s->vg, face_img);
+  nvgFill(s->vg);
+}
+
 static void ui_draw_vision_header(UIState *s) {
   const UIScene *scene = &s->scene;
   int ui_viz_rx = scene->ui_viz_rx;
@@ -998,6 +1030,18 @@ static void ui_draw_vision_header(UIState *s) {
   ui_draw_vision_maxspeed(s);
   ui_draw_vision_speed(s);
   ui_draw_vision_wheel(s);
+}
+
+static void ui_draw_vision_footer(UIState *s) {
+  const UIScene *scene = &s->scene;
+  int ui_viz_rx = scene->ui_viz_rx;
+  int ui_viz_rw = scene->ui_viz_rw;
+
+  nvgBeginPath(s->vg);
+  nvgRect(s->vg, ui_viz_rx, footer_y, ui_viz_rw, footer_h);
+
+  // Driver Monitoring
+  ui_draw_vision_face(s);
 }
 
 static void ui_draw_vision_alert(UIState *s, int va_size, int va_color,
@@ -1109,7 +1153,10 @@ static void ui_draw_vision(UIState *s) {
   } else if (scene->cal_status == CALIBRATION_UNCALIBRATED) {
     // Calibration Status
     ui_draw_calibration_status(s);
+  } else {
+    ui_draw_vision_footer(s);
   }
+
 
   nvgEndFrame(s->vg);
   glDisable(GL_BLEND);
@@ -1399,6 +1446,7 @@ static void ui_update(UIState *s) {
         s->scene.engaged = datad.enabled;
         s->scene.engageable = datad.engageable;
         s->scene.gps_planner_active = datad.gpsPlannerActive;
+        s->scene.monitoring_active = datad.driverMonitoringOn;
         // printf("recv %f\n", datad.vEgo);
 
         s->scene.frontview = datad.rearViewCam;
@@ -1634,12 +1682,6 @@ static void* light_sensor_thread(void *args) {
 
   int SENSOR_LIGHT = 7;
 
-  struct stat buffer;
-  if (stat("/sys/bus/i2c/drivers/cyccg", &buffer) == 0) {
-    LOGD("LeEco light sensor detected");
-    SENSOR_LIGHT = 5;
-  }
-
   device->activate(device, SENSOR_LIGHT, 0);
   device->activate(device, SENSOR_LIGHT, 1);
   device->setDelay(device, SENSOR_LIGHT, ms2ns(100));
@@ -1653,9 +1695,7 @@ static void* light_sensor_thread(void *args) {
       LOG_100("light_sensor_poll failed: %d", n);
     }
     if (n > 0) {
-      if (SENSOR_LIGHT == 5) s->light_sensor = buffer[0].light * 2;
-      else s->light_sensor = buffer[0].light;
-      //printf("new light sensor value: %f\n", s->light_sensor);
+      s->light_sensor = buffer[0].light;
     }
   }
 
