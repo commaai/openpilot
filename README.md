@@ -10,7 +10,7 @@ The openpilot codebase has been written to be concise and enable rapid prototypi
 Community
 ------
 
-openpilot is supported by [comma.ai](https://comma.ai/).
+openpilot is developed by [comma.ai](https://comma.ai/) and users like you.
 
 We have a [Twitter you should follow](https://twitter.com/comma_ai).
 
@@ -41,57 +41,62 @@ Install openpilot on a neo device by entering ``https://openpilot.comma.ai`` dur
 Supported Cars
 ------
 
-| Make    | Model                  | Supported Package    | Lateral | Longitudinal | No Accel Below  | No Steer Below |
-| ------- | ---------------------- | -------------------- | ------- | ------------ | --------------  | -------------- |
-| Acura   | ILX 2016               | AcuraWatch Plus      | Yes     | Yes          | 25mph*          | 25mph          |
-| Acura   | ILX 2017               | AcuraWatch Plus      | Yes     | Yes          | 25mph*          | 25mph          |
-| Acura   | RDX 2018               | AcuraWatch Plus      | Yes     | Yes          | 25mph*          | 12mph          |
-| GM      | Volt 2017              | Driver Confidence II | Yes     | Yes          | 0mph            | 7mph           |
-| GM      | Volt 2018              | Driver Confidence II | Yes     | Yes          | 0mph            | 7mph           |
-| Honda   | Accord 2018            | All                  | Yes     | Stock        | 0mph            | 3mph           |
-| Honda   | Civic 2016             | Honda Sensing        | Yes     | Yes          | 0mph            | 12mph          |
-| Honda   | Civic 2017             | Honda Sensing        | Yes     | Yes          | 0mph            | 12mph          |
-| Honda   | Civic 2017 *(Hatch)*   | Honda Sensing        | Yes     | Stock        | 0mph            | 12mph          |
-| Honda   | Civic 2018             | Honda Sensing        | Yes     | Yes          | 0mph            | 12mph          |
-| Honda   | CR-V 2015              | Honda Sensing        | Yes     | Yes          | 25mph*          | 12mph          |
-| Honda   | CR-V 2016              | Honda Sensing        | Yes     | Yes          | 25mph*          | 12mph          |
-| Honda   | CR-V 2017              | Honda Sensing        | Yes     | Stock        | 0mph            | 12mph          |
-| Honda   | CR-V 2018              | Honda Sensing        | Yes     | Stock        | 0mph            | 12mph          |
-| Honda   | Odyssey 2017           | Honda Sensing        | Yes     | Yes          | 25mph*          | 12mph          |
-| Honda   | Odyssey 2018           | Honda Sensing        | Yes     | Yes          | 25mph*          | 12mph          |
-| Honda   | Pilot 2017             | Honda Sensing        | Yes     | Yes          | 25mph*          | 12mph          |
-| Honda   | Pilot 2018             | Honda Sensing        | Yes     | Yes          | 25mph*          | 12mph          |
-| Honda   | Ridgeline 2017         | Honda Sensing        | Yes     | Yes          | 25mph*          | 12mph          |
-| Honda   | Ridgeline 2018         | Honda Sensing        | Yes     | Yes          | 25mph*          | 12mph          |
-| Lexus   | RX Hybrid 2017         | All                  | Yes     | Yes          | 0mph            | 0mph           |
-| Lexus   | RX Hybrid 2018         | All                  | Yes     | Yes          | 0mph            | 0mph           |
-| Toyota  | Corolla 2017           | All                  | Yes     | Yes          | 20mph           | 0mph           |
-| Toyota  | Corolla 2018           | All                  | Yes     | Yes          | 20mph           | 0mph           |
-| Toyota  | Prius 2016             | TSS-P                | Yes     | Yes          | 0mph            | 0mph           |
-| Toyota  | Prius 2017             | All                  | Yes     | Yes          | 0mph            | 0mph           |
-| Toyota  | Prius 2018             | All                  | Yes     | Yes          | 0mph            | 0mph           |
-| Toyota  | Prius Prime 2017       | All                  | Yes     | Yes          | 0mph            | 0mph           |
-| Toyota  | Prius Prime 2018       | All                  | Yes     | Yes          | 0mph            | 0mph           |
-| Toyota  | Rav4 2016              | TSS-P                | Yes     | Yes          | 20mph           | 0mph           |
-| Toyota  | Rav4 2017              | All                  | Yes     | Yes          | 20mph           | 0mph           |
-| Toyota  | Rav4 2018              | All                  | Yes     | Yes          | 20mph           | 0mph           |
-| Toyota  | Rav4 Hybrid 2017       | All                  | Yes     | Yes          | 0mph            | 0mph           |
-| Toyota  | Rav4 Hybrid 2018       | All                  | Yes     | Yes          | 0mph            | 0mph           |
+| Make          | Model                     | Supported Package    | Lateral | Longitudinal   | No Accel Below   | No Steer Below |
+| -------       | ----------------------    | -------------------- | ------- | ------------   | --------------   | -------------- |
+| Acura         | ILX 2016                  | AcuraWatch Plus      | Yes     | Yes            | 25mph<sup>1</sup>| 25mph          |
+| Acura         | ILX 2017                  | AcuraWatch Plus      | Yes     | Yes            | 25mph<sup>1</sup>| 25mph          |
+| Acura         | RDX 2018                  | AcuraWatch Plus      | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          |
+| GM<sup>3</sup>| Volt 2017                 | Driver Confidence II | Yes     | Yes            | 0mph             | 7mph           |
+| GM<sup>3</sup>| Volt 2018                 | Driver Confidence II | Yes     | Yes            | 0mph             | 7mph           |
+| Honda         | Accord 2018               | All                  | Yes     | Stock          | 0mph             | 3mph           |
+| Honda         | Civic 2016                | Honda Sensing        | Yes     | Yes            | 0mph             | 12mph          |
+| Honda         | Civic 2017                | Honda Sensing        | Yes     | Yes            | 0mph             | 12mph          |
+| Honda         | Civic 2017 *(Hatch)*      | Honda Sensing        | Yes     | Stock          | 0mph             | 12mph          |
+| Honda         | Civic 2018                | Honda Sensing        | Yes     | Yes            | 0mph             | 12mph          |
+| Honda         | CR-V 2015                 | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          |
+| Honda         | CR-V 2016                 | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          |
+| Honda         | CR-V 2017                 | Honda Sensing        | Yes     | Stock          | 0mph             | 12mph          |
+| Honda         | CR-V 2018                 | Honda Sensing        | Yes     | Stock          | 0mph             | 12mph          |
+| Honda         | Odyssey 2017              | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          |
+| Honda         | Odyssey 2018              | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          |
+| Honda         | Pilot 2017                | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          |
+| Honda         | Pilot 2018                | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          |
+| Honda         | Ridgeline 2017            | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          |
+| Honda         | Ridgeline 2018            | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          |
+| Lexus         | RX Hybrid 2017            | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
+| Lexus         | RX Hybrid 2018            | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
+| Toyota        | Camry 2018<sup>4</sup>    | All                  | Yes     | Stock          | 0mph<sup>5</sup> | 0mph           |
+| Toyota        | C-HR 2018<sup>4</sup>     | All                  | Yes     | Stock          | 0mph             | 0mph           |
+| Toyota        | Corolla 2017              | All                  | Yes     | Yes<sup>2</sup>| 20mph            | 0mph           |
+| Toyota        | Corolla 2018              | All                  | Yes     | Yes<sup>2</sup>| 20mph            | 0mph           |
+| Toyota        | Prius 2016                | TSS-P                | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
+| Toyota        | Prius 2017                | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
+| Toyota        | Prius 2018                | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
+| Toyota        | Prius Prime 2017          | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
+| Toyota        | Prius Prime 2018          | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
+| Toyota        | Rav4 2016                 | TSS-P                | Yes     | Yes<sup>2</sup>| 20mph            | 0mph           |
+| Toyota        | Rav4 2017                 | All                  | Yes     | Yes<sup>2</sup>| 20mph            | 0mph           |
+| Toyota        | Rav4 2018                 | All                  | Yes     | Yes<sup>2</sup>| 20mph            | 0mph           |
+| Toyota        | Rav4 Hybrid 2017          | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
+| Toyota        | Rav4 Hybrid 2018          | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
 
 
-*[Comma Pedal](https://community.comma.ai/wiki/index.php/Comma_Pedal) is used to provide stop-and-go capability to some of the openpilot-supported cars that don't currently support stop-and-go. Here is how to [build a Comma Pedal](https://medium.com/@jfrux/comma-pedal-building-with-macrofab-6328bea791e8). ***NOTE: The Comma Pedal is not officially supported by [comma.ai](https://comma.ai)***
+<sup>1</sup>[Comma Pedal](https://community.comma.ai/wiki/index.php/Comma_Pedal) is used to provide stop-and-go capability to some of the openpilot-supported cars that don't currently support stop-and-go. Here is how to [build a Comma Pedal](https://medium.com/@jfrux/comma-pedal-building-with-macrofab-6328bea791e8). ***NOTE: The Comma Pedal is not officially supported by [comma.ai](https://comma.ai)***  
+<sup>2</sup>When disconnecting the Driver Support Unit (DSU), otherwise longitudinal control is stock ACC. For DSU locations, see [Toyota Wiki page](https://community.comma.ai/wiki/index.php/Toyota)  
+<sup>3</sup>[GM installation guide](https://www.zoneos.com/volt.htm)  
+<sup>4</sup>It needs an extra 120Ohm resistor ([pic1](https://i.imgur.com/CmdKtTP.jpg), [pic2](https://i.imgur.com/s2etUo6.jpg)) on bus 3 and giraffe switches set to 01X1 (11X1 for stock LKAS), where X depends on if you have the [comma power](https://comma.ai/shop/products/power/).  
+<sup>5</sup>28mph for Camry 4CYL L, 4CYL LE and 4CYL SE which don't have Full-Speed Range Dynamic Radar Cruise Control.  
 
 Community Maintained Cars
 ------
 
-| Make    | Model                  | Supported Package    | Lateral | Longitudinal | No Accel Below  | No Steer Below	|
-| ------- | -----------------------| -------------------- | ------- | ------------ | -----------     | ------------ |
-| Tesla   | Model S 2012           | All                  | Yes     | Not yet      | Not applicable  | 0mph         |
-| Tesla   | Model S 2013           | All                  | Yes     | Not yet      | Not applicable  | 0mph         |
+| Make          | Model                     | Supported Package    | Lateral | Longitudinal   | No Accel Below   | No Steer Below |
+| -------       | ----------------------    | -------------------- | ------- | ------------   | --------------   | -------------- |
+| Honda         | Fit 2018                  | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          |
 
-[[Tesla Pull Request]](https://github.com/commaai/openpilot/pull/246)
+[[Honda Fit Pull Request]](https://github.com/commaai/openpilot/pull/266).
 
-*Community Maintained Cars are not confirmed by comma.ai to meet our safety model. Be extra cautious using them.
+Community Maintained Cars are not confirmed by comma.ai to meet our safety model. Be extra cautious using them.
 
 In Progress Cars
 ------
@@ -107,7 +112,7 @@ How can I add support for my car?
 
 If your car has adaptive cruise control and lane keep assist, you are in luck. Using a [panda](https://comma.ai/shop/products/panda-obd-ii-dongle/) and [cabana](https://community.comma.ai/cabana/), you can understand how to make your car drive by wire.
 
-We've written a [porting guide](https://medium.com/@comma_ai/openpilot-port-guide-for-toyota-models-e5467f4b5fe6) for Toyota that might help you after you have the basics figured out.
+We've written guides for [Brand](https://medium.com/@comma_ai/how-to-write-a-car-port-for-openpilot-7ce0785eda84) and [Model](https://medium.com/@comma_ai/openpilot-port-guide-for-toyota-models-e5467f4b5fe6) ports. These guides might help you after you have the basics figured out.
 
 - BMW, Audi, Volvo, and Mercedes all use [FlexRay](https://en.wikipedia.org/wiki/FlexRay) and are unlikely to be supported any time soon.
 - We put time into a Ford port, but the steering has a 10 second cutout limitation that makes it unusable.
@@ -174,7 +179,7 @@ Contributing
 ------
 
 We welcome both pull requests and issues on
-[github](http://github.com/commaai/openpilot). Bug fixes and new car support encouraged.
+[github](http://github.com/commaai/openpilot). Bug fixes and new car ports encouraged.
 
 Want to get paid to work on openpilot? [comma.ai is hiring](https://comma.ai/jobs/)
 
