@@ -215,10 +215,10 @@ class CarController(object):
           elif CS.v_ego > 18 * CV.MPH_TO_MS:  # cruise only works >18mph.
             # How much we can accelerate without exceeding the max allowed speed.
             available_speed = CS.v_cruise_pcm - CS.v_cruise_actual
-            if full_press_kph < speed_offset and full_press_kph < available_speed:
+            if speed_offset > full_press_kph and speed_offset < available_speed:
               # Send cruise stalk up_2nd.
               button_to_press = CruiseButtons.RES_ACCEL_2ND
-            elif half_press_kph < speed_offset and half_press_kph < available_speed:
+            elif speed_offset > half_press_kph and speed_offset < available_speed:
               # Send cruise stalk up_1st.
               button_to_press = CruiseButtons.RES_ACCEL
       if button_to_press:
