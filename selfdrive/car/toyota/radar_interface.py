@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 import os
+import zmq
+import time
 from selfdrive.can.parser import CANParser
 from cereal import car
 from common.realtime import sec_since_boot
-import zmq
 from selfdrive.services import service_list
 import selfdrive.messaging as messaging
+from selfdrive.car.toyota.values import NO_DSU_CAR
 
 
 RADAR_MSGS = list(range(0x210, 0x220))
@@ -30,15 +32,21 @@ class RadarInterface(object):
 
     self.delay = 0.0  # Delay of radar
 
-    # Nidec
     self.rcp = _create_radard_can_parser()
+    self.no_dsu_car = CP.carFingerprint in NO_DSU_CAR
 
     context = zmq.Context()
     self.logcan = messaging.sub_sock(context, service_list['can'].port)
 
   def update(self):
-    canMonoTimes = []
 
+    ret = car.RadarState.new_message()
+    if self.no_dsu_car:
+      # TODO: make a adas dbc file for dsu-less models
+      time.sleep(0.05)
+      return ret
+
+    canMonoTimes = []
     updated_messages = set()
     while 1:
       tm = int(sec_since_boot() * 1e9)
@@ -47,7 +55,6 @@ class RadarInterface(object):
       if 0x21f in updated_messages:
         break
 
-    ret = car.RadarState.new_message()
     errors = []
     if not self.rcp.can_valid:
       errors.append("commIssue")

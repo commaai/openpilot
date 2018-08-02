@@ -1,4 +1,4 @@
-from selfdrive.car.toyota.values import CAR, DBC
+from selfdrive.car.toyota.values import CAR, DBC, STEER_THRESHOLD
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from common.kalman.simple_kalman import KF1D
@@ -7,7 +7,7 @@ import numpy as np
 
 def parse_gear_shifter(can_gear, car_fingerprint):
   # TODO: Use values from DBC to parse this field
-  if car_fingerprint == CAR.PRIUS:
+  if car_fingerprint in [CAR.PRIUS, CAR.CHRH, CAR.CAMRYH]:
     if can_gear == 0x0:
       return "park"
     elif can_gear == 0x1:
@@ -19,7 +19,7 @@ def parse_gear_shifter(can_gear, car_fingerprint):
     elif can_gear == 0x4:
       return "brake"
   elif car_fingerprint in [CAR.RAV4, CAR.RAV4H, 
-                           CAR.LEXUS_RXH, CAR.COROLLA]:
+                           CAR.LEXUS_RXH, CAR.COROLLA, CAR.CHR, CAR.CAMRY]:
     if can_gear == 0x20:
       return "park"
     elif can_gear == 0x10:
@@ -147,8 +147,6 @@ class CarState(object):
     self.left_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 1
     self.right_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 2
 
-    # we could use the override bit from dbc, but it's triggered at too high torque values
-    self.steer_override = abs(cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_DRIVER']) > 100
     # 2 is standby, 10 is active. TODO: check that everything else is really a faulty state
     self.steer_state = cp.vl["EPS_STATUS"]['LKA_STATE']
     self.steer_error = cp.vl["EPS_STATUS"]['LKA_STATE'] not in [1, 5]
@@ -156,6 +154,8 @@ class CarState(object):
     self.brake_error = 0
     self.steer_torque_driver = cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_DRIVER']
     self.steer_torque_motor = cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_EPS']
+    # we could use the override bit from dbc, but it's triggered at too high torque values
+    self.steer_override = abs(self.steer_torque_driver) > STEER_THRESHOLD
 
     self.user_brake = 0
     self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED']
