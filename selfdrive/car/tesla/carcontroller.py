@@ -178,6 +178,8 @@ class CarController(object):
       # The difference between OP's target speed and the current cruise
       # control speed, in KPH.
       speed_offset = (pcm_speed * CV.MS_TO_KPH - CS.v_cruise_actual)
+      # Tesla cruise only functions above 18 MPH
+      min_cruise_speed = 18 * CV.MPH_TO_MS
       
       if (CS.enable_adaptive_cruise
           # Only do ACC if OP is steering
@@ -188,7 +190,7 @@ class CarController(object):
           and current_time_ms > self.automated_cruise_action_time + 1000):
         # Automatically engange traditional cruise if it is idle and we are
         # going fast enough.
-        if CS.pcm_acc_status == 1 and CS.v_ego > 18 * CV.MPH_TO_MS:
+        if CS.pcm_acc_status == 1 and CS.v_ego > min_cruise_speed:
           button_to_press = CruiseButtons.DECEL_2ND
         # If traditional cruise is engaged, then control it.
         elif (CS.pcm_acc_status == 2
@@ -212,8 +214,8 @@ class CarController(object):
             # Send cruise stalk dn_1st.
             button_to_press = CruiseButtons.DECEL_SET
           # Increase cruise speed if possible.
-          elif CS.v_ego > 18 * CV.MPH_TO_MS:  # cruise only works >18mph.
-            # How much we can accelerate without exceeding the max allowed speed.
+          elif CS.v_ego > min_cruise_speed:
+            # How much we can accelerate without exceeding max allowed speed.
             available_speed = CS.v_cruise_pcm - CS.v_cruise_actual
             if speed_offset > full_press_kph and speed_offset < available_speed:
               # Send cruise stalk up_2nd.
