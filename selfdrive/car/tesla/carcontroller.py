@@ -148,6 +148,7 @@ class CarController(object):
     laneChange_angle = 0.
     if (CS.prev_right_blinker_on and (not CS.right_blinker_on)) or ( CS.prev_left_blinker_on and (not CS.left_blinker_on)):
       if CS.laneChange_enabled ==7:
+        print "AutoLaneChange reset to 1"
         CS.laneChange_enabled =1
     if ((not CS.prev_right_blinker_on) and CS.right_blinker_on) or ((not CS.prev_left_blinker_on) and CS.left_blinker_on):
       laneChange_direction = 1
@@ -176,7 +177,7 @@ class CarController(object):
         print "AutoLaneChange Canceled by user interaction"
         #if any steer override cancel process
         CS.laneChange_counter = 0
-        CS.laneChange_enabled = 7 
+        CS.laneChange_enabled = 1
         CS.laneChange_direction = 0
       if CS.laneChange_enabled == 2:
         if CS.laneChange_counter == 1:
@@ -184,7 +185,7 @@ class CarController(object):
         laneChange_angle = CS.laneChange_angled * (50 - CS.laneChange_counter )/ 50
         CS.laneChange_counter += 1
         if CS.laneChange_counter == 50:
-          CS.laneChange_enabled = 1
+          CS.laneChange_enabled = 7
           CS.laneChange_counter = 0
           CS.laneChange_direction = 0
       if CS.laneChange_enabled ==3:
