@@ -171,7 +171,7 @@ class CarController(object):
         CS.laneChange_direction = laneChange_direction
     #lane change in process
     if CS.laneChange_enabled > 1:
-      CS.laneChange_angled = laneChange_direction * CS.laneChange_steerr *  interp(CS.v_ego, CL_MAXD_BP, CL_MAXD_A)
+      CS.laneChange_angled = CS.laneChange_direction * CS.laneChange_steerr *  interp(CS.v_ego, CL_MAXD_BP, CL_MAXD_A)
       if (CS.steer_override or (CS.v_ego < CL_MIN_V)):
         print "AutoLaneChange Canceled by user interaction"
         #if any steer override cancel process or if speed less than min speed
@@ -200,7 +200,7 @@ class CarController(object):
           CS.laneChange_angle = -actuators.steerAngle
           print "Entering stage 4: slow turn"
           #if angle more than max angle allowed cancel; last chance to cancel on road curvature
-          if (abs(CS.laneChange_angle) > CS_MAX_A):
+          if (abs(CS.laneChange_angle) > CL_MAX_A):
             CS.laneChange_enabled = 1
             CS.laneChange_counter = 0
             CS.laneChange_direction = 0
