@@ -174,57 +174,56 @@ class CarController(object):
       current_time_ms = int(round(time.time() * 1000))
       if CS.cruise_buttons not in [CruiseButtons.IDLE, CruiseButtons.MAIN]:
         self.human_cruise_action_time = current_time_ms
-      cruise_msg = None
+      button_to_press = None
       # The difference between OP's target speed and the current cruise
       # control speed, in KPH.
       speed_offset = (pcm_speed * CV.MS_TO_KPH - CS.v_cruise_actual)
-      # If ACC was just enabled, also enable traditional cruise control if
-      # possible.
-      if (CS.enable_adaptive_cruise and CS.pcm_acc_status == 1
-          and enable_steer_control
-          and CS.v_ego > 18 * CV.MPH_TO_MS
-          and current_time_ms > self.automated_cruise_action_time + 1000):
-        self.automated_cruise_action_time = current_time_ms
-        cruise_msg = teslacan.create_cruise_adjust_msg(CruiseButtons.DECEL_2ND, CS.steering_wheel_stalk)
-      elif (# Only do adaptive cruise control while cruise control is enabled.
-          CS.enable_adaptive_cruise and CS.pcm_acc_status == 2
-          # And OpenPilot is steering.
+      
+      if (CS.enable_adaptive_cruise
+          # Only do ACC if OP is steering
           and enable_steer_control
           # And adjust infrequently, since sending repeated adjustments makes
           # the car think we're doing a 'long press' on the cruise stalk,
           # resulting in small, jerky speed adjustments.
-          and current_time_ms > self.automated_cruise_action_time + 1000
-          # And don't make adjustments if a human has manually done so in the
-          # last 2 seconds. Human intention should not be overridden.
-          and current_time_ms > self.human_cruise_action_time + 2000):
-        # Metric cars adjust cruise in units of 1 and 5 kph.
-        half_press_kph = 1
-        full_press_kph = 5
-        # Imperial unit cars adjust cruise in units of 1 and 5 mph.
-        if CS.imperial_speed_units:
-          half_press_kph = 1 * CV.MPH_TO_KPH
-          full_press_kph = 5 * CV.MPH_TO_KPH
-        
-        # Reduce cruise speed significantly if necessary.
-        if speed_offset < (-1 * full_press_kph):
-          # Send cruise stalk dn_2nd.
-          cruise_msg = teslacan.create_cruise_adjust_msg(CruiseButtons.DECEL_2ND, CS.steering_wheel_stalk)
-        # Reduce speed slightly if necessary.
-        elif speed_offset < (-1 * half_press_kph):
-          # Send cruise stalk dn_1st.
-          cruise_msg = teslacan.create_cruise_adjust_msg(CruiseButtons.DECEL_SET, CS.steering_wheel_stalk)
-        # Increase cruise speed if possible.
-        elif CS.v_ego > 18 * CV.MPH_TO_MS:  # cruise only works >18mph.
-          # How much we can accelerate without exceeding the max allowed speed.
-          available_speed = CS.v_cruise_pcm - CS.v_cruise_actual
-          if full_press_kph < speed_offset and full_press_kph < available_speed:
-            # Send cruise stalk up_2nd.
-            cruise_msg = teslacan.create_cruise_adjust_msg(CruiseButtons.RES_ACCEL_2ND, CS.steering_wheel_stalk)
-          elif half_press_kph < speed_offset and half_press_kph < available_speed:
-            # Send cruise stalk up_1st.
-            cruise_msg = teslacan.create_cruise_adjust_msg(CruiseButtons.RES_ACCEL, CS.steering_wheel_stalk)
-      if cruise_msg:
+          and current_time_ms > self.automated_cruise_action_time + 1000):
+        # Automatically engange traditional cruise if it is idle and we are
+        # going fast enough.
+        if CS.pcm_acc_status == 1 and CS.v_ego > 18 * CV.MPH_TO_MS:
+          button_to_press = CruiseButtons.DECEL_2ND
+        # If traditional cruise is engaged, then control it.
+        elif (CS.pcm_acc_status == 2
+              # But don't make adjustments if a human has manually done so in
+              # the last 2 seconds. Human intention should not be overridden.
+              and current_time_ms > self.human_cruise_action_time + 2000):
+          # Metric cars adjust cruise in units of 1 and 5 kph.
+          half_press_kph = 1
+          full_press_kph = 5
+          # Imperial unit cars adjust cruise in units of 1 and 5 mph.
+          if CS.imperial_speed_units:
+            half_press_kph = 1 * CV.MPH_TO_KPH
+            full_press_kph = 5 * CV.MPH_TO_KPH
+          
+          # Reduce cruise speed significantly if necessary.
+          if speed_offset < (-1 * full_press_kph):
+            # Send cruise stalk dn_2nd.
+            button_to_press = CruiseButtons.DECEL_2ND
+          # Reduce speed slightly if necessary.
+          elif speed_offset < (-1 * half_press_kph):
+            # Send cruise stalk dn_1st.
+            button_to_press = CruiseButtons.DECEL_SET
+          # Increase cruise speed if possible.
+          elif CS.v_ego > 18 * CV.MPH_TO_MS:  # cruise only works >18mph.
+            # How much we can accelerate without exceeding the max allowed speed.
+            available_speed = CS.v_cruise_pcm - CS.v_cruise_actual
+            if full_press_kph < speed_offset and full_press_kph < available_speed:
+              # Send cruise stalk up_2nd.
+              button_to_press = CruiseButtons.RES_ACCEL_2ND
+            elif half_press_kph < speed_offset and half_press_kph < available_speed:
+              # Send cruise stalk up_1st.
+              button_to_press = CruiseButtons.RES_ACCEL
+      if button_to_press:
         self.automated_cruise_action_time = current_time_ms
+        cruise_msg = teslacan.create_cruise_adjust_msg(button_to_press, CS.steering_wheel_stalk)
         can_sends.insert(0, cruise_msg)
 
       sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
