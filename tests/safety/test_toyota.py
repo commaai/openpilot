@@ -41,9 +41,9 @@ class TestToyotaSafety(unittest.TestCase):
     cls.safety.init_tests_toyota()
 
   def _set_prev_torque(self, t):
-    self.safety.set_desired_torque_last(t)
-    self.safety.set_rt_torque_last(t)
-    self.safety.set_torque_meas(t, t)
+    self.safety.set_toyota_desired_torque_last(t)
+    self.safety.set_toyota_rt_torque_last(t)
+    self.safety.set_toyota_torque_meas(t, t)
 
   def _torque_meas_msg(self, torque):
     to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
@@ -158,9 +158,9 @@ class TestToyotaSafety(unittest.TestCase):
     for controls_allowed in [True, False]:
       for torque in np.arange(-MAX_TORQUE - 1000, MAX_TORQUE + 1000, MAX_RATE_UP):
           self.safety.set_controls_allowed(controls_allowed)
-          self.safety.set_rt_torque_last(torque)
-          self.safety.set_torque_meas(torque, torque)
-          self.safety.set_desired_torque_last(torque - MAX_RATE_UP)
+          self.safety.set_toyota_rt_torque_last(torque)
+          self.safety.set_toyota_torque_meas(torque, torque)
+          self.safety.set_toyota_desired_torque_last(torque - MAX_RATE_UP)
 
           if controls_allowed:
             send = (-MAX_TORQUE <= torque <= MAX_TORQUE)
@@ -181,14 +181,14 @@ class TestToyotaSafety(unittest.TestCase):
   def test_non_realtime_limit_down(self):
     self.safety.set_controls_allowed(True)
 
-    self.safety.set_rt_torque_last(1000)
-    self.safety.set_torque_meas(500, 500)
-    self.safety.set_desired_torque_last(1000)
+    self.safety.set_toyota_rt_torque_last(1000)
+    self.safety.set_toyota_torque_meas(500, 500)
+    self.safety.set_toyota_desired_torque_last(1000)
     self.assertTrue(self.safety.toyota_tx_hook(self._torque_msg(1000 - MAX_RATE_DOWN)))
 
-    self.safety.set_rt_torque_last(1000)
-    self.safety.set_torque_meas(500, 500)
-    self.safety.set_desired_torque_last(1000)
+    self.safety.set_toyota_rt_torque_last(1000)
+    self.safety.set_toyota_torque_meas(500, 500)
+    self.safety.set_toyota_desired_torque_last(1000)
     self.assertFalse(self.safety.toyota_tx_hook(self._torque_msg(1000 - MAX_RATE_DOWN + 1)))
 
   def test_exceed_torque_sensor(self):
@@ -210,14 +210,14 @@ class TestToyotaSafety(unittest.TestCase):
       self._set_prev_torque(0)
       for t in np.arange(0, 380, 10):
         t *= sign
-        self.safety.set_torque_meas(t, t)
+        self.safety.set_toyota_torque_meas(t, t)
         self.assertTrue(self.safety.toyota_tx_hook(self._torque_msg(t)))
       self.assertFalse(self.safety.toyota_tx_hook(self._torque_msg(sign * 380)))
 
       self._set_prev_torque(0)
       for t in np.arange(0, 370, 10):
         t *= sign
-        self.safety.set_torque_meas(t, t)
+        self.safety.set_toyota_torque_meas(t, t)
         self.assertTrue(self.safety.toyota_tx_hook(self._torque_msg(t)))
 
       # Increase timer to update rt_torque_last
@@ -233,16 +233,16 @@ class TestToyotaSafety(unittest.TestCase):
     self.safety.toyota_rx_hook(self._torque_meas_msg(0))
     self.safety.toyota_rx_hook(self._torque_meas_msg(0))
 
-    self.assertEqual(-51, self.safety.get_torque_meas_min())
-    self.assertEqual(51, self.safety.get_torque_meas_max())
+    self.assertEqual(-51, self.safety.get_toyota_torque_meas_min())
+    self.assertEqual(51, self.safety.get_toyota_torque_meas_max())
 
     self.safety.toyota_rx_hook(self._torque_meas_msg(0))
-    self.assertEqual(-1, self.safety.get_torque_meas_max())
-    self.assertEqual(-51, self.safety.get_torque_meas_min())
+    self.assertEqual(-1, self.safety.get_toyota_torque_meas_max())
+    self.assertEqual(-51, self.safety.get_toyota_torque_meas_min())
 
     self.safety.toyota_rx_hook(self._torque_meas_msg(0))
-    self.assertEqual(-1, self.safety.get_torque_meas_max())
-    self.assertEqual(-1, self.safety.get_torque_meas_min())
+    self.assertEqual(-1, self.safety.get_toyota_torque_meas_max())
+    self.assertEqual(-1, self.safety.get_toyota_torque_meas_min())
 
   def test_ipas_override(self):
 
