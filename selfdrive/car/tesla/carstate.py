@@ -165,7 +165,7 @@ class CarState(object):
     self.pedal_enabled = 0
 
     #variables for lane change
-    self.laneChange_enabled = 1 #set to zero for no lane change
+    self.laneChange_enabled = 0 #set to zero for no lane change
     self.laneChange_counter = 0 #used to count frames during lane change
     self.laneChange_duration = 4 #how many seconds to actually do the move
     self.laneChange_wait = 2 #how many seconds to wait before it starts the change
