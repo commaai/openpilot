@@ -174,7 +174,13 @@ class CarController(object):
       current_time_ms = int(round(time.time() * 1000))
       if CS.cruise_buttons not in [CruiseButtons.IDLE, CruiseButtons.MAIN]:
         self.human_cruise_action_time = current_time_ms
-      if (# Only do adaptive cruise control while cruise control is enabled.
+      cruise_msg = None
+      if (CS.enable_adaptive_cruise and not CS.prev_enable_adaptive_cruise
+          and CS.pcm_acc_status == 1 and CS.v_ego > 18 * CV.MPH_TO_MS):
+        # ACC was just enabled but traditional cruise control is idle. Kick it
+        # on with cruise stalk up_2nd.
+        cruise_msg = teslacan.create_cruise_adjust_msg(CruiseButtons.RES_ACCEL_2ND, CS.steering_wheel_stalk)
+      elif (# Only do adaptive cruise control while cruise control is enabled.
           CS.enable_adaptive_cruise and CS.pcm_acc_status == 2
           # And OpenPilot is steering.
           and enable_steer_control
@@ -193,7 +199,6 @@ class CarController(object):
           half_press_kph = 1 * CV.MPH_TO_KPH
           full_press_kph = 5 * CV.MPH_TO_KPH
         
-        cruise_msg = None
         # The difference between OP's target speed and the current cruise
         # control speed, in KPH.
         speed_offset = (pcm_speed * CV.MS_TO_KPH - CS.v_cruise_actual)
@@ -215,8 +220,8 @@ class CarController(object):
           elif half_press_kph < speed_offset and half_press_kph < available_speed:
             # Send cruise stalk up_1st.
             cruise_msg = teslacan.create_cruise_adjust_msg(CruiseButtons.RES_ACCEL, CS.steering_wheel_stalk)
-        if cruise_msg:
-          self.automated_cruise_action_time = current_time_ms
-          can_sends.insert(0, cruise_msg)
+      if cruise_msg:
+        self.automated_cruise_action_time = current_time_ms
+        can_sends.insert(0, cruise_msg)
 
       sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())

@@ -166,6 +166,7 @@ class CarState(object):
   def __init__(self, CP):
     self.brake_only = CP.enableCruise
     self.enable_adaptive_cruise = False
+    self.prev_enable_adaptive_cruise = False
     self.last_cruise_stalk_pull_time = 0
     self.CP = CP
 
@@ -217,6 +218,7 @@ class CarState(object):
     self.prev_steering_wheel_stalk = self.steering_wheel_stalk
     self.prev_cruise_buttons = self.cruise_buttons
     self.prev_cruise_setting = self.cruise_setting
+    self.prev_enable_adaptive_cruise = self.enable_adaptive_cruise
     self.prev_blinker_on = self.blinker_on
 
     self.prev_left_blinker_on = self.left_blinker_on
