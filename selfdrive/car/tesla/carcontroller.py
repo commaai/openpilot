@@ -181,6 +181,9 @@ class CarController(object):
       # Tesla cruise only functions above 18 MPH
       min_cruise_speed = 18 * CV.MPH_TO_MS
       
+      # Debugging
+      print "a_ego: " + str(CS.a_ego)
+      
       if (CS.enable_adaptive_cruise
           # Only do ACC if OP is steering
           and enable_steer_control
@@ -189,8 +192,10 @@ class CarController(object):
           # resulting in small, jerky speed adjustments.
           and current_time_ms > self.automated_cruise_action_time + 1000):
         # Automatically engange traditional cruise if it is idle and we are
-        # going fast enough.
-        if CS.pcm_acc_status == 1 and CS.v_ego > min_cruise_speed:
+        # going fast enough and we are accelerating.
+        if (CS.pcm_acc_status == 1
+            and CS.v_ego > min_cruise_speed
+            and CS.a_ego >= 0):
           button_to_press = CruiseButtons.DECEL_2ND
         # If traditional cruise is engaged, then control it.
         elif (CS.pcm_acc_status == 2
