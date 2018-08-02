@@ -174,8 +174,10 @@ class CarState(object):
     self.laneChange_angled = 0. #angle delta
     self.laneChange_steerr = 13 #steer ratio for lane changes : ck if we can use the same
     self.laneChange_direction = 0 #direction of the lane change
-
-
+    
+    #custom message counter
+    self.custom_alert_counter = -1 #set to 100 for 1 second display; carcontroller will take down to zero
+     
     # vEgo kalman filter
     dt = 0.01
     # Q = np.matrix([[10.0, 0.0], [0.0, 100.0]])

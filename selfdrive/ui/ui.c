@@ -915,6 +915,40 @@ static int bb_ui_draw_measure(UIState *s,  const char* bb_value, const char* bb_
   return (int)((bb_valueFontSize + bb_labelFontSize)*2.5) + 5;
 }
 
+static void bb_ui_draw_custom_alert(UIState *s,char *car_model) {
+  const UIScene *scene = &s->scene;
+  char *filepath = malloc(90);
+  sprintf(filepath,"/data/openpilot/selfdrive/car/%s/alert.msg",car_model);
+  //get 3-state switch position
+  int alert_msg_fd;
+  char alert_msg[1000];
+  if (strlen(s->scene.alert_text1) > 0) {
+    //already a system alert, ignore ours
+    return;
+  }
+  alert_msg_fd = open (filepath, O_RDONLY);
+  //if we can't open then done
+  if (alert_msg_fd == -1) {
+    return;
+  } else {
+    int rd = read(alert_msg_fd, &(s->scene.alert_text1), 1000);
+    if ((rd > 1) && (s->scene.alert_text1[rd-1] == '^')) {
+      //^ as last character means warning
+      s->status = 3; //ALERT_WARNING
+      rd --;
+    }
+    s->scene.alert_text1[rd] = '\0';
+    close(alert_msg_fd);
+    if (strlen(s->scene.alert_text1) > 0) {
+      s->scene.alert_size = ALERTSIZE_SMALL;
+    } else {
+      s->scene.alert_size = ALERTSIZE_NONE;
+      s->scene.alert_text1[0]=0;
+    }
+  }
+
+}
+
 static void bb_ui_draw_measures_left(UIState *s, int bb_x, int bb_y, int bb_w ) {
 	const UIScene *scene = &s->scene;		
 	int bb_rx = bb_x + (int)(bb_w/2);
@@ -1248,6 +1282,7 @@ static void bb_ui_draw_UI(UIState *s) {
 
 	 bb_ui_draw_measures_left(s,bb_dml_x, bb_dml_y, bb_dml_w );
 	 bb_ui_draw_measures_right(s,bb_dmr_x, bb_dmr_y, bb_dmr_w );
+   bb_ui_draw_custom_alert(s,"tesla");
 	 }
 	 if (tri_state_switch ==3) {
 	 	ui_draw_vision_grid(s);

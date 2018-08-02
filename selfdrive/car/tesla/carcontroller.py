@@ -9,10 +9,12 @@ from selfdrive.controls.lib.drive_helpers import rate_limit
 from common.numpy_fast import clip, interp
 import numpy as np
 import math as mth
+from common.realtime import sec_since_boot
 from selfdrive.car.tesla import teslacan
 from selfdrive.car.tesla.values import AH, CruiseButtons, CAR
 from selfdrive.can.packer import CANPacker
 from selfdrive.config import Conversions as CV
+import custom_alert as tcm
 
 # Steer angle limits
 ANGLE_MAX_BP = [0., 27., 36.]
@@ -25,7 +27,7 @@ ANGLE_DELTA_VU = [5., 3.5, 0.4]   # unwind limit
 #change lane delta angles and other params
 CL_MAXD_BP = [1., 44.]
 CL_MAXD_A = [.4, 0.01] #delta angle based on speed; needs fine tune
-CL_MIN_V = 9. # do not turn if speed less than x m/2; 20 mph = 8.9 m/s
+CL_MIN_V = 0. # do not turn if speed less than x m/2; 20 mph = 8.9 m/s
 CL_MAX_A = 3. # do not turn if actuator wants more than x deg for going straight 
 
 def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
@@ -145,27 +147,36 @@ class CarController(object):
     # Basic highway lane change logic
     changing_lanes = CS.right_blinker_on or CS.left_blinker_on
 
+    #countdown for custom message timer
+    if (CS.custom_alert_counter > 0):
+      CS.custom_alert_counter -= 1
+      if (CS.custom_alert_counter ==0):
+        tcm.custom_alert_message("")
+        CS.custom_alert_counter = -1
+
     enable_steer_control = (enabled and not changing_lanes)
-     
     laneChange_angle = 0.
     if (CS.prev_right_blinker_on and (not CS.right_blinker_on)) or ( CS.prev_left_blinker_on and (not CS.left_blinker_on)):
       if CS.laneChange_enabled ==7:
-        print "AutoLaneChange reset to 1"
         CS.laneChange_enabled =1
-    if (((not CS.prev_right_blinker_on) and CS.right_blinker_on) or ((not CS.prev_left_blinker_on) and CS.left_blinker_on)) and (CS.v_ego > CL_MIN_V) and (abs(actuators.steerAngle) < CL_MAX_A):
+        CS.laneChange_counter =0
+        tcm.custom_alert_message("")
+    if (((not CS.prev_right_blinker_on) and CS.right_blinker_on) or ((not CS.prev_left_blinker_on) and CS.left_blinker_on)) and (CS.v_ego >= CL_MIN_V) and (abs(actuators.steerAngle) < CL_MAX_A):
       laneChange_direction = 1
       #changing lanes
       if CS.left_blinker_on:
         laneChange_direction = -1
       if (CS.laneChange_enabled > 1) and (CS.laneChange_direction <> laneChange_direction):
         #something is not right; signal in oposite direction; cancel
-        print "AutoLaneChange canceled by conflicting turn signals"
+        tcm.custom_alert_message("Auto Lane Change Canceled! (s)^")
+        CS.custom_alert_counter = 200
         CS.laneChange_enabled = 1
         CS.laneChange_counter = 0
         CS.laneChange_direction = 0
       elif (CS.laneChange_enabled == 1) : 
         #compute angle delta for lane change
-        print "AutoChangeLane initiated"
+        tcm.custom_alert_message("Auto Lane Change Engaged! (1)")
+        CS.custom_alert_counter = 100
         CS.laneChange_enabled = 5 
         CS.laneChange_counter = 1
         CS.laneChange_direction = laneChange_direction
@@ -173,23 +184,26 @@ class CarController(object):
     if CS.laneChange_enabled > 1:
       CS.laneChange_angled = CS.laneChange_direction * CS.laneChange_steerr *  interp(CS.v_ego, CL_MAXD_BP, CL_MAXD_A)
       if (CS.steer_override or (CS.v_ego < CL_MIN_V)):
-        print "AutoLaneChange Canceled by user interaction"
+        tcm.custom_alert_message("Auto Lane Change Canceled! (u)^")
+        CS.custom_alert_counter = 200
         #if any steer override cancel process or if speed less than min speed
         CS.laneChange_counter = 0
         CS.laneChange_enabled = 1
         CS.laneChange_direction = 0
       if CS.laneChange_enabled == 2:
         if CS.laneChange_counter == 1:
-          print"Entering stage 2: slow turn back"
+          tcm.custom_alert_message("Auto Lane Change Engaged! (5)")
+          CS.custom_alert_counter = 100
         laneChange_angle = CS.laneChange_angled * (50 - CS.laneChange_counter )/ 50
         CS.laneChange_counter += 1
         if CS.laneChange_counter == 50:
           CS.laneChange_enabled = 7
-          CS.laneChange_counter = 0
+          CS.laneChange_counter = 1 
           CS.laneChange_direction = 0
       if CS.laneChange_enabled ==3:
         if CS.laneChange_counter == 1:
-          print "Entering stage 3: change lanes"
+          tcm.custom_alert_message("Auto Lane Change Engaged! (4)")
+          CS.custom_alert_counter = 500
         CS.laneChange_counter += 1
         laneChange_angle = CS.laneChange_angled
         if CS.laneChange_counter == (CS.laneChange_duration - 1) * 100:
@@ -198,9 +212,12 @@ class CarController(object):
       if CS.laneChange_enabled == 4:
         if CS.laneChange_counter == 1:
           CS.laneChange_angle = -actuators.steerAngle
-          print "Entering stage 4: slow turn"
+          tcm.custom_alert_message("Auto Lane Change Engaged! (3)")
+          CS.custom_alert_counter=100
           #if angle more than max angle allowed cancel; last chance to cancel on road curvature
           if (abs(CS.laneChange_angle) > CL_MAX_A):
+            tcm.custom_alert_message("Auto Lane Change Canceled! (a)^")
+            CS.custom_alert_counter = 200
             CS.laneChange_enabled = 1
             CS.laneChange_counter = 0
             CS.laneChange_direction = 0
@@ -211,11 +228,17 @@ class CarController(object):
           CS.laneChange_counter = 1
       if CS.laneChange_enabled == 5:
         if CS.laneChange_counter == 1:
-          print "Entering stage 5: Countdown"
+          tcm.custom_alert_message("Auto Lane Change Engaged! (2)")
+          CS.custom_alert_counter = 100
         CS.laneChange_counter += 1
         if CS.laneChange_counter == CS.laneChange_wait * 100:
           CS.laneChange_enabled = 4
           CS.laneChange_counter = 1
+      if CS.laneChange_enabled == 7:
+        if CS.laneChange_counter ==1:
+          tcm.custom_alert_message("Auto Lane Change Complete!")
+          CS.custom_alert_counter = 200
+        CS.laneChange_counter +=1
     enable_steer_control = (enabled and ((not changing_lanes) or (CS.laneChange_enabled > 1)))
     apply_angle = 0.
     # Angle
