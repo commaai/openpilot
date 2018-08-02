@@ -202,14 +202,16 @@ class CarController(object):
               # But don't make adjustments if a human has manually done so in
               # the last 2 seconds. Human intention should not be overridden.
               and current_time_ms > self.human_cruise_action_time + 2000):
-          # Metric cars adjust cruise in units of 1 and 5 kph.
-          half_press_kph = 1
-          full_press_kph = 5
-          # Imperial unit cars adjust cruise in units of 1 and 5 mph.
+          
           if CS.imperial_speed_units:
+            # Imperial unit cars adjust cruise in units of 1 and 5 mph.
             half_press_kph = 1 * CV.MPH_TO_KPH
             full_press_kph = 5 * CV.MPH_TO_KPH
-          
+          else:
+            # Metric cars adjust cruise in units of 1 and 5 kph.
+            half_press_kph = 1
+            full_press_kph = 5
+            
           # Reduce cruise speed significantly if necessary.
           if speed_offset < (-1 * full_press_kph):
             # Send cruise stalk dn_2nd.
