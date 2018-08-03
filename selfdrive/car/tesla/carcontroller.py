@@ -21,8 +21,8 @@ ANGLE_MAX_BP = [0., 27., 36.]
 ANGLE_MAX_V = [410., 92., 36.]
 
 ANGLE_DELTA_BP = [0., 5., 15.]
-ANGLE_DELTA_V = [5., .8, .15]     # windup limit
-ANGLE_DELTA_VU = [5., 3.5, 0.4]   # unwind limit
+ANGLE_DELTA_V = [5., .8, .25]     # windup limit
+ANGLE_DELTA_VU = [5., 3.5, 0.8]   # unwind limit
 
 #change lane delta angles and other params
 CL_MAXD_BP = [1., 32, 44.]
@@ -232,8 +232,11 @@ class CarController(object):
           self.laneChange_over_the_line = 1
           self.laneChange_last_actuator_delta = abs (CS.laneChange_angle + CS.laneChange_angled + actuators.steerAngle)
           actuator_delta = 1
-        elif self.laneChange_over_the_line ==1:
-          #we are on the other side, let's try to find either a min angle to let go
+        if self.laneChange_over_the_line ==1:
+          CS.laneChange_enabled = 7
+          CS.laneChange_counter = 1
+          CS.laneChange_direction = 0
+          """#we are on the other side, let's try to find either a min angle to let go
           #or we need to find the inflection point and let go
           actuator_delta_end = abs(CS.laneChange_angle + CS.laneChange_angled + actuators.steerAngle)
           if (actuator_delta_end < 8.) or (abs(self.laneChange_last_actuator_delta) < abs(actuator_delta_end)):
@@ -241,7 +244,7 @@ class CarController(object):
             CS.laneChange_enabled = 2
             CS.laneChange_counter = 1
           else:
-            self.laneChange_last_actuator_delta = actuator_delta_end
+            self.laneChange_last_actuator_delta = actuator_delta_end"""
         if CS.laneChange_counter >  (CS.laneChange_duration) * 100:
           CS.laneChange_enabled = 1 
           CS.laneChange_counter = 0
