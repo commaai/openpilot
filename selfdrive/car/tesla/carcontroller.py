@@ -215,7 +215,7 @@ class CarController(object):
         CS.laneChange_counter += 1
         laneChange_angle = CS.laneChange_angled
         if CS.laneChange_counter > CS.laneChange_duration * 100:
-          angle_limit = CS.laneChange_angled if CS.laneChange_angled > 2. else 3.
+          angle_limit = CS.laneChange_angled if CS.laneChange_angled > 3. else 3.
           if (abs(actuators.steerAngle - CS.laneChange_angle - laneChange_angle) < angle_limit):
             #we're close to the angle, so we should release
             #need to add outer limits based on delta angle sign change
