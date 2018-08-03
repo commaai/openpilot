@@ -25,9 +25,9 @@ ANGLE_DELTA_V = [5., .8, .15]     # windup limit
 ANGLE_DELTA_VU = [5., 3.5, 0.4]   # unwind limit
 
 #change lane delta angles and other params
-CL_MAXD_BP = [1., 32, 44.]
-CL_MAXD_A = [.5, 0.22, 0.08] #delta angle based on speed; needs fine tune
-CL_MIN_V = 8.9 # do not turn if speed less than x m/2; 20 mph = 8.9 m/s
+CL_MAXD_BP = [0., 32, 44.]
+CL_MAXD_A = [.27, 0.22, 0.11] #delta angle based on speed; needs fine tune
+CL_MIN_V =0. # 8.9 # do not turn if speed less than x m/2; 20 mph = 8.9 m/s
 CL_MAX_A = 10. # do not turn if actuator wants more than x deg for going straight; this should be interp based on speed
 
 def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
@@ -84,6 +84,9 @@ class CarController(object):
     self.packer = CANPacker(dbc_name)
     self.epas_disabled = True
     self.last_angle = 0.
+    self.laneChange_last_actuator_angle = 0.
+    self.laneChange_last_actuator_delta = 0.
+    self.laneChange_over_the_line = 0
     self.laneChange_avg_angle = 0.
     self.laneChange_avg_count = 0.
 
@@ -155,7 +158,7 @@ class CarController(object):
       if (CS.custom_alert_counter ==0):
         tcm.custom_alert_message("")
         CS.custom_alert_counter = -1
-
+    actuator_delta = 0.
     enable_steer_control = (enabled and not changing_lanes)
     laneChange_angle = 0.
     if (CS.prev_right_blinker_on and (not CS.right_blinker_on)) or ( CS.prev_left_blinker_on and (not CS.left_blinker_on)):
@@ -168,10 +171,10 @@ class CarController(object):
       tcm.custom_alert_message("Auto Lane Change Unavailable!")
       CS.custom_alert_counter = 500
     if (((not CS.prev_right_blinker_on) and CS.right_blinker_on) or ((not CS.prev_left_blinker_on) and CS.left_blinker_on)) and (CS.v_ego >= CL_MIN_V) and (abs(actuators.steerAngle) < CL_MAX_A):
-      laneChange_direction = 1.2 # for some reason right turns for me nees more angke
+      laneChange_direction = 1 # for some reason right turns for me nees more angke
       #changing lanes
       if CS.left_blinker_on:
-        laneChange_direction = -1.2
+        laneChange_direction = -1
       if (CS.laneChange_enabled > 1) and (CS.laneChange_direction <> laneChange_direction):
         #something is not right; signal in oposite direction; cancel
         tcm.custom_alert_message("Auto Lane Change Canceled! (s)")
@@ -188,9 +191,9 @@ class CarController(object):
         CS.laneChange_direction = laneChange_direction
         self.laneChange_avg_angle = 0.
         self.laneChange_avg_count = 0.
+        CS.laneChange_angled = CS.laneChange_direction * CS.laneChange_steerr *  interp(CS.v_ego, CL_MAXD_BP, CL_MAXD_A)
     #lane change in process
     if CS.laneChange_enabled > 1:
-      CS.laneChange_angled = CS.laneChange_direction * CS.laneChange_steerr *  interp(CS.v_ego, CL_MAXD_BP, CL_MAXD_A)
       if (CS.steer_override or (CS.v_ego < CL_MIN_V)):
         tcm.custom_alert_message("Auto Lane Change Canceled! (u)")
         CS.custom_alert_counter = 200
@@ -200,7 +203,7 @@ class CarController(object):
         CS.laneChange_direction = 0
       if CS.laneChange_enabled == 2:
         if CS.laneChange_counter == 1:
-          tcm.custom_alert_message("Auto Lane Change Engaged! (5)")
+          tcm.custom_alert_message("Auto Lane Change Engaged! (6)")
           CS.custom_alert_counter = 100
         laneChange_angle = CS.laneChange_angled * (50 - CS.laneChange_counter )/ 50
         CS.laneChange_counter += 1
@@ -212,26 +215,45 @@ class CarController(object):
         if CS.laneChange_counter == 1:
           tcm.custom_alert_message("Auto Lane Change Engaged! (4)")
           CS.custom_alert_counter = 800
+          self.laneChange_last_actuator_delta = 0.
+          self.laneChange_last_actuator_angle = - actuators.steerAngle
+          self.laneChange_over_the_line = 0
         CS.laneChange_counter += 1
         laneChange_angle = CS.laneChange_angled
-        if CS.laneChange_counter > CS.laneChange_duration * 100:
-          angle_limit = CS.laneChange_angled if CS.laneChange_angled > 3. else 3.
-          if (abs(actuators.steerAngle - CS.laneChange_angle - laneChange_angle) < angle_limit):
-            #we're close to the angle, so we should release
-            #need to add outer limits based on delta angle sign change
-            #between steerAngle and what we compute as well as an upper limit
+        if (self.laneChange_over_the_line == 0):
+          #we didn't cross the line, so keep computing the actuator delta until it flips
+          actuator_sign = -1. if CS.laneChange_angled >= 0 else 1.
+          actuator_delta =  (-actuators.steerAngle - self.laneChange_last_actuator_angle)/actuator_sign
+          self.laneChange_last_actuator_angle = - actuators.steerAngle
+        if (actuator_delta < 0) and (abs(actuator_delta) > abs(CS.laneChange_angled)):
+          #sudden change in actuator angle sign means we are on the other side of the line
+          tcm.custom_alert_message("Auto Lane Change Engaged! (5)")
+          CS.custom_alert_counter = 800
+          self.laneChange_over_the_line = 1
+          self.laneChange_last_actuator_delta = abs (CS.laneChange_angle + CS.laneChange_angled + actuators.steerAngle)
+          actuator_delta = 1
+        elif self.laneChange_over_the_line ==1:
+          #we are on the other side, let's try to find either a min angle to let go
+          #or we need to find the inflection point and let go
+          actuator_delta_end = abs(CS.laneChange_angle + CS.laneChange_angled + actuators.steerAngle)
+          if (actuator_delta_end < 3.) or (abs(self.laneChange_last_actuator_delta) < abs(actuator_delta_end)):
+            #found the release point
             CS.laneChange_enabled = 2
             CS.laneChange_counter = 1
-        if CS.laneChange_counter >  (CS.laneChange_duration - 1) * 100:
-          CS.laneChange_enabled = 2
-          CS.laneChange_counter = 1
-
+          else:
+            self.laneChange_last_actuator_delta = actuator_delta_end
+        if CS.laneChange_counter >  (CS.laneChange_duration) * 100:
+          CS.laneChange_enabled = 1 
+          CS.laneChange_counter = 0
+          tcm.custom_alert_message("Auto Lane Change Canceled! (t)")
+          CS.custom_alert_counter = 200
+          CS.laneChange_counter = 0
       if CS.laneChange_enabled == 4:
         if CS.laneChange_counter == 1:
-          CS.laneChange_angle = self.laneChange_avg_angle / self.laneChange_avg_count
-          #-actuators.steerAngle
+          CS.laneChange_angle = -actuators.steerAngle
           tcm.custom_alert_message("Auto Lane Change Engaged! (3)")
           CS.custom_alert_counter=100
+          CS.laneChange_angled = CS.laneChange_direction * CS.laneChange_steerr *  interp(CS.v_ego, CL_MAXD_BP, CL_MAXD_A)
           #if angle more than max angle allowed cancel; last chance to cancel on road curvature
           if (abs(CS.laneChange_angle) > CL_MAX_A):
             tcm.custom_alert_message("Auto Lane Change Canceled! (a)")
@@ -241,9 +263,15 @@ class CarController(object):
             CS.laneChange_direction = 0
         laneChange_angle = CS.laneChange_angled *  CS.laneChange_counter / 50
         CS.laneChange_counter += 1
-        if CS.laneChange_counter == 50:
-          CS.laneChange_enabled = 3
-          CS.laneChange_counter = 1
+        delta_change = abs(CS.laneChange_angle+ laneChange_angle + actuators.steerAngle) - abs(CS.laneChange_angled)
+        if (CS.laneChange_counter == 100) or (delta_change >= 0):
+          if (delta_change < 0):
+            #didn't achieve desired angle yet, so repeat
+            CS.laneChange_counter = 1
+          else:
+            CS.laneChange_enabled = 3
+            CS.laneChange_counter = 1
+            CS.laneChange_angled = laneChange_angle
       if CS.laneChange_enabled == 5:
         if CS.laneChange_counter == 1:
           tcm.custom_alert_message("Auto Lane Change Engaged! (2)")
