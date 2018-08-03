@@ -162,7 +162,7 @@ class CarController(object):
         CS.laneChange_counter =0
         tcm.custom_alert_message("")
     if (((not CS.prev_right_blinker_on) and CS.right_blinker_on) or ((not CS.prev_left_blinker_on) and CS.left_blinker_on)) and (CS.v_ego >= CL_MIN_V) and (abs(actuators.steerAngle) < CL_MAX_A):
-      laneChange_direction = 1
+      laneChange_direction = 1.2 # for some reason right turns for me nees more angke
       #changing lanes
       if CS.left_blinker_on:
         laneChange_direction = -1
