@@ -236,7 +236,7 @@ class CarController(object):
           #we are on the other side, let's try to find either a min angle to let go
           #or we need to find the inflection point and let go
           actuator_delta_end = abs(CS.laneChange_angle + CS.laneChange_angled + actuators.steerAngle)
-          if (actuator_delta_end < 3.) or (abs(self.laneChange_last_actuator_delta) < abs(actuator_delta_end)):
+          if (actuator_delta_end < 8.) or (abs(self.laneChange_last_actuator_delta) < abs(actuator_delta_end)):
             #found the release point
             CS.laneChange_enabled = 2
             CS.laneChange_counter = 1
