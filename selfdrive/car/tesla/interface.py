@@ -138,7 +138,11 @@ class CarInterface(object):
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter. Otherwise, add 0.5 mph margin to not
     # conflict with PCM acc
-    ret.minEnableSpeed = -1. if (stop_and_go or ret.enableGasInterceptor) else 25.5 * CV.MPH_TO_MS
+    # This also appears to control the minimum speed to engage automatic steering.
+    # Since we want the Tesla branch to allow steering regardless of speed, set this
+    # to -1.
+    # ret.minEnableSpeed = -1. if (stop_and_go or ret.enableGasInterceptor) else 18. * CV.MPH_TO_MS
+    ret.minEnableSpeed = -1.
 
     centerToRear = ret.wheelbase - ret.centerToFront
     # TODO: get actual value, for now starting with reasonable value for Model S
@@ -363,16 +367,20 @@ class CarInterface(object):
       # KEEP THIS EVENT LAST! send enable event if button is pressed and there are
       # NO_ENTRY events, so controlsd will display alerts. Also not send enable events
       # too close in time, so a no_entry will not be followed by another one.
-      # TODO: button press should be the only thing that triggers enble
+      # TODO: button press should be the only thing that triggers enable
       if ((cur_time - self.last_enable_pressed) < 0.2 and
           (cur_time - self.last_enable_sent) > 0.2 and
           ret.cruiseState.enabled) or \
          (enable_pressed and get_events(events, [ET.NO_ENTRY])):
         events.append(create_event('buttonEnable', [ET.ENABLE]))
         self.last_enable_sent = cur_time
+        events.append(create_event('pcmEnable', [ET.ENABLE]))
+        self.CS.v_cruise_pcm = self.CS.v_ego * CV.MS_TO_KPH
     elif enable_pressed:
       events.append(create_event('buttonEnable', [ET.ENABLE]))
-
+      events.append(create_event('pcmEnable', [ET.ENABLE]))
+      self.CS.v_cruise_pcm = self.CS.v_ego * CV.MS_TO_KPH
+        
     ret.events = events
     ret.canMonoTimes = canMonoTimes
 

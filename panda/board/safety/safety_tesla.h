@@ -261,6 +261,11 @@ static int tesla_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
       to_fwd->RDLR = to_fwd->RDLR + (checksum << 16);
       return 2;
     }
+	  
+    // remove EPB_epasControl
+    if (addr == 0x214) {
+      return false;
+    }
 
     return 2; // Custom EPAS bus
   }

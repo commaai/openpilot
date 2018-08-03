@@ -12,6 +12,9 @@ from selfdrive.car.tesla.values import AH, CruiseButtons, CAR
 from selfdrive.can.packer import CANPacker
 from selfdrive.config import Conversions as CV
 
+import time
+
+
 # Steer angle limits
 ANGLE_MAX_BP = [0., 27., 36.]
 ANGLE_MAX_V = [410., 92., 36.]
@@ -23,8 +26,8 @@ ANGLE_DELTA_VU = [5., 3.5, 0.4]   # unwind limit
 def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
   # hyst params... TODO: move these to VehicleParams
   brake_hyst_on = 0.02     # to activate brakes exceed this value
-  brake_hyst_off = 0.005                     # to deactivate brakes below this value
-  brake_hyst_gap = 0.01                      # don't change brake command for small ocilalitons within this value
+  brake_hyst_off = 0.005   # to deactivate brakes below this value
+  brake_hyst_gap = 0.01    # don't change brake command for small ocilalitons within this value
 
   #*** histeresys logic to avoid brake blinking. go above 0.1 to trigger
   if (brake < brake_hyst_on and not braking) or brake < brake_hyst_off:
@@ -38,7 +41,6 @@ def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
     brake_steady = brake - brake_hyst_gap
   elif brake < brake_steady - brake_hyst_gap:
     brake_steady = brake + brake_hyst_gap
-  brake = brake_steady
 
   return brake, braking, brake_steady
 
@@ -70,9 +72,14 @@ class CarController(object):
     self.braking = False
     self.brake_steady = 0.
     self.brake_last = 0.
+    self.accelerating = False
+    self.accel_steady = 0.
+    self.accel_last = 0.
     self.enable_camera = enable_camera
     self.packer = CANPacker(dbc_name)
     self.epas_disabled = True
+    self.human_cruise_action_time = 0
+    self.automated_cruise_action_time = 0
     self.last_angle = 0.
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
@@ -88,7 +95,7 @@ class CarController(object):
 
     # *** apply brake hysteresis ***
     brake, self.braking, self.brake_steady = actuator_hystereses(actuators.brake, self.braking, self.brake_steady, CS.v_ego, CS.CP.carFingerprint)
-
+    accel, self.accelerating, self.accel_steady =  actuator_hystereses(actuators.gas, self.accelerating, self.accel_steady, CS.v_ego, CS.CP.carFingerprint)
     # *** no output if not enabled ***
     if not enabled and CS.pcm_acc_status:
       # send pcm acc cancel cmd if drive is disabled but pcm is still on, or if the system can't be activated
@@ -162,4 +169,67 @@ class CarController(object):
       can_sends.append(teslacan.create_steering_control(enable_steer_control, apply_angle, idx))
       can_sends.append(teslacan.create_epb_enable_signal(idx))
       self.last_angle = apply_angle
+      
+      # Adaptive cruise control
+      current_time_ms = int(round(time.time() * 1000))
+      if CS.cruise_buttons not in [CruiseButtons.IDLE, CruiseButtons.MAIN]:
+        self.human_cruise_action_time = current_time_ms
+      button_to_press = None
+      # The difference between OP's target speed and the current cruise
+      # control speed, in KPH.
+      speed_offset = (pcm_speed * CV.MS_TO_KPH - CS.v_cruise_actual)
+      # Tesla cruise only functions above 18 MPH
+      min_cruise_speed = 18 * CV.MPH_TO_MS
+      
+      if (CS.enable_adaptive_cruise
+          # Only do ACC if OP is steering
+          and enable_steer_control
+          # And adjust infrequently, since sending repeated adjustments makes
+          # the car think we're doing a 'long press' on the cruise stalk,
+          # resulting in small, jerky speed adjustments.
+          and current_time_ms > self.automated_cruise_action_time + 1000):
+        # Automatically engange traditional cruise if it is idle and we are
+        # going fast enough and we are accelerating.
+        if (CS.pcm_acc_status == 1
+            and CS.v_ego > min_cruise_speed
+            and CS.a_ego > 0.1):
+          button_to_press = CruiseButtons.DECEL_2ND
+        # If traditional cruise is engaged, then control it.
+        elif (CS.pcm_acc_status == 2
+              # But don't make adjustments if a human has manually done so in
+              # the last 3 seconds. Human intention should not be overridden.
+              and current_time_ms > self.human_cruise_action_time + 3000):
+          
+          if CS.imperial_speed_units:
+            # Imperial unit cars adjust cruise in units of 1 and 5 mph.
+            half_press_kph = 1 * CV.MPH_TO_KPH
+            full_press_kph = 5 * CV.MPH_TO_KPH
+          else:
+            # Metric cars adjust cruise in units of 1 and 5 kph.
+            half_press_kph = 1
+            full_press_kph = 5
+            
+          # Reduce cruise speed significantly if necessary.
+          if speed_offset < (-1 * full_press_kph):
+            # Send cruise stalk dn_2nd.
+            button_to_press = CruiseButtons.DECEL_2ND
+          # Reduce speed slightly if necessary.
+          elif speed_offset < (-1 * half_press_kph):
+            # Send cruise stalk dn_1st.
+            button_to_press = CruiseButtons.DECEL_SET
+          # Increase cruise speed if possible.
+          elif CS.v_ego > min_cruise_speed:
+            # How much we can accelerate without exceeding max allowed speed.
+            available_speed = CS.v_cruise_pcm - CS.v_cruise_actual
+            if speed_offset > full_press_kph and speed_offset < available_speed:
+              # Send cruise stalk up_2nd.
+              button_to_press = CruiseButtons.RES_ACCEL_2ND
+            elif speed_offset > half_press_kph and speed_offset < available_speed:
+              # Send cruise stalk up_1st.
+              button_to_press = CruiseButtons.RES_ACCEL
+      if button_to_press:
+        self.automated_cruise_action_time = current_time_ms
+        cruise_msg = teslacan.create_cruise_adjust_msg(button_to_press, CS.steering_wheel_stalk)
+        can_sends.insert(0, cruise_msg)
+
       sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
