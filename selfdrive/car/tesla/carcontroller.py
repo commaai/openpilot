@@ -161,6 +161,10 @@ class CarController(object):
         CS.laneChange_enabled =1
         CS.laneChange_counter =0
         tcm.custom_alert_message("")
+    if (((not CS.prev_right_blinker_on) and CS.right_blinker_on) or ((not     CS.prev_left_blinker_on) and CS.left_blinker_on)) and ((CS.v_ego < CL_MIN_V) or (abs(actuators.steerAngle) >= CL_MAX_A)):
+      #something is not right; signal in oposite direction; cancel
+      tcm.custom_alert_message("Auto Lane Change Unavailable!")
+      CS.custom_alert_counter = 500
     if (((not CS.prev_right_blinker_on) and CS.right_blinker_on) or ((not CS.prev_left_blinker_on) and CS.left_blinker_on)) and (CS.v_ego >= CL_MIN_V) and (abs(actuators.steerAngle) < CL_MAX_A):
       laneChange_direction = 1.2 # for some reason right turns for me nees more angke
       #changing lanes
