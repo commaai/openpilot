@@ -195,6 +195,8 @@ class CarController(object):
         # going fast enough and we are accelerating.
         if (CS.pcm_acc_status == 1
             and CS.v_ego > min_cruise_speed
+            # TODO: Make this slightly positive so that we know real
+            # acceleration is happening.
             and CS.a_ego >= 0):
           button_to_press = CruiseButtons.DECEL_2ND
         # If traditional cruise is engaged, then control it.
