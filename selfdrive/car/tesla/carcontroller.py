@@ -186,6 +186,8 @@ class CarController(object):
         CS.laneChange_enabled = 5 
         CS.laneChange_counter = 1
         CS.laneChange_direction = laneChange_direction
+        self.laneChange_avg_angle = 0.
+        self.laneChange_avg_count = 0.
     #lane change in process
     if CS.laneChange_enabled > 1:
       CS.laneChange_angled = CS.laneChange_direction * CS.laneChange_steerr *  interp(CS.v_ego, CL_MAXD_BP, CL_MAXD_A)
