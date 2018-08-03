@@ -11,6 +11,7 @@ from selfdrive.car.tesla import teslacan
 from selfdrive.car.tesla.values import AH, CruiseButtons, CAR
 from selfdrive.can.packer import CANPacker
 from selfdrive.config import Conversions as CV
+import selfdrive.messaging as messaging
 
 import time
 
@@ -180,7 +181,27 @@ class CarController(object):
       speed_offset = (pcm_speed * CV.MS_TO_KPH - CS.v_cruise_actual)
       # Tesla cruise only functions above 18 MPH
       min_cruise_speed = 18 * CV.MPH_TO_MS
-      
+
+      #Bring in the lead car distance from the Live20 feed
+      l20 = None
+      #follow_time = 2.5 #in seconds
+      #safe_dist = 300 #in meters
+      if enable_steer_control and idx == 0:
+        for socket, event in self.poller.poll(0):
+          if socket is self.live20:
+            l20 = messaging.recv_one(socket)
+
+      if l20 is not None and idx == 0:
+        self.lead_1 = l20.live20.leadOne
+
+        #dRel is in meters
+        lead_dist = self.lead_1.dRel;
+        #grab the relative speed and convert from m/s to kph
+        rel_speed = self.lead_1.vRel * 3.6
+        #v_ego is in m/s, so safe_distance is meters
+        #safe_dist = CS.v_ego * follow_time
+        #print "Lead Dist: ", "{0:.1f}".format(lead_dist*3.28), "ft Safe Dist: ", "{0:.1f}".format(safe_dist*3.28), "ft Rel Speed: ","{0:.1f}".format(rel_speed), "kph"     
+
       if (CS.enable_adaptive_cruise
           # Only do ACC if OP is steering
           and enable_steer_control
