@@ -210,9 +210,14 @@ class CarController(object):
           CS.custom_alert_counter = 500
         CS.laneChange_counter += 1
         laneChange_angle = CS.laneChange_angled
-        if CS.laneChange_counter == (CS.laneChange_duration - 1) * 100:
+        if CS.laneChange_counter >  (CS.laneChange_duration - 2) * 100:
+          if (abs(actuators.steerAngle) < 3.):
+            CS.laneChange_enabled = 2
+            CS.laneChange_counter = 1
+        if CS.laneChange_counter >  (CS.laneChange_duration - 1) * 100:
           CS.laneChange_enabled = 2
           CS.laneChange_counter = 1
+
       if CS.laneChange_enabled == 4:
         if CS.laneChange_counter == 1:
           CS.laneChange_angle = -actuators.steerAngle
