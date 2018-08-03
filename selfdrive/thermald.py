@@ -2,7 +2,7 @@
 import os
 import zmq
 from smbus2 import SMBus
-
+from cereal import log
 from selfdrive.version import training_version
 from selfdrive.swaglog import cloudlog
 import selfdrive.messaging as messaging
@@ -10,9 +10,9 @@ from selfdrive.services import service_list
 from selfdrive.loggerd.config import ROOT
 from common.params import Params
 from common.realtime import sec_since_boot
+from common.numpy_fast import clip
 
-import cereal
-ThermalStatus = cereal.log.ThermalData.ThermalStatus
+ThermalStatus = log.ThermalData.ThermalStatus
 
 def read_tz(x):
   with open("/sys/devices/virtual/thermal/thermal_zone%d/temp" % x) as f:
@@ -74,9 +74,9 @@ _FAN_SPEEDS = [0, 16384, 32768, 65535]
 # max fan speed only allowed if battery if hot
 _BAT_TEMP_THERSHOLD = 45.
 
-def handle_fan(max_temp, bat_temp, fan_speed):
-  new_speed_h = next(speed for speed, temp_h in zip(_FAN_SPEEDS, _TEMP_THRS_H) if temp_h > max_temp)
-  new_speed_l = next(speed for speed, temp_l in zip(_FAN_SPEEDS, _TEMP_THRS_L) if temp_l > max_temp)
+def handle_fan(max_cpu_temp, bat_temp, fan_speed):
+  new_speed_h = next(speed for speed, temp_h in zip(_FAN_SPEEDS, _TEMP_THRS_H) if temp_h > max_cpu_temp)
+  new_speed_l = next(speed for speed, temp_l in zip(_FAN_SPEEDS, _TEMP_THRS_L) if temp_l > max_cpu_temp)
 
   if new_speed_h > fan_speed:
     # update speed if using the high thresholds results in fan speed increment
@@ -164,31 +164,32 @@ def thermald_thread():
       msg.thermal.usbOnline = bool(int(f.read()))
 
     # TODO: add car battery voltage check
-    max_temp = max(msg.thermal.cpu0, msg.thermal.cpu1,
-                   msg.thermal.cpu2, msg.thermal.cpu3) / 10.0
+    max_cpu_temp = max(msg.thermal.cpu0, msg.thermal.cpu1,
+                       msg.thermal.cpu2, msg.thermal.cpu3) / 10.0
+    max_comp_temp = max(max_cpu_temp, msg.thermal.mem / 10., msg.thermal.gpu / 10.)
     bat_temp = msg.thermal.bat/1000.
-    fan_speed = handle_fan(max_temp, bat_temp, fan_speed)
+    fan_speed = handle_fan(max_cpu_temp, bat_temp, fan_speed)
     msg.thermal.fanSpeed = fan_speed
 
-    # thermal logic here
-
-    if max_temp < 70.0:
-      thermal_status = ThermalStatus.green
-    if max_temp > 85.0:
-      cloudlog.warning("over temp: %r", max_temp)
-      thermal_status = ThermalStatus.yellow
-
-    # from controls
-    overtemp_proc = any(t > 950 for t in
-                        (msg.thermal.cpu0, msg.thermal.cpu1, msg.thermal.cpu2,
-                         msg.thermal.cpu3, msg.thermal.mem, msg.thermal.gpu))
-    overtemp_bat = msg.thermal.bat > 60000 # 60c
-    if overtemp_proc or overtemp_bat:
-      # TODO: hysteresis
-      thermal_status = ThermalStatus.red
-
-    if max_temp > 107.0 or msg.thermal.bat >= 63000:
+    # thermal logic with hysterisis
+    if max_cpu_temp > 107. or bat_temp >= 63.:
+      # onroad not allowed
       thermal_status = ThermalStatus.danger
+    elif max_comp_temp > 95. or bat_temp > 60.:
+      # hysteresis between onroad not allowed and engage not allowed
+      thermal_status = clip(thermal_status, ThermalStatus.red, ThermalStatus.danger)
+    elif max_cpu_temp > 90.0:
+      # hysteresis between engage not allowed and uploader not allowed
+      thermal_status = clip(thermal_status, ThermalStatus.yellow, ThermalStatus.red)
+    elif max_cpu_temp > 85.0:
+      # uploader not allowed
+      thermal_status = ThermalStatus.yellow
+    elif max_cpu_temp > 75.0:
+      # hysteresis between uploader not allowed and all good
+      thermal_status = clip(thermal_status, ThermalStatus.green, ThermalStatus.yellow)
+    else:
+      # all good
+      thermal_status = ThermalStatus.green
 
     # **** starting logic ****
 
@@ -225,7 +226,7 @@ def thermald_thread():
 
     # if any CPU gets above 107 or the battery gets above 63, kill all processes
     # controls will warn with CPU above 95 or battery above 60
-    if msg.thermal.thermalStatus >= ThermalStatus.danger:
+    if thermal_status >= ThermalStatus.danger:
       # TODO: Add a better warning when this is happening
       should_start = False
 
