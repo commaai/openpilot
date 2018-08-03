@@ -181,9 +181,6 @@ class CarController(object):
       # Tesla cruise only functions above 18 MPH
       min_cruise_speed = 18 * CV.MPH_TO_MS
       
-      # Debugging
-      print "a_ego: " + str(CS.a_ego)
-      
       if (CS.enable_adaptive_cruise
           # Only do ACC if OP is steering
           and enable_steer_control
@@ -195,15 +192,13 @@ class CarController(object):
         # going fast enough and we are accelerating.
         if (CS.pcm_acc_status == 1
             and CS.v_ego > min_cruise_speed
-            # TODO: Make this slightly positive so that we know real
-            # acceleration is happening.
-            and CS.a_ego >= 0):
+            and CS.a_ego > 0.1):
           button_to_press = CruiseButtons.DECEL_2ND
         # If traditional cruise is engaged, then control it.
         elif (CS.pcm_acc_status == 2
               # But don't make adjustments if a human has manually done so in
-              # the last 2 seconds. Human intention should not be overridden.
-              and current_time_ms > self.human_cruise_action_time + 2000):
+              # the last 3 seconds. Human intention should not be overridden.
+              and current_time_ms > self.human_cruise_action_time + 3000):
           
           if CS.imperial_speed_units:
             # Imperial unit cars adjust cruise in units of 1 and 5 mph.
