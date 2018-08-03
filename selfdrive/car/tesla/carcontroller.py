@@ -25,8 +25,8 @@ ANGLE_DELTA_V = [5., .8, .15]     # windup limit
 ANGLE_DELTA_VU = [5., 3.5, 0.4]   # unwind limit
 
 #change lane delta angles and other params
-CL_MAXD_BP = [1., 44.]
-CL_MAXD_A = [.6, 0.005] #delta angle based on speed; needs fine tune
+CL_MAXD_BP = [1., 32, 44.]
+CL_MAXD_A = [.5, 0.2, 0.08] #delta angle based on speed; needs fine tune
 CL_MIN_V = 8.9 # do not turn if speed less than x m/2; 20 mph = 8.9 m/s
 CL_MAX_A = 10. # do not turn if actuator wants more than x deg for going straight; this should be interp based on speed
 
@@ -214,7 +214,7 @@ class CarController(object):
           CS.custom_alert_counter = 800
         CS.laneChange_counter += 1
         laneChange_angle = CS.laneChange_angled
-        if CS.laneChange_counter >  (CS.laneChange_duration - 2) * 100:
+        if CS.laneChange_counter >  (CS.laneChange_duration - 1) * 100:
           if (abs(actuators.steerAngle - CS.laneChange_angle - laneChange_angle) < 3.):
             #we're close to the angle, so we should release
             #need to add outer limits based on delta angle sign change
@@ -246,7 +246,7 @@ class CarController(object):
       if CS.laneChange_enabled == 5:
         if CS.laneChange_counter == 1:
           tcm.custom_alert_message("Auto Lane Change Engaged! (2)")
-          CS.custom_alert_counter = 200
+          CS.custom_alert_counter = CS.laneChange_wait * 100
         CS.laneChange_counter += 1
         if CS.laneChange_counter > (CS.laneChange_wait -1) *100:
           self.laneChange_avg_angle +=  -actuators.steerAngle
