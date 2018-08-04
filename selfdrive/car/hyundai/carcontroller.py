@@ -6,15 +6,14 @@ from selfdrive.can.packer import CANPacker
 
 
 # Steer torque limits
-STEER_MAX = 200   # Actual integer limit is 1023, but ignores >767
+STEER_MAX = 250   # Actual integer limit is 1023, but ignores >767
 STEER_MAX_ZERO = 1024
 STEER_DELTA_UP = 3
-STEER_DELTA_DOWN = 6
+STEER_DELTA_DOWN = 5
 
 STEER_DRIVER_ALLOWANCE = 100
 STEER_DRIVER_MULTIPLIER = 1
 STEER_DRIVER_FACTOR = 100
-
 
 class CarController(object):
   def __init__(self, dbc_name, car_fingerprint, enable_camera):
@@ -48,11 +47,11 @@ class CarController(object):
 
     # Torque Rate Limiting - based from GM Port
     if self.apply_steer_last > 0:
-      apply_steer = clip(apply_steer, max(self.apply_steer_last - STEER_DELTA_DOWN, -STEER_DELTA_UP),
+      apply_steer = clip(apply_steer, self.apply_steer_last - STEER_DELTA_DOWN,
                                       self.apply_steer_last + STEER_DELTA_UP)
     else:
       apply_steer = clip(apply_steer, self.apply_steer_last - STEER_DELTA_UP,
-                                      min(self.apply_steer_last + STEER_DELTA_DOWN, STEER_DELTA_UP))
+                                      self.apply_steer_last + STEER_DELTA_DOWN)
 
     # Redundant Min/Max Clipping
     apply_steer = clip(apply_steer, STEER_MAX_ZERO - STEER_MAX, STEER_MAX_ZERO + STEER_MAX)
@@ -182,7 +181,7 @@ class CarController(object):
 
     # Limit Terminal Debugging to 5Hz
     if (frame % 20) == 0:
-      print "controlsdDebug steer", actuators.steer, "strToq", CS.steer_torque_driver, "v_ego", \
+      print "controlsdDebug steer", actuators.steer, "steera", apply_steer,  "strToq", CS.steer_torque_driver, "v_ego", \
         CS.v_ego, "strAng", CS.angle_steers
 
 
