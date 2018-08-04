@@ -15,7 +15,7 @@ from selfdrive.car.tesla.values import AH, CruiseButtons, CAR
 from selfdrive.can.packer import CANPacker
 from selfdrive.config import Conversions as CV
 import custom_alert as tcm
-import ALCA_module
+from ALCA_module import ALCAController
 
 # Steer angle limits
 ANGLE_MAX_BP = [0., 27., 36.]
@@ -150,8 +150,8 @@ class CarController(object):
 
     #get the angle from ALCA
     alca_enabled = False
-    apply_angle,alca_enabled = ALCA.update(enabled,CS,frame,actuators)
-    apply_agle = -apply_angle #Tesla is reversed vs OP
+    apply_angle,alca_enabled = self.ALCA.update(enabled,CS,frame,actuators)
+    apply_angle = -apply_angle #Tesla is reversed vs OP
 
     enable_steer_control = (enabled and ((not changing_lanes) or alca_enabled))
     

@@ -6,7 +6,7 @@ from common.numpy_fast import interp
 CL_MAXD_BP = [1., 32, 44.]
 CL_MAXD_A = [.115, 0.081, 0.042] #delta angle based on speed; needs fine tune, based on Tesla steer ratio of 16.75
 #0.477611    [
-CL_MIN_V = 8.9 # do not turn if speed less than x m/2; 20 mph = 8.9 m/s
+CL_MIN_V = 0. #8.9 # do not turn if speed less than x m/2; 20 mph = 8.9 m/s
 CL_MAX_A = 10. # do not turn if actuator wants more than x deg for going straight; this should be interp based on speed
 
 
@@ -33,26 +33,6 @@ class ALCAController(object):
     self.laneChange_steerr = 16.75 #steer ratio for lane change
     self.laneChange_direction = 0 #direction of the lane change 
   
-  def update(self,enabled,CS,frame,actuators):
-    if self.alcaEnabled:
-      # ALCA enabled
-      if self.laneChange_steerByAngle:
-        # steering by angle
-        return update_angle(self,enabled,CS,frame,actuators)
-      else:
-        # steering by torque
-        #TODO: torque ALCA module
-        return [actuators.steerAngle,False]
-    else:
-      # ALCA disabled
-      if self.laneChange_steerByAngle:
-        #steer by angle
-        return [actuators.steerAngle,False]
-      else:
-        #steer by torque
-        #TODO: torque ALCA module
-        return [actuators.steerAngle,False]
-
   def update_angle(self,enabled,CS,frame,actuators):
     # Basic highway lane change logic
     changing_lanes = CS.right_blinker_on or CS.left_blinker_on  
@@ -124,15 +104,15 @@ class ALCAController(object):
           tcm.custom_alert_message("Auto Lane Change Engaged! (4)",CS,800)
           self.laneChange_over_the_line = 0
         self.laneChange_counter += 1
-        laneChange_angle = CS.laneChange_angled
+        laneChange_angle = self.laneChange_angled
         if (self.laneChange_over_the_line == 0):
           #we didn't cross the line, so keep computing the actuator delta until it flips
           actuator_delta = self.laneChange_direction * (-actuators.steerAngle - self.laneChange_last_actuator_angle)
-          actuator_ratio = (-actuators.steerAngle)/self.laneChage_last_actuator_angle
+          actuator_ratio = (-actuators.steerAngle)/self.laneChange_last_actuator_angle
           #actuator_sign_change = (-actuators.steerAngle)*(self.laneChange_last_actuator_angle)
           #angle_now = self.laneChange_angle + self.laneChange_angled
           #angle_correction_increase = abs(self.laneChange_last_sent_angle - self.laneChange_last_actuator_angle) > abs(angle_now + actuators.steerAngle)
-        if (actuator_ration < 1) and (abs(actuator_delta) > abs(self.laneChange_angled)):
+        if (actuator_ratio < 1) and (abs(actuator_delta) > abs(self.laneChange_angled)):
           #sudden change in actuator angle or sign means we are on the other side of the line
           tcm.custom_alert_message("Auto Lane Change Engaged! (5)",CS,800)
           self.laneChange_over_the_line = 1
@@ -201,12 +181,45 @@ class ALCAController(object):
         self.laneChange_counter +=1
     alca_enabled = (self.laneChange_enabled > 1)
     apply_angle = 0.
-    # Angle
-    self.laneChange_last_actuator_delta = -actuators.stterAngle - self.laneChange_last_actuator_angle
-    self.laneChange_last_actuator_angle = -actuators.stterAngle
+    # Angle if 0 we need to save it as a very small nonzero with the same sign as the prev one
+    self.laneChange_last_actuator_delta = -actuators.steerAngle - self.laneChange_last_actuator_angle
+    last_angle_sign = 1
+    if (self.laneChange_last_actuator_angle <>0):
+      last_angle_sign = self.laneChange_last_actuator_angle / abs(self.laneChange_last_actuator_angle)
+    if actuators.steerAngle == 0:
+      self.laneChange_last_actuator_angle = last_angle_sign * 0.00001
+    else:
+      self.laneChange_last_actuator_angle = -actuators.steerAngle
+
     if (self.laneChange_enabled > 1) and (self.laneChange_enabled < 5):
       apply_angle = self.laneChange_angle + laneChange_angle
     else:
       apply_angle = -actuators.steerAngle
     self.laneChange_last_sent_angle = apply_angle
     return [-apply_angle,alca_enabled]
+
+
+
+  def update(self,enabled,CS,frame,actuators):
+    if self.alcaEnabled:
+      # ALCA enabled
+      if self.laneChange_steerByAngle:
+        # steering by angle
+        new_angle = 0.
+        new_ALCA_enabled = False
+        new_angle,new_ALCA_Enabled = self.update_angle(enabled,CS,frame,actuators)
+        return [new_angle,new_ALCA_Enabled]
+      else:
+        # steering by torque
+        #TODO: torque ALCA module
+        return [actuators.steerAngle,False]
+    else:
+      # ALCA disabled
+      if self.laneChange_steerByAngle:
+        #steer by angle
+        return [actuators.steerAngle,False]
+      else:
+        #steer by torque
+        #TODO: torque ALCA module
+        return [actuators.steerAngle,False]
+ 

@@ -13,5 +13,5 @@ def update_custom_alert(CS):
   if (CS.custom_alert_counter > 0):
     CS.custom_alert_counter -= 1
     if (CS.custom_alert_counter ==0):
-      custom_alert_message("")
+      custom_alert_message("",CS,0)
       CS.custom_alert_counter = -1
