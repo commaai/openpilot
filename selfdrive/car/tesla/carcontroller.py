@@ -82,6 +82,89 @@ class CarController(object):
     self.human_cruise_action_time = 0
     self.automated_cruise_action_time = 0
     self.last_angle = 0.
+    context = zmq.Context()
+    self.poller = zmq.Poller()
+    self.live20 = messaging.sub_sock(context, service_list['live20'].port, conflate=True, poller=self.poller)
+    self.lead_1 = None
+
+  #function to calculate the desired cruise speed based on a safe follow distance
+  def calc_follow_speed(self, CS):
+    follow_time = 2.5 #in seconds
+    safe_dist = 300 #in meters
+    current_time_ms = int(round(time.time() * 1000))
+    #dRel is in meters
+    lead_dist = self.lead_1.dRel;
+    #grab the relative speed and convert from m/s to kph
+    rel_speed = self.lead_1.vRel * 3.6
+    #current speed in kph
+    cur_speed = CS.v_ego * 3.6
+    #v_ego is in m/s, so safe_distance is in meters
+    safe_dist = CS.v_ego * follow_time
+    # How much we can accelerate without exceeding the max allowed speed.
+    available_speed = CS.v_cruise_pcm - cur_speed
+    # Metric cars adjust cruise in units of 1 and 5 kph
+    half_press_kph = 1
+    full_press_kph = 5
+    # Imperial unit cars adjust cruise in units of 1 and 5 mph
+    if CS.imperial_speed_units:
+      half_press_kph = 1 * CV.MPH_TO_KPH
+      full_press_kph = 5 * CV.MPH_TO_KPH
+    #speed_delta is the change we want to make
+    speed_delta = 0
+
+    print "Lead Dist: ", "{0:.1f}".format(lead_dist*3.28), "ft Safe Dist: ", "{0:.1f}".format(safe_dist*3.28), "ft Rel Speed: ","{0:.1f}".format(rel_speed), "kph"
+    #print "dRel: ", self.lead_1.dRel," yRel: ", self.lead_1.yRel, " vRel: ", self.lead_1.vRel, " aRel: ", self.lead_1.aRel, " vLead: ", self.lead_1.vLead, " vLeadK: ", self.lead_1.vLeadK, " aLeadK: ",     self.lead_1.aLeadK
+
+    ###   Logic to determine best cruise speed ###
+
+    #if lead_dist is reported as 0, no one is detected in front of you so you can speed up
+    #TODO: don't speed up when steer-angle > 2; vision radar often loses lead car in a turn
+    if lead_dist == 0:
+      if full_press_kph < available_speed:
+        speed_delta = 5
+      elif half_press_kph < available_speed:
+        speed_delta = 1
+
+    #if we have a populated lead_distance
+    elif lead_dist > 0:
+      ### Slowing down ###
+      #Reduce speed significantly if lead_dist < 50% of safe dist, no matter the rel_speed
+      if lead_dist < (safe_dist * 0.5):
+        print "50pct down"
+        speed_delta = -5
+      #Reduce speed significantly if lead_dist < 60% of  safe dist
+      #and if the lead car isn't pulling away
+      elif lead_dist < (safe_dist * 0.7) and rel_speed < 5:
+        print "70pct down"
+        speed_delta = -5
+      #Reduce speed if rel_speed < -15kph so you don't rush up to lead car
+      elif rel_speed < -15:
+        print "relspd -15 down"
+        speed_delta = -1
+      #we're close to the safe distance, so make slow adjustments
+      #only adjust every 2 secs
+      elif (lead_dist < (safe_dist * 0.9) and rel_speed < 3 
+            and current_time_ms > self.automated_cruise_action_time + 2000):
+        print "90pct down"
+        speed_delta = -1
+
+      ### Speed up ###
+      #don't speed up again until you have more than a safe distance in front
+      #only adjust every 2 secs
+      elif (lead_dist > safe_dist * 1.2 and available_speed > 1
+            and current_time_ms > self.automated_cruise_action_time + 2000):
+        # Send cruise stalk up_1st
+        speed_delta = 1
+
+    #if we don't need to do any of the above, then we're at a pretty good speed
+    #make sure if we're at this point that the set cruise speed isn't set too low
+    if (CS.v_ego * 3.6) - CS.v_cruise_actual > 3:
+      # Send cruise stalk up_1st if the set speed is too low to bring it up
+      print "cruise rectify"
+      speed_delta = 1
+    
+    return cur_speed + speed_delta
+    
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
              pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel, \
@@ -178,29 +261,19 @@ class CarController(object):
       button_to_press = None
       # The difference between OP's target speed and the current cruise
       # control speed, in KPH.
-      speed_offset = (pcm_speed * CV.MS_TO_KPH - CS.v_cruise_actual)
+      desired_speed = calc_follow_speed(self, CS) #instead of pcm_speed * CV.MS_TO_KPH 
+      speed_offset = (desired_speed - CS.v_cruise_actual)
       # Tesla cruise only functions above 18 MPH
       min_cruise_speed = 18 * CV.MPH_TO_MS
 
       #Bring in the lead car distance from the Live20 feed
       l20 = None
-      #follow_time = 2.5 #in seconds
-      #safe_dist = 300 #in meters
       if enable_steer_control and idx == 0:
         for socket, event in self.poller.poll(0):
           if socket is self.live20:
             l20 = messaging.recv_one(socket)
-
       if l20 is not None and idx == 0:
         self.lead_1 = l20.live20.leadOne
-
-        #dRel is in meters
-        lead_dist = self.lead_1.dRel;
-        #grab the relative speed and convert from m/s to kph
-        rel_speed = self.lead_1.vRel * 3.6
-        #v_ego is in m/s, so safe_distance is meters
-        #safe_dist = CS.v_ego * follow_time
-        #print "Lead Dist: ", "{0:.1f}".format(lead_dist*3.28), "ft Safe Dist: ", "{0:.1f}".format(safe_dist*3.28), "ft Rel Speed: ","{0:.1f}".format(rel_speed), "kph"     
 
       if (CS.enable_adaptive_cruise
           # Only do ACC if OP is steering
