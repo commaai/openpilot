@@ -33,7 +33,7 @@ class ALCAController(object):
     self.laneChange_steerr = 16.75 #steer ratio for lane change
     self.laneChange_direction = 0 #direction of the lane change 
     self.prev_right_blinker_on = False #local variable for prev position
-    self.prev_right_blinker_on = False #local variable for prev position
+    self.prev_left_blinker_on = False #local variable for prev position
 
   def update_angle(self,enabled,CS,frame,actuators):
     # Basic highway lane change logic
