@@ -79,7 +79,7 @@ class CarController(object):
     self.packer = CANPacker(dbc_name)
     self.epas_disabled = True
     self.last_angle = 0
-    self.ALCA = ALCAController(self)
+    self.ALCA = ALCAController(self,True,True)  # Enabled and SteerByAngle both True
 
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
@@ -151,6 +151,8 @@ class CarController(object):
     #get the angle from ALCA
     alca_enabled = False
     apply_angle,alca_enabled = ALCA.update(enabled,CS,frame,actuators)
+    apply_agle = -apply_angle #Tesla is reversed vs OP
+
     enable_steer_control = (enabled and ((not changing_lanes) or alca_enabled))
     
     angle_lim = interp(CS.v_ego, ANGLE_MAX_BP, ANGLE_MAX_V)
