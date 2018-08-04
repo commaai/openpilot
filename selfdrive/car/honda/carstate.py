@@ -2,7 +2,7 @@ from common.numpy_fast import interp
 from common.kalman.simple_kalman import KF1D
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
-from selfdrive.car.honda.values import CAR, DBC
+from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD
 
 def parse_gear_shifter(can_gear_shifter, car_fingerprint):
 
@@ -284,10 +284,8 @@ class CarState(object):
     else:
       self.car_gas = cp.vl["GAS_PEDAL_2"]['CAR_GAS']
 
-    #rdx has different steer override threshold
-    steer_thrsld = 400 if self.CP.carFingerprint == CAR.ACURA_RDX else 1200
-    self.steer_override = abs(cp.vl["STEER_STATUS"]['STEER_TORQUE_SENSOR']) > steer_thrsld
     self.steer_torque_driver = cp.vl["STEER_STATUS"]['STEER_TORQUE_SENSOR']
+    self.steer_override = abs(self.steer_torque_driver) > STEER_THRESHOLD[self.CP.carFingerprint]
 
     self.brake_switch = cp.vl["POWERTRAIN_DATA"]['BRAKE_SWITCH']
 

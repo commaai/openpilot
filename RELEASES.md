@@ -1,3 +1,10 @@
+Version 0.5.1 (2018-08-01)
+========================
+ * Fix radar error on Civic sedan 2018
+ * Improve thermal management logic
+ * Alpha Toyota C-HR and Camry support!
+ * Auto-switch Driver Monitoring to 3 min counter when inaccurate
+
 Version 0.5 (2018-07-11)
 ========================
  * Driver Monitoring (beta) option in settings!

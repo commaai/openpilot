@@ -104,5 +104,19 @@ DBC = {
   CAR.RIDGELINE: dbc_dict('honda_ridgeline_black_edition_2017_can_generated', 'acura_ilx_2016_nidec'),
 }
 
+
+STEER_THRESHOLD = {
+  CAR.ACCORD: 1200,
+  CAR.ACURA_ILX: 1200,
+  CAR.ACURA_RDX: 400,
+  CAR.CIVIC: 1200,
+  CAR.CIVIC_HATCH: 1200,
+  CAR.CRV: 1200,
+  CAR.CRV_5G: 1200,
+  CAR.ODYSSEY: 1200,
+  CAR.PILOT: 1200,
+  CAR.RIDGELINE: 1200,
+}
+
 # TODO: get these from dbc file
 HONDA_BOSCH = [CAR.ACCORD, CAR.CIVIC_HATCH, CAR.CRV_5G]
