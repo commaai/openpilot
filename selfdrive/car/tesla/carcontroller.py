@@ -132,7 +132,7 @@ class CarController(object):
         button = CruiseButtons.RES_ACCEL
 
     #if we have a populated lead_distance
-    elif (lead_dist > 0:
+    elif (lead_dist > 0
           #and we only issue commands every 300ms
           and current_time_ms > self.automated_cruise_action_time + 300):
       ### Slowing down ###
@@ -152,31 +152,36 @@ class CarController(object):
       #we're close to the safe distance, so make slow adjustments
       #only adjust every 2 secs
       elif (lead_dist < (safe_dist * 0.9) and rel_speed < 0
-            and current_time_ms > self.automated_cruise_action_time + 2000):
+            and current_time_ms > self.automated_cruise_action_time + 1000):
         msg =  "90pct down"
         button = CruiseButtons.DECEL_SET
 
       ### Speed up ###
       #don't speed up again until you have more than a safe distance in front
-      #only adjust every 2 secs
+      #only adjust every 1 sec
       elif (lead_dist > safe_dist * 1.2 and available_speed > 1
-            and current_time_ms > self.automated_cruise_action_time + 2000):
-        # Send cruise stalk up_1st
+            and current_time_ms > self.automated_cruise_action_time + 1000):
         button = CruiseButtons.RES_ACCEL
 
     #if we don't need to do any of the above, then we're at a pretty good speed
-    #make sure if we're at this point that the set cruise speed isn't set too low
-    if ((CS.v_ego * 3.6) - CS.v_cruise_actual) > 3 and button = None:
+    #make sure if we're at this point that the set cruise speed isn't set too low or high
+    if ((CS.v_ego * 3.6) - CS.v_cruise_actual) > 3 and button == None:
       # Send cruise stalk up_1st if the set speed is too low to bring it up
       msg =  "cruise rectify"
       button = CruiseButtons.RES_ACCEL
+    elif (CS.v_cruise_actual - (CS.v_ego * 3.6)) > 3 and button == None:
+      #or push it down if it's too high
+      msg =  "cruise rectify"
+      button = CruiseButtons.DECEL_SET
 
     
     if (current_time_ms > self.last_update_time + 1000):
       #print "Lead Dist: ", "{0:.1f}".format(lead_dist*3.28), "ft Safe Dist: ", "{0:.1f}".format(safe_dist*3.28), "ft Rel Speed: ","{0:.1f}".format(rel_speed), "kph   SpdOffset: ", "{0:.3f}".format(speed_delta * 1.01)
-      print "Ratio: ", "{0:.1f}%".format((lead_dist / safe_dist) * 100), "   Rel Speed: ","{0:.1f}".format(rel_speed), "kph","{0:.1f}".format(self.last_angle), "deg"
+      print "Ratio: {0:.1f}%".format((lead_dist / safe_dist) * 100), "   Rel Speed: ","{0:.1f}kph".format(rel_speed), "  Angle: {0:.1f}deg".format(self.last_angle)
       self.last_update_time = current_time_ms
-    
+      if msg != None:
+        print msg
+        
     return button
     
 
