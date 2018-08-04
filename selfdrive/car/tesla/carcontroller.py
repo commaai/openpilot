@@ -1,5 +1,6 @@
 import os
 import subprocess
+import zmq
 from  threading import Thread
 import traceback
 import shlex
@@ -11,6 +12,7 @@ from selfdrive.car.tesla import teslacan
 from selfdrive.car.tesla.values import AH, CruiseButtons, CAR
 from selfdrive.can.packer import CANPacker
 from selfdrive.config import Conversions as CV
+from selfdrive.services import service_list
 import selfdrive.messaging as messaging
 
 import time
