@@ -164,17 +164,6 @@ class CarState(object):
     self.pedal_speed_kph = 0.
     self.pedal_enabled = 0
 
-    #variables for lane change
-    self.laneChange_enabled = 1 #set to zero for no lane change
-    self.laneChange_counter = 0 #used to count frames during lane change
-    self.laneChange_duration = 6.6 #how many max seconds to actually do the move
-    self.laneChange_wait = 2 #how many seconds to wait before it starts the change
-    self.laneChange_lw = 3.7 #lane width in meters
-    self.laneChange_angle = 0. #saves the last angle from actuators before lane change starts
-    self.laneChange_angled = 0. #angle delta
-    self.laneChange_steerr = 8 #steer ratio for lane changes : ck if we can use the same
-    self.laneChange_direction = 0 #direction of the lane change
-    
     #custom message counter
     self.custom_alert_counter = -1 #set to 100 for 1 second display; carcontroller will take down to zero
      
