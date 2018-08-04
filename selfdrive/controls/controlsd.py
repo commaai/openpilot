@@ -292,7 +292,7 @@ def state_control(plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, 
   return actuators, v_cruise_kph, driver_status, angle_offset
 
 
-def data_send(plan, plan_ts, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, carstate,
+def data_send(perception_state, plan, plan_ts, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, carstate,
               carcontrol, live100, livempc, AM, driver_status,
               LaC, LoC, angle_offset, passive):
 
@@ -323,7 +323,7 @@ def data_send(plan, plan_ts, CS, CI, CP, VM, state, events, actuators, v_cruise_
     CC.hudControl.audibleAlert = AM.audible_alert
 
     # send car controls over can
-    CI.apply(CC)
+    CI.apply(CC, perception_state)
 
   # ***** publish state to logger *****
   # publish controls state at 100Hz
@@ -337,6 +337,7 @@ def data_send(plan, plan_ts, CS, CI, CP, VM, state, events, actuators, v_cruise_
     "alertStatus": AM.alert_status,
     "alertBlinkingRate": AM.alert_rate,
     "awarenessStatus": max(driver_status.awareness, 0.0) if isEnabled(state) else 0.0,
+    "driverMonitoringOn": bool(driver_status.monitor_on),
     "canMonoTimes": list(CS.canMonoTimes),
     "planMonoTime": plan_ts,
     "enabled": isEnabled(state),
@@ -446,7 +447,6 @@ def controlsd_thread(gctx=None, rate=100, default_bias=0.):
     CP.safetyModel = car.CarParams.SafetyModels.noOutput
 
   fcw_enabled = params.get("IsFcwEnabled") == "1"
-  driver_monitor_on = params.get("IsDriverMonitoringEnabled") == "1"
   geofence = None
   try:
     from selfdrive.controls.lib.geofence import Geofence
@@ -460,7 +460,7 @@ def controlsd_thread(gctx=None, rate=100, default_bias=0.):
   VM = VehicleModel(CP)
   LaC = LatControl(VM)
   AM = AlertManager()
-  driver_status = DriverStatus(driver_monitor_on)
+  driver_status = DriverStatus()
 
   if not passive:
     AM.add("startup", False)
@@ -516,7 +516,7 @@ def controlsd_thread(gctx=None, rate=100, default_bias=0.):
     prof.checkpoint("State Control")
 
     # publish data
-    CC = data_send(plan, plan_ts, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, carstate, carcontrol,
+    CC = data_send(PL.perception_state, plan, plan_ts, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, carstate, carcontrol,
       live100, livempc, AM, driver_status, LaC, LoC, angle_offset, passive)
     prof.checkpoint("Sent")
 
