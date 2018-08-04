@@ -112,7 +112,7 @@ class ALCAController(object):
           #actuator_sign_change = (-actuators.steerAngle)*(self.laneChange_last_actuator_angle)
           #angle_now = self.laneChange_angle + self.laneChange_angled
           #angle_correction_increase = abs(self.laneChange_last_sent_angle - self.laneChange_last_actuator_angle) > abs(angle_now + actuators.steerAngle)
-        if (actuator_ratio < 1) and (abs(actuator_delta) > abs(self.laneChange_angled)):
+        if (actuator_ratio < 1) and (abs(actuator_delta) > 0.5 * abs(self.laneChange_angled)):
           #sudden change in actuator angle or sign means we are on the other side of the line
           tcm.custom_alert_message("Auto Lane Change Engaged! (5)",CS,800)
           self.laneChange_over_the_line = 1
