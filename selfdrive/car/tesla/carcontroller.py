@@ -88,12 +88,16 @@ class CarController(object):
     self.poller = zmq.Poller()
     self.live20 = messaging.sub_sock(context, service_list['live20'].port, conflate=True, poller=self.poller)
     self.lead_1 = None
+    self.last_update_time = 0
 
   #function to calculate the desired cruise speed based on a safe follow distance
   def calc_follow_speed(self, CS):
     follow_time = 2.5 #in seconds
     safe_dist = 300 #in meters
     current_time_ms = int(round(time.time() * 1000))
+    #make sure we were able to population lead_1
+    if self.lead_1 is None:
+      return 0
     #dRel is in meters
     lead_dist = self.lead_1.dRel;
     #grab the relative speed and convert from m/s to kph
@@ -114,7 +118,6 @@ class CarController(object):
     #speed_delta is the change we want to make
     speed_delta = 0
 
-    print "Lead Dist: ", "{0:.1f}".format(lead_dist*3.28), "ft Safe Dist: ", "{0:.1f}".format(safe_dist*3.28), "ft Rel Speed: ","{0:.1f}".format(rel_speed), "kph"
     #print "dRel: ", self.lead_1.dRel," yRel: ", self.lead_1.yRel, " vRel: ", self.lead_1.vRel, " aRel: ", self.lead_1.aRel, " vLead: ", self.lead_1.vLead, " vLeadK: ", self.lead_1.vLeadK, " aLeadK: ",     self.lead_1.aLeadK
 
     ###   Logic to determine best cruise speed ###
@@ -132,22 +135,22 @@ class CarController(object):
       ### Slowing down ###
       #Reduce speed significantly if lead_dist < 50% of safe dist, no matter the rel_speed
       if lead_dist < (safe_dist * 0.5):
-        print "50pct down"
+        #print "50pct down"
         speed_delta = -5
       #Reduce speed significantly if lead_dist < 60% of  safe dist
       #and if the lead car isn't pulling away
       elif lead_dist < (safe_dist * 0.7) and rel_speed < 5:
-        print "70pct down"
+        #print "70pct down"
         speed_delta = -5
       #Reduce speed if rel_speed < -15kph so you don't rush up to lead car
       elif rel_speed < -15:
-        print "relspd -15 down"
+        #print "relspd -15 down"
         speed_delta = -1
       #we're close to the safe distance, so make slow adjustments
       #only adjust every 2 secs
       elif (lead_dist < (safe_dist * 0.9) and rel_speed < 3 
             and current_time_ms > self.automated_cruise_action_time + 2000):
-        print "90pct down"
+        #print "90pct down"
         speed_delta = -1
 
       ### Speed up ###
@@ -160,12 +163,19 @@ class CarController(object):
 
     #if we don't need to do any of the above, then we're at a pretty good speed
     #make sure if we're at this point that the set cruise speed isn't set too low
-    if (CS.v_ego * 3.6) - CS.v_cruise_actual > 3:
+    elif (CS.v_ego * 3.6) - CS.v_cruise_actual > 3:
       # Send cruise stalk up_1st if the set speed is too low to bring it up
-      print "cruise rectify"
+      #print "cruise rectify"
       speed_delta = 1
+
+    offset = CS.v_cruise_actual + speed_delta * 1.01 
     
-    return cur_speed + speed_delta
+    if (current_time_ms > self.last_update_time + 1000):
+      #print "Lead Dist: ", "{0:.1f}".format(lead_dist*3.28), "ft Safe Dist: ", "{0:.1f}".format(safe_dist*3.28), "ft Rel Speed: ","{0:.1f}".format(rel_speed), "kph   SpdOffset: ", "{0:.3f}".format(speed_delta * 1.01)
+      print "Ratio: ", "{0:.1f}".format(lead_dist - safe_dist / safe_dist), "   Rel Speed: ","{0:.1f}".format(rel_speed), "kph   SpdOffset: ", "{0:.3f}".format(speed_delta * 1.01)
+      self.last_update_time = current_time_ms
+    
+    return offset
     
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
@@ -257,25 +267,26 @@ class CarController(object):
       self.last_angle = apply_angle
       
       # Adaptive cruise control
+      #Bring in the lead car distance from the Live20 feed
+      l20 = None
+      if enable_steer_control:
+        for socket, event in self.poller.poll(0):
+          if socket is self.live20:
+            l20 = messaging.recv_one(socket)
+      if l20 is not None:
+        self.lead_1 = l20.live20.leadOne
+
       current_time_ms = int(round(time.time() * 1000))
       if CS.cruise_buttons not in [CruiseButtons.IDLE, CruiseButtons.MAIN]:
         self.human_cruise_action_time = current_time_ms
       button_to_press = None
       # The difference between OP's target speed and the current cruise
       # control speed, in KPH.
-      desired_speed = calc_follow_speed(self, CS) #instead of pcm_speed * CV.MS_TO_KPH 
+      desired_speed = self.calc_follow_speed(CS) #instead of pcm_speed * CV.MS_TO_KPH 
       speed_offset = (desired_speed - CS.v_cruise_actual)
       # Tesla cruise only functions above 18 MPH
       min_cruise_speed = 18 * CV.MPH_TO_MS
 
-      #Bring in the lead car distance from the Live20 feed
-      l20 = None
-      if enable_steer_control and idx == 0:
-        for socket, event in self.poller.poll(0):
-          if socket is self.live20:
-            l20 = messaging.recv_one(socket)
-      if l20 is not None and idx == 0:
-        self.lead_1 = l20.live20.leadOne
 
       if (CS.enable_adaptive_cruise
           # Only do ACC if OP is steering
@@ -283,7 +294,7 @@ class CarController(object):
           # And adjust infrequently, since sending repeated adjustments makes
           # the car think we're doing a 'long press' on the cruise stalk,
           # resulting in small, jerky speed adjustments.
-          and current_time_ms > self.automated_cruise_action_time + 1000):
+          and current_time_ms > self.automated_cruise_action_time + 300):
         # Automatically engange traditional cruise if it is idle and we are
         # going fast enough and we are accelerating.
         if (CS.pcm_acc_status == 1
@@ -309,10 +320,12 @@ class CarController(object):
           if speed_offset < (-1 * full_press_kph):
             # Send cruise stalk dn_2nd.
             button_to_press = CruiseButtons.DECEL_2ND
+            print "spdoffset: ",  speed_offset
           # Reduce speed slightly if necessary.
           elif speed_offset < (-1 * half_press_kph):
             # Send cruise stalk dn_1st.
             button_to_press = CruiseButtons.DECEL_SET
+            print "spdoffset: ",  speed_offset
           # Increase cruise speed if possible.
           elif CS.v_ego > min_cruise_speed:
             # How much we can accelerate without exceeding max allowed speed.
@@ -320,10 +333,13 @@ class CarController(object):
             if speed_offset > full_press_kph and speed_offset < available_speed:
               # Send cruise stalk up_2nd.
               button_to_press = CruiseButtons.RES_ACCEL_2ND
+              print "spdoffset: ",  speed_offset
             elif speed_offset > half_press_kph and speed_offset < available_speed:
               # Send cruise stalk up_1st.
               button_to_press = CruiseButtons.RES_ACCEL
+              print "spdoffset: ",  speed_offset
       if button_to_press:
+        print "button: ",  button_to_press
         self.automated_cruise_action_time = current_time_ms
         cruise_msg = teslacan.create_cruise_adjust_msg(button_to_press, CS.steering_wheel_stalk)
         can_sends.insert(0, cruise_msg)
