@@ -209,23 +209,6 @@ class CarState(object):
 
     self.prev_left_blinker_on = self.left_blinker_on
     self.prev_right_blinker_on = self.right_blinker_on
-    
-    self.steering_wheel_stalk = cp.vl["STW_ACTN_RQ"]
-    self.cruise_setting = self.steering_wheel_stalk['SpdCtrlLvr_Stat']
-    self.cruise_buttons = self.steering_wheel_stalk['SpdCtrlLvr_Stat']
-    # Check if the cruise stalk was double pulled, indicating that adaptive
-    # cruise control should be enabled. Twice in .75 seconds counts as a double
-    # pull.
-    if (self.cruise_buttons == CruiseButtons.MAIN and
-        self.prev_cruise_buttons != CruiseButtons.MAIN):
-      curr_time_ms = _current_time_millis()
-      self.enable_adaptive_cruise = (
-        curr_time_ms - self.last_cruise_stalk_pull_time < 750)
-      self.last_cruise_stalk_pull_time = curr_time_ms
-    elif (self.cruise_buttons == CruiseButtons.CANCEL and
-          self.prev_cruise_buttons != CruiseButtons.CANCEL):
-      self.enable_adaptive_cruise = False
-      self.last_cruise_stalk_pull_time = 0
 
     # ******************* parse out can *******************
     self.door_all_closed = not any([cp.vl["GTW_carState"]['DOOR_STATE_FL'], cp.vl["GTW_carState"]['DOOR_STATE_FR'],
@@ -265,10 +248,6 @@ class CarState(object):
     self.angle_steers = -(cp.vl["STW_ANGLHP_STAT"]['StW_AnglHP']) #JCT polarity reversed from Honda/Acura
     self.angle_steers_rate = 0 #JCT
 
-    self.blinker_on = (self.steering_wheel_stalk['TurnIndLvr_Stat'] == 1) or (self.steering_wheel_stalk['TurnIndLvr_Stat'] == 2)
-    self.left_blinker_on = self.steering_wheel_stalk['TurnIndLvr_Stat'] == 1
-    self.right_blinker_on = self.steering_wheel_stalk['TurnIndLvr_Stat'] == 2
-
     #if self.CP.carFingerprint in (CAR.CIVIC, CAR.ODYSSEY):
     #  self.park_brake = cp.vl["EPB_STATUS"]['EPB_STATE'] != 0
     #  self.brake_hold = cp.vl["VSA_STATUS"]['BRAKE_HOLD_ACTIVE']
@@ -298,11 +277,40 @@ class CarState(object):
       self.v_cruise_actual = (cp.vl["DI_state"]['DI_cruiseSet'])*CV.MPH_TO_KPH
     else:
       self.v_cruise_actual = cp.vl["DI_state"]['DI_cruiseSet']
-    # The user may manually increase cruise speed. If they push it above the max
-    # cruise speed, update the max.
-    self.v_cruise_pcm = max(self.v_cruise_actual, self.v_cruise_pcm)
     self.pcm_acc_status = cp.vl["DI_state"]['DI_cruiseState']
+    self.steering_wheel_stalk = cp.vl["STW_ACTN_RQ"]
+    self.cruise_setting = self.steering_wheel_stalk['SpdCtrlLvr_Stat']
+    self.cruise_buttons = self.steering_wheel_stalk['SpdCtrlLvr_Stat']
+    # Check if the cruise stalk was double pulled, indicating that adaptive
+    # cruise control should be enabled. Twice in .75 seconds counts as a double
+    # pull.
+    if (self.cruise_buttons == CruiseButtons.MAIN and
+        self.prev_cruise_buttons != CruiseButtons.MAIN):
+      curr_time_ms = _current_time_millis()
+      if curr_time_ms - self.last_cruise_stalk_pull_time < 750:
+        # Double stalk pull, enable ACC.
+        self.enable_adaptive_cruise = True
+        self.v_cruise_pcm = self.v_ego
+      else:
+        # Single stalk pull, disable ACC.
+        self.enable_adaptive_cruise = False
+        self.v_cruise_pcm = 0
+      self.last_cruise_stalk_pull_time = curr_time_ms
+    # Check if OP was disabled.
+    elif self.cruise_buttons == CruiseButtons.CANCEL:
+      self.enable_adaptive_cruise = False
+      self.v_cruise_pcm = 0
+      self.last_cruise_stalk_pull_time = 0
+    else:
+      # The user may manually increase cruise speed. If they push it above the max
+      # cruise speed, update the max.
+      self.v_cruise_pcm = max(self.v_cruise_actual, self.v_cruise_pcm)
+      
     self.hud_lead = 0 #JCT
+    
+    self.blinker_on = (self.steering_wheel_stalk['TurnIndLvr_Stat'] == 1) or (self.steering_wheel_stalk['TurnIndLvr_Stat'] == 2)
+    self.left_blinker_on = self.steering_wheel_stalk['TurnIndLvr_Stat'] == 1
+    self.right_blinker_on = self.steering_wheel_stalk['TurnIndLvr_Stat'] == 2
 
 
 # carstate standalone tester
