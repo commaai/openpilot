@@ -172,7 +172,7 @@ class CarController(object):
       
       # Adaptive cruise control
       current_time_ms = int(round(time.time() * 1000))
-      if CS.cruise_buttons not in [CruiseButtons.IDLE, CruiseButtons.MAIN]:
+      if CS.cruise_buttons != CruiseButtons.IDLE:
         self.human_cruise_action_time = current_time_ms
       button_to_press = None
       # The difference between OP's target speed and the current cruise
