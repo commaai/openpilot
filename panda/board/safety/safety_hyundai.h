@@ -3,9 +3,9 @@
 // Based on GM Safety
 
 const int HYUNDAI_STEER_ZERO = 1024;
-const int HYUNDAI_MAX_STEER = 200; // This may be lifted highter AFTER a valid proof from users deems it necessary
-const int HYUNDAI_MAX_RATE_UP = 5;
-const int HYUNDAI_MAX_RATE_DOWN = 10;
+const int HYUNDAI_MAX_STEER = 250; // This may be lifted highter AFTER a valid proof from users deems it necessary
+const int HYUNDAI_MAX_RATE_UP = 3;
+const int HYUNDAI_MAX_RATE_DOWN = 6;
 const int HYUNDAI_DRIVER_TORQUE_ALLOWANCE = 100;
 const int HYUNDAI_DRIVER_TORQUE_FACTOR = 100;
 const int HYUNDAI_MAX_RT_DELTA = 128;
