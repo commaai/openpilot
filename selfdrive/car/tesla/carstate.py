@@ -30,18 +30,6 @@ def _current_time_millis():
   return int(round(time.time() * 1000))
 
 
-def calc_cruise_offset(offset, speed):
-  # euristic formula so that speed is controlled to ~ 0.3m/s below pid_speed
-  # constraints to solve for _K0, _K1, _K2 are:
-  # - speed = 0m/s, out = -0.3
-  # - speed = 34m/s, offset = 20, out = -0.25
-  # - speed = 34m/s, offset = -2.5, out = -1.8
-  _K0 = -0.3
-  _K1 = -0.01879
-  _K2 = 0.01013
-  return min(_K0 + _K1 * speed + _K2 * speed * offset, 0.)
-
-
 def get_can_signals(CP):
 # this function generates lists for signal, messages and initial values
   signals = [
@@ -307,7 +295,7 @@ class CarState(object):
     self.standstill = cp.vl["DI_torque2"]['DI_vehicleSpeed'] == 0
     self.imperial_speed_units = cp.vl["DI_state"]['DI_speedUnits'] == 0
     if self.imperial_speed_units:
-      self.v_cruise_actual = (cp.vl["DI_state"]['DI_cruiseSet'])*CV.MPH_TO_KPH # Reported in MPH, expected in KPH??
+      self.v_cruise_actual = (cp.vl["DI_state"]['DI_cruiseSet'])*CV.MPH_TO_KPH
     else:
       self.v_cruise_actual = cp.vl["DI_state"]['DI_cruiseSet']
     # The user may manually increase cruise speed. If they push it above the max
@@ -315,8 +303,6 @@ class CarState(object):
     self.v_cruise_pcm = max(self.v_cruise_actual, self.v_cruise_pcm)
     self.pcm_acc_status = cp.vl["DI_state"]['DI_cruiseState']
     self.hud_lead = 0 #JCT
-    self.cruise_speed_offset = calc_cruise_offset(self.v_cruise_actual,
-                                                  self.v_ego)
 
 
 # carstate standalone tester
