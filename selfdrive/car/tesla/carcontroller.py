@@ -190,7 +190,7 @@ class CarController(object):
           # And adjust infrequently, since sending repeated adjustments makes
           # the car think we're doing a 'long press' on the cruise stalk,
           # resulting in small, jerky speed adjustments.
-          and current_time_ms > self.automated_cruise_action_time + 1000):
+          and current_time_ms > self.automated_cruise_action_time + 1500):
         # Automatically engange traditional cruise if it is idle and we are
         # going fast enough and we are accelerating.
         if (CS.pcm_acc_status == 1
@@ -203,7 +203,7 @@ class CarController(object):
         elif (CS.pcm_acc_status == 2
               # But don't make adjustments if a human has manually done so in
               # the last 2 seconds. Human intention should not be overridden.
-              and current_time_ms > self.human_cruise_action_time + 2000):
+              and current_time_ms > self.human_cruise_action_time + 3000):
           
           if CS.imperial_speed_units:
             # Imperial unit cars adjust cruise in units of 1 and 5 mph.
