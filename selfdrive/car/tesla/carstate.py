@@ -5,7 +5,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.car.tesla.values import CAR, CruiseButtons, DBC
 import numpy as np
 from ctypes import create_string_buffer
-
+import custom_alert as customAlert
 import time
 
 
@@ -188,6 +188,9 @@ class CarState(object):
     
     self.imperial_speed_units = True
 
+    #custom message counter
+    self.custom_alert_counter = -1 #set to 100 for 1 second display; carcontroller will take down to zero
+
     # vEgo kalman filter
     dt = 0.01
     # Q = np.matrix([[10.0, 0.0], [0.0, 100.0]])
@@ -228,15 +231,23 @@ class CarState(object):
     # Check if the cruise stalk was double pulled, indicating that adaptive
     # cruise control should be enabled. Twice in .75 seconds counts as a double
     # pull.
+    adaptive_cruise_prev = self.enable_adaptive_cruise
     if (self.cruise_buttons == CruiseButtons.MAIN and
         self.prev_cruise_buttons != CruiseButtons.MAIN):
       curr_time_ms = _current_time_millis()
       self.enable_adaptive_cruise = (
         curr_time_ms - self.last_cruise_stalk_pull_time < 750)
+      if(self.enable_adaptive_cruise):
+        customAlert.custom_alert_message("ACC Enabled",self,150)
+      elif adaptive_cruise_prev == True:
+        customAlert.custom_alert_message("ACC Disabled",self,150)
+
       self.last_cruise_stalk_pull_time = curr_time_ms
     elif (self.cruise_buttons == CruiseButtons.CANCEL and
           self.prev_cruise_buttons != CruiseButtons.CANCEL):
       self.enable_adaptive_cruise = False
+      if adaptive_cruise_prev == True:
+        customAlert.custom_alert_message("ACC Disabled",self,150)
       self.last_cruise_stalk_pull_time = 0
 
     # ******************* parse out can *******************

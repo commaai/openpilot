@@ -1,5 +1,6 @@
 import os
 import subprocess
+import time
 import zmq
 from  threading import Thread
 import traceback
@@ -14,7 +15,7 @@ from selfdrive.can.packer import CANPacker
 from selfdrive.config import Conversions as CV
 from selfdrive.services import service_list
 import selfdrive.messaging as messaging
-import time
+import custom_alert as customAlert
 
 
 # Steer angle limits
@@ -133,7 +134,7 @@ class CarController(object):
     # If traditional cruise is engaged, then control it.
     elif CS.pcm_acc_status == 2:
       #if lead_dist is reported as 0, no one is detected in front of you so you can speed up
-      #TODO: don't speed up when steer-angle > 2; vision radar often loses lead car in a turn
+      #don't speed up when steer-angle > 2; vision radar often loses lead car in a turn
       if lead_dist == 0 and CS.enable_adaptive_cruise and CS.angle_steers < 2.0:
         if full_press_kph < (available_speed * 0.9): 
           msg =  "5 MPH UP   full: ","{0:.1f}kph".format(full_press_kph), "  avail: {0:.1f}kph".format(available_speed)
@@ -257,6 +258,9 @@ class CarController(object):
     
     # Basic highway lane change logic
     changing_lanes = CS.right_blinker_on or CS.left_blinker_on
+
+    #countdown for custom message timer
+    customAlert.update_custom_alert(CS)
 
     enable_steer_control = (enabled and not changing_lanes)
     
