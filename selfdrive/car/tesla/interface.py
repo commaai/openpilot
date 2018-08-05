@@ -276,21 +276,6 @@ class CarInterface(object):
         be.type = 'altButton3'
       buttonEvents.append(be)
 
-    if self.CS.cruise_setting != self.CS.prev_cruise_setting:
-      be = car.CarState.ButtonEvent.new_message()
-      be.type = 'unknown'
-      if self.CS.cruise_setting != 0:
-        be.pressed = True
-        but = self.CS.cruise_setting
-      else:
-        be.pressed = False
-        but = self.CS.prev_cruise_setting
-      #if but == 1:
-      #  be.type = 'altButton1'
-      # TODO: more buttons?
-      buttonEvents.append(be)
-    ret.buttonEvents = buttonEvents
-
     # events
     # TODO: I don't like the way capnp does enums
     # These strings aren't checked at compile time

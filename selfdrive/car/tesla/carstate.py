@@ -164,7 +164,6 @@ class CarState(object):
     self.steering_wheel_stalk = None
     self.cruise_buttons = CruiseButtons.IDLE
     self.prev_cruise_buttons = CruiseButtons.IDLE
-    self.cruise_setting = CruiseButtons.IDLE
     self.blinker_on = 0
 
     self.left_blinker_on = 0
@@ -204,14 +203,12 @@ class CarState(object):
     # update prevs, update must run once per loop
     self.prev_steering_wheel_stalk = self.steering_wheel_stalk
     self.prev_cruise_buttons = self.cruise_buttons
-    self.prev_cruise_setting = self.cruise_setting
     self.prev_blinker_on = self.blinker_on
 
     self.prev_left_blinker_on = self.left_blinker_on
     self.prev_right_blinker_on = self.right_blinker_on
     
     self.steering_wheel_stalk = cp.vl["STW_ACTN_RQ"]
-    self.cruise_setting = self.steering_wheel_stalk['SpdCtrlLvr_Stat']
     self.cruise_buttons = self.steering_wheel_stalk['SpdCtrlLvr_Stat']
     # Check if the cruise stalk was double pulled, indicating that adaptive
     # cruise control should be enabled. Twice in .75 seconds counts as a double
