@@ -98,7 +98,7 @@ class CarController(object):
     if self.lead_1 is None:
       return None
     #dRel is in meters
-    lead_dist = self.lead_1.dRel;
+    lead_dist = self.lead_1.dRel
     #grab the relative speed and convert from m/s to kph
     rel_speed = self.lead_1.vRel * 3.6
     #current speed in kph
@@ -106,7 +106,7 @@ class CarController(object):
     #v_ego is in m/s, so safe_distance is in meters
     safe_dist = CS.v_ego * follow_time
     # How much we can accelerate without exceeding the max allowed speed.
-    available_speed = CS.v_cruise_pcm - cur_speed
+    available_speed = CS.v_cruise_pcm - CS.v_cruise_actual
     # Metric cars adjust cruise in units of 1 and 5 kph
     half_press_kph = 1
     full_press_kph = 5
@@ -125,10 +125,13 @@ class CarController(object):
 
     #if lead_dist is reported as 0, no one is detected in front of you so you can speed up
     #TODO: don't speed up when steer-angle > 2; vision radar often loses lead car in a turn
-    if lead_dist == 0:
-      if full_press_kph < available_speed:
+    #TODO: fix imperial avail speed here
+    if lead_dist == 0 and CS.enable_adaptive_cruise:
+      if full_press_kph < (available_speed * 0.9): 
+        msg =  "5 MPH UP   full: ","{0:.1f}kph".format(full_press_kph), "  avail: {0:.1f}kph".format(available_speed)
         button = CruiseButtons.RES_ACCEL_2ND
-      elif half_press_kph < available_speed:
+      elif half_press_kph < (available_speed * 0.8):
+        msg =  "1 MPH UP   half: ","{0:.1f}kph".format(half_press_kph), "  avail: {0:.1f}kph".format(available_speed)
         button = CruiseButtons.RES_ACCEL
 
     #if we have a populated lead_distance
@@ -158,30 +161,37 @@ class CarController(object):
 
       ### Speed up ###
       #don't speed up again until you have more than a safe distance in front
-      #only adjust every 1 sec
-      elif (lead_dist > safe_dist * 1.2 and available_speed > 1
-            and current_time_ms > self.automated_cruise_action_time + 1000):
+      #only adjust every 2 sec
+      elif (lead_dist > safe_dist * 1.2 and half_press_kph < available_speed * 0.8
+            and current_time_ms > self.automated_cruise_action_time + 2000):
+        msg =  "120pct UP   half: ","{0:.1f}kph".format(half_press_kph), "  avail: {0:.1f}kph".format(available_speed)
         button = CruiseButtons.RES_ACCEL
 
     #if we don't need to do any of the above, then we're at a pretty good speed
     #make sure if we're at this point that the set cruise speed isn't set too low or high
-    if ((CS.v_ego * 3.6) - CS.v_cruise_actual) > 3 and button == None:
+    if (cur_speed - CS.v_cruise_actual) > 5 and button == None:
       # Send cruise stalk up_1st if the set speed is too low to bring it up
       msg =  "cruise rectify"
       button = CruiseButtons.RES_ACCEL
-    elif (CS.v_cruise_actual - (CS.v_ego * 3.6)) > 3 and button == None:
+    #elif (CS.v_cruise_actual - (CS.v_ego * 3.6)) > 5 and button == None:
       #or push it down if it's too high
-      msg =  "cruise rectify"
-      button = CruiseButtons.DECEL_SET
+    #  msg =  "cruise rectify"
+    #  button = CruiseButtons.DECEL_SET
 
     
+    #print "lead_dist1: ", lead_dist
     if (current_time_ms > self.last_update_time + 1000):
       #print "Lead Dist: ", "{0:.1f}".format(lead_dist*3.28), "ft Safe Dist: ", "{0:.1f}".format(safe_dist*3.28), "ft Rel Speed: ","{0:.1f}".format(rel_speed), "kph   SpdOffset: ", "{0:.3f}".format(speed_delta * 1.01)
-      print "Ratio: {0:.1f}%".format((lead_dist / safe_dist) * 100), "   Rel Speed: ","{0:.1f}kph".format(rel_speed), "  Angle: {0:.1f}deg".format(self.last_angle)
+      ratio = 0
+      if safe_dist > 0:
+        ratio = (lead_dist / safe_dist) * 100
+      #print "pcm: ", CS.v_cruise_pcm, " cur_speed: ", cur_speed
+      print "Ratio: {0:.1f}%".format(ratio), "   lead: ","{0:.1f}m".format(lead_dist),"   avail: ","{0:.1f}kph".format(available_speed), "   Rel Speed: ","{0:.1f}kph".format(rel_speed), "  Angle: {0:.1f}deg".format(CS.angle_steers)
       self.last_update_time = current_time_ms
       if msg != None:
         print msg
         
+    #print "lead_dist2: ", lead_dist
     return button
     
 
@@ -340,7 +350,7 @@ class CarController(object):
               # Send cruise stalk up_1st.
               button_to_press = CruiseButtons.RES_ACCEL
       
-      button_to_press = self.calc_follow_speed(CS)
+        button_to_press = self.calc_follow_speed(CS)
       if button_to_press:
         self.automated_cruise_action_time = current_time_ms
         cruise_msg = teslacan.create_cruise_adjust_msg(button_to_press, CS.steering_wheel_stalk)
