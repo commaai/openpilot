@@ -231,6 +231,8 @@ typedef struct UIState {
   float alert_blinking_alpha;
   bool alert_blinked;
 
+  bool acc_enabled;
+
   float light_sensor;
 } UIState;
 
@@ -414,6 +416,8 @@ static void ui_init(UIState *s) {
   glDisable(GL_DEPTH_TEST);
 
   assert(glGetError() == GL_NO_ERROR);
+
+  s->acc_enabled = false;
 
   {
     char *value;
@@ -915,6 +919,45 @@ static int bb_ui_draw_measure(UIState *s,  const char* bb_value, const char* bb_
   return (int)((bb_valueFontSize + bb_labelFontSize)*2.5) + 5;
 }
 
+static void bb_ui_draw_custom_alert(UIState *s,char *car_model) {
+  const UIScene *scene = &s->scene;
+  char *filepath = malloc(90);
+  sprintf(filepath,"/data/openpilot/selfdrive/car/%s/alert.msg",car_model);
+  //get 3-state switch position
+  int alert_msg_fd;
+  char alert_msg[1000];
+  if (strlen(s->scene.alert_text1) > 0) {
+    //already a system alert, ignore ours
+    return;
+  }
+  alert_msg_fd = open (filepath, O_RDONLY);
+  //if we can't open then done
+  if (alert_msg_fd == -1) {
+    return;
+  } else {
+    int rd = read(alert_msg_fd, &(s->scene.alert_text1), 1000);
+    if ((rd > 1) && (s->scene.alert_text1[rd-1] == '^')) {
+      //^ as last character means warning
+      s->status = 3; //ALERT_WARNING
+      rd --;
+    }
+    s->scene.alert_text1[rd] = '\0';
+    close(alert_msg_fd);
+    if(!strcmp(s->scene.alert_text1, "ACC Enabled")){
+      s->acc_enabled = true;
+    }
+    if(!strcmp(s->scene.alert_text1, "ACC Disabled")){
+      s->acc_enabled = false;
+    }
+    if (strlen(s->scene.alert_text1) > 0) {
+      s->scene.alert_size = ALERTSIZE_SMALL;
+    } else {
+      s->scene.alert_size = ALERTSIZE_NONE;
+      s->scene.alert_text1[0]=0;
+    }
+  }
+}
+
 static void bb_ui_draw_measures_left(UIState *s, int bb_x, int bb_y, int bb_w ) {
 	const UIScene *scene = &s->scene;		
 	int bb_rx = bb_x + (int)(bb_w/2);
@@ -1233,8 +1276,8 @@ static void bb_ui_draw_UI(UIState *s) {
             tri_state_switch = 2;
   } else {
   	read (tri_state_fd, &buffer, 10);
-	tri_state_switch = buffer[0] -48;
-	close(tri_state_fd);
+	  tri_state_switch = buffer[0] -48;
+	  close(tri_state_fd);
   }
   if (tri_state_switch == 1) {
 	  const UIScene *scene = &s->scene;
@@ -1246,13 +1289,14 @@ static void bb_ui_draw_UI(UIState *s) {
 	  const int bb_dmr_x = scene->ui_viz_rx + scene->ui_viz_rw - bb_dmr_w - (bdr_s*2) ; 
 	  const int bb_dmr_y = (box_y + (bdr_s*1.5))+220;
 
-	 bb_ui_draw_measures_left(s,bb_dml_x, bb_dml_y, bb_dml_w );
-	 bb_ui_draw_measures_right(s,bb_dmr_x, bb_dmr_y, bb_dmr_w );
-	 }
-	 if (tri_state_switch ==3) {
-	 	ui_draw_vision_grid(s);
-	 }
- }
+    bb_ui_draw_measures_left(s,bb_dml_x, bb_dml_y, bb_dml_w );
+	  bb_ui_draw_measures_right(s,bb_dmr_x, bb_dmr_y, bb_dmr_w );
+    bb_ui_draw_custom_alert(s,"tesla");
+	}
+	if (tri_state_switch ==3) {
+		ui_draw_vision_grid(s);
+	}
+}
  
  
 //BB END: functions added for the display of various items
@@ -1273,15 +1317,26 @@ static void ui_draw_vision_maxspeed(UIState *s) {
 
   nvgBeginPath(s->vg);
   nvgRoundedRect(s->vg, viz_maxspeed_x, viz_maxspeed_y, viz_maxspeed_w, viz_maxspeed_h, 20);
-  nvgStrokeColor(s->vg, nvgRGBA(255,255,255,80));
-  nvgStrokeWidth(s->vg, 6);
+  if(s->acc_enabled == true){
+    //bounding box is green and thicker
+    nvgStrokeColor(s->vg, nvgRGBA(23, 134, 68, 255));
+    nvgStrokeWidth(s->vg, 10);
+  } else {
+    nvgStrokeColor(s->vg, nvgRGBA(255,255,255,80));
+    nvgStrokeWidth(s->vg, 6);
+  }
   nvgStroke(s->vg);
 
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
   nvgFontFace(s->vg, "sans-regular");
   nvgFontSize(s->vg, 26*2.5);
   nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 200));
-  nvgText(s->vg, viz_maxspeed_x+viz_maxspeed_w/2, 148, "MAX", NULL);
+  
+  if(s->acc_enabled == true){
+    nvgText(s->vg, viz_maxspeed_x+viz_maxspeed_w/2, 148, "ACC", NULL);
+  } else {
+    nvgText(s->vg, viz_maxspeed_x+viz_maxspeed_w/2, 148, "MAX", NULL);
+  }
 
   nvgFontFace(s->vg, "sans-semibold");
   nvgFontSize(s->vg, 52*2.5);
