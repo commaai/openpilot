@@ -301,7 +301,7 @@ class CarState(object):
       self.enable_adaptive_cruise = False
       self.v_cruise_pcm = 0
       self.last_cruise_stalk_pull_time = 0
-    else:
+    elif self.pcm_acc_status == 2:
       # The user may manually increase cruise speed. If they push it above the max
       # cruise speed, update the max.
       self.v_cruise_pcm = max(self.v_cruise_actual, self.v_cruise_pcm)
