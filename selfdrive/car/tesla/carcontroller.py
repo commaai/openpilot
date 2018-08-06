@@ -126,11 +126,10 @@ class CarController(object):
     ###   Logic to determine best cruise speed ###
 
     # Automatically engange traditional cruise if it is idle and we are
-    # going fast enough and we are accelerating.
+    # going fast enough.
     if (CS.pcm_acc_status == 1
-        and CS.v_ego > min_cruise_speed
-        and CS.a_ego > 0.1):
-      button_to_press = CruiseButtons.DECEL_2ND
+        and CS.v_ego > min_cruise_speed):
+      button = CruiseButtons.DECEL_SET
     # If traditional cruise is engaged, then control it.
     elif CS.pcm_acc_status == 2:
       #if lead_dist is reported as 0, no one is detected in front of you so you can speed up

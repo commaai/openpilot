@@ -232,9 +232,9 @@ class CarState(object):
     # cruise control should be enabled. Twice in .75 seconds counts as a double
     # pull.
     adaptive_cruise_prev = self.enable_adaptive_cruise
+    curr_time_ms = _current_time_millis()
     if (self.cruise_buttons == CruiseButtons.MAIN and
         self.prev_cruise_buttons != CruiseButtons.MAIN):
-      curr_time_ms = _current_time_millis()
       self.enable_adaptive_cruise = (
         curr_time_ms - self.last_cruise_stalk_pull_time < 750)
       if(self.enable_adaptive_cruise):
@@ -249,6 +249,12 @@ class CarState(object):
       if adaptive_cruise_prev == True:
         customAlert.custom_alert_message("ACC Disabled",self,150)
       self.last_cruise_stalk_pull_time = 0
+    #if ACC was on and something disabled cruise control, disable ACC too
+    elif (self.enable_adaptive_cruise == True and
+          self.pcm_acc_status != 2 and
+          curr_time_ms - self.last_cruise_stalk_pull_time >  2000):
+      self.enable_adaptive_cruise = False
+      customAlert.custom_alert_message("ACC Disabled",self,150)
 
     # ******************* parse out can *******************
     self.door_all_closed = not any([cp.vl["GTW_carState"]['DOOR_STATE_FL'], cp.vl["GTW_carState"]['DOOR_STATE_FR'],
