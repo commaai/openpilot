@@ -7,7 +7,7 @@ from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD
 def parse_gear_shifter(can_gear_shifter, car_fingerprint):
 
   # TODO: Use VAL from DBC to parse this field
-  if car_fingerprint in (CAR.ACURA_ILX, CAR.ODYSSEY):
+  if car_fingerprint in (CAR.ACURA_ILX, CAR.CLARITY, CAR.ODYSSEY):
     if can_gear_shifter == 0x1:
       return "park"
     elif can_gear_shifter == 0x2:
@@ -129,7 +129,7 @@ def get_can_signals(CP):
                 ("WHEELS_MOVING", "STANDSTILL", 1)]
     checks += [("DOORS_STATUS", 3)]
 
-  if CP.carFingerprint == CAR.CIVIC:
+  if CP.carFingerprint in (CAR.CIVIC, CAR.CLARITY):
     signals += [("CAR_GAS", "GAS_PEDAL_2", 0),
                 ("MAIN_ON", "SCM_FEEDBACK", 0),
                 ("EPB_STATE", "EPB_STATUS", 0),
@@ -266,7 +266,7 @@ class CarState(object):
     self.left_blinker_on = cp.vl["SCM_FEEDBACK"]['LEFT_BLINKER']
     self.right_blinker_on = cp.vl["SCM_FEEDBACK"]['RIGHT_BLINKER']
 
-    if self.CP.carFingerprint in (CAR.CIVIC, CAR.ODYSSEY, CAR.CRV_5G, CAR.ACCORD, CAR.CIVIC_HATCH):
+    if self.CP.carFingerprint in (CAR.CIVIC, CAR.ODYSSEY, CAR.CRV_5G, CAR.ACCORD, CAR.CIVIC_HATCH, CAR.CLARITY):
       self.park_brake = cp.vl["EPB_STATUS"]['EPB_STATE'] != 0
       self.brake_hold = cp.vl["VSA_STATUS"]['BRAKE_HOLD_ACTIVE']
       self.main_on = cp.vl["SCM_FEEDBACK"]['MAIN_ON']

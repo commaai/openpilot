@@ -155,7 +155,7 @@ class CarController(object):
         idx = (frame / 2) % 4
         can_sends.append(
           hondacan.create_brake_command(self.packer, apply_brake, pcm_override,
-                                      pcm_cancel_cmd, hud.chime, hud.fcw, idx))
+                                      pcm_cancel_cmd, hud.chime, hud.fcw, CS.CP.carFingerprint, idx))
         if CS.CP.enableGasInterceptor:
           # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
           # This prevents unexpected pedal range rescaling
