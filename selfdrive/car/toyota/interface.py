@@ -57,7 +57,7 @@ class CarInterface(object):
     ret.safetyModel = car.CarParams.SafetyModels.toyota
 
     # pedal
-    ret.enableCruise = True
+    ret.enableCruise = not ret.enableGasInterceptor  
 
     # FIXME: hardcoding honda civic 2016 touring params so they can be used to
     # scale unknown params for other cars
@@ -73,6 +73,7 @@ class CarInterface(object):
     ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
 
     if candidate == CAR.PRIUS:
+	  stop_and_go = True
       ret.safetyParam = 66  # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.70
       ret.steerRatio = 15.00   # unknown end-to-end spec
@@ -84,6 +85,7 @@ class CarInterface(object):
       ret.steerActuatorDelay = 0.25
 
     elif candidate in [CAR.RAV4, CAR.RAV4H]:
+	  stop_and_go = True if (candidate in CAR.RAV4H) else False
       ret.safetyParam = 73  # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.65
       ret.steerRatio = 16.30   # 14.5 is spec end-to-end
@@ -93,6 +95,7 @@ class CarInterface(object):
       ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
 
     elif candidate == CAR.COROLLA:
+	  stop_and_go = False
       ret.safetyParam = 100 # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.70
       ret.steerRatio = 17.8
@@ -102,6 +105,7 @@ class CarInterface(object):
       ret.steerKf = 0.00003   # full torque for 20 deg at 80mph means 0.00007818594
 
     elif candidate == CAR.LEXUS_RXH:
+	  stop_and_go = True
       ret.safetyParam = 100 # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.79
       ret.steerRatio = 16.  # 14.8 is spec end-to-end
@@ -111,6 +115,7 @@ class CarInterface(object):
       ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
 
     elif candidate in [CAR.CHR, CAR.CHRH]:
+	  stop_and_go = True
       ret.safetyParam = 100
       ret.wheelbase = 2.63906
       ret.steerRatio = 13.6
@@ -120,6 +125,7 @@ class CarInterface(object):
       ret.steerKf = 0.00006
 
     elif candidate in [CAR.CAMRY, CAR.CAMRYH]:
+	  stop_and_go = True
       ret.safetyParam = 100 
       ret.wheelbase = 2.82448
       ret.steerRatio = 13.7
@@ -136,10 +142,8 @@ class CarInterface(object):
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter.
-    if candidate in [CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH, CAR.CHR, CAR.CHRH, CAR.CAMRY, CAR.CAMRYH]: # rav4 hybrid can do stop and go
-      ret.minEnableSpeed = -1.
-    elif candidate in [CAR.RAV4, CAR.COROLLA]: # TODO: hack ICE to do stop and go
-      ret.minEnableSpeed = 19. * CV.MPH_TO_MS
+  
+    ret.minEnableSpeed = -1. if (stop_and_go or ret.enableGasInterceptor) else 19. * CV.MPH_TO_MS
 
     centerToRear = ret.wheelbase - ret.centerToFront
     # TODO: get actual value, for now starting with reasonable value for
@@ -171,9 +175,11 @@ class CarInterface(object):
     ret.enableCamera = not check_ecu_msgs(fingerprint, ECU.CAM)
     ret.enableDsu = not check_ecu_msgs(fingerprint, ECU.DSU)
     ret.enableApgs = False #not check_ecu_msgs(fingerprint, ECU.APGS)
+	ret.enableGasInterceptor = 0x201 in fingerprint
     cloudlog.warn("ECU Camera Simulated: %r", ret.enableCamera)
     cloudlog.warn("ECU DSU Simulated: %r", ret.enableDsu)
     cloudlog.warn("ECU APGS Simulated: %r", ret.enableApgs)
+	cloudlog.warn("ECU Gas Interceptor: %r", ret.enableGasInterceptor)
 
     ret.steerLimitAlert = False
     ret.stoppingControl = False
