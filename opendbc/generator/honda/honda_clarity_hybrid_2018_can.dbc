@@ -1,5 +1,4 @@
 CM_ "IMPORT _honda_2017.dbc"
-CM_ "IMPORT _comma.dbc"
 
 BO_ 148 KINEMATICS: 8 XXX
  SG_ LAT_ACCEL : 7|10@0+ (0.02,-512) [-20|20] "m/s2" EON
@@ -38,9 +37,9 @@ BO_ 399 STEER_STATUS: 7 EPS
  SG_ COUNTER : 53|2@0+ (1,0) [0|3] "" EON
  SG_ CHECKSUM : 51|4@0+ (1,0) [0|3] "" EON
 
-BO_ 401 GEARBOX: 8 PCM
- SG_ GEAR_SHIFTER : 5|6@0+ (1,0) [0|63] "" EON
- SG_ GEAR : 43|4@0+ (1,0) [0|15] "" EON
+BO_ 419 GEARBOX: 8 PCM
+ SG_ GEAR : 7|8@0+ (1,0) [0|256] "" EON
+ SG_ GEAR_SHIFTER : 35|4@0+ (1,0) [0|15] "" EON
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
 
@@ -58,16 +57,10 @@ BO_ 450 EPB_STATUS: 8 EPB
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
 
-BO_ 487 BRAKE_PRESSURE: 4 VSA
- SG_ BRAKE_PRESSURE1 : 7|10@0+ (0.015625,-103) [0|1000] "" EON
- SG_ BRAKE_PRESSURE2 : 9|10@0+ (0.015625,-103) [0|1000] "" EON
- SG_ CHECKSUM : 27|4@0+ (1,0) [0|3] "" EON
- SG_ COUNTER : 29|2@0+ (1,0) [0|3] "" EON
-
 BO_ 506 BRAKE_COMMAND: 8 ADAS
- SG_ COMPUTER_BRAKE : 7|10@0+ (1,0) [0|1] "" EBCM
- SG_ ZEROS_BOH : 13|5@0+ (1,0) [0|1] "" EBCM
- SG_ BRAKE_PUMP_REQUEST : 8|1@0+ (1,0) [0|1] "" EBCM
+ SG_ ZEROS_BOH : 7|12@0+ (1,0) [0|3] "" XXX
+ SG_ BRAKE_PUMP_REQUEST : 11|1@0+ (1,0) [0|1] "" EBCM
+ SG_ ZEROS_BOH2 : 10|3@0+ (1,0) [0|7] "" XXX
  SG_ CRUISE_BOH2 : 23|3@0+ (1,0) [0|1] "" EBCM
  SG_ CRUISE_OVERRIDE : 20|1@0+ (1,0) [0|1] "" EBCM
  SG_ CRUISE_BOH3 : 19|1@0+ (1,0) [0|1] "" EBCM
@@ -80,9 +73,20 @@ BO_ 506 BRAKE_COMMAND: 8 ADAS
  SG_ CHIME : 47|3@0+ (1,0) [0|7] "" EBCM
  SG_ ZEROS_BOH6 : 44|1@0+ (1,0) [0|1] "" EBCM
  SG_ FCW : 43|2@0+ (1,0) [0|3] "" EBCM
- SG_ ZEROS_BOH4 : 55|8@0+ (1,0) [0|0] "" EBCM
+ SG_ COMPUTER_BRAKE : 55|10@0+ (1,0) [0|1] "" EBCM
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EBCM
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" EBCM
+
+BO_ 512 GAS_COMMAND: 3 EON
+ SG_ GAS_COMMAND : 7|16@0+ (0.253984064,-83.3) [0|1] "" INTERCEPTOR
+ SG_ COUNTER : 21|2@0+ (1,0) [0|3] "" INTERCEPTOR
+ SG_ CHECKSUM : 19|4@0+ (1,0) [0|3] "" INTERCEPTOR
+
+BO_ 513 GAS_SENSOR: 5 INTERCEPTOR
+ SG_ INTERCEPTOR_GAS : 7|16@0+ (0.253984064,-83.3) [0|1] "" EON
+ SG_ INTERCEPTOR_GAS2 : 23|16@0+ (0.126992032,-83.3) [0|1] "" EON
+ SG_ COUNTER : 37|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 35|4@0+ (1,0) [0|3] "" EON
 
 BO_ 545 ECON_STATUS: 6 XXX
  SG_ ECON_ON_2 : 37|2@0+ (1,0) [0|3] "" EON
@@ -103,7 +107,7 @@ BO_ 806 SCM_FEEDBACK: 8 SCM
  SG_ LEFT_BLINKER : 26|1@0+ (1,0) [0|1] "" EON
  SG_ REVERSE_LIGHT : 18|1@0+ (1,0) [0|1] "" EON
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
- SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" EON
 
 BO_ 862 HIGHBEAM_CONTROL: 8 ADAS
  SG_ ZEROS_BOH : 7|50@0+ (1,0) [0|127] "" BDY
@@ -118,12 +122,12 @@ BO_ 884 STALK_STATUS: 8 XXX
  SG_ HIGH_BEAM_HOLD : 47|1@0+ (1,0) [0|1] "" EON
  SG_ HIGH_BEAM_FLASH : 45|1@0+ (1,0) [0|1] "" EON
  SG_ HEADLIGHTS_ON : 54|1@0+ (1,0) [0|1] "" EON
- SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" EON
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
 
 BO_ 891 WIPERS: 8 XXX
  SG_ WIPERS : 17|2@0+ (1,0) [0|3] "" EON
- SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" EON
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
 
 BO_ 927 RADAR_HUD: 8 ADAS
@@ -137,21 +141,18 @@ BO_ 927 RADAR_HUD: 8 ADAS
  SG_ LEAD_DISTANCE : 43|5@0+ (1,0) [0|31] "" BDY
  SG_ ZEROS_BOH3 : 54|7@0+ (1,0) [0|127] "" BDY
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" BDY
- SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" BDY
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" BDY
 
-BO_ 1302 ODOMETER: 8 XXX
+BO_ 1302 XXX_27: 8 XXX
  SG_ ODOMETER : 7|24@0+ (1,0) [0|16777215] "km" EON
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
- SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" EON
 
-CM_ SG_ 401 GEAR "10 = reverse, 11 = transition";
-CM_ SG_ 420 BRAKE_HOLD_RELATED "On when Brake Hold engaged";
-CM_ SG_ 450 EPB_STATE "3 "engaged" 2 "disengaging" 1 "engaging" 0 "disengaged"";
+CM_ SG_ 419 GEAR "10 = reverse, 11 = transition";
 CM_ SG_ 806 REVERSE_LIGHT "Might be reverse gear selected and not the lights";
 
 VAL_ 399 STEER_STATUS 5 "fault" 4 "no_torque_alert_2" 2 "no_torque_alert_1" 0 "normal" ;
-VAL_ 401 GEAR_SHIFTER 32 "L" 16 "S" 8 "D" 4 "N" 2 "R" 1 "P" ;
-VAL_ 401 GEAR 7 "L" 10 "S" 4 "D" 3 "N" 2 "R" 1 "P" ;
+VAL_ 419 GEAR_SHIFTER 10 "S" 4 "D" 3 "N" 2 "R" 1 "P" ;
 VAL_ 450 EPB_STATE 3 "engaged" 2 "disengaging" 1 "engaging" 0 "disengaged" ;
 VAL_ 545 ECON_ON_2 0 "off" 3 "on" ;
 VAL_ 662 CRUISE_BUTTONS 7 "tbd" 6 "tbd" 5 "tbd" 4 "accel_res" 3 "decel_set" 2 "cancel" 1 "main" 0 "none" ;
