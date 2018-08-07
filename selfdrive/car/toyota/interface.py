@@ -73,7 +73,7 @@ class CarInterface(object):
     ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
 
     if candidate == CAR.PRIUS:
-	  stop_and_go = True
+      stop_and_go = True
       ret.safetyParam = 66  # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.70
       ret.steerRatio = 15.00   # unknown end-to-end spec
@@ -85,7 +85,7 @@ class CarInterface(object):
       ret.steerActuatorDelay = 0.25
 
     elif candidate in [CAR.RAV4, CAR.RAV4H]:
-	  stop_and_go = True if (candidate in CAR.RAV4H) else False
+      stop_and_go = True if (candidate in CAR.RAV4H) else False
       ret.safetyParam = 73  # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.65
       ret.steerRatio = 16.30   # 14.5 is spec end-to-end
@@ -95,7 +95,7 @@ class CarInterface(object):
       ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
 
     elif candidate == CAR.COROLLA:
-	  stop_and_go = False
+      stop_and_go = False
       ret.safetyParam = 100 # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.70
       ret.steerRatio = 17.8
@@ -105,7 +105,7 @@ class CarInterface(object):
       ret.steerKf = 0.00003   # full torque for 20 deg at 80mph means 0.00007818594
 
     elif candidate == CAR.LEXUS_RXH:
-	  stop_and_go = True
+      stop_and_go = True
       ret.safetyParam = 100 # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.79
       ret.steerRatio = 16.  # 14.8 is spec end-to-end
@@ -115,7 +115,7 @@ class CarInterface(object):
       ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
 
     elif candidate in [CAR.CHR, CAR.CHRH]:
-	  stop_and_go = True
+      stop_and_go = True
       ret.safetyParam = 100
       ret.wheelbase = 2.63906
       ret.steerRatio = 13.6
@@ -125,7 +125,7 @@ class CarInterface(object):
       ret.steerKf = 0.00006
 
     elif candidate in [CAR.CAMRY, CAR.CAMRYH]:
-	  stop_and_go = True
+      stop_and_go = True
       ret.safetyParam = 100 
       ret.wheelbase = 2.82448
       ret.steerRatio = 13.7
