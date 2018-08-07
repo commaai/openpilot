@@ -35,28 +35,50 @@ class ALCAController(object):
     self.prev_right_blinker_on = False #local variable for prev position
     self.prev_left_blinker_on = False #local variable for prev position
 
+  def update_status(self,alcaEnabled):
+    self.alcaEnabled = alcaEnabled
+
   def update_angle(self,enabled,CS,frame,actuators):
     # Basic highway lane change logic
     changing_lanes = CS.right_blinker_on or CS.left_blinker_on  
 
     actuator_delta = 0.
     laneChange_angle = 0.
+    turn_signal_needed = 0 #send 1 for left, 2 for right 0 for not needed
 
-    if (self.prev_right_blinker_on and (not CS.right_blinker_on)) or ( self.prev_left_blinker_on and (not CS.left_blinker_on)):
-      if self.laneChange_enabled ==7:
-        #if stage 7 (complete) and blinkers turned off we reset
+    if (not CS.right_blinker_on) and (not CS.left_blinker_on) and \
+    (self.laneChange_enabled ==7):
         self.laneChange_enabled =1
         self.laneChange_counter =0
+        self.laneChange_direction =0
         tcm.custom_alert_message("",CS,0)
+    
+    if (not CS.right_blinker_on) and (not CS.left_blinker_on) and \
+      (self.laneChange_enabled > 1):
+      #no blinkers on but we are still changin lane, so we need to send blinker command
+      if self.laneChange_direction == -1:
+        turn_signal_needed = 1
+      elif self.laneChange_direction == 1:
+        turn_signal_needed = 2
+      else:
+        turn_signal_needed = 0
 
-    if enabled and (((not self.prev_right_blinker_on) and CS.right_blinker_on) or \
+
+    if self.alcaEnabled and self.laneChange_enabled ==1:
+      if ((CS.v_ego < CL_MIN_V) or (abs(actuators.steerAngle) >= CL_MAX_A)): 
+        CS.cstm_btns.set_button_status("alca1",9)
+      else:
+        CS.cstm_btns.set_button_status("alca1",1)
+
+    if self.alcaEnabled and enabled and (((not self.prev_right_blinker_on) and CS.right_blinker_on) or \
       ((not self.prev_left_blinker_on) and CS.left_blinker_on)) and \
       ((CS.v_ego < CL_MIN_V) or (abs(actuators.steerAngle) >= CL_MAX_A)):
       #something is not right, the speed or angle is limitting
       tcm.custom_alert_message("Auto Lane Change Unavailable!",CS,500)
 
-    if enabled and (((not self.prev_right_blinker_on) and CS.right_blinker_on) or \
-      ((not self.prev_left_blinker_on) and CS.left_blinker_on)) and \
+
+    if self.alcaEnabled and enabled and (((not self.prev_right_blinker_on) and CS.right_blinker_on) or \
+      ((not self.prev_left_blinker_on) and CS.left_blinker_on))  and \
       (CS.v_ego >= CL_MIN_V) and (abs(actuators.steerAngle) < CL_MAX_A):
       # start blinker, speed and angle is within limits, let's go
 
@@ -70,6 +92,7 @@ class ALCAController(object):
         self.laneChange_enabled = 1
         self.laneChange_counter = 0
         self.laneChange_direction = 0
+        CS.cstm_btns.set_button_status("alca1",1)
       elif (self.laneChange_enabled == 1) :
         #compute angle delta for lane change
         tcm.custom_alert_message("Auto Lane Change Engaged! (1)",CS,100)
@@ -82,6 +105,12 @@ class ALCAController(object):
         self.laneChange_last_actuator_angle = 0.
         self.laneChange_last_actuator_delta = 0.
         self.laneChange_over_the_line = 0 
+        CS.cstm_btns.set_button_status("alca1",2)
+
+    if (not self.alcaEnabled) and self.laneChange_enabled > 1:
+      self.laneChange_enabled = 1
+      self.laneChange_counter = 0
+      self.laneChange_direction = 0
 
     #lane change in process
     if self.laneChange_enabled > 1:
@@ -91,6 +120,7 @@ class ALCAController(object):
         self.laneChange_counter = 0
         self.laneChange_enabled = 1
         self.laneChange_direction = 0
+        CS.cstm_btns.set_button_status("alca1",1)
       # this is the main stage once we start turning
       # we have to detect when to let go control back to OP or raise alarm if max timer passed
       # there are three conditions we look for:
@@ -103,7 +133,10 @@ class ALCAController(object):
       # CONTROL: during this time we use ALCA angle to steer (ALCA Control)
 
       # TODO: - add some logic once we cross the line to smooth the transition to OP
+      #           (needs about 0.1-0.2 s at low angles to get to the point where it's smooth)
       #       - check if the 0.5 * angle_delta is enough of a test for lane change
+      #       - check that the delta in angle from actuator is increasing at a constant rate of DA/x
+      #          or adjust angle for turns in road
       #       - generate audible alert for errors/take over messages
       if self.laneChange_enabled ==3:
         if self.laneChange_counter == 1:
@@ -129,6 +162,7 @@ class ALCAController(object):
           self.laneChange_counter = 0
           tcm.custom_alert_message("Auto Lane Change Canceled! (t)",CS,200)
           self.laneChange_counter = 0
+          CS.cstm_btns.set_button_status("alca1",1)
       # this is the critical start of the turn
       # here we will detect the angle to move; it is based on a speed determined angle but we have to also
       # take in consideration what's happening with the delta of consecutive actuators
@@ -148,6 +182,7 @@ class ALCAController(object):
             self.laneChange_enabled = 1
             self.laneChange_counter = 0
             self.laneChange_direction = 0
+            CS.cstm_btns.set_button_status("alca1",1)
         laneChange_angle = self.laneChange_angled *  self.laneChange_counter / 50
         self.laneChange_counter += 1
         delta_change = abs(self.laneChange_angle+ laneChange_angle + actuators.steerAngle) - abs(self.laneChange_angled)
@@ -180,6 +215,7 @@ class ALCAController(object):
       if self.laneChange_enabled == 7:
         if self.laneChange_counter ==1:
           tcm.custom_alert_message("Auto Lane Change Complete!",CS,300)
+          CS.cstm_btns.set_button_status("alca1",1)
         self.laneChange_counter +=1
     alca_enabled = (self.laneChange_enabled > 1)
     apply_angle = 0.
@@ -201,7 +237,7 @@ class ALCAController(object):
     else:
       apply_angle = -actuators.steerAngle
     self.laneChange_last_sent_angle = apply_angle
-    return [-apply_angle,alca_enabled]
+    return [-apply_angle,alca_enabled,turn_signal_needed]
 
 
 
@@ -212,19 +248,20 @@ class ALCAController(object):
         # steering by angle
         new_angle = 0.
         new_ALCA_enabled = False
-        new_angle,new_ALCA_Enabled = self.update_angle(enabled,CS,frame,actuators)
-        return [new_angle,new_ALCA_Enabled]
+        new_turn_signal = 0
+        new_angle,new_ALCA_Enabled,new_turn_signal = self.update_angle(enabled,CS,frame,actuators)
+        return [new_angle,new_ALCA_Enabled,new_turn_signal]
       else:
         # steering by torque
         #TODO: torque ALCA module
-        return [actuators.steerAngle,False]
+        return [actuators.steerAngle,False,0]
     else:
       # ALCA disabled
       if self.laneChange_steerByAngle:
         #steer by angle
-        return [actuators.steerAngle,False]
+        return [actuators.steerAngle,False,0]
       else:
         #steer by torque
         #TODO: torque ALCA module
-        return [actuators.steerAngle,False]
+        return [actuators.steerAngle,False,0]
  

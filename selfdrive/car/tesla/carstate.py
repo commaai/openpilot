@@ -3,8 +3,11 @@ from common.kalman.simple_kalman import KF1D
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from selfdrive.car.tesla.values import CAR, DBC
+from uibuttons import UIButtons,UIButton
 import numpy as np
 from ctypes import create_string_buffer
+import custom_alert as customAlert
+import time
 
 def parse_gear_shifter(can_gear_shifter, car_fingerprint):
 
@@ -21,6 +24,10 @@ def parse_gear_shifter(can_gear_shifter, car_fingerprint):
       return "drive"
 
   return "unknown"
+
+def _current_time_millis():
+  return int(round(time.time() * 1000))
+
 
 
 def calc_cruise_offset(offset, speed):
@@ -127,6 +134,8 @@ def get_epas_parser(CP):
 class CarState(object):
   def __init__(self, CP):
     self.brake_only = CP.enableCruise
+    self.enable_adaptive_cruise = False
+    self.last_cruise_stalk_pull_time = 0
     self.CP = CP
 
     self.user_gas, self.user_gas_pressed = 0., 0
@@ -164,8 +173,19 @@ class CarState(object):
     self.pedal_speed_kph = 0.
     self.pedal_enabled = 0
 
+    #variable for custom buttons
+    self.cstm_btns = UIButtons()
+
     #custom message counter
     self.custom_alert_counter = -1 #set to 100 for 1 second display; carcontroller will take down to zero
+
+    #steering_wheel_stalk last position, used by ACC and ALCA
+    self.steering_wheel_stalk = None
+    self.prev_steering_wheel_stalk = None
+
+    #variables used by ACC
+    self.prev_cruise_buttons = CruiseButtons.IDLE
+    self.prev_cruise_setting = CruiseButtons.IDLE
      
     # vEgo kalman filter
     dt = 0.01
@@ -187,12 +207,54 @@ class CarState(object):
     v_weight_bp = [1., 6.]   # smooth blending, below ~0.6m/s the smooth speed snaps to zero
 
     # update prevs, update must run once per loop
+    self.prev_steering_wheel_stalk = self.steering_wheel_stalk
     self.prev_cruise_buttons = self.cruise_buttons
     self.prev_cruise_setting = self.cruise_setting
     self.prev_blinker_on = self.blinker_on
 
     self.prev_left_blinker_on = self.left_blinker_on
     self.prev_right_blinker_on = self.right_blinker_on
+
+    self.steering_wheel_stalk = cp.vl["STW_ACTN_RQ"]
+    self.cruise_setting = cp.vl["STW_ACTN_RQ"]['SpdCtrlLvr_Stat']
+    self.cruise_buttons = cp.vl["STW_ACTN_RQ"]['SpdCtrlLvr_Stat']
+
+    self.steering_wheel_stalk = cp.vl["STW_ACTN_RQ"]
+    self.cruise_setting = self.steering_wheel_stalk['SpdCtrlLvr_Stat']
+    self.cruise_buttons = self.steering_wheel_stalk['SpdCtrlLvr_Stat']
+    # Check if the cruise stalk was double pulled, indicating that adaptive
+    # cruise control should be enabled. Twice in .75 seconds counts as a double
+    # pull.
+    adaptive_cruise_prev = self.enable_adaptive_cruise
+    curr_time_ms = _current_time_millis()
+    if (self.cruise_buttons == CruiseButtons.MAIN and
+        self.prev_cruise_buttons != CruiseButtons.MAIN):
+      self.enable_adaptive_cruise = (
+        curr_time_ms - self.last_cruise_stalk_pull_time < 750) and \
+        self.cstm_btns.get_button_status("acc01")
+      if(self.enable_adaptive_cruise):
+        customAlert.custom_alert_message("ACC Enabled",self,150)
+        self.cstm_btns.set_button_status("acc01",2)
+      elif adaptive_cruise_prev == True:
+        customAlert.custom_alert_message("ACC Disabled",self,150)
+        self.cstm_btns.set_button_status("acc01",1)
+
+      self.last_cruise_stalk_pull_time = curr_time_ms
+    elif (self.cruise_buttons == CruiseButtons.CANCEL and
+          self.prev_cruise_buttons != CruiseButtons.CANCEL):
+      self.enable_adaptive_cruise = False
+      if adaptive_cruise_prev == True:
+        customAlert.custom_alert_message("ACC Disabled",self,150)
+        self.cstm_btns.set_button_status("acc01",1)
+      self.last_cruise_stalk_pull_time = 0
+    #if ACC was on and something disabled cruise control, disable ACC too
+    elif (self.enable_adaptive_cruise == True and
+          self.pcm_acc_status != 2 and
+          curr_time_ms - self.last_cruise_stalk_pull_time >  2000):
+      self.enable_adaptive_cruise = False
+      customAlert.custom_alert_message("ACC Disabled",self,150)
+      self.cstm_btns.set_button_status("acc01",1)
+
 
     # ******************* parse out can *******************
     self.door_all_closed = not any([cp.vl["GTW_carState"]['DOOR_STATE_FL'], cp.vl["GTW_carState"]['DOOR_STATE_FR'],
@@ -232,8 +294,6 @@ class CarState(object):
     self.angle_steers = -(cp.vl["STW_ANGLHP_STAT"]['StW_AnglHP']) #JCT polarity reversed from Honda/Acura
     self.angle_steers_rate = 0 #JCT
 
-    self.cruise_setting = cp.vl["STW_ACTN_RQ"]['SpdCtrlLvr_Stat']
-    self.cruise_buttons = cp.vl["STW_ACTN_RQ"]['SpdCtrlLvr_Stat']
     self.blinker_on = (cp.vl["STW_ACTN_RQ"]['TurnIndLvr_Stat'] == 1) or (cp.vl["STW_ACTN_RQ"]['TurnIndLvr_Stat'] == 2)
     self.left_blinker_on = cp.vl["STW_ACTN_RQ"]['TurnIndLvr_Stat'] == 1
     self.right_blinker_on = cp.vl["STW_ACTN_RQ"]['TurnIndLvr_Stat'] == 2

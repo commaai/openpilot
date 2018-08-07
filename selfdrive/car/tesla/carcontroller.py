@@ -16,6 +16,7 @@ from selfdrive.can.packer import CANPacker
 from selfdrive.config import Conversions as CV
 import custom_alert as tcm
 from ALCA_module import ALCAController
+from ACC_module import ACCController
 
 # Steer angle limits
 ANGLE_MAX_BP = [0., 27., 36.]
@@ -80,6 +81,7 @@ class CarController(object):
     self.epas_disabled = True
     self.last_angle = 0
     self.ALCA = ALCAController(self,True,True)  # Enabled and SteerByAngle both True
+    self.ACC = ACCController(self)
 
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
@@ -148,9 +150,18 @@ class CarController(object):
     tcm.update_custom_alert(CS)
     #end countdown for custom
 
+    #update statuses for custom buttons every 0.1 sec
+    if (frame % 10 == 0):
+      CS.cstm_btns.read_buttons_in_file()
+      CS.cstm_btns.write_buttons_out_file()
+      self.ALCA.update_status(True if CS.cstm_btns.get_button_status("alca1") > 0 else False)
+      #print CS.cstm_btns.get_button_status("alca")
+
+
     #get the angle from ALCA
     alca_enabled = False
-    apply_angle,alca_enabled = self.ALCA.update(enabled,CS,frame,actuators)
+    turn_signal_needed = 0
+    apply_angle,alca_enabled,turn_signal_needed = self.ALCA.update(enabled,CS,frame,actuators)
     apply_angle = -apply_angle #Tesla is reversed vs OP
 
     enable_steer_control = (enabled and ((not changing_lanes) or alca_enabled))
@@ -220,5 +231,12 @@ class CarController(object):
       idx = frame % 16 #(frame/send_step) % 16 
       can_sends.append(teslacan.create_steering_control(enable_steer_control, apply_angle, idx))
       can_sends.append(teslacan.create_epb_enable_signal(idx))
+      cruise_btn = None
+      if CS.cstm_btns.get_button_status("acc01")==2:
+        cruise_btn = self.ACC.update_acc(enabled,CS,frame,actuators)
+      if cruise_btn:
+        can_send.append(teslacan.create_cruise_adjust_msg(cruise_btn,-1,CS.steering_wheel_stalk))
+      elif (turn_signal_needed > 0) and (frame % 10 ==0):
+        can_send.append(teslacan.create_cruise_adjust_msg(-1,turn_signal_needed,CS.steering_wheel_stalk))
       self.last_angle = apply_angle
       sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())

@@ -285,12 +285,12 @@ class CarInterface(object):
           #BBTODO: use metric/imperial based on settings of OP
           #no car cruise control, use commands to set pedal speed
           speed_uom = 1.609
-          if but == 0x01:
+          if but == 0x02:
             #forward: set speed to car speed and enabled pedal
             self.CS.pedal_speed_kph = self.CS.v_ego_raw
             self.CS.v_cruise_pcm = self.CS.pedal_speed_kph
             self.CS.pedal_enabled = 2
-          elif but == 0x02:
+          elif but == 0x01:
             #reverse: disable pedal
             self.CS.pedal_enabled = 1
           elif but == 0x10:
@@ -328,6 +328,11 @@ class CarInterface(object):
     # TODO: I don't like the way capnp does enums
     # These strings aren't checked at compile time
     events = []
+    if self.CS.cstm_btns.get_button_status("brake")>0: #break not canceling when pressed
+      self.CS.cstm_btns.set_button_status("brake", 2 if ret.brake else 1)
+    else:
+      if ret.brake:
+        events.append(create_event('steerTempUnavailableMute', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     if not self.CS.can_valid:
       self.can_invalid_count += 1
       if self.can_invalid_count >= 5:
