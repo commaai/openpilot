@@ -299,6 +299,7 @@ class CarController(object):
     # Automatically engange traditional cruise if it is idle and we are
     # going fast enough.
     if (CS.pcm_acc_status == 1
+        and CS.enable_adaptive_cruise
         and CS.v_ego > min_cruise_speed):
       button = CruiseButtons.DECEL_SET
     # If traditional cruise is engaged, then control it.
