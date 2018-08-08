@@ -244,7 +244,7 @@ class ACCController(object):
                 elif speed_offset > half_press_kph and speed_offset < available_speed:
                     # Send cruise stalk up_1st.
                     button_to_press = CruiseButtons.RES_ACCEL
-        if CS.btns[1].btn_label2 == "Model JJ":
+        if CS.btns[1].btn_label2 == "Mod JJ":
             button_to_press = self.calc_follow_speed(CS)
     if button_to_press:
         self.automated_cruise_action_time = current_time_ms

@@ -53,10 +53,10 @@ class UIButtons:
                     if self.btns[i].btn_status > 0:
                         if (i == 1) and (ord(indata[1])==48):
                             #don't change status, just model
-                            if (self.btns[i].btn_label2 == "Model OP"):
-                                self.btns[i].btn_label2 = "Model JJ"
+                            if (self.btns[i].btn_label2 == "Mod OP"):
+                                self.btns[i].btn_label2 = "Mod JJ"
                             else:
-                                self.btns[i].btn_label2 = "Model OP"
+                                self.btns[i].btn_label2 = "Mod OP"
                             self.write_buttons_labels_to_file()
                         else:
                             self.btns[i].btn_status = (ord(indata[i]) - 48) * self.btns[i].btn_status
@@ -97,7 +97,7 @@ class UIButtons:
     def __init__(self):
         self.btns = []
         self.hasChanges = True
-        self.last_in_read_time = 0
+        self.last_in_read_time = datetime.min 
         if os.path.exists(buttons_labels_path):
             #there is a file, load it
             self.read_buttons_labels_from_file()
