@@ -237,8 +237,10 @@ class CarController(object):
       if self.ACC.enable_adaptive_cruise:
         cruise_btn = self.ACC.update_acc(enabled,CS,frame,actuators,pcm_speed)
       if cruise_btn:
-        can_sends.append(teslacan.create_cruise_adjust_msg(cruise_btn,-1,CS.steering_wheel_stalk))
-      elif (turn_signal_needed > 0) and (frame % 3 ==0):
-        can_sends.append(teslacan.create_cruise_adjust_msg(-1,turn_signal_needed,CS.steering_wheel_stalk))
+        cruise_msg = teslacan.create_cruise_adjust_msg(cruise_btn,-1,CS.steering_wheel_stalk)
+        can_sends.insert(0, cruise_msg)
+      elif (turn_signal_needed > 0) and (frame % 2 == 0):
+        cruise_msg = teslacan.create_cruise_adjust_msg(-1,turn_signal_needed,CS.steering_wheel_stalk)
+        can_sends.insert(0, cruise_msg)
       self.last_angle = apply_angle
       sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
