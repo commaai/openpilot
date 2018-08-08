@@ -974,7 +974,7 @@ static bool bb_handle_ui_touch(UIState *s, int touch_x, int touch_y) {
 static int bb_get_button_status(UIState *s, char *btn_name) {
   int ret_status = 0;
   for (int i = 0; i< 6; i++) {
-    if (strcmp(btns[i].btn_name,btn_name)==0) {
+    if (strcmp(s->btns[i].btn_name,btn_name)==0) {
       ret_status = s->btns_status[i];
     }
   }
@@ -1518,7 +1518,7 @@ static void update_status(UIState *s, int status) {
     if ((status ==3 ) && (s->custom_alert_playsound == 1)) {
       s->custom_alert_playsound = 2;
     }
-    if (bb_get_button_status("sound") > 0) {
+    if (bb_get_button_status(s,"sound") > 0) {
       asprintf(&snd_command, "python /data/openpilot/selfdrive/car/%s/snd/playsound.py %d &",s->car_model, status);
       system(snd_command);
     }
