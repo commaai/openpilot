@@ -1031,6 +1031,7 @@ static void bb_draw_button(UIState *s, int btn_id) {
   if (s->btns_status[btn_id] ==1) {
     //enabled - blue
     nvgStrokeColor(s->vg, nvgRGBA(255,255,255,200));
+    nvgStrokeWidth(s->vg, 6);
     if (strcmp(btn_text2,"")==0) {
       btn_text2 = "Ready";
     }
