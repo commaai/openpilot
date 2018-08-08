@@ -153,8 +153,6 @@ class ACCController(object):
         CS.cstm_btns.set_button_status("acc",1)
 
       self.last_cruise_stalk_pull_time = curr_time_ms
-      print "time ms = "
-      print curr_time_ms
     elif (CS.cruise_buttons == CruiseButtons.CANCEL and
           self.prev_cruise_buttons != CruiseButtons.CANCEL):
       self.enable_adaptive_cruise = False

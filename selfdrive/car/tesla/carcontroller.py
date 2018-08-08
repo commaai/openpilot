@@ -154,7 +154,7 @@ class CarController(object):
     if (frame % 10 == 0):
       CS.cstm_btns.read_buttons_in_file()
       CS.cstm_btns.write_buttons_out_file()
-      self.ALCA.update_status(True if CS.cstm_btns.get_button_status("alca1") > 0 else False)
+      self.ALCA.update_status(True if CS.cstm_btns.get_button_status("alca") > 0 else False)
       #print CS.cstm_btns.get_button_status("alca")
 
     #update ACC module info
