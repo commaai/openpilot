@@ -6,7 +6,7 @@ from common.numpy_fast import interp
 CL_MAXD_BP = [1., 32, 44.]
 CL_MAXD_A = [.115, 0.081, 0.042] #delta angle based on speed; needs fine tune, based on Tesla steer ratio of 16.75
 #0.477611    [
-CL_MIN_V = 0. #8.9 # do not turn if speed less than x m/2; 20 mph = 8.9 m/s
+CL_MIN_V = 8.9 # do not turn if speed less than x m/2; 20 mph = 8.9 m/s
 CL_MAX_A = 10. # do not turn if actuator wants more than x deg for going straight; this should be interp based on speed
 
 
