@@ -36,7 +36,7 @@ class UIButtons:
             self.btns = []
             for i in range(0, len(indata), btn_msg_len):
                 name,label,label2 = struct.unpack(btn_msg_struct, indata[i:i+btn_msg_len])  
-                self.btns.append(UIButton(name,label,0,label2))
+                self.btns.append(UIButton(name.rstrip("\0"),label.rstrip("\0"),0,label2.rstrip("\0")))
             #now read the last saved statuses
         else:
             #we don't have all the data, ignore
@@ -63,6 +63,7 @@ class UIButtons:
                     else:
                         self.btns[i].btn_status = ord(indata[i]) - 48
                 self.last_in_read_time = modification_date
+                self.hasChanges = True
             else:
                 #something wrong with the file
                 print "status file is bad"    
@@ -105,8 +106,8 @@ class UIButtons:
             self.read_buttons_in_file()
         else:
             #there is no file, create it
-            self.btns.append(UIButton("alca1","ALC",0,""))
-            self.btns.append(UIButton("acc01","ACC",0,"Model OP"))
+            self.btns.append(UIButton("alca","ALC",0,""))
+            self.btns.append(UIButton("acc","ACC",0,"Mod OP"))
             self.btns.append(UIButton("","",0,""))
             self.btns.append(UIButton("","",0,""))
             self.btns.append(UIButton("brake","BRK",1,""))

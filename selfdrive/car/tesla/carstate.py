@@ -6,7 +6,7 @@ from selfdrive.car.tesla.values import CAR, CruiseButtons, DBC
 from uibuttons import UIButtons,UIButton
 import numpy as np
 from ctypes import create_string_buffer
-
+ 
 def parse_gear_shifter(can_gear_shifter, car_fingerprint):
 
   # TODO: Use VAL from DBC to parse this field

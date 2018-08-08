@@ -143,14 +143,14 @@ class ACCController(object):
     if (CS.cruise_buttons == CruiseButtons.MAIN and
         self.prev_cruise_buttons != CruiseButtons.MAIN):
       self.enable_adaptive_cruise = (curr_time_ms - self.last_cruise_stalk_pull_time < 750) and \
-        (CS.cstm_btns.get_button_status("acc01")>0) and enabled and \
+        (CS.cstm_btns.get_button_status("acc")>0) and enabled and \
          ((CS.pcm_acc_status == 2) or (CS.pcm_acc_status == 1))
       if(self.enable_adaptive_cruise):
         customAlert.custom_alert_message("ACC Enabled",self,150)
-        CS.cstm_btns.set_button_status("acc01",2)
+        CS.cstm_btns.set_button_status("acc",2)
       elif adaptive_cruise_prev == True:
         customAlert.custom_alert_message("ACC Disabled",self,150)
-        CS.cstm_btns.set_button_status("acc01",1)
+        CS.cstm_btns.set_button_status("acc",1)
 
       self.last_cruise_stalk_pull_time = curr_time_ms
     elif (CS.cruise_buttons == CruiseButtons.CANCEL and
@@ -158,7 +158,7 @@ class ACCController(object):
       self.enable_adaptive_cruise = False
       if adaptive_cruise_prev == True:
         customAlert.custom_alert_message("ACC Disabled",self,150)
-        CS.cstm_btns.set_button_status("acc01",1)
+        CS.cstm_btns.set_button_status("acc",1)
       self.last_cruise_stalk_pull_time = 0
     #if ACC was on and something disabled cruise control, disable ACC too
     elif (self.enable_adaptive_cruise == True and
@@ -166,14 +166,14 @@ class ACCController(object):
           curr_time_ms - self.last_cruise_stalk_pull_time >  2000):
       self.enable_adaptive_cruise = False
       customAlert.custom_alert_message("ACC Disabled",self,150)
-      CS.cstm_btns.set_button_status("acc01",1)
+      CS.cstm_btns.set_button_status("acc",1)
     self.prev_steering_wheel_stalk = CS.steering_wheel_stalk
     #now let's see if the ACC is available
-    if (CS.cstm_btns.get_button_status("acc01")==1) or (CS.cstm_btns.get_button_status("acc01")==9):
+    if (CS.cstm_btns.get_button_status("acc")==1) or (CS.cstm_btns.get_button_status("acc")==9):
         if enabled and ((CS.pcm_acc_status == 2) or (CS.pcm_acc_status == 1)):
-            CS.cstm_btns.set_button_status("acc01",1)
+            CS.cstm_btns.set_button_status("acc",1)
         else:
-            CS.cstm_btns.set_button_status("acc01",9)
+            CS.cstm_btns.set_button_status("acc",9)
 
 
 
