@@ -146,18 +146,20 @@ class ACCController(object):
         (CS.cstm_btns.get_button_status("acc")>0) and enabled and \
          ((CS.pcm_acc_status == 2) or (CS.pcm_acc_status == 1))
       if(self.enable_adaptive_cruise):
-        customAlert.custom_alert_message("ACC Enabled",self,150)
+        customAlert.custom_alert_message("ACC Enabled",CS,150)
         CS.cstm_btns.set_button_status("acc",2)
       elif adaptive_cruise_prev == True:
-        customAlert.custom_alert_message("ACC Disabled",self,150)
+        customAlert.custom_alert_message("ACC Disabled",CS,150)
         CS.cstm_btns.set_button_status("acc",1)
 
       self.last_cruise_stalk_pull_time = curr_time_ms
+      print "time ms = "
+      print curr_time_ms
     elif (CS.cruise_buttons == CruiseButtons.CANCEL and
           self.prev_cruise_buttons != CruiseButtons.CANCEL):
       self.enable_adaptive_cruise = False
       if adaptive_cruise_prev == True:
-        customAlert.custom_alert_message("ACC Disabled",self,150)
+        customAlert.custom_alert_message("ACC Disabled",S,150)
         CS.cstm_btns.set_button_status("acc",1)
       self.last_cruise_stalk_pull_time = 0
     #if ACC was on and something disabled cruise control, disable ACC too
@@ -165,9 +167,10 @@ class ACCController(object):
           CS.pcm_acc_status != 2 and
           curr_time_ms - self.last_cruise_stalk_pull_time >  2000):
       self.enable_adaptive_cruise = False
-      customAlert.custom_alert_message("ACC Disabled",self,150)
+      customAlert.custom_alert_message("ACC Disabled",CS,150)
       CS.cstm_btns.set_button_status("acc",1)
     self.prev_steering_wheel_stalk = CS.steering_wheel_stalk
+    self.prev_cruise_buttons = CS.cruise_buttons
     #now let's see if the ACC is available
     if (CS.cstm_btns.get_button_status("acc")==1) or (CS.cstm_btns.get_button_status("acc")==9):
         if enabled and ((CS.pcm_acc_status == 2) or (CS.pcm_acc_status == 1)):
