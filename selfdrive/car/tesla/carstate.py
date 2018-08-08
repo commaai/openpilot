@@ -2,7 +2,7 @@ from common.numpy_fast import interp
 from common.kalman.simple_kalman import KF1D
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
-from selfdrive.car.tesla.values import CAR, DBC
+from selfdrive.car.tesla.values import CAR, CruiseButtons, DBC
 from uibuttons import UIButtons,UIButton
 import numpy as np
 from ctypes import create_string_buffer
@@ -76,15 +76,43 @@ def get_can_signals(CP):
       ("DI_stateCounter", "DI_state", 0),
       ("GTW_driverPresent", "GTW_status", 0),
       ("DI_brakePedal", "DI_torque2", 0),
-      ("SpdCtrlLvr_Stat", "STW_ACTN_RQ", 0),
       ("DI_cruiseSet", "DI_state", 0),
       ("DI_cruiseState", "DI_state", 0),
-      ("VSL_Enbl_Rq", "STW_ACTN_RQ", 0), # Used in interface.py
-      ("TSL_RND_Posn_StW","SBW_RQ_SCCM" , 0),
       ("TSL_P_Psd_StW","SBW_RQ_SCCM" , 0),
-      ("TurnIndLvr_Stat", "STW_ACTN_RQ", 0),
       ("DI_motorRPM", "DI_torque1", 0),
       ("DI_speedUnits", "DI_state", 0),
+      # Steering wheel stalk signals (useful for managing cruise control)
+      ("SpdCtrlLvr_Stat", "STW_ACTN_RQ", 0),
+      ("VSL_Enbl_Rq", "STW_ACTN_RQ", 0),
+      ("SpdCtrlLvrStat_Inv", "STW_ACTN_RQ", 0),
+      ("DTR_Dist_Rq", "STW_ACTN_RQ", 0),
+      ("TurnIndLvr_Stat", "STW_ACTN_RQ", 0),
+      ("HiBmLvr_Stat", "STW_ACTN_RQ", 0),
+      ("WprWashSw_Psd", "STW_ACTN_RQ", 0),
+      ("WprWash_R_Sw_Posn_V2", "STW_ACTN_RQ", 0),
+      ("StW_Lvr_Stat", "STW_ACTN_RQ", 0),
+      ("StW_Cond_Flt", "STW_ACTN_RQ", 0),
+      ("StW_Cond_Psd", "STW_ACTN_RQ", 0),
+      ("HrnSw_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw00_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw01_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw02_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw03_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw04_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw05_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw06_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw07_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw08_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw09_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw10_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw11_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw12_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw13_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw14_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw15_Psd", "STW_ACTN_RQ", 0),
+      ("WprSw6Posn", "STW_ACTN_RQ", 0),
+      ("MC_STW_ACTN_RQ", "STW_ACTN_RQ", 0),
+      ("CRC_STW_ACTN_RQ", "STW_ACTN_RQ", 0),
       
   ]
 
@@ -197,6 +225,14 @@ class CarState(object):
                          K=np.matrix([[0.12287673], [0.29666309]]))
     self.v_ego = 0.0
 
+    self.imperial_speed_units = True
+
+    # The current max allowed cruise speed. Actual cruise speed sent to the car
+    # may be lower, depending on traffic.
+    self.v_cruise_pcm = 0.0
+    # Actual cruise speed currently active on the car.
+    self.v_cruise_actual = 0.0
+
   def update(self, cp, epas_cp):
 
     # copy can_valid
@@ -231,7 +267,7 @@ class CarState(object):
         self.prev_cruise_buttons != CruiseButtons.MAIN):
       self.enable_adaptive_cruise = (
         curr_time_ms - self.last_cruise_stalk_pull_time < 750) and \
-        self.cstm_btns.get_button_status("acc01")
+        (self.cstm_btns.get_button_status("acc01")>0)
       if(self.enable_adaptive_cruise):
         customAlert.custom_alert_message("ACC Enabled",self,150)
         self.cstm_btns.set_button_status("acc01",2)
@@ -324,6 +360,7 @@ class CarState(object):
     self.user_brake = cp.vl["DI_torque2"]['DI_brakePedal']
     self.standstill = cp.vl["DI_torque2"]['DI_vehicleSpeed'] == 0
     self.pcm_acc_status = cp.vl["DI_state"]['DI_cruiseState']
+    self.imperial_speed_units = cp.vl["DI_state"]['DI_speedUnits'] == 0
     if self.pcm_acc_status == 0:
       #no cruise, we set our own speed for cruise
       if self.pedal_enabled == 0:
@@ -336,6 +373,10 @@ class CarState(object):
         self.v_cruise_pcm = (cp.vl["DI_state"]['DI_cruiseSet'])*CV.MPH_TO_KPH # Reported in MPH, expected in KPH??
       else:
         self.v_cruise_pcm = cp.vl["DI_state"]['DI_cruiseSet']
+    if self.imperial_speed_units:
+      self.v_cruise_actual = (cp.vl["DI_state"]['DI_cruiseSet'])*CV.MPH_TO_KPH # Reported in MPH, expected in KPH??
+    else:
+      self.v_cruise_actual = cp.vl["DI_state"]['DI_cruiseSet']
     self.hud_lead = 0 #JCT
     self.cruise_speed_offset = calc_cruise_offset(self.v_cruise_pcm, self.v_ego)
 

@@ -1030,8 +1030,7 @@ static void bb_draw_button(UIState *s, int btn_id) {
   } else
   if (s->btns_status[btn_id] ==1) {
     //enabled - blue
-    nvgStrokeColor(s->vg, nvgRGBA(37,212,221,200));
-    nvgStrokeWidth(s->vg, 6);
+    nvgStrokeColor(s->vg, nvgRGBA(255,255,255,200));
     if (strcmp(btn_text2,"")==0) {
       btn_text2 = "Ready";
     }
@@ -1045,7 +1044,7 @@ static void bb_draw_button(UIState *s, int btn_id) {
   } else
   if (s->btns_status[btn_id] ==9) {
     //available - thin white
-    nvgStrokeColor(s->vg, nvgRGBA(255,255,255,80));
+    nvgStrokeColor(s->vg, nvgRGBA(200,200,200,40));
     nvgStrokeWidth(s->vg, 6);
     if (strcmp(btn_text2,"")==0) {
       btn_text2 = "";
@@ -1517,7 +1516,7 @@ static void update_status(UIState *s, int status) {
     if ((status ==3 ) && (s->custom_alert_playsound == 1)) {
       s->custom_alert_playsound = 2;
     }
-    if (bb_get_button_status(s,"sound")>0) {
+    if (s->btns_status[5]>0) {
       asprintf(&snd_command, "python /data/openpilot/selfdrive/car/%s/snd/playsound.py %d &",s->car_model, status);
       system(snd_command);
     }

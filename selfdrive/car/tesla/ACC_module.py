@@ -1,4 +1,6 @@
 from selfdrive.services import service_list
+from selfdrive.car.tesla.values import AH, CruiseButtons, CAR
+from selfdrive.config import Conversions as CV
 import selfdrive.messaging as messaging
 import custom_alert as customAlert
 import os
@@ -8,6 +10,7 @@ import zmq
 
 class ACCController(object):
   def __init__(self,carcontroller):
+    self.cc = carcontroller
     self.human_cruise_action_time = 0
     self.automated_cruise_action_time = 0
     self.last_angle = 0.
@@ -123,11 +126,11 @@ class ACCController(object):
         
     return button
 
-  def update_acc(self,enabled,CS,frame,actuators):
+  def update_acc(self,enabled,CS,frame,actuators,pcm_speed):
     # Adaptive cruise control
     #Bring in the lead car distance from the Live20 feed
     l20 = None
-    if enable_steer_control:
+    if enabled:
         for socket, event in self.poller.poll(0):
             if socket is self.live20:
                 l20 = messaging.recv_one(socket)
@@ -146,7 +149,7 @@ class ACCController(object):
 
     if (CS.enable_adaptive_cruise
         # Only do ACC if OP is steering
-        and enable_steer_control
+        and enabled
         # And adjust infrequently, since sending repeated adjustments makes
         # the car think we're doing a 'long press' on the cruise stalk,
         # resulting in small, jerky speed adjustments.

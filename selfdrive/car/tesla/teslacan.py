@@ -178,8 +178,7 @@ def create_cruise_adjust_msg(spdCtrlLvr_stat, turnIndLvr_Stat, real_steering_whe
     # message count should be 1 more than the previous (and loop after 16)
   if turnIndLvr_Stat > -1:
     fake_stalk['TurnIndLvr_Stat'] = turnIndLvr_Stat
-  fake_stalk['MC_STW_ACTN_RQ'] = (int(round(
-    fake_stalk['MC_STW_ACTN_RQ'])) + 1) % 16
+  fake_stalk['MC_STW_ACTN_RQ'] = (int(round(fake_stalk['MC_STW_ACTN_RQ'])) + 1) % 16
   # CRC should initially be 0 before a new one is calculated.
   fake_stalk['CRC_STW_ACTN_RQ'] = 0
   

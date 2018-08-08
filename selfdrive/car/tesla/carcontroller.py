@@ -233,10 +233,10 @@ class CarController(object):
       can_sends.append(teslacan.create_epb_enable_signal(idx))
       cruise_btn = None
       if CS.cstm_btns.get_button_status("acc01")==2:
-        cruise_btn = self.ACC.update_acc(enabled,CS,frame,actuators)
+        cruise_btn = self.ACC.update_acc(enabled,CS,frame,actuators,pcm_speed)
       if cruise_btn:
-        can_send.append(teslacan.create_cruise_adjust_msg(cruise_btn,-1,CS.steering_wheel_stalk))
-      elif (turn_signal_needed > 0) and (frame % 10 ==0):
-        can_send.append(teslacan.create_cruise_adjust_msg(-1,turn_signal_needed,CS.steering_wheel_stalk))
+        can_sends.append(teslacan.create_cruise_adjust_msg(cruise_btn,-1,CS.steering_wheel_stalk))
+      elif (turn_signal_needed > 0) and (frame % 3 ==0):
+        can_sends.append(teslacan.create_cruise_adjust_msg(-1,turn_signal_needed,CS.steering_wheel_stalk))
       self.last_angle = apply_angle
       sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
