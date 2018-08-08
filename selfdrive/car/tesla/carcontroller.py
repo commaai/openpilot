@@ -157,6 +157,8 @@ class CarController(object):
       self.ALCA.update_status(True if CS.cstm_btns.get_button_status("alca1") > 0 else False)
       #print CS.cstm_btns.get_button_status("alca")
 
+    #update ACC module info
+    self.ACC.update_stat(CS, True)
 
     #get the angle from ALCA
     alca_enabled = False
@@ -232,7 +234,7 @@ class CarController(object):
       can_sends.append(teslacan.create_steering_control(enable_steer_control, apply_angle, idx))
       can_sends.append(teslacan.create_epb_enable_signal(idx))
       cruise_btn = None
-      if CS.cstm_btns.get_button_status("acc01")==2:
+      if self.ACC.enable_adaptive_cruise:
         cruise_btn = self.ACC.update_acc(enabled,CS,frame,actuators,pcm_speed)
       if cruise_btn:
         can_sends.append(teslacan.create_cruise_adjust_msg(cruise_btn,-1,CS.steering_wheel_stalk))

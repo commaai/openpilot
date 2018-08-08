@@ -55,7 +55,7 @@ class ALCAController(object):
     
     if (not CS.right_blinker_on) and (not CS.left_blinker_on) and \
       (self.laneChange_enabled > 1):
-      #no blinkers on but we are still changin lane, so we need to send blinker command
+      #no blinkers on but we are still changing lane, so we need to send blinker command
       if self.laneChange_direction == -1:
         turn_signal_needed = 1
       elif self.laneChange_direction == 1:
@@ -65,23 +65,24 @@ class ALCAController(object):
 
 
     if self.alcaEnabled and self.laneChange_enabled ==1:
-      if ((CS.v_ego < CL_MIN_V) or (abs(actuators.steerAngle) >= CL_MAX_A)): 
+      if ((CS.v_ego < CL_MIN_V) or (abs(actuators.steerAngle) >= CL_MAX_A) or \
+      (abs(CS.angle_steers)>= CL_MAX_A)  or (not enabled)): 
         CS.cstm_btns.set_button_status("alca1",9)
       else:
         CS.cstm_btns.set_button_status("alca1",1)
 
     if self.alcaEnabled and enabled and (((not self.prev_right_blinker_on) and CS.right_blinker_on) or \
       ((not self.prev_left_blinker_on) and CS.left_blinker_on)) and \
-      ((CS.v_ego < CL_MIN_V) or (abs(actuators.steerAngle) >= CL_MAX_A)):
+      ((CS.v_ego < CL_MIN_V) or (abs(actuators.steerAngle) >= CL_MAX_A) or (abs(CS.angle_steers) >=CL_MAX_A)):
       #something is not right, the speed or angle is limitting
       tcm.custom_alert_message("Auto Lane Change Unavailable!",CS,500)
+      CS.cstm_btns.set_button_status("alca1",9)
 
 
     if self.alcaEnabled and enabled and (((not self.prev_right_blinker_on) and CS.right_blinker_on) or \
       ((not self.prev_left_blinker_on) and CS.left_blinker_on))  and \
       (CS.v_ego >= CL_MIN_V) and (abs(actuators.steerAngle) < CL_MAX_A):
       # start blinker, speed and angle is within limits, let's go
-
       laneChange_direction = 1
       #changing lanes
       if CS.left_blinker_on:

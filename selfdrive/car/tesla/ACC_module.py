@@ -8,6 +8,9 @@ import subprocess
 import time
 import zmq
 
+def _current_time_millis():
+  return int(round(time.time() * 1000))
+
 class ACCController(object):
   def __init__(self,carcontroller):
     self.cc = carcontroller
@@ -19,6 +22,11 @@ class ACCController(object):
     self.live20 = messaging.sub_sock(context, service_list['live20'].port, conflate=True, poller=self.poller)
     self.lead_1 = None
     self.last_update_time = 0
+    self.enable_adaptive_cruise = False
+    self.last_cruise_stalk_pull_time = 0
+    self.prev_steering_wheel_stalk = None
+    self.prev_cruise_buttons = CruiseButtons.IDLE
+    self.prev_cruise_setting = CruiseButtons.IDLE
 
   #function to calculate the desired cruise speed based on a safe follow distance
   def calc_follow_speed(self, CS):
@@ -126,6 +134,49 @@ class ACCController(object):
         
     return button
 
+  def update_stat(self,CS, enabled):
+    # Check if the cruise stalk was double pulled, indicating that adaptive
+    # cruise control should be enabled. Twice in .75 seconds counts as a double
+    # pull.
+    adaptive_cruise_prev = self.enable_adaptive_cruise
+    curr_time_ms = _current_time_millis()
+    if (CS.cruise_buttons == CruiseButtons.MAIN and
+        self.prev_cruise_buttons != CruiseButtons.MAIN):
+      self.enable_adaptive_cruise = (curr_time_ms - self.last_cruise_stalk_pull_time < 750) and \
+        (CS.cstm_btns.get_button_status("acc01")>0) and enabled and \
+         ((CS.pcm_acc_status == 2) or (CS.pcm_acc_status == 1))
+      if(self.enable_adaptive_cruise):
+        customAlert.custom_alert_message("ACC Enabled",self,150)
+        CS.cstm_btns.set_button_status("acc01",2)
+      elif adaptive_cruise_prev == True:
+        customAlert.custom_alert_message("ACC Disabled",self,150)
+        CS.cstm_btns.set_button_status("acc01",1)
+
+      self.last_cruise_stalk_pull_time = curr_time_ms
+    elif (CS.cruise_buttons == CruiseButtons.CANCEL and
+          self.prev_cruise_buttons != CruiseButtons.CANCEL):
+      self.enable_adaptive_cruise = False
+      if adaptive_cruise_prev == True:
+        customAlert.custom_alert_message("ACC Disabled",self,150)
+        CS.cstm_btns.set_button_status("acc01",1)
+      self.last_cruise_stalk_pull_time = 0
+    #if ACC was on and something disabled cruise control, disable ACC too
+    elif (self.enable_adaptive_cruise == True and
+          CS.pcm_acc_status != 2 and
+          curr_time_ms - self.last_cruise_stalk_pull_time >  2000):
+      self.enable_adaptive_cruise = False
+      customAlert.custom_alert_message("ACC Disabled",self,150)
+      CS.cstm_btns.set_button_status("acc01",1)
+    self.prev_steering_wheel_stalk = CS.steering_wheel_stalk
+    #now let's see if the ACC is available
+    if (CS.cstm_btns.get_button_status("acc01")==1) or (CS.cstm_btns.get_button_status("acc01")==9):
+        if enabled and ((CS.pcm_acc_status == 2) or (CS.pcm_acc_status == 1)):
+            CS.cstm_btns.set_button_status("acc01",1)
+        else:
+            CS.cstm_btns.set_button_status("acc01",9)
+
+
+
   def update_acc(self,enabled,CS,frame,actuators,pcm_speed):
     # Adaptive cruise control
     #Bring in the lead car distance from the Live20 feed
@@ -193,8 +244,8 @@ class ACCController(object):
                 elif speed_offset > half_press_kph and speed_offset < available_speed:
                     # Send cruise stalk up_1st.
                     button_to_press = CruiseButtons.RES_ACCEL
-    
-        button_to_press = self.calc_follow_speed(CS)
+        if CS.btns[1].btn_label2 == "Model JJ":
+            button_to_press = self.calc_follow_speed(CS)
     if button_to_press:
         self.automated_cruise_action_time = current_time_ms
     return button_to_press

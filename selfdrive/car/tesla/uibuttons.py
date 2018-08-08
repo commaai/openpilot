@@ -2,14 +2,15 @@
 import struct
 from ctypes import create_string_buffer
 import os
+from datetime import datetime
 
 buttons_labels_path = "/data/openpilot/selfdrive/car/tesla/buttons.msg"
 buttons_status_in_path = "/data/openpilot/selfdrive/car/tesla/buttons.ui.msg"
 buttons_status_out_path = "/data/openpilot/selfdrive/car/tesla/buttons.cc.msg"
 buttons_file_rw = "wb"
 buttons_file_r = "rb"
-btn_msg_len = 20
-btn_msg_struct = "5s5s10s" #name=5 char string, label = 5 char string, satus = 1 char, label2 = 10 char string
+btn_msg_len = 23
+btn_msg_struct = "6s6s11s" #name=5 char string, label = 5 char string, satus = 1 char, label2 = 10 char string
 
 class UIButton:
     def __init__(self,btn_name,btn_label,btn_status,btn_label2):
@@ -42,18 +43,29 @@ class UIButtons:
             print "labels file is bad"
 
     def read_buttons_in_file(self):
-        fi =  open(buttons_status_in_path, buttons_file_r)
-        indata = fi.read()
-        fi.close()
-        if len(indata) == 6:
-            for i in range(0,len(indata)):
-                if self.btns[i].btn_status > 0:
-                    self.btns[i].btn_status = (ord(indata[i]) - 48) * self.btns[i].btn_status
-                else:
-                    self.btns[i].btn_status = ord(indata[i]) - 48
-        else:
-            #something wrong with the file
-            print "status file is bad"       
+        modification_date =  datetime.fromtimestamp(os.path.getmtime(buttons_status_in_path))
+        if (modification_date > self.last_in_read_time):
+            fi =  open(buttons_status_in_path, buttons_file_r)
+            indata = fi.read()
+            fi.close()
+            if len(indata) == 6:
+                for i in range(0,len(indata)):
+                    if self.btns[i].btn_status > 0:
+                        if (i == 1) and (ord(indata[1])==48):
+                            #don't change status, just model
+                            if (self.btns[i].btn_label2 == "Model OP"):
+                                self.btns[i].btn_label2 = "Model JJ"
+                            else:
+                                self.btns[i].btn_label2 = "Model OP"
+                            self.write_buttons_labels_to_file()
+                        else:
+                            self.btns[i].btn_status = (ord(indata[i]) - 48) * self.btns[i].btn_status
+                    else:
+                        self.btns[i].btn_status = ord(indata[i]) - 48
+                self.last_in_read_time = modification_date
+            else:
+                #something wrong with the file
+                print "status file is bad"    
 
     def write_buttons_in_file(self):
         fo = open(buttons_status_in_path, buttons_file_rw)
@@ -85,6 +97,7 @@ class UIButtons:
     def __init__(self):
         self.btns = []
         self.hasChanges = True
+        self.last_in_read_time = 0
         if os.path.exists(buttons_labels_path):
             #there is a file, load it
             self.read_buttons_labels_from_file()
@@ -93,7 +106,7 @@ class UIButtons:
         else:
             #there is no file, create it
             self.btns.append(UIButton("alca1","ALC",0,""))
-            self.btns.append(UIButton("acc01","ACC",0,""))
+            self.btns.append(UIButton("acc01","ACC",0,"Model OP"))
             self.btns.append(UIButton("","",0,""))
             self.btns.append(UIButton("","",0,""))
             self.btns.append(UIButton("brake","BRK",1,""))

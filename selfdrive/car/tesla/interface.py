@@ -287,8 +287,8 @@ class CarInterface(object):
           speed_uom = 1.609
           if but == 0x02:
             #forward: set speed to car speed and enabled pedal
-            self.CS.pedal_speed_kph = self.CS.v_ego_raw
-            self.CS.v_cruise_pcm = self.CS.pedal_speed_kph
+            self.CS.pedal_speed_kph = self.CS.v_ego_raw * 3.6
+            self.CS.v_cruise_pcm = self.CS.pedal_speed_kph 
             self.CS.pedal_enabled = 2
           elif but == 0x01:
             #reverse: disable pedal

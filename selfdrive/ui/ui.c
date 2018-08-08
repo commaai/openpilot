@@ -92,9 +92,9 @@ const int alert_sizes[] = {
 };
 
 typedef struct UICstmButton {
-  char btn_name[5];
-  char btn_label[5];
-  char btn_label2[10];
+  char btn_name[6];
+  char btn_label[6];
+  char btn_label2[11];
 } UICstmButton;
 
 
@@ -972,14 +972,13 @@ static bool bb_handle_ui_touch(UIState *s, int touch_x, int touch_y) {
 };
 
 static int bb_get_button_status(UIState *s, char *btn_name) {
-  char b_name[6];
+  int ret_status = 0;
   for (int i = 0; i< 6; i++) {
-    strcpy(b_name,s->btns[i].btn_name);
-    if (strcmp(b_name,btn_name)==0) {
-      return s->btns_status[i];
+    if (strcmp(btns[i].btn_name,btn_name)==0) {
+      ret_status = s->btns_status[i];
     }
   }
-  return 0;
+  return ret_status;
 }
 
 static void bb_draw_button(UIState *s, int btn_id) {
@@ -1029,16 +1028,16 @@ static void bb_draw_button(UIState *s, int btn_id) {
     }
   } else
   if (s->btns_status[btn_id] ==1) {
-    //enabled - blue
+    //enabled - white
     nvgStrokeColor(s->vg, nvgRGBA(255,255,255,200));
-    nvgStrokeWidth(s->vg, 6);
+    nvgStrokeWidth(s->vg, 4);
     if (strcmp(btn_text2,"")==0) {
       btn_text2 = "Ready";
     }
   } else
   if (s->btns_status[btn_id] ==2) {
     //active - green
-    nvgStrokeColor(s->vg, nvgRGBA(23,134,68,200));
+    nvgStrokeColor(s->vg, nvgRGBA(28, 204,98,200));
     if (strcmp(btn_text2,"")==0) {
       btn_text2 = "Active";
     }
@@ -1046,7 +1045,7 @@ static void bb_draw_button(UIState *s, int btn_id) {
   if (s->btns_status[btn_id] ==9) {
     //available - thin white
     nvgStrokeColor(s->vg, nvgRGBA(200,200,200,40));
-    nvgStrokeWidth(s->vg, 6);
+    nvgStrokeWidth(s->vg, 4);
     if (strcmp(btn_text2,"")==0) {
       btn_text2 = "";
     }
@@ -1105,8 +1104,10 @@ static void bb_draw_buttons(UIState *s) {
     sFile = open(in_status_file, O_RDONLY);
     if (sFile != -1) {
       int rd = read(sFile, &(temp_stats),6*sizeof(char));
-      for (int i = 0; i < 6; i++) {
-        s->btns_status[i] = temp_stats[i]-'0';
+      if (rd == 6) {
+        for (int i = 0; i < 6; i++) {
+          s->btns_status[i] = temp_stats[i]-'0';
+        }
       }
       close(sFile);
       s->status_last_modified = filestat.st_mtime;
@@ -1517,7 +1518,7 @@ static void update_status(UIState *s, int status) {
     if ((status ==3 ) && (s->custom_alert_playsound == 1)) {
       s->custom_alert_playsound = 2;
     }
-    if (s->btns_status[5]>0) {
+    if (bb_get_button_status("sound") > 0) {
       asprintf(&snd_command, "python /data/openpilot/selfdrive/car/%s/snd/playsound.py %d &",s->car_model, status);
       system(snd_command);
     }
