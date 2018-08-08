@@ -76,12 +76,22 @@ class CarInterface(object):
       ret.safetyParam = 66  # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.70
       ret.steerRatio = 15.00   # unknown end-to-end spec
-      tire_stiffness_factor = 0.6371   # hand-tune
+      tire_stiffness_factor = 0.6371
       ret.mass = 3045 * CV.LB_TO_KG + std_cargo
-      ret.steerKpV, ret.steerKiV = [[0.4], [0.01]]
-      ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
+      ret.steerKpV, ret.steerKiV = [[0.3], [0.0]]
+      ret.steerKf = 0.000078   # full torque for 10 deg at 80mph means 0.00007818594
       # TODO: Prius seem to have very laggy actuators. Understand if it is lag or hysteresis
-      ret.steerActuatorDelay = 0.25
+      ret.steerActuatorDelay = 0.01
+    elif candidate == CAR.PRIUS_PRIME:
+      ret.safetyParam = 66  # see conversion factor for STEER_TORQUE_EPS in dbc file
+      ret.wheelbase = 2.70
+      ret.steerRatio = 15.00   # unknown end-to-end spec
+      tire_stiffness_factor = 0.6371
+      ret.mass = 3370 * CV.LB_TO_KG + std_cargo
+      ret.steerKpV, ret.steerKiV = [[0.3], [0.0]]
+      ret.steerKf = 0.000078   # full torque for 10 deg at 80mph means 0.00007818594
+      # TODO: Prius seem to have very laggy actuators. Understand if it is lag or hysteresis
+      ret.steerActuatorDelay = 0.01
 
     elif candidate in [CAR.RAV4, CAR.RAV4H]:
       ret.safetyParam = 73  # see conversion factor for STEER_TORQUE_EPS in dbc file
@@ -136,7 +146,7 @@ class CarInterface(object):
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter.
-    if candidate in [CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH, CAR.CHR, CAR.CHRH, CAR.CAMRY, CAR.CAMRYH]: # rav4 hybrid can do stop and go
+    if candidate in [CAR.PRIUS, PRIUS_PRIME, CAR.RAV4H, CAR.LEXUS_RXH, CAR.CHR, CAR.CHRH, CAR.CAMRY, CAR.CAMRYH]: # rav4 hybrid can do stop and go
       ret.minEnableSpeed = -1.
     elif candidate in [CAR.RAV4, CAR.COROLLA]: # TODO: hack ICE to do stop and go
       ret.minEnableSpeed = 19. * CV.MPH_TO_MS
