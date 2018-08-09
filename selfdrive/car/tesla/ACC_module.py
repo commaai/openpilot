@@ -66,14 +66,14 @@ class ACCController(object):
     # Automatically engange traditional cruise if it is idle and we are
     # going fast enough.
     if (CS.pcm_acc_status == 1
-        and CS.enable_adaptive_cruise
+        and self.enable_adaptive_cruise
         and CS.v_ego > min_cruise_speed):
       button = CruiseButtons.DECEL_SET
     # If traditional cruise is engaged, then control it.
     elif CS.pcm_acc_status == 2:
       #if lead_dist is reported as 0, no one is detected in front of you so you can speed up
       #don't speed up when steer-angle > 2; vision radar often loses lead car in a turn
-      if lead_dist == 0 and CS.enable_adaptive_cruise and CS.angle_steers < 2.0:
+      if lead_dist == 0 and self.enable_adaptive_cruise and CS.angle_steers < 2.0:
         if full_press_kph < (available_speed * 0.9): 
           msg =  "5 MPH UP   full: ","{0:.1f}kph".format(full_press_kph), "  avail: {0:.1f}kph".format(available_speed)
           button = CruiseButtons.RES_ACCEL_2ND
@@ -199,7 +199,7 @@ class ACCController(object):
     # Tesla cruise only functions above 18 MPH
     min_cruise_speed = 18 * CV.MPH_TO_MS
 
-    if (CS.enable_adaptive_cruise
+    if (self.enable_adaptive_cruise
         # Only do ACC if OP is steering
         and enabled
         # And adjust infrequently, since sending repeated adjustments makes
@@ -245,7 +245,7 @@ class ACCController(object):
                 elif speed_offset > half_press_kph and speed_offset < available_speed:
                     # Send cruise stalk up_1st.
                     button_to_press = CruiseButtons.RES_ACCEL
-        if CS.btns[1].btn_label2 == "Mod JJ":
+        if CS.cstm_btns[1].btn_label2 == "Mod JJ":
             button_to_press = self.calc_follow_speed(CS)
     if button_to_press:
         self.automated_cruise_action_time = current_time_ms
