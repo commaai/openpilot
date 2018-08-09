@@ -173,12 +173,20 @@ class ACCController(object):
       #enabled and new stalk command, let's see what we do with speed
       if CS.cruise_buttons == CruiseButtons.RES_ACCEL:
         self.acc_speed_kph += speed_uom
+        if self.acc_speed_kph > 170:
+          self.acc_speed_kph = 170
       if CS.cruise_buttons == CruiseButtons.RES_ACCEL_2ND:
         self.acc_speed_kph += 5 * speed_uom
+        if self.acc_speed_kph > 170:
+          self.acc_speed_kph = 170
       if CS.cruise_buttons == CruiseButtons.DECEL_SET:
         self.acc_speed_kph -= speed_uom
+        if self.acc_speed_kph < 0:
+          self.acc_speed_kph = 0
       if CS.cruise_buttons == CruiseButtons.DECEL_2ND:
         self.acc_speed_kph -= 5 * speed_uom
+        if self.acc_speed_kph < 0:
+          self.acc_speed_kph = 0
     #if ACC was on and something disabled cruise control, disable ACC too
     elif (self.enable_adaptive_cruise == True and
           CS.pcm_acc_status != 2 and

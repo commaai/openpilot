@@ -177,12 +177,20 @@ class PCCController(object):
       #enabled and new stalk command, let's see what we do with speed
       if CS.cruise_buttons == CruiseButtons.RES_ACCEL:
         self.pedal_speed_kph += speed_uom
+        if self.pedal_speed_kph > 170:
+          self.pedal_speed_kph = 170
       if CS.cruise_buttons == CruiseButtons.RES_ACCEL_2ND:
         self.pedal_speed_kph += 5 * speed_uom
+        if self.pedal_speed_kph > 170:
+          self.pedal_speed_kph = 170
       if CS.cruise_buttons == CruiseButtons.DECEL_SET:
         self.pedal_speed_kph -= speed_uom
+        if self.pedal_speed_kph < 0:
+          self.pedal_speed_kph = 0
       if CS.cruise_buttons == CruiseButtons.DECEL_2ND:
         self.pedal_speed_kph -= 5 * speed_uom
+        if self.pedal_speed_kph < 0:
+          self.pedal_speed_kph = 0
     #if PDL was on and something disabled cruise control, disable PDL too
     elif (self.enable_pedal_cruise == True and
           CS.pcm_acc_status != 0 and
