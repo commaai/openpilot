@@ -166,7 +166,6 @@ class CarController(object):
     self.PCC.update_stat(CS, True)
     #update HSO module info
     human_control = False
-    human_control = self.HSO.update_stat(CS,enabled,actuators,frame)
 
     #update CS.v_cruise_pcm based on module selected
     if self.ACC.enable_adaptive_cruise:
@@ -180,7 +179,7 @@ class CarController(object):
     turn_signal_needed = 0
     apply_angle,alca_enabled,turn_signal_needed = self.ALCA.update(enabled,CS,frame,actuators)
     apply_angle = -apply_angle #Tesla is reversed vs OP
-
+    human_control = self.HSO.update_stat(CS,enabled,actuators,frame)
     enable_steer_control = (enabled and ((not changing_lanes) or alca_enabled) and not human_control)
     
     angle_lim = interp(CS.v_ego, ANGLE_MAX_BP, ANGLE_MAX_V)
