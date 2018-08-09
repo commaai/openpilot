@@ -17,7 +17,8 @@ from selfdrive.config import Conversions as CV
 import custom_alert as tcm
 from ALCA_module import ALCAController
 from ACC_module import ACCController
-
+from PCC_module import PCCController
+from HSO_module import HSOController
 # Steer angle limits
 ANGLE_MAX_BP = [0., 27., 36.]
 ANGLE_MAX_V = [410., 92., 36.]
@@ -82,6 +83,8 @@ class CarController(object):
     self.last_angle = 0
     self.ALCA = ALCAController(self,True,True)  # Enabled and SteerByAngle both True
     self.ACC = ACCController(self)
+    self.PCC = PCCController(self)
+    self.HSO = HSOController(self)
 
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
@@ -159,14 +162,26 @@ class CarController(object):
 
     #update ACC module info
     self.ACC.update_stat(CS, True)
+    #update PCC module info
+    self.PCC.update_stat(CS, True)
+    #update HSO module info
+    human_control = False
+    human_control = self.HSO.update_stat(CS,enabled,actuators,frame)
 
+    #update CS.v_cruise_pcm based on module selected
+    if self.ACC.enable_adaptive_cruise:
+      CS.v_cruise_pcm = self.ACC.acc_speed_kph
+    elif self.PCC.enable_pedal_cruise:
+      CS.v_cruise_pcm = self.PCC.pedal_speed_kph
+    else:
+      CS.v_cruise_pcm = CS.v_cruise_actual
     #get the angle from ALCA
     alca_enabled = False
     turn_signal_needed = 0
     apply_angle,alca_enabled,turn_signal_needed = self.ALCA.update(enabled,CS,frame,actuators)
     apply_angle = -apply_angle #Tesla is reversed vs OP
 
-    enable_steer_control = (enabled and ((not changing_lanes) or alca_enabled))
+    enable_steer_control = (enabled and ((not changing_lanes) or alca_enabled) and not human_control)
     
     angle_lim = interp(CS.v_ego, ANGLE_MAX_BP, ANGLE_MAX_V)
     apply_angle = clip(apply_angle, -angle_lim, angle_lim)

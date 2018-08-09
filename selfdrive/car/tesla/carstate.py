@@ -319,18 +319,7 @@ class CarState(object):
     self.standstill = cp.vl["DI_torque2"]['DI_vehicleSpeed'] == 0
     self.pcm_acc_status = cp.vl["DI_state"]['DI_cruiseState']
     self.imperial_speed_units = cp.vl["DI_state"]['DI_speedUnits'] == 0
-    if self.pcm_acc_status == 0:
-      #no cruise, we set our own speed for cruise
-      if self.pedal_enabled == 0:
-        self.pedal_enabled = 1
-      self.v_cruise_pcm = self.pedal_speed_kph
-    else:
-      #disable pedal CC if real CC is on
-      self.pedal_enabled = 0
-      if cp.vl["DI_state"]['DI_speedUnits'] == 0:
-        self.v_cruise_pcm = (cp.vl["DI_state"]['DI_cruiseSet'])*CV.MPH_TO_KPH # Reported in MPH, expected in KPH??
-      else:
-        self.v_cruise_pcm = cp.vl["DI_state"]['DI_cruiseSet']
+
     if self.imperial_speed_units:
       self.v_cruise_actual = (cp.vl["DI_state"]['DI_cruiseSet'])*CV.MPH_TO_KPH # Reported in MPH, expected in KPH??
     else:

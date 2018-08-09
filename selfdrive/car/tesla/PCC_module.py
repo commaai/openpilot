@@ -11,7 +11,8 @@ import zmq
 def _current_time_millis():
   return int(round(time.time() * 1000))
 
-class ACCController(object):
+#this is for the pedal cruise control
+class PCCController(object):
   def __init__(self,carcontroller):
     self.CC = carcontroller
     self.human_cruise_action_time = 0
@@ -22,14 +23,16 @@ class ACCController(object):
     self.live20 = messaging.sub_sock(context, service_list['live20'].port, conflate=True, poller=self.poller)
     self.lead_1 = None
     self.last_update_time = 0
-    self.enable_adaptive_cruise = False
+    self.enable_pedal_cruise = False
     self.last_cruise_stalk_pull_time = 0
     self.prev_steering_wheel_stalk = None
     self.prev_cruise_buttons = CruiseButtons.IDLE
     self.prev_cruise_setting = CruiseButtons.IDLE
-    self.acc_speed_kph = 0.
+    self.pedal_hardware_present = True
+    self.pedal_speed_kph = 0.
 
   #function to calculate the desired cruise speed based on a safe follow distance
+  """ from ACC, leave here until we implement
   def calc_follow_speed(self, CS):
     follow_time = 2.5 #in seconds
     current_time_ms = int(round(time.time() * 1000))
@@ -45,7 +48,7 @@ class ACCController(object):
     #v_ego is in m/s, so safe_distance is in meters
     safe_dist = CS.v_ego * follow_time
     # How much we can accelerate without exceeding the max allowed speed.
-    available_speed = self.acc_speed_kph - CS.v_cruise_actual
+    available_speed = CS.v_cruise_pcm - CS.v_cruise_actual
     # Tesla cruise only functions above 18 MPH
     min_cruise_speed = 18 * CV.MPH_TO_MS
     # Metric cars adjust cruise in units of 1 and 5 kph
@@ -67,14 +70,14 @@ class ACCController(object):
     # Automatically engange traditional cruise if it is idle and we are
     # going fast enough.
     if (CS.pcm_acc_status == 1
-        and self.enable_adaptive_cruise
+        and self.enable_pedal_cruise
         and CS.v_ego > min_cruise_speed):
       button = CruiseButtons.DECEL_SET
     # If traditional cruise is engaged, then control it.
     elif CS.pcm_acc_status == 2:
       #if lead_dist is reported as 0, no one is detected in front of you so you can speed up
       #don't speed up when steer-angle > 2; vision radar often loses lead car in a turn
-      if lead_dist == 0 and self.enable_adaptive_cruise and CS.angle_steers < 2.0:
+      if lead_dist == 0 and self.enable_pedal_cruise and CS.angle_steers < 2.0:
         if full_press_kph < (available_speed * 0.9): 
           msg =  "5 MPH UP   full: ","{0:.1f}kph".format(full_press_kph), "  avail: {0:.1f}kph".format(available_speed)
           button = CruiseButtons.RES_ACCEL_2ND
@@ -133,73 +136,81 @@ class ACCController(object):
       if msg != None:
         print msg
         
-    return button
+    return button"""
 
   def update_stat(self,CS, enabled):
     # Check if the cruise stalk was double pulled, indicating that adaptive
     # cruise control should be enabled. Twice in .75 seconds counts as a double
     # pull.
-    adaptive_cruise_prev = self.enable_adaptive_cruise
     curr_time_ms = _current_time_millis()
+    adaptive_cruise_prev = self.enable_pedal_cruise
+    speed_uom = 1.
     if CS.imperial_speed_units:
       speed_uom = 1.609
     if (CS.cruise_buttons == CruiseButtons.MAIN and
         self.prev_cruise_buttons != CruiseButtons.MAIN):
       double_pull = (curr_time_ms - self.last_cruise_stalk_pull_time < 750) and \
-        (CS.cstm_btns.get_button_status("acc")>0) and enabled and \
-         ((CS.pcm_acc_status == 2) or (CS.pcm_acc_status == 1))
-      if(not self.enable_adaptive_cruise) and double_pull:
-        customAlert.custom_alert_message("ACC Enabled",CS,150)
-        self.enable_adaptive_cruise = True
-        CS.cstm_btns.set_button_status("acc",2)
-        self.acc_speed_kph = CS.v_ego_raw * 3.6
-      elif self.enable_adaptive_cruise and double_pull:
+        (CS.cstm_btns.get_button_status("pedal")>0) and enabled and \
+         (CS.pcm_acc_status == 0) and self.pedal_hardware_present
+      if(not self.enable_pedal_cruise) and double_pull:
+        self.enable_pedal_cruise = True
+        customAlert.custom_alert_message("PDL Enabled",CS,150)
+        CS.cstm_btns.set_button_status("pedal",2)
+        self.pedal_speed_kph = CS.v_ego_raw * 3.6
+      elif (self.enable_pedal_cruise) and double_pull:
         #already enabled, reset speed to current speed
-        customAlert.custom_alert_message("ACC Speed Updated",CS,150)
-        self.acc_speed_kph = CS.v_ego_raw * 3.6
-      elif self.enable_adaptive_cruise and not double_pull:
-        customAlert.custom_alert_message("ACC Disabled",CS,150)
-        CS.cstm_btns.set_button_status("acc",1)
-        self.enable_adaptive_cruise = False
+        customAlert.custom_alert_message("PDL Speed Updated",CS,150)
+        self.pedal_speed_kph = CS.v_ego_raw * 3.6
+      elif self.enable_pedal_cruise and not double_pull:
+        self.enable_pedal_cruise = False
+        customAlert.custom_alert_message("PDL Disabled",CS,150)
+        CS.cstm_btns.set_button_status("pedal",1)
       self.last_cruise_stalk_pull_time = curr_time_ms
     elif (CS.cruise_buttons == CruiseButtons.CANCEL and
           self.prev_cruise_buttons != CruiseButtons.CANCEL):
-      self.enable_adaptive_cruise = False
+      self.enable_pedal_cruise = False
       if adaptive_cruise_prev == True:
-        customAlert.custom_alert_message("ACC Disabled",CS,150)
-        CS.cstm_btns.set_button_status("acc",1)
+        customAlert.custom_alert_message("PDL Disabled",CS,150)
+        CS.cstm_btns.set_button_status("pedal",1)
       self.last_cruise_stalk_pull_time = 0
-    elif (self.enable_adaptive_cruise and CS.cruise_buttons !=self.prev_cruise_buttons):
+    elif (self.enable_pedal_cruise and CS.cruise_buttons !=self.prev_cruise_buttons):
       #enabled and new stalk command, let's see what we do with speed
       if CS.cruise_buttons == CruiseButtons.RES_ACCEL:
-        self.acc_speed_kph += speed_uom
+        self.pedal_speed_kph += speed_uom
       if CS.cruise_buttons == CruiseButtons.RES_ACCEL_2ND:
-        self.acc_speed_kph += 5 * speed_uom
+        self.pedal_speed_kph += 5 * speed_uom
       if CS.cruise_buttons == CruiseButtons.DECEL_SET:
-        self.acc_speed_kph -= speed_uom
+        self.pedal_speed_kph -= speed_uom
       if CS.cruise_buttons == CruiseButtons.DECEL_2ND:
-        self.acc_speed_kph -= 5 * speed_uom
-    #if ACC was on and something disabled cruise control, disable ACC too
-    elif (self.enable_adaptive_cruise == True and
-          CS.pcm_acc_status != 2 and
+        self.pedal_speed_kph -= 5 * speed_uom
+    #if PDL was on and something disabled cruise control, disable PDL too
+    elif (self.enable_pedal_cruise == True and
+          CS.pcm_acc_status != 0 and
           curr_time_ms - self.last_cruise_stalk_pull_time >  2000):
-      self.enable_adaptive_cruise = False
-      customAlert.custom_alert_message("ACC Disabled",CS,150)
-      CS.cstm_btns.set_button_status("acc",1)
+      self.enable_pedal_cruise = False
+      customAlert.custom_alert_message("PCC Disabled",CS,150)
+      CS.cstm_btns.set_button_status("pedal",1)
     self.prev_steering_wheel_stalk = CS.steering_wheel_stalk
     self.prev_cruise_buttons = CS.cruise_buttons
-    #now let's see if the ACC is available
-    if (CS.cstm_btns.get_button_status("acc")==1) or (CS.cstm_btns.get_button_status("acc")==9):
-        if enabled and ((CS.pcm_acc_status == 2) or (CS.pcm_acc_status == 1)):
-            CS.cstm_btns.set_button_status("acc",1)
+    #now let's see if the PDL is available
+    if (CS.cstm_btns.get_button_status("pedal")==1) or (CS.cstm_btns.get_button_status("pedal")==9):
+        if enabled and (CS.pcm_acc_status == 0):
+            CS.cstm_btns.set_button_status("pedal",1)
         else:
-            CS.cstm_btns.set_button_status("acc",9)
+            CS.cstm_btns.set_button_status("pedal",9)
+    if (CS.cstm_btns.get_button_status("pedal")>0) and not self.pedal_hardware_present:
+      #no pedal hardware, disable button
+      CS.cstm_btns.set_button_status("pedal",0)
 
+  def update_pdl(self,enabled,CS,frame,actuators,pcm_speed):
+    #Pedal cruise control
+    #if no hardware present, return -1
+    if not self.pedal_hardware_present:
+      return 0,False
 
-
-  def update_acc(self,enabled,CS,frame,actuators,pcm_speed):
     # Adaptive cruise control
     #Bring in the lead car distance from the Live20 feed
+    """ from ACC, leave here until we implement
     l20 = None
     if enabled:
         for socket, event in self.poller.poll(0):
@@ -218,7 +229,7 @@ class ACCController(object):
     # Tesla cruise only functions above 18 MPH
     min_cruise_speed = 18 * CV.MPH_TO_MS
 
-    if (self.enable_adaptive_cruise
+    if (self.enable_pedal_cruise
         # Only do ACC if OP is steering
         and enabled
         # And adjust infrequently, since sending repeated adjustments makes
@@ -257,7 +268,7 @@ class ACCController(object):
             # Increase cruise speed if possible.
             elif CS.v_ego > min_cruise_speed:
                 # How much we can accelerate without exceeding max allowed speed.
-                available_speed = self.acc_speed_kph - CS.v_cruise_actual
+                available_speed = CS.v_cruise_pcm - CS.v_cruise_actual
                 if speed_offset > full_press_kph and speed_offset < available_speed:
                     # Send cruise stalk up_2nd.
                     button_to_press = CruiseButtons.RES_ACCEL_2ND
@@ -268,4 +279,5 @@ class ACCController(object):
             button_to_press = self.calc_follow_speed(CS)
     if button_to_press:
         self.automated_cruise_action_time = current_time_ms
-    return button_to_press
+    return button_to_press"""
+    return 0,False

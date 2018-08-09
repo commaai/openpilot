@@ -108,8 +108,8 @@ class UIButtons:
             #there is no file, create it
             self.btns.append(UIButton("alca","ALC",0,""))
             self.btns.append(UIButton("acc","ACC",0,"Mod OP"))
-            self.btns.append(UIButton("","",0,""))
-            self.btns.append(UIButton("","",0,""))
+            self.btns.append(UIButton("pedal","PDL",0,""))
+            self.btns.append(UIButton("steer","STR",0,""))
             self.btns.append(UIButton("brake","BRK",1,""))
             self.btns.append(UIButton("sound","SND",1,""))
             self.write_buttons_labels_to_file()
