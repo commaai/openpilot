@@ -157,9 +157,10 @@ class CarController(object):
 
     # frame is 100Hz (0.01s period)
     if (frame % 10 == 0) or self.first_time:  # 0.1s period
-      can_sends.append(create_2d9())
+      can_sends.append(create_2d9(self.car_fingerprint))
     if (frame % 25 == 0) or self.first_time or self.send_new_status:  # 0.25s period
-      can_sends.append(create_2a6(CS.gear_shifter, apply_steer, moving_fast))
+      can_sends.append(create_2a6(
+        CS.gear_shifter, apply_steer, moving_fast, self.car_fingerprint))
       self.send_new_status = False
     new_msg = create_292(int(apply_steer * 5.1), frame, moving_fast)
     can_sends.append(new_msg)  # degrees * 5.1 -> car steering units

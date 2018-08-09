@@ -1,6 +1,8 @@
 import struct
 import binascii
 
+from selfdrive.car.chrysler.values import CAR
+
 
 # *** Chrysler specific ***
 
@@ -54,21 +56,33 @@ def make_can_msg(addr, dat, alt=0, cks=False, counter=None):
   #                                           ' '.join('{:02x}'.format(ord(c)) for c in dat)))
   return [addr, 0, dat, alt]
 
-def create_2d9():
-  msg = '0000000820'.decode('hex')
+def create_2d9(car_fingerprint):
+  msg = '0000000820'.decode('hex')  # 2017
+  if car_fingerprint == CAR.PACIFICA_2018:
+    msg = '0000000020'.decode('hex')
   return make_can_msg(0x2d9, msg)
 
-def create_2a6(gear, apply_steer, moving_fast):
+def create_2a6(gear, apply_steer, moving_fast, car_fingerprint):
   msg = '0000000000000000'.decode('hex')  # park or neutral
+  if car_fingerprint == CAR.PACIFICA_2018:
+    msg = '0064000000000000'.decode('hex')  # Have not verified 2018 park with a real car.
   if (gear == 'drive' or gear == 'reverse'):
     if moving_fast:
       msg = '0200060000000000'.decode('hex') # moving fast, display green.
+      if car_fingerprint == CAR.PACIFICA_2018:
+        msg = '0264060000000000'.decode('hex')
     else:
       msg = '0100010000000000'.decode('hex') # moving slowly, display white.
+      if car_fingerprint == CAR.PACIFICA_2018:
+        msg = '0164010000000000'.decode('hex')
   if apply_steer > 0:  # steering left
     msg = '03000a0000000000'.decode('hex')  # when torqueing, display yellow.
+    if car_fingerprint == CAR.PACIFICA_2018:
+      msg = '03640a0000000000'.decode('hex')
   elif apply_steer < 0:  # steering right
     msg = '0300080000000000'.decode('hex')  # when torqueing, display yellow.
+    if car_fingerprint == CAR.PACIFICA_2018:
+      msg = '0364080000000000'.decode('hex')
   return make_can_msg(0x2a6, msg)
 
 LIMIT = 230-6  # 230 is documented limit # 171 is max from main example
