@@ -157,7 +157,7 @@ class ACCController(object):
           self.prev_cruise_buttons != CruiseButtons.CANCEL):
       self.enable_adaptive_cruise = False
       if adaptive_cruise_prev == True:
-        customAlert.custom_alert_message("ACC Disabled",S,150)
+        customAlert.custom_alert_message("ACC Disabled",CS,150)
         CS.cstm_btns.set_button_status("acc",1)
       self.last_cruise_stalk_pull_time = 0
     #if ACC was on and something disabled cruise control, disable ACC too
@@ -245,7 +245,7 @@ class ACCController(object):
                 elif speed_offset > half_press_kph and speed_offset < available_speed:
                     # Send cruise stalk up_1st.
                     button_to_press = CruiseButtons.RES_ACCEL
-        if CS.cstm_btns[1].btn_label2 == "Mod JJ":
+        if CS.cstm_btns.btns[1].btn_label2 == "Mod JJ":
             button_to_press = self.calc_follow_speed(CS)
     if button_to_press:
         self.automated_cruise_action_time = current_time_ms
