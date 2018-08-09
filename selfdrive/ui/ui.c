@@ -347,6 +347,7 @@ static void ui_init(UIState *s) {
   pthread_mutex_init(&s->lock, NULL);
   pthread_cond_init(&s->bg_cond, NULL);
   //
+  s->status = STATUS_DISENGAGED;
   s->car_model = "tesla";
   s->label_last_modified = 0;
   s->status_last_modified = 0;
@@ -1506,6 +1507,7 @@ static void bb_ui_draw_UI(UIState *s) {
 //BB END: functions added for the display of various items
 
 static void update_status(UIState *s, int status) {
+  int old_status = s->status;
   if (s->status != status) {
     s->status = status;
     // wake up bg thread to change
@@ -1518,7 +1520,7 @@ static void update_status(UIState *s, int status) {
     if ((status ==3 ) && (s->custom_alert_playsound == 1)) {
       s->custom_alert_playsound = 2;
     }
-    if (bb_get_button_status(s,"sound") > 0) {
+    if ((bb_get_button_status(s,"sound") > 0) && ((old_status != STATUS_STOPPED) || (s->status != STATUS_DISENGAGED))) {
       asprintf(&snd_command, "python /data/openpilot/selfdrive/car/%s/snd/playsound.py %d &",s->car_model, status);
       system(snd_command);
     }
