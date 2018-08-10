@@ -290,7 +290,7 @@ class CarInterface(object):
       self.CS.cstm_btns.set_button_status("brake", 2 if ret.brake else 1)
     else:
       if ret.brake:
-        events.append(create_event('steerTempUnavailableMute', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
+        events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
     if not self.CS.can_valid:
       self.can_invalid_count += 1
       if self.can_invalid_count >= 5:
@@ -336,6 +336,8 @@ class CarInterface(object):
     if (ret.gasPressed and not self.gas_pressed_prev) or \
        (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001)):
       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
+      print "ret.gasPressed, self.gas_pressed_prev == " + str(ret.gasPressed) + "," + str(self.gas_pressed_prev)
+      print "ret.brakePressed, self.brake_pressed_prev, ret.vEgo == " + str(ret.brakePressed) + ", " + str(self.brake_pressed_prev) + ", " + str(Ret.vEgo)
       #Note: This event is thrown for steering override (needs more refactoring)
 
     if ret.gasPressed:
