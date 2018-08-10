@@ -128,10 +128,10 @@ class ACCController(object):
       ratio = 0
       if safe_dist > 0:
         ratio = (lead_dist / safe_dist) * 100
-      print "Ratio: {0:.1f}%".format(ratio), "   lead: ","{0:.1f}m".format(lead_dist),"   avail: ","{0:.1f}kph".format(available_speed), "   Rel Speed: ","{0:.1f}kph".format(rel_speed), "  Angle: {0:.1f}deg".format(CS.angle_steers)
+      #print "Ratio: {0:.1f}%".format(ratio), "   lead: ","{0:.1f}m".format(lead_dist),"   avail: ","{0:.1f}kph".format(available_speed), "   Rel Speed: ","{0:.1f}kph".format(rel_speed), "  Angle: {0:.1f}deg".format(CS.angle_steers)
       self.last_update_time = current_time_ms
-      if msg != None:
-        print msg
+      #if msg != None:
+      #  print msg
         
     return button
 

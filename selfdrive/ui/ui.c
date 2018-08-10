@@ -1498,6 +1498,9 @@ static void bb_ui_draw_UI(UIState *s) {
    bb_draw_buttons(s);
    bb_ui_draw_custom_alert(s);
 	 }
+   if (tri_state_switch ==2) {
+	 	bb_ui_draw_custom_alert(s);
+	 }
 	 if (tri_state_switch ==3) {
 	 	ui_draw_vision_grid(s);
 	 }
