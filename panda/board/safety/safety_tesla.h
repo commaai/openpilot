@@ -12,11 +12,11 @@
 // 2m/s are added to be less restrictive
 const struct lookup_t TESLA_LOOKUP_ANGLE_RATE_UP = {
   {2., 7., 17.},
-  {5., .8, .15}};
+  {5., .8, .25}};
 
 const struct lookup_t TESLA_LOOKUP_ANGLE_RATE_DOWN = {
   {2., 7., 17.},
-  {5., 3.5, .4}};
+  {5., 3.5, .8}};
 
 const struct lookup_t TESLA_LOOKUP_MAX_ANGLE = {
   {2., 29., 38.},
