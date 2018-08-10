@@ -137,7 +137,9 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   if (addr == 0x370) {
     // if EPAS_eacStatus is not 1 or 2, disable control
     eac_status = ((to_push->RDHR >> 21)) & 0x7;
-    if ((controls_allowed == 1) && (eac_status != 1) && (eac_status != 2)) {
+    // For human steering override we must not disable controls when eac_status == 0
+    // Additional safety: we could only allow eac_status == 0 when we have human steerign allowed
+    if ((controls_allowed == 1) && (eac_status != 0) && (eac_status != 1) && (eac_status != 2)) {
       controls_allowed = 0;
       puts("EPAS error! \n");
     }

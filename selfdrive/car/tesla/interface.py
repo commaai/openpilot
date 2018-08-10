@@ -298,9 +298,15 @@ class CarInterface(object):
     else:
       self.can_invalid_count = 0
     if self.CS.steer_error:
-      events.append(create_event('steerUnavailable', [ET.NO_ENTRY, ET.WARNING]))
+      if self.CS.cstm_btns.get_button_status("steer") > 0:
+        customAlert.custom_alert_message("Manual Steering Enabled",CS,50)
+      else:
+        events.append(create_event('steerUnavailable', [ET.NO_ENTRY, ET.WARNING]))
     elif self.CS.steer_warning:
-      events.append(create_event('steerTempUnavailableMute', [ET.NO_ENTRY, ET.WARNING]))
+      if self.CS.cstm_btns.get_button_status("steer") > 0:
+        customAlert.custom_alert_message("Manual Steering Enabled",CS,50)
+      else:
+        events.append(create_event('steerTempUnavailableMute', [ET.NO_ENTRY, ET.WARNING]))
     if self.CS.brake_error:
       events.append(create_event('brakeUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
     if not ret.gearShifter == 'drive':

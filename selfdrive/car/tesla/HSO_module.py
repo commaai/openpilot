@@ -17,25 +17,20 @@ class HSOController(object):
         human_control = False
         
         if (CS.cstm_btns.get_button_status("steer") >0) and enabled:
-            #if steering but not by ALCA
-            if (CS.right_blinker_on or CS.left_blinker_on) and (self.CC.ALCA.laneChange_enabled <= 1):
-                self.frame_humanSteered = frame
-                customAlert.custom_alert_message("Manual Steering Enabled",CS,50)
-            if (CS.steer_override>0): 
-                self.frame_humanSteered = frame
-                customAlert.custom_alert_message("Manual Steering Enabled",CS,50)
-            else:
-                if (frame - self.frame_humanSteered < 50): # Need more human testing of handoff timing
-                    # Find steering difference between visiond model and human (no need to do every frame if we run out of CPU):
-                    steer_current=(CS.angle_steers)  # Formula to convert current steering angle to match apply_steer calculated number
-                    apply_steer = int(-actuators.steerAngle)
-                    angle = abs(apply_steer-steer_current)
-                    # If OP steering > 5 degrees different from human than count that as human still steering..
-                    # Tesla rack doesn't report accurate enough, i.e. lane switch we show no human steering when they
-                    # still are crossing road at an angle clearly they don't want OP to take over
-                    if angle > 50:
-                        self.frame_humanSteered = frame
-                        customAlert.custom_alert_message("Manual Steering Enabled",CS,50)
+            if (frame - self.frame_humanSteered < 50): # Need more human testing of handoff timing
+                # Find steering difference between visiond model and human (no need to do every frame if we run out of CPU):
+                steer_current=(CS.angle_steers)  # Formula to convert current steering angle to match apply_steer calculated number
+                apply_steer = int(-actuators.steerAngle)
+                angle = abs(apply_steer-steer_current)
+                # If OP steering > 5 degrees different from human than count that as human still steering..
+                # Tesla rack doesn't report accurate enough, i.e. lane switch we show no human steering when they
+                # still are crossing road at an angle clearly they don't want OP to take over
+                print "Angle: " + str(angle)
+                if angle > 50:
+# My code had CS..
+#           self.CS.frame_humanSteered = self.frame
+                    self.frame_humanSteered = frame
+                    customAlert.custom_alert_message("Manual Steering Enabled",CS,50)
         if enabled:
             if CS.cstm_btns.get_button_status("steer") > 0:
               if (frame - self.frame_humanSteered < 50):
