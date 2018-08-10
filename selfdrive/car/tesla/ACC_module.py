@@ -141,6 +141,7 @@ class ACCController(object):
     # pull.
     adaptive_cruise_prev = self.enable_adaptive_cruise
     curr_time_ms = _current_time_millis()
+    speed_uom = 1.
     if CS.imperial_speed_units:
       speed_uom = 1.609
     if (CS.cruise_buttons == CruiseButtons.MAIN and
