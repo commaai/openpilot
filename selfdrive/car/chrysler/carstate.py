@@ -83,7 +83,7 @@ class CarState(object):
     self.seatbelt = True  # TODO
 
     self.brake_pressed = cp.vl["BRAKE_2"]['BRAKE_PRESSED_2'] == 5 # human-only
-    self.pedal_gas = False  # TODO Disabled until we can find the message on Pacifica 2018
+    self.pedal_gas = 0  # TODO Disabled until we can find the message on Pacifica 2018
     # self.pedal_gas = cp.vl["ACCEL_PEDAL_MSG"]['ACCEL_PEDAL']
     self.car_gas = self.pedal_gas
     self.esp_disabled = False # cp.vl["ESP_CONTROL"]['TC_DISABLED']  # TODO
