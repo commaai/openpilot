@@ -245,8 +245,9 @@ class CarController(object):
         CS.DAS_objects_frm = (CS.DAS_objects_frm + 3) % 100
       # end of DAS emulation """
       idx = frame % 16 #(frame/send_step) % 16 
-      can_sends.append(teslacan.create_steering_control(enable_steer_control, apply_angle, idx))
-      can_sends.append(teslacan.create_epb_enable_signal(idx))
+      if not human_control:
+        can_sends.append(teslacan.create_steering_control(enable_steer_control, apply_angle, idx))
+        can_sends.append(teslacan.create_epb_enable_signal(idx))
       cruise_btn = None
       if self.ACC.enable_adaptive_cruise:
         cruise_btn = self.ACC.update_acc(enabled,CS,frame,actuators,pcm_speed)

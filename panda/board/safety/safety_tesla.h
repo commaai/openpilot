@@ -224,6 +224,12 @@ static int tesla_tx_hook(CAN_FIFOMailBox_TypeDef *to_send)
     angle_raw = ((to_send->RDLR & 0x7F) << 8) + ((to_send->RDLR & 0xFF00) >> 8);
     desired_angle = angle_raw * 0.1 - 1638.35;
     int16_t violation = 0;
+    int st_enabled = (to_send->RDLR & 0x400000) >> 22;
+
+    if (st_enabled == 0) {
+      //steering is not enabled, do not check angles and do not send
+      return false;
+    }
 
     if (controls_allowed)
     {
