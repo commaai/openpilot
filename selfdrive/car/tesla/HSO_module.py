@@ -19,10 +19,8 @@ class HSOController(object):
           #if steering but not by ALCA
           if (CS.right_blinker_on or CS.left_blinker_on) and (self.CC.ALCA.laneChange_enabled <= 1):
             self.frame_humanSteered = frame
-            customAlert.custom_alert_message("Manual Steering Enabled",CS,51)
           if (CS.steer_override > 0): 
             self.frame_humanSteered = frame
-            customAlert.custom_alert_message("Manual Steering Enabled",CS,51)
           else:
             if (frame - self.frame_humanSteered < 50): # Need more human testing of handoff timing
               # Find steering difference between visiond model and human (no need to do every frame if we run out of CPU):
@@ -31,7 +29,6 @@ class HSOController(object):
               angle = abs(apply_steer-steer_current)
               if angle > 5.:
                 self.frame_humanSteered = frame
-                customAlert.custom_alert_message("Manual Steering Enabled",CS,51)
         if enabled:
             if CS.cstm_btns.get_button_status("steer") > 0:
               if (frame - self.frame_humanSteered < 50):
