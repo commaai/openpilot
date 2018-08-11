@@ -296,7 +296,7 @@ class CarInterface(object):
         events.append(create_event('steerUnavailable', [ET.NO_ENTRY, ET.WARNING]))
     elif self.CS.steer_warning:
       if self.CS.cstm_btns.get_button_status("steer") == 0:
-        events.append(create_event('steerTempUnavailableMute', [ET.NO_ENTRY, ET.WARNING]))
+         events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     if self.CS.brake_error:
       events.append(create_event('brakeUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
     if not ret.gearShifter == 'drive':
