@@ -31,7 +31,7 @@ int16_t tesla_rt_angle_last = 0.; // last real time angle
 uint32_t tesla_ts_angle_last = 0;
 
 int tesla_controls_allowed_last = 0;
-int steer_allowed = 0;
+int steer_allowed = 1;
 
 int tesla_brake_prev = 0;
 int tesla_gas_prev = 0;
