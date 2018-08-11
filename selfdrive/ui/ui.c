@@ -962,7 +962,9 @@ static bool bb_handle_ui_touch(UIState *s, int touch_x, int touch_y) {
           }
         }
         oFile = open(out_status_file,O_WRONLY);
-        write(oFile,&temp_stats,6);
+        if (oFile != -1) {
+          write(oFile,&temp_stats,6);
+        }
         close(oFile);
         //done, return true
         return true;

@@ -12,11 +12,11 @@
 // 2m/s are added to be less restrictive
 const struct lookup_t TESLA_LOOKUP_ANGLE_RATE_UP = {
   {2., 7., 17.},
-  {5., .8, .15}};
+  {5., .8, .25}};
 
 const struct lookup_t TESLA_LOOKUP_ANGLE_RATE_DOWN = {
   {2., 7., 17.},
-  {5., 3.5, .4}};
+  {5., 3.5, .8}};
 
 const struct lookup_t TESLA_LOOKUP_MAX_ANGLE = {
   {2., 29., 38.},
@@ -263,6 +263,11 @@ static int tesla_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
       to_fwd->RDLR = to_fwd->RDLR & 0xFFFF;
       to_fwd->RDLR = to_fwd->RDLR + (checksum << 16);
       return 2;
+    }
+
+    // remove EPB_epasControl
+    if (addr == 0x214) {
+      return false;
     }
 
     return 2; // Custom EPAS bus
