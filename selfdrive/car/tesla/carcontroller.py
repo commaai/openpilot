@@ -247,7 +247,7 @@ class CarController(object):
       idx = frame % 16 #(frame/send_step) % 16 
       if not human_control:
         can_sends.append(teslacan.create_steering_control(enable_steer_control, apply_angle, idx))
-        can_sends.append(teslacan.create_epb_enable_signal(idx))
+      can_sends.append(teslacan.create_epb_enable_signal(idx))
       cruise_btn = None
       if self.ACC.enable_adaptive_cruise:
         cruise_btn = self.ACC.update_acc(enabled,CS,frame,actuators,pcm_speed)
