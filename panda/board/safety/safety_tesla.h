@@ -227,8 +227,9 @@ static int tesla_tx_hook(CAN_FIFOMailBox_TypeDef *to_send)
     int st_enabled = (to_send->RDLR & 0x400000) >> 22;
 
     if (st_enabled == 0) {
-      //steering is not enabled, do not check angles and do not send
-      return false;
+      //steering is not enabled, do not check angles and do send
+      tesla_desired_angle_last = desired_angle;
+      return true;
     }
 
     if (controls_allowed)

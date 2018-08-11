@@ -191,6 +191,9 @@ class CarController(object):
       angle_rate_lim = interp(CS.v_ego, ANGLE_DELTA_BP, ANGLE_DELTA_VU)
 
     apply_angle = clip(apply_angle, self.last_angle - angle_rate_lim, self.last_angle + angle_rate_lim)
+    #if human control send the steering angle as read at steering wheel
+    if human_control:
+      apply_angle = CS.angle_steers
     #if blinker is on send the actual angle
     #if (changing_lanes and (CS.laneChange_enabled < 2)):
     #  apply_angle = CS.angle_steers
@@ -245,8 +248,7 @@ class CarController(object):
         CS.DAS_objects_frm = (CS.DAS_objects_frm + 3) % 100
       # end of DAS emulation """
       idx = frame % 16 #(frame/send_step) % 16 
-      if not human_control:
-        can_sends.append(teslacan.create_steering_control(enable_steer_control, apply_angle, idx))
+      can_sends.append(teslacan.create_steering_control(enable_steer_control, apply_angle, idx))
       can_sends.append(teslacan.create_epb_enable_signal(idx))
       cruise_btn = None
       if self.ACC.enable_adaptive_cruise:
