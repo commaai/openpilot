@@ -317,7 +317,6 @@ class CarState(object):
     self.brake_switch = cp.vl["DI_torque2"]['DI_brakePedal']
     self.brake_pressed = cp.vl["DI_torque2"]['DI_brakePedal']
 
-    self.user_brake = cp.vl["DI_torque2"]['DI_brakePedal']
     self.standstill = cp.vl["DI_torque2"]['DI_vehicleSpeed'] == 0
     self.pcm_acc_status = cp.vl["DI_state"]['DI_cruiseState']
     self.imperial_speed_units = cp.vl["DI_state"]['DI_speedUnits'] == 0

@@ -208,7 +208,6 @@ class CarInterface(object):
       ret.gasPressed = self.CS.user_gas_pressed
 
     # brake pedal
-    ret.brake = self.CS.user_brake
     ret.brakePressed = self.CS.brake_pressed != 0
     # FIXME: read sendcan for brakelights
     brakelights_threshold = 0.1
@@ -286,11 +285,6 @@ class CarInterface(object):
     # TODO: I don't like the way capnp does enums
     # These strings aren't checked at compile time
     events = []
-    if self.CS.cstm_btns.get_button_status("brake")>0: #break not canceling when pressed
-      self.CS.cstm_btns.set_button_status("brake", 2 if ret.brake else 1)
-    else:
-      if ret.brake:
-        events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
     if not self.CS.can_valid:
       self.can_invalid_count += 1
       if self.can_invalid_count >= 5:
@@ -332,13 +326,17 @@ class CarInterface(object):
     if self.CP.enableCruise and ret.vEgo < self.CP.minEnableSpeed:
       events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
 
-    # disable on pedals rising edge or when brake is pressed and speed isn't zero
-    if (ret.gasPressed and not self.gas_pressed_prev) or \
-       (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001)):
-      events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
-      print "ret.gasPressed, self.gas_pressed_prev == " + str(ret.gasPressed) + "," + str(self.gas_pressed_prev)
-      print "ret.brakePressed, self.brake_pressed_prev, ret.vEgo == " + str(ret.brakePressed) + ", " + str(self.brake_pressed_prev) + ", " + str(Ret.vEgo)
-      #Note: This event is thrown for steering override (needs more refactoring)
+# Standard OP method to disengage:
+# disable on pedals rising edge or when brake is pressed and speed isn't zero
+#    if (ret.gasPressed and not self.gas_pressed_prev) or \
+#       (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001)):
+#      events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
+
+    if self.CS.cstm_btns.get_button_status("brake")>0: #break not canceling when pressed
+      self.CS.cstm_btns.set_button_status("brake", 2 if ret.brakePressed else 1)
+    else:
+      if ret.brakePressed:
+        events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
 
     if ret.gasPressed:
       events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
