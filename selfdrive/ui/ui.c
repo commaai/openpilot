@@ -5,6 +5,8 @@
 #include <assert.h>
 #include <sys/mman.h>
 #include <sys/resource.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include <cutils/properties.h>
 
@@ -89,6 +91,13 @@ const int alert_sizes[] = {
   [ALERTSIZE_FULL] = vwp_h,
 };
 
+typedef struct UICstmButton {
+  char btn_name[6];
+  char btn_label[6];
+  char btn_label2[11];
+} UICstmButton;
+
+
 typedef struct UIScene {
   int frontview;
 
@@ -143,7 +152,6 @@ typedef struct UIScene {
   // Used to display calibration progress
   int cal_status;
   int cal_perc;
-
   // Used to show gps planner status
   bool gps_planner_active;
 
@@ -159,7 +167,17 @@ typedef struct UIState {
   EGLSurface surface;
 
   NVGcontext *vg;
-
+  //BB
+  int custom_alert_playsound;
+  UICstmButton btns[6];
+  char btns_status[6];
+  char *car_model;
+  int btns_x[6];
+  int btns_y[6];
+  int btns_r[6];
+  time_t label_last_modified;
+  time_t status_last_modified;
+  //BB END
   int font_courbd;
   int font_sans_regular;
   int font_sans_semibold;
@@ -328,7 +346,11 @@ static void ui_init(UIState *s) {
 
   pthread_mutex_init(&s->lock, NULL);
   pthread_cond_init(&s->bg_cond, NULL);
-
+  //
+  s->status = STATUS_DISENGAGED;
+  s->car_model = "tesla";
+  s->label_last_modified = 0;
+  s->status_last_modified = 0;
   // init connections
 
   s->thermal_sock = zsock_new_sub(">tcp://127.0.0.1:8005", "");
@@ -368,6 +390,7 @@ static void ui_init(UIState *s) {
   s->plus_sock_raw = zsock_resolve(s->plus_sock);
 
   s->ipc_fd = -1;
+  s->custom_alert_playsound=0;
 
   // init display
   s->fb = framebuffer_init("ui", 0x00010000, true,
@@ -878,6 +901,7 @@ static void ui_draw_world(UIState *s) {
   }
 }
 
+
 //BB START: functions added for the display of various items
 static int bb_ui_draw_measure(UIState *s,  const char* bb_value, const char* bb_uom, const char* bb_label, 
 		int bb_x, int bb_y, int bb_uom_dx,
@@ -914,6 +938,231 @@ static int bb_ui_draw_measure(UIState *s,  const char* bb_value, const char* bb_
   }
   return (int)((bb_valueFontSize + bb_labelFontSize)*2.5) + 5;
 }
+
+static bool bb_handle_ui_touch(UIState *s, int touch_x, int touch_y) {
+  char *out_status_file = malloc(90);
+  sprintf(out_status_file,"/data/openpilot/selfdrive/car/%s/buttons.ui.msg",s->car_model);
+  char temp_stats[6];
+  int oFile;
+  for(int i=0; i<6; i++) {
+    if (s->btns_r[i] > 0) {
+      if ((abs(touch_x - s->btns_x[i]) < s->btns_r[i]) && (abs(touch_y - s->btns_y[i]) < s->btns_r[i])) {
+        //found it; change the status and write to file
+        if (s->btns_status[i] > 0) {
+          s->btns_status[i] = 0;
+        } else {
+          s->btns_status[i] = 1;
+        }
+        //now write to file
+        for (int j=0; j<6; j++) {
+          if (s->btns_status[j] ==0) {
+            temp_stats[j]='0';
+          } else {
+            temp_stats[j]='1';
+          }
+        }
+        oFile = open(out_status_file,O_WRONLY);
+        if (oFile != -1) {
+          write(oFile,&temp_stats,6);
+        }
+        close(oFile);
+        //done, return true
+        return true;
+      }
+    }
+  }
+  return false;
+};
+
+static int bb_get_button_status(UIState *s, char *btn_name) {
+  int ret_status = 0;
+  for (int i = 0; i< 6; i++) {
+    if (strcmp(s->btns[i].btn_name,btn_name)==0) {
+      ret_status = s->btns_status[i];
+    }
+  }
+  return ret_status;
+}
+
+static void bb_draw_button(UIState *s, int btn_id) {
+  const UIScene *scene = &s->scene;
+
+  int viz_button_x = 0;
+  const int viz_button_y = (box_y + (bdr_s*1.5)) + 20;
+  const int viz_button_w = 140;
+  const int viz_button_h = 140;
+
+  char *btn_text, *btn_text2;
+  
+  const int delta_x = viz_button_w * 1.1;
+  
+  if (btn_id >2) {
+    viz_button_x = scene->ui_viz_rx + scene->ui_viz_rw - (bdr_s*2) -190;
+    viz_button_x -= (6-btn_id) * delta_x ;
+  } else {
+    viz_button_x = scene->ui_viz_rx + (bdr_s*2) + 200;
+    viz_button_x +=  (btn_id) * delta_x;
+  }
+
+  btn_text = s->btns[btn_id].btn_label;
+  btn_text2 = s->btns[btn_id].btn_label2;
+  
+  if (strcmp(btn_text,"")==0) {
+    s->btns_r[btn_id] = 0;
+  } else {
+    s->btns_r[btn_id]= (int)((viz_button_w + viz_button_h)/4);
+  }
+  s->btns_x[btn_id]=viz_button_x + s->btns_r[btn_id];
+  s->btns_y[btn_id]=viz_button_y + s->btns_r[btn_id];
+  if (s->btns_r[btn_id] == 0) {
+    return;
+  }
+  
+  nvgBeginPath(s->vg);
+  nvgRoundedRect(s->vg, viz_button_x, viz_button_y, viz_button_w, viz_button_h, 80);
+  nvgStrokeWidth(s->vg, 12);
+
+  
+  if (s->btns_status[btn_id] ==0) {
+    //disabled - red
+    nvgStrokeColor(s->vg, nvgRGBA(255, 0, 0, 200));
+    if (strcmp(btn_text2,"")==0) {
+      btn_text2 = "Off";
+    }
+  } else
+  if (s->btns_status[btn_id] ==1) {
+    //enabled - white
+    nvgStrokeColor(s->vg, nvgRGBA(255,255,255,200));
+    nvgStrokeWidth(s->vg, 4);
+    if (strcmp(btn_text2,"")==0) {
+      btn_text2 = "Ready";
+    }
+  } else
+  if (s->btns_status[btn_id] ==2) {
+    //active - green
+    nvgStrokeColor(s->vg, nvgRGBA(28, 204,98,200));
+    if (strcmp(btn_text2,"")==0) {
+      btn_text2 = "Active";
+    }
+  } else
+  if (s->btns_status[btn_id] ==9) {
+    //available - thin white
+    nvgStrokeColor(s->vg, nvgRGBA(200,200,200,40));
+    nvgStrokeWidth(s->vg, 4);
+    if (strcmp(btn_text2,"")==0) {
+      btn_text2 = "";
+    }
+  } else {
+    //others - orange
+    nvgStrokeColor(s->vg, nvgRGBA(255, 188, 3, 200));
+    if (strcmp(btn_text2,"")==0) {
+      btn_text2 = "Alert";
+    }
+  }
+
+  nvgStroke(s->vg);
+
+  nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
+  nvgFontFace(s->vg, "sans-regular");
+  nvgFontSize(s->vg, 14*2.5);
+  nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 200));
+  nvgText(s->vg, viz_button_x+viz_button_w/2, 210, btn_text2, NULL);
+
+  nvgFontFace(s->vg, "sans-semibold");
+  nvgFontSize(s->vg, 28*2.5);
+  nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 255));
+  nvgText(s->vg, viz_button_x+viz_button_w/2, 183, btn_text, NULL);
+}
+
+static void bb_draw_buttons(UIState *s) {
+  const UIScene *scene = &s->scene;
+  char *labels_file = malloc(90);
+  char *in_status_file = malloc(90);
+  
+  sprintf(labels_file,"/data/openpilot/selfdrive/car/%s/buttons.msg",s->car_model);
+  sprintf(in_status_file,"/data/openpilot/selfdrive/car/%s/buttons.cc.msg",s->car_model);
+  
+  int lFile;
+  int sFile;
+  char temp_stats[6];
+  struct stat filestat;
+  int file_status;
+  bool changes_present;
+
+  changes_present = false;
+  file_status = stat(labels_file, &filestat);
+  //read only if modified after last read
+  if ((filestat.st_mtime > s->label_last_modified) || (s->label_last_modified ==0)) {
+    lFile = open (labels_file, O_RDONLY);
+    if (lFile != -1) {
+      int rd = read(lFile, &(s->btns), 6*sizeof(struct UICstmButton));
+      close(lFile);
+      s->label_last_modified = filestat.st_mtime;
+      changes_present = true;
+    }
+  }
+  file_status = stat(in_status_file, &filestat);
+  //read only if modified after last read
+  if ((filestat.st_mtime > s->status_last_modified) || (s->status_last_modified ==0)) {
+    sFile = open(in_status_file, O_RDONLY);
+    if (sFile != -1) {
+      int rd = read(sFile, &(temp_stats),6*sizeof(char));
+      if (rd == 6) {
+        for (int i = 0; i < 6; i++) {
+          s->btns_status[i] = temp_stats[i]-'0';
+        }
+      }
+      close(sFile);
+      s->status_last_modified = filestat.st_mtime;
+      changes_present = true;
+    }
+  }
+  for (int i = 0; i < 6; i++) {
+    bb_draw_button(s,i);
+  }
+}
+
+static void bb_ui_draw_custom_alert(UIState *s) {
+  const UIScene *scene = &s->scene;
+  char *filepath = malloc(90);
+  sprintf(filepath,"/data/openpilot/selfdrive/car/%s/alert.msg",s->car_model);
+  //get 3-state switch position
+  int alert_msg_fd;
+  char alert_msg[1000];
+  if (strlen(s->scene.alert_text1) > 0) {
+    //already a system alert, ignore ours
+    return;
+  }
+  alert_msg_fd = open (filepath, O_RDONLY);
+  //if we can't open then done
+  if (alert_msg_fd == -1) {
+    s->custom_alert_playsound = 0;
+    return;
+  } else {
+    int rd = read(alert_msg_fd, &(s->scene.alert_text1), 1000);
+    if ((rd > 1) && (s->scene.alert_text1[rd-1] == '^')) {
+      //^ as last character means warning
+      if (s->custom_alert_playsound==0) {
+        //sound never played, request sound
+        s->custom_alert_playsound=1;
+      }
+      //update_status(s,3); //ALERT_WARNINGa
+      s->status = 3; //ALERT_WARNING
+      rd --;
+    }
+    s->scene.alert_text1[rd] = '\0';
+    close(alert_msg_fd);
+    if (strlen(s->scene.alert_text1) > 0) {
+      s->scene.alert_size = ALERTSIZE_SMALL;
+    } else {
+      s->scene.alert_size = ALERTSIZE_NONE;
+      s->scene.alert_text1[0]=0;
+      s->custom_alert_playsound = 0;
+    }
+  }
+}
+
+
 
 static void bb_ui_draw_measures_left(UIState *s, int bb_x, int bb_y, int bb_w ) {
 	const UIScene *scene = &s->scene;		
@@ -1236,6 +1485,7 @@ static void bb_ui_draw_UI(UIState *s) {
 	tri_state_switch = buffer[0] -48;
 	close(tri_state_fd);
   }
+  
   if (tri_state_switch == 1) {
 	  const UIScene *scene = &s->scene;
 	  const int bb_dml_w = 180;
@@ -1245,9 +1495,13 @@ static void bb_ui_draw_UI(UIState *s) {
 	  const int bb_dmr_w = 180;
 	  const int bb_dmr_x = scene->ui_viz_rx + scene->ui_viz_rw - bb_dmr_w - (bdr_s*2) ; 
 	  const int bb_dmr_y = (box_y + (bdr_s*1.5))+220;
-
 	 bb_ui_draw_measures_left(s,bb_dml_x, bb_dml_y, bb_dml_w );
 	 bb_ui_draw_measures_right(s,bb_dmr_x, bb_dmr_y, bb_dmr_w );
+   bb_draw_buttons(s);
+   bb_ui_draw_custom_alert(s);
+	 }
+   if (tri_state_switch ==2) {
+	 	bb_ui_draw_custom_alert(s);
 	 }
 	 if (tri_state_switch ==3) {
 	 	ui_draw_vision_grid(s);
@@ -1257,6 +1511,26 @@ static void bb_ui_draw_UI(UIState *s) {
  
 //BB END: functions added for the display of various items
 
+static void update_status(UIState *s, int status) {
+  int old_status = s->status;
+  if (s->status != status) {
+    s->status = status;
+    // wake up bg thread to change
+    pthread_cond_signal(&s->bg_cond);
+    //if tesla call the sound command
+    if ((status ==3 ) && (s->custom_alert_playsound > 0)) {
+      return;
+    }
+    char* snd_command;
+    if ((status ==3 ) && (s->custom_alert_playsound == 1)) {
+      s->custom_alert_playsound = 2;
+    }
+    if ((bb_get_button_status(s,"sound") > 0) && ((old_status != STATUS_STOPPED) || (s->status != STATUS_DISENGAGED))) {
+      asprintf(&snd_command, "python /data/openpilot/selfdrive/car/%s/snd/playsound.py %d &",s->car_model, status);
+      system(snd_command);
+    }
+  }
+}
 
 static void ui_draw_vision_maxspeed(UIState *s) {
   const UIScene *scene = &s->scene;
@@ -1574,18 +1848,6 @@ static ModelData read_model(cereal_ModelData_ptr modelp) {
   };
 
   return d;
-}
-
-static void update_status(UIState *s, int status) {
-  if (s->status != status) {
-    s->status = status;
-    // wake up bg thread to change
-    pthread_cond_signal(&s->bg_cond);
-    //if tesla call the sound command
-    char* snd_command;
-    asprintf(&snd_command, "python /data/openpilot/selfdrive/car/tesla/snd/playsound.py %d &", status);
-    system(snd_command);
-  }
 }
 
 static void ui_update(UIState *s) {
@@ -2216,6 +2478,8 @@ int main() {
     if (touched == 1) {
       // touch event will still happen :(
       set_awake(s, true);
+      // BB check touch area
+      bb_handle_ui_touch(s,touch_x,touch_y);
     }
 
     // manage wakefulness

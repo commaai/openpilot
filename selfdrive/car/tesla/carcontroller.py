@@ -7,18 +7,25 @@ from collections import namedtuple
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.controls.lib.drive_helpers import rate_limit
 from common.numpy_fast import clip, interp
+import numpy as np
+import math as mth
+from common.realtime import sec_since_boot
 from selfdrive.car.tesla import teslacan
 from selfdrive.car.tesla.values import AH, CruiseButtons, CAR
 from selfdrive.can.packer import CANPacker
 from selfdrive.config import Conversions as CV
-
+import custom_alert as tcm
+from ALCA_module import ALCAController
+from ACC_module import ACCController
+from PCC_module import PCCController
+from HSO_module import HSOController
 # Steer angle limits
 ANGLE_MAX_BP = [0., 27., 36.]
 ANGLE_MAX_V = [410., 92., 36.]
 
 ANGLE_DELTA_BP = [0., 5., 15.]
-ANGLE_DELTA_V = [5., .8, .15]     # windup limit
-ANGLE_DELTA_VU = [5., 3.5, 0.4]   # unwind limit
+ANGLE_DELTA_V = [5., .8, .25]     # windup limit
+ANGLE_DELTA_VU = [5., 3.5, 0.8]   # unwind limit
 
 def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
   # hyst params... TODO: move these to VehicleParams
@@ -73,7 +80,12 @@ class CarController(object):
     self.enable_camera = enable_camera
     self.packer = CANPacker(dbc_name)
     self.epas_disabled = True
-    self.last_angle = 0.
+    self.last_angle = 0
+    self.ALCA = ALCAController(self,True,True)  # Enabled and SteerByAngle both True
+    self.ACC = ACCController(self)
+    self.PCC = PCCController(self)
+    self.HSO = HSOController(self)
+
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
              pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel, \
@@ -137,10 +149,39 @@ class CarController(object):
     # Basic highway lane change logic
     changing_lanes = CS.right_blinker_on or CS.left_blinker_on
 
-    enable_steer_control = (enabled and not changing_lanes)
+    #countdown for custom message timer
+    tcm.update_custom_alert(CS)
+    #end countdown for custom
+
+    #update statuses for custom buttons every 0.1 sec
+    if (frame % 10 == 0):
+      CS.cstm_btns.read_buttons_in_file()
+      CS.cstm_btns.write_buttons_out_file()
+      self.ALCA.update_status(True if CS.cstm_btns.get_button_status("alca") > 0 else False)
+      #print CS.cstm_btns.get_button_status("alca")
+
+    #update ACC module info
+    self.ACC.update_stat(CS, True)
+    #update PCC module info
+    self.PCC.update_stat(CS, True)
+    #update HSO module info
+    human_control = False
+
+    #update CS.v_cruise_pcm based on module selected
+    if self.ACC.enable_adaptive_cruise:
+      CS.v_cruise_pcm = self.ACC.acc_speed_kph
+    elif self.PCC.enable_pedal_cruise:
+      CS.v_cruise_pcm = self.PCC.pedal_speed_kph
+    else:
+      CS.v_cruise_pcm = CS.v_cruise_actual
+    #get the angle from ALCA
+    alca_enabled = False
+    turn_signal_needed = 0
+    apply_angle,alca_enabled,turn_signal_needed = self.ALCA.update(enabled,CS,frame,actuators)
+    apply_angle = -apply_angle #Tesla is reversed vs OP
+    human_control = self.HSO.update_stat(CS,enabled,actuators,frame)
+    enable_steer_control = (enabled and ((not changing_lanes) or alca_enabled) and not human_control)
     
-    # Angle
-    apply_angle = -actuators.steerAngle
     angle_lim = interp(CS.v_ego, ANGLE_MAX_BP, ANGLE_MAX_V)
     apply_angle = clip(apply_angle, -angle_lim, angle_lim)
     # windup slower
@@ -150,16 +191,73 @@ class CarController(object):
       angle_rate_lim = interp(CS.v_ego, ANGLE_DELTA_BP, ANGLE_DELTA_VU)
 
     apply_angle = clip(apply_angle, self.last_angle - angle_rate_lim, self.last_angle + angle_rate_lim)
-    #if blinker is on send the actual angle
-    if (changing_lanes):
+    #if human control send the steering angle as read at steering wheel
+    if human_control:
       apply_angle = CS.angle_steers
+    #if blinker is on send the actual angle
+    #if (changing_lanes and (CS.laneChange_enabled < 2)):
+    #  apply_angle = CS.angle_steers
     # Send CAN commands.
     can_sends = []
     send_step = 5
 
     if  (True): #(frame % send_step) == 0:
+      """#first we emulate DAS
+      if (CS.DAS_info_frm == -1):
+        #initialize all frames
+        CS.DAS_info_frm = frame # 1.00 s interval
+        CS.DAS_status_frm = (frame + 10) % 100 # 0.50 s interval
+        CS.DAS_status2_frm = (frame + 35) % 100 # 0.50 s interval in between DAS_status
+        CS.DAS_bodyControls_frm = (frame + 40) % 100 # 0.50 s interval
+        CS.DAS_lanes_frm = (frame + 5) % 100 # 0.10 s interval 
+        CS.DAS_objects_frm = (frame + 2) % 100 # 0.03 s interval
+        CS.DAS_pscControl_frm = (frame + 3) % 100 # 0.04 s interval
+      if (CS.DAS_info_frm == frame):
+        can_sends.append(teslacan.create_DAS_info_msg(CS.DAS_info_msg))
+        CS.DAS_info_msg += 1
+        CS.DAS_info_msg = CS.DAS_info_msg % 10
+      if (CS.DAS_status_frm == frame):
+        can_sends.append(teslacan.create_DAS_status_msg(CS.DAS_status_idx))
+        CS.DAS_status_idx += 1
+        CS.DAS_status_idx = CS.DAS_status_idx % 16
+        CS.DAS_status_frm = (CS.DAS_status_frm + 50) % 100
+      if (CS.DAS_status2_frm == frame):
+        can_sends.append(teslacan.create_DAS_status2_msg(CS.DAS_status2_idx))
+        CS.DAS_status2_idx += 1
+        CS.DAS_status2_idx = CS.DAS_status2_idx % 16
+        CS.DAS_status2_frm = (CS.DAS_status2_frm + 50) % 100
+      if (CS.DAS_bodyControls_frm == frame):
+        can_sends.append(teslacan.create_DAS_bodyControls_msg(CS.DAS_bodyControls_idx))
+        CS.DAS_bodyControls_idx += 1
+        CS.DAS_bodyControls_idx = CS.DAS_bodyControls_idx % 16
+        CS.DAS_bodyControls_frm = (CS.DAS_bodyControls_frm + 50) % 100
+      if (CS.DAS_lanes_frm == frame):
+        can_sends.append(teslacan.create_DAS_lanes_msg(CS.DAS_lanes_idx))
+        CS.DAS_lanes_idx += 1
+        CS.DAS_lanes_idx = CS.DAS_lanes_idx % 16
+        CS.DAS_lanes_frm = (CS.DAS_lanes_frm + 10) % 100
+      if (CS.DAS_pscControl_frm == frame):
+        can_sends.append(teslacan.create_DAS_pscControl_msg(CS.DAS_pscControl_idx))
+        CS.DAS_pscControl_idx += 1
+        CS.DAS_pscControl_idx = CS.DAS_pscControl_idx % 16
+        CS.DAS_pscControl_frm = (CS.DAS_pscControl_frm + 4) % 100
+      if (CS.DAS_objects_frm == frame):
+        can_sends.append(teslacan.create_DAS_objects_msg(CS.DAS_objects_idx))
+        CS.DAS_objects_idx += 1
+        CS.DAS_objects_idx = CS.DAS_objects_idx % 16
+        CS.DAS_objects_frm = (CS.DAS_objects_frm + 3) % 100
+      # end of DAS emulation """
       idx = frame % 16 #(frame/send_step) % 16 
       can_sends.append(teslacan.create_steering_control(enable_steer_control, apply_angle, idx))
       can_sends.append(teslacan.create_epb_enable_signal(idx))
+      cruise_btn = None
+      if self.ACC.enable_adaptive_cruise:
+        cruise_btn = self.ACC.update_acc(enabled,CS,frame,actuators,pcm_speed)
+      if cruise_btn:
+        cruise_msg = teslacan.create_cruise_adjust_msg(cruise_btn,-1,CS.steering_wheel_stalk)
+        can_sends.insert(0, cruise_msg)
+      elif (turn_signal_needed > 0) and (frame % 2 == 0):
+        cruise_msg = teslacan.create_cruise_adjust_msg(-1,turn_signal_needed,CS.steering_wheel_stalk)
+        can_sends.insert(0, cruise_msg)
       self.last_angle = apply_angle
       sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())

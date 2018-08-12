@@ -208,8 +208,7 @@ class CarInterface(object):
       ret.gasPressed = self.CS.user_gas_pressed
 
     # brake pedal
-    ret.brake = self.CS.user_brake
-    ret.brakePressed = self.CS.brake_pressed != 0
+    ret.brakePressed = (self.CS.brake_pressed != 0) and (self.CS.cstm_btns.get_button_status("brake") == 0)
     # FIXME: read sendcan for brakelights
     brakelights_threshold = 0.1
     ret.brakeLights = bool(self.CS.brake_switch or
@@ -277,13 +276,8 @@ class CarInterface(object):
       be.type = 'unknown'
       if self.CS.cruise_setting != 0:
         be.pressed = True
-        but = self.CS.cruise_setting
       else:
         be.pressed = False
-        but = self.CS.prev_cruise_setting
-      #if but == 1:
-      #  be.type = 'altButton1'
-      # TODO: more buttons?
       buttonEvents.append(be)
     ret.buttonEvents = buttonEvents
 
@@ -298,9 +292,11 @@ class CarInterface(object):
     else:
       self.can_invalid_count = 0
     if self.CS.steer_error:
-      events.append(create_event('steerUnavailable', [ET.NO_ENTRY, ET.WARNING]))
+      if self.CS.cstm_btns.get_button_status("steer") == 0:
+        events.append(create_event('steerUnavailable', [ET.NO_ENTRY, ET.WARNING]))
     elif self.CS.steer_warning:
-      events.append(create_event('steerTempUnavailableMute', [ET.NO_ENTRY, ET.WARNING]))
+      if self.CS.cstm_btns.get_button_status("steer") == 0:
+         events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     if self.CS.brake_error:
       events.append(create_event('brakeUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
     if not ret.gearShifter == 'drive':
@@ -324,11 +320,17 @@ class CarInterface(object):
     if self.CP.enableCruise and ret.vEgo < self.CP.minEnableSpeed:
       events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
 
-    # disable on pedals rising edge or when brake is pressed and speed isn't zero
-    if (ret.gasPressed and not self.gas_pressed_prev) or \
-       (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001)):
-      events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
-      #Note: This event is thrown for steering override (needs more refactoring)
+# Standard OP method to disengage:
+# disable on pedals rising edge or when brake is pressed and speed isn't zero
+#    if (ret.gasPressed and not self.gas_pressed_prev) or \
+#       (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001)):
+#      events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
+
+    if self.CS.cstm_btns.get_button_status("brake")>0: #break not canceling when pressed
+      self.CS.cstm_btns.set_button_status("brake", 2 if ret.brakePressed else 1)
+    else:
+      if ret.brakePressed:
+        events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
 
     if ret.gasPressed:
       events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))

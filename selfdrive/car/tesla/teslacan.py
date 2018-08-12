@@ -69,39 +69,140 @@ def create_das_status_msg(autopilotState,idx):
   struct.pack_into('B', msg, msg_len-1, add_tesla_checksum(msg_id,msg))
   return [msg_id, 0, msg.raw, 0]
 
-def create_cruise_adjust_msg(spdCtrlLvr_stat, idx, lastStalkMsg):
+def create_DAS_info_msg(mid):
+  msg_id = 0x539
+  msg_len = 8
+  msg = create_string_buffer(msg_len)
+  if (mid == 0):
+    struct.pack_into('BBBBBBBB', msg, 0, 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00)
+  elif (mid == 1):
+    struct.pack_into('BBBBBBBB', msg, 0, 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00)
+  elif (mid == 2):
+    struct.pack_into('BBBBBBBB', msg, 0, 0x0a,0x01,0x11,0x00,0x00,0x00,0x8b,0x00)
+  elif (mid == 3):
+    struct.pack_into('BBBBBBBB', msg, 0, 0x0b,0x00,0x07,0x01,0x01,0x00,0x00,0x00)
+  elif (mid == 4):
+    struct.pack_into('BBBBBBBB', msg, 0, 0x0d,0x00,0x00,0x00,0xa8,0x6a,0xbd,0xc9)
+  elif (mid == 5):
+    struct.pack_into('BBBBBBBB', msg, 0, 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00)
+  elif (mid == 6):
+    struct.pack_into('BBBBBBBB', msg, 0, 0x11,0x00,0x00,0x00,0x00,0x00,0x00,0x00)
+  elif (mid == 7):
+    struct.pack_into('BBBBBBBB', msg, 0, 0x12,0xca,0x0a,0x51,0x21,0xf4,0x38,0xd3)
+  elif (mid == 8):
+    struct.pack_into('BBBBBBBB', msg, 0, 0x13,0x01,0xff,0xff,0xff,0xfc,0x00,0x00)
+  else:
+    struct.pack_into('BBBBBBBB', msg, 0, 0x14,0x05,0x00,0x00,0x91,0x53,0x86,0x6a)
+  return [msg_id, 0, msg.raw, 0]
+
+
+def create_DAS_status_msg(idx):
+  msg_id = 0x399
+  msg_len = 8
+  msg = create_string_buffer(msg_len)
+  struct.pack_into('BBBBBBB', msg, 0, 0x03,0x0b,0x20,0x00,0x08,0x08,(idx << 4) + 8)
+  struct.pack_into('B', msg, msg_len-1, add_tesla_checksum(msg_id,msg))
+  return [msg_id, 0, msg.raw, 0]
+
+def create_DAS_status2_msg(idx):
+  msg_id = 0x389
+  msg_len = 8
+  msg = create_string_buffer(msg_len)
+  struct.pack_into('BBBBBBB', msg, 0, 0xff,0x03,0x44,0x04,0x00,0x80,(idx << 4) )
+  struct.pack_into('B', msg, msg_len-1, add_tesla_checksum(msg_id,msg))
+  return [msg_id, 0, msg.raw, 0]
+
+def create_DAS_bodyControls_msg(idx):
+  msg_id = 0x3E9
+  msg_len = 8
+  msg = create_string_buffer(msg_len)
+  struct.pack_into('BBBBBBB', msg, 0, 0xf1,0x0c,0x00,0x00,0x00,0x00,(idx << 4) )
+  struct.pack_into('B', msg, msg_len-1, add_tesla_checksum(msg_id,msg))
+  return [msg_id, 0, msg.raw, 0]
+
+def create_DAS_pscControl_msg(idx):
+  msg_id = 0x219
+  msg_len = 8
+  msg = create_string_buffer(msg_len)
+  struct.pack_into('BBBBBBBB', msg, 0, 0x90 + idx,0x00,0x00,0x00,0x00,0x00,0x00,0x00 )
+  struct.pack_into('B', msg, 2, add_tesla_checksum(msg_id,msg))
+  return [msg_id, 0, msg.raw, 0]
+
+def create_DAS_lanes_msg(idx):
+  msg_id = 0x239
+  msg_len = 8
+  msg = create_string_buffer(msg_len)
+  struct.pack_into('BBBBBBBB', msg, 0, 0x62,0x28,0x62,0x7b,0x65,0x7d,0x30,0x2c)
+  return [msg_id, 0, msg.raw, 0]
+
+def create_DAS_objects_msg(idx):
+  msg_id = 0x309
+  msg_len = 8
+  msg = create_string_buffer(msg_len)
+  struct.pack_into('BBBBBBBB', msg, 0, 0x01,0xff,0xff,0xff,0x83,0xff,0xff,0x03)
+  return [msg_id, 0, msg.raw, 0]
+
+
+def create_cruise_adjust_msg(spdCtrlLvr_stat, turnIndLvr_Stat, real_steering_wheel_stalk):
   """Creates a CAN message from the cruise control stalk.
-
-  Simluates pressing the cruise control stalk (STW_ACTN_RQ.SpdCtrlLvr_Stat
-
+  Simluates pressing the cruise control stalk (STW_ACTN_RQ.SpdCtrlLvr_Stat) 
+  and turn signal stalk (STW_ACTN_RQ.TurnIndLvr_Stat)
   It is probably best not to flood these messages so that the real
   stalk works normally.
-
   Args:
     spdCtrlLvr_stat: Int value of dbc entry STW_ACTN_RQ.SpdCtrlLvr_Stat
+      (allowing us to simulate pressing the cruise stalk up or down)
+      -1 means no change
+    TurnIndLvr_Stat: Int value of dbc entry STW_ACTN_RQ.TurnIndLvr_Stat
+      (allowing us to simulate pressing the turn signal up or down)
+      -1 means no change
+    real_steering_wheel_stalk: Previous STW_ACTN_RQ message sent by the real
+      stalk. When sending these artifical messages for cruise control, we want
+      to mimic whatever windshield wiper and highbeam settings the car is
+      currently sending.
+    
   """
   msg_id = 0x045  # 69 in hex, STW_ACTN_RQ
   msg_len = 8
   msg = create_string_buffer(msg_len)
-  if ( True ): #(len(lastStalkMsg) == 0):
-    b0 = (spdCtrlLvr_stat << 2) & 0xFF
-    b1 = 0xFF
-    b2 = 0x00
-    b3 = 0x00
-    b4 = 0x00
-    b5 = 0x00
-    b6 = 0x02 + (idx << 4)
-  else:
-    #b0 = ( ord(lastStalkMsg[0]) & 0xC0 ) + spdCtrlLvr_stat
-    b0 = ( ord(lastStalkMsg[0]) & 0x80 ) + ( 1 << 6 ) + spdCtrlLvr_stat
-    b1 = ord(lastStalkMsg[1])
-    b2 = ord(lastStalkMsg[2])
-    b3 = ord(lastStalkMsg[3])
-    b4 = ord(lastStalkMsg[4])
-    b5 = ord(lastStalkMsg[5])
-    idx = ((((ord(lastStalkMsg[6]) & 0xF0) >> 4) + 1 ) & 0x0F)
-    b6 = ord(lastStalkMsg[6]) & 0x0F + (idx << 4)
-  struct.pack_into('BBBBBBB', msg, 0, b0, b1, b2, b3, b4, b5, b6)
-  struct.pack_into('B', msg, msg_len-1, add_tesla_crc(msg,7))
+  # Do not send messages that conflict with the driver's actual actions on the
+  # steering wheel stalk. To ensure this, copy all the fields you can from the
+  # real cruise stalk message.
+  fake_stalk = real_steering_wheel_stalk.copy()
+
+  if spdCtrlLvr_stat > -1:
+    # if accelerating, override VSL_Enbl_Rq to 1.
+    if spdCtrlLvr_stat in [4, 16]:
+      fake_stalk['VSL_Enbl_Rq'] = 1
+    fake_stalk['SpdCtrlLvr_Stat'] = spdCtrlLvr_stat
+    # message count should be 1 more than the previous (and loop after 16)
+  if turnIndLvr_Stat > -1:
+    fake_stalk['TurnIndLvr_Stat'] = turnIndLvr_Stat
+  fake_stalk['MC_STW_ACTN_RQ'] = (int(round(fake_stalk['MC_STW_ACTN_RQ'])) + 1) % 16
+  # CRC should initially be 0 before a new one is calculated.
+  fake_stalk['CRC_STW_ACTN_RQ'] = 0
+  
+  # Set the first byte, containing cruise control
+  struct.pack_into('B', msg, 0,
+                   (fake_stalk['SpdCtrlLvr_Stat']) +
+                   (int(round(fake_stalk['VSL_Enbl_Rq'])) << 6))
+  # Set the 2nd byte, containing DTR_Dist_Rq
+  struct.pack_into('B', msg, 1,  fake_stalk['DTR_Dist_Rq'])
+  # Set the 3rd byte, containing turn indicator, highbeams, and wiper wash
+  struct.pack_into('B', msg, 2,
+                   int(round(fake_stalk['TurnIndLvr_Stat'])) +
+                   (int(round(fake_stalk['HiBmLvr_Stat'])) << 2) +
+                   (int(round(fake_stalk['WprWashSw_Psd'])) << 4) +
+                   (int(round(fake_stalk['WprWash_R_Sw_Posn_V2'])) << 6)
+                  )
+  # Set the 7th byte, containing the wipers and message counter.
+  struct.pack_into('B', msg, 6,
+                   int(round(fake_stalk['WprSw6Posn'])) +
+                   (fake_stalk['MC_STW_ACTN_RQ'] << 4))
+  
+  # Finally, set the CRC for the message. Must be calculated last!
+  fake_stalk['CRC_STW_ACTN_RQ'] = add_tesla_crc(msg=msg, msg_len=7)
+  struct.pack_into('B', msg, msg_len-1, fake_stalk['CRC_STW_ACTN_RQ'])
+
   return [msg_id, 0, msg.raw, 0]
 

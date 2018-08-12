@@ -2,10 +2,11 @@ from common.numpy_fast import interp
 from common.kalman.simple_kalman import KF1D
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
-from selfdrive.car.tesla.values import CAR, DBC
+from selfdrive.car.tesla.values import CAR, CruiseButtons, DBC
+from uibuttons import UIButtons,UIButton
 import numpy as np
 from ctypes import create_string_buffer
-
+ 
 def parse_gear_shifter(can_gear_shifter, car_fingerprint):
 
   # TODO: Use VAL from DBC to parse this field
@@ -21,6 +22,7 @@ def parse_gear_shifter(can_gear_shifter, car_fingerprint):
       return "drive"
 
   return "unknown"
+
 
 
 def calc_cruise_offset(offset, speed):
@@ -69,15 +71,43 @@ def get_can_signals(CP):
       ("DI_stateCounter", "DI_state", 0),
       ("GTW_driverPresent", "GTW_status", 0),
       ("DI_brakePedal", "DI_torque2", 0),
-      ("SpdCtrlLvr_Stat", "STW_ACTN_RQ", 0),
       ("DI_cruiseSet", "DI_state", 0),
       ("DI_cruiseState", "DI_state", 0),
-      ("VSL_Enbl_Rq", "STW_ACTN_RQ", 0), # Used in interface.py
-      ("TSL_RND_Posn_StW","SBW_RQ_SCCM" , 0),
       ("TSL_P_Psd_StW","SBW_RQ_SCCM" , 0),
-      ("TurnIndLvr_Stat", "STW_ACTN_RQ", 0),
       ("DI_motorRPM", "DI_torque1", 0),
       ("DI_speedUnits", "DI_state", 0),
+      # Steering wheel stalk signals (useful for managing cruise control)
+      ("SpdCtrlLvr_Stat", "STW_ACTN_RQ", 0),
+      ("VSL_Enbl_Rq", "STW_ACTN_RQ", 0),
+      ("SpdCtrlLvrStat_Inv", "STW_ACTN_RQ", 0),
+      ("DTR_Dist_Rq", "STW_ACTN_RQ", 0),
+      ("TurnIndLvr_Stat", "STW_ACTN_RQ", 0),
+      ("HiBmLvr_Stat", "STW_ACTN_RQ", 0),
+      ("WprWashSw_Psd", "STW_ACTN_RQ", 0),
+      ("WprWash_R_Sw_Posn_V2", "STW_ACTN_RQ", 0),
+      ("StW_Lvr_Stat", "STW_ACTN_RQ", 0),
+      ("StW_Cond_Flt", "STW_ACTN_RQ", 0),
+      ("StW_Cond_Psd", "STW_ACTN_RQ", 0),
+      ("HrnSw_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw00_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw01_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw02_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw03_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw04_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw05_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw06_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw07_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw08_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw09_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw10_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw11_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw12_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw13_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw14_Psd", "STW_ACTN_RQ", 0),
+      ("StW_Sw15_Psd", "STW_ACTN_RQ", 0),
+      ("WprSw6Posn", "STW_ACTN_RQ", 0),
+      ("MC_STW_ACTN_RQ", "STW_ACTN_RQ", 0),
+      ("CRC_STW_ACTN_RQ", "STW_ACTN_RQ", 0),
       
   ]
 
@@ -127,6 +157,8 @@ def get_epas_parser(CP):
 class CarState(object):
   def __init__(self, CP):
     self.brake_only = CP.enableCruise
+    self.enable_adaptive_cruise = False
+    self.last_cruise_stalk_pull_time = 0
     self.CP = CP
 
     self.user_gas, self.user_gas_pressed = 0., 0
@@ -144,6 +176,38 @@ class CarState(object):
     self.stopped = 0
     self.frame_humanSteered = 0    # Last frame human steered
 
+    # variables used for the fake DAS creation
+    self.DAS_info_frm = -1
+    self.DAS_info_msg = 0
+    self.DAS_status_frm = 0
+    self.DAS_status_idx = 0
+    self.DAS_status2_frm = 0
+    self.DAS_status2_idx = 0
+    self.DAS_bodyControls_frm = 0
+    self.DAS_bodyControls_idx = 0
+    self.DAS_lanes_frm = 0
+    self.DAS_lanes_idx = 0
+    self.DAS_objects_frm = 0
+    self.DAS_objects_idx = 0
+    self.DAS_pscControl_frm = 0
+    self.DAS_pscControl_idx = 0
+
+    #variables for pedal CC
+    self.pedal_speed_kph = 0.
+    self.pedal_enabled = 0
+
+    #variable for custom buttons
+    self.cstm_btns = UIButtons()
+
+    #custom message counter
+    self.custom_alert_counter = -1 #set to 100 for 1 second display; carcontroller will take down to zero
+
+    #steering_wheel_stalk last position, used by ACC and ALCA
+    self.steering_wheel_stalk = None
+
+    #variables used by ACC
+    
+     
     # vEgo kalman filter
     dt = 0.01
     # Q = np.matrix([[10.0, 0.0], [0.0, 100.0]])
@@ -153,6 +217,14 @@ class CarState(object):
                          C=np.matrix([1.0, 0.0]),
                          K=np.matrix([[0.12287673], [0.29666309]]))
     self.v_ego = 0.0
+
+    self.imperial_speed_units = True
+
+    # The current max allowed cruise speed. Actual cruise speed sent to the car
+    # may be lower, depending on traffic.
+    self.v_cruise_pcm = 0.0
+    # Actual cruise speed currently active on the car.
+    self.v_cruise_actual = 0.0
 
   def update(self, cp, epas_cp):
 
@@ -171,6 +243,13 @@ class CarState(object):
     self.prev_left_blinker_on = self.left_blinker_on
     self.prev_right_blinker_on = self.right_blinker_on
 
+    self.steering_wheel_stalk = cp.vl["STW_ACTN_RQ"]
+    self.cruise_setting = cp.vl["STW_ACTN_RQ"]['SpdCtrlLvr_Stat']
+    self.cruise_buttons = cp.vl["STW_ACTN_RQ"]['SpdCtrlLvr_Stat']
+
+    
+
+
     # ******************* parse out can *******************
     self.door_all_closed = not any([cp.vl["GTW_carState"]['DOOR_STATE_FL'], cp.vl["GTW_carState"]['DOOR_STATE_FR'],
                                cp.vl["GTW_carState"]['DOOR_STATE_RL'], cp.vl["GTW_carState"]['DOOR_STATE_RR']])  #JCT
@@ -180,6 +259,7 @@ class CarState(object):
     # TODO: Use values from DBC to parse this field
     self.steer_error = epas_cp.vl["EPAS_sysStatus"]['EPAS_steeringFault'] == 1
     self.steer_not_allowed = epas_cp.vl["EPAS_sysStatus"]['EPAS_eacStatus'] not in [2,1] # 2 "EAC_ACTIVE" 1 "EAC_AVAILABLE" 3 "EAC_FAULT" 0 "EAC_INHIBITED"
+    self.steer_warning = self.steer_not_allowed
     self.brake_error = 0 #NOT WORKINGcp.vl[309]['ESP_brakeLamp'] #JCT
     # JCT More ESP errors available, these needs to be added once car steers on its own to disable / alert driver
     self.esp_disabled = 0 #NEED TO CORRECT DBC cp.vl[309]['ESP_espOffLamp'] or cp.vl[309]['ESP_tcOffLamp'] or cp.vl[309]['ESP_tcLampFlash'] or cp.vl[309]['ESP_espFaultLamp'] #JCT
@@ -198,7 +278,7 @@ class CarState(object):
     v_ego_x = self.v_ego_kf.update(speed)
     self.v_ego = float(v_ego_x[0])
     self.a_ego = float(v_ego_x[1])
-    
+
     # this is a hack for the interceptor. This is now only used in the simulation
     # TODO: Replace tests by toyota so this can go away
     self.user_gas = 0 #for now
@@ -206,11 +286,9 @@ class CarState(object):
 
     can_gear_shifter = cp.vl["DI_torque2"]['DI_gear']
     self.gear = 0 # JCT
-    self.angle_steers = -(cp.vl["STW_ANGLHP_STAT"]['StW_AnglHP']) #JCT polarity reversed from Honda/Acura
+    self.angle_steers  = -(cp.vl["STW_ANGLHP_STAT"]['StW_AnglHP']) #JCT polarity reversed from Honda/Acura
     self.angle_steers_rate = 0 #JCT
 
-    self.cruise_setting = cp.vl["STW_ACTN_RQ"]['SpdCtrlLvr_Stat']
-    self.cruise_buttons = cp.vl["STW_ACTN_RQ"]['SpdCtrlLvr_Stat']
     self.blinker_on = (cp.vl["STW_ACTN_RQ"]['TurnIndLvr_Stat'] == 1) or (cp.vl["STW_ACTN_RQ"]['TurnIndLvr_Stat'] == 2)
     self.left_blinker_on = cp.vl["STW_ACTN_RQ"]['TurnIndLvr_Stat'] == 1
     self.right_blinker_on = cp.vl["STW_ACTN_RQ"]['TurnIndLvr_Stat'] == 2
@@ -235,17 +313,19 @@ class CarState(object):
 
     # brake switch has shown some single time step noise, so only considered when
     # switch is on for at least 2 consecutive CAN samples
-    self.brake_switch = epas_cp.vl["EPAS_sysStatus"]['EPAS_eacErrorCode'] == 3 and epas_cp.vl["EPAS_sysStatus"]['EPAS_eacStatus'] == 0 #cp.vl["DI_torque2"]['DI_brakePedal']
-    self.brake_pressed = epas_cp.vl["EPAS_sysStatus"]['EPAS_eacErrorCode'] == 3 and epas_cp.vl["EPAS_sysStatus"]['EPAS_eacStatus'] == 0  #cp.vl["DI_torque2"]['DI_brakePedal']
+    # Todo / refactor: This shouldn't have to do with epas == 3..
+    # was wrongly set to epas_cp.vl["EPAS_sysStatus"]['EPAS_eacErrorCode'] == 3 and epas_cp.vl["EPAS_sysStatus"]['EPAS_eacStatus'] == 0
+    self.brake_switch = cp.vl["DI_torque2"]['DI_brakePedal']
+    self.brake_pressed = cp.vl["DI_torque2"]['DI_brakePedal']
 
-    self.user_brake = cp.vl["DI_torque2"]['DI_brakePedal']
     self.standstill = cp.vl["DI_torque2"]['DI_vehicleSpeed'] == 0
-    if cp.vl["DI_state"]['DI_speedUnits'] == 0:
-      self.v_cruise_pcm = (cp.vl["DI_state"]['DI_cruiseSet'])*CV.MPH_TO_KPH # Reported in MPH, expected in KPH??
-    else:
-      self.v_cruise_pcm = cp.vl["DI_state"]['DI_cruiseSet']
-    
     self.pcm_acc_status = cp.vl["DI_state"]['DI_cruiseState']
+    self.imperial_speed_units = cp.vl["DI_state"]['DI_speedUnits'] == 0
+
+    if self.imperial_speed_units:
+      self.v_cruise_actual = (cp.vl["DI_state"]['DI_cruiseSet'])*CV.MPH_TO_KPH # Reported in MPH, expected in KPH??
+    else:
+      self.v_cruise_actual = cp.vl["DI_state"]['DI_cruiseSet']
     self.hud_lead = 0 #JCT
     self.cruise_speed_offset = calc_cruise_offset(self.v_cruise_pcm, self.v_ego)
 
