@@ -1,3 +1,4 @@
+
 alert_file_path = "/data/openpilot/selfdrive/car/tesla/alert.msg"
 alert_file_rw = "w"
 

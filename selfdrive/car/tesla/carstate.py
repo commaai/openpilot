@@ -3,12 +3,10 @@ from common.kalman.simple_kalman import KF1D
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from selfdrive.car.tesla.values import CAR, CruiseButtons, DBC
+from uibuttons import UIButtons,UIButton
 import numpy as np
 from ctypes import create_string_buffer
-import custom_alert as customAlert
-import time
-
-
+ 
 def parse_gear_shifter(can_gear_shifter, car_fingerprint):
 
   # TODO: Use VAL from DBC to parse this field
@@ -24,10 +22,19 @@ def parse_gear_shifter(can_gear_shifter, car_fingerprint):
       return "drive"
 
   return "unknown"
-  
-  
-def _current_time_millis():
-  return int(round(time.time() * 1000))
+
+
+
+def calc_cruise_offset(offset, speed):
+  # euristic formula so that speed is controlled to ~ 0.3m/s below pid_speed
+  # constraints to solve for _K0, _K1, _K2 are:
+  # - speed = 0m/s, out = -0.3
+  # - speed = 34m/s, offset = 20, out = -0.25
+  # - speed = 34m/s, offset = -2.5, out = -1.8
+  _K0 = -0.3
+  _K1 = -0.01879
+  _K2 = 0.01013
+  return min(_K0 + _K1 * speed + _K2 * speed * offset, 0.)
 
 
 def get_can_signals(CP):
@@ -66,9 +73,9 @@ def get_can_signals(CP):
       ("DI_brakePedal", "DI_torque2", 0),
       ("DI_cruiseSet", "DI_state", 0),
       ("DI_cruiseState", "DI_state", 0),
-      ("TSL_RND_Posn_StW","SBW_RQ_SCCM" , 0),
       ("TSL_P_Psd_StW","SBW_RQ_SCCM" , 0),
-      
+      ("DI_motorRPM", "DI_torque1", 0),
+      ("DI_speedUnits", "DI_state", 0),
       # Steering wheel stalk signals (useful for managing cruise control)
       ("SpdCtrlLvr_Stat", "STW_ACTN_RQ", 0),
       ("VSL_Enbl_Rq", "STW_ACTN_RQ", 0),
@@ -101,9 +108,6 @@ def get_can_signals(CP):
       ("WprSw6Posn", "STW_ACTN_RQ", 0),
       ("MC_STW_ACTN_RQ", "STW_ACTN_RQ", 0),
       ("CRC_STW_ACTN_RQ", "STW_ACTN_RQ", 0),
-      
-      ("DI_motorRPM", "DI_torque1", 0),
-      ("DI_speedUnits", "DI_state", 0),
       
   ]
 
@@ -161,10 +165,8 @@ class CarState(object):
     self.brake_switch_prev = 0
     self.brake_switch_ts = 0
 
-    self.steering_wheel_stalk = None
-    self.cruise_buttons = CruiseButtons.IDLE
-    self.prev_cruise_buttons = CruiseButtons.IDLE
-    self.cruise_setting = CruiseButtons.IDLE
+    self.cruise_buttons = 0
+    self.cruise_setting = 0
     self.blinker_on = 0
 
     self.left_blinker_on = 0
@@ -173,12 +175,39 @@ class CarState(object):
     
     self.stopped = 0
     self.frame_humanSteered = 0    # Last frame human steered
-    
-    self.imperial_speed_units = True
+
+    # variables used for the fake DAS creation
+    self.DAS_info_frm = -1
+    self.DAS_info_msg = 0
+    self.DAS_status_frm = 0
+    self.DAS_status_idx = 0
+    self.DAS_status2_frm = 0
+    self.DAS_status2_idx = 0
+    self.DAS_bodyControls_frm = 0
+    self.DAS_bodyControls_idx = 0
+    self.DAS_lanes_frm = 0
+    self.DAS_lanes_idx = 0
+    self.DAS_objects_frm = 0
+    self.DAS_objects_idx = 0
+    self.DAS_pscControl_frm = 0
+    self.DAS_pscControl_idx = 0
+
+    #variables for pedal CC
+    self.pedal_speed_kph = 0.
+    self.pedal_enabled = 0
+
+    #variable for custom buttons
+    self.cstm_btns = UIButtons()
 
     #custom message counter
     self.custom_alert_counter = -1 #set to 100 for 1 second display; carcontroller will take down to zero
 
+    #steering_wheel_stalk last position, used by ACC and ALCA
+    self.steering_wheel_stalk = None
+
+    #variables used by ACC
+    
+     
     # vEgo kalman filter
     dt = 0.01
     # Q = np.matrix([[10.0, 0.0], [0.0, 100.0]])
@@ -188,7 +217,9 @@ class CarState(object):
                          C=np.matrix([1.0, 0.0]),
                          K=np.matrix([[0.12287673], [0.29666309]]))
     self.v_ego = 0.0
-    
+
+    self.imperial_speed_units = True
+
     # The current max allowed cruise speed. Actual cruise speed sent to the car
     # may be lower, depending on traffic.
     self.v_cruise_pcm = 0.0
@@ -205,13 +236,19 @@ class CarState(object):
     v_weight_bp = [1., 6.]   # smooth blending, below ~0.6m/s the smooth speed snaps to zero
 
     # update prevs, update must run once per loop
-    self.prev_steering_wheel_stalk = self.steering_wheel_stalk
     self.prev_cruise_buttons = self.cruise_buttons
     self.prev_cruise_setting = self.cruise_setting
     self.prev_blinker_on = self.blinker_on
 
     self.prev_left_blinker_on = self.left_blinker_on
     self.prev_right_blinker_on = self.right_blinker_on
+
+    self.steering_wheel_stalk = cp.vl["STW_ACTN_RQ"]
+    self.cruise_setting = cp.vl["STW_ACTN_RQ"]['SpdCtrlLvr_Stat']
+    self.cruise_buttons = cp.vl["STW_ACTN_RQ"]['SpdCtrlLvr_Stat']
+
+    
+
 
     # ******************* parse out can *******************
     self.door_all_closed = not any([cp.vl["GTW_carState"]['DOOR_STATE_FL'], cp.vl["GTW_carState"]['DOOR_STATE_FR'],
@@ -222,6 +259,7 @@ class CarState(object):
     # TODO: Use values from DBC to parse this field
     self.steer_error = epas_cp.vl["EPAS_sysStatus"]['EPAS_steeringFault'] == 1
     self.steer_not_allowed = epas_cp.vl["EPAS_sysStatus"]['EPAS_eacStatus'] not in [2,1] # 2 "EAC_ACTIVE" 1 "EAC_AVAILABLE" 3 "EAC_FAULT" 0 "EAC_INHIBITED"
+    self.steer_warning = self.steer_not_allowed
     self.brake_error = 0 #NOT WORKINGcp.vl[309]['ESP_brakeLamp'] #JCT
     # JCT More ESP errors available, these needs to be added once car steers on its own to disable / alert driver
     self.esp_disabled = 0 #NEED TO CORRECT DBC cp.vl[309]['ESP_espOffLamp'] or cp.vl[309]['ESP_tcOffLamp'] or cp.vl[309]['ESP_tcLampFlash'] or cp.vl[309]['ESP_espFaultLamp'] #JCT
@@ -240,7 +278,7 @@ class CarState(object):
     v_ego_x = self.v_ego_kf.update(speed)
     self.v_ego = float(v_ego_x[0])
     self.a_ego = float(v_ego_x[1])
-    
+
     # this is a hack for the interceptor. This is now only used in the simulation
     # TODO: Replace tests by toyota so this can go away
     self.user_gas = 0 #for now
@@ -248,8 +286,12 @@ class CarState(object):
 
     can_gear_shifter = cp.vl["DI_torque2"]['DI_gear']
     self.gear = 0 # JCT
-    self.angle_steers = -(cp.vl["STW_ANGLHP_STAT"]['StW_AnglHP']) #JCT polarity reversed from Honda/Acura
+    self.angle_steers  = -(cp.vl["STW_ANGLHP_STAT"]['StW_AnglHP']) #JCT polarity reversed from Honda/Acura
     self.angle_steers_rate = 0 #JCT
+
+    self.blinker_on = (cp.vl["STW_ACTN_RQ"]['TurnIndLvr_Stat'] == 1) or (cp.vl["STW_ACTN_RQ"]['TurnIndLvr_Stat'] == 2)
+    self.left_blinker_on = cp.vl["STW_ACTN_RQ"]['TurnIndLvr_Stat'] == 1
+    self.right_blinker_on = cp.vl["STW_ACTN_RQ"]['TurnIndLvr_Stat'] == 2
 
     #if self.CP.carFingerprint in (CAR.CIVIC, CAR.ODYSSEY):
     #  self.park_brake = cp.vl["EPB_STATUS"]['EPB_STATE'] != 0
@@ -260,6 +302,7 @@ class CarState(object):
     self.brake_hold = 0  # TODO
 
     self.main_on = 1 #cp.vl["SCM_BUTTONS"]['MAIN_ON']
+    self.cruise_speed_offset = calc_cruise_offset(cp.vl["DI_state"]['DI_cruiseSet'], self.v_ego)
     self.gear_shifter = parse_gear_shifter(can_gear_shifter, self.CP.carFingerprint)
 
     self.pedal_gas = 0 #cp.vl["DI_torque1"]['DI_pedalPos']
@@ -270,55 +313,21 @@ class CarState(object):
 
     # brake switch has shown some single time step noise, so only considered when
     # switch is on for at least 2 consecutive CAN samples
-    self.brake_switch = epas_cp.vl["EPAS_sysStatus"]['EPAS_eacErrorCode'] == 3 and epas_cp.vl["EPAS_sysStatus"]['EPAS_eacStatus'] == 0 #cp.vl["DI_torque2"]['DI_brakePedal']
-    self.brake_pressed = epas_cp.vl["EPAS_sysStatus"]['EPAS_eacErrorCode'] == 3 and epas_cp.vl["EPAS_sysStatus"]['EPAS_eacStatus'] == 0  #cp.vl["DI_torque2"]['DI_brakePedal']
+    # Todo / refactor: This shouldn't have to do with epas == 3..
+    # was wrongly set to epas_cp.vl["EPAS_sysStatus"]['EPAS_eacErrorCode'] == 3 and epas_cp.vl["EPAS_sysStatus"]['EPAS_eacStatus'] == 0
+    self.brake_switch = cp.vl["DI_torque2"]['DI_brakePedal']
+    self.brake_pressed = cp.vl["DI_torque2"]['DI_brakePedal']
 
-    self.user_brake = cp.vl["DI_torque2"]['DI_brakePedal']
     self.standstill = cp.vl["DI_torque2"]['DI_vehicleSpeed'] == 0
+    self.pcm_acc_status = cp.vl["DI_state"]['DI_cruiseState']
     self.imperial_speed_units = cp.vl["DI_state"]['DI_speedUnits'] == 0
+
     if self.imperial_speed_units:
-      self.v_cruise_actual = (cp.vl["DI_state"]['DI_cruiseSet'])*CV.MPH_TO_KPH
+      self.v_cruise_actual = (cp.vl["DI_state"]['DI_cruiseSet'])*CV.MPH_TO_KPH # Reported in MPH, expected in KPH??
     else:
       self.v_cruise_actual = cp.vl["DI_state"]['DI_cruiseSet']
-    self.pcm_acc_status = cp.vl["DI_state"]['DI_cruiseState']
-    self.steering_wheel_stalk = cp.vl["STW_ACTN_RQ"]
-    self.cruise_setting = self.steering_wheel_stalk['SpdCtrlLvr_Stat']
-    self.cruise_buttons = self.steering_wheel_stalk['SpdCtrlLvr_Stat']
-    # Check if the cruise stalk was double pulled, indicating that adaptive
-    # cruise control should be enabled. Twice in .75 seconds counts as a double
-    # pull.
-    prev_enabled_adaptive_cruise = self.enable_adaptive_cruise
-    if (self.cruise_buttons == CruiseButtons.MAIN and
-        self.prev_cruise_buttons != CruiseButtons.MAIN):
-      curr_time_ms = _current_time_millis()
-      if curr_time_ms - self.last_cruise_stalk_pull_time < 750:
-        # Double stalk pull, enable ACC.
-        self.enable_adaptive_cruise = True
-        self.v_cruise_pcm = self.v_ego
-      else:
-        # Single stalk pull, disable ACC.
-        self.enable_adaptive_cruise = False
-        self.v_cruise_pcm = 0
-      self.last_cruise_stalk_pull_time = curr_time_ms
-    # Check if OP was disabled.
-    elif self.cruise_buttons == CruiseButtons.CANCEL:
-      self.enable_adaptive_cruise = False
-      self.v_cruise_pcm = 0
-      self.last_cruise_stalk_pull_time = 0
-    elif self.pcm_acc_status == 2:
-      # The user may manually increase cruise speed. If they push it above the max
-      # cruise speed, update the max.
-      self.v_cruise_pcm = max(self.v_cruise_actual, self.v_cruise_pcm)
-    
-    if prev_enabled_adaptive_cruise != self.enable_adaptive_cruise:
-      state = "Enabled" if self.enable_adaptive_cruise else "Disabled"
-      customAlert.custom_alert_message("ACC %s" % state, self, 150)
-      
     self.hud_lead = 0 #JCT
-    
-    self.blinker_on = (self.steering_wheel_stalk['TurnIndLvr_Stat'] == 1) or (self.steering_wheel_stalk['TurnIndLvr_Stat'] == 2)
-    self.left_blinker_on = self.steering_wheel_stalk['TurnIndLvr_Stat'] == 1
-    self.right_blinker_on = self.steering_wheel_stalk['TurnIndLvr_Stat'] == 2
+    self.cruise_speed_offset = calc_cruise_offset(self.v_cruise_pcm, self.v_ego)
 
 
 # carstate standalone tester
