@@ -208,7 +208,7 @@ class CarInterface(object):
       ret.gasPressed = self.CS.user_gas_pressed
 
     # brake pedal
-    ret.brakePressed = self.CS.brake_pressed != 0
+    ret.brakePressed = (self.CS.brake_pressed != 0) and (self.CS.cstm_btns.get_button_status("brake") == 0)
     # FIXME: read sendcan for brakelights
     brakelights_threshold = 0.1
     ret.brakeLights = bool(self.CS.brake_switch or
