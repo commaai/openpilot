@@ -126,40 +126,40 @@ class ACCController(object):
         if (CS.pcm_acc_status == 1
             and CS.v_ego > min_cruise_speed_ms
             and CS.a_ego > 0.1):
-            button_to_press = CruiseButtons.DECEL_2ND
+          button_to_press = CruiseButtons.DECEL_2ND
         # If traditional cruise is engaged, then control it.
         elif (CS.pcm_acc_status == 2
-                # But don't make adjustments if a human has manually done so in
-                # the last 3 seconds. Human intention should not be overridden.
-                and current_time_ms > self.human_cruise_action_time + 3000):
+              # But don't make adjustments if a human has manually done so in
+              # the last 3 seconds. Human intention should not be overridden.
+              and current_time_ms > self.human_cruise_action_time + 3000):
             
-            if CS.imperial_speed_units:
-              # Imperial unit cars adjust cruise in units of 1 and 5 mph.
-              half_press_kph = 1 * CV.MPH_TO_KPH
-              full_press_kph = 5 * CV.MPH_TO_KPH
-            else:
-              # Metric cars adjust cruise in units of 1 and 5 kph.
-              half_press_kph = 1
-              full_press_kph = 5
-            
-            # Reduce cruise speed significantly if necessary.
-            if speed_offset < (-1 * full_press_kph):
-              # Send cruise stalk dn_2nd.
-              button_to_press = CruiseButtons.DECEL_2ND
-            # Reduce speed slightly if necessary.
-            elif speed_offset < (-1 * half_press_kph):
-              # Send cruise stalk dn_1st.
-              button_to_press = CruiseButtons.DECEL_SET
-            # Increase cruise speed if possible.
-            elif CS.v_ego > min_cruise_speed_ms:
-              # How much we can accelerate without exceeding max allowed speed.
-              available_speed = self.acc_speed_kph - CS.v_cruise_actual
-              if speed_offset > full_press_kph and speed_offset < available_speed:
-                # Send cruise stalk up_2nd.
-                button_to_press = CruiseButtons.RES_ACCEL_2ND
-              elif speed_offset > half_press_kph and speed_offset < available_speed:
-                # Send cruise stalk up_1st.
-                button_to_press = CruiseButtons.RES_ACCEL
+          if CS.imperial_speed_units:
+            # Imperial unit cars adjust cruise in units of 1 and 5 mph.
+            half_press_kph = 1 * CV.MPH_TO_KPH
+            full_press_kph = 5 * CV.MPH_TO_KPH
+          else:
+            # Metric cars adjust cruise in units of 1 and 5 kph.
+            half_press_kph = 1
+            full_press_kph = 5
+          
+          # Reduce cruise speed significantly if necessary.
+          if speed_offset < (-1 * full_press_kph):
+            # Send cruise stalk dn_2nd.
+            button_to_press = CruiseButtons.DECEL_2ND
+          # Reduce speed slightly if necessary.
+          elif speed_offset < (-1 * half_press_kph):
+            # Send cruise stalk dn_1st.
+            button_to_press = CruiseButtons.DECEL_SET
+          # Increase cruise speed if possible.
+          elif CS.v_ego > min_cruise_speed_ms:
+            # How much we can accelerate without exceeding max allowed speed.
+            available_speed = self.acc_speed_kph - CS.v_cruise_actual
+            if speed_offset > full_press_kph and speed_offset < available_speed:
+              # Send cruise stalk up_2nd.
+              button_to_press = CruiseButtons.RES_ACCEL_2ND
+            elif speed_offset > half_press_kph and speed_offset < available_speed:
+              # Send cruise stalk up_1st.
+              button_to_press = CruiseButtons.RES_ACCEL
         if CS.cstm_btns.btns[1].btn_label2 == "Mod JJ":
           # Alternative speed decision logic that uses the lead car's distance
           # and speed more directly.
@@ -178,24 +178,24 @@ class ACCController(object):
 
   # function to calculate the desired cruise speed based on a safe follow distance
   def calc_follow_speed(self, CS):
-    follow_time = 2.5 #in seconds
+    follow_time = 2.5 # in seconds
     current_time_ms = _current_time_millis()
-     #make sure we were able to populate lead_1
+     # Make sure we were able to populate lead_1.
     if self.lead_1 is None:
       return None
-    # dRel is in meters
+    # dRel is in meters.
     lead_dist = self.lead_1.dRel
-    # grab the relative speed
+    # Grab the relative speed.
     rel_speed = self.lead_1.vRel * CV.MS_TO_KPH
-    # current speed in kph
+    # Current speed in kph
     cur_speed = CS.v_ego * CV.MS_TO_KPH
-    # v_ego is in m/s, so safe_dist_mance is in meters
+    # v_ego is in m/s, so safe_dist_mance is in meters.
     safe_dist_m = CS.v_ego * follow_time
     # How much we can accelerate without exceeding the max allowed speed.
     available_speed = self.acc_speed_kph - CS.v_cruise_actual
-    # Tesla cruise only functions above 18 MPH
+    # Tesla cruise only functions above 18 MPH.
     min_cruise_speed_ms = 18 * CV.MPH_TO_MS
-    # Metric cars adjust cruise in units of 1 and 5 kph
+    # Metric cars adjust cruise in units of 1 and 5 kph.
     half_press_kph = 1
     full_press_kph = 5
     # Imperial unit cars adjust cruise in units of 1 and 5 mph
