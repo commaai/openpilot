@@ -46,13 +46,13 @@ class ACCController(object):
         enabled and
         CS.pcm_acc_status in [1, 2])
       if double_pull and not self.enable_adaptive_cruise:
-        customAlert.custom_alert_message("ACC Enabled", CS ,150)
+        customAlert.custom_alert_message("ACC Enabled", CS, 150)
         self.enable_adaptive_cruise = True
         CS.cstm_btns.set_button_status("acc", 2)
         self.acc_speed_kph = CS.v_ego_raw * CV.MS_TO_KPH
       elif self.enable_adaptive_cruise and double_pull:
         # already enabled, reset speed to current speed
-        customAlert.custom_alert_message("ACC Speed Updated", CS ,150)
+        customAlert.custom_alert_message("ACC Speed Updated", CS, 150)
         self.acc_speed_kph = CS.v_ego_raw * CV.MS_TO_KPH
       elif self.enable_adaptive_cruise and not double_pull:
         customAlert.custom_alert_message("ACC Disabled", CS, 150)
@@ -132,7 +132,6 @@ class ACCController(object):
               # But don't make adjustments if a human has manually done so in
               # the last 3 seconds. Human intention should not be overridden.
               and current_time_ms > self.human_cruise_action_time + 3000):
-            
           if CS.imperial_speed_units:
             # Imperial unit cars adjust cruise in units of 1 and 5 mph.
             half_press_kph = 1 * CV.MPH_TO_KPH

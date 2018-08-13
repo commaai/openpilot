@@ -260,8 +260,8 @@ class CarController(object):
             spdCtrlLvr_stat=cruise_btn,
             turnIndLvr_Stat=None,
             real_steering_wheel_stalk=CS.steering_wheel_stalk)
-        # Send this CAN msg first because it is racing against the real stalk.
-        can_sends.insert(0, cruise_msg)
+          # Send this CAN msg first because it is racing against the real stalk.
+          can_sends.insert(0, cruise_msg)
       elif (turn_signal_needed > 0) and (frame % 2 == 0):
         cruise_msg = teslacan.create_cruise_adjust_msg(
           spdCtrlLvr_stat=None,
