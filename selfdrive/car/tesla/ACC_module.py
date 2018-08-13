@@ -62,7 +62,7 @@ class ACCController(object):
     elif (CS.cruise_buttons == CruiseButtons.CANCEL and
           self.prev_cruise_buttons != CruiseButtons.CANCEL):
       self.enable_adaptive_cruise = False
-      if prev_enable_adaptive_cruise == True:
+      if prev_enable_adaptive_cruise:
         customAlert.custom_alert_message("ACC Disabled", CS, 150)
         CS.cstm_btns.set_button_status("acc", 1)
       self.last_cruise_stalk_pull_time = 0
@@ -86,13 +86,6 @@ class ACCController(object):
       # Clip ACC speed between 0 and 170 KPH.
       self.acc_speed_kph = min(self.acc_speed_kph, 170)
       self.acc_speed_kph = max(self.acc_speed_kph, 0)
-    # If ACC was on and something disabled cruise control, disable ACC too.
-    elif (self.enable_adaptive_cruise and
-          CS.pcm_acc_status != 2 and
-          curr_time_ms - self.last_cruise_stalk_pull_time >  2000):
-      self.enable_adaptive_cruise = False
-      customAlert.custom_alert_message("ACC Disabled", CS, 150)
-      CS.cstm_btns.set_button_status("acc", 1)
     self.prev_steering_wheel_stalk = CS.steering_wheel_stalk
     self.prev_cruise_buttons = CS.cruise_buttons
     # Now let's see if the ACC is available.
