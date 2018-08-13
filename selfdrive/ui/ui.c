@@ -248,6 +248,7 @@ typedef struct UIState {
   int alert_size;
   float alert_blinking_alpha;
   bool alert_blinked;
+  bool acc_enabled;
 
   float light_sensor;
 } UIState;
@@ -437,6 +438,8 @@ static void ui_init(UIState *s) {
   glDisable(GL_DEPTH_TEST);
 
   assert(glGetError() == GL_NO_ERROR);
+
+  s->acc_enabled = false;
 
   {
     char *value;
@@ -1152,6 +1155,12 @@ static void bb_ui_draw_custom_alert(UIState *s) {
     }
     s->scene.alert_text1[rd] = '\0';
     close(alert_msg_fd);
+    if(!strcmp(s->scene.alert_text1, "ACC Enabled")){
+      s->acc_enabled = true;
+    }
+    if(!strcmp(s->scene.alert_text1, "ACC Disabled")){
+      s->acc_enabled = false;
+    }
     if (strlen(s->scene.alert_text1) > 0) {
       s->scene.alert_size = ALERTSIZE_SMALL;
     } else {
@@ -1547,15 +1556,25 @@ static void ui_draw_vision_maxspeed(UIState *s) {
 
   nvgBeginPath(s->vg);
   nvgRoundedRect(s->vg, viz_maxspeed_x, viz_maxspeed_y, viz_maxspeed_w, viz_maxspeed_h, 20);
-  nvgStrokeColor(s->vg, nvgRGBA(255,255,255,80));
-  nvgStrokeWidth(s->vg, 6);
+  if(s->acc_enabled == true){
+    //bounding box is green and thicker
+    nvgStrokeColor(s->vg, nvgRGBA(23, 134, 68, 255));
+    nvgStrokeWidth(s->vg, 10);
+  } else {
+    nvgStrokeColor(s->vg, nvgRGBA(255,255,255,80));
+    nvgStrokeWidth(s->vg, 6);
+  }
   nvgStroke(s->vg);
 
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
   nvgFontFace(s->vg, "sans-regular");
   nvgFontSize(s->vg, 26*2.5);
   nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 200));
-  nvgText(s->vg, viz_maxspeed_x+viz_maxspeed_w/2, 148, "MAX", NULL);
+  if(s->acc_enabled == true){
+    nvgText(s->vg, viz_maxspeed_x+viz_maxspeed_w/2, 148, "ACC", NULL);
+  } else {
+    nvgText(s->vg, viz_maxspeed_x+viz_maxspeed_w/2, 148, "MAX", NULL);
+  }
 
   nvgFontFace(s->vg, "sans-semibold");
   nvgFontSize(s->vg, 52*2.5);

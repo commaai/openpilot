@@ -170,13 +170,13 @@ class ACCController(object):
                   l20 = messaging.recv_one(socket)
           if l20 is not None:
               self.lead_1 = l20.live20.leadOne
-          button_to_press = self.calc_follow_speed(CS)
+          button_to_press = self.calc_follow_button(CS)
     if button_to_press:
         self.automated_cruise_action_time = current_time_ms
     return button_to_press
 
-  # function to calculate the desired cruise speed based on a safe follow distance
-  def calc_follow_speed(self, CS):
+  # function to calculate the cruise button based on a safe follow distance
+  def calc_follow_button(self, CS):
     follow_time = 2.5 # in seconds
     current_time_ms = _current_time_millis()
      # Make sure we were able to populate lead_1.
@@ -218,14 +218,18 @@ class ACCController(object):
       button = CruiseButtons.DECEL_SET
     # If traditional cruise is engaged, then control it.
     elif CS.pcm_acc_status == 2:
+      # if cruise is set to faster than the max speed, slow down
+      if CS.v_cruise_actual > self.acc_speed_kph:
+        msg =  "Slow to max"
+        button = CruiseButtons.DECEL_SET
       # If lead_dist is reported as 0, no one is detected in front of you so you
       # can speed up don't speed up when steer-angle > 2; vision radar often
       # loses lead car in a turn.
-      if lead_dist == 0 and self.enable_adaptive_cruise and CS.angle_steers < 2.0:
-        if full_press_kph < (available_speed * 0.9): 
+      elif lead_dist == 0 and self.enable_adaptive_cruise and CS.angle_steers < 2.0:
+        if full_press_kph < available_speed: 
           msg =  "5 MPH UP   full: ","{0:.1f}kph".format(full_press_kph), "  avail: {0:.1f}kph".format(available_speed)
           button = CruiseButtons.RES_ACCEL_2ND
-        elif half_press_kph < (available_speed * 0.8):
+        elif half_press_kph < available_speed:
           msg =  "1 MPH UP   half: ","{0:.1f}kph".format(half_press_kph), "  avail: {0:.1f}kph".format(available_speed)
           button = CruiseButtons.RES_ACCEL
 
@@ -241,9 +245,9 @@ class ACCController(object):
           button = CruiseButtons.DECEL_2ND
         # Reduce speed significantly if lead_dist < 60% of  safe dist
         # and if the lead car isn't pulling away
-        elif lead_dist < (safe_dist_m * 0.7) and rel_speed < 5:
+        elif lead_dist < (safe_dist_m * 0.7) and rel_speed < 0:
           msg =  "70pct down"
-          button = CruiseButtons.DECEL_2ND
+          button = CruiseButtons.DECEL_SET
          #Reduce speed if rel_speed < -15kph so you don't rush up to lead car
         elif rel_speed < -15:
           msg =  "relspd -15 down"
@@ -258,7 +262,7 @@ class ACCController(object):
         ### Speed up ###
         # don't speed up again until you have more than a safe distance in front
         # only adjust every 2 sec
-        elif (lead_dist > safe_dist_m * 1.2 and half_press_kph < available_speed * 0.8
+        elif (lead_dist > safe_dist_m * 1.2 and half_press_kph < available_speed
               and current_time_ms > self.automated_cruise_action_time + 2000):
           msg =  "120pct UP   half: ","{0:.1f}kph".format(half_press_kph), "  avail: {0:.1f}kph".format(available_speed)
           button = CruiseButtons.RES_ACCEL
@@ -272,13 +276,12 @@ class ACCController(object):
         button = CruiseButtons.RES_ACCEL
 
     if (current_time_ms > self.last_update_time + 1000):
-      #print "Lead Dist: ", "{0:.1f}".format(lead_dist*3.28), "ft Safe Dist: ", "{0:.1f}".format(safe_dist_m*3.28), "ft Rel Speed: ","{0:.1f}".format(rel_speed), "kph   SpdOffset: ", "{0:.3f}".format(speed_delta * 1.01)
       ratio = 0
       if safe_dist_m > 0:
         ratio = (lead_dist / safe_dist_m) * 100
-      #print "Ratio: {0:.1f}%".format(ratio), "   lead: ","{0:.1f}m".format(lead_dist),"   avail: ","{0:.1f}kph".format(available_speed), "   Rel Speed: ","{0:.1f}kph".format(rel_speed), "  Angle: {0:.1f}deg".format(CS.angle_steers)
+      print "Ratio: {0:.1f}%".format(ratio), "   lead: ","{0:.1f}m".format(lead_dist),"   avail: ","{0:.1f}kph".format(available_speed), "   Rel Speed: ","{0:.1f}kph".format(rel_speed), "  Angle: {0:.1f}deg".format(CS.angle_steers)
       self.last_update_time = current_time_ms
-      #if msg != None:
-      #  print msg
+      if msg != None:
+        print msg
         
     return button
