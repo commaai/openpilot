@@ -98,18 +98,7 @@ class UIButtons:
         self.write_buttons_out_file()
 
     def set_button_status_from_ui(self,id,btn_status):
-        if self.btns[id].btn_status > 0:
-            if (id == 1) and (btn_status == 0):
-                #don't change status, just model
-                if (self.btns[id].btn_label2 == "Mod OP"):
-                    self.btns[id].btn_label2 = "Mod JJ"
-                else:
-                    self.btns[id].btn_label2 = "Mod OP"
-                self.write_buttons_labels_to_file()
-            else:
-                self.btns[id].btn_status = btn_status * self.btns[id].btn_status
-        else:
-            self.btns[id].btn_status = btn_status
+        self.CS.update_ui_buttons(id,btn_status)
         self.CS.UE.uiButtonInfoEvent(id,self.btns[id].btn_name, \
                     self.btns[id].btn_label,self.btns[id].btn_status,self.btns[id].btn_label2)
         self.write_buttons_out_file()

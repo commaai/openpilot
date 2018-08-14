@@ -238,6 +238,20 @@ class CarState(object):
     self.cstm_btns.btns.append(UIButton("brake","BRK",1,""))
     self.cstm_btns.btns.append(UIButton("sound","SND",1,""))
 
+  def update_ui_buttons(self,id,btn_status):
+    if self.cstm_btns.btns[id].btn_status > 0:
+      if (id == 1) and (btn_status == 0):
+          #don't change status, just model
+          if (self.cstm_btns.btns[id].btn_label2 == "Mod OP"):
+              self.cstm_btns.btns[id].btn_label2 = "Mod JJ"
+          else:
+              self.cstm_btns.btns[id].btn_label2 = "Mod OP"
+          self.cstm_btns.write_buttons_labels_to_file()
+      else:
+          self.cstm_btns.btns[id].btn_status = btn_status * self.cstm_btns.btns[id].btn_status
+    else:
+        self.cstm_btns.btns[id].btn_status = btn_status
+
   def update(self, cp, epas_cp):
 
     # copy can_valid
