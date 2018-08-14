@@ -14,10 +14,10 @@ from selfdrive.car.tesla import teslacan
 from selfdrive.car.tesla.values import AH, CruiseButtons, CAR
 from selfdrive.can.packer import CANPacker
 from selfdrive.config import Conversions as CV
-from ALCA_module import ALCAController
-from ACC_module import ACCController
-from PCC_module import PCCController
-from HSO_module import HSOController
+from selfdrive.car.common.ALCA_module import ALCAController
+from selfdrive.car.tesla.ACC_module import ACCController
+from selfdrive.car.tesla.PCC_module import PCCController
+from selfdrive.car.tesla.HSO_module import HSOController
 # Steer angle limits
 ANGLE_MAX_BP = [0., 27., 36.]
 ANGLE_MAX_V = [410., 92., 36.]

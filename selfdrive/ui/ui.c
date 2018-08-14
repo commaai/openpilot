@@ -1535,7 +1535,7 @@ static void update_status(UIState *s, int status) {
       s->custom_alert_playsound = 2;
     }
     if ((bb_get_button_status(s,"sound") > 0) && ((old_status != STATUS_STOPPED) || (s->status != STATUS_DISENGAGED))) {
-      asprintf(&snd_command, "python /data/openpilot/selfdrive/car/%s/snd/playsound.py %d &",s->car_model, status);
+      asprintf(&snd_command, "python /data/openpilot/selfdrive/car/common/snd/playsound.py %d &",s->car_model, status);
       system(snd_command);
     }
   }

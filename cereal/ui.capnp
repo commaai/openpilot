@@ -11,32 +11,32 @@ using Car = import "car.capnp";
 
 struct UIButtonInfo {
     # button ID 0..5
-    btn_id @0 :Int8;
+    btnId @0 :Int8;
     # internal button name
-    btn_name @0 :Text;
+    btnName @1 :Text;
     # display label for button (3 chars)
-    btn_label @1 :Text;
+    btnLabel @2 :Text;
     # buttons status: 0 = DISABLED, 1 = AVAILABLE, 2 = ENABLED, 3 = WARNING, 9 = NOT AVAILABLE
-    btn_status @2 :Int16;
+    btnStatus @3 :Int16;
     # small font label shows below the main label, max 7 chars
-    btn_label2 @3 :Text;
+    btnLabel2 @4 :Text;
 }
 
 struct UIButtonStatus {
     # button ID 0..5
-    btn_id @0 :Int8;
+    btnId @0 :Int8;
     # buttons status: 0 = DISABLED, 1 = AVAILABLE, 2 = ENABLED, 3 = WARNING, 9 = NOT AVAILABLE
-    btn_status @2 :Int16;
+    btnStatus @1 :Int16;
 }
 
 struct UICustomAlert {
-    ca_status @0 :Int8;
-    ca_text @1 :Text;
+    caStatus @0 :Int8;
+    caSext @1 :Text;
 }
 
 struct UISetCar {
-    ic_carFolder@0 :Text;
-    ic_carName @1 :Text;
+    icCarFolder@0 :Text;
+    icCarName @1 :Text;
 }
 
 struct UIEvent {

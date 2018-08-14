@@ -9,9 +9,9 @@ class UIEvents(object):
         self.CS = carstate
         context = zmq.Context()
         self.buttons_poller = zmq.Poller()
-        self.uiCustomAlert = messaging.sub_sock(context, service_list['uiCustomAlert'].port, conflate=True, poller=None)
-        self.uiButtonInfo = messaging.sub_sock(context, service_list['uiButtonInfo'].port, conflate=True, poller=None)
-        self.uiSetCar = messaging.sub_sock(context, service_list['uiSetCar'].port, conflate=True, poller=None)
+        self.uiCustomAlert = messaging.pub_sock(context, service_list['uiCustomAlert'].port)
+        self.uiButtonInfo = messaging.pub_sock(context, service_list['uiButtonInfo'].port)
+        self.uiSetCar = messaging.pub_sock(context, service_list['uiSetCar'].port)
         self.uiButtonStatus = messaging.sub_sock(context, service_list['uiButtonStatus'].port, conflate=True, poller=self.buttons_poller)
 
     def uiCustomAlertEvent(self,status,message):
@@ -19,8 +19,8 @@ class UIEvents(object):
         dat.logMonoTime = int(realtime.sec_since_boot() * 1e9)
         dat.init('uiCustomAlert')
         dat.uiCustomAlert = {
-            "ca_status": status,
-            "ca_text": message
+            "caStatus": status,
+            "caText": message
         }
         self.uiCustomAlert.send(dat.to_bytes())
     
@@ -29,11 +29,11 @@ class UIEvents(object):
         dat.logMonoTime = int(realtime.sec_since_boot() * 1e9)
         dat.init('uiButtonInfo')
         dat.uiButtonInfo = {
-            "btn_id": id,
-            "btn_name": name,
-            "btn_label": label,
-            "btn_status": status,
-            "btn_label2": label2
+            "btnId": id,
+            "btnName": name,
+            "btnLabel": label,
+            "btnStatus": status,
+            "btnLabel2": label2
         }
         self.uiButtonInfo.send(dat.to_bytes())
     
@@ -42,8 +42,8 @@ class UIEvents(object):
         dat.logMonoTime = int(realtime.sec_since_boot() * 1e9)
         dat.init('UISetCar')
         dat.UISetCar = {
-            "ic_carFolder": car_folder,
-            "ic_carName": car_name
+            "icCarFolder": car_folder,
+            "icCarName": car_name
         }
         self.uiSetCar.send(dat.to_bytes())
     

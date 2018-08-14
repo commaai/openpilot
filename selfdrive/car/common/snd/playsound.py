@@ -3,8 +3,8 @@ import subprocess
 import sys
 
 "call the snd library"""
-base_fld_code = "/data/openpilot/selfdrive/car/tesla/snd/"
-base_fld_wav = "/data/openpilot/selfdrive/car/tesla/snd/"
+base_fld_code = "/data/openpilot/selfdrive/car/common/snd/"
+base_fld_wav = "/data/openpilot/selfdrive/car/common/snd/"
 snd_command = base_fld_wav
 snd_beep = int(sys.argv[1])
 gen_snd = True
