@@ -159,14 +159,15 @@ class ACCController(object):
         # Bring in the lead car distance from the Live20 feed
         l20 = None
         if enabled:
-          for socket, event in self.poller.poll(0):
+          for socket, _ in self.poller.poll(0):
             if socket is self.live20:
-                l20 = messaging.recv_one(socket)
+              l20 = messaging.recv_one(socket)
+              break
         if l20 is not None:
-            self.lead_1 = l20.live20.leadOne
+          self.lead_1 = l20.live20.leadOne
         button_to_press = self.calc_follow_speed(CS)
     if button_to_press:
-        self.automated_cruise_action_time = current_time_ms
+      self.automated_cruise_action_time = current_time_ms
     return button_to_press
 
   # function to calculate the desired cruise speed based on a safe follow distance
