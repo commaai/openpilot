@@ -152,10 +152,10 @@ def create_cruise_adjust_msg(spdCtrlLvr_stat, turnIndLvr_Stat, real_steering_whe
   Args:
     spdCtrlLvr_stat: Int value of dbc entry STW_ACTN_RQ.SpdCtrlLvr_Stat
       (allowing us to simulate pressing the cruise stalk up or down)
-      -1 means no change
+      None means no change
     TurnIndLvr_Stat: Int value of dbc entry STW_ACTN_RQ.TurnIndLvr_Stat
       (allowing us to simulate pressing the turn signal up or down)
-      -1 means no change
+      None means no change
     real_steering_wheel_stalk: Previous STW_ACTN_RQ message sent by the real
       stalk. When sending these artifical messages for cruise control, we want
       to mimic whatever windshield wiper and highbeam settings the car is
@@ -170,14 +170,14 @@ def create_cruise_adjust_msg(spdCtrlLvr_stat, turnIndLvr_Stat, real_steering_whe
   # real cruise stalk message.
   fake_stalk = real_steering_wheel_stalk.copy()
 
-  if spdCtrlLvr_stat > -1:
+  if spdCtrlLvr_stat is not None:
     # if accelerating, override VSL_Enbl_Rq to 1.
     if spdCtrlLvr_stat in [4, 16]:
       fake_stalk['VSL_Enbl_Rq'] = 1
     fake_stalk['SpdCtrlLvr_Stat'] = spdCtrlLvr_stat
-    # message count should be 1 more than the previous (and loop after 16)
-  if turnIndLvr_Stat > -1:
+  if turnIndLvr_Stat is not None:
     fake_stalk['TurnIndLvr_Stat'] = turnIndLvr_Stat
+  # message count should be 1 more than the previous (and loop after 16)
   fake_stalk['MC_STW_ACTN_RQ'] = (int(round(fake_stalk['MC_STW_ACTN_RQ'])) + 1) % 16
   # CRC should initially be 0 before a new one is calculated.
   fake_stalk['CRC_STW_ACTN_RQ'] = 0

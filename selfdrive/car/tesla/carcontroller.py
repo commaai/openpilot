@@ -152,54 +152,57 @@ class CarController(object):
     CS.UE.update_custom_ui()
 
 
-    #update statuses for custom buttons every 0.1 sec
+    # Update statuses for custom buttons every 0.1 sec.
     if (frame % 10 == 0):
-      self.ALCA.update_status(True if CS.cstm_btns.get_button_status("alca") > 0 else False)
+      self.ALCA.update_status(CS.cstm_btns.get_button_status("alca") > 0)
       #print CS.cstm_btns.get_button_status("alca")
 
-    #update ACC module info
+    # Update ACC module info.
     self.ACC.update_stat(CS, True)
     #update PCC module info
     self.PCC.update_stat(CS, True)
-    #update HSO module info
+    # Update HSO module info.
     human_control = False
 
-    #update CS.v_cruise_pcm based on module selected
+    # update CS.v_cruise_pcm based on module selected.
     if self.ACC.enable_adaptive_cruise:
       CS.v_cruise_pcm = self.ACC.acc_speed_kph
     elif self.PCC.enable_pedal_cruise:
       CS.v_cruise_pcm = self.PCC.pedal_speed_kph
     else:
       CS.v_cruise_pcm = CS.v_cruise_actual
-    #get the angle from ALCA
+    # Get the angle from ALCA.
     alca_enabled = False
     turn_signal_needed = 0
-    apply_angle,alca_enabled,turn_signal_needed = self.ALCA.update(enabled,CS,frame,actuators)
-    apply_angle = -apply_angle #Tesla is reversed vs OP
-    human_control = self.HSO.update_stat(CS,enabled,actuators,frame)
-    enable_steer_control = (enabled and ((not changing_lanes) or alca_enabled) and not human_control)
+    apply_angle, alca_enabled, turn_signal_needed = self.ALCA.update(enabled, CS, frame, actuators)
+    apply_angle = -apply_angle  # Tesla is reversed vs OP.
+    human_control = self.HSO.update_stat(CS, enabled, actuators, frame)
+    human_lane_changing = changing_lanes and not alca_enabled
+    enable_steer_control = (enabled
+                            and not human_lane_changing
+                            and not human_control)
     
     angle_lim = interp(CS.v_ego, ANGLE_MAX_BP, ANGLE_MAX_V)
     apply_angle = clip(apply_angle, -angle_lim, angle_lim)
-    # windup slower
+    # Windup slower.
     if self.last_angle * apply_angle > 0. and abs(apply_angle) > abs(self.last_angle):
       angle_rate_lim = interp(CS.v_ego, ANGLE_DELTA_BP, ANGLE_DELTA_V)
     else:
       angle_rate_lim = interp(CS.v_ego, ANGLE_DELTA_BP, ANGLE_DELTA_VU)
 
     apply_angle = clip(apply_angle, self.last_angle - angle_rate_lim, self.last_angle + angle_rate_lim)
-    #if human control send the steering angle as read at steering wheel
+    # If human control, send the steering angle as read at steering wheel.
     if human_control:
       apply_angle = CS.angle_steers
-    #if blinker is on send the actual angle
+    # If blinker is on send the actual angle.
     #if (changing_lanes and (CS.laneChange_enabled < 2)):
     #  apply_angle = CS.angle_steers
     # Send CAN commands.
     can_sends = []
     send_step = 5
 
-    if  (True): #(frame % send_step) == 0:
-      """#first we emulate DAS
+    if  (True):
+      """#First we emulate DAS.
       if (CS.DAS_info_frm == -1):
         #initialize all frames
         CS.DAS_info_frm = frame # 1.00 s interval
@@ -244,17 +247,23 @@ class CarController(object):
         CS.DAS_objects_idx = CS.DAS_objects_idx % 16
         CS.DAS_objects_frm = (CS.DAS_objects_frm + 3) % 100
       # end of DAS emulation """
-      idx = frame % 16 #(frame/send_step) % 16 
+      idx = frame % 16
       can_sends.append(teslacan.create_steering_control(enable_steer_control, apply_angle, idx))
       can_sends.append(teslacan.create_epb_enable_signal(idx))
-      cruise_btn = None
       if self.ACC.enable_adaptive_cruise:
-        cruise_btn = self.ACC.update_acc(enabled,CS,frame,actuators,pcm_speed)
-      if cruise_btn:
-        cruise_msg = teslacan.create_cruise_adjust_msg(cruise_btn,-1,CS.steering_wheel_stalk)
-        can_sends.insert(0, cruise_msg)
+        cruise_btn = self.ACC.update_acc(enabled, CS, frame, actuators, pcm_speed)
+        if cruise_btn:
+          cruise_msg = teslacan.create_cruise_adjust_msg(
+            spdCtrlLvr_stat=cruise_btn,
+            turnIndLvr_Stat=None,
+            real_steering_wheel_stalk=CS.steering_wheel_stalk)
+          # Send this CAN msg first because it is racing against the real stalk.
+          can_sends.insert(0, cruise_msg)
       elif (turn_signal_needed > 0) and (frame % 2 == 0):
-        cruise_msg = teslacan.create_cruise_adjust_msg(-1,turn_signal_needed,CS.steering_wheel_stalk)
+        cruise_msg = teslacan.create_cruise_adjust_msg(
+          spdCtrlLvr_stat=None,
+          turnIndLvr_Stat=turn_signal_needed,
+          real_steering_wheel_stalk=CS.steering_wheel_stalk)
         can_sends.insert(0, cruise_msg)
       self.last_angle = apply_angle
       sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
