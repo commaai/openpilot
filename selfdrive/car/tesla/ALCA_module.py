@@ -1,4 +1,3 @@
-import custom_alert as tcm
 from common.numpy_fast import interp
 
 
@@ -51,7 +50,7 @@ class ALCAController(object):
         self.laneChange_enabled =1
         self.laneChange_counter =0
         self.laneChange_direction =0
-        tcm.custom_alert_message("",CS,0)
+        CS.UE.custom_alert_message("",0)
     
     if (not CS.right_blinker_on) and (not CS.left_blinker_on) and \
       (self.laneChange_enabled > 1):
@@ -75,7 +74,7 @@ class ALCAController(object):
       ((not self.prev_left_blinker_on) and CS.left_blinker_on)) and \
       ((CS.v_ego < CL_MIN_V) or (abs(actuators.steerAngle) >= CL_MAX_A) or (abs(CS.angle_steers) >=CL_MAX_A)):
       #something is not right, the speed or angle is limitting
-      tcm.custom_alert_message("Auto Lane Change Unavailable!",CS,500)
+      CS.UE.custom_alert_message("Auto Lane Change Unavailable!",500)
       CS.cstm_btns.set_button_status("alca",9)
 
 
@@ -89,14 +88,14 @@ class ALCAController(object):
         laneChange_direction = -1
       if (self.laneChange_enabled > 1) and (self.laneChange_direction <> laneChange_direction):
         #something is not right; signal in oposite direction; cancel
-        tcm.custom_alert_message("Auto Lane Change Canceled! (s)",CS,200)
+        CS.UE.custom_alert_message("Auto Lane Change Canceled! (s)",200)
         self.laneChange_enabled = 1
         self.laneChange_counter = 0
         self.laneChange_direction = 0
         CS.cstm_btns.set_button_status("alca",1)
       elif (self.laneChange_enabled == 1) :
         #compute angle delta for lane change
-        tcm.custom_alert_message("Auto Lane Change Engaged! (1)",CS,100)
+        CS.UE.custom_alert_message("Auto Lane Change Engaged! (1)",100)
         self.laneChange_enabled = 5
         self.laneChange_counter = 1
         self.laneChange_direction = laneChange_direction
@@ -116,7 +115,7 @@ class ALCAController(object):
     #lane change in process
     if self.laneChange_enabled > 1:
       if (CS.steer_override or (CS.v_ego < CL_MIN_V)):
-        tcm.custom_alert_message("Auto Lane Change Canceled! (u)",CS,200)
+        CS.UE.custom_alert_message("Auto Lane Change Canceled! (u)",200)
         #if any steer override cancel process or if speed less than min speed
         self.laneChange_counter = 0
         self.laneChange_enabled = 1
@@ -141,7 +140,7 @@ class ALCAController(object):
       #       - generate audible alert for errors/take over messages
       if self.laneChange_enabled ==3:
         if self.laneChange_counter == 1:
-          tcm.custom_alert_message("Auto Lane Change Engaged! (4)",CS,800)
+          CS.UE.custom_alert_message("Auto Lane Change Engaged! (4)",800)
           self.laneChange_over_the_line = 0
         self.laneChange_counter += 1
         laneChange_angle = self.laneChange_angled
@@ -151,7 +150,7 @@ class ALCAController(object):
           actuator_ratio = (-actuators.steerAngle)/self.laneChange_last_actuator_angle
         if (actuator_ratio < 1) and (abs(actuator_delta) > 0.5 * abs(self.laneChange_angled)):
           #sudden change in actuator angle or sign means we are on the other side of the line
-          tcm.custom_alert_message("Auto Lane Change Engaged! (5)",CS,800)
+          CS.UE.custom_alert_message("Auto Lane Change Engaged! (5)",800)
           self.laneChange_over_the_line = 1
         if self.laneChange_over_the_line ==1:
           self.laneChange_enabled = 7
@@ -161,7 +160,7 @@ class ALCAController(object):
         if self.laneChange_counter >  (self.laneChange_duration) * 100:
           self.laneChange_enabled = 1
           self.laneChange_counter = 0
-          tcm.custom_alert_message("Auto Lane Change Canceled! (t)",CS,200)
+          CS.UE.custom_alert_message("Auto Lane Change Canceled! (t)",200)
           self.laneChange_counter = 0
           CS.cstm_btns.set_button_status("alca",1)
       # this is the critical start of the turn
@@ -175,11 +174,11 @@ class ALCAController(object):
       if self.laneChange_enabled == 4:
         if self.laneChange_counter == 1:
           self.laneChange_angle = -actuators.steerAngle
-          tcm.custom_alert_message("Auto Lane Change Engaged! (3)",CS,100)
+          CS.UE.custom_alert_message("Auto Lane Change Engaged! (3)",100)
           self.laneChange_angled = self.laneChange_direction * self.laneChange_steerr *  interp(CS.v_ego, CL_MAXD_BP, CL_MAXD_A)
           #if angle more than max angle allowed cancel; last chance to cancel on road curvature
           if (abs(self.laneChange_angle) > CL_MAX_A):
-            tcm.custom_alert_message("Auto Lane Change Canceled! (a)",CS,200)
+            CS.UE.custom_alert_message("Auto Lane Change Canceled! (a)",200)
             self.laneChange_enabled = 1
             self.laneChange_counter = 0
             self.laneChange_direction = 0
@@ -202,7 +201,7 @@ class ALCAController(object):
       # CONTROL: during this stage we use the actuator angle to steer (OP Control)
       if self.laneChange_enabled == 5:
         if self.laneChange_counter == 1:
-          tcm.custom_alert_message("Auto Lane Change Engaged! (2)",CS,self.laneChange_wait * 100)
+          CS.UE.custom_alert_message("Auto Lane Change Engaged! (2)",self.laneChange_wait * 100)
         self.laneChange_counter += 1
         if self.laneChange_counter > (self.laneChange_wait -1) *100:
           self.laneChange_avg_angle +=  -actuators.steerAngle
@@ -215,7 +214,7 @@ class ALCAController(object):
       # CONTROL: during this time we use the actuator angle to steer (OP Control)
       if self.laneChange_enabled == 7:
         if self.laneChange_counter ==1:
-          tcm.custom_alert_message("Auto Lane Change Complete!",CS,300)
+          CS.UE.custom_alert_message("Auto Lane Change Complete!",300)
           CS.cstm_btns.set_button_status("alca",1)
         self.laneChange_counter +=1
     alca_enabled = (self.laneChange_enabled > 1)

@@ -6,6 +6,7 @@ from selfdrive.car.tesla.values import CAR, CruiseButtons, DBC
 from uibuttons import UIButtons,UIButton
 import numpy as np
 from ctypes import create_string_buffer
+from UIEV_module import UIEvents
  
 def parse_gear_shifter(can_gear_shifter, car_fingerprint):
 
@@ -197,7 +198,10 @@ class CarState(object):
     self.pedal_enabled = 0
 
     #variable for custom buttons
-    self.cstm_btns = UIButtons()
+    self.cstm_btns = UIButtons(self)
+
+    #UIEvents
+    self.UE = UIEvents(self)
 
     #custom message counter
     self.custom_alert_counter = -1 #set to 100 for 1 second display; carcontroller will take down to zero

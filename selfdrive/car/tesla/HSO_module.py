@@ -1,7 +1,6 @@
 #human steer override module
 from selfdrive.config import Conversions as CV
 import selfdrive.messaging as messaging
-import custom_alert as customAlert
 import time
 
 def _current_time_millis():
@@ -34,7 +33,7 @@ class HSOController(object):
               if (frame - self.frame_humanSteered < 50):
                 human_control = True
                 CS.cstm_btns.set_button_status("steer",3)
-                customAlert.custom_alert_message("Manual Steering Enabled",CS,51)
+                CS.UE.custom_alert_message("Manual Steering Enabled",51)
               else:
                 CS.cstm_btns.set_button_status("steer",2)
         else:

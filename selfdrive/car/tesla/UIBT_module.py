@@ -5,7 +5,6 @@ import os
 from datetime import datetime
 
 buttons_labels_path = "/data/openpilot/selfdrive/car/tesla/buttons.msg"
-buttons_status_in_path = "/data/openpilot/selfdrive/car/tesla/buttons.ui.msg"
 buttons_status_out_path = "/data/openpilot/selfdrive/car/tesla/buttons.cc.msg"
 buttons_file_rw = "wb"
 buttons_file_r = "rb"
@@ -42,38 +41,6 @@ class UIButtons:
             #we don't have all the data, ignore
             print "labels file is bad"
 
-    def read_buttons_in_file(self):
-        modification_date =  datetime.fromtimestamp(os.path.getmtime(buttons_status_in_path))
-        if (modification_date > self.last_in_read_time):
-            fi =  open(buttons_status_in_path, buttons_file_r)
-            indata = fi.read()
-            fi.close()
-            if len(indata) == 6:
-                for i in range(0,len(indata)):
-                    if self.btns[i].btn_status > 0:
-                        if (i == 1) and (ord(indata[1])==48):
-                            #don't change status, just model
-                            if (self.btns[i].btn_label2 == "Mod OP"):
-                                self.btns[i].btn_label2 = "Mod JJ"
-                            else:
-                                self.btns[i].btn_label2 = "Mod OP"
-                            self.write_buttons_labels_to_file()
-                        else:
-                            self.btns[i].btn_status = (ord(indata[i]) - 48) * self.btns[i].btn_status
-                    else:
-                        self.btns[i].btn_status = ord(indata[i]) - 48
-                self.last_in_read_time = modification_date
-                self.hasChanges = True
-            else:
-                #something wrong with the file
-                print "status file is bad"    
-
-    def write_buttons_in_file(self):
-        fo = open(buttons_status_in_path, buttons_file_rw)
-        for btn in self.btns:
-            btn_val = 1 if btn.btn_status > 0 else 0
-            fo.write(struct.pack("B",btn_val + 48))
-        fo.close()
 
     def write_buttons_out_file(self):
         if self.hasChanges:
@@ -95,7 +62,8 @@ class UIButtons:
             print "status file is bad"
 
 
-    def __init__(self):
+    def __init__(self, carstate):
+        self.CS = carstate
         self.btns = []
         self.hasChanges = True
         self.last_in_read_time = datetime.min 
@@ -103,7 +71,6 @@ class UIButtons:
             #there is a file, load it
             self.read_buttons_labels_from_file()
             self.read_buttons_out_file()
-            self.read_buttons_in_file()
         else:
             #there is no file, create it
             self.btns.append(UIButton("alca","ALC",0,""))
@@ -113,8 +80,11 @@ class UIButtons:
             self.btns.append(UIButton("brake","BRK",1,""))
             self.btns.append(UIButton("sound","SND",1,""))
             self.write_buttons_labels_to_file()
-            self.write_buttons_in_file()
             self.write_buttons_out_file()
+        #send events to initiate UI
+        for i in range(0,6):
+            self.CS.UE.uiButtonInfoEvent(i,self.btns[i].btn_name, \
+                    self.btns[i].btn_label,self.btns[i].btn_status,self.btns[i].btn_label2)
 
     def get_button_status(self,btn_name):
         ret_val =-1 
@@ -128,6 +98,26 @@ class UIButtons:
             if self.btns[i].btn_name.strip() == btn_name:
                 self.btns[i].btn_status = btn_status
                 self.hasChanges = True
+                self.CS.UE.uiButtonInfoEvent(i,self.btns[i].btn_name, \
+                    self.btns[i].btn_label,self.btns[i].btn_status,self.btns[i].btn_label2)
+        self.write_buttons_out_file()
+
+    def set_button_status_from_ui(self,id,btn_status):
+        if self.btns[id].btn_status > 0:
+            if (id == 1) and (btn_status == 0):
+                #don't change status, just model
+                if (self.btns[id].btn_label2 == "Mod OP"):
+                    self.btns[id].btn_label2 = "Mod JJ"
+                else:
+                    self.btns[id].btn_label2 = "Mod OP"
+                self.write_buttons_labels_to_file()
+            else:
+                self.btns[id].btn_status = btn_status * self.btns[id].btn_status
+        else:
+            self.btns[id].btn_status = btn_status
+        self.CS.UE.uiButtonInfoEvent(id,self.btns[id].btn_name, \
+                    self.btns[id].btn_label,self.btns[id].btn_status,self.btns[id].btn_label2)
+        self.write_buttons_out_file()
         
 
     

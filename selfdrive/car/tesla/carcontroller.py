@@ -14,7 +14,6 @@ from selfdrive.car.tesla import teslacan
 from selfdrive.car.tesla.values import AH, CruiseButtons, CAR
 from selfdrive.can.packer import CANPacker
 from selfdrive.config import Conversions as CV
-import custom_alert as tcm
 from ALCA_module import ALCAController
 from ACC_module import ACCController
 from PCC_module import PCCController
@@ -149,14 +148,12 @@ class CarController(object):
     # Basic highway lane change logic
     changing_lanes = CS.right_blinker_on or CS.left_blinker_on
 
-    #countdown for custom message timer
-    tcm.update_custom_alert(CS)
-    #end countdown for custom
+    #upodate custom UI buttons and alerts
+    CS.UE.update_custom_ui()
+
 
     #update statuses for custom buttons every 0.1 sec
     if (frame % 10 == 0):
-      CS.cstm_btns.read_buttons_in_file()
-      CS.cstm_btns.write_buttons_out_file()
       self.ALCA.update_status(True if CS.cstm_btns.get_button_status("alca") > 0 else False)
       #print CS.cstm_btns.get_button_status("alca")
 

@@ -2,7 +2,6 @@ from selfdrive.services import service_list
 from selfdrive.car.tesla.values import AH, CruiseButtons, CAR
 from selfdrive.config import Conversions as CV
 import selfdrive.messaging as messaging
-import custom_alert as customAlert
 import os
 import subprocess
 import time
@@ -150,16 +149,16 @@ class ACCController(object):
         (CS.cstm_btns.get_button_status("acc")>0) and enabled and \
          ((CS.pcm_acc_status == 2) or (CS.pcm_acc_status == 1))
       if(not self.enable_adaptive_cruise) and double_pull:
-        customAlert.custom_alert_message("ACC Enabled",CS,150)
+        CS.UE.custom_alert_message("ACC Enabled",150)
         self.enable_adaptive_cruise = True
         CS.cstm_btns.set_button_status("acc",2)
         self.acc_speed_kph = CS.v_ego_raw * 3.6
       elif self.enable_adaptive_cruise and double_pull:
         #already enabled, reset speed to current speed
-        customAlert.custom_alert_message("ACC Speed Updated",CS,150)
+        CS.UE.custom_alert_message("ACC Speed Updated",150)
         self.acc_speed_kph = CS.v_ego_raw * 3.6
       elif self.enable_adaptive_cruise and not double_pull:
-        customAlert.custom_alert_message("ACC Disabled",CS,150)
+        CS.UE.custom_alert_message("ACC Disabled",150)
         CS.cstm_btns.set_button_status("acc",1)
         self.enable_adaptive_cruise = False
       self.last_cruise_stalk_pull_time = curr_time_ms
@@ -167,7 +166,7 @@ class ACCController(object):
           self.prev_cruise_buttons != CruiseButtons.CANCEL):
       self.enable_adaptive_cruise = False
       if adaptive_cruise_prev == True:
-        customAlert.custom_alert_message("ACC Disabled",CS,150)
+        CS.UE.custom_alert_message("ACC Disabled",150)
         CS.cstm_btns.set_button_status("acc",1)
       self.last_cruise_stalk_pull_time = 0
     elif (self.enable_adaptive_cruise and CS.cruise_buttons !=self.prev_cruise_buttons):
@@ -193,7 +192,7 @@ class ACCController(object):
           CS.pcm_acc_status != 2 and
           curr_time_ms - self.last_cruise_stalk_pull_time >  2000):
       self.enable_adaptive_cruise = False
-      customAlert.custom_alert_message("ACC Disabled",CS,150)
+      CS.UE.custom_alert_message("ACC Disabled",150)
       CS.cstm_btns.set_button_status("acc",1)
     self.prev_steering_wheel_stalk = CS.steering_wheel_stalk
     self.prev_cruise_buttons = CS.cruise_buttons

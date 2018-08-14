@@ -2,7 +2,6 @@ from selfdrive.services import service_list
 from selfdrive.car.tesla.values import AH, CruiseButtons, CAR
 from selfdrive.config import Conversions as CV
 import selfdrive.messaging as messaging
-import custom_alert as customAlert
 import os
 import subprocess
 import time
@@ -154,23 +153,23 @@ class PCCController(object):
          (CS.pcm_acc_status == 0) and self.pedal_hardware_present
       if(not self.enable_pedal_cruise) and double_pull:
         self.enable_pedal_cruise = True
-        customAlert.custom_alert_message("PDL Enabled",CS,150)
+        CS.UE.custom_alert_message("PDL Enabled",150)
         CS.cstm_btns.set_button_status("pedal",2)
         self.pedal_speed_kph = CS.v_ego_raw * 3.6
       elif (self.enable_pedal_cruise) and double_pull:
         #already enabled, reset speed to current speed
-        customAlert.custom_alert_message("PDL Speed Updated",CS,150)
+        CS.UE.custom_alert_message("PDL Speed Updated",150)
         self.pedal_speed_kph = CS.v_ego_raw * 3.6
       elif self.enable_pedal_cruise and not double_pull:
         self.enable_pedal_cruise = False
-        customAlert.custom_alert_message("PDL Disabled",CS,150)
+        CS.UE.custom_alert_message("PDL Disabled",150)
         CS.cstm_btns.set_button_status("pedal",1)
       self.last_cruise_stalk_pull_time = curr_time_ms
     elif (CS.cruise_buttons == CruiseButtons.CANCEL and
           self.prev_cruise_buttons != CruiseButtons.CANCEL):
       self.enable_pedal_cruise = False
       if adaptive_cruise_prev == True:
-        customAlert.custom_alert_message("PDL Disabled",CS,150)
+        CS.UE.custom_alert_message("PDL Disabled",150)
         CS.cstm_btns.set_button_status("pedal",1)
       self.last_cruise_stalk_pull_time = 0
     elif (self.enable_pedal_cruise and CS.cruise_buttons !=self.prev_cruise_buttons):
@@ -196,7 +195,7 @@ class PCCController(object):
           CS.pcm_acc_status != 0 and
           curr_time_ms - self.last_cruise_stalk_pull_time >  2000):
       self.enable_pedal_cruise = False
-      customAlert.custom_alert_message("PCC Disabled",CS,150)
+      CS.UE.custom_alert_message("PCC Disabled",150)
       CS.cstm_btns.set_button_status("pedal",1)
     self.prev_steering_wheel_stalk = CS.steering_wheel_stalk
     self.prev_cruise_buttons = CS.cruise_buttons
