@@ -14,7 +14,7 @@ from selfdrive.car.tesla import teslacan
 from selfdrive.car.tesla.values import AH, CruiseButtons, CAR
 from selfdrive.can.packer import CANPacker
 from selfdrive.config import Conversions as CV
-from selfdrive.car.common.ALCA_module import ALCAController
+from selfdrive.car.modules.ALCA_module import ALCAController
 from selfdrive.car.tesla.ACC_module import ACCController
 from selfdrive.car.tesla.PCC_module import PCCController
 from selfdrive.car.tesla.HSO_module import HSOController

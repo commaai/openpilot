@@ -3,10 +3,10 @@ from common.kalman.simple_kalman import KF1D
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from selfdrive.car.tesla.values import CAR, CruiseButtons, DBC
-from selfdrive.car.common.UIBT_module import UIButtons,UIButton
+from selfdrive.car.modules.UIBT_module import UIButtons,UIButton
 import numpy as np
 from ctypes import create_string_buffer
-from selfdrive.car.common.UIEV_module import UIEvents
+from selfdrive.car.modules.UIEV_module import UIEvents
  
 def parse_gear_shifter(can_gear_shifter, car_fingerprint):
 

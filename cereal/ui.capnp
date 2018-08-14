@@ -31,12 +31,20 @@ struct UIButtonStatus {
 
 struct UICustomAlert {
     caStatus @0 :Int8;
-    caSext @1 :Text;
+    caText @1 :Text;
 }
 
 struct UISetCar {
-    icCarFolder@0 :Text;
+    icCarFolder @0 :Text;
     icCarName @1 :Text;
+}
+
+struct UIPlaySound {
+    sndSound @0 :Int8;
+}
+
+struct UIUpdate {
+    uiDoUpdate @0 :Int8;
 }
 
 struct UIEvent {
@@ -48,5 +56,7 @@ struct UIEvent {
         uiCustomAlert @2 :UICustomAlert;
         uiSetCar @3 :UISetCar;
         uiButtonStatus @4 :UIButtonStatus;
+        uiPlaySound @5 :UIPlaySound;
+        uiUpdate @6 :UIUpdate;
     }
 }

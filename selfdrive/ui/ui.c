@@ -35,6 +35,8 @@
 #include "common/params.h"
 
 #include "cereal/gen/c/log.capnp.h"
+//BB Cereal for UI
+#include "cereal/gen/c/ui.capnp.h"
 
 // Calibration status values from controlsd.py
 #define CALIBRATION_UNCALIBRATED 0
@@ -141,14 +143,6 @@ typedef struct UIScene {
   float awareness_status;
 
   uint64_t started_ts;
-  //BB CPU TEMP
-  uint16_t maxCpuTemp;
-  uint32_t maxBatTemp;
-  float gpsAccuracy ;
-  float freeSpace;
-  float angleSteers;
-  float angleSteersDes;
-  //BB END CPU TEMP
   // Used to display calibration progress
   int cal_status;
   int cal_perc;
@@ -167,17 +161,6 @@ typedef struct UIState {
   EGLSurface surface;
 
   NVGcontext *vg;
-  //BB
-  int custom_alert_playsound;
-  UICstmButton btns[6];
-  char btns_status[6];
-  char *car_model;
-  int btns_x[6];
-  int btns_y[6];
-  int btns_r[6];
-  time_t label_last_modified;
-  time_t status_last_modified;
-  //BB END
   int font_courbd;
   int font_sans_regular;
   int font_sans_semibold;
@@ -349,9 +332,7 @@ static void ui_init(UIState *s) {
   pthread_cond_init(&s->bg_cond, NULL);
   //
   s->status = STATUS_DISENGAGED;
-  s->car_model = "tesla";
-  s->label_last_modified = 0;
-  s->status_last_modified = 0;
+  
   // init connections
 
   s->thermal_sock = zsock_new_sub(">tcp://127.0.0.1:8005", "");
@@ -390,8 +371,9 @@ static void ui_init(UIState *s) {
   assert(s->plus_sock);
   s->plus_sock_raw = zsock_resolve(s->plus_sock);
 
+
+
   s->ipc_fd = -1;
-  s->custom_alert_playsound=0;
 
   // init display
   s->fb = framebuffer_init("ui", 0x00010000, true,
@@ -905,620 +887,7 @@ static void ui_draw_world(UIState *s) {
 }
 
 
-//BB START: functions added for the display of various items
-static int bb_ui_draw_measure(UIState *s,  const char* bb_value, const char* bb_uom, const char* bb_label, 
-		int bb_x, int bb_y, int bb_uom_dx,
-		NVGcolor bb_valueColor, NVGcolor bb_labelColor, NVGcolor bb_uomColor, 
-		int bb_valueFontSize, int bb_labelFontSize, int bb_uomFontSize )  {
-  const UIScene *scene = &s->scene;	
-  nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
-  int dx = 0;
-  if (strlen(bb_uom) > 0) {
-  	dx = (int)(bb_uomFontSize*2.5/2);
-   }
-  //print value
-  nvgFontFace(s->vg, "sans-semibold");
-  nvgFontSize(s->vg, bb_valueFontSize*2.5);
-  nvgFillColor(s->vg, bb_valueColor);
-  nvgText(s->vg, bb_x-dx/2, bb_y+ (int)(bb_valueFontSize*2.5)+5, bb_value, NULL);
-  //print label
-  nvgFontFace(s->vg, "sans-regular");
-  nvgFontSize(s->vg, bb_labelFontSize*2.5);
-  nvgFillColor(s->vg, bb_labelColor);
-  nvgText(s->vg, bb_x, bb_y + (int)(bb_valueFontSize*2.5)+5 + (int)(bb_labelFontSize*2.5)+5, bb_label, NULL);
-  //print uom
-  if (strlen(bb_uom) > 0) {
-      nvgSave(s->vg);
-	  int rx =bb_x + bb_uom_dx + bb_valueFontSize -3;
-	  int ry = bb_y + (int)(bb_valueFontSize*2.5/2)+25;
-	  nvgTranslate(s->vg,rx,ry);
-	  nvgRotate(s->vg, -1.5708); //-90deg in radians
-	  nvgFontFace(s->vg, "sans-regular");
-	  nvgFontSize(s->vg, (int)(bb_uomFontSize*2.5));
-	  nvgFillColor(s->vg, bb_uomColor);
-	  nvgText(s->vg, 0, 0, bb_uom, NULL);
-	  nvgRestore(s->vg);
-  }
-  return (int)((bb_valueFontSize + bb_labelFontSize)*2.5) + 5;
-}
 
-static bool bb_handle_ui_touch(UIState *s, int touch_x, int touch_y) {
-  char *out_status_file = malloc(90);
-  sprintf(out_status_file,"/data/openpilot/selfdrive/car/%s/buttons.ui.msg",s->car_model);
-  char temp_stats[6];
-  int oFile;
-  for(int i=0; i<6; i++) {
-    if (s->btns_r[i] > 0) {
-      if ((abs(touch_x - s->btns_x[i]) < s->btns_r[i]) && (abs(touch_y - s->btns_y[i]) < s->btns_r[i])) {
-        //found it; change the status and write to file
-        if (s->btns_status[i] > 0) {
-          s->btns_status[i] = 0;
-        } else {
-          s->btns_status[i] = 1;
-        }
-        //now write to file
-        for (int j=0; j<6; j++) {
-          if (s->btns_status[j] ==0) {
-            temp_stats[j]='0';
-          } else {
-            temp_stats[j]='1';
-          }
-        }
-        oFile = open(out_status_file,O_WRONLY);
-        if (oFile != -1) {
-          write(oFile,&temp_stats,6);
-        }
-        close(oFile);
-        //done, return true
-        return true;
-      }
-    }
-  }
-  return false;
-};
-
-static int bb_get_button_status(UIState *s, char *btn_name) {
-  int ret_status = 0;
-  for (int i = 0; i< 6; i++) {
-    if (strcmp(s->btns[i].btn_name,btn_name)==0) {
-      ret_status = s->btns_status[i];
-    }
-  }
-  return ret_status;
-}
-
-static void bb_draw_button(UIState *s, int btn_id) {
-  const UIScene *scene = &s->scene;
-
-  int viz_button_x = 0;
-  const int viz_button_y = (box_y + (bdr_s*1.5)) + 20;
-  const int viz_button_w = 140;
-  const int viz_button_h = 140;
-
-  char *btn_text, *btn_text2;
-  
-  const int delta_x = viz_button_w * 1.1;
-  
-  if (btn_id >2) {
-    viz_button_x = scene->ui_viz_rx + scene->ui_viz_rw - (bdr_s*2) -190;
-    viz_button_x -= (6-btn_id) * delta_x ;
-  } else {
-    viz_button_x = scene->ui_viz_rx + (bdr_s*2) + 200;
-    viz_button_x +=  (btn_id) * delta_x;
-  }
-
-  btn_text = s->btns[btn_id].btn_label;
-  btn_text2 = s->btns[btn_id].btn_label2;
-  
-  if (strcmp(btn_text,"")==0) {
-    s->btns_r[btn_id] = 0;
-  } else {
-    s->btns_r[btn_id]= (int)((viz_button_w + viz_button_h)/4);
-  }
-  s->btns_x[btn_id]=viz_button_x + s->btns_r[btn_id];
-  s->btns_y[btn_id]=viz_button_y + s->btns_r[btn_id];
-  if (s->btns_r[btn_id] == 0) {
-    return;
-  }
-  
-  nvgBeginPath(s->vg);
-  nvgRoundedRect(s->vg, viz_button_x, viz_button_y, viz_button_w, viz_button_h, 80);
-  nvgStrokeWidth(s->vg, 12);
-
-  
-  if (s->btns_status[btn_id] ==0) {
-    //disabled - red
-    nvgStrokeColor(s->vg, nvgRGBA(255, 0, 0, 200));
-    if (strcmp(btn_text2,"")==0) {
-      btn_text2 = "Off";
-    }
-  } else
-  if (s->btns_status[btn_id] ==1) {
-    //enabled - white
-    nvgStrokeColor(s->vg, nvgRGBA(255,255,255,200));
-    nvgStrokeWidth(s->vg, 4);
-    if (strcmp(btn_text2,"")==0) {
-      btn_text2 = "Ready";
-    }
-  } else
-  if (s->btns_status[btn_id] ==2) {
-    //active - green
-    nvgStrokeColor(s->vg, nvgRGBA(28, 204,98,200));
-    if (strcmp(btn_text2,"")==0) {
-      btn_text2 = "Active";
-    }
-  } else
-  if (s->btns_status[btn_id] ==9) {
-    //available - thin white
-    nvgStrokeColor(s->vg, nvgRGBA(200,200,200,40));
-    nvgStrokeWidth(s->vg, 4);
-    if (strcmp(btn_text2,"")==0) {
-      btn_text2 = "";
-    }
-  } else {
-    //others - orange
-    nvgStrokeColor(s->vg, nvgRGBA(255, 188, 3, 200));
-    if (strcmp(btn_text2,"")==0) {
-      btn_text2 = "Alert";
-    }
-  }
-
-  nvgStroke(s->vg);
-
-  nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
-  nvgFontFace(s->vg, "sans-regular");
-  nvgFontSize(s->vg, 14*2.5);
-  nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 200));
-  nvgText(s->vg, viz_button_x+viz_button_w/2, 210, btn_text2, NULL);
-
-  nvgFontFace(s->vg, "sans-semibold");
-  nvgFontSize(s->vg, 28*2.5);
-  nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 255));
-  nvgText(s->vg, viz_button_x+viz_button_w/2, 183, btn_text, NULL);
-}
-
-static void bb_draw_buttons(UIState *s) {
-  const UIScene *scene = &s->scene;
-  char *labels_file = malloc(90);
-  char *in_status_file = malloc(90);
-  
-  sprintf(labels_file,"/data/openpilot/selfdrive/car/%s/buttons.msg",s->car_model);
-  sprintf(in_status_file,"/data/openpilot/selfdrive/car/%s/buttons.cc.msg",s->car_model);
-  
-  int lFile;
-  int sFile;
-  char temp_stats[6];
-  struct stat filestat;
-  int file_status;
-  bool changes_present;
-
-  changes_present = false;
-  file_status = stat(labels_file, &filestat);
-  //read only if modified after last read
-  if ((filestat.st_mtime > s->label_last_modified) || (s->label_last_modified ==0)) {
-    lFile = open (labels_file, O_RDONLY);
-    if (lFile != -1) {
-      int rd = read(lFile, &(s->btns), 6*sizeof(struct UICstmButton));
-      close(lFile);
-      s->label_last_modified = filestat.st_mtime;
-      changes_present = true;
-    }
-  }
-  file_status = stat(in_status_file, &filestat);
-  //read only if modified after last read
-  if ((filestat.st_mtime > s->status_last_modified) || (s->status_last_modified ==0)) {
-    sFile = open(in_status_file, O_RDONLY);
-    if (sFile != -1) {
-      int rd = read(sFile, &(temp_stats),6*sizeof(char));
-      if (rd == 6) {
-        for (int i = 0; i < 6; i++) {
-          s->btns_status[i] = temp_stats[i]-'0';
-        }
-      }
-      close(sFile);
-      s->status_last_modified = filestat.st_mtime;
-      changes_present = true;
-    }
-  }
-  for (int i = 0; i < 6; i++) {
-    bb_draw_button(s,i);
-  }
-}
-
-static void bb_ui_draw_custom_alert(UIState *s) {
-  const UIScene *scene = &s->scene;
-  char *filepath = malloc(90);
-  sprintf(filepath,"/data/openpilot/selfdrive/car/%s/alert.msg",s->car_model);
-  //get 3-state switch position
-  int alert_msg_fd;
-  char alert_msg[1000];
-  if (strlen(s->scene.alert_text1) > 0) {
-    //already a system alert, ignore ours
-    return;
-  }
-  alert_msg_fd = open (filepath, O_RDONLY);
-  //if we can't open then done
-  if (alert_msg_fd == -1) {
-    s->custom_alert_playsound = 0;
-    return;
-  } else {
-    int rd = read(alert_msg_fd, &(s->scene.alert_text1), 1000);
-    if ((rd > 1) && (s->scene.alert_text1[rd-1] == '^')) {
-      //^ as last character means warning
-      if (s->custom_alert_playsound==0) {
-        //sound never played, request sound
-        s->custom_alert_playsound=1;
-      }
-      //update_status(s,3); //ALERT_WARNINGa
-      s->status = 3; //ALERT_WARNING
-      rd --;
-    }
-    s->scene.alert_text1[rd] = '\0';
-    close(alert_msg_fd);
-    if(!strcmp(s->scene.alert_text1, "ACC Enabled")){
-      s->acc_enabled = true;
-    }
-    if(!strcmp(s->scene.alert_text1, "ACC Disabled")){
-      s->acc_enabled = false;
-    }
-    if (strlen(s->scene.alert_text1) > 0) {
-      s->scene.alert_size = ALERTSIZE_SMALL;
-    } else {
-      s->scene.alert_size = ALERTSIZE_NONE;
-      s->scene.alert_text1[0]=0;
-      s->custom_alert_playsound = 0;
-    }
-  }
-}
-
-
-
-static void bb_ui_draw_measures_left(UIState *s, int bb_x, int bb_y, int bb_w ) {
-	const UIScene *scene = &s->scene;		
-	int bb_rx = bb_x + (int)(bb_w/2);
-	int bb_ry = bb_y;
-	int bb_h = 5; 
-	NVGcolor lab_color = nvgRGBA(255, 255, 255, 200);
-	NVGcolor uom_color = nvgRGBA(255, 255, 255, 200);
-	int value_fontSize=30;
-	int label_fontSize=15;
-	int uom_fontSize = 15;
-	int bb_uom_dx =  (int)(bb_w /2 - uom_fontSize*2.5) ;
-	
-	//add CPU temperature
-	if (true) {
-	    	char val_str[16];
-		char uom_str[6];
-		NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
-			if((int)(scene->maxCpuTemp/10) > 80) {
-				val_color = nvgRGBA(255, 188, 3, 200);
-			}
-			if((int)(scene->maxCpuTemp/10) > 92) {
-				val_color = nvgRGBA(255, 0, 0, 200);
-			}
-			// temp is alway in C * 10
-			if (s->is_metric) {
-				 snprintf(val_str, sizeof(val_str), "%d C", (int)(scene->maxCpuTemp/10));
-			} else {
-				 snprintf(val_str, sizeof(val_str), "%d F", (int)(32+9*(scene->maxCpuTemp/10)/5));
-			}
-		snprintf(uom_str, sizeof(uom_str), "");
-		bb_h +=bb_ui_draw_measure(s,  val_str, uom_str, "CPU TEMP", 
-				bb_rx, bb_ry, bb_uom_dx,
-				val_color, lab_color, uom_color, 
-				value_fontSize, label_fontSize, uom_fontSize );
-		bb_ry = bb_y + bb_h;
-	}
-
-   //add battery temperature
-	if (true) {
-		char val_str[16];
-		char uom_str[6];
-		NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
-		if((int)(scene->maxBatTemp/1000) > 40) {
-			val_color = nvgRGBA(255, 188, 3, 200);
-		}
-		if((int)(scene->maxBatTemp/1000) > 50) {
-			val_color = nvgRGBA(255, 0, 0, 200);
-		}
-		// temp is alway in C * 1000
-		if (s->is_metric) {
-			 snprintf(val_str, sizeof(val_str), "%d C", (int)(scene->maxBatTemp/1000));
-		} else {
-			 snprintf(val_str, sizeof(val_str), "%d F", (int)(32+9*(scene->maxBatTemp/1000)/5));
-		}
-		snprintf(uom_str, sizeof(uom_str), "");
-		bb_h +=bb_ui_draw_measure(s,  val_str, uom_str, "BAT TEMP", 
-				bb_rx, bb_ry, bb_uom_dx,
-				val_color, lab_color, uom_color, 
-				value_fontSize, label_fontSize, uom_fontSize );
-		bb_ry = bb_y + bb_h;
-	}
-	
-	//add grey panda GPS accuracy
-	if (true) {
-		char val_str[16];
-		char uom_str[3];
-		NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
-		//show red/orange if gps accuracy is high
-	    if(scene->gpsAccuracy > 0.59) {
-	       val_color = nvgRGBA(255, 188, 3, 200);
-	    }
-	    if(scene->gpsAccuracy > 0.8) {
-	       val_color = nvgRGBA(255, 0, 0, 200);
-	    }
-
-
-		// gps accuracy is always in meters
-		if (s->is_metric) {
-			 snprintf(val_str, sizeof(val_str), "%d", (int)(s->scene.gpsAccuracy*100.0));
-		} else {
-			 snprintf(val_str, sizeof(val_str), "%.1f", s->scene.gpsAccuracy * 3.28084 * 12);
-		}
-		if (s->is_metric) {
-			snprintf(uom_str, sizeof(uom_str), "cm");;
-		} else {
-			snprintf(uom_str, sizeof(uom_str), "in");
-		}
-		bb_h +=bb_ui_draw_measure(s,  val_str, uom_str, "GPS PREC", 
-				bb_rx, bb_ry, bb_uom_dx,
-				val_color, lab_color, uom_color, 
-				value_fontSize, label_fontSize, uom_fontSize );
-		bb_ry = bb_y + bb_h;
-	}
-  //add free space - from bthaler1
-	if (true) {
-		char val_str[16];
-		char uom_str[3];
-		NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
-
-		//show red/orange if free space is low
-		if(scene->freeSpace < 0.4) {
-			val_color = nvgRGBA(255, 188, 3, 200);
-		}
-		if(scene->freeSpace < 0.2) {
-			val_color = nvgRGBA(255, 0, 0, 200);
-		}
-
-		snprintf(val_str, sizeof(val_str), "%.1f", s->scene.freeSpace* 100);
-		snprintf(uom_str, sizeof(uom_str), "%%");
-
-		bb_h +=bb_ui_draw_measure(s, val_str, uom_str, "FREE", 
-			bb_rx, bb_ry, bb_uom_dx,
-			val_color, lab_color, uom_color, 
-			value_fontSize, label_fontSize, uom_fontSize );
-		bb_ry = bb_y + bb_h;
-	}	
-	//finally draw the frame
-	bb_h += 20;
-	nvgBeginPath(s->vg);
-  	nvgRoundedRect(s->vg, bb_x, bb_y, bb_w, bb_h, 20);
-  	nvgStrokeColor(s->vg, nvgRGBA(255,255,255,80));
-  	nvgStrokeWidth(s->vg, 6);
-  	nvgStroke(s->vg);
-}
-
-
-static void bb_ui_draw_measures_right(UIState *s, int bb_x, int bb_y, int bb_w ) {
-	const UIScene *scene = &s->scene;		
-	int bb_rx = bb_x + (int)(bb_w/2);
-	int bb_ry = bb_y;
-	int bb_h = 5; 
-	NVGcolor lab_color = nvgRGBA(255, 255, 255, 200);
-	NVGcolor uom_color = nvgRGBA(255, 255, 255, 200);
-	int value_fontSize=30;
-	int label_fontSize=15;
-	int uom_fontSize = 15;
-	int bb_uom_dx =  (int)(bb_w /2 - uom_fontSize*2.5) ;
-	
-	//add visual radar relative distance
-	if (true) {
-		char val_str[16];
-		char uom_str[6];
-		NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
-		if (scene->lead_status) {
-			//show RED if less than 5 meters
-			//show orange if less than 15 meters
-			if((int)(scene->lead_d_rel) < 15) {
-				val_color = nvgRGBA(255, 188, 3, 200);
-			}
-			if((int)(scene->lead_d_rel) < 5) {
-				val_color = nvgRGBA(255, 0, 0, 200);
-			}
-			// lead car relative distance is always in meters
-			if (s->is_metric) {
-				 snprintf(val_str, sizeof(val_str), "%d", (int)scene->lead_d_rel);
-			} else {
-				 snprintf(val_str, sizeof(val_str), "%d", (int)(scene->lead_d_rel * 3.28084));
-			}
-		} else {
-		   snprintf(val_str, sizeof(val_str), "-");
-		}
-		if (s->is_metric) {
-			snprintf(uom_str, sizeof(uom_str), "m   ");
-		} else {
-			snprintf(uom_str, sizeof(uom_str), "ft");
-		}
-		bb_h +=bb_ui_draw_measure(s,  val_str, uom_str, "REL DIST", 
-				bb_rx, bb_ry, bb_uom_dx,
-				val_color, lab_color, uom_color, 
-				value_fontSize, label_fontSize, uom_fontSize );
-		bb_ry = bb_y + bb_h;
-	}
-	
-	//add visual radar relative speed
-	if (true) {
-		char val_str[16];
-		char uom_str[6];
-		NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
-		if (scene->lead_status) {
-			//show Orange if negative speed (approaching)
-			//show Orange if negative speed faster than 5mph (approaching fast)
-			if((int)(scene->lead_v_rel) < 0) {
-				val_color = nvgRGBA(255, 188, 3, 200);
-			}
-			if((int)(scene->lead_v_rel) < -5) {
-				val_color = nvgRGBA(255, 0, 0, 200);
-			}
-			// lead car relative speed is always in meters
-			if (s->is_metric) {
-				 snprintf(val_str, sizeof(val_str), "%d", (int)(scene->lead_v_rel * 3.6 + 0.5));
-			} else {
-				 snprintf(val_str, sizeof(val_str), "%d", (int)(scene->lead_v_rel * 2.2374144 + 0.5));
-			}
-		} else {
-		   snprintf(val_str, sizeof(val_str), "-");
-		}
-		if (s->is_metric) {
-			snprintf(uom_str, sizeof(uom_str), "km/h");;
-		} else {
-			snprintf(uom_str, sizeof(uom_str), "mph");
-		}
-		bb_h +=bb_ui_draw_measure(s,  val_str, uom_str, "REL SPD", 
-				bb_rx, bb_ry, bb_uom_dx,
-				val_color, lab_color, uom_color, 
-				value_fontSize, label_fontSize, uom_fontSize );
-		bb_ry = bb_y + bb_h;
-	}
-	
-	//add  steering angle
-	if (true) {
-		char val_str[16];
-		char uom_str[6];
-		NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
-			//show Orange if more than 6 degrees
-			//show red if  more than 12 degrees
-			if(((int)(scene->angleSteers) < -6) || ((int)(scene->angleSteers) > 6)) {
-				val_color = nvgRGBA(255, 188, 3, 200);
-			}
-			if(((int)(scene->angleSteers) < -12) || ((int)(scene->angleSteers) > 12)) {
-				val_color = nvgRGBA(255, 0, 0, 200);
-			}
-			// steering is in degrees
-			snprintf(val_str, sizeof(val_str), "%.1f",(scene->angleSteers));
-
-	    snprintf(uom_str, sizeof(uom_str), "deg");
-		bb_h +=bb_ui_draw_measure(s,  val_str, uom_str, "STEER", 
-				bb_rx, bb_ry, bb_uom_dx,
-				val_color, lab_color, uom_color, 
-				value_fontSize, label_fontSize, uom_fontSize );
-		bb_ry = bb_y + bb_h;
-	}
-	
-	//add  desired steering angle
-	if (true) {
-		char val_str[16];
-		char uom_str[6];
-		NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
-			//show Orange if more than 6 degrees
-			//show red if  more than 12 degrees
-			if(((int)(scene->angleSteersDes) < -6) || ((int)(scene->angleSteersDes) > 6)) {
-				val_color = nvgRGBA(255, 188, 3, 200);
-			}
-			if(((int)(scene->angleSteersDes) < -12) || ((int)(scene->angleSteersDes) > 12)) {
-				val_color = nvgRGBA(255, 0, 0, 200);
-			}
-			// steering is in degrees
-			snprintf(val_str, sizeof(val_str), "%.1f",(scene->angleSteersDes));
-
-	    snprintf(uom_str, sizeof(uom_str), "deg");
-		bb_h +=bb_ui_draw_measure(s,  val_str, uom_str, "DES STEER", 
-				bb_rx, bb_ry, bb_uom_dx,
-				val_color, lab_color, uom_color, 
-				value_fontSize, label_fontSize, uom_fontSize );
-		bb_ry = bb_y + bb_h;
-	}
-	
-	
-	//finally draw the frame
-	bb_h += 20;
-	nvgBeginPath(s->vg);
-  	nvgRoundedRect(s->vg, bb_x, bb_y, bb_w, bb_h, 20);
-  	nvgStrokeColor(s->vg, nvgRGBA(255,255,255,80));
-  	nvgStrokeWidth(s->vg, 6);
-  	nvgStroke(s->vg);
-}
-
-//draw grid from wiki
-static void ui_draw_vision_grid(UIState *s) {
-  const UIScene *scene = &s->scene;
-  bool is_cruise_set = (s->scene.v_cruise != 0 && s->scene.v_cruise != 255);
-  if (!is_cruise_set) {
-    const int grid_spacing = 30;
-
-    int ui_viz_rx = scene->ui_viz_rx;
-    int ui_viz_rw = scene->ui_viz_rw;
-
-    nvgSave(s->vg);
-
-    // path coords are worked out in rgb-box space
-    nvgTranslate(s->vg, 240.0f, 0.0);
-
-    // zooom in 2x
-    nvgTranslate(s->vg, -1440.0f / 2, -1080.0f / 2);
-    nvgScale(s->vg, 2.0, 2.0);
-
-    nvgScale(s->vg, 1440.0f / s->rgb_width, 1080.0f / s->rgb_height);
-
-    nvgBeginPath(s->vg);
-    nvgStrokeColor(s->vg, nvgRGBA(255,255,255,128));
-    nvgStrokeWidth(s->vg, 1);
-
-    for (int i=box_y; i < box_h; i+=grid_spacing) {
-      nvgMoveTo(s->vg, ui_viz_rx, i);
-      //nvgLineTo(s->vg, ui_viz_rx, i);
-      nvgLineTo(s->vg, ((ui_viz_rw + ui_viz_rx) / 2)+ 10, i);
-    }
-
-    for (int i=ui_viz_rx + 12; i <= ui_viz_rw; i+=grid_spacing) {
-      nvgMoveTo(s->vg, i, 0);
-      nvgLineTo(s->vg, i, 1000);
-    }
-    nvgStroke(s->vg);
-    nvgRestore(s->vg);
-  }
-}
-
-static void bb_ui_draw_UI(UIState *s) {
-  //get 3-state switch position
-  int tri_state_fd;
-  int tri_state_switch;
-  char buffer[10];
-  tri_state_switch = 0;
-  tri_state_fd = open ("/sys/devices/virtual/switch/tri-state-key/state", O_RDONLY);
-  //if we can't open then switch should be considered in the middle, nothing done
-  if (tri_state_fd == -1) {
-            tri_state_switch = 2;
-  } else {
-  	read (tri_state_fd, &buffer, 10);
-	tri_state_switch = buffer[0] -48;
-	close(tri_state_fd);
-  }
-  
-  if (tri_state_switch == 1) {
-	  const UIScene *scene = &s->scene;
-	  const int bb_dml_w = 180;
-	  const int bb_dml_x =  (scene->ui_viz_rx + (bdr_s*2));
-	  const int bb_dml_y = (box_y + (bdr_s*1.5))+220;
-	  
-	  const int bb_dmr_w = 180;
-	  const int bb_dmr_x = scene->ui_viz_rx + scene->ui_viz_rw - bb_dmr_w - (bdr_s*2) ; 
-	  const int bb_dmr_y = (box_y + (bdr_s*1.5))+220;
-	 bb_ui_draw_measures_left(s,bb_dml_x, bb_dml_y, bb_dml_w );
-	 bb_ui_draw_measures_right(s,bb_dmr_x, bb_dmr_y, bb_dmr_w );
-   bb_draw_buttons(s);
-   bb_ui_draw_custom_alert(s);
-	 }
-   if (tri_state_switch ==2) {
-	 	bb_ui_draw_custom_alert(s);
-	 }
-	 if (tri_state_switch ==3) {
-	 	ui_draw_vision_grid(s);
-	 }
- }
- 
- 
-//BB END: functions added for the display of various items
 
 static void update_status(UIState *s, int status) {
   int old_status = s->status;
@@ -1526,18 +895,6 @@ static void update_status(UIState *s, int status) {
     s->status = status;
     // wake up bg thread to change
     pthread_cond_signal(&s->bg_cond);
-    //if tesla call the sound command
-    if ((status ==3 ) && (s->custom_alert_playsound > 0)) {
-      return;
-    }
-    char* snd_command;
-    if ((status ==3 ) && (s->custom_alert_playsound == 1)) {
-      s->custom_alert_playsound = 2;
-    }
-    if ((bb_get_button_status(s,"sound") > 0) && ((old_status != STATUS_STOPPED) || (s->status != STATUS_DISENGAGED))) {
-      asprintf(&snd_command, "python /data/openpilot/selfdrive/car/common/snd/playsound.py %d &",s->car_model, status);
-      system(snd_command);
-    }
   }
 }
 
@@ -1592,7 +949,7 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   }
 
   //BB START: add new measures panel  const int bb_dml_w = 180;
-	bb_ui_draw_UI(s) ;
+	//bb_ui_draw_UI(s) ;
   //BB END: add new measures panel
 }
 
@@ -1971,6 +1328,7 @@ static void ui_update(UIState *s) {
       num_polls++;
     }
 
+
     int ret = zmq_poll(polls, num_polls, 0);
     if (ret < 0) {
       LOGW("poll failed (%d)", ret);
@@ -2065,15 +1423,6 @@ static void ui_update(UIState *s) {
       struct cereal_GpsLocationData datad;
       cereal_read_GpsLocationData(&datad, eventd.gpsLocation);
 
-      s->scene.gpsAccuracy= datad.accuracy;
-      if (s->scene.gpsAccuracy>100)
-      {
-          s->scene.gpsAccuracy=99.99;
-      }
-      else if (s->scene.gpsAccuracy==0)
-      {
-          s->scene.gpsAccuracy=99.8;
-      }
       capn_free(&ctx);
       zmq_msg_close(&msg);
     } else {
@@ -2112,8 +1461,6 @@ static void ui_update(UIState *s) {
         }
         s->scene.v_cruise = datad.vCruise;
         s->scene.v_ego = datad.vEgo;
-		s->scene.angleSteers = datad.angleSteers;
-		s->scene.angleSteersDes = datad.angleSteersDes;
         s->scene.curvature = datad.curvature;
         s->scene.engaged = datad.enabled;
         s->scene.engageable = datad.engageable;
@@ -2237,23 +1584,6 @@ static void ui_update(UIState *s) {
 
         s->scene.started_ts = datad.startedTs;
 
-	   //BBB CPU TEMP
-		s->scene.maxCpuTemp=datad.cpu0;
-        if (s->scene.maxCpuTemp<datad.cpu1)
-        {
-            s->scene.maxCpuTemp=datad.cpu1;
-        }
-        else if (s->scene.maxCpuTemp<datad.cpu2)
-        {
-            s->scene.maxCpuTemp=datad.cpu2;
-        }
-        else if (s->scene.maxCpuTemp<datad.cpu3)
-        {
-            s->scene.maxCpuTemp=datad.cpu3;
-        }
-      s->scene.maxBatTemp=datad.bat;
-	  s->scene.freeSpace=datad.freeSpace;
-	   //BBB END CPU TEMP
       } else if (eventd.which == cereal_Event_uiLayoutState) {
           struct cereal_UiLayoutState datad;
           cereal_read_UiLayoutState(&datad, eventd.uiLayoutState);
@@ -2433,6 +1763,19 @@ static void* bg_thread(void* args) {
   return NULL;
 }
 
+static void bb_init_ui_overlay(UIState *s) {
+  char* snd_command;
+  //launch overlay
+  sprintf(snd_command, "/data/openpilot/selfdrive/car/common/uio/uio &");
+  system(snd_command);
+  //send UIState cereal message
+  //bb_send_ui_state(s);
+}
+
+static void bb_send_ui_state(UIState *s) {
+  cereal_UIEvent_ptr p;
+}
+
 
 int main() {
   int err;
@@ -2444,7 +1787,7 @@ int main() {
   UIState uistate;
   UIState *s = &uistate;
   ui_init(s);
-
+  bb_init_ui_overlay(s);
   pthread_t connect_thread_handle;
   err = pthread_create(&connect_thread_handle, NULL,
                        vision_connect_thread, s);
@@ -2497,8 +1840,6 @@ int main() {
     if (touched == 1) {
       // touch event will still happen :(
       set_awake(s, true);
-      // BB check touch area
-      bb_handle_ui_touch(s,touch_x,touch_y);
     }
 
     // manage wakefulness
