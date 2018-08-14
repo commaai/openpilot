@@ -18,7 +18,7 @@ def parse_gear_shifter(can_gear_shifter, car_fingerprint):
       return "drive"
     elif can_gear_shifter == 0xa:
       return "sport"
-  elif car_fingerprint in (CAR.CIVIC, CAR.CRV, CAR.ACURA_RDX, CAR.CRV_5G, CAR.CIVIC_HATCH):
+  elif car_fingerprint in (CAR.CIVIC, CAR.CRV, CAR.ACURA_RDX, CAR.ACCORD_15, CAR.CRV_5G, CAR.CIVIC_HATCH):
     if can_gear_shifter == 0x1:
       return "park"
     elif can_gear_shifter == 0x2:
@@ -119,7 +119,7 @@ def get_can_signals(CP):
                 ("CRUISE_SPEED_OFFSET", "CRUISE_PARAMS", 0)]
     checks += [("CRUISE_PARAMS", 50)]
 
-  if CP.carFingerprint == CAR.ACCORD:
+  if CP.carFingerprint in (CAR.ACCORD, CAR.ACCORD_15):
     signals += [("DRIVERS_DOOR_OPEN", "SCM_FEEDBACK", 1)]
   else:
     signals += [("DOOR_OPEN_FL", "DOORS_STATUS", 1),
@@ -212,7 +212,7 @@ class CarState(object):
 
     # ******************* parse out can *******************
 
-    if self.CP.carFingerprint == CAR.ACCORD: # TODO: find wheels moving bit in dbc
+    if self.CP.carFingerprint in (CAR.ACCORD, CAR.ACCORD_15): # TODO: find wheels moving bit in dbc
       self.standstill = cp.vl["ENGINE_DATA"]['XMISSION_SPEED'] < 0.1
       self.door_all_closed = not cp.vl["SCM_FEEDBACK"]['DRIVERS_DOOR_OPEN']
     else:
@@ -266,7 +266,7 @@ class CarState(object):
     self.left_blinker_on = cp.vl["SCM_FEEDBACK"]['LEFT_BLINKER']
     self.right_blinker_on = cp.vl["SCM_FEEDBACK"]['RIGHT_BLINKER']
 
-    if self.CP.carFingerprint in (CAR.CIVIC, CAR.ODYSSEY, CAR.CRV_5G, CAR.ACCORD, CAR.CIVIC_HATCH):
+    if self.CP.carFingerprint in (CAR.CIVIC, CAR.ODYSSEY, CAR.CRV_5G, CAR.ACCORD, CAR.ACCORD_15, CAR.CIVIC_HATCH):
       self.park_brake = cp.vl["EPB_STATUS"]['EPB_STATE'] != 0
       self.brake_hold = cp.vl["VSA_STATUS"]['BRAKE_HOLD_ACTIVE']
       self.main_on = cp.vl["SCM_FEEDBACK"]['MAIN_ON']
