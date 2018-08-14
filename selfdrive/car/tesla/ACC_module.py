@@ -173,7 +173,7 @@ class ACCController(object):
               break
         if l20 is not None:
           self.lead_1 = l20.live20.leadOne
-        button_to_press = self.calc_follow_speed(CS)
+        button_to_press = self.calc_follow_button(CS)
     if button_to_press:
       self.automated_cruise_action_time = current_time_ms
     return button_to_press
@@ -214,7 +214,7 @@ class ACCController(object):
     ###   Logic to determine best cruise speed ###
 
     # Automatically engange traditional cruise if it is idle and we are
-    # going fast enough and accelerating
+    # going fast enough and accelerating.
     if (CS.pcm_acc_status == 1
         and self.enable_adaptive_cruise
         and CS.v_ego > min_cruise_speed_ms
