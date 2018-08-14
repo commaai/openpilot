@@ -73,12 +73,7 @@ class UIButtons:
             self.read_buttons_out_file()
         else:
             #there is no file, create it
-            self.btns.append(UIButton("alca","ALC",0,""))
-            self.btns.append(UIButton("acc","ACC",0,"Mod OP"))
-            self.btns.append(UIButton("pedal","PDL",0,""))
-            self.btns.append(UIButton("steer","STR",0,""))
-            self.btns.append(UIButton("brake","BRK",1,""))
-            self.btns.append(UIButton("sound","SND",1,""))
+            self.CS.init_ui_buttons()
             self.write_buttons_labels_to_file()
             self.write_buttons_out_file()
         #send events to initiate UI

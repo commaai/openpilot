@@ -3,7 +3,7 @@ from common.kalman.simple_kalman import KF1D
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from selfdrive.car.tesla.values import CAR, CruiseButtons, DBC
-from selfdrive.car.common.UIBT_module import UIButtons
+from selfdrive.car.common.UIBT_module import UIButtons,UIButton
 import numpy as np
 from ctypes import create_string_buffer
 from selfdrive.car.common.UIEV_module import UIEvents
@@ -229,6 +229,14 @@ class CarState(object):
     self.v_cruise_pcm = 0.0
     # Actual cruise speed currently active on the car.
     self.v_cruise_actual = 0.0
+
+  def init_ui_buttons(self):
+    self.cstm_btns.btns.append(UIButton("alca","ALC",0,""))
+    self.cstm_btns.btns.append(UIButton("acc","ACC",0,"Mod OP"))
+    self.cstm_btns.btns.append(UIButton("pedal","PDL",0,""))
+    self.cstm_btns.btns.append(UIButton("steer","STR",0,""))
+    self.cstm_btns.btns.append(UIButton("brake","BRK",1,""))
+    self.cstm_btns.btns.append(UIButton("sound","SND",1,""))
 
   def update(self, cp, epas_cp):
 
