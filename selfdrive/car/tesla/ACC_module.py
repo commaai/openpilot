@@ -119,7 +119,7 @@ class ACCController(object):
       # going fast enough and we are accelerating.
       if (CS.pcm_acc_status == 1
           and CS.v_ego > min_cruise_speed_ms
-          and CS.a_ego > 0.1):
+          and CS.a_ego > 0.12):
         button_to_press = CruiseButtons.DECEL_2ND
       # If traditional cruise is engaged, then control it.
       elif (CS.pcm_acc_status == 2
@@ -211,7 +211,7 @@ class ACCController(object):
     if (CS.pcm_acc_status == 1
         and self.enable_adaptive_cruise
         and CS.v_ego > min_cruise_speed_ms
-        and cs.a_ego > 0.1):
+        and cs.a_ego > 0.12):
       button = CruiseButtons.DECEL_SET
     # If traditional cruise is engaged, then control it.
     elif CS.pcm_acc_status == 2:
