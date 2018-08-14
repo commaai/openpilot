@@ -115,56 +115,56 @@ class ACCController(object):
         # the car think we're doing a 'long press' on the cruise stalk,
         # resulting in small, jerky speed adjustments.
         and current_time_ms > self.automated_cruise_action_time + 1000):
-        # Automatically engange traditional cruise if it is idle and we are
-        # going fast enough and we are accelerating.
-        if (CS.pcm_acc_status == 1
-            and CS.v_ego > min_cruise_speed_ms
-            and CS.a_ego > 0.1):
+      # Automatically engange traditional cruise if it is idle and we are
+      # going fast enough and we are accelerating.
+      if (CS.pcm_acc_status == 1
+          and CS.v_ego > min_cruise_speed_ms
+          and CS.a_ego > 0.1):
+        button_to_press = CruiseButtons.DECEL_2ND
+      # If traditional cruise is engaged, then control it.
+      elif (CS.pcm_acc_status == 2
+            # But don't make adjustments if a human has manually done so in
+            # the last 3 seconds. Human intention should not be overridden.
+            and current_time_ms > self.human_cruise_action_time + 3000):
+        if CS.imperial_speed_units:
+          # Imperial unit cars adjust cruise in units of 1 and 5 mph.
+          half_press_kph = 1 * CV.MPH_TO_KPH
+          full_press_kph = 5 * CV.MPH_TO_KPH
+        else:
+          # Metric cars adjust cruise in units of 1 and 5 kph.
+          half_press_kph = 1
+          full_press_kph = 5
+        
+        # Reduce cruise speed significantly if necessary.
+        if speed_offset < (-1 * full_press_kph):
+          # Send cruise stalk dn_2nd.
           button_to_press = CruiseButtons.DECEL_2ND
-        # If traditional cruise is engaged, then control it.
-        elif (CS.pcm_acc_status == 2
-              # But don't make adjustments if a human has manually done so in
-              # the last 3 seconds. Human intention should not be overridden.
-              and current_time_ms > self.human_cruise_action_time + 3000):
-          if CS.imperial_speed_units:
-            # Imperial unit cars adjust cruise in units of 1 and 5 mph.
-            half_press_kph = 1 * CV.MPH_TO_KPH
-            full_press_kph = 5 * CV.MPH_TO_KPH
-          else:
-            # Metric cars adjust cruise in units of 1 and 5 kph.
-            half_press_kph = 1
-            full_press_kph = 5
-          
-          # Reduce cruise speed significantly if necessary.
-          if speed_offset < (-1 * full_press_kph):
-            # Send cruise stalk dn_2nd.
-            button_to_press = CruiseButtons.DECEL_2ND
-          # Reduce speed slightly if necessary.
-          elif speed_offset < (-1 * half_press_kph):
-            # Send cruise stalk dn_1st.
-            button_to_press = CruiseButtons.DECEL_SET
-          # Increase cruise speed if possible.
-          elif CS.v_ego > min_cruise_speed_ms:
-            # How much we can accelerate without exceeding max allowed speed.
-            available_speed = self.acc_speed_kph - CS.v_cruise_actual
-            if speed_offset > full_press_kph and speed_offset < available_speed:
-              # Send cruise stalk up_2nd.
-              button_to_press = CruiseButtons.RES_ACCEL_2ND
-            elif speed_offset > half_press_kph and speed_offset < available_speed:
-              # Send cruise stalk up_1st.
-              button_to_press = CruiseButtons.RES_ACCEL
-        if CS.cstm_btns.btns[1].btn_label2 == "Mod JJ":
-          # Alternative speed decision logic that uses the lead car's distance
-          # and speed more directly.
-          # Bring in the lead car distance from the Live20 feed
-          l20 = None
-          if enabled:
-            for socket, event in self.poller.poll(0):
-              if socket is self.live20:
-                  l20 = messaging.recv_one(socket)
-          if l20 is not None:
-              self.lead_1 = l20.live20.leadOne
-          button_to_press = self.calc_follow_speed(CS)
+        # Reduce speed slightly if necessary.
+        elif speed_offset < (-1 * half_press_kph):
+          # Send cruise stalk dn_1st.
+          button_to_press = CruiseButtons.DECEL_SET
+        # Increase cruise speed if possible.
+        elif CS.v_ego > min_cruise_speed_ms:
+          # How much we can accelerate without exceeding max allowed speed.
+          available_speed = self.acc_speed_kph - CS.v_cruise_actual
+          if speed_offset > full_press_kph and speed_offset < available_speed:
+            # Send cruise stalk up_2nd.
+            button_to_press = CruiseButtons.RES_ACCEL_2ND
+          elif speed_offset > half_press_kph and speed_offset < available_speed:
+            # Send cruise stalk up_1st.
+            button_to_press = CruiseButtons.RES_ACCEL
+      if CS.cstm_btns.btns[1].btn_label2 == "Mod JJ":
+        # Alternative speed decision logic that uses the lead car's distance
+        # and speed more directly.
+        # Bring in the lead car distance from the Live20 feed
+        l20 = None
+        if enabled:
+          for socket, event in self.poller.poll(0):
+            if socket is self.live20:
+                l20 = messaging.recv_one(socket)
+        if l20 is not None:
+            self.lead_1 = l20.live20.leadOne
+        button_to_press = self.calc_follow_speed(CS)
     if button_to_press:
         self.automated_cruise_action_time = current_time_ms
     return button_to_press
