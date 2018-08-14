@@ -206,10 +206,11 @@ class ACCController(object):
     ###   Logic to determine best cruise speed ###
 
     # Automatically engange traditional cruise if it is idle and we are
-    # going fast enough.
+    # going fast enough and accelerating
     if (CS.pcm_acc_status == 1
         and self.enable_adaptive_cruise
-        and CS.v_ego > min_cruise_speed_ms):
+        and CS.v_ego > min_cruise_speed_ms
+        and cs.a_ego > 0.1):
       button = CruiseButtons.DECEL_SET
     # If traditional cruise is engaged, then control it.
     elif CS.pcm_acc_status == 2:
