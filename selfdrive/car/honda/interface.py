@@ -204,7 +204,7 @@ class CarInterface(object):
       ret.longitudinalKiBP = [0., 35.]
       ret.longitudinalKiV = [0.18, 0.12]
 
-    elif candidate == CAR.ACCORD:
+    elif candidate in (CAR.ACCORD, CAR.ACCORD_15):
       stop_and_go = True
       ret.safetyParam = 1 # Accord and CRV 5G use an alternate user brake msg
       ret.mass = 3279. * CV.LB_TO_KG + std_cargo
