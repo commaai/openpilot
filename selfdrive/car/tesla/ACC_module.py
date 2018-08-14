@@ -49,7 +49,8 @@ class ACCController(object):
         customAlert.custom_alert_message("ACC Enabled", CS, 150)
         self.enable_adaptive_cruise = True
         CS.cstm_btns.set_button_status("acc", 2)
-        self.acc_speed_kph = CS.v_ego_raw * CV.MS_TO_KPH
+        # Increase ACC speed to match current, if applicable.
+        self.acc_speed_kph = max(CS.v_ego_raw * CV.MS_TO_KPH, self.acc_speed_kph)
       elif self.enable_adaptive_cruise and double_pull:
         # already enabled, reset speed to current speed
         customAlert.custom_alert_message("ACC Speed Updated", CS, 150)
