@@ -23,6 +23,9 @@ class ACCController(object):
     self.lead_1 = None
     self.last_update_time = 0
     self.enable_adaptive_cruise = False
+    # Whether to re-engage automatically after being paused due to low speed or
+    # user-initated deceleration.
+    self.autoresume = False
     self.last_cruise_stalk_pull_time = 0
     self.prev_steering_wheel_stalk = None
     self.prev_cruise_buttons = CruiseButtons.IDLE
@@ -91,6 +94,7 @@ class ACCController(object):
     # If ACC was on and something disabled cruise control, disable ACC too.
     elif (self.enable_adaptive_cruise and
           CS.pcm_acc_status != 2 and
+          not self.autoresume and
           curr_time_ms - self.last_cruise_stalk_pull_time >  2000):
       self.enable_adaptive_cruise = False
       customAlert.custom_alert_message("ACC Disabled", CS, 150)
@@ -103,6 +107,7 @@ class ACCController(object):
           CS.cstm_btns.set_button_status("acc", 1)
       else:
           CS.cstm_btns.set_button_status("acc", 9)
+    self.autoresume = CS.cstm_btns.get_button_label2("acc") == "AutoRes"
 
   def update_acc(self, enabled, CS, frame, actuators, pcm_speed):
     # Adaptive cruise control

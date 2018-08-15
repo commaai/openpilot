@@ -53,8 +53,10 @@ class UIButtons:
                     if self.btns[i].btn_status > 0:
                         if (i == 1) and (ord(indata[1])==48):
                             #don't change status, just model
-                            if (self.btns[i].btn_label2 == "Mod OP"):
+                            if self.btns[i].btn_label2 == "Mod OP":
                                 self.btns[i].btn_label2 = "Mod JJ"
+                            elif self.btns[i].btn_label2 == "Mod JJ":
+                                self.btns[i].btn_label2 = "AutoRes"
                             else:
                                 self.btns[i].btn_label2 = "Mod OP"
                             self.write_buttons_labels_to_file()
@@ -115,19 +117,25 @@ class UIButtons:
             self.write_buttons_labels_to_file()
             self.write_buttons_in_file()
             self.write_buttons_out_file()
+            
+    def get_button(self, btn_name):
+        for button in self.btns:
+            if button.btn_name.strip() == btn_name:
+                return button
+        return None
 
     def get_button_status(self, btn_name):
-        for button in self.btns:
-            if button.btn_name.strip() == btn_name:
-                return button.btn_status
-        return -1
+        btn = self.get_button(btn_name)
+        if btn:
+            return btn.btn_status
+        else:
+            return -1
 
     def set_button_status(self, btn_name, btn_status):
-        for button in self.btns:
-            if button.btn_name.strip() == btn_name:
-                button.btn_status = btn_status
-                self.hasChanges = True
-                return
+        btn = self.get_button(btn_name)
+        if btn:
+            btn.btn_status = btn_status
+            self.hasChanges = True
         
 
     

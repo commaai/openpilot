@@ -3,7 +3,7 @@ from common.kalman.simple_kalman import KF1D
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from selfdrive.car.tesla.values import CAR, CruiseButtons, DBC
-from uibuttons import UIButtons,UIButton
+from uibuttons import UIButtons, UIButton
 import numpy as np
 from ctypes import create_string_buffer
  
@@ -157,10 +157,6 @@ def get_epas_parser(CP):
 class CarState(object):
   def __init__(self, CP):
     self.brake_only = CP.enableCruise
-    self.enable_adaptive_cruise = False
-    # Whether adaptive cruise should automatically resume if it was paused
-    # by low speeds or braking.
-    self.acc_autoresume = False
     self.last_cruise_stalk_pull_time = 0
     self.CP = CP
 
