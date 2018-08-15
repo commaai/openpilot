@@ -1033,34 +1033,31 @@ static int bb_ui_draw_measure(UIState *s,  const char* bb_value, const char* bb_
 }
 
 static bool bb_handle_ui_touch(UIState *s, int touch_x, int touch_y) {
-  //TODO send cereal on touch!
-  char *out_status_file = malloc(90);
-  sprintf(out_status_file,"/data/openpilot/selfdrive/car/%s/buttons.ui.msg",s->car_model);
-  char temp_stats[6];
-  int oFile;
   for(int i=0; i<6; i++) {
     if (s->btns_r[i] > 0) {
       if ((abs(touch_x - s->btns_x[i]) < s->btns_r[i]) && (abs(touch_y - s->btns_y[i]) < s->btns_r[i])) {
-        //found it; change the status and write to file
+        //found it; change the status
         if (s->btns_status[i] > 0) {
           s->btns_status[i] = 0;
         } else {
           s->btns_status[i] = 1;
         }
-        //now write to file
-        for (int j=0; j<6; j++) {
-          if (s->btns_status[j] ==0) {
-            temp_stats[j]='0';
-          } else {
-            temp_stats[j]='1';
-          }
-        }
-        oFile = open(out_status_file,O_WRONLY);
-        if (oFile != -1) {
-          write(oFile,&temp_stats,6);
-        }
-        close(oFile);
-        //done, return true
+        //now let's send the cereal
+        struct capn ctx;
+        capn_init_malloc(&ctx);
+
+        struct capn_ptr root = capn_root(&ctx);
+        struct capn_ptr ptr = capn_new_struct(root.seg, 8, 0);
+        cereal_UIButtonStatus_ptr btn_p = cereal_new_UIButtonStatus(root.seg);
+        struct cereal_UIButtonStatus btn_d;
+        btn_d.btnId = i;
+        btn_d.btnStatus = s->btns_status[i];
+        cereal_write_UIButtonStatus(&btn_d, btn_p);
+        zmq_msg_t msg;
+        zmq_msg_init(&msg);
+        capn_write_mem(&ctx,zmq_msg_data(&msg),100,0);
+        capn_free(&ctx);
+        zmq_msg_send(&msg, s->uiButtonStatus_sock_raw,0);
         return true;
       }
     }
