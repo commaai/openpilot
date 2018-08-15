@@ -63,6 +63,7 @@ class ACCController(object):
     elif (CS.cruise_buttons == CruiseButtons.CANCEL and
           self.prev_cruise_buttons != CruiseButtons.CANCEL):
       self.enable_adaptive_cruise = False
+      self.acc_speed_kph = 0.
       if prev_enable_adaptive_cruise:
         customAlert.custom_alert_message("ACC Disabled", CS, 150)
         CS.cstm_btns.set_button_status("acc", 1)
