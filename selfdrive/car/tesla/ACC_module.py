@@ -148,7 +148,7 @@ class ACCController(object):
           half_press_kph = 1
           full_press_kph = 5
         
-        # Reduce cruise speed significantly if necessary. Multiply by 80% to
+        # Reduce cruise speed significantly if necessary. Multiply by a % to
         # make the car slightly more eager to slow down vs speed up.
         if speed_offset < (-0.6 * full_press_kph):
           # Send cruise stalk dn_2nd.
