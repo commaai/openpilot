@@ -130,6 +130,13 @@ class UIButtons:
             return btn.btn_status
         else:
             return -1
+        
+    def get_button_label2(self, btn_name):
+        btn = self.get_button(btn_name)
+        if btn:
+            return btn.btn_label2
+        else:
+            return -1
 
     def set_button_status(self, btn_name, btn_status):
         btn = self.get_button(btn_name)
