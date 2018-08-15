@@ -1766,7 +1766,7 @@ static void* bg_thread(void* args) {
 static void bb_init_ui_overlay(UIState *s) {
   char* snd_command;
   //launch overlay
-  sprintf(snd_command, "/data/openpilot/selfdrive/car/common/uio/uio &");
+  asprintf(&snd_command, "/data/openpilot/selfdrive/car/modules/uio/uio &");
   system(snd_command);
   //send UIState cereal message
   //bb_send_ui_state(s);
