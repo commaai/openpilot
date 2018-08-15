@@ -122,7 +122,7 @@ class CarController(object):
     # *** compute control surfaces ***
 
     # gas and brake
-	apply_gas = clip(actuators.gas, 0., 1.)
+    apply_gas = clip(actuators.gas, 0., 1.)
     apply_accel = actuators.gas - actuators.brake
     apply_accel, self.accel_steady = accel_hysteresis(apply_accel, self.accel_steady, enabled)
     apply_accel = clip(apply_accel * ACCEL_SCALE, ACCEL_MIN, ACCEL_MAX)
