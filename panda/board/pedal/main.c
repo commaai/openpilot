@@ -160,7 +160,7 @@ void CAN1_RX0_IRQHandler() {
         }
         // clear the timeout
         timeout = 0;
-        
+       }
       } else {
         // wrong checksum = fault
         state = FAULT_BAD_CHECKSUM;
