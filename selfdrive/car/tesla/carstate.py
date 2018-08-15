@@ -158,6 +158,9 @@ class CarState(object):
   def __init__(self, CP):
     self.brake_only = CP.enableCruise
     self.enable_adaptive_cruise = False
+    # Whether adaptive cruise should automatically resume if it was paused
+    # by low speeds or braking.
+    self.acc_autoresume = False
     self.last_cruise_stalk_pull_time = 0
     self.CP = CP
 

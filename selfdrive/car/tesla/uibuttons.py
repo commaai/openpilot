@@ -116,18 +116,18 @@ class UIButtons:
             self.write_buttons_in_file()
             self.write_buttons_out_file()
 
-    def get_button_status(self,btn_name):
-        ret_val =-1 
-        for i in range(0,6):
-            if self.btns[i].btn_name.strip() == btn_name:
-                ret_val = self.btns[i].btn_status
-        return ret_val
+    def get_button_status(self, btn_name):
+        for button in self.btns:
+            if button.btn_name.strip() == btn_name:
+                return button.btn_status
+        return -1
 
-    def set_button_status(self,btn_name,btn_status):
-        for i in range(0,6):
-            if self.btns[i].btn_name.strip() == btn_name:
-                self.btns[i].btn_status = btn_status
+    def set_button_status(self, btn_name, btn_status):
+        for button in self.btns:
+            if button.btn_name.strip() == btn_name:
+                button.btn_status = btn_status
                 self.hasChanges = True
+                return
         
 
     
