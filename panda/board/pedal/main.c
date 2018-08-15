@@ -140,7 +140,7 @@ void CAN1_RX0_IRQHandler() {
       uint16_t value_1 = (dat[2] << 8) | dat[3];
       uint8_t enable = (dat2[0] >> 7) & 1;
       uint8_t cksum = dat2[1];
-      if (can_cksum(dat, 5, CAN_GAS_INPUT) == (dat2[1]) {
+      if (can_cksum(dat, 5, CAN_GAS_INPUT) == dat2[1]) {
         #ifdef DEBUG
           puts("setting gas ");
           puth(value);
@@ -155,8 +155,8 @@ void CAN1_RX0_IRQHandler() {
             state = NO_FAULT;
           } else {
             state = FAULT_INVALID;
-          }
-          gas_set_0 = gas_set_1 = -1; //set negative when no gas command so ADC = DAC
+            }
+            gas_set_0 = gas_set_1 = -1;
         }
         // clear the timeout
         timeout = 0;
@@ -169,7 +169,6 @@ void CAN1_RX0_IRQHandler() {
     // next
     CAN->RF0R |= CAN_RF0R_RFOM0;
   }
-}
 
 void CAN1_SCE_IRQHandler() {
   state = FAULT_SCE;
