@@ -150,11 +150,11 @@ class ACCController(object):
         
         # Reduce cruise speed significantly if necessary. Multiply by 80% to
         # make the car slightly more eager to slow down vs speed up.
-        if speed_offset < (-0.8 * full_press_kph):
+        if speed_offset < (-0.6 * full_press_kph):
           # Send cruise stalk dn_2nd.
           button_to_press = CruiseButtons.DECEL_2ND
         # Reduce speed slightly if necessary.
-        elif speed_offset < (-0.6 * half_press_kph):
+        elif speed_offset < (-0.9 * half_press_kph):
           # Send cruise stalk dn_1st.
           button_to_press = CruiseButtons.DECEL_SET
         # Increase cruise speed if possible.
