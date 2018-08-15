@@ -122,6 +122,7 @@ class CarController(object):
     # *** compute control surfaces ***
 
     # gas and brake
+	apply_gas = clip(actuators.gas, 0., 1.)
     apply_accel = actuators.gas - actuators.brake
     apply_accel, self.accel_steady = accel_hysteresis(apply_accel, self.accel_steady, enabled)
     apply_accel = clip(apply_accel * ACCEL_SCALE, ACCEL_MIN, ACCEL_MAX)
@@ -209,6 +210,10 @@ class CarController(object):
       else:
         can_sends.append(create_accel_command(self.packer, 0, pcm_cancel_cmd, False))
 
+    if CS.CP.enableGasInterceptor:
+          # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
+          # This prevents unexpected pedal range rescaling
+          can_sends.append(toyotacan.create_gas_command(self.packer, apply_gas))
     if frame % 10 == 0 and ECU.CAM in self.fake_ecus and self.car_fingerprint not in NO_DSU_CAR:
       for addr in TARGET_IDS:
         can_sends.append(create_video_target(frame/10, addr))
