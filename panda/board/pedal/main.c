@@ -70,21 +70,22 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, int hardwired) {
 
 #endif
 
-// ***************************** honda can checksum *****************************
+// ***************************** toyota can checksum ****************************
 
-int can_cksum(uint8_t *dat, int len, int addr, int idx) {
-  int i;
-  int s = 0;
-  for (i = 0; i < len; i++) {
-    s += (dat[i] >> 4); 
-    s += dat[i] & 0xF;
-  }
-  s += (addr>>0)&0xF;
-  s += (addr>>4)&0xF;
-  s += (addr>>8)&0xF;
-  s += idx;
-  s = 8-s;
-  return s&0xF;
+int can_cksum(uint8_t *dat, uint8_t len, uint16_t addr)
+{
+	uint8_t checksum = 0;
+	checksum =((addr & 0xFF00) >> 8) + (addr & 0x00FF) + len + 1;
+	//uint16_t temp_msg = msg;
+	
+	for (int ii = 0; ii < (len - 1); ii++)
+	{
+		checksum += (dat[ii]);
+		//temp_msg = temp_msg >> 8;
+	}
+	
+	//return ((msg & ~0xFF) & (checksum & 0xFF));
+	return checksum;
 }
 
 // ***************************** can port *****************************
@@ -104,7 +105,6 @@ uint16_t gas_set_1 = 0;
 
 #define MAX_TIMEOUT 10
 uint32_t timeout = 0;
-uint32_t current_index = 0;
 
 #define NO_FAULT 0
 #define FAULT_BAD_CHECKSUM 1
@@ -139,30 +139,28 @@ void CAN1_RX0_IRQHandler() {
       uint16_t value_0 = (dat[0] << 8) | dat[1];
       uint16_t value_1 = (dat[2] << 8) | dat[3];
       uint8_t enable = (dat2[0] >> 7) & 1;
-      uint8_t index = (dat2[1] >> 4) & 3;
-      if (can_cksum(dat, 5, CAN_GAS_INPUT, index) == (dat2[1] & 0xF)) {
-        if (((current_index+1)&3) == index) {
-          #ifdef DEBUG
-            puts("setting gas ");
-            puth(value);
-            puts("\n");
-          #endif
-          if (enable) {
-            gas_set_0 = value_0;
-            gas_set_1 = value_1;
+      uint8_t cksum = dat2[1];
+      if (can_cksum(dat, 5, CAN_GAS_INPUT) == (dat2[1]) {
+        #ifdef DEBUG
+          puts("setting gas ");
+          puth(value);
+          puts("\n");
+        #endif
+        if (enable) {
+          gas_set_0 = value_0;
+          gas_set_1 = value_0;
+        } else {
+          // clear the fault state if values are 0
+          if (value_0 == 0 && value_1 == 0) {
+            state = NO_FAULT;
           } else {
-            // clear the fault state if values are 0
-            if (value_0 == 0 && value_1 == 0) {
-              state = NO_FAULT;
-            } else {
-              state = FAULT_INVALID;
-            }
-            gas_set_0 = gas_set_1 = 0;
+            state = FAULT_INVALID;
           }
-          // clear the timeout
-          timeout = 0;
+          gas_set_0 = gas_set_1 = -1; //set negative when no gas command so ADC = DAC
         }
-        current_index = index;
+        // clear the timeout
+        timeout = 0;
+        
       } else {
         // wrong checksum = fault
         state = FAULT_BAD_CHECKSUM;
@@ -179,8 +177,6 @@ void CAN1_SCE_IRQHandler() {
 }
 
 int pdl0 = 0, pdl1 = 0;
-int pkt_idx = 0;
-
 int led_value = 0;
 
 void TIM3_IRQHandler() {
@@ -201,13 +197,11 @@ void TIM3_IRQHandler() {
     dat[2] = (pdl1>>8)&0xFF;
     dat[3] = (pdl1>>0)&0xFF;
     dat[4] = state;
-    dat[5] = can_cksum(dat, 5, CAN_GAS_OUTPUT, pkt_idx) | (pkt_idx<<4);
+    dat[5] = can_cksum(dat, 5, CAN_GAS_OUTPUT);
     CAN->sTxMailBox[0].TDLR = dat[0] | (dat[1]<<8) | (dat[2]<<16) | (dat[3]<<24);
     CAN->sTxMailBox[0].TDHR = dat[4] | (dat[5]<<8);
     CAN->sTxMailBox[0].TDTR = 6;  // len of packet is 5
     CAN->sTxMailBox[0].TIR = (CAN_GAS_OUTPUT << 21) | 1;
-    ++pkt_idx;
-    pkt_idx &= 3;
   } else {
     // old can packet hasn't sent!
     state = FAULT_SEND;
@@ -239,8 +233,8 @@ void pedal() {
 
   // write the pedal to the DAC
   if (state == NO_FAULT) {
-    dac_set(0, max(gas_set_0, pdl0));
-    dac_set(1, max(gas_set_1, pdl1));
+    dac_set(0, max((pdl0 + gas_set_0), pdl0));
+    dac_set(1, max((pdl1 + gas_set_0), pdl1));
   } else {
     dac_set(0, pdl0);
     dac_set(1, pdl1);
