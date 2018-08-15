@@ -4,8 +4,7 @@ from ctypes import create_string_buffer
 import os
 from datetime import datetime
 
-buttons_labels_path = "/data/openpilot/selfdrive/car/tesla/buttons.msg"
-buttons_status_out_path = "/data/openpilot/selfdrive/car/tesla/buttons.cc.msg"
+
 buttons_file_rw = "wb"
 buttons_file_r = "rb"
 btn_msg_len = 23
@@ -21,13 +20,13 @@ class UIButton:
 
 class UIButtons:
     def write_buttons_labels_to_file(self):
-        fo = open(buttons_labels_path, buttons_file_rw)
+        fo = open(self.buttons_labels_path, buttons_file_rw)
         for btn in self.btns:
             fo.write(struct.pack(btn_msg_struct,btn.btn_name,btn.btn_label,btn.btn_label2))
         fo.close()
 
     def read_buttons_labels_from_file(self):
-        fi =  open(buttons_labels_path, buttons_file_r)
+        fi =  open(self.buttons_labels_path, buttons_file_r)
         indata = fi.read()
         fi.close()
         if len(indata) == btn_msg_len * 6 :
@@ -44,14 +43,14 @@ class UIButtons:
 
     def write_buttons_out_file(self):
         if self.hasChanges:
-            fo = open(buttons_status_out_path, buttons_file_rw)
+            fo = open(self.buttons_status_out_path, buttons_file_rw)
             for btn in self.btns:
                 fo.write(struct.pack("B",btn.btn_status + 48))
             fo.close()
         self.hasChanges = False
 
     def read_buttons_out_file(self):
-        fi =  open(buttons_status_out_path, buttons_file_r)
+        fi =  open(self.buttons_status_out_path, buttons_file_r)
         indata = fi.read()
         fi.close()
         if len(indata) == 6:
@@ -61,13 +60,23 @@ class UIButtons:
             #something wrong with the file
             print "status file is bad"
 
+    def send_button_info(self):
+        if self.isLive:
+            for i in range(0,6):
+                self.CS.UE.uiButtonInfoEvent(i,self.btns[i].btn_name, \
+                    self.btns[i].btn_label,self.btns[i].btn_status,self.btns[i].btn_label2)
 
-    def __init__(self, carstate):
+    def __init__(self, carstate,car,folder):
+        self.isLive = False
         self.CS = carstate
+        self.car_folder = folder
+        self.car_name = car
+        self.buttons_labels_path = "/data/openpilot/selfdrive/car/"+self.car_folder+"/buttons.msg"
+        self.buttons_status_out_path = "/data/openpilot/selfdrive/car/"+self.car_folder+"/buttons.cc.msg"
         self.btns = []
         self.hasChanges = True
         self.last_in_read_time = datetime.min 
-        if os.path.exists(buttons_labels_path):
+        if os.path.exists(self.buttons_labels_path):
             #there is a file, load it
             self.read_buttons_labels_from_file()
             self.read_buttons_out_file()
@@ -77,9 +86,10 @@ class UIButtons:
             self.write_buttons_labels_to_file()
             self.write_buttons_out_file()
         #send events to initiate UI
-        for i in range(0,6):
-            self.CS.UE.uiButtonInfoEvent(i,self.btns[i].btn_name, \
-                    self.btns[i].btn_label,self.btns[i].btn_status,self.btns[i].btn_label2)
+        self.isLive = True
+        self.send_button_info()
+        self.CS.UE.uiSetCarEvent(self.car_folder,self.car_name)
+
 
     def get_button_status(self,btn_name):
         ret_val =-1 

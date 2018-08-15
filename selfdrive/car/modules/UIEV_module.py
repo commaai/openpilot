@@ -18,46 +18,30 @@ class UIEvents(object):
         self.prev_cstm_status = -1
 
     def uiCustomAlertEvent(self,status,message):
-        dat = ui.UIEvent.new_message()
-        dat.logMonoTime = int(realtime.sec_since_boot() * 1e9)
-        dat.init('uiCustomAlert')
-        dat.uiCustomAlert = {
-            "caStatus": status,
-            "caText": message
-        }
+        dat = ui.UICustomAlert.new_message()
+        dat.caStatus = status
+        dat.caText = message
         self.uiCustomAlert.send(dat.to_bytes())
     
-    def uiButtonInfoEvent(self,id,name,label,status,label2):
-        dat = ui.UIEvent.new_message()
-        dat.logMonoTime = int(realtime.sec_since_boot() * 1e9)
-        dat.init('uiButtonInfo')
-        dat.uiButtonInfo = {
-            "btnId": id,
-            "btnName": name,
-            "btnLabel": label,
-            "btnStatus": status,
-            "btnLabel2": label2
-        }
+    def uiButtonInfoEvent(self,btnid,name,label,status,label2):
+        dat = ui.UIButtonInfo.new_message()
+        dat.btnId = btnid
+        dat.btnName = name
+        dat.btnLabel = label
+        dat.btnStatus = status
+        dat.btnLabel2 = label2
         self.uiButtonInfo.send(dat.to_bytes())
     
     def uiSetCarEvent(self,car_folder,car_name):
-        dat = ui.UIEvent.new_message()
-        dat.logMonoTime = int(realtime.sec_since_boot() * 1e9)
-        dat.init('UISetCar')
-        dat.UISetCar = {
-            "icCarFolder": car_folder,
-            "icCarName": car_name
-        }
+        dat = ui.UISetCar.new_message()
+        dat.icCarFolder = car_folder
+        dat.icCarName = car_name
         self.uiSetCar.send(dat.to_bytes())
 
     def uiPlaySoundEvent(self,sound):
         if self.CS.cstm_btns.get_button_status("sound") > 0:
-            dat = ui.UIEvent.new_message()
-            dat.logMonoTime = int(realtime.sec_since_boot() * 1e9)
-            dat.init('UIPlaySound')
-            dat.UISetCar = {
-                "sndSound": sound
-            }
+            dat = ui.UIPlaySound.new_message()
+            dat.sndSound = sound
             self.uiPlaySound.send(dat.to_bytes())
 
     # for status we will use one of these values

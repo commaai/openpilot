@@ -20,7 +20,7 @@ ZMQ_LIBS = -L$(PHONELIBS)/zmq/aarch64/lib \
 
 CEREAL_CFLAGS = -I$(PHONELIBS)/capnp-c/include
 CEREAL_LIBS = -L$(PHONELIBS)/capnp-c/aarch64/lib -l:libcapn.a
-CEREAL_OBJS = ../../cereal/gen/c/log.capnp.o
+CEREAL_OBJS = ../../cereal/gen/c/log.capnp.o ../../cereal/gen/c/ui.capnp.o
 
 NANOVG_FLAGS = -I$(PHONELIBS)/nanovg
 JSON_FLAGS = -I$(PHONELIBS)/json/src

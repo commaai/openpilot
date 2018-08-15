@@ -201,7 +201,7 @@ class CarState(object):
     self.UE = UIEvents(self)
 
     #variable for custom buttons
-    self.cstm_btns = UIButtons(self)
+    self.cstm_btns = UIButtons(self,"Tesla Model S","tesla")
 
     #custom message counter
     self.custom_alert_counter = -1 #set to 100 for 1 second display; carcontroller will take down to zero

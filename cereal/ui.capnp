@@ -45,18 +45,20 @@ struct UIPlaySound {
 
 struct UIUpdate {
     uiDoUpdate @0 :Int8;
+    uiStatus @1 :Int8;
+    uiCanDisplayMessage @2 :Int8;
 }
 
-struct UIEvent {
-    # in nanoseconds?
-    logMonoTime @0 :UInt64;
-
-    union {
-        uiButtonInfo @1 :UIButtonInfo;
-        uiCustomAlert @2 :UICustomAlert;
-        uiSetCar @3 :UISetCar;
-        uiButtonStatus @4 :UIButtonStatus;
-        uiPlaySound @5 :UIPlaySound;
-        uiUpdate @6 :UIUpdate;
-    }
-}
+#struct UIEvent {
+#    # in nanoseconds?
+#    logMonoTime @0 :UInt64;
+#
+#    union {
+#        uiButtonInfo @1 :UIButtonInfo;
+#        uiCustomAlert @2 :UICustomAlert;
+#        uiSetCar @3 :UISetCar;
+#        uiButtonStatus @4 :UIButtonStatus;
+#        uiUpdate @5 :UIUpdate;
+#        uiPlaySound @6 :UIPlaySound;
+#    }
+#}
