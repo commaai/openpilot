@@ -70,10 +70,10 @@ class CarInterface(object):
 
     ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
     ret.safetyParam = 73  # see conversion factor for STEER_TORQUE_EPS in dbc file
-    ret.wheelbase = 2.65
-    ret.steerRatio = 14.5 # Rav4 2017
-    ret.mass = 3650./2.205 + std_cargo  # mean between normal and hybrid
-    ret.steerKpV, ret.steerKiV = [[0.6], [0.05]]
+    ret.wheelbase = 3.089  # in meters for Pacifica Hybrid 2017
+    ret.steerRatio = 16.2 # Pacifica Hybrid 2017
+    ret.mass = 2858 + std_cargo  # kg curb weight Pacifica Hybrid 2017
+    ret.steerKpV, ret.steerKiV = [[0.5], [0.04]]  # reduced to reduced wobble. originally [[0.6], [0.05]]
     ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
     ret.steerActuatorDelay = 0.1
     ret.steerRateCost = 1.

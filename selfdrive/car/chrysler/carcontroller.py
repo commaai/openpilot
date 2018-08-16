@@ -16,10 +16,11 @@ ACCEL_MIN = -3.0 # 3   m/s2
 ACCEL_SCALE = max(ACCEL_MAX, -ACCEL_MIN)
 
 # Steer torque range is 1024+-230. The 1024 is added by our library.
-# degrees * 5.1 = car units 
-STEER_MAX = 230 / 5.1  # degrees
-STEER_DELTA_UP = 0.5  # degrees
-STEER_DELTA_DOWN = 0.5  # degrees
+# degrees * 5.1 = car units
+CAR_UNITS_PER_DEGREE = 4.0  # originally 5.1
+STEER_MAX = 230 / CAR_UNITS_PER_DEGREE  # degrees
+STEER_DELTA_UP = 2.5 / CAR_UNITS_PER_DEGREE  # degrees
+STEER_DELTA_DOWN = 2.5 / CAR_UNITS_PER_DEGREE  # degrees
 STEER_ERROR_MAX = 350     # max delta between torque cmd and torque motor
 
 # Steer angle limits (tested at the Crows Landing track and considered ok)
@@ -162,7 +163,7 @@ class CarController(object):
       can_sends.append(create_2a6(
         CS.gear_shifter, apply_steer, moving_fast, self.car_fingerprint))
       self.send_new_status = False
-    new_msg = create_292(int(apply_steer * 5.1), frame, moving_fast)
+    new_msg = create_292(int(apply_steer * CAR_UNITS_PER_DEGREE), frame, moving_fast)
     can_sends.append(new_msg)  # degrees * 5.1 -> car steering units
     for msg in can_sends:
       [addr, _, dat, _] = msg
