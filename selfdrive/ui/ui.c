@@ -197,6 +197,7 @@ typedef struct UIState {
   int font_sans_semibold;
   int font_sans_bold;
   int img_wheel;
+  int img_logo;
 
   zsock_t *thermal_sock;
   void *thermal_sock_raw;
@@ -451,6 +452,7 @@ static void ui_init(UIState *s) {
 
   assert(s->img_wheel >= 0);
   s->img_wheel = nvgCreateImage(s->vg, "../assets/img_chffr_wheel.png", 1);
+  s->img_logo = nvgCreateImage(s->vg, "../assets/img_spinner_comma.png", 1);
 
   // init gl
   s->frame_program = load_program(frame_vertex_shader, frame_fragment_shader);
@@ -1032,6 +1034,7 @@ static int bb_ui_draw_measure(UIState *s,  const char* bb_value, const char* bb_
   return (int)((bb_valueFontSize + bb_labelFontSize)*2.5) + 5;
 }
 
+
 static bool bb_handle_ui_touch(UIState *s, int touch_x, int touch_y) {
   for(int i=0; i<6; i++) {
     if (s->btns_r[i] > 0) {
@@ -1043,22 +1046,29 @@ static bool bb_handle_ui_touch(UIState *s, int touch_x, int touch_y) {
           s->btns_status[i] = 1;
         }
         //now let's send the cereal
-        /*
-        struct capn ctx;
-        capn_init_malloc(&ctx);
-
-        struct capn_ptr root = capn_root(&ctx);
-        cereal_UIButtonStatus_ptr btn_p = cereal_new_UIButtonStatus(root.seg);
+        
+        struct capn c;
+        capn_init_malloc(&c);
+        struct capn_ptr cr = capn_root(&c);
+        struct capn_segment *cs = cr.seg;
+        
         struct cereal_UIButtonStatus btn_d;
         btn_d.btnId = i;
         btn_d.btnStatus = s->btns_status[i];
+
+        cereal_UIButtonStatus_ptr btn_p = cereal_new_UIButtonStatus(cs);
+        
         cereal_write_UIButtonStatus(&btn_d, btn_p);
-        zmq_msg_t msg;
-        zmq_msg_init(&msg);
-        capn_write_mem(&ctx,zmq_msg_data(&msg),100,0);
-        capn_free(&ctx);
-        zmq_msg_send(&msg, s->uiButtonStatus_sock_raw,0);
-        */
+        int setp_ret = capn_setp(capn_root(&c), 0, btn_p.p);
+        assert(setp_ret == 0);
+
+        uint8_t buf[4096];
+        ssize_t rs = capn_write_mem(&c, buf, sizeof(buf), 0);
+
+        capn_free(&c);
+        
+        zmq_send(s->uiButtonStatus_sock_raw, buf,rs,0);
+        
         return true;
       }
     }
@@ -1487,6 +1497,27 @@ static void ui_draw_vision_grid(UIState *s) {
   }
 }
 
+static void bb_ui_draw_logo(UIState *s) {
+  const UIScene *scene = &s->scene;
+  const int ui_viz_rx = scene->ui_viz_rx;
+  const int ui_viz_rw = scene->ui_viz_rw;
+  const int viz_event_w = 820;
+  const int viz_event_h = viz_event_w;
+  const int viz_event_x = (ui_viz_rx + (ui_viz_rw - viz_event_w - bdr_s*2)/2);
+  const int viz_event_y = 200;
+  bool is_engageable = scene->engageable;
+  float viz_event_alpha = 0.1f;
+  if (is_engageable) {
+    viz_event_alpha = 1.0f;
+  }
+  nvgBeginPath(s->vg);
+  NVGpaint imgPaint = nvgImagePattern(s->vg, viz_event_x, viz_event_y,
+  viz_event_w, viz_event_h, 0, s->img_logo, viz_event_alpha);
+  nvgRect(s->vg, viz_event_x, viz_event_y, viz_event_w, viz_event_h);
+  nvgFillPaint(s->vg, imgPaint);
+  nvgFill(s->vg);
+}
+
 static void bb_ui_draw_UI(UIState *s) {
   //get 3-state switch position
   int tri_state_fd;
@@ -1516,6 +1547,7 @@ static void bb_ui_draw_UI(UIState *s) {
 	 bb_ui_draw_measures_right(s,bb_dmr_x, bb_dmr_y, bb_dmr_w );
    bb_draw_buttons(s);
    bb_ui_draw_custom_alert(s);
+   bb_ui_draw_logo(s);
 	 }
    if (tri_state_switch ==2) {
 	 	bb_ui_draw_custom_alert(s);
@@ -1792,6 +1824,8 @@ static void ui_draw_vision_speed(UIState *s) {
     nvgText(s->vg, viz_speed_x+viz_speed_w/2, 320, "mph", NULL);
   }
 }
+
+
 
 static void ui_draw_vision_wheel(UIState *s) {
   const UIScene *scene = &s->scene;

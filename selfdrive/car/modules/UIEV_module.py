@@ -74,10 +74,10 @@ class UIEvents(object):
         btn_message = None
         for socket, event in self.buttons_poller.poll(0):
             if socket is self.uiButtonStatus:
-                btn_message = messaging.recv_one(socket)
+                btn_message = ui.UIButtonStatus.from_bytes(socket.recv())
         if btn_message is not None:
-            btn_id = btn_message.uiButtonStatus.btn_id
-            self.CS.cstm_btns.set_button_status_from_ui(btn_id,btn_message.uiButtonStatus.btn_status)
+            btn_id = btn_message.btnId
+            self.CS.cstm_btns.set_button_status_from_ui(btn_id,btn_message.btnStatus)
         if (self.CS.custom_alert_counter > 0):
             self.CS.custom_alert_counter -= 1
             if (self.CS.custom_alert_counter ==0):
