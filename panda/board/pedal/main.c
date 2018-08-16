@@ -78,7 +78,7 @@ int can_cksum(uint8_t *dat, uint8_t len, uint16_t addr)
 	checksum =((addr & 0xFF00) >> 8) + (addr & 0x00FF) + len + 1;
 	//uint16_t temp_msg = msg;
 	
-	for (int ii = 0; ii < (len - 1); ii++)
+	for (int ii = 0; ii < len; ii++)
 	{
 		checksum += (dat[ii]);
 		//temp_msg = temp_msg >> 8;
