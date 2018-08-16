@@ -150,13 +150,14 @@ class ACCController(object):
         
         # Reduce cruise speed significantly if necessary. Multiply by a % to
         # make the car slightly more eager to slow down vs speed up.
-        if speed_offset < (-0.6 * full_press_kph):
-          # Send cruise stalk dn_2nd.
-          button_to_press = CruiseButtons.DECEL_2ND
-        # Reduce speed slightly if necessary.
-        elif speed_offset < (-0.9 * half_press_kph):
-          # Send cruise stalk dn_1st.
-          button_to_press = CruiseButtons.DECEL_SET
+        if CS.v_cruise_actual > 0:
+          if speed_offset < (-0.6 * full_press_kph):
+            # Send cruise stalk dn_2nd.
+            button_to_press = CruiseButtons.DECEL_2ND
+          # Reduce speed slightly if necessary.
+          elif speed_offset < (-0.9 * half_press_kph):
+            # Send cruise stalk dn_1st.
+            button_to_press = CruiseButtons.DECEL_SET
         # Increase cruise speed if possible.
         elif CS.v_ego > min_cruise_speed_ms:
           # How much we can accelerate without exceeding max allowed speed.
@@ -250,24 +251,25 @@ class ACCController(object):
         ### Slowing down ###
         # Reduce speed significantly if lead_dist < 50% of safe dist, no matter
         # the rel_speed
-        if lead_dist < (safe_dist_m * 0.5):
-          msg =  "50pct down"
-          button = CruiseButtons.DECEL_2ND
-        # Reduce speed significantly if lead_dist < 60% of  safe dist
-        # and if the lead car isn't pulling away
-        elif lead_dist < (safe_dist_m * 0.7) and rel_speed < 0:
-          msg =  "70pct down"
-          button = CruiseButtons.DECEL_SET
-         #Reduce speed if rel_speed < -15kph so you don't rush up to lead car
-        elif rel_speed < -15:
-          msg =  "relspd -15 down"
-          button = CruiseButtons.DECEL_SET
-        # we're close to the safe distance, so make slow adjustments
-        # only adjust every 1 secs
-        elif (lead_dist < (safe_dist_m * 0.9) and rel_speed < 0
-              and current_time_ms > self.automated_cruise_action_time + 1000):
-          msg =  "90pct down"
-          button = CruiseButtons.DECEL_SET
+        if CS.v_cruise_actual > 0:
+          if lead_dist < (safe_dist_m * 0.5):
+            msg =  "50pct down"
+            button = CruiseButtons.DECEL_2ND
+          # Reduce speed significantly if lead_dist < 60% of  safe dist
+          # and if the lead car isn't pulling away
+          elif lead_dist < (safe_dist_m * 0.7) and rel_speed < 0:
+            msg =  "70pct down"
+            button = CruiseButtons.DECEL_SET
+           #Reduce speed if rel_speed < -15kph so you don't rush up to lead car
+          elif rel_speed < -15:
+            msg =  "relspd -15 down"
+            button = CruiseButtons.DECEL_SET
+          # we're close to the safe distance, so make slow adjustments
+          # only adjust every 1 secs
+          elif (lead_dist < (safe_dist_m * 0.9) and rel_speed < 0
+                and current_time_ms > self.automated_cruise_action_time + 1000):
+            msg =  "90pct down"
+            button = CruiseButtons.DECEL_SET
 
         ### Speed up ###
         # don't speed up again until you have more than a safe distance in front
