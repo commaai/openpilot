@@ -25,6 +25,7 @@ class UIEvents(object):
     
     def uiButtonInfoEvent(self,btnid,name,label,status,label2):
         dat = ui.UIButtonInfo.new_message()
+        dat = ui.UIButtonInfo.new_message()
         dat.btnId = btnid
         dat.btnName = name+ '\0'
         dat.btnLabel = label+ '\0'

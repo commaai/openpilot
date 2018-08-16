@@ -94,9 +94,9 @@ const int alert_sizes[] = {
 };
 
 typedef struct UICstmButton {
-  char *btn_name;
-  char *btn_label;
-  char *btn_label2;
+  char btn_name[6];
+  char btn_label[6];
+  char btn_label2[11];
 } UICstmButton;
 
 
@@ -172,8 +172,8 @@ typedef struct UIState {
   //BB
   UICstmButton btns[6];
   char btns_status[6];
-  char *car_model;
-  char *car_folder;
+  char car_model[40];
+  char car_folder[20];
   zsock_t *uiButtonInfo_sock;
   void *uiButtonInfo_sock_raw;
   zsock_t *uiCustomAlert_sock;
@@ -190,7 +190,7 @@ typedef struct UIState {
   time_t label_last_modified;
   time_t status_last_modified;
   int custom_message_status;
-  char *custom_message;
+  char custom_message[120];
   //BB END
   int font_courbd;
   int font_sans_regular;
@@ -1526,12 +1526,6 @@ static void bb_ui_draw_UI(UIState *s) {
  }
 
  static void bb_ui_init(UIState *s) {
-    for (int i=0; i<6; i++) {
-      s->btns[i].btn_name="";
-      s->btns[i].btn_label="";
-      s->btns[i].btn_label2="";
-      s->btns_status[i]=0;
-    }
 
     s->custom_message="";
     
@@ -1614,9 +1608,10 @@ static void bb_ui_draw_UI(UIState *s) {
           cereal_read_UIButtonInfo(&datad, stp);
 
           int id = datad.btnId;
-          s->btns[id].btn_name = (char *)datad.btnName.str;
-          s->btns[id].btn_label = (char *)datad.btnLabel.str;
-          s->btns[id].btn_label2 = (char *)datad.btnLabel2.str;
+          LOGW("got button info: ID = (%d)", id);
+          strcpy(s->btns[id].btn_name,(char *)datad.btnName.str);
+          strcpy(s->btns[id].btn_label, (char *)datad.btnLabel.str);
+          strcpy(s->btns[id].btn_label2, (char *)datad.btnLabel2.str);
           s->btns_status[id] = datad.btnStatus;
           
           capn_free(&ctx);
@@ -1638,7 +1633,7 @@ static void bb_ui_draw_UI(UIState *s) {
           struct cereal_UICustomAlert  datad;
           cereal_read_UICustomAlert(&datad, stp);
 
-          s->custom_message = (char *) datad.caText.str;
+          strcpy(s->custom_message,datad.caText.str);
           s->custom_message_status = datad.caStatus;
           
           capn_free(&ctx);
@@ -1660,8 +1655,8 @@ static void bb_ui_draw_UI(UIState *s) {
           struct cereal_UISetCar datad;
           cereal_read_UISetCar(&datad, stp);
 
-          s->car_model = (char *) datad.icCarName.str;
-          s->car_folder = (char *) datad.icCarFolder.str;
+          strcpy(s->car_model, (char *) datad.icCarName.str);
+          strcpy(s->car_folder, (char *) datad.icCarFolder.str);
           
           capn_free(&ctx);
           zmq_msg_close(&msg);
