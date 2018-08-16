@@ -83,7 +83,6 @@ int can_cksum(uint8_t *dat, uint8_t len, uint16_t addr)
 		checksum += (dat[ii]);
 		//temp_msg = temp_msg >> 8;
 	}
-	
 	//return ((msg & ~0xFF) & (checksum & 0xFF));
 	return checksum;
 }
@@ -139,28 +138,30 @@ void CAN1_RX0_IRQHandler() {
       uint16_t value_0 = (dat[0] << 8) | dat[1];
       uint16_t value_1 = (dat[2] << 8) | dat[3];
       uint8_t enable = (dat2[0] >> 7) & 1;
-      uint8_t cksum = dat2[1];
-      if (can_cksum(dat, 5, CAN_GAS_INPUT) == (dat2[1])) {
-        #ifdef DEBUG
-          puts("setting gas ");
-          puth(value);
-          puts("\n");
-        #endif
-        if (enable) {
-          gas_set_0 = value_0;
-          gas_set_1 = value_0;
-        } else {
-          // clear the fault state if values are 0
-          if (value_0 == 0 && value_1 == 0) {
-            state = NO_FAULT;
+      uint8_t index = 0;
+      if (can_cksum(dat, 5, CAN_GAS_INPUT) == dat2[1]) {
+        if (index == 0) {
+          #ifdef DEBUG
+            puts("setting gas ");
+            puth(value);
+            puts("\n");
+          #endif
+          if (enable) {
+            gas_set_0 = value_0;
+            gas_set_1 = value_1;
           } else {
-            state = FAULT_INVALID;
+            // clear the fault state if values are 0
+            if (value_0 == 0 && value_1 == 0) {
+              state = NO_FAULT;
+            } else {
+              state = FAULT_INVALID;
             }
-            gas_set_0 = gas_set_1 = -1;
+            gas_set_0 = gas_set_1 = 0;
+          }
+          // clear the timeout
+          timeout = 0;
         }
-        // clear the timeout
-        timeout = 0;
-       }
+
       } else {
         // wrong checksum = fault
         state = FAULT_BAD_CHECKSUM;
@@ -169,6 +170,7 @@ void CAN1_RX0_IRQHandler() {
     // next
     CAN->RF0R |= CAN_RF0R_RFOM0;
   }
+}
 
 void CAN1_SCE_IRQHandler() {
   state = FAULT_SCE;
@@ -176,6 +178,8 @@ void CAN1_SCE_IRQHandler() {
 }
 
 int pdl0 = 0, pdl1 = 0;
+
+
 int led_value = 0;
 
 void TIM3_IRQHandler() {
@@ -232,8 +236,8 @@ void pedal() {
 
   // write the pedal to the DAC
   if (state == NO_FAULT) {
-    dac_set(0, max((pdl0 + gas_set_0), pdl0));
-    dac_set(1, max((pdl1 + gas_set_0), pdl1));
+    dac_set(0, max(gas_set_0, pdl0));
+    dac_set(1, max(gas_set_1, pdl1));
   } else {
     dac_set(0, pdl0);
     dac_set(1, pdl1);
@@ -285,4 +289,3 @@ int main() {
 
   return 0;
 }
-
