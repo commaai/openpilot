@@ -326,12 +326,12 @@ class CarInterface(object):
 #       (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001)):
 #      events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
 
-    if self.CS.cstm_btns.get_button_status("brake")>0: #break not canceling when pressed
-      self.CS.cstm_btns.set_button_status("brake", 2 if ret.brakePressed else 1)
+    if (self.CS.cstm_btns.get_button_status("brake")>0):
+      if ((self.CS.brake_pressed !=0) != self.brake_pressed_prev): #break not canceling when pressed
+        self.CS.cstm_btns.set_button_status("brake", 2 if self.CS.brake_pressed != 0 else 1)
     else:
       if ret.brakePressed:
         events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
-
     if ret.gasPressed:
       events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
 
@@ -380,7 +380,7 @@ class CarInterface(object):
 
     # update previous brake/gas pressed
     self.gas_pressed_prev = ret.gasPressed
-    self.brake_pressed_prev = ret.brakePressed
+    self.brake_pressed_prev = self.CS.brake_pressed != 0
 
     # cast to reader so it can't be modified
     return ret.as_reader()

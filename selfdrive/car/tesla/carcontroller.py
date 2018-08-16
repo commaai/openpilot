@@ -151,8 +151,8 @@ class CarController(object):
     #upodate custom UI buttons and alerts
     CS.UE.update_custom_ui()
       
-    #if (frame % 1000 == 0):
-    #  CS.cstm_btns.send_button_info()
+    if (frame % 1000 == 0):
+      CS.cstm_btns.send_button_info()
 
     # Update statuses for custom buttons every 0.1 sec.
     if (frame % 10 == 0):

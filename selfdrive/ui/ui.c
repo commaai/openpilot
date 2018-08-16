@@ -363,8 +363,8 @@ static void ui_init(UIState *s) {
   pthread_cond_init(&s->bg_cond, NULL);
   //
   s->status = STATUS_DISENGAGED;
-  s->car_model = "Tesla";
-  s->car_folder = "tesla";
+  strcpy(s->car_model,"Tesla");
+  strcpy(s->car_folder,"tesla");
   s->label_last_modified = 0;
   s->status_last_modified = 0;
   // init connections
@@ -1527,7 +1527,6 @@ static void bb_ui_draw_UI(UIState *s) {
 
  static void bb_ui_init(UIState *s) {
 
-    s->custom_message="";
     
     //BB Define CAPNP sock
     s->uiButtonInfo_sock = zsock_new_sub(">tcp://127.0.0.1:8201", "");
@@ -1561,8 +1560,8 @@ static void bb_ui_draw_UI(UIState *s) {
  }
 
  static void bb_ui_set_car(UIState *s, char *model, char *folder) {
-   s->car_model = model;
-   s->car_folder = folder;
+   strcpy(s->car_model,model);
+   strcpy(s->car_folder, folder);
  }
 
  static void  bb_ui_poll_update(UIState *s) {

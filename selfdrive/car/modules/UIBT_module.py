@@ -90,7 +90,7 @@ class UIButtons:
         #send events to initiate UI
         self.isLive = True
         self.send_button_info()
-        #self.CS.UE.uiSetCarEvent(self.car_folder,self.car_name)
+        self.CS.UE.uiSetCarEvent(self.car_folder,self.car_name)
 
 
     def get_button_status(self,btn_name):
