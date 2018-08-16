@@ -164,11 +164,12 @@ class CarController(object):
       self.send_new_status = False
     new_msg = create_292(int(apply_steer * 5.1), frame, moving_fast)
     can_sends.append(new_msg)  # degrees * 5.1 -> car steering units
-    [addr, _, dat, _] = new_msg
-    outp  = ('make_can_msg:%s  len:%d  %s' % ('0x{:02x}'.format(addr), len(dat),
-                                              ' '.join('{:02x}'.format(ord(c)) for c in dat)))
-    # print outp
-    logging.info(outp)
+    for msg in can_sends:
+      [addr, _, dat, _] = msg
+      outp  = ('make_can_msg:%s  len:%d  %s' % ('0x{:02x}'.format(addr), len(dat),
+                                                ' '.join('{:02x}'.format(ord(c)) for c in dat)))
+      # print outp
+      logging.info(outp)
 
     self.first_time = False
 
