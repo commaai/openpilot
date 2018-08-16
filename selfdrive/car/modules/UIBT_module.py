@@ -73,6 +73,8 @@ class UIButtons:
         self.car_name = car
         self.buttons_labels_path = "/data/openpilot/selfdrive/car/"+self.car_folder+"/buttons.msg"
         self.buttons_status_out_path = "/data/openpilot/selfdrive/car/"+self.car_folder+"/buttons.cc.msg"
+        print self.buttons_labels_path
+        print self.buttons_status_out_path
         self.btns = []
         self.hasChanges = True
         self.last_in_read_time = datetime.min 
@@ -88,7 +90,7 @@ class UIButtons:
         #send events to initiate UI
         self.isLive = True
         self.send_button_info()
-        self.CS.UE.uiSetCarEvent(self.car_folder,self.car_name)
+        #self.CS.UE.uiSetCarEvent(self.car_folder,self.car_name)
 
 
     def get_button_status(self,btn_name):

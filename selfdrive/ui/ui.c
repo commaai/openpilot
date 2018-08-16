@@ -1043,11 +1043,11 @@ static bool bb_handle_ui_touch(UIState *s, int touch_x, int touch_y) {
           s->btns_status[i] = 1;
         }
         //now let's send the cereal
+        /*
         struct capn ctx;
         capn_init_malloc(&ctx);
 
         struct capn_ptr root = capn_root(&ctx);
-        struct capn_ptr ptr = capn_new_struct(root.seg, 8, 0);
         cereal_UIButtonStatus_ptr btn_p = cereal_new_UIButtonStatus(root.seg);
         struct cereal_UIButtonStatus btn_d;
         btn_d.btnId = i;
@@ -1058,6 +1058,7 @@ static bool bb_handle_ui_touch(UIState *s, int touch_x, int touch_y) {
         capn_write_mem(&ctx,zmq_msg_data(&msg),100,0);
         capn_free(&ctx);
         zmq_msg_send(&msg, s->uiButtonStatus_sock_raw,0);
+        */
         return true;
       }
     }

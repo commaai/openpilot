@@ -20,22 +20,22 @@ class UIEvents(object):
     def uiCustomAlertEvent(self,status,message):
         dat = ui.UICustomAlert.new_message()
         dat.caStatus = status
-        dat.caText = message
+        dat.caText = message+'\0'
         self.uiCustomAlert.send(dat.to_bytes())
     
     def uiButtonInfoEvent(self,btnid,name,label,status,label2):
         dat = ui.UIButtonInfo.new_message()
         dat.btnId = btnid
-        dat.btnName = name
-        dat.btnLabel = label
+        dat.btnName = name+ '\0'
+        dat.btnLabel = label+ '\0'
         dat.btnStatus = status
-        dat.btnLabel2 = label2
+        dat.btnLabel2 = label2+ '\0'
         self.uiButtonInfo.send(dat.to_bytes())
     
     def uiSetCarEvent(self,car_folder,car_name):
         dat = ui.UISetCar.new_message()
-        dat.icCarFolder = car_folder
-        dat.icCarName = car_name
+        dat.icCarFolder = car_folder+'\0'
+        dat.icCarName = car_name+'\0'
         self.uiSetCar.send(dat.to_bytes())
 
     def uiPlaySoundEvent(self,sound):
