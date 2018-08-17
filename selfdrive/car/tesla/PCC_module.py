@@ -155,7 +155,8 @@ class PCCController(object):
         self.enable_pedal_cruise = True
         CS.UE.custom_alert_message(2,"PDL Enabled",150)
         CS.cstm_btns.set_button_status("pedal",2)
-        self.pedal_speed_kph = CS.v_ego_raw * 3.6
+        if self.pedal_speed_kph < CS.v_ego_raw * 3.6:
+          self.pedal_speed_kph = CS.v_ego_raw * 3.6
       elif (self.enable_pedal_cruise) and double_pull:
         #already enabled, reset speed to current speed if speed is grater than previous one
         if self.pedal_speed_kph < CS.v_ego_raw * 3.6:
