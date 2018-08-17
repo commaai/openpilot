@@ -2,6 +2,8 @@ from selfdrive.car.toyota.values import CAR, DBC
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from common.kalman.simple_kalman import KF1D
+from selfdrive.car.modules.UIBT_module import UIButtons,UIButton
+from selfdrive.car.modules.UIEV_module import UIEvents
 import numpy as np
 
 
@@ -91,6 +93,14 @@ class CarState(object):
     self.CP = CP
     self.left_blinker_on = 0
     self.right_blinker_on = 0
+    #UIEvents
+    self.UE = UIEvents(self)
+
+    #variable for custom buttons
+    self.cstm_btns = UIButtons(self,"Toyota","toyota")
+
+    #custom message counter
+    self.custom_alert_counter = -1 #set to 100 for 1 second display; carcontroller will take down to zero
 
     # initialize can parser
     self.car_fingerprint = CP.carFingerprint
@@ -104,6 +114,20 @@ class CarState(object):
                          C=np.matrix([1.0, 0.0]),
                          K=np.matrix([[0.12287673], [0.29666309]]))
     self.v_ego = 0.0
+  
+  def init_ui_buttons(self):
+    self.cstm_btns.btns.append(UIButton("alca","ALC",0,""))
+    self.cstm_btns.btns.append(UIButton("","",0,""))
+    self.cstm_btns.btns.append(UIButton("","",0,""))
+    self.cstm_btns.btns.append(UIButton("","",0,""))
+    self.cstm_btns.btns.append(UIButton("","",0,""))
+    self.cstm_btns.btns.append(UIButton("sound","SND",1,""))
+
+  def update_ui_buttons(self,id,btn_status):
+    if self.cstm_btns.btns[id].btn_status > 0:
+        self.cstm_btns.btns[id].btn_status = btn_status * self.cstm_btns.btns[id].btn_status
+    else:
+        self.cstm_btns.btns[id].btn_status = btn_status
 
   def update(self, cp):
     # copy can_valid

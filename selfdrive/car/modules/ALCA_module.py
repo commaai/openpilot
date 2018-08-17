@@ -37,6 +37,9 @@ class ALCAController(object):
   def update_status(self,alcaEnabled):
     self.alcaEnabled = alcaEnabled
 
+  def update_steer_type(self,steerByAngle):
+    self.laneChange_steerByAngle = steerByAngle
+
   def update_angle(self,enabled,CS,frame,actuators):
     # Basic highway lane change logic
     changing_lanes = CS.right_blinker_on or CS.left_blinker_on  
@@ -254,7 +257,7 @@ class ALCAController(object):
       else:
         # steering by torque
         #TODO: torque ALCA module
-        return [actuators.steerAngle,False,0]
+        return [actuators.steer,False,0]
     else:
       # ALCA disabled
       if self.laneChange_steerByAngle:
@@ -263,5 +266,5 @@ class ALCAController(object):
       else:
         #steer by torque
         #TODO: torque ALCA module
-        return [actuators.steerAngle,False,0]
+        return [actuators.steer,False,0]
  
