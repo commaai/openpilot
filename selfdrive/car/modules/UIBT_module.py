@@ -82,7 +82,7 @@ class UIButtons:
             self.read_buttons_out_file()
         else:
             #there is no file, create it
-            self.CS.init_ui_buttons()
+            self.btns = self.CS.init_ui_buttons()
             self.write_buttons_labels_to_file()
             self.write_buttons_out_file()
         #send events to initiate UI

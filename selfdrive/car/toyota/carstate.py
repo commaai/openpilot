@@ -116,12 +116,15 @@ class CarState(object):
     self.v_ego = 0.0
   
   def init_ui_buttons(self):
-    self.cstm_btns.btns.append(UIButton("alca","ALC",0,""))
-    self.cstm_btns.btns.append(UIButton("","",0,""))
-    self.cstm_btns.btns.append(UIButton("","",0,""))
-    self.cstm_btns.btns.append(UIButton("","",0,""))
-    self.cstm_btns.btns.append(UIButton("","",0,""))
-    self.cstm_btns.btns.append(UIButton("sound","SND",1,""))
+    def init_ui_buttons(self):
+    btns = []
+    btns.append(UIButton("alca","ALC",0,""))
+    btns.append(UIButton("","",0,""))
+    btns.append(UIButton("","",0,""))
+    btns.append(UIButton("","",0,""))
+    btns.append(UIButton("","",0,""))
+    btns.append(UIButton("sound","SND",1,""))
+    return btns
 
   def update_ui_buttons(self,id,btn_status):
     if self.cstm_btns.btns[id].btn_status > 0:
