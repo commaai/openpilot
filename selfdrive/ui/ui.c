@@ -198,6 +198,7 @@ typedef struct UIState {
   int font_sans_semibold;
   int font_sans_bold;
   int img_wheel;
+  int tri_state_switch;
   
 
   zsock_t *thermal_sock;
@@ -363,10 +364,13 @@ static void ui_init(UIState *s) {
 
   pthread_mutex_init(&s->lock, NULL);
   pthread_cond_init(&s->bg_cond, NULL);
-  //
+  //BB INIT
   s->status = STATUS_DISENGAGED;
   strcpy(s->car_model,"Tesla");
   strcpy(s->car_folder,"tesla");
+  s->img_logo = nvgCreateImage(s->vg, "../assets/img_spinner_comma.png", 1);
+  s->img_logo2 = nvgCreateImage(s->vg, "../assets/img_spinner_comma2.png", 1);
+  s->tri_state_switch = -1;
   // init connections
 
   s->thermal_sock = zsock_new_sub(">tcp://127.0.0.1:8005", "");
@@ -451,8 +455,8 @@ static void ui_init(UIState *s) {
 
   assert(s->img_wheel >= 0);
   s->img_wheel = nvgCreateImage(s->vg, "../assets/img_chffr_wheel.png", 1);
-  s->img_logo = nvgCreateImage(s->vg, "../assets/img_spinner_comma.png", 1);
-  s->img_logo2 = nvgCreateImage(s->vg, "../assets/img_spinner_comma2.png", 1);
+
+  
 
   // init gl
   s->frame_program = load_program(frame_vertex_shader, frame_fragment_shader);
@@ -1505,9 +1509,9 @@ static void ui_draw_vision_grid(UIState *s) {
 }
 
 static void bb_ui_draw_logo(UIState *s) {
-  //if ((s->status != STATUS_DISENGAGED) && (s->status != STATUS_STOPPED)) {
-  //  return;
-  //}
+  if ((s->status != STATUS_DISENGAGED) && (s->status != STATUS_STOPPED)) {
+    return;
+  }
   int rduration = 8000;
   int logot = (bb_currentTimeInMilis() % rduration);
   int logoi = s->img_logo;
@@ -1540,20 +1544,20 @@ static void bb_ui_draw_logo(UIState *s) {
 static void bb_ui_draw_UI(UIState *s) {
   //get 3-state switch position
   int tri_state_fd;
-  int tri_state_switch;
   char buffer[10];
-  tri_state_switch = 0;
-  tri_state_fd = open ("/sys/devices/virtual/switch/tri-state-key/state", O_RDONLY);
-  //if we can't open then switch should be considered in the middle, nothing done
-  if (tri_state_fd == -1) {
-            tri_state_switch = 2;
-  } else {
-  	read (tri_state_fd, &buffer, 10);
-	tri_state_switch = buffer[0] -48;
-	close(tri_state_fd);
+  if ((s->tri_state_switch == -1) || (bb_currentTimeInMilis() % 2000 == 0)) {
+    tri_state_fd = open ("/sys/devices/virtual/switch/tri-state-key/state", O_RDONLY);
+    //if we can't open then switch should be considered in the middle, nothing done
+    if (tri_state_fd == -1) {
+      s->tri_state_switch = 2;
+    } else {
+      read (tri_state_fd, &buffer, 10);
+      s->tri_state_switch = buffer[0] -48;
+      close(tri_state_fd);
+    }
   }
   
-  if (tri_state_switch == 1) {
+  if (s->tri_state_switch == 1) {
 	  const UIScene *scene = &s->scene;
 	  const int bb_dml_w = 180;
 	  const int bb_dml_x =  (scene->ui_viz_rx + (bdr_s*2));
@@ -1568,10 +1572,10 @@ static void bb_ui_draw_UI(UIState *s) {
    bb_ui_draw_custom_alert(s);
    bb_ui_draw_logo(s);
 	 }
-   if (tri_state_switch ==2) {
+   if (s->tri_state_switch ==2) {
 	 	bb_ui_draw_custom_alert(s);
 	 }
-	 if (tri_state_switch ==3) {
+	 if (s->tri_state_switch ==3) {
 	 	ui_draw_vision_grid(s);
 	 }
  }
@@ -1863,7 +1867,7 @@ static void ui_draw_vision_wheel(UIState *s) {
   const int img_wheel_y = bg_wheel_y-25;
   float img_wheel_alpha = 0.1f;
   bool is_engaged = (s->status == STATUS_ENGAGED);
-  bool is_warning = (s->status == STATUS_WARNING);
+  bool is_warning = ((s->status == STATUS_WARNING) || ((s->status == STATUS_ENGAGED) && (s->custom_message_status > STATUS_ENGAGED))) ;
   bool is_engageable = scene->engageable;
   if (is_engaged || is_warning || is_engageable) {
     nvgBeginPath(s->vg);
@@ -2577,11 +2581,19 @@ static void* bg_thread(void* args) {
   int bg_status = -1;
   while(!do_exit) {
     pthread_mutex_lock(&s->lock);
-    if (bg_status == s->status) {
+    //BB Change of background based on our color
+    int bb_status = -1;
+    if ((s->status == STATUS_ENGAGED) && (s->custom_message_status > STATUS_ENGAGED)) {
+      bb_status = s->custom_message_status;
+    } else {
+      bb_status = s->status;
+    }
+    if (bg_status == bb_status) {
       // will always be signaled if it changes?
       pthread_cond_wait(&s->bg_cond, &s->lock);
     }
-    bg_status = s->status;
+    bg_status = bb_status;
+    //BB End of background color change
     pthread_mutex_unlock(&s->lock);
 
     assert(bg_status < ARRAYSIZE(bg_colors));
