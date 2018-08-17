@@ -220,7 +220,10 @@ class CarInterface(object):
 
     # gas pedal
     ret.gas = self.CS.car_gas
-    ret.gasPressed = self.CS.pedal_gas > 0
+    if ret.enableGasInterceptor:
+      ret.gasPressed = self.CS.pedal_gas > 43
+    else:
+      ret.gasPressed = self.CS.pedal_gas > 0
 
     # brake pedal
     ret.brake = self.CS.user_brake

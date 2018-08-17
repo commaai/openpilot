@@ -81,6 +81,11 @@ def get_can_parser(CP):
 
   if CP.carFingerprint == CAR.PRIUS:
     signals += [("STATE", "AUTOPARK_STATUS", 0)]
+  
+  # add gas interceptor reading if we are using it
+  if CP.enableGasInterceptor:
+      signals.append(("INTERCEPTOR_GAS", "GAS_SENSOR", 0))
+      checks.append(("GAS_SENSOR", 50))
 
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
@@ -119,7 +124,10 @@ class CarState(object):
 
     can_gear = cp.vl["GEAR_PACKET"]['GEAR']
     self.brake_pressed = cp.vl["BRAKE_MODULE"]['BRAKE_PRESSED']
-    self.pedal_gas = cp.vl["GAS_PEDAL"]['GAS_PEDAL']
+    if CP.enableGasInterceptor:
+      self.pedal_gas = cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS']
+    else:
+      self.pedal_gas = cp.vl["GAS_PEDAL"]['GAS_PEDAL']
     self.car_gas = self.pedal_gas
     self.esp_disabled = cp.vl["ESP_CONTROL"]['TC_DISABLED']
 
