@@ -37,6 +37,7 @@
 #include "cereal/gen/c/log.capnp.h"
 //BB Cereal for UI
 #include "cereal/gen/c/ui.capnp.h"
+#include <time.h>
 
 // Calibration status values from controlsd.py
 #define CALIBRATION_UNCALIBRATED 0
@@ -187,17 +188,17 @@ typedef struct UIState {
   int btns_x[6];
   int btns_y[6];
   int btns_r[6];
-  time_t label_last_modified;
-  time_t status_last_modified;
   int custom_message_status;
   char custom_message[120];
+  int img_logo;
+  int img_logo2;
   //BB END
   int font_courbd;
   int font_sans_regular;
   int font_sans_semibold;
   int font_sans_bold;
   int img_wheel;
-  int img_logo;
+  
 
   zsock_t *thermal_sock;
   void *thermal_sock_raw;
@@ -366,8 +367,6 @@ static void ui_init(UIState *s) {
   s->status = STATUS_DISENGAGED;
   strcpy(s->car_model,"Tesla");
   strcpy(s->car_folder,"tesla");
-  s->label_last_modified = 0;
-  s->status_last_modified = 0;
   // init connections
 
   s->thermal_sock = zsock_new_sub(">tcp://127.0.0.1:8005", "");
@@ -453,6 +452,7 @@ static void ui_init(UIState *s) {
   assert(s->img_wheel >= 0);
   s->img_wheel = nvgCreateImage(s->vg, "../assets/img_chffr_wheel.png", 1);
   s->img_logo = nvgCreateImage(s->vg, "../assets/img_spinner_comma.png", 1);
+  s->img_logo2 = nvgCreateImage(s->vg, "../assets/img_spinner_comma2.png", 1);
 
   // init gl
   s->frame_program = load_program(frame_vertex_shader, frame_fragment_shader);
@@ -998,6 +998,13 @@ static void ui_draw_vision_alert(UIState *s, int va_size, int va_color,
 
 
 //BB START: functions added for the display of various items
+
+static long bb_currentTimeInMilis() {
+    struct timespec res;
+    clock_gettime(CLOCK_MONOTONIC, &res);
+    return (res.tv_sec * 1000) + res.tv_nsec/1000000;
+}
+
 static int bb_ui_draw_measure(UIState *s,  const char* bb_value, const char* bb_uom, const char* bb_label, 
 		int bb_x, int bb_y, int bb_uom_dx,
 		NVGcolor bb_valueColor, NVGcolor bb_labelColor, NVGcolor bb_uomColor, 
@@ -1498,22 +1505,34 @@ static void ui_draw_vision_grid(UIState *s) {
 }
 
 static void bb_ui_draw_logo(UIState *s) {
+  //if ((s->status != STATUS_DISENGAGED) && (s->status != STATUS_STOPPED)) {
+  //  return;
+  //}
+  int rduration = 8000;
+  int logot = (bb_currentTimeInMilis() % rduration);
+  int logoi = s->img_logo;
+  if ((logot > (int)(rduration/4)) && (logot < (int)(3*rduration/4))) {
+    logoi = s->img_logo2;
+  }
+  if (logot < (int)(rduration/2)) {
+    logot = logot - (int)(rduration/4);
+  } else {
+    logot = logot - (int)(3*rduration/4);
+  }
+  float logop = fabs(4.0*logot/rduration);
   const UIScene *scene = &s->scene;
   const int ui_viz_rx = scene->ui_viz_rx;
   const int ui_viz_rw = scene->ui_viz_rw;
-  const int viz_event_w = 820;
-  const int viz_event_h = viz_event_w;
+  const int viz_event_w = (int)(820 * logop);
+  const int viz_event_h = 820;
   const int viz_event_x = (ui_viz_rx + (ui_viz_rw - viz_event_w - bdr_s*2)/2);
   const int viz_event_y = 200;
   bool is_engageable = scene->engageable;
-  float viz_event_alpha = 0.1f;
-  if (is_engageable) {
-    viz_event_alpha = 1.0f;
-  }
+  float viz_event_alpha = 1.0f;
   nvgBeginPath(s->vg);
   NVGpaint imgPaint = nvgImagePattern(s->vg, viz_event_x, viz_event_y,
-  viz_event_w, viz_event_h, 0, s->img_logo, viz_event_alpha);
-  nvgRect(s->vg, viz_event_x, viz_event_y, viz_event_w, viz_event_h);
+  viz_event_w, viz_event_h, 0, logoi, viz_event_alpha);
+  nvgRect(s->vg, viz_event_x, viz_event_y, (int)viz_event_w, viz_event_h);
   nvgFillPaint(s->vg, imgPaint);
   nvgFill(s->vg);
 }

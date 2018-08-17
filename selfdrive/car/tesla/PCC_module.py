@@ -157,19 +157,20 @@ class PCCController(object):
         CS.cstm_btns.set_button_status("pedal",2)
         self.pedal_speed_kph = CS.v_ego_raw * 3.6
       elif (self.enable_pedal_cruise) and double_pull:
-        #already enabled, reset speed to current speed
-        CS.UE.custom_alert_message(2,"PDL Speed Updated",150)
-        self.pedal_speed_kph = CS.v_ego_raw * 3.6
+        #already enabled, reset speed to current speed if speed is grater than previous one
+        if self.pedal_speed_kph < CS.v_ego_raw * 3.6:
+          CS.UE.custom_alert_message(2,"PDL Speed Updated",150)
+          self.pedal_speed_kph = CS.v_ego_raw * 3.6
       elif self.enable_pedal_cruise and not double_pull:
         self.enable_pedal_cruise = False
-        CS.UE.custom_alert_message(3,"PDL Disabled",150)
+        CS.UE.custom_alert_message(3,"PDL Disabled",150,4)
         CS.cstm_btns.set_button_status("pedal",1)
       self.last_cruise_stalk_pull_time = curr_time_ms
     elif (CS.cruise_buttons == CruiseButtons.CANCEL and
           self.prev_cruise_buttons != CruiseButtons.CANCEL):
       self.enable_pedal_cruise = False
       if adaptive_cruise_prev == True:
-        CS.UE.custom_alert_message(3,"PDL Disabled",150)
+        CS.UE.custom_alert_message(3,"PDL Disabled",150,4)
         CS.cstm_btns.set_button_status("pedal",1)
       self.last_cruise_stalk_pull_time = 0
     elif (self.enable_pedal_cruise and CS.cruise_buttons !=self.prev_cruise_buttons):
@@ -195,7 +196,7 @@ class PCCController(object):
           CS.pcm_acc_status != 0 and
           curr_time_ms - self.last_cruise_stalk_pull_time >  2000):
       self.enable_pedal_cruise = False
-      CS.UE.custom_alert_message(3,"PCC Disabled",150)
+      CS.UE.custom_alert_message(3,"PDL Disabled",150,4)
       CS.cstm_btns.set_button_status("pedal",1)
     self.prev_steering_wheel_stalk = CS.steering_wheel_stalk
     self.prev_cruise_buttons = CS.cruise_buttons

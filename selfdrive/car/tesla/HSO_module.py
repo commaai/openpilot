@@ -33,7 +33,7 @@ class HSOController(object):
               if (frame - self.frame_humanSteered < 50):
                 human_control = True
                 CS.cstm_btns.set_button_status("steer",3)
-                CS.UE.custom_alert_message(3,"Manual Steering Enabled",51)
+                CS.UE.custom_alert_message(3,"Manual Steering Enabled",51,4)
               else:
                 CS.cstm_btns.set_button_status("steer",2)
         else:

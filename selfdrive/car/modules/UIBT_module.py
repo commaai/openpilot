@@ -101,11 +101,14 @@ class UIButtons:
     def set_button_status(self,btn_name,btn_status):
         for i in range(0,6):
             if self.btns[i].btn_name.strip() == btn_name:
-                self.btns[i].btn_status = btn_status
-                self.hasChanges = True
-                self.CS.UE.uiButtonInfoEvent(i,self.btns[i].btn_name, \
-                    self.btns[i].btn_label,self.btns[i].btn_status,self.btns[i].btn_label2)
-        self.write_buttons_out_file()
+                if self.btns[i].btn_status != btn_status:
+                    self.btns[i].btn_status = btn_status
+                    self.hasChanges = True
+                    self.CS.UE.uiButtonInfoEvent(i,self.btns[i].btn_name, \
+                        self.btns[i].btn_label,self.btns[i].btn_status,self.btns[i].btn_label2)
+        if self.hasChanges:
+            self.write_buttons_out_file()
+            self.hasChanges = False
 
     def set_button_status_from_ui(self,id,btn_status):
         self.CS.update_ui_buttons(id,btn_status)
