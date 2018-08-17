@@ -192,13 +192,16 @@ typedef struct UIState {
   char custom_message[120];
   int img_logo;
   int img_logo2;
+  int img_car;
+  int tri_state_switch;
+  long tri_state_switch_last_read;
   //BB END
   int font_courbd;
   int font_sans_regular;
   int font_sans_semibold;
   int font_sans_bold;
   int img_wheel;
-  int tri_state_switch;
+  
   
 
   zsock_t *thermal_sock;
@@ -368,9 +371,8 @@ static void ui_init(UIState *s) {
   s->status = STATUS_DISENGAGED;
   strcpy(s->car_model,"Tesla");
   strcpy(s->car_folder,"tesla");
-  s->img_logo = nvgCreateImage(s->vg, "../assets/img_spinner_comma.png", 1);
-  s->img_logo2 = nvgCreateImage(s->vg, "../assets/img_spinner_comma2.png", 1);
   s->tri_state_switch = -1;
+  s->tri_state_switch_last_read = 0;
   // init connections
 
   s->thermal_sock = zsock_new_sub(">tcp://127.0.0.1:8005", "");
@@ -455,6 +457,11 @@ static void ui_init(UIState *s) {
 
   assert(s->img_wheel >= 0);
   s->img_wheel = nvgCreateImage(s->vg, "../assets/img_chffr_wheel.png", 1);
+
+  //BB Load Images
+  s->img_logo = nvgCreateImage(s->vg, "../assets/img_spinner_comma.png", 1);
+  s->img_logo2 = nvgCreateImage(s->vg, "../assets/img_spinner_comma2.png", 1);
+  s->img_car = nvgCreateImage(s->vg, "../assets/img_car_tesla.png", 1);
 
   
 
@@ -663,6 +670,25 @@ static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
   nvgBeginPath(s->vg);
   float g_xo = sz/5;
   float g_yo = sz/10;
+  //BB added for printing the car
+  if (s->tri_state_switch == 2) {
+    float bbsz = 0.1 + 0.8 * (200-x_in)/200;
+    if (bbsz < 0.1) bbsz = 0.1;
+    if (bbsz > 0.8) bbsz = 0.8;
+    float car_alpha = 0.3 + 0.5*bbsz;
+    float car_w = 750 * bbsz;
+    float car_h = 531 * bbsz;
+    float car_y = y - car_h;
+    float car_x = x - car_w/2;
+    
+    nvgBeginPath(s->vg);
+    NVGpaint imgPaint = nvgImagePattern(s->vg, car_x, car_y,
+    car_w, car_h, 0, s->img_car, car_alpha);
+    nvgRect(s->vg, car_x, car_y, car_w, car_h);
+    nvgFillPaint(s->vg, imgPaint);
+    nvgFill(s->vg);
+  }
+
   if (x >= 0 && y >= 0.) {
     nvgMoveTo(s->vg, x+(sz*1.35)+g_xo, y+sz+g_yo);
     nvgLineTo(s->vg, x, y-g_xo);
@@ -871,12 +897,14 @@ static void draw_frame(UIState *s) {
     { 1.0,  1.0, x1, y2}, //tr
     { 1.0, -1.0, x1, y1}, //br
   };
-
+  
   glActiveTexture(GL_TEXTURE0);
-  if (s->scene.frontview && s->cur_vision_front_idx >= 0) {
-    glBindTexture(GL_TEXTURE_2D, s->frame_front_texs[s->cur_vision_front_idx]);
-  } else if (!scene->frontview && s->cur_vision_idx >= 0) {
-    glBindTexture(GL_TEXTURE_2D, s->frame_texs[s->cur_vision_idx]);
+  if (s->tri_state_switch != 2) {
+    if (s->scene.frontview && s->cur_vision_front_idx >= 0) {
+      glBindTexture(GL_TEXTURE_2D, s->frame_front_texs[s->cur_vision_front_idx]);
+    } else if (!scene->frontview && s->cur_vision_idx >= 0) {
+      glBindTexture(GL_TEXTURE_2D, s->frame_texs[s->cur_vision_idx]);
+    }
   }
 
   glUseProgram(s->frame_program);
@@ -893,6 +921,7 @@ static void draw_frame(UIState *s) {
                         sizeof(frame_coords[0]), &frame_coords[0][2]);
 
   assert(glGetError() == GL_NO_ERROR);
+  
   glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, &frame_indicies[0]);
 }
 
@@ -1509,7 +1538,7 @@ static void ui_draw_vision_grid(UIState *s) {
 }
 
 static void bb_ui_draw_logo(UIState *s) {
-  if ((s->status != STATUS_DISENGAGED) && (s->status != STATUS_STOPPED)) {
+  if (s->status != STATUS_DISENGAGED) {//((s->status != STATUS_DISENGAGED) && (s->status != STATUS_STOPPED)) {
     return;
   }
   int rduration = 8000;
@@ -1541,11 +1570,70 @@ static void bb_ui_draw_logo(UIState *s) {
   nvgFill(s->vg);
 }
 
+static void bb_ui_draw_car(UIState *s) {
+  // replaces the draw_chevron function when button in mid position
+  //static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
+  //                        NVGcolor fillColor, NVGcolor glowColor) {
+  if (!s->scene.lead_status) {
+    //no lead car to draw
+    return;
+  }
+  const UIScene *scene = &s->scene;
+  float x_in = scene->lead_d_rel+2.7;
+  float y_in = scene->lead_y_rel;
+  float sz = 1.0;
+
+  nvgSave(s->vg);
+  nvgTranslate(s->vg, 240.0f, 0.0);
+  nvgTranslate(s->vg, -1440.0f / 2, -1080.0f / 2);
+  nvgScale(s->vg, 2.0, 2.0);
+  nvgScale(s->vg, 1440.0f / s->rgb_width, 1080.0f / s->rgb_height);
+
+  const vec4 p_car_space = (vec4){{x_in, y_in, 0., 1.}};
+  const vec3 p_full_frame = car_space_to_full_frame(s, p_car_space);
+
+  //sz *= 30;
+  //sz /= (x_in / 3 + 30);
+  //if (sz > 30) sz = 30;
+  //if (sz < 15) sz = 15;
+  //sz = 0.1 + 0.8*(sz -15.0)/15.0
+
+  //they have sz between 15 and 30
+  //we want size between 10% and 90%
+  //let's say 20 ft or less is 90%, 200 ft or more is 10%
+  //so we do a tad of math...
+  if (x_in < 20) {
+    sz = 0.9;
+  } else if (x_in < 200) {
+    sz = 0.1 + 0.8 * (200 - x_in)/180.0;
+  } else {
+    sz = 0.1;
+  }
+  
+
+  float x = p_full_frame.v[0];
+  float y = p_full_frame.v[1];
+
+  float car_alpha = 0.3 + 0.5*sz;
+  float car_w = 750 * sz;
+  float car_h = 531 * sz;
+  float car_y = y - car_h;
+  float car_x = x - car_w/2;
+  
+  nvgBeginPath(s->vg);
+  NVGpaint imgPaint = nvgImagePattern(s->vg, car_x, car_y,
+  car_w, car_h, 0, s->img_car, car_alpha);
+  nvgRect(s->vg, car_x, car_y, car_w, car_h);
+  nvgFillPaint(s->vg, imgPaint);
+  nvgFill(s->vg);
+  nvgRestore(s->vg);
+}
+
 static void bb_ui_draw_UI(UIState *s) {
   //get 3-state switch position
   int tri_state_fd;
   char buffer[10];
-  if ((s->tri_state_switch == -1) || (bb_currentTimeInMilis() % 2000 == 0)) {
+  if  (bb_currentTimeInMilis() - s->tri_state_switch_last_read > 2000)  {
     tri_state_fd = open ("/sys/devices/virtual/switch/tri-state-key/state", O_RDONLY);
     //if we can't open then switch should be considered in the middle, nothing done
     if (tri_state_fd == -1) {
@@ -1554,6 +1642,7 @@ static void bb_ui_draw_UI(UIState *s) {
       read (tri_state_fd, &buffer, 10);
       s->tri_state_switch = buffer[0] -48;
       close(tri_state_fd);
+      s->tri_state_switch_last_read = bb_currentTimeInMilis();
     }
   }
   
@@ -1566,19 +1655,35 @@ static void bb_ui_draw_UI(UIState *s) {
 	  const int bb_dmr_w = 180;
 	  const int bb_dmr_x = scene->ui_viz_rx + scene->ui_viz_rw - bb_dmr_w - (bdr_s*2) ; 
 	  const int bb_dmr_y = (box_y + (bdr_s*1.5))+220;
-	 bb_ui_draw_measures_left(s,bb_dml_x, bb_dml_y, bb_dml_w );
-	 bb_ui_draw_measures_right(s,bb_dmr_x, bb_dmr_y, bb_dmr_w );
-   bb_draw_buttons(s);
-   bb_ui_draw_custom_alert(s);
-   bb_ui_draw_logo(s);
+    bb_ui_draw_measures_left(s,bb_dml_x, bb_dml_y, bb_dml_w );
+    bb_ui_draw_measures_right(s,bb_dmr_x, bb_dmr_y, bb_dmr_w );
+    bb_draw_buttons(s);
+    bb_ui_draw_custom_alert(s);
+    bb_ui_draw_logo(s);
 	 }
+
    if (s->tri_state_switch ==2) {
-	 	bb_ui_draw_custom_alert(s);
+	 	const UIScene *scene = &s->scene;
+	  const int bb_dml_w = 180;
+	  const int bb_dml_x =  (scene->ui_viz_rx + (bdr_s*2));
+	  const int bb_dml_y = (box_y + (bdr_s*1.5))+220;
+	  
+	  const int bb_dmr_w = 180;
+	  const int bb_dmr_x = scene->ui_viz_rx + scene->ui_viz_rw - bb_dmr_w - (bdr_s*2) ; 
+	  const int bb_dmr_y = (box_y + (bdr_s*1.5))+220;
+    //bb_ui_draw_measures_left(s,bb_dml_x, bb_dml_y, bb_dml_w );
+    //bb_ui_draw_measures_right(s,bb_dmr_x, bb_dmr_y, bb_dmr_w );
+    bb_draw_buttons(s);
+    bb_ui_draw_custom_alert(s);
+    bb_ui_draw_logo(s);
+    //bb_ui_draw_car(s);
 	 }
 	 if (s->tri_state_switch ==3) {
 	 	ui_draw_vision_grid(s);
 	 }
  }
+
+
 
  static void bb_ui_init(UIState *s) {
 
@@ -1933,7 +2038,9 @@ static void ui_draw_vision(UIState *s) {
   glEnable(GL_SCISSOR_TEST);
   glViewport(ui_viz_rx+ui_viz_ro, s->fb_h-(box_y+box_h), viz_w, box_h);
   glScissor(ui_viz_rx, s->fb_h-(box_y+box_h), ui_viz_rw, box_h);
+  
   draw_frame(s);
+  
   glViewport(0, 0, s->fb_w, s->fb_h);
   glDisable(GL_SCISSOR_TEST);
 
@@ -2061,13 +2168,13 @@ static void ui_update(UIState *s) {
       s->frame_texs[i] = visionimg_to_gl(&img);
 
       glBindTexture(GL_TEXTURE_2D, s->frame_texs[i]);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-    // BGR
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
+      // BGR
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
     }
 
     for (int i=0; i<UI_BUF_COUNT; i++) {
@@ -2085,13 +2192,13 @@ static void ui_update(UIState *s) {
       s->frame_front_texs[i] = visionimg_to_gl(&img);
 
       glBindTexture(GL_TEXTURE_2D, s->frame_front_texs[i]);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-    // BGR
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
+      // BGR
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
     }
 
     assert(glGetError() == GL_NO_ERROR);
