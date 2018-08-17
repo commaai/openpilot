@@ -764,6 +764,9 @@ static void ui_draw_lane_line(UIState *s, const float *points, float off,
 }
 
 static void ui_draw_lane(UIState *s, const PathData path, NVGcolor color) {
+  if (s->tri_state_switch == 2) {
+    color = nvgRGBA(66, 220, 244,250);
+  }
   ui_draw_lane_line(s, path.points, 0.025*path.prob, color, false);
   float var = min(path.std, 0.7);
   color.a /= 4;
@@ -925,8 +928,80 @@ static void draw_frame(UIState *s) {
   glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, &frame_indicies[0]);
 }
 
+//BB function to draw the lane
+static void bb_draw_lane_fill (UIState *s) {
+
+  const UIScene *scene = &s->scene;
+
+  nvgSave(s->vg);
+  nvgTranslate(s->vg, 240.0f, 0.0); // rgb-box space
+  nvgTranslate(s->vg, -1440.0f / 2, -1080.0f / 2); // zoom 2x
+  nvgScale(s->vg, 2.0, 2.0);
+  nvgScale(s->vg, 1440.0f / s->rgb_width, 1080.0f / s->rgb_height);
+  nvgBeginPath(s->vg);
+
+  //BB let the magic begin
+  //define variables
+  PathData path;
+  float *points;
+  float off;
+  NVGcolor bb_color = nvgRGBA(138, 140, 142, 180);
+  bool started = false;
+  bool is_ghost = true;
+  //left lane, first init
+  path = scene->model.left_lane;
+  points = path.points;
+  off = 0.025*path.prob;
+  //draw left
+  for (int i=0; i<49; i++) {
+    float px = (float)i;
+    float py = points[i] - off;
+    vec4 p_car_space = (vec4){{px, py, 0., 1.}};
+    vec3 p_full_frame = car_space_to_full_frame(s, p_car_space);
+    float x = p_full_frame.v[0];
+    float y = p_full_frame.v[1];
+    if (x < 0 || y < 0.) {
+      continue;
+    }
+    if (!started) {
+      nvgMoveTo(s->vg, x, y);
+      started = true;
+    } else {
+      nvgLineTo(s->vg, x, y);
+    }
+  }
+  //right lane, first init
+  path = scene->model.right_lane;
+  points = path.points;
+  off = 0.025*path.prob;
+  //draw right
+  for (int i=49; i>0; i--) {
+    float px = (float)i;
+    float py = is_ghost?(points[i]-off):(points[i]+off);
+    vec4 p_car_space = (vec4){{px, py, 0., 1.}};
+    vec3 p_full_frame = car_space_to_full_frame(s, p_car_space);
+    float x = p_full_frame.v[0];
+    float y = p_full_frame.v[1];
+    if (x < 0 || y < 0.) {
+      continue;
+    }
+    nvgLineTo(s->vg, x, y);
+  }
+
+  nvgClosePath(s->vg);
+  nvgFillColor(s->vg, bb_color);
+  nvgFill(s->vg);
+  nvgRestore(s->vg);
+
+}
+//BB end
+
 static void ui_draw_vision_lanes(UIState *s) {
   const UIScene *scene = &s->scene;
+  //BB
+  if (s->tri_state_switch == 2) {
+    bb_draw_lane_fill(s);
+  }
   // Draw left lane edge
   ui_draw_lane(
       s, scene->model.left_lane,
@@ -1032,10 +1107,23 @@ static void ui_draw_vision_alert(UIState *s, int va_size, int va_color,
 
 //BB START: functions added for the display of various items
 
+
+
 static long bb_currentTimeInMilis() {
     struct timespec res;
     clock_gettime(CLOCK_MONOTONIC, &res);
     return (res.tv_sec * 1000) + res.tv_nsec/1000000;
+}
+
+static int bb_get_status(UIState *s) {
+    //BB select status based on main s->status w/ priority over s->custom_message_status
+    int bb_status = -1;
+    if ((s->status == STATUS_ENGAGED) && (s->custom_message_status > STATUS_ENGAGED)) {
+      bb_status = s->custom_message_status;
+    } else {
+      bb_status = s->status;
+    }
+    return bb_status;
 }
 
 static int bb_ui_draw_measure(UIState *s,  const char* bb_value, const char* bb_uom, const char* bb_label, 
@@ -1130,21 +1218,37 @@ static void bb_draw_button(UIState *s, int btn_id) {
   const UIScene *scene = &s->scene;
 
   int viz_button_x = 0;
-  const int viz_button_y = (box_y + (bdr_s*1.5)) + 20;
-  const int viz_button_w = 140;
-  const int viz_button_h = 140;
+  int viz_button_y = (box_y + (bdr_s*1.5)) + 20;
+  int viz_button_w = 140;
+  int viz_button_h = 140;
 
   char *btn_text, *btn_text2;
   
-  const int delta_x = viz_button_w * 1.1;
-  
-  if (btn_id >2) {
-    viz_button_x = scene->ui_viz_rx + scene->ui_viz_rw - (bdr_s*2) -190;
-    viz_button_x -= (6-btn_id) * delta_x ;
-  } else {
-    viz_button_x = scene->ui_viz_rx + (bdr_s*2) + 200;
-    viz_button_x +=  (btn_id) * delta_x;
+  int delta_x = viz_button_w * 1.1;
+  int delta_y = 0;
+  int dx1 = 200;
+  int dx2 = 190;
+  int dy = 0;
+
+  if (s->tri_state_switch ==2) {
+    delta_y = delta_x;
+    delta_x = 0;
+    dx1 = 20;
+    dx2 = 160;
+    dy = 200;
   }
+
+  if (btn_id >2) {
+    viz_button_x = scene->ui_viz_rx + scene->ui_viz_rw - (bdr_s*2) -dx2;
+    viz_button_x -= (6-btn_id) * delta_x ;
+    viz_button_y += (btn_id-3) * delta_y + dy;
+    
+  } else {
+    viz_button_x = scene->ui_viz_rx + (bdr_s*2) + dx1;
+    viz_button_x +=  (btn_id) * delta_x;
+    viz_button_y += btn_id * delta_y + dy;
+  }
+  
 
   btn_text = s->btns[btn_id].btn_label;
   btn_text2 = s->btns[btn_id].btn_label2;
@@ -1208,12 +1312,12 @@ static void bb_draw_button(UIState *s, int btn_id) {
   nvgFontFace(s->vg, "sans-regular");
   nvgFontSize(s->vg, 14*2.5);
   nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 200));
-  nvgText(s->vg, viz_button_x+viz_button_w/2, 210, btn_text2, NULL);
+  nvgText(s->vg, viz_button_x+viz_button_w/2, viz_button_y + 112, btn_text2, NULL);
 
   nvgFontFace(s->vg, "sans-semibold");
   nvgFontSize(s->vg, 28*2.5);
   nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 255));
-  nvgText(s->vg, viz_button_x+viz_button_w/2, 183, btn_text, NULL);
+  nvgText(s->vg, viz_button_x+viz_button_w/2, viz_button_y + 85,btn_text, NULL);
 }
 
 static void bb_draw_buttons(UIState *s) {
@@ -1671,8 +1775,6 @@ static void bb_ui_draw_UI(UIState *s) {
 	  const int bb_dmr_w = 180;
 	  const int bb_dmr_x = scene->ui_viz_rx + scene->ui_viz_rw - bb_dmr_w - (bdr_s*2) ; 
 	  const int bb_dmr_y = (box_y + (bdr_s*1.5))+220;
-    //bb_ui_draw_measures_left(s,bb_dml_x, bb_dml_y, bb_dml_w );
-    //bb_ui_draw_measures_right(s,bb_dmr_x, bb_dmr_y, bb_dmr_w );
     bb_draw_buttons(s);
     bb_ui_draw_custom_alert(s);
     bb_ui_draw_logo(s);
@@ -1973,7 +2075,7 @@ static void ui_draw_vision_wheel(UIState *s) {
   const int img_wheel_x = bg_wheel_x-(img_wheel_size/2);
   const int img_wheel_y = bg_wheel_y-25;
   float img_wheel_alpha = 0.1f;
-  bool is_engaged = (s->status == STATUS_ENGAGED);
+  bool is_engaged = ((s->status == STATUS_ENGAGED) && (s->custom_message_status <= STATUS_ENGAGED));
   bool is_warning = ((s->status == STATUS_WARNING) || ((s->status == STATUS_ENGAGED) && (s->custom_message_status > STATUS_ENGAGED))) ;
   bool is_engageable = scene->engageable;
   if (is_engaged || is_warning || is_engageable) {
@@ -2691,17 +2793,12 @@ static void* bg_thread(void* args) {
   while(!do_exit) {
     pthread_mutex_lock(&s->lock);
     //BB Change of background based on our color
-    int bb_status = -1;
-    if ((s->status == STATUS_ENGAGED) && (s->custom_message_status > STATUS_ENGAGED)) {
-      bb_status = s->custom_message_status;
-    } else {
-      bb_status = s->status;
-    }
-    if (bg_status == bb_status) {
+    int actual_status = bb_get_status(s);
+    if (bg_status == actual_status) {
       // will always be signaled if it changes?
       pthread_cond_wait(&s->bg_cond, &s->lock);
     }
-    bg_status = bb_status;
+    bg_status = actual_status;
     //BB End of background color change
     pthread_mutex_unlock(&s->lock);
 
