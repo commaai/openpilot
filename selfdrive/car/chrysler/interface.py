@@ -5,7 +5,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.chrysler.carstate import CarState, get_can_parser
-from selfdrive.car.chrysler.values import ECU, check_ecu_msgs
+from selfdrive.car.chrysler.values import ECU, check_ecu_msgs, CAR
 
 try:
   from selfdrive.car.chrysler.carcontroller import CarController
@@ -52,6 +52,9 @@ class CarInterface(object):
 
     ret.carName = "chrysler"
     ret.carFingerprint = candidate
+    # TODO actually look for radar messages instead of hard-coding non-giraffe cars.
+    if candidate in [CAR.CHEROKEE, CAR.PACIFICA_2018]:
+      ret.radarOffCan = True
 
     ret.safetyModel = car.CarParams.SafetyModels.chrysler
 

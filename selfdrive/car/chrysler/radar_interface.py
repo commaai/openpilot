@@ -54,6 +54,7 @@ class RadarInterface(object):
   def __init__(self, CP):
     self.pts = {}
     self.delay = 0.0  # Delay of radar  #TUNE
+    self.radar_off_can = CP.radarOffCan
     self.rcp = _create_radard_can_parser()
     context = zmq.Context()
     self.logcan = messaging.sub_sock(context, service_list['can'].port)
@@ -62,13 +63,20 @@ class RadarInterface(object):
     canMonoTimes = []
 
     updated_messages = set()  # set of message IDs (sig_addresses) we've seen
+    ret = car.RadarState.new_message()
+
+    # in non-giraffe models we are only steering for now, so sleep 0.05s to keep
+    # radard at 20Hz and return no points
+    if self.radar_off_can:
+      time.sleep(0.05)
+      return ret
+
     while 1:
       tm = int(sec_since_boot() * 1e9)
       updated_messages.update(self.rcp.update(tm, True))
       if len(updated_messages) == NUMBER_MSGS:  # got at least one of each message
         break
 
-    ret = car.RadarState.new_message()
     errors = []
     if not self.rcp.can_valid:
       errors.append("commIssue")
