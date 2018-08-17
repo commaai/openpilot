@@ -224,7 +224,8 @@ class CarInterface(object):
     # gas pedal
     ret.gas = self.CS.car_gas
     if self.CP.enableGasInterceptor:
-      ret.gasPressed = self.CS.pedal_gas > 43
+    # use interceptor values to disengage on pedal press
+      ret.gasPressed = self.CS.pedal_gas > 15
     else:
       ret.gasPressed = self.CS.pedal_gas > 0
 
@@ -245,9 +246,10 @@ class CarInterface(object):
     ret.cruiseState.speed = self.CS.v_cruise_pcm * CV.KPH_TO_MS
     ret.cruiseState.available = bool(self.CS.main_on)
     ret.cruiseState.speedOffset = 0.
-    if self.CP.carFingerprint == CAR.RAV4H:
+    if (self.CP.carFingerprint == CAR.RAV4H) or self.CP.enableGasInterceptor:
       # ignore standstill in hybrid rav4, since pcm allows to restart without
       # receiving any special command
+      #also if interceptor is detected
       ret.cruiseState.standstill = False
     else:
       ret.cruiseState.standstill = self.CS.pcm_acc_status == 7
