@@ -17,7 +17,7 @@ ACCEL_SCALE = max(ACCEL_MAX, -ACCEL_MIN)
 
 # Steer torque range is 1024+-230. The 1024 is added by our library.
 # degrees * 5.1 = car units
-CAR_UNITS_PER_DEGREE = 4.0  # originally 5.1
+CAR_UNITS_PER_DEGREE = 3.0  # originally 5.1
 STEER_MAX = 230 / CAR_UNITS_PER_DEGREE  # degrees
 STEER_DELTA_UP = 2.5 / CAR_UNITS_PER_DEGREE  # degrees
 STEER_DELTA_DOWN = 2.5 / CAR_UNITS_PER_DEGREE  # degrees
