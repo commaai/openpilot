@@ -153,10 +153,16 @@ class CarController(object):
     self.steer_angle_enabled, self.ipas_reset_counter = \
       ipas_state_transition(self.steer_angle_enabled, enabled, CS.ipas_active, self.ipas_reset_counter)
     #print self.steer_angle_enabled, self.ipas_reset_counter, CS.ipas_active
+   
+    #update custom UI buttons and alerts
+    CS.UE.update_custom_ui()
+    if (frame % 1000 == 0):
+      CS.cstm_btns.send_button_info()
 
-    # Update statuses for custom buttons every 0.1 sec.
+    # Update ALCA status and custom button every 0.1 sec.
     if (frame % 10 == 0):
       self.ALCA.update_status(CS.cstm_btns.get_button_status("alca") > 0)
+
     # tell ALCA which mode we use
     self.ALCA.update_steer_type(self.steer_angle_enabled)
 
