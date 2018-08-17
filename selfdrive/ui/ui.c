@@ -1538,7 +1538,7 @@ static void ui_draw_vision_grid(UIState *s) {
 }
 
 static void bb_ui_draw_logo(UIState *s) {
-  if (s->status != STATUS_DISENGAGED) {//((s->status != STATUS_DISENGAGED) && (s->status != STATUS_STOPPED)) {
+  if ((s->status != STATUS_DISENGAGED) && (s->status != STATUS_STOPPED)) { //(s->status != STATUS_DISENGAGED) {//
     return;
   }
   int rduration = 8000;
@@ -1767,7 +1767,7 @@ static void bb_ui_draw_UI(UIState *s) {
           cereal_read_UIButtonInfo(&datad, stp);
 
           int id = datad.btnId;
-          LOGW("got button info: ID = (%d)", id);
+          //LOGW("got button info: ID = (%d)", id);
           strcpy(s->btns[id].btn_name,(char *)datad.btnName.str);
           strcpy(s->btns[id].btn_label, (char *)datad.btnLabel.str);
           strcpy(s->btns[id].btn_label2, (char *)datad.btnLabel2.str);
