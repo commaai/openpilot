@@ -83,6 +83,7 @@ class UIButtons:
         else:
             #there is no file, create it
             self.btns = self.CS.init_ui_buttons()
+            self.hasChanges = True
             self.write_buttons_labels_to_file()
             self.write_buttons_out_file()
         #send events to initiate UI
