@@ -184,7 +184,7 @@ class ACCController(object):
     if button_to_press:
       self.automated_cruise_action_time = current_time_ms
       # If trying to slow below the min cruise speed, just cancel cruise.
-      if (button_to_press in [CruiseButtons.RES_ACCEL, CruiseButtons.RES_ACCEL_2ND]
+      if (button_to_press in [CruiseButtons.DECEL_SET, CruiseButtons.DECEL_2ND]
           and CS.v_cruise_actual - 1 < min_cruise_speed_ms * CV.MS_TO_KPH):
         button_to_press = CruiseButtons.CANCEL
     return button_to_press
