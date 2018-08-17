@@ -672,10 +672,10 @@ static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
   float g_yo = sz/10;
   //BB added for printing the car
   if (s->tri_state_switch == 2) {
-    float bbsz = 0.1 + 0.8 * (200-x_in)/200;
-    if (bbsz < 0.1) bbsz = 0.1;
-    if (bbsz > 0.8) bbsz = 0.8;
-    float car_alpha = 0.3 + 0.5*bbsz;
+    float bbsz =0.1*  0.1 + 0.6 * (200-x_in)/180;
+    if (bbsz < 0.1) bbsz = 0.01;
+    if (bbsz > 0.8) bbsz = 0.6;
+    float car_alpha = 1.;
     float car_w = 750 * bbsz;
     float car_h = 531 * bbsz;
     float car_y = y - car_h;
@@ -687,7 +687,7 @@ static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
     nvgRect(s->vg, car_x, car_y, car_w, car_h);
     nvgFillPaint(s->vg, imgPaint);
     nvgFill(s->vg);
-  }
+  } else {
 
   if (x >= 0 && y >= 0.) {
     nvgMoveTo(s->vg, x+(sz*1.35)+g_xo, y+sz+g_yo);
@@ -710,7 +710,7 @@ static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
   }
   nvgFillColor(s->vg, fillColor);
   nvgFill(s->vg);
-
+}
   nvgRestore(s->vg);
 }
 
@@ -1500,7 +1500,7 @@ static void bb_ui_draw_measures_right(UIState *s, int bb_x, int bb_y, int bb_w )
 //draw grid from wiki
 static void ui_draw_vision_grid(UIState *s) {
   const UIScene *scene = &s->scene;
-  bool is_cruise_set = (s->scene.v_cruise != 0 && s->scene.v_cruise != 255);
+  bool is_cruise_set = false;//(s->scene.v_cruise != 0 && s->scene.v_cruise != 255);
   if (!is_cruise_set) {
     const int grid_spacing = 30;
 
@@ -1797,6 +1797,8 @@ static void bb_ui_draw_UI(UIState *s) {
           
           capn_free(&ctx);
           zmq_msg_close(&msg);
+          // wakeup bg thread since status changed
+          pthread_cond_signal(&s->bg_cond);
         } else if (bb_polls[2].revents) {
           //uiSetCar
           //printf("uio: event: uiSetCar\n");
