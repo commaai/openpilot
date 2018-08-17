@@ -1,5 +1,5 @@
 from selfdrive.services import service_list
-from selfdrive.car.tesla.values import AH, CruiseButtons, CAR
+from selfdrive.car.tesla.values import AH, CruiseButtons, CruiseState, CAR
 from selfdrive.config import Conversions as CV
 import selfdrive.messaging as messaging
 import custom_alert as customAlert
@@ -47,7 +47,7 @@ class ACCController(object):
         curr_time_ms - self.last_cruise_stalk_pull_time < 750 and
         CS.cstm_btns.get_button_status("acc") > 0 and
         enabled and
-        CS.pcm_acc_status in [1, 2])
+        CruiseState.is_enabled_or_standby(CS.pcm_acc_status))
       if double_pull and not self.enable_adaptive_cruise:
         customAlert.custom_alert_message("ACC Enabled", CS, 150)
         self.enable_adaptive_cruise = True
@@ -103,7 +103,7 @@ class ACCController(object):
     self.prev_cruise_buttons = CS.cruise_buttons
     # Now let's see if the ACC is available.
     if CS.cstm_btns.get_button_status("acc") in [1, 9]:
-      if enabled and CS.pcm_acc_status in [1, 2]:
+      if enabled and CruiseState.is_enabled_or_standby(CS.pcm_acc_status):
           CS.cstm_btns.set_button_status("acc", 1)
       else:
           CS.cstm_btns.set_button_status("acc", 9)
@@ -112,7 +112,7 @@ class ACCController(object):
   def update_acc(self, enabled, CS, frame, actuators, pcm_speed):
     # Adaptive cruise control
     current_time_ms = _current_time_millis()
-    if CS.cruise_buttons not in [CruiseButtons.IDLE, CruiseButtons.MAIN]:
+    if CruiseButtons.should_be_throttled(CS.cruise_buttons):
         self.human_cruise_action_time = current_time_ms
     button_to_press = None
     # The difference between OP's target speed and the current cruise
@@ -184,7 +184,7 @@ class ACCController(object):
     if button_to_press:
       self.automated_cruise_action_time = current_time_ms
       # If trying to slow below the min cruise speed, just cancel cruise.
-      if (button_to_press in [CruiseButtons.DECEL_SET, CruiseButtons.DECEL_2ND]
+      if (CruiseButtons.is_decel(button_to_press)
           and CS.v_cruise_actual - 1 < min_cruise_speed_ms * CV.MS_TO_KPH):
         button_to_press = CruiseButtons.CANCEL
     return button_to_press
