@@ -672,13 +672,13 @@ static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
   float g_yo = sz/10;
   //BB added for printing the car
   if (s->tri_state_switch == 2) {
-    float bbsz =0.1*  0.1 + 0.6 * (200-x_in)/180;
-    if (bbsz < 0.1) bbsz = 0.01;
-    if (bbsz > 0.8) bbsz = 0.6;
-    float car_alpha = 1.;
+    float bbsz =0.1*  0.1 + 0.6 * (180-x_in*3.3-20)/180;
+    if (bbsz < 0.1) bbsz = 0.1;
+    if (bbsz > 0.6) bbsz = 0.6;
+    float car_alpha = .8;
     float car_w = 750 * bbsz;
     float car_h = 531 * bbsz;
-    float car_y = y - car_h;
+    float car_y = y - car_h/2;
     float car_x = x - car_w/2;
     
     nvgBeginPath(s->vg);
@@ -945,7 +945,7 @@ static void bb_draw_lane_fill (UIState *s) {
   PathData path;
   float *points;
   float off;
-  NVGcolor bb_color = nvgRGBA(138, 140, 142, 180);
+  NVGcolor bb_color = nvgRGBA(138, 140, 142,180);
   bool started = false;
   bool is_ghost = true;
   //left lane, first init
