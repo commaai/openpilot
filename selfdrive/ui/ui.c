@@ -719,6 +719,7 @@ static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
   float g_yo = sz/10;
   //BB added for printing the car
   if (s->tri_state_switch == 2) {
+    nvgRestore(s->vg);
     bb_ui_draw_car(s);
   } else {
     if (x >= 0 && y >= 0.) {
