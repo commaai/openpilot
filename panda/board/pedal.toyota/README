@@ -1,3 +1,6 @@
+MOVE ALL FILES TO board/pedal TO FLASH
+
+
 This is the firmware for the comma pedal. It borrows a lot from panda.
 
 The comma pedal is a gas pedal interceptor for Honda/Acura. It allows you to "virtually" press the pedal.
