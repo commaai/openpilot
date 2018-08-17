@@ -124,7 +124,7 @@ class CarState(object):
 
     can_gear = cp.vl["GEAR_PACKET"]['GEAR']
     self.brake_pressed = cp.vl["BRAKE_MODULE"]['BRAKE_PRESSED']
-    if CP.enableGasInterceptor:
+    if self.CP.enableGasInterceptor:
       self.pedal_gas = cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS']
     else:
       self.pedal_gas = cp.vl["GAS_PEDAL"]['GAS_PEDAL']
