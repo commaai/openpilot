@@ -992,6 +992,17 @@ void  bb_ui_poll_update( UIState *s) {
 
           strcpy(s->car_model, (char *) datad.icCarName.str);
           strcpy(s->car_folder, (char *) datad.icCarFolder.str);
+
+          if (strcmp(s->car_folder,"tesle")==0) {
+            s->img_logo = nvgCreateImage(s->vg, "../assets/img_spinner_comma.png", 1);
+            s->img_logo2 = nvgCreateImage(s->vg, "../assets/img_spinner_comma2.png", 1);
+          } else if (strcmp(s->car_folder,"honda")==0) {
+            s->img_logo = nvgCreateImage(s->vg, "../assets/img_spinner_comma.honda.png", 1);
+            s->img_logo2 = nvgCreateImage(s->vg, "../assets/img_spinner_comma2.honda.png", 1);
+          } else if (strcmp(s->car_folder,"toyota")==0) {
+            s->img_logo = nvgCreateImage(s->vg, "../assets/img_spinner_comma.toyota.png", 1);
+            s->img_logo2 = nvgCreateImage(s->vg, "../assets/img_spinner_comma2.toyota.png", 1);
+          };
           
           capn_free(&ctx);
           zmq_msg_close(&msg);
