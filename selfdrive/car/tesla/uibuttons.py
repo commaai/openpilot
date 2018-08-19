@@ -55,8 +55,8 @@ class UIButtons:
                             #don't change status, just model
                             if self.btns[i].btn_label2 == "Mod OP":
                                 self.btns[i].btn_label2 = "Mod JJ"
-                            elif self.btns[i].btn_label2 == "Mod JJ":
-                                self.btns[i].btn_label2 = "AutoRes"
+                            #elif self.btns[i].btn_label2 == "Mod JJ":
+                            #    self.btns[i].btn_label2 = "AutoRes"
                             else:
                                 self.btns[i].btn_label2 = "Mod OP"
                             self.write_buttons_labels_to_file()
