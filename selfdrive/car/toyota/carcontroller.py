@@ -114,7 +114,7 @@ class CarController(object):
     if enable_camera: self.fake_ecus.add(ECU.CAM)
     if enable_dsu: self.fake_ecus.add(ECU.DSU)
     if enable_apg: self.fake_ecus.add(ECU.APGS)
-    self.ALCA = ALCAController(self,True,True)  # Enabled and SteerByAngle both True
+    self.ALCA = ALCAController(self,True,False)  # Enabled and SteerByAngle both True
 
     self.packer = CANPacker(dbc_name)
 
@@ -181,7 +181,8 @@ class CarController(object):
 
       apply_angle = clip(apply_angle, self.last_angle - angle_rate_lim, self.last_angle + angle_rate_lim)
     else:
-      apply_angle = CS.angle_steers
+      #apply_angle = CS.angle_steers
+      apply_angle, alca_enabled, turn_signal_needed = self.ALCA.update(enabled, CS, frame, actuators)
 
     if not enabled and CS.pcm_acc_status:
       # send pcm acc cancel cmd if drive is disabled but pcm is still on, or if the system can't be activated

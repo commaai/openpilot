@@ -256,8 +256,17 @@ class ALCAController(object):
         return [new_angle,new_ALCA_Enabled,new_turn_signal]
       else:
         # steering by torque
-        #TODO: torque ALCA module
-        return [actuators.steer,False,0]
+        # steering by angle
+        new_angle = 0.
+        new_ALCA_enabled = False
+        new_turn_signal = 0
+        new_angle,new_ALCA_Enabled,new_turn_signal = self.update_angle(enabled,CS,frame,actuators)
+        if new_ALCA_Enabled:
+           output_steer = CS.pid.update(new_angle, CS.steeringAngle , check_saturation=(CS.vEgo > 10), override=CS.steeringPressed,
+                                     feedforward=new_angle, speed=CS.vEgo, deadzone=0.0)
+        else: 
+          output_steer = actuators.steer
+        return [output_steer,new_ALCA_Enabled,0]
     else:
       # ALCA disabled
       if self.laneChange_steerByAngle:

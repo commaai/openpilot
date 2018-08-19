@@ -513,6 +513,11 @@ static void ui_draw_lane_line(UIState *s, const float *points, float off,
 }
 
 static void ui_draw_lane(UIState *s, const PathData path, NVGcolor color) {
+  //BB added to make the line blue
+  if (s->tri_state_switch == 2) {
+    color = nvgRGBA(66, 220, 244,250);
+  }
+  //BB end  
   ui_draw_lane_line(s, path.points, 0.025*path.prob, color, false);
   float var = min(path.std, 0.7);
   color.a /= 4;
@@ -648,11 +653,15 @@ static void draw_frame(UIState *s) {
   };
 
   glActiveTexture(GL_TEXTURE0);
-  if (s->scene.frontview && s->cur_vision_front_idx >= 0) {
-    glBindTexture(GL_TEXTURE_2D, s->frame_front_texs[s->cur_vision_front_idx]);
-  } else if (!scene->frontview && s->cur_vision_idx >= 0) {
-    glBindTexture(GL_TEXTURE_2D, s->frame_texs[s->cur_vision_idx]);
+  //BB added to suppress video printing
+  if (s->tri_state_switch != 2) {
+    if (s->scene.frontview && s->cur_vision_front_idx >= 0) {
+      glBindTexture(GL_TEXTURE_2D, s->frame_front_texs[s->cur_vision_front_idx]);
+    } else if (!scene->frontview && s->cur_vision_idx >= 0) {
+      glBindTexture(GL_TEXTURE_2D, s->frame_texs[s->cur_vision_idx]);
+    }
   }
+  //BB end  
 
   glUseProgram(s->frame_program);
 
