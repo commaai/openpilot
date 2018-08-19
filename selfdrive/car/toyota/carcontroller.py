@@ -130,6 +130,11 @@ class CarController(object):
     # Get the angle from ALCA.
     alca_enabled = False
     turn_signal_needed = 0
+    # Update ALCA status and custom button every 0.1 sec.
+    if self.ALCA.pid == None:
+      self.ALCA.set_pid(CS)
+    if (frame % 10 == 0):
+      self.ALCA.update_status(CS.cstm_btns.get_button_status("alca") > 0)
     # steer torque
     apply_steer, alca_enabled, turn_signal_needed = self.ALCA.update(enabled, CS, frame, actuators)
     apply_steer = int(round(apply_steer * STEER_MAX))
@@ -161,11 +166,6 @@ class CarController(object):
       CS.cstm_btns.send_button_info()
       CS.UE.uiSetCarEvent(CS.cstm_btns.car_folder,CS.cstm_btns.car_name)
 
-    # Update ALCA status and custom button every 0.1 sec.
-    if self.ALCA.pid == None:
-      self.ALCA.set_pid(CS)
-    if (frame % 10 == 0):
-      self.ALCA.update_status(CS.cstm_btns.get_button_status("alca") > 0)
 
     # tell ALCA which mode we use
     self.ALCA.update_steer_type(self.steer_angle_enabled)
