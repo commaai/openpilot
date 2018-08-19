@@ -55,6 +55,7 @@ class UIButtons:
                             #don't change status, just model
                             if self.btns[i].btn_label2 == "Mod OP":
                                 self.btns[i].btn_label2 = "Mod JJ"
+                            # Button for cruise with auto-resume after stops.
                             #elif self.btns[i].btn_label2 == "Mod JJ":
                             #    self.btns[i].btn_label2 = "AutoRes"
                             else:
