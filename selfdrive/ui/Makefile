@@ -35,7 +35,7 @@ FRAMEBUFFER_LIBS = -lutils -lgui -lEGL
 CFLAGS += -DQCOM
 CXXFLAGS += -DQCOM
 
-OBJS = ui.o \
+OBJS = ui.o bbui.o \
        ../common/glutil.o \
        ../common/visionipc.o \
        ../common/visionimg.o \
