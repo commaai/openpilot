@@ -130,6 +130,8 @@ class CarController(object):
       CS.UE.uiSetCarEvent(CS.cstm_btns.car_folder,CS.cstm_btns.car_name)
 
     # Update ALCA status and custom button every 0.1 sec.
+    if self.ALCA.pid = None:
+      self.ALCA.set_pid(CS)
     if (frame % 10 == 0):
       self.ALCA.update_status(CS.cstm_btns.get_button_status("alca") > 0)
 

@@ -1,4 +1,5 @@
 from common.numpy_fast import interp
+from selfdrive.controls.lib.pid import PIController
 
 
 #change lane delta angles and other params
@@ -33,12 +34,18 @@ class ALCAController(object):
     self.laneChange_direction = 0 #direction of the lane change 
     self.prev_right_blinker_on = False #local variable for prev position
     self.prev_left_blinker_on = False #local variable for prev position
+    self.pid = None
 
   def update_status(self,alcaEnabled):
     self.alcaEnabled = alcaEnabled
 
   def update_steer_type(self,steerByAngle):
     self.laneChange_steerByAngle = steerByAngle
+
+  def set_pid(self,CS):
+    self.pid = PIController((CS.CP.steerKpBP, CS.CP.steerKpV),
+                            (CS.CP.steerKiBP, CS.CP.steerKiV),
+                            k_f=CS.CP.steerKf, pos_limit=1.0)
 
   def update_angle(self,enabled,CS,frame,actuators):
     # Basic highway lane change logic
@@ -109,6 +116,8 @@ class ALCAController(object):
         self.laneChange_last_actuator_delta = 0.
         self.laneChange_over_the_line = 0 
         CS.cstm_btns.set_button_status("alca",2)
+        #reset PID for torque
+        self.pid.reset()
 
     if (not self.alcaEnabled) and self.laneChange_enabled > 1:
       self.laneChange_enabled = 1
@@ -262,7 +271,7 @@ class ALCAController(object):
         new_turn_signal = 0
         new_angle,new_ALCA_Enabled,new_turn_signal = self.update_angle(enabled,CS,frame,actuators)
         if new_ALCA_Enabled:
-           output_steer = CS.pid.update(new_angle, CS.steeringAngle , check_saturation=(CS.vEgo > 10), override=CS.steeringPressed, feedforward=new_angle, speed=CS.vEgo, deadzone=0.0)
+           output_steer = self.pid.update(new_angle, CS.steeringAngle , check_saturation=(CS.vEgo > 10), override=CS.steeringPressed, feedforward=new_angle, speed=CS.vEgo, deadzone=0.0)
         else: 
           output_steer = actuators.steer
         return [output_steer,new_ALCA_Enabled,0]
