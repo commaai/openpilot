@@ -131,7 +131,8 @@ class CarController(object):
     alca_enabled = False
     turn_signal_needed = 0
     # steer torque
-    apply_steer = int(round(actuators.steer * STEER_MAX))
+    apply_steer, alca_enabled, turn_signal_needed = self.ALCA.update(enabled, CS, frame, actuators)
+    apply_steer = int(round(apply_steer * STEER_MAX))
 
     max_lim = min(max(CS.steer_torque_motor + STEER_ERROR_MAX, STEER_ERROR_MAX), STEER_MAX)
     min_lim = max(min(CS.steer_torque_motor - STEER_ERROR_MAX, -STEER_ERROR_MAX), -STEER_MAX)
@@ -184,8 +185,7 @@ class CarController(object):
 
       apply_angle = clip(apply_angle, self.last_angle - angle_rate_lim, self.last_angle + angle_rate_lim)
     else:
-      #apply_angle = CS.angle_steers
-      apply_angle, alca_enabled, turn_signal_needed = self.ALCA.update(enabled, CS, frame, actuators)
+      apply_angle = CS.angle_steers
 
     if not enabled and CS.pcm_acc_status:
       # send pcm acc cancel cmd if drive is disabled but pcm is still on, or if the system can't be activated
