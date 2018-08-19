@@ -470,17 +470,17 @@ void bb_ui_draw_measures_left( UIState *s, int bb_x, int bb_y, int bb_w ) {
 	    	char val_str[16];
 		char uom_str[6];
 		NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
-			if((int)(scene->maxCpuTemp/10) > 80) {
+			if((int)(s->maxCpuTemp/10) > 80) {
 				val_color = nvgRGBA(255, 188, 3, 200);
 			}
-			if((int)(scene->maxCpuTemp/10) > 92) {
+			if((int)(s->maxCpuTemp/10) > 92) {
 				val_color = nvgRGBA(255, 0, 0, 200);
 			}
 			// temp is alway in C * 10
 			if (s->is_metric) {
-				 snprintf(val_str, sizeof(val_str), "%d C", (int)(scene->maxCpuTemp/10));
+				 snprintf(val_str, sizeof(val_str), "%d C", (int)(s->maxCpuTemp/10));
 			} else {
-				 snprintf(val_str, sizeof(val_str), "%d F", (int)(32+9*(scene->maxCpuTemp/10)/5));
+				 snprintf(val_str, sizeof(val_str), "%d F", (int)(32+9*(s->maxCpuTemp/10)/5));
 			}
 		snprintf(uom_str, sizeof(uom_str), "");
 		bb_h +=bb_ui_draw_measure(s,  val_str, uom_str, "CPU TEMP", 
@@ -495,17 +495,17 @@ void bb_ui_draw_measures_left( UIState *s, int bb_x, int bb_y, int bb_w ) {
 		char val_str[16];
 		char uom_str[6];
 		NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
-		if((int)(scene->maxBatTemp/1000) > 40) {
+		if((int)(s->maxBatTemp/1000) > 40) {
 			val_color = nvgRGBA(255, 188, 3, 200);
 		}
-		if((int)(scene->maxBatTemp/1000) > 50) {
+		if((int)(s->maxBatTemp/1000) > 50) {
 			val_color = nvgRGBA(255, 0, 0, 200);
 		}
 		// temp is alway in C * 1000
 		if (s->is_metric) {
-			 snprintf(val_str, sizeof(val_str), "%d C", (int)(scene->maxBatTemp/1000));
+			 snprintf(val_str, sizeof(val_str), "%d C", (int)(s->maxBatTemp/1000));
 		} else {
-			 snprintf(val_str, sizeof(val_str), "%d F", (int)(32+9*(scene->maxBatTemp/1000)/5));
+			 snprintf(val_str, sizeof(val_str), "%d F", (int)(32+9*(s->maxBatTemp/1000)/5));
 		}
 		snprintf(uom_str, sizeof(uom_str), "");
 		bb_h +=bb_ui_draw_measure(s,  val_str, uom_str, "BAT TEMP", 
@@ -521,19 +521,19 @@ void bb_ui_draw_measures_left( UIState *s, int bb_x, int bb_y, int bb_w ) {
 		char uom_str[3];
 		NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
 		//show red/orange if gps accuracy is high
-	    if(scene->gpsAccuracy > 0.59) {
+	    if(s->gpsAccuracy > 0.59) {
 	       val_color = nvgRGBA(255, 188, 3, 200);
 	    }
-	    if(scene->gpsAccuracy > 0.8) {
+	    if(s->gpsAccuracy > 0.8) {
 	       val_color = nvgRGBA(255, 0, 0, 200);
 	    }
 
 
 		// gps accuracy is always in meters
 		if (s->is_metric) {
-			 snprintf(val_str, sizeof(val_str), "%d", (int)(s->scene.gpsAccuracy*100.0));
+			 snprintf(val_str, sizeof(val_str), "%d", (int)(s->gpsAccuracy*100.0));
 		} else {
-			 snprintf(val_str, sizeof(val_str), "%.1f", s->scene.gpsAccuracy * 3.28084 * 12);
+			 snprintf(val_str, sizeof(val_str), "%.1f", s->gpsAccuracy * 3.28084 * 12);
 		}
 		if (s->is_metric) {
 			snprintf(uom_str, sizeof(uom_str), "cm");;
@@ -553,14 +553,14 @@ void bb_ui_draw_measures_left( UIState *s, int bb_x, int bb_y, int bb_w ) {
 		NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
 
 		//show red/orange if free space is low
-		if(scene->freeSpace < 0.4) {
+		if(s->freeSpace < 0.4) {
 			val_color = nvgRGBA(255, 188, 3, 200);
 		}
-		if(scene->freeSpace < 0.2) {
+		if(s->freeSpace < 0.2) {
 			val_color = nvgRGBA(255, 0, 0, 200);
 		}
 
-		snprintf(val_str, sizeof(val_str), "%.1f", s->scene.freeSpace* 100);
+		snprintf(val_str, sizeof(val_str), "%.1f", s->freeSpace* 100);
 		snprintf(uom_str, sizeof(uom_str), "%%");
 
 		bb_h +=bb_ui_draw_measure(s, val_str, uom_str, "FREE", 
@@ -668,14 +668,14 @@ void bb_ui_draw_measures_right( UIState *s, int bb_x, int bb_y, int bb_w ) {
 		NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
 			//show Orange if more than 6 degrees
 			//show red if  more than 12 degrees
-			if(((int)(scene->angleSteers) < -6) || ((int)(scene->angleSteers) > 6)) {
+			if(((int)(s->angleSteers) < -6) || ((int)(s->angleSteers) > 6)) {
 				val_color = nvgRGBA(255, 188, 3, 200);
 			}
-			if(((int)(scene->angleSteers) < -12) || ((int)(scene->angleSteers) > 12)) {
+			if(((int)(s->angleSteers) < -12) || ((int)(s->angleSteers) > 12)) {
 				val_color = nvgRGBA(255, 0, 0, 200);
 			}
 			// steering is in degrees
-			snprintf(val_str, sizeof(val_str), "%.1f",(scene->angleSteers));
+			snprintf(val_str, sizeof(val_str), "%.1f",(s->angleSteers));
 
 	    snprintf(uom_str, sizeof(uom_str), "deg");
 		bb_h +=bb_ui_draw_measure(s,  val_str, uom_str, "STEER", 
@@ -692,14 +692,14 @@ void bb_ui_draw_measures_right( UIState *s, int bb_x, int bb_y, int bb_w ) {
 		NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
 			//show Orange if more than 6 degrees
 			//show red if  more than 12 degrees
-			if(((int)(scene->angleSteersDes) < -6) || ((int)(scene->angleSteersDes) > 6)) {
+			if(((int)(s->angleSteersDes) < -6) || ((int)(s->angleSteersDes) > 6)) {
 				val_color = nvgRGBA(255, 188, 3, 200);
 			}
-			if(((int)(scene->angleSteersDes) < -12) || ((int)(scene->angleSteersDes) > 12)) {
+			if(((int)(s->angleSteersDes) < -12) || ((int)(s->angleSteersDes) > 12)) {
 				val_color = nvgRGBA(255, 0, 0, 200);
 			}
 			// steering is in degrees
-			snprintf(val_str, sizeof(val_str), "%.1f",(scene->angleSteersDes));
+			snprintf(val_str, sizeof(val_str), "%.1f",(s->angleSteersDes));
 
 	    snprintf(uom_str, sizeof(uom_str), "deg");
 		bb_h +=bb_ui_draw_measure(s,  val_str, uom_str, "DES STEER", 
@@ -910,10 +910,10 @@ void  bb_ui_poll_update( UIState *s) {
         bb_polls[2].events = ZMQ_POLLIN;
         bb_polls[3].socket = s->uiPlaySound_sock_raw;
         bb_polls[3].events = ZMQ_POLLIN;
-        
-        
+        bb_polls[4].socket = s->gps_sock_raw;
+        bb_polls[4].events = ZMQ_POLLIN;
 
-        int ret = zmq_poll(bb_polls, 4, 0);
+        int ret = zmq_poll(bb_polls, 5, 0);
         if (ret < 0) {
           LOGW("bb poll failed (%d)", ret);
           break;
@@ -1017,6 +1017,37 @@ void  bb_ui_poll_update( UIState *s) {
           
           capn_free(&ctx);
           zmq_msg_close(&msg);
+        } if (bb_polls[4].revents) {
+            // gps socket
+
+            zmq_msg_t msg;
+            err = zmq_msg_init(&msg);
+            assert(err == 0);
+            err = zmq_msg_recv(&msg, s->gps_sock_raw, 0);
+            assert(err >= 0);
+
+            struct capn ctx;
+            capn_init_mem(&ctx, zmq_msg_data(&msg), zmq_msg_size(&msg), 0);
+
+            cereal_Event_ptr eventp;
+            eventp.p = capn_getp(capn_root(&ctx), 0, 1);
+            struct cereal_Event eventd;
+            cereal_read_Event(&eventd, eventp);
+
+            struct cereal_GpsLocationData datad;
+            cereal_read_GpsLocationData(&datad, eventd.gpsLocation);
+
+            s->gpsAccuracy= datad.accuracy;
+            if (s->gpsAccuracy>100)
+            {
+                s->gpsAccuracy=99.99;
+            }
+            else if (s->gpsAccuracy==0)
+            {
+                s->gpsAccuracy=99.8;
+            }
+            capn_free(&ctx);
+            zmq_msg_close(&msg);
         }
             
     }

@@ -90,14 +90,6 @@
         float awareness_status;
 
         uint64_t started_ts;
-        //BB CPU TEMP
-        uint16_t maxCpuTemp;
-        uint32_t maxBatTemp;
-        float gpsAccuracy ;
-        float freeSpace;
-        float angleSteers;
-        float angleSteersDes;
-        //BB END CPU TEMP
         // Used to display calibration progress
         int cal_status;
         int cal_perc;
@@ -141,6 +133,14 @@
         int img_car;
         int tri_state_switch;
         long tri_state_switch_last_read;
+
+        uint16_t maxCpuTemp;
+        uint32_t maxBatTemp;
+        float gpsAccuracy ;
+        float freeSpace;
+        float angleSteers;
+        float angleSteersDes;
+
         //BB END
         int font_courbd;
         int font_sans_regular;

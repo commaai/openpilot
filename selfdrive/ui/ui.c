@@ -1264,6 +1264,10 @@ static void ui_update(UIState *s) {
         }
         s->scene.v_cruise = datad.vCruise;
         s->scene.v_ego = datad.vEgo;
+        //BB get angles
+        s->angleSteers = datad.angleSteers;
+		    s->angleSteersDes = datad.angleSteersDes;
+        //BB END
         s->scene.curvature = datad.curvature;
         s->scene.engaged = datad.enabled;
         s->scene.engageable = datad.engageable;
@@ -1386,6 +1390,23 @@ static void ui_update(UIState *s) {
         }
 
         s->scene.started_ts = datad.startedTs;
+        //BB CPU TEMP
+		    s->maxCpuTemp=datad.cpu0;
+        if (s->maxCpuTemp<datad.cpu1)
+        {
+            s->maxCpuTemp=datad.cpu1;
+        }
+        else if (s->maxCpuTemp<datad.cpu2)
+        {
+            s->maxCpuTemp=datad.cpu2;
+        }
+        else if (s->maxCpuTemp<datad.cpu3)
+        {
+            s->maxCpuTemp=datad.cpu3;
+        }
+        s->maxBatTemp=datad.bat;
+        s->freeSpace=datad.freeSpace;
+        //BB END CPU TEMP
       } else if (eventd.which == cereal_Event_uiLayoutState) {
           struct cereal_UiLayoutState datad;
           cereal_read_UiLayoutState(&datad, eventd.uiLayoutState);
