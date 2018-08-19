@@ -190,7 +190,7 @@ class CarState(object):
     self.UE = UIEvents(self)
 
     #BB variable for custom buttons
-    self.cstm_btns = UIButtons(self,"Toyota","toyota")
+    self.cstm_btns = UIButtons(self,"Honda","honda")
 
     #BB pid holder for ALCA
     self.pid = None
@@ -215,9 +215,9 @@ class CarState(object):
     btns.append(UIButton("alca","ALC",0,""))
     btns.append(UIButton("","",0,""))
     btns.append(UIButton("","",0,""))
-    btns.append(UIButton("","",0,""))
-    btns.append(UIButton("","",0,""))
     btns.append(UIButton("sound","SND",1,""))
+    btns.append(UIButton("","",0,""))
+    btns.append(UIButton("","",0,""))
     return btns
 
   #BB update ui buttons

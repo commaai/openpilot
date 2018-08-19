@@ -223,7 +223,6 @@ void bb_draw_lane_fill ( UIState *s) {
 }
 
 
-//BB START: functions added for the display of various items
 
 
 
@@ -990,20 +989,25 @@ void  bb_ui_poll_update( UIState *s) {
           struct cereal_UISetCar datad;
           cereal_read_UISetCar(&datad, stp);
 
-          strcpy(s->car_model, (char *) datad.icCarName.str);
-          strcpy(s->car_folder, (char *) datad.icCarFolder.str);
+          if ((strcmp(s->car_model,(char *) datad.icCarName.str) != 0) || (strcmp(s->car_folder, (char *) datad.icCarFolder.str) !=0)) {
+            strcpy(s->car_model, (char *) datad.icCarName.str);
+            strcpy(s->car_folder, (char *) datad.icCarFolder.str);
+            LOGW("Car folder set (%s)", s->car_folder);
 
-          if (strcmp(s->car_folder,"tesle")==0) {
-            s->img_logo = nvgCreateImage(s->vg, "../assets/img_spinner_comma.png", 1);
-            s->img_logo2 = nvgCreateImage(s->vg, "../assets/img_spinner_comma2.png", 1);
-          } else if (strcmp(s->car_folder,"honda")==0) {
-            s->img_logo = nvgCreateImage(s->vg, "../assets/img_spinner_comma.honda.png", 1);
-            s->img_logo2 = nvgCreateImage(s->vg, "../assets/img_spinner_comma2.honda.png", 1);
-          } else if (strcmp(s->car_folder,"toyota")==0) {
-            s->img_logo = nvgCreateImage(s->vg, "../assets/img_spinner_comma.toyota.png", 1);
-            s->img_logo2 = nvgCreateImage(s->vg, "../assets/img_spinner_comma2.toyota.png", 1);
-          };
-          
+            if (strcmp(s->car_folder,"tesla")==0) {
+              s->img_logo = nvgCreateImage(s->vg, "../assets/img_spinner_comma.png", 1);
+              s->img_logo2 = nvgCreateImage(s->vg, "../assets/img_spinner_comma2.png", 1);
+              LOGW("Spinning logo set for Tesla");
+            } else if (strcmp(s->car_folder,"honda")==0) {
+              s->img_logo = nvgCreateImage(s->vg, "../assets/img_spinner_comma.honda.png", 1);
+              s->img_logo2 = nvgCreateImage(s->vg, "../assets/img_spinner_comma.honda2.png", 1);
+              LOGW("Spinning logo set for Honda");
+            } else if (strcmp(s->car_folder,"toyota")==0) {
+              s->img_logo = nvgCreateImage(s->vg, "../assets/img_spinner_comma.toyota.png", 1);
+              s->img_logo2 = nvgCreateImage(s->vg, "../assets/img_spinner_comma.toyota2.png", 1);
+              LOGW("Spinning logo set for Toyota");
+            };
+          }
           capn_free(&ctx);
           zmq_msg_close(&msg);
         } else if (bb_polls[3].revents) {
