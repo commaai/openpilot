@@ -258,7 +258,7 @@ class ALCAController(object):
         new_turn_signal = 0
         new_angle,new_ALCA_Enabled,new_turn_signal = self.update_angle(enabled,CS,frame,actuators)
         output_steer = 0.
-        if new_ALCA_Enabled  and not self.laneChange_steerByAngle:
+        if new_ALCA_Enabled and (self.laneChange_enabled < 5 ) and not self.laneChange_steerByAngle:
           output_steer = self.pid.update(new_angle, CS.angle_steers , check_saturation=(CS.v_ego > 10), override=CS.steer_override, feedforward=new_angle, speed=CS.v_ego, deadzone=0.0)
         else: 
           output_steer = actuators.steer
