@@ -235,9 +235,9 @@ class CarState(object):
     btns = []
     btns.append(UIButton("alca","ALC",0,""))
     btns.append(UIButton("acc","ACC",0,"Mod OP"))
-    btns.append(UIButton("pedal","PDL",0,""))
     btns.append(UIButton("steer","STR",0,""))
     btns.append(UIButton("brake","BRK",1,""))
+    btns.append(UIButton("msg","MSG",1,""))
     btns.append(UIButton("sound","SND",1,""))
     return btns
 
