@@ -114,7 +114,7 @@ class CarController(object):
     if enable_camera: self.fake_ecus.add(ECU.CAM)
     if enable_dsu: self.fake_ecus.add(ECU.DSU)
     if enable_apg: self.fake_ecus.add(ECU.APGS)
-    self.ALCA = ALCAController(self,True,False)  # Enabled and SteerByAngle both True
+    self.ALCA = ALCAController(self,True,False)  # Enabled True and SteerByAngle only False
 
     self.packer = CANPacker(dbc_name)
 
@@ -129,6 +129,8 @@ class CarController(object):
     apply_accel = clip(apply_accel * ACCEL_SCALE, ACCEL_MIN, ACCEL_MAX)
     # Get the angle from ALCA.
     alca_enabled = False
+    alca_steer = 0.
+    alca_angle = 0.
     turn_signal_needed = 0
     # Update ALCA status and custom button every 0.1 sec.
     if self.ALCA.pid == None:
@@ -136,8 +138,8 @@ class CarController(object):
     if (frame % 10 == 0):
       self.ALCA.update_status(CS.cstm_btns.get_button_status("alca") > 0)
     # steer torque
-    apply_steer, alca_enabled, turn_signal_needed = self.ALCA.update(enabled, CS, frame, actuators)
-    apply_steer = int(round(apply_steer * STEER_MAX))
+    alca_angle, alca_steer, alca_enabled, turn_signal_needed = self.ALCA.update(enabled, CS, frame, actuators)
+    apply_steer = int(round(alca_steer * STEER_MAX))
 
     max_lim = min(max(CS.steer_torque_motor + STEER_ERROR_MAX, STEER_ERROR_MAX), STEER_MAX)
     min_lim = max(min(CS.steer_torque_motor - STEER_ERROR_MAX, -STEER_ERROR_MAX), -STEER_MAX)
@@ -167,13 +169,10 @@ class CarController(object):
       CS.UE.uiSetCarEvent(CS.cstm_btns.car_folder,CS.cstm_btns.car_name)
 
 
-    # tell ALCA which mode we use
-    self.ALCA.update_steer_type(self.steer_angle_enabled)
-
     # steer angle
     if self.steer_angle_enabled and CS.ipas_active:
 
-      apply_angle, alca_enabled, turn_signal_needed = self.ALCA.update(enabled, CS, frame, actuators)
+      apply_angle = alca_angle
       angle_lim = interp(CS.v_ego, ANGLE_MAX_BP, ANGLE_MAX_V)
       apply_angle = clip(apply_angle, -angle_lim, angle_lim)
 

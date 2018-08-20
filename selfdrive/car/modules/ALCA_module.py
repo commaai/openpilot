@@ -15,7 +15,7 @@ class ALCAController(object):
     self.CC = carcontroller  #added to start, will see if we need it actually
     #variables for lane change
     self.alcaEnabled = alcaEnabled
-    self.laneChange_steerByAngle = steerByAngle
+    self.laneChange_steerByAngle = steerByAngle #steer only by angle; do not call PID
     self.laneChange_last_actuator_angle = 0.
     self.laneChange_last_actuator_delta = 0.
     self.laneChange_last_sent_angle = 0.
@@ -256,32 +256,16 @@ class ALCAController(object):
   def update(self,enabled,CS,frame,actuators):
     if self.alcaEnabled:
       # ALCA enabled
-      if self.laneChange_steerByAngle:
-        # steering by angle
         new_angle = 0.
-        new_ALCA_enabled = False
+        new_ALCA_Enabled = False
         new_turn_signal = 0
         new_angle,new_ALCA_Enabled,new_turn_signal = self.update_angle(enabled,CS,frame,actuators)
-        return [new_angle,new_ALCA_Enabled,new_turn_signal]
-      else:
-        # steering by torque
-        # steering by angle
-        new_angle = 0.
-        new_ALCA_enabled = False
-        new_turn_signal = 0
-        new_angle,new_ALCA_Enabled,new_turn_signal = self.update_angle(enabled,CS,frame,actuators)
-        if new_ALCA_Enabled:
-           output_steer = self.pid.update(new_angle, CS.steeringAngle , check_saturation=(CS.vEgo > 10), override=CS.steeringPressed, feedforward=new_angle, speed=CS.vEgo, deadzone=0.0)
+        if new_ALCA_Enabled  and not self.laneChange_steerByAngle:
+          output_steer = self.pid.update(new_angle, CS.angle_steers , check_saturation=(CS.v_ego > 10), override=CS.steer_override, feedforward=new_angle, speed=CS.v_ego, deadzone=0.0)
         else: 
           output_steer = actuators.steer
-        return [output_steer,new_ALCA_Enabled,0]
+        return [new_angle,output_steer,new_ALCA_Enabled,new_turn_signal]
     else:
       # ALCA disabled
-      if self.laneChange_steerByAngle:
-        #steer by angle
-        return [actuators.steerAngle,False,0]
-      else:
-        #steer by torque
-        #TODO: torque ALCA module
-        return [actuators.steer,False,0]
+      return [actuators.steerAngle,actuators.steer,False,0]
  

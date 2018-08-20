@@ -178,7 +178,8 @@ class CarController(object):
     # Get the angle from ALCA.
     alca_enabled = False
     turn_signal_needed = 0
-    apply_angle, alca_enabled, turn_signal_needed = self.ALCA.update(enabled, CS, frame, actuators)
+    alca_steer = 0.
+    apply_angle, alca_steer,alca_enabled, turn_signal_needed = self.ALCA.update(enabled, CS, frame, actuators)
     apply_angle = -apply_angle  # Tesla is reversed vs OP.
     human_control = self.HSO.update_stat(CS, enabled, actuators, frame)
     human_lane_changing = changing_lanes and not alca_enabled

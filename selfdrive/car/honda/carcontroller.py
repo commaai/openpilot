@@ -62,7 +62,7 @@ class CarController(object):
     self.brake_last = 0.
     self.enable_camera = enable_camera
     self.packer = CANPacker(dbc_name)
-    self.ALCA = ALCAController(self,True,False)  # Enabled and SteerByAngle both True
+    self.ALCA = ALCAController(self,True,False)  # Enabled  True and SteerByAngle only False
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
              pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel, \
@@ -129,24 +129,24 @@ class CarController(object):
       CS.cstm_btns.send_button_info()
       CS.UE.uiSetCarEvent(CS.cstm_btns.car_folder,CS.cstm_btns.car_name)
 
+    # Get the angle from ALCA.
+    alca_enabled = False
+    alca_steer = 0.
+    alca_angle = 0.
+    turn_signal_needed = 0
     # Update ALCA status and custom button every 0.1 sec.
     if self.ALCA.pid == None:
       self.ALCA.set_pid(CS)
     if (frame % 10 == 0):
       self.ALCA.update_status(CS.cstm_btns.get_button_status("alca") > 0)
+    # steer torque
+    alca_angle, alca_steer, alca_enabled, turn_signal_needed = self.ALCA.update(enabled, CS, frame, actuators)
 
-    # tell ALCA which mode we use
-    #not needed for Honda since it's all done by torque
-    #self.ALCA.update_steer_type(self.steer_angle_enabled)
 
     # steer torque is converted back to CAN reference (positive when steering right)
     apply_gas = clip(actuators.gas, 0., 1.)
     apply_brake = int(clip(self.brake_last * BRAKE_MAX, 0, BRAKE_MAX - 1))
-    # Get the angle from ALCA.
-    alca_enabled = False
-    turn_signal_needed = 0
-    apply_angle, alca_enabled, turn_signal_needed = self.ALCA.update(enabled, CS, frame, actuators)
-    apply_steer = int(clip(-apply_angle * STEER_MAX, -STEER_MAX, STEER_MAX))
+    apply_steer = int(clip(-alca_steer * STEER_MAX, -STEER_MAX, STEER_MAX))
 
     # any other cp.vl[0x18F]['STEER_STATUS'] is common and can happen during user override. sending 0 torque to avoid EPS sending error 5
     lkas_active = enabled and not CS.steer_not_allowed
