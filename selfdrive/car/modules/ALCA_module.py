@@ -70,7 +70,7 @@ class ALCAController(object):
         turn_signal_needed = 0
 
 
-    if self.alcaEnabled and (self.laneChange_enabled == 1):
+    if (CS.cstm_btns.get_button_status("alca") > 0) and self.alcaEnabled and (self.laneChange_enabled == 1):
       if ((CS.v_ego < CL_MIN_V) or (abs(actuators.steerAngle) >= CL_MAX_A) or \
       (abs(CS.angle_steers)>= CL_MAX_A)  or (not enabled)): 
         CS.cstm_btns.set_button_status("alca",9)
