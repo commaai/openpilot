@@ -1,48 +1,17 @@
 from common.numpy_fast import interp
 from common.kalman.simple_kalman import KF1D
-from selfdrive.can.parser import CANParser
+from selfdrive.can.parser import CANParser, CANDefine
 from selfdrive.config import Conversions as CV
-from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD
+from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, SPEED_FACTOR
 
-def parse_gear_shifter(can_gear_shifter, car_fingerprint):
+def parse_gear_shifter(gear, vals):
 
-  # TODO: Use VAL from DBC to parse this field
-  if car_fingerprint in (CAR.ACURA_ILX, CAR.ODYSSEY):
-    if can_gear_shifter == 0x1:
-      return "park"
-    elif can_gear_shifter == 0x2:
-      return "reverse"
-    elif can_gear_shifter == 0x3:
-      return "neutral"
-    elif can_gear_shifter == 0x4:
-      return "drive"
-    elif can_gear_shifter == 0xa:
-      return "sport"
-  elif car_fingerprint in (CAR.CIVIC, CAR.CRV, CAR.ACURA_RDX, CAR.ACCORD_15, CAR.CRV_5G, CAR.CIVIC_HATCH):
-    if can_gear_shifter == 0x1:
-      return "park"
-    elif can_gear_shifter == 0x2:
-      return "reverse"
-    elif can_gear_shifter == 0x4:
-      return "neutral"
-    elif can_gear_shifter == 0x8:
-      return "drive"
-    elif can_gear_shifter == 0x10:
-      return "sport"
-    elif can_gear_shifter == 0x20:
-      return "low"
-
-  elif car_fingerprint in (CAR.ACCORD, CAR.PILOT, CAR.RIDGELINE):
-     if can_gear_shifter == 0x8:
-       return "reverse"
-     elif can_gear_shifter == 0x4:
-       return "park"
-     elif can_gear_shifter == 0x20:
-       return "drive"
-     elif can_gear_shifter == 0x2:
-        return "sport"
-
-  return "unknown"
+  val_to_capnp = {'P': 'park', 'R': 'reverse', 'N': 'neutral',
+                  'D': 'drive', 'S': 'sport', 'L': 'low'}
+  try:
+    return val_to_capnp[vals[gear]]
+  except KeyError:
+    return "unknown"
 
 
 def calc_cruise_offset(offset, speed):
@@ -168,6 +137,8 @@ def get_can_parser(CP):
 class CarState(object):
   def __init__(self, CP):
     self.CP = CP
+    self.can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
+    self.shifter_values = self.can_define.dv["GEARBOX"]["GEAR_SHIFTER"]
 
     self.user_gas, self.user_gas_pressed = 0., 0
     self.brake_switch_prev = 0
@@ -230,15 +201,17 @@ class CarState(object):
     self.esp_disabled = cp.vl["VSA_STATUS"]['ESP_DISABLED']
 
     # calc best v_ego estimate, by averaging two opposite corners
-    self.v_wheel_fl = cp.vl["WHEEL_SPEEDS"]['WHEEL_SPEED_FL'] * CV.KPH_TO_MS
-    self.v_wheel_fr = cp.vl["WHEEL_SPEEDS"]['WHEEL_SPEED_FR'] * CV.KPH_TO_MS
-    self.v_wheel_rl = cp.vl["WHEEL_SPEEDS"]['WHEEL_SPEED_RL'] * CV.KPH_TO_MS
-    self.v_wheel_rr = cp.vl["WHEEL_SPEEDS"]['WHEEL_SPEED_RR'] * CV.KPH_TO_MS
+    speed_factor = SPEED_FACTOR[self.CP.carFingerprint]
+    self.v_wheel_fl = cp.vl["WHEEL_SPEEDS"]['WHEEL_SPEED_FL'] * CV.KPH_TO_MS * speed_factor
+    self.v_wheel_fr = cp.vl["WHEEL_SPEEDS"]['WHEEL_SPEED_FR'] * CV.KPH_TO_MS * speed_factor
+    self.v_wheel_rl = cp.vl["WHEEL_SPEEDS"]['WHEEL_SPEED_RL'] * CV.KPH_TO_MS * speed_factor
+    self.v_wheel_rr = cp.vl["WHEEL_SPEEDS"]['WHEEL_SPEED_RR'] * CV.KPH_TO_MS * speed_factor
     self.v_wheel = (self.v_wheel_fl+self.v_wheel_fr+self.v_wheel_rl+self.v_wheel_rr)/4.
 
     # blend in transmission speed at low speed, since it has more low speed accuracy
     self.v_weight = interp(self.v_wheel, v_weight_bp, v_weight_v)
-    speed = (1. - self.v_weight) * cp.vl["ENGINE_DATA"]['XMISSION_SPEED'] * CV.KPH_TO_MS + self.v_weight * self.v_wheel
+    speed = (1. - self.v_weight) * cp.vl["ENGINE_DATA"]['XMISSION_SPEED'] * CV.KPH_TO_MS * speed_factor + \
+      self.v_weight * self.v_wheel
 
     if abs(speed - self.v_ego) > 2.0:  # Prevent large accelerations when car starts at non zero speed
       self.v_ego_x = [[speed], [0.0]]
@@ -254,7 +227,6 @@ class CarState(object):
       self.user_gas = cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS']
       self.user_gas_pressed = self.user_gas > 0 # this works because interceptor read < 0 when pedal position is 0. Once calibrated, this will change
 
-    can_gear_shifter = cp.vl["GEARBOX"]['GEAR_SHIFTER']
     self.gear = 0 if self.CP.carFingerprint == CAR.CIVIC else cp.vl["GEARBOX"]['GEAR']
     self.angle_steers = cp.vl["STEERING_SENSORS"]['STEER_ANGLE']
     self.angle_steers_rate = cp.vl["STEERING_SENSORS"]['STEER_ANGLE_RATE']
@@ -275,7 +247,8 @@ class CarState(object):
       self.brake_hold = 0  # TODO
       self.main_on = cp.vl["SCM_BUTTONS"]['MAIN_ON']
 
-    self.gear_shifter = parse_gear_shifter(can_gear_shifter, self.CP.carFingerprint)
+    can_gear_shifter = int(cp.vl["GEARBOX"]['GEAR_SHIFTER'])
+    self.gear_shifter = parse_gear_shifter(can_gear_shifter, self.shifter_values)
 
     self.pedal_gas = cp.vl["POWERTRAIN_DATA"]['PEDAL_GAS']
     # crv doesn't include cruise control
