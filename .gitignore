@@ -20,8 +20,6 @@ a.out
 *.class
 *.pyxbldc
 *.vcd
-lane.cpp
-loc*.cpp
 config.json
 clcache
 
