@@ -155,6 +155,8 @@ class CarController(object):
       CS.cstm_btns.send_button_info()
 
     # Update statuses for custom buttons every 0.1 sec.
+    if self.ALCA.pid == None:
+      self.ALCA.set_pid(CS)
     if (frame % 10 == 0):
       self.ALCA.update_status(CS.cstm_btns.get_button_status("alca") > 0)
       #print CS.cstm_btns.get_button_status("alca")
@@ -176,7 +178,8 @@ class CarController(object):
     # Get the angle from ALCA.
     alca_enabled = False
     turn_signal_needed = 0
-    apply_angle, alca_enabled, turn_signal_needed = self.ALCA.update(enabled, CS, frame, actuators)
+    alca_steer = 0.
+    apply_angle, alca_steer,alca_enabled, turn_signal_needed = self.ALCA.update(enabled, CS, frame, actuators)
     apply_angle = -apply_angle  # Tesla is reversed vs OP.
     human_control = self.HSO.update_stat(CS, enabled, actuators, frame)
     human_lane_changing = changing_lanes and not alca_enabled
@@ -252,20 +255,15 @@ class CarController(object):
       idx = frame % 16
       can_sends.append(teslacan.create_steering_control(enable_steer_control, apply_angle, idx))
       can_sends.append(teslacan.create_epb_enable_signal(idx))
+      cruise_btn = None
       if self.ACC.enable_adaptive_cruise:
         cruise_btn = self.ACC.update_acc(enabled, CS, frame, actuators, pcm_speed)
-        if cruise_btn:
+      if (cruise_btn != None) or ((turn_signal_needed > 0) and (frame % 2 == 0)):
           cruise_msg = teslacan.create_cruise_adjust_msg(
             spdCtrlLvr_stat=cruise_btn,
-            turnIndLvr_Stat=None,
+            turnIndLvr_Stat=turn_signal_needed,
             real_steering_wheel_stalk=CS.steering_wheel_stalk)
           # Send this CAN msg first because it is racing against the real stalk.
           can_sends.insert(0, cruise_msg)
-      elif (turn_signal_needed > 0) and (frame % 2 == 0):
-        cruise_msg = teslacan.create_cruise_adjust_msg(
-          spdCtrlLvr_stat=None,
-          turnIndLvr_Stat=turn_signal_needed,
-          real_steering_wheel_stalk=CS.steering_wheel_stalk)
-        can_sends.insert(0, cruise_msg)
       self.last_angle = apply_angle
       sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())

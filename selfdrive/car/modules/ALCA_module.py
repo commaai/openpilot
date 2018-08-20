@@ -1,4 +1,5 @@
 from common.numpy_fast import interp
+from selfdrive.controls.lib.pid import PIController
 
 
 #change lane delta angles and other params
@@ -14,7 +15,7 @@ class ALCAController(object):
     self.CC = carcontroller  #added to start, will see if we need it actually
     #variables for lane change
     self.alcaEnabled = alcaEnabled
-    self.laneChange_steerByAngle = steerByAngle
+    self.laneChange_steerByAngle = steerByAngle #steer only by angle; do not call PID
     self.laneChange_last_actuator_angle = 0.
     self.laneChange_last_actuator_delta = 0.
     self.laneChange_last_sent_angle = 0.
@@ -33,12 +34,15 @@ class ALCAController(object):
     self.laneChange_direction = 0 #direction of the lane change 
     self.prev_right_blinker_on = False #local variable for prev position
     self.prev_left_blinker_on = False #local variable for prev position
+    self.pid = None
 
   def update_status(self,alcaEnabled):
     self.alcaEnabled = alcaEnabled
 
-  def update_steer_type(self,steerByAngle):
-    self.laneChange_steerByAngle = steerByAngle
+  def set_pid(self,CS):
+    self.pid = PIController((CS.CP.steerKpBP, CS.CP.steerKpV),
+                            (CS.CP.steerKiBP, CS.CP.steerKiV),
+                            k_f=CS.CP.steerKf, pos_limit=1.0)
 
   def update_angle(self,enabled,CS,frame,actuators):
     # Basic highway lane change logic
@@ -66,7 +70,7 @@ class ALCAController(object):
         turn_signal_needed = 0
 
 
-    if self.alcaEnabled and (self.laneChange_enabled == 1):
+    if (CS.cstm_btns.get_button_status("alca") > 0) and self.alcaEnabled and (self.laneChange_enabled == 1):
       if ((CS.v_ego < CL_MIN_V) or (abs(actuators.steerAngle) >= CL_MAX_A) or \
       (abs(CS.angle_steers)>= CL_MAX_A)  or (not enabled)): 
         CS.cstm_btns.set_button_status("alca",9)
@@ -109,6 +113,8 @@ class ALCAController(object):
         self.laneChange_last_actuator_delta = 0.
         self.laneChange_over_the_line = 0 
         CS.cstm_btns.set_button_status("alca",2)
+        #reset PID for torque
+        self.pid.reset()
 
     if (not self.alcaEnabled) and self.laneChange_enabled > 1:
       self.laneChange_enabled = 1
@@ -247,24 +253,17 @@ class ALCAController(object):
   def update(self,enabled,CS,frame,actuators):
     if self.alcaEnabled:
       # ALCA enabled
-      if self.laneChange_steerByAngle:
-        # steering by angle
         new_angle = 0.
-        new_ALCA_enabled = False
+        new_ALCA_Enabled = False
         new_turn_signal = 0
         new_angle,new_ALCA_Enabled,new_turn_signal = self.update_angle(enabled,CS,frame,actuators)
-        return [new_angle,new_ALCA_Enabled,new_turn_signal]
-      else:
-        # steering by torque
-        #TODO: torque ALCA module
-        return [actuators.steer,False,0]
+        output_steer = 0.
+        if new_ALCA_Enabled and (self.laneChange_enabled < 5 ) and not self.laneChange_steerByAngle:
+          output_steer = self.pid.update(new_angle, CS.angle_steers , check_saturation=(CS.v_ego > 10), override=CS.steer_override, feedforward=new_angle, speed=CS.v_ego, deadzone=0.0)
+        else: 
+          output_steer = actuators.steer
+        return [new_angle,output_steer,new_ALCA_Enabled,new_turn_signal]
     else:
       # ALCA disabled
-      if self.laneChange_steerByAngle:
-        #steer by angle
-        return [actuators.steerAngle,False,0]
-      else:
-        #steer by torque
-        #TODO: torque ALCA module
-        return [actuators.steer,False,0]
+      return [actuators.steerAngle,actuators.steer,False,0]
  

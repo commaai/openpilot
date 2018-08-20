@@ -25,18 +25,17 @@ class UIEvents(object):
     
     def uiButtonInfoEvent(self,btnid,name,label,status,label2):
         dat = ui.UIButtonInfo.new_message()
-        dat = ui.UIButtonInfo.new_message()
         dat.btnId = btnid
-        dat.btnName = name+ '\0'
-        dat.btnLabel = label+ '\0'
+        dat.btnName = name #+ '\0'
+        dat.btnLabel = label #+ '\0'
         dat.btnStatus = status
-        dat.btnLabel2 = label2+ '\0'
+        dat.btnLabel2 = label2 #+ '\0'
         self.uiButtonInfo.send(dat.to_bytes())
     
     def uiSetCarEvent(self,car_folder,car_name):
         dat = ui.UISetCar.new_message()
-        dat.icCarFolder = car_folder+'\0'
-        dat.icCarName = car_name+'\0'
+        dat.icCarFolder = car_folder
+        dat.icCarName = car_name
         self.uiSetCar.send(dat.to_bytes())
 
     def uiPlaySoundEvent(self,sound):

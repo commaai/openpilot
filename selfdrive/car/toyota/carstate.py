@@ -93,13 +93,16 @@ class CarState(object):
     self.CP = CP
     self.left_blinker_on = 0
     self.right_blinker_on = 0
-    #UIEvents
+    #BB UIEvents
     self.UE = UIEvents(self)
 
-    #variable for custom buttons
+    #BB variable for custom buttons
     self.cstm_btns = UIButtons(self,"Toyota","toyota")
 
-    #custom message counter
+    #BB pid holder for ALCA
+    self.pid = None
+
+    #BB custom message counter
     self.custom_alert_counter = -1 #set to 100 for 1 second display; carcontroller will take down to zero
 
     # initialize can parser
@@ -115,16 +118,18 @@ class CarState(object):
                          K=np.matrix([[0.12287673], [0.29666309]]))
     self.v_ego = 0.0
   
+  #BB init ui buttons
   def init_ui_buttons(self):
     btns = []
     btns.append(UIButton("alca","ALC",0,""))
     btns.append(UIButton("","",0,""))
     btns.append(UIButton("","",0,""))
-    btns.append(UIButton("","",0,""))
-    btns.append(UIButton("","",0,""))
     btns.append(UIButton("sound","SND",1,""))
+    btns.append(UIButton("","",0,""))
+    btns.append(UIButton("","",0,""))
     return btns
 
+  #BB update ui buttons
   def update_ui_buttons(self,id,btn_status):
     if self.cstm_btns.btns[id].btn_status > 0:
         self.cstm_btns.btns[id].btn_status = btn_status * self.cstm_btns.btns[id].btn_status

@@ -193,23 +193,24 @@ class CarState(object):
     self.DAS_pscControl_frm = 0
     self.DAS_pscControl_idx = 0
 
-    #variables for pedal CC
+    #BB variables for pedal CC
     self.pedal_speed_kph = 0.
     self.pedal_enabled = 0
 
-    #UIEvents
+    #BB UIEvents
     self.UE = UIEvents(self)
 
-    #variable for custom buttons
+    #BB variable for custom buttons
     self.cstm_btns = UIButtons(self,"Tesla Model S","tesla")
 
-    #custom message counter
+    #BB custom message counter
     self.custom_alert_counter = -1 #set to 100 for 1 second display; carcontroller will take down to zero
 
-    #steering_wheel_stalk last position, used by ACC and ALCA
+    #BB steering_wheel_stalk last position, used by ACC and ALCA
     self.steering_wheel_stalk = None
 
-    #variables used by ACC
+    #BB pid holder for ALCA
+    self.pid = None
     
      
     # vEgo kalman filter
