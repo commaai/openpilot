@@ -255,20 +255,15 @@ class CarController(object):
       idx = frame % 16
       can_sends.append(teslacan.create_steering_control(enable_steer_control, apply_angle, idx))
       can_sends.append(teslacan.create_epb_enable_signal(idx))
+      cruise_btn = None
       if self.ACC.enable_adaptive_cruise:
         cruise_btn = self.ACC.update_acc(enabled, CS, frame, actuators, pcm_speed)
-        if cruise_btn:
+      if (cruise_btn != None) or ((turn_signal_needed > 0) and (frame % 2 == 0)):
           cruise_msg = teslacan.create_cruise_adjust_msg(
             spdCtrlLvr_stat=cruise_btn,
-            turnIndLvr_Stat=None,
+            turnIndLvr_Stat=turn_signal_needed,
             real_steering_wheel_stalk=CS.steering_wheel_stalk)
           # Send this CAN msg first because it is racing against the real stalk.
           can_sends.insert(0, cruise_msg)
-      elif (turn_signal_needed > 0) and (frame % 2 == 0):
-        cruise_msg = teslacan.create_cruise_adjust_msg(
-          spdCtrlLvr_stat=None,
-          turnIndLvr_Stat=turn_signal_needed,
-          real_steering_wheel_stalk=CS.steering_wheel_stalk)
-        can_sends.insert(0, cruise_msg)
       self.last_angle = apply_angle
       sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
