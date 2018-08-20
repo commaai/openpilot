@@ -1,3 +1,35 @@
+"""
+Copyright 2018 BB Solutions, LLC. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+  * Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+
+  * Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in
+    the documentation and/or other materials provided with the
+    distribution.
+
+  * Neither the name of Google nor the names of its contributors may
+    be used to endorse or promote products derived from this software
+    without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+"""
+
 from common.numpy_fast import interp
 from selfdrive.controls.lib.pid import PIController
 
@@ -147,6 +179,24 @@ class ALCAController(object):
       #       - check that the delta in angle from actuator is increasing at a constant rate of DA/x
       #          or adjust angle for turns in road
       #       - generate audible alert for errors/take over messages
+      if self.laneChange_enabled ==2:
+        if self.laneChange_counter ==1:
+          CS.UE.custom_alert_message(2,"Auto Lane Change Engaged! (5)",800)
+        self.laneChange_counter += 1
+        laneChange_angle = self.laneChange_angled
+        #check if angle continues to decrease
+        current_delta = abs(self.laneChange_angle + laneChange_angle + (-actuators.steerAngle))
+        previous_delta = abs(self.laneChange_last_sent_angle  - self.laneChange_last_actuator_angle)
+        #wait 0.05 sec before starting to check if angle increases
+        if (current_delta > previous_delta) and (self.laneChange_counter > 5):
+          self.laneChange_enabled = 7
+          self.laneChange_counter = 1
+          self.laneChange_direction = 0
+        #wait 0.10 sec before looking if we are within 5 deg of actuator.angleSteer
+        if (current_delta <= 5.) and (self.laneChange_counter > 10):
+          self.laneChange_enabled = 7
+          self.laneChange_counter = 1
+          self.laneChange_direction = 0
       if self.laneChange_enabled ==3:
         if self.laneChange_counter == 1:
           CS.UE.custom_alert_message(2,"Auto Lane Change Engaged! (4)",800)
@@ -161,11 +211,13 @@ class ALCAController(object):
           #sudden change in actuator angle or sign means we are on the other side of the line
           CS.UE.custom_alert_message(2,"Auto Lane Change Engaged! (5)",800)
           self.laneChange_over_the_line = 1
-        if self.laneChange_over_the_line ==1:
-          self.laneChange_enabled = 7
+          self.laneChange_enabled = 2
           self.laneChange_counter = 1
-          self.laneChange_direction = 0
-          #we are on the other side, let control go to OP
+        #if self.laneChange_over_the_line ==1:
+        #  self.laneChange_enabled = 7
+        #  self.laneChange_counter = 1
+        #  self.laneChange_direction = 0
+        #  #we are on the other side, let control go to OP
         if self.laneChange_counter >  (self.laneChange_duration) * 100:
           self.laneChange_enabled = 1
           self.laneChange_counter = 0
