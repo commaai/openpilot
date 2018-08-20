@@ -4,11 +4,6 @@
 // IPAS override
 const int32_t TOYOTA_IPAS_OVERRIDE_THRESHOLD = 200;  // disallow controls when user torque exceeds this value
 
-struct lookup_t {
-  float x[3];
-  float y[3];
-};
-
 // 2m/s are added to be less restrictive
 const struct lookup_t LOOKUP_ANGLE_RATE_UP = {
   {2., 7., 17.},
@@ -34,31 +29,6 @@ int16_t rt_angle_last = 0;             // last desired torque for real time chec
 uint32_t ts_angle_last = 0;
 
 int controls_allowed_last = 0;
-
-// interp function that holds extreme values
-float interpolate(struct lookup_t xy, float x) {
-  int size = sizeof(xy.x) / sizeof(xy.x[0]);
-  // x is lower than the first point in the x array. Return the first point
-  if (x <= xy.x[0]) {
-    return xy.y[0];
-
-  } else {
-    // find the index such that (xy.x[i] <= x < xy.x[i+1]) and linearly interp
-    for (int i=0; i < size-1; i++) {
-      if (x < xy.x[i+1]) {
-        float x0 = xy.x[i];
-        float y0 = xy.y[i];
-        float dx = xy.x[i+1] - x0;
-        float dy = xy.y[i+1] - y0;
-        // dx should not be zero as xy.x is supposed ot be monotonic
-        if (dx <= 0.) dx = 0.0001;
-        return dy * (x - x0) / dx + y0;
-      }
-    }
-    // if no such point is found, then x > xy.x[size-1]. Return last point
-    return xy.y[size - 1];
-  }
-}
 
 
 static void toyota_ipas_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
@@ -146,15 +116,15 @@ static int toyota_ipas_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
         int delta_angle_down = (int) (interpolate(LOOKUP_ANGLE_RATE_DOWN, speed) * CAN_TO_DEG + 1.);
         int highest_desired_angle = desired_angle_last + (desired_angle_last > 0? delta_angle_up:delta_angle_down);
         int lowest_desired_angle = desired_angle_last - (desired_angle_last > 0? delta_angle_down:delta_angle_up);
-        if ((desired_angle > highest_desired_angle) || 
+        if ((desired_angle > highest_desired_angle) ||
             (desired_angle < lowest_desired_angle)){
           violation = 1;
           controls_allowed = 0;
         }
       }
-      
+
       // desired steer angle should be the same as steer angle measured when controls are off
-      if ((!controls_allowed) && 
+      if ((!controls_allowed) &&
            ((desired_angle < (angle_meas.min - 1)) ||
             (desired_angle > (angle_meas.max + 1)) ||
             (ipas_state_cmd != 1))) {
