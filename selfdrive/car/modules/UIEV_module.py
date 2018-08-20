@@ -62,6 +62,10 @@ class UIEvents(object):
     # error.wav 5
 
     def custom_alert_message(self,status,message,duration,sound=-1):
+        if (status > -1) and (self.prev_cstm_status > status) and \
+          (self.CS.custom_alert_counter > 55):
+          #dont change lessage to a lower importance one if we still have more than half second of display time
+          return
         if (sound > -1) and ((self.prev_cstm_message != message) or (self.prev_cstm_status != status)):
             self.uiPlaySoundEvent(sound)
         self.uiCustomAlertEvent(status,message)
