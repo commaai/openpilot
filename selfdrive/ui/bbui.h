@@ -1,5 +1,7 @@
 #include "cereal/gen/c/ui.capnp.h"
 
+
+
 vec3 bb_car_space_to_full_frame(const  UIState *s, vec4 car_space_projective) {
   const UIScene *scene = &s->scene;
 
@@ -109,7 +111,7 @@ void bb_ui_draw_car(  UIState *s) {
   
   nvgBeginPath(s->vg);
   NVGpaint imgPaint = nvgImagePattern(s->vg, car_x, car_y,
-  car_w, car_h, 0, s->img_car, car_alpha);
+  car_w, car_h, 0, s->b.img_car, car_alpha);
   nvgRect(s->vg, car_x, car_y, car_w, car_h);
   nvgFillPaint(s->vg, imgPaint);
   nvgFill(s->vg);
@@ -193,10 +195,10 @@ long bb_currentTimeInMilis() {
 }
 
 int bb_get_status( UIState *s) {
-    //BB select status based on main s->status w/ priority over s->custom_message_status
+    //BB select status based on main s->status w/ priority over s->b.custom_message_status
     int bb_status = -1;
-    if ((s->status == STATUS_ENGAGED) && (s->custom_message_status > STATUS_ENGAGED)) {
-      bb_status = s->custom_message_status;
+    if ((s->status == STATUS_ENGAGED) && (s->b.custom_message_status > STATUS_ENGAGED)) {
+      bb_status = s->b.custom_message_status;
     } else {
       bb_status = s->status;
     }
@@ -242,13 +244,13 @@ int bb_ui_draw_measure( UIState *s,  const char* bb_value, const char* bb_uom, c
 
 bool bb_handle_ui_touch( UIState *s, int touch_x, int touch_y) {
   for(int i=0; i<6; i++) {
-    if (s->btns_r[i] > 0) {
-      if ((abs(touch_x - s->btns_x[i]) < s->btns_r[i]) && (abs(touch_y - s->btns_y[i]) < s->btns_r[i])) {
+    if (s->b.btns_r[i] > 0) {
+      if ((abs(touch_x - s->b.btns_x[i]) < s->b.btns_r[i]) && (abs(touch_y - s->b.btns_y[i]) < s->b.btns_r[i])) {
         //found it; change the status
-        if (s->btns_status[i] > 0) {
-          s->btns_status[i] = 0;
+        if (s->b.btns_status[i] > 0) {
+          s->b.btns_status[i] = 0;
         } else {
-          s->btns_status[i] = 1;
+          s->b.btns_status[i] = 1;
         }
         //now let's send the cereal
         
@@ -259,7 +261,7 @@ bool bb_handle_ui_touch( UIState *s, int touch_x, int touch_y) {
         
         struct cereal_UIButtonStatus btn_d;
         btn_d.btnId = i;
-        btn_d.btnStatus = s->btns_status[i];
+        btn_d.btnStatus = s->b.btns_status[i];
 
         cereal_UIButtonStatus_ptr btn_p = cereal_new_UIButtonStatus(cs);
         
@@ -272,7 +274,7 @@ bool bb_handle_ui_touch( UIState *s, int touch_x, int touch_y) {
 
         capn_free(&c);
         
-        zmq_send(s->uiButtonStatus_sock_raw, buf,rs,0);
+        zmq_send(s->b.uiButtonStatus_sock_raw, buf,rs,0);
         
         return true;
       }
@@ -284,8 +286,8 @@ bool bb_handle_ui_touch( UIState *s, int touch_x, int touch_y) {
 int bb_get_button_status( UIState *s, char *btn_name) {
   int ret_status = -1;
   for (int i = 0; i< 6; i++) {
-    if (strcmp(s->btns[i].btn_name,btn_name)==0) {
-      ret_status = s->btns_status[i];
+    if (strcmp(s->b.btns[i].btn_name,btn_name)==0) {
+      ret_status = s->b.btns_status[i];
     }
   }
   return ret_status;
@@ -307,7 +309,7 @@ void bb_draw_button( UIState *s, int btn_id) {
   int dx2 = 190;
   int dy = 0;
 
-  if (s->tri_state_switch ==2) {
+  if (s->b.tri_state_switch ==2) {
     delta_y = delta_x;
     delta_x = 0;
     dx1 = 20;
@@ -327,17 +329,17 @@ void bb_draw_button( UIState *s, int btn_id) {
   }
   
 
-  btn_text = s->btns[btn_id].btn_label;
-  btn_text2 = s->btns[btn_id].btn_label2;
+  btn_text = s->b.btns[btn_id].btn_label;
+  btn_text2 = s->b.btns[btn_id].btn_label2;
   
   if (strcmp(btn_text,"")==0) {
-    s->btns_r[btn_id] = 0;
+    s->b.btns_r[btn_id] = 0;
   } else {
-    s->btns_r[btn_id]= (int)((viz_button_w + viz_button_h)/4);
+    s->b.btns_r[btn_id]= (int)((viz_button_w + viz_button_h)/4);
   }
-  s->btns_x[btn_id]=viz_button_x + s->btns_r[btn_id];
-  s->btns_y[btn_id]=viz_button_y + s->btns_r[btn_id];
-  if (s->btns_r[btn_id] == 0) {
+  s->b.btns_x[btn_id]=viz_button_x + s->b.btns_r[btn_id];
+  s->b.btns_y[btn_id]=viz_button_y + s->b.btns_r[btn_id];
+  if (s->b.btns_r[btn_id] == 0) {
     return;
   }
   
@@ -346,14 +348,14 @@ void bb_draw_button( UIState *s, int btn_id) {
   nvgStrokeWidth(s->vg, 12);
 
   
-  if (s->btns_status[btn_id] ==0) {
+  if (s->b.btns_status[btn_id] ==0) {
     //disabled - red
     nvgStrokeColor(s->vg, nvgRGBA(255, 0, 0, 200));
     if (strcmp(btn_text2,"")==0) {
       btn_text2 = "Off";
     }
   } else
-  if (s->btns_status[btn_id] ==1) {
+  if (s->b.btns_status[btn_id] ==1) {
     //enabled - white
     nvgStrokeColor(s->vg, nvgRGBA(255,255,255,200));
     nvgStrokeWidth(s->vg, 4);
@@ -361,14 +363,14 @@ void bb_draw_button( UIState *s, int btn_id) {
       btn_text2 = "Ready";
     }
   } else
-  if (s->btns_status[btn_id] ==2) {
+  if (s->b.btns_status[btn_id] ==2) {
     //active - green
     nvgStrokeColor(s->vg, nvgRGBA(28, 204,98,200));
     if (strcmp(btn_text2,"")==0) {
       btn_text2 = "Active";
     }
   } else
-  if (s->btns_status[btn_id] ==9) {
+  if (s->b.btns_status[btn_id] ==9) {
     //available - thin white
     nvgStrokeColor(s->vg, nvgRGBA(200,200,200,40));
     nvgStrokeWidth(s->vg, 4);
@@ -404,9 +406,9 @@ void bb_draw_buttons( UIState *s) {
 }
 
 void bb_ui_draw_custom_alert( UIState *s) {
-    if ((strlen(s->custom_message) > 0) && (strlen(s->scene.alert_text1)==0)){
-      bb_ui_draw_vision_alert(s, ALERTSIZE_SMALL, s->custom_message_status,
-                            s->custom_message,"");
+    if ((strlen(s->b.custom_message) > 0) && (strlen(s->scene.alert_text1)==0)){
+      bb_ui_draw_vision_alert(s, ALERTSIZE_SMALL, s->b.custom_message_status,
+                            s->b.custom_message,"");
     } 
 }
 
@@ -429,17 +431,17 @@ void bb_ui_draw_measures_left( UIState *s, int bb_x, int bb_y, int bb_w ) {
 	    	char val_str[16];
 		char uom_str[6];
 		NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
-			if((int)(s->maxCpuTemp/10) > 80) {
+			if((int)(s->b.maxCpuTemp/10) > 80) {
 				val_color = nvgRGBA(255, 188, 3, 200);
 			}
-			if((int)(s->maxCpuTemp/10) > 92) {
+			if((int)(s->b.maxCpuTemp/10) > 92) {
 				val_color = nvgRGBA(255, 0, 0, 200);
 			}
 			// temp is alway in C * 10
 			if (s->is_metric) {
-				 snprintf(val_str, sizeof(val_str), "%d C", (int)(s->maxCpuTemp/10));
+				 snprintf(val_str, sizeof(val_str), "%d C", (int)(s->b.maxCpuTemp/10));
 			} else {
-				 snprintf(val_str, sizeof(val_str), "%d F", (int)(32+9*(s->maxCpuTemp/10)/5));
+				 snprintf(val_str, sizeof(val_str), "%d F", (int)(32+9*(s->b.maxCpuTemp/10)/5));
 			}
 		snprintf(uom_str, sizeof(uom_str), "");
 		bb_h +=bb_ui_draw_measure(s,  val_str, uom_str, "CPU TEMP", 
@@ -454,17 +456,17 @@ void bb_ui_draw_measures_left( UIState *s, int bb_x, int bb_y, int bb_w ) {
 		char val_str[16];
 		char uom_str[6];
 		NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
-		if((int)(s->maxBatTemp/1000) > 40) {
+		if((int)(s->b.maxBatTemp/1000) > 40) {
 			val_color = nvgRGBA(255, 188, 3, 200);
 		}
-		if((int)(s->maxBatTemp/1000) > 50) {
+		if((int)(s->b.maxBatTemp/1000) > 50) {
 			val_color = nvgRGBA(255, 0, 0, 200);
 		}
 		// temp is alway in C * 1000
 		if (s->is_metric) {
-			 snprintf(val_str, sizeof(val_str), "%d C", (int)(s->maxBatTemp/1000));
+			 snprintf(val_str, sizeof(val_str), "%d C", (int)(s->b.maxBatTemp/1000));
 		} else {
-			 snprintf(val_str, sizeof(val_str), "%d F", (int)(32+9*(s->maxBatTemp/1000)/5));
+			 snprintf(val_str, sizeof(val_str), "%d F", (int)(32+9*(s->b.maxBatTemp/1000)/5));
 		}
 		snprintf(uom_str, sizeof(uom_str), "");
 		bb_h +=bb_ui_draw_measure(s,  val_str, uom_str, "BAT TEMP", 
@@ -480,19 +482,19 @@ void bb_ui_draw_measures_left( UIState *s, int bb_x, int bb_y, int bb_w ) {
 		char uom_str[3];
 		NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
 		//show red/orange if gps accuracy is high
-	    if(s->gpsAccuracy > 0.59) {
+	    if(s->b.gpsAccuracy > 0.59) {
 	       val_color = nvgRGBA(255, 188, 3, 200);
 	    }
-	    if(s->gpsAccuracy > 0.8) {
+	    if(s->b.gpsAccuracy > 0.8) {
 	       val_color = nvgRGBA(255, 0, 0, 200);
 	    }
 
 
 		// gps accuracy is always in meters
 		if (s->is_metric) {
-			 snprintf(val_str, sizeof(val_str), "%d", (int)(s->gpsAccuracy*100.0));
+			 snprintf(val_str, sizeof(val_str), "%d", (int)(s->b.gpsAccuracy*100.0));
 		} else {
-			 snprintf(val_str, sizeof(val_str), "%.1f", s->gpsAccuracy * 3.28084 * 12);
+			 snprintf(val_str, sizeof(val_str), "%.1f", s->b.gpsAccuracy * 3.28084 * 12);
 		}
 		if (s->is_metric) {
 			snprintf(uom_str, sizeof(uom_str), "cm");;
@@ -512,14 +514,14 @@ void bb_ui_draw_measures_left( UIState *s, int bb_x, int bb_y, int bb_w ) {
 		NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
 
 		//show red/orange if free space is low
-		if(s->freeSpace < 0.4) {
+		if(s->b.freeSpace < 0.4) {
 			val_color = nvgRGBA(255, 188, 3, 200);
 		}
-		if(s->freeSpace < 0.2) {
+		if(s->b.freeSpace < 0.2) {
 			val_color = nvgRGBA(255, 0, 0, 200);
 		}
 
-		snprintf(val_str, sizeof(val_str), "%.1f", s->freeSpace* 100);
+		snprintf(val_str, sizeof(val_str), "%.1f", s->b.freeSpace* 100);
 		snprintf(uom_str, sizeof(uom_str), "%%");
 
 		bb_h +=bb_ui_draw_measure(s, val_str, uom_str, "FREE", 
@@ -627,14 +629,14 @@ void bb_ui_draw_measures_right( UIState *s, int bb_x, int bb_y, int bb_w ) {
 		NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
 			//show Orange if more than 6 degrees
 			//show red if  more than 12 degrees
-			if(((int)(s->angleSteers) < -6) || ((int)(s->angleSteers) > 6)) {
+			if(((int)(s->b.angleSteers) < -6) || ((int)(s->b.angleSteers) > 6)) {
 				val_color = nvgRGBA(255, 188, 3, 200);
 			}
-			if(((int)(s->angleSteers) < -12) || ((int)(s->angleSteers) > 12)) {
+			if(((int)(s->b.angleSteers) < -12) || ((int)(s->b.angleSteers) > 12)) {
 				val_color = nvgRGBA(255, 0, 0, 200);
 			}
 			// steering is in degrees
-			snprintf(val_str, sizeof(val_str), "%.1f",(s->angleSteers));
+			snprintf(val_str, sizeof(val_str), "%.1f",(s->b.angleSteers));
 
 	    snprintf(uom_str, sizeof(uom_str), "deg");
 		bb_h +=bb_ui_draw_measure(s,  val_str, uom_str, "STEER", 
@@ -651,14 +653,14 @@ void bb_ui_draw_measures_right( UIState *s, int bb_x, int bb_y, int bb_w ) {
 		NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
 			//show Orange if more than 6 degrees
 			//show red if  more than 12 degrees
-			if(((int)(s->angleSteersDes) < -6) || ((int)(s->angleSteersDes) > 6)) {
+			if(((int)(s->b.angleSteersDes) < -6) || ((int)(s->b.angleSteersDes) > 6)) {
 				val_color = nvgRGBA(255, 188, 3, 200);
 			}
-			if(((int)(s->angleSteersDes) < -12) || ((int)(s->angleSteersDes) > 12)) {
+			if(((int)(s->b.angleSteersDes) < -12) || ((int)(s->b.angleSteersDes) > 12)) {
 				val_color = nvgRGBA(255, 0, 0, 200);
 			}
 			// steering is in degrees
-			snprintf(val_str, sizeof(val_str), "%.1f",(s->angleSteersDes));
+			snprintf(val_str, sizeof(val_str), "%.1f",(s->b.angleSteersDes));
 
 	    snprintf(uom_str, sizeof(uom_str), "deg");
 		bb_h +=bb_ui_draw_measure(s,  val_str, uom_str, "DES STEER", 
@@ -724,9 +726,9 @@ void bb_ui_draw_logo( UIState *s) {
   }
   int rduration = 8000;
   int logot = (bb_currentTimeInMilis() % rduration);
-  int logoi = s->img_logo;
+  int logoi = s->b.img_logo;
   if ((logot > (int)(rduration/4)) && (logot < (int)(3*rduration/4))) {
-    logoi = s->img_logo2;
+    logoi = s->b.img_logo2;
   }
   if (logot < (int)(rduration/2)) {
     logot = logot - (int)(rduration/4);
@@ -757,20 +759,20 @@ void bb_ui_draw_UI( UIState *s) {
   //get 3-state switch position
   int tri_state_fd;
   char buffer[10];
-  if  (bb_currentTimeInMilis() - s->tri_state_switch_last_read > 2000)  {
+  if  (bb_currentTimeInMilis() - s->b.tri_state_switch_last_read > 2000)  {
     tri_state_fd = open ("/sys/devices/virtual/switch/tri-state-key/state", O_RDONLY);
     //if we can't open then switch should be considered in the middle, nothing done
     if (tri_state_fd == -1) {
-      s->tri_state_switch = 2;
+      s->b.tri_state_switch = 2;
     } else {
       read (tri_state_fd, &buffer, 10);
-      s->tri_state_switch = buffer[0] -48;
+      s->b.tri_state_switch = buffer[0] -48;
       close(tri_state_fd);
-      s->tri_state_switch_last_read = bb_currentTimeInMilis();
+      s->b.tri_state_switch_last_read = bb_currentTimeInMilis();
     }
   }
   
-  if (s->tri_state_switch == 1) {
+  if (s->b.tri_state_switch == 1) {
 	  const UIScene *scene = &s->scene;
 	  const int bb_dml_w = 180;
 	  const int bb_dml_x =  (scene->ui_viz_rx + (bdr_s*2));
@@ -786,7 +788,7 @@ void bb_ui_draw_UI( UIState *s) {
     bb_ui_draw_logo(s);
 	 }
 
-   if (s->tri_state_switch ==2) {
+   if (s->b.tri_state_switch ==2) {
 	 	const UIScene *scene = &s->scene;
 	  const int bb_dml_w = 180;
 	  const int bb_dml_x =  (scene->ui_viz_rx + (bdr_s*2));
@@ -800,7 +802,7 @@ void bb_ui_draw_UI( UIState *s) {
     bb_ui_draw_logo(s);
     //bb_ui_draw_car(s);
 	 }
-	 if (s->tri_state_switch ==3) {
+	 if (s->b.tri_state_switch ==3) {
 	 	ui_draw_vision_grid(s);
 	 }
 }
@@ -811,36 +813,40 @@ void bb_ui_init(UIState *s) {
 
     //BB INIT
     s->status = STATUS_DISENGAGED;
-    strcpy(s->car_model,"Tesla");
-    strcpy(s->car_folder,"tesla");
-    s->tri_state_switch = -1;
-    s->tri_state_switch_last_read = 0;
+    strcpy(s->b.car_model,"Tesla");
+    strcpy(s->b.car_folder,"tesla");
+    s->b.tri_state_switch = -1;
+    s->b.tri_state_switch_last_read = 0;
 
     //BB Define CAPNP sock
-    s->uiButtonInfo_sock = zsock_new_sub(">tcp://127.0.0.1:8201", "");
-    assert(s->uiButtonInfo_sock);
-    s->uiButtonInfo_sock_raw = zsock_resolve(s->uiButtonInfo_sock);
+    s->b.uiButtonInfo_sock = zsock_new_sub(">tcp://127.0.0.1:8201", "");
+    assert(s->b.uiButtonInfo_sock);
+    s->b.uiButtonInfo_sock_raw = zsock_resolve(s->b.uiButtonInfo_sock);
 
-    s->uiCustomAlert_sock = zsock_new_sub(">tcp://127.0.0.1:8202", "");
-    assert(s->uiCustomAlert_sock);
-    s->uiCustomAlert_sock_raw = zsock_resolve(s->uiCustomAlert_sock);
+    s->b.uiCustomAlert_sock = zsock_new_sub(">tcp://127.0.0.1:8202", "");
+    assert(s->b.uiCustomAlert_sock);
+    s->b.uiCustomAlert_sock_raw = zsock_resolve(s->b.uiCustomAlert_sock);
 
-    s->uiSetCar_sock = zsock_new_sub(">tcp://127.0.0.1:8203", "");
-    assert(s->uiSetCar_sock);
-    s->uiSetCar_sock_raw = zsock_resolve(s->uiSetCar_sock);
+    s->b.uiSetCar_sock = zsock_new_sub(">tcp://127.0.0.1:8203", "");
+    assert(s->b.uiSetCar_sock);
+    s->b.uiSetCar_sock_raw = zsock_resolve(s->b.uiSetCar_sock);
 
-    s->uiPlaySound_sock = zsock_new_sub(">tcp://127.0.0.1:8205", "");
-    assert(s->uiPlaySound_sock);
-    s->uiPlaySound_sock_raw = zsock_resolve(s->uiPlaySound_sock);
+    s->b.uiPlaySound_sock = zsock_new_sub(">tcp://127.0.0.1:8205", "");
+    assert(s->b.uiPlaySound_sock);
+    s->b.uiPlaySound_sock_raw = zsock_resolve(s->b.uiPlaySound_sock);
 
-    s->uiButtonStatus_sock = zsock_new_pub("@tcp://127.0.0.1:8204");
-    assert(s->uiButtonStatus_sock);
-    s->uiButtonStatus_sock_raw = zsock_resolve(s->uiButtonStatus_sock);
+    s->b.uiButtonStatus_sock = zsock_new_pub("@tcp://127.0.0.1:8204");
+    assert(s->b.uiButtonStatus_sock);
+    s->b.uiButtonStatus_sock_raw = zsock_resolve(s->b.uiButtonStatus_sock);
+
+    s->b.gps_sock = zsock_new_pub(">tcp://127.0.0.1:8032");
+    assert(s->b.gps_sock);
+    s->b.gps_sock_raw = zsock_resolve(s->b.gps_sock);
 
     //BB Load Images
-    s->img_logo = nvgCreateImage(s->vg, "../assets/img_spinner_comma.png", 1);
-    s->img_logo2 = nvgCreateImage(s->vg, "../assets/img_spinner_comma2.png", 1);
-    s->img_car = nvgCreateImage(s->vg, "../assets/img_car_tesla.png", 1);
+    s->b.img_logo = nvgCreateImage(s->vg, "../assets/img_spinner_comma.png", 1);
+    s->b.img_logo2 = nvgCreateImage(s->vg, "../assets/img_spinner_comma2.png", 1);
+    s->b.img_car = nvgCreateImage(s->vg, "../assets/img_car_tesla.png", 1);
 }
 
 void bb_ui_play_sound( UIState *s, int sound) {
@@ -853,23 +859,23 @@ void bb_ui_play_sound( UIState *s, int sound) {
 }
 
 void bb_ui_set_car( UIState *s, char *model, char *folder) {
-    strcpy(s->car_model,model);
-    strcpy(s->car_folder, folder);
+    strcpy(s->b.car_model,model);
+    strcpy(s->b.car_folder, folder);
 }
 
 void  bb_ui_poll_update( UIState *s) {
     int err;
     while (true) {
         zmq_pollitem_t bb_polls[8] = {{0}};
-        bb_polls[0].socket = s->uiButtonInfo_sock_raw;
+        bb_polls[0].socket = s->b.uiButtonInfo_sock_raw;
         bb_polls[0].events = ZMQ_POLLIN;
-        bb_polls[1].socket = s->uiCustomAlert_sock_raw;
+        bb_polls[1].socket = s->b.uiCustomAlert_sock_raw;
         bb_polls[1].events = ZMQ_POLLIN;
-        bb_polls[2].socket = s->uiSetCar_sock_raw;
+        bb_polls[2].socket = s->b.uiSetCar_sock_raw;
         bb_polls[2].events = ZMQ_POLLIN;
-        bb_polls[3].socket = s->uiPlaySound_sock_raw;
+        bb_polls[3].socket = s->b.uiPlaySound_sock_raw;
         bb_polls[3].events = ZMQ_POLLIN;
-        bb_polls[4].socket = s->gps_sock_raw;
+        bb_polls[4].socket = s->b.gps_sock_raw;
         bb_polls[4].events = ZMQ_POLLIN;
 
         int ret = zmq_poll(bb_polls, 5, 0);
@@ -888,7 +894,7 @@ void  bb_ui_poll_update( UIState *s) {
           zmq_msg_t msg;
           err = zmq_msg_init(&msg);
           assert(err == 0);
-          err = zmq_msg_recv(&msg, s->uiButtonInfo_sock_raw, 0);
+          err = zmq_msg_recv(&msg, s->b.uiButtonInfo_sock_raw, 0);
           assert(err >= 0);
 
           struct capn ctx;
@@ -901,10 +907,10 @@ void  bb_ui_poll_update( UIState *s) {
 
           int id = datad.btnId;
           //LOGW("got button info: ID = (%d)", id);
-          strcpy(s->btns[id].btn_name,(char *)datad.btnName.str);
-          strcpy(s->btns[id].btn_label, (char *)datad.btnLabel.str);
-          strcpy(s->btns[id].btn_label2, (char *)datad.btnLabel2.str);
-          s->btns_status[id] = datad.btnStatus;
+          strcpy(s->b.btns[id].btn_name,(char *)datad.btnName.str);
+          strcpy(s->b.btns[id].btn_label, (char *)datad.btnLabel.str);
+          strcpy(s->b.btns[id].btn_label2, (char *)datad.btnLabel2.str);
+          s->b.btns_status[id] = datad.btnStatus;
           
           capn_free(&ctx);
           zmq_msg_close(&msg);
@@ -914,7 +920,7 @@ void  bb_ui_poll_update( UIState *s) {
           zmq_msg_t msg;
           err = zmq_msg_init(&msg);
           assert(err == 0);
-          err = zmq_msg_recv(&msg, s->uiCustomAlert_sock_raw, 0);
+          err = zmq_msg_recv(&msg, s->b.uiCustomAlert_sock_raw, 0);
           assert(err >= 0);
 
           struct capn ctx;
@@ -925,8 +931,8 @@ void  bb_ui_poll_update( UIState *s) {
           struct cereal_UICustomAlert  datad;
           cereal_read_UICustomAlert(&datad, stp);
 
-          strcpy(s->custom_message,datad.caText.str);
-          s->custom_message_status = datad.caStatus;
+          strcpy(s->b.custom_message,datad.caText.str);
+          s->b.custom_message_status = datad.caStatus;
           
           capn_free(&ctx);
           zmq_msg_close(&msg);
@@ -938,7 +944,7 @@ void  bb_ui_poll_update( UIState *s) {
           zmq_msg_t msg;
           err = zmq_msg_init(&msg);
           assert(err == 0);
-          err = zmq_msg_recv(&msg, s->uiSetCar_sock_raw, 0);
+          err = zmq_msg_recv(&msg, s->b.uiSetCar_sock_raw, 0);
           assert(err >= 0);
 
           struct capn ctx;
@@ -949,22 +955,22 @@ void  bb_ui_poll_update( UIState *s) {
           struct cereal_UISetCar datad;
           cereal_read_UISetCar(&datad, stp);
 
-          if ((strcmp(s->car_model,(char *) datad.icCarName.str) != 0) || (strcmp(s->car_folder, (char *) datad.icCarFolder.str) !=0)) {
-            strcpy(s->car_model, (char *) datad.icCarName.str);
-            strcpy(s->car_folder, (char *) datad.icCarFolder.str);
-            LOGW("Car folder set (%s)", s->car_folder);
+          if ((strcmp(s->b.car_model,(char *) datad.icCarName.str) != 0) || (strcmp(s->b.car_folder, (char *) datad.icCarFolder.str) !=0)) {
+            strcpy(s->b.car_model, (char *) datad.icCarName.str);
+            strcpy(s->b.car_folder, (char *) datad.icCarFolder.str);
+            LOGW("Car folder set (%s)", s->b.car_folder);
 
-            if (strcmp(s->car_folder,"tesla")==0) {
-              s->img_logo = nvgCreateImage(s->vg, "../assets/img_spinner_comma.png", 1);
-              s->img_logo2 = nvgCreateImage(s->vg, "../assets/img_spinner_comma2.png", 1);
+            if (strcmp(s->b.car_folder,"tesla")==0) {
+              s->b.img_logo = nvgCreateImage(s->vg, "../assets/img_spinner_comma.png", 1);
+              s->b.img_logo2 = nvgCreateImage(s->vg, "../assets/img_spinner_comma2.png", 1);
               LOGW("Spinning logo set for Tesla");
-            } else if (strcmp(s->car_folder,"honda")==0) {
-              s->img_logo = nvgCreateImage(s->vg, "../assets/img_spinner_comma.honda.png", 1);
-              s->img_logo2 = nvgCreateImage(s->vg, "../assets/img_spinner_comma.honda2.png", 1);
+            } else if (strcmp(s->b.car_folder,"honda")==0) {
+              s->b.img_logo = nvgCreateImage(s->vg, "../assets/img_spinner_comma.honda.png", 1);
+              s->b.img_logo2 = nvgCreateImage(s->vg, "../assets/img_spinner_comma.honda2.png", 1);
               LOGW("Spinning logo set for Honda");
-            } else if (strcmp(s->car_folder,"toyota")==0) {
-              s->img_logo = nvgCreateImage(s->vg, "../assets/img_spinner_comma.toyota.png", 1);
-              s->img_logo2 = nvgCreateImage(s->vg, "../assets/img_spinner_comma.toyota2.png", 1);
+            } else if (strcmp(s->b.car_folder,"toyota")==0) {
+              s->b.img_logo = nvgCreateImage(s->vg, "../assets/img_spinner_comma.toyota.png", 1);
+              s->b.img_logo2 = nvgCreateImage(s->vg, "../assets/img_spinner_comma.toyota2.png", 1);
               LOGW("Spinning logo set for Toyota");
             };
           }
@@ -976,7 +982,7 @@ void  bb_ui_poll_update( UIState *s) {
           zmq_msg_t msg;
           err = zmq_msg_init(&msg);
           assert(err == 0);
-          err = zmq_msg_recv(&msg, s->uiPlaySound_sock_raw, 0);
+          err = zmq_msg_recv(&msg, s->b.uiPlaySound_sock_raw, 0);
           assert(err >= 0);
 
           struct capn ctx;
@@ -998,7 +1004,7 @@ void  bb_ui_poll_update( UIState *s) {
             zmq_msg_t msg;
             err = zmq_msg_init(&msg);
             assert(err == 0);
-            err = zmq_msg_recv(&msg, s->gps_sock_raw, 0);
+            err = zmq_msg_recv(&msg, s->b.gps_sock_raw, 0);
             assert(err >= 0);
 
             struct capn ctx;
@@ -1012,14 +1018,14 @@ void  bb_ui_poll_update( UIState *s) {
             struct cereal_GpsLocationData datad;
             cereal_read_GpsLocationData(&datad, eventd.gpsLocation);
 
-            s->gpsAccuracy= datad.accuracy;
-            if (s->gpsAccuracy>100)
+            s->b.gpsAccuracy= datad.accuracy;
+            if (s->b.gpsAccuracy>100)
             {
-                s->gpsAccuracy=99.99;
+                s->b.gpsAccuracy=99.99;
             }
-            else if (s->gpsAccuracy==0)
+            else if (s->b.gpsAccuracy==0)
             {
-                s->gpsAccuracy=99.8;
+                s->b.gpsAccuracy=99.8;
             }
             capn_free(&ctx);
             zmq_msg_close(&msg);
