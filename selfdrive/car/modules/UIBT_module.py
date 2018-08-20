@@ -91,22 +91,27 @@ class UIButtons:
         self.send_button_info()
         self.CS.UE.uiSetCarEvent(self.car_folder,self.car_name)
 
+    def get_button(self, btn_name):
+        for button in self.btns:
+            if button.btn_name.strip() == btn_name:
+                return button
+        return None
 
-    def get_button_status(self,btn_name):
-        ret_val =-1 
-        for i in range(0,6):
-            if self.btns[i].btn_name.strip() == btn_name:
-                ret_val = self.btns[i].btn_status
-        return ret_val
+    def get_button_status(self, btn_name):
+        btn = self.get_button(btn_name)
+        if btn:
+            return btn.btn_status
+        else:
+            return -1
+
 
     def set_button_status(self,btn_name,btn_status):
-        for i in range(0,6):
-            if self.btns[i].btn_name.strip() == btn_name:
-                if self.btns[i].btn_status != btn_status:
-                    self.btns[i].btn_status = btn_status
-                    self.hasChanges = True
-                    self.CS.UE.uiButtonInfoEvent(i,self.btns[i].btn_name, \
-                        self.btns[i].btn_label,self.btns[i].btn_status,self.btns[i].btn_label2)
+        btn = self.get_button(btn_name)
+        if btn:
+            btn.btn_status = btn_status
+            self.hasChanges = True
+            self.CS.UE.uiButtonInfoEvent(self.btns.index(btn),btn.btn_name, \
+                btn.btn_label,btn.btn_status,btn.btn_label2)
         if self.hasChanges:
             self.write_buttons_out_file()
             self.hasChanges = False
@@ -119,4 +124,9 @@ class UIButtons:
         self.write_buttons_out_file()
         
 
-    
+    def get_button_label2(self, btn_name):
+        btn = self.get_button(btn_name)
+        if btn:
+            return btn.btn_label2
+        else:
+            return -1    

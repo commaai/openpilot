@@ -26,6 +26,19 @@ class CruiseButtons:
   CANCEL        = 1
   MAIN          = 2
   IDLE          = 0
+  
+  @classmethod
+  def is_accel(cls, btn):
+    return btn in [cls.RES_ACCEL, cls.RES_ACCEL_2ND]
+    
+  @classmethod
+  def is_decel(cls, btn):
+    return btn in [cls.DECEL_SET, cls.DECEL_2ND]
+    
+  @classmethod
+  def should_be_throttled(cls, btn):
+    # Some buttons should not be spammed or they may overwhelm the SCCM.
+    return btn not in [cls.MAIN, cls.IDLE]
 
 
 #car chimes: enumeration from dbc file. Chimes are for alerts and warnings
@@ -54,3 +67,22 @@ class AH:
   GEAR_NOT_D     = [4, 6]
   SEATBELT       = [5, 5]
   SPEED_TOO_HIGH = [6, 8]
+
+class CruiseState:
+  # DI_cruiseState from the DBC
+  OFF = 0
+  STANDBY = 1
+  ENABLED = 2
+  STANDSTILL = 3
+  OVERRIDE = 4
+  FAULT = 5
+  PRE_FAULT = 6
+  PRE_CANCEL = 7
+  
+  @classmethod
+  def is_enabled_or_standby(cls, state):
+    return state in [cls.ENABLED, cls.STANDBY]
+    
+  @classmethod
+  def is_faulted(cls, state):
+    return state in [cls.PRE_FAULT, cls.FAULT]

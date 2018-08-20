@@ -158,7 +158,6 @@ def get_epas_parser(CP):
 class CarState(object):
   def __init__(self, CP):
     self.brake_only = CP.enableCruise
-    self.enable_adaptive_cruise = False
     self.last_cruise_stalk_pull_time = 0
     self.CP = CP
 
