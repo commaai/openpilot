@@ -185,12 +185,18 @@ class ALCAController(object):
         self.laneChange_counter += 1
         laneChange_angle = self.laneChange_angled
         #check if angle continues to decrease
-        current_delta = abs(self.laneChange_angle + laneChange_angle + (-actuatros.steerAngle))
+        current_delta = abs(self.laneChange_angle + laneChange_angle + (-actuators.steerAngle))
         previous_delta = abs(self.laneChange_last_sent_angle  - self.laneChange_last_actuator_angle)
-        if (current_delta > previous_delta) and (self.laneChange_counter > 10): #wait 0.1 sec before starting to check
+        #wait 0.05 sec before starting to check if angle increases
+        if (current_delta > previous_delta) and (self.laneChange_counter > 5):
           self.laneChange_enabled = 7
           self.laneChange_counter = 1
-          self.laneChange_direction = 1
+          self.laneChange_direction = 0
+        #wait 0.10 sec before looking if we are within 5 deg of actuator.angleSteer
+        if (current_delta <= 5.) and (self.laneChange_counter > 10):
+          self.laneChange_enabled = 7
+          self.laneChange_counter = 1
+          self.laneChange_direction = 0
       if self.laneChange_enabled ==3:
         if self.laneChange_counter == 1:
           CS.UE.custom_alert_message(2,"Auto Lane Change Engaged! (4)",800)
