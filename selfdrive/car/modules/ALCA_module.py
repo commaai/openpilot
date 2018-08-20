@@ -169,7 +169,7 @@ class ALCAController(object):
         if self.laneChange_counter >  (self.laneChange_duration) * 100:
           self.laneChange_enabled = 1
           self.laneChange_counter = 0
-          CS.UE.custom_alert_message(3,"Auto Lane Change Canceled! (t)",200,5)
+          CS.UE.custom_alert_message(4,"Auto Lane Change Canceled! (t)",200,5)
           self.laneChange_counter = 0
           CS.cstm_btns.set_button_status("alca",1)
       # this is the critical start of the turn
@@ -187,7 +187,7 @@ class ALCAController(object):
           self.laneChange_angled = self.laneChange_direction * self.laneChange_steerr *  interp(CS.v_ego, CL_MAXD_BP, CL_MAXD_A)
           #if angle more than max angle allowed cancel; last chance to cancel on road curvature
           if (abs(self.laneChange_angle) > CL_MAX_A):
-            CS.UE.custom_alert_message(3,"Auto Lane Change Canceled! (a)",200,5)
+            CS.UE.custom_alert_message(4,"Auto Lane Change Canceled! (a)",200,5)
             self.laneChange_enabled = 1
             self.laneChange_counter = 0
             self.laneChange_direction = 0
