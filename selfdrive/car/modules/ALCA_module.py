@@ -39,9 +39,6 @@ class ALCAController(object):
   def update_status(self,alcaEnabled):
     self.alcaEnabled = alcaEnabled
 
-  def update_steer_type(self,steerByAngle):
-    self.laneChange_steerByAngle = steerByAngle
-
   def set_pid(self,CS):
     self.pid = PIController((CS.CP.steerKpBP, CS.CP.steerKpV),
                             (CS.CP.steerKiBP, CS.CP.steerKiV),
@@ -260,6 +257,7 @@ class ALCAController(object):
         new_ALCA_Enabled = False
         new_turn_signal = 0
         new_angle,new_ALCA_Enabled,new_turn_signal = self.update_angle(enabled,CS,frame,actuators)
+        output_steer = 0.
         if new_ALCA_Enabled  and not self.laneChange_steerByAngle:
           output_steer = self.pid.update(new_angle, CS.angle_steers , check_saturation=(CS.v_ego > 10), override=CS.steer_override, feedforward=new_angle, speed=CS.v_ego, deadzone=0.0)
         else: 
