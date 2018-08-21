@@ -151,22 +151,21 @@ class ACCController(object):
         
         # Reduce cruise speed significantly if necessary. Multiply by a % to
         # make the car slightly more eager to slow down vs speed up.
-        if CS.v_cruise_actual > full_press_kph:
-          if speed_offset < (-0.6 * full_press_kph):
-            # Send cruise stalk dn_2nd.
-            button_to_press = CruiseButtons.DECEL_2ND
-          # Reduce speed slightly if necessary.
-          elif speed_offset < (-0.9 * half_press_kph):
-            # Send cruise stalk dn_1st.
-            button_to_press = CruiseButtons.DECEL_SET
+        if speed_offset < -0.6 * full_press_kph and CS.v_cruise_actual > 0:
+          # Send cruise stalk dn_2nd.
+          button_to_press = CruiseButtons.DECEL_2ND
+        # Reduce speed slightly if necessary.
+        elif speed_offset < -0.9 * half_press_kph and CS.v_cruise_actual > 0:
+          # Send cruise stalk dn_1st.
+          button_to_press = CruiseButtons.DECEL_SET
         # Increase cruise speed if possible.
         elif CS.v_ego > min_cruise_speed_ms:
           # How much we can accelerate without exceeding max allowed speed.
           available_speed = self.acc_speed_kph - CS.v_cruise_actual
-          if speed_offset > full_press_kph and speed_offset < available_speed:
+          if speed_offset > full_press_kph and full_press_kph < available_speed:
             # Send cruise stalk up_2nd.
             button_to_press = CruiseButtons.RES_ACCEL_2ND
-          elif speed_offset > half_press_kph and speed_offset < available_speed:
+          elif speed_offset > half_press_kph and half_press_kph < available_speed:
             # Send cruise stalk up_1st.
             button_to_press = CruiseButtons.RES_ACCEL
       if CS.cstm_btns.btns[1].btn_label2 == "Mod JJ":
@@ -191,10 +190,10 @@ class ACCController(object):
           and CS.v_cruise_actual - 1 < min_cruise_speed_ms * CV.MS_TO_KPH):
         button_to_press = CruiseButtons.CANCEL
       # Debug logging (disable in production to reduce latency of commands)
-      # print "ACC command: %s" % button_to_press
-    elif (current_time_ms > self.last_update_time + 1000):
-      self.last_update_time = current_time_ms
-      print "ACC max speed: %s\nCC actual speed: %s\nDesired speed change: %s" % (self.acc_speed_kph, CS.v_cruise_actual, speed_offset)
+      #print "***ACC command: %s***" % button_to_press
+    #elif (current_time_ms > self.last_update_time + 1000):
+    #  self.last_update_time = current_time_ms
+    #  print "Desired ACC speed change: %s" % (speed_offset)
     return button_to_press
 
   # function to calculate the cruise button based on a safe follow distance
