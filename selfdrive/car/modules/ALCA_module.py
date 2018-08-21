@@ -255,11 +255,11 @@ class ALCAController(object):
           a = 0.00001
         if (abs(a) > MAX_ACTUATOR_DELTA):
           c = (a/abs(a)) * CORRECTION_FACTOR * (abs(a) - MAX_ACTUATOR_DELTA) / 10
-          self.laneChange_angle = self.laneChange_angle - c * 10
+          self.laneChange_angle = self.laneChange_angle + c * 10
           self.last10delta_correct(-c)
         if (abs(a) < MIN_ACTUATOR_DELTA):
           c = (a/abs(a)) * CORRECTION_FACTOR * (MIN_ACTUATOR_DELTA - abs(a)) / 10
-          self.laneChange_angle = self.laneChange_angle + c * 10
+          self.laneChange_angle = self.laneChange_angle -  c * 10
           self.last10delta_correct(c)
         print a, c, actuator_delta, self.laneChange_angle
         if self.laneChange_counter >  (self.laneChange_duration) * 100:
