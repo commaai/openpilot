@@ -128,7 +128,7 @@ class ACCController(object):
         # And adjust infrequently, since sending repeated adjustments makes
         # the car think we're doing a 'long press' on the cruise stalk,
         # resulting in small, jerky speed adjustments.
-        and current_time_ms > self.automated_cruise_action_time + 1000):
+        and current_time_ms > self.automated_cruise_action_time + 500):
       # Automatically engange traditional cruise if it is idle and we are
       # going fast enough and we are accelerating.
       if (CS.pcm_acc_status == 1
