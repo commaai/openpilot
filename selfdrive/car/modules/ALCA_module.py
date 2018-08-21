@@ -156,7 +156,7 @@ class ALCAController(object):
       # changing lanes
       if CS.left_blinker_on:
         laneChange_direction = -1
-        
+
       if (self.laneChange_enabled > 1) and (self.laneChange_direction <> laneChange_direction):
         # something is not right; signal in oposite direction; cancel
         CS.UE.custom_alert_message(3,"Auto Lane Change Canceled! (s)",200,5)
@@ -250,6 +250,7 @@ class ALCAController(object):
           self.laneChange_counter = 1
         # didn't change the lane yet, check that we are not eversteering or understeering based on road curvature
         n,a = self.last10delta_add(actuator_delta)
+        c = 0.
         if a == 0:
           a = 0.00001
         if (abs(a) > MAX_ACTUATOR_DELTA):
@@ -260,6 +261,7 @@ class ALCAController(object):
           c = (a/abs(a)) * CORRECTION_FACTOR * (MIN_ACTUATOR_DELTA - abs(a)) / 10
           self.laneChange_angle = self.laneChange_angle + c * 10
           self.last10delta_correct(c)
+        print a, c, actuator_delta, self.laneChange_angle
         if self.laneChange_counter >  (self.laneChange_duration) * 100:
           self.laneChange_enabled = 1
           self.laneChange_counter = 0
