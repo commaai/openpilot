@@ -43,15 +43,17 @@ CL_MAX_A = 10. # do not turn if actuator wants more than x deg for going straigh
 # define limits for angle change every 0.1 s
 # we need to force correction above 10 deg but less than 20
 # anything more means we are going to steep or not enough in a turn
-MAX_ACTUATOR_DELTA = 1.
-MIN_ACTUATOR_DELTA = 0.5
-CORRECTION_FACTOR = 1.1
+MAX_ACTUATOR_DELTA = 1111.2
+MIN_ACTUATOR_DELTA = 0. 
+CORRECTION_FACTOR = 0.
 
 class ALCAController(object):
   def __init__(self,carcontroller,alcaEnabled,steerByAngle):
     self.CC = carcontroller  # added to start, will see if we need it actually
     # variables for lane change
     self.alcaEnabled = alcaEnabled
+    self.laneChange_strStartFactor = 2.
+    self.laneChange_strStartMultiplier = 1.2
     self.laneChange_steerByAngle = steerByAngle # steer only by angle; do not call PID
     self.laneChange_last_actuator_angle = 0.
     self.laneChange_last_actuator_delta = 0.
@@ -63,8 +65,8 @@ class ALCAController(object):
     self.laneChange_counter = 0 # used to count frames during lane change
     self.laneChange_min_duration = 2. # min time to wait before looking for next lane
     self.laneChange_duration = 5.6 # how many max seconds to actually do the move; if lane not found after this then send error
-    self.laneChange_after_lane_duration = 0.75 #time after we cross the line before we let OP take over 
-    self.laneChange_wait = 2 # how many seconds to wait before it starts the change
+    self.laneChange_after_lane_duration = 0.45 #time after we cross the line before we let OP take over 
+    self.laneChange_wait = 1 # how many seconds to wait before it starts the change
     self.laneChange_lw = 3.7 # lane width in meters
     self.laneChange_angle = 0. # saves the last angle from actuators before lane change starts
     self.laneChange_angled = 0. # angle delta
@@ -110,7 +112,7 @@ class ALCAController(object):
   def update_angle(self,enabled,CS,frame,actuators):
     # Basic highway lane change logic
     changing_lanes = CS.right_blinker_on or CS.left_blinker_on  
-
+    self.laneChange_steerr = CS.CP.steerRatio
     actuator_delta = 0.
     laneChange_angle = 0.
     turn_signal_needed = 0 # send 1 for left, 2 for right 0 for not needed
@@ -254,12 +256,12 @@ class ALCAController(object):
         if a == 0:
           a = 0.00001
         if (abs(a) > MAX_ACTUATOR_DELTA):
-          c = (a/abs(a)) * CORRECTION_FACTOR * (abs(a) - MAX_ACTUATOR_DELTA) / 10
-          self.laneChange_angle = self.laneChange_angle + c * 10
+          c = (a/abs(a)) *  (abs(a) - MAX_ACTUATOR_DELTA) / 10
+          self.laneChange_angle = self.laneChange_angle + self.laneChange_direction * CORRECTION_FACTOR*c * 10 
           self.last10delta_correct(-c)
         if (abs(a) < MIN_ACTUATOR_DELTA):
-          c = (a/abs(a)) * CORRECTION_FACTOR * (MIN_ACTUATOR_DELTA - abs(a)) / 10
-          self.laneChange_angle = self.laneChange_angle -  c * 10
+          c = (a/abs(a)) * (MIN_ACTUATOR_DELTA - abs(a)) / 10
+          self.laneChange_angle = self.laneChange_angle -self.laneChange_direction * CORRECTION_FACTOR* c *10 
           self.last10delta_correct(c)
         print a, c, actuator_delta, self.laneChange_angle
         if self.laneChange_counter >  (self.laneChange_duration) * 100:
@@ -288,9 +290,9 @@ class ALCAController(object):
             self.laneChange_counter = 0
             self.laneChange_direction = 0
             CS.cstm_btns.set_button_status("alca",1)
-        laneChange_angle = self.laneChange_angled *  self.laneChange_counter / 50
+        laneChange_angle = self.laneChange_strStartFactor * self.laneChange_angled *  self.laneChange_counter / 50
         self.laneChange_counter += 1
-        delta_change = abs(self.laneChange_angle+ laneChange_angle + actuators.steerAngle) - abs(self.laneChange_angled)
+        delta_change = abs(self.laneChange_angle+ laneChange_angle + actuators.steerAngle) - self.laneChange_strStartMultiplier * abs(self.laneChange_angled)
         if (self.laneChange_counter == 100) or (delta_change >= 0):
           if (delta_change < 0):
             # didn't achieve desired angle yet, so repeat
@@ -355,6 +357,10 @@ class ALCAController(object):
         new_angle,new_ALCA_Enabled,new_turn_signal = self.update_angle(enabled,CS,frame,actuators)
         output_steer = 0.
         if new_ALCA_Enabled and (self.laneChange_enabled < 5 ) and not self.laneChange_steerByAngle:
+          self.angle_steers_des = self.angle_steers_des_mpc
+          steers_max = interp(CS.v_ego, CS.CP.steerMaxBP, CS.CP.steerMaxV)
+          self.pid.pos_limit = steers_max
+          self.pid.neg_limit = -steers_max
           output_steer = self.pid.update(new_angle, CS.angle_steers , check_saturation=(CS.v_ego > 10), override=CS.steer_override, feedforward=new_angle, speed=CS.v_ego, deadzone=0.0)
         else: 
           output_steer = actuators.steer
