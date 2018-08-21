@@ -53,12 +53,13 @@ Supported Cars
 | Honda         | Civic 2017                | Honda Sensing        | Yes     | Yes            | 0mph             | 12mph          |
 | Honda         | Civic 2017 *(Hatch)*      | Honda Sensing        | Yes     | Stock          | 0mph             | 12mph          |
 | Honda         | Civic 2018                | Honda Sensing        | Yes     | Yes            | 0mph             | 12mph          |
-| Honda         | CR-V 2015                 | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          |
-| Honda         | CR-V 2016                 | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          |
+| Honda         | Civic 2018 *(Hatch)*      | Honda Sensing        | Yes     | Stock          | 0mph             | 12mph          |
+| Honda         | CR-V 2015                 | Touring              | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          |
+| Honda         | CR-V 2016                 | Touring              | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          |
 | Honda         | CR-V 2017                 | Honda Sensing        | Yes     | Stock          | 0mph             | 12mph          |
 | Honda         | CR-V 2018                 | Honda Sensing        | Yes     | Stock          | 0mph             | 12mph          |
-| Honda         | Odyssey 2017              | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          |
-| Honda         | Odyssey 2018              | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          |
+| Honda         | Odyssey 2017              | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 0mph           |
+| Honda         | Odyssey 2018              | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 0mph           |
 | Honda         | Pilot 2017                | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          |
 | Honda         | Pilot 2018                | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          |
 | Honda         | Ridgeline 2017            | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          |
@@ -96,7 +97,7 @@ Community Maintained Cars
 
 [[Honda Fit Pull Request]](https://github.com/commaai/openpilot/pull/266).
 
-Community Maintained Cars are not confirmed by comma.ai to meet our safety model. Be extra cautious using them.
+Community Maintained Cars are not confirmed by comma.ai to meet our [safety model](https://github.com/commaai/openpilot/blob/devel/SAFETY.md). Be extra cautious using them.
 
 In Progress Cars
 ------

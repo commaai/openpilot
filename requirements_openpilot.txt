@@ -1,6 +1,6 @@
-Cython==0.24.1
+Cython==0.27.3
 bitstring==3.1.5
-fastcluster==1.1.21
+fastcluster==1.1.20
 libusb1==1.5.0
 pycapnp==0.6.3
 pyzmq==15.4.0
@@ -9,11 +9,11 @@ requests==2.10.0
 setproctitle==1.1.10
 simplejson==3.8.2
 pyyaml==3.12
-cffi==1.7.0
-enum34==1.1.1
+cffi==1.11.5
+enum34==1.1.6
 sympy==1.1.1
-filterpy==1.0.0
+filterpy==1.2.4
 smbus2==0.2.0
-pyflakes==1.5.0
+pyflakes==1.6.0
 -e git+https://github.com/commaai/le_python.git@5eef8f5be5929d33973e1b10e686fa0cdcd6792f#egg=Logentries
-Flask==1.0.1
+Flask==1.0.2

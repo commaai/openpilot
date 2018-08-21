@@ -511,7 +511,7 @@ def controlsd_thread(gctx=None, rate=100, default_bias=0.):
       prof.checkpoint("State transition")
 
     # compute actuators
-    actuators, v_cruise_kph, driver_status, angle_offset = state_control(plan, CS, CP, state, events, v_cruise_kph, 
+    actuators, v_cruise_kph, driver_status, angle_offset = state_control(plan, CS, CP, state, events, v_cruise_kph,
       v_cruise_kph_last, AM, rk, driver_status, PL, LaC, LoC, VM, angle_offset, passive)
     prof.checkpoint("State Control")
 

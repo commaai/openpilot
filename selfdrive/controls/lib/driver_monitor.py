@@ -6,7 +6,7 @@ _DT = 0.01                  # update runs at 100Hz
 _AWARENESS_TIME = 180       # 3 minutes limit without user touching steering wheels make the car enter a terminal status
 _AWARENESS_PRE_TIME = 20.   # a first alert is issued 20s before expiration
 _AWARENESS_PROMPT_TIME = 5. # a second alert is issued 5s before start decelerating the car
-_DISTRACTED_TIME = 6.
+_DISTRACTED_TIME = 8.
 _DISTRACTED_PRE_TIME = 4.
 _DISTRACTED_PROMPT_TIME = 2.
 # measured 1 rad in x FOV. 1152x864 is original image, 160x320 is a right crop for model
@@ -27,13 +27,6 @@ _VARIANCE_FILTER_F = 0.008    # 0.008Hz, 20s ts
 _VARIANCE_FILTER_K = 2 * np.pi * _VARIANCE_FILTER_F * _DTM / (1 + 2 * np.pi * _VARIANCE_FILTER_F * _DTM)
 
 
-class MonitorChangeEvent:
-  NO_CHANGE = 0
-  PARAM_ON = 1
-  PARAM_OFF = 2
-  VARIANCE_HIGH = 3
-  VARIANCE_LOW = 4
-
 class _DriverPose():
   def __init__(self):
     self.yaw = 0.
@@ -52,7 +45,6 @@ class DriverStatus():
     self.monitor_on = monitor_on
     self.monitor_param_on = monitor_on
     self.monitor_valid = True   # variance needs to be low
-    self.monitor_change_event = MonitorChangeEvent.NO_CHANGE
     self.awareness = 1.
     self.driver_distracted = False
     self.driver_distraction_level = 0.
@@ -89,21 +81,6 @@ class DriverStatus():
     return 1 if metric > _METRIC_THRESHOLD else 0
 
 
-  def _monitor_change_check(self, monitor_param_on_prev, monitor_valid_prev, monitor_on_prev):
-    if not monitor_param_on_prev and self.monitor_param_on:
-      self._reset_filters()
-      return MonitorChangeEvent.PARAM_ON
-    elif monitor_param_on_prev and not self.monitor_param_on:
-      self._reset_filters()
-      return MonitorChangeEvent.PARAM_OFF
-    elif monitor_on_prev and not self.monitor_valid:
-      return MonitorChangeEvent.VARIANCE_HIGH
-    elif self.monitor_param_on and not monitor_valid_prev and self.monitor_valid:
-      return MonitorChangeEvent.VARIANCE_LOW
-    else:
-      return MonitorChangeEvent.NO_CHANGE
-
-
   def get_pose(self, driver_monitoring, params):
 
     self.pose.pitch = driver_monitoring.descriptor[0]
@@ -121,17 +98,17 @@ class DriverStatus():
 
     monitor_param_on_prev = self.monitor_param_on
     monitor_valid_prev = self.monitor_valid
-    monitor_on_prev = self.monitor_on
 
     # don't check for param too often as it's a kernel call
     ts = sec_since_boot()
     if ts - self.ts_last_check > 1.:
       self.monitor_param_on = params.get("IsDriverMonitoringEnabled") == "1"
       self.ts_last_check = ts
-    
+
     self.monitor_valid = _monitor_hysteresys(self.variance_level, monitor_valid_prev)
     self.monitor_on = self.monitor_valid and self.monitor_param_on
-    self.monitor_change_event = self._monitor_change_check(monitor_param_on_prev, monitor_valid_prev, monitor_on_prev)
+    if monitor_param_on_prev != self.monitor_param_on:
+      self._reset_filters()
     self._set_timers()
 
 
@@ -142,9 +119,6 @@ class DriverStatus():
     if (driver_engaged and self.awareness > 0.) or not ctrl_active:
       # always reset if driver is in control (unless we are in red alert state) or op isn't active
       self.awareness = 1.
-      if not ctrl_active:
-        # hold monitor_level constant when control isn't active
-        self.variance_level = 0. if self.monitor_valid else 1.
 
     if (not self.monitor_on or (self.driver_distraction_level > 0.63 and self.driver_distracted)) and \
        not (standstill and self.awareness - self.step_change <= self.threshold_prompt):
@@ -163,8 +137,6 @@ class DriverStatus():
     if alert is not None:
       events.append(create_event(alert, [ET.WARNING]))
 
-    self.monitor_change_event = MonitorChangeEvent.NO_CHANGE
-
     return events
 
 
@@ -177,5 +149,4 @@ if __name__ == "__main__":
     print(ds.awareness, ds.driver_distracted, ds.driver_distraction_level)
   ds.update([], True, True, False)
   print(ds.awareness, ds.driver_distracted, ds.driver_distraction_level)
-  
 
