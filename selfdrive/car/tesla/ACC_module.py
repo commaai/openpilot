@@ -59,7 +59,7 @@ class ACCController(object):
           CS.UE.custom_alert_message(2,"ACC Speed Updated", 150)
           self.acc_speed_kph = CS.v_ego_raw * CV.MS_TO_KPH
       elif self.enable_adaptive_cruise and not double_pull:
-        CS.UE.custom_alert_message(3,"ACC Disabled", 150,4)
+        CS.UE.custom_alert_message(3,"ACC Disabled", 150, 4)
         CS.cstm_btns.set_button_status("acc", 1)
         self.enable_adaptive_cruise = False
       self.last_cruise_stalk_pull_time = curr_time_ms
@@ -68,10 +68,10 @@ class ACCController(object):
       self.enable_adaptive_cruise = False
       self.acc_speed_kph = 0. 
       if prev_enable_adaptive_cruise == True:
-        CS.UE.custom_alert_message(3,"ACC Disabled", 150,4)
+        CS.UE.custom_alert_message(3,"ACC Disabled", 150, 4)
       self.acc_speed_kph = 0.
       if prev_enable_adaptive_cruise:
-        customAlert.custom_alert_message("ACC Disabled", CS, 150)
+        CS.UE.custom_alert_message("ACC Disabled", CS, 150)
         CS.cstm_btns.set_button_status("acc", 1)
       self.last_cruise_stalk_pull_time = 0
     elif (self.enable_adaptive_cruise and
