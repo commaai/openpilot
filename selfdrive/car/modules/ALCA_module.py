@@ -35,8 +35,8 @@ from selfdrive.controls.lib.pid import PIController
 
 
 # change lane delta angles and other params
-CL_MAXD_BP = [1., 32, 44.]
-CL_MAXD_A = [.115, 0.081, 0.042] #delta angle based on speed; needs fine tune, based on Tesla steer ratio of 16.75
+CL_MAXD_BP = [10., 32., 44.]
+CL_MAXD_A = [.175, 0.081, 0.042] #delta angle based on speed; needs fine tune, based on Tesla steer ratio of 16.75
 CL_MIN_V = 8.9 # do not turn if speed less than x m/2; 20 mph = 8.9 m/s
 CL_MAX_A = 10. # do not turn if actuator wants more than x deg for going straight; this should be interp based on speed
 
@@ -46,6 +46,10 @@ CL_MAX_A = 10. # do not turn if actuator wants more than x deg for going straigh
 MAX_ACTUATOR_DELTA = 1111.2
 MIN_ACTUATOR_DELTA = 0. 
 CORRECTION_FACTOR = 0.
+
+#duration after we cross the line until we release is a factor of speed
+CL_TIMEA_BP = [10., 32., 44.]
+CL_TIMEA_T = [0.9 ,0.35, 0.25]
 
 class ALCAController(object):
   def __init__(self,carcontroller,alcaEnabled,steerByAngle):
@@ -65,7 +69,7 @@ class ALCAController(object):
     self.laneChange_counter = 0 # used to count frames during lane change
     self.laneChange_min_duration = 2. # min time to wait before looking for next lane
     self.laneChange_duration = 5.6 # how many max seconds to actually do the move; if lane not found after this then send error
-    self.laneChange_after_lane_duration = 0.45 #time after we cross the line before we let OP take over 
+    self.laneChange_after_lane_duration_mult = 1.  # multiplier for time after we cross the line before we let OP take over; multiplied with CL_TIMEA_T 
     self.laneChange_wait = 1 # how many seconds to wait before it starts the change
     self.laneChange_lw = 3.7 # lane width in meters
     self.laneChange_angle = 0. # saves the last angle from actuators before lane change starts
@@ -219,8 +223,9 @@ class ALCAController(object):
           self.laneChange_enabled = 7
           self.laneChange_counter = 1
           self.laneChange_direction = 0
-        # we crossed the line, so 0.7 sec later give control back to OP
-        if (self.laneChange_counter > self.laneChange_after_lane_duration * 100):
+        # we crossed the line, so  x sec later give control back to OP
+        laneChange_after_lane_duration = interp(CS.v_ego,CL_TIMEA_BP,CL_TIMEA_T) * self.laneChange_after_lane_duration_mult
+        if (self.laneChange_counter > laneChange_after_lane_duration * 100):
           self.laneChange_enabled = 7
           self.laneChange_counter = 1
           self.laneChange_direction = 0
