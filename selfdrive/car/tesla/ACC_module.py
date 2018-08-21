@@ -67,11 +67,9 @@ class ACCController(object):
           self.prev_cruise_buttons != CruiseButtons.CANCEL):
       self.enable_adaptive_cruise = False
       self.acc_speed_kph = 0. 
-      if prev_enable_adaptive_cruise == True:
-        CS.UE.custom_alert_message(3,"ACC Disabled", 150, 4)
-      self.acc_speed_kph = 0.
       if prev_enable_adaptive_cruise:
-        CS.UE.custom_alert_message("ACC Disabled", CS, 150)
+        CS.UE.custom_alert_message(3, "ACC Disabled", 150, 4)
+        self.acc_speed_kph = 0.
         CS.cstm_btns.set_button_status("acc", 1)
       self.last_cruise_stalk_pull_time = 0
     elif (self.enable_adaptive_cruise and
