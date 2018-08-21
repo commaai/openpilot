@@ -107,8 +107,7 @@ class ACCController(object):
           CS.cstm_btns.set_button_status("acc", 1)
       else:
           CS.cstm_btns.set_button_status("acc", 9)
-    self.autoresume = (CS.cstm_btns.get_button_label2("acc") == "AutoRes"
-                       or CS.cstm_btns.get_button_status("steer") > 0)
+    self.autoresume = CS.cstm_btns.get_button_label2("acc") == "AutoRes"
 
   def update_acc(self, enabled, CS, frame, actuators, pcm_speed):
     # Adaptive cruise control
