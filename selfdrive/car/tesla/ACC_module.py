@@ -69,7 +69,6 @@ class ACCController(object):
       self.acc_speed_kph = 0. 
       if prev_enable_adaptive_cruise:
         CS.UE.custom_alert_message(3, "ACC Disabled", 150, 4)
-        self.acc_speed_kph = 0.
         CS.cstm_btns.set_button_status("acc", 1)
       self.last_cruise_stalk_pull_time = 0
     elif (self.enable_adaptive_cruise and
@@ -133,7 +132,7 @@ class ACCController(object):
       # going fast enough and we are accelerating.
       if (CS.pcm_acc_status == 1
           and CS.v_ego > min_cruise_speed_ms
-          and CS.a_ego > 0.12):
+          and CS.a_ego >= 0.):
         button_to_press = CruiseButtons.DECEL_2ND
       # If traditional cruise is engaged, then control it.
       elif (CS.pcm_acc_status == 2
