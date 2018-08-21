@@ -48,7 +48,7 @@ class ACCController(object):
         enabled and
         CruiseState.is_enabled_or_standby(CS.pcm_acc_status))
       if double_pull and not self.enable_adaptive_cruise:
-        CS.UE.custom_alert_message(2,"ACC Enabled", 150)
+        CS.UE.custom_alert_message(2, "ACC Enabled", 150)
         self.enable_adaptive_cruise = True
         CS.cstm_btns.set_button_status("acc", 2)
         # Increase ACC speed to match current, if applicable.
@@ -56,10 +56,10 @@ class ACCController(object):
       elif self.enable_adaptive_cruise and double_pull:
         # already enabled, reset speed to current speed
         if self.acc_speed_kph < CS.v_ego_raw * CV.MS_TO_KPH:
-          CS.UE.custom_alert_message(2,"ACC Speed Updated", 150)
+          CS.UE.custom_alert_message(2, "ACC Speed Updated", 150)
           self.acc_speed_kph = CS.v_ego_raw * CV.MS_TO_KPH
       elif self.enable_adaptive_cruise and not double_pull:
-        CS.UE.custom_alert_message(3,"ACC Disabled", 150, 4)
+        CS.UE.custom_alert_message(3, "ACC Disabled", 150, 4)
         CS.cstm_btns.set_button_status("acc", 1)
         self.enable_adaptive_cruise = False
       self.last_cruise_stalk_pull_time = curr_time_ms
@@ -98,7 +98,7 @@ class ACCController(object):
           not self.autoresume and
           curr_time_ms - self.last_cruise_stalk_pull_time >  2000):
       self.enable_adaptive_cruise = False
-      CS.UE.custom_alert_message(3,"ACC Disabled",  150,4)
+      CS.UE.custom_alert_message(3, "ACC Disabled", 150, 4)
       CS.cstm_btns.set_button_status("acc", 1)
     self.prev_steering_wheel_stalk = CS.steering_wheel_stalk
     self.prev_cruise_buttons = CS.cruise_buttons
