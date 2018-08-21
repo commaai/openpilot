@@ -331,13 +331,16 @@ struct Live20Data {
 }
 
 struct LiveCalibrationData {
+  # deprecated
   warpMatrix @0 :List(Float32);
+  # camera_frame_from_model_frame
   warpMatrix2 @5 :List(Float32);
   calStatus @1 :Int8;
   calCycle @2 :Int32;
   calPerc @3 :Int8;
 
-  # Maps car space to normalized image space.
+  # view_frame_from_road_frame
+  # ui's is inversed needs new
   extrinsicMatrix @4 :List(Float32);
 }
 
