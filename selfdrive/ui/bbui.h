@@ -2,6 +2,7 @@
 
 
 
+/*
 vec3 bb_car_space_to_full_frame(const  UIState *s, vec4 car_space_projective) {
   const UIScene *scene = &s->scene;
 
@@ -17,6 +18,7 @@ vec3 bb_car_space_to_full_frame(const  UIState *s, vec4 car_space_projective) {
   const vec3 p_image = {{KEp.v[0] / KEp.v[2], KEp.v[1] / KEp.v[2], 1.}};
   return p_image;
 }
+*/
 
 void bb_ui_draw_vision_alert( UIState *s, int va_size, int va_color,
                                   const char* va_text1, const char* va_text2) {
@@ -73,6 +75,7 @@ void bb_ui_draw_vision_alert( UIState *s, int va_size, int va_color,
 }
 
 
+/*
 void bb_ui_draw_car(  UIState *s) {
   // replaces the draw_chevron function when button in mid position
   //static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
@@ -183,7 +186,7 @@ void bb_draw_lane_fill ( UIState *s) {
   nvgRestore(s->vg);
 
 }
-
+*/
 
 
 

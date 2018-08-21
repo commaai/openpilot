@@ -14,7 +14,7 @@ def parse_gear_shifter(gear, vals):
   try:
     return val_to_capnp[vals[gear]]
   except KeyError:
-  return "unknown"
+    return "unknown"
 
 
 def calc_cruise_offset(offset, speed):
