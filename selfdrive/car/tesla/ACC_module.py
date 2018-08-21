@@ -194,7 +194,7 @@ class ACCController(object):
       # print "ACC command: %s" % button_to_press
     elif (current_time_ms > self.last_update_time + 1000):
       self.last_update_time = current_time_ms
-      print "ACC max speed: %s\nCC actual speed: %s\nDesired speed change: %s" % (self.acc_speed_kph, speed_offset)
+      print "ACC max speed: %s\nCC actual speed: %s\nDesired speed change: %s" % (self.acc_speed_kph, CS.v_cruise_actual, speed_offset)
     return button_to_press
 
   # function to calculate the cruise button based on a safe follow distance
