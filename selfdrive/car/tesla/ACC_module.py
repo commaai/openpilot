@@ -107,7 +107,8 @@ class ACCController(object):
           CS.cstm_btns.set_button_status("acc", 1)
       else:
           CS.cstm_btns.set_button_status("acc", 9)
-    self.autoresume = CS.cstm_btns.get_button_label2("acc") == "AutoRes"
+    self.autoresume = (CS.cstm_btns.get_button_label2("acc") == "AutoRes"
+                       or CS.cstm_btns.get_button_status("steer") > 0)
 
   def update_acc(self, enabled, CS, frame, actuators, pcm_speed):
     # Adaptive cruise control
@@ -184,9 +185,16 @@ class ACCController(object):
     if button_to_press:
       self.automated_cruise_action_time = current_time_ms
       # If trying to slow below the min cruise speed, just cancel cruise.
+      # This prevents a SCCM crash which is triggered by repeatedly pressing
+      # stalk-down when already at min cruise speed.
       if (CruiseButtons.is_decel(button_to_press)
           and CS.v_cruise_actual - 1 < min_cruise_speed_ms * CV.MS_TO_KPH):
         button_to_press = CruiseButtons.CANCEL
+      # Debug logging (disable in production to reduce latency of commands)
+      # print "ACC command: %s" % button_to_press
+    elif (current_time_ms > self.last_update_time + 1000):
+      self.last_update_time = current_time_ms
+      print "ACC max speed: %s\nCC actual speed: %s\nDesired speed change: %s" % (self.acc_speed_kph, speed_offset)
     return button_to_press
 
   # function to calculate the cruise button based on a safe follow distance
@@ -295,9 +303,9 @@ class ACCController(object):
       ratio = 0
       if safe_dist_m > 0:
         ratio = (lead_dist / safe_dist_m) * 100
-      #print "Ratio: {0:.1f}%".format(ratio), "   lead: ","{0:.1f}m".format(lead_dist),"   avail: ","{0:.1f}kph".format(available_speed), "   Rel Speed: ","{0:.1f}kph".format(rel_speed), "  Angle: {0:.1f}deg".format(CS.angle_steers)
+      print "Ratio: {0:.1f}%".format(ratio), "   lead: ","{0:.1f}m".format(lead_dist),"   avail: ","{0:.1f}kph".format(available_speed), "   Rel Speed: ","{0:.1f}kph".format(rel_speed), "  Angle: {0:.1f}deg".format(CS.angle_steers)
       self.last_update_time = current_time_ms
-      #if msg != None:
-      #  print msg
+      if msg != None:
+        print msg
         
     return button
