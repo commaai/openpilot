@@ -1470,7 +1470,7 @@ static void ui_update(UIState *s) {
         s->scene.engaged = datad.enabled;
         s->scene.engageable = datad.engageable;
         s->scene.gps_planner_active = datad.gpsPlannerActive;
-        s->scene.monitoring_active = datad.driverMonitoringOn;
+        //s->scene.monitoring_active = datad.driverMonitoringOn;
         // printf("recv %f\n", datad.vEgo);
 
         s->scene.frontview = datad.rearViewCam;
