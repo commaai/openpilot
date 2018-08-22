@@ -33,13 +33,6 @@ def add_tesla_checksum(msg_id,msg):
   checksum = (checksum + ord(msg[i])) & 0xFF
  return checksum
 
-def tesla_pedal_checksum(msg_id,msg,idx):
- """Calculates the checksum for the data part of the Tesla message"""
- checksum = ((msg_id) & 0xFF) + ((msg_id >> 8) & 0xFF)
- for i in range(0,len(msg),1):
-   checksum = (checksum + ord(msg[i])) & 0xFF
- checksum = ((checksum >> 4) & 0xF + checksum & 0xF) & 0xF
- return checksum
 
 
 def create_steering_control(enabled, apply_steer, idx):
@@ -68,6 +61,16 @@ def create_epb_enable_signal(idx):
   struct.pack_into('BB', msg, 0,  1, idx)
   struct.pack_into('B', msg, msg_len-1, add_tesla_checksum(msg_id,msg))
   return [msg_id, 0, msg.raw, 2]
+
+def create_gas_command_msg(gasCommand, gasCommand2, status,idx):
+  """Create GAS_COMMAND (0x551) message to comma pedal"""
+  msg_id = 0x551
+  msg_len = 6
+  msg = create_string_buffer(msg_len)
+  struct.pack_into('BBBBB', msg, 0, (gasCommand >> 8) & 0xFF, gasCommand & 0xFF, \
+      (gasCommand2 >> 8) & 0xFF, gasCommand2 & 0XFF,(idx << 4 + status) & 0xFF)
+  struct.pack_into('B', msg, msg_len-1, add_tesla_checksum(msg_id,msg))
+  return [msg_id, 0, msg.raw, 2]    
   
 def create_das_status_msg(autopilotState,idx):
   """Create DAS_status (0x399) message to generate AP sounds"""
@@ -150,6 +153,8 @@ def create_DAS_objects_msg(idx):
   msg = create_string_buffer(msg_len)
   struct.pack_into('BBBBBBBB', msg, 0, 0x01,0xff,0xff,0xff,0x83,0xff,0xff,0x03)
   return [msg_id, 0, msg.raw, 0]
+
+
 
 
 def create_cruise_adjust_msg(spdCtrlLvr_stat, turnIndLvr_Stat, real_steering_wheel_stalk):

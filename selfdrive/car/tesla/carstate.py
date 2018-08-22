@@ -137,10 +137,14 @@ def get_epas_can_signals(CP):
       ("EPAS_eacErrorCode", "EPAS_sysStatus", 0),
       ("EPAS_handsOnLevel", "EPAS_sysStatus", 0),
       ("EPAS_steeringFault", "EPAS_sysStatus", 0),
+      ("INTERCEPTOR_GAS", "GAS_SENSOR", 0),
+      ("INTERCEPTOR_GAS2", "GAS_SENSOR", 0),
+      ("STATE", "GAS_SENSOR", 0),
   ]
 
   checks = [
       ("EPAS_sysStatus", 5), #JCT Actual message freq is 1.3 Hz (0.76 sec)
+      ("GAS_SENSOR", 3),
   ]
 
 
