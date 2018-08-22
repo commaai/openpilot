@@ -71,17 +71,13 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, int hardwired) {
 #endif
 
 // ***************************** tesla pedal checksum *****************************
-// tesla does checksum on a full octet but this is design for 4 bits checksum
-// so for tesla, we will add the two as in 0xAB = (A + B) & F
-int can_cksum(uint8_t *dat, int len, int addr, int idx) {
+int can_cksum(uint8_t *dat, int len, int addr) {
   int i;
   int s = 0;
   s += ((addr)&0xFF) + ((addr>>8)&0xFF);
   for (i = 0; i < len; i++) {
     s = (s + dat[i]) & 0xFF;
    }
-   s = (s + idx) & 0xFF;
-   s = (((s>>4)&0xF) + (s&0xF)) & 0xF;
    return s;
 }
 
@@ -137,9 +133,9 @@ void CAN1_RX0_IRQHandler() {
       uint16_t value_0 = (dat[0] << 8) | dat[1];
       uint16_t value_1 = (dat[2] << 8) | dat[3];
       uint8_t enable = (dat2[0] >> 7) & 1;
-      uint8_t index = (dat2[1] >> 4) & 3;
-      if (can_cksum(dat, 5, CAN_GAS_INPUT, index) == (dat2[1] & 0xF)) {
-        if (((current_index+1)&3) == index) {
+      uint8_t index = (dat2[0] >> 4) & 0xF;
+      if (can_cksum(dat, 5, CAN_GAS_INPUT) == (dat2[1] & 0xFF)) {
+        if (((current_index+1)&0xF) == index) {
           #ifdef DEBUG
             puts("setting gas ");
             puth(value);
@@ -198,14 +194,14 @@ void TIM3_IRQHandler() {
     dat[1] = (pdl0>>0)&0xFF;
     dat[2] = (pdl1>>8)&0xFF;
     dat[3] = (pdl1>>0)&0xFF;
-    dat[4] = state;
-    dat[5] = can_cksum(dat, 5, CAN_GAS_OUTPUT, pkt_idx) | (pkt_idx<<4);
+    dat[4] = ((state<<0) | (pkt_idx<<4))&0xFF;
+    dat[5] = can_cksum(dat, 5, CAN_GAS_OUTPUT);
     CAN->sTxMailBox[0].TDLR = dat[0] | (dat[1]<<8) | (dat[2]<<16) | (dat[3]<<24);
     CAN->sTxMailBox[0].TDHR = dat[4] | (dat[5]<<8);
     CAN->sTxMailBox[0].TDTR = 6;  // len of packet is 5
     CAN->sTxMailBox[0].TIR = (CAN_GAS_OUTPUT << 21) | 1;
     ++pkt_idx;
-    pkt_idx &= 3;
+    pkt_idx &= 0xF;
   } else {
     // old can packet hasn't sent!
     state = FAULT_SEND;
