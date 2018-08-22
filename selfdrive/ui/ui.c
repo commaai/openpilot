@@ -585,7 +585,7 @@ static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
   //BB added for printing the car
   if (s->b.tri_state_switch == 2) {
     nvgRestore(s->vg);
-    // bb_ui_draw_car(s);
+    bb_ui_draw_car(s);
   } else {
     if (x >= 0 && y >= 0.) {
         nvgMoveTo(s->vg, x+(sz*1.35)+g_xo, y+sz+g_yo);
@@ -837,7 +837,7 @@ static void ui_draw_vision_lanes(UIState *s) {
   const UIScene *scene = &s->scene;
   //BB add to draw our lanes
   if (s->b.tri_state_switch == 2) {
-    //bb_draw_lane_fill(s);
+    bb_draw_lane_fill(s);
   }
   // Draw left lane edge
   ui_draw_lane(
