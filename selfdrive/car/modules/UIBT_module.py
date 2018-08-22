@@ -26,12 +26,15 @@ class UIButtons:
         self.hasChanges = False
 
     def read_buttons_out_file(self):
-        try:
-            with open(self.buttons_status_out_path, "rb") as fo:
-                self.btns = pickle.load(fo)
-        except Exception as e:
-            print "Failed to read button file %s" % self.buttons_status_out_path
-            print str(e)
+        if os.path.exists(self.buttons_status_out_path):
+            try:
+                with open(self.buttons_status_out_path, "rb") as fo:
+                    self.btns = pickle.load(fo)
+                return True
+            except Exception as e:
+                print "Failed to read button file %s" % self.buttons_status_out_path
+                print str(e)
+        return False
 
     def send_button_info(self):
         if self.isLive:
@@ -48,10 +51,7 @@ class UIButtons:
         self.btns = []
         self.hasChanges = True
         self.last_in_read_time = datetime.min 
-        if os.path.exists(self.buttons_status_out_path):
-            #there is a file, load it
-            self.read_buttons_out_file()
-        else:
+        if not self.read_buttons_out_file():
             #there is no file, create it
             self.btns = self.CS.init_ui_buttons()
             self.hasChanges = True
