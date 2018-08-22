@@ -38,13 +38,13 @@ void reset_angle_control(void);
 int get_controls_allowed(void);
 void init_tests_toyota(void);
 void set_timer(int t);
-void set_torque_meas(int min, int max);
+void set_toyota_torque_meas(int min, int max);
 void set_cadillac_torque_driver(int min, int max);
 void set_gm_torque_driver(int min, int max);
-void set_rt_torque_last(int t);
-void set_desired_torque_last(int t);
-int get_torque_meas_min(void);
-int get_torque_meas_max(void);
+void set_toyota_rt_torque_last(int t);
+void set_toyota_desired_torque_last(int t);
+int get_toyota_torque_meas_min(void);
+int get_toyota_torque_meas_max(void);
 
 void init_tests_honda(void);
 int get_ego_speed(void);

@@ -21,6 +21,8 @@ struct Map(Key, Value) {
 
 struct InitData {
   kernelArgs @0 :List(Text);
+  kernelVersion @15 :Text;
+
   gctx @1 :Text;
   dongleId @2 :Text;
 
@@ -32,6 +34,7 @@ struct InitData {
 
   androidBuildInfo @5 :AndroidBuildInfo;
   androidSensors @6 :List(AndroidSensor);
+  androidProperties @16 :Map(Text, Text);
   chffrAndroidExtra @7 :ChffrAndroidExtra;
   iosBuildInfo @14 :IosBuildInfo;
 
@@ -328,13 +331,16 @@ struct Live20Data {
 }
 
 struct LiveCalibrationData {
+  # deprecated
   warpMatrix @0 :List(Float32);
+  # camera_frame_from_model_frame
   warpMatrix2 @5 :List(Float32);
   calStatus @1 :Int8;
   calCycle @2 :Int32;
   calPerc @3 :Int8;
 
-  # Maps car space to normalized image space.
+  # view_frame_from_road_frame
+  # ui's is inversed needs new
   extrinsicMatrix @4 :List(Float32);
 }
 
@@ -399,6 +405,7 @@ struct Live100Data {
   angleOffset @27 :Float32;
   gpsPlannerActive @40 :Bool;
   engageable @41 :Bool;  # can OP be engaged?
+  driverMonitoringOn @43 :Bool;
 
   enum ControlState {
     disabled @0;
@@ -1533,6 +1540,13 @@ struct OrbKeyFrame {
 struct DriverMonitoring {
   frameId @0 :UInt32;
   descriptor @1 :List(Float32);
+  std @2 :Float32;
+}
+
+struct Boot {
+  wallTimeNanos @0 :UInt64;
+  lastKmsg @1 :Data;
+  lastPmsg @2 :Data;
 }
 
 struct Event {
@@ -1599,5 +1613,6 @@ struct Event {
     uiLayoutState @57 :UiLayoutState;
     orbFeaturesSummary @58 :OrbFeaturesSummary;
     driverMonitoring @59 :DriverMonitoring;
+    boot @60 :Boot;
   }
 }

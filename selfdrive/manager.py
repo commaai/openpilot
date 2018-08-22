@@ -93,9 +93,11 @@ managed_processes = {
   "boardd": ("selfdrive/boardd", ["./boardd"]),   # not used directly
   "pandad": "selfdrive.pandad",
   "ui": ("selfdrive/ui", ["./ui"]),
+  "calibrationd": "selfdrive.locationd.calibrationd",
   "visiond": ("selfdrive/visiond", ["./visiond"]),
   "sensord": ("selfdrive/sensord", ["./sensord"]),
   "gpsd": ("selfdrive/sensord", ["./gpsd"]),
+  "orbd": ("selfdrive/orbd", ["./orbd_wrapper.sh"]),
   "updated": "selfdrive.updated",
 }
 android_packages = ("ai.comma.plus.offroad", "ai.comma.plus.frame")
@@ -118,7 +120,6 @@ persistent_processes = [
   'uploader',
   'ui',
   'gpsd',
-  'ubloxd',
   'updated',
 ]
 
@@ -127,9 +128,11 @@ car_started_processes = [
   'loggerd',
   'sensord',
   'radard',
+  'calibrationd',
   'visiond',
   'proclogd',
-  'orbd',
+  'ubloxd',
+  'orbd'
 ]
 
 def register_managed_process(name, desc, car_started=False):
@@ -298,6 +301,9 @@ def manager_thread():
   cloudlog.info("manager start")
   cloudlog.info({"environ": os.environ})
 
+  # save boot log
+  subprocess.call(["./loggerd", "--bootlog"], cwd=os.path.join(BASEDIR, "selfdrive/loggerd"))
+
   for p in persistent_processes:
     start_managed_process(p)
 
@@ -464,7 +470,7 @@ def main():
   if params.get("IsUploadVideoOverCellularEnabled") is None:
     params.put("IsUploadVideoOverCellularEnabled", "1")
   if params.get("IsDriverMonitoringEnabled") is None:
-    params.put("IsDriverMonitoringEnabled", "0")
+    params.put("IsDriverMonitoringEnabled", "1")
   if params.get("IsGeofenceEnabled") is None:
     params.put("IsGeofenceEnabled", "-1")
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import numpy as np
 from common.kalman.simple_kalman import KF1D
-from cereal import car
+from cereal import car, log
 from common.numpy_fast import clip, interp
 from common.realtime import sec_since_boot
 from selfdrive.config import Conversions as CV
@@ -387,7 +387,7 @@ class CarInterface(object):
 
   # pass in a car.CarControl
   # to be called @ 100hz
-  def apply(self, c):
+  def apply(self, c, perception_state=log.Live20Data.new_message()):
     if c.hudControl.speedVisible:
       hud_v_cruise = c.hudControl.setSpeed * CV.MS_TO_KPH
     else:

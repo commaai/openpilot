@@ -20,8 +20,6 @@ a.out
 *.class
 *.pyxbldc
 *.vcd
-lane.cpp
-loc*.cpp
 config.json
 clcache
 
@@ -30,6 +28,7 @@ selfdrive/boardd/boardd
 selfdrive/logcatd/logcatd
 selfdrive/proclogd/proclogd
 selfdrive/ui/ui
+selfdrive/test/tests/plant/out
 /src/
 
 one
