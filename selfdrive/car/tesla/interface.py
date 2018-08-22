@@ -94,8 +94,7 @@ class CarInterface(object):
     ret.safetyModel = car.CarParams.SafetyModels.tesla
 
     ret.enableCamera = True
-    # ret.enableGasInterceptor = 0x201 in fingerprint
-    ret.enableGasInterceptor = False
+    ret.enableGasInterceptor = 0x551 in fingerprint
     print "ECU Camera Simulated: ", ret.enableCamera
     print "ECU Gas Interceptor: ", ret.enableGasInterceptor
 
@@ -111,7 +110,6 @@ class CarInterface(object):
     tireStiffnessRear_models = 90000
     # will create Kp and Ki for 0, 20, 40, 60 mph
     ret.steerKiBP, ret.steerKpBP = [[0., 8.94, 17.88, 26.82 ], [0., 8.94, 17.88, 26.82]]
-    #ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
     if candidate == CAR.MODELS:
       stop_and_go = True
       ret.mass = mass_models
@@ -120,8 +118,6 @@ class CarInterface(object):
       ret.steerRatio = 16.75
       # Kp and Ki for the lateral control for 0, 20, 40, 60 mph
       ret.steerKpV, ret.steerKiV = [[0.60, 0.40, 0.30, 0.15], [0.08, 0.06, 0.04, 0.02]]
-      #ret.steerKpV, ret.steerKiV = [[0.15], [0.02]]
-      #ret.steerKpV, ret.steerKiV = [[0.6], [0.1]]
       ret.steerKf = 0.00006 # Initial test value TODO: investigate FF steer control for Model S?
       ret.steerActuatorDelay = 0.09
       
