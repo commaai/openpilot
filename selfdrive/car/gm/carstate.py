@@ -4,7 +4,8 @@ from common.kalman.simple_kalman import KF1D
 from selfdrive.config import Conversions as CV
 from selfdrive.can.parser import CANParser
 from selfdrive.car.gm.values import DBC, CAR, parse_gear_shifter, \
-                                    CruiseButtons, is_eps_status_ok
+                                    CruiseButtons, is_eps_status_ok, \
+                                    STEER_THRESHOLD
 
 def get_powertrain_can_parser(CP, canbus):
   # this function generates lists for signal, messages and initial values
@@ -91,7 +92,7 @@ class CarState(object):
     self.user_gas_pressed = self.pedal_gas > 0
 
     self.steer_torque_driver = pt_cp.vl["PSCMStatus"]['LKADriverAppldTrq']
-    self.steer_override = abs(self.steer_torque_driver) > 1.0
+    self.steer_override = abs(self.steer_torque_driver) > STEER_THRESHOLD
 
     # 0 - inactive, 1 - active, 2 - temporary limited, 3 - failed
     self.lkas_status = pt_cp.vl["PSCMStatus"]['LKATorqueDeliveredStatus']

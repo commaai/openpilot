@@ -70,28 +70,26 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, int hardwired) {
 
 #endif
 
-// ***************************** honda can checksum *****************************
-
+// ***************************** tesla pedal checksum *****************************
+// tesla does checksum on a full octet but this is design for 4 bits checksum
+// so for tesla, we will add the two as in 0xAB = (A + B) & F
 int can_cksum(uint8_t *dat, int len, int addr, int idx) {
   int i;
   int s = 0;
+  s += ((addr)&0xFF) + ((addr>>8)&0xFF);
   for (i = 0; i < len; i++) {
-    s += (dat[i] >> 4); 
-    s += dat[i] & 0xF;
-  }
-  s += (addr>>0)&0xF;
-  s += (addr>>4)&0xF;
-  s += (addr>>8)&0xF;
-  s += idx;
-  s = 8-s;
-  return s&0xF;
+    s = (s + dat[i]) & 0xFF;
+   }
+   s = (s + idx) & 0xFF;
+   s = (((s>>4)&0xF) + (s&0xF)) & 0xF;
+   return s;
 }
 
 // ***************************** can port *****************************
 
 // addresses to be used on CAN
-#define CAN_GAS_INPUT  0x200
-#define CAN_GAS_OUTPUT 0x201
+#define CAN_GAS_INPUT  0x551
+#define CAN_GAS_OUTPUT 0x552
 
 void CAN1_TX_IRQHandler() {
   // clear interrupt

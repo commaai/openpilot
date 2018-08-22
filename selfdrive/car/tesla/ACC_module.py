@@ -197,7 +197,7 @@ class ACCController(object):
 
   # function to calculate the cruise button based on a safe follow distance
   def calc_follow_button(self, CS):
-    follow_time = 2.5 # in seconds
+    follow_time = 2.0 # in seconds
     current_time_ms = _current_time_millis()
      # Make sure we were able to populate lead_1.
     if self.lead_1 is None:
@@ -262,12 +262,12 @@ class ACCController(object):
         # Reduce speed significantly if lead_dist < 50% of safe dist, no matter
         # the rel_speed
         if CS.v_cruise_actual > full_press_kph:
-          if lead_dist < (safe_dist_m * 0.5):
+          if lead_dist < (safe_dist_m * 0.3) and rel_speed < 2:
             msg =  "50pct down"
             button = CruiseButtons.DECEL_2ND
           # Reduce speed significantly if lead_dist < 60% of  safe dist
           # and if the lead car isn't pulling away
-          elif lead_dist < (safe_dist_m * 0.7) and rel_speed < 0:
+          elif lead_dist < (safe_dist_m * 0.5) and rel_speed < 0:
             msg =  "70pct down"
             button = CruiseButtons.DECEL_SET
            #Reduce speed if rel_speed < -15kph so you don't rush up to lead car
@@ -284,8 +284,8 @@ class ACCController(object):
         ### Speed up ###
         # don't speed up again until you have more than a safe distance in front
         # only adjust every 2 sec
-        elif (lead_dist > safe_dist_m * 1.2 and half_press_kph < available_speed
-              and current_time_ms > self.automated_cruise_action_time + 2000):
+        elif ((lead_dist > (safe_dist_m * 0.8) or rel_speed > 5) and half_press_kph < available_speed
+              and current_time_ms > self.automated_cruise_action_time + 100):
           msg =  "120pct UP   half: ","{0:.1f}kph".format(half_press_kph), "  avail: {0:.1f}kph".format(available_speed)
           button = CruiseButtons.RES_ACCEL
 

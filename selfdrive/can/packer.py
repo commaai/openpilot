@@ -46,9 +46,17 @@ class CANPacker(object):
 
 
 if __name__ == "__main__":
-  cp = CANPacker("honda_civic_touring_2016_can_generated")
-  s = cp.pack_bytes(0x30c, [
-    ("PCM_SPEED", 123),
-    ("PCM_GAS", 10),
-  ])
+  ## little endian test
+  cp = CANPacker("hyundai_2015_ccan")
+  s = cp.pack_bytes(0x340, {
+    "CR_Lkas_StrToqReq": -0.06,
+    "CF_Lkas_FcwBasReq": 1,
+    "CF_Lkas_Chksum": 3,
+  })
+  # big endian test
+  #cp = CANPacker("honda_civic_touring_2016_can_generated")
+  #s = cp.pack_bytes(0xe4, {
+  #  "STEER_TORQUE": -2,
+  #})
+  print [hex(ord(v)) for v in s[1]]
   print(s[1].encode("hex"))

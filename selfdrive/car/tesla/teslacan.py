@@ -33,6 +33,15 @@ def add_tesla_checksum(msg_id,msg):
   checksum = (checksum + ord(msg[i])) & 0xFF
  return checksum
 
+def tesla_pedal_checksum(msg_id,msg,idx):
+ """Calculates the checksum for the data part of the Tesla message"""
+ checksum = ((msg_id) & 0xFF) + ((msg_id >> 8) & 0xFF)
+ for i in range(0,len(msg),1):
+   checksum = (checksum + ord(msg[i])) & 0xFF
+ checksum = ((checksum >> 4) & 0xF + checksum & 0xF) & 0xF
+ return checksum
+
+
 def create_steering_control(enabled, apply_steer, idx):
  """Creates a CAN message for the Tesla DBC DAS_steeringControl."""
  msg_id = 0x488

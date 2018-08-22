@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from cereal import car
+from cereal import car, log
 from common.realtime import sec_since_boot
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
@@ -308,7 +308,7 @@ class CarInterface(object):
 
   # pass in a car.CarControl
   # to be called @ 100hz
-  def apply(self, c):
+  def apply(self, c, perception_state=log.Live20Data.new_message()):
     hud_v_cruise = c.hudControl.setSpeed
     if hud_v_cruise > 70:
       hud_v_cruise = 0
