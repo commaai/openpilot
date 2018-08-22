@@ -205,6 +205,7 @@ class CarState(object):
 
     #BB variable for custom buttons
     self.cstm_btns = UIButtons(self,"Tesla Model S","tesla")
+    self.config_ui_buttons() #sets CC button based on pedal being present or not
 
     #BB custom message counter
     self.custom_alert_counter = -1 #set to 100 for 1 second display; carcontroller will take down to zero
@@ -237,12 +238,30 @@ class CarState(object):
   def init_ui_buttons(self):
     btns = []
     btns.append(UIButton("alca","ALC",0,""))
-    btns.append(UIButton("acc","ACC",0,"Mod OP"))
+    if self.CP.enableGasInterceptor:
+      btns.append(UIButton("pcc","PDL",0,"M"))
+    else:
+      btns.append(UIButton("acc","ACC",0,"Mod OP"))
     btns.append(UIButton("steer","STR",0,""))
     btns.append(UIButton("brake","BRK",1,""))
     btns.append(UIButton("msg","MSG",1,""))
     btns.append(UIButton("sound","SND",1,""))
     return btns
+   
+  def config_ui_buttons(self):
+    if self.CP.enableGasInterceptor:
+      btn = self.cstm_btns.get_button("acc")
+      if btn:
+        btn.btn_name = "pcc"
+        btn.btn_label = "PDL"
+        btn.btn_label2 = ""
+    else:
+      #we don't have gas interceptor
+      btn = self.cstm_btns.get_button("pcc")
+      if btn:
+        btn.btn_name = "acc"
+        btn.btn_label = "ACC"
+        btn.btn_label2 = "Mod OP"
 
   def update_ui_buttons(self,id,btn_status):
     if self.cstm_btns.btns[id].btn_status > 0:
