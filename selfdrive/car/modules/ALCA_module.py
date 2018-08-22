@@ -116,7 +116,7 @@ class ALCAController(object):
   def update_angle(self,enabled,CS,frame,actuators):
     # Basic highway lane change logic
     changing_lanes = CS.right_blinker_on or CS.left_blinker_on  
-    self.laneChange_steerr = CS.CP.steerRatio
+    #self.laneChange_steerr = CS.CP.steerRatio
     actuator_delta = 0.
     laneChange_angle = 0.
     turn_signal_needed = 0 # send 1 for left, 2 for right 0 for not needed
