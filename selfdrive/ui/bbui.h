@@ -2,6 +2,7 @@
 
 
 
+
 vec3 bb_car_space_to_full_frame(const  UIState *s, vec4 car_space_projective) {
   const UIScene *scene = &s->scene;
 
@@ -11,12 +12,13 @@ vec3 bb_car_space_to_full_frame(const  UIState *s, vec4 car_space_projective) {
 
   // The last entry is zero because of how we store E (to use matvecmul).
   const vec3 Ep = {{Ep4.v[0], Ep4.v[1], Ep4.v[2]}};
-  const vec3 KEp = matvecmul3(s->intrinsic_matrix, Ep);
+  const vec3 KEp = matvecmul3(intrinsic_matrix, Ep);
 
   // Project.
   const vec3 p_image = {{KEp.v[0] / KEp.v[2], KEp.v[1] / KEp.v[2], 1.}};
   return p_image;
 }
+
 
 void bb_ui_draw_vision_alert( UIState *s, int va_size, int va_color,
                                   const char* va_text1, const char* va_text2) {
@@ -71,6 +73,7 @@ void bb_ui_draw_vision_alert( UIState *s, int va_size, int va_color,
     nvgTextBox(s->vg, alr_x, alr_h-(longAlert1?300:360), alr_w-60, va_text2, NULL);
   }
 }
+
 
 
 void bb_ui_draw_car(  UIState *s) {

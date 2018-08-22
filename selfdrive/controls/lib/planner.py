@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 import os
 import zmq
-
-import numpy as np
 import math
+import numpy as np
+from copy import copy
+from cereal import log
 from collections import defaultdict
-
 from common.realtime import sec_since_boot
 from common.numpy_fast import interp
 import selfdrive.messaging as messaging
@@ -303,6 +303,7 @@ class Planner(object):
 
     self.last_gps_planner_plan = None
     self.gps_planner_active = False
+    self.perception_state = log.Live20Data.new_message()
 
   def choose_solution(self, v_cruise_setpoint, enabled):
     if enabled:
@@ -374,6 +375,7 @@ class Planner(object):
           self.PP.c_prob = 1.0
 
     if l20 is not None:
+      self.perception_state = copy(l20.live20)
       self.last_l20_ts = l20.logMonoTime
       self.last_l20 = cur_time
       self.radar_dead = False
