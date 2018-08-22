@@ -157,7 +157,7 @@ class CarController(object):
     # TODO verify units and see if we want apply_steer or apply_angle
 
     # frame is 100Hz (0.01s period)
-    if (frame % 10 == 0) or self.first_time:  # 0.1s period
+    if (frame + 3 % 10 == 0) or self.first_time:  # 0.1s period
       can_sends.append(create_2d9(self.car_fingerprint))
     if (frame % 25 == 0) or self.first_time or self.send_new_status:  # 0.25s period
       can_sends.append(create_2a6(

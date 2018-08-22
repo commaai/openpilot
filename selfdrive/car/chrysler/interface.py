@@ -68,8 +68,8 @@ class CarInterface(object):
     centerToFront_civic = wheelbase_civic * 0.4
     centerToRear_civic = wheelbase_civic - centerToFront_civic
     rotationalInertia_civic = 2500
-    tireStiffnessFront_civic = 85400
-    tireStiffnessRear_civic = 90000
+    tireStiffnessFront_civic = 85400 * 2.0
+    tireStiffnessRear_civic = 90000 * 2.0
 
     ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
     ret.safetyParam = 73  # see conversion factor for STEER_TORQUE_EPS in dbc file
