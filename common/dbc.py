@@ -4,7 +4,7 @@ import struct
 import bitstring
 import sys
 import numbers
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 
 def int_or_float(s):
   # return number, trying to maintain int format
@@ -28,6 +28,7 @@ class dbc(object):
     bo_regexp = re.compile(r"^BO\_ (\w+) (\w+) *: (\w+) (\w+)")
     sg_regexp = re.compile(r"^SG\_ (\w+) : (\d+)\|(\d+)@(\d+)([\+|\-]) \(([0-9.+\-eE]+),([0-9.+\-eE]+)\) \[([0-9.+\-eE]+)\|([0-9.+\-eE]+)\] \"(.*)\" (.*)")
     sgm_regexp = re.compile(r"^SG\_ (\w+) (\w+) *: (\d+)\|(\d+)@(\d+)([\+|\-]) \(([0-9.+\-eE]+),([0-9.+\-eE]+)\) \[([0-9.+\-eE]+)\|([0-9.+\-eE]+)\] \"(.*)\" (.*)")
+    val_regexp = re.compile(r"VAL\_ (\w+) (\w+) (\s*[-+]?[0-9]+\s+\".+?\"[^;]*)")
 
     # A dictionary which maps message ids to tuples ((name, size), signals).
     #   name is the ASCII name of the message.
@@ -35,6 +36,9 @@ class dbc(object):
     #   signals is a list signals contained in the message.
     # signals is a list of DBCSignal in order of increasing start_bit.
     self.msgs = {}
+
+    # A dictionary which maps message ids to a list of tuples (signal name, definition value pairs)
+    self.def_vals = defaultdict(list)
 
     # lookup to bit reverse each byte
     self.bits_index = [(i & ~0b111) + ((-i-1) & 0b111) for i in xrange(64)]
@@ -80,6 +84,30 @@ class dbc(object):
         self.msgs[ids][1].append(
           DBCSignal(sgname, start_bit, signal_size, is_little_endian,
                     is_signed, factor, offset, tmin, tmax, units))
+
+      if l.startswith("VAL_ "):
+        # new signal value/definition
+        dat = val_regexp.match(l)
+
+        if dat is None:
+          print "bad VAL", l
+        ids = int(dat.group(1), 0) # could be hex
+        sgname = dat.group(2)
+        defvals = dat.group(3)
+
+        defvals = defvals.replace("?","\?") #escape sequence in C++
+        defvals = defvals.split('"')[:-1]
+
+        defs = defvals[1::2]
+        #cleanup, convert to UPPER_CASE_WITH_UNDERSCORES
+        for i,d in enumerate(defs):
+          d = defs[i].strip().upper()
+          defs[i] = d.replace(" ","_")
+
+        defvals[1::2] = defs
+        defvals = '"'+"".join(str(i) for i in defvals)+'"'
+
+        self.def_vals[ids].append((sgname, defvals))
 
     for msg in self.msgs.viewvalues():
       msg[1].sort(key=lambda x: x.start_bit)

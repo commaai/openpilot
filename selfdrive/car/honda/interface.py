@@ -204,7 +204,7 @@ class CarInterface(object):
       ret.longitudinalKiBP = [0., 35.]
       ret.longitudinalKiV = [0.18, 0.12]
 
-    elif candidate == CAR.ACCORD:
+    elif candidate in (CAR.ACCORD, CAR.ACCORD_15):
       stop_and_go = True
       ret.safetyParam = 1 # Accord and CRV 5G use an alternate user brake msg
       ret.mass = 3279. * CV.LB_TO_KG + std_cargo
@@ -500,7 +500,7 @@ class CarInterface(object):
       events.append(create_event('wrongCarMode', [ET.NO_ENTRY, ET.USER_DISABLE]))
     if ret.gearShifter == 'reverse':
       events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
-    if self.CS.brake_hold:
+    if self.CS.brake_hold and self.CS.CP.carFingerprint not in HONDA_BOSCH:
       events.append(create_event('brakeHold', [ET.NO_ENTRY, ET.USER_DISABLE]))
     if self.CS.park_brake:
       events.append(create_event('parkBrake', [ET.NO_ENTRY, ET.USER_DISABLE]))
