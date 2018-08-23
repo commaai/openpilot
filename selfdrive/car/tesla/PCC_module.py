@@ -136,4 +136,4 @@ class PCCController(object):
     if (apply_gas > 0) and (self.enable_pedal_cruise):
       idx = self.pedal_idx
       self.pedal_idx = (self.pedal_idx + 1) % 16
-    return apply_gas.,self.enable_pedal_cruise,idx
+    return apply_gas,self.enable_pedal_cruise,idx
