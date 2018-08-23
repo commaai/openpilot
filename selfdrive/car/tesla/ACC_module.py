@@ -113,7 +113,7 @@ class ACCController(object):
     # Adaptive cruise control
     current_time_ms = _current_time_millis()
     if CruiseButtons.should_be_throttled(CS.cruise_buttons):
-        self.human_cruise_action_time = current_time_ms
+      self.human_cruise_action_time = current_time_ms
     button_to_press = None
     # The difference between OP's target speed and the current cruise
     # control speed, in KPH.
