@@ -69,8 +69,12 @@ def create_gas_command_msg(gasCommand, enable, idx):
   m1 = 0.050796813
   m2 = 0.101593626
   d = -22.85856576
-  int_gasCommand = int((gasCommand - d)/m2)
-  int_gasCommand2 = int((gasCommand - d)/m2)
+  if enable == 1:
+    int_gasCommand = int((gasCommand - d)/m1)
+    int_gasCommand2 = int((gasCommand - d)/m2)
+  else:
+    int_gasCommand = 0
+    int_gasCommand2 = 0
   msg = create_string_buffer(msg_len)
   struct.pack_into('BBBBB', msg, 0, (int_gasCommand >> 8) & 0xFF, int_gasCommand & 0xFF, \
       (int_gasCommand2 >> 8) & 0xFF, int_gasCommand2 & 0XFF,(enable << 7 + idx) & 0xFF)

@@ -1,6 +1,7 @@
 from selfdrive.services import service_list
 from selfdrive.car.tesla.values import AH, CruiseButtons, CAR
 from selfdrive.config import Conversions as CV
+from common.numpy_fast import clip
 import selfdrive.messaging as messaging
 import os
 import subprocess
@@ -51,12 +52,6 @@ class PCCController(object):
       self.enable_pedal_cruise = False
       CS.UE.custom_alert_message(3,"PDL Disabled",150,4)
       CS.cstm_btns.set_button_status("pedal",1)
-    # set the cruise speed to be picked up by longcontrol
-    if self.enable_pedal_cruise:
-      CS.cruiseState.enabled = True
-      CS.cruiseState.speed = self.pedal_speed_kph * CV.KPH_TO_MS
-    else:
-      CS.cruiseState.enabled = False
     # process any stalk movement
     curr_time_ms = _current_time_millis()
     adaptive_cruise_prev = self.enable_pedal_cruise
@@ -129,11 +124,10 @@ class PCCController(object):
   def update_pdl(self,enabled,CS,frame,actuators,pcm_speed):
     #Pedal cruise control
     #if no hardware present, return -1
-    if not self.pedal_hardware_present:
-      return 0.,False,-1
+    idx = self.pedal_idx
+    self.pedal_idx = (self.pedal_idx + 1) % 16
+    if not self.pedal_hardware_present or not enabled:
+      return 0.,0,idx
     apply_gas = clip(actuators.gas, 0., 1.) if self.enable_pedal_cruise else 0.
-    idx = -1
-    if (apply_gas > 0) and (self.enable_pedal_cruise):
-      idx = self.pedal_idx
-      self.pedal_idx = (self.pedal_idx + 1) % 16
-    return apply_gas,self.enable_pedal_cruise,idx
+    enable_gas = 1 if self.enable_pedal_cruise else 0
+    return apply_gas,enable_gas,idx

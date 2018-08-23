@@ -140,6 +140,7 @@ def get_epas_can_signals(CP):
       ("INTERCEPTOR_GAS", "GAS_SENSOR", 0),
       ("INTERCEPTOR_GAS2", "GAS_SENSOR", 0),
       ("STATE", "GAS_SENSOR", 0),
+      ("IDX", "GAS_SENSOR", 0),
   ]
 
   checks = [
@@ -333,6 +334,8 @@ class CarState(object):
     # this is a hack for the interceptor. This is now only used in the simulation
     # TODO: Replace tests by toyota so this can go away
     self.user_gas = epas_cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS']
+    self.user_gas_state = epas_cp.vl["GAS_SENSOR"]['IDX']
+    print self.user_gas_state
     self.user_gas_pressed = self.user_gas > 5 # this works because interceptor read < 0 when pedal position is 0. Once calibrated, this will change
     #a = epas_cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS']
     #b = epas_cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS2']

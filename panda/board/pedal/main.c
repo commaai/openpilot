@@ -133,7 +133,7 @@ void CAN1_RX0_IRQHandler() {
       uint16_t value_0 = (dat[0] << 8) | dat[1];
       uint16_t value_1 = (dat[2] << 8) | dat[3];
       uint8_t enable = (dat2[0] >> 7) & 1;
-      uint8_t index = (dat2[0] >> 4) & 0xF;
+      uint8_t index = (dat2[0] ) & 0xF;
       if (can_cksum(dat, 5, CAN_GAS_INPUT) == (dat2[1] & 0xFF)) {
         if (((current_index+1)&0xF) == index) {
           #ifdef DEBUG
