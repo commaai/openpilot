@@ -55,11 +55,11 @@ class UIButtons:
         self.btn_map = {}
         self.last_in_read_time = datetime.min 
         if not self.read_buttons_out_file():
-            #there is no file, create it
+            # there is no file, create it
             self.btns = self.CS.init_ui_buttons()
-            self._map_buttons(self.btns)
+            self.btn_map = self._map_buttons(self.btns)
             self.write_buttons_out_file()
-        #send events to initiate UI
+        # send events to initiate UI
         self.isLive = True
         self.send_button_info()
         self.CS.UE.uiSetCarEvent(self.car_folder, self.car_name)
@@ -78,7 +78,7 @@ class UIButtons:
 
     def set_button_status(self, btn_name, btn_status):
         btn = self.get_button(btn_name)
-        if btn:
+        if btn and btn.btn_status != btn_status:
             btn.btn_status = btn_status
             self.CS.UE.uiButtonInfoEvent(btn.btn_index,
                                          btn.btn_name,
@@ -88,13 +88,14 @@ class UIButtons:
             self.write_buttons_out_file()
 
     def set_button_status_from_ui(self, id, btn_status):
-        self.CS.update_ui_buttons(id, btn_status)
-        self.CS.UE.uiButtonInfoEvent(id,
-                                     self.btns[id].btn_name,
-                                     self.btns[id].btn_label,
-                                     self.btns[id].btn_status,
-                                     self.btns[id].btn_label2)
-        self.write_buttons_out_file()
+        if self.btns[id].btn_status != btn_status:
+            self.CS.update_ui_buttons(id, btn_status)
+            self.CS.UE.uiButtonInfoEvent(id,
+                                         self.btns[id].btn_name,
+                                         self.btns[id].btn_label,
+                                         self.btns[id].btn_status,
+                                         self.btns[id].btn_label2)
+            self.write_buttons_out_file()
         
 
     def get_button_label2(self, btn_name):
