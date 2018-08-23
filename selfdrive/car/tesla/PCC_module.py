@@ -27,7 +27,8 @@ class PCCController(object):
     self.prev_steering_wheel_stalk = None
     self.prev_cruise_buttons = CruiseButtons.IDLE
     self.prev_cruise_setting = CruiseButtons.IDLE
-    self.pedal_hardware_present = True
+    self.pedal_hardware_present = False
+    self.pedal_hardware_first_check = True
     self.pedal_speed_kph = 0.
 
   #function to calculate the desired cruise speed based on a safe follow distance
@@ -141,6 +142,13 @@ class PCCController(object):
     # Check if the cruise stalk was double pulled, indicating that adaptive
     # cruise control should be enabled. Twice in .75 seconds counts as a double
     # pull.
+    if (CS.user_gas >= 0 ) and (not self.pedal_hardware_present) and (self.pedal_hardware_first_check):
+      self.pedal_hardware_present = True
+      CS.config_ui_buttons()
+      self.pedal_hardware_first_check = False
+    if (not self.pedal_hardware_present) and (self.pedal_hardware_first_check):
+      self.pedal_hardware_first_check = False
+      return
     curr_time_ms = _current_time_millis()
     adaptive_cruise_prev = self.enable_pedal_cruise
     speed_uom = 1.

@@ -62,13 +62,18 @@ def create_epb_enable_signal(idx):
   struct.pack_into('B', msg, msg_len-1, add_tesla_checksum(msg_id,msg))
   return [msg_id, 0, msg.raw, 2]
 
-def create_gas_command_msg(gasCommand, gasCommand2, status,idx):
+def create_gas_command_msg(gasCommand, enable, idx):
   """Create GAS_COMMAND (0x551) message to comma pedal"""
   msg_id = 0x551
   msg_len = 6
+  m1 = 0.050796813
+  m2 = 0.101593626
+  d = -22.85856576
+  int_gasCommand = int((gasCommand - d)/m2)
+  int_gasCommand2 = int((gasCommand - d)/m2)
   msg = create_string_buffer(msg_len)
-  struct.pack_into('BBBBB', msg, 0, (gasCommand >> 8) & 0xFF, gasCommand & 0xFF, \
-      (gasCommand2 >> 8) & 0xFF, gasCommand2 & 0XFF,(idx << 4 + status) & 0xFF)
+  struct.pack_into('BBBBB', msg, 0, (int_gasCommand >> 8) & 0xFF, int_gasCommand & 0xFF, \
+      (int_gasCommand2 >> 8) & 0xFF, int_gasCommand2 & 0XFF,(enable << 7 + idx) & 0xFF)
   struct.pack_into('B', msg, msg_len-1, add_tesla_checksum(msg_id,msg))
   return [msg_id, 0, msg.raw, 2]    
   

@@ -205,7 +205,6 @@ class CarState(object):
 
     #BB variable for custom buttons
     self.cstm_btns = UIButtons(self,"Tesla Model S","tesla")
-    self.config_ui_buttons() #sets CC button based on pedal being present or not
 
     #BB custom message counter
     self.custom_alert_counter = -1 #set to 100 for 1 second display; carcontroller will take down to zero
@@ -332,9 +331,11 @@ class CarState(object):
 
     # this is a hack for the interceptor. This is now only used in the simulation
     # TODO: Replace tests by toyota so this can go away
-    self.user_gas = 0 #for now
+    self.user_gas = epas_cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS']
     self.user_gas_pressed = self.user_gas > 0 # this works because interceptor read < 0 when pedal position is 0. Once calibrated, this will change
-
+    a = epas_cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS']
+    b = epas_cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS2']
+    print a,b
     can_gear_shifter = cp.vl["DI_torque2"]['DI_gear']
     self.gear = 0 # JCT
     self.angle_steers  = -(cp.vl["STW_ANGLHP_STAT"]['StW_AnglHP']) #JCT polarity reversed from Honda/Acura
