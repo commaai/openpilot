@@ -238,7 +238,7 @@ class CarState(object):
     btns = []
     btns.append(UIButton("alca","ALC",0,""))
     if self.CP.enableGasInterceptor:
-      btns.append(UIButton("pcc","PDL",0,"M"))
+      btns.append(UIButton("pedal","PDL",0,"M"))
     else:
       btns.append(UIButton("acc","ACC",0,"Mod OP"))
     btns.append(UIButton("steer","STR",0,""))
@@ -247,16 +247,17 @@ class CarState(object):
     btns.append(UIButton("sound","SND",1,""))
     return btns
    
-  def config_ui_buttons(self):
-    if self.CP.enableGasInterceptor:
+  def config_ui_buttons(self,pedalPresent):
+    self.CP.enableGasInterceptor = pedalPresent
+    if pedalPresent:
       btn = self.cstm_btns.get_button("acc")
       if btn:
-        btn.btn_name = "pcc"
+        btn.btn_name = "pedal"
         btn.btn_label = "PDL"
-        btn.btn_label2 = ""
+        btn.btn_label2 = "";
     else:
       #we don't have gas interceptor
-      btn = self.cstm_btns.get_button("pcc")
+      btn = self.cstm_btns.get_button("pedal")
       if btn:
         btn.btn_name = "acc"
         btn.btn_label = "ACC"
@@ -332,10 +333,10 @@ class CarState(object):
     # this is a hack for the interceptor. This is now only used in the simulation
     # TODO: Replace tests by toyota so this can go away
     self.user_gas = epas_cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS']
-    self.user_gas_pressed = self.user_gas > 0 # this works because interceptor read < 0 when pedal position is 0. Once calibrated, this will change
-    a = epas_cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS']
-    b = epas_cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS2']
-    print a,b
+    self.user_gas_pressed = self.user_gas > 5 # this works because interceptor read < 0 when pedal position is 0. Once calibrated, this will change
+    #a = epas_cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS']
+    #b = epas_cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS2']
+    #print a,b
     can_gear_shifter = cp.vl["DI_torque2"]['DI_gear']
     self.gear = 0 # JCT
     self.angle_steers  = -(cp.vl["STW_ANGLHP_STAT"]['StW_AnglHP']) #JCT polarity reversed from Honda/Acura

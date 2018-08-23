@@ -142,12 +142,14 @@ class PCCController(object):
     # Check if the cruise stalk was double pulled, indicating that adaptive
     # cruise control should be enabled. Twice in .75 seconds counts as a double
     # pull.
-    if (CS.user_gas >= 0 ) and (not self.pedal_hardware_present) and (self.pedal_hardware_first_check):
+    if (CS.brake_pressed) and (CS.user_gas >= 0 ) and (not self.pedal_hardware_present) and (self.pedal_hardware_first_check):
       self.pedal_hardware_present = True
-      CS.config_ui_buttons()
+      CS.config_ui_buttons(True)
       self.pedal_hardware_first_check = False
-    if (not self.pedal_hardware_present) and (self.pedal_hardware_first_check):
+    if (CS.brake_pressed) and (not self.pedal_hardware_present) and (self.pedal_hardware_first_check):
       self.pedal_hardware_first_check = False
+      CS.config_ui_buttons(False)
+    if not self.pedal_hardware_present:
       return
     curr_time_ms = _current_time_millis()
     adaptive_cruise_prev = self.enable_pedal_cruise
