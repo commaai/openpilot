@@ -248,7 +248,7 @@ class CarState(object):
               self.cstm_btns.btns[id].btn_label2 = "Mod JJ"
           else:
               self.cstm_btns.btns[id].btn_label2 = "Mod OP"
-          self.cstm_btns.write_buttons_labels_to_file()
+          self.cstm_btns.write_buttons_out_file()
       else:
           self.cstm_btns.btns[id].btn_status = btn_status * self.cstm_btns.btns[id].btn_status
     else:
