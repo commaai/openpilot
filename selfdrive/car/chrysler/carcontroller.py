@@ -54,6 +54,7 @@ class CarController(object):
     self.last_steer = 0
     self.last_angle = 0
     self.send_new_status = False
+    self.prev_2a6 = 0
     self.accel_steady = 0.
     self.car_fingerprint = car_fingerprint
     self.alert_active = False
@@ -159,10 +160,15 @@ class CarController(object):
     # frame is 100Hz (0.01s period)
     if (frame + 3 % 10 == 0) or self.first_time:  # 0.1s period
       can_sends.append(create_2d9(self.car_fingerprint))
-    if (frame % 25 == 0) or self.first_time or self.send_new_status:  # 0.25s period
+    if self.first_time or (((frame + 13 % 25 == 0) or self.send_new_status) and
+                           ((frame - self.prev_2a6) > 10)):  # 0.25s period
+      # must have been at least 100ms (10 frames) since last 2a6.
       can_sends.append(create_2a6(
         CS.gear_shifter, apply_steer, moving_fast, self.car_fingerprint))
       self.send_new_status = False
+      self.prev_2a6 = frame
+    elif self.send_new_status:  # only gets here if prev_2a6 check failed.
+      apply_steer = 0  # cannot steer yet, waiting for 2a6 to be sent.
     new_msg = create_292(int(apply_steer * CAR_UNITS_PER_DEGREE), frame, moving_fast)
     can_sends.append(new_msg)  # degrees * 5.1 -> car steering units
     for msg in can_sends:
