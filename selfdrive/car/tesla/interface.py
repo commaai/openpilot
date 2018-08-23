@@ -123,9 +123,9 @@ class CarInterface(object):
       
       # Kp and Ki for the longitudinal control
       ret.longitudinalKpBP = [0., 5., 35.]
-      ret.longitudinalKpV = [3.6, 2.4, 1.5]
+      ret.longitudinalKpV = [1.2 , 0.8, 0.5]
       ret.longitudinalKiBP = [0., 35.]
-      ret.longitudinalKiV = [0.54, 0.36]
+      ret.longitudinalKiV = [0.18, 0.12]
     else:
       raise ValueError("unsupported car %s" % candidate)
 
@@ -158,7 +158,7 @@ class CarInterface(object):
     ret.steerMaxV = [17.,17.]   # max steer allowed
 
     ret.gasMaxBP = [0.]  # m/s
-    ret.gasMaxV = [0.6] #if ret.enableGasInterceptor else [0.] # max gas allowed
+    ret.gasMaxV = [0.3] #if ret.enableGasInterceptor else [0.] # max gas allowed
     ret.brakeMaxBP = [5., 20.]  # m/s
     ret.brakeMaxV = [1., 0.8]   # max brake allowed
 
