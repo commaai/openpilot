@@ -232,12 +232,12 @@ class CarState(object):
 
   def init_ui_buttons(self):
     btns = []
-    btns.append(UIButton("alca","ALC",0,""))
-    btns.append(UIButton("acc","ACC",0,"Mod OP"))
-    btns.append(UIButton("steer","STR",0,""))
-    btns.append(UIButton("brake","BRK",1,""))
-    btns.append(UIButton("msg","MSG",1,""))
-    btns.append(UIButton("sound","SND",1,""))
+    btns.append(UIButton("alca", "ALC", 0, "", 0))
+    btns.append(UIButton("acc", "ACC", 0, "Mod OP", 1))
+    btns.append(UIButton("steer", "STR", 0, "", 2))
+    btns.append(UIButton("brake", "BRK", 1, "", 3))
+    btns.append(UIButton("msg", "MSG", 1, "", 4))
+    btns.append(UIButton("sound", "SND", 1, "", 5))
     return btns
 
   def update_ui_buttons(self,id,btn_status):
