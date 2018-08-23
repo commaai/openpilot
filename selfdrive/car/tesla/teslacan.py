@@ -66,6 +66,7 @@ def create_gas_command_msg(gasCommand, enable, idx):
   """Create GAS_COMMAND (0x551) message to comma pedal"""
   msg_id = 0x551
   msg_len = 6
+  msg = create_string_buffer(msg_len)
   m1 = 0.050796813
   m2 = 0.101593626
   d = -22.85856576
@@ -77,7 +78,7 @@ def create_gas_command_msg(gasCommand, enable, idx):
     int_gasCommand2 = 0
   msg = create_string_buffer(msg_len)
   struct.pack_into('BBBBB', msg, 0, (int_gasCommand >> 8) & 0xFF, int_gasCommand & 0xFF, \
-      (int_gasCommand2 >> 8) & 0xFF, int_gasCommand2 & 0XFF,(enable << 7 + idx) & 0xFF)
+      (int_gasCommand2 >> 8) & 0xFF, int_gasCommand2 & 0XFF,((enable << 7) + idx) & 0xFF)
   struct.pack_into('B', msg, msg_len-1, add_tesla_checksum(msg_id,msg))
   return [msg_id, 0, msg.raw, 2]    
   
