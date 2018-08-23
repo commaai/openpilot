@@ -164,7 +164,7 @@ class CarController(object):
     # Update ACC module info.
     self.ACC.update_stat(CS, True)
     #update PCC module info
-    self.PCC.update_stat(CS, True)
+    self.PCC.update_stat(CS, True, sendcan)
     # Update HSO module info.
     human_control = False
 
@@ -265,7 +265,7 @@ class CarController(object):
             real_steering_wheel_stalk=CS.steering_wheel_stalk)
           # Send this CAN msg first because it is racing against the real stalk.
           can_sends.insert(0, cruise_msg)
-      if (frame % 2) == 0:
+      if (frame % 2) == 0 and self.PCC.pedal_hardware_present:
         apply_gas,gas_needed,gas_idx = self.PCC.update_pdl(enabled,CS,frame,actuators,pcm_speed)
         gas_msg = teslacan.create_gas_command_msg(apply_gas * 112.,gas_needed ,gas_idx)
         can_sends.insert(0, gas_msg)

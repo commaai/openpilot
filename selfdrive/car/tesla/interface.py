@@ -158,9 +158,9 @@ class CarInterface(object):
     ret.steerMaxV = [17.,17.]   # max steer allowed
 
     ret.gasMaxBP = [0.]  # m/s
-    ret.gasMaxV = [0.3] #if ret.enableGasInterceptor else [0.] # max gas allowed
+    ret.gasMaxV = [0.6] #if ret.enableGasInterceptor else [0.] # max gas allowed
     ret.brakeMaxBP = [5., 20.]  # m/s
-    ret.brakeMaxV = [1., 0.8]   # max brake allowed
+    ret.brakeMaxV = [1., 1.]   # max brake allowed - BB: since we are using regen, make this even
 
     ret.longPidDeadzoneBP = [0.]
     ret.longPidDeadzoneV = [0.]

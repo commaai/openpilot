@@ -109,6 +109,7 @@ def get_can_signals(CP):
       ("WprSw6Posn", "STW_ACTN_RQ", 0),
       ("MC_STW_ACTN_RQ", "STW_ACTN_RQ", 0),
       ("CRC_STW_ACTN_RQ", "STW_ACTN_RQ", 0),
+      ("DI_regenLight", "DI_state",0),
       
   ]
 
@@ -203,6 +204,9 @@ class CarState(object):
 
     #BB UIEvents
     self.UE = UIEvents(self)
+
+    #BB PCC
+    self.regenLight = 0
 
     #BB variable for custom buttons
     self.cstm_btns = UIButtons(self,"Tesla Model S","tesla")
@@ -377,6 +381,7 @@ class CarState(object):
     self.standstill = cp.vl["DI_torque2"]['DI_vehicleSpeed'] == 0
     self.pcm_acc_status = cp.vl["DI_state"]['DI_cruiseState']
     self.imperial_speed_units = cp.vl["DI_state"]['DI_speedUnits'] == 0
+    self.regenLight = cp.vl["DI_state"]['DI_regenLight'] == 1
 
     if self.imperial_speed_units:
       self.v_cruise_actual = (cp.vl["DI_state"]['DI_cruiseSet'])*CV.MPH_TO_KPH # Reported in MPH, expected in KPH??
