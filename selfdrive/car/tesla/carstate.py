@@ -248,13 +248,13 @@ class CarState(object):
     return btns
    
   def config_ui_buttons(self,pedalPresent):
-    self.CP.enableGasInterceptor = pedalPresent
+    #self.CP.enableGasInterceptor = pedalPresent
     if pedalPresent:
       btn = self.cstm_btns.get_button("acc")
       if btn:
         btn.btn_name = "pedal"
         btn.btn_label = "PDL"
-        btn.btn_label2 = "";
+        btn.btn_label2 = ""
     else:
       #we don't have gas interceptor
       btn = self.cstm_btns.get_button("pedal")
