@@ -263,6 +263,21 @@ class DBWriter(DBAccessor):
       self._lock = None
 
 
+def read_db_fast(params_path, key):
+  path = "%s/d/%s" % (params_path, key)
+  try:
+    with open(path, "rb") as f:
+      return f.read()
+  except IOError:
+    return None
+
+def write_db_fast(params_path, key, value):
+  tmp_path = tempfile.mktemp(prefix=".tmp", dir=params_path)
+  with open(tmp_path, "wb") as f:
+    f.write(value)
+
+  path = "%s/d/%s" % (params_path, key)
+  os.rename(tmp_path, path)
 
 class JSDB(object):
   def __init__(self, fn):
@@ -276,6 +291,7 @@ class JSDB(object):
 
 class Params(object):
   def __init__(self, db='/data/params'):
+    self.db = db
     self.env = JSDB(db)
 
   def _clear_keys_with_type(self, tx_type):
@@ -313,6 +329,19 @@ class Params(object):
 
     with self.env.begin(write=True) as txn:
       txn.put(key, dat)
+
+  def get_fast(self, key):
+    if key not in keys:
+      raise UnknownKeyName(key)
+
+    return read_db_fast(self.db, key)
+
+  def put_fast(self, key, dat):
+    if key not in keys:
+      raise UnknownKeyName(key)
+
+    return write_db_fast(self.db, key, dat)
+
 
 if __name__ == "__main__":
   params = Params()

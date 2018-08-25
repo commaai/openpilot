@@ -146,7 +146,7 @@ class Calibrator(object):
           self.vp = self.vp_unfilt
         if self.param_put:
           cal_params = {"vanishing_point": list(self.vp), "angle_offset2": self.angle_offset}
-          self.params.put("CalibrationParams", json.dumps(cal_params))
+          self.params.put_fast("CalibrationParams", json.dumps(cal_params))
       return self.vp_unfilt
 
   def parse_orb_features(self, log):
