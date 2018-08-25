@@ -116,9 +116,9 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, idx):
   # Clarity sends longitudinal control and UI messages to bus 0 and 2.
   if car_fingerprint == CAR.CLARITY:
     commands.append(packer.make_can_msg('LKAS_HUD', 2, lkas_hud_values, idx))
-  # commands.append(packer.make_can_msg('LKAS_HUD', bus, lkas_hud_values, idx))
+    commands.append(packer.make_can_msg('HIGHBEAM_CONTROL', 2, {'HIGHBEAMS_ON': False}, idx))
 
-  if car_fingerprint in (CAR.CIVIC, CAR.ODYSSEY, CAR.CLARITY):
+  if car_fingerprint in (CAR.CIVIC, CAR.ODYSSEY):
     commands.append(packer.make_can_msg('HIGHBEAM_CONTROL', 0, {'HIGHBEAMS_ON': False}, idx))
 
     radar_hud_values = {
