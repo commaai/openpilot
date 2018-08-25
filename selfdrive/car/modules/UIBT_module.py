@@ -4,6 +4,7 @@ from ctypes import create_string_buffer
 import os
 import pickle
 from datetime import datetime
+from Queue import Queue
 import threading
 import time
 
@@ -18,24 +19,26 @@ class UIButton:
 
 
 class UIButtons:
-    def write_buttons_out_file(self):
+    
+    def _write_buttons_worker(self):
         """ Write button file in a non-blocking manner.
         The button file is used to resume settings after a reboot. It is not
         time sensitive or critical. So do these writes in a separate thread,
         allowing the main control loop to continue unblocked.
     
         """
-        thread = threading.Thread(target=self._write_buttons_blocking,
-                                  args=(time.time()))
-        thread.start()
+        while True:
+            if self.last_written_btns != self.btns:
+                self._write_buttons()
+            else:
+                time.sleep(1)
             
-    def _write_buttons_blocking(self, nonce):
+    def _write_buttons(self):
         try:
             with self.file_lock:
-                if nonce > self.file_nonce:
-                    with open(self.buttons_status_out_path, "wb") as fo:
-                        pickle.dump(self.btns, fo)
-                    self.file_nonce = nonce
+                self.last_written_btns = self.btns.copy()
+                with open(self.buttons_status_out_path, "wb") as fo:
+                    pickle.dump(self.last_written_btns, fo)
         except Exception as e:
             print "Failed to write button file %s" % self.buttons_status_out_path
             print str(e)
@@ -75,15 +78,14 @@ class UIButtons:
             # there is no file, create it
             self.btns = self.CS.init_ui_buttons()
             self.btn_map = self._map_buttons(self.btns)
-            self.write_buttons_out_file()
         # send events to initiate UI
         self.isLive = True
         self.send_button_info()
         self.CS.UE.uiSetCarEvent(self.car_folder, self.car_name)
         # TODO: a rwlock would perform better (allowing parallel reads)
         self.file_lock = threading.Lock()
-        # An ever-increasing count to ensure writes don't happen out of order.
-        self.file_nonce = -1
+        self.last_written_btns = []
+        threading.Thread(target = self._write_buttons_worker).start()
 
     def get_button(self, btn_name):
         if btn_name in self.btn_map:
