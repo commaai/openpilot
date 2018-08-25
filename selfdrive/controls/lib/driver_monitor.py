@@ -102,7 +102,7 @@ class DriverStatus():
     # don't check for param too often as it's a kernel call
     ts = sec_since_boot()
     if ts - self.ts_last_check > 1.:
-      self.monitor_param_on = params.get("IsDriverMonitoringEnabled") == "1"
+      self.monitor_param_on = params.get_fast("IsDriverMonitoringEnabled") == "1"
       self.ts_last_check = ts
 
     self.monitor_valid = _monitor_hysteresys(self.variance_level, monitor_valid_prev)
