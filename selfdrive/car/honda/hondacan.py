@@ -54,7 +54,7 @@ def create_brake_command(packer, apply_brake, pcm_override, pcm_cancel_cmd, chim
   # Send clarity on bus 2 as well.
   if car_fingerprint == CAR.CLARITY:
     commands.append(packer.make_can_msg("BRAKE_COMMAND", 2, values, idx))
-  commands.append(packer.make_can_msg("BRAKE_COMMAND", 0, values, idx))
+  # commands.append(packer.make_can_msg("BRAKE_COMMAND", 0, values, idx))
   return commands
 
 
@@ -104,7 +104,7 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, idx):
     # Clarity sends longitudinal control and UI messages to bus 0 and 2.
     if car_fingerprint == CAR.CLARITY:
       commands.append(packer.make_can_msg("ACC_HUD", 2, acc_hud_values, idx))
-    commands.append(packer.make_can_msg("ACC_HUD", 0, acc_hud_values, idx))
+    # commands.append(packer.make_can_msg("ACC_HUD", 0, acc_hud_values, idx))
 
   lkas_hud_values = {
     'SET_ME_X41': 0x41,
@@ -116,7 +116,7 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, idx):
   # Clarity sends longitudinal control and UI messages to bus 0 and 2.
   if car_fingerprint == CAR.CLARITY:
     commands.append(packer.make_can_msg('LKAS_HUD', 2, lkas_hud_values, idx))
-  commands.append(packer.make_can_msg('LKAS_HUD', bus, lkas_hud_values, idx))
+  # commands.append(packer.make_can_msg('LKAS_HUD', bus, lkas_hud_values, idx))
 
   if car_fingerprint in (CAR.CIVIC, CAR.ODYSSEY, CAR.CLARITY):
     commands.append(packer.make_can_msg('HIGHBEAM_CONTROL', 0, {'HIGHBEAMS_ON': False}, idx))
