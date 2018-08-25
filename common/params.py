@@ -292,6 +292,11 @@ class Params(object):
   def __init__(self, db='/data/params'):
     self.db = db
 
+    # create the database if it doesn't exist...
+    if not os.path.exists(self.db+"/d"):
+      with self.transaction(write=True):
+        pass
+
   def transaction(self, write=False):
     if write:
       return DBWriter(self.db)
