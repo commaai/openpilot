@@ -4,6 +4,8 @@ from ctypes import create_string_buffer
 import os
 import pickle
 from datetime import datetime
+import threading
+import time
 
 
 class UIButton:
@@ -17,9 +19,23 @@ class UIButton:
 
 class UIButtons:
     def write_buttons_out_file(self):
+        """ Write button file in a non-blocking manner.
+        The button file is used to resume settings after a reboot. It is not
+        time sensitive or critical. So do these writes in a separate thread,
+        allowing the main control loop to continue unblocked.
+    
+        """
+        thread = threading.Thread(target=self._write_buttons_blocking,
+                                  args=(time.time()))
+        thread.start()
+            
+    def _write_buttons_blocking(self, nonce):
         try:
-            with open(self.buttons_status_out_path, "wb") as fo:
-                pickle.dump(self.btns, fo)
+            with self.file_lock:
+                if nonce > self.file_nonce:
+                    with open(self.buttons_status_out_path, "wb") as fo:
+                        pickle.dump(self.btns, fo)
+                    self.file_nonce = nonce
         except Exception as e:
             print "Failed to write button file %s" % self.buttons_status_out_path
             print str(e)
@@ -27,9 +43,10 @@ class UIButtons:
     def read_buttons_out_file(self):
         if os.path.exists(self.buttons_status_out_path):
             try:
-                with open(self.buttons_status_out_path, "rb") as fo:
-                    self.btns = pickle.load(fo)
-                    self.btn_map = self._map_buttons(self.btns)
+                with self.file_lock:
+                    with open(self.buttons_status_out_path, "rb") as fo:
+                        self.btns = pickle.load(fo)
+                        self.btn_map = self._map_buttons(self.btns)
                 return True
             except Exception as e:
                 print "Failed to read button file %s" % self.buttons_status_out_path
@@ -63,6 +80,10 @@ class UIButtons:
         self.isLive = True
         self.send_button_info()
         self.CS.UE.uiSetCarEvent(self.car_folder, self.car_name)
+        # TODO: a rwlock would perform better (allowing parallel reads)
+        self.file_lock = threading.Lock()
+        # An ever-increasing count to ensure writes don't happen out of order.
+        self.file_nonce = -1
 
     def get_button(self, btn_name):
         if btn_name in self.btn_map:
