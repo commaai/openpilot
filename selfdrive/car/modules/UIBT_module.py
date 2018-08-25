@@ -28,7 +28,7 @@ class UIButtons:
     
         """
         while True:
-            if self.last_written_btns != self.btns:
+            if self.btns != self.last_written_btns:
                 self._write_buttons()
             else:
                 time.sleep(1)
@@ -108,7 +108,6 @@ class UIButtons:
                                          btn.btn_label,
                                          btn.btn_status,
                                          btn.btn_label2)
-            self.write_buttons_out_file()
 
     def set_button_status_from_ui(self, id, btn_status):
         if self.btns[id].btn_status != btn_status:
@@ -118,7 +117,6 @@ class UIButtons:
                                          self.btns[id].btn_label,
                                          self.btns[id].btn_status,
                                          self.btns[id].btn_label2)
-            self.write_buttons_out_file()
         
 
     def get_button_label2(self, btn_name):
