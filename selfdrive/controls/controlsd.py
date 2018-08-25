@@ -122,7 +122,8 @@ def data_sample(CI, CC, thermal, calibration, health, driver_monitor, gps_locati
 
 def calc_plan(CS, CP, events, PL, LaC, LoC, v_cruise_kph, driver_status, geofence):
    # plan runs always, independently of the state
-   force_decel = driver_status.awareness < 0. or (geofence is not None and not geofence.in_geofence)
+   # BB to test pedal; removed any other issues that could have slowed down the car
+   force_decel = False #driver_status.awareness < 0. or (geofence is not None and not geofence.in_geofence)
    plan_packet = PL.update(CS, LaC, LoC, v_cruise_kph, force_decel)
    plan = plan_packet.plan
    plan_ts = plan_packet.logMonoTime

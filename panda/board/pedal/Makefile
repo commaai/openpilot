@@ -19,14 +19,14 @@ CERT = ../../certs/debug
 CFLAGS += "-DALLOW_DEBUG"
 
 canflash: obj/$(PROJ_NAME).bin
-	../../tests/pedal/enter_canloader.py $<
+	../../tests/pedal/enter_canloader_tesla.py $<
 
 usbflash: obj/$(PROJ_NAME).bin
-	../../tests/pedal/enter_canloader.py; sleep 0.5
+	../../tests/pedal/enter_canloader_tesla.py; sleep 0.5
 	PYTHONPATH=../../ python -c "from python import Panda; p = [x for x in [Panda(x) for x in Panda.list()] if x.bootstub]; assert(len(p)==1); p[0].flash('obj/$(PROJ_NAME).bin', reconnect=False)"
 
 recover: obj/bootstub.bin obj/$(PROJ_NAME).bin
-	../../tests/pedal/enter_canloader.py --recover; sleep 0.5
+	../../tests/pedal/enter_canloader_tesla.py --recover; sleep 0.5
 	$(DFU_UTIL) -d 0483:df11 -a 0 -s 0x08004000 -D obj/$(PROJ_NAME).bin
 	$(DFU_UTIL) -d 0483:df11 -a 0 -s 0x08000000:leave -D obj/bootstub.bin
 

@@ -76,6 +76,7 @@ def get_can_signals(CP):
       ("DI_cruiseState", "DI_state", 0),
       ("TSL_P_Psd_StW","SBW_RQ_SCCM" , 0),
       ("DI_motorRPM", "DI_torque1", 0),
+      ("DI_torqueMotor", "DI_torque1",0),
       ("DI_speedUnits", "DI_state", 0),
       # Steering wheel stalk signals (useful for managing cruise control)
       ("SpdCtrlLvr_Stat", "STW_ACTN_RQ", 0),
@@ -207,6 +208,7 @@ class CarState(object):
 
     #BB PCC
     self.regenLight = 0
+    self.torqueLevel = 0.
 
     #BB variable for custom buttons
     self.cstm_btns = UIButtons(self,"Tesla Model S","tesla")
@@ -379,6 +381,7 @@ class CarState(object):
     self.brake_pressed = cp.vl["DI_torque2"]['DI_brakePedal']
 
     self.standstill = cp.vl["DI_torque2"]['DI_vehicleSpeed'] == 0
+    self.torqueMotor = cp.vl["DI_torque1"]['DI_torqueMotor']
     self.pcm_acc_status = cp.vl["DI_state"]['DI_cruiseState']
     self.imperial_speed_units = cp.vl["DI_state"]['DI_speedUnits'] == 0
     self.regenLight = cp.vl["DI_state"]['DI_regenLight'] == 1

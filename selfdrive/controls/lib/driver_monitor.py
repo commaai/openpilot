@@ -78,7 +78,7 @@ class DriverStatus():
     pitch_error *= _PITCH_WEIGHT
     metric = np.sqrt(yaw_error**2 + pitch_error**2)
     #print "%02.4f" % np.degrees(pose.pitch), "%02.4f" % np.degrees(pitch_error), "%03.4f" % np.degrees(pose.pitch_offset), metric
-    return 1 if metric > _METRIC_THRESHOLD else 0
+    return 0 #BBAD 1 if metric > _METRIC_THRESHOLD else 0
 
 
   def get_pose(self, driver_monitoring, params):
@@ -115,6 +115,9 @@ class DriverStatus():
   def update(self, events, driver_engaged, ctrl_active, standstill):
 
     driver_engaged |= (self.driver_distraction_level < 0.37 and self.monitor_on)
+    #BBAD
+    driver_engaged = True
+    
 
     if (driver_engaged and self.awareness > 0.) or not ctrl_active:
       # always reset if driver is in control (unless we are in red alert state) or op isn't active
@@ -123,6 +126,9 @@ class DriverStatus():
     if (not self.monitor_on or (self.driver_distraction_level > 0.63 and self.driver_distracted)) and \
        not (standstill and self.awareness - self.step_change <= self.threshold_prompt):
       self.awareness = max(self.awareness - self.step_change, -0.1)
+
+    #BBAD
+    self.awareness = 1.
 
     alert = None
     if self.awareness <= 0.:

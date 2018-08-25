@@ -162,8 +162,8 @@ class CarInterface(object):
     ret.brakeMaxBP = [5., 20.]  # m/s
     ret.brakeMaxV = [1., 1.]   # max brake allowed - BB: since we are using regen, make this even
 
-    ret.longPidDeadzoneBP = [0.]
-    ret.longPidDeadzoneV = [0.]
+    ret.longPidDeadzoneBP = [0., 9.] #BB: added from Toyota to start pedal work; need to tune
+    ret.longPidDeadzoneV = [0., .15] #BB: added from Toyota to start pedal work; need to tune
 
     ret.stoppingControl = True
     ret.steerLimitAlert = False

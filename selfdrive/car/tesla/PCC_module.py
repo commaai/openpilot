@@ -1,3 +1,4 @@
+from selfdrive.car.tesla import teslacan
 from selfdrive.services import service_list
 from selfdrive.car.tesla.values import AH, CruiseButtons, CAR
 from selfdrive.boardd.boardd import can_list_to_can_capnp
@@ -15,6 +16,12 @@ ACCEL_HYST_GAP = 0.02  # don't change accel command for small oscilalitons withi
 ACCEL_MAX = 1
 ACCEL_MIN = -1
 ACCEL_SCALE = max(ACCEL_MAX, -ACCEL_MIN)
+ACCEL_REWIND_MAX = 0.04
+PEDAL_DEADZONE = 0.1
+
+#BBTODO: move the vehicle variables; maybe make them speed variable
+TORQUE_LEVEL_ACC = 30.
+TORQUE_LEVEL_DECEL = -30.
 
 def _current_time_millis():
   return int(round(time.time() * 1000))
@@ -81,13 +88,17 @@ class PCCController(object):
     self.prev_actuator_gas = 0.
     self.user_gas_state = 0
     self.LoC = None
+    self.torqueLevel_last = 0.
+    self.prev_v_ego = 0.
+    self.lastPedalForZeroTorque = 0.
     
     
 
   def update_stat(self,CS, enabled, sendcan):
     if self.LoC == None:
-      self.LoC = LongControl(CP,get_compute_gb_models)
+      self.LoC = LongControl(CS.CP,get_compute_gb_models)
     can_sends = []
+    #BBTODO: a better way to engage the pedal early and reset its CAN
     # on first brake press check if hardware present; being on CAN2 values are not included in fingerprinting
     if (CS.brake_pressed) and (CS.user_gas >= 0 ) and (not self.pedal_hardware_present) and (self.pedal_hardware_first_check):
       self.pedal_hardware_present = True
@@ -198,17 +209,41 @@ class PCCController(object):
       return 0.,0,idx
     # gas and brake
     apply_accel = actuators.gas
-    if apply_accel < (0.75 * self.prev_actuator_gas):
-      if not CS.regenLight and actuators.brake == 0:
-        #no regen lights yet, go 75% down?
-        apply_accel = 0.75 * self.prev_actuator_gas
-      elif CS.regenLight and actuators.brake ==0:
-        #regen light and no brake request
-        apply_accel = self.prev_actuator_gas
+    apply_brake = actuators.brake
+
+    #slow deceleration
+    if (apply_accel > PEDAL_DEADZON) and (apply_accel < self.prev_actuator_gas) and (apply_brake == 0):
+      if (CS.torqueLevel < TORQUE_LEVEL_ACC) and (CS.v_ego < self.prev_v_ego):
+        tesla_accel = self.prev_actuator_gas
       else:
-        apply_accel = clip(self.prev_actuator_gas * (0.5 - actuators.brake), 0., 1.)
-    apply_accel, self.accel_steady = accel_hysteresis(apply_accel, self.accel_steady, enabled)
-    self.prev_actuator_gas = apply_accel
+        tesla_accel = clip(apply_accel,self.prev_actuator_gas - ACCEL_REWIND_MAX,self.prev_actuator_gas)
+    else:
+        tesla_acces = apply_accel
+
+    #coast
+    if (apply_accel <= PEDAL_DEADZONE) and (apply_brake == 0):
+      if (CS.torqueLevel < TORQUE_LEVEL_ACC):
+        #we are in the torque dead zone, 
+        tesla_accel = self.prev_actuator_gas
+      else:
+        tesla_accel = self.prev_actuator_gas - ACCEL_REWIND_MAX
+
+    #save position for brake
+    if (CS.torqueLevel < TORQUE_LEVEL_ACC) and (CS.torqueLevel > TORQUE_LEVEL_DECEL):
+      self.lastPedalForZeroTorque = self.prev_actuator_gas
+
+    if (apply_brake > 0) and (apply_gas == 0):
+      if self.lastPedalForZeroTorque > 0:
+        tesla_accel = (1 - apply_brake) * self.lastPedalForZeroTorque
+        self.lastPedalForZeroTorque = 0.
+      else:
+        tesla_accel = (1 - apply_brake) * self.prev_actuator_gas
+
+    tesla_accel, self.accel_steady = accel_hysteresis(tesla_accel, self.accel_steady, enabled)
+    
     apply_gas = clip(apply_accel, 0., 1.) if self.enable_pedal_cruise else 0.
     enable_gas = 1 if self.enable_pedal_cruise else 0
+    self.torqueLevel_last = CS.torqueLevel
+    self.prev_actuator_gas = tesla_accel * enable_gas
+    self.prev_v_ego = CS.v_ego
     return apply_gas,enable_gas,idx

@@ -20,13 +20,14 @@
 
 #define CAN CAN1
 
+//#define PEDAL
+
 //#define PEDAL_USB
 
 #ifdef PEDAL_USB
   #include "drivers/usb.h"
 #endif
 
-#define ENTER_BOOTLOADER_MAGIC 0xdeadbeef
 uint32_t enter_bootloader_mode;
 
 void __initialize_hardware_early() {
