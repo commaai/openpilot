@@ -35,20 +35,22 @@ def long_control_state_trans(active, long_control_state, v_ego, v_target, v_pid,
     if long_control_state == LongCtrlState.off:
       if active:
         long_control_state = LongCtrlState.pid
-
+        print "Long Control: switching to PID"
     elif long_control_state == LongCtrlState.pid:
       if stopping_condition:
         long_control_state = LongCtrlState.stopping
-
+        print "Long Control: switching to Stopping"
     elif long_control_state == LongCtrlState.stopping:
       if starting_condition:
         long_control_state = LongCtrlState.starting
-
+        print "Long Control: switching to Starting"
     elif long_control_state == LongCtrlState.starting:
       if stopping_condition:
         long_control_state = LongCtrlState.stopping
+        print "Long Control: switching to Stopping"
       elif output_gb >= -BRAKE_THRESHOLD_TO_PID:
         long_control_state = LongCtrlState.pid
+        print "Long Control: switching to PID"
 
   return long_control_state
 
@@ -81,7 +83,11 @@ class LongControl(object):
     gas_max = interp(v_ego, CP.gasMaxBP, CP.gasMaxV)
     brake_max = interp(v_ego, CP.brakeMaxBP, CP.brakeMaxV)
 
-    output_gb = self.last_output_gb
+    #BBAD - try to figure out how to engage with gas pedal pressed without delay on highway
+    if CP.gasPressed
+      output_gb = CP.gas/112.16
+    else
+      output_gb = self.last_output_gb
     rate = 100.0
     self.long_control_state = long_control_state_trans(active, self.long_control_state, v_ego,
                                                        v_target_future, self.v_pid, output_gb,
@@ -94,7 +100,7 @@ class LongControl(object):
       self.v_pid = v_ego_pid  # do nothing
       output_gb = 0.
       self.pid.reset()
-
+      p
     # tracking objects and driving
     elif self.long_control_state == LongCtrlState.pid:
       prevent_overshoot = not CP.stoppingControl and v_ego < 1.5 and v_target_future < 0.7
