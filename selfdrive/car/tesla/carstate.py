@@ -337,15 +337,12 @@ class CarState(object):
     self.v_ego = float(v_ego_x[0])
     self.a_ego = float(v_ego_x[1])
 
-    # this is a hack for the interceptor. This is now only used in the simulation
-    # TODO: Replace tests by toyota so this can go away
+    #BB this is a hack for the interceptor
     self.user_gas = epas_cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS']
     self.user_gas_state = epas_cp.vl["GAS_SENSOR"]['STATE']
-    #print self.user_gas_state
-    self.user_gas_pressed = self.user_gas > 5 # this works because interceptor read < 0 when pedal position is 0. Once calibrated, this will change
-    #a = epas_cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS']
-    #b = epas_cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS2']
-    #print a,b
+    self.user_gas_pressed = self.user_gas > 1.12
+
+
     can_gear_shifter = cp.vl["DI_torque2"]['DI_gear']
     self.gear = 0 # JCT
     self.angle_steers  = -(cp.vl["STW_ANGLHP_STAT"]['StW_AnglHP']) #JCT polarity reversed from Honda/Acura
@@ -367,7 +364,7 @@ class CarState(object):
     self.cruise_speed_offset = calc_cruise_offset(cp.vl["DI_state"]['DI_cruiseSet'], self.v_ego)
     self.gear_shifter = parse_gear_shifter(can_gear_shifter, self.CP.carFingerprint)
 
-    self.pedal_gas = 0 #cp.vl["DI_torque1"]['DI_pedalPos']
+    self.pedal_gas = cp.vl["DI_torque1"]['DI_pedalPos'] / 102 #BB: to make it between 0..1
     self.car_gas = self.pedal_gas
 
     self.steer_override = abs(epas_cp.vl["EPAS_sysStatus"]['EPAS_handsOnLevel']) > 0

@@ -197,9 +197,9 @@ class CarInterface(object):
     ret.wheelSpeeds.rr = self.CS.v_wheel_rr
 
     # gas pedal
-    ret.gas = self.CS.car_gas / 256.0
+    ret.gas = self.CS.user_gas / 112.0 #BB: transform into 0..1 range
     if not self.CP.enableGasInterceptor:
-      ret.gasPressed = self.CS.pedal_gas > 0
+      ret.gasPressed = self.CS.user_gas_pressed
     else:
       ret.gasPressed = self.CS.user_gas_pressed
 

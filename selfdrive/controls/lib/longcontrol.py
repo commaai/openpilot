@@ -30,7 +30,7 @@ def long_control_state_trans(active, long_control_state, v_ego, v_target, v_pid,
 
   if not active:
     long_control_state = LongCtrlState.off
-
+    print "Long Control: NOT ACTIVE"
   else:
     if long_control_state == LongCtrlState.off:
       if active:
@@ -51,7 +51,6 @@ def long_control_state_trans(active, long_control_state, v_ego, v_target, v_pid,
       elif output_gb >= -BRAKE_THRESHOLD_TO_PID:
         long_control_state = LongCtrlState.pid
         print "Long Control: switching to PID"
-
   return long_control_state
 
 
@@ -85,7 +84,7 @@ class LongControl(object):
 
     #BBAD - try to figure out how to engage with gas pedal pressed without delay on highway
     if CS.gasPressed:
-      output_gb = CS.gas/112.16
+      output_gb = CS.gas
     else:
       output_gb = self.last_output_gb
     rate = 100.0
@@ -100,7 +99,6 @@ class LongControl(object):
       self.v_pid = v_ego_pid  # do nothing
       output_gb = 0.
       self.pid.reset()
-      p
     # tracking objects and driving
     elif self.long_control_state == LongCtrlState.pid:
       prevent_overshoot = not CP.stoppingControl and v_ego < 1.5 and v_target_future < 0.7
