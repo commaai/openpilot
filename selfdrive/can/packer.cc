@@ -31,6 +31,7 @@ namespace {
     uint64_t dat = (ival & ((1ULL << sig.b2)-1)) << shift;
     if (sig.is_little_endian) {
       dat = ReverseBytes(dat);
+      mask = ReverseBytes(mask);
     }
     ret &= ~mask;
     ret |= dat;

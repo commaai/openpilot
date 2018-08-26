@@ -448,12 +448,6 @@ def controlsd_thread(gctx=None, rate=100, default_bias=0.):
 
   fcw_enabled = params.get("IsFcwEnabled") == "1"
   geofence = None
-  try:
-    from selfdrive.controls.lib.geofence import Geofence
-    geofence = Geofence(params.get("IsGeofenceEnabled") == "1")
-  except ImportError:
-    # geofence not available
-    params.put("IsGeofenceEnabled", "-1")
 
   PL = Planner(CP, fcw_enabled)
   LoC = LongControl(CP, CI.compute_gb)
