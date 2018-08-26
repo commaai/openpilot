@@ -40,8 +40,8 @@ _A_CRUISE_MAX_BP = [0.,  5., 10., 20., 40.]
 
 # Lookup table for turns
 #BBAD - Tesla motor has too much torque to allow so much acceleration in turns
-_A_TOTAL_MAX_V = [1.5, 1.9, 3.2]
-_A_TOTAL_MAX_BP = [0., 10., 10.]
+_A_TOTAL_MAX_V = [1., 1.2, 2.0]
+_A_TOTAL_MAX_BP = [0., 20., 40.]
 
 _FCW_A_ACT_V = [-3., -2.]
 _FCW_A_ACT_BP = [0., 30.]

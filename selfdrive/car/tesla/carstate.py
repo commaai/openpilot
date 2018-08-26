@@ -76,6 +76,7 @@ def get_can_signals(CP):
       ("DI_cruiseState", "DI_state", 0),
       ("TSL_P_Psd_StW","SBW_RQ_SCCM" , 0),
       ("DI_motorRPM", "DI_torque1", 0),
+      ("DI_pedalPos", "DI_torque1", 0),
       ("DI_torqueMotor", "DI_torque1",0),
       ("DI_speedUnits", "DI_state", 0),
       # Steering wheel stalk signals (useful for managing cruise control)
@@ -216,7 +217,7 @@ class CarState(object):
     self.cstm_btns = UIButtons(self,"Tesla Model S","tesla")
 
     #BB checking for the switch between ACC and PDL
-    if cstm_btns.get_button("pedal") == None:
+    if self.cstm_btns.get_button("pedal") == None:
       self.pedal_hardware_present_prev = False
     else:
       self.pedal_hardware_present_prev = True
@@ -270,6 +271,7 @@ class CarState(object):
         btn.btn_name = "pedal"
         btn.btn_label = "PDL"
         btn.btn_label2 = ""
+        btn.btn_status = 1
     else:
       #we don't have gas interceptor
       btn = self.cstm_btns.get_button("pedal")
@@ -277,10 +279,11 @@ class CarState(object):
         btn.btn_name = "acc"
         btn.btn_label = "ACC"
         btn.btn_label2 = "Mod OP"
+        btn.btn_status = 1
 
   def update_ui_buttons(self,id,btn_status):
     if self.cstm_btns.btns[id].btn_status > 0:
-      if (id == 1) and (btn_status == 0):
+      if (id == 1) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name="acc":
           #don't change status, just model
           if (self.cstm_btns.btns[id].btn_label2 == "Mod OP"):
               self.cstm_btns.btns[id].btn_label2 = "Mod JJ"

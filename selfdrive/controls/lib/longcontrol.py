@@ -30,7 +30,7 @@ def long_control_state_trans(active, long_control_state, v_ego, v_target, v_pid,
 
   if not active:
     long_control_state = LongCtrlState.off
-    print "Long Control: NOT ACTIVE"
+    #print "Long Control: NOT ACTIVE"
   else:
     if long_control_state == LongCtrlState.off:
       if active:
@@ -107,7 +107,8 @@ class LongControl(object):
       self.pid.pos_limit = gas_max
       self.pid.neg_limit = - brake_max
       deadzone = interp(v_ego_pid, CP.longPidDeadzoneBP, CP.longPidDeadzoneV)
-      output_gb = self.pid.update(self.v_pid, v_ego_pid, speed=v_ego_pid, deadzone=deadzone, feedforward=a_target, freeze_integrator=prevent_overshoot)
+      #BBAD adding overridet to pid to see if we can engage sooner
+      output_gb = self.pid.update(self.v_pid, v_ego_pid, speed=v_ego_pid, override = CS.gasPressed, deadzone=deadzone, feedforward=a_target, freeze_integrator=prevent_overshoot)
       if prevent_overshoot:
         output_gb = min(output_gb, 0.0)
 

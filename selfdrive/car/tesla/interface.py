@@ -123,9 +123,9 @@ class CarInterface(object):
       
       # Kp and Ki for the longitudinal control
       ret.longitudinalKpBP = [0., 5., 35.]
-      ret.longitudinalKpV = [1.2 , 0.8, 0.5]
+      ret.longitudinalKpV = [1.2 ,1.0, 0.8]
       ret.longitudinalKiBP = [0., 35.]
-      ret.longitudinalKiV = [0.18, 0.12]
+      ret.longitudinalKiV = [0.18, 0.16]
     else:
       raise ValueError("unsupported car %s" % candidate)
 
@@ -163,7 +163,7 @@ class CarInterface(object):
     ret.brakeMaxV = [1., 1.]   # max brake allowed - BB: since we are using regen, make this even
 
     ret.longPidDeadzoneBP = [0., 9.] #BB: added from Toyota to start pedal work; need to tune
-    ret.longPidDeadzoneV = [0., .15] #BB: added from Toyota to start pedal work; need to tune
+    ret.longPidDeadzoneV = [0., 0.] #BB: added from Toyota to start pedal work; need to tune; changed to 0 for now
 
     ret.stoppingControl = True
     ret.steerLimitAlert = False
