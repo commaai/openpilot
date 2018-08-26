@@ -26,28 +26,6 @@ ANGLE_DELTA_BP = [0., 5., 15.]
 ANGLE_DELTA_V = [5., .8, .25]     # windup limit
 ANGLE_DELTA_VU = [5., 3.5, 0.8]   # unwind limit
 
-def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
-  # hyst params... TODO: move these to VehicleParams
-  brake_hyst_on = 0.02     # to activate brakes exceed this value
-  brake_hyst_off = 0.005                     # to deactivate brakes below this value
-  brake_hyst_gap = 0.01                      # don't change brake command for small ocilalitons within this value
-
-  #*** histeresys logic to avoid brake blinking. go above 0.1 to trigger
-  if (brake < brake_hyst_on and not braking) or brake < brake_hyst_off:
-    brake = 0.
-  braking = brake > 0.
-
-  # for small brake oscillations within brake_hyst_gap, don't change the brake command
-  if brake == 0.:
-    brake_steady = 0.
-  elif brake > brake_steady + brake_hyst_gap:
-    brake_steady = brake - brake_hyst_gap
-  elif brake < brake_steady - brake_hyst_gap:
-    brake_steady = brake + brake_hyst_gap
-  brake = brake_steady
-
-  return brake, braking, brake_steady
-
 
 def process_hud_alert(hud_alert):
   # initialize to no alert
@@ -97,16 +75,10 @@ class CarController(object):
     if not self.enable_camera:
       return
 
-    # *** apply brake hysteresis ***
-    brake, self.braking, self.brake_steady = actuator_hystereses(actuators.brake, self.braking, self.brake_steady, CS.v_ego, CS.CP.carFingerprint)
-
     # *** no output if not enabled ***
     if not enabled and CS.pcm_acc_status:
       # send pcm acc cancel cmd if drive is disabled but pcm is still on, or if the system can't be activated
       pcm_cancel_cmd = True
-
-    # *** rate limit after the enable check ***
-    self.brake_last = rate_limit(brake, self.brake_last, -2., 1./100)
 
     # vehicle hud display, wait for one update from 10Hz 0x304 msg
     if hud_show_lanes:

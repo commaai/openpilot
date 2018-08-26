@@ -87,7 +87,7 @@ class PCCController(object):
     self.accel_steady = 0.
     self.prev_actuator_gas = 0.
     self.user_gas_state = 0
-    self.LoC = None
+    #self.LoC = None
     self.torqueLevel_last = 0.
     self.prev_v_ego = 0.
     self.lastPedalForZeroTorque = 0.
@@ -95,18 +95,13 @@ class PCCController(object):
     
 
   def update_stat(self,CS, enabled, sendcan):
-    if self.LoC == None:
-      self.LoC = LongControl(CS.CP,get_compute_gb_models)
+    #if self.LoC == None:
+    #  self.LoC = LongControl(CS.CP,get_compute_gb_models)
     can_sends = []
     #BBTODO: a better way to engage the pedal early and reset its CAN
     # on first brake press check if hardware present; being on CAN2 values are not included in fingerprinting
-    if (CS.brake_pressed) and (CS.user_gas >= 0 ) and (not self.pedal_hardware_present) and (self.pedal_hardware_first_check):
-      self.pedal_hardware_present = True
-      CS.config_ui_buttons(True)
-      self.pedal_hardware_first_check = False
-    if (CS.brake_pressed) and (not self.pedal_hardware_present) and (self.pedal_hardware_first_check):
-      self.pedal_hardware_first_check = False
-      CS.config_ui_buttons(False)
+    self.pedal_hardware_present = CS.pedal_hardware_present
+    
     if not self.pedal_hardware_present:
       if (CS.cstm_btns.get_button_status("pedal")>0):
         #no pedal hardware, disable button

@@ -202,6 +202,8 @@ class CarState(object):
     #BB variables for pedal CC
     self.pedal_speed_kph = 0.
     self.pedal_enabled = 0
+    self.pedal_hardware_present = False
+    self.pedal_hardware_present_prev = False
 
     #BB UIEvents
     self.UE = UIEvents(self)
@@ -212,6 +214,12 @@ class CarState(object):
 
     #BB variable for custom buttons
     self.cstm_btns = UIButtons(self,"Tesla Model S","tesla")
+
+    #BB checking for the switch between ACC and PDL
+    if cstm_btns.get_button("pedal") == None:
+      self.pedal_hardware_present_prev = False
+    else:
+      self.pedal_hardware_present_prev = True
 
     #BB custom message counter
     self.custom_alert_counter = -1 #set to 100 for 1 second display; carcontroller will take down to zero
@@ -338,6 +346,10 @@ class CarState(object):
     self.a_ego = float(v_ego_x[1])
 
     #BB this is a hack for the interceptor
+    self.pedal_hardware_present = epas_cp.vl["GAS_SENSOR"] != None
+    if self.pedal_hardware_present != self.pedal_hardware_present_prev:
+        self.config_ui_buttons(self.pedal_hardware_present)
+    self.pedal_hardware_present_prev = self.pedal_hardware_present
     self.user_gas = epas_cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS']
     self.user_gas_state = epas_cp.vl["GAS_SENSOR"]['STATE']
     self.user_gas_pressed = self.user_gas > 1.12
