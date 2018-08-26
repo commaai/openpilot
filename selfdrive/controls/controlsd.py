@@ -270,9 +270,10 @@ def state_control(plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, 
                                       CS.steeringPressed)
 
   # *** gas/brake PID loop ***
+  #BBAD added CS to longcontrol call
   actuators.gas, actuators.brake = LoC.update(active, CS.vEgo, CS.brakePressed, CS.standstill, CS.cruiseState.standstill,
                                               v_cruise_kph, plan.vTarget, plan.vTargetFuture, plan.aTarget,
-                                              CP, PL.lead_1)
+                                              CP, CS, PL.lead_1)
 
   # *** steering PID loop ***
   actuators.steer, actuators.steerAngle = LaC.update(active, CS.vEgo, CS.steeringAngle,

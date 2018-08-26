@@ -78,15 +78,15 @@ class LongControl(object):
     self.pid.reset()
     self.v_pid = v_pid
 
-  def update(self, active, v_ego, brake_pressed, standstill, cruise_standstill, v_cruise, v_target, v_target_future, a_target, CP, lead_1):
+  def update(self, active, v_ego, brake_pressed, standstill, cruise_standstill, v_cruise, v_target, v_target_future, a_target, CP,CS, lead_1):
     # actuation limits
     gas_max = interp(v_ego, CP.gasMaxBP, CP.gasMaxV)
     brake_max = interp(v_ego, CP.brakeMaxBP, CP.brakeMaxV)
 
     #BBAD - try to figure out how to engage with gas pedal pressed without delay on highway
-    if CP.gasPressed
-      output_gb = CP.gas/112.16
-    else
+    if CS.gasPressed:
+      output_gb = CS.gas/112.16
+    else:
       output_gb = self.last_output_gb
     rate = 100.0
     self.long_control_state = long_control_state_trans(active, self.long_control_state, v_ego,
