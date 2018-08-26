@@ -283,7 +283,7 @@ class CarState(object):
 
   def update_ui_buttons(self,id,btn_status):
     if self.cstm_btns.btns[id].btn_status > 0:
-      if (id == 1) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name="acc":
+      if (id == 1) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="acc":
           #don't change status, just model
           if (self.cstm_btns.btns[id].btn_label2 == "Mod OP"):
               self.cstm_btns.btns[id].btn_label2 = "Mod JJ"
