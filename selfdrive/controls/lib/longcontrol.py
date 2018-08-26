@@ -81,12 +81,15 @@ class LongControl(object):
     # actuation limits
     gas_max = interp(v_ego, CP.gasMaxBP, CP.gasMaxV)
     brake_max = interp(v_ego, CP.brakeMaxBP, CP.brakeMaxV)
-
+    override = False
     #BBAD - try to figure out how to engage with gas pedal pressed without delay on highway
-    if CS.gasPressed:
-      output_gb = CS.gas
-    else:
-      output_gb = self.last_output_gb
+    if CP.carFingerprint == CAR.MODELS:
+      if CS.gasPressed:
+        output_gb = CS.gas
+      else:
+        output_gb = self.last_output_gb
+      override = CS.gasPressed
+
     rate = 100.0
     self.long_control_state = long_control_state_trans(active, self.long_control_state, v_ego,
                                                        v_target_future, self.v_pid, output_gb,
@@ -108,7 +111,7 @@ class LongControl(object):
       self.pid.neg_limit = - brake_max
       deadzone = interp(v_ego_pid, CP.longPidDeadzoneBP, CP.longPidDeadzoneV)
       #BBAD adding overridet to pid to see if we can engage sooner
-      output_gb = self.pid.update(self.v_pid, v_ego_pid, speed=v_ego_pid, override = CS.gasPressed, deadzone=deadzone, feedforward=a_target, freeze_integrator=prevent_overshoot)
+      output_gb = self.pid.update(self.v_pid, v_ego_pid, speed=v_ego_pid, override=override, deadzone=deadzone, feedforward=a_target, freeze_integrator=prevent_overshoot)
       if prevent_overshoot:
         output_gb = min(output_gb, 0.0)
 

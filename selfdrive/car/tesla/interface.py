@@ -17,13 +17,14 @@ except ImportError:
   CarController = None
 
 
-def get_compute_gb_models(accel, speed):
-  creep_brake = 0.0
-  creep_speed = 2.3
-  creep_brake_value = 0.15
-  if speed < creep_speed:
-    creep_brake = (creep_speed - speed) / creep_speed * creep_brake_value
-  return float(accel) / 4.8 - creep_brake
+def tesla_compute_gb(accel, speed):
+  #creep_brake = 0.0
+  #creep_speed = 2.3
+  #creep_brake_value = 0.15
+  #if speed < creep_speed:
+  #  creep_brake = (creep_speed - speed) / creep_speed * creep_brake_value
+  #return float(accel) / 4.8 - creep_brake
+  return float(accel)
 
 
 class CarInterface(object):
@@ -49,7 +50,7 @@ class CarInterface(object):
       self.sendcan = sendcan
       self.CC = CarController(self.cp.dbc_name, CP.enableCamera)
 
-    self.compute_gb = get_compute_gb_models
+    self.compute_gb = tesla_compute_gb
 
   @staticmethod
   def calc_accel_override(a_ego, a_target, v_ego, v_target):
