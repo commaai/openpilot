@@ -1,10 +1,7 @@
 #library to work with buttons and ui.c via buttons.msg file
-import struct
 import copy
-from ctypes import create_string_buffer
 import os
 import pickle
-from Queue import Queue
 import threading
 import time
 
