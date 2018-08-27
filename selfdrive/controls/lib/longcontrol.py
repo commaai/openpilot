@@ -83,13 +83,15 @@ class LongControl(object):
     brake_max = interp(v_ego, CP.brakeMaxBP, CP.brakeMaxV)
     override = False
     #BBAD - try to figure out how to engage with gas pedal pressed without delay on highway
-    if CP.carFingerprint == CAR.MODELS:
+    if CP.carName == "tesla":
       if CS.gasPressed:
         output_gb = CS.gas
+        self.pid.update_i(CS.gas)
       else:
         output_gb = self.last_output_gb
       override = CS.gasPressed
-
+    else:
+      output_gb = self.last_output_gb
     rate = 100.0
     self.long_control_state = long_control_state_trans(active, self.long_control_state, v_ego,
                                                        v_target_future, self.v_pid, output_gb,
@@ -104,7 +106,8 @@ class LongControl(object):
       self.pid.reset()
     # tracking objects and driving
     elif self.long_control_state == LongCtrlState.pid:
-      prevent_overshoot = not CP.stoppingControl and v_ego < 1.5 and v_target_future < 0.7
+      #BBAD just trying to see
+      prevent_overshoot = False #not CP.stoppingControl and v_ego < 1.5 and v_target_future < 0.7
 
       self.v_pid = v_target
       self.pid.pos_limit = gas_max

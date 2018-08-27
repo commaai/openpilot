@@ -280,6 +280,7 @@ class CarState(object):
         btn.btn_label = "ACC"
         btn.btn_label2 = "Mod OP"
         btn.btn_status = 1
+    self.update_ui_buttons(1,1)    
 
   def update_ui_buttons(self,id,btn_status):
     if self.cstm_btns.btns[id].btn_status > 0:

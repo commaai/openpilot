@@ -124,9 +124,9 @@ class CarInterface(object):
       
       # Kp and Ki for the longitudinal control
       ret.longitudinalKpBP = [0., 5., 35.]
-      ret.longitudinalKpV = [1.2 ,1.0, 0.8]
-      ret.longitudinalKiBP = [0., 35.]
-      ret.longitudinalKiV = [0.18, 0.16]
+      ret.longitudinalKpV = [0.27 , 0.27, 0.24]
+      ret.longitudinalKiBP = [0., 5., 35.]
+      ret.longitudinalKiV = [0.036, 0.036, 0.032]
     else:
       raise ValueError("unsupported car %s" % candidate)
 

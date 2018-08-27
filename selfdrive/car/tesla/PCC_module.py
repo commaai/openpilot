@@ -125,7 +125,7 @@ class PCCController(object):
       CS.cstm_btns.set_button_status("pedal",1)
     # process any stalk movement
     curr_time_ms = _current_time_millis()
-    adaptive_cruise_prev = self.enable_pedal_cruise
+    enable_pedal_cruise = self.enable_pedal_cruise
     speed_uom = 1.
     if CS.imperial_speed_units:
       speed_uom = 1.609
@@ -153,7 +153,7 @@ class PCCController(object):
     elif (CS.cruise_buttons == CruiseButtons.CANCEL and
           self.prev_cruise_buttons != CruiseButtons.CANCEL):
       self.enable_pedal_cruise = False
-      if adaptive_cruise_prev == True:
+      if enable_pedal_cruise == True:
         CS.UE.custom_alert_message(3,"PDL Disabled",150,4)
         CS.cstm_btns.set_button_status("pedal",1)
       self.last_cruise_stalk_pull_time = 0

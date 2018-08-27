@@ -55,6 +55,9 @@ class PIController(object):
     self.saturated = False
     self.control = 0
 
+  def update_i(self, pedal_pos):
+    self.i = pedal_pos
+
   def update(self, setpoint, measurement, speed=0.0, check_saturation=True, override=False, feedforward=0., deadzone=0., freeze_integrator=False):
     self.speed = speed
 
