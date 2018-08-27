@@ -1,5 +1,6 @@
 #library to work with buttons and ui.c via buttons.msg file
 import struct
+import copy
 from ctypes import create_string_buffer
 import os
 import pickle
@@ -28,15 +29,17 @@ class UIButtons:
     
         """
         while True:
-            if self.btns != self.last_written_btns:
-                self._write_buttons()
+            for index, btn in enumerate(self.btns):
+                if btn.__dict__ != self.last_written_btns[index].__dict__:
+                    self._write_buttons()
+                    break
             else:
                 time.sleep(1)
             
     def _write_buttons(self):
         try:
             with self.file_lock:
-                self.last_written_btns = list(self.btns)  # makes a copy.
+                self.last_written_btns = copy.deepcopy(self.btns)
                 with open(self.buttons_status_out_path, "wb") as fo:
                     pickle.dump(self.last_written_btns, fo)
         except Exception as e:
