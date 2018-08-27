@@ -128,11 +128,12 @@ def create_radar_commands(v_ego, car_fingerprint, new_radar_config, idx):
                "\x00\x00")
   msg_0x301 = VEHICLE_STATE_MSG[car_fingerprint]
 
+  idx_0x300 = idx
   if car_fingerprint == CAR.CIVIC:
     idx_offset = 0xc if new_radar_config else 0x8   # radar in civic 2018 requires 0xc
-    idx += idx_offset
+    idx_0x300 += idx_offset
 
-  commands.append(make_can_msg(0x300, msg_0x300, idx, 1))
+  commands.append(make_can_msg(0x300, msg_0x300, idx_0x300, 1))
   commands.append(make_can_msg(0x301, msg_0x301, idx, 1))
   return commands
 
