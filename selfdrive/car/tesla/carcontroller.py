@@ -228,7 +228,7 @@ class CarController(object):
       can_sends.append(teslacan.create_steering_control(enable_steer_control, apply_angle, idx))
       can_sends.append(teslacan.create_epb_enable_signal(idx))
       cruise_btn = None
-      if self.ACC.enable_adaptive_cruise:
+      if self.ACC.enable_adaptive_cruise and not self.PCC.pedal_hardware_present:
         cruise_btn = self.ACC.update_acc(enabled, CS, frame, actuators, pcm_speed)
       if (cruise_btn != None) or ((turn_signal_needed > 0) and (frame % 2 == 0)):
           cruise_msg = teslacan.create_cruise_adjust_msg(
@@ -240,6 +240,7 @@ class CarController(object):
       if (frame % 2) == 0 and self.PCC.pedal_hardware_present:
         apply_gas,gas_needed,gas_idx = self.PCC.update_pdl(enabled,CS,frame,actuators,pcm_speed)
         gas_msg = teslacan.create_gas_command_msg(apply_gas * 112.,gas_needed ,gas_idx)
-        can_sends.insert(0, gas_msg)
+        #can_sends.insert(0, gas_msg)
+        can_sends.append(gas_msg)
       self.last_angle = apply_angle
       sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())

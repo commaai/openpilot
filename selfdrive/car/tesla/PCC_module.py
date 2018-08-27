@@ -21,7 +21,7 @@ PEDAL_DEADZONE = 0.05
 
 #BB
 BRAKE_THRESHOLD =0.1
-
+ACCEL_THRESHOLD = 0.1
 #BBTODO: move the vehicle variables; maybe make them speed variable
 TORQUE_LEVEL_ACC = 30.
 TORQUE_LEVEL_DECEL = -30.
