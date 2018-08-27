@@ -36,7 +36,7 @@ class UIButtons:
     def _write_buttons(self):
         try:
             with self.file_lock:
-                self.last_written_btns = self.btns.copy()
+                self.last_written_btns = list(self.btns)  # makes a copy.
                 with open(self.buttons_status_out_path, "wb") as fo:
                     pickle.dump(self.last_written_btns, fo)
         except Exception as e:
