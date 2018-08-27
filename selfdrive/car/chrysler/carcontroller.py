@@ -53,8 +53,8 @@ class CarController(object):
     self.controls_allowed = True
     self.last_steer = 0
     self.last_angle = 0
-    self.send_new_status = False
-    self.prev_2a6 = 0
+    self.send_new_status = False  # indicates we want to send 2a6 when we can.
+    self.prev_2a6 = -9999  # long time ago.
     self.accel_steady = 0.
     self.car_fingerprint = car_fingerprint
     self.alert_active = False
@@ -64,8 +64,6 @@ class CarController(object):
 
     self.steer_angle_enabled = False
     self.ipas_reset_counter = 0
-
-    self.first_time = True
 
     self.fake_ecus = set()
     if enable_camera: self.fake_ecus.add(ECU.CAM)
@@ -158,27 +156,29 @@ class CarController(object):
     # TODO verify units and see if we want apply_steer or apply_angle
 
     # frame is 100Hz (0.01s period)
-    if ((frame + 3) % 10 == 0) or self.first_time:  # 0.1s period
-      can_sends.append(create_2d9(self.car_fingerprint))
-    if self.first_time or ((((frame + 13) % 25 == 0) or self.send_new_status) and
-                           ((frame - self.prev_2a6) > 10)):  # 0.25s period
-      # must have been at least 100ms (10 frames) since last 2a6.
-      can_sends.append(create_2a6(
-        CS.gear_shifter, apply_steer, moving_fast, self.car_fingerprint))
-      self.send_new_status = False
-      self.prev_2a6 = frame
-    elif self.send_new_status:  # only gets here if prev_2a6 check failed.
-      apply_steer = 0  # cannot steer yet, waiting for 2a6 to be sent.
+    if (frame % 10 == 0):  # 0.1s period
+      new_msg = create_2d9(self.car_fingerprint)
+      sendcan.send(can_list_to_can_capnp([new_msg], msgtype='sendcan').to_bytes())
+      can_sends.append(new_msg)
+    if (frame % 25 == 0) or self.send_new_status:  # 0.25s period
+      if (frame - self.prev_2a6) < 10:  # at least 100ms (10 frames) since last 2a6.
+        self.send_new_status = True  # will not send, so send next time.
+        apply_steer = 0  # cannot steer yet, waiting for 2a6 to be sent.
+      else:
+        new_msg = create_2a6(CS.gear_shifter, apply_steer, moving_fast, self.car_fingerprint)
+        sendcan.send(can_list_to_can_capnp([new_msg], msgtype='sendcan').to_bytes())
+        can_sends.append(new_msg)
+        self.send_new_status = False
+        self.prev_2a6 = frame
     new_msg = create_292(int(apply_steer * CAR_UNITS_PER_DEGREE), frame, moving_fast)
+    sendcan.send(can_list_to_can_capnp([new_msg], msgtype='sendcan').to_bytes())
     can_sends.append(new_msg)  # degrees * 5.1 -> car steering units
     for msg in can_sends:
       [addr, _, dat, _] = msg
       outp  = ('make_can_msg:%s  len:%d  %s' % ('0x{:02x}'.format(addr), len(dat),
                                                 ' '.join('{:02x}'.format(ord(c)) for c in dat)))
-      # print outp
       logging.info(outp)
 
-    self.first_time = False
 
 
-    sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
+    # sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
