@@ -92,6 +92,7 @@ class LongControl(object):
       override = CS.gasPressed
     else:
       output_gb = self.last_output_gb
+      override = False
     rate = 100.0
     self.long_control_state = long_control_state_trans(active, self.long_control_state, v_ego,
                                                        v_target_future, self.v_pid, output_gb,
