@@ -4,7 +4,6 @@ import copy
 from ctypes import create_string_buffer
 import os
 import pickle
-from datetime import datetime
 from Queue import Queue
 import threading
 import time
@@ -20,7 +19,9 @@ class UIButton:
 
 
 class UIButtons:
-    
+   
+    file_lock = threading.Lock()
+
     def _write_buttons_worker(self):
         """ Write button file in a non-blocking manner.
         The button file is used to resume settings after a reboot. It is not
@@ -29,11 +30,14 @@ class UIButtons:
     
         """
         while True:
+            print "~~~button check"
             if not self.last_written_btns or len(self.btns) != len(self.last_written_btns):
+                print "+++intial button write"
                 self._write_buttons()
             else:
                 for index, btn in enumerate(self.btns):
                     if btn.__dict__ != self.last_written_btns[index].__dict__:
+                        print "+++button write due to change"
                         self._write_buttons()
                         break
             time.sleep(1)
@@ -44,6 +48,7 @@ class UIButtons:
                 self.last_written_btns = copy.deepcopy(self.btns)
                 with open(self.buttons_status_out_path, "wb") as fo:
                     pickle.dump(self.last_written_btns, fo)
+                    print "+++written"
         except Exception as e:
             print "Failed to write button file %s" % self.buttons_status_out_path
             print str(e)
@@ -54,6 +59,7 @@ class UIButtons:
                 with self.file_lock:
                     with open(self.buttons_status_out_path, "rb") as fo:
                         self.btns = pickle.load(fo)
+                        self.last_written_btns = self.btns
                         self.btn_map = self._map_buttons(self.btns)
                 return True
             except Exception as e:
@@ -77,19 +83,21 @@ class UIButtons:
         self.car_name = car
         self.buttons_status_out_path = "/data/openpilot/selfdrive/car/"+self.car_folder+"/buttons.pickle"
         self.btns = []
+        self.last_written_btns = self.btns
         self.btn_map = {}
-        self.last_in_read_time = datetime.min 
+        # lock must be created before file access.
+        # TODO: a rwlock would perform better (allowing parallel reads).
+        self.file_lock = threading.Lock()
         if not self.read_buttons_out_file():
+            print "Creating new button file."
             # there is no file, create it
             self.btns = self.CS.init_ui_buttons()
+            self.last_written_btns = []
             self.btn_map = self._map_buttons(self.btns)
         # send events to initiate UI
         self.isLive = True
         self.send_button_info()
         self.CS.UE.uiSetCarEvent(self.car_folder, self.car_name)
-        # TODO: a rwlock would perform better (allowing parallel reads)
-        self.file_lock = threading.Lock()
-        self.last_written_btns = []
         threading.Thread(target = self._write_buttons_worker).start()
 
     def get_button(self, btn_name):
