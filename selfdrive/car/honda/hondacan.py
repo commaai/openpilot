@@ -142,6 +142,8 @@ def create_radar_commands(v_ego, car_fingerprint, new_radar_config, idx):
       msg_0x301 = "\x0f\x18\x51\x02\x5a\x00\x00"
     elif car_fingerprint == CAR.PILOT:
       msg_0x301 = "\x00\x00\x56\x02\x58\x00\x00"
+    elif car_fingerprint == CAR.PILOT_2019:
+      msg_0x301 = "\x00\x00\x58\x02\x5c\x00\x00"
     elif car_fingerprint == CAR.RIDGELINE:
       msg_0x301 = "\x00\x00\x56\x02\x57\x00\x00"
     commands.append(make_can_msg(0x300, msg_0x300, idx, 1))
