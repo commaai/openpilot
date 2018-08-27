@@ -28,13 +28,17 @@ class UIButtons:
     
         """
         while True:
-            if not self.last_written_btns or len(self.btns) != len(self.last_written_btns):
-                self._write_buttons()
-            else:
-                for index, btn in enumerate(self.btns):
-                    if btn.__dict__ != self.last_written_btns[index].__dict__:
-                        self._write_buttons()
-                        break
+            try:
+              if not self.last_written_btns or len(self.btns) != len(self.last_written_btns):
+                  self._write_buttons()
+              else:
+                  for index, btn in enumerate(self.btns):
+                      if btn.__dict__ != self.last_written_btns[index].__dict__:
+                          self._write_buttons()
+                          break
+            except Exception as e:
+              print "Error in button worker thread."
+              print str(e)
             time.sleep(1)
             
     def _write_buttons(self):
@@ -53,7 +57,7 @@ class UIButtons:
                 with self.file_lock:
                     with open(self.buttons_status_out_path, "rb") as fo:
                         self.btns = pickle.load(fo)
-                        self.last_written_btns = self.btns
+                        self.last_written_btns = copy.deepcopy(self.btns)
                         self.btn_map = self._map_buttons(self.btns)
                 return True
             except Exception as e:
@@ -76,17 +80,16 @@ class UIButtons:
         self.car_folder = folder
         self.car_name = car
         self.buttons_status_out_path = "/data/openpilot/selfdrive/car/"+self.car_folder+"/buttons.pickle"
-        self.btns = []
-        self.last_written_btns = self.btns
+        self.btns = None
+        self.last_written_btns = None
         self.btn_map = {}
         # lock must be created before file access.
         # TODO: a rwlock would perform better (allowing parallel reads).
         self.file_lock = threading.Lock()
         if not self.read_buttons_out_file():
-            print "Creating new button file."
             # there is no file, create it
             self.btns = self.CS.init_ui_buttons()
-            self.last_written_btns = []
+            self.last_written_btns = None
             self.btn_map = self._map_buttons(self.btns)
         # send events to initiate UI
         self.isLive = True
