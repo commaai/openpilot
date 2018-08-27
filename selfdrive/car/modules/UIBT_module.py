@@ -29,12 +29,14 @@ class UIButtons:
     
         """
         while True:
-            for index, btn in enumerate(self.btns):
-                if btn.__dict__ != self.last_written_btns[index].__dict__:
-                    self._write_buttons()
-                    break
+            if not self.last_written_btns or len(self.btns) != len(self.last_written_btns):
+                self._write_buttons()
             else:
-                time.sleep(1)
+                for index, btn in enumerate(self.btns):
+                    if btn.__dict__ != self.last_written_btns[index].__dict__:
+                        self._write_buttons()
+                        break
+            time.sleep(1)
             
     def _write_buttons(self):
         try:
