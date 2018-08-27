@@ -17,7 +17,10 @@ ACCEL_MAX = 1
 ACCEL_MIN = -1
 ACCEL_SCALE = max(ACCEL_MAX, -ACCEL_MIN)
 ACCEL_REWIND_MAX = 0.04
-PEDAL_DEADZONE = 0.1
+PEDAL_DEADZONE = 0.05
+
+#BB
+BRAKE_THRESHOLD =0.1
 
 #BBTODO: move the vehicle variables; maybe make them speed variable
 TORQUE_LEVEL_ACC = 30.
@@ -211,23 +214,23 @@ class PCCController(object):
       self.lastPedalForZeroTorque = self.prev_actuator_gas
 
     #slow deceleration
-    if (apply_accel > PEDAL_DEADZONE) and (apply_accel < self.prev_actuator_gas) and (apply_brake == 0):
+    if (apply_accel > PEDAL_DEADZONE) and (apply_accel < self.prev_actuator_gas) and (apply_brake <= BRAKE_THRESHOLD):
       if (CS.torqueLevel < TORQUE_LEVEL_ACC) and (CS.v_ego < self.prev_v_ego):
         tesla_accel = self.prev_actuator_gas
       else:
         tesla_accel = clip(apply_accel,self.prev_actuator_gas - ACCEL_REWIND_MAX,self.prev_actuator_gas)
-    elif (apply_accel <= PEDAL_DEADZONE) and (apply_brake == 0):
+    elif (apply_accel <= PEDAL_DEADZONE) and (apply_brake <= BRAKE_THRESHOLD):
       if (CS.torqueLevel < TORQUE_LEVEL_ACC):
         #we are in the torque dead zone, 
         tesla_accel = self.prev_actuator_gas
       else:
         tesla_accel = self.prev_actuator_gas - ACCEL_REWIND_MAX
-    elif (apply_brake > 0) and (apply_accel == 0):
+    elif (apply_brake > BRAKE_THRESHOLD) and (apply_accel <= ACCEL_THRESHOLD):
       if self.lastPedalForZeroTorque > 0:
-        tesla_accel = (1 - apply_brake) * self.lastPedalForZeroTorque
+        tesla_accel = (.8 - apply_brake) * self.lastPedalForZeroTorque
         self.lastPedalForZeroTorque = 0.
       else:
-        tesla_accel = (1 - apply_brake) * self.prev_actuator_gas
+        tesla_accel = (.8 - apply_brake) * self.prev_actuator_gas
     else:
       tesla_accel = actuators.gas
     tesla_accel, self.accel_steady = accel_hysteresis(tesla_accel, self.accel_steady, enabled)
