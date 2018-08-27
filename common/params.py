@@ -272,6 +272,7 @@ def read_db(params_path, key):
     return None
 
 def write_db(params_path, key, value):
+  prev_umask = os.umask(0)
   lock = FileLock(params_path+"/.lock", True)
   lock.acquire()
 
@@ -286,6 +287,7 @@ def write_db(params_path, key, value):
     os.rename(tmp_path, path)
     fsync_dir(os.path.dirname(path))
   finally:
+    os.umask(prev_umask)
     lock.release()
 
 class Params(object):
