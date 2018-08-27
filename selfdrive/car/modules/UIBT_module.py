@@ -19,8 +19,6 @@ class UIButton:
 
 
 class UIButtons:
-   
-    file_lock = threading.Lock()
 
     def _write_buttons_worker(self):
         """ Write button file in a non-blocking manner.
@@ -30,14 +28,11 @@ class UIButtons:
     
         """
         while True:
-            print "~~~button check"
             if not self.last_written_btns or len(self.btns) != len(self.last_written_btns):
-                print "+++intial button write"
                 self._write_buttons()
             else:
                 for index, btn in enumerate(self.btns):
                     if btn.__dict__ != self.last_written_btns[index].__dict__:
-                        print "+++button write due to change"
                         self._write_buttons()
                         break
             time.sleep(1)
@@ -48,7 +43,6 @@ class UIButtons:
                 self.last_written_btns = copy.deepcopy(self.btns)
                 with open(self.buttons_status_out_path, "wb") as fo:
                     pickle.dump(self.last_written_btns, fo)
-                    print "+++written"
         except Exception as e:
             print "Failed to write button file %s" % self.buttons_status_out_path
             print str(e)
