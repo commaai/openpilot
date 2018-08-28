@@ -122,8 +122,7 @@ def data_sample(CI, CC, thermal, calibration, health, driver_monitor, gps_locati
 
 def calc_plan(CS, CP, events, PL, LaC, LoC, v_cruise_kph, driver_status, geofence):
    # plan runs always, independently of the state
-   # BB to test pedal; removed any other issues that could have slowed down the car
-   force_decel = False #driver_status.awareness < 0. or (geofence is not None and not geofence.in_geofence)
+   force_decel = driver_status.awareness < 0. or (geofence is not None and not geofence.in_geofence)
    plan_packet = PL.update(CS, LaC, LoC, v_cruise_kph, force_decel)
    plan = plan_packet.plan
    plan_ts = plan_packet.logMonoTime
@@ -270,10 +269,9 @@ def state_control(plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, 
                                       CS.steeringPressed)
 
   # *** gas/brake PID loop ***
-  #BBAD added CS to longcontrol call
   actuators.gas, actuators.brake = LoC.update(active, CS.vEgo, CS.brakePressed, CS.standstill, CS.cruiseState.standstill,
                                               v_cruise_kph, plan.vTarget, plan.vTargetFuture, plan.aTarget,
-                                              CP, CS, PL.lead_1)
+                                              CP, PL.lead_1)
 
   # *** steering PID loop ***
   actuators.steer, actuators.steerAngle = LaC.update(active, CS.vEgo, CS.steeringAngle,
@@ -450,7 +448,7 @@ def controlsd_thread(gctx=None, rate=100, default_bias=0.):
 
   fcw_enabled = params.get("IsFcwEnabled") == "1"
   geofence = None
-  
+
   PL = Planner(CP, fcw_enabled)
   LoC = LongControl(CP, CI.compute_gb)
   VM = VehicleModel(CP)
