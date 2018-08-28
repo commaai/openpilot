@@ -1,4 +1,6 @@
 from selfdrive.car.tesla import teslacan
+from selfdrive.controls.lib.pid import PIController
+from common.numpy_fast import interp
 from selfdrive.services import service_list
 from selfdrive.car.tesla.values import AH, CruiseButtons, CAR
 from selfdrive.boardd.boardd import can_list_to_can_capnp
@@ -95,7 +97,7 @@ class PCCController(object):
   def update_stat(self,CS, enabled, sendcan):
     if self.pid == None:
       CP = CS.CP
-      self.PIController((CP.longitudinalKpBP, CP.longitudinalKpV),
+      self.pid = PIController((CP.longitudinalKpBP, CP.longitudinalKpV),
                             (CP.longitudinalKiBP, CP.longitudinalKiV),
                             rate=100.0,
                             sat_limit=0.8)
@@ -112,12 +114,14 @@ class PCCController(object):
       if (CS.cstm_btns.get_button_status("pedal")>0):
         #no pedal hardware, disable button
         CS.cstm_btns.set_button_status("pedal",0)
+        print "disabling pedal"
+      print "no pedal hardware"
       return
     if self.pedal_hardware_present:
       if (CS.cstm_btns.get_button_status("pedal")==0):
         #pedal hardware, enable button
         CS.cstm_btns.set_button_status("pedal",1)
-      return
+        print "enabling pedal"
     # check if we had error before
     if self.user_gas_state != CS.user_gas_state:
       self.user_gas_state = CS.user_gas_state
@@ -127,7 +131,7 @@ class PCCController(object):
         # send reset command
         idx = self.pedal_idx
         self.pedal_idx = (self.pedal_idx + 1) % 16
-        can_sends.append(teslacan.create_gas_command_msg(0,0,idx))
+        can_sends.append(teslacan.create_pedal_command_msg(0,0,idx))
         sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
     # disable on brake
     if CS.brake_pressed and self.enable_pedal_cruise:
@@ -135,6 +139,7 @@ class PCCController(object):
       self.reset(0.)
       CS.UE.custom_alert_message(3,"PDL Disabled",150,4)
       CS.cstm_btns.set_button_status("pedal",1)
+      print "brake pressed"
     # process any stalk movement
     curr_time_ms = _current_time_millis()
     enable_pedal_cruise = self.enable_pedal_cruise
@@ -240,9 +245,10 @@ class PCCController(object):
     v_ego_pid = max(CS.v_ego, MIN_CAN_SPEED)
     deadzone = interp(v_ego_pid, CS.CP.longPidDeadzoneBP, CS.CP.longPidDeadzoneV)
     #BBAD adding overridet to pid to see if we can engage sooner
+    override = self.enable_pedal_cruise and CS.v_ego *  CV.MS_TO_KPH > self.pedal_speed_kph and CS.user_gas_pressed
     # we will try to feed forward the pedal position.... we might want to feed the last output_gb....
     # it's all about testing now.
-    output_gb = self.pid.update(self.v_pid, v_ego_pid, speed=v_ego_pid, override=override, deadzone=deadzone, feedforward=pedal_gas, freeze_integrator=prevent_overshoot)
+    output_gb = self.pid.update(self.v_pid, v_ego_pid, speed=v_ego_pid, override=override, deadzone=deadzone, feedforward=CS.pedal_gas, freeze_integrator=prevent_overshoot)
     if prevent_overshoot:
       output_gb = min(output_gb, 0.0)
 
@@ -317,15 +323,19 @@ class PCCController(object):
       # if cruise is set to faster than the max speed, slow down
       if actual_speed > self.pedal_speed_kph:
         msg =  "Slow to max"
-        new_speed = self.pedal_speed_kph
+        new_speed = actual_speed + 1 
       # If lead_dist is reported as 0, no one is detected in front of you so you
       # can speed up don't speed up when steer-angle > 2; vision radar often
       # loses lead car in a turn.
-      elif lead_dist == 0 and CS.angle_steers < 2.0:
+      elif lead_dist == 0 and CS.angle_steers < 5.0:
         if actual_speed < self.pedal_speed_kph: 
           msg =  "Accel to max"
           new_speed = self.pedal_speed_kph
       # if we have a populated lead_distance
+      # TODO: make angle dependent on speed
+      elif (lead_dist == 0 or lead_dist >= safe_dist_m) and CS.angle_steers >= 5.0:
+        new_speed = actual_speed
+        msg = "safe and turning so steady speed"
       elif (lead_dist > 0):
         ### Slowing down ###
         # Reduce speed significantly if lead_dist < 50% of safe dist, no matter
