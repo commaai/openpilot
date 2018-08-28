@@ -14,7 +14,7 @@ class SteerLimitParams:
   STEER_DELTA_DOWN = 10
   STEER_DRIVER_ALLOWANCE = 50
   STEER_DRIVER_MULTIPLIER = 4
-  STEER_DRIVER_FACTOR = 100
+  STEER_DRIVER_FACTOR = 1
 
 class CarController(object):
   def __init__(self, dbc_name, car_fingerprint, enable_camera):
