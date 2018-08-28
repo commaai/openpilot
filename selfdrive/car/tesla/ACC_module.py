@@ -14,8 +14,8 @@ def _current_time_millis():
 
 class ACCController(object):
   
-  # Tesla cruise only functions above 18 MPH
-  MIN_CRUISE_SPEED_MS = 18 * CV.MPH_TO_MS
+  # Tesla cruise only functions above 17 MPH
+  MIN_CRUISE_SPEED_MS = 17.5 * CV.MPH_TO_MS
     
   def __init__(self, carcontroller):
     self.CC = carcontroller
