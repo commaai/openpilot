@@ -93,13 +93,13 @@ class PCCController(object):
     self.v_pid = v_pid
 
   def update_stat(self,CS, enabled, sendcan):
-    if self.pid = None:
+    if self.pid == None:
       CP = CS.CP
       self.PIController((CP.longitudinalKpBP, CP.longitudinalKpV),
                             (CP.longitudinalKiBP, CP.longitudinalKiV),
                             rate=100.0,
                             sat_limit=0.8)
-      self.reset(0.):
+      self.reset(0.)
 
     #if self.LoC == None:
     #  self.LoC = LongControl(CS.CP,get_compute_gb_models)
@@ -336,7 +336,7 @@ class PCCController(object):
           msg =  "relspd -15 down"
           new_speed = actual_speed + rel_speed/2
         #Reduce speed if rel_speed < -5kph so you don't rush up to lead car
-        elif rel_speed < -5  and lead_dist >  1.5 safe_dist_m:
+        elif rel_speed < -5  and lead_dist >  1.5 * safe_dist_m:
           msg =  "relspd to 0"
           new_speed = actual_speed + rel_speed
         # Reduce speed significantly if lead_dist < 60% of  safe dist
