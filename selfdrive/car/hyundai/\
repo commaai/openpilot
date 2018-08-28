@@ -1,0 +1,28 @@
+import struct
+
+def create_lkas11(packer, apply_steer, steer_req, cnt, lkas11):
+
+
+  "CF_Lkas_LdwsSysState": lkas11.CF_Lkas_LdwsSysState
+  "CF_Lkas_SysWarning": lkas11.CF_Lkas_SysWarning
+  "CF_Lkas_LdwsLHWarning": lkas11.CF_Lkas_LdwsLHWarning
+  "CF_Lkas_LdwsRHWarning": lkas11.
+  "CF_Lkas_HbaLamp": lkas11.
+  "CF_Lkas_FcwBasReq": lkas11.
+  "CR_Lkas_StrToqReq": lkas11.
+  "CF_Lkas_ActToi": steer_req
+  "CF_Lkas_ToiFlt": 
+  "CF_Lkas_HbaSysState": lkas11.
+  "CF_Lkas_FcwOpt": lkas11.
+  "CF_Lkas_HbaOpt": lkas11.
+  "CF_Lkas_MsgCount": lkas11.
+  "CF_Lkas_FcwSysState": lkas11.
+  "CF_Lkas_FcwCollisionWarning": lkas11.
+  "CF_Lkas_FusionState": lkas11.
+  "CF_Lkas_Chksum": 0
+  "CF_Lkas_FcwOpt_USM": lkas11.
+  "CF_Lkas_LdwsOpt_USM": lkas11.
+
+
+  dat = packer.make_can_msg("LKAS11", 0, values)[2]
+
