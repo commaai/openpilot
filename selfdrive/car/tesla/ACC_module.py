@@ -1,22 +1,16 @@
 from selfdrive.services import service_list
-from selfdrive.car.tesla.values import AH, CruiseButtons, CruiseState, CAR
+from selfdrive.car.tesla.values import AH, CruiseButtons, CruiseState, CAR, ACCModes, ACCState
 from selfdrive.config import Conversions as CV
 import selfdrive.messaging as messaging
 import os
 import subprocess
 import time
 import zmq
-
-class ACCState(object):
-  # Possible state of the ACC system, following the DI_cruiseState naming
-  # scheme.
-  OFF = 0         # Disabled by UI.
-  STANDBY = 1     # Ready to be enaged.
-  ENABLED = 2     # Engaged.
-  NOT_READY = 9   # Not ready to be engaged due to the state of the car.
+  
 
 def _current_time_millis():
   return int(round(time.time() * 1000))
+
 
 class ACCController(object):
   
@@ -47,7 +41,8 @@ class ACCController(object):
     # cruise control should be enabled. Twice in .75 seconds counts as a double
     # pull.
     prev_enable_adaptive_cruise = self.enable_adaptive_cruise
-    self.autoresume = CS.cstm_btns.get_button_label2("acc") in ["AutoOP", "AutoJJ"]
+    acc_mode = CS.cstm_btns.get_button_label2("acc")
+    self.autoresume = ACCModes[acc_mode].autoresume
     curr_time_ms = _current_time_millis()
     speed_uom_kph = 1.
     if CS.imperial_speed_units:
@@ -177,7 +172,7 @@ class ACCController(object):
           elif speed_offset > half_press_kph and half_press_kph < available_speed:
             # Send cruise stalk up_1st.
             button_to_press = CruiseButtons.RES_ACCEL
-      if CS.cstm_btns.get_button_label2("acc") == "Mod JJ":
+      if CS.cstm_btns.get_button_label2("acc") in ["JJ", "AutoJJ"]:
         # Alternative speed decision logic that uses the lead car's distance
         # and speed more directly.
         # Bring in the lead car distance from the Live20 feed
