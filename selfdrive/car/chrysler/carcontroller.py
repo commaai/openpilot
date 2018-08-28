@@ -55,6 +55,7 @@ class CarController(object):
     self.last_angle = 0
     self.send_new_status = False  # indicates we want to send 2a6 when we can.
     self.prev_2a6 = -9999  # long time ago.
+    self.has_sent_2a6_warning = False  # if it's sent the initial warning
     self.accel_steady = 0.
     self.car_fingerprint = car_fingerprint
     self.alert_active = False
@@ -136,7 +137,7 @@ class CarController(object):
     self.standstill_req = False #?
 
     moving_fast = True  # for status message
-    if CS.v_ego < 3:  # don't steer if going under 6mph to not lock out LKAS
+    if CS.v_ego < 5:  # don't steer if going under 6mph to not lock out LKAS (was < 3)
       apply_angle = 0
       apply_steer = 0
       moving_fast = False
@@ -160,12 +161,19 @@ class CarController(object):
       new_msg = create_2d9(self.car_fingerprint)
       sendcan.send(can_list_to_can_capnp([new_msg], msgtype='sendcan').to_bytes())
       can_sends.append(new_msg)
-    if (frame % 25 == 0) or self.send_new_status:  # 0.25s period
-      if (frame - self.prev_2a6) < 10:  # at least 100ms (10 frames) since last 2a6.
+    if ((frame + 3) % 25 == 0) or self.send_new_status:  # 0.25s period
+      if (frame - self.prev_2a6) < 20:  # at least 200ms (20 frames) since last 2a6.
         self.send_new_status = True  # will not send, so send next time.
         apply_steer = 0  # cannot steer yet, waiting for 2a6 to be sent.
+        last_steer = 0
+        last_angle = 0
       else:
         new_msg = create_2a6(CS.gear_shifter, apply_steer, moving_fast, self.car_fingerprint)
+        if ((self.prev_2a6 > 0) and  # already sent a green
+            (not self.has_sent_2a6_warning) and
+            moving_fast):  # send initial warning in case that's needed to prep actuators.
+          self.has_sent_2a6_warning = True
+          new_msg = create_2a6(CS.gear_shifter, -1, moving_fast, self.car_fingerprint)
         sendcan.send(can_list_to_can_capnp([new_msg], msgtype='sendcan').to_bytes())
         can_sends.append(new_msg)
         self.send_new_status = False
