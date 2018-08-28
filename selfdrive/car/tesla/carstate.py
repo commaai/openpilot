@@ -253,7 +253,7 @@ class CarState(object):
   def init_ui_buttons(self):
     btns = []
     btns.append(UIButton("alca","ALC",0,""))
-    if self.CP.enableGasInterceptor:
+    if self.pedal_hardware_present:
       btns.append(UIButton("pedal","PDL",0,"M"))
     else:
       btns.append(UIButton("acc","ACC",0,"Mod OP"))
@@ -380,7 +380,7 @@ class CarState(object):
     self.cruise_speed_offset = calc_cruise_offset(cp.vl["DI_state"]['DI_cruiseSet'], self.v_ego)
     self.gear_shifter = parse_gear_shifter(can_gear_shifter, self.CP.carFingerprint)
 
-    self.pedal_gas = cp.vl["DI_torque1"]['DI_pedalPos'] / 112 #BB: to make it between 0..1
+    self.pedal_gas = cp.vl["DI_torque1"]['DI_pedalPos'] / 102 #BB: to make it between 0..1
     self.car_gas = self.pedal_gas
 
     self.steer_override = abs(epas_cp.vl["EPAS_sysStatus"]['EPAS_handsOnLevel']) > 0
