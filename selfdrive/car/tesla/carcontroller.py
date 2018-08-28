@@ -57,7 +57,8 @@ class CarController(object):
     self.enable_camera = enable_camera
     self.packer = CANPacker(dbc_name)
     self.epas_disabled = True
-    self.last_angle = 0
+    self.last_angle = 0.
+    self.last_accel = 0.
     self.ALCA = ALCAController(self,True,True)  # Enabled and SteerByAngle both True
     self.ACC = ACCController(self)
     self.PCC = PCCController(self)
@@ -133,10 +134,16 @@ class CarController(object):
       self.ALCA.update_status(CS.cstm_btns.get_button_status("alca") > 0)
       #print CS.cstm_btns.get_button_status("alca")
 
-    # Update ACC module info.
-    self.ACC.update_stat(CS, True)
-    #update PCC module info
-    self.PCC.update_stat(CS, True, sendcan)
+    
+    if CS.pedal_hardware_present:
+      #update PCC module info
+      self.PCC.update_stat(CS, True, sendcan)
+      self.ACC.enable_adaptive_cruise = False
+    else:
+      # Update ACC module info.
+      self.ACC.update_stat(CS, True)
+      self.PCC.enable_pedal_cruise = False
+    
     # Update HSO module info.
     human_control = False
 
@@ -238,9 +245,8 @@ class CarController(object):
           # Send this CAN msg first because it is racing against the real stalk.
           can_sends.insert(0, cruise_msg)
       if (frame % 2) == 0 and self.PCC.pedal_hardware_present:
-        apply_gas,gas_needed,gas_idx = self.PCC.update_pdl(enabled,CS,frame,actuators,pcm_speed)
-        gas_msg = teslacan.create_gas_command_msg(apply_gas * 112.,gas_needed ,gas_idx)
-        #can_sends.insert(0, gas_msg)
-        can_sends.append(gas_msg)
+        apply_accel,accel_needed,accel_idx = self.PCC.update_pdl(enabled,CS,frame,actuators,pcm_speed)
+        can_sends.append(teslacan.create_pedal_command_msg(apply_accel * 112.,accel_needed ,accel_idx))
       self.last_angle = apply_angle
+      self.last_accel = apply_accel
       sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())

@@ -45,7 +45,8 @@ class UIButtons:
         if self.hasChanges:
             fo = open(self.buttons_status_out_path, buttons_file_rw)
             for btn in self.btns:
-                fo.write(struct.pack("B",btn.btn_status + 48))
+                btn_status = 1 if btn.btn_status > 0 else 0
+                fo.write(struct.pack("B",btn_status + 48))
             fo.close()
         self.hasChanges = False
 
@@ -104,24 +105,30 @@ class UIButtons:
         else:
             return -1
 
-
     def set_button_status(self,btn_name,btn_status):
         btn = self.get_button(btn_name)
         if btn:
+            #if we change from enable to disable or the other way, save to file
+            if btn.btn_status * btn_status == 0 and btn.btn_status != btn_status:
+                self.hasChanges = True
             btn.btn_status = btn_status
-            self.hasChanges = True
             self.CS.UE.uiButtonInfoEvent(self.btns.index(btn),btn.btn_name, \
                 btn.btn_label,btn.btn_status,btn.btn_label2)
         if self.hasChanges:
             self.write_buttons_out_file()
-            self.hasChanges = False
 
     def set_button_status_from_ui(self,id,btn_status):
+        old_btn_status = self.btns[id].btn_status
+        if old_btn_status * btn_status == 0 and old_btn_status != btn_status:
+            self.hasChanges = True
         self.CS.update_ui_buttons(id,btn_status)
-        self.CS.UE.uiButtonInfoEvent(id,self.btns[id].btn_name, \
+        new_btn_status = self.btns[id].btn_status
+        if new_btn_status * btn_status == 0 and new_btn_status != btn_status:
+            self.hasChanges = True
+        if self.hasChanges:
+            self.CS.UE.uiButtonInfoEvent(id,self.btns[id].btn_name, \
                     self.btns[id].btn_label,self.btns[id].btn_status,self.btns[id].btn_label2)
-        self.hasChanges = True
-        self.write_buttons_out_file()
+            self.write_buttons_out_file()
         
 
     def get_button_label2(self, btn_name):

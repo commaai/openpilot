@@ -227,9 +227,6 @@ class CarState(object):
 
     #BB steering_wheel_stalk last position, used by ACC and ALCA
     self.steering_wheel_stalk = None
-
-    #BB pid holder for ALCA
-    self.pid = None
     
      
     # vEgo kalman filter
@@ -290,7 +287,7 @@ class CarState(object):
               self.cstm_btns.btns[id].btn_label2 = "Mod JJ"
           else:
               self.cstm_btns.btns[id].btn_label2 = "Mod OP"
-          self.cstm_btns.write_buttons_labels_to_file()
+          self.cstm_btns.hasChanges = True
       else:
           self.cstm_btns.btns[id].btn_status = btn_status * self.cstm_btns.btns[id].btn_status
     else:
