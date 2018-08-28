@@ -47,7 +47,7 @@ class ACCController(object):
     # cruise control should be enabled. Twice in .75 seconds counts as a double
     # pull.
     prev_enable_adaptive_cruise = self.enable_adaptive_cruise
-    self.autoresume = CS.cstm_btns.get_button_label2("acc") == "AutoRes"
+    self.autoresume = CS.cstm_btns.get_button_label2("acc") in ["AutoOP", "AutoJJ"]
     curr_time_ms = _current_time_millis()
     speed_uom_kph = 1.
     if CS.imperial_speed_units:

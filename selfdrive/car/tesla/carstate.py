@@ -244,10 +244,14 @@ class CarState(object):
     if self.cstm_btns.btns[id].btn_status > 0:
       if (id == 1) and (btn_status == 0):
           #don't change status, just model
-          if (self.cstm_btns.btns[id].btn_label2 == "Mod OP"):
-              self.cstm_btns.btns[id].btn_label2 = "Mod JJ"
+          if self.cstm_btns.btns[id].btn_label2 == "OP":
+              self.cstm_btns.btns[id].btn_label2 = "JJ"
+          elif self.cstm_btns.btns[id].btn_label2 == "JJ":
+              self.cstm_btns.btns[id].btn_label2 = "AutoOP"
+          elif self.cstm_btns.btns[id].btn_label2 == "AutoOP":
+            self.cstm_btns.btns[id].btn_label2 = "AutoJJ"
           else:
-              self.cstm_btns.btns[id].btn_label2 = "Mod OP"
+            self.cstm_btns.btns[id].btn_label2 = "OP"
       else:
           self.cstm_btns.btns[id].btn_status = btn_status * self.cstm_btns.btns[id].btn_status
     else:
