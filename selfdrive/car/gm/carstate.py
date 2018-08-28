@@ -137,7 +137,7 @@ class CarState(object):
       self.main_on = pt_cp.vl["ECMEngineStatus"]['CruiseMainOn']
       self.acc_active = False
       self.esp_disabled = pt_cp.vl["ESPStatus"]['TractionControlOn'] != 1
-      self.regen_pressed = bool(pt_cp.vl["EBCMRegenPaddle"]['RegenPaddle'])
+      self.regen_pressed = False
       self.pcm_acc_status = pt_cp.vl["AcceleratorPedal2"]['CruiseState']
     else: 
       self.park_brake = False
