@@ -14,6 +14,11 @@ class CarControllerParams():
       self.STEER_STEP = 2              # how often we update the steer cmd
       self.STEER_DELTA_UP = 7          # ~0.75s time to peak torque (255/50hz/0.75s)
       self.STEER_DELTA_DOWN = 17       # ~0.3s from peak torque to zero
+    elif car_fingerprint == CAR.ACADIA_DENALI:
+      self.STEER_MAX = 255
+      self.STEER_STEP = 2              # how often we update the steer cmd
+      self.STEER_DELTA_UP = 7          # ~0.75s time to peak torque (255/50hz/0.75s)
+      self.STEER_DELTA_DOWN = 17       # ~0.3s from peak torque to zero
     elif car_fingerprint == CAR.CADILLAC_CT6:
       self.STEER_MAX = 150
       self.STEER_STEP = 1              # how often we update the steer cmd
@@ -115,6 +120,9 @@ class CarController(object):
       if self.car_fingerprint == CAR.VOLT:
         can_sends.append(gmcan.create_steering_control(self.packer_pt,
           canbus.powertrain, apply_steer, idx, lkas_enabled))
+      if self.car_fingerprint == CAR.ACADIA_DENALI:
+        can_sends.append(gmcan.create_steering_control(self.packer_pt,
+          canbus.powertrain, apply_steer, idx, lkas_enabled))
       if self.car_fingerprint == CAR.CADILLAC_CT6:
         can_sends += gmcan.create_steering_control_ct6(self.packer_pt, 
           canbus, apply_steer, CS.v_ego, idx, lkas_enabled)
@@ -122,6 +130,19 @@ class CarController(object):
     ### GAS/BRAKE ###
 
     if self.car_fingerprint == CAR.VOLT:
+      # no output if not enabled, but keep sending keepalive messages
+      # threat pedals as one
+      final_pedal = actuators.gas - actuators.brake
+
+      # *** apply pedal hysteresis ***
+      final_brake, self.brake_steady = actuator_hystereses(
+        final_pedal, self.pedal_steady)
+
+      if not enabled:
+        apply_gas = P.MAX_ACC_REGEN  # TODO: do we really need to send max regen when not enabled?
+        apply_brake = 0
+        
+    if self.car_fingerprint == CAR.ACADIA_DENALI:
       # no output if not enabled, but keep sending keepalive messages
       # threat pedals as one
       final_pedal = actuators.gas - actuators.brake
