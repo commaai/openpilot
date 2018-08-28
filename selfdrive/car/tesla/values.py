@@ -86,3 +86,7 @@ class CruiseState:
   @classmethod
   def is_faulted(cls, state):
     return state in [cls.PRE_FAULT, cls.FAULT]
+
+  @classmethod
+  def is_off(cls, state):
+    return state in [cls.OFF]

@@ -2,7 +2,7 @@ from selfdrive.car.tesla import teslacan
 from selfdrive.controls.lib.pid import PIController
 from common.numpy_fast import clip, interp
 from selfdrive.services import service_list
-from selfdrive.car.tesla.values import AH, CruiseButtons, CAR
+from selfdrive.car.tesla.values import AH,CruiseState, CruiseButtons, CAR
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.config import Conversions as CV
 from common.numpy_fast import clip
@@ -156,16 +156,16 @@ class PCCController(object):
     prev_enable_pedal_cruise = self.enable_pedal_cruise
     # process any stalk movement
     curr_time_ms = _current_time_millis()
-    speed_uom = 1.
+    speed_uom_kph = 1.
     if CS.imperial_speed_units:
-      speed_uom = CV.MPH_TO_KPH
+      speed_uom_kph = CV.MPH_TO_KPH
     if (CS.cruise_buttons == CruiseButtons.MAIN and
         self.prev_cruise_buttons != CruiseButtons.MAIN):
       double_pull = curr_time_ms - self.last_cruise_stalk_pull_time < 750
       self.last_cruise_stalk_pull_time = curr_time_ms
       ready = (CS.cstm_btns.get_button_status("pedal") > PCCState.OFF and
                enabled and
-               not CruiseState.is_enabled_or_standby(CS.pcm_acc_status))
+               CruiseState.is_off(CS.pcm_acc_status))
       if ready and double_pull:
         # A double pull enables ACC. updating the max ACC speed if necessary.
         self.enable_pedal_cruise = True
@@ -214,9 +214,9 @@ class PCCController(object):
       CS.cstm_btns.set_button_status("pedal", PCCState.ENABLED)
 
     # Update the UI to show whether the current car state allows ACC.
-    if CS.cstm_btns.get_button_status("pedal") in [ACCState.STANDBY, ACCState.NOT_READY]:
+    if CS.cstm_btns.get_button_status("pedal") in [PCCState.STANDBY, PCCState.NOT_READY]:
       if (enabled
-          and not CruiseState.is_enabled_or_standby(CS.pcm_acc_status)):
+          and CruiseState.is_off(CS.pcm_acc_status)):
         CS.cstm_btns.set_button_status("pedal", PCCState.STANDBY)
       else:
         CS.cstm_btns.set_button_status("pedal", PCCState.NOT_READY)
@@ -295,7 +295,7 @@ class PCCController(object):
       else:
         tesla_accel = (.8 - apply_brake) * self.prev_actuator_gas
     else:
-      tesla_accel = actuators.gas
+      tesla_accel = apply_accel
     tesla_accel, self.accel_steady = accel_hysteresis(tesla_accel, self.accel_steady, enabled)
     
     tesla_accel = clip(tesla_accel, 0., 1.) if self.enable_pedal_cruise else 0.
@@ -333,6 +333,7 @@ class PCCController(object):
 
     if self.enable_pedal_cruise:
       # if cruise is set to faster than the max speed, slow down
+      new_speed = actual_speed
       if actual_speed > self.pedal_speed_kph:
         msg =  "Slow to max"
         new_speed = actual_speed - 1 
@@ -342,7 +343,7 @@ class PCCController(object):
       elif lead_dist == 0 and CS.angle_steers < 5.0:
         if actual_speed < self.pedal_speed_kph: 
           msg =  "Accel to max"
-          new_speed = actual_speed + 1
+          new_speed = actual_speed + 0.5
       # if we have a populated lead_distance
       # TODO: make angle dependent on speed
       elif (lead_dist == 0 or lead_dist >= safe_dist_m) and CS.angle_steers >= 5.0:
