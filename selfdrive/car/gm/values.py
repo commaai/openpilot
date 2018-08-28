@@ -3,7 +3,7 @@ from selfdrive.car import dbc_dict
 
 class CAR:
   VOLT = "CHEVROLET VOLT PREMIER 2017"
-  ACADIA = "GMC ACADIA DENALI 2018"
+  ACADIA_DENALI = "GMC ACADIA DENALI 2018"
   CADILLAC_CT6 = "CADILLAC CT6 SUPERCRUISE 2018"
 
 class CruiseButtons:
