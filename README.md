@@ -62,6 +62,7 @@ Supported Cars
 | Honda         | Odyssey 2018              | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 0mph           |
 | Honda         | Pilot 2017                | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          |
 | Honda         | Pilot 2018                | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          |
+| Honda         | Pilot 2019                | All                  | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          |
 | Honda         | Ridgeline 2017            | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          |
 | Honda         | Ridgeline 2018            | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          |
 | Lexus         | RX Hybrid 2017            | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
