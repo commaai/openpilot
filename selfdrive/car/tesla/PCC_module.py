@@ -62,14 +62,6 @@ def accel_hysteresis(accel, accel_steady, enabled):
   return accel, accel_steady
 
 
-def get_compute_gb_models(accel, speed):
-  creep_brake = 0.0
-  creep_speed = 2.3
-  creep_brake_value = 0.15
-  if speed < creep_speed:
-    creep_brake = (creep_speed - speed) / creep_speed * creep_brake_value
-  return float(accel)# / 4.8 - creep_brake
-
 #this is for the pedal cruise control
 class PCCController(object):
   def __init__(self,carcontroller):
@@ -115,8 +107,6 @@ class PCCController(object):
                             sat_limit=0.8)
       self.reset(0.)
 
-    #if self.LoC == None:
-    #  self.LoC = LongControl(CS.CP,get_compute_gb_models)
     can_sends = []
     #BBTODO: a better way to engage the pedal early and reset its CAN
     # on first brake press check if hardware present; being on CAN2 values are not included in fingerprinting
@@ -188,10 +178,10 @@ class PCCController(object):
       # max ACC speed. If actual speed is already 50, the code also increases
       # the max cruise speed.
       if CS.cruise_buttons == CruiseButtons.RES_ACCEL:
-        requested_speed_kph = CS.v_ego * CV.MS_TO_KPH + speed_uom_kph
+        requested_speed_kph = CS.v_ego_raw * CV.MS_TO_KPH + speed_uom_kph
         self.pedal_speed_kph = max(self.pedal_speed_kph, requested_speed_kph)
       elif CS.cruise_buttons == CruiseButtons.RES_ACCEL_2ND:
-        requested_speed_kph = CS.v_ego * CV.MS_TO_KPH + 5 * speed_uom_kph
+        requested_speed_kph = CS.v_ego_raw * CV.MS_TO_KPH + 5 * speed_uom_kph
         self.pedal_speed_kph = max(self.pedal_speed_kph, requested_speed_kph)
       elif CS.cruise_buttons == CruiseButtons.DECEL_SET:
         self.pedal_speed_kph -= speed_uom_kph
@@ -256,13 +246,13 @@ class PCCController(object):
     self.v_pid = self.calc_follow_speed(CS)
     self.pid.pos_limit = gas_max
     self.pid.neg_limit = - brake_max
-    v_ego_pid = max(CS.v_ego, MIN_CAN_SPEED)
+    v_ego_pid = max(CS.v_ego_raw, MIN_CAN_SPEED)
     deadzone = interp(v_ego_pid, CS.CP.longPidDeadzoneBP, CS.CP.longPidDeadzoneV)
     #BBAD adding overridet to pid to see if we can engage sooner
-    override = self.enable_pedal_cruise and CS.v_ego *  CV.MS_TO_KPH > self.pedal_speed_kph and CS.user_gas_pressed
+    override = self.enable_pedal_cruise and CS.v_ego_raw *  CV.MS_TO_KPH > self.pedal_speed_kph and CS.user_gas_pressed
     # we will try to feed forward the pedal position.... we might want to feed the last output_gb....
     # it's all about testing now.
-    output_gb = self.pid.update(self.v_pid, v_ego_pid, speed=v_ego_pid, override=override, deadzone=deadzone, feedforward=CS.pedal_gas, freeze_integrator=prevent_overshoot)
+    output_gb = self.pid.update(self.v_pid, v_ego_pid, speed=v_ego_pid, override=override, deadzone=deadzone, feedforward=last_output_gb, freeze_integrator=prevent_overshoot)
     if prevent_overshoot:
       output_gb = min(output_gb, 0.0)
 
@@ -278,7 +268,7 @@ class PCCController(object):
 
     #slow deceleration
     if (apply_accel > PEDAL_DEADZONE) and (apply_accel < self.prev_actuator_gas) and (apply_brake <= BRAKE_THRESHOLD):
-      if (CS.torqueLevel < TORQUE_LEVEL_ACC) and (CS.v_ego < self.prev_v_ego):
+      if (CS.torqueLevel < TORQUE_LEVEL_ACC) and (CS.v_ego_raw < self.prev_v_ego):
         tesla_accel = self.prev_actuator_gas
       else:
         tesla_accel = clip(apply_accel,self.prev_actuator_gas - ACCEL_REWIND_MAX,self.prev_actuator_gas)
@@ -302,7 +292,7 @@ class PCCController(object):
     enable_gas = 1 if self.enable_pedal_cruise else 0
     self.torqueLevel_last = CS.torqueLevel
     self.prev_actuator_gas = tesla_accel * enable_gas
-    self.prev_v_ego = CS.v_ego
+    self.prev_v_ego = CS.v_ego_raw
     return tesla_accel,enable_gas,idx
 
 
@@ -318,9 +308,9 @@ class PCCController(object):
     # Grab the relative speed.
     rel_speed = self.lead_1.vRel * CV.MS_TO_KPH
     # v_ego is in m/s, so safe_dist_mance is in meters.
-    safe_dist_m = CS.v_ego * self.follow_time
+    safe_dist_m = CS.v_ego_raw * self.follow_time
     # Current speed in kph
-    actual_speed = CS.v_ego * CV.MS_TO_KPH
+    actual_speed = CS.v_ego_raw * CV.MS_TO_KPH
     available_speed = self.pedal_speed_kph - actual_speed
     # button to issue
     new_speed = 0.
