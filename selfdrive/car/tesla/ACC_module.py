@@ -1,5 +1,5 @@
 from selfdrive.services import service_list
-from selfdrive.car.tesla.values import AH, CruiseButtons, CruiseState, CAR, ACCModes, ACCState
+from selfdrive.car.tesla.values import AH, CruiseButtons, CruiseState, CAR, GetAccMode
 from selfdrive.config import Conversions as CV
 import selfdrive.messaging as messaging
 import os
@@ -45,8 +45,10 @@ class ACCController(object):
     # cruise control should be enabled. Twice in .75 seconds counts as a double
     # pull.
     prev_enable_adaptive_cruise = self.enable_adaptive_cruise
-    acc_mode = CS.cstm_btns.get_button_label2("acc")
-    self.autoresume = ACCModes[acc_mode].autoresume
+    acc_string = CS.cstm_btns.get_button_label2("acc")
+    acc_mode = GetAccMode(acc_string)
+    CS.cstm_btns.get_button("acc").btn_label2 = acc_mode.name
+    self.autoresume = acc_mode.autoresume
     curr_time_ms = _current_time_millis()
     speed_uom_kph = 1.
     if CS.imperial_speed_units:

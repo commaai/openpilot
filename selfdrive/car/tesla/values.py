@@ -103,7 +103,13 @@ class ACCMode(object):
     self.next_mode = next_mode
 
   
-ACCModes = {
+_ACCModes = {
   "FOLLOW": ACCMode(name="FOLLOW", autoresume=False, next_mode="AUTO"),
   "AUTO":   ACCMode(name="AUTO",   autoresume=True,  next_mode="FOLLOW")
 }
+
+def GetAccMode(name):
+  if name in _ACCModes:
+    return _ACCModes[name]
+  else:
+    return _ACCModes.values()[0]
