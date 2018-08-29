@@ -170,13 +170,9 @@ class ACCController(object):
     
   # Adjust speed based off OP's longitudinal model.
   def calc_op_button(self, CS, pcm_speed, current_time_ms):
-    # Automatically engange traditional cruise if it is idle and we are
-    # going fast enough and we are accelerating.
-    if (CS.pcm_acc_status == 1
-        and CS.v_ego > self.MIN_CRUISE_SPEED_MS
-        and CS.a_ego >= 0.05
-        and self.autoresume):
-      button_to_press = CruiseButtons.DECEL_2ND
+    # Automatically engange traditional cruise if ACC is active.
+    if self.should_autoengage_cc(CS, current_time_ms):
+      button_to_press = CruiseButtons.RES_ACCEL
     # If traditional cruise is engaged, then control it.
     elif (CS.pcm_acc_status == 2
           # But don't make adjustments if a human has manually done so in
@@ -216,6 +212,16 @@ class ACCController(object):
           # Send cruise stalk up_1st.
           button_to_press = CruiseButtons.RES_ACCEL
     return button_to_press
+    
+  def should_autoengage_cc(self, CS, current_time_ms):
+    autoresume_supressed_by_braking = (
+      self.autoresume
+      and CS.a_ego < 0
+      and current_time_ms > self.enabled_time + 300)
+    return (CS.pcm_acc_status == 1
+            and self.enable_adaptive_cruise
+            and CS.v_ego >= self.MIN_CRUISE_SPEED_MS
+            and not autoresume_supressed_by_braking)
 
   # function to calculate the cruise button based on a safe follow distance
   def calc_follow_button(self, CS):
@@ -250,14 +256,13 @@ class ACCController(object):
 
     ###   Logic to determine best cruise speed ###
 
-    # Automatically engange traditional cruise if it is idle and we are
-    # going fast enough and accelerating.
-    if (CS.pcm_acc_status == 1
-        and self.enable_adaptive_cruise
-        and CS.v_ego > self.MIN_CRUISE_SPEED_MS
-        and CS.a_ego > 0.05
-        and self.autoresume):
-      button = CruiseButtons.DECEL_SET
+    # Automatically engange traditional cruise if ACC is active.
+    braking_supresses_autoresume = (
+      self.autoresume
+      and CS.a_ego < 0
+      and current_time_ms > self.enabled_time + 300)
+    if self.should_autoengage_cc(CS, current_time_ms):
+      button = CruiseButtons.RES_ACCEL
     # If traditional cruise is engaged, then control it.
     elif CS.pcm_acc_status == 2:
       # if cruise is set to faster than the max speed, slow down
