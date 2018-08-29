@@ -134,7 +134,7 @@ class ACCController(object):
         and current_time_ms > self.automated_cruise_action_time + 500):
       
       if CS.cstm_btns.get_button_label2("acc") in ["OP", "AutoOP"]:    
-        button_to_press = self.cal_op_button(CS, pcm_speed, current_time_ms)
+        button_to_press = self.calc_op_button(CS, pcm_speed, current_time_ms)
       elif CS.cstm_btns.get_button_label2("acc") in ["FOLLOW", "AUTO"]:
         # Alternative speed decision logic that uses the lead car's distance
         # and speed more directly.
@@ -164,7 +164,7 @@ class ACCController(object):
     return button_to_press
     
   # Adjust speed based off OP's longitudinal model.
-  def cal_op_button(self, CS, pcm_speed, current_time_ms):
+  def calc_op_button(self, CS, pcm_speed, current_time_ms):
     # Automatically engange traditional cruise if it is idle and we are
     # going fast enough and we are accelerating.
     if (CS.pcm_acc_status == 1

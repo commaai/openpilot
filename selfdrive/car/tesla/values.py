@@ -104,8 +104,6 @@ class ACCMode(object):
 
   
 ACCModes = {
-  #"OP":     ACCMode(name="OP",     autoresume=False, next_mode="JJ"),
-  "FOLLOW":     ACCMode(name="FOLLOW",     autoresume=False, next_mode="AUTO"),
-  #"AutoOP": ACCMode(name="AutoOP", autoresume=True,  next_mode="AutoJJ"),
-  "AUTO": ACCMode(name="AUTO", autoresume=True,  next_mode="FOLLOW")
+  "FOLLOW": ACCMode(name="FOLLOW", autoresume=False, next_mode="AUTO"),
+  "AUTO":   ACCMode(name="AUTO",   autoresume=True,  next_mode="FOLLOW")
 }
