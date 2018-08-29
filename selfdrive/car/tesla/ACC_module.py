@@ -21,6 +21,7 @@ class ACCController(object):
     self.CC = carcontroller
     self.human_cruise_action_time = 0
     self.automated_cruise_action_time = 0
+    self.enabled_time = 0
     self.last_angle = 0.
     context = zmq.Context()
     self.poller = zmq.Poller()
@@ -58,6 +59,7 @@ class ACCController(object):
       if ready and double_pull:
         # A double pull enables ACC. updating the max ACC speed if necessary.
         self.enable_adaptive_cruise = True
+        self.enabled_time = curr_time_ms
         # Increase ACC speed to match current, if applicable.
         self.acc_speed_kph = max(CS.v_ego_raw * CV.MS_TO_KPH, self.acc_speed_kph)
       else:
@@ -144,7 +146,8 @@ class ACCController(object):
       elif (CS.pcm_acc_status == 2
             # But don't make adjustments if a human has manually done so in
             # the last 3 seconds. Human intention should not be overridden.
-            and current_time_ms > self.human_cruise_action_time + 3000):
+            and current_time_ms > self.human_cruise_action_time + 3000
+            and current_time_ms > self.enabled_time + 1000):
         if CS.imperial_speed_units:
           # Imperial unit cars adjust cruise in units of 1 and 5 mph.
           half_press_kph = 1 * CV.MPH_TO_KPH
