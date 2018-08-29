@@ -1127,6 +1127,14 @@ static void ui_draw_calibration_status(UIState *s) {
 }
 
 static void ui_draw_vision(UIState *s) {
+  //BB code added to only draw every other frame
+  if (!s->b.shouldDrawFrame) {
+    s->b.shouldDrawFrame = true;
+    return;
+  }
+  s->b.shouldDrawFrame = false;
+  //BBEND
+
   const UIScene *scene = &s->scene;
   int ui_viz_rx = scene->ui_viz_rx;
   int ui_viz_rw = scene->ui_viz_rw;
