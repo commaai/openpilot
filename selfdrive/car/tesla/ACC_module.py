@@ -117,16 +117,13 @@ class ACCController(object):
     # Update prev state after all other actions.
     self.prev_cruise_buttons = CS.cruise_buttons
     self.prev_pcm_acc_status = CS.pcm_acc_status
-
+    
   def update_acc(self, enabled, CS, frame, actuators, pcm_speed):
     # Adaptive cruise control
     current_time_ms = _current_time_millis()
     if CruiseButtons.should_be_throttled(CS.cruise_buttons):
       self.human_cruise_action_time = current_time_ms
     button_to_press = None
-    # The difference between OP's target speed and the current cruise
-    # control speed, in KPH.
-    speed_offset = (pcm_speed * CV.MS_TO_KPH - CS.v_cruise_actual)
 
     if (self.enable_adaptive_cruise
         # Only do ACC if OP is steering
@@ -135,48 +132,10 @@ class ACCController(object):
         # the car think we're doing a 'long press' on the cruise stalk,
         # resulting in small, jerky speed adjustments.
         and current_time_ms > self.automated_cruise_action_time + 500):
-      # Automatically engange traditional cruise if it is idle and we are
-      # going fast enough and we are accelerating.
-      if (CS.pcm_acc_status == 1
-          and CS.v_ego > self.MIN_CRUISE_SPEED_MS
-          and CS.a_ego >= 0.05
-          and self.autoresume):
-        button_to_press = CruiseButtons.DECEL_2ND
-      # If traditional cruise is engaged, then control it.
-      elif (CS.pcm_acc_status == 2
-            # But don't make adjustments if a human has manually done so in
-            # the last 3 seconds. Human intention should not be overridden.
-            and current_time_ms > self.human_cruise_action_time + 3000
-            and current_time_ms > self.enabled_time + 1000):
-        if CS.imperial_speed_units:
-          # Imperial unit cars adjust cruise in units of 1 and 5 mph.
-          half_press_kph = 1 * CV.MPH_TO_KPH
-          full_press_kph = 5 * CV.MPH_TO_KPH
-        else:
-          # Metric cars adjust cruise in units of 1 and 5 kph.
-          half_press_kph = 1
-          full_press_kph = 5
-        
-        # Reduce cruise speed significantly if necessary. Multiply by a % to
-        # make the car slightly more eager to slow down vs speed up.
-        if speed_offset < -0.6 * full_press_kph and CS.v_cruise_actual > 0:
-          # Send cruise stalk dn_2nd.
-          button_to_press = CruiseButtons.DECEL_2ND
-        # Reduce speed slightly if necessary.
-        elif speed_offset < -0.9 * half_press_kph and CS.v_cruise_actual > 0:
-          # Send cruise stalk dn_1st.
-          button_to_press = CruiseButtons.DECEL_SET
-        # Increase cruise speed if possible.
-        elif CS.v_ego > self.MIN_CRUISE_SPEED_MS:
-          # How much we can accelerate without exceeding max allowed speed.
-          available_speed = self.acc_speed_kph - CS.v_cruise_actual
-          if speed_offset > full_press_kph and full_press_kph < available_speed:
-            # Send cruise stalk up_2nd.
-            button_to_press = CruiseButtons.RES_ACCEL_2ND
-          elif speed_offset > half_press_kph and half_press_kph < available_speed:
-            # Send cruise stalk up_1st.
-            button_to_press = CruiseButtons.RES_ACCEL
-      if CS.cstm_btns.get_button_label2("acc") in ["JJ", "AutoJJ"]:
+      
+      if CS.cstm_btns.get_button_label2("acc") in ["OP", "AutoOP"]:    
+        button_to_press = self.cal_op_button(CS, pcm_speed, current_time_ms)
+      elif CS.cstm_btns.get_button_label2("acc") in ["FOLLOW", "AUTO"]:
         # Alternative speed decision logic that uses the lead car's distance
         # and speed more directly.
         # Bring in the lead car distance from the Live20 feed
@@ -202,6 +161,55 @@ class ACCController(object):
     #elif (current_time_ms > self.last_update_time + 1000):
     #  self.last_update_time = current_time_ms
     #  print "Desired ACC speed change: %s" % (speed_offset)
+    return button_to_press
+    
+  # Adjust speed based off OP's longitudinal model.
+  def cal_op_button(self, CS, pcm_speed, current_time_ms):
+    # Automatically engange traditional cruise if it is idle and we are
+    # going fast enough and we are accelerating.
+    if (CS.pcm_acc_status == 1
+        and CS.v_ego > self.MIN_CRUISE_SPEED_MS
+        and CS.a_ego >= 0.05
+        and self.autoresume):
+      button_to_press = CruiseButtons.DECEL_2ND
+    # If traditional cruise is engaged, then control it.
+    elif (CS.pcm_acc_status == 2
+          # But don't make adjustments if a human has manually done so in
+          # the last 3 seconds. Human intention should not be overridden.
+          and current_time_ms > self.human_cruise_action_time + 3000
+          and current_time_ms > self.enabled_time + 1000):
+      # The difference between OP's target speed and the current cruise
+      # control speed, in KPH.
+      speed_offset = (pcm_speed * CV.MS_TO_KPH - CS.v_cruise_actual)
+    
+      if CS.imperial_speed_units:
+        # Imperial unit cars adjust cruise in units of 1 and 5 mph.
+        half_press_kph = 1 * CV.MPH_TO_KPH
+        full_press_kph = 5 * CV.MPH_TO_KPH
+      else:
+        # Metric cars adjust cruise in units of 1 and 5 kph.
+        half_press_kph = 1
+        full_press_kph = 5
+      
+      # Reduce cruise speed significantly if necessary. Multiply by a % to
+      # make the car slightly more eager to slow down vs speed up.
+      if speed_offset < -0.6 * full_press_kph and CS.v_cruise_actual > 0:
+        # Send cruise stalk dn_2nd.
+        button_to_press = CruiseButtons.DECEL_2ND
+      # Reduce speed slightly if necessary.
+      elif speed_offset < -0.9 * half_press_kph and CS.v_cruise_actual > 0:
+        # Send cruise stalk dn_1st.
+        button_to_press = CruiseButtons.DECEL_SET
+      # Increase cruise speed if possible.
+      elif CS.v_ego > self.MIN_CRUISE_SPEED_MS:
+        # How much we can accelerate without exceeding max allowed speed.
+        available_speed = self.acc_speed_kph - CS.v_cruise_actual
+        if speed_offset > full_press_kph and full_press_kph < available_speed:
+          # Send cruise stalk up_2nd.
+          button_to_press = CruiseButtons.RES_ACCEL_2ND
+        elif speed_offset > half_press_kph and half_press_kph < available_speed:
+          # Send cruise stalk up_1st.
+          button_to_press = CruiseButtons.RES_ACCEL
     return button_to_press
 
   # function to calculate the cruise button based on a safe follow distance

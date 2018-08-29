@@ -245,7 +245,11 @@ class CarState(object):
       if (id == 1) and (btn_status == 0):
           # don't change status, just model
           current_mode = self.cstm_btns.btns[id].btn_label2
-          self.cstm_btns.btns[id].btn_label2 = ACCModes[current_mode].next_mode
+          if current_mode in ACCModes:
+            next_mode = ACCModes[current_mode].next_mode
+          else:
+            next_mode = ACCModes.values()[0]
+          self.cstm_btns.btns[id].btn_label2 = next_mode
       else:
           self.cstm_btns.btns[id].btn_status = btn_status * self.cstm_btns.btns[id].btn_status
     else:
