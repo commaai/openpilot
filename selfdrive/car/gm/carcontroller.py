@@ -117,10 +117,7 @@ class CarController(object):
       self.apply_steer_last = apply_steer
       idx = (frame / P.STEER_STEP) % 4
 
-      if self.car_fingerprint == CAR.VOLT:
-        can_sends.append(gmcan.create_steering_control(self.packer_pt,
-          canbus.powertrain, apply_steer, idx, lkas_enabled))
-      if self.car_fingerprint == CAR.ACADIA_DENALI:
+      if self.car_fingerprint in (CAR.VOLT, CAR.ACADIA_DENALI):
         can_sends.append(gmcan.create_steering_control(self.packer_pt,
           canbus.powertrain, apply_steer, idx, lkas_enabled))
       if self.car_fingerprint == CAR.CADILLAC_CT6:
@@ -129,20 +126,7 @@ class CarController(object):
 
     ### GAS/BRAKE ###
 
-    if self.car_fingerprint == CAR.VOLT:
-      # no output if not enabled, but keep sending keepalive messages
-      # threat pedals as one
-      final_pedal = actuators.gas - actuators.brake
-
-      # *** apply pedal hysteresis ***
-      final_brake, self.brake_steady = actuator_hystereses(
-        final_pedal, self.pedal_steady)
-
-      if not enabled:
-        apply_gas = P.MAX_ACC_REGEN  # TODO: do we really need to send max regen when not enabled?
-        apply_brake = 0
-        
-    if self.car_fingerprint == CAR.ACADIA_DENALI:
+    if self.car_fingerprint in (CAR.VOLT, CAR.ACADIA_DENALI):
       # no output if not enabled, but keep sending keepalive messages
       # threat pedals as one
       final_pedal = actuators.gas - actuators.brake
