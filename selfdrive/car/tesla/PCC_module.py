@@ -5,6 +5,7 @@ from selfdrive.services import service_list
 from selfdrive.car.tesla.values import AH,CruiseState, CruiseButtons, CAR
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.config import Conversions as CV
+from selfdrive.controls.lib.speed_smoother import speed_smoother
 from common.numpy_fast import clip
 import selfdrive.messaging as messaging
 import os
@@ -35,6 +36,38 @@ MIN_CAN_SPEED = 0.3  #TODO: parametrize this in car interface
 STOPPING_TARGET_SPEED = MIN_CAN_SPEED + 0.01
 STARTING_TARGET_SPEED = 0.5
 BRAKE_THRESHOLD_TO_PID = 0.2
+
+
+#### from planner
+#
+_DT = 0.01    # 100Hz
+_DT_MPC = 0.2  # 5Hz
+MAX_SPEED_ERROR = 2.0
+AWARENESS_DECEL = -0.2     # car smoothly decel at .2m/s^2 when user is distracted
+_LEAD_ACCEL_TAU = 1.5
+
+GPS_PLANNER_ADDR = "192.168.5.1"
+
+# lookup tables VS speed to determine min and max accels in cruise
+# make sure these accelerations are smaller than mpc limits
+_A_CRUISE_MIN_V  = [-1.0, -.8, -.67, -.5, -.30]
+_A_CRUISE_MIN_BP = [   0., 5.,  10., 20.,  40.]
+
+# need fast accel at very low speed for stop and go
+# make sure these accelerations are smaller than mpc limits
+_A_CRUISE_MAX_V = [1.1, 1.1, .8, .5, .3]
+_A_CRUISE_MAX_V_FOLLOWING = [1.6, 1.6, 1.2, .7, .3]
+_A_CRUISE_MAX_BP = [0.,  5., 10., 20., 40.]
+
+# Lookup table for turns
+_A_TOTAL_MAX_V = [1.5, 1.9, 3.2]
+_A_TOTAL_MAX_BP = [0., 20., 40.]
+
+_FCW_A_ACT_V = [-3., -2.]
+_FCW_A_ACT_BP = [0., 30.]
+
+# max acceleration allowed in acc, which happens in restart
+A_ACC_MAX = max(_A_CRUISE_MAX_V_FOLLOWING)
 
 
 class PCCState(object):
@@ -92,6 +125,8 @@ class PCCController(object):
     self.follow_time = FOLLOW_UP_TIME # in seconds
     self.pid = None
     self.v_pid = 0.
+    self.a_pid = 0.
+    self.b_pid = 0.
     self.last_output_gb = 0.
     
   def reset(self, v_pid):
@@ -104,7 +139,7 @@ class PCCController(object):
       self.pid = PIController((CP.longitudinalKpBP, CP.longitudinalKpV),
                             (CP.longitudinalKiBP, CP.longitudinalKiV),
                             rate=100.0,
-                            sat_limit=0.8)
+                            sat_limit=0.8) #,convert=compute_gb)
       self.reset(0.)
 
     can_sends = []
@@ -160,7 +195,7 @@ class PCCController(object):
         # A double pull enables ACC. updating the max ACC speed if necessary.
         self.enable_pedal_cruise = True
         # Increase ACC speed to match current, if applicable.
-        self.pedal_speed_kph = max(CS.v_ego_raw * CV.MS_TO_KPH, self.pedal_speed_kph)
+        self.pedal_speed_kph = max(CS.v_ego * CV.MS_TO_KPH, self.pedal_speed_kph)
       else:
         # A single pull disables ACC (falling back to just steering).
         self.enable_pedal_cruise = False
@@ -178,10 +213,10 @@ class PCCController(object):
       # max ACC speed. If actual speed is already 50, the code also increases
       # the max cruise speed.
       if CS.cruise_buttons == CruiseButtons.RES_ACCEL:
-        requested_speed_kph = CS.v_ego_raw * CV.MS_TO_KPH + speed_uom_kph
+        requested_speed_kph = CS.v_ego * CV.MS_TO_KPH + speed_uom_kph
         self.pedal_speed_kph = max(self.pedal_speed_kph, requested_speed_kph)
       elif CS.cruise_buttons == CruiseButtons.RES_ACCEL_2ND:
-        requested_speed_kph = CS.v_ego_raw * CV.MS_TO_KPH + 5 * speed_uom_kph
+        requested_speed_kph = CS.v_ego * CV.MS_TO_KPH + 5 * speed_uom_kph
         self.pedal_speed_kph = max(self.pedal_speed_kph, requested_speed_kph)
       elif CS.cruise_buttons == CruiseButtons.DECEL_SET:
         self.pedal_speed_kph -= speed_uom_kph
@@ -243,16 +278,37 @@ class PCCController(object):
     prevent_overshoot = False #not CS.CP.stoppingControl and CS.v_ego < 1.5 and v_target_future < 0.7
     gas_max = interp(CS.v_ego, CS.CP.gasMaxBP, CS.CP.gasMaxV)
     brake_max = interp(CS.v_ego, CS.CP.brakeMaxBP, CS.CP.brakeMaxV)
-    self.v_pid = self.calc_follow_speed(CS)
+
+    self.v_pid, self.b_pid = self.calc_follow_speed(CS)
+
+    accel_limits = map(float, calc_cruise_accel_limits(CS.vEgo, following))
+    # TODO: make a separate lookup for jerk tuning
+    jerk_limits = [min(-0.1, accel_limits[0]), max(0.1, accel_limits[1])]
+    accel_limits = limit_accel_in_turns(CS.vEgo, CS.steeringAngle, accel_limits, self.CP)
+
+    if brake_max <= 0.2:
+      # if required so, force a smooth deceleration
+      accel_limits[1] = min(accel_limits[1], AWARENESS_DECEL)
+      accel_limits[0] = min(accel_limits[0], accel_limits[1])
+
+    self.v_pid, self.a_pid = speed_smoother(self.v_pid, CS.a_ego,
+                                                      self.pedal_speed_kph * CS.KPH_TO_MS,
+                                                      accel_limits[1], accel_limits[0],
+                                                      jerk_limits[1], jerk_limits[0],
+                                                      _DT_MPC)
+    # cruise speed can't be negative even is user is distracted
+    self.v_pid = max(self.v_pid, 0.)
+
     self.pid.pos_limit = gas_max
     self.pid.neg_limit = - brake_max
-    v_ego_pid = max(CS.v_ego_raw, MIN_CAN_SPEED)
+    v_ego_pid = max(CS.v_ego, MIN_CAN_SPEED)
     deadzone = interp(v_ego_pid, CS.CP.longPidDeadzoneBP, CS.CP.longPidDeadzoneV)
     #BBAD adding overridet to pid to see if we can engage sooner
-    override = self.enable_pedal_cruise and CS.v_ego_raw *  CV.MS_TO_KPH > self.pedal_speed_kph and CS.user_gas_pressed
+    override = self.enable_pedal_cruise and CS.v_ego *  CV.MS_TO_KPH > self.pedal_speed_kph and CS.user_gas_pressed
     # we will try to feed forward the pedal position.... we might want to feed the last output_gb....
     # it's all about testing now.
-    output_gb = self.pid.update(self.v_pid, v_ego_pid, speed=v_ego_pid, override=override, deadzone=deadzone, feedforward=last_output_gb, freeze_integrator=prevent_overshoot)
+    output_gb = self.pid.update(self.v_pid, v_ego_pid, speed=v_ego_pid, override=override, deadzone=deadzone, feedforward=self.a_pid, freeze_integrator=prevent_overshoot)
+    output_gb = output_gb
     if prevent_overshoot:
       output_gb = min(output_gb, 0.0)
 
@@ -260,7 +316,8 @@ class PCCController(object):
 
     # gas and brake
     apply_accel = clip(output_gb, 0., gas_max)
-    apply_brake = -clip(output_gb, -brake_max, 0.)
+    #by adding b_pid we can enforce not to apply brake in small situations
+    apply_brake = -clip(output_gb * self.b_pid, -brake_max, 0.)
 
     #save position for brake
     if (CS.torqueLevel < TORQUE_LEVEL_ACC) and (CS.torqueLevel > TORQUE_LEVEL_DECEL):
@@ -268,7 +325,7 @@ class PCCController(object):
 
     #slow deceleration
     if (apply_accel > PEDAL_DEADZONE) and (apply_accel < self.prev_actuator_gas) and (apply_brake <= BRAKE_THRESHOLD):
-      if (CS.torqueLevel < TORQUE_LEVEL_ACC) and (CS.v_ego_raw < self.prev_v_ego):
+      if (CS.torqueLevel < TORQUE_LEVEL_ACC) and (CS.v_ego < self.prev_v_ego):
         tesla_accel = self.prev_actuator_gas
       else:
         tesla_accel = clip(apply_accel,self.prev_actuator_gas - ACCEL_REWIND_MAX,self.prev_actuator_gas)
@@ -292,7 +349,7 @@ class PCCController(object):
     enable_gas = 1 if self.enable_pedal_cruise else 0
     self.torqueLevel_last = CS.torqueLevel
     self.prev_actuator_gas = tesla_accel * enable_gas
-    self.prev_v_ego = CS.v_ego_raw
+    self.prev_v_ego = CS.v_ego
     return tesla_accel,enable_gas,idx
 
 
@@ -308,12 +365,13 @@ class PCCController(object):
     # Grab the relative speed.
     rel_speed = self.lead_1.vRel * CV.MS_TO_KPH
     # v_ego is in m/s, so safe_dist_mance is in meters.
-    safe_dist_m = CS.v_ego_raw * self.follow_time
+    safe_dist_m = CS.v_ego * self.follow_time
     # Current speed in kph
-    actual_speed = CS.v_ego_raw * CV.MS_TO_KPH
+    actual_speed = CS.v_ego * CV.MS_TO_KPH
     available_speed = self.pedal_speed_kph - actual_speed
-    # button to issue
+    # speed and brake to issue
     new_speed = 0.
+    new_brake = 0.
     # debug msg
     msg = None
 
@@ -331,9 +389,9 @@ class PCCController(object):
       # can speed up don't speed up when steer-angle > 2; vision radar often
       # loses lead car in a turn.
       elif lead_dist == 0 and CS.angle_steers < 5.0:
-        if actual_speed < self.pedal_speed_kph: 
+        if actual_speed < self.pedal_speed_kph + 1: 
           msg =  "Accel to max"
-          new_speed = actual_speed + 0.5
+          new_speed = actual_speed +1 
       # if we have a populated lead_distance
       # TODO: make angle dependent on speed
       elif (lead_dist == 0 or lead_dist >= safe_dist_m) and CS.angle_steers >= 5.0:
@@ -342,7 +400,10 @@ class PCCController(object):
       elif (lead_dist > 0):
         ### Slowing down ###
         #Reduce speed if rel_speed < -15kph so you don't rush up to lead car
-        if rel_speed < -15  and lead_dist > 2. * safe_dist_m:
+        if lead_dist >= 2 * safe_dist_m:
+          msg =  "more than 2x safe distance... do nothing..."
+          new_speed = actual_speed 
+        if rel_speed < -15  and lead_dist > safe_dist_m and lead_dist <= 2 * safe_dist_m:
           msg =  "Approaching fast (-15), still twice the safe distance, slow down"
           new_speed = actual_speed + rel_speed/2
         #Reduce speed if rel_speed < -5kph so you don't rush up to lead car
@@ -353,28 +414,34 @@ class PCCController(object):
         elif lead_dist < (safe_dist_m * 0.3) and rel_speed < 2:
           msg =  "90pct down"
           new_speed = actual_speed * 0.1
+          new_brake = 1. #full regen brake
         # and if the lead car isn't pulling away
         elif lead_dist < (safe_dist_m * 0.5) and rel_speed < 0:
           msg =  "70pct down"
           new_speed = actual_speed * 0.3
+          new_brake = 0.7
         # we're close to the safe distance, so make slow adjustments
         # only adjust every 1 secs
         elif lead_dist < (safe_dist_m * 0.9) and rel_speed < 0:
           msg =  "10pct down"
           new_speed = actual_speed + rel_speed * 2
+          new_brake = 0.1
         ### Speed up ###
         # don't speed up again until you have more than a safe distance in front
         # only adjust every 2 sec
         elif lead_dist > (safe_dist_m * 1.2) or rel_speed > 5:
           msg = "Lead moving ahead fast: increase speed"
           new_speed = actual_speed  + 1
+          new_brake = 0.
         else:
           msg = "Have lead and do nothing"
           new_speed = actual_speed
+          new_brake = 0.
       else:
         msg = "No lead and do nothing"
         new_speed = actual_speed
+        new_brake = 0.
       if msg:
         print msg  
       new_speed = clip(new_speed,MIN_PCC_V,MAX_PCC_V)
-    return new_speed * CV.KPH_TO_MS
+    return new_speed * CV.KPH_TO_MS, new_brake
