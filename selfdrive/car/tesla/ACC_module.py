@@ -218,7 +218,7 @@ class ACCController(object):
     rel_speed = self.lead_1.vRel * CV.MS_TO_KPH
     # Current speed in kph
     cur_speed = CS.v_ego * CV.MS_TO_KPH
-    # v_ego is in m/s, so safe_dist_mance is in meters.
+    # v_ego is in m/s, so safe_dist_m is in meters.
     safe_dist_m = CS.v_ego * follow_time
     # How much we can accelerate without exceeding the max allowed speed.
     available_speed = self.acc_speed_kph - CS.v_cruise_actual
@@ -239,11 +239,10 @@ class ACCController(object):
     ###   Logic to determine best cruise speed ###
 
     # Automatically engange traditional cruise if it is idle and we are
-    # going fast enough and accelerating.
+    # going fast enough.
     if (CS.pcm_acc_status == 1
         and self.enable_adaptive_cruise
-        and CS.v_ego > self.MIN_CRUISE_SPEED_MS
-        and CS.a_ego > 0.12):
+        and CS.v_ego > self.MIN_CRUISE_SPEED_MS):
       button = CruiseButtons.DECEL_SET
     # If traditional cruise is engaged, then control it.
     elif CS.pcm_acc_status == 2:
