@@ -48,12 +48,28 @@ const Msg msgs[] = {
 {% endfor %}
 };
 
+const Val vals[] = {
+{% for address, sig in def_vals %}
+  {% for sg_name, def_val in sig %}
+    {% set address_hex = "0x%X" % address %}
+    {
+      .name = "{{sg_name}}",
+      .address = {{address_hex}},
+      .def_val = {{def_val}},
+      .sigs = sigs_{{address}},
+    },
+  {% endfor %}
+{% endfor %}
+};
+
 }
 
 const DBC {{dbc.name}} = {
   .name = "{{dbc.name}}",
   .num_msgs = ARRAYSIZE(msgs),
   .msgs = msgs,
+  .vals = vals,
+  .num_vals = ARRAYSIZE(vals),
 };
 
 dbc_init({{dbc.name}})

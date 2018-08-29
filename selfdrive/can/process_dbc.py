@@ -24,6 +24,9 @@ with open(template_fn, "r") as template_f:
 msgs = [(address, msg_name, msg_size, sorted(msg_sigs, key=lambda s: s.name not in ("COUNTER", "CHECKSUM"))) # process counter and checksums first
         for address, ((msg_name, msg_size), msg_sigs) in sorted(can_dbc.msgs.iteritems()) if msg_sigs]
 
+def_vals = {a: set(b) for a,b in can_dbc.def_vals.items()} #remove duplicates
+def_vals = [(address, sig) for address, sig in sorted(def_vals.iteritems())]
+
 if can_dbc.name.startswith("honda") or can_dbc.name.startswith("acura"):
   checksum_type = "honda"
   checksum_size = 4
@@ -55,7 +58,7 @@ for name, count in c.items():
   if count > 1:
     sys.exit("Duplicate message name in DBC file %s" % name)
 
-parser_code = template.render(dbc=can_dbc, checksum_type=checksum_type, msgs=msgs, len=len)
+parser_code = template.render(dbc=can_dbc, checksum_type=checksum_type, msgs=msgs, def_vals=def_vals, len=len)
 
 with open(out_fn, "w") as out_f:
   out_f.write(parser_code)
