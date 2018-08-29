@@ -31,15 +31,7 @@ def get_powertrain_can_parser(CP, canbus):
     ("LKATorqueDeliveredStatus", "PSCMStatus", 0),
   ]
 
-  if CP.carFingerprint == CAR.VOLT:
-    signals += [
-      ("RegenPaddle", "EBCMRegenPaddle", 0),
-      ("TractionControlOn", "ESPStatus", 0),
-      ("EPBClosed", "EPBStatus", 0),
-      ("CruiseMainOn", "ECMEngineStatus", 0),
-      ("CruiseState", "AcceleratorPedal2", 0),
-    ]
-  elif CP.carFingerprint == CAR.ACADIA_DENALI:
+  if CP.carFingerprint in (CAR.VOLT, CAR.ACADIA_DENALI):
     signals += [
       ("RegenPaddle", "EBCMRegenPaddle", 0),
       ("TractionControlOn", "ESPStatus", 0),
@@ -125,14 +117,7 @@ class CarState(object):
     self.left_blinker_on = pt_cp.vl["BCMTurnSignals"]['TurnSignals'] == 1
     self.right_blinker_on = pt_cp.vl["BCMTurnSignals"]['TurnSignals'] == 2
 
-    if self.car_fingerprint == CAR.VOLT:
-      self.park_brake = pt_cp.vl["EPBStatus"]['EPBClosed']
-      self.main_on = pt_cp.vl["ECMEngineStatus"]['CruiseMainOn']
-      self.acc_active = False
-      self.esp_disabled = pt_cp.vl["ESPStatus"]['TractionControlOn'] != 1
-      self.regen_pressed = bool(pt_cp.vl["EBCMRegenPaddle"]['RegenPaddle'])
-      self.pcm_acc_status = pt_cp.vl["AcceleratorPedal2"]['CruiseState']
-    elif self.car_fingerprint == CAR.ACADIA_DENALI:
+    if self.car_fingerprint in (CAR.VOLT, CAR.ACADIA_DENALI):
       self.park_brake = pt_cp.vl["EPBStatus"]['EPBClosed']
       self.main_on = pt_cp.vl["ECMEngineStatus"]['CruiseMainOn']
       self.acc_active = False
