@@ -62,9 +62,6 @@ class ACCController(object):
         self.enabled_time = curr_time_ms
         # Increase ACC speed to match current, if applicable.
         self.acc_speed_kph = max(CS.v_ego_raw * CV.MS_TO_KPH, self.acc_speed_kph)
-      else:
-        # A single pull disables ACC (falling back to just steering).
-        self.enable_adaptive_cruise = False
     # Handle pressing the cancel button.
     elif CS.cruise_buttons == CruiseButtons.CANCEL:
       self.enable_adaptive_cruise = False
