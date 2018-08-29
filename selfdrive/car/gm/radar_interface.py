@@ -22,23 +22,7 @@ LAST_RADAR_MSG = NUM_TARGETS_MSG + NUM_SLOTS
 def create_radard_can_parser(canbus, car_fingerprint):
 
   dbc_f = DBC[car_fingerprint]['radar']
-  if car_fingerprint == CAR.VOLT:
-    # C1A-ARS3-A by Continental
-    radar_targets = range(SLOT_1_MSG, SLOT_1_MSG + NUM_SLOTS)
-    signals = zip(['LRRNumObjects'] +
-                  ['TrkRange'] * NUM_SLOTS + ['TrkRangeRate'] * NUM_SLOTS +
-                  ['TrkRangeAccel'] * NUM_SLOTS + ['TrkAzimuth'] * NUM_SLOTS +
-                  ['TrkWidth'] * NUM_SLOTS + ['TrkObjectID'] * NUM_SLOTS,
-                  [NUM_TARGETS_MSG] + radar_targets * 6,
-                  [0] + [0.0] * NUM_SLOTS + [0.0] * NUM_SLOTS +
-                  [0.0] * NUM_SLOTS + [0.0] * NUM_SLOTS +
-                  [0.0] * NUM_SLOTS + [0] * NUM_SLOTS)
-
-    checks = []
-
-    return CANParser(dbc_f, signals, checks, canbus.obstacle)
-
-  if car_fingerprint == CAR.ACADIA_DENALI:
+  if car_fingerprint in (CAR.VOLT, CAR.ACADIA_DENALI):
     # C1A-ARS3-A by Continental
     radar_targets = range(SLOT_1_MSG, SLOT_1_MSG + NUM_SLOTS)
     signals = zip(['LRRNumObjects'] +
