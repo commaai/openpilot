@@ -291,8 +291,8 @@ class PCCController(object):
       accel_limits[1] = min(accel_limits[1], AWARENESS_DECEL)
       accel_limits[0] = min(accel_limits[0], accel_limits[1])
 
-    self.v_pid, self.a_pid = speed_smoother(self.v_pid, CS.a_ego,
-                                                      self.pedal_speed_kph * CS.KPH_TO_MS,
+    self.v_pid, self.a_pid = speed_smoother(CS.v_ego, CS.a_ego,
+                                                      self.v_pid,
                                                       accel_limits[1], accel_limits[0],
                                                       jerk_limits[1], jerk_limits[0],
                                                       _DT_MPC)
