@@ -89,15 +89,15 @@ class CarInterface(object):
       ret.centerToFront = ret.wheelbase * 0.4 # wild guess
     
     elif candidate == CAR.ACADIA_DENALI:
-      # supports stop and go, but initial engage must be above 18mph (which include conservatism)
-      ret.minEnableSpeed = 18 * CV.MPH_TO_MS
+      # engage speed is decided by pcm
+      ret.minEnableSpeed = -1
       # kg of standard extra cargo to count for drive, gas, etc...
-      ret.mass = 1607 + std_cargo
+      ret.mass = 4016. * CV.LB_TO_KG + std_cargo
       ret.safetyModel = car.CarParams.SafetyModels.gm
-      ret.wheelbase = 2.69
-      ret.steerRatio = 15.7
-      ret.steerRatioRear = 0.
-      ret.centerToFront = ret.wheelbase * 0.4 # wild guess
+      ret.wheelbase = 3.11
+      ret.steerRatio = 16.3   # it's 16.3 without rear active steering
+      ret.steerRatioRear = 0. # TODO: there is RAS on this car!
+      ret.centerToFront = ret.wheelbase * 0.465
 
     elif candidate == CAR.CADILLAC_CT6:
       # engage speed is decided by pcm
