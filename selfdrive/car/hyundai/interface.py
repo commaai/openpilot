@@ -60,10 +60,15 @@ class CarInterface(object):
     # pedal
     ret.enableCruise = False
 
-    rotationalInertia = 2500
-
-    tireStiffnessFront = 85400
-    tireStiffnessRear = 90000
+    # FIXME: hardcoding honda civic 2016 touring params so they can be used to
+    # scale unknown params for other cars
+    mass_civic = 2923 * CV.LB_TO_KG + std_cargo
+    wheelbase_civic = 2.70
+    centerToFront_civic = wheelbase_civic * 0.4
+    centerToRear_civic = wheelbase_civic - centerToFront_civic
+    rotationalInertia_civic = 2500
+    tireStiffnessFront_civic = 192150
+    tireStiffnessRear_civic = 202500
 
     ret.steerActuatorDelay = 0.1  # Default delay, Prius has larger delay
 
@@ -72,13 +77,14 @@ class CarInterface(object):
     ret.steerRateCost = 0.5
     ret.mass = 3982 * CV.LB_TO_KG + std_cargo
     ret.wheelbase = 2.766
-    ret.steerRatio = 13.8
+    ret.steerRatio = 13.8 * 1.15   # 15% higher at the center seems reasonable
     ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
     ret.steerKpV, ret.steerKiV = [[0.20], [0.06]]
     ret.longitudinalKpBP = [0.]
     ret.longitudinalKpV = [0.]
     ret.longitudinalKiBP = [0.]
     ret.longitudinalKiV = [0.]
+    tire_stiffness_factor = 1.
 
     ret.centerToFront = ret.wheelbase * 0.4
 
@@ -87,14 +93,21 @@ class CarInterface(object):
     ret.minEnableSpeed = -1.
 
     centerToRear = ret.wheelbase - ret.centerToFront
+
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
-    ret.rotationalInertia = rotationalInertia * ret.mass * ret.wheelbase**2
+    ret.rotationalInertia = rotationalInertia_civic * \
+                            ret.mass * ret.wheelbase**2 / (mass_civic * wheelbase_civic**2)
 
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
-    ret.tireStiffnessFront = tireStiffnessFront * ret.mass * (centerToRear / ret.wheelbase)
-    ret.tireStiffnessRear = tireStiffnessRear * ret.mass * (ret.centerToFront / ret.wheelbase)
+    ret.tireStiffnessFront = (tireStiffnessFront_civic * tire_stiffness_factor) * \
+                             ret.mass / mass_civic * \
+                             (centerToRear / ret.wheelbase) / (centerToRear_civic / wheelbase_civic)
+    ret.tireStiffnessRear = (tireStiffnessRear_civic * tire_stiffness_factor) * \
+                            ret.mass / mass_civic * \
+                            (ret.centerToFront / ret.wheelbase) / (centerToFront_civic / wheelbase_civic)
+
 
     # no rear steering, at least on the listed cars above
     ret.steerRatioRear = 0.

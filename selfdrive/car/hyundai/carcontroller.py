@@ -10,10 +10,10 @@ from selfdrive.can.packer import CANPacker
 
 class SteerLimitParams:
   STEER_MAX = 250   # 409 is the max
-  STEER_DELTA_UP = 4
-  STEER_DELTA_DOWN = 10
+  STEER_DELTA_UP = 3
+  STEER_DELTA_DOWN = 7
   STEER_DRIVER_ALLOWANCE = 50
-  STEER_DRIVER_MULTIPLIER = 4
+  STEER_DRIVER_MULTIPLIER = 2
   STEER_DRIVER_FACTOR = 1
 
 class CarController(object):
