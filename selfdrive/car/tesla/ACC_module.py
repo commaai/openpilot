@@ -88,11 +88,14 @@ class ACCController(object):
       # Clip ACC speed between 0 and 170 KPH.
       self.acc_speed_kph = min(self.acc_speed_kph, 170)
       self.acc_speed_kph = max(self.acc_speed_kph, 0)
-    # If something disabled cruise control, disable ACC too.
-    elif (self.prev_pcm_acc_status == 2 and
-          CS.pcm_acc_status != 2 and
-          not self.autoresume):
-      self.enable_adaptive_cruise = False
+    # If autoresume is not enabled, certain user actions disable ACC.
+    elif not self.autoresume:
+      # If something disabled cruise control (braking), disable ACC too.
+      if self.prev_pcm_acc_status == 2 and CS.pcm_acc_status != 2:
+        self.enable_adaptive_cruise = False
+      # if user took over steering, disable ACC too.
+      elif not enabled:
+        self.enable_adaptive_cruise = False
     
     # Notify if ACC was toggled
     if prev_enable_adaptive_cruise and not self.enable_adaptive_cruise:
