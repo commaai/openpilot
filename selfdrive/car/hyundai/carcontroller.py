@@ -37,7 +37,7 @@ class CarController(object):
     ### Steering Torque
     apply_steer = actuators.steer * SteerLimitParams.STEER_MAX
 
-    apply_std_steer_torque_limits(apply_steer, self.apply_steer_last, CS.steer_torque_driver, SteerLimitParams)
+    apply_steer = apply_std_steer_torque_limits(apply_steer, self.apply_steer_last, CS.steer_torque_driver, SteerLimitParams)
 
     if not enabled:
       apply_steer = 0
