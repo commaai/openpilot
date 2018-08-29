@@ -37,6 +37,9 @@ class ACCController(object):
     self.prev_pcm_acc_status = 0
     self.acc_speed_kph = 0.
   
+  # Updates the internal state of this controller based on user input,
+  # specifically the steering wheel mounted cruise control stalk, and OpenPilot
+  # UI buttons.
   def update_stat(self, CS, enabled):
     # Check if the cruise stalk was double pulled, indicating that adaptive
     # cruise control should be enabled. Twice in .75 seconds counts as a double
@@ -118,6 +121,8 @@ class ACCController(object):
     self.prev_cruise_buttons = CS.cruise_buttons
     self.prev_pcm_acc_status = CS.pcm_acc_status
     
+  # Decide which cruise control buttons to simluate to get the car to the
+  # desired speed.
   def update_acc(self, enabled, CS, frame, actuators, pcm_speed):
     # Adaptive cruise control
     current_time_ms = _current_time_millis()
