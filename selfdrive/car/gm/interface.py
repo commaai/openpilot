@@ -89,14 +89,14 @@ class CarInterface(object):
       ret.centerToFront = ret.wheelbase * 0.4 # wild guess
     
     elif candidate == CAR.ACADIA_DENALI:
-      # engage speed is decided by pcm
-      ret.minEnableSpeed = -1
+      # supports stop and go, but initial engage must be above 18mph (which include conservatism)
+      ret.minEnableSpeed = 18 * CV.MPH_TO_MS
       # kg of standard extra cargo to count for drive, gas, etc...
       ret.mass = 4016. * CV.LB_TO_KG + std_cargo
       ret.safetyModel = car.CarParams.SafetyModels.gm
       ret.wheelbase = 3.11
       ret.steerRatio = 16.3   # it's 16.3 without rear active steering
-      ret.steerRatioRear = 0. # TODO: there is RAS on this car!
+      ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.465
 
     elif candidate == CAR.CADILLAC_CT6:
@@ -268,41 +268,7 @@ class CarInterface(object):
     if ret.seatbeltUnlatched:
       events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
 
-    if self.CS.car_fingerprint == CAR.VOLT:
-
-      if self.CS.brake_error:
-        events.append(create_event('brakeUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
-      if not self.CS.gear_shifter_valid:
-        events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-      if self.CS.esp_disabled:
-        events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-      if not self.CS.main_on:
-        events.append(create_event('wrongCarMode', [ET.NO_ENTRY, ET.USER_DISABLE]))
-      if self.CS.gear_shifter == 3:
-        events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
-      if ret.vEgo < self.CP.minEnableSpeed:
-        events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
-      if self.CS.park_brake:
-        events.append(create_event('parkBrake', [ET.NO_ENTRY, ET.USER_DISABLE]))
-      # disable on pedals rising edge or when brake is pressed and speed isn't zero
-      if (ret.gasPressed and not self.gas_pressed_prev) or \
-        (ret.brakePressed): # and (not self.brake_pressed_prev or ret.vEgo > 0.001)):
-        events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
-      if ret.gasPressed:
-        events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
-      if ret.cruiseState.standstill:
-        events.append(create_event('resumeRequired', [ET.WARNING]))
-
-      # handle button presses
-      for b in ret.buttonEvents:
-        # do enable on both accel and decel buttons
-        if b.type in ["accelCruise", "decelCruise"] and not b.pressed:
-          events.append(create_event('buttonEnable', [ET.ENABLE]))
-        # do disable on button down
-        if b.type == "cancel" and b.pressed:
-          events.append(create_event('buttonCancel', [ET.USER_DISABLE]))
-        
-    if self.CS.car_fingerprint == CAR.ACADIA_DENALI:
+    if self.CS.car_fingerprint in (CAR.VOLT, CAR.ACADIA_DENALI):
 
       if self.CS.brake_error:
         events.append(create_event('brakeUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
