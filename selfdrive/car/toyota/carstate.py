@@ -8,16 +8,16 @@ from selfdrive.services import service_list
 from common.kalman.simple_kalman import KF1D
 import numpy as np
 
-def gps_distance(gpsLon, gpsLat, gpsAlt, gpsAcc):
-  dist = 999
+def gps_distance(gpsLat, gpsLon, gpsAlt, gpsAcc):
+  dist = 999.000001
   lat=48.12893908
   lon=9.797879048
-  lonlatacc=1
+  lonlatacc=1.00001
   alt=575.5
-  altacc=15
-  includeradius = 22
-  approachradius = 100
-  speedlimit = 25
+  altacc=15.000001
+  includeradius = 22.000001
+  approachradius = 100.0000001
+  speedlimit = 25.000001
   if abs(gpsAlt -alt) < altacc:
     if gpsAcc<lonlatacc:
       dist = 6371010*acos(sin(radians(gpsLat))*sin(radians(lat))+cos(radians(gpsLat))*cos(radians(lat))*cos(radians(gpsLon-lon)))
