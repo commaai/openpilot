@@ -19,7 +19,6 @@ def get_can_parser(CP):
   signals = [
     # sig_name, sig_address, default
     ("GEAR", "GEAR_PACKET", 0),
-    ("BRAKE_PRESSED", "BRAKE_MODULE", 0),
     ("GAS_PEDAL", "GAS_PEDAL", 0),
     ("WHEEL_SPEED_FL", "WHEEL_SPEEDS", 0),
     ("WHEEL_SPEED_FR", "WHEEL_SPEEDS", 0),
