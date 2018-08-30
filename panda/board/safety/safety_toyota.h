@@ -30,8 +30,8 @@ uint32_t toyota_ts_last = 0;
 int toyota_cruise_engaged_last = 0;       // cruise state
 struct sample_t toyota_torque_meas;       // last 3 motor torques produced by the eps
 
-uint32_t acc_addr = 0;
-int is_lexus_ave30 = 0;
+uint32_t acc_addr = 0;                    // acc state address
+int is_lexus_ave30 = 0;                   // is a lexus is300h/ave30 model?
 
 static void toyota_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   // get eps motor torque (0.66 factor in dbc)
@@ -51,7 +51,8 @@ static void toyota_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
   // enter controls on rising edge of ACC, exit controls on ACC off
   if ((to_push->RIR>>21) == acc_addr) {
-    // 4 bits: 55-52
+    // lexus ave30 1 bit: 11
+    // toyota: 4 bits: 55-52
     int cruise_engaged = is_lexus_ave30 == 1? to_push->RDLR & 0x400 : to_push->RDHR & 0xF00000;
     if (cruise_engaged && !toyota_cruise_engaged_last) {
       controls_allowed = 1;
