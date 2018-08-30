@@ -142,8 +142,8 @@ class ACCController(object):
         and current_time_ms > self.automated_cruise_action_time + 500):
       
       if CS.cstm_btns.get_button_label2("acc") in ["OP", "AutoOP"]:    
-        button_to_press = self.calc_op_button(CS, pcm_speed, current_time_ms)
-      elif CS.cstm_btns.get_button_label2("acc") in ["FOLLOW", "AUTO"]:
+        button_to_press = self.calc_button(CS, pcm_speed, current_time_ms)
+      else:
         # Alternative speed decision logic that uses the lead car's distance
         # and speed more directly.
         # Bring in the lead car distance from the Live20 feed
@@ -153,9 +153,12 @@ class ACCController(object):
             if socket is self.live20:
               l20 = messaging.recv_one(socket)
               break
-        if l20 is not None:
+        if l20:
           self.lead_1 = l20.live20.leadOne
-        button_to_press = self.calc_follow_button(CS)
+        if CS.cstm_btns.get_button_label2("acc") in ["FOLLOW", "AUTO"]:
+          button_to_press = self.calc_follow_button(CS)
+        elif if CS.cstm_btns.get_button_label2("acc") in ["EXPR"]:
+          button_to_press = self.calc_experimental_button(CS, current_time_ms)
     if button_to_press:
       self.automated_cruise_action_time = current_time_ms
       # If trying to slow below the min cruise speed, just cancel cruise.
@@ -172,7 +175,7 @@ class ACCController(object):
     return button_to_press
     
   # Adjust speed based off OP's longitudinal model.
-  def calc_op_button(self, CS, pcm_speed, current_time_ms):
+  def calc_button(self, CS, desired_speed_ms, current_time_ms):
     # Automatically engange traditional cruise if ACC is active.
     if self.should_autoengage_cc(CS, current_time_ms):
       button_to_press = CruiseButtons.RES_ACCEL
@@ -334,3 +337,30 @@ class ACCController(object):
         print msg
         
     return button
+    
+  # function to calculate the cruise button based on experimental logic.
+  def calc_experimental_button(self, CS, current_time_ms):
+    target_speed_ms = 0.
+    
+    if not (self.lead_1 and self.lead_1.dRel):
+      # In the absence of a lead car, maintain speed around curves and
+      # accelerate on straighaways.
+      if CS.angle_steers > 2.0:
+        target_speed_ms = CS.v_ego
+      else:
+        target_speed_ms = self.acc_speed_kph * CS.KPH_TO_MS
+    else:
+      # In the presence of a lead car, attempt to follow the 2-second rule.
+      target_gap_sec = 2.
+      target_speed_ms = self.lead_1.dRel / target_gap_sec
+      
+      # While staying at a similar speed to the lead car.
+      lead_absolute_speed = CS.v_ego + self.lead_1.vRel
+      target_speed_ms = max(target_speed_ms, lead_absolute_speed * 1.1)
+      target_speed_ms = min(target_speed_ms, lead_absolute_speed * .8)
+        
+    # Clamp between 0 and max ACC speed
+    target_speed_ms = max(target_speed_ms, 0)
+    target_speed_ms = min(target_speed_ms, self.acc_speed_kph * CS.KPH_TO_MS)
+        
+    return self.calc_button(CS, target_speed_ms, current_time_ms)
