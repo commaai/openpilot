@@ -115,10 +115,10 @@ BO_ 1042 LKAS_HUD: 8 XXX
  SG_ ADJUSTING_CAMERA : 13|1@0+ (1,0) [0|1] "" XXX
  SG_ LDA_MALFUNCTION : 15|1@0+ (1,0) [0|1] "" XXX
  SG_ REPEATED_BEEPS : 32|1@0+ (1,0) [0|1] "" XXX
- SG_ SET_ME_X0A : 23|8@0+ (1,0) [0|1] "" XXX
- SG_ SET_ME_X29 : 47|8@0+ (1,0) [0|1] "" XXX
- SG_ SET_ME_X08 : 55|8@0+ (1,0) [0|1] "" XXX
- SG_ SET_ME_X03 : 63|8@0+ (1,0) [0|1] "" XXX
+ SG_ SET_ME_X0C : 23|8@0+ (1,0) [0|1] "" XXX
+ SG_ SET_ME_X2C : 47|8@0+ (1,0) [0|1] "" XXX
+ SG_ SET_ME_X38 : 55|8@0+ (1,0) [0|1] "" XXX
+ SG_ SET_ME_X02 : 63|8@0+ (1,0) [0|1] "" XXX
 
 BO_ 1553 UI_SEETING: 8 XXX
  SG_ UNITS : 26|2@0+ (1,0) [0|3] "" XXX
