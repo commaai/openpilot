@@ -57,8 +57,7 @@ class CarInterface(object):
 
     ret.safetyModel = car.CarParams.SafetyModels.hyundai
 
-    # pedal
-    ret.enableCruise = False
+    ret.enableCruise = True  # stock acc
 
     # FIXME: hardcoding honda civic 2016 touring params so they can be used to
     # scale unknown params for other cars
