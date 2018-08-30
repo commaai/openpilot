@@ -30,6 +30,8 @@ uint32_t toyota_ts_last = 0;
 int toyota_cruise_engaged_last = 0;       // cruise state
 struct sample_t toyota_torque_meas;       // last 3 motor torques produced by the eps
 
+uint32_t acc_addr = 0;
+uint32_t acc_vl = 0;
 
 static void toyota_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   // get eps motor torque (0.66 factor in dbc)
