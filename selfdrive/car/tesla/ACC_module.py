@@ -152,7 +152,7 @@ class ACCController(object):
               lead_1 = messaging.recv_one(socket).live20.leadOne
         if CS.cstm_btns.get_button_label2("acc") in ["FOLLOW", "AUTO"]:
           button_to_press = self.calc_follow_button(CS, lead_1)
-        elif if CS.cstm_btns.get_button_label2("acc") in ["EXPR"]:
+        elif CS.cstm_btns.get_button_label2("acc") in ["EXPR"]:
           button_to_press = self.calc_experimental_button(CS, lead_1, current_time_ms)
     if button_to_press:
       self.automated_cruise_action_time = current_time_ms
@@ -170,14 +170,14 @@ class ACCController(object):
     return button_to_press
     
   def get_cc_units_kph(self, is_imperial_units):
-      if is_imperial_units:
-        # Imperial unit cars adjust cruise in units of 1 and 5 mph.
-        half_press_kph = 1 * CV.MPH_TO_KPH
-        full_press_kph = 5 * CV.MPH_TO_KPH
-      else:
-        # Metric cars adjust cruise in units of 1 and 5 kph.
-        half_press_kph = 1
-        full_press_kph = 5
+    if is_imperial_units:
+      # Imperial unit cars adjust cruise in units of 1 and 5 mph.
+      half_press_kph = 1 * CV.MPH_TO_KPH
+      full_press_kph = 5 * CV.MPH_TO_KPH
+    else:
+      # Metric cars adjust cruise in units of 1 and 5 kph.
+      half_press_kph = 1
+      full_press_kph = 5
     return half_press_kph, full_press_kph
     
   # Adjust speed based off OP's longitudinal model.
