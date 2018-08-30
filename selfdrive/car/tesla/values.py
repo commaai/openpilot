@@ -86,3 +86,30 @@ class CruiseState:
   @classmethod
   def is_faulted(cls, state):
     return state in [cls.PRE_FAULT, cls.FAULT]
+
+class ACCState(object):
+  # Possible state of the ACC system, following the DI_cruiseState naming
+  # convention.
+  OFF = 0         # Disabled by UI.
+  STANDBY = 1     # Ready to be enaged.
+  ENABLED = 2     # Engaged.
+  NOT_READY = 9   # Not ready to be engaged due to the state of the car.
+
+  
+class ACCMode(object):
+  def __init__(self, name, autoresume, next_mode):
+    self.name = name
+    self.autoresume = autoresume
+    self.next_mode = next_mode
+
+  
+_ACCModes = {
+  "FOLLOW": ACCMode(name="FOLLOW", autoresume=False, next_mode="AUTO"),
+  "AUTO":   ACCMode(name="AUTO",   autoresume=True,  next_mode="FOLLOW")
+}
+
+def GetAccMode(name):
+  if name in _ACCModes:
+    return _ACCModes[name]
+  else:
+    return _ACCModes.values()[0]

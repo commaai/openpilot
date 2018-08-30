@@ -2,8 +2,8 @@ from common.numpy_fast import interp
 from common.kalman.simple_kalman import KF1D
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
-from selfdrive.car.tesla.values import CAR, CruiseButtons, DBC
-from selfdrive.car.modules.UIBT_module import UIButtons,UIButton
+from selfdrive.car.tesla.values import CAR, CruiseButtons, DBC, GetAccMode
+from selfdrive.car.modules.UIBT_module import UIButtons, UIButton
 import numpy as np
 from ctypes import create_string_buffer
 from selfdrive.car.modules.UIEV_module import UIEvents
@@ -243,11 +243,10 @@ class CarState(object):
   def update_ui_buttons(self,id,btn_status):
     if self.cstm_btns.btns[id].btn_status > 0:
       if (id == 1) and (btn_status == 0):
-          #don't change status, just model
-          if (self.cstm_btns.btns[id].btn_label2 == "Mod OP"):
-              self.cstm_btns.btns[id].btn_label2 = "Mod JJ"
-          else:
-              self.cstm_btns.btns[id].btn_label2 = "Mod OP"
+          # don't change status, just model
+          current_mode = self.cstm_btns.btns[id].btn_label2
+          next_mode = GetAccMode(current_mode).next_mode
+          self.cstm_btns.btns[id].btn_label2 = next_mode
       else:
           self.cstm_btns.btns[id].btn_status = btn_status * self.cstm_btns.btns[id].btn_status
     else:
