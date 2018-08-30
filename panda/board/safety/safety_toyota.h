@@ -32,6 +32,7 @@ struct sample_t toyota_torque_meas;       // last 3 motor torques produced by th
 
 uint32_t acc_addr = 0;
 uint32_t acc_vl = 0;
+int is_lexus_ave30 = 0;
 
 static void toyota_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   // get eps motor torque (0.66 factor in dbc)
@@ -52,7 +53,11 @@ static void toyota_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   // enter controls on rising edge of ACC, exit controls on ACC off
   if ((to_push->RIR>>21) == acc_addr) {
     // 4 bits: 55-52
-    int cruise_engaged = to_push->RDHR & acc_vl;
+    if (is_lexus_ave30 == 1) {
+        int cruise_engaged = to_push->RDLR & 0x400;
+    } else {
+        int cruise_engaged = to_push->RDHR & 0xF00000;
+    }
     if (cruise_engaged && !toyota_cruise_engaged_last) {
       controls_allowed = 1;
     } else if (!cruise_engaged) {
@@ -159,7 +164,7 @@ static void toyota_init(int16_t param) {
   toyota_giraffe_switch_1 = 0;
   toyota_dbc_eps_torque_factor = param;
   acc_addr = 0x1D2;
-  acc_vl = 0xF00000;
+  is_lexus_ave30 = 0;
 }
 
 static void lexus_ave30_init(int16_t param) {
@@ -169,6 +174,7 @@ static void lexus_ave30_init(int16_t param) {
   toyota_dbc_eps_torque_factor = param;
   acc_addr = 0x3F1;
   acc_vl = 0x400;
+  is_lexus_ave30 = 1;
 }
 
 static int toyota_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
@@ -197,7 +203,7 @@ static void toyota_nolimits_init(int16_t param) {
   toyota_giraffe_switch_1 = 0;
   toyota_dbc_eps_torque_factor = param;
   acc_addr = 0x1D2;
-  acc_vl = 0xF00000;
+  is_lexus_ave30 = 0;
 }
 
 const safety_hooks toyota_nolimits_hooks = {
