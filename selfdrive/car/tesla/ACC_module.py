@@ -249,7 +249,7 @@ class ACCController(object):
       # if cruise is set to faster than the max speed, slow down
       if CS.v_cruise_actual > self.acc_speed_kph:
         msg =  "Slow to max"
-        button = CruiseButtons.DECEL_SET
+        button = CruiseButtons.RES_ACCEL
       # If lead_dist is reported as 0, no one is detected in front of you so you
       # can speed up don't speed up when steer-angle > 2; vision radar often
       # loses lead car in a turn.
@@ -291,7 +291,7 @@ class ACCController(object):
         ### Speed up ###
         # don't speed up again until you have more than a safe distance in front
         # only adjust every 2 sec
-        elif ((lead_dist > (safe_dist_m * 0.8) or rel_speed > 5) and half_press_kph < available_speed
+        if ((lead_dist > (safe_dist_m * 0.8) or rel_speed > 5) and half_press_kph < available_speed
               and current_time_ms > self.automated_cruise_action_time + 100):
           msg =  "120pct UP   half: ","{0:.1f}kph".format(half_press_kph), "  avail: {0:.1f}kph".format(available_speed)
           button = CruiseButtons.RES_ACCEL
