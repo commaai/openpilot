@@ -217,6 +217,8 @@ class ACCController(object):
     return button_to_press
     
   def should_autoengage_cc(self, CS, current_time_ms):
+    # In auto-resume mode, we must not to engage during deceleration other than
+    # during the first moment after ACC was engaged.
     autoresume_supressed_by_braking = (
       self.autoresume
       and CS.a_ego < 0
@@ -267,7 +269,7 @@ class ACCController(object):
       # if cruise is set to faster than the max speed, slow down
       if CS.v_cruise_actual > self.acc_speed_kph:
         msg =  "Slow to max"
-        button = CruiseButtons.RES_ACCEL
+        button = CruiseButtons.DECEL_SET
       # If lead_dist is reported as 0, no one is detected in front of you so you
       # can speed up don't speed up when steer-angle > 2; vision radar often
       # loses lead car in a turn.
