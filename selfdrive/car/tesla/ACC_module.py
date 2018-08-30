@@ -58,9 +58,10 @@ class ACCController(object):
         self.prev_cruise_buttons != CruiseButtons.MAIN):
       double_pull = curr_time_ms - self.last_cruise_stalk_pull_time < 750
       self.last_cruise_stalk_pull_time = curr_time_ms
-      ready = (CS.cstm_btns.get_button_status("acc") > ACCState.OFF and
-               enabled and
-               CruiseState.is_enabled_or_standby(CS.pcm_acc_status))
+      ready = (CS.cstm_btns.get_button_status("acc") > ACCState.OFF
+               and enabled
+               and CruiseState.is_enabled_or_standby(CS.pcm_acc_status)
+               and CS.v_ego > self.MIN_CRUISE_SPEED_MS)
       if ready and double_pull:
         # A double pull enables ACC. updating the max ACC speed if necessary.
         self.enable_adaptive_cruise = True
@@ -259,10 +260,6 @@ class ACCController(object):
     ###   Logic to determine best cruise speed ###
 
     # Automatically engange traditional cruise if ACC is active.
-    braking_supresses_autoresume = (
-      self.autoresume
-      and CS.a_ego < 0
-      and current_time_ms > self.enabled_time + 300)
     if self.should_autoengage_cc(CS, current_time_ms):
       button = CruiseButtons.RES_ACCEL
     # If traditional cruise is engaged, then control it.
