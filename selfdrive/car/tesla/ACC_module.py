@@ -193,7 +193,7 @@ class ACCController(object):
           and current_time_ms > self.enabled_time + 1000):
       # The difference between OP's target speed and the current cruise
       # control speed, in KPH.
-      speed_offset = (pcm_speed * CV.MS_TO_KPH - CS.v_cruise_actual)
+      speed_offset = (desired_speed_ms * CV.MS_TO_KPH - CS.v_cruise_actual)
     
       half_press_kph, full_press_kph = self.get_cc_units_kph(CS.imperial_speed_units)
       
@@ -341,15 +341,15 @@ class ACCController(object):
       if CS.angle_steers > 2.0:
         target_speed_ms = CS.v_ego
       elif current_time_ms > self.last_spotted_lead_time + 3000:
-        target_speed_ms = self.acc_speed_kph * CS.KPH_TO_MS
+        target_speed_ms = self.acc_speed_kph * CV.KPH_TO_MS
     else:
       self.last_spotted_lead_time = current_time_ms
       # In the presence of a lead car, attempt to follow the 2-second rule.
+      lead_absolute_speed = CS.v_ego + lead_car.vRel
       target_speed_ms = lead_absolute_speed
       min_gap_sec = 2.
       max_gap_sec = 2.5
       actual_gap_sec = lead_car.dRel / CS.v_ego
-      lead_absolute_speed = CS.v_ego + lead_car.vRel
       half_press_kph, _ = self.get_cc_units_kph(CS.imperial_speed_units)
       if actual_gap_sec < min_gap_sec:
         target_speed_ms -= half_press_kph
