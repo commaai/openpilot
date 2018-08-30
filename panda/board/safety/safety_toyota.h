@@ -172,7 +172,6 @@ static void lexus_ave30_init(int16_t param) {
   toyota_giraffe_switch_1 = 0;
   toyota_dbc_eps_torque_factor = param;
   acc_addr = 0x3F1;
-  acc_vl = 0x400;
   is_lexus_ave30 = 1;
 }
 
