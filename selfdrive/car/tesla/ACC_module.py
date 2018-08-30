@@ -182,6 +182,7 @@ class ACCController(object):
     
   # Adjust speed based off OP's longitudinal model.
   def calc_button(self, CS, desired_speed_ms, current_time_ms):
+    button_to_press = None
     # Automatically engange traditional cruise if ACC is active.
     if self.should_autoengage_cc(CS, current_time_ms):
       button_to_press = CruiseButtons.RES_ACCEL
@@ -210,10 +211,10 @@ class ACCController(object):
       elif CS.v_ego > self.MIN_CRUISE_SPEED_MS:
         # How much we can accelerate without exceeding max allowed speed.
         available_speed = self.acc_speed_kph - CS.v_cruise_actual
-        if speed_offset > full_press_kph and full_press_kph < available_speed:
+        if speed_offset >= full_press_kph and full_press_kph < available_speed:
           # Send cruise stalk up_2nd.
           button_to_press = CruiseButtons.RES_ACCEL_2ND
-        elif speed_offset > half_press_kph and half_press_kph < available_speed:
+        elif speed_offset >= half_press_kph and half_press_kph < available_speed:
           # Send cruise stalk up_1st.
           button_to_press = CruiseButtons.RES_ACCEL
     return button_to_press
