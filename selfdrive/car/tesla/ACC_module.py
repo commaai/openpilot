@@ -26,7 +26,6 @@ class ACCController(object):
     context = zmq.Context()
     self.poller = zmq.Poller()
     self.live20 = messaging.sub_sock(context, service_list['live20'].port, conflate=True, poller=self.poller)
-    self.lead_1 = None
     self.last_update_time = 0
     self.enable_adaptive_cruise = False
     # Whether to re-engage automatically after being paused due to low speed or
@@ -36,6 +35,7 @@ class ACCController(object):
     self.prev_cruise_buttons = CruiseButtons.IDLE
     self.prev_pcm_acc_status = 0
     self.acc_speed_kph = 0.
+    self.last_spotted_lead_time = 0.
   
   # Updates the internal state of this controller based on user input,
   # specifically the steering wheel mounted cruise control stalk, and OpenPilot
@@ -145,18 +145,15 @@ class ACCController(object):
         # Alternative speed decision logic that uses the lead car's distance
         # and speed more directly.
         # Bring in the lead car distance from the Live20 feed
-        l20 = None
+        lead_1 = None
         if enabled:
           for socket, _ in self.poller.poll(0):
             if socket is self.live20:
-              l20 = messaging.recv_one(socket)
-              break
-        if l20:
-          self.lead_1 = l20.live20.leadOne
+              lead_1 = messaging.recv_one(socket).live20.leadOne
         if CS.cstm_btns.get_button_label2("acc") in ["FOLLOW", "AUTO"]:
-          button_to_press = self.calc_follow_button(CS)
+          button_to_press = self.calc_follow_button(CS, lead_1)
         elif if CS.cstm_btns.get_button_label2("acc") in ["EXPR"]:
-          button_to_press = self.calc_experimental_button(CS, current_time_ms)
+          button_to_press = self.calc_experimental_button(CS, lead_1, current_time_ms)
     if button_to_press:
       self.automated_cruise_action_time = current_time_ms
       # If trying to slow below the min cruise speed, just cancel cruise.
@@ -234,16 +231,16 @@ class ACCController(object):
             and not autoresume_supressed_by_braking)
 
   # function to calculate the cruise button based on a safe follow distance
-  def calc_follow_button(self, CS):
+  def calc_follow_button(self, CS, lead_car):
     follow_time = 2.0 # in seconds
     current_time_ms = _current_time_millis()
      # Make sure we were able to populate lead_1.
-    if self.lead_1 is None:
+    if lead_car is None:
       return None
     # dRel is in meters.
-    lead_dist = self.lead_1.dRel
+    lead_dist = lead_car.dRel
     # Grab the relative speed.
-    rel_speed = self.lead_1.vRel * CV.MS_TO_KPH
+    rel_speed = lead_car.vRel * CV.MS_TO_KPH
     # Current speed in kph
     cur_speed = CS.v_ego * CV.MS_TO_KPH
     # v_ego is in m/s, so safe_dist_m is in meters.
@@ -256,7 +253,7 @@ class ACCController(object):
     # debug msg
     msg = None
 
-    #print "dRel: ", self.lead_1.dRel," yRel: ", self.lead_1.yRel, " vRel: ", self.lead_1.vRel, " aRel: ", self.lead_1.aRel, " vLead: ", self.lead_1.vLead, " vLeadK: ", self.lead_1.vLeadK, " aLeadK: ",     self.lead_1.aLeadK
+    #print "dRel: ", lead_car.dRel," yRel: ", lead_car.yRel, " vRel: ", lead_car.vRel, " aRel: ", lead_car.aRel, " vLead: ", lead_car.vLead, " vLeadK: ", lead_car.vLeadK, " aLeadK: ",     lead_car.aLeadK
 
     ###   Logic to determine best cruise speed ###
 
@@ -335,23 +332,24 @@ class ACCController(object):
     return button
     
   # function to calculate the cruise button based on experimental logic.
-  def calc_experimental_button(self, CS, current_time_ms):
+  def calc_experimental_button(self, CS, lead_car, current_time_ms):
     target_speed_ms = 0.
     
-    if not (self.lead_1 and self.lead_1.dRel):
+    if not (lead_car and lead_car.dRel):
       # In the absence of a lead car, maintain speed around curves and
-      # accelerate on straighaways.
+      # accelerate to max on straightaways.
       if CS.angle_steers > 2.0:
         target_speed_ms = CS.v_ego
-      else:
+      elif current_time_ms > self.last_spotted_lead_time + 3000:
         target_speed_ms = self.acc_speed_kph * CS.KPH_TO_MS
     else:
+      self.last_spotted_lead_time = current_time_ms
       # In the presence of a lead car, attempt to follow the 2-second rule.
       target_speed_ms = lead_absolute_speed
       min_gap_sec = 2.
-      max_gap_sec = 2.5.
-      actual_gap_sec = self.lead_1.dRel / CS.v_ego
-      lead_absolute_speed = CS.v_ego + self.lead_1.vRel
+      max_gap_sec = 2.5
+      actual_gap_sec = lead_car.dRel / CS.v_ego
+      lead_absolute_speed = CS.v_ego + lead_car.vRel
       half_press_kph, _ = self.get_cc_units_kph(CS.imperial_speed_units)
       if actual_gap_sec < min_gap_sec:
         target_speed_ms -= half_press_kph
