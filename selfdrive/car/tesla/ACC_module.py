@@ -36,7 +36,8 @@ class ACCController(object):
     self.prev_pcm_acc_status = 0
     self.acc_speed_kph = 0.
     self.last_spotted_lead_time = 0.
-  
+    self.prev_lead_absolute_speed = 0.
+
   # Updates the internal state of this controller based on user input,
   # specifically the steering wheel mounted cruise control stalk, and OpenPilot
   # UI buttons.
@@ -332,6 +333,16 @@ class ACCController(object):
         
     return button
     
+  def smoothed_lead_speed(self, CS, lead_car, current_time_ms):
+    smoothed_speed = None
+    lead_absolute_speed = CS.v_ego + lead_car.vRel
+    if current_time_ms < self.last_spotted_lead_time + 1000 and self.prev_lead_absolute_speed:
+      smoothed_speed = (lead_absolute_speed + self.prev_lead_absolute_speed) / 2
+    else:
+      smoothed_speed = (CS.v_cruise_actual * CV.KPH_TO_MS) if CS.v_cruise_actual else CS.v_ego
+    self.prev_lead_absolute_speed = lead_absolute_speed
+    return smoothed_speed
+  
   # function to calculate the cruise button based on experimental logic.
   def calc_experimental_button(self, CS, lead_car, current_time_ms):
     target_speed_ms = 0.
@@ -346,7 +357,7 @@ class ACCController(object):
     else:
       self.last_spotted_lead_time = current_time_ms
       # In the presence of a lead car, attempt to follow the 2-second rule.
-      lead_absolute_speed = CS.v_ego + lead_car.vRel
+      lead_absolute_speed = self.smoothed_lead_speed(CS, lead_car, current_time_ms)
       target_speed_ms = lead_absolute_speed
       min_gap_sec = 2.
       max_gap_sec = 2.5
@@ -356,7 +367,7 @@ class ACCController(object):
         target_speed_ms -= half_press_kph
       elif actual_gap_sec > max_gap_sec:
         target_speed_ms += half_press_kph
-        
+    
     # Clamp between 0 and max ACC speed
     target_speed_ms = max(target_speed_ms, 0)
     target_speed_ms = min(target_speed_ms, self.acc_speed_kph * CV.KPH_TO_MS)
