@@ -48,9 +48,9 @@ static void toyota_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   }
 
   // enter controls on rising edge of ACC, exit controls on ACC off
-  if ((to_push->RIR>>21) == 0x1D2) {
+  if ((to_push->RIR>>21) == acc_addr) {
     // 4 bits: 55-52
-    int cruise_engaged = to_push->RDHR & 0xF00000;
+    int cruise_engaged = to_push->RDHR & acc_vl;
     if (cruise_engaged && !toyota_cruise_engaged_last) {
       controls_allowed = 1;
     } else if (!cruise_engaged) {
@@ -156,6 +156,17 @@ static void toyota_init(int16_t param) {
   toyota_actuation_limits = 1;
   toyota_giraffe_switch_1 = 0;
   toyota_dbc_eps_torque_factor = param;
+  acc_addr = 0x1D2;
+  acc_vl = 0xF00000;
+}
+
+static void lexus_ave30_init(int16_t param) {
+  controls_allowed = 0;
+  toyota_actuation_limits = 1;
+  toyota_giraffe_switch_1 = 0;
+  toyota_dbc_eps_torque_factor = param;
+  acc_addr = 0x3F1;
+  acc_vl = 0x400;
 }
 
 static int toyota_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
@@ -183,10 +194,21 @@ static void toyota_nolimits_init(int16_t param) {
   toyota_actuation_limits = 0;
   toyota_giraffe_switch_1 = 0;
   toyota_dbc_eps_torque_factor = param;
+  acc_addr = 0x1D2;
+  acc_vl = 0xF00000;
 }
 
 const safety_hooks toyota_nolimits_hooks = {
   .init = toyota_nolimits_init,
+  .rx = toyota_rx_hook,
+  .tx = toyota_tx_hook,
+  .tx_lin = toyota_tx_lin_hook,
+  .ignition = default_ign_hook,
+  .fwd = toyota_fwd_hook,
+};
+
+const safety_hooks lexus_ave30_hooks = {
+  .init = lexus_ave30_init,
   .rx = toyota_rx_hook,
   .tx = toyota_tx_hook,
   .tx_lin = toyota_tx_lin_hook,

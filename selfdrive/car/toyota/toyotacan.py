@@ -99,5 +99,9 @@ def create_ui_command(packer, steer, sound1, sound2):
     "REPEATED_BEEPS": sound1,
     "TWO_BEEPS": sound2,
     "LDA_ALERT": steer,
+    "SET_ME_X0A": 0x0a,
+    "SET_ME_X29": 0x29,
+    "SET_ME_X08": 0x08,
+    "SET_ME_X03": 0x03,
   }
   return packer.make_can_msg("LKAS_HUD", 0, values)

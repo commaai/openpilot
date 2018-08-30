@@ -54,7 +54,10 @@ class CarInterface(object):
     ret.carName = "toyota"
     ret.carFingerprint = candidate
 
-    ret.safetyModel = car.CarParams.SafetyModels.toyota
+    if candidate == CAR.LEXUS_AVE30:
+      ret.safetyModel = car.CarParams.SafetyModels.lexusAve30
+    else:
+      ret.safetyModel = car.CarParams.SafetyModels.toyota
 
     # pedal
     ret.enableCruise = True
@@ -128,6 +131,15 @@ class CarInterface(object):
       ret.steerKpV, ret.steerKiV = [[0.6], [0.1]]
       ret.steerKf = 0.00006
 
+    elif candidate == CAR.LEXUS_AVE30:
+      ret.safetyParam = 58
+      ret.wheelbase = 2.80 # in spec
+      ret.steerRatio = 13.3 # in spec
+      tire_stiffness_factor = 0.444 # from camry
+      ret.mass = 3736.8 * CV.LB_TO_KG + std_cargo # in spec, mean of is300 (1680 kg) / is300h (1720 kg) / is350 (1685 kg)
+      ret.steerKpV, ret.steerKiV = [[0.3], [0.1]]
+      ret.steerKf = 0.00006 # from camry
+
     ret.steerRateCost = 1.
     ret.centerToFront = ret.wheelbase * 0.44
 
@@ -140,6 +152,8 @@ class CarInterface(object):
       ret.minEnableSpeed = -1.
     elif candidate in [CAR.RAV4, CAR.COROLLA]: # TODO: hack ICE to do stop and go
       ret.minEnableSpeed = 19. * CV.MPH_TO_MS
+    elif candidate == CAR.LEXUS_AVE30:
+      ret.minEnableSpeed = 19. * CV.MPH_TO_MS # MY17 AVE30R does not have stop and g
 
     centerToRear = ret.wheelbase - ret.centerToFront
     # TODO: get actual value, for now starting with reasonable value for
