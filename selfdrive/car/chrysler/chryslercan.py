@@ -1,6 +1,6 @@
 import struct
 import binascii
-
+from common.numpy_fast import clip
 from selfdrive.car.chrysler.values import CAR
 
 
@@ -65,6 +65,7 @@ def create_2d9(car_fingerprint):
   return make_can_msg(0x2d9, msg)
 
 def create_2a6(gear, apply_steer, moving_fast, car_fingerprint):
+  moving_fast = True  #!! overwriting to make it more like game_ see if this helps. see also the 292 high_status.
   msg = '0000000000000000'.decode('hex')  # park or neutral
   if car_fingerprint == CAR.PACIFICA_2018:
     msg = '0064000000000000'.decode('hex')  # Have not verified 2018 park with a real car.
@@ -99,6 +100,7 @@ def create_2a6(gear, apply_steer, moving_fast, car_fingerprint):
 
 LIMIT = 230-3  # 230 is documented limit # 171 is max from main example
 STEP = 3  # 3 is stock. originally 20. 100 is fine. 200 is too much it seems.
+_prev_angle = 0  # TODO if this is needed, refactor it.
 
 def create_292(apply_angle, frame, moving_fast):
   apply_angle = int(apply_angle)
@@ -106,6 +108,8 @@ def create_292(apply_angle, frame, moving_fast):
     apply_angle = LIMIT
   if apply_angle < -LIMIT:
     apply_angle = -LIMIT
+  apply_angle = clip(apply_angle, _prev_angle - STEP, _prev_angle + STEP)
+  _prev_angle = apply_angle
   combined_torque = apply_angle + 1024  # 1024 is straight. more is left, less is right.
   high_status = 0x10  #!!  0x00 here is more correct, but can_game_sticky uses 0x10
   if moving_fast:
