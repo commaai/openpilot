@@ -50,9 +50,7 @@ class ACCController(object):
     CS.cstm_btns.get_button("acc").btn_label2 = acc_mode.name
     self.autoresume = acc_mode.autoresume
     curr_time_ms = _current_time_millis()
-    speed_uom_kph = 1.
-    if CS.imperial_speed_units:
-      speed_uom_kph = CV.MPH_TO_KPH
+    half_press_kph, full_press_kph = self.get_cc_units_kph(CS.imperial_speed_units)
     # Handle pressing the enable button.
     if (CS.cruise_buttons == CruiseButtons.MAIN and
         self.prev_cruise_buttons != CruiseButtons.MAIN):
@@ -82,15 +80,15 @@ class ACCController(object):
       # max ACC speed. If actual speed is already 50, the code also increases
       # the max cruise speed.
       if CS.cruise_buttons == CruiseButtons.RES_ACCEL:
-        requested_speed_kph = CS.v_ego * CV.MS_TO_KPH + speed_uom_kph
+        requested_speed_kph = CS.v_ego * CV.MS_TO_KPH + half_press_kph
         self.acc_speed_kph = max(self.acc_speed_kph, requested_speed_kph)
       elif CS.cruise_buttons == CruiseButtons.RES_ACCEL_2ND:
-        requested_speed_kph = CS.v_ego * CV.MS_TO_KPH + 5 * speed_uom_kph
+        requested_speed_kph = CS.v_ego * CV.MS_TO_KPH + full_press_kph
         self.acc_speed_kph = max(self.acc_speed_kph, requested_speed_kph)
       elif CS.cruise_buttons == CruiseButtons.DECEL_SET:
-        self.acc_speed_kph -= speed_uom_kph
+        self.acc_speed_kph -= half_press_kph
       elif CS.cruise_buttons == CruiseButtons.DECEL_2ND:
-        self.acc_speed_kph -= 5 * speed_uom_kph
+        self.acc_speed_kph -= full_press_kph
       # Clip ACC speed between 0 and 170 KPH.
       self.acc_speed_kph = min(self.acc_speed_kph, 170)
       self.acc_speed_kph = max(self.acc_speed_kph, 0)
@@ -174,6 +172,17 @@ class ACCController(object):
     #  print "Desired ACC speed change: %s" % (speed_offset)
     return button_to_press
     
+  def get_cc_units_kph(self, is_imperial_units):
+      if is_imperial_units:
+        # Imperial unit cars adjust cruise in units of 1 and 5 mph.
+        half_press_kph = 1 * CV.MPH_TO_KPH
+        full_press_kph = 5 * CV.MPH_TO_KPH
+      else:
+        # Metric cars adjust cruise in units of 1 and 5 kph.
+        half_press_kph = 1
+        full_press_kph = 5
+    return half_press_kph, full_press_kph
+    
   # Adjust speed based off OP's longitudinal model.
   def calc_button(self, CS, desired_speed_ms, current_time_ms):
     # Automatically engange traditional cruise if ACC is active.
@@ -189,14 +198,7 @@ class ACCController(object):
       # control speed, in KPH.
       speed_offset = (pcm_speed * CV.MS_TO_KPH - CS.v_cruise_actual)
     
-      if CS.imperial_speed_units:
-        # Imperial unit cars adjust cruise in units of 1 and 5 mph.
-        half_press_kph = 1 * CV.MPH_TO_KPH
-        full_press_kph = 5 * CV.MPH_TO_KPH
-      else:
-        # Metric cars adjust cruise in units of 1 and 5 kph.
-        half_press_kph = 1
-        full_press_kph = 5
+      half_press_kph, full_press_kph = self.get_cc_units_kph(CS.imperial_speed_units)
       
       # Reduce cruise speed significantly if necessary. Multiply by a % to
       # make the car slightly more eager to slow down vs speed up.
@@ -248,13 +250,7 @@ class ACCController(object):
     safe_dist_m = CS.v_ego * follow_time
     # How much we can accelerate without exceeding the max allowed speed.
     available_speed = self.acc_speed_kph - CS.v_cruise_actual
-    # Metric cars adjust cruise in units of 1 and 5 kph.
-    half_press_kph = 1
-    full_press_kph = 5
-    # Imperial unit cars adjust cruise in units of 1 and 5 mph
-    if CS.imperial_speed_units:
-      half_press_kph = 1 * CV.MPH_TO_KPH
-      full_press_kph = 5 * CV.MPH_TO_KPH
+    half_press_kph, full_press_kph = self.get_cc_units_kph(CS.imperial_speed_units)
     # button to issue
     button = None
     # debug msg
@@ -351,13 +347,16 @@ class ACCController(object):
         target_speed_ms = self.acc_speed_kph * CS.KPH_TO_MS
     else:
       # In the presence of a lead car, attempt to follow the 2-second rule.
-      target_gap_sec = 2.
-      target_speed_ms = self.lead_1.dRel / target_gap_sec
-      
-      # While staying at a similar speed to the lead car.
+      target_speed_ms = lead_absolute_speed
+      min_gap_sec = 2.
+      max_gap_sec = 2.5.
+      actual_gap_sec = self.lead_1.dRel / CS.v_ego
       lead_absolute_speed = CS.v_ego + self.lead_1.vRel
-      target_speed_ms = max(target_speed_ms, lead_absolute_speed * 1.1)
-      target_speed_ms = min(target_speed_ms, lead_absolute_speed * .8)
+      half_press_kph, _ = self.get_cc_units_kph(CS.imperial_speed_units)
+      if actual_gap_sec < min_gap_sec:
+        target_speed_ms -= half_press_kph
+      elif actual_gap_sec > max_gap_sec:
+        target_speed_ms += half_press_kph
         
     # Clamp between 0 and max ACC speed
     target_speed_ms = max(target_speed_ms, 0)
