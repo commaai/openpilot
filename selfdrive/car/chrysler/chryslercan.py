@@ -103,6 +103,7 @@ STEP = 3  # 3 is stock. originally 20. 100 is fine. 200 is too much it seems.
 _prev_angle = 0  # TODO if this is needed, refactor it.
 
 def create_292(apply_angle, frame, moving_fast):
+  global _prev_angle, LIMIT, STEP
   apply_angle = int(apply_angle)
   if apply_angle > LIMIT:
     apply_angle = LIMIT
