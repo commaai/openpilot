@@ -1,8 +1,6 @@
-from common.numpy_fast import interp
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car.hyundai.hyundaican import create_lkas11, create_lkas12, create_1191, create_1156
-from selfdrive.car.hyundai.values import CAR
 from selfdrive.can.packer import CANPacker
 
 

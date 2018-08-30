@@ -79,7 +79,7 @@ class CarInterface(object):
     ret.wheelbase = 2.766
     ret.steerRatio = 13.8 * 1.15   # 15% higher at the center seems reasonable
     ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
-    ret.steerKpV, ret.steerKiV = [[0.20], [0.06]]
+    ret.steerKpV, ret.steerKiV = [[0.4], [0.1]]
     ret.longitudinalKpBP = [0.]
     ret.longitudinalKpV = [0.]
     ret.longitudinalKiBP = [0.]
@@ -176,8 +176,6 @@ class CarInterface(object):
     else:
       ret.cruiseState.speed = 0
     ret.cruiseState.available = bool(self.CS.main_on)
-    ret.cruiseState.speedOffset = 0.
-
     ret.cruiseState.standstill = False
 
     # TODO: button presses

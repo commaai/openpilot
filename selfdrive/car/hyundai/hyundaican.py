@@ -2,9 +2,7 @@ import crcmod
 
 hyundai_checksum = crcmod.mkCrcFun(0x11D, initCrc=0xFD, rev=False, xorOut=0xdf)
 
-def make_can_msg(addr, dat, alt, cks=False):
-  if cks:
-    dat = fix(dat, addr)
+def make_can_msg(addr, dat, alt):
   return [addr, 0, dat, alt]
 
 
@@ -43,12 +41,12 @@ def create_lkas11(packer, apply_steer, steer_req, cnt, enabled):
 
 
 def create_lkas12():
-  return make_can_msg(1342, "\x00\x00\x00\x00\x60\x05", 0, False)
+  return make_can_msg(1342, "\x00\x00\x00\x00\x60\x05", 0)
 
 
 def create_1191():
-  return make_can_msg(1191, "\x01\x00", 0, False)
+  return make_can_msg(1191, "\x01\x00", 0)
 
 
 def create_1156():
-  return make_can_msg(1156, "\x08\x20\xfe\x3f\x00\xe0\xfd\x3f", 0, False)
+  return make_can_msg(1156, "\x08\x20\xfe\x3f\x00\xe0\xfd\x3f", 0)

@@ -155,9 +155,8 @@ class CarState(object):
     self.v_ego = float(v_ego_x[0])
     self.a_ego = float(v_ego_x[1])
     is_set_speed_in_mph = int(cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"])
-    self.cruise_set_speed = cp.vl["SCC11"]['VSetDis']
-    if is_set_speed_in_mph:
-      self.cruise_set_speed *= CV.MPH_TO_KPH
+    speed_conv = CV.MPH_TO_MS if is_set_speed_in_mph else CV.KPH_TO_MS
+    self.cruise_set_speed = cp.vl["SCC11"]['VSetDis'] * speed_conv
     self.standstill = not self.v_wheel > 0.001
 
     self.angle_steers = cp.vl["SAS11"]['SAS_Angle']
