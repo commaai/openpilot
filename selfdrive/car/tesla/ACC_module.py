@@ -358,6 +358,6 @@ class ACCController(object):
         
     # Clamp between 0 and max ACC speed
     target_speed_ms = max(target_speed_ms, 0)
-    target_speed_ms = min(target_speed_ms, self.acc_speed_kph * CS.KPH_TO_MS)
+    target_speed_ms = min(target_speed_ms, self.acc_speed_kph * CV.KPH_TO_MS)
         
     return self.calc_button(CS, target_speed_ms, current_time_ms)
