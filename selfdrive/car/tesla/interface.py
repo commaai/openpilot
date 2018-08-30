@@ -123,16 +123,16 @@ class CarInterface(object):
       ret.steerActuatorDelay = 0.09
       
       # Kp and Ki for the longitudinal control
-      #ret.longitudinalKpBP = [0., 5., 35.]
-      #ret.longitudinalKpV = [0.87 , 0.85, 0.85]
-      #ret.longitudinalKiBP = [0., 5., 35.]
-      #ret.longitudinalKiV = [0.07, 0.07, 0.06]
+      ret.longitudinalKpBP = [0., 5., 35.]
+      ret.longitudinalKpV = [1.27 , 1.05, 0.85]
+      ret.longitudinalKiBP = [0., 5., 35.]
+      ret.longitudinalKiV = [0.11, 0.09, 0.06]
       
       #from honda
-      ret.longitudinalKpBP = [0., 5., 35.]
-      ret.longitudinalKpV = [1.2, 0.8, 0.5]
-      ret.longitudinalKiBP = [0., 35.]
-      ret.longitudinalKiV = [0.18, 0.12]
+      #ret.longitudinalKpBP = [0., 5., 35.]
+      #ret.longitudinalKpV = [1.2, 0.8, 0.5]
+      #ret.longitudinalKiBP = [0., 35.]
+      #ret.longitudinalKiV = [0.18, 0.12]
       # from toyota
       #ret.longitudinalKpBP = [0., 5., 35.]
       #ret.longitudinalKpV = [3.6, 2.4, 1.5]
