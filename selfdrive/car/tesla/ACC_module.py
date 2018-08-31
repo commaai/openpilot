@@ -337,33 +337,35 @@ class ACCController(object):
     # discard old observations
     window_ms = 1000
     while self.lead_speeds:
-      time_observed, _ = self.lead_speeds[0]
+      time_observed, _, _ = self.lead_speeds[0]
       if _current_time_millis() > time_observed + window_ms:
         self.lead_speeds.popleft()
       else:
         break
     
-  def smoothed_lead_speed(self):
+  def smoothed_lead(self):
     self.filter_lead_speeds()
     # Average all remaining observations
     speed_sum = 0
-    for _, speed in self.lead_speeds:
+    dist_sum = 0
+    for _, speed, dist in self.lead_speeds:
       speed_sum += speed
-    return speed_sum / len(self.lead_speeds)
+      dist_sum += dist
+    return speed_sum / len(self.lead_speeds), dist_sum / len(self.lead_speeds)
   
   # function to calculate the cruise button based on experimental logic.
   def calc_experimental_button(self, CS, lead_car, current_time_ms):
     target_speed_ms = 0.
     if lead_car and lead_car.dRel:
       lead_speed = CS.v_ego + lead_car.vRel
-      self.lead_speeds.append((current_time_ms, lead_speed))
+      self.lead_speeds.append((current_time_ms, lead_speed, lead_car.dRel))
     self.filter_lead_speeds()
     if len(self.lead_speeds) >= 4:
       # In the presence of a lead car, attempt to follow the 2-second rule.
-      target_speed_ms = self.smoothed_lead_speed()
+      target_speed_ms, smoothed_dRel = self.smoothed_lead()
       min_gap_sec = 2.
       max_gap_sec = 2.5
-      actual_gap_sec = lead_car.dRel / CS.v_ego
+      actual_gap_sec = smoothed_dRel / CS.v_ego
       half_press_kph, _ = self.get_cc_units_kph(CS.imperial_speed_units)
       if actual_gap_sec < min_gap_sec:
         target_speed_ms -= half_press_kph
