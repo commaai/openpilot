@@ -356,7 +356,7 @@ class ACCController(object):
     target_speed_ms = 0.
     if lead_car and lead_car.dRel:
       lead_speed = CS.v_ego + lead_car.vRel
-      self.lead_speeds.appendleft((current_time_ms, lead_speed))
+      self.lead_speeds.append((current_time_ms, lead_speed))
     self.filter_lead_speeds()
     if len(self.lead_speeds) >= 4:
       # In the presence of a lead car, attempt to follow the 2-second rule.
