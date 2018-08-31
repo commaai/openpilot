@@ -36,7 +36,7 @@ class ACCController(object):
     self.prev_cruise_buttons = CruiseButtons.IDLE
     self.prev_pcm_acc_status = 0
     self.acc_speed_kph = 0.
-    self.lead_speeds = collections.deque()
+    self.lead_smoother = LeadSmoother(window_ms=750)
 
   # Updates the internal state of this controller based on user input,
   # specifically the steering wheel mounted cruise control stalk, and OpenPilot
@@ -332,40 +332,19 @@ class ACCController(object):
         print msg
         
     return button
-    
-  def filter_lead_speeds(self):
-    # discard old observations
-    window_ms = 750
-    while self.lead_speeds:
-      time_observed, _, _ = self.lead_speeds[0]
-      if _current_time_millis() > time_observed + window_ms:
-        self.lead_speeds.popleft()
-      else:
-        return
-    
-  def smoothed_lead(self):
-    self.filter_lead_speeds()
-    # Average all remaining observations
-    speed_sum = 0
-    dist_sum = 0
-    for _, speed, dist in self.lead_speeds:
-      speed_sum += speed
-      dist_sum += dist
-    return speed_sum / len(self.lead_speeds), dist_sum / len(self.lead_speeds)
   
   # function to calculate the cruise button based on experimental logic.
   def calc_experimental_button(self, CS, lead_car, current_time_ms):
     target_speed_ms = 0.
     if lead_car and lead_car.dRel:
       lead_speed = CS.v_ego + lead_car.vRel
-      self.lead_speeds.append((current_time_ms, lead_speed, lead_car.dRel))
-    self.filter_lead_speeds()
-    if len(self.lead_speeds) >= 3:
+      self.lead_smoother.add_observation(lead_speed, lead_car.dRel)
+    if len(self.lead_smoother) >= 3:
       # In the presence of a lead car, match their speed.
-      target_speed_ms, smoothed_dRel = self.smoothed_lead()
+      target_speed_ms, distance = self.lead_smoother.speed_and_dist()
       
       # And adjust to obey the 2-second rule.
-      gap_sec = smoothed_dRel / CS.v_ego
+      gap_sec = distance / CS.v_ego
       half_press_kph, full_press_kph = self.get_cc_units_kph(CS.imperial_speed_units)
       if gap_sec < 0.5:
         print "***TOO CLOSE - CANCEL CRUISE***"
@@ -394,3 +373,40 @@ class ACCController(object):
     target_speed_ms = min(target_speed_ms, self.acc_speed_kph * CV.KPH_TO_MS)
         
     return self.calc_button(CS, target_speed_ms, current_time_ms)
+    
+    
+class LeadSmoother(object):
+  """
+  Tracks speed and distance of lead car, smoothing over a window of time.
+  """
+  def __init__(self, window_ms):
+    self.window_ms = window_ms
+    self.lead_car_observations = collections.deque()
+    
+  def add_observation(self, speed, distance):
+    self.lead_car_observations.append((_current_time_millis(), speed, distance))
+    
+  def speed_and_dist(self):
+    self._filter_leads()
+    # Average all remaining observations of the lead car.
+    speed_sum = 0
+    dist_sum = 0
+    for _, speed, dist in self.lead_car_observations:
+      speed_sum += speed
+      dist_sum += dist
+    average_absolute_speed = speed_sum / len(self.lead_car_observations)
+    average_dRel = dist_sum / len(self.lead_car_observations)
+    return average_absolute_speed, average_dRel
+    
+  def __len__(self):
+    self._filter_leads()
+    return len(self.lead_car_observations)
+    
+  def _filter_leads(self):
+    # Discard old observations of the lead car.
+    while self.lead_car_observations:
+      time_observed, _, _ = self.lead_car_observations[0]
+      if _current_time_millis() > time_observed + self.window_ms:
+        self.lead_car_observations.popleft()
+      else:
+        return
