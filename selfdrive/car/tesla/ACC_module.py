@@ -335,13 +335,13 @@ class ACCController(object):
     
   def filter_lead_speeds(self):
     # discard old observations
-    window_ms = 1000
+    window_ms = 750
     while self.lead_speeds:
       time_observed, _, _ = self.lead_speeds[0]
       if _current_time_millis() > time_observed + window_ms:
         self.lead_speeds.popleft()
       else:
-        break
+        return
     
   def smoothed_lead(self):
     self.filter_lead_speeds()
@@ -360,25 +360,28 @@ class ACCController(object):
       lead_speed = CS.v_ego + lead_car.vRel
       self.lead_speeds.append((current_time_ms, lead_speed, lead_car.dRel))
     self.filter_lead_speeds()
-    if len(self.lead_speeds) >= 4:
-      # In the presence of a lead car..
+    if len(self.lead_speeds) >= 3:
+      # In the presence of a lead car, match their speed.
       target_speed_ms, smoothed_dRel = self.smoothed_lead()
       
-      # And adjust slightly to attempt to follow the 2-second rule
-      emergency_gap_sec = 1.
-      danger_gap_sec = 1.5
-      min_gap_sec = 2.
-      max_gap_sec = 2.5
-      actual_gap_sec = smoothed_dRel / CS.v_ego
+      # And adjust to obey the 2-second rule.
+      gap_sec = smoothed_dRel / CS.v_ego
       half_press_kph, full_press_kph = self.get_cc_units_kph(CS.imperial_speed_units)
-      if actual_gap_sec < emergency_gap_sec:
+      if gap_sec < 0.5:
+        print "***TOO CLOSE - CANCEL CRUISE***"
         return CruiseButtons.CANCEL
-      elif actual_gap_sec < danger_gap_sec:
+      elif target_speed_ms < self.MIN_CRUISE_SPEED_MS * 3 / 4 :
+        print "***SLOW TRAFFIC - CANCEL CRUISE***"
+        return CruiseButtons.CANCEL
+      elif gap_sec < 1:
         target_speed_ms -= full_press_kph
-      elif actual_gap_sec < min_gap_sec:
+        print "***TOO CLOSE - FALL BACK SIGNIFICANTLY***"
+      elif gap_sec < 2:
         target_speed_ms -= half_press_kph
-      elif actual_gap_sec > max_gap_sec:
+        print "***TOO CLOSE - FALL BACK SLIGHTLY***"
+      elif gap_sec > 2.5:
         target_speed_ms += half_press_kph
+        print "***TOO FAR - GET CLOSER***"
     else:
       # In the absence of a lead car, maintain speed around curves and
       # accelerate to max on straightaways.
