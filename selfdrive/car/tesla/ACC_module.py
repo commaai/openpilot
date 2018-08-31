@@ -3,6 +3,7 @@ from selfdrive.car.tesla.values import ACCState, AH, CruiseButtons, CruiseState,
 from selfdrive.config import Conversions as CV
 import selfdrive.messaging as messaging
 import os
+import collections
 import subprocess
 import time
 import zmq
@@ -35,8 +36,7 @@ class ACCController(object):
     self.prev_cruise_buttons = CruiseButtons.IDLE
     self.prev_pcm_acc_status = 0
     self.acc_speed_kph = 0.
-    self.last_spotted_lead_time = 0.
-    self.prev_lead_absolute_speed = 0.
+    self.lead_speeds = collections.deque()
 
   # Updates the internal state of this controller based on user input,
   # specifically the steering wheel mounted cruise control stalk, and OpenPilot
@@ -333,32 +333,36 @@ class ACCController(object):
         
     return button
     
-  def smoothed_lead_speed(self, CS, lead_car, current_time_ms):
-    smoothed_speed = None
-    lead_absolute_speed = CS.v_ego + lead_car.vRel
-    if current_time_ms < self.last_spotted_lead_time + 1000 and self.prev_lead_absolute_speed:
-      smoothed_speed = (lead_absolute_speed + self.prev_lead_absolute_speed) / 2
-    else:
-      smoothed_speed = (CS.v_cruise_actual * CV.KPH_TO_MS) if CS.v_cruise_actual else CS.v_ego
-    self.prev_lead_absolute_speed = lead_absolute_speed
-    return smoothed_speed
+  def smoothed_lead_speed(self, filter=True):
+    if filter:
+      self.filter_lead_speeds()
+    # Average all remaining observations
+    speed_sum = 0
+    for observation in self.lead_speeds:
+      _, speed = observation
+      speed_sum += speed
+    return speed_sum / len(self.lead_speeds)
+    
+  def filter_lead_speeds(self):
+    # discard old observations
+    window_ms = 1000
+    while self.lead_speeds:
+      time_observed, _ = self.lead_speeds[0]
+      if _current_time_millis() > time_observed + window_ms:
+        self.lead_speeds.popleft()
+      else:
+        break
   
   # function to calculate the cruise button based on experimental logic.
   def calc_experimental_button(self, CS, lead_car, current_time_ms):
     target_speed_ms = 0.
-    
-    if not (lead_car and lead_car.dRel):
-      # In the absence of a lead car, maintain speed around curves and
-      # accelerate to max on straightaways.
-      if CS.angle_steers > 2.0:
-        target_speed_ms = CS.v_ego
-      elif current_time_ms > self.last_spotted_lead_time + 3000:
-        target_speed_ms = self.acc_speed_kph * CV.KPH_TO_MS
-    else:
-      self.last_spotted_lead_time = current_time_ms
+    if lead_car and lead_car.dRel:
+      lead_speed = CS.v_ego + lead_car.vRel
+      self.lead_speeds.appendleft((current_time_ms, lead_speed))
+    self.filter_lead_speeds()
+    if len(self.lead_speeds) >= 4:
       # In the presence of a lead car, attempt to follow the 2-second rule.
-      lead_absolute_speed = self.smoothed_lead_speed(CS, lead_car, current_time_ms)
-      target_speed_ms = lead_absolute_speed
+      target_speed_ms = self.smoothed_lead_speed()
       min_gap_sec = 2.
       max_gap_sec = 2.5
       actual_gap_sec = lead_car.dRel / CS.v_ego
@@ -367,7 +371,13 @@ class ACCController(object):
         target_speed_ms -= half_press_kph
       elif actual_gap_sec > max_gap_sec:
         target_speed_ms += half_press_kph
-    
+    else:
+      # In the absence of a lead car, maintain speed around curves and
+      # accelerate to max on straightaways.
+      if CS.angle_steers > 2.0:
+        target_speed_ms = CS.v_ego
+      else:
+        target_speed_ms = self.acc_speed_kph * CV.KPH_TO_MS
     # Clamp between 0 and max ACC speed
     target_speed_ms = max(target_speed_ms, 0)
     target_speed_ms = min(target_speed_ms, self.acc_speed_kph * CV.KPH_TO_MS)
