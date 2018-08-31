@@ -361,13 +361,21 @@ class ACCController(object):
       self.lead_speeds.append((current_time_ms, lead_speed, lead_car.dRel))
     self.filter_lead_speeds()
     if len(self.lead_speeds) >= 4:
-      # In the presence of a lead car, attempt to follow the 2-second rule.
+      # In the presence of a lead car..
       target_speed_ms, smoothed_dRel = self.smoothed_lead()
+      
+      # And adjust slightly to attempt to follow the 2-second rule
+      emergency_gap_sec = 1.
+      danger_gap_sec = 1.5
       min_gap_sec = 2.
       max_gap_sec = 2.5
       actual_gap_sec = smoothed_dRel / CS.v_ego
-      half_press_kph, _ = self.get_cc_units_kph(CS.imperial_speed_units)
-      if actual_gap_sec < min_gap_sec:
+      half_press_kph, full_press_kph = self.get_cc_units_kph(CS.imperial_speed_units)
+      if actual_gap_sec < emergency_gap_sec:
+        return CruiseButtons.CANCEL
+      elif actual_gap_sec < danger_gap_sec:
+        target_speed_ms -= full_press_kph
+      elif actual_gap_sec < min_gap_sec:
         target_speed_ms -= half_press_kph
       elif actual_gap_sec > max_gap_sec:
         target_speed_ms += half_press_kph
