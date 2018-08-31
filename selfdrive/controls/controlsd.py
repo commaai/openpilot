@@ -302,7 +302,7 @@ def data_send(perception_state, plan, plan_ts, CS, CI, CP, VM, state, events, ac
 
   if not passive:
 
-    CC.enabled = isEnabled(state)
+    CC.enabled = isActive(state) # CarController isn't enabled until actuators are active.
 
     CC.actuators = actuators
 
