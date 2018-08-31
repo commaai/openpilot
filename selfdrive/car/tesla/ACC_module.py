@@ -333,16 +333,6 @@ class ACCController(object):
         
     return button
     
-  def smoothed_lead_speed(self, filter=True):
-    if filter:
-      self.filter_lead_speeds()
-    # Average all remaining observations
-    speed_sum = 0
-    for observation in self.lead_speeds:
-      _, speed = observation
-      speed_sum += speed
-    return speed_sum / len(self.lead_speeds)
-    
   def filter_lead_speeds(self):
     # discard old observations
     window_ms = 1000
@@ -352,6 +342,14 @@ class ACCController(object):
         self.lead_speeds.popleft()
       else:
         break
+    
+  def smoothed_lead_speed(self):
+    self.filter_lead_speeds()
+    # Average all remaining observations
+    speed_sum = 0
+    for _, speed in self.lead_speeds:
+      speed_sum += speed
+    return speed_sum / len(self.lead_speeds)
   
   # function to calculate the cruise button based on experimental logic.
   def calc_experimental_button(self, CS, lead_car, current_time_ms):
