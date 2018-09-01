@@ -30,8 +30,17 @@ def get_can_parser(CP):
     ("CYL_PRES", "ESP12", 0),
 
     ("CF_Clu_CruiseSwState", "CLU11", 0),
-    ("CF_Clu_CruiseSwMain", "CLU11", 0),
+    ("CF_Clu_CruiseSwMain" , "CLU11", 0),
+    ("CF_Clu_SldMainSW", "CLU11", 0),
+    ("CF_Clu_ParityBit1", "CLU11", 0),
+    ("CF_Clu_VanzDecimal" , "CLU11", 0),
+    ("CF_Clu_Vanz", "CLU11", 0),
     ("CF_Clu_SPEED_UNIT", "CLU11", 0),
+    ("CF_Clu_DetentOut", "CLU11", 0),
+    ("CF_Clu_RheostatLevel", "CLU11", 0),
+    ("CF_Clu_CluInfo", "CLU11", 0),
+    ("CF_Clu_AmpInfo", "CLU11", 0),
+    ("CF_Clu_AliveCnt1", "CLU11", 0),
 
     ("CF_Lvr_Gear","LVR12",0),
 
@@ -53,27 +62,11 @@ def get_can_parser(CP):
     ("CR_Mdps_OutTq", "MDPS12", 0),
 
     ("VSetDis", "SCC11", 0),
+    ("SCCInfoDisplay", "SCC11", 0),
     ("ACCMode", "SCC12", 1),
 
     ("SAS_Angle", "SAS11", 0),
     ("SAS_Speed", "SAS11", 0),
-
-    # TODO: replace with proper initial value
-    ("CF_Lkas_LdwsSysState", "LKAS11", 0),
-    ("CF_Lkas_SysWarning", "LKAS11", 0),
-    ("CF_Lkas_LdwsLHWarning", "LKAS11", 0),
-    ("CF_Lkas_LdwsTHWarning", "LKAS11", 0),
-    ("CF_Lkas_HbaLamp", "LKAS11", 0),
-    ("CF_Lkas_FcwBasReq", "LKAS11", 0),
-    ("CF_Lkas_ToiFlt", "LKAS11", 0),
-    ("CF_Lkas_HbaSysState", "LKAS11", 0),
-    ("CF_Lkas_FcwOpt", "LKAS11", 0),
-    ("CF_Lkas_HbaOpt", "LKAS11", 0),
-    ("CF_Lkas_FcwSysState", "LKAS11", 0),
-    ("CF_Lkas_FcwCollisionWarning", "LKAS11", 0),
-    ("CF_Lkas_FusionState", "LKAS11", 0),
-    ("CF_Lkas_FcwOpt_USM", "LKAS11", 0),
-    ("CF_Lkas_LdwsOpt_USM", "LKAS11", 0),
   ]
 
   checks = [
@@ -95,6 +88,30 @@ def get_can_parser(CP):
 
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
+def get_camera_parser(CP):
+
+  signals = [
+    # sig_name, sig_address, default
+    ("CF_Lkas_LdwsSysState", "LKAS11", 0),
+    ("CF_Lkas_SysWarning", "LKAS11", 0),
+    ("CF_Lkas_LdwsLHWarning", "LKAS11", 0),
+    ("CF_Lkas_LdwsRHWarning", "LKAS11", 0),
+    ("CF_Lkas_HbaLamp", "LKAS11", 0),
+    ("CF_Lkas_FcwBasReq", "LKAS11", 0),
+    ("CF_Lkas_ToiFlt", "LKAS11", 0),
+    ("CF_Lkas_HbaSysState", "LKAS11", 0),
+    ("CF_Lkas_FcwOpt", "LKAS11", 0),
+    ("CF_Lkas_HbaOpt", "LKAS11", 0),
+    ("CF_Lkas_FcwSysState", "LKAS11", 0),
+    ("CF_Lkas_FcwCollisionWarning", "LKAS11", 0),
+    ("CF_Lkas_FusionState", "LKAS11", 0),
+    ("CF_Lkas_FcwOpt_USM", "LKAS11", 0),
+    ("CF_Lkas_LdwsOpt_USM", "LKAS11", 0)
+  ]
+
+  checks = []
+
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
 
 class CarState(object):
   def __init__(self, CP):
@@ -118,7 +135,7 @@ class CarState(object):
     self.right_blinker_on = 0
     self.right_blinker_flash = 0
 
-  def update(self, cp):
+  def update(self, cp, cp_cam):
     # copy can_valid
     self.can_valid = cp.can_valid
 
@@ -146,7 +163,7 @@ class CarState(object):
 
     self.low_speed_lockout = self.v_wheel < 1.0
 
-    # Kalman filter
+    # Kalman filter, even though Hyundai raw wheel speed is heaviliy filtered by default
     if abs(self.v_wheel - self.v_ego) > 2.0:  # Prevent large accelerations when car starts at non zero speed
       self.v_ego_x = np.matrix([[self.v_wheel], [0.0]])
 
@@ -157,7 +174,7 @@ class CarState(object):
     is_set_speed_in_mph = int(cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"])
     speed_conv = CV.MPH_TO_MS if is_set_speed_in_mph else CV.KPH_TO_MS
     self.cruise_set_speed = cp.vl["SCC11"]['VSetDis'] * speed_conv
-    self.standstill = not self.v_wheel > 0.001
+    self.standstill = not self.v_wheel > 0.1
 
     self.angle_steers = cp.vl["SAS11"]['SAS_Angle']
     self.angle_steers_rate = cp.vl["SAS11"]['SAS_Speed']
@@ -173,6 +190,7 @@ class CarState(object):
     self.brake_error = 0
     self.steer_torque_driver = cp.vl["MDPS11"]['CR_Mdps_DrvTq']
     self.steer_torque_motor = cp.vl["MDPS12"]['CR_Mdps_OutTq']
+    self.stopped = cp.vl["SCC11"]['SCCInfoDisplay'] == 4.
 
     self.user_brake = 0
 
@@ -196,3 +214,7 @@ class CarState(object):
       self.gear_shifter = "reverse"
     else:
       self.gear_shifter = "unknown"
+
+    # save the entire LKAS11 and CLU11
+    self.lkas11 = cp_cam.vl["LKAS11"]
+    self.clu11 = cp.vl["CLU11"]

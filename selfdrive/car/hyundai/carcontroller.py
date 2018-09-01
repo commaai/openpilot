@@ -1,6 +1,9 @@
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.boardd.boardd import can_list_to_can_capnp
-from selfdrive.car.hyundai.hyundaican import create_lkas11, create_lkas12, create_1191, create_1156
+from selfdrive.car.hyundai.hyundaican import create_lkas11, create_lkas12, \
+                                             create_1191, create_1156, \
+                                             create_clu11
+from selfdrive.car.hyundai.values import Buttons
 from selfdrive.can.packer import CANPacker
 
 
@@ -16,18 +19,19 @@ class SteerLimitParams:
 
 class CarController(object):
   def __init__(self, dbc_name, car_fingerprint, enable_camera):
-    self.braking = False
-    self.controls_allowed = True
     self.apply_steer_last = 0
     self.car_fingerprint = car_fingerprint
-    self.angle_control = False
     self.lkas11_cnt = 0
     self.cnt = 0
+    self.last_resume_cnt = 0
     self.enable_camera = enable_camera
+    # True when giraffe switch 2 is low and we need to replace all the camera messages
+    # otherwise we forward the camera msgs and we just replace the lkas cmd signals
+    self.camera_disconnected = False
 
     self.packer = CANPacker(dbc_name)
 
-  def update(self, sendcan, enabled, CS, actuators):
+  def update(self, sendcan, enabled, CS, actuators, pcm_cancel_cmd, hud_alert):
 
     if not self.enable_camera:
       return
@@ -47,14 +51,24 @@ class CarController(object):
     can_sends = []
 
     self.lkas11_cnt = self.cnt % 0x10
+    self.clu11_cnt = self.cnt % 0x10
 
-    can_sends.append(create_lkas11(self.packer, apply_steer, steer_req, self.lkas11_cnt, enabled))
-    if (self.cnt % 10) == 0:
-      can_sends.append(create_lkas12())
-    if (self.cnt % 50) == 0:
-      can_sends.append(create_1191())
-    if (self.cnt % 7) == 0:
-      can_sends.append(create_1156())
+    if self.camera_disconnected:
+      if (self.cnt % 10) == 0:
+        can_sends.append(create_lkas12())
+      if (self.cnt % 50) == 0:
+        can_sends.append(create_1191())
+      if (self.cnt % 7) == 0:
+        can_sends.append(create_1156())
+
+    can_sends.append(create_lkas11(self.packer, apply_steer, steer_req, self.lkas11_cnt,
+                                   enabled, CS.lkas11, hud_alert, keep_stock=(not self.camera_disconnected)))
+
+    if pcm_cancel_cmd:
+      can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.CANCEL))
+    elif CS.stopped and (self.cnt - self.last_resume_cnt) > 5:
+      self.last_resume_cnt = self.cnt
+      can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.RES_ACCEL))
 
     ### Send messages to canbus
     sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())

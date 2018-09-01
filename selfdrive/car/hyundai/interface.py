@@ -4,8 +4,8 @@ from common.realtime import sec_since_boot
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
-from selfdrive.car.hyundai.carstate import CarState, get_can_parser
-from selfdrive.car.hyundai.values import CAMERA_MSGS
+from selfdrive.car.hyundai.carstate import CarState, get_can_parser, get_camera_parser
+from selfdrive.car.hyundai.values import CAMERA_MSGS, get_hud_alerts
 
 try:
   from selfdrive.car.hyundai.carcontroller import CarController
@@ -29,6 +29,7 @@ class CarInterface(object):
     # *** init the major players ***
     self.CS = CarState(CP)
     self.cp = get_can_parser(CP)
+    self.cp_cam = get_camera_parser(CP)
 
     # sending if read only is False
     if sendcan is not None:
@@ -72,13 +73,13 @@ class CarInterface(object):
     ret.steerActuatorDelay = 0.1  # Default delay, Prius has larger delay
 
     #borrowing a lot from corolla, given similar car size
-    ret.steerKf = 0.00004   # full torque for 20 deg at 80mph means 0.00007818594
+    ret.steerKf = 0.00005   # full torque for 20 deg at 80mph means 0.00007818594
     ret.steerRateCost = 0.5
     ret.mass = 3982 * CV.LB_TO_KG + std_cargo
     ret.wheelbase = 2.766
     ret.steerRatio = 13.8 * 1.15   # 15% higher at the center seems reasonable
     ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
-    ret.steerKpV, ret.steerKiV = [[0.4], [0.1]]
+    ret.steerKpV, ret.steerKiV = [[0.37], [0.1]]
     ret.longitudinalKpBP = [0.]
     ret.longitudinalKpV = [0.]
     ret.longitudinalKiBP = [0.]
@@ -135,7 +136,8 @@ class CarInterface(object):
     # ******************* do can recv *******************
     canMonoTimes = []
     self.cp.update(int(sec_since_boot() * 1e9), False)
-    self.CS.update(self.cp)
+    self.cp_cam.update(int(sec_since_boot() * 1e9), False)
+    self.CS.update(self.cp, self.cp_cam)
     # create message
     ret = car.CarState.new_message()
     # speeds
@@ -231,8 +233,8 @@ class CarInterface(object):
       events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
 
     # disable on pedals rising edge or when brake is pressed and speed isn't zero
-    #if (ret.gasPressed and not self.gas_pressed_prev) or \
-    if (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001)):
+    if (ret.gasPressed and not self.gas_pressed_prev) or \
+      (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgoRaw > 0.1)):
       events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
 
     if ret.gasPressed:
@@ -247,10 +249,11 @@ class CarInterface(object):
 
     return ret.as_reader()
 
-  # pass in a car.CarControl
-  # to be called @ 100hz
   def apply(self, c, perception_state=log.Live20Data.new_message()):
 
-    self.CC.update(self.sendcan, c.enabled, self.CS, c.actuators)
+    hud_alert = get_hud_alerts(c.hudControl.visualAlert, c.hudControl.audibleAlert)
+
+    self.CC.update(self.sendcan, c.enabled, self.CS, c.actuators,
+                   c.cruiseControl.cancel, hud_alert)
 
     return False

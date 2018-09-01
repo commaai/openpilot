@@ -1,7 +1,19 @@
 from selfdrive.car import dbc_dict
 
+def get_hud_alerts(visual_alert, audble_alert):
+  if visual_alert == "steerRequired":
+    return 4 if audble_alert != "none" else 5
+  else:
+    return 0
+
 class CAR:
   SANTA_FE = "HYUNDAI SANTA FE LIMITED 2019"
+
+class Buttons:
+  NONE = 0
+  RES_ACCEL = 1
+  SET_DECEL = 2
+  CANCEL = 4
 
 FINGERPRINTS = {
   CAR.SANTA_FE: [{
@@ -14,3 +26,4 @@ CAMERA_MSGS = [832, 1156, 1191, 1342]   # msgs sent by the camera
 DBC = {
   CAR.SANTA_FE: dbc_dict('hyundai_santa_fe_2019_ccan', None),
 }
+
