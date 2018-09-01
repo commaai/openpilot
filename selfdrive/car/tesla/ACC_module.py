@@ -354,20 +354,20 @@ class ACCController(object):
       # And adjust to obey the 2-second rule.
       gap_sec = distance / CS.v_ego
       half_press_kph, full_press_kph = self.get_cc_units_kph(CS.imperial_speed_units)
-      if gap_sec < 0.5:
+      if gap_sec < 1:
         print "***TOO CLOSE - CANCEL CRUISE***"
         return CruiseButtons.CANCEL
       elif target_speed_ms < self.MIN_CRUISE_SPEED_MS * 3 / 4 :
         print "***SLOW TRAFFIC - CANCEL CRUISE***"
         return CruiseButtons.CANCEL
-      elif gap_sec < 1:
-        target_speed_ms -= full_press_kph
+      elif gap_sec < 1.5:
+        target_speed_ms -= full_press_kph * CV.KPH_TO_MS
         print "***TOO CLOSE - FALL BACK SIGNIFICANTLY***"
-      elif gap_sec < 2:
-        target_speed_ms -= half_press_kph
+      elif gap_sec < 2.5:
+        target_speed_ms -= half_press_kph * CV.KPH_TO_MS
         print "***TOO CLOSE - FALL BACK SLIGHTLY***"
-      elif gap_sec > 2.5:
-        target_speed_ms += half_press_kph
+      elif gap_sec > 3 and CS.v_cruise_actual * CV.KPH_TO_MS < target_speed_ms:
+        target_speed_ms += half_press_kph * CV.KPH_TO_MS
         print "***TOO FAR - GET CLOSER***"
     # Clamp between 0 and max ACC speed
     target_speed_ms = max(target_speed_ms, 0)
@@ -388,14 +388,19 @@ class LeadSmoother(object):
     self.lead_car_observations.append((_current_time_millis(), speed, distance))
     
   def speed_and_dist(self):
-    self._filter_leads()
+    now_ms = _current_time_millis()
+    self._filter_leads(now_ms)
     # Average all remaining observations of the lead car.
     speed_sum = 0
+    weight_sum = 0
     dist_sum = 0
-    for _, speed, dist in self.lead_car_observations:
-      speed_sum += speed
+    for time_ms, speed, dist in self.lead_car_observations:
+      timespan = now_ms - time_ms
+      weight = float(timespan) / self.window_ms
+      speed_sum += speed * weight
+      weight_sum += weight
       dist_sum += dist
-    average_absolute_speed = speed_sum / len(self.lead_car_observations)
+    average_absolute_speed = speed_sum / weight_sum
     average_dRel = dist_sum / len(self.lead_car_observations)
     return average_absolute_speed, average_dRel
     
@@ -407,14 +412,15 @@ class LeadSmoother(object):
       return None
     
   def __len__(self):
-    self._filter_leads()
+    now_ms = _current_time_millis()
+    self._filter_leads(now_ms)
     return len(self.lead_car_observations)
     
-  def _filter_leads(self):
+  def _filter_leads(self, time_ms):
     # Discard old observations of the lead car.
     while self.lead_car_observations:
       time_observed, _, _ = self.lead_car_observations[0]
-      if _current_time_millis() > time_observed + self.window_ms:
+      if time_ms > time_observed + self.window_ms:
         self.lead_car_observations.popleft()
       else:
         return
