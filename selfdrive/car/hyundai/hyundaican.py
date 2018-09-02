@@ -9,7 +9,7 @@ def make_can_msg(addr, dat, alt):
 def create_lkas11(packer, apply_steer, steer_req, cnt, enabled, lkas11, hud_alert, checksum_type, keep_stock=False):
   values = {
     "CF_Lkas_Icon": 3 if enabled else 0,
-    "CF_Lkas_LdwsSysState": lkas11["CF_Lkas_LdwsSysState"] if keep_stock else 1,
+    "CF_Lkas_LdwsSysState": 7 if steer_req else 1,
     "CF_Lkas_SysWarning": hud_alert,
     "CF_Lkas_LdwsLHWarning": lkas11["CF_Lkas_LdwsLHWarning"] if keep_stock else 0,
     "CF_Lkas_LdwsRHWarning": lkas11["CF_Lkas_LdwsRHWarning"] if keep_stock else 0,
@@ -17,7 +17,7 @@ def create_lkas11(packer, apply_steer, steer_req, cnt, enabled, lkas11, hud_aler
     "CF_Lkas_FcwBasReq": lkas11["CF_Lkas_FcwBasReq"] if keep_stock else 0,
     "CR_Lkas_StrToqReq": apply_steer,
     "CF_Lkas_ActToi": steer_req,
-    "CF_Lkas_ToiFlt": lkas11["CF_Lkas_ToiFlt"] if keep_stock else 0,
+    "CF_Lkas_ToiFlt": 0 if keep_stock else 0,
     "CF_Lkas_HbaSysState": lkas11["CF_Lkas_HbaSysState"] if keep_stock else 1,
     "CF_Lkas_FcwOpt": lkas11["CF_Lkas_FcwOpt"] if keep_stock else 0,
     "CF_Lkas_HbaOpt": lkas11["CF_Lkas_HbaOpt"] if keep_stock else 3,
@@ -41,6 +41,7 @@ def create_lkas11(packer, apply_steer, steer_req, cnt, enabled, lkas11, hud_aler
   if checksum_type == 7:
     dat = [ord(i) for i in dat]
     checksum = ( dat[0] + dat[1] + dat[2] + dat[3] + dat[4] + dat[5] + dat[7] ) % 256
+  
   values["CF_Lkas_Chksum"] = checksum
 
   return packer.make_can_msg("LKAS11", 0, values)

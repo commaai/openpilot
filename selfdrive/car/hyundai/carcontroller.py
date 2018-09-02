@@ -61,6 +61,7 @@ class CarController(object):
       if (self.cnt % 7) == 0:
         can_sends.append(create_1156())
 
+    can_sends.append(create_lkas12())
     can_sends.append(create_lkas11(self.packer, apply_steer, steer_req, self.lkas11_cnt,
                                    enabled, CS.lkas11, hud_alert, CHECKSUM[self.car_fingerprint], keep_stock=(not self.camera_disconnected)))
 

@@ -124,7 +124,7 @@ persistent_processes = [
 ]
 
 car_started_processes = [
-#  'controlsd',
+  'controlsd',
   'loggerd',
   'sensord',
   'radard',

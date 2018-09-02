@@ -79,7 +79,7 @@ class CarInterface(object):
     ret.wheelbase = 2.766
     ret.steerRatio = 13.8 * 1.15   # 15% higher at the center seems reasonable
     ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
-    ret.steerKpV, ret.steerKiV = [[0.37], [0.1]]
+    ret.steerKpV, ret.steerKiV = [[0.2], [0.05]]
     ret.longitudinalKpBP = [0.]
     ret.longitudinalKpV = [0.]
     ret.longitudinalKiBP = [0.]
