@@ -1,5 +1,4 @@
 from selfdrive.car import dbc_dict
-from selfdrive.config import Conversions as CV
 
 def get_hud_alerts(visual_alert, audble_alert):
   if visual_alert == "steerRequired":
