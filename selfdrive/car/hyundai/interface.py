@@ -48,6 +48,7 @@ class CarInterface(object):
   def get_params(candidate, fingerprint):
 
     # kg of standard extra cargo to count for drive, gas, etc...
+    # This should be tweaked, unless the car is empty, this will be too low
     std_cargo = 136
 
     ret = car.CarParams.new_message()
@@ -73,13 +74,25 @@ class CarInterface(object):
     ret.steerActuatorDelay = 0.1  # Default delay, Prius has larger delay
 
     #borrowing a lot from corolla, given similar car size
-    ret.steerKf = 0.00005   # full torque for 20 deg at 80mph means 0.00007818594
-    ret.steerRateCost = 0.5
-    ret.mass = 3982 * CV.LB_TO_KG + std_cargo
-    ret.wheelbase = 2.766
-    ret.steerRatio = 13.8 * 1.15   # 15% higher at the center seems reasonable
-    ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
-    ret.steerKpV, ret.steerKiV = [[0.2], [0.05]]
+
+    if candidate == CAR.SANTA_FE:
+      ret.steerKf = 0.00005   # full torque for 20 deg at 80mph means 0.00007818594
+      ret.steerRateCost = 0.5
+      ret.mass = 3982 * CV.LB_TO_KG + std_cargo
+      ret.wheelbase = 2.766
+      ret.steerRatio = 13.8 * 1.15   # 15% higher at the center seems reasonable
+      ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
+      ret.steerKpV, ret.steerKiV = [[0.37], [0.1]]
+    elif candidate == CAR.SORENTO:
+      ret.steerKf = 0.00005   # full torque for 20 deg at 80mph means 0.00007818594
+      ret.steerRateCost = 0.5
+      ret.mass = 1985 + std_cargo
+      ret.wheelbase = 2.78
+      ret.steerRatio = 14.4 * 1.15   # 15% higher at the center seems reasonable
+      ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
+      ret.steerKpV, ret.steerKiV = [[0.2], [0.05]]
+
+
     ret.longitudinalKpBP = [0.]
     ret.longitudinalKpV = [0.]
     ret.longitudinalKiBP = [0.]

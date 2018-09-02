@@ -1,4 +1,5 @@
 from selfdrive.car import dbc_dict
+from selfdrive.config import Conversions as CV
 
 def get_hud_alerts(visual_alert, audble_alert):
   if visual_alert == "steerRequired":
@@ -39,4 +40,3 @@ DBC = {
   CAR.SANTA_FE: dbc_dict('hyundai_santa_fe_2019_ccan', None),
   CAR.SORENTO: dbc_dict('hyundai_santa_fe_2019_ccan', None),
 }
-
