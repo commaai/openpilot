@@ -18,9 +18,9 @@ static void hyundai_init(int16_t param) {
 static int hyundai_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
 
   // forward camera to car and viceversa, excpet for lkas11 and mdps12
-  if ((bus_num == 0 || bus_num == 2) && !hyundai_giraffe_switch_1) {
+  if ((bus_num == 0 || bus_num == 1)) { // && !hyundai_giraffe_switch_1) {
     int addr = to_fwd->RIR>>21;
-    bool is_lkas_msg = (addr == 832 && bus_num == 2) || (addr == 593 && bus_num == 0);
+    bool is_lkas_msg = (addr == 832 && bus_num == 1) || (addr == 593 && bus_num == 0);
     return is_lkas_msg? -1 : (uint8_t)(~bus_num & 0x2);
   }
   return -1;

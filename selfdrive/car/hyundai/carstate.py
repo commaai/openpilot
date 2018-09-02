@@ -22,6 +22,7 @@ def get_can_parser(CP):
     ("CF_Gway_TurnSigLh", "CGW1", 0),
     ("CF_Gway_TSigRHSw", "CGW1", 0),
     ("CF_Gway_TurnSigRh", "CGW1", 0),
+    ("CF_Gway_ParkBrakeSw", "CGW1", 0),
 
     ("BRAKE_ACT", "EMS12", 0),
     ("PV_AV_CAN", "EMS12", 0),
@@ -111,7 +112,7 @@ def get_camera_parser(CP):
 
   checks = []
 
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 1)
 
 class CarState(object):
   def __init__(self, CP):
@@ -149,7 +150,7 @@ class CarState(object):
     self.brake_pressed = cp.vl["TCS13"]['DriverBraking']
     self.esp_disabled = cp.vl["TCS15"]['ESC_Off_Step']
 
-    self.park_brake = False
+    self.park_brake = cp.vl["CGW1"]['CF_Gway_ParkBrakeSw']
     self.main_on = True
     self.acc_active = cp.vl["SCC12"]['ACCMode'] != 0
     self.pcm_acc_status = int(self.acc_active)

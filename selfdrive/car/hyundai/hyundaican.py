@@ -2,10 +2,11 @@ import crcmod
 
 hyundai_checksum = crcmod.mkCrcFun(0x11D, initCrc=0xFD, rev=False, xorOut=0xdf)
 
+
 def make_can_msg(addr, dat, alt):
   return [addr, 0, dat, alt]
 
-def create_lkas11(packer, apply_steer, steer_req, cnt, enabled, lkas11, hud_alert, keep_stock=False):
+def create_lkas11(packer, apply_steer, steer_req, cnt, enabled, lkas11, hud_alert, checksum_type, keep_stock=False):
   values = {
     "CF_Lkas_Icon": 3 if enabled else 0,
     "CF_Lkas_LdwsSysState": lkas11["CF_Lkas_LdwsSysState"] if keep_stock else 1,
@@ -30,9 +31,16 @@ def create_lkas11(packer, apply_steer, steer_req, cnt, enabled, lkas11, hud_aler
   }
 
   dat = packer.make_can_msg("LKAS11", 0, values)[2]
-  dat = dat[:6] + dat[7]
-  checksum = hyundai_checksum(dat)
 
+  if checksum_type == 0:
+    dat = dat[:6] + dat[7]
+    checksum = hyundai_checksum(dat)
+  if checksum_type == 6:
+    dat = [ord(i) for i in dat]
+    checksum = ( dat[0] + dat[1] + dat[2] + dat[3] + dat[4] + dat[5] ) % 256
+  if checksum_type == 7:
+    dat = [ord(i) for i in dat]
+    checksum = ( dat[0] + dat[1] + dat[2] + dat[3] + dat[4] + dat[5] + dat[7] ) % 256
   values["CF_Lkas_Chksum"] = checksum
 
   return packer.make_can_msg("LKAS11", 0, values)
