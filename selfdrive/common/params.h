@@ -32,4 +32,10 @@ void read_db_value_blocking(const char* params_path, const char* key,
 }  // extern "C"
 #endif
 
+#ifdef __cplusplus
+#include <map>
+#include <string>
+int read_db_all(const char* params_path, std::map<std::string, std::string> *params);
+#endif
+
 #endif  // _SELFDRIVE_COMMON_PARAMS_H_
