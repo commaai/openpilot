@@ -153,7 +153,7 @@ class CarInterface(object):
     elif candidate in [CAR.RAV4, CAR.COROLLA]: # TODO: hack ICE to do stop and go
       ret.minEnableSpeed = 19. * CV.MPH_TO_MS
     elif candidate == CAR.LEXUS_AVE30:
-      ret.minEnableSpeed = 19. * CV.MPH_TO_MS # MY17 is300h/AVE30R (AU ver.) does not have stop and go
+      ret.minEnableSpeed = 29. * CV.MPH_TO_MS # MY17 is300h/AVE30R (AU ver.) does not have stop and go, minimum ACC speed allow is 46kph
 
     centerToRear = ret.wheelbase - ret.centerToFront
     # TODO: get actual value, for now starting with reasonable value for
