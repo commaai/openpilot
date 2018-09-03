@@ -439,7 +439,7 @@ BO_ 897 MDPS11: 8 MDPS
  SG_ CF_Mdps_Flex : 2|3@1+ (1.0,0.0) [0.0|3.0] ""  CLU,LDWS_LKAS
  SG_ CF_Mdps_FlexDisp : 5|1@1+ (1.0,0.0) [0.0|1.0] ""  CLU
  SG_ CF_Mdps_Stat : 7|4@1+ (1.0,0.0) [0.0|15.0] ""  SPAS
- SG_ CR_Mdps_DrvTq : 11|12@1+ (0.01,-20.48) [-20.48|20.46] ""  SPAS
+ SG_ CR_Mdps_DrvTq : 11|12@1+ (1.0,-2048.0) [-2048.0|2046.0] ""  SPAS
  SG_ CF_Mdps_ALTRequest : 23|1@1+ (1.0,0.0) [0.0|1.0] ""  EMS
  SG_ CR_Mdps_StrAng : 24|16@1- (0.1,0.0) [-3276.8|3276.7] "Deg"  SPAS
  SG_ CF_Mdps_AliveCnt : 40|8@1+ (1.0,0.0) [0.0|255.0] ""  LDWS_LKAS,SPAS
@@ -691,7 +691,10 @@ BO_ 1365 FPCM11: 8 FPCM
  SG_ CF_Fpcm_PreSnrSigErr : 14|1@1+ (1.0,0.0) [0.0|1.0] ""  EMS
  SG_ CF_Fpcm_LPCtrCirFlt : 15|1@1+ (1.0,0.0) [0.0|1.0] ""  EMS
 
-BO_ 852 LVR11: 7 LVR
+BO_ 871 LVR12: 8 LVR
+ SG_ CF_Lvr_Gear : 32|4@1+ (1.0,0.0) [0.0|15.0] ""  CLU,TCU
+
+BO_ 872 LVR11: 8 LVR
  SG_ CF_Lvr_GearInf : 0|4@1+ (1.0,0.0) [0.0|15.0] ""  CLU,TCU
  SG_ CF_Lvr_PRelStat : 4|1@1+ (1.0,0.0) [0.0|1.0] ""  BCM,CLU,SMK,TCU
  SG_ CF_Lvr_BkeAct : 5|1@1+ (1.0,0.0) [0.0|1.0] ""  TCU
@@ -957,18 +960,19 @@ BO_ 64 DATC14: 8 DATC
  SG_ DATC_ADSDisp : 28|2@1+ (1.0,0.0) [0.0|3.0] ""  CLU
 
 BO_ 832 LKAS11: 8 LDWS_LKAS
+ SG_ CF_Lkas_Icon : 0|2@1+ (1.0,0.0) [0.0|3.0] ""  CLU,IBOX,PSB
  SG_ CF_Lkas_LdwsSysState : 2|4@1+ (1.0,0.0) [0.0|15.0] ""  CLU,IBOX,PSB
  SG_ CF_Lkas_SysWarning : 6|4@1+ (1.0,0.0) [0.0|15.0] ""  BCM,CLU
  SG_ CF_Lkas_LdwsLHWarning : 10|2@1+ (1.0,0.0) [0.0|3.0] ""  BCM,CLU,PSB
  SG_ CF_Lkas_LdwsRHWarning : 12|2@1+ (1.0,0.0) [0.0|3.0] ""  BCM,CLU,PSB
  SG_ CF_Lkas_HbaLamp : 14|1@1+ (1.0,0.0) [0.0|1.0] ""  CLU
  SG_ CF_Lkas_FcwBasReq : 15|1@1+ (1.0,0.0) [0.0|1.0] ""  ABS,ESC
- SG_ CR_Lkas_StrToqReq : 16|11@1+ (0.0078125,-8.0) [-8.0|8.0] "Nm"  MDPS
+ SG_ CR_Lkas_StrToqReq : 16|11@1+ (1.0,-1024.0) [-1024.0|1024.0] ""  MDPS
  SG_ CF_Lkas_ActToi : 27|1@1+ (1.0,0.0) [0.0|1.0] ""  MDPS
  SG_ CF_Lkas_ToiFlt : 28|1@1+ (1.0,0.0) [0.0|1.0] ""  MDPS
  SG_ CF_Lkas_HbaSysState : 29|3@1+ (1.0,0.0) [0.0|7.0] ""  BCM,CLU
  SG_ CF_Lkas_FcwOpt : 32|2@1+ (1.0,0.0) [0.0|3.0] ""  CLU
- SG_ CF_Lkas_HbaOpt : 34|1@1+ (1.0,0.0) [0.0|1.0] ""  BCM,CGW
+ SG_ CF_Lkas_HbaOpt : 34|2@1+ (1.0,0.0) [0.0|1.0] ""  BCM,CGW
  SG_ CF_Lkas_MsgCount : 36|4@1+ (1.0,0.0) [0.0|15.0] ""  CLU,MDPS
  SG_ CF_Lkas_FcwSysState : 40|3@1+ (1.0,0.0) [0.0|7.0] ""  CLU
  SG_ CF_Lkas_FcwCollisionWarning : 43|2@1+ (1.0,0.0) [0.0|3.0] ""  CLU
