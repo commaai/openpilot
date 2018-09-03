@@ -12,6 +12,7 @@ def load_interfaces(x):
     try:
       imp = __import__('selfdrive.car.%s.interface' % interface, fromlist=['CarInterface']).CarInterface
     except ImportError:
+      cloudlog.warning("Import Error %s", ImportError)
       imp = None
     for car in x[interface]:
       ret[car] = imp
