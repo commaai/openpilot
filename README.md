@@ -70,6 +70,8 @@ Supported Cars
 | Toyota        | C-HR 2018<sup>4</sup>     | All                  | Yes     | Stock          | 0mph             | 0mph           |
 | Toyota        | Corolla 2017              | All                  | Yes     | Yes<sup>2</sup>| 20mph            | 0mph           |
 | Toyota        | Corolla 2018              | All                  | Yes     | Yes<sup>2</sup>| 20mph            | 0mph           |
+| Toyota        | Highlander 2017           | All                  | Yes     | Yes<sup>2</sup>| 20mph            | 0mph           |
+| Toyota        | Highlander Hybrid 2018    | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
 | Toyota        | Prius 2016                | TSS-P                | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
 | Toyota        | Prius 2017                | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
 | Toyota        | Prius 2018                | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
@@ -80,8 +82,6 @@ Supported Cars
 | Toyota        | Rav4 2018                 | All                  | Yes     | Yes<sup>2</sup>| 20mph            | 0mph           |
 | Toyota        | Rav4 Hybrid 2017          | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
 | Toyota        | Rav4 Hybrid 2018          | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
-| Toyota        | Highlander 2017           | All                  | Yes     | Yes<sup>2</sup>| 20mph            | 0mph           |
-| Toyota        | Highlander Hybrid 2018    | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
 
 <sup>1</sup>[Comma Pedal](https://community.comma.ai/wiki/index.php/Comma_Pedal) is used to provide stop-and-go capability to some of the openpilot-supported cars that don't currently support stop-and-go. Here is how to [build a Comma Pedal](https://medium.com/@jfrux/comma-pedal-building-with-macrofab-6328bea791e8). ***NOTE: The Comma Pedal is not officially supported by [comma.ai](https://comma.ai)***  
 <sup>2</sup>When disconnecting the Driver Support Unit (DSU), otherwise longitudinal control is stock ACC. For DSU locations, see [Toyota Wiki page](https://community.comma.ai/wiki/index.php/Toyota)  
