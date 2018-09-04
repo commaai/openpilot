@@ -57,4 +57,3 @@ const safety_hooks alloutput_hooks = {
   .ignition = default_ign_hook,
   .fwd = alloutput_fwd_hook,
 };
-

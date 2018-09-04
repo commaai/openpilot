@@ -1,3 +1,10 @@
+Version 0.5.3 (2018-09-03)
+========================
+ * Hyundai Santa Fe support!
+ * Honda Pilot 2019 support thanks to energee!
+ * Toyota Hyghlander support thanks to daehahn!
+ * Improve steering tuning for Honda Odyssey
+
 Version 0.5.2 (2018-08-16)
 ========================
  * New calibration: more accurate, a lot faster, open source!
