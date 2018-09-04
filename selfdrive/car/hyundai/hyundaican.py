@@ -2,8 +2,6 @@ import crcmod
 
 hyundai_checksum = crcmod.mkCrcFun(0x11D, initCrc=0xFD, rev=False, xorOut=0xdf)
 
-<<<<<<< HEAD
-
 def make_can_msg(addr, dat, alt):
   return [addr, 0, dat, alt]
 

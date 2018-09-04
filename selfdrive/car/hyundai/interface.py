@@ -83,6 +83,7 @@ class CarInterface(object):
       ret.steerRatio = 13.8 * 1.15   # 15% higher at the center seems reasonable
       ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
       ret.steerKpV, ret.steerKiV = [[0.37], [0.1]]
+      ret.minEnableSpeed = -1.   # Minimum speed to enable control
     elif candidate == CAR.SORENTO:
       ret.steerKf = 0.00005   # full torque for 20 deg at 80mph means 0.00007818594
       ret.steerRateCost = 0.5
@@ -91,6 +92,35 @@ class CarInterface(object):
       ret.steerRatio = 14.4 * 1.15   # 15% higher at the center seems reasonable
       ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
       ret.steerKpV, ret.steerKiV = [[0.25], [0.05]]
+      ret.minEnableSpeed = -1.   # Minimum speed to enable control
+    elif candidate == CAR.ELANTRA:
+      ret.steerKf = 0.00004   # full torque for 20 deg at 80mph means 0.00007818594
+      ret.steerRateCost = 0.5
+      ret.mass = 1275 + std_cargo
+      ret.wheelbase = 2.7
+      ret.steerRatio = 16.9 
+      ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
+      ret.steerKpV, ret.steerKiV = [[0.20], [0.01]]
+      ret.minEnableSpeed = 56 * CV.KPH_TO_MS   # Minimum speed to enable control
+    elif candidate == CAR.GENESIS:
+      ret.steerKf = 0.00005   # full torque for 20 deg at 80mph means 0.00007818594
+      ret.steerRateCost = 0.5
+      ret.mass = 2060 + std_cargo
+      ret.wheelbase = 3.01
+      ret.steerRatio = 16.5   
+      ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
+      ret.steerKpV, ret.steerKiV = [[0.16], [0.01]]
+      ret.minEnableSpeed = 56 * CV.KPH_TO_MS   # Minimum speed to enable control
+    elif candidate == CAR.STINGER:
+      ret.steerKf = 0.00005   # full torque for 20 deg at 80mph means 0.00007818594
+      ret.steerRateCost = 0.5
+      ret.mass = 1825 + std_cargo
+      ret.wheelbase = 2.78
+      ret.steerRatio = 14.4 * 1.15   # 15% higher at the center seems reasonable
+      ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
+      ret.steerKpV, ret.steerKiV = [[0.25], [0.05]]
+      ret.minEnableSpeed = -1.   # Minimum speed to enable control
+
 
 
     ret.longitudinalKpBP = [0.]
@@ -100,10 +130,6 @@ class CarInterface(object):
     tire_stiffness_factor = 1.
 
     ret.centerToFront = ret.wheelbase * 0.4
-
-    # min speed to enable ACC. if car can do stop and go, then set enabling speed
-    # to a negative value, so it won't matter.
-    ret.minEnableSpeed = -1.
 
     centerToRear = ret.wheelbase - ret.centerToFront
 
