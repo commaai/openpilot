@@ -94,9 +94,9 @@ class VehicleModel(object):
 
 if __name__ == '__main__':
   from selfdrive.car.honda.interface import CarInterface
-  # load car params
-  #CP = CarInterface.get_params("TOYOTA PRIUS 2017", {})
   CP = CarInterface.get_params("HONDA CIVIC 2016 TOURING", {})
+  #from selfdrive.car.hyundai.interface import CarInterface
+  #CP = CarInterface.get_params("HYUNDAI SANTA FE UNLIMITED 2019", {})
   #print CP
   VM = VehicleModel(CP)
   #print VM.steady_state_sol(.1, 0.15)

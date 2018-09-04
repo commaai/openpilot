@@ -134,6 +134,16 @@ class CarInterface(object):
       ret.steerKpV, ret.steerKiV = [[0.6], [0.1]]
       ret.steerKf = 0.00006
 
+    elif candidate in [CAR.HIGHLANDER, CAR.HIGHLANDERH]:
+      stop_and_go = True if (candidate in CAR.HIGHLANDERH) else False
+      ret.safetyParam = 100
+      ret.wheelbase = 2.78
+      ret.steerRatio = 16.0
+      tire_stiffness_factor = 0.444 # not optimized yet
+      ret.mass = 4607 * CV.LB_TO_KG + std_cargo #mean between normal and hybrid limited
+      ret.steerKpV, ret.steerKiV = [[0.6], [0.05]]
+      ret.steerKf = 0.00006
+
     ret.steerRateCost = 1.
     ret.centerToFront = ret.wheelbase * 0.44
 
@@ -146,7 +156,6 @@ class CarInterface(object):
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter.
-  
     ret.minEnableSpeed = -1. if (stop_and_go or ret.enableGasInterceptor) else 19. * CV.MPH_TO_MS
 
     centerToRear = ret.wheelbase - ret.centerToFront
@@ -246,17 +255,20 @@ class CarInterface(object):
     ret.cruiseState.speed = self.CS.v_cruise_pcm * CV.KPH_TO_MS
     ret.cruiseState.available = bool(self.CS.main_on)
     ret.cruiseState.speedOffset = 0.
+<<<<<<< HEAD
     if (self.CP.carFingerprint == CAR.RAV4H) or self.CP.enableGasInterceptor:
       # ignore standstill in hybrid rav4, since pcm allows to restart without
+=======
+    if self.CP.carFingerprint in [CAR.RAV4H, CAR.HIGHLANDERH]:
+      # ignore standstill in hybrid vehicles, since pcm allows to restart without
+>>>>>>> 012727ef6069586642d7965f263bc58afac19778
       # receiving any special command
       #also if interceptor is detected
       ret.cruiseState.standstill = False
     else:
       ret.cruiseState.standstill = self.CS.pcm_acc_status == 7
 
-    # TODO: button presses
     buttonEvents = []
-
     if self.CS.left_blinker_on != self.CS.prev_left_blinker_on:
       be = car.CarState.ButtonEvent.new_message()
       be.type = 'leftBlinker'
