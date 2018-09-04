@@ -397,8 +397,8 @@ class LeadSmoother(object):
       timespan = now_ms - time_ms
       
       # Discount speed observations that are older or more distant.
-      time_weight = self.window_ms / float(timespan)
-      distance_weight = 1. / dist
+      time_weight = self.window_ms / max(float(timespan), 1.)
+      distance_weight = 1. / max(dist, 1)
       weight = time_weight * distance_weight
       
       speed_sum += speed * weight
