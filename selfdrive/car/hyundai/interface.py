@@ -5,7 +5,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.hyundai.carstate import CarState, get_can_parser, get_camera_parser
-from selfdrive.car.hyundai.values import CAMERA_MSGS, get_hud_alerts
+from selfdrive.car.hyundai.values import CAMERA_MSGS, CAR, get_hud_alerts
 
 try:
   from selfdrive.car.hyundai.carcontroller import CarController
@@ -90,7 +90,7 @@ class CarInterface(object):
       ret.wheelbase = 2.78
       ret.steerRatio = 14.4 * 1.15   # 15% higher at the center seems reasonable
       ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
-      ret.steerKpV, ret.steerKiV = [[0.2], [0.05]]
+      ret.steerKpV, ret.steerKiV = [[0.25], [0.05]]
 
 
     ret.longitudinalKpBP = [0.]
