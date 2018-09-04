@@ -1,11 +1,12 @@
 import crcmod
+from selfdrive.car.hyundai.values import CHECKSUM
 
 hyundai_checksum = crcmod.mkCrcFun(0x11D, initCrc=0xFD, rev=False, xorOut=0xdf)
 
 def make_can_msg(addr, dat, alt):
   return [addr, 0, dat, alt]
 
-def create_lkas11(packer, apply_steer, steer_req, cnt, enabled, lkas11, hud_alert, checksum_type, keep_stock=False):
+def create_lkas11(packer, car_fingerprint, apply_steer, steer_req, cnt, enabled, lkas11, hud_alert, keep_stock=False):
   values = {
     "CF_Lkas_Icon": 3 if enabled else 0,
     "CF_Lkas_LdwsSysState": 3 if steer_req else 1,
@@ -32,15 +33,15 @@ def create_lkas11(packer, apply_steer, steer_req, cnt, enabled, lkas11, hud_aler
   dat = packer.make_can_msg("LKAS11", 0, values)[2]
 
   # CRC Checksum as seen on 2019 Hyundai Santa Fe
-  if checksum_type == 0:
+  if CHECKSUM[car_fingerprint] == 0:
     dat = dat[:6] + dat[7]
     checksum = hyundai_checksum(dat)
   # Checksum of first 6 Bytes, as seen on 2018 Kia Sorento
-  if checksum_type == 6:
+  if CHECKSUM[car_fingerprint] == 6:
     dat = [ord(i) for i in dat]
     checksum = sum(dat[:6]) % 256
   # Checksum of first 6 Bytes and last Byte as seen on 2018 Kia Stinger
-  if checksum_type == 7: 
+  if CHECKSUM[car_fingerprint] == 7: 
     dat = [ord(i) for i in dat]
     checksum = (sum(dat[:6]) + dat[7]) % 256
   

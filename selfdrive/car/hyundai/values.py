@@ -8,7 +8,7 @@ def get_hud_alerts(visual_alert, audble_alert):
 
 class CAR:
   SANTA_FE = "HYUNDAI SANTA FE LIMITED 2019"
-  SORENTO = "KIA SORENTO GT LINE 2018"         # Top Trim Kia Sorento for Australian Market, AWD Diesel 8sp Auto
+  SORENTO = "KIA SORENTO GT LINE 2018"  # Top Trim Kia Sorento for Australian Market, AWD Diesel 8sp Auto
   ELANTRA = "HYUNDAI ELANTRA LIMITED ULTIMATE 2017"
   GENESIS = "HYUNDAI GENESIS 2018"
   STINGER = "KIA STINGER GT2 2018"

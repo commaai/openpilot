@@ -3,7 +3,7 @@ from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car.hyundai.hyundaican import create_lkas11, create_lkas12, \
                                              create_1191, create_1156, \
                                              create_clu11
-from selfdrive.car.hyundai.values import Buttons, CHECKSUM
+from selfdrive.car.hyundai.values import Buttons
 from selfdrive.can.packer import CANPacker
 
 
@@ -61,8 +61,8 @@ class CarController(object):
       if (self.cnt % 7) == 0:
         can_sends.append(create_1156())
 
-    can_sends.append(create_lkas11(self.packer, apply_steer, steer_req, self.lkas11_cnt,
-                                   enabled, CS.lkas11, hud_alert, CHECKSUM[self.car_fingerprint], keep_stock=(not self.camera_disconnected)))
+    can_sends.append(create_lkas11(self.packer, self.car_fingerprint, apply_steer, steer_req, self.lkas11_cnt,
+                                   enabled, CS.lkas11, hud_alert, keep_stock=(not self.camera_disconnected)))
 
     if pcm_cancel_cmd:
       can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.CANCEL))
