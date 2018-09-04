@@ -348,7 +348,7 @@ class ACCController(object):
         target_speed_ms = self.acc_speed_kph * CV.KPH_TO_MS
     else:
       # In the presence of a lead car, match their speed.
-      target_speed_ms, _ = self.lead_smoother.speed_and_dist()
+      target_speed_ms, _ = self.lead_smoother.speed()
       distance = self.lead_smoother.last_distance()
       
       # And adjust to obey the 2-second rule.
@@ -366,7 +366,7 @@ class ACCController(object):
       elif gap_sec < 2.5:
         target_speed_ms -= half_press_kph * CV.KPH_TO_MS
         print "***TOO CLOSE - FALL BACK SLIGHTLY***"
-      elif gap_sec > 3 and CS.v_cruise_actual * CV.KPH_TO_MS < target_speed_ms:
+      elif gap_sec > 3.5:
         target_speed_ms += half_press_kph * CV.KPH_TO_MS
         print "***TOO FAR - GET CLOSER***"
     # Clamp between 0 and max ACC speed
@@ -387,13 +387,12 @@ class LeadSmoother(object):
   def add_observation(self, speed, distance):
     self.lead_car_observations.append((_current_time_millis(), speed, distance))
     
-  def speed_and_dist(self):
+  def speed(self):
     now_ms = _current_time_millis()
     self._filter_leads(now_ms)
     # Average all remaining observations of the lead car.
     speed_sum = 0
     weight_sum = 0
-    dist_sum = 0
     for time_ms, speed, dist in self.lead_car_observations:
       timespan = now_ms - time_ms
       
@@ -404,10 +403,8 @@ class LeadSmoother(object):
       
       speed_sum += speed * weight
       weight_sum += weight
-      dist_sum += dist
     average_absolute_speed = speed_sum / weight_sum
-    average_dRel = dist_sum / len(self.lead_car_observations)
-    return average_absolute_speed, average_dRel
+    return average_absolute_speed
     
   def last_distance(self):
     if self.lead_car_observations:
