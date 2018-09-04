@@ -396,7 +396,7 @@ class LeadSmoother(object):
     dist_sum = 0
     for time_ms, speed, dist in self.lead_car_observations:
       timespan = now_ms - time_ms
-      weight = float(timespan) / self.window_ms
+      weight = self.window_ms / float(timespan)
       speed_sum += speed * weight
       weight_sum += weight
       dist_sum += dist
