@@ -255,13 +255,9 @@ class CarInterface(object):
     ret.cruiseState.speed = self.CS.v_cruise_pcm * CV.KPH_TO_MS
     ret.cruiseState.available = bool(self.CS.main_on)
     ret.cruiseState.speedOffset = 0.
-<<<<<<< HEAD
-    if (self.CP.carFingerprint == CAR.RAV4H) or self.CP.enableGasInterceptor:
-      # ignore standstill in hybrid rav4, since pcm allows to restart without
-=======
-    if self.CP.carFingerprint in [CAR.RAV4H, CAR.HIGHLANDERH]:
+	
+    if self.CP.carFingerprint in [CAR.RAV4H, CAR.HIGHLANDERH] or self.CP.enableGasInterceptor:
       # ignore standstill in hybrid vehicles, since pcm allows to restart without
->>>>>>> 012727ef6069586642d7965f263bc58afac19778
       # receiving any special command
       #also if interceptor is detected
       ret.cruiseState.standstill = False
