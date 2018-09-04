@@ -348,7 +348,8 @@ class ACCController(object):
         target_speed_ms = self.acc_speed_kph * CV.KPH_TO_MS
     else:
       # In the presence of a lead car, match their speed.
-      target_speed_ms = self.lead_smoother.speed()
+      #target_speed_ms = self.lead_smoother.speed()
+      target_speed_ms = self.lead_smoother.last_speed()
       distance = self.lead_smoother.last_distance()
       
       # And adjust to obey the 2-second rule.
@@ -410,6 +411,13 @@ class LeadSmoother(object):
     if self.lead_car_observations:
       _, _, last_dist = self.lead_car_observations[-1]
       return last_dist
+    else:
+      return None
+      
+  def last_speed(self):
+    if self.lead_car_observations:
+      _, last_speed, _ = self.lead_car_observations[-1]
+      return last_speed
     else:
       return None
     
