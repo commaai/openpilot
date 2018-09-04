@@ -25,10 +25,7 @@ FINGERPRINTS = {
   }],
 }
 
-#CAMERA_MSGS = {
-#  CAR.SANTA_FE: [832, 1156, 1191, 1342],   # msgs sent by the camera
-CAMERA_MSGS = [832, 1156]
-#}
+CAMERA_MSGS = [832, 1156, 1191, 1342]   # msgs sent by the camera
 
 CHECKSUM = {
   CAR.SANTA_FE: 0,
