@@ -325,7 +325,11 @@ class CarInterface(object):
       "chimeRepeated": (CM.LOW_CHIME, -1),
       "chimeContinuous": (CM.LOW_CHIME, -1)}[str(c.hudControl.audibleAlert)]
 
-    self.CC.update(self.sendcan, c.enabled, self.CS, self.frame, \
+    # For Openpilot, "enabled" includes pre-enable.
+    # In GM, PCM faults out if ACC command overlaps user gas.
+    enabled = c.enabled and not self.CS.user_gas_pressed
+
+    self.CC.update(self.sendcan, enabled, self.CS, self.frame, \
       c.actuators,
       hud_v_cruise, c.hudControl.lanesVisible, \
       c.hudControl.leadVisible, \
