@@ -199,6 +199,7 @@ class dbc(object):
 
     st = x[2].rjust(8, '\x00')
     le, be = None, None
+    size = msg[0][1]
 
     for s in msg[1]:
       if arr is not None and s[0] not in arr:
@@ -215,7 +216,7 @@ class dbc(object):
       else:
         if le is None:
           le = struct.unpack("<Q", st)[0]
-        x2_int = le
+        x2_int = le >> (64 - 8 * size)
         ss = s[1]
         data_bit_pos = ss
 

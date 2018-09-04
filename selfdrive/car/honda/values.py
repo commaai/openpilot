@@ -145,5 +145,18 @@ SPEED_FACTOR = {
   CAR.RIDGELINE: 1.,
 }
 
+# This message sends car info to the radar that is specific to the model. You
+# can determine this message by monitoring the OEM system.
+VEHICLE_STATE_MSG = {
+  CAR.ACURA_ILX: "\x0f\x18\x51\x02\x5a\x00\x00",
+  CAR.ACURA_RDX: "\x0f\x57\x4f\x02\x5a\x00\x00",
+  CAR.CIVIC: "\x02\x38\x44\x32\x4f\x00\x00",
+  CAR.CRV: "\x00\x00\x50\x02\x51\x00\x00",
+  CAR.ODYSSEY: "\x00\x00\x56\x02\x55\x00\x00",
+  CAR.PILOT: "\x00\x00\x56\x02\x58\x00\x00",
+  CAR.PILOT_2019: "\x00\x00\x58\x02\x5c\x00\x00",
+  CAR.RIDGELINE: "\x00\x00\x56\x02\x57\x00\x00",
+}
+
 # TODO: get these from dbc file
 HONDA_BOSCH = [CAR.ACCORD, CAR.ACCORD_15, CAR.CIVIC_HATCH, CAR.CRV_5G]

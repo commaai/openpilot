@@ -222,11 +222,6 @@ static int gm_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   return true;
 }
 
-static int gm_tx_lin_hook(int lin_num, uint8_t *data, int len) {
-  // LIN is not used in Volt
-  return false;
-}
-
 static void gm_init(int16_t param) {
   controls_allowed = 0;
   gm_ignition_started = 0;
@@ -236,16 +231,12 @@ static int gm_ign_hook() {
   return gm_ignition_started;
 }
 
-static int gm_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
-  return -1;
-}
-
 const safety_hooks gm_hooks = {
   .init = gm_init,
   .rx = gm_rx_hook,
   .tx = gm_tx_hook,
-  .tx_lin = gm_tx_lin_hook,
+  .tx_lin = nooutput_tx_lin_hook,
   .ignition = gm_ign_hook,
-  .fwd = gm_fwd_hook,
+  .fwd = nooutput_fwd_hook,
 };
 
