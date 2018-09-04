@@ -7,6 +7,7 @@ const int HYUNDAI_DRIVER_TORQUE_ALLOWANCE = 50;
 const int HYUNDAI_DRIVER_TORQUE_FACTOR = 2;
 
 int hyundai_camera_detected = 0;
+int hyundai_camera_bus = 0;
 int hyundai_giraffe_switch_2 = 0;          // is giraffe switch 2 high?
 int hyundai_rt_torque_last = 0;
 int hyundai_desired_torque_last = 0;
@@ -39,6 +40,14 @@ static void hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     controls_allowed = 0;
   }
 
+  // Find out which bus the camera is on
+  if (bus == 1 && addr == 832) {
+    hyundai_camera_bus = 1;
+  }
+  if (bus == 2 && addr == 832) {
+    hyundai_camera_bus = 2;
+  }
+
   // enter controls on rising edge of ACC, exit controls on ACC off
   if ((to_push->RIR>>21) == 1057) {
     // 2 bits: 13-14
@@ -51,8 +60,8 @@ static void hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     hyundai_cruise_engaged_last = cruise_engaged;
   }
 
-  // 832 is lkas cmd. If it is on bus 2, then giraffe switch 2 is high
-  if ((to_push->RIR>>21) == 832 && (bus == 2)) {
+  // 832 is lkas cmd. If it is on camera bus, then giraffe switch 2 is high
+  if ((to_push->RIR>>21) == 832 && (bus == hyundai_camera_bus) && (hyundai_camera_bus != 0)) {
     hyundai_giraffe_switch_2 = 1;
   }
 }
@@ -133,10 +142,12 @@ static int hyundai_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 
 static int hyundai_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
   // forward cam to ccan and viceversa, except lkas cmd
-  if ((bus_num == 0 || bus_num == 2) && hyundai_giraffe_switch_2) {
+  if ((bus_num == 0 || bus_num == hyundai_camera_bus) && hyundai_giraffe_switch_2) {
     int addr = to_fwd->RIR>>21;
-    bool is_lkas_msg = addr == 832 && bus_num == 2;
-    return is_lkas_msg? -1 : (uint8_t)(~bus_num & 0x2);
+
+    if (addr == 832 && bus_num == hyundai_camera_bus) return -1;
+    if (bus_num == 0) return (uint8_t)(hyundai_camera_bus);
+    if (bus_num == hyundai_camera_bus) return (uint8_t)(0);
   }
   return -1;
 }
