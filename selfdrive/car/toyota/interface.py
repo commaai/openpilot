@@ -123,7 +123,7 @@ class CarInterface(object):
       ret.steerKf = 0.00006
 
     elif candidate in [CAR.CAMRY, CAR.CAMRYH]:
-      ret.safetyParam = 100 
+      ret.safetyParam = 100
       ret.wheelbase = 2.82448
       ret.steerRatio = 13.7
       tire_stiffness_factor = 0.7933
