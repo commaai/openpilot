@@ -401,16 +401,16 @@ class LeadSmoother(object):
       timespan = now_ms - time_ms
       
       # Discount speed observations that are older or more distant.
-      time_weight = self.window_ms / max(float(timespan), 1.)
+      time_weight = float(self.window_ms) / max(timespan, 1)
       distance_weight = 1. / max(dist, 1)
       weight = time_weight * distance_weight
       
-      speed_sum += speed * weight
+      speed_sum += (speed * weight)
       weight_sum += weight
-    average_absolute_speed = speed_sum / weight_sum
-    return average_absolute_speed
+    return speed_sum / weight_sum
     
   def last_distance(self):
+    self._filter_leads(_current_time_millis())
     if self.lead_car_observations:
       _, _, last_dist = self.lead_car_observations[-1]
       return last_dist
@@ -418,6 +418,7 @@ class LeadSmoother(object):
       return None
       
   def last_speed(self):
+    self._filter_leads(_current_time_millis())
     if self.lead_car_observations:
       _, last_speed, _ = self.lead_car_observations[-1]
       return last_speed
@@ -425,8 +426,7 @@ class LeadSmoother(object):
       return None
     
   def __len__(self):
-    now_ms = _current_time_millis()
-    self._filter_leads(now_ms)
+    self._filter_leads(_current_time_millis())
     return len(self.lead_car_observations)
     
   def _filter_leads(self, time_ms):
