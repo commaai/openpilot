@@ -52,9 +52,6 @@ class CarInterface(object):
 
     ret.carName = "chrysler"
     ret.carFingerprint = candidate
-    # TODO actually look for radar messages instead of hard-coding non-giraffe cars.
-    #if candidate in [CAR.CHEROKEE, CAR.PACIFICA_2018]:
-    #  ret.radarOffCan = True
 
     ret.safetyModel = car.CarParams.SafetyModels.chrysler
 
