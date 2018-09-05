@@ -245,6 +245,7 @@ class ACCController(object):
     rel_speed = lead_car.vRel * CV.MS_TO_KPH
     # Current speed in kph
     cur_speed = CS.v_ego * CV.MS_TO_KPH
+    lead_absolute_speed = cur_speed + rel_speed
     in_progress_accel = CS.v_cruise_actual - cur_speed
     future_rel_speed = rel_speed - in_progress_accel
     # v_ego is in m/s, so safe_dist_m is in meters.
@@ -287,8 +288,9 @@ class ACCController(object):
         ### Slowing down ###
         if CS.v_cruise_actual > full_press_kph:
           # detect stopped traffic and disengage cruise.
-          if rel_speed < 0 and cur_speed <= -1.1 * rel_speed:
-            msg = "Off (Stopped traffic)"
+          if (cur_speed <= -1.1 * rel_speed
+              or lead_absolute_speed < float(self.MIN_CRUISE_SPEED_MS) * 2 / 3):
+            msg = "Off (Slow traffic)"
             button = CruiseButtons.CANCEL
           # Reduce speed significantly if lead_dist < safe dist
           # and if the lead car isn't already pulling away.
