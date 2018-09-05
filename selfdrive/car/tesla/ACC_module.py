@@ -234,7 +234,7 @@ class ACCController(object):
 
   # function to calculate the cruise button based on a safe follow distance
   def calc_follow_button(self, CS, lead_car):
-    follow_time = 2.0 # in seconds
+    follow_time = 3.0 # in seconds
     current_time_ms = _current_time_millis()
      # Make sure we were able to populate lead_1.
     if lead_car is None:
@@ -288,7 +288,7 @@ class ACCController(object):
         # the rel_speed
         if CS.v_cruise_actual > full_press_kph:
           # detect stopped traffic and disengage cruise.
-          if -1 * rel_speed > 0.9 * CS.v_ego * CV.MS_TO_KPH:
+          if -1 * rel_speed > 0.50 * CS.v_ego * CV.MS_TO_KPH:
             msg = "Stopped traffic. Calcel cruise."
             button = CruiseButtons.CANCEL
           if lead_dist < (safe_dist_m * 0.3) and rel_speed < 2:
@@ -302,7 +302,7 @@ class ACCController(object):
            #Reduce speed if rel_speed < -15kph so you don't rush up to lead car
           elif rel_speed < -15:
             msg =  "relspd -15 down"
-            button = CruiseButtons.DECEL_SET
+            button = CruiseButtons.DECEL_2ND
           # we're close to the safe distance, so make slow adjustments
           # only adjust every 1 secs
           elif (lead_dist < (safe_dist_m * 0.9) and rel_speed < 0
