@@ -273,7 +273,7 @@ class ACCController(object):
         button = CruiseButtons.DECEL_SET
         
       # If lead_dist is reported as 0, no one is detected in front of you so you
-      # can speed up don't speed up on straight-aways; vision radar often
+      # can speed up. Only accel on straight-aways; vision radar often
       # loses lead car in a turn.
       elif (lead_dist == 0
             and CS.angle_steers < 2.0
