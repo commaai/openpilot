@@ -55,7 +55,6 @@ class CarController(object):
     self.last_angle = 0
     self.send_new_status = False  # indicates we want to send 2a6 when we can.
     self.prev_2a6 = -9999  # long time ago.
-    self.has_sent_2a6_warning = False  # if it's sent the initial warning
     self.accel_steady = 0.
     self.car_fingerprint = car_fingerprint
     self.alert_active = False
@@ -169,11 +168,6 @@ class CarController(object):
         last_angle = 0
       else:
         new_msg = create_2a6(CS.gear_shifter, apply_steer, moving_fast, self.car_fingerprint)
-        if ((self.prev_2a6 > 0) and  # already sent a green
-            (not self.has_sent_2a6_warning) and
-            moving_fast):  # send initial warning in case that's needed to prep actuators.
-          self.has_sent_2a6_warning = True
-          new_msg = create_2a6(CS.gear_shifter, -1, moving_fast, self.car_fingerprint)
         sendcan.send(can_list_to_can_capnp([new_msg], msgtype='sendcan').to_bytes())
         can_sends.append(new_msg)
         self.send_new_status = False
