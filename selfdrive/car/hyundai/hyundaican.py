@@ -32,19 +32,19 @@ def create_lkas11(packer, car_fingerprint, apply_steer, steer_req, cnt, enabled,
 
   dat = packer.make_can_msg("LKAS11", 0, values)[2]
 
-  # CRC Checksum as seen on 2019 Hyundai Santa Fe
-  if CHECKSUM[car_fingerprint] == 0:
+  if car_fingerprint in CHECKSUM["crc8"]:
+    # CRC Checksum as seen on 2019 Hyundai Santa Fe
     dat = dat[:6] + dat[7]
     checksum = hyundai_checksum(dat)
-  # Checksum of first 6 Bytes, as seen on 2018 Kia Sorento
-  if CHECKSUM[car_fingerprint] == 6:
+  elif car_fingerprint in CHECKSUM["6B"]:
+    # Checksum of first 6 Bytes, as seen on 2018 Kia Sorento
     dat = [ord(i) for i in dat]
     checksum = sum(dat[:6]) % 256
-  # Checksum of first 6 Bytes and last Byte as seen on 2018 Kia Stinger
-  if CHECKSUM[car_fingerprint] == 7: 
+  elif car_fingerprint in CHECKSUM["7B"]:
+    # Checksum of first 6 Bytes and last Byte as seen on 2018 Kia Stinger
     dat = [ord(i) for i in dat]
     checksum = (sum(dat[:6]) + dat[7]) % 256
-  
+
   values["CF_Lkas_Chksum"] = checksum
 
   return packer.make_can_msg("LKAS11", 0, values)

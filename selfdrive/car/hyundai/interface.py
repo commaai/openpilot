@@ -84,7 +84,7 @@ class CarInterface(object):
       ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
       ret.steerKpV, ret.steerKiV = [[0.37], [0.1]]
       ret.minEnableSpeed = -1.   # Minimum speed to enable control
-    elif candidate == CAR.SORENTO:
+    elif candidate == CAR.KIA_SORENTO:
       ret.steerKf = 0.00005   # full torque for 20 deg at 80mph means 0.00007818594
       ret.steerRateCost = 0.5
       ret.mass = 1985 + std_cargo
@@ -98,7 +98,7 @@ class CarInterface(object):
       ret.steerRateCost = 0.5
       ret.mass = 1275 + std_cargo
       ret.wheelbase = 2.7
-      ret.steerRatio = 16.9 
+      ret.steerRatio = 16.9
       ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
       ret.steerKpV, ret.steerKiV = [[0.20], [0.01]]
       ret.minEnableSpeed = 56 * CV.KPH_TO_MS   # Minimum speed to enable control
@@ -107,11 +107,11 @@ class CarInterface(object):
       ret.steerRateCost = 0.5
       ret.mass = 2060 + std_cargo
       ret.wheelbase = 3.01
-      ret.steerRatio = 16.5   
+      ret.steerRatio = 16.5
       ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
       ret.steerKpV, ret.steerKiV = [[0.16], [0.01]]
       ret.minEnableSpeed = 56 * CV.KPH_TO_MS   # Minimum speed to enable control
-    elif candidate == CAR.STINGER:
+    elif candidate == CAR.KIA_STINGER:
       ret.steerKf = 0.00005   # full torque for 20 deg at 80mph means 0.00007818594
       ret.steerRateCost = 0.5
       ret.mass = 1825 + std_cargo
