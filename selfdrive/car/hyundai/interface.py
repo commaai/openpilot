@@ -89,7 +89,7 @@ class CarInterface(object):
       ret.steerRateCost = 0.5
       ret.mass = 1985 + std_cargo
       ret.wheelbase = 2.78
-      ret.steerRatio = 14.4 * 1.15   # 15% higher at the center seems reasonable
+      ret.steerRatio = 14.4 * 1.1   # 15% higher at the center seems reasonable
       ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
       ret.steerKpV, ret.steerKiV = [[0.25], [0.05]]
       ret.minEnableSpeed = -1.   # Minimum speed to enable control
