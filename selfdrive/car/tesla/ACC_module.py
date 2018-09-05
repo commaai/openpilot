@@ -287,6 +287,10 @@ class ACCController(object):
         # Reduce speed significantly if lead_dist < 50% of safe dist, no matter
         # the rel_speed
         if CS.v_cruise_actual > full_press_kph:
+          # detect stopped traffic and disengage cruise.
+          if -1 * rel_speed > 0.9 * CS.v_ego * CV.MS_TO_KPH:
+            msg = "Stopped traffic. Calcel cruise."
+            button = CruiseButtons.CANCEL
           if lead_dist < (safe_dist_m * 0.3) and rel_speed < 2:
             msg =  "50pct down"
             button = CruiseButtons.DECEL_2ND
