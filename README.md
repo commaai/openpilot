@@ -73,7 +73,7 @@ Supported Cars
 | Toyota             | C-HR 2018<sup>4</sup> | All                  | Yes     | Stock          | 0mph             | 0mph           |
 | Toyota             | Corolla 2017          | All                  | Yes     | Yes<sup>2</sup>| 20mph            | 0mph           |
 | Toyota             | Corolla 2018          | All                  | Yes     | Yes<sup>2</sup>| 20mph            | 0mph           |
-| Toyota             | Highlander 2017       | All                  | Yes     | Yes<sup>2</sup>| 20mph            | 0mph           |
+| Toyota             | Highlander 2017       | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
 | Toyota             | Highlander Hybrid 2018| All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
 | Toyota             | Prius 2016            | TSS-P                | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
 | Toyota             | Prius 2017            | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
@@ -107,7 +107,7 @@ Community Maintained Cars are not confirmed by comma.ai to meet our [safety mode
 In Progress Cars
 ------
 - All TSS-P Toyota with Steering Assist.
-  - 'Full Speed Range Dynamic Radar Cruise Control' is required to enable stop-and-go. Only the Prius, Camry and C-HR have this option.
+  - 'Full Speed Range Dynamic Radar Cruise Control' is required to enable stop-and-go. Only the Prius, Camry and C-HR have this option.  OpenPilot also adds stop-an-go functionality for Highlander and Highlander Hybrid.
   - Even though the Tundra, Sequoia and the Land Cruiser have TSS-P, they don't have Steering Assist and are not supported.
 - All LSS-P Lexus with Steering Assist or Lane Keep Assist.
   - 'All-Speed Range Dynamic Radar Cruise Control' is required to enable stop-and-go. Only the GS, GSH, F, RX, RXH, LX, NX, NXH, LC, LCH, LS, LSH have this option.
