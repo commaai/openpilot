@@ -314,7 +314,7 @@ class ACCController(object):
                   or (lead_dist > safe_dist_m and future_rel_speed > 5)
                 and half_press_kph < available_speed
                 and current_time_ms > self.automated_cruise_action_time):
-            msg =  "+1 (Beyond safe distance)
+            msg =  "+1 (Beyond safe distance)"
             button = CruiseButtons.RES_ACCEL
 
       # if we don't need to do any of the above, then we're at a pretty good
