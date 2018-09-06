@@ -36,6 +36,7 @@ class CarControllerParams():
     self.GAS_LOOKUP_V = [self.MAX_ACC_REGEN, ZERO_GAS, MAX_GAS]
     self.BRAKE_LOOKUP_BP = [-1., -0.25]
     self.BRAKE_LOOKUP_V = [MAX_BRAKE, 0]
+    self.INTENSE_BRAKING_THRESHOLD = 80 # This is right around where the ASCM switches braking modes when braking hard.
 
 
 def actuator_hystereses(final_pedal, pedal_steady):
@@ -64,6 +65,7 @@ class CarController(object):
     self.steer_idx = 0
     self.apply_steer_last = 0
     self.car_fingerprint = car_fingerprint
+    self.intense_braking = False
 
     # Setup detection helper. Routes commands to
     # an appropriate CAN bus number.
@@ -124,13 +126,18 @@ class CarController(object):
         apply_gas = int(round(interp(final_pedal, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)))
         apply_brake = int(round(interp(final_pedal, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)))
 
+      if apply_brake == 0:
+        self.intense_braking = False # We stopped needing friction brake, reset state
+
+      self.intense_braking = self.intense_braking or apply_brake > P.INTENSE_BRAKING_THRESHOLD
+
       # Gas/regen and brakes - all at 25Hz
       if (frame % 4) == 0:
         idx = (frame / 4) % 4
 
         at_full_stop = enabled and CS.standstill
         near_stop = enabled and (CS.v_ego < P.NEAR_STOP_BRAKE_PHASE)
-        can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, canbus.chassis, apply_brake, idx, near_stop, at_full_stop))
+        can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, canbus.chassis, apply_brake, idx, near_stop, at_full_stop, self.intense_braking))
 
         at_full_stop = enabled and CS.standstill
         can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, canbus.powertrain, apply_gas, idx, enabled, at_full_stop))
