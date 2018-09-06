@@ -5,7 +5,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.can.parser import CANParser
 from selfdrive.car.gm.values import DBC, CAR, parse_gear_shifter, \
                                     CruiseButtons, is_eps_status_ok, \
-                                    STEER_THRESHOLD
+                                    STEER_THRESHOLD, AccState
 
 def get_powertrain_can_parser(CP, canbus):
   # this function generates lists for signal, messages and initial values
