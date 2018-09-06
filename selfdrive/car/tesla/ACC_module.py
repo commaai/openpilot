@@ -319,7 +319,7 @@ class ACCController(object):
 
       # if we don't need to do any of the above, then we're at a pretty good
       # speed. Make sure the set cruise speed matches actual speed.
-      if  button == None and cur_speed > CS.v_cruise_actual + 5
+      if  button == None and cur_speed > CS.v_cruise_actual + 5:
         # Send cruise stalk up_1st if the set speed is too low to bring it up
         msg =  "cruise rectify"
         button = CruiseButtons.RES_ACCEL
