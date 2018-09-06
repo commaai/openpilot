@@ -25,6 +25,7 @@ class CarInterface(object):
     self.brake_pressed_prev = False
     self.can_invalid_count = 0
     self.cruise_enabled_prev = False
+    self.low_speed_alert = False
 
     # *** init the major players ***
     self.CS = CarState(CP)
@@ -78,6 +79,7 @@ class CarInterface(object):
       ret.steerRatio = 13.8 * 1.15   # 15% higher at the center seems reasonable
       ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
       ret.steerKpV, ret.steerKiV = [[0.37], [0.1]]
+      ret.minSteerSpeed = 0.
     elif candidate == CAR.KIA_SORENTO:
       ret.steerKf = 0.00005
       ret.steerRateCost = 0.5
@@ -86,6 +88,7 @@ class CarInterface(object):
       ret.steerRatio = 14.4 * 1.1   # 10% higher at the center seems reasonable
       ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
       ret.steerKpV, ret.steerKiV = [[0.25], [0.05]]
+      ret.minSteerSpeed = 0.
     elif candidate == CAR.ELANTRA:
       ret.steerKf = 0.00004
       ret.steerRateCost = 0.5
@@ -94,6 +97,7 @@ class CarInterface(object):
       ret.steerRatio = 16.9
       ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
       ret.steerKpV, ret.steerKiV = [[0.20], [0.01]]
+      ret.minSteerSpeed = 35 * CV.MPH_TO_MS
     elif candidate == CAR.GENESIS:
       ret.steerKf = 0.00005
       ret.steerRateCost = 0.5
@@ -102,6 +106,7 @@ class CarInterface(object):
       ret.steerRatio = 16.5
       ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
       ret.steerKpV, ret.steerKiV = [[0.16], [0.01]]
+      ret.minSteerSpeed = 35 * CV.MPH_TO_MS
     elif candidate == CAR.KIA_STINGER:
       ret.steerKf = 0.00005
       ret.steerRateCost = 0.5
@@ -110,6 +115,7 @@ class CarInterface(object):
       ret.steerRatio = 14.4 * 1.15   # 15% higher at the center seems reasonable
       ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
       ret.steerKpV, ret.steerKiV = [[0.25], [0.05]]
+      ret.minSteerSpeed = 0.
 
     ret.minEnableSpeed = -1.   # enable is done by stock ACC, so ignore this
     ret.longitudinalKpBP = [0.]
@@ -229,7 +235,12 @@ class CarInterface(object):
     ret.doorOpen = not self.CS.door_all_closed
     ret.seatbeltUnlatched = not self.CS.seatbelt
 
-    #ret.genericToggle = self.CS.generic_toggle
+
+    # low speed steer alert hysteresis logic (only for cars with steer cut off above 10 m/s)
+    if ret.vEgo < (self.CP.minSteerSpeed + 2.) and self.CP.minSteerSpeed > 10.:
+      self.low_speed_alert = True
+    if ret.vEgo > (self.CP.minSteerSpeed + 4.):
+      self.low_speed_alert = False
 
     # events
     events = []
@@ -267,6 +278,9 @@ class CarInterface(object):
 
     if ret.gasPressed:
       events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
+
+    if self.low_speed_alert:
+      events.append(create_event('belowSteerSpeed', [ET.WARNING]))
 
     ret.events = events
     ret.canMonoTimes = canMonoTimes
