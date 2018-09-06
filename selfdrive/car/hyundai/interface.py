@@ -48,7 +48,6 @@ class CarInterface(object):
   def get_params(candidate, fingerprint):
 
     # kg of standard extra cargo to count for drive, gas, etc...
-    # This should be tweaked, unless the car is empty, this will be too low
     std_cargo = 136
 
     ret = car.CarParams.new_message()
@@ -56,9 +55,7 @@ class CarInterface(object):
     ret.carName = "hyundai"
     ret.carFingerprint = candidate
     ret.radarOffCan = True
-
     ret.safetyModel = car.CarParams.SafetyModels.hyundai
-
     ret.enableCruise = True  # stock acc
 
     # FIXME: hardcoding honda civic 2016 touring params so they can be used to
@@ -71,58 +68,50 @@ class CarInterface(object):
     tireStiffnessFront_civic = 192150
     tireStiffnessRear_civic = 202500
 
-    ret.steerActuatorDelay = 0.1  # Default delay, Prius has larger delay
-
-    #borrowing a lot from corolla, given similar car size
+    ret.steerActuatorDelay = 0.1  # Default delay
 
     if candidate == CAR.SANTA_FE:
-      ret.steerKf = 0.00005   # full torque for 20 deg at 80mph means 0.00007818594
+      ret.steerKf = 0.00005
       ret.steerRateCost = 0.5
       ret.mass = 3982 * CV.LB_TO_KG + std_cargo
       ret.wheelbase = 2.766
       ret.steerRatio = 13.8 * 1.15   # 15% higher at the center seems reasonable
       ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
       ret.steerKpV, ret.steerKiV = [[0.37], [0.1]]
-      ret.minEnableSpeed = -1.   # Minimum speed to enable control
     elif candidate == CAR.KIA_SORENTO:
-      ret.steerKf = 0.00005   # full torque for 20 deg at 80mph means 0.00007818594
+      ret.steerKf = 0.00005
       ret.steerRateCost = 0.5
       ret.mass = 1985 + std_cargo
       ret.wheelbase = 2.78
-      ret.steerRatio = 14.4 * 1.1   # 15% higher at the center seems reasonable
+      ret.steerRatio = 14.4 * 1.1   # 10% higher at the center seems reasonable
       ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
       ret.steerKpV, ret.steerKiV = [[0.25], [0.05]]
-      ret.minEnableSpeed = -1.   # Minimum speed to enable control
     elif candidate == CAR.ELANTRA:
-      ret.steerKf = 0.00004   # full torque for 20 deg at 80mph means 0.00007818594
+      ret.steerKf = 0.00004
       ret.steerRateCost = 0.5
       ret.mass = 1275 + std_cargo
       ret.wheelbase = 2.7
       ret.steerRatio = 16.9
       ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
       ret.steerKpV, ret.steerKiV = [[0.20], [0.01]]
-      ret.minEnableSpeed = 56 * CV.KPH_TO_MS   # Minimum speed to enable control
     elif candidate == CAR.GENESIS:
-      ret.steerKf = 0.00005   # full torque for 20 deg at 80mph means 0.00007818594
+      ret.steerKf = 0.00005
       ret.steerRateCost = 0.5
       ret.mass = 2060 + std_cargo
       ret.wheelbase = 3.01
       ret.steerRatio = 16.5
       ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
       ret.steerKpV, ret.steerKiV = [[0.16], [0.01]]
-      ret.minEnableSpeed = 56 * CV.KPH_TO_MS   # Minimum speed to enable control
     elif candidate == CAR.KIA_STINGER:
-      ret.steerKf = 0.00005   # full torque for 20 deg at 80mph means 0.00007818594
+      ret.steerKf = 0.00005
       ret.steerRateCost = 0.5
       ret.mass = 1825 + std_cargo
       ret.wheelbase = 2.78
       ret.steerRatio = 14.4 * 1.15   # 15% higher at the center seems reasonable
       ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
       ret.steerKpV, ret.steerKiV = [[0.25], [0.05]]
-      ret.minEnableSpeed = -1.   # Minimum speed to enable control
 
-
-
+    ret.minEnableSpeed = -1.   # enable is done by stock ACC, so ignore this
     ret.longitudinalKpBP = [0.]
     ret.longitudinalKpV = [0.]
     ret.longitudinalKiBP = [0.]
