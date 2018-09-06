@@ -155,6 +155,9 @@ class CarController(object):
     # can_sends.append(create_steer_command(self.packer, apply_steer, frame))
     # TODO verify units and see if we want apply_steer or apply_angle
 
+    if (frame < (100 * 20)):
+      return  # do not send can messages for first 20 seconds
+
     # frame is 100Hz (0.01s period)
     if (frame % 10 == 0):  # 0.1s period
       new_msg = create_2d9(self.car_fingerprint)
