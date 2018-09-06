@@ -258,10 +258,6 @@ class ACCController(object):
     # debug msg
     msg = None
 
-    #print "dRel: ", lead_car.dRel," yRel: ", lead_car.yRel, " vRel: ", lead_car.vRel, " aRel: ", lead_car.aRel, " vLead: ", lead_car.vLead, " vLeadK: ", lead_car.vLeadK, " aLeadK: ",     lead_car.aLeadK
-
-    ###   Logic to determine best cruise speed ###
-
     # Automatically engange traditional cruise if ACC is active.
     if self.should_autoengage_cc(CS, current_time_ms):
       button = CruiseButtons.RES_ACCEL
