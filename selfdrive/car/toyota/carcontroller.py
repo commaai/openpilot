@@ -63,7 +63,7 @@ def process_hud_alert(hud_alert, audible_alert):
     sound1 = 1
   elif audible_alert in ['beepSingle', 'chimeSingle', 'chimeDouble']:
     # TODO: find a way to send single chimes
-    sound2 = 0 #Changed by P Lee to disable disengage chime
+    sound2 = 1
 
   return steer, fcw, sound1, sound2
 
