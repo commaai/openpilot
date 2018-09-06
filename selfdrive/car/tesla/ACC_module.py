@@ -284,8 +284,8 @@ class ACCController(object):
         ### Slowing down ###
         if CS.v_cruise_actual > full_press_kph:
           # detect stopped traffic and disengage cruise.
-          if (cur_speed <= -1.1 * rel_speed
-              or lead_absolute_speed < float(self.MIN_CRUISE_SPEED_MS) * 2 / 3):
+          if (cur_speed <= -2 * rel_speed
+              or lead_absolute_speed < self.MIN_CRUISE_SPEED_MS):
             msg = "Off (Slow traffic)"
             button = CruiseButtons.CANCEL
           # Reduce speed significantly if lead_dist < safe dist
