@@ -312,7 +312,7 @@ class ACCController(object):
           elif (available_speed > half_press_kph
                 and current_time_ms > self.automated_cruise_action_time
                 and lead_dist > safe_dist_m):
-            lead_is_far = lead_dist > 2 safe_dist_m
+            lead_is_far = lead_dist > 2 * safe_dist_m
             closing = future_rel_speed < -2
             lead_is_pulling_away = future_rel_speed > 5 
             if lead_is_far and not closing or lead_is_pulling_away:
