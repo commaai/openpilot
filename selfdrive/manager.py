@@ -10,21 +10,7 @@ from common.basedir import BASEDIR
 sys.path.append(os.path.join(BASEDIR, "pyextra"))
 os.environ['BASEDIR'] = BASEDIR
 
-if __name__ == "__main__":
-  if os.path.isfile("/init.qcom.rc") \
-      and (not os.path.isfile("/VERSION") or int(open("/VERSION").read()) < 6):
-
-    # update continue.sh before updating NEOS
-    if os.path.isfile(os.path.join(BASEDIR, "scripts", "continue.sh")):
-      from shutil import copyfile
-      copyfile(os.path.join(BASEDIR, "scripts", "continue.sh"), "/data/data/com.termux/files/continue.sh")
-
-    # run the updater
-    print("Starting NEOS updater")
-    subprocess.check_call(["git", "clean", "-xdf"], cwd=BASEDIR)
-    os.system(os.path.join(BASEDIR, "installer", "updater", "updater"))
-    raise Exception("NEOS outdated")
-
+def unblock_stdout():
   # get a non-blocking stdout
   child_pid, child_pty = os.forkpty()
   if child_pid != 0: # parent
@@ -53,6 +39,23 @@ if __name__ == "__main__":
         pass
 
     os._exit(os.wait()[1])
+
+if __name__ == "__main__":
+  if os.path.isfile("/init.qcom.rc") \
+      and (not os.path.isfile("/VERSION") or int(open("/VERSION").read()) < 6):
+
+    # update continue.sh before updating NEOS
+    if os.path.isfile(os.path.join(BASEDIR, "scripts", "continue.sh")):
+      from shutil import copyfile
+      copyfile(os.path.join(BASEDIR, "scripts", "continue.sh"), "/data/data/com.termux/files/continue.sh")
+
+    # run the updater
+    print("Starting NEOS updater")
+    subprocess.check_call(["git", "clean", "-xdf"], cwd=BASEDIR)
+    os.system(os.path.join(BASEDIR, "installer", "updater", "updater"))
+    raise Exception("NEOS outdated")
+
+  unblock_stdout()
 
 import glob
 import shutil

@@ -47,11 +47,16 @@ class CANPacker(object):
 
 if __name__ == "__main__":
   ## little endian test
-  cp = CANPacker("hyundai_2015_ccan")
+  cp = CANPacker("hyundai_santa_fe_2019_ccan")
   s = cp.pack_bytes(0x340, {
     "CR_Lkas_StrToqReq": -0.06,
-    "CF_Lkas_FcwBasReq": 1,
-    "CF_Lkas_Chksum": 3,
+    #"CF_Lkas_FcwBasReq": 1,
+    "CF_Lkas_MsgCount": 7,
+    "CF_Lkas_HbaSysState": 0,
+    #"CF_Lkas_Chksum": 3,
+  })
+  s = cp.pack_bytes(0x340, {
+    "CF_Lkas_MsgCount": 1,
   })
   # big endian test
   #cp = CANPacker("honda_civic_touring_2016_can_generated")
