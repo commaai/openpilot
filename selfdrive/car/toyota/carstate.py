@@ -1,37 +1,17 @@
-from selfdrive.car.toyota.values import CAR, DBC, STEER_THRESHOLD
-from selfdrive.can.parser import CANParser
-from selfdrive.config import Conversions as CV
-from common.kalman.simple_kalman import KF1D
 import numpy as np
+from common.kalman.simple_kalman import KF1D
+from selfdrive.can.parser import CANParser, CANDefine
+from selfdrive.config import Conversions as CV
+from selfdrive.car.toyota.values import CAR, DBC, STEER_THRESHOLD
 
+def parse_gear_shifter(gear, vals):
 
-def parse_gear_shifter(can_gear, car_fingerprint):
-  # TODO: Use values from DBC to parse this field
-  if car_fingerprint in [CAR.PRIUS, CAR.CHRH, CAR.CAMRYH]:
-    if can_gear == 0x0:
-      return "park"
-    elif can_gear == 0x1:
-      return "reverse"
-    elif can_gear == 0x2:
-      return "neutral"
-    elif can_gear == 0x3:
-      return "drive"
-    elif can_gear == 0x4:
-      return "brake"
-  elif car_fingerprint in [CAR.RAV4, CAR.RAV4H, 
-                           CAR.LEXUS_RXH, CAR.COROLLA, CAR.CHR, CAR.CAMRY]:
-    if can_gear == 0x20:
-      return "park"
-    elif can_gear == 0x10:
-      return "reverse"
-    elif can_gear == 0x8:
-      return "neutral"
-    elif can_gear == 0x0:
-      return "drive"
-    elif can_gear == 0x1:
-      return "sport"
-
-  return "unknown"
+  val_to_capnp = {'P': 'park', 'R': 'reverse', 'N': 'neutral',
+                  'D': 'drive', 'B': 'brake'}
+  try:
+    return val_to_capnp[vals[gear]]
+  except KeyError:
+    return "unknown"
 
 
 def get_can_parser(CP):
@@ -89,6 +69,8 @@ class CarState(object):
   def __init__(self, CP):
 
     self.CP = CP
+    self.can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
+    self.shifter_values = self.can_define.dv["GEAR_PACKET"]['GEAR']
     self.left_blinker_on = 0
     self.right_blinker_on = 0
 
@@ -117,7 +99,6 @@ class CarState(object):
                                     cp.vl["SEATS_DOORS"]['DOOR_OPEN_RL'], cp.vl["SEATS_DOORS"]['DOOR_OPEN_RR']])
     self.seatbelt = not cp.vl["SEATS_DOORS"]['SEATBELT_DRIVER_UNLATCHED']
 
-    can_gear = cp.vl["GEAR_PACKET"]['GEAR']
     self.brake_pressed = cp.vl["BRAKE_MODULE"]['BRAKE_PRESSED']
     self.pedal_gas = cp.vl["GAS_PEDAL"]['GAS_PEDAL']
     self.car_gas = self.pedal_gas
@@ -142,7 +123,8 @@ class CarState(object):
 
     self.angle_steers = cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']
     self.angle_steers_rate = cp.vl["STEER_ANGLE_SENSOR"]['STEER_RATE']
-    self.gear_shifter = parse_gear_shifter(can_gear, self.car_fingerprint)
+    can_gear = int(cp.vl["GEAR_PACKET"]['GEAR'])
+    self.gear_shifter = parse_gear_shifter(can_gear, self.shifter_values)
     self.main_on = cp.vl["PCM_CRUISE_2"]['MAIN_ON']
     self.left_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 1
     self.right_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 2
