@@ -21,18 +21,16 @@ class CM:
   LOW_CHIME = 0x86
   HIGH_CHIME = 0x87
 
-# GM cars have 4 CAN buses, which creates many ways
-# of how the car can be connected to.
-# This ia a helper class for the interface to be setup-agnostic.
-# Supports single Panda setup (connected to OBDII port),
-# and a CAN forwarding setup (connected to camera module connector).
-
 class CanBus(object):
   def __init__(self):
     self.powertrain = 0
     self.obstacle = 1
     self.chassis = 2
     self.sw_gmlan = 3
+
+# 384 = "ASCMLKASteeringCmd"
+# 715 = "ASCMGasRegenCmd"
+CONTROL_MSGS = [384, 715]
 
 class CarInterface(object):
   def __init__(self, CP, sendcan=None):
@@ -54,7 +52,7 @@ class CarInterface(object):
     # sending if read only is False
     if sendcan is not None:
       self.sendcan = sendcan
-      self.CC = CarController(canbus, CP.carFingerprint)
+      self.CC = CarController(canbus, CP.carFingerprint, CP.enableCamera)
 
   @staticmethod
   def compute_gb(accel, speed):
@@ -73,8 +71,11 @@ class CarInterface(object):
 
     ret.enableCruise = False
 
-    # TODO: gate this on detection
-    ret.enableCamera = True
+    # Presence of a camera on the object bus is ok.
+    # Have to go passive if ASCM is online (ACC-enabled cars),
+    # or camera is on powertrain bus (LKA cars without ACC).
+    ret.enableCamera = not any(x for x in CONTROL_MSGS if x in fingerprint)
+
     std_cargo = 136
 
     if candidate == CAR.VOLT:
