@@ -74,7 +74,7 @@ def set_eon_fan(val):
     last_eon_fan_val = val
 
 # temp thresholds to control fan speed - high hysteresis
-_TEMP_THRS_H = [50., 65., 80., 10000]
+_TEMP_THRS_H = [50, 65., 80., 10000.]
 # temp thresholds to control fan speed - low hysteresis
 _TEMP_THRS_L = [42.5, 57.5, 72.5, 10000]
 # fan speed options
