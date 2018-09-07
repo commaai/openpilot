@@ -19,12 +19,10 @@ class ACCController(object):
   # Tesla cruise only functions above 17 MPH
   MIN_CRUISE_SPEED_MS = 17.5 * CV.MPH_TO_MS
     
-  def __init__(self, carcontroller):
-    self.CC = carcontroller
+  def __init__(self):
     self.human_cruise_action_time = 0
     self.automated_cruise_action_time = 0
     self.enabled_time = 0
-    self.last_angle = 0.
     context = zmq.Context()
     self.poller = zmq.Poller()
     self.live20 = messaging.sub_sock(context, service_list['live20'].port, conflate=True, poller=self.poller)
@@ -37,7 +35,6 @@ class ACCController(object):
     self.prev_cruise_buttons = CruiseButtons.IDLE
     self.prev_pcm_acc_status = 0
     self.acc_speed_kph = 0.
-    self.lead_smoother = LeadSmoother(window_ms=750)
 
   # Updates the internal state of this controller based on user input,
   # specifically the steering wheel mounted cruise control stalk, and OpenPilot
@@ -154,8 +151,6 @@ class ACCController(object):
               lead_1 = messaging.recv_one(socket).live20.leadOne
         if CS.cstm_btns.get_button_label2("acc") in ["FOLLOW", "AUTO"]:
           button_to_press = self.calc_follow_button(CS, lead_1)
-        elif CS.cstm_btns.get_button_label2("acc") in ["EXPR"]:
-          button_to_press = self.calc_experimental_button(CS, lead_1, current_time_ms)
     if button_to_press:
       self.automated_cruise_action_time = current_time_ms
       # If trying to slow below the min cruise speed, just cancel cruise.
@@ -170,17 +165,6 @@ class ACCController(object):
     #  self.last_update_time = current_time_ms
     #  print "Desired ACC speed change: %s" % (speed_offset)
     return button_to_press
-    
-  def get_cc_units_kph(self, is_imperial_units):
-    if is_imperial_units:
-      # Imperial unit cars adjust cruise in units of 1 and 5 mph.
-      half_press_kph = 1 * CV.MPH_TO_KPH
-      full_press_kph = 5 * CV.MPH_TO_KPH
-    else:
-      # Metric cars adjust cruise in units of 1 and 5 kph.
-      half_press_kph = 1
-      full_press_kph = 5
-    return half_press_kph, full_press_kph
     
   # Adjust speed based off OP's longitudinal model.
   def calc_button(self, CS, desired_speed_ms, current_time_ms):
@@ -220,18 +204,6 @@ class ACCController(object):
           # Send cruise stalk up_1st.
           button_to_press = CruiseButtons.RES_ACCEL
     return button_to_press
-    
-  def should_autoengage_cc(self, CS, current_time_ms):
-    # In auto-resume mode, we must not to engage during deceleration other than
-    # during the first moment after ACC was engaged.
-    autoresume_supressed_by_braking = (
-      self.autoresume
-      and CS.a_ego < 0
-      and current_time_ms > self.enabled_time + 300)
-    return (CS.pcm_acc_status == 1
-            and self.enable_adaptive_cruise
-            and CS.v_ego >= self.MIN_CRUISE_SPEED_MS
-            and not autoresume_supressed_by_braking)
 
   # function to calculate the cruise button based on a safe follow distance
   def calc_follow_button(self, CS, lead_car):
@@ -337,6 +309,18 @@ class ACCController(object):
         
     return button
     
+  def should_autoengage_cc(self, CS, current_time_ms):
+    # In auto-resume mode, we must not to engage during deceleration other than
+    # during the first moment after ACC was engaged.
+    autoresume_supressed_by_braking = (
+      self.autoresume
+      and CS.a_ego < 0
+      and current_time_ms > self.enabled_time + 300)
+    return (CS.pcm_acc_status == 1
+            and self.enable_adaptive_cruise
+            and CS.v_ego >= self.MIN_CRUISE_SPEED_MS
+            and not autoresume_supressed_by_braking)
+    
   def fast_stop_required(self, CS, lead_car):
     sec_to_collision = abs(float(lead_car.dRel) / lead_car.vRel) if lead_car.vRel < 0 else sys.maxint
     lead_absolute_speed_ms = lead_car.vRel + CS.v_ego
@@ -346,102 +330,14 @@ class ACCController(object):
     too_fast = CS.v_ego >= 1.8 * lead_absolute_speed_ms
     
     return collision_imminent or lead_stopping or too_fast
-  
-  # function to calculate the cruise button based on experimental logic.
-  def calc_experimental_button(self, CS, lead_car, current_time_ms):
-    target_speed_ms = 0.
-    if lead_car and lead_car.dRel:
-      lead_speed = CS.v_ego + lead_car.vRel
-      self.lead_smoother.add_observation(lead_speed, lead_car.dRel)
-    if len(self.lead_smoother) < 3:
-      # In the absence of a lead car, maintain speed around curves and
-      # accelerate to max on straightaways.
-      if CS.angle_steers > 2.0:
-        target_speed_ms = CS.v_ego
-      else:
-        target_speed_ms = self.acc_speed_kph * CV.KPH_TO_MS
+    
+  def get_cc_units_kph(self, is_imperial_units):
+    if is_imperial_units:
+      # Imperial unit cars adjust cruise in units of 1 and 5 mph.
+      half_press_kph = 1 * CV.MPH_TO_KPH
+      full_press_kph = 5 * CV.MPH_TO_KPH
     else:
-      # In the presence of a lead car, match their speed.
-      #target_speed_ms = self.lead_smoother.speed()
-      target_speed_ms = self.lead_smoother.last_speed()
-      distance = self.lead_smoother.last_distance()
-      
-      # And adjust to obey the 2-second rule.
-      gap_sec = distance / CS.v_ego
-      half_press_kph, full_press_kph = self.get_cc_units_kph(CS.imperial_speed_units)
-      if self.fast_stop_required(CS, lead_car):
-        print "***SLOW TRAFFIC - CANCEL CRUISE***"
-        return CruiseButtons.CANCEL
-      elif gap_sec < 1.5:
-        target_speed_ms -= full_press_kph * CV.KPH_TO_MS
-        print "***TOO CLOSE - FALL BACK SIGNIFICANTLY***"
-      elif gap_sec < 2.5:
-        target_speed_ms -= half_press_kph * CV.KPH_TO_MS
-        print "***TOO CLOSE - FALL BACK SLIGHTLY***"
-      elif gap_sec > 3.5:
-        target_speed_ms += half_press_kph * CV.KPH_TO_MS
-        print "***TOO FAR - GET CLOSER***"
-    # Clamp between 0 and max ACC speed
-    target_speed_ms = max(target_speed_ms, 0)
-    target_speed_ms = min(target_speed_ms, self.acc_speed_kph * CV.KPH_TO_MS)
-        
-    return self.calc_button(CS, target_speed_ms, current_time_ms)
-    
-    
-class LeadSmoother(object):
-  """
-  Tracks speed and distance of lead car, smoothing over a window of time.
-  """
-  def __init__(self, window_ms):
-    self.window_ms = window_ms
-    self.lead_car_observations = collections.deque()
-    
-  def add_observation(self, speed, distance):
-    self.lead_car_observations.append((_current_time_millis(), speed, distance))
-    
-  def speed(self):
-    now_ms = _current_time_millis()
-    self._filter_leads(now_ms)
-    # Average all remaining observations of the lead car.
-    speed_sum = 0
-    weight_sum = 0
-    for time_ms, speed, dist in self.lead_car_observations:
-      timespan = now_ms - time_ms
-      
-      # Discount speed observations that are older or more distant.
-      time_weight = float(self.window_ms) / max(timespan, 1)
-      distance_weight = 1. / max(dist, 1)
-      weight = time_weight * distance_weight
-      
-      speed_sum += (speed * weight)
-      weight_sum += weight
-    return speed_sum / weight_sum
-    
-  def last_distance(self):
-    self._filter_leads(_current_time_millis())
-    if self.lead_car_observations:
-      _, _, last_dist = self.lead_car_observations[-1]
-      return last_dist
-    else:
-      return None
-      
-  def last_speed(self):
-    self._filter_leads(_current_time_millis())
-    if self.lead_car_observations:
-      _, last_speed, _ = self.lead_car_observations[-1]
-      return last_speed
-    else:
-      return None
-    
-  def __len__(self):
-    self._filter_leads(_current_time_millis())
-    return len(self.lead_car_observations)
-    
-  def _filter_leads(self, time_ms):
-    # Discard old observations of the lead car.
-    while self.lead_car_observations:
-      time_observed, _, _ = self.lead_car_observations[0]
-      if time_ms > time_observed + self.window_ms:
-        self.lead_car_observations.popleft()
-      else:
-        return
+      # Metric cars adjust cruise in units of 1 and 5 kph.
+      half_press_kph = 1
+      full_press_kph = 5
+    return half_press_kph, full_press_kph
