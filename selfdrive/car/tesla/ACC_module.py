@@ -5,6 +5,7 @@ import selfdrive.messaging as messaging
 import os
 import collections
 import subprocess
+import sys
 import time
 import zmq
   
@@ -283,14 +284,13 @@ class ACCController(object):
             and current_time_ms > self.automated_cruise_action_time + 300):
         ### Slowing down ###
         if CS.v_cruise_actual > full_press_kph:
-          # detect stopped traffic and disengage cruise.
-          if (cur_speed <= -2 * rel_speed
-              or lead_absolute_speed < self.MIN_CRUISE_SPEED_MS):
+          # detect slow traffic and disengage cruise immediately.
+          if self.fast_stop_required(CS, lead_car):
             msg = "Off (Slow traffic)"
             button = CruiseButtons.CANCEL
           # Reduce speed significantly if lead_dist < safe dist
           # and if the lead car isn't already pulling away.
-          if lead_dist < safe_dist_m * .5 and rel_speed < 2:
+          elif lead_dist < safe_dist_m * .5 and rel_speed < 2:
             msg =  "-5 (Significantly too close)"
             button = CruiseButtons.DECEL_2ND
           # Don't rush up to lead car
@@ -336,6 +336,16 @@ class ACCController(object):
         print "ACC: " + msg
         
     return button
+    
+  def fast_stop_required(self, CS, lead_car):
+    sec_to_collision = abs(float(lead_car.dRel) / lead_car.vRel) if lead_car.vRel < 0 else sys.maxint
+    lead_absolute_speed_ms = lead_car.vRel + CS.v_ego
+    
+    collision_imminent = sec_to_collision < 2
+    lead_stopping = lead_absolute_speed_ms < self.MIN_CRUISE_SPEED_MS * CV.KPH_TO_MS
+    too_fast = CS.v_ego >= 1.8 * lead_absolute_speed_ms
+    
+    return collision_imminent or lead_stopping or too_fast
   
   # function to calculate the cruise button based on experimental logic.
   def calc_experimental_button(self, CS, lead_car, current_time_ms):
