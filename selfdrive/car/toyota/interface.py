@@ -259,7 +259,7 @@ class CarInterface(object):
     if self.CP.carFingerprint in [CAR.RAV4H, CAR.HIGHLANDERH, CAR.HIGHLANDER] or self.CP.enableGasInterceptor:
       # ignore standstill in hybrid vehicles, since pcm allows to restart without
       # receiving any special command
-      #also if interceptor is detected
+      # also if interceptor is detected
       ret.cruiseState.standstill = False
     else:
       ret.cruiseState.standstill = self.CS.pcm_acc_status == 7

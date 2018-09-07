@@ -126,11 +126,9 @@ class CarController(object):
     apply_gas = clip(actuators.gas, 0., 1.)
 
     if CS.CP.enableGasInterceptor:
-      # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
-      # This prevents unexpected pedal range rescaling
-      #only send brake values if interceptor is detected. otherwise, send the regular value
-      #can_sends.append(create_gas_command(self.packer, apply_gas))
-      apply_accel = -actuators.brake
+      # send only send brake values if interceptor is detected. otherwise, send the regular value
+	  # +0.06 offset to reduce ABS pump usage when OP is engaged
+      apply_accel = 0.06 - actuators.brake
     else:
       apply_accel = actuators.gas - actuators.brake
 
@@ -219,10 +217,12 @@ class CarController(object):
         can_sends.append(create_accel_command(self.packer, apply_accel, pcm_cancel_cmd, self.standstill_req))
       else:
         can_sends.append(create_accel_command(self.packer, 0, pcm_cancel_cmd, False))
+		
     if CS.CP.enableGasInterceptor:
         # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
         # This prevents unexpected pedal range rescaling
         can_sends.append(create_gas_command(self.packer, apply_gas))
+		
     if frame % 10 == 0 and ECU.CAM in self.fake_ecus and self.car_fingerprint not in NO_DSU_CAR:
       for addr in TARGET_IDS:
         can_sends.append(create_video_target(frame/10, addr))
