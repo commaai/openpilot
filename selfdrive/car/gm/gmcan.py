@@ -39,13 +39,13 @@ def create_adas_keepalive(bus):
   dat = "\x00\x00\x00\x00\x00\x00\x00"
   return [[0x409, 0, dat, bus], [0x40a, 0, dat, bus]]
 
-def create_gas_regen_command(packer, bus, throttle, idx, acc_engaged, at_full_stop):
+def create_gas_regen_command(packer, bus, throttle, idx, acc_engaged, want_full_stop):
   values = {
     "GasRegenCmdActive": acc_engaged,
     "RollingCounter": idx,
     "GasRegenCmdActiveInv": 1 - acc_engaged,
     "GasRegenCmd": throttle,
-    "GasRegenFullStopActive": at_full_stop,
+    "GasRegenFullStopActive": want_full_stop,
     "GasRegenAlwaysOne": 1,
     "GasRegenAlwaysOne2": 1,
     "GasRegenAlwaysOne3": 1,
@@ -58,14 +58,14 @@ def create_gas_regen_command(packer, bus, throttle, idx, acc_engaged, at_full_st
 
   return packer.make_can_msg("ASCMGasRegenCmd", bus, values)
 
-def create_friction_brake_command(packer, bus, apply_brake, idx, near_stop, at_full_stop):
+def create_friction_brake_command(packer, bus, apply_brake, idx, near_stop, want_full_stop):
 
   if apply_brake == 0:
     mode = 0x1
   else:
     mode = 0xa
 
-    if at_full_stop:
+    if want_full_stop:
       mode = 0xd
     # TODO: this is to have GM bringing the car to complete stop,
     # but currently it conflicts with OP controls, so turned off.
