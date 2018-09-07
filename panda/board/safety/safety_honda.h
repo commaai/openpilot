@@ -119,7 +119,7 @@ static int honda_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
       if ((to_send->RDLR & 0xFFFF0000) != to_send->RDLR) return 0;
     }
   }
-  
+
   // FORCE CANCEL: safety check only relevant when spamming the cancel button in Bosch HW
   // ensuring that only the cancel button press is sent (VAL 2) when controls are off.
   // This avoids unintended engagements while still allowing resume spam
@@ -132,28 +132,19 @@ static int honda_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   return true;
 }
 
-static int honda_tx_lin_hook(int lin_num, uint8_t *data, int len) {
-  // TODO: add safety if using LIN
-  return true;
-}
-
 static void honda_init(int16_t param) {
   controls_allowed = 0;
   bosch_hardware = false;
   honda_alt_brake_msg = false;
 }
 
-static int honda_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
-  return -1;
-}
-
 const safety_hooks honda_hooks = {
   .init = honda_init,
   .rx = honda_rx_hook,
   .tx = honda_tx_hook,
-  .tx_lin = honda_tx_lin_hook,
+  .tx_lin = nooutput_tx_lin_hook,
   .ignition = default_ign_hook,
-  .fwd = honda_fwd_hook,
+  .fwd = nooutput_fwd_hook,
 };
 
 static void honda_bosch_init(int16_t param) {
@@ -175,7 +166,7 @@ const safety_hooks honda_bosch_hooks = {
   .init = honda_bosch_init,
   .rx = honda_rx_hook,
   .tx = honda_tx_hook,
-  .tx_lin = honda_tx_lin_hook,
+  .tx_lin = nooutput_tx_lin_hook,
   .ignition = default_ign_hook,
   .fwd = honda_bosch_fwd_hook,
 };

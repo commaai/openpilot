@@ -83,24 +83,11 @@ static int ford_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   return true;
 }
 
-static int ford_tx_lin_hook(int lin_num, uint8_t *data, int len) {
-  // TODO: add safety if using LIN
-  return true;
-}
-
-static void ford_init(int16_t param) {
-  controls_allowed = 0;
-}
-
-static int ford_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
-  return -1;
-}
-
 const safety_hooks ford_hooks = {
-  .init = ford_init,
+  .init = nooutput_init,
   .rx = ford_rx_hook,
   .tx = ford_tx_hook,
-  .tx_lin = ford_tx_lin_hook,
+  .tx_lin = nooutput_tx_lin_hook,
   .ignition = default_ign_hook,
-  .fwd = ford_fwd_hook,
+  .fwd = nooutput_fwd_hook,
 };

@@ -97,6 +97,7 @@ def get_car(logcan, sendcan=None, passive=True):
       return None, None
 
   interface_cls = interfaces[candidate]
+
   if interface_cls is None:
     cloudlog.warning("car matched %s, but interface wasn't available or failed to import" % candidate)
     return None, None
