@@ -448,12 +448,6 @@ def controlsd_thread(gctx=None, rate=100, default_bias=0.):
 
   fcw_enabled = params.get("IsFcwEnabled") == "1"
   geofence = None
-  try:
-    from selfdrive.controls.lib.geofence import Geofence
-    geofence = Geofence(params.get("IsGeofenceEnabled") == "1")
-  except ImportError:
-    # geofence not available
-    params.put("IsGeofenceEnabled", "-1")
 
   PL = Planner(CP, fcw_enabled)
   LoC = LongControl(CP, CI.compute_gb)
@@ -511,7 +505,7 @@ def controlsd_thread(gctx=None, rate=100, default_bias=0.):
       prof.checkpoint("State transition")
 
     # compute actuators
-    actuators, v_cruise_kph, driver_status, angle_offset = state_control(plan, CS, CP, state, events, v_cruise_kph, 
+    actuators, v_cruise_kph, driver_status, angle_offset = state_control(plan, CS, CP, state, events, v_cruise_kph,
       v_cruise_kph_last, AM, rk, driver_status, PL, LaC, LoC, VM, angle_offset, passive)
     prof.checkpoint("State Control")
 

@@ -91,8 +91,16 @@ const int alert_sizes[] = {
   [ALERTSIZE_FULL] = vwp_h,
 };
 
+// TODO: this is also hardcoded in common/transformations/camera.py
+const mat3 intrinsic_matrix = (mat3){{
+  910., 0., 582.,
+  0., 910., 437.,
+  0.,   0.,   1.
+}};
+
 typedef struct UIScene {
   int frontview;
+  int fullview;
 
   int transformed_width, transformed_height;
 
@@ -211,9 +219,6 @@ typedef struct UIState {
   unsigned int rgb_front_width, rgb_front_height, rgb_front_stride;
   size_t rgb_front_buf_len;
 
-  bool intrinsic_matrix_loaded;
-  mat3 intrinsic_matrix;
-
   UIScene scene;
 
   bool awake;
@@ -318,6 +323,14 @@ static const mat4 frame_transform = {{
                                            0.0, 0.0, 0.0, 1.0,
 }};
 
+// frame from 4/3 to 16/9 display
+static const mat4 full_to_wide_frame_transform = {{
+  .75,  0.0, 0.0, 0.0,
+  0.0,  1.0, 0.0, 0.0,
+  0.0,  0.0, 1.0, 0.0,
+  0.0,  0.0, 0.0, 1.0,
+}};
+
 static void ui_init(UIState *s) {
   memset(s, 0, sizeof(UIState));
 
@@ -419,37 +432,6 @@ static void ui_init(UIState *s) {
   }
 }
 
-// If the intrinsics are in the params entry, this copies them to
-// intrinsic_matrix and returns true.  Otherwise returns false.
-static bool try_load_intrinsics(mat3 *intrinsic_matrix) {
-  char *value;
-  const int result = read_db_value(NULL, "CloudCalibration", &value, NULL);
-
-  if (result == 0) {
-    JsonNode* calibration_json = json_decode(value);
-    free(value);
-
-    JsonNode *intrinsic_json =
-        json_find_member(calibration_json, "intrinsic_matrix");
-
-    if (intrinsic_json == NULL || intrinsic_json->tag != JSON_ARRAY) {
-      json_delete(calibration_json);
-      return false;
-    }
-
-    int i = 0;
-    JsonNode* json_num;
-    json_foreach(json_num, intrinsic_json) {
-      intrinsic_matrix->v[i++] = json_num->number_;
-    }
-    json_delete(calibration_json);
-
-    return true;
-  } else {
-    return false;
-  }
-}
-
 static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
                            int num_back_fds, const int *back_fds,
                            const VisionStreamBufs front_bufs, int num_front_fds,
@@ -467,6 +449,7 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
 
   s->scene = (UIScene){
       .frontview = getenv("FRONTVIEW") != NULL,
+      .fullview = getenv("FULLVIEW") != NULL,
       .cal_status = CALIBRATION_CALIBRATED,
       .transformed_width = ui_info.transformed_width,
       .transformed_height = ui_info.transformed_height,
@@ -551,7 +534,7 @@ vec3 car_space_to_full_frame(const UIState *s, vec4 car_space_projective) {
 
   // The last entry is zero because of how we store E (to use matvecmul).
   const vec3 Ep = {{Ep4.v[0], Ep4.v[1], Ep4.v[2]}};
-  const vec3 KEp = matvecmul3(s->intrinsic_matrix, Ep);
+  const vec3 KEp = matvecmul3(intrinsic_matrix, Ep);
 
   // Project.
   const vec3 p_image = {{KEp.v[0] / KEp.v[2], KEp.v[1] / KEp.v[2], 1.}};
@@ -773,21 +756,25 @@ static void draw_steering(UIState *s, float curvature) {
 static void draw_frame(UIState *s) {
   const UIScene *scene = &s->scene;
 
-  mat4 out_mat;
   float x1, x2, y1, y2;
   if (s->scene.frontview) {
-    out_mat = device_transform; // full 16/9
     // flip horizontally so it looks like a mirror
-    x1 = (float)scene->front_box_x / s->rgb_front_width;
-    x2 = (float)(scene->front_box_x + scene->front_box_width) / s->rgb_front_width;
-    y2 = (float)scene->front_box_y / s->rgb_front_height;
-    y1 = (float)(scene->front_box_y + scene->front_box_height) / s->rgb_front_height;
+    x1 = 0.0;
+    x2 = 1.0;
+    y1 = 1.0;
+    y2 = 0.0;
   } else {
-    out_mat = matmul(device_transform, frame_transform);
     x1 = 1.0;
     x2 = 0.0;
     y1 = 1.0;
     y2 = 0.0;
+  }
+
+  mat4 out_mat;
+  if (s->scene.frontview || s->scene.fullview) {
+    out_mat = matmul(device_transform, full_to_wide_frame_transform);
+  } else {
+    out_mat = matmul(device_transform, frame_transform);
   }
 
   const uint8_t frame_indicies[] = {0, 1, 2, 0, 2, 3};
@@ -930,7 +917,7 @@ static void ui_draw_vision_speed(UIState *s) {
   if (s->is_metric) {
     snprintf(speed_str, sizeof(speed_str), "%d", (int)(speed * 3.6 + 0.5));
   } else {
-    snprintf(speed_str, sizeof(speed_str), "%d", (int)(speed * 2.2374144 + 0.5));
+    snprintf(speed_str, sizeof(speed_str), "%d", (int)(speed * 2.2369363 + 0.5));
   }
   nvgFontFace(s->vg, "sans-bold");
   nvgFontSize(s->vg, 96*2.5);
@@ -1103,7 +1090,7 @@ static void ui_draw_calibration_status(UIState *s) {
   char calib_str1[64];
   char calib_str2[64];
   snprintf(calib_str1, sizeof(calib_str1), "Calibration in Progress: %d%%", scene->cal_perc);
-  snprintf(calib_str2, sizeof(calib_str2), (s->is_metric?"Drive above 72 km/h":"Drive above 45 mph"));
+  snprintf(calib_str2, sizeof(calib_str2), (s->is_metric?"Drive above 35 km/h":"Drive above 15 mph"));
 
   ui_draw_vision_alert(s, ALERTSIZE_MID, s->status, calib_str1, calib_str2);
 }
@@ -1137,7 +1124,7 @@ static void ui_draw_vision(UIState *s) {
   nvgScissor(s->vg, ui_viz_rx, box_y, ui_viz_rw, box_h);
   nvgTranslate(s->vg, ui_viz_rx+ui_viz_ro, box_y + (box_h-inner_height)/2.0);
   nvgScale(s->vg, (float)viz_w / s->fb_w, (float)inner_height / s->fb_h);
-  if (!scene->frontview) {
+  if (!scene->frontview && !scene->fullview) {
     ui_draw_world(s);
   }
 
@@ -1235,10 +1222,6 @@ static void update_status(UIState *s, int status) {
 
 static void ui_update(UIState *s) {
   int err;
-
-  if (!s->intrinsic_matrix_loaded) {
-    s->intrinsic_matrix_loaded = try_load_intrinsics(&s->intrinsic_matrix);
-  }
 
   if (s->vision_connect_firstrun) {
     // cant run this in connector thread because opengl.
@@ -1513,7 +1496,7 @@ static void ui_update(UIState *s) {
         s->scene.lead_y_rel = leaddatad.yRel;
         s->scene.lead_v_rel = leaddatad.vRel;
       } else if (eventd.which == cereal_Event_liveCalibration) {
-        s->scene.world_objects_visible = s->intrinsic_matrix_loaded;
+        s->scene.world_objects_visible = true;
         struct cereal_LiveCalibrationData datad;
         cereal_read_LiveCalibrationData(&datad, eventd.liveCalibration);
 
@@ -1736,6 +1719,21 @@ static void* bg_thread(void* args) {
   return NULL;
 }
 
+int is_leon() {
+  #define MAXCHAR 1000
+  FILE *fp;
+  char str[MAXCHAR];
+  char* filename = "/proc/cmdline";
+
+  fp = fopen(filename, "r");
+  if (fp == NULL){
+    printf("Could not open file %s",filename);
+    return 0;
+  }
+  fgets(str, MAXCHAR, fp);
+  fclose(fp);
+  return strstr(str, "letv") != NULL;
+}
 
 int main() {
   int err;
@@ -1767,14 +1765,14 @@ int main() {
   touch_init(&touch);
 
   // light sensor scaling params
-  #define LIGHT_SENSOR_M 1.3
-  #define LIGHT_SENSOR_B 5.0
+  const int EON = (access("/EON", F_OK) != -1);
+  const int LEON = is_leon();
 
+  const float BRIGHTNESS_B = LEON? 10.0 : 5.0;
+  const float BRIGHTNESS_M = LEON? 2.6 : 1.3;
   #define NEO_BRIGHTNESS 100
 
-  float smooth_light_sensor = LIGHT_SENSOR_B;
-
-  const int EON = (access("/EON", F_OK) != -1);
+  float smooth_brightness = BRIGHTNESS_B;
 
   while (!do_exit) {
     bool should_swap = false;
@@ -1783,10 +1781,10 @@ int main() {
     if (EON) {
       // light sensor is only exposed on EONs
 
-      float clipped_light_sensor = (s->light_sensor*LIGHT_SENSOR_M) + LIGHT_SENSOR_B;
-      if (clipped_light_sensor > 255) clipped_light_sensor = 255;
-      smooth_light_sensor = clipped_light_sensor * 0.01 + smooth_light_sensor * 0.99;
-      set_brightness(s, (int)smooth_light_sensor);
+      float clipped_brightness = (s->light_sensor*BRIGHTNESS_M) + BRIGHTNESS_B;
+      if (clipped_brightness > 255) clipped_brightness = 255;
+      smooth_brightness = clipped_brightness * 0.01 + smooth_brightness * 0.99;
+      set_brightness(s, (int)smooth_brightness);
     } else {
       // compromise for bright and dark envs
       set_brightness(s, NEO_BRIGHTNESS);

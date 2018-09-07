@@ -59,8 +59,17 @@ typedef struct {
 
 typedef struct {
   const char* name;
+  uint32_t address;
+  const char* def_val;
+  const Signal *sigs;
+} Val;
+
+typedef struct {
+  const char* name;
   size_t num_msgs;
   const Msg *msgs;
+  const Val *vals;
+  size_t num_vals;
 } DBC;
 
 
