@@ -107,7 +107,7 @@ Community Maintained Cars are not confirmed by comma.ai to meet our [safety mode
 In Progress Cars
 ------
 - All TSS-P Toyota with Steering Assist.
-  - 'Full Speed Range Dynamic Radar Cruise Control' is required to enable stop-and-go. Only the Prius, Camry and C-HR have this option.  OpenPilot also adds stop-an-go functionality for Highlander and Highlander Hybrid.
+  - 'Full Speed Range Dynamic Radar Cruise Control' is required to enable stop-and-go. Only the Prius, Camry and C-HR have this option.
   - Even though the Tundra, Sequoia and the Land Cruiser have TSS-P, they don't have Steering Assist and are not supported.
 - All LSS-P Lexus with Steering Assist or Lane Keep Assist.
   - 'All-Speed Range Dynamic Radar Cruise Control' is required to enable stop-and-go. Only the GS, GSH, F, RX, RXH, LX, NX, NXH, LC, LCH, LS, LSH have this option.
