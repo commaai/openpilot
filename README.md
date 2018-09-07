@@ -73,7 +73,7 @@ Supported Cars
 | Toyota             | C-HR 2018<sup>4</sup> | All                  | Yes     | Stock          | 0mph             | 0mph           |
 | Toyota             | Corolla 2017          | All                  | Yes     | Yes<sup>2</sup>| 20mph            | 0mph           |
 | Toyota             | Corolla 2018          | All                  | Yes     | Yes<sup>2</sup>| 20mph            | 0mph           |
-| Toyota             | Highlander 2017       | All                  | Yes     | Yes<sup>2</sup>| 20mph            | 0mph           |
+| Toyota             | Highlander 2017       | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
 | Toyota             | Highlander Hybrid 2018| All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
 | Toyota             | Prius 2016            | TSS-P                | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
 | Toyota             | Prius 2017            | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |

@@ -9,7 +9,7 @@ from selfdrive.can.packer import CANPacker
 
 # Accel limits
 ACCEL_HYST_GAP = 0.02  # don't change accel command for small oscilalitons within this value
-ACCEL_MAX = 1.5  # Returned to 1.5 m/s2 for testing stop and go
+ACCEL_MAX = 1.5  # 1.5 m/s2
 ACCEL_MIN = -3.0 # 3   m/s2
 ACCEL_SCALE = max(ACCEL_MAX, -ACCEL_MIN)
 
@@ -63,7 +63,7 @@ def process_hud_alert(hud_alert, audible_alert):
     sound1 = 1
   elif audible_alert in ['beepSingle', 'chimeSingle', 'chimeDouble']:
     # TODO: find a way to send single chimes
-    sound2 = 0 #Changed by P Lee to disable disengage chime
+    sound2 = 1
 
   return steer, fcw, sound1, sound2
 
