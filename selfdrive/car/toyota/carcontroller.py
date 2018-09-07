@@ -9,7 +9,7 @@ from selfdrive.can.packer import CANPacker
 
 # Accel limits
 ACCEL_HYST_GAP = 0.02  # don't change accel command for small oscilalitons within this value
-ACCEL_MAX = 1.0  # Lowering for fuel efficiency, hoping to keep stop and go working
+ACCEL_MAX = 1.5  # Back to 1.5 to maybe fix long hunting
 ACCEL_MIN = -3.0 # 3   m/s2
 ACCEL_SCALE = max(ACCEL_MAX, -ACCEL_MIN)
 
