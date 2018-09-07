@@ -46,8 +46,8 @@ Supported Cars
 | Acura              | ILX 2016              | AcuraWatch Plus      | Yes     | Yes            | 25mph<sup>1</sup>| 25mph          |
 | Acura              | ILX 2017              | AcuraWatch Plus      | Yes     | Yes            | 25mph<sup>1</sup>| 25mph          |
 | Acura              | RDX 2018              | AcuraWatch Plus      | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          |
-| GM<sup>3</sup>     | Volt 2017             | Driver Confidence II | Yes     | Yes            | 0mph             | 7mph           |
-| GM<sup>3</sup>     | Volt 2018             | Driver Confidence II | Yes     | Yes            | 0mph             | 7mph           |
+| GM<sup>3</sup>     | Volt 2017             | Adaptive Cruise      | Yes     | Yes            | 0mph             | 7mph           |
+| GM<sup>3</sup>     | Volt 2018             | Adaptive Cruise      | Yes     | Yes            | 0mph             | 7mph           |
 | Honda              | Accord 2018           | All                  | Yes     | Stock          | 0mph             | 3mph           |
 | Honda              | Civic 2016            | Honda Sensing        | Yes     | Yes            | 0mph             | 12mph          |
 | Honda              | Civic 2017            | Honda Sensing        | Yes     | Yes            | 0mph             | 12mph          |
