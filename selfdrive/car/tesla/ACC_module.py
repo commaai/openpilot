@@ -341,7 +341,7 @@ class ACCController(object):
     sec_to_collision = abs(float(lead_car.dRel) / lead_car.vRel) if lead_car.vRel < 0 else sys.maxint
     lead_absolute_speed_ms = lead_car.vRel + CS.v_ego
     
-    collision_imminent = sec_to_collision < 2
+    collision_imminent = sec_to_collision < 4
     lead_stopping = lead_absolute_speed_ms < self.MIN_CRUISE_SPEED_MS * CV.KPH_TO_MS
     too_fast = CS.v_ego >= 1.8 * lead_absolute_speed_ms
     
@@ -369,10 +369,7 @@ class ACCController(object):
       # And adjust to obey the 2-second rule.
       gap_sec = distance / CS.v_ego
       half_press_kph, full_press_kph = self.get_cc_units_kph(CS.imperial_speed_units)
-      if gap_sec < 1:
-        print "***TOO CLOSE - CANCEL CRUISE***"
-        return CruiseButtons.CANCEL
-      elif target_speed_ms < self.MIN_CRUISE_SPEED_MS * 3 / 4 :
+      if self.fast_stop_required(CS, lead_car):
         print "***SLOW TRAFFIC - CANCEL CRUISE***"
         return CruiseButtons.CANCEL
       elif gap_sec < 1.5:
