@@ -142,7 +142,7 @@ class CarInterface(object):
     ret.longPidDeadzoneV = [0.]
 
     ret.longitudinalKpBP = [0., 5., 35.]
-    ret.longitudinalKpV = [1.7, 2.425, 2.2]
+    ret.longitudinalKpV = [3.3, 2.425, 2.2]
     ret.longitudinalKiBP = [0., 35.]
     ret.longitudinalKiV = [0.36, 0.36]
 
