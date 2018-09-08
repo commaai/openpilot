@@ -4,7 +4,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.gm import gmcan
-from selfdrive.car.gm.values import CAR, DBC
+from selfdrive.car.gm.values import CAR, DBC, AccState
 from selfdrive.can.packer import CANPacker
 
 
@@ -83,7 +83,6 @@ class CarController(object):
       return
 
     P = self.params
-
     # Send CAN commands.
     can_sends = []
     canbus = self.canbus
@@ -132,13 +131,14 @@ class CarController(object):
         idx = (frame / 4) % 4
 
         car_stopping = apply_gas < P.ZERO_GAS
-        at_full_stop = enabled and CS.standstill and car_stopping
+        standstill = CS.pcm_acc_status == AccState.STANDSTILL
+        at_full_stop = enabled and standstill and car_stopping
         near_stop = enabled and (CS.v_ego < P.NEAR_STOP_BRAKE_PHASE) and car_stopping
         can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, canbus.chassis, apply_brake, idx, near_stop, at_full_stop))
 
         # Auto-resume from full stop by resetting ACC control
         acc_enabled = enabled
-        if CS.standstill and not car_stopping:
+        if standstill and not car_stopping:
           acc_enabled = False
 
         can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, canbus.powertrain, apply_gas, idx, acc_enabled, at_full_stop))
