@@ -129,9 +129,10 @@ static int hyundai_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   // FORCE CANCEL: safety check only relevant when spamming the cancel button.
   // ensuring that only the cancel button press is sent (VAL 4) when controls are off.
   // This avoids unintended engagements while still allowing resume spam
-  if (((to_send->RIR>>21) == 1265) && !controls_allowed && ((to_send->RDTR >> 4) & 0xFF) == 0) {
-    if ((to_send->RDLR & 0x7) != 4) return 0;
-  }
+  // TODO: fix bug preventing the button msg to be fwd'd on bus 2
+  //if (((to_send->RIR>>21) == 1265) && !controls_allowed && ((to_send->RDTR >> 4) & 0xFF) == 0) {
+  //  if ((to_send->RDLR & 0x7) != 4) return 0;
+  //}
 
   // 1 allows the message through
   return true;
