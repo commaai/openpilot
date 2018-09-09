@@ -12,6 +12,12 @@ class CruiseButtons:
   MAIN        = 5
   CANCEL      = 6
 
+class AccState:
+  OFF        = 0
+  ACTIVE     = 1
+  FAULTED    = 3
+  STANDSTILL = 4
+
 def is_eps_status_ok(eps_status, car_fingerprint):
   valid_eps_status = []
   if car_fingerprint == CAR.VOLT:
