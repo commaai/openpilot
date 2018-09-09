@@ -81,7 +81,7 @@ class CarController(object):
     self.epas_disabled = True
     self.last_angle = 0
     self.ALCA = ALCAController(self,True,True)  # Enabled and SteerByAngle both True
-    self.ACC = ACCController(self)
+    self.ACC = ACCController()
     self.PCC = PCCController(self)
     self.HSO = HSOController(self)
 

@@ -105,7 +105,7 @@ class ACCMode(object):
   
 _ACCModes = {
   "FOLLOW": ACCMode(name="FOLLOW", autoresume=False, next_mode="AUTO"),
-  "AUTO":   ACCMode(name="AUTO",   autoresume=True,  next_mode="FOLLOW")
+  "AUTO":   ACCMode(name="AUTO",   autoresume=True,  next_mode="FOLLOW"),
 }
 
 def GetAccMode(name):
