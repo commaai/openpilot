@@ -224,7 +224,7 @@ def state_transition(CS, CP, state, events, soft_disable_timer, v_cruise_kph, AM
 
 
 def state_control(plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, AM, rk,
-                  driver_status, PL, LaC, LoC, VM, angle_offset, passive):
+                  driver_status, PL, LaC, LoC, VM, angle_offset, passive, is_metric):
   # Given the state, this function returns the actuators
 
   # reset actuators to zero
@@ -258,7 +258,13 @@ def state_control(plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, 
 
     # parse warnings from car specific interface
     for e in get_events(events, [ET.WARNING]):
-      AM.add(e, enabled)
+      extra_text = ''
+      if e == "belowSteerSpeed":
+        if is_metric:
+          extra_text = str(int(round(CP.minSteerSpeed * CV.MS_TO_KPH))) + " kph"
+        else:
+          extra_text = str(int(round(CP.minSteerSpeed * CV.MS_TO_MPH))) + " mph"
+      AM.add(e, enabled, extra_text=extra_text)
 
   # *** angle offset learning ***
 
@@ -410,6 +416,7 @@ def controlsd_thread(gctx=None, rate=100, default_bias=0.):
   carcontrol = messaging.pub_sock(context, service_list['carControl'].port)
   livempc = messaging.pub_sock(context, service_list['liveMpc'].port)
 
+  is_metric = params.get("IsMetric") == "1"
   passive = params.get("Passive") != "0"
   if not passive:
     while 1:
@@ -506,7 +513,7 @@ def controlsd_thread(gctx=None, rate=100, default_bias=0.):
 
     # compute actuators
     actuators, v_cruise_kph, driver_status, angle_offset = state_control(plan, CS, CP, state, events, v_cruise_kph,
-      v_cruise_kph_last, AM, rk, driver_status, PL, LaC, LoC, VM, angle_offset, passive)
+      v_cruise_kph_last, AM, rk, driver_status, PL, LaC, LoC, VM, angle_offset, passive, is_metric)
     prof.checkpoint("State Control")
 
     # publish data
