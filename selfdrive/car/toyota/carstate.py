@@ -61,7 +61,7 @@ def get_can_parser(CP):
     signals += [
       ("MAIN_ON", "PCM_CRUISE_3", 0),
       ("SET_SPEED", "PCM_CRUISE_3", 0),
-      ("CRUISE_STATE", "PCM_CRUISE_3", 0),
+      ("CRUISE_STATE", "PCM_CRUISE_3", 0)
     ]
     checks += [("PCM_CRUISE_3", 1)]
   else:
@@ -155,7 +155,7 @@ class CarState(object):
 
     self.user_brake = 0
     if self.CP.carFingerprint == CAR.LEXUS_IS:
-        self.v_cruise_pcm = cp.vl["PCM_CRUISE_3"]['SET_SPEED']
+        self.v_cruise_pcm = cp.vl["PCM_CRUISE_3"]['SET_SPEED'] * CV.MPH_TO_KPH
         self.pcm_acc_status = cp.vl["PCM_CRUISE_3"]['CRUISE_STATE']
         self.low_speed_lockout = 0
     else:
