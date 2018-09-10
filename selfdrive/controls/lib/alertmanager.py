@@ -181,6 +181,12 @@ class AlertManager(object):
         AlertStatus.userPrompt, AlertSize.mid,
         Priority.LOW, None, None, 0., 0., .2),
 
+    "belowSteerSpeed": Alert(
+        "TAKE CONTROL",
+        "Steer Unavailable Below ",
+        AlertStatus.userPrompt, AlertSize.mid,
+        Priority.MID, "steerRequired", None, 0., 0., .1),
+
     "debugAlert": Alert(
         "DEBUG ALERT",
         "",
