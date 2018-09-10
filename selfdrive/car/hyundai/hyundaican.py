@@ -1,14 +1,15 @@
 import crcmod
+from selfdrive.car.hyundai.values import CHECKSUM
 
 hyundai_checksum = crcmod.mkCrcFun(0x11D, initCrc=0xFD, rev=False, xorOut=0xdf)
 
 def make_can_msg(addr, dat, alt):
   return [addr, 0, dat, alt]
 
-def create_lkas11(packer, apply_steer, steer_req, cnt, enabled, lkas11, hud_alert, keep_stock=False):
+def create_lkas11(packer, car_fingerprint, apply_steer, steer_req, cnt, enabled, lkas11, hud_alert, keep_stock=False):
   values = {
     "CF_Lkas_Icon": 3 if enabled else 0,
-    "CF_Lkas_LdwsSysState": lkas11["CF_Lkas_LdwsSysState"] if keep_stock else 1,
+    "CF_Lkas_LdwsSysState": 3 if steer_req else 1,
     "CF_Lkas_SysWarning": hud_alert,
     "CF_Lkas_LdwsLHWarning": lkas11["CF_Lkas_LdwsLHWarning"] if keep_stock else 0,
     "CF_Lkas_LdwsRHWarning": lkas11["CF_Lkas_LdwsRHWarning"] if keep_stock else 0,
@@ -16,7 +17,7 @@ def create_lkas11(packer, apply_steer, steer_req, cnt, enabled, lkas11, hud_aler
     "CF_Lkas_FcwBasReq": lkas11["CF_Lkas_FcwBasReq"] if keep_stock else 0,
     "CR_Lkas_StrToqReq": apply_steer,
     "CF_Lkas_ActToi": steer_req,
-    "CF_Lkas_ToiFlt": lkas11["CF_Lkas_ToiFlt"] if keep_stock else 0,
+    "CF_Lkas_ToiFlt": 0,
     "CF_Lkas_HbaSysState": lkas11["CF_Lkas_HbaSysState"] if keep_stock else 1,
     "CF_Lkas_FcwOpt": lkas11["CF_Lkas_FcwOpt"] if keep_stock else 0,
     "CF_Lkas_HbaOpt": lkas11["CF_Lkas_HbaOpt"] if keep_stock else 3,
@@ -30,8 +31,19 @@ def create_lkas11(packer, apply_steer, steer_req, cnt, enabled, lkas11, hud_aler
   }
 
   dat = packer.make_can_msg("LKAS11", 0, values)[2]
-  dat = dat[:6] + dat[7]
-  checksum = hyundai_checksum(dat)
+
+  if car_fingerprint in CHECKSUM["crc8"]:
+    # CRC Checksum as seen on 2019 Hyundai Santa Fe
+    dat = dat[:6] + dat[7]
+    checksum = hyundai_checksum(dat)
+  elif car_fingerprint in CHECKSUM["6B"]:
+    # Checksum of first 6 Bytes, as seen on 2018 Kia Sorento
+    dat = [ord(i) for i in dat]
+    checksum = sum(dat[:6]) % 256
+  elif car_fingerprint in CHECKSUM["7B"]:
+    # Checksum of first 6 Bytes and last Byte as seen on 2018 Kia Stinger
+    dat = [ord(i) for i in dat]
+    checksum = (sum(dat[:6]) + dat[7]) % 256
 
   values["CF_Lkas_Chksum"] = checksum
 
