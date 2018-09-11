@@ -309,16 +309,17 @@ class ACCController(object):
     return button
     
   def should_autoengage_cc(self, CS, current_time_ms):
-    # In auto-resume mode, we must not to engage during deceleration other than
-    # during the first moment after ACC was engaged.
-    autoresume_supressed_by_braking = (
-      self.autoresume
-      and CS.a_ego < 0
-      and current_time_ms > self.enabled_time + 300)
-    return (CS.pcm_acc_status == 1
-            and self.enable_adaptive_cruise
-            and CS.v_ego >= self.MIN_CRUISE_SPEED_MS
-            and not autoresume_supressed_by_braking)
+    # Try to engage cruise control if ACC was just enabled or if auto-resume
+    # is ready.
+    cruise_ready = (self.enable_adaptive_cruise
+                    and CS.pcm_acc_status == 1
+                    and CS.v_ego >= self.MIN_CRUISE_SPEED_MS)
+    acc_just_enabled = current_time_ms < self.enabled_time + 300
+    # "Autoresume" mode allows cruise to engage at other times too, but
+    # shouldn't trigger during deceleration.
+    autoresume_ready = self.autoresume and CS.a_ego > 0
+    
+    return cruise_ready and (acc_just_enabled or autoresume_ready)
     
   def fast_stop_required(self, CS, lead_car):
     sec_to_collision = abs(float(lead_car.dRel) / lead_car.vRel) if lead_car.vRel < 0 else sys.maxint
