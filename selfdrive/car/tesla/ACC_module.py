@@ -216,7 +216,7 @@ class ACCController(object):
     # dRel is in meters.
     lead_dist = lead_car.dRel
     lead_speed_kph = (lead_car.vRel + CS.v_ego) * CV.MS_TO_KPH
-    # Relative velocity between the lead car and our current set cruise speed.
+    # Relative velocity between the lead car and our set cruise speed.
     future_vrel_kph = lead_speed_kph - CS.v_cruise_actual
     # v_ego is in m/s, so safe_dist_m is in meters.
     safe_dist_m = CS.v_ego * follow_time
@@ -319,7 +319,7 @@ class ACCController(object):
     
     collision_imminent = sec_to_collision < 4
     lead_stopping = lead_absolute_speed_ms < self.MIN_CRUISE_SPEED_MS * CV.KPH_TO_MS
-    too_fast = CS.v_ego >= 1.8 * lead_absolute_speed_ms
+    too_fast = CS.v_ego >= 1.5 * lead_absolute_speed_ms
     
     return collision_imminent or lead_stopping or too_fast
     
