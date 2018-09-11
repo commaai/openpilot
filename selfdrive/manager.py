@@ -10,36 +10,7 @@ from common.basedir import BASEDIR
 sys.path.append(os.path.join(BASEDIR, "pyextra"))
 os.environ['BASEDIR'] = BASEDIR
 
-if __name__ == "__main__":
-  if os.path.isfile("/init.qcom.rc") \
-      and (not os.path.isfile("/VERSION") or int(open("/VERSION").read()) < 6):
-
-    # update continue.sh before updating NEOS
-    if os.path.isfile(os.path.join(BASEDIR, "scripts", "continue.sh")):
-      from shutil import copyfile
-      copyfile(os.path.join(BASEDIR, "scripts", "continue.sh"), "/data/data/com.termux/files/continue.sh")
-
-    # run the updater
-    print("Starting NEOS updater")
-    subprocess.check_call(["git", "clean", "-xdf"], cwd=BASEDIR)
-    os.system(os.path.join(BASEDIR, "installer", "updater", "updater"))
-    raise Exception("NEOS outdated")
-
-    # update shim
-    r = os.system("""git remote set-branches --add origin release2 &&
-                   git fetch origin &&
-                   rm /data/data/com.termux/files/continue.sh &&
-                   git checkout -f -b release2 origin/release2 &&
-                   git clean -xdf &&
-                   echo '#!/usr/bin/bash
-
-cd /data/openpilot
-exec ./launch_openpilot.sh' > /data/data/com.termux/files/continue.sh &&
-                   chmod +x /data/data/com.termux/files/continue.sh &&
-                   LD_LIBRARY_PATH='' svc power reboot""")
-    assert r == 0
-    while True: time.sleep(1)
-
+def unblock_stdout():
   # get a non-blocking stdout
   child_pid, child_pty = os.forkpty()
   if child_pid != 0: # parent
@@ -68,6 +39,23 @@ exec ./launch_openpilot.sh' > /data/data/com.termux/files/continue.sh &&
         pass
 
     os._exit(os.wait()[1])
+
+if __name__ == "__main__":
+  if os.path.isfile("/init.qcom.rc") \
+      and (not os.path.isfile("/VERSION") or int(open("/VERSION").read()) < 6):
+
+    # update continue.sh before updating NEOS
+    if os.path.isfile(os.path.join(BASEDIR, "scripts", "continue.sh")):
+      from shutil import copyfile
+      copyfile(os.path.join(BASEDIR, "scripts", "continue.sh"), "/data/data/com.termux/files/continue.sh")
+
+    # run the updater
+    print("Starting NEOS updater")
+    subprocess.check_call(["git", "clean", "-xdf"], cwd=BASEDIR)
+    os.system(os.path.join(BASEDIR, "installer", "updater", "updater"))
+    raise Exception("NEOS outdated")
+
+  unblock_stdout()
 
 import glob
 import shutil
@@ -108,9 +96,11 @@ managed_processes = {
   "boardd": ("selfdrive/boardd", ["./boardd"]),   # not used directly
   "pandad": "selfdrive.pandad",
   "ui": ("selfdrive/ui", ["./ui"]),
+  "calibrationd": "selfdrive.locationd.calibrationd",
   "visiond": ("selfdrive/visiond", ["./visiond"]),
   "sensord": ("selfdrive/sensord", ["./sensord"]),
   "gpsd": ("selfdrive/sensord", ["./gpsd"]),
+  "orbd": ("selfdrive/orbd", ["./orbd_wrapper.sh"]),
   "updated": "selfdrive.updated",
 }
 android_packages = ("ai.comma.plus.offroad", "ai.comma.plus.frame")
@@ -133,7 +123,6 @@ persistent_processes = [
   'uploader',
   'ui',
   'gpsd',
-  'ubloxd',
   'updated',
 ]
 
@@ -142,9 +131,11 @@ car_started_processes = [
   'loggerd',
   'sensord',
   'radard',
+  'calibrationd',
   'visiond',
   'proclogd',
-  'orbd',
+  'ubloxd',
+  'orbd'
 ]
 
 def register_managed_process(name, desc, car_started=False):
@@ -313,6 +304,9 @@ def manager_thread():
   cloudlog.info("manager start")
   cloudlog.info({"environ": os.environ})
 
+  # save boot log
+  subprocess.call(["./loggerd", "--bootlog"], cwd=os.path.join(BASEDIR, "selfdrive/loggerd"))
+
   for p in persistent_processes:
     start_managed_process(p)
 
@@ -479,7 +473,7 @@ def main():
   if params.get("IsUploadVideoOverCellularEnabled") is None:
     params.put("IsUploadVideoOverCellularEnabled", "1")
   if params.get("IsDriverMonitoringEnabled") is None:
-    params.put("IsDriverMonitoringEnabled", "0")
+    params.put("IsDriverMonitoringEnabled", "1")
   if params.get("IsGeofenceEnabled") is None:
     params.put("IsGeofenceEnabled", "-1")
 

@@ -2,12 +2,7 @@
 // TODO: refactor to repeat less code
 
 // IPAS override
-const int32_t IPAS_OVERRIDE_THRESHOLD = 200;  // disallow controls when user torque exceeds this value
-
-struct lookup_t {
-  float x[3];
-  float y[3];
-};
+const int32_t TOYOTA_IPAS_OVERRIDE_THRESHOLD = 200;  // disallow controls when user torque exceeds this value
 
 // 2m/s are added to be less restrictive
 const struct lookup_t LOOKUP_ANGLE_RATE_UP = {
@@ -34,31 +29,6 @@ int16_t rt_angle_last = 0;             // last desired torque for real time chec
 uint32_t ts_angle_last = 0;
 
 int controls_allowed_last = 0;
-
-// interp function that holds extreme values
-float interpolate(struct lookup_t xy, float x) {
-  int size = sizeof(xy.x) / sizeof(xy.x[0]);
-  // x is lower than the first point in the x array. Return the first point
-  if (x <= xy.x[0]) {
-    return xy.y[0];
-
-  } else {
-    // find the index such that (xy.x[i] <= x < xy.x[i+1]) and linearly interp
-    for (int i=0; i < size-1; i++) {
-      if (x < xy.x[i+1]) {
-        float x0 = xy.x[i];
-        float y0 = xy.y[i];
-        float dx = xy.x[i+1] - x0;
-        float dy = xy.y[i+1] - y0;
-        // dx should not be zero as xy.x is supposed ot be monotonic
-        if (dx <= 0.) dx = 0.0001;
-        return dy * (x - x0) / dx + y0;
-      }
-    }
-    // if no such point is found, then x > xy.x[size-1]. Return last point
-    return xy.y[size - 1];
-  }
-}
 
 
 static void toyota_ipas_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
@@ -92,7 +62,7 @@ static void toyota_ipas_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
     // every RT_INTERVAL or when controls are turned on, set the new limits
     uint32_t ts_elapsed = get_ts_elapsed(ts, ts_angle_last);
-    if ((ts_elapsed > RT_INTERVAL) || (controls_allowed && !controls_allowed_last)) {
+    if ((ts_elapsed > TOYOTA_RT_INTERVAL) || (controls_allowed && !controls_allowed_last)) {
       rt_angle_last = angle_meas_new;
       ts_angle_last = ts;
     }
@@ -118,8 +88,8 @@ static void toyota_ipas_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   }
 
   // exit controls on high steering override
-  if (angle_control && ((torque_driver.min > IPAS_OVERRIDE_THRESHOLD) ||
-                        (torque_driver.max < -IPAS_OVERRIDE_THRESHOLD) ||
+  if (angle_control && ((torque_driver.min > TOYOTA_IPAS_OVERRIDE_THRESHOLD) ||
+                        (torque_driver.max < -TOYOTA_IPAS_OVERRIDE_THRESHOLD) ||
                         (ipas_state==5))) {
     controls_allowed = 0;
   }
@@ -146,15 +116,15 @@ static int toyota_ipas_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
         int delta_angle_down = (int) (interpolate(LOOKUP_ANGLE_RATE_DOWN, speed) * CAN_TO_DEG + 1.);
         int highest_desired_angle = desired_angle_last + (desired_angle_last > 0? delta_angle_up:delta_angle_down);
         int lowest_desired_angle = desired_angle_last - (desired_angle_last > 0? delta_angle_down:delta_angle_up);
-        if ((desired_angle > highest_desired_angle) || 
+        if ((desired_angle > highest_desired_angle) ||
             (desired_angle < lowest_desired_angle)){
           violation = 1;
           controls_allowed = 0;
         }
       }
-      
+
       // desired steer angle should be the same as steer angle measured when controls are off
-      if ((!controls_allowed) && 
+      if ((!controls_allowed) &&
            ((desired_angle < (angle_meas.min - 1)) ||
             (desired_angle > (angle_meas.max + 1)) ||
             (ipas_state_cmd != 1))) {
@@ -179,7 +149,7 @@ const safety_hooks toyota_ipas_hooks = {
   .init = toyota_init,
   .rx = toyota_ipas_rx_hook,
   .tx = toyota_ipas_tx_hook,
-  .tx_lin = toyota_tx_lin_hook,
+  .tx_lin = nooutput_tx_lin_hook,
   .ignition = default_ign_hook,
   .fwd = toyota_fwd_hook,
 };

@@ -2,7 +2,7 @@ import struct
 
 import common.numpy_fast as np
 from selfdrive.config import Conversions as CV
-from selfdrive.car.honda.values import CAR
+from selfdrive.car.honda.values import CAR, HONDA_BOSCH, VEHICLE_STATE_MSG
 
 # *** Honda specific ***
 def can_cksum(mm):
@@ -70,7 +70,7 @@ def create_steering_control(packer, apply_steer, lkas_active, car_fingerprint, i
     "STEER_TORQUE_REQUEST": lkas_active,
   }
   # Set bus 2 for accord and new crv.
-  bus = 2 if car_fingerprint in (CAR.CRV_5G, CAR.ACCORD, CAR.CIVIC_HATCH) else 0
+  bus = 2 if car_fingerprint in HONDA_BOSCH else 0
   return packer.make_can_msg("STEERING_CONTROL", bus, values, idx)
 
 
@@ -80,7 +80,7 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, idx):
   bus = 0
 
   # Bosch sends commands to bus 2.
-  if car_fingerprint in (CAR.CRV_5G, CAR.ACCORD, CAR.CIVIC_HATCH):
+  if car_fingerprint in HONDA_BOSCH:
     bus = 2
   else:
     acc_hud_values = {
@@ -117,7 +117,7 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, idx):
   return commands
 
 
-def create_radar_commands(v_ego, car_fingerprint, idx):
+def create_radar_commands(v_ego, car_fingerprint, new_radar_config, idx):
   """Creates an iterable of CAN messages for the radar system."""
   commands = []
   v_ego_kph = np.clip(int(round(v_ego * CV.MS_TO_KPH)), 0, 255)
@@ -126,25 +126,14 @@ def create_radar_commands(v_ego, car_fingerprint, idx):
   msg_0x300 = ("\xf9" + speed + "\x8a\xd0" +
                ("\x20" if idx == 0 or idx == 3 else "\x00") +
                "\x00\x00")
+  msg_0x301 = VEHICLE_STATE_MSG[car_fingerprint]
 
+  idx_0x300 = idx
   if car_fingerprint == CAR.CIVIC:
-    msg_0x301 = "\x02\x38\x44\x32\x4f\x00\x00"
-    commands.append(make_can_msg(0x300, msg_0x300, idx + 8, 1))  # add 8 on idx.
-  else:
-    if car_fingerprint == CAR.CRV:
-      msg_0x301 = "\x00\x00\x50\x02\x51\x00\x00"
-    elif car_fingerprint == CAR.ACURA_RDX:
-      msg_0x301 = "\x0f\x57\x4f\x02\x5a\x00\x00"
-    elif car_fingerprint == CAR.ODYSSEY:
-      msg_0x301 = "\x00\x00\x56\x02\x55\x00\x00"
-    elif car_fingerprint == CAR.ACURA_ILX:
-      msg_0x301 = "\x0f\x18\x51\x02\x5a\x00\x00"
-    elif car_fingerprint == CAR.PILOT:
-      msg_0x301 = "\x00\x00\x56\x02\x58\x00\x00"
-    elif car_fingerprint == CAR.RIDGELINE:
-      msg_0x301 = "\x00\x00\x56\x02\x57\x00\x00"
-    commands.append(make_can_msg(0x300, msg_0x300, idx, 1))
+    idx_offset = 0xc if new_radar_config else 0x8   # radar in civic 2018 requires 0xc
+    idx_0x300 += idx_offset
 
+  commands.append(make_can_msg(0x300, msg_0x300, idx_0x300, 1))
   commands.append(make_can_msg(0x301, msg_0x301, idx, 1))
   return commands
 

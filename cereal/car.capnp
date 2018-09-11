@@ -63,6 +63,12 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     promptDriverDistracted @38;
     driverDistracted @39;
     geofence @40;
+    driverMonitorOn @41;
+    driverMonitorOff @42;
+    preDriverUnresponsive @43;
+    promptDriverUnresponsive @44;
+    driverUnresponsive @45;
+    belowSteerSpeed @46;
   }
 }
 
@@ -284,6 +290,7 @@ struct CarParams {
   enableApgs @28 :Bool; # advanced parking guidance system
 
   minEnableSpeed @17 :Float32;
+  minSteerSpeed @49 :Float32;
   safetyModel @18 :Int16;
   safetyParam @41 :Int16;
 
@@ -307,6 +314,9 @@ struct CarParams {
     hondaBosch @5;
     ford @6;
     cadillac @7;
+    hyundai @8;
+    chrysler @9;
+    tesla @10;
   }
 
   # things about the car in the manual
