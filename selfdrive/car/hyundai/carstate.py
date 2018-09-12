@@ -205,14 +205,13 @@ class CarState(object):
     self.car_gas = cp.vl["EMS12"]['TPS']
 
     # Gear Selecton - This should be compatible with all Kia/Hyundai with Auto's
-    gear = cp.vl["LVR12"]["CF_Lvr_Gear"]
-    if gear == 5:
+    if cp.vl["CLU15"]["CF_Clu_InhibitD"] == 1:
       self.gear_shifter = "drive"
-    elif gear == 6:
+    elif cp.vl["CLU15"]["CF_Clu_InhibitN"] == 1:
       self.gear_shifter = "neutral"
-    elif gear == 0:
+    elif cp.vl["CLU15"]["CF_Clu_InhibitP"] == 1:
       self.gear_shifter = "park"
-    elif gear == 7:
+    elif cp.vl["CLU15"]["CF_Clu_InhibitR"] == 1:
       self.gear_shifter = "reverse"
     else:
       self.gear_shifter = "unknown"
