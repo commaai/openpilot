@@ -250,7 +250,7 @@ class ACCController(object):
               and lead_dist > safe_dist_m):
           lead_is_far = lead_dist > 2 * safe_dist_m
           closing = future_vrel_kph < -2
-          lead_is_pulling_away = future_vrel_kph > 5 
+          lead_is_pulling_away = future_vrel_kph > 4
           if lead_is_far and not closing or lead_is_pulling_away:
             msg =  "+1 (Beyond safe distance and speed)"
             button = CruiseButtons.RES_ACCEL
