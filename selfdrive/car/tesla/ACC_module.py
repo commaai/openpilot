@@ -207,20 +207,17 @@ class ACCController(object):
 
   # function to calculate the cruise button based on a safe follow distance
   def calc_follow_button(self, CS, lead_car):
-    follow_time = 2.0 # in seconds
+    # Desired gap (in seconds) between cars.
+    follow_time = 2.0
     current_time_ms = _current_time_millis()
      # Make sure we were able to populate lead_1.
     if lead_car is None:
       return None
     # dRel is in meters.
     lead_dist = lead_car.dRel
-    # Grab the relative speed.
-    rel_speed = lead_car.vRel * CV.MS_TO_KPH
-    # Current speed in kph
-    cur_speed = CS.v_ego * CV.MS_TO_KPH
-    lead_absolute_speed = cur_speed + rel_speed
-    in_progress_accel = CS.v_cruise_actual - cur_speed
-    future_rel_speed = rel_speed - in_progress_accel
+    lead_speed_kph = (lead_car.vRel + CS.v_ego) * CV.MS_TO_KPH
+    # Relative velocity between the lead car and our set cruise speed.
+    future_vrel_kph = lead_speed_kph - CS.v_cruise_actual
     # v_ego is in m/s, so safe_dist_m is in meters.
     safe_dist_m = CS.v_ego * follow_time
     # How much we can accelerate without exceeding the max allowed speed.
@@ -254,55 +251,49 @@ class ACCController(object):
       elif (lead_dist > 0
             # and we only issue commands every 300ms
             and current_time_ms > self.automated_cruise_action_time + 300):
-        ### Slowing down ###
+        
         if CS.v_cruise_actual > full_press_kph:
+          ### Slowing down ###
           # detect slow traffic and disengage cruise immediately.
           if self.fast_stop_required(CS, lead_car):
             msg = "Off (Slow traffic)"
             button = CruiseButtons.CANCEL
           # Reduce speed significantly if lead_dist < safe dist
           # and if the lead car isn't already pulling away.
-          elif lead_dist < safe_dist_m * .5 and rel_speed < 2:
+          elif lead_dist < safe_dist_m * .5 and future_vrel_kph < 2:
             msg =  "-5 (Significantly too close)"
             button = CruiseButtons.DECEL_2ND
           # Don't rush up to lead car
-          elif rel_speed < -15:
+          elif future_vrel_kph < -15:
             msg =  "-5 (approaching too fast)"
             button = CruiseButtons.DECEL_2ND
-          elif lead_dist < safe_dist_m and rel_speed <= 0:
+          elif lead_dist < safe_dist_m and future_vrel_kph <= 0:
             msg =  "-1 (Too close)"
             button = CruiseButtons.DECEL_SET
           # Make slow adjustments if close to the safe distance.
           # only adjust every 1 secs
           elif (lead_dist < safe_dist_m * 1.2
-                and future_rel_speed < 0
+                and future_vrel_kph < 0
                 and current_time_ms > self.automated_cruise_action_time + 1000):
             msg =  "-1 (Near safe distance)"
             button = CruiseButtons.DECEL_SET
 
           ### Speed up ###
           elif (available_speed > half_press_kph
-                and current_time_ms > self.automated_cruise_action_time
                 and lead_dist > safe_dist_m):
             lead_is_far = lead_dist > 2 * safe_dist_m
-            closing = future_rel_speed < -2
-            lead_is_pulling_away = future_rel_speed > 5 
+            closing = future_vrel_kph < -2
+            lead_is_pulling_away = future_vrel_kph > 5 
             if lead_is_far and not closing or lead_is_pulling_away:
               msg =  "+1 (Beyond safe distance and speed)"
               button = CruiseButtons.RES_ACCEL
-
-      # if we don't need to do any of the above, then we're at a pretty good
-      # speed. Make sure the set cruise speed matches actual speed.
-      if  button == None and cur_speed > CS.v_cruise_actual + 5:
-        # Send cruise stalk up_1st if the set speed is too low to bring it up
-        msg =  "cruise rectify"
-        button = CruiseButtons.RES_ACCEL
 
     if (current_time_ms > self.last_update_time + 1000):
       ratio = 0
       if safe_dist_m > 0:
         ratio = (lead_dist / safe_dist_m) * 100
-      print "Ratio: {0:.1f}%".format(ratio), "   lead: ","{0:.1f}m".format(lead_dist),"   avail: ","{0:.1f}kph".format(available_speed), "   Rel Speed: ","{0:.1f}kph".format(rel_speed), "  Angle: {0:.1f}deg".format(CS.angle_steers)
+      print "Ratio: {0:.1f}%  lead: {1:.1f}m  avail: {2:.1f}kph  vRel: {3:.1f}kph  Angle: {4:.1f}deg".format(
+        ratio, lead_dist, available_speed, lead_car.vRel * CV.MS_TO_KPH, CS.angle_steers)
       self.last_update_time = current_time_ms
       if msg != None:
         print "ACC: " + msg
@@ -310,16 +301,17 @@ class ACCController(object):
     return button
     
   def should_autoengage_cc(self, CS, current_time_ms):
-    # In auto-resume mode, we must not to engage during deceleration other than
-    # during the first moment after ACC was engaged.
-    autoresume_supressed_by_braking = (
-      self.autoresume
-      and CS.a_ego < 0
-      and current_time_ms > self.enabled_time + 300)
-    return (CS.pcm_acc_status == 1
-            and self.enable_adaptive_cruise
-            and CS.v_ego >= self.MIN_CRUISE_SPEED_MS
-            and not autoresume_supressed_by_braking)
+    # Try to engage cruise control if ACC was just enabled or if auto-resume
+    # is ready.
+    cruise_ready = (self.enable_adaptive_cruise
+                    and CS.pcm_acc_status == 1
+                    and CS.v_ego >= self.MIN_CRUISE_SPEED_MS)
+    acc_just_enabled = current_time_ms < self.enabled_time + 300
+    # "Autoresume" mode allows cruise to engage at other times too, but
+    # shouldn't trigger during deceleration.
+    autoresume_ready = self.autoresume and CS.a_ego > 0
+    
+    return cruise_ready and (acc_just_enabled or autoresume_ready)
     
   def fast_stop_required(self, CS, lead_car):
     sec_to_collision = abs(float(lead_car.dRel) / lead_car.vRel) if lead_car.vRel < 0 else sys.maxint
@@ -327,7 +319,7 @@ class ACCController(object):
     
     collision_imminent = sec_to_collision < 4
     lead_stopping = lead_absolute_speed_ms < self.MIN_CRUISE_SPEED_MS * CV.KPH_TO_MS
-    too_fast = CS.v_ego >= 1.8 * lead_absolute_speed_ms
+    too_fast = CS.v_ego >= 1.5 * lead_absolute_speed_ms
     
     return collision_imminent or lead_stopping or too_fast
     

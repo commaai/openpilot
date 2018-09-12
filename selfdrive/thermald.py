@@ -56,8 +56,16 @@ def set_eon_fan(val):
   if last_eon_fan_val is None or last_eon_fan_val != val:
     bus = SMBus(7, force=True)
     if LEON:
-      i = [0x1, 0x3 | 0, 0x3 | 0x08, 0x3 | 0x10][val]
-      bus.write_i2c_block_data(0x3d, 0, [i])
+      try:
+        i = [0x1, 0x3 | 0, 0x3 | 0x08, 0x3 | 0x10][val]
+        bus.write_i2c_block_data(0x3d, 0, [i])
+      except IOError:
+        # tusb320
+        if val == 0:
+          bus.write_i2c_block_data(0x67, 0xa, [0])
+        else:
+          bus.write_i2c_block_data(0x67, 0xa, [0x20])
+          bus.write_i2c_block_data(0x67, 0x8, [(val-1)<<6])
     else:
       bus.write_byte_data(0x21, 0x04, 0x2)
       bus.write_byte_data(0x21, 0x03, (val*2)+1)
@@ -126,6 +134,9 @@ class LocationStarter(object):
 def thermald_thread():
   setup_eon_fan()
 
+  # prevent LEECO from undervoltage
+  BATT_PERC_OFF = 10 if LEON else 3
+
   # now loop
   context = zmq.Context()
   thermal_sock = messaging.pub_sock(context, service_list['thermal'].port)
@@ -160,6 +171,10 @@ def thermald_thread():
       msg.thermal.batteryPercent = int(f.read())
     with open("/sys/class/power_supply/battery/status") as f:
       msg.thermal.batteryStatus = f.read().strip()
+    with open("/sys/class/power_supply/battery/current_now") as f:
+      msg.thermal.batteryCurrent = int(f.read())
+    with open("/sys/class/power_supply/battery/voltage_now") as f:
+      msg.thermal.batteryVoltage = int(f.read())
     with open("/sys/class/power_supply/usb/online") as f:
       msg.thermal.usbOnline = bool(int(f.read()))
 
@@ -243,7 +258,7 @@ def thermald_thread():
 
       # shutdown if the battery gets lower than 3%, it's discharging, we aren't running for
       # more than a minute but we were running
-      if msg.thermal.batteryPercent < 3 and msg.thermal.batteryStatus == "Discharging" and \
+      if msg.thermal.batteryPercent < BATT_PERC_OFF and msg.thermal.batteryStatus == "Discharging" and \
          started_seen and (sec_since_boot() - off_ts) > 60:
         os.system('LD_LIBRARY_PATH="" svc power shutdown')
 
