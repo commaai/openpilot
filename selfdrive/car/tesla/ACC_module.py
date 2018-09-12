@@ -344,7 +344,9 @@ class ACCController(object):
   def no_action_for(self, milliseconds, human_action_milliseconds=None):
     """
     Args:
-      milliseconds: how far back to look.
+      milliseconds: how far back to look for cruise control speed changes.
+      human_action_milliseconds: Optionally, use a different timespan when
+        checking for human (non-automated) cruise control changes.
     Returns: True if cruise control speed remained unchanged through this time.
     """
     now = _current_time_millis()
