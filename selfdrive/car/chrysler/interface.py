@@ -266,6 +266,13 @@ class CarInterface(object):
   # to be called @ 100hz
   def apply(self, c, perception_state=log.Live20Data.new_message()):
 
+    #! if our frame isn't synced with 220, then reset it.
+    # this wasn't needed in the game, so could it be needed for OP?!?!
+    # check if it's more than 3 away, accounting for 0x10 wrap-around.
+    if ((abs(self.CS.frame_220 - (self.frame % 0x10)) > 3)
+        and (abs((self.CS.frame_220+0x10) - (self.frame % 0x10)) > 3)):
+      self.frame = self.CS.frame_220
+
     self.CC.update(self.sendcan, c.enabled, self.CS, self.frame,
                    c.actuators, c.cruiseControl.cancel, c.hudControl.visualAlert,
                    c.hudControl.audibleAlert)

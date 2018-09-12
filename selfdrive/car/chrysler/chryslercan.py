@@ -65,7 +65,6 @@ def create_2d9(car_fingerprint):
   return make_can_msg(0x2d9, msg)
 
 def create_2a6(gear, apply_steer, moving_fast, car_fingerprint):
-  moving_fast = True  #!! overwriting to make it more like game_ see if this helps. see also the 292 high_status.
   msg = '0000000000000000'.decode('hex')  # park or neutral
   if car_fingerprint == CAR.PACIFICA_2018:
     msg = '0064000000000000'.decode('hex')  # Have not verified 2018 park with a real car.

@@ -40,6 +40,7 @@ def get_can_parser(CP):
     ("ACC_STATUS_2", "ACC_2", 0),
     ("HIGH_BEAM_FLASH", "STEERING_LEVERS", 0),
     ("ACC_SPEED_CONFIG_KPH", "DASHBOARD", 0),
+    ("INCREMENTING_220", "LKAS_INDICATOR_1", 0),
   ]
 
   checks = [
@@ -75,6 +76,8 @@ class CarState(object):
     # update prevs, update must run once per loop
     self.prev_left_blinker_on = self.left_blinker_on
     self.prev_right_blinker_on = self.right_blinker_on
+
+    self.frame_220 = cp.vl["LKAS_INDICATOR_1"]['INCREMENTING_220']
 
     self.door_all_closed = not any([cp.vl["DOORS"]['DOOR_OPEN_FL'],
                                     cp.vl["DOORS"]['DOOR_OPEN_FR'],
