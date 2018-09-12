@@ -55,7 +55,7 @@ def actuator_hystereses(final_pedal, pedal_steady):
 
 
 class CarController(object):
-  def __init__(self, canbus, car_fingerprint):
+  def __init__(self, canbus, car_fingerprint, allow_controls):
     self.pedal_steady = 0.
     self.start_time = sec_since_boot()
     self.chime = 0
@@ -64,6 +64,7 @@ class CarController(object):
     self.steer_idx = 0
     self.apply_steer_last = 0
     self.car_fingerprint = car_fingerprint
+    self.allow_controls = allow_controls
 
     # Setup detection helper. Routes commands to
     # an appropriate CAN bus number.
@@ -76,6 +77,10 @@ class CarController(object):
   def update(self, sendcan, enabled, CS, frame, actuators, \
              hud_v_cruise, hud_show_lanes, hud_show_car, chime, chime_cnt):
     """ Controls thread """
+
+    # Sanity check.
+    if not self.allow_controls:
+      return
 
     P = self.params
 
