@@ -267,13 +267,16 @@ class ACCController(object):
           elif future_vrel_kph < -15:
             msg =  "-5 (approaching too fast)"
             button = CruiseButtons.DECEL_2ND
+          elif future_vrel_kph < -8:
+            msg =  "-1 (approaching too fast)"
+            button = CruiseButtons.DECEL_SET
           elif lead_dist < safe_dist_m and future_vrel_kph <= 0:
             msg =  "-1 (Too close)"
             button = CruiseButtons.DECEL_SET
           # Make slow adjustments if close to the safe distance.
           # only adjust every 1 secs
-          elif (lead_dist < safe_dist_m * 1.2
-                and future_vrel_kph < 0
+          elif (lead_dist < safe_dist_m * 1.3
+                and future_vrel_kph < -1 * half_press_kph
                 and current_time_ms > self.automated_cruise_action_time + 1000):
             msg =  "-1 (Near safe distance)"
             button = CruiseButtons.DECEL_SET
