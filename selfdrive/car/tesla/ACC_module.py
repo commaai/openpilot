@@ -342,6 +342,11 @@ class ACCController(object):
     return button_to_press
     
   def no_action_since(self, milliseconds):
+    """
+    Args:
+      milliseconds: how far back to look.
+    Returns: True if cruise control speed remained unchanged through this time.
+    """
     now = _current_time_millis()
     return (now < self.automated_cruise_action_time + milliseconds
             and now < self.human_cruise_action_time + milliseconds)
