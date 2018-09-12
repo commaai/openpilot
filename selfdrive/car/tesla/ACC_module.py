@@ -181,7 +181,7 @@ class ACCController(object):
     # debug msg
     msg = None
 
-    # Automatically engange traditional cruise if ACC is active.
+    # Automatically engage traditional cruise if ACC is active.
     if self.should_autoengage_cc(CS, current_time_ms):
       button = CruiseButtons.RES_ACCEL
     # If traditional cruise is engaged, then control it.
@@ -195,7 +195,7 @@ class ACCController(object):
         button = CruiseButtons.CANCEL
         
       # if cruise is set to faster than the max speed, slow down
-      if CS.v_cruise_actual > self.acc_speed_kph and self.no_action_since(milliseconds=300):
+      if CS.v_cruise_actual > self.acc_speed_kph and self.no_action_for(milliseconds=300):
         msg =  "Slow to max"
         button = CruiseButtons.DECEL_SET
         
@@ -205,13 +205,13 @@ class ACCController(object):
       elif (lead_dist_m == 0
             and CS.angle_steers < 2.0
             and half_press_kph < available_speed_kph
-            and self.no_action_since(milliseconds=500)):
+            and self.no_action_for(milliseconds=500, human_action_milliseconds=1000)):
           msg =  "+1 (road clear)"
           button = CruiseButtons.RES_ACCEL
         
       elif (# if we have a populated lead_distance
             lead_dist_m > 0
-            and self.no_action_since(milliseconds=300)
+            and self.no_action_for(milliseconds=300)
             # and we're moving
             and CS.v_cruise_actual > full_press_kph):
         ### Slowing down ###
@@ -234,13 +234,14 @@ class ACCController(object):
         # only adjust every 1 secs
         elif (lead_dist_m < safe_dist_m * 1.3
               and future_vrel_kph < -1 * half_press_kph
-              and self.no_action_since(milliseconds=1000)):
+              and self.no_action_for(milliseconds=1000)):
           msg =  "-1 (Near safe distance)"
           button = CruiseButtons.DECEL_SET
 
         ### Speed up ###
         elif (available_speed_kph > half_press_kph
-              and lead_dist_m > safe_dist_m):
+              and lead_dist_m > safe_dist_m
+              and self.no_action_for(milliseconds=0, human_action_milliseconds=1000)):
           lead_is_far = lead_dist_m > safe_dist_m * 1.75
           closing = future_vrel_kph < -2
           lead_is_pulling_away = future_vrel_kph > 4
@@ -312,7 +313,7 @@ class ACCController(object):
           # the last 3 seconds. Human intention should not be overridden.
           and current_time_ms > self.human_cruise_action_time + 3000
           and current_time_ms > self.enabled_time + 1000
-          and self.no_action_since(milliseconds=500)):
+          and self.no_action_for(milliseconds=500)):
       # The difference between OP's target speed and the current cruise
       # control speed, in KPH.
       speed_offset = (desired_speed_ms * CV.MS_TO_KPH - CS.v_cruise_actual)
@@ -340,7 +341,7 @@ class ACCController(object):
           button_to_press = CruiseButtons.RES_ACCEL
     return button_to_press
     
-  def no_action_since(self, milliseconds):
+  def no_action_for(self, milliseconds, human_action_milliseconds=None):
     """
     Args:
       milliseconds: how far back to look.
@@ -348,4 +349,4 @@ class ACCController(object):
     """
     now = _current_time_millis()
     return (now > self.automated_cruise_action_time + milliseconds
-            and now > self.human_cruise_action_time + milliseconds)
+            and now > self.human_cruise_action_time + (human_action_milliseconds or milliseconds))
