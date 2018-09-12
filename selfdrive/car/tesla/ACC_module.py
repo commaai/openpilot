@@ -195,19 +195,9 @@ class ACCController(object):
         button = CruiseButtons.CANCEL
         
       # if cruise is set to faster than the max speed, slow down
-      if CS.v_cruise_actual > self.acc_speed_kph and self.no_action_for(milliseconds=300):
+      elif CS.v_cruise_actual > self.acc_speed_kph and self.no_action_for(milliseconds=300):
         msg =  "Slow to max"
         button = CruiseButtons.DECEL_SET
-        
-      # If lead_dist is reported as 0, no one is detected in front of you so you
-      # can speed up. Only accel on straight-aways; vision radar often
-      # loses lead car in a turn.
-      elif (lead_dist_m == 0
-            and CS.angle_steers < 2.0
-            and half_press_kph < available_speed_kph
-            and self.no_action_for(milliseconds=500, human_action_milliseconds=1000)):
-          msg =  "+1 (road clear)"
-          button = CruiseButtons.RES_ACCEL
         
       elif (# if we have a populated lead_distance
             lead_dist_m > 0
@@ -248,6 +238,16 @@ class ACCController(object):
           if lead_is_far and not closing or lead_is_pulling_away:
             msg =  "+1 (Beyond safe distance and speed)"
             button = CruiseButtons.RES_ACCEL
+          
+      # If lead_dist is reported as 0, no one is detected in front of you so you
+      # can speed up. Only accel on straight-aways; vision radar often
+      # loses lead car in a turn.
+      elif (lead_dist_m == 0
+            and CS.angle_steers < 2.0
+            and half_press_kph < available_speed_kph
+            and self.no_action_for(milliseconds=500, human_action_milliseconds=1000)):
+          msg =  "+1 (road clear)"
+          button = CruiseButtons.RES_ACCEL
 
     if (current_time_ms > self.last_update_time + 1000):
       ratio = 0
