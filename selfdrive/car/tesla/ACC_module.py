@@ -168,21 +168,21 @@ class ACCController(object):
 
   # function to calculate the cruise button based on a safe follow distance
   def calc_follow_button(self, CS, lead_car):
-    # Desired gap (in seconds) between cars.
-    follow_time = 2.0
-    current_time_ms = _current_time_millis()
-     # Make sure we were able to populate lead_1.
     if lead_car is None:
       return None
+    # Desired gap (in seconds) between cars.
+    follow_time_s = 2.0
+    # v_ego is in m/s, so safe_dist_m is in meters.
+    safe_dist_m = CS.v_ego * follow_time_s
+    current_time_ms = _current_time_millis()
+     # Make sure we were able to populate lead_1.
     # dRel is in meters.
-    lead_dist = lead_car.dRel
+    lead_dist_m = lead_car.dRel
     lead_speed_kph = (lead_car.vRel + CS.v_ego) * CV.MS_TO_KPH
     # Relative velocity between the lead car and our set cruise speed.
     future_vrel_kph = lead_speed_kph - CS.v_cruise_actual
-    # v_ego is in m/s, so safe_dist_m is in meters.
-    safe_dist_m = CS.v_ego * follow_time
     # How much we can accelerate without exceeding the max allowed speed.
-    available_speed = self.acc_speed_kph - CS.v_cruise_actual
+    available_speed_kph = self.acc_speed_kph - CS.v_cruise_actual
     half_press_kph, full_press_kph = self.get_cc_units_kph(CS.imperial_speed_units)
     # button to issue
     button = None
@@ -202,9 +202,9 @@ class ACCController(object):
       # If lead_dist is reported as 0, no one is detected in front of you so you
       # can speed up. Only accel on straight-aways; vision radar often
       # loses lead car in a turn.
-      elif (lead_dist == 0
+      elif (lead_dist_m == 0
             and CS.angle_steers < 2.0
-            and half_press_kph < available_speed):
+            and half_press_kph < available_speed_kph):
           msg =  "+1 (road clear)"
           button = CruiseButtons.RES_ACCEL
           
@@ -216,7 +216,7 @@ class ACCController(object):
         button = CruiseButtons.CANCEL
         
       elif (# if we have a populated lead_distance
-            lead_dist > 0
+            lead_dist_m > 0
             # and it's been at least 300ms since the last command
             and current_time_ms > self.automated_cruise_action_time + 300
             # and we're moving
@@ -224,7 +224,7 @@ class ACCController(object):
         ### Slowing down ###
         # Reduce speed significantly if lead_dist < safe dist
         # and if the lead car isn't already pulling away.
-        if lead_dist < safe_dist_m * .5 and future_vrel_kph < 2:
+        if lead_dist_m < safe_dist_m * .5 and future_vrel_kph < 2:
           msg =  "-5 (Significantly too close)"
           button = CruiseButtons.DECEL_2ND
         # Don't rush up to lead car
@@ -234,21 +234,21 @@ class ACCController(object):
         elif future_vrel_kph < -8:
           msg =  "-1 (approaching too fast)"
           button = CruiseButtons.DECEL_SET
-        elif lead_dist < safe_dist_m and future_vrel_kph <= 0:
+        elif lead_dist_m < safe_dist_m and future_vrel_kph <= 0:
           msg =  "-1 (Too close)"
           button = CruiseButtons.DECEL_SET
         # Make slow adjustments if close to the safe distance.
         # only adjust every 1 secs
-        elif (lead_dist < safe_dist_m * 1.3
+        elif (lead_dist_m < safe_dist_m * 1.3
               and future_vrel_kph < -1 * half_press_kph
               and current_time_ms > self.automated_cruise_action_time + 1000):
           msg =  "-1 (Near safe distance)"
           button = CruiseButtons.DECEL_SET
 
         ### Speed up ###
-        elif (available_speed > half_press_kph
-              and lead_dist > safe_dist_m):
-          lead_is_far = lead_dist > 2 * safe_dist_m
+        elif (available_speed_kph > half_press_kph
+              and lead_dist_m > safe_dist_m):
+          lead_is_far = lead_dist_m > 2 * safe_dist_m
           closing = future_vrel_kph < -2
           lead_is_pulling_away = future_vrel_kph > 4
           if lead_is_far and not closing or lead_is_pulling_away:
@@ -258,9 +258,9 @@ class ACCController(object):
     if (current_time_ms > self.last_update_time + 1000):
       ratio = 0
       if safe_dist_m > 0:
-        ratio = (lead_dist / safe_dist_m) * 100
+        ratio = (lead_dist_m / safe_dist_m) * 100
       print "Ratio: {0:.1f}%  lead: {1:.1f}m  avail: {2:.1f}kph  vRel: {3:.1f}kph  Angle: {4:.1f}deg".format(
-        ratio, lead_dist, available_speed, lead_car.vRel * CV.MS_TO_KPH, CS.angle_steers)
+        ratio, lead_dist_m, available_speed_kph, lead_car.vRel * CV.MS_TO_KPH, CS.angle_steers)
       self.last_update_time = current_time_ms
       if msg != None:
         print "ACC: " + msg
@@ -337,11 +337,11 @@ class ACCController(object):
       # Increase cruise speed if possible.
       elif CS.v_ego > self.MIN_CRUISE_SPEED_MS:
         # How much we can accelerate without exceeding max allowed speed.
-        available_speed = self.acc_speed_kph - CS.v_cruise_actual
-        if speed_offset >= full_press_kph and full_press_kph < available_speed:
+        available_speed_kph = self.acc_speed_kph - CS.v_cruise_actual
+        if speed_offset >= full_press_kph and full_press_kph < available_speed_kph:
           # Send cruise stalk up_2nd.
           button_to_press = CruiseButtons.RES_ACCEL_2ND
-        elif speed_offset >= half_press_kph and half_press_kph < available_speed:
+        elif speed_offset >= half_press_kph and half_press_kph < available_speed_kph:
           # Send cruise stalk up_1st.
           button_to_press = CruiseButtons.RES_ACCEL
     return button_to_press
