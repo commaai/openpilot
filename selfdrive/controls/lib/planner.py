@@ -23,7 +23,6 @@ _DT = 0.01    # 100Hz
 _DT_MPC = 0.2  # 5Hz
 MAX_SPEED_ERROR = 2.0
 AWARENESS_DECEL = -0.2     # car smoothly decel at .2m/s^2 when user is distracted
-_LEAD_ACCEL_TAU = 1.5
 TR=1.8 # CS.distance_toggle
 
 GPS_PLANNER_ADDR = "192.168.5.1"
