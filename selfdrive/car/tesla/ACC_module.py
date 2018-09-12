@@ -211,7 +211,6 @@ class ACCController(object):
         
       elif (# if we have a populated lead_distance
             lead_dist_m > 0
-            # and it's been at least 300ms since the last command
             and self.no_action_since(milliseconds=300)
             # and we're moving
             and CS.v_cruise_actual > full_press_kph):
@@ -348,5 +347,5 @@ class ACCController(object):
     Returns: True if cruise control speed remained unchanged through this time.
     """
     now = _current_time_millis()
-    return (now < self.automated_cruise_action_time + milliseconds
-            and now < self.human_cruise_action_time + milliseconds)
+    return (now > self.automated_cruise_action_time + milliseconds
+            and now > self.human_cruise_action_time + milliseconds)
