@@ -269,9 +269,14 @@ class CarInterface(object):
     #! if our frame isn't synced with 220, then reset it.
     # this wasn't needed in the game, so could it be needed for OP?!?!
     # check if it's more than 3 away, accounting for 0x10 wrap-around.
-    if ((abs(self.CS.frame_220 - (self.frame % 0x10)) > 3)
-        and (abs((self.CS.frame_220+0x10) - (self.frame % 0x10)) > 3)):
-      self.frame = self.CS.frame_220
+
+    f1 = self.frame % 0x10
+    f2 = self.CS.frame_220 % 0x10  # shouldn't need the mod, but just in case.
+    fmin = min(f1, f2)
+    fmax = max(f1, f2)
+    if ((fmax - fmin) > 2) and ((fmin + 0x10 - fmax) > 2):
+      # copy lower nibble from frame_220 to our frame so they match
+      self.frame = (self.frame & 0xfffffff0) | f2
 
     self.CC.update(self.sendcan, c.enabled, self.CS, self.frame,
                    c.actuators, c.cruiseControl.cancel, c.hudControl.visualAlert,
