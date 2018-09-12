@@ -288,7 +288,7 @@ class ACCController(object):
     lead_absolute_speed_ms = lead_car.vRel + CS.v_ego
     
     collision_imminent = sec_to_collision < 4
-    lead_stopping = lead_absolute_speed_ms < self.MIN_CRUISE_SPEED_MS * CV.KPH_TO_MS
+    lead_stopping = lead_absolute_speed_ms < self.MIN_CRUISE_SPEED_MS
     too_fast = CS.v_ego >= 1.5 * lead_absolute_speed_ms
     
     return collision_imminent or lead_stopping or too_fast
