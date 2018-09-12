@@ -248,7 +248,7 @@ class ACCController(object):
         ### Speed up ###
         elif (available_speed_kph > half_press_kph
               and lead_dist_m > safe_dist_m):
-          lead_is_far = lead_dist_m > 2 * safe_dist_m
+          lead_is_far = lead_dist_m > 1.75 * safe_dist_m
           closing = future_vrel_kph < -2
           lead_is_pulling_away = future_vrel_kph > 4
           if lead_is_far and not closing or lead_is_pulling_away:
@@ -285,9 +285,9 @@ class ACCController(object):
       return False
       
     sec_to_collision = abs(float(lead_car.dRel) / lead_car.vRel) if lead_car.vRel < 0 else sys.maxint
-    lead_absolute_speed_ms = lead_car.vRel + CS.v_ego
-    
     collision_imminent = sec_to_collision < 4
+    
+    lead_absolute_speed_ms = lead_car.vRel + CS.v_ego
     lead_stopping = lead_absolute_speed_ms < self.MIN_CRUISE_SPEED_MS
     too_fast = CS.v_ego >= 1.5 * lead_absolute_speed_ms
     
