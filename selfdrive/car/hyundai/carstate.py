@@ -44,6 +44,11 @@ def get_can_parser(CP):
     ("CF_Clu_AmpInfo", "CLU11", 0),
     ("CF_Clu_AliveCnt1", "CLU11", 0),
 
+    ("CF_Clu_InhibitD", "CLU15", 0),
+    ("CF_Clu_InhibitP", "CLU15", 0),
+    ("CF_Clu_InhibitN", "CLU15", 0),
+    ("CF_Clu_InhibitR", "CLU15", 0),
+
     ("CF_Lvr_Gear","LVR12",0),
 
     ("ACCEnable", "TCS13", 0),
