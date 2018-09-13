@@ -34,6 +34,10 @@
 
 #include "cereal/gen/c/log.capnp.h"
 
+//BB include BBUIState def
+#include "bbuistate.h"
+//BB end
+
 // Calibration status values from controlsd.py
 #define CALIBRATION_UNCALIBRATED 0
 #define CALIBRATION_CALIBRATED 1
@@ -161,6 +165,9 @@ typedef struct UIScene {
 } UIScene;
 
 typedef struct UIState {
+  //BB define BBUIState
+  BBUIState b;
+  //BB end
   pthread_mutex_t lock;
   pthread_cond_t bg_cond;
 
@@ -242,6 +249,9 @@ typedef struct UIState {
 
   float light_sensor;
 } UIState;
+
+
+#include "bbui.h"
 
 static int last_brightness = -1;
 static void set_brightness(UIState *s, int brightness) {
@@ -585,6 +595,11 @@ static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
   nvgBeginPath(s->vg);
   float g_xo = sz/5;
   float g_yo = sz/10;
+  //BB added for printing the car
+  if (s->b.tri_state_switch == 2) {
+    nvgRestore(s->vg);
+    bb_ui_draw_car(s);
+  } else {
   if (x >= 0 && y >= 0.) {
     nvgMoveTo(s->vg, x+(sz*1.35)+g_xo, y+sz+g_yo);
     nvgLineTo(s->vg, x, y-g_xo);
@@ -606,7 +621,7 @@ static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
   }
   nvgFillColor(s->vg, fillColor);
   nvgFill(s->vg);
-
+  }
   nvgRestore(s->vg);
 }
 
@@ -660,6 +675,11 @@ static void ui_draw_lane_line(UIState *s, const float *points, float off,
 }
 
 static void ui_draw_lane(UIState *s, const PathData path, NVGcolor color) {
+  //BB added to make the line blue
+  if (s->b.tri_state_switch == 2) {
+    color = nvgRGBA(66, 220, 244,250);
+  }
+  //BB end  
   ui_draw_lane_line(s, path.points, 0.025*path.prob, color, false);
   float var = min(path.std, 0.7);
   color.a /= 4;
@@ -799,11 +819,15 @@ static void draw_frame(UIState *s) {
   };
 
   glActiveTexture(GL_TEXTURE0);
-  if (s->scene.frontview && s->cur_vision_front_idx >= 0) {
-    glBindTexture(GL_TEXTURE_2D, s->frame_front_texs[s->cur_vision_front_idx]);
-  } else if (!scene->frontview && s->cur_vision_idx >= 0) {
-    glBindTexture(GL_TEXTURE_2D, s->frame_texs[s->cur_vision_idx]);
+  //BB added to suppress video printing
+  if (s->b.tri_state_switch != 2) {
+    if (s->scene.frontview && s->cur_vision_front_idx >= 0) {
+      glBindTexture(GL_TEXTURE_2D, s->frame_front_texs[s->cur_vision_front_idx]);
+    } else if (!scene->frontview && s->cur_vision_idx >= 0) {
+      glBindTexture(GL_TEXTURE_2D, s->frame_texs[s->cur_vision_idx]);
+    }
   }
+  //BB end  
 
   glUseProgram(s->frame_program);
 
@@ -824,6 +848,10 @@ static void draw_frame(UIState *s) {
 
 static void ui_draw_vision_lanes(UIState *s) {
   const UIScene *scene = &s->scene;
+  //BB add to draw our lanes
+  if (s->b.tri_state_switch == 2) {
+    bb_draw_lane_fill(s);
+  }
   // Draw left lane edge
   ui_draw_lane(
       s, scene->model.left_lane,
@@ -1611,10 +1639,16 @@ static ModelData read_model(cereal_ModelData_ptr modelp) {
 }
 
 static void update_status(UIState *s, int status) {
+  //BB Variable for the old status
+  int old_status = s->status;
   if (s->status != status) {
     s->status = status;
     // wake up bg thread to change
     pthread_cond_signal(&s->bg_cond);
+    //BB add sound
+    if ((old_status != STATUS_STOPPED) || (s->status != STATUS_DISENGAGED)) {
+      bb_ui_play_sound(s,s->status);
+    }
   }
 }
 
@@ -1857,8 +1891,10 @@ static void ui_update(UIState *s) {
         }
         s->scene.v_cruise = datad.vCruise;
         s->scene.v_ego = datad.vEgo;
-		s->scene.angleSteers = datad.angleSteers;
-		s->scene.angleSteersDes = datad.angleSteersDes;
+        //BB get angles
+        s->b.angleSteers = datad.angleSteers;
+        s->b.angleSteersDes = datad.angleSteersDes;
+        //BB END
         s->scene.curvature = datad.curvature;
         s->scene.engaged = datad.enabled;
         s->scene.engageable = datad.engageable;
@@ -1983,23 +2019,23 @@ static void ui_update(UIState *s) {
 
         s->scene.started_ts = datad.startedTs;
 
-	   //BBB CPU TEMP
-		s->scene.maxCpuTemp=datad.cpu0;
-        if (s->scene.maxCpuTemp<datad.cpu1)
+        //BB CPU TEMP
+		    s->b.maxCpuTemp=datad.cpu0;
+        if (s->b.maxCpuTemp<datad.cpu1)
         {
-            s->scene.maxCpuTemp=datad.cpu1;
+            s->b.maxCpuTemp=datad.cpu1;
         }
-        else if (s->scene.maxCpuTemp<datad.cpu2)
+        else if (s->b.maxCpuTemp<datad.cpu2)
         {
-            s->scene.maxCpuTemp=datad.cpu2;
+            s->b.maxCpuTemp=datad.cpu2;
         }
-        else if (s->scene.maxCpuTemp<datad.cpu3)
+        else if (s->b.maxCpuTemp<datad.cpu3)
         {
-            s->scene.maxCpuTemp=datad.cpu3;
+            s->b.maxCpuTemp=datad.cpu3;
         }
-      s->scene.maxBatTemp=datad.bat;
-	  s->scene.freeSpace=datad.freeSpace;
-	   //BBB END CPU TEMP
+        s->b.maxBatTemp=datad.bat;
+        s->b.freeSpace=datad.freeSpace;
+        //BB END CPU TEMP
       } else if (eventd.which == cereal_Event_uiLayoutState) {
           struct cereal_UiLayoutState datad;
           cereal_read_UiLayoutState(&datad, eventd.uiLayoutState);
@@ -2151,11 +2187,14 @@ static void* bg_thread(void* args) {
   int bg_status = -1;
   while(!do_exit) {
     pthread_mutex_lock(&s->lock);
-    if (bg_status == s->status) {
+    //BB Change of background based on our color
+    int actual_status = bb_get_status(s);
+    if (bg_status == actual_status) {
       // will always be signaled if it changes?
       pthread_cond_wait(&s->bg_cond, &s->lock);
     }
-    bg_status = s->status;
+    bg_status = actual_status;
+    //BB End of background color change
     pthread_mutex_unlock(&s->lock);
 
     assert(bg_status < ARRAYSIZE(bg_colors));
@@ -2197,6 +2236,8 @@ int main() {
   UIState uistate;
   UIState *s = &uistate;
   ui_init(s);
+  //BB init our UI
+  bb_ui_init(s);
 
   pthread_t connect_thread_handle;
   err = pthread_create(&connect_thread_handle, NULL,
@@ -2244,12 +2285,16 @@ int main() {
 
     ui_update(s);
 
+    //BB Update our cereal polls
+    bb_ui_poll_update(s);
     // awake on any touch
     int touch_x = -1, touch_y = -1;
     int touched = touch_poll(&touch, &touch_x, &touch_y, s->awake ? 0 : 100);
     if (touched == 1) {
       // touch event will still happen :(
       set_awake(s, true);
+      // BB check touch area
+      bb_handle_ui_touch(s,touch_x,touch_y);
     }
 
     // manage wakefulness

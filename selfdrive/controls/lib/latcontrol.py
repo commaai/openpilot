@@ -129,7 +129,8 @@ class LatControl(object):
           print "debug: blindspot detected"
         self.blindspot_blink_counter_right_check += 1
         if self.blindspot_blink_counter_right_check > 150:
-          self.angle_steers_des -= 15
+          self.angle_steers_des# -= 15
+
       else:
         self.blindspot_blink_counter_right_check = 0
       
@@ -139,7 +140,7 @@ class LatControl(object):
           print "debug: blindspot detected"
         self.blindspot_blink_counter_left_check += 1
         if self.blindspot_blink_counter_left_check > 150:
-          self.angle_steers_des += 15
+          self.angle_steers_des# += 15
       else:
         self.blindspot_blink_counter_left_check = 0
 

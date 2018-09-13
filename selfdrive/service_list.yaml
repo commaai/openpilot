@@ -75,6 +75,15 @@ testModel: [8040, false]
 testLiveLocation: [8045, false]
 testJoystick: [8056, false]
 
+#ui Events
+uiButtonInfo: [8201, true]
+uiCustomAlert: [8202, true]
+uiSetCar: [8203, true]
+uiButtonStatus: [8204, true]
+uiPlaySound: [8205, true]
+uiUpdate: [8206, true]
+
+
 # 8080 is reserved for slave testing daemon
 # 8762 is reserved for logserver
 

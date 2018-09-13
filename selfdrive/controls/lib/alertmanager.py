@@ -88,8 +88,14 @@ class AlertManager(object):
     "steerTempUnavailable": Alert(
         "TAKE CONTROL",
         "Steering Temporarily Unavailable",
-        AlertStatus.userPrompt, AlertSize.mid,
-        Priority.LOW, "steerRequired", "chimeDouble", .4, 2., 3.),
+        AlertStatus.userPrompt, AlertSize.small,
+        Priority.LOW, None, None, .1, .1, .1),
+
+     "steerTempUnavailableMuteNoEntry": Alert(
+        "TAKE CONTROL",
+        "Steering Temporarily Unavailable",
+        AlertStatus.userPrompt, AlertSize.small,
+        Priority.LOW, None, None, .1, .1, .1),
 
     "steerTempUnavailableMute": Alert(
         "TAKE CONTROL",

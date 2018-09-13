@@ -7,6 +7,9 @@ import numpy as np
 from selfdrive.can.parser import CANParser, CANDefine
 from selfdrive.config import Conversions as CV
 from selfdrive.car.toyota.values import CAR, DBC, STEER_THRESHOLD
+from common.kalman.simple_kalman import KF1D
+from selfdrive.car.modules.UIBT_module import UIButtons,UIButton
+from selfdrive.car.modules.UIEV_module import UIEvents
 
 def gps_distance(gpsLat, gpsLon, gpsAlt, gpsAcc):
   dist = 999.000001
@@ -106,7 +109,17 @@ class CarState(object):
     self.speedlimit = 25
     self.approachradius = 100
     self.includeradius = 22
+    #BB UIEvents
+    self.UE = UIEvents(self)
 
+    #BB variable for custom buttons
+    self.cstm_btns = UIButtons(self,"Toyota","toyota")
+
+    #BB pid holder for ALCA
+    self.pid = None
+
+    #BB custom message counter
+    self.custom_alert_counter = -1 #set to 100 for 1 second display; carcontroller will take down to zero
     # initialize can parser
     self.car_fingerprint = CP.carFingerprint
 
@@ -120,9 +133,28 @@ class CarState(object):
                          K=np.matrix([[0.12287673], [0.29666309]]))
     self.v_ego = 0.0
 
+ #BB init ui buttons
+  def init_ui_buttons(self):
+    btns = []
+    btns.append(UIButton("alca", "ALC", 0, "", 0))
+    btns.append(UIButton("", "", 0, "", 1))
+    btns.append(UIButton("", "", 0, "", 2))
+    btns.append(UIButton("sound", "SND", 1, "", 3))
+    btns.append(UIButton("", "", 0, "", 4))
+    btns.append(UIButton("", "", 0, "", 5))
+    return btns
+
+  #BB update ui buttons
+  def update_ui_buttons(self,id,btn_status):
+    if self.cstm_btns.btns[id].btn_status > 0:
+        self.cstm_btns.btns[id].btn_status = btn_status * self.cstm_btns.btns[id].btn_status
+    else:
+        self.cstm_btns.btns[id].btn_status = btn_status
+
   def update(self, cp):
     # copy can_valid
     self.can_valid = cp.can_valid
+
     msg = messaging.recv_one_or_none(self.gps_location)
     if msg is not None:
       gps_pkt = msg.gpsLocationExternal
