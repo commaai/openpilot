@@ -181,7 +181,7 @@ class ACCController(object):
     msg = None
 
     # Automatically engage traditional cruise if ACC is active.
-    if self._should_autoengage_cc(CS, current_time_ms):
+    if self._should_autoengage_cc(CS):
       button = CruiseButtons.RES_ACCEL
     # If traditional cruise is engaged, then control it.
     elif CS.pcm_acc_status == 2:
@@ -260,12 +260,12 @@ class ACCController(object):
         
     return button
     
-  def _should_autoengage_cc(self, CS, current_time_ms):
+  def _should_autoengage_cc(self, CS):
     # Engage cruise control if ACC was just enabled or if auto-resume is ready.
     cruise_ready = (self.enable_adaptive_cruise
                     and CS.pcm_acc_status == 1
                     and CS.v_ego >= self.MIN_CRUISE_SPEED_MS)
-    acc_just_enabled = current_time_ms < self.enabled_time + 300
+    acc_just_enabled = _current_time_millis() < self.enabled_time + 500
     # "Autoresume" mode allows cruise to engage at other times too, but
     # shouldn't trigger during deceleration.
     autoresume_ready = self.autoresume and CS.a_ego > 0
@@ -306,7 +306,7 @@ class ACCController(object):
   def _calc_button(self, CS, desired_speed_ms, current_time_ms):
     button_to_press = None
     # Automatically engange traditional cruise if ACC is active.
-    if self._should_autoengage_cc(CS, current_time_ms):
+    if self._should_autoengage_cc(CS):
       button_to_press = CruiseButtons.RES_ACCEL
     # If traditional cruise is engaged, then control it.
     elif (CS.pcm_acc_status == 2
