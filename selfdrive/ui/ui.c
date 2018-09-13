@@ -65,6 +65,8 @@ const int box_w = vwp_w-sbr_w-(bdr_s*2);
 const int box_h = vwp_h-(bdr_s*2);
 const int viz_w = vwp_w-(bdr_s*2);
 const int header_h = 420;
+const int footer_h = 280;
+const int footer_y = vwp_h-bdr_s-footer_h;
 
 const uint8_t bg_colors[][4] = {
   [STATUS_STOPPED] = {0x07, 0x23, 0x39, 0xff},
@@ -89,6 +91,13 @@ const int alert_sizes[] = {
   [ALERTSIZE_FULL] = vwp_h,
 };
 
+// TODO: this is also hardcoded in common/transformations/camera.py
+const mat3 intrinsic_matrix = (mat3){{
+  910., 0., 582.,
+  0., 910., 437.,
+  0.,   0.,   1.
+}};
+
 typedef struct UIScene {
   int frontview;
   int fullview;
@@ -111,6 +120,7 @@ typedef struct UIScene {
   float curvature;
   int engaged;
   bool engageable;
+  bool monitoring_active;
 
   bool uilayout_sidebarcollapsed;
   bool uilayout_mapenabled;
@@ -166,6 +176,7 @@ typedef struct UIState {
   int font_sans_semibold;
   int font_sans_bold;
   int img_wheel;
+  int img_face;
 
   zsock_t *thermal_sock;
   void *thermal_sock_raw;
@@ -324,6 +335,14 @@ static const mat4 frame_transform = {{
                                            0.0, 0.0, 0.0, 1.0,
 }};
 
+// frame from 4/3 to 16/9 display
+static const mat4 full_to_wide_frame_transform = {{
+  .75,  0.0, 0.0, 0.0,
+  0.0,  1.0, 0.0, 0.0,
+  0.0,  0.0, 1.0, 0.0,
+  0.0,  0.0, 0.0, 1.0,
+}};
+
 static void ui_init(UIState *s) {
   memset(s, 0, sizeof(UIState));
 
@@ -393,6 +412,9 @@ static void ui_init(UIState *s) {
   assert(s->img_wheel >= 0);
   s->img_wheel = nvgCreateImage(s->vg, "../assets/img_chffr_wheel.png", 1);
 
+  assert(s->img_face >= 0);
+  s->img_face = nvgCreateImage(s->vg, "../assets/img_driver_face.png", 1);
+	
   // init gl
   s->frame_program = load_program(frame_vertex_shader, frame_fragment_shader);
   assert(s->frame_program);
@@ -559,7 +581,7 @@ vec3 car_space_to_full_frame(const UIState *s, vec4 car_space_projective) {
 
   // The last entry is zero because of how we store E (to use matvecmul).
   const vec3 Ep = {{Ep4.v[0], Ep4.v[1], Ep4.v[2]}};
-  const vec3 KEp = matvecmul3(s->intrinsic_matrix, Ep);
+  const vec3 KEp = matvecmul3(intrinsic_matrix, Ep);
 
   // Project.
   const vec3 p_image = {{KEp.v[0] / KEp.v[2], KEp.v[1] / KEp.v[2], 1.}};
