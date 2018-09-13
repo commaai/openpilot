@@ -1468,10 +1468,10 @@ static void ui_draw_vision(UIState *s) {
   nvgScissor(s->vg, ui_viz_rx, box_y, ui_viz_rw, box_h);
   nvgTranslate(s->vg, ui_viz_rx+ui_viz_ro, box_y + (box_h-inner_height)/2.0);
   nvgScale(s->vg, (float)viz_w / s->fb_w, (float)inner_height / s->fb_h);
-  if (!scene->frontview && !scene->fullview) {
+  //if (!scene->frontview && !scene->fullview) {
     ui_draw_world(s);
     
-  }
+  //}
 
   nvgRestore(s->vg);
 
