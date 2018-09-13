@@ -35,6 +35,12 @@ class ACCController(object):
     self.prev_cruise_buttons = CruiseButtons.IDLE
     self.prev_pcm_acc_status = 0
     self.acc_speed_kph = 0.
+    # The car normally tries to remember you last cruise speed so it can be
+    # resumed later. This can lead to some surprises when you go to enable just
+    # OpenPilot steering (single stalk pull) and the car accelerates because
+    # single stalk pull also enabled basic cruise control and resumes your last
+    # cruise speed. So clear the saved cruise speed when ACC disengages.
+    self._should_clear_cc = False
 
   # Updates the internal state of this controller based on user input,
   # specifically the steering wheel mounted cruise control stalk, and OpenPilot
@@ -73,11 +79,12 @@ class ACCController(object):
     elif (self.enable_adaptive_cruise and
           CS.cruise_buttons != self.prev_cruise_buttons):
       self._update_max_acc_speed(CS)
-    # If autoresume is not enabled, certain user actions disable ACC.
-    elif not self.autoresume:
-      # If something disabled cruise control or steering, disable ACC too.
-      if self.prev_pcm_acc_status == 2 and CS.pcm_acc_status != 2 or not enabled:
+    # If something disabled cruise control or steering, disable ACC too.
+    elif self.prev_pcm_acc_status == 2 and CS.pcm_acc_status != 2 or not enabled:
+      # If autoresume is not enabled, certain user actions disable ACC.
+      if not self.autoresume:
         self.enable_adaptive_cruise = False
+      self._should_clear_cc = True
     
     # Notify if ACC was toggled
     if prev_enable_adaptive_cruise and not self.enable_adaptive_cruise:
@@ -145,6 +152,9 @@ class ACCController(object):
             if socket is self.live20:
               lead_1 = messaging.recv_one(socket).live20.leadOne
         button_to_press = self._calc_follow_button(CS, lead_1)
+    elif self._should_clear_cc:
+      button_to_press = CruiseButtons.CANCEL
+      self._should_clear_cc = False
     if button_to_press:
       self.automated_cruise_action_time = current_time_ms
       # If trying to slow below the min cruise speed, just cancel cruise.
