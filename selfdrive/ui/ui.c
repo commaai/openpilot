@@ -91,7 +91,8 @@ const int alert_sizes[] = {
 
 typedef struct UIScene {
   int frontview;
-
+  int fullview;
+	
   int transformed_width, transformed_height;
 
   uint64_t model_ts;
@@ -473,6 +474,7 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
 
   s->scene = (UIScene){
       .frontview = getenv("FRONTVIEW") != NULL,
+      .fullview = getenv("FULLVIEW") != NULL,
       .cal_status = CALIBRATION_CALIBRATED,
       .transformed_width = ui_info.transformed_width,
       .transformed_height = ui_info.transformed_height,
