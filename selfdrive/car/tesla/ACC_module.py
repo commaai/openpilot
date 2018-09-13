@@ -181,7 +181,7 @@ class ACCController(object):
     msg = None
 
     # Automatically engage traditional cruise if ACC is active.
-    if self._should_autoengage_cc(CS):
+    if self._should_autoengage_cc(CS) and self._no_action_for(milliseconds=100):
       button = CruiseButtons.RES_ACCEL
     # If traditional cruise is engaged, then control it.
     elif CS.pcm_acc_status == 2:
@@ -189,7 +189,7 @@ class ACCController(object):
       # Disengage cruise control if a slow object is seen ahead. This triggers
       # full regen braking, which is stronger than the braking that happens if
       # you just reduce cruise speed.
-      if self._fast_stop_required(CS, lead_car):
+      if self._fast_stop_required(CS, lead_car) and self._no_human_action_for(milliseconds=500):
         msg = "Off (Slow traffic)"
         button = CruiseButtons.CANCEL
         
@@ -230,7 +230,7 @@ class ACCController(object):
         ### Speed up ###
         elif (available_speed_kph > half_press_kph
               and lead_dist_m > safe_dist_m
-              and self._no_action_for(milliseconds=0, human_action_milliseconds=1000)):
+              and self._no_human_action_for(milliseconds=1000)):
           lead_is_far = lead_dist_m > safe_dist_m * 1.75
           closing = future_vrel_kph < -2
           lead_is_pulling_away = future_vrel_kph > 4
@@ -244,7 +244,8 @@ class ACCController(object):
       elif (lead_dist_m == 0
             and CS.angle_steers < 2.0
             and half_press_kph < available_speed_kph
-            and self._no_action_for(milliseconds=500, human_action_milliseconds=1000)):
+            and self._no_action_for(milliseconds=500)
+            and self._no_human_action_for(milliseconds=1000)):
           msg =  "+1 (road clear)"
           button = CruiseButtons.RES_ACCEL
 
@@ -268,7 +269,7 @@ class ACCController(object):
     acc_just_enabled = _current_time_millis() < self.enabled_time + 500
     # "Autoresume" mode allows cruise to engage at other times too, but
     # shouldn't trigger during deceleration.
-    autoresume_ready = self.autoresume and CS.a_ego > 0
+    autoresume_ready = self.autoresume and CS.a_ego >= 0
     
     return cruise_ready and (acc_just_enabled or autoresume_ready)
     
@@ -281,10 +282,10 @@ class ACCController(object):
     collision_imminent = sec_to_collision < 4
     
     lead_absolute_speed_ms = lead_car.vRel + CS.v_ego
-    lead_stopping = lead_absolute_speed_ms < self.MIN_CRUISE_SPEED_MS
-    too_fast = CS.v_ego >= 1.5 * lead_absolute_speed_ms
+    lead_too_slow = lead_absolute_speed_ms < self.MIN_CRUISE_SPEED_MS
+    too_fast = CS.v_ego > 1.5 * lead_absolute_speed_ms
     
-    return collision_imminent or lead_stopping or too_fast
+    return collision_imminent or lead_too_slow or too_fast
     
   def _get_cc_units_kph(self, is_imperial_units):
     # Cruise control buttons behave differently depending on whether the car
@@ -342,17 +343,11 @@ class ACCController(object):
           button_to_press = CruiseButtons.RES_ACCEL
     return button_to_press
     
-  def _no_action_for(self, milliseconds, human_action_milliseconds=None):
-    """
-    Used to rate limit cruise control CAN messages, preventing automated actions
-    from overwhelming the SCCM or overriding human actions.
+  def _no_human_action_for(self, milliseconds):
+    return _current_time_millis() > self.human_cruise_action_time + milliseconds
     
-    Args:
-      milliseconds: how far back to look for cruise control speed changes.
-      human_action_milliseconds: Optionally, use a different timespan when
-        checking for human (non-automated) cruise control changes.
-    Returns: True if cruise control speed remained unchanged through this time.
-    """
-    now = _current_time_millis()
-    return (now > self.automated_cruise_action_time + milliseconds
-            and now > self.human_cruise_action_time + (human_action_milliseconds or milliseconds))
+  def _no_automated_action_for(self, milliseconds):
+    return _current_time_millis() > self.automated_cruise_action_time + milliseconds
+    
+  def _no_action_for(self, milliseconds):
+    return self._no_human_action_for(milliseconds) and self._no_automated_action_for(milliseconds)
