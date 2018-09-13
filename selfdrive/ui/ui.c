@@ -1875,7 +1875,7 @@ static void ui_update(UIState *s) {
         s->scene.lead_y_rel = leaddatad.yRel;
         s->scene.lead_v_rel = leaddatad.vRel;
       } else if (eventd.which == cereal_Event_liveCalibration) {
-        s->scene.world_objects_visible = s->intrinsic_matrix_loaded;
+        s->scene.world_objects_visible = true;
         struct cereal_LiveCalibrationData datad;
         cereal_read_LiveCalibrationData(&datad, eventd.liveCalibration);
 
