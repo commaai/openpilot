@@ -858,10 +858,10 @@ static void ui_draw_world(UIState *s) {
     return;
   }
 
-  if ((nanos_since_boot() - scene->model_ts) < 1000000000ULL) {
+  //if ((nanos_since_boot() - scene->model_ts) < 1000000000ULL) {
     // Draw lane edges and vision/mpc tracks
     ui_draw_vision_lanes(s);
-  }
+  //}
 
   if (scene->lead_status) {
     // Draw lead car indicator
