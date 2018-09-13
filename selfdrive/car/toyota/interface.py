@@ -102,7 +102,7 @@ class CarInterface(object):
       ret.steerKf = 0.00003   # full torque for 20 deg at 80mph means 0.00007818594
 
     elif candidate == CAR.LEXUS_RXH:
-      ret.safetyParam = 100 # see conversion factor for STEER_TORQUE_EPS in dbc file
+      ret.safetyParam = 73 # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.79
       ret.steerRatio = 16.  # 14.8 is spec end-to-end
       tire_stiffness_factor = 0.444  # not optimized yet
@@ -111,7 +111,7 @@ class CarInterface(object):
       ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
 
     elif candidate in [CAR.CHR, CAR.CHRH]:
-      ret.safetyParam = 100
+      ret.safetyParam = 73 # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.63906
       ret.steerRatio = 13.6
       tire_stiffness_factor = 0.7933
@@ -120,7 +120,7 @@ class CarInterface(object):
       ret.steerKf = 0.00006
 
     elif candidate in [CAR.CAMRY, CAR.CAMRYH]:
-      ret.safetyParam = 100
+      ret.safetyParam = 66 # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.82448
       ret.steerRatio = 13.7
       tire_stiffness_factor = 0.7933
@@ -129,7 +129,7 @@ class CarInterface(object):
       ret.steerKf = 0.00006
 
     elif candidate in [CAR.HIGHLANDER, CAR.HIGHLANDERH]:
-      ret.safetyParam = 100
+      ret.safetyParam = 73 # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.78
       ret.steerRatio = 16.0
       tire_stiffness_factor = 0.444 # not optimized yet
