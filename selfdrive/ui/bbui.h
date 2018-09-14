@@ -435,10 +435,10 @@ void bb_ui_draw_measures_left( UIState *s, int bb_x, int bb_y, int bb_w ) {
 	    	char val_str[16];
 		char uom_str[6];
 		NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
-			if((int)(s->b.maxCpuTemp/10) > 80) {
+			if((int)(s->b.maxCpuTemp/10) > 65) {
 				val_color = nvgRGBA(255, 188, 3, 200);
 			}
-			if((int)(s->b.maxCpuTemp/10) > 92) {
+			if((int)(s->b.maxCpuTemp/10) > 85) {
 				val_color = nvgRGBA(255, 0, 0, 200);
 			}
 			// temp is alway in C * 10
@@ -489,7 +489,7 @@ void bb_ui_draw_measures_left( UIState *s, int bb_x, int bb_y, int bb_w ) {
 	    if(s->b.gpsAccuracy > 0.59) {
 	       val_color = nvgRGBA(255, 188, 3, 200);
 	    }
-	    if(s->b.gpsAccuracy > 0.8) {
+	    if(s->b.gpsAccuracy > 0.99) {
 	       val_color = nvgRGBA(255, 0, 0, 200);
 	    }
 
