@@ -91,12 +91,12 @@ class CarInterface(object):
     
     elif candidate == CAR.ACADIA_DENALI:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
-      ret.minEnableSpeed = 18 * CV.MPH_TO_MS
+      ret.minEnableSpeed = -1
       # kg of standard extra cargo to count for drive, gas, etc...
-      ret.mass = 4016. * CV.LB_TO_KG + std_cargo
+      ret.mass = 4400. * CV.LB_TO_KG + std_cargo
       ret.safetyModel = car.CarParams.SafetyModels.gm
-      ret.wheelbase = 3.11
-      ret.steerRatio = 16.3   # it's 16.3 without rear active steering
+      ret.wheelbase = 2.89
+      ret.steerRatio = 16
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.465
 
@@ -139,28 +139,53 @@ class CarInterface(object):
 
 
     # same tuning for Volt and CT6 for now
-    ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
-    ret.steerKpV, ret.steerKiV = [[0.2], [0.00]]
-    ret.steerKf = 0.00004   # full torque for 20 deg at 80mph means 0.00007818594
+    if candidate in (CAR.VOLT, CAR.CADILLAC_CT6):
+      ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
+      ret.steerKpV, ret.steerKiV = [[0.2], [0.00]]
+      ret.steerKf = 0.00004   # full torque for 20 deg at 80mph means 0.00007818594
 
-    ret.steerMaxBP = [0.] # m/s
-    ret.steerMaxV = [1.]
-    ret.gasMaxBP = [0.]
-    ret.gasMaxV = [.5]
-    ret.brakeMaxBP = [0.]
-    ret.brakeMaxV = [1.]
-    ret.longPidDeadzoneBP = [0.]
-    ret.longPidDeadzoneV = [0.]
+      ret.steerMaxBP = [0.] # m/s
+      ret.steerMaxV = [1.]
+      ret.gasMaxBP = [0.]
+      ret.gasMaxV = [.5]
+      ret.brakeMaxBP = [0.]
+      ret.brakeMaxV = [1.]
+      ret.longPidDeadzoneBP = [0.]
+      ret.longPidDeadzoneV = [0.]
 
-    ret.longitudinalKpBP = [5., 35.]
-    ret.longitudinalKpV = [2.4, 1.5]
-    ret.longitudinalKiBP = [0.]
-    ret.longitudinalKiV = [0.36]
+      ret.longitudinalKpBP = [5., 35.]
+      ret.longitudinalKpV = [2.4, 1.5]
+      ret.longitudinalKiBP = [0.]
+      ret.longitudinalKiV = [0.36]
 
-    ret.steerLimitAlert = True
+      ret.steerLimitAlert = True
 
-    ret.stoppingControl = True
-    ret.startAccel = 0.8
+      ret.stoppingControl = True
+      ret.startAccel = 0.8
+      
+    elif candidate == CAR.ACADIA_DENALI:
+      ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
+      ret.steerKpV, ret.steerKiV = [[0.38], [0.11]]
+      ret.steerKf = 0.00004   # full torque for 20 deg at 80mph means 0.00007818594
+
+      ret.steerMaxBP = [0.] # m/s
+      ret.steerMaxV = [1.]
+      ret.gasMaxBP = [0.]
+      ret.gasMaxV = [.5]
+      ret.brakeMaxBP = [0.]
+      ret.brakeMaxV = [1.]
+      ret.longPidDeadzoneBP = [0.]
+      ret.longPidDeadzoneV = [0.]
+
+      ret.longitudinalKpBP = [0., 5., 35.]
+      ret.longitudinalKpV = [1.2, 0.8, 0.5]
+      ret.longitudinalKiBP = [0., 35.]
+      ret.longitudinalKiV = [0.18, 0.12]
+
+      ret.steerLimitAlert = True
+
+      ret.stoppingControl = True
+      ret.startAccel = 0.8
 
     ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
     ret.steerRateCost = 1.0
@@ -291,8 +316,6 @@ class CarInterface(object):
         events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
       if ret.gasPressed:
         events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
-      if ret.cruiseState.standstill:
-        events.append(create_event('resumeRequired', [ET.WARNING]))
 
       # handle button presses
       for b in ret.buttonEvents:
