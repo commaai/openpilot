@@ -119,7 +119,7 @@ class CarState(object):
     self.pid = None
 
     #BB custom message counter
-    self.custom_alert_counter = -1 #set to 100 for 1 second display; carcontroller will take down to zero
+    self.custom_alert_counter = 100 #set to 100 for 1 second display; carcontroller will take down to zero
     # initialize can parser
     self.car_fingerprint = CP.carFingerprint
 
@@ -136,12 +136,12 @@ class CarState(object):
  #BB init ui buttons
   def init_ui_buttons(self):
     btns = []
-    btns.append(UIButton("alca", "ALC", 0, "", 0))
-    btns.append(UIButton("", "", 0, "", 1))
-    btns.append(UIButton("", "", 0, "", 2))
-    btns.append(UIButton("sound", "SND", 1, "", 3))
-    btns.append(UIButton("", "", 0, "", 4))
-    btns.append(UIButton("", "", 0, "", 5))
+    btns.append(UIButton("alca", "ALC", 0, ""))
+    btns.append(UIButton("", "", 0, ""))
+    btns.append(UIButton("", "", 0, ""))
+    btns.append(UIButton("sound", "SND", 1, ""))
+    btns.append(UIButton("", "", 0, ""))
+    btns.append(UIButton("", "", 0, ""))
     return btns
 
   #BB update ui buttons
