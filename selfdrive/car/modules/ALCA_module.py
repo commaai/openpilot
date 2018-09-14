@@ -376,7 +376,7 @@ class ALCAController(object):
         new_angle,new_ALCA_Enabled,new_turn_signal = self.update_angle(enabled,CS,frame,actuators)
         output_steer = 0.
         if new_ALCA_Enabled and (self.laneChange_enabled < 5 ) and not self.laneChange_steerByAngle:
-          self.angle_steers_des = self.angle_steers_des_mpc
+          #self.angle_steers_des = self.angle_steers_des_mpc # not declared
           steers_max = interp(CS.v_ego, CS.CP.steerMaxBP, CS.CP.steerMaxV)
           self.pid.pos_limit = steers_max
           self.pid.neg_limit = -steers_max
