@@ -191,7 +191,7 @@ class CarInterface(object):
     ret.startAccel = 0.0
 
     ret.longitudinalKpBP = [0., 5., 65.]
-    ret.longitudinalKpV = [3.6, 2.0, 1.0]
+    ret.longitudinalKpV = [3.6, 1.5, 1.0]
     ret.longitudinalKiBP = [0., 35.]
     ret.longitudinalKiV = [0.54, 0.26]
 
