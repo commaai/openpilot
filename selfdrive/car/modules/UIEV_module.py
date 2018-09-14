@@ -85,4 +85,4 @@ class UIEvents(object):
             self.CS.custom_alert_counter -= 1
             if (self.CS.custom_alert_counter ==0):
                 self.custom_alert_message(-1,"",0)
-self.CS.custom_alert_counter = -1
+                self.CS.custom_alert_counter = -1
