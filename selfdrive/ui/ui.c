@@ -880,10 +880,10 @@ static void ui_draw_world(UIState *s) {
     return;
   }
 
-  //if ((nanos_since_boot() - scene->model_ts) < 1000000000ULL) {
+  if ((nanos_since_boot() - scene->model_ts) < 1000000000ULL) {
     // Draw lane edges and vision/mpc tracks
     ui_draw_vision_lanes(s);
-  //}
+  }
 
   if (scene->lead_status) {
     // Draw lead car indicator
@@ -1493,7 +1493,7 @@ static void ui_draw_calibration_status(UIState *s) {
   char calib_str1[64];
   char calib_str2[64];
   snprintf(calib_str1, sizeof(calib_str1), "Calibration in Progress: %d%%", scene->cal_perc);
-  snprintf(calib_str2, sizeof(calib_str2), (s->is_metric?"Drive above 72 km/h":"Drive above 45 mph"));
+  snprintf(calib_str2, sizeof(calib_str2), (s->is_metric?"Drive above 35 km/h":"Drive above 15 mph"));
 
   ui_draw_vision_alert(s, ALERTSIZE_MID, s->status, calib_str1, calib_str2);
 }
@@ -1527,10 +1527,10 @@ static void ui_draw_vision(UIState *s) {
   nvgScissor(s->vg, ui_viz_rx, box_y, ui_viz_rw, box_h);
   nvgTranslate(s->vg, ui_viz_rx+ui_viz_ro, box_y + (box_h-inner_height)/2.0);
   nvgScale(s->vg, (float)viz_w / s->fb_w, (float)inner_height / s->fb_h);
-  //if (!scene->frontview && !scene->fullview) {
+  if (!scene->frontview && !scene->fullview) {
     ui_draw_world(s);
     
-  //}
+  }
 
   nvgRestore(s->vg);
 
