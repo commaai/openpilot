@@ -73,8 +73,9 @@ class ACCController(object):
     elif (self.enable_adaptive_cruise and
           CS.cruise_buttons != self.prev_cruise_buttons):
       self._update_max_acc_speed(CS)
+      
     # If autoresume is not enabled, certain user actions disable ACC.
-    elif not self.autoresume:
+    if not self.autoresume:
       # If something disabled cruise control or steering, disable ACC too.
       if self.prev_pcm_acc_status == 2 and CS.pcm_acc_status != 2 or not enabled:
         self.enable_adaptive_cruise = False
