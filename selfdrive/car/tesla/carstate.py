@@ -246,10 +246,7 @@ class CarState(object):
       current_mode = ACCMode.get(button.btn_label2)
       next_mode = ACCMode.get(current_mode.next_mode)
       button.btn_label2 = next_mode.name
-      if next_mode.enabled:
-        button.btn_status = ACCState.STANDBY
-      else:
-        button.btn_status = ACCState.OFF
+      button.btn_status = next_mode.state
     else:
       button.btn_status = btn_status
 
