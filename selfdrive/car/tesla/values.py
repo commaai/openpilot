@@ -104,11 +104,12 @@ class ACCMode(object):
   # ACCMode objects)
   ACC_MODES = None
 
-  def get(self, name):
-    if name in self.ACC_MODES:
-      return self.ACC_MODES[name]
+  @classmethod
+  def get(cls, name):
+    if name in cls.ACC_MODES:
+      return cls.ACC_MODES[name]
     else:
-      return self.ACC_MODES.values()[0]
+      return cls.ACC_MODES.values()[0]
 
   def __init__(self, name, autoresume, state, next_mode):
     self.name = name
