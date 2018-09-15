@@ -2,7 +2,7 @@ from common.numpy_fast import interp
 from common.kalman.simple_kalman import KF1D
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
-from selfdrive.car.tesla.values import CAR, CruiseButtons, DBC, GetAccMode
+from selfdrive.car.tesla.values import ACCState, ACCMode, CAR, CruiseButtons, DBC
 from selfdrive.car.modules.UIBT_module import UIButtons, UIButton
 import numpy as np
 from ctypes import create_string_buffer
@@ -230,27 +230,28 @@ class CarState(object):
     # Actual cruise speed currently active on the car.
     self.v_cruise_actual = 0.0
 
+  ALC_BTN = UIButton("alca",  "ALC", 0, "",          0)
+  ACC_BTN = UIButton("acc",   "ACC", 0, ACCMode.OFF, 1)
+  STR_BTN = UIButton("steer", "STR", 0, "",          2)
+  BRK_BTN = UIButton("brake", "BRK", 1, "",          3)
+  MSG_BTN = UIButton("msg",   "MSG", 1, "",          4)
+  SND_BTN = UIButton("sound", "SND", 1, "",          5)
+  
   def init_ui_buttons(self):
-    btns = []
-    btns.append(UIButton("alca", "ALC", 0, "", 0))
-    btns.append(UIButton("acc", "ACC", 0, "Mod OP", 1))
-    btns.append(UIButton("steer", "STR", 0, "", 2))
-    btns.append(UIButton("brake", "BRK", 1, "", 3))
-    btns.append(UIButton("msg", "MSG", 1, "", 4))
-    btns.append(UIButton("sound", "SND", 1, "", 5))
-    return btns
+    return [ALC_BTN, ACC_BTN, STR_BTN, BRK_BTN, MSG_BTN, SND_BTN]
 
-  def update_ui_buttons(self,id,btn_status):
-    if self.cstm_btns.btns[id].btn_status > 0:
-      if (id == 1) and (btn_status == 0):
-          # don't change status, just model
-          current_mode = self.cstm_btns.btns[id].btn_label2
-          next_mode = GetAccMode(current_mode).next_mode
-          self.cstm_btns.btns[id].btn_label2 = next_mode
+  def update_ui_buttons(self, id, btn_status):
+    button = self.cstm_btns.btns[id]
+    if (id == ACC_BTN.btn_index):
+      current_mode = ACCMode.get(button.btn_label2)
+      next_mode = ACCMode.get(current_mode.next_mode)
+      button.btn_label2 = next_mode.name
+      if next_mode.enabled:
+        button.btn_status = ACCState.STANDBY
       else:
-          self.cstm_btns.btns[id].btn_status = btn_status * self.cstm_btns.btns[id].btn_status
+        button.btn_status = ACCState.OFF
     else:
-        self.cstm_btns.btns[id].btn_status = btn_status
+      button.btn_status = btn_status
 
   def update(self, cp, epas_cp):
 

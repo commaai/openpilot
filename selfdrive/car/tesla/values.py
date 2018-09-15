@@ -95,21 +95,24 @@ class ACCState(object):
   ENABLED = 2     # Engaged.
   NOT_READY = 9   # Not ready to be engaged due to the state of the car.
 
-  
 class ACCMode(object):
+  FOLLOW = "FOLLOW"
+  AUTO = "AUTO"
+  OFF = "OFF"
+  
+  _ACC_MODES = {
+    ACCMode.FOLLOW: ACCMode(name=ACCMode.FOLLOW, autoresume=False, enabled=True,  next_mode=ACCMode.AUTO),
+    ACCMode.AUTO:   ACCMode(name=ACCMode.AUTO,   autoresume=True,  enabled=True,  next_mode=ACCMode.OFF),
+    ACCMode.OFF:    ACCMode(name=ACCMode.OFF,    autoresume=False, enabled=False, next_mode=ACCMode.FOLLOW),
+  }
+
+  def get(name):
+    if name in _ACC_MODES:
+      return _ACC_MODES[name]
+    else:
+      return _ACC_MODES.values()[0]
+
   def __init__(self, name, autoresume, next_mode):
     self.name = name
     self.autoresume = autoresume
     self.next_mode = next_mode
-
-  
-_ACCModes = {
-  "FOLLOW": ACCMode(name="FOLLOW", autoresume=False, next_mode="AUTO"),
-  "AUTO":   ACCMode(name="AUTO",   autoresume=True,  next_mode="FOLLOW"),
-}
-
-def GetAccMode(name):
-  if name in _ACCModes:
-    return _ACCModes[name]
-  else:
-    return _ACCModes.values()[0]
