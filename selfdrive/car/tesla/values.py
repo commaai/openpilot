@@ -100,17 +100,15 @@ class ACCMode(object):
   AUTO = "AUTO"
   OFF = "OFF"
   
-  _ACC_MODES = {
-    ACCMode.FOLLOW: ACCMode(name=ACCMode.FOLLOW, autoresume=False, state=ACCState.STANDBY, next_mode=ACCMode.AUTO),
-    ACCMode.AUTO:   ACCMode(name=ACCMode.AUTO,   autoresume=True,  state=ACCState.STANDBY, next_mode=ACCMode.OFF),
-    ACCMode.OFF:    ACCMode(name=ACCMode.OFF,    autoresume=False, state=ACCState.OFF,     next_mode=ACCMode.FOLLOW),
-  }
+  # This static map is filled just below the class (so that it can contain
+  # ACCMode objects)
+  ACC_MODES = None
 
-  def get(name):
-    if name in _ACC_MODES:
-      return _ACC_MODES[name]
+  def get(self, name):
+    if name in self.ACC_MODES:
+      return self.ACC_MODES[name]
     else:
-      return _ACC_MODES.values()[0]
+      return self.ACC_MODES.values()[0]
 
   def __init__(self, name, autoresume, state, next_mode):
     self.name = name
@@ -120,3 +118,10 @@ class ACCMode(object):
     
   def next(self):
     return self.get(self.next_mode)
+    
+ACCMode.ACC_MODES = {
+  ACCMode.FOLLOW: ACCMode(name=ACCMode.FOLLOW, autoresume=False, state=ACCState.STANDBY, next_mode=ACCMode.AUTO),
+  ACCMode.AUTO:   ACCMode(name=ACCMode.AUTO,   autoresume=True,  state=ACCState.STANDBY, next_mode=ACCMode.OFF),
+  ACCMode.OFF:    ACCMode(name=ACCMode.OFF,    autoresume=False, state=ACCState.OFF,     next_mode=ACCMode.FOLLOW),
+}
+  
