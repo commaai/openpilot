@@ -95,21 +95,34 @@ class ACCState(object):
   ENABLED = 2     # Engaged.
   NOT_READY = 9   # Not ready to be engaged due to the state of the car.
 
-  
 class ACCMode(object):
-  def __init__(self, name, autoresume, next_mode):
+  FOLLOW = "FOLLOW"
+  AUTO = "AUTO"
+  OFF = "OFF"
+  
+  # This static map is filled just below the class (so that it can contain
+  # ACCMode objects)
+  ACC_MODES = None
+
+  @classmethod
+  def get(cls, name):
+    if name in cls.ACC_MODES:
+      return cls.ACC_MODES[name]
+    else:
+      return cls.ACC_MODES.values()[0]
+
+  def __init__(self, name, autoresume, state, next_mode):
     self.name = name
     self.autoresume = autoresume
+    self.state = state
     self.next_mode = next_mode
-
-  
-_ACCModes = {
-  "FOLLOW": ACCMode(name="FOLLOW", autoresume=False, next_mode="AUTO"),
-  "AUTO":   ACCMode(name="AUTO",   autoresume=True,  next_mode="FOLLOW"),
+    
+  def next(self):
+    return self.get(self.next_mode)
+    
+ACCMode.ACC_MODES = {
+  ACCMode.FOLLOW: ACCMode(name=ACCMode.FOLLOW, autoresume=False, state=ACCState.STANDBY, next_mode=ACCMode.AUTO),
+  ACCMode.AUTO:   ACCMode(name=ACCMode.AUTO,   autoresume=True,  state=ACCState.STANDBY, next_mode=ACCMode.OFF),
+  ACCMode.OFF:    ACCMode(name=ACCMode.OFF,    autoresume=False, state=ACCState.OFF,     next_mode=ACCMode.FOLLOW),
 }
-
-def GetAccMode(name):
-  if name in _ACCModes:
-    return _ACCModes[name]
-  else:
-    return _ACCModes.values()[0]
+  
