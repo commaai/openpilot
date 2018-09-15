@@ -73,7 +73,7 @@ class ALCAController(object):
     self.laneChange_direction = 0 # direction of the lane change 
     self.prev_right_blinker_on = False # local variable for prev position
     self.prev_left_blinker_on = False # local variable for prev position
-    self.blindspot_blink_counter = 0
+    #self.blindspot_blink_counter = 0
     self.pid = None
     self.last10delta = []
 
@@ -113,22 +113,22 @@ class ALCAController(object):
     # Basic highway lane change logic
     changing_lanes = CS.right_blinker_on or CS.left_blinker_on
     blindspot = CS.blind_spot_on
-    if changing_lanes:
-      if blindspot:
-        self.blindspot_blink_counter = 0
-        print "debug: blindspot detected in alca"
+    #if changing_lanes:
+      #if blindspot:
+        #self.blindspot_blink_counter = 0
+       # print "debug: blindspot detected in alca"
         #CS.UE.custom_alert_message(3,"Auto Lane Change Canceled! (s)",200,5)
         #self.laneChange_enabled = 1
-        self.laneChange_counter = 0
+      #  self.laneChange_counter = 0
         #self.laneChange_direction = 0
-      self.blindspot_blink_counter += 1
+     # self.blindspot_blink_counter += 1
     
-    if self.blindspot_blink_counter < 150:
+    #if self.blindspot_blink_counter < 150:
       #self.laneChange_enabled = 0
       #self.laneChange_counter = 0
-    else:
+    #else:
       #self.laneChange_enabled = 1
-      self.laneChange_counter = self.laneChange_counter
+      #self.laneChange_counter = self.laneChange_counter
      
     #self.laneChange_steerr = CS.CP.steerRatio
     actuator_delta = 0.
@@ -214,6 +214,15 @@ class ALCAController(object):
         self.laneChange_enabled = 1
         self.laneChange_direction = 0
         CS.cstm_btns.set_button_status("alca",1)
+    if self.laneChange_enabled > 1:
+      if blindspot:
+        CS.UE.custom_alert_message(4,"Auto Lane Change Canceled! (b)",200,3)
+        # if blindspot detected cancel process
+        self.laneChange_counter = 0
+        self.laneChange_enabled = 1
+        self.laneChange_direction = 0
+        CS.cstm_btns.set_button_status("alca",1)
+            
       # now that we crossed the line, we need to get far enough from the line and then engage OP
       #     1. we wait 0.05s to ensure we don't have back and forth adjustments
       #     2. we check to see if the delta between our steering and the actuator continues to decrease or not
