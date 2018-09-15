@@ -112,7 +112,11 @@ class ACCMode(object):
     else:
       return _ACC_MODES.values()[0]
 
-  def __init__(self, name, autoresume, next_mode):
+  def __init__(self, name, autoresume, state, next_mode):
     self.name = name
     self.autoresume = autoresume
+    self.state = state
     self.next_mode = next_mode
+    
+  def next(self):
+    return self.get(self.next_mode)

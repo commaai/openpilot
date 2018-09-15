@@ -244,7 +244,7 @@ class CarState(object):
     button = self.cstm_btns.btns[id]
     if (id == ACC_BTN.btn_index):
       current_mode = ACCMode.get(button.btn_label2)
-      next_mode = ACCMode.get(current_mode.next_mode)
+      next_mode = current_mode.next()
       button.btn_label2 = next_mode.name
       button.btn_status = next_mode.state
     else:
