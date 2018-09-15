@@ -125,7 +125,7 @@ class ALCAController(object):
     
     if self.blindspot_blink_counter < 150:
       #self.laneChange_enabled = 0
-      self.laneChange_counter = 0
+      #self.laneChange_counter = 0
     else:
       #self.laneChange_enabled = 1
       self.laneChange_counter = self.laneChange_counter
