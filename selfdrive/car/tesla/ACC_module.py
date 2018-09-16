@@ -279,7 +279,7 @@ class ACCController(object):
     # In the special case of a 'fast stop' we can consider autoresuming even
     # during deceleration. A fast stop is accomplished by disabling cruise all
     # together, so we end it by resuming cruise.
-    fast_decel_initiated_recently = self.fast_deceling and _current_time_millis() < self.fast_decel_time + 2500
+    fast_decel_initiated_recently = self.fast_deceling and _current_time_millis() < self.fast_decel_time + 4000
     fast_decel_necessary = lead_car and self._fast_decel_required(CS, lead_car)
     finished_fast_decel = fast_decel_initiated_recently and not fast_decel_necessary
     
