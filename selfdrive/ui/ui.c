@@ -150,7 +150,6 @@ typedef struct UIScene {
   //BB CPU TEMP
   uint16_t maxCpuTemp;
   uint32_t maxBatTemp;
-  float gpsAccuracy ;
   float freeSpace;
   float angleSteers;
   float angleSteersDes;
@@ -199,8 +198,6 @@ typedef struct UIState {
   void *livempc_sock_raw;
   zsock_t *plus_sock;
   void *plus_sock_raw;
-  zsock_t *gps_sock;
-  void *gps_sock_raw;
 
   zsock_t *uilayout_sock;
   void *uilayout_sock_raw;
@@ -362,10 +359,6 @@ static void ui_init(UIState *s) {
   assert(s->thermal_sock);
   s->thermal_sock_raw = zsock_resolve(s->thermal_sock);
 
-  s->gps_sock = zsock_new_sub(">tcp://127.0.0.1:8032", "");
-  assert(s->gps_sock);
-  s->gps_sock_raw = zsock_resolve(s->gps_sock);
-  
   s->model_sock = zsock_new_sub(">tcp://127.0.0.1:8009", "");
   assert(s->model_sock);
   s->model_sock_raw = zsock_resolve(s->model_sock);
@@ -1359,14 +1352,12 @@ static void ui_update(UIState *s) {
     polls[6].events = ZMQ_POLLIN;
     polls[7].socket = s->plus_sock_raw;
     polls[7].events = ZMQ_POLLIN;
-    polls[8].socket = s->gps_sock_raw;
-    polls[8].events = ZMQ_POLLIN;
 
-    int num_polls = 9;
+    int num_polls = 8;
     if (s->vision_connected) {
       assert(s->ipc_fd >= 0);
-      polls[9].fd = s->ipc_fd;
-      polls[9].events = ZMQ_POLLIN;
+      polls[8].fd = s->ipc_fd;
+      polls[8].events = ZMQ_POLLIN;
       num_polls++;
     }
 
@@ -1385,7 +1376,7 @@ static void ui_update(UIState *s) {
       set_awake(s, true);
     }
 
-    if (s->vision_connected && polls[9].revents) {
+    if (s->vision_connected && polls[8].revents) {
       // vision ipc event
       VisionPacket rp;
       err = vipc_recv(s->ipc_fd, &rp);
@@ -1443,38 +1434,6 @@ static void ui_update(UIState *s) {
 
       zmq_msg_close(&msg);
 
-    } else if (polls[8].revents) 
-    {
-      // gps socket
-
-      zmq_msg_t msg;
-      err = zmq_msg_init(&msg);
-      assert(err == 0);
-      err = zmq_msg_recv(&msg, s->gps_sock_raw, 0);
-      assert(err >= 0);
-
-      struct capn ctx;
-      capn_init_mem(&ctx, zmq_msg_data(&msg), zmq_msg_size(&msg), 0);
-
-      cereal_Event_ptr eventp;
-      eventp.p = capn_getp(capn_root(&ctx), 0, 1);
-      struct cereal_Event eventd;
-      cereal_read_Event(&eventd, eventp);
-
-      struct cereal_GpsLocationData datad;
-      cereal_read_GpsLocationData(&datad, eventd.gpsLocation);
-
-      s->scene.gpsAccuracy= datad.accuracy;
-      if (s->scene.gpsAccuracy>100)
-      {
-          s->scene.gpsAccuracy=99.99;
-      }
-      else if (s->scene.gpsAccuracy==0)
-      {
-          s->scene.gpsAccuracy=99.8;
-      }
-      capn_free(&ctx);
-      zmq_msg_close(&msg);
     } else {
       // zmq messages
       void* which = NULL;
