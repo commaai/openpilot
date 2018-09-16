@@ -229,7 +229,9 @@ class CarState(object):
     self.v_cruise_pcm = 0.0
     # Actual cruise speed currently active on the car.
     self.v_cruise_actual = 0.0
-
+    self.define_ui_buttons()
+    
+  def define_ui_buttons(self):
     self.ALC_BTN = UIButton("alca",  "ALC", 0, "",          0)
     self.ACC_BTN = UIButton("acc",   "ACC", 0, ACCMode.OFF, 1)
     self.STR_BTN = UIButton("steer", "STR", 0, "",          2)
@@ -238,6 +240,7 @@ class CarState(object):
     self.SND_BTN = UIButton("sound", "SND", 1, "",          5)
   
   def init_ui_buttons(self):
+    self.define_ui_buttons()
     return [self.ALC_BTN, self.ACC_BTN, self.STR_BTN, self.BRK_BTN, self.MSG_BTN, self.SND_BTN]
 
   def update_ui_buttons(self, id, btn_status):
