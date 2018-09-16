@@ -35,7 +35,8 @@ class ACCController(object):
     self.prev_cruise_buttons = CruiseButtons.IDLE
     self.prev_pcm_acc_status = 0
     self.acc_speed_kph = 0.
-    self.fast_stop_initiated = False
+    self.fast_stopping = False
+    self.fast_stop_time = 0
 
   # Updates the internal state of this controller based on user input,
   # specifically the steering wheel mounted cruise control stalk, and OpenPilot
@@ -88,7 +89,7 @@ class ACCController(object):
     elif self.enable_adaptive_cruise and not prev_enable_adaptive_cruise:
       CS.UE.custom_alert_message(2, "ACC Enabled", 150)
       CS.cstm_btns.set_button_status("acc", ACCState.ENABLED)
-      self.fast_stop_initiated = False
+      self.fast_stopping = False
 
     # Update the UI to show whether the current car state allows ACC.
     if CS.cstm_btns.get_button_status("acc") in [ACCState.STANDBY, ACCState.NOT_READY]:
@@ -195,7 +196,8 @@ class ACCController(object):
       if self._fast_stop_required(CS, lead_car) and self._no_human_action_for(milliseconds=500):
         msg = "Off (Slow traffic)"
         button = CruiseButtons.CANCEL
-        self.fast_stop_initiated = True
+        self.fast_stopping = True
+        self.fast_stop_time = current_time_ms
         
       # if cruise is set to faster than the max speed, slow down
       elif CS.v_cruise_actual > self.acc_speed_kph and self._no_action_for(milliseconds=300):
@@ -279,7 +281,12 @@ class ACCController(object):
     # and may over-decelerate, especially when vision radar first aquires a
     # lead.
     fast_stop_necessary = lead_car and self._fast_stop_required(CS, lead_car)
-    cancel_fast_stop = self.autoresume and self.fast_stop_initiated and not fast_stop_necessary
+    fast_stop_initiated_recently = self.fast_stopping and _current_time_millis() < self.fast_stop_time + 2500
+    cancel_fast_stop = self.autoresume and fast_stop_initiated_recently and not fast_stop_necessary
+    
+    should_autoengage = cruise_ready and (acc_just_enabled or autoresume_ready or cancel_fast_stop)
+    if should_autoengage:
+      self.fast_stopping = False
     
     return cruise_ready and (acc_just_enabled or autoresume_ready or cancel_fast_stop)
     
