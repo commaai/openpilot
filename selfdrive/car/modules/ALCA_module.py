@@ -65,7 +65,7 @@ class ALCAController(object):
     self.laneChange_min_duration = 1. # min time to wait before looking for next lane
     self.laneChange_duration = 5 # how many max seconds to actually do the move; if lane not found after this then send error
     self.laneChange_after_lane_duration_mult = 1.  # multiplier for time after we cross the line before we let OP take over; multiplied with CL_TIMEA_T 
-    self.laneChange_wait = 1 # how many seconds to wait before it starts the change
+    self.laneChange_wait = 2 # how many seconds to wait before it starts the change
     self.laneChange_lw = 3.0 # lane width in meters
     self.laneChange_angle = 0. # saves the last angle from actuators before lane change starts
     self.laneChange_angled = 0. # angle delta
@@ -214,14 +214,12 @@ class ALCAController(object):
         self.laneChange_enabled = 1
         self.laneChange_direction = 0
         CS.cstm_btns.set_button_status("alca",1)
-    if self.laneChange_enabled > 1:
       if blindspot:
-        CS.UE.custom_alert_message(4,"Auto Lane Change Canceled! (b)",200,3)
+        CS.UE.custom_alert_message(4,"Auto Lane Change Held! (b)",200,3)
         # if blindspot detected cancel process
         self.laneChange_counter = 0
-        self.laneChange_enabled = 1
-        self.laneChange_direction = 0
-        CS.cstm_btns.set_button_status("alca",1)
+        self.laneChange_enabled = 5
+        #CS.cstm_btns.set_button_status("alca",1)
             
       # now that we crossed the line, we need to get far enough from the line and then engage OP
       #     1. we wait 0.05s to ensure we don't have back and forth adjustments
@@ -344,6 +342,9 @@ class ALCAController(object):
         if self.laneChange_counter == self.laneChange_wait * 100:
           self.laneChange_enabled = 4
           self.laneChange_counter = 1
+        if self.laneChange_counter == 0:
+          if not blindspot:
+            self.laneChange_counter += 1
       # this is the final stage of the ALCAS
       # this just shows a message that we completed the lane change 
       # CONTROL: during this time we use the actuator angle to steer (OP Control)
