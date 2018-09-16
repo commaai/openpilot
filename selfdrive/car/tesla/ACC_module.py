@@ -35,6 +35,8 @@ class ACCController(object):
     self.prev_cruise_buttons = CruiseButtons.IDLE
     self.prev_pcm_acc_status = 0
     self.acc_speed_kph = 0.
+    self.fast_stopping = False
+    self.fast_stop_time = 0
 
   # Updates the internal state of this controller based on user input,
   # specifically the steering wheel mounted cruise control stalk, and OpenPilot
@@ -87,6 +89,7 @@ class ACCController(object):
     elif self.enable_adaptive_cruise and not prev_enable_adaptive_cruise:
       CS.UE.custom_alert_message(2, "ACC Enabled", 150)
       CS.cstm_btns.set_button_status("acc", ACCState.ENABLED)
+      self.fast_stopping = False
 
     # Update the UI to show whether the current car state allows ACC.
     if CS.cstm_btns.get_button_status("acc") in [ACCState.STANDBY, ACCState.NOT_READY]:
@@ -182,7 +185,7 @@ class ACCController(object):
     msg = None
 
     # Automatically engage traditional cruise if ACC is active.
-    if self._should_autoengage_cc(CS) and self._no_action_for(milliseconds=100):
+    if self._should_autoengage_cc(CS, lead_car=lead_car) and self._no_action_for(milliseconds=100):
       button = CruiseButtons.RES_ACCEL
     # If traditional cruise is engaged, then control it.
     elif CS.pcm_acc_status == 2:
@@ -193,6 +196,8 @@ class ACCController(object):
       if self._fast_stop_required(CS, lead_car) and self._no_human_action_for(milliseconds=500):
         msg = "Off (Slow traffic)"
         button = CruiseButtons.CANCEL
+        self.fast_stopping = True
+        self.fast_stop_time = current_time_ms
         
       # if cruise is set to faster than the max speed, slow down
       elif CS.v_cruise_actual > self.acc_speed_kph and self._no_action_for(milliseconds=300):
@@ -262,7 +267,7 @@ class ACCController(object):
         
     return button
     
-  def _should_autoengage_cc(self, CS):
+  def _should_autoengage_cc(self, CS, lead_car=None):
     # Engage cruise control if ACC was just enabled or if auto-resume is ready.
     cruise_ready = (self.enable_adaptive_cruise
                     and CS.pcm_acc_status == 1
@@ -271,22 +276,38 @@ class ACCController(object):
     # "Autoresume" mode allows cruise to engage at other times too, but
     # shouldn't trigger during deceleration.
     autoresume_ready = self.autoresume and CS.a_ego >= 0
+    # In the special case of a 'fast stop' we can consider autoresuming even
+    # during deceleration. A fast stop is accomplished by disabling cruise,
+    # and may over-decelerate, especially when vision radar first aquires a
+    # lead.
+    fast_stop_necessary = lead_car and self._fast_stop_required(CS, lead_car)
+    fast_stop_initiated_recently = self.fast_stopping and _current_time_millis() < self.fast_stop_time + 2500
+    cancel_fast_stop = self.autoresume and fast_stop_initiated_recently and not fast_stop_necessary
     
-    return cruise_ready and (acc_just_enabled or autoresume_ready)
+    should_autoengage = cruise_ready and (acc_just_enabled or autoresume_ready or cancel_fast_stop)
+    if should_autoengage:
+      self.fast_stopping = False
+    
+    return cruise_ready and (acc_just_enabled or autoresume_ready or cancel_fast_stop)
     
   def _fast_stop_required(self, CS, lead_car):
     """ Identifies situations which call for rapid deceleration. """
     if not lead_car or not lead_car.dRel:
       return False
-      
-    sec_to_collision = abs(float(lead_car.dRel) / lead_car.vRel) if lead_car.vRel < 0 else sys.maxint
-    collision_imminent = sec_to_collision < 4
+
+    collision_imminent = self._seconds_to_collision(CS, lead_car) < 4
     
     lead_absolute_speed_ms = lead_car.vRel + CS.v_ego
     lead_too_slow = lead_absolute_speed_ms < self.MIN_CRUISE_SPEED_MS
-    too_fast = CS.v_ego > 1.5 * lead_absolute_speed_ms
     
-    return collision_imminent or lead_too_slow or too_fast
+    return collision_imminent or lead_too_slow
+    
+  def _seconds_to_collision(self, CS, lead_car):
+    if not lead_car or not lead_car.dRel:
+      return sys.maxint
+    elif lead_car.vRel >= 0:
+      return sys.maxint
+    return abs(float(lead_car.dRel) / lead_car.vRel)
     
   def _get_cc_units_kph(self, is_imperial_units):
     # Cruise control buttons behave differently depending on whether the car
