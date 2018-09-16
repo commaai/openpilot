@@ -63,9 +63,9 @@ class ALCAController(object):
     self.laneChange_enabled = 1 # set to zero for no lane change
     self.laneChange_counter = 0 # used to count frames during lane change
     self.laneChange_min_duration = 1. # min time to wait before looking for next lane
-    self.laneChange_duration = 10 # how many max seconds to actually do the move; if lane not found after this then send error
+    self.laneChange_duration = 5 # how many max seconds to actually do the move; if lane not found after this then send error
     self.laneChange_after_lane_duration_mult = 1.  # multiplier for time after we cross the line before we let OP take over; multiplied with CL_TIMEA_T 
-    self.laneChange_wait = 2 # how many seconds to wait before it starts the change
+    self.laneChange_wait = 1 # how many seconds to wait before it starts the change
     self.laneChange_lw = 3.0 # lane width in meters
     self.laneChange_angle = 0. # saves the last angle from actuators before lane change starts
     self.laneChange_angled = 0. # angle delta
@@ -207,7 +207,7 @@ class ALCAController(object):
 
     # lane change in process
     if self.laneChange_enabled > 1:
-      if (CS.steer_override or (CS.v_ego < CL_MIN_V) or blindspot):
+      if (CS.steer_override or (CS.v_ego < CL_MIN_V) or (not changing_lanes)):
         CS.UE.custom_alert_message(4,"Auto Lane Change Canceled! (u)",200,3)
         # if any steer override cancel process or if speed less than min speed
         self.laneChange_counter = 0
