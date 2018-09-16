@@ -109,8 +109,8 @@ class CarState(object):
     self.speedlimit = 25
     self.approachradius = 100
     self.includeradius = 22
-    self.blind_spot_on = 0
-    self.blind_spot_on_prev = 0
+    self.blind_spot_on = bool(0)
+    self.blind_spot_on_prev = bool(0)
     #BB UIEvents
     self.UE = UIEvents(self)
 
@@ -204,7 +204,7 @@ class CarState(object):
     self.blind_spot_side = cp.vl["DEBUG"]['BLINDSPOTSIDE']
     self.blind_spot_on_prev = bool(cp.vl["DEBUG"]['BLINDSPOT'])
     if bool(cp.vl["DEBUG"]['BLINDSPOT']) and self.blind_spot_on_prev:
-      self.blind_spot_on = 1
+      self.blind_spot_on = bool(1)
     
     
     # we could use the override bit from dbc, but it's triggered at too high torque values
