@@ -26,7 +26,7 @@ def gps_distance(gpsLat, gpsLon, gpsAlt, gpsAcc):
   minindex = np.argmin((np.sum((B[:,[0,1,2]] - A)**2,axis=1))**0.5, axis=0)
   if abs(gpsAlt -B[minindex,3]) < altacc:
     if gpsAcc<1.00001:
-      'dist = 6371010*acos(sin(radians(gpsLat))*sin(radians(lat))+cos(radians(gpsLat))*cos(radians(lat))*cos(radians(gpsLon-lon)))
+      #dist = 6371010*acos(sin(radians(gpsLat))*sin(radians(lat))+cos(radians(gpsLat))*cos(radians(lat))*cos(radians(gpsLon-lon)))
       dist = (np.sum((B[minindex,[0,1,2]] - A)**2))**0.5
   else:
     print "Altitude inacurate"
