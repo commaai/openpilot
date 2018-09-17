@@ -78,7 +78,7 @@ class CarInterface(object):
 
     std_cargo = 136
 
-    if candidate == CAR.VOLT:
+    if candidate in (CAR.VOLT, CAR.MALIBU):
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
       # kg of standard extra cargo to count for drive, gas, etc...
@@ -258,7 +258,7 @@ class CarInterface(object):
     if ret.seatbeltUnlatched:
       events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
 
-    if self.CS.car_fingerprint == CAR.VOLT:
+    if self.CS.car_fingerprint in (CAR.VOLT, CAR.MALIBU):
 
       if self.CS.brake_error:
         events.append(create_event('brakeUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
@@ -298,7 +298,7 @@ class CarInterface(object):
         events.append(create_event('pcmEnable', [ET.ENABLE]))
       if not self.CS.acc_active:
         events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
-  
+
     ret.events = events
 
     # update previous brake/gas pressed
