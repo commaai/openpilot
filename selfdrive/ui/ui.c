@@ -101,7 +101,7 @@ const mat3 intrinsic_matrix = (mat3){{
 typedef struct UIScene {
   int frontview;
   int fullview;
-	
+
   int transformed_width, transformed_height;
 
   uint64_t model_ts;
@@ -2188,6 +2188,20 @@ static void* bg_thread(void* args) {
   return NULL;
 }
 
+int is_leon() {
+  #define MAXCHAR 1000
+  FILE *fp;
+  char str[MAXCHAR];
+  char* filename = "/proc/cmdline";
+   fp = fopen(filename, "r");
+  if (fp == NULL){
+    printf("Could not open file %s",filename);
+    return 0;
+  }
+  fgets(str, MAXCHAR, fp);
+  fclose(fp);
+  return strstr(str, "letv") != NULL;
+}
 
 int main() {
   int err;
@@ -2219,14 +2233,15 @@ int main() {
   touch_init(&touch);
 
   // light sensor scaling params
-  #define LIGHT_SENSOR_M 1.3
-  #define LIGHT_SENSOR_B 5.0
+  const int EON = (access("/EON", F_OK) != -1);
+  const int LEON = is_leon();
+
+  const float BRIGHTNESS_B = LEON? 10.0 : 5.0;
+  const float BRIGHTNESS_M = LEON? 2.6 : 1.3;
 
   #define NEO_BRIGHTNESS 100
 
-  float smooth_light_sensor = LIGHT_SENSOR_B;
-
-  const int EON = (access("/EON", F_OK) != -1);
+  float smooth_brightness = BRIGHTNESS_B;
 
   while (!do_exit) {
     bool should_swap = false;
@@ -2235,10 +2250,10 @@ int main() {
     if (EON) {
       // light sensor is only exposed on EONs
 
-      float clipped_light_sensor = (s->light_sensor*LIGHT_SENSOR_M) + LIGHT_SENSOR_B;
-      if (clipped_light_sensor > 255) clipped_light_sensor = 255;
-      smooth_light_sensor = clipped_light_sensor * 0.01 + smooth_light_sensor * 0.99;
-      set_brightness(s, (int)smooth_light_sensor);
+      float clipped_brightness = (s->light_sensor*BRIGHTNESS_M) + BRIGHTNESS_B;
+      if (clipped_brightness > 255) clipped_brightness = 255;
+      smooth_brightness = clipped_brightness * 0.01 + smooth_brightness * 0.99;
+      set_brightness(s, (int)smooth_brightness);
     } else {
       // compromise for bright and dark envs
       set_brightness(s, NEO_BRIGHTNESS);
@@ -2273,7 +2288,7 @@ int main() {
     // safe to do this outside the lock?
     if (should_swap) {
       eglSwapBuffers(s->display, s->surface);
-  }
+    }
   }
 
   set_awake(s, true);
