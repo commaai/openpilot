@@ -89,9 +89,10 @@ class ACCController(object):
     if prev_enable_adaptive_cruise and not self.enable_adaptive_cruise:
       CS.UE.custom_alert_message(3, "ACC Disabled", 150, 4)
       CS.cstm_btns.set_button_status("acc", ACCState.STANDBY)
-    elif self.enable_adaptive_cruise and not prev_enable_adaptive_cruise:
-      CS.UE.custom_alert_message(2, "ACC Enabled", 150)
+    elif self.enable_adaptive_cruise:
       CS.cstm_btns.set_button_status("acc", ACCState.ENABLED)
+      if not prev_enable_adaptive_cruise:
+        CS.UE.custom_alert_message(2, "ACC Enabled", 150)
 
     # Update the UI to show whether the current car state allows ACC.
     if CS.cstm_btns.get_button_status("acc") in [ACCState.STANDBY, ACCState.NOT_READY]:
