@@ -4,6 +4,7 @@ from selfdrive.car import dbc_dict
 class CAR:
   VOLT = "CHEVROLET VOLT PREMIER 2017"
   CADILLAC_CT6 = "CADILLAC CT6 SUPERCRUISE 2018"
+  MALIBU = "CHEVROLET MALIBU PREMIER 2017"
 
 class CruiseButtons:
   UNPRESS     = 1
