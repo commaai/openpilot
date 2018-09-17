@@ -12,18 +12,22 @@ from selfdrive.car.modules.UIBT_module import UIButtons,UIButton
 from selfdrive.car.modules.UIEV_module import UIEvents
 
 def gps_distance(gpsLat, gpsLon, gpsAlt, gpsAcc):
+  A = np.array([(6371010+gpsAlt)*sin(radians(gpsLat-90))*cos(radians(gpsLon)),(6371010+gpsAlt)*sin(radians(gpsLat-90))*sin(radians(gpsLon)),(6371010+gpsAlt)*cos(radians(gpsLat-90))])
+  B = np.array([[-4190726.5,-723704.4,4744593.25,575.5,15.000001,22.000001,100.000001,25.000001]])
   dist = 999.000001
-  lat=48.12893908
-  lon=9.797879048
-  lonlatacc=1.00001
-  alt=575.5
-  altacc=15.000001
-  includeradius = 22.000001
-  approachradius = 100.0000001
-  speedlimit = 25.000001
-  if abs(gpsAlt -alt) < altacc:
-    if gpsAcc<lonlatacc:
-      dist = 6371010*acos(sin(radians(gpsLat))*sin(radians(lat))+cos(radians(gpsLat))*cos(radians(lat))*cos(radians(gpsLon-lon)))
+  'lat=48.12893908
+  'lon=9.797879048
+  'lonlatacc=1.00001
+  'alt=575.5
+  altacc = B[minindex,4]
+  includeradius = B[minindex,5]
+  approachradius = B[minindex,6]
+  speedlimit = B[minindex,7]
+  minindex = np.argmin((np.sum((B[:,[0,1,2]] - A)**2,axis=1))**0.5, axis=0)
+  if abs(gpsAlt -B[minindex,3]) < altacc:
+    if gpsAcc<1.00001:
+      'dist = 6371010*acos(sin(radians(gpsLat))*sin(radians(lat))+cos(radians(gpsLat))*cos(radians(lat))*cos(radians(gpsLon-lon)))
+      dist = (np.sum((B[minindex,[0,1,2]] - A)**2))**0.5
   else:
     print "Altitude inacurate"
   return dist, includeradius, approachradius, speedlimit
