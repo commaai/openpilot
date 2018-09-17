@@ -22,7 +22,6 @@ class ACCController(object):
   def __init__(self):
     self.human_cruise_action_time = 0
     self.automated_cruise_action_time = 0
-    self.enabled_time = 0
     context = zmq.Context()
     self.poller = zmq.Poller()
     self.live20 = messaging.sub_sock(context, service_list['live20'].port, conflate=True, poller=self.poller)
@@ -35,8 +34,7 @@ class ACCController(object):
     self.prev_cruise_buttons = CruiseButtons.IDLE
     self.prev_pcm_acc_status = 0
     self.acc_speed_kph = 0.
-    self.fast_deceling = False
-    self.fast_decel_time = 0
+    self.user_has_braked = False
 
   # Updates the internal state of this controller based on user input,
   # specifically the steering wheel mounted cruise control stalk, and OpenPilot
@@ -63,9 +61,9 @@ class ACCController(object):
       if ready and double_pull:
         # A double pull enables ACC. updating the max ACC speed if necessary.
         self.enable_adaptive_cruise = True
-        self.enabled_time = curr_time_ms
         # Increase ACC speed to match current, if applicable.
         self.acc_speed_kph = max(CS.v_ego_raw * CV.MS_TO_KPH, self.acc_speed_kph)
+        self.user_has_braked = False
     # Handle pressing the cancel button.
     elif CS.cruise_buttons == CruiseButtons.CANCEL:
       self.enable_adaptive_cruise = False
@@ -75,6 +73,9 @@ class ACCController(object):
     elif (self.enable_adaptive_cruise and
           CS.cruise_buttons != self.prev_cruise_buttons):
       self._update_max_acc_speed(CS)
+      
+    if CS.brake_pressed:
+      self.user_has_braked = True
       
     # If autoresume is not enabled, certain user actions disable ACC.
     if not self.autoresume:
@@ -89,7 +90,6 @@ class ACCController(object):
     elif self.enable_adaptive_cruise and not prev_enable_adaptive_cruise:
       CS.UE.custom_alert_message(2, "ACC Enabled", 150)
       CS.cstm_btns.set_button_status("acc", ACCState.ENABLED)
-      self.fast_deceling = False
 
     # Update the UI to show whether the current car state allows ACC.
     if CS.cstm_btns.get_button_status("acc") in [ACCState.STANDBY, ACCState.NOT_READY]:
@@ -196,8 +196,6 @@ class ACCController(object):
       if self._fast_decel_required(CS, lead_car) and self._no_human_action_for(milliseconds=500):
         msg = "Off (Slow traffic)"
         button = CruiseButtons.CANCEL
-        self.fast_deceling = True
-        self.fast_decel_time = current_time_ms
         
       # if cruise is set to faster than the max speed, slow down
       elif CS.v_cruise_actual > self.acc_speed_kph and self._no_action_for(milliseconds=300):
@@ -268,26 +266,17 @@ class ACCController(object):
     return button
     
   def _should_autoengage_cc(self, CS, lead_car=None):
-    # Engage cruise control if ACC was just enabled or if auto-resume is ready.
+    # Automatically (re)engage cruise control so long as the brake has not been
+    # pressed since enabling ACC.
     cruise_ready = (self.enable_adaptive_cruise
                     and CS.pcm_acc_status == 1
                     and CS.v_ego >= self.MIN_CRUISE_SPEED_MS)
-    acc_just_enabled = _current_time_millis() < self.enabled_time + 500
-    # "Autoresume" mode allows cruise to engage at other times too, but
-    # shouldn't trigger during deceleration.
-    autoresume_ready = self.autoresume and CS.a_ego >= 0
-    # In the special case of a 'fast stop' we can consider autoresuming even
-    # during deceleration. A fast stop is accomplished by disabling cruise all
-    # together, so we end it by resuming cruise.
-    fast_decel_initiated_recently = self.fast_deceling and _current_time_millis() < self.fast_decel_time + 4000
-    fast_decel_necessary = lead_car and self._fast_decel_required(CS, lead_car)
-    finished_fast_decel = fast_decel_initiated_recently and not fast_decel_necessary
     
-    should_autoengage = cruise_ready and (acc_just_enabled or autoresume_ready or finished_fast_decel)
-    if should_autoengage:
-      self.fast_deceling = False
+    # "Autoresume" mode allows cruise to engage even after brake events, but
+-   # shouldn't trigger DURING braking.
+-   autoresume_ready = self.autoresume and CS.a_ego >= 0.1
     
-    return cruise_ready and (acc_just_enabled or autoresume_ready or cancel_fast_decel)
+    return cruise_ready and (autoresume_ready or not self.user_has_braked)
     
   def _fast_decel_required(self, CS, lead_car):
     """ Identifies situations which call for rapid deceleration. """
