@@ -1130,7 +1130,7 @@ static void ui_draw_vision(UIState *s) {
   //BB code added to only draw every other frame
   if (!s->b.shouldDrawFrame) {
     s->b.shouldDrawFrame = true;
-    return;
+    //return;
   }
   s->b.shouldDrawFrame = false;
   //BBEND

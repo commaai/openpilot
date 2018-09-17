@@ -16,7 +16,8 @@ try:
 except ImportError:
   CarController = None
 
-
+K_MULT = .8
+K_MULTi = 280.
 def tesla_compute_gb(accel, speed):
   creep_brake = 0.0
   creep_speed = 2.3
@@ -124,9 +125,9 @@ class CarInterface(object):
       
       # Kp and Ki for the longitudinal control
       ret.longitudinalKpBP = [0., 5., 35.]
-      ret.longitudinalKpV = [1.27 , 1.05, 0.85]
+      ret.longitudinalKpV = [1.27/K_MULT , 1.05/K_MULT, 0.85/K_MULT]
       ret.longitudinalKiBP = [0., 5., 35.]
-      ret.longitudinalKiV = [0.11, 0.09, 0.06]
+      ret.longitudinalKiV = [0.11/K_MULTi, 0.09/K_MULTi, 0.06/K_MULTi]
       
       #from honda
       #ret.longitudinalKpBP = [0., 5., 35.]

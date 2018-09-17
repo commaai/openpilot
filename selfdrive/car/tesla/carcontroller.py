@@ -245,7 +245,7 @@ class CarController(object):
           # Send this CAN msg first because it is racing against the real stalk.
           can_sends.insert(0, cruise_msg)
       apply_accel = 0.
-      if (frame % 2) == 0 and self.PCC.pedal_hardware_present:
+      if (frame % 10) == 0 and self.PCC.pedal_hardware_present:
         apply_accel,accel_needed,accel_idx = self.PCC.update_pdl(enabled,CS,frame,actuators,pcm_speed)
         can_sends.append(teslacan.create_pedal_command_msg(apply_accel * 112.,accel_needed ,accel_idx))
       self.last_angle = apply_angle

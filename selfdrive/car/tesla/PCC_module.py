@@ -15,20 +15,23 @@ import zmq
 import math
 import numpy as np
 
+# TODO: these should end up in values.py at some point, probably variable by trim
 # Accel limits
 ACCEL_HYST_GAP = 0.02  # don't change accel command for small oscilalitons within this value
-ACCEL_MAX = 1
-ACCEL_MIN = -1
+ACCEL_MAX = 1.;
+ACCEL_MIN = -1.
 ACCEL_SCALE = max(ACCEL_MAX, -ACCEL_MIN)
 ACCEL_REWIND_MAX = 0.04
 PEDAL_DEADZONE = 0.05
-
+PEDAL_MAX_UP = 0.02
+PEDAL_MAX_DOWN = 0.05
 #BB
-FRAMES_PER_SEC = 50
+MIN_SAFE_DIST_M = 4. # min safe distance in meters
+FRAMES_PER_SEC = 5.
 BRAKE_THRESHOLD =0.1
 ACCEL_THRESHOLD = 0.1
-SPEED_UP = 12 / FRAMES_PER_SEC   # 2 m/s = 7.5 mph = 12 kph 
-SPEED_DOWN = 24 / FRAMES_PER_SEC
+SPEED_UP = 1. #3. / FRAMES_PER_SEC   # 2 m/s = 7.5 mph = 12 kph 
+SPEED_DOWN = 1. #6. / FRAMES_PER_SEC
 
 #BBTODO: move the vehicle variables; maybe make them speed variable
 TORQUE_LEVEL_ACC = 30.
@@ -47,7 +50,7 @@ BRAKE_THRESHOLD_TO_PID = 0.2
 #### from planner
 #
 _DT = 0.01    # 100Hz
-_DT_MPC = 0.2  # 5Hz
+_DT_MPC = 0.02  # 50Hz
 MAX_SPEED_ERROR = 2.0
 AWARENESS_DECEL = -0.2     # car smoothly decel at .2m/s^2 when user is distracted
 _LEAD_ACCEL_TAU = 1.5
@@ -143,8 +146,8 @@ class PCCController(object):
     self.pedal_speed_kph = 0.
     self.pedal_idx = 0
     self.accel_steady = 0.
-    self.prev_actuator_gas = 0.
-    self.user_gas_state = 0
+    self.prev_tesla_accel = 0.
+    self.user_pedal_state = 0
     self.torqueLevel_last = 0.
     self.prev_v_ego = 0.
     self.lastPedalForZeroTorque = 0.
@@ -155,6 +158,14 @@ class PCCController(object):
     self.b_pid = 0.
     self.last_output_gb = 0.
     self.last_speed = 0.
+    #wait for delay in pedal
+    self.wd1=0
+    self.wd2=0
+    self.wd3=0
+    self.wd4=0
+    self.wd5=0
+    self.wd6=0
+    self.wd7=0
     
   def reset(self, v_pid):
     self.pid.reset()
@@ -187,11 +198,11 @@ class PCCController(object):
         CS.cstm_btns.set_button_status("pedal",1)
         print "enabling pedal"
     # check if we had error before
-    if self.user_gas_state != CS.user_gas_state:
-      self.user_gas_state = CS.user_gas_state
-      CS.cstm_btns.set_button_status("pedal", 1 if self.user_gas_state > 0 else 0)
-      if self.user_gas_state > 0:
-        CS.UE.custom_alert_message(3,"Pedal Interceptor Error (" + `self.user_gas_state` + ")",150,4)
+    if self.user_pedal_state != CS.user_gas_state:
+      self.user_pedal_state = CS.user_gas_state
+      CS.cstm_btns.set_button_status("pedal", 1 if self.user_pedal_state > 0 else 0)
+      if self.user_pedal_state > 0:
+        CS.UE.custom_alert_message(3,"Pedal Interceptor Error (" + `self.user_pedal_state` + ")",150,4)
         # send reset command
         idx = self.pedal_idx
         self.pedal_idx = (self.pedal_idx + 1) % 16
@@ -279,11 +290,7 @@ class PCCController(object):
     
 
   def update_pdl(self,enabled,CS,frame,actuators,pcm_speed):
-    #Pedal cruise control
-    #if no hardware present, return -1
-    #tesla_gas, tesla_brake = self.LoC.update(active, CS.vEgo, CS.brakePressed, CS.standstill, CS.cruiseState.standstill,
-    #                                          v_cruise_kph, plan.vTarget, plan.vTargetFuture, plan.aTarget,
-    #                                          CS.CP, PL.lead_1)
+
     idx = self.pedal_idx
     self.pedal_idx = (self.pedal_idx + 1) % 16
     if not self.pedal_hardware_present or not enabled:
@@ -303,7 +310,7 @@ class PCCController(object):
       self.lead_1 = l20.live20.leadOne
 
     prevent_overshoot = False #not CS.CP.stoppingControl and CS.v_ego < 1.5 and v_target_future < 0.7
-    gas_max = interp(CS.v_ego, CS.CP.gasMaxBP, CS.CP.gasMaxV)
+    accel_max = interp(CS.v_ego, CS.CP.gasMaxBP, CS.CP.gasMaxV)
     brake_max = interp(CS.v_ego, CS.CP.brakeMaxBP, CS.CP.brakeMaxV)
 
     following = self.lead_1.status and self.lead_1.dRel   < 45.0 and self.lead_1.vLeadK > CS.v_ego and self.lead_1.aLeadK > 0.0
@@ -328,59 +335,84 @@ class PCCController(object):
     # cruise speed can't be negative even is user is distracted
     self.v_pid = max(self.v_pid, 0.)
 
-    self.pid.pos_limit = gas_max
+    self.pid.pos_limit = accel_max
     self.pid.neg_limit = - brake_max
+
     v_ego_pid = max(CS.v_ego, MIN_CAN_SPEED)
+
     deadzone = interp(v_ego_pid, CS.CP.longPidDeadzoneBP, CS.CP.longPidDeadzoneV)
+
     #BBAD adding overridet to pid to see if we can engage sooner
     override = self.enable_pedal_cruise and CS.v_ego *  CV.MS_TO_KPH > self.pedal_speed_kph and CS.user_gas_pressed
+
     # we will try to feed forward the pedal position.... we might want to feed the last output_gb....
     # it's all about testing now.
-    output_gb = self.pid.update(self.v_pid, v_ego_pid, speed=v_ego_pid, override=override, deadzone=deadzone, feedforward=self.a_pid, freeze_integrator=prevent_overshoot)
-    output_gb = output_gb
+
+    output_gb = self.pid.update(self.v_pid, v_ego_pid, speed=v_ego_pid, override=override, deadzone=deadzone, feedforward= 0.00000005 * self.prev_tesla_accel, freeze_integrator=prevent_overshoot)
+
     if prevent_overshoot:
       output_gb = min(output_gb, 0.0)
 
     self.last_output_gb = output_gb
 
-    # gas and brake
-    apply_accel = clip(output_gb, 0., gas_max)
+    # accel and brake
+    apply_accel = clip(output_gb, 0., accel_max)
     #by adding b_pid we can enforce not to apply brake in small situations
     apply_brake = -clip(output_gb * self.b_pid, -brake_max, 0.)
 
     #save position for brake
     if (CS.torqueLevel < TORQUE_LEVEL_ACC) and (CS.torqueLevel > TORQUE_LEVEL_DECEL):
-      self.lastPedalForZeroTorque = self.prev_actuator_gas
+      self.lastPedalForZeroTorque = self.prev_tesla_accel
 
     #slow deceleration
-    if (apply_accel > PEDAL_DEADZONE) and (apply_accel < self.prev_actuator_gas) and (apply_brake <= BRAKE_THRESHOLD):
+    if (apply_accel > PEDAL_DEADZONE) and (apply_accel < self.prev_tesla_accel) and (apply_brake <= BRAKE_THRESHOLD):
       if (CS.torqueLevel < TORQUE_LEVEL_ACC) and (CS.v_ego < self.prev_v_ego):
-        tesla_accel = self.prev_actuator_gas
+        tesla_accel = self.prev_tesla_accel
       else:
-        tesla_accel = clip(apply_accel,self.prev_actuator_gas - ACCEL_REWIND_MAX,self.prev_actuator_gas)
+        tesla_accel = clip(apply_accel,self.prev_tesla_accel - ACCEL_REWIND_MAX,self.prev_tesla_accel)
     elif (apply_accel <= PEDAL_DEADZONE) and (apply_brake <= BRAKE_THRESHOLD):
       if (CS.torqueLevel < TORQUE_LEVEL_ACC):
         #we are in the torque dead zone, 
-        tesla_accel = self.prev_actuator_gas
+        tesla_accel = self.prev_tesla_accel
       else:
-        tesla_accel = self.prev_actuator_gas - ACCEL_REWIND_MAX
+        tesla_accel = self.prev_tesla_accel - ACCEL_REWIND_MAX
     elif (apply_brake > BRAKE_THRESHOLD) and (apply_accel <= ACCEL_THRESHOLD):
       if self.lastPedalForZeroTorque > 0:
         tesla_accel = (.8 - apply_brake) * self.lastPedalForZeroTorque
         self.lastPedalForZeroTorque = 0.
       else:
-        tesla_accel = (.8 - apply_brake) * self.prev_actuator_gas
+        tesla_accel = (.8 - apply_brake) * self.prev_tesla_accel
     else:
       tesla_accel = apply_accel
     tesla_accel, self.accel_steady = accel_hysteresis(tesla_accel, self.accel_steady, enabled)
     
+    tesla_accel = clip(tesla_accel, self.prev_tesla_accel - PEDAL_MAX_DOWN - apply_brake * self.b_pid, self.prev_tesla_accel + PEDAL_MAX_UP)
     tesla_accel = clip(tesla_accel, 0., 1.) if self.enable_pedal_cruise else 0.
-    enable_gas = 1 if self.enable_pedal_cruise else 0
+    enable_pedal = 1 if self.enable_pedal_cruise else 0
+    
     self.torqueLevel_last = CS.torqueLevel
-    self.prev_actuator_gas = tesla_accel * enable_gas
+    self.prev_tesla_accel = tesla_accel * enable_pedal
     self.prev_v_ego = CS.v_ego
-    return tesla_accel,enable_gas,idx
+    #print self.v_pid, self.prev_tesla_accel,apply_accel,apply_brake
+    return self.prev_tesla_accel,enable_pedal,idx
 
+  def decrement_wd(self):
+    self.wd1 = max (self.wd1-1 , 0)
+    self.wd2 = max (self.wd2-1 , 0)
+    self.d3 = max (self.wd3-1 , 0)
+    self.wd4 = max (self.wd4-1 , 0)
+    self.wd5 = max (self.wd5-1 , 0)
+    self.wd6 = max (self.wd6-1 , 0)
+    self.wd7 = max (self.wd7-1 , 0)
+
+  def reset_wd(self):
+    self.wd1=0
+    self.wd2=0
+    self.wd3=0
+    self.wd4=0
+    self.wd5=0
+    self.wd6=0
+    self.wd7=0
 
   # function to calculate the cruise speed based on a safe follow distance
   def calc_follow_speed(self, CS):
@@ -394,12 +426,12 @@ class PCCController(object):
     # Grab the relative speed.
     rel_speed = self.lead_1.vRel * CV.MS_TO_KPH
     # v_ego is in m/s, so safe_dist_mance is in meters.
-    safe_dist_m = CS.v_ego * self.follow_time
+    safe_dist_m = max(CS.v_ego * self.follow_time, MIN_SAFE_DIST_M)
     # Current speed in kph
     actual_speed = CS.v_ego * CV.MS_TO_KPH
     available_speed = self.pedal_speed_kph - actual_speed
     # speed and brake to issue
-    new_speed = self.last_speed
+    new_speed = actual_speed # self.last_speed if abs(self.last_speed - actual_speed) < 2. else actual_speed
     new_brake = 0.
     # debug msg
     msg = None
@@ -409,8 +441,9 @@ class PCCController(object):
     ###   Logic to determine best cruise speed ###
 
     if self.enable_pedal_cruise:
+      self.decrement_wd()
       # if cruise is set to faster than the max speed, slow down
-      if lead_dist == 0 and actual_speed > self.pedal_speed_kph:
+      if lead_dist == 0 and new_speed > self.pedal_speed_kph:
         msg =  "Slow to max"
         new_speed -= SPEED_DOWN 
         new_brake =0.5
@@ -418,60 +451,100 @@ class PCCController(object):
       # can speed up don't speed up when steer-angle > 2; vision radar often
       # loses lead car in a turn.
       elif lead_dist == 0 and CS.angle_steers < 5.0:
-        if actual_speed < self.pedal_speed_kph + 1: 
+        if new_speed < self.pedal_speed_kph + SPEED_UP: 
           msg =  "Accel to max"
           new_speed += SPEED_UP 
       # if we have a populated lead_distance
       # TODO: make angle dependent on speed
       elif (lead_dist == 0 or lead_dist >= safe_dist_m) and CS.angle_steers >= 5.0:
-        #new_speed = actual_speed
+        new_speed = self.last_speed
         msg = "Safe distance & turning: steady speed"
       elif (lead_dist > 0):
         ### Slowing down ###
         #Reduce speed if rel_speed < -15kph so you don't rush up to lead car
         if lead_dist >= 2 * safe_dist_m:
           msg =  "more than 2x safe distance... do nothing..."
+          if new_speed < self.pedal_speed_kph + SPEED_UP:
+            new_speed += SPEED_UP
+          else:
+            new_speed = self.last_speed
           #new_speed = actual_speed 
         if rel_speed < -15  and lead_dist > safe_dist_m and lead_dist <= 2 * safe_dist_m:
-          msg =  "Approaching fast (-15), still twice the safe distance, slow down"
-          new_speed += rel_speed/2
+          if self.wd1 > 0:
+            new_speed = self.last_speed
+          else:
+            msg =  "Approaching fast (-15), still twice the safe distance, slow down"
+            self.reset_wd()
+            new_speed += rel_speed
+            self.wd1 = FRAMES_PER_SEC 
           new_brake = 0.5
         #Reduce speed if rel_speed < -5kph so you don't rush up to lead car
         elif rel_speed < -5  and lead_dist >  1.5 * safe_dist_m:
-          msg =  "Approaching fast (-5), still 1.5 the safe distance, slow down"
-          new_speed += rel_speed * 2
+          if self.wd2 > 0:
+            new_speed = self.last_speed
+          else:
+            self.reset_wd()
+            new_speed += rel_speed * 1.5
+            self.wd2 = FRAMES_PER_SEC
+            msg =  "Approaching fast (-5), still 1.5 the sa    fe distance, slow down"
           new_brake = 0.5
         # Reduce speed significantly if lead_dist < 60% of  safe dist
         elif lead_dist < (safe_dist_m * 0.3) and rel_speed < 2:
           if rel_speed > 0:
-            new_speed *= 0.5
-            msg =  "50 pct down"
+            if self.wd3 > 0:
+              new_speed = self.last_speed
+            else:
+              self.reset_wd()
+              new_speed *= 0.5
+              self.wd3 = FRAMES_PER_SEC
+              msg =  "50 pct down"
           else:
             new_speed *= 0.1
             msg =  "90 pct down"
+            self.reset_wd()
           new_brake = 1. #full regen brake
         # and if the lead car isn't pulling away
         elif lead_dist < (safe_dist_m * 0.5) and rel_speed < 0:
           if rel_speed < -5:
-            new_speed *=  0.7
-            msg =  "30 pct down"
+            if self.wd4 > 0:
+              new_speed = self.last_speed
+            else:
+              self.reset_wd()
+              new_speed *=  0.3
+              self.wd4 = FRAMES_PER_SEC
+              msg =  "70 pct down"
             new_brake = 0.5
           else:
-            new_speed +=  4 * rel_speed
-            msg =  "4x rel speed down"
+            if self.wd5 > 0:
+              new_speed = self.last_speed
+            else:
+              self.reset_wd()
+              self.wd5 = FRAMES_PER_SEC
+              new_speed +=  4 * rel_speed
+              msg =  "4x rel speed down"
             new_brake = 0.8 
         # we're close to the safe distance, so make slow adjustments
         # only adjust every 1 secs
         elif lead_dist < (safe_dist_m * 0.9) and rel_speed < 0:
-          msg =  "10 pct down"
-          new_speed += 2 * rel_speed
+          if self.wd6 > 0:
+            new_speed = self.last_speed
+          else:
+            self.reset_wd()
+            self.wd6 = FRAMES_PER_SEC
+            new_speed += 2 * rel_speed
+            msg = "10 pct down"
           new_brake = 0.5
         ### Speed up ###
         # don't speed up again until you have more than a safe distance in front
         # only adjust every 2 sec
-        elif lead_dist > (safe_dist_m * 1.2) or rel_speed > 5:
-          msg = "Lead moving ahead fast: increase speed"
-          new_speed += SPEED_UP
+        elif (lead_dist > (safe_dist_m * 1.2) or rel_speed > 5) and new_speed < self.pedal_speed_kph + SPEED_UP:
+          if self.wd7 > 0:
+            new_speed = self.last_speed
+          else:
+            msg = "Lead moving ahead fast: increase speed"
+            new_speed += SPEED_UP
+            self.reset_wd()
+            self.wd7 = FRAMES_PER_SEC
           new_brake = 0.
         else:
           msg = "Have lead and do nothing"
