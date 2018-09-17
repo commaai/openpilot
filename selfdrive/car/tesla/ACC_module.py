@@ -273,8 +273,8 @@ class ACCController(object):
                     and CS.v_ego >= self.MIN_CRUISE_SPEED_MS)
     
     # "Autoresume" mode allows cruise to engage even after brake events, but
--   # shouldn't trigger DURING braking.
--   autoresume_ready = self.autoresume and CS.a_ego >= 0.1
+    # shouldn't trigger DURING braking.
+    autoresume_ready = self.autoresume and CS.a_ego >= 0.1
     
     return cruise_ready and (autoresume_ready or not self.user_has_braked)
     
