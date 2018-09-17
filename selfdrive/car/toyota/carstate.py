@@ -24,9 +24,9 @@ def gps_distance(gpsLat, gpsLon, gpsAlt, gpsAcc):
   speedlimit = 25.000001
   minindex = np.argmin((np.sum((B[:,[0,1,2]] - A)**2,axis=1))**0.5, axis=0)
   altacc = B[minindex,4]
-  includeradius = B[minindex,5].astype(float)
-  approachradius = B[minindex,6].astype(float)
-  speedlimit = B[minindex,7].astype(float)
+  includeradius = B[minindex,5]
+  approachradius = B[minindex,6]
+  speedlimit = float(B[minindex,7])
   
   if abs(gpsAlt -B[minindex,3]) < altacc:
     if gpsAcc<1.00001:
