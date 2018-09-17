@@ -15,10 +15,10 @@ def gps_distance(gpsLat, gpsLon, gpsAlt, gpsAcc):
   A = np.array([(6371010+gpsAlt)*sin(radians(gpsLat-90))*cos(radians(gpsLon)),(6371010+gpsAlt)*sin(radians(gpsLat-90))*sin(radians(gpsLon)),(6371010+gpsAlt)*cos(radians(gpsLat-90))])
   B = np.array([[-4190726.5,-723704.4,4744593.25,575.5,15.000001,22.000001,100.000001,25.000001]])
   dist = 999.000001
-  'lat=48.12893908
-  'lon=9.797879048
-  'lonlatacc=1.00001
-  'alt=575.5
+  #lat=48.12893908
+  #lon=9.797879048
+  #lonlatacc=1.00001
+  #alt=575.5
   altacc = B[minindex,4]
   includeradius = B[minindex,5]
   approachradius = B[minindex,6]
