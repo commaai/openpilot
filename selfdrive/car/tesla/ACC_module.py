@@ -335,9 +335,8 @@ class ACCController(object):
     elif (CS.pcm_acc_status == 2
           # But don't make adjustments if a human has manually done so in
           # the last 3 seconds. Human intention should not be overridden.
-          and current_time_ms > self.human_cruise_action_time + 3000
-          and current_time_ms > self.enabled_time + 1000
-          and self._no_action_for(milliseconds=500)):
+          and self._no_human_action_for(milliseconds=3000)
+          and self._no_automated_action_for(milliseconds=500)):
       # The difference between OP's target speed and the current cruise
       # control speed, in KPH.
       speed_offset = (desired_speed_ms * CV.MS_TO_KPH - CS.v_cruise_actual)
