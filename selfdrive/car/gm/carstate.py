@@ -39,7 +39,7 @@ def get_powertrain_can_parser(CP, canbus):
       ("CruiseMainOn", "ECMEngineStatus", 0),
       ("CruiseState", "AcceleratorPedal2", 0),
     ]
-    
+
   elif CP.carFingerprint == CAR.CADILLAC_CT6:
     signals += [
       ("ACCCmdActive", "ASCMActiveCruiseControlStatus", 0)
