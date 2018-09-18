@@ -44,7 +44,7 @@ def get_powertrain_can_parser(CP, canbus):
     signals += [
       ("ACCCmdActive", "ASCMActiveCruiseControlStatus", 0)
     ]
-    
+
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, [], canbus.powertrain)
 
 class CarState(object):
