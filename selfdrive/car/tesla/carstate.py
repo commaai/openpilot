@@ -137,6 +137,7 @@ def get_epas_can_signals(CP):
       ("EPAS_eacErrorCode", "EPAS_sysStatus", 0),
       ("EPAS_handsOnLevel", "EPAS_sysStatus", 0),
       ("EPAS_steeringFault", "EPAS_sysStatus", 0),
+      ("EPAS_internalSAS",  "EPAS_sysStatus", 0), #BB see if this works better than STW_ANGLHP_STAT for angle
   ]
 
   checks = [
@@ -313,7 +314,8 @@ class CarState(object):
 
     can_gear_shifter = cp.vl["DI_torque2"]['DI_gear']
     self.gear = 0 # JCT
-    self.angle_steers  = -(cp.vl["STW_ANGLHP_STAT"]['StW_AnglHP']) #JCT polarity reversed from Honda/Acura
+    #self.angle_steers  = -(cp.vl["STW_ANGLHP_STAT"]['StW_AnglHP']) #JCT polarity reversed from Honda/Acura
+    self.angle_steers = -(epas_cp.vl["EPAS_sysStatus"]['EPAS_internalSAS'])  #BB see if this works better than STW_ANGLHP_STAT for angle
     self.angle_steers_rate = 0 #JCT
 
     self.blinker_on = (cp.vl["STW_ACTN_RQ"]['TurnIndLvr_Stat'] == 1) or (cp.vl["STW_ACTN_RQ"]['TurnIndLvr_Stat'] == 2)
