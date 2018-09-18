@@ -90,7 +90,7 @@ class CarInterface(object):
       ret.centerToFront = ret.wheelbase * 0.4 # wild guess
     
     elif candidate == CAR.ACADIA_DENALI:
-      # supports stop and go, but initial engage must be above 18mph (which include conservatism)
+      # engage speed is decided by pcm
       ret.minEnableSpeed = -1
       # kg of standard extra cargo to count for drive, gas, etc...
       ret.mass = 4400. * CV.LB_TO_KG + std_cargo
