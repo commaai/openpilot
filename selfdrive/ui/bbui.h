@@ -816,6 +816,7 @@ void bb_ui_draw_UI( UIState *s) {
 void bb_ui_init(UIState *s) {
 
     //BB INIT
+    s->b.shouldDrawFrame = true;
     s->status = STATUS_DISENGAGED;
     strcpy(s->b.car_model,"Tesla");
     strcpy(s->b.car_folder,"tesla");
@@ -843,7 +844,7 @@ void bb_ui_init(UIState *s) {
     assert(s->b.uiButtonStatus_sock);
     s->b.uiButtonStatus_sock_raw = zsock_resolve(s->b.uiButtonStatus_sock);
 
-    s->b.gps_sock = zsock_new_pub(">tcp://127.0.0.1:8032");
+    s->b.gps_sock = zsock_new_sub(">tcp://127.0.0.1:8032", "");
     assert(s->b.gps_sock);
     s->b.gps_sock_raw = zsock_resolve(s->b.gps_sock);
 

@@ -22,7 +22,6 @@ class ACCController(object):
   def __init__(self):
     self.human_cruise_action_time = 0
     self.automated_cruise_action_time = 0
-    self.enabled_time = 0
     context = zmq.Context()
     self.poller = zmq.Poller()
     self.live20 = messaging.sub_sock(context, service_list['live20'].port, conflate=True, poller=self.poller)
@@ -35,8 +34,9 @@ class ACCController(object):
     self.prev_cruise_buttons = CruiseButtons.IDLE
     self.prev_pcm_acc_status = 0
     self.acc_speed_kph = 0.
-    self.fast_stopping = False
-    self.fast_stop_time = 0
+    self.user_has_braked = False
+    self.fast_decel_time = 0
+    self.lead_last_seen_time = 0
 
   # Updates the internal state of this controller based on user input,
   # specifically the steering wheel mounted cruise control stalk, and OpenPilot
@@ -63,9 +63,9 @@ class ACCController(object):
       if ready and double_pull:
         # A double pull enables ACC. updating the max ACC speed if necessary.
         self.enable_adaptive_cruise = True
-        self.enabled_time = curr_time_ms
         # Increase ACC speed to match current, if applicable.
         self.acc_speed_kph = max(CS.v_ego_raw * CV.MS_TO_KPH, self.acc_speed_kph)
+        self.user_has_braked = False
     # Handle pressing the cancel button.
     elif CS.cruise_buttons == CruiseButtons.CANCEL:
       self.enable_adaptive_cruise = False
@@ -76,20 +76,23 @@ class ACCController(object):
           CS.cruise_buttons != self.prev_cruise_buttons):
       self._update_max_acc_speed(CS)
       
-    # If autoresume is not enabled, certain user actions disable ACC.
-    if not self.autoresume:
-      # If something disabled cruise control or steering, disable ACC too.
-      if self.prev_pcm_acc_status == 2 and CS.pcm_acc_status != 2 or not enabled:
+    if CS.brake_pressed:
+      self.user_has_braked = True
+      if not self.autoresume:
         self.enable_adaptive_cruise = False
+    
+    # If autoresume is not enabled, manually steering disables ACC.
+    if not (enabled or self.autoresume):
+      self.enable_adaptive_cruise = False
     
     # Notify if ACC was toggled
     if prev_enable_adaptive_cruise and not self.enable_adaptive_cruise:
       CS.UE.custom_alert_message(3, "ACC Disabled", 150, 4)
       CS.cstm_btns.set_button_status("acc", ACCState.STANDBY)
-    elif self.enable_adaptive_cruise and not prev_enable_adaptive_cruise:
-      CS.UE.custom_alert_message(2, "ACC Enabled", 150)
+    elif self.enable_adaptive_cruise:
       CS.cstm_btns.set_button_status("acc", ACCState.ENABLED)
-      self.fast_stopping = False
+      if not prev_enable_adaptive_cruise:
+        CS.UE.custom_alert_message(2, "ACC Enabled", 150)
 
     # Update the UI to show whether the current car state allows ACC.
     if CS.cstm_btns.get_button_status("acc") in [ACCState.STANDBY, ACCState.NOT_READY]:
@@ -148,6 +151,8 @@ class ACCController(object):
           for socket, _ in self.poller.poll(0):
             if socket is self.live20:
               lead_1 = messaging.recv_one(socket).live20.leadOne
+              if lead_1.dRel:
+                self.lead_last_seen_time = current_time_ms
         button_to_press = self._calc_follow_button(CS, lead_1)
     if button_to_press:
       self.automated_cruise_action_time = current_time_ms
@@ -157,6 +162,7 @@ class ACCController(object):
       if (CruiseButtons.is_decel(button_to_press)
           and CS.v_cruise_actual - 1 < self.MIN_CRUISE_SPEED_MS * CV.MS_TO_KPH):
         button_to_press = CruiseButtons.CANCEL
+        self.fast_decel_time = current_time_ms
       # Debug logging (disable in production to reduce latency of commands)
       #print "***ACC command: %s***" % button_to_press
     return button_to_press
@@ -193,11 +199,9 @@ class ACCController(object):
       # Disengage cruise control if a slow object is seen ahead. This triggers
       # full regen braking, which is stronger than the braking that happens if
       # you just reduce cruise speed.
-      if self._fast_stop_required(CS, lead_car) and self._no_human_action_for(milliseconds=500):
+      if self._fast_decel_required(CS, lead_car) and self._no_human_action_for(milliseconds=500):
         msg = "Off (Slow traffic)"
         button = CruiseButtons.CANCEL
-        self.fast_stopping = True
-        self.fast_stop_time = current_time_ms
         
       # if cruise is set to faster than the max speed, slow down
       elif CS.v_cruise_actual > self.acc_speed_kph and self._no_action_for(milliseconds=300):
@@ -251,7 +255,8 @@ class ACCController(object):
             and CS.angle_steers < 2.0
             and half_press_kph < available_speed_kph
             and self._no_action_for(milliseconds=500)
-            and self._no_human_action_for(milliseconds=1000)):
+            and self._no_human_action_for(milliseconds=1000)
+            and current_time_ms > self.lead_last_seen_time + 2000):
           msg =  "+1 (road clear)"
           button = CruiseButtons.RES_ACCEL
 
@@ -268,29 +273,20 @@ class ACCController(object):
     return button
     
   def _should_autoengage_cc(self, CS, lead_car=None):
-    # Engage cruise control if ACC was just enabled or if auto-resume is ready.
+    # Automatically (re)engage cruise control so long as the brake has not been
+    # pressed since enabling ACC.
     cruise_ready = (self.enable_adaptive_cruise
                     and CS.pcm_acc_status == 1
-                    and CS.v_ego >= self.MIN_CRUISE_SPEED_MS)
-    acc_just_enabled = _current_time_millis() < self.enabled_time + 500
-    # "Autoresume" mode allows cruise to engage at other times too, but
-    # shouldn't trigger during deceleration.
-    autoresume_ready = self.autoresume and CS.a_ego >= 0
-    # In the special case of a 'fast stop' we can consider autoresuming even
-    # during deceleration. A fast stop is accomplished by disabling cruise,
-    # and may over-decelerate, especially when vision radar first aquires a
-    # lead.
-    fast_stop_necessary = lead_car and self._fast_stop_required(CS, lead_car)
-    fast_stop_initiated_recently = self.fast_stopping and _current_time_millis() < self.fast_stop_time + 2500
-    cancel_fast_stop = self.autoresume and fast_stop_initiated_recently and not fast_stop_necessary
+                    and CS.v_ego >= self.MIN_CRUISE_SPEED_MS
+                    and _current_time_millis() > self.fast_decel_time + 2000)
     
-    should_autoengage = cruise_ready and (acc_just_enabled or autoresume_ready or cancel_fast_stop)
-    if should_autoengage:
-      self.fast_stopping = False
+    # "Autoresume" mode allows cruise to engage even after brake events, but
+    # shouldn't trigger DURING braking.
+    autoresume_ready = self.autoresume and CS.a_ego >= 0.1
     
-    return cruise_ready and (acc_just_enabled or autoresume_ready or cancel_fast_stop)
+    return cruise_ready and (autoresume_ready or not self.user_has_braked)
     
-  def _fast_stop_required(self, CS, lead_car):
+  def _fast_decel_required(self, CS, lead_car):
     """ Identifies situations which call for rapid deceleration. """
     if not lead_car or not lead_car.dRel:
       return False
@@ -300,7 +296,11 @@ class ACCController(object):
     lead_absolute_speed_ms = lead_car.vRel + CS.v_ego
     lead_too_slow = lead_absolute_speed_ms < self.MIN_CRUISE_SPEED_MS
     
-    return collision_imminent or lead_too_slow
+    fast_decel_required = collision_imminent or lead_too_slow
+    if fast_decel_required:
+      self.fast_decel_time = _current_time_millis()
+    
+    return fast_decel_required
     
   def _seconds_to_collision(self, CS, lead_car):
     if not lead_car or not lead_car.dRel:
@@ -335,9 +335,8 @@ class ACCController(object):
     elif (CS.pcm_acc_status == 2
           # But don't make adjustments if a human has manually done so in
           # the last 3 seconds. Human intention should not be overridden.
-          and current_time_ms > self.human_cruise_action_time + 3000
-          and current_time_ms > self.enabled_time + 1000
-          and self._no_action_for(milliseconds=500)):
+          and self._no_human_action_for(milliseconds=3000)
+          and self._no_automated_action_for(milliseconds=500)):
       # The difference between OP's target speed and the current cruise
       # control speed, in KPH.
       speed_offset = (desired_speed_ms * CV.MS_TO_KPH - CS.v_cruise_actual)
