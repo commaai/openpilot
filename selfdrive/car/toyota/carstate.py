@@ -43,9 +43,9 @@ def get_can_parser(CP):
 
   if CP.carFingerprint == CAR.LEXUS_AVE30:
     signals += [
-      ("BRAKE_PRESSED", "BRAKE_MODULE2", 0),
+      ("BRAKE_PRESSED", "BRAKE_MODULE", 0),
       ("GAS_RELEASED", "PCM_CRUISE", 0),
-      ("CRUISE_STATE", "PCM_CRUISE_LEXUS_AVE30", 0),
+      ("CRUISE_STATE", "PCM_CRUISE", 0),
       ("MAIN_ON", "PCM_CRUISE_LEXUS_AVE30", 0),
       ("SET_SPEED", "PCM_CRUISE_LEXUS_AVE30", 0),
     ]
