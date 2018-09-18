@@ -316,6 +316,8 @@ class CarInterface(object):
         events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
       if ret.gasPressed:
         events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
+      if ret.cruiseState.standstill:
+        events.append(create_event('resumeRequired', [ET.WARNING]))
 
       # handle button presses
       for b in ret.buttonEvents:
