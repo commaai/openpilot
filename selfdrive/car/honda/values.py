@@ -7,7 +7,6 @@ class CruiseButtons:
   CANCEL      = 2
   MAIN        = 1
 
-
 #car chimes: enumeration from dbc file. Chimes are for alerts and warnings
 class CM:
   MUTE = 0
@@ -15,7 +14,6 @@ class CM:
   DOUBLE = 4
   REPEATED = 1
   CONTINUOUS = 2
-
 
 #car beepss: enumeration from dbc file. Beeps are for activ and deactiv
 class BP:
@@ -35,10 +33,10 @@ class AH:
   SEATBELT       = [5, 5]
   SPEED_TOO_HIGH = [6, 8]
 
-
 class CAR:
   ACCORD = "HONDA ACCORD 2018 SPORT 2T"
   ACCORD_15 = "HONDA ACCORD 2018 LX 1.5T"
+  ACCORDH = "HONDA ACCORD 2018 HYBRID TOURING"
   CIVIC = "HONDA CIVIC 2016 TOURING"
   CIVIC_HATCH = "HONDA CIVIC HATCHBACK 2017 EX"
   ACURA_ILX = "ACURA ILX 2016 ACURAWATCH PLUS"
@@ -50,13 +48,15 @@ class CAR:
   PILOT_2019 = "HONDA PILOT 2019 ELITE"
   RIDGELINE = "HONDA RIDGELINE 2017 BLACK EDITION"
 
-
 FINGERPRINTS = {
   CAR.ACCORD: [{
-    148: 8, 228: 5, 304: 8, 330: 8, 344: 8, 380: 8, 387: 8, 388: 8, 399: 7, 419: 8, 420: 8, 427: 3, 432: 7, 441: 5, 446: 3, 450: 8, 464: 8, 477: 8, 479: 8, 495: 8, 525: 8, 545: 6, 662: 4, 773: 7, 777: 8, 780: 8, 804: 8, 806: 8, 808: 8, 829: 5, 862: 8, 884: 8, 891: 8, 927: 8, 929: 8, 1302: 8, 1600: 5, 1601: 8, 1652: 8
+    148: 8, 228: 5, 304: 8, 330: 8, 344: 8, 380: 8, 399: 7, 419: 8, 420: 8, 427: 3, 432: 7, 441: 5, 446: 3, 450: 8, 464: 8, 477: 8, 479: 8, 495: 8, 545: 6, 662: 4, 773: 7, 777: 8, 780: 8, 804: 8, 806: 8, 808: 8, 829: 5, 862: 8, 884: 8, 891: 8, 927: 8, 929: 8, 1302: 8, 1600: 5, 1601: 8, 1652: 8
   }],
   CAR.ACCORD_15: [{
     148: 8, 228: 5, 304: 8, 330: 8, 344: 8, 380: 8, 399: 7, 401: 8, 420: 8, 427: 3, 432: 7, 441: 5, 446: 3, 450: 8, 464: 8, 477: 8, 479: 8, 495: 8, 545: 6, 662: 4, 773: 7, 777: 8, 780: 8, 804: 8, 806: 8, 808: 8, 829: 5, 862: 8, 884: 8, 891: 8, 927: 8, 929: 8, 1302: 8, 1600: 5, 1601: 8, 1652: 8
+  }],
+  CAR.ACCORDH: [{
+    148: 8, 228: 5, 304: 8, 330: 8, 344: 8, 380: 8, 387: 8, 388: 8, 399: 7, 419: 8, 420: 8, 427: 3, 432: 7, 441: 5, 450: 8, 464: 8, 477: 8, 479: 8, 495: 8, 525: 8, 545: 6, 662: 4, 773: 7, 777: 8, 780: 8, 804: 8, 806: 8, 808: 8, 829: 5, 862: 8, 884: 8, 891: 8, 927: 8, 929: 8, 1302: 8, 1600: 5, 1601: 8, 1652: 8
   }],
   CAR.ACURA_ILX: [{
     57: 3, 145: 8, 228: 5, 304: 8, 316: 8, 342: 6, 344: 8, 380: 8, 398: 3, 399: 7, 419: 8, 420: 8, 422: 8, 428: 8, 432: 7, 464: 8, 476: 4, 490: 8, 506: 8, 512: 6, 513: 6, 542: 7, 545: 4, 597: 8, 660: 8, 773: 7, 777: 8, 780: 8, 800: 8, 804: 8, 808: 8, 819: 7, 821: 5, 829: 5, 882: 2, 884: 7, 887: 8, 888: 8, 892: 8, 923: 2, 929: 4, 983: 8, 985: 3, 1024: 5, 1027: 5, 1029: 8, 1030: 5, 1034: 5, 1036: 8, 1039: 8, 1057: 5, 1064: 7, 1108: 8, 1365: 5,
@@ -98,10 +98,10 @@ FINGERPRINTS = {
   }]
 }
 
-
 DBC = {
   CAR.ACCORD: dbc_dict('honda_accord_s2t_2018_can_generated', None),
   CAR.ACCORD_15: dbc_dict('honda_accord_lx15t_2018_can_generated', None),
+  CAR.ACCORDH: dbc_dict('honda_accord_s2t_2018_can_generated', None),
   CAR.ACURA_ILX: dbc_dict('acura_ilx_2016_can_generated', 'acura_ilx_2016_nidec'),
   CAR.ACURA_RDX: dbc_dict('acura_rdx_2018_can_generated', 'acura_ilx_2016_nidec'),
   CAR.CIVIC: dbc_dict('honda_civic_touring_2016_can_generated', 'acura_ilx_2016_nidec'),
@@ -114,10 +114,10 @@ DBC = {
   CAR.RIDGELINE: dbc_dict('honda_ridgeline_black_edition_2017_can_generated', 'acura_ilx_2016_nidec'),
 }
 
-
 STEER_THRESHOLD = {
   CAR.ACCORD: 1200,
   CAR.ACCORD_15: 1200,
+  CAR.ACCORDH: 1200,
   CAR.ACURA_ILX: 1200,
   CAR.ACURA_RDX: 400,
   CAR.CIVIC: 1200,
@@ -133,6 +133,7 @@ STEER_THRESHOLD = {
 SPEED_FACTOR = {
   CAR.ACCORD: 1.,
   CAR.ACCORD_15: 1.,
+  CAR.ACCORDH: 1.,
   CAR.ACURA_ILX: 1.,
   CAR.ACURA_RDX: 1.,
   CAR.CIVIC: 1.,
@@ -159,4 +160,4 @@ VEHICLE_STATE_MSG = {
 }
 
 # TODO: get these from dbc file
-HONDA_BOSCH = [CAR.ACCORD, CAR.ACCORD_15, CAR.CIVIC_HATCH, CAR.CRV_5G]
+HONDA_BOSCH = [CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH, CAR.CIVIC_HATCH, CAR.CRV_5G]
