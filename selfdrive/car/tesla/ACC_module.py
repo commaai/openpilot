@@ -36,7 +36,7 @@ class ACCController(object):
     self.acc_speed_kph = 0.
     self.user_has_braked = False
     self.fast_decel_time = 0
-    self.lead_last_seen_time = 0
+    self.lead_last_seen_time_ms = 0
 
   # Updates the internal state of this controller based on user input,
   # specifically the steering wheel mounted cruise control stalk, and OpenPilot
@@ -152,7 +152,7 @@ class ACCController(object):
             if socket is self.live20:
               lead_1 = messaging.recv_one(socket).live20.leadOne
               if lead_1.dRel:
-                self.lead_last_seen_time = current_time_ms
+                self.lead_last_seen_time_ms = current_time_ms
         button_to_press = self._calc_follow_button(CS, lead_1)
     if button_to_press:
       self.automated_cruise_action_time = current_time_ms
@@ -256,7 +256,7 @@ class ACCController(object):
             and half_press_kph < available_speed_kph
             and self._no_action_for(milliseconds=500)
             and self._no_human_action_for(milliseconds=1000)
-            and current_time_ms > self.lead_last_seen_time + 2000):
+            and current_time_ms > self.lead_last_seen_time_ms + 4000):
           msg =  "+1 (road clear)"
           button = CruiseButtons.RES_ACCEL
 
