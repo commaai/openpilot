@@ -35,6 +35,7 @@ class ACCController(object):
     self.prev_pcm_acc_status = 0
     self.acc_speed_kph = 0.
     self.user_has_braked = False
+    self.has_gone_below_min_speed = False
     self.fast_decel_time = 0
     self.lead_last_seen_time_ms = 0
 
@@ -66,6 +67,7 @@ class ACCController(object):
         # Increase ACC speed to match current, if applicable.
         self.acc_speed_kph = max(CS.v_ego_raw * CV.MS_TO_KPH, self.acc_speed_kph)
         self.user_has_braked = False
+        self.has_gone_below_min_speed = False
     # Handle pressing the cancel button.
     elif CS.cruise_buttons == CruiseButtons.CANCEL:
       self.enable_adaptive_cruise = False
@@ -80,6 +82,9 @@ class ACCController(object):
       self.user_has_braked = True
       if not self.autoresume:
         self.enable_adaptive_cruise = False
+        
+    if CS.v_ego < self.MIN_CRUISE_SPEED_MS:
+      self.has_gone_below_min_speed = True
     
     # If autoresume is not enabled, manually steering disables ACC.
     if not (enabled or self.autoresume):
@@ -284,7 +289,9 @@ class ACCController(object):
     # shouldn't trigger DURING braking.
     autoresume_ready = self.autoresume and CS.a_ego >= 0.1
     
-    return cruise_ready and (autoresume_ready or not self.user_has_braked)
+    braked = self.user_has_braked or self.has_gone_below_min_speed
+    
+    return cruise_ready and (autoresume_ready or not braked)
     
   def _fast_decel_required(self, CS, lead_car):
     """ Identifies situations which call for rapid deceleration. """
