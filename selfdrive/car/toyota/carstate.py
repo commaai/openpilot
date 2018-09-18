@@ -119,6 +119,7 @@ class CarState(object):
     self.includeradius = 22
     self.blind_spot_on = bool(0)
     self.blind_spot_on_prev = bool(0)
+    self.distance_toggle_prev = 2
     #BB UIEvents
     self.UE = UIEvents(self)
 
@@ -230,6 +231,13 @@ class CarState(object):
     self.steer_torque_motor = cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_EPS']
     self.lane_departure_toggle_on = bool(cp.vl["JOEL_ID"]['LANE_WARNING'])
     self.distance_toggle = cp.vl["JOEL_ID"]['ACC_DISTANCE']
+    if self.distance_toggle <> self.distance_toggle_prev:
+      if self.distance_toggle == 1:
+        self.UE.custom_alert_message(2,"Following distance set to 0.9s",200,3)
+      if self.distance_toggle == 2:
+        self.UE.custom_alert_message(2,"Following distance set to 1.8s",200,3)
+      if self.distance_toggle == 3:
+        self.UE.custom_alert_message(2,"Following distance set to 2.7s",200,3)
     self.acc_slow_on = bool(cp.vl["JOEL_ID"]['ACC_SLOW'])
     # we could use the override bit from dbc, but it's triggered at too high torque values
     self.steer_override = abs(self.steer_torque_driver) > STEER_THRESHOLD
