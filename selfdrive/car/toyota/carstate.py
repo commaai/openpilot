@@ -238,6 +238,7 @@ class CarState(object):
         self.UE.custom_alert_message(2,"Following distance set to 1.8s",200,3)
       if self.distance_toggle == 3:
         self.UE.custom_alert_message(2,"Following distance set to 2.7s",200,3)
+      self.distance_toggle_prev = self.distance_toggle
     self.acc_slow_on = bool(cp.vl["JOEL_ID"]['ACC_SLOW'])
     # we could use the override bit from dbc, but it's triggered at too high torque values
     self.steer_override = abs(self.steer_torque_driver) > STEER_THRESHOLD
