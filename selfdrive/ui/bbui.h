@@ -843,7 +843,7 @@ void bb_ui_init(UIState *s) {
     assert(s->b.uiButtonStatus_sock);
     s->b.uiButtonStatus_sock_raw = zsock_resolve(s->b.uiButtonStatus_sock);
 
-    s->b.gps_sock = zsock_new_pub(">tcp://127.0.0.1:8032");
+    s->b.gps_sock = zsock_new_sub(">tcp://127.0.0.1:8032", "");
     assert(s->b.gps_sock);
     s->b.gps_sock_raw = zsock_resolve(s->b.gps_sock);
 
@@ -1022,7 +1022,7 @@ void  bb_ui_poll_update( UIState *s) {
             struct cereal_GpsLocationData datad;
             cereal_read_GpsLocationData(&datad, eventd.gpsLocation);
 
-            s->b.gpsAccuracy= datad.accuracy;
+            s->b.gpsAccuracy = datad.accuracy;
             if (s->b.gpsAccuracy>100)
             {
                 s->b.gpsAccuracy=99.99;
