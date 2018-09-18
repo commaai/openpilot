@@ -816,6 +816,7 @@ void bb_ui_draw_UI( UIState *s) {
 void bb_ui_init(UIState *s) {
 
     //BB INIT
+    s->b.shouldDrawFrame = true;
     s->status = STATUS_DISENGAGED;
     strcpy(s->b.car_model,"Tesla");
     strcpy(s->b.car_folder,"tesla");
