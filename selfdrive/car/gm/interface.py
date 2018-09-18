@@ -93,18 +93,18 @@ class CarInterface(object):
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
       ret.minEnableSpeed = -1
       # kg of standard extra cargo to count for drive, gas, etc...
-      ret.mass = 4400. * CV.LB_TO_KG + std_cargo
+      ret.mass = 4400 * CV.LB_TO_KG + std_cargo
       ret.safetyModel = car.CarParams.SafetyModels.gm
       ret.wheelbase = 2.89
       ret.steerRatio = 16
       ret.steerRatioRear = 0.
-      ret.centerToFront = ret.wheelbase * 0.465
+      ret.centerToFront = ret.wheelbase * 0.4
 
     elif candidate == CAR.CADILLAC_CT6:
       # engage speed is decided by pcm
       ret.minEnableSpeed = -1
       # kg of standard extra cargo to count for drive, gas, etc...
-      ret.mass = 4016. * CV.LB_TO_KG + std_cargo
+      ret.mass = 4016 * CV.LB_TO_KG + std_cargo
       ret.safetyModel = car.CarParams.SafetyModels.cadillac
       ret.wheelbase = 3.11
       ret.steerRatio = 14.6   # it's 16.3 without rear active steering
@@ -165,7 +165,7 @@ class CarInterface(object):
       
     elif candidate == CAR.ACADIA_DENALI:
       ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
-      ret.steerKpV, ret.steerKiV = [[0.2], [0.05]]
+      ret.steerKpV, ret.steerKiV = [[0.2], [0.00]]
       ret.steerKf = 0.00004   # full torque for 20 deg at 80mph means 0.00007818594
 
       ret.steerMaxBP = [0.] # m/s
