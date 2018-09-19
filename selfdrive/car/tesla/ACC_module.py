@@ -167,6 +167,7 @@ class ACCController(object):
       if (CruiseButtons.is_decel(button_to_press)
           and CS.v_cruise_actual - 1 < self.MIN_CRUISE_SPEED_MS * CV.MS_TO_KPH):
         button_to_press = CruiseButtons.CANCEL
+      if button_to_press == CruiseButtons.CANCEL:
         self.fast_decel_time = current_time_ms
       # Debug logging (disable in production to reduce latency of commands)
       #print "***ACC command: %s***" % button_to_press
@@ -278,14 +279,16 @@ class ACCController(object):
     return button
     
   def _should_autoengage_cc(self, CS, lead_car=None):
-    # Automatically (re)engage cruise control so long as the brake has not been
-    # pressed since enabling ACC.
+    # Automatically (re)engage cruise control so long as 
+    # 1) The carstate allows cruise control
+    # 2) There is no imminent threat of collision
+    # 3) The user did not cancel ACC by pressing the brake
     cruise_ready = (self.enable_adaptive_cruise
                     and CS.pcm_acc_status == 1
                     and CS.v_ego >= self.MIN_CRUISE_SPEED_MS
                     and _current_time_millis() > self.fast_decel_time + 2000)
                     
-    no_slow_lead = not lead_car or lead_car.vRel >= 0
+    slow_lead = lead_car and lead_car.dRel > 0 and lead_car.vRel < 0 or self._fast_decel_required(CS, lead_car)
     
     # "Autoresume" mode allows cruise to engage even after brake events, but
     # shouldn't trigger DURING braking.
@@ -293,7 +296,7 @@ class ACCController(object):
     
     braked = self.user_has_braked or self.has_gone_below_min_speed
     
-    return cruise_ready and no_slow_lead and (autoresume_ready or not braked)
+    return cruise_ready and not slow_lead and (autoresume_ready or not braked)
     
   def _fast_decel_required(self, CS, lead_car):
     """ Identifies situations which call for rapid deceleration. """
@@ -305,11 +308,7 @@ class ACCController(object):
     lead_absolute_speed_ms = lead_car.vRel + CS.v_ego
     lead_too_slow = lead_absolute_speed_ms < self.MIN_CRUISE_SPEED_MS
     
-    fast_decel_required = collision_imminent or lead_too_slow
-    if fast_decel_required:
-      self.fast_decel_time = _current_time_millis()
-    
-    return fast_decel_required
+    return collision_imminent or lead_too_slow
     
   def _seconds_to_collision(self, CS, lead_car):
     if not lead_car or not lead_car.dRel:
