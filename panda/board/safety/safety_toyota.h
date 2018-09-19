@@ -204,7 +204,7 @@ const safety_hooks lexus_ish_hooks = {
   .init = lexus_ish_init,
   .rx = toyota_rx_hook,
   .tx = toyota_tx_hook,
-  .tx_lin = toyota_tx_lin_hook,
+  .tx_lin = nooutput_tx_lin_hook,
   .ignition = default_ign_hook,
   .fwd = toyota_fwd_hook,
 };
