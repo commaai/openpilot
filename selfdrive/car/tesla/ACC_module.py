@@ -284,6 +284,8 @@ class ACCController(object):
                     and CS.pcm_acc_status == 1
                     and CS.v_ego >= self.MIN_CRUISE_SPEED_MS
                     and _current_time_millis() > self.fast_decel_time + 2000)
+                    
+    no_slow_lead = not lead_car or lead_car.vRel >= 0
     
     # "Autoresume" mode allows cruise to engage even after brake events, but
     # shouldn't trigger DURING braking.
@@ -291,7 +293,7 @@ class ACCController(object):
     
     braked = self.user_has_braked or self.has_gone_below_min_speed
     
-    return cruise_ready and (autoresume_ready or not braked)
+    return cruise_ready and no_slow_lead and (autoresume_ready or not braked)
     
   def _fast_decel_required(self, CS, lead_car):
     """ Identifies situations which call for rapid deceleration. """
