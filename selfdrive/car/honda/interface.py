@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import os
 import numpy as np
+import selfdrive.messaging as messaging
 from cereal import car, log
 from common.numpy_fast import clip, interp
 from common.realtime import sec_since_boot
@@ -30,6 +31,22 @@ def compute_gb_honda(accel, speed):
     creep_brake = (creep_speed - speed) / creep_speed * creep_brake_value
   return float(accel) / 4.8 - creep_brake
 
+def check_switch_bosch():
+  logcan = messaging.sub_sock(context, service_list['can'].port)
+  st = None
+  can_seen = False
+  giraffe_switch_high = False
+  while 1:
+    for a in messaging.drain_sock(logcan):
+      for can in a.can:
+        can_seen = True
+        giraffe_switch_high = can.src == 2 and can.address == 0xe4
+    if st is None and can_seen:
+      st = sec_since_boot()
+    ts = sec_since_boot()
+    if (ts-st) > 0.1:
+      break
+  return giraffe_switch_high
 
 def get_compute_gb_acura():
   # generate a function that takes in [desired_accel, current_speed] -> [-1.0, 1.0]
@@ -137,9 +154,14 @@ class CarInterface(object):
     ret.carFingerprint = candidate
 
     if candidate in HONDA_BOSCH:
-      ret.safetyModel = car.CarParams.SafetyModels.hondaBosch
-      ret.enableCamera = True
-      ret.radarOffCan = True
+      # Check third can for steering msg.
+      giraffe_switch_high = check_switch_bosch()
+      if giraffe_switch_high:
+        ret.enableCamera = False
+      else:
+        ret.safetyModel = car.CarParams.SafetyModels.hondaBosch
+        ret.enableCamera = True
+        ret.radarOffCan = True
     else:
       ret.safetyModel = car.CarParams.SafetyModels.honda
       ret.enableCamera = not any(x for x in CAMERA_MSGS if x in fingerprint)
