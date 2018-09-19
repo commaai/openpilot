@@ -30,8 +30,7 @@ uint32_t toyota_ts_last = 0;
 int toyota_cruise_engaged_last = 0;       // cruise state
 struct sample_t toyota_torque_meas;       // last 3 motor torques produced by the eps
 
-uint32_t acc_addr = 0;                    // acc state address
-int is_lexus_ave30 = 0;                   // is a lexus is300h/ave30 model?
+int is_lexus_ish = 0;                   // is a lexus is hybrid model?
 
 static void toyota_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   // get eps motor torque (0.66 factor in dbc)
@@ -50,10 +49,9 @@ static void toyota_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   }
 
   // enter controls on rising edge of ACC, exit controls on ACC off
-  if ((to_push->RIR>>21) == acc_addr) {
-    // lexus ave30 1 bit: 11
+  if ((to_push->RIR>>21) == 0x1D2) {
     // toyota: 4 bits: 55-52
-    int cruise_engaged = is_lexus_ave30 == 1? to_push->RDLR & 0x400 : to_push->RDHR & 0xF00000;
+    int cruise_engaged = is_lexus_ish == 1? to_push->RDLR & 0x2000 : to_push->RDHR & 0xF00000;
     if (cruise_engaged && !toyota_cruise_engaged_last) {
       controls_allowed = 1;
     } else if (!cruise_engaged) {
@@ -154,17 +152,15 @@ static void toyota_init(int16_t param) {
   toyota_actuation_limits = 1;
   toyota_giraffe_switch_1 = 0;
   toyota_dbc_eps_torque_factor = param;
-  acc_addr = 0x1D2;
-  is_lexus_ave30 = 0;
+  is_lexus_ish = 0;
 }
 
-static void lexus_ave30_init(int16_t param) {
+static void lexus_ish_init(int16_t param) {
   controls_allowed = 0;
   toyota_actuation_limits = 1;
   toyota_giraffe_switch_1 = 0;
   toyota_dbc_eps_torque_factor = param;
-  acc_addr = 0x3F1;
-  is_lexus_ave30 = 1;
+  is_lexus_ish = 1;
 }
 
 static int toyota_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
@@ -192,8 +188,7 @@ static void toyota_nolimits_init(int16_t param) {
   toyota_actuation_limits = 0;
   toyota_giraffe_switch_1 = 0;
   toyota_dbc_eps_torque_factor = param;
-  acc_addr = 0x1D2;
-  is_lexus_ave30 = 0;
+  is_lexus_ish = 0;
 }
 
 const safety_hooks toyota_nolimits_hooks = {
@@ -205,11 +200,11 @@ const safety_hooks toyota_nolimits_hooks = {
   .fwd = toyota_fwd_hook,
 };
 
-const safety_hooks lexus_ave30_hooks = {
-  .init = lexus_ave30_init,
+const safety_hooks lexus_ish_hooks = {
+  .init = lexus_ish_init,
   .rx = toyota_rx_hook,
   .tx = toyota_tx_hook,
-  .tx_lin = toyota_tx_lin_hook,
+  .tx_lin = nooutput_tx_lin_hook,
   .ignition = default_ign_hook,
   .fwd = toyota_fwd_hook,
 };
