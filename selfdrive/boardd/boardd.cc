@@ -592,7 +592,7 @@ void *pigeon_thread(void *crap) {
       //printf("got %d\n", len);
       alen += len;
     }
-    if (alen > 0) { 
+    if (alen > 0) {
       if (dat[0] == (char)0x00){
         LOGW("received invalid ublox message, resetting pigeon");
         pigeon_init();
