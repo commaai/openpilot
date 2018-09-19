@@ -54,8 +54,8 @@ class CarInterface(object):
     ret.carName = "toyota"
     ret.carFingerprint = candidate
 
-    if candidate == CAR.LEXUS_AVE30:
-      ret.safetyModel = car.CarParams.SafetyModels.lexusAve30
+    if candidate == CAR.LEXUS_ISH:
+      ret.safetyModel = car.CarParams.SafetyModels.lexusIsh
     else:
       ret.safetyModel = car.CarParams.SafetyModels.toyota
 
@@ -140,7 +140,7 @@ class CarInterface(object):
       ret.steerKpV, ret.steerKiV = [[0.6], [0.05]]
       ret.steerKf = 0.00006
 
-    elif candidate == CAR.LEXUS_AVE30:
+    elif candidate == CAR.LEXUS_ISH:
       ret.safetyParam = 66
       ret.wheelbase = 2.80 # in spec
       ret.steerRatio = 13.3 # in spec
@@ -161,7 +161,7 @@ class CarInterface(object):
     if candidate in [CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH, CAR.CHR,
                      CAR.CHRH, CAR.CAMRY, CAR.CAMRYH, CAR.HIGHLANDERH, CAR.HIGHLANDER]:
       ret.minEnableSpeed = -1.
-    elif candidate in [CAR.RAV4, CAR.COROLLA, CAR.LEXUS_AVE30]: # TODO: hack ICE to do stop and go
+    elif candidate in [CAR.RAV4, CAR.COROLLA, CAR.LEXUS_ISH]: # TODO: hack ICE to do stop and go
       ret.minEnableSpeed = 19. * CV.MPH_TO_MS
 
     centerToRear = ret.wheelbase - ret.centerToFront
