@@ -5,7 +5,8 @@ from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.gm.values import DBC, CAR
-from selfdrive.car.gm.carstate import CarState, CruiseButtons, get_powertrain_can_parser
+from selfdrive.car.gm.carstate import CarState, CruiseButtons, \
+                                      AccState, get_powertrain_can_parser
 
 try:
   from selfdrive.car.gm.carcontroller import CarController
@@ -79,8 +80,12 @@ class CarInterface(object):
     std_cargo = 136
 
     if candidate == CAR.VOLT:
-      # supports stop and go, but initial engage must be above 18mph (which include conservatism)
-      ret.minEnableSpeed = 18 * CV.MPH_TO_MS
+      # initial engage must be above ~18mph, and resume
+      # can happen at any speed, unless brake pedal was pressed,
+      # in which case resume can only happen above ~7mph.
+      # TODO: track PCM state to know exactly when set/res are allowed,
+      # instead of disengaging on a PCM fault.
+      ret.minEnableSpeed = -1
       # kg of standard extra cargo to count for drive, gas, etc...
       ret.mass = 1607 + std_cargo
       ret.safetyModel = car.CarParams.SafetyModels.gm
@@ -195,9 +200,9 @@ class CarInterface(object):
 
     # cruise state
     ret.cruiseState.available = bool(self.CS.main_on)
-    cruiseEnabled = self.CS.pcm_acc_status != 0
+    cruiseEnabled = self.CS.pcm_acc_status in [AccState.ACTIVE, AccState.STANDSTILL]
     ret.cruiseState.enabled = cruiseEnabled
-    ret.cruiseState.standstill = self.CS.pcm_acc_status == 4
+    ret.cruiseState.standstill = self.CS.pcm_acc_status == AccState.STANDSTILL
 
     ret.leftBlinker = self.CS.left_blinker_on
     ret.rightBlinker = self.CS.right_blinker_on
@@ -282,6 +287,8 @@ class CarInterface(object):
         events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
       if ret.cruiseState.standstill:
         events.append(create_event('resumeRequired', [ET.WARNING]))
+      if self.CS.pcm_acc_status == AccState.FAULTED:
+        events.append(create_event('speedTooLow', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
 
       # handle button presses
       for b in ret.buttonEvents:
