@@ -17,7 +17,7 @@ def _current_time_millis():
 class ACCController(object):
   
   # Tesla cruise only functions above 17 MPH
-  MIN_CRUISE_SPEED_MS = 17.5 * CV.MPH_TO_MS
+  MIN_CRUISE_SPEED_MS = 17.1 * CV.MPH_TO_MS
     
   def __init__(self):
     self.human_cruise_action_time = 0
@@ -86,8 +86,9 @@ class ACCController(object):
     if CS.v_ego < self.MIN_CRUISE_SPEED_MS:
       self.has_gone_below_min_speed = True
     
-    # If autoresume is not enabled, manually steering disables ACC.
-    if not (enabled or self.autoresume):
+    # If autoresume is not enabled, manually steering or slowing disables ACC.
+    if not self.autoresume:
+      if not enabled or self.user_has_braked or self.has_gone_below_min_speed:
       self.enable_adaptive_cruise = False
     
     # Notify if ACC was toggled
