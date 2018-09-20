@@ -15,7 +15,7 @@ class CruiseButtons:
 
 def is_eps_status_ok(eps_status, car_fingerprint):
   valid_eps_status = []
-  if car_fingerprint == in (CAR.VOLT, CAR.MALIBU):
+  if car_fingerprint in (CAR.VOLT, CAR.MALIBU):
     valid_eps_status += [0, 1]
   elif car_fingerprint == CAR.CADILLAC_CT6:
     valid_eps_status += [0, 1, 4, 5, 6]
