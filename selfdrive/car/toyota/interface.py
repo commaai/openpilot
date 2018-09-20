@@ -120,7 +120,10 @@ class CarInterface(object):
       ret.steerKf = 0.00006
 
     elif candidate in [CAR.CAMRY, CAR.CAMRYH]:
-      ret.safetyParam = 66 # see conversion factor for STEER_TORQUE_EPS in dbc file
+      if candidate == CAR.CAMRY: # Camry is using CHR's dbc, while CamryH has own 
+        et.safetyParam = 73 # see conversion factor for STEER_TORQUE_EPS in dbc file
+      else:        
+        et.safetyParam = 66 # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.82448
       ret.steerRatio = 13.7
       tire_stiffness_factor = 0.7933
