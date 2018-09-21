@@ -118,7 +118,7 @@ def get_camera_parser(CP):
 
   checks = []
 
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 1)
 
 class CarState(object):
   def __init__(self, CP):
@@ -209,17 +209,30 @@ class CarState(object):
       self.pedal_gas = cp.vl["EMS12"]['TPS']
     self.car_gas = cp.vl["EMS12"]['TPS']
 
-    # Gear Selecton - This should be compatible with all Kia/Hyundai with Auto's
-    if cp.vl["CLU15"]["CF_Clu_InhibitD"] == 1:
+    # Gear Selecton - This is not compatible with all Kia/Hyundai's, But is the best way for those it is compatible with
+    gear = cp.vl["LVR12"]["CF_Lvr_Gear"]
+    if gear == 5:
       self.gear_shifter = "drive"
-    elif cp.vl["CLU15"]["CF_Clu_InhibitN"] == 1:
+    elif gear == 6:
       self.gear_shifter = "neutral"
-    elif cp.vl["CLU15"]["CF_Clu_InhibitP"] == 1:
+    elif gear == 0:
       self.gear_shifter = "park"
-    elif cp.vl["CLU15"]["CF_Clu_InhibitR"] == 1:
+    elif gear == 7:
       self.gear_shifter = "reverse"
     else:
       self.gear_shifter = "unknown"
+
+    # Gear Selection via Cluster - For those Kia/Hyundai which are not fully discovered, we can use the Cluster Indicator for Gear Selection, as this seems to be standard over all cars, but is not the preferred method.
+    if cp.vl["CLU15"]["CF_Clu_InhibitD"] == 1:
+      self.gear_shifter_cluster = "drive"
+    elif cp.vl["CLU15"]["CF_Clu_InhibitN"] == 1:
+      self.gear_shifter_cluster = "neutral"
+    elif cp.vl["CLU15"]["CF_Clu_InhibitP"] == 1:
+      self.gear_shifter_cluster = "park"
+    elif cp.vl["CLU15"]["CF_Clu_InhibitR"] == 1:
+      self.gear_shifter_cluster = "reverse"
+    else:
+      self.gear_shifter_cluster = "unknown"
 
     # save the entire LKAS11 and CLU11
     self.lkas11 = cp_cam.vl["LKAS11"]

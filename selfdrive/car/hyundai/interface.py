@@ -186,7 +186,10 @@ class CarInterface(object):
     ret.wheelSpeeds.rr = self.CS.v_wheel_rr
 
     # gear shifter
-    ret.gearShifter = self.CS.gear_shifter
+    if candidate == CAR.ELANTRA:
+      ret.gearShifter = self.CS.gear_shifter_cluster
+    else:
+      ret.gearShifter = self.CS.gear_shifter
 
     # gas pedal
     ret.gas = self.CS.car_gas
