@@ -148,7 +148,7 @@ class ACCController(object):
     
     # If ACC is disabled, disengage traditional cruise control.
     if (self.prev_enable_adaptive_cruise and not self.enable_adaptive_cruise
-        and CS.pcm_acc_status == CruiseState.ENABLED:
+        and CS.pcm_acc_status == CruiseState.ENABLED):
       button_to_press = CruiseButtons.CANCEL
 
     if self.enable_adaptive_cruise and enabled:
