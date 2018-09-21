@@ -90,7 +90,7 @@ class ACCController(object):
     # If autoresume is not enabled, manually steering or slowing disables ACC.
     if not self.autoresume:
       if not enabled or self.user_has_braked or self.has_gone_below_min_speed:
-      self.enable_adaptive_cruise = False
+        self.enable_adaptive_cruise = False
     
     # Notify if ACC was toggled
     if self.prev_enable_adaptive_cruise and not self.enable_adaptive_cruise:
@@ -145,7 +145,6 @@ class ACCController(object):
     if CruiseButtons.should_be_throttled(CS.cruise_buttons):
       self.human_cruise_action_time = current_time_ms
     button_to_press = None
-    
     
     # If ACC is disabled, disengage traditional cruise control.
     if (self.prev_enable_adaptive_cruise and not self.enable_adaptive_cruise
