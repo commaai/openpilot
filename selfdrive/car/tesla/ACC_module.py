@@ -27,6 +27,7 @@ class ACCController(object):
     self.live20 = messaging.sub_sock(context, service_list['live20'].port, conflate=True, poller=self.poller)
     self.last_update_time = 0
     self.enable_adaptive_cruise = False
+    self.prev_enable_adaptive_cruise = False
     # Whether to re-engage automatically after being paused due to low speed or
     # user-initated deceleration.
     self.autoresume = False
@@ -46,7 +47,7 @@ class ACCController(object):
     # Check if the cruise stalk was double pulled, indicating that adaptive
     # cruise control should be enabled. Twice in .75 seconds counts as a double
     # pull.
-    prev_enable_adaptive_cruise = self.enable_adaptive_cruise
+    self.prev_enable_adaptive_cruise = self.enable_adaptive_cruise
     acc_string = CS.cstm_btns.get_button_label2("acc")
     acc_mode = ACCMode.get(acc_string)
     CS.cstm_btns.get_button("acc").btn_label2 = acc_mode.name
@@ -92,12 +93,12 @@ class ACCController(object):
       self.enable_adaptive_cruise = False
     
     # Notify if ACC was toggled
-    if prev_enable_adaptive_cruise and not self.enable_adaptive_cruise:
+    if self.prev_enable_adaptive_cruise and not self.enable_adaptive_cruise:
       CS.UE.custom_alert_message(3, "ACC Disabled", 150, 4)
       CS.cstm_btns.set_button_status("acc", ACCState.STANDBY)
     elif self.enable_adaptive_cruise:
       CS.cstm_btns.set_button_status("acc", ACCState.ENABLED)
-      if not prev_enable_adaptive_cruise:
+      if not self.prev_enable_adaptive_cruise:
         CS.UE.custom_alert_message(2, "ACC Enabled", 150)
 
     # Update the UI to show whether the current car state allows ACC.
@@ -144,6 +145,12 @@ class ACCController(object):
     if CruiseButtons.should_be_throttled(CS.cruise_buttons):
       self.human_cruise_action_time = current_time_ms
     button_to_press = None
+    
+    
+    # If ACC is disabled, disengage traditional cruise control.
+    if (self.prev_enable_adaptive_cruise and not self.enable_adaptive_cruise
+        and CS.pcm_acc_status == CruiseState.ENABLED:
+      button_to_press = CruiseButtons.CANCEL
 
     if self.enable_adaptive_cruise and enabled:
       if CS.cstm_btns.get_button_label2("acc") in ["OP", "AutoOP"]:    
@@ -201,7 +208,7 @@ class ACCController(object):
     if self._should_autoengage_cc(CS, lead_car=lead_car) and self._no_action_for(milliseconds=100):
       button = CruiseButtons.RES_ACCEL
     # If traditional cruise is engaged, then control it.
-    elif CS.pcm_acc_status == 2:
+    elif CS.pcm_acc_status == CruiseState.ENABLED:
       
       # Disengage cruise control if a slow object is seen ahead. This triggers
       # full regen braking, which is stronger than the braking that happens if
@@ -285,7 +292,7 @@ class ACCController(object):
     # 2) There is no imminent threat of collision
     # 3) The user did not cancel ACC by pressing the brake
     cruise_ready = (self.enable_adaptive_cruise
-                    and CS.pcm_acc_status == 1
+                    and CS.pcm_acc_status == CruiseState.STANDBY
                     and CS.v_ego >= self.MIN_CRUISE_SPEED_MS
                     and _current_time_millis() > self.fast_decel_time + 2000)
                     
@@ -341,7 +348,7 @@ class ACCController(object):
     if self._should_autoengage_cc(CS):
       button_to_press = CruiseButtons.RES_ACCEL
     # If traditional cruise is engaged, then control it.
-    elif (CS.pcm_acc_status == 2
+    elif (CS.pcm_acc_status == CruiseState.ENABLED
           # But don't make adjustments if a human has manually done so in
           # the last 3 seconds. Human intention should not be overridden.
           and self._no_human_action_for(milliseconds=3000)
