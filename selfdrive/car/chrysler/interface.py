@@ -68,12 +68,13 @@ class CarInterface(object):
     tireStiffnessFront_civic = 85400 * 2.0
     tireStiffnessRear_civic = 90000 * 2.0
 
-    ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
+    # Speed conversion:                0,  20,  45,  75 mph
+    ret.steerKpBP, ret.steerKiBP = [[  0.,  9., 20., 34.], [  0.,  9., 20., 34.]]
     ret.safetyParam = 73  # see conversion factor for STEER_TORQUE_EPS in dbc file
     ret.wheelbase = 3.089  # in meters for Pacifica Hybrid 2017
     ret.steerRatio = 16.2 # Pacifica Hybrid 2017
     ret.mass = 2858 + std_cargo  # kg curb weight Pacifica Hybrid 2017
-    ret.steerKpV, ret.steerKiV = [[0.5], [0.04]]  # reduced to reduced wobble. originally [[0.6], [0.05]]
+    ret.steerKpV, ret.steerKiV =   [[0.15,0.15,0.34,0.34], [0.03,0.03,0.03,0.03]]
     ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
     ret.steerActuatorDelay = 0.1
     ret.steerRateCost = 1.
