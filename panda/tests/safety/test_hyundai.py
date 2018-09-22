@@ -168,18 +168,18 @@ class TestHyundaiSafety(unittest.TestCase):
       self.assertTrue(self.safety.hyundai_tx_hook(self._torque_msg(sign * (MAX_RT_DELTA + 1))))
 
 
-  def test_spam_cancel_safety_check(self):
-    RESUME_BTN = 1
-    SET_BTN = 2
-    CANCEL_BTN = 4
-    BUTTON_MSG = 1265
-    self.safety.set_controls_allowed(0)
-    self.assertTrue(self.safety.hyundai_tx_hook(self._button_msg(CANCEL_BTN)))
-    self.assertFalse(self.safety.hyundai_tx_hook(self._button_msg(RESUME_BTN)))
-    self.assertFalse(self.safety.hyundai_tx_hook(self._button_msg(SET_BTN)))
-    # do not block resume if we are engaged already
-    self.safety.set_controls_allowed(1)
-    self.assertTrue(self.safety.hyundai_tx_hook(self._button_msg(RESUME_BTN)))
+  #def test_spam_cancel_safety_check(self):
+  #  RESUME_BTN = 1
+  #  SET_BTN = 2
+  #  CANCEL_BTN = 4
+  #  BUTTON_MSG = 1265
+  #  self.safety.set_controls_allowed(0)
+  #  self.assertTrue(self.safety.hyundai_tx_hook(self._button_msg(CANCEL_BTN)))
+  #  self.assertFalse(self.safety.hyundai_tx_hook(self._button_msg(RESUME_BTN)))
+  #  self.assertFalse(self.safety.hyundai_tx_hook(self._button_msg(SET_BTN)))
+  #  # do not block resume if we are engaged already
+  #  self.safety.set_controls_allowed(1)
+  #  self.assertTrue(self.safety.hyundai_tx_hook(self._button_msg(RESUME_BTN)))
 
 
 if __name__ == "__main__":
