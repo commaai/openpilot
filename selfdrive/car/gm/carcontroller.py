@@ -91,14 +91,11 @@ class CarController(object):
     ### STEER ###
 
     if (frame % P.STEER_STEP) == 0:
-      final_steer = actuators.steer if enabled else 0.
-      apply_steer = final_steer * P.STEER_MAX
-
-      apply_steer = apply_std_steer_torque_limits(apply_steer, self.apply_steer_last, CS.steer_torque_driver, P)
-
       lkas_enabled = enabled and not CS.steer_not_allowed and CS.v_ego > 3.
-
-      if not lkas_enabled:
+      if lkas_enabled:
+        apply_steer = actuators.steer * P.STEER_MAX
+        apply_steer = apply_std_steer_torque_limits(apply_steer, self.apply_steer_last, CS.steer_torque_driver, P)
+      else:
         apply_steer = 0
 
       self.apply_steer_last = apply_steer
@@ -115,7 +112,7 @@ class CarController(object):
 
     if self.car_fingerprint == CAR.VOLT:
       # no output if not enabled, but keep sending keepalive messages
-      # threat pedals as one
+      # treat pedals as one
       final_pedal = actuators.gas - actuators.brake
 
       # *** apply pedal hysteresis ***
@@ -123,7 +120,8 @@ class CarController(object):
         final_pedal, self.pedal_steady)
 
       if not enabled:
-        apply_gas = P.MAX_ACC_REGEN  # TODO: do we really need to send max regen when not enabled?
+        # Stock ECU sends max regen when not enabled.
+        apply_gas = P.MAX_ACC_REGEN
         apply_brake = 0
       else:
         apply_gas = int(round(interp(final_pedal, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)))
