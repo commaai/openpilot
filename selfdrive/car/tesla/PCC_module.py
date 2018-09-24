@@ -198,8 +198,8 @@ class PCCController(object):
         CS.cstm_btns.set_button_status("pedal",1)
         print "enabling pedal"
     # check if we had error before
-    if self.user_pedal_state != CS.user_gas_state:
-      self.user_pedal_state = CS.user_gas_state
+    if self.user_pedal_state != CS.user_pedal_state:
+      self.user_pedal_state = CS.user_pedal_state
       CS.cstm_btns.set_button_status("pedal", 1 if self.user_pedal_state > 0 else 0)
       if self.user_pedal_state > 0:
         CS.UE.custom_alert_message(3,"Pedal Interceptor Error (" + `self.user_pedal_state` + ")",150,4)
@@ -343,7 +343,7 @@ class PCCController(object):
     deadzone = interp(v_ego_pid, CS.CP.longPidDeadzoneBP, CS.CP.longPidDeadzoneV)
 
     #BBAD adding overridet to pid to see if we can engage sooner
-    override = self.enable_pedal_cruise and CS.v_ego *  CV.MS_TO_KPH > self.pedal_speed_kph and CS.user_gas_pressed
+    override = self.enable_pedal_cruise and CS.v_ego *  CV.MS_TO_KPH > self.pedal_speed_kph and CS.user_pedal_pressed
 
     # we will try to feed forward the pedal position.... we might want to feed the last output_gb....
     # it's all about testing now.

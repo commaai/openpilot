@@ -55,6 +55,7 @@ class ALCAController(object):
   def __init__(self,carcontroller,alcaEnabled,steerByAngle):
     self.CC = carcontroller  # added to start, will see if we need it actually
     # variables for lane change
+    self.angle_offset = 0. #added when one needs to compensate for missalignment
     self.alcaEnabled = alcaEnabled
     self.laneChange_strStartFactor = 2.
     self.laneChange_strStartMultiplier = 1.2
@@ -349,7 +350,7 @@ class ALCAController(object):
     else:
       apply_angle = -actuators.steerAngle
     self.laneChange_last_sent_angle = apply_angle
-    return [-apply_angle,alca_enabled,turn_signal_needed]
+    return [-apply_angle-self.angle_offset,alca_enabled,turn_signal_needed]
 
 
 

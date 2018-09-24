@@ -140,6 +140,7 @@ def get_epas_can_signals(CP):
       ("EPAS_eacErrorCode", "EPAS_sysStatus", 0),
       ("EPAS_handsOnLevel", "EPAS_sysStatus", 0),
       ("EPAS_steeringFault", "EPAS_sysStatus", 0),
+      ("EPAS_internalSAS",  "EPAS_sysStatus", 0), #BB see if this works better than STW_ANGLHP_STAT for angle
       ("INTERCEPTOR_GAS", "GAS_SENSOR", 0),
       ("INTERCEPTOR_GAS2", "GAS_SENSOR", 0),
       ("STATE", "GAS_SENSOR", 0),
@@ -169,7 +170,9 @@ class CarState(object):
     self.last_cruise_stalk_pull_time = 0
     self.CP = CP
 
-    self.user_gas, self.user_gas_pressed = 0., 0
+    self.user_gas, self.user_gas_pressed = 0., False
+    self.user_pedal_state = 0
+    self.user_pedal, self.user_pedal_pressed = 0., False
     self.brake_switch_prev = 0
     self.brake_switch_ts = 0
 
@@ -270,7 +273,7 @@ class CarState(object):
         btn.btn_label2 = ""
         btn.btn_status = 1
     else:
-      #we don't have gas interceptor
+      #we don't have pedal interceptor
       btn = self.cstm_btns.get_button("pedal")
       if btn:
         btn.btn_name = "acc"
@@ -351,14 +354,18 @@ class CarState(object):
     if self.pedal_hardware_present != self.pedal_hardware_present_prev:
         self.config_ui_buttons(self.pedal_hardware_present)
     self.pedal_hardware_present_prev = self.pedal_hardware_present
-    self.user_gas = epas_cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS']
-    self.user_gas_state = epas_cp.vl["GAS_SENSOR"]['STATE']
-    self.user_gas_pressed = self.user_gas > 1.12
 
+    #BB use this set for pedal work as the user_gas_xx is used in other places
+    self.user_pedal = epas_cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS']
+    self.user_pedal_state = epas_cp.vl["GAS_SENSOR"]['STATE']
+    self.user_pedal_pressed = self.user_pedal > 1.12
 
     can_gear_shifter = cp.vl["DI_torque2"]['DI_gear']
     self.gear = 0 # JCT
-    self.angle_steers  = -(cp.vl["STW_ANGLHP_STAT"]['StW_AnglHP']) #JCT polarity reversed from Honda/Acura
+
+    # self.angle_steers  = -(cp.vl["STW_ANGLHP_STAT"]['StW_AnglHP']) #JCT polarity reversed from Honda/Acura
+    self.angle_steers = -(epas_cp.vl["EPAS_sysStatus"]['EPAS_internalSAS'])  #BB see if this works better than STW_ANGLHP_STAT for angle
+    
     self.angle_steers_rate = 0 #JCT
 
     self.blinker_on = (cp.vl["STW_ACTN_RQ"]['TurnIndLvr_Stat'] == 1) or (cp.vl["STW_ACTN_RQ"]['TurnIndLvr_Stat'] == 2)

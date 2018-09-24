@@ -209,12 +209,14 @@ class CarInterface(object):
     ret.wheelSpeeds.rl = self.CS.v_wheel_rl
     ret.wheelSpeeds.rr = self.CS.v_wheel_rr
 
-    # gas pedal
-    ret.gas = self.CS.user_gas / 112.0 #BB: transform into 0..1 range
+    # gas pedal, we don't use with with interceptor so it's always 0/False
+    ret.gas = self.CS.user_gas 
     if not self.CP.enableGasInterceptor:
       ret.gasPressed = self.CS.user_gas_pressed
     else:
       ret.gasPressed = self.CS.user_gas_pressed
+
+    
 
     # brake pedal
     ret.brakePressed = (self.CS.brake_pressed != 0) and (self.CS.cstm_btns.get_button_status("brake") == 0)
