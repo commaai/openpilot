@@ -116,7 +116,7 @@ class CarInterface(object):
       ret.steerRatio = 13.3
       tire_stiffness_factor = 0.444
       ret.mass = 3736.8 * CV.LB_TO_KG + std_cargo  # mean between min and max
-      ret.steerKpV, ret.steerKiV = [[0.3], [0.1]]
+      ret.steerKpV, ret.steerKiV = [[0.2], [0.05]]
       ret.steerKf = 0.00006
 
     elif candidate in [CAR.CHR, CAR.CHRH]:
