@@ -17,3 +17,5 @@ COPY ./phonelibs /tmp/openpilot/phonelibs
 COPY ./pyextra /tmp/openpilot/pyextra
 
 RUN mkdir -p /tmp/openpilot/selfdrive/test/out
+RUN make -C /tmp/openpilot/selfdrive/controls/lib/longitudinal_mpc clean
+RUN make -C /tmp/openpilot/selfdrive/controls/lib/lateral_mpc clean

@@ -26,7 +26,8 @@ DT = 0.1      # nominal time step of 10Hz (orbd_live runs slower on pc)
 VP_RATE_LIM = 2. * DT    # 2 px/s
 VP_INIT = np.array([W/2., H/2.])
 EXTERNAL_PATH = os.path.dirname(os.path.abspath(__file__))
-VP_VALIDITY_CORNERS = np.array([[-200., -200.], [200., 200.]])  + VP_INIT
+# big model is 864x288
+VP_VALIDITY_CORNERS = np.array([[-150., -200.], [150., 200.]])  + VP_INIT
 GRID_WEIGHT_INIT = 2e6
 MAX_LINES = 500    # max lines to avoid over computation
 
