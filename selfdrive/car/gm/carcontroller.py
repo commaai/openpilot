@@ -4,14 +4,14 @@ from selfdrive.config import Conversions as CV
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.gm import gmcan
-from selfdrive.car.gm.values import CAR, DBC
+from selfdrive.car.gm.values import CAR, DBC, AccState
 from selfdrive.can.packer import CANPacker
 
 
 class CarControllerParams():
   def __init__(self, car_fingerprint):
     if car_fingerprint == CAR.VOLT:
-      self.STEER_MAX = 255
+      self.STEER_MAX = 300
       self.STEER_STEP = 2              # how often we update the steer cmd
       self.STEER_DELTA_UP = 7          # ~0.75s time to peak torque (255/50hz/0.75s)
       self.STEER_DELTA_DOWN = 17       # ~0.3s from peak torque to zero
@@ -29,11 +29,11 @@ class CarControllerParams():
     self.ADAS_KEEPALIVE_STEP = 10
     # pedal lookups, only for Volt
     MAX_GAS = 3072              # Only a safety limit
-    ZERO_GAS = 2048
+    self.ZERO_GAS = 2048
     MAX_BRAKE = 350             # Should be around 3.5m/s^2, including regen
     self.MAX_ACC_REGEN = 1404  # ACC Regen braking is slightly less powerful than max regen paddle
     self.GAS_LOOKUP_BP = [-0.25, 0., 0.5]
-    self.GAS_LOOKUP_V = [self.MAX_ACC_REGEN, ZERO_GAS, MAX_GAS]
+    self.GAS_LOOKUP_V = [self.MAX_ACC_REGEN, self.ZERO_GAS, MAX_GAS]
     self.BRAKE_LOOKUP_BP = [-1., -0.25]
     self.BRAKE_LOOKUP_V = [MAX_BRAKE, 0]
 
@@ -83,7 +83,6 @@ class CarController(object):
       return
 
     P = self.params
-
     # Send CAN commands.
     can_sends = []
     canbus = self.canbus
@@ -91,14 +90,11 @@ class CarController(object):
     ### STEER ###
 
     if (frame % P.STEER_STEP) == 0:
-      final_steer = actuators.steer if enabled else 0.
-      apply_steer = final_steer * P.STEER_MAX
-
-      apply_steer = apply_std_steer_torque_limits(apply_steer, self.apply_steer_last, CS.steer_torque_driver, P)
-
       lkas_enabled = enabled and not CS.steer_not_allowed and CS.v_ego > 3.
-
-      if not lkas_enabled:
+      if lkas_enabled:
+        apply_steer = actuators.steer * P.STEER_MAX
+        apply_steer = apply_std_steer_torque_limits(apply_steer, self.apply_steer_last, CS.steer_torque_driver, P)
+      else:
         apply_steer = 0
 
       self.apply_steer_last = apply_steer
@@ -115,7 +111,7 @@ class CarController(object):
 
     if self.car_fingerprint == CAR.VOLT:
       # no output if not enabled, but keep sending keepalive messages
-      # threat pedals as one
+      # treat pedals as one
       final_pedal = actuators.gas - actuators.brake
 
       # *** apply pedal hysteresis ***
@@ -123,7 +119,8 @@ class CarController(object):
         final_pedal, self.pedal_steady)
 
       if not enabled:
-        apply_gas = P.MAX_ACC_REGEN  # TODO: do we really need to send max regen when not enabled?
+        # Stock ECU sends max regen when not enabled.
+        apply_gas = P.MAX_ACC_REGEN
         apply_brake = 0
       else:
         apply_gas = int(round(interp(final_pedal, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)))
@@ -133,12 +130,18 @@ class CarController(object):
       if (frame % 4) == 0:
         idx = (frame / 4) % 4
 
-        at_full_stop = enabled and CS.standstill
-        near_stop = enabled and (CS.v_ego < P.NEAR_STOP_BRAKE_PHASE)
+        car_stopping = apply_gas < P.ZERO_GAS
+        standstill = CS.pcm_acc_status == AccState.STANDSTILL
+        at_full_stop = enabled and standstill and car_stopping
+        near_stop = enabled and (CS.v_ego < P.NEAR_STOP_BRAKE_PHASE) and car_stopping
         can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, canbus.chassis, apply_brake, idx, near_stop, at_full_stop))
 
-        at_full_stop = enabled and CS.standstill
-        can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, canbus.powertrain, apply_gas, idx, enabled, at_full_stop))
+        # Auto-resume from full stop by resetting ACC control
+        acc_enabled = enabled
+        if standstill and not car_stopping:
+          acc_enabled = False
+
+        can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, canbus.powertrain, apply_gas, idx, acc_enabled, at_full_stop))
 
       # Send dashboard UI commands (ACC status), 25hz
       if (frame % 4) == 0:
