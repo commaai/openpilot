@@ -46,8 +46,8 @@ Supported Cars
 | Acura              | ILX 2016              | AcuraWatch Plus      | Yes     | Yes            | 25mph<sup>1</sup>| 25mph          |
 | Acura              | ILX 2017              | AcuraWatch Plus      | Yes     | Yes            | 25mph<sup>1</sup>| 25mph          |
 | Acura              | RDX 2018              | AcuraWatch Plus      | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          |
-| GM<sup>3</sup>     | Volt 2017             | Driver Confidence II | Yes     | Yes            | 0mph             | 7mph           |
-| GM<sup>3</sup>     | Volt 2018             | Driver Confidence II | Yes     | Yes            | 0mph             | 7mph           |
+| GM<sup>3</sup>     | Volt 2017             | Adaptive Cruise      | Yes     | Yes            | 0mph             | 7mph           |
+| GM<sup>3</sup>     | Volt 2018             | Adaptive Cruise      | Yes     | Yes            | 0mph             | 7mph           |
 | Honda              | Accord 2018           | All                  | Yes     | Stock          | 0mph             | 3mph           |
 | Honda              | Civic 2016            | Honda Sensing        | Yes     | Yes            | 0mph             | 12mph          |
 | Honda              | Civic 2017            | Honda Sensing        | Yes     | Yes            | 0mph             | 12mph          |
@@ -67,13 +67,17 @@ Supported Cars
 | Honda              | Ridgeline 2017        | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          |
 | Honda              | Ridgeline 2018        | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          |
 | Hyundai<sup>6</sup>| Santa Fe 2019         | All                  | Yes     | Stock          | 0mph             | 0mph           |
+| Hyundai<sup>6</sup>| Elantra 2017          | SCC + LKAS           | Yes     | Stock          | 19mph            | 34mph          |
+| Hyundai<sup>6</sup>| Genesis 2018          | All                  | Yes     | Stock          | 19mph            | 34mph          |
+| Kia<sup>6</sup>    | Sorento 2018          | All                  | Yes     | Stock          | 0mph             | 0mph           |
+| Kia<sup>6</sup>    | Stinger 2018          | SCC + LKAS           | Yes     | Stock          | 0mph             | 0mph           |
 | Lexus              | RX Hybrid 2017        | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
 | Lexus              | RX Hybrid 2018        | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
 | Toyota             | Camry 2018<sup>4</sup>| All                  | Yes     | Stock          | 0mph<sup>5</sup> | 0mph           |
 | Toyota             | C-HR 2018<sup>4</sup> | All                  | Yes     | Stock          | 0mph             | 0mph           |
 | Toyota             | Corolla 2017          | All                  | Yes     | Yes<sup>2</sup>| 20mph            | 0mph           |
 | Toyota             | Corolla 2018          | All                  | Yes     | Yes<sup>2</sup>| 20mph            | 0mph           |
-| Toyota             | Highlander 2017       | All                  | Yes     | Yes<sup>2</sup>| 20mph            | 0mph           |
+| Toyota             | Highlander 2017       | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
 | Toyota             | Highlander Hybrid 2018| All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
 | Toyota             | Prius 2016            | TSS-P                | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
 | Toyota             | Prius 2017            | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
@@ -113,7 +117,7 @@ In Progress Cars
   - 'All-Speed Range Dynamic Radar Cruise Control' is required to enable stop-and-go. Only the GS, GSH, F, RX, RXH, LX, NX, NXH, LC, LCH, LS, LSH have this option.
   - Even though the LX have TSS-P, it does not have Steering Assist and is not supported.
 - All Hyundai with SmartSense.
-- All Kia with ACC and LKAS.
+- All Kia with SCC and LKAS.
 
 How can I add support for my car?
 ------

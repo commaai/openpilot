@@ -4,7 +4,7 @@ from common.realtime import sec_since_boot
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from selfdrive.controls.lib.vehicle_model import VehicleModel
-from selfdrive.car.gm.values import DBC, CAR
+from selfdrive.car.gm.values import DBC, CAR, STOCK_CONTROL_MSGS
 from selfdrive.car.gm.carstate import CarState, CruiseButtons, get_powertrain_can_parser
 
 try:
@@ -20,12 +20,6 @@ class CM:
   HIGH_BEEP = 0x85
   LOW_CHIME = 0x86
   HIGH_CHIME = 0x87
-
-# GM cars have 4 CAN buses, which creates many ways
-# of how the car can be connected to.
-# This ia a helper class for the interface to be setup-agnostic.
-# Supports single Panda setup (connected to OBDII port),
-# and a CAN forwarding setup (connected to camera module connector).
 
 class CanBus(object):
   def __init__(self):
@@ -54,7 +48,7 @@ class CarInterface(object):
     # sending if read only is False
     if sendcan is not None:
       self.sendcan = sendcan
-      self.CC = CarController(canbus, CP.carFingerprint)
+      self.CC = CarController(canbus, CP.carFingerprint, CP.enableCamera)
 
   @staticmethod
   def compute_gb(accel, speed):
@@ -73,8 +67,11 @@ class CarInterface(object):
 
     ret.enableCruise = False
 
-    # TODO: gate this on detection
-    ret.enableCamera = True
+    # Presence of a camera on the object bus is ok.
+    # Have to go passive if ASCM is online (ACC-enabled cars),
+    # or camera is on powertrain bus (LKA cars without ACC).
+    ret.enableCamera = not any(x for x in STOCK_CONTROL_MSGS[candidate] if x in fingerprint)
+
     std_cargo = 136
 
     if candidate == CAR.VOLT:
@@ -196,7 +193,7 @@ class CarInterface(object):
     ret.cruiseState.available = bool(self.CS.main_on)
     cruiseEnabled = self.CS.pcm_acc_status != 0
     ret.cruiseState.enabled = cruiseEnabled
-    ret.cruiseState.standstill = self.CS.pcm_acc_status == 4
+    ret.cruiseState.standstill = False
 
     ret.leftBlinker = self.CS.left_blinker_on
     ret.rightBlinker = self.CS.right_blinker_on
@@ -279,8 +276,6 @@ class CarInterface(object):
         events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
       if ret.gasPressed:
         events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
-      if ret.cruiseState.standstill:
-        events.append(create_event('resumeRequired', [ET.WARNING]))
 
       # handle button presses
       for b in ret.buttonEvents:
@@ -297,7 +292,7 @@ class CarInterface(object):
         events.append(create_event('pcmEnable', [ET.ENABLE]))
       if not self.CS.acc_active:
         events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
-  
+
     ret.events = events
 
     # update previous brake/gas pressed
