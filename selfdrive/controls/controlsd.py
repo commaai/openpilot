@@ -255,10 +255,9 @@ def state_control(plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, 
     AM.add("fcw", enabled)
 
   # handle lkasButton
-  for e in get_events(events, [ET.WARNING]):
-    if e == "debugAlert":
+  for b in CS.buttonEvents:
+    if b.type in ["altButton1"] and b.pressed:
       NoSteering = not NoSteering
-      AM.add(e, True, extra_text="Steering Off" if NoSteering else "Steering On")
 
   # ***** state specific actions *****
 

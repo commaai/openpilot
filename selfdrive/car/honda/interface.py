@@ -473,7 +473,6 @@ class CarInterface(object):
         be.pressed = False
         but = self.CS.prev_cruise_setting
       if but == 1:
-        be.type = 'altButton1'
         be.type = 'altButton1' # lkas
       elif but == 3:
         be.type = 'altButton2' # acc distance setting
@@ -520,7 +519,7 @@ class CarInterface(object):
       events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
 
     # disable on pedals rising edge or when brake is pressed and speed isn't zero
-    if (ret.gasPressed and not self.gas_pressed_prev) or \
+    if ((not self.CS.CP.carFingerprint in HONDA_BOSCH) and ret.gasPressed and not self.gas_pressed_prev) or \
        (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001)):
       events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
 
