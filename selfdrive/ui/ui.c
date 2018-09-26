@@ -1286,7 +1286,7 @@ static void ui_draw_button(NVGcontext *vg, int x, int y, int w, int h, char *lab
 }
 
 const buttonCount = 5;
-const *buttons = ["<<", "<", "OFF", ">", ">>"];
+const *buttons[] = { "<<", "<", "OFF", ">", ">>" };
 
 static void ui_draw_buttons(UIState *s) {
     const UIScene *scene = &s->scene;
