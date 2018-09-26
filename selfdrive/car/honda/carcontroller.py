@@ -85,8 +85,8 @@ class CarController(object):
     except zmq.error.Again:
       uie = None
     if uie is not None:
-      print "interface UIEvent %r" % uie
-      if not uie in ["1","2","3"]:
+      cloudlog.warn("interface UIEvent %s", uie)
+      if not uie in ["1","2","3","4","5"]:
         uie = None
 
     # *** apply brake hysteresis ***
@@ -165,7 +165,7 @@ class CarController(object):
       elif CS.stopped:
         can_sends.extend(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, CS.CP.carFingerprint, idx))
       elif uie != None:
-        but = [ CruiseButtons.DECEL_SET, -10, CruiseButtons.CANCEL, -4, CruiseButtons.RES_ACCEL][int(uie)]
+        but = [ CruiseButtons.DECEL_SET, -CruiseButtons.DECEL_SET, CruiseButtons.CANCEL, -CruiseButtons.RES_ACCEL, CruiseButtons.RES_ACCEL][int(uie)-1]
         cloudlog.warn("Spamming button: %r", but)
         can_sends.extend(hondacan.spam_buttons_command(self.packer, but, CS.CP.carFingerprint, idx))
     else:
