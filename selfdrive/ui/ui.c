@@ -1272,7 +1272,7 @@ static void ui_draw_vision_grid(UIState *s)
   }
 }
 
-static void ui_draw_button(NVGcontext *vg, int x, int y, int w, int h, char *label) {
+static void ui_draw_button(NVGcontext *vg, int x, int y, int w, int h, const char *label) {
   nvgTextAlign(vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
   nvgFontFace(vg, "sans-semibold");
   nvgFontSize(vg, (strlen(label)>2?30:40) * 2.5);
@@ -1285,8 +1285,8 @@ static void ui_draw_button(NVGcontext *vg, int x, int y, int w, int h, char *lab
   nvgStroke(vg);
 }
 
-const buttonCount = 5;
-const *buttons[] = { "<<", "<", "OFF", ">", ">>" };
+const int buttonCount = 5;
+const char *buttons[] = { "<<", "<", "OFF", ">", ">>" };
 
 static void ui_draw_buttons(UIState *s) {
     const UIScene *scene = &s->scene;
