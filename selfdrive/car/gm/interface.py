@@ -39,6 +39,10 @@ class CarInterface(object):
     self.can_invalid_count = 0
     self.acc_active_prev = 0
 
+    # First engagement must be done with "set/-",
+    # ignore "res/+" until then.
+    self.allow_resume = False
+
     # *** init the major players ***
     canbus = CanBus()
     self.CS = CarState(CP, canbus)
@@ -197,6 +201,7 @@ class CarInterface(object):
 
     # cruise state
     ret.cruiseState.available = bool(self.CS.main_on)
+    self.allow_resume &= ret.cruiseState.available
     cruiseEnabled = self.CS.pcm_acc_status in [AccState.ACTIVE, AccState.STANDSTILL]
     ret.cruiseState.enabled = cruiseEnabled
     ret.cruiseState.standstill = False
@@ -232,10 +237,12 @@ class CarInterface(object):
         be.pressed = False
         but = self.CS.prev_cruise_buttons
       if but == CruiseButtons.RES_ACCEL:
-        if not (cruiseEnabled and self.CS.standstill):
-          be.type = 'accelCruise' # Suppress resume button if we're resuming from stop so we don't adjust speed.
+        # Suppress resume button if we're resuming from stop so we don't adjust speed.
+        if self.allow_resume and not (cruiseEnabled and self.CS.standstill):
+          be.type = 'accelCruise'
       elif but == CruiseButtons.DECEL_SET:
         be.type = 'decelCruise'
+        self.allow_resume = True
       elif but == CruiseButtons.CANCEL:
         be.type = 'cancel'
       elif but == CruiseButtons.MAIN:
