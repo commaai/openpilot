@@ -9,10 +9,6 @@
 #include <sstream>
 #include <fstream>
 
-#ifdef __x86_64
-#include <linux/limits.h>
-#endif
-
 namespace util {
 
 inline bool starts_with(std::string s, std::string prefix) {
@@ -56,13 +52,13 @@ inline std::string dir_name(std::string const & path) {
 }
 
 inline std::string readlink(std::string path) {
-    char buff[PATH_MAX];
-    ssize_t len = ::readlink(path.c_str(), buff, sizeof(buff)-1);
-    if (len != -1) {
-      buff[len] = '\0';
-      return std::string(buff);
-    }
-    return "";
+  char buff[4096];
+  ssize_t len = ::readlink(path.c_str(), buff, sizeof(buff)-1);
+  if (len != -1) {
+    buff[len] = '\0';
+    return std::string(buff);
+  }
+  return "";
 }
 
 }

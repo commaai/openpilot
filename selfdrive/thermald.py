@@ -11,8 +11,10 @@ from selfdrive.loggerd.config import ROOT
 from common.params import Params
 from common.realtime import sec_since_boot
 from common.numpy_fast import clip
+from common.filter_simple import FirstOrderFilter
 
 ThermalStatus = log.ThermalData.ThermalStatus
+CURRENT_TAU = 2.   # 2s time constant
 
 def read_tz(x):
   with open("/sys/devices/virtual/thermal/thermal_zone%d/temp" % x) as f:
@@ -152,11 +154,12 @@ def thermald_thread():
   passive_starter = LocationStarter()
   thermal_status = ThermalStatus.green
   health_sock.RCVTIMEO = 1500
+  current_filter = FirstOrderFilter(0., CURRENT_TAU, 1.)
 
   params = Params()
 
   while 1:
-    td = messaging.recv_sock(health_sock, wait=True)
+    health = messaging.recv_sock(health_sock, wait=True)
     location = messaging.recv_sock(location_sock)
     location = location.gpsLocation if location else None
     msg = read_thermal()
@@ -177,6 +180,9 @@ def thermald_thread():
       msg.thermal.batteryVoltage = int(f.read())
     with open("/sys/class/power_supply/usb/online") as f:
       msg.thermal.usbOnline = bool(int(f.read()))
+
+    current_filter.update(msg.thermal.batteryCurrent / 1e6)
+    msg.thermal.chargerDisabled = current_filter.x > 1.0   # if current is ? 1A out, then charger might be off
 
     # TODO: add car battery voltage check
     max_cpu_temp = max(msg.thermal.cpu0, msg.thermal.cpu1,
@@ -209,11 +215,11 @@ def thermald_thread():
     # **** starting logic ****
 
     # start constellation of processes when the car starts
-    ignition = td is not None and td.health.started
+    ignition = health is not None and health.health.started
     ignition_seen = ignition_seen or ignition
 
     # add voltage check for ignition
-    if not ignition_seen and td is not None and td.health.voltage > 13500:
+    if not ignition_seen and health is not None and health.health.voltage > 13500:
       ignition = True
 
     do_uninstall = params.get("DoUninstall") == "1"
@@ -226,7 +232,7 @@ def thermald_thread():
     passive = (params.get("Passive") == "1")
 
     # start on gps movement if we haven't seen ignition and are in passive mode
-    should_start = should_start or (not (ignition_seen and td) # seen ignition and panda is connected
+    should_start = should_start or (not (ignition_seen and health) # seen ignition and panda is connected
                                     and passive
                                     and passive_starter.update(started_ts, location))
 
@@ -273,7 +279,7 @@ def thermald_thread():
     if (count%60) == 0:
       cloudlog.event("STATUS_PACKET",
         count=count,
-        health=(td.to_dict() if td else None),
+        health=(health.to_dict() if health else None),
         location=(location.to_dict() if location else None),
         thermal=msg.to_dict())
 

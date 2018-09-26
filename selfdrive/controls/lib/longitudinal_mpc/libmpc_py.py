@@ -8,7 +8,7 @@ subprocess.check_call(["make", "-j4"], cwd=mpc_dir)
 
 
 def _get_libmpc(mpc_id):
-    libmpc_fn = os.path.join(mpc_dir, "libcommampc%d.so" % mpc_id)
+    libmpc_fn = os.path.join(mpc_dir, "libmpc%d.so" % mpc_id)
 
     ffi = FFI()
     ffi.cdef("""
@@ -24,14 +24,14 @@ def _get_libmpc(mpc_id):
     double j_ego[21];
     double x_l[21];
     double v_l[21];
-    double a_l[21];
+    double t[21];
     double cost;
     } log_t;
 
     void init(double ttcCost, double distanceCost, double accelerationCost, double jerkCost);
     void init_with_simulation(double v_ego, double x_l, double v_l, double a_l, double l);
     int run_mpc(state_t * x0, log_t * solution,
-                double l);
+                double l, double a_l_0);
     """)
 
     return (ffi, ffi.dlopen(libmpc_fn))

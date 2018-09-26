@@ -64,7 +64,7 @@ extern "C"
 /** Number of control/estimation intervals. */
 #define ACADO_N 20
 /** Number of online data values. */
-#define ACADO_NOD 1
+#define ACADO_NOD 2
 /** Number of path constraints. */
 #define ACADO_NPAC 0
 /** Number of control variables. */
@@ -114,11 +114,11 @@ real_t x[ 126 ];
  */
 real_t u[ 20 ];
 
-/** Column vector of size: 21
+/** Matrix of size: 21 x 2 (row major format)
  * 
  *  Matrix containing 21 online data vectors.
  */
-real_t od[ 21 ];
+real_t od[ 42 ];
 
 /** Column vector of size: 80
  * 
@@ -155,16 +155,19 @@ real_t x0[ 6 ];
  */
 typedef struct ACADOworkspace_
 {
+/** Column vector of size: 10 */
+real_t rhs_aux[ 10 ];
+
 real_t rk_ttt;
 
-/** Row vector of size: 50 */
-real_t rk_xxx[ 50 ];
+/** Row vector of size: 51 */
+real_t rk_xxx[ 51 ];
 
 /** Matrix of size: 4 x 48 (row major format) */
 real_t rk_kkk[ 192 ];
 
-/** Row vector of size: 50 */
-real_t state[ 50 ];
+/** Row vector of size: 51 */
+real_t state[ 51 ];
 
 /** Column vector of size: 120 */
 real_t d[ 120 ];
@@ -184,8 +187,8 @@ real_t evGu[ 120 ];
 /** Column vector of size: 30 */
 real_t objAuxVar[ 30 ];
 
-/** Row vector of size: 8 */
-real_t objValueIn[ 8 ];
+/** Row vector of size: 9 */
+real_t objValueIn[ 9 ];
 
 /** Row vector of size: 32 */
 real_t objValueOut[ 32 ];
