@@ -194,13 +194,18 @@ class CarInterface(object):
     cloudlog.warn("ECU Gas Interceptor: %r", ret.enableGasInterceptor)
 
     ret.steerLimitAlert = False
-    ret.stoppingControl = True if ret.enableGasInterceptor else False
-    ret.startAccel = 0.5 if ret.enableGasInterceptor else 0.0
-
     ret.longitudinalKpBP = [0., 5., 35.]
-    ret.longitudinalKpV = [3.6, 2.4, 1.5]
     ret.longitudinalKiBP = [0., 35.]
-    ret.longitudinalKiV = [0.54, 0.36] 
+    ret.stoppingControl = False
+
+    if ret.enableGasInterceptor:
+      ret.startAccel = 0.0
+      ret.longitudinalKpV = [1.2, 0.8, 0.5]
+      ret.longitudinalKiV = [0.18, 0.12]
+    else:
+      ret.startAccel = 0.0
+      ret.longitudinalKpV = [3.6, 2.4, 1.5]
+      ret.longitudinalKiV = [0.54, 0.36]
 
     return ret
 
