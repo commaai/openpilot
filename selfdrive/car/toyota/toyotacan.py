@@ -82,8 +82,8 @@ def create_gas_command(packer, gas_amount):
   values = {"ENABLE": enable}
 
   if enable:
-    values["GAS_COMMAND"] = gas_amount * 50.
-    values["GAS_COMMAND2"] = gas_amount * 50.
+    values["GAS_COMMAND"] = gas_amount * 45.
+    values["GAS_COMMAND2"] = gas_amount * 45.
 
   return packer.make_can_msg("GAS_COMMAND", 0, values)
 
