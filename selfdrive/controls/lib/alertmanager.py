@@ -74,6 +74,12 @@ class AlertManager(object):
         AlertStatus.normal, AlertSize.none,
         Priority.MID, None, "beepSingle", .2, 0., 0.),
 
+    "userdisable": Alert(
+        "",
+        "",
+        AlertStatus.normal, AlertSize.none,
+        Priority.MID, None, None, .2, 0., 0.),
+
     "fcw": Alert(
         "BRAKE!",
         "Risk of Collision",

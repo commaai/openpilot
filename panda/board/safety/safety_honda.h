@@ -15,7 +15,7 @@ int gas_prev = 0;
 int gas_interceptor_prev = 0;
 int ego_speed = 0;
 // TODO: auto-detect bosch hardware based on CAN messages?
-bool bosch_hardware = false;
+bool bosch_hardware = true; // default to Bosch hardware
 bool honda_alt_brake_msg = false;
 
 static void honda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
@@ -55,26 +55,29 @@ static void honda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     brake_prev = brake;
   }
 
-  // exit controls on rising edge of gas press if interceptor (0x201 w/ len = 6)
-  // length check because bosch hardware also uses this id (0x201 w/ len = 8)
-  if ((to_push->RIR>>21) == 0x201 && (to_push->RDTR & 0xf) == 6) {
-    gas_interceptor_detected = 1;
-    int gas_interceptor = ((to_push->RDLR & 0xFF) << 8) | ((to_push->RDLR & 0xFF00) >> 8);
-    if ((gas_interceptor > gas_interceptor_threshold) &&
-        (gas_interceptor_prev <= gas_interceptor_threshold)) {
-      controls_allowed = 0;
-    }
-    gas_interceptor_prev = gas_interceptor;
-  }
-
-  // exit controls on rising edge of gas press if no interceptor
-  if (!gas_interceptor_detected) {
-    if ((to_push->RIR>>21) == 0x17C) {
-      int gas = to_push->RDLR & 0xFF;
-      if (gas && !(gas_prev)) {
+  // stock ACC on Bosch allows pressing gas pedal while ACC is enabled
+  if(!bosch_hardware) {
+    // exit controls on rising edge of gas press if interceptor (0x201 w/ len = 6)
+    // length check because bosch hardware also uses this id (0x201 w/ len = 8)
+    if ((to_push->RIR>>21) == 0x201 && (to_push->RDTR & 0xf) == 6) {
+      gas_interceptor_detected = 1;
+      int gas_interceptor = ((to_push->RDLR & 0xFF) << 8) | ((to_push->RDLR & 0xFF00) >> 8);
+      if ((gas_interceptor > gas_interceptor_threshold) &&
+          (gas_interceptor_prev <= gas_interceptor_threshold)) {
         controls_allowed = 0;
       }
-      gas_prev = gas;
+      gas_interceptor_prev = gas_interceptor;
+    }
+
+    // exit controls on rising edge of gas press if no interceptor
+    if (!gas_interceptor_detected) {
+      if ((to_push->RIR>>21) == 0x17C) {
+        int gas = to_push->RDLR & 0xFF;
+        if (gas && !(gas_prev)) {
+          controls_allowed = 0;
+        }
+        gas_prev = gas;
+      }
     }
   }
 }
@@ -87,9 +90,9 @@ static void honda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
 static int honda_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 
-  // disallow actuator commands if gas or brake (with vehicle moving) are pressed
+  // disallow actuator commands if gas (on non Bosch hardware) or brake (with vehicle moving) are pressed
   // and the the latching controls_allowed flag is True
-  int pedal_pressed = gas_prev || (gas_interceptor_prev > gas_interceptor_threshold) ||
+  int pedal_pressed = (!bosch_hardware && (gas_prev || (gas_interceptor_prev > gas_interceptor_threshold))) ||
                       (brake_prev && ego_speed);
   int current_controls_allowed = controls_allowed && !(pedal_pressed);
 

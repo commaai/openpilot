@@ -257,7 +257,7 @@ def uploader_fn(exit_event):
   backoff = 0.1
   while True:
 
-    should_upload = (params.get("IsUploadVideoOverCellularEnabled") != "0") or is_on_wifi()
+    should_upload = (params.get("IsUploadVideoOverCellularEnabled") != "0") #or is_on_wifi()
 
     if exit_event.is_set():
       return

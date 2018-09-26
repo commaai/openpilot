@@ -1,0 +1,2 @@
+export PYTHONPATH=/data/openpilot
+cd /data/openpilot/selfdrive

@@ -398,9 +398,12 @@ class CarInterface(object):
     ret.brake = self.CS.user_brake
     ret.brakePressed = self.CS.brake_pressed != 0
     # FIXME: read sendcan for brakelights
-    brakelights_threshold = 0.02 if self.CS.CP.carFingerprint == CAR.CIVIC else 0.1
-    ret.brakeLights = bool(self.CS.brake_switch or
-                           c.actuators.brake > brakelights_threshold)
+    if self.CS.CP.carFingerprint in (CAR.ACCORDH):
+      ret.brakeLights = bool(self.CS.brake_switch or self.CS.braking1!=0)
+    else:
+      brakelights_threshold = 0.02 if self.CS.CP.carFingerprint == CAR.CIVIC else 0.1
+      ret.brakeLights = bool(self.CS.brake_switch or
+                            c.actuators.brake > brakelights_threshold)
 
     # steering wheel
     ret.steeringAngle = self.CS.angle_steers
@@ -456,6 +459,8 @@ class CarInterface(object):
         be.type = 'cancel'
       elif but == CruiseButtons.MAIN:
         be.type = 'altButton3'
+      else:
+        cloudlog.info("button in cruise_buttons %r" % but)
       buttonEvents.append(be)
 
     if self.CS.cruise_setting != self.CS.prev_cruise_setting:
@@ -469,6 +474,11 @@ class CarInterface(object):
         but = self.CS.prev_cruise_setting
       if but == 1:
         be.type = 'altButton1'
+        be.type = 'altButton1' # lkas
+      elif but == 3:
+        be.type = 'altButton2' # acc distance setting
+      else:
+        cloudlog.info("button in cruise_setting %r" % but)
       # TODO: more buttons?
       buttonEvents.append(be)
     ret.buttonEvents = buttonEvents
@@ -514,7 +524,7 @@ class CarInterface(object):
        (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001)):
       events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
 
-    if ret.gasPressed:
+    if (not self.CS.CP.carFingerprint in HONDA_BOSCH) and ret.gasPressed:
       events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
 
     # it can happen that car cruise disables while comma system is enabled: need to

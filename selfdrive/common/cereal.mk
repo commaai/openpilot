@@ -11,7 +11,7 @@ CEREAL_LIBS = -lcapnp -lkj
 
 else ifeq ($(UNAME_S),Darwin)
 
-CEREAL_CXXFLAGS = -I$(PHONELIBS)/capnp-cpp/mac/include
+CEREAL_CXXFLAGS = -I$(PHONELIBS)/capnp-cpp/mac/include -std=c++1z
 CEREAL_LIBS = $(PHONELIBS)/capnp-cpp/mac/lib/libcapnp.a \
               $(PHONELIBS)/capnp-cpp/mac/lib/libkj.a \
               $(PHONELIBS)/capnp-c/mac/lib/libcapnp_c.a

@@ -1,3 +1,6 @@
+import zmq
+import selfdrive.messaging as messaging
+from selfdrive.swaglog import cloudlog
 from cereal import car
 from collections import namedtuple
 from selfdrive.boardd.boardd import can_list_to_can_capnp
@@ -63,6 +66,7 @@ class CarController(object):
     self.enable_camera = enable_camera
     self.packer = CANPacker(dbc_name)
     self.new_radar_config = False
+    self.uievent = messaging.sub_sock(zmq.Context(), 8064)
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
              pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel, \
@@ -73,6 +77,17 @@ class CarController(object):
 
     if not self.enable_camera:
       return
+
+    # receive UI events
+    uie = None
+    try:
+      uie = self.uievent.recv(zmq.NOBLOCK)
+    except zmq.error.Again:
+      uie = None
+    if uie is not None:
+      print "interface UIEvent %r" % uie
+      if not uie in ["1","2","3"]:
+        uie = None
 
     # *** apply brake hysteresis ***
     brake, self.braking, self.brake_steady = actuator_hystereses(actuators.brake, self.braking, self.brake_steady, CS.v_ego, CS.CP.carFingerprint)
@@ -149,6 +164,10 @@ class CarController(object):
         can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.CANCEL, idx))
       elif CS.stopped:
         can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx))
+      elif uie != None:        
+        but = CruiseButtons.CANCEL if uie=="2" else CruiseButtons.RES_ACCEL if uie=="1" else CruiseButtons.DECEL_SET        
+        cloudlog.warn("Spamming button: %r", but)
+        can_sends.append(hondacan.spam_buttons_command(self.packer, but, idx))
     else:
       # Send gas and brake commands.
       if (frame % 2) == 0:

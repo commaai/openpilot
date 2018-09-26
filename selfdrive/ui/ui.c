@@ -52,8 +52,9 @@ const int vwp_w = 1920;
 const int vwp_h = 1080;
 const int nav_w = 640;
 const int nav_ww= 760;
-const int sbr_w = 300;
-const int bdr_s = 30;
+const int sbr_w = 0; //300;
+const int bdr_s = 0; //30;
+const int bdr_is = 30;
 const int box_x = sbr_w+bdr_s;
 const int box_y = bdr_s;
 const int box_w = vwp_w-sbr_w-(bdr_s*2);
@@ -85,6 +86,17 @@ const int alert_sizes[] = {
   [ALERTSIZE_MID] = 390,
   [ALERTSIZE_FULL] = vwp_h,
 };
+
+#define UIEVENT_BTN1  1
+#define UIEVENT_BTN2  2
+#define UIEVENT_BTN3  3
+#define UIEVENT_BTN4  4
+#define UIEVENT_BTN5  5
+#define UIEVENT_BTN6  6
+#define UIEVENT_BTN7  7
+#define UIEVENT_BTN8  8
+#define UIEVENT_STARTUP 10
+#define UIEVENT_SHUTDOWN 11
 
 // TODO: this is also hardcoded in common/transformations/camera.py
 const mat3 intrinsic_matrix = (mat3){{
@@ -138,9 +150,27 @@ typedef struct UIScene {
   float awareness_status;
 
   uint64_t started_ts;
+    //BB CPU TEMP
+  uint16_t maxCpuTemp;
+  uint32_t maxBatTemp;
+  float gpsAccuracy;
+  float freeSpace;
+  float angleSteers;
+  float angleSteersDes;
+  float cameraOffset;
+  //BB END CPU TEMP
+  bool steerOverride;
+  // Used to display calibration progress
+  int cal_status;
+  int cal_perc;
 
   // Used to show gps planner status
   bool gps_planner_active;
+
+  bool brakeLights;
+  bool leftBlinker;
+  bool rightBlinker;
+  int blinker_blinkingrate;
 
 } UIScene;
 
@@ -162,6 +192,8 @@ typedef struct UIState {
   int img_wheel;
   int img_face;
 
+  zsock_t *uievent_sock;
+
   zsock_t *thermal_sock;
   void *thermal_sock_raw;
   zsock_t *model_sock;
@@ -176,6 +208,10 @@ typedef struct UIState {
   void *livempc_sock_raw;
   zsock_t *plus_sock;
   void *plus_sock_raw;
+  zsock_t *gps_sock;
+  void *gps_sock_raw;
+  zsock_t *carstate_sock;
+  void *carstate_sock_raw;
 
   zsock_t *uilayout_sock;
   void *uilayout_sock_raw;
@@ -223,6 +259,8 @@ typedef struct UIState {
   bool alert_blinked;
 
   float light_sensor;
+  bool ignoreLayout;
+
 } UIState;
 
 static int last_brightness = -1;
@@ -324,15 +362,22 @@ static const mat4 full_to_wide_frame_transform = {{
 
 static void ui_init(UIState *s) {
   memset(s, 0, sizeof(UIState));
+  s->ignoreLayout = true;
 
   pthread_mutex_init(&s->lock, NULL);
   pthread_cond_init(&s->bg_cond, NULL);
 
   // init connections
+  s->uievent_sock = zsock_new_pub("tcp://0.0.0.0:8064");
+  assert(s->uievent_sock);
 
   s->thermal_sock = zsock_new_sub(">tcp://127.0.0.1:8005", "");
   assert(s->thermal_sock);
   s->thermal_sock_raw = zsock_resolve(s->thermal_sock);
+
+  s->gps_sock = zsock_new_sub(">tcp://127.0.0.1:8032", "");
+  assert(s->gps_sock);
+  s->gps_sock_raw = zsock_resolve(s->gps_sock);
 
   s->model_sock = zsock_new_sub(">tcp://127.0.0.1:8009", "");
   assert(s->model_sock);
@@ -421,6 +466,8 @@ static void ui_init(UIState *s) {
       free(value);
     }
   }
+
+  zsock_send(s->uievent_sock, "i", UIEVENT_STARTUP);
 }
 
 static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
@@ -849,14 +896,472 @@ static void ui_draw_world(UIState *s) {
   }
 }
 
+
+//BB START: functions added for the display of various items
+static int bb_ui_draw_measure(UIState *s, const char *bb_value, const char *bb_uom, const char *bb_label,
+                              int bb_x, int bb_y, int bb_uom_dx,
+                              NVGcolor bb_valueColor, NVGcolor bb_labelColor, NVGcolor bb_uomColor,
+                              int bb_valueFontSize, int bb_labelFontSize, int bb_uomFontSize)
+{
+  const UIScene *scene = &s->scene;
+  nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
+  int dx = 0;
+  if (strlen(bb_uom) > 0)
+  {
+    dx = (int)(bb_uomFontSize * 2.5 / 2);
+  }
+  //print value
+  nvgFontFace(s->vg, "sans-semibold");
+  nvgFontSize(s->vg, bb_valueFontSize * 2.5);
+  nvgFillColor(s->vg, bb_valueColor);
+  nvgText(s->vg, bb_x - dx / 2, bb_y + (int)(bb_valueFontSize * 2.5) + 5, bb_value, NULL);
+  //print label
+  nvgFontFace(s->vg, "sans-regular");
+  nvgFontSize(s->vg, bb_labelFontSize * 2.5);
+  nvgFillColor(s->vg, bb_labelColor);
+  nvgText(s->vg, bb_x, bb_y + (int)(bb_valueFontSize * 2.5) + 5 + (int)(bb_labelFontSize * 2.5) + 5, bb_label, NULL);
+  //print uom
+  if (strlen(bb_uom) > 0)
+  {
+    nvgSave(s->vg);
+    int rx = bb_x + bb_uom_dx + bb_valueFontSize - 3;
+    int ry = bb_y + (int)(bb_valueFontSize * 2.5 / 2) + 25;
+    nvgTranslate(s->vg, rx, ry);
+    nvgRotate(s->vg, -1.5708); //-90deg in radians
+    nvgFontFace(s->vg, "sans-regular");
+    nvgFontSize(s->vg, (int)(bb_uomFontSize * 2.5));
+    nvgFillColor(s->vg, bb_uomColor);
+    nvgText(s->vg, 0, 0, bb_uom, NULL);
+    nvgRestore(s->vg);
+  }
+  return (int)((bb_valueFontSize + bb_labelFontSize) * 2.5) + 5;
+}
+
+static void bb_ui_draw_measures_left(UIState *s, int bb_x, int bb_y, int bb_w)
+{
+  const UIScene *scene = &s->scene;
+  int bb_rx = bb_x + (int)(bb_w / 2);
+  int bb_ry = bb_y;
+  int bb_h = 5;
+  NVGcolor lab_color = nvgRGBA(255, 255, 255, 200);
+  NVGcolor uom_color = nvgRGBA(255, 255, 255, 200);
+  int value_fontSize = 30;
+  int label_fontSize = 15;
+  int uom_fontSize = 15;
+  int bb_uom_dx = (int)(bb_w / 2 - uom_fontSize * 2.5);
+
+  //add CPU temperature
+  if (true)
+  {
+    char val_str[16];
+    char uom_str[6];
+    NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
+    if ((int)(scene->maxCpuTemp / 10) > 65)
+    {
+      val_color = nvgRGBA(255, 188, 3, 200);
+    }
+    if ((int)(scene->maxCpuTemp / 10) > 85)
+    {
+      val_color = nvgRGBA(255, 0, 0, 200);
+    }
+    // temp is alway in C * 10
+    snprintf(val_str, sizeof(val_str), "%d C", (int)(scene->maxCpuTemp / 10));
+    snprintf(uom_str, sizeof(uom_str), "");
+    bb_h += bb_ui_draw_measure(s, val_str, uom_str, "CPU TEMP",
+                               bb_rx, bb_ry, bb_uom_dx,
+                               val_color, lab_color, uom_color,
+                               value_fontSize, label_fontSize, uom_fontSize);                               
+    bb_ry = bb_y + bb_h;
+  }
+
+  //add battery temperature
+  if (true)
+  {
+    char val_str[16];
+    char uom_str[6];
+    NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
+    if ((int)(scene->maxBatTemp / 1000) > 40)
+    {
+      val_color = nvgRGBA(255, 188, 3, 200);
+    }
+    if ((int)(scene->maxBatTemp / 1000) > 50)
+    {
+      val_color = nvgRGBA(255, 0, 0, 200);
+    }
+    // temp is alway in C * 1000
+    snprintf(val_str, sizeof(val_str), "%d C", (int)(scene->maxBatTemp / 1000));
+    snprintf(uom_str, sizeof(uom_str), "");
+    bb_h += bb_ui_draw_measure(s, val_str, uom_str, "BAT TEMP",
+                               bb_rx, bb_ry, bb_uom_dx,
+                               val_color, lab_color, uom_color,
+                               value_fontSize, label_fontSize, uom_fontSize);
+    bb_ry = bb_y + bb_h;
+  }
+
+  //add grey panda GPS accuracy
+  if (true)
+  {
+    char val_str[16];
+    char uom_str[3];
+    NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
+    //show red/orange if gps accuracy is high
+    if (scene->gpsAccuracy > 0.59)
+    {
+      val_color = nvgRGBA(255, 188, 3, 200);
+    }
+    if (scene->gpsAccuracy > 0.8)
+    {
+      val_color = nvgRGBA(255, 0, 0, 200);
+    }
+
+    // gps accuracy is always in meters
+    snprintf(val_str, sizeof(val_str), "%.2f", s->scene.gpsAccuracy);
+    snprintf(uom_str, sizeof(uom_str), "m");
+    bb_h += bb_ui_draw_measure(s, val_str, uom_str, "GPS PREC",
+                               bb_rx, bb_ry, bb_uom_dx,
+                               val_color, lab_color, uom_color,
+                               value_fontSize, label_fontSize, uom_fontSize);
+    bb_ry = bb_y + bb_h;
+  }
+  //add free space - from bthaler1
+  if (true)
+  {
+    char val_str[16];
+    char uom_str[3];
+    NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
+
+    //show red/orange if free space is low
+    if (scene->freeSpace < 0.4)
+    {
+      val_color = nvgRGBA(255, 188, 3, 200);
+    }
+    if (scene->freeSpace < 0.2)
+    {
+      val_color = nvgRGBA(255, 0, 0, 200);
+    }
+
+    snprintf(val_str, sizeof(val_str), "%.1f", s->scene.freeSpace * 100);
+    snprintf(uom_str, sizeof(uom_str), "%%");
+
+    bb_h += bb_ui_draw_measure(s, val_str, uom_str, "FREE",
+                               bb_rx, bb_ry, bb_uom_dx,
+                               val_color, lab_color, uom_color,
+                               value_fontSize, label_fontSize, uom_fontSize);
+    bb_ry = bb_y + bb_h;
+  }
+  //finally draw the frame
+  bb_h += 20;
+  nvgBeginPath(s->vg);
+  nvgRoundedRect(s->vg, bb_x, bb_y, bb_w, bb_h, 20);
+  nvgStrokeColor(s->vg, nvgRGBA(255, 255, 255, 80));
+  nvgStrokeWidth(s->vg, 6);
+  nvgStroke(s->vg);
+}
+
+static void bb_ui_draw_measures_right(UIState *s, int bb_x, int bb_y, int bb_w)
+{
+  const UIScene *scene = &s->scene;
+  int bb_rx = bb_x + (int)(bb_w / 2);
+  int bb_ry = bb_y;
+  int bb_h = 5;
+  NVGcolor lab_color = nvgRGBA(255, 255, 255, 200);
+  NVGcolor uom_color = nvgRGBA(255, 255, 255, 200);
+  int value_fontSize = 30;
+  int label_fontSize = 15;
+  int uom_fontSize = 15;
+  int bb_uom_dx = (int)(bb_w / 2 - uom_fontSize * 2.5);
+
+  //add visual radar relative distance
+  if (true)
+  {
+    char val_str[16];
+    char uom_str[6];
+    NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
+    if (scene->lead_status)
+    {
+      //show RED if less than 5 meters
+      //show orange if less than 15 meters
+      if ((int)(scene->lead_d_rel) < 15)
+      {
+        val_color = nvgRGBA(255, 188, 3, 200);
+      }
+      if ((int)(scene->lead_d_rel) < 5)
+      {
+        val_color = nvgRGBA(255, 0, 0, 200);
+      }
+      // lead car relative distance is always in meters
+      if (s->is_metric)
+      {
+        snprintf(val_str, sizeof(val_str), "%d", (int)scene->lead_d_rel);
+      }
+      else
+      {
+        snprintf(val_str, sizeof(val_str), "%d", (int)(scene->lead_d_rel * 3.28084));
+      }
+    }
+    else
+    {
+      snprintf(val_str, sizeof(val_str), "-");
+    }
+    if (s->is_metric)
+    {
+      snprintf(uom_str, sizeof(uom_str), "m   ");
+    }
+    else
+    {
+      snprintf(uom_str, sizeof(uom_str), "ft");
+    }
+    bb_h += bb_ui_draw_measure(s, val_str, uom_str, "REL DIST",
+                               bb_rx, bb_ry, bb_uom_dx,
+                               val_color, lab_color, uom_color,
+                               value_fontSize, label_fontSize, uom_fontSize);
+    bb_ry = bb_y + bb_h;
+  }
+
+  //add visual radar relative speed
+  if (true)
+  {
+    char val_str[16];
+    char uom_str[6];
+    NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
+    if (scene->lead_status)
+    {
+      //show Orange if negative speed (approaching)
+      //show Orange if negative speed faster than 5mph (approaching fast)
+      if ((int)(scene->lead_v_rel) < 0)
+      {
+        val_color = nvgRGBA(255, 188, 3, 200);
+      }
+      if ((int)(scene->lead_v_rel) < -5)
+      {
+        val_color = nvgRGBA(255, 0, 0, 200);
+      }
+      // lead car relative speed is always in meters
+      if (s->is_metric)
+      {
+        snprintf(val_str, sizeof(val_str), "%d", (int)(scene->lead_v_rel * 3.6 + 0.5));
+      }
+      else
+      {
+        snprintf(val_str, sizeof(val_str), "%d", (int)(scene->lead_v_rel * 2.2374144 + 0.5));
+      }
+    }
+    else
+    {
+      snprintf(val_str, sizeof(val_str), "-");
+    }
+    if (s->is_metric)
+    {
+      snprintf(uom_str, sizeof(uom_str), "km/h");
+      ;
+    }
+    else
+    {
+      snprintf(uom_str, sizeof(uom_str), "mph");
+    }
+    bb_h += bb_ui_draw_measure(s, val_str, uom_str, "REL SPD",
+                               bb_rx, bb_ry, bb_uom_dx,
+                               val_color, lab_color, uom_color,
+                               value_fontSize, label_fontSize, uom_fontSize);
+    bb_ry = bb_y + bb_h;
+  }
+
+  //add  steering angle
+  if (true)
+  {
+    char val_str[16];
+    char uom_str[6];
+    NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
+    //show Orange if more than 6 degrees
+    //show red if  more than 12 degrees
+    if (((int)(scene->angleSteers) < -6) || ((int)(scene->angleSteers) > 6))
+    {
+      val_color = nvgRGBA(255, 188, 3, 200);
+    }
+    if (((int)(scene->angleSteers) < -12) || ((int)(scene->angleSteers) > 12))
+    {
+      val_color = nvgRGBA(255, 0, 0, 200);
+    }
+    // steering is in degrees
+    snprintf(val_str, sizeof(val_str), "%.1f", (scene->angleSteers));
+
+    snprintf(uom_str, sizeof(uom_str), "deg");
+    bb_h += bb_ui_draw_measure(s, val_str, uom_str, "STEER",
+                               bb_rx, bb_ry, bb_uom_dx,
+                               val_color, lab_color, uom_color,
+                               value_fontSize, label_fontSize, uom_fontSize);
+    bb_ry = bb_y + bb_h;
+  }
+
+  //add  desired steering angle
+  if (true)
+  {
+    char val_str[16];
+    char uom_str[6];
+    NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
+    //show Orange if more than 6 degrees
+    //show red if  more than 12 degrees
+    if (((int)(scene->angleSteersDes) < -6) || ((int)(scene->angleSteersDes) > 6))
+    {
+      val_color = nvgRGBA(255, 188, 3, 200);
+    }
+    if (((int)(scene->angleSteersDes) < -12) || ((int)(scene->angleSteersDes) > 12))
+    {
+      val_color = nvgRGBA(255, 0, 0, 200);
+    }
+    // steering is in degrees
+    snprintf(val_str, sizeof(val_str), "%.1f", (scene->angleSteersDes));
+
+    snprintf(uom_str, sizeof(uom_str), "deg");
+    bb_h += bb_ui_draw_measure(s, val_str, uom_str, "DES STEER",
+                               bb_rx, bb_ry, bb_uom_dx,
+                               val_color, lab_color, uom_color,
+                               value_fontSize, label_fontSize, uom_fontSize);
+    bb_ry = bb_y + bb_h;
+  }
+
+  //finally draw the frame
+  bb_h += 20;
+  nvgBeginPath(s->vg);
+  nvgRoundedRect(s->vg, bb_x, bb_y, bb_w, bb_h, 20);
+  nvgStrokeColor(s->vg, nvgRGBA(255, 255, 255, 80));
+  nvgStrokeWidth(s->vg, 6);
+  nvgStroke(s->vg);
+}
+
+//draw grid from wiki
+static void ui_draw_vision_grid(UIState *s)
+{
+  const UIScene *scene = &s->scene;
+  bool is_cruise_set = (s->scene.v_cruise != 0 && s->scene.v_cruise != 255);
+  if (!is_cruise_set)
+  {
+    const int grid_spacing = 30;
+
+    int ui_viz_rx = scene->ui_viz_rx;
+    int ui_viz_rw = scene->ui_viz_rw;
+
+    nvgSave(s->vg);
+
+    // path coords are worked out in rgb-box space
+    nvgTranslate(s->vg, 240.0f, 0.0);
+
+    // zooom in 2x
+    nvgTranslate(s->vg, -1440.0f / 2, -1080.0f / 2);
+    nvgScale(s->vg, 2.0, 2.0);
+
+    nvgScale(s->vg, 1440.0f / s->rgb_width, 1080.0f / s->rgb_height);
+
+    nvgBeginPath(s->vg);
+    nvgStrokeColor(s->vg, nvgRGBA(255, 255, 255, 128));
+    nvgStrokeWidth(s->vg, 1);
+
+    for (int i = box_y; i < box_h; i += grid_spacing)
+    {
+      nvgMoveTo(s->vg, ui_viz_rx, i);
+      //nvgLineTo(s->vg, ui_viz_rx, i);
+      nvgLineTo(s->vg, ((ui_viz_rw + ui_viz_rx) / 2) + 10, i);
+    }
+
+    for (int i = ui_viz_rx + 12; i <= ui_viz_rw; i += grid_spacing)
+    {
+      nvgMoveTo(s->vg, i, 0);
+      nvgLineTo(s->vg, i, 1000);
+    }
+    nvgStroke(s->vg);
+    nvgRestore(s->vg);
+  }
+}
+
+static void ui_draw_button(NVGcontext *vg, int x, int y, int w, int h, char *label) {
+  nvgTextAlign(vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
+  nvgFontFace(vg, "sans-semibold");
+  nvgFontSize(vg, (strlen(label)>2?30:40) * 2.5);
+  nvgFillColor(vg, nvgRGBA(255, 255, 255, 200));
+  nvgText(vg, x + w/2, y + (int)(40 * 2.5) + 5, label, NULL);
+  nvgBeginPath(vg);
+  nvgRoundedRect(vg, x, y, w, h, 20);
+  nvgStrokeColor(vg, nvgRGBA(255, 255, 255, 80));
+  nvgStrokeWidth(vg, 6);
+  nvgStroke(vg);
+}
+
+static void ui_draw_buttons(UIState *s) {
+    const UIScene *scene = &s->scene;
+    const int w = 180;
+    const int x = scene->ui_viz_rx + scene->ui_viz_rw/2 - ((3*w + 40)/2);
+    const int y = box_h - bdr_is - 140;
+    const int h = 150;
+    char outstr[32];
+    ui_draw_button(s->vg, x, y, w, h, "<<");
+    snprintf(outstr, 32, "%i cm", (int)(100.0 * s->scene.cameraOffset));
+    ui_draw_button(s->vg, x + w + 20, y, w, h, outstr);
+    ui_draw_button(s->vg, x+2*w+40, y, w, h, ">>");
+}
+
+static int test_button_touch(UIState *s, int tx, int ty) {
+    const UIScene *scene = &s->scene;
+    const int w = 180;
+    const int x = scene->ui_viz_rx + scene->ui_viz_rw/2 - (3*w/2);
+    const int y = box_h - bdr_is - 140;
+    const int h = 150;
+    for(int i=0;i<3;i++)
+      if(tx>=x+i*(w+20) && tx<=x+w+i*(w+20) && ty>=y && ty<=y+h)
+        return i;
+    return -1;
+}
+
+static void bb_ui_draw_UI(UIState *s)
+{
+  //get 3-state switch position
+  int tri_state_fd;
+  int tri_state_switch;
+  char buffer[10];
+  tri_state_switch = 0;
+  tri_state_fd = open("/sys/devices/virtual/switch/tri-state-key/state", O_RDONLY);
+  //if we can't open then switch should be considered in the middle, nothing done
+  if (tri_state_fd == -1)
+  {
+    tri_state_switch = 1;
+  }
+  else
+  {
+    read(tri_state_fd, &buffer, 10);
+    tri_state_switch = buffer[0] - 48;
+    close(tri_state_fd);
+  }
+  s->ignoreLayout = (tri_state_switch==3);
+
+  if (tri_state_switch >= 2)
+  {
+    const UIScene *scene = &s->scene;
+    const int bb_dml_w = 180;
+    const int bb_dml_x = (scene->ui_viz_rx + (bdr_is * 2));
+    const int bb_dml_y = (box_y + (bdr_is * 1.5)) + 220;
+
+    const int bb_dmr_w = 180;
+    const int bb_dmr_x = scene->ui_viz_rx + scene->ui_viz_rw - bb_dmr_w - (bdr_is * 2);
+    const int bb_dmr_y = (box_y + (bdr_is * 1.5)) + 220;
+
+    bb_ui_draw_measures_right(s, bb_dml_x, bb_dml_y, bb_dml_w);
+    bb_ui_draw_measures_left(s, bb_dmr_x, bb_dmr_y, bb_dmr_w);
+  }
+  if (tri_state_switch == 3)
+  {
+    ui_draw_buttons(s);
+    //ui_draw_vision_grid(s);
+  }
+}
+
+//BB END: functions added for the display of various items
 static void ui_draw_vision_maxspeed(UIState *s) {
   const UIScene *scene = &s->scene;
   int ui_viz_rx = scene->ui_viz_rx;
   int ui_viz_rw = scene->ui_viz_rw;
   float maxspeed = s->scene.v_cruise;
 
-  const int viz_maxspeed_x = (ui_viz_rx + (bdr_s*2));
-  const int viz_maxspeed_y = (box_y + (bdr_s*1.5));
+  const int viz_maxspeed_x = (ui_viz_rx + (bdr_is*2));
+  const int viz_maxspeed_y = (box_y + (bdr_is*1.5));
   const int viz_maxspeed_w = 180;
   const int viz_maxspeed_h = 202;
   char maxspeed_str[32];
@@ -888,10 +1393,14 @@ static void ui_draw_vision_maxspeed(UIState *s) {
     nvgFontSize(s->vg, 42*2.5);
     nvgText(s->vg, viz_maxspeed_x+viz_maxspeed_w/2, 242, "N/A", NULL);
   }
+
+  //BB START: add new measures panel  const int bb_dml_w = 180;
+  bb_ui_draw_UI(s);
+  //BB END: add new measures panel
 }
 
 static void ui_draw_vision_speed(UIState *s) {
-  const UIScene *scene = &s->scene;
+  UIScene *scene = &s->scene;
   int ui_viz_rx = scene->ui_viz_rx;
   int ui_viz_rw = scene->ui_viz_rw;
   float speed = s->scene.v_ego;
@@ -899,9 +1408,38 @@ static void ui_draw_vision_speed(UIState *s) {
   const int viz_speed_w = 280;
   const int viz_speed_x = ui_viz_rx+((ui_viz_rw/2)-(viz_speed_w/2));
   char speed_str[32];
+  
+  if(scene->leftBlinker) {
+    nvgBeginPath(s->vg);
+    nvgMoveTo(s->vg, viz_speed_x, box_y);
+    nvgLineTo(s->vg, viz_speed_x - viz_speed_w/2, box_y + header_h/2);
+    nvgLineTo(s->vg, viz_speed_x, box_y + header_h);
+    nvgLineTo(s->vg, viz_speed_x, box_y);
+    nvgFillColor(s->vg, nvgRGBA(255,165,0,scene->blinker_blinkingrate>=50?160:60)); 
+    nvgFill(s->vg);
+  }
 
+  if(scene->rightBlinker) {
+    nvgBeginPath(s->vg);
+    nvgMoveTo(s->vg, viz_speed_x+viz_speed_w, box_y);
+    nvgLineTo(s->vg, viz_speed_x+viz_speed_w + viz_speed_w/2, box_y + header_h/2);
+    nvgLineTo(s->vg, viz_speed_x+viz_speed_w, box_y + header_h);
+    nvgLineTo(s->vg, viz_speed_x+viz_speed_w, box_y);
+    nvgFillColor(s->vg, nvgRGBA(255,165,0,scene->blinker_blinkingrate>=50?160:60)); 
+    nvgFill(s->vg);
+  }
+
+  if(scene->leftBlinker || scene->rightBlinker) {
+    scene->blinker_blinkingrate -= 2;
+    if(scene->blinker_blinkingrate<0) scene->blinker_blinkingrate = 100;
+  }
+  
   nvgBeginPath(s->vg);
   nvgRect(s->vg, viz_speed_x, box_y, viz_speed_w, header_h);
+  if(scene->brakeLights) {
+    nvgFillColor(s->vg, nvgRGBA(240,0,0,100));
+    nvgFill(s->vg);
+  }
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
 
   if (s->is_metric) {
@@ -931,8 +1469,8 @@ static void ui_draw_vision_wheel(UIState *s) {
   const int ui_viz_rw = scene->ui_viz_rw;
   const int viz_event_w = 220;
   const int viz_event_x = ((ui_viz_rx + ui_viz_rw) - (viz_event_w + (bdr_s*2)));
-  const int viz_event_y = (box_y + (bdr_s*1.5));
-  const int viz_event_h = (header_h - (bdr_s*1.5));
+  const int viz_event_y = (box_y + (bdr_is*1.5));
+  const int viz_event_h = (header_h - (bdr_is*1.5));
   // draw steering wheel
   const int bg_wheel_size = 96;
   const int bg_wheel_x = viz_event_x + (viz_event_w-bg_wheel_size);
@@ -946,7 +1484,7 @@ static void ui_draw_vision_wheel(UIState *s) {
   bool is_engageable = scene->engageable;
   if (is_engaged || is_warning || is_engageable) {
     nvgBeginPath(s->vg);
-    nvgCircle(s->vg, bg_wheel_x, (bg_wheel_y + (bdr_s*1.5)), bg_wheel_size);
+    nvgCircle(s->vg, bg_wheel_x, (bg_wheel_y + (bdr_is*1.5)), bg_wheel_size);
     if (is_engaged) {
       nvgFillColor(s->vg, nvgRGBA(23, 134, 68, 255));
     } else if (is_warning) {
@@ -1032,9 +1570,9 @@ static void ui_draw_vision_alert(UIState *s, int va_size, int va_color,
 
   const uint8_t *color = alert_colors[va_color];
   const int alr_s = alert_sizes[va_size];
-  const int alr_x = ui_viz_rx-(mapEnabled?(hasSidebar?nav_w:(nav_ww)):0)-bdr_s;
-  const int alr_w = ui_viz_rw+(mapEnabled?(hasSidebar?nav_w:(nav_ww)):0)+(bdr_s*2);
-  const int alr_h = alr_s+(va_size==ALERTSIZE_NONE?0:bdr_s);
+  const int alr_x = ui_viz_rx-(mapEnabled?(hasSidebar?nav_w:(nav_ww)):0)-bdr_is;
+  const int alr_w = ui_viz_rw+(mapEnabled?(hasSidebar?nav_w:(nav_ww)):0)+(bdr_is*2);
+  const int alr_h = alr_s+(va_size==ALERTSIZE_NONE?0:bdr_is);
   const int alr_y = vwp_h-alr_h;
 
   nvgBeginPath(s->vg);
@@ -1201,6 +1739,10 @@ static void ui_update(UIState *s) {
   int err;
 
   if (s->vision_connect_firstrun) {
+    s->carstate_sock = zsock_new_sub(">tcp://127.0.0.1:8021", "");
+    assert(s->carstate_sock);
+    s->carstate_sock_raw = zsock_resolve(s->carstate_sock);
+
     // cant run this in connector thread because opengl.
     // do this here for now in lieu of a run_on_main_thread event
 
@@ -1267,7 +1809,7 @@ static void ui_update(UIState *s) {
 
   // poll for events
   while (true) {
-    zmq_pollitem_t polls[9] = {{0}};
+    zmq_pollitem_t polls[11] = {{0}};
     polls[0].socket = s->live100_sock_raw;
     polls[0].events = ZMQ_POLLIN;
     polls[1].socket = s->livecalibration_sock_raw;
@@ -1284,14 +1826,22 @@ static void ui_update(UIState *s) {
     polls[6].events = ZMQ_POLLIN;
     polls[7].socket = s->plus_sock_raw;
     polls[7].events = ZMQ_POLLIN;
+    polls[8].socket = s->gps_sock_raw;
+    polls[8].events = ZMQ_POLLIN;
 
-    int num_polls = 8;
-    if (s->vision_connected) {
+    int num_polls = 9;
+    if (s->vision_connected)
+    {
+      polls[num_polls].socket = s->carstate_sock_raw;
+      polls[num_polls].events = ZMQ_POLLIN;
+      num_polls++;
+
       assert(s->ipc_fd >= 0);
-      polls[8].fd = s->ipc_fd;
-      polls[8].events = ZMQ_POLLIN;
+      polls[num_polls].fd = s->ipc_fd;
+      polls[num_polls].events = ZMQ_POLLIN;
       num_polls++;
     }
+
 
     int ret = zmq_poll(polls, num_polls, 0);
     if (ret < 0) {
@@ -1308,7 +1858,7 @@ static void ui_update(UIState *s) {
       set_awake(s, true);
     }
 
-    if (s->vision_connected && polls[8].revents) {
+    if (s->vision_connected && polls[10].revents) {
       // vision ipc event
       VisionPacket rp;
       err = vipc_recv(s->ipc_fd, &rp);
@@ -1317,6 +1867,7 @@ static void ui_update(UIState *s) {
         close(s->ipc_fd);
         s->ipc_fd = -1;
         s->vision_connected = false;
+        zsock_destroy(&s->carstate_sock);
         continue;
       }
       if (rp.type == VIPC_STREAM_ACQUIRE) {
@@ -1366,6 +1917,37 @@ static void ui_update(UIState *s) {
 
       zmq_msg_close(&msg);
 
+    } else if (polls[8].revents) {
+      // gps socket
+
+      zmq_msg_t msg;
+      err = zmq_msg_init(&msg);
+      assert(err == 0);
+      err = zmq_msg_recv(&msg, s->gps_sock_raw, 0);
+      assert(err >= 0);
+
+      struct capn ctx;
+      capn_init_mem(&ctx, zmq_msg_data(&msg), zmq_msg_size(&msg), 0);
+
+      cereal_Event_ptr eventp;
+      eventp.p = capn_getp(capn_root(&ctx), 0, 1);
+      struct cereal_Event eventd;
+      cereal_read_Event(&eventd, eventp);
+
+      struct cereal_GpsLocationData datad;
+      cereal_read_GpsLocationData(&datad, eventd.gpsLocation);
+
+      s->scene.gpsAccuracy = datad.accuracy;
+      if (s->scene.gpsAccuracy > 100)
+      {
+        s->scene.gpsAccuracy = 99.99;
+      }
+      else if (s->scene.gpsAccuracy == 0)
+      {
+        s->scene.gpsAccuracy = 99.8;
+      }
+      capn_free(&ctx);
+      zmq_msg_close(&msg);
     } else {
       // zmq messages
       void* which = NULL;
@@ -1402,6 +1984,10 @@ static void ui_update(UIState *s) {
         }
         s->scene.v_cruise = datad.vCruise;
         s->scene.v_ego = datad.vEgo;
+        s->scene.angleSteers = datad.angleSteers;
+        s->scene.angleSteersDes = datad.angleSteersDes;
+        s->scene.cameraOffset = datad.cameraOffset;
+        s->scene.steerOverride = datad.steerOverride;
         s->scene.curvature = datad.curvature;
         s->scene.engaged = datad.enabled;
         s->scene.engageable = datad.engageable;
@@ -1522,23 +2108,51 @@ static void ui_update(UIState *s) {
         }
 
         s->scene.started_ts = datad.startedTs;
+
+        //BBB CPU TEMP
+        s->scene.maxCpuTemp = datad.cpu0;
+        if (s->scene.maxCpuTemp < datad.cpu1)
+        {
+          s->scene.maxCpuTemp = datad.cpu1;
+        }
+        else if (s->scene.maxCpuTemp < datad.cpu2)
+        {
+          s->scene.maxCpuTemp = datad.cpu2;
+        }
+        else if (s->scene.maxCpuTemp < datad.cpu3)
+        {
+          s->scene.maxCpuTemp = datad.cpu3;
+        }
+        s->scene.maxBatTemp = datad.bat;
+        s->scene.freeSpace = datad.freeSpace;
+        //BBB END CPU TEMP
       } else if (eventd.which == cereal_Event_uiLayoutState) {
           struct cereal_UiLayoutState datad;
           cereal_read_UiLayoutState(&datad, eventd.uiLayoutState);
-          s->scene.uilayout_sidebarcollapsed = datad.sidebarCollapsed;
-          s->scene.uilayout_mapenabled = datad.mapEnabled;
+          if(!s->ignoreLayout) {
+            s->scene.uilayout_sidebarcollapsed = datad.sidebarCollapsed;
+            s->scene.uilayout_mapenabled = datad.mapEnabled;
 
-          bool hasSidebar = !s->scene.uilayout_sidebarcollapsed;
-          bool mapEnabled = s->scene.uilayout_mapenabled;
-          if (mapEnabled) {
-            s->scene.ui_viz_rx = hasSidebar ? (box_x+nav_w) : (box_x+nav_w-(bdr_s*4));
-            s->scene.ui_viz_rw = hasSidebar ? (box_w-nav_w) : (box_w-nav_w+(bdr_s*4));
-            s->scene.ui_viz_ro = -(sbr_w + 4*bdr_s);
-          } else {
-            s->scene.ui_viz_rx = hasSidebar ? box_x : (box_x-sbr_w+bdr_s*2);
-            s->scene.ui_viz_rw = hasSidebar ? box_w : (box_w+sbr_w-(bdr_s*2));
-            s->scene.ui_viz_ro = hasSidebar ? -(sbr_w - 6*bdr_s) : 0;
+            bool hasSidebar = !s->scene.uilayout_sidebarcollapsed;
+            bool mapEnabled = s->scene.uilayout_mapenabled;
+            if (mapEnabled) {
+              s->scene.ui_viz_rx = hasSidebar ? (box_x+nav_w) : (box_x+nav_w-(bdr_s*4));
+              s->scene.ui_viz_rw = hasSidebar ? (box_w-nav_w) : (box_w-nav_w+(bdr_s*4));
+              s->scene.ui_viz_ro = -(sbr_w + 4*bdr_s);
+            } else {
+              s->scene.ui_viz_rx = hasSidebar ? box_x : (box_x-sbr_w+bdr_s*2);
+              s->scene.ui_viz_rw = hasSidebar ? box_w : (box_w+sbr_w-(bdr_s*2));
+              s->scene.ui_viz_ro = hasSidebar ? -(sbr_w - 6*bdr_s) : 0;
+            }
           }
+      } else if (eventd.which == cereal_Event_carState) {
+        struct cereal_CarState datad;
+        cereal_read_CarState(&datad, eventd.carState);
+        s->scene.brakeLights = datad.brakeLights;
+        if(s->scene.leftBlinker!=datad.leftBlinker || s->scene.rightBlinker!=datad.rightBlinker)
+          s->scene.blinker_blinkingrate = 100;
+        s->scene.leftBlinker = datad.leftBlinker;
+        s->scene.rightBlinker = datad.rightBlinker;
       }
       capn_free(&ctx);
       zmq_msg_close(&msg);
@@ -1719,6 +2333,15 @@ int main() {
   UIState uistate;
   UIState *s = &uistate;
   ui_init(s);
+  s->scene = (UIScene){
+      .frontview = getenv("FRONTVIEW") != NULL,
+      .fullview = getenv("FULLVIEW") != NULL,
+      .world_objects_visible = true, // Invisible until we receive a calibration message.
+      .gps_planner_active = true,
+      .ui_viz_rx = (box_x - sbr_w + bdr_s * 2),
+      .ui_viz_rw = (box_w + sbr_w - (bdr_s * 2)),
+      .ui_viz_ro = 0,
+  };
 
   pthread_t connect_thread_handle;
   err = pthread_create(&connect_thread_handle, NULL,
@@ -1772,6 +2395,12 @@ int main() {
     if (touched == 1) {
       // touch event will still happen :(
       set_awake(s, true);
+      if(s->vision_connected && s->plus_state == 0 && s->ignoreLayout) {
+        int but = test_button_touch(s, touch_x, touch_y);
+        //printf("%d, %d, %d\n", touch_x, touch_y, but);
+        if(but!=-1) 
+          zsock_send(s->uievent_sock, "i", but+1);
+      }
     }
 
     // manage wakefulness
@@ -1807,6 +2436,9 @@ int main() {
 
   err = pthread_join(connect_thread_handle, NULL);
   assert(err == 0);
+
+  zsock_send(s->uievent_sock, "i", UIEVENT_SHUTDOWN);
+  zsock_destroy(&s->uievent_sock);
 
   return 0;
 }
