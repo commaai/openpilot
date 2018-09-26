@@ -25,6 +25,7 @@ typedef struct
 struct sample_t toyota_torque_meas;
 struct sample_t cadillac_torque_driver;
 struct sample_t gm_torque_driver;
+struct sample_t hyundai_torque_driver;
 
 TIM_TypeDef timer;
 TIM_TypeDef *TIM2 = &timer;
@@ -75,6 +76,11 @@ void set_gm_torque_driver(int min, int max){
   gm_torque_driver.max = max;
 }
 
+void set_hyundai_torque_driver(int min, int max){
+  hyundai_torque_driver.min = min;
+  hyundai_torque_driver.max = max;
+}
+
 int get_toyota_torque_meas_min(void){
   return toyota_torque_meas.min;
 }
@@ -95,6 +101,10 @@ void set_gm_rt_torque_last(int t){
   gm_rt_torque_last = t;
 }
 
+void set_hyundai_rt_torque_last(int t){
+  hyundai_rt_torque_last = t;
+}
+
 void set_toyota_desired_torque_last(int t){
   toyota_desired_torque_last = t;
 }
@@ -107,6 +117,9 @@ void set_gm_desired_torque_last(int t){
   gm_desired_torque_last = t;
 }
 
+void set_hyundai_desired_torque_last(int t){
+  hyundai_desired_torque_last = t;
+}
 
 int get_ego_speed(void){
   return ego_speed;
@@ -152,6 +165,15 @@ void init_tests_gm(void){
   gm_desired_torque_last = 0;
   gm_rt_torque_last = 0;
   gm_ts_last = 0;
+  set_timer(0);
+}
+
+void init_tests_hyundai(void){
+  hyundai_torque_driver.min = 0;
+  hyundai_torque_driver.max = 0;
+  hyundai_desired_torque_last = 0;
+  hyundai_rt_torque_last = 0;
+  hyundai_ts_last = 0;
   set_timer(0);
 }
 

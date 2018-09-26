@@ -108,7 +108,7 @@ class TestHondaSafety(unittest.TestCase):
     self.safety.set_controls_allowed(1)
     self.safety.honda_rx_hook(self._alt_brake_msg(1))
     self.assertFalse(self.safety.get_controls_allowed())
-    
+
     self.safety.set_honda_alt_brake_msg(0)
     self.safety.set_controls_allowed(1)
     self.safety.honda_rx_hook(self._alt_brake_msg(1))

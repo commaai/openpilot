@@ -2,7 +2,7 @@ from common.numpy_fast import interp
 from common.kalman.simple_kalman import KF1D
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
-from selfdrive.car.tesla.values import CAR, CruiseButtons, DBC, GetAccMode
+from selfdrive.car.tesla.values import ACCState, ACCMode, CAR, CruiseButtons, DBC
 from selfdrive.car.modules.UIBT_module import UIButtons, UIButton
 import numpy as np
 from ctypes import create_string_buffer
@@ -137,6 +137,7 @@ def get_epas_can_signals(CP):
       ("EPAS_eacErrorCode", "EPAS_sysStatus", 0),
       ("EPAS_handsOnLevel", "EPAS_sysStatus", 0),
       ("EPAS_steeringFault", "EPAS_sysStatus", 0),
+      ("EPAS_internalSAS",  "EPAS_sysStatus", 0), #BB see if this works better than STW_ANGLHP_STAT for angle
   ]
 
   checks = [
@@ -229,28 +230,29 @@ class CarState(object):
     self.v_cruise_pcm = 0.0
     # Actual cruise speed currently active on the car.
     self.v_cruise_actual = 0.0
-
+    self.define_ui_buttons()
+    
+  def define_ui_buttons(self):
+    self.ALC_BTN = UIButton("alca",  "ALC", 0, "",          0)
+    self.ACC_BTN = UIButton("acc",   "ACC", 0, ACCMode.OFF, 1)
+    self.STR_BTN = UIButton("steer", "STR", 0, "",          2)
+    self.BRK_BTN = UIButton("brake", "BRK", 1, "",          3)
+    self.MSG_BTN = UIButton("msg",   "MSG", 1, "",          4)
+    self.SND_BTN = UIButton("sound", "SND", 1, "",          5)
+  
   def init_ui_buttons(self):
-    btns = []
-    btns.append(UIButton("alca", "ALC", 0, "", 0))
-    btns.append(UIButton("acc", "ACC", 0, "Mod OP", 1))
-    btns.append(UIButton("steer", "STR", 0, "", 2))
-    btns.append(UIButton("brake", "BRK", 1, "", 3))
-    btns.append(UIButton("msg", "MSG", 1, "", 4))
-    btns.append(UIButton("sound", "SND", 1, "", 5))
-    return btns
+    self.define_ui_buttons()
+    return [self.ALC_BTN, self.ACC_BTN, self.STR_BTN, self.BRK_BTN, self.MSG_BTN, self.SND_BTN]
 
-  def update_ui_buttons(self,id,btn_status):
-    if self.cstm_btns.btns[id].btn_status > 0:
-      if (id == 1) and (btn_status == 0):
-          # don't change status, just model
-          current_mode = self.cstm_btns.btns[id].btn_label2
-          next_mode = GetAccMode(current_mode).next_mode
-          self.cstm_btns.btns[id].btn_label2 = next_mode
-      else:
-          self.cstm_btns.btns[id].btn_status = btn_status * self.cstm_btns.btns[id].btn_status
+  def update_ui_buttons(self, id, btn_status):
+    button = self.cstm_btns.btns[id]
+    if (id == self.ACC_BTN.btn_index):
+      current_mode = ACCMode.get(button.btn_label2)
+      next_mode = current_mode.next()
+      button.btn_label2 = next_mode.name
+      button.btn_status = next_mode.state
     else:
-        self.cstm_btns.btns[id].btn_status = btn_status
+      button.btn_status = btn_status
 
   def update(self, cp, epas_cp):
 
@@ -312,7 +314,8 @@ class CarState(object):
 
     can_gear_shifter = cp.vl["DI_torque2"]['DI_gear']
     self.gear = 0 # JCT
-    self.angle_steers  = -(cp.vl["STW_ANGLHP_STAT"]['StW_AnglHP']) #JCT polarity reversed from Honda/Acura
+    #self.angle_steers  = -(cp.vl["STW_ANGLHP_STAT"]['StW_AnglHP']) #JCT polarity reversed from Honda/Acura
+    self.angle_steers = -(epas_cp.vl["EPAS_sysStatus"]['EPAS_internalSAS'])  #BB see if this works better than STW_ANGLHP_STAT for angle
     self.angle_steers_rate = 0 #JCT
 
     self.blinker_on = (cp.vl["STW_ACTN_RQ"]['TurnIndLvr_Stat'] == 1) or (cp.vl["STW_ACTN_RQ"]['TurnIndLvr_Stat'] == 2)
