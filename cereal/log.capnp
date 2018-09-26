@@ -276,6 +276,7 @@ struct ThermalData {
   startedTs @13 :UInt64;
 
   thermalStatus @14 :ThermalStatus;
+  chargerDisabled @17 :Bool;
 
   enum ThermalStatus {
     green @0;   # all processes run
