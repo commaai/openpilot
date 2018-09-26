@@ -57,7 +57,7 @@ class CarInterface(object):
     ret.safetyModel = car.CarParams.SafetyModels.toyota
 
     # pedal
-    ret.enableCruise = not ret.enableGasInterceptor  
+    ret.enableCruise = not ret.enableGasInterceptor
 
     # FIXME: hardcoding honda civic 2016 touring params so they can be used to
     # scale unknown params for other cars
@@ -126,7 +126,7 @@ class CarInterface(object):
 
     elif candidate in [CAR.CAMRY, CAR.CAMRYH]:
       stop_and_go = True
-      ret.safetyParam = 100 
+      ret.safetyParam = 100
       ret.wheelbase = 2.82448
       ret.steerRatio = 13.7
       tire_stiffness_factor = 0.7933
@@ -181,7 +181,7 @@ class CarInterface(object):
     ret.steerMaxBP = [16. * CV.KPH_TO_MS, 45. * CV.KPH_TO_MS]  # breakpoints at 1 and 40 kph
     ret.steerMaxV = [1., 1.]  # 2/3rd torque allowed above 45 kph
     ret.gasMaxBP = [0.]
-    ret.gasMaxV = [0.5]
+    ret.gasMaxV = [0.6] if ret.enableGasInterceptor else [0.5]
     ret.brakeMaxBP = [5., 20.]
     ret.brakeMaxV = [1., 0.8]
 
@@ -195,7 +195,7 @@ class CarInterface(object):
 
     ret.steerLimitAlert = False
     ret.stoppingControl = False
-    ret.startAccel = 0.0
+    ret.startAccel = 0.5 if ret.enableGasInterceptor else 0.0
 
     ret.longitudinalKpBP = [0., 5., 35.]
     ret.longitudinalKpV = [3.6, 2.4, 1.5]
@@ -255,7 +255,7 @@ class CarInterface(object):
     ret.cruiseState.speed = self.CS.v_cruise_pcm * CV.KPH_TO_MS
     ret.cruiseState.available = bool(self.CS.main_on)
     ret.cruiseState.speedOffset = 0.
-	
+
     if self.CP.carFingerprint in [CAR.RAV4H, CAR.HIGHLANDERH, CAR.HIGHLANDER] or self.CP.enableGasInterceptor:
       # ignore standstill in hybrid vehicles, since pcm allows to restart without
       # receiving any special command
