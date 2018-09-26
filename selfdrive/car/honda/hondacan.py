@@ -139,7 +139,9 @@ def create_radar_commands(v_ego, car_fingerprint, new_radar_config, idx):
 
 def spam_buttons_command(packer, button_val, idx):
   commands = []
-  #commands.append(make_can_msg(0x221, "\x20\x00\x00\x00\x00\x00", idx, 1))
+  if button_val==-10:
+    commands.append(make_can_msg(0x221, "\x20\x00\x00\x00\x00\x00", idx, 1))
+    button_val=3
   values = {
     'CRUISE_BUTTONS': button_val if button_val>0 else 0,
     'CRUISE_SETTING': -button_val if button_val<0 else 0,

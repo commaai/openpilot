@@ -165,7 +165,7 @@ class CarController(object):
       elif CS.stopped:
         can_sends.extend(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx))
       elif uie != None:
-        but = CruiseButtons.CANCEL if uie=="2" else CruiseButtons.RES_ACCEL if uie=="4" else CruiseButtons.DECEL_SET if uie="0" else -4
+        but = [ CruiseButtons.DECEL_SET, -10, CruiseButtons.CANCEL, -4, CruiseButtons.RES_ACCEL][int(uie)]
         cloudlog.warn("Spamming button: %r", but)
         can_sends.extend(hondacan.spam_buttons_command(self.packer, but, idx))
     else:
