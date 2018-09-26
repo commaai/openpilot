@@ -139,7 +139,6 @@ typedef struct UIScene {
 
   uint64_t started_ts;
 
-<<<<<<< HEAD
   //BB CPU TEMP
   uint16_t maxCpuTemp;
   uint32_t maxBatTemp;
@@ -148,12 +147,7 @@ typedef struct UIScene {
   float angleSteers;
   float angleSteersDes;
   //BB END CPU TEMP
-  // Used to display calibration progress
-  int cal_status;
-  int cal_perc;
 
-=======
->>>>>>> upstream/devel
   // Used to show gps planner status
   bool gps_planner_active;
 
@@ -1529,16 +1523,8 @@ static void ui_draw_vision(UIState *s) {
     // Controls Alerts
     ui_draw_vision_alert(s, s->scene.alert_size, s->status,
                             s->scene.alert_text1, s->scene.alert_text2);
-<<<<<<< HEAD
-  } else if (scene->cal_status == CALIBRATION_UNCALIBRATED) {
-    // Calibration Status
-    ui_draw_calibration_status(s);
-   } else {
-     ui_draw_vision_footer(s);
-=======
   } else {
     ui_draw_vision_footer(s);
->>>>>>> upstream/devel
   }
 
   nvgEndFrame(s->vg);
