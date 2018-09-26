@@ -141,8 +141,8 @@ def spam_buttons_command(packer, button_val, idx):
   commands = []
   #commands.append(make_can_msg(0x221, "\x20\x00\x00\x00\x00\x00", idx, 1))
   values = {
-    'CRUISE_BUTTONS': button_val,
-    'CRUISE_SETTING': 0,
+    'CRUISE_BUTTONS': button_val if button_val>0 else 0,
+    'CRUISE_SETTING': -button_val if button_val<0 else 0,
   }
   commands.append(packer.make_can_msg("SCM_BUTTONS", 0, values, idx))
   return commands

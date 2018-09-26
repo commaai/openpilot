@@ -1285,16 +1285,17 @@ static void ui_draw_button(NVGcontext *vg, int x, int y, int w, int h, char *lab
   nvgStroke(vg);
 }
 
+const buttonCount = 5;
+const *buttons = ["<<", "<", "OFF", ">", ">>"];
+
 static void ui_draw_buttons(UIState *s) {
     const UIScene *scene = &s->scene;
     const int w = 180;
-    const int x = scene->ui_viz_rx + scene->ui_viz_rw/2 - ((3*w + 40)/2);
+    const int x = scene->ui_viz_rx + scene->ui_viz_rw/2 - ((buttonCount*w + (buttonCount-1)*20)/2);
     const int y = box_h - bdr_is - 140;
     const int h = 150;
-    char outstr[32];
-    ui_draw_button(s->vg, x, y, w, h, "<<");
-    ui_draw_button(s->vg, x + w + 20, y, w, h, "OFF");
-    ui_draw_button(s->vg, x+2*w+40, y, w, h, ">>");
+    for(int i=0;i<buttonCount;i++)
+      ui_draw_button(s->vg, x + (w+20) * i, y, w, h, buttons[i]);
 }
 
 static int test_button_touch(UIState *s, int tx, int ty) {
@@ -1303,7 +1304,7 @@ static int test_button_touch(UIState *s, int tx, int ty) {
     const int x = scene->ui_viz_rx + scene->ui_viz_rw/2 - (3*w/2);
     const int y = box_h - bdr_is - 140;
     const int h = 150;
-    for(int i=0;i<3;i++)
+    for(int i=0;i<buttonCount;i++)
       if(tx>=x+i*(w+20) && tx<=x+w+i*(w+20) && ty>=y && ty<=y+h)
         return i;
     return -1;
