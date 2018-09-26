@@ -157,7 +157,6 @@ typedef struct UIScene {
   float freeSpace;
   float angleSteers;
   float angleSteersDes;
-  float cameraOffset;
   //BB END CPU TEMP
   bool steerOverride;
   // Used to display calibration progress
@@ -1294,8 +1293,7 @@ static void ui_draw_buttons(UIState *s) {
     const int h = 150;
     char outstr[32];
     ui_draw_button(s->vg, x, y, w, h, "<<");
-    snprintf(outstr, 32, "%i cm", (int)(100.0 * s->scene.cameraOffset));
-    ui_draw_button(s->vg, x + w + 20, y, w, h, outstr);
+    ui_draw_button(s->vg, x + w + 20, y, w, h, "OFF");
     ui_draw_button(s->vg, x+2*w+40, y, w, h, ">>");
 }
 
@@ -1986,7 +1984,6 @@ static void ui_update(UIState *s) {
         s->scene.v_ego = datad.vEgo;
         s->scene.angleSteers = datad.angleSteers;
         s->scene.angleSteersDes = datad.angleSteersDes;
-        s->scene.cameraOffset = datad.cameraOffset;
         s->scene.steerOverride = datad.steerOverride;
         s->scene.curvature = datad.curvature;
         s->scene.engaged = datad.enabled;
