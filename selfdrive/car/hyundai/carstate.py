@@ -17,7 +17,7 @@ def get_can_parser(CP):
     ("YAW_RATE", "ESP12", 0),
 
     ("CF_Gway_DrvSeatBeltInd", "CGW4", 1),
-    
+
     ("CF_Gway_DrvSeatBeltSw", "CGW1", 0),
     ("CF_Gway_TSigLHSw", "CGW1", 0),
     ("CF_Gway_TurnSigLh", "CGW1", 0),
