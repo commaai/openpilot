@@ -161,13 +161,13 @@ class CarController(object):
     if CS.CP.radarOffCan:
       # If using stock ACC, spam cancel command to kill gas when OP disengages.
       if pcm_cancel_cmd:
-        can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.CANCEL, idx))
+        can_sends.extend(hondacan.spam_buttons_command(self.packer, CruiseButtons.CANCEL, idx))
       elif CS.stopped:
-        can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx))
+        can_sends.extend(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx))
       elif uie != None:        
         but = CruiseButtons.CANCEL if uie=="2" else CruiseButtons.RES_ACCEL if uie=="1" else CruiseButtons.DECEL_SET        
         cloudlog.warn("Spamming button: %r", but)
-        can_sends.append(hondacan.spam_buttons_command(self.packer, but, idx))
+        can_sends.extend(hondacan.spam_buttons_command(self.packer, but, idx))
     else:
       # Send gas and brake commands.
       if (frame % 2) == 0:
