@@ -141,6 +141,7 @@ BO_ 495 ACC_CONTROL_ON: 8 XXX
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
 
 BO_ 545 XXX_16: 6 SCM
+ SG_ CONTEXT : 7|8@0+ (1,0) [0|255] "" XXX
  SG_ ECON_ON : 23|1@0+ (1,0) [0|1] "" XXX
  SG_ DRIVE_MODE : 37|2@0+ (1,0) [0|3] "" XXX
  SG_ COUNTER : 45|2@0+ (1,0) [0|3] "" BDY
