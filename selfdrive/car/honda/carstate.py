@@ -77,7 +77,7 @@ def get_can_signals(CP):
       signals += [("BRAKE_PRESSED", "BRAKE_MODULE", 0)]
       checks += [("BRAKE_MODULE", 50)]
     elif CP.carFingerprint in (CAR.ACCORDH):
-      signals += [("BRAKING_1", "ACC_CONTROL", 0)]
+      signals += [("BRAKING_1", "ACC_CONTROL", 0), ("CONTEXT", "XXX_16", 0)]
     signals += [("CAR_GAS", "GAS_PEDAL_2", 0),
                 ("MAIN_ON", "SCM_FEEDBACK", 0),
                 ("EPB_STATE", "EPB_STATUS", 0),
@@ -231,6 +231,8 @@ class CarState(object):
 
     self.cruise_setting = cp.vl["SCM_BUTTONS"]['CRUISE_SETTING']
     self.cruise_buttons = cp.vl["SCM_BUTTONS"]['CRUISE_BUTTONS']
+    if self.CP.carFingerprint in (CAR.ACCORDH):
+      self.cruise_context = cp.vl["XXX_16"]['CONTEXT']
 
     self.blinker_on = cp.vl["SCM_FEEDBACK"]['LEFT_BLINKER'] or cp.vl["SCM_FEEDBACK"]['RIGHT_BLINKER']
     self.left_blinker_on = cp.vl["SCM_FEEDBACK"]['LEFT_BLINKER']
