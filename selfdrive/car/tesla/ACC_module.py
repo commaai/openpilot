@@ -354,27 +354,29 @@ class ACCController(object):
           and self._no_automated_action_for(milliseconds=500)):
       # The difference between OP's target speed and the current cruise
       # control speed, in KPH.
-      speed_offset = (desired_speed_ms * CV.MS_TO_KPH - CS.v_cruise_actual)
+      speed_offset_kph = (desired_speed_ms * CV.MS_TO_KPH - CS.v_cruise_actual)
     
       half_press_kph, full_press_kph = self._get_cc_units_kph(CS.imperial_speed_units)
       
       # Reduce cruise speed significantly if necessary. Multiply by a % to
       # make the car slightly more eager to slow down vs speed up.
-      if speed_offset < -0.6 * full_press_kph and CS.v_cruise_actual > 0:
+      if speed_offset_kph < -1.5 * full_press_kph and CS.v_cruise_actual > 0:
+        button_to_press = CruiseButtons.CANCEL
+      elif speed_offset_kph < -0.6 * full_press_kph and CS.v_cruise_actual > 0:
         # Send cruise stalk dn_2nd.
         button_to_press = CruiseButtons.DECEL_2ND
       # Reduce speed slightly if necessary.
-      elif speed_offset < -0.9 * half_press_kph and CS.v_cruise_actual > 0:
+      elif speed_offset_kph < -0.9 * half_press_kph and CS.v_cruise_actual > 0:
         # Send cruise stalk dn_1st.
         button_to_press = CruiseButtons.DECEL_SET
       # Increase cruise speed if possible.
       elif CS.v_ego > self.MIN_CRUISE_SPEED_MS:
         # How much we can accelerate without exceeding max allowed speed.
         available_speed_kph = self.acc_speed_kph - CS.v_cruise_actual
-        if speed_offset >= full_press_kph and full_press_kph < available_speed_kph:
+        if speed_offset_kph >= full_press_kph and full_press_kph < available_speed_kph:
           # Send cruise stalk up_2nd.
           button_to_press = CruiseButtons.RES_ACCEL_2ND
-        elif speed_offset >= half_press_kph and half_press_kph < available_speed_kph:
+        elif speed_offset_kph >= half_press_kph and half_press_kph < available_speed_kph:
           # Send cruise stalk up_1st.
           button_to_press = CruiseButtons.RES_ACCEL
     return button_to_press

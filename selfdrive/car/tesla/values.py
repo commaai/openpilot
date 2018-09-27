@@ -98,6 +98,7 @@ class ACCState(object):
 class ACCMode(object):
   FOLLOW = "FOLLOW"
   AUTO = "AUTO"
+  OP = "OP"
   OFF = "OFF"
   
   # This static map is filled just below the class (so that it can contain
@@ -122,7 +123,8 @@ class ACCMode(object):
     
 ACCMode.ACC_MODES = {
   ACCMode.FOLLOW: ACCMode(name=ACCMode.FOLLOW, autoresume=False, state=ACCState.STANDBY, next_mode=ACCMode.AUTO),
-  ACCMode.AUTO:   ACCMode(name=ACCMode.AUTO,   autoresume=True,  state=ACCState.STANDBY, next_mode=ACCMode.OFF),
+  ACCMode.AUTO:   ACCMode(name=ACCMode.AUTO,   autoresume=True,  state=ACCState.STANDBY, next_mode=ACCMode.OP),
+  ACCMode.OP:     ACCMode(name=ACCMode.OP,     autoresume=False, state=ACCState.STANDBY, next_mode=ACCMode.OFF),
   ACCMode.OFF:    ACCMode(name=ACCMode.OFF,    autoresume=False, state=ACCState.OFF,     next_mode=ACCMode.FOLLOW),
 }
   
