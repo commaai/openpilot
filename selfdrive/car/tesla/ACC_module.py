@@ -153,7 +153,7 @@ class ACCController(object):
 
     if self.enable_adaptive_cruise and enabled:
       if CS.cstm_btns.get_button_label2("acc") in ["OP", "AutoOP"]:    
-        button_to_press = self._calc_button(CS, pcm_speed, current_time_ms)
+        button_to_press = self._calc_button(CS, pcm_speed)
       else:
         # Alternative speed decision logic that uses the lead car's distance
         # and speed more directly.
@@ -341,10 +341,10 @@ class ACCController(object):
   # is inoperable because the planner crashes when given only visual radar
   # inputs. (Perhaps this can be used in the future with a radar install, or if
   # OpenPilot planner changes.)
-  def _calc_button(self, CS, desired_speed_ms, current_time_ms):
+  def _calc_button(self, CS, desired_speed_ms):
     button_to_press = None
-    # Automatically engange traditional cruise if ACC is active.
-    if self._should_autoengage_cc(CS):
+    # Automatically engange traditional cruise if appropriate.
+    if self._should_autoengage_cc(CS) and desired_speed_ms > CS.v_ego:
       button_to_press = CruiseButtons.RES_ACCEL
     # If traditional cruise is engaged, then control it.
     elif (CS.pcm_acc_status == CruiseState.ENABLED
