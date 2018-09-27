@@ -344,7 +344,7 @@ class ACCController(object):
   def _calc_button(self, CS, desired_speed_ms):
     button_to_press = None
     # Automatically engange traditional cruise if appropriate.
-    if self._should_autoengage_cc(CS) and desired_speed_ms > CS.v_ego:
+    if self._should_autoengage_cc(CS) and desired_speed_ms >= CS.v_ego:
       button_to_press = CruiseButtons.RES_ACCEL
     # If traditional cruise is engaged, then control it.
     elif (CS.pcm_acc_status == CruiseState.ENABLED
@@ -360,7 +360,9 @@ class ACCController(object):
       
       # Reduce cruise speed significantly if necessary. Multiply by a % to
       # make the car slightly more eager to slow down vs speed up.
-      if speed_offset_kph < -1.5 * full_press_kph and CS.v_cruise_actual > 0:
+      if desired_speed_ms < self.MIN_CRUISE_SPEED_MS:
+        button_to_press = CruiseButtons.CANCEL
+      if speed_offset_kph < -2 * full_press_kph and CS.v_cruise_actual > 0:
         button_to_press = CruiseButtons.CANCEL
       elif speed_offset_kph < -0.6 * full_press_kph and CS.v_cruise_actual > 0:
         # Send cruise stalk dn_2nd.
