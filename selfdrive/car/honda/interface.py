@@ -392,7 +392,9 @@ class CarInterface(object):
         self.CS.cruise_buttons = [ CruiseButtons.CANCEL, CruiseButtons.DECEL_SET, CruiseButtons.RES_ACCEL][uie-3]
         self.CS.cruise_virtualPress = True
       elif uie in [1,2]:
-        self.cruise_speed_override = [35,75][uie-1] * CV.MPH_TO_KPH
+        self.cruise_speed_override = int([35,75][uie-1] * CV.MPH_TO_KPH)
+        if self.CS.v_cruise_pcm > self.cruise_speed_override:
+          self.cruise_speed_override = -self.cruise_speed_override
 
     # reset override if physical or virtual buttons were pressed
     if self.CS.cruise_buttons!=0:
@@ -401,14 +403,18 @@ class CarInterface(object):
     # simulate button presses to adjust cruise speed
     cloudlog.warn("speed %r %r", self.cruise_speed_override, self.CS.v_cruise_pcm)
     if self.cruise_speed_override!=0:
-      if self.CS.v_cruise_pcm < self.cruise_speed_override:
-        self.CS.cruise_buttons = CruiseButtons.RES_ACCEL
-        self.CS.cruise_virtualPress = True
-      elif self.CS.v_cruise_pcm > self.cruise_speed_override:
-        self.CS.cruise_buttons = CruiseButtons.DECEL_SET
-        self.CS.cruise_virtualPress = True
+      if self.cruise_speed_override<0:
+        if self.CS.v_cruise_pcm > -self.cruise_speed_override+8:
+          self.CS.cruise_buttons = CruiseButtons.DECEL_SET
+          self.CS.cruise_virtualPress = True
+        else:
+          self.cruise_speed_override = 0
       else:
-        self.cruise_speed_override = 0 # cancel override if desired speed has been set
+        if self.CS.v_cruise_pcm < self.cruise_speed_override-8:
+          self.CS.cruise_buttons = CruiseButtons.RES_ACCEL
+          self.CS.cruise_virtualPress = True
+        else:
+          self.cruise_speed_override = 0
 
     # create message
     ret = car.CarState.new_message()
