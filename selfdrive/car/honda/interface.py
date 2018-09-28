@@ -404,13 +404,13 @@ class CarInterface(object):
     cloudlog.warn("speed %r %r", self.cruise_speed_override, self.CS.v_cruise_pcm)
     if self.cruise_speed_override!=0:
       if self.cruise_speed_override<0:
-        if self.CS.v_cruise_pcm > -self.cruise_speed_override+8:
+        if self.CS.v_cruise_pcm > -self.cruise_speed_override+6:
           self.CS.cruise_buttons = CruiseButtons.DECEL_SET
           self.CS.cruise_virtualPress = True
         else:
           self.cruise_speed_override = 0
       else:
-        if self.CS.v_cruise_pcm < self.cruise_speed_override-8:
+        if self.CS.v_cruise_pcm < self.cruise_speed_override-6:
           self.CS.cruise_buttons = CruiseButtons.RES_ACCEL
           self.CS.cruise_virtualPress = True
         else:
