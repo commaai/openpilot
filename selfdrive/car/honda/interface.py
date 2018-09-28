@@ -97,7 +97,7 @@ class CarInterface(object):
     self.VM = VehicleModel(CP)
 
     self.uievent = messaging.sub_sock(zmq.Context(), 8064)
-    self.cruise_speed_override = 0;
+    self.cruise_speed_override = 0
 
     # sending if read only is False
     if sendcan is not None:
