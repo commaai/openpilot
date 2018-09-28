@@ -97,6 +97,7 @@ class CarInterface(object):
     self.VM = VehicleModel(CP)
 
     self.uievent = messaging.sub_sock(zmq.Context(), 8064)
+    self.cruise_speed_override = 0;
 
     # sending if read only is False
     if sendcan is not None:
@@ -389,6 +390,21 @@ class CarInterface(object):
       # don't override physical button presses
       if uie>0 and uie<4 and self.CS.cruise_buttons==self.CS.prev_cruise_buttons:
         self.CS.cruise_buttons = [ 0, CruiseButtons.DECEL_SET, CruiseButtons.CANCEL, CruiseButtons.RES_ACCEL][uie]
+        self.CS.cruise_virtualPress = True
+      elif uie>15:
+        self.cruise_speed_override = uie * CV.MPH_TO_KPH
+
+    # reset override if physical or virtual buttons were pressed
+    if self.CS.cruise_buttons!=self.CS.prev_cruise_buttons:
+      self.cruise_speed_override = 0
+
+    # simulate button presses to adjust cruise speed
+    if self.cruise_speed_override!=0 and self.CS.v_cruise_pcm != self.cruise_speed_override:
+      if self.CS.v_cruise_pcm < self.cruise_speed_override:
+        self.CS.cruise_buttons = CruiseButtons.RES_ACCEL
+        self.CS.cruise_virtualPress = True
+      else:
+        self.CS.cruise_buttons = CruiseButtons.DECEL_SET
         self.CS.cruise_virtualPress = True
 
     # create message
