@@ -85,8 +85,8 @@ class CarController(object):
     except zmq.error.Again:
       uie = None
     if uie is not None:
-      cloudlog.warn("interface UIEvent %s", uie)
-      if not uie in ["1","2","3","4","5"]:
+      uie = int(uie)
+      if uie>3:
         uie = None
 
     # *** apply brake hysteresis ***
@@ -159,21 +159,12 @@ class CarController(object):
       can_sends.extend(hondacan.create_ui_commands(self.packer, pcm_speed, hud, CS.CP.carFingerprint, idx))
 
     if CS.CP.radarOffCan:
-      # If using stock ACC, spam cancel command to kill gas when OP disengages.
-      #if pcm_cancel_cmd:
-      #  can_sends.extend(hondacan.spam_buttons_command(self.packer, CruiseButtons.CANCEL, CS.cruise_context, CS.cruise_counter))
-      #elif CS.stopped:
-      #  can_sends.extend(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, CS.cruise_context, CS.cruise_counter))
-      #elif uie != None:
-      #  but = [ CruiseButtons.DECEL_SET, -CruiseButtons.DECEL_SET, CruiseButtons.CANCEL, -CruiseButtons.RES_ACCEL, CruiseButtons.RES_ACCEL][int(uie)-1]
-      #  cloudlog.warn("Spamming button: %r", but)
-      #  can_sends.extend(hondacan.spam_buttons_command(self.packer, but, CS.cruise_context, CS.cruise_counter))
       if pcm_cancel_cmd:
         can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.CANCEL, idx))
       elif CS.stopped:
         can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx))
       elif uie != None:
-        but = [ CruiseButtons.DECEL_SET, 0, CruiseButtons.CANCEL, 0, CruiseButtons.RES_ACCEL][int(uie)-1]
+        but = [ 0, CruiseButtons.DECEL_SET, CruiseButtons.CANCEL, CruiseButtons.RES_ACCEL][uie]
         cloudlog.warn("Spamming button: %r", but)
         can_sends.append(hondacan.spam_buttons_command(self.packer, but, idx))
     else:
