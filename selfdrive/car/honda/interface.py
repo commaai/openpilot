@@ -396,8 +396,8 @@ class CarInterface(object):
         if self.CS.v_cruise_pcm > self.cruise_speed_override:
           self.cruise_speed_override = -self.cruise_speed_override
 
-    # reset override if physical or virtual buttons were pressed
-    if self.CS.cruise_buttons!=0:
+    # reset override if physical or virtual buttons were pressed, or brake was pressed
+    if self.CS.cruise_buttons!=0 or self.CS.brake_pressed:
       self.cruise_speed_override = 0
 
     # simulate button presses to adjust cruise speed

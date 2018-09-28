@@ -2409,12 +2409,9 @@ int main() {
         //printf("%d, %d, %d\n", touch_x, touch_y, but);
       }
     }
-    if(s->scene.spammedButton!=-1) {
+    // send button event
+    if(s->scene.spammedButton!=-1) 
       zsock_send(s->uievent_sock, "i", s->scene.spammedButton+1);
-      s->scene.spammedButtonTimeout--;
-      if(s->scene.spammedButtonTimeout<=0)
-        s->scene.spammedButton=-1;
-    }
 
     // manage wakefulness
     if (s->awake_timeout > 0) {
@@ -2427,6 +2424,13 @@ int main() {
       ui_draw(s);
       glFinish();
       should_swap = true;
+    }
+
+    // adjust spam timeout
+    if(s->scene.spammedButton!=-1) {
+      s->scene.spammedButtonTimeout--;
+      if(s->scene.spammedButtonTimeout<=0)
+        s->scene.spammedButton=-1;
     }
 
     pthread_mutex_unlock(&s->lock);
