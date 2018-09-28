@@ -231,9 +231,6 @@ class CarState(object):
 
     self.cruise_setting = cp.vl["SCM_BUTTONS"]['CRUISE_SETTING']
     self.cruise_buttons = cp.vl["SCM_BUTTONS"]['CRUISE_BUTTONS']
-    if self.CP.carFingerprint in (CAR.ACCORDH):
-      self.cruise_context = cp.vl["XXX_16"]['CONTEXT']
-      self.cruise_counter = cp.vl["SCM_BUTTONS"]['COUNTER']
 
     self.blinker_on = cp.vl["SCM_FEEDBACK"]['LEFT_BLINKER'] or cp.vl["SCM_FEEDBACK"]['RIGHT_BLINKER']
     self.left_blinker_on = cp.vl["SCM_FEEDBACK"]['LEFT_BLINKER']
