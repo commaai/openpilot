@@ -50,8 +50,8 @@ FINGERPRINTS = {
 STEER_THRESHOLD = 1.0
 
 STOCK_CONTROL_MSGS = {
-   CAR.VOLT: [384, 715], # 384 = "ASCMLKASteeringCmd", 715 = "ASCMGasRegenCmd"
-   CAR.CADILLAC_CT6: [], # Cadillac does not require ASCMs to be disconnected
+  CAR.VOLT: [384, 715], # 384 = "ASCMLKASteeringCmd", 715 = "ASCMGasRegenCmd"
+  CAR.CADILLAC_CT6: [], # Cadillac does not require ASCMs to be disconnected
 }
 
 DBC = {
