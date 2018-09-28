@@ -399,13 +399,15 @@ class CarInterface(object):
       self.cruise_speed_override = 0
 
     # simulate button presses to adjust cruise speed
-    if self.cruise_speed_override!=0 and self.CS.v_cruise_pcm != self.cruise_speed_override:
+    if self.cruise_speed_override!=0:
       if self.CS.v_cruise_pcm < self.cruise_speed_override:
         self.CS.cruise_buttons = CruiseButtons.RES_ACCEL
         self.CS.cruise_virtualPress = True
-      else:
+      elif self.CS.v_cruise_pcm > self.cruise_speed_override:
         self.CS.cruise_buttons = CruiseButtons.DECEL_SET
         self.CS.cruise_virtualPress = True
+      else:
+        self.cruise_speed_override = 0 # cancel override if desired speed has been set
 
     # create message
     ret = car.CarState.new_message()
