@@ -389,16 +389,17 @@ class CarInterface(object):
       uie = int(uie)
       # don't override physical button presses
       if uie in [3,4,5] and self.CS.cruise_buttons==self.CS.prev_cruise_buttons:
-        self.CS.cruise_buttons = [ CruiseButtons.DECEL_SET, CruiseButtons.CANCEL, CruiseButtons.RES_ACCEL][uie-3]
+        self.CS.cruise_buttons = [ CruiseButtons.CANCEL, CruiseButtons.DECEL_SET, CruiseButtons.RES_ACCEL][uie-3]
         self.CS.cruise_virtualPress = True
       elif uie in [1,2]:
-        self.cruise_speed_override = [35,75][uie] * CV.MPH_TO_KPH
+        self.cruise_speed_override = [35,75][uie-1] * CV.MPH_TO_KPH
 
     # reset override if physical or virtual buttons were pressed
     if self.CS.cruise_buttons!=self.CS.prev_cruise_buttons:
       self.cruise_speed_override = 0
 
     # simulate button presses to adjust cruise speed
+    cloudlog.warn("speed %r %r", self.cruise_speed_override, self.CS.v_cruise_pcm)
     if self.cruise_speed_override!=0:
       if self.CS.v_cruise_pcm < self.cruise_speed_override:
         self.CS.cruise_buttons = CruiseButtons.RES_ACCEL
