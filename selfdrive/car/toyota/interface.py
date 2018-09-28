@@ -199,11 +199,9 @@ class CarInterface(object):
     ret.stoppingControl = False
 
     if ret.enableGasInterceptor:
-      ret.startAccel = 0.0
       ret.longitudinalKpV = [1.2, 0.8, 0.5]
       ret.longitudinalKiV = [0.18, 0.12]
     else:
-      ret.startAccel = 0.0
       ret.longitudinalKpV = [3.6, 2.4, 1.5]
       ret.longitudinalKiV = [0.54, 0.36]
 
