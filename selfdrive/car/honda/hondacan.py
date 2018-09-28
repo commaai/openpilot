@@ -156,4 +156,4 @@ def spam_buttons_command(packer, button_val, idx):
     'CRUISE_BUTTONS': button_val,
     'CRUISE_SETTING': 0,
   }
-  return packer.make_can_msg("SCM_BUTTONS", bus, values, idx)
+  return packer.make_can_msg("SCM_BUTTONS", 0, values, idx)
