@@ -4,7 +4,7 @@ from common.realtime import sec_since_boot
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from selfdrive.controls.lib.vehicle_model import VehicleModel
-from selfdrive.car.gm.values import DBC, CAR
+from selfdrive.car.gm.values import DBC, CAR, STOCK_CONTROL_MSGS
 from selfdrive.car.gm.carstate import CarState, CruiseButtons, get_powertrain_can_parser
 
 try:
@@ -28,9 +28,6 @@ class CanBus(object):
     self.chassis = 2
     self.sw_gmlan = 3
 
-# 384 = "ASCMLKASteeringCmd"
-# 715 = "ASCMGasRegenCmd"
-CONTROL_MSGS = [384, 715]
 
 class CarInterface(object):
   def __init__(self, CP, sendcan=None):
