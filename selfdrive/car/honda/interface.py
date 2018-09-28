@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 import os
 import numpy as np
+import zmq
+import selfdrive.messaging as messaging
 from cereal import car, log
 from common.numpy_fast import clip, interp
 from common.realtime import sec_since_boot
@@ -93,6 +95,8 @@ class CarInterface(object):
     # *** init the major players ***
     self.CS = CarState(CP)
     self.VM = VehicleModel(CP)
+
+    self.uievent = messaging.sub_sock(zmq.Context(), 8064)
 
     # sending if read only is False
     if sendcan is not None:
@@ -372,6 +376,20 @@ class CarInterface(object):
     self.cp.update(int(sec_since_boot() * 1e9), False)
 
     self.CS.update(self.cp)
+
+    # receive UI events
+    uie = None
+    self.CS.cruise_virtualPress = False
+    try:
+      uie = self.uievent.recv(zmq.NOBLOCK)
+    except zmq.error.Again:
+      uie = None
+    if uie is not None:
+      uie = int(uie)
+      # don't override physical button presses
+      if uie>0 and uie<4 and self.CS.cruise_buttons==self.CS.prev_cruise_buttons:
+        self.CS.cruise_buttons = [ 0, CruiseButtons.DECEL_SET, CruiseButtons.CANCEL, CruiseButtons.RES_ACCEL][uie]
+        self.CS.cruise_virtualPress = True
 
     # create message
     ret = car.CarState.new_message()

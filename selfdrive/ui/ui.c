@@ -1293,8 +1293,8 @@ static void ui_draw_button(NVGcontext *vg, int x, int y, int w, int h, const cha
   nvgText(vg, x + w/2, y + (int)(40 * 2.5) + 5, label, NULL);
 }
 
-const int buttonCount = 5;
-const char *buttons[] = { "<<", "<", "OFF", ">", ">>" };
+const int buttonCount = 3;
+const char *buttons[] = { "DEC", "OFF", "ACC" };
 
 static void ui_draw_buttons(UIState *s) {
     const UIScene *scene = &s->scene;
@@ -2405,7 +2405,7 @@ int main() {
 
       if(s->vision_connected && s->plus_state == 0 && s->ignoreLayout) {
         s->scene.spammedButton = test_button_touch(s, touch_x, touch_y);
-        s->scene.spammedButtonTimeout = (s->scene.spammedButton==0 || s->scene.spammedButton==4)?20:6; // approx 650/200ms @ 30 fps
+        s->scene.spammedButtonTimeout = 6; // approx 200ms @ 30 fps
         //printf("%d, %d, %d\n", touch_x, touch_y, but);
       }
     }
