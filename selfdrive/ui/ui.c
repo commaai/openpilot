@@ -171,6 +171,7 @@ typedef struct UIScene {
   bool rightBlinker;
   int blinker_blinkingrate;
   int spammedButton;
+  int spammedButtonTimeout;
 
 } UIScene;
 
@@ -2403,11 +2404,16 @@ int main() {
       set_awake(s, true);
       if(s->vision_connected && s->plus_state == 0 && s->ignoreLayout) {
         s->scene.spammedButton = test_button_touch(s, touch_x, touch_y);
+        s->scene.spammedButtonTimeout = 6; // approx 200ms @ 30 fps
         //printf("%d, %d, %d\n", touch_x, touch_y, but);
       }
     }
-    if(s->scene.spammedButton!=-1)
+    if(s->scene.spammedButton!=-1) {
       zsock_send(s->uievent_sock, "i", s->scene.spammedButton+1);
+      s->scene.spammedButtonTimeout--;
+      if(s->scene.spammedButtonTimeout<=0)
+        s->scene.spammedButton=-1;
+    }
 
     // manage wakefulness
     if (s->awake_timeout > 0) {
