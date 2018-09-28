@@ -170,6 +170,7 @@ typedef struct UIScene {
   bool leftBlinker;
   bool rightBlinker;
   int blinker_blinkingrate;
+  int spammedButton;
 
 } UIScene;
 
@@ -1272,17 +1273,22 @@ static void ui_draw_vision_grid(UIState *s)
   }
 }
 
-static void ui_draw_button(NVGcontext *vg, int x, int y, int w, int h, const char *label) {
-  nvgTextAlign(vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
-  nvgFontFace(vg, "sans-semibold");
-  nvgFontSize(vg, (strlen(label)>2?30:40) * 2.5);
-  nvgFillColor(vg, nvgRGBA(255, 255, 255, 200));
-  nvgText(vg, x + w/2, y + (int)(40 * 2.5) + 5, label, NULL);
+static void ui_draw_button(NVGcontext *vg, int x, int y, int w, int h, const char *label, bool highlight) {
   nvgBeginPath(vg);
   nvgRoundedRect(vg, x, y, w, h, 20);
   nvgStrokeColor(vg, nvgRGBA(255, 255, 255, 80));
   nvgStrokeWidth(vg, 6);
   nvgStroke(vg);
+  if(highlight) {
+    nvgFillColor(vg, nvgRGBA(128, 128, 128, 160));
+    nvgFill(vg);
+  }
+
+  nvgTextAlign(vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
+  nvgFontFace(vg, "sans-semibold");
+  nvgFontSize(vg, (strlen(label)>2?30:40) * 2.5);
+  nvgFillColor(vg, nvgRGBA(255, 255, 255, 200));
+  nvgText(vg, x + w/2, y + (int)(40 * 2.5) + 5, label, NULL);
 }
 
 const int buttonCount = 5;
@@ -1295,7 +1301,7 @@ static void ui_draw_buttons(UIState *s) {
     const int y = box_h - bdr_is - 140;
     const int h = 150;
     for(int i=0;i<buttonCount;i++)
-      ui_draw_button(s->vg, x + (w+20) * i, y, w, h, buttons[i]);
+      ui_draw_button(s->vg, x + (w+20) * i, y, w, h, buttons[i], scene->spammedButton==i);
 }
 
 static int test_button_touch(UIState *s, int tx, int ty) {
@@ -2394,12 +2400,12 @@ int main() {
       // touch event will still happen :(
       set_awake(s, true);
       if(s->vision_connected && s->plus_state == 0 && s->ignoreLayout) {
-        int but = test_button_touch(s, touch_x, touch_y);
+        s->scene->spammedButton = test_button_touch(s, touch_x, touch_y);
         //printf("%d, %d, %d\n", touch_x, touch_y, but);
-        if(but!=-1) 
-          zsock_send(s->uievent_sock, "i", but+1);
       }
     }
+    if(s->scene->spammedButton!=-1)
+      zsock_send(s->uievent_sock, "i", s->scene->spammedButton+1);
 
     // manage wakefulness
     if (s->awake_timeout > 0) {
