@@ -86,7 +86,7 @@ class CarController(object):
       uie = None
     if uie is not None:
       uie = int(uie)
-      if uie>3:
+      if uie>9:
         uie = None
 
     # *** apply brake hysteresis ***
@@ -164,7 +164,7 @@ class CarController(object):
       elif CS.stopped:
         can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx))
       elif uie != None:
-        but = [ 0, CruiseButtons.DECEL_SET, CruiseButtons.CANCEL, CruiseButtons.RES_ACCEL][uie]
+        but = [ 0, CruiseButtons.DECEL_SET, CruiseButtons.DECEL_SET, CruiseButtons.CANCEL, CruiseButtons.RES_ACCEL, CruiseButtons.RES_ACCEL][uie]
         cloudlog.warn("Spamming button: %r", but)
         can_sends.append(hondacan.spam_buttons_command(self.packer, but, idx))
     else:

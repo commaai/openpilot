@@ -128,6 +128,14 @@ static int honda_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   //    !current_controls_allowed && ((to_send->RDTR >> 4) & 0xFF) == 0) {
   //  if (((to_send->RDLR >> 5) & 0x7) != 2) return 0;
   //}
+  if (bosch_hardware && ((to_send->RIR>>21) == 0x296)) {
+    int buttons = (to_send->RDLR & 0xE0) >> 5;
+    if (buttons == 4 || buttons == 3) {
+      controls_allowed = 1;
+    } else if (buttons == 2) {
+      controls_allowed = 0;
+    }
+  }
 
   // 1 allows the message through
   return true;

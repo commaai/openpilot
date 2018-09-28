@@ -1309,7 +1309,7 @@ static void ui_draw_buttons(UIState *s) {
 static int test_button_touch(UIState *s, int tx, int ty) {
     const UIScene *scene = &s->scene;
     const int w = 180;
-    const int x = scene->ui_viz_rx + scene->ui_viz_rw/2 - (3*w/2);
+    const int x = scene->ui_viz_rx + scene->ui_viz_rw/2 - ((buttonCount*w + (buttonCount-1)*20)/2);
     const int y = box_h - bdr_is - 140;
     const int h = 150;
     for(int i=0;i<buttonCount;i++)
@@ -2405,7 +2405,7 @@ int main() {
 
       if(s->vision_connected && s->plus_state == 0 && s->ignoreLayout) {
         s->scene.spammedButton = test_button_touch(s, touch_x, touch_y);
-        s->scene.spammedButtonTimeout = (s->scene.spammedButton==0 || s->scene.spammedButton==4)?10:5; // approx 340/170ms @ 30 fps
+        s->scene.spammedButtonTimeout = (s->scene.spammedButton==0 || s->scene.spammedButton==4)?20:6; // approx 650/200ms @ 30 fps
         //printf("%d, %d, %d\n", touch_x, touch_y, but);
       }
     }
