@@ -5,7 +5,8 @@ from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.gm.values import DBC, CAR, STOCK_CONTROL_MSGS
-from selfdrive.car.gm.carstate import CarState, CruiseButtons, get_powertrain_can_parser
+from selfdrive.car.gm.carstate import CarState, CruiseButtons, \
+                                      AccState, get_powertrain_can_parser
 
 try:
   from selfdrive.car.gm.carcontroller import CarController
@@ -37,6 +38,10 @@ class CarInterface(object):
     self.brake_pressed_prev = False
     self.can_invalid_count = 0
     self.acc_active_prev = 0
+
+    # First engagement must be done with "set/-",
+    # ignore "res/+" until then.
+    self.allow_resume = False
 
     # *** init the major players ***
     canbus = CanBus()
@@ -75,8 +80,13 @@ class CarInterface(object):
     std_cargo = 136
 
     if candidate == CAR.VOLT:
-      # supports stop and go, but initial engage must be above 18mph (which include conservatism)
-      ret.minEnableSpeed = 18 * CV.MPH_TO_MS
+      # 2017 Volt: initial engage must be done with "set/-", above ~18mph.
+      # Then, both "set/-" and "res/+" work at any speed.
+      # Unless brake pedal was pressed, in which case resume works above ~7mph
+      # and set works above ~18mph.
+      # TODO: track PCM state to know exactly when set/res are allowed,
+      # instead of disengaging on a PCM fault.
+      ret.minEnableSpeed = -1
       # kg of standard extra cargo to count for drive, gas, etc...
       ret.mass = 1607 + std_cargo
       ret.safetyModel = car.CarParams.SafetyModels.gm
@@ -191,7 +201,8 @@ class CarInterface(object):
 
     # cruise state
     ret.cruiseState.available = bool(self.CS.main_on)
-    cruiseEnabled = self.CS.pcm_acc_status != 0
+    self.allow_resume &= ret.cruiseState.available
+    cruiseEnabled = self.CS.pcm_acc_status in [AccState.ACTIVE, AccState.STANDSTILL]
     ret.cruiseState.enabled = cruiseEnabled
     ret.cruiseState.standstill = False
 
@@ -226,10 +237,12 @@ class CarInterface(object):
         be.pressed = False
         but = self.CS.prev_cruise_buttons
       if but == CruiseButtons.RES_ACCEL:
-        if not (cruiseEnabled and self.CS.standstill):
-          be.type = 'accelCruise' # Suppress resume button if we're resuming from stop so we don't adjust speed.
+        # Suppress resume button if we're resuming from stop so we don't adjust speed.
+        if self.allow_resume and not (cruiseEnabled and self.CS.standstill):
+          be.type = 'accelCruise'
       elif but == CruiseButtons.DECEL_SET:
         be.type = 'decelCruise'
+        self.allow_resume = True
       elif but == CruiseButtons.CANCEL:
         be.type = 'cancel'
       elif but == CruiseButtons.MAIN:
@@ -276,6 +289,8 @@ class CarInterface(object):
         events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
       if ret.gasPressed:
         events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
+      if self.CS.pcm_acc_status == AccState.FAULTED:
+        events.append(create_event('speedTooLow', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
 
       # handle button presses
       for b in ret.buttonEvents:
