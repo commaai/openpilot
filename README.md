@@ -34,19 +34,19 @@ Code changes: [Code diff to comma.ai devel branch](https://github.com/commaai/op
 
 There are a bunch of changes for debugging/compiling on Mac, etc. The relevant changes are in the following 11 files:
 
-! File                                             ! Added features                                                !
-!--------------------------------------------------!---------------------------------------------------------------!
-! opendbc/honda_accord_s2t_2018_can_generated.dbc  ! Brake lights                                                  !
-! panda/board/safety/safety_honda.h                ! Gas pedal use, virtual buttons                                !
-! selfdrive/car/honda/carcontroller.py             ! Virtual buttons                                               !
-! selfdrive/car/honda/carstate.py                  ! Brake lights                                                  !
-! selfdrive/car/honda/interface.py                 ! Virtual buttons, brake lights, gas pedal use, LKAS button     !
-! selfdrive/controls/controlsd.py                  ! LKAS button, No beep on user disable                          !
-! selfdrive/controls/lib/alertmanager.py           ! No beep on user disable                                       !
-! selfdrive/controls/radard.py                     ! Mock radar support                                            !
-! selfdrive/loggerd/uploader.py                    ! Upload toggle works on WIFI                                   !
-! selfdrive/ui/ui.c                                ! Virtual buttons, brake lights, blinkers, engineering display  !
-! selfdrive/visiond/visiond                        ! Latest, non-wiggle model                                      !
+| File                                             | Added features                                                |
+|--------------------------------------------------|---------------------------------------------------------------|
+| opendbc/honda_accord_s2t_2018_can_generated.dbc  | Brake lights                                                  |
+| panda/board/safety/safety_honda.h                | Gas pedal use, virtual buttons                                |
+| selfdrive/car/honda/carcontroller.py             | Virtual buttons                                               |
+| selfdrive/car/honda/carstate.py                  | Brake lights                                                  |
+| selfdrive/car/honda/interface.py                 | Virtual buttons, brake lights, gas pedal use, LKAS button     |
+| selfdrive/controls/controlsd.py                  | LKAS button, No beep on user disable                          |
+| selfdrive/controls/lib/alertmanager.py           | No beep on user disable                                       |
+| selfdrive/controls/radard.py                     | Mock radar support                                            |
+| selfdrive/loggerd/uploader.py                    | Upload toggle works on WIFI                                   |
+| selfdrive/ui/ui.c                                | Virtual buttons, brake lights, blinkers, engineering display  |
+| selfdrive/visiond/visiond                        | Latest, non-wiggle model                                      |
 
 
 
