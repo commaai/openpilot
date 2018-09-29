@@ -403,7 +403,7 @@ class CarInterface(object):
     # simulate button presses to adjust cruise speed
     if self.cruise_speed_override!=0:
       if self.cruise_speed_override<0:
-        if self.CS.v_cruise_pcm > -self.cruise_speed_override+6:
+        if self.CS.v_cruise_pcm > -self.cruise_speed_override+8:
           self.CS.cruise_buttons = CruiseButtons.DECEL_SET
           self.CS.cruise_virtualPress = True
         else:
