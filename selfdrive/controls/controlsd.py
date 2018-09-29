@@ -294,12 +294,12 @@ def state_control(plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, 
                                               CP, PL.lead_1)
 
   # *** steering PID loop ***
-  if not NoSteering:
+  if not NoSteering and not CS.leftBlinker and not CS.rightBlinker:
     actuators.steer, actuators.steerAngle = LaC.update(active, CS.vEgo, CS.steeringAngle,
                                                      CS.steeringPressed, plan.dPoly, angle_offset, VM, PL)
 
   # send a "steering required alert" if saturation count has reached the limit
-  if (not NoSteering) and LaC.sat_flag and CP.steerLimitAlert:
+  if (not NoSteering and not CS.leftBlinker and not CS.rightBlinker) and LaC.sat_flag and CP.steerLimitAlert:
     AM.add("steerSaturated", enabled)
 
   # parse permanent warnings to display constantly
@@ -342,7 +342,7 @@ def data_send(perception_state, plan, plan_ts, CS, CI, CP, VM, state, events, ac
 
     CC.hudControl.setSpeed = float(v_cruise_kph * CV.KPH_TO_MS)
     CC.hudControl.speedVisible = isEnabled(state)
-    CC.hudControl.lanesVisible = isEnabled(state) and not NoSteering
+    CC.hudControl.lanesVisible = isEnabled(state) and not NoSteering and not CS.leftBlinker and not CS.rightBlinker
     CC.hudControl.leadVisible = plan.hasLead
     CC.hudControl.visualAlert = AM.visual_alert
     CC.hudControl.audibleAlert = AM.audible_alert
@@ -356,7 +356,7 @@ def data_send(perception_state, plan, plan_ts, CS, CI, CP, VM, state, events, ac
     CC.enabled = False
     CC.cruiseControl.override = False
     CC.hudControl.speedVisible = False
-    CC.hudControl.lanesVisible = not NoSteering
+    CC.hudControl.lanesVisible = not NoSteering and not CS.leftBlinker and not CS.rightBlinker
     CC.hudControl.leadVisible = False
     CC.hudControl.visualAlert = None
     CC.hudControl.audibleAlert = None
@@ -382,7 +382,7 @@ def data_send(perception_state, plan, plan_ts, CS, CI, CP, VM, state, events, ac
     "vEgoRaw": CS.vEgoRaw,
     "angleSteers": CS.steeringAngle,
     "curvature": VM.calc_curvature(CS.steeringAngle * CV.DEG_TO_RAD, CS.vEgo),
-    "steerOverride": CS.steeringPressed or NoSteering,
+    "steerOverride": CS.steeringPressed or NoSteering and not CS.leftBlinker and not CS.rightBlinker,
     "state": state,
     "engageable": not bool(get_events(events, [ET.NO_ENTRY])),
     "longControlState": LoC.long_control_state,
