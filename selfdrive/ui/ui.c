@@ -38,10 +38,6 @@
 #include "bbuistate.h"
 //BB end
 
-// Calibration status values from controlsd.py
-#define CALIBRATION_UNCALIBRATED 0
-#define CALIBRATION_CALIBRATED 1
-#define CALIBRATION_INVALID 2
 
 #define STATUS_STOPPED 0
 #define STATUS_DISENGAGED 1
@@ -148,9 +144,6 @@ typedef struct UIScene {
 
   uint64_t started_ts;
 
-  // Used to display calibration progress
-  int cal_status;
-  int cal_perc;
 
   // Used to show gps planner status
   bool gps_planner_active;
@@ -460,7 +453,6 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
   s->scene = (UIScene){
       .frontview = getenv("FRONTVIEW") != NULL,
       .fullview = getenv("FULLVIEW") != NULL,
-      .cal_status = CALIBRATION_CALIBRATED,
       .transformed_width = ui_info.transformed_width,
       .transformed_height = ui_info.transformed_height,
       .front_box_x = ui_info.front_box_x,
@@ -1116,15 +1108,6 @@ static void ui_draw_vision_alert(UIState *s, int va_size, int va_color,
   }
 }
 
-static void ui_draw_calibration_status(UIState *s) {
-  const UIScene *scene = &s->scene;
-  char calib_str1[64];
-  char calib_str2[64];
-  snprintf(calib_str1, sizeof(calib_str1), "Calibration in Progress: %d%%", scene->cal_perc);
-  snprintf(calib_str2, sizeof(calib_str2), (s->is_metric?"Drive above 35 km/h":"Drive above 15 mph"));
-
-  ui_draw_vision_alert(s, ALERTSIZE_MID, s->status, calib_str1, calib_str2);
-}
 
 static void ui_draw_vision(UIState *s) {
   //BB code added to only draw every other frame
@@ -1176,9 +1159,6 @@ static void ui_draw_vision(UIState *s) {
     // Controls Alerts
     ui_draw_vision_alert(s, s->scene.alert_size, s->status,
                             s->scene.alert_text1, s->scene.alert_text2);
-  } else if (scene->cal_status == CALIBRATION_UNCALIBRATED) {
-    // Calibration Status
-    ui_draw_calibration_status(s);
   } else {
     ui_draw_vision_footer(s);
   }
@@ -1549,8 +1529,6 @@ static void ui_update(UIState *s) {
         struct cereal_LiveCalibrationData datad;
         cereal_read_LiveCalibrationData(&datad, eventd.liveCalibration);
 
-        s->scene.cal_status = datad.calStatus;
-        s->scene.cal_perc = datad.calPerc;
 
         // should we still even have this?
         capn_list32 warpl = datad.warpMatrix2;

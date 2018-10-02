@@ -189,7 +189,7 @@ BO_ 1033 ASCMKeepAlive: 7 NEO
  SG_ ASCMKeepAliveAllZero : 7|56@0+ (1,0) [0|0] ""  NEO
 
 BO_ 1217 ECMEngineCoolantTemp: 8 K20_ECM
- SG_ EngineCoolantTemp : 23|8@0+ (1,-40) [0|0] "°C"  NEO
+ SG_ EngineCoolantTemp : 23|8@0+ (1,-40) [0|0] "Â°C"  NEO
 
 BO_ 1249 VIN_Part2: 8 K20_ECM
  SG_ VINPart2 : 7|64@0+ (1,0) [0|0] ""  NEO
