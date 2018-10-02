@@ -350,7 +350,7 @@ class CarState(object):
     self.a_ego = float(v_ego_x[1])
 
     #BB this is a hack for the interceptor
-    self.pedal_hardware_present = epas_cp.vl["GAS_SENSOR"] != None
+    self.pedal_hardware_present = epas_cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS'] != None
     if self.pedal_hardware_present != self.pedal_hardware_present_prev:
         self.config_ui_buttons(self.pedal_hardware_present)
     self.pedal_hardware_present_prev = self.pedal_hardware_present
