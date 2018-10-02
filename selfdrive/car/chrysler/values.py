@@ -3,7 +3,7 @@ from selfdrive.car import dbc_dict
 
 class CAR:
   PACIFICA_2017 = "CHRYSLER PACIFICA HYBRID 2017"
-  PACIFICA_2018_HYBRID = "CHRYSLER PACIFICA HYBRID 2017"
+  PACIFICA_2018_HYBRID = "CHRYSLER PACIFICA HYBRID 2018"
   PACIFICA_2018 = "CHRYSLER PACIFICA 2018"
   CHEROKEE = "GRAND CHEROKEE V6 2018"
 
@@ -33,6 +33,9 @@ DBC = {
   CAR.PACIFICA_2018: dbc_dict(  # Same DBC file works.
     'chrysler_pacifica_2017_hybrid',  # 'pt'
     'chrysler_pacifica_2017_hybrid_private_fusion'),  # 'radar'
+  CAR.PACIFICA_2018_HYBRID: dbc_dict(  # Same DBC file works.
+    'chrysler_pacifica_2017_hybrid',  # 'pt'
+    'chrysler_pacifica_2017_hybrid_private_fusion'),  # 'radar'
   CAR.CHEROKEE: dbc_dict(  # Same DBC file works.
     'chrysler_pacifica_2017_hybrid',  # 'pt'
     'chrysler_pacifica_2017_hybrid_private_fusion'),  # 'radar'
@@ -45,6 +48,7 @@ class ECU:
 # addr: (ecu, cars, bus, 1/freq*100, vl)
 STATIC_MSGS = [(0x2d9, ECU.CAM, (CAR.PACIFICA_2017), 0,   10, '\x00\x00\x00\x08\x20'),
                (0x2d9, ECU.CAM, (CAR.PACIFICA_2018), 0,   10, '\x00\x00\x00\x00\x20'),
+               (0x2d9, ECU.CAM, (CAR.PACIFICA_2018_HYBRID), 0,   10, '\x00\x00\x00\x04\x40'),
                (0x2d9, ECU.CAM, (CAR.CHEROKEE),      0,   10, '\x00\x00\x00\x00\x40'),
                # TODO verify the 10 here is for every 0.1 seconds
                # 0x2a6 and 0x292 are not static, so they're not included here.
