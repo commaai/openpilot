@@ -117,6 +117,7 @@ void *safety_setter_thread(void *s) {
     break;
   case (int)cereal::CarParams::SafetyModels::TESLA:
     safety_setting = SAFETY_TESLA;
+    break;
   case (int)cereal::CarParams::SafetyModels::HYUNDAI:
     safety_setting = SAFETY_HYUNDAI;
     break;
