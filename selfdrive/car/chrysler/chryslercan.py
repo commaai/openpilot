@@ -81,7 +81,7 @@ def create_2a6(gear, apply_steer, moving_fast, car_fingerprint):
         msg = '0264060000000000'.decode('hex')
       elif car_fingerprint == CAR.CHEROKEE:
         msg = '02a4060000000000'.decode('hex')
-      elif car_fingerprint == CAR.PACIFICA_HYBRID_2018:
+      elif car_fingerprint == CAR.PACIFICA_2018_HYBRID:
         msg = '02a8060000000000'.decode('hex')
     else:
       msg = '0100010000000000'.decode('hex') # moving slowly, display white.
@@ -89,7 +89,7 @@ def create_2a6(gear, apply_steer, moving_fast, car_fingerprint):
         msg = '0164010000000000'.decode('hex')
       elif car_fingerprint == CAR.CHEROKEE:
         msg = '01a4010000000000'.decode('hex')
-      elif car_fingerprint == CAR.PACIFICA_HYBRID_2018:
+      elif car_fingerprint == CAR.PACIFICA_2018_HYBRID:
         msg = '01a8010000000000'.decode('hex')
   if apply_steer > 0:  # steering left
     msg = '03000a0000000000'.decode('hex')  # when torqueing, display yellow.
@@ -97,7 +97,7 @@ def create_2a6(gear, apply_steer, moving_fast, car_fingerprint):
       msg = '03640a0000000000'.decode('hex')
     elif car_fingerprint == CAR.CHEROKEE:
       msg = '03a40a0000000000'.decode('hex')
-    elif car_fingerprint == CAR.PACIFICA_HYBRID_2018:
+    elif car_fingerprint == CAR.PACIFICA_2018_HYBRID:
       msg = '03a80a0000000000'.decode('hex')
   elif apply_steer < 0:  # steering right
     msg = '0300080000000000'.decode('hex')  # when torqueing, display yellow.
@@ -105,7 +105,7 @@ def create_2a6(gear, apply_steer, moving_fast, car_fingerprint):
       msg = '0364080000000000'.decode('hex')
     elif car_fingerprint == CAR.CHEROKEE:
       msg = '03a4080000000000'.decode('hex')
-    elif car_fingerprint == CAR.PACIFICA_HYBRID_2018:
+    elif car_fingerprint == CAR.PACIFICA_2018_HYBRID:
       msg = '03a8080000000000'.decode('hex')
   return make_can_msg(0x2a6, msg)
 
