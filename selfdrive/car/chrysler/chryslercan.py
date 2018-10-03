@@ -109,7 +109,7 @@ def create_2a6(gear, apply_steer, moving_fast, car_fingerprint):
       msg = '03a8080000000000'.decode('hex')
   return make_can_msg(0x2a6, msg)
 
-LIMIT = 230-3  # 230 is documented limit # 171 is max from main example
+LIMIT = 230  # 230 is documented limit # 171 is max from main example
 STEP = 3  # 3 is stock. originally 20. 100 is fine. 200 is too much it seems.
 _prev_angle = 0  # TODO if this is needed, refactor it.
 

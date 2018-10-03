@@ -137,7 +137,7 @@ class CarController(object):
     self.standstill_req = False #?
 
     moving_fast = True  # for status message
-    if CS.v_ego < 5:  # don't steer if going under 6mph to not lock out LKAS (was < 3)
+    if CS.v_ego < 3.5:  # don't steer if going under 7.8mph to not lock out LKAS (was < 3)
       apply_angle = 0
       apply_steer = 0
       moving_fast = False
