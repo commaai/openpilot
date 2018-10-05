@@ -4,7 +4,7 @@ from common.realtime import sec_since_boot
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from selfdrive.controls.lib.vehicle_model import VehicleModel
-from selfdrive.car.gm.values import DBC, CAR
+from selfdrive.car.gm.values import DBC, CAR, STOCK_CONTROL_MSGS
 from selfdrive.car.gm.carstate import CarState, CruiseButtons, get_powertrain_can_parser
 
 try:
@@ -27,10 +27,6 @@ class CanBus(object):
     self.obstacle = 1
     self.chassis = 2
     self.sw_gmlan = 3
-
-# 384 = "ASCMLKASteeringCmd"
-# 715 = "ASCMGasRegenCmd"
-CONTROL_MSGS = [384, 715]
 
 class CarInterface(object):
   def __init__(self, CP, sendcan=None):
@@ -74,7 +70,7 @@ class CarInterface(object):
     # Presence of a camera on the object bus is ok.
     # Have to go passive if ASCM is online (ACC-enabled cars),
     # or camera is on powertrain bus (LKA cars without ACC).
-    ret.enableCamera = not any(x for x in CONTROL_MSGS if x in fingerprint)
+    ret.enableCamera = not any(x for x in STOCK_CONTROL_MSGS[candidate] if x in fingerprint)
 
     std_cargo = 136
 
@@ -298,7 +294,7 @@ class CarInterface(object):
         events.append(create_event('pcmEnable', [ET.ENABLE]))
       if not self.CS.acc_active:
         events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
-  
+
     ret.events = events
 
     # update previous brake/gas pressed
