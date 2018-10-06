@@ -145,6 +145,9 @@ class CarController(object):
     # only cut torque when steer state is a known fault
     if not enabled or CS.steer_state in [9, 25]:
       apply_steer = 0
+      apply_steer_req = 0
+    else:
+      apply_steer_req = 1
 
     self.steer_angle_enabled, self.ipas_reset_counter = \
       ipas_state_transition(self.steer_angle_enabled, enabled, CS.ipas_active, self.ipas_reset_counter)
@@ -192,12 +195,12 @@ class CarController(object):
     # on consecutive messages
     if ECU.CAM in self.fake_ecus:
       if self.angle_control:
-        can_sends.append(create_steer_command(self.packer, 0., frame))
+        can_sends.append(create_steer_command(self.packer, 0., 0, frame))
       else:
-        can_sends.append(create_steer_command(self.packer, apply_steer, frame))
+        can_sends.append(create_steer_command(self.packer, apply_steer, apply_steer_req, frame))
 
     if self.angle_control:
-      can_sends.append(create_ipas_steer_command(self.packer, apply_angle, self.steer_angle_enabled, 
+      can_sends.append(create_ipas_steer_command(self.packer, apply_angle, self.steer_angle_enabled,
                                                  ECU.APGS in self.fake_ecus))
     elif ECU.APGS in self.fake_ecus:
       can_sends.append(create_ipas_steer_command(self.packer, 0, 0, True))

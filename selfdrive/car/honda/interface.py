@@ -204,9 +204,10 @@ class CarInterface(object):
       ret.longitudinalKiBP = [0., 35.]
       ret.longitudinalKiV = [0.18, 0.12]
 
-    elif candidate in (CAR.ACCORD, CAR.ACCORD_15):
+    elif candidate in (CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH):
       stop_and_go = True
-      ret.safetyParam = 1 # Accord and CRV 5G use an alternate user brake msg
+      if not candidate == CAR.ACCORDH: # Hybrid uses same brake msg as hatch
+        ret.safetyParam = 1 # Accord and CRV 5G use an alternate user brake msg
       ret.mass = 3279. * CV.LB_TO_KG + std_cargo
       ret.wheelbase = 2.83
       ret.centerToFront = ret.wheelbase * 0.39
@@ -277,18 +278,18 @@ class CarInterface(object):
 
     elif candidate == CAR.ODYSSEY:
       stop_and_go = False
-      ret.mass = 4354 * CV.LB_TO_KG + std_cargo
+      ret.mass = 4471 * CV.LB_TO_KG + std_cargo
       ret.wheelbase = 3.00
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 14.35        # as spec
-      tire_stiffness_factor = 0.444 # not optimized yet
-      ret.steerKpV, ret.steerKiV = [[0.6], [0.18]]
+      tire_stiffness_factor = 0.82
+      ret.steerKpV, ret.steerKiV = [[0.45], [0.135]]
       ret.longitudinalKpBP = [0., 5., 35.]
       ret.longitudinalKpV = [1.2, 0.8, 0.5]
       ret.longitudinalKiBP = [0., 35.]
       ret.longitudinalKiV = [0.18, 0.12]
 
-    elif candidate == CAR.PILOT:
+    elif candidate in (CAR.PILOT, CAR.PILOT_2019):
       stop_and_go = False
       ret.mass = 4303 * CV.LB_TO_KG + std_cargo
       ret.wheelbase = 2.81

@@ -73,7 +73,7 @@ def get_can_signals(CP):
 
   if CP.radarOffCan:
     # Civic is only bosch to use the same brake message as other hondas.
-    if CP.carFingerprint != CAR.CIVIC_HATCH:
+    if CP.carFingerprint not in (CAR.ACCORDH, CAR.CIVIC_HATCH):
       signals += [("BRAKE_PRESSED", "BRAKE_MODULE", 0)]
       checks += [("BRAKE_MODULE", 50)]
     signals += [("CAR_GAS", "GAS_PEDAL_2", 0),
@@ -88,7 +88,7 @@ def get_can_signals(CP):
                 ("CRUISE_SPEED_OFFSET", "CRUISE_PARAMS", 0)]
     checks += [("CRUISE_PARAMS", 50)]
 
-  if CP.carFingerprint in (CAR.ACCORD, CAR.ACCORD_15):
+  if CP.carFingerprint in (CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH):
     signals += [("DRIVERS_DOOR_OPEN", "SCM_FEEDBACK", 1)]
   else:
     signals += [("DOOR_OPEN_FL", "DOORS_STATUS", 1),
@@ -106,9 +106,7 @@ def get_can_signals(CP):
   elif CP.carFingerprint == CAR.ACURA_ILX:
     signals += [("CAR_GAS", "GAS_PEDAL_2", 0),
                 ("MAIN_ON", "SCM_BUTTONS", 0)]
-  elif CP.carFingerprint == CAR.CRV:
-    signals += [("MAIN_ON", "SCM_BUTTONS", 0)]
-  elif CP.carFingerprint == CAR.ACURA_RDX:
+  elif CP.carFingerprint in (CAR.CRV, CAR.ACURA_RDX, CAR.PILOT_2019, CAR.RIDGELINE):
     signals += [("MAIN_ON", "SCM_BUTTONS", 0)]
   elif CP.carFingerprint == CAR.ODYSSEY:
     signals += [("MAIN_ON", "SCM_FEEDBACK", 0),
@@ -118,8 +116,6 @@ def get_can_signals(CP):
   elif CP.carFingerprint == CAR.PILOT:
     signals += [("MAIN_ON", "SCM_BUTTONS", 0),
                 ("CAR_GAS", "GAS_PEDAL_2", 0)]
-  elif CP.carFingerprint == CAR.RIDGELINE:
-    signals += [("MAIN_ON", "SCM_BUTTONS", 0)]
 
   # add gas interceptor reading if we are using it
   if CP.enableGasInterceptor:
@@ -183,7 +179,7 @@ class CarState(object):
 
     # ******************* parse out can *******************
 
-    if self.CP.carFingerprint in (CAR.ACCORD, CAR.ACCORD_15): # TODO: find wheels moving bit in dbc
+    if self.CP.carFingerprint in (CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH): # TODO: find wheels moving bit in dbc
       self.standstill = cp.vl["ENGINE_DATA"]['XMISSION_SPEED'] < 0.1
       self.door_all_closed = not cp.vl["SCM_FEEDBACK"]['DRIVERS_DOOR_OPEN']
     else:
@@ -238,7 +234,7 @@ class CarState(object):
     self.left_blinker_on = cp.vl["SCM_FEEDBACK"]['LEFT_BLINKER']
     self.right_blinker_on = cp.vl["SCM_FEEDBACK"]['RIGHT_BLINKER']
 
-    if self.CP.carFingerprint in (CAR.CIVIC, CAR.ODYSSEY, CAR.CRV_5G, CAR.ACCORD, CAR.ACCORD_15, CAR.CIVIC_HATCH):
+    if self.CP.carFingerprint in (CAR.CIVIC, CAR.ODYSSEY, CAR.CRV_5G, CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH, CAR.CIVIC_HATCH):
       self.park_brake = cp.vl["EPB_STATUS"]['EPB_STATE'] != 0
       self.brake_hold = cp.vl["VSA_STATUS"]['BRAKE_HOLD_ACTIVE']
       self.main_on = cp.vl["SCM_FEEDBACK"]['MAIN_ON']
@@ -252,7 +248,7 @@ class CarState(object):
 
     self.pedal_gas = cp.vl["POWERTRAIN_DATA"]['PEDAL_GAS']
     # crv doesn't include cruise control
-    if self.CP.carFingerprint in (CAR.CRV, CAR.ODYSSEY, CAR.ACURA_RDX, CAR.RIDGELINE):
+    if self.CP.carFingerprint in (CAR.CRV, CAR.ODYSSEY, CAR.ACURA_RDX, CAR.RIDGELINE, CAR.PILOT_2019):
       self.car_gas = self.pedal_gas
     else:
       self.car_gas = cp.vl["GAS_PEDAL_2"]['CAR_GAS']
@@ -265,7 +261,7 @@ class CarState(object):
     if self.CP.radarOffCan:
       self.stopped = cp.vl["ACC_HUD"]['CRUISE_SPEED'] == 252.
       self.cruise_speed_offset = calc_cruise_offset(0, self.v_ego)
-      if self.CP.carFingerprint == CAR.CIVIC_HATCH:
+      if self.CP.carFingerprint in (CAR.CIVIC_HATCH, CAR.ACCORDH):
         self.brake_switch = cp.vl["POWERTRAIN_DATA"]['BRAKE_SWITCH']
         self.brake_pressed = cp.vl["POWERTRAIN_DATA"]['BRAKE_PRESSED'] or \
                           (self.brake_switch and self.brake_switch_prev and \
