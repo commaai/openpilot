@@ -69,7 +69,7 @@ class ALCAController(object):
     self.laneChange_lw = 3.0 # lane width in meters
     self.laneChange_angle = 0. # saves the last angle from actuators before lane change starts
     self.laneChange_angled = 0. # angle delta
-    self.laneChange_steerr = 15.00 # steer ratio for lane change
+    self.laneChange_steerr = 16.70 # steer ratio for lane change
     self.laneChange_direction = 0 # direction of the lane change 
     self.prev_right_blinker_on = False # local variable for prev position
     self.prev_left_blinker_on = False # local variable for prev position
