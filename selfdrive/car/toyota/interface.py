@@ -86,7 +86,7 @@ class CarInterface(object):
     elif candidate in [CAR.RAV4, CAR.RAV4H]:
       ret.safetyParam = 73  # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.66 # 2.65 default
-      ret.steerRatio = 13 # Rav4 2018 16.3 default
+      ret.steerRatio = 14 # Rav4 2018 16.3 default
       ret.mass = 4100./2.205 + std_cargo  # mean between normal and hybrid
       ret.steerKpV, ret.steerKiV = [[0.45], [0.045]] #0.6 0.05 default
       ret.wheelbase = 2.65
@@ -191,9 +191,9 @@ class CarInterface(object):
     ret.startAccel = 0.0
 
     ret.longitudinalKpBP = [0., 5., 65.]
-    ret.longitudinalKpV = [3.6, 1.3, 1.0]
+    ret.longitudinalKpV = [3.6, 1.1, 1.0]
     ret.longitudinalKiBP = [0., 35.]
-    ret.longitudinalKiV = [0.5, 0.26]
+    ret.longitudinalKiV = [0.5, 0.24]
 
     return ret
 
