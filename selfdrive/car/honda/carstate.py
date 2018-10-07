@@ -3,6 +3,9 @@ from common.kalman.simple_kalman import KF1D
 from selfdrive.can.parser import CANParser, CANDefine
 from selfdrive.config import Conversions as CV
 from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, SPEED_FACTOR
+from selfdrive.car.modules.UIBT_module import UIButtons,UIButton
+from selfdrive.car.modules.UIEV_module import UIEvents
+import numpy as np
 
 def parse_gear_shifter(gear, vals):
 
@@ -149,7 +152,20 @@ class CarState(object):
     self.right_blinker_on = 0
 
     self.stopped = 0
-
+    
+    #BB UIEvents
+    self.UE = UIEvents(self)
+    
+    #BB variable for custom buttons
+    self.cstm_btns = UIButtons(self,"Honda","honda")
+    
+    #BB pid holder for ALCA
+    self.pid = None
+    
+    #BB custom message counter
+    self.custom_alert_counter = -1 #set to 100 for 1 second display; carcontroller will take down to zero
+    
+    
     # vEgo kalman filter
     dt = 0.01
     # Q = np.matrix([[10.0, 0.0], [0.0, 100.0]])
@@ -159,6 +175,23 @@ class CarState(object):
                          C=[[1.0, 0.0]],
                          K=[[0.12287673], [0.29666309]])
     self.v_ego = 0.0
+    #BB init ui buttons
+  def init_ui_buttons(self):
+    btns = []
+    btns.append(UIButton("alca","ALC",0,""))
+    btns.append(UIButton("","",0,""))
+    btns.append(UIButton("","",0,""))
+    btns.append(UIButton("sound","SND",1,""))
+    btns.append(UIButton("","",0,""))
+    btns.append(UIButton("","",0,""))
+    return btns
+
+  #BB update ui buttons
+  def update_ui_buttons(self,id,btn_status):
+    if self.cstm_btns.btns[id].btn_status > 0:
+        self.cstm_btns.btns[id].btn_status = btn_status * self.cstm_btns.btns[id].btn_status
+    else:
+        self.cstm_btns.btns[id].btn_status = btn_status
 
   def update(self, cp):
 
