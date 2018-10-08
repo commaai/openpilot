@@ -23,6 +23,10 @@ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+v3.1 - new angle logic for a smoother re-entry
+v3.0 - better lane dettection logic
+v2.0 - detection of lane crossing 
+v1.0 - fixed angle move
 """
 
 from common.numpy_fast import interp
@@ -52,7 +56,7 @@ class ALCAController(object):
     # variables for lane change
     self.alcaEnabled = alcaEnabled
     self.laneChange_strStartFactor = 2.
-    self.laneChange_strStartMultiplier = 1.2
+    self.laneChange_strStartMultiplier = 1.5
     self.laneChange_steerByAngle = steerByAngle # steer only by angle; do not call PID
     self.laneChange_last_actuator_angle = 0.
     self.laneChange_last_actuator_delta = 0.
@@ -230,10 +234,12 @@ class ALCAController(object):
         if self.laneChange_counter ==1:
           CS.UE.custom_alert_message(2,"Auto Lane Change Engaged! (5)",800)
         self.laneChange_counter += 1
-        laneChange_angle = self.laneChange_angled
+        # continue to half the angle between our angle and actuator
+        laneChange_angle = (-actuators.steerAngle - self.laneChange_angle)/2 #self.laneChange_angled
         # check if angle continues to decrease
         current_delta = abs(self.laneChange_angle + laneChange_angle + (-actuators.steerAngle))
         previous_delta = abs(self.laneChange_last_sent_angle  - self.laneChange_last_actuator_angle)
+        self.laneChange_angle += laneChange_angle
         # wait 0.05 sec before starting to check if angle increases
         if (current_delta > previous_delta) and (self.laneChange_counter > 5):
           self.laneChange_enabled = 7
