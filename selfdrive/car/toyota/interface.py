@@ -277,6 +277,7 @@ class CarInterface(object):
     ret.laneDepartureToggle = self.CS.lane_departure_toggle_on
     ret.distanceToggle = self.CS.distance_toggle
     ret.accSlowToggle = self.CS.acc_slow_on
+    ret.readdistancelines = self.CS.read_distance_lines
 
     # events
     events = []
