@@ -27,6 +27,30 @@
 
 #define MAX_BAD_COUNTER 5
 
+unsigned int honda_checksum(unsigned int address, uint64_t d, int l) {
+  d >>= ((8-l)*8); // remove padding
+  d >>= 4; // remove checksum
+
+  int s = 0;
+  while (address) { s += (address & 0xF); address >>= 4; }
+  while (d) { s += (d & 0xF); d >>= 4; }
+  s = 8-s;
+  s &= 0xF;
+
+  return s;
+}
+
+unsigned int toyota_checksum(unsigned int address, uint64_t d, int l) {
+  d >>= ((8-l)*8); // remove padding
+  d >>= 8; // remove checksum
+
+  unsigned int s = l;
+  while (address) { s += address & 0xff; address >>= 8; }
+  while (d) { s += d & 0xff; d >>= 8; }
+
+  return s & 0xFF;
+}
+
 namespace {
 
 uint64_t read_u64_be(const uint8_t* v) {
@@ -40,26 +64,21 @@ uint64_t read_u64_be(const uint8_t* v) {
           | (uint64_t)v[7]);
 }
 
-bool honda_checksum(int address, uint64_t d, int l) {
-  int target = (d >> l) & 0xF;
-
-  DEBUG("check checksum %16lx %d", d, l);
-
-  // remove checksum from calculation
-  d &= ~(0xFLL << l);
-
-  int s = 0;
-  while (address > 0) { s += (address & 0xF); address >>= 4; }
-  while (d > 0) { s += (d & 0xF); d >>= 4; }
-  s = 8-s;
-  s &= 0xF;
-
-  DEBUG("   %d = %d\n", target, s);
-  return target == s;
+uint64_t read_u64_le(const uint8_t* v) {
+  return ((uint64_t)v[0]
+          | ((uint64_t)v[1] << 8)
+          | ((uint64_t)v[2] << 16)
+          | ((uint64_t)v[3] << 24)
+          | ((uint64_t)v[4] << 32)
+          | ((uint64_t)v[5] << 40)
+          | ((uint64_t)v[6] << 48)
+          | ((uint64_t)v[7] << 56));
 }
+
 
 struct MessageState {
   uint32_t address;
+  unsigned int size;
 
   std::vector<Signal> parse_sigs;
   std::vector<double> vals;
@@ -74,21 +93,34 @@ struct MessageState {
   bool parse(uint64_t sec, uint16_t ts_, uint64_t dat) {
     for (int i=0; i < parse_sigs.size(); i++) {
       auto& sig = parse_sigs[i];
+      int64_t tmp;
 
-      int64_t tmp = (dat >> sig.bo) & ((1ULL << sig.b2)-1);
+      if (sig.is_little_endian){
+        tmp = (dat >> sig.b1) & ((1ULL << sig.b2)-1);
+      } else {
+        tmp = (dat >> sig.bo) & ((1ULL << sig.b2)-1);
+      }
+
       if (sig.is_signed) {
         tmp -= (tmp >> (sig.b2-1)) ? (1ULL << sig.b2) : 0; //signed
       }
 
-      DEBUG("parse %X %s -> %ld\n", address, sig.name, tmp);
+      DEBUG("parse %X %s -> %lld\n", address, sig.name, tmp);
 
       if (sig.type == SignalType::HONDA_CHECKSUM) {
-        if (!honda_checksum(address, dat, sig.bo)) {
+        if (honda_checksum(address, dat, size) != tmp) {
           INFO("%X CHECKSUM FAIL\n", address);
           return false;
         }
       } else if (sig.type == SignalType::HONDA_COUNTER) {
         if (!honda_update_counter(tmp)) {
+          return false;
+        }
+      } else if (sig.type == SignalType::TOYOTA_CHECKSUM) {
+        // INFO("CHECKSUM %d %d %018llX - %lld vs %d\n", address, size, dat, tmp, toyota_checksum(address, dat, size));
+
+        if (toyota_checksum(address, dat, size) != tmp) {
+          INFO("%X CHECKSUM FAIL\n", address);
           return false;
         }
       }
@@ -126,13 +158,24 @@ class CANParser {
  public:
   CANParser(int abus, const std::string& dbc_name,
             const std::vector<MessageParseOptions> &options,
-            const std::vector<SignalParseOptions> &sigoptions)
+            const std::vector<SignalParseOptions> &sigoptions,
+            bool sendcan, const std::string& tcp_addr)
     : bus(abus) {
     // connect to can on 8006
     context = zmq_ctx_new();
     subscriber = zmq_socket(context, ZMQ_SUB);
     zmq_setsockopt(subscriber, ZMQ_SUBSCRIBE, "", 0);
-    zmq_connect(subscriber, "tcp://127.0.0.1:8006");
+
+    std::string tcp_addr_str;
+
+    if (sendcan) {
+      tcp_addr_str = "tcp://" + tcp_addr + ":8017";
+    } else {
+      tcp_addr_str = "tcp://" + tcp_addr + ":8006";
+    }
+    const char *tcp_addr_char = tcp_addr_str.c_str();
+
+    zmq_connect(subscriber, tcp_addr_char);
 
     dbc = dbc_lookup(dbc_name);
     assert(dbc);
@@ -161,11 +204,12 @@ class CANParser {
         assert(false);
       }
 
-      // track checksums and for this message
+      state.size = msg->size;
+
+      // track checksums and counters for this message
       for (int i=0; i<msg->num_sigs; i++) {
         const Signal *sig = &msg->sigs[i];
-        if (sig->type == HONDA_CHECKSUM
-            || sig->type == HONDA_COUNTER) {
+        if (sig->type != SignalType::DEFAULT) {
           state.parse_sigs.push_back(*sig);
           state.vals.push_back(0);
         }
@@ -178,8 +222,7 @@ class CANParser {
         for (int i=0; i<msg->num_sigs; i++) {
           const Signal *sig = &msg->sigs[i];
           if (strcmp(sig->name, sigop.name) == 0
-              && sig->type != HONDA_CHECKSUM
-              && sig->type != HONDA_COUNTER) {
+              && sig->type == SignalType::DEFAULT) {
             state.parse_sigs.push_back(*sig);
             state.vals.push_back(sigop.default_value);
             break;
@@ -194,6 +237,7 @@ class CANParser {
 
   void UpdateCans(uint64_t sec, const capnp::List<cereal::CanData>::Reader& cans) {
       int msg_count = cans.size();
+      uint64_t p;
 
       DEBUG("got %d messages\n", msg_count);
 
@@ -214,9 +258,16 @@ class CANParser {
         uint8_t dat[8] = {0};
         memcpy(dat, cmsg.getDat().begin(), cmsg.getDat().size());
 
-        uint64_t p = read_u64_be(dat);
+        // Assumes all signals in the message are of the same type (little or big endian)
+        // TODO: allow signals within the same message to have different endianess
+        auto& sig = message_states[cmsg.getAddress()].parse_sigs[0];
+        if (sig.is_little_endian) {
+            p = read_u64_le(dat);
+        } else {
+            p = read_u64_be(dat);
+        }
 
-        DEBUG("  proc %X: %lx\n", cmsg.getAddress(), p);
+        DEBUG("  proc %X: %llx\n", cmsg.getAddress(), p);
 
         state_it->second.parse(sec, cmsg.getBusTime(), p);
       }
@@ -228,7 +279,7 @@ class CANParser {
       const auto& state = kv.second;
       if (state.check_threshold > 0 && (sec - state.seen) > state.check_threshold) {
         if (state.seen > 0) {
-          INFO("%X TIMEOUT\n", state.address);
+          DEBUG("%X TIMEOUT\n", state.address);
         }
         can_valid = false;
       }
@@ -260,7 +311,7 @@ class CANParser {
       // extract the messages
       capnp::FlatArrayMessageReader cmsg(amsg);
       cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-      
+
       auto cans = event.getCan();
 
       UpdateCans(sec, cans);
@@ -268,6 +319,7 @@ class CANParser {
 
     UpdateValid(sec);
 
+    zmq_msg_close(&msg);
   }
 
   std::vector<SignalValue> query(uint64_t sec) {
@@ -276,7 +328,7 @@ class CANParser {
     for (const auto& kv : message_states) {
       const auto& state = kv.second;
       if (sec != 0 && state.seen != sec) continue;
-      
+
       for (int i=0; i<state.parse_sigs.size(); i++) {
         const Signal &sig = state.parse_sigs[i];
         ret.push_back((SignalValue){
@@ -308,13 +360,14 @@ class CANParser {
 extern "C" {
 
 void* can_init(int bus, const char* dbc_name,
-              size_t num_message_options, const MessageParseOptions* message_options,
-              size_t num_signal_options, const SignalParseOptions* signal_options) {
+               size_t num_message_options, const MessageParseOptions* message_options,
+               size_t num_signal_options, const SignalParseOptions* signal_options,
+               bool sendcan, const char* tcp_addr) {
   CANParser* ret = new CANParser(bus, std::string(dbc_name),
-    (message_options ? std::vector<MessageParseOptions>(message_options, message_options+num_message_options)
-      : std::vector<MessageParseOptions>{}),
-    (signal_options ? std::vector<SignalParseOptions>(signal_options, signal_options+num_signal_options)
-      : std::vector<SignalParseOptions>{}));
+                                 (message_options ? std::vector<MessageParseOptions>(message_options, message_options+num_message_options)
+                                  : std::vector<MessageParseOptions>{}),
+                                 (signal_options ? std::vector<SignalParseOptions>(signal_options, signal_options+num_signal_options)
+                                  : std::vector<SignalParseOptions>{}), sendcan, std::string(tcp_addr));
   return (void*)ret;
 }
 
@@ -362,7 +415,7 @@ int main(int argc, char** argv) {
       {0x30c, 0},
     },
     std::vector<SignalParseOptions>{
-      //  sig_name, sig_address, default 
+      //  sig_name, sig_address, default
       {0x158, "XMISSION_SPEED", 0},
       {0x1d0, "WHEEL_SPEED_FL", 0},
       {0x1d0, "WHEEL_SPEED_FR", 0},

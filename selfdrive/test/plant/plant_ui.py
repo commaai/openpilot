@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import pygame
 from plant import Plant
-from selfdrive.config import CruiseButtons
+from selfdrive.car.honda.values import CruiseButtons
 import numpy as np
 import selfdrive.messaging as messaging
 import math
@@ -21,7 +21,7 @@ def rot_center(image, angle):
   return rot_image
 
 def car_w_color(c):
-  car = pygame.Surface((METER*CAR_LENGTH, METER*CAR_LENGTH))
+  car = pygame.Surface((METER*CAR_LENGTH, METER*CAR_LENGTH))  # pylint: disable=too-many-function-args
   car.set_alpha(0)
   car.fill((10,10,10))
   car.set_alpha(128)
@@ -101,9 +101,9 @@ if __name__ == "__main__":
     for x,y in control_pts:
       pygame.draw.circle(display, (255,255,0), (int(x * METER),int(y * METER)), 2)
 
-    # draw path 
+    # draw path
     path_pts = zip(np.arange(0, 50), md.model.path.points)
-    
+
     for x,y in path_pts:
       x,y = pt_from_car((x,y))
       pygame.draw.circle(display, (0,255,0), (int(x * METER),int(y * METER)), 1)
@@ -118,5 +118,3 @@ if __name__ == "__main__":
     """
 
     pygame.display.flip()
-
-

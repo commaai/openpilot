@@ -6,13 +6,15 @@ os.environ['NOCRASH'] = '1'
 import time
 import unittest
 import shutil
-
 import matplotlib
 matplotlib.use('svg')
 
-from selfdrive.config import Conversions as CV, CruiseButtons as CB
+from selfdrive.config import Conversions as CV
+from selfdrive.car.honda.values import CruiseButtons as CB
 from selfdrive.test.plant.maneuver import Maneuver
 import selfdrive.manager as manager
+from common.params import Params
+
 
 def create_dir(path):
   try:
@@ -79,7 +81,7 @@ maneuvers = [
     initial_speed = 20.,
     lead_relevancy=True,
     initial_distance_lead=35.,
-    speed_lead_values = [20.*CV.MPH_TO_MS, 20.*CV.MPH_TO_MS, 0.*CV.MPH_TO_MS],
+    speed_lead_values = [20., 20., 0.],
     speed_lead_breakpoints = [0., 15., 35.0],
     cruise_button_presses = [(CB.DECEL_SET, 1.2), (0, 1.3)]
   ),
@@ -89,8 +91,18 @@ maneuvers = [
     initial_speed = 20.,
     lead_relevancy=True,
     initial_distance_lead=35.,
-    speed_lead_values = [20.*CV.MPH_TO_MS, 20.*CV.MPH_TO_MS, 0.*CV.MPH_TO_MS],
+    speed_lead_values = [20., 20., 0.],
     speed_lead_breakpoints = [0., 15., 25.0],
+    cruise_button_presses = [(CB.DECEL_SET, 1.2), (0, 1.3)]
+  ),
+  Maneuver(
+    'steady state following a car at 20m/s, then lead decel to 0mph at 3m/s^2',
+    duration=50.,
+    initial_speed = 20.,
+    lead_relevancy=True,
+    initial_distance_lead=35.,
+    speed_lead_values = [20., 20., 0.],
+    speed_lead_breakpoints = [0., 15., 21.66],
     cruise_button_presses = [(CB.DECEL_SET, 1.2), (0, 1.3)]
   ),
   Maneuver(
@@ -156,6 +168,18 @@ maneuvers = [
                             (CB.RES_ACCEL, 1.6), (0.0, 1.7)]
   ),
   Maneuver(
+    "stop and go with 1.5m/s2 lead accel and 3.3m/s^2 lead decel, with full stops",
+    duration=45.,
+    initial_speed=0.,
+    lead_relevancy=True,
+    initial_distance_lead=20.,
+    speed_lead_values=[10., 0., 0., 10., 0., 0.] ,
+    speed_lead_breakpoints=[10., 13., 26., 33., 36., 45.],
+    cruise_button_presses = [(CB.DECEL_SET, 1.2), (0, 1.3),
+                            (CB.RES_ACCEL, 1.4), (0.0, 1.5),
+                            (CB.RES_ACCEL, 1.6), (0.0, 1.7)]
+  ),
+  Maneuver(
     "accelerate from 20 while lead vehicle decelerates from 40 to 20 at 1m/s2",
     duration=30.,
     initial_speed=10.,
@@ -184,8 +208,50 @@ maneuvers = [
                             (CB.RES_ACCEL, 1.8), (0.0, 1.9),
                             (CB.RES_ACCEL, 2.0), (0.0, 2.1),
                             (CB.RES_ACCEL, 2.2), (0.0, 2.3)]
+  ),
+  Maneuver(
+    "fcw: traveling at 30 m/s and approaching lead traveling at 20m/s",
+    duration=15.,
+    initial_speed=30.,
+    lead_relevancy=True,
+    initial_distance_lead=100.,
+    speed_lead_values=[20.],
+    speed_lead_breakpoints=[1.],
+    cruise_button_presses = []
+  ),
+  Maneuver(
+    "fcw: traveling at 20 m/s following a lead that decels from 20m/s to 0 at 1m/s2",
+    duration=18.,
+    initial_speed=20.,
+    lead_relevancy=True,
+    initial_distance_lead=35.,
+    speed_lead_values=[20., 0.],
+    speed_lead_breakpoints=[3., 23.],
+    cruise_button_presses = []
+  ),
+  Maneuver(
+    "fcw: traveling at 20 m/s following a lead that decels from 20m/s to 0 at 3m/s2",
+    duration=13.,
+    initial_speed=20.,
+    lead_relevancy=True,
+    initial_distance_lead=35.,
+    speed_lead_values=[20., 0.],
+    speed_lead_breakpoints=[3., 9.6],
+    cruise_button_presses = []
+  ),
+  Maneuver(
+    "fcw: traveling at 20 m/s following a lead that decels from 20m/s to 0 at 5m/s2",
+    duration=8.,
+    initial_speed=20.,
+    lead_relevancy=True,
+    initial_distance_lead=35.,
+    speed_lead_values=[20., 0.],
+    speed_lead_breakpoints=[3., 7.],
+    cruise_button_presses = []
   )
 ]
+
+#maneuvers = [maneuvers[-1]]
 
 def setup_output():
   output_dir = os.path.join(os.getcwd(), 'out/longitudinal')
@@ -220,6 +286,9 @@ class LongitudinalControl(unittest.TestCase):
     setup_output()
 
     shutil.rmtree('/data/params', ignore_errors=True)
+    params = Params()
+    params.put("Passive", "1" if os.getenv("PASSIVE") else "0")
+    params.put("IsFcwEnabled", "1")
 
     manager.gctx = {}
     manager.prepare_managed_process('radard')

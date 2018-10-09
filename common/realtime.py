@@ -1,7 +1,6 @@
 """Utilities for reading real time clocks and keeping soft real time constraints."""
 import os
 import time
-import ctypes
 import platform
 import threading
 import subprocess
@@ -107,5 +106,3 @@ class Ratekeeper(object):
     self._remaining = remaining
     return lagged
 
-if __name__ == "__main__":
-  print sec_since_boot()

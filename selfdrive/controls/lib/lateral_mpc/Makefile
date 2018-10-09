@@ -1,3 +1,4 @@
+
 CC = clang
 CXX = clang++
 
@@ -8,7 +9,7 @@ UNAME_M := $(shell uname -m)
 CFLAGS = -O3 -fPIC -I.
 CXXFLAGS = -O3 -fPIC -I.
 
-QPOASES_FLAGS = -I$(PHONELIBS)/qpoases -I$(PHONELIBS)/qpoases/INCLUDE -I$(PHONELIBS)/qpoases/SRC 
+QPOASES_FLAGS = -I$(PHONELIBS)/qpoases -I$(PHONELIBS)/qpoases/INCLUDE -I$(PHONELIBS)/qpoases/SRC
 
 ACADO_FLAGS = -I$(PHONELIBS)/acado/include -I$(PHONELIBS)/acado/include/acado
 
@@ -19,41 +20,49 @@ ACADO_LIBS := -L $(PHONELIBS)/acado/x64/lib -l:libacado_toolkit.a -l:libacado_ca
 endif
 
 OBJS = \
-  $(PHONELIBS)/qpoases/SRC/Bounds.o \
-  $(PHONELIBS)/qpoases/SRC/Constraints.o \
-  $(PHONELIBS)/qpoases/SRC/CyclingManager.o \
-  $(PHONELIBS)/qpoases/SRC/Indexlist.o \
-  $(PHONELIBS)/qpoases/SRC/MessageHandling.o \
-  $(PHONELIBS)/qpoases/SRC/QProblem.o \
-  $(PHONELIBS)/qpoases/SRC/QProblemB.o \
-  $(PHONELIBS)/qpoases/SRC/SubjectTo.o \
-  $(PHONELIBS)/qpoases/SRC/Utils.o \
-  $(PHONELIBS)/qpoases/SRC/EXTRAS/SolutionAnalysis.o \
-  mpc_export/acado_qpoases_interface.o \
-  mpc_export/acado_integrator.o \
-  mpc_export/acado_solver.o \
-  mpc_export/acado_auxiliary_functions.o \
-  mpc.o
+  lib_qp/Bounds.o \
+  lib_qp/Constraints.o \
+  lib_qp/CyclingManager.o \
+  lib_qp/Indexlist.o \
+  lib_qp/MessageHandling.o \
+  lib_qp/QProblem.o \
+  lib_qp/QProblemB.o \
+  lib_qp/SubjectTo.o \
+  lib_qp/Utils.o \
+  lib_qp/EXTRAS/SolutionAnalysis.o \
+	lib_mpc_export/acado_qpoases_interface.o \
+  lib_mpc_export/acado_integrator.o \
+  lib_mpc_export/acado_solver.o \
+  lib_mpc_export/acado_auxiliary_functions.o \
+  lateral_mpc.o
 
 DEPS := $(OBJS:.o=.d)
 
 .PHONY: all
-all: libcommampc.so
+all: libmpc.so
 
-libcommampc.so: $(OBJS)
+libmpc.so: $(OBJS)
 	$(CXX) -shared -o '$@' $^ -lm
+
+lib_qp/%.o: $(PHONELIBS)/qpoases/SRC/%.cpp
+	@echo "[ CXX ] $@"
+	mkdir -p lib_qp/EXTRAS
+	$(CXX) $(CXXFLAGS) -MMD \
+           -I lib_mpc_export/ \
+           $(QPOASES_FLAGS) \
+           -c -o '$@' '$<'
 
 %.o: %.cpp
 	@echo "[ CXX ] $@"
 	$(CXX) $(CXXFLAGS) -MMD \
-           -I mpc_export/ \
+           -I lib_mpc_export/ \
            $(QPOASES_FLAGS) \
            -c -o '$@' '$<'
 
 %.o: %.c
 	@echo "[ CC ] $@"
 	$(CC) $(CFLAGS) -MMD \
-           -I mpc_export/ \
+           -I lib_mpc_export/ \
            $(QPOASES_FLAGS) \
            -c -o '$@' '$<'
 
@@ -70,6 +79,6 @@ generate: generator
 
 .PHONY: clean
 clean:
-	rm -f libcommampc.so generator $(OBJS) $(DEPS)
+	rm -f *.so generator $(OBJS) $(DEPS)
 
 -include $(DEPS)

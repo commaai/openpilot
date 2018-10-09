@@ -2,8 +2,11 @@
 .tags
 .ipynb_checkpoints
 .idea
+.sconsign.dblite
 model2.png
+a.out
 
+*.DSYM
 *.d
 *.pyc
 *.pyo
@@ -25,5 +28,7 @@ selfdrive/boardd/boardd
 selfdrive/logcatd/logcatd
 selfdrive/proclogd/proclogd
 selfdrive/ui/ui
+selfdrive/test/tests/plant/out
 /src/
 
+one

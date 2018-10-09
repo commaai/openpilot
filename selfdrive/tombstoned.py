@@ -7,11 +7,12 @@ import datetime
 from raven import Client
 from raven.transport.http import HTTPTransport
 
-from selfdrive.version import version
+from selfdrive.version import version, dirty
 from selfdrive.swaglog import cloudlog
 
 def get_tombstones():
-  return [fn for fn in os.listdir("/data/tombstones") if fn.startswith("tombstone")]
+  return [("/data/tombstones/"+fn, int(os.stat("/data/tombstones/"+fn).st_ctime) )
+          for fn in os.listdir("/data/tombstones") if fn.startswith("tombstone")]
 
 def report_tombstone(fn, client):
   mtime = os.path.getmtime(fn)
@@ -61,19 +62,19 @@ def report_tombstone(fn, client):
     user={'id': os.environ.get('DONGLE_ID')},
     message=message,
   )
+  cloudlog.error({"tombstone": message})
 
 
 def main(gctx):
   initial_tombstones = set(get_tombstones())
 
   client = Client('https://d3b175702f62402c91ade04d1c547e68:b20d68c813c74f63a7cdf9c4039d8f56@sentry.io/157615',
-                  install_sys_hook=False, transport=HTTPTransport)
+                  install_sys_hook=False, transport=HTTPTransport, release=version, tags={'dirty': dirty})
 
   while True:
     now_tombstones = set(get_tombstones())
 
-    for ts in (now_tombstones - initial_tombstones):
-      fn = "/data/tombstones/"+ts
+    for fn, ctime in (now_tombstones - initial_tombstones):
       cloudlog.info("reporting new tombstone %s", fn)
       report_tombstone(fn, client)
 

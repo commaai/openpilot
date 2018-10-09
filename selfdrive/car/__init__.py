@@ -1,36 +1,26 @@
-from common.fingerprints import fingerprint
+# functions common among cars
+from common.numpy_fast import clip
 
-from .honda.interface import CarInterface as HondaInterface
 
-try:
-  from .toyota.interface import CarInterface as ToyotaInterface
-except ImportError:
-  ToyotaInterface = None
+def dbc_dict(pt_dbc, radar_dbc, chassis_dbc=None):
+  return {'pt': pt_dbc, 'radar': radar_dbc, 'chassis': chassis_dbc}
 
-try:
-  from .simulator.interface import CarInterface as SimInterface
-except ImportError:
-  SimInterface = None
 
-try:
-  from .simulator2.interface import CarInterface as Sim2Interface
-except ImportError:
-  Sim2Interface = None
+def apply_std_steer_torque_limits(apply_torque, apply_torque_last, driver_torque, LIMITS):
 
-interfaces = {
-  "HONDA CIVIC 2016 TOURING": HondaInterface,
-  "ACURA ILX 2016 ACURAWATCH PLUS": HondaInterface,
-  "HONDA ACCORD 2016 TOURING": HondaInterface,
-  "HONDA CR-V 2016 TOURING": HondaInterface,
-  "TOYOTA PRIUS 2017": ToyotaInterface,
+  # limits due to driver torque
+  driver_max_torque = LIMITS.STEER_MAX + (LIMITS.STEER_DRIVER_ALLOWANCE + driver_torque * LIMITS.STEER_DRIVER_FACTOR) * LIMITS.STEER_DRIVER_MULTIPLIER
+  driver_min_torque = -LIMITS.STEER_MAX + (-LIMITS.STEER_DRIVER_ALLOWANCE + driver_torque * LIMITS.STEER_DRIVER_FACTOR) * LIMITS.STEER_DRIVER_MULTIPLIER
+  max_steer_allowed = max(min(LIMITS.STEER_MAX, driver_max_torque), 0)
+  min_steer_allowed = min(max(-LIMITS.STEER_MAX, driver_min_torque), 0)
+  apply_torque = clip(apply_torque, min_steer_allowed, max_steer_allowed)
 
-  "simulator": SimInterface,
-  "simulator2": Sim2Interface
-}
+  # slow rate if steer torque increases in magnitude
+  if apply_torque_last > 0:
+    apply_torque = clip(apply_torque, max(apply_torque_last - LIMITS.STEER_DELTA_DOWN, -LIMITS.STEER_DELTA_UP),
+                                    apply_torque_last + LIMITS.STEER_DELTA_UP)
+  else:
+    apply_torque = clip(apply_torque, apply_torque_last - LIMITS.STEER_DELTA_UP,
+                                    min(apply_torque_last + LIMITS.STEER_DELTA_DOWN, LIMITS.STEER_DELTA_UP))
 
-def get_car(logcan, sendcan=None):
-  candidate, fingerprints = fingerprint(logcan)
-  interface_cls = interfaces[candidate]
-  params = interface_cls.get_params(candidate, fingerprints)
-
-  return interface_cls(params, logcan, sendcan), params
+  return int(round(apply_torque))

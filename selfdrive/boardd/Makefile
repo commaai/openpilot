@@ -13,8 +13,8 @@ WARN_FLAGS = -Werror=implicit-function-declaration \
              -Werror=return-type \
              -Werror=format-extra-args
 
-CFLAGS = -std=gnu11 -g -fPIC -I../../ -O2 $(WARN_FLAGS)
-CXXFLAGS = -std=c++11 -g -fPIC -I../../ -O2 $(WARN_FLAGS)
+CFLAGS = -std=gnu11 -g -fPIC -I../ -I../../ -O2 $(WARN_FLAGS)
+CXXFLAGS = -std=c++11 -g -fPIC -I../ -I../../ -O2 $(WARN_FLAGS)
 
 ZMQ_FLAGS = -I$(PHONELIBS)/zmq/aarch64/include
 ZMQ_LIBS = -L$(PHONELIBS)/zmq/aarch64/lib \
@@ -25,18 +25,16 @@ JSON_FLAGS = -I$(PHONELIBS)/json/src
 
 EXTRA_LIBS = -lusb
 
-ifeq ($(OS),GNU/Linux)
-# for Drive PX2
-ZMQ_LIBS = -lczmq -lzmq
-CEREAL_LIBS = -lcapnp -lkj -lcapnp_c
-EXTRA_LIBS = -lusb-1.0 -lpthread
-endif
+# ifeq ($(OS),GNU/Linux)
+# # for Drive PX2
+# ZMQ_LIBS = -lczmq -lzmq
+# CEREAL_LIBS = -lcapnp -lkj -lcapnp_c
+# EXTRA_LIBS = -lusb-1.0 -lpthread
+# endif
 
 ifeq ($(ARCH),x86_64)
-ZMQ_LIBS = -L$(HOME)/one/external/zmq/lib/ \
+ZMQ_LIBS = -L$(BASEDIR)/external/zmq/lib/ \
            -l:libczmq.a -l:libzmq.a
-CEREAL_LIBS = -L$(HOME)/one/external/capnp/lib/ \
-              -l:libcapnp.a -l:libcapnp_c.a -l:libkj.a
 EXTRA_LIBS = -lusb-1.0 -lpthread
 CXXFLAGS += -I/usr/include/libusb-1.0
 CFLAGS += -I/usr/include/libusb-1.0

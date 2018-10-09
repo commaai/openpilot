@@ -12,7 +12,7 @@ from selfdrive.swaglog import cloudlog
 # USB is optional
 try:
   import usb1
-  from usb1 import USBErrorIO, USBErrorOverflow
+  from usb1 import USBErrorIO, USBErrorOverflow  #pylint: disable=no-name-in-module
 except Exception:
   pass
 
@@ -101,13 +101,13 @@ def can_init():
     if device.getVendorID() == 0xbbaa and device.getProductID() == 0xddcc:
       handle = device.open()
       handle.claimInterface(0)
-      handle.controlWrite(0x40, 0xdc, SAFETY_HONDA, 0, b'')
+      handle.controlWrite(0x40, 0xdc, SAFETY_ALLOUTPUT, 0, b'')
 
   if handle is None:
-    print "CAN NOT FOUND"
+    cloudlog.warn("CAN NOT FOUND")
     exit(-1)
 
-  print "got handle"
+  cloudlog.info("got handle")
   cloudlog.info("can init done")
 
 def boardd_mock_loop():
@@ -116,6 +116,7 @@ def boardd_mock_loop():
   handle.controlWrite(0x40, 0xdc, SAFETY_ALLOUTPUT, 0, b'')
 
   logcan = messaging.sub_sock(context, service_list['can'].port)
+  sendcan = messaging.pub_sock(context, service_list['sendcan'].port)
 
   while 1:
     tsc = messaging.drain_sock(logcan, wait_for_one=True)
@@ -128,9 +129,9 @@ def boardd_mock_loop():
 
     # recv @ 100hz
     can_msgs = can_recv()
-    print "sent %d got %d" % (len(snd), len(can_msgs))
-
-    #print can_msgs
+    print("sent %d got %d" % (len(snd), len(can_msgs)))
+    m = can_list_to_can_capnp(can_msgs)
+    sendcan.send(m.to_bytes())
 
 def boardd_test_loop():
   can_init()
@@ -141,7 +142,7 @@ def boardd_test_loop():
     #can_send_many([[0xaa,0,"\xaa\xaa\xaa\xaa",1]])
     # recv @ 100hz
     can_msgs = can_recv()
-    print "got %d" % (len(can_msgs))
+    print("got %d" % (len(can_msgs)))
     time.sleep(0.01)
     cnt += 1
 
@@ -189,9 +190,45 @@ def boardd_loop(rate=200):
 
     rk.keep_time()
 
+# *** main loop ***
+def boardd_proxy_loop(rate=200, address="192.168.2.251"):
+  rk = Ratekeeper(rate)
+  context = zmq.Context()
+
+  can_init()
+
+  # *** subscribes can
+  logcan = messaging.sub_sock(context, service_list['can'].port, addr=address)
+  # *** publishes to can send
+  sendcan = messaging.pub_sock(context, service_list['sendcan'].port)
+
+  while 1:
+    # recv @ 100hz
+    can_msgs = can_recv()
+    #for m in can_msgs:
+    #  print "R:",hex(m[0]), str(m[2]).encode("hex")
+
+    # publish to logger
+    # TODO: refactor for speed
+    if len(can_msgs) > 0:
+      dat = can_list_to_can_capnp(can_msgs, "sendcan")
+      sendcan.send(dat.to_bytes())
+
+    # send can if we have a packet
+    tsc = messaging.recv_sock(logcan)
+    if tsc is not None:
+      cl = can_capnp_to_can_list(tsc.can)
+      #for m in cl:
+      #  print "S:",hex(m[0]), str(m[2]).encode("hex")
+      can_send_many(cl)
+
+    rk.keep_time()
+
 def main(gctx=None):
   if os.getenv("MOCK") is not None:
     boardd_mock_loop()
+  elif os.getenv("PROXY") is not None:
+    boardd_proxy_loop()
   elif os.getenv("BOARDTEST") is not None:
     boardd_test_loop()
   else:

@@ -37,7 +37,7 @@ def mkdirs_exists_ok(path):
       raise
 
 class TxType(Enum):
-  PERSISTANT = 1
+  PERSISTENT = 1
   CLEAR_ON_MANAGER_START = 2
   CLEAR_ON_CAR_START = 3
 
@@ -46,25 +46,37 @@ class UnknownKeyName(Exception):
 
 keys = {
 # written: manager
-# read:    loggerd, uploaderd, baseui
-  "DongleId": TxType.PERSISTANT,
-  "AccessToken": TxType.PERSISTANT,
-  "Version": TxType.PERSISTANT,
-  "GitCommit": TxType.PERSISTANT,
-  "GitBranch": TxType.PERSISTANT,
+# read:    loggerd, uploaderd, offroad
+  "DongleId": TxType.PERSISTENT,
+  "AccessToken": TxType.PERSISTENT,
+  "Version": TxType.PERSISTENT,
+  "TrainingVersion": TxType.PERSISTENT,
+  "GitCommit": TxType.PERSISTENT,
+  "GitBranch": TxType.PERSISTENT,
+  "GitRemote": TxType.PERSISTENT,
 # written: baseui
 # read:    ui, controls
-  "IsMetric": TxType.PERSISTANT,
-  "IsRearViewMirror": TxType.PERSISTANT,
+  "IsMetric": TxType.PERSISTENT,
+  "IsFcwEnabled": TxType.PERSISTENT,
+  "HasAcceptedTerms": TxType.PERSISTENT,
+  "CompletedTrainingVersion": TxType.PERSISTENT,
+  "IsUploadVideoOverCellularEnabled": TxType.PERSISTENT,
+  "IsDriverMonitoringEnabled": TxType.PERSISTENT,
+  "IsGeofenceEnabled": TxType.PERSISTENT,
 # written: visiond
 # read:    visiond, controlsd
-  "CalibrationParams": TxType.PERSISTANT,
-# written: visiond
-# read:    visiond, ui
-  "CloudCalibration": TxType.PERSISTANT,
+  "CalibrationParams": TxType.PERSISTENT,
 # written: controlsd
 # read:    radard
-  "CarParams": TxType.CLEAR_ON_CAR_START}
+  "CarParams": TxType.CLEAR_ON_CAR_START,
+
+  "Passive": TxType.PERSISTENT,
+  "DoUninstall": TxType.CLEAR_ON_MANAGER_START,
+  "ShouldDoUpdate": TxType.CLEAR_ON_MANAGER_START,
+  "IsUpdateAvailable": TxType.PERSISTENT,
+
+  "RecordFront": TxType.PERSISTENT,
+}
 
 def fsync_dir(path):
   fd = os.open(path, os.O_RDONLY)
@@ -219,7 +231,7 @@ class DBWriter(DBAccessor):
         data_path = self._data_path()
         try:
           old_data_path = os.path.join(self._path, os.readlink(data_path))
-        except (OSError, IOError) as e:
+        except (OSError, IOError):
           # NOTE(mgraczyk): If other DB implementations have bugs, this could cause
           #                 copies to be left behind, but we still want to overwrite.
           pass
@@ -251,23 +263,50 @@ class DBWriter(DBAccessor):
       self._lock = None
 
 
+def read_db(params_path, key):
+  path = "%s/d/%s" % (params_path, key)
+  try:
+    with open(path, "rb") as f:
+      return f.read()
+  except IOError:
+    return None
 
-class JSDB(object):
-  def __init__(self, fn):
-    self._fn = fn
+def write_db(params_path, key, value):
+  prev_umask = os.umask(0)
+  lock = FileLock(params_path+"/.lock", True)
+  lock.acquire()
 
-  def begin(self, write=False):
-    if write:
-      return DBWriter(self._fn)
-    else:
-      return DBReader(self._fn)
+  try:
+    tmp_path = tempfile.mktemp(prefix=".tmp", dir=params_path)
+    with open(tmp_path, "wb") as f:
+      f.write(value)
+      f.flush()
+      os.fsync(f.fileno())
+
+    path = "%s/d/%s" % (params_path, key)
+    os.rename(tmp_path, path)
+    fsync_dir(os.path.dirname(path))
+  finally:
+    os.umask(prev_umask)
+    lock.release()
 
 class Params(object):
   def __init__(self, db='/data/params'):
-    self.env = JSDB(db)
+    self.db = db
+
+    # create the database if it doesn't exist...
+    if not os.path.exists(self.db+"/d"):
+      with self.transaction(write=True):
+        pass
+
+  def transaction(self, write=False):
+    if write:
+      return DBWriter(self.db)
+    else:
+      return DBReader(self.db)
 
   def _clear_keys_with_type(self, tx_type):
-    with self.env.begin(write=True) as txn:
+    with self.transaction(write=True) as txn:
       for key in keys:
         if keys[key] == tx_type:
           txn.delete(key)
@@ -279,7 +318,7 @@ class Params(object):
     self._clear_keys_with_type(TxType.CLEAR_ON_CAR_START)
 
   def delete(self, key):
-    with self.env.begin(write=True) as txn:
+    with self.transaction(write=True) as txn:
       txn.delete(key)
 
   def get(self, key, block=False):
@@ -287,8 +326,7 @@ class Params(object):
       raise UnknownKeyName(key)
 
     while 1:
-      with self.env.begin() as txn:
-        ret = txn.get(key)
+      ret = read_db(self.db, key)
       if not block or ret is not None:
         break
       # is polling really the best we can do?
@@ -299,9 +337,7 @@ class Params(object):
     if key not in keys:
       raise UnknownKeyName(key)
 
-    with self.env.begin(write=True) as txn:
-      txn.put(key, dat)
-    print "set", key
+    write_db(self.db, key, dat)
 
 if __name__ == "__main__":
   params = Params()
@@ -311,11 +347,11 @@ if __name__ == "__main__":
     for k in keys:
       pp = params.get(k)
       if pp is None:
-        print k, "is None"
+        print("%s is None" % k)
       elif all(ord(c) < 128 and ord(c) >= 32 for c in pp):
-        print k, pp
+        print("%s = %s" % (k, pp))
       else:
-        print k, pp.encode("hex")
+        print("%s = %s" % (k, pp.encode("hex")))
 
   # Test multiprocess:
   # seq 0 100000 | xargs -P20 -I{} python common/params.py DongleId {} && sleep 0.05

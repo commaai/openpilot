@@ -1,7 +1,7 @@
-using Cxx = import "c++.capnp";
+using Cxx = import "./include/c++.capnp";
 $Cxx.namespace("cereal");
 
-using Java = import "java.capnp";
+using Java = import "./include/java.capnp";
 $Java.package("ai.comma.openpilot.cereal");
 $Java.outerClassname("Car");
 
@@ -12,12 +12,13 @@ $Java.outerClassname("Car");
 struct CarEvent @0x9b1657f34caf3ad3 {
   name @0 :EventName;
   enable @1 :Bool;
-  preEnable @7 :Bool;
   noEntry @2 :Bool;
   warning @3 :Bool;
   userDisable @4 :Bool;
   softDisable @5 :Bool;
   immediateDisable @6 :Bool;
+  preEnable @7 :Bool;
+  permanent @8 :Bool;
 
   enum EventName @0xbaa8c5d505f727de {
     # TODO: copy from error list
@@ -41,7 +42,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     speedTooLow @17;
     outOfSpace @18;
     overheat @19;
-    calibrationInProgress @20;
+    calibrationIncomplete @20;
     calibrationInvalid @21;
     controlsMismatch @22;
     pcmEnable @23;
@@ -51,6 +52,25 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     modelCommIssue @27;
     brakeHold @28;
     parkBrake @29;
+    manualRestart @30;
+    lowSpeedLockout @31;
+    plannerError @32;
+    ipasOverride @33;
+    debugAlert @34;
+    steerTempUnavailableMute @35;
+    resumeRequired @36;
+    preDriverDistracted @37;
+    promptDriverDistracted @38;
+    driverDistracted @39;
+    geofence @40;
+    driverMonitorOn @41;
+    driverMonitorOff @42;
+    preDriverUnresponsive @43;
+    promptDriverUnresponsive @44;
+    driverUnresponsive @45;
+    belowSteerSpeed @46;
+    calibrationProgress @47;
+    lowBattery @48;
   }
 }
 
@@ -62,7 +82,11 @@ struct CarState {
   events @13 :List(CarEvent);
 
   # car speed
-  vEgo @1 :Float32;       # best estimate of speed
+  vEgo @1 :Float32;         # best estimate of speed
+  aEgo @16 :Float32;        # best estimate of acceleration
+  vEgoRaw @17 :Float32;     # unfiltered speed from CAN sensors
+  yawRate @22 :Float32;     # best estimate of yaw rate
+  standstill @18 :Bool;
   wheelSpeeds @2 :WheelSpeeds;
 
   # gas pedal, 0.0-1.0
@@ -72,9 +96,11 @@ struct CarState {
   # brake pedal, 0.0-1.0
   brake @5 :Float32;      # this is user pedal only
   brakePressed @6 :Bool;  # this is user pedal only
+  brakeLights @19 :Bool;
 
   # steering wheel
   steeringAngle @7 :Float32;   # deg
+  steeringRate @15 :Float32;   # deg/s
   steeringTorque @8 :Float32;  # TODO: standardize units
   steeringPressed @9 :Bool;    # if the user is using the steering wheel
 
@@ -86,6 +112,13 @@ struct CarState {
 
   # button presses
   buttonEvents @11 :List(ButtonEvent);
+  leftBlinker @20 :Bool;
+  rightBlinker @21 :Bool;
+  genericToggle @23 :Bool;
+
+  # lock info
+  doorOpen @24 :Bool;
+  seatbeltUnlatched @25 :Bool;
 
   # which packets this state came from
   canMonoTimes @12: List(UInt64);
@@ -103,6 +136,7 @@ struct CarState {
     speed @1 :Float32;
     available @2 :Bool;
     speedOffset @3 :Float32;
+    standstill @4 :Bool;
   }
 
   enum GearShifter {
@@ -148,6 +182,7 @@ struct RadarState {
   enum Error {
     commIssue @0;
     fault @1;
+    wrongConfig @2;
   }
 
   # similar to LiveTracks
@@ -163,6 +198,9 @@ struct RadarState {
     # these are optional and valid if they are not NaN
     aRel @4 :Float32; # m/s^2
     yvRel @5 :Float32; # m/s
+
+    # some radars flag measurements VS estimates
+    measured @6 :Bool;
   }
 }
 
@@ -171,6 +209,7 @@ struct RadarState {
 struct CarControl {
   # must be true for any actuator commands to work
   enabled @0 :Bool;
+  active @7 :Bool;
 
   gasDEPRECATED @1 :Float32;
   brakeDEPRECATED @2 :Float32;
@@ -187,6 +226,7 @@ struct CarControl {
     brake @1: Float32;
     # range from -1.0 - 1.0
     steer @2: Float32;
+    steerAngle @3: Float32;
   }
 
   struct CruiseControl {
@@ -235,48 +275,88 @@ struct CarControl {
 
 struct CarParams {
   carName @0 :Text;
-  radarName @1 :Text;
+  radarNameDEPRECATED @1 :Text;
   carFingerprint @2 :Text;
 
-  enableSteer @3 :Bool;
-  enableGas @4 :Bool;
-  enableBrake @5 :Bool;
+  enableSteerDEPRECATED @3 :Bool;
+  enableGasInterceptor @4 :Bool;
+  enableBrakeDEPRECATED @5 :Bool;
   enableCruise @6 :Bool;
+  enableCamera @26 :Bool;
+  enableDsu @27 :Bool; # driving support unit
+  enableApgs @28 :Bool; # advanced parking guidance system
 
-  minEnableSpeed @18 :Float32;
-  safetyModel @19 :Int16;
+  minEnableSpeed @17 :Float32;
+  minSteerSpeed @49 :Float32;
+  safetyModel @18 :Int16;
+  safetyParam @41 :Int16;
 
-  steerMaxBP @20 :List(Float32);
-  steerMaxV @21 :List(Float32);
-  gasMaxBP @22 :List(Float32);
-  gasMaxV @23 :List(Float32);
-  brakeMaxBP @24 :List(Float32);
-  brakeMaxV @25 :List(Float32);
+  steerMaxBP @19 :List(Float32);
+  steerMaxV @20 :List(Float32);
+  gasMaxBP @21 :List(Float32);
+  gasMaxV @22 :List(Float32);
+  brakeMaxBP @23 :List(Float32);
+  brakeMaxV @24 :List(Float32);
+
+  longPidDeadzoneBP @32 :List(Float32);
+  longPidDeadzoneV @33 :List(Float32);
 
   enum SafetyModels {
-    # from board
-    default @0;
+    # does NOT match board setting
+    noOutput @0;
     honda @1;
     toyota @2;
+    elm327 @3;
+    gm @4;
+    hondaBosch @5;
+    ford @6;
+    cadillac @7;
+    hyundai @8;
+    chrysler @9;
+    tesla @10;
   }
 
   # things about the car in the manual
-  m @7 :Float32;     # [kg] running weight
-  l @8 :Float32;     # [m] wheelbase
-  sR @9 :Float32;    # [] steering ratio
-  aF @10 :Float32;   # [m] GC distance to front axle
-  aR @11 :Float32;   # [m] GC distance to rear axle
-  chi @12 :Float32;  # [] rear steering ratio wrt front steering (usually 0)
+  mass @7 :Float32;             # [kg] running weight
+  wheelbase @8 :Float32;        # [m] distance from rear to front axle
+  centerToFront @9 :Float32;   # [m] GC distance to front axle
+  steerRatio @10 :Float32;       # [] ratio between front wheels and steering wheel angles
+  steerRatioRear @11 :Float32;  # [] rear steering ratio wrt front steering (usually 0)
 
   # things we can derive
-  j @13 :Float32;    # [kg*m2] body rotational inertia
-  cF @14 :Float32;   # [N/rad] front tire coeff of stiff
-  cR @15 :Float32;   # [N/rad] rear tire coeff of stiff
+  rotationalInertia @12 :Float32;    # [kg*m2] body rotational inertia
+  tireStiffnessFront @13 :Float32;   # [N/rad] front tire coeff of stiff
+  tireStiffnessRear @14 :Float32;    # [N/rad] rear tire coeff of stiff
 
   # Kp and Ki for the lateral control
-  steerKp @16 :Float32;
-  steerKi @17 :Float32;
+  steerKpBP @42 :List(Float32);
+  steerKpV @43 :List(Float32);
+  steerKiBP @44 :List(Float32);
+  steerKiV @45 :List(Float32);
+  steerKpDEPRECATED @15 :Float32;
+  steerKiDEPRECATED @16 :Float32;
+  steerKf @25 :Float32;
 
-  # TODO: Kp and Ki for long control, perhaps not needed?
+  # Kp and Ki for the longitudinal control
+  longitudinalKpBP @36 :List(Float32);
+  longitudinalKpV @37 :List(Float32);
+  longitudinalKiBP @38 :List(Float32);
+  longitudinalKiV @39 :List(Float32);
+
+  steerLimitAlert @29 :Bool;
+
+  vEgoStopping @30 :Float32; # Speed at which the car goes into stopping state
+  directAccelControl @31 :Bool; # Does the car have direct accel control or just gas/brake
+  stoppingControl @34 :Bool; # Does the car allows full control even at lows speeds when stopping
+  startAccel @35 :Float32; # Required acceleraton to overcome creep braking
+  steerRateCost @40 :Float32; # Lateral MPC cost on steering rate
+  steerControlType @46 :SteerControlType;
+  radarOffCan @47 :Bool; # True when radar objects aren't visible on CAN
+
+  steerActuatorDelay @48 :Float32; # Steering wheel actuator delay in seconds
+
+  enum SteerControlType {
+    torque @0;
+    angle @1;
+  }
 }
-

@@ -1,28 +1,38 @@
 import os
+from common.basedir import BASEDIR
 
-_FINGERPRINTS = {
-  "ACURA ILX 2016 ACURAWATCH PLUS": {
-    1024L: 5, 513L: 5, 1027L: 5, 1029L: 8, 929L: 4, 1057L: 5, 777L: 8, 1034L: 5, 1036L: 8, 398L: 3, 399L: 7, 145L: 8, 660L: 8, 985L: 3, 923L: 2, 542L: 7, 773L: 7, 800L: 8, 432L: 7, 419L: 8, 420L: 8, 1030L: 5, 422L: 8, 808L: 8, 428L: 8, 304L: 8, 819L: 7, 821L: 5, 57L: 3, 316L: 8, 545L: 4, 464L: 8, 1108L: 8, 597L: 8, 342L: 6, 983L: 8, 344L: 8, 804L: 8, 1039L: 8, 476L: 4, 892L: 8, 490L: 8, 1064L: 7, 882L: 2, 884L: 7, 887L: 8, 888L: 8, 380L: 8, 1365L: 5,
-    # sent messages
-    0xe4: 5, 0x1fa: 8, 0x200: 3, 0x30c: 8, 0x33d: 5,
-  },
-  "HONDA CIVIC 2016 TOURING": {
-    1024L: 5, 513L: 5, 1027L: 5, 1029L: 8, 777L: 8, 1036L: 8, 1039L: 8, 1424L: 5, 401L: 8, 148L: 8, 662L: 4, 985L: 3, 795L: 8, 773L: 7, 800L: 8, 545L: 6, 420L: 8, 806L: 8, 808L: 8, 1322L: 5, 427L: 3, 428L: 8, 304L: 8, 432L: 7, 57L: 3, 450L: 8, 929L: 8, 330L: 8, 1302L: 8, 464L: 8, 1361L: 5, 1108L: 8, 597L: 8, 470L: 2, 344L: 8, 804L: 8, 399L: 7, 476L: 7, 1633L: 8, 487L: 4, 892L: 8, 490L: 8, 493L: 5, 884L: 8, 891L: 8, 380L: 8, 1365L: 5,
-    # sent messages
-    0xe4: 5, 0x1fa: 8, 0x200: 3, 0x30c: 8, 0x33d: 5, 0x35e: 8, 0x39f: 8,
-  },
-  "HONDA ACCORD 2016 TOURING": {
-    1024L: 5, 929L: 8, 1027L: 5, 773L: 7, 1601L: 8, 777L: 8, 1036L: 8, 398L: 3, 1039L: 8, 401L: 8, 145L: 8, 1424L: 5, 660L: 8, 661L: 4, 918L: 7, 985L: 3, 923L: 2, 542L: 7, 927L: 8, 800L: 8, 545L: 4, 420L: 8, 422L: 8, 808L: 8, 426L: 8, 1029L: 8, 432L: 7, 57L: 3, 316L: 8, 829L: 5, 1600L: 5, 1089L: 8, 1057L: 5, 780L: 8, 1088L: 8, 464L: 8, 1108L: 8, 597L: 8, 342L: 6, 983L: 8, 344L: 8, 804L: 8, 476L: 4, 1296L: 3, 891L: 8, 1125L: 8, 487L: 4, 892L: 8, 490L: 8, 871L: 8, 1064L: 7, 882L: 2, 884L: 8, 506L: 8, 507L: 1, 380L: 8, 1365L: 5
-  },
-  "HONDA CR-V 2016 TOURING": {
-    57L: 3, 145L: 8, 316L: 8, 340L: 8, 342L: 6, 344L: 8, 380L: 8, 398L: 3, 399L: 6, 401L: 8, 420L: 8, 422L: 8, 426L: 8, 432L: 7, 464L: 8, 474L: 5, 476L: 4, 487L: 4, 490L: 8, 493L: 3, 507L: 1, 542L: 7, 545L: 4, 597L: 8, 660L: 8, 661L: 4, 773L: 7, 777L: 8, 800L: 8, 804L: 8, 808L: 8, 882L: 2, 884L: 7, 888L: 8, 891L: 8, 892L: 8, 923L: 2, 929L: 8, 983L: 8, 985L: 3, 1024L: 5, 1027L: 5, 1029L: 8, 1033L: 5, 1036L: 8, 1039L: 8, 1057L: 5, 1064L: 7, 1108L: 8, 1125L: 8, 1296L: 8, 1365L: 5, 1424L: 5, 1600L: 5, 1601L: 8,
-    # sent messages
-    0x194: 4, 0x1fa: 8, 0x30c: 8, 0x33d: 5,
-  },
-  "TOYOTA PRIUS 2017": {
-    896L: 8, 832L: 8, 898L: 8, 899L: 8, 577L: 8, 528L: 8, 529L: 8, 530L: 8, 531L: 8, 532L: 8, 533L: 8, 534L: 8, 535L: 8, 536L: 8, 537L: 8, 538L: 8, 539L: 8, 540L: 8, 541L: 8, 542L: 8, 543L: 8, 544L: 8, 545L: 8, 546L: 8, 547L: 8, 548L: 8, 549L: 8, 550L: 8, 551L: 8, 296L: 6, 553L: 6, 554L: 6, 555L: 6, 556L: 6, 557L: 6, 558L: 6, 559L: 6, 560L: 7, 561L: 8, 562L: 8, 883L: 8, 837L: 8, 833L: 8, 576L: 8, 321L: 4, 834L: 8, 835L: 8, 580L: 8, 581L: 8, 897L: 8, 584L: 8, 1136L: 4, 976L: 8, 977L: 8, 978L: 8, 291L: 7, 881L: 8, 352L: 8, 353L: 7, 867L: 8, 868L: 8, 869L: 8, 1126L: 3, 304L: 7, 880L: 8, 552L: 6, 882L: 8, 979L: 8, 884L: 8, 885L: 8, 836L: 8
-  }
-}
+def get_fingerprint_list():
+  # read all the folders in selfdrive/car and return a dict where:
+  # - keys are all the car models for which we have a fingerprint
+  # - values are lists dicts of messages that constitute the unique 
+  #   CAN fingerprint of each car model and all its variants
+  fingerprints = {}
+  for car_folder in [x[0] for x in os.walk(BASEDIR + '/selfdrive/car')]:
+    try:
+      car_name = car_folder.split('/')[-1]
+      values = __import__('selfdrive.car.%s.values' % car_name, fromlist=['FINGERPRINTS'])
+      if hasattr(values, 'FINGERPRINTS'):
+        car_fingerprints = values.FINGERPRINTS
+      else:
+        continue
+      for f, v in car_fingerprints.items():
+        fingerprints[f] = v
+    except (ImportError, IOError):
+      pass
+  return fingerprints
+
+
+_FINGERPRINTS = get_fingerprint_list()
+
+_DEBUG_ADDRESS = {1880: 8}   # reserved for debug purposes
+
+def is_valid_for_fingerprint(msg, car_fingerprint):
+  adr = msg.address
+  bus = msg.src
+  # ignore addresses that are more than 11 bits
+  return (adr in car_fingerprint and car_fingerprint[adr] == len(msg.dat)) or \
+         bus != 0 or adr >= 0x800
+
 
 def eliminate_incompatible_cars(msg, candidate_cars):
   """Removes cars that could not have sent msg.
@@ -35,51 +45,20 @@ def eliminate_incompatible_cars(msg, candidate_cars):
       A list containing the subset of candidate_cars that could have sent msg.
   """
   compatible_cars = []
+
   for car_name in candidate_cars:
-    adr = msg.address
-    if msg.src != 0 or (adr in _FINGERPRINTS[car_name] and
-                        _FINGERPRINTS[car_name][adr] == len(msg.dat)):
-      compatible_cars.append(car_name)
-    else:
-      pass
-      #isin = adr in _FINGERPRINTS[car_name]
-      #print "eliminate", car_name, hex(adr), isin, len(msg.dat), msg.dat.encode("hex")
+    car_fingerprints = _FINGERPRINTS[car_name]
+
+    for fingerprint in car_fingerprints:
+      fingerprint.update(_DEBUG_ADDRESS)  # add alien debug address
+
+      if is_valid_for_fingerprint(msg, fingerprint):
+        compatible_cars.append(car_name)
+        break
+
   return compatible_cars
+
 
 def all_known_cars():
   """Returns a list of all known car strings."""
   return _FINGERPRINTS.keys()
-
-# **** for use live only ****
-def fingerprint(logcan):
-  import selfdrive.messaging as messaging
-  from cereal import car
-  from common.realtime import sec_since_boot
-
-  if os.getenv("SIMULATOR") is not None or logcan is None:
-    return ("simulator", None)
-  elif os.getenv("SIMULATOR2") is not None:
-    return ("simulator2", None)
-
-  print "waiting for fingerprint..."
-  candidate_cars = all_known_cars()
-  finger = {}
-  st = None
-  while 1:
-    for a in messaging.drain_sock(logcan, wait_for_one=True):
-      if st is None:
-        st = sec_since_boot()
-      for can in a.can:
-        if can.src == 0:
-          finger[can.address] = len(can.dat)
-        candidate_cars = eliminate_incompatible_cars(can, candidate_cars)
-
-    # if we only have one car choice and it's been 100ms since we got our first message, exit
-    if len(candidate_cars) == 1 and st is not None and (sec_since_boot()-st) > 0.1:
-      break
-    elif len(candidate_cars) == 0:
-      print map(hex, finger.keys())
-      raise Exception("car doesn't match any fingerprints")
-
-  print "fingerprinted", candidate_cars[0]
-  return (candidate_cars[0], finger)

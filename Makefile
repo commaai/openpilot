@@ -1,6 +1,9 @@
-.PHONY: all
 
-# TODO: Add a global build system to openpilot
+code_dir := $(shell pwd)
+
+# TODO: Add a global build system
+
+.PHONY: all
 all:
-	cd /data/openpilot/selfdrive && PYTHONPATH=/data/openpilot PREPAREONLY=1 /data/openpilot/selfdrive/manager.py
+	cd selfdrive && PYTHONPATH=$(code_dir) PREPAREONLY=1 ./manager.py
 

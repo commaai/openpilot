@@ -1,6 +1,7 @@
 import numpy as np
 
 class Conversions:
+  #Speed
   MPH_TO_KPH = 1.609344
   KPH_TO_MPH = 1. / MPH_TO_KPH
   MS_TO_KPH = 3.6
@@ -9,24 +10,14 @@ class Conversions:
   MPH_TO_MS = MPH_TO_KPH * KPH_TO_MS
   MS_TO_KNOTS = 1.9438
   KNOTS_TO_MS = 1. / MS_TO_KNOTS
+  #Angle
   DEG_TO_RAD = np.pi/180.
   RAD_TO_DEG = 1. / DEG_TO_RAD
-
-  # Car decode decimal minutes into decimal degrees, can work with numpy arrays as input
-  @staticmethod
-  def dm2d(dm):
-    degs = np.round(dm/100.)
-    mins = dm - degs*100.
-    return degs + mins/60.
+  #Mass
+  LB_TO_KG = 0.453592
 
 
-# Car button codes
-class CruiseButtons:
-  RES_ACCEL   = 4
-  DECEL_SET   = 3
-  CANCEL      = 2
-  MAIN        = 1
-
+RADAR_TO_CENTER = 2.7   # RADAR is ~ 2.7m ahead from center of car
 
 # Image params for color cam on acura, calibrated on pre las vegas drive (2016-05-21)
 class ImageParams:
@@ -51,7 +42,7 @@ class ImageParams:
     self.VPY = self.VPY_R + to_int(shift[1])  # current vanishing point with shift
 
 class UIParams:
-  lidar_x, lidar_y, lidar_zoom = 384, 960, 8
+  lidar_x, lidar_y, lidar_zoom = 384, 960, 6
   lidar_car_x, lidar_car_y = lidar_x/2., lidar_y/1.1
   car_hwidth = 1.7272/2 * lidar_zoom
   car_front = 2.6924 * lidar_zoom

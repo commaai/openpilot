@@ -45,8 +45,38 @@ gpsLocationExternal: [8032, true]
 ubloxGnss: [8033, true]
 clocks: [8034, true]
 liveMpc: [8035, true]
+liveLongitudinalMpc: [8036, true]
+plusFrame: [8037, false]
+navStatus: [8038, true]
+gpsLocationTrimble: [8039, true]
+trimbleGnss: [8041, true]
+ubloxRaw: [8042, true]
+gpsPlannerPoints: [8043, true]
+gpsPlannerPlan: [8044, true]
+applanixRaw: [8046, true]
+orbLocation: [8047, true]
+trafficEvents: [8048, true]
+liveLocationTiming: [8049, true]
+orbslamCorrection: [8050, true]
+liveLocationCorrected: [8051, true]
+orbObservation: [8052, true]
+applanixLocation: [8053, true]
+liveLocationKalman: [8054, true]
+uiNavigationEvent: [8055, true]
+orbOdometry: [8057, true]
+orbFeatures: [8058, false]
+orbKeyFrame: [8059, true]
+uiLayoutState: [8060, true]
+frontEncodeIdx: [8061, true]
+orbFeaturesSummary: [8062, true]
+driverMonitoring: [8063, true]
 
 testModel: [8040, false]
+testLiveLocation: [8045, false]
+testJoystick: [8056, false]
+
+# 8080 is reserved for slave testing daemon
+# 8762 is reserved for logserver
 
 # manager -- base process to manage starting and stopping of all others
 #   subscribes: health
@@ -56,7 +86,7 @@ testModel: [8040, false]
 
 # boardd -- communicates with the car
 #   subscribes: sendcan
-#   publishes:  can, health
+#   publishes:  can, health, ubloxRaw
 
 # sensord -- publishes the IMU and GPS
 #   publishes:  sensorEvents, gpsNMEA

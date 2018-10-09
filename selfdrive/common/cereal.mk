@@ -2,27 +2,31 @@ UNAME_M ?= $(shell uname -m)
 UNAME_S ?= $(shell uname -s)
 
 
-ifeq ($(UNAME_S),Darwin)
 
 CEREAL_CFLAGS = -I$(PHONELIBS)/capnp-c/include
-CEREAL_CXXFLAGS = -I$(PHONELIBS)/capnp-cpp/mac/include
 
+ifeq ($(OPTEST),1)
+
+CEREAL_LIBS = -lcapnp -lkj
+
+else ifeq ($(UNAME_S),Darwin)
+
+CEREAL_CXXFLAGS = -I$(PHONELIBS)/capnp-cpp/mac/include
 CEREAL_LIBS = $(PHONELIBS)/capnp-cpp/mac/lib/libcapnp.a \
               $(PHONELIBS)/capnp-cpp/mac/lib/libkj.a \
               $(PHONELIBS)/capnp-c/mac/lib/libcapnp_c.a
 
 else ifeq ($(UNAME_M),x86_64)
 
-CEREAL_CFLAGS = -I$(BASEDIR)/external/capnp/include
-CEREAL_CXXFLAGS = $(CEREAL_CFLAGS)
+CEREAL_CXXFLAGS = -I$(PHONELIBS)/capnp-cpp/include
 ifeq ($(CEREAL_LIBS),)
-  CEREAL_LIBS = -L$(BASEDIR)/external/capnp/lib \
-	              -l:libcapnp.a -l:libkj.a -l:libcapnp_c.a
+  CEREAL_LIBS = -L$(PHONELIBS)/capnp-cpp/x64/lib/ \
+                -L$(PHONELIBS)/capnp-c/x64/lib/ \
+                -l:libcapnp.a -l:libkj.a -l:libcapnp_c.a
 endif
 
 else
 
-CEREAL_CFLAGS = -I$(PHONELIBS)/capnp-c/include
 CEREAL_CXXFLAGS = -I$(PHONELIBS)/capnp-cpp/include
 ifeq ($(CEREAL_LIBS),)
   CEREAL_LIBS = -L$(PHONELIBS)/capnp-cpp/aarch64/lib/ \
