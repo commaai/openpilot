@@ -285,9 +285,10 @@ class CarController(object):
                                                  ECU.APGS in self.fake_ecus))
     elif ECU.APGS in self.fake_ecus:
       can_sends.append(create_ipas_steer_command(self.packer, 0, 0, True))
+    
     if CS.cstm_btns.get_button_status("tr") > 0:
       distance = 0b01110011 #x73 comma with toggle - toggle is 5th bit from right
-      #CS.cstm_btns.set_button_status("tr", 0)
+      CS.cstm_btns.set_button_status("tr", 0)
     else:
       distance = 0b01100011 #x63 comma with toggle - toggle is 5th bit from right
     # accel cmd comes from DSU, but we can spam can to cancel the system even if we are using lat only control
