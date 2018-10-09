@@ -123,6 +123,8 @@ class CarState(object):
     self.blind_spot_on_prev = bool(0)
     self.distance_toggle_prev = 2
     self.read_distance_lines_prev = 3
+    self.lane_departure_toggle_on_prev = True
+    self.acc_slow_on_prev = False
     #BB UIEvents
     self.UE = UIEvents(self)
 
@@ -232,19 +234,48 @@ class CarState(object):
     self.brake_error = 0
     self.steer_torque_driver = cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_DRIVER']
     self.steer_torque_motor = cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_EPS']
-    self.lane_departure_toggle_on = bool(cp.vl["JOEL_ID"]['LANE_WARNING'])
+    if bool(cp.vl["JOEL_ID"]['LANE_WARNING']) <> self.lane_departure_toggle_on_prev:
+      self.lane_departure_toggle_on = bool(cp.vl["JOEL_ID"]['LANE_WARNING'])
+      if self.lane_departure_toggle_on:
+        self.cstm_btns.set_button_status("lka", 1)
+      else:
+        self.cstm_btns.set_button_status("lka", 0)
+      self.lane_departure_toggle_on_prev = self.lane_departure_toggle_on
+    else:
+      if self.cstm_btns.get_button_status("lka") == 0:
+        self.lane_departure_toggle_on = False
+      else:
+        self.lane_departure_toggle_on = True
+      
     self.distance_toggle = cp.vl["JOEL_ID"]['ACC_DISTANCE']
     self.read_distance_lines = cp.vl["PCM_CRUISE_SM"]['DISTANCE_LINES']
-    if self.read_distance_lines <> self.distance_toggle_prev:
+    if self.distance_toggle <> self.distance_toggle_prev:
+      if self.read_distance_lines == self.distance_toggle:
+        self.distance_toggle_prev = self.distance_toggle
+      else:
+        self.cstm_btns.set_button_status("tr", 1)
+    if self.read_distance_lines <> self.read_distance_lines_prev:
       if self.read_distance_lines == 1:
         self.UE.custom_alert_message(2,"Following distance set to 0.9s",200,3)
       if self.read_distance_lines == 2:
         self.UE.custom_alert_message(2,"Following distance set to 1.8s",200,3)
       if self.read_distance_lines == 3:
         self.UE.custom_alert_message(2,"Following distance set to 2.7s",200,3)
-      self.distance_toggle_prev = self.distance_toggle
       self.read_distance_lines_prev = self.read_distance_lines
-    self.acc_slow_on = bool(cp.vl["JOEL_ID"]['ACC_SLOW'])
+    
+    if bool(cp.vl["JOEL_ID"]['ACC_SLOW']) <> self.acc_slow_on_prev:
+      self.acc_slow_on = bool(cp.vl["JOEL_ID"]['ACC_SLOW'])
+      if self.acc_slow_on:
+        self.cstm_btns.set_button_status("slow", 1)
+      else:
+        self.cstm_btns.set_button_status("slow", 0)
+      self.acc_slow_on_prev = self.acc_slow_on
+    else:
+      if self.cstm_btns.get_button_status("slow") == 0:
+        self.acc_slow_on = False
+      else:
+        self.acc_slow_on = True
+
     # we could use the override bit from dbc, but it's triggered at too high torque values
     self.steer_override = abs(self.steer_torque_driver) > STEER_THRESHOLD
 
