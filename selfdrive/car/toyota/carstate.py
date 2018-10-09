@@ -122,6 +122,7 @@ class CarState(object):
     self.blind_spot_on = bool(0)
     self.blind_spot_on_prev = bool(0)
     self.distance_toggle_prev = 2
+    self.read_distance_lines_prev = 3
     #BB UIEvents
     self.UE = UIEvents(self)
 
@@ -151,9 +152,9 @@ class CarState(object):
     btns = []
     btns.append(UIButton("alca", "ALC", 0, "", 0))
     btns.append(UIButton("tr", "TR", 0, "", 1))
-    btns.append(UIButton("", "", 0, "", 2))
+    btns.append(UIButton("lka", "LKA", 0, "", 2))
     btns.append(UIButton("sound", "SND", 1, "", 3))
-    btns.append(UIButton("", "", 0, "", 4))
+    btns.append(UIButton("slow", "SLO", 0, "", 4))
     btns.append(UIButton("", "", 0, "", 5))
     return btns
 
@@ -233,14 +234,16 @@ class CarState(object):
     self.steer_torque_motor = cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_EPS']
     self.lane_departure_toggle_on = bool(cp.vl["JOEL_ID"]['LANE_WARNING'])
     self.distance_toggle = cp.vl["JOEL_ID"]['ACC_DISTANCE']
-    if self.distance_toggle <> self.distance_toggle_prev:
-      if self.distance_toggle == 1:
+    self.read_distance_lines = cp.vl["PCM_CRUISE_SM"]['DISTANCE_LINES']
+    if self.read_distance_lines <> self.distance_toggle_prev:
+      if self.read_distance_lines == 1:
         self.UE.custom_alert_message(2,"Following distance set to 0.9s",200,3)
-      if self.distance_toggle == 2:
+      if self.read_distance_lines == 2:
         self.UE.custom_alert_message(2,"Following distance set to 1.8s",200,3)
-      if self.distance_toggle == 3:
+      if self.read_distance_lines == 3:
         self.UE.custom_alert_message(2,"Following distance set to 2.7s",200,3)
       self.distance_toggle_prev = self.distance_toggle
+      self.read_distance_lines_prev = self.read_distance_lines
     self.acc_slow_on = bool(cp.vl["JOEL_ID"]['ACC_SLOW'])
     # we could use the override bit from dbc, but it's triggered at too high torque values
     self.steer_override = abs(self.steer_torque_driver) > STEER_THRESHOLD
@@ -272,4 +275,4 @@ class CarState(object):
       self.generic_toggle = cp.vl["AUTOPARK_STATUS"]['STATE'] != 0
     else:
       self.generic_toggle = bool(cp.vl["LIGHT_STALK"]['AUTO_HIGH_BEAM'])
-    self.read_distance_lines = cp.vl["PCM_CRUISE_SM"]['DISTANCE_LINES']
+    
