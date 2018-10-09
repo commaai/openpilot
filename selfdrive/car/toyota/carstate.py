@@ -84,6 +84,7 @@ def get_can_parser(CP):
     ("ACC_DISTANCE", "JOEL_ID", 2),
     ("LANE_WARNING", "JOEL_ID", 1),
     ("ACC_SLOW", "JOEL_ID", 0),
+    ("DISTANCE_LINES", "PCM_CRUISE_SM", 0),
   ]
 
   checks = [
@@ -271,4 +272,4 @@ class CarState(object):
       self.generic_toggle = cp.vl["AUTOPARK_STATUS"]['STATE'] != 0
     else:
       self.generic_toggle = bool(cp.vl["LIGHT_STALK"]['AUTO_HIGH_BEAM'])
-      
+    self.read_distance_lines = cp.vl["PCM_CRUISE_SM"]['DISTANCE_LINES']
