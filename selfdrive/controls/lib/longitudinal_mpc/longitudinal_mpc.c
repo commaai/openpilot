@@ -118,7 +118,6 @@ void init_with_simulation(double v_ego, double x_l_0, double v_l_0, double a_l_0
   for (i = 0; i < NYN; ++i)  acadoVariables.yN[ i ] = 0.0;
 }
 
-=======
 int run_mpc(state_t * x0, log_t * solution, double l, double a_l_0, double TR){
   int i;
 
