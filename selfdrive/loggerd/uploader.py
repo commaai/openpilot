@@ -75,8 +75,23 @@ def is_on_wifi():
     return False
 
   data = ''.join(''.join(w.decode("hex")[::-1] for w in l[14:49].split()) for l in result[1:])
+  flag = "\x00".join("WIFI") in data
+  if not flag: return False
 
-  return "\x00".join("WIFI") in data
+  # get SSID(English only) and check with avoid list in "avoidUploadSSIDs"
+  ssid = ""
+  for ch in data:
+    if flag:
+      if ch == '"': flag = False
+      continue 
+    if ord(ch) != 0:
+      if ch == '"': break
+      ssid += ch
+
+  params = Params()
+  avoidUploadSSIDs = params.get("AvoidUploadSSIDs")
+  if ssid in avoidUploadSSIDs: return False
+  return True
 
 
 class Uploader(object):
