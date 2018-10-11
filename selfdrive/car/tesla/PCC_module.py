@@ -17,14 +17,14 @@ import numpy as np
 
 # TODO: these should end up in values.py at some point, probably variable by trim
 # Accel limits
-ACCEL_HYST_GAP = 0.02  # don't change accel command for small oscilalitons within this value
-ACCEL_MAX = 1.;
+ACCEL_HYST_GAP = 0.5  # don't change accel command for small oscilalitons within this value
+ACCEL_MAX = 1.
 ACCEL_MIN = -1.
 ACCEL_SCALE = max(ACCEL_MAX, -ACCEL_MIN)
-ACCEL_REWIND_MAX = 0.04
-PEDAL_DEADZONE = 0.05
-PEDAL_MAX_UP = 0.02
-PEDAL_MAX_DOWN = 0.05
+ACCEL_REWIND_MAX = 4.
+PEDAL_DEADZONE = 3.
+PEDAL_MAX_UP = 2.
+PEDAL_MAX_DOWN = 5.
 #BB
 MIN_SAFE_DIST_M = 4. # min safe distance in meters
 FRAMES_PER_SEC = 5.
@@ -33,8 +33,10 @@ ACCEL_THRESHOLD = 0.1
 SPEED_UP = 1. #3. / FRAMES_PER_SEC   # 2 m/s = 7.5 mph = 12 kph 
 SPEED_DOWN = 1. #6. / FRAMES_PER_SEC
 
+MAX_PEDAL_VALUE = 112.
+
 #BBTODO: move the vehicle variables; maybe make them speed variable
-TORQUE_LEVEL_ACC = 30.
+TORQUE_LEVEL_ACC = 0.
 TORQUE_LEVEL_DECEL = -30.
 FOLLOW_UP_TIME = 1.5 #time in seconds to follow car in front
 MIN_PCC_V = 0. #
@@ -147,10 +149,12 @@ class PCCController(object):
     self.pedal_idx = 0
     self.accel_steady = 0.
     self.prev_tesla_accel = 0.
+    self.prev_tesla_pedal = 0.
     self.user_pedal_state = 0
     self.torqueLevel_last = 0.
     self.prev_v_ego = 0.
-    self.lastPedalForZeroTorque = 0.
+    self.PedalForZeroTorque = 18. #starting number, works on my S85
+    self.lastTorqueForPedalForZeroTorque = TORQUE_LEVEL_DECEL
     self.follow_time = FOLLOW_UP_TIME # in seconds
     self.pid = None
     self.v_pid = 0.
@@ -276,7 +280,7 @@ class PCCController(object):
       CS.UE.custom_alert_message(2, "PCC Enabled", 150)
       CS.cstm_btns.set_button_status("pedal", PCCState.ENABLED)
 
-    # Update the UI to show whether the current car state allows ACC.
+    # Update the UI to show whether the current car state allows PCC.
     if CS.cstm_btns.get_button_status("pedal") in [PCCState.STANDBY, PCCState.NOT_READY]:
       if (enabled
           and CruiseState.is_off(CS.pcm_acc_status)):
@@ -314,7 +318,7 @@ class PCCController(object):
     brake_max = interp(CS.v_ego, CS.CP.brakeMaxBP, CS.CP.brakeMaxV)
 
     following = self.lead_1.status and self.lead_1.dRel   < 45.0 and self.lead_1.vLeadK > CS.v_ego and self.lead_1.aLeadK > 0.0
-    self.v_pid, self.b_pid = self.calc_follow_speed(CS)
+    
 
     accel_limits = map(float, calc_cruise_accel_limits(CS.v_ego, following))
     # TODO: make a separate lookup for jerk tuning
@@ -325,76 +329,84 @@ class PCCController(object):
       # if required so, force a smooth deceleration
       accel_limits[1] = min(accel_limits[1], AWARENESS_DECEL)
       accel_limits[0] = min(accel_limits[0], accel_limits[1])
+    output_gb = 0
+    ####################################################################
+    # this mode (Follow) uses the Follow logic created by JJ for ACC
+    #
+    # once the speed is detected we have to use our own PID to determine
+    # how much accel and break we have to do
+    ####################################################################
+    if (CS.cstm_btns.get_button_label2("pedal") == "Follow"):
+      self.v_pid, self.b_pid = self.calc_follow_speed(CS)
+      # cruise speed can't be negative even is user is distracted
+      self.v_pid = max(self.v_pid, 0.)
 
-    #self.v_pid, self.a_pid = speed_smoother(CS.v_ego, CS.a_ego,
-    #                                                  self.v_pid,
-    #                                                  accel_limits[1], accel_limits[0],
-    #                                                  jerk_limits[1], jerk_limits[0],
-    #                                                  _DT_MPC)
-    
-    # cruise speed can't be negative even is user is distracted
-    self.v_pid = max(self.v_pid, 0.)
+      self.pid.pos_limit = accel_max
+      self.pid.neg_limit = - brake_max
 
-    self.pid.pos_limit = accel_max
-    self.pid.neg_limit = - brake_max
+      v_ego_pid = max(CS.v_ego, MIN_CAN_SPEED)
 
-    v_ego_pid = max(CS.v_ego, MIN_CAN_SPEED)
+      deadzone = interp(v_ego_pid, CS.CP.longPidDeadzoneBP, CS.CP.longPidDeadzoneV)
 
-    deadzone = interp(v_ego_pid, CS.CP.longPidDeadzoneBP, CS.CP.longPidDeadzoneV)
+      #BBAD adding overridet to pid to see if we can engage sooner
+      override = self.enable_pedal_cruise and CS.v_ego *  CV.MS_TO_KPH > self.pedal_speed_kph and CS.user_pedal_pressed
 
-    #BBAD adding overridet to pid to see if we can engage sooner
-    override = self.enable_pedal_cruise and CS.v_ego *  CV.MS_TO_KPH > self.pedal_speed_kph and CS.user_pedal_pressed
+      # we will try to feed forward the pedal position.... we might want to feed the last output_gb....
+      # it's all about testing now.
 
-    # we will try to feed forward the pedal position.... we might want to feed the last output_gb....
-    # it's all about testing now.
+      output_gb = self.pid.update(self.v_pid, v_ego_pid, speed=v_ego_pid, override=override, deadzone=deadzone, feedforward= 0.00000005 * self.prev_tesla_accel, freeze_integrator=prevent_overshoot)
 
-    output_gb = self.pid.update(self.v_pid, v_ego_pid, speed=v_ego_pid, override=override, deadzone=deadzone, feedforward= 0.00000005 * self.prev_tesla_accel, freeze_integrator=prevent_overshoot)
+      if prevent_overshoot:
+        output_gb = min(output_gb, 0.0)
+    ##############################################################
+    # this mode (Lng MPC) uses the longitudinal MPC built in OP
+    #
+    # we use the values from actuator.accel and actuator.brake
+    ##############################################################
+    elif (CS.cstm_btns.get_button_label2("pedal") == "Lng MPC"):
+      self.b_pid = 1.
+      output_gb = actuators.gas -  actuators.brake
 
-    if prevent_overshoot:
-      output_gb = min(output_gb, 0.0)
+
+    ######################################################################################
+    # Determine pedal "zero"
+    #
+    #save position for cruising (zero acc, zero brake, no torque) when we are above 10 MPH
+    ######################################################################################
+    if (CS.torqueLevel < TORQUE_LEVEL_ACC) and (CS.torqueLevel > TORQUE_LEVEL_DECEL) and (CS.v_ego >= 10.* CV.MPH_TO_MS) and (abs(CS.torqueLevel) < abs(self.lastTorqueForPedalForZeroTorque)):
+      self.PedalForZeroTorque = self.prev_tesla_accel
+      self.lastTorqueForPedalForZeroTorque = CS.torqueLevel
+      #print "Detected new Pedal For Zero Torque at %s" % (self.PedalForZeroTorque)
+      #print "Torque level at detection %s" % (CS.torqueLevel)
+      #print "Speed level at detection %s" % (CS.v_ego * CV.MS_TO_MPH)
 
     self.last_output_gb = output_gb
-
     # accel and brake
     apply_accel = clip(output_gb, 0., accel_max)
     #by adding b_pid we can enforce not to apply brake in small situations
     apply_brake = -clip(output_gb * self.b_pid, -brake_max, 0.)
 
-    #save position for brake
-    if (CS.torqueLevel < TORQUE_LEVEL_ACC) and (CS.torqueLevel > TORQUE_LEVEL_DECEL):
-      self.lastPedalForZeroTorque = self.prev_tesla_accel
+    #if the speed if over 5mpg, the "zero" is at PedalForZeroTorque otherwise it at zero
+    pedal_zero = 0.
+    if (CS.v_ego >= 5.* CV.MPH_TO_MS):
+      pedal_zero = self.PedalForZeroTorque
+    tesla_brake = clip((1. - apply_brake) * pedal_zero,0,pedal_zero)
+    tesla_accel = clip(apply_accel * MAX_PEDAL_VALUE,0,MAX_PEDAL_VALUE - tesla_brake)
+    tesla_pedal = tesla_brake + tesla_accel
 
-    #slow deceleration
-    if (apply_accel > PEDAL_DEADZONE) and (apply_accel < self.prev_tesla_accel) and (apply_brake <= BRAKE_THRESHOLD):
-      if (CS.torqueLevel < TORQUE_LEVEL_ACC) and (CS.v_ego < self.prev_v_ego):
-        tesla_accel = self.prev_tesla_accel
-      else:
-        tesla_accel = clip(apply_accel,self.prev_tesla_accel - ACCEL_REWIND_MAX,self.prev_tesla_accel)
-    elif (apply_accel <= PEDAL_DEADZONE) and (apply_brake <= BRAKE_THRESHOLD):
-      if (CS.torqueLevel < TORQUE_LEVEL_ACC):
-        #we are in the torque dead zone, 
-        tesla_accel = self.prev_tesla_accel
-      else:
-        tesla_accel = self.prev_tesla_accel - ACCEL_REWIND_MAX
-    elif (apply_brake > BRAKE_THRESHOLD) and (apply_accel <= ACCEL_THRESHOLD):
-      if self.lastPedalForZeroTorque > 0:
-        tesla_accel = (.8 - apply_brake) * self.lastPedalForZeroTorque
-        self.lastPedalForZeroTorque = 0.
-      else:
-        tesla_accel = (.8 - apply_brake) * self.prev_tesla_accel
-    else:
-      tesla_accel = apply_accel
-    tesla_accel, self.accel_steady = accel_hysteresis(tesla_accel, self.accel_steady, enabled)
+
+
+    tesla_pedal, self.accel_steady = accel_hysteresis(tesla_pedal, self.accel_steady, enabled)
     
-    tesla_accel = clip(tesla_accel, self.prev_tesla_accel - PEDAL_MAX_DOWN - apply_brake * self.b_pid, self.prev_tesla_accel + PEDAL_MAX_UP)
-    tesla_accel = clip(tesla_accel, 0., 1.) if self.enable_pedal_cruise else 0.
-    enable_pedal = 1 if self.enable_pedal_cruise else 0
+    tesla_pedal = clip(tesla_pedal, self.prev_tesla_pedal - PEDAL_MAX_DOWN, self.prev_tesla_pedal + PEDAL_MAX_UP)
+    tesla_pedal = clip(tesla_pedal, 0., MAX_PEDAL_VALUE) if self.enable_pedal_cruise else 0.
+    enable_pedal = 1. if self.enable_pedal_cruise else 0.
     
     self.torqueLevel_last = CS.torqueLevel
-    self.prev_tesla_accel = tesla_accel * enable_pedal
+    self.prev_tesla_pedal = tesla_pedal * enable_pedal
+    self.prev_tesla_accel = apply_accel * enable_pedal
     self.prev_v_ego = CS.v_ego
-    #print self.v_pid, self.prev_tesla_accel,apply_accel,apply_brake
-    return self.prev_tesla_accel,enable_pedal,idx
+    return self.prev_tesla_pedal,enable_pedal,idx
 
   def decrement_wd(self):
     self.wd1 = max (self.wd1-1 , 0)
@@ -469,11 +481,11 @@ class PCCController(object):
           else:
             new_speed = self.last_speed
           #new_speed = actual_speed 
-        if rel_speed < -15  and lead_dist > safe_dist_m and lead_dist <= 2 * safe_dist_m:
+        elif rel_speed < -15  and lead_dist > safe_dist_m and lead_dist <= 2 * safe_dist_m:
           if self.wd1 > 0:
             new_speed = self.last_speed
           else:
-            msg =  "Approaching fast (-15), still twice the safe distance, slow down"
+            msg =  "Approaching fast (-15), still more than the safe distance, slow down"
             self.reset_wd()
             new_speed += rel_speed
             self.wd1 = FRAMES_PER_SEC 
@@ -486,7 +498,7 @@ class PCCController(object):
             self.reset_wd()
             new_speed += rel_speed * 1.5
             self.wd2 = FRAMES_PER_SEC
-            msg =  "Approaching fast (-5), still 1.5 the sa    fe distance, slow down"
+            msg =  "Approaching fast (-5), still 1.5 the safe distance, slow down"
           new_brake = 0.5
         # Reduce speed significantly if lead_dist < 60% of  safe dist
         elif lead_dist < (safe_dist_m * 0.3) and rel_speed < 2:

@@ -254,7 +254,7 @@ class CarState(object):
     btns = []
     btns.append(UIButton("alca","ALC",0,"",0))
     if self.pedal_hardware_present:
-      btns.append(UIButton("pedal","PDL",0,"M",1))
+      btns.append(UIButton("pedal","PDL",0,"Longit",1))
     else:
       btns.append(UIButton("acc","ACC",0,"Mod OP",1))
     btns.append(UIButton("steer","STR",0,"",2))
@@ -270,7 +270,7 @@ class CarState(object):
       if btn:
         btn.btn_name = "pedal"
         btn.btn_label = "PDL"
-        btn.btn_label2 = ""
+        btn.btn_label2 = "Lng MPC"
         btn.btn_status = 1
     else:
       #we don't have pedal interceptor
@@ -290,6 +290,13 @@ class CarState(object):
               self.cstm_btns.btns[id].btn_label2 = "Mod JJ"
           else:
               self.cstm_btns.btns[id].btn_label2 = "Mod OP"
+          self.cstm_btns.hasChanges = True
+      elif (id == 1) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="pedal":
+          #don't change status, just model
+          if (self.cstm_btns.btns[id].btn_label2 == "Follow"):
+              self.cstm_btns.btns[id].btn_label2 = "Lng MPC"
+          else:
+              self.cstm_btns.btns[id].btn_label2 = "Follow"
           self.cstm_btns.hasChanges = True
       else:
           self.cstm_btns.btns[id].btn_status = btn_status * self.cstm_btns.btns[id].btn_status
@@ -351,6 +358,8 @@ class CarState(object):
 
     #BB this is a hack for the interceptor
     self.pedal_hardware_present = epas_cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS'] != 0
+    #print "Pedal present? %s" % (self.pedal_hardware_present)
+    #print "Pedal value = %s" % (epas_cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS'])
     if self.pedal_hardware_present != self.pedal_hardware_present_prev:
         self.config_ui_buttons(self.pedal_hardware_present)
     self.pedal_hardware_present_prev = self.pedal_hardware_present

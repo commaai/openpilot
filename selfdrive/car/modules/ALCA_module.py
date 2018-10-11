@@ -29,6 +29,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+v3.2 - angle adjustment to compesate for road curvature change
 v3.1 - new angle logic for a smoother re-entry
 v3.0 - better lane dettection logic
 v2.0 - detection of lane crossing 
@@ -38,6 +39,8 @@ v1.0 - fixed angle move
 from common.numpy_fast import interp
 from selfdrive.controls.lib.pid import PIController
 
+# max REAL delta angle for correction vs actuator
+CL_MAX_ANGLE_DELTA = 1.
 
 # change lane delta angles and other params
 CL_MAXD_BP = [10., 32., 44.]
@@ -48,9 +51,9 @@ CL_MAX_A = 10. # do not turn if actuator wants more than x deg for going straigh
 # define limits for angle change every 0.1 s
 # we need to force correction above 10 deg but less than 20
 # anything more means we are going to steep or not enough in a turn
-MAX_ACTUATOR_DELTA = 1111.2
+MAX_ACTUATOR_DELTA = 2.
 MIN_ACTUATOR_DELTA = 0. 
-CORRECTION_FACTOR = 0.
+CORRECTION_FACTOR = 1.
 
 #duration after we cross the line until we release is a factor of speed
 CL_TIMEA_BP = [10., 32., 44.]
@@ -84,6 +87,7 @@ class ALCAController(object):
     self.laneChange_direction = 0 # direction of the lane change 
     self.prev_right_blinker_on = False # local variable for prev position
     self.prev_left_blinker_on = False # local variable for prev position
+    self.keep_angle = False #local variable to keep certain angle delta vs. actuator
     self.pid = None
     self.last10delta = []
 
@@ -215,11 +219,11 @@ class ALCAController(object):
         if self.laneChange_counter ==1:
           CS.UE.custom_alert_message(2,"Auto Lane Change Engaged! (5)",800)
         self.laneChange_counter += 1
-        # continue to half the angle between our angle and actuator
-        laneChange_angle = (-actuators.steerAngle - self.laneChange_angle)/2 #self.laneChange_angled
         # check if angle continues to decrease
         current_delta = abs(self.laneChange_angle + laneChange_angle + (-actuators.steerAngle))
         previous_delta = abs(self.laneChange_last_sent_angle  - self.laneChange_last_actuator_angle)
+        # continue to half the angle between our angle and actuator
+        laneChange_angle = (-actuators.steerAngle - self.laneChange_angle)/2 #self.laneChange_angled
         self.laneChange_angle += laneChange_angle
         # wait 0.05 sec before starting to check if angle increases
         if (current_delta > previous_delta) and (self.laneChange_counter > 5):
@@ -252,6 +256,7 @@ class ALCAController(object):
           CS.UE.custom_alert_message(2,"Auto Lane Change Engaged! (4)",800)
           self.laneChange_over_the_line = 0
           self.last10delta_reset()
+          self.keep_angle = False
         self.laneChange_counter += 1
         laneChange_angle = self.laneChange_angled
         if (self.laneChange_over_the_line == 0):
@@ -264,19 +269,26 @@ class ALCAController(object):
           self.laneChange_enabled = 2
           self.laneChange_counter = 1
         # didn't change the lane yet, check that we are not eversteering or understeering based on road curvature
+
+        """
+        # code for v3.1 designed to turn more if lane moves away
         n,a = self.last10delta_add(actuator_delta)
-        c = 0.
+        c = 5.
         if a == 0:
           a = 0.00001
-        if (abs(a) > MAX_ACTUATOR_DELTA):
-          c = (a/abs(a)) *  (abs(a) - MAX_ACTUATOR_DELTA) / 10
-          self.laneChange_angle = self.laneChange_angle + self.laneChange_direction * CORRECTION_FACTOR*c * 10 
-          self.last10delta_correct(-c)
-        if (abs(a) < MIN_ACTUATOR_DELTA):
+        if (abs(a) < MIN_ACTUATOR_DELTA) and (self.keep_angle == False):
           c = (a/abs(a)) * (MIN_ACTUATOR_DELTA - abs(a)) / 10
-          self.laneChange_angle = self.laneChange_angle -self.laneChange_direction * CORRECTION_FACTOR* c *10 
+          self.laneChange_angle = self.laneChange_angle -self.laneChange_direction * CORRECTION_FACTOR * c * 10 
           self.last10delta_correct(c)
-        print a, c, actuator_delta, self.laneChange_angle
+        #print a, c, actuator_delta, self.laneChange_angle
+        """
+
+        # code for v3.2 and above
+        a_delta = self.laneChange_direction * (self.laneChange_angle + laneChange_angle - (-actuators.steerAngle))
+        if (self.laneChange_over_the_line == 0) and ((abs(a_delta) > CL_MAX_ANGLE_DELTA * self.laneChange_steerr) or (self.keep_angle)):
+          #steering more than what we wanted, need to adjust
+          self.keep_angle = True
+          self.laneChange_angle  = -actuators.steerAngle + self.laneChange_direction * CL_MAX_ANGLE_DELTA * self.laneChange_steerr - laneChange_angle
         if self.laneChange_counter >  (self.laneChange_duration) * 100:
           self.laneChange_enabled = 1
           self.laneChange_counter = 0

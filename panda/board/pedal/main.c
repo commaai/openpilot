@@ -234,8 +234,16 @@ void pedal() {
 
   // write the pedal to the DAC
   if (state == NO_FAULT) {
-    dac_set(0, max(gas_set_0, pdl0));
-    dac_set(1, max(gas_set_1, pdl1));
+    if (pdl0 > 500) {
+      dac_set(0, max(gas_set_0, pdl0));
+      dac_set(1, max(gas_set_1, pdl1));
+    } else if (gas_set_0 > 0) {
+      dac_set(0, gas_set_0);
+      dac_set(1, gas_set_1);
+    } else {
+      dac_set(0, pdl0);
+      dac_set(1, pdl1);
+    }
   } else {
     dac_set(0, pdl0);
     dac_set(1, pdl1);
