@@ -816,6 +816,7 @@ void bb_ui_draw_UI( UIState *s) {
 void bb_ui_init(UIState *s) {
 
     //BB INIT
+    s->b.shouldDrawFrame = true;
     s->status = STATUS_DISENGAGED;
     strcpy(s->b.car_model,"Tesla");
     strcpy(s->b.car_folder,"tesla");
@@ -869,19 +870,21 @@ void bb_ui_set_car( UIState *s, char *model, char *folder) {
 
 void  bb_ui_poll_update( UIState *s) {
     int err;
+    zmq_pollitem_t bb_polls[8] = {{0}};
+    bb_polls[0].socket = s->b.uiButtonInfo_sock_raw;
+    bb_polls[0].events = ZMQ_POLLIN;
+    bb_polls[1].socket = s->b.uiCustomAlert_sock_raw;
+    bb_polls[1].events = ZMQ_POLLIN;
+    bb_polls[2].socket = s->b.uiSetCar_sock_raw;
+    bb_polls[2].events = ZMQ_POLLIN;
+    bb_polls[3].socket = s->b.uiPlaySound_sock_raw;
+    bb_polls[3].events = ZMQ_POLLIN;
+    bb_polls[4].socket = s->b.gps_sock_raw;
+    bb_polls[4].events = ZMQ_POLLIN;
+	
     while (true) {
-        zmq_pollitem_t bb_polls[8] = {{0}};
-        bb_polls[0].socket = s->b.uiButtonInfo_sock_raw;
-        bb_polls[0].events = ZMQ_POLLIN;
-        bb_polls[1].socket = s->b.uiCustomAlert_sock_raw;
-        bb_polls[1].events = ZMQ_POLLIN;
-        bb_polls[2].socket = s->b.uiSetCar_sock_raw;
-        bb_polls[2].events = ZMQ_POLLIN;
-        bb_polls[3].socket = s->b.uiPlaySound_sock_raw;
-        bb_polls[3].events = ZMQ_POLLIN;
-        bb_polls[4].socket = s->b.gps_sock_raw;
-        bb_polls[4].events = ZMQ_POLLIN;
-
+	    
+	    
         int ret = zmq_poll(bb_polls, 5, 0);
         if (ret < 0) {
           LOGW("bb poll failed (%d)", ret);
@@ -893,8 +896,7 @@ void  bb_ui_poll_update( UIState *s) {
         }
 
         if (bb_polls[0].revents) {
-          //uiBtnInfo
-          //printf("uio: event: uiBtnInfo\n");
+          //button info socket
           zmq_msg_t msg;
           err = zmq_msg_init(&msg);
           assert(err == 0);
@@ -918,9 +920,9 @@ void  bb_ui_poll_update( UIState *s) {
           
           capn_free(&ctx);
           zmq_msg_close(&msg);
-        } else if (bb_polls[1].revents) {
-          //uiCstmAlert
-          //printf("uio: event: uiCstmAlert\n");
+        }
+	if (bb_polls[1].revents) {
+          //custom alert socket
           zmq_msg_t msg;
           err = zmq_msg_init(&msg);
           assert(err == 0);
@@ -942,9 +944,9 @@ void  bb_ui_poll_update( UIState *s) {
           zmq_msg_close(&msg);
           // wakeup bg thread since status changed
           pthread_cond_signal(&s->bg_cond);
-        } else if (bb_polls[2].revents) {
-          //uiSetCar
-          //printf("uio: event: uiSetCar\n");
+        }
+	if (bb_polls[2].revents) {
+          //set car model socket
           zmq_msg_t msg;
           err = zmq_msg_init(&msg);
           assert(err == 0);
@@ -980,9 +982,9 @@ void  bb_ui_poll_update( UIState *s) {
           }
           capn_free(&ctx);
           zmq_msg_close(&msg);
-        } else if (bb_polls[3].revents) {
-          //uiPlaySound
-          //printf("uio: event: uiPlaySound\n");
+        }
+	if (bb_polls[3].revents) {
+          //play sound socket
           zmq_msg_t msg;
           err = zmq_msg_init(&msg);
           assert(err == 0);
@@ -1002,9 +1004,9 @@ void  bb_ui_poll_update( UIState *s) {
           
           capn_free(&ctx);
           zmq_msg_close(&msg);
-        } if (bb_polls[4].revents) {
+        }
+	if (bb_polls[4].revents) {
             // gps socket
-
             zmq_msg_t msg;
             err = zmq_msg_init(&msg);
             assert(err == 0);
