@@ -29,6 +29,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+v3.3 - re-entry logic changed for smoothness
 v3.2 - angle adjustment to compesate for road curvature change
 v3.1 - new angle logic for a smoother re-entry
 v3.0 - better lane dettection logic
@@ -42,6 +43,7 @@ from selfdrive.controls.lib.pid import PIController
 # max REAL delta angle for correction vs actuator
 CL_MAX_ANGLE_DELTA = 1.2 
 
+# a jump in angle above the CL_LANE_DETECT_FACTOR means we crossed the line
 CL_LANE_DETECT_FACTOR = .75
 
 # change lane delta angles and other params
@@ -224,16 +226,14 @@ class ALCAController(object):
         # check if angle continues to decrease
         current_delta = abs(self.laneChange_angle + laneChange_angle + (-actuators.steerAngle))
         previous_delta = abs(self.laneChange_last_sent_angle  - self.laneChange_last_actuator_angle)
-        # continue to half the angle between our angle and actuator
-        laneChange_angle = (-actuators.steerAngle - self.laneChange_angle)/2 #self.laneChange_angled
-        self.laneChange_angle += laneChange_angle
-        # wait 0.05 sec before starting to check if angle increases
-        if (current_delta > previous_delta) and (self.laneChange_counter > 5):
-          self.laneChange_enabled = 7
-          self.laneChange_counter = 1
-          self.laneChange_direction = 0
-        # wait 0.10 sec before looking if we are within 5 deg of actuator.angleSteer
-        if (current_delta <= 5.) and (self.laneChange_counter > 10):
+        if (self.laneChange_counter > 4):
+          # continue to half the angle between our angle and actuator
+          laneChange_angle = (-actuators.steerAngle - self.laneChange_angle)/2 #self.laneChange_angled
+          self.laneChange_angle += laneChange_angle
+        else:
+          laneChange_angle = self.laneChange_angled
+        # wait 0.05 sec before starting to check if angle increases or if we are within 5 deg of actuator.angleSteer
+        if ((current_delta > previous_delta) or  (current_delta <= 5.)) and (self.laneChange_counter > 5):
           self.laneChange_enabled = 7
           self.laneChange_counter = 1
           self.laneChange_direction = 0
