@@ -44,7 +44,8 @@ from selfdrive.controls.lib.pid import PIController
 CL_MAX_ANGLE_DELTA = 1.2 
 
 # a jump in angle above the CL_LANE_DETECT_FACTOR means we crossed the line
-CL_LANE_DETECT_FACTOR = .75
+CL_LANE_DETECT_BP = [10., 44.]
+CL_LANE_DETECT_FACTOR = [1.3, .75]
 
 # change lane delta angles and other params
 CL_MAXD_BP = [10., 32., 44.]
@@ -261,11 +262,12 @@ class ALCAController(object):
           self.keep_angle = False
         self.laneChange_counter += 1
         laneChange_angle = self.laneChange_angled
+        cl_lane_detect_factor = interp(CS.v_ego, CL_LANE_DETECT_BP, CL_LANE_DETECT_FACTOR)
         if (self.laneChange_over_the_line == 0):
           # we didn't cross the line, so keep computing the actuator delta until it flips
           actuator_delta = self.laneChange_direction * (-actuators.steerAngle - self.laneChange_last_actuator_angle)
           actuator_ratio = (-actuators.steerAngle)/self.laneChange_last_actuator_angle
-        if (actuator_ratio < 1) and (abs(actuator_delta) > 0.5 * CL_LANE_DETECT_FACTOR):
+        if (actuator_ratio < 1) and (abs(actuator_delta) > 0.5 * cl_lane_detect_factor):
           # sudden change in actuator angle or sign means we are on the other side of the line
           self.laneChange_over_the_line = 1
           self.laneChange_enabled = 2
