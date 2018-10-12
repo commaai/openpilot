@@ -5,6 +5,7 @@ typedef struct UICstmButton {
 } UICstmButton;
 
 typedef struct BBUIState {
+    bool shouldDrawFrame;
     UICstmButton btns[6];
     char btns_status[6];
     char car_model[40];
