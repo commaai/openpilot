@@ -287,21 +287,10 @@ class ALCAController(object):
           self.laneChange_over_the_line = 1
           self.laneChange_enabled = 2
           self.laneChange_counter = 1
-        # didn't change the lane yet, check that we are not eversteering or understeering based on road curvature
+          # didn't change the lane yet, check that we are not eversteering or understeering based on road curvature
         
-         """
-        # code for v3.1 designed to turn more if lane moves away
-        n,a = self.last10delta_add(actuator_delta)
-        c = 5.
-        if a == 0:
-          a = 0.00001
-        if (abs(a) < MIN_ACTUATOR_DELTA) and (self.keep_angle == False):
-          c = (a/abs(a)) * (MIN_ACTUATOR_DELTA - abs(a)) / 10
-          self.laneChange_angle = self.laneChange_angle -self.laneChange_direction * CORRECTION_FACTOR * c * 10 
-          self.last10delta_correct(c)
-        #print a, c, actuator_delta, self.laneChange_angle
-        """
-         # code for v3.2 and above
+          #print a, c, actuator_delta, self.laneChange_angle
+        # code for v3.2 and above
         a_delta = self.laneChange_direction * (self.laneChange_angle + laneChange_angle - (-actuators.steerAngle))
         if (self.laneChange_over_the_line == 0) and ((abs(a_delta) > CL_MAX_ANGLE_DELTA * self.laneChange_steerr) or (self.keep_angle)):
           #steering more than what we wanted, need to adjust
