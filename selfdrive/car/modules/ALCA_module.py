@@ -40,11 +40,13 @@ from common.numpy_fast import interp
 from selfdrive.controls.lib.pid import PIController
 
 # max REAL delta angle for correction vs actuator
-CL_MAX_ANGLE_DELTA = 1.
+CL_MAX_ANGLE_DELTA = 1.2 
+
+CL_LANE_DETECT_FACTOR = .75
 
 # change lane delta angles and other params
 CL_MAXD_BP = [10., 32., 44.]
-CL_MAXD_A = [.175, 0.081, 0.042] #delta angle based on speed; needs fine tune, based on Tesla steer ratio of 16.75
+CL_MAXD_A = [.308, 0.084, 0.042] #delta angle based on speed; needs fine tune, based on Tesla steer ratio of 16.75
 CL_MIN_V = 8.9 # do not turn if speed less than x m/2; 20 mph = 8.9 m/s
 CL_MAX_A = 10. # do not turn if actuator wants more than x deg for going straight; this should be interp based on speed
 
@@ -263,11 +265,12 @@ class ALCAController(object):
           # we didn't cross the line, so keep computing the actuator delta until it flips
           actuator_delta = self.laneChange_direction * (-actuators.steerAngle - self.laneChange_last_actuator_angle)
           actuator_ratio = (-actuators.steerAngle)/self.laneChange_last_actuator_angle
-        if (actuator_ratio < 1) and (abs(actuator_delta) > 0.5 * abs(self.laneChange_angled)):
+        if (actuator_ratio < 1) and (abs(actuator_delta) > 0.5 * CL_LANE_DETECT_FACTOR):
           # sudden change in actuator angle or sign means we are on the other side of the line
           self.laneChange_over_the_line = 1
           self.laneChange_enabled = 2
           self.laneChange_counter = 1
+ 
         # didn't change the lane yet, check that we are not eversteering or understeering based on road curvature
 
         """
