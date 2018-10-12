@@ -128,6 +128,7 @@ BO_ 742 LEAD_INFO: 8 DSU
 
 BO_ 835 ACC_CONTROL: 8 DSU
  SG_ ACCEL_CMD : 7|16@0- (0.001,0) [-20|20] "m/s2" HCU
+ SG_ ACC_DISTANCE : 20|1@0+ (1,0) [0|1] "" XXX
  SG_ SET_ME_X63 : 23|8@0+ (1,0) [0|255] "" HCU
  SG_ SET_ME_1 : 30|1@0+ (1,0) [0|1] "" HCU
  SG_ RELEASE_STANDSTILL : 31|1@0+ (1,0) [0|1] "" HCU
@@ -146,6 +147,7 @@ BO_ 467 PCM_CRUISE_2: 8 XXX
  SG_ MAIN_ON : 15|1@0+ (1,0) [0|1] "" XXX
  SG_ LOW_SPEED_LOCKOUT : 14|2@0+ (1,0) [0|3] "kph" XXX
  SG_ SET_SPEED : 23|8@0+ (1,0) [0|255] "kph" XXX
+ SG_ DISTANCE_LINES : 14|2@0+ (1,0) [0|3] "" XXX
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
 
 BO_ 921 PCM_CRUISE_SM: 8 XXX
@@ -251,10 +253,20 @@ BO_ 610 EPS_STATUS: 8 EPS
  SG_ LKA_STATE : 31|7@0+ (1,0) [0|127] "" XXX
  SG_ TYPE : 24|1@0+ (1,0) [0|1] "" XXX
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+ 
+BO_ 1880 DEBUG: 8 XXX
+ SG_ BLINDSPOTSIDE : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ BLINDSPOT : 38|1@0+ (1,0) [0|15] "" XXX
+
+BO_ 515 JOEL_ID: 8 XXX
+ SG_ ACC_DISTANCE : 1|2@0+ (1,0) [1|3] "" XXX
+ SG_ LANE_WARNING : 8|1@0+ (1,0) [0|1] "" XXX
+ SG_ ACC_SLOW : 16|1@0+ (1,0) [0|1] "" XXX
 
 CM_ SG_ 548 BRAKE_PRESSURE "seems prop to pedal force";
 CM_ SG_ 548 BRAKE_POSITION "seems proportional to pedal displacement, unclear the max value of 0x1c8";
 CM_ SG_ 610 TYPE "seems 1 on Corolla, 0 on all others";
+CM_ SG_ 1880 BLINDSPOTSIDE "65 for Left and 66 for Right";
 CM_ SG_ 581 GAS_PEDAL "it seems slightly filtered";
 VAL_ 295 GEAR 0 "P" 1 "R" 2 "N" 3 "D" 4 "B";
 VAL_ 610 IPAS_STATE 5 "override" 3 "enabled" 1 "disabled";
