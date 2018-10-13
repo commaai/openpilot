@@ -61,23 +61,33 @@ model_frame_from_bigmodel_frame = np.dot(model_intrinsics, np.linalg.inv(bigmode
 
 # 'camera from model camera'
 def get_model_height_transform(camera_frame_from_road_frame, height):
-  camera_frame_from_road_ground = np.dot(camera_frame_from_road_frame, np.array([
-      [1, 0, 0],
-      [0, 1, 0],
-      [0, 0, 0],
-      [0, 0, 1],
-  ]))
-
-  camera_frame_from_road_high = np.dot(camera_frame_from_road_frame, np.array([
-      [1, 0, 0],
-      [0, 1, 0],
-      [0, 0, height - model_height],
-      [0, 0, 1],
-  ]))
-
-  road_high_from_camera_frame = np.linalg.inv(camera_frame_from_road_high)
-  high_camera_from_low_camera = np.dot(camera_frame_from_road_ground, road_high_from_camera_frame)
-
+  A = camera_frame_from_road_frame
+  height_diff = height - model_height
+  x = height_diff * A[0][2]
+  y = height_diff * A[1][2]
+  z = height_diff * A[2][2]
+  eg = A[1][1] * A[2][0]
+  dh = A[1][0] * A[2][1]
+  ah = A[0][0] * A[2][1]
+  bg = A[0][1] * A[2][0]
+  bd = A[0][1] * A[1][0]
+  ae = A[0][0] * A[1][1]
+  det = (
+    ae * (z + A[2][3]) +
+    bg * (y + A[1][3]) +
+    dh * (x + A[0][3]) -
+    eg * (x + A[0][3]) -
+    bd * (z + A[2][3]) -
+    ah * (y + A[1][3])
+  )
+  eg_dh__det = (eg - dh) / det
+  ah_bg__det = (ah - bg) / det
+  bd_ae__det = (bd - ae) / det
+  high_camera_from_low_camera = np.array([
+    [1 + x * eg_dh__det,     x * ah_bg__det,     x * bd_ae__det],
+    [    y * eg_dh__det, 1 + y * ah_bg__det,     y * bd_ae__det],
+    [    z * eg_dh__det,     z * ah_bg__det, 1 + z * bd_ae__det],
+  ])
   return high_camera_from_low_camera
 
 
@@ -93,7 +103,6 @@ def get_camera_frame_from_model_frame(camera_frame_from_road_frame, height):
   ])
 
   # This function is super slow, so skip it if height is very close to canonical
-  # TODO: speed it up!
   if abs(height - model_height) > 0.001: #
     camera_from_model_camera = get_model_height_transform(camera_frame_from_road_frame, height)
   else:
