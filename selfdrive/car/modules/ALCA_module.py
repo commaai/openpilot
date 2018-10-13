@@ -23,6 +23,8 @@ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+v3.3 - re-entry logic changed for smoothness
 v3.2 - angle adjustment to compesate for road curvature change
 v3.1 - new angle logic for a smoother re-entry
 v3.0 - better lane dettection logic
@@ -36,7 +38,9 @@ from selfdrive.controls.lib.pid import PIController
 # max REAL delta angle for correction vs actuator
 CL_MAX_ANGLE_DELTA = 1.2
 
-CL_LANE_DETECT_FACTOR = .75
+# a jump in angle above the CL_LANE_DETECT_FACTOR means we crossed the line
+CL_LANE_DETECT_BP = [10., 44.]
+CL_LANE_DETECT_FACTOR = [1.3, .75]
 
 # change lane delta angles and other params
 CL_MAXD_BP = [10., 32., 44.]
@@ -243,16 +247,14 @@ class ALCAController(object):
         # check if angle continues to decrease
         current_delta = abs(self.laneChange_angle + laneChange_angle + (-actuators.steerAngle))
         previous_delta = abs(self.laneChange_last_sent_angle  - self.laneChange_last_actuator_angle)
-        # continue to half the angle between our angle and actuator
-        laneChange_angle = (-actuators.steerAngle - self.laneChange_angle)/2 #self.laneChange_angled
-        self.laneChange_angle += laneChange_angle
-        # wait 0.05 sec before starting to check if angle increases
-        if (current_delta > previous_delta) and (self.laneChange_counter > 5):
-          self.laneChange_enabled = 7
-          self.laneChange_counter = 1
-          self.laneChange_direction = 0
-        # wait 0.10 sec before looking if we are within 5 deg of actuator.angleSteer
-        if (current_delta <= 5.) and (self.laneChange_counter > 10):
+        if (self.laneChange_counter > 4):
+          # continue to half the angle between our angle and actuator
+          laneChange_angle = (-actuators.steerAngle - self.laneChange_angle)/2 #self.laneChange_angled
+          self.laneChange_angle += laneChange_angle
+        else:
+          laneChange_angle = self.laneChange_angled
+        # wait 0.05 sec before starting to check if angle increases or if we are within 5 deg of actuator.angleSteer
+        if ((current_delta > previous_delta) or  (current_delta <= 5.)) and (self.laneChange_counter > 5):
           self.laneChange_enabled = 7
           self.laneChange_counter = 1
           self.laneChange_direction = 0
@@ -280,11 +282,12 @@ class ALCAController(object):
           self.keep_angle = False
         self.laneChange_counter += 1
         laneChange_angle = self.laneChange_angled
+        cl_lane_detect_factor = interp(CS.v_ego, CL_LANE_DETECT_BP, CL_LANE_DETECT_FACTOR)
         if (self.laneChange_over_the_line == 0):
           # we didn't cross the line, so keep computing the actuator delta until it flips
           actuator_delta = self.laneChange_direction * (-actuators.steerAngle - self.laneChange_last_actuator_angle)
           actuator_ratio = (-actuators.steerAngle)/self.laneChange_last_actuator_angle
-        if (actuator_ratio < 1) and (abs(actuator_delta) > 0.5 * CL_LANE_DETECT_FACTOR):
+        if (actuator_ratio < 1) and (abs(actuator_delta) > 0.5 * cl_lane_detect_factor):
           # sudden change in actuator angle or sign means we are on the other side of the line
           self.laneChange_over_the_line = 1
           self.laneChange_enabled = 2

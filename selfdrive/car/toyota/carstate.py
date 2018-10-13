@@ -16,12 +16,12 @@ def gps_distance(gpsLat, gpsLon, gpsAlt, gpsAcc):
   #x y z alt altacc includeradius approachradius speedlimit
   B = np.array([[-4190726.5,-723704.4,4744593.25,575.5,15.000001,22.000001,100.000001,25.000001],[-4182729.45,-730269.75,4750656.55,587.7,15.000001,22.000001,100.000001,25.000001]])
   dist = 999.000001
-  #lat=48.12893908
+  #lat=48.128939
   #lon=9.797879048
   #lonlatacc=1.00001
   #alt=575.5
   includeradius = 22.000001
-  approachradius = 100.000001
+  approachradius = 100.0001
   speedlimit = 25.000001
   minindex = np.argmin((np.sum((B[:,[0,1,2]] - A)**2,axis=1))**0.5, axis=0)
   altacc = B[minindex,4]
@@ -157,11 +157,11 @@ class CarState(object):
  #BB init ui buttons
   def init_ui_buttons(self):
     btns = []
-    btns.append(UIButton("alca", "ALC", 0, "", 0))
-    btns.append(UIButton("tr", "TR", 0, "", 1))
-    btns.append(UIButton("lka", "LKA", 0, "", 2))
-    btns.append(UIButton("sound", "SND", 1, "", 3))
-    btns.append(UIButton("slow", "SLO", 0, "", 4))
+    btns.append(UIButton("sound", "SND", 1, "", 0))
+    btns.append(UIButton("alca", "ALC", 0, "", 1))
+    btns.append(UIButton("slow", "SLO", 0, "", 2))
+    btns.append(UIButton("lka", "LKA", 0, "", 3))
+    btns.append(UIButton("tr", "TR", 0, "", 4))
     btns.append(UIButton("gas", "GAS", 0, "", 5))
     return btns
 
