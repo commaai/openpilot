@@ -107,7 +107,8 @@ class CarController(object):
 
       self.apply_steer_last = apply_steer
       idx = (frame / P.STEER_STEP) % 4
-
+      if CS.cstm_btns.get_button_status("lka") == 0:
+        apply_steer = 0
       if self.car_fingerprint == CAR.VOLT:
         can_sends.append(gmcan.create_steering_control(self.packer_pt,
           canbus.powertrain, apply_steer, idx, lkas_enabled))
