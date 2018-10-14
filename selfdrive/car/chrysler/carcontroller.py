@@ -1,3 +1,4 @@
+import logging
 from common.numpy_fast import clip, interp
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 # from selfdrive.car.toyota.toyotacan import make_can_msg, create_video_target,\
@@ -71,6 +72,10 @@ class CarController(object):
     #if enable_apg: self.fake_ecus.add(ECU.APGS)
 
     self.packer = CANPacker(dbc_name)
+
+    logging.basicConfig(level=logging.DEBUG, filename="/tmp/chrylog", filemode="a+",
+                        format="%(asctime)-15s %(levelname)-8s %(message)s")
+    logging.info('CarController init')
 
   def update(self, sendcan, enabled, CS, frame, actuators,
              pcm_cancel_cmd, hud_alert, audible_alert):
@@ -171,8 +176,9 @@ class CarController(object):
     can_sends.append(new_msg)  # degrees * 5.1 -> car steering units
     for msg in can_sends:
       [addr, _, dat, _] = msg
-      #outp  = ('make_can_msg:%s  len:%d  %s' % ('0x{:02x}'.format(addr), len(dat),
-      #                                          ' '.join('{:02x}'.format(ord(c)) for c in dat)))
+      outp  = ('make_can_msg:%s  len:%d  %s' % ('0x{:02x}'.format(addr), len(dat),
+                                                ' '.join('{:02x}'.format(ord(c)) for c in dat)))
+      logging.info(outp)
 
 
     self.ccframe += 1
