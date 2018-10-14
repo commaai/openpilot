@@ -85,7 +85,7 @@ class CarState(object):
     btns.append(UIButton("","",0,"",1))
     btns.append(UIButton("","",0,"",2))
     btns.append(UIButton("","",0,"",3))
-    btns.append(UIButton("","",0,"",4))
+    btns.append(UIButton("gas","GAS",0,"",4))
     btns.append(UIButton("lka","LKA",0,"",5))
     return btns
   #BB update ui buttons
