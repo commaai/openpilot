@@ -1,4 +1,3 @@
-import logging
 from common.numpy_fast import clip, interp
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 # from selfdrive.car.toyota.toyotacan import make_can_msg, create_video_target,\
@@ -73,9 +72,6 @@ class CarController(object):
 
     self.packer = CANPacker(dbc_name)
 
-    logging.basicConfig(level=logging.DEBUG, filename="/tmp/chrylog", filemode="a+",
-                        format="%(asctime)-15s %(levelname)-8s %(message)s")
-
   def update(self, sendcan, enabled, CS, frame, actuators,
              pcm_cancel_cmd, hud_alert, audible_alert):
 
@@ -89,9 +85,8 @@ class CarController(object):
     # steer torque
     apply_steer = int(round(actuators.steer * STEER_MAX))
     # TODO use these values to decide if we should use apply_steer or apply_angle
-    outp = 'carcontroller apply_steer %s  actuators.steerAngle %s' % (apply_steer, actuators.steerAngle)
+    # outp = 'carcontroller apply_steer %s  actuators.steerAngle %s' % (apply_steer, actuators.steerAngle)
     # print outp
-    logging.info(outp)
 
     # max_lim = min(max(CS.steer_torque_motor + STEER_ERROR_MAX, STEER_ERROR_MAX), STEER_MAX)
     # min_lim = max(min(CS.steer_torque_motor - STEER_ERROR_MAX, -STEER_ERROR_MAX), -STEER_MAX)
@@ -124,12 +119,10 @@ class CarController(object):
         angle_rate_lim = interp(CS.v_ego, ANGLE_DELTA_BP, ANGLE_DELTA_VU)
 
       apply_angle = clip(apply_angle, self.last_angle - angle_rate_lim, self.last_angle + angle_rate_lim)
-      outp = '  apply_angle:%s  angle_lim:%s  angle_rate_lim:%s  apply_steer:%s' % (apply_angle, angle_lim, angle_rate_lim, apply_steer)
+      # outp = '  apply_angle:%s  angle_lim:%s  angle_rate_lim:%s  apply_steer:%s' % (apply_angle, angle_lim, angle_rate_lim, apply_steer)
       # print outp
-      logging.info(outp)
-      outp = '  CS.angle_steers:%s  CS.v_ego:%s' % (CS.angle_steers, CS.v_ego)
+      # outp = '  CS.angle_steers:%s  CS.v_ego:%s' % (CS.angle_steers, CS.v_ego)
       # print outp
-      logging.info(outp)
 #    else:
 #      apply_angle = CS.angle_steers  # just sets it to the current steering angle
 
@@ -137,7 +130,7 @@ class CarController(object):
     self.standstill_req = False #?
 
     moving_fast = True  # for status message
-    if CS.v_ego < 5:  # don't steer if going under 6mph to not lock out LKAS (was < 3)
+    if CS.v_ego < 3.5:  # don't steer if going under 7.8mph to not lock out LKAS (was < 3)
       apply_angle = 0
       apply_steer = 0
       moving_fast = False
@@ -178,9 +171,8 @@ class CarController(object):
     can_sends.append(new_msg)  # degrees * 5.1 -> car steering units
     for msg in can_sends:
       [addr, _, dat, _] = msg
-      outp  = ('make_can_msg:%s  len:%d  %s' % ('0x{:02x}'.format(addr), len(dat),
-                                                ' '.join('{:02x}'.format(ord(c)) for c in dat)))
-      logging.info(outp)
+      #outp  = ('make_can_msg:%s  len:%d  %s' % ('0x{:02x}'.format(addr), len(dat),
+      #                                          ' '.join('{:02x}'.format(ord(c)) for c in dat)))
 
 
     self.ccframe += 1
