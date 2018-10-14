@@ -24,9 +24,12 @@ class CarControllerParams():
     self.STEER_DRIVER_ALLOWANCE = 50   # allowed driver torque before start limiting
     self.STEER_DRIVER_MULTIPLIER = 4   # weight driver torque heavily
     self.STEER_DRIVER_FACTOR = 100     # from dbc
-    self.NEAR_STOP_BRAKE_PHASE = 0.5 # m/s, more aggressive braking near full stop
+    self.NEAR_STOP_BRAKE_PHASE = 1.5 # m/s, more aggressive braking near full stop
 
-    self.ADAS_KEEPALIVE_STEP = 10
+    # Takes case of "Service Adaptive Cruise" and "Service Front Camera"
+    # dashboard messages.
+    self.ADAS_KEEPALIVE_STEP = 100
+    self.CAMERA_KEEPALIVE_STEP = 100
     # pedal lookups, only for Volt
     MAX_GAS = 3072              # Only a safety limit
     ZERO_GAS = 2048
@@ -59,12 +62,11 @@ class CarController(object):
     self.pedal_steady = 0.
     self.start_time = sec_since_boot()
     self.chime = 0
-    self.lkas_active = False
-    self.inhibit_steer_for = 0
     self.steer_idx = 0
     self.apply_steer_last = 0
     self.car_fingerprint = car_fingerprint
     self.allow_controls = allow_controls
+    self.lka_icon_status_last = 0
 
     # Setup detection helper. Routes commands to
     # an appropriate CAN bus number.
@@ -161,6 +163,18 @@ class CarController(object):
       # Send ADAS keepalive, 10hz
       if frame % P.ADAS_KEEPALIVE_STEP == 0:
         can_sends += gmcan.create_adas_keepalive(canbus.powertrain)
+        
+    # Show green icon when LKA torque is applied, and
+    # alarming orange icon when approaching torque limit.
+    # If not sent periodically, LKA icon disappears in about 5 seconds.
+    # Conveniently, sending camera message periodically also works as a keepalive.
+    lka_active = CS.lkas_status == 1
+    lka_critical = abs(actuators.steer) > 0.9
+    lka_icon_status = lka_active + (int(lka_critical) << 1)
+    if frame % P.CAMERA_KEEPALIVE_STEP == 0 \
+        or lka_icon_status != self.lka_icon_status_last:
+      can_sends.append(gmcan.create_lka_icon_command(canbus.sw_gmlan, lka_active, lka_critical))
+      self.lka_icon_status_last = lka_icon_status
 
     # Send chimes
     if self.chime != chime:
