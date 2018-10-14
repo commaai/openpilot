@@ -52,7 +52,7 @@ class CarInterface(object):
 
   @staticmethod
   def compute_gb(accel, speed):
-    # Ripped from compute_gb_honda in Honda's interface.py. Works well off shelf but may need more tuning
+  	# Ripped from compute_gb_honda in Honda's interface.py. Works well off shelf but may need more tuning
     creep_brake = 0.0
     creep_speed = 2.68
     creep_brake_value = 0.10
@@ -199,7 +199,7 @@ class CarInterface(object):
     ret.cruiseState.available = bool(self.CS.main_on)
     cruiseEnabled = self.CS.pcm_acc_status != 0
     ret.cruiseState.enabled = cruiseEnabled
-    ret.cruiseState.standstill = self.CS.pcm_acc_status == 4
+    ret.cruiseState.standstill = False
 
     ret.leftBlinker = self.CS.left_blinker_on
     ret.rightBlinker = self.CS.right_blinker_on
@@ -282,8 +282,6 @@ class CarInterface(object):
         events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
       if ret.gasPressed:
         events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
-      if ret.cruiseState.standstill:
-        events.append(create_event('resumeRequired', [ET.WARNING]))
 
       # handle button presses
       for b in ret.buttonEvents:
