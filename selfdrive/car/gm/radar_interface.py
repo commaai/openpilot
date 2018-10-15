@@ -25,12 +25,16 @@ def create_radard_can_parser(canbus, car_fingerprint):
   if car_fingerprint == CAR.VOLT:
     # C1A-ARS3-A by Continental
     radar_targets = range(SLOT_1_MSG, SLOT_1_MSG + NUM_SLOTS)
-    signals = zip(['FLRRNumValidTargets'] +
+    signals = zip(['FLRRNumValidTargets',
+                   'FLRRSnsrBlckd', 'FLRRYawRtPlsblityFlt',
+                   'FLRRHWFltPrsntInt', 'FLRRAntTngFltPrsnt',
+                   'FLRRAlgnFltPrsnt', 'FLRRSnstvFltPrsntInt'] +
                   ['TrkRange'] * NUM_SLOTS + ['TrkRangeRate'] * NUM_SLOTS +
                   ['TrkRangeAccel'] * NUM_SLOTS + ['TrkAzimuth'] * NUM_SLOTS +
                   ['TrkWidth'] * NUM_SLOTS + ['TrkObjectID'] * NUM_SLOTS,
-                  [RADAR_HEADER_MSG] + radar_targets * 6,
-                  [0] + [0.0] * NUM_SLOTS + [0.0] * NUM_SLOTS +
+                  [RADAR_HEADER_MSG] * 7 + radar_targets * 6,
+                  [0] * 7 +
+                  [0.0] * NUM_SLOTS + [0.0] * NUM_SLOTS +
                   [0.0] * NUM_SLOTS + [0.0] * NUM_SLOTS +
                   [0.0] * NUM_SLOTS + [0] * NUM_SLOTS)
 
@@ -68,13 +72,19 @@ class RadarInterface(object):
       if LAST_RADAR_MSG in updated_messages:
         break
 
+    header = self.rcp.vl[RADAR_HEADER_MSG]
+    fault = header['FLRRSnsrBlckd'] or header['FLRRSnstvFltPrsntInt'] or \
+      header['FLRRYawRtPlsblityFlt'] or header['FLRRHWFltPrsntInt'] or \
+      header['FLRRAntTngFltPrsnt'] or header['FLRRAlgnFltPrsnt']
     errors = []
     if not self.rcp.can_valid:
       errors.append("commIssue")
+    if fault:
+      errors.append("fault")
     ret.errors = errors
 
     currentTargets = set()
-    num_targets = self.rcp.vl[RADAR_HEADER_MSG]['FLRRNumValidTargets']
+    num_targets = header['FLRRNumValidTargets']
 
     # Not all radar messages describe targets,
     # no need to monitor all of the self.rcp.msgs_upd
