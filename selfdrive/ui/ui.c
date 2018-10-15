@@ -239,7 +239,7 @@ typedef struct UIState {
   float light_sensor;
 } UIState;
 
-#include "./screencapture.h"
+#include "./dashcam.h"
 
 static int last_brightness = -1;
 static void set_brightness(UIState *s, int brightness) {
