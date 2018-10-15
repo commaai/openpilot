@@ -15,9 +15,11 @@ int elapsed_time = 0; // Time of current recording
 bool lock_current_video = false; // If true save the current video before rotating
 
 void stop_capture() {
-  //printf("Stop capturing screen\n");
-  system("killall -SIGINT screenrecord");
-  captureState = CAPTURE_STATE_NOT_CAPTURING;
+  if (captureState == CAPTURE_STATE_CAPTURING) {
+    //printf("Stop capturing screen\n");
+    system("killall -SIGINT screenrecord");
+    captureState = CAPTURE_STATE_NOT_CAPTURING;
+  }
 }
 
 int get_time() {
