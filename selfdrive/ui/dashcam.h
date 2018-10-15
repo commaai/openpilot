@@ -37,11 +37,19 @@ int get_time() {
 }
 
 void start_capture() {
+  captureState = CAPTURE_STATE_CAPTURING;
   char cmd[50] = "";
+  char videos_dir[50] = "/sdcard/videos";
+
   //////////////////////////////////
-  // NOTE: make sure /sdcard/videos/ folder exists on the device!
+  // NOTE: make sure videos_dir folder exists on the device!
   //////////////////////////////////
-  snprintf(cmd,sizeof(cmd),"screenrecord /sdcard/videos/video%d.mp4&",captureNum);
+  struct stat st = {0};
+  if (stat(videos_dir, &st) == -1) {
+    mkdir(videos_dir,0700);
+  }
+
+  snprintf(cmd,sizeof(cmd),"screenrecord %s/video%d.mp4&",videos_dir,captureNum);
   //printf("Capturing to file: %s\n",cmd);
   start_time = get_time();
   system(cmd);
@@ -138,10 +146,11 @@ static void screen_draw_button(UIState *s, int touch_x, int touch_y) {
 
 void screen_toggle_record_state() {
   if (captureState == CAPTURE_STATE_CAPTURING) {
-    captureState = CAPTURE_STATE_NOT_CAPTURING;
+    stop_capture();
   }
   else {
-    captureState = CAPTURE_STATE_CAPTURING;
+    //captureState = CAPTURE_STATE_CAPTURING;
+    start_capture();
   }
 }
 
@@ -150,12 +159,14 @@ void screen_capture( UIState *s, int touch_x, int touch_y ) {
   if (screen_button_clicked(touch_x,touch_y)) {
     screen_toggle_record_state();
 
+/*
     if (captureState == CAPTURE_STATE_CAPTURING) {
       start_capture();
     }
     else if (captureState == CAPTURE_STATE_NOT_CAPTURING) {
       stop_capture();
     }
+*/
   }
   else if (!s->vision_connected) {
     // Assume car is not in drive so stop recording
