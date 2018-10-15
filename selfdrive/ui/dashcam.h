@@ -15,9 +15,11 @@ int elapsed_time = 0; // Time of current recording
 bool lock_current_video = false; // If true save the current video before rotating
 
 void stop_capture() {
-  //printf("Stop capturing screen\n");
-  system("killall -SIGINT screenrecord");
-  captureState = CAPTURE_STATE_NOT_CAPTURING;
+  if (captureState == CAPTURE_STATE_CAPTURING) {
+    //printf("Stop capturing screen\n");
+    system("killall -SIGINT screenrecord");
+    captureState = CAPTURE_STATE_NOT_CAPTURING;
+  }
 }
 
 int get_time() {
@@ -37,15 +39,17 @@ int get_time() {
 void start_capture() {
   captureState = CAPTURE_STATE_CAPTURING;
   char cmd[50] = "";
+  char videos_dir[50] = "/sdcard/videos";
+
   //////////////////////////////////
-  // NOTE: make sure /sdcard/videos/ folder exists on the device!
+  // NOTE: make sure videos_dir folder exists on the device!
   //////////////////////////////////
   struct stat st = {0};
-  if (stat("/sdcard/videos", &st) == -1) {
-    mkdir("/sdcard/videos",0700);
+  if (stat(videos_dir, &st) == -1) {
+    mkdir(videos_dir,0700);
   }
 
-  snprintf(cmd,sizeof(cmd),"screenrecord /sdcard/videos/video%d.mp4&",captureNum);
+  snprintf(cmd,sizeof(cmd),"screenrecord %s/video%d.mp4&",videos_dir,captureNum);
   //printf("Capturing to file: %s\n",cmd);
   start_time = get_time();
   system(cmd);
