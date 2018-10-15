@@ -183,7 +183,7 @@ class CarState(object):
     btns.append(UIButton("","",0,"",2))
     btns.append(UIButton("sound","SND",1,"",3))
     btns.append(UIButton("","",0,"",4))
-    btns.append(UIButton("","",0,"",5))
+    btns.append(UIButton("gas","Gas",0,"",5))
     return btns
 
   #BB update ui buttons

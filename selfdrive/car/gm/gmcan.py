@@ -59,19 +59,16 @@ def create_gas_regen_command(packer, bus, throttle, idx, acc_engaged, at_full_st
   return packer.make_can_msg("ASCMGasRegenCmd", bus, values)
 
 def create_friction_brake_command(packer, bus, apply_brake, idx, near_stop, at_full_stop):
-
-  if apply_brake == 0:
-    mode = 0x1
-  else:
+  mode = 0x1
+  if apply_brake > 0:
     mode = 0xa
 
-    if at_full_stop:
-      mode = 0xd
-    # TODO: this is to have GM bringing the car to complete stop,
-    # but currently it conflicts with OP controls, so turned off.
-    #elif near_stop:
-    #  mode = 0xb
+  if near_stop:
+    mode = 0xb
 
+  if at_full_stop:
+    mode = 0xd
+    
   brake = (0x1000 - apply_brake) & 0xfff
   checksum = (0x10000 - (mode << 12) - brake - idx) & 0xffff
 
@@ -133,6 +130,16 @@ def create_adas_headlights_status(bus):
 def create_chime_command(bus, chime_type, duration, repeat_cnt):
   dat = [chime_type, duration, repeat_cnt, 0xff, 0]
   return [0x10400060, 0, "".join(map(chr, dat)), bus]
+
+def create_lka_icon_command(bus, active, critical):
+  if active:
+    if critical:
+      dat = "\x40\xc0\x14"
+    else:
+      dat = "\x40\x40\x18"
+  else:
+    dat = "\x00\x00\x00"
+  return [0x104c006c, 0, dat, bus]
 
 # TODO: WIP
 '''

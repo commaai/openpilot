@@ -472,7 +472,7 @@ class CarInterface(object):
       # TODO: more buttons?
       buttonEvents.append(be)
     ret.buttonEvents = buttonEvents
-
+    ret.gasbuttonstatus = self.CS.cstm_btns.get_button_status("gas")
     # events
     # TODO: I don't like the way capnp does enums
     # These strings aren't checked at compile time
