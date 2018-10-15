@@ -11,13 +11,13 @@ from common.realtime import sec_since_boot
 from selfdrive.services import service_list
 import selfdrive.messaging as messaging
 
-NUM_TARGETS_MSG = 1120
-SLOT_1_MSG = NUM_TARGETS_MSG + 1
+RADAR_HEADER_MSG = 1120
+SLOT_1_MSG = RADAR_HEADER_MSG + 1
 NUM_SLOTS = 20
 
 # Actually it's 0x47f, but can parser only reports
 # messages that are present in DBC
-LAST_RADAR_MSG = NUM_TARGETS_MSG + NUM_SLOTS
+LAST_RADAR_MSG = RADAR_HEADER_MSG + NUM_SLOTS
 
 def create_radard_can_parser(canbus, car_fingerprint):
 
@@ -29,7 +29,7 @@ def create_radard_can_parser(canbus, car_fingerprint):
                   ['TrkRange'] * NUM_SLOTS + ['TrkRangeRate'] * NUM_SLOTS +
                   ['TrkRangeAccel'] * NUM_SLOTS + ['TrkAzimuth'] * NUM_SLOTS +
                   ['TrkWidth'] * NUM_SLOTS + ['TrkObjectID'] * NUM_SLOTS,
-                  [NUM_TARGETS_MSG] + radar_targets * 6,
+                  [RADAR_HEADER_MSG] + radar_targets * 6,
                   [0] + [0.0] * NUM_SLOTS + [0.0] * NUM_SLOTS +
                   [0.0] * NUM_SLOTS + [0.0] * NUM_SLOTS +
                   [0.0] * NUM_SLOTS + [0] * NUM_SLOTS)
@@ -74,12 +74,12 @@ class RadarInterface(object):
     ret.errors = errors
 
     currentTargets = set()
-    num_targets = self.rcp.vl[NUM_TARGETS_MSG]['FLRRNumValidTargets']
+    num_targets = self.rcp.vl[RADAR_HEADER_MSG]['FLRRNumValidTargets']
 
     # Not all radar messages describe targets,
     # no need to monitor all of the self.rcp.msgs_upd
     for ii in updated_messages:
-      if ii == NUM_TARGETS_MSG:
+      if ii == RADAR_HEADER_MSG:
         continue
 
       if num_targets == 0:
