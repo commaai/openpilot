@@ -34,6 +34,7 @@ def get_can_parser(CP):
     ("STEER_ANGLE", "STEER_ANGLE_SENSOR", 0),
     ("STEER_FRACTION", "STEER_ANGLE_SENSOR", 0),
     ("STEER_RATE", "STEER_ANGLE_SENSOR", 0),
+    ("ACC_ACTIVE", "PCM_CRUISE", 0),
     ("GAS_RELEASED", "PCM_CRUISE", 0),
     ("STEER_TORQUE_DRIVER", "STEER_TORQUE_SENSOR", 0),
     ("STEER_TORQUE_EPS", "STEER_TORQUE_SENSOR", 0),
@@ -61,7 +62,6 @@ def get_can_parser(CP):
     signals += [
       ("MAIN_ON", "PCM_CRUISE_3", 0),
       ("SET_SPEED", "PCM_CRUISE_3", 0),
-      ("CRUISE_STATE", "PCM_CRUISE_3", 0)
     ]
     checks += [("PCM_CRUISE_3", 1)]
   else:
@@ -69,7 +69,6 @@ def get_can_parser(CP):
       ("MAIN_ON", "PCM_CRUISE_2", 0),
       ("SET_SPEED", "PCM_CRUISE_2", 0),
       ("LOW_SPEED_LOCKOUT", "PCM_CRUISE_2", 0),
-      ("CRUISE_STATE", "PCM_CRUISE", 0)
     ]
     checks += [("PCM_CRUISE_2", 33)]
 
@@ -154,13 +153,12 @@ class CarState(object):
     self.steer_override = abs(self.steer_torque_driver) > STEER_THRESHOLD
 
     self.user_brake = 0
+    self.pcm_acc_status = cp.vl["PCM_CRUISE"]['ACC_ACTIVE']
     if self.CP.carFingerprint == CAR.LEXUS_IS:
-        self.v_cruise_pcm = cp.vl["PCM_CRUISE_3"]['SET_SPEED'] * CV.MPH_TO_KPH
-        self.pcm_acc_status = cp.vl["PCM_CRUISE_3"]['CRUISE_STATE']
+        self.v_cruise_pcm = cp.vl["PCM_CRUISE_3"]['SET_SPEED']
         self.low_speed_lockout = 0
     else:
         self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED']
-        self.pcm_acc_status = cp.vl["PCM_CRUISE"]['CRUISE_STATE']
         self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]['LOW_SPEED_LOCKOUT'] == 2
     self.gas_pressed = not cp.vl["PCM_CRUISE"]['GAS_RELEASED']
     self.brake_lights = bool(cp.vl["ESP_CONTROL"]['BRAKE_LIGHTS_ACC'] or self.brake_pressed)
