@@ -18,18 +18,13 @@ import numpy as np
 # TODO: these should end up in values.py at some point, probably variable by trim
 # Accel limits
 ACCEL_HYST_GAP = 0.5  # don't change accel command for small oscilalitons within this value
-ACCEL_MAX = 1.
-ACCEL_MIN = -1.
-ACCEL_SCALE = max(ACCEL_MAX, -ACCEL_MIN)
-ACCEL_REWIND_MAX = 4.
-PEDAL_DEADZONE = 3.
+
 PEDAL_MAX_UP = 2.
 PEDAL_MAX_DOWN = 5.
 #BB
 MIN_SAFE_DIST_M = 4. # min safe distance in meters
-FRAMES_PER_SEC = 5.
-BRAKE_THRESHOLD =0.1
-ACCEL_THRESHOLD = 0.1
+FRAMES_PER_SEC = 100.
+
 SPEED_UP = 1. #3. / FRAMES_PER_SEC   # 2 m/s = 7.5 mph = 12 kph 
 SPEED_DOWN = 1. #6. / FRAMES_PER_SEC
 
@@ -42,22 +37,10 @@ FOLLOW_UP_TIME = 1.5 #time in seconds to follow car in front
 MIN_PCC_V = 0. #
 MAX_PCC_V = 170.
 
-STOPPING_EGO_SPEED = 0.5
 MIN_CAN_SPEED = 0.3  #TODO: parametrize this in car interface
-STOPPING_TARGET_SPEED = MIN_CAN_SPEED + 0.01
-STARTING_TARGET_SPEED = 0.5
-BRAKE_THRESHOLD_TO_PID = 0.2
 
 
-#### from planner
-#
-_DT = 0.01    # 100Hz
-_DT_MPC = 0.02  # 50Hz
-MAX_SPEED_ERROR = 2.0
 AWARENESS_DECEL = -0.2     # car smoothly decel at .2m/s^2 when user is distracted
-_LEAD_ACCEL_TAU = 1.5
-
-GPS_PLANNER_ADDR = "192.168.5.1"
 
 # lookup tables VS speed to determine min and max accels in cruise
 # make sure these accelerations are smaller than mpc limits
@@ -80,26 +63,6 @@ _FCW_A_ACT_BP = [0., 30.]
 # max acceleration allowed in acc, which happens in restart
 A_ACC_MAX = max(_A_CRUISE_MAX_V_FOLLOWING)
 
-def calc_cruise_accel_limits(v_ego, following):
-  a_cruise_min = interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V)
-  if following:
-    a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V_FOLLOWING)
-  else:
-    a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V)
-  return np.vstack([a_cruise_min, a_cruise_max])
-
-def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
-  """
-  This function returns a limited long acceleration allow    ed, depending on the existing lateral acceleration
-  this should avoid accelerating when losing the target i    n turns
-  """
-
-  a_total_max = interp(v_ego, _A_TOTAL_MAX_BP, _A_TOTAL_MAX_V)
-  a_y = v_ego**2 * angle_steers * CV.DEG_TO_RAD / (CP.steerRatio * CP.wheelbase)
-  a_x_allowed = math.sqrt(max(a_total_max**2 - a_y**2, 0.))
-
-  a_target[1] = min(a_target[1], a_x_allowed)
-  return a_target
 
 class PCCState(object):
   # Possible state of the ACC system, following the DI_cruiseState naming
@@ -317,18 +280,6 @@ class PCCController(object):
     accel_max = interp(CS.v_ego, CS.CP.gasMaxBP, CS.CP.gasMaxV)
     brake_max = interp(CS.v_ego, CS.CP.brakeMaxBP, CS.CP.brakeMaxV)
 
-    following = self.lead_1.status and self.lead_1.dRel   < 45.0 and self.lead_1.vLeadK > CS.v_ego and self.lead_1.aLeadK > 0.0
-    
-
-    accel_limits = map(float, calc_cruise_accel_limits(CS.v_ego, following))
-    # TODO: make a separate lookup for jerk tuning
-    jerk_limits = [min(-0.1, accel_limits[0]), max(0.1, accel_limits[1])]
-    accel_limits = limit_accel_in_turns(CS.v_ego,CS.angle_steers, accel_limits, CS.CP)
-
-    if brake_max <= 0.2:
-      # if required so, force a smooth deceleration
-      accel_limits[1] = min(accel_limits[1], AWARENESS_DECEL)
-      accel_limits[0] = min(accel_limits[0], accel_limits[1])
     output_gb = 0
     ####################################################################
     # this mode (Follow) uses the Follow logic created by JJ for ACC
