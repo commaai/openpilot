@@ -44,8 +44,6 @@ class RadarInterface(object):
   def __init__(self, CP):
     # radar
     self.pts = {}
-    self.track_id = 0
-    self.num_targets = 0
 
     self.delay = 0.0  # Delay of radar
 
@@ -72,19 +70,19 @@ class RadarInterface(object):
 
     errors = []
     if not self.rcp.can_valid:
-      errors.append("notValid")
+      errors.append("commIssue")
     ret.errors = errors
 
     currentTargets = set()
-    self.num_targets = self.rcp.vl[NUM_TARGETS_MSG]['FLRRNumValidTargets']
+    num_targets = self.rcp.vl[NUM_TARGETS_MSG]['FLRRNumValidTargets']
 
     # Not all radar messages describe targets,
-    # no need to monitor all of the sself.rcp.msgs_upd
+    # no need to monitor all of the self.rcp.msgs_upd
     for ii in updated_messages:
       if ii == NUM_TARGETS_MSG:
         continue
 
-      if self.num_targets == 0:
+      if num_targets == 0:
         break
 
       cpt = self.rcp.vl[ii]
