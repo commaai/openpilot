@@ -1860,6 +1860,7 @@ int main() {
     }
 
     if (s->awake) {
+      screen_capture(s, touch_x, touch_y);
       ui_draw(s);
       glFinish();
       should_swap = true;
