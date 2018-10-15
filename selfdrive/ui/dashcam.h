@@ -10,6 +10,7 @@ int captureState = CAPTURE_STATE_NOT_CAPTURING;
 int captureNum = 1;
 int start_time = 0; 
 int elapsed_time = 0; // Time of current recording
+char filenames[3][50]; // Track the filenames so they can be deleted when rotating
 
 //TBD - need to implement locking current video
 bool lock_current_video = false; // If true save the current video before rotating
@@ -36,6 +37,31 @@ int get_time() {
   return seconds;
 }
 
+struct tm get_time_struct() {
+  time_t t = time(NULL);
+  struct tm tm = *localtime(&t);
+  return tm;
+}
+
+void remove_file(char *videos_dir, char *filename) {
+  if (filename[0] == '\0') {
+    // Don't do anything if no filename is passed
+    return;
+  }
+
+  int status;
+  char fullpath[64];
+  snprintf(fullpath,sizeof(fullpath),"%s/%s", videos_dir, filename);
+  status = remove(fullpath);
+  if (status == 0) {
+    printf("Removed file: %s\n", fullpath);
+  }
+  else {
+    printf("Unable to remove file: %s\n", fullpath);
+    perror("Error message:");
+  }
+}
+
 void start_capture() {
   captureState = CAPTURE_STATE_CAPTURING;
   char cmd[50] = "";
@@ -49,16 +75,27 @@ void start_capture() {
     mkdir(videos_dir,0700);
   }
 
-  snprintf(cmd,sizeof(cmd),"screenrecord %s/video%d.mp4&",videos_dir,captureNum);
-  //printf("Capturing to file: %s\n",cmd);
+  char filename[64];
+  //snprintf(filename,sizeof(filename),"video%d.mp4",captureNum);
+  struct tm tm = get_time_struct();
+  snprintf(filename,sizeof(filename),"%04d%02d%02d-%02d%02d%02d.mp4", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+  snprintf(cmd,sizeof(cmd),"screenrecord %s/%s&",videos_dir,filename);
+
+  strcpy(filenames[captureNum-1],filename);
+  printf("Capturing to file: %s\n",cmd);
   start_time = get_time();
   system(cmd);
 
-  if (captureNum >= RECORD_FILES) {
+  if (captureNum > RECORD_FILES) {
     captureNum = 1;
   }
   else {
     captureNum++;
+  }
+
+  if (filenames[captureNum-1] != NULL) {
+    // remove the old file
+    remove_file(videos_dir, filenames[captureNum-1]);
   }
 }
 
@@ -80,9 +117,8 @@ void draw_date_time(UIState *s) {
   int rect_y = (1080-rect_h-10);
 
   // Get local time to display
-  time_t t = time(NULL);
-  struct tm tm = *localtime(&t);
-  char now[50] = "";
+  char now[50];
+  struct tm tm = get_time_struct();
   snprintf(now,sizeof(now),"%04d/%02d/%02d  %02d:%02d:%02d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
 
   nvgBeginPath(s->vg);
@@ -154,7 +190,7 @@ void screen_toggle_record_state() {
   }
 }
 
-void screen_capture( UIState *s, int touch_x, int touch_y ) {
+void dashcam( UIState *s, int touch_x, int touch_y ) {
   screen_draw_button(s, touch_x, touch_y);
   if (screen_button_clicked(touch_x,touch_y)) {
     screen_toggle_record_state();
