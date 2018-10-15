@@ -10,7 +10,7 @@ int captureState = CAPTURE_STATE_NOT_CAPTURING;
 int captureNum = 1;
 int start_time = 0; 
 int elapsed_time = 0; // Time of current recording
-char filenames[3][50]; // Track the filenames so they can be deleted when rotating
+char filenames[RECORD_FILES][50]; // Track the filenames so they can be deleted when rotating
 
 //TBD - need to implement locking current video
 bool lock_current_video = false; // If true save the current video before rotating
