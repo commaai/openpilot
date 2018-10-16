@@ -220,7 +220,9 @@ static void screen_draw_button(UIState *s, int touch_x, int touch_y) {
   // Set button to bottom left of screen
   if (s->vision_connected && s->plus_state == 0) {
 
-    draw_lock_button(s);
+    if (captureState == CAPTURE_STATE_CAPTURING) {
+      draw_lock_button(s);
+    }
 
     int btn_w = 150;
     int btn_h = 150;
@@ -260,6 +262,7 @@ static void screen_draw_button(UIState *s, int touch_x, int touch_y) {
 void screen_toggle_record_state() {
   if (captureState == CAPTURE_STATE_CAPTURING) {
     stop_capture();
+    lock_current_video = false;
   }
   else {
     //captureState = CAPTURE_STATE_CAPTURING;
