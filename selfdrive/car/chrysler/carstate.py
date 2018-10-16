@@ -43,7 +43,9 @@ def get_can_parser(CP):
     ("INCREMENTING_220", "LKAS_INDICATOR_1", -1),
   ]
 
+  # It’s considered invalid if it is not received for 10x the expected period (1/f).
   checks = [
+    # sig_address, frequency
   ]
 
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)

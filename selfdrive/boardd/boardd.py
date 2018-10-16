@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+
+# This file is not used by OpenPilot. Only boardd.cc is used.
+# The python version is slower, but has more options for development.
+
 import os
 import struct
 import zmq
