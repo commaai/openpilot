@@ -117,17 +117,10 @@ class ACCController(object):
   def _update_max_acc_speed(self, CS):
     # Adjust the max ACC speed based on user cruise stalk actions.
     half_press_kph, full_press_kph = self._get_cc_units_kph(CS.imperial_speed_units)
-    # If user increases cruise speed while well below max ACC speed, do not
-    #   change max ACC speed.
-    # If user increases cruise speed while near max ACC speed, increase the max
-    #   ACC speed as necessary.
     if CS.cruise_buttons == CruiseButtons.RES_ACCEL:
-      requested_speed_kph = CS.v_ego * CV.MS_TO_KPH + half_press_kph
-      self.acc_speed_kph = max(self.acc_speed_kph, requested_speed_kph)
+      self.acc_speed_kph += half_press_kph
     elif CS.cruise_buttons == CruiseButtons.RES_ACCEL_2ND:
-      requested_speed_kph = CS.v_ego * CV.MS_TO_KPH + full_press_kph
-      self.acc_speed_kph = max(self.acc_speed_kph, requested_speed_kph)
-    # If user decreses cruise speed, decrease the max ACC speed also.
+      self.acc_speed_kph += full_press_kph
     elif CS.cruise_buttons == CruiseButtons.DECEL_SET:
       self.acc_speed_kph -= half_press_kph
     elif CS.cruise_buttons == CruiseButtons.DECEL_2ND:
