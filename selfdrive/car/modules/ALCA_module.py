@@ -161,7 +161,7 @@ class ALCAController(object):
     cl_adjust_factor = interp(CS.v_ego, CS.CL_ADJUST_FACTOR_BP, CS.CL_ADJUST_FACTOR)
     cl_reentry_angle = interp(CS.v_ego, CS.CL_REENTRY_ANGLE_BP, CS.CL_REENTRY_ANGLE)
     cl_min_v = CS.CL_MIN_V
-   
+    self.laneChange_wait = CS.CL_WAIT_BEFORE_START
    
     # Basic highway lane change logic
     blindspot = CS.blind_spot_on
