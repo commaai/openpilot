@@ -332,9 +332,9 @@ class ALCAController(object):
           
           # didn't change the lane yet, check that we are not eversteering or understeering based on road curvature
 
-         """
-         # code for v3.1 designed to turn more if lane moves away
-         n,a = self.last10delta_add(actuator_delta)
+        """
+        # code for v3.1 designed to turn more if lane moves away
+        n,a = self.last10delta_add(actuator_delta)
         c = 5.
         if a == 0:
           a = 0.00001
