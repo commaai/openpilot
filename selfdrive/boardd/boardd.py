@@ -203,6 +203,9 @@ def boardd_proxy_loop(rate=200, address="192.168.2.251"):
   # *** publishes to can send
   sendcan = messaging.pub_sock(context, service_list['sendcan'].port)
 
+  # drain sendcan to delete any stale messages from previous runs
+  messaging.drain_sock(sendcan)
+
   while 1:
     # recv @ 100hz
     can_msgs = can_recv()
