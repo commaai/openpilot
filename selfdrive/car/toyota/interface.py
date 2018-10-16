@@ -96,7 +96,7 @@ class CarInterface(object):
       stop_and_go = True if (candidate in CAR.RAV4H) else False
       ret.safetyParam = 73  # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.65 # 2.65 default
-      ret.steerRatio = 16.30 # Rav4 2018 16.3 default
+      ret.steerRatio = 16.00 # Rav4 2018 16.3 default
       ret.mass = 4100./2.205 + std_cargo  # mean between normal and hybrid
       ret.steerKpV, ret.steerKiV = [[0.6], [0.05]] #0.6 0.05 default
       ret.wheelbase = 2.65
