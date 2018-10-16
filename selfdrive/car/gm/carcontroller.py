@@ -4,7 +4,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.gm import gmcan
-from selfdrive.car.gm.values import CAR, DBC, AccState
+from selfdrive.car.gm.values import CAR, DBC
 from selfdrive.can.packer import CANPacker
 
 
@@ -26,14 +26,18 @@ class CarControllerParams():
     self.STEER_DRIVER_FACTOR = 100     # from dbc
     self.NEAR_STOP_BRAKE_PHASE = 0.5 # m/s, more aggressive braking near full stop
 
-    self.ADAS_KEEPALIVE_STEP = 10
+    # Takes case of "Service Adaptive Cruise" and "Service Front Camera"
+    # dashboard messages.
+    self.ADAS_KEEPALIVE_STEP = 100
+    self.CAMERA_KEEPALIVE_STEP = 100
+
     # pedal lookups, only for Volt
     MAX_GAS = 3072              # Only a safety limit
-    self.ZERO_GAS = 2048
+    ZERO_GAS = 2048
     MAX_BRAKE = 350             # Should be around 3.5m/s^2, including regen
     self.MAX_ACC_REGEN = 1404  # ACC Regen braking is slightly less powerful than max regen paddle
     self.GAS_LOOKUP_BP = [-0.25, 0., 0.5]
-    self.GAS_LOOKUP_V = [self.MAX_ACC_REGEN, self.ZERO_GAS, MAX_GAS]
+    self.GAS_LOOKUP_V = [self.MAX_ACC_REGEN, ZERO_GAS, MAX_GAS]
     self.BRAKE_LOOKUP_BP = [-1., -0.25]
     self.BRAKE_LOOKUP_V = [MAX_BRAKE, 0]
 
@@ -59,12 +63,11 @@ class CarController(object):
     self.pedal_steady = 0.
     self.start_time = sec_since_boot()
     self.chime = 0
-    self.lkas_active = False
-    self.inhibit_steer_for = 0
     self.steer_idx = 0
     self.apply_steer_last = 0
     self.car_fingerprint = car_fingerprint
     self.allow_controls = allow_controls
+    self.lka_icon_status_last = (False, False)
 
     # Setup detection helper. Routes commands to
     # an appropriate CAN bus number.
@@ -83,6 +86,7 @@ class CarController(object):
       return
 
     P = self.params
+
     # Send CAN commands.
     can_sends = []
     canbus = self.canbus
@@ -130,18 +134,12 @@ class CarController(object):
       if (frame % 4) == 0:
         idx = (frame / 4) % 4
 
-        car_stopping = apply_gas < P.ZERO_GAS
-        standstill = CS.pcm_acc_status == AccState.STANDSTILL
-        at_full_stop = enabled and standstill and car_stopping
-        near_stop = enabled and (CS.v_ego < P.NEAR_STOP_BRAKE_PHASE) and car_stopping
+        at_full_stop = enabled and CS.standstill
+        near_stop = enabled and (CS.v_ego < P.NEAR_STOP_BRAKE_PHASE)
         can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, canbus.chassis, apply_brake, idx, near_stop, at_full_stop))
 
-        # Auto-resume from full stop by resetting ACC control
-        acc_enabled = enabled
-        if standstill and not car_stopping:
-          acc_enabled = False
-
-        can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, canbus.powertrain, apply_gas, idx, acc_enabled, at_full_stop))
+        at_full_stop = enabled and CS.standstill
+        can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, canbus.powertrain, apply_gas, idx, enabled, at_full_stop))
 
       # Send dashboard UI commands (ACC status), 25hz
       if (frame % 4) == 0:
@@ -163,9 +161,20 @@ class CarController(object):
         can_sends.append(gmcan.create_adas_steering_status(canbus.obstacle, idx))
         can_sends.append(gmcan.create_adas_accelerometer_speed_status(canbus.obstacle, CS.v_ego, idx))
 
-      # Send ADAS keepalive, 10hz
       if frame % P.ADAS_KEEPALIVE_STEP == 0:
         can_sends += gmcan.create_adas_keepalive(canbus.powertrain)
+
+    # Show green icon when LKA torque is applied, and
+    # alarming orange icon when approaching torque limit.
+    # If not sent again, LKA icon disappears in about 5 seconds.
+    # Conveniently, sending camera message periodically also works as a keepalive.
+    lka_active = CS.lkas_status == 1
+    lka_critical = lka_active and abs(actuators.steer) > 0.9
+    lka_icon_status = (lka_active, lka_critical)
+    if frame % P.CAMERA_KEEPALIVE_STEP == 0 \
+        or lka_icon_status != self.lka_icon_status_last:
+      can_sends.append(gmcan.create_lka_icon_command(canbus.sw_gmlan, lka_active, lka_critical))
+      self.lka_icon_status_last = lka_icon_status
 
     # Send chimes
     if self.chime != chime:
