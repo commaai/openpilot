@@ -87,6 +87,10 @@ class CruiseState:
   def is_faulted(cls, state):
     return state in [cls.PRE_FAULT, cls.FAULT]
 
+  @classmethod
+  def is_off(cls, state):
+    return state in [cls.OFF]
+
 class ACCState(object):
   # Possible state of the ACC system, following the DI_cruiseState naming
   # convention.
@@ -125,4 +129,3 @@ ACCMode.ACC_MODES = {
   ACCMode.AUTO:   ACCMode(name=ACCMode.AUTO,   autoresume=True,  state=ACCState.STANDBY, next_mode=ACCMode.OFF),
   ACCMode.OFF:    ACCMode(name=ACCMode.OFF,    autoresume=False, state=ACCState.OFF,     next_mode=ACCMode.FOLLOW),
 }
-  

@@ -12,7 +12,7 @@ class CanHandle(object):
 
   def transact(self, dat):
     #print "W:",dat.encode("hex")
-    self.p.isotp_send(1, dat, 0, recvaddr=2)
+    self.p.isotp_send(1, dat, 2, recvaddr=2)
 
     def _handle_timeout(signum, frame):
       # will happen on reset
@@ -21,7 +21,7 @@ class CanHandle(object):
     signal.signal(signal.SIGALRM, _handle_timeout)
     signal.alarm(1)
     try:
-      ret = self.p.isotp_recv(2, 0, sendaddr=1)
+      ret = self.p.isotp_recv(2, 2, sendaddr=1)
     finally:
       signal.alarm(0)
 
@@ -60,11 +60,10 @@ if __name__ == "__main__":
       break
 
   if args.recover:
-    p.can_send(0x200, "\xce\xfa\xad\xde\x1e\x0b\xb0\x02", 0)
+    p.can_send(0x551, "\xce\xfa\xad\xde\x1e\x0b\xb0\x02", 2)
     exit(0)
   else:
-    p.can_send(0x200, "\xce\xfa\xad\xde\x1e\x0b\xb0\x0a", 0)
-
+    p.can_send(0x551, "\xce\xfa\xad\xde\x1e\x0b\xb0\x0a", 2)
   if args.fn:
     time.sleep(0.1)
     print "flashing", args.fn

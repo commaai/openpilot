@@ -38,6 +38,7 @@
 #include "bbuistate.h"
 //BB end
 
+
 #define STATUS_STOPPED 0
 #define STATUS_DISENGAGED 1
 #define STATUS_ENGAGED 2
@@ -142,6 +143,7 @@ typedef struct UIScene {
   float awareness_status;
 
   uint64_t started_ts;
+
 
   // Used to show gps planner status
   bool gps_planner_active;
@@ -1106,6 +1108,7 @@ static void ui_draw_vision_alert(UIState *s, int va_size, int va_color,
   }
 }
 
+
 static void ui_draw_vision(UIState *s) {
   //BB code added to only draw every other frame
   if (!s->b.shouldDrawFrame) {
@@ -1525,6 +1528,7 @@ static void ui_update(UIState *s) {
         s->scene.world_objects_visible = true;
         struct cereal_LiveCalibrationData datad;
         cereal_read_LiveCalibrationData(&datad, eventd.liveCalibration);
+
 
         // should we still even have this?
         capn_list32 warpl = datad.warpMatrix2;

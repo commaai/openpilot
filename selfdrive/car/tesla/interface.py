@@ -16,14 +16,16 @@ try:
 except ImportError:
   CarController = None
 
-
-def get_compute_gb_models(accel, speed):
+K_MULT = .8
+K_MULTi = 280.
+def tesla_compute_gb(accel, speed):
   creep_brake = 0.0
   creep_speed = 2.3
   creep_brake_value = 0.15
   if speed < creep_speed:
     creep_brake = (creep_speed - speed) / creep_speed * creep_brake_value
   return float(accel) / 4.8 - creep_brake
+  #return float(accel)
 
 
 class CarInterface(object):
@@ -49,7 +51,7 @@ class CarInterface(object):
       self.sendcan = sendcan
       self.CC = CarController(self.cp.dbc_name, CP.enableCamera)
 
-    self.compute_gb = get_compute_gb_models
+    self.compute_gb = tesla_compute_gb
 
   @staticmethod
   def calc_accel_override(a_ego, a_target, v_ego, v_target):
@@ -94,8 +96,7 @@ class CarInterface(object):
     ret.safetyModel = car.CarParams.SafetyModels.tesla
 
     ret.enableCamera = True
-    # ret.enableGasInterceptor = 0x201 in fingerprint
-    ret.enableGasInterceptor = False
+    ret.enableGasInterceptor = False #keep this False for now
     print "ECU Camera Simulated: ", ret.enableCamera
     print "ECU Gas Interceptor: ", ret.enableGasInterceptor
 
@@ -111,25 +112,33 @@ class CarInterface(object):
     tireStiffnessRear_models = 90000
     # will create Kp and Ki for 0, 20, 40, 60 mph
     ret.steerKiBP, ret.steerKpBP = [[0., 8.94, 17.88, 26.82 ], [0., 8.94, 17.88, 26.82]]
-    #ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
     if candidate == CAR.MODELS:
       stop_and_go = True
       ret.mass = mass_models
       ret.wheelbase = wheelbase_models
       ret.centerToFront = centerToFront_models
-      ret.steerRatio = 16.75
+      ret.steerRatio = 15.75
       # Kp and Ki for the lateral control for 0, 20, 40, 60 mph
-      ret.steerKpV, ret.steerKiV = [[0.60, 0.40, 0.30, 0.15], [0.08, 0.06, 0.04, 0.02]]
-      #ret.steerKpV, ret.steerKiV = [[0.15], [0.02]]
-      #ret.steerKpV, ret.steerKiV = [[0.6], [0.1]]
+      ret.steerKpV, ret.steerKiV = [[1.20, 0.80, 0.60, 0.30], [0.16, 0.12, 0.08, 0.04]]
       ret.steerKf = 0.00006 # Initial test value TODO: investigate FF steer control for Model S?
       ret.steerActuatorDelay = 0.09
       
       # Kp and Ki for the longitudinal control
       ret.longitudinalKpBP = [0., 5., 35.]
-      ret.longitudinalKpV = [3.6, 2.4, 1.5]
-      ret.longitudinalKiBP = [0., 35.]
-      ret.longitudinalKiV = [0.54, 0.36]
+      ret.longitudinalKpV = [1.27/K_MULT , 1.05/K_MULT, 0.85/K_MULT]
+      ret.longitudinalKiBP = [0., 5., 35.]
+      ret.longitudinalKiV = [0.11/K_MULTi, 0.09/K_MULTi, 0.06/K_MULTi]
+      
+      #from honda
+      #ret.longitudinalKpBP = [0., 5., 35.]
+      #ret.longitudinalKpV = [1.2, 0.8, 0.5]
+      #ret.longitudinalKiBP = [0., 35.]
+      #ret.longitudinalKiV = [0.18, 0.12]
+      # from toyota
+      #ret.longitudinalKpBP = [0., 5., 35.]
+      #ret.longitudinalKpV = [3.6, 2.4, 1.5]
+      #ret.longitudinalKiBP = [0., 35.]
+      #ret.longitudinalKiV = [0.54, 0.36]
     else:
       raise ValueError("unsupported car %s" % candidate)
 
@@ -159,15 +168,15 @@ class CarInterface(object):
 
     # no max steer limit VS speed
     ret.steerMaxBP = [0.,15.]  # m/s
-    ret.steerMaxV = [17.,17.]   # max steer allowed
+    ret.steerMaxV = [420.,420.]   # max steer allowed
 
     ret.gasMaxBP = [0.]  # m/s
-    ret.gasMaxV = [0.6] if ret.enableGasInterceptor else [0.] # max gas allowed
-    ret.brakeMaxBP = [5., 20.]  # m/s
-    ret.brakeMaxV = [1., 0.8]   # max brake allowed
+    ret.gasMaxV = [0.6] #if ret.enableGasInterceptor else [0.] # max gas allowed
+    ret.brakeMaxBP = [0., 20.]  # m/s
+    ret.brakeMaxV = [1., 1.]   # max brake allowed - BB: since we are using regen, make this even
 
-    ret.longPidDeadzoneBP = [0.]
-    ret.longPidDeadzoneV = [0.]
+    ret.longPidDeadzoneBP = [0., 9.] #BB: added from Toyota to start pedal work; need to tune
+    ret.longPidDeadzoneV = [0., 0.] #BB: added from Toyota to start pedal work; need to tune; changed to 0 for now
 
     ret.stoppingControl = True
     ret.steerLimitAlert = False
@@ -200,12 +209,14 @@ class CarInterface(object):
     ret.wheelSpeeds.rl = self.CS.v_wheel_rl
     ret.wheelSpeeds.rr = self.CS.v_wheel_rr
 
-    # gas pedal
-    ret.gas = self.CS.car_gas / 256.0
+    # gas pedal, we don't use with with interceptor so it's always 0/False
+    ret.gas = self.CS.user_gas 
     if not self.CP.enableGasInterceptor:
-      ret.gasPressed = self.CS.pedal_gas > 0
+      ret.gasPressed = self.CS.user_gas_pressed
     else:
       ret.gasPressed = self.CS.user_gas_pressed
+
+    
 
     # brake pedal
     ret.brakePressed = (self.CS.brake_pressed != 0) and (self.CS.cstm_btns.get_button_status("brake") == 0)

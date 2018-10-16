@@ -76,6 +76,8 @@ def get_can_signals(CP):
       ("DI_cruiseState", "DI_state", 0),
       ("TSL_P_Psd_StW","SBW_RQ_SCCM" , 0),
       ("DI_motorRPM", "DI_torque1", 0),
+      ("DI_pedalPos", "DI_torque1", 0),
+      ("DI_torqueMotor", "DI_torque1",0),
       ("DI_speedUnits", "DI_state", 0),
       # Steering wheel stalk signals (useful for managing cruise control)
       ("SpdCtrlLvr_Stat", "STW_ACTN_RQ", 0),
@@ -109,6 +111,7 @@ def get_can_signals(CP):
       ("WprSw6Posn", "STW_ACTN_RQ", 0),
       ("MC_STW_ACTN_RQ", "STW_ACTN_RQ", 0),
       ("CRC_STW_ACTN_RQ", "STW_ACTN_RQ", 0),
+      ("DI_regenLight", "DI_state",0),
       
   ]
 
@@ -138,10 +141,15 @@ def get_epas_can_signals(CP):
       ("EPAS_handsOnLevel", "EPAS_sysStatus", 0),
       ("EPAS_steeringFault", "EPAS_sysStatus", 0),
       ("EPAS_internalSAS",  "EPAS_sysStatus", 0), #BB see if this works better than STW_ANGLHP_STAT for angle
+      ("INTERCEPTOR_GAS", "GAS_SENSOR", 0),
+      ("INTERCEPTOR_GAS2", "GAS_SENSOR", 0),
+      ("STATE", "GAS_SENSOR", 0),
+      ("IDX", "GAS_SENSOR", 0),
   ]
 
   checks = [
       ("EPAS_sysStatus", 5), #JCT Actual message freq is 1.3 Hz (0.76 sec)
+      ("GAS_SENSOR", 3),
   ]
 
 
@@ -158,11 +166,61 @@ def get_epas_parser(CP):
 
 class CarState(object):
   def __init__(self, CP):
+    if (CP.carFingerprint == CAR.MODELS):
+      # ALCA PARAMS
+      # max REAL delta angle for correction vs actuator
+      self.CL_MAX_ANGLE_DELTA_BP = [10., 44.]
+      self.CL_MAX_ANGLE_DELTA = [1.8, .3]
+
+      # adjustment factor for merging steer angle to actuator; should be over 4; the higher the smoother
+      self.CL_ADJUST_FACTOR_BP = [10., 44.]
+      self.CL_ADJUST_FACTOR = [16. , 8.]
+
+
+      # reenrey angle when to let go
+      self.CL_REENTRY_ANGLE_BP = [10., 44.]
+      self.CL_REENTRY_ANGLE = [5. , 5.]
+
+      # a jump in angle above the CL_LANE_DETECT_FACTOR means we crossed the line
+      self.CL_LANE_DETECT_BP = [10., 44.]
+      self.CL_LANE_DETECT_FACTOR = [1.5, 1.5]
+
+      self.CL_LANE_PASS_BP = [10., 20., 44.]
+      self.CL_LANE_PASS_TIME = [40.,10., 3.] 
+
+      # change lane delta angles and other params
+      self.CL_MAXD_BP = [10., 32., 44.]
+      self.CL_MAXD_A = [.358, 0.084, 0.042] #delta angle based on speed; needs fine tune, based on Tesla steer ratio of 16.75
+
+      self.CL_MIN_V = 8.9 # do not turn if speed less than x m/2; 20 mph = 8.9 m/s
+
+      # do not turn if actuator wants more than x deg for going straight; this should be interp based on speed
+      self.CL_MAX_A_BP = [10., 44.]
+      self.CL_MAX_A = [10., 10.] 
+
+      # define limits for angle change every 0.1 s
+      # we need to force correction above 10 deg but less than 20
+      # anything more means we are going to steep or not enough in a turn
+      self.CL_MAX_ACTUATOR_DELTA = 2.
+      self.CL_MIN_ACTUATOR_DELTA = 0. 
+      self.CL_CORRECTION_FACTOR = 1.
+
+      #duration after we cross the line until we release is a factor of speed
+      self.CL_TIMEA_BP = [10., 32., 44.]
+      self.CL_TIMEA_T = [0.7 ,0.30, 0.20]
+
+      #duration to wait (in seconds) with blinkers on before starting to turn
+      self.CL_WAIT_BEFORE_START = 1
+
+      #END OF ALCA PARAMS
+      
     self.brake_only = CP.enableCruise
     self.last_cruise_stalk_pull_time = 0
     self.CP = CP
 
-    self.user_gas, self.user_gas_pressed = 0., 0
+    self.user_gas, self.user_gas_pressed = 0., False
+    self.user_pedal_state = 0
+    self.user_pedal, self.user_pedal_pressed = 0., False
     self.brake_switch_prev = 0
     self.brake_switch_ts = 0
 
@@ -196,21 +254,30 @@ class CarState(object):
     #BB variables for pedal CC
     self.pedal_speed_kph = 0.
     self.pedal_enabled = 0
+    self.pedal_hardware_present = False
+    self.pedal_hardware_present_prev = False
 
     #BB UIEvents
     self.UE = UIEvents(self)
 
+    #BB PCC
+    self.regenLight = 0
+    self.torqueLevel = 0.
+
     #BB variable for custom buttons
     self.cstm_btns = UIButtons(self,"Tesla Model S","tesla")
+
+    #BB checking for the switch between ACC and PDL
+    if self.cstm_btns.get_button("pedal") == None:
+      self.pedal_hardware_present_prev = False
+    else:
+      self.pedal_hardware_present_prev = True
 
     #BB custom message counter
     self.custom_alert_counter = -1 #set to 100 for 1 second display; carcontroller will take down to zero
 
     #BB steering_wheel_stalk last position, used by ACC and ALCA
     self.steering_wheel_stalk = None
-
-    #BB pid holder for ALCA
-    self.pid = None
     
      
     # vEgo kalman filter
@@ -307,15 +374,23 @@ class CarState(object):
     self.v_ego = float(v_ego_x[0])
     self.a_ego = float(v_ego_x[1])
 
-    # this is a hack for the interceptor. This is now only used in the simulation
-    # TODO: Replace tests by toyota so this can go away
-    self.user_gas = 0 #for now
-    self.user_gas_pressed = self.user_gas > 0 # this works because interceptor read < 0 when pedal position is 0. Once calibrated, this will change
+    #BB this is a hack for the interceptor
+    self.pedal_hardware_present = epas_cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS'] != 0
+    #print "Pedal present? %s" % (self.pedal_hardware_present)
+    #print "Pedal value = %s" % (epas_cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS'])
+    self.pedal_hardware_present_prev = self.pedal_hardware_present
+
+    #BB use this set for pedal work as the user_gas_xx is used in other places
+    self.user_pedal = epas_cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS']
+    self.user_pedal_state = epas_cp.vl["GAS_SENSOR"]['STATE']
+    self.user_pedal_pressed = self.user_pedal > 1.12
 
     can_gear_shifter = cp.vl["DI_torque2"]['DI_gear']
     self.gear = 0 # JCT
-    #self.angle_steers  = -(cp.vl["STW_ANGLHP_STAT"]['StW_AnglHP']) #JCT polarity reversed from Honda/Acura
+
+    # self.angle_steers  = -(cp.vl["STW_ANGLHP_STAT"]['StW_AnglHP']) #JCT polarity reversed from Honda/Acura
     self.angle_steers = -(epas_cp.vl["EPAS_sysStatus"]['EPAS_internalSAS'])  #BB see if this works better than STW_ANGLHP_STAT for angle
+    
     self.angle_steers_rate = 0 #JCT
 
     self.blinker_on = (cp.vl["STW_ACTN_RQ"]['TurnIndLvr_Stat'] == 1) or (cp.vl["STW_ACTN_RQ"]['TurnIndLvr_Stat'] == 2)
@@ -334,7 +409,7 @@ class CarState(object):
     self.cruise_speed_offset = calc_cruise_offset(cp.vl["DI_state"]['DI_cruiseSet'], self.v_ego)
     self.gear_shifter = parse_gear_shifter(can_gear_shifter, self.CP.carFingerprint)
 
-    self.pedal_gas = 0 #cp.vl["DI_torque1"]['DI_pedalPos']
+    self.pedal_gas = 0. # cp.vl["DI_torque1"]['DI_pedalPos'] / 102 #BB: to make it between 0..1
     self.car_gas = self.pedal_gas
 
     self.steer_override = abs(epas_cp.vl["EPAS_sysStatus"]['EPAS_handsOnLevel']) > 0
@@ -348,8 +423,10 @@ class CarState(object):
     self.brake_pressed = cp.vl["DI_torque2"]['DI_brakePedal']
 
     self.standstill = cp.vl["DI_torque2"]['DI_vehicleSpeed'] == 0
+    self.torqueMotor = cp.vl["DI_torque1"]['DI_torqueMotor']
     self.pcm_acc_status = cp.vl["DI_state"]['DI_cruiseState']
     self.imperial_speed_units = cp.vl["DI_state"]['DI_speedUnits'] == 0
+    self.regenLight = cp.vl["DI_state"]['DI_regenLight'] == 1
 
     if self.imperial_speed_units:
       self.v_cruise_actual = (cp.vl["DI_state"]['DI_cruiseSet'])*CV.MPH_TO_KPH # Reported in MPH, expected in KPH??
