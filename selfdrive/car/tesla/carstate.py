@@ -300,20 +300,26 @@ class CarState(object):
     self.define_ui_buttons()
     
   def define_ui_buttons(self):
-    self.ALC_BTN = UIButton("alca",  "ALC", 0, "",          0)
-    self.ACC_BTN = UIButton("acc",   "ACC", 0, ACCMode.OFF, 1)
-    self.STR_BTN = UIButton("steer", "STR", 0, "",          2)
-    self.BRK_BTN = UIButton("brake", "BRK", 1, "",          3)
-    self.MSG_BTN = UIButton("msg",   "MSG", 1, "",          4)
-    self.SND_BTN = UIButton("sound", "SND", 1, "",          5)
+    self.ALC_BTN = UIButton("alca",  "ALC", 0, "",                   0)
+    self.PDL_BTN = UIButton("pedal", "PDL", 0, ACCMode.PEDAL_OFF,    1)
+    self.ACC_BTN = UIButton("acc",   "ACC", 0, ACCMode.OFF,          1)
+    self.STR_BTN = UIButton("steer", "STR", 0, "",                   2)
+    self.BRK_BTN = UIButton("brake", "BRK", 1, "",                   3)
+    self.MSG_BTN = UIButton("msg",   "MSG", 1, "",                   4)
+    self.SND_BTN = UIButton("sound", "SND", 1, "",                   5)
   
   def init_ui_buttons(self):
     self.define_ui_buttons()
-    return [self.ALC_BTN, self.ACC_BTN, self.STR_BTN, self.BRK_BTN, self.MSG_BTN, self.SND_BTN]
+    return [self.ALC_BTN,
+            self.PDL_BTN if self.pedal_hardware_present else self.ACC_BTN,
+            self.STR_BTN,
+            self.BRK_BTN,
+            self.MSG_BTN,
+            self.SND_BTN]
 
   def update_ui_buttons(self, id, btn_status):
     button = self.cstm_btns.btns[id]
-    if (id == self.ACC_BTN.btn_index):
+    if id in [self.ACC_BTN.btn_index, self.PDL_BTN.btn_index]:
       current_mode = ACCMode.get(button.btn_label2)
       next_mode = current_mode.next()
       button.btn_label2 = next_mode.name
