@@ -40,7 +40,7 @@ def get_can_parser(CP):
     ("ACC_STATUS_2", "ACC_2", 0),
     ("HIGH_BEAM_FLASH", "STEERING_LEVERS", 0),
     ("ACC_SPEED_CONFIG_KPH", "DASHBOARD", 0),
-    ("INCREMENTING_220", "LKAS_INDICATOR_1", 0),
+    ("INCREMENTING_220", "LKAS_INDICATOR_1", -1),
   ]
 
   checks = [

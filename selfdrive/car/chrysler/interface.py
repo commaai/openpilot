@@ -271,6 +271,9 @@ class CarInterface(object):
     # this wasn't needed in the game, so could it be needed for OP?!?!
     # check if it's more than 3 away, accounting for 0x10 wrap-around.
 
+    if (self.CS.frame_220 == -1):
+      return False # if we haven't seen a frame 220, then do not update.
+
     f1 = int(self.frame) % 0x10
     f2 = int(self.CS.frame_220) % 0x10  # shouldn't need the mod, but just in case.
     fmin = min(f1, f2)
