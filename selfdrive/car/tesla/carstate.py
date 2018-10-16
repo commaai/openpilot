@@ -209,6 +209,9 @@ class CarState(object):
       self.CL_TIMEA_BP = [10., 32., 44.]
       self.CL_TIMEA_T = [0.7 ,0.30, 0.20]
       #END OF ALCA PARAMS
+
+      #duration to wait (in seconds) with blinkers on before starting to turn
+      self.CL_WAIT_BEFORE_START = 1
       
     self.brake_only = CP.enableCruise
     self.last_cruise_stalk_pull_time = 0
