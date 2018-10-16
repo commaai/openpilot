@@ -92,8 +92,27 @@ class CarInterface(object):
         ret.longitudinalKpV = [3.6, 2.4, 1.5]
         ret.longitudinalKiV = [0.54, 0.36]
 
-    elif candidate in [CAR.RAV4, CAR.RAV4H]:
-      stop_and_go = True if (candidate in CAR.RAV4H) else False
+    elif candidate in [CAR.RAV4]:
+      ret.safetyParam = 73  # see conversion factor for STEER_TORQUE_EPS in dbc file
+      ret.wheelbase = 2.66 # 2.65 default
+      ret.steerRatio = 14 # Rav4 2018 16.3 default
+      ret.mass = 4100./2.205 + std_cargo  # mean between normal and hybrid
+      ret.steerKpV, ret.steerKiV = [[0.45], [0.045]] #0.6 0.05 default
+      ret.wheelbase = 2.65
+      tire_stiffness_factor = 0.5533
+      ret.steerKf = 0.00006 # full torque for 10 deg at 80mph means 0.00007818594
+      if ret.enableGasInterceptor:
+        stop_and_go = True
+        ret.gasMaxV = [0.7]
+        ret.longitudinalKpV = [1.2, 0.8, 0.5]
+        ret.longitudinalKiV = [0.18, 0.12]
+      else:
+        stop_and_go = False
+        ret.gasMaxV = [0.2]
+        ret.longitudinalKpV = [3.6, 1.1, 1.0]
+        ret.longitudinalKiV = [0.5, 0.24]
+    elif candidate in [CAR.RAV4H]:
+      stop_and_go = True
       ret.safetyParam = 73  # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.65 # 2.65 default
       ret.steerRatio = 16.00 # Rav4 2018 16.3 default

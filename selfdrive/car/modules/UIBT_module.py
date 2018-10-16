@@ -29,16 +29,26 @@ class UIButtons:
         fi =  open(self.buttons_labels_path, buttons_file_r)
         indata = fi.read()
         fi.close()
+        file_matches = True
         if len(indata) == btn_msg_len * 6 :
-            #we have all the data
-            self.btns = []
+            #check if it matches the current setup
             for i in range(0, len(indata), btn_msg_len):
-                name,label,label2 = struct.unpack(btn_msg_struct, indata[i:i+btn_msg_len])  
-                self.btns.append(UIButton(name.rstrip("\0"),label.rstrip("\0"),0,label2.rstrip("\0"),0))
-            #now read the last saved statuses
+                j = int(i/btn_msg_len)
+                name,label,label2 = struct.unpack(btn_msg_struct, indata[i:i+btn_msg_len]) 
+                if (self.btns[j].btn_name != name.rstrip("\0")):
+                    file_matches = False
+            #we have all the da;ta and it matches
+            if file_matches:
+                for i in range(0, len(indata), btn_msg_len):
+                    j = int(i/btn_msg_len)
+                    name,label,label2 = struct.unpack(btn_msg_struct, indata[i:i+btn_msg_len]) 
+                    self.btns[j].btn_label = label.rstrip("\0")
+                    self.btns[j].btn_label2 = label2.rstrip("\0")
+            return file_matches
         else:
             #we don't have all the data, ignore
             print "labels file is bad"
+            return False
 
 
     def write_buttons_out_file(self):
@@ -78,9 +88,15 @@ class UIButtons:
         self.hasChanges = True
         self.last_in_read_time = datetime.min 
         if os.path.exists(self.buttons_labels_path):
+            self.btns = self.CS.init_ui_buttons()
             #there is a file, load it
-            self.read_buttons_labels_from_file()
-            self.read_buttons_out_file()
+            if self.read_buttons_labels_from_file():
+                self.read_buttons_out_file()
+            else:
+                #no match, so write the new ones
+                self.hasChanges = True
+                self.write_buttons_labels_to_file()
+                self.write_buttons_out_file()
         else:
             #there is no file, create it
             self.btns = self.CS.init_ui_buttons()

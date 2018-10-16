@@ -24,4 +24,4 @@ if (gen_snd):
   env = dict(os.environ)
   env['LD_LIBRARY_PATH'] = base_fld_code + "."
   args = [base_fld_code + "mediaplayer", snd_command]
-subprocess.Popen(args, shell = False, stdin=None, stdout=None, stderr=None, env = env, close_fds=True)
+  subprocess.Popen(args, shell = False, stdin=None, stdout=None, stderr=None, env = env, close_fds=True)
