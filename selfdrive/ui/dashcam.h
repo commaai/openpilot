@@ -3,23 +3,39 @@
 #define CAPTURE_STATE_NONE 0
 #define CAPTURE_STATE_CAPTURING 1
 #define CAPTURE_STATE_NOT_CAPTURING 2
-#define RECORD_INTERVAL 60 // Time in seconds to rotate recordings
+#define RECORD_INTERVAL 10 // Time in seconds to rotate recordings
 #define RECORD_FILES 3 // Number of files to create before looping over
 
+typedef struct dashcam_element {
+  int pos_x;
+  int pos_y;
+  int width;
+  int height;
+} dashcam_element;
+
+dashcam_element lock_button;
+
 int captureState = CAPTURE_STATE_NOT_CAPTURING;
-int captureNum = 1;
+int captureNum = 0;
 int start_time = 0; 
 int elapsed_time = 0; // Time of current recording
 char filenames[RECORD_FILES][50]; // Track the filenames so they can be deleted when rotating
 
-//TBD - need to implement locking current video
 bool lock_current_video = false; // If true save the current video before rotating
+bool locked_files[RECORD_FILES]; // Track which files are locked
+int lock_image; // Stores reference to the PNG
+int files_created = 0;
 
 void stop_capture() {
   if (captureState == CAPTURE_STATE_CAPTURING) {
     //printf("Stop capturing screen\n");
     system("killall -SIGINT screenrecord");
     captureState = CAPTURE_STATE_NOT_CAPTURING;
+    captureNum++;
+
+    if (captureNum > RECORD_FILES-1) {
+      captureNum = 0;
+    }
   }
 }
 
@@ -62,6 +78,18 @@ void remove_file(char *videos_dir, char *filename) {
   }
 }
 
+void save_file(char *videos_dir, char *filename) {
+  if (!strlen(filename)) {
+    return;
+  }
+
+  // Rename file to save it from being overwritten
+  char cmd[128];
+  snprintf(cmd,sizeof(cmd), "mv %s/%s %s/saved_%s", videos_dir, filename, videos_dir, filename);
+  printf("save: %s\n",cmd);
+  system(cmd);
+}
+
 void start_capture() {
   captureState = CAPTURE_STATE_CAPTURING;
   char cmd[50] = "";
@@ -75,28 +103,45 @@ void start_capture() {
     mkdir(videos_dir,0700);
   }
 
+  if (strlen(filenames[captureNum]) && files_created >= RECORD_FILES) {
+    if (locked_files[captureNum] > 0) {
+      save_file(videos_dir, filenames[captureNum]);
+    }
+    else {
+      // remove the old file
+      remove_file(videos_dir, filenames[captureNum]);
+    }
+    locked_files[captureNum] = 0;
+  }
+
   char filename[64];
-  //snprintf(filename,sizeof(filename),"video%d.mp4",captureNum);
   struct tm tm = get_time_struct();
   snprintf(filename,sizeof(filename),"%04d%02d%02d-%02d%02d%02d.mp4", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
   snprintf(cmd,sizeof(cmd),"screenrecord %s/%s&",videos_dir,filename);
+  strcpy(filenames[captureNum],filename);
 
-  strcpy(filenames[captureNum-1],filename);
   printf("Capturing to file: %s\n",cmd);
   start_time = get_time();
   system(cmd);
 
-  if (captureNum > RECORD_FILES) {
-    captureNum = 1;
+  if (lock_current_video) {
+    // Lock is still on so mark this file for saving
+    locked_files[captureNum] = 1;
   }
   else {
-    captureNum++;
+    locked_files[captureNum] = 0;
   }
 
-  if (filenames[captureNum-1] != NULL) {
-    // remove the old file
-    remove_file(videos_dir, filenames[captureNum-1]);
+  files_created++;
+}
+
+bool screen_lock_button_clicked(int touch_x, int touch_y, dashcam_element el) {
+  if (touch_x >= el.pos_x && touch_x <= el.pos_x + el.width) {
+    if (touch_y >= el.pos_y && touch_y <= el.pos_y + el.height) {
+      return true;
+    }
   }
+  return false;
 }
 
 bool screen_button_clicked(int touch_x, int touch_y) {
@@ -141,9 +186,41 @@ static void rotate_video() {
   start_capture();
 }
 
+void draw_lock_button(UIState *s) {
+  int btn_w = 150;
+  int btn_h = 150; 
+  int btn_x = 1920 - btn_w - 150;
+  int btn_y = 1080 - btn_h;
+  int imgw, imgh;
+
+  // Load the lock icon
+  lock_image = nvgCreateImage(s->vg, "../assets/lock_icon.png", 1);
+  float alpha = 0.3f;
+
+  if (lock_current_video) {
+    alpha = 1.0f;
+  }
+
+  nvgBeginPath(s->vg);
+    NVGpaint imgPaint = nvgImagePattern(s->vg, btn_x-125, btn_y-45, 150, 150, 0, lock_image, alpha);
+    nvgRoundedRect(s->vg, btn_x-125, btn_y-45, 150, 150, 100);
+    nvgFillPaint(s->vg, imgPaint);
+    nvgFill(s->vg);
+
+
+    lock_button = (dashcam_element){
+      .pos_x = 1500,
+      .pos_y = 920,
+      .width = 150,
+      .height = 150
+    };
+}
+
 static void screen_draw_button(UIState *s, int touch_x, int touch_y) {
   // Set button to bottom left of screen
   if (s->vision_connected && s->plus_state == 0) {
+
+    draw_lock_button(s);
 
     int btn_w = 150;
     int btn_h = 150;
@@ -190,21 +267,25 @@ void screen_toggle_record_state() {
   }
 }
 
+void screen_toggle_lock() {
+  if (lock_current_video) {
+    lock_current_video = false;
+  }
+  else {
+    lock_current_video = true;
+    locked_files[captureNum] = 1;
+  }
+}
+
 void dashcam( UIState *s, int touch_x, int touch_y ) {
   screen_draw_button(s, touch_x, touch_y);
   if (screen_button_clicked(touch_x,touch_y)) {
     screen_toggle_record_state();
-
-/*
-    if (captureState == CAPTURE_STATE_CAPTURING) {
-      start_capture();
-    }
-    else if (captureState == CAPTURE_STATE_NOT_CAPTURING) {
-      stop_capture();
-    }
-*/
   }
-  else if (!s->vision_connected) {
+  if (screen_lock_button_clicked(touch_x,touch_y,lock_button)) {
+    screen_toggle_lock();
+  }
+  if (!s->vision_connected) {
     // Assume car is not in drive so stop recording
     stop_capture();
   }
