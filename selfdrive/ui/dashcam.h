@@ -21,7 +21,7 @@ int start_time = 0;
 int elapsed_time = 0; // Time of current recording
 char filenames[RECORD_FILES][50]; // Track the filenames so they can be deleted when rotating
 
-bool lock_current_video = True; // If true save the current video before rotating
+bool lock_current_video = true; // If true save the current video before rotating
 bool locked_files[RECORD_FILES]; // Track which files are locked
 int lock_image; // Stores reference to the PNG
 int files_created = 0;
