@@ -139,18 +139,18 @@ class CarState(object):
     # ALCA PARAMS
     # max REAL delta angle for correction vs actuator
     self.CL_MAX_ANGLE_DELTA_BP = [10., 44.]
-    self.CL_MAX_ANGLE_DELTA = [2., .8]
+    self.CL_MAX_ANGLE_DELTA = [1.8, .3]
      # adjustment factor for merging steer angle to actuator; should be over 4; the higher the smoother
     self.CL_ADJUST_FACTOR_BP = [10., 44.]
-    self.CL_ADJUST_FACTOR = [16. , 16.]
+    self.CL_ADJUST_FACTOR = [16. , 8.]
      # reenrey angle when to let go
     self.CL_REENTRY_ANGLE_BP = [10., 44.]
     self.CL_REENTRY_ANGLE = [5. , 5.]
      # a jump in angle above the CL_LANE_DETECT_FACTOR means we crossed the line
     self.CL_LANE_DETECT_BP = [10., 44.]
-    self.CL_LANE_DETECT_FACTOR = [1.5, .75]
-     self.CL_LANE_PASS_BP = [10., 44.]
-    self.CL_LANE_PASS_TIME = [100., 5.] 
+    self.CL_LANE_DETECT_FACTOR = [1.5, 1.5]
+    self.CL_LANE_PASS_BP = [10., 20., 44.]
+    self.CL_LANE_PASS_TIME = [40.,10., 3.] 
      # change lane delta angles and other params
     self.CL_MAXD_BP = [10., 32., 44.]
     self.CL_MAXD_A = [.358, 0.084, 0.042] #delta angle based on speed; needs fine tune, based on Tesla steer ratio of 16.75
@@ -167,6 +167,8 @@ class CarState(object):
      #duration after we cross the line until we release is a factor of speed
     self.CL_TIMEA_BP = [10., 32., 44.]
     self.CL_TIMEA_T = [0.7 ,0.30, 0.20]
+    #duration to wait (in seconds) with blinkers on before starting to turn
+    self.CL_WAIT_BEFORE_START = 1
     #END OF ALCA PARAMS
     
     self.CP = CP
