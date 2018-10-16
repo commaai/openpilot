@@ -3,7 +3,7 @@
 #define CAPTURE_STATE_NONE 0
 #define CAPTURE_STATE_CAPTURING 1
 #define CAPTURE_STATE_NOT_CAPTURING 2
-#define RECORD_INTERVAL 10 // Time in seconds to rotate recordings
+#define RECORD_INTERVAL 60 // Time in seconds to rotate recordings
 #define RECORD_FILES 3 // Number of files to create before looping over
 
 typedef struct dashcam_element {
