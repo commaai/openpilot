@@ -275,10 +275,7 @@ class CarInterface(object):
 
     ret.longitudinalKpBP = [0., 5., 35.]
     ret.longitudinalKiBP = [0., 35.]
-
-    return ret
     
-
     return ret
 
   # returns a car.CarState
