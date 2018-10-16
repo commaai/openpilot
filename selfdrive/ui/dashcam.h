@@ -136,6 +136,11 @@ void start_capture() {
 }
 
 bool screen_lock_button_clicked(int touch_x, int touch_y, dashcam_element el) {
+  if (captureState == CAPTURE_STATE_NOT_CAPTURING) {
+    // Don't register click if we're not recording
+    return false;
+  }
+
   if (touch_x >= el.pos_x && touch_x <= el.pos_x + el.width) {
     if (touch_y >= el.pos_y && touch_y <= el.pos_y + el.height) {
       return true;
