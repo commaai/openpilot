@@ -57,13 +57,13 @@ def get_can_parser(CP):
 
   if CP.carFingerprint == CAR.PRIUS:
     signals += [("STATE", "AUTOPARK_STATUS", 0)]
-  
+
   # add gas interceptor reading if we are using it
   if CP.enableGasInterceptor:
       signals.append(("INTERCEPTOR_GAS", "GAS_SENSOR", 0))
       checks.append(("GAS_SENSOR", 50))
 
-  if CP.carFingerprint == CAR.LEXUS_IS:
+  if CP.carFingerprint == CAR.LEXUS_GS300H:
     signals += [
       ("MAIN_ON", "PCM_CRUISE_3", 0),
       ("SET_SPEED", "PCM_CRUISE_3", 0),
@@ -143,7 +143,7 @@ class CarState(object):
     self.angle_steers_rate = cp.vl["STEER_ANGLE_SENSOR"]['STEER_RATE']
     can_gear = int(cp.vl["GEAR_PACKET"]['GEAR'])
     self.gear_shifter = parse_gear_shifter(can_gear, self.shifter_values)
-    if self.CP.carFingerprint == CAR.LEXUS_IS:
+    if self.CP.carFingerprint == CAR.LEXUS_GS300H:
         self.main_on = cp.vl["PCM_CRUISE_3"]['MAIN_ON']
     else:
      self.main_on = cp.vl["PCM_CRUISE_2"]['MAIN_ON']
@@ -162,7 +162,7 @@ class CarState(object):
 
     self.user_brake = 0
     self.pcm_acc_status = cp.vl["PCM_CRUISE"]['ACC_ACTIVE']
-    if self.CP.carFingerprint == CAR.LEXUS_IS:
+    if self.CP.carFingerprint == CAR.LEXUS_GS300H:
         self.v_cruise_pcm = cp.vl["PCM_CRUISE_3"]['SET_SPEED']
         self.low_speed_lockout = 0
     else:
