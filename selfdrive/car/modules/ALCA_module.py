@@ -319,7 +319,6 @@ class ALCAController(object):
           self.keep_angle = False
         self.laneChange_counter += 1
         laneChange_angle = self.laneChange_angled
-        cl_lane_detect_factor = interp(CS.v_ego, CL_LANE_DETECT_BP, CL_LANE_DETECT_FACTOR)
         if (self.laneChange_over_the_line == 0):
           # we didn't cross the line, so keep computing the actuator delta until it flips
           actuator_delta = self.laneChange_direction * (-actuators.steerAngle - self.laneChange_last_actuator_angle)
