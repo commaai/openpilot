@@ -1231,6 +1231,8 @@ static void bb_ui_draw_UI(UIState *s) {
 	close(tri_state_fd);
   }
 
+  draw_date_time(s);
+
   if (tri_state_switch == 1) {
 	  const UIScene *scene = &s->scene;
 	  const int bb_dml_w = 180;

@@ -159,6 +159,11 @@ bool screen_button_clicked(int touch_x, int touch_y) {
 }
 
 void draw_date_time(UIState *s) {
+  if (captureState == CAPTURE_STATE_NOT_CAPTURING) {
+    // Don't draw if we're not recording
+    return;
+  }
+
   // Draw the current date/time
 
   int rect_w = 465;
@@ -173,6 +178,8 @@ void draw_date_time(UIState *s) {
 
   nvgBeginPath(s->vg);
     nvgRoundedRect(s->vg, rect_x, rect_y, rect_w, rect_h, 15);
+    nvgFillColor(s->vg, nvgRGBA(0, 0, 0, 100));
+    nvgFill(s->vg);
     nvgStrokeColor(s->vg, nvgRGBA(255,255,255,80));
     nvgStrokeWidth(s->vg, 6);
     nvgStroke(s->vg);
@@ -180,7 +187,7 @@ void draw_date_time(UIState *s) {
   nvgFontSize(s->vg, 60);
     nvgFontFace(s->vg, "sans-semibold");
     nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 200));
-    nvgText(s->vg,rect_x+17,rect_y+55,now,NULL);
+    nvgText(s->vg,rect_x+231,rect_y+55,now,NULL);
 }
 
 static void rotate_video() {
@@ -256,7 +263,7 @@ static void screen_draw_button(UIState *s, int touch_x, int touch_y) {
   }
 
   if (captureState == CAPTURE_STATE_CAPTURING) {
-    draw_date_time(s);
+    //draw_date_time(s);
 
     elapsed_time = get_time() - start_time;
 
