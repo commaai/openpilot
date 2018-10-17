@@ -87,7 +87,7 @@ class UIButtons:
             # there is no file, create it
             self.btns = self.CS.init_ui_buttons()
             self.last_written_btns = None
-            self.remap_buttons(self.btns)
+            self.remap_buttons()
         # send events to initiate UI
         self.isLive = True
         self.send_button_info()
