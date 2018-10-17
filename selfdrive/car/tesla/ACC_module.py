@@ -17,7 +17,7 @@ def _current_time_millis():
 class ACCController(object):
   
   # Tesla cruise only functions above 17 MPH
-  MIN_CRUISE_SPEED_MS = 17.5 * CV.MPH_TO_MS
+  MIN_CRUISE_SPEED_MS = 17.1 * CV.MPH_TO_MS
     
   def __init__(self):
     self.human_cruise_action_time = 0
@@ -27,6 +27,7 @@ class ACCController(object):
     self.live20 = messaging.sub_sock(context, service_list['live20'].port, conflate=True, poller=self.poller)
     self.last_update_time = 0
     self.enable_adaptive_cruise = False
+    self.prev_enable_adaptive_cruise = False
     # Whether to re-engage automatically after being paused due to low speed or
     # user-initated deceleration.
     self.autoresume = False
@@ -46,7 +47,7 @@ class ACCController(object):
     # Check if the cruise stalk was double pulled, indicating that adaptive
     # cruise control should be enabled. Twice in .75 seconds counts as a double
     # pull.
-    prev_enable_adaptive_cruise = self.enable_adaptive_cruise
+    self.prev_enable_adaptive_cruise = self.enable_adaptive_cruise
     acc_string = CS.cstm_btns.get_button_label2("acc")
     acc_mode = ACCMode.get(acc_string)
     CS.cstm_btns.get_button("acc").btn_label2 = acc_mode.name
@@ -86,17 +87,25 @@ class ACCController(object):
     if CS.v_ego < self.MIN_CRUISE_SPEED_MS:
       self.has_gone_below_min_speed = True
     
+    # If autoresume is not enabled, manually steering or slowing disables ACC.
+    if not self.autoresume:
+      if not enabled or self.user_has_braked or self.has_gone_below_min_speed:
+        self.enable_adaptive_cruise = False
+        
+    if CS.v_ego < self.MIN_CRUISE_SPEED_MS:
+      self.has_gone_below_min_speed = True
+    
     # If autoresume is not enabled, manually steering disables ACC.
     if not (enabled or self.autoresume):
       self.enable_adaptive_cruise = False
     
     # Notify if ACC was toggled
-    if prev_enable_adaptive_cruise and not self.enable_adaptive_cruise:
+    if self.prev_enable_adaptive_cruise and not self.enable_adaptive_cruise:
       CS.UE.custom_alert_message(3, "ACC Disabled", 150, 4)
       CS.cstm_btns.set_button_status("acc", ACCState.STANDBY)
     elif self.enable_adaptive_cruise:
       CS.cstm_btns.set_button_status("acc", ACCState.ENABLED)
-      if not prev_enable_adaptive_cruise:
+      if not self.prev_enable_adaptive_cruise:
         CS.UE.custom_alert_message(2, "ACC Enabled", 150)
 
     # Update the UI to show whether the current car state allows ACC.
@@ -143,6 +152,11 @@ class ACCController(object):
     if CruiseButtons.should_be_throttled(CS.cruise_buttons):
       self.human_cruise_action_time = current_time_ms
     button_to_press = None
+    
+    # If ACC is disabled, disengage traditional cruise control.
+    if (self.prev_enable_adaptive_cruise and not self.enable_adaptive_cruise
+        and CS.pcm_acc_status == CruiseState.ENABLED):
+      button_to_press = CruiseButtons.CANCEL
 
     if self.enable_adaptive_cruise and enabled:
       if CS.cstm_btns.get_button_label2("acc") in ["OP", "AutoOP"]:    
@@ -167,6 +181,7 @@ class ACCController(object):
       if (CruiseButtons.is_decel(button_to_press)
           and CS.v_cruise_actual - 1 < self.MIN_CRUISE_SPEED_MS * CV.MS_TO_KPH):
         button_to_press = CruiseButtons.CANCEL
+      if button_to_press == CruiseButtons.CANCEL:
         self.fast_decel_time = current_time_ms
       # Debug logging (disable in production to reduce latency of commands)
       #print "***ACC command: %s***" % button_to_press
@@ -199,7 +214,7 @@ class ACCController(object):
     if self._should_autoengage_cc(CS, lead_car=lead_car) and self._no_action_for(milliseconds=100):
       button = CruiseButtons.RES_ACCEL
     # If traditional cruise is engaged, then control it.
-    elif CS.pcm_acc_status == 2:
+    elif CS.pcm_acc_status == CruiseState.ENABLED:
       
       # Disengage cruise control if a slow object is seen ahead. This triggers
       # full regen braking, which is stronger than the braking that happens if
@@ -278,12 +293,16 @@ class ACCController(object):
     return button
     
   def _should_autoengage_cc(self, CS, lead_car=None):
-    # Automatically (re)engage cruise control so long as the brake has not been
-    # pressed since enabling ACC.
+    # Automatically (re)engage cruise control so long as 
+    # 1) The carstate allows cruise control
+    # 2) There is no imminent threat of collision
+    # 3) The user did not cancel ACC by pressing the brake
     cruise_ready = (self.enable_adaptive_cruise
-                    and CS.pcm_acc_status == 1
+                    and CS.pcm_acc_status == CruiseState.STANDBY
                     and CS.v_ego >= self.MIN_CRUISE_SPEED_MS
                     and _current_time_millis() > self.fast_decel_time + 2000)
+                    
+    slow_lead = lead_car and lead_car.dRel > 0 and lead_car.vRel < 0 or self._fast_decel_required(CS, lead_car)
     
     # "Autoresume" mode allows cruise to engage even after brake events, but
     # shouldn't trigger DURING braking.
@@ -291,7 +310,7 @@ class ACCController(object):
     
     braked = self.user_has_braked or self.has_gone_below_min_speed
     
-    return cruise_ready and (autoresume_ready or not braked)
+    return cruise_ready and not slow_lead and (autoresume_ready or not braked)
     
   def _fast_decel_required(self, CS, lead_car):
     """ Identifies situations which call for rapid deceleration. """
@@ -303,11 +322,7 @@ class ACCController(object):
     lead_absolute_speed_ms = lead_car.vRel + CS.v_ego
     lead_too_slow = lead_absolute_speed_ms < self.MIN_CRUISE_SPEED_MS
     
-    fast_decel_required = collision_imminent or lead_too_slow
-    if fast_decel_required:
-      self.fast_decel_time = _current_time_millis()
-    
-    return fast_decel_required
+    return collision_imminent or lead_too_slow
     
   def _seconds_to_collision(self, CS, lead_car):
     if not lead_car or not lead_car.dRel:
@@ -339,7 +354,7 @@ class ACCController(object):
     if self._should_autoengage_cc(CS):
       button_to_press = CruiseButtons.RES_ACCEL
     # If traditional cruise is engaged, then control it.
-    elif (CS.pcm_acc_status == 2
+    elif (CS.pcm_acc_status == CruiseState.ENABLED
           # But don't make adjustments if a human has manually done so in
           # the last 3 seconds. Human intention should not be overridden.
           and self._no_human_action_for(milliseconds=3000)
