@@ -87,7 +87,7 @@ class UIButtons:
             # there is no file, create it
             self.btns = self.CS.init_ui_buttons()
             self.last_written_btns = None
-            self.btn_map = self._map_buttons(self.btns)
+            self.remap_buttons(self.btns)
         # send events to initiate UI
         self.isLive = True
         self.send_button_info()
@@ -134,8 +134,8 @@ class UIButtons:
             
     # Convert the button list to a map, keyed based on btn_name. Allows o(1)
     # lookup time for buttons based on name.
-    def _map_buttons(self, btn_list):
+    def remap_buttons(self):
         btn_map = {}
-        for btn in btn_list:
+        for btn in self.btns:
             btn_map[btn.btn_name] = btn
-        return btn_map
+        self.btn_map = btn_map

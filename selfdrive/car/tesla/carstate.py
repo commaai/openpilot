@@ -301,8 +301,8 @@ class CarState(object):
     
   def define_ui_buttons(self):
     self.ALC_BTN = UIButton("alca",  "ALC", 0, "",                   0)
-    self.PDL_BTN = UIButton("pedal", "PDL", 0, ACCMode.PEDAL_OFF,    1)
     self.ACC_BTN = UIButton("acc",   "ACC", 0, ACCMode.OFF,          1)
+    self.PDL_BTN = UIButton("pedal", "PDL", 0, ACCMode.PEDAL_OFF,    self.ACC_BTN.btn_index)
     self.STR_BTN = UIButton("steer", "STR", 0, "",                   2)
     self.BRK_BTN = UIButton("brake", "BRK", 1, "",                   3)
     self.MSG_BTN = UIButton("msg",   "MSG", 1, "",                   4)
@@ -316,7 +316,16 @@ class CarState(object):
             self.BRK_BTN,
             self.MSG_BTN,
             self.SND_BTN]
-
+            
+  def config_ui_buttons(self,pedalPresent):
+    #self.CP.enableGasInterceptor = pedalPresent
+    if pedalPresent:
+      self.cstm_btns.btns[self.ACC_BTN.btn_index] = self.PDL_BTN
+    else:
+      #we don't have pedal interceptor
+      self.cstm_btns.btns[self.ACC_BTN.btn_index] = self.ACC_BTN
+    self.cstm_btns.remap_buttons()
+    
   def update_ui_buttons(self, id, btn_status):
     button = self.cstm_btns.btns[id]
     if id in [self.ACC_BTN.btn_index, self.PDL_BTN.btn_index]:
@@ -384,6 +393,8 @@ class CarState(object):
     self.pedal_hardware_present = epas_cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS'] != 0
     #print "Pedal present? %s" % (self.pedal_hardware_present)
     #print "Pedal value = %s" % (epas_cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS'])
+    if self.pedal_hardware_present != self.pedal_hardware_present_prev:
+        self.config_ui_buttons(self.pedal_hardware_present)
     self.pedal_hardware_present_prev = self.pedal_hardware_present
 
     #BB use this set for pedal work as the user_gas_xx is used in other places
