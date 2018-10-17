@@ -3,8 +3,8 @@
 #define CAPTURE_STATE_NONE 0
 #define CAPTURE_STATE_CAPTURING 1
 #define CAPTURE_STATE_NOT_CAPTURING 2
-#define RECORD_INTERVAL 3600 // Time in seconds to rotate recordings
-#define RECORD_FILES 3 // Number of files to create before looping over
+#define RECORD_INTERVAL 300 // Time in seconds to rotate recordings
+#define RECORD_FILES 10 // Number of files to create before looping over
 
 typedef struct dashcam_element {
   int pos_x;
@@ -198,9 +198,12 @@ void draw_lock_button(UIState *s) {
   int btn_y = 1080 - btn_h;
   int imgw, imgh;
 
-  // Load the lock icon
-  lock_image = nvgCreateImage(s->vg, "../assets/lock_icon.png", 1);
   float alpha = 0.3f;
+  
+  if (!lock_image) {
+    // Load the lock icon
+    lock_image = nvgCreateImage(s->vg, "../assets/lock_icon.png", 1);
+  }
 
   if (lock_current_video) {
     alpha = 1.0f;
