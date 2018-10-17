@@ -317,7 +317,7 @@ class CarState(object):
             self.MSG_BTN,
             self.SND_BTN]
             
-  def config_ui_buttons(self,pedalPresent):
+  def config_ui_buttons(self, pedalPresent):
     #self.CP.enableGasInterceptor = pedalPresent
     if pedalPresent:
       self.cstm_btns.btns[self.ACC_BTN.btn_index] = self.PDL_BTN
