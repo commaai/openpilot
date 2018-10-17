@@ -197,10 +197,12 @@ void draw_lock_button(UIState *s) {
   int btn_x = 1920 - btn_w - 150;
   int btn_y = 1080 - btn_h;
   int imgw, imgh;
-
-  // Load the lock icon
-  lock_image = nvgCreateImage(s->vg, "../assets/lock_icon.png", 1);
   float alpha = 0.3f;
+
+  if (!lock_image) {
+    // Load the lock icon
+    lock_image = nvgCreateImage(s->vg, "../assets/lock_icon.png", 1);
+  }
 
   if (lock_current_video) {
     alpha = 1.0f;
