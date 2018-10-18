@@ -84,11 +84,11 @@ class CarInterface(object):
       # TODO: Prius seem to have very laggy actuators. Understand if it is lag or hysteresis
       ret.steerActuatorDelay = 0.25
       if ret.enableGasInterceptor:
-        ret.gasMaxV = [0.7]
+        ret.gasMaxV = [0.2, 0.5, 0.7]
         ret.longitudinalKpV = [3.6, 2.4, 1.5]
         ret.longitudinalKiV = [0.54, 0.36]
       else:
-        ret.gasMaxV = [0.2]
+        ret.gasMaxV = [0.2, 0.5, 0.7]
         ret.longitudinalKpV = [3.6, 2.4, 1.5]
         ret.longitudinalKiV = [0.54, 0.36]
 
@@ -103,12 +103,12 @@ class CarInterface(object):
       ret.steerKf = 0.00006 # full torque for 10 deg at 80mph means 0.00007818594
       if ret.enableGasInterceptor:
         stop_and_go = True
-        ret.gasMaxV = [0.7]
+        ret.gasMaxV = [0.2, 0.5, 0.7]
         ret.longitudinalKpV = [1.2, 0.8, 0.5]
         ret.longitudinalKiV = [0.18, 0.12]
       else:
         stop_and_go = False
-        ret.gasMaxV = [0.2]
+        ret.gasMaxV = [0.2, 0.5, 0.7]
         ret.longitudinalKpV = [3.6, 1.1, 1.0]
         ret.longitudinalKiV = [0.5, 0.24]
     elif candidate in [CAR.RAV4H]:
@@ -122,11 +122,11 @@ class CarInterface(object):
       tire_stiffness_factor = 0.5533
       ret.steerKf = 0.00006 # full torque for 10 deg at 80mph means 0.00007818594
       if ret.enableGasInterceptor:
-        ret.gasMaxV = [0.7]
+        ret.gasMaxV = [0.2, 0.5, 0.7]
         ret.longitudinalKpV = [1.2, 0.8, 0.5]
         ret.longitudinalKiV = [0.18, 0.12]
       else:
-        ret.gasMaxV = [0.2]
+        ret.gasMaxV = [0.2, 0.5, 0.7]
         ret.longitudinalKpV = [3.6, 1.1, 1.0]
         ret.longitudinalKiV = [0.5, 0.24]
 
@@ -140,11 +140,11 @@ class CarInterface(object):
       ret.steerKpV, ret.steerKiV = [[0.2], [0.05]]
       ret.steerKf = 0.00003   # full torque for 20 deg at 80mph means 0.00007818594
       if ret.enableGasInterceptor:
-        ret.gasMaxV = [0.7]
+        ret.gasMaxV = [0.2, 0.5, 0.7]
         ret.longitudinalKpV = [1.2, 0.8, 0.5]
         ret.longitudinalKiV = [0.18, 0.12]
       else:
-        ret.gasMaxV = [0.2]
+        ret.gasMaxV = [0.2, 0.5, 0.7]
         ret.longitudinalKpV = [3.6, 1.1, 1.0]
         ret.longitudinalKiV = [0.5, 0.24]
 
@@ -158,11 +158,11 @@ class CarInterface(object):
       ret.steerKpV, ret.steerKiV = [[0.6], [0.1]]
       ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
       if ret.enableGasInterceptor:
-        ret.gasMaxV = [0.7]
+        ret.gasMaxV = [0.2, 0.5, 0.7]
         ret.longitudinalKpV = [1.2, 0.8, 0.5]
         ret.longitudinalKiV = [0.18, 0.12]
       else:
-        ret.gasMaxV = [0.2]
+        ret.gasMaxV = [0.2, 0.5, 0.7]
         ret.longitudinalKpV = [3.6, 1.1, 1.0]
         ret.longitudinalKiV = [0.5, 0.24]
 
@@ -176,11 +176,11 @@ class CarInterface(object):
       ret.steerKpV, ret.steerKiV = [[0.723], [0.0428]]
       ret.steerKf = 0.00006
       if ret.enableGasInterceptor:
-        ret.gasMaxV = [0.7]
+        ret.gasMaxV = [0.2, 0.5, 0.7]
         ret.longitudinalKpV = [1.2, 0.8, 0.5]
         ret.longitudinalKiV = [0.18, 0.12]
       else:
-        ret.gasMaxV = [0.2]
+        ret.gasMaxV = [0.2, 0.5, 0.7]
         ret.longitudinalKpV = [3.6, 1.1, 1.0]
         ret.longitudinalKiV = [0.5, 0.24]
 
@@ -194,11 +194,11 @@ class CarInterface(object):
       ret.steerKpV, ret.steerKiV = [[0.6], [0.1]]
       ret.steerKf = 0.00006
       if ret.enableGasInterceptor:
-        ret.gasMaxV = [0.7]
+        ret.gasMaxV = [0.2, 0.5, 0.7]
         ret.longitudinalKpV = [1.2, 0.8, 0.5]
         ret.longitudinalKiV = [0.18, 0.12]
       else:
-        ret.gasMaxV = [0.2]
+        ret.gasMaxV = [0.2, 0.5, 0.7]
         ret.longitudinalKpV = [3.6, 1.1, 1.0]
         ret.longitudinalKiV = [0.5, 0.24]
 
@@ -212,11 +212,11 @@ class CarInterface(object):
       ret.steerKpV, ret.steerKiV = [[0.6], [0.05]]
       ret.steerKf = 0.00006
       if ret.enableGasInterceptor:
-        ret.gasMaxV = [0.7]
+        ret.gasMaxV = [0.2, 0.5, 0.7]
         ret.longitudinalKpV = [1.2, 0.8, 0.5]
         ret.longitudinalKiV = [0.18, 0.12]
       else:
-        ret.gasMaxV = [0.2]
+        ret.gasMaxV = [0.2, 0.5, 0.7]
         ret.longitudinalKpV = [3.6, 1.1, 1.0]
         ret.longitudinalKiV = [0.5, 0.24]
 
@@ -256,8 +256,8 @@ class CarInterface(object):
     # steer, gas, brake limitations VS speed
     ret.steerMaxBP = [16. * CV.KPH_TO_MS, 45. * CV.KPH_TO_MS]  # breakpoints at 1 and 40 kph
     ret.steerMaxV = [1., 1.]  # 2/3rd torque allowed above 45 kph
-    ret.gasMaxBP = [0.]
-    #ret.gasMaxV = [0.2]
+    ret.gasMaxBP = [0., 9., 35.]
+    #ret.gasMaxV = [0.2, 0.5, 0.7]
     ret.brakeMaxBP = [5., 20.]
     ret.brakeMaxV = [1., 0.8]
 
