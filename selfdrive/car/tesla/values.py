@@ -137,6 +137,6 @@ ACCMode.ACC_MODES = {
   
   # Pedal-based modes
   ACCMode.PEDAL_FOLLOW: ACCMode(name=ACCMode.PEDAL_FOLLOW, autoresume=False, state=ACCState.STANDBY, next_mode=ACCMode.PEDAL_MPC),
-  ACCMode.PEDAL_MPC:    ACCMode(name=ACCMode.PEDAL_MPC,    autoresume=True,  state=ACCState.STANDBY, next_mode=ACCMode.PEDAL_OFF),
+  ACCMode.PEDAL_MPC:    ACCMode(name=ACCMode.PEDAL_MPC,    autoresume=False, state=ACCState.STANDBY, next_mode=ACCMode.PEDAL_OFF),
   ACCMode.PEDAL_OFF:    ACCMode(name=ACCMode.PEDAL_MPC,    autoresume=False, state=ACCState.OFF,     next_mode=ACCMode.PEDAL_FOLLOW)
 }

@@ -324,7 +324,6 @@ class CarState(object):
     else:
       #we don't have pedal interceptor
       self.cstm_btns.btns[self.ACC_BTN.btn_index] = self.ACC_BTN
-    self.cstm_btns.remap_buttons()
     
   def update_ui_buttons(self, id, btn_status):
     button = self.cstm_btns.btns[id]
