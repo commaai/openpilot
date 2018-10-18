@@ -104,4 +104,5 @@ def get_car(logcan, sendcan=None, passive=True):
 
   params = interface_cls.get_params(candidate, fingerprints)
 
+  time.sleep(2.0)  # Testing to see if this helps.
   return interface_cls(params, sendcan), params
