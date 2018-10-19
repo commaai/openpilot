@@ -36,6 +36,7 @@ def get_can_parser(CP):
     ("STEER_RATE", "STEER_ANGLE_SENSOR", 0),
     ("ACC_ACTIVE", "PCM_CRUISE", 0),
     ("GAS_RELEASED", "PCM_CRUISE", 0),
+    ("CRUISE_STATE", "PCM_CRUISE", 0),
     ("STEER_TORQUE_DRIVER", "STEER_TORQUE_SENSOR", 0),
     ("STEER_TORQUE_EPS", "STEER_TORQUE_SENSOR", 0),
     ("TURN_SIGNALS", "STEERING_LEVERS", 3),   # 3 is no blinkers
@@ -161,11 +162,12 @@ class CarState(object):
     self.steer_override = abs(self.steer_torque_driver) > STEER_THRESHOLD
 
     self.user_brake = 0
-    self.pcm_acc_status = cp.vl["PCM_CRUISE"]['ACC_ACTIVE']
     if self.CP.carFingerprint == CAR.LEXUS_GS300H:
+        self.pcm_acc_status = cp.vl["PCM_CRUISE"]['ACC_ACTIVE']
         self.v_cruise_pcm = cp.vl["PCM_CRUISE_3"]['SET_SPEED']
         self.low_speed_lockout = 0
     else:
+        self.pcm_acc_status = cp.vl["PCM_CRUISE"]['CRUISE_STATE']
         self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED']
         self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]['LOW_SPEED_LOCKOUT'] == 2
     self.gas_pressed = not cp.vl["PCM_CRUISE"]['GAS_RELEASED']
