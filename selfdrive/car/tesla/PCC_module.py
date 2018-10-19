@@ -340,7 +340,7 @@ class PCCController(object):
       v_ego_pid = max(CS.v_ego, MIN_CAN_SPEED)
 
       if self.enable_pedal_cruise:
-        accel_limits = map(float, calc_cruise_accel_limits(CS.vEgo, following))
+        accel_limits = map(float, calc_cruise_accel_limits(CS.v_ego, following))
         # TODO: make a separate lookup for jerk tuning
         jerk_limits = [min(-0.1, accel_limits[0]), max(0.1, accel_limits[1])]
         accel_limits = limit_accel_in_turns(CS.vEgo, CS.steeringAngle, accel_limits, self.CP)
@@ -355,7 +355,7 @@ class PCCController(object):
         self.v_cruise = max(self.v_cruise, 0.)
       else:
         a_ego = min(CS.aEgo, 0.0)
-        reset_speed = CS.vEgo
+        reset_speed = CS.v_ego
         reset_accel = a_ego
         self.v_acc = reset_speed
         self.a_acc = reset_accel
@@ -388,7 +388,7 @@ class PCCController(object):
       vTargetFuture = self.v_acc_future
       prevent_overshoot = not CS.CP.stoppingControl and CS.v_ego < 1.5 and vTargetFuture < 0.7
       output_gb = self.pid.update(self.v_pid, v_ego_pid, speed=v_ego_pid, override=override, deadzone=deadzone, feedforward= a_target, freeze_integrator=prevent_overshoot)
-      self.v_pid = v_ego
+      self.v_pid = CS.v_ego
       if prevent_overshoot:
         output_gb = min(output_gb, 0.0)
     ##############################################################
