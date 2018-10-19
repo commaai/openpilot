@@ -17,7 +17,7 @@ import math
 import numpy as np
 
 
-MPC_BRAKE_MULTIPLIER = 2.
+MPC_BRAKE_MULTIPLIER = 3.
 
 # TODO: these should end up in values.py at some point, probably variable by trim
 # Accel limits
