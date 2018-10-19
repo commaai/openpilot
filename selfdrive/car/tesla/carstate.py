@@ -168,7 +168,6 @@ class CarState(object):
   def __init__(self, CP):
     #labels for ALCA modes
     self.alcaLabels = ["MadMax","Normal","Wifey"]
-    self.alcaMode = 0
 
     if (CP.carFingerprint == CAR.MODELS):
       # ALCA PARAMS
@@ -306,7 +305,7 @@ class CarState(object):
 
   def init_ui_buttons(self):
     btns = []
-    btns.append(UIButton("alca","ALC",0,self.alcaLabels[self.alcaMode],0))
+    btns.append(UIButton("alca","ALC",0,self.alcaLabels[1],0))
     if self.pedal_hardware_present:
       btns.append(UIButton("pedal","PDL",0,"Longit",1))
     else:
@@ -339,12 +338,12 @@ class CarState(object):
   def update_ui_buttons(self,id,btn_status):
     if self.cstm_btns.btns[id].btn_status > 0:
       if (id == 0) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="alca":
-          if self.cstm_btns.btns[id].btn_label2 == self.alcaLabels[self.alcaMode]:
-            self.alcaMode = (self.alcaMode + 1 ) % 3
-          else:
-            self.alcaMode = 0
-          self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
-          self.cstm_btns.hasChanges = True
+        alcaMode = 0
+        for i in range(0,len(self.alcaLabels)):
+          if self.cstm_btns.btns[id].btn_label2 == self.alcaLabels[i]:
+            alcaMode = (i + 1 ) % len(self.alcaLabels)
+        self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[alcaMode]
+        self.cstm_btns.hasChanges = True
       elif (id == 1) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="acc":
           #don't change status, just model
           if (self.cstm_btns.btns[id].btn_label2 == "Mod OP"):

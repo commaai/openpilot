@@ -160,22 +160,21 @@ class ALCAController(object):
                             k_f=CS.CP.steerKf, pos_limit=1.0)
 
   def update_angle(self,enabled,CS,frame,actuators):
-    alca_m1 = 1.
-    alca_m2 = 1.
-    alca_m3 = 1.
-    if CS.alcaMode == 1:
-      alca_m1 =.9 
-      alca_m2 = 1.
-      alca_m3 = 0.5
-    if CS.alcaMode == 2:
-      alca_m1 = 0.8
-      alca_m2 = 1.7
-      alca_m3 = 0.5
+    alca_b = CS.cstm_btns.get_button("alca")
+    alcaMode = 0
+    if alca_b:
+      for i in range(0,len(CS.alcaLabels)):
+        if alca_b.btn_label2 == CS.alcaLabels[i]:
+          alcaMode = i
+    #parameters that define the speed/aggressiveness of lane change modes
+    alca_m1 = [1., .9, .8]
+    alca_m2 = [1., 1., 1.7]
+    alca_m3 = [1., 0.5, 0.5]
     # speed variable parameters
-    cl_max_angle_delta = interp(CS.v_ego,CS.CL_MAX_ANGLE_DELTA_BP,CS.CL_MAX_ANGLE_DELTA) * alca_m1
-    cl_maxd_a =  interp(CS.v_ego, CS.CL_MAXD_BP, CS.CL_MAXD_A) * alca_m3
-    cl_lane_pass_time = interp(CS.v_ego,CS.CL_LANE_PASS_BP,CS.CL_LANE_PASS_TIME) * alca_m2
-    cl_timea_t = interp(CS.v_ego,CS.CL_TIMEA_BP,CS.CL_TIMEA_T) * alca_m2
+    cl_max_angle_delta = interp(CS.v_ego,CS.CL_MAX_ANGLE_DELTA_BP,CS.CL_MAX_ANGLE_DELTA) * alca_m1[alcaMode]
+    cl_maxd_a =  interp(CS.v_ego, CS.CL_MAXD_BP, CS.CL_MAXD_A) * alca_m3[alcaMode]
+    cl_lane_pass_time = interp(CS.v_ego,CS.CL_LANE_PASS_BP,CS.CL_LANE_PASS_TIME) * alca_m2[alcaMode]
+    cl_timea_t = interp(CS.v_ego,CS.CL_TIMEA_BP,CS.CL_TIMEA_T) * alca_m2[alcaMode]
     cl_lane_detect_factor = interp(CS.v_ego, CS.CL_LANE_DETECT_BP, CS.CL_LANE_DETECT_FACTOR)
     cl_max_a = interp(CS.v_ego, CS.CL_MAX_A_BP, CS.CL_MAX_A)
     cl_adjust_factor = interp(CS.v_ego, CS.CL_ADJUST_FACTOR_BP, CS.CL_ADJUST_FACTOR)
