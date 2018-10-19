@@ -207,7 +207,7 @@ class CarState(object):
   #BB update ui buttons
   def update_ui_buttons(self,id,btn_status):
     if self.cstm_btns.btns[id].btn_status > 0:
-      if (id == 0) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="alca":
+      if (id == 1) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="alca":
           if self.cstm_btns.btns[id].btn_label2 == self.alcaLabels[self.alcaMode]:
             self.alcaMode = (self.alcaMode + 1 ) % 3
           else:
