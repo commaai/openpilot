@@ -6,6 +6,7 @@ from selfdrive.car.tesla.values import AH,CruiseState, CruiseButtons, CAR
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.speed_smoother import speed_smoother
+from common.realtime import sec_since_boot
 from common.numpy_fast import clip
 import selfdrive.messaging as messaging
 import os
@@ -14,6 +15,9 @@ import time
 import zmq
 import math
 import numpy as np
+
+
+MPC_BRAKE_MULTIPLIER = 2.
 
 # TODO: these should end up in values.py at some point, probably variable by trim
 # Accel limits
@@ -62,6 +66,32 @@ _FCW_A_ACT_BP = [0., 30.]
 
 # max acceleration allowed in acc, which happens in restart
 A_ACC_MAX = max(_A_CRUISE_MAX_V_FOLLOWING)
+
+_DT = 0.01    # 100Hz
+_DT_MPC = 0.2  # 5Hz
+
+def calc_cruise_accel_limits(v_ego, following):
+  a_cruise_min = interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V)
+
+  if following:
+    a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V_FOLLOWING)
+  else:
+    a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V)
+  return np.vstack([a_cruise_min, a_cruise_max])
+
+
+def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
+  """
+  This function returns a limited long acceleration allowed, depending on the existing lateral acceleration
+  this should avoid accelerating when losing the target in turns
+  """
+
+  a_total_max = interp(v_ego, _A_TOTAL_MAX_BP, _A_TOTAL_MAX_V)
+  a_y = v_ego**2 * angle_steers * CV.DEG_TO_RAD / (CP.steerRatio * CP.wheelbase)
+  a_x_allowed = math.sqrt(max(a_total_max**2 - a_y**2, 0.))
+
+  a_target[1] = min(a_target[1], a_x_allowed)
+  return a_target
 
 
 class PCCState(object):
@@ -133,6 +163,17 @@ class PCCController(object):
     self.wd5=0
     self.wd6=0
     self.wd7=0
+    #for smoothing the changes in speed
+    self.v_acc_start = 0.0
+    self.a_acc_start = 0.0
+    self.acc_start_time = sec_since_boot()
+    self.v_acc = 0.0
+    self.v_acc_sol = 0.0
+    self.v_acc_future = 0.0
+    self.a_acc = 0.0
+    self.a_acc_sol = 0.0
+    self.v_cruise = 0.0
+    self.a_cruise = 0.0
     
   def reset(self, v_pid):
     self.pid.reset()
@@ -144,7 +185,7 @@ class PCCController(object):
       self.pid = PIController((CP.longitudinalKpBP, CP.longitudinalKpV),
                             (CP.longitudinalKiBP, CP.longitudinalKiV),
                             rate=100.0,
-                            sat_limit=0.8) #,convert=compute_gb)
+                            sat_limit=0.8) 
       self.reset(0.)
 
     can_sends = []
@@ -199,6 +240,7 @@ class PCCController(object):
       if ready and double_pull:
         # A double pull enables ACC. updating the max ACC speed if necessary.
         self.enable_pedal_cruise = True
+        self.pid.reset()
         # Increase ACC speed to match current, if applicable.
         self.pedal_speed_kph = max(CS.v_ego * CV.MS_TO_KPH, self.pedal_speed_kph)
       else:
@@ -257,13 +299,12 @@ class PCCController(object):
     
 
   def update_pdl(self,enabled,CS,frame,actuators,pcm_speed):
-
+    cur_time = sec_since_boot()
     idx = self.pedal_idx
     self.pedal_idx = (self.pedal_idx + 1) % 16
     if not self.pedal_hardware_present or not enabled:
       return 0.,0,idx
-
-
+    following = False
     # Alternative speed decision logic that uses the lead car's distance
     # and speed more directly.
     # Bring in the lead car distance from the Live20 feed
@@ -291,11 +332,49 @@ class PCCController(object):
       self.v_pid, self.b_pid = self.calc_follow_speed(CS)
       # cruise speed can't be negative even is user is distracted
       self.v_pid = max(self.v_pid, 0.)
+      v_cruise_setpoint = self.v_pid
 
       self.pid.pos_limit = accel_max
       self.pid.neg_limit = - brake_max
 
       v_ego_pid = max(CS.v_ego, MIN_CAN_SPEED)
+
+      if self.enable_pedal_cruise:
+        accel_limits = map(float, calc_cruise_accel_limits(CS.vEgo, following))
+        # TODO: make a separate lookup for jerk tuning
+        jerk_limits = [min(-0.1, accel_limits[0]), max(0.1, accel_limits[1])]
+        accel_limits = limit_accel_in_turns(CS.vEgo, CS.steeringAngle, accel_limits, self.CP)
+        v_cruise_setpoint = self.v_pid
+        self.v_cruise, self.a_cruise = speed_smoother(self.v_acc_start, self.a_acc_start,
+                                                      v_cruise_setpoint,
+                                                      accel_limits[1], accel_limits[0],
+                                                      jerk_limits[1], jerk_limits[0],
+                                                      _DT_MPC)
+        
+        # cruise speed can't be negative even is user is distracted
+        self.v_cruise = max(self.v_cruise, 0.)
+      else:
+        a_ego = min(CS.aEgo, 0.0)
+        reset_speed = CS.vEgo
+        reset_accel = a_ego
+        self.v_acc = reset_speed
+        self.a_acc = reset_accel
+        self.v_acc_start = reset_speed
+        self.a_acc_start = reset_accel
+        self.v_cruise = reset_speed
+        self.a_cruise = reset_accel
+        self.v_acc_sol = reset_speed
+        self.a_acc_sol = reset_accel
+        self.pid.reset()
+        self.v_pid = v_ego_pid
+
+      self.v_acc = self.v_cruise
+      self.a_acc = self.a_cruise
+
+      # Interpolation of trajectory
+      dt = min(cur_time - self.acc_start_time, _DT_MPC + _DT) + _DT  # no greater than dt mpc + dt, to prevent too high extraps
+      self.a_acc_sol = self.a_acc_start + (dt / _DT_MPC) * (self.a_acc - self.a_acc_start)
+      self.v_acc_sol = self.v_acc_start + dt * (self.a_acc_sol + self.a_acc_start) / 2.0
 
       deadzone = interp(v_ego_pid, CS.CP.longPidDeadzoneBP, CS.CP.longPidDeadzoneV)
 
@@ -304,9 +383,12 @@ class PCCController(object):
 
       # we will try to feed forward the pedal position.... we might want to feed the last output_gb....
       # it's all about testing now.
-
-      output_gb = self.pid.update(self.v_pid, v_ego_pid, speed=v_ego_pid, override=override, deadzone=deadzone, feedforward= 0.00000005 * self.prev_tesla_accel, freeze_integrator=prevent_overshoot)
-
+      aTarget = self.a_acc_sol
+      vTarget = self.v_acc_sol
+      vTargetFuture = self.v_acc_future
+      prevent_overshoot = not CS.CP.stoppingControl and CS.v_ego < 1.5 and vTargetFuture < 0.7
+      output_gb = self.pid.update(self.v_pid, v_ego_pid, speed=v_ego_pid, override=override, deadzone=deadzone, feedforward= a_target, freeze_integrator=prevent_overshoot)
+      self.v_pid = v_ego
       if prevent_overshoot:
         output_gb = min(output_gb, 0.0)
     ##############################################################
@@ -315,7 +397,7 @@ class PCCController(object):
     # we use the values from actuator.accel and actuator.brake
     ##############################################################
     elif (CS.cstm_btns.get_button_label2("pedal") == "Lng MPC"):
-      self.b_pid = 1.
+      self.b_pid = MPC_BRAKE_MULTIPLIER
       output_gb = actuators.gas -  actuators.brake
 
 
@@ -362,7 +444,7 @@ class PCCController(object):
   def decrement_wd(self):
     self.wd1 = max (self.wd1-1 , 0)
     self.wd2 = max (self.wd2-1 , 0)
-    self.d3 = max (self.wd3-1 , 0)
+    self.wd3 = max (self.wd3-1 , 0)
     self.wd4 = max (self.wd4-1 , 0)
     self.wd5 = max (self.wd5-1 , 0)
     self.wd6 = max (self.wd6-1 , 0)

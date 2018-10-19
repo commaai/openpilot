@@ -166,11 +166,16 @@ def get_epas_parser(CP):
 
 class CarState(object):
   def __init__(self, CP):
+    #labels for ALCA modes
+    self.alcaLabels = ["MadMax","Normal","Wifey"]
+    self.alcaMode = 0
+
     if (CP.carFingerprint == CAR.MODELS):
       # ALCA PARAMS
+
       # max REAL delta angle for correction vs actuator
       self.CL_MAX_ANGLE_DELTA_BP = [10., 44.]
-      self.CL_MAX_ANGLE_DELTA = [1.8, .3]
+      self.CL_MAX_ANGLE_DELTA = [2.2, .3]
 
       # adjustment factor for merging steer angle to actuator; should be over 4; the higher the smoother
       self.CL_ADJUST_FACTOR_BP = [10., 44.]
@@ -298,9 +303,10 @@ class CarState(object):
     # Actual cruise speed currently active on the car.
     self.v_cruise_actual = 0.0
 
+
   def init_ui_buttons(self):
     btns = []
-    btns.append(UIButton("alca","ALC",0,"",0))
+    btns.append(UIButton("alca","ALC",0,self.alcaLabels[self.alcaMode],0))
     if self.pedal_hardware_present:
       btns.append(UIButton("pedal","PDL",0,"Longit",1))
     else:
@@ -332,7 +338,16 @@ class CarState(object):
 
   def update_ui_buttons(self,id,btn_status):
     if self.cstm_btns.btns[id].btn_status > 0:
-      if (id == 1) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="acc":
+      if (id == 0) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="alca":
+          if self.cstm_btns.btns[id].btn_label2 == self.alcaLabels[self.alcaMode]:
+            self.alcaMode += 1
+            if self.alcaMode >= 3:
+              self.alcaMode = 0
+          else:
+            self.alcaMode = 0
+          self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
+          self.cstm_btns.hasChanges = True
+      elif (id == 1) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="acc":
           #don't change status, just model
           if (self.cstm_btns.btns[id].btn_label2 == "Mod OP"):
               self.cstm_btns.btns[id].btn_label2 = "Mod JJ"
@@ -405,7 +420,7 @@ class CarState(object):
     self.a_ego = float(v_ego_x[1])
 
     #BB this is a hack for the interceptor
-    self.pedal_hardware_present = epas_cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS'] != 0
+    self.pedal_hardware_present = True #epas_cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS'] != 0
     #print "Pedal present? %s" % (self.pedal_hardware_present)
     #print "Pedal value = %s" % (epas_cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS'])
     if self.pedal_hardware_present != self.pedal_hardware_present_prev:
