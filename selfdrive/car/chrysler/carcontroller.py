@@ -55,6 +55,7 @@ class CarController(object):
     self.last_angle = 0
     self.send_new_status = False  # indicates we want to send 2a6 when we can.
     self.prev_2a6 = -9999  # long time ago.
+    self.prev_frame = -1  # previous frame from interface from 220 frame
     self.ccframe = 0
     self.accel_steady = 0.
     self.car_fingerprint = car_fingerprint
@@ -147,6 +148,9 @@ class CarController(object):
     self.last_accel = apply_accel
     self.last_standstill = CS.standstill
 
+    if self.prev_frame == frame:
+      return  # Do not reuse an old frame. This avoids repeating on shut-down.
+
     can_sends = []
 
     #*** control msgs ***
@@ -172,6 +176,7 @@ class CarController(object):
         self.send_new_status = False
         self.prev_2a6 = self.ccframe
     new_msg = create_292(int(apply_steer * CAR_UNITS_PER_DEGREE), frame, moving_fast)
+    self.prev_frame = frame  # save so we do not reuse frames
     sendcan.send(can_list_to_can_capnp([new_msg], msgtype='sendcan').to_bytes())
     can_sends.append(new_msg)  # degrees * 5.1 -> car steering units
     for msg in can_sends:
