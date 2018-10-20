@@ -256,11 +256,11 @@ class CarController(object):
           can_sends.append(set_blindspot_debug_mode(RIGHT_BLINDSPOT, False))
           self.blindspot_debug_enabled_right = False
           #print "debug Right blindspot debug disabled"
-      if self.blindspot_blink_counter_left > 199 and not self.blindspot_debug_enabled_left: #After 2 seconds of blinking check blindspot
+      if self.blindspot_blink_counter_left > 9 and not self.blindspot_debug_enabled_left: #check blindspot
         can_sends.append(set_blindspot_debug_mode(LEFT_BLINDSPOT, True))
         #print "debug Left blindspot debug enabled"
         self.blindspot_debug_enabled_left = True
-      if self.blindspot_blink_counter_right > 195 and not self.blindspot_debug_enabled_left: #After 2 seconds of blinking check blindspot
+      if self.blindspot_blink_counter_right > 5 and not self.blindspot_debug_enabled_left: #check blindspot
         if CS.v_ego > 6: #polling at low speeds switches camera off
           can_sends.append(set_blindspot_debug_mode(RIGHT_BLINDSPOT, True))
           #print "debug Left blindspot debug enabled"
