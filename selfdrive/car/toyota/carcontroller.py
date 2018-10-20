@@ -239,32 +239,34 @@ class CarController(object):
     if BLINDSPOTDEBUG:
       self.blindspot_poll_counter += 1
     if self.blindspot_poll_counter > 1000: # 10 seconds after start
-      if CS.left_blinker_on:
-        self.blindspot_blink_counter_left += 1
-        #print "debug Left Blinker on"
-      elif CS.right_blinker_on:
-        self.blindspot_blink_counter_right += 1
-      else:
-        self.blindspot_blink_counter_left = 0
-        self.blindspot_blink_counter_right = 0
-        #print "debug Left Blinker off"
-        if self.blindspot_debug_enabled_left:
-          can_sends.append(set_blindspot_debug_mode(LEFT_BLINDSPOT, False))
-          self.blindspot_debug_enabled_left = False
-          #print "debug Left blindspot debug disabled"
-        if self.blindspot_debug_enabled_right:
-          can_sends.append(set_blindspot_debug_mode(RIGHT_BLINDSPOT, False))
-          self.blindspot_debug_enabled_right = False
-          #print "debug Right blindspot debug disabled"
-      if self.blindspot_blink_counter_left > 9 and not self.blindspot_debug_enabled_left: #check blindspot
+
+      #if CS.left_blinker_on:
+      self.blindspot_blink_counter_left += 1
+      #print "debug Left Blinker on"
+      #elif CS.right_blinker_on:
+      self.blindspot_blink_counter_right += 1
+      #else:
+      #  self.blindspot_blink_counter_left = 0
+      #  self.blindspot_blink_counter_right = 0
+      #  #print "debug Left Blinker off"
+      #  if self.blindspot_debug_enabled_left:
+      #    can_sends.append(set_blindspot_debug_mode(LEFT_BLINDSPOT, False))
+      #    self.blindspot_debug_enabled_left = False
+      #    #print "debug Left blindspot debug disabled"
+      #  if self.blindspot_debug_enabled_right:
+      #    can_sends.append(set_blindspot_debug_mode(RIGHT_BLINDSPOT, False))
+      #    self.blindspot_debug_enabled_right = False
+      #    #print "debug Right blindspot debug disabled"
+      
+      if not self.blindspot_debug_enabled_left: #enable blindspot debug mode
         can_sends.append(set_blindspot_debug_mode(LEFT_BLINDSPOT, True))
         #print "debug Left blindspot debug enabled"
         self.blindspot_debug_enabled_left = True
-      if self.blindspot_blink_counter_right > 5 and not self.blindspot_debug_enabled_left: #check blindspot
-        if CS.v_ego > 6: #polling at low speeds switches camera off
-          can_sends.append(set_blindspot_debug_mode(RIGHT_BLINDSPOT, True))
-          #print "debug Left blindspot debug enabled"
-          self.blindspot_debug_enabled_right = True
+      if not self.blindspot_debug_enabled_left: #enable blindspot debug mode
+        #if CS.v_ego > 6: #polling at low speeds switches camera off
+        can_sends.append(set_blindspot_debug_mode(RIGHT_BLINDSPOT, True))
+        #print "debug Left blindspot debug enabled"
+        self.blindspot_debug_enabled_right = True
     if self.blindspot_debug_enabled_left:
       if self.blindspot_poll_counter % 20 == 0 and self.blindspot_poll_counter > 1001:  # Poll blindspots at 5 Hz
         can_sends.append(poll_blindspot_status(LEFT_BLINDSPOT))
