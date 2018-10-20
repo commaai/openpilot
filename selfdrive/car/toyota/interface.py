@@ -355,7 +355,6 @@ class CarInterface(object):
     ret.rightBlinker = bool(self.CS.right_blinker_on)
     ret.blindspot = self.CS.blind_spot_on
     ret.blindspotside = self.CS.blind_spot_side
-    ret.blindspotonprev =self.CS.blind_spot_on_prev
     ret.doorOpen = not self.CS.door_all_closed
     ret.seatbeltUnlatched = not self.CS.seatbelt
 
