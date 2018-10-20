@@ -104,8 +104,8 @@ class CarInterface(object):
       if ret.enableGasInterceptor:
         stop_and_go = True
         ret.gasMaxV = [0.2, 0.5, 0.7]
-        ret.longitudinalKpV = [1.2, 0.8, 0.5]
-        ret.longitudinalKiV = [0.18, 0.12]
+        ret.longitudinalKpV = [0.1, 0.8, 0.8]
+        ret.longitudinalKiV = [0.06, 0.12]
       else:
         stop_and_go = False
         ret.gasMaxV = [0.2, 0.5, 0.7]
