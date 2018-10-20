@@ -1850,8 +1850,8 @@ int main() {
       set_awake(s, true);
       // BB check touch area
       bb_handle_ui_touch(s,touch_x,touch_y);
-      dashcam(s, touch_x, touch_y);
     }
+    dashcam(s, touch_x, touch_y);
 
     // manage wakefulness
     if (s->awake_timeout > 0) {
