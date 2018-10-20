@@ -91,7 +91,7 @@ class CarState(object):
     self.prev_left_blinker_on = self.left_blinker_on
     self.prev_right_blinker_on = self.right_blinker_on
 
-    self.frame_220 = cp.vl["LKAS_INDICATOR_1"]['INCREMENTING_220']
+    self.frame_220 = int(cp.vl["LKAS_INDICATOR_1"]['INCREMENTING_220'])
     logging.info('frame_220 %d' % self.frame_220)
 
     self.door_all_closed = not any([cp.vl["DOORS"]['DOOR_OPEN_FL'],
