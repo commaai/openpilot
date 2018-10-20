@@ -98,7 +98,8 @@ BO_ 3 STW_ANGL_STAT: 8 STW
  SG_ MC_STW_ANGL_STAT : 55|4@0+ (1,0) [0|15] ""  NEO
  SG_ CRC_STW_ANGL_STAT : 63|8@0+ (1,0) [0|255] ""  NEO
 
-BO_ 14 STW_ANGLHP_STAT: 8 STW 
+BO_ 14 STW_ANGLHP_STAT: 8 STW
+ 
  SG_ StW_AnglHP : 5|14@0+ (0.1,-819.2) [-819.2|819] "deg"  NEO
  SG_ StW_AnglHP_Spd : 21|14@0+ (0.5,-4096) [-4096|4095.5] "deg/s"  NEO
  SG_ StW_AnglHP_Sens_Stat : 33|2@0+ (1,0) [0|0] ""  NEO
@@ -147,19 +148,21 @@ BO_ 309 ESP_135h: 5 ESP
  SG_ ESP_espOffLamp : 31|1@0+ (1,0) [-1|2] ""  NEO
  SG_ ESP_stabilityControlSts : 14|3@0+ (1,0) [6|7] ""  NEO
  SG_ ESP_tcLampFlash : 5|1@0+ (1,0) [-1|2] ""  NEO
- SG_ ESP_tcOffLamp : 15|1@0+ (1,0) [0|1] ""  NEOBO_ 341 ESP_B: 8 ESP 
- SG_ ESP_BChecksum : 39|8@0+ (1,0) [0|255] ""  NEO,EPAS 
- SG_ ESP_BCounter : 62|4@0+ (1,0) [1|15] ""  NEO,EPAS 
- SG_ ESP_vehicleSpeed : 47|16@0+ (0.00999999978,0) [0|0] "kph"  NEO,EPAS 
- SG_ ESP_vehicleSpeedQF : 57|2@0+ (1,0) [1|2] ""  NEO,EPAS 
- SG_ ESP_wheelPulseCountFrL : 7|8@0+ (1,0) [0|254] ""  NEO,EPAS 
- SG_ ESP_wheelPulseCountFrR : 15|8@0+ (1,0) [0|254] ""  NEO,EPAS 
- SG_ ESP_wheelPulseCountReL : 23|8@0+ (1,0) [0|254] ""  NEO,EPAS 
+ SG_ ESP_tcOffLamp : 15|1@0+ (1,0) [0|1] ""  NEO
+
+BO_ 341 ESP_B: 8 ESP
+ SG_ ESP_BChecksum : 39|8@0+ (1,0) [0|255] ""  NEO,EPAS
+ SG_ ESP_BCounter : 62|4@0+ (1,0) [1|15] ""  NEO,EPAS
+ SG_ ESP_vehicleSpeed : 47|16@0+ (0.00999999978,0) [0|0] "kph"  NEO,EPAS
+ SG_ ESP_vehicleSpeedQF : 57|2@0+ (1,0) [1|2] ""  NEO,EPAS
+ SG_ ESP_wheelPulseCountFrL : 7|8@0+ (1,0) [0|254] ""  NEO,EPAS 
+ SG_ ESP_wheelPulseCountFrR : 15|8@0+ (1,0) [0|254] ""  NEO,EPAS
+ SG_ ESP_wheelPulseCountReL : 23|8@0+ (1,0) [0|254] ""  NEO,EPAS 
  SG_ ESP_wheelPulseCountReR : 31|8@0+ (1,0) [0|254] ""  NEO,EPAS
 
-BO_ 532 EPB_epasControl: 3 EPB 
- SG_ EPB_epasControlChecksum : 23|8@0+ (1,0) [0|255] ""  NEO,EPAS 
- SG_ EPB_epasControlCounter : 11|4@0+ (1,0) [0|15] ""  NEO,EPAS 
+BO_ 532 EPB_epasControl: 3 EPB
+ SG_ EPB_epasControlChecksum : 23|8@0+ (1,0) [0|255] ""  NEO,EPAS 
+ SG_ EPB_epasControlCounter : 11|4@0+ (1,0) [0|15] ""  NEO,EPAS
  SG_ EPB_epasEACAllow : 2|3@0+ (1,0) [4|7] ""  NEO,EPAS
 
 BO_ 792 GTW_carState: 8 GTW
@@ -307,6 +310,21 @@ BO_ 840 GTW_status: 8 GTW
  SG_ GTW_statusChecksum : 63|8@0+ (1,0) [0|255] ""  NEO
  SG_ GTW_statusCounter : 51|4@0+ (1,0) [0|15] ""  NEO
 
+BO_ 1361 GAS_COMMAND: 6 EON
+ SG_ GAS_COMMAND : 7|16@0+ (0.0507968128,-22.85856576) [0|1] "" INTERCEPTOR
+ SG_ GAS_COMMAND2 : 23|16@0+ (0.1015936256,-22.85856576) [0|1] "" INTERCEPTOR
+ SG_ ENABLE : 39|1@0+ (1,0) [0|1] "" INTERCEPTOR
+ SG_ IDX : 35|4@0+ (1,0) [0|15] "" INTERCEPTOR
+ SG_ CHECKSUM : 47|8@0+ (1,0) [0|3] "" INTERCEPTOR
+
+BO_ 1362 GAS_SENSOR: 6 INTERCEPTOR
+ SG_ INTERCEPTOR_GAS : 7|16@0+ (0.0507968128,-22.85856576) [0|1] "" EON
+ SG_ INTERCEPTOR_GAS2 : 23|16@0+ (0.1015936256,-22.85856576) [0|1] "" EON
+ SG_ STATE : 35|4@0+ (1,0) [0|15] "" EON
+ SG_ IDX : 39|4@0+ (1,0) [0|15] "" EON
+ SG_ CHECKSUM : 47|8@0+ (1,0) [0|3] "" EON
+
+
 VAL_ 3 StW_Angl 16383 "SNA" ;
 VAL_ 3 StW_AnglSens_Id 2 "MUST" 0 "PSBL" 1 "SELF" ;
 VAL_ 3 StW_AnglSens_Stat 2 "ERR" 3 "ERR_INI" 1 "INI" 0 "OK" ;
@@ -417,5 +435,6 @@ VAL_ 904 MCU_clusterReadyForDrive 0 "NO_SNA" 1 "YES" ;
 VAL_ 1160 DAS_steeringAngleRequest 16384 "ZERO_ANGLE" ;
 VAL_ 1160 DAS_steeringControlType 1 "ANGLE_CONTROL" 3 "DISABLED" 0 "NONE" 2 "RESERVED" ;
 VAL_ 1160 DAS_steeringHapticRequest 1 "ACTIVE" 0 "IDLE" ;
+VAL_ 1362 STATE 5 "FAULT_TIMEOUT" 4 "FAULT_STARTUP" 3 "FAULT_SCE" 2 "FAULT_SEND" 1 "FAULT_BAD_CHECKSUM" 0 "NO_FAULT" ;
 
 CM_ "CHFFR_METRIC 1160 DAS_steeringAngleRequest STEER_ANGLE 0.1098666 180; CHFFR_METRIC 264 DI_motorRPM ENGINE_RPM 1 0";
