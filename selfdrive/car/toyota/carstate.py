@@ -81,6 +81,8 @@ def get_can_parser(CP):
     ("AUTO_HIGH_BEAM", "LIGHT_STALK", 0),
     ("BLINDSPOT","DEBUG", 0),
     ("BLINDSPOTSIDE","DEBUG",65),
+    ("BLINDSPOTD1","DEBUG", 0),
+    ("BLINDSPOTD2","DEBUG", 0),
     ("ACC_DISTANCE", "JOEL_ID", 2),
     ("LANE_WARNING", "JOEL_ID", 1),
     ("ACC_SLOW", "JOEL_ID", 0),
@@ -164,7 +166,6 @@ class CarState(object):
     self.approachradius = 100
     self.includeradius = 22
     self.blind_spot_on = bool(0)
-    self.blind_spot_on_prev = bool(0)
     self.distance_toggle_prev = 2
     self.read_distance_lines_prev = 3
     self.lane_departure_toggle_on_prev = True
@@ -272,12 +273,10 @@ class CarState(object):
     self.right_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 2
     self.blind_spot_side = cp.vl["DEBUG"]['BLINDSPOTSIDE']
 
-    if bool(cp.vl["DEBUG"]['BLINDSPOT']) and self.blind_spot_on_prev:
+    if (cp.vl["DEBUG"]['BLINDSPOTD1'] > 10) or (cp.vl["DEBUG"]['BLINDSPOTD1'] > 10):
       self.blind_spot_on = bool(1)
     else:
       self.blind_spot_on = bool(0)
-
-    self.blind_spot_on_prev = bool(cp.vl["DEBUG"]['BLINDSPOT'])
     
     # we could use the override bit from dbc, but it's triggered at too high torque values
     self.steer_override = abs(cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_DRIVER']) > 100
