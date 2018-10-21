@@ -10,7 +10,6 @@ from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET,
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.honda.carstate import CarState, get_can_parser
 from selfdrive.car.honda.values import CruiseButtons, CM, BP, AH, CAR, HONDA_BOSCH
-from selfdrive.controls.lib.planner import A_ACC_MAX
 
 try:
   from selfdrive.car.honda.carcontroller import CarController
@@ -128,7 +127,7 @@ class CarInterface(object):
     # accelOverride is more or less the max throttle allowed to pcm: usually set to a constant
     # unless aTargetMax is very high and then we scale with it; this help in quicker restart
 
-    return float(max(0.714, a_target / A_ACC_MAX)) * min(speedLimiter, accelLimiter)
+    return float(min(speedLimiter, accelLimiter))
 
   @staticmethod
   def get_params(candidate, fingerprint):
