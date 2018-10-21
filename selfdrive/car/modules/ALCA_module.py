@@ -270,7 +270,7 @@ class ALCAController(object):
 
     # lane change in process
     if self.laneChange_enabled > 1:
-      if (CS.steer_override or (CS.v_ego < cl_min_v)):
+      if (CS.steer_override or (CS.v_ego < cl_min_v) or (not (CS.right_blinker_on or CS.right_blinker_on))):
         CS.UE.custom_alert_message(4,"Auto Lane Change Canceled! (u)",200,3)
         # if any steer override cancel process or if speed less than min speed
         self.laneChange_counter = 0
@@ -424,13 +424,8 @@ class ALCAController(object):
           if not blindspot:
             if CS.right_blinker_on or CS.left_blinker_on:
               self.laneChange_counter += 1
-            else:
-              CS.UE.custom_alert_message(4,"Auto Lane Change Canceled! (bl)",200,3)
-              # if blinker is off after the blindspot has spotted are
-              self.laneChange_counter = 1
-              self.laneChange_enabled = 0
-              self.laneChange_direction = 0
-              CS.cstm_btns.set_button_status("alca",1)
+           
+            
       # this is the final stage of the ALCAS
       # this just shows a message that we completed the lane change 
       # CONTROL: during this time we use the actuator angle to steer (OP Control)
