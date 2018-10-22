@@ -37,13 +37,17 @@ class UIButtons:
                 name,label,label2 = struct.unpack(btn_msg_struct, indata[i:i+btn_msg_len]) 
                 if (self.btns[j].btn_name != name.rstrip("\0")):
                     file_matches = False
-            #we have all the da;ta and it matches
+            #we have all the data and it matches
             if file_matches:
                 for i in range(0, len(indata), btn_msg_len):
                     j = int(i/btn_msg_len)
                     name,label,label2 = struct.unpack(btn_msg_struct, indata[i:i+btn_msg_len]) 
                     self.btns[j].btn_label = label.rstrip("\0")
-                    self.btns[j].btn_label2 = label2.rstrip("\0")
+                    #check if label is actually a valid option
+                    if label2.rstrip("\0") in self.CS.btns_init[j][2]:
+                        self.btns[j].btn_label2 = label2.rstrip("\0")
+                    else:
+                        self.btns[j].btn_label2 = self.CS.btns_init[j][2][0]
             return file_matches
         else:
             #we don't have all the data, ignore
