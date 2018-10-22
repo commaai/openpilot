@@ -1,7 +1,7 @@
 from selfdrive.car.tesla import teslacan
 #from selfdrive.controls.lib.pid import PIController
 from selfdrive.car.tesla.longcontrol_tesla import LongControl, STARTING_TARGET_SPEED
-from selfdrive.car.tesla.interface import tesla_compute_gb
+#from selfdrive.car.tesla.interface import tesla_compute_gb
 from selfdrive.car.tesla import teslacan
 from common.numpy_fast import clip, interp
 from selfdrive.services import service_list
@@ -73,6 +73,9 @@ A_ACC_MAX = max(_A_CRUISE_MAX_V_FOLLOWING)
 _DT = 0.01    # 100Hz
 _DT_MPC = 0.01  # 100Hz in our case
 
+def tesla_compute_gb(accel, speed):
+  return float(accel) / 3.0
+
 def calc_cruise_accel_limits(v_ego, following):
   a_cruise_min = interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V)
 
@@ -104,6 +107,8 @@ class PCCState(object):
   STANDBY = 1     # Ready to be enaged.
   ENABLED = 2     # Engaged.
   NOT_READY = 9   # Not ready to be engaged due to the state of the car.
+
+
 
 def _current_time_millis():
   return int(round(time.time() * 1000))
@@ -178,7 +183,8 @@ class PCCController(object):
     self.a_cruise = 0.0
     #Long Control
     self.LoC = None
-    
+
+
   def reset(self, v_pid):
     if self.LoC:
       self.LoC.reset(v_pid)
