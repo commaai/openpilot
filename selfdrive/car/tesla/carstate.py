@@ -166,8 +166,7 @@ def get_epas_parser(CP):
 
 class CarState(object):
   def __init__(self, CP):
-    #labels for ALCA modes
-    #self.alcaLabels = ["MadMax","Normal","Wifey"]
+    #labels for buttons
     self.btns_init = [["alca","ALC",["MadMax","Normal","Wifey"]], \
                       ["acc","ACC",["Mod OP","Mod JJ"]], \
                       ["steer","STR",[""]], \
@@ -312,6 +311,7 @@ class CarState(object):
   def init_ui_buttons(self):
     if self.pedal_hardware_present:
       self.btns_init[1] = ["pedal","PDL",["Lng MPC","Follow"]]
+    return 0
    
   def config_ui_buttons(self,pedalPresent):
     #self.CP.enableGasInterceptor = pedalPresent

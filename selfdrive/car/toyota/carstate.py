@@ -70,8 +70,13 @@ def get_can_parser(CP):
 
 class CarState(object):
   def __init__(self, CP):
-    #labels for ALCA modes
-    self.alcaLabels = ["MadMax","Normal","Wifey"]
+    #labels for buttons
+    self.btns_init = [["alca","ALC",["MadMax","Normal","Wifey"]], \
+                      ["","",[""]], \
+                      ["","",[""]], \
+                      ["sound","SND",[""]], \
+                      ["", "",[""]], \
+                      ["", "", [""]]]
     #if (CP.carFingerprint == CAR.MODELS):
     # ALCA PARAMS
     # max REAL delta angle for correction vs actuator
@@ -149,31 +154,6 @@ class CarState(object):
                          K=np.matrix([[0.12287673], [0.29666309]]))
     self.v_ego = 0.0
   
-  #BB init ui buttons
-  def init_ui_buttons(self):
-    btns = []
-    btns.append(UIButton("alca", "ALC", 0, self.alcaLabels[self.alcaMode], 0))
-    btns.append(UIButton("", "", 0, "", 1))
-    btns.append(UIButton("", "", 0, "", 2))
-    btns.append(UIButton("sound", "SND", 1, "", 3))
-    btns.append(UIButton("", "", 0, "", 4))
-    btns.append(UIButton("", "", 0, "", 5))
-    return btns
-
-  #BB update ui buttons
-  def update_ui_buttons(self,id,btn_status):
-    if self.cstm_btns.btns[id].btn_status > 0:
-      if (id == 0) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="alca":
-        alcaMode = 0
-        for i in range(0,len(self.alcaLabels)):
-          if self.cstm_btns.btns[id].btn_label2 == self.alcaLabels[i]:
-            alcaMode = (i + 1 ) % len(self.alcaLabels)
-        self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[alcaMode]
-        self.cstm_btns.hasChanges = True
-      else:
-        self.cstm_btns.btns[id].btn_status = btn_status * self.cstm_btns.btns[id].btn_status
-    else:
-        self.cstm_btns.btns[id].btn_status = btn_status
 
   def update(self, cp):
     # copy can_valid

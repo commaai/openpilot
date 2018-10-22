@@ -110,7 +110,12 @@ class UIButtons:
 
     def init_ui_buttons(self):
         self.btns = []
-        self.CS.init_ui_buttons()
+        try:
+            self.CS.init_ui_buttons()
+            print "Buttons iniatlized with custom CS code"  
+        except AttributeError:
+            # no init method
+            print "Buttons iniatlized with just base code"
         for i in range(0,len(self.CS.btns_init)):
             self.btns.append(UIButton(self.CS.btns_init[i][0],self.CS.btns_init[i][1],1,self.CS.btns_init[i][2][0],i))
 
