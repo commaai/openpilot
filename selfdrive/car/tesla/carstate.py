@@ -328,6 +328,7 @@ class CarState(object):
         self.btns_init[1] = ["acc","ACC",["Mod OP","Mod JJ"]]
         hasChanges = True
     if hasChanges:
+      i = 1
       btn.btn_name = self.btns_init[i][0]
       btn.btn_label = self.btns_init[i][1]
       btn.btn_label2 = self.btns_init[i][2][0]

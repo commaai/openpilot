@@ -92,7 +92,7 @@ class UIButtons:
         self.hasChanges = True
         self.last_in_read_time = datetime.min 
         if os.path.exists(self.buttons_labels_path):
-            self.btns = self.init_ui_buttons()
+            self.init_ui_buttons()
             #there is a file, load it
             if self.read_buttons_labels_from_file():
                 self.read_buttons_out_file()
@@ -103,7 +103,7 @@ class UIButtons:
                 self.write_buttons_out_file()
         else:
             #there is no file, create it
-            self.btns = self.init_ui_buttons()
+            self.init_ui_buttons()
             self.hasChanges = True
             self.write_buttons_labels_to_file()
             self.write_buttons_out_file()
@@ -176,7 +176,7 @@ class UIButtons:
         btn = self.get_button(btn_name)
         if btn:
             b_index = -1
-            bpos = self.CS.cstm_btns.index(btn)
+            bpos = self.btns.index(btn)
             for i in range(0,len(self.CS.btns_init[bpos][2])):
                 if btn.btn_label2 == self.CS.btns_init[bpos][2][i]:
                     b_index = i
