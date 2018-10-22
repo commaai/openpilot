@@ -366,7 +366,7 @@ class PCCController(object):
         self.v_acc_sol = reset_speed
         self.a_acc_sol = reset_accel
         self.pid.reset()
-        self.v_pid = v_ego_pid
+        self.v_pid = reset_speed
 
       self.v_acc = self.v_cruise
       self.a_acc = self.a_cruise
@@ -385,10 +385,11 @@ class PCCController(object):
       # it's all about testing now.
       aTarget = self.a_acc_sol
       vTarget = self.v_acc_sol
+      self.v_acc_future = self.v_pid
       vTargetFuture = self.v_acc_future
       prevent_overshoot = not CS.CP.stoppingControl and CS.v_ego < 1.5 and vTargetFuture < 0.7
+      self.v_pid = v_target
       output_gb = self.pid.update(self.v_pid, v_ego_pid, speed=v_ego_pid, override=override, deadzone=deadzone, feedforward= a_target, freeze_integrator=prevent_overshoot)
-      self.v_pid = CS.v_ego
       if prevent_overshoot:
         output_gb = min(output_gb, 0.0)
     ##############################################################
