@@ -177,7 +177,7 @@ class ACCController(object):
           elif speed_offset > half_press_kph and half_press_kph < available_speed:
             # Send cruise stalk up_1st.
             button_to_press = CruiseButtons.RES_ACCEL
-      if CS.cstm_btns.get_button_label2("acc") == "Mod JJ":
+      if CS.cstm_btns.get_button_label2_index("acc") == 1:
         # Alternative speed decision logic that uses the lead car's distance
         # and speed more directly.
         # Bring in the lead car distance from the Live20 feed

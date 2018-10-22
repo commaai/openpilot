@@ -328,7 +328,7 @@ class PCCController(object):
     # once the speed is detected we have to use our own PID to determine
     # how much accel and break we have to do
     ####################################################################
-    if (CS.cstm_btns.get_button_label2("pedal") == "Follow"):
+    if (CS.cstm_btns.get_button_label2_index("pedal") == 1):
       self.v_pid, self.b_pid = self.calc_follow_speed(CS)
       # cruise speed can't be negative even is user is distracted
       self.v_pid = max(self.v_pid, 0.)

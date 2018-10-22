@@ -88,7 +88,7 @@ class UIButtons:
         self.hasChanges = True
         self.last_in_read_time = datetime.min 
         if os.path.exists(self.buttons_labels_path):
-            self.btns = self.CS.init_ui_buttons()
+            self.btns = self.init_ui_buttons()
             #there is a file, load it
             if self.read_buttons_labels_from_file():
                 self.read_buttons_out_file()
@@ -99,7 +99,7 @@ class UIButtons:
                 self.write_buttons_out_file()
         else:
             #there is no file, create it
-            self.btns = self.CS.init_ui_buttons()
+            self.btns = self.init_ui_buttons()
             self.hasChanges = True
             self.write_buttons_labels_to_file()
             self.write_buttons_out_file()
@@ -107,6 +107,12 @@ class UIButtons:
         self.isLive = True
         self.send_button_info()
         self.CS.UE.uiSetCarEvent(self.car_folder,self.car_name)
+
+    def init_ui_buttons(self):
+        self.btns = []
+        self.CS.init_ui_buttons()
+        for i in range(0,len(self.CS.btns_init)):
+            self.btns.append(UIButton(self.CS.btns_init[i][0],self.CS.btns_init[i][1],1,self.CS.btns_init[i][2][0],i))
 
     def get_button(self, btn_name):
         for button in self.btns:
@@ -135,15 +141,18 @@ class UIButtons:
 
     def set_button_status_from_ui(self,id,btn_status):
         old_btn_status = self.btns[id].btn_status
+        old_btn_label2 = self.btns[id].btn_label2
         if old_btn_status * btn_status == 0 and old_btn_status != btn_status:
             self.hasChanges = True
-        self.CS.update_ui_buttons(id,btn_status)
+        self.update_ui_buttons(id,btn_status)
         new_btn_status = self.btns[id].btn_status
         if new_btn_status * btn_status == 0 and new_btn_status != btn_status:
             self.hasChanges = True
         if self.hasChanges:
             self.CS.UE.uiButtonInfoEvent(id,self.btns[id].btn_name, \
                     self.btns[id].btn_label,self.btns[id].btn_status,self.btns[id].btn_label2)
+            if old_btn_label2 != self.btns[id].btn_label2:
+                self.write_buttons_labels_to_file()
             self.write_buttons_out_file()
         
 
@@ -153,3 +162,30 @@ class UIButtons:
             return btn.btn_label2
         else:
             return -1    
+
+    def get_button_label2_index(self, btn_name):
+        btn = self.get_button(btn_name)
+        if btn:
+            b_index = -1
+            bpos = self.CS.cstm_btns.index(btn)
+            for i in range(0,len(self.CS.btns_init[bpos][2])):
+                if btn.btn_label2 == self.CS.btns_init[bpos][2][i]:
+                    b_index = i
+            return b_index
+        else:
+            return -1
+    
+    def update_ui_buttons(self,id,btn_status):
+        if self.CS.cstm_btns.btns[id].btn_status > 0:
+        #if we have more than one Label2 then we toggle
+            if (len(self.CS.btns_init[id][2]) > 1):
+                status2 = 0
+                for i in range(0,len(self.CS.btns_init[id][2])):
+                    if self.CS.cstm_btns.btns[id].btn_label2 == self.CS.btns_init[id][2][i]:
+                        status2 = (i + 1 ) % len(self.CS.btns_init[id][2])
+                self.CS.cstm_btns.btns[id].btn_label2 = self.CS.btns_init[id][2][status2]
+                self.CS.cstm_btns.hasChanges = True
+            else:
+                self.CS.cstm_btns.btns[id].btn_status = btn_status * self.CS.cstm_btns.btns[id].btn_status
+        else:
+            self.CS.cstm_btns.btns[id].btn_status = btn_status

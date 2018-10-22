@@ -167,7 +167,13 @@ def get_epas_parser(CP):
 class CarState(object):
   def __init__(self, CP):
     #labels for ALCA modes
-    self.alcaLabels = ["MadMax","Normal","Wifey"]
+    #self.alcaLabels = ["MadMax","Normal","Wifey"]
+    self.btns_init = [["alca","ALC",["MadMax","Normal","Wifey"]], \
+                      ["acc","ACC",["Mod OP","Mod JJ"]], \
+                      ["steer","STR",[""]], \
+                      ["brake","BRK",[""]], \
+                      ["msg", "MSG",[""]], \
+                      ["sound", "SND", [""]]]
 
     if (CP.carFingerprint == CAR.MODELS):
       # ALCA PARAMS
@@ -304,64 +310,29 @@ class CarState(object):
 
 
   def init_ui_buttons(self):
-    btns = []
-    btns.append(UIButton("alca","ALC",0,self.alcaLabels[1],0))
     if self.pedal_hardware_present:
-      btns.append(UIButton("pedal","PDL",0,"Longit",1))
-    else:
-      btns.append(UIButton("acc","ACC",0,"Mod OP",1))
-    btns.append(UIButton("steer","STR",0,"",2))
-    btns.append(UIButton("brake","BRK",1,"",3))
-    btns.append(UIButton("msg","MSG",1,"",4))
-    btns.append(UIButton("sound","SND",1,"",5))
-    return btns
+      self.btns_init[1] = ["pedal","PDL",["Lng MPC","Follow"]]
    
   def config_ui_buttons(self,pedalPresent):
     #self.CP.enableGasInterceptor = pedalPresent
+    hasChanges = False
     if pedalPresent:
       btn = self.cstm_btns.get_button("acc")
       if btn:
-        btn.btn_name = "pedal"
-        btn.btn_label = "PDL"
-        btn.btn_label2 = "Lng MPC"
-        btn.btn_status = 1
+        self.btns_init[1] = ["pedal","PDL",["Lng MPC","Follow"]]
+        hasChanges = True
     else:
       #we don't have pedal interceptor
       btn = self.cstm_btns.get_button("pedal")
       if btn:
-        btn.btn_name = "acc"
-        btn.btn_label = "ACC"
-        btn.btn_label2 = "Mod OP"
-        btn.btn_status = 1
-    self.update_ui_buttons(1,1)    
-
-  def update_ui_buttons(self,id,btn_status):
-    if self.cstm_btns.btns[id].btn_status > 0:
-      if (id == 0) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="alca":
-        alcaMode = 0
-        for i in range(0,len(self.alcaLabels)):
-          if self.cstm_btns.btns[id].btn_label2 == self.alcaLabels[i]:
-            alcaMode = (i + 1 ) % len(self.alcaLabels)
-        self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[alcaMode]
-        self.cstm_btns.hasChanges = True
-      elif (id == 1) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="acc":
-          #don't change status, just model
-          if (self.cstm_btns.btns[id].btn_label2 == "Mod OP"):
-              self.cstm_btns.btns[id].btn_label2 = "Mod JJ"
-          else:
-              self.cstm_btns.btns[id].btn_label2 = "Mod OP"
-          self.cstm_btns.hasChanges = True
-      elif (id == 1) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="pedal":
-          #don't change status, just model
-          if (self.cstm_btns.btns[id].btn_label2 == "Follow"):
-              self.cstm_btns.btns[id].btn_label2 = "Lng MPC"
-          else:
-              self.cstm_btns.btns[id].btn_label2 = "Follow"
-          self.cstm_btns.hasChanges = True
-      else:
-          self.cstm_btns.btns[id].btn_status = btn_status * self.cstm_btns.btns[id].btn_status
-    else:
-        self.cstm_btns.btns[id].btn_status = btn_status
+        self.btns_init[1] = ["acc","ACC",["Mod OP","Mod JJ"]]
+        hasChanges = True
+    if hasChanges:
+      btn.btn_name = self.btns_init[i][0]
+      btn.btn_label = self.btns_init[i][1]
+      btn.btn_label2 = self.btns_init[i][2][0]
+      btn.btn_status = 1
+      self.cstm_btns.update_ui_buttons(1,1)    
 
   def update(self, cp, epas_cp):
 

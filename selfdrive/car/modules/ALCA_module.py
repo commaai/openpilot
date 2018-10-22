@@ -160,12 +160,7 @@ class ALCAController(object):
                             k_f=CS.CP.steerKf, pos_limit=1.0)
 
   def update_angle(self,enabled,CS,frame,actuators):
-    alca_b = CS.cstm_btns.get_button("alca")
-    alcaMode = 0
-    if alca_b:
-      for i in range(0,len(CS.alcaLabels)):
-        if alca_b.btn_label2 == CS.alcaLabels[i]:
-          alcaMode = i
+    alcaMode = CS.cstm_btns.get_button_label2_index("alca")
     #parameters that define the speed/aggressiveness of lane change modes
     alca_m1 = [1., .9, .8]
     alca_m2 = [1., 1., 1.7]
