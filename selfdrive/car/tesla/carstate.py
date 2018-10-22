@@ -309,8 +309,8 @@ class CarState(object):
 
 
   def init_ui_buttons(self):
-    if self.pedal_hardware_present:
-      self.btns_init[1] = ["pedal","PDL",["Lng MPC","Follow"]]
+    #if self.pedal_hardware_present:
+    self.btns_init[1] = ["pedal","PDL",["Lng MPC","Follow"]]
     return 0
    
   def config_ui_buttons(self,pedalPresent):
