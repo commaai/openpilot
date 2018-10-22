@@ -37,8 +37,10 @@ class UIButtons:
                 name,label,label2 = struct.unpack(btn_msg_struct, indata[i:i+btn_msg_len]) 
                 if (self.btns[j].btn_name != name.rstrip("\0")):
                     file_matches = False
+                    print "Btn file does not match"
             #we have all the data and it matches
             if file_matches:
+                print "Btn file matches"
                 for i in range(0, len(indata), btn_msg_len):
                     j = int(i/btn_msg_len)
                     name,label,label2 = struct.unpack(btn_msg_struct, indata[i:i+btn_msg_len]) 
@@ -46,6 +48,7 @@ class UIButtons:
                     #check if label is actually a valid option
                     if label2.rstrip("\0") in self.CS.btns_init[j][2]:
                         self.btns[j].btn_label2 = label2.rstrip("\0")
+                        print "Set label2 from file"
                     else:
                         self.btns[j].btn_label2 = self.CS.btns_init[j][2][0]
             return file_matches
