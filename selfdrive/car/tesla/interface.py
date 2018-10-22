@@ -19,13 +19,13 @@ except ImportError:
 K_MULT = .8
 K_MULTi = 280.
 def tesla_compute_gb(accel, speed):
-  creep_brake = 0.0
-  creep_speed = 2.3
-  creep_brake_value = 0.15
-  if speed < creep_speed:
-    creep_brake = (creep_speed - speed) / creep_speed * creep_brake_value
-  return float(accel) / 4.8 - creep_brake
-  #return float(accel)
+  #creep_brake = 0.0
+  #creep_speed = 2.3
+  #creep_brake_value = 0.15
+  #if speed < creep_speed:
+  #  creep_brake = (creep_speed - speed) / creep_speed * creep_brake_value
+  #return float(accel) / 4.8 - creep_brake
+  return float(accel)
 
 
 class CarInterface(object):
