@@ -776,8 +776,7 @@ void bb_ui_draw_UI( UIState *s) {
     }
   }
   
-  draw_date_time(s);
-	
+  
   if (s->b.tri_state_switch == 1) {
 	  const UIScene *scene = &s->scene;
 	  const int bb_dml_w = 180;
@@ -806,6 +805,8 @@ void bb_ui_draw_UI( UIState *s) {
     bb_draw_buttons(s);
     bb_ui_draw_custom_alert(s);
     bb_ui_draw_logo(s);
+    draw_date_time(s);
+	
     //bb_ui_draw_car(s);
 	 }
 	 if (s->b.tri_state_switch ==3) {
