@@ -149,7 +149,7 @@ class CarController(object):
     self.last_standstill = CS.standstill
 
     if self.prev_frame == frame:
-      logging.info('prev_frame == frame so skipping')
+      # logging.info('prev_frame == frame so skipping')
       return  # Do not reuse an old frame. This avoids repeating on shut-down.
 
     can_sends = []
@@ -184,7 +184,7 @@ class CarController(object):
       [addr, _, dat, _] = msg
       outp  = ('make_can_msg:%s  len:%d  %s' % ('0x{:02x}'.format(addr), len(dat),
                                                 ' '.join('{:02x}'.format(ord(c)) for c in dat)))
-      logging.info(outp)
+      # logging.info(outp)
 
 
     self.ccframe += 1
