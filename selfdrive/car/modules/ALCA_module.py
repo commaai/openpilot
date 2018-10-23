@@ -270,7 +270,7 @@ class ALCAController(object):
 
     # lane change in process
     if self.laneChange_enabled > 1:
-      if (CS.steer_override or (CS.v_ego < cl_min_v) or (not (CS.right_blinker_on or CS.right_blinker_on))):
+      if (CS.steer_override or (CS.v_ego < cl_min_v) or (not (CS.right_blinker_on or CS.left_blinker_on))):
         CS.UE.custom_alert_message(4,"Auto Lane Change Canceled! (u)",200,3)
         # if any steer override cancel process or if speed less than min speed
         self.laneChange_counter = 0
