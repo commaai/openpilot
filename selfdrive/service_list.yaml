@@ -70,6 +70,7 @@ uiLayoutState: [8060, true]
 frontEncodeIdx: [8061, true]
 orbFeaturesSummary: [8062, true]
 driverMonitoring: [8063, true]
+liveParameters: [8064, true]
 
 testModel: [8040, false]
 testLiveLocation: [8045, false]

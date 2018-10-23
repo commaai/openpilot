@@ -1,3 +1,9 @@
+Version 0.5.5 (2018-10-20)
+========================
+ * Increase allowed Honda positive accelerations
+ * Fix sporadic unexpected braking when passing semi-trucks in Toyota
+ * Fix gear reading bug in Hyundai Elantra thanks to emmertex!
+
 Version 0.5.4 (2018-09-25)
 ========================
  * New Driving Model
