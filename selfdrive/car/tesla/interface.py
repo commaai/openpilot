@@ -16,8 +16,8 @@ try:
 except ImportError:
   CarController = None
 
-K_MULT = .8
-K_MULTi = 280.
+K_MULT = 8. 
+K_MULTi = 280000.
 def tesla_compute_gb(accel, speed):
   #creep_brake = 0.0
   #creep_speed = 2.3
@@ -171,7 +171,7 @@ class CarInterface(object):
     ret.steerMaxV = [420.,420.]   # max steer allowed
 
     ret.gasMaxBP = [0.]  # m/s
-    ret.gasMaxV = [0.6] #if ret.enableGasInterceptor else [0.] # max gas allowed
+    ret.gasMaxV = [0.3] #if ret.enableGasInterceptor else [0.] # max gas allowed
     ret.brakeMaxBP = [0., 20.]  # m/s
     ret.brakeMaxV = [1., 1.]   # max brake allowed - BB: since we are using regen, make this even
 

@@ -1,6 +1,6 @@
 from selfdrive.car.tesla import teslacan
 #from selfdrive.controls.lib.pid import PIController
-from selfdrive.car.tesla.longcontrol_tesla import LongControl, STARTING_TARGET_SPEED
+from selfdrive.car.tesla.longcontrol_tesla import LongControl, LongCtrlState, STARTING_TARGET_SPEED
 #from selfdrive.car.tesla.interface import tesla_compute_gb
 from selfdrive.car.tesla import teslacan
 from common.numpy_fast import clip, interp
@@ -32,8 +32,8 @@ PEDAL_MAX_DOWN = 5.
 MIN_SAFE_DIST_M = 4. # min safe distance in meters
 FRAMES_PER_SEC = 100.
 
-SPEED_UP = 1. #3. / FRAMES_PER_SEC   # 2 m/s = 7.5 mph = 12 kph 
-SPEED_DOWN = 1. #6. / FRAMES_PER_SEC
+SPEED_UP = 3. / FRAMES_PER_SEC   # 2 m/s = 7.5 mph = 12 kph 
+SPEED_DOWN = 3. / FRAMES_PER_SEC
 
 MAX_PEDAL_VALUE = 112.
 
@@ -74,7 +74,7 @@ _DT = 0.01    # 100Hz
 _DT_MPC = 0.01  # 100Hz in our case
 
 def tesla_compute_gb(accel, speed):
-  return float(accel) / 3.0
+  return float(accel) #  / 3.0
 
 def calc_cruise_accel_limits(v_ego, following):
   a_cruise_min = interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V)
@@ -340,9 +340,10 @@ class PCCController(object):
       self.v_pid = max(self.v_pid, 0.)
       self.b_pid *= MPC_BRAKE_MULTIPLIER
 
-      v_ego_pid = max(CS.v_ego, MIN_CAN_SPEED)
 
-      if self.enable_pedal_cruise:
+      enabled = ((self.LoC.long_control_state == LongCtrlState.pid) or (self.LoC.long_control_state == LongCtrlState.stopping)) and self.enable_pedal_cruise
+
+      if self.enable_pedal_cruise: # enabled:
         accel_limits = map(float, calc_cruise_accel_limits(CS.v_ego, following))
         # TODO: make a separate lookup for jerk tuning
         jerk_limits = [min(-0.1, accel_limits[0]), max(0.1, accel_limits[1])]
@@ -361,6 +362,10 @@ class PCCController(object):
         self.v_acc_future = self.v_pid
         vTargetFuture = self.v_acc_future
 
+        self.v_acc_start = self.v_acc_sol
+        self.a_acc_start = self.a_acc_sol
+        self.acc_start_time = cur_time
+
         # Interpolation of trajectory
         dt = min(cur_time - self.acc_start_time, _DT_MPC + _DT) + _DT  # no greater than dt mpc + dt, to prevent too high extraps
         self.a_acc_sol = self.a_acc_start + (dt / _DT_MPC) * (self.a_acc - self.a_acc_start)
@@ -372,13 +377,28 @@ class PCCController(object):
         aTarget = self.a_acc_sol
         vTarget = self.v_acc_sol
 
-        t_go, t_brake = self.LoC.update(self.enable_pedal_cruise, CS.v_ego, CS.brake_pressed != 0, CS.standstill, False,
-                                              self.v_pid, vTarget, vTargetFuture, aTarget,
-                                              CS.CP, self.lead_1)
+        t_go, t_brake = self.LoC.update(self.enable_pedal_cruise, CS.v_ego, CS.brake_pressed != 0, CS.standstill, False, 
+                  self.v_pid * CV.MS_TO_KPH , vTarget, vTargetFuture, aTarget, CS.CP, None)
         output_gb = t_go - t_brake
+        print "Output GB Follow:",output_gb
       else:
         self.LoC.reset(CS.v_ego)
+        print "PID reset"
         output_gb = 0.
+        starting = self.LoC.long_control_state == LongCtrlState.starting
+        a_ego = min(CS.a_ego, 0.0)
+        reset_speed = MIN_CAN_SPEED if starting else CS.v_ego
+        reset_accel = CS.CP.startAccel if starting else a_ego
+        self.v_acc = reset_speed
+        self.a_acc = reset_accel
+        self.v_acc_start = reset_speed
+        self.a_acc_start = reset_accel
+        self.v_cruise = reset_speed
+        self.a_cruise = reset_accel
+        self.v_acc_sol = reset_speed
+        self.a_acc_sol = reset_accel
+        self.v_pid = reset_speed
+        
 
       
     ##############################################################
@@ -460,13 +480,13 @@ class PCCController(object):
     lead_dist = self.lead_1.dRel
     # Grab the relative speed.
     rel_speed = self.lead_1.vRel * CV.MS_TO_KPH
-    # v_ego is in m/s, so safe_dist_mance is in meters.
+    # v_ego is in m/s, so safe_distance is in meters.
     safe_dist_m = max(CS.v_ego * self.follow_time, MIN_SAFE_DIST_M)
     # Current speed in kph
     actual_speed = CS.v_ego * CV.MS_TO_KPH
     available_speed = self.pedal_speed_kph - actual_speed
     # speed and brake to issue
-    new_speed = actual_speed # self.last_speed if abs(self.last_speed - actual_speed) < 2. else actual_speed
+    new_speed = self.last_speed if abs(self.last_speed - actual_speed) < 2. else actual_speed
     new_brake = 0.
     # debug msg
     msg = None
@@ -512,7 +532,7 @@ class PCCController(object):
             self.reset_wd()
             new_speed += rel_speed
             self.wd1 = FRAMES_PER_SEC 
-          new_brake = 0.5
+          new_brake =1. 
         #Reduce speed if rel_speed < -5kph so you don't rush up to lead car
         elif rel_speed < -5  and lead_dist >  1.5 * safe_dist_m:
           if self.wd2 > 0:
@@ -522,7 +542,7 @@ class PCCController(object):
             new_speed += rel_speed * 1.5
             self.wd2 = FRAMES_PER_SEC
             msg =  "Approaching fast (-5), still 1.5 the safe distance, slow down"
-          new_brake = 0.5
+          new_brake =2. 
         # Reduce speed significantly if lead_dist < 60% of  safe dist
         elif lead_dist < (safe_dist_m * 0.3) and rel_speed < 2:
           if rel_speed > 0:
@@ -537,7 +557,7 @@ class PCCController(object):
             new_speed *= 0.1
             msg =  "90 pct down"
             self.reset_wd()
-          new_brake = 1. #full regen brake
+          new_brake = 4. #full regen brake
         # and if the lead car isn't pulling away
         elif lead_dist < (safe_dist_m * 0.5) and rel_speed < 0:
           if rel_speed < -5:
@@ -548,7 +568,7 @@ class PCCController(object):
               new_speed *=  0.3
               self.wd4 = FRAMES_PER_SEC
               msg =  "70 pct down"
-            new_brake = 0.5
+            new_brake =2. 
           else:
             if self.wd5 > 0:
               new_speed = self.last_speed
@@ -557,7 +577,7 @@ class PCCController(object):
               self.wd5 = FRAMES_PER_SEC
               new_speed +=  4 * rel_speed
               msg =  "4x rel speed down"
-            new_brake = 0.8 
+            new_brake = 4. 
         # we're close to the safe distance, so make slow adjustments
         # only adjust every 1 secs
         elif lead_dist < (safe_dist_m * 0.9) and rel_speed < 0:
@@ -568,7 +588,7 @@ class PCCController(object):
             self.wd6 = FRAMES_PER_SEC
             new_speed += 2 * rel_speed
             msg = "10 pct down"
-          new_brake = 0.5
+          new_brake =1. 
         ### Speed up ###
         # don't speed up again until you have more than a safe distance in front
         # only adjust every 2 sec
@@ -592,4 +612,4 @@ class PCCController(object):
       #new_speed = clip(new_speed, 0, self.pedal_speed_kph)
       new_speed = clip(new_speed,MIN_PCC_V,MAX_PCC_V)
       self.last_speed = new_speed
-    return new_speed * CV.KPH_TO_MS, new_brake
+    return new_speed * CV.KPH_TO_MS , new_brake
