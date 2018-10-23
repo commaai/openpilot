@@ -101,7 +101,6 @@ typedef struct {
 #define SAFETY_FORD 5
 #define SAFETY_CADILLAC 6
 #define SAFETY_HYUNDAI 7
-#define SAFETY_LEXUS_ISH 8
 #define SAFETY_TESLA 8
 #define SAFETY_LEXUS_ISH 9
 #define SAFETY_TOYOTA_IPAS 0x1335
