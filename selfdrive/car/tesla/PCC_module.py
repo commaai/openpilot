@@ -27,7 +27,7 @@ MPC_BRAKE_MULTIPLIER = 6.
 ACCEL_HYST_GAP = 0.5  # don't change accel command for small oscilalitons within this value
 
 PEDAL_MAX_UP = 2.
-PEDAL_MAX_DOWN = 5.
+PEDAL_MAX_DOWN = 50.
 #BB
 MIN_SAFE_DIST_M = 4. # min safe distance in meters
 FRAMES_PER_SEC = 100.
@@ -74,7 +74,7 @@ _DT = 0.01    # 100Hz
 _DT_MPC = 0.01  # 100Hz in our case
 
 def tesla_compute_gb(accel, speed):
-  return float(accel) #  / 3.0
+  return float(accel)  / 3.0
 
 def calc_cruise_accel_limits(v_ego, following):
   a_cruise_min = interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V)
@@ -378,7 +378,7 @@ class PCCController(object):
         vTarget = self.v_acc_sol
 
         t_go, t_brake = self.LoC.update(self.enable_pedal_cruise, CS.v_ego, CS.brake_pressed != 0, CS.standstill, False, 
-                  self.v_pid * CV.MS_TO_KPH , vTarget, vTargetFuture, aTarget, CS.CP, None)
+                  self.v_pid , vTarget, vTargetFuture, aTarget, CS.CP, None)
         output_gb = t_go - t_brake
         print "Output GB Follow:",output_gb
       else:
@@ -487,7 +487,7 @@ class PCCController(object):
     available_speed = self.pedal_speed_kph - actual_speed
     # speed and brake to issue
     new_speed = self.last_speed if abs(self.last_speed - actual_speed) < 2. else actual_speed
-    new_brake = 0.
+    new_brake = 1.
     # debug msg
     msg = None
 
@@ -500,15 +500,17 @@ class PCCController(object):
       # if cruise is set to faster than the max speed, slow down
       if lead_dist == 0 and new_speed > self.pedal_speed_kph:
         msg =  "Slow to max"
-        new_speed -= SPEED_DOWN 
+        #new_speed -= SPEED_DOWN 
+        new_speed = self.pedal_speed_kph
         new_brake = 1.
       # If lead_dist is reported as 0, no one is detected in front of you so you
       # can speed up don't speed up when steer-angle > 2; vision radar often
       # loses lead car in a turn.
       elif lead_dist == 0 and CS.angle_steers < 5.0:
-        if new_speed <= self.pedal_speed_kph + SPEED_UP: 
+        if new_speed <= (self.pedal_speed_kph + SPEED_UP): 
           msg =  "Accel to max"
-          new_speed += SPEED_UP 
+          #new_speed += SPEED_UP 
+          new_speed = self.pedal_speed_kph
       # if we have a populated lead_distance
       # TODO: make angle dependent on speed
       elif (lead_dist == 0 or lead_dist >= safe_dist_m) and CS.angle_steers >= 5.0:
@@ -600,7 +602,7 @@ class PCCController(object):
             new_speed += SPEED_UP
             self.reset_wd()
             self.wd7 = FRAMES_PER_SEC
-          new_brake = 0.
+          new_brake = 1.
         else:
           msg = "Have lead and do nothing"
           new_brake = 0.2
@@ -612,4 +614,5 @@ class PCCController(object):
       #new_speed = clip(new_speed, 0, self.pedal_speed_kph)
       new_speed = clip(new_speed,MIN_PCC_V,MAX_PCC_V)
       self.last_speed = new_speed
+      print new_speed
     return new_speed * CV.KPH_TO_MS , new_brake
