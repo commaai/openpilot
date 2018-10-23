@@ -1,3 +1,4 @@
+import logging
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from selfdrive.car.chrysler.values import DBC
@@ -40,10 +41,19 @@ def get_can_parser(CP):
     ("ACC_STATUS_2", "ACC_2", 0),
     ("HIGH_BEAM_FLASH", "STEERING_LEVERS", 0),
     ("ACC_SPEED_CONFIG_KPH", "DASHBOARD", 0),
-    ("INCREMENTING_220", "LKAS_INDICATOR_1", 0),
+    ("INCREMENTING_220", "LKAS_INDICATOR_1", -1),
   ]
 
+  # It's considered invalid if it is not received for 10x the expected period (1/f).
   checks = [
+    # sig_address, frequency
+    # ("GEAR", 50),
+    ("BRAKE_2", 50),
+    ("LKAS_INDICATOR_1", 100),
+    ("SPEED_1", 100),
+    ("WHEEL_SPEEDS", 50),
+    ("STEERING", 100),
+    ("ACC_2", 50),
   ]
 
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
@@ -68,6 +78,10 @@ class CarState(object):
                          C=np.matrix([1.0, 0.0]),
                          K=np.matrix([[0.12287673], [0.29666309]]))
     self.v_ego = 0.0
+    logging.basicConfig(level=logging.DEBUG, filename="/tmp/chrylog-cs", filemode="a+",
+                        format="%(asctime)-15s %(levelname)-8s %(message)s")
+    logging.info('CarState init')
+
 
   def update(self, cp):
     # copy can_valid
@@ -77,7 +91,8 @@ class CarState(object):
     self.prev_left_blinker_on = self.left_blinker_on
     self.prev_right_blinker_on = self.right_blinker_on
 
-    self.frame_220 = cp.vl["LKAS_INDICATOR_1"]['INCREMENTING_220']
+    self.frame_220 = int(cp.vl["LKAS_INDICATOR_1"]['INCREMENTING_220'])
+    logging.info('frame_220 %d' % self.frame_220)
 
     self.door_all_closed = not any([cp.vl["DOORS"]['DOOR_OPEN_FL'],
                                     cp.vl["DOORS"]['DOOR_OPEN_FR'],

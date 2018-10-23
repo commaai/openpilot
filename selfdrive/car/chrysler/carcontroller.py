@@ -1,3 +1,4 @@
+import logging
 from common.numpy_fast import clip, interp
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 # from selfdrive.car.toyota.toyotacan import make_can_msg, create_video_target,\
@@ -54,6 +55,7 @@ class CarController(object):
     self.last_angle = 0
     self.send_new_status = False  # indicates we want to send 2a6 when we can.
     self.prev_2a6 = -9999  # long time ago.
+    self.prev_frame = -1  # previous frame from interface from 220 frame
     self.ccframe = 0
     self.accel_steady = 0.
     self.car_fingerprint = car_fingerprint
@@ -71,6 +73,10 @@ class CarController(object):
     #if enable_apg: self.fake_ecus.add(ECU.APGS)
 
     self.packer = CANPacker(dbc_name)
+
+    logging.basicConfig(level=logging.DEBUG, filename="/tmp/chrylog", filemode="a+",
+                        format="%(asctime)-15s %(levelname)-8s %(message)s")
+    logging.info('CarController init')
 
   def update(self, sendcan, enabled, CS, frame, actuators,
              pcm_cancel_cmd, hud_alert, audible_alert):
@@ -142,6 +148,10 @@ class CarController(object):
     self.last_accel = apply_accel
     self.last_standstill = CS.standstill
 
+    if self.prev_frame == frame:
+      logging.info('prev_frame == frame so skipping')
+      return  # Do not reuse an old frame. This avoids repeating on shut-down.
+
     can_sends = []
 
     #*** control msgs ***
@@ -167,12 +177,14 @@ class CarController(object):
         self.send_new_status = False
         self.prev_2a6 = self.ccframe
     new_msg = create_292(int(apply_steer * CAR_UNITS_PER_DEGREE), frame, moving_fast)
+    self.prev_frame = frame  # save so we do not reuse frames
     sendcan.send(can_list_to_can_capnp([new_msg], msgtype='sendcan').to_bytes())
     can_sends.append(new_msg)  # degrees * 5.1 -> car steering units
     for msg in can_sends:
       [addr, _, dat, _] = msg
-      #outp  = ('make_can_msg:%s  len:%d  %s' % ('0x{:02x}'.format(addr), len(dat),
-      #                                          ' '.join('{:02x}'.format(ord(c)) for c in dat)))
+      outp  = ('make_can_msg:%s  len:%d  %s' % ('0x{:02x}'.format(addr), len(dat),
+                                                ' '.join('{:02x}'.format(ord(c)) for c in dat)))
+      logging.info(outp)
 
 
     self.ccframe += 1

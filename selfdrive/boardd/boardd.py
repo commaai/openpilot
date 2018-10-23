@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+
+# This file is not used by OpenPilot. Only boardd.cc is used.
+# The python version is slower, but has more options for development.
+
 import os
 import struct
 import zmq
@@ -161,6 +165,9 @@ def boardd_loop(rate=200):
   # *** subscribes to can send
   sendcan = messaging.sub_sock(context, service_list['sendcan'].port)
 
+  # drain sendcan to delete any stale messages from previous runs
+  messaging.drain_sock(sendcan)
+
   while 1:
     # health packet @ 1hz
     if (rk.frame%rate) == 0:
@@ -202,6 +209,9 @@ def boardd_proxy_loop(rate=200, address="192.168.2.251"):
   logcan = messaging.sub_sock(context, service_list['can'].port, addr=address)
   # *** publishes to can send
   sendcan = messaging.pub_sock(context, service_list['sendcan'].port)
+
+  # drain sendcan to delete any stale messages from previous runs
+  messaging.drain_sock(sendcan)
 
   while 1:
     # recv @ 100hz
