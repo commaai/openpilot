@@ -142,14 +142,16 @@ def gen_solution(msg):
              'longitude': msg_data['lon']*1e-07,  # longitude in degrees
              'speed': msg_data['gSpeed']*1e-03,  # ground speed in meters
              'accuracy': msg_data['hAcc']*1e-03,  # horizontal accuracy (1 sigma?)
-             'timestamp': timestamp,  # UTC time in ms since start of UTC stime 
+             'timestamp': timestamp,  # UTC time in ms since start of UTC stime
              'vNED': [msg_data['velN']*1e-03,
                      msg_data['velE']*1e-03,
                      msg_data['velD']*1e-03],  # velocity in NED frame in m/s
              'speedAccuracy': msg_data['sAcc']*1e-03,  # speed accuracy in m/s
              'verticalAccuracy': msg_data['vAcc']*1e-03,  # vertical accuracy in meters
              'bearingAccuracy': msg_data['headAcc']*1e-05,  # heading accuracy in degrees
-             'source': 'ublox'}
+             'source': 'ublox',
+             'flags': msg_data['flags'],
+  }
   return log.Event.new_message(gpsLocationExternal=gps_fix)
 
 def gen_nav_data(msg, nav_frame_buffer):
