@@ -52,13 +52,13 @@ AWARENESS_DECEL = -0.2     # car smoothly decel at .2m/s^2 when user is distract
 
 # lookup tables VS speed to determine min and max accels in cruise
 # make sure these accelerations are smaller than mpc limits
-_A_CRUISE_MIN_V  = [-3.0, -2.4, -2.1, -1.5, -.90]
+_A_CRUISE_MIN_V  = [-6.0, -5.0, -4.2, -3.0, -1.90]
 _A_CRUISE_MIN_BP = [   0., 5.,  10., 20.,  40.]
 
 # need fast accel at very low speed for stop and go
 # make sure these accelerations are smaller than mpc limits
-_A_CRUISE_MAX_V = [1.0, 1.0, .9, .75, .45]
-_A_CRUISE_MAX_V_FOLLOWING = [1.0, 1.0, .9, .75, .45]
+_A_CRUISE_MAX_V = [2.0, 2.0, 1.9, 1.5, .9]
+_A_CRUISE_MAX_V_FOLLOWING = [2.0, 2.0, 1.9, 1.5, .9]
 _A_CRUISE_MAX_BP = [0.,  5., 10., 20., 40.]
 
 # Lookup table for turns
@@ -163,6 +163,7 @@ class PCCController(object):
     self.b_pid = 0.
     self.last_output_gb = 0.
     self.last_speed = 0.
+    self.last_brake = 0.
     #for smoothing the changes in speed
     self.v_acc_start = 0.0
     self.a_acc_start = 0.0
@@ -176,6 +177,11 @@ class PCCController(object):
     self.a_cruise = 0.0
     #Long Control
     self.LoC = None
+    #when was radar data last updated?
+    self.last_md_ts = None
+    self.last_l100_ts = None
+    self.md_ts = None
+    self.l100_ts = None
 
 
   def reset(self, v_pid):
@@ -310,6 +316,8 @@ class PCCController(object):
           break
     if l20 is not None:
       self.lead_1 = l20.live20.leadOne
+      self.md_ts = l20.live20.mdMonoTime
+      self.l100_ts = l20.live20.l100MonoTime
 
     prevent_overshoot = False #not CS.CP.stoppingControl and CS.v_ego < 1.5 and v_target_future < 0.7
     accel_max = interp(CS.v_ego, CS.CP.gasMaxBP, CS.CP.gasMaxV)
@@ -438,6 +446,10 @@ class PCCController(object):
     self.prev_tesla_pedal = tesla_pedal * enable_pedal
     self.prev_tesla_accel = apply_accel * enable_pedal
     self.prev_v_ego = CS.v_ego
+
+    self.last_md_ts = self.md_ts
+    self.last_l100_ts = self.l100_ts
+
     return self.prev_tesla_pedal,enable_pedal,idx
 
 
@@ -464,6 +476,18 @@ class PCCController(object):
     msg = None
     msg2 = " *** UNKNOWN *** "
 
+    if ((self.last_md_ts == self.md_ts) or (self.last_l100_ts == self.l100_ts)):
+      #no radar update, so just keep doing what we're doing
+      new_speed = self.last_speed
+      new_brake = self.last_brake
+      msg2 = "No change - No Data"
+      if DEBUG:
+        if msg:
+          print msg
+        CS.UE.custom_alert_message(2,msg2+ " ["+ `int(new_speed*CV.KPH_TO_MPH)` + "]",6,0)
+      else:
+        print msg2
+      return new_speed * CV.KPH_TO_MS , new_brake
     #print "dRel: ", self.lead_1.dRel," yRel: ", self.lead_1.yRel, " vRel: ", self.lead_1.vRel, " aRel: ", self.lead_1.aRel, " vLead: ", self.lead_1.vLead, " vLeadK: ", self.lead_1.vLeadK, " aLeadK: ",     self.lead_1.aLeadK
 
     ###   Logic to determine best cruise speed ###
@@ -543,6 +567,7 @@ class PCCController(object):
       new_speed = clip(new_speed,MIN_PCC_V,MAX_PCC_V)
       new_speed = clip(new_speed, 0, self.pedal_speed_kph)
       self.last_speed = new_speed
+      self.last_brake = new_brake
       if DEBUG:
         if msg:
           print msg
