@@ -173,6 +173,8 @@ class CarInterface(object):
 
     ret.steerKf = 0.00006 # conservative feed-forward
 
+    ret.steerControlType = car.CarParams.SteerControlType.torque
+
     if candidate == CAR.CIVIC:
       stop_and_go = True
       ret.mass = mass_civic
@@ -217,6 +219,7 @@ class CarInterface(object):
       ret.longitudinalKpV = [1.2, 0.8, 0.5]
       ret.longitudinalKiBP = [0., 35.]
       ret.longitudinalKiV = [0.18, 0.12]
+      ret.steerControlType = car.CarParams.SteerControlType.angle
 
     elif candidate == CAR.ACURA_ILX:
       stop_and_go = False
@@ -316,8 +319,6 @@ class CarInterface(object):
 
     else:
       raise ValueError("unsupported car %s" % candidate)
-
-    ret.steerControlType = car.CarParams.SteerControlType.torque
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter. Otherwise, add 0.5 mph margin to not
