@@ -485,8 +485,9 @@ class PCCController(object):
         ### We have lead ###
         if lead_dist >= 2 * safe_dist_m:
           msg =  "More than 2x safe distance... use lead speed..."
-          msg2 = "LD > 2x safe, V = lead"
-          new_speed = new_speed + rel_speed
+          msg2 = "LD > 2x safe, V=max" 
+          new_speed = self.pedal_speed_kph
+          #new_speed = new_speed + rel_speed
           new_brake = 1.
         #Reduce speed if rel_speed < -15kph so you don't rush up to lead car
         elif rel_speed < -15  and lead_dist >= safe_dist_m:
@@ -538,14 +539,15 @@ class PCCController(object):
         msg = "No lead and do nothing"
         new_brake = 1.
         msg2 = msg
-      if msg:
-        print msg  
       #new_speed = clip(new_speed, 0, self.pedal_speed_kph)
       new_speed = clip(new_speed,MIN_PCC_V,MAX_PCC_V)
       new_speed = clip(new_speed, 0, self.pedal_speed_kph)
       self.last_speed = new_speed
       if DEBUG:
-        print new_speed
+        if msg:
+          print msg
         CS.UE.custom_alert_message(2,msg2+ " ["+ `int(new_speed*CV.KPH_TO_MPH)` + "]",6,0)
+      else:
+        print msg2
 
     return new_speed * CV.KPH_TO_MS , new_brake
