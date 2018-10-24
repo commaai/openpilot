@@ -7,7 +7,10 @@ from common.api import api_get
 from common.params import Params
 
 def get_imei():
-  return subprocess.check_output(["getprop", "oem.device.imeicache"]).strip()
+  ret = subprocess.check_output(["getprop", "oem.device.imeicache"]).strip()
+  if ret == "":
+    ret = "000000000000000"
+  return ret
 
 def get_serial():
   return subprocess.check_output(["getprop", "ro.serialno"]).strip()
