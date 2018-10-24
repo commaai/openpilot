@@ -67,8 +67,37 @@ BO_ 776 ASCMAccSpeedStatus: 7 NEO
  SG_ VehicleSpeed : 15|12@0+ (1,0) [0|0] ""  B233B_LRR
  SG_ AlwaysOne : 3|1@0+ (1,0) [0|0] ""  B233B_LRR
 
-BO_ 1120 LRRNumObjects: 8 B233B_LRR
- SG_ LRRNumObjects : 20|5@0+ (1,0) [0|0] ""  NEO
+BO_ 1120 F_LRR_Obj_Header: 8 LRR_FO
+ SG_ FLRRRollingCount : 7|2@0+ (1,0) [0|3] ""  EOCM_F_FO
+ SG_ FLRRModeCmdFdbk : 23|3@0+ (1,0) [0|7] ""  EOCM_F_FO
+ SG_ FLRRNumValidTargets : 20|5@0+ (1,0) [0|31] ""  EOCM_F_FO
+ SG_ FLRRTimeStampV : 31|1@0+ (1,0) [0|1] ""  EOCM_F_FO
+ SG_ FLRRTimeStamp : 2|11@0+ (1,0) [0|2047] "ms"  EOCM_F_FO
+ SG_ FLRRRoadTypeInfo : 5|3@0+ (1,0) [0|7] ""  EOCM_F_FO
+ SG_ FLRRBurstChecksum : 55|16@0+ (1,0) [0|65535] ""  EOCM_F_FO
+ SG_ FLRRDiagSpare : 30|1@0+ (1,0) [0|1] ""  EOCM_F_FO
+ SG_ FLRRVltgOutRngLo : 44|1@0+ (1,0) [0|1] ""  EOCM_F_FO
+ SG_ FLRRVltgOutRngHi : 43|1@0+ (1,0) [0|1] ""  EOCM_F_FO
+ SG_ FLRRSvcAlgnInPrcs : 38|1@0+ (1,0) [0|1] ""  EOCM_F_FO
+ SG_ FLRRSnsrBlckd : 45|1@0+ (1,0) [0|1] ""  EOCM_F_FO
+ SG_ FLRRSnstvFltPrsntInt : 24|1@0+ (1,0) [0|1] ""  EOCM_F_FO
+ SG_ FLRRPlntAlgnInProc : 37|1@0+ (1,0) [0|1] ""  EOCM_F_FO
+ SG_ FLRRMsalgnYawRt : 47|1@0+ (1,0) [0|1] ""  EOCM_F_FO
+ SG_ FLRRMsalgnYawLt : 46|1@0+ (1,0) [0|1] ""  EOCM_F_FO
+ SG_ FLRRLonVelPlsblityFlt : 35|1@0+ (1,0) [0|1] ""  EOCM_F_FO
+ SG_ FLRRYawRtPlsblityFlt : 34|1@0+ (1,0) [0|1] ""  EOCM_F_FO
+ SG_ FLRRMsalgnPtchUp : 32|1@0+ (1,0) [0|1] ""  EOCM_F_FO
+ SG_ FLRRMsalgnPtchDn : 33|1@0+ (1,0) [0|1] ""  EOCM_F_FO
+ SG_ FLRRInitDiagCmplt : 40|1@0+ (1,0) [0|1] ""  EOCM_F_FO
+ SG_ FLRRHWFltPrsntInt : 25|1@0+ (1,0) [0|1] ""  EOCM_F_FO
+ SG_ FLRRExtIntrfrnc : 36|1@0+ (1,0) [0|1] ""  EOCM_F_FO
+ SG_ FLRRCANSgnlSpvFld : 29|1@0+ (1,0) [0|1] ""  EOCM_F_FO
+ SG_ FLRRCANRxErr : 28|1@0+ (1,0) [0|1] ""  EOCM_F_FO
+ SG_ FLRRTunlDtctd : 27|1@0+ (1,0) [0|1] ""  EOCM_F_FO
+ SG_ FLRRAmbTmpOutRngLw : 42|1@0+ (1,0) [0|1] ""  EOCM_F_FO
+ SG_ FLRRAmbTmpOutRngHi : 41|1@0+ (1,0) [0|1] ""  EOCM_F_FO
+ SG_ FLRRAntTngFltPrsnt : 26|1@0+ (1,0) [0|1] ""  EOCM_F_FO
+ SG_ FLRRAlgnFltPrsnt : 39|1@0+ (1,0) [0|1] ""  EOCM_F_FO
 
 BO_ 1134 LRRObject14: 8 B233B_LRR
  SG_ TrkRange : 5|11@0+ (0.125,0) [0|255.875] "m"  NEO
