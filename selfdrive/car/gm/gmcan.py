@@ -84,14 +84,21 @@ def create_friction_brake_command(packer, bus, apply_brake, idx, near_stop, at_f
 
   return packer.make_can_msg("EBCMFrictionBrakeCmd", bus, values)
 
-def create_acc_dashboard_command(bus, acc_engaged, target_speed_ms, lead_car_in_sight):
-  engaged = 0x90 if acc_engaged else 0
-  lead_car = 0x10 if lead_car_in_sight else 0
-  target_speed = int(target_speed_ms * 208) & 0xfff
-  speed_high = target_speed >> 8
-  speed_low = target_speed & 0xff
-  dat = [0x01, 0x00, engaged | speed_high, speed_low, 0x01, lead_car]
-  return [0x370, 0, "".join(map(chr, dat)), bus]
+def create_acc_dashboard_command(packer, bus, acc_engaged, target_speed_kph, lead_car_in_sight):
+  # Not a bit shift, dash can round up based on low 4 bits.
+  target_speed = int(target_speed_kph * 16) & 0xfff
+
+  values = {
+    "ACCAlwaysOne" : 1,
+    "ACCResumeButton" : 0,
+    "ACCSpeedSetpoint" : target_speed,
+    "ACCGapLevel" : 3 * acc_engaged, # 3 "far", 0 "inactive"
+    "ACCCmdActive" : acc_engaged,
+    "ACCAlwaysOne2" : 1,
+    "ACCLeadCar" : lead_car_in_sight
+  }
+
+  return packer.make_can_msg("ASCMActiveCruiseControlStatus", bus, values)
 
 def create_adas_time_status(bus, tt, idx):
   dat = [(tt >> 20) & 0xff, (tt >> 12) & 0xff, (tt >> 4) & 0xff,
@@ -126,6 +133,16 @@ def create_adas_headlights_status(bus):
 def create_chime_command(bus, chime_type, duration, repeat_cnt):
   dat = [chime_type, duration, repeat_cnt, 0xff, 0]
   return [0x10400060, 0, "".join(map(chr, dat)), bus]
+
+def create_lka_icon_command(bus, active, critical):
+  if active:
+    if critical:
+      dat = "\x40\xc0\x14"
+    else:
+      dat = "\x40\x40\x18"
+  else:
+    dat = "\x00\x00\x00"
+  return [0x104c006c, 0, dat, bus]
 
 # TODO: WIP
 '''

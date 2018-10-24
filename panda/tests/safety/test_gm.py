@@ -5,7 +5,7 @@ import libpandasafety_py
 
 MAX_RATE_UP = 7
 MAX_RATE_DOWN = 17
-MAX_STEER = 255
+MAX_STEER = 300
 MAX_BRAKE = 350
 MAX_GAS = 3072
 MAX_REGEN = 1404
@@ -84,10 +84,6 @@ class TestGmSafety(unittest.TestCase):
     to_send[0].RDHR = (((t >> 8) & 0x7) << 16) | ((t & 0xFF) << 24)
     return to_send
 
-  def _torque_driver_msg_array(self, torque):
-    for i in range(3):
-      self.safety.gm_ipas_rx_hook(self._torque_driver_msg(torque))
-
   def _torque_msg(self, torque):
     to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
     to_send[0].RIR = 384 << 21
@@ -117,7 +113,7 @@ class TestGmSafety(unittest.TestCase):
     self.safety.gm_rx_hook(self._button_msg(CANCEL_BTN))
     self.assertFalse(self.safety.get_controls_allowed())
 
-  def test_disengage_on_brake(self): 
+  def test_disengage_on_brake(self):
     self.safety.set_controls_allowed(1)
     self.safety.gm_rx_hook(self._brake_msg(True))
     self.assertFalse(self.safety.get_controls_allowed())

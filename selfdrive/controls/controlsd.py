@@ -46,8 +46,8 @@ def isEnabled(state):
 
 
 def data_sample(CI, CC, thermal, calibration, health, driver_monitor, gps_location,
-                poller, cal_status, overtemp, free_space, driver_status, geofence,
-                state, mismatch_counter, params):
+                poller, cal_status, cal_perc, overtemp, free_space, low_battery,
+                driver_status, geofence, state, mismatch_counter, params):
 
   # *** read can and compute car states ***
   CS = CI.update(CC)
@@ -80,6 +80,12 @@ def data_sample(CI, CC, thermal, calibration, health, driver_monitor, gps_locati
     # under 15% of space free no enable allowed
     free_space = td.thermal.freeSpace < 0.15
 
+    # at zero percent battery, OP should not be allowed
+    low_battery = td.thermal.batteryPercent < 1
+
+  if low_battery:
+    events.append(create_event('lowBattery', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+
   if overtemp:
     events.append(create_event('overheat', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
 
@@ -89,10 +95,11 @@ def data_sample(CI, CC, thermal, calibration, health, driver_monitor, gps_locati
   # *** read calibration status ***
   if cal is not None:
     cal_status = cal.liveCalibration.calStatus
+    cal_perc = cal.liveCalibration.calPerc
 
   if cal_status != Calibration.CALIBRATED:
     if cal_status == Calibration.UNCALIBRATED:
-      events.append(create_event('calibrationInProgress', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+      events.append(create_event('calibrationIncomplete', [ET.NO_ENTRY, ET.SOFT_DISABLE, ET.PERMANENT]))
     else:
       events.append(create_event('calibrationInvalid', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
 
@@ -117,7 +124,7 @@ def data_sample(CI, CC, thermal, calibration, health, driver_monitor, gps_locati
   if geofence is not None and not geofence.in_geofence:
     events.append(create_event('geofence', [ET.NO_ENTRY, ET.WARNING]))
 
-  return CS, events, cal_status, overtemp, free_space, mismatch_counter
+  return CS, events, cal_status, cal_perc, overtemp, free_space, low_battery, mismatch_counter
 
 
 def calc_plan(CS, CP, events, PL, LaC, LoC, v_cruise_kph, driver_status, geofence):
@@ -224,7 +231,7 @@ def state_transition(CS, CP, state, events, soft_disable_timer, v_cruise_kph, AM
 
 
 def state_control(plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, AM, rk,
-                  driver_status, PL, LaC, LoC, VM, angle_offset, passive):
+                  driver_status, PL, LaC, LoC, VM, angle_offset, passive, is_metric, cal_perc):
   # Given the state, this function returns the actuators
 
   # reset actuators to zero
@@ -258,7 +265,13 @@ def state_control(plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, 
 
     # parse warnings from car specific interface
     for e in get_events(events, [ET.WARNING]):
-      AM.add(e, enabled)
+      extra_text = ""
+      if e == "belowSteerSpeed":
+        if is_metric:
+          extra_text = str(int(round(CP.minSteerSpeed * CV.MS_TO_KPH))) + " kph"
+        else:
+          extra_text = str(int(round(CP.minSteerSpeed * CV.MS_TO_MPH))) + " mph"
+      AM.add(e, enabled, extra_text_2=extra_text)
 
   # *** angle offset learning ***
 
@@ -283,16 +296,19 @@ def state_control(plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, 
 
   # parse permanent warnings to display constantly
   for e in get_events(events, [ET.PERMANENT]):
-    AM.add(str(e) + "Permanent", enabled)
+    extra_text_1, extra_text_2 = "", ""
+    if e == "calibrationIncomplete":
+      extra_text_1 = str(cal_perc) + "%"
+      extra_text_2 = "35 kph" if is_metric else "15 mph"
+    AM.add(str(e) + "Permanent", enabled, extra_text_1=extra_text_1, extra_text_2=extra_text_2)
 
   # *** process alerts ***
-
   AM.process_alerts(sec_since_boot())
 
   return actuators, v_cruise_kph, driver_status, angle_offset
 
 
-def data_send(plan, plan_ts, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, carstate,
+def data_send(perception_state, plan, plan_ts, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, carstate,
               carcontrol, live100, livempc, AM, driver_status,
               LaC, LoC, angle_offset, passive):
 
@@ -323,7 +339,7 @@ def data_send(plan, plan_ts, CS, CI, CP, VM, state, events, actuators, v_cruise_
     CC.hudControl.audibleAlert = AM.audible_alert
 
     # send car controls over can
-    CI.apply(CC)
+    CI.apply(CC, perception_state)
 
   # ***** publish state to logger *****
   # publish controls state at 100Hz
@@ -336,7 +352,9 @@ def data_send(plan, plan_ts, CS, CI, CP, VM, state, events, actuators, v_cruise_
     "alertSize": AM.alert_size,
     "alertStatus": AM.alert_status,
     "alertBlinkingRate": AM.alert_rate,
+    "alertType": AM.alert_type,
     "awarenessStatus": max(driver_status.awareness, 0.0) if isEnabled(state) else 0.0,
+    "driverMonitoringOn": bool(driver_status.monitor_on),
     "canMonoTimes": list(CS.canMonoTimes),
     "planMonoTime": plan_ts,
     "enabled": isEnabled(state),
@@ -409,6 +427,7 @@ def controlsd_thread(gctx=None, rate=100, default_bias=0.):
   carcontrol = messaging.pub_sock(context, service_list['carControl'].port)
   livempc = messaging.pub_sock(context, service_list['liveMpc'].port)
 
+  is_metric = params.get("IsMetric") == "1"
   passive = params.get("Passive") != "0"
   if not passive:
     while 1:
@@ -446,21 +465,14 @@ def controlsd_thread(gctx=None, rate=100, default_bias=0.):
     CP.safetyModel = car.CarParams.SafetyModels.noOutput
 
   fcw_enabled = params.get("IsFcwEnabled") == "1"
-  driver_monitor_on = params.get("IsDriverMonitoringEnabled") == "1"
   geofence = None
-  try:
-    from selfdrive.controls.lib.geofence import Geofence
-    geofence = Geofence(params.get("IsGeofenceEnabled") == "1")
-  except ImportError:
-    # geofence not available
-    params.put("IsGeofenceEnabled", "-1")
 
   PL = Planner(CP, fcw_enabled)
   LoC = LongControl(CP, CI.compute_gb)
   VM = VehicleModel(CP)
   LaC = LatControl(VM)
   AM = AlertManager()
-  driver_status = DriverStatus(driver_monitor_on)
+  driver_status = DriverStatus()
 
   if not passive:
     AM.add("startup", False)
@@ -474,8 +486,10 @@ def controlsd_thread(gctx=None, rate=100, default_bias=0.):
   v_cruise_kph_last = 0
   overtemp = False
   free_space = False
-  cal_status = Calibration.UNCALIBRATED
+  cal_status = Calibration.INVALID
+  cal_perc = 0
   mismatch_counter = 0
+  low_battery = False
 
   rk = Ratekeeper(rate, print_delay_threshold=2./1000)
 
@@ -496,8 +510,8 @@ def controlsd_thread(gctx=None, rate=100, default_bias=0.):
     prof.checkpoint("Ratekeeper", ignore=True)
 
     # sample data and compute car events
-    CS, events, cal_status, overtemp, free_space, mismatch_counter = data_sample(CI, CC, thermal, cal, health,
-      driver_monitor, gps_location, poller, cal_status, overtemp, free_space, driver_status, geofence, state, mismatch_counter, params)
+    CS, events, cal_status, cal_perc, overtemp, free_space, low_battery, mismatch_counter = data_sample(CI, CC, thermal, cal, health,
+      driver_monitor, gps_location, poller, cal_status, cal_perc, overtemp, free_space, low_battery, driver_status, geofence, state, mismatch_counter, params)
     prof.checkpoint("Sample")
 
     # define plan
@@ -511,12 +525,12 @@ def controlsd_thread(gctx=None, rate=100, default_bias=0.):
       prof.checkpoint("State transition")
 
     # compute actuators
-    actuators, v_cruise_kph, driver_status, angle_offset = state_control(plan, CS, CP, state, events, v_cruise_kph, 
-      v_cruise_kph_last, AM, rk, driver_status, PL, LaC, LoC, VM, angle_offset, passive)
+    actuators, v_cruise_kph, driver_status, angle_offset = state_control(plan, CS, CP, state, events, v_cruise_kph,
+      v_cruise_kph_last, AM, rk, driver_status, PL, LaC, LoC, VM, angle_offset, passive, is_metric, cal_perc)
     prof.checkpoint("State Control")
 
     # publish data
-    CC = data_send(plan, plan_ts, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, carstate, carcontrol,
+    CC = data_send(PL.perception_state, plan, plan_ts, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, carstate, carcontrol,
       live100, livempc, AM, driver_status, LaC, LoC, angle_offset, passive)
     prof.checkpoint("Sent")
 

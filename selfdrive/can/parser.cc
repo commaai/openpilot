@@ -259,6 +259,7 @@ class CANParser {
         memcpy(dat, cmsg.getDat().begin(), cmsg.getDat().size());
 
         // Assumes all signals in the message are of the same type (little or big endian)
+        // TODO: allow signals within the same message to have different endianess
         auto& sig = message_states[cmsg.getAddress()].parse_sigs[0];
         if (sig.is_little_endian) {
             p = read_u64_le(dat);
