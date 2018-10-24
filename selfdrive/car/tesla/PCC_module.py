@@ -21,7 +21,7 @@ import numpy as np
 
 
 MPC_BRAKE_MULTIPLIER = 6.
-DEBUG = True
+DEBUG = False
 
 # TODO: these should end up in values.py at some point, probably variable by trim
 # Accel limits
@@ -75,7 +75,7 @@ _DT = 0.05    # 20Hz in our case, since we don't want to process more than once 
 _DT_MPC = 0.05  # 20Hz 
 
 def tesla_compute_gb(accel, speed):
-  return float(accel) # / 3.
+  return float(accel)  / 3.
 
 def calc_cruise_accel_limits(v_ego, following):
   a_cruise_min = interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V)
