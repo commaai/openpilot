@@ -234,7 +234,7 @@ typedef struct UIState {
   float light_sensor;
 } UIState;
 
-
+#include "dashcam.h"
 #include "bbui.h"
 
 static int last_brightness = -1;
@@ -1860,6 +1860,7 @@ int main() {
     }
 
     if (s->awake) {
+      dashcam(s, touch_x, touch_y);
       ui_draw(s);
       glFinish();
       should_swap = true;
