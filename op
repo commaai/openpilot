@@ -1,0 +1,2 @@
+PYTHONPATH=/data/openpilot/ python /data/openpilot/selfdrive/controls/controlsd.py
+
