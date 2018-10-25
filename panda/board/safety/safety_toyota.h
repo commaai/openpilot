@@ -155,8 +155,8 @@ static void toyota_init(int16_t param) {
 
 static int toyota_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
 
-  // forward cam to radar and viceversa if car is dsu-less, except lkas cmd and hud removed  && toyota_no_dsu_car
-  if ((bus_num == 0 || bus_num == 2) && !toyota_giraffe_switch_1) { 
+  // forward cam to radar and viceversa if car is dsu-less, except lkas cmd and hud removed 
+  if ((bus_num == 0 || bus_num == 2) && toyota_no_dsu_car && !toyota_giraffe_switch_1) { 
     int addr = to_fwd->RIR>>21;
     bool is_lkas_msg = (addr == 0x2E4 || addr == 0x412) && bus_num == 2;
     return is_lkas_msg? -1 : (uint8_t)(~bus_num & 0x2);
