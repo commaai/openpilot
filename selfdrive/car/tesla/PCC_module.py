@@ -23,6 +23,8 @@ import numpy as np
 MPC_BRAKE_MULTIPLIER = 6.
 DEBUG = False
 
+PCC_SPEED_FACTOR = 3.
+
 # TODO: these should end up in values.py at some point, probably variable by trim
 # Accel limits
 ACCEL_HYST_GAP = 0.5  # don't change accel command for small oscilalitons within this value
@@ -497,7 +499,11 @@ class PCCController(object):
       if lead_dist == 0 and new_speed != self.pedal_speed_kph:
         msg =  "Set to max"
         msg2 = "LD = 0, V = max"
-        new_speed = self.pedal_speed_kph
+        if new_speed <= (self.pedal_speed_kph + SPEED_UP):
+          #new_speed = self.last_speed + SPEED_UP
+          new_speed = new_speed + SPEED_UP
+        else:
+          new_speed = self.pedal_speed_kph
         new_brake = 2.
       # If we have a populated lead_distance
       # TODO: make angle dependent on speed
@@ -510,9 +516,25 @@ class PCCController(object):
         if lead_dist >= 2 * safe_dist_m:
           msg =  "More than 2x safe distance... use lead speed..."
           msg2 = "LD > 2x safe, V=max" 
-          new_speed = self.pedal_speed_kph
+          if new_speed <= (self.pedal_speed_kph + SPEED_UP):
+            #new_speed = self.last_speed + SPEED_UP
+            new_speed = new_speed + SPEED_UP
+          else:
+            new_speed = self.pedal_speed_kph
           #new_speed = new_speed + rel_speed
           new_brake = 1.
+        # if between safe dist and 2x safe dist adjust speed
+        elif lead_dist >= safe_dist_m and lead_dist < 2 * safe_dist_m:
+          nb_d = (2 * safe_dist_m - lead_dist ) / safe_dist_m
+          nb_v = - rel_speed / PCC_SPEED_FACTOR
+          new_brake = clip (nb_d, 0.1, 1) * clip(nb_v, 0.1, 20)
+          if rel_speed > SPEED_UP:
+            #new_speed = self.last_speed + SPEED_UP
+            new_speed = new_speed + SPEED_UP
+          elif rel_speed >= 0:
+            new_speed = new_speed + rel_speed 
+          else:
+            new_speed = new_speed + rel_speed * clip(nb_v, 1, 2)
         #Reduce speed if rel_speed < -15kph so you don't rush up to lead car
         elif rel_speed < -15  and lead_dist >= safe_dist_m:
           msg =  "Approaching fast (-15), still more than the safe distance, slow down 3x"
@@ -524,19 +546,19 @@ class PCCController(object):
           msg =  "Approaching moderate (-5), still more than the safe distance, slow down 2x"
           msg2 = "LD > safe, RV < -5, V=V-2xRV"
           new_speed = new_speed + rel_speed * 2
-          new_brake = 2.
+          new_brake =  .5
         #Reduce speed if rel_speed < 0kph so you don't rush up to lead car
         elif rel_speed < 0  and lead_dist >=  safe_dist_m:
           msg =  "Approaching (-0), still more than the safe distance, slow down 1.5x"
           msg2 = "LD > safe, RV < 0, V=V-1.5xRV"
           new_speed = new_speed + rel_speed * 1.5
-          new_brake = 1.
+          new_brake = .3 
         #Reduce speed if rel_speed < -5kph so you don't rush up to lead car
         elif rel_speed >= 0  and lead_dist >=  safe_dist_m:
           msg =  "Following, still more than the safe distance... continue to follow"
           msg2 = "LD > safe, RV > 0, V=V+RV"
-          new_speed = new_speed + rel_speed
-          new_brake = 1.
+          new_speed = new_speed + rel_speed *.25
+          new_brake = .1
         #Reduce speed significantly if lead_dist < safe dist
         elif lead_dist < safe_dist_m and rel_speed < 2:
           if rel_speed > 0:
@@ -554,7 +576,8 @@ class PCCController(object):
           msg =  "Less than safe distance and moving away... 1.5 rel speed down"
           msg2 = "LD < safe, RV > 2, V=V"
           #new_speed = new_speed - rel_speed * 1.5
-          new_brake = 3.
+          new_speed = self.last_speed
+          new_brake = .1
         else:
           msg = "Have lead and do nothing"
           msg2 = msg
