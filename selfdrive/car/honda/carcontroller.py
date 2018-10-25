@@ -120,7 +120,7 @@ class CarController(object):
       STEER_MAX = 0xF00
     elif CS.CP.carFingerprint in (CAR.CRV, CAR.ACURA_RDX):
       STEER_MAX = 0x3e8  # CR-V only uses 12-bits and requires a lower value (max value from energee)
-    elif CS.CP.carFingerprint in  in (CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH):
+    elif CS.CP.carFingerprint in (CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH):
       STEER_MAX = min(0x3dff, abs(CS.angle_steers) + 0x1000)
     else:
       STEER_MAX = 0x1000
@@ -129,7 +129,7 @@ class CarController(object):
     apply_gas = clip(actuators.gas, 0., 1.)
     apply_brake = int(clip(self.brake_last * BRAKE_MAX, 0, BRAKE_MAX - 1))
 
-    if CS.CP.steerControlType = car.CarParams.SteerControlType.angle
+    if CS.CP.steerControlType == car.CarParams.SteerControlType.angle:
       apply_steer = int(clip(actuators.angleSteer, -STEER_MAX, STEER_MAX))
     else:
       apply_steer = int(clip(actuators.steer * STEER_MAX, -STEER_MAX, STEER_MAX))
