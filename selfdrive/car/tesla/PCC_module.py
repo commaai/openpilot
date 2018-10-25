@@ -23,8 +23,8 @@ import numpy as np
 MPC_BRAKE_MULTIPLIER = 6.
 DEBUG = False
 
-PCC_SPEED_FACTOR = 5.
-PCC_X_SAFE = 2.
+PCC_SPEED_FACTOR = 2.
+PCC_X_SAFE = 2.5
 
 # TODO: these should end up in values.py at some point, probably variable by trim
 # Accel limits
