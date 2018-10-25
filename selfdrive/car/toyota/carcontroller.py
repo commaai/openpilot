@@ -126,6 +126,7 @@ class CarController(object):
     self.blindspot_blink_counter_right = 0
     self.steer_angle_enabled = False
     self.ipas_reset_counter = 0
+    self.last_fault_frame = -200
     self.blindspot_debug_enabled_left = False
     self.blindspot_debug_enabled_right = False
 
@@ -190,6 +191,9 @@ class CarController(object):
     # cuts steer torque immediately anyway TODO: monitor if this is a real issue
     # only cut torque when steer state is a known fault
     if not enabled or CS.steer_state in [9, 25]:
+      self.last_fault_frame = frame
+      # Cut steering for 2s after fault
+    if frame - self.last_fault_frame < 200:
       apply_steer = 0
       apply_steer_req = 0
     else:
