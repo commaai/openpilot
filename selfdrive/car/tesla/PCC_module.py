@@ -24,6 +24,7 @@ MPC_BRAKE_MULTIPLIER = 6.
 DEBUG = False
 
 PCC_SPEED_FACTOR = 3.
+PCC_X_SAFE = 3.
 
 # TODO: these should end up in values.py at some point, probably variable by trim
 # Accel limits
@@ -513,7 +514,7 @@ class PCCController(object):
         msg2 = "LD = 0 or safe, A > 5, V= cnst"
       elif (lead_dist > 0):
         ### We have lead ###
-        if lead_dist >= 2 * safe_dist_m:
+        if lead_dist >= PCC_X_SAFE * safe_dist_m:
           msg =  "More than 2x safe distance... use lead speed..."
           msg2 = "LD > 2x safe, V=max" 
           if new_speed <= (self.pedal_speed_kph + SPEED_UP):
@@ -524,9 +525,10 @@ class PCCController(object):
           #new_speed = new_speed + rel_speed
           new_brake = 1.
         # if between safe dist and 2x safe dist adjust speed
-        elif lead_dist >= safe_dist_m and lead_dist < 2 * safe_dist_m:
-          nb_d = (2 * safe_dist_m - lead_dist ) / safe_dist_m
+        elif lead_dist >= safe_dist_m and lead_dist < PCC_X_SAFE * safe_dist_m:
+          nb_d = (PCC_X_SAFE * safe_dist_m - lead_dist ) / ((PCC_X_SAFE -1) * safe_dist_m)
           nb_v = - rel_speed / PCC_SPEED_FACTOR
+          msg2= "LD > safe, LD < 2x safe"
           new_brake = clip (nb_d, 0.1, 1) * clip(nb_v, 0.1, 20)
           if rel_speed > SPEED_UP:
             #new_speed = self.last_speed + SPEED_UP
