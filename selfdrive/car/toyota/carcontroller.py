@@ -293,8 +293,11 @@ class CarController(object):
         # rav4h with dsu disconnected
 
     if self.angle_control:
-      can_sends.append(create_ipas_steer_command(self.packer, apply_angle, self.steer_angle_enabled,
+      if CS.lane_departure_toggle_on:
+        can_sends.append(create_ipas_steer_command(self.packer, apply_angle, self.steer_angle_enabled,
                                                  ECU.APGS in self.fake_ecus))
+      else:
+        can_sends.append(create_ipas_steer_command(self.packer, 0, 0, True))
     elif ECU.APGS in self.fake_ecus:
       can_sends.append(create_ipas_steer_command(self.packer, 0, 0, True))
     
