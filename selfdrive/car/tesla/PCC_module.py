@@ -23,8 +23,8 @@ import numpy as np
 MPC_BRAKE_MULTIPLIER = 6.
 DEBUG = False
 
-PCC_SPEED_FACTOR = 3.
-PCC_X_SAFE = 3.
+PCC_SPEED_FACTOR = 5.
+PCC_X_SAFE = 2.
 
 # TODO: these should end up in values.py at some point, probably variable by trim
 # Accel limits
@@ -60,8 +60,8 @@ _A_CRUISE_MIN_BP = [   0., 5.,  10., 20.,  40.]
 
 # need fast accel at very low speed for stop and go
 # make sure these accelerations are smaller than mpc limits
-_A_CRUISE_MAX_V = [2.0, 2.0, 1.9, 1.5, .9]
-_A_CRUISE_MAX_V_FOLLOWING = [2.0, 2.0, 1.9, 1.5, .9]
+_A_CRUISE_MAX_V = [1.0, 1.0, .8, .6, .4]
+_A_CRUISE_MAX_V_FOLLOWING = [1.0, 1.0, .8, .6, .4]
 _A_CRUISE_MAX_BP = [0.,  5., 10., 20., 40.]
 
 # Lookup table for turns
@@ -473,7 +473,7 @@ class PCCController(object):
     actual_speed = CS.v_ego * CV.MS_TO_KPH
     available_speed = self.pedal_speed_kph - actual_speed
     # speed and brake to issue
-    new_speed = actual_speed
+    new_speed = max(actual_speed,self.last_speed)
     new_brake = 1.
     # debug msg
     msg = None
@@ -500,11 +500,7 @@ class PCCController(object):
       if lead_dist == 0 and new_speed != self.pedal_speed_kph:
         msg =  "Set to max"
         msg2 = "LD = 0, V = max"
-        if new_speed <= (self.pedal_speed_kph + SPEED_UP):
-          #new_speed = self.last_speed + SPEED_UP
-          new_speed = new_speed + SPEED_UP
-        else:
-          new_speed = self.pedal_speed_kph
+        new_speed = self.pedal_speed_kph
         new_brake = 2.
       # If we have a populated lead_distance
       # TODO: make angle dependent on speed
