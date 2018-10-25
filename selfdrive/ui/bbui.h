@@ -791,6 +791,7 @@ void bb_ui_draw_UI( UIState *s) {
     bb_draw_buttons(s);
     bb_ui_draw_custom_alert(s);
     bb_ui_draw_logo(s);
+    draw_date_time(s);
 	 }
 
    if (s->b.tri_state_switch ==2) {
@@ -811,6 +812,7 @@ void bb_ui_draw_UI( UIState *s) {
 	 }
 	 if (s->b.tri_state_switch ==3) {
 	 	ui_draw_vision_grid(s);
+		draw_date_time(s);
 	 }
 }
 
