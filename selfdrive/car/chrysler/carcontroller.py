@@ -1,10 +1,6 @@
 import logging
 from common.numpy_fast import clip, interp
 from selfdrive.boardd.boardd import can_list_to_can_capnp
-# from selfdrive.car.toyota.toyotacan import make_can_msg, create_video_target,\
-#                                            create_steer_command, create_ui_command, \
-#                                            create_ipas_steer_command, create_accel_command, \
-#                                            create_fcw_command
 from selfdrive.car.chrysler.chryslercan import create_2d9, create_2a6, create_292
 from selfdrive.car.chrysler.values import ECU, STATIC_MSGS
 from selfdrive.can.packer import CANPacker
@@ -136,7 +132,7 @@ class CarController(object):
     self.standstill_req = False #?
 
     moving_fast = True  # for status message
-    if CS.v_ego < 3.5:  # don't steer if going under 7.8mph to not lock out LKAS (was < 3)
+    if CS.v_ego < 3.8:  # don't steer if going under 8.5mph to not lock out LKAS (was < 3)
       apply_angle = 0
       apply_steer = 0
       moving_fast = False
