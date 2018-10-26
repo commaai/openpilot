@@ -4,7 +4,6 @@
 // ********************* includes *********************
 
 #include "libc.h"
-#include "safety.h"
 #include "provision.h"
 
 #include "drivers/drivers.h"
@@ -19,6 +18,7 @@
 #include "drivers/can.h"
 #include "drivers/spi.h"
 #include "drivers/timer.h"
+#include "safety.h"
 
 
 // ***************************** fan *****************************
@@ -290,6 +290,15 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, int hardwired) {
           case SAFETY_ELM327:
             can_silent = ALL_CAN_BUT_MAIN_SILENT;
             can_autobaud_enabled[0] = false;
+            break;
+          case SAFETY_TESLA:
+            can_silent = ALL_CAN_LIVE;
+            can_autobaud_enabled[0] = false;
+            can_autobaud_enabled[1] = false;
+            #ifdef PANDA
+              can_autobaud_enabled[2] = false;
+            #endif
+            // MISSING: setup GMLAN pin as output and high level to switch EPAS CAN on Tesla Giraffe
             break;
           default:
             can_silent = ALL_CAN_LIVE;
