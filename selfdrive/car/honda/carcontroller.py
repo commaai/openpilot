@@ -1,3 +1,5 @@
+import time
+import zmq
 from cereal import car
 from collections import namedtuple
 from selfdrive.boardd.boardd import can_list_to_can_capnp
@@ -63,9 +65,13 @@ class CarController(object):
     self.enable_camera = enable_camera
     self.packer = CANPacker(dbc_name)
     self.new_radar_config = False
+    self.context = zmq.Context()
+    self.steerpub = self.context.socket(zmq.PUB)
+    self.steerpub.bind("tcp://*:8595")
+    self.steerData = ""
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
-             pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel, \
+             pcm_speed, pcm_override, pcm_cancel_cmd, LaC, pcm_accel, \
              radar_error, hud_v_cruise, hud_show_lanes, hud_show_car, \
              hud_alert, snd_beep, snd_chime):
 
@@ -144,10 +150,27 @@ class CarController(object):
     idx = frame % 4
     can_sends.append(hondacan.create_steering_control(self.packer, apply_steer, lkas_active, CS.CP.carFingerprint, idx))
 
+
     # Send dashboard UI commands.
     if (frame % 10) == 0:
+
       idx = (frame/10) % 4
       can_sends.extend(hondacan.create_ui_commands(self.packer, pcm_speed, hud, CS.CP.carFingerprint, idx))
+      if enabled and lkas_active:
+        command_steer_output = actuators.steerAngle
+        actual_steer_output = CS.angle_steers
+      else:
+        command_steer_output = 0
+        actual_steer_output = 0      
+      self.steerData += ('%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d|' \
+              % (CS.CP.steerKpV[0], CS.CP.steerKiV[0], float(CS.CP.steerKf), LaC.pid.p, LaC.pid.i, LaC.pid.f, LaC.pid.pos_limit, \
+              LaC.pid.saturated, LaC.pid.sat_count, LaC.pid.i_rate, LaC.pid.k_i, LaC.pid.k_f, LaC.pid.k_p, LaC.pid.i_unwind_rate, \
+              actual_steer_output, CS.angle_steers_rate, apply_steer, CS.steer_torque_driver, \
+              command_steer_output, int(time.time() * 100) * 10000000))
+              
+    elif len(self.steerData) > 2000 and (frame % 10) == 5:
+      self.steerpub.send(self.steerData)
+      self.steerData = ""
 
     if CS.CP.radarOffCan:
       # If using stock ACC, spam cancel command to kill gas when OP disengages.

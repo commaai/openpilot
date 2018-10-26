@@ -284,12 +284,15 @@ class CANParser {
           next_can_forward_ns += can_forward_period_ns;
           // next_can_forward_ns starts at 0, so it needs to be reset.  Also handle delays.
           if (sec > next_can_forward_ns) next_can_forward_ns = sec + can_forward_period_ns;
+          std::string canOut = "";
           for (auto src : raw_can_values) {
               for (auto pid : src.second) {
                   std::string canOut = std::to_string(src.first) + " " + std::to_string(pid.first) + " " + std::to_string(pid.second);
                   zmq_send(forwarder, canOut.data(), canOut.size(), 0);
+                  canOut = canOut + std::to_string(src.first) + " " + std::to_string(pid.first) + " " + std::to_string(pid.second) + "|";
               }
           }
+          zmq_send(forwarder, canOut.data(), canOut.size(), 0);
       }
   }
 

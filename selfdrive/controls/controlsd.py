@@ -277,10 +277,10 @@ def state_control(plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, 
 
   if rk.frame % 5 == 2 and plan.lateralValid:
     # *** run this at 20hz again ***
-    angle_offset = abs(learn_angle_offset(active, CS.vEgo, angle_offset,
-                                      PL.PP.c_poly, PL.PP.c_prob, -CS.steeringAngle,
-                                      CS.steeringPressed))
-
+    angle_offset = learn_angle_offset(active, CS.vEgo, angle_offset,
+                                      PL.PP.c_poly, PL.PP.c_prob, CS.steeringAngle,
+                                      CS.steeringPressed)
+  angle_offset = -1
   # *** gas/brake PID loop ***
   actuators.gas, actuators.brake = LoC.update(active, CS.vEgo, CS.brakePressed, CS.standstill, CS.cruiseState.standstill,
                                               v_cruise_kph, plan.vTarget, plan.vTargetFuture, plan.aTarget,
@@ -288,7 +288,7 @@ def state_control(plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, 
 
   # *** steering PID loop ***
   actuators.steer, actuators.steerAngle = LaC.update(active, CS.vEgo, CS.steeringAngle,
-                                                     CS.steeringPressed, plan.dPoly, -angle_offset, VM, PL)
+                                                     CS.steeringPressed, plan.dPoly, angle_offset, VM, PL)
   print(angle_offset, CS.steeringAngle, actuators.steerAngle)
   # send a "steering required alert" if saturation count has reached the limit
   if LaC.sat_flag and CP.steerLimitAlert:
@@ -337,9 +337,9 @@ def data_send(perception_state, plan, plan_ts, CS, CI, CP, VM, state, events, ac
     CC.hudControl.leadVisible = plan.hasLead
     CC.hudControl.visualAlert = AM.visual_alert
     CC.hudControl.audibleAlert = AM.audible_alert
-
+    
     # send car controls over can
-    CI.apply(CC, perception_state)
+    CI.apply(CC, perception_state, LaC)
 
   # ***** publish state to logger *****
   # publish controls state at 100Hz
