@@ -89,10 +89,10 @@ class CarInterface(object):
       # engage speed is decided by pcm
       ret.minEnableSpeed = -1
       # kg of standard extra cargo to count for drive, gas, etc...
-      ret.mass = 4400. * CV.LB_TO_KG + std_cargo
+      ret.mass = 4353. * CV.LB_TO_KG + std_cargo
       ret.safetyModel = car.CarParams.SafetyModels.gm
-      ret.wheelbase = 2.89
-      ret.steerRatio = 16
+      ret.wheelbase = 2.86
+      ret.steerRatio = 14.8
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.4
 
@@ -127,7 +127,7 @@ class CarInterface(object):
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
     ret.tireStiffnessFront = tireStiffnessFront_civic * \
-                             ret.mass / mass_civic * \
+                            ret.mass / mass_civic * \
                              (centerToRear / ret.wheelbase) / (centerToRear_civic / wheelbase_civic)
     ret.tireStiffnessRear = tireStiffnessRear_civic * \
                             ret.mass / mass_civic * \
@@ -137,7 +137,7 @@ class CarInterface(object):
     # same tuning for Volt and CT6 for now
     if candidate in (CAR.VOLT, CAR.CADILLAC_CT6):
       ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
-      ret.steerKpV, ret.steerKiV = [[0.2], [0.00]]
+      ret.steerKpV, ret.steerKiV = [[0.25], [0.00]]
       ret.steerKf = 0.00004   # full torque for 20 deg at 80mph means 0.00007818594
 
       ret.steerMaxBP = [0.] # m/s
@@ -161,7 +161,7 @@ class CarInterface(object):
       
     elif candidate == CAR.ACADIA_DENALI:
       ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
-      ret.steerKpV, ret.steerKiV = [[0.2], [0.00]]
+      ret.steerKpV, ret.steerKiV = [[0.35], [0.13]]
       ret.steerKf = 0.00004   # full torque for 20 deg at 80mph means 0.00007818594
 
       ret.steerMaxBP = [0.] # m/s
@@ -174,9 +174,9 @@ class CarInterface(object):
       ret.longPidDeadzoneV = [0.]
 
       ret.longitudinalKpBP = [0., 5., 35.]
-      ret.longitudinalKpV = [1.2, 0.8, 0.5]
+      ret.longitudinalKpV = [2.4, 1.2, 0.6]
       ret.longitudinalKiBP = [0., 35.]
-      ret.longitudinalKiV = [0.18, 0.12]
+      ret.longitudinalKiV = [0.25, 0.16]
 
       ret.steerLimitAlert = True
 
