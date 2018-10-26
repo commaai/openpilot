@@ -134,6 +134,16 @@ def create_chime_command(bus, chime_type, duration, repeat_cnt):
   dat = [chime_type, duration, repeat_cnt, 0xff, 0]
   return [0x10400060, 0, "".join(map(chr, dat)), bus]
 
+def create_lka_icon_command(bus, active, critical):
+  if active:
+    if critical:
+      dat = "\x40\xc0\x14"
+    else:
+      dat = "\x40\x40\x18"
+  else:
+    dat = "\x00\x00\x00"
+  return [0x104c006c, 0, dat, bus]
+
 # TODO: WIP
 '''
 def create_friction_brake_command_ct6(packer, bus, apply_brake, idx, near_stop, at_full_stop):
