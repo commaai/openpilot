@@ -127,7 +127,7 @@ class CarInterface(object):
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
     ret.tireStiffnessFront = tireStiffnessFront_civic * \
-                            ret.mass / mass_civic * \
+                             ret.mass / mass_civic * \
                              (centerToRear / ret.wheelbase) / (centerToRear_civic / wheelbase_civic)
     ret.tireStiffnessRear = tireStiffnessRear_civic * \
                             ret.mass / mass_civic * \
