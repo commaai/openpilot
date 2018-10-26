@@ -44,9 +44,6 @@ _A_TOTAL_MAX_BP = [0., 20., 40.]
 _FCW_A_ACT_V = [-3., -2.]
 _FCW_A_ACT_BP = [0., 30.]
 
-# max acceleration allowed in acc, which happens in restart
-A_ACC_MAX = max(_A_CRUISE_MAX_V_FOLLOWING)
-
 
 def calc_cruise_accel_limits(v_ego, following):
   a_cruise_min = interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V)
