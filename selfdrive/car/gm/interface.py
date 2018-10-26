@@ -74,7 +74,7 @@ class CarInterface(object):
 
     std_cargo = 136
 
-    if candidate in (CAR.VOLT, CAR.MALIBU):
+    if candidate == CAR.VOLT:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
       # kg of standard extra cargo to count for drive, gas, etc...
@@ -85,6 +85,16 @@ class CarInterface(object):
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.4 # wild guess
 
+    elif candidate == CAR.MALIBU:
+      # supports stop and go, but initial engage must be above 18mph (which include conservatism)
+      ret.minEnableSpeed = 18 * CV.MPH_TO_MS
+      ret.mass = 1496 + std_cargo
+      ret.safetyModel = car.CarParams.SafetyModels.gm
+      ret.wheelbase = 2.83
+      ret.steerRatio = 15.8
+      ret.steerRatioRear = 0.
+      ret.centerToFront = ret.wheelbase * 0.4 # wild guess
+      
     elif candidate == CAR.CADILLAC_CT6:
       # engage speed is decided by pcm
       ret.minEnableSpeed = -1
