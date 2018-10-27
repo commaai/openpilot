@@ -144,7 +144,8 @@ class CarState(object):
     # anything more means we are going to steep or not enough in a turn
     self.CL_MAX_ACTUATOR_DELTA = 2.
     self.CL_MIN_ACTUATOR_DELTA = 0. 
-    self.CL_CORRECTION_FACTOR = 1.
+    self.CL_CORRECTION_FACTOR = [1.1,1.1,1.1]
+    self.CL_CORRECTION_FACTOR_BP = [10., 32., 44.]
      #duration after we cross the line until we release is a factor of speed
     self.CL_TIMEA_BP = [10., 32., 44.]
     self.CL_TIMEA_T = [0.7 ,0.30, 0.20]
