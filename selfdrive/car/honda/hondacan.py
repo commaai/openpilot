@@ -35,9 +35,10 @@ def create_brake_command(packer, apply_brake, pcm_override, pcm_cancel_cmd, chim
   brakelights = apply_brake > 0
   brake_rq = apply_brake > 0
   pcm_fault_cmd = False
+  bus = 0
 
   if car_fingerprint == CAR.CLARITY:
-    apply_brake = 0
+    bus = 2
 
   values = {
     "COMPUTER_BRAKE": apply_brake,
@@ -51,10 +52,13 @@ def create_brake_command(packer, apply_brake, pcm_override, pcm_cancel_cmd, chim
     "CHIME": chime,
     "FCW": fcw << 1,  # TODO: Why are there two bits for fcw? According to dbc file the first bit should also work
   }
-  # Send clarity on bus 2 as well.
-  if car_fingerprint == CAR.CLARITY:
-    commands.append(packer.make_can_msg("BRAKE_COMMAND", 2, values, idx))
-  # commands.append(packer.make_can_msg("BRAKE_COMMAND", 0, values, idx))
+
+  # Toggle first bit of checksum byte if brake value is odd due to overflow into the last byte.
+  if apply_brake & 1:
+    idx += 0x8
+
+  commands.append(packer.make_can_msg("BRAKE_COMMAND", bus, values, idx))
+
   return commands
 
 
@@ -88,7 +92,7 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, idx):
   bus = 0
 
   # Bosch sends commands to bus 2.
-  if car_fingerprint in HONDA_BOSCH:
+  if car_fingerprint in HONDA_BOSCH or car_fingerprint == CAR.CLARITY:
     bus = 2
   else:
     acc_hud_values = {
@@ -102,9 +106,7 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, idx):
       'SET_ME_X01': 0x01,
     }
     # Clarity sends longitudinal control and UI messages to bus 0 and 2.
-    if car_fingerprint == CAR.CLARITY:
-      commands.append(packer.make_can_msg("ACC_HUD", 2, acc_hud_values, idx))
-    # commands.append(packer.make_can_msg("ACC_HUD", 0, acc_hud_values, idx))
+    commands.append(packer.make_can_msg("ACC_HUD", bus, acc_hud_values, idx))
 
   lkas_hud_values = {
     'SET_ME_X41': 0x41,
