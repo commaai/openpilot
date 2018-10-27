@@ -10,7 +10,6 @@ from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET,
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.honda.carstate import CarState, get_can_parser
 from selfdrive.car.honda.values import CruiseButtons, CM, BP, AH, CAR, HONDA_BOSCH
-from selfdrive.controls.lib.planner import A_ACC_MAX
 
 try:
   from selfdrive.car.honda.carcontroller import CarController
@@ -128,7 +127,7 @@ class CarInterface(object):
     # accelOverride is more or less the max throttle allowed to pcm: usually set to a constant
     # unless aTargetMax is very high and then we scale with it; this help in quicker restart
 
-    return float(max(0.714, a_target / A_ACC_MAX)) * min(speedLimiter, accelLimiter)
+    return float(min(speedLimiter, accelLimiter))
 
   @staticmethod
   def get_params(candidate, fingerprint):
@@ -217,9 +216,10 @@ class CarInterface(object):
       ret.longitudinalKiBP = [0., 35.]
       ret.longitudinalKiV = [0.54, 0.36]
 
-    elif candidate in (CAR.ACCORD, CAR.ACCORD_15):
+    elif candidate in (CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH):
       stop_and_go = True
-      ret.safetyParam = 1 # Accord and CRV 5G use an alternate user brake msg
+      if not candidate == CAR.ACCORDH: # Hybrid uses same brake msg as hatch
+        ret.safetyParam = 1 # Accord and CRV 5G use an alternate user brake msg
       ret.mass = 3279. * CV.LB_TO_KG + std_cargo
       ret.wheelbase = 2.83
       ret.centerToFront = ret.wheelbase * 0.39

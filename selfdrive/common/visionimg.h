@@ -23,6 +23,7 @@ typedef struct VisionImg {
   size_t size;
 } VisionImg;
 
+void visionimg_compute_aligned_width_and_height(int width, int height, int *aligned_w, int *aligned_h);
 VisionImg visionimg_alloc_rgb24(int width, int height, VisionBuf *out_buf);
 
 #ifdef QCOM

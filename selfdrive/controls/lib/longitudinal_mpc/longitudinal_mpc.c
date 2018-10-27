@@ -2,6 +2,7 @@
 #include "acado_auxiliary_functions.h"
 
 #include <stdio.h>
+#include <math.h>
 
 #define NX          ACADO_NX  /* Number of differential state variables.  */
 #define NXA         ACADO_NXA /* Number of algebraic variables. */
@@ -28,7 +29,7 @@ typedef struct {
   double j_ego[N+1];
 	double x_l[N+1];
 	double v_l[N+1];
-	double a_l[N+1];
+	double t[N+1];
 	double cost;
 } log_t;
 
@@ -65,34 +66,47 @@ void init(double ttcCost, double distanceCost, double accelerationCost, double j
 
 }
 
-void init_with_simulation(double v_ego, double x_l, double v_l, double a_l, double l){
+void init_with_simulation(double v_ego, double x_l_0, double v_l_0, double a_l_0, double l){
   int i;
   double x_ego = 0.0;
   double a_ego = 0.0;
+
+  double x_l = x_l_0;
+  double v_l = v_l_0;
+  double a_l = a_l_0;
+
 
   if (v_ego > v_l){
     a_ego = -(v_ego - v_l) * (v_ego - v_l) / (2.0 * x_l + 0.01) + a_l;
   }
   double dt = 0.2;
+  double t = 0.;
 
   for (i = 0; i < N + 1; ++i){
     if (i > 4){
       dt = 0.6;
     }
+
+    // Directly calculate a_l to prevent instabilites due to discretization
+    a_l = a_l_0 * exp(-l * t * t / 2);
+
+    /* printf("x_e: %.2f\t v_e: %.2f\t a_e: %.2f\t", x_ego, v_ego, a_ego); */
+    /* printf("x_l: %.2f\t v_l: %.2f\t a_l: %.2f\n", x_l, v_l, a_l); */
+
     acadoVariables.x[i*NX] = x_ego;
     acadoVariables.x[i*NX+1] = v_ego;
     acadoVariables.x[i*NX+2] = a_ego;
 
     acadoVariables.x[i*NX+3] = x_l;
     acadoVariables.x[i*NX+4] = v_l;
-    acadoVariables.x[i*NX+5] = a_l;
+    acadoVariables.x[i*NX+5] = t;
 
     x_ego += v_ego * dt;
     v_ego += a_ego * dt;
 
     x_l += v_l * dt;
     v_l += a_l * dt;
-    a_l += -l * a_l * dt;
+    t += dt;
 
     if (v_ego <= 0.0) {
       v_ego = 0.0;
@@ -104,11 +118,12 @@ void init_with_simulation(double v_ego, double x_l, double v_l, double a_l, doub
   for (i = 0; i < NYN; ++i)  acadoVariables.yN[ i ] = 0.0;
 }
 
-int run_mpc(state_t * x0, log_t * solution, double l){
+int run_mpc(state_t * x0, log_t * solution, double l, double a_l_0){
   int i;
 
   for (i = 0; i <= NOD * N; i+= NOD){
     acadoVariables.od[i] = l;
+    acadoVariables.od[i+1] = a_l_0;
   }
 
   acadoVariables.x[0] = acadoVariables.x0[0] = x0->x_ego;
@@ -116,7 +131,7 @@ int run_mpc(state_t * x0, log_t * solution, double l){
   acadoVariables.x[2] = acadoVariables.x0[2] = x0->a_ego;
   acadoVariables.x[3] = acadoVariables.x0[3] = x0->x_l;
   acadoVariables.x[4] = acadoVariables.x0[4] = x0->v_l;
-  acadoVariables.x[5] = acadoVariables.x0[5] = x0->a_l;
+  acadoVariables.x[5] = acadoVariables.x0[5] = 0.0;
 
   acado_preparationStep();
   acado_feedbackStep();
@@ -127,7 +142,7 @@ int run_mpc(state_t * x0, log_t * solution, double l){
     solution->a_ego[i] = acadoVariables.x[i*NX+2];
 		solution->x_l[i] = acadoVariables.x[i*NX+3];
 		solution->v_l[i] = acadoVariables.x[i*NX+4];
-		solution->a_l[i] = acadoVariables.x[i*NX+5];
+		solution->t[i] = acadoVariables.x[i*NX+5];
 
     solution->j_ego[i] = acadoVariables.u[i];
 	}

@@ -42,7 +42,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     speedTooLow @17;
     outOfSpace @18;
     overheat @19;
-    calibrationInProgress @20;
+    calibrationIncomplete @20;
     calibrationInvalid @21;
     controlsMismatch @22;
     pcmEnable @23;
@@ -68,6 +68,9 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     preDriverUnresponsive @43;
     promptDriverUnresponsive @44;
     driverUnresponsive @45;
+    belowSteerSpeed @46;
+    calibrationProgress @47;
+    lowBattery @48;
   }
 }
 
@@ -284,6 +287,7 @@ struct CarParams {
   enableApgs @28 :Bool; # advanced parking guidance system
 
   minEnableSpeed @17 :Float32;
+  minSteerSpeed @49 :Float32;
   safetyModel @18 :Int16;
   safetyParam @41 :Int16;
 

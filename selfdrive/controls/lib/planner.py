@@ -44,9 +44,6 @@ _A_TOTAL_MAX_BP = [0., 20., 40.]
 _FCW_A_ACT_V = [-3., -2.]
 _FCW_A_ACT_BP = [0., 30.]
 
-# max acceleration allowed in acc, which happens in restart
-A_ACC_MAX = max(_A_CRUISE_MAX_V_FOLLOWING)
-
 
 def calc_cruise_accel_limits(v_ego, following):
   a_cruise_min = interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V)
@@ -161,7 +158,6 @@ class LongitudinalMpc(object):
     dat.liveLongitudinalMpc.aEgo = list(self.mpc_solution[0].a_ego)
     dat.liveLongitudinalMpc.xLead = list(self.mpc_solution[0].x_l)
     dat.liveLongitudinalMpc.vLead = list(self.mpc_solution[0].v_l)
-    dat.liveLongitudinalMpc.aLead = list(self.mpc_solution[0].a_l)
     dat.liveLongitudinalMpc.cost = self.mpc_solution[0].cost
     dat.liveLongitudinalMpc.aLeadTau = self.a_lead_tau
     dat.liveLongitudinalMpc.qpIterations = qp_iterations
@@ -193,11 +189,12 @@ class LongitudinalMpc(object):
       v_lead = max(0.0, lead.vLead)
       a_lead = lead.aLeadK
 
+
       if (v_lead < 0.1 or -a_lead / 2.0 > v_lead):
         v_lead = 0.0
         a_lead = 0.0
 
-      self.a_lead_tau = max(lead.aLeadTau, -a_lead / (v_lead + 0.01))
+      self.a_lead_tau = max(lead.aLeadTau, (a_lead**2 * math.pi) / (2 * (v_lead + 0.01)**2))
       self.new_lead = False
       if not self.prev_lead_status or abs(x_lead - self.prev_lead_x) > 2.5:
         self.libmpc.init_with_simulation(self.v_mpc, x_lead, v_lead, a_lead, self.a_lead_tau)
@@ -207,18 +204,17 @@ class LongitudinalMpc(object):
       self.prev_lead_x = x_lead
       self.cur_state[0].x_l = x_lead
       self.cur_state[0].v_l = v_lead
-      self.cur_state[0].a_l = a_lead
     else:
       self.prev_lead_status = False
       # Fake a fast lead car, so mpc keeps running
       self.cur_state[0].x_l = 50.0
       self.cur_state[0].v_l = CS.vEgo + 10.0
-      self.cur_state[0].a_l = 0.0
+      a_lead = 0.0
       self.a_lead_tau = _LEAD_ACCEL_TAU
 
     # Calculate mpc
     t = sec_since_boot()
-    n_its = self.libmpc.run_mpc(self.cur_state, self.mpc_solution, self.a_lead_tau)
+    n_its = self.libmpc.run_mpc(self.cur_state, self.mpc_solution, self.a_lead_tau, a_lead)
     duration = int((sec_since_boot() - t) * 1e9)
     self.send_mpc_solution(n_its, duration)
 
