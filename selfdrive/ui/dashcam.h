@@ -92,7 +92,7 @@ void save_file(char *videos_dir, char *filename) {
 
 void start_capture() {
   captureState = CAPTURE_STATE_CAPTURING;
-  char cmd[50] = "";
+  char cmd[128] = "";
   char videos_dir[50] = "/sdcard/videos";
 
   //////////////////////////////////
