@@ -356,6 +356,7 @@ def data_send(perception_state, plan, plan_ts, CS, CI, CP, VM, state, events, ac
     "alertSize": AM.alert_size,
     "alertStatus": AM.alert_status,
     "alertBlinkingRate": AM.alert_rate,
+    "alertType": AM.alert_type,
     "awarenessStatus": max(driver_status.awareness, 0.0) if isEnabled(state) else 0.0,
     "driverMonitoringOn": bool(driver_status.monitor_on),
     "canMonoTimes": list(CS.canMonoTimes),

@@ -67,7 +67,7 @@ class CarController(object):
     self.apply_steer_last = 0
     self.car_fingerprint = car_fingerprint
     self.allow_controls = allow_controls
-    self.lka_icon_status_last = 0
+    self.lka_icon_status_last = (False, False)
 
     # Setup detection helper. Routes commands to
     # an appropriate CAN bus number.
@@ -177,11 +177,11 @@ class CarController(object):
 
     # Show green icon when LKA torque is applied, and
     # alarming orange icon when approaching torque limit.
-    # If not sent periodically, LKA icon disappears in about 5 seconds.
+    # If not sent again, LKA icon disappears in about 5 seconds.
     # Conveniently, sending camera message periodically also works as a keepalive.
     lka_active = CS.lkas_status == 1
-    lka_critical = abs(actuators.steer) > 0.9
-    lka_icon_status = lka_active + (int(lka_critical) << 1)
+    lka_critical = lka_active and abs(actuators.steer) > 0.9
+    lka_icon_status = (lka_active, lka_critical)
     if frame % P.CAMERA_KEEPALIVE_STEP == 0 \
         or lka_icon_status != self.lka_icon_status_last:
       can_sends.append(gmcan.create_lka_icon_command(canbus.sw_gmlan, lka_active, lka_critical))

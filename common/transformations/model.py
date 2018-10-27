@@ -75,10 +75,8 @@ def get_model_height_transform(camera_frame_from_road_frame, height):
       [0, 0, 1],
   ]))
 
-  ground_from_camera_frame = np.linalg.inv(camera_frame_from_road_ground)
-
-  low_camera_from_high_camera = np.dot(camera_frame_from_road_high, ground_from_camera_frame)
-  high_camera_from_low_camera = np.linalg.inv(low_camera_from_high_camera)
+  road_high_from_camera_frame = np.linalg.inv(camera_frame_from_road_high)
+  high_camera_from_low_camera = np.dot(camera_frame_from_road_ground, road_high_from_camera_frame)
 
   return high_camera_from_low_camera
 
