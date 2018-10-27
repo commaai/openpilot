@@ -171,6 +171,7 @@ class ALCAController(object):
     cl_max_a = interp(CS.v_ego, CS.CL_MAX_A_BP, CS.CL_MAX_A)
     cl_adjust_factor = interp(CS.v_ego, CS.CL_ADJUST_FACTOR_BP, CS.CL_ADJUST_FACTOR)
     cl_reentry_angle = interp(CS.v_ego, CS.CL_REENTRY_ANGLE_BP, CS.CL_REENTRY_ANGLE)
+    cl_correction_factor = interp(CS.v_ego, CS.CL_CORRECTION_FACTOR_BP, CS.CL_CORRECTION_FACTOR)
     cl_min_v = CS.CL_MIN_V
     self.laneChange_wait = CS.CL_WAIT_BEFORE_START
    
@@ -361,6 +362,7 @@ class ALCAController(object):
           #steering more than what we wanted, need to adjust
           self.keep_angle = True
           self.laneChange_angle  = -actuators.steerAngle + self.laneChange_direction * cl_max_angle_delta * self.laneChange_steerr - laneChange_angle
+          self.laneChange_angle  = self.laneChange_angle * (1 - self.laneChange_direction * (1 - cl_correction_factor))
         if self.laneChange_counter >  (self.laneChange_duration) * 100:
           self.laneChange_enabled = 1
           self.laneChange_counter = 0
