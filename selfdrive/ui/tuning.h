@@ -1,3 +1,32 @@
+/**************************************
+  Tuning UI
+  Author: pjlao307
+
+  This OpenPilot mod allows you to dynamically modify variables used by OpenPilot.
+  The purpose of this mod is to make it easier to tweak certain variables instead of
+  having to modify code, recompile, reboot after every change.
+
+  To use this mod you need to do 2 things:
+
+  1. Create a file called /sdcard/tuning/params.txt
+
+     Copy the file called params.example.txt into /sdcard/tuning (create the directory if needed).  
+     You will need to specify which variables you want the Tuning mod to manage by adding them
+     to that file.
+
+  2. Modify OpenPilot code that uses the variable so that it is read from this file instead of hard coded.  This is left for the user to figure out and implement.
+
+  For questions or info about this mod, visit the comma slack channel #mod-tuning
+
+  CHANGE LOG:
+
+  v0.0.1 - Initial version
+
+**************************************/
+
+#define VERSION "0.0.1"
+
+#define ERROR_NO_FILE 1
 #define BTN_NONE 0
 #define BTN_INCREASE 1
 #define BTN_DECREASE 2
@@ -10,6 +39,9 @@
 #define MAX_NUM_PARAMS 10 // max number of params we can track
 #define MAX_FILE_BYTES 100000 // max bytes to write to file
 
+bool debug = false;
+int status = 0; // Status code to tell us if something went wrong
+
 typedef struct ui_element {
   char name[50];
   int pos_x;
@@ -17,8 +49,6 @@ typedef struct ui_element {
   int width;
   int height;
 } ui_element;
-
-bool debug = false;
 
 int left_arrow_icon;
 int right_arrow_icon;
@@ -91,6 +121,13 @@ char *get_full_path(char *fname) {
 char **readfile(char *filename) {
   if (debug) { printf("readfile\n"); }
   FILE* file = fopen(filename, "r");
+
+  if (!file) {
+    //printf("Could not open file!\n");
+    status = ERROR_NO_FILE;
+    return NULL;
+  }
+
   char line[256];
   char **lines = malloc(sizeof(char *) * MAX_NUM_PARAMS);
   num_lines = 0;
@@ -118,6 +155,11 @@ char **readfile(char *filename) {
 void parse_file(char *filename) {
   if (debug) { printf("parse_file\n"); }
   char **lines = readfile(filename);
+
+  if (status == ERROR_NO_FILE) {
+    return;
+  }
+
   //printf("num_lines: %d\n",num_lines);
 
   for (int i=0; i < num_lines; i++) {
@@ -319,6 +361,24 @@ void init_tuning(UIState *s) {
 
 }
 
+void draw_error( UIState *s) {
+  //printf("No file!\n");
+
+  nvgBeginPath(s->vg);
+    nvgRoundedRect(s->vg,350,400,1350,380,40);
+    nvgStrokeColor(s->vg, nvgRGBA(255,255,255,80));
+    nvgStrokeWidth(s->vg, 6);
+    nvgStroke(s->vg);
+    nvgFillColor(s->vg, nvgRGBA(0, 0, 0, 100));
+    nvgFill(s->vg);
+    nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
+    nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 200));
+    nvgFontSize(s->vg, 70);
+    nvgText(s->vg,400,500,"ERROR - File not found:",NULL);
+    nvgText(s->vg,400,600,"  /sdcard/tuning/params.txt",NULL);
+    nvgText(s->vg,400,700,"Please check that this file exists",NULL);
+}
+
 void screen_draw_tuning(UIState *s) {
   if (debug) { printf("screen_draw_tuning\n"); }
 
@@ -328,8 +388,12 @@ void screen_draw_tuning(UIState *s) {
   if (!init_tune) {
     return;
   }
+
+  if (status == ERROR_NO_FILE && tune_enabled) {
+    draw_error(s);
+  }
   
-  if (tune_enabled) {
+  if (tune_enabled && status != ERROR_NO_FILE) {
 
   if (current_property != -1) {
 
@@ -508,6 +572,7 @@ void screen_draw_tuning(UIState *s) {
   }
 
   if (s->vision_connected) {
+    //printf("vision connected\n");
 
     // tune button
     nvgBeginPath(s->vg);
@@ -600,26 +665,30 @@ void tuning( UIState *s, int touch_x, int touch_y ) {
   }
 */
 
+  screen_draw_tuning(s);
+
+  if (ui_element_clicked(touch_x,touch_y,tune_button)) {
+    toggle_tune();
+    current_button = BTN_TUNE;
+  }
+
+  if (current_button != BTN_NONE) {
+    frame_num++;
+    if (frame_num >= frame_delay) {
+      current_button = BTN_NONE;
+      frame_num = 0;
+    }
+  }
+
+  if (status == ERROR_NO_FILE) {
+    return;
+  }
+
   if (ui_element_clicked(touch_x,touch_y,increase_button) && current_property != -1) {
     //printf("increase button clicked\n");
-    /*debugger
-    for (int i=0; i < num_lines; i++) {
-      for (int j=0; j < param_value_count[i]; j++) {
-        printf("%d, %d: %.3f\n", i, j, angles[i][j]);
-      }
-    }
-    */
     //printf("param_index: %d\n",param_index);
     //printf("current_prop: %d\n",current_property);
     angles[param_index][current_property] += step;
-    /*debugger
-    printf("after:\n");
-    for (int i=0; i < num_lines; i++) {
-      for (int j=0; j < param_value_count[i]; j++) {
-        printf("%d, %d: %.3f\n", i, j, angles[i][j]);
-      }
-    }
-    */
     update_params();
     current_button = BTN_INCREASE;
   }
@@ -649,10 +718,6 @@ void tuning( UIState *s, int touch_x, int touch_y ) {
     next_param(1);
     current_button = BTN_RIGHT_ARROW;
   }
-  else if (ui_element_clicked(touch_x,touch_y,tune_button)) {
-    toggle_tune();
-    current_button = BTN_TUNE;
-  }
   else if (ui_element_clicked(touch_x,touch_y,step_text)) {
     toggle_step();
     current_button = BTN_STEP;
@@ -673,14 +738,5 @@ void tuning( UIState *s, int touch_x, int touch_y ) {
     }
   }
 
-  if (current_button != BTN_NONE) {
-    frame_num++;
-    if (frame_num >= frame_delay) {
-      current_button = BTN_NONE;
-      frame_num = 0;
-    }
-  }
-
-  screen_draw_tuning(s);
 }
 
