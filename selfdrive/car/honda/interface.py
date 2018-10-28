@@ -175,7 +175,37 @@ class CarInterface(object):
 
     ret.steerKf = 0.00006    #  0.00006 # conservative feed-forward
 
-    if candidate in (CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH):
+    if candidate == CAR.CIVIC:
+      stop_and_go = True
+      ret.mass = mass_civic
+      ret.wheelbase = wheelbase_civic
+      ret.centerToFront = centerToFront_civic
+      ret.steerRatio = 14.63  # 10.93 is end-to-end spec
+      tire_stiffness_factor = 1.
+      # Civic at comma has modified steering FW, so different tuning for the Neo in that car
+      is_fw_modified = os.getenv("DONGLE_ID") in ['99c94dc769b5d96e']
+      ret.steerKpV, ret.steerKiV = [[0.33], [0.10]] if is_fw_modified else [[0.8], [0.24]]
+      if is_fw_modified:
+        ret.steerKf = 0.00003
+      ret.longitudinalKpBP = [0., 5., 35.]
+      ret.longitudinalKpV = [3.6, 2.4, 1.5]
+      ret.longitudinalKiBP = [0., 35.]
+      ret.longitudinalKiV = [0.54, 0.36]
+
+    elif candidate == CAR.CIVIC_HATCH:
+      stop_and_go = True
+      ret.mass = 2916. * CV.LB_TO_KG + std_cargo
+      ret.wheelbase = wheelbase_civic
+      ret.centerToFront = centerToFront_civic
+      ret.steerRatio = 14.63  # 10.93 is spec end-to-end
+      tire_stiffness_factor = 1.
+      ret.steerKpV, ret.steerKiV = [[0.8], [0.24]]
+      ret.longitudinalKpBP = [0., 5., 35.]
+      ret.longitudinalKpV = [1.2, 0.8, 0.5]
+      ret.longitudinalKiBP = [0., 35.]
+      ret.longitudinalKiV = [0.18, 0.12]
+
+    elif candidate in (CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH):
       stop_and_go = True
       if not candidate == CAR.ACCORDH: # Hybrid uses same brake msg as hatch
         ret.safetyParam = 1 # Accord and CRV 5G use an alternate user brake msg
@@ -184,14 +214,113 @@ class CarInterface(object):
       ret.centerToFront = ret.wheelbase * 0.39
       ret.steerRatio = 15.96  # 11.82 is spec end-to-end
       tire_stiffness_factor = 0.8467
-      ret.steerKpV, ret.steerKiV = [[.6], [0.18]]   # [[0.6], [0.18]]
+      #ret.steerKpV, ret.steerKiV = [[0.6], [0.18]]
+      ret.steerKpV, ret.steerKiV = [[0.13], [0.02]]
       ret.longitudinalKpBP = [0., 5., 35.]
       ret.longitudinalKpV = [1.2, 0.8, 0.5]
       ret.longitudinalKiBP = [0., 35.]
       ret.longitudinalKiV = [0.18, 0.12]
-      ret.steerControlType = car.CarParams.SteerControlType.angle
+
+    elif candidate == CAR.ACURA_ILX:
+      stop_and_go = False
+      ret.mass = 3095 * CV.LB_TO_KG + std_cargo
+      ret.wheelbase = 2.67
+      ret.centerToFront = ret.wheelbase * 0.37
+      ret.steerRatio = 18.61  # 15.3 is spec end-to-end
+      tire_stiffness_factor = 0.72
+      # Acura at comma has modified steering FW, so different tuning for the Neo in that car
+      is_fw_modified = os.getenv("DONGLE_ID") in ['ff83f397542ab647']
+      ret.steerKpV, ret.steerKiV = [[0.45], [0.00]] if is_fw_modified else [[0.8], [0.24]]
+      if is_fw_modified:
+        ret.steerKf = 0.00003
+      ret.longitudinalKpBP = [0., 5., 35.]
+      ret.longitudinalKpV = [1.2, 0.8, 0.5]
+      ret.longitudinalKiBP = [0., 35.]
+      ret.longitudinalKiV = [0.18, 0.12]
+
+    elif candidate == CAR.CRV:
+      stop_and_go = False
+      ret.mass = 3572 * CV.LB_TO_KG + std_cargo
+      ret.wheelbase = 2.62
+      ret.centerToFront = ret.wheelbase * 0.41
+      ret.steerRatio = 15.3         # as spec
+      tire_stiffness_factor = 0.444 # not optimized yet
+      ret.steerKpV, ret.steerKiV = [[0.8], [0.24]]
+      ret.longitudinalKpBP = [0., 5., 35.]
+      ret.longitudinalKpV = [1.2, 0.8, 0.5]
+      ret.longitudinalKiBP = [0., 35.]
+      ret.longitudinalKiV = [0.18, 0.12]
+
+    elif candidate == CAR.CRV_5G:
+      stop_and_go = True
+      ret.safetyParam = 1 # Accord and CRV 5G use an alternate user brake msg
+      ret.mass = 3410. * CV.LB_TO_KG + std_cargo
+      ret.wheelbase = 2.66
+      ret.centerToFront = ret.wheelbase * 0.41
+      ret.steerRatio = 16.0   # 12.3 is spec end-to-end
+      tire_stiffness_factor = 0.677
+      ret.steerKpV, ret.steerKiV = [[0.6], [0.18]]
+      ret.longitudinalKpBP = [0., 5., 35.]
+      ret.longitudinalKpV = [1.2, 0.8, 0.5]
+      ret.longitudinalKiBP = [0., 35.]
+      ret.longitudinalKiV = [0.18, 0.12]
+
+    elif candidate == CAR.ACURA_RDX:
+      stop_and_go = False
+      ret.mass = 3935 * CV.LB_TO_KG + std_cargo
+      ret.wheelbase = 2.68
+      ret.centerToFront = ret.wheelbase * 0.38
+      ret.steerRatio = 15.0         # as spec
+      tire_stiffness_factor = 0.444 # not optimized yet
+      ret.steerKpV, ret.steerKiV = [[0.8], [0.24]]
+      ret.longitudinalKpBP = [0., 5., 35.]
+      ret.longitudinalKpV = [1.2, 0.8, 0.5]
+      ret.longitudinalKiBP = [0., 35.]
+      ret.longitudinalKiV = [0.18, 0.12]
+
+    elif candidate == CAR.ODYSSEY:
+      stop_and_go = False
+      ret.mass = 4471 * CV.LB_TO_KG + std_cargo
+      ret.wheelbase = 3.00
+      ret.centerToFront = ret.wheelbase * 0.41
+      ret.steerRatio = 14.35        # as spec
+      tire_stiffness_factor = 0.82
+      ret.steerKpV, ret.steerKiV = [[0.45], [0.135]]
+      ret.longitudinalKpBP = [0., 5., 35.]
+      ret.longitudinalKpV = [1.2, 0.8, 0.5]
+      ret.longitudinalKiBP = [0., 35.]
+      ret.longitudinalKiV = [0.18, 0.12]
+
+    elif candidate in (CAR.PILOT, CAR.PILOT_2019):
+      stop_and_go = False
+      ret.mass = 4303 * CV.LB_TO_KG + std_cargo
+      ret.wheelbase = 2.81
+      ret.centerToFront = ret.wheelbase * 0.41
+      ret.steerRatio = 16.0         # as spec
+      tire_stiffness_factor = 0.444 # not optimized yet
+      ret.steerKpV, ret.steerKiV = [[0.38], [0.11]]
+      ret.longitudinalKpBP = [0., 5., 35.]
+      ret.longitudinalKpV = [1.2, 0.8, 0.5]
+      ret.longitudinalKiBP = [0., 35.]
+      ret.longitudinalKiV = [0.18, 0.12]
+
+    elif candidate == CAR.RIDGELINE:
+      stop_and_go = False
+      ret.mass = 4515 * CV.LB_TO_KG + std_cargo
+      ret.wheelbase = 3.18
+      ret.centerToFront = ret.wheelbase * 0.41
+      ret.steerRatio = 15.59        # as spec
+      tire_stiffness_factor = 0.444 # not optimized yet
+      ret.steerKpV, ret.steerKiV = [[0.38], [0.11]]
+      ret.longitudinalKpBP = [0., 5., 35.]
+      ret.longitudinalKpV = [1.2, 0.8, 0.5]
+      ret.longitudinalKiBP = [0., 35.]
+      ret.longitudinalKiV = [0.18, 0.12]
+
     else:
       raise ValueError("unsupported car %s" % candidate)
+
+    ret.steerControlType = car.CarParams.SteerControlType.torque
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter. Otherwise, add 0.5 mph margin to not
@@ -229,10 +358,10 @@ class CarInterface(object):
     ret.longPidDeadzoneV = [0.]
 
     ret.stoppingControl = True
-    ret.steerLimitAlert = True
+    ret.steerLimitAlert = False
     ret.startAccel = 0.5
 
-    ret.steerActuatorDelay = 0.1
+    ret.steerActuatorDelay = 0.01
     ret.steerRateCost = 0.5
 
     return ret
