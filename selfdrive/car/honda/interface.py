@@ -173,7 +173,7 @@ class CarInterface(object):
 
     ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
 
-    ret.steerKf = 0.00006    #  0.00006 # conservative feed-forward
+    ret.steerKf =  0.00006 # conservative feed-forward
 
     if candidate == CAR.CIVIC:
       stop_and_go = True
@@ -570,7 +570,7 @@ class CarInterface(object):
 
   # pass in a car.CarControl
   # to be called @ 100hz
-  def apply(self, c, perception_state=log.Live20Data.new_message(), LaC=None):
+  def apply(self, c, perception_state=log.Live20Data.new_message()):
     if c.hudControl.speedVisible:
       hud_v_cruise = c.hudControl.setSpeed * CV.MS_TO_KPH
     else:
@@ -602,7 +602,6 @@ class CarInterface(object):
       c.cruiseControl.speedOverride, \
       c.cruiseControl.override, \
       c.cruiseControl.cancel, \
-      LaC, \
       pcm_accel, \
       perception_state.radarErrors, \
       hud_v_cruise, c.hudControl.lanesVisible, \
