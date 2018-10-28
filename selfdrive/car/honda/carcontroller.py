@@ -127,7 +127,7 @@ class CarController(object):
     elif CS.CP.carFingerprint in (CAR.CRV, CAR.ACURA_RDX):
       STEER_MAX = 0x3e8  # CR-V only uses 12-bits and requires a lower value (max value from energee)
     elif CS.CP.carFingerprint in (CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH):
-      STEER_MAX = min(0x3dff, abs(CS.angle_steers * 1000) + 0x3800)
+      STEER_MAX = 0x7dff
     else:
       STEER_MAX = 0x1000
 
@@ -138,7 +138,7 @@ class CarController(object):
     if CS.CP.steerControlType == car.CarParams.SteerControlType.angle:
       apply_steer = int(clip(-actuators.steerAngle * 1000, -STEER_MAX, STEER_MAX))
     else:
-      apply_steer = int(clip(-actuators.steer * STEER_MAX, -STEER_MAX, STEER_MAX))
+      apply_steer = clip(STEER_MAX * -actuators.steer * (1 - (CS.angle_steers / 60)) ** 4, -STEER_MAX, STEER_MAX)
 
     # any other cp.vl[0x18F]['STEER_STATUS'] is common and can happen during user override. sending 0 torque to avoid EPS sending error 5
     lkas_active = enabled and not CS.steer_not_allowed
