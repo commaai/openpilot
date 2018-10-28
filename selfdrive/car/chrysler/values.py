@@ -1,12 +1,16 @@
 from selfdrive.car import dbc_dict
 
-
 class CAR:
   PACIFICA_2017_HYBRID = "CHRYSLER PACIFICA HYBRID 2017"
   PACIFICA_2018_HYBRID = "CHRYSLER PACIFICA HYBRID 2018"
   PACIFICA_2018 = "CHRYSLER PACIFICA 2018"
   CHEROKEE = "GRAND CHEROKEE V6 2018"
 
+# Unique can messages:
+# Only the hybrids have 270: 8
+# Only the gas have 55: 8, 416: 7, 752: 2
+# For 564, Pacifica 2017 has length 4, whereas Pacifica 2018 has length 8.
+# For 924, Pacifica 2017 has length 3, whereas all 2018 have length 8.
 
 FINGERPRINTS = {
   CAR.PACIFICA_2017_HYBRID: [
