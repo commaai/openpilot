@@ -288,7 +288,7 @@ def state_control(plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, 
   # *** steering PID loop ***
   actuators.steer, actuators.steerAngle = LaC.update(active, CS.vEgo, CS.steeringAngle,
                                                      CS.steeringPressed, plan.dPoly, angle_offset, VM, PL)
-  print(angle_offset, CS.steeringAngle, actuators.steerAngle)
+  #print(angle_offset, CS.steeringAngle, actuators.steerAngle)
   # send a "steering required alert" if saturation count has reached the limit
   if LaC.sat_flag and CP.steerLimitAlert:
     AM.add("steerSaturated", enabled)
@@ -338,7 +338,7 @@ def data_send(perception_state, plan, plan_ts, CS, CI, CP, VM, state, events, ac
     CC.hudControl.audibleAlert = AM.audible_alert
     
     # send car controls over can
-    CI.apply(CC, perception_state, LaC)
+    CI.apply(CC, perception_state)
 
   # ***** publish state to logger *****
   # publish controls state at 100Hz
