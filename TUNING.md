@@ -19,6 +19,8 @@ This mod can manage up to 10 different variables with each variable having a max
 
 For questions or info about this mod, visit the comma slack channel #mod-tuning
 
+![screenshot](https://i.imgur.com/G7j2vQY.jpg)
+
 CHANGE LOG:
 
 v0.0.1 - Initial version
