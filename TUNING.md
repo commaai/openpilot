@@ -11,10 +11,11 @@ To use this mod you need to do 2 things:
 
 1. Create a file called **/sdcard/tuning/params.txt** on your EON.
 
-Copy the file called **selfdrive/ui/params.example.txt** into **/sdcard/tuning** (create the directory if needed).
-You will need to specify which variables you want the Tuning mod to manage by adding them to that file.
+You will need to specify which variables you want the Tuning mod to manage by adding them to that file.  See the file called **selfdrive/ui/params.example.txt** for an example.
 
 2. Modify OpenPilot code that uses the variable so that it is read from this file instead of hard coded.  This is left for the user to figure out and implement.
+
+This mod can manage up to 10 different variables with each variable having a maximum of 3 element values in it.
 
 For questions or info about this mod, visit the comma slack channel #mod-tuning
 
@@ -22,3 +23,5 @@ CHANGE LOG:
 
 v0.0.1 - Initial version
 
+To Do:
+- [ ] Ability to handle hex values
