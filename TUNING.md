@@ -1,7 +1,7 @@
 Welcome to openpilot - Tuning mod
 ======
 
-This OpenPilot mod allows you to dynamically modify variables used by OpenPilot.
+This openpilot mod allows you to dynamically modify variables used by openpilot.
 The purpose of this mod is to make it easier to tweak certain variables instead of
 having to modify code, recompile, reboot after every change.
 
