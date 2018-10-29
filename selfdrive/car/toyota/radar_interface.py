@@ -33,7 +33,7 @@ class RadarInterface(object):
   def __init__(self, CP):
     # radar
     self.pts = {}
-    self.seen_valid = {key: False for key in RADAR_A_MSGS}
+    self.valid_cnt = {key: 0 for key in RADAR_A_MSGS}
     self.track_id = 0
 
     self.delay = 0.0  # Delay of radar
@@ -57,8 +57,7 @@ class RadarInterface(object):
     while 1:
       tm = int(sec_since_boot() * 1e9)
       updated_messages.update(self.rcp.update(tm, True))
-      # TODO: do not hardcode last msg
-      if 0x22f in updated_messages:
+      if RADAR_B_MSGS[-1] in updated_messages:
         break
 
     errors = []
@@ -71,17 +70,18 @@ class RadarInterface(object):
       if ii in RADAR_A_MSGS:
         cpt = self.rcp.vl[ii]
 
-        if cpt['LONG_DIST'] >= 255 or cpt['NEW_TRACK']:
-          self.seen_valid[ii] = False    # reset validity
-
-        if cpt['LONG_DIST'] < 255 and cpt['VALID']:
-          self.seen_valid[ii] = True
+        if cpt['LONG_DIST'] >=255 or cpt['NEW_TRACK']:
+          self.valid_cnt[ii] = 0    # reset counter
+        if cpt['VALID'] and cpt['LONG_DIST'] < 255:
+          self.valid_cnt[ii] += 1
+        else:
+          self.valid_cnt[ii] = max(self.valid_cnt[ii] -1, 0)
 
         score = self.rcp.vl[ii+16]['SCORE']
-        # print ii, score, cpt['VALID'], cpt['LONG_DIST'], cpt['LAT_DIST']
+        # print ii, self.valid_cnt[ii], score, cpt['VALID'], cpt['LONG_DIST'], cpt['LAT_DIST']
 
         # radar point only valid if it's a valid measurement and score is above 50
-        if (cpt['VALID'] or score > 50) and cpt['LONG_DIST'] < 255 and self.seen_valid[ii]:
+        if cpt['VALID'] or (score > 50 and cpt['LONG_DIST'] < 255 and self.valid_cnt[ii] > 0):
           if ii not in self.pts or cpt['NEW_TRACK']:
             self.pts[ii] = car.RadarState.RadarPoint.new_message()
             self.pts[ii].trackId = self.track_id
