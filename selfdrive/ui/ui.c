@@ -1754,7 +1754,6 @@ int main() {
     bool should_swap = false;
     pthread_mutex_lock(&s->lock);
 
-/*
     if (EON) {
       // light sensor is only exposed on EONs
 
@@ -1766,8 +1765,6 @@ int main() {
       // compromise for bright and dark envs
       set_brightness(s, NEO_BRIGHTNESS);
     }
-*/
-    set_brightness(s, NEO_BRIGHTNESS);
 
     ui_update(s);
 
@@ -1786,7 +1783,6 @@ int main() {
     } else {
       set_awake(s, false);
     }
-    set_awake(s, true);
 
     if (s->awake) {
       ui_draw(s);
