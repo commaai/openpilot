@@ -20,11 +20,14 @@
 
   CHANGE LOG:
 
+  v0.0.2 - Added 'press and hold' on the increment/decrement buttons
   v0.0.1 - Initial version
 
 **************************************/
 
-#define VERSION "0.0.1"
+#include "custom_touch.h"
+
+#define VERSION "0.0.2"
 
 #define ERROR_NO_FILE 1
 #define BTN_NONE 0
@@ -55,6 +58,11 @@ int right_arrow_icon;
 int tune_icon;
 int current_button = BTN_NONE;
 bool tune_enabled = false;
+
+int last_x = 0;
+int last_y = 0;
+int touch_frame_delay = 5; // Delay this many frames before reading touch events to slow down the reading
+int touch_frame= 0; // Current frame
 
 ui_element increase_button;
 ui_element decrease_button;
@@ -270,7 +278,7 @@ void init_tuning(UIState *s) {
 
   increase_button = (ui_element){
     .name = "increase_button",
-    .pos_x = (1920/2)-140,
+    .pos_x = (1920/2)+40,
     .pos_y = 1080-240,
     .width = 120,
     .height = 120
@@ -278,7 +286,7 @@ void init_tuning(UIState *s) {
 
   decrease_button = (ui_element){
     .name = "decrease_button",
-    .pos_x = (1920/2)+40,
+    .pos_x = (1920/2)-140,
     .pos_y = 1080-240,
     .width = 120,
     .height = 120
@@ -295,7 +303,7 @@ void init_tuning(UIState *s) {
   property_button = (ui_element){
     .name = "property_button",
     .pos_x = (1920/2)-365,
-    .pos_y = 1080-420,
+    .pos_y = 1080-400,
     .width = 230,
     .height = 95
   };
@@ -319,17 +327,17 @@ void init_tuning(UIState *s) {
     .height = 125
   };
 
-  step_increase = (ui_element){
-    .name = "step_increase",
+  step_decrease = (ui_element){
+    .name = "step_decrease",
     .pos_x = (1920/2)-90,
     .pos_y = 1080-640,
     .width = 120,
     .height = 120
   };
 
-  step_decrease = (ui_element){
-    .name = "step_decrease",
-    .pos_x = step_increase.pos_x + step_increase.width + 15,
+  step_increase = (ui_element){
+    .name = "step_increase",
+    .pos_x = step_decrease.pos_x + step_decrease.width + 15,
     .pos_y = 1080-640,
     .width = 120,
     .height = 120
@@ -459,7 +467,7 @@ void screen_draw_tuning(UIState *s) {
       snprintf(thisValue,sizeof(thisValue),"%.1f",angles[param_index][i]);
     }
     nvgFontSize(s->vg, 70);
-    nvgText(s->vg,tune_values.pos_x+pos_x+60,tune_values.pos_y+140,thisValue,NULL);
+    nvgText(s->vg,tune_values.pos_x+pos_x+60,tune_values.pos_y+160,thisValue,NULL);
   }
 
   // Render property buttons based on the number of elements in the params 
@@ -655,36 +663,52 @@ void toggle_step() {
   step = delta_step;
 }
 
-void tuning( UIState *s, int touch_x, int touch_y ) {
+void tuning( UIState *s, int touch_x, int touch_y, int key_up) {
   init_tuning(s);
 
+  bool hold = false; // Track whether we're pressing and holding
+
   if (debug) { printf("tuning\n"); }
-/*
-  if (touch_x > 0) {
-    printf("touch: %d, %d\n", touch_x, touch_y);
-  }
-*/
-
-  screen_draw_tuning(s);
-
-  if (ui_element_clicked(touch_x,touch_y,tune_button)) {
-    toggle_tune();
-    current_button = BTN_TUNE;
-  }
-
-  if (current_button != BTN_NONE) {
-    frame_num++;
-    if (frame_num >= frame_delay) {
-      current_button = BTN_NONE;
-      frame_num = 0;
-    }
-  }
 
   if (status == ERROR_NO_FILE) {
     return;
   }
 
-  if (ui_element_clicked(touch_x,touch_y,increase_button) && current_property != -1) {
+  if (ui_element_clicked(touch_x,touch_y,tune_button) && key_up) {
+    toggle_tune();
+    current_button = BTN_TUNE;
+  }
+
+  screen_draw_tuning(s);
+
+/*
+  if (touch_x > 0) {
+    printf("touch: %d, %d keyup: %d\n", touch_x, touch_y, key_up);
+  }
+*/
+
+  if (touch_x >= 0 && touch_y >= 0 && last_x == touch_x && last_y == touch_y && touch_frame >= touch_frame_delay) {
+    hold = true;
+  }
+
+  if (current_button != BTN_NONE && ((last_x != touch_x && last_y != touch_y) || (touch_x < 0 && touch_y < 0))) {
+    // Delay turning off the current button highlight
+    frame_num++;
+    if (frame_num >= frame_delay && !hold) {
+      current_button = BTN_NONE;
+      frame_num = 0;
+    }
+  }
+
+  touch_frame++;
+  if (touch_frame > touch_frame_delay) {
+    touch_frame = 0;
+  }
+
+  last_x = touch_x;
+  last_y = touch_y;
+
+  if (ui_element_clicked(touch_x,touch_y,increase_button) && current_property != -1 && hold) {
     //printf("increase button clicked\n");
     //printf("param_index: %d\n",param_index);
     //printf("current_prop: %d\n",current_property);
@@ -692,7 +716,7 @@ void tuning( UIState *s, int touch_x, int touch_y ) {
     update_params();
     current_button = BTN_INCREASE;
   }
-  else if (ui_element_clicked(touch_x,touch_y,decrease_button) && current_property != -1) {
+  else if (ui_element_clicked(touch_x,touch_y,decrease_button) && current_property != -1 && hold) {
     //printf("decrease button clicked\n");
     angles[param_index][current_property] -= step;
     //snprintf(angles[param_index][current_property],sizeof(angles[param_index][current_property]),"%.3f",num);
@@ -700,31 +724,31 @@ void tuning( UIState *s, int touch_x, int touch_y ) {
     update_params();
     current_button = BTN_DECREASE;
   }
-  else if (ui_element_clicked(touch_x,touch_y,step_increase)) {
+  else if (ui_element_clicked(touch_x,touch_y,step_increase) && hold) {
     //printf("step increase button clicked\n");
     step += delta_step;
     current_button = BTN_STEP_INCREASE;
   }
-  else if (ui_element_clicked(touch_x,touch_y,step_decrease)) {
+  else if (ui_element_clicked(touch_x,touch_y,step_decrease) && hold) {
     //printf("step decrease button clicked\n");
     step -= delta_step;
     current_button = BTN_STEP_DECREASE;
   }
-  else if (ui_element_clicked(touch_x,touch_y,left_arrow_button)) {
+  else if (ui_element_clicked(touch_x,touch_y,left_arrow_button) && key_up) {
     next_param(-1);
     current_button = BTN_LEFT_ARROW;
   }
-  else if (ui_element_clicked(touch_x,touch_y,right_arrow_button)) {
+  else if (ui_element_clicked(touch_x,touch_y,right_arrow_button) && key_up) {
     next_param(1);
     current_button = BTN_RIGHT_ARROW;
   }
-  else if (ui_element_clicked(touch_x,touch_y,step_text)) {
+  else if (ui_element_clicked(touch_x,touch_y,step_text) && key_up) {
     toggle_step();
     current_button = BTN_STEP;
   }
   else {
     for (int i=0; i < param_value_count[param_index]; i++) {
-      if (ui_element_clicked(touch_x,touch_y,property_buttons[param_index][i])) {
+      if (ui_element_clicked(touch_x,touch_y,property_buttons[param_index][i]) && key_up) {
         if (current_property == i) {
           // Toggle off
           current_property = -1;
