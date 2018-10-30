@@ -144,8 +144,9 @@ class CarState(object):
     self.right_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 2
 
     # 2 is standby, 10 is active. TODO: check that everything else is really a faulty state
+    # 9 is a fault. 3 seems ot be ok
     self.steer_state = cp.vl["EPS_STATUS"]['LKA_STATE']
-    self.steer_error = cp.vl["EPS_STATUS"]['LKA_STATE'] not in [1, 5]
+    self.steer_error = cp.vl["EPS_STATUS"]['LKA_STATE'] not in [1, 3, 5]
     self.ipas_active = cp.vl['EPS_STATUS']['IPAS_STATE'] == 3
     self.brake_error = 0
     self.steer_torque_driver = cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_DRIVER']
