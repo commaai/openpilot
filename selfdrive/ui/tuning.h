@@ -20,7 +20,8 @@
 
   CHANGE LOG:
 
-  v0.0.2 - Added 'press and hold' on the increment/decrement buttons
+  v0.0.2 - Added 'press and hold' on the +/- buttons
+         - Swapped positions of +/- buttons
   v0.0.1 - Initial version
 
 **************************************/
