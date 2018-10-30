@@ -1754,6 +1754,7 @@ int main() {
     bool should_swap = false;
     pthread_mutex_lock(&s->lock);
 
+/*
     if (EON) {
       // light sensor is only exposed on EONs
 
@@ -1765,12 +1766,15 @@ int main() {
       // compromise for bright and dark envs
       set_brightness(s, NEO_BRIGHTNESS);
     }
+*/
+    set_brightness(s, NEO_BRIGHTNESS);
 
     ui_update(s);
 
     // awake on any touch
     int touch_x = -1, touch_y = -1;
-    int touched = touch_poll(&touch, &touch_x, &touch_y, s->awake ? 0 : 100);
+    int key_up = 0;
+    int touched = custom_touch_poll(&touch, &touch_x, &touch_y, s->awake ? 0 : 100, &key_up);
     if (touched == 1) {
       // touch event will still happen :(
       set_awake(s, true);
@@ -1782,12 +1786,13 @@ int main() {
     } else {
       set_awake(s, false);
     }
+    set_awake(s, true);
 
     if (s->awake) {
       ui_draw(s);
       glFinish();
       should_swap = true;
-      tuning(s, touch_x, touch_y);
+      tuning(s, touch_x, touch_y, key_up);
     }
 
     pthread_mutex_unlock(&s->lock);
