@@ -84,12 +84,12 @@ char python_file[256]; // stores values as pyton variable
 bool init_tune = false; // Used to initialize stuff
 int num_lines = 0;
 
-float angles[MAX_NUM_PARAMS][3]; // List of angle values from the file
+double angles[MAX_NUM_PARAMS][3]; // List of angle values from the file
 char property[50] = "CL_MAXD_A"; // What property to tune
 char properties[50][MAX_NUM_PARAMS]; // List of property names
 int current_property = -1; // Which property value to adjust when clicking the increase/decrease buttons
 ui_element *property_buttons[MAX_NUM_PARAMS]; // Store the buttons that can be selected
-float step = 0.001; // Steps to adjust on each click
+double step = 0.000001; // Steps to adjust on each click
 float delta_step = 0.001; // Change step by this amount
 int step_toggle = 0; // Change to preset toggle step
 
@@ -184,17 +184,18 @@ void parse_file(char *filename) {
     param_labels[i] = token;
     while (token != NULL ) {
       token = strtok(NULL, "=");
+      char *end;
       if (token != NULL) {
         token_value = str_remove(str_remove(token,'['),']');
         //printf("token_value: %s\n", token_value);
         char* token2 = strtok(token_value,",");
         //printf("token2: %s\n", token2);
-        angles[i][angle_index++] = atof(token2);
+        angles[i][angle_index++] = strtod(token2,&end);
         while (token2 != NULL) {
           token2 = strtok(NULL, ",");
           if (token2 != NULL) {
             token_value2 = token2;
-            angles[i][angle_index++] = atof(token_value2);
+            angles[i][angle_index++] = strtod(token_value2,&end);
             //printf("token_value2: %s\n", token_value2);
           }
         }
@@ -210,7 +211,7 @@ void parse_file(char *filename) {
   for (int i=0; i < num_lines; i++) {
     int num_elements = param_value_count[i];
     for (int j=0; j < num_elements; j++) {
-      printf("%d, %d: %.3f\n", i, j, angles[i][j]);
+      printf("%d, %d: %.7f\n", i, j, angles[i][j]);
     }
   }
 */
@@ -232,12 +233,12 @@ void update_params() {
     char temp[128] = "";
     for (int j=0; j < num_elements; j++) {
       char value_str[50];
-      snprintf(value_str,sizeof(value_str),"%.3f",angles[i][j]);
+      snprintf(value_str,sizeof(value_str),"%.6f",angles[i][j]);
       strcat(temp, value_str);
       if (j < num_elements-1) {
         strcat(temp, ",");
       }
-      //printf("%d, %d: %.3f\n", i, j, angles[i][j]);
+      //printf("%d, %d: %.36\n", i, j, angles[i][j]);
     }
     char line[128] = "";
     snprintf(line,sizeof(line),"%s=[%s]\n",param_labels[i],temp);
@@ -295,17 +296,17 @@ void init_tuning(UIState *s) {
 
   tune_values = (ui_element){
     .name = "tune_values",
-    .pos_x = (1920/2)-400,
+    .pos_x = (1920/2)-650,
     .pos_y = 1080-490,
-    .width = 850,
+    .width = 1350,
     .height = 220
   };
 
   property_button = (ui_element){
     .name = "property_button",
-    .pos_x = (1920/2)-365,
+    .pos_x = (1920/2)-600,
     .pos_y = 1080-400,
-    .width = 230,
+    .width = 390,
     .height = 95
   };
 
@@ -322,9 +323,9 @@ void init_tuning(UIState *s) {
 
   step_text = (ui_element){
     .name = "step_text",
-    .pos_x = (1920/2)-380,
+    .pos_x = (1920/2)-580,
     .pos_y = 1080-635,
-    .width = 250,
+    .width = 450,
     .height = 125
   };
 
@@ -455,14 +456,24 @@ void screen_draw_tuning(UIState *s) {
 
   int pos_x;
   int pos_y;
-  char thisValue[8];
+  char thisValue[12];
   for (int i=0; i < param_value_count[param_index]; i++) {
-    pos_x = i*300;
-    if (i > 0) {
-      pos_x -= 40;
+    int pos_x = 0;
+    switch(i) {
+      case 0:
+        pos_x = 30;
+        break;
+      case 1:
+        pos_x = 470;
+        break;
+      case 2:
+        pos_x = 900;
+        break;
+      default:
+        break;
     }
     if (angles[param_index][i] < 1) {
-      snprintf(thisValue,sizeof(thisValue),"%.3f",angles[param_index][i]);
+      snprintf(thisValue,sizeof(thisValue),"%.6f",angles[param_index][i]);
     }
     else {
       snprintf(thisValue,sizeof(thisValue),"%.1f",angles[param_index][i]);
@@ -498,18 +509,18 @@ void screen_draw_tuning(UIState *s) {
   if (current_button == BTN_STEP) {
     nvgFillColor(s->vg, nvgRGBA(0, 162, 255, 100));
   }
-  char step_str[8];
+  char step_str[12];
   if (step >= 1) {
     snprintf(step_str,sizeof(step_str),"%.1f",step);
   }
   else {
-    snprintf(step_str,sizeof(step_str),"%.3f",step);
+    snprintf(step_str,sizeof(step_str),"%.6f",step);
   }
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
   nvgFontSize(s->vg, 70);
   nvgText(s->vg,step_text.pos_x+120,step_increase.pos_y+55,"Steps",NULL);
   nvgFontSize(s->vg, 80);
-  nvgText(s->vg,step_text.pos_x+125,step_increase.pos_y+112,step_str,NULL);
+  nvgText(s->vg,step_text.pos_x+220,step_increase.pos_y+112,step_str,NULL);
 
   nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
   nvgBeginPath(s->vg);
@@ -641,25 +652,34 @@ bool ui_element_clicked(int touch_x, int touch_y, ui_element el) {
 
 void toggle_step() {
   //printf("step_toggle: %d\n",step_toggle);
+  step_toggle++;
   if (step_toggle == 0) {
-    step_toggle++;
-    delta_step = 0.01;
+    delta_step = 0.000001;
   }
   else if (step_toggle == 1) {
-    step_toggle++;
-    delta_step = 0.1;
+    delta_step = 0.00001;
   }
   else if (step_toggle == 2) {
-    step_toggle++;
-    delta_step = 1;
+    delta_step = 0.0001;
   }
   else if (step_toggle == 3) {
-    step_toggle++;
+    delta_step = 0.001;
+  }
+  else if (step_toggle == 4) {
+    delta_step = 0.01;
+  }
+  else if (step_toggle == 5) {
+    delta_step = 0.1;
+  }
+  else if (step_toggle == 6) {
+    delta_step = 1;
+  }
+  else if (step_toggle == 7) {
     delta_step = 5;
   }
   else {
     step_toggle = 0;
-    delta_step = 0.001;
+    delta_step = 0.000001;
   }
   step = delta_step;
 }
