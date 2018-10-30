@@ -345,8 +345,8 @@ def manager_thread():
         kill_managed_process(p)
 
     # check the status of all processes, did any of them die?
-    for p in running:
-      cloudlog.debug("   running %s %s" % (p, running[p]))
+    #for p in running:
+    #  cloudlog.debug("   running %s %s" % (p, running[p]))
 
     # is this still needed?
     if params.get("DoUninstall") == "1":

@@ -225,6 +225,8 @@ typedef struct UIState {
   float light_sensor;
 } UIState;
 
+#include "tuning.h"
+
 static int last_brightness = -1;
 static void set_brightness(UIState *s, int brightness) {
   if (last_brightness != brightness && (s->awake || brightness == 0)) {
@@ -1785,6 +1787,7 @@ int main() {
       ui_draw(s);
       glFinish();
       should_swap = true;
+      tuning(s, touch_x, touch_y);
     }
 
     pthread_mutex_unlock(&s->lock);
