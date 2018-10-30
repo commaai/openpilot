@@ -20,6 +20,7 @@
 
   CHANGE LOG:
 
+  v0.0.3 - Increase precision to 6 decimal places
   v0.0.2 - Added 'press and hold' on the +/- buttons
          - Swapped positions of +/- buttons
   v0.0.1 - Initial version
@@ -28,7 +29,7 @@
 
 #include "custom_touch.h"
 
-#define VERSION "0.0.2"
+#define VERSION "0.0.3"
 
 #define ERROR_NO_FILE 1
 #define BTN_NONE 0
