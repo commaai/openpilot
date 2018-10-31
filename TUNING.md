@@ -25,7 +25,7 @@ CHANGE LOG:
 
 v0.0.3
 ========================
-Increase precision to 6 decimal places
+ * Increase precision to 6 decimal places
 
 v0.0.2
 ========================
