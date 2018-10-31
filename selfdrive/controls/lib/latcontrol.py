@@ -30,6 +30,13 @@ class LatControl(object):
     self.last_cloudlog_t = 0.0
     self.setup_mpc(VM.CP.steerRateCost)
 
+  def update_rt_params(self, VM):
+    # TODO:  Is this really necessary, or is the original reference preserved through the cap n' proto setup?
+    # Real-time tuning:  Update these values from the CP if called from real-time tuning logic in controlsd
+    self.pid._k_p = (VM.CP.steerKpBP, VM.CP.steerKpV)    # proportional gain
+    self.pid._k_i = (VM.CP.steerKiBP, VM.CP.steerKiV)    # integral gain
+    self.pid.k_f = VM.CP.steerKf                         # feedforward gain
+
   def setup_mpc(self, steer_rate_cost):
     self.libmpc = libmpc_py.libmpc
     self.libmpc.init(MPC_COST_LAT.PATH, MPC_COST_LAT.LANE, MPC_COST_LAT.HEADING, steer_rate_cost)

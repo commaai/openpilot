@@ -61,6 +61,19 @@ class VehicleModel(object):
     self.sR = CP.steerRatio
     self.chi = CP.steerRatioRear
 
+  def update_rt_params(self, CP):
+    # Update parameters used in real-time tuning if called from real-time tuning logic in controlsd
+    # TODO:  Determine if really necessary
+    #self.m = CP.mass
+    #self.j = CP.rotationalInertia
+    #self.l = CP.wheelbase
+    #self.aF = CP.centerToFront
+    #self.aR = CP.wheelbase - CP.centerToFront
+    self.cF = CP.tireStiffnessFront
+    self.cR = CP.tireStiffnessRear
+    self.sR = CP.steerRatio
+    #self.chi = CP.steerRatioRear
+
   def update_state(self, state):
     self.state = state
 
