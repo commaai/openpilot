@@ -86,7 +86,7 @@ class CarInterface(object):
       ret.mass = 3370 * CV.LB_TO_KG + std_cargo
       ret.steerKpV = tuning.steerKpV
       ret.steerKiV = tuning.steerKiV
-      ret.steerKf = tuning.steerKf   # full torque for 10 deg at 80mph means 0.00007818594
+      ret.steerKf = tuning.steerKf[0]   # full torque for 10 deg at 80mph means 0.00007818594
       # TODO: Prius seem to have very laggy actuators. Understand if it is lag or hysteresis
       ret.steerActuatorDelay = tuning.steerActuatorDelay[0]
 
