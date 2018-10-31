@@ -15,8 +15,11 @@ You will need to specify which variables you want the Tuning mod to manage by ad
 
 `
 import imp
+
 f = open("/sdcard/tuning/params.txt")
+
 tuning = imp.load_source('tuning', '', f)
+
 f.close()
 `
 
