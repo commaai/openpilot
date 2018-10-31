@@ -91,8 +91,11 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, idx):
   commands = []
   bus = 0
 
+  if car_fingerprint == CAR.CLARITY:
+    bus = 2
+
   # Bosch sends commands to bus 2.
-  if car_fingerprint in HONDA_BOSCH or car_fingerprint == CAR.CLARITY:
+  if car_fingerprint in HONDA_BOSCH:
     bus = 2
   else:
     acc_hud_values = {
