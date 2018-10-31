@@ -91,7 +91,7 @@ char properties[50][MAX_NUM_PARAMS]; // List of property names
 int current_property = -1; // Which property value to adjust when clicking the increase/decrease buttons
 ui_element *property_buttons[MAX_NUM_PARAMS]; // Store the buttons that can be selected
 double step = 0.000001; // Steps to adjust on each click
-float delta_step = 0.001; // Change step by this amount
+float delta_step = 0.000001; // Change step by this amount
 int step_toggle = 0; // Change to preset toggle step
 
 int param_index = 0; // Index to track which param label we're working with
