@@ -337,7 +337,7 @@ class CarState(object):
 
     self.user_brake = 0
     if self.acc_slow_on:
-      self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED'] - 34.0
+      self.v_cruise_pcm = max(7, cp.vl["PCM_CRUISE_2"]['SET_SPEED'] - 34.0)
     else:
       self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED']
     #print "distane"
