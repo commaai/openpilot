@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 import imp
-f = open("/sdcard/tuning/params.txt")
-tuning = imp.load_source('tuning', '', f)
-f.close()
 from common.realtime import sec_since_boot
 from cereal import car, log
 from selfdrive.config import Conversions as CV
@@ -49,6 +46,9 @@ class CarInterface(object):
 
   @staticmethod
   def get_params(candidate, fingerprint):
+    f = open("/sdcard/tuning/params.txt")
+    tuning = imp.load_source('tuning', '', f)
+    f.close()
 
     # kg of standard extra cargo to count for drive, gas, etc...
     std_cargo = 136
