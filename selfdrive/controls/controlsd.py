@@ -505,9 +505,18 @@ def controlsd_thread(gctx=None, rate=100, default_bias=0.):
 
   prof = Profiler(False)  # off by default
 
+  tune_counter = 0
+  tune_delay = 10000000 # delay calling this so we don't read the file too fast (about every 3 sec)
+
   while 1:
 
     prof.checkpoint("Ratekeeper", ignore=True)
+
+    if (tune_counter % tune_delay == 0):
+      CI, CP = get_car(logcan, sendcan, 1.0 if passive else None)
+      tune_counter = 0
+
+    tune_counter += 1
 
     # sample data and compute car events
     CS, events, cal_status, cal_perc, overtemp, free_space, low_battery, mismatch_counter = data_sample(CI, CC, thermal, cal, health,
