@@ -39,6 +39,11 @@ def create_brake_command(packer, apply_brake, pcm_override, pcm_cancel_cmd, chim
 
   if car_fingerprint == CAR.CLARITY:
     bus = 2
+    # This a bit of a hack but clarity brake msg flows into the last byte so
+    # rather than change the fix() function just set accordingly here.
+    apply_brake >>= 1
+    if apply_brake & 1:
+      idx += 0x8
 
   values = {
     "COMPUTER_BRAKE": apply_brake,
@@ -52,10 +57,6 @@ def create_brake_command(packer, apply_brake, pcm_override, pcm_cancel_cmd, chim
     "CHIME": chime,
     "FCW": fcw << 1,  # TODO: Why are there two bits for fcw? According to dbc file the first bit should also work
   }
-
-  # Toggle first bit of checksum byte if brake value is odd due to overflow into the last byte.
-  if apply_brake & 1:
-    idx += 0x8
 
   commands.append(packer.make_can_msg("BRAKE_COMMAND", bus, values, idx))
 
