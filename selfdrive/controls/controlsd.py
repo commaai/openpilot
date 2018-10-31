@@ -513,7 +513,7 @@ def controlsd_thread(gctx=None, rate=100, default_bias=0.):
     prof.checkpoint("Ratekeeper", ignore=True)
 
     if (tune_counter % tune_delay == 0):
-      CI, CP = get_car(logcan, sendcan, 1.0 if passive else None)
+      CP = get_params(logcan, sendcan, 1.0 if passive else None)
       tune_counter = 0
 
     tune_counter += 1
