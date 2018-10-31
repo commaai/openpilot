@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+import imp
+import os
 import gc
 import json
 import zmq
@@ -10,7 +12,7 @@ from common.params import Params
 import selfdrive.messaging as messaging
 from selfdrive.config import Conversions as CV
 from selfdrive.services import service_list
-from selfdrive.car.car_helpers import get_car
+from selfdrive.car.car_helpers import get_car, get_params
 from selfdrive.controls.lib.planner import Planner
 from selfdrive.controls.lib.drive_helpers import learn_angle_offset, \
                                                  get_events, \
@@ -505,18 +507,51 @@ def controlsd_thread(gctx=None, rate=100, default_bias=0.):
 
   prof = Profiler(False)  # off by default
 
-  tune_counter = 0
-  tune_delay = 10000000 # delay calling this so we don't read the file too fast (about every 3 sec)
+  ########## BEGIN Tuning Mod #############
+  tune_file = "/sdcard/tuning/params.txt"
+  last_mod_time = 0
+  mod_time = 0
+  ########## END Tuning Mod #############
 
   while 1:
 
     prof.checkpoint("Ratekeeper", ignore=True)
 
-    if (tune_counter % tune_delay == 0):
-      CP = get_params(logcan, sendcan, 1.0 if passive else None)
-      tune_counter = 0
+    ########## BEGIN Tuning Mod #############
+    if rk.frame % 100 == 29:
+      try:
+        mod_time = os.path.getmtime(tune_file)
+      except OSError:
+        # File doesn't exist so just use the values from interface.py
+        mod_time = None
+        print "ERROR: Tuning Mod file %s does not exist!" % tune_file
 
-    tune_counter += 1
+    if last_mod_time != mod_time:
+      if mod_time is not None:
+        # Read from the file and assign the values to CP
+        f = open("/sdcard/tuning/params.txt")
+        tuning = imp.load_source('tuning', '', f)
+        f.close()
+
+        # Update CP values from tuning mod
+        CP.steerKpV = tuning.steerKpV
+        CP.steerKiV = tuning.steerKiV
+        CP.steerKf = tuning.steerKf[0]
+        CP.steerKiBP = tuning.steerKiBP
+        CP.steerKpBP = tuning.steerKpBP
+        CP.steerActuatorDelay = tuning.steerActuatorDelay[0]
+
+        last_mod_time = os.path.getmtime(tune_file)
+      else:
+        last_mod_time = mod_time 
+
+      print "CP.steerKpV: %s" % CP.steerKpV
+      print "CP.steerKiV: %s" % CP.steerKiV
+      print "CP.steerKf: %s" % CP.steerKf
+      print "CP.steerKiBP: %s" % CP.steerKiBP
+      print "CP.steerKpBP: %s" % CP.steerKpBP
+      print "CP.steerActuatorDelay: %s" % CP.steerActuatorDelay
+    ########## END Tuning Mod #############
 
     # sample data and compute car events
     CS, events, cal_status, cal_perc, overtemp, free_space, low_battery, mismatch_counter = data_sample(CI, CC, thermal, cal, health,

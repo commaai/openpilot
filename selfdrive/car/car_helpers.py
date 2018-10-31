@@ -106,24 +106,3 @@ def get_car(logcan, sendcan=None, passive=True):
   params = interface_cls.get_params(candidate, fingerprints)
 
   return interface_cls(params, sendcan), params
-
-def get_params(logcan, sendcan=None, passive=True):
-  timeout = 2. if passive else None
-  candidate, fingerprints = fingerprint(logcan, timeout)
-
-  if candidate is None:
-    cloudlog.warning("car doesn't match any fingerprints: %r", fingerprints)
-    if passive:
-      candidate = "mock"
-    else:
-      return None, None
-
-  interface_cls = interfaces[candidate]
-
-  if interface_cls is None:
-    cloudlog.warning("car matched %s, but interface wasn't available or failed to import" % candidate)
-    return None, None
-
-  params = interface_cls.get_params(candidate, fingerprints)
-
-  return params
