@@ -23,10 +23,18 @@ To change the "scale" of the steps tap the "Steps" box.  It will cycle through d
 
 CHANGE LOG:
 
-v0.0.3 - Increase precision to 6 decimal places
-v0.0.2 - Added 'press and hold' on the +/- buttons
-       - Swapped positions of +/- buttons
-v0.0.1 - Initial version
+v0.0.3
+========================
+Increase precision to 6 decimal places
+
+v0.0.2
+========================
+ * Added 'press and hold' on the +/- buttons
+ * Swapped positions of +/- buttons
+ 
+v0.0.1
+========================
+ * Initial version
 
 To Do:
 - [ ] Ability to handle hex values
