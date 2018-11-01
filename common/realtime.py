@@ -88,21 +88,18 @@ class Ratekeeper(object):
     return self._remaining
 
   # Maintain loop rate by calling this at the end of each loop
-  def keep_time(self):
-    lagged = self.monitor_time()
+  def fixed_loop_rate(self):
+    self.monitor_lag()
     if self._remaining > 0:
       time.sleep(self._remaining)
-    return lagged
+    return
 
-  # this only monitor the cumulative lag, but does not enforce a rate
-  def monitor_time(self):
-    lagged = False
-    remaining = self._next_frame_time - sec_since_boot()
+  # this only monitors the cumulative lag and does not enforce a rate
+  def monitor_lag(self):
+    self._remaining = self._next_frame_time - sec_since_boot()
     self._next_frame_time += self._interval
-    if remaining < -self._print_delay_threshold:
-      print("%s lagging by %.2f ms" % (self._process_name, -remaining * 1000))
-      lagged = True
     self._frame += 1
-    self._remaining = remaining
-    return lagged
+    if self._remaining < -self._print_delay_threshold:
+      print("%s lagging by %.2f ms" % (self._process_name, -self._remaining * 1000))
+    return
 

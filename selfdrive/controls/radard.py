@@ -284,7 +284,7 @@ def radard_thread(gctx=None):
       }
     liveTracks.send(dat.to_bytes())
 
-    rk.monitor_time()
+    rk.monitor_lag()
 
 def main(gctx=None):
   radard_thread(gctx)

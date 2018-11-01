@@ -535,7 +535,7 @@ def controlsd_thread(gctx=None, rate=100, default_bias=0.):
     prof.checkpoint("Sent")
 
     # *** run loop at fixed rate ***
-    rk.keep_time()
+    rk.fixed_loop_rate()
 
     prof.display()
 

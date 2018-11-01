@@ -222,7 +222,7 @@ def boardd_proxy_loop(rate=200, address="192.168.2.251"):
       #  print "S:",hex(m[0]), str(m[2]).encode("hex")
       can_send_many(cl)
 
-    rk.keep_time()
+    rk.fixed_loop_rate()
 
 def main(gctx=None):
   if os.getenv("MOCK") is not None:
