@@ -113,6 +113,8 @@ def get_can_parser(CP):
 
 class CarState(object):
   def __init__(self, CP):
+    self.Angle = [0, 5, 10, 15,20,25,30,35,60,100,180,270,500]
+    self.Angle_Speed = [255,160,100,80,70,60,55,50,40,30,20,10,5]
     #labels for ALCA modes
     self.alcaLabels = ["MadMax","Normal","Wifey"]
     self.alcaMode = 0
@@ -340,6 +342,7 @@ class CarState(object):
       self.v_cruise_pcm = max(7, cp.vl["PCM_CRUISE_2"]['SET_SPEED'] - 34.0)
     else:
       self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED']
+    self.v_cruise_pcm = min(self.v_cruise_pcm, interp(self.angle_steers, self.Angle, self.Angle_Speed))
     #print "distane"
     #print self.distance
     if self.distance < self.approachradius + self.includeradius:
