@@ -62,6 +62,7 @@ class CarController(object):
     self.brake_last = 0.
     self.enable_camera = enable_camera
     self.packer = CANPacker(dbc_name)
+    self.new_radar_config = False
     self.ALCA = ALCAController(self,True,False)  # Enabled  True and SteerByAngle only False
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
