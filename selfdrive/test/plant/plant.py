@@ -334,7 +334,7 @@ class Plant(object):
     self.distance_prev = distance
     self.distance_lead_prev = distance_lead
 
-    self.rk.fixed_loop_rate()
+    self.rk.keep_fixed_rate()
     return (distance, speed, acceleration, distance_lead, brake, gas, steer_torque, fcw, live100_msgs)
 
 # simple engage in standalone mode

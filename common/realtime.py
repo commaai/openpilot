@@ -88,7 +88,7 @@ class Ratekeeper(object):
     return self._remaining
 
   # Maintain loop rate by calling this at the end of each loop
-  def fixed_loop_rate(self):
+  def keep_fixed_rate(self):
     self.monitor_lag()
     if self._remaining > 0:
       time.sleep(self._remaining)

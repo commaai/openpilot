@@ -188,7 +188,7 @@ def boardd_loop(rate=200):
     if tsc is not None:
       can_send_many(can_capnp_to_can_list(tsc.sendcan))
 
-    rk.keep_time()
+    rk.keep_fixed_rate()
 
 # *** main loop ***
 def boardd_proxy_loop(rate=200, address="192.168.2.251"):
@@ -222,7 +222,7 @@ def boardd_proxy_loop(rate=200, address="192.168.2.251"):
       #  print "S:",hex(m[0]), str(m[2]).encode("hex")
       can_send_many(cl)
 
-    rk.fixed_loop_rate()
+    rk.keep_fixed_rate()
 
 def main(gctx=None):
   if os.getenv("MOCK") is not None:
