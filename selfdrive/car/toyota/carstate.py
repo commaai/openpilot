@@ -4,6 +4,7 @@ import selfdrive.messaging as messaging
 from selfdrive.services import service_list
 from common.kalman.simple_kalman import KF1D
 import numpy as np
+from common.numpy_fast import interp
 from selfdrive.can.parser import CANParser, CANDefine
 from selfdrive.config import Conversions as CV
 from selfdrive.car.toyota.values import CAR, DBC, STEER_THRESHOLD
@@ -342,7 +343,7 @@ class CarState(object):
       self.v_cruise_pcm = max(7, cp.vl["PCM_CRUISE_2"]['SET_SPEED'] - 34.0)
     else:
       self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED']
-    self.v_cruise_pcm = min(self.v_cruise_pcm, interp(self.angle_steers, self.Angle, self.Angle_Speed))
+    self.v_cruise_pcm = int(min(self.v_cruise_pcm, interp(self.angle_steers, self.Angle, self.Angle_Speed)))
     #print "distane"
     #print self.distance
     if self.distance < self.approachradius + self.includeradius:
