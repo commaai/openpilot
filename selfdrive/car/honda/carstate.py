@@ -167,9 +167,10 @@ class CarState(object):
     # we need to force correction above 10 deg but less than 20
     # anything more means we are going to steep or not enough in a turn
     self.CL_MAX_ACTUATOR_DELTA = 2.
-    self.CL_MIN_ACTUATOR_DELTA = 0. 
-    self.CL_CORRECTION_FACTOR = [1.]
+    self.CL_MIN_ACTUATOR_DELTA = [0., 0., 0. ]
+    self.CL_CORRECTION_FACTOR = [10., 20., 44.]
     self.CL_CORRECTION_FACTOR_BP = [0.]
+    
      #duration after we cross the line until we release is a factor of speed
     self.CL_TIMEA_BP = [10., 32., 44.]
     self.CL_TIMEA_T = [0.7 ,0.30, 0.20]
@@ -222,7 +223,7 @@ class CarState(object):
     btns = []
     btns.append(UIButton("alca", "ALC", 0, self.alcaLabels[self.alcaMode], 0))
     btns.append(UIButton("","",0,"",1))
-    btns.append(UIButton("","",0,"",2))
+    btns.append(UIButton("slo","SLO",0,"",2))
     btns.append(UIButton("sound","SND",1,"",3))
     btns.append(UIButton("tr","TR",0,self.trLabels[self.trMode],4))
     btns.append(UIButton("gas","Gas",0,"",5))
@@ -239,7 +240,7 @@ class CarState(object):
           self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
           self.cstm_btns.hasChanges = True
       elif (id == 4) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="tr":
-          if self.cstm_btns.btns[id].btn_label2 == self.trLabels[self.trMode]:
+          if self.cstm_btns.btns[id].btn_label2 == self.alcaLabels[self.trMode]:
             self.trMode = (self.trMode + 1 ) % 3
             self.read_distance_lines = self.trMode + 1
           else:
@@ -375,7 +376,14 @@ class CarState(object):
                          cp.ts["POWERTRAIN_DATA"]['BRAKE_SWITCH'] != self.brake_switch_ts)
       self.brake_switch_prev = self.brake_switch
       self.brake_switch_ts = cp.ts["POWERTRAIN_DATA"]['BRAKE_SWITCH']
-
+    if self.cstm_btns.get_button_status("slow") == 0:
+        self.acc_slow_on = False
+    else:
+        self.acc_slow_on = True
+    if self.acc_slow_on:
+      self.v_cruise_pcm = self.v_cruise_pcm - 34
+    else:
+      self.v_cruise_pcm = self.v_cruise_pcm
     self.user_brake = cp.vl["VSA_STATUS"]['USER_BRAKE']
     self.pcm_acc_status = cp.vl["POWERTRAIN_DATA"]['ACC_STATUS']
     self.hud_lead = cp.vl["ACC_HUD"]['HUD_LEAD']
