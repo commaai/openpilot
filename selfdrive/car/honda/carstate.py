@@ -137,7 +137,9 @@ class CarState(object):
   def __init__(self, CP):
     #labels for ALCA modes
     self.alcaLabels = ["MadMax","Normal","Wifey"]
+    self.trLabels = ["0.9","1.8","2.7"]
     self.alcaMode = 0
+    self.trMode = 0
     #if (CP.carFingerprint == CAR.MODELS):
     # ALCA PARAMS
     # max REAL delta angle for correction vs actuator
@@ -221,7 +223,7 @@ class CarState(object):
     btns.append(UIButton("","",0,"",1))
     btns.append(UIButton("","",0,"",2))
     btns.append(UIButton("sound","SND",1,"",3))
-    btns.append(UIButton("","",0,"",4))
+    btns.append(UIButton("tr","TR",0,self.trLabels[self.trMode],4))
     btns.append(UIButton("gas","Gas",0,"",5))
     return btns
 
@@ -233,6 +235,14 @@ class CarState(object):
             self.alcaMode = (self.alcaMode + 1 ) % 3
           else:
             self.alcaMode = 0
+          self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
+          self.cstm_btns.hasChanges = True
+      elif (id == 4) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="tr":
+          if self.cstm_btns.btns[id].btn_label2 == self.alcaLabels[self.trMode]:
+            self.trMode = (self.trMode + 1 ) % 3
+            self.read_distance_lines = self.trMode + 1
+          else:
+            self.trMode = 0
           self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
           self.cstm_btns.hasChanges = True
       else:
