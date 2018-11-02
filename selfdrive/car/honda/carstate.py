@@ -245,7 +245,7 @@ class CarState(object):
             self.read_distance_lines = self.trMode + 1
           else:
             self.trMode = 0
-          self.cstm_btns.btns[id].btn_label2 = self.trLabels[self.alcaMode]
+          self.cstm_btns.btns[id].btn_label2 = self.trLabels[self.trMode]
           self.cstm_btns.hasChanges = True
       else:
         self.cstm_btns.btns[id].btn_status = btn_status * self.cstm_btns.btns[id].btn_status
