@@ -1,3 +1,4 @@
+from cereal import car
 from collections import namedtuple
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.controls.lib.drive_helpers import rate_limit
@@ -62,12 +63,13 @@ class CarController(object):
     self.brake_last = 0.
     self.enable_camera = enable_camera
     self.packer = CANPacker(dbc_name)
+    self.new_radar_config = False
     self.ALCA = ALCAController(self,True,False)  # Enabled  True and SteerByAngle only False
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
              pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel, \
-             hud_v_cruise, hud_show_lanes, hud_show_car, hud_alert, \
-             snd_beep, snd_chime):
+             radar_error, hud_v_cruise, hud_show_lanes, hud_show_car, \
+             hud_alert, snd_beep, snd_chime):
 
     """ Controls thread """
 
@@ -189,6 +191,8 @@ class CarController(object):
 
       if (frame % radar_send_step) == 0:
         idx = (frame/radar_send_step) % 4
-        can_sends.extend(hondacan.create_radar_commands(CS.v_ego, CS.CP.carFingerprint, idx))
+        if not self.new_radar_config:  # only change state once
+          self.new_radar_config = car.RadarState.Error.wrongConfig in radar_error
+        can_sends.extend(hondacan.create_radar_commands(CS.v_ego, CS.CP.carFingerprint, self.new_radar_config, idx))
 
     sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
