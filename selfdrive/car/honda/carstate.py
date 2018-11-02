@@ -135,6 +135,8 @@ def get_can_parser(CP):
 
 class CarState(object):
   def __init__(self, CP):
+    self.Angle = [0, 5, 10, 15,20,25,30,35,60,100,180,270,500]
+    self.Angle_Speed = [255,160,100,80,70,60,55,50,40,30,20,10,5]
     self.blind_spot_on = bool(0)
     #labels for ALCA modes
     self.alcaLabels = ["MadMax","Normal","Wifey"]
@@ -385,6 +387,7 @@ class CarState(object):
       self.v_cruise_pcm = max(self.v_cruise_pcm - 32, 8)
     else:
       self.v_cruise_pcm = self.v_cruise_pcm
+    self.v_cruise_pcm = int(min(self.v_cruise_pcm, interp(self.angle_steers, self.Angle, self.Angle_Speed)))
     self.user_brake = cp.vl["VSA_STATUS"]['USER_BRAKE']
     self.pcm_acc_status = cp.vl["POWERTRAIN_DATA"]['ACC_STATUS']
     self.hud_lead = cp.vl["ACC_HUD"]['HUD_LEAD']
