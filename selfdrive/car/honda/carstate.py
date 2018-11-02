@@ -135,6 +135,7 @@ def get_can_parser(CP):
 
 class CarState(object):
   def __init__(self, CP):
+    self.blind_spot_on = bool(0)
     #labels for ALCA modes
     self.alcaLabels = ["MadMax","Normal","Wifey"]
     self.trLabels = ["0.9","1.8","2.7"]
