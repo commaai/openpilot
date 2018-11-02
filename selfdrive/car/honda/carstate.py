@@ -381,7 +381,7 @@ class CarState(object):
     else:
         self.acc_slow_on = True
     if self.acc_slow_on:
-      self.v_cruise_pcm = self.v_cruise_pcm - 34
+      self.v_cruise_pcm = max(self.v_cruise_pcm - 34, 7)
     else:
       self.v_cruise_pcm = self.v_cruise_pcm
     self.user_brake = cp.vl["VSA_STATUS"]['USER_BRAKE']
