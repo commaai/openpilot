@@ -1,143 +1,128 @@
+#!/usr/bin/env python
+import zmq
+import math
+import time
 import numpy as np
 from cereal import car
-from common.kalman.simple_kalman import KF1D
-from selfdrive.config import Conversions as CV
 from selfdrive.can.parser import CANParser
-from selfdrive.car.gm.values import DBC, CAR, parse_gear_shifter, \
-                                    CruiseButtons, is_eps_status_ok, \
-                                    STEER_THRESHOLD
+from selfdrive.car.gm.interface import CanBus
+from selfdrive.car.gm.values import DBC, CAR
+from common.realtime import sec_since_boot
+from selfdrive.services import service_list
+import selfdrive.messaging as messaging
 
-def get_powertrain_can_parser(CP, canbus):
-  # this function generates lists for signal, messages and initial values
-  signals = [
-    # sig_name, sig_address, default
-    ("BrakePedalPosition", "EBCMBrakePedalPosition", 0),
-    ("FrontLeftDoor", "BCMDoorBeltStatus", 0),
-    ("FrontRightDoor", "BCMDoorBeltStatus", 0),
-    ("RearLeftDoor", "BCMDoorBeltStatus", 0),
-    ("RearRightDoor", "BCMDoorBeltStatus", 0),
-    ("LeftSeatBelt", "BCMDoorBeltStatus", 0),
-    ("RightSeatBelt", "BCMDoorBeltStatus", 0),
-    ("TurnSignals", "BCMTurnSignals", 0),
-    ("AcceleratorPedal", "AcceleratorPedal", 0),
-    ("ACCButtons", "ASCMSteeringButton", CruiseButtons.UNPRESS),
-    ("SteeringWheelAngle", "PSCMSteeringAngle", 0),
-    ("FLWheelSpd", "EBCMWheelSpdFront", 0),
-    ("FRWheelSpd", "EBCMWheelSpdFront", 0),
-    ("RLWheelSpd", "EBCMWheelSpdRear", 0),
-    ("RRWheelSpd", "EBCMWheelSpdRear", 0),
-    ("PRNDL", "ECMPRDNL", 0),
-    ("LKADriverAppldTrq", "PSCMStatus", 0),
-    ("LKATorqueDeliveredStatus", "PSCMStatus", 0),
-  ]
+RADAR_HEADER_MSG = 1120
+SLOT_1_MSG = RADAR_HEADER_MSG + 1
+NUM_SLOTS = 20
 
-  if CP.carFingerprint == CAR.VOLT:
-    signals += [
-      ("RegenPaddle", "EBCMRegenPaddle", 0),
-      ("TractionControlOn", "ESPStatus", 0),
-      ("EPBClosed", "EPBStatus", 0),
-      ("CruiseMainOn", "ECMEngineStatus", 0),
-      ("CruiseState", "AcceleratorPedal2", 0),
-    ]
-  elif CP.carFingerprint == CAR.CADILLAC_CT6:
-    signals += [
-      ("ACCCmdActive", "ASCMActiveCruiseControlStatus", 0)
-    ]
+# Actually it's 0x47f, but can parser only reports
+# messages that are present in DBC
+LAST_RADAR_MSG = RADAR_HEADER_MSG + NUM_SLOTS
 
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, [], canbus.powertrain)
+def create_radard_can_parser(canbus, car_fingerprint):
 
-class CarState(object):
-  def __init__(self, CP, canbus):
-    # initialize can parser
+  dbc_f = DBC[car_fingerprint]['radar']
+  if car_fingerprint == CAR.VOLT:
+    # C1A-ARS3-A by Continental
+    radar_targets = range(SLOT_1_MSG, SLOT_1_MSG + NUM_SLOTS)
+    signals = zip(['FLRRNumValidTargets',
+                   'FLRRSnsrBlckd', 'FLRRYawRtPlsblityFlt',
+                   'FLRRHWFltPrsntInt', 'FLRRAntTngFltPrsnt',
+                   'FLRRAlgnFltPrsnt', 'FLRRSnstvFltPrsntInt'] +
+                  ['TrkRange'] * NUM_SLOTS + ['TrkRangeRate'] * NUM_SLOTS +
+                  ['TrkRangeAccel'] * NUM_SLOTS + ['TrkAzimuth'] * NUM_SLOTS +
+                  ['TrkWidth'] * NUM_SLOTS + ['TrkObjectID'] * NUM_SLOTS,
+                  [RADAR_HEADER_MSG] * 7 + radar_targets * 6,
+                  [0] * 7 +
+                  [0.0] * NUM_SLOTS + [0.0] * NUM_SLOTS +
+                  [0.0] * NUM_SLOTS + [0.0] * NUM_SLOTS +
+                  [0.0] * NUM_SLOTS + [0] * NUM_SLOTS)
 
-    self.car_fingerprint = CP.carFingerprint
-    self.cruise_buttons = CruiseButtons.UNPRESS
-    self.left_blinker_on = False
-    self.prev_left_blinker_on = False
-    self.right_blinker_on = False
-    self.prev_right_blinker_on = False
+    checks = []
 
-    # vEgo kalman filter
-    dt = 0.01
-    self.v_ego_kf = KF1D(x0=np.matrix([[0.], [0.]]),
-                         A=np.matrix([[1., dt], [0., 1.]]),
-                         C=np.matrix([1., 0.]),
-                         K=np.matrix([[0.12287673], [0.29666309]]))
-    self.v_ego = 0.
+    return CANParser(dbc_f, signals, checks, canbus.obstacle)
+  else:
+    return None
 
-  def update(self, pt_cp):
+class RadarInterface(object):
+  def __init__(self, CP):
+    # radar
+    self.pts = {}
 
-    self.can_valid = pt_cp.can_valid
-    self.prev_cruise_buttons = self.cruise_buttons
-    self.cruise_buttons = pt_cp.vl["ASCMSteeringButton"]['ACCButtons']
+    self.delay = 0.0  # Delay of radar
 
-    self.v_wheel_fl = pt_cp.vl["EBCMWheelSpdFront"]['FLWheelSpd'] * CV.KPH_TO_MS
-    self.v_wheel_fr = pt_cp.vl["EBCMWheelSpdFront"]['FRWheelSpd'] * CV.KPH_TO_MS
-    self.v_wheel_rl = pt_cp.vl["EBCMWheelSpdRear"]['RLWheelSpd'] * CV.KPH_TO_MS
-    self.v_wheel_rr = pt_cp.vl["EBCMWheelSpdRear"]['RRWheelSpd'] * CV.KPH_TO_MS
-    speed_estimate = float(np.mean([self.v_wheel_fl, self.v_wheel_fr, self.v_wheel_rl, self.v_wheel_rr]))
+    canbus = CanBus()
+    print "Using %d as obstacle CAN bus ID" % canbus.obstacle
+    self.rcp = create_radard_can_parser(canbus, CP.carFingerprint)
 
-    self.v_ego_raw = speed_estimate
-    v_ego_x = self.v_ego_kf.update(speed_estimate)
-    self.v_ego = float(v_ego_x[0])
-    self.a_ego = float(v_ego_x[1])
+    context = zmq.Context()
+    self.logcan = messaging.sub_sock(context, service_list['can'].port)
 
-    self.standstill = self.v_ego_raw < 0.01
+  def update(self):
+    updated_messages = set()
+    ret = car.RadarState.new_message()
+    while 1:
 
-    self.angle_steers = pt_cp.vl["PSCMSteeringAngle"]['SteeringWheelAngle']
-    self.gear_shifter = parse_gear_shifter(pt_cp.vl["ECMPRDNL"]['PRNDL'])
-    self.user_brake = pt_cp.vl["EBCMBrakePedalPosition"]['BrakePedalPosition']
+      if self.rcp is None:
+        time.sleep(0.05)   # nothing to do
+        return ret
 
-    self.pedal_gas = pt_cp.vl["AcceleratorPedal"]['AcceleratorPedal']
-    self.user_gas_pressed = self.pedal_gas > 0
+      tm = int(sec_since_boot() * 1e9)
+      updated_messages.update(self.rcp.update(tm, True))
+      if LAST_RADAR_MSG in updated_messages:
+        break
 
-    self.steer_torque_driver = pt_cp.vl["PSCMStatus"]['LKADriverAppldTrq']
-    self.steer_override = abs(self.steer_torque_driver) > STEER_THRESHOLD
+    header = self.rcp.vl[RADAR_HEADER_MSG]
+    fault = header['FLRRSnsrBlckd'] or header['FLRRSnstvFltPrsntInt'] or \
+      header['FLRRYawRtPlsblityFlt'] or header['FLRRHWFltPrsntInt'] or \
+      header['FLRRAntTngFltPrsnt'] or header['FLRRAlgnFltPrsnt']
+    errors = []
+    if not self.rcp.can_valid:
+      errors.append("commIssue")
+    if fault:
+      errors.append("fault")
+    ret.errors = errors
 
-    # 0 - inactive, 1 - active, 2 - temporary limited, 3 - failed
-    self.lkas_status = pt_cp.vl["PSCMStatus"]['LKATorqueDeliveredStatus']
-    self.steer_not_allowed = not is_eps_status_ok(self.lkas_status, self.car_fingerprint)
+    currentTargets = set()
+    num_targets = header['FLRRNumValidTargets']
 
-    # 1 - open, 0 - closed
-    self.door_all_closed = (pt_cp.vl["BCMDoorBeltStatus"]['FrontLeftDoor'] == 0 and
-      pt_cp.vl["BCMDoorBeltStatus"]['FrontRightDoor'] == 0 and
-      pt_cp.vl["BCMDoorBeltStatus"]['RearLeftDoor'] == 0 and
-      pt_cp.vl["BCMDoorBeltStatus"]['RearRightDoor'] == 0)
+    # Not all radar messages describe targets,
+    # no need to monitor all of the self.rcp.msgs_upd
+    for ii in updated_messages:
+      if ii == RADAR_HEADER_MSG:
+        continue
 
-    # 1 - latched
-    self.seatbelt = pt_cp.vl["BCMDoorBeltStatus"]['LeftSeatBelt'] == 1
+      if num_targets == 0:
+        break
 
-    self.steer_error = False
+      cpt = self.rcp.vl[ii]
+      # Zero distance means it's an empty target slot
+      if cpt['TrkRange'] > 0.0:
+        targetId = cpt['TrkObjectID']
+        currentTargets.add(targetId)
+        if targetId not in self.pts:
+          self.pts[targetId] = car.RadarState.RadarPoint.new_message()
+          self.pts[targetId].trackId = targetId
+        distance = cpt['TrkRange']
+        self.pts[targetId].dRel = distance # from front of car
+        # From driver's pov, left is positive
+        deg_to_rad = np.pi/180.
+        self.pts[targetId].yRel = math.sin(deg_to_rad * cpt['TrkAzimuth']) * distance
+        self.pts[targetId].vRel = cpt['TrkRangeRate']
+        self.pts[targetId].aRel = float('nan')
+        self.pts[targetId].yvRel = float('nan')
 
-    self.brake_error = False
-    self.can_valid = True
+    for oldTarget in self.pts.keys():
+      if not oldTarget in currentTargets:
+        del self.pts[oldTarget]
 
-    self.prev_left_blinker_on = self.left_blinker_on
-    self.prev_right_blinker_on = self.right_blinker_on
-    self.left_blinker_on = pt_cp.vl["BCMTurnSignals"]['TurnSignals'] == 1
-    self.right_blinker_on = pt_cp.vl["BCMTurnSignals"]['TurnSignals'] == 2
+    ret.points = self.pts.values()
+    return ret
 
-    if self.car_fingerprint == CAR.VOLT:
-      self.park_brake = pt_cp.vl["EPBStatus"]['EPBClosed']
-      self.main_on = pt_cp.vl["ECMEngineStatus"]['CruiseMainOn']
-      self.acc_active = False
-      self.esp_disabled = pt_cp.vl["ESPStatus"]['TractionControlOn'] != 1
-      self.regen_pressed = bool(pt_cp.vl["EBCMRegenPaddle"]['RegenPaddle'])
-      self.pcm_acc_status = pt_cp.vl["AcceleratorPedal2"]['CruiseState']
-    else: 
-      self.park_brake = False
-      self.main_on = False
-      self.acc_active = pt_cp.vl["ASCMActiveCruiseControlStatus"]['ACCCmdActive']
-      self.esp_disabled = False
-      self.regen_pressed = False
-      self.pcm_acc_status = int(self.acc_active)
+if __name__ == "__main__":
+  RI = RadarInterface(None)
+  while 1:
+    ret = RI.update()
+    print(chr(27) + "[2J")
+    print ret
 
-    # Brake pedal's potentiometer returns near-zero reading
-    # even when pedal is not pressed.
-    if self.user_brake < 10:
-      self.user_brake = 0
-
-    # Regen braking is braking
-    self.brake_pressed = self.user_brake > 10 or self.regen_pressed
-
-    self.gear_shifter_valid = self.gear_shifter == car.CarState.GearShifter.drive
