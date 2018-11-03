@@ -245,7 +245,6 @@ class CarState(object):
       elif (id == 4) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="tr":
           if self.cstm_btns.btns[id].btn_label2 == self.trLabels[self.trMode]:
             self.trMode = (self.trMode + 1 ) % 3
-            self.read_distance_lines = self.trMode + 1
           else:
             self.trMode = 0
           self.cstm_btns.btns[id].btn_label2 = self.trLabels[self.trMode]
@@ -391,7 +390,7 @@ class CarState(object):
     self.user_brake = cp.vl["VSA_STATUS"]['USER_BRAKE']
     self.pcm_acc_status = cp.vl["POWERTRAIN_DATA"]['ACC_STATUS']
     self.hud_lead = cp.vl["ACC_HUD"]['HUD_LEAD']
-
+    self.read_distance_lines = self.trMode + 1
 
 # carstate standalone tester
 if __name__ == '__main__':
