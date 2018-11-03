@@ -2,7 +2,7 @@ from common.numpy_fast import interp
 from common.kalman.simple_kalman import KF1D
 from selfdrive.can.parser import CANParser, CANDefine
 from selfdrive.config import Conversions as CV
-from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, SPEED_FACTOR
+from selfdrive.car.honda.values import CAR, DBC, SteerStatus, STEER_THRESHOLD, SPEED_FACTOR
 
 def parse_gear_shifter(gear, vals):
 
@@ -188,11 +188,14 @@ class CarState(object):
                                       cp.vl["DOORS_STATUS"]['DOOR_OPEN_RL'], cp.vl["DOORS_STATUS"]['DOOR_OPEN_RR']])
     self.seatbelt = not cp.vl["SEATBELT_STATUS"]['SEATBELT_DRIVER_LAMP'] and cp.vl["SEATBELT_STATUS"]['SEATBELT_DRIVER_LATCHED']
 
-    # 2 = temporary; 3 = TBD; 4 = temporary, hit a bump; 5 = (permanent); 6 = temporary; 7 = (permanent)
-    # TODO: Use values from DBC to parse this field
-    self.steer_error = cp.vl["STEER_STATUS"]['STEER_STATUS'] not in [0, 2, 3, 4, 6]
-    self.steer_not_allowed = cp.vl["STEER_STATUS"]['STEER_STATUS'] != 0
-    self.steer_warning = cp.vl["STEER_STATUS"]['STEER_STATUS'] not in [0, 3]   # 3 is low speed lockout, not worth a warning
+    self.steer_error = cp.vl["STEER_STATUS"]['STEER_STATUS'] not in [SteerStatus.NORMAL,
+                                                                     SteerStatus.NO_TORQUE_ALERT_1,
+                                                                     SteerStatus.LOW_SPEED_LOCKOUT,
+                                                                     SteerStatus.NO_TORQUE_ALERT_2,
+                                                                     SteerStatus.TMP_FAULT]
+    self.steer_not_allowed = cp.vl["STEER_STATUS"]['STEER_STATUS'] != SteerStatus.NORMAL
+    self.steer_warning = cp.vl["STEER_STATUS"]['STEER_STATUS'] not in [SteerStatus.NORMAL,
+                                                                       SteerStatus.LOW_SPEED_LOCKOUT]
     self.brake_error = cp.vl["STANDSTILL"]['BRAKE_ERROR_1'] or cp.vl["STANDSTILL"]['BRAKE_ERROR_2']
     self.esp_disabled = cp.vl["VSA_STATUS"]['ESP_DISABLED']
 

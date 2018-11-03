@@ -15,7 +15,7 @@ class CM:
   REPEATED = 1
   CONTINUOUS = 2
 
-#car beepss: enumeration from dbc file. Beeps are for activ and deactiv
+#car beeps: enumeration from dbc file. Beeps are for active and deactive
 class BP:
   MUTE = 0
   SINGLE = 3
@@ -32,6 +32,15 @@ class AH:
   GEAR_NOT_D     = [4, 6]
   SEATBELT       = [5, 5]
   SPEED_TOO_HIGH = [6, 8]
+
+#car steer status: enumeration from dbc file.
+class SteerStatus:
+  TMP_FAULT         = 6
+  FAULT_1           = 5
+  NO_TORQUE_ALERT_2 = 4
+  LOW_SPEED_LOCKOUT = 3
+  NO_TORQUE_ALERT_1 = 2
+  NORMAL            = 0
 
 class CAR:
   ACCORD = "HONDA ACCORD 2018 SPORT 2T"
