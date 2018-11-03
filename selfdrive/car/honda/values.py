@@ -36,7 +36,6 @@ class AH:
 #car steer status: enumeration from dbc file.
 class SteerStatus:
   TMP_FAULT         = 6
-  FAULT_1           = 5
   NO_TORQUE_ALERT_2 = 4
   LOW_SPEED_LOCKOUT = 3
   NO_TORQUE_ALERT_1 = 2
