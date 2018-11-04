@@ -189,7 +189,7 @@ By default, openpilot creates an account and includes a client for chffr, our da
 
 It's open source software, so you are free to disable it if you wish.
 
-It logs the road facing the camera, CAN, GPS, IMU, magnetometer, thermal sensors, crashes, and operating system logs.
+It logs the road-facing the camera, CAN, GPS, IMU, magnetometer, thermal sensors, crashes, and operating system logs.
 The user-facing camera is only logged if you explicitly opt-in in settings.
 It does not log the microphone.
 
