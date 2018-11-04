@@ -3,9 +3,26 @@
 Welcome to openpilot
 ======
 
-[openpilot](http://github.com/commaai/openpilot) is an open source driving agent. Currently it performs the functions of Adaptive Cruise Control (ACC) and Lane Keeping Assist System (LKAS) for selected Honda, Toyota, Acura, Lexus, Chevrolet, Hyundai, Kia. It's about on par with Tesla Autopilot and GM Super Cruise, and better than [all other manufacturers](http://www.thedrive.com/tech/5707/the-war-for-autonomous-driving-part-iii-us-vs-germany-vs-japan).
+[openpilot](http://github.com/commaai/openpilot) is an open source driving agent. Currently, it performs the functions of Adaptive Cruise Control (ACC) and Lane Keeping Assist System (LKAS) for selected Honda, Toyota, Acura, Lexus, Chevrolet, Hyundai, Kia. It's about on par with Tesla Autopilot and GM Super Cruise, and better than [all other manufacturers](http://www.thedrive.com/tech/5707/the-war-for-autonomous-driving-part-iii-us-vs-germany-vs-japan).
 
-The openpilot codebase has been written to be concise and enable rapid prototyping. We look forward to your contributions - improving real vehicle automation has never been easier.
+The openpilot codebase has been written to be concise and enables rapid prototyping. We look forward to your contributions - improving real vehicle automation has never been easier.
+
+Table Of Contents (ToC)
+=======================
+
+* [Community](#community)
+* [Hardware](#hardware)
+* [Supported Cars](#supported-cars)
+* [Community Maintained Cars](#community-maintained-cars)
+* [In Progress Cars](#in-progress-cars)
+* [How can I add support for my car?](#how-can-I-add-support-for-my-car?)
+* [Directory structure](#directory-structure)
+* [User Data / chffr Account / Crash Reporting](#user-data-chffr-account-crash-reporting)
+* [Testing on PC](#testing-on-pc)
+* [Contributing](#contributing)
+* [Licensing](#licensing)
+
+---
 
 Community
 ------
@@ -130,8 +147,10 @@ If your car has adaptive cruise control and lane keep assist, you are in luck. U
 We've written guides for [Brand](https://medium.com/@comma_ai/how-to-write-a-car-port-for-openpilot-7ce0785eda84) and [Model](https://medium.com/@comma_ai/openpilot-port-guide-for-toyota-models-e5467f4b5fe6) ports. These guides might help you after you have the basics figured out.
 
 - BMW, Audi, Volvo, and Mercedes all use [FlexRay](https://en.wikipedia.org/wiki/FlexRay) and are unlikely to be supported any time soon.
-- We put time into a Ford port, but the steering has a 10 second cutout limitation that makes it unusable.
-- The 2016-2017 Honda Accord use a custom signaling protocol for steering that's unlikely to ever be upstreamed.
+- We put time into a Ford port, but the steering has a 10-second cutout limitation that makes it unusable.
+- The 2016-2017 Honda Accord uses a custom signaling protocol for steering that's unlikely to ever be streamed.
+
+---
 
 Directory structure
 ------
@@ -166,12 +185,12 @@ To understand how the services interact, see `selfdrive/service_list.yaml`
 User Data / chffr Account / Crash Reporting
 ------
 
-By default openpilot creates an account and includes a client for chffr, our dashcam app. We use your data to train better models and improve openpilot for everyone.
+By default, openpilot creates an account and includes a client for chffr, our dashcam app. We use your data to train better models and improve openpilot for everyone.
 
 It's open source software, so you are free to disable it if you wish.
 
-It logs the road facing camera, CAN, GPS, IMU, magnetometer, thermal sensors, crashes, and operating system logs.
-The user facing camera is only logged if you explicitly opt-in in settings.
+It logs the road facing the camera, CAN, GPS, IMU, magnetometer, thermal sensors, crashes, and operating system logs.
+The user-facing camera is only logged if you explicitly opt-in in settings.
 It does not log the microphone.
 
 By using it, you agree to [our privacy policy](https://community.comma.ai/privacy.html). You understand that use of this software or its related services will generate certain types of user data, which may be logged and stored at the sole discretion of comma.ai. By accepting this agreement, you grant an irrevocable, perpetual, worldwide right to comma.ai for the use of this data.
@@ -190,11 +209,13 @@ The resulting plots are displayed in `selfdrive/test/tests/plant/out/longitudina
 
 More extensive testing infrastructure and simulation environments are coming soon.
 
+---
+
 Contributing
 ------
 
 We welcome both pull requests and issues on
-[github](http://github.com/commaai/openpilot). Bug fixes and new car ports encouraged.
+[github](http://github.com/commaai/openpilot). Bug fixes and new carports encouraged.
 
 Want to get paid to work on openpilot? [comma.ai is hiring](https://comma.ai/jobs/)
 
@@ -208,3 +229,7 @@ Any user of this software shall indemnify and hold harmless Comma.ai, Inc. and i
 **THIS IS ALPHA QUALITY SOFTWARE FOR RESEARCH PURPOSES ONLY. THIS IS NOT A PRODUCT.
 YOU ARE RESPONSIBLE FOR COMPLYING WITH LOCAL LAWS AND REGULATIONS.
 NO WARRANTY EXPRESSED OR IMPLIED.**
+
+---
+
+<img src="https://d1qb2nb5cznatu.cloudfront.net/startups/i/1061157-bc7e9bf3b246ece7322e6ffe653f6af8-medium_jpg.jpg?buster=1458363130" width="75"></img> <img src="https://cdn-images-1.medium.com/max/1600/1*C87EjxGeMPrkTuVRVWVg4w.png" width="225"></img>
