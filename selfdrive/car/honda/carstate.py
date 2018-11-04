@@ -172,7 +172,7 @@ class CarState(object):
     self.CL_MAX_ACTUATOR_DELTA = 2.
 
     self.CL_MIN_ACTUATOR_DELTA = 0. 
-    self.CL_CORRECTION_FACTOR = [1.3,1.2,1.2]
+    self.CL_CORRECTION_FACTOR = [1.,1.,1.]
     self.CL_CORRECTION_FACTOR_BP = [10., 32., 44.]
     #duration after we cross the line until we release is a factor of speed
     self.CL_TIMEA_BP = [10., 32., 44.]
