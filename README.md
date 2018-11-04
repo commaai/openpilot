@@ -148,7 +148,7 @@ We've written guides for [Brand](https://medium.com/@comma_ai/how-to-write-a-car
 
 - BMW, Audi, Volvo, and Mercedes all use [FlexRay](https://en.wikipedia.org/wiki/FlexRay) and are unlikely to be supported any time soon.
 - We put time into a Ford port, but the steering has a 10-second cutout limitation that makes it unusable.
-- The 2016-2017 Honda Accord uses a custom signaling protocol for steering that's unlikely to ever be streamed.
+- The 2016-2017 Honda Accord uses a custom signaling protocol for steering that's unlikely to ever be upstreamed.
 
 ---
 
