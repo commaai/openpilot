@@ -76,8 +76,7 @@ def fingerprint(logcan, timeout):
 
     # bail if no cars left or we've been waiting too long
     elif len(candidate_cars) == 0 or (timeout and (ts - st_passive) > timeout):
-      #return None, finger
-      return "TESLA MODEL S", finger
+      return None, finger
 
     time.sleep(0.01)
 

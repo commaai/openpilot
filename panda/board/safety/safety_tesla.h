@@ -285,4 +285,3 @@ const safety_hooks tesla_hooks = {
     .ignition = tesla_ign_hook,
     .fwd = tesla_fwd_hook,
 };
-

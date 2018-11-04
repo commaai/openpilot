@@ -24,7 +24,7 @@ int max_limit_check(int val, const int MAX, const int MIN);
 int dist_to_meas_check(int val, int val_last, struct sample_t *val_meas,
   const int MAX_RATE_UP, const int MAX_RATE_DOWN, const int MAX_ERROR);
 int driver_limit_check(int val, int val_last, struct sample_t *val_driver,
-  const int MAX, const int MAX_RATE_UP, const int MAX_RATE_DOWN, 
+  const int MAX, const int MAX_RATE_UP, const int MAX_RATE_DOWN,
   const int MAX_ALLOWANCE, const int DRIVER_FACTOR);
 int rt_rate_limit_check(int val, int val_last, const int MAX_RT_DELTA);
 #ifdef PANDA
@@ -61,9 +61,6 @@ int controls_allowed = 0;
 #include "safety/safety_gm.h"
 #include "safety/safety_ford.h"
 #include "safety/safety_cadillac.h"
-#ifdef PANDA
-#include "safety/safety_tesla.h"
-#endif
 #include "safety/safety_hyundai.h"
 #include "safety/safety_elm327.h"
 
@@ -118,10 +115,6 @@ const safety_hook_config safety_hook_registry[] = {
   {SAFETY_GM, &gm_hooks},
   {SAFETY_FORD, &ford_hooks},
   {SAFETY_CADILLAC, &cadillac_hooks},
-#ifdef PANDA
-  {SAFETY_TESLA, &tesla_hooks},
-#endif
-  {SAFETY_TOYOTA_NOLIMITS, &toyota_nolimits_hooks},
   {SAFETY_HYUNDAI, &hyundai_hooks},
   {SAFETY_TOYOTA_NOLIMITS, &toyota_nolimits_hooks},
 #ifdef PANDA

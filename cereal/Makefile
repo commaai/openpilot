@@ -1,18 +1,18 @@
 PWD := $(shell pwd)
 
-SRCS := log.capnp car.capnp ui.capnp
+SRCS := log.capnp car.capnp
 
-GENS := gen/cpp/car.capnp.c++ gen/cpp/log.capnp.c++ gen/cpp/ui.capnp.c++
-JS := gen/js/car.capnp.js gen/js/log.capnp.js gen/js/ui.capnp.js
+GENS := gen/cpp/car.capnp.c++ gen/cpp/log.capnp.c++
+JS := gen/js/car.capnp.js gen/js/log.capnp.js
 
 UNAME_M ?= $(shell uname -m)
 
 # only generate C++ for docker tests
 ifneq ($(OPTEST),1)
-	GENS += gen/c/car.capnp.c gen/c/log.capnp.c gen/c/ui.capnp.c gen/c/include/c++.capnp.h gen/c/include/java.capnp.h 
+	GENS += gen/c/car.capnp.c gen/c/log.capnp.c gen/c/include/c++.capnp.h gen/c/include/java.capnp.h
 
 	ifeq ($(UNAME_M),x86_64)
-		GENS += gen/java/Car.java gen/java/Log.java gen/java/Ui.java
+		GENS += gen/java/Car.java gen/java/Log.java
 	endif
 
 endif
