@@ -2,6 +2,7 @@ from common.numpy_fast import interp
 from common.kalman.simple_kalman import KF1D
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
+from selfdrive.car.tesla.ACC_module import ACCMode
 from selfdrive.car.tesla.values import CAR, CruiseButtons, DBC
 from selfdrive.car.modules.UIBT_module import UIButtons,UIButton
 import numpy as np
@@ -168,7 +169,7 @@ class CarState(object):
   def __init__(self, CP):
     #labels for buttons
     self.btns_init = [["alca","ALC",["MadMax","Normal","Wifey"]], \
-                      ["acc","ACC",["Mod OP","Mod JJ"]], \
+                      ["acc","ACC", ACCMode.get_labels()], \
                       ["steer","STR",[""]], \
                       ["brake","BRK",[""]], \
                       ["msg", "MSG",[""]], \
@@ -325,7 +326,7 @@ class CarState(object):
       #we don't have pedal interceptor
       btn = self.cstm_btns.get_button("pedal")
       if btn:
-        self.btns_init[1] = ["acc","ACC",["Mod OP","Mod JJ"]]
+        self.btns_init[1] = ["acc", "ACC", ACCMode.get_labels()]
         hasChanges = True
     if hasChanges:
       i = 1
