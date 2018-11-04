@@ -2,7 +2,7 @@ from common.numpy_fast import interp
 from common.kalman.simple_kalman import KF1D
 from selfdrive.can.parser import CANParser, CANDefine
 from selfdrive.config import Conversions as CV
-from selfdrive.car.honda.values import CAR, DBC, SteerStatus, STEER_THRESHOLD, SPEED_FACTOR
+from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, SPEED_FACTOR
 
 def parse_gear_shifter(gear, vals):
 
@@ -134,7 +134,8 @@ class CarState(object):
   def __init__(self, CP):
     self.CP = CP
     self.can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
-    self.shifter_values = self.can_define.dv["GEARBOX"]["GEAR_SHIFTER"]
+    self.shifter_values = self.can_define.vd["GEARBOX"]["GEAR_SHIFTER"]
+    self.steer_status_defs = self.can_define.dv["STEER_STATUS"]["STEER_STATUS"]
 
     self.user_gas, self.user_gas_pressed = 0., 0
     self.brake_switch_prev = 0
@@ -188,14 +189,14 @@ class CarState(object):
                                       cp.vl["DOORS_STATUS"]['DOOR_OPEN_RL'], cp.vl["DOORS_STATUS"]['DOOR_OPEN_RR']])
     self.seatbelt = not cp.vl["SEATBELT_STATUS"]['SEATBELT_DRIVER_LAMP'] and cp.vl["SEATBELT_STATUS"]['SEATBELT_DRIVER_LATCHED']
 
-    self.steer_error = cp.vl["STEER_STATUS"]['STEER_STATUS'] not in [SteerStatus.NORMAL,
-                                                                     SteerStatus.NO_TORQUE_ALERT_1,
-                                                                     SteerStatus.LOW_SPEED_LOCKOUT,
-                                                                     SteerStatus.NO_TORQUE_ALERT_2,
-                                                                     SteerStatus.TMP_FAULT]
-    self.steer_not_allowed = cp.vl["STEER_STATUS"]['STEER_STATUS'] != SteerStatus.NORMAL
-    self.steer_warning = cp.vl["STEER_STATUS"]['STEER_STATUS'] not in [SteerStatus.NORMAL,
-                                                                       SteerStatus.LOW_SPEED_LOCKOUT]
+    self.steer_error = cp.vl["STEER_STATUS"]['STEER_STATUS'] not in [self.steer_status_defs['NORMAL'],
+                                                                     self.steer_status_defs['NO_TORQUE_ALERT_1'],
+                                                                     self.steer_status_defs['LOW_SPEED_LOCKOUT'],
+                                                                     self.steer_status_defs['NO_TORQUE_ALERT_2'],
+                                                                     self.steer_status_defs['TMP_FAULT']]
+    self.steer_not_allowed = cp.vl["STEER_STATUS"]['STEER_STATUS'] != self.steer_status_defs['NORMAL']
+    self.steer_warning = cp.vl["STEER_STATUS"]['STEER_STATUS'] not in [self.steer_status_defs['NORMAL'],
+                                                                       self.steer_status_defs['LOW_SPEED_LOCKOUT']]
     self.brake_error = cp.vl["STANDSTILL"]['BRAKE_ERROR_1'] or cp.vl["STANDSTILL"]['BRAKE_ERROR_2']
     self.esp_disabled = cp.vl["VSA_STATUS"]['ESP_DISABLED']
 

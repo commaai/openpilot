@@ -96,6 +96,7 @@ class CANParser(object):
 class CANDefine(object):
   def __init__(self, dbc_name):
     self.dv = defaultdict(dict)
+    self.vd = defaultdict(dict)
     self.dbc_name = dbc_name
     self.dbc = libdbc.dbc_lookup(dbc_name)
 
@@ -121,15 +122,18 @@ class CANDefine(object):
       values = [int(v) for v in def_val[::2]]
       defs = def_val[1::2]
 
-      if address not in self.dv:
-        self.dv[address] = {}
+      if address not in self.vd:
+        self.vd[address] = {}
         msgname = self.address_to_msg_name[address]
-        self.dv[msgname] = {}
+        self.vd[msgname] = {}
 
       # two ways to lookup: address or msg name
-      self.dv[address][sgname] = {v: d for v, d in zip(values, defs)} #build dict
+      # map value to defintion
+      self.vd[address][sgname] = {v: d for v, d in zip(values, defs)} #build dict
+      self.vd[msgname][sgname] = self.vd[address][sgname]
+      # map definition to value
+      self.dv[address][sgname] = {d: v for d, v in zip(defs, values)} #build dict
       self.dv[msgname][sgname] = self.dv[address][sgname]
-
 
 if __name__ == "__main__":
   from common.realtime import sec_since_boot
