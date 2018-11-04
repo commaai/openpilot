@@ -281,7 +281,7 @@ def state_control(plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, 
                                       PL.PP.c_poly, PL.PP.c_prob, CS.steeringAngle,
                                       CS.steeringPressed)
   if CS.gasbuttonstatus == 0:
-    CP.gasMaxV = [0.3, 0.5, 0.7]
+    CP.gasMaxV = [0.2, 0.3, 0.4]
   else:
     CP.gasMaxV = [0.5, 0.7, 0.9]
   # *** gas/brake PID loop ***
