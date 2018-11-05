@@ -392,7 +392,7 @@ class CarState(object):
     if self.cruise_setting == 3:
       if cp.vl["SCM_BUTTONS"]["CRUISE_SETTING"] == 0:
         self.trMode = (self.trMode + 1 ) % 3
-        self.cstm_btns.btns[id].btn_label2 = self.trLabels[self.trMode]
+        self.cstm_btns.btns[4].btn_label2 = self.trLabels[self.trMode]
     self.prev_cruise_setting = self.cruise_setting
     self.cruise_setting = cp.vl["SCM_BUTTONS"]['CRUISE_SETTING']
     self.read_distance_lines = self.trMode + 1
