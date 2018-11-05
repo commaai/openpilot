@@ -115,7 +115,7 @@ def get_can_parser(CP):
 class CarState(object):
   def __init__(self, CP):
     self.Angle = [0, 5, 10, 15,20,25,30,35,60,100,180,270,500]
-    self.Angle_Speed = [255,160,100,80,70,60,55,50,40,30,20,10,5]
+    self.Angle_Speed = [255,160,100,80,70,60,55,50,40,33,27,17,12]
     #labels for ALCA modes
     self.alcaLabels = ["MadMax","Normal","Wifey"]
     self.alcaMode = 0
