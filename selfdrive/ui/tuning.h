@@ -45,7 +45,7 @@
 #define BTN_STEP 8
 #define MAX_NUM_PARAMS 10 // max number of params we can track
 #define MAX_FILE_BYTES 100000 // max bytes to write to file
-#define MAX_PRESETS 10 // max number of params we can track
+#define MAX_PRESETS 10 // max number of presets we can track
 
 bool debug = false;
 int status = 0; // Status code to tell us if something went wrong
@@ -85,7 +85,7 @@ ui_element preset_button;
 char rootdir[50] = "/sdcard/tuning";
 
 char params_file[256] = "params.txt";
-char tune_file[256] = "tune.txt"; // Stores the current preset values in a format that can be used by openpilot (pyton)
+char tune_file[256] = "tune.txt"; // Stores the current preset values in a format that can be used by openpilot (python)
 char python_file[256]; // stores values as pyton variable
 bool init_tune = false; // Used to initialize stuff
 int num_lines = 0;
