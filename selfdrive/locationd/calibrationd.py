@@ -75,9 +75,8 @@ def gaussian_kernel(sizex, sizey, stdx, stdy, dx, dy):
 def gaussian_kernel_1D(H):
   #creates separable gaussian filter
   u,s,v = np.linalg.svd(H)
-
-  x = (u[:,0]*np.sqrt(s[0]))
-  y = (np.sqrt(s[0])*v[0,:])
+  x = u[:,0]*np.sqrt(s[0])
+  y = np.sqrt(s[0])*v[0,:]
   return x, y
 
 def blur_image(img, kernel_x, kernel_y):
