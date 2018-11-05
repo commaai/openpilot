@@ -775,6 +775,7 @@ void toggle_presets() {
   if (preset >= num_presets) {
     preset = 0;
   }
+  write_current_params();
 }
 
 void toggle_step() {
