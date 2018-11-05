@@ -72,9 +72,9 @@ def gaussian_kernel(sizex, sizey, stdx, stdy, dx, dy):
   g = np.exp(-((x - dx)**2 / (2. * stdx**2) + (y - dy)**2 / (2. * stdy**2)))
   return g / g.sum()
 
-def gaussian_kernel_1D(H):
+def gaussian_kernel_1d(kernel):
   #creates separable gaussian filter
-  u,s,v = np.linalg.svd(H)
+  u,s,v = np.linalg.svd(kernel)
   x = u[:,0]*np.sqrt(s[0])
   y = np.sqrt(s[0])*v[0,:]
   return x, y
@@ -96,7 +96,7 @@ class Calibrator(object):
     self.l100_last_updated = 0
     self.prev_orbs = None
     self.kernel = gaussian_kernel(11, 11, 2.35, 2.35, 0, 0)
-    self.kernel_x, self.kernel_y = gaussian_kernel_1D(self.kernel)
+    self.kernel_x, self.kernel_y = gaussian_kernel_1d(self.kernel)
 
     self.vp = copy.copy(VP_INIT)
     self.cal_status = Calibration.UNCALIBRATED
