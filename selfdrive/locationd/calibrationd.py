@@ -145,7 +145,7 @@ class Calibrator(object):
     increment_grid_c(self.grid, lines, len(lines))
     self.frame_counter += 1
     if (self.frame_counter % FRAMES_NEEDED) == 0:
-      grid = blur_image(self.grid, self.kernel)
+      grid = blur_image(self.grid, self.kernel_x, self.kernel_y)
       argmax_vp = np.unravel_index(np.argmax(grid), grid.shape)[::-1]
       self.rescale_grid()
       self.vp_unfilt = np.array(argmax_vp)
@@ -198,7 +198,7 @@ class Calibrator(object):
     self.yaw_rate = log.live100.curvature * self.speed
 
   def handle_debug(self):
-    grid_blurred = blur_image(self.grid, self.kernel)
+    grid_blurred = blur_image(self.grid, self.kernel_x, self.kernel_y)
     grid_grey = np.clip(grid_blurred/(0.1 + np.max(grid_blurred))*255, 0, 255)
     grid_color = np.repeat(grid_grey[:,:,np.newaxis], 3, axis=2)
     grid_color[:,:,0] = 0
