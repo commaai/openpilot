@@ -390,7 +390,7 @@ class CarState(object):
     self.pcm_acc_status = cp.vl["POWERTRAIN_DATA"]['ACC_STATUS']
     self.hud_lead = cp.vl["ACC_HUD"]['HUD_LEAD']
     if self.cruise_setting == 3:
-      if cp.vl["SCM_BUTTONS"]["CRUISE_SETTING"] = 0:
+      if cp.vl["SCM_BUTTONS"]["CRUISE_SETTING"] == 0:
         self.trMode = (self.trMode + 1 ) % 3
         self.cstm_btns.btns[id].btn_label2 = self.trLabels[self.trMode]
     self.prev_cruise_setting = self.cruise_setting
