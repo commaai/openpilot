@@ -20,6 +20,8 @@
 
   CHANGE LOG:
 
+  v0.0.4 - Add ability to specify "presets" for the parameter list
+           Presets need to be labeled as "PRESET=#" where # starts with 1
   v0.0.3 - Increase precision to 6 decimal places
   v0.0.2 - Added 'press and hold' on the +/- buttons
          - Swapped positions of +/- buttons
@@ -43,6 +45,7 @@
 #define BTN_STEP 8
 #define MAX_NUM_PARAMS 10 // max number of params we can track
 #define MAX_FILE_BYTES 100000 // max bytes to write to file
+#define MAX_PRESETS 10 // max number of params we can track
 
 bool debug = false;
 int status = 0; // Status code to tell us if something went wrong
@@ -77,15 +80,22 @@ ui_element step_text;
 ui_element left_arrow_button;
 ui_element right_arrow_button;
 ui_element tune_button;
+ui_element preset_button;
 
 char rootdir[50] = "/sdcard/tuning";
 
 char params_file[256] = "params.txt";
+char tune_file[256] = "tune.txt"; // Stores the current preset values in a format that can be used by openpilot (pyton)
 char python_file[256]; // stores values as pyton variable
 bool init_tune = false; // Used to initialize stuff
 int num_lines = 0;
 
-double angles[MAX_NUM_PARAMS][3]; // List of angle values from the file
+// Preset variables
+int preset = 0; // Preset index
+int num_presets = 0; // Number of presets in the file
+int num_preset_params[MAX_PRESETS]; // Number of presets in the file
+
+double angles[MAX_PRESETS][MAX_NUM_PARAMS][3]; // List of angle values from the file
 char property[50] = "CL_MAXD_A"; // What property to tune
 char properties[50][MAX_NUM_PARAMS]; // List of property names
 int current_property = -1; // Which property value to adjust when clicking the increase/decrease buttons
@@ -95,7 +105,7 @@ float delta_step = 0.000001; // Change step by this amount
 int step_toggle = 0; // Change to preset toggle step
 
 int param_index = 0; // Index to track which param label we're working with
-int param_value_count[MAX_NUM_PARAMS]; // Store the number of elements for each param
+int param_value_count[MAX_PRESETS][MAX_NUM_PARAMS]; // Store the number of elements for each param
 char *param_labels[MAX_NUM_PARAMS]; // Store the names of the params
 
 // Used to delay button highlighting
@@ -146,10 +156,19 @@ char **readfile(char *filename) {
   while(fgets(line, sizeof(line), file)) {
     //printf("line: %s\n", line);
     ln = strlen(line) - 1;
-    line[ln] = '\0';
-    lines[num_lines] = malloc(256+1);
-    strcpy(lines[num_lines],line);
-    num_lines++;
+    int cmp = strncmp(line,"#",1);
+    if (cmp != 0 && ln > 0) {
+      line[ln] = '\0';
+      lines[num_lines] = malloc(256+1);
+      strcpy(lines[num_lines],line);
+      num_lines++;
+    }
+    else if (ln > 0) {
+      printf("[TUNING MOD] Ignoring comment: %s",line);
+    }
+    else {
+      printf("[TUNING MOD] Ignoring blank line\n");
+    }
   }
   fclose(file);
   //printf("num_lines: %d\n", num_lines);
@@ -165,6 +184,7 @@ char **readfile(char *filename) {
 void parse_file(char *filename) {
   if (debug) { printf("parse_file\n"); }
   char **lines = readfile(filename);
+  int param_num = 0;
 
   if (status == ERROR_NO_FILE) {
     return;
@@ -177,12 +197,19 @@ void parse_file(char *filename) {
     char* token_value;
     char* token_value2;
     char* token2;
-    param_labels[i] = malloc(sizeof(char *));
+    param_labels[param_num] = malloc(sizeof(char *));
 
     //printf("line %d: %s\n", i, lines[i]);
     char* token = strtok(lines[i], "=");
     //printf("token1: %s\n", token);
-    param_labels[i] = token;
+    int cmp = strncmp(token,"PRESET",10);
+    if (cmp != 0) {
+      param_labels[param_num] = token;
+    }
+    else {
+      num_presets++;
+      param_num = 0;
+    }
     while (token != NULL ) {
       token = strtok(NULL, "=");
       char *end;
@@ -190,29 +217,47 @@ void parse_file(char *filename) {
         token_value = str_remove(str_remove(token,'['),']');
         //printf("token_value: %s\n", token_value);
         char* token2 = strtok(token_value,",");
-        //printf("token2: %s\n", token2);
-        angles[i][angle_index++] = strtod(token2,&end);
-        while (token2 != NULL) {
-          token2 = strtok(NULL, ",");
-          if (token2 != NULL) {
-            token_value2 = token2;
-            angles[i][angle_index++] = strtod(token_value2,&end);
-            //printf("token_value2: %s\n", token_value2);
+
+        if (cmp == 0) {
+          preset = atoi(token2)-1;
+        }
+        else {
+          //printf("token2: (%d) %s\n", preset, token2);
+          angles[preset][param_num][angle_index++] = strtod(token2,&end);
+          while (token2 != NULL) {
+            token2 = strtok(NULL, ",");
+            if (token2 != NULL) {
+              token_value2 = token2;
+              angles[preset][param_num][angle_index++] = strtod(token_value2,&end);
+              //printf("token_value2: %s\n", token_value2);
+            }
           }
         }
       }
     }
-    param_value_count[i] = angle_index;
+    param_value_count[preset][param_num] = angle_index;
+    if (cmp != 0) {
+      param_num++;
+      num_preset_params[preset] = param_num;
+    }
   }
 
+  preset = 0; // Reset preset index back to default
+
 /*
-  for (int i=0; i < num_lines; i++) {
-     printf("%s: %d indexes\n",param_labels[i],param_value_count[i]);
+  for (int i=0; i < num_presets; i++) {
+    int num_params = num_preset_params[i];
+    for (int j=0; j < num_params; j++) {
+      printf("Preset %d: %s: %d indexes\n",i,param_labels[j],param_value_count[preset][j]);
+    }
   }
-  for (int i=0; i < num_lines; i++) {
-    int num_elements = param_value_count[i];
-    for (int j=0; j < num_elements; j++) {
-      printf("%d, %d: %.7f\n", i, j, angles[i][j]);
+  for (int i=0; i < num_presets; i++) {
+    int num_params = num_preset_params[i];
+    for (int j=0; j < num_params; j++) {
+      int num_elements = param_value_count[i][j];
+      for (int k=0; k < num_elements; k++) {
+        printf("Preset %d: %d, %d: %.7f\n", i, j, k, angles[i][j][k]);
+      }
     }
   }
 */
@@ -225,26 +270,71 @@ void read_file_values(char *fname) {
   parse_file(filename);
 } 
 
-void update_params() {
-  if (debug) { printf("update_params\n"); }
-  // update the params file with the current values
+void write_current_params() {
   char content[MAX_FILE_BYTES] = "";
-  for (int i=0; i < num_lines; i++) {
-    int num_elements = param_value_count[i];
+  char line[128] = "";
+  int num_params = num_preset_params[preset];
+
+  for (int i=0; i < num_params; i++) {
+    int num_elements = param_value_count[preset][i];
     char temp[128] = "";
     for (int j=0; j < num_elements; j++) {
       char value_str[50];
-      snprintf(value_str,sizeof(value_str),"%.6f",angles[i][j]);
+      snprintf(value_str,sizeof(value_str),"%.6f",angles[preset][i][j]);
       strcat(temp, value_str);
       if (j < num_elements-1) {
         strcat(temp, ",");
       }
-      //printf("%d, %d: %.36\n", i, j, angles[i][j]);
+      //printf("%d, %d: %.36\n", i, j, angles[preset][i][j]);
     }
     char line[128] = "";
     snprintf(line,sizeof(line),"%s=[%s]\n",param_labels[i],temp);
     //printf("line: %s\n",line);
     strcat(content,line);
+  }
+
+  char *filename = get_full_path(tune_file);
+  FILE *out_file = fopen(filename, "w");
+
+  if (out_file == NULL) {
+    printf("Error: Could not open file: %s", filename);
+    return;
+  } 
+
+  fprintf(out_file, content, sizeof(content));
+  //printf("python: %s\n",content);
+
+  fclose(out_file); 
+}
+
+void update_params() {
+  if (debug) { printf("update_params\n"); }
+  // update the params file with the current values
+  char content[MAX_FILE_BYTES] = "";
+  char preset_label[128] = "PRESET";
+
+  for (int k=0; k < num_presets; k++) {
+    char line[128] = "";
+    int num_params = num_preset_params[k];
+    snprintf(line,sizeof(line),"%s=%d\n",preset_label,k+1);
+    strcat(content,line);
+    for (int i=0; i < num_params; i++) {
+      int num_elements = param_value_count[k][i];
+      char temp[128] = "";
+      for (int j=0; j < num_elements; j++) {
+        char value_str[50];
+        snprintf(value_str,sizeof(value_str),"%.6f",angles[k][i][j]);
+        strcat(temp, value_str);
+        if (j < num_elements-1) {
+          strcat(temp, ",");
+        }
+        //printf("%d, %d: %.36\n", i, j, angles[k][i][j]);
+      }
+      char line[128] = "";
+      snprintf(line,sizeof(line),"%s=[%s]\n",param_labels[i],temp);
+      //printf("line: %s\n",line);
+      strcat(content,line);
+    }
   }
   //printf("Contents:\n\n");
   //printf("%s", content);
@@ -261,6 +351,8 @@ void update_params() {
   //printf("python: %s\n",content);
 
   fclose(out_file); 
+
+  write_current_params();
 } 
 
 void init_tuning(UIState *s) {
@@ -313,7 +405,7 @@ void init_tuning(UIState *s) {
 
   for (int j=0; j < num_lines; j++) {
     property_buttons[j] = malloc(sizeof(ui_element) * 3);
-    for (int i=0; i < param_value_count[param_index]; i++) {
+    for (int i=0; i < param_value_count[preset][param_index]; i++) {
       property_buttons[j][i] = property_button;
       property_buttons[j][i].pos_x += i*(property_button.width+45);
       char valuename[50];
@@ -368,6 +460,14 @@ void init_tuning(UIState *s) {
     .pos_y = 1080-240,
     .width = 120,
     .height = 120
+  };
+
+  preset_button = (ui_element) {
+    .name = "preset_button",
+    .pos_x = (1920/2)-630,
+    .pos_y = 1080-490,
+    .width = 310,
+    .height = 85
   };
 
 }
@@ -453,12 +553,29 @@ void screen_draw_tuning(UIState *s) {
 
   nvgFontSize(s->vg, 65);
   nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 200));
-  nvgText(s->vg,tune_values.pos_x+20,tune_values.pos_y+50,param_labels[param_index],NULL);
+
+  // Preset button
+  char label[128];
+  nvgBeginPath(s->vg);
+  nvgRoundedRect(s->vg, preset_button.pos_x, preset_button.pos_y, preset_button.width, preset_button.height, 10);
+  /*  
+  nvgStrokeColor(s->vg, nvgRGBA(255,255,255,80));
+  nvgStrokeWidth(s->vg, 6);
+  nvgStroke(s->vg);
+  nvgFillColor(s->vg, nvgRGBA(0, 0, 0, 100));
+  nvgFill(s->vg);
+  */
+  snprintf(label,sizeof(label),"Preset %d:", preset+1);
+  nvgFillColor(s->vg, nvgRGBA(0, 255, 255, 200));
+  nvgText(s->vg,tune_values.pos_x+20,tune_values.pos_y+50,label,NULL);
+
+  nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 200));
+  nvgText(s->vg,tune_values.pos_x+340,tune_values.pos_y+50,param_labels[param_index],NULL);
 
   int pos_x;
   int pos_y;
   char thisValue[12];
-  for (int i=0; i < param_value_count[param_index]; i++) {
+  for (int i=0; i < param_value_count[preset][param_index]; i++) {
     int pos_x = 0;
     switch(i) {
       case 0:
@@ -473,18 +590,18 @@ void screen_draw_tuning(UIState *s) {
       default:
         break;
     }
-    if (angles[param_index][i] < 1) {
-      snprintf(thisValue,sizeof(thisValue),"%.6f",angles[param_index][i]);
+    if (angles[preset][param_index][i] < 1) {
+      snprintf(thisValue,sizeof(thisValue),"%.6f",angles[preset][param_index][i]);
     }
     else {
-      snprintf(thisValue,sizeof(thisValue),"%.1f",angles[param_index][i]);
+      snprintf(thisValue,sizeof(thisValue),"%.1f",angles[preset][param_index][i]);
     }
     nvgFontSize(s->vg, 70);
     nvgText(s->vg,tune_values.pos_x+pos_x+60,tune_values.pos_y+160,thisValue,NULL);
   }
 
   // Render property buttons based on the number of elements in the params 
-  for (int i=0; i < param_value_count[param_index]; i++) {
+  for (int i=0; i < param_value_count[preset][param_index]; i++) {
     nvgBeginPath(s->vg);
     nvgRoundedRect(s->vg, property_buttons[param_index][i].pos_x, property_buttons[param_index][i].pos_y, property_buttons[param_index][i].width, property_buttons[param_index][i].height, 15);
     if (i == current_property) {
@@ -623,12 +740,14 @@ void next_param(int direction) {
   if (debug) { printf("next_param\n"); }
   // Load the next parameter to adjust
   param_index += direction;
+
+  int num_params = num_preset_params[preset];
   
-  if (param_index >= num_lines) {
+  if (param_index >= num_params) {
     param_index = 0;
   }
   else if (param_index < 0) {
-    param_index = num_lines-1;
+    param_index = num_params-1;
   }
 }
 
@@ -649,6 +768,13 @@ bool ui_element_clicked(int touch_x, int touch_y, ui_element el) {
     }
   }
   return false;
+}
+
+void toggle_presets() {
+  preset++;
+  if (preset >= num_presets) {
+    preset = 0;
+  }
 }
 
 void toggle_step() {
@@ -734,15 +860,13 @@ void tuning( UIState *s, int touch_x, int touch_y, int key_up) {
     //printf("increase button clicked\n");
     //printf("param_index: %d\n",param_index);
     //printf("current_prop: %d\n",current_property);
-    angles[param_index][current_property] += step;
+    angles[preset][param_index][current_property] += step;
     update_params();
     current_button = BTN_INCREASE;
   }
   else if (ui_element_clicked(touch_x,touch_y,decrease_button) && current_property != -1 && hold) {
     //printf("decrease button clicked\n");
-    angles[param_index][current_property] -= step;
-    //snprintf(angles[param_index][current_property],sizeof(angles[param_index][current_property]),"%.3f",num);
-    //angles[param_index][current_property] = num;
+    angles[preset][param_index][current_property] -= step;
     update_params();
     current_button = BTN_DECREASE;
   }
@@ -768,8 +892,11 @@ void tuning( UIState *s, int touch_x, int touch_y, int key_up) {
     toggle_step();
     current_button = BTN_STEP;
   }
+  else if (ui_element_clicked(touch_x,touch_y,preset_button) && key_up) {
+    toggle_presets();
+  }
   else {
-    for (int i=0; i < param_value_count[param_index]; i++) {
+    for (int i=0; i < param_value_count[preset][param_index]; i++) {
       if (ui_element_clicked(touch_x,touch_y,property_buttons[param_index][i]) && key_up) {
         if (current_property == i) {
           // Toggle off

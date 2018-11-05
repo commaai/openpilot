@@ -38,6 +38,10 @@ To change the "scale" of the steps tap the "Steps" box.  It will cycle through d
 
 CHANGE LOG:
 
+v0.0.4
+========================
+ * Add ability to specify "presets" in params.txt file (See selfdrive/ui/params.example.txt).  You can have up to 10 "preset" values.  NOTE: The parameter list for each preset MUST match.  When you edit a preset value the values for the current preset will be written to a file called **/sdcard/tuning/tune.txt**.  This is now the file you should be loading into your python code.
+
 v0.0.3
 ========================
  * Increase precision to 6 decimal places
