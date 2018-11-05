@@ -10,6 +10,14 @@ import time
 import zmq
   
 
+class ACCState(object):
+  # Possible state of the ACC system, following the DI_cruiseState naming
+  # scheme.
+  OFF = 0         # Disabled by UI.
+  STANDBY = 1     # Ready to be enaged.
+  ENABLED = 2     # Engaged.
+  NOT_READY = 9   # Not ready to be engaged due to the state of the car.
+
 def _current_time_millis():
   return int(round(time.time() * 1000))
 
@@ -124,22 +132,14 @@ class ACCController(object):
   def _update_max_acc_speed(self, CS):
     # Adjust the max ACC speed based on user cruise stalk actions.
     half_press_kph, full_press_kph = self._get_cc_units_kph(CS.imperial_speed_units)
-    # If user increases cruise speed while well below max ACC speed, do not
-    #   change max ACC speed.
-    # If user increases cruise speed while near max ACC speed, increase the max
-    #   ACC speed as necessary.
-    if CS.cruise_buttons == CruiseButtons.RES_ACCEL:
-      requested_speed_kph = CS.v_ego * CV.MS_TO_KPH + half_press_kph
-      self.acc_speed_kph = max(self.acc_speed_kph, requested_speed_kph)
-    elif CS.cruise_buttons == CruiseButtons.RES_ACCEL_2ND:
-      requested_speed_kph = CS.v_ego * CV.MS_TO_KPH + full_press_kph
-      self.acc_speed_kph = max(self.acc_speed_kph, requested_speed_kph)
-    # If user decreses cruise speed, decrease the max ACC speed also.
-    elif CS.cruise_buttons == CruiseButtons.DECEL_SET:
-      self.acc_speed_kph -= half_press_kph
-    elif CS.cruise_buttons == CruiseButtons.DECEL_2ND:
-      self.acc_speed_kph -= full_press_kph
-      
+    speed_change_map = {
+      CruiseButtons.RES_ACCEL:     half_press_kph,
+      CruiseButtons.RES_ACCEL_2ND: full_press_kph,
+      CruiseButtons.DECEL_SET:     -1 * half_press_kph,
+      CruiseButtons.DECEL_2ND:     -1 * full_press_kph
+    }
+    self.acc_speed_kph += speed_change_map.get(CS.cruise_buttons, 0)
+
     # Clip ACC speed between 0 and 170 KPH.
     self.acc_speed_kph = min(self.acc_speed_kph, 170)
     self.acc_speed_kph = max(self.acc_speed_kph, 0)
@@ -160,7 +160,7 @@ class ACCController(object):
 
     if self.enable_adaptive_cruise and enabled:
       if CS.cstm_btns.get_button_label2("acc") in ["OP", "AutoOP"]:    
-        button_to_press = self._calc_button(CS, pcm_speed, current_time_ms)
+        button_to_press = self._calc_button(CS, pcm_speed)
       else:
         # Alternative speed decision logic that uses the lead car's distance
         # and speed more directly.
@@ -348,10 +348,10 @@ class ACCController(object):
   # is inoperable because the planner crashes when given only visual radar
   # inputs. (Perhaps this can be used in the future with a radar install, or if
   # OpenPilot planner changes.)
-  def _calc_button(self, CS, desired_speed_ms, current_time_ms):
+  def _calc_button(self, CS, desired_speed_ms):
     button_to_press = None
-    # Automatically engange traditional cruise if ACC is active.
-    if self._should_autoengage_cc(CS):
+    # Automatically engange traditional cruise if appropriate.
+    if self._should_autoengage_cc(CS) and desired_speed_ms >= CS.v_ego:
       button_to_press = CruiseButtons.RES_ACCEL
     # If traditional cruise is engaged, then control it.
     elif (CS.pcm_acc_status == CruiseState.ENABLED
@@ -361,27 +361,31 @@ class ACCController(object):
           and self._no_automated_action_for(milliseconds=500)):
       # The difference between OP's target speed and the current cruise
       # control speed, in KPH.
-      speed_offset = (desired_speed_ms * CV.MS_TO_KPH - CS.v_cruise_actual)
+      speed_offset_kph = (desired_speed_ms * CV.MS_TO_KPH - CS.v_cruise_actual)
     
       half_press_kph, full_press_kph = self._get_cc_units_kph(CS.imperial_speed_units)
       
       # Reduce cruise speed significantly if necessary. Multiply by a % to
       # make the car slightly more eager to slow down vs speed up.
-      if speed_offset < -0.6 * full_press_kph and CS.v_cruise_actual > 0:
+      if desired_speed_ms < self.MIN_CRUISE_SPEED_MS:
+        button_to_press = CruiseButtons.CANCEL
+      if speed_offset_kph < -2 * full_press_kph and CS.v_cruise_actual > 0:
+        button_to_press = CruiseButtons.CANCEL
+      elif speed_offset_kph < -0.6 * full_press_kph and CS.v_cruise_actual > 0:
         # Send cruise stalk dn_2nd.
         button_to_press = CruiseButtons.DECEL_2ND
       # Reduce speed slightly if necessary.
-      elif speed_offset < -0.9 * half_press_kph and CS.v_cruise_actual > 0:
+      elif speed_offset_kph < -0.9 * half_press_kph and CS.v_cruise_actual > 0:
         # Send cruise stalk dn_1st.
         button_to_press = CruiseButtons.DECEL_SET
       # Increase cruise speed if possible.
       elif CS.v_ego > self.MIN_CRUISE_SPEED_MS:
         # How much we can accelerate without exceeding max allowed speed.
         available_speed_kph = self.acc_speed_kph - CS.v_cruise_actual
-        if speed_offset >= full_press_kph and full_press_kph < available_speed_kph:
+        if speed_offset_kph >= full_press_kph and full_press_kph < available_speed_kph:
           # Send cruise stalk up_2nd.
           button_to_press = CruiseButtons.RES_ACCEL_2ND
-        elif speed_offset >= half_press_kph and half_press_kph < available_speed_kph:
+        elif speed_offset_kph >= half_press_kph and half_press_kph < available_speed_kph:
           # Send cruise stalk up_1st.
           button_to_press = CruiseButtons.RES_ACCEL
     return button_to_press

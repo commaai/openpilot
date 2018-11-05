@@ -87,6 +87,10 @@ class CruiseState:
   def is_faulted(cls, state):
     return state in [cls.PRE_FAULT, cls.FAULT]
 
+  @classmethod
+  def is_off(cls, state):
+    return state in [cls.OFF]
+
 class ACCState(object):
   # Possible state of the ACC system, following the DI_cruiseState naming
   # convention.
@@ -96,9 +100,14 @@ class ACCState(object):
   NOT_READY = 9   # Not ready to be engaged due to the state of the car.
 
 class ACCMode(object):
-  FOLLOW = "FOLLOW"
-  AUTO = "AUTO"
-  OFF = "OFF"
+  FOLLOW = "ACC"
+  AUTO = "ACC AUTO"
+  OFF = "ACC OFF"
+  
+  PEDAL_FOLLOW = "PEDAL"
+  PEDAL_MPC = "PEDAL MPC"
+  PEDAL_OFF = "PEDAL OFF"
+  
   
   # This static map is filled just below the class (so that it can contain
   # ACCMode objects)
@@ -121,8 +130,13 @@ class ACCMode(object):
     return self.get(self.next_mode)
     
 ACCMode.ACC_MODES = {
+  # Cruise-control based modes
   ACCMode.FOLLOW: ACCMode(name=ACCMode.FOLLOW, autoresume=False, state=ACCState.STANDBY, next_mode=ACCMode.AUTO),
   ACCMode.AUTO:   ACCMode(name=ACCMode.AUTO,   autoresume=True,  state=ACCState.STANDBY, next_mode=ACCMode.OFF),
   ACCMode.OFF:    ACCMode(name=ACCMode.OFF,    autoresume=False, state=ACCState.OFF,     next_mode=ACCMode.FOLLOW),
-}
   
+  # Pedal-based modes
+  ACCMode.PEDAL_FOLLOW: ACCMode(name=ACCMode.PEDAL_FOLLOW, autoresume=False, state=ACCState.STANDBY, next_mode=ACCMode.PEDAL_MPC),
+  ACCMode.PEDAL_MPC:    ACCMode(name=ACCMode.PEDAL_MPC,    autoresume=False, state=ACCState.STANDBY, next_mode=ACCMode.PEDAL_OFF),
+  ACCMode.PEDAL_OFF:    ACCMode(name=ACCMode.PEDAL_MPC,    autoresume=False, state=ACCState.OFF,     next_mode=ACCMode.PEDAL_FOLLOW)
+}

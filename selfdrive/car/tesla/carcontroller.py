@@ -26,28 +26,6 @@ ANGLE_DELTA_BP = [0., 5., 15.]
 ANGLE_DELTA_V = [5., .8, .25]     # windup limit
 ANGLE_DELTA_VU = [5., 3.5, 0.8]   # unwind limit
 
-def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
-  # hyst params... TODO: move these to VehicleParams
-  brake_hyst_on = 0.02     # to activate brakes exceed this value
-  brake_hyst_off = 0.005                     # to deactivate brakes below this value
-  brake_hyst_gap = 0.01                      # don't change brake command for small ocilalitons within this value
-
-  #*** histeresys logic to avoid brake blinking. go above 0.1 to trigger
-  if (brake < brake_hyst_on and not braking) or brake < brake_hyst_off:
-    brake = 0.
-  braking = brake > 0.
-
-  # for small brake oscillations within brake_hyst_gap, don't change the brake command
-  if brake == 0.:
-    brake_steady = 0.
-  elif brake > brake_steady + brake_hyst_gap:
-    brake_steady = brake - brake_hyst_gap
-  elif brake < brake_steady - brake_hyst_gap:
-    brake_steady = brake + brake_hyst_gap
-  brake = brake_steady
-
-  return brake, braking, brake_steady
-
 
 def process_hud_alert(hud_alert):
   # initialize to no alert
@@ -79,7 +57,8 @@ class CarController(object):
     self.enable_camera = enable_camera
     self.packer = CANPacker(dbc_name)
     self.epas_disabled = True
-    self.last_angle = 0
+    self.last_angle = 0.
+    self.last_accel = 0.
     self.ALCA = ALCAController(self,True,True)  # Enabled and SteerByAngle both True
     self.ACC = ACCController()
     self.PCC = PCCController(self)
@@ -97,16 +76,10 @@ class CarController(object):
     if not self.enable_camera:
       return
 
-    # *** apply brake hysteresis ***
-    brake, self.braking, self.brake_steady = actuator_hystereses(actuators.brake, self.braking, self.brake_steady, CS.v_ego, CS.CP.carFingerprint)
-
     # *** no output if not enabled ***
     if not enabled and CS.pcm_acc_status:
       # send pcm acc cancel cmd if drive is disabled but pcm is still on, or if the system can't be activated
       pcm_cancel_cmd = True
-
-    # *** rate limit after the enable check ***
-    self.brake_last = rate_limit(brake, self.brake_last, -2., 1./100)
 
     # vehicle hud display, wait for one update from 10Hz 0x304 msg
     if hud_show_lanes:
@@ -161,10 +134,16 @@ class CarController(object):
       self.ALCA.update_status(CS.cstm_btns.get_button_status("alca") > 0)
       #print CS.cstm_btns.get_button_status("alca")
 
-    # Update ACC module info.
-    self.ACC.update_stat(CS, True)
-    #update PCC module info
-    self.PCC.update_stat(CS, True)
+    
+    if CS.pedal_hardware_present:
+      #update PCC module info
+      self.PCC.update_stat(CS, True, sendcan)
+      self.ACC.enable_adaptive_cruise = False
+    else:
+      # Update ACC module info.
+      self.ACC.update_stat(CS, True)
+      self.PCC.enable_pedal_cruise = False
+    
     # Update HSO module info.
     human_control = False
 
@@ -256,7 +235,7 @@ class CarController(object):
       can_sends.append(teslacan.create_steering_control(enable_steer_control, apply_angle, idx))
       can_sends.append(teslacan.create_epb_enable_signal(idx))
       cruise_btn = None
-      if self.ACC.enable_adaptive_cruise:
+      if self.ACC.enable_adaptive_cruise and not self.PCC.pedal_hardware_present:
         cruise_btn = self.ACC.update_acc(enabled, CS, frame, actuators, pcm_speed)
       if (cruise_btn != None) or ((turn_signal_needed > 0) and (frame % 2 == 0)):
           cruise_msg = teslacan.create_cruise_adjust_msg(
@@ -265,5 +244,10 @@ class CarController(object):
             real_steering_wheel_stalk=CS.steering_wheel_stalk)
           # Send this CAN msg first because it is racing against the real stalk.
           can_sends.insert(0, cruise_msg)
+      apply_accel = 0.
+      if self.PCC.pedal_hardware_present: # and (frame % 10) == 0:
+        apply_accel,accel_needed,accel_idx = self.PCC.update_pdl(enabled,CS,frame,actuators,pcm_speed)
+        can_sends.append(teslacan.create_pedal_command_msg(apply_accel,int(accel_needed) ,accel_idx))
       self.last_angle = apply_angle
+      self.last_accel = apply_accel
       sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())

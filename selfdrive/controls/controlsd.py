@@ -281,13 +281,10 @@ def state_control(plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, 
                                       PL.PP.c_poly, PL.PP.c_prob, CS.steeringAngle,
                                       CS.steeringPressed)
 
-  # *** gas/brake PID loop ***
-  # Temporarily disabled for vision-only (non-radar) setups since they suffer
-  # frequent crashes in the longitudinal logic.
-  if not CP.radarOffCan:
-    actuators.gas, actuators.brake = LoC.update(active, CS.vEgo, CS.brakePressed, CS.standstill, CS.cruiseState.standstill,
-                                                v_cruise_kph, plan.vTarget, plan.vTargetFuture, plan.aTarget,
-                                                CP, PL.lead_1)
+  # *** gas/brake PID loop ***a
+  actuators.gas, actuators.brake = LoC.update(active, CS.vEgo, CS.brakePressed, CS.standstill, CS.cruiseState.standstill,
+                                              v_cruise_kph, plan.vTarget, plan.vTargetFuture, plan.aTarget,
+                                              CP, PL.lead_1)
 
   # *** steering PID loop ***
   actuators.steer, actuators.steerAngle = LaC.update(active, CS.vEgo, CS.steeringAngle,
