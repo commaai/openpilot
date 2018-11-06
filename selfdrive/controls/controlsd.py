@@ -508,7 +508,7 @@ def controlsd_thread(gctx=None, rate=100, default_bias=0.):
   prof = Profiler(False)  # off by default
 
   ########## BEGIN Tuning Mod #############
-  tune_file = "/sdcard/tuning/params.txt"
+  tune_file = "/sdcard/tuning/tune.txt"
   last_mod_time = 0
   mod_time = 0
   ########## END Tuning Mod #############
@@ -562,8 +562,8 @@ def controlsd_thread(gctx=None, rate=100, default_bias=0.):
           CP.steerKpV = tuning.steerKpV
           CP.steerKiV = tuning.steerKiV
           CP.steerKf = tuning.steerKf[0]
-          CP.steerKiBP = tuning.steerKiBP
-          CP.steerKpBP = tuning.steerKpBP
+          #CP.steerKiBP = tuning.steerKiBP
+          #CP.steerKpBP = tuning.steerKpBP
           CP.steerActuatorDelay = tuning.steerActuatorDelay[0]
 
           last_mod_time = os.path.getmtime(tune_file)
