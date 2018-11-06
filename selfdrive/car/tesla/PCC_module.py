@@ -147,7 +147,6 @@ class PCCController(object):
     self.last_cruise_stalk_pull_time = 0
     self.prev_pcm_acc_status = 0
     self.prev_cruise_buttons = CruiseButtons.IDLE
-    self.prev_cruise_setting = CruiseButtons.IDLE
     self.pedal_hardware_present = False
     self.pedal_hardware_first_check = True
     self.pedal_speed_kph = 0.

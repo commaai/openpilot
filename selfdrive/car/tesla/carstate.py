@@ -235,7 +235,6 @@ class CarState(object):
     self.brake_switch_ts = 0
 
     self.cruise_buttons = 0
-    self.cruise_setting = 0
     self.blinker_on = 0
 
     self.left_blinker_on = 0
@@ -277,12 +276,6 @@ class CarState(object):
     #BB variable for custom buttons
     self.cstm_btns = UIButtons(self,"Tesla Model S","tesla")
 
-    #BB checking for the switch between ACC and PDL
-    if self.cstm_btns.get_button("pedal") == None:
-      self.pedal_hardware_present_prev = False
-    else:
-      self.pedal_hardware_present_prev = True
-
     #BB custom message counter
     self.custom_alert_counter = -1 #set to 100 for 1 second display; carcontroller will take down to zero
 
@@ -307,34 +300,26 @@ class CarState(object):
     self.v_cruise_pcm = 0.0
     # Actual cruise speed currently active on the car.
     self.v_cruise_actual = 0.0
-
-
-  def init_ui_buttons(self):
-    #if self.pedal_hardware_present:
-    self.btns_init[1] = ["pedal","PDL",["Lng MPC","Follow"]]
-    return 0
    
-  def config_ui_buttons(self,pedalPresent):
-    #self.CP.enableGasInterceptor = pedalPresent
+  def config_ui_buttons(self, pedalPresent):
     hasChanges = False
     if pedalPresent:
       btn = self.cstm_btns.get_button("acc")
       if btn:
-        self.btns_init[1] = ["pedal","PDL",["Lng MPC","Follow"]]
+        self.btns_init[1] = ["pedal", "PDL", ["Lng MPC", "Follow"]]
         hasChanges = True
     else:
-      #we don't have pedal interceptor
+      # we don't have pedal interceptor
       btn = self.cstm_btns.get_button("pedal")
       if btn:
         self.btns_init[1] = ["acc", "ACC", ACCMode.get_labels()]
         hasChanges = True
     if hasChanges:
-      i = 1
-      btn.btn_name = self.btns_init[i][0]
-      btn.btn_label = self.btns_init[i][1]
-      btn.btn_label2 = self.btns_init[i][2][0]
+      btn.btn_name = self.btns_init[1][0]
+      btn.btn_label = self.btns_init[1][1]
+      btn.btn_label2 = self.btns_init[1][2][0]
       btn.btn_status = 1
-      self.cstm_btns.update_ui_buttons(1,1)    
+      self.cstm_btns.update_ui_buttons(1, 1)    
 
   def update(self, cp, epas_cp):
 
@@ -347,17 +332,13 @@ class CarState(object):
 
     # update prevs, update must run once per loop
     self.prev_cruise_buttons = self.cruise_buttons
-    self.prev_cruise_setting = self.cruise_setting
     self.prev_blinker_on = self.blinker_on
 
     self.prev_left_blinker_on = self.left_blinker_on
     self.prev_right_blinker_on = self.right_blinker_on
 
     self.steering_wheel_stalk = cp.vl["STW_ACTN_RQ"]
-    self.cruise_setting = cp.vl["STW_ACTN_RQ"]['SpdCtrlLvr_Stat']
     self.cruise_buttons = cp.vl["STW_ACTN_RQ"]['SpdCtrlLvr_Stat']
-
-    
 
 
     # ******************* parse out can *******************
@@ -388,14 +369,6 @@ class CarState(object):
     v_ego_x = self.v_ego_kf.update(speed)
     self.v_ego = float(v_ego_x[0])
     self.a_ego = float(v_ego_x[1])
-
-    #BB this is a hack for the interceptor
-    self.pedal_hardware_present = True #epas_cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS'] != 0
-    #print "Pedal present? %s" % (self.pedal_hardware_present)
-    #print "Pedal value = %s" % (epas_cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS'])
-    if self.pedal_hardware_present != self.pedal_hardware_present_prev:
-        self.config_ui_buttons(self.pedal_hardware_present)
-    self.pedal_hardware_present_prev = self.pedal_hardware_present
 
     #BB use this set for pedal work as the user_gas_xx is used in other places
     self.user_pedal = epas_cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS']
@@ -444,6 +417,13 @@ class CarState(object):
     self.pcm_acc_status = cp.vl["DI_state"]['DI_cruiseState']
     self.imperial_speed_units = cp.vl["DI_state"]['DI_speedUnits'] == 0
     self.regenLight = cp.vl["DI_state"]['DI_regenLight'] == 1
+    
+    #BB this is a hack for the interceptor
+    self.pedal_hardware_present_prev = self.pedal_hardware_present
+    # For now, use ACC if cruise is ready, and pedal interception otherwise.
+    self.pedal_hardware_present = bool(self.pcm_acc_status)
+    if self.pedal_hardware_present != self.pedal_hardware_present_prev:
+        self.config_ui_buttons(self.pedal_hardware_present)
 
     if self.imperial_speed_units:
       self.v_cruise_actual = (cp.vl["DI_state"]['DI_cruiseSet'])*CV.MPH_TO_KPH # Reported in MPH, expected in KPH??
