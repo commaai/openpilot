@@ -421,7 +421,7 @@ class CarState(object):
     #BB this is a hack for the interceptor
     self.pedal_hardware_present_prev = self.pedal_hardware_present
     # For now, use ACC if cruise is ready, and pedal interception otherwise.
-    self.pedal_hardware_present = bool(self.pcm_acc_status)
+    self.pedal_hardware_present = not bool(self.pcm_acc_status)
     if self.pedal_hardware_present != self.pedal_hardware_present_prev:
         self.config_ui_buttons(self.pedal_hardware_present)
 
