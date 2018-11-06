@@ -11,47 +11,42 @@ import zmq
   
 
 class ACCState(object):
-  # Possible state of the ACC system, following the DI_cruiseState naming
+  # Possible states of the ACC system, following the DI_cruiseState naming
   # scheme.
   OFF = 0         # Disabled by UI.
   STANDBY = 1     # Ready to be enaged.
   ENABLED = 2     # Engaged.
   NOT_READY = 9   # Not ready to be engaged due to the state of the car.
   
-class Mode(object):
+class _Mode(object):
   def __init__(self, label, autoresume, state):
     self.label = label
     self.autoresume = autoresume
     self.state = state
-    
-  def set_next(self, next):
-    self.next = next
+    self.next = None
   
 class ACCMode(object):
-  ON   = Mode(label="on",   autoresume=False, state=ACCState.STANDBY)
-  AUTO = Mode(label="auto", autoresume=True,  state=ACCState.STANDBY)
-  OFF  = Mode(label="off",  autoresume=False, state=ACCState.OFF)
+  # Possible ACC modes, controlling how ACC behaves.
+  # This is separate from ACC state. For example, you could
+  # have ACC in "Autoresume" mode in "Standby" state.
+  OFF  = _Mode(label="off",  autoresume=False, state=ACCState.OFF)
+  ON   = _Mode(label="on",   autoresume=False, state=ACCState.STANDBY)
+  AUTO = _Mode(label="auto", autoresume=True,  state=ACCState.STANDBY)
   
-  ON.set_next(AUTO)
-  AUTO.set_next(OFF)
-  OFF.set_next(ON)
-  
-  label_to_mode = {
-    ON.label: ON,
-    AUTO.label: AUTO,
-    OFF.label: OFF
-  }
-  
+  # Toggle order: OFF -> ON -> AUTO -> OFF
+  _all_modes = [OFF, ON, AUTO]
+  for index, mode in enumerate(_all_modes):
+    mode.next = _all_modes[(index + 1) % len(_all_modes)]
+    
+  # Map labels to modes for fast lookup by label.
+  _label_to_mode = {mode.label: mode for mode in _all_modes}
   @ classmethod
-  def get(cls, name):
-    if name in cls.label_to_mode:
-      return cls.label_to_mode[name]
-    else:
-      return cls.OFF
+  def from_label(cls, label):
+    return cls._label_to_mode.get(label, cls.OFF)  # Default to OFF.
       
   @ classmethod
   def get_labels(cls):
-    return [label for label in cls.label_to_mode if label != cls.OFF.label]
+    return [label for label in cls._label_to_mode if label != cls.OFF.label]
 
 def _current_time_millis():
   return int(round(time.time() * 1000))
@@ -92,7 +87,7 @@ class ACCController(object):
     # pull.
     self.prev_enable_adaptive_cruise = self.enable_adaptive_cruise
     acc_string = CS.cstm_btns.get_button_label2("acc")
-    acc_mode = ACCMode.get(acc_string)
+    acc_mode = ACCMode.from_label(acc_string)
     CS.cstm_btns.get_button("acc").btn_label2 = acc_mode.label
     self.autoresume = acc_mode.autoresume
     curr_time_ms = _current_time_millis()
