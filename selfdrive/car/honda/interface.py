@@ -442,6 +442,8 @@ class CarInterface(object):
     ret.cruiseState.available = bool(self.CS.main_on)
     ret.cruiseState.speedOffset = self.CS.cruise_speed_offset
     ret.cruiseState.standstill = False
+    
+    ret.readdistancelines = self.CS.read_distance_lines
 
     # TODO: button presses
     buttonEvents = []
