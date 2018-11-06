@@ -167,12 +167,12 @@ def get_epas_parser(CP):
 
 class CarState(object):
   def __init__(self, CP):
-    #labels for buttons
-    self.btns_init = [["alca","ALC",["MadMax","Normal","Wifey"]], \
-                      ["acc","ACC", ACCMode.get_labels()], \
-                      ["steer","STR",[""]], \
-                      ["brake","BRK",[""]], \
-                      ["msg", "MSG",[""]], \
+    # labels for buttons
+    self.btns_init = [["alca",  "ALC", ["MadMax", "Normal", "Wifey"]],
+                      ["acc",   "ACC", ACCMode.get_labels()],
+                      ["steer", "STR", [""]],
+                      ["brake", "BRK", [""]],
+                      ["msg",   "MSG", [""]],
                       ["sound", "SND", [""]]]
 
     if (CP.carFingerprint == CAR.MODELS):
@@ -302,24 +302,17 @@ class CarState(object):
     self.v_cruise_actual = 0.0
    
   def config_ui_buttons(self, pedalPresent):
-    hasChanges = False
     if pedalPresent:
-      btn = self.cstm_btns.get_button("acc")
-      if btn:
-        self.btns_init[1] = ["pedal", "PDL", ["Lng MPC", "Follow"]]
-        hasChanges = True
+      self.btns_init[1] = ["pedal", "PDL", ["Lng MPC", "Follow"]]
     else:
       # we don't have pedal interceptor
-      btn = self.cstm_btns.get_button("pedal")
-      if btn:
-        self.btns_init[1] = ["acc", "ACC", ACCMode.get_labels()]
-        hasChanges = True
-    if hasChanges:
-      btn.btn_name = self.btns_init[1][0]
-      btn.btn_label = self.btns_init[1][1]
-      btn.btn_label2 = self.btns_init[1][2][0]
-      btn.btn_status = 1
-      self.cstm_btns.update_ui_buttons(1, 1)    
+      self.btns_init[1] = ["acc", "ACC", ACCMode.get_labels()]
+    btn = self.cstm_btns.btns[1]
+    btn.btn_name = self.btns_init[1][0]
+    btn.btn_label = self.btns_init[1][1]
+    btn.btn_label2 = self.btns_init[1][2][0]
+    btn.btn_status = 1
+    self.cstm_btns.update_ui_buttons(1, 1)    
 
   def update(self, cp, epas_cp):
 
