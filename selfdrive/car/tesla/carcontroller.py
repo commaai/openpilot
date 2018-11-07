@@ -60,7 +60,7 @@ class CarController(object):
     self.last_angle = 0.
     self.last_accel = 0.
     self.ALCA = ALCAController(self,True,True)  # Enabled and SteerByAngle both True
-    self.ACC = ACCController(self)
+    self.ACC = ACCController()
     self.PCC = PCCController(self)
     self.HSO = HSOController(self)
 
@@ -237,7 +237,7 @@ class CarController(object):
       cruise_btn = None
       if self.ACC.enable_adaptive_cruise and not self.PCC.pedal_hardware_present:
         cruise_btn = self.ACC.update_acc(enabled, CS, frame, actuators, pcm_speed)
-      if (cruise_btn != None) or ((turn_signal_needed > 0) and (frame % 2 == 0)):
+      if cruise_btn or (turn_signal_needed > 0 and frame % 2 == 0):
           cruise_msg = teslacan.create_cruise_adjust_msg(
             spdCtrlLvr_stat=cruise_btn,
             turnIndLvr_Stat=turn_signal_needed,

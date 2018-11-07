@@ -277,13 +277,10 @@ class CarInterface(object):
         be.type = 'altButton3'
       buttonEvents.append(be)
 
-    if self.CS.cruise_setting != self.CS.prev_cruise_setting:
+    if self.CS.cruise_buttons != self.CS.prev_cruise_buttons:
       be = car.CarState.ButtonEvent.new_message()
       be.type = 'unknown'
-      if self.CS.cruise_setting != 0:
-        be.pressed = True
-      else:
-        be.pressed = False
+      be.pressed = bool(self.CS.cruise_buttons)
       buttonEvents.append(be)
     ret.buttonEvents = buttonEvents
 

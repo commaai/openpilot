@@ -147,7 +147,6 @@ class PCCController(object):
     self.last_cruise_stalk_pull_time = 0
     self.prev_pcm_acc_status = 0
     self.prev_cruise_buttons = CruiseButtons.IDLE
-    self.prev_cruise_setting = CruiseButtons.IDLE
     self.pedal_hardware_present = False
     self.pedal_hardware_first_check = True
     self.pedal_speed_kph = 0.
@@ -218,17 +217,17 @@ class PCCController(object):
       self.user_pedal_state = CS.user_pedal_state
       CS.cstm_btns.set_button_status("pedal", 1 if self.user_pedal_state > 0 else 0)
       if self.user_pedal_state > 0:
-        CS.UE.custom_alert_message(3,"Pedal Interceptor Error (" + `self.user_pedal_state` + ")",150,4)
+        CS.UE.custom_alert_message(3, "Pedal Interceptor Error (%s)" % self.user_pedal_state, 150, 4)
         # send reset command
         idx = self.pedal_idx
         self.pedal_idx = (self.pedal_idx + 1) % 16
-        can_sends.append(teslacan.create_pedal_command_msg(0,0,idx))
+        can_sends.append(teslacan.create_pedal_command_msg(0, 0, idx))
         sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
     # disable on brake
     if CS.brake_pressed and self.enable_pedal_cruise:
       self.enable_pedal_cruise = False
       self.reset(0.)
-      CS.UE.custom_alert_message(3,"PDL Disabled",150,4)
+      CS.UE.custom_alert_message(3,"PDL Disabled", 150, 4)
       CS.cstm_btns.set_button_status("pedal",1)
       print "brake pressed"
 
@@ -251,9 +250,6 @@ class PCCController(object):
         self.LoC.reset(CS.v_ego)
         # Increase PCC speed to match current, if applicable.
         self.pedal_speed_kph = max(CS.v_ego * CV.MS_TO_KPH, self.pedal_speed_kph)
-      else:
-        # A single pull disables ACC (falling back to just steering).
-        self.enable_pedal_cruise = False
     # Handle pressing the cancel button.
     elif CS.cruise_buttons == CruiseButtons.CANCEL:
       self.enable_pedal_cruise = False
@@ -273,11 +269,10 @@ class PCCController(object):
         self.pedal_speed_kph = min(self.pedal_speed_kph, actual_speed_kph) - speed_uom_kph
       elif CS.cruise_buttons == CruiseButtons.DECEL_2ND:
         self.pedal_speed_kph = min(self.pedal_speed_kph, actual_speed_kph) - 5 * speed_uom_kph
-      # Clip ACC speed between 0 and 170 KPH.
-      self.pedal_speed_kph = clip(self.pedal_speed_kph,MIN_PCC_V ,MAX_PCC_V)
+      # Clip PCC speed between 0 and 170 KPH.
+      self.pedal_speed_kph = clip(self.pedal_speed_kph, MIN_PCC_V, MAX_PCC_V)
     # If something disabled cruise control, disable PCC too
-    elif (self.enable_pedal_cruise == True and
-          CS.pcm_acc_status != 0):
+    elif self.enable_pedal_cruise and CS.pcm_acc_status != 0:
       self.enable_pedal_cruise = False
     
     # Notify if PCC was toggled
@@ -290,8 +285,7 @@ class PCCController(object):
 
     # Update the UI to show whether the current car state allows PCC.
     if CS.cstm_btns.get_button_status("pedal") in [PCCState.STANDBY, PCCState.NOT_READY]:
-      if (enabled
-          and CruiseState.is_off(CS.pcm_acc_status)):
+      if enabled and CruiseState.is_off(CS.pcm_acc_status):
         CS.cstm_btns.set_button_status("pedal", PCCState.STANDBY)
       else:
         CS.cstm_btns.set_button_status("pedal", PCCState.NOT_READY)
@@ -301,12 +295,12 @@ class PCCController(object):
     self.prev_pcm_acc_status = CS.pcm_acc_status
     
 
-  def update_pdl(self,enabled,CS,frame,actuators,pcm_speed):
+  def update_pdl(self, enabled, CS, frame, actuators, pcm_speed):
     cur_time = sec_since_boot()
     idx = self.pedal_idx
     self.pedal_idx = (self.pedal_idx + 1) % 16
     if not self.pedal_hardware_present or not enabled:
-      return 0.,0,idx
+      return 0., 0, idx
     following = False
     # Alternative speed decision logic that uses the lead car's distance
     # and speed more directly.
@@ -340,7 +334,7 @@ class PCCController(object):
       #self.b_pid *= MPC_BRAKE_MULTIPLIER
 
 
-      enabled = ((self.LoC.long_control_state == LongCtrlState.pid) or (self.LoC.long_control_state == LongCtrlState.stopping)) and self.enable_pedal_cruise
+      enabled = self.enable_pedal_cruise and self.LoC.long_control_state in [LongCtrlState.pid, LongCtrlState.stopping]
 
       if self.enable_pedal_cruise: # enabled:
         accel_limits = map(float, calc_cruise_accel_limits(CS.v_ego, following))
@@ -374,7 +368,7 @@ class PCCController(object):
         # we will try to feed forward the pedal position.... we might want to feed the last output_gb....
         # it's all about testing now.
         aTarget = self.a_acc_sol
-        vTarget = clip(self.v_acc_sol,0,self.v_pid)
+        vTarget = clip(self.v_acc_sol, 0, self.v_pid)
         vTargetFuture = clip(vTargetFuture, 0, self.v_pid)
 
         t_go, t_brake = self.LoC.update(self.enable_pedal_cruise, CS.v_ego, CS.brake_pressed != 0, CS.standstill, False, 
@@ -408,7 +402,7 @@ class PCCController(object):
     ##############################################################
     elif (CS.cstm_btns.get_button_label2("pedal") == "Lng MPC"):
       self.b_pid = MPC_BRAKE_MULTIPLIER
-      output_gb = actuators.gas -  actuators.brake
+      output_gb = actuators.gas - actuators.brake
 
 
     ######################################################################################
@@ -416,7 +410,10 @@ class PCCController(object):
     #
     #save position for cruising (zero acc, zero brake, no torque) when we are above 10 MPH
     ######################################################################################
-    if (CS.torqueLevel < TORQUE_LEVEL_ACC) and (CS.torqueLevel > TORQUE_LEVEL_DECEL) and (CS.v_ego >= 10.* CV.MPH_TO_MS) and (abs(CS.torqueLevel) < abs(self.lastTorqueForPedalForZeroTorque)):
+    if (CS.torqueLevel < TORQUE_LEVEL_ACC
+        and CS.torqueLevel > TORQUE_LEVEL_DECEL
+        and CS.v_ego >= 10.* CV.MPH_TO_MS
+        and abs(CS.torqueLevel) < abs(self.lastTorqueForPedalForZeroTorque)):
       self.PedalForZeroTorque = self.prev_tesla_accel
       self.lastTorqueForPedalForZeroTorque = CS.torqueLevel
       #print "Detected new Pedal For Zero Torque at %s" % (self.PedalForZeroTorque)
@@ -437,8 +434,6 @@ class PCCController(object):
     tesla_accel = clip(apply_accel * MAX_PEDAL_VALUE,0,MAX_PEDAL_VALUE - tesla_brake)
     tesla_pedal = tesla_brake + tesla_accel
 
-
-
     tesla_pedal, self.accel_steady = accel_hysteresis(tesla_pedal, self.accel_steady, enabled)
     
     tesla_pedal = clip(tesla_pedal, self.prev_tesla_pedal - PEDAL_MAX_DOWN, self.prev_tesla_pedal + PEDAL_MAX_UP)
@@ -455,10 +450,8 @@ class PCCController(object):
 
     return self.prev_tesla_pedal,enable_pedal,idx
 
-
   # function to calculate the cruise speed based on a safe follow distance
   def calc_follow_speed(self, CS):
-    
     current_time_ms = _current_time_millis()
      # Make sure we were able to populate lead_1.
     if self.lead_1 is None:
@@ -479,7 +472,7 @@ class PCCController(object):
     msg = None
     msg2 = " *** UNKNOWN *** "
 
-    if ((self.last_md_ts == self.md_ts) or (self.last_l100_ts == self.l100_ts)):
+    if (self.last_md_ts == self.md_ts) or (self.last_l100_ts == self.l100_ts):
       #no radar update, so just keep doing what we're doing
       new_speed = self.last_speed
       new_brake = self.last_brake
@@ -487,7 +480,7 @@ class PCCController(object):
       if DEBUG:
         if msg:
           print msg
-        CS.UE.custom_alert_message(2,msg2+ " ["+ `int(new_speed*CV.KPH_TO_MPH)` + "]",6,0)
+        CS.UE.custom_alert_message(2, "%s [%s]" % (msg2, int(new_speed*CV.KPH_TO_MPH)), 6, 0)
       else:
         print msg2
       return new_speed * CV.KPH_TO_MS , new_brake
@@ -585,14 +578,14 @@ class PCCController(object):
         new_brake = 1.
         msg2 = msg
       #new_speed = clip(new_speed, 0, self.pedal_speed_kph)
-      new_speed = clip(new_speed,MIN_PCC_V,MAX_PCC_V)
+      new_speed = clip(new_speed, MIN_PCC_V, MAX_PCC_V)
       new_speed = clip(new_speed, 0, self.pedal_speed_kph)
       self.last_speed = new_speed
       self.last_brake = new_brake
       if DEBUG:
         if msg:
           print msg
-        CS.UE.custom_alert_message(2,msg2+ " ["+ `int(new_speed*CV.KPH_TO_MPH)` + "]",6,0)
+        CS.UE.custom_alert_message(2, "%s [%s]" % (msg2, int(new_speed*CV.KPH_TO_MPH)), 6, 0)
       else:
         print msg2
 
