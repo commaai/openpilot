@@ -142,7 +142,7 @@ class CarState(object):
     self.alcaLabels = ["MadMax","Normal","Wifey"]
     self.trLabels = ["0.9","1.8","2.7"]
     self.alcaMode = 0
-    self.trMode = 0
+    self.trMode = 1
     #if (CP.carFingerprint == CAR.MODELS):
     # ALCA PARAMS
     # max REAL delta angle for correction vs actuator
