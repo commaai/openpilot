@@ -18,6 +18,7 @@ import time
 import zmq
 import math
 import numpy as np
+from collections import OrderedDict
 
 
 MPC_BRAKE_MULTIPLIER = 6.
@@ -53,16 +54,31 @@ MIN_CAN_SPEED = 0.3  #TODO: parametrize this in car interface
 
 AWARENESS_DECEL = -0.2     # car smoothly decel at .2m/s^2 when user is distracted
 
-# lookup tables VS speed to determine min and max accels in cruise
-# make sure these accelerations are smaller than mpc limits
-_A_CRUISE_MIN_V  = [-6.0, -5.0, -4.2, -3.0, -1.90]
-_A_CRUISE_MIN_BP = [   0., 5.,  10., 20.,  40.]
+# Map of speed to max allowed decel.
+# Make sure these accelerations are smaller than mpc limits.
+_A_CRUISE_MIN = OrderedDict([
+  (0.0, -6.0),
+  (5.0, -5.0),
+  (10., -4.2),
+  (20., -3.0),
+  (40., -1.9)])
 
-# need fast accel at very low speed for stop and go
-# make sure these accelerations are smaller than mpc limits
-_A_CRUISE_MAX_V = [1.0, 1.0, .8, .6, .4]
-_A_CRUISE_MAX_V_FOLLOWING = [1.0, 1.0, .8, .6, .4]
-_A_CRUISE_MAX_BP = [0.,  5., 10., 20., 40.]
+# Map of speed to max allowed acceleration.
+# Need higher accel at very low speed for stop and go.
+# make sure these accelerations are smaller than mpc limits.
+_A_CRUISE_MAX = OrderedDict([
+  (0.0, 1.0),
+  (5.0, 0.8),
+  (10., 0.7),
+  (20., 0.6),
+  (40., 0.4)])
+  
+_A_CRUISE_MAX_FOLLOWING = OrderedDict([
+  (0.0, 1.0),
+  (5.0, 0.8),
+  (10., 0.7),
+  (20., 0.6),
+  (40., 0.4)])
 
 # Lookup table for turns
 _A_TOTAL_MAX_V = [1.5, 1.5, 1.5]
@@ -72,7 +88,7 @@ _FCW_A_ACT_V = [-3., -2.]
 _FCW_A_ACT_BP = [0., 30.]
 
 # max acceleration allowed in acc, which happens in restart
-A_ACC_MAX = max(_A_CRUISE_MAX_V_FOLLOWING)
+A_ACC_MAX = max(_A_CRUISE_MAX_FOLLOWING.values())
 
 _DT = 0.05    # 20Hz in our case, since we don't want to process more than once the same live20 message
 _DT_MPC = 0.05  # 20Hz 
@@ -80,17 +96,21 @@ _DT_MPC = 0.05  # 20Hz
 def tesla_compute_gb(accel, speed):
   return float(accel)  / 3.
 
-def calc_cruise_accel_limits(v_ego, following):
-  a_cruise_min = interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V)
+def calc_cruise_accel_limits(CS, following):
+  a_cruise_min = interp(CS.v_ego, _A_CRUISE_MIN.keys(), _A_CRUISE_MIN.values())
 
   if following:
-    a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V_FOLLOWING)
+    a_cruise_max = interp(CS.v_ego, _A_CRUISE_MAX_FOLLOWING.keys(), _A_CRUISE_MAX_FOLLOWING.values())
   else:
-    a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V)
-  return np.vstack([a_cruise_min, a_cruise_max])
+    a_cruise_max = interp(CS.v_ego, _A_CRUISE_MAX.keys(), _A_CRUISE_MAX.values())
+    
+  a_while_turning_max = max_accel_in_turns(CS.v_ego, CS.angle_steers, CS.CP)
+  a_cruise_max = min(a_cruise_max, a_while_turning_max)
+  
+  return float(a_cruise_min), float(a_cruise_max)
 
 
-def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
+def max_accel_in_turns(v_ego, angle_steers, CP):
   """
   This function returns a limited long acceleration allowed, depending on the existing lateral acceleration
   this should avoid accelerating when losing the target in turns
@@ -99,9 +119,7 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   a_total_max = interp(v_ego, _A_TOTAL_MAX_BP, _A_TOTAL_MAX_V)
   a_y = v_ego**2 * angle_steers * CV.DEG_TO_RAD / (CP.steerRatio * CP.wheelbase)
   a_x_allowed = math.sqrt(max(a_total_max**2 - a_y**2, 0.))
-
-  a_target[1] = min(a_target[1], a_x_allowed)
-  return a_target
+  return a_x_allowed
 
 
 class PCCState(object):
@@ -337,14 +355,14 @@ class PCCController(object):
       enabled = self.enable_pedal_cruise and self.LoC.long_control_state in [LongCtrlState.pid, LongCtrlState.stopping]
 
       if self.enable_pedal_cruise: # enabled:
-        accel_limits = map(float, calc_cruise_accel_limits(CS.v_ego, following))
+        accel_min, accel_max = calc_cruise_accel_limits(CS.v_ego, following)
         # TODO: make a separate lookup for jerk tuning
-        jerk_limits = [min(-0.1, accel_limits[0]), max(0.1, accel_limits[1])]
-        accel_limits = limit_accel_in_turns(CS.v_ego, CS.angle_steers, accel_limits, CS.CP)
+        jerk_min = min(-0.1, accel_min)
+        jerk_max = max(0.1, accel_max)
         self.v_cruise, self.a_cruise = speed_smoother(self.v_acc_start, self.a_acc_start,
                                                       self.v_pid,
-                                                      accel_limits[1], accel_limits[0],
-                                                      jerk_limits[1], jerk_limits[0],
+                                                      accel_max, accel_min,
+                                                      jerk_max, jerk_min,
                                                       _DT_MPC)
         
         # cruise speed can't be negative even is user is distracted
