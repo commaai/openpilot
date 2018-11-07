@@ -109,7 +109,7 @@ class LatControl(object):
       steers_max = get_steer_max(VM.CP, v_ego)
       self.pid.pos_limit = steers_max
       self.pid.neg_limit = -steers_max
-      steer_feedforward = self.angle_steers_des - angle_offset   # feedforward desired angle
+      steer_feedforward = self.angle_steers_des - float(angle_offset)   # feedforward desired angle
       if VM.CP.steerControlType == car.CarParams.SteerControlType.torque:
         steer_feedforward *= v_ego**2  # proportional to realigning tire momentum (~ lateral accel)
       deadzone = 0.0
