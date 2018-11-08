@@ -779,8 +779,9 @@ void toggle_tune() {
 }
 
 bool ui_element_clicked(int touch_x, int touch_y, ui_element el) {
-  if (touch_x >= el.pos_x && touch_x <= (int)(el.pos_x+el.width)) {
-    if (touch_y >= el.pos_y && touch_y <= (int)(el.pos_y+el.height)) {
+  int padding = 20; // Increase touch region by this many pixels so it's not as precise
+  if (touch_x >= (el.pos_x-padding) && touch_x <= (int)(el.pos_x+el.width+padding)) {
+    if (touch_y >= (el.pos_y-padding) && touch_y <= (int)(el.pos_y+el.height+padding)) {
       return true;
     }
   }
