@@ -63,13 +63,6 @@ class CarController(object):
     self.enable_camera = enable_camera
     self.packer = CANPacker(dbc_name)
     self.new_radar_config = False
-    self.prev_apply_steer = 0
-    self.steer_torque_array = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-    self.tiny_torque_array = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-    self.tiny_torque_count = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-    self.steer_torque_count = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-    self.center_angle = 0.
-    self.center_count = 0
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
              pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel, \
@@ -138,27 +131,12 @@ class CarController(object):
     # any other cp.vl[0x18F]['STEER_STATUS'] is common and can happen during user override. sending 0 torque to avoid EPS sending error 5
     lkas_active = enabled and not CS.steer_not_allowed
 
-    if lkas_active and abs(CS.angle_steers) <= 10 and int(CS.angle_steers) == int(actuators.steerAngle):
-      angle_index = int(actuators.steerAngle) + 10
-      self.steer_torque_array[angle_index] = (self.steer_torque_count[angle_index] * self.steer_torque_array[angle_index] + apply_steer) / (self.steer_torque_count[angle_index] + 1)    
-      self.steer_torque_count[angle_index] += 1     
-      if abs(CS.angle_steers) <= 1 and int(CS.angle_steers * 10) == int(actuators.steerAngle * 10):
-        angle_index = int(actuators.steerAngle) + 10
-        self.tiny_torque_array[int(actuators.steerAngle * 10) + 1] = (self.steer_torque_count[int(actuators.steerAngle * 10) + 1] * self.steer_torque_array[int(actuators.steerAngle * 10) + 1] + apply_steer) / (self.steer_torque_count[int(actuators.steerAngle ) + 10] + 1)    
-        self.tiny_torque_count[int(actuators.steerAngle) + 10] += 1     
-      if int(CS.angle_steers * 10) == int(actuators.steerAngle * 10) and self.prev_apply_steer * apply_steer < 0:
-        self.center_angle = (self.center_count * self.center_angle + CS.angle_steers) / (self.center_angle + 1)
-        self.center_count = min(100, self.center_count + 1)
-
-    if (frame % 1000) == 0:  
-      print (self.steer_torque_array, self.steer_torque_count, self.steer_torque_array, self.tiny_torque_count, self.center_angle, self.center_count)
-    
     # Send CAN commands.
     can_sends = []
 
     # Send steering command.
     idx = frame % 4
-    can_sends.append(hondacan.create_steering_control(self.packer, apply_steer, lkas_active, CS.CP.carFingerprint, idx))
+    can_sends.append(hondacan.create_steering_control(self.packer, apply_steer, lkas_active, CS.create_steering_control(self.packer, apply_steer, lkas_active, CS.CP.carFingerprint, idx))
 
     # Send dashboard UI commands.
     if (frame % 10) == 0:
