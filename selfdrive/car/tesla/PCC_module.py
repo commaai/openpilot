@@ -1,7 +1,6 @@
 from selfdrive.car.tesla import teslacan
 #from selfdrive.controls.lib.pid import PIController
 from selfdrive.car.tesla.longcontrol_tesla import LongControl, LongCtrlState, STARTING_TARGET_SPEED
-#from selfdrive.car.tesla.interface import tesla_compute_gb
 from selfdrive.car.tesla import teslacan
 from common.numpy_fast import clip, interp
 from selfdrive.services import service_list
@@ -10,7 +9,6 @@ from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.speed_smoother import speed_smoother
 from common.realtime import sec_since_boot
-from common.numpy_fast import clip
 import selfdrive.messaging as messaging
 import os
 import subprocess
@@ -79,16 +77,12 @@ _A_CRUISE_MAX_FOLLOWING = OrderedDict([
   (10., 0.7),
   (20., 0.6),
   (40., 0.4)])
-
+  
 # Lookup table for turns
-_A_TOTAL_MAX_V = [1.5, 1.5, 1.5]
-_A_TOTAL_MAX_BP = [0., 20., 40.]
-
-_FCW_A_ACT_V = [-3., -2.]
-_FCW_A_ACT_BP = [0., 30.]
-
-# max acceleration allowed in acc, which happens in restart
-A_ACC_MAX = max(_A_CRUISE_MAX_FOLLOWING.values())
+_A_TOTAL_MAX = OrderedDict([
+  (0.0, 1.5),
+  (20., 1.5),
+  (40., 1.5)])
 
 _DT = 0.05    # 20Hz in our case, since we don't want to process more than once the same live20 message
 _DT_MPC = 0.05  # 20Hz 
@@ -116,7 +110,7 @@ def max_accel_in_turns(v_ego, angle_steers, CP):
   this should avoid accelerating when losing the target in turns
   """
 
-  a_total_max = interp(v_ego, _A_TOTAL_MAX_BP, _A_TOTAL_MAX_V)
+  a_total_max = interp(v_ego, _A_TOTAL_MAX.keys(), _A_TOTAL_MAX.values())
   a_y = v_ego**2 * angle_steers * CV.DEG_TO_RAD / (CP.steerRatio * CP.wheelbase)
   a_x_allowed = math.sqrt(max(a_total_max**2 - a_y**2, 0.))
   return a_x_allowed
@@ -208,8 +202,8 @@ class PCCController(object):
     if self.LoC:
       self.LoC.reset(v_pid)
 
-  def update_stat(self,CS, enabled, sendcan):
-    if self.LoC == None:
+  def update_stat(self, CS, enabled, sendcan):
+    if not self.LoC:
       self.LoC = LongControl(CS.CP, tesla_compute_gb)
 
 
@@ -219,16 +213,16 @@ class PCCController(object):
     self.pedal_hardware_present = CS.pedal_hardware_present
     
     if not self.pedal_hardware_present:
-      if (CS.cstm_btns.get_button_status("pedal")>0):
-        #no pedal hardware, disable button
-        CS.cstm_btns.set_button_status("pedal",0)
+      if CS.cstm_btns.get_button_status("pedal"):
+        # no pedal hardware, disable button
+        CS.cstm_btns.set_button_status("pedal", 0)
         print "disabling pedal"
       print "no pedal hardware"
       return
     if self.pedal_hardware_present:
-      if (CS.cstm_btns.get_button_status("pedal")==0):
-        #pedal hardware, enable button
-        CS.cstm_btns.set_button_status("pedal",1)
+      if not CS.cstm_btns.get_button_status("pedal"):
+        # pedal hardware, enable button
+        CS.cstm_btns.set_button_status("pedal", 1)
         print "enabling pedal"
     # check if we had error before
     if self.user_pedal_state != CS.user_pedal_state:
@@ -245,8 +239,8 @@ class PCCController(object):
     if CS.brake_pressed and self.enable_pedal_cruise:
       self.enable_pedal_cruise = False
       self.reset(0.)
-      CS.UE.custom_alert_message(3,"PDL Disabled", 150, 4)
-      CS.cstm_btns.set_button_status("pedal",1)
+      CS.UE.custom_alert_message(3, "PDL Disabled", 150, 4)
+      CS.cstm_btns.set_button_status("pedal", 1)
       print "brake pressed"
 
     prev_enable_pedal_cruise = self.enable_pedal_cruise
@@ -259,9 +253,9 @@ class PCCController(object):
         self.prev_cruise_buttons != CruiseButtons.MAIN):
       double_pull = curr_time_ms - self.last_cruise_stalk_pull_time < 750
       self.last_cruise_stalk_pull_time = curr_time_ms
-      ready = (CS.cstm_btns.get_button_status("pedal") > PCCState.OFF and
-               enabled and
-               CruiseState.is_off(CS.pcm_acc_status))
+      ready = (CS.cstm_btns.get_button_status("pedal") > PCCState.OFF
+               and enabled
+               and CruiseState.is_off(CS.pcm_acc_status))
       if ready and double_pull:
         # A double pull enables ACC. updating the max ACC speed if necessary.
         self.enable_pedal_cruise = True
@@ -274,8 +268,8 @@ class PCCController(object):
       self.pedal_speed_kph = 0. 
       self.last_cruise_stalk_pull_time = 0
     # Handle pressing up and down buttons.
-    elif (self.enable_pedal_cruise and 
-          CS.cruise_buttons !=self.prev_cruise_buttons):
+    elif (self.enable_pedal_cruise 
+          and CS.cruise_buttons != self.prev_cruise_buttons):
       # Real stalk command while PCC is already enabled. Adjust the max PCC
       # speed if necessary. 
       actual_speed_kph = CS.v_ego * CV.MS_TO_KPH
@@ -290,7 +284,7 @@ class PCCController(object):
       # Clip PCC speed between 0 and 170 KPH.
       self.pedal_speed_kph = clip(self.pedal_speed_kph, MIN_PCC_V, MAX_PCC_V)
     # If something disabled cruise control, disable PCC too
-    elif self.enable_pedal_cruise and CS.pcm_acc_status != 0:
+    elif self.enable_pedal_cruise and CS.pcm_acc_status:
       self.enable_pedal_cruise = False
     
     # Notify if PCC was toggled
@@ -354,7 +348,7 @@ class PCCController(object):
 
       enabled = self.enable_pedal_cruise and self.LoC.long_control_state in [LongCtrlState.pid, LongCtrlState.stopping]
 
-      if self.enable_pedal_cruise: # enabled:
+      if self.enable_pedal_cruise:
         accel_min, accel_max = calc_cruise_accel_limits(CS.v_ego, following)
         # TODO: make a separate lookup for jerk tuning
         jerk_min = min(-0.1, accel_min)
@@ -392,7 +386,7 @@ class PCCController(object):
         t_go, t_brake = self.LoC.update(self.enable_pedal_cruise, CS.v_ego, CS.brake_pressed != 0, CS.standstill, False, 
                   self.v_pid , vTarget, vTargetFuture, aTarget, CS.CP, None)
         output_gb = t_go - t_brake
-        print "Output GB Follow:",output_gb
+        print "Output GB Follow:", output_gb
       else:
         self.LoC.reset(CS.v_ego)
         print "PID reset"
@@ -418,7 +412,7 @@ class PCCController(object):
     #
     # we use the values from actuator.accel and actuator.brake
     ##############################################################
-    elif (CS.cstm_btns.get_button_label2("pedal") == "Lng MPC"):
+    elif CS.cstm_btns.get_button_label2("pedal") == "Lng MPC":
       self.b_pid = MPC_BRAKE_MULTIPLIER
       output_gb = actuators.gas - actuators.brake
 
@@ -446,7 +440,7 @@ class PCCController(object):
 
     #if the speed if over 5mpg, the "zero" is at PedalForZeroTorque otherwise it at zero
     pedal_zero = 0.
-    if (CS.v_ego >= 5.* CV.MPH_TO_MS):
+    if CS.v_ego >= 5.* CV.MPH_TO_MS:
       pedal_zero = self.PedalForZeroTorque
     tesla_brake = clip((1. - apply_brake) * pedal_zero,0,pedal_zero)
     tesla_accel = clip(apply_accel * MAX_PEDAL_VALUE,0,MAX_PEDAL_VALUE - tesla_brake)
