@@ -228,7 +228,7 @@ class CarState(object):
     btns = []
     btns.append(UIButton("alca", "ALC", 1, self.alcaLabels[self.alcaMode], 0))
     btns.append(UIButton("lka","LKA",1,"",1))
-    btns.append(UIButton("slow","SLO",0,"",2))
+    btns.append(UIButton("","",0,"",2))
     btns.append(UIButton("sound","SND",0,"",3))
     btns.append(UIButton("tr","TR",0,self.trLabels[self.trMode],4))
     btns.append(UIButton("gas","Gas",1,"",5))
@@ -379,14 +379,7 @@ class CarState(object):
                          cp.ts["POWERTRAIN_DATA"]['BRAKE_SWITCH'] != self.brake_switch_ts)
       self.brake_switch_prev = self.brake_switch
       self.brake_switch_ts = cp.ts["POWERTRAIN_DATA"]['BRAKE_SWITCH']
-    if self.cstm_btns.get_button_status("slow") == 0:
-        self.acc_slow_on = False
-    else:
-        self.acc_slow_on = True
-    if self.acc_slow_on:
-      self.v_cruise_pcm = max(self.v_cruise_pcm - 32, 8)
-    else:
-      self.v_cruise_pcm = self.v_cruise_pcm
+    
     self.v_cruise_pcm = int(min(self.v_cruise_pcm, interp(self.angle_steers, self.Angle, self.Angle_Speed)))
     self.user_brake = cp.vl["VSA_STATUS"]['USER_BRAKE']
     self.pcm_acc_status = cp.vl["POWERTRAIN_DATA"]['ACC_STATUS']
