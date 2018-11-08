@@ -257,7 +257,7 @@ void parse_file(char *filename) {
   for (int i=0; i < num_presets; i++) {
     int num_params = num_preset_params[i];
     for (int j=0; j < num_params; j++) {
-      printf("Preset %d - %s: %s: %d indexes\n",i,preset_labels[i],param_labels[j],param_value_count[preset][j]);
+      printf("Preset %d - %s: %s: %d indexes\n",i,preset_labels[i],param_labels[j],param_value_count[i][j]);
     }
   }
   for (int i=0; i < num_presets; i++) {
@@ -386,8 +386,6 @@ void init_tuning(UIState *s) {
 
   read_file_values(params_file);
 
-  //update_params();
-
   init_tune = true;
 
   increase_button = (ui_element){
@@ -422,15 +420,14 @@ void init_tuning(UIState *s) {
     .height = 95
   };
 
-  for (int j=0; j < num_lines; j++) {
-    property_buttons[j] = malloc(sizeof(ui_element) * 3);
-    for (int i=0; i < param_value_count[preset][param_index]; i++) {
-      property_buttons[j][i] = property_button;
-      property_buttons[j][i].pos_x += i*(property_button.width+45);
-      char valuename[50];
-      snprintf(valuename,sizeof(valuename),"value_%d",i);
-      snprintf(property_buttons[j][i].name,sizeof(property_buttons[j][i].name),"%s",valuename);
-    }
+  //for (int j=0; j < num_lines; j++) {
+  for (int i=0; i < 3; i++) {
+    property_buttons[i] = malloc(sizeof(ui_element) * 3);
+    property_buttons[0][i] = property_button;
+    property_buttons[0][i].pos_x += i*(property_button.width+45);
+    char valuename[50];
+    snprintf(valuename,sizeof(valuename),"value_%d",i);
+    snprintf(property_buttons[0][i].name,sizeof(property_buttons[0][i].name),"%s",valuename);
   }
 
   step_text = (ui_element){
@@ -620,14 +617,15 @@ void screen_draw_tuning(UIState *s) {
   }
 
   // Render property buttons based on the number of elements in the params 
-  for (int i=0; i < param_value_count[preset][param_index]; i++) {
+  int num_params = param_value_count[preset][param_index];
+  for (int i=0; i < num_params; i++) {
     nvgBeginPath(s->vg);
-    nvgRoundedRect(s->vg, property_buttons[param_index][i].pos_x, property_buttons[param_index][i].pos_y, property_buttons[param_index][i].width, property_buttons[param_index][i].height, 15);
+    nvgRoundedRect(s->vg, property_buttons[0][i].pos_x, property_buttons[0][i].pos_y, property_buttons[0][i].width, property_buttons[0][i].height, 15);
     if (i == current_property) {
       nvgStrokeColor(s->vg, nvgRGBA(0,162,255,200));
     }
     else {
-      nvgStrokeColor(s->vg, nvgRGBA(255,255,255,80));
+      nvgStrokeColor(s->vg, nvgRGBA(255,255,255,200));
     }
     nvgStrokeWidth(s->vg, 9);
     nvgStroke(s->vg);
@@ -917,7 +915,7 @@ void tuning( UIState *s, int touch_x, int touch_y, int key_up) {
   }
   else {
     for (int i=0; i < param_value_count[preset][param_index]; i++) {
-      if (ui_element_clicked(touch_x,touch_y,property_buttons[param_index][i]) && key_up) {
+      if (ui_element_clicked(touch_x,touch_y,property_buttons[0][i]) && key_up) {
         if (current_property == i) {
           // Toggle off
           current_property = -1;
