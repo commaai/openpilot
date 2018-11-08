@@ -170,7 +170,6 @@ class ACCController(object):
   # Decide which cruise control buttons to simluate to get the car to the
   # desired speed.
   def update_acc(self, enabled, CS, frame, actuators, pcm_speed):
-    print "Enter update_acc"
     # Adaptive cruise control
     current_time_ms = _current_time_millis()
     if CruiseButtons.should_be_throttled(CS.cruise_buttons):
@@ -213,7 +212,6 @@ class ACCController(object):
 
   # function to calculate the cruise button based on a safe follow distance
   def _calc_follow_button(self, CS, lead_car):
-    print "Enter _calc_follow_button"
     if lead_car is None:
       return None
     # Desired gap (in seconds) between cars.
@@ -314,9 +312,6 @@ class ACCController(object):
       self.last_update_time = current_time_ms
       if msg != None:
         print "ACC: " + msg
-        
-    if button:
-      print "Cruise button: %s" % button
     return button
     
   def _should_autoengage_cc(self, CS, lead_car=None):
