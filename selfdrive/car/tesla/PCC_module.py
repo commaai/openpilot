@@ -339,7 +339,7 @@ class PCCController(object):
     # once the speed is detected we have to use our own PID to determine
     # how much accel and break we have to do
     ####################################################################
-    if (CS.cstm_btns.get_button_label2_index("pedal") == 1):
+    if CS.cstm_btns.get_button_label2("pedal") == "Follow":
       self.v_pid, self.b_pid = self.calc_follow_speed(CS)
       # cruise speed can't be negative even is user is distracted
       self.v_pid = max(self.v_pid, 0.)
@@ -349,7 +349,7 @@ class PCCController(object):
       enabled = self.enable_pedal_cruise and self.LoC.long_control_state in [LongCtrlState.pid, LongCtrlState.stopping]
 
       if self.enable_pedal_cruise:
-        accel_min, accel_max = calc_cruise_accel_limits(CS.v_ego, following)
+        accel_min, accel_max = calc_cruise_accel_limits(CS, following)
         # TODO: make a separate lookup for jerk tuning
         jerk_min = min(-0.1, accel_min)
         jerk_max = max(0.1, accel_max)
@@ -442,8 +442,8 @@ class PCCController(object):
     pedal_zero = 0.
     if CS.v_ego >= 5.* CV.MPH_TO_MS:
       pedal_zero = self.PedalForZeroTorque
-    tesla_brake = clip((1. - apply_brake) * pedal_zero,0,pedal_zero)
-    tesla_accel = clip(apply_accel * MAX_PEDAL_VALUE,0,MAX_PEDAL_VALUE - tesla_brake)
+    tesla_brake = clip((1. - apply_brake) * pedal_zero, 0, pedal_zero)
+    tesla_accel = clip(apply_accel * MAX_PEDAL_VALUE, 0, MAX_PEDAL_VALUE - tesla_brake)
     tesla_pedal = tesla_brake + tesla_accel
 
     tesla_pedal, self.accel_steady = accel_hysteresis(tesla_pedal, self.accel_steady, enabled)
@@ -460,7 +460,7 @@ class PCCController(object):
     self.last_md_ts = self.md_ts
     self.last_l100_ts = self.l100_ts
 
-    return self.prev_tesla_pedal,enable_pedal,idx
+    return self.prev_tesla_pedal, enable_pedal, idx
 
   # function to calculate the cruise speed based on a safe follow distance
   def calc_follow_speed(self, CS):
