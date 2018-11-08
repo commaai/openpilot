@@ -137,85 +137,21 @@ class LatControl(object):
       self.steerpub.send(self.steerdata)
       self.steerdata = ""
 
-    if v_ego < 0.3 or not active:
-      output_steer = 0.0
-      self.prev_output_steer = 0
-      self.pid.reset()
-    else:
-      # TODO: ideally we should interp, but for tuning reasons we keep the mpc solution
-      # constant for 0.05s.
-      #dt = min(cur_time - self.angle_steers_des_time, _DT_MPC + _DT) + _DT  # no greater than dt mpc + dt, to prevent too high extraps
-      #self.angle_steers_des = self.angle_steers_des_prev + (dt / _DT_MPC) * (self.angle_steers_des_mpc - self.angle_steers_des_prev)
-      self.angle_steers_des = (4 * self.angle_steers_des + self.angle_steers_des_mpc) / 5
-      steers_max = get_steer_max(VM.CP, v_ego)
-      self.pid.pos_limit = steers_max
-      self.pid.neg_limit = -steers_max
-      steer_feedforward = self.angle_steers_des - float(angle_offset)   # feedforward desired angle
-      if VM.CP.steerControlType == car.CarParams.SteerControlType.torque:
-        steer_feedforward *= v_ego**2 / cur_Steer_Ratio  # proportional to realigning tire momentum (~ lateral accel)
-      deadzone = 0.0
-      output_steer = self.pid.update(self.angle_steers_des, angle_steers, check_saturation=False, override=steer_override,
-                                     feedforward=steer_feedforward, speed=v_ego, deadzone=deadzone)
-
-      if not steer_override and v_ego > 10. and self.prev_output_steer != 0 and abs(angle_steers) <= 10:
-        #take torque samples for external characterization
-        new_output_steer = int(output_steer * 10000)
-        angle_index = int(angle_steers) + 10
-        self.rough_angle_array[angle_index] = int(angle_steers)
-        if int(angle_steers) == int(self.angle_steers_des)
-          self.steer_torque_array[angle_index] = (self.steer_torque_count[angle_index] * self.steer_torque_array[angle_index] + new_output_steer) / (self.steer_torque_count[angle_index] + 1)    
-          self.steer_torque_count[angle_index] = min(1000, self.steer_torque_count[angle_index] + 1)
-        elif int(angle_steers) > int(self.angle_steers_des):
-          self.rough_accel_positive_array[angle_index] = (self.rough_accel_positive_count[angle_index] * self.rough_accel_positive_array[angle_index] + (new_output_steer / abs(angle_steers - self.angle_steers_des))) / (self.rough_accel_positive_count[angle_index] + 1)    
-          self.rough_accel_positive_count[angle_index] = min(1000, self.rough_accel_positive_count[angle_index] + 1)
-        else:
-          self.rough_accel_negative_array[angle_index] = (self.rough_accel_negative_count[angle_index] * self.rough_accel_negative_array[angle_index] + (new_output_steer / abs(angle_steers - self.angle_steers_des))) / (self.rough_accel_negative_count[angle_index] + 1)    
-          self.rough_accel_negative_count[angle_index] = min(1000, self.rough_accel_negative_count[angle_index] + 1)
-
-        if abs(angle_steers) <= 1.:
-          #take HD samples near 0
-          angle_index = int(angle_steers * 10) + 10
-          self.tiny_angle_array[angle_index] = int(angle_steers * 10)
-          if int(angle_steers * 10) == int(self.angle_steers_des * 10):
-            self.tiny_torque_array[angle_index] = (self.tiny_torque_count[angle_index] * self.tiny_torque_array[angle_index] + new_output_steer) / (self.tiny_torque_count[angle_index] + 1)    
-            self.tiny_torque_count[angle_index] = min(1000, self.tiny_torque_count[angle_index] + 1)
-          elif int(angle_steers * 10) > int(self.angle_steers_des * 10):
-            self.accel_positive_array[angle_index] = (self.accel_positive_count[angle_index] * self.accel_positive_array[angle_index] + (new_output_steer / abs(angle_steers - self.angle_steers_des))) / (self.accel_positive_count[angle_index] + 1)    
-            self.accel_positive_count[angle_index] = min(1000, self.accel_positive_count[angle_index] + 1)
-          else:
-            self.accel_negative_array[angle_index] = (self.accel_negative_count[angle_index] * self.accel_negative_array[angle_index] + (new_output_steer / abs(angle_steers - self.angle_steers_des))) / (self.accel_negative_count[angle_index] + 1)    
-            self.accel_negative_count[angle_index] = min(1000, self.accel_negative_count[angle_index] + 1)
-
-        if self.prev_output_steer != 0 and int(angle_steers * 10) == int(self.angle_steers_des * 10) and self.prev_output_steer * output_steer <= 0:
-          self.center_angle = (self.center_count * self.center_angle + angle_steers) / (self.center_count + 1)
-          self.center_count = min(1000, self.center_count + 1)
-
-      if (int(cur_time * 100) % 500) == 0:  
-        print (self.rough_angle_array) 
-        print (self.steer_torque_array) 
-        print (self.steer_torque_count) 
-        print (self.tiny_angle_array) 
-        print (self.tiny_torque_array) 
-        print (self.tiny_torque_count) 
-        print (self.accel_positive_array) 
-        print (self.accel_positive_count) 
-        print (self.accel_negative_array) 
-        print (self.accel_negative_count) 
-        print (self.center_angle, self.center_count)
-      elif (int(cur_time * 100) % 700) == 100:  
-        for i in range(21):
-          if self.steer_torque_count[i] > 0:
-            self.steerdata2 += 'steerTune,type=%s,angleTag=%d angle=%d,value=%f,count=%d\n' % ('rough', self.rough_angle_array[i], self.rough_angle_array[i], self.steer_torque_array[i], self.steer_torque_count[i])
-        if len(self.steerdata2) > 0:
-          self.steerpub2.send(self.steerdata2)
-          self.steerdata2 = ""
-      elif (int(cur_time * 100) % 700) == 200:  
-        for i in range(21):
-          if self.tiny_torque_count[i] > 0:
-            self.steerdata2 += 'steerTune,type=%s,angleTag=%d angle=%d,value=%f,count=%d\n' % ('tiny', self.tiny_angle_array[i], self.tiny_angle_array[i], self.tiny_torque_array[i], self.tiny_torque_count[i])
-        if len(self.steerdata2) > 0:
-          self.steerpub2.send(self.steerdata2)
-          self.steerdata2 = ""
+    if (int(cur_time * 100) % 200) == 0:  
+      for i in range(21):
+        if self.steer_torque_count[i] > 0:
+          self.steerdata2 += 'steerTune,type=%s,angleTag=%d angle=%d,value=%f,count=%d\n' % ('rough', self.rough_angle_array[i], self.rough_angle_array[i], self.steer_torque_array[i], self.steer_torque_count[i])
+      if len(self.steerdata2) > 0:
+        self.steerpub2.send(self.steerdata2)
+        self.steerdata2 = ""
+    elif (int(cur_time * 100) % 200) == 100:  
+      for i in range(21):
+        if self.tiny_torque_count[i] > 0:
+          self.steerdata2 += 'steerTune,type=%s,angleTag=%d angle=%d,value=%f,count=%d\n' % ('tiny', self.tiny_angle_array[i], self.tiny_angle_array[i], self.tiny_torque_array[i], self.tiny_torque_count[i])
+      if len(self.steerdata2) > 0:
+        self.steerpub2.send(self.steerdata2)
+        self.steerdata2 = ""
+    elif False == True:
       elif (int(cur_time * 100) % 700) == 300:  
         for i in range(21):
           if self.accel_positive_count[i] > 0:
@@ -244,6 +180,60 @@ class LatControl(object):
         if len(self.steerdata2) > 0:
           self.steerpub2.send(self.steerdata2)
           self.steerdata2 = ""
+
+    if v_ego < 0.3 or not active:
+      output_steer = 0.0
+      self.prev_output_steer = 0
+      self.pid.reset()
+    else:
+      # TODO: ideally we should interp, but for tuning reasons we keep the mpc solution
+      # constant for 0.05s.
+      #dt = min(cur_time - self.angle_steers_des_time, _DT_MPC + _DT) + _DT  # no greater than dt mpc + dt, to prevent too high extraps
+      #self.angle_steers_des = self.angle_steers_des_prev + (dt / _DT_MPC) * (self.angle_steers_des_mpc - self.angle_steers_des_prev)
+      self.angle_steers_des = (4 * self.angle_steers_des + self.angle_steers_des_mpc) / 5
+      steers_max = get_steer_max(VM.CP, v_ego)
+      self.pid.pos_limit = steers_max
+      self.pid.neg_limit = -steers_max
+      steer_feedforward = self.angle_steers_des - float(angle_offset)   # feedforward desired angle
+      if VM.CP.steerControlType == car.CarParams.SteerControlType.torque:
+        steer_feedforward *= v_ego**2 / cur_Steer_Ratio  # proportional to realigning tire momentum (~ lateral accel)
+      deadzone = 0.0
+      output_steer = self.pid.update(self.angle_steers_des, angle_steers, check_saturation=False, override=steer_override,
+                                     feedforward=steer_feedforward, speed=v_ego, deadzone=deadzone)
+
+      if not steer_override and v_ego > 10. and self.prev_output_steer != 0 and abs(angle_steers) <= 10:
+        #take torque samples for external characterization
+        new_output_steer = int(output_steer * 10000)
+        angle_index = int(angle_steers) + 10
+        self.rough_angle_array[angle_index] = int(angle_steers)
+        if int(angle_steers) == int(self.angle_steers_des):
+          self.steer_torque_array[angle_index] = (self.steer_torque_count[angle_index] * self.steer_torque_array[angle_index] + new_output_steer) / (self.steer_torque_count[angle_index] + 1)    
+          self.steer_torque_count[angle_index] = min(1000, self.steer_torque_count[angle_index] + 1)
+        #elif int(angle_steers) > int(self.angle_steers_des):
+        #  self.rough_accel_positive_array[angle_index] = (self.rough_accel_positive_count[angle_index] * self.rough_accel_positive_array[angle_index] + (new_output_steer / abs(angle_steers - self.angle_steers_des))) / (self.rough_accel_positive_count[angle_index] + 1)    
+        #  self.rough_accel_positive_count[angle_index] = min(1000, self.rough_accel_positive_count[angle_index] + 1)
+        #else:
+        #  self.rough_accel_negative_array[angle_index] = (self.rough_accel_negative_count[angle_index] * self.rough_accel_negative_array[angle_index] + (new_output_steer / abs(angle_steers - self.angle_steers_des))) / (self.rough_accel_negative_count[angle_index] + 1)    
+        #  self.rough_accel_negative_count[angle_index] = min(1000, self.rough_accel_negative_count[angle_index] + 1)
+
+        if abs(angle_steers) <= 1.:
+          #take HD samples near 0
+          angle_index = int(angle_steers * 10) + 10
+          self.tiny_angle_array[angle_index] = int(angle_steers * 10)
+          if int(angle_steers * 10) == int(self.angle_steers_des * 10):
+            self.tiny_torque_array[angle_index] = (self.tiny_torque_count[angle_index] * self.tiny_torque_array[angle_index] + new_output_steer) / (self.tiny_torque_count[angle_index] + 1)    
+            self.tiny_torque_count[angle_index] = min(1000, self.tiny_torque_count[angle_index] + 1)
+        #  elif int(angle_steers * 10) > int(self.angle_steers_des * 10):
+        #    self.accel_positive_array[angle_index] = (self.accel_positive_count[angle_index] * self.accel_positive_array[angle_index] + (new_output_steer / abs(angle_steers - self.angle_steers_des))) / (self.accel_positive_count[angle_index] + 1)    
+        #    self.accel_positive_count[angle_index] = min(1000, self.accel_positive_count[angle_index] + 1)
+        #  else:
+        #    self.accel_negative_array[angle_index] = (self.accel_negative_count[angle_index] * self.accel_negative_array[angle_index] + (new_output_steer / abs(angle_steers - self.angle_steers_des))) / (self.accel_negative_count[angle_index] + 1)    
+        #    self.accel_negative_count[angle_index] = min(1000, self.accel_negative_count[angle_index] + 1)
+
+        if self.prev_output_steer != 0 and int(angle_steers * 10) == int(self.angle_steers_des * 10) and self.prev_output_steer * output_steer <= 0:
+          self.center_angle = (self.center_count * self.center_angle + angle_steers) / (self.center_count + 1)
+          self.center_count = min(1000, self.center_count + 1)
+
 
       if (int(cur_time * 100) % 5) == 2:
         self.steerdata += ("%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d|" % (self.isActive, self.center_angle, angle_steers, self.angle_steers_des, angle_offset, \
