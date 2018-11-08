@@ -20,6 +20,7 @@
 
   CHANGE LOG:
 
+  v0.0.4.1 - Add ability to use named presets
   v0.0.4 - Add ability to specify "presets" for the parameter list
            Presets need to be labeled as "PRESET=#" where # starts with 1
   v0.0.3 - Increase precision to 6 decimal places
@@ -45,7 +46,7 @@
 #define BTN_STEP 8
 #define MAX_NUM_PARAMS 10 // max number of params we can track
 #define MAX_FILE_BYTES 100000 // max bytes to write to file
-#define MAX_PRESETS 10 // max number of params we can track
+#define MAX_PRESETS 10 // max number of presets we can track
 
 bool debug = false;
 int status = 0; // Status code to tell us if something went wrong
@@ -85,7 +86,7 @@ ui_element preset_button;
 char rootdir[50] = "/sdcard/tuning";
 
 char params_file[256] = "params.txt";
-char tune_file[256] = "tune.txt"; // Stores the current preset values in a format that can be used by openpilot (pyton)
+char tune_file[256] = "tune.txt"; // Stores the current preset values in a format that can be used by openpilot (python)
 char python_file[256]; // stores values as pyton variable
 bool init_tune = false; // Used to initialize stuff
 int num_lines = 0;
@@ -94,6 +95,7 @@ int num_lines = 0;
 int preset = 0; // Preset index
 int num_presets = 0; // Number of presets in the file
 int num_preset_params[MAX_PRESETS]; // Number of presets in the file
+char *preset_labels[MAX_PRESETS]; // Store preset names
 
 double angles[MAX_PRESETS][MAX_NUM_PARAMS][3]; // List of angle values from the file
 char property[50] = "CL_MAXD_A"; // What property to tune
@@ -185,6 +187,7 @@ void parse_file(char *filename) {
   if (debug) { printf("parse_file\n"); }
   char **lines = readfile(filename);
   int param_num = 0;
+  int sawPreset = 0;
 
   if (status == ERROR_NO_FILE) {
     return;
@@ -202,13 +205,12 @@ void parse_file(char *filename) {
     //printf("line %d: %s\n", i, lines[i]);
     char* token = strtok(lines[i], "=");
     //printf("token1: %s\n", token);
-    int cmp = strncmp(token,"PRESET",10);
+    int cmp = strncmp(token,"PRESET",6);
     if (cmp != 0) {
       param_labels[param_num] = token;
     }
     else {
-      num_presets++;
-      param_num = 0;
+      sawPreset++;
     }
     while (token != NULL ) {
       token = strtok(NULL, "=");
@@ -219,7 +221,14 @@ void parse_file(char *filename) {
         char* token2 = strtok(token_value,",");
 
         if (cmp == 0) {
-          preset = atoi(token2)-1;
+          //preset = atoi(token2)-1;
+          num_presets++;
+          if (sawPreset > 1) {
+            preset++;
+          }
+          preset_labels[preset] = token_value;
+          //printf("%s: %d\n",token_value,preset);
+          param_num = 0;
         }
         else {
           //printf("token2: (%d) %s\n", preset, token2);
@@ -248,7 +257,7 @@ void parse_file(char *filename) {
   for (int i=0; i < num_presets; i++) {
     int num_params = num_preset_params[i];
     for (int j=0; j < num_params; j++) {
-      printf("Preset %d: %s: %d indexes\n",i,param_labels[j],param_value_count[preset][j]);
+      printf("Preset %d - %s: %s: %d indexes\n",i,preset_labels[i],param_labels[j],param_value_count[preset][j]);
     }
   }
   for (int i=0; i < num_presets; i++) {
@@ -261,6 +270,16 @@ void parse_file(char *filename) {
     }
   }
 */
+}
+
+int numChars(char *str) {
+  int i=0;
+
+  while(str[i] != '\0') {
+    i++;
+  }
+
+  return i;
 }
 
 void read_file_values(char *fname) {
@@ -316,7 +335,7 @@ void update_params() {
   for (int k=0; k < num_presets; k++) {
     char line[128] = "";
     int num_params = num_preset_params[k];
-    snprintf(line,sizeof(line),"%s=%d\n",preset_label,k+1);
+    snprintf(line,sizeof(line),"%s=%s\n",preset_label,preset_labels[k]);
     strcat(content,line);
     for (int i=0; i < num_params; i++) {
       int num_elements = param_value_count[k][i];
@@ -565,12 +584,12 @@ void screen_draw_tuning(UIState *s) {
   nvgFillColor(s->vg, nvgRGBA(0, 0, 0, 100));
   nvgFill(s->vg);
   */
-  snprintf(label,sizeof(label),"Preset %d:", preset+1);
+  snprintf(label,sizeof(label),"%s:", preset_labels[preset]);
   nvgFillColor(s->vg, nvgRGBA(0, 255, 255, 200));
   nvgText(s->vg,tune_values.pos_x+20,tune_values.pos_y+50,label,NULL);
 
   nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 200));
-  nvgText(s->vg,tune_values.pos_x+340,tune_values.pos_y+50,param_labels[param_index],NULL);
+  nvgText(s->vg,tune_values.pos_x+340+(10*numChars(preset_labels[preset])),tune_values.pos_y+50,param_labels[param_index],NULL);
 
   int pos_x;
   int pos_y;
