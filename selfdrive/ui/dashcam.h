@@ -92,7 +92,7 @@ void save_file(char *videos_dir, char *filename) {
 
 void start_capture() {
   captureState = CAPTURE_STATE_CAPTURING;
-  char cmd[50] = "";
+  char cmd[128] = "";
   char videos_dir[50] = "/sdcard/videos";
 
   //////////////////////////////////
@@ -117,7 +117,7 @@ void start_capture() {
   char filename[64];
   struct tm tm = get_time_struct();
   snprintf(filename,sizeof(filename),"%04d%02d%02d-%02d%02d%02d.mp4", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-  snprintf(cmd,sizeof(cmd),"screenrecord %s/%s&",videos_dir,filename);
+  snprintf(cmd,sizeof(cmd),"screenrecord --bit-rate 3M %s/%s&",videos_dir,filename);
   strcpy(filenames[captureNum],filename);
 
   printf("Capturing to file: %s\n",cmd);
