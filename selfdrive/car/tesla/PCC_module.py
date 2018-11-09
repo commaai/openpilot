@@ -447,8 +447,7 @@ class PCCController(object):
     ##############################################################
     elif Modes.button_is(ExperimentalMode(), CS.cstm_btns):
       output_gb = 0.0
-      enabled = self.enable_pedal_cruise
-      if enabled:
+      if enabled and self.enable_pedal_cruise:
         self.b_pid = MPC_BRAKE_MULTIPLIER
         
         MAX_ACCEL_RATIO = 1.01
@@ -457,7 +456,11 @@ class PCCController(object):
         
         optimal_dist_m = CS.v_ego * 2  # (m/s * s = m)
         
-        if self.LoC.long_control_state not in [LongCtrlState.pid, LongCtrlState.stopping]:
+        available_speed_kph = self.pedal_speed_kph - CS.v_ego * CV.MS_TO_KPH
+        if available_speed_kph < 0 and _distance_is_safe(CS.v_ego, self.lead_1):
+          # linearly brake harder, getting up to -1 at 5kph over
+          output_gb = available_speed_kph / 5.0
+        elif self.LoC.long_control_state not in [LongCtrlState.pid, LongCtrlState.stopping]:
           self.LoC.reset(CS.v_ego)
           print "PID reset"
           enabled = False
@@ -482,7 +485,8 @@ class PCCController(object):
           output_gb = pedal_position * 2 - 1
         # If no lead has been seen for a few seconds, accelerate.
         elif _current_time_millis() > self.lead_last_seen_time_ms() + 3000:
-          output_gb = 0.1
+          linear_factor = min(available_speed_kph, 10) / 10
+          output_gb = 0.2 * linear_factor
 
 
     ######################################################################################
@@ -532,7 +536,6 @@ class PCCController(object):
 
   # function to calculate the cruise speed based on a safe follow distance
   def calc_follow_speed(self, CS):
-    current_time_ms = _current_time_millis()
      # Make sure we were able to populate lead_1.
     if self.lead_1 is None:
       return None
@@ -544,7 +547,6 @@ class PCCController(object):
     safe_dist_m = _safe_distance_m(self.lead_1.vRel)
     # Current speed in kph
     actual_speed = CS.v_ego * CV.MS_TO_KPH
-    available_speed = self.pedal_speed_kph - actual_speed
     # speed and brake to issue
     new_speed = max(actual_speed, self.last_speed)
     new_brake = 1.
