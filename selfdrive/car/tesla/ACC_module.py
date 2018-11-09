@@ -45,7 +45,7 @@ class ACCMode(object):
     return cls._label_to_mode.get(label, cls.OFF)  # Default to OFF.
       
   @ classmethod
-  def get_labels(cls):
+  def labels(cls):
     return [mode.label for mode in cls._all_modes]
 
 def _current_time_millis():

@@ -3,8 +3,9 @@ from common.kalman.simple_kalman import KF1D
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from selfdrive.car.tesla.ACC_module import ACCMode
+from selfdrive.car.tesla.PCC_module import PCCModes
 from selfdrive.car.tesla.values import CAR, CruiseButtons, DBC
-from selfdrive.car.modules.UIBT_module import UIButtons,UIButton
+from selfdrive.car.modules.UIBT_module import UIButtons, UIButton
 import numpy as np
 from ctypes import create_string_buffer
 from selfdrive.car.modules.UIEV_module import UIEvents
@@ -169,7 +170,7 @@ class CarState(object):
   def __init__(self, CP):
     # labels for buttons
     self.btns_init = [["alca",  "ALC", ["MadMax", "Normal", "Wifey"]],
-                      ["acc",   "ACC", ACCMode.get_labels()],
+                      ["acc",   "ACC", ACCMode.labels()],
                       ["steer", "STR", [""]],
                       ["brake", "BRK", [""]],
                       ["msg",   "MSG", [""]],
@@ -303,10 +304,10 @@ class CarState(object):
    
   def config_ui_buttons(self, pedalPresent):
     if pedalPresent:
-      self.btns_init[1] = ["pedal", "PDL", ["Lng MPC", "Follow"]]
+      self.btns_init[1] = ["pedal", "PDL", PCCModes.labels()]
     else:
       # we don't have pedal interceptor
-      self.btns_init[1] = ["acc", "ACC", ACCMode.get_labels()]
+      self.btns_init[1] = ["acc", "ACC", ACCMode.labels()]
     btn = self.cstm_btns.btns[1]
     btn.btn_name = self.btns_init[1][0]
     btn.btn_label = self.btns_init[1][1]
