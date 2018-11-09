@@ -54,10 +54,7 @@ class CarInterface(object):
     ret.carName = "toyota"
     ret.carFingerprint = candidate
 
-    if candidate == CAR.LEXUS_ISH:
-      ret.safetyModel = car.CarParams.SafetyModels.lexusIsh
-    else:
-      ret.safetyModel = car.CarParams.SafetyModels.toyota
+    ret.safetyModel = car.CarParams.SafetyModels.toyota
 
     # pedal
     ret.enableCruise = True

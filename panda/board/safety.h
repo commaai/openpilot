@@ -102,7 +102,6 @@ typedef struct {
 #define SAFETY_CADILLAC 6
 #define SAFETY_HYUNDAI 7
 #define SAFETY_TESLA 8
-#define SAFETY_LEXUS_ISH 9
 #define SAFETY_TOYOTA_IPAS 0x1335
 #define SAFETY_TOYOTA_NOLIMITS 0x1336
 #define SAFETY_ALLOUTPUT 0x1337
@@ -118,7 +117,6 @@ const safety_hook_config safety_hook_registry[] = {
   {SAFETY_CADILLAC, &cadillac_hooks},
   {SAFETY_HYUNDAI, &hyundai_hooks},
   {SAFETY_TOYOTA_NOLIMITS, &toyota_nolimits_hooks},
-  {SAFETY_LEXUS_ISH, &lexus_ish_hooks},
 #ifdef PANDA
   {SAFETY_TOYOTA_IPAS, &toyota_ipas_hooks},
   {SAFETY_TESLA, &tesla_hooks},
