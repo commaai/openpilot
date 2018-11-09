@@ -343,7 +343,7 @@ class CarState(object):
       self.v_cruise_pcm = max(7, cp.vl["PCM_CRUISE_2"]['SET_SPEED'] - 34.0)
     else:
       self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED']
-    self.v_cruise_pcm = int(min(self.v_cruise_pcm, interp(self.angle_steers, self.Angle, self.Angle_Speed)))
+    self.v_cruise_pcm = int(min(self.v_cruise_pcm, interp(abs(self.angle_steers), self.Angle, self.Angle_Speed)))
     #print "distane"
     #print self.distance
     if self.distance < self.approachradius + self.includeradius:
