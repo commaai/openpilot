@@ -147,12 +147,12 @@ class LatControl(object):
     elif (int(cur_time * 100) % 200) == 100:  
       for i in range(21):
         if self.tiny_torque_count[i] > 0:
-          self.steerdata2 += 'steerTune,type=%s,angleTag=%d angle=%d,value=%f,count=%d\n' % ('tiny', self.tiny_angle_array[i], self.tiny_angle_array[i], self.tiny_torque_array[i], self.tiny_torque_count[i])
+          self.steerdata2 += 'steerTune,type=%s,angleTag=%f angle=%f,value=%f,count=%d\n' % ('tiny', self.tiny_angle_array[i] / 5, self.tiny_angle_array[i] / 5, self.tiny_torque_array[i], self.tiny_torque_count[i])
       if len(self.steerdata2) > 0:
         self.steerpub2.send(self.steerdata2)
         self.steerdata2 = ""
     elif False == True:
-      elif (int(cur_time * 100) % 700) == 300:  
+      if (int(cur_time * 100) % 700) == 300:  
         for i in range(21):
           if self.accel_positive_count[i] > 0:
             self.steerdata2 += 'steerTune,type=%s,angleTag=%d angle=%d,value=%f,count=%d\n' % ('rough_positive', self.rough_angle_array[i], self.rough_angle_array[i], self.rough_accel_positive_array[i], self.rough_accel_positive_array[i])
