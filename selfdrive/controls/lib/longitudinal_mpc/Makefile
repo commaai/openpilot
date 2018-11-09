@@ -72,7 +72,7 @@ lib_qp/%.o: $(PHONELIBS)/qpoases/SRC/%.cpp
            -c -o '$@' '$<'
 
 generator: generator.cpp
-	$(CXX) -Wall -std=c++11 \
+	$(CXX) -v -Wall -std=c++11 \
          generator.cpp \
          -o generator \
          $(ACADO_FLAGS) \
