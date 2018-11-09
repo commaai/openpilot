@@ -30,6 +30,7 @@ EXTERNAL_PATH = os.path.dirname(os.path.abspath(__file__))
 VP_VALIDITY_CORNERS = np.array([[-150., -200.], [150., 200.]])  + VP_INIT
 GRID_WEIGHT_INIT = 2e6
 MAX_LINES = 500    # max lines to avoid over computation
+HOOD_HEIGHT = H*3/4 # the part of image usually free from the car's hood
 
 DEBUG = os.getenv("DEBUG") is not None
 
@@ -135,7 +136,12 @@ class Calibrator(object):
       return
     rot_speeds = np.array([0.,0.,-yaw_rate])
     uvs[:,1,:] = denormalize(correct_pts(normalize(uvs[:,1,:]), rot_speeds, self.dt))
-    good_tracks = np.linalg.norm(uvs[:,1,:] - uvs[:,0,:], axis=1) > 10
+    # exclude tracks where:
+    # - pixel movement was less than 10 pixels
+    # - tracks are in the "hood region"
+    good_tracks = np.all([np.linalg.norm(uvs[:,1,:] - uvs[:,0,:], axis=1) > 10,
+                  uvs[:,0,1] < HOOD_HEIGHT,
+                  uvs[:,1,1] < HOOD_HEIGHT], axis = 0)
     uvs = uvs[good_tracks]
     if uvs.shape[0] > MAX_LINES:
       uvs = uvs[np.random.choice(uvs.shape[0], MAX_LINES, replace=False), :]
