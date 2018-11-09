@@ -449,7 +449,7 @@ class PCCController(object):
       output_gb = 0.0
       if enabled and self.enable_pedal_cruise:
         MAX_ACCEL_RATIO = 1.07
-        MIN_ACCEL_RATIO = 0.8
+        MIN_ACCEL_RATIO = 0.7
         self.b_pid = MPC_BRAKE_MULTIPLIER 
         optimal_dist_m = _safe_distance_m(CS.v_ego)
         available_speed_kph = self.pedal_speed_kph - CS.v_ego * CV.MS_TO_KPH
