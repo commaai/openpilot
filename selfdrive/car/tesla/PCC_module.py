@@ -446,9 +446,9 @@ class PCCController(object):
     # Don't use it.
     ##############################################################
     elif Modes.button_is(ExperimentalMode(), CS.cstm_btns):
-      enabled = self.enable_pedal_cruise and self.LoC.long_control_state in [LongCtrlState.pid, LongCtrlState.stopping]
-
-      if self.enable_pedal_cruise:
+      output_gb = 0.0
+      enabled = self.enable_pedal_cruise
+      if enabled:
         self.b_pid = MPC_BRAKE_MULTIPLIER
         
         MAX_ACCEL_RATIO = 1.01
@@ -457,9 +457,13 @@ class PCCController(object):
         
         optimal_dist_m = CS.v_ego * 2  # (m/s * s = m)
         
+        if self.LoC.long_control_state not in [LongCtrlState.pid, LongCtrlState.stopping]:
+          self.LoC.reset(CS.v_ego)
+          print "PID reset"
+          enabled = False
         # Hold speed in turns if no car is too close
-        if CS.angle_steers >= 5.0 and _distance_is_safe(CS.v_ego, self.lead_1):
-          output_gb = 0.0
+        elif CS.angle_steers >= 5.0 and _distance_is_safe(CS.v_ego, self.lead_1):
+          pass
         # Try to stay 2 seconds behind lead, matching their speed.
         elif self.lead_1 and self.lead_1.d_rel:
           distance_ratio = self.lead_1.d_rel / optimal_dist_m or MAX_ACCEL_RATIO
@@ -479,26 +483,6 @@ class PCCController(object):
         # If no lead has been seen for a few seconds, accelerate.
         elif _current_time_millis() > self.lead_last_seen_time_ms() + 3000:
           output_gb = 0.1
-        # Otherwise, hold steady.
-        else:
-          output_gb = 0.0
-      else:
-        self.LoC.reset(CS.v_ego)
-        print "PID reset"
-        output_gb = 0.
-        starting = self.LoC.long_control_state == LongCtrlState.starting
-        a_ego = min(CS.a_ego, 0.0)
-        reset_speed = MIN_CAN_SPEED if starting else CS.v_ego
-        reset_accel = CS.CP.startAccel if starting else a_ego
-        self.v_acc = reset_speed
-        self.a_acc = reset_accel
-        self.v_acc_start = reset_speed
-        self.a_acc_start = reset_accel
-        self.v_cruise = reset_speed
-        self.a_cruise = reset_accel
-        self.v_acc_sol = reset_speed
-        self.a_acc_sol = reset_accel
-        self.v_pid = reset_speed
 
 
     ######################################################################################
