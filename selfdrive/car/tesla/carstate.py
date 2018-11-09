@@ -169,7 +169,7 @@ def get_epas_parser(CP):
 class CarState(object):
   def __init__(self, CP):
     # labels for buttons
-    self.btns_init = [["alca",                "ALC",                      ["MadMax", "Normal", "Wifey"]],
+    self.btns_init = [["alca",                "ALC",                      ["MadMax", "Normal", "Calm"]],
                       [ACCMode.BUTTON_NAME,   ACCMode.BUTTON_ABREVIATION, ACCMode.labels()],
                       ["steer",               "STR",                      [""]],
                       ["brake",               "BRK",                      [""]],
