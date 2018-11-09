@@ -448,26 +448,19 @@ class PCCController(object):
     elif PCCModes.button_is(ExperimentalMode(), CS.cstm_btns):
       output_gb = 0.0
       if enabled and self.enable_pedal_cruise:
-        self.b_pid = MPC_BRAKE_MULTIPLIER
-        
-        MAX_ACCEL_RATIO = 1.1
+        MAX_ACCEL_RATIO = 1.07
         MIN_ACCEL_RATIO = 0.8
-        #MIN_PEDAL_ACCEL_POSITION = 0.05
-        
+        self.b_pid = MPC_BRAKE_MULTIPLIER 
         optimal_dist_m = _safe_distance_m(CS.v_ego)
-
         available_speed_kph = self.pedal_speed_kph - CS.v_ego * CV.MS_TO_KPH
+        # if going above the max configured PCC speed, slow.
         if available_speed_kph < 0 and _distance_is_safe(CS.v_ego, self.lead_1):
-          # linearly brake harder, getting up to -1 at 5kph over
-          output_gb = available_speed_kph / 5.0
+          # linearly brake harder, getting up to -1 at 8kph over
+          output_gb = max(available_speed_kph, -8) / 8.0
           print 'Expr PCC: %s' % output_gb
           print '(%s-%s=%s kph over limit)' % (self.pedal_speed_kph, CS.v_ego * CV.MS_TO_KPH, available_speed_kph)
-        #elif self.LoC.long_control_state not in [LongCtrlState.pid, LongCtrlState.stopping]:
-        #  self.LoC.reset(CS.v_ego)
-        #  print "PID reset"
-        #  enabled = False
-        # Hold speed in turns if no car is too close
-        elif CS.angle_steers >= 5.0 and _distance_is_safe(CS.v_ego, self.lead_1):
+        # Hold speed in turns if no car is seen
+        elif CS.angle_steers >= 5.0 and not (self.lead_1 or self.lead_1.dRel):
           print 'EXPR PCC: %s (in a turn)' % output_gb
           pass
         # Try to stay 2 seconds behind lead, matching their speed.
@@ -479,21 +472,16 @@ class PCCController(object):
           velocity_ratio = lead_absolute_velocity_ms / max(CS.v_ego, 0.001)
           velocity_ratio = clip(velocity_ratio, MIN_ACCEL_RATIO, MAX_ACCEL_RATIO)
           
-          #pedal_position = (distance_ratio *  velocity_ratio) * self.prev_tesla_pedal
-          #pedal_position = clip(pedal_position, 0.0, MAX_PEDAL_VALUE)
-          #if distance_ratio > 1 and velocity_ratio > 1:
-          #  pedal_position = max(pedal_position, MIN_PEDAL_ACCEL_POSITION)
-    
-          # Pedal position goes from 0 to MAX_PEDAL_VALUE. Rescale from -1 to 1.
-          #output_gb = float(pedal_position * 2 - MAX_PEDAL_VALUE) / MAX_PEDAL_VALUE
-          net_ratio = distance_ratio * velocity_ratio
+          # Weigh the velocity less than the distance
+          net_ratio = distance_ratio * (velocity_ratio ** 0.7)
+
           # rescale around 0 rather than 1.
           output_gb = net_ratio - 1
           print 'EXPR PCC: %s (following)' % output_gb
         # If no lead has been seen for a few seconds, accelerate.
         elif _current_time_millis() > self.lead_last_seen_time_ms + 3000:
           linear_factor = min(available_speed_kph, 5) / 5
-          output_gb = 0.2 * linear_factor
+          output_gb = 0.15 * linear_factor
           print 'EXPR PCC: %s (all clear)' % output_gb
         else:
           print 'EXPER PCC: NOTHING?'
