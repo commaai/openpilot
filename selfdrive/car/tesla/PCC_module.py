@@ -405,7 +405,7 @@ class PCCController(object):
         # we will try to feed forward the pedal position.... we might want to feed the last output_gb....
         # it's all about testing now.
         vTarget = clip(self.v_acc_sol, 0, self.v_pid)
-        self.vTargetFuture = clip(self.vTargetFuture, 0, self.v_pid)
+        self.vTargetFuture = clip(self.v_acc_future, 0, self.v_pid)
 
         t_go, t_brake = self.LoC.update(self.enable_pedal_cruise, CS.v_ego, CS.brake_pressed != 0, CS.standstill, False, 
                   self.v_pid , vTarget, self.vTargetFuture, self.a_acc_sol, CS.CP, None)
