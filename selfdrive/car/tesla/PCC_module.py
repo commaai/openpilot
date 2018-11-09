@@ -97,6 +97,8 @@ class ExperimentalMode(Mode):
 class PCCModes(object):
   _all_modes = [OffMode(), OpMode(), FollowMode(), ExperimentalMode()]
   _mode_map = {mode.label : mode for mode in _all_modes}
+  BUTTON_NAME = 'pedal'
+  BUTTON_ABREVIATION = 'PDL'
   
   @classmethod
   def from_label(cls, label):
@@ -104,10 +106,11 @@ class PCCModes(object):
     
   @classmethod
   def from_buttons(cls, cstm_btns):
-    return cls.from_label(cstm_btns.get_button_label2("pedal"))
+    return cls.from_label(cstm_btns.get_button_label2(cls.BUTTON_NAME))
     
   @classmethod
-  def button_is(cls, mode, cstm_butns):
+  def is_selected(cls, mode, cstm_butns):
+    """Tell if the UI buttons are set to the given mode"""
     return type(mode) == type(cls.from_buttons(cstm_butns))
     
   @classmethod
@@ -365,7 +368,7 @@ class PCCController(object):
     # once the speed is detected we have to use our own PID to determine
     # how much accel and break we have to do
     ####################################################################
-    if PCCModes.button_is(FollowMode(), CS.cstm_btns):
+    if PCCModes.is_selected(FollowMode(), CS.cstm_btns):
       self.v_pid, self.b_pid = self.calc_follow_speed(CS)
       # cruise speed can't be negative even is user is distracted
       self.v_pid = max(self.v_pid, 0.)
@@ -436,7 +439,7 @@ class PCCController(object):
     #
     # we use the values from actuator.accel and actuator.brake
     ##############################################################
-    elif PCCModes.button_is(OpMode(), CS.cstm_btns):
+    elif PCCModes.is_selected(OpMode(), CS.cstm_btns):
       self.b_pid = MPC_BRAKE_MULTIPLIER
       output_gb = actuators.gas - actuators.brake
 
@@ -445,7 +448,7 @@ class PCCController(object):
     #
     # Don't use it.
     ##############################################################
-    elif PCCModes.button_is(ExperimentalMode(), CS.cstm_btns):
+    elif PCCModes.is_selected(ExperimentalMode(), CS.cstm_btns):
       output_gb = 0.0
       if enabled and self.enable_pedal_cruise:
         MAX_ACCEL_RATIO = 1.07
