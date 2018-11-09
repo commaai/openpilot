@@ -457,11 +457,8 @@ class PCCController(object):
         if available_speed_kph < 0 and _distance_is_safe(CS.v_ego, self.lead_1):
           # linearly brake harder, getting up to -1 at 8kph over
           output_gb = max(available_speed_kph, -8) / 8.0
-          print 'Expr PCC: %s' % output_gb
-          print '(%s-%s=%s kph over limit)' % (self.pedal_speed_kph, CS.v_ego * CV.MS_TO_KPH, available_speed_kph)
         # Hold speed in turns if no car is seen
         elif CS.angle_steers >= 5.0 and not (self.lead_1 or self.lead_1.dRel):
-          print 'EXPR PCC: %s (in a turn)' % output_gb
           pass
         # Try to stay 2 seconds behind lead, matching their speed.
         elif self.lead_1 and self.lead_1.dRel:
@@ -477,15 +474,10 @@ class PCCController(object):
 
           # rescale around 0 rather than 1.
           output_gb = net_ratio - 1
-          print 'EXPR PCC: %s (following)' % output_gb
         # If no lead has been seen for a few seconds, accelerate.
         elif _current_time_millis() > self.lead_last_seen_time_ms + 3000:
           linear_factor = min(available_speed_kph, 5) / 5
           output_gb = 0.15 * linear_factor
-          print 'EXPR PCC: %s (all clear)' % output_gb
-        else:
-          print 'EXPER PCC: NOTHING?'
-
 
     ######################################################################################
     # Determine pedal "zero"
