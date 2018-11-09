@@ -220,6 +220,7 @@ class PCCController(object):
     self.last_l100_ts = None
     self.md_ts = None
     self.l100_ts = None
+    self.lead_last_seen_time_ms = 0
 
 
   def reset(self, v_pid):
@@ -348,6 +349,8 @@ class PCCController(object):
           break
     if l20 is not None:
       self.lead_1 = l20.live20.leadOne
+      if self.lead_1:
+        self.lead_last_seen_time_ms = _current_time_millis()
       self.md_ts = l20.live20.mdMonoTime
       self.l100_ts = l20.live20.l100MonoTime
 
@@ -429,13 +432,73 @@ class PCCController(object):
 
       
     ##############################################################
-    # this mode (Lng MPC) uses the longitudinal MPC built in OP
+    # This mode uses the longitudinal MPC built in OP
     #
     # we use the values from actuator.accel and actuator.brake
     ##############################################################
     elif Modes.button_is(OpMode(), CS.cstm_btns):
       self.b_pid = MPC_BRAKE_MULTIPLIER
       output_gb = actuators.gas - actuators.brake
+
+    ##############################################################
+    # This is an experimental mode that is probably broken.
+    #
+    # Don't use it.
+    ##############################################################
+    elif Modes.button_is(ExperimentalMode(), CS.cstm_btns):
+      enabled = self.enable_pedal_cruise and self.LoC.long_control_state in [LongCtrlState.pid, LongCtrlState.stopping]
+
+      if self.enable_pedal_cruise:
+        self.b_pid = MPC_BRAKE_MULTIPLIER
+        
+        MAX_ACCEL_RATIO = 1.01
+        MIN_ACCEL_RATIO = 0.8
+        MIN_PEDAL_ACCEL_POSITION = 0.05
+        
+        optimal_dist_m = CS.v_ego * 2  # (m/s * s = m)
+        
+        # Hold speed in turns if no car is too close
+        if CS.angle_steers >= 5.0 and _distance_is_safe(CS.v_ego, self.lead_1):
+          output_gb = 0.0
+        # Try to stay 2 seconds behind lead, matching their speed.
+        elif self.lead_1 and self.lead_1.d_rel:
+          distance_ratio = self.lead_1.d_rel / optimal_dist_m or MAX_ACCEL_RATIO
+          distance_ratio = clip(distance_ratio, MIN_ACCEL_RATIO, MAX_ACCEL_RATIO)
+          
+          lead_absolute_velocity_ms = CS.v_ego + self.lead_1.v_rel
+          velocity_ratio = lead_absolute_velocity_ms / max(CS.v_ego, 0.001)
+          velocity_ratio = clip(velocity_ratio, MIN_ACCEL_RATIO, MAX_ACCEL_RATIO)
+          
+          pedal_position = (distance_ratio *  velocity_ratio) * self.prev_tesla_pedal
+          pedal_position = clip(pedal_position, 0.0 , 1.0)
+          if distance_ratio > 1 and velocity_ratio > 1:
+            pedal_position = max(pedal_position, MIN_PEDAL_ACCEL_POSITION)
+    
+          # Pedal position goes from 0 to 1. Rescale from -1 to 1.
+          output_gb = pedal_position * 2 - 1
+        # If no lead has been seen for a few seconds, accelerate.
+        elif _current_time_millis() > self.lead_last_seen_time_ms() + 3000:
+          output_gb = 0.1
+        # Otherwise, hold steady.
+        else:
+          output_gb = 0.0
+      else:
+        self.LoC.reset(CS.v_ego)
+        print "PID reset"
+        output_gb = 0.
+        starting = self.LoC.long_control_state == LongCtrlState.starting
+        a_ego = min(CS.a_ego, 0.0)
+        reset_speed = MIN_CAN_SPEED if starting else CS.v_ego
+        reset_accel = CS.CP.startAccel if starting else a_ego
+        self.v_acc = reset_speed
+        self.a_acc = reset_accel
+        self.v_acc_start = reset_speed
+        self.a_acc_start = reset_accel
+        self.v_cruise = reset_speed
+        self.a_cruise = reset_accel
+        self.v_acc_sol = reset_speed
+        self.a_acc_sol = reset_accel
+        self.v_pid = reset_speed
 
 
     ######################################################################################
@@ -528,7 +591,7 @@ class PCCController(object):
         new_brake = 2.
       # If we are turning without danger, hold speed.
       # TODO: make angle dependent on speed
-      elif CS.angle_steers >= 5.0 and _distance_is_safe(CS.v_ego, lead_dist):
+      elif CS.angle_steers >= 5.0 and _distance_is_safe(CS.v_ego, self.lead_1):
         new_speed = self.last_speed
         msg = "Safe distance & turning: steady speed"
         msg2 = "LD = 0 or safe, A > 5, V= cnst"
@@ -625,5 +688,6 @@ class PCCController(object):
 def _safe_distance_m(v_ms):
   return max(FOLLOW_TIME_S * v_ms, MIN_SAFE_DIST_M)
   
-def _distance_is_safe(v_ego_ms, d_rel_m):
-  return d_rel_m and d_rel_m > _safe_distance_m(v_ego_ms)
+def _distance_is_safe(v_ego_ms, lead):
+  lead_too_close = bool(lead and lead.d_rel and lead.d_rel <= _safe_distance_m(v_ego_ms))
+  return not lead_too_close
