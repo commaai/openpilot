@@ -460,10 +460,10 @@ class PCCController(object):
         if available_speed_kph < 0 and _distance_is_safe(CS.v_ego, self.lead_1):
           # linearly brake harder, getting up to -1 at 5kph over
           output_gb = available_speed_kph / 5.0
-        elif self.LoC.long_control_state not in [LongCtrlState.pid, LongCtrlState.stopping]:
-          self.LoC.reset(CS.v_ego)
-          print "PID reset"
-          enabled = False
+        #elif self.LoC.long_control_state not in [LongCtrlState.pid, LongCtrlState.stopping]:
+        #  self.LoC.reset(CS.v_ego)
+        #  print "PID reset"
+        #  enabled = False
         # Hold speed in turns if no car is too close
         elif CS.angle_steers >= 5.0 and _distance_is_safe(CS.v_ego, self.lead_1):
           pass
@@ -484,7 +484,7 @@ class PCCController(object):
           # Pedal position goes from 0 to 1. Rescale from -1 to 1.
           output_gb = pedal_position * 2 - 1
         # If no lead has been seen for a few seconds, accelerate.
-        elif _current_time_millis() > self.lead_last_seen_time_ms() + 3000:
+        elif _current_time_millis() > self.lead_last_seen_time_ms + 3000:
           linear_factor = min(available_speed_kph, 10) / 10
           output_gb = 0.2 * linear_factor
 
