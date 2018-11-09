@@ -450,9 +450,9 @@ class PCCController(object):
       if enabled and self.enable_pedal_cruise:
         self.b_pid = MPC_BRAKE_MULTIPLIER
         
-        MAX_ACCEL_RATIO = 1.01
+        MAX_ACCEL_RATIO = 1.1
         MIN_ACCEL_RATIO = 0.8
-        MIN_PEDAL_ACCEL_POSITION = 0.05
+        #MIN_PEDAL_ACCEL_POSITION = 0.05
         
         optimal_dist_m = max(CS.v_ego * 2, MIN_SAFE_DIST_M)
 
@@ -479,13 +479,16 @@ class PCCController(object):
           velocity_ratio = lead_absolute_velocity_ms / max(CS.v_ego, 0.001)
           velocity_ratio = clip(velocity_ratio, MIN_ACCEL_RATIO, MAX_ACCEL_RATIO)
           
-          pedal_position = (distance_ratio *  velocity_ratio) * self.prev_tesla_pedal
-          pedal_position = clip(pedal_position, 0.0, MAX_PEDAL_VALUE)
-          if distance_ratio > 1 and velocity_ratio > 1:
-            pedal_position = max(pedal_position, MIN_PEDAL_ACCEL_POSITION)
+          #pedal_position = (distance_ratio *  velocity_ratio) * self.prev_tesla_pedal
+          #pedal_position = clip(pedal_position, 0.0, MAX_PEDAL_VALUE)
+          #if distance_ratio > 1 and velocity_ratio > 1:
+          #  pedal_position = max(pedal_position, MIN_PEDAL_ACCEL_POSITION)
     
           # Pedal position goes from 0 to MAX_PEDAL_VALUE. Rescale from -1 to 1.
-          output_gb = float(pedal_position * 2 - MAX_PEDAL_VALUE) / MAX_PEDAL_VALUE
+          #output_gb = float(pedal_position * 2 - MAX_PEDAL_VALUE) / MAX_PEDAL_VALUE
+          net_ratio = distance_ratio * velocity_ratio
+          # rescale around 0 rather than 1.
+          output_gb = net_ratio - 1
           print 'EXPR PCC: %s (following)' % output_gb
         # If no lead has been seen for a few seconds, accelerate.
         elif _current_time_millis() > self.lead_last_seen_time_ms + 3000:
