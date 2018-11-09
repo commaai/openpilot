@@ -94,7 +94,7 @@ class FollowMode(Mode):
 class ExperimentalMode(Mode):
   label = 'EXPRMNT'
   
-class Modes(object):
+class PCCModes(object):
   _all_modes = [OffMode(), OpMode(), FollowMode(), ExperimentalMode()]
   _mode_map = {mode.label : mode for mode in _all_modes}
   
@@ -365,7 +365,7 @@ class PCCController(object):
     # once the speed is detected we have to use our own PID to determine
     # how much accel and break we have to do
     ####################################################################
-    if Modes.button_is(FollowMode(), CS.cstm_btns):
+    if PCCModes.button_is(FollowMode(), CS.cstm_btns):
       self.v_pid, self.b_pid = self.calc_follow_speed(CS)
       # cruise speed can't be negative even is user is distracted
       self.v_pid = max(self.v_pid, 0.)
@@ -436,7 +436,7 @@ class PCCController(object):
     #
     # we use the values from actuator.accel and actuator.brake
     ##############################################################
-    elif Modes.button_is(OpMode(), CS.cstm_btns):
+    elif PCCModes.button_is(OpMode(), CS.cstm_btns):
       self.b_pid = MPC_BRAKE_MULTIPLIER
       output_gb = actuators.gas - actuators.brake
 
@@ -445,7 +445,7 @@ class PCCController(object):
     #
     # Don't use it.
     ##############################################################
-    elif Modes.button_is(ExperimentalMode(), CS.cstm_btns):
+    elif PCCModes.button_is(ExperimentalMode(), CS.cstm_btns):
       output_gb = 0.0
       if enabled and self.enable_pedal_cruise:
         self.b_pid = MPC_BRAKE_MULTIPLIER
