@@ -468,11 +468,11 @@ class PCCController(object):
         elif CS.angle_steers >= 5.0 and _distance_is_safe(CS.v_ego, self.lead_1):
           pass
         # Try to stay 2 seconds behind lead, matching their speed.
-        elif self.lead_1 and self.lead_1.d_rel:
-          distance_ratio = self.lead_1.d_rel / optimal_dist_m or MAX_ACCEL_RATIO
+        elif self.lead_1 and self.lead_1.dRel:
+          distance_ratio = self.lead_1.dRel / optimal_dist_m or MAX_ACCEL_RATIO
           distance_ratio = clip(distance_ratio, MIN_ACCEL_RATIO, MAX_ACCEL_RATIO)
           
-          lead_absolute_velocity_ms = CS.v_ego + self.lead_1.v_rel
+          lead_absolute_velocity_ms = CS.v_ego + self.lead_1.vRel
           velocity_ratio = lead_absolute_velocity_ms / max(CS.v_ego, 0.001)
           velocity_ratio = clip(velocity_ratio, MIN_ACCEL_RATIO, MAX_ACCEL_RATIO)
           
@@ -675,5 +675,5 @@ def _safe_distance_m(v_ms):
   return max(FOLLOW_TIME_S * v_ms, MIN_SAFE_DIST_M)
   
 def _distance_is_safe(v_ego_ms, lead):
-  lead_too_close = bool(lead and lead.d_rel and lead.d_rel <= _safe_distance_m(v_ego_ms))
+  lead_too_close = bool(lead and lead.dRel and lead.dRel <= _safe_distance_m(v_ego_ms))
   return not lead_too_close
