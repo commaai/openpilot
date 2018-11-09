@@ -454,7 +454,7 @@ class PCCController(object):
         MIN_ACCEL_RATIO = 0.8
         #MIN_PEDAL_ACCEL_POSITION = 0.05
         
-        optimal_dist_m = max(CS.v_ego * 2, MIN_SAFE_DIST_M)
+        optimal_dist_m = _safe_distance_m(CS.v_ego)
 
         available_speed_kph = self.pedal_speed_kph - CS.v_ego * CV.MS_TO_KPH
         if available_speed_kph < 0 and _distance_is_safe(CS.v_ego, self.lead_1):
