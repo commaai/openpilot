@@ -142,7 +142,6 @@ class Calibrator(object):
     good_tracks = np.all([np.linalg.norm(uvs[:,1,:] - uvs[:,0,:], axis=1) > 10,
                   uvs[:,0,1] < HOOD_HEIGHT,
                   uvs[:,1,1] < HOOD_HEIGHT], axis = 0)
-    #print "b", sum(good_tracks)
     uvs = uvs[good_tracks]
     if uvs.shape[0] > MAX_LINES:
       uvs = uvs[np.random.choice(uvs.shape[0], MAX_LINES, replace=False), :]
