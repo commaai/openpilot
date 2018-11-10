@@ -576,6 +576,7 @@ def controlsd_thread(gctx=None, rate=100, default_bias=0.):
         print "CP.steerKf: %s" % CP.steerKf
         print "CP.steerKiBP: %s" % CP.steerKiBP
         print "CP.steerKpBP: %s" % CP.steerKpBP
+        print "CP.steerRatio: %s" % CP.steerRatio
         print "CP.steerActuatorDelay: %s" % CP.steerActuatorDelay
 
         VM.update_rt_params(CP)
