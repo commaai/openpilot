@@ -2,6 +2,7 @@ import zmq
 import math
 import numpy as np
 import time
+import json
 from selfdrive.controls.lib.pid import PIController
 from selfdrive.controls.lib.drive_helpers import MPC_COST_LAT
 from selfdrive.controls.lib.lateral_mpc import libmpc_py
@@ -62,9 +63,10 @@ class LatControl(object):
     self.steer_steps = [0., 0., 0., 0., 0.]
     self.probFactor = 0.
     self.prev_output_steer = 0.
-    self.rough_angle_array = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    self.rough_angle_array = [0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.]
+    self.steer_speed_array = [0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.]
     self.tiny_angle_array = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-    self.steer_torque_array = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    self.steer_torque_array = [0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.]
     self.steer_torque_count = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
     self.tiny_torque_array = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
     self.tiny_torque_count = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
@@ -72,6 +74,7 @@ class LatControl(object):
     self.center_count = 0
     self.save_steering = False
     self.steer_zero_crossing = 0.0
+    self.steer_initialized = True
 
   def reset(self):
     self.pid.reset()
@@ -143,10 +146,16 @@ class LatControl(object):
       output_steer = 0.0
       self.prev_output_steer = 0
       self.pid.reset()
-      file = open("/sdcard/realdata/steering/gernby.dat","w")
-      file.write(json.dumps(self.steer_torque_array, self.steer_torque_count))
-      file.close()
-      self.save_steering = False
+      if self.save_steering:
+        file = open("/sdcard/realdata/steering/gernby.dat","w")
+        file.write(json.dumps([self.steer_torque_array, self.steer_speed_array, self.steer_torque_count]))
+        file.close()
+        self.save_steering = False
+      elif not self.steer_initialized:
+        self.steer_initialized = True
+        file = open("/sdcard/realdata/steering/gernby.dat","r")
+        self.steer_torque_array, self.steer_speed_array, self.steer_torque_count = json.loads(file.read())
+        print (self.steer_torque_array)
     else:
       # TODO: ideally we should interp, but for tuning reasons we keep the mpc solution
       # constant for 0.05s.
@@ -173,13 +182,14 @@ class LatControl(object):
 
       if not steer_override and v_ego > 10. and self.prev_output_steer != 0 and abs(angle_steers) <= 10:
         #take torque samples for external characterization
-        feedforward = int((output_steer / v_ego**2) * 100000.)
+        feedforward = int((output_steer / v_ego**2) * 100000000.)
 
         angle_index = int(angle_steers) + 10
         self.rough_angle_array[angle_index] = int(angle_steers)
         if int(angle_steers) == int(self.angle_steers_des):
           self.save_steering = True
-          self.steer_torque_array[angle_index] = (self.steer_torque_count[angle_index] * self.steer_torque_array[angle_index] + feedforward) / (self.steer_torque_count[angle_index] + 1)    
+          self.steer_torque_array[angle_index] = int((self.steer_torque_count[angle_index] * self.steer_torque_array[angle_index] + feedforward) / (self.steer_torque_count[angle_index] + 1))    
+          self.steer_speed_array[angle_index] = int((self.steer_torque_count[angle_index] * self.steer_speed_array[angle_index] + v_ego) / (self.steer_torque_count[angle_index] + 1))
           self.steer_torque_count[angle_index] = min(1000, self.steer_torque_count[angle_index] + 1)
 
         if self.prev_output_steer != 0 and int(angle_steers * 10) == int(self.angle_steers_des * 10) and self.prev_output_steer * output_steer <= 0:
