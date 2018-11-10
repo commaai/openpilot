@@ -118,11 +118,6 @@ class CarController(object):
         hud_car = 1
     else:
       hud_car = 0
-       
-    #if CS.readdistancelines == 0 or CS.readdistancelines == 1 or CS.readdistancelines == 2 or CS.readdistancelines == 3:
-    #  distance_lines = CS.readdistancelines
-    #else:
-    #  distance_lines = 1
       
     # For lateral control-only, send chimes as a beep since we don't send 0x1fa
     if CS.CP.radarOffCan:
