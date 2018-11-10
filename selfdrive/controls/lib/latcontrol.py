@@ -61,7 +61,7 @@ class LatControl(object):
     self.ratioScale = 10.
     self.steer_steps = [0., 0., 0., 0., 0.]
     self.probFactor = 0.
-    self.prev_output_steer = 0
+    self.prev_output_steer = 0.
     self.rough_angle_array = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
     self.tiny_angle_array = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
     self.steer_torque_array = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
@@ -70,6 +70,8 @@ class LatControl(object):
     self.tiny_torque_count = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
     self.center_angle = 0.
     self.center_count = 0
+    self.save_steering = False
+    self.steer_zero_crossing = 0.0
 
   def reset(self):
     self.pid.reset()
@@ -136,18 +138,15 @@ class LatControl(object):
       if len(self.steerdata2) > 0:
         self.steerpub2.send(self.steerdata2)
         self.steerdata2 = ""
-    elif (int(cur_time * 100) % 200) == 100:  
-      for i in range(21):
-        if self.tiny_torque_count[i] > 0:
-          self.steerdata2 += 'steerTune,type=%s,angleTag=%f angle=%f,value=%f,count=%d\n' % ('tiny', self.tiny_angle_array[i] / 5, self.tiny_angle_array[i] / 5, self.tiny_torque_array[i], self.tiny_torque_count[i])
-      if len(self.steerdata2) > 0:
-        self.steerpub2.send(self.steerdata2)
-        self.steerdata2 = ""
 
     if v_ego < 0.3 or not active:
       output_steer = 0.0
       self.prev_output_steer = 0
       self.pid.reset()
+      file = open("/sdcard/realdata/steering/gernby.dat","w")
+      file.write(json.dumps(self.steer_torque_array, self.steer_torque_count))
+      file.close()
+      self.save_steering = False
     else:
       # TODO: ideally we should interp, but for tuning reasons we keep the mpc solution
       # constant for 0.05s.
@@ -157,34 +156,35 @@ class LatControl(object):
       steers_max = get_steer_max(VM.CP, v_ego)
       self.pid.pos_limit = steers_max
       self.pid.neg_limit = -steers_max
-      steer_feedforward = self.angle_steers_des - float(angle_offset)   # feedforward desired angle
+
       if VM.CP.steerControlType == car.CarParams.SteerControlType.torque:
-        steer_feedforward *= v_ego**2 / cur_Steer_Ratio  # proportional to realigning tire momentum (~ lateral accel)
+        if abs(self.angle_steers_des - self.steer_zero_crossing) > abs(self.angle_steers_des - angle_steers):
+          steer_feedforward = self.angle_steers_des - self.steer_zero_crossing
+        else:
+          steer_feedforward = 0
+      else:
+        steer_feedforward = self.angle_steers_des   # feedforward desired angle
+
+      steer_feedforward *= v_ego**2  # proportional to realigning tire momentum (~ lateral accel)
+
       deadzone = 0.0
       output_steer = self.pid.update(self.angle_steers_des, angle_steers, check_saturation=False, override=steer_override,
                                      feedforward=steer_feedforward, speed=v_ego, deadzone=deadzone)
 
       if not steer_override and v_ego > 10. and self.prev_output_steer != 0 and abs(angle_steers) <= 10:
         #take torque samples for external characterization
-        new_output_steer = int(output_steer * 10000)
+        feedforward = int((output_steer / v_ego**2) * 100000.)
+
         angle_index = int(angle_steers) + 10
         self.rough_angle_array[angle_index] = int(angle_steers)
         if int(angle_steers) == int(self.angle_steers_des):
-          self.steer_torque_array[angle_index] = (self.steer_torque_count[angle_index] * self.steer_torque_array[angle_index] + new_output_steer) / (self.steer_torque_count[angle_index] + 1)    
+          self.save_steering = True
+          self.steer_torque_array[angle_index] = (self.steer_torque_count[angle_index] * self.steer_torque_array[angle_index] + feedforward) / (self.steer_torque_count[angle_index] + 1)    
           self.steer_torque_count[angle_index] = min(1000, self.steer_torque_count[angle_index] + 1)
-
-        if abs(angle_steers) <= 2.:
-          #take HD samples near 0
-          angle_index = int(angle_steers * 5) + 5
-          self.tiny_angle_array[angle_index] = int(angle_steers * 5)
-          if int(angle_steers * 5) == int(self.angle_steers_des * 5):
-            self.tiny_torque_array[angle_index] = (self.tiny_torque_count[angle_index] * self.tiny_torque_array[angle_index] + new_output_steer) / (self.tiny_torque_count[angle_index] + 1)    
-            self.tiny_torque_count[angle_index] = min(1000, self.tiny_torque_count[angle_index] + 1)
 
         if self.prev_output_steer != 0 and int(angle_steers * 10) == int(self.angle_steers_des * 10) and self.prev_output_steer * output_steer <= 0:
           self.center_angle = (self.center_count * self.center_angle + angle_steers) / (self.center_count + 1)
           self.center_count = min(1000, self.center_count + 1)
-
 
       if False == True and (int(cur_time * 100) % 5) == 2:
         self.steerdata += ("%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d|" % (self.isActive, self.center_angle, angle_steers, self.angle_steers_des, angle_offset, \
@@ -192,6 +192,9 @@ class LatControl(object):
           PL.PP.r_prob, PL.PP.c_prob, PL.PP.p_prob, self.l_poly[0], self.l_poly[1], self.l_poly[2], self.l_poly[3], self.r_poly[0], self.r_poly[1], self.r_poly[2], self.r_poly[3], \
           self.p_poly[0], self.p_poly[1], self.p_poly[2], self.p_poly[3], PL.PP.c_poly[0], PL.PP.c_poly[1], PL.PP.c_poly[2], PL.PP.c_poly[3], PL.PP.d_poly[0], PL.PP.d_poly[1], \
           PL.PP.d_poly[2], PL.PP.lane_width, PL.PP.lane_width_estimate, PL.PP.lane_width_certainty, v_ego, self.pid.p, self.pid.i, self.pid.f, int(time.time() * 100) * 10000000))
+
+    if self.prev_output_steer * output_steer < 0.0:
+      self.steer_zero_crossing = angle_steers
 
     self.prev_output_steer = output_steer
     self.sat_flag = self.pid.saturated
