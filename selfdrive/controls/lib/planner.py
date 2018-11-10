@@ -153,6 +153,7 @@ class LongitudinalMpc(object):
     self.prev_lead_x = 0.0
     self.new_lead = False
     
+    self.override = False      # for one bar distance at low speeds - introduce early braking and hysteresis for resume follow
     self.lastTR = 2
     self.last_cloudlog_t = 0.0
 
@@ -192,7 +193,8 @@ class LongitudinalMpc(object):
     self.cur_state[0].x_ego = 0.0
 
     if lead is not None and lead.status:
-      x_lead = lead.dRel
+      #x_lead = lead.dRel
+      x_lead = max(0, lead.dRel - 1)  # increase stopping distance to car by 1m
       v_lead = max(0.0, lead.vLead)
       a_lead = lead.aLeadK
 
@@ -214,16 +216,24 @@ class LongitudinalMpc(object):
     else:
       self.prev_lead_status = False
       # Fake a fast lead car, so mpc keeps running
-      self.cur_state[0].x_l = 50.0
+      self.cur_state[0].x_l = 150.0
       self.cur_state[0].v_l = CS.vEgo + 10.0
       a_lead = 0.0
+      v_lead = CS.vEgo + 10.0
+      x_lead = 150.0
       self.a_lead_tau = _LEAD_ACCEL_TAU
 
     # Calculate mpc
     t = sec_since_boot()
     
-    if CS.vEgo < 11.4:
-      TR=1.8 # under 41km/hr use a TR of 1.8 seconds
+    # Override with 3 bar distance profile if using one bar distance - hysteresis for safety
+    if self.override and CS.aEgo >= 0:
+      self.override = False  # When car starts accelerating, resume one bar distance profile
+      
+    if self.override or (CS.readdistancelines == 1 and CS.vEgo < 18.06 and (v_lead - CS.vEgo) < -3 and x_lead < 100):
+      if CS.aEgo < -0.5:
+         self.override = True   # If we start braking, then keep 3 bar distance profile until car starts to accelerate
+      TR=2.7
       #if self.lastTR > 0:
         #self.libmpc.init(MPC_COST_LONG.TTC, 0.1, PC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
         #self.lastTR = 0
@@ -251,7 +261,7 @@ class LongitudinalMpc(object):
           self.lastTR = CS.readdistancelines
       else:
         TR=1.8 # if readdistancelines = 0
-    #print TR
+    
     
     n_its = self.libmpc.run_mpc(self.cur_state, self.mpc_solution, self.a_lead_tau, a_lead, TR)
     duration = int((sec_since_boot() - t) * 1e9)
