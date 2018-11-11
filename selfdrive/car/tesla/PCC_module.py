@@ -460,13 +460,9 @@ class PCCController(object):
         self.b_pid = MPC_BRAKE_MULTIPLIER 
         optimal_dist_m = _safe_distance_m(CS.v_ego)
         available_speed_kph = self.pedal_speed_kph - CS.v_ego * CV.MS_TO_KPH
-        # if going above the max configured PCC speed, slow.
-        if available_speed_kph < 0 and _distance_is_safe(CS.v_ego, self.lead_1):
-          # linearly brake harder, getting up to -1 at 8kph over
-          output_gb = max(available_speed_kph, -8) / 8.0
         # Hold speed if radar is getting intermittent readings at great distance.
         # Makes the car less skittish when first making radar contact.
-        elif _is_present(self.lead_1) and self.continuous_lead_sightings < 10 and _sec_til_collision(self.lead_1) > 8:
+        if _is_present(self.lead_1) and self.continuous_lead_sightings < 10 and _sec_til_collision(self.lead_1) > 8:
           pass
         # Hold speed in turns if no car is seen
         elif CS.angle_steers >= 5.0 and not _is_present(self.lead_1):
@@ -498,6 +494,12 @@ class PCCController(object):
             
           # rescale around 0 rather than 1.
           output_gb = net_ratio - 1
+          
+          # if going above the max configured PCC speed, slow.
+          if available_speed_kph < 0:
+            # linearly brake harder, hitting -1 at 10kph over
+            alt_gb = max(available_speed_kph, -10) / 10.0
+            output_gb = min(output_gb, alt_gb)
         # If no lead has been seen for a few seconds, accelerate.
         elif _current_time_millis() > self.lead_last_seen_time_ms + 3000:
           linear_factor = min(available_speed_kph, 5) / 5
@@ -696,4 +698,4 @@ def _is_present(lead):
   return bool(lead and lead.dRel)
 
 def _sec_til_collision(lead):
-  return lead.dRel / lead.Vrel
+  return lead.dRel / lead.vRel
