@@ -67,7 +67,7 @@ class LatControl(object):
     self.steerpub2.bind("tcp://*:8596")
     self.steerdata2 = ""
     self.ratioExp = 2.6
-    self.ratioScale = 10.
+    self.ratioScale = 15.
     self.steer_steps = [0., 0., 0., 0., 0.]
     self.probFactor = 0.
     self.prev_output_steer = 0.
@@ -92,8 +92,10 @@ class LatControl(object):
     cur_time = sec_since_boot()
     self.mpc_updated = False
 
-    smoothing = 0.0
-    self.smooth_angle_steers = (smoothing * self.smooth_angle_steers + angle_steers) / (smoothing + 1.0)
+    
+    smoothing = 4.0
+    
+    self.smooth_angle_steers = angle_steers  #  (smoothing * self.smooth_angle_steers + angle_steers) / (smoothing + 1.0)
     ratioFactor = max(0.1, 1. - self.ratioScale * abs(self.smooth_angle_steers / 100.) ** self.ratioExp)
     cur_Steer_Ratio = VM.CP.steerRatio * ratioFactor
 
@@ -109,7 +111,7 @@ class LatControl(object):
       self.p_poly = libmpc_py.ffi.new("double[4]", list(PL.PP.p_poly))
 
       # account for actuation delay
-      self.cur_state = calc_states_after_delay(self.cur_state, v_ego, self.smooth_angle_steers, curvature_factor, cur_Steer_Ratio, VM.CP.steerActuatorDelay)
+      self.cur_state = calc_states_after_delay(self.cur_state, v_ego, self.smooth_angle_steers, curvature_factor, cur_Steer_Ratio, VM.CP.steerActuatorDelay) # + smoothing / 200)
 
       v_ego_mpc = max(v_ego, 5.0)  # avoid mpc roughness due to low speed
       self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
@@ -174,16 +176,16 @@ class LatControl(object):
     else:
       # TODO: ideally we should interp, but for tuning reasons we keep the mpc solution
       # constant for 0.05s.
-      #dt = min(cur_time - self.angle_steers_des_time, _DT_MPC + _DT) + _DT  # no greater than dt mpc + dt, to prevent too high extraps
-      #self.angle_steers_des = self.angle_steers_des_prev + (dt / _DT_MPC) * (self.angle_steers_des_mpc - self.angle_steers_des_prev)
-      self.angle_steers_des = (smoothing * self.angle_steers_des + self.angle_steers_des_mpc) / (smoothing + 1.0)
+      dt = min(cur_time - self.angle_steers_des_time, _DT_MPC + _DT) + _DT  # no greater than dt mpc + dt, to prevent too high extraps
+      self.angle_steers_des = self.angle_steers_des_prev + (dt / _DT_MPC) * (self.angle_steers_des_mpc - self.angle_steers_des_prev)
+      #self.angle_steers_des = (smoothing * self.angle_steers_des + self.angle_steers_des_mpc) / (smoothing + 1.0)
       steers_max = get_steer_max(VM.CP, v_ego)
       self.pid.pos_limit = steers_max
       self.pid.neg_limit = -steers_max
 
       if VM.CP.steerControlType == car.CarParams.SteerControlType.torque:
-        steer_feedforward = self.angle_steers_des - self.steer_zero_crossing
-        steer_feedforward *= v_ego**2  # proportional to realigning tire momentum (~ lateral accel)
+        steer_feedforward = apply_deadzone(self.angle_steers_des - float(angle_offset), 0.5)  #self.steer_zero_crossing
+        steer_feedforward *= v_ego**2 / ratioFactor  # proportional to realigning tire momentum (~ lateral accel)
       else:
         steer_feedforward = self.angle_steers_des   # feedforward desired angle
   

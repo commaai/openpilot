@@ -171,7 +171,7 @@ class CarInterface(object):
 
     ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
 
-    ret.steerKf = 0.0001 # conservative feed-forward
+    ret.steerKf = 0.0002 # conservative feed-forward
 
     if candidate == CAR.CIVIC:
       stop_and_go = True
@@ -212,7 +212,7 @@ class CarInterface(object):
       ret.centerToFront = ret.wheelbase * 0.39
       ret.steerRatio = 15.96  # 11.82 is spec end-to-end
       tire_stiffness_factor = 0.8467
-      ret.steerKpV, ret.steerKiV = [[0.2], [0.18]]
+      ret.steerKpV, ret.steerKiV = [[0.3], [0.18]]
       ret.longitudinalKpBP = [0., 5., 35.]
       ret.longitudinalKpV = [1.2, 0.8, 0.5]
       ret.longitudinalKiBP = [0., 35.]
