@@ -92,7 +92,8 @@ class LatControl(object):
     cur_time = sec_since_boot()
     self.mpc_updated = False
 
-    self.smooth_angle_steers = (4.0 * self.smooth_angle_steers + angle_steers) / 5.0
+    smoothing = 0.0
+    self.smooth_angle_steers = (smoothing * self.smooth_angle_steers + angle_steers) / (smoothing + 1.0)
     ratioFactor = max(0.1, 1. - self.ratioScale * abs(self.smooth_angle_steers / 100.) ** self.ratioExp)
     cur_Steer_Ratio = VM.CP.steerRatio * ratioFactor
 
@@ -175,7 +176,7 @@ class LatControl(object):
       # constant for 0.05s.
       #dt = min(cur_time - self.angle_steers_des_time, _DT_MPC + _DT) + _DT  # no greater than dt mpc + dt, to prevent too high extraps
       #self.angle_steers_des = self.angle_steers_des_prev + (dt / _DT_MPC) * (self.angle_steers_des_mpc - self.angle_steers_des_prev)
-      self.angle_steers_des = (4.0 * self.angle_steers_des + self.angle_steers_des_mpc) / 5.0
+      self.angle_steers_des = (smoothing * self.angle_steers_des + self.angle_steers_des_mpc) / (smoothing + 1.0)
       steers_max = get_steer_max(VM.CP, v_ego)
       self.pid.pos_limit = steers_max
       self.pid.neg_limit = -steers_max
@@ -193,12 +194,9 @@ class LatControl(object):
       output_steer =  self.pid.update(self.angle_steers_des, self.smooth_angle_steers, check_saturation=False, override=steer_override,
                                      feedforward=steer_feedforward, speed=v_ego, deadzone=deadzone)
 
-      #output_steer = ((self.prev_output_steer * 4.) + new_output_steer) / 5.0
-
-      if not steer_override and v_ego > 10. and self.prev_output_steer != 0 and abs(self.smooth_angle_steers) <= 10:
+      if not steer_override and v_ego > 10. and abs(self.smooth_angle_steers) <= 10:
         #take torque samples for external characterization
 
-        self.prev_output_steer = output_steer
         angle_index = int(self.smooth_angle_steers) + 10
         self.rough_angle_array[angle_index] = int(self.smooth_angle_steers)
         if int(self.smooth_angle_steers) == int(self.angle_steers_des):
@@ -211,23 +209,19 @@ class LatControl(object):
           self.center_angle = (self.center_count * self.center_angle + self.smooth_angle_steers) / (self.center_count + 1)
           self.center_count = min(1000, self.center_count + 1)
   
-        if (self.pid.f + self.pid.i) * prev_i_f <= 0.0:
-          self.pid.reset()
-          self.steer_zero_crossing = self.smooth_angle_steers
-
-        if (output_steer * self.prev_output_steer) < 0.0
-          
-      else:
-        self.prev_output_steer = 0.0
-        self.steer_zero_crossing = 0.0
-
-      if (int(cur_time * 100) % 1) == 0:
-        self.steerdata += ("%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d|" % (self.isActive, self.steer_zero_crossing, self.center_angle, self.smooth_angle_steers, self.angle_steers_des, angle_offset, \
+        if (int(cur_time * 100) % 1) == 0:
+          self.steerdata += ("%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d|" % (self.isActive, self.steer_zero_crossing, self.center_angle, self.smooth_angle_steers, self.angle_steers_des, angle_offset, \
           self.angle_steers_des_mpc, cur_Steer_Ratio, VM.CP.steerKf / ratioFactor, VM.CP.steerKpV[0] / ratioFactor, VM.CP.steerKiV[0] / ratioFactor, VM.CP.steerRateCost, PL.PP.l_prob, \
           PL.PP.r_prob, PL.PP.c_prob, PL.PP.p_prob, self.l_poly[0], self.l_poly[1], self.l_poly[2], self.l_poly[3], self.r_poly[0], self.r_poly[1], self.r_poly[2], self.r_poly[3], \
           self.p_poly[0], self.p_poly[1], self.p_poly[2], self.p_poly[3], PL.PP.c_poly[0], PL.PP.c_poly[1], PL.PP.c_poly[2], PL.PP.c_poly[3], PL.PP.d_poly[0], PL.PP.d_poly[1], \
           PL.PP.d_poly[2], PL.PP.lane_width, PL.PP.lane_width_estimate, PL.PP.lane_width_certainty, v_ego, self.pid.p, self.pid.i, self.pid.f, int(time.time() * 100) * 10000000))
 
+        if (prev_i_f * (self.pid.i + self.pid.f)) < 0.0:
+          self.steer_zero_crossing = self.smooth_angle_steers
+
+      #else:
+        #self.steer_zero_crossing = 0.0
     
     self.sat_flag = self.pid.saturated
+    self.prev_output_steer = output_steer
     return output_steer, float(self.angle_steers_des)
