@@ -485,7 +485,7 @@ class PCCController(object):
             (10., 0.),
             (16., 0.)
           ])
-          v_weight = interp(_sec_til_collision(self.lead), v_weights.keys(), v_weights.vakues())
+          v_weight = interp(_sec_til_collision(self.lead_1), v_weights.keys(), v_weights.values())
           
           net_ratio = distance_ratio * (velocity_ratio ** v_weight)
           # Don't accelerate based on intermittent sightings
