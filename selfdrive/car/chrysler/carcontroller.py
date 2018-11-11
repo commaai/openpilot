@@ -11,6 +11,7 @@ CAR_UNITS_PER_DEGREE = 3.0  # originally 5.1
 STEER_MAX = 230 / CAR_UNITS_PER_DEGREE  # degrees
 STEER_DELTA_UP = 2.5 / CAR_UNITS_PER_DEGREE  # degrees
 STEER_DELTA_DOWN = 2.5 / CAR_UNITS_PER_DEGREE  # degrees
+MIN_STEER_MS = 3.8  # consolidate with interface.py low_speed_alert
 
 
 class CarController(object):
@@ -50,7 +51,7 @@ class CarController(object):
       apply_steer = clip(apply_steer, self.last_steer - STEER_DELTA_UP, min(self.last_steer + STEER_DELTA_DOWN, STEER_DELTA_UP))
 
     moving_fast = True  # for status message
-    if CS.v_ego < 3.8:  # don't steer if going under 8.5mph to not lock out LKAS (was < 3)
+    if CS.v_ego < MIN_STEER_MS:  # don't steer if going under 8.5mph to not lock out LKAS (was < 3)
       apply_steer = 0
       moving_fast = False
 

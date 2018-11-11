@@ -23,6 +23,7 @@ class CarInterface(object):
     self.gas_pressed_prev = False
     self.brake_pressed_prev = False
     self.cruise_enabled_prev = False
+    self.low_speed_alert = False
 
     # *** init the major players ***
     self.CS = CarState(CP)
@@ -204,6 +205,7 @@ class CarInterface(object):
 
     ret.doorOpen = not self.CS.door_all_closed
     ret.seatbeltUnlatched = not self.CS.seatbelt
+    self.low_speed_alert = (ret.vEgo < 3.8) # consolidate into interface
 
     ret.genericToggle = self.CS.generic_toggle
 
@@ -229,8 +231,6 @@ class CarInterface(object):
       events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     if self.CS.steer_error:
       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
-    if self.CS.low_speed_lockout and self.CP.enableDsu:
-      events.append(create_event('lowSpeedLockout', [ET.NO_ENTRY, ET.PERMANENT]))
     if ret.vEgo < self.CP.minEnableSpeed and self.CP.enableDsu:
       events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
       if c.actuators.gas > 0.1:
@@ -253,6 +253,9 @@ class CarInterface(object):
 
     if ret.gasPressed:
       events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
+
+    if self.low_speed_alert:
+      events.append(create_event('belowSteerSpeed', [ET.WARNING]))
 
     ret.events = events
     ret.canMonoTimes = canMonoTimes
