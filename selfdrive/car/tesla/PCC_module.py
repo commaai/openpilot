@@ -224,6 +224,7 @@ class PCCController(object):
     self.md_ts = None
     self.l100_ts = None
     self.lead_last_seen_time_ms = 0
+    self.continuous_lead_sightings = 0
 
 
   def reset(self, v_pid):
@@ -352,8 +353,11 @@ class PCCController(object):
           break
     if l20 is not None:
       self.lead_1 = l20.live20.leadOne
-      if self.lead_1 and self.lead_1.dRel:
+      if _is_present(self.lead_1):
         self.lead_last_seen_time_ms = _current_time_millis()
+        self.continuous_lead_sightings += 1
+      else:
+        self.continuous_lead_sightings = 0
       self.md_ts = l20.live20.mdMonoTime
       self.l100_ts = l20.live20.l100MonoTime
 
@@ -460,11 +464,15 @@ class PCCController(object):
         if available_speed_kph < 0 and _distance_is_safe(CS.v_ego, self.lead_1):
           # linearly brake harder, getting up to -1 at 8kph over
           output_gb = max(available_speed_kph, -8) / 8.0
+        # Hold speed if radar is getting intermittent readings at great distance.
+        # Makes the car less skittish when first making radar contact.
+        elif _is_present(self.lead_1) and self.continuous_lead_sightings < 10 and _sec_til_collision(self.lead_1) > 8:
+          pass
         # Hold speed in turns if no car is seen
-        elif CS.angle_steers >= 5.0 and not (self.lead_1 or self.lead_1.dRel):
+        elif CS.angle_steers >= 5.0 and not _is_present(self.lead_1):
           pass
         # Try to stay 2 seconds behind lead, matching their speed.
-        elif self.lead_1 and self.lead_1.dRel:
+        elif _is_present(self.lead_1):
           distance_ratio = self.lead_1.dRel / optimal_dist_m
           distance_ratio = clip(distance_ratio, MIN_ACCEL_RATIO, MAX_ACCEL_RATIO)
           
@@ -472,9 +480,22 @@ class PCCController(object):
           velocity_ratio = lead_absolute_velocity_ms / max(CS.v_ego, 0.001)
           velocity_ratio = clip(velocity_ratio, MIN_ACCEL_RATIO, MAX_ACCEL_RATIO)
           
-          # Weigh the velocity less than the distance
-          net_ratio = distance_ratio * (velocity_ratio ** 0.7)
-
+          # Discount speed readings if the time til collision is great.
+          # This accounts for poor visual radar at distances.
+          v_weights = OrderedDict([
+            # seconds til collision : importance of relative speed
+            (0.,  1.),
+            (5.,  1.),
+            (10., 0.),
+            (16., 0.)
+          ])
+          v_weight = interp(_sec_til_collision(self.lead), v_weights.keys(), v_weights.vakues())
+          
+          net_ratio = distance_ratio * (velocity_ratio ** v_weight)
+          # Don't accelerate based on intermittent sightings
+          if self.continuous_lead_sightings < 10:
+            net_ratio = min(net_ratio, 1.0)
+            
           # rescale around 0 rather than 1.
           output_gb = net_ratio - 1
         # If no lead has been seen for a few seconds, accelerate.
@@ -668,5 +689,11 @@ def _safe_distance_m(v_ms):
   return max(FOLLOW_TIME_S * v_ms, MIN_SAFE_DIST_M)
   
 def _distance_is_safe(v_ego_ms, lead):
-  lead_too_close = bool(lead and lead.dRel and lead.dRel <= _safe_distance_m(v_ego_ms))
+  lead_too_close = bool(_is_present(lead) and lead.dRel <= _safe_distance_m(v_ego_ms))
   return not lead_too_close
+
+def _is_present(lead):
+  return bool(lead and lead.dRel)
+
+def _sec_til_collision(lead):
+  return lead.dRel / lead.Vrel
