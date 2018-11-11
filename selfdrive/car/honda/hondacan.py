@@ -86,9 +86,10 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, idx):
       'CRUISE_SPEED': hud.v_cruise,
       'ENABLE_MINI_CAR': hud.mini_car,
       'HUD_LEAD': hud.car,
-      'SET_ME_X03': 0x03,
+      'SET_ME_X03': hud.dist_lines,
       'SET_ME_X03_2': 0x03,
       'SET_ME_X01': 0x01,
+      'HUD_DISTANCE_3': 1,
     }
     commands.append(packer.make_can_msg("ACC_HUD", 0, acc_hud_values, idx))
 
