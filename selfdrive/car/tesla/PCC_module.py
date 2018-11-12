@@ -493,7 +493,7 @@ class PCCController(object):
           velocity_ratio = clip(velocity_ratio, MAX_DECEL_RATIO, MAX_ACCEL_RATIO)
           # Discount speed reading if the time til potential collision is great.
           # This accounts for poor visual radar at distances. It also means that
-          # at very low speed, 
+          # at very low speed, distance logic dominates.
           v_weights = OrderedDict([
             # seconds to cross distance : importance of relative speed
             (FOLLOW_TIME_S,        1.),
@@ -501,8 +501,7 @@ class PCCController(object):
             (FOLLOW_TIME_S * 5,    0.),  # zero weight when distant
             (FOLLOW_TIME_S * 6,    0.)
           ])
-          # TODO: decide better logic at v=0
-          v_weight = interp(_sec_to_travel(self.lead_1.dRel, CS.v_ego) or 0, v_weights.keys(), v_weights.values())
+          v_weight = interp(_sec_to_travel(self.lead_1.dRel, CS.v_ego) or 60, v_weights.keys(), v_weights.values())
           weighted_v_ratio = velocity_ratio ** v_weight
          
           gb_ratio = weighted_d_ratio * weighted_v_ratio
