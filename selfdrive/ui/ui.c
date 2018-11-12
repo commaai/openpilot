@@ -890,6 +890,8 @@ static void ui_draw_vision_maxspeed(UIState *s) {
     nvgFontSize(s->vg, 42*2.5);
     nvgText(s->vg, viz_maxspeed_x+viz_maxspeed_w/2, 242, "N/A", NULL);
   }
+
+  screen_draw_tuning(s);
 }
 
 static void ui_draw_vision_speed(UIState *s) {
