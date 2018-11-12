@@ -101,10 +101,7 @@ def get_usb_status():
     return int(f.read())
 
 def set_charging_status(status):
-  if status == True:
-    val = "1"
-  else:
-    val = "0"
+  val = "1" if status == True else "0"
   os.system("echo " + val + " > " + "/sys/class/power_supply/battery/charging_enabled")
 
 def set_max_cpu_freq(ismax=True):
@@ -116,7 +113,7 @@ def set_max_cpu_freq(ismax=True):
       file = '/sys/devices/system/cpu/cpu' + cpuid + '/cpufreq/cpuinfo_min_freq'
 
     with open(file) as f:
-      freq = str(f.read()).rstrip()
+      freq = f.read().rstrip()
       os.system("echo " + freq + " > " + "/sys/devices/system/cpu/cpu" + cpuid + "/cpufreq/scaling_max_freq")
 
 if __name__ == "__main__":
