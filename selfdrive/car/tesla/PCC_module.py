@@ -449,18 +449,17 @@ class PCCController(object):
     # This is an experimental mode that is probably broken.
     #
     # Don't use it.
+    #
+    # Ratios are centered at 1. They can be multiplied together.
+    # Factors are centered around 0. They can be multiplied by constants.
+    # For example +9% is a 1.06 ratio or 0.09 factor.
     ##############################################################
     elif PCCModes.is_selected(ExperimentalMode(), CS.cstm_btns):
       output_gb = 0.0
       if enabled and self.enable_pedal_cruise:
-        # ratios are centered at 1, factors are centered at 0.
-        MAX_ACCEL_FACTOR = 0.09
-        MAX_ACCEL_RATIO = 1 + MAX_ACCEL_FACTOR
-        MAX_DECEL_FACTOR = -1.0
-        MAX_DECEL_RATIO = 1 + MAX_DECEL_FACTOR
-        
+        MAX_DECEL_RATIO = 0
+        MAX_ACCEL_RATIO = 1.09
         self.b_pid = MPC_BRAKE_MULTIPLIER 
-        optimal_dist_m = _safe_distance_m(CS.v_ego)
         available_speed_kph = self.pedal_speed_kph - CS.v_ego * CV.MS_TO_KPH
         # Hold accel if radar gives intermittent readings at great distance.
         # Makes the car less skittish when first making radar contact.
@@ -473,36 +472,8 @@ class PCCController(object):
           pass
         # Try to stay 2 seconds behind lead, matching their speed.
         elif _is_present(self.lead_1):
-          # S-curve of distance to lead vs desire to accelerate.
-          # Centered around (optimal_dist_m, 0)
-          d_offset = self.lead_1.dRel - optimal_dist_m
-          d_offset_sign = -1 if d_offset < 0 else 1
-          d_factor = d_offset_sign * d_offset ** 2 / optimal_dist_m ** 2
-          if d_factor > 0:
-            # Scale positive values to reach max accel at 2x optimal_dist_m.
-            d_factor *= (MAX_ACCEL_FACTOR / 2**2)
-          else:
-            # Scale negative values to reach min accel at 1/2 optimal_dist_m
-            d_factor *= (MAX_DECEL_FACTOR / 0.5**2)
-          weighted_d_ratio = 1 + d_factor
-          weighted_d_ratio = clip(weighted_d_ratio, MAX_DECEL_RATIO, MAX_ACCEL_RATIO)
-          
-          # Ratio of our speed vs the lead's speed
-          lead_absolute_velocity_ms = CS.v_ego + self.lead_1.vRel
-          velocity_ratio = lead_absolute_velocity_ms / max(CS.v_ego, 0.01)
-          velocity_ratio = clip(velocity_ratio, MAX_DECEL_RATIO, MAX_ACCEL_RATIO)
-          # Discount speed reading if the time til potential collision is great.
-          # This accounts for poor visual radar at distances. It also means that
-          # at very low speed, distance logic dominates.
-          v_weights = OrderedDict([
-            # seconds to cross distance : importance of relative speed
-            (FOLLOW_TIME_S,        1.),
-            (FOLLOW_TIME_S * 1.5,  1.),  # full weight near desired follow distance
-            (FOLLOW_TIME_S * 5,    0.),  # zero weight when distant
-            (FOLLOW_TIME_S * 6,    0.)
-          ])
-          v_weight = interp(_sec_to_travel(self.lead_1.dRel, CS.v_ego) or 60, v_weights.keys(), v_weights.values())
-          weighted_v_ratio = velocity_ratio ** v_weight
+          weighted_d_ratio = _weighted_distance_ratio(self.lead_1, CS.v_ego, MAX_DECEL_RATIO, MAX_ACCEL_RATIO)
+          weighted_v_ratio = _weighted_velocity_ratio(self.lead_1, CS.v_ego, MAX_DECEL_RATIO, MAX_ACCEL_RATIO)
          
           gb_ratio = weighted_d_ratio * weighted_v_ratio
           # rescale around 0 rather than 1.
@@ -515,7 +486,10 @@ class PCCController(object):
             output_gb = min(output_gb, speed_limited_gb)
         # If no lead has been seen for a few seconds, accelerate to max speed.
         elif _current_time_millis() > self.lead_last_seen_time_ms + 2000:
-          max_speed_factor = min(available_speed_kph, 5) / 5  # 0 near max speed
+          # An acceleration factor that drops off as we aproach max speed.
+          max_speed_factor = min(available_speed_kph, 10) / 10
+          # An acceleration factor that increases as time passes without seeing
+          # a lead car.
           time_factor = (_current_time_millis() - self.lead_last_seen_time_ms - 2000) / 4000
           time_factor = clip(time_factor, 0, 1)
           output_gb = 0.12 * max_speed_factor * time_factor
@@ -718,8 +692,70 @@ def _sec_til_collision(lead):
   else:
     return 60  # Arbitrary, but better than MAXINT because we can still do math on it.
     
-def _sec_to_travel(distance, speed):
-  if speed:
-    return distance / speed
+def _sec_to_travel(positive_distance, speed):
+  if speed > 0:
+    return positive_distance / speed
   else:
-    return None
+    return 60*60  # 1 hour, an arbitrary big time.
+
+def _weighted_distance_ratio(lead, v_ego, max_decel_ratio, max_accel_ratio):
+  """Decide how to accel/decel based on how far away the lead is.
+  
+  Args:
+    ...
+    max_decel_ratio: a number between 0 and 1 that limits deceleration.
+    max_accel_ratio: a number between 1 and 2 that limits acceleration.
+  
+  Returns:
+    0 to 1: deceleration suggested to increase distance.
+    1:      no change needed.
+    1 to 2: acceleration suggested to decrease distance.
+  """
+  optimal_dist_m = _safe_distance_m(v_ego)
+  # S-curve of distance to lead vs desire to accelerate.
+  # Centered around (optimal_dist_m, 0)
+  d_offset = lead.dRel - optimal_dist_m
+  d_offset_sign = -1 if d_offset < 0 else 1
+  d_factor = d_offset_sign * d_offset ** 2 / optimal_dist_m ** 2
+  if d_factor > 0:
+    # Scale positive values to reach max accel at 2x optimal_dist_m.
+    max_accel_factor = max_accel_ratio - 1
+    d_factor *= (max_accel_factor / 2**2)
+  else:
+    # Scale negative values to reach min accel at 1/2 optimal_dist_m
+    max_decel_factor = max_decel_ratio - 1
+    d_factor *= (max_decel_factor / 0.5**2)
+    
+  d_ratio = d_factor + 1
+  d_ratio = clip(d_ratio, max_decel_ratio, max_accel_ratio)
+  return d_ratio
+  
+def _weighted_velocity_ratio(lead, v_ego, max_decel_ratio, max_accel_ratio):
+  """Decide how to accel/decel based on how fast the lead is.
+  
+  Args:
+    ...
+    max_decel_ratio: a number between 0 and 1 that limits deceleration.
+    max_accel_ratio: a number between 1 and 2 that limits acceleration.
+  
+  Returns:
+    0 to 1: deceleration suggested to match speed.
+    1:      no change needed.
+    1 to 2: acceleration suggested to match speed.
+  """
+  lead_absolute_velocity_ms = v_ego + lead.vRel
+  # Ratio of our speed vs the lead's speed
+  velocity_ratio = lead_absolute_velocity_ms / max(v_ego, 0.01)
+  velocity_ratio = clip(velocity_ratio, max_decel_ratio, max_accel_ratio)
+  # Discount speed reading if the time til potential collision is great.
+  # This accounts for poor visual radar at distances. It also means that
+  # at very low speed, distance logic dominates.
+  v_weights = OrderedDict([
+    # seconds to travel distance : importance of relative speed
+    (FOLLOW_TIME_S,        1.),
+    (FOLLOW_TIME_S * 1.5,  1.),  # full weight near desired follow distance
+    (FOLLOW_TIME_S * 5,    0.),  # zero weight when distant
+    (FOLLOW_TIME_S * 6,    0.)
+  ])
+  v_weight = interp(_sec_to_travel(lead.dRel, v_ego), v_weights.keys(), v_weights.values())
+  return velocity_ratio ** v_weight
