@@ -514,11 +514,12 @@ class PCCController(object):
             # linearly brake harder, hitting -1 at 10kph over
             speed_limited_gb = max(available_speed_kph, -10) / 10.0
             output_gb = min(output_gb, speed_limited_gb)
-        # If no lead has been seen for a few seconds, accelerate.
-        elif _current_time_millis() > self.lead_last_seen_time_ms + 3000:
-          # TODO: scale based on how long since sighting
-          linear_factor = min(available_speed_kph, 5) / 5
-          output_gb = 0.12 * linear_factor
+        # If no lead has been seen for a few seconds, accelerate to max speed.
+        elif _current_time_millis() > self.lead_last_seen_time_ms + 2000:
+          max_speed_factor = min(available_speed_kph, 5) / 5  # 0 near max speed
+          time_factor = (_current_time_millis() - self.lead_last_seen_time_ms - 2000) / 4000
+          time_factor = clip(time_factor, 0, 1)
+          output_gb = 0.12 * max_speed_factor * time_factor
 
     ######################################################################################
     # Determine pedal "zero"
