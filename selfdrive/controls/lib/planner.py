@@ -39,7 +39,7 @@ _A_CRUISE_MAX_V_FOLLOWING = [1.6, 1.6, 1.2, .7, .3]
 _A_CRUISE_MAX_BP = [0.,  5., 10., 20., 40.]
 
 # Lookup table for turns
-_A_TOTAL_MAX_V = [2.7, 3.1, 3.5]
+_A_TOTAL_MAX_V = [2.9, 3.3, 3.5]
 _A_TOTAL_MAX_BP = [0., 20., 40.]
 
 _FCW_A_ACT_V = [-3., -2.]
