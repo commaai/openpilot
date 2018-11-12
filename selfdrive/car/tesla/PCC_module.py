@@ -487,11 +487,12 @@ class PCCController(object):
           time_factor = (_current_time_millis() - self.lead_last_seen_time_ms - 2000) / 4000
           time_factor = clip(time_factor, 0, 1)
           output_gb = 0.12 * max_speed_factor * time_factor
-        # if going above the max configured PCC speed, slow.
+        # If going above the max configured PCC speed, slow. This should always
+        # be in force so it is not part of the if/else block above.
         if available_speed_kph < 0:
           # linearly brake harder, hitting -1 at 10kph over
           speed_limited_gb = max(available_speed_kph, -10) / 10.0
-          # Brake at least this hard.
+          # This is a minimum braking amount. The logic above may ask for more.
           output_gb = min(output_gb, speed_limited_gb)
 
     ######################################################################################
