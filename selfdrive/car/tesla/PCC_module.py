@@ -456,14 +456,17 @@ class PCCController(object):
       output_gb = 0.0
       if enabled and self.enable_pedal_cruise:
         MAX_ACCEL_RATIO = 1.09
+        CAUTIOUS_ACCEL_RATIO = 1.045
         MIN_ACCEL_RATIO = 0.7
         self.b_pid = MPC_BRAKE_MULTIPLIER 
         optimal_dist_m = _safe_distance_m(CS.v_ego)
         available_speed_kph = self.pedal_speed_kph - CS.v_ego * CV.MS_TO_KPH
         # Hold speed if radar is getting intermittent readings at great distance.
         # Makes the car less skittish when first making radar contact.
-        if _is_present(self.lead_1) and self.continuous_lead_sightings < 10 and _sec_til_collision(self.lead_1) > 8:
-          pass
+        if (_is_present(self.lead_1)
+            and self.continuous_lead_sightings < 8
+            and _sec_til_collision(self.lead_1) > 6):
+          output_gb = self.last_output_gb
         # Hold speed in turns if no car is seen
         elif CS.angle_steers >= 5.0 and not _is_present(self.lead_1):
           pass
@@ -476,25 +479,22 @@ class PCCController(object):
           velocity_ratio = lead_absolute_velocity_ms / max(CS.v_ego, 0.001)
           velocity_ratio = clip(velocity_ratio, MIN_ACCEL_RATIO, MAX_ACCEL_RATIO)
           
-          # Discount speed readings if the time til collision is great.
+          # Discount speed reading if the time til potential collision is great.
           # This accounts for poor visual radar at distances.
           v_weights = OrderedDict([
-            # seconds til collision : importance of relative speed
-            (0.,  1.),
-            (5.,  1.),
-            (10., 0.),
-            (16., 0.)
+            # seconds to cross distance : importance of relative speed
+            (FOLLOW_TIME_S,      1.),
+            (FOLLOW_TIME_S + 1,  1.),
+            (10.,                0.),
+            (16.,                0.)
           ])
-          v_weight = interp(_sec_til_collision(self.lead_1), v_weights.keys(), v_weights.values())
-          
+          v_weight = interp(_sec_to_travel(self.lead_1.dRel, CS.v_ego) or 0, v_weights.keys(), v_weights.values())
+
           net_ratio = distance_ratio * (velocity_ratio ** v_weight)
-          # Don't accelerate based on intermittent sightings
-          #if self.continuous_lead_sightings < 3:
-          #  net_ratio = min(net_ratio, 1.0)
-            
+
           # rescale around 0 rather than 1.
           output_gb = net_ratio - 1
-          
+
           # if going above the max configured PCC speed, slow.
           if available_speed_kph < 0:
             # linearly brake harder, hitting -1 at 10kph over
@@ -702,3 +702,9 @@ def _sec_til_collision(lead):
     return lead.dRel / lead.vRel
   else:
     return 60  # Arbitrary, but better than MAXINT because we can still do math on it.
+    
+def _sec_to_travel(distance, speed):
+  if speed:
+    return distance / speed
+  else:
+    return None
