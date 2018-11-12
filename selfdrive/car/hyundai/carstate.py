@@ -174,7 +174,7 @@ class CarState(object):
     self.UE = UIEvents(self)
 
     #BB variable for custom buttons
-    self.cstm_btns = UIButtons(self,"Toyota","toyota")
+    self.cstm_btns = UIButtons(self,"Hyundai","hyundai")
 
     #BB pid holder for ALCA
     self.pid = None
