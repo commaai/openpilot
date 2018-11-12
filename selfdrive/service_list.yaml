@@ -134,5 +134,3 @@ testJoystick: [8056, false]
 #   publishes: procLog
 
 # tombstoned -- reports native crashes
-
-# customd -- a custom service
