@@ -435,9 +435,7 @@ class PCCController(object):
         self.v_acc_sol = reset_speed
         self.a_acc_sol = reset_accel
         self.v_pid = reset_speed
-        
 
-      
     ##############################################################
     # This mode uses the longitudinal MPC built in OP
     #
@@ -456,12 +454,11 @@ class PCCController(object):
       output_gb = 0.0
       if enabled and self.enable_pedal_cruise:
         MAX_ACCEL_RATIO = 1.09
-        CAUTIOUS_ACCEL_RATIO = 1.045
         MIN_ACCEL_RATIO = 0.7
         self.b_pid = MPC_BRAKE_MULTIPLIER 
         optimal_dist_m = _safe_distance_m(CS.v_ego)
         available_speed_kph = self.pedal_speed_kph - CS.v_ego * CV.MS_TO_KPH
-        # Hold speed if radar is getting intermittent readings at great distance.
+        # Hold accel if radar gives intermittent readings at great distance.
         # Makes the car less skittish when first making radar contact.
         if (_is_present(self.lead_1)
             and self.continuous_lead_sightings < 8
@@ -472,9 +469,11 @@ class PCCController(object):
           pass
         # Try to stay 2 seconds behind lead, matching their speed.
         elif _is_present(self.lead_1):
+          # ratio of current distance to lead vs desired distance to lead
           distance_ratio = self.lead_1.dRel / optimal_dist_m
           distance_ratio = clip(distance_ratio, MIN_ACCEL_RATIO, MAX_ACCEL_RATIO)
           
+          # ratio of our speed vs the lead's speed
           lead_absolute_velocity_ms = CS.v_ego + self.lead_1.vRel
           velocity_ratio = lead_absolute_velocity_ms / max(CS.v_ego, 0.001)
           velocity_ratio = clip(velocity_ratio, MIN_ACCEL_RATIO, MAX_ACCEL_RATIO)
@@ -484,22 +483,21 @@ class PCCController(object):
           v_weights = OrderedDict([
             # seconds to cross distance : importance of relative speed
             (FOLLOW_TIME_S,      1.),
-            (FOLLOW_TIME_S + 1,  1.),
+            (FOLLOW_TIME_S + 1,  1.),  # full weight near desired follow distance
             (10.,                0.),
             (16.,                0.)
           ])
           v_weight = interp(_sec_to_travel(self.lead_1.dRel, CS.v_ego) or 0, v_weights.keys(), v_weights.values())
-
+         
           net_ratio = distance_ratio * (velocity_ratio ** v_weight)
-
           # rescale around 0 rather than 1.
           output_gb = net_ratio - 1
 
           # if going above the max configured PCC speed, slow.
           if available_speed_kph < 0:
             # linearly brake harder, hitting -1 at 10kph over
-            alt_gb = max(available_speed_kph, -10) / 10.0
-            output_gb = min(output_gb, alt_gb)
+            speed_limited_gb = max(available_speed_kph, -10) / 10.0
+            output_gb = min(output_gb, speed_limited_gb)
         # If no lead has been seen for a few seconds, accelerate.
         elif _current_time_millis() > self.lead_last_seen_time_ms + 3000:
           linear_factor = min(available_speed_kph, 5) / 5
