@@ -42,6 +42,7 @@ def get_can_parser(CP):
     ("HIGH_BEAM_FLASH", "STEERING_LEVERS", 0),
     ("ACC_SPEED_CONFIG_KPH", "DASHBOARD", 0),
     ("INCREMENTING_220", "LKAS_INDICATOR_1", -1),
+    ("LKAS_IS_GREEN", "LKAS_INDICATOR_1", 1),
   ]
 
   # It's considered invalid if it is not received for 10x the expected period (1/f).
