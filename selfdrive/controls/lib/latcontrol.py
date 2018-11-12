@@ -72,7 +72,7 @@ class LatControl(object):
     # TODO: this creates issues in replay when rewinding time: mpc won't run
     if self.last_mpc_ts < PL.last_md_ts:
       self.last_mpc_ts = PL.last_md_ts
-      self.angle_steers_des_prev = self.angle_steers_des_mpc
+      self.angle_steers_des_prev = angle_steers  #  self.angle_steers_des_mpc
 
       curvature_factor = VM.curvature_factor(v_ego)
 
@@ -118,9 +118,9 @@ class LatControl(object):
     else:
       # TODO: ideally we should interp, but for tuning reasons we keep the mpc solution
       # constant for 0.05s.
-      dt = min(cur_time - self.angle_steers_des_time, _DT_MPC + _DT) + _DT  # no greater than dt mpc + dt, to prevent too high extraps
+      dt = min(cur_time - self.angle_steers_des_time + _DT, _DT_MPC)   # no greater than dt mpc, to prevent overshooting 
       self.angle_steers_des = self.angle_steers_des_prev + (dt / _DT_MPC) * (self.angle_steers_des_mpc - self.angle_steers_des_prev)
-      #self.angle_steers_des = self.angle_steers_des_mpc
+      #self.angle_steers_des = ((4.0 * self.angle_steers_des + self.angle_steers_des_mpc) / 5.0
       steers_max = get_steer_max(VM.CP, v_ego)
       self.pid.pos_limit = steers_max
       self.pid.neg_limit = -steers_max
