@@ -1,18 +1,18 @@
 #!/usr/bin/env python
+import os
+import time
 
 # custom service run tasks every SLEEP_TIMER second(s)
 
-import time
-import subprocess
-
 POWER_OFF_TIMER = 1 # shut down after POWER_OFF_TIMER hours of no USB connection, set to 0 to disable this.
-SLEEP_TIMER = 5
-BAT_TEMP_LIMIT = 460
-BAT_CAP_LIMIT = 35
-POWER_OFF_BAT_LIMIT = 35
-RESTORE_CPU_FREQ_WHEN_BAT_CAP_AT = 5
+SLEEP_TIMER = 5 # sleep timer, in seconds, how often you would like the script to query the system status.
+BAT_TEMP_LIMIT = 460 # temp limit - 46 degree, match thermald.py, it stop charging when reach this temp level.
+BAT_CAP_LIMIT = 35 # battery limit (percentage), if battery capacity is lower than this then it will keep charging.
+RESTORE_CPU_FREQ_WHEN_BAT_CAP_AT = 5 # when battery reach this capacity, we turn cpu freq back on prepare for a shutdown
 
 def main(gctx=None):
+  # a few system optimisation, may only effect from next reboot
+  battery_optimisation()
 
   # when first execute
   set_max_cpu_freq(True)
@@ -21,7 +21,7 @@ def main(gctx=None):
   set_charging_status(True)
 
   prev_usb_status = get_usb_status()
-  sec_counter = 0
+  count = 0
   power_off_sec = 0
 
   # calculate power_off_sec value
@@ -59,17 +59,27 @@ def main(gctx=None):
         set_max_cpu_freq(cur_usb_status == 1)
         prev_usb_status = cur_usb_status
 
-    if power_off_sec > 0 and sec_counter >= power_off_sec:
+    if power_off_sec > 0 and count >= power_off_sec:
       set_max_cpu_freq(True)
       shutdown()
 
     if cur_usb_status == 0:
-      sec_counter = sec_counter + 1
+      count = count + 1
     else:
-      sec_counter = 0
+      count = 0
 
     time.sleep(SLEEP_TIMER)
 
+def battery_optimisation():
+  # a few system optimisation, may only effect from next reboot
+  # Wi-Fi (scanning always available) off
+  os.system('settings put global wifi_scan_always_enabled 0')
+  # disable notify the user of open networks.
+  os.system('settings put global wifi_networks_available_notification_on 0')
+  # keep wifi on during sleep only when plugged in
+  os.system('settings put global wifi_sleep_policy 1')
+  # disable nfc
+  os.system('LD_LIBRARY_PATH="" svc nfc disable')
 
 def shutdown():
   os.system('LD_LIBRARY_PATH="" svc power shutdown')
@@ -95,27 +105,19 @@ def set_charging_status(status):
     val = "1"
   else:
     val = "0"
-  subprocess.call(["echo", val, ">", "/sys/class/power_supply/battery/charging_enabled"])
+  os.system("echo " + val + " > " + "/sys/class/power_supply/battery/charging_enabled")
 
 def set_max_cpu_freq(ismax=True):
-  param = "{print $NF}"
-  if not ismax:
-    param = "{print $1}"
-
   for i in range(0, 4):
     cpuid = str(i)
-    try:
-      # fetch cpu's available max/min freq
-      proc = subprocess.Popen(
-        ["awk", param, "/sys/devices/system/cpu/cpu" + cpuid + "/cpufreq/scaling_available_frequencies"],
-        stdout=subprocess.PIPE)
-      freq = proc.stdout.read()
-      # set cpu's max freq to max/min available
-      print "Set cpu" , cpuid , " to " , freq
-      subprocess.call(["echo", freq, ">", "/sys/devices/system/cpu/cpu" + cpuid + "/freq/scaling_max_freq"])
+    if ismax:
+      file = '/sys/devices/system/cpu/cpu' + cpuid + '/cpufreq/cpuinfo_max_freq'
+    else:
+      file = '/sys/devices/system/cpu/cpu' + cpuid + '/cpufreq/cpuinfo_min_freq'
 
-    except subprocess.CalledProcessError, e:
-      print "Unable to extract cpu freq for cpu ", cpuid
+    with open(file) as f:
+      freq = str(f.read()).rstrip()
+      os.system("echo " + freq + " > " + "/sys/devices/system/cpu/cpu" + cpuid + "/cpufreq/scaling_max_freq")
 
 if __name__ == "__main__":
   main()
