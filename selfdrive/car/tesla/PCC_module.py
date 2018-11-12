@@ -473,24 +473,27 @@ class PCCController(object):
           pass
         # Try to stay 2 seconds behind lead, matching their speed.
         elif _is_present(self.lead_1):
-          # 0-ceneted curve of current vs desired distance to lead.
-          # Raised to ^3 to make an S curve. Then rescaled to make it softer.
-          d_factor = (self.lead_1.dRel - optimal_dist_m) ** 3 / optimal_dist_m ** 3
+          # S-curve of distance to lead vs desire to accelerate.
+          # Centered around (optimal_dist_m, 0)
+          d_offset = self.lead_1.dRel - optimal_dist_m
+          d_offset_sign = -1 if d_offset < 0 else 1
+          d_factor = d_offset_sign * d_offset ** 2 / optimal_dist_m ** 2
           if d_factor > 0:
             # Scale positive values to reach max accel at 2x optimal_dist_m.
-            d_factor *= (MAX_ACCEL_FACTOR / 2**3)
+            d_factor *= (MAX_ACCEL_FACTOR / 2**2)
           else:
             # Scale negative values to reach min accel at 1/2 optimal_dist_m
-            d_factor *= (MAX_DECEL_FACTOR / 0.5**3)
+            d_factor *= (MAX_DECEL_FACTOR / 0.5**2)
           weighted_d_ratio = 1 + d_factor
           weighted_d_ratio = clip(weighted_d_ratio, MAX_DECEL_RATIO, MAX_ACCEL_RATIO)
           
           # Ratio of our speed vs the lead's speed
           lead_absolute_velocity_ms = CS.v_ego + self.lead_1.vRel
-          velocity_ratio = lead_absolute_velocity_ms / max(CS.v_ego, 0.001)
+          velocity_ratio = lead_absolute_velocity_ms / max(CS.v_ego, 0.01)
           velocity_ratio = clip(velocity_ratio, MAX_DECEL_RATIO, MAX_ACCEL_RATIO)
           # Discount speed reading if the time til potential collision is great.
-          # This accounts for poor visual radar at distances.
+          # This accounts for poor visual radar at distances. It also means that
+          # at very low speed, 
           v_weights = OrderedDict([
             # seconds to cross distance : importance of relative speed
             (FOLLOW_TIME_S,        1.),
@@ -498,6 +501,7 @@ class PCCController(object):
             (FOLLOW_TIME_S * 5,    0.),  # zero weight when distant
             (FOLLOW_TIME_S * 6,    0.)
           ])
+          # TODO: decide better logic at v=0
           v_weight = interp(_sec_to_travel(self.lead_1.dRel, CS.v_ego) or 0, v_weights.keys(), v_weights.values())
           weighted_v_ratio = velocity_ratio ** v_weight
          
@@ -512,6 +516,7 @@ class PCCController(object):
             output_gb = min(output_gb, speed_limited_gb)
         # If no lead has been seen for a few seconds, accelerate.
         elif _current_time_millis() > self.lead_last_seen_time_ms + 3000:
+          # TODO: scale based on how long since sighting
           linear_factor = min(available_speed_kph, 5) / 5
           output_gb = 0.12 * linear_factor
 
