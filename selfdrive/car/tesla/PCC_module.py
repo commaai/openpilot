@@ -453,8 +453,12 @@ class PCCController(object):
     elif PCCModes.is_selected(ExperimentalMode(), CS.cstm_btns):
       output_gb = 0.0
       if enabled and self.enable_pedal_cruise:
-        MAX_ACCEL_RATIO = 1.09
-        MIN_ACCEL_RATIO = 0.7
+        # ratios are centered at 1, factors are centered at 0.
+        MAX_ACCEL_FACTOR = 0.09
+        MAX_ACCEL_RATIO = 1 + MAX_ACCEL_FACTOR
+        MAX_DECEL_FACTOR = -1.0
+        MAX_DECEL_RATIO = 1 + MAX_DECEL_FACTOR
+        
         self.b_pid = MPC_BRAKE_MULTIPLIER 
         optimal_dist_m = _safe_distance_m(CS.v_ego)
         available_speed_kph = self.pedal_speed_kph - CS.v_ego * CV.MS_TO_KPH
@@ -469,29 +473,37 @@ class PCCController(object):
           pass
         # Try to stay 2 seconds behind lead, matching their speed.
         elif _is_present(self.lead_1):
-          # ratio of current distance to lead vs desired distance to lead
-          distance_ratio = self.lead_1.dRel / optimal_dist_m
-          distance_ratio = clip(distance_ratio, MIN_ACCEL_RATIO, MAX_ACCEL_RATIO)
+          # 0-ceneted curve of current vs desired distance to lead.
+          # Raised to ^3 to make an S curve. Then rescaled to make it softer.
+          d_factor = (self.lead_1.dRel - optimal_dist_m) ** 3 / optimal_dist_m ** 3
+          if d_factor > 0:
+            # Scale positive values to reach max accel at 2x optimal_dist_m.
+            d_factor *= (MAX_ACCEL_FACTOR / 2**3)
+          else:
+            # Scale negative values to reach min accel at 1/2 optimal_dist_m
+            d_factor *= (MAX_DECEL_FACTOR / 0.5**3)
+          weighted_d_ratio = 1 + d_factor
+          weighted_d_ratio = clip(weighted_d_ratio, MAX_DECEL_RATIO, MAX_ACCEL_RATIO)
           
-          # ratio of our speed vs the lead's speed
+          # Ratio of our speed vs the lead's speed
           lead_absolute_velocity_ms = CS.v_ego + self.lead_1.vRel
           velocity_ratio = lead_absolute_velocity_ms / max(CS.v_ego, 0.001)
-          velocity_ratio = clip(velocity_ratio, MIN_ACCEL_RATIO, MAX_ACCEL_RATIO)
-          
+          velocity_ratio = clip(velocity_ratio, MAX_DECEL_RATIO, MAX_ACCEL_RATIO)
           # Discount speed reading if the time til potential collision is great.
           # This accounts for poor visual radar at distances.
           v_weights = OrderedDict([
             # seconds to cross distance : importance of relative speed
-            (FOLLOW_TIME_S,      1.),
-            (FOLLOW_TIME_S + 1,  1.),  # full weight near desired follow distance
-            (10.,                0.),
-            (16.,                0.)
+            (FOLLOW_TIME_S,        1.),
+            (FOLLOW_TIME_S * 1.5,  1.),  # full weight near desired follow distance
+            (FOLLOW_TIME_S * 5,    0.),  # zero weight when distant
+            (FOLLOW_TIME_S * 6,    0.)
           ])
           v_weight = interp(_sec_to_travel(self.lead_1.dRel, CS.v_ego) or 0, v_weights.keys(), v_weights.values())
+          weighted_v_ratio = velocity_ratio ** v_weight
          
-          net_ratio = distance_ratio * (velocity_ratio ** v_weight)
+          gb_ratio = weighted_d_ratio * weighted_v_ratio
           # rescale around 0 rather than 1.
-          output_gb = net_ratio - 1
+          output_gb = gb_ratio - 1
 
           # if going above the max configured PCC speed, slow.
           if available_speed_kph < 0:
