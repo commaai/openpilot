@@ -455,7 +455,7 @@ class PCCController(object):
     elif PCCModes.is_selected(ExperimentalMode(), CS.cstm_btns):
       output_gb = 0.0
       if enabled and self.enable_pedal_cruise:
-        MAX_ACCEL_RATIO = 1.07
+        MAX_ACCEL_RATIO = 1.09
         MIN_ACCEL_RATIO = 0.7
         self.b_pid = MPC_BRAKE_MULTIPLIER 
         optimal_dist_m = _safe_distance_m(CS.v_ego)
@@ -489,8 +489,8 @@ class PCCController(object):
           
           net_ratio = distance_ratio * (velocity_ratio ** v_weight)
           # Don't accelerate based on intermittent sightings
-          if self.continuous_lead_sightings < 10:
-            net_ratio = min(net_ratio, 1.0)
+          #if self.continuous_lead_sightings < 3:
+          #  net_ratio = min(net_ratio, 1.0)
             
           # rescale around 0 rather than 1.
           output_gb = net_ratio - 1
@@ -503,7 +503,7 @@ class PCCController(object):
         # If no lead has been seen for a few seconds, accelerate.
         elif _current_time_millis() > self.lead_last_seen_time_ms + 3000:
           linear_factor = min(available_speed_kph, 5) / 5
-          output_gb = 0.15 * linear_factor
+          output_gb = 0.12 * linear_factor
 
     ######################################################################################
     # Determine pedal "zero"
@@ -698,4 +698,7 @@ def _is_present(lead):
   return bool(lead and lead.dRel)
 
 def _sec_til_collision(lead):
-  return lead.dRel / lead.vRel
+  if _is_present(lead) and lead.vRel != 0:
+    return lead.dRel / lead.vRel
+  else:
+    return 60  # Arbitrary, but better than MAXINT because we can still do math on it.
