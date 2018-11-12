@@ -195,7 +195,9 @@ class CarInterface(object):
       ret.gearShifter = self.CS.gear_shifter_cluster
     else:
       ret.gearShifter = self.CS.gear_shifter
-
+    
+    ret.gasbuttonstatus = self.CS.cstm_btns.get_button_status("gas")
+    ret.readdistancelines = self.CS.read_distance_lines
     # gas pedal
     ret.gas = self.CS.car_gas
     ret.gasPressed = self.CS.pedal_gas > 1e-3   # tolerance to avoid false press reading
