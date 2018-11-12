@@ -475,15 +475,9 @@ class PCCController(object):
           weighted_d_ratio = _weighted_distance_ratio(self.lead_1, CS.v_ego, MAX_DECEL_RATIO, MAX_ACCEL_RATIO)
           weighted_v_ratio = _weighted_velocity_ratio(self.lead_1, CS.v_ego, MAX_DECEL_RATIO, MAX_ACCEL_RATIO)
          
-          gb_ratio = weighted_d_ratio * weighted_v_ratio
+          gas_brake_ratio = weighted_d_ratio * weighted_v_ratio
           # rescale around 0 rather than 1.
-          output_gb = gb_ratio - 1
-
-          # if going above the max configured PCC speed, slow.
-          if available_speed_kph < 0:
-            # linearly brake harder, hitting -1 at 10kph over
-            speed_limited_gb = max(available_speed_kph, -10) / 10.0
-            output_gb = min(output_gb, speed_limited_gb)
+          output_gb = gas_brake_ratio - 1
         # If no lead has been seen for a few seconds, accelerate to max speed.
         elif _current_time_millis() > self.lead_last_seen_time_ms + 2000:
           # An acceleration factor that drops off as we aproach max speed.
@@ -493,6 +487,12 @@ class PCCController(object):
           time_factor = (_current_time_millis() - self.lead_last_seen_time_ms - 2000) / 4000
           time_factor = clip(time_factor, 0, 1)
           output_gb = 0.12 * max_speed_factor * time_factor
+        # if going above the max configured PCC speed, slow.
+        if available_speed_kph < 0:
+          # linearly brake harder, hitting -1 at 10kph over
+          speed_limited_gb = max(available_speed_kph, -10) / 10.0
+          # Brake at least this hard.
+          output_gb = min(output_gb, speed_limited_gb)
 
     ######################################################################################
     # Determine pedal "zero"
