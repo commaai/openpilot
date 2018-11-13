@@ -1,7 +1,6 @@
 from selfdrive.car.tesla import teslacan
 #from selfdrive.controls.lib.pid import PIController
 from selfdrive.car.tesla.longcontrol_tesla import LongControl, LongCtrlState, STARTING_TARGET_SPEED
-#from selfdrive.car.tesla.interface import tesla_compute_gb
 from selfdrive.car.tesla import teslacan
 from common.numpy_fast import clip, interp
 from selfdrive.services import service_list
@@ -10,7 +9,6 @@ from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.speed_smoother import speed_smoother
 from common.realtime import sec_since_boot
-from common.numpy_fast import clip
 import selfdrive.messaging as messaging
 import os
 import subprocess
@@ -18,6 +16,7 @@ import time
 import zmq
 import math
 import numpy as np
+from collections import OrderedDict
 
 
 MPC_BRAKE_MULTIPLIER = 6.
@@ -33,7 +32,9 @@ ACCEL_HYST_GAP = 0.5  # don't change accel command for small oscilalitons within
 PEDAL_MAX_UP = 4.
 PEDAL_MAX_DOWN = 150.
 #BB
-MIN_SAFE_DIST_M = 4. # min safe distance in meters
+# min safe distance in meters. This sounds too large, but visual radar sucks
+# at estimating short distances and rarely gives a reading below 10m.
+MIN_SAFE_DIST_M = 10.
 FRAMES_PER_SEC = 20.
 
 SPEED_UP = 3. / FRAMES_PER_SEC   # 2 m/s = 7.5 mph = 12 kph 
@@ -44,64 +45,105 @@ MAX_PEDAL_VALUE = 112.
 #BBTODO: move the vehicle variables; maybe make them speed variable
 TORQUE_LEVEL_ACC = 0.
 TORQUE_LEVEL_DECEL = -30.
-FOLLOW_UP_TIME = 1.5 #time in seconds to follow car in front
+FOLLOW_TIME_S = 1.8  # time in seconds to follow car in front
 MIN_PCC_V = 0. #
 MAX_PCC_V = 170.
 
 MIN_CAN_SPEED = 0.3  #TODO: parametrize this in car interface
 
-
 AWARENESS_DECEL = -0.2     # car smoothly decel at .2m/s^2 when user is distracted
 
-# lookup tables VS speed to determine min and max accels in cruise
-# make sure these accelerations are smaller than mpc limits
-_A_CRUISE_MIN_V  = [-6.0, -5.0, -4.2, -3.0, -1.90]
-_A_CRUISE_MIN_BP = [   0., 5.,  10., 20.,  40.]
+# Map of speed to max allowed decel.
+# Make sure these accelerations are smaller than mpc limits.
+_A_CRUISE_MIN = OrderedDict([
+  (0.0, -6.0),
+  (5.0, -5.0),
+  (10., -4.2),
+  (20., -3.0),
+  (40., -1.9)])
 
-# need fast accel at very low speed for stop and go
-# make sure these accelerations are smaller than mpc limits
-_A_CRUISE_MAX_V = [1.0, 1.0, .8, .6, .4]
-_A_CRUISE_MAX_V_FOLLOWING = [1.0, 1.0, .8, .6, .4]
-_A_CRUISE_MAX_BP = [0.,  5., 10., 20., 40.]
-
+# Map of speed to max allowed acceleration.
+# Need higher accel at very low speed for stop and go.
+# make sure these accelerations are smaller than mpc limits.
+_A_CRUISE_MAX = OrderedDict([
+  (0.0, 1.0),
+  (5.0, 0.8),
+  (10., 0.7),
+  (20., 0.6),
+  (40., 0.4)])
+  
 # Lookup table for turns
-_A_TOTAL_MAX_V = [1.5, 1.5, 1.5]
-_A_TOTAL_MAX_BP = [0., 20., 40.]
-
-_FCW_A_ACT_V = [-3., -2.]
-_FCW_A_ACT_BP = [0., 30.]
-
-# max acceleration allowed in acc, which happens in restart
-A_ACC_MAX = max(_A_CRUISE_MAX_V_FOLLOWING)
+_A_TOTAL_MAX = OrderedDict([
+  (0.0, 1.5),
+  (20., 1.5),
+  (40., 1.5)])
 
 _DT = 0.05    # 20Hz in our case, since we don't want to process more than once the same live20 message
-_DT_MPC = 0.05  # 20Hz 
+_DT_MPC = 0.05  # 20Hz
+
+class Mode(object):
+  label = None
+  
+class OffMode(Mode):
+  label = 'OFF'
+
+class OpMode(Mode):
+  label = 'OP'
+
+class FollowMode(Mode):
+  label = 'FOLLOW'
+
+class ExperimentalMode(Mode):
+  label = 'EXPRMNT'
+  
+class PCCModes(object):
+  _all_modes = [OffMode(), OpMode(), FollowMode(), ExperimentalMode()]
+  _mode_map = {mode.label : mode for mode in _all_modes}
+  BUTTON_NAME = 'pedal'
+  BUTTON_ABREVIATION = 'PDL'
+  
+  @classmethod
+  def from_label(cls, label):
+    return cls._mode_map.get(label, OffMode())
+    
+  @classmethod
+  def from_buttons(cls, cstm_btns):
+    return cls.from_label(cstm_btns.get_button_label2(cls.BUTTON_NAME))
+    
+  @classmethod
+  def is_selected(cls, mode, cstm_butns):
+    """Tell if the UI buttons are set to the given mode"""
+    return type(mode) == type(cls.from_buttons(cstm_butns))
+    
+  @classmethod
+  def labels(cls):
+    return [mode.label for mode in cls._all_modes]
+    
 
 def tesla_compute_gb(accel, speed):
   return float(accel)  / 3.
 
-def calc_cruise_accel_limits(v_ego, following):
-  a_cruise_min = interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V)
+def calc_cruise_accel_limits(CS):
+  a_cruise_min = interp(CS.v_ego, _A_CRUISE_MIN.keys(), _A_CRUISE_MIN.values())
 
-  if following:
-    a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V_FOLLOWING)
-  else:
-    a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V)
-  return np.vstack([a_cruise_min, a_cruise_max])
+  a_cruise_max = interp(CS.v_ego, _A_CRUISE_MAX.keys(), _A_CRUISE_MAX.values())
+    
+  a_while_turning_max = max_accel_in_turns(CS.v_ego, CS.angle_steers, CS.CP)
+  a_cruise_max = min(a_cruise_max, a_while_turning_max)
+  
+  return float(a_cruise_min), float(a_cruise_max)
 
 
-def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
+def max_accel_in_turns(v_ego, angle_steers, CP):
   """
   This function returns a limited long acceleration allowed, depending on the existing lateral acceleration
   this should avoid accelerating when losing the target in turns
   """
 
-  a_total_max = interp(v_ego, _A_TOTAL_MAX_BP, _A_TOTAL_MAX_V)
+  a_total_max = interp(v_ego, _A_TOTAL_MAX.keys(), _A_TOTAL_MAX.values())
   a_y = v_ego**2 * angle_steers * CV.DEG_TO_RAD / (CP.steerRatio * CP.wheelbase)
   a_x_allowed = math.sqrt(max(a_total_max**2 - a_y**2, 0.))
-
-  a_target[1] = min(a_target[1], a_x_allowed)
-  return a_target
+  return a_x_allowed
 
 
 class PCCState(object):
@@ -147,19 +189,16 @@ class PCCController(object):
     self.last_cruise_stalk_pull_time = 0
     self.prev_pcm_acc_status = 0
     self.prev_cruise_buttons = CruiseButtons.IDLE
-    self.pedal_hardware_present = False
-    self.pedal_hardware_first_check = True
     self.pedal_speed_kph = 0.
     self.pedal_idx = 0
     self.accel_steady = 0.
     self.prev_tesla_accel = 0.
     self.prev_tesla_pedal = 0.
-    self.user_pedal_state = 0
+    self.pedal_interceptor_state = 0
     self.torqueLevel_last = 0.
     self.prev_v_ego = 0.
     self.PedalForZeroTorque = 18. #starting number, works on my S85
     self.lastTorqueForPedalForZeroTorque = TORQUE_LEVEL_DECEL
-    self.follow_time = FOLLOW_UP_TIME # in seconds
     self.v_pid = 0.
     self.a_pid = 0.
     self.b_pid = 0.
@@ -184,40 +223,38 @@ class PCCController(object):
     self.last_l100_ts = None
     self.md_ts = None
     self.l100_ts = None
+    self.lead_last_seen_time_ms = 0
+    self.continuous_lead_sightings = 0
 
 
   def reset(self, v_pid):
     if self.LoC:
       self.LoC.reset(v_pid)
 
-  def update_stat(self,CS, enabled, sendcan):
-    if self.LoC == None:
+  def update_stat(self, CS, enabled, sendcan):
+    if not self.LoC:
       self.LoC = LongControl(CS.CP, tesla_compute_gb)
 
 
     can_sends = []
-    #BBTODO: a better way to engage the pedal early and reset its CAN
-    # on first brake press check if hardware present; being on CAN2 values are not included in fingerprinting
-    self.pedal_hardware_present = CS.pedal_hardware_present
-    
-    if not self.pedal_hardware_present:
-      if (CS.cstm_btns.get_button_status("pedal")>0):
-        #no pedal hardware, disable button
-        CS.cstm_btns.set_button_status("pedal",0)
+    if CS.pedal_interceptor_available and not CS.cstm_btns.get_button_status("pedal"):
+      # pedal hardware, enable button
+      CS.cstm_btns.set_button_status("pedal", 1)
+      print "enabling pedal"
+    elif not CS.pedal_interceptor_available:
+      if CS.cstm_btns.get_button_status("pedal"):
+        # no pedal hardware, disable button
+        CS.cstm_btns.set_button_status("pedal", 0)
         print "disabling pedal"
-      print "no pedal hardware"
+      print "Pedal unavailable."
       return
-    if self.pedal_hardware_present:
-      if (CS.cstm_btns.get_button_status("pedal")==0):
-        #pedal hardware, enable button
-        CS.cstm_btns.set_button_status("pedal",1)
-        print "enabling pedal"
+    
     # check if we had error before
-    if self.user_pedal_state != CS.user_pedal_state:
-      self.user_pedal_state = CS.user_pedal_state
-      CS.cstm_btns.set_button_status("pedal", 1 if self.user_pedal_state > 0 else 0)
-      if self.user_pedal_state > 0:
-        CS.UE.custom_alert_message(3, "Pedal Interceptor Error (%s)" % self.user_pedal_state, 150, 4)
+    if self.pedal_interceptor_state != CS.pedal_interceptor_state:
+      self.pedal_interceptor_state = CS.pedal_interceptor_state
+      CS.cstm_btns.set_button_status("pedal", 1 if self.pedal_interceptor_state > 0 else 0)
+      if self.pedal_interceptor_state > 0:
+        CS.UE.custom_alert_message(3, "Pedal Interceptor Error (%s)" % self.pedal_interceptor_state, 150, 4)
         # send reset command
         idx = self.pedal_idx
         self.pedal_idx = (self.pedal_idx + 1) % 16
@@ -227,8 +264,8 @@ class PCCController(object):
     if CS.brake_pressed and self.enable_pedal_cruise:
       self.enable_pedal_cruise = False
       self.reset(0.)
-      CS.UE.custom_alert_message(3,"PDL Disabled", 150, 4)
-      CS.cstm_btns.set_button_status("pedal",1)
+      CS.UE.custom_alert_message(3, "PDL Disabled", 150, 4)
+      CS.cstm_btns.set_button_status("pedal", 1)
       print "brake pressed"
 
     prev_enable_pedal_cruise = self.enable_pedal_cruise
@@ -241,9 +278,9 @@ class PCCController(object):
         self.prev_cruise_buttons != CruiseButtons.MAIN):
       double_pull = curr_time_ms - self.last_cruise_stalk_pull_time < 750
       self.last_cruise_stalk_pull_time = curr_time_ms
-      ready = (CS.cstm_btns.get_button_status("pedal") > PCCState.OFF and
-               enabled and
-               CruiseState.is_off(CS.pcm_acc_status))
+      ready = (CS.cstm_btns.get_button_status("pedal") > PCCState.OFF
+               and enabled
+               and CruiseState.is_off(CS.pcm_acc_status))
       if ready and double_pull:
         # A double pull enables ACC. updating the max ACC speed if necessary.
         self.enable_pedal_cruise = True
@@ -256,8 +293,8 @@ class PCCController(object):
       self.pedal_speed_kph = 0. 
       self.last_cruise_stalk_pull_time = 0
     # Handle pressing up and down buttons.
-    elif (self.enable_pedal_cruise and 
-          CS.cruise_buttons !=self.prev_cruise_buttons):
+    elif (self.enable_pedal_cruise 
+          and CS.cruise_buttons != self.prev_cruise_buttons):
       # Real stalk command while PCC is already enabled. Adjust the max PCC
       # speed if necessary. 
       actual_speed_kph = CS.v_ego * CV.MS_TO_KPH
@@ -272,7 +309,7 @@ class PCCController(object):
       # Clip PCC speed between 0 and 170 KPH.
       self.pedal_speed_kph = clip(self.pedal_speed_kph, MIN_PCC_V, MAX_PCC_V)
     # If something disabled cruise control, disable PCC too
-    elif self.enable_pedal_cruise and CS.pcm_acc_status != 0:
+    elif self.enable_pedal_cruise and CS.pcm_acc_status:
       self.enable_pedal_cruise = False
     
     # Notify if PCC was toggled
@@ -299,9 +336,8 @@ class PCCController(object):
     cur_time = sec_since_boot()
     idx = self.pedal_idx
     self.pedal_idx = (self.pedal_idx + 1) % 16
-    if not self.pedal_hardware_present or not enabled:
+    if not CS.pedal_interceptor_available or not enabled:
       return 0., 0, idx
-    following = False
     # Alternative speed decision logic that uses the lead car's distance
     # and speed more directly.
     # Bring in the lead car distance from the Live20 feed
@@ -313,6 +349,11 @@ class PCCController(object):
           break
     if l20 is not None:
       self.lead_1 = l20.live20.leadOne
+      if _is_present(self.lead_1):
+        self.lead_last_seen_time_ms = _current_time_millis()
+        self.continuous_lead_sightings += 1
+      else:
+        self.continuous_lead_sightings = 0
       self.md_ts = l20.live20.mdMonoTime
       self.l100_ts = l20.live20.l100MonoTime
 
@@ -327,7 +368,7 @@ class PCCController(object):
     # once the speed is detected we have to use our own PID to determine
     # how much accel and break we have to do
     ####################################################################
-    if (CS.cstm_btns.get_button_label2_index("pedal") == 1):
+    if PCCModes.is_selected(FollowMode(), CS.cstm_btns):
       self.v_pid, self.b_pid = self.calc_follow_speed(CS)
       # cruise speed can't be negative even is user is distracted
       self.v_pid = max(self.v_pid, 0.)
@@ -336,15 +377,15 @@ class PCCController(object):
 
       enabled = self.enable_pedal_cruise and self.LoC.long_control_state in [LongCtrlState.pid, LongCtrlState.stopping]
 
-      if self.enable_pedal_cruise: # enabled:
-        accel_limits = map(float, calc_cruise_accel_limits(CS.v_ego, following))
+      if self.enable_pedal_cruise:
+        accel_min, accel_max = calc_cruise_accel_limits(CS)
         # TODO: make a separate lookup for jerk tuning
-        jerk_limits = [min(-0.1, accel_limits[0]), max(0.1, accel_limits[1])]
-        accel_limits = limit_accel_in_turns(CS.v_ego, CS.angle_steers, accel_limits, CS.CP)
+        jerk_min = min(-0.1, accel_min)
+        jerk_max = max(0.1, accel_max)
         self.v_cruise, self.a_cruise = speed_smoother(self.v_acc_start, self.a_acc_start,
                                                       self.v_pid,
-                                                      accel_limits[1], accel_limits[0],
-                                                      jerk_limits[1], jerk_limits[0],
+                                                      accel_max, accel_min,
+                                                      jerk_max, jerk_min,
                                                       _DT_MPC)
         
         # cruise speed can't be negative even is user is distracted
@@ -353,7 +394,6 @@ class PCCController(object):
         self.a_acc = self.a_cruise
 
         self.v_acc_future = self.v_pid
-        vTargetFuture = self.v_acc_future
 
         self.v_acc_start = self.v_acc_sol
         self.a_acc_start = self.a_acc_sol
@@ -367,14 +407,13 @@ class PCCController(object):
 
         # we will try to feed forward the pedal position.... we might want to feed the last output_gb....
         # it's all about testing now.
-        aTarget = self.a_acc_sol
         vTarget = clip(self.v_acc_sol, 0, self.v_pid)
-        vTargetFuture = clip(vTargetFuture, 0, self.v_pid)
+        self.vTargetFuture = clip(self.v_acc_future, 0, self.v_pid)
 
         t_go, t_brake = self.LoC.update(self.enable_pedal_cruise, CS.v_ego, CS.brake_pressed != 0, CS.standstill, False, 
-                  self.v_pid , vTarget, vTargetFuture, aTarget, CS.CP, None)
+                  self.v_pid , vTarget, self.vTargetFuture, self.a_acc_sol, CS.CP, None)
         output_gb = t_go - t_brake
-        print "Output GB Follow:",output_gb
+        print "Output GB Follow:", output_gb
       else:
         self.LoC.reset(CS.v_ego)
         print "PID reset"
@@ -392,18 +431,69 @@ class PCCController(object):
         self.v_acc_sol = reset_speed
         self.a_acc_sol = reset_accel
         self.v_pid = reset_speed
-        
 
-      
     ##############################################################
-    # this mode (Lng MPC) uses the longitudinal MPC built in OP
+    # This mode uses the longitudinal MPC built in OP
     #
     # we use the values from actuator.accel and actuator.brake
     ##############################################################
-    elif (CS.cstm_btns.get_button_label2("pedal") == "Lng MPC"):
+    elif PCCModes.is_selected(OpMode(), CS.cstm_btns):
       self.b_pid = MPC_BRAKE_MULTIPLIER
       output_gb = actuators.gas - actuators.brake
 
+    ##############################################################
+    # This is an experimental mode that is probably broken.
+    #
+    # Don't use it.
+    #
+    # Ratios are centered at 1. They can be multiplied together.
+    # Factors are centered around 0. They can be multiplied by constants.
+    # For example +9% is a 1.06 ratio or 0.09 factor.
+    ##############################################################
+    elif PCCModes.is_selected(ExperimentalMode(), CS.cstm_btns):
+      output_gb = 0.0
+      if enabled and self.enable_pedal_cruise:
+        MAX_DECEL_RATIO = 0
+        MAX_ACCEL_RATIO = 1.1
+        self.b_pid = MPC_BRAKE_MULTIPLIER 
+        available_speed_kph = self.pedal_speed_kph - CS.v_ego * CV.MS_TO_KPH
+        # Hold accel if radar gives intermittent readings at great distance.
+        # Makes the car less skittish when first making radar contact.
+        if (_is_present(self.lead_1)
+            and self.continuous_lead_sightings < 8
+            and _sec_til_collision(self.lead_1) > 3
+            and self.lead_1.dRel > 60):
+          output_gb = self.last_output_gb
+        # Hold speed in turns if no car is seen
+        elif CS.angle_steers >= 5.0 and not _is_present(self.lead_1):
+          pass
+        # Try to stay 2 seconds behind lead, matching their speed.
+        elif _is_present(self.lead_1):
+          weighted_d_ratio = _weighted_distance_ratio(self.lead_1, CS.v_ego, MAX_DECEL_RATIO, MAX_ACCEL_RATIO)
+          weighted_v_ratio = _weighted_velocity_ratio(self.lead_1, CS.v_ego, MAX_DECEL_RATIO, MAX_ACCEL_RATIO)
+          # Don't bother decelerating if the lead is already pulling away
+          if weighted_d_ratio < 1 and weighted_v_ratio > 1:
+            gas_brake_ratio = 1
+          else:
+            gas_brake_ratio = weighted_d_ratio * weighted_v_ratio
+          # rescale around 0 rather than 1.
+          output_gb = gas_brake_ratio - 1
+        # If no lead has been seen recently, accelerate to max speed.
+        else:
+          # An acceleration factor that drops off as we aproach max speed.
+          max_speed_factor = min(available_speed_kph, 3) / 3
+          # An acceleration factor that increases as time passes without seeing
+          # a lead car.
+          time_factor = (_current_time_millis() - self.lead_last_seen_time_ms) / 3000
+          time_factor = clip(time_factor, 0, 1)
+          output_gb = 0.14 * max_speed_factor * time_factor
+        # If going above the max configured PCC speed, slow. This should always
+        # be in force so it is not part of the if/else block above.
+        if available_speed_kph < 0:
+          # linearly brake harder, hitting -1 at 10kph over
+          speed_limited_gb = max(available_speed_kph, -10) / 10.0
+          # This is a minimum braking amount. The logic above may ask for more.
+          output_gb = min(output_gb, speed_limited_gb)
 
     ######################################################################################
     # Determine pedal "zero"
@@ -428,10 +518,10 @@ class PCCController(object):
 
     #if the speed if over 5mpg, the "zero" is at PedalForZeroTorque otherwise it at zero
     pedal_zero = 0.
-    if (CS.v_ego >= 5.* CV.MPH_TO_MS):
+    if CS.v_ego >= 5.* CV.MPH_TO_MS:
       pedal_zero = self.PedalForZeroTorque
-    tesla_brake = clip((1. - apply_brake) * pedal_zero,0,pedal_zero)
-    tesla_accel = clip(apply_accel * MAX_PEDAL_VALUE,0,MAX_PEDAL_VALUE - tesla_brake)
+    tesla_brake = clip((1. - apply_brake) * pedal_zero, 0, pedal_zero)
+    tesla_accel = clip(apply_accel * MAX_PEDAL_VALUE, 0, MAX_PEDAL_VALUE - tesla_brake)
     tesla_pedal = tesla_brake + tesla_accel
 
     tesla_pedal, self.accel_steady = accel_hysteresis(tesla_pedal, self.accel_steady, enabled)
@@ -448,11 +538,10 @@ class PCCController(object):
     self.last_md_ts = self.md_ts
     self.last_l100_ts = self.l100_ts
 
-    return self.prev_tesla_pedal,enable_pedal,idx
+    return self.prev_tesla_pedal, enable_pedal, idx
 
   # function to calculate the cruise speed based on a safe follow distance
   def calc_follow_speed(self, CS):
-    current_time_ms = _current_time_millis()
      # Make sure we were able to populate lead_1.
     if self.lead_1 is None:
       return None
@@ -461,19 +550,18 @@ class PCCController(object):
     # Grab the relative speed.
     rel_speed = self.lead_1.vRel * CV.MS_TO_KPH
     # v_ego is in m/s, so safe_distance is in meters.
-    safe_dist_m = max(CS.v_ego * self.follow_time, MIN_SAFE_DIST_M)
+    safe_dist_m = _safe_distance_m(self.lead_1.vRel)
     # Current speed in kph
     actual_speed = CS.v_ego * CV.MS_TO_KPH
-    available_speed = self.pedal_speed_kph - actual_speed
     # speed and brake to issue
-    new_speed = max(actual_speed,self.last_speed)
+    new_speed = max(actual_speed, self.last_speed)
     new_brake = 1.
     # debug msg
     msg = None
     msg2 = " *** UNKNOWN *** "
 
-    if (self.last_md_ts == self.md_ts) or (self.last_l100_ts == self.l100_ts):
-      #no radar update, so just keep doing what we're doing
+    if self.last_md_ts == self.md_ts or self.last_l100_ts == self.l100_ts:
+      # no radar update, so just keep doing what we're doing
       new_speed = self.last_speed
       new_brake = self.last_brake
       msg2 = "No change - No Data"
@@ -483,11 +571,9 @@ class PCCController(object):
         CS.UE.custom_alert_message(2, "%s [%s]" % (msg2, int(new_speed*CV.KPH_TO_MPH)), 6, 0)
       else:
         print msg2
-      return new_speed * CV.KPH_TO_MS , new_brake
-    #print "dRel: ", self.lead_1.dRel," yRel: ", self.lead_1.yRel, " vRel: ", self.lead_1.vRel, " aRel: ", self.lead_1.aRel, " vLead: ", self.lead_1.vLead, " vLeadK: ", self.lead_1.vLeadK, " aLeadK: ",     self.lead_1.aLeadK
+      return new_speed * CV.KPH_TO_MS, new_brake
 
     ###   Logic to determine best cruise speed ###
-
     if self.enable_pedal_cruise:
       # If cruise is set to faster than the max speed, slow down
       if lead_dist == 0 and new_speed != self.pedal_speed_kph:
@@ -495,9 +581,9 @@ class PCCController(object):
         msg2 = "LD = 0, V = max"
         new_speed = self.pedal_speed_kph
         new_brake = 2.
-      # If we have a populated lead_distance
+      # If we are turning without danger, hold speed.
       # TODO: make angle dependent on speed
-      elif (lead_dist == 0 or lead_dist >= safe_dist_m) and CS.angle_steers >= 5.0:
+      elif CS.angle_steers >= 5.0 and _distance_is_safe(CS.v_ego, self.lead_1):
         new_speed = self.last_speed
         msg = "Safe distance & turning: steady speed"
         msg2 = "LD = 0 or safe, A > 5, V= cnst"
@@ -590,3 +676,80 @@ class PCCController(object):
         print msg2
 
     return new_speed * CV.KPH_TO_MS , new_brake
+
+def _safe_distance_m(v_ms):
+  return max(FOLLOW_TIME_S * v_ms, MIN_SAFE_DIST_M)
+  
+def _distance_is_safe(v_ego_ms, lead):
+  lead_too_close = bool(_is_present(lead) and lead.dRel <= _safe_distance_m(v_ego_ms))
+  return not lead_too_close
+
+def _is_present(lead):
+  return bool(lead and lead.dRel)
+
+def _sec_til_collision(lead):
+  if _is_present(lead) and lead.vRel != 0:
+    return lead.dRel / lead.vRel
+  else:
+    return 60  # Arbitrary, but better than MAXINT because we can still do math on it.
+    
+def _sec_to_travel(positive_distance, speed):
+  if speed > 0:
+    return positive_distance / speed
+  else:
+    return 60*60  # 1 hour, an arbitrary big time.
+
+def _weighted_distance_ratio(lead, v_ego, max_decel_ratio, max_accel_ratio):
+  """Decide how to accel/decel based on how far away the lead is.
+  
+  Args:
+    ...
+    max_decel_ratio: a number between 0 and 1 that limits deceleration.
+    max_accel_ratio: a number between 1 and 2 that limits acceleration.
+  
+  Returns:
+    0 to 1: deceleration suggested to increase distance.
+    1:      no change needed.
+    1 to 2: acceleration suggested to decrease distance.
+  """
+  optimal_dist_m = _safe_distance_m(v_ego)
+  # Scale to use max accel outside of 2x optimal_dist_m
+  # and max decel within 1/3 optimal_dist_m.
+  d_weights = OrderedDict([
+    # relative distance : acceleration ratio
+    (0,                max_decel_ratio),
+    (optimal_dist_m/3, max_decel_ratio),
+    (optimal_dist_m*1, 1),
+    (optimal_dist_m*2, max_accel_ratio),
+    (optimal_dist_m*3, max_accel_ratio)])
+  return  interp(lead.dRel, d_weights.keys(), d_weights.values())
+  
+def _weighted_velocity_ratio(lead, v_ego, max_decel_ratio, max_accel_ratio):
+  """Decide how to accel/decel based on how fast the lead is.
+  
+  Args:
+    ...
+    max_decel_ratio: a number between 0 and 1 that limits deceleration.
+    max_accel_ratio: a number between 1 and 2 that limits acceleration.
+  
+  Returns:
+    0 to 1: deceleration suggested to match speed.
+    1:      no change needed.
+    1 to 2: acceleration suggested to match speed.
+  """
+  lead_absolute_velocity_ms = v_ego + lead.vRel
+  # Ratio of our speed vs the lead's speed
+  velocity_ratio = lead_absolute_velocity_ms / max(v_ego, 0.01)
+  velocity_ratio = clip(velocity_ratio, max_decel_ratio, max_accel_ratio)
+  # Discount speed reading if the time til potential collision is great.
+  # This accounts for poor visual radar at distances. It also means that
+  # at very low speed, distance logic dominates.
+  v_weights = OrderedDict([
+    # seconds to travel distance : importance of relative speed
+    (FOLLOW_TIME_S,        1.),
+    (FOLLOW_TIME_S * 1.5,  1.),  # full weight near desired follow distance
+    (FOLLOW_TIME_S * 5,    0.),  # zero weight when distant
+    (FOLLOW_TIME_S * 6,    0.)
+  ])
+  v_weight = interp(_sec_to_travel(lead.dRel, v_ego), v_weights.keys(), v_weights.values())
+  return velocity_ratio ** v_weight

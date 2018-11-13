@@ -33,6 +33,9 @@ class ACCMode(object):
   ON   = _Mode(label="on",   autoresume=False, state=ACCState.STANDBY)
   AUTO = _Mode(label="auto", autoresume=True,  state=ACCState.STANDBY)
   
+  BUTTON_NAME = 'acc'
+  BUTTON_ABREVIATION = 'ACC'
+  
   # Toggle order: OFF -> ON -> AUTO -> OFF
   _all_modes = [OFF, ON, AUTO]
   for index, mode in enumerate(_all_modes):
@@ -45,7 +48,7 @@ class ACCMode(object):
     return cls._label_to_mode.get(label, cls.OFF)  # Default to OFF.
       
   @ classmethod
-  def get_labels(cls):
+  def labels(cls):
     return [mode.label for mode in cls._all_modes]
 
 def _current_time_millis():
@@ -86,9 +89,9 @@ class ACCController(object):
     # cruise control should be enabled. Twice in .75 seconds counts as a double
     # pull.
     self.prev_enable_adaptive_cruise = self.enable_adaptive_cruise
-    acc_string = CS.cstm_btns.get_button_label2("acc")
+    acc_string = CS.cstm_btns.get_button_label2(ACCMode.BUTTON_NAME)
     acc_mode = ACCMode.from_label(acc_string)
-    CS.cstm_btns.get_button("acc").btn_label2 = acc_mode.label
+    CS.cstm_btns.get_button(ACCMode.BUTTON_NAME).btn_label2 = acc_mode.label
     self.autoresume = acc_mode.autoresume
     curr_time_ms = _current_time_millis()
     # Handle pressing the enable button.
@@ -96,7 +99,7 @@ class ACCController(object):
         self.prev_cruise_buttons != CruiseButtons.MAIN):
       double_pull = curr_time_ms - self.last_cruise_stalk_pull_time < 750
       self.last_cruise_stalk_pull_time = curr_time_ms
-      ready = (CS.cstm_btns.get_button_status("acc") > ACCState.OFF
+      ready = (CS.cstm_btns.get_button_status(ACCMode.BUTTON_NAME) > ACCState.OFF
                and enabled
                and CruiseState.is_enabled_or_standby(CS.pcm_acc_status)
                and CS.v_ego > self.MIN_CRUISE_SPEED_MS)
@@ -133,20 +136,20 @@ class ACCController(object):
     # Notify if ACC was toggled
     if self.prev_enable_adaptive_cruise and not self.enable_adaptive_cruise:
       CS.UE.custom_alert_message(3, "ACC Disabled", 150, 4)
-      CS.cstm_btns.set_button_status("acc", ACCState.STANDBY)
+      CS.cstm_btns.set_button_status(ACCMode.BUTTON_NAME, ACCState.STANDBY)
     elif self.enable_adaptive_cruise:
-      CS.cstm_btns.set_button_status("acc", ACCState.ENABLED)
+      CS.cstm_btns.set_button_status(ACCMode.BUTTON_NAME, ACCState.ENABLED)
       if not self.prev_enable_adaptive_cruise:
         CS.UE.custom_alert_message(2, "ACC Enabled", 150)
 
     # Update the UI to show whether the current car state allows ACC.
-    if CS.cstm_btns.get_button_status("acc") in [ACCState.STANDBY, ACCState.NOT_READY]:
+    if CS.cstm_btns.get_button_status(ACCMode.BUTTON_NAME) in [ACCState.STANDBY, ACCState.NOT_READY]:
       if (enabled
           and CruiseState.is_enabled_or_standby(CS.pcm_acc_status)
           and CS.v_ego > self.MIN_CRUISE_SPEED_MS):
-        CS.cstm_btns.set_button_status("acc", ACCState.STANDBY)
+        CS.cstm_btns.set_button_status(ACCMode.BUTTON_NAME, ACCState.STANDBY)
       else:
-        CS.cstm_btns.set_button_status("acc", ACCState.NOT_READY)
+        CS.cstm_btns.set_button_status(ACCMode.BUTTON_NAME, ACCState.NOT_READY)
           
     # Update prev state after all other actions.
     self.prev_cruise_buttons = CS.cruise_buttons
@@ -170,7 +173,6 @@ class ACCController(object):
   # Decide which cruise control buttons to simluate to get the car to the
   # desired speed.
   def update_acc(self, enabled, CS, frame, actuators, pcm_speed):
-    print "Enter update_acc"
     # Adaptive cruise control
     current_time_ms = _current_time_millis()
     if CruiseButtons.should_be_throttled(CS.cruise_buttons):
@@ -183,7 +185,7 @@ class ACCController(object):
       button_to_press = CruiseButtons.CANCEL
 
     if self.enable_adaptive_cruise and enabled:
-      if CS.cstm_btns.get_button_label2("acc") in ["OP", "AutoOP"]:    
+      if CS.cstm_btns.get_button_label2(ACCMode.BUTTON_NAME) in ["OP", "AutoOP"]:    
         button_to_press = self._calc_button(CS, pcm_speed)
       else:
         # Alternative speed decision logic that uses the lead car's distance
@@ -213,7 +215,6 @@ class ACCController(object):
 
   # function to calculate the cruise button based on a safe follow distance
   def _calc_follow_button(self, CS, lead_car):
-    print "Enter _calc_follow_button"
     if lead_car is None:
       return None
     # Desired gap (in seconds) between cars.
@@ -314,9 +315,6 @@ class ACCController(object):
       self.last_update_time = current_time_ms
       if msg != None:
         print "ACC: " + msg
-        
-    if button:
-      print "Cruise button: %s" % button
     return button
     
   def _should_autoengage_cc(self, CS, lead_car=None):
