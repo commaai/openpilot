@@ -94,7 +94,7 @@ class FollowMode(Mode):
   label = 'FOLLOW'
 
 class ExperimentalMode(Mode):
-  label = 'EXPRMNT'
+  label = 'DEVEL'
   
 class PCCModes(object):
   _all_modes = [OffMode(), OpMode(), FollowMode(), ExperimentalMode()]
