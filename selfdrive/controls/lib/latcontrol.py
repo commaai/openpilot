@@ -71,7 +71,7 @@ class LatControl(object):
     # TODO: this creates issues in replay when rewinding time: mpc won't run
     if self.last_mpc_ts < PL.last_md_ts:
       self.last_mpc_ts = PL.last_md_ts
-      self.angle_steers_des_prev = angle_steers  #  self.angle_steers_des_mpc
+      self.angle_steers_des_prev = self.angle_steers_des_mpc
 
       curvature_factor = VM.curvature_factor(v_ego)
 
@@ -116,7 +116,7 @@ class LatControl(object):
 
     else:
       
-      # Interpolate desired angle between MPS updates, and don't allow interpolation to exceed desired angle
+      # Interpolate desired angle between MPC updates, and don't allow interpolation to exceed desired angle
       dt = min(cur_time - self.angle_steers_des_time + _DT, _DT_MPC)
       self.angle_steers_des = self.angle_steers_des_prev + (dt / _DT_MPC) * (self.angle_steers_des_mpc - self.angle_steers_des_prev)
       
