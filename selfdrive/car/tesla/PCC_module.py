@@ -32,7 +32,9 @@ ACCEL_HYST_GAP = 0.5  # don't change accel command for small oscilalitons within
 PEDAL_MAX_UP = 4.
 PEDAL_MAX_DOWN = 150.
 #BB
-MIN_SAFE_DIST_M = 4. # min safe distance in meters
+# min safe distance in meters. This sounds too large, but visual radar sucks
+# at estimating short distances and rarely gives a reading below 10m.
+MIN_SAFE_DIST_M = 10.
 FRAMES_PER_SEC = 20.
 
 SPEED_UP = 3. / FRAMES_PER_SEC   # 2 m/s = 7.5 mph = 12 kph 
@@ -713,23 +715,18 @@ def _weighted_distance_ratio(lead, v_ego, max_decel_ratio, max_accel_ratio):
     1 to 2: acceleration suggested to decrease distance.
   """
   optimal_dist_m = _safe_distance_m(v_ego)
-  # S-curve of distance to lead vs desire to accelerate.
-  # Centered around (optimal_dist_m, 0)
   d_offset = lead.dRel - optimal_dist_m
-  d_offset_sign = -1 if d_offset < 0 else 1
-  d_factor = d_offset_sign * d_offset ** 2 / optimal_dist_m ** 2
-  if d_factor > 0:
-    # Scale positive values to reach max accel at 2x optimal_dist_m.
-    max_accel_factor = max_accel_ratio - 1
-    d_factor *= (max_accel_factor / 2**2)
-  else:
-    # Scale negative values to reach min accel at 1/2 optimal_dist_m
-    max_decel_factor = max_decel_ratio - 1
-    d_factor *= (max_decel_factor / 0.5**2)
+  # Scale to use max accel outside of 2x optimal_dist_m
+  # and max decel within 1/2 optimal_dist_m.
+  d_weights = OrderedDict([
+    # offest from desired speed : acceleration ratio
+    (-optimal_dist_m,   max_decel_ratio),
+    (-optimal_dist_m/2, max_decel_ratio),
+    (0,                 1),
+    (optimal_dist_m,    max_accel_ratio),
+    (optimal_dist_m*2,  max_accel_ratio)])
     
-  d_ratio = d_factor + 1
-  d_ratio = clip(d_ratio, max_decel_ratio, max_accel_ratio)
-  return d_ratio
+  return interp(d_offset, d_weights.keys(), d_weights.values())
   
 def _weighted_velocity_ratio(lead, v_ego, max_decel_ratio, max_accel_ratio):
   """Decide how to accel/decel based on how fast the lead is.
