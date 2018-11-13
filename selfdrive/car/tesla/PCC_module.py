@@ -255,7 +255,7 @@ class PCCController(object):
       CS.cstm_btns.set_button_status("pedal", 1 if self.pedal_interceptor_state > 0 else 0)
       if self.pedal_interceptor_state > 0:
         if self.pedal_interceptor_state == 5:
-          CS.UE.custom_alert_message(3, "Pedal Interceptor Disabled (%s)" % self.pedal_interceptor_state, 150, 4)
+          CS.UE.custom_alert_message(3, "Pedal Interceptor Disabled.", 150, 4)
         else:
           CS.UE.custom_alert_message(3, "Pedal Interceptor Error (%s)" % self.pedal_interceptor_state, 150, 4)
         # send reset command
