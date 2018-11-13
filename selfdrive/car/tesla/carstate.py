@@ -234,7 +234,6 @@ class CarState(object):
     self.pedal_interceptor_state = 0
     self.pedal_interceptor_value = 0.
     self.pedal_interceptor_value2 = 0.
-    self.pedal_interceptor_pressed = False
     self.brake_switch_prev = 0
     self.brake_switch_ts = 0
 
@@ -266,7 +265,6 @@ class CarState(object):
 
     #BB variables for pedal CC
     self.pedal_speed_kph = 0.
-    self.pedal_interceptor_present = False
     self.pedal_interceptor_available = False
     self.prev_pedal_interceptor_available = False
 
@@ -371,7 +369,6 @@ class CarState(object):
     self.pedal_interceptor_state = epas_cp.vl["GAS_SENSOR"]['STATE']
     self.pedal_interceptor_value = epas_cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS']
     self.pedal_interceptor_value2 = epas_cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS2']
-    self.pedal_interceptor_pressed = self.pedal_interceptor_value > 1.12
 
     can_gear_shifter = cp.vl["DI_torque2"]['DI_gear']
     self.gear = 0 # JCT
@@ -416,15 +413,12 @@ class CarState(object):
     self.imperial_speed_units = cp.vl["DI_state"]['DI_speedUnits'] == 0
     self.regenLight = cp.vl["DI_state"]['DI_regenLight'] == 1
     
-    #BB this is a hack for the interceptor
     self.prev_pedal_interceptor_available = self.pedal_interceptor_available
-    self.pedal_interceptor_present = (
-        self.pedal_interceptor_state == 0
-        and bool(self.pedal_interceptor_value)
-        and bool(self.pedal_interceptor_value2)
-      )
+    pedal_interceptor_present = (self.pedal_interceptor_state in [0, 5]
+                                 and bool(self.pedal_interceptor_value)
+                                 and bool(self.pedal_interceptor_value2))
     # Mark pedal unavailable while traditional cruise is on.
-    self.pedal_interceptor_available = self.pedal_interceptor_present and not bool(self.pcm_acc_status)
+    self.pedal_interceptor_available = pedal_interceptor_present and not bool(self.pcm_acc_status)
     if self.pedal_interceptor_available != self.prev_pedal_interceptor_available:
         self.config_ui_buttons(self.pedal_interceptor_available)
 
