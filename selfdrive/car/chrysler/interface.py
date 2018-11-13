@@ -85,9 +85,10 @@ class CarInterface(object):
     ret.longPidDeadzoneBP = [0., 9.]
     ret.longPidDeadzoneV = [0., .15]
 
+    ret.minSteerSpeed = 3.8  # m/s
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter.
-    ret.minEnableSpeed = 5. * CV.MPH_TO_MS  # -1 for stop-and-go
+    ret.minEnableSpeed = 3.8  # in m/s, -1 for stop-and-go
 
     centerToRear = ret.wheelbase - ret.centerToFront
     # TODO: get actual value, for now starting with reasonable value for
@@ -205,7 +206,7 @@ class CarInterface(object):
 
     ret.doorOpen = not self.CS.door_all_closed
     ret.seatbeltUnlatched = not self.CS.seatbelt
-    self.low_speed_alert = (ret.vEgo < 3.8) # consolidate into interface
+    self.low_speed_alert = (ret.vEgo < self.CP.minSteerSpeed)
 
     ret.genericToggle = self.CS.generic_toggle
 
