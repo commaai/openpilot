@@ -11,7 +11,6 @@ from cereal import car
 _DT = 0.01    # 100Hz
 _DT_MPC = 0.05  # 20Hz
 
-
 def calc_states_after_delay(states, v_ego, steer_angle, curvature_factor, steer_ratio, delay):
   states[0].x = v_ego * delay
   states[0].psi = v_ego * curvature_factor * math.radians(steer_angle) / steer_ratio * delay
@@ -116,11 +115,11 @@ class LatControl(object):
       self.pid.reset()
 
     else:
-      # TODO: ideally we should interp, but for tuning reasons we keep the mpc solution
-      # constant for 0.05s.
-      dt = min(cur_time - self.angle_steers_des_time + _DT, _DT_MPC)   # no greater than dt mpc, to prevent overshooting 
+      
+      # Interpolate desired angle between MPS updates, and don't allow interpolation to exceed desired angle
+      dt = min(cur_time - self.angle_steers_des_time + _DT, _DT_MPC)
       self.angle_steers_des = self.angle_steers_des_prev + (dt / _DT_MPC) * (self.angle_steers_des_mpc - self.angle_steers_des_prev)
-      #self.angle_steers_des = ((4.0 * self.angle_steers_des + self.angle_steers_des_mpc) / 5.0
+      
       steers_max = get_steer_max(VM.CP, v_ego)
       self.pid.pos_limit = steers_max
       self.pid.neg_limit = -steers_max
