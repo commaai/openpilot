@@ -265,6 +265,9 @@ class CarState(object):
 
     #BB variables for pedal CC
     self.pedal_speed_kph = 0.
+    # Pedal interceptor hardware has been seen at least once
+    self.pedal_interceptor_present = False
+    # Pedal mode is ready, i.e. hardware is present and normal cruise is off.
     self.pedal_interceptor_available = False
     self.prev_pedal_interceptor_available = False
 
@@ -414,11 +417,12 @@ class CarState(object):
     self.regenLight = cp.vl["DI_state"]['DI_regenLight'] == 1
     
     self.prev_pedal_interceptor_available = self.pedal_interceptor_available
-    pedal_interceptor_present = (self.pedal_interceptor_state in [0, 5]
-                                 and bool(self.pedal_interceptor_value)
-                                 and bool(self.pedal_interceptor_value2))
+    if not self.pedal_interceptor_present:
+      # 'present' means the hardware has been seen at least once this session.
+      pedal_has_value = bool(self.pedal_interceptor_value) or bool(self.pedal_interceptor_value2)
+      self.pedal_interceptor_present = (self.pedal_interceptor_state in [0, 5] and pedal_has_value)
     # Mark pedal unavailable while traditional cruise is on.
-    self.pedal_interceptor_available = pedal_interceptor_present and not bool(self.pcm_acc_status)
+    self.pedal_interceptor_available = self.pedal_interceptor_present and not bool(self.pcm_acc_status)
     if self.pedal_interceptor_available != self.prev_pedal_interceptor_available:
         self.config_ui_buttons(self.pedal_interceptor_available)
 
