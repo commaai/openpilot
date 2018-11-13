@@ -189,14 +189,12 @@ class PCCController(object):
     self.last_cruise_stalk_pull_time = 0
     self.prev_pcm_acc_status = 0
     self.prev_cruise_buttons = CruiseButtons.IDLE
-    self.pedal_hardware_present = False
-    self.pedal_hardware_first_check = True
     self.pedal_speed_kph = 0.
     self.pedal_idx = 0
     self.accel_steady = 0.
     self.prev_tesla_accel = 0.
     self.prev_tesla_pedal = 0.
-    self.user_pedal_state = 0
+    self.pedal_interceptor_state = 0
     self.torqueLevel_last = 0.
     self.prev_v_ego = 0.
     self.PedalForZeroTorque = 18. #starting number, works on my S85
@@ -239,28 +237,24 @@ class PCCController(object):
 
 
     can_sends = []
-    #BBTODO: a better way to engage the pedal early and reset its CAN
-    # on first brake press check if hardware present; being on CAN2 values are not included in fingerprinting
-    self.pedal_hardware_present = CS.pedal_hardware_present
-    
-    if not self.pedal_hardware_present:
+    if CS.pedal_interceptor_available and not CS.cstm_btns.get_button_status("pedal"):
+      # pedal hardware, enable button
+      CS.cstm_btns.set_button_status("pedal", 1)
+      print "enabling pedal"
+    elif not CS.pedal_interceptor_available:
       if CS.cstm_btns.get_button_status("pedal"):
         # no pedal hardware, disable button
         CS.cstm_btns.set_button_status("pedal", 0)
         print "disabling pedal"
-      print "no pedal hardware"
+      print "Pedal unavailable."
       return
-    if self.pedal_hardware_present:
-      if not CS.cstm_btns.get_button_status("pedal"):
-        # pedal hardware, enable button
-        CS.cstm_btns.set_button_status("pedal", 1)
-        print "enabling pedal"
+    
     # check if we had error before
-    if self.user_pedal_state != CS.user_pedal_state:
-      self.user_pedal_state = CS.user_pedal_state
-      CS.cstm_btns.set_button_status("pedal", 1 if self.user_pedal_state > 0 else 0)
-      if self.user_pedal_state > 0:
-        CS.UE.custom_alert_message(3, "Pedal Interceptor Error (%s)" % self.user_pedal_state, 150, 4)
+    if self.pedal_interceptor_state != CS.pedal_interceptor_state:
+      self.pedal_interceptor_state = CS.pedal_interceptor_state
+      CS.cstm_btns.set_button_status("pedal", 1 if self.pedal_interceptor_state > 0 else 0)
+      if self.pedal_interceptor_state > 0:
+        CS.UE.custom_alert_message(3, "Pedal Interceptor Error (%s)" % self.pedal_interceptor_state, 150, 4)
         # send reset command
         idx = self.pedal_idx
         self.pedal_idx = (self.pedal_idx + 1) % 16
@@ -342,7 +336,7 @@ class PCCController(object):
     cur_time = sec_since_boot()
     idx = self.pedal_idx
     self.pedal_idx = (self.pedal_idx + 1) % 16
-    if not self.pedal_hardware_present or not enabled:
+    if not CS.pedal_interceptor_available or not enabled:
       return 0., 0, idx
     # Alternative speed decision logic that uses the lead car's distance
     # and speed more directly.

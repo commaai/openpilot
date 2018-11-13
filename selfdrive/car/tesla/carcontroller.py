@@ -135,7 +135,7 @@ class CarController(object):
       #print CS.cstm_btns.get_button_status("alca")
 
     
-    if CS.pedal_hardware_present:
+    if CS.pedal_interceptor_available:
       #update PCC module info
       self.PCC.update_stat(CS, True, sendcan)
       self.ACC.enable_adaptive_cruise = False
@@ -235,7 +235,7 @@ class CarController(object):
       can_sends.append(teslacan.create_steering_control(enable_steer_control, apply_angle, idx))
       can_sends.append(teslacan.create_epb_enable_signal(idx))
       cruise_btn = None
-      if self.ACC.enable_adaptive_cruise and not self.PCC.pedal_hardware_present:
+      if self.ACC.enable_adaptive_cruise and not CS.pedal_interceptor_available:
         cruise_btn = self.ACC.update_acc(enabled, CS, frame, actuators, pcm_speed)
       if cruise_btn or (turn_signal_needed > 0 and frame % 2 == 0):
           cruise_msg = teslacan.create_cruise_adjust_msg(
@@ -245,9 +245,9 @@ class CarController(object):
           # Send this CAN msg first because it is racing against the real stalk.
           can_sends.insert(0, cruise_msg)
       apply_accel = 0.
-      if self.PCC.pedal_hardware_present and (frame % 5) == 0: #pedal processed at 20Hz
-        apply_accel,accel_needed,accel_idx = self.PCC.update_pdl(enabled,CS,frame,actuators,pcm_speed)
-        can_sends.append(teslacan.create_pedal_command_msg(apply_accel,int(accel_needed) ,accel_idx))
+      if CS.pedal_interceptor_available and frame % 5 == 0: # pedal processed at 20Hz
+        apply_accel, accel_needed, accel_idx = self.PCC.update_pdl(enabled, CS, frame, actuators, pcm_speed)
+        can_sends.append(teslacan.create_pedal_command_msg(apply_accel, int(accel_needed), accel_idx))
       self.last_angle = apply_angle
       self.last_accel = apply_accel
       sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
