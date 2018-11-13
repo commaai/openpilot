@@ -45,7 +45,7 @@ MAX_PEDAL_VALUE = 112.
 #BBTODO: move the vehicle variables; maybe make them speed variable
 TORQUE_LEVEL_ACC = 0.
 TORQUE_LEVEL_DECEL = -30.
-FOLLOW_TIME_S = 2 # time in seconds to follow car in front
+FOLLOW_TIME_S = 1.8  # time in seconds to follow car in front
 MIN_PCC_V = 0. #
 MAX_PCC_V = 170.
 
@@ -454,14 +454,15 @@ class PCCController(object):
       output_gb = 0.0
       if enabled and self.enable_pedal_cruise:
         MAX_DECEL_RATIO = 0
-        MAX_ACCEL_RATIO = 1.09
+        MAX_ACCEL_RATIO = 1.1
         self.b_pid = MPC_BRAKE_MULTIPLIER 
         available_speed_kph = self.pedal_speed_kph - CS.v_ego * CV.MS_TO_KPH
         # Hold accel if radar gives intermittent readings at great distance.
         # Makes the car less skittish when first making radar contact.
         if (_is_present(self.lead_1)
             and self.continuous_lead_sightings < 8
-            and _sec_til_collision(self.lead_1) > 6):
+            and _sec_til_collision(self.lead_1) > 3
+            and self.lead_1.dRel > 60):
           output_gb = self.last_output_gb
         # Hold speed in turns if no car is seen
         elif CS.angle_steers >= 5.0 and not _is_present(self.lead_1):
@@ -470,19 +471,22 @@ class PCCController(object):
         elif _is_present(self.lead_1):
           weighted_d_ratio = _weighted_distance_ratio(self.lead_1, CS.v_ego, MAX_DECEL_RATIO, MAX_ACCEL_RATIO)
           weighted_v_ratio = _weighted_velocity_ratio(self.lead_1, CS.v_ego, MAX_DECEL_RATIO, MAX_ACCEL_RATIO)
-         
-          gas_brake_ratio = weighted_d_ratio * weighted_v_ratio
+          # Don't bother decelerating if the lead is already pulling away
+          if weighted_d_ratio < 1 and weighted_v_ratio > 1:
+            gas_brake_ratio = 1
+          else:
+            gas_brake_ratio = weighted_d_ratio * weighted_v_ratio
           # rescale around 0 rather than 1.
           output_gb = gas_brake_ratio - 1
-        # If no lead has been seen for a few seconds, accelerate to max speed.
-        elif _current_time_millis() > self.lead_last_seen_time_ms + 2000:
+        # If no lead has been seen recently, accelerate to max speed.
+        else:
           # An acceleration factor that drops off as we aproach max speed.
-          max_speed_factor = min(available_speed_kph, 10) / 10
+          max_speed_factor = min(available_speed_kph, 3) / 3
           # An acceleration factor that increases as time passes without seeing
           # a lead car.
-          time_factor = (_current_time_millis() - self.lead_last_seen_time_ms - 2000) / 4000
+          time_factor = (_current_time_millis() - self.lead_last_seen_time_ms) / 3000
           time_factor = clip(time_factor, 0, 1)
-          output_gb = 0.12 * max_speed_factor * time_factor
+          output_gb = 0.14 * max_speed_factor * time_factor
         # If going above the max configured PCC speed, slow. This should always
         # be in force so it is not part of the if/else block above.
         if available_speed_kph < 0:
@@ -709,18 +713,16 @@ def _weighted_distance_ratio(lead, v_ego, max_decel_ratio, max_accel_ratio):
     1 to 2: acceleration suggested to decrease distance.
   """
   optimal_dist_m = _safe_distance_m(v_ego)
-  d_offset = lead.dRel - optimal_dist_m
   # Scale to use max accel outside of 2x optimal_dist_m
-  # and max decel within 1/2 optimal_dist_m.
+  # and max decel within 1/3 optimal_dist_m.
   d_weights = OrderedDict([
-    # offest from desired speed : acceleration ratio
-    (-optimal_dist_m,   max_decel_ratio),
-    (-optimal_dist_m/2, max_decel_ratio),
-    (0,                 1),
-    (optimal_dist_m,    max_accel_ratio),
-    (optimal_dist_m*2,  max_accel_ratio)])
-    
-  return interp(d_offset, d_weights.keys(), d_weights.values())
+    # relative distance : acceleration ratio
+    (0,                max_decel_ratio),
+    (optimal_dist_m/3, max_decel_ratio),
+    (optimal_dist_m*1, 1),
+    (optimal_dist_m*2, max_accel_ratio),
+    (optimal_dist_m*3, max_accel_ratio)])
+  return  interp(lead.dRel, d_weights.keys(), d_weights.values())
   
 def _weighted_velocity_ratio(lead, v_ego, max_decel_ratio, max_accel_ratio):
   """Decide how to accel/decel based on how fast the lead is.
