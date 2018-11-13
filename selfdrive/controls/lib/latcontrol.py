@@ -11,6 +11,7 @@ from cereal import car
 _DT = 0.01    # 100Hz
 _DT_MPC = 0.05  # 20Hz
 
+
 def calc_states_after_delay(states, v_ego, steer_angle, curvature_factor, steer_ratio, delay):
   states[0].x = v_ego * delay
   states[0].psi = v_ego * curvature_factor * math.radians(steer_angle) / steer_ratio * delay
@@ -62,7 +63,6 @@ class LatControl(object):
 
   def update(self, active, v_ego, angle_steers, angle_rate, steer_override, d_poly, angle_offset, VM, PL):
     self.mpc_updated = False
-
     # TODO: this creates issues in replay when rewinding time: mpc won't run
     if self.last_mpc_ts < PL.last_md_ts:
       self.last_mpc_ts = PL.last_md_ts
@@ -109,29 +109,22 @@ class LatControl(object):
     if v_ego < 0.3 or not active:
       output_steer = 0.0
       self.pid.reset()
-
     else:
-      
       # Project future steering angle using average steer rate since last MPC update
       self.avg_angle_rate = (self.avg_angle_rate * self.angle_rate_count + angle_rate) / (self.angle_rate_count + 1.) 
       self.angle_rate_count += 1.0
-
       future_angle_steers = (self.avg_angle_rate * _DT_MPC) + self.starting_angle_steers
-
       steers_max = get_steer_max(VM.CP, v_ego)
       self.pid.pos_limit = steers_max
       self.pid.neg_limit = -steers_max
-
       if VM.CP.steerControlType == car.CarParams.SteerControlType.torque:
         steer_feedforward = apply_deadzone(self.angle_steers_des_mpc - float(angle_offset), 0.5) 
         steer_feedforward *= v_ego**2  # proportional to realigning tire momentum (~ lateral accel)
       else:
         steer_feedforward = self.angle_steers_des_mpc   # feedforward desired angle
-  
       deadzone = 0.0
 
       output_steer = self.pid.update(self.angle_steers_des_mpc, future_angle_steers, check_saturation=(v_ego > 10), override=steer_override,
                                      feedforward=steer_feedforward, speed=v_ego, deadzone=deadzone)
-    
     self.sat_flag = self.pid.saturated
     return output_steer, float(self.angle_steers_des_mpc)
