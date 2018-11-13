@@ -171,7 +171,7 @@ class CarInterface(object):
 
     ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
 
-    ret.steerKf = 0.0002 # conservative feed-forward
+    ret.steerKf = 0.00006 # conservative feed-forward
 
     if candidate == CAR.CIVIC:
       stop_and_go = True
