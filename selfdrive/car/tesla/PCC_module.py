@@ -255,7 +255,7 @@ class PCCController(object):
       CS.cstm_btns.set_button_status("pedal", 1 if self.pedal_interceptor_state > 0 else 0)
       if self.pedal_interceptor_state > 0:
         if self.pedal_interceptor_state == 5:
-          CS.UE.custom_alert_message(3, "Pedal Interceptor Disabled.", 150, 4)
+          CS.UE.custom_alert_message(3, "Pedal Interceptor Off", 150, 4)
         else:
           CS.UE.custom_alert_message(3, "Pedal Interceptor Error (%s)" % self.pedal_interceptor_state, 150, 4)
         # send reset command
@@ -263,6 +263,8 @@ class PCCController(object):
         self.pedal_idx = (self.pedal_idx + 1) % 16
         can_sends.append(teslacan.create_pedal_command_msg(0, 0, idx))
         sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
+      elif self.pedal_interceptor_state == 0:
+        CS.UE.custom_alert_message(2, "Pedal Interceptor On", 150)
     # disable on brake
     if CS.brake_pressed and self.enable_pedal_cruise:
       self.enable_pedal_cruise = False
