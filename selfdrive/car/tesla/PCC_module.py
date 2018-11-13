@@ -290,6 +290,9 @@ class PCCController(object):
         self.LoC.reset(CS.v_ego)
         # Increase PCC speed to match current, if applicable.
         self.pedal_speed_kph = max(CS.v_ego * CV.MS_TO_KPH, self.pedal_speed_kph)
+      else:
+        # A single pull disables PCC (falling back to just steering).
+        self.enable_pedal_cruise = False
     # Handle pressing the cancel button.
     elif CS.cruise_buttons == CruiseButtons.CANCEL:
       self.enable_pedal_cruise = False
@@ -475,8 +478,8 @@ class PCCController(object):
           weighted_d_ratio = _weighted_distance_ratio(self.lead_1, CS.v_ego, MAX_DECEL_RATIO, MAX_ACCEL_RATIO)
           weighted_v_ratio = _weighted_velocity_ratio(self.lead_1, CS.v_ego, MAX_DECEL_RATIO, MAX_ACCEL_RATIO)
           # Don't bother decelerating if the lead is already pulling away
-          if weighted_d_ratio < 1 and weighted_v_ratio > 1:
-            gas_brake_ratio = 1
+          if weighted_d_ratio < 1 and weighted_v_ratio > 1.01:
+            gas_brake_ratio = max(1, self.last_output_gb + 1)
           else:
             gas_brake_ratio = weighted_d_ratio * weighted_v_ratio
           # rescale around 0 rather than 1.
