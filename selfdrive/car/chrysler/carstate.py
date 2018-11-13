@@ -130,21 +130,14 @@ class CarState(object):
     self.left_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 1
     self.right_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 2
 
-    # TODO continue here with these values and see which ones we need.
-    # # we could use the override bit from dbc, but it's triggered at too high torque values
     self.steer_override = False  # abs(cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_DRIVER']) > 100  # TODO
-    # # 2 is standby, 10 is active. TODO: check that everything else is really a faulty state
-    # self.steer_state = cp.vl["EPS_STATUS"]['LKA_STATE']
     self.steer_error = cp.vl["LKAS_INDICATOR_1"]['LKAS_IS_GREEN'] == 0  # 0 if wheel will not actuate
-    # self.ipas_active = cp.vl['EPS_STATUS']['IPAS_STATE'] == 3
-    # self.brake_error = 0
     self.steer_torque_driver = 0 # cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_DRIVER'] # TODO
-    # self.steer_torque_motor = cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_EPS']
 
-    self.user_brake = 0  # TODO perhaps just use brake_pressed
+    self.user_brake = 0
+    self.brake_lights = self.brake_pressed
     self.v_cruise_pcm = cp.vl["DASHBOARD"]['ACC_SPEED_CONFIG_KPH']
-    self.pcm_acc_status = self.main_on # cp.vl["PCM_CRUISE"]['CRUISE_STATE']
+    self.pcm_acc_status = self.main_on
     # self.gas_pressed = not cp.vl["PCM_CRUISE"]['GAS_RELEASED']
-    self.brake_lights = self.brake_pressed # bool(cp.vl["ESP_CONTROL"]['BRAKE_LIGHTS_ACC'] or self.brake_pressed)  # TODO
 
     self.generic_toggle = bool(cp.vl["STEERING_LEVERS"]['HIGH_BEAM_FLASH'])
