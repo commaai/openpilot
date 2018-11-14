@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import numpy as np
-from numpy.linalg import inv
+from numpy.linalg import solve
 
 # dynamic bycicle model from "The Science of Vehicle Dynamics (2014), M. Guiggiani"##
 # Xdot = A*X + B*U
@@ -33,7 +33,7 @@ def kin_ss_sol(sa, u, VM):
 def dyn_ss_sol(sa, u, VM):
   # Dynamic solution, useful when speed > 0
   A, B = create_dyn_state_matrices(u, VM)
-  return - np.matmul(inv(A), B) * sa
+  return - solve(A, B) * sa
 
 
 def calc_slip_factor(VM):
@@ -87,7 +87,7 @@ class VehicleModel(object):
     # U is the matrix of the controls
     # u is the long speed
     A, B = create_dyn_state_matrices(u, self)
-    return np.matmul((A * self.dt + np.identity(2)), self.state) + B * sa * self.dt
+    return np.matmul((A * self.dt + np.eye(2)), self.state) + B * sa * self.dt
 
   def yaw_rate(self, sa, u):
     return self.calc_curvature(sa, u) * u
