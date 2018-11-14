@@ -203,7 +203,7 @@ class PCCController(object):
     self.a_pid = 0.
     self.b_pid = 0.
     self.last_output_gb = 0.
-    self.last_speed = 0.
+    self.last_speed_kph = 0.
     self.last_brake = 0.
     #for smoothing the changes in speed
     self.v_acc_start = 0.0
@@ -551,15 +551,15 @@ class PCCController(object):
     if self.lead_1 is None:
       return None
     # dRel is in meters.
-    lead_dist = self.lead_1.dRel
+    lead_dist_m = self.lead_1.dRel
     # Grab the relative speed.
-    rel_speed = self.lead_1.vRel * CV.MS_TO_KPH
+    rel_speed_kph = self.lead_1.vRel * CV.MS_TO_KPH
     # v_ego is in m/s, so safe_distance is in meters.
     safe_dist_m = _safe_distance_m(self.lead_1.vRel)
     # Current speed in kph
-    actual_speed = CS.v_ego * CV.MS_TO_KPH
+    actual_speed_kph = CS.v_ego * CV.MS_TO_KPH
     # speed and brake to issue
-    new_speed = max(actual_speed, self.last_speed)
+    new_speed_kph = max(actual_speed_kph, self.last_speed_kph)
     new_brake = 1.
     # debug msg
     msg = None
@@ -567,120 +567,59 @@ class PCCController(object):
 
     if self.last_md_ts == self.md_ts or self.last_l100_ts == self.l100_ts:
       # no radar update, so just keep doing what we're doing
-      new_speed = self.last_speed
+      new_speed_kph = self.last_speed_kph
       new_brake = self.last_brake
       msg2 = "No change - No Data"
       if DEBUG:
         if msg:
           print msg
-        CS.UE.custom_alert_message(2, "%s [%s]" % (msg2, int(new_speed*CV.KPH_TO_MPH)), 6, 0)
+        CS.UE.custom_alert_message(2, "%s [%s]" % (msg2, int(new_speed_kph*CV.KPH_TO_MPH)), 6, 0)
       else:
         print msg2
-      return new_speed * CV.KPH_TO_MS, new_brake
+      return new_speed_kph * CV.KPH_TO_MS, new_brake
 
     ###   Logic to determine best cruise speed ###
-    if self.enable_pedal_cruise:
+    elif self.enable_pedal_cruise:
       # If cruise is set to faster than the max speed, slow down
-      if lead_dist == 0 and new_speed != self.pedal_speed_kph:
+      if lead_dist_m == 0 and new_speed_kph != self.pedal_speed_kph:
         msg =  "Set to max"
         msg2 = "LD = 0, V = max"
-        new_speed = self.pedal_speed_kph
+        new_speed_kph = self.pedal_speed_kph
         new_brake = 2.
       # If we are turning without danger, hold speed.
       # TODO: make angle dependent on speed
       elif CS.angle_steers >= 5.0 and _distance_is_safe(CS.v_ego, self.lead_1):
-        new_speed = self.last_speed
+        new_speed_kph = self.last_speed_kph
         msg = "Safe distance & turning: steady speed"
         msg2 = "LD = 0 or safe, A > 5, V= cnst"
-      elif (lead_dist > 0):
-        ### We have lead ###
-        if lead_dist >= PCC_X_SAFE * safe_dist_m:
-          msg =  "More than 2x safe distance... use lead speed..."
-          msg2 = "LD > 2x safe, V=max" 
-          if new_speed <= (self.pedal_speed_kph + SPEED_UP):
-            #new_speed = self.last_speed + SPEED_UP
-            new_speed = new_speed + SPEED_UP
-          else:
-            new_speed = self.pedal_speed_kph
-          #new_speed = new_speed + rel_speed
-          new_brake = 1.
-        # if between safe dist and 2x safe dist adjust speed
-        elif lead_dist >= safe_dist_m and lead_dist < PCC_X_SAFE * safe_dist_m:
-          nb_d = (PCC_X_SAFE * safe_dist_m - lead_dist ) / ((PCC_X_SAFE -1) * safe_dist_m)
-          nb_v = - rel_speed / PCC_SPEED_FACTOR
-          msg2= "LD > safe, LD < 2x safe"
-          new_brake = clip (nb_d, 0.1, 1) * clip(nb_v, 0.1, 20)
-          if rel_speed > SPEED_UP:
-            #new_speed = self.last_speed + SPEED_UP
-            new_speed = new_speed + SPEED_UP
-          elif rel_speed >= 0:
-            new_speed = new_speed + rel_speed 
-          else:
-            new_speed = new_speed + rel_speed * clip(nb_v, 1, 2)
-        #Reduce speed if rel_speed < -15kph so you don't rush up to lead car
-        elif rel_speed < -15  and lead_dist >= safe_dist_m:
-          msg =  "Approaching fast (-15), still more than the safe distance, slow down 3x"
-          msg2 = "LD > safe, RV < -15, V=V-3xRV"
-          new_speed = new_speed + rel_speed * 3
-          new_brake = 2. 
-        #Reduce speed if rel_speed < -5kph so you don't rush up to lead car
-        elif rel_speed < -5  and lead_dist >=  safe_dist_m:
-          msg =  "Approaching moderate (-5), still more than the safe distance, slow down 2x"
-          msg2 = "LD > safe, RV < -5, V=V-2xRV"
-          new_speed = new_speed + rel_speed * 2
-          new_brake =  .5
-        #Reduce speed if rel_speed < 0kph so you don't rush up to lead car
-        elif rel_speed < 0  and lead_dist >=  safe_dist_m:
-          msg =  "Approaching (-0), still more than the safe distance, slow down 1.5x"
-          msg2 = "LD > safe, RV < 0, V=V-1.5xRV"
-          new_speed = new_speed + rel_speed * 1.5
-          new_brake = .3 
-        #Reduce speed if rel_speed < -5kph so you don't rush up to lead car
-        elif rel_speed >= 0  and lead_dist >=  safe_dist_m:
-          msg =  "Following, still more than the safe distance... continue to follow"
-          msg2 = "LD > safe, RV > 0, V=V+RV"
-          new_speed = new_speed + rel_speed *.25
-          new_brake = .1
-        #Reduce speed significantly if lead_dist < safe dist
-        elif lead_dist < safe_dist_m and rel_speed < 2:
-          if rel_speed > 0:
-            msg =  "Less than safe distance and moving away... 1.5 rel speed down"
-            msg2 = "LD < safe, RV > 0, V=V-1.5xRV"
-            new_speed = new_speed - rel_speed * 1.5
-            new_brake = 6.
-          else:
-            msg =  "Less than safe distance and approaching... 4x rel speed down"
-            msg2 = "LD < safe, RV < 0, V=V-4xRV"
-            new_speed = new_speed + rel_speed * 4
-            new_brake = 6.
-        #Reduce speed significantly if lead_dist < safe dist
-        elif lead_dist < safe_dist_m and rel_speed >= 2:
-          msg =  "Less than safe distance and moving away... 1.5 rel speed down"
-          msg2 = "LD < safe, RV > 2, V=V"
-          #new_speed = new_speed - rel_speed * 1.5
-          new_speed = self.last_speed
-          new_brake = .1
-        else:
-          msg = "Have lead and do nothing"
-          msg2 = msg
-          new_brake = 1.
+      elif lead_dist_m > 0:
+        # Match speed exactly at safe_dist_m
+        target_speed = actual_speed_kph + rel_speed_kph
+        target_speeds = OrderedDict([
+          (0,                           target_speed - 5),
+          (safe_dist_m / 2,             target_speed - 5),
+          (safe_dist_m,                 target_speed),
+          (safe_dist_m * PCC_X_SAFE,    target_speed + 5),
+          (safe_dist_m * PCC_X_SAFE +1, target_speed + 5),
+          ])
+        new_speed_kph = interp(lead_dist_m, target_speeds.keys(), target_speeds.values())
       else:
         msg = "No lead and do nothing"
         new_brake = 1.
         msg2 = msg
-      #new_speed = clip(new_speed, 0, self.pedal_speed_kph)
-      new_speed = clip(new_speed, MIN_PCC_V, MAX_PCC_V)
-      new_speed = clip(new_speed, 0, self.pedal_speed_kph)
-      self.last_speed = new_speed
+      #new_speed_kph = clip(new_speed_kph, 0, self.pedal_speed_kph)
+      new_speed_kph = clip(new_speed_kph, MIN_PCC_V, MAX_PCC_V)
+      new_speed_kph = clip(new_speed_kph, 0, self.pedal_speed_kph)
+      self.last_speed_kph = new_speed_kph
       self.last_brake = new_brake
       if DEBUG:
         if msg:
           print msg
-        CS.UE.custom_alert_message(2, "%s [%s]" % (msg2, int(new_speed*CV.KPH_TO_MPH)), 6, 0)
+        CS.UE.custom_alert_message(2, "%s [%s]" % (msg2, int(new_speed_kph*CV.KPH_TO_MPH)), 6, 0)
       else:
         print msg2
 
-    return new_speed * CV.KPH_TO_MS , new_brake
+    return new_speed_kph * CV.KPH_TO_MS , new_brake
 
 def _safe_distance_m(v_ms):
   return max(FOLLOW_TIME_S * v_ms, MIN_SAFE_DIST_M)
