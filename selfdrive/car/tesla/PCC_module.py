@@ -44,7 +44,7 @@ MAX_PEDAL_VALUE = 112.
 #BBTODO: move the vehicle variables; maybe make them speed variable
 TORQUE_LEVEL_ACC = 0.
 TORQUE_LEVEL_DECEL = -30.
-FOLLOW_TIME_S = 1.8  # time in seconds to follow car in front
+FOLLOW_TIME_S = 2.0  # time in seconds to follow car in front
 MIN_PCC_V = 0. #
 MAX_PCC_V = 170.
 
@@ -558,7 +558,7 @@ class PCCController(object):
     # Current speed in kph
     actual_speed_kph = CS.v_ego * CV.MS_TO_KPH
     # speed and brake to issue
-    new_speed_kph = max(actual_speed_kph, self.last_speed_kph)
+    new_speed_kph = self.last_speed_kph
     new_brake = 1.
     # debug msg
     msg = None
@@ -579,35 +579,35 @@ class PCCController(object):
 
     ###   Logic to determine best cruise speed ###
     elif self.enable_pedal_cruise:
+      # Turning sometimes causes the lead to be lost. Hold speed if so.
+      # TODO: make angle dependent on speed
+      if CS.angle_steers >= 5.0 and lead_dist_m == 0:
+        new_speed_kph = actual_speed_kph
+        msg = "Safe distance & turning: steady speed"
+        msg2 = "LD = 0 or safe, A > 5, V= cnst"
       # If cruise is set to faster than the max speed, slow down
-      if lead_dist_m == 0 and new_speed_kph != self.pedal_speed_kph:
+      elif lead_dist_m == 0:
         msg =  "Set to max"
         msg2 = "LD = 0, V = max"
         new_speed_kph = self.pedal_speed_kph
         new_brake = 2.
-      # If we are turning without danger, hold speed.
-      # TODO: make angle dependent on speed
-      elif CS.angle_steers >= 5.0 and _distance_is_safe(CS.v_ego, self.lead_1):
-        new_speed_kph = self.last_speed_kph
-        msg = "Safe distance & turning: steady speed"
-        msg2 = "LD = 0 or safe, A > 5, V= cnst"
       elif lead_dist_m > 0:
-        if lead_dist_m < safe_dist_m * .5 and rel_speed_kph < 2:
-          new_speed_kph = actual_speed_kph - 1
-        elif rel_speed_kph < -15:
+        if rel_speed_kph < -15:
           new_speed_kph = actual_speed_kph - 3
+        elif lead_dist_m < safe_dist_m * .5 and rel_speed_kph < 2:
+          new_speed_kph = actual_speed_kph - 2
         elif rel_speed_kph < -8:
           new_speed_kph = actual_speed_kph - 1
         elif lead_dist_m < safe_dist_m and rel_speed_kph <= 0:
           new_speed_kph = actual_speed_kph - 1
-        elif lead_dist_m < safe_dist_m * 1.3 and rel_speed_kph < -1:
-          new_speed_kph = actual_speed_kph - 1
+        elif lead_dist_m < safe_dist_m * 1.5:
+          new_speed_kph = actual_speed_kph + rel_speed_kph / 3
         elif lead_dist_m > safe_dist_m:
           lead_is_far = lead_dist_m > safe_dist_m * 1.75
           closing = rel_speed_kph < -2
           lead_is_pulling_away = rel_speed_kph > 4
-          if lead_is_far and not closing or lead_is_pulling_away:
-            new_speed_kph = actual_speed_kph + 1
+          if (lead_is_far and not closing) or lead_is_pulling_away:
+            new_speed_kph = actual_speed_kph + max(1, rel_speed_kph/3)
       new_speed_kph = clip(new_speed_kph, MIN_PCC_V, MAX_PCC_V)
       new_speed_kph = clip(new_speed_kph, 0, self.pedal_speed_kph)
       self.last_speed_kph = new_speed_kph
@@ -627,9 +627,6 @@ def _safe_distance_m(v_ms):
 def _distance_is_safe(v_ego_ms, lead):
   lead_too_close = bool(_is_present(lead) and lead.dRel <= _safe_distance_m(v_ego_ms))
   return not lead_too_close
-
-def _max_safe_speed_ms(lead):
-  return lead.dRel / FOLLOW_TIME_S
 
 def _is_present(lead):
   return bool(lead and lead.dRel)
