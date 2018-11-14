@@ -43,6 +43,8 @@ def get_can_parser(CP):
     ("ACC_SPEED_CONFIG_KPH", "DASHBOARD", 0),
     ("INCREMENTING_220", "LKAS_INDICATOR_1", -1),
     ("LKAS_IS_GREEN", "LKAS_INDICATOR_1", 1),
+    ("TRACTION_OFF", "TRACTION_BUTTON", 0),
+    ("SEATBELT_DRIVER_UNLATCHED", "SEATBELT_STATUS", 0),
   ]
 
   # It's considered invalid if it is not received for 10x the expected period (1/f).
@@ -99,13 +101,13 @@ class CarState(object):
                                     cp.vl["DOORS"]['DOOR_OPEN_FR'],
                                     cp.vl["DOORS"]['DOOR_OPEN_RL'],
                                     cp.vl["DOORS"]['DOOR_OPEN_RR']])
-    self.seatbelt = True  # TODO
+    self.seatbelt = (cp.vl["SEATBELT_STATUS"]['SEATBELT_DRIVER_UNLATCHED'] == 0)
 
     self.brake_pressed = cp.vl["BRAKE_2"]['BRAKE_PRESSED_2'] == 5 # human-only
     self.pedal_gas = 0  # TODO Disabled until we can find the message on Pacifica 2018
     # self.pedal_gas = cp.vl["ACCEL_PEDAL_MSG"]['ACCEL_PEDAL']
     self.car_gas = self.pedal_gas
-    self.esp_disabled = False # cp.vl["ESP_CONTROL"]['TC_DISABLED']  # TODO
+    self.esp_disabled = (cp.vl["TRACTION_BUTTON"]['TRACTION_OFF'] == 1)
 
     self.v_wheel_fl = cp.vl['WHEEL_SPEEDS']['WHEEL_SPEED_FL']
     self.v_wheel_rr = cp.vl['WHEEL_SPEEDS']['WHEEL_SPEED_RR']
