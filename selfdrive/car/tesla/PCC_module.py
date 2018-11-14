@@ -23,7 +23,6 @@ MPC_BRAKE_MULTIPLIER = 6.
 DEBUG = False
 
 PCC_SPEED_FACTOR = 2.
-PCC_X_SAFE = 2.5
 
 # TODO: these should end up in values.py at some point, probably variable by trim
 # Accel limits
@@ -593,21 +592,22 @@ class PCCController(object):
         msg = "Safe distance & turning: steady speed"
         msg2 = "LD = 0 or safe, A > 5, V= cnst"
       elif lead_dist_m > 0:
-        # Match speed exactly at safe_dist_m
-        target_speed = actual_speed_kph + rel_speed_kph
-        target_speeds = OrderedDict([
-          (0,                           target_speed - 5),
-          (safe_dist_m / 2,             target_speed - 5),
-          (safe_dist_m,                 target_speed),
-          (safe_dist_m * PCC_X_SAFE,    target_speed + 5),
-          (safe_dist_m * PCC_X_SAFE +1, target_speed + 5),
-          ])
-        new_speed_kph = interp(lead_dist_m, target_speeds.keys(), target_speeds.values())
-      else:
-        msg = "No lead and do nothing"
-        new_brake = 1.
-        msg2 = msg
-      #new_speed_kph = clip(new_speed_kph, 0, self.pedal_speed_kph)
+        if lead_dist_m < safe_dist_m * .5 and rel_speed_kph < 2:
+          new_speed_kph = actual_speed_kph - 1
+        elif rel_speed_kph < -15:
+          new_speed_kph = actual_speed_kph - 3
+        elif rel_speed_kph < -8:
+          new_speed_kph = actual_speed_kph - 1
+        elif lead_dist_m < safe_dist_m and rel_speed_kph <= 0:
+          new_speed_kph = actual_speed_kph - 1
+        elif lead_dist_m < safe_dist_m * 1.3 and rel_speed_kph < -1:
+          new_speed_kph = actual_speed_kph - 1
+        elif lead_dist_m > safe_dist_m:
+          lead_is_far = lead_dist_m > safe_dist_m * 1.75
+          closing = rel_speed_kph < -2
+          lead_is_pulling_away = rel_speed_kph > 4
+          if lead_is_far and not closing or lead_is_pulling_away:
+            new_speed_kph = actual_speed_kph + 1
       new_speed_kph = clip(new_speed_kph, MIN_PCC_V, MAX_PCC_V)
       new_speed_kph = clip(new_speed_kph, 0, self.pedal_speed_kph)
       self.last_speed_kph = new_speed_kph
@@ -627,6 +627,9 @@ def _safe_distance_m(v_ms):
 def _distance_is_safe(v_ego_ms, lead):
   lead_too_close = bool(_is_present(lead) and lead.dRel <= _safe_distance_m(v_ego_ms))
   return not lead_too_close
+
+def _max_safe_speed_ms(lead):
+  return lead.dRel / FOLLOW_TIME_S
 
 def _is_present(lead):
   return bool(lead and lead.dRel)
