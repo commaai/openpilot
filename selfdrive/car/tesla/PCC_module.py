@@ -44,7 +44,7 @@ MAX_PEDAL_VALUE = 112.
 #BBTODO: move the vehicle variables; maybe make them speed variable
 TORQUE_LEVEL_ACC = 0.
 TORQUE_LEVEL_DECEL = -30.
-FOLLOW_TIME_S = 2.0  # time in seconds to follow car in front
+FOLLOW_TIME_S = 1.5  # time in seconds to follow car in front
 MIN_PCC_V = 0. #
 MAX_PCC_V = 170.
 
@@ -378,7 +378,6 @@ class PCCController(object):
       self.v_pid = max(self.v_pid, 0.)
       #self.b_pid *= MPC_BRAKE_MULTIPLIER
 
-
       enabled = self.enable_pedal_cruise and self.LoC.long_control_state in [LongCtrlState.pid, LongCtrlState.stopping]
 
       if self.enable_pedal_cruise:
@@ -417,7 +416,7 @@ class PCCController(object):
         t_go, t_brake = self.LoC.update(self.enable_pedal_cruise, CS.v_ego, CS.brake_pressed != 0, CS.standstill, False, 
                   self.v_pid , vTarget, self.vTargetFuture, self.a_acc_sol, CS.CP, None)
         output_gb = t_go - t_brake
-        print "Output GB Follow:", output_gb
+        #print "Output GB Follow:", output_gb
       else:
         self.LoC.reset(CS.v_ego)
         print "PID reset"
@@ -551,10 +550,12 @@ class PCCController(object):
       return None
     # dRel is in meters.
     lead_dist_m = self.lead_1.dRel
+    # visual radar sucks at short distances. Remap 7m to 0m.
+    lead_dist_m = interp(lead_dist_m, [0, 7, 15, 10000], [0, 0, 15, 10000])
     # Grab the relative speed.
     rel_speed_kph = self.lead_1.vRel * CV.MS_TO_KPH
     # v_ego is in m/s, so safe_distance is in meters.
-    safe_dist_m = _safe_distance_m(self.lead_1.vRel)
+    safe_dist_m = _safe_distance_m(CS.v_ego)
     # Current speed in kph
     actual_speed_kph = CS.v_ego * CV.MS_TO_KPH
     # speed and brake to issue
@@ -587,22 +588,36 @@ class PCCController(object):
         new_speed_kph = self.pedal_speed_kph
         new_brake = 2.
       elif lead_dist_m > 0:
-        # if way to close and not falling back, reduce speed significantly
+        # if too close and not falling back, reduce speed significantly
         if lead_dist_m < safe_dist_m * .5 and rel_speed_kph < 2:
           new_speed_kph = actual_speed_kph - max(2, -rel_speed_kph)
+          print 'PCC --'
         # if slightly too close and not falling back, reduce speed slightly
         elif lead_dist_m < safe_dist_m and rel_speed_kph <= 1:
           new_speed_kph = actual_speed_kph - 1
+          print 'PCC -'
         # if in the comfort zone, match lead speed
         elif lead_dist_m < safe_dist_m * 1.5:
-          new_speed_kph = actual_speed_kph + rel_speed_kph / 3
+          new_speed_kph = actual_speed_kph
+          if abs(rel_speed_kph) > 3:
+            new_speed_kph = actual_speed_kph + clip(rel_speed_kph / 2, -3, 3)
+            print 'PCC ='
+          else:
+            print 'PCC =='
         # if too far and not gaining, increase speed
-        elif lead_dist_m > safe_dist_m * 1.5 and rel_speed_kph > 0:
-          new_speed_kph = actual_speed_kph + max(1, rel_speed_kph/3)
+        elif lead_dist_m > safe_dist_m * 1.5 and rel_speed_kph > -1:
+          new_speed_kph = actual_speed_kph + clip(rel_speed_kph / 2, 2, 5)
+          print 'PCC +'
         # Visual radar sucks at great distances, but consider action if
         # relative speed is significant.
         elif lead_dist_m < 3 * safe_dist_m and lead_dist_m < 60 and rel_speed_kph < -15:
           new_speed_kph = actual_speed_kph - 1
+          'PCC scary distant object'
+        else:
+          new_speed_kph = max(_max_safe_speed_ms(lead_dist_m) * CV.MS_TO_KPH, actual_speed_kph)
+          'PCC ignore distant object'
+        new_speed_kph = min(new_speed_kph, _max_safe_speed_ms(lead_dist_m) * CV.MS_TO_KPH)
+
       # Enforce limits on speed
       new_speed_kph = clip(new_speed_kph, MIN_PCC_V, MAX_PCC_V)
       new_speed_kph = clip(new_speed_kph, 0, self.pedal_speed_kph)
@@ -612,17 +627,20 @@ class PCCController(object):
         if msg:
           print msg
         CS.UE.custom_alert_message(2, "%s [%s]" % (msg2, int(new_speed_kph*CV.KPH_TO_MPH)), 6, 0)
-      else:
-        print msg2
+      #else:
+        #print msg2
 
     return new_speed_kph * CV.KPH_TO_MS , new_brake
 
-def _safe_distance_m(v_ms):
-  return max(FOLLOW_TIME_S * v_ms, MIN_SAFE_DIST_M)
+def _safe_distance_m(v_ego_ms):
+  return max(FOLLOW_TIME_S * v_ego_ms, MIN_SAFE_DIST_M)
   
 def _distance_is_safe(v_ego_ms, lead):
   lead_too_close = bool(_is_present(lead) and lead.dRel <= _safe_distance_m(v_ego_ms))
   return not lead_too_close
+
+def _max_safe_speed_ms(m):
+  return m / FOLLOW_TIME_S
 
 def _is_present(lead):
   return bool(lead and lead.dRel)
@@ -661,7 +679,7 @@ def _weighted_distance_ratio(lead, v_ego, max_decel_ratio, max_accel_ratio):
     (optimal_dist_m/3, max_decel_ratio),
     (optimal_dist_m*1, 1),
     (optimal_dist_m*2, max_accel_ratio),
-    (optimal_dist_m*3, max_accel_ratio)])
+    (optimal_dist_m*1000, max_accel_ratio)])
   return  interp(lead.dRel, d_weights.keys(), d_weights.values())
   
 def _weighted_velocity_ratio(lead, v_ego, max_decel_ratio, max_accel_ratio):
