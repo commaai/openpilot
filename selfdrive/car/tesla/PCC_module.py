@@ -559,32 +559,12 @@ class PCCController(object):
     # Current speed in kph
     actual_speed_kph = CS.v_ego * CV.MS_TO_KPH
     # speed and brake to issue
-    #new_speed_kph = max(actual_speed_kph, self.last_speed_kph)
-    #new_brake = 1.
-    # debug msg
-    msg = None
-    msg2 = " *** UNKNOWN *** "
-
-    #if self.last_md_ts == self.md_ts or self.last_l100_ts == self.l100_ts:
-    #  # no radar update, so just keep doing what we're doing
-    #  new_speed_kph = self.last_speed_kph
-    #  new_brake = self.last_brake
-    #  msg2 = "No change - No Data"
-    #  if DEBUG:
-    #    if msg:
-    #      print msg
-    #    CS.UE.custom_alert_message(2, "%s [%s]" % (msg2, int(new_speed_kph*CV.KPH_TO_MPH)), 6, 0)
-    #  else:
-    #    print msg2
-    #  return new_speed_kph * CV.KPH_TO_MS, new_brake
     new_speed_kph = self.last_speed_kph
     new_brake = self.last_brake
     ###   Logic to determine best cruise speed ###
     if self.enable_pedal_cruise:
       # If no lead is present, accel up to max speed
       if lead_dist_m == 0:
-        msg =  "Set to max"
-        msg2 = "LD = 0, V = max"
         new_speed_kph = self.pedal_speed_kph
         new_brake = 2.
       elif lead_dist_m > 0:
@@ -600,13 +580,13 @@ class PCCController(object):
         elif lead_dist_m < safe_dist_m * 1.5:
           new_speed_kph = actual_speed_kph
           if abs(rel_speed_kph) > 3:
-            new_speed_kph = actual_speed_kph + clip(rel_speed_kph / 2, -3, 3)
+            new_speed_kph = actual_speed_kph + clip(rel_speed_kph / 3, -3, 3)
             print 'PCC ='
           else:
             print 'PCC =='
         # if too far and not gaining, increase speed
-        elif lead_dist_m > safe_dist_m * 1.5 and rel_speed_kph > -1:
-          new_speed_kph = actual_speed_kph + clip(rel_speed_kph / 2, 2, 5)
+        elif lead_dist_m > safe_dist_m * 1.5 and rel_speed_kph > 0:
+          new_speed_kph = actual_speed_kph + clip(rel_speed_kph / 3, 0, 4)
           print 'PCC +'
         # Visual radar sucks at great distances, but consider action if
         # relative speed is significant.
@@ -623,12 +603,6 @@ class PCCController(object):
       new_speed_kph = clip(new_speed_kph, 0, self.pedal_speed_kph)
       self.last_speed_kph = new_speed_kph
       self.last_brake = new_brake
-      if DEBUG:
-        if msg:
-          print msg
-        CS.UE.custom_alert_message(2, "%s [%s]" % (msg2, int(new_speed_kph*CV.KPH_TO_MPH)), 6, 0)
-      #else:
-        #print msg2
 
     return new_speed_kph * CV.KPH_TO_MS , new_brake
 
