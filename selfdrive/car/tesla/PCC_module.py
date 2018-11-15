@@ -558,33 +558,28 @@ class PCCController(object):
     # Current speed in kph
     actual_speed_kph = CS.v_ego * CV.MS_TO_KPH
     # speed and brake to issue
-    new_speed_kph = self.last_speed_kph
-    new_brake = 1.
+    #new_speed_kph = max(actual_speed_kph, self.last_speed_kph)
+    #new_brake = 1.
     # debug msg
     msg = None
     msg2 = " *** UNKNOWN *** "
 
-    if self.last_md_ts == self.md_ts or self.last_l100_ts == self.l100_ts:
-      # no radar update, so just keep doing what we're doing
-      new_speed_kph = self.last_speed_kph
-      new_brake = self.last_brake
-      msg2 = "No change - No Data"
-      if DEBUG:
-        if msg:
-          print msg
-        CS.UE.custom_alert_message(2, "%s [%s]" % (msg2, int(new_speed_kph*CV.KPH_TO_MPH)), 6, 0)
-      else:
-        print msg2
-      return new_speed_kph * CV.KPH_TO_MS, new_brake
-
+    #if self.last_md_ts == self.md_ts or self.last_l100_ts == self.l100_ts:
+    #  # no radar update, so just keep doing what we're doing
+    #  new_speed_kph = self.last_speed_kph
+    #  new_brake = self.last_brake
+    #  msg2 = "No change - No Data"
+    #  if DEBUG:
+    #    if msg:
+    #      print msg
+    #    CS.UE.custom_alert_message(2, "%s [%s]" % (msg2, int(new_speed_kph*CV.KPH_TO_MPH)), 6, 0)
+    #  else:
+    #    print msg2
+    #  return new_speed_kph * CV.KPH_TO_MS, new_brake
+    new_speed_kph = self.last_speed_kph
+    new_brake = self.last_brake
     ###   Logic to determine best cruise speed ###
-    elif self.enable_pedal_cruise:
-      # Turning sometimes causes the lead to be lost. Hold speed if so.
-      # TODO: make angle dependent on speed
-      if CS.angle_steers >= 5.0 and lead_dist_m == 0:
-        new_speed_kph = actual_speed_kph
-        msg = "Safe distance & turning: steady speed"
-        msg2 = "LD = 0 or safe, A > 5, V= cnst"
+    if self.enable_pedal_cruise:
       # If cruise is set to faster than the max speed, slow down
       elif lead_dist_m == 0:
         msg =  "Set to max"
@@ -592,7 +587,9 @@ class PCCController(object):
         new_speed_kph = self.pedal_speed_kph
         new_brake = 2.
       elif lead_dist_m > 0:
-        if rel_speed_kph < -15:
+        if lead_dist_m < safe_dist_m * .5 and rel_speed_kph < 2:
+          new_speed_kph = actual_speed_kph - 2
+        elif rel_speed_kph < -15:
           new_speed_kph = actual_speed_kph - 3
         elif lead_dist_m < safe_dist_m * .5 and rel_speed_kph < 2:
           new_speed_kph = actual_speed_kph - 2
