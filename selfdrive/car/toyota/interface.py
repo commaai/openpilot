@@ -106,7 +106,7 @@ class CarInterface(object):
       ret.wheelbase = 2.79
       ret.steerRatio = 16.  # 14.8 is spec end-to-end
       tire_stiffness_factor = 0.444  # not optimized yet
-      ret.mass = 4481 * CV.LB_TO_KG + std_cargo  # mean between min and max
+      ret.mass = 5416 * CV.LB_TO_KG + std_cargo  # mean between min and max
       ret.steerKpV, ret.steerKiV = [[0.6], [0.1]]
       ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
 
