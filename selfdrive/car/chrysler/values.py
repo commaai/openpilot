@@ -54,7 +54,6 @@ STATIC_MSGS = [(0x2d9, ECU.CAM, (CAR.PACIFICA_2017_HYBRID), 0,   10, '\x00\x00\x
                (0x2d9, ECU.CAM, (CAR.PACIFICA_2018), 0,   10, '\x00\x00\x00\x00\x20'),
                (0x2d9, ECU.CAM, (CAR.PACIFICA_2018_HYBRID), 0,   10, '\x00\x00\x00\x04\x40'),
                (0x2d9, ECU.CAM, (CAR.CHEROKEE),      0,   10, '\x00\x00\x00\x00\x40'),
-               # TODO verify the 10 here is for every 0.1 seconds
                # 0x2a6 and 0x292 are not static, so they're not included here.
               ]
 
