@@ -580,31 +580,30 @@ class PCCController(object):
     new_brake = self.last_brake
     ###   Logic to determine best cruise speed ###
     if self.enable_pedal_cruise:
-      # If cruise is set to faster than the max speed, slow down
-      elif lead_dist_m == 0:
+      # If no lead is present, accel up to max speed
+      if lead_dist_m == 0:
         msg =  "Set to max"
         msg2 = "LD = 0, V = max"
         new_speed_kph = self.pedal_speed_kph
         new_brake = 2.
       elif lead_dist_m > 0:
+        # if way to close and not falling back, reduce speed significantly
         if lead_dist_m < safe_dist_m * .5 and rel_speed_kph < 2:
-          new_speed_kph = actual_speed_kph - 2
-        elif rel_speed_kph < -15:
-          new_speed_kph = actual_speed_kph - 3
-        elif lead_dist_m < safe_dist_m * .5 and rel_speed_kph < 2:
-          new_speed_kph = actual_speed_kph - 2
-        elif rel_speed_kph < -8:
+          new_speed_kph = actual_speed_kph - max(2, -rel_speed_kph)
+        # if slightly too close and not falling back, reduce speed slightly
+        elif lead_dist_m < safe_dist_m and rel_speed_kph <= 1:
           new_speed_kph = actual_speed_kph - 1
-        elif lead_dist_m < safe_dist_m and rel_speed_kph <= 0:
-          new_speed_kph = actual_speed_kph - 1
+        # if in the comfort zone, match lead speed
         elif lead_dist_m < safe_dist_m * 1.5:
           new_speed_kph = actual_speed_kph + rel_speed_kph / 3
-        elif lead_dist_m > safe_dist_m:
-          lead_is_far = lead_dist_m > safe_dist_m * 1.75
-          closing = rel_speed_kph < -2
-          lead_is_pulling_away = rel_speed_kph > 4
-          if (lead_is_far and not closing) or lead_is_pulling_away:
-            new_speed_kph = actual_speed_kph + max(1, rel_speed_kph/3)
+        # if too far and not gaining, increase speed
+        elif lead_dist_m > safe_dist_m * 1.5 and rel_speed_kph > 0:
+          new_speed_kph = actual_speed_kph + max(1, rel_speed_kph/3)
+        # Visual radar sucks at great distances, but consider action if
+        # relative speed is significant.
+        elif lead_dist_m < 3 * safe_dist_m and lead_dist_m < 60 and rel_speed_kph < -15:
+          new_speed_kph = actual_speed_kph - 1
+      # Enforce limits on speed
       new_speed_kph = clip(new_speed_kph, MIN_PCC_V, MAX_PCC_V)
       new_speed_kph = clip(new_speed_kph, 0, self.pedal_speed_kph)
       self.last_speed_kph = new_speed_kph
