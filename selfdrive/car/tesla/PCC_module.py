@@ -65,11 +65,11 @@ _A_CRUISE_MIN = OrderedDict([
 # Need higher accel at very low speed for stop and go.
 # make sure these accelerations are smaller than mpc limits.
 _A_CRUISE_MAX = OrderedDict([
-  (0.0, 1.0),
-  (5.0, 0.8),
-  (10., 0.7),
-  (20., 0.6),
-  (40., 0.4)])
+  (0.0, 0.8),
+  (5.0, 0.6),
+  (10., 0.5),
+  (20., 0.4),
+  (40., 0.3)])
   
 # Lookup table for turns
 _A_TOTAL_MAX = OrderedDict([
