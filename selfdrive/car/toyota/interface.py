@@ -115,9 +115,9 @@ class CarInterface(object):
       stop_and_go = True
       ret.safetyParam = 73  # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.65 # 2.65 default
-      ret.steerRatio = 16.00 # Rav4 2018 16.3 default
+      ret.steerRatio = 15.00 # Rav4 2018 16.3 default
       ret.mass = 4100./2.205 + std_cargo  # mean between normal and hybrid
-      ret.steerKpV, ret.steerKiV = [[0.6], [0.05]] #0.6 0.05 default
+      ret.steerKpV, ret.steerKiV = [[0.45], [0.045]] #0.6 0.05 default
       ret.wheelbase = 2.65
       tire_stiffness_factor = 0.5533
       ret.steerKf = 0.00006 # full torque for 10 deg at 80mph means 0.00007818594
