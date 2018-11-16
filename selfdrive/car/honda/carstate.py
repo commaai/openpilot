@@ -145,6 +145,7 @@ class CarState(object):
   def __init__(self, CP):
     self.trLabels = ["0.9","1.8","2.7"]
     self.trMode = 1
+    self.lkMode = True
     self.read_distance_lines_prev = 3
     self.CP = CP
     self.can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
@@ -310,6 +311,15 @@ class CarState(object):
     if self.cruise_setting == 3:
       if cp.vl["SCM_BUTTONS"]["CRUISE_SETTING"] == 0:
         self.trMode = (self.trMode + 1 ) % 3
+        
+    # when user presses LKAS button on steering wheel
+    if self.cruise_setting == 1:
+      if cp.vl["SCM_BUTTONS"]["CRUISE_SETTING"] == 0:
+        if self.lkMode:
+          self.lkMode = False
+        else:
+          self.lkMode = True
+          
     self.prev_cruise_setting = self.cruise_setting
     self.cruise_setting = cp.vl["SCM_BUTTONS"]['CRUISE_SETTING']
     self.read_distance_lines = self.trMode + 1
