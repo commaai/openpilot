@@ -155,11 +155,11 @@ class ALCAController(object):
     alca_m2 = 1.
     alca_m3 = 1.
     if CS.alcaMode == 1:
-      alca_m1 =.9 
+      alca_m1 = 0.95
       alca_m2 = 1.
       alca_m3 = 0.5
     if CS.alcaMode == 2:
-      alca_m1 = 0.8
+      alca_m1 = 0.9
       alca_m2 = 1.7
       alca_m3 = 0.5
     # speed variable parameters
