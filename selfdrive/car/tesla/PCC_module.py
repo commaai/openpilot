@@ -44,7 +44,7 @@ MAX_PEDAL_VALUE = 112.
 #BBTODO: move the vehicle variables; maybe make them speed variable
 TORQUE_LEVEL_ACC = 0.
 TORQUE_LEVEL_DECEL = -30.
-FOLLOW_TIME_S = 1.5  # time in seconds to follow car in front
+FOLLOW_TIME_S = 2.0  # time in seconds to follow car in front
 MIN_PCC_V = 0. #
 MAX_PCC_V = 170.
 
@@ -579,8 +579,8 @@ class PCCController(object):
         # if in the comfort zone, match lead speed
         elif lead_dist_m < 1.5 * safe_dist_m:
           new_speed_kph = actual_speed_kph
-          if abs(rel_speed_kph) > 3:
-            new_speed_kph = actual_speed_kph + clip(rel_speed_kph / 3, -3, 3)
+          if abs(rel_speed_kph) > 4:
+            new_speed_kph = actual_speed_kph + clip(rel_speed_kph / 4, -2, 1)
             print 'PCC ='
           else:
             print 'PCC =='
