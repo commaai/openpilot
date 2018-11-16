@@ -383,7 +383,7 @@ class PCCController(object):
       if self.enable_pedal_cruise:
         accel_min, accel_max = calc_cruise_accel_limits(CS)
         accel_min *= accel_modifier
-        accel max *= accel_modifier
+        accel_max *= accel_modifier
         # TODO: make a separate lookup for jerk tuning
         jerk_min = min(-0.1, accel_min)
         jerk_max = max(0.1, accel_max)
@@ -622,7 +622,7 @@ class PCCController(object):
 def _visual_radar_adjusted_dist_m(m):
   # visual radar sucks at short distances. It rarely shows readings below 7m.
   # So rescale distances with 7m -> 0m. Maxes out at 100km, if that matters.
-  return = interp(m, [0, 7, 300, 100000], [0, 0, 300, 10000])
+  return interp(m, [0, 7, 300, 100000], [0, 0, 300, 10000])
 
 def _safe_distance_m(v_ego_ms):
   return max(FOLLOW_TIME_S * v_ego_ms, MIN_SAFE_DIST_M)
@@ -672,7 +672,7 @@ def _weighted_distance_ratio(lead, v_ego, max_decel_ratio, max_accel_ratio):
     (optimal_dist_m*1, 1),
     (optimal_dist_m*2, max_accel_ratio),
     (optimal_dist_m*1000, max_accel_ratio)])
-    dist = _visual_radar_adjusted_dist_m(lead.dRel)
+  dist = _visual_radar_adjusted_dist_m(lead.dRel)
   return  interp(dist, d_weights.keys(), d_weights.values())
   
 def _weighted_velocity_ratio(lead, v_ego, max_decel_ratio, max_accel_ratio):
