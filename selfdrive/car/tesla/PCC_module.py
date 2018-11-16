@@ -373,7 +373,7 @@ class PCCController(object):
     # how much accel and break we have to do
     ####################################################################
     if PCCModes.is_selected(FollowMode(), CS.cstm_btns):
-      self.v_pid, self.b_pid = self.calc_follow_speed(CS)
+      self.v_pid, self.b_pid, accel_modifier = self.calc_follow_speed(CS)
       # cruise speed can't be negative even is user is distracted
       self.v_pid = max(self.v_pid, 0.)
       #self.b_pid *= MPC_BRAKE_MULTIPLIER
@@ -382,6 +382,8 @@ class PCCController(object):
 
       if self.enable_pedal_cruise:
         accel_min, accel_max = calc_cruise_accel_limits(CS)
+        accel_min *= accel_modifier
+        accel max *= accel_modifier
         # TODO: make a separate lookup for jerk tuning
         jerk_min = min(-0.1, accel_min)
         jerk_max = max(0.1, accel_max)
@@ -547,7 +549,7 @@ class PCCController(object):
   def calc_follow_speed(self, CS):
      # Make sure we were able to populate lead_1.
     if self.lead_1 is None:
-      return None
+      return None, None, None
     # dRel is in meters.
     lead_dist_m = _visual_radar_adjusted_dist_m(self.lead_1.dRel)
     # Grab the relative speed.
@@ -559,6 +561,7 @@ class PCCController(object):
     # speed and brake to issue
     new_speed_kph = self.last_speed_kph
     new_brake = self.last_brake
+    accel_multiplier  # < 1 to signal when less acceleration is warranted
     ###   Logic to determine best cruise speed ###
     if self.enable_pedal_cruise:
       # If no lead is present, accel up to max speed
@@ -581,6 +584,7 @@ class PCCController(object):
           new_speed_kph = actual_speed_kph
           if abs(rel_speed_kph) > 4:
             new_speed_kph = actual_speed_kph + clip(rel_speed_kph / 4, -2, 1)
+            accel_multiplier = 0.5
             print 'PCC ='
           else:
             print 'PCC =='
@@ -588,6 +592,7 @@ class PCCController(object):
         # relative speed is significant.
         elif lead_dist_m < 65 and rel_speed_kph < -15:
           new_speed_kph = actual_speed_kph - 1
+          accel_multiplier = 0.5
           'PCC scary distant object'
         # if too far, consider increasing speed
         elif lead_dist_m > 1.5 * safe_dist_m:
@@ -602,6 +607,7 @@ class PCCController(object):
             (3.0 * safe_dist_m, 0.2)])
           distance_speed_weight = interp(lead_dist_m, distance_speed_weights.keys(), distance_speed_weights.values())
           new_speed_kph = actual_speed_kph + clip(rel_speed_kph * distance_speed_weight + distance_bonus_kph, 0, 5)
+          accel_multiplier = 0.5
           print 'PCC +'
         new_speed_kph = min(new_speed_kph, _max_safe_speed_ms(lead_dist_m) * CV.MS_TO_KPH)
 
@@ -611,7 +617,7 @@ class PCCController(object):
       self.last_speed_kph = new_speed_kph
       self.last_brake = new_brake
 
-    return new_speed_kph * CV.KPH_TO_MS , new_brake
+    return new_speed_kph * CV.KPH_TO_MS, new_brake, accel_multiplier
 
 def _visual_radar_adjusted_dist_m(m):
   # visual radar sucks at short distances. It rarely shows readings below 7m.
