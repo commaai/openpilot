@@ -568,8 +568,10 @@ class PCCController(object):
         new_speed_kph = self.pedal_speed_kph
         new_brake = 2.
       elif lead_dist_m > 0:
+        if lead_dist_m < MIN_SAFE_DIST_M:
+          new_speed_kph = 0
         # if too close and not falling back, reduce speed significantly
-        if lead_dist_m < safe_dist_m * .5 and rel_speed_kph < 2:
+        if lead_dist_m < 0.5 * safe_dist_m and rel_speed_kph < 2:
           new_speed_kph = actual_speed_kph - max(2, -rel_speed_kph)
           print 'PCC --'
         # if slightly too close and not falling back, reduce speed slightly
@@ -577,25 +579,32 @@ class PCCController(object):
           new_speed_kph = actual_speed_kph - 1
           print 'PCC -'
         # if in the comfort zone, match lead speed
-        elif lead_dist_m < safe_dist_m * 1.5:
+        elif lead_dist_m < 1.5 * safe_dist_m:
           new_speed_kph = actual_speed_kph
           if abs(rel_speed_kph) > 3:
             new_speed_kph = actual_speed_kph + clip(rel_speed_kph / 3, -3, 3)
             print 'PCC ='
           else:
             print 'PCC =='
-        # if too far and not gaining, increase speed
-        elif lead_dist_m > safe_dist_m * 1.5 and rel_speed_kph > 0:
-          new_speed_kph = actual_speed_kph + clip(rel_speed_kph / 3, 0, 4)
-          print 'PCC +'
         # Visual radar sucks at great distances, but consider action if
         # relative speed is significant.
-        elif lead_dist_m < 3 * safe_dist_m and lead_dist_m < 60 and rel_speed_kph < -15:
+        elif lead_dist_m < 65 and rel_speed_kph < -15:
           new_speed_kph = actual_speed_kph - 1
           'PCC scary distant object'
-        else:
-          new_speed_kph = max(_max_safe_speed_ms(lead_dist_m) * CV.MS_TO_KPH, actual_speed_kph)
-          'PCC ignore distant object'
+        # if too far, consider increasing speed
+        elif lead_dist_m > 1.5 * safe_dist_m:
+          distance_bonuses_kph = OrderedDict([
+            # (distance in m, speed increase in kph) 
+            (1.5 * safe_dist_m, 2.0),
+            (3.0 * safe_dist_m, 5.0)])
+          distance_bonus_kph = interp(lead_dist_m, distance_bonuses_kph.keys(), distance_bonuses_kph.values())
+          distance_speed_weights = OrderedDict([
+            # (distance in m, weight of the rel_speed reading)
+            (1.5 * safe_dist_m, 0.5),
+            (3.0 * safe_dist_m, 0.2)])
+          distance_speed_weight = interp(lead_dist_m, distance_speed_weights.keys(), distance_speed_weights.values())
+          new_speed_kph = actual_speed_kph + clip(rel_speed_kph * distance_speed_weight + distance_bonus_kph, 0, 5)
+          print 'PCC +'
         new_speed_kph = min(new_speed_kph, _max_safe_speed_ms(lead_dist_m) * CV.MS_TO_KPH)
 
       # Enforce limits on speed
