@@ -131,7 +131,7 @@ def calc_cruise_accel_limits(CS, lead):
   a_while_turning_max = max_accel_in_turns(CS.v_ego, CS.angle_steers, CS.CP)
   a_cruise_max = min(a_cruise_max, a_while_turning_max)
   # Reduce accel in the presence of a lead car
-  a_cruise_max *= _accel_limit_multiplier(lead)
+  a_cruise_max *= _accel_limit_multiplier(CS.v_ego, lead)
   
   return float(a_cruise_min), float(a_cruise_max)
 
@@ -603,7 +603,7 @@ class PCCController(object):
             # (distance in m, weight of the rel_speed reading)
             (1.5 * safe_dist_m, 0.5),
             (3.0 * safe_dist_m, 0.2)])
-          speed_weight = _interp_map(lead_dist_m, speed_weights))
+          speed_weight = _interp_map(lead_dist_m, speed_weights)
           new_speed_kph = actual_speed_kph + clip(rel_speed_kph * speed_weight + distance_bonus_kph, 0, 5)
           print 'PCC +'
         new_speed_kph = min(new_speed_kph, _max_safe_speed_ms(lead_dist_m) * CV.MS_TO_KPH)
@@ -715,14 +715,15 @@ def _interp_map(val, val_map):
   this easier to read than interp, which takes two arrays."""
   return interp(val, val_map.keys(), val_map.values())
   
-def _accel_limit_multiplier(lead):
+def _accel_limit_multiplier(v_ego, lead):
   """Limits acceleration in the presence of a lead car. Range: 0 to 1, so that
   it can be multiplied with other accel limits."""
   if lead and lead.dRel:
+    safe_dist_m = _safe_distance_m(v_ego)
     accel_multipliers = OrderedDict([
       # (distance in m, max allowed acceleration fraction)
       (1.0 * safe_dist_m, 0.0),
       (3.0 * safe_dist_m, 1.0)])
-    return _interp_map(lead_dist_m, accel_multipliers)
+    return _interp_map(lead.dRel, accel_multipliers)
   else:
     return 1.0
