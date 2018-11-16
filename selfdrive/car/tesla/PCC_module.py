@@ -65,7 +65,7 @@ _A_CRUISE_MIN = OrderedDict([
 # Need higher accel at very low speed for stop and go.
 # make sure these accelerations are smaller than mpc limits.
 _A_CRUISE_MAX = OrderedDict([
-  (0.0, 0.8),
+  (0.0, 0.9),
   (5.0, 0.6),
   (10., 0.5),
   (20., 0.4),
@@ -561,7 +561,7 @@ class PCCController(object):
     # speed and brake to issue
     new_speed_kph = self.last_speed_kph
     new_brake = self.last_brake
-    accel_multiplier  # < 1 to signal when less acceleration is warranted
+    accel_multiplier = 1 # < 1 to signal when less acceleration is warranted
     ###   Logic to determine best cruise speed ###
     if self.enable_pedal_cruise:
       # If no lead is present, accel up to max speed
