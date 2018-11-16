@@ -231,8 +231,7 @@ class LongitudinalMpc(object):
       self.override = False  # When car starts accelerating, resume one bar distance profile
       
     if self.override or (CS.readdistancelines == 1 and CS.vEgo < 18.06 and (v_lead - CS.vEgo) < -3 and x_lead < 100):
-      if CS.aEgo < -0.5:
-         self.override = True   # If we start braking, then keep 3 bar distance profile until car starts to accelerate
+      self.override = True   # If we start braking, then keep 3 bar distance profile until car starts to accelerate
       TR=2.7
       #if self.lastTR > 0:
         #self.libmpc.init(MPC_COST_LONG.TTC, 0.1, PC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
