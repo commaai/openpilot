@@ -519,7 +519,7 @@ class PCCController(object):
     #by adding b_pid we can enforce not to apply brake in small situations
     apply_brake = -clip(output_gb * self.b_pid, -brake_max, 0.)
 
-    #if the speed if over 5mpg, the "zero" is at PedalForZeroTorque otherwise it at zero
+    # if speed is over 5mpg, the "zero" is at PedalForZeroTorque; otherwise it is zero
     pedal_zero = 0.
     if CS.v_ego >= 5.* CV.MPH_TO_MS:
       pedal_zero = self.PedalForZeroTorque
@@ -549,9 +549,7 @@ class PCCController(object):
     if self.lead_1 is None:
       return None
     # dRel is in meters.
-    lead_dist_m = self.lead_1.dRel
-    # visual radar sucks at short distances. Remap 7m to 0m.
-    lead_dist_m = interp(lead_dist_m, [0, 7, 15, 10000], [0, 0, 15, 10000])
+    lead_dist_m = _visual_radar_adjusted_dist_m(self.lead_1.dRel)
     # Grab the relative speed.
     rel_speed_kph = self.lead_1.vRel * CV.MS_TO_KPH
     # v_ego is in m/s, so safe_distance is in meters.
@@ -615,11 +613,16 @@ class PCCController(object):
 
     return new_speed_kph * CV.KPH_TO_MS , new_brake
 
+def _visual_radar_adjusted_dist_m(m):
+  # visual radar sucks at short distances. It rarely shows readings below 7m.
+  # So rescale distances with 7m -> 0m. Maxes out at 100km, if that matters.
+  return = interp(m, [0, 7, 300, 100000], [0, 0, 300, 10000])
+
 def _safe_distance_m(v_ego_ms):
   return max(FOLLOW_TIME_S * v_ego_ms, MIN_SAFE_DIST_M)
   
 def _distance_is_safe(v_ego_ms, lead):
-  lead_too_close = bool(_is_present(lead) and lead.dRel <= _safe_distance_m(v_ego_ms))
+  lead_too_close = bool(_is_present(lead) and _visual_radar_adjusted_dist_m(lead.dRel) <= _safe_distance_m(v_ego_ms))
   return not lead_too_close
 
 def _max_safe_speed_ms(m):
@@ -630,7 +633,7 @@ def _is_present(lead):
 
 def _sec_til_collision(lead):
   if _is_present(lead) and lead.vRel != 0:
-    return lead.dRel / lead.vRel
+    return _visual_radar_adjusted_dist_m(lead.dRel) / lead.vRel
   else:
     return 60  # Arbitrary, but better than MAXINT because we can still do math on it.
     
@@ -663,7 +666,8 @@ def _weighted_distance_ratio(lead, v_ego, max_decel_ratio, max_accel_ratio):
     (optimal_dist_m*1, 1),
     (optimal_dist_m*2, max_accel_ratio),
     (optimal_dist_m*1000, max_accel_ratio)])
-  return  interp(lead.dRel, d_weights.keys(), d_weights.values())
+    dist = _visual_radar_adjusted_dist_m(lead.dRel)
+  return  interp(dist, d_weights.keys(), d_weights.values())
   
 def _weighted_velocity_ratio(lead, v_ego, max_decel_ratio, max_accel_ratio):
   """Decide how to accel/decel based on how fast the lead is.
@@ -692,5 +696,6 @@ def _weighted_velocity_ratio(lead, v_ego, max_decel_ratio, max_accel_ratio):
     (FOLLOW_TIME_S * 5,    0.),  # zero weight when distant
     (FOLLOW_TIME_S * 6,    0.)
   ])
-  v_weight = interp(_sec_to_travel(lead.dRel, v_ego), v_weights.keys(), v_weights.values())
+  dist = _visual_radar_adjusted_dist_m(lead.dRel)
+  v_weight = interp(_sec_to_travel(dist, v_ego), v_weights.keys(), v_weights.values())
   return velocity_ratio ** v_weight
