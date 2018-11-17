@@ -42,7 +42,7 @@ MAX_PEDAL_VALUE = 112.
 #BBTODO: move the vehicle variables; maybe make them speed variable
 TORQUE_LEVEL_ACC = 0.
 TORQUE_LEVEL_DECEL = -30.
-FOLLOW_TIME_S = 2.0  # time in seconds to follow car in front
+FOLLOW_TIME_S = 1.8  # time in seconds to follow car in front
 MIN_PCC_V = 0. #
 MAX_PCC_V = 170.
 
@@ -65,10 +65,10 @@ _A_CRUISE_MIN = OrderedDict([
 # make sure these accelerations are smaller than mpc limits.
 _A_CRUISE_MAX = OrderedDict([
   # (speed in m/s, allowed acceleration)
-  (0.0, 0.8),
-  (5.0, 0.6),
-  (10., 0.5),
-  (20., 0.4),
+  (0.0, 0.4),
+  (5.0, 0.3),
+  (10., 0.3),
+  (20., 0.3),
   (40., 0.3)])
   
 # Lookup table for turns
@@ -379,8 +379,8 @@ class PCCController(object):
 
       if self.enable_pedal_cruise:
         # TODO: make a separate lookup for jerk tuning
-        jerk_min = -0.1
-        jerk_max = 0.1
+        jerk_min = -0.3
+        jerk_max = 0.12
         self.v_cruise, self.a_cruise = speed_smoother(self.v_acc_start, self.a_acc_start,
                                                       self.v_pid,
                                                       accel_max, brake_max,
@@ -560,31 +560,25 @@ class PCCController(object):
         if lead_dist_m < MIN_SAFE_DIST_M:
           new_speed_kph = 0
         # if too close and not falling back, reduce speed
-        elif lead_dist_m < safe_dist_m and rel_speed_kph <= 1:
+        elif lead_dist_m < safe_dist_m and rel_speed_kph < 0.5:
           new_speed_kph = actual_speed_kph - 1
-          print 'PCC -'
         # if in the comfort zone, match lead speed
         elif lead_dist_m < 1.5 * safe_dist_m:
           new_speed_kph = actual_speed_kph
-          if abs(rel_speed_kph) > 2:
-            new_speed_kph = actual_speed_kph + clip(rel_speed_kph / 2, -1, 1)
-            print 'PCC ='
-          else:
-            print 'PCC =='
+          if abs(rel_speed_kph) > 3:
+            new_speed_kph = actual_speed_kph + clip(rel_speed_kph, -1, 1)
         # Visual radar sucks at great distances, but consider action if
         # relative speed is significant.
         elif lead_dist_m < 65 and rel_speed_kph < -15:
           new_speed_kph = actual_speed_kph - 1
-          'PCC scary distant object'
         # if too far, consider increasing speed
         elif lead_dist_m > 1.5 * safe_dist_m:
           speed_weights = OrderedDict([
             # (distance in m, weight of the rel_speed reading)
             (1.5 * safe_dist_m, 0.4),
-            (3.0 * safe_dist_m, 0.2)])
+            (3.0 * safe_dist_m, 0.1)])
           speed_weight = _interp_map(lead_dist_m, speed_weights)
-          new_speed_kph = actual_speed_kph + clip(rel_speed_kph * speed_weight + 3, 0, 5)
-          print 'PCC +'
+          new_speed_kph = actual_speed_kph + clip(rel_speed_kph * speed_weight + 5, 0, 3)
         new_speed_kph = min(new_speed_kph, _max_safe_speed_ms(lead_dist_m) * CV.MS_TO_KPH)
 
       # Enforce limits on speed
@@ -700,9 +694,9 @@ def _accel_limit_multiplier(v_ego, lead):
   if lead and lead.dRel:
     safe_dist_m = _safe_distance_m(v_ego)
     accel_multipliers = OrderedDict([
-      # (distance in m, max allowed acceleration fraction)
-      (1.0 * safe_dist_m, 0.0),
-      (3.0 * safe_dist_m, 1.0)])
+      # (distance in m, acceleration fraction)
+      (0.7 * safe_dist_m, 0.0),
+      (2.0 * safe_dist_m, 1.0)])
     return _interp_map(lead.dRel, accel_multipliers)
   else:
     return 1.0
@@ -711,9 +705,10 @@ def _decel_limit_multiplier(v_ego, lead):
   if lead and lead.dRel:
     safe_dist_m = _safe_distance_m(v_ego)
     decel_multipliers = OrderedDict([
-       # (distance in m, max allowed acceleration fraction)
-       (0.6 * safe_dist_m, 1.0),
-       (3.0 * safe_dist_m, 0.1)])
+       # (distance in m, acceleration fraction)
+       (0.4 * safe_dist_m, 1.0),
+       (1.4 * safe_dist_m, 0.2),
+       (1.9 * safe_dist_m, 0.1)])
     return _interp_map(lead.dRel, decel_multipliers)
   else:
     return 1
