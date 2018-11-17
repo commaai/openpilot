@@ -249,6 +249,8 @@ typedef struct UIState {
   float light_sensor;
 } UIState;
 
+#include "tuning.h"
+
 static int last_brightness = -1;
 static void set_brightness(UIState *s, int brightness) {
   if (last_brightness != brightness && (s->awake || brightness == 0)) {
@@ -1971,8 +1973,8 @@ static void ui_update(UIState *s) {
         }
         s->scene.v_cruise = datad.vCruise;
         s->scene.v_ego = datad.vEgo;
-		s->scene.angleSteers = datad.angleSteers;
-		s->scene.angleSteersDes = datad.angleSteersDes;
+		    s->scene.angleSteers = datad.angleSteers;
+		    s->scene.angleSteersDes = datad.angleSteersDes;
         s->scene.curvature = datad.curvature;
         s->scene.engaged = datad.enabled;
         s->scene.engageable = datad.engageable;
@@ -2139,7 +2141,7 @@ static void ui_update(UIState *s) {
             s->scene.maxCpuTemp=datad.cpu3;
         }
       s->scene.maxBatTemp=datad.bat;
-	  s->scene.freeSpace=datad.freeSpace;
+	    s->scene.freeSpace=datad.freeSpace;
 	   //BBB END CPU TEMP
       } else if (eventd.which == cereal_Event_uiLayoutState) {
         struct cereal_UiLayoutState datad;
@@ -2409,7 +2411,8 @@ int main() {
 
     // awake on any touch
     int touch_x = -1, touch_y = -1;
-    int touched = touch_poll(&touch, &touch_x, &touch_y, s->awake ? 0 : 100);
+    int key_up = 0;
+    int touched = custom_touch_poll(&touch, &touch_x, &touch_y, s->awake ? 0 : 100, &key_up);
     if (touched == 1) {
       // touch event will still happen :(
       set_awake(s, true);
@@ -2426,6 +2429,7 @@ int main() {
       ui_draw(s);
       glFinish();
       should_swap = true;
+      tuning(s, touch_x, touch_y, key_up);
     }
 
     if (s->volume_timeout > 0) {

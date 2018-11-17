@@ -75,6 +75,18 @@ def create_accel_command(packer, accel, pcm_cancel, standstill_req):
   }
   return packer.make_can_msg("ACC_CONTROL", 0, values)
 
+def create_gas_command(packer, gas_amount):
+  """Creates a CAN message for the Pedal DBC GAS_COMMAND."""
+  enable = gas_amount > 0.001
+
+  values = {"ENABLE": enable}
+
+  if enable:
+    values["GAS_COMMAND"] = gas_amount * 255.
+    values["GAS_COMMAND2"] = gas_amount * 255.
+
+  return packer.make_can_msg("GAS_COMMAND", 0, values)
+
 
 def create_fcw_command(packer, fcw):
   values = {
