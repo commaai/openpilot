@@ -110,6 +110,9 @@ class ACCController(object):
         self.acc_speed_kph = max(CS.v_ego_raw * CV.MS_TO_KPH, self.acc_speed_kph)
         self.user_has_braked = False
         self.has_gone_below_min_speed = False
+      else:
+        # A single pull disables ACC (falling back to just steering).
+        self.enable_adaptive_cruise = False
     # Handle pressing the cancel button.
     elif CS.cruise_buttons == CruiseButtons.CANCEL:
       self.enable_adaptive_cruise = False

@@ -234,7 +234,7 @@ class CarState(object):
     self.pedal_interceptor_state = 0
     self.pedal_interceptor_value = 0.
     self.pedal_interceptor_value2 = 0.
-    self.pedal_interceptor_counter = 0
+    self.pedal_interceptor_missed_counter = 0
     self.brake_switch_prev = 0
     self.brake_switch_ts = 0
 
@@ -266,9 +266,9 @@ class CarState(object):
 
     #BB variables for pedal CC
     self.pedal_speed_kph = 0.
+    # Pedal mode is ready, i.e. hardware is present and normal cruise is off.
     self.pedal_interceptor_available = False
     self.prev_pedal_interceptor_available = False
-    self.prev_pedal_interceptor_present = False
 
     #BB UIEvents
     self.UE = UIEvents(self)
@@ -416,17 +416,14 @@ class CarState(object):
     self.regenLight = cp.vl["DI_state"]['DI_regenLight'] == 1
     
     self.prev_pedal_interceptor_available = self.pedal_interceptor_available
-    pedal_interceptor_present = (self.pedal_interceptor_state in [0, 5]
-                                 and bool(self.pedal_interceptor_value)
-                                 and bool(self.pedal_interceptor_value2))
+    pedal_has_value = bool(self.pedal_interceptor_value) or bool(self.pedal_interceptor_value2)
+    pedal_interceptor_present = self.pedal_interceptor_state in [0, 5] and pedal_has_value
     # Add loggic if we just miss some CAN messages so we don't immediately disable pedal
     if pedal_interceptor_present:
-      self.pedal_interceptor_counter = 0
-    if self.prev_pedal_interceptor_present and not pedal_interceptor_present:
-      self.pedal_interceptor_counter += 1
-      if self.pedal_interceptor_counter < 10:
-        pedal_interceptor_present = self.prev_pedal_interceptor_present
-    self.prev_pedal_interceptor_present = pedal_interceptor_present
+      self.pedal_interceptor_missed_counter = 0
+    else:
+      self.pedal_interceptor_missed_counter += 1
+    pedal_interceptor_present = self.pedal_interceptor_missed_counter < 10
     # Mark pedal unavailable while traditional cruise is on.
     self.pedal_interceptor_available = pedal_interceptor_present and not bool(self.pcm_acc_status)
     if self.pedal_interceptor_available != self.prev_pedal_interceptor_available:
