@@ -19,7 +19,6 @@ import numpy as np
 from collections import OrderedDict
 
 
-MPC_BRAKE_MULTIPLIER = 6.
 DEBUG = False
 
 PCC_SPEED_FACTOR = 2.
@@ -58,9 +57,9 @@ _A_CRUISE_MIN = OrderedDict([
   # (speed in m/s, allowed deceleration)
   (0.0, -6.0),
   (5.0, -5.0),
-  (10., -4.2),
+  (10., -4.0),
   (20., -3.0),
-  (40., -1.9)])
+  (40., -2.0)])
 
 # Map of speed to max allowed acceleration.
 # Need higher accel at very low speed for stop and go.
@@ -130,8 +129,10 @@ def calc_cruise_accel_limits(CS, lead):
     
   a_while_turning_max = max_accel_in_turns(CS.v_ego, CS.angle_steers, CS.CP)
   a_cruise_max = min(a_cruise_max, a_while_turning_max)
-  # Reduce accel in the presence of a lead car
+  # Reduce accel if lead car is close
   a_cruise_max *= _accel_limit_multiplier(CS.v_ego, lead)
+  # Reduce decel if lead car is distant
+  a_cruise_min *= _decel_limit_multiplier(CS.v_ego, lead)
   
   return float(a_cruise_min), float(a_cruise_max)
 
@@ -203,10 +204,8 @@ class PCCController(object):
     self.lastTorqueForPedalForZeroTorque = TORQUE_LEVEL_DECEL
     self.v_pid = 0.
     self.a_pid = 0.
-    self.b_pid = 0.
     self.last_output_gb = 0.
     self.last_speed_kph = 0.
-    self.last_brake = 0.
     #for smoothing the changes in speed
     self.v_acc_start = 0.0
     self.a_acc_start = 0.0
@@ -365,9 +364,10 @@ class PCCController(object):
       self.l100_ts = l20.live20.l100MonoTime
 
     prevent_overshoot = False #not CS.CP.stoppingControl and CS.v_ego < 1.5 and v_target_future < 0.7
-    accel_max = interp(CS.v_ego, CS.CP.gasMaxBP, CS.CP.gasMaxV)
-    brake_max = interp(CS.v_ego, CS.CP.brakeMaxBP, CS.CP.brakeMaxV)
-
+    # TODO: remove these CP things if unused
+    #accel_max = interp(CS.v_ego, CS.CP.gasMaxBP, CS.CP.gasMaxV)
+    #brake_max = interp(CS.v_ego, CS.CP.brakeMaxBP, CS.CP.brakeMaxV)
+    brake_max, accel_max = calc_cruise_accel_limits(CS, self.lead_1)
     output_gb = 0
     ####################################################################
     # this mode (Follow) uses the Follow logic created by JJ for ACC
@@ -376,21 +376,19 @@ class PCCController(object):
     # how much accel and break we have to do
     ####################################################################
     if PCCModes.is_selected(FollowMode(), CS.cstm_btns):
-      self.v_pid, self.b_pid = self.calc_follow_speed(CS)
+      self.v_pid = self.calc_follow_speed(CS)
       # cruise speed can't be negative even is user is distracted
       self.v_pid = max(self.v_pid, 0.)
-      #self.b_pid *= MPC_BRAKE_MULTIPLIER
 
       enabled = self.enable_pedal_cruise and self.LoC.long_control_state in [LongCtrlState.pid, LongCtrlState.stopping]
 
       if self.enable_pedal_cruise:
-        accel_min, accel_max = calc_cruise_accel_limits(CS, self.lead_1)
         # TODO: make a separate lookup for jerk tuning
-        jerk_min = min(-0.1, accel_min)
+        jerk_min = min(-0.1, brake_max)
         jerk_max = max(0.1, accel_max)
         self.v_cruise, self.a_cruise = speed_smoother(self.v_acc_start, self.a_acc_start,
                                                       self.v_pid,
-                                                      accel_max, accel_min,
+                                                      accel_max, brake_max,
                                                       jerk_max, jerk_min,
                                                       _DT_MPC)
         
@@ -444,7 +442,6 @@ class PCCController(object):
     # we use the values from actuator.accel and actuator.brake
     ##############################################################
     elif PCCModes.is_selected(OpMode(), CS.cstm_btns):
-      self.b_pid = MPC_BRAKE_MULTIPLIER
       output_gb = actuators.gas - actuators.brake
 
     ##############################################################
@@ -461,7 +458,6 @@ class PCCController(object):
       if enabled and self.enable_pedal_cruise:
         MAX_DECEL_RATIO = 0
         MAX_ACCEL_RATIO = 1.1
-        self.b_pid = MPC_BRAKE_MULTIPLIER 
         available_speed_kph = self.pedal_speed_kph - CS.v_ego * CV.MS_TO_KPH
         # Hold accel if radar gives intermittent readings at great distance.
         # Makes the car less skittish when first making radar contact.
@@ -519,8 +515,8 @@ class PCCController(object):
     self.last_output_gb = output_gb
     # accel and brake
     apply_accel = clip(output_gb, 0., accel_max)
-    #by adding b_pid we can enforce not to apply brake in small situations
-    apply_brake = -clip(output_gb * self.b_pid, -brake_max, 0.)
+    MPC_BRAKE_MULTIPLIER = 6.
+    apply_brake = -clip(output_gb * MPC_BRAKE_MULTIPLIER, -brake_max, 0.)
 
     # if speed is over 5mpg, the "zero" is at PedalForZeroTorque; otherwise it is zero
     pedal_zero = 0.
@@ -561,29 +557,23 @@ class PCCController(object):
     actual_speed_kph = CS.v_ego * CV.MS_TO_KPH
     # speed and brake to issue
     new_speed_kph = self.last_speed_kph
-    new_brake = self.last_brake
     ###   Logic to determine best cruise speed ###
     if self.enable_pedal_cruise:
       # If no lead is present, accel up to max speed
       if lead_dist_m == 0:
         new_speed_kph = self.pedal_speed_kph
-        new_brake = 2.
       elif lead_dist_m > 0:
         if lead_dist_m < MIN_SAFE_DIST_M:
           new_speed_kph = 0
-        # if too close and not falling back, reduce speed significantly
-        if lead_dist_m < 0.5 * safe_dist_m and rel_speed_kph < 2:
-          new_speed_kph = actual_speed_kph - max(2, -rel_speed_kph)
-          print 'PCC --'
-        # if slightly too close and not falling back, reduce speed slightly
+        # if too close and not falling back, reduce speed
         elif lead_dist_m < safe_dist_m and rel_speed_kph <= 1:
           new_speed_kph = actual_speed_kph - 1
           print 'PCC -'
         # if in the comfort zone, match lead speed
         elif lead_dist_m < 1.5 * safe_dist_m:
           new_speed_kph = actual_speed_kph
-          if abs(rel_speed_kph) > 4:
-            new_speed_kph = actual_speed_kph + clip(rel_speed_kph / 4, -2, 1)
+          if abs(rel_speed_kph) > 2:
+            new_speed_kph = actual_speed_kph + clip(rel_speed_kph / 2, -1, 1)
             print 'PCC ='
           else:
             print 'PCC =='
@@ -594,17 +584,12 @@ class PCCController(object):
           'PCC scary distant object'
         # if too far, consider increasing speed
         elif lead_dist_m > 1.5 * safe_dist_m:
-          distance_bonuses_kph = OrderedDict([
-            # (distance in m, speed increase in kph) 
-            (1.5 * safe_dist_m, 2.0),
-            (3.0 * safe_dist_m, 5.0)])
-          distance_bonus_kph = _interp_map(lead_dist_m, distance_bonuses_kph)
           speed_weights = OrderedDict([
             # (distance in m, weight of the rel_speed reading)
-            (1.5 * safe_dist_m, 0.5),
+            (1.5 * safe_dist_m, 0.4),
             (3.0 * safe_dist_m, 0.2)])
           speed_weight = _interp_map(lead_dist_m, speed_weights)
-          new_speed_kph = actual_speed_kph + clip(rel_speed_kph * speed_weight + distance_bonus_kph, 0, 5)
+          new_speed_kph = actual_speed_kph + clip(rel_speed_kph * speed_weight + 3, 0, 5)
           print 'PCC +'
         new_speed_kph = min(new_speed_kph, _max_safe_speed_ms(lead_dist_m) * CV.MS_TO_KPH)
 
@@ -612,9 +597,8 @@ class PCCController(object):
       new_speed_kph = clip(new_speed_kph, MIN_PCC_V, MAX_PCC_V)
       new_speed_kph = clip(new_speed_kph, 0, self.pedal_speed_kph)
       self.last_speed_kph = new_speed_kph
-      self.last_brake = new_brake
 
-    return new_speed_kph * CV.KPH_TO_MS, new_brake
+    return new_speed_kph * CV.KPH_TO_MS
 
 def _visual_radar_adjusted_dist_m(m):
   # visual radar sucks at short distances. It rarely shows readings below 7m.
@@ -727,3 +711,14 @@ def _accel_limit_multiplier(v_ego, lead):
     return _interp_map(lead.dRel, accel_multipliers)
   else:
     return 1.0
+
+def _decel_limit_multiplier(v_ego, lead):
+  if lead and lead.dRel:
+    safe_dist_m = _safe_distance_m(v_ego)
+    decel_multipliers = OrderedDict([
+       # (distance in m, max allowed acceleration fraction)
+       (0.6 * safe_dist_m, 1.0),
+       (3.0 * safe_dist_m, 0.1)])
+    return _interp_map(lead.dRel, decel_multipliers)
+  else:
+    return 1
