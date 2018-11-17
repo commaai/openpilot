@@ -249,7 +249,7 @@ typedef struct UIState {
   float light_sensor;
 } UIState;
 
-#include "./dashcam.h"
+#include "tuning.h"
 
 static int last_brightness = -1;
 static void set_brightness(UIState *s, int brightness) {
@@ -1355,9 +1355,6 @@ static void ui_draw_vision_maxspeed(UIState *s) {
     nvgText(s->vg, viz_maxspeed_x+viz_maxspeed_w/2, 242, "N/A", NULL);
   }
 
-  //BB START: add new measures panel  const int bb_dml_w = 180;
-	bb_ui_draw_UI(s) ;
-  //BB END: add new measures panel
 }
 
 static void ui_draw_vision_speedlimit(UIState *s) {
@@ -1427,7 +1424,8 @@ static void ui_draw_vision_speedlimit(UIState *s) {
 
     snprintf(maxspeed_str, sizeof(maxspeed_str), "%d", (int)(speedlimit * 2.2369363 + 0.5));
     nvgText(s->vg, viz_maxspeed_x+viz_maxspeed_w/2, viz_maxspeed_y + 170, maxspeed_str, NULL);
- }
+  }
+  screen_draw_tuning(s);
 }
 
 static void ui_draw_vision_speed(UIState *s) {
@@ -2422,7 +2420,8 @@ int main() {
 
     // awake on any touch
     int touch_x = -1, touch_y = -1;
-    int touched = touch_poll(&touch, &touch_x, &touch_y, s->awake ? 0 : 100);
+    int key_up = 0;
+    int touched = custom_touch_poll(&touch, &touch_x, &touch_y, s->awake ? 0 : 100, &key_up);
     if (touched == 1) {
       // touch event will still happen :(
       set_awake(s, true);
@@ -2440,6 +2439,7 @@ int main() {
       ui_draw(s);
       glFinish();
       should_swap = true;
+      tuning(s, touch_x, touch_y, key_up);
     }
 
     if (s->volume_timeout > 0) {
