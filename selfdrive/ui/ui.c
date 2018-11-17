@@ -249,8 +249,6 @@ typedef struct UIState {
   float light_sensor;
 } UIState;
 
-#include "tuning.h"
-
 static int last_brightness = -1;
 static void set_brightness(UIState *s, int brightness) {
   if (last_brightness != brightness && (s->awake || brightness == 0)) {
@@ -406,10 +404,6 @@ static void ui_init(UIState *s) {
   assert(s->thermal_sock);
   s->thermal_sock_raw = zsock_resolve(s->thermal_sock);
 
-  s->gps_sock = zsock_new_sub(">tcp://127.0.0.1:8032", "");
-  assert(s->gps_sock);
-  s->gps_sock_raw = zsock_resolve(s->gps_sock);
-  
   s->model_sock = zsock_new_sub(">tcp://127.0.0.1:8009", "");
   assert(s->model_sock);
   s->model_sock_raw = zsock_resolve(s->model_sock);
@@ -1291,8 +1285,6 @@ static void bb_ui_draw_UI(UIState *s) {
 	close(tri_state_fd);
   }
 
-  draw_date_time(s);
-
   if (tri_state_switch == 1) {
 	  const UIScene *scene = &s->scene;
 	  const int bb_dml_w = 180;
@@ -1425,7 +1417,6 @@ static void ui_draw_vision_speedlimit(UIState *s) {
     snprintf(maxspeed_str, sizeof(maxspeed_str), "%d", (int)(speedlimit * 2.2369363 + 0.5));
     nvgText(s->vg, viz_maxspeed_x+viz_maxspeed_w/2, viz_maxspeed_y + 170, maxspeed_str, NULL);
   }
-  screen_draw_tuning(s);
 }
 
 static void ui_draw_vision_speed(UIState *s) {
@@ -1921,8 +1912,6 @@ static void ui_update(UIState *s) {
       zmq_msg_t msg;
       err = zmq_msg_init(&msg);
       assert(err == 0);
-      err = zmq_msg_recv(&msg, s->gps_sock_raw, 0);
-      assert(err >= 0);
 
       struct capn ctx;
       capn_init_mem(&ctx, zmq_msg_data(&msg), zmq_msg_size(&msg), 0);
@@ -2420,8 +2409,7 @@ int main() {
 
     // awake on any touch
     int touch_x = -1, touch_y = -1;
-    int key_up = 0;
-    int touched = custom_touch_poll(&touch, &touch_x, &touch_y, s->awake ? 0 : 100, &key_up);
+    int touched = touch_poll(&touch, &touch_x, &touch_y, s->awake ? 0 : 100);
     if (touched == 1) {
       // touch event will still happen :(
       set_awake(s, true);
@@ -2435,11 +2423,9 @@ int main() {
     }
 
     if (s->awake) {
-      dashcam(s, touch_x, touch_y);
       ui_draw(s);
       glFinish();
       should_swap = true;
-      tuning(s, touch_x, touch_y, key_up);
     }
 
     if (s->volume_timeout > 0) {
