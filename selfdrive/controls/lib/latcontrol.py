@@ -114,6 +114,10 @@ class LatControl(object):
       self.avg_angle_rate = (self.avg_angle_rate * self.angle_rate_count + angle_rate) / (self.angle_rate_count + 1.) 
       self.angle_rate_count += 1.0
       future_angle_steers = (self.avg_angle_rate * _DT_MPC) + self.starting_angle_steers
+
+      if abs(angle_rate) <= 1. or abs(angle_steers - self.angle_steers_des_mpc) <= 0.2:
+        future_angle_steers = angle_steers
+
       steers_max = get_steer_max(CP, v_ego)
       self.pid.pos_limit = steers_max
       self.pid.neg_limit = -steers_max
