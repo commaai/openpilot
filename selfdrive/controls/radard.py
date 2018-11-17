@@ -141,6 +141,14 @@ def radard_thread(gctx=None):
       reading = speedSensorV.read(PP.lead_dist, covar=np.matrix(PP.lead_var))
       ekfv.update_scalar(reading)
       ekfv.predict(tsv)
+
+      # When changing lanes the distance to the lead car can suddenly change,
+      # which makes the Kalman filter output large relative acceleration
+      if mocked and abs(PP.lead_dist - ekfv.state[XV]) > 2.0:
+        ekfv.state[XV] = PP.lead_dist
+        ekfv.covar = (np.diag([PP.lead_var, ekfv.var_init]))
+        ekfv.state[SPEEDV] = 0.
+
       ar_pts[VISION_POINT] = (float(ekfv.state[XV]), np.polyval(PP.d_poly, float(ekfv.state[XV])),
                               float(ekfv.state[SPEEDV]), False)
     else:
@@ -279,8 +287,8 @@ def radard_thread(gctx=None):
         "yRel": float(tracks[ids].yRel),
         "vRel": float(tracks[ids].vRel),
         "aRel": float(tracks[ids].aRel),
-        "stationary": tracks[ids].stationary,
-        "oncoming": tracks[ids].oncoming,
+        "stationary": bool(tracks[ids].stationary),
+        "oncoming": bool(tracks[ids].oncoming),
       }
     liveTracks.send(dat.to_bytes())
 
