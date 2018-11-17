@@ -125,7 +125,6 @@ class CarController(object):
       
     # Do not send audible alert when steering is disabled
     if not CS.lkMode:
-      snd_beep = 0
       snd_chime = 0
 
     #print chime, alert_id, hud_alert

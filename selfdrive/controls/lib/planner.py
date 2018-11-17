@@ -216,23 +216,24 @@ class LongitudinalMpc(object):
     else:
       self.prev_lead_status = False
       # Fake a fast lead car, so mpc keeps running
-      self.cur_state[0].x_l = 150.0
+      self.cur_state[0].x_l = 50.0
       self.cur_state[0].v_l = CS.vEgo + 10.0
       a_lead = 0.0
-      v_lead = CS.vEgo + 10.0
-      x_lead = 150.0
+      #v_lead = CS.vEgo + 10.0
+      #x_lead = 150.0
       self.a_lead_tau = _LEAD_ACCEL_TAU
 
     # Calculate mpc
     t = sec_since_boot()
     
     # Override with 3 bar distance profile if using one bar distance - hysteresis for safety
-    if self.override and CS.aEgo >= 0:
-      self.override = False  # When car starts accelerating, resume one bar distance profile
+    #if self.override and CS.aEgo >= 0:
+    #  self.override = False  # When car starts accelerating, resume one bar distance profile
       
-    if self.override or (CS.readdistancelines == 1 and CS.vEgo < 18.06 and (v_lead - CS.vEgo) < -3 and x_lead < 100):
-      self.override = True   # If we start braking, then keep 3 bar distance profile until car starts to accelerate
-      TR=2.7
+    #if self.override or (CS.readdistancelines == 1 and CS.vEgo < 18.06 and (v_lead - CS.vEgo) < -3 and x_lead < 100):
+    if CS.readdistancelines == 1 and CS.vEgo < 18.06:  
+      #self.override = True   # If we start braking, then keep 3 bar distance profile until car starts to accelerate
+      TR=1.8
       #if self.lastTR > 0:
         #self.libmpc.init(MPC_COST_LONG.TTC, 0.1, PC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
         #self.lastTR = 0
