@@ -1,3 +1,13 @@
+Version 0.5.6 (2018-11-16)
+========================
+ * Refresh settings layout and add feature descriptions
+ * In Honda, keep stock camera on for logging and extra stock features; new openpilot giraffe setting is 0111!
+ * In Toyota, option to keep stock camera on for logging and extra stock features (e.g. AHB); 120Ohm resistor required on giraffe.
+ * Improve camera calibration stability
+ * More tuning to Honda positive accelerations
+ * Reduce brake pump use on Hondas
+ * Chevrolet Malibu support thanks to tylergets!
+
 Version 0.5.5 (2018-10-20)
 ========================
  * Increase allowed Honda positive accelerations

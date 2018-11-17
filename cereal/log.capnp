@@ -411,6 +411,7 @@ struct Live100Data {
   alertSize @39 :AlertSize;
   alertBlinkingRate @42 :Float32;
   alertType @44 :Text;
+  alertSound @45 :Text;
   awarenessStatus @26 :Float32;
   angleOffset @27 :Float32;
   gpsPlannerActive @40 :Bool;
@@ -1565,6 +1566,11 @@ struct LiveParametersData {
   angleOffset @2 :Float32;
 }
 
+struct LiveMapData {
+  valid @0 :Bool;
+  speedLimit @1 :Float32;
+}
+
 
 struct Event {
   # in nanoseconds?
@@ -1632,5 +1638,6 @@ struct Event {
     driverMonitoring @59 :DriverMonitoring;
     boot @60 :Boot;
     liveParameters @61 :LiveParametersData;
+    liveMapData @62 :LiveMapData;
   }
 }
