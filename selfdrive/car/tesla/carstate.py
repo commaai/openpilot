@@ -419,9 +419,8 @@ class CarState(object):
     self.regenLight = cp.vl["DI_state"]['DI_regenLight'] == 1
     
     self.prev_pedal_interceptor_available = self.pedal_interceptor_available
-    pedal_interceptor_present = (self.pedal_interceptor_state in [0, 5]
-                                 and bool(self.pedal_interceptor_value)
-                                 and bool(self.pedal_interceptor_value2))
+    pedal_has_value = bool(self.pedal_interceptor_value) or bool(self.pedal_interceptor_value2)
+    pedal_interceptor_present = (self.pedal_interceptor_state in [0, 5] and pedal_has_value)
     # Add loggic if we just miss some CAN messages so we don't immediately disable pedal
     if pedal_interceptor_present:
       self.pedal_interceptor_counter = 0
