@@ -1,8 +1,6 @@
 import struct
-
-import common.numpy_fast as np
 from selfdrive.config import Conversions as CV
-from selfdrive.car.honda.values import CAR, HONDA_BOSCH, VEHICLE_STATE_MSG
+from selfdrive.car.honda.values import CAR, HONDA_BOSCH
 
 # *** Honda specific ***
 def can_cksum(mm):
@@ -21,16 +19,8 @@ def fix(msg, addr):
   return msg2
 
 
-def make_can_msg(addr, dat, idx, alt):
-  if idx is not None:
-    dat += chr(idx << 4)
-    dat = fix(dat, addr)
-  return [addr, 0, dat, alt]
-
-
-def create_brake_command(packer, apply_brake, pcm_override, pcm_cancel_cmd, chime, fcw, idx):
-  """Creates a CAN message for the Honda DBC BRAKE_COMMAND."""
-  pump_on = apply_brake > 0
+def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, chime, fcw, idx):
+  # TODO: do we loose pressure if we keep pump off for long?
   brakelights = apply_brake > 0
   brake_rq = apply_brake > 0
   pcm_fault_cmd = False
@@ -45,13 +35,13 @@ def create_brake_command(packer, apply_brake, pcm_override, pcm_cancel_cmd, chim
     "SET_ME_0X80": 0x80,
     "BRAKE_LIGHTS": brakelights,
     "CHIME": chime,
-    "FCW": fcw << 1,  # TODO: Why are there two bits for fcw? According to dbc file the first bit should also work
+    # TODO: Why are there two bits for fcw? According to dbc file the first bit should also work
+    "FCW": fcw << 1,
   }
   return packer.make_can_msg("BRAKE_COMMAND", 0, values, idx)
 
 
 def create_gas_command(packer, gas_amount, idx):
-  """Creates a CAN message for the Honda DBC GAS_COMMAND."""
   enable = gas_amount > 0.001
 
   values = {"ENABLE": enable}
@@ -64,7 +54,6 @@ def create_gas_command(packer, gas_amount, idx):
 
 
 def create_steering_control(packer, apply_steer, lkas_active, car_fingerprint, idx):
-  """Creates a CAN message for the Honda DBC STEERING_CONTROL."""
   values = {
     "STEER_TORQUE": apply_steer if lkas_active else 0,
     "STEER_TORQUE_REQUEST": lkas_active,
@@ -75,7 +64,6 @@ def create_steering_control(packer, apply_steer, lkas_active, car_fingerprint, i
 
 
 def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, idx):
-  """Creates an iterable of CAN messages for the UIs."""
   commands = []
   bus = 0
 
@@ -105,7 +93,6 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, idx):
   commands.append(packer.make_can_msg('LKAS_HUD', bus, lkas_hud_values, idx))
 
   if car_fingerprint in (CAR.CIVIC, CAR.ODYSSEY):
-    commands.append(packer.make_can_msg('HIGHBEAM_CONTROL', 0, {'HIGHBEAMS_ON': False}, idx))
 
     radar_hud_values = {
       'ACC_ALERTS': hud.acc_alert,
@@ -116,26 +103,6 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, idx):
     commands.append(packer.make_can_msg('RADAR_HUD', 0, radar_hud_values, idx))
   return commands
 
-
-def create_radar_commands(v_ego, car_fingerprint, new_radar_config, idx):
-  """Creates an iterable of CAN messages for the radar system."""
-  commands = []
-  v_ego_kph = np.clip(int(round(v_ego * CV.MS_TO_KPH)), 0, 255)
-  speed = struct.pack('!B', v_ego_kph)
-
-  msg_0x300 = ("\xf9" + speed + "\x8a\xd0" +
-               ("\x20" if idx == 0 or idx == 3 else "\x00") +
-               "\x00\x00")
-  msg_0x301 = VEHICLE_STATE_MSG[car_fingerprint]
-
-  idx_0x300 = idx
-  if car_fingerprint == CAR.CIVIC:
-    idx_offset = 0xc if new_radar_config else 0x8   # radar in civic 2018 requires 0xc
-    idx_0x300 += idx_offset
-
-  commands.append(make_can_msg(0x300, msg_0x300, idx_0x300, 1))
-  commands.append(make_can_msg(0x301, msg_0x301, idx, 1))
-  return commands
 
 def spam_buttons_command(packer, button_val, idx):
   values = {

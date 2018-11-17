@@ -22,7 +22,7 @@ LAST_RADAR_MSG = RADAR_HEADER_MSG + NUM_SLOTS
 def create_radard_can_parser(canbus, car_fingerprint):
 
   dbc_f = DBC[car_fingerprint]['radar']
-  if car_fingerprint == CAR.VOLT:
+  if car_fingerprint in (CAR.VOLT, CAR.MALIBU):
     # C1A-ARS3-A by Continental
     radar_targets = range(SLOT_1_MSG, SLOT_1_MSG + NUM_SLOTS)
     signals = zip(['FLRRNumValidTargets',
@@ -125,5 +125,3 @@ if __name__ == "__main__":
     ret = RI.update()
     print(chr(27) + "[2J")
     print ret
-
-
