@@ -1,5 +1,4 @@
 from selfdrive.car.tesla import teslacan
-#from selfdrive.controls.lib.pid import PIController
 from selfdrive.car.tesla.longcontrol_tesla import LongControl, LongCtrlState, STARTING_TARGET_SPEED
 from selfdrive.car.tesla import teslacan
 from common.numpy_fast import clip, interp
@@ -55,11 +54,11 @@ AWARENESS_DECEL = -0.2     # car smoothly decel at .2m/s^2 when user is distract
 # Make sure these accelerations are smaller than mpc limits.
 _A_CRUISE_MIN = OrderedDict([
   # (speed in m/s, allowed deceleration)
-  (0.0, -6.0),
-  (5.0, -5.0),
-  (10., -4.0),
-  (20., -3.0),
-  (40., -2.0)])
+  (0.0, 1.0),
+  (5.0, 1.0),
+  (10., 1.0),
+  (20., 0.9),
+  (40., 0.8)])
 
 # Map of speed to max allowed acceleration.
 # Need higher accel at very low speed for stop and go.
@@ -67,9 +66,9 @@ _A_CRUISE_MIN = OrderedDict([
 _A_CRUISE_MAX = OrderedDict([
   # (speed in m/s, allowed acceleration)
   (0.0, 0.9),
-  (5.0, 0.6),
-  (10., 0.5),
-  (20., 0.4),
+  (5.0, 0.7),
+  (10., 0.6),
+  (20., 0.5),
   (40., 0.3)])
   
 # Lookup table for turns
