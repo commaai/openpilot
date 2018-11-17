@@ -7,6 +7,8 @@ class PathPlanner(object):
   def __init__(self):
     self.d_poly = [0., 0., 0., 0.]
     self.c_poly = [0., 0., 0., 0.]
+    self.r_poly = [0., 0., 0., 0.]
+    self.l_poly = [0., 0., 0., 0.]
     self.c_prob = 0.
     self.last_model = 0.
     self.lead_dist, self.lead_prob, self.lead_var = 0, 0, 1
