@@ -1,5 +1,5 @@
-int toyota_no_dsu_car = 0;                // ch-r and camry don't have the DSU
 int toyota_giraffe_switch_1 = 0;          // is giraffe switch 1 high?
+int toyota_camera_forwarded = 0;          // should we forward the camera bus?
 
 // global torque limit
 const int TOYOTA_MAX_TORQUE = 1500;       // max torque cmd allowed ever
@@ -49,8 +49,8 @@ static void toyota_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
   // enter controls on rising edge of ACC, exit controls on ACC off
   if ((to_push->RIR>>21) == 0x1D2) {
-    // 4 bits: 55-52
-    int cruise_engaged = to_push->RDHR & 0xF00000;
+    // 5th bit is CRUISE_ACTIVE
+    int cruise_engaged = to_push->RDLR & 0x20;
     if (cruise_engaged && !toyota_cruise_engaged_last) {
       controls_allowed = 1;
     } else if (!cruise_engaged) {
@@ -60,16 +60,15 @@ static void toyota_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   }
 
   int bus = (to_push->RDTR >> 4) & 0xF;
-  // 0x680 is a radar msg only found in dsu-less cars
-  if ((to_push->RIR>>21) == 0x680 && (bus == 1)) {
-    toyota_no_dsu_car = 1;
+  // msgs are only on bus 2 if panda is connected to frc
+  if (bus == 2) {
+    toyota_camera_forwarded = 1;
   }
 
   // 0x2E4 is lkas cmd. If it is on bus 0, then giraffe switch 1 is high
   if ((to_push->RIR>>21) == 0x2E4 && (bus == 0)) {
     toyota_giraffe_switch_1 = 1;
   }
-
 }
 
 static int toyota_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
@@ -150,13 +149,15 @@ static void toyota_init(int16_t param) {
   controls_allowed = 0;
   toyota_actuation_limits = 1;
   toyota_giraffe_switch_1 = 0;
+  toyota_camera_forwarded = 0;
   toyota_dbc_eps_torque_factor = param;
 }
 
 static int toyota_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
 
-  // forward cam to radar and viceversa if car is dsu-less, except lkas cmd and hud
-  if ((bus_num == 0 || bus_num == 2) && toyota_no_dsu_car && !toyota_giraffe_switch_1) {
+  // forward cam to radar and viceversa if car, except lkas cmd and hud
+  // don't forward when switch 1 is high
+  if ((bus_num == 0 || bus_num == 2) && toyota_camera_forwarded && !toyota_giraffe_switch_1) {
     int addr = to_fwd->RIR>>21;
     bool is_lkas_msg = (addr == 0x2E4 || addr == 0x412) && bus_num == 2;
     return is_lkas_msg? -1 : (uint8_t)(~bus_num & 0x2);
@@ -177,6 +178,7 @@ static void toyota_nolimits_init(int16_t param) {
   controls_allowed = 0;
   toyota_actuation_limits = 0;
   toyota_giraffe_switch_1 = 0;
+  toyota_camera_forwarded = 0;
   toyota_dbc_eps_torque_factor = param;
 }
 
