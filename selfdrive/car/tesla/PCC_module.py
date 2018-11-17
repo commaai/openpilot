@@ -371,7 +371,7 @@ class PCCController(object):
     # how much accel and break we have to do
     ####################################################################
     if PCCModes.is_selected(FollowMode(), CS.cstm_btns):
-      self.v_pid = self.calc_follow_speed(CS)
+      self.v_pid = self.calc_follow_speed_ms(CS)
       # cruise speed can't be negative even is user is distracted
       self.v_pid = max(self.v_pid, 0.)
 
@@ -379,7 +379,7 @@ class PCCController(object):
 
       if self.enable_pedal_cruise:
         # TODO: make a separate lookup for jerk tuning
-        jerk_min, jerk_max = _jerk_limits(v_ego, lead)
+        jerk_min, jerk_max = _jerk_limits(CS.v_ego, self.lead_1)
         self.v_cruise, self.a_cruise = speed_smoother(self.v_acc_start, self.a_acc_start,
                                                       self.v_pid,
                                                       accel_max, brake_max,
@@ -536,7 +536,7 @@ class PCCController(object):
     return self.prev_tesla_pedal, enable_pedal, idx
 
   # function to calculate the cruise speed based on a safe follow distance
-  def calc_follow_speed(self, CS):
+  def calc_follow_speed_ms(self, CS):
      # Make sure we were able to populate lead_1.
     if self.lead_1 is None:
       return None, None, None
