@@ -31,12 +31,12 @@ def apply_deadzone(angle, deadzone):
   return angle
 
 class LatControl(object):
-  def __init__(self, VM):
-    self.pid = PIController((VM.CP.steerKpBP, VM.CP.steerKpV),
-                            (VM.CP.steerKiBP, VM.CP.steerKiV),
-                            k_f=VM.CP.steerKf, pos_limit=1.0)
+  def __init__(self, CP):
+    self.pid = PIController((CP.steerKpBP, CP.steerKpV),
+                            (CP.steerKiBP, CP.steerKiV),
+                            k_f=CP.steerKf, pos_limit=1.0)
     self.last_cloudlog_t = 0.0
-    self.setup_mpc(VM.CP.steerRateCost)
+    self.setup_mpc(CP.steerRateCost)
 
   def setup_mpc(self, steer_rate_cost):
     self.libmpc = libmpc_py.libmpc
@@ -61,7 +61,7 @@ class LatControl(object):
   def reset(self):
     self.pid.reset()
 
-  def update(self, active, v_ego, angle_steers, angle_rate, steer_override, d_poly, angle_offset, VM, PL):
+  def update(self, active, v_ego, angle_steers, angle_rate, steer_override, d_poly, angle_offset, CP, VM, PL):
     self.mpc_updated = False
     # TODO: this creates issues in replay when rewinding time: mpc won't run
     if self.last_mpc_ts < PL.last_md_ts:
@@ -77,7 +77,7 @@ class LatControl(object):
       p_poly = libmpc_py.ffi.new("double[4]", list(PL.PP.p_poly))
 
       # account for actuation delay
-      self.cur_state = calc_states_after_delay(self.cur_state, v_ego, angle_steers, curvature_factor, VM.CP.steerRatio, VM.CP.steerActuatorDelay)
+      self.cur_state = calc_states_after_delay(self.cur_state, v_ego, angle_steers, curvature_factor, CP.steerRatio, CP.steerActuatorDelay)
 
       v_ego_mpc = max(v_ego, 5.0)  # avoid mpc roughness due to low speed
       self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
@@ -88,19 +88,19 @@ class LatControl(object):
       if active:
         delta_desired = self.mpc_solution[0].delta[1]
       else:
-        delta_desired = math.radians(angle_steers - angle_offset) / VM.CP.steerRatio
+        delta_desired = math.radians(angle_steers - angle_offset) / CP.steerRatio
 
       self.cur_state[0].delta = delta_desired
 
-      self.angle_steers_des_mpc = float(math.degrees(delta_desired * VM.CP.steerRatio) + angle_offset)
+      self.angle_steers_des_mpc = float(math.degrees(delta_desired * CP.steerRatio) + angle_offset)
       self.mpc_updated = True
 
       #  Check for infeasable MPC solution
       self.mpc_nans = np.any(np.isnan(list(self.mpc_solution[0].delta)))
       t = sec_since_boot()
       if self.mpc_nans:
-        self.libmpc.init(MPC_COST_LAT.PATH, MPC_COST_LAT.LANE, MPC_COST_LAT.HEADING, VM.CP.steerRateCost)
-        self.cur_state[0].delta = math.radians(angle_steers) / VM.CP.steerRatio
+        self.libmpc.init(MPC_COST_LAT.PATH, MPC_COST_LAT.LANE, MPC_COST_LAT.HEADING, CP.steerRateCost)
+        self.cur_state[0].delta = math.radians(angle_steers) / CP.steerRatio
 
         if t > self.last_cloudlog_t + 5.0:
           self.last_cloudlog_t = t
@@ -117,12 +117,13 @@ class LatControl(object):
       steers_max = get_steer_max(VM.CP, v_ego)
       self.pid.pos_limit = steers_max
       self.pid.neg_limit = -steers_max
-      if VM.CP.steerControlType == car.CarParams.SteerControlType.torque:
+      if CP.steerControlType == car.CarParams.SteerControlType.torque:
         steer_feedforward = apply_deadzone(self.angle_steers_des_mpc - float(angle_offset), 0.5) 
         steer_feedforward *= v_ego**2  # proportional to realigning tire momentum (~ lateral accel)
       else:
         steer_feedforward = self.angle_steers_des_mpc   # feedforward desired angle
-      deadzone = 0.0
+      
+      deadzone = 0.1
 
       output_steer = self.pid.update(self.angle_steers_des_mpc, future_angle_steers, check_saturation=(v_ego > 10), override=steer_override,
                                      feedforward=steer_feedforward, speed=v_ego, deadzone=deadzone)
