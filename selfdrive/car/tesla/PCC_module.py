@@ -716,13 +716,13 @@ def _jerk_limits(v_ego, lead):
   if lead and lead.dRel:
     safe_dist_m = _safe_distance_m(v_ego)
     jerk_min_map = OrderedDict([
-      # (distance in m, jerk)
+      # (distance in m, decel jerk)
       (0.5 * safe_dist_m, -0.3),
       (1.0 * safe_dist_m, -0.15)])
     jerk_min = _interp_map(lead.dRel, jerk_min_map)
     jerk_max_map = OrderedDict([
-      # (distance in m, jerk)
-      (0.5 * safe_dist_m, 0.06),
+      # (distance in m, accel jerk)
+      (1.0 * safe_dist_m, 0.06),
       (2.0 * safe_dist_m, 0.12)])
     jerk_max = _interp_map(lead.dRel, jerk_max_map)
     return jerk_min, jerk_max
