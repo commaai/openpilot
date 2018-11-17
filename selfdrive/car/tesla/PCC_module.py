@@ -54,11 +54,11 @@ AWARENESS_DECEL = -0.2     # car smoothly decel at .2m/s^2 when user is distract
 # Make sure these accelerations are smaller than mpc limits.
 _A_CRUISE_MIN = OrderedDict([
   # (speed in m/s, allowed deceleration)
-  (0.0, 1.0),
-  (5.0, 1.0),
-  (10., 1.0),
-  (20., 0.9),
-  (40., 0.8)])
+  (0.0, 1.5),
+  (5.0, 1.4),
+  (10., 1.3),
+  (20., 0.95),
+  (40., 0.9)])
 
 # Map of speed to max allowed acceleration.
 # Need higher accel at very low speed for stop and go.
@@ -68,8 +68,8 @@ _A_CRUISE_MAX = OrderedDict([
   (0.0, 0.5),
   (5.0, 0.4),
   (10., 0.3),
-  (20., 0.3),
-  (40., 0.3)])
+  (20., 0.25),
+  (40., 0.22)])
   
 # Lookup table for turns
 _A_TOTAL_MAX = OrderedDict([
