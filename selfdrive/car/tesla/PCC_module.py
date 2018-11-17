@@ -65,8 +65,8 @@ _A_CRUISE_MIN = OrderedDict([
 # make sure these accelerations are smaller than mpc limits.
 _A_CRUISE_MAX = OrderedDict([
   # (speed in m/s, allowed acceleration)
-  (0.0, 0.4),
-  (5.0, 0.3),
+  (0.0, 0.5),
+  (5.0, 0.4),
   (10., 0.3),
   (20., 0.3),
   (40., 0.3)])
@@ -705,26 +705,26 @@ def _decel_limit_multiplier(v_ego, lead):
     safe_dist_m = _safe_distance_m(v_ego)
     decel_multipliers = OrderedDict([
        # (distance in m, acceleration fraction)
-       (0.4 * safe_dist_m, 1.0),
-       (1.4 * safe_dist_m, 0.2),
-       (1.9 * safe_dist_m, 0.1)])
+       (0.5 * safe_dist_m, 1.0),
+       (1.0 * safe_dist_m, 0.5), # new
+       (2.0 * safe_dist_m, 0.1)])
     return _interp_map(lead.dRel, decel_multipliers)
   else:
-    return 1
+    return 1.0
     
 def _jerk_limits(v_ego, lead):
   if lead and lead.dRel:
     safe_dist_m = _safe_distance_m(v_ego)
-    jerk_min_map = OrderedDict([
+    decel_jerk_map = OrderedDict([
       # (distance in m, decel jerk)
-      (0.5 * safe_dist_m, -0.3),
-      (1.0 * safe_dist_m, -0.15)])
-    jerk_min = _interp_map(lead.dRel, jerk_min_map)
-    jerk_max_map = OrderedDict([
+      (0.5 * safe_dist_m, -0.5),
+      (1.0 * safe_dist_m, -0.18)])
+    decel_jerk = _interp_map(lead.dRel, decel_jerk_map)
+    accel_jerk_map = OrderedDict([
       # (distance in m, accel jerk)
-      (1.0 * safe_dist_m, 0.06),
-      (2.0 * safe_dist_m, 0.12)])
-    jerk_max = _interp_map(lead.dRel, jerk_max_map)
-    return jerk_min, jerk_max
+      (1.0 * safe_dist_m, 0.04),
+      (2.0 * safe_dist_m, 0.07)])
+    accel_jerk = _interp_map(lead.dRel, accel_jerk_map)
+    return decel_jerk, accel_jerk
   else:
-    return -0.15, 0.10
+    return -0.15, 0.8
