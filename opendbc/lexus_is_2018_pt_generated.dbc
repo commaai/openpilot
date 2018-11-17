@@ -72,11 +72,6 @@ BO_ 36 KINEMATICS: 8 XXX
  SG_ YAW_RATE : 1|10@0+ (1,-512) [0|65535] "" XXX
  SG_ STEERING_TORQUE : 17|10@0+ (1,-512) [0|65535] "" XXX
 
-BO_ 37 STEER_ANGLE_SENSOR: 8 XXX
- SG_ STEER_ANGLE : 3|12@0- (1.5,0) [-500|500] "deg" XXX
- SG_ STEER_FRACTION : 39|4@0- (0.1,0) [-0.7|0.7] "deg" XXX
- SG_ STEER_RATE : 35|12@0- (1,0) [-2000|2000] "deg/s" XXX
- 
 BO_ 166 BRAKE: 8 XXX
  SG_ BRAKE_AMOUNT : 7|8@0+ (1,0) [0|255] "" XXX
  SG_ BRAKE_PEDAL : 23|8@0+ (1,0) [0|255] "" XXX
@@ -98,12 +93,6 @@ BO_ 466 PCM_CRUISE: 8 XXX
  SG_ STANDSTILL_ON : 12|1@0+ (1,0) [0|1] "" XXX
  SG_ ACCEL_NET : 23|16@0- (0.001,0) [-20|20] "m/s2" XXX
  SG_ CRUISE_STATE : 55|4@0+ (1,0) [0|15] "" XXX
- SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
-
-BO_ 467 PCM_CRUISE_2: 8 XXX
- SG_ MAIN_ON : 15|1@0+ (1,0) [0|1] "" XXX
- SG_ LOW_SPEED_LOCKOUT : 14|2@0+ (1,0) [0|3] "kph" XXX
- SG_ SET_SPEED : 23|8@0+ (1,0) [0|255] "kph" XXX
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
 
 BO_ 552 ACCELEROMETER: 8 XXX
@@ -146,6 +135,20 @@ BO_ 835 ACC_CONTROL: 8 DSU
  SG_ CANCEL_REQ : 24|1@0+ (1,0) [0|1] "" HCU
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
 
+BO_ 1556 STEERING_LEVERS: 8 XXX
+ SG_ TURN_SIGNALS : 29|2@0+ (1,0) [0|3] "" XXX
+
+BO_ 37 STEER_ANGLE_SENSOR: 8 XXX
+ SG_ STEER_ANGLE : 3|12@0- (1.5,0) [-500|500] "deg" XXX
+ SG_ STEER_FRACTION : 39|4@0- (0.1,0) [-0.7|0.7] "deg" XXX
+ SG_ STEER_RATE : 35|12@0- (1,0) [-2000|2000] "deg/s" XXX
+
+BO_ 467 PCM_CRUISE_2: 8 XXX
+ SG_ MAIN_ON : 15|1@0+ (1,0) [0|1] "" XXX
+ SG_ LOW_SPEED_LOCKOUT : 14|2@0+ (1,0) [0|3] "kph" XXX
+ SG_ SET_SPEED : 23|8@0+ (1,0) [0|255] "kph" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
 BO_ 921 PCM_CRUISE_SM: 8 XXX
  SG_ MAIN_ON : 4|1@0+ (1,0) [0|1] "" XXX
  SG_ CRUISE_CONTROL_STATE : 11|4@0+ (1,0) [0|15] "" XXX
@@ -180,9 +183,6 @@ BO_ 1042 LKAS_HUD: 8 XXX
 
 BO_ 1553 UI_SEETING: 8 XXX
  SG_ UNITS : 26|2@0+ (1,0) [0|3] "" XXX
- 
-BO_ 1556 STEERING_LEVERS: 8 XXX
- SG_ TURN_SIGNALS : 29|2@0+ (1,0) [0|3] "" XXX
 
 BO_ 1568 SEATS_DOORS: 8 XXX
  SG_ SEATBELT_DRIVER_UNLATCHED : 62|1@0+ (1,0) [0|1] "" XXX
@@ -224,83 +224,53 @@ BO_ 1162 RSA2: 8 FCM
  SG_ SPDUNT : 63|2@0+ (1,0) [0|0] "" XXX
  SG_ TSRWMSG : 61|2@0+ (1,0) [0|0] "" XXX
  SG_ SYNCID2 : 59|4@0+ (1,0) [0|0] "" XXX
- 
-BO_ 1163 RSA3: 8 FCM
- SG_ TSREQPD : 7|1@0+ (1,0) [0|0] "" XXX
- SG_ TSRMSW : 6|1@0+ (1,0) [0|0] "" XXX
- SG_ OTSGNNTM : 5|2@0+ (1,0) [0|0] "" XXX
- SG_ NTLVLSPD : 3|2@0+ (1,0) [0|0] "" XXX
- SG_ OVSPNTM : 1|2@0+ (1,0) [0|0] "" XXX
- SG_ OVSPVALL : 11|4@0+ (1,-5) [0|0] "" XXX
- SG_ OVSPVALM : 19|4@0+ (1,-5) [0|0] "" XXX
- SG_ OVSPVALH : 27|4@0+ (1,-5) [0|0] "" XXX
- SG_ TSRSPU : 33|2@0+ (1,0) [0|0] "" XXX
 
 CM_ SG_ 36 ACCEL_Y "unit is tbd";
 CM_ SG_ 36 YAW_RATE "verify";
 CM_ SG_ 36 STEERING_TORQUE "does not seem the steer torque, tbd";
-CM_ SG_ 37 STEER_FRACTION "1/15th of the signal STEER_ANGLE, which is 1.5 deg; note that 0x8 is never set";
-CM_ SG_ 37 STEER_RATE "factor is tbd";
 CM_ SG_ 466 ACCEL_NET "net acceleration produced by the system, given ACCEL_CMD, road grade and other factors";
-CM_ SG_ 467 SET_SPEED "43 kph are shown as 28mph, so conversion isnt perfect";
-CM_ SG_ 467 LOW_SPEED_LOCKOUT "in low speed lockout, system would always disengage below 28mph";
 CM_ SG_ 560 BRAKE_PRESSED "another brake pressed?";
+CM_ SG_ 951 BRAKE_LIGHTS_ACC "brake lights when ACC commands decel";
 CM_ SG_ 608 STEER_TORQUE_DRIVER "driver torque";
 CM_ SG_ 608 STEER_OVERRIDE "set when driver torque exceeds a certain value";
 CM_ SG_ 614 ANGLE "set to measured angle when ipas control isn't active";
+CM_ SG_ 37 STEER_FRACTION "1/15th of the signal STEER_ANGLE, which is 1.5 deg; note that 0x8 is never set";
+CM_ SG_ 37 STEER_RATE "factor is tbd";
+CM_ SG_ 467 SET_SPEED "43 kph are shown as 28mph, so conversion isnt perfect";
+CM_ SG_ 467 LOW_SPEED_LOCKOUT "in low speed lockout, system would always disengage below 28mph";
 CM_ SG_ 921 UI_SET_SPEED "set speed shown in UI with user set unit";
-CM_ SG_ 951 BRAKE_LIGHTS_ACC "brake lights when ACC commands decel";
 CM_ SG_ 1042 SET_ME_1 "unclear what this is, but it's always 1 in drive traces";
 CM_ SG_ 1042 REPEATED_BEEPS "recommended for fcw and other important alerts";
-CM_ SG_ 1161 SPDVAL1 "Numbers 0-199 is displayed, 200-254 displays circle without number and 255 is for no limit.";
-CM_ SG_ 1161 SYNCID1 "counter from 1 to f at 1 Hz";
-CM_ SG_ 1161 SPDVAL2 "conditional speed value 70"
-CM_ SG_ 1162 SGNNUMP "1 if SPDVAL1 is set, otherwise 0";
-CM_ SG_ 1162 SYNCID2 "counter from 1 to f at 1 Hz";
-CM_ SG_ 1163 TSREQPD "always 1";
-CM_ SG_ 1163 TSRMSW "always 1";
-CM_ SG_ 1163 OTSGNNTM "always 3";
-CM_ SG_ 1163 NTLVLSPD "always 3";
-CM_ SG_ 1163 OVSPNTM "always 3";
-CM_ SG_ 1163 OVSPVALL "-5 at start then 2 after 2 seconds";
-CM_ SG_ 1163 OVSPVALM "-5 at start then 5 after 2 seconds";
-CM_ SG_ 1163 OVSPVALH "-5 at start then 10 after 2 seconds";
-CM_ SG_ 1163 TSRSPU "always 1";
-
-VAL_ 466 CRUISE_STATE 8 "active" 7 "standstill" 1 "off";
-VAL_ 467 LOW_SPEED_LOCKOUT 2 "low speed locked" 1 "ok";
+CM_ SG_ 1161 SPDVAL1 "is the displayed speed 10,30,50,60,70,80,90,100,120 and 255 is for no limit. SPDVAL2 is the secondary speed usually written smaller";
+VAL_ 466 CRUISE_STATE 8 "active" 7 "standstill" 1 "off" ;
+VAL_ 467 LOW_SPEED_LOCKOUT 2 "low speed locked" 1 "ok" ;
 VAL_ 614 STATE 3 "enabled" 1 "disabled";
 VAL_ 614 DIRECTION_CMD 3 "right" 2 "center" 1 "left";
-VAL_ 921 CRUISE_CONTROL_STATE 2 "disabled" 11 "hold" 10 "hold_waiting_user_cmd" 6 "enabled" 5 "faulted";
+VAL_ 1553 UNITS 1 "km" 2 "miles";
+VAL_ 1556 TURN_SIGNALS 3 "none" 2 "right" 1 "left" ;
 VAL_ 1042 LDA_ALERT 3 "hold with continuous beep" 2 "LDA unavailable" 1 "hold" 0 "none";
 VAL_ 1042 BARRIERS 3 "both" 2 "right" 1 "left" 0 "none";
 VAL_ 1042 RIGHT_LINE 3 "orange" 2 "double" 1 "solid" 0 "none";
 VAL_ 1042 LEFT_LINE 3 "orange" 2 "double" 1 "solid" 0 "none";
-VAL_ 1553 UNITS 1 "km" 2 "miles";
-VAL_ 1556 TURN_SIGNALS 3 "none" 2 "right" 1 "left";
-VAL_ 1161 TSGN1 1 "speed sign" 0 "none";
-VAL_ 1161 TSGN2 1 "speed sign" 0 "none";
-VAL_ 1161 SPLSGN2 15 "conditional" 0 "none";
-VAL_ 1162 TSGN3 0 "none" 1 "speed sign" 2 "0 unlimited" 7 "unlimited" 16 "highway" 17 "no highway" 18 "motorway" 19 "no motorway" 20 "in city" 21 "outside city" 22 "pedestrian area" 23 "no pedestrian area" 65 "no overtaking left" 66 "no overtaking right" 67 "overtaking allowed again" 65 "no overtake" 129 "no entry";
-VAL_ 1162 SPLSGN3 15 "conditional" 0 "none";
-
+VAL_ 921 CRUISE_CONTROL_STATE 2 "disabled" 11 "hold" 10 "hold_waiting_user_cmd" 6 "enabled" 5 "faulted";
 
 CM_ "CHFFR_METRIC 37 STEER_ANGLE STEER_ANGLE 0.36 180";
 
-CM_ "toyota_corolla_2017_pt.dbc starts here"
+CM_ "lexus_is_2018_pt.dbc starts here"
 
 
 
-BO_ 548 BRAKE_MODULE: 8 XXX
- SG_ BRAKE_PRESSURE : 43|12@0+ (1,0) [0|4047] "" XXX
- SG_ BRAKE_PRESSED : 5|1@0+ (1,0) [0|1] "" XXX
+BO_ 550 BRAKE_MODULE: 8 XXX
+ SG_ BRAKE_PRESSURE : 0|9@0+ (1,0) [0|511] "" XXX
+ SG_ BRAKE_POSITION : 16|9@0+ (1,0) [0|511] "" XXX
+ SG_ BRAKE_PRESSED : 37|1@0+ (1,0) [0|1] "" XXX
 
 BO_ 705 GAS_PEDAL: 8 XXX
  SG_ GAS_RELEASED : 3|1@0+ (1,0) [0|1] "" XXX
  SG_ GAS_PEDAL : 55|8@0+ (0.005,0) [0|1] "" XXX
 
 BO_ 608 STEER_TORQUE_SENSOR: 8 XXX
- SG_ STEER_TORQUE_EPS : 47|16@0- (1.0,0) [-20000|20000] "" XXX
+ SG_ STEER_TORQUE_EPS : 47|16@0- (0.73,0) [-20000|20000] "" XXX
  SG_ STEER_TORQUE_DRIVER : 15|16@0- (1,0) [-32768|32767] "" XXX
  SG_ STEER_OVERRIDE : 0|1@0+ (1,0) [0|1] "" XXX
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
@@ -314,9 +284,15 @@ BO_ 610 EPS_STATUS: 5 EPS
 BO_ 956 GEAR_PACKET: 8 XXX
  SG_ GEAR : 13|6@0+ (1,0) [0|63] "" XXX
 
-CM_ SG_ 548 BRAKE_PRESSURE "seems prop to pedal force";
-CM_ SG_ 548 BRAKE_POSITION "seems proportional to pedal displacement, unclear the max value of 0x1c8";
+BO_ 1009 PCM_CRUISE_3: 8 XXX
+ SG_ MAIN_ON : 13|1@0+ (1,0) [0|3] "" XXX
+ SG_ CRUISE_STATE : 10|1@0+ (1,0) [0|1] "" XXX
+ SG_ SET_SPEED : 23|8@0+ (1,0) [0|255] "mph" XXX
+
+CM_ SG_ 550 BRAKE_PRESSURE "seems prop to pedal force";
+CM_ SG_ 550 BRAKE_POSITION "seems proportional to pedal displacement, unclear the max value of 0x1c8";
 CM_ SG_ 610 TYPE "seems 1 on Corolla, 0 on all others";
+CM_ SG_ 1009 SET_SPEED "units seem to be whatever the car is set to";
 VAL_ 956 GEAR 0 "D" 1 "S" 8 "N" 16 "R" 32 "P";
 VAL_ 610 IPAS_STATE 5 "override" 3 "enabled" 1 "disabled";
 VAL_ 610 LKA_STATE 25 "temporary_fault" 9 "temporary_fault2" 5 "active" 1 "standby";
