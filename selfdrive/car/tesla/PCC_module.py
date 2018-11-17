@@ -65,10 +65,10 @@ _A_CRUISE_MIN = OrderedDict([
 # make sure these accelerations are smaller than mpc limits.
 _A_CRUISE_MAX = OrderedDict([
   # (speed in m/s, allowed acceleration)
-  (0.0, 0.9),
-  (5.0, 0.7),
-  (10., 0.6),
-  (20., 0.5),
+  (0.0, 0.8),
+  (5.0, 0.6),
+  (10., 0.5),
+  (20., 0.4),
   (40., 0.3)])
   
 # Lookup table for turns
@@ -362,10 +362,6 @@ class PCCController(object):
       self.md_ts = l20.live20.mdMonoTime
       self.l100_ts = l20.live20.l100MonoTime
 
-    prevent_overshoot = False #not CS.CP.stoppingControl and CS.v_ego < 1.5 and v_target_future < 0.7
-    # TODO: remove these CP things if unused
-    #accel_max = interp(CS.v_ego, CS.CP.gasMaxBP, CS.CP.gasMaxV)
-    #brake_max = interp(CS.v_ego, CS.CP.brakeMaxBP, CS.CP.brakeMaxV)
     brake_max, accel_max = calc_cruise_accel_limits(CS, self.lead_1)
     output_gb = 0
     ####################################################################
@@ -383,8 +379,8 @@ class PCCController(object):
 
       if self.enable_pedal_cruise:
         # TODO: make a separate lookup for jerk tuning
-        jerk_min = min(-0.1, brake_max)
-        jerk_max = max(0.1, accel_max)
+        jerk_min = -0.1
+        jerk_max = 0.1
         self.v_cruise, self.a_cruise = speed_smoother(self.v_acc_start, self.a_acc_start,
                                                       self.v_pid,
                                                       accel_max, brake_max,
@@ -406,7 +402,6 @@ class PCCController(object):
         dt = min(cur_time - self.acc_start_time, _DT_MPC + _DT) + _DT  # no greater than dt mpc + dt, to prevent too high extraps
         self.a_acc_sol = self.a_acc_start + (dt / _DT_MPC) * (self.a_acc - self.a_acc_start)
         self.v_acc_sol = self.v_acc_start + dt * (self.a_acc_sol + self.a_acc_start) / 2.0
-
 
         # we will try to feed forward the pedal position.... we might want to feed the last output_gb....
         # it's all about testing now.
@@ -699,8 +694,9 @@ def _interp_map(val, val_map):
   return interp(val, val_map.keys(), val_map.values())
   
 def _accel_limit_multiplier(v_ego, lead):
-  """Limits acceleration in the presence of a lead car. Range: 0 to 1, so that
-  it can be multiplied with other accel limits."""
+  """Limits acceleration in the presence of a lead car. The further the lead car
+  is, the more accel is allowed. Range: 0 to 1, so that it can be multiplied
+  with other accel limits."""
   if lead and lead.dRel:
     safe_dist_m = _safe_distance_m(v_ego)
     accel_multipliers = OrderedDict([
