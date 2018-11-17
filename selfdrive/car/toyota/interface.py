@@ -4,7 +4,7 @@ from cereal import car, log
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
-from selfdrive.car.toyota.carstate import CarState, get_can_parser
+from selfdrive.car.toyota.carstate import CarState, get_can_parser, get_cam_can_parser
 from selfdrive.car.toyota.values import ECU, check_ecu_msgs, CAR
 from selfdrive.swaglog import cloudlog
 
@@ -23,12 +23,16 @@ class CarInterface(object):
     self.gas_pressed_prev = False
     self.brake_pressed_prev = False
     self.can_invalid_count = 0
+    self.cam_can_valid_count = 0
     self.cruise_enabled_prev = False
 
     # *** init the major players ***
     self.CS = CarState(CP)
 
     self.cp = get_can_parser(CP)
+    self.cp_cam = get_cam_can_parser(CP)
+
+    self.forwarding_camera = False
 
     # sending if read only is False
     if sendcan is not None:
@@ -204,7 +208,11 @@ class CarInterface(object):
 
     self.cp.update(int(sec_since_boot() * 1e9), False)
 
-    self.CS.update(self.cp)
+    # run the cam can update for 10s as we just need to know if the camera is alive
+    if self.frame < 1000:
+      self.cp_cam.update(int(sec_since_boot() * 1e9), False)
+
+    self.CS.update(self.cp, self.cp_cam)
 
     # create message
     ret = car.CarState.new_message()
@@ -240,7 +248,7 @@ class CarInterface(object):
     ret.steeringPressed = self.CS.steer_override
 
     # cruise state
-    ret.cruiseState.enabled = self.CS.pcm_acc_status != 0
+    ret.cruiseState.enabled = self.CS.pcm_acc_active
     ret.cruiseState.speed = self.CS.v_cruise_pcm * CV.KPH_TO_MS
     ret.cruiseState.available = bool(self.CS.main_on)
     ret.cruiseState.speedOffset = 0.
@@ -281,6 +289,12 @@ class CarInterface(object):
         events.append(create_event('commIssue', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     else:
       self.can_invalid_count = 0
+
+    if self.CS.cam_can_valid:
+      self.cam_can_valid_count += 1
+      if self.cam_can_valid_count >= 5:
+        self.forwarding_camera = True
+
     if not ret.gearShifter == 'drive' and self.CP.enableDsu:
       events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if ret.doorOpen:
@@ -335,7 +349,7 @@ class CarInterface(object):
 
     self.CC.update(self.sendcan, c.enabled, self.CS, self.frame,
                    c.actuators, c.cruiseControl.cancel, c.hudControl.visualAlert,
-                   c.hudControl.audibleAlert)
+                   c.hudControl.audibleAlert, self.forwarding_camera)
 
     self.frame += 1
     return False
