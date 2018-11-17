@@ -379,8 +379,7 @@ class PCCController(object):
 
       if self.enable_pedal_cruise:
         # TODO: make a separate lookup for jerk tuning
-        jerk_min = -0.3
-        jerk_max = 0.12
+        jerk_min, jerk_max = _jerk_limits(v_ego, lead)
         self.v_cruise, self.a_cruise = speed_smoother(self.v_acc_start, self.a_acc_start,
                                                       self.v_pid,
                                                       accel_max, brake_max,
@@ -712,3 +711,20 @@ def _decel_limit_multiplier(v_ego, lead):
     return _interp_map(lead.dRel, decel_multipliers)
   else:
     return 1
+    
+def _jerk_limits(v_ego, lead):
+  if lead and lead.dRel:
+    safe_dist_m = _safe_distance_m(v_ego)
+    jerk_min_map = OrderedDict([
+      # (distance in m, jerk)
+      (0.5 * safe_dist_m, -0.3),
+      (1.0 * safe_dist_m, -0.15)])
+    jerk_min = _interp_map(lead.dRel, jerk_min_map)
+    jerk_max_map = OrderedDict([
+      # (distance in m, jerk)
+      (0.5 * safe_dist_m, 0.06),
+      (2.0 * safe_dist_m, 0.12)])
+    jerk_max = _interp_map(lead.dRel, jerk_max_map)
+    return jerk_min, jerk_max
+  else:
+    return -0.15, 0.10
