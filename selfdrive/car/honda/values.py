@@ -1,4 +1,8 @@
+from cereal import car
 from selfdrive.car import dbc_dict
+
+AudibleAlert = car.CarControl.HUDControl.AudibleAlert
+VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 # Car button codes
 class CruiseButtons:
@@ -15,12 +19,22 @@ class CM:
   REPEATED = 1
   CONTINUOUS = 2
 
-#car beepss: enumeration from dbc file. Beeps are for activ and deactiv
+#car beeps: enumeration from dbc file. Beeps are for engage and disengage
 class BP:
   MUTE = 0
   SINGLE = 3
   TRIPLE = 2
   REPEATED = 1
+
+AUDIO_HUD = {
+  AudibleAlert.none: (BP.MUTE, CM.MUTE),
+  AudibleAlert.chimeEngage: (BP.SINGLE, CM.MUTE),
+  AudibleAlert.chimeDisengage: (BP.SINGLE, CM.MUTE),
+  AudibleAlert.chimeError: (BP.MUTE, CM.DOUBLE),
+  AudibleAlert.chimePrompt: (BP.MUTE, CM.SINGLE),
+  AudibleAlert.chimeWarning1: (BP.MUTE, CM.DOUBLE),
+  AudibleAlert.chimeWarning2: (BP.MUTE, CM.REPEATED),
+  AudibleAlert.chimeWarningRepeat: (BP.MUTE, CM.REPEATED)}
 
 class AH:
   #[alert_idx, value]
@@ -32,6 +46,15 @@ class AH:
   GEAR_NOT_D     = [4, 6]
   SEATBELT       = [5, 5]
   SPEED_TOO_HIGH = [6, 8]
+
+VISUAL_HUD = {
+  VisualAlert.none: AH.NONE,
+  VisualAlert.fcw: AH.FCW,
+  VisualAlert.steerRequired: AH.STEER,
+  VisualAlert.brakePressed: AH.BRAKE_PRESSED,
+  VisualAlert.wrongGear: AH.GEAR_NOT_D,
+  VisualAlert.seatbeltUnbuckled: AH.SEATBELT,
+  VisualAlert.speedTooHigh: AH.SPEED_TOO_HIGH}
 
 class CAR:
   ACCORD = "HONDA ACCORD 2018 SPORT 2T"
@@ -144,19 +167,6 @@ SPEED_FACTOR = {
   CAR.PILOT: 1.,
   CAR.PILOT_2019: 1.,
   CAR.RIDGELINE: 1.,
-}
-
-# This message sends car info to the radar that is specific to the model. You
-# can determine this message by monitoring the OEM system.
-VEHICLE_STATE_MSG = {
-  CAR.ACURA_ILX: "\x0f\x18\x51\x02\x5a\x00\x00",
-  CAR.ACURA_RDX: "\x0f\x57\x4f\x02\x5a\x00\x00",
-  CAR.CIVIC: "\x02\x38\x44\x32\x4f\x00\x00",
-  CAR.CRV: "\x00\x00\x50\x02\x51\x00\x00",
-  CAR.ODYSSEY: "\x00\x00\x56\x02\x55\x00\x00",
-  CAR.PILOT: "\x00\x00\x56\x02\x58\x00\x00",
-  CAR.PILOT_2019: "\x00\x00\x58\x02\x5c\x00\x00",
-  CAR.RIDGELINE: "\x00\x00\x56\x02\x57\x00\x00",
 }
 
 # TODO: get these from dbc file
