@@ -35,13 +35,18 @@ BS_:
 
 BU_: K16_BECM K73_TCIC K9_BCM K43_PSCM K17_EBCM K20_ECM K114B_HPCM NEO K124_ASCM EPB
 VAL_TABLE_ TurnSignals 2 "Right Turn" 1 "Left Turn" 0 "None" ;
+VAL_TABLE_ Intellibeam 1 "Active" 0 "Inactive" ;
+VAL_TABLE_ HighBeamsActive 1 "Active" 0 "Inactive" ;
+VAL_TABLE_ HighBeamsTemporary 1 "Active" 0 "Inactive" ;
 VAL_TABLE_ ACCLeadCar 1 "Present" 0 "Not Present" ;
 VAL_TABLE_ ACCCmdActive 1 "Active" 0 "Inactive" ;
 VAL_TABLE_ BrakePedalPressed 1 "Pressed" 0 "Depressed" ;
 VAL_TABLE_ DistanceButton 1 "Active" 0 "Inactive" ;
 VAL_TABLE_ LKAButton 1 "Active" 0 "Inactive" ;
 VAL_TABLE_ ACCButtons 6 "Cancel" 5 "Main" 3 "Set" 2 "Resume" 1 "None" ;
+VAL_TABLE_ DriveModeButton 1 "Active" 0 "Inactive" ;
 VAL_TABLE_ PRNDL 3 "Reverse" 2 "Drive" 1 "Neutral" 0 "Park" ;
+VAL_TABLE_ ESPButton 1 "Active" 0 "Inactive" ;
 VAL_TABLE_ DoorStatus 1 "Opened" 0 "Closed" ;
 VAL_TABLE_ SeatBeltStatus 1 "Latched" 0 "Unlatched" ;
 VAL_TABLE_ LKASteeringCmdActive 1 "Active" 0 "Inactive" ;
@@ -81,9 +86,13 @@ BO_ 298 BCMDoorBeltStatus: 8 K9_BCM
 
 BO_ 309 ECMPRDNL: 8 K20_ECM
  SG_ PRNDL : 2|3@0+ (1,0) [0|0] ""  NEO
+ SG_ ESPButton : 4|1@0+ (1,0) [0|1] "" XXX
 
 BO_ 320 BCMTurnSignals: 3 K9_BCM
  SG_ TurnSignals : 19|2@0+ (1,0) [0|0] ""  NEO
+ SG_ Intellibeam : 13|1@0+ (1,0) [0|1] "" XXX
+ SG_ HighBeamsActive : 7|1@0+ (1,0) [0|1] "" XXX
+ SG_ HighBeamsTemporary : 5|1@0+ (1,0) [0|1] "" XXX
 
 BO_ 328 PSCM_148: 1 K43_PSCM
 
@@ -118,6 +127,7 @@ BO_ 481 ASCMSteeringButton: 7 K124_ASCM
  SG_ DistanceButton : 22|1@0+ (1,0) [0|0] ""  NEO
  SG_ LKAButton : 23|1@0+ (1,0) [0|0] ""  NEO
  SG_ ACCButtons : 46|3@0+ (1,0) [0|0] ""  NEO
+ SG_ DriveModeButton : 39|1@0+ (1,0) [0|1] "" XXX
 
 BO_ 485 PSCMSteeringAngle: 8 K43_PSCM
  SG_ SteeringWheelAngle : 15|16@0- (0.0625,0) [-540|540] "deg"  NEO
@@ -224,8 +234,10 @@ BA_ "UseGMParameterIDs" 0;
 VAL_ 481 DistanceButton 1 "Active" 0 "Inactive" ;
 VAL_ 481 LKAButton 1 "Active" 0 "Inactive" ;
 VAL_ 481 ACCButtons 6 "Cancel" 5 "Main" 3 "Set" 2 "Resume" 1 "None" ;
+VAL_ 481 DriveModeButton 1 "Active" 0 "Inactive" ;
 VAL_ 452 CruiseState 4 "Standstill" 3 "Faulted" 1 "Active" 0 "Off" ;
 VAL_ 309 PRNDL 3 "Reverse" 2 "Drive" 1 "Neutral" 0 "Park" ;
+VAL_ 309 ESPButton 1 "Active" 0 "Inactive" ;
 VAL_ 384 LKASteeringCmdActive 1 "Active" 0 "Inactive" ;
 VAL_ 880 ACCLeadCar 1 "Present" 0 "Not Present" ;
 VAL_ 880 ACCGapLevel 3 "Far" 2 "Med" 1 "Near" 0 "Inactive" ;
@@ -237,4 +249,7 @@ VAL_ 388 LKATorqueDeliveredStatus 3 "Failed" 2 "Temp. Limited" 1 "Active" 0 "Ina
 VAL_ 489 BrakePedalPressed 1 "Pressed" 0 "Depressed" ;
 VAL_ 715 GasRegenCmdActiveInv 1 "Inactive" 0 "Active" ;
 VAL_ 715 GasRegenCmdActive 1 "Active" 0 "Inactive" ;
+VAL_ 320 Intellibeam 1 "Active" 0 "Inactive" ;
+VAL_ 320 HighBeamsActive 1 "Active" 0 "Inactive" ;
+VAL_ 320 HighBeamsTemporary 1 "Active" 0 "Inactive" ;
 

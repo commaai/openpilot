@@ -121,6 +121,10 @@ void set_hyundai_desired_torque_last(int t){
   hyundai_desired_torque_last = t;
 }
 
+void set_chrysler_desired_torque_last(int t){
+  chrysler_desired_torque_last = t;
+}
+
 int get_ego_speed(void){
   return ego_speed;
 }
@@ -184,6 +188,10 @@ void init_tests_honda(void){
   gas_prev = 0;
 }
 
+void init_tests_chrysler(void){
+  chrysler_desired_torque_last = 0;
+  set_timer(0);
+}
 
 void set_gmlan_digital_output(int to_set){
 }
