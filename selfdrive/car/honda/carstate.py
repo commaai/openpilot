@@ -2,7 +2,7 @@ from common.numpy_fast import interp
 from common.kalman.simple_kalman import KF1D
 from selfdrive.can.parser import CANParser, CANDefine
 from selfdrive.config import Conversions as CV
-from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, SPEED_FACTOR
+from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, SPEED_FACTOR, HONDA_BOSCH
 
 def parse_gear_shifter(gear, vals):
 
@@ -129,6 +129,17 @@ def get_can_parser(CP):
   signals, checks = get_can_signals(CP)
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
+def get_cam_can_parser(CP):
+  signals = []
+
+  # all hondas except CRV and RDX use 0xe4 for steering
+  checks = [(0xe4, 100)]
+  if CP.carFingerprint in [CAR.CRV, CAR.ACURA_RDX]:
+    checks = [(0x194, 100)]
+
+  cam_bus = 1 if CP.carFingerprint in HONDA_BOSCH else 2
+
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, cam_bus)
 
 class CarState(object):
   def __init__(self, CP):
@@ -160,10 +171,11 @@ class CarState(object):
                          K=[[0.12287673], [0.29666309]])
     self.v_ego = 0.0
 
-  def update(self, cp):
+  def update(self, cp, cp_cam):
 
-    # copy can_valid
+    # copy can_valid on buses 0 and 2
     self.can_valid = cp.can_valid
+    self.cam_can_valid = cp_cam.can_valid
 
     # car params
     v_weight_v = [0., 1.]  # don't trust smooth speed at low values to avoid premature zero snapping

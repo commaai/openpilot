@@ -242,7 +242,7 @@ class Plant(object):
            'INTERCEPTOR_GAS',
            ])
     vls = vls_tuple(
-           self.speed_sensor(speed), 
+           self.speed_sensor(speed),
            self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed),
            self.angle_steer, self.angle_steer_rate, 0, #Steer torque sensor
            0, 0,  # Blinkers
@@ -302,6 +302,14 @@ class Plant(object):
                   "0f00000"
       can_msgs.append([0x400, 0, radar_state_msg, 1])
       can_msgs.append([0x445, 0, radar_msg.decode("hex"), 1])
+
+    # add camera msg so controlsd thinks it's alive
+    msg_struct["COUNTER"] = self.rk.frame % 4
+    msg = honda.lookup_msg_id(0xe4)
+    msg_data = honda.encode(msg, msg_struct)
+    msg_data = fix(msg_data, 0xe4)
+    can_msgs.append([0xe4, 0, msg_data, 2])
+
     Plant.logcan.send(can_list_to_can_capnp(can_msgs).to_bytes())
 
     # ******** publish a fake model going straight and fake calibration ********
