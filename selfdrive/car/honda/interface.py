@@ -8,8 +8,9 @@ from selfdrive.swaglog import cloudlog
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET, get_events
 from selfdrive.controls.lib.vehicle_model import VehicleModel
-from selfdrive.car.honda.carstate import CarState, get_can_parser
-from selfdrive.car.honda.values import CruiseButtons, CM, BP, AH, CAR, HONDA_BOSCH
+from selfdrive.car.honda.carstate import CarState, get_can_parser, get_cam_can_parser
+from selfdrive.car.honda.values import CruiseButtons, CAR, HONDA_BOSCH, AUDIO_HUD, VISUAL_HUD
+from selfdrive.controls.lib.planner import _A_CRUISE_MAX_V_FOLLOWING
 
 try:
   from selfdrive.car.honda.carcontroller import CarController
@@ -20,6 +21,8 @@ except ImportError:
 # msgs sent for steering controller by camera module on can 0.
 # those messages are mutually exclusive on CRV and non-CRV cars
 CAMERA_MSGS = [0xe4, 0x194]
+
+A_ACC_MAX = max(_A_CRUISE_MAX_V_FOLLOWING)
 
 
 def compute_gb_honda(accel, speed):
@@ -86,8 +89,10 @@ class CarInterface(object):
     self.gas_pressed_prev = False
     self.brake_pressed_prev = False
     self.can_invalid_count = 0
+    self.cam_can_invalid_count = 0
 
     self.cp = get_can_parser(CP)
+    self.cp_cam = get_cam_can_parser(CP)
 
     # *** init the major players ***
     self.CS = CarState(CP)
@@ -105,6 +110,12 @@ class CarInterface(object):
 
   @staticmethod
   def calc_accel_override(a_ego, a_target, v_ego, v_target):
+
+    # normalized max accel. Allowing max accel at low speed causes speed overshoots
+    max_accel_bp = [10, 20]    # m/s
+    max_accel_v = [0.714, 1.0] # unit of max accel
+    max_accel = interp(v_ego, max_accel_bp, max_accel_v)
+
     # limit the pcm accel cmd if:
     # - v_ego exceeds v_target, or
     # - a_ego exceeds a_target and v_ego is close to v_target
@@ -127,7 +138,7 @@ class CarInterface(object):
     # accelOverride is more or less the max throttle allowed to pcm: usually set to a constant
     # unless aTargetMax is very high and then we scale with it; this help in quicker restart
 
-    return float(min(speedLimiter, accelLimiter))
+    return float(max(max_accel, a_target / A_ACC_MAX)) * min(speedLimiter, accelLimiter)
 
   @staticmethod
   def get_params(candidate, fingerprint):
@@ -369,8 +380,9 @@ class CarInterface(object):
     canMonoTimes = []
 
     self.cp.update(int(sec_since_boot() * 1e9), False)
+    self.cp_cam.update(int(sec_since_boot() * 1e9), False)
 
-    self.CS.update(self.cp)
+    self.CS.update(self.cp, self.cp_cam)
 
     # create message
     ret = car.CarState.new_message()
@@ -482,6 +494,12 @@ class CarInterface(object):
         events.append(create_event('commIssue', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     else:
       self.can_invalid_count = 0
+    if not self.CS.cam_can_valid and self.CP.enableCamera:
+      self.cam_can_invalid_count += 1
+      if self.cam_can_invalid_count >= 5 and self.CS.CP.carFingerprint not in HONDA_BOSCH:
+        events.append(create_event('invalidGiraffeHonda', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
+    else:
+      self.cam_can_invalid_count = 0
     if self.CS.steer_error:
       events.append(create_event('steerUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
     elif self.CS.steer_warning:
@@ -573,24 +591,8 @@ class CarInterface(object):
     else:
       hud_v_cruise = 255
 
-    hud_alert = {
-      "none": AH.NONE,
-      "fcw": AH.FCW,
-      "steerRequired": AH.STEER,
-      "brakePressed": AH.BRAKE_PRESSED,
-      "wrongGear": AH.GEAR_NOT_D,
-      "seatbeltUnbuckled": AH.SEATBELT,
-      "speedTooHigh": AH.SPEED_TOO_HIGH}[str(c.hudControl.visualAlert)]
-
-    snd_beep, snd_chime = {
-      "none": (BP.MUTE, CM.MUTE),
-      "beepSingle": (BP.SINGLE, CM.MUTE),
-      "beepTriple": (BP.TRIPLE, CM.MUTE),
-      "beepRepeated": (BP.REPEATED, CM.MUTE),
-      "chimeSingle": (BP.MUTE, CM.SINGLE),
-      "chimeDouble": (BP.MUTE, CM.DOUBLE),
-      "chimeRepeated": (BP.MUTE, CM.REPEATED),
-      "chimeContinuous": (BP.MUTE, CM.CONTINUOUS)}[str(c.hudControl.audibleAlert)]
+    hud_alert = VISUAL_HUD[c.hudControl.visualAlert.raw]
+    snd_beep, snd_chime = AUDIO_HUD[c.hudControl.audibleAlert.raw]
 
     pcm_accel = int(clip(c.cruiseControl.accelOverride,0,1)*0xc6)
 

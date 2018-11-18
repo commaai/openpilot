@@ -24,15 +24,14 @@ static int find_dev() {
     int fd = openat(dirfd(dir), de->d_name, O_RDONLY);
     assert(fd >= 0);
 
-    char name[128] = {0};
-    err = ioctl(fd, EVIOCGNAME(sizeof(name) - 1), &name);
+    unsigned char ev_bits[KEY_MAX / 8 + 1];
+    err = ioctl(fd, EVIOCGBIT(EV_ABS, sizeof(ev_bits)), ev_bits);
     assert(err >= 0);
 
-    unsigned long ev_bits[8] = {0};
-    err = ioctl(fd, EVIOCGBIT(0, sizeof(ev_bits)), ev_bits);
-    assert(err >= 0);
-
-    if (strncmp(name, "synaptics", 9) == 0 && ev_bits[0] == 0xb) {
+    const int x_key = ABS_MT_POSITION_X / 8;
+    const int y_key = ABS_MT_POSITION_Y / 8;
+    if ((ev_bits[x_key] & (ABS_MT_POSITION_X - x_key)) &&
+        (ev_bits[y_key] & (ABS_MT_POSITION_Y - y_key))) {
       ret = fd;
       break;
     }
@@ -77,12 +76,7 @@ int touch_poll(TouchState *s, int* out_x, int* out_y, int timeout) {
       } else if (event.code == ABS_MT_POSITION_Y) {
         s->last_y = event.value;
       }
-      break;
-    case EV_KEY:
-      if (event.code == BTN_TOOL_FINGER && event.value == 0) {
-        // finger up
-        up = true;
-      }
+      up = true;
       break;
     default:
       break;

@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+
+# TODO: merge the extra functionalities of this file (like MOCK) in boardd.c and
+# delete this python version of boardd
+
 import os
 import struct
 import zmq
@@ -15,8 +19,6 @@ try:
   from usb1 import USBErrorIO, USBErrorOverflow  #pylint: disable=no-name-in-module
 except Exception:
   pass
-
-# TODO: rewrite in C to save CPU
 
 SAFETY_NOOUTPUT = 0
 SAFETY_HONDA = 1
