@@ -645,11 +645,9 @@ def _weighted_distance_ratio(lead, v_ego, max_decel_ratio, max_accel_ratio):
   # and max decel within 1/3 optimal_dist_m.
   d_weights = OrderedDict([
     # relative distance : acceleration ratio
-    (0,                max_decel_ratio),
     (optimal_dist_m/3, max_decel_ratio),
     (optimal_dist_m*1, 1),
-    (optimal_dist_m*2, max_accel_ratio),
-    (optimal_dist_m*1000, max_accel_ratio)])
+    (optimal_dist_m*2, max_accel_ratio)])
   dist = _visual_radar_adjusted_dist_m(lead.dRel)
   return  _interp_map(dist, d_weights)
   
@@ -675,10 +673,8 @@ def _weighted_velocity_ratio(lead, v_ego, max_decel_ratio, max_accel_ratio):
   # at very low speed, distance logic dominates.
   v_weights = OrderedDict([
     # seconds to travel distance : importance of relative speed
-    (FOLLOW_TIME_S,        1.),
     (FOLLOW_TIME_S * 1.5,  1.),  # full weight near desired follow distance
     (FOLLOW_TIME_S * 5,    0.),  # zero weight when distant
-    (FOLLOW_TIME_S * 6,    0.)
   ])
   dist = _visual_radar_adjusted_dist_m(lead.dRel)
   v_weight = _interp_map(_sec_to_travel(dist, v_ego), v_weights)
