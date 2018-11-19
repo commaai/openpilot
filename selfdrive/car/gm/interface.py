@@ -12,15 +12,6 @@ try:
 except ImportError:
   CarController = None
 
-# Car chimes, beeps, blinker sounds etc
-class CM:
-  TOCK = 0x81
-  TICK = 0x82
-  LOW_BEEP = 0x84
-  HIGH_BEEP = 0x85
-  LOW_CHIME = 0x86
-  HIGH_CHIME = 0x87
-
 class CanBus(object):
   def __init__(self):
     self.powertrain = 0
