@@ -711,13 +711,13 @@ def _decel_limit_multiplier(v_ego, lead):
   else:
     return 1.0
     
-def _jerk_limits(v_ego, lead, max_speed_kph):
+def _jerk_limits(v_ego, lead, max_speed_kph, lead_last_seen_time_ms):
   # prevent high jerk near max speed
-  multipliers_near_max_speed = OrderedDict([
+  near_max_speed_multipliers = OrderedDict([
       # (kph under max speed, accel jerk multiplier)
       (0, 0.1),
       (3, 1.0)])
-  multiplier_near_max_speed = _interp_map(max_speed_kph - v_ego * CV.MS_TO_KPH, multipliers_near_max_speed)
+  near_max_speed_multiplier = _interp_map(max_speed_kph - v_ego * CV.MS_TO_KPH, near_max_speed_multipliers)
   
   if lead and lead.dRel:
     safe_dist_m = _safe_distance_m(v_ego)
@@ -740,12 +740,19 @@ def _jerk_limits(v_ego, lead, max_speed_kph):
       (1.0 * safe_dist_m, 0.03),
       (2.5 * safe_dist_m, 0.15)])
     accel_jerk = _interp_map(lead.dRel, accel_jerk_map)
-    accel_jerk *= multiplier_near_max_speed
+    accel_jerk *= near_max_speed_multiplier
     return decel_jerk, accel_jerk
   else:
+    # In the absence of a lead car
     decel_jerk = -0.15
-    # TODO: Limit accel jerk if the lead was only recently lost, to prevent
+    # Limit accel jerk if the lead was only recently lost, to prevent
     # bucking as a lead is intermittently detected.
+    time_since_lead_seen_ms = _current_time_millis() - lead_last_seen_time_ms
+    time_since_lead_seen_multipliers = OrderedDict([
+      # (ms since last lead sighting, accel jerk multiplier)
+      (0,    0.1),
+      (3000, 1.0)])
+    time_since_lead_seen_multiplier = _interp_map(time_since_lead_seen_ms, time_since_lead_seen_multipliers)
     # Limit accel jerk near max speed.
-    accel_jerk = 0.15 * multiplier_near_max_speed
+    accel_jerk = 0.15 * near_max_speed_multiplier * time_since_lead_seen_multiplier
     return decel_jerk, accel_jerk
