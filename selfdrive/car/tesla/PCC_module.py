@@ -730,15 +730,15 @@ def _jerk_limits(v_ego, lead, max_speed_kph):
     # allow extra decel jerk if relative speed is high
     decel_multipliers = OrderedDict([
         # (relative speed in m/s, decel jerk multiplier)
-        (-14, 3),
-        (-3,  1)])
+        (-12, 3),
+        (-2,  1)])
     decel_multiplier = _interp_map(lead.vRel, decel_multipliers)
     decel_jerk *= decel_multiplier
     
     accel_jerk_map = OrderedDict([
       # (distance in m, accel jerk)
       (1.0 * safe_dist_m, 0.03),
-      (2.5 * safe_dist_m, 0.16)])
+      (2.5 * safe_dist_m, 0.15)])
     accel_jerk = _interp_map(lead.dRel, accel_jerk_map)
     accel_jerk *= multiplier_near_max_speed
     return decel_jerk, accel_jerk
@@ -747,5 +747,5 @@ def _jerk_limits(v_ego, lead, max_speed_kph):
     # TODO: Limit accel jerk if the lead was only recently lost, to prevent
     # bucking as a lead is intermittently detected.
     # Limit accel jerk near max speed.
-    accel_jerk = 0.16 * multiplier_near_max_speed
+    accel_jerk = 0.15 * multiplier_near_max_speed
     return decel_jerk, accel_jerk
