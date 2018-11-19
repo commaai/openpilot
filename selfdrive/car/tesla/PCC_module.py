@@ -378,7 +378,7 @@ class PCCController(object):
       enabled = self.enable_pedal_cruise and self.LoC.long_control_state in [LongCtrlState.pid, LongCtrlState.stopping]
 
       if self.enable_pedal_cruise:
-        jerk_min, jerk_max = _jerk_limits(CS.v_ego, self.lead_1, self.pedal_speed_kph)
+        jerk_min, jerk_max = _jerk_limits(CS.v_ego, self.lead_1, self.pedal_speed_kph, self.lead_last_seen_time_ms)
         self.v_cruise, self.a_cruise = speed_smoother(self.v_acc_start, self.a_acc_start,
                                                       self.v_pid,
                                                       accel_max, brake_max,
