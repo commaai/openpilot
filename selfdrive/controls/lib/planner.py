@@ -219,8 +219,8 @@ class LongitudinalMpc(object):
       self.cur_state[0].x_l = 50.0
       self.cur_state[0].v_l = CS.vEgo + 10.0
       a_lead = 0.0
-      #v_lead = CS.vEgo + 10.0
-      #x_lead = 150.0
+      v_lead = CS.vEgo + 10.0
+      x_lead = 50.0
       self.a_lead_tau = _LEAD_ACCEL_TAU
 
     # Calculate mpc
@@ -228,10 +228,9 @@ class LongitudinalMpc(object):
     
     # Override with 3 bar distance profile if using one bar distance - hysteresis for safety
     #if self.override and CS.aEgo >= 0:
-    #  self.override = False  # When car starts accelerating, resume one bar distance profile
-      
-    #if self.override or (CS.readdistancelines == 1 and CS.vEgo < 18.06 and (v_lead - CS.vEgo) < -3 and x_lead < 100):
-    if CS.readdistancelines == 1 and CS.vEgo < 18.06:  
+      #self.override = False  # When car starts accelerating, resume one bar distance profile
+       
+    if CS.readdistancelines == 1 and CS.vEgo < 18.06 and (v_lead - CS.vEgo) < -1:
       #self.override = True   # If we start braking, then keep 3 bar distance profile until car starts to accelerate
       TR=1.8
       #if self.lastTR > 0:
@@ -239,26 +238,23 @@ class LongitudinalMpc(object):
         #self.lastTR = 0
     else:
       if CS.readdistancelines == 2:
-        if CS.readdistancelines == self.lastTR:
-          TR=1.8 # 20m at 40km/hr
-        else:
-          TR=1.8
+        TR=1.8 # 20m at 40km/hr
+        if CS.readdistancelines != self.lastTR:
           self.libmpc.init(MPC_COST_LONG.TTC, 0.1, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
           self.lastTR = CS.readdistancelines
+          
       elif CS.readdistancelines == 1:
-        if CS.readdistancelines == self.lastTR:
-          TR=0.9 # 10m at 40km/hr
-        else:
-          TR=0.9
+        TR=0.9 # 10m at 40km/hr
+        if CS.readdistancelines != self.lastTR:
           self.libmpc.init(MPC_COST_LONG.TTC, 1.0, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
           self.lastTR = CS.readdistancelines
+          
       elif CS.readdistancelines == 3:
-        if CS.readdistancelines == self.lastTR:
-          TR=2.7
-        else:
-          TR=2.7 # 30m at 40km/hr
+        TR=2.7 # 30m at 40km/hr
+        if CS.readdistancelines != self.lastTR:
           self.libmpc.init(MPC_COST_LONG.TTC, 0.05, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
           self.lastTR = CS.readdistancelines
+          
       else:
         TR=1.8 # if readdistancelines = 0
     
