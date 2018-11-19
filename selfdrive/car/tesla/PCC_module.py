@@ -718,26 +718,27 @@ def _decel_limit_multiplier(v_ego, lead):
 def _jerk_limits(v_ego, lead, max_speed_kph):
   # prevent high jerk near max speed
   multipliers_near_max_speed = OrderedDict([
-      # (speed under max, accel jerk multiplier)
+      # (kph under max speed, accel jerk multiplier)
       (0, 0.1),
       (3, 1.0)])
   multiplier_near_max_speed = _interp_map(max_speed_kph - v_ego * CV.MS_TO_KPH, multipliers_near_max_speed)
   
-  # allow extra decel jerk if relative speed is high
-  decel_multipliers = OrderedDict([
-      # (relative speed in m/s, decel jerk multiplier)
-      (-14, 3),
-      (-3,  1)])
-  decel_multiplier = _interp_map(v_ego, decel_multipliers)
-  
   if lead and lead.dRel:
     safe_dist_m = _safe_distance_m(v_ego)
+    
     decel_jerk_map = OrderedDict([
       # (distance in m, decel jerk)
       (0.5 * safe_dist_m, -0.6),
       (1.2 * safe_dist_m, -0.2)])
     decel_jerk = _interp_map(lead.dRel, decel_jerk_map)
+    # allow extra decel jerk if relative speed is high
+    decel_multipliers = OrderedDict([
+        # (relative speed in m/s, decel jerk multiplier)
+        (-14, 3),
+        (-3,  1)])
+    decel_multiplier = _interp_map(lead.vRel, decel_multipliers)
     decel_jerk *= decel_multiplier
+    
     accel_jerk_map = OrderedDict([
       # (distance in m, accel jerk)
       (1.0 * safe_dist_m, 0.03),
@@ -747,4 +748,4 @@ def _jerk_limits(v_ego, lead, max_speed_kph):
     return decel_jerk, accel_jerk
   else:
     # limit accel jerk near max speed
-    return -0.15 * decel_multiplier, 0.16 * multiplier_near_max_speed
+    return -0.15, 0.16 * multiplier_near_max_speed
