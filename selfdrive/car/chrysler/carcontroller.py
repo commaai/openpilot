@@ -33,9 +33,9 @@ class CarController(object):
 
     self.packer = CANPacker(dbc_name)
 
-    logging.basicConfig(level=logging.DEBUG, filename="/tmp/chrylog", filemode="a+",
-                        format="%(asctime)-15s %(levelname)-8s %(message)s")
-    logging.info('CarController init')
+    #logging.basicConfig(level=logging.DEBUG, filename="/tmp/chrylog", filemode="a+",
+    #                    format="%(asctime)-15s %(levelname)-8s %(message)s")
+    #logging.info('CarController init')
 
   def update(self, sendcan, enabled, CS, frame, actuators,
              pcm_cancel_cmd, hud_alert, audible_alert):
@@ -61,7 +61,7 @@ class CarController(object):
     self.last_steer = apply_steer
 
     if self.prev_frame == frame:
-      logging.info('prev_frame == frame so skipping')
+      #logging.info('prev_frame == frame so skipping')
       return  # Do not reuse an old frame. This avoids repeating on shut-down.
 
     can_sends = []
@@ -92,7 +92,7 @@ class CarController(object):
       [addr, _, dat, _] = msg
       outp  = ('make_can_msg:%s  len:%d  %s' % ('0x{:02x}'.format(addr), len(dat),
                                                 ' '.join('{:02x}'.format(ord(c)) for c in dat)))
-      logging.info(outp)
+      #logging.info(outp)
 
 
     self.ccframe += 1

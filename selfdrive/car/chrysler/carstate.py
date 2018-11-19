@@ -81,9 +81,9 @@ class CarState(object):
                          C=np.matrix([1.0, 0.0]),
                          K=np.matrix([[0.12287673], [0.29666309]]))
     self.v_ego = 0.0
-    logging.basicConfig(level=logging.DEBUG, filename="/tmp/chrylog-cs", filemode="a+",
-                        format="%(asctime)-15s %(levelname)-8s %(message)s")
-    logging.info('CarState init')
+    #logging.basicConfig(level=logging.DEBUG, filename="/tmp/chrylog-cs", filemode="a+",
+    #                    format="%(asctime)-15s %(levelname)-8s %(message)s")
+    #logging.info('CarState init')
 
 
   def update(self, cp):
@@ -95,7 +95,7 @@ class CarState(object):
     self.prev_right_blinker_on = self.right_blinker_on
 
     self.frame_220 = int(cp.vl["LKAS_INDICATOR_1"]['INCREMENTING_220'])
-    logging.info('frame_220 %d' % self.frame_220)
+    #logging.info('frame_220 %d' % self.frame_220)
 
     self.door_all_closed = not any([cp.vl["DOORS"]['DOOR_OPEN_FL'],
                                     cp.vl["DOORS"]['DOOR_OPEN_FR'],
