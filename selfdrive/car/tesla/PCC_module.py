@@ -569,7 +569,7 @@ class PCCController(object):
         # Visual radar sucks at great distances, but consider action if
         # relative speed is significant.
         elif lead_dist_m < 65 and rel_speed_kph < -15:
-          new_speed_kph = actual_speed_kph - 1
+          new_speed_kph = actual_speed_kph - 2
         # if too far, consider increasing speed
         elif lead_dist_m > 1.5 * safe_dist_m:
           speed_weights = OrderedDict([
@@ -583,6 +583,9 @@ class PCCController(object):
       # Enforce limits on speed
       new_speed_kph = clip(new_speed_kph, MIN_PCC_V, MAX_PCC_V)
       new_speed_kph = clip(new_speed_kph, 0, self.pedal_speed_kph)
+      if CS.blinker_on:
+        # Don't accelerate during manual turns.
+        new_speed_kph = min(new_speed_kph, self.last_speed_kph)
       self.last_speed_kph = new_speed_kph
 
     return new_speed_kph * CV.KPH_TO_MS
@@ -712,19 +715,36 @@ def _decel_limit_multiplier(v_ego, lead):
   else:
     return 1.0
     
-def _jerk_limits(v_ego, lead):
+def _jerk_limits(v_ego, lead, max_speed_kph):
+  # prevent high jerk near max speed
+  multipliers_near_max_speed = OrderedDict([
+      # (speed under max, accel jerk multiplier)
+      (0, 0.1),
+      (3, 1.0)])
+  multiplier_near_max_speed = _interp_map(max_speed_kph - v_ego * CV.MS_TO_KPH, multipliers_near_max_speed)
+  
+  # allow extra decel jerk if relative speed is high
+  decel_multipliers = OrderedDict([
+      # (relative speed in m/s, decel jerk multiplier)
+      (-14, 3),
+      (-3,  1)])
+  decel_multiplier = _interp_map(v_ego, decel_multipliers)
+  
   if lead and lead.dRel:
     safe_dist_m = _safe_distance_m(v_ego)
     decel_jerk_map = OrderedDict([
       # (distance in m, decel jerk)
-      (0.5 * safe_dist_m, -0.5),
-      (1.0 * safe_dist_m, -0.18)])
+      (0.5 * safe_dist_m, -0.6),
+      (1.2 * safe_dist_m, -0.2)])
     decel_jerk = _interp_map(lead.dRel, decel_jerk_map)
+    decel_jerk *= decel_multiplier
     accel_jerk_map = OrderedDict([
       # (distance in m, accel jerk)
-      (1.0 * safe_dist_m, 0.04),
-      (2.0 * safe_dist_m, 0.07)])
+      (1.0 * safe_dist_m, 0.03),
+      (2.0 * safe_dist_m, 0.06)])
     accel_jerk = _interp_map(lead.dRel, accel_jerk_map)
+    accel_jerk *= multiplier_near_max_speed
     return decel_jerk, accel_jerk
   else:
-    return -0.15, 0.8
+    # limit accel jerk near max speed
+    return -0.15 * decel_multiplier, 0.8 * multiplier_near_max_speed
