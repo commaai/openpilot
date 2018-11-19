@@ -82,14 +82,6 @@ def create_pedal_command_msg(accelCommand, enable, idx):
   struct.pack_into('B', msg, msg_len-1, add_tesla_checksum(msg_id,msg))
   return [msg_id, 0, msg.raw, 2]    
   
-def create_das_status_msg(autopilotState,idx):
-  """Create DAS_status (0x399) message to generate AP sounds"""
-  msg_id = 0x399
-  msg_len = 8
-  msg = create_string_buffer(msg_len)
-  struct.pack_into('BBBBBBB', msg, 0,  (autopilotState << 4) & 0xFF, 0, 0, 0, 0, 0, idx)
-  struct.pack_into('B', msg, msg_len-1, add_tesla_checksum(msg_id,msg))
-  return [msg_id, 0, msg.raw, 0]
 
 def create_DAS_info_msg(mid):
   msg_id = 0x539
@@ -118,19 +110,23 @@ def create_DAS_info_msg(mid):
   return [msg_id, 0, msg.raw, 0]
 
 
-def create_DAS_status_msg(idx):
+def create_DAS_status_msg(idx,op_status,speed_limit_kph,alca_state,hands_on_state):
   msg_id = 0x399
   msg_len = 8
   msg = create_string_buffer(msg_len)
-  struct.pack_into('BBBBBBB', msg, 0, 0x03,0x0b,0x20,0x00,0x08,0x08,(idx << 4) + 8)
+  sl = int(speed_limit_kph / 5)
+  struct.pack_into('BBBBBBB', msg, 0, op_status,sl,sl,0x00,0x08,hands_on_state << 2 + 0xFF & (alca_state << 6),(idx << 4)) # + 8 + alca_state >>2)
   struct.pack_into('B', msg, msg_len-1, add_tesla_checksum(msg_id,msg))
   return [msg_id, 0, msg.raw, 0]
 
-def create_DAS_status2_msg(idx):
+def create_DAS_status2_msg(idx,acc_speed_limit_mph,collision_warning):
   msg_id = 0x389
   msg_len = 8
+  sl = int(acc_speed_limit_mph / 0.2)
+  if acc_speed_limit_mph == 0:
+    sl = 0x3FF
   msg = create_string_buffer(msg_len)
-  struct.pack_into('BBBBBBB', msg, 0, 0xff,0x03,0x44,0x04,0x00,0x80,(idx << 4) )
+  struct.pack_into('BBBBBBB', msg, 0, sl & 0xFF, (sl & 0xF00) >> 8,0x00,0x000,0x00,0x80,(idx << 4) + collision_warning )
   struct.pack_into('B', msg, msg_len-1, add_tesla_checksum(msg_id,msg))
   return [msg_id, 0, msg.raw, 0]
 
@@ -154,7 +150,7 @@ def create_DAS_lanes_msg(idx):
   msg_id = 0x239
   msg_len = 8
   msg = create_string_buffer(msg_len)
-  struct.pack_into('BBBBBBBB', msg, 0, 0x62,0x28,0x62,0x7b,0x65,0x7d,0x30,0x2c)
+  struct.pack_into('BBBBBBBB', msg, 0, 0x33,0x28,0x00,0x00,0x00,0x00,0x22,(idx << 4)+0x0C)
   return [msg_id, 0, msg.raw, 0]
 
 def create_DAS_objects_msg(idx):
