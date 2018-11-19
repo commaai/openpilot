@@ -42,6 +42,9 @@ def get_can_parser(CP):
     ("HIGH_BEAM_FLASH", "STEERING_LEVERS", 0),
     ("ACC_SPEED_CONFIG_KPH", "DASHBOARD", 0),
     ("INCREMENTING_220", "LKAS_INDICATOR_1", -1),
+    ("LKAS_IS_GREEN", "LKAS_INDICATOR_1", 1),
+    ("TRACTION_OFF", "TRACTION_BUTTON", 0),
+    ("SEATBELT_DRIVER_UNLATCHED", "SEATBELT_STATUS", 0),
   ]
 
   # It's considered invalid if it is not received for 10x the expected period (1/f).
@@ -78,9 +81,9 @@ class CarState(object):
                          C=np.matrix([1.0, 0.0]),
                          K=np.matrix([[0.12287673], [0.29666309]]))
     self.v_ego = 0.0
-    logging.basicConfig(level=logging.DEBUG, filename="/tmp/chrylog-cs", filemode="a+",
-                        format="%(asctime)-15s %(levelname)-8s %(message)s")
-    logging.info('CarState init')
+    #logging.basicConfig(level=logging.DEBUG, filename="/tmp/chrylog-cs", filemode="a+",
+    #                    format="%(asctime)-15s %(levelname)-8s %(message)s")
+    #logging.info('CarState init')
 
 
   def update(self, cp):
@@ -92,19 +95,19 @@ class CarState(object):
     self.prev_right_blinker_on = self.right_blinker_on
 
     self.frame_220 = int(cp.vl["LKAS_INDICATOR_1"]['INCREMENTING_220'])
-    logging.info('frame_220 %d' % self.frame_220)
+    #logging.info('frame_220 %d' % self.frame_220)
 
     self.door_all_closed = not any([cp.vl["DOORS"]['DOOR_OPEN_FL'],
                                     cp.vl["DOORS"]['DOOR_OPEN_FR'],
                                     cp.vl["DOORS"]['DOOR_OPEN_RL'],
                                     cp.vl["DOORS"]['DOOR_OPEN_RR']])
-    self.seatbelt = True  # TODO
+    self.seatbelt = (cp.vl["SEATBELT_STATUS"]['SEATBELT_DRIVER_UNLATCHED'] == 0)
 
     self.brake_pressed = cp.vl["BRAKE_2"]['BRAKE_PRESSED_2'] == 5 # human-only
     self.pedal_gas = 0  # TODO Disabled until we can find the message on Pacifica 2018
     # self.pedal_gas = cp.vl["ACCEL_PEDAL_MSG"]['ACCEL_PEDAL']
     self.car_gas = self.pedal_gas
-    self.esp_disabled = False # cp.vl["ESP_CONTROL"]['TC_DISABLED']  # TODO
+    self.esp_disabled = (cp.vl["TRACTION_BUTTON"]['TRACTION_OFF'] == 1)
 
     self.v_wheel_fl = cp.vl['WHEEL_SPEEDS']['WHEEL_SPEED_FL']
     self.v_wheel_rr = cp.vl['WHEEL_SPEEDS']['WHEEL_SPEED_RR']
@@ -129,22 +132,14 @@ class CarState(object):
     self.left_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 1
     self.right_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 2
 
-    # TODO continue here with these values and see which ones we need.
-    # # we could use the override bit from dbc, but it's triggered at too high torque values
     self.steer_override = False  # abs(cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_DRIVER']) > 100  # TODO
-    # # 2 is standby, 10 is active. TODO: check that everything else is really a faulty state
-    # self.steer_state = cp.vl["EPS_STATUS"]['LKA_STATE']
-    self.steer_error = False # cp.vl["EPS_STATUS"]['LKA_STATE'] not in [1, 5] # TODO
-    # self.ipas_active = cp.vl['EPS_STATUS']['IPAS_STATE'] == 3
-    # self.brake_error = 0
+    self.steer_error = cp.vl["LKAS_INDICATOR_1"]['LKAS_IS_GREEN'] == 0  # 0 if wheel will not actuate
     self.steer_torque_driver = 0 # cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_DRIVER'] # TODO
-    # self.steer_torque_motor = cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_EPS']
 
-    self.user_brake = 0  # TODO perhaps just use brake_pressed
+    self.user_brake = 0
+    self.brake_lights = self.brake_pressed
     self.v_cruise_pcm = cp.vl["DASHBOARD"]['ACC_SPEED_CONFIG_KPH']
-    self.pcm_acc_status = self.main_on # cp.vl["PCM_CRUISE"]['CRUISE_STATE']
+    self.pcm_acc_status = self.main_on
     # self.gas_pressed = not cp.vl["PCM_CRUISE"]['GAS_RELEASED']
-    self.low_speed_lockout = False  # cp.vl["PCM_CRUISE_2"]['LOW_SPEED_LOCKOUT'] == 2 # TODO
-    self.brake_lights = self.brake_pressed # bool(cp.vl["ESP_CONTROL"]['BRAKE_LIGHTS_ACC'] or self.brake_pressed)  # TODO
 
     self.generic_toggle = bool(cp.vl["STEERING_LEVERS"]['HIGH_BEAM_FLASH'])

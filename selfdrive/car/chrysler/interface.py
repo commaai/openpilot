@@ -23,6 +23,7 @@ class CarInterface(object):
     self.gas_pressed_prev = False
     self.brake_pressed_prev = False
     self.cruise_enabled_prev = False
+    self.low_speed_alert = False
 
     # *** init the major players ***
     self.CS = CarState(CP)
@@ -32,7 +33,7 @@ class CarInterface(object):
     # sending if read only is False
     if sendcan is not None:
       self.sendcan = sendcan
-      self.CC = CarController(self.cp.dbc_name, CP.carFingerprint, CP.enableCamera, CP.enableDsu, CP.enableApgs)
+      self.CC = CarController(self.cp.dbc_name, CP.carFingerprint, CP.enableCamera)
 
   @staticmethod
   def compute_gb(accel, speed):
@@ -84,9 +85,8 @@ class CarInterface(object):
     ret.longPidDeadzoneBP = [0., 9.]
     ret.longPidDeadzoneV = [0., .15]
 
-    # min speed to enable ACC. if car can do stop and go, then set enabling speed
-    # to a negative value, so it won't matter.
-    ret.minEnableSpeed = 5. * CV.MPH_TO_MS  # -1 for stop-and-go
+    ret.minSteerSpeed = 3.8  # m/s
+    ret.minEnableSpeed = -1.   # enable is done by stock ACC, so ignore this
 
     centerToRear = ret.wheelbase - ret.centerToFront
     # TODO: get actual value, for now starting with reasonable value for
@@ -115,11 +115,7 @@ class CarInterface(object):
     ret.brakeMaxV = [1., 0.8]
 
     ret.enableCamera = not check_ecu_msgs(fingerprint, candidate, ECU.CAM)
-    ret.enableDsu = False #not check_ecu_msgs(fingerprint, candidate, ECU.DSU)
-    ret.enableApgs = False #not check_ecu_msgs(fingerprint, candidate, ECU.APGS)
     print "ECU Camera Simulated: ", ret.enableCamera
-    print "ECU DSU Simulated: ", ret.enableDsu
-    print "ECU APGS Simulated: ", ret.enableApgs
 
     ret.steerLimitAlert = False
     ret.stoppingControl = False
@@ -204,6 +200,7 @@ class CarInterface(object):
 
     ret.doorOpen = not self.CS.door_all_closed
     ret.seatbeltUnlatched = not self.CS.seatbelt
+    self.low_speed_alert = (ret.vEgo < self.CP.minSteerSpeed)
 
     ret.genericToggle = self.CS.generic_toggle
 
@@ -215,30 +212,20 @@ class CarInterface(object):
         events.append(create_event('commIssue', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     else:
       self.can_invalid_count = 0
-    if not ret.gearShifter == 'drive' and self.CP.enableDsu:
+    if not ret.gearShifter == 'drive':
       events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if ret.doorOpen:
       events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if ret.seatbeltUnlatched:
       events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if self.CS.esp_disabled and self.CP.enableDsu:
+    if self.CS.esp_disabled:
       events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if not self.CS.main_on and self.CP.enableDsu:
+    if not self.CS.main_on:
       events.append(create_event('wrongCarMode', [ET.NO_ENTRY, ET.USER_DISABLE]))
-    if ret.gearShifter == 'reverse' and self.CP.enableDsu:
+    if ret.gearShifter == 'reverse':
       events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     if self.CS.steer_error:
       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
-    if self.CS.low_speed_lockout and self.CP.enableDsu:
-      events.append(create_event('lowSpeedLockout', [ET.NO_ENTRY, ET.PERMANENT]))
-    if ret.vEgo < self.CP.minEnableSpeed and self.CP.enableDsu:
-      events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
-      if c.actuators.gas > 0.1:
-        # some margin on the actuator to not false trigger cancellation while stopping
-        events.append(create_event('speedTooLow', [ET.IMMEDIATE_DISABLE]))
-      if ret.vEgo < 0.001:
-        # while in standstill, send a user alert
-        events.append(create_event('manualRestart', [ET.WARNING]))
 
     # enable request in prius is simple, as we activate when Toyota is active (rising edge)
     if ret.cruiseState.enabled and not self.cruise_enabled_prev:
@@ -254,6 +241,9 @@ class CarInterface(object):
     if ret.gasPressed:
       events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
 
+    if self.low_speed_alert:
+      events.append(create_event('belowSteerSpeed', [ET.WARNING]))
+
     ret.events = events
     ret.canMonoTimes = canMonoTimes
 
@@ -266,26 +256,12 @@ class CarInterface(object):
   # pass in a car.CarControl
   # to be called @ 100hz
   def apply(self, c, perception_state=log.Live20Data.new_message()):
-
-    #! if our frame isn't synced with 220, then reset it.
-    # this wasn't needed in the game, so could it be needed for OP?!?!
-    # check if it's more than 3 away, accounting for 0x10 wrap-around.
-
     if (self.CS.frame_220 == -1):
       return False # if we haven't seen a frame 220, then do not update.
     self.frame = self.CS.frame_220
-
-    # f1 = int(self.frame) % 0x10
-    # f2 = int(self.CS.frame_220) % 0x10  # shouldn't need the mod, but just in case.
-    # fmin = min(f1, f2)
-    # fmax = max(f1, f2)
-    # if ((fmax - fmin) > 2) and ((fmin + 0x10 - fmax) > 2):
-    #   # copy lower nibble from frame_220 to our frame so they match
-    #   self.frame = (int(self.frame) & 0xfffffff0) | f2
 
     self.CC.update(self.sendcan, c.enabled, self.CS, self.frame,
                    c.actuators, c.cruiseControl.cancel, c.hudControl.visualAlert,
                    c.hudControl.audibleAlert)
 
-    # self.frame += 1
     return False
