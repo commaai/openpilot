@@ -67,8 +67,8 @@ _A_CRUISE_MAX = OrderedDict([
   # (speed in m/s, allowed acceleration)
   (0.0, 0.5),
   (5.0, 0.3),
-  (10., 0.25),
-  (20., 0.22),
+  (10., 0.22),
+  (20., 0.21),
   (40., 0.20)])
   
 # Lookup table for turns
