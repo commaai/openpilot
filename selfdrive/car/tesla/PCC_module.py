@@ -378,7 +378,6 @@ class PCCController(object):
       enabled = self.enable_pedal_cruise and self.LoC.long_control_state in [LongCtrlState.pid, LongCtrlState.stopping]
 
       if self.enable_pedal_cruise:
-        # TODO: make a separate lookup for jerk tuning
         jerk_min, jerk_max = _jerk_limits(CS.v_ego, self.lead_1, self.pedal_speed_kph)
         self.v_cruise, self.a_cruise = speed_smoother(self.v_acc_start, self.a_acc_start,
                                                       self.v_pid,
@@ -577,6 +576,7 @@ class PCCController(object):
             (1.5 * safe_dist_m, 0.4),
             (3.0 * safe_dist_m, 0.1)])
           speed_weight = _interp_map(lead_dist_m, speed_weights)
+          # TODO: This equation is sketchy and deserves more thought.
           new_speed_kph = actual_speed_kph + clip(rel_speed_kph * speed_weight + 5, 0, 3)
         new_speed_kph = min(new_speed_kph, _max_safe_speed_ms(lead_dist_m) * CV.MS_TO_KPH)
 
@@ -743,5 +743,9 @@ def _jerk_limits(v_ego, lead, max_speed_kph):
     accel_jerk *= multiplier_near_max_speed
     return decel_jerk, accel_jerk
   else:
-    # limit accel jerk near max speed
-    return -0.15, 0.16 * multiplier_near_max_speed
+    decel_jerk = -0.15
+    # TODO: Limit accel jerk if the lead was only recently lost, to prevent
+    # bucking as a lead is intermittently detected.
+    # Limit accel jerk near max speed.
+    accel_jerk = 0.16 * multiplier_near_max_speed
+    return decel_jerk, accel_jerk
