@@ -66,10 +66,10 @@ _A_CRUISE_MIN = OrderedDict([
 _A_CRUISE_MAX = OrderedDict([
   # (speed in m/s, allowed acceleration)
   (0.0, 0.5),
-  (5.0, 0.4),
-  (10., 0.3),
-  (20., 0.25),
-  (40., 0.22)])
+  (5.0, 0.3),
+  (10., 0.25),
+  (20., 0.22),
+  (40., 0.20)])
   
 # Lookup table for turns
 _A_TOTAL_MAX = OrderedDict([
@@ -379,7 +379,7 @@ class PCCController(object):
 
       if self.enable_pedal_cruise:
         # TODO: make a separate lookup for jerk tuning
-        jerk_min, jerk_max = _jerk_limits(CS.v_ego, self.lead_1)
+        jerk_min, jerk_max = _jerk_limits(CS.v_ego, self.lead_1, self.pedal_speed_kph)
         self.v_cruise, self.a_cruise = speed_smoother(self.v_acc_start, self.a_acc_start,
                                                       self.v_pid,
                                                       accel_max, brake_max,
@@ -741,10 +741,10 @@ def _jerk_limits(v_ego, lead, max_speed_kph):
     accel_jerk_map = OrderedDict([
       # (distance in m, accel jerk)
       (1.0 * safe_dist_m, 0.03),
-      (2.0 * safe_dist_m, 0.06)])
+      (2.5 * safe_dist_m, 0.16)])
     accel_jerk = _interp_map(lead.dRel, accel_jerk_map)
     accel_jerk *= multiplier_near_max_speed
     return decel_jerk, accel_jerk
   else:
     # limit accel jerk near max speed
-    return -0.15 * decel_multiplier, 0.8 * multiplier_near_max_speed
+    return -0.15 * decel_multiplier, 0.16 * multiplier_near_max_speed
