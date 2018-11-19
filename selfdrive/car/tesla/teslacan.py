@@ -115,7 +115,7 @@ def create_DAS_status_msg(idx,op_status,speed_limit_kph,alca_state,hands_on_stat
   msg_len = 8
   msg = create_string_buffer(msg_len)
   sl = int(speed_limit_kph / 5)
-  struct.pack_into('BBBBBBB', msg, 0, op_status,sl,sl,0x00,0x08,hands_on_state << 2 + 0xFF & (alca_state << 6),(idx << 4)) # + 8 + alca_state >>2)
+  struct.pack_into('BBBBBBB', msg, 0, op_status,sl,sl,0x00,0x08,(hands_on_state << 2) + ((alca_state & 0x03) << 6),((idx << 4) &0xF0 )+( 0x0F & (alca_state >>2)))
   struct.pack_into('B', msg, msg_len-1, add_tesla_checksum(msg_id,msg))
   return [msg_id, 0, msg.raw, 0]
 
