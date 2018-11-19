@@ -25,15 +25,10 @@ from selfdrive.controls.lib.latcontrol import LatControl
 from selfdrive.controls.lib.alertmanager import AlertManager
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.controls.lib.driver_monitor import DriverStatus
+from selfdrive.locationd.calibration_values import Calibration, Filter
 
 ThermalStatus = log.ThermalData.ThermalStatus
 State = log.Live100Data.ControlState
-
-
-class Calibration:
-  UNCALIBRATED = 0
-  CALIBRATED = 1
-  INVALID = 2
 
 
 def isActive(state):
@@ -293,7 +288,10 @@ def state_control(plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, 
     extra_text_1, extra_text_2 = "", ""
     if e == "calibrationIncomplete":
       extra_text_1 = str(cal_perc) + "%"
-      extra_text_2 = "35 kph" if is_metric else "15 mph"
+      if is_metric:
+        extra_text_2 = str(int(round(Filter.MIN_SPEED * CV.MS_TO_KPH))) + " kph"
+      else:
+        extra_text_2 = str(int(round(Filter.MIN_SPEED * CV.MS_TO_MPH))) + " mph"
     AM.add(str(e) + "Permanent", enabled, extra_text_1=extra_text_1, extra_text_2=extra_text_2)
 
   AM.process_alerts(sec_since_boot())
