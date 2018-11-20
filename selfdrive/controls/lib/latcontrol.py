@@ -110,10 +110,17 @@ class LatControl(object):
       output_steer = 0.0
       self.pid.reset()
     else:
-      # Project future steering angle using average steer rate since last MPC update
+      # Calculate average steering rate since last MPC update
       self.avg_angle_rate = (self.avg_angle_rate * self.angle_rate_count + angle_rate) / (self.angle_rate_count + 1.) 
       self.angle_rate_count += 1.0
-      future_angle_steers = (self.avg_angle_rate * _DT_MPC) + self.starting_angle_steers
+
+      if abs(angle_rate) <= 1. or abs(angle_steers - self.angle_steers_des_mpc) <= 0.2:
+        # For small steering error, use instantaneous angle for torque calculation
+        future_angle_steers = angle_steers
+      else:
+        # Otherwise, use average steering rate since last MPC update to project future steering error
+        future_angle_steers = (self.avg_angle_rate * _DT_MPC) + self.starting_angle_steers
+
       steers_max = get_steer_max(CP, v_ego)
       self.pid.pos_limit = steers_max
       self.pid.neg_limit = -steers_max
