@@ -125,19 +125,19 @@ def calc_plan(CS, CP, events, PL, LaC, LoC, v_cruise_kph, driver_status, geofenc
   """Calculate a longitudinal plan using MPC"""
 
   # Slow down when based on driver monitoring or geofence
-   force_decel = driver_status.awareness < 0. or (geofence is not None and not geofence.in_geofence)
+  force_decel = driver_status.awareness < 0. or (geofence is not None and not geofence.in_geofence)
 
   # Update planner
-   plan_packet = PL.update(CS, LaC, LoC, v_cruise_kph, force_decel)
-   plan = plan_packet.plan
-   plan_ts = plan_packet.logMonoTime
-   events += list(plan.events)
+  plan_packet = PL.update(CS, LaC, LoC, v_cruise_kph, force_decel)
+  plan = plan_packet.plan
+  plan_ts = plan_packet.logMonoTime
+  events += list(plan.events)
 
   # Only allow engagement with brake pressed when stopped behind another stopped car
-   if CS.brakePressed and plan.vTargetFuture >= STARTING_TARGET_SPEED and not CP.radarOffCan and CS.vEgo < 0.3:
-     events.append(create_event('noTarget', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
+  if CS.brakePressed and plan.vTargetFuture >= STARTING_TARGET_SPEED and not CP.radarOffCan and CS.vEgo < 0.3:
+    events.append(create_event('noTarget', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
 
-   return plan, plan_ts
+  return plan, plan_ts
 
 
 def state_transition(CS, CP, state, events, soft_disable_timer, v_cruise_kph, AM):

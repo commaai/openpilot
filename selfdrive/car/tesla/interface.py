@@ -16,6 +16,9 @@ try:
 except ImportError:
   CarController = None
 
+AudibleAlert = car.CarControl.HUDControl.AudibleAlert
+VisualAlert = car.CarControl.HUDControl.VisualAlert
+
 K_MULT = 0.8 
 K_MULTi = 280000.
 
@@ -396,24 +399,27 @@ class CarInterface(object):
     else:
       hud_v_cruise = 255
 
-    hud_alert = {
-      "none": AH.NONE,
-      "fcw": AH.FCW,
-      "steerRequired": AH.STEER,
-      "brakePressed": AH.BRAKE_PRESSED,
-      "wrongGear": AH.GEAR_NOT_D,
-      "seatbeltUnbuckled": AH.SEATBELT,
-      "speedTooHigh": AH.SPEED_TOO_HIGH}[str(c.hudControl.visualAlert)]
+    VISUAL_HUD = {
+      VisualAlert.none: AH.NONE,
+      VisualAlert.fcw: AH.FCW,
+      VisualAlert.steerRequired: AH.STEER,
+      VisualAlert.brakePressed: AH.BRAKE_PRESSED,
+      VisualAlert.wrongGear: AH.GEAR_NOT_D,
+      VisualAlert.seatbeltUnbuckled: AH.SEATBELT,
+      VisualAlert.speedTooHigh: AH.SPEED_TOO_HIGH}
 
-    snd_beep, snd_chime = {
-      "none": (BP.MUTE, CM.MUTE),
-      "beepSingle": (BP.SINGLE, CM.MUTE),
-      "beepTriple": (BP.TRIPLE, CM.MUTE),
-      "beepRepeated": (BP.REPEATED, CM.MUTE),
-      "chimeSingle": (BP.MUTE, CM.SINGLE),
-      "chimeDouble": (BP.MUTE, CM.DOUBLE),
-      "chimeRepeated": (BP.MUTE, CM.REPEATED),
-      "chimeContinuous": (BP.MUTE, CM.CONTINUOUS)}[str(c.hudControl.audibleAlert)]
+    AUDIO_HUD = {
+      AudibleAlert.none: (BP.MUTE, CM.MUTE),
+      AudibleAlert.chimeEngage: (BP.SINGLE, CM.MUTE),
+      AudibleAlert.chimeDisengage: (BP.SINGLE, CM.MUTE),
+      AudibleAlert.chimeError: (BP.MUTE, CM.DOUBLE),
+      AudibleAlert.chimePrompt: (BP.MUTE, CM.SINGLE),
+      AudibleAlert.chimeWarning1: (BP.MUTE, CM.DOUBLE),
+      AudibleAlert.chimeWarning2: (BP.MUTE, CM.REPEATED),
+      AudibleAlert.chimeWarningRepeat: (BP.MUTE, CM.REPEATED)}
+
+    hud_alert = VISUAL_HUD[c.hudControl.visualAlert.raw]
+    snd_beep, snd_chime = AUDIO_HUD[c.hudControl.audibleAlert.raw]
 
     pcm_accel = int(clip(c.cruiseControl.accelOverride,0,1)*0xc6)
 
