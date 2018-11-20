@@ -259,6 +259,21 @@ class CarController(object):
           can_sends.append(teslacan.create_DAS_objects_msg(CS.DAS_objects_idx))
           CS.DAS_objects_idx += 1
           CS.DAS_objects_idx = CS.DAS_objects_idx % 16
+        #send DAS_warningMatrix0
+        if frame % 6 == 0: 
+          can_sends.append(teslacan.create_DAS_warningMatrix0(CS.DAS_warningMatrix0_idx))
+          CS.DAS_warningMatrix0_idx += 1
+          CS.DAS_warningMatrix0_idx = CS.DAS_warningMatrix0_idx % 16
+        #send DAS_warningMatrix3
+        if (frame + 3) % 6 == 0: 
+          can_sends.append(teslacan.create_DAS_warningMatrix3(CS.DAS_warningMatrix3_idx))
+          CS.DAS_warningMatrix3_idx += 1
+          CS.DAS_warningMatrix3_idx = CS.DAS_warningMatrix3_idx % 16
+        #send DAS_warningMatrix1
+        if frame  % 100 == 0: 
+          can_sends.append(teslacan.create_DAS_warningMatrix1(CS.DAS_warningMatrix1_idx))
+          CS.DAS_warningMatrix1_idx += 1
+          CS.DAS_warningMatrix1_idx = CS.DAS_warningMatrix1_idx % 16
       # end of DAS emulation """
       idx = frame % 16
       can_sends.append(teslacan.create_steering_control(enable_steer_control, apply_angle, idx))
@@ -269,7 +284,7 @@ class CarController(object):
       if cruise_btn or (turn_signal_needed > 0 and frame % 2 == 0):
           cruise_msg = teslacan.create_cruise_adjust_msg(
             spdCtrlLvr_stat=cruise_btn,
-            turnIndLvr_Stat=turn_signal_needed,
+            turnIndLvr_Stat= 0, #turn_signal_needed,
             real_steering_wheel_stalk=CS.steering_wheel_stalk)
           # Send this CAN msg first because it is racing against the real stalk.
           can_sends.insert(0, cruise_msg)
