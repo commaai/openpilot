@@ -18,6 +18,9 @@ from selfdrive.car.modules.ALCA_module import ALCAController
 from selfdrive.car.tesla.ACC_module import ACCController
 from selfdrive.car.tesla.PCC_module import PCCController
 from selfdrive.car.tesla.HSO_module import HSOController
+import zmq
+import selfdrive.messaging as messaging
+from selfdrive.services import service_list
 from cereal import ui
 
 # Steer angle limits
@@ -66,6 +69,7 @@ class CarController(object):
     self.PCC = PCCController(self)
     self.HSO = HSOController(self)
     self.sent_DAS_bootID = False
+    context = zmq.Context()
     self.poller = zmq.Poller()
     self.speedlimit = messaging.sub_sock(context, service_list['speedLimit'].port, conflate=True, poller=self.poller)
     self.speedlimit_mph = 0
@@ -195,7 +199,7 @@ class CarController(object):
       #First we emulate DAS.
       #send DAS_bootID
       if not self.sent_DAS_bootID:
-        can_sends.append(teslacan.create_DAS_bootID_msg)
+        can_sends.append(teslacan.create_DAS_bootID_msg())
         self.sent_DAS_bootID = True
       else:
         #get speed limit

@@ -4,6 +4,8 @@ import zmq
 import overpy
 from datetime import datetime
 from cereal import ui
+import re
+from selfdrive.config import Conversions as CV
 
 from selfdrive.services import service_list
 import selfdrive.messaging as messaging
@@ -22,7 +24,7 @@ def parse_way(way):
     tags = way.tags
 
     if 'maxspeed' in tags:
-        max_speed = int(tags['maxspeed'])
+        max_speed = int(re.compile("(\d+)").match(tags['maxspeed']).group(1)) #int(tags['maxspeed'])
 
     if 'maxspeed:conditional' in tags:
         max_speed_cond, cond = tags['maxspeed:conditional'].split(' @ ')
@@ -34,8 +36,8 @@ def parse_way(way):
         end = datetime.strptime(end, "%H:%M").replace(year=now.year, month=now.month, day=now.day)
 
         if start <= now <= end:
-            max_speed = int(max_speed_cond)
-
+            max_speed = int(re.compile("(\d+)").match(max_speed_cond).group(1)) #int(max_speed_cond)
+    #print max_speed
     return max_speed
 
 def get_max_speed(lat, lon, radius=5.):
@@ -76,8 +78,7 @@ def speedlimitd_thread():
           dat = ui.SpeedLimitData.new_message()
 
           if max_speed:
-            max_speed /= 3.6 # to m/s
-            dat.speed = max_speed
+            dat.speed = max_speed * CV.MPH_TO_MS
 
           speedlimit_sock.send(dat.to_bytes())
         except Exception as e:
