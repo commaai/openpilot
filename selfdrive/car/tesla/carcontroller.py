@@ -221,7 +221,7 @@ class CarController(object):
             op_status = 0x03
             alca_state = 0x08 + turn_signal_needed
             if not enable_steer_control:
-              op_status = 0x02
+              op_status = 0x04
             if hud_alert == AH.STEER:
               if snd_chime == CM.MUTE:
                 hands_on_state = 0x03
