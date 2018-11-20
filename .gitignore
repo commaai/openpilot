@@ -33,6 +33,6 @@ selfdrive/test/tests/plant/out
 
 one
 
-.vscode/settings.json
+.vscode/*.json
 launch_chffrplus.sh
 

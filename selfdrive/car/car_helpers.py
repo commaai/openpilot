@@ -13,6 +13,7 @@ def load_interfaces(x):
       imp = __import__('selfdrive.car.%s.interface' % interface, fromlist=['CarInterface']).CarInterface
     except ImportError:
       imp = None
+      print "Import Exception on Interface " + interface
     for car in x[interface]:
       ret[car] = imp
   return ret
@@ -77,6 +78,7 @@ def fingerprint(logcan, timeout):
     # bail if no cars left or we've been waiting too long
     elif len(candidate_cars) == 0 or (timeout and (ts - st_passive) > timeout):
       #return None, finger
+      print "Fingerprinting Failed: Returning Tesla (based on branch)"
       return "TESLA MODEL S", finger
 
     time.sleep(0.01)
