@@ -126,7 +126,7 @@ def create_DAS_status2_msg(idx,acc_speed_limit_mph,collision_warning):
   if acc_speed_limit_mph == 0:
     sl = 0x3FF
   msg = create_string_buffer(msg_len)
-  struct.pack_into('BBBBBBB', msg, 0, sl & 0xFF, (sl & 0xF00) >> 8,0x00,0x000,0x00,0x80,(idx << 4) + collision_warning )
+  struct.pack_into('BBBBBBB', msg, 0, sl & 0xFF, (sl & 0xF00) >> 8,0x00,0x00,0x07 + 16,0x80,(idx << 4) + collision_warning )
   struct.pack_into('B', msg, msg_len-1, add_tesla_checksum(msg_id,msg))
   return [msg_id, 0, msg.raw, 0]
 
