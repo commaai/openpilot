@@ -211,7 +211,7 @@ class CarController(object):
         if frame % 50 == 0: 
           op_status = 0x02
           hands_on_state = 0x00
-          speed_limit_kph = 100
+          speed_limit_kph = int(self.speedlimit_mph)
           alca_state = 0x08 
           if enabled:
             op_status = 0x03
