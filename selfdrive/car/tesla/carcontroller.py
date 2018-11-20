@@ -18,6 +18,8 @@ from selfdrive.car.modules.ALCA_module import ALCAController
 from selfdrive.car.tesla.ACC_module import ACCController
 from selfdrive.car.tesla.PCC_module import PCCController
 from selfdrive.car.tesla.HSO_module import HSOController
+from cereal import ui
+
 # Steer angle limits
 ANGLE_MAX_BP = [0., 27., 36.]
 ANGLE_MAX_V = [410., 92., 36.]
@@ -63,6 +65,10 @@ class CarController(object):
     self.ACC = ACCController()
     self.PCC = PCCController(self)
     self.HSO = HSOController(self)
+    self.sent_DAS_bootID = False
+    self.poller = zmq.Poller()
+    self.speedlimit = messaging.sub_sock(context, service_list['speedLimit'].port, conflate=True, poller=self.poller)
+    self.speedlimit_mph = 0
 
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
@@ -187,52 +193,68 @@ class CarController(object):
 
     if  (True):
       #First we emulate DAS.
-      if frame % 100 == 0: 
-        can_sends.append(teslacan.create_DAS_info_msg(CS.DAS_info_msg))
-        CS.DAS_info_msg += 1
-        CS.DAS_info_msg = CS.DAS_info_msg % 10
-      if frame % 50 == 0: 
-        op_status = 0x02
-        hands_on_state = 0x00
-        speed_limit_kph = 100
-        alca_state = 0x08 
-        if enabled:
-          op_status = 0x03
-          alca_state = 0x08 + turn_signal_needed
-          if not enable_steer_control:
-            op_status = 0x02
-          if hud_alert == AH.STEER:
-            if snd_chime == CM.MUTE:
-              hands_on_state = 0x03
-            else:
-              hands_on_state = 0x05
-        can_sends.append(teslacan.create_DAS_status_msg(CS.DAS_status_idx,op_status,speed_limit_kph,alca_state,hands_on_state))
-        CS.DAS_status_idx += 1
-        CS.DAS_status_idx = CS.DAS_status_idx % 16
-      if frame % 50 == 0: 
-        collision_warning = 0x00
-        acc_speed_limit_mph = CS.v_cruise_pcm * CV.KPH_TO_MPH
-        if hud_alert == AH.FCW:
-          collision_warning = 0x01
-        can_sends.append(teslacan.create_DAS_status2_msg(CS.DAS_status2_idx,acc_speed_limit_mph,collision_warning))
-        CS.DAS_status2_idx += 1
-        CS.DAS_status2_idx = CS.DAS_status2_idx % 16
-      if frame % 50 == 0: 
-        #can_sends.append(teslacan.create_DAS_bodyControls_msg(CS.DAS_bodyControls_idx))
-        CS.DAS_bodyControls_idx += 1
-        CS.DAS_bodyControls_idx = CS.DAS_bodyControls_idx % 16
-      if frame % 10 == 0: 
-        can_sends.append(teslacan.create_DAS_lanes_msg(CS.DAS_lanes_idx))
-        CS.DAS_lanes_idx += 1
-        CS.DAS_lanes_idx = CS.DAS_lanes_idx % 16
-      if frame % 4 == 0: 
-        #can_sends.append(teslacan.create_DAS_pscControl_msg(CS.DAS_pscControl_idx))
-        CS.DAS_pscControl_idx += 1
-        CS.DAS_pscControl_idx = CS.DAS_pscControl_idx % 16
-      if frame % 3 == 0: 
-        #can_sends.append(teslacan.create_DAS_objects_msg(CS.DAS_objects_idx))
-        CS.DAS_objects_idx += 1
-        CS.DAS_objects_idx = CS.DAS_objects_idx % 16
+      #send DAS_bootID
+      if not self.sent_DAS_bootID:
+        can_sends.append(teslacan.create_DAS_bootID_msg)
+        self.sent_DAS_bootID = True
+      else:
+        #get speed limit
+        for socket, _ in self.poller.poll(0):
+            if socket is self.speedlimit:
+              self.speedlimit_mph = ui.SpeedLimitData.from_bytes(socket.recv()).speed * CV.MS_TO_MPH
+        #send DAS_info
+        if frame % 100 == 0: 
+          can_sends.append(teslacan.create_DAS_info_msg(CS.DAS_info_msg))
+          CS.DAS_info_msg += 1
+          CS.DAS_info_msg = CS.DAS_info_msg % 8
+        #send DAS_status
+        if frame % 50 == 0: 
+          op_status = 0x02
+          hands_on_state = 0x00
+          speed_limit_kph = 100
+          alca_state = 0x08 
+          if enabled:
+            op_status = 0x03
+            alca_state = 0x08 + turn_signal_needed
+            if not enable_steer_control:
+              op_status = 0x02
+            if hud_alert == AH.STEER:
+              if snd_chime == CM.MUTE:
+                hands_on_state = 0x03
+              else:
+                hands_on_state = 0x05
+          can_sends.append(teslacan.create_DAS_status_msg(CS.DAS_status_idx,op_status,speed_limit_kph,alca_state,hands_on_state))
+          CS.DAS_status_idx += 1
+          CS.DAS_status_idx = CS.DAS_status_idx % 16
+        #send DAS_status2
+        if frame % 50 == 0: 
+          collision_warning = 0x00
+          acc_speed_limit_mph = CS.v_cruise_pcm * CV.KPH_TO_MPH
+          if hud_alert == AH.FCW:
+            collision_warning = 0x01
+          can_sends.append(teslacan.create_DAS_status2_msg(CS.DAS_status2_idx,acc_speed_limit_mph,collision_warning))
+          CS.DAS_status2_idx += 1
+          CS.DAS_status2_idx = CS.DAS_status2_idx % 16
+        #send DAS_bodyControl
+        if frame % 50 == 0: 
+          can_sends.append(teslacan.create_DAS_bodyControls_msg(CS.DAS_bodyControls_idx,turn_signal_needed))
+          CS.DAS_bodyControls_idx += 1
+          CS.DAS_bodyControls_idx = CS.DAS_bodyControls_idx % 16
+        #send DAS_lanes
+        if frame % 10 == 0: 
+          can_sends.append(teslacan.create_DAS_lanes_msg(CS.DAS_lanes_idx))
+          CS.DAS_lanes_idx += 1
+          CS.DAS_lanes_idx = CS.DAS_lanes_idx % 16
+        #send DAS_pscControl
+        if frame % 4 == 0: 
+          #can_sends.append(teslacan.create_DAS_pscControl_msg(CS.DAS_pscControl_idx))
+          CS.DAS_pscControl_idx += 1
+          CS.DAS_pscControl_idx = CS.DAS_pscControl_idx % 16
+        #send DAS_objects
+        if frame % 3 == 0: 
+          can_sends.append(teslacan.create_DAS_objects_msg(CS.DAS_objects_idx))
+          CS.DAS_objects_idx += 1
+          CS.DAS_objects_idx = CS.DAS_objects_idx % 16
       # end of DAS emulation """
       idx = frame % 16
       can_sends.append(teslacan.create_steering_control(enable_steer_control, apply_angle, idx))
