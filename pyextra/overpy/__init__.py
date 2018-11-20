@@ -43,7 +43,7 @@ class Overpass(object):
     Class to access the Overpass API
     """
     default_read_chunk_size = 4096
-    default_url = "http://overpass-api.de/api/interpreter"
+    default_url = "https://overpass.kumi.systems/api/interpreter"
 
     def __init__(self, read_chunk_size=None, url=None, xml_parser=XML_PARSER_SAX):
         """
