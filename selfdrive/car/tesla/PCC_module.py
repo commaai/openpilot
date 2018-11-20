@@ -754,5 +754,5 @@ def _jerk_limits(v_ego, lead, max_speed_kph, lead_last_seen_time_ms):
       (3000, 1.0)])
     time_since_lead_seen_multiplier = _interp_map(time_since_lead_seen_ms, time_since_lead_seen_multipliers)
     # Limit accel jerk near max speed.
-    accel_jerk = 0.15 * near_max_speed_multiplier * time_since_lead_seen_multiplier
+    accel_jerk = 0.12 * near_max_speed_multiplier * time_since_lead_seen_multiplier
     return decel_jerk, accel_jerk
