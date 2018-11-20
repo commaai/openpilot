@@ -3,8 +3,9 @@ from common.kalman.simple_kalman import KF1D
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from selfdrive.car.tesla.ACC_module import ACCMode
+from selfdrive.car.tesla.PCC_module import PCCModes
 from selfdrive.car.tesla.values import CAR, CruiseButtons, DBC
-from selfdrive.car.modules.UIBT_module import UIButtons,UIButton
+from selfdrive.car.modules.UIBT_module import UIButtons, UIButton
 import numpy as np
 from ctypes import create_string_buffer
 from selfdrive.car.modules.UIEV_module import UIEvents
@@ -168,12 +169,12 @@ def get_epas_parser(CP):
 class CarState(object):
   def __init__(self, CP):
     # labels for buttons
-    self.btns_init = [["alca",  "ALC", ["MadMax", "Normal", "Wifey"]],
-                      ["acc",   "ACC", ACCMode.get_labels()],
-                      ["steer", "STR", [""]],
-                      ["brake", "BRK", [""]],
-                      ["msg",   "MSG", [""]],
-                      ["sound", "SND", [""]]]
+    self.btns_init = [["alca",                "ALC",                      ["MadMax", "Normal", "Calm"]],
+                      [ACCMode.BUTTON_NAME,   ACCMode.BUTTON_ABREVIATION, ACCMode.labels()],
+                      ["steer",               "STR",                      [""]],
+                      ["brake",               "BRK",                      [""]],
+                      ["msg",                 "MSG",                      [""]],
+                      ["sound",               "SND",                      [""]]]
 
     if (CP.carFingerprint == CAR.MODELS):
       # ALCA PARAMS
@@ -228,9 +229,12 @@ class CarState(object):
     self.last_cruise_stalk_pull_time = 0
     self.CP = CP
 
-    self.user_gas, self.user_gas_pressed = 0., False
-    self.user_pedal_state = 0
-    self.user_pedal, self.user_pedal_pressed = 0., False
+    self.user_gas = 0.
+    self.user_gas_pressed = False
+    self.pedal_interceptor_state = 0
+    self.pedal_interceptor_value = 0.
+    self.pedal_interceptor_value2 = 0.
+    self.pedal_interceptor_missed_counter = 0
     self.brake_switch_prev = 0
     self.brake_switch_ts = 0
 
@@ -262,9 +266,9 @@ class CarState(object):
 
     #BB variables for pedal CC
     self.pedal_speed_kph = 0.
-    self.pedal_enabled = 0
-    self.pedal_hardware_present = False
-    self.pedal_hardware_present_prev = False
+    # Pedal mode is ready, i.e. hardware is present and normal cruise is off.
+    self.pedal_interceptor_available = False
+    self.prev_pedal_interceptor_available = False
 
     #BB UIEvents
     self.UE = UIEvents(self)
@@ -303,10 +307,10 @@ class CarState(object):
    
   def config_ui_buttons(self, pedalPresent):
     if pedalPresent:
-      self.btns_init[1] = ["pedal", "PDL", ["Lng MPC", "Follow"]]
+      self.btns_init[1] = [PCCModes.BUTTON_NAME, PCCModes.BUTTON_ABREVIATION, PCCModes.labels()]
     else:
       # we don't have pedal interceptor
-      self.btns_init[1] = ["acc", "ACC", ACCMode.get_labels()]
+      self.btns_init[1] = [ACCMode.BUTTON_NAME, ACCMode.BUTTON_ABREVIATION, ACCMode.labels()]
     btn = self.cstm_btns.btns[1]
     btn.btn_name = self.btns_init[1][0]
     btn.btn_label = self.btns_init[1][1]
@@ -364,9 +368,9 @@ class CarState(object):
     self.a_ego = float(v_ego_x[1])
 
     #BB use this set for pedal work as the user_gas_xx is used in other places
-    self.user_pedal = epas_cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS']
-    self.user_pedal_state = epas_cp.vl["GAS_SENSOR"]['STATE']
-    self.user_pedal_pressed = self.user_pedal > 1.12
+    self.pedal_interceptor_state = epas_cp.vl["GAS_SENSOR"]['STATE']
+    self.pedal_interceptor_value = epas_cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS']
+    self.pedal_interceptor_value2 = epas_cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS2']
 
     can_gear_shifter = cp.vl["DI_torque2"]['DI_gear']
     self.gear = 0 # JCT
@@ -411,12 +415,19 @@ class CarState(object):
     self.imperial_speed_units = cp.vl["DI_state"]['DI_speedUnits'] == 0
     self.regenLight = cp.vl["DI_state"]['DI_regenLight'] == 1
     
-    #BB this is a hack for the interceptor
-    self.pedal_hardware_present_prev = self.pedal_hardware_present
-    # For now, use ACC if cruise is ready, and pedal interception otherwise.
-    self.pedal_hardware_present = not bool(self.pcm_acc_status)
-    if self.pedal_hardware_present != self.pedal_hardware_present_prev:
-        self.config_ui_buttons(self.pedal_hardware_present)
+    self.prev_pedal_interceptor_available = self.pedal_interceptor_available
+    pedal_has_value = bool(self.pedal_interceptor_value) or bool(self.pedal_interceptor_value2)
+    pedal_interceptor_present = self.pedal_interceptor_state in [0, 5] and pedal_has_value
+    # Add loggic if we just miss some CAN messages so we don't immediately disable pedal
+    if pedal_interceptor_present:
+      self.pedal_interceptor_missed_counter = 0
+    else:
+      self.pedal_interceptor_missed_counter += 1
+    pedal_interceptor_present = self.pedal_interceptor_missed_counter < 10
+    # Mark pedal unavailable while traditional cruise is on.
+    self.pedal_interceptor_available = pedal_interceptor_present and not bool(self.pcm_acc_status)
+    if self.pedal_interceptor_available != self.prev_pedal_interceptor_available:
+        self.config_ui_buttons(self.pedal_interceptor_available)
 
     if self.imperial_speed_units:
       self.v_cruise_actual = (cp.vl["DI_state"]['DI_cruiseSet'])*CV.MPH_TO_KPH # Reported in MPH, expected in KPH??
