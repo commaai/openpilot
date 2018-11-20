@@ -37,6 +37,12 @@ AUDIO_HUD = {
   AudibleAlert.chimeWarning2: (CM.LOW_CHIME, -1),
   AudibleAlert.chimeWarningRepeat: (CM.LOW_CHIME, -1)}
 
+class AccState:
+  OFF        = 0
+  ACTIVE     = 1
+  FAULTED    = 3
+  STANDSTILL = 4
+
 def is_eps_status_ok(eps_status, car_fingerprint):
   valid_eps_status = []
   if car_fingerprint in (CAR.VOLT, CAR.MALIBU, CAR.HOLDEN_ASTRA, CAR.ACADIA, CAR.CADILLAC_ATS):
