@@ -13,20 +13,52 @@ from selfdrive.car.toyota.values import NO_DSU_CAR
 RADAR_A_MSGS = list(range(0x210, 0x220))
 RADAR_B_MSGS = list(range(0x220, 0x230))
 
-def _create_radard_can_parser():
-  dbc_f = 'toyota_prius_2017_adas.dbc'
+def create_radar_signals(*signals):
+  # accepts multiple namedtuples in the form ([('name', value)],[msg])
+  name_value = []
+  msgs   = []
+  repetitions  = []
+  for s in signals:
+    name_value += [nv for nv in s.name_value]
+    name_value_n = len(s.name_value)
+    msgs_n = [len(s.msg)]
+    repetitions += msgs_n * name_value_n
+    msgs += s.msg * name_value_n
 
-  msg_a_n = len(RADAR_A_MSGS)
-  msg_b_n = len(RADAR_B_MSGS)
+  name_value = sum([[nv] * r for nv, r in zip(name_value, repetitions)], [])
+  names = [n for n, v in name_value]
+  vals  = [v for n, v in name_value]
+  return zip(names, msgs, vals)
 
-  signals = zip(['LONG_DIST'] * msg_a_n + ['NEW_TRACK'] * msg_a_n + ['LAT_DIST'] * msg_a_n +
-                ['REL_SPEED'] * msg_a_n + ['VALID'] * msg_a_n + ['SCORE'] * msg_b_n,
-                RADAR_A_MSGS * 5 + RADAR_B_MSGS,
-                [255] * msg_a_n + [1] * msg_a_n + [0] * msg_a_n + [0] * msg_a_n + [0] * msg_a_n + [0] * msg_b_n)
+def create_radar_checks(msgs, select, rate = [20]):
+  if select == "all":
+    return zip(msgs, rate * len(msgs))
+  if select == "last":
+    return zip([msgs[-1]], rate)
+  if select == "none":
+    return []
+  return []
 
-  checks = zip(RADAR_A_MSGS + RADAR_B_MSGS, [20]*(msg_a_n + msg_b_n))
 
-  return CANParser(os.path.splitext(dbc_f)[0], signals, checks, 1)
+def _create_radard_can_parser(car_fingerprint):
+  dbc_f = DBC[car_fingerprint]['radar']
+
+  sig = namedtuple('sig','name_value msg')
+  a_labels = [('LONG_DIST', 255),
+              ('NEW_TRACK', 1),
+              ('LAT_DIST', 0),
+              ('REL_SPEED', 0),
+              ('VALID', 0)]
+  sig_a = sig(a_labels, RADAR_A_MSGS)
+
+  b_labels = [('SCORE', 0)]
+  sig_b = sig(b_labels, RADAR_B_MSGS)
+
+  signals = create_radar_signals(sig_a, sig_b)
+
+  checks = create_radar_checks(RADAR_A_MSGS + RADAR_B_MSGS, select = "all")
+
+  return CANParser(dbc_f, signals, checks, 1)
 
 
 class RadarInterface(object):
@@ -38,7 +70,7 @@ class RadarInterface(object):
 
     self.delay = 0.0  # Delay of radar
 
-    self.rcp = _create_radard_can_parser()
+    self.rcp = _create_radard_can_parser(CP.carFingerprint)
     self.no_dsu_car = CP.carFingerprint in NO_DSU_CAR
 
     context = zmq.Context()
