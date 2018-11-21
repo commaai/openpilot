@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import os
 import zmq
 import time
 from selfdrive.can.parser import CANParser
