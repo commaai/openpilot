@@ -8,18 +8,56 @@ from common.realtime import sec_since_boot
 from selfdrive.services import service_list
 import selfdrive.messaging as messaging
 
+def create_radar_signals(*signals):
+  # accepts multiple namedtuples in the form ([('name', value)],[msg])
+  name_value = []
+  msgs   = []
+  repetitions  = []
+  for s in signals:
+    name_value += [nv for nv in s.name_value]
+    name_value_n = len(s.name_value)
+    msgs_n = [len(s.msg)]
+    repetitions += msgs_n * name_value_n
+    msgs += s.msg * name_value_n
 
-def _create_nidec_can_parser():
-  dbc_f = 'acura_ilx_2016_nidec.dbc'
-  radar_messages = [0x400] + range(0x430, 0x43A) + range(0x440, 0x446)
-  signals = zip(['RADAR_STATE'] +
-                ['LONG_DIST'] * 16 + ['NEW_TRACK'] * 16 + ['LAT_DIST'] * 16 +
-                ['REL_SPEED'] * 16,
-                [0x400] + radar_messages[1:] * 4,
-                [0] + [255] * 16 + [1] * 16 + [0] * 16 + [0] * 16)
-  checks = zip([0x445], [20])
+  name_value = sum([[nv] * r for nv, r in zip(name_value, repetitions)], [])
+  names = [n for n, v in name_value]
+  vals  = [v for n, v in name_value]
+  return zip(names, msgs, vals)
 
-  return CANParser(os.path.splitext(dbc_f)[0], signals, checks, 1)
+def create_radar_checks(msgs, select, rate = [20]):
+  if select == "all":
+    return zip(msgs, rate * len(msgs))
+  if select == "last":
+    return zip([msgs[-1]], rate)
+  if select == "none":
+    return []
+  return []
+
+RADAR_HEADER_MSG = 0x400
+
+def _create_nidec_can_parser(car_fingerprint):
+  dbc_f = DBC[car_fingerprint]['radar']
+  if dbc_f is not None:
+    radar_targets = range(0x430, 0x43A) + range(0x440, 0x446)
+    radar_messages = [RADAR_HEADER_MSG] + radar_targets
+  
+    sig = namedtuple('sig','name_value msg')
+    headers = [('RADAR_STATE', 0)]
+    header_sig = sig(headers, [RADAR_HEADER_MSG])
+  
+    targets = [('LONG_DIST', 255),
+               ('NEW_TRACK', 1),
+               ('LAT_DIST', 0),
+               ('REL_SPEED', 0)]
+    target_sig = sig(targets, radar_targets)
+  
+    signals = create_radar_signals(header_sig, target_sig)
+    checks = create_radar_checks(radar_messages, select = "last")
+
+    return CANParser(dbc_f, signals, checks, 1)
+  else:
+    return None
 
 
 class RadarInterface(object):
@@ -34,7 +72,7 @@ class RadarInterface(object):
     self.delay = 0.1  # Delay of radar
 
     # Nidec
-    self.rcp = _create_nidec_can_parser()
+    self.rcp = _create_nidec_can_parser(CP.carFingerprint)
 
     context = zmq.Context()
     self.logcan = messaging.sub_sock(context, service_list['can'].port)
@@ -59,7 +97,7 @@ class RadarInterface(object):
 
     for ii in updated_messages:
       cpt = self.rcp.vl[ii]
-      if ii == 0x400:
+      if ii == RADAR_HEADER_MSG:
         # check for radar faults
         self.radar_fault = cpt['RADAR_STATE'] != 0x79
         self.radar_wrong_config = cpt['RADAR_STATE'] == 0x69
