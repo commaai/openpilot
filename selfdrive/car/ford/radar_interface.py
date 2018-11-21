@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import numpy as np
 from selfdrive.can.parser import CANParser
+from selfdrive.car.ford.values import DBC
 from cereal import car
 from common.realtime import sec_since_boot
 import zmq
