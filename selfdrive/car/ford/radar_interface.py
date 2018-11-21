@@ -5,6 +5,7 @@ from cereal import car
 from common.realtime import sec_since_boot
 import zmq
 from selfdrive.services import service_list
+from selfdrive.config import Conversions as CV
 import selfdrive.messaging as messaging
 
 def create_radar_signals(*signals):
@@ -48,6 +49,7 @@ def _create_radard_can_parser(car_fingerprint):
   checks = create_radar_checks(RADAR_MSGS, select = "all")
 
   return CANParser(dbc_f, signals, checks, 1)
+
 
 class RadarInterface(object):
   def __init__(self, CP):
@@ -100,7 +102,7 @@ class RadarInterface(object):
           self.pts[ii].trackId = self.track_id
           self.track_id += 1
         self.pts[ii].dRel = cpt['X_Rel']  # from front of car
-        self.pts[ii].yRel = cpt['X_Rel'] * cpt['Angle'] * np.pi / 180.  # in car frame's y axis, left is positive
+        self.pts[ii].yRel = cpt['X_Rel'] * cpt['Angle'] * CV.DEG_TO_RAD  # in car frame's y axis, left is positive
         self.pts[ii].vRel = cpt['V_Rel']
         self.pts[ii].aRel = float('nan')
         self.pts[ii].yvRel = float('nan')

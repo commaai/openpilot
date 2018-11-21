@@ -9,21 +9,15 @@ from selfdrive.car.gm.interface import CanBus
 from selfdrive.car.gm.values import DBC, CAR
 from common.realtime import sec_since_boot
 from selfdrive.services import service_list
+from selfdrive.config import Conversions as CV
 import selfdrive.messaging as messaging
 
-RADAR_HEADER_MSG = 1120
-SLOT_1_MSG = RADAR_HEADER_MSG + 1
-NUM_SLOTS = 20
-
-# Actually it's 0x47f, but can parser only reports
-# messages that are present in DBC
-LAST_RADAR_MSG = RADAR_HEADER_MSG + NUM_SLOTS
 
 def create_radar_signals(*signals):
   # accepts multiple namedtuples in the form ([('name', value)],[msg])
   name_value = []
-  msgs   = []
-  repetitions  = []
+  msgs = []
+  repetitions = []
   for s in signals:
     name_value += [nv for nv in s.name_value]
     name_value_n = len(s.name_value)
@@ -45,8 +39,15 @@ def create_radar_checks(msgs, select, rate = [20]):
     return []
   return []
 
-def create_radard_can_parser(canbus, car_fingerprint):
+RADAR_HEADER_MSG = 1120
+SLOT_1_MSG = RADAR_HEADER_MSG + 1
+NUM_SLOTS = 20
 
+# Actually it's 0x47f, but can parser only reports
+# messages that are present in DBC
+LAST_RADAR_MSG = RADAR_HEADER_MSG + NUM_SLOTS
+
+def create_radard_can_parser(canbus, car_fingerprint):
   dbc_f = DBC[car_fingerprint]['radar']
   if car_fingerprint in (CAR.VOLT, CAR.MALIBU):
     # C1A-ARS3-A by Continental
@@ -77,6 +78,7 @@ def create_radard_can_parser(canbus, car_fingerprint):
     return CANParser(dbc_f, signals, checks, canbus.obstacle)
   else:
     return None
+
 
 class RadarInterface(object):
   def __init__(self, CP):
@@ -140,8 +142,7 @@ class RadarInterface(object):
         distance = cpt['TrkRange']
         self.pts[targetId].dRel = distance # from front of car
         # From driver's pov, left is positive
-        deg_to_rad = np.pi/180.
-        self.pts[targetId].yRel = math.sin(deg_to_rad * cpt['TrkAzimuth']) * distance
+        self.pts[targetId].yRel = math.sin(cpt['TrkAzimuth'] * CV.DEG_TO_RAD) * distance
         self.pts[targetId].vRel = cpt['TrkRangeRate']
         self.pts[targetId].aRel = float('nan')
         self.pts[targetId].yvRel = float('nan')

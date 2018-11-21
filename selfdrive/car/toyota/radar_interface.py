@@ -10,14 +10,11 @@ import selfdrive.messaging as messaging
 from selfdrive.car.toyota.values import NO_DSU_CAR
 
 
-RADAR_A_MSGS = list(range(0x210, 0x220))
-RADAR_B_MSGS = list(range(0x220, 0x230))
-
 def create_radar_signals(*signals):
   # accepts multiple namedtuples in the form ([('name', value)],[msg])
   name_value = []
-  msgs   = []
-  repetitions  = []
+  msgs = []
+  repetitions = []
   for s in signals:
     name_value += [nv for nv in s.name_value]
     name_value_n = len(s.name_value)
@@ -40,23 +37,26 @@ def create_radar_checks(msgs, select, rate = [20]):
   return []
 
 
+RADAR_TARGET_MSGS = list(range(0x210, 0x220))
+RADAR_SCORE_MSGS = list(range(0x220, 0x230))
+
 def _create_radard_can_parser(car_fingerprint):
   dbc_f = DBC[car_fingerprint]['radar']
+  radar_messages = RADAR_TARGET_MSGS + RADAR_SCORE_MSGS
 
   sig = namedtuple('sig','name_value msg')
-  a_labels = [('LONG_DIST', 255),
+  targets = [('LONG_DIST', 255),
               ('NEW_TRACK', 1),
               ('LAT_DIST', 0),
               ('REL_SPEED', 0),
               ('VALID', 0)]
-  sig_a = sig(a_labels, RADAR_A_MSGS)
+  target_sig = sig(targets, RADAR_TARGET_MSGS)
 
-  b_labels = [('SCORE', 0)]
-  sig_b = sig(b_labels, RADAR_B_MSGS)
+  scores = [('SCORE', 0)]
+  score_sig = sig(scores, RADAR_SCORE_MSGS)
 
-  signals = create_radar_signals(sig_a, sig_b)
-
-  checks = create_radar_checks(RADAR_A_MSGS + RADAR_B_MSGS, select = "all")
+  signals = create_radar_signals(target_sig, score_sig)
+  checks = create_radar_checks(radar_messages, select = "all")
 
   return CANParser(dbc_f, signals, checks, 1)
 
@@ -65,7 +65,7 @@ class RadarInterface(object):
   def __init__(self, CP):
     # radar
     self.pts = {}
-    self.valid_cnt = {key: 0 for key in RADAR_A_MSGS}
+    self.valid_cnt = {key: 0 for key in RADAR_TARGET_MSGS}
     self.track_id = 0
 
     self.delay = 0.0  # Delay of radar
@@ -89,7 +89,7 @@ class RadarInterface(object):
     while 1:
       tm = int(sec_since_boot() * 1e9)
       updated_messages.update(self.rcp.update(tm, True))
-      if RADAR_B_MSGS[-1] in updated_messages:
+      if RADAR_SCORE_MSGS[-1] in updated_messages:
         break
 
     errors = []
@@ -99,7 +99,7 @@ class RadarInterface(object):
     ret.canMonoTimes = canMonoTimes
 
     for ii in updated_messages:
-      if ii in RADAR_A_MSGS:
+      if ii in RADAR_TARGET_MSGS:
         cpt = self.rcp.vl[ii]
 
         if cpt['LONG_DIST'] >=255 or cpt['NEW_TRACK']:

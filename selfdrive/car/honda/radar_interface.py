@@ -11,8 +11,8 @@ import selfdrive.messaging as messaging
 def create_radar_signals(*signals):
   # accepts multiple namedtuples in the form ([('name', value)],[msg])
   name_value = []
-  msgs   = []
-  repetitions  = []
+  msgs = []
+  repetitions = []
   for s in signals:
     name_value += [nv for nv in s.name_value]
     name_value_n = len(s.name_value)
@@ -35,23 +35,23 @@ def create_radar_checks(msgs, select, rate = [20]):
   return []
 
 RADAR_HEADER_MSG = 0x400
+RADAR_TARGET_MSG = range(0x430, 0x43A) + range(0x440, 0x446)
 
 def _create_nidec_can_parser(car_fingerprint):
   dbc_f = DBC[car_fingerprint]['radar']
   if dbc_f is not None:
-    radar_targets = range(0x430, 0x43A) + range(0x440, 0x446)
-    radar_messages = [RADAR_HEADER_MSG] + radar_targets
-  
+    radar_messages = [RADAR_HEADER_MSG] + RADAR_TARGET_MSG
+
     sig = namedtuple('sig','name_value msg')
     headers = [('RADAR_STATE', 0)]
     header_sig = sig(headers, [RADAR_HEADER_MSG])
-  
+
     targets = [('LONG_DIST', 255),
                ('NEW_TRACK', 1),
                ('LAT_DIST', 0),
                ('REL_SPEED', 0)]
-    target_sig = sig(targets, radar_targets)
-  
+    target_sig = sig(targets, RADAR_TARGET_MSG)
+
     signals = create_radar_signals(header_sig, target_sig)
     checks = create_radar_checks(radar_messages, select = "last")
 
@@ -92,7 +92,7 @@ class RadarInterface(object):
     while 1:
       tm = int(sec_since_boot() * 1e9)
       updated_messages.update(self.rcp.update(tm, True))
-      if 0x445 in updated_messages:
+      if RADAR_TARGET_MSG[-1] in updated_messages:
         break
 
     for ii in updated_messages:
