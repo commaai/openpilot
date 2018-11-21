@@ -68,7 +68,7 @@ class CarInterface(object):
     if candidate == CAR.VOLT:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
-      # kg of standard extra cargo to count for drive, gas, etc...
+      # kg of standard extra cargo to count for driver, gas, etc...
       ret.mass = 1607 + std_cargo
       ret.safetyModel = car.CarParams.SafetyModels.gm
       ret.wheelbase = 2.69
@@ -86,10 +86,21 @@ class CarInterface(object):
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.4 # wild guess
 
+    elif candidate == CAR.HOLDEN_ASTRA:
+      # kg of standard extra cargo to count for driver, gas, etc...
+      ret.mass = 1363 + std_cargo
+      ret.wheelbase = 2.662
+      # Remaining parameters copied from Volt for now
+      ret.centerToFront = ret.wheelbase * 0.4
+      ret.minEnableSpeed = 18 * CV.MPH_TO_MS
+      ret.safetyModel = car.CarParams.SafetyModels.gm
+      ret.steerRatio = 15.7
+      ret.steerRatioRear = 0.
+
     elif candidate == CAR.CADILLAC_CT6:
       # engage speed is decided by pcm
       ret.minEnableSpeed = -1
-      # kg of standard extra cargo to count for drive, gas, etc...
+      # kg of standard extra cargo to count for driver, gas, etc...
       ret.mass = 4016. * CV.LB_TO_KG + std_cargo
       ret.safetyModel = car.CarParams.SafetyModels.cadillac
       ret.wheelbase = 3.11
@@ -255,8 +266,7 @@ class CarInterface(object):
     if ret.seatbeltUnlatched:
       events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
 
-    if self.CS.car_fingerprint in (CAR.VOLT, CAR.MALIBU):
-
+    if self.CS.car_fingerprint in (CAR.VOLT, CAR.MALIBU, CAR.HOLDEN_ASTRA):
       if self.CS.brake_error:
         events.append(create_event('brakeUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
       if not self.CS.gear_shifter_valid:
