@@ -67,9 +67,9 @@ _A_CRUISE_MAX = OrderedDict([
   # (speed in m/s, allowed acceleration)
   (0.0, 0.5),
   (5.0, 0.3),
-  (10., 0.22),
-  (20., 0.21),
-  (40., 0.20)])
+  (10., 0.18),
+  (20., 0.14),
+  (40., 0.10)])
   
 # Lookup table for turns
 _A_TOTAL_MAX = OrderedDict([
@@ -737,8 +737,8 @@ def _jerk_limits(v_ego, lead, max_speed_kph, lead_last_seen_time_ms):
     
     accel_jerk_map = OrderedDict([
       # (distance in m, accel jerk)
-      (1.0 * safe_dist_m, 0.03),
-      (2.5 * safe_dist_m, 0.15)])
+      (1.0 * safe_dist_m, 0.02),
+      (2.5 * safe_dist_m, 0.12)])
     accel_jerk = _interp_map(lead.dRel, accel_jerk_map)
     accel_jerk *= near_max_speed_multiplier
     return decel_jerk, accel_jerk
