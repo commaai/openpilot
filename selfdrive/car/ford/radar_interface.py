@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import os
 import numpy as np
 from selfdrive.can.parser import CANParser
 from cereal import car
@@ -8,18 +7,47 @@ import zmq
 from selfdrive.services import service_list
 import selfdrive.messaging as messaging
 
+def create_radar_signals(*signals):
+  # accepts multiple namedtuples in the form ([('name', value)],[msg])
+  name_value = []
+  msgs = []
+  repetitions = []
+  for s in signals:
+    name_value += [nv for nv in s.name_value]
+    name_value_n = len(s.name_value)
+    msgs_n = [len(s.msg)]
+    repetitions += msgs_n * name_value_n
+    msgs += s.msg * name_value_n
+
+  name_value = sum([[nv] * r for nv, r in zip(name_value, repetitions)], [])
+  names = [n for n, v in name_value]
+  vals  = [v for n, v in name_value]
+  return zip(names, msgs, vals)
+
+def create_radar_checks(msgs, select, rate = [20]):
+  if select == "all":
+    return zip(msgs, rate * len(msgs))
+  if select == "last":
+    return zip([msgs[-1]], rate)
+  if select == "none":
+    return []
+  return []
 
 RADAR_MSGS = range(0x500, 0x540)
 
-def _create_radard_can_parser():
-  dbc_f = 'ford_fusion_2018_adas.dbc'
-  msg_n = len(RADAR_MSGS)
-  signals = zip(['X_Rel'] * msg_n + ['Angle'] * msg_n + ['V_Rel'] * msg_n,
-                RADAR_MSGS * 3,
-                [0] * msg_n + [0] * msg_n + [0] * msg_n)
-  checks = zip(RADAR_MSGS, [20]*msg_n)
+def _create_radard_can_parser(car_fingerprint):
+  dbc_f = DBC[car_fingerprint]['radar']
 
-  return CANParser(os.path.splitext(dbc_f)[0], signals, checks, 1)
+  sig = namedtuple('sig','name_value msg')
+  trackers = [('X_Rel', 0),
+              ('Angle', 0),
+              ('V_Rel', 0)]
+  tracker_sig = sig(trackers, RADAR_MSGS)
+
+  signals = create_radar_signals(tracker_sig)
+  checks = create_radar_checks(RADAR_MSGS, select = "all")
+
+  return CANParser(dbc_f, signals, checks, 1)
 
 class RadarInterface(object):
   def __init__(self, CP):
@@ -30,7 +58,6 @@ class RadarInterface(object):
 
     self.delay = 0.0  # Delay of radar
 
-    # Nidec
     self.rcp = _create_radard_can_parser()
 
     context = zmq.Context()
@@ -43,8 +70,8 @@ class RadarInterface(object):
     while 1:
       tm = int(sec_since_boot() * 1e9)
       updated_messages.update(self.rcp.update(tm, True))
-      # TODO: do not hardcode last msg
-      if 0x53f in updated_messages:
+
+      if RADAR_MSGS[-1] in updated_messages:
         break
 
     ret = car.RadarState.new_message()
