@@ -7,7 +7,7 @@ from common.realtime import sec_since_boot
 from selfdrive.services import service_list
 import selfdrive.messaging as messaging
 from selfdrive.car.toyota.values import NO_DSU_CAR, DBC
-
+from collections import namedtuple
 
 def create_radar_signals(*signals):
   # accepts multiple namedtuples in the form ([('name', value)],[msg])

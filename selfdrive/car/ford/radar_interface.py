@@ -8,6 +8,7 @@ import zmq
 from selfdrive.services import service_list
 from selfdrive.config import Conversions as CV
 import selfdrive.messaging as messaging
+from collections import namedtuple
 
 def create_radar_signals(*signals):
   # accepts multiple namedtuples in the form ([('name', value)],[msg])
