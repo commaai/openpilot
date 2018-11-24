@@ -194,7 +194,7 @@ class LongitudinalMpc(object):
 
     if lead is not None and lead.status:
       #x_lead = lead.dRel
-      x_lead = max(0, lead.dRel - 1)  # increase stopping distance to car by 1m
+      x_lead = max(0, lead.dRel - 2)  # increase stopping distance to car by 2m
       v_lead = max(0.0, lead.vLead)
       a_lead = lead.aLeadK
 
