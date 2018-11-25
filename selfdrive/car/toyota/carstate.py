@@ -314,6 +314,7 @@ class CarState(object):
       else:
         self.cstm_btns.set_button_status("tr", 1)
     if self.read_distance_lines <> self.read_distance_lines_prev:
+      self.cstm_btns.set_button_status("tr", 0)
       if self.read_distance_lines == 1:
         self.UE.custom_alert_message(2,"Following distance set to 0.9s",200,3)
       if self.read_distance_lines == 2:
