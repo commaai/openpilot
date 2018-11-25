@@ -10,7 +10,7 @@ from selfdrive.can.packer import CANPacker
 
 class CarControllerParams():
   def __init__(self, car_fingerprint):
-    if car_fingerprint == CAR.VOLT:
+    if car_fingerprint in (CAR.VOLT, CAR.MALIBU):
       self.STEER_MAX = 300
       self.STEER_STEP = 2              # how often we update the steer cmd
       self.STEER_DELTA_UP = 7          # ~0.75s time to peak torque (255/50hz/0.75s)
@@ -26,7 +26,11 @@ class CarControllerParams():
     self.STEER_DRIVER_FACTOR = 100     # from dbc
     self.NEAR_STOP_BRAKE_PHASE = 0.5 # m/s, more aggressive braking near full stop
 
-    self.ADAS_KEEPALIVE_STEP = 10
+    # Takes case of "Service Adaptive Cruise" and "Service Front Camera"
+    # dashboard messages.
+    self.ADAS_KEEPALIVE_STEP = 100
+    self.CAMERA_KEEPALIVE_STEP = 100
+
     # pedal lookups, only for Volt
     MAX_GAS = 3072              # Only a safety limit
     ZERO_GAS = 2048
@@ -59,12 +63,11 @@ class CarController(object):
     self.pedal_steady = 0.
     self.start_time = sec_since_boot()
     self.chime = 0
-    self.lkas_active = False
-    self.inhibit_steer_for = 0
     self.steer_idx = 0
     self.apply_steer_last = 0
     self.car_fingerprint = car_fingerprint
     self.allow_controls = allow_controls
+    self.lka_icon_status_last = (False, False)
 
     # Setup detection helper. Routes commands to
     # an appropriate CAN bus number.
@@ -101,7 +104,7 @@ class CarController(object):
       self.apply_steer_last = apply_steer
       idx = (frame / P.STEER_STEP) % 4
 
-      if self.car_fingerprint == CAR.VOLT:
+      if self.car_fingerprint in (CAR.VOLT, CAR.MALIBU):
         can_sends.append(gmcan.create_steering_control(self.packer_pt,
           canbus.powertrain, apply_steer, idx, lkas_enabled))
       if self.car_fingerprint == CAR.CADILLAC_CT6:
@@ -110,7 +113,7 @@ class CarController(object):
 
     ### GAS/BRAKE ###
 
-    if self.car_fingerprint == CAR.VOLT:
+    if self.car_fingerprint in (CAR.VOLT, CAR.MALIBU):
       # no output if not enabled, but keep sending keepalive messages
       # treat pedals as one
       final_pedal = actuators.gas - actuators.brake
@@ -158,9 +161,20 @@ class CarController(object):
         can_sends.append(gmcan.create_adas_steering_status(canbus.obstacle, idx))
         can_sends.append(gmcan.create_adas_accelerometer_speed_status(canbus.obstacle, CS.v_ego, idx))
 
-      # Send ADAS keepalive, 10hz
       if frame % P.ADAS_KEEPALIVE_STEP == 0:
         can_sends += gmcan.create_adas_keepalive(canbus.powertrain)
+
+    # Show green icon when LKA torque is applied, and
+    # alarming orange icon when approaching torque limit.
+    # If not sent again, LKA icon disappears in about 5 seconds.
+    # Conveniently, sending camera message periodically also works as a keepalive.
+    lka_active = CS.lkas_status == 1
+    lka_critical = lka_active and abs(actuators.steer) > 0.9
+    lka_icon_status = (lka_active, lka_critical)
+    if frame % P.CAMERA_KEEPALIVE_STEP == 0 \
+        or lka_icon_status != self.lka_icon_status_last:
+      can_sends.append(gmcan.create_lka_icon_command(canbus.sw_gmlan, lka_active, lka_critical))
+      self.lka_icon_status_last = lka_icon_status
 
     # Send chimes
     if self.chime != chime:
