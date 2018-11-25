@@ -206,7 +206,7 @@ class LatControl(object):
           self.feed_forward = (((self.ff_smoothing - 1.0) * self.feed_forward) + (v_ego**2 * self.feed_forward_angle)) / self.ff_smoothing 
           if self.last_ff_a == 0.0:
             self.last_ff_r = 0.0
-            self.last_ff_a = sec_since_boot() + 1.0
+            self.last_ff_a = sec_since_boot() + 0.5
         else:
           ff_type = "r"
           self.feed_forward = (((self.ff_smoothing - 1.0) * self.feed_forward) + (v_ego**2 * self.feed_forward_rate)) / self.ff_smoothing      
@@ -217,29 +217,29 @@ class LatControl(object):
         self.feed_forward = self.angle_steers_des_mpc   # feedforward desired angle
       deadzone = 0.0
 
-      if abs(angle_steers) > 4.0:
+      if abs(angle_steers) > 3.0:
         self.last_ff_a = 0.0
         self.last_ff_r = 0.0
-      elif ff_type == "r" and self.last_ff_r != 0.0 and sec_since_boot() > self.last_ff_r:
-        if (self.pid.p > 0) == (self.feed_forward > 0):
-          self.ff_rate_factor *= 1.001
-        else:
-          self.ff_rate_factor *= 0.999    
-        self.last_ff_r = sec_since_boot() + 1.0
-        self.save_steering = True
       elif ff_type == "a" and self.last_ff_a != 0.0 and sec_since_boot() > self.last_ff_a:
         if (self.pid.p > 0) == (self.feed_forward > 0):
-          self.ff_angle_factor *= 1.001
+          self.ff_angle_factor *= 1.005
         else:
-          self.ff_angle_factor *= 0.999    
-        self.last_ff_a = sec_since_boot() + 1.0
+          self.ff_angle_factor *= 0.995    
+        self.last_ff_a = sec_since_boot() + 0.5
+        self.save_steering = True
+      elif ff_type == "r" and self.last_ff_r != 0.0 and sec_since_boot() > self.last_ff_r:
+        if (self.pid.p > 0) == (self.feed_forward > 0):
+          self.ff_rate_factor *= 1.005
+        else:
+          self.ff_rate_factor *= 0.995    
+        self.last_ff_r = sec_since_boot() + 1.0
         self.save_steering = True
             
       output_steer =  self.pid.update(self.angle_steers_des, future_angle_steers, check_saturation=False, override=steer_override,
                                      feedforward=self.feed_forward, speed=v_ego, deadzone=deadzone)
 
       if not steer_override and v_ego > 10. and abs(angle_steers) <= 10:
-        self.steerdata += ("%d,%s,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d|" % (self.isActive, \
+        self.steerdata += ("%d,%s,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d|" % (self.isActive, \
         ff_type, 1 if ff_type == "a" else 0, 1 if ff_type == "r" else 0, self.ff_angle_factor, self.ff_rate_factor, self.pCost, self.lCost, self.rCost, self.hCost, self.srCost, future_angle_steers, angle_rate, \
         self.steer_zero_crossing, self.center_angle, angle_steers, self.angle_steers_des, angle_offset, self.angle_steers_des_mpc, cur_Steer_Ratio, CP.steerKf, CP.steerKpV[0], CP.steerKiV[0], CP.steerRateCost, PL.PP.l_prob, \
         PL.PP.r_prob, PL.PP.c_prob, PL.PP.p_prob, self.l_poly[0], self.l_poly[1], self.l_poly[2], self.l_poly[3], self.r_poly[0], self.r_poly[1], self.r_poly[2], self.r_poly[3], \
