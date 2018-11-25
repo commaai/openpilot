@@ -101,6 +101,8 @@ class LatControl(object):
     self.last_ff_r = 0.0
     self.ff_angle_factor = 1.0
     self.ff_rate_factor = 1.0
+    self.save_steering = False
+    self.steer_initialized = False
 
   def reset(self):
     self.pid.reset()
@@ -179,6 +181,17 @@ class LatControl(object):
       self.last_ff_a = 0.0
       self.last_ff_r = 0.0
       self.pid.reset()
+      
+      if self.save_steering:
+        file = open("/sdcard/steering/steer_trims.dat","w")
+        file.write(json.dumps([self.ff_angle_factor, self.ff_rate_factor]))
+        file.close()
+        self.save_steering = False
+      elif not self.steer_initialized:
+        self.steer_initialized = True
+        file = open("/sdcard/steering/steer_trims.dat","r")
+        self.ff_angle_factor, self.ff_rate_factor = json.loads(file.read())
+        print(self.ff_angle_factor, self.ff_rate_factor)
     else:
       self.angle_steers_des += self.angle_steer_des_step
       future_angle_steers = angle_steers + (angle_rate * _DT)
@@ -204,29 +217,31 @@ class LatControl(object):
         self.feed_forward = self.angle_steers_des_mpc   # feedforward desired angle
       deadzone = 0.0
 
-      if abs(angle_steers) > 3.0:
+      if abs(angle_steers) > 4.0:
         self.last_ff_a = 0.0
         self.last_ff_r = 0.0
-      elif ff_type == "r" and self.last_ff_r > 0.0 and sec_since_boot() > self.last_ff_r:
+      elif ff_type == "r" and self.last_ff_r != 0.0 and sec_since_boot() > self.last_ff_r:
         if (self.pid.p > 0) == (self.feed_forward > 0):
           self.ff_rate_factor *= 1.001
         else:
           self.ff_rate_factor *= 0.999    
         self.last_ff_r = sec_since_boot() + 1.0
-      elif ff_type == "a" and self.last_ff_a > 0.0 and sec_since_boot() > self.last_ff_a:
+        self.save_steering = True
+      elif ff_type == "a" and self.last_ff_a != 0.0 and sec_since_boot() > self.last_ff_a:
         if (self.pid.p > 0) == (self.feed_forward > 0):
           self.ff_angle_factor *= 1.001
         else:
           self.ff_angle_factor *= 0.999    
         self.last_ff_a = sec_since_boot() + 1.0
+        self.save_steering = True
             
       output_steer =  self.pid.update(self.angle_steers_des, future_angle_steers, check_saturation=False, override=steer_override,
                                      feedforward=self.feed_forward, speed=v_ego, deadzone=deadzone)
 
       if not steer_override and v_ego > 10. and abs(angle_steers) <= 10:
         self.steerdata += ("%d,%s,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d|" % (self.isActive, \
-        ff_type, self.ff_angle_factor, self.ff_rate_factor, self.pCost, self.lCost, self.rCost, self.hCost, self.srCost, future_angle_steers, angle_rate, self.steer_zero_crossing, self.center_angle, angle_steers, self.angle_steers_des, angle_offset, \
-        self.angle_steers_des_mpc, cur_Steer_Ratio, CP.steerKf, CP.steerKpV[0], CP.steerKiV[0], CP.steerRateCost, PL.PP.l_prob, \
+        ff_type, 1 if ff_type == "a" else 0, 1 if ff_type == "r" else 0, self.ff_angle_factor, self.ff_rate_factor, self.pCost, self.lCost, self.rCost, self.hCost, self.srCost, future_angle_steers, angle_rate, \
+        self.steer_zero_crossing, self.center_angle, angle_steers, self.angle_steers_des, angle_offset, self.angle_steers_des_mpc, cur_Steer_Ratio, CP.steerKf, CP.steerKpV[0], CP.steerKiV[0], CP.steerRateCost, PL.PP.l_prob, \
         PL.PP.r_prob, PL.PP.c_prob, PL.PP.p_prob, self.l_poly[0], self.l_poly[1], self.l_poly[2], self.l_poly[3], self.r_poly[0], self.r_poly[1], self.r_poly[2], self.r_poly[3], \
         self.p_poly[0], self.p_poly[1], self.p_poly[2], self.p_poly[3], PL.PP.c_poly[0], PL.PP.c_poly[1], PL.PP.c_poly[2], PL.PP.c_poly[3], PL.PP.d_poly[0], PL.PP.d_poly[1], \
         PL.PP.d_poly[2], PL.PP.lane_width, PL.PP.lane_width_estimate, PL.PP.lane_width_certainty, v_ego, self.pid.p, self.pid.i, self.pid.f, int(time.time() * 100) * 10000000))
