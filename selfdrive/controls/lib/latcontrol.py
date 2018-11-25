@@ -206,7 +206,7 @@ class LatControl(object):
           self.feed_forward = (((self.ff_smoothing - 1.0) * self.feed_forward) + (v_ego**2 * self.feed_forward_angle)) / self.ff_smoothing 
           if self.last_ff_a == 0.0:
             self.last_ff_r = 0.0
-            self.last_ff_a = sec_since_boot() + 0.5
+            self.last_ff_a = sec_since_boot() + 0.25
         else:
           ff_type = "r"
           self.feed_forward = (((self.ff_smoothing - 1.0) * self.feed_forward) + (v_ego**2 * self.feed_forward_rate)) / self.ff_smoothing      
@@ -225,7 +225,7 @@ class LatControl(object):
           self.ff_angle_factor *= 1.005
         else:
           self.ff_angle_factor *= 0.995    
-        self.last_ff_a = sec_since_boot() + 0.5
+        self.last_ff_a = sec_since_boot() + 0.25
         self.save_steering = True
       elif ff_type == "r" and self.last_ff_r != 0.0 and sec_since_boot() > self.last_ff_r:
         if (self.pid.p > 0) == (self.feed_forward > 0):
