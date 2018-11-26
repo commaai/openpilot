@@ -565,24 +565,20 @@ class PCCController(object):
           new_speed_kph = actual_speed_kph
           if abs(rel_speed_kph) > 3:
             new_speed_kph = actual_speed_kph + clip(rel_speed_kph, -1, 1)
-        # Visual radar sucks at great distances, but consider action if
+        # Visual radar sucks at great distances, but take action if
         # relative speed is significant.
-        elif lead_dist_m < 65 and rel_speed_kph < -15:
+        elif rel_speed_kph < -10:
+          new_speed_kph = actual_speed_kph - 1
+        elif rel_speed_kph < -18:
           new_speed_kph = actual_speed_kph - 2
         # if too far, consider increasing speed
-        elif lead_dist_m > 1.5 * safe_dist_m:
-          speed_weights = OrderedDict([
-            # (distance in m, weight of the rel_speed reading)
-            (1.5 * safe_dist_m, 0.4),
-            (3.0 * safe_dist_m, 0.1)])
-          speed_weight = _interp_map(lead_dist_m, speed_weights)
-          # TODO: This equation is sketchy and deserves more thought.
-          new_speed_kph = actual_speed_kph + clip(rel_speed_kph * speed_weight + 5, 0, 3)
+        elif lead_dist_m > 1.5 * safe_dist_m and rel_speed_kph > -2:
+          new_speed_kph = actual_speed_kph + max(rel_speed_kph / 2, 1)
         new_speed_kph = min(new_speed_kph, _max_safe_speed_ms(lead_dist_m) * CV.MS_TO_KPH)
 
       # Enforce limits on speed
       new_speed_kph = clip(new_speed_kph, MIN_PCC_V, MAX_PCC_V)
-      new_speed_kph = clip(new_speed_kph, 0, self.pedal_speed_kph)
+      new_speed_kph = clip(new_speed_kph, MIN_PCC_V, self.pedal_speed_kph)
       if CS.blinker_on:
         # Don't accelerate during manual turns.
         new_speed_kph = min(new_speed_kph, self.last_speed_kph)
