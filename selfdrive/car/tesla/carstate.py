@@ -263,6 +263,9 @@ class CarState(object):
     self.DAS_objects_idx = 0
     self.DAS_pscControl_frm = 0
     self.DAS_pscControl_idx = 0
+    self.DAS_warningMatrix0_idx = 0
+    self.DAS_warningMatrix1_idx = 0
+    self.DAS_warningMatrix3_idx = 0
 
     #BB variables for pedal CC
     self.pedal_speed_kph = 0.

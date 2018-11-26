@@ -95,14 +95,15 @@ class CarInterface(object):
       ret.steerKpV, ret.steerKiV = [[0.25], [0.05]]
       ret.minSteerSpeed = 0.
     elif candidate == CAR.ELANTRA:
-      ret.steerKf = 0.00004
+      ret.steerKf = 0.00006
       ret.steerRateCost = 0.5
       ret.mass = 1275 + std_cargo
       ret.wheelbase = 2.7
-      ret.steerRatio = 16.9
+      ret.steerRatio = 13.73   #Spec
+      tire_stiffness_factor = 0.385
       ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
-      ret.steerKpV, ret.steerKiV = [[0.20], [0.01]]
-      ret.minSteerSpeed = 35 * CV.MPH_TO_MS
+      ret.steerKpV, ret.steerKiV = [[0.25], [0.05]]
+      ret.minSteerSpeed = 32 * CV.MPH_TO_MS
     elif candidate == CAR.GENESIS:
       ret.steerKf = 0.00005
       ret.steerRateCost = 0.5
@@ -190,7 +191,10 @@ class CarInterface(object):
     ret.wheelSpeeds.rr = self.CS.v_wheel_rr
 
     # gear shifter
-    ret.gearShifter = self.CS.gear_shifter
+    if self.CP.carFingerprint == CAR.ELANTRA:
+      ret.gearShifter = self.CS.gear_shifter_cluster
+    else:
+      ret.gearShifter = self.CS.gear_shifter
 
     # gas pedal
     ret.gas = self.CS.car_gas

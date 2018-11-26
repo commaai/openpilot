@@ -82,63 +82,93 @@ def create_pedal_command_msg(accelCommand, enable, idx):
   struct.pack_into('B', msg, msg_len-1, add_tesla_checksum(msg_id,msg))
   return [msg_id, 0, msg.raw, 2]    
   
-def create_das_status_msg(autopilotState,idx):
-  """Create DAS_status (0x399) message to generate AP sounds"""
-  msg_id = 0x399
-  msg_len = 8
-  msg = create_string_buffer(msg_len)
-  struct.pack_into('BBBBBBB', msg, 0,  (autopilotState << 4) & 0xFF, 0, 0, 0, 0, 0, idx)
-  struct.pack_into('B', msg, msg_len-1, add_tesla_checksum(msg_id,msg))
-  return [msg_id, 0, msg.raw, 0]
 
 def create_DAS_info_msg(mid):
   msg_id = 0x539
   msg_len = 8
   msg = create_string_buffer(msg_len)
   if (mid == 0):
-    struct.pack_into('BBBBBBBB', msg, 0, 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00)
+    struct.pack_into('BBBBBBBB', msg, 0, 0x00,0x00,0x00,0x00,0xA4,0x00,0x90,0x3A)
   elif (mid == 1):
-    struct.pack_into('BBBBBBBB', msg, 0, 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00)
+    struct.pack_into('BBBBBBBB', msg, 0, 0x00,0x00,0x00,0x00,0xA4,0x00,0x30,0xDA)
   elif (mid == 2):
-    struct.pack_into('BBBBBBBB', msg, 0, 0x0a,0x01,0x11,0x00,0x00,0x00,0x8b,0x00)
+    struct.pack_into('BBBBBBBB', msg, 0, 0x00,0x00,0x00,0x00,0xA4,0x00,0xD0,0x7A)
   elif (mid == 3):
-    struct.pack_into('BBBBBBBB', msg, 0, 0x0b,0x00,0x07,0x01,0x01,0x00,0x00,0x00)
+    struct.pack_into('BBBBBBBB', msg, 0, 0x00,0x00,0x00,0x00,0xA4,0x00,0x70,0x1A)
   elif (mid == 4):
-    struct.pack_into('BBBBBBBB', msg, 0, 0x0d,0x00,0x00,0x00,0xa8,0x6a,0xbd,0xc9)
+    struct.pack_into('BBBBBBBB', msg, 0, 0x00,0x00,0x00,0x00,0xA4,0x00,0x10,0xBA)
   elif (mid == 5):
-    struct.pack_into('BBBBBBBB', msg, 0, 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00)
+    struct.pack_into('BBBBBBBB', msg, 0, 0x00,0x00,0x00,0x00,0xA4,0x00,0xB0,0x5A)
   elif (mid == 6):
-    struct.pack_into('BBBBBBBB', msg, 0, 0x11,0x00,0x00,0x00,0x00,0x00,0x00,0x00)
+    struct.pack_into('BBBBBBBB', msg, 0, 0x00,0x00,0x00,0x00,0xA4,0x00,0x50,0xFA)
   elif (mid == 7):
-    struct.pack_into('BBBBBBBB', msg, 0, 0x12,0xca,0x0a,0x51,0x21,0xf4,0x38,0xd3)
-  elif (mid == 8):
-    struct.pack_into('BBBBBBBB', msg, 0, 0x13,0x01,0xff,0xff,0xff,0xfc,0x00,0x00)
-  else:
-    struct.pack_into('BBBBBBBB', msg, 0, 0x14,0x05,0x00,0x00,0x91,0x53,0x86,0x6a)
+    struct.pack_into('BBBBBBBB', msg, 0, 0x00,0x00,0x00,0x00,0xA4,0x00,0xF0,0x9A)
+
   return [msg_id, 0, msg.raw, 0]
 
+def create_DAS_bootID_msg():
+  msg_id = 0x639
+  msg_len = 8
+  msg = create_string_buffer(msg_len)
+  struct.pack_into('BBBBBBBB', msg, 0, 0x55,0x00,0xE3,0x00,0xBD,0x03,0x20,0x00)
+  return [msg_id, 0, msg.raw, 0]
 
-def create_DAS_status_msg(idx):
+def create_DAS_warningMatrix3(idx):
+  msg_id = 0x349
+  msg_len = 8
+  msg = create_string_buffer(msg_len)
+  if idx % 2 == 0:
+    #struct.pack_into('BBBBBBBB', msg, 0, 0x17, 0x17, 0x80, 0x27, 0x0C, 0x01, 0xAE, 0xCB)
+    struct.pack_into('BBBBBBBB', msg, 0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)
+  else:
+    #struct.pack_into('BBBBBBBB', msg, 0, 0x17, 0x17, 0x80, 0x27, 0x0C, 0x01, 0xAE, 0x4B)
+    struct.pack_into('BBBBBBBB', msg, 0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)
+  return [msg_id, 0, msg.raw, 0]
+
+def create_DAS_warningMatrix1(idx):
+  msg_id = 0x369
+  msg_len = 8
+  msg = create_string_buffer(msg_len)
+  struct.pack_into('BBBBBBBB', msg, 0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)
+  return [msg_id, 0, msg.raw, 0]
+
+def create_DAS_warningMatrix0(idx):
+  msg_id = 0x329
+  msg_len = 8
+  msg = create_string_buffer(msg_len)
+  if idx % 2 == 0:
+    #struct.pack_into('BBBBBBBB', msg, 0, 0x00, 0x02, 0xCE, 0x45, 0x21, 0x1D, 0x08, 0x00)
+    struct.pack_into('BBBBBBBB', msg, 0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)
+  else:
+    #struct.pack_into('BBBBBBBB', msg, 0, 0x00, 0x02, 0xCE, 0x45, 0x21, 0x1D, 0x08, 0x80)
+    struct.pack_into('BBBBBBBB', msg, 0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)
+  return [msg_id, 0, msg.raw, 0]
+
+def create_DAS_status_msg(idx,op_status,speed_limit_kph,alca_state,hands_on_state):
   msg_id = 0x399
   msg_len = 8
   msg = create_string_buffer(msg_len)
-  struct.pack_into('BBBBBBB', msg, 0, 0x03,0x0b,0x20,0x00,0x08,0x08,(idx << 4) + 8)
+  sl = int(speed_limit_kph / 5)
+  struct.pack_into('BBBBBBB', msg, 0, op_status,sl,sl,0x00,0x08,(hands_on_state << 2) + ((alca_state & 0x03) << 6),((idx << 4) &0xF0 )+( 0x0F & (alca_state >>2)))
   struct.pack_into('B', msg, msg_len-1, add_tesla_checksum(msg_id,msg))
   return [msg_id, 0, msg.raw, 0]
 
-def create_DAS_status2_msg(idx):
+def create_DAS_status2_msg(idx,acc_speed_limit_mph,collision_warning):
   msg_id = 0x389
   msg_len = 8
+  sl = int(acc_speed_limit_mph / 0.2)
+  if acc_speed_limit_mph == 0:
+    sl = 0x3FF
   msg = create_string_buffer(msg_len)
-  struct.pack_into('BBBBBBB', msg, 0, 0xff,0x03,0x44,0x04,0x00,0x80,(idx << 4) )
+  struct.pack_into('BBBBBBB', msg, 0, sl & 0xFF, (sl & 0xF00) >> 8,0x00,0x00,0x07 + 16,0x80,(idx << 4) + collision_warning )
   struct.pack_into('B', msg, msg_len-1, add_tesla_checksum(msg_id,msg))
   return [msg_id, 0, msg.raw, 0]
 
-def create_DAS_bodyControls_msg(idx):
+def create_DAS_bodyControls_msg(idx,turn_signal_request):
   msg_id = 0x3E9
   msg_len = 8
   msg = create_string_buffer(msg_len)
-  struct.pack_into('BBBBBBB', msg, 0, 0xf1,0x0c,0x00,0x00,0x00,0x00,(idx << 4) )
+  struct.pack_into('BBBBBBB', msg, 0, 0xf1,0x0c + turn_signal_request,0x00,0x00,0x00,0x00,(idx << 4) )
   struct.pack_into('B', msg, msg_len-1, add_tesla_checksum(msg_id,msg))
   return [msg_id, 0, msg.raw, 0]
 
@@ -154,7 +184,7 @@ def create_DAS_lanes_msg(idx):
   msg_id = 0x239
   msg_len = 8
   msg = create_string_buffer(msg_len)
-  struct.pack_into('BBBBBBBB', msg, 0, 0x62,0x28,0x62,0x7b,0x65,0x7d,0x30,0x2c)
+  struct.pack_into('BBBBBBBB', msg, 0, 0x33,0x28,0x00,0x00,0x00,0x00,0x22,(idx << 4)+0x0C)
   return [msg_id, 0, msg.raw, 0]
 
 def create_DAS_objects_msg(idx):
