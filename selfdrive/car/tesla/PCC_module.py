@@ -43,8 +43,8 @@ MAX_PEDAL_VALUE = 112.
 TORQUE_LEVEL_ACC = 0.
 TORQUE_LEVEL_DECEL = -30.
 FOLLOW_TIME_S = 1.8  # time in seconds to follow car in front
-MIN_PCC_V = 0. #
-MAX_PCC_V = 170.
+MIN_PCC_V_KPH = 0. #
+MAX_PCC_V_KPH = 170.
 
 MIN_CAN_SPEED = 0.3  #TODO: parametrize this in car interface
 
@@ -312,7 +312,7 @@ class PCCController(object):
       elif CS.cruise_buttons == CruiseButtons.DECEL_2ND:
         self.pedal_speed_kph = min(self.pedal_speed_kph, actual_speed_kph) - 5 * speed_uom_kph
       # Clip PCC speed between 0 and 170 KPH.
-      self.pedal_speed_kph = clip(self.pedal_speed_kph, MIN_PCC_V, MAX_PCC_V)
+      self.pedal_speed_kph = clip(self.pedal_speed_kph, MIN_PCC_V_KPH, MAX_PCC_V_KPH)
     # If something disabled cruise control, disable PCC too
     elif self.enable_pedal_cruise and CS.pcm_acc_status:
       self.enable_pedal_cruise = False
@@ -565,20 +565,16 @@ class PCCController(object):
           new_speed_kph = actual_speed_kph
           if abs(rel_speed_kph) > 3:
             new_speed_kph = actual_speed_kph + clip(rel_speed_kph, -1, 1)
-        # Visual radar sucks at great distances, but take action if
-        # relative speed is significant.
-        elif rel_speed_kph < -10:
-          new_speed_kph = actual_speed_kph - 1
-        elif rel_speed_kph < -18:
-          new_speed_kph = actual_speed_kph - 2
         # if too far, consider increasing speed
         elif lead_dist_m > 1.5 * safe_dist_m and rel_speed_kph > -2:
           new_speed_kph = actual_speed_kph + max(rel_speed_kph / 2, 1)
-        new_speed_kph = min(new_speed_kph, _max_safe_speed_ms(lead_dist_m) * CV.MS_TO_KPH)
+        # Enforce limits on speed in the presence of a lead car
+        lead_absolute_speed_kph = actual_speed_kph + rel_speed_kph
+        new_speed_kph = min(new_speed_kph, _max_safe_speed_kph(lead_dist_m), lead_absolute_speed_kph + 10)
 
       # Enforce limits on speed
-      new_speed_kph = clip(new_speed_kph, MIN_PCC_V, MAX_PCC_V)
-      new_speed_kph = clip(new_speed_kph, MIN_PCC_V, self.pedal_speed_kph)
+      new_speed_kph = clip(new_speed_kph, MIN_PCC_V_KPH, MAX_PCC_V_KPH)
+      new_speed_kph = clip(new_speed_kph, MIN_PCC_V_KPH, self.pedal_speed_kph)
       if CS.blinker_on:
         # Don't accelerate during manual turns.
         new_speed_kph = min(new_speed_kph, self.last_speed_kph)
@@ -605,8 +601,8 @@ def _distance_is_safe(v_ego_ms, lead):
   lead_too_close = bool(_is_present(lead) and _visual_radar_adjusted_dist_m(lead.dRel) <= _safe_distance_m(v_ego_ms))
   return not lead_too_close
 
-def _max_safe_speed_ms(m):
-  return m / FOLLOW_TIME_S
+def _max_safe_speed_kph(m):
+  return CV.MS_TO_KPH * m / FOLLOW_TIME_S
 
 def _is_present(lead):
   return bool(lead and lead.dRel)
