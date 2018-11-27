@@ -566,11 +566,14 @@ class PCCController(object):
           if abs(rel_speed_kph) > 3:
             new_speed_kph = actual_speed_kph + clip(rel_speed_kph, -1, 1)
         # if too far, consider increasing speed
-        elif lead_dist_m > 1.5 * safe_dist_m and rel_speed_kph > -2:
+        elif lead_dist_m > 1.5 * safe_dist_m and rel_speed_kph > -1:
           new_speed_kph = actual_speed_kph + max(rel_speed_kph / 2, 1)
         # Enforce limits on speed in the presence of a lead car
         lead_absolute_speed_kph = actual_speed_kph + rel_speed_kph
-        new_speed_kph = min(new_speed_kph, _max_safe_speed_kph(lead_dist_m), lead_absolute_speed_kph + 10)
+
+        new_speed_kph = min(new_speed_kph,
+                            _max_safe_speed_kph(lead_dist_m),
+                            lead_absolute_speed_kph - _min_safe_vrel_kph(lead_dist_m))
 
       # Enforce limits on speed
       new_speed_kph = clip(new_speed_kph, MIN_PCC_V_KPH, MAX_PCC_V_KPH)
@@ -603,6 +606,14 @@ def _distance_is_safe(v_ego_ms, lead):
 
 def _max_safe_speed_kph(m):
   return CV.MS_TO_KPH * m / FOLLOW_TIME_S
+  
+def _min_safe_vrel_kph(m):
+  min_vrel_by_distance = OrderedDict([
+    # (meters, safe relative velocity in kph)
+    # Remember, a negative relative velocity means we are closing the distance.
+    (MIN_SAFE_DIST_M, 1),    # If lead is close, it better be pulling away.
+    (200,             -15)]) # if lead is far, it's ok if we're closing.
+  return _interp_map(m, min_vrel_by_distance)
 
 def _is_present(lead):
   return bool(lead and lead.dRel)
