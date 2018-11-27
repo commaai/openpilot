@@ -570,7 +570,6 @@ class PCCController(object):
           new_speed_kph = actual_speed_kph + max(rel_speed_kph / 2, 1)
         # Enforce limits on speed in the presence of a lead car.
         lead_absolute_speed_kph = actual_speed_kph + rel_speed_kph
-
         new_speed_kph = min(new_speed_kph,
                             _max_safe_speed_kph(lead_dist_m),
                             lead_absolute_speed_kph - _min_safe_vrel_kph(lead_dist_m))
@@ -587,14 +586,11 @@ class PCCController(object):
 
 def _visual_radar_adjusted_dist_m(m):
   # visual radar sucks at short distances. It rarely shows readings below 7m.
-  # So rescale distances with 7m -> 0m. Maxes out at 100km, if that matters.
+  # So rescale distances with 7m -> 0m. Maxes out at 1km, if that matters.
   mapping = OrderedDict([
     # (input distance, output distance)
-    (0,     0),
-    (7,     0),   # anything below 7m is set to 0m.
-    (300,   300), # no discontinuity, values >7m are scaled.
-    (100000,100000)
-    ])
+    (7,    0),      # anything below 7m is set to 0m.
+    (1000, 1000)])  # values >7m are scaled, maxing out at 1km.
   return _interp_map(m, mapping)
 
 def _safe_distance_m(v_ego_ms):
