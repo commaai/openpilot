@@ -144,7 +144,7 @@ def radard_thread(gctx=None):
 
       # When changing lanes the distance to the lead car can suddenly change,
       # which makes the Kalman filter output large relative acceleration
-      if mocked and abs(PP.lead_dist - ekfv.state[XV]) > 2.0:
+      if mocked and abs(PP.lead_dist - ekfv.state[XV]) > 3.0:
         ekfv.state[XV] = PP.lead_dist
         ekfv.covar = (np.diag([PP.lead_var, ekfv.var_init]))
         ekfv.state[SPEEDV] = 0.
