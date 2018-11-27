@@ -557,18 +557,18 @@ class PCCController(object):
       elif lead_dist_m > 0:
         if lead_dist_m < MIN_SAFE_DIST_M:
           new_speed_kph = 0
-        # if too close and not falling back, reduce speed
+        # if too close, make sure we're falling back.
         elif lead_dist_m < safe_dist_m and rel_speed_kph < 0.5:
           new_speed_kph = actual_speed_kph - 1
-        # if in the comfort zone, match lead speed
+        # if in the comfort zone, match lead speed.
         elif lead_dist_m < 1.5 * safe_dist_m:
           new_speed_kph = actual_speed_kph
           if abs(rel_speed_kph) > 3:
             new_speed_kph = actual_speed_kph + clip(rel_speed_kph, -1, 1)
-        # if too far, consider increasing speed
+        # if too far, make sure we're closing.
         elif lead_dist_m > 1.5 * safe_dist_m and rel_speed_kph > -1:
           new_speed_kph = actual_speed_kph + max(rel_speed_kph / 2, 1)
-        # Enforce limits on speed in the presence of a lead car
+        # Enforce limits on speed in the presence of a lead car.
         lead_absolute_speed_kph = actual_speed_kph + rel_speed_kph
 
         new_speed_kph = min(new_speed_kph,
