@@ -555,21 +555,19 @@ class PCCController(object):
       if lead_dist_m == 0:
         new_speed_kph = self.pedal_speed_kph
       elif lead_dist_m > 0:
+        lead_absolute_speed_kph = actual_speed_kph + rel_speed_kph
         if lead_dist_m < MIN_SAFE_DIST_M:
-          new_speed_kph = 0
+          new_speed_kph = MIN_PCC_V_KPH
         # if too close, make sure we're falling back.
-        elif lead_dist_m < safe_dist_m and rel_speed_kph < 0.5:
-          new_speed_kph = actual_speed_kph - 1
+        elif lead_dist_m < safe_dist_m:
+          new_speed_kph = lead_absolute_speed_kph - 1.5
         # if in the comfort zone, match lead speed.
         elif lead_dist_m < 1.5 * safe_dist_m:
-          new_speed_kph = actual_speed_kph
-          if abs(rel_speed_kph) > 3:
-            new_speed_kph = actual_speed_kph + clip(rel_speed_kph, -1, 1)
+          new_speed_kph = lead_absolute_speed_kph
         # if too far, make sure we're closing.
-        elif lead_dist_m > 1.5 * safe_dist_m and rel_speed_kph > -1:
-          new_speed_kph = actual_speed_kph + max(rel_speed_kph / 2, 1)
+        elif lead_dist_m > 1.5 * safe_dist_m:
+          new_speed_kph = lead_absolute_speed_kph + 1.5
         # Enforce limits on speed in the presence of a lead car.
-        lead_absolute_speed_kph = actual_speed_kph + rel_speed_kph
         new_speed_kph = min(new_speed_kph,
                             _max_safe_speed_kph(lead_dist_m),
                             lead_absolute_speed_kph - _min_safe_vrel_kph(lead_dist_m))
