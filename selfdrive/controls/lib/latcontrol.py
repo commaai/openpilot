@@ -66,9 +66,9 @@ class LatControl(object):
     self.steerpub.bind("tcp://*:8594")
     self.steerdata = ""
     self.ratioExp = 2.6
-    self.ratioScale = 0.
+    self.ratioScale = 15.0
     self.steer_steps = [0., 0., 0., 0., 0.]
-    self.probFactor = 0.
+    self.probFactor = 0.0
     self.prev_output_steer = 0.
     self.rough_angle_array = [0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.]
     self.steer_speed_array = [0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.]
@@ -115,8 +115,13 @@ class LatControl(object):
     enable_enhancements = True
     self.frame += 1
 
-    cur_Steer_Ratio = CP.steerRatio * 1.
-
+    if enable_enhancements:
+      ratioFactor = max(0.1, 1. - self.ratioScale * abs(angle_steers / 100.) ** self.ratioExp)
+    else:
+      ratioFactor = 1.0
+    
+    cur_Steer_Ratio = CP.steerRatio * ratioFactor
+     
     # Use previous starting angle and average rate to project the NEXT angle_steer
     self.avg_angle_rate = ((self.angle_rate_count * self.avg_angle_rate) + float(angle_rate)) / (self.angle_rate_count + 1.0)
     self.angle_rate_count += 1.0
@@ -169,7 +174,7 @@ class LatControl(object):
 
       #  Check for infeasable MPC solution
       self.mpc_nans = np.any(np.isnan(list(self.mpc_solution[0].delta)))
-      t = sec_since_boot()
+      t = cur_time
       if self.mpc_nans:
         self.libmpc.init(MPC_COST_LAT.PATH, MPC_COST_LAT.LANE, MPC_COST_LAT.HEADING, CP.steerRateCost)
         self.cur_state[0].delta = math.radians(angle_steers) / cur_Steer_Ratio
@@ -205,7 +210,7 @@ class LatControl(object):
         self.steer_initialized = True
         file = open("/sdcard/steering/steer_trims.dat","r")
         self.ff_angle_factor, self.ff_rate_factor = json.loads(file.read())
-        print(self.ff_angle_factor, self.ff_rate_factor)
+        #print(self.ff_angle_factor, self.ff_rate_factor)
     else:
       
       self.angle_steers_des = self.angle_steers_des_prev + (_DT + cur_time - self.angle_steers_des_time) * self.angle_rate_desired
@@ -220,40 +225,40 @@ class LatControl(object):
           if self.last_ff_r == 0.0:
             self.last_ff_a = 0.0
             self.last_i = self.pid.i
-            self.last_ff_r = sec_since_boot() + 0.1
+            self.last_ff_r = cur_time + 0.1
         elif (abs(self.feed_forward_angle) - 0.5 > abs(self.feed_forward_rate)):
           ff_type = "a"
           self.feed_forward = (((self.MPC_smoothing - 1.0) * self.feed_forward) + (v_ego**2 * self.feed_forward_angle)) / self.MPC_smoothing 
           if self.last_ff_a == 0.0:
             self.last_ff_r = 0.0
             self.last_i = self.pid.i
-            self.last_ff_a = sec_since_boot() + 0.1
+            self.last_ff_a = cur_time + 0.1
         else:
           ff_type = "r"
-          self.last_ff_r = 0.0
+          self.last_ff_a = 0.0
           self.last_ff_r = 0.0
           self.feed_forward = (((self.MPC_smoothing - 1.0) * self.feed_forward) + 0.0) / self.MPC_smoothing
       else:
         self.feed_forward = self.angle_steers_des_mpc   # feedforward desired angle
       deadzone = 0.0
-      print (self.angle_rate_count, self.angle_rate_desired, self.avg_angle_rate)
+      #print (self.angle_rate_count, self.angle_rate_desired, self.avg_angle_rate)
 
       if abs(angle_steers) > 3.0:
         self.last_ff_a = 0.0
         self.last_ff_r = 0.0
-      elif ff_type == "a" and self.last_ff_a != 0.0 and sec_since_boot() > self.last_ff_a:
+      elif ff_type == "a" and self.last_ff_a != 0.0 and cur_time > self.last_ff_a:
         if (self.pid.i > self.last_i) == (self.feed_forward > 0):
           self.ff_angle_factor *= 1.001
         else:
           self.ff_angle_factor *= 0.999    
-        self.last_ff_a = sec_since_boot() + 0.1
+        self.last_ff_a = cur_time + 0.1
         self.save_steering = True
-      elif ff_type == "r" and self.last_ff_r != 0.0 and sec_since_boot() > self.last_ff_r:
+      elif ff_type == "r" and self.last_ff_r != 0.0 and cur_time > self.last_ff_r:
         if (self.pid.i > self.last_i) == (self.feed_forward > 0):
           self.ff_rate_factor *= 1.001
         else:
           self.ff_rate_factor *= 0.999  
-        self.last_ff_r = sec_since_boot() + 0.1
+        self.last_ff_r = cur_time + 0.1
         self.save_steering = True
             
       output_steer = self.pid.update(self.angle_steers_des, future_angle_steers, check_saturation=False, override=steer_override,
