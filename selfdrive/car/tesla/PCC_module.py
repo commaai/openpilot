@@ -558,15 +558,16 @@ class PCCController(object):
         lead_absolute_speed_kph = actual_speed_kph + rel_speed_kph
         if lead_dist_m < MIN_SAFE_DIST_M:
           new_speed_kph = MIN_PCC_V_KPH
-        # if too close, make sure we're falling back.
-        elif lead_dist_m < safe_dist_m:
-          new_speed_kph = lead_absolute_speed_kph - 1.5
-        # if in the comfort zone, match lead speed.
-        elif lead_dist_m < 1.5 * safe_dist_m:
-          new_speed_kph = lead_absolute_speed_kph
-        # if too far, make sure we're closing.
-        elif lead_dist_m > 1.5 * safe_dist_m:
-          new_speed_kph = lead_absolute_speed_kph + 1.5
+        else:
+          desired_speed_offsets = OrderedDict([
+            # (distance in m, desired relaltive speed in kph)
+            (0.5 * safe_dist_m, -3), # if too close, make sure we're falling back.
+            (1.0 * safe_dist_m, 0), # if in the comfort zone, match lead speed.
+            (1.5 * safe_dist_m, 0),
+            (2.5 * safe_dist_m, 3)]) # if too far, make sure we're closing.
+          desired_speed_offset = _interp_map(desired_speed_offsets, lead_dist_m)
+          new_speed_kph = lead_absolute_speed_kph + desired_speed_offset
+          
         # Enforce limits on speed in the presence of a lead car.
         new_speed_kph = min(new_speed_kph,
                             _max_safe_speed_kph(lead_dist_m),
