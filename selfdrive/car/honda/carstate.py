@@ -36,7 +36,9 @@ def get_can_signals(CP):
       ("WHEEL_SPEED_RR", "WHEEL_SPEEDS", 0),
       ("STEER_ANGLE", "STEERING_SENSORS", 0),
       ("STEER_ANGLE_RATE", "STEERING_SENSORS", 0),
+      ("STEER_ANGLE_OFFSET", "STEERING_SENSORS", 0),
       ("STEER_TORQUE_SENSOR", "STEER_STATUS", 0),
+      ("STEER_TORQUE_MOTOR", "STEER_STATUS", 0),
       ("LEFT_BLINKER", "SCM_FEEDBACK", 0),
       ("RIGHT_BLINKER", "SCM_FEEDBACK", 0),
       ("GEAR", "GEARBOX", 0),
@@ -236,7 +238,7 @@ class CarState(object):
       self.user_gas_pressed = self.user_gas > 0 # this works because interceptor read < 0 when pedal position is 0. Once calibrated, this will change
 
     self.gear = 0 if self.CP.carFingerprint == CAR.CIVIC else cp.vl["GEARBOX"]['GEAR']
-    self.angle_steers = cp.vl["STEERING_SENSORS"]['STEER_ANGLE']
+    self.angle_steers = cp.vl["STEERING_SENSORS"]['STEER_ANGLE'] + cp.vl["STEERING_SENSORS"]['STEER_ANGLE_OFFSET']
     self.angle_steers_rate = cp.vl["STEERING_SENSORS"]['STEER_ANGLE_RATE']
 
     self.cruise_setting = cp.vl["SCM_BUTTONS"]['CRUISE_SETTING']
@@ -266,6 +268,7 @@ class CarState(object):
       self.car_gas = cp.vl["GAS_PEDAL_2"]['CAR_GAS']
 
     self.steer_torque_driver = float(cp.vl["STEER_STATUS"]['STEER_TORQUE_SENSOR'])
+    self.steer_torque_motor = float(cp.vl["STEER_STATUS"]['STEER_TORQUE_MOTOR'])
     self.steer_override = abs(self.steer_torque_driver) > STEER_THRESHOLD[self.CP.carFingerprint]
 
     self.brake_switch = cp.vl["POWERTRAIN_DATA"]['BRAKE_SWITCH']

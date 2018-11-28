@@ -108,7 +108,7 @@ class LatControl(object):
   def reset(self):
     self.pid.reset()
 
-  def update(self, active, v_ego, angle_steers, angle_rate, steer_override, driver_torque, d_poly, angle_offset, CP, VM, PL):
+  def update(self, active, v_ego, angle_steers, angle_rate, driver_torque, steer_motor, steer_override, d_poly, angle_offset, CP, VM, PL):
     self.mpc_updated = False
     cur_time = sec_since_boot()
 
@@ -216,9 +216,9 @@ class LatControl(object):
       future_angle_steers = float(angle_steers) + _DT * float(angle_rate)
 
       if self.angle_rate_desired > float(angle_rate):
-        restricted_steer_rate = min(float(angle_rate) + 2.0, self.angle_rate_desired)
+        restricted_steer_rate = min(float(angle_rate) + 10.5, self.angle_rate_desired)
       else:
-        restricted_steer_rate = max(float(angle_rate) - 2.0, self.angle_rate_desired)
+        restricted_steer_rate = max(float(angle_rate) - 10.5, self.angle_rate_desired)
 
       self.feed_forward_rate = self.ff_rate_factor * restricted_steer_rate
 
@@ -231,14 +231,16 @@ class LatControl(object):
       if CP.steerControlType == car.CarParams.SteerControlType.torque:
         if abs(restricted_steer_rate) > abs(float(angle_rate)) or (restricted_steer_rate < 0 != float(angle_rate) < 0):
           ff_type = "r"
-          self.feed_forward = (((self.MPC_smoothing - 1.0) * self.feed_forward) + (v_ego**2 * (self.feed_forward_rate + self.feed_forward_angle))) / self.MPC_smoothing      
+          self.feed_forward = v_ego**2 * (self.feed_forward_angle)      
+          #self.feed_forward = (((self.MPC_smoothing - 1.0) * self.feed_forward) + (v_ego**2 * (self.feed_forward_rate + self.feed_forward_angle))) / self.MPC_smoothing      
           if self.last_ff_r == 0.0:
             self.last_ff_a = 0.0
             self.last_i = self.pid.i
             self.last_ff_r = cur_time + 0.1
         elif (abs(self.feed_forward_angle) - 0.5 > abs(self.feed_forward_rate)):
           ff_type = "a"
-          self.feed_forward = (((self.MPC_smoothing - 1.0) * self.feed_forward) + (v_ego**2 * self.feed_forward_angle)) / self.MPC_smoothing 
+          #self.feed_forward = (((self.MPC_smoothing - 1.0) * self.feed_forward) + (v_ego**2 * self.feed_forward_angle)) / self.MPC_smoothing 
+          self.feed_forward = v_ego**2 * self.feed_forward_angle 
           if self.last_ff_a == 0.0:
             self.last_ff_r = 0.0
             self.last_i = self.pid.i
@@ -247,7 +249,8 @@ class LatControl(object):
           ff_type = "r"
           self.last_ff_a = 0.0
           self.last_ff_r = 0.0
-          self.feed_forward = (((self.MPC_smoothing - 1.0) * self.feed_forward) + 0.0) / self.MPC_smoothing
+          #self.feed_forward = (((self.MPC_smoothing - 1.0) * self.feed_forward) + 0.0) / self.MPC_smoothing
+          self.feed_forward = 0.0
       else:
         self.feed_forward = self.angle_steers_des_mpc   # feedforward desired angle
       deadzone = 0.0
@@ -275,8 +278,8 @@ class LatControl(object):
                                      feedforward=self.feed_forward, speed=v_ego, deadzone=deadzone)
 
       if True == True:  # not steer_override and v_ego > 10. and abs(angle_steers) <= 10:
-        self.steerdata += ("%d,%s,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d|" % (self.isActive, \
-        ff_type, 1 if ff_type == "a" else 0, 1 if ff_type == "r" else 0, restricted_steer_rate ,self.ff_angle_factor, self.ff_rate_factor, self.pCost, self.lCost, self.rCost, self.hCost, self.srCost, float(driver_torque), \
+        self.steerdata += ("%d,%s,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d|" % (self.isActive, \
+        ff_type, 1 if ff_type == "a" else 0, 1 if ff_type == "r" else 0, restricted_steer_rate ,self.ff_angle_factor, self.ff_rate_factor, self.pCost, self.lCost, self.rCost, self.hCost, self.srCost, steer_motor, float(driver_torque), \
         self.angle_rate_count, self.angle_rate_desired, self.avg_angle_rate, future_angle_steers, angle_rate, self.steer_zero_crossing, self.center_angle, angle_steers, self.angle_steers_des, angle_offset, \
         self.angle_steers_des_mpc, cur_Steer_Ratio, CP.steerKf, CP.steerKpV[0], CP.steerKiV[0], CP.steerRateCost, PL.PP.l_prob, \
         PL.PP.r_prob, PL.PP.c_prob, PL.PP.p_prob, self.l_poly[0], self.l_poly[1], self.l_poly[2], self.l_poly[3], self.r_poly[0], self.r_poly[1], self.r_poly[2], self.r_poly[3], \
