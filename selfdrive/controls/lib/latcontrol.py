@@ -231,7 +231,7 @@ class LatControl(object):
       if CP.steerControlType == car.CarParams.SteerControlType.torque:
         if abs(restricted_steer_rate) > abs(float(angle_rate)) or (restricted_steer_rate < 0 != float(angle_rate) < 0):
           ff_type = "r"
-          self.feed_forward = v_ego**2 * (self.feed_forward_angle)      
+          self.feed_forward = v_ego**2 * (self.feed_forward_rate)      
           #self.feed_forward = (((self.MPC_smoothing - 1.0) * self.feed_forward) + (v_ego**2 * (self.feed_forward_rate + self.feed_forward_angle))) / self.MPC_smoothing      
           if self.last_ff_r == 0.0:
             self.last_ff_a = 0.0
