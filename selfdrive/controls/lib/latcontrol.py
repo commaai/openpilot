@@ -216,9 +216,9 @@ class LatControl(object):
       future_angle_steers = float(angle_steers) + _DT * float(angle_rate)
 
       if self.angle_rate_desired > float(angle_rate):
-        restricted_steer_rate = min(float(angle_rate) + 4.0, self.angle_rate_desired)
+        restricted_steer_rate = min(float(angle_rate) + 2.0, self.angle_rate_desired)
       else:
-        restricted_steer_rate = max(float(angle_rate) - 4.0, self.angle_rate_desired)
+        restricted_steer_rate = max(float(angle_rate) - 2.0, self.angle_rate_desired)
 
       self.feed_forward_rate = self.ff_rate_factor * restricted_steer_rate
 
@@ -258,25 +258,25 @@ class LatControl(object):
         self.last_ff_r = 0.0
       elif ff_type == "a" and self.last_ff_a != 0.0 and cur_time > self.last_ff_a:
         if (self.pid.i > self.last_i) == (self.feed_forward > 0):
-          self.ff_angle_factor *= 1.001
+          self.ff_angle_factor *= 1.0000000001
         else:
-          self.ff_angle_factor *= 0.999    
+          self.ff_angle_factor *= 0.99999999    
         self.last_ff_a = cur_time + 0.1
         self.save_steering = True
       elif ff_type == "r" and self.last_ff_r != 0.0 and cur_time > self.last_ff_r:
         if (self.pid.i > self.last_i) == (self.feed_forward > 0):
-          self.ff_rate_factor *= 1.001
+          self.ff_rate_factor *= 1.00000001
         else:
-          self.ff_rate_factor *= 0.999  
+          self.ff_rate_factor *= 0.99999999  
         self.last_ff_r = cur_time + 0.1
         self.save_steering = True
-            
+
       output_steer = self.pid.update(self.angle_steers_des, future_angle_steers, check_saturation=False, override=steer_override,
                                      feedforward=self.feed_forward, speed=v_ego, deadzone=deadzone)
 
       if True == True:  # not steer_override and v_ego > 10. and abs(angle_steers) <= 10:
         self.steerdata += ("%d,%s,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d|" % (self.isActive, \
-        ff_type, 1 if ff_type == "a" else 0, 1 if ff_type == "r" else 0, restricted_steer_rate ,self.ff_angle_factor, self.ff_rate_factor, self.pCost, self.lCost, self.rCost, self.hCost, self.srCost, driver_torque, \
+        ff_type, 1 if ff_type == "a" else 0, 1 if ff_type == "r" else 0, restricted_steer_rate ,self.ff_angle_factor, self.ff_rate_factor, self.pCost, self.lCost, self.rCost, self.hCost, self.srCost, float(driver_torque), \
         self.angle_rate_count, self.angle_rate_desired, self.avg_angle_rate, future_angle_steers, angle_rate, self.steer_zero_crossing, self.center_angle, angle_steers, self.angle_steers_des, angle_offset, \
         self.angle_steers_des_mpc, cur_Steer_Ratio, CP.steerKf, CP.steerKpV[0], CP.steerKiV[0], CP.steerRateCost, PL.PP.l_prob, \
         PL.PP.r_prob, PL.PP.c_prob, PL.PP.p_prob, self.l_poly[0], self.l_poly[1], self.l_poly[2], self.l_poly[3], self.r_poly[0], self.r_poly[1], self.r_poly[2], self.r_poly[3], \
