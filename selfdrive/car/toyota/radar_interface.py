@@ -8,7 +8,7 @@ from common.realtime import sec_since_boot
 from selfdrive.services import service_list
 from selfdrive.car.toyota.values import NO_DSU_CAR, DBC
 import selfdrive.messaging as messaging
-import selfdrive.rcp_helpers as rcp
+import selfdrive.car.rcp_helpers as rcp
 
 
 RADAR_TARGET_MSGS = list(range(0x210, 0x220))

@@ -8,7 +8,7 @@ import zmq
 from selfdrive.services import service_list
 from selfdrive.config import Conversions as CV
 import selfdrive.messaging as messaging
-import selfdrive.rcp_helpers as rcp
+import selfdrive.car.rcp_helpers as rcp
 
 
 RADAR_MSGS = range(0x500, 0x540)
