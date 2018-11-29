@@ -568,7 +568,7 @@ class PCCController(object):
             (1.5 * safe_dist_m, clip(actual_speed_kph, lead_absolute_speed_kph - 2, lead_absolute_speed_kph + 4)),
              # if too far, make sure we're closing.
             (3.5 * safe_dist_m, clip(actual_speed_kph, lead_absolute_speed_kph + 5, lead_absolute_speed_kph + 15))])
-          new_speed_kph = _interp_map(desired_speeds, lead_dist_m)
+          new_speed_kph = _interp_map(lead_dist_m, desired_speeds)
           
         # Enforce limits on speed in the presence of a lead car.
         new_speed_kph = min(new_speed_kph,
