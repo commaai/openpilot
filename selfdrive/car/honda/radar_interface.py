@@ -1,39 +1,15 @@
 #!/usr/bin/env python
 import zmq
 import time
+from collections import namedtuple
 from cereal import car
 from selfdrive.can.parser import CANParser
 from selfdrive.car.honda.values import DBC
 from common.realtime import sec_since_boot
 from selfdrive.services import service_list
 import selfdrive.messaging as messaging
-from collections import namedtuple
+import selfdrive.rcp_helpers as rcp
 
-def create_radar_signals(*signals):
-  # accepts multiple namedtuples in the form ([('name', value)],[msg])
-  name_value = []
-  msgs = []
-  repetitions = []
-  for s in signals:
-    name_value += [nv for nv in s.name_value]
-    name_value_n = len(s.name_value)
-    msgs_n = [len(s.msg)]
-    repetitions += msgs_n * name_value_n
-    msgs += s.msg * name_value_n
-
-  name_value = sum([[nv] * r for nv, r in zip(name_value, repetitions)], [])
-  names = [n for n, v in name_value]
-  vals  = [v for n, v in name_value]
-  return zip(names, msgs, vals)
-
-def create_radar_checks(msgs, select, rate = [20]):
-  if select == "all":
-    return zip(msgs, rate * len(msgs))
-  if select == "last":
-    return zip([msgs[-1]], rate)
-  if select == "none":
-    return []
-  return []
 
 RADAR_HEADER_MSG = 0x400
 RADAR_TARGET_MSG = range(0x430, 0x43A) + range(0x440, 0x446)
@@ -43,7 +19,7 @@ def _create_nidec_can_parser(car_fingerprint):
   if dbc_f is not None:
     radar_messages = [RADAR_HEADER_MSG] + RADAR_TARGET_MSG
 
-    sig = namedtuple('sig','name_value msg')
+    sig = namedtuple('sig', 'name_value msg')
     headers = [('RADAR_STATE', 0)]
     header_sig = sig(headers, [RADAR_HEADER_MSG])
 
@@ -53,8 +29,8 @@ def _create_nidec_can_parser(car_fingerprint):
                ('REL_SPEED', 0)]
     target_sig = sig(targets, RADAR_TARGET_MSG)
 
-    signals = create_radar_signals(header_sig, target_sig)
-    checks = create_radar_checks(radar_messages, select = "last")
+    signals = rcp.create_radar_signals(header_sig, target_sig)
+    checks = rcp.create_radar_checks(radar_messages, select = "last")
 
     return CANParser(dbc_f, signals, checks, 1)
   else:

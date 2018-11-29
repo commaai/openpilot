@@ -2,7 +2,7 @@
 import zmq
 import math
 import time
-import numpy as np
+from collections import namedtuple
 from cereal import car
 from selfdrive.can.parser import CANParser
 from selfdrive.car.gm.interface import CanBus
@@ -11,34 +11,8 @@ from common.realtime import sec_since_boot
 from selfdrive.services import service_list
 from selfdrive.config import Conversions as CV
 import selfdrive.messaging as messaging
-from collections import namedtuple
+import selfdrive.rcp_helpers as rcp
 
-
-def create_radar_signals(*signals):
-  # accepts multiple namedtuples in the form ([('name', value)],[msg])
-  name_value = []
-  msgs = []
-  repetitions = []
-  for s in signals:
-    name_value += [nv for nv in s.name_value]
-    name_value_n = len(s.name_value)
-    msgs_n = [len(s.msg)]
-    repetitions += msgs_n * name_value_n
-    msgs += s.msg * name_value_n
-
-  name_value = sum([[nv] * r for nv, r in zip(name_value, repetitions)], [])
-  names = [n for n, v in name_value]
-  vals  = [v for n, v in name_value]
-  return zip(names, msgs, vals)
-
-def create_radar_checks(msgs, select, rate = [20]):
-  if select == "all":
-    return zip(msgs, rate * len(msgs))
-  if select == "last":
-    return zip([msgs[-1]], rate)
-  if select == "none":
-    return []
-  return []
 
 RADAR_HEADER_MSG = 1120
 SLOT_1_MSG = RADAR_HEADER_MSG + 1
@@ -55,7 +29,7 @@ def create_radard_can_parser(canbus, car_fingerprint):
     radar_trackers = range(SLOT_1_MSG, SLOT_1_MSG + NUM_SLOTS)
     radar_messages = [RADAR_HEADER_MSG] + radar_trackers
 
-    sig = namedtuple('sig','name_value msg')
+    sig = namedtuple('sig', 'name_value msg')
     headers = [('FLRRNumValidTargets', 0),
                ('FLRRSnsrBlckd', 0),
                ('FLRRYawRtPlsblityFlt', 0),
@@ -73,8 +47,8 @@ def create_radard_can_parser(canbus, car_fingerprint):
                 ('TrkObjectID', 0)]
     tracker_sig = sig(trackers, radar_trackers)
 
-    signals = create_radar_signals(header_sig, tracker_sig)
-    checks = create_radar_checks(radar_messages, select = "none")
+    signals = rcp.create_radar_signals(header_sig, tracker_sig)
+    checks = rcp.create_radar_checks(radar_messages, select = "none")
 
     return CANParser(dbc_f, signals, checks, canbus.obstacle)
   else:

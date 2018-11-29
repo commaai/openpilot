@@ -1,39 +1,14 @@
 #!/usr/bin/env python
 import zmq
 import time
+from collections import namedtuple
 from selfdrive.can.parser import CANParser
 from cereal import car
 from common.realtime import sec_since_boot
 from selfdrive.services import service_list
-import selfdrive.messaging as messaging
 from selfdrive.car.toyota.values import NO_DSU_CAR, DBC
-from collections import namedtuple
-
-def create_radar_signals(*signals):
-  # accepts multiple namedtuples in the form ([('name', value)],[msg])
-  name_value = []
-  msgs = []
-  repetitions = []
-  for s in signals:
-    name_value += [nv for nv in s.name_value]
-    name_value_n = len(s.name_value)
-    msgs_n = [len(s.msg)]
-    repetitions += msgs_n * name_value_n
-    msgs += s.msg * name_value_n
-
-  name_value = sum([[nv] * r for nv, r in zip(name_value, repetitions)], [])
-  names = [n for n, v in name_value]
-  vals  = [v for n, v in name_value]
-  return zip(names, msgs, vals)
-
-def create_radar_checks(msgs, select, rate = [20]):
-  if select == "all":
-    return zip(msgs, rate * len(msgs))
-  if select == "last":
-    return zip([msgs[-1]], rate)
-  if select == "none":
-    return []
-  return []
+import selfdrive.messaging as messaging
+import selfdrive.rcp_helpers as rcp
 
 
 RADAR_TARGET_MSGS = list(range(0x210, 0x220))
@@ -43,19 +18,19 @@ def _create_radard_can_parser(car_fingerprint):
   dbc_f = DBC[car_fingerprint]['radar']
   radar_messages = RADAR_TARGET_MSGS + RADAR_SCORE_MSGS
 
-  sig = namedtuple('sig','name_value msg')
+  sig = namedtuple('sig', 'name_value msg')
   targets = [('LONG_DIST', 255),
-              ('NEW_TRACK', 1),
-              ('LAT_DIST', 0),
-              ('REL_SPEED', 0),
-              ('VALID', 0)]
+             ('NEW_TRACK', 1),
+             ('LAT_DIST', 0),
+             ('REL_SPEED', 0),
+             ('VALID', 0)]
   target_sig = sig(targets, RADAR_TARGET_MSGS)
 
   scores = [('SCORE', 0)]
   score_sig = sig(scores, RADAR_SCORE_MSGS)
 
-  signals = create_radar_signals(target_sig, score_sig)
-  checks = create_radar_checks(radar_messages, select = "all")
+  signals = rcp.create_radar_signals(target_sig, score_sig)
+  checks = rcp.create_radar_checks(radar_messages, select = "all")
 
   return CANParser(dbc_f, signals, checks, 1)
 
