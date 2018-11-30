@@ -54,11 +54,11 @@ AWARENESS_DECEL = -0.2     # car smoothly decel at .2m/s^2 when user is distract
 # Make sure these accelerations are smaller than mpc limits.
 _A_CRUISE_MIN = OrderedDict([
   # (speed in m/s, allowed deceleration)
-  (0.0, 1.5),
-  (5.0, 1.4),
-  (10., 1.3),
-  (20., 0.95),
-  (40., 0.9)])
+  (0.0, 2),
+  (5.0, 2),
+  (10., 2),
+  (20., 2),
+  (40., 2)])
 
 # Map of speed to max allowed acceleration.
 # Need higher accel at very low speed for stop and go.
@@ -96,7 +96,7 @@ class ExperimentalMode(Mode):
   label = 'DEVEL'
   
 class PCCModes(object):
-  _all_modes = [OffMode(), OpMode(), FollowMode(), ExperimentalMode()]
+  _all_modes = [OffMode(), OpMode(), FollowMode()]
   _mode_map = {mode.label : mode for mode in _all_modes}
   BUTTON_NAME = 'pedal'
   BUTTON_ABREVIATION = 'PDL'
@@ -704,15 +704,14 @@ def _decel_limit_multiplier(v_ego, lead):
     safe_dist_m = _safe_distance_m(v_ego)
     decel_multipliers = OrderedDict([
        # (distance in m, acceleration fraction)
-       (0.5 * safe_dist_m, 1.0),
-       (1.0 * safe_dist_m, 0.5), # new
-       (2.0 * safe_dist_m, 0.1)])
+       (1.0 * safe_dist_m, 1.0),
+       (4.0 * safe_dist_m, 0.1)])
     return _interp_map(lead.dRel, decel_multipliers)
   else:
     return 1.0
     
 def _jerk_limits(v_ego, lead, max_speed_kph, lead_last_seen_time_ms):
-  # prevent high jerk near max speed
+  # prevent high accel jerk near max speed
   near_max_speed_multipliers = OrderedDict([
       # (kph under max speed, accel jerk multiplier)
       (0, 0.1),
@@ -725,13 +724,13 @@ def _jerk_limits(v_ego, lead, max_speed_kph, lead_last_seen_time_ms):
     decel_jerk_map = OrderedDict([
       # (distance in m, decel jerk)
       (0.5 * safe_dist_m, -0.6),
-      (1.2 * safe_dist_m, -0.2)])
+      (2.0 * safe_dist_m, -0.2)])
     decel_jerk = _interp_map(lead.dRel, decel_jerk_map)
     # allow extra decel jerk if relative speed is high
     decel_multipliers = OrderedDict([
         # (relative speed in m/s, decel jerk multiplier)
-        (-12, 3),
-        (-2,  1)])
+        (-20, 4),
+        (-3,  1)])
     decel_multiplier = _interp_map(lead.vRel, decel_multipliers)
     decel_jerk *= decel_multiplier
     
