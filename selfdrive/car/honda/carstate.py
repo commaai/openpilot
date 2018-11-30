@@ -266,7 +266,7 @@ class CarState(object):
     else:
       self.car_gas = cp.vl["GAS_PEDAL_2"]['CAR_GAS']
 
-    self.steer_torque_driver = float(cp.vl["STEER_STATUS"]['STEER_TORQUE_SENSOR'])
+    self.steer_torque_driver = cp.vl["STEER_STATUS"]['STEER_TORQUE_SENSOR']
     self.steer_override = abs(self.steer_torque_driver) > STEER_THRESHOLD[self.CP.carFingerprint]
 
     self.brake_switch = cp.vl["POWERTRAIN_DATA"]['BRAKE_SWITCH']
