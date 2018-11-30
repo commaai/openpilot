@@ -420,8 +420,6 @@ class CarInterface(object):
     # gear shifter lever
     ret.gearShifter = self.CS.gear_shifter
 
-    ret.steeringTorque = float(self.CS.steer_torque_driver)
-    ret.steeringTorqueMotor = float(self.CS.steer_torque_motor)
     ret.steeringPressed = self.CS.steer_override
 
     # cruise state

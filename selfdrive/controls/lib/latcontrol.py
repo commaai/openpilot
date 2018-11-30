@@ -66,14 +66,14 @@ class LatControl(object):
     self.smooth_factor = 11.0 * _DT_MPC / _DT
     self.feed_forward = 0.0
     self.angle_rate_desired = 0.0
-    self.ff_angle_factor = 0.5
+    self.ff_angle_factor = 0.25
     self.ff_rate_factor = 2.5
-    self.angle_steer_accel_limit = 0.2
+    self.accel_limit = 0.3
 
   def reset(self):
     self.pid.reset()
 
-  def update(self, active, v_ego, angle_steers, angle_rate, driver_torque, steer_motor, steer_override, d_poly, angle_offset, CP, VM, PL):
+  def update(self, active, v_ego, angle_steers, angle_rate, steer_override, d_poly, angle_offset, CP, VM, PL):
     cur_time = sec_since_boot()
     self.mpc_updated = False
     # TODO: this creates issues in replay when rewinding time: mpc won't run
@@ -131,7 +131,7 @@ class LatControl(object):
       self.pid.reset()
     else:
       self.angle_steers_des = self.angle_steers_des_prev + self.angle_rate_desired * (cur_time - self.angle_steers_des_time)
-      restricted_steer_rate = np.clip((self.angle_steers_des - float(angle_steers)) / _DT , float(angle_rate) - self.angle_steer_accel_limit, float(angle_rate) + self.angle_steer_accel_limit)
+      restricted_steer_rate = np.clip((self.angle_steers_des - float(angle_steers)) / _DT , float(angle_rate) - self.accel_limit, float(angle_rate) + self.accel_limit)
       future_angle_steers_des = float(angle_steers) + self.smooth_factor * _DT * restricted_steer_rate
       future_angle_steers = float(angle_steers) + self.smooth_factor * _DT * float(angle_rate)
 
