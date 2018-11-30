@@ -65,7 +65,7 @@ def create_steer_command(packer, steer, steer_req, raw_cnt):
 
 
 def create_accel_command(packer, accel, pcm_cancel, standstill_req):
-  # TODO: find the exact canceling bit
+  # TODO: find the exact canceling bit that does not create a chime
   values = {
     "ACCEL_CMD": accel,
     "SET_ME_X63": 0x63,

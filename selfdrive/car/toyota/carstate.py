@@ -36,6 +36,7 @@ def get_can_parser(CP):
     ("STEER_RATE", "STEER_ANGLE_SENSOR", 0),
     ("ACC_ACTIVE", "PCM_CRUISE", 0),
     ("GAS_RELEASED", "PCM_CRUISE", 0),
+    ("CRUISE_ACTIVE", "PCM_CRUISE", 0),
     ("CRUISE_STATE", "PCM_CRUISE", 0),
     ("STEER_TORQUE_DRIVER", "STEER_TORQUE_SENSOR", 0),
     ("STEER_TORQUE_EPS", "STEER_TORQUE_SENSOR", 0),
@@ -81,6 +82,16 @@ def get_can_parser(CP):
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
 
+def get_cam_can_parser(CP):
+
+  signals = []
+
+  # use steering message to check if panda is connected to frc
+  checks = [("STEERING_LKA", 42)]
+
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
+
+
 class CarState(object):
   def __init__(self, CP):
 
@@ -103,9 +114,10 @@ class CarState(object):
                          K=np.matrix([[0.12287673], [0.29666309]]))
     self.v_ego = 0.0
 
-  def update(self, cp):
+  def update(self, cp, cp_cam):
     # copy can_valid
     self.can_valid = cp.can_valid
+    self.cam_can_valid = cp_cam.can_valid
 
     # update prevs, update must run once per loop
     self.prev_left_blinker_on = self.left_blinker_on
