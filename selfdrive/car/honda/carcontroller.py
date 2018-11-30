@@ -1,5 +1,5 @@
-from cereal import car
 from collections import namedtuple
+from common.realtime import sec_since_boot
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.controls.lib.drive_helpers import rate_limit
 from common.numpy_fast import clip
@@ -8,7 +8,7 @@ from selfdrive.car.honda.values import AH, CruiseButtons, CAR
 from selfdrive.can.packer import CANPacker
 
 def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
-  # hyst params... TODO: move these to VehicleParams
+  # hyst params
   brake_hyst_on = 0.02     # to activate brakes exceed this value
   brake_hyst_off = 0.005                     # to deactivate brakes below this value
   brake_hyst_gap = 0.01                      # don't change brake command for small ocilalitons within this value
@@ -31,6 +31,24 @@ def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
     brake += 0.15
 
   return brake, braking, brake_steady
+
+
+def brake_pump_hysteresys(apply_brake, apply_brake_last, last_pump_ts):
+  ts = sec_since_boot()
+  pump_on = False
+
+  # reset pump timer if:
+  # - there is an increment in brake request
+  # - we are applying steady state brakes and we haven't been running the pump
+  #   for more than 20s (to prevent pressure bleeding)
+  if apply_brake > apply_brake_last or (ts - last_pump_ts > 20 and apply_brake > 0):
+    last_pump_ts = ts
+
+  # once the pump is on, run it for at least 0.2s
+  if ts - last_pump_ts < 0.2 and apply_brake > 0:
+    pump_on = True
+
+  return pump_on, last_pump_ts
 
 
 def process_hud_alert(hud_alert):
@@ -60,6 +78,8 @@ class CarController(object):
     self.braking = False
     self.brake_steady = 0.
     self.brake_last = 0.
+    self.apply_brake_last = 0
+    self.last_pump_ts = 0
     self.enable_camera = enable_camera
     self.packer = CANPacker(dbc_name)
     self.new_radar_config = False
@@ -109,9 +129,6 @@ class CarController(object):
     hud = HUDData(int(pcm_accel), int(round(hud_v_cruise)), 1, hud_car,
                   0xc1, hud_lanes, int(snd_beep), snd_chime, fcw_display, acc_alert, steer_required)
 
-    if not all(isinstance(x, int) and 0 <= x < 256 for x in hud):
-      hud = HUDData(0xc6, 255, 64, 0xc0, 209, 0x40, 0, 0, 0, 0)
-
     # **** process the car messages ****
 
     # *** compute control surfaces ***
@@ -128,7 +145,6 @@ class CarController(object):
     apply_brake = int(clip(self.brake_last * BRAKE_MAX, 0, BRAKE_MAX - 1))
     apply_steer = int(clip(-actuators.steer * STEER_MAX, -STEER_MAX, STEER_MAX))
 
-    # any other cp.vl[0x18F]['STEER_STATUS'] is common and can happen during user override. sending 0 torque to avoid EPS sending error 5
     lkas_active = enabled and not CS.steer_not_allowed
 
     # Send CAN commands.
@@ -136,7 +152,8 @@ class CarController(object):
 
     # Send steering command.
     idx = frame % 4
-    can_sends.append(hondacan.create_steering_control(self.packer, apply_steer, lkas_active, CS.CP.carFingerprint, idx))
+    can_sends.append(hondacan.create_steering_control(self.packer, apply_steer,
+      lkas_active, CS.CP.carFingerprint, idx))
 
     # Send dashboard UI commands.
     if (frame % 10) == 0:
@@ -149,28 +166,19 @@ class CarController(object):
         can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.CANCEL, idx))
       elif CS.stopped:
         can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx))
+
     else:
       # Send gas and brake commands.
       if (frame % 2) == 0:
         idx = (frame / 2) % 4
-        can_sends.append(
-          hondacan.create_brake_command(self.packer, apply_brake, pcm_override,
-                                      pcm_cancel_cmd, hud.chime, hud.fcw, idx))
+        pump_on, self.last_pump_ts = brake_pump_hysteresys(apply_brake, self.apply_brake_last, self.last_pump_ts)
+        can_sends.append(hondacan.create_brake_command(self.packer, apply_brake, pump_on,
+          pcm_override, pcm_cancel_cmd, hud.chime, hud.fcw, idx))
+        self.apply_brake_last = apply_brake
+
         if CS.CP.enableGasInterceptor:
           # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
           # This prevents unexpected pedal range rescaling
           can_sends.append(hondacan.create_gas_command(self.packer, apply_gas, idx))
-
-      # radar at 20Hz, but these msgs need to be sent at 50Hz on ilx (seems like an Acura bug)
-      if CS.CP.carFingerprint == CAR.ACURA_ILX:
-        radar_send_step = 2
-      else:
-        radar_send_step = 5
-
-      if (frame % radar_send_step) == 0:
-        idx = (frame/radar_send_step) % 4
-        if not self.new_radar_config:  # only change state once
-          self.new_radar_config = car.RadarState.Error.wrongConfig in radar_error
-        can_sends.extend(hondacan.create_radar_commands(CS.v_ego, CS.CP.carFingerprint, self.new_radar_config, idx))
 
     sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())

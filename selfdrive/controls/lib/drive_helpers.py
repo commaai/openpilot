@@ -1,5 +1,3 @@
-import os
-import signal
 from cereal import car
 from common.numpy_fast import clip
 from selfdrive.config import Conversions as CV
@@ -9,6 +7,7 @@ V_CRUISE_MAX = 144
 V_CRUISE_MIN = 8
 V_CRUISE_DELTA = 8
 V_CRUISE_ENABLE_MIN = 40
+
 
 class MPC_COST_LAT:
   PATH = 1.0
@@ -60,8 +59,8 @@ def learn_angle_offset(lateral_control, v_ego, angle_offset, c_poly, c_prob, ang
   # simple integral controller that learns how much steering offset to put to have the car going straight
   # while being in the middle of the lane
   min_offset = -5.  # deg
-  max_offset =  5.  # deg
-  alpha = 1./36000. # correct by 1 deg in 2 mins, at 30m/s, with 50cm of error, at 20Hz
+  max_offset = 5.  # deg
+  alpha = 1. / 36000.  # correct by 1 deg in 2 mins, at 30m/s, with 50cm of error, at 20Hz
   min_learn_speed = 1.
 
   # learn less at low speed or when turning
@@ -97,12 +96,3 @@ def initialize_v_cruise(v_ego, buttonEvents, v_cruise_last):
       return v_cruise_last
 
   return int(round(clip(v_ego * CV.MS_TO_KPH, V_CRUISE_ENABLE_MIN, V_CRUISE_MAX)))
-
-
-def kill_defaultd():
-  # defaultd is used to send can messages when controlsd is off to make car test easier
-  if os.path.isfile("/tmp/defaultd_pid"):
-    with open("/tmp/defaultd_pid") as f:
-      ddpid = int(f.read())
-    print("signalling defaultd with pid %d" % ddpid)
-    os.kill(ddpid, signal.SIGUSR1)
