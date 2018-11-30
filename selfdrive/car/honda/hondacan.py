@@ -1,8 +1,6 @@
 import struct
-
-import common.numpy_fast as np
 from selfdrive.config import Conversions as CV
-from selfdrive.car.honda.values import CAR, HONDA_BOSCH, VEHICLE_STATE_MSG
+from selfdrive.car.honda.values import CAR, HONDA_BOSCH
 
 # *** Honda specific ***
 def can_cksum(mm):
@@ -19,13 +17,6 @@ def can_cksum(mm):
 def fix(msg, addr):
   msg2 = msg[0:-1] + chr(ord(msg[-1]) | can_cksum(struct.pack("I", addr)+msg))
   return msg2
-
-
-def make_can_msg(addr, dat, idx, alt):
-  if idx is not None:
-    dat += chr(idx << 4)
-    dat = fix(dat, addr)
-  return [addr, 0, dat, alt]
 
 
 def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, chime, fcw, idx):
@@ -103,7 +94,6 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, idx):
   commands.append(packer.make_can_msg('LKAS_HUD', bus, lkas_hud_values, idx))
 
   if car_fingerprint in (CAR.CIVIC, CAR.ODYSSEY):
-    commands.append(packer.make_can_msg('HIGHBEAM_CONTROL', 0, {'HIGHBEAMS_ON': False}, idx))
 
     radar_hud_values = {
       'ACC_ALERTS': hud.acc_alert,
@@ -114,25 +104,6 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, idx):
     commands.append(packer.make_can_msg('RADAR_HUD', 0, radar_hud_values, idx))
   return commands
 
-
-def create_radar_commands(v_ego, car_fingerprint, new_radar_config, idx):
-  commands = []
-  v_ego_kph = np.clip(int(round(v_ego * CV.MS_TO_KPH)), 0, 255)
-  speed = struct.pack('!B', v_ego_kph)
-
-  msg_0x300 = ("\xf9" + speed + "\x8a\xd0" +
-               ("\x20" if idx == 0 or idx == 3 else "\x00") +
-               "\x00\x00")
-  msg_0x301 = VEHICLE_STATE_MSG[car_fingerprint]
-
-  idx_0x300 = idx
-  if car_fingerprint == CAR.CIVIC:
-    idx_offset = 0xc if new_radar_config else 0x8   # radar in civic 2018 requires 0xc
-    idx_0x300 += idx_offset
-
-  commands.append(make_can_msg(0x300, msg_0x300, idx_0x300, 1))
-  commands.append(make_can_msg(0x301, msg_0x301, idx, 1))
-  return commands
 
 def spam_buttons_command(packer, button_val, idx):
   values = {

@@ -10,7 +10,7 @@ from selfdrive.can.packer import CANPacker
 
 class CarControllerParams():
   def __init__(self, car_fingerprint):
-    if car_fingerprint == CAR.VOLT:
+    if car_fingerprint in (CAR.VOLT, CAR.MALIBU, CAR.HOLDEN_ASTRA):
       self.STEER_MAX = 300
       self.STEER_STEP = 2              # how often we update the steer cmd
       self.STEER_DELTA_UP = 7          # ~0.75s time to peak torque (255/50hz/0.75s)
@@ -80,7 +80,7 @@ class CarController(object):
   def update(self, sendcan, enabled, CS, frame, actuators, \
              hud_v_cruise, hud_show_lanes, hud_show_car, chime, chime_cnt):
     """ Controls thread """
-#update custom UI buttons and alerts
+    #update custom UI buttons and alerts
     CS.UE.update_custom_ui()
     if (frame % 1000 == 0):
       CS.cstm_btns.send_button_info()
@@ -109,7 +109,8 @@ class CarController(object):
       idx = (frame / P.STEER_STEP) % 4
       if CS.cstm_btns.get_button_status("lka") == 0:
         apply_steer = 0
-      if self.car_fingerprint == CAR.VOLT:
+
+      if self.car_fingerprint in (CAR.VOLT, CAR.MALIBU, CAR.HOLDEN_ASTRA):
         can_sends.append(gmcan.create_steering_control(self.packer_pt,
           canbus.powertrain, apply_steer, idx, lkas_enabled))
       if self.car_fingerprint == CAR.CADILLAC_CT6:
@@ -118,7 +119,7 @@ class CarController(object):
 
     ### GAS/BRAKE ###
 
-    if self.car_fingerprint == CAR.VOLT:
+    if self.car_fingerprint in (CAR.VOLT, CAR.MALIBU, CAR.HOLDEN_ASTRA):
       # no output if not enabled, but keep sending keepalive messages
       # treat pedals as one
       final_pedal = actuators.gas - actuators.brake
