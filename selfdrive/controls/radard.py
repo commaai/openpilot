@@ -137,27 +137,26 @@ def radard_thread(gctx=None):
     PP.update(v_ego, md)
 
     # run kalman filter only if prob is high enough
-    if PP.lead_prob > 0.7:
+    high_lead_prob = PP.lead_prob > 0.7
+    if high_lead_prob:
       reading = speedSensorV.read(PP.lead_dist, covar=np.matrix(PP.lead_var))
       ekfv.update_scalar(reading)
       ekfv.predict(tsv)
-
-      # When changing lanes the distance to the lead car can suddenly change,
-      # which makes the Kalman filter output large relative acceleration
-      if mocked and abs(PP.lead_dist - ekfv.state[XV]) > 2.0:
-        ekfv.state[XV] = PP.lead_dist
-        ekfv.covar = (np.diag([PP.lead_var, ekfv.var_init]))
-        ekfv.state[SPEEDV] = 0.
-
-      ar_pts[VISION_POINT] = (float(ekfv.state[XV]), np.polyval(PP.d_poly, float(ekfv.state[XV])),
-                              float(ekfv.state[SPEEDV]), False)
-    else:
+      
+    # When changing lanes the distance to the lead car can suddenly change,
+    # which makes the Kalman filter output large relative acceleration
+    sudden_lead_change = abs(PP.lead_dist - ekfv.state[XV]) > 2.0
+    if not high_lead_prob or (mocked and sudden_lead_change):
       ekfv.state[XV] = PP.lead_dist
-      ekfv.covar = (np.diag([PP.lead_var, ekfv.var_init]))
+      ekfv.covar = np.array([[PP.lead_var, 0.], 
+                             [0., ekfv.var_init]])
       ekfv.state[SPEEDV] = 0.
 
-      if VISION_POINT in ar_pts:
-        del ar_pts[VISION_POINT]
+    if high_lead_prob: 
+      ar_pts[VISION_POINT] = (float(ekfv.state[XV]), np.polyval(PP.d_poly, float(ekfv.state[XV])),
+                              float(ekfv.state[SPEEDV]), False)
+    elif VISION_POINT in ar_pts:
+      del ar_pts[VISION_POINT]
 
     # *** compute the likely path_y ***
     if (active and not steer_override) or mocked:
