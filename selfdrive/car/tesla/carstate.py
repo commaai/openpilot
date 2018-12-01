@@ -114,6 +114,30 @@ def get_can_signals(CP):
       ("MC_STW_ACTN_RQ", "STW_ACTN_RQ", 0),
       ("CRC_STW_ACTN_RQ", "STW_ACTN_RQ", 0),
       ("DI_regenLight", "DI_state",0),
+      ("GTW_performanceConfig", "GTW_carConfig",0),
+      ("GTW_fourWheelDrive", "GTW_carConfig",0),
+      ("GTW_unknown1", "GTW_carConfig",0),
+      ("GTW_dasHw", "GTW_carConfig",0),
+      ("GTW_parkAssistInstalled", "GTW_carConfig",0),
+      ("GTW_forwardRadarHw", "GTW_carConfig",0),
+      ("GTW_airSuspensionInstalled", "GTW_carConfig",0),
+      ("GTW_unknown2", "GTW_carConfig",0),
+      ("GTW_country", "GTW_carConfig",0),
+      ("GTW_parkSensorGeometryType", "GTW_carConfig",0),
+      ("GTW_rhd", "GTW_carConfig",0),
+      ("GTW_bodyControlsType", "GTW_carConfig",0),
+      ("GTW_radarPosition", "GTW_carConfig",0),
+      ("GTW_rearCornerRadarHw", "GTW_carConfig",0),
+      ("GTW_frontCornerRadarHw", "GTW_carConfig",0),
+      ("GTW_epasType", "GTW_carConfig",0),
+      ("GTW_chassisType", "GTW_carConfig",0),
+      ("GTW_wheelType", "GTW_carConfig",0),
+      ("GTW_rearSeatControllerMask", "GTW_carConfig",0),
+      ("GTW_euVehicle", "GTW_carConfig",0),
+      ("GTW_foldingMirrorsInstalled", "GTW_carConfig",0),
+      ("GTW_brakeHwType", "GTW_carConfig",0),
+      ("GTW_autopilot", "GTW_carConfig",0),
+      ("GTW_unknown3", "GTW_carConfig",0),
       
   ]
 
@@ -129,6 +153,7 @@ def get_can_signals(CP):
       ("DI_state", 5), #JCT Actual message freq is 1 Hz (1 sec)
       ("EPAS_sysStatus", 0), #JCT Actual message freq is 1.3 Hz (0.76 sec)
       ("MCU_locationStatus", 5), #JCT Actual message freq is 1.3 Hz (0.76 sec)
+      ("GTW_carConfig",  10), #BB Actual message freq is 1 Hz
   ]
 
 
@@ -266,6 +291,11 @@ class CarState(object):
     self.DAS_warningMatrix0_idx = 0
     self.DAS_warningMatrix1_idx = 0
     self.DAS_warningMatrix3_idx = 0
+    self.DAS_telemetryPeriodic1_idx = 0
+    self.DAS_telemetryPeriodic2_idx = 0
+    self.DAS_telemetryEvent1_idx = 0
+    self.DAS_telemetryEvent2_idx = 0
+    self.DAS_control_idx = 0
 
     #BB variables for pedal CC
     self.pedal_speed_kph = 0.
@@ -288,6 +318,10 @@ class CarState(object):
 
     #BB steering_wheel_stalk last position, used by ACC and ALCA
     self.steering_wheel_stalk = None
+    
+    #BB carConfig data used to change IC info
+    self.real_carConfig = None
+    self.real_dasHw = 0
     
      
     # vEgo kalman filter
@@ -338,6 +372,8 @@ class CarState(object):
     self.prev_right_blinker_on = self.right_blinker_on
 
     self.steering_wheel_stalk = cp.vl["STW_ACTN_RQ"]
+    self.real_carConfig = cp.vl["GTW_carConfig"]
+    self.real_dasHw = cp.vl["GTW_carConfig"]['GTW_dasHw']
     self.cruise_buttons = cp.vl["STW_ACTN_RQ"]['SpdCtrlLvr_Stat']
 
 

@@ -80,6 +80,8 @@ class ACCController(object):
     self.has_gone_below_min_speed = False
     self.fast_decel_time = 0
     self.lead_last_seen_time_ms = 0
+    # BB speed for testing
+    self.new_speed = 0
 
   # Updates the internal state of this controller based on user input,
   # specifically the steering wheel mounted cruise control stalk, and OpenPilot
@@ -172,6 +174,7 @@ class ACCController(object):
     # Clip ACC speed between 0 and 170 KPH.
     self.acc_speed_kph = min(self.acc_speed_kph, 170)
     self.acc_speed_kph = max(self.acc_speed_kph, 0)
+
     
   # Decide which cruise control buttons to simluate to get the car to the
   # desired speed.
@@ -190,6 +193,7 @@ class ACCController(object):
     if self.enable_adaptive_cruise and enabled:
       if CS.cstm_btns.get_button_label2(ACCMode.BUTTON_NAME) in ["OP", "AutoOP"]:    
         button_to_press = self._calc_button(CS, pcm_speed)
+        self.new_speed = pcm_speed * CV.MS_TO_KPH
       else:
         # Alternative speed decision logic that uses the lead car's distance
         # and speed more directly.
@@ -251,11 +255,13 @@ class ACCController(object):
       if self._fast_decel_required(CS, lead_car) and self._no_human_action_for(milliseconds=500):
         msg = "Off (Slow traffic)"
         button = CruiseButtons.CANCEL
+        self.new_speed = 1
         
       # if cruise is set to faster than the max speed, slow down
       elif CS.v_cruise_actual > self.acc_speed_kph and self._no_action_for(milliseconds=300):
         msg =  "Slow to max"
         button = CruiseButtons.DECEL_SET
+        self.new_speed =  self.acc_speed_kph 
         
       elif (# if we have a populated lead_distance
             lead_dist_m > 0
@@ -268,16 +274,20 @@ class ACCController(object):
         if lead_dist_m < safe_dist_m * .5 and future_vrel_kph < 2:
           msg =  "-5 (Significantly too close)"
           button = CruiseButtons.DECEL_2ND
+          self.new_speed = CS.v_ego * CV.MS_TO_KPH - full_press_kph
         # Don't rush up to lead car
         elif future_vrel_kph < -15:
           msg =  "-5 (approaching too fast)"
           button = CruiseButtons.DECEL_2ND
+          self.new_speed = CS.v_ego * CV.MS_TO_KPH - full_press_kph
         elif future_vrel_kph < -8:
           msg =  "-1 (approaching too fast)"
           button = CruiseButtons.DECEL_SET
+          self.new_speed = CS.v_ego * CV.MS_TO_KPH - half_press_kph
         elif lead_dist_m < safe_dist_m and future_vrel_kph <= 0:
           msg =  "-1 (Too close)"
           button = CruiseButtons.DECEL_SET
+          self.new_speed = CS.v_ego * CV.MS_TO_KPH - half_press_kph
         # Make slow adjustments if close to the safe distance.
         # only adjust every 1 secs
         elif (lead_dist_m < safe_dist_m * 1.3
@@ -285,6 +295,7 @@ class ACCController(object):
               and self._no_action_for(milliseconds=1000)):
           msg =  "-1 (Near safe distance)"
           button = CruiseButtons.DECEL_SET
+          self.new_speed = CS.v_ego * CV.MS_TO_KPH - half_press_kph
 
         ### Speed up ###
         elif (available_speed_kph > half_press_kph
@@ -296,6 +307,7 @@ class ACCController(object):
           if lead_is_far and not closing or lead_is_pulling_away:
             msg =  "+1 (Beyond safe distance and speed)"
             button = CruiseButtons.RES_ACCEL
+            self.new_speed = CS.v_ego * CV.MS_TO_KPH + half_press_kph
           
       # If lead_dist is reported as 0, no one is detected in front of you so you
       # can speed up. Only accel on straight-aways; vision radar often
@@ -308,6 +320,7 @@ class ACCController(object):
             and current_time_ms > self.lead_last_seen_time_ms + 4000):
           msg =  "+1 (road clear)"
           button = CruiseButtons.RES_ACCEL
+          self.new_speed = CS.v_ego * CV.MS_TO_KPH + half_press_kph
 
     if (current_time_ms > self.last_update_time + 1000):
       ratio = 0
