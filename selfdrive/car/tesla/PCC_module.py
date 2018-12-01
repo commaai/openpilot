@@ -65,8 +65,8 @@ _A_CRUISE_MIN = OrderedDict([
 # make sure these accelerations are smaller than mpc limits.
 _A_CRUISE_MAX = OrderedDict([
   # (speed in m/s, allowed acceleration)
-  (0.0, 0.5),
-  (5.0, 0.3),
+  (0.0, 0.55),
+  (5.0, 0.28),
   (10., 0.18),
   (20., 0.14),
   (40., 0.10)])
@@ -562,12 +562,12 @@ class PCCController(object):
           desired_speeds = OrderedDict([
             # (distance in m, desired speed in kph)
             # if too close, make sure we're falling back.
-            (0.5 * safe_dist_m, clip(actual_speed_kph, lead_absolute_speed_kph - 15, lead_absolute_speed_kph - 5)),
+            (0.5 * safe_dist_m, clip(actual_speed_kph, lead_absolute_speed_kph - 15, lead_absolute_speed_kph - 2)),
             # if at the comfort point, match lead speed.
-            (1.0 * safe_dist_m, clip(actual_speed_kph, lead_absolute_speed_kph - 4, lead_absolute_speed_kph + 2)),
-            (1.5 * safe_dist_m, clip(actual_speed_kph, lead_absolute_speed_kph - 2, lead_absolute_speed_kph + 4)),
+            (1.0 * safe_dist_m, clip(actual_speed_kph, lead_absolute_speed_kph - 6, lead_absolute_speed_kph + 3)),
+            (1.5 * safe_dist_m, clip(actual_speed_kph, lead_absolute_speed_kph - 3, lead_absolute_speed_kph + 6)),
              # if too far, make sure we're closing.
-            (3.5 * safe_dist_m, clip(actual_speed_kph, lead_absolute_speed_kph + 5, lead_absolute_speed_kph + 15))])
+            (3.5 * safe_dist_m, clip(actual_speed_kph, lead_absolute_speed_kph + 1, lead_absolute_speed_kph + 18))])
           new_speed_kph = _interp_map(lead_dist_m, desired_speeds)
           
         # Enforce limits on speed in the presence of a lead car.
@@ -694,7 +694,7 @@ def _accel_limit_multiplier(v_ego, lead):
     accel_multipliers = OrderedDict([
       # (distance in m, acceleration fraction)
       (0.7 * safe_dist_m, 0.0),
-      (2.0 * safe_dist_m, 1.0)])
+      (3.0 * safe_dist_m, 1.0)])
     return _interp_map(lead.dRel, accel_multipliers)
   else:
     return 1.0
@@ -703,9 +703,9 @@ def _decel_limit_multiplier(v_ego, lead):
   if lead and lead.dRel:
     safe_dist_m = _safe_distance_m(v_ego)
     decel_multipliers = OrderedDict([
-       # (distance in m, acceleration fraction)
-       (1.0 * safe_dist_m, 1.0),
-       (4.0 * safe_dist_m, 0.1)])
+      # (distance in m, acceleration fraction)
+      (1.0 * safe_dist_m, 1.0),
+      (4.0 * safe_dist_m, 0.1)])
     return _interp_map(lead.dRel, decel_multipliers)
   else:
     return 1.0
@@ -713,27 +713,22 @@ def _decel_limit_multiplier(v_ego, lead):
 def _jerk_limits(v_ego, lead, max_speed_kph, lead_last_seen_time_ms):
   # prevent high accel jerk near max speed
   near_max_speed_multipliers = OrderedDict([
-      # (kph under max speed, accel jerk multiplier)
-      (0, 0.1),
-      (3, 1.0)])
+    # (kph under max speed, accel jerk multiplier)
+    (0, 0.1),
+    (3, 1.0)])
   near_max_speed_multiplier = _interp_map(max_speed_kph - v_ego * CV.MS_TO_KPH, near_max_speed_multipliers)
   
   if lead and lead.dRel:
-    safe_dist_m = _safe_distance_m(v_ego)
-    
+    # pick decel jerk based on how much time we have til collision
+    sec_til_collision = _sec_til_collision(lead)
     decel_jerk_map = OrderedDict([
-      # (distance in m, decel jerk)
-      (0.5 * safe_dist_m, -0.6),
-      (2.0 * safe_dist_m, -0.2)])
-    decel_jerk = _interp_map(lead.dRel, decel_jerk_map)
-    # allow extra decel jerk if relative speed is high
-    decel_multipliers = OrderedDict([
-        # (relative speed in m/s, decel jerk multiplier)
-        (-20, 4),
-        (-3,  1)])
-    decel_multiplier = _interp_map(lead.vRel, decel_multipliers)
-    decel_jerk *= decel_multiplier
-    
+      # (sec to collision, decel jerk)
+      (0, -1.00),
+      (2, -0.50),
+      (8, -0.01)])
+    decel_jerk = _interp_map(sec_til_collision, decel_jerk_map)
+   
+    safe_dist_m = _safe_distance_m(v_ego) 
     accel_jerk_map = OrderedDict([
       # (distance in m, accel jerk)
       (1.0 * safe_dist_m, 0.01),
