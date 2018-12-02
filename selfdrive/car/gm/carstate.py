@@ -183,6 +183,6 @@ class CarState(object):
 
     self.gear_shifter_valid = self.gear_shifter == car.CarState.GearShifter.drive
     
-   def get_follow_level(self):
+def get_follow_level(self):
     return self.follow_level
   
