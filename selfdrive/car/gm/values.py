@@ -4,6 +4,7 @@ from selfdrive.car import dbc_dict
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 
 class CAR:
+  HOLDEN_ASTRA = "HOLDEN ASTRA RS-V BK 2017"
   VOLT = "CHEVROLET VOLT PREMIER 2017"
   CADILLAC_CT6 = "CADILLAC CT6 SUPERCRUISE 2018"
   MALIBU = "CHEVROLET MALIBU PREMIER 2017"
@@ -36,7 +37,7 @@ AUDIO_HUD = {
 
 def is_eps_status_ok(eps_status, car_fingerprint):
   valid_eps_status = []
-  if car_fingerprint in (CAR.VOLT, CAR.MALIBU):
+  if car_fingerprint in (CAR.VOLT, CAR.MALIBU, CAR.HOLDEN_ASTRA):
     valid_eps_status += [0, 1]
   elif car_fingerprint == CAR.CADILLAC_CT6:
     valid_eps_status += [0, 1, 4, 5, 6]
@@ -55,6 +56,10 @@ def parse_gear_shifter(can_gear):
     return car.CarState.GearShifter.unknown
 
 FINGERPRINTS = {
+  # Astra BK MY17, ASCM unplugged
+  CAR.HOLDEN_ASTRA: [{
+    190: 8, 193: 8, 197: 8, 199: 4, 201: 8, 209: 7, 211: 8, 241: 6, 249: 8, 288: 5, 298: 8, 304: 1, 309: 8, 311: 8, 313: 8, 320: 3, 328: 1, 352: 5, 381: 6, 386: 8, 388: 8, 393: 8, 398: 8, 401: 8, 413: 8, 417: 8, 419: 8, 422: 1, 426: 7, 431: 8, 442: 8, 451: 8, 452: 8, 453: 8, 455: 7, 456: 8, 458: 5, 479: 8, 481: 7, 485: 8, 489: 8, 497: 8, 499: 3, 500: 8, 501: 8, 508: 8, 528: 5, 532: 6, 554: 3, 560: 8, 562: 8, 563: 5, 564: 5, 565: 5, 567: 5, 647: 5, 707: 8, 723: 8, 753: 5, 761: 7, 806: 1, 810: 8, 840: 5, 842: 5, 844: 8, 866: 4, 961: 8, 969: 8, 977: 8, 979: 8, 985: 5, 1001: 8, 1009: 8, 1011: 6, 1017: 8, 1019: 3, 1020: 8, 1105: 6, 1217: 8, 1221: 5, 1225: 8, 1233: 8, 1249: 8, 1257: 6, 1259: 8, 1261: 7, 1263: 4, 1265: 8, 1267: 8, 1280: 4, 1300: 8, 1328: 4, 1417: 8, 1906: 7, 1907: 7, 1908: 7, 1912: 7, 1919: 7,
+  }],
   CAR.VOLT: [
   # Volt Premier w/ ACC 2017
   {
@@ -77,12 +82,14 @@ FINGERPRINTS = {
 STEER_THRESHOLD = 1.0
 
 STOCK_CONTROL_MSGS = {
+  CAR.HOLDEN_ASTRA: [384, 715],
   CAR.VOLT: [384, 715], # 384 = "ASCMLKASteeringCmd", 715 = "ASCMGasRegenCmd"
   CAR.MALIBU: [384, 715], # 384 = "ASCMLKASteeringCmd", 715 = "ASCMGasRegenCmd"
   CAR.CADILLAC_CT6: [], # Cadillac does not require ASCMs to be disconnected
 }
 
 DBC = {
+  CAR.HOLDEN_ASTRA: dbc_dict('gm_global_a_powertrain', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
   CAR.VOLT: dbc_dict('gm_global_a_powertrain', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
   CAR.MALIBU: dbc_dict('gm_global_a_powertrain', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
   CAR.CADILLAC_CT6: dbc_dict('cadillac_ct6_powertrain', 'cadillac_ct6_object', chassis_dbc='cadillac_ct6_chassis'),
