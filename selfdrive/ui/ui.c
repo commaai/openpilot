@@ -1247,7 +1247,7 @@ static void ui_draw_vision_alert(UIState *s, int va_size, int va_color,
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BOTTOM);
     nvgTextBox(s->vg, alr_x, alr_h-(longAlert1?300:360), alr_w-60, va_text2, NULL);
   }
-  set_awake(s, true);
+  
 }
 
 
@@ -1378,6 +1378,7 @@ static void update_status(UIState *s, int status) {
   int old_status = s->status;
   if (s->status != status) {
     s->status = status;
+    set_awake(s, true);
     // wake up bg thread to change
     pthread_cond_signal(&s->bg_cond);
     //BB add sound
@@ -2050,11 +2051,9 @@ int main() {
       set_awake(s, false);
     }
 
-    ui_draw(s);
-
     if (s->awake) {
       dashcam(s, touch_x, touch_y);
-      //ui_draw(s);
+      ui_draw(s);
       glFinish();
       should_swap = true;
     }
