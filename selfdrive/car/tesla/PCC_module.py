@@ -562,12 +562,12 @@ class PCCController(object):
           desired_speeds = OrderedDict([
             # (distance in m, desired speed in kph)
             # if too close, make sure we're falling back.
-            (0.5 * safe_dist_m, clip(actual_speed_kph, lead_absolute_speed_kph - 15, lead_absolute_speed_kph - 2)),
+            (0.5 * safe_dist_m, clip(actual_speed_kph, lead_absolute_speed_kph - 20, lead_absolute_speed_kph - 1)),
             # if at the comfort point, match lead speed.
-            (1.0 * safe_dist_m, clip(actual_speed_kph, lead_absolute_speed_kph - 6, lead_absolute_speed_kph + 3)),
-            (1.5 * safe_dist_m, clip(actual_speed_kph, lead_absolute_speed_kph - 3, lead_absolute_speed_kph + 6)),
+            (1.0 * safe_dist_m, clip(actual_speed_kph, lead_absolute_speed_kph - 7, lead_absolute_speed_kph + 6)),
+            (1.5 * safe_dist_m, clip(actual_speed_kph, lead_absolute_speed_kph - 6, lead_absolute_speed_kph + 7)),
              # if too far, make sure we're closing.
-            (3.5 * safe_dist_m, clip(actual_speed_kph, lead_absolute_speed_kph + 1, lead_absolute_speed_kph + 18))])
+            (3.5 * safe_dist_m, clip(actual_speed_kph, lead_absolute_speed_kph + 1, lead_absolute_speed_kph + 20))])
           new_speed_kph = _interp_map(lead_dist_m, desired_speeds)
           
         # Enforce limits on speed in the presence of a lead car.
@@ -724,10 +724,10 @@ def _jerk_limits(v_ego, lead, max_speed_kph, lead_last_seen_time_ms):
     decel_jerk_map = OrderedDict([
       # (sec to collision, decel jerk)
       (0, -1.00),
-      (2, -0.50),
-      (4, -0.25),
-      (8, -0.01)])
-    decel_jerk = _interp_map(_sec_til_collision(lead), decel_jerk_map)
+      (2, -0.10),
+      (4, -0.005),
+      (8, -0.001)])
+    decel_jerk = _interp_map(_sec_til_collision, decel_jerk_map)
    
     safe_dist_m = _safe_distance_m(v_ego) 
     accel_jerk_map = OrderedDict([
