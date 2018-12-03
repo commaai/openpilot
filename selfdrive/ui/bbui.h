@@ -20,6 +20,7 @@ vec3 bb_car_space_to_full_frame(const  UIState *s, vec4 car_space_projective) {
 }
 
 
+
 void bb_ui_draw_vision_alert( UIState *s, int va_size, int va_color,
                                   const char* va_text1, const char* va_text2) {
   const UIScene *scene = &s->scene;
@@ -72,6 +73,7 @@ void bb_ui_draw_vision_alert( UIState *s, int va_size, int va_color,
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BOTTOM);
     nvgTextBox(s->vg, alr_x, alr_h-(longAlert1?300:360), alr_w-60, va_text2, NULL);
   }
+  set_awake(s, true);
 }
 
 
@@ -791,7 +793,6 @@ void bb_ui_draw_UI( UIState *s) {
     bb_ui_draw_custom_alert(s);
     bb_ui_draw_logo(s);
 	 }
-
    if (s->b.tri_state_switch ==2) {
 	 	const UIScene *scene = &s->scene;
 	  const int bb_dml_w = 180;
@@ -807,7 +808,20 @@ void bb_ui_draw_UI( UIState *s) {
     //bb_ui_draw_car(s);
 	 }
 	 if (s->b.tri_state_switch ==3) {
-	 	ui_draw_vision_grid(s);
+    //we now use the state 3 for minimalistic data alerts
+	 	const UIScene *scene = &s->scene;
+	  const int bb_dml_w = 180;
+	  const int bb_dml_x =  (scene->ui_viz_rx + (bdr_s*2));
+	  const int bb_dml_y = (box_y + (bdr_s*1.5))+220;
+	  
+	  const int bb_dmr_w = 180;
+	  const int bb_dmr_x = scene->ui_viz_rx + scene->ui_viz_rw - bb_dmr_w - (bdr_s*2) ; 
+	  const int bb_dmr_y = (box_y + (bdr_s*1.5))+220;
+    bb_ui_draw_measures_left(s,bb_dml_x, bb_dml_y, bb_dml_w );
+    bb_ui_draw_measures_right(s,bb_dmr_x, bb_dmr_y, bb_dmr_w );
+    bb_draw_buttons(s);
+    bb_ui_draw_custom_alert(s);
+    bb_ui_draw_logo(s);
 	 }
 }
 
