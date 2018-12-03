@@ -47,11 +47,15 @@ class LatControl(object):
     self.smooth_factor = CP.steerActuatorDelay / _DT
     self.feed_forward = 0.0
     self.angle_rate_desired = 0.0
-    self.ff_angle_factor = 1.0
-    self.ff_rate_factor = self.ff_angle_factor * 3.0
+    self.ff_angle_factor = 0.5
+    self.ff_rate_factor = 8.0
     self.accel_limit = 5.0
     self.curvature_factor = 0.0
     self.slip_factor = 0.0
+    self.ratioDelayExp = 2.0
+    self.ratioDelayScale = 0.
+    self.prev_angle_rate = 0
+    self.frames = 0
 
   def setup_mpc(self, steer_rate_cost):
     self.libmpc = libmpc_py.libmpc
@@ -76,7 +80,7 @@ class LatControl(object):
     self.pid.reset()
 
   def update(self, active, v_ego, angle_steers, angle_rate, steer_override, d_poly, angle_offset, CP, VM, PL):
-    cur_time = sec_since_boot()
+    cur_time = sec_since_boot()    
     self.mpc_updated = False
     # TODO: this creates issues in replay when rewinding time: mpc won't run
     if self.last_mpc_ts < PL.last_md_ts:
@@ -84,13 +88,18 @@ class LatControl(object):
       self.angle_steers_des_prev = self.angle_steers_des_mpc
 
       self.curvature_factor = VM.curvature_factor(v_ego)
+      ratioDelayFactor = 1. + self.ratioDelayScale * abs(angle_steers / 100.) ** self.ratioDelayExp
+      plan_age = _DT_MPC + cur_time - float(PL.last_md_ts / 1000000000.0) 
+      total_delay = ratioDelayFactor * CP.steerActuatorDelay + plan_age
+      accelerated_angle_rate = 2.0 * angle_rate - self.prev_angle_rate    
+      projected_angle_steers = ratioDelayFactor * CP.steerActuatorDelay * accelerated_angle_rate + angle_steers
 
       self.l_poly = libmpc_py.ffi.new("double[4]", list(PL.PP.l_poly))
       self.r_poly = libmpc_py.ffi.new("double[4]", list(PL.PP.r_poly))
       self.p_poly = libmpc_py.ffi.new("double[4]", list(PL.PP.p_poly))
 
       # account for actuation delay
-      self.cur_state = calc_states_after_delay(self.cur_state, v_ego, (CP.steerActuatorDelay * angle_rate + angle_steers), self.curvature_factor, CP.steerRatio, CP.steerActuatorDelay)
+      self.cur_state = calc_states_after_delay(self.cur_state, v_ego, projected_angle_steers, self.curvature_factor, CP.steerRatio, total_delay)
 
       v_ego_mpc = max(v_ego, 5.0)  # avoid mpc roughness due to low speed
       self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
@@ -123,8 +132,9 @@ class LatControl(object):
           self.last_cloudlog_t = t
           cloudlog.warning("Lateral mpc - nan: True")
 
-    elif self.steerdata != "" and len(self.steerdata) > 40000:
+    elif self.steerdata != "" and self.frames > 10:
       self.steerpub.send(self.steerdata)
+      self.frames = 0
       self.steerdata = ""
 
     if v_ego < 0.3 or not active:
@@ -172,6 +182,7 @@ class LatControl(object):
       self.angle_rate_count = 0.0
       driver_torque = 0.0     
       steer_motor = 0.0
+      self.frames += 1
 
       self.steerdata += ("%d,%s,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d|" % (self.isActive, \
       ff_type, 1 if ff_type == "a" else 0, 1 if ff_type == "r" else 0, self.cur_state[0].x, self.cur_state[0].y, self.cur_state[0].psi, self.cur_state[0].delta, self.cur_state[0].t, self.curvature_factor, self.slip_factor ,self.smooth_factor, self.accel_limit, float(restricted_steer_rate) ,self.ff_angle_factor, self.ff_rate_factor, self.pCost, self.lCost, self.rCost, self.hCost, self.srCost, steer_motor, float(driver_torque), \
@@ -182,4 +193,5 @@ class LatControl(object):
       PL.PP.d_poly[2], PL.PP.lane_width, PL.PP.lane_width_estimate, PL.PP.lane_width_certainty, v_ego, self.pid.p, self.pid.i, self.pid.f, int(time.time() * 100) * 10000000))
 
     self.sat_flag = self.pid.saturated
+    self.prev_angle_rate = angle_rate
     return output_steer, float(self.angle_steers_des)
