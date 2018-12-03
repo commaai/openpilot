@@ -549,7 +549,7 @@ class Planner(object):
     self.a_acc_sol = self.a_acc_start + (dt / _DT_MPC) * (self.a_acc - self.a_acc_start)
     self.v_acc_sol = self.v_acc_start + dt * (self.a_acc_sol + self.a_acc_start) / 2.0
 
-    plan_send.plan.events = eventssetting
+    plan_send.plan.events = events
     plan_send.plan.mdMonoTime = self.last_md_ts
     plan_send.plan.l20MonoTime = self.last_l20_ts
 
