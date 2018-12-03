@@ -616,8 +616,8 @@ def _is_present(lead):
   return bool(lead and lead.dRel)
 
 def _sec_til_collision(lead):
-  if _is_present(lead) and lead.vRel != 0:
-    return _visual_radar_adjusted_dist_m(lead.dRel) / lead.vRel
+  if _is_present(lead) and lead.vRel < 0:
+    return _visual_radar_adjusted_dist_m(lead.dRel) / abs(lead.vRel)
   else:
     return 60  # Arbitrary, but better than MAXINT because we can still do math on it.
     
