@@ -701,12 +701,13 @@ def _accel_limit_multiplier(v_ego, lead):
 
 def _decel_limit_multiplier(v_ego, lead):
   if lead and lead.dRel:
-    safe_dist_m = _safe_distance_m(v_ego)
-    decel_multipliers = OrderedDict([
-      # (distance in m, acceleration fraction)
-      (1.0 * safe_dist_m, 1.0),
-      (4.0 * safe_dist_m, 0.1)])
-    return _interp_map(lead.dRel, decel_multipliers)
+    decel_map = OrderedDict([
+      # (sec to collision, decel)
+      (0, 1.0),
+      (2, 0.50),
+      (4, 0.25),
+      (8, 0.1)])
+    return _interp_map(_sec_til_collision(lead), decel_map)
   else:
     return 1.0
     
@@ -720,13 +721,13 @@ def _jerk_limits(v_ego, lead, max_speed_kph, lead_last_seen_time_ms):
   
   if lead and lead.dRel:
     # pick decel jerk based on how much time we have til collision
-    sec_til_collision = _sec_til_collision(lead)
     decel_jerk_map = OrderedDict([
       # (sec to collision, decel jerk)
       (0, -1.00),
       (2, -0.50),
+      (4, -0.25),
       (8, -0.01)])
-    decel_jerk = _interp_map(sec_til_collision, decel_jerk_map)
+    decel_jerk = _interp_map(_sec_til_collision(lead), decel_jerk_map)
    
     safe_dist_m = _safe_distance_m(v_ego) 
     accel_jerk_map = OrderedDict([
@@ -744,8 +745,8 @@ def _jerk_limits(v_ego, lead, max_speed_kph, lead_last_seen_time_ms):
     time_since_lead_seen_ms = _current_time_millis() - lead_last_seen_time_ms
     time_since_lead_seen_multipliers = OrderedDict([
       # (ms since last lead sighting, accel jerk multiplier)
-      (0,    0.1),
-      (3000, 1.0)])
+      (0,    0.01),
+      (2000, 1.0)])
     time_since_lead_seen_multiplier = _interp_map(time_since_lead_seen_ms, time_since_lead_seen_multipliers)
     # Limit accel jerk near max speed.
     accel_jerk = 0.12 * near_max_speed_multiplier * time_since_lead_seen_multiplier
