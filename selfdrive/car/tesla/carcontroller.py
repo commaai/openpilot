@@ -220,8 +220,8 @@ class CarController(object):
           if enabled:
             op_status = 0x03
             alca_state = 0x08 + turn_signal_needed
-            if not enable_steer_control:
-              op_status = 0x04
+            #if not enable_steer_control:
+              #op_status = 0x04
               #hands_on_state = 0x03
             if hud_alert == AH.STEER:
               if snd_chime == CM.MUTE:
@@ -274,14 +274,17 @@ class CarController(object):
             CS.DAS_telemetryPeriodic1_idx = CS.DAS_telemetryPeriodic1_idx % 16
         #send DAS_telemetryEvent
         if frame % 10 == 0:
-          can_sends.append(teslacan.create_DAS_telemetryEvent(CS.DAS_telemetryEvent1_idx,CS.DAS_telemetryEvent2_idx))
+          #can_sends.append(teslacan.create_DAS_telemetryEvent(CS.DAS_telemetryEvent1_idx,CS.DAS_telemetryEvent2_idx))
           CS.DAS_telemetryEvent2_idx += 1
           CS.DAS_telemetryEvent2_idx = CS.DAS_telemetryEvent2_idx % 10
           if CS.DAS_telemetryEvent2_idx == 0:
             CS.DAS_telemetryEvent1_idx += 2
             CS.DAS_telemetryEvent1_idx = CS.DAS_telemetryEvent1_idx % 16
+        #send DAS_visualDebug
+        if (frame + 1) % 10 == 0:
+          can_sends.append(teslacan.create_DAS_visualDebug_msg())
         #send DAS_chNm
-        if frame % 10 == 0:
+        if (frame + 2) % 10 == 0:
           can_sends.append(teslacan.create_DAS_chNm())
         #send DAS_objects
         if frame % 3 == 0: 
@@ -295,7 +298,10 @@ class CarController(object):
           CS.DAS_warningMatrix0_idx = CS.DAS_warningMatrix0_idx % 16
         #send DAS_warningMatrix3
         if (frame + 3) % 6 == 0: 
-          can_sends.append(teslacan.create_DAS_warningMatrix3(CS.DAS_warningMatrix3_idx))
+          driverResumeRequired = 0
+          if enabled and not enable_steer_control:
+            driverResumeRequired = 1
+          can_sends.append(teslacan.create_DAS_warningMatrix3(CS.DAS_warningMatrix3_idx,driverResumeRequired))
           CS.DAS_warningMatrix3_idx += 1
           CS.DAS_warningMatrix3_idx = CS.DAS_warningMatrix3_idx % 16
         #send DAS_warningMatrix1

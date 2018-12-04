@@ -644,7 +644,11 @@ static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
   float g_xo = sz/5;
   float g_yo = sz/10;
   //BB added for printing the car
-  if (s->b.tri_state_switch >= 2) {
+  //if position is 3 do nothing
+  if (s->b.tri_state_switch == 3) {
+    return;
+  }
+  if (s->b.tri_state_switch == 2) {
     nvgRestore(s->vg);
     bb_ui_draw_car(s);
   } else {
@@ -896,8 +900,12 @@ static void draw_frame(UIState *s) {
 
 static void ui_draw_vision_lanes(UIState *s) {
   const UIScene *scene = &s->scene;
+  //draw nothing if position is 3
+  if (s->b.tri_state_switch == 3) {
+    return;
+  }
   //BB add to draw our lanes
-  if (s->b.tri_state_switch >= 2) {
+  if (s->b.tri_state_switch == 2) {
     bb_draw_lane_fill(s);
   }
   // Draw left lane edge

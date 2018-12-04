@@ -73,7 +73,6 @@ void bb_ui_draw_vision_alert( UIState *s, int va_size, int va_color,
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BOTTOM);
     nvgTextBox(s->vg, alr_x, alr_h-(longAlert1?300:360), alr_w-60, va_text2, NULL);
   }
-  set_awake(s, true);
 }
 
 
@@ -760,9 +759,7 @@ void bb_ui_draw_logo( UIState *s) {
   nvgFill(s->vg);
 }
 
-
-
-void bb_ui_draw_UI( UIState *s) {
+void bb_ui_read_triState_switch( UIState *s) {
   //get 3-state switch position
   int tri_state_fd;
   char buffer[10];
@@ -778,6 +775,10 @@ void bb_ui_draw_UI( UIState *s) {
       s->b.tri_state_switch_last_read = bb_currentTimeInMilis();
     }
   }
+}
+
+void bb_ui_draw_UI( UIState *s) {
+  
   
   if (s->b.tri_state_switch == 1) {
 	  const UIScene *scene = &s->scene;
@@ -818,11 +819,11 @@ void bb_ui_draw_UI( UIState *s) {
 	  const int bb_dmr_w = 180;
 	  const int bb_dmr_x = scene->ui_viz_rx + scene->ui_viz_rw - bb_dmr_w - (bdr_s*2) ; 
 	  const int bb_dmr_y = (box_y + (bdr_s*1.5))+220;
-    bb_ui_draw_measures_left(s,bb_dml_x, bb_dml_y, bb_dml_w );
-    bb_ui_draw_measures_right(s,bb_dmr_x, bb_dmr_y, bb_dmr_w );
+    //bb_ui_draw_measures_left(s,bb_dml_x, bb_dml_y, bb_dml_w );
+    //bb_ui_draw_measures_right(s,bb_dmr_x, bb_dmr_y, bb_dmr_w );
     bb_draw_buttons(s);
     bb_ui_draw_custom_alert(s);
-    bb_ui_draw_logo(s);
+    //bb_ui_draw_logo(s);
 	 }
 }
 
@@ -897,6 +898,9 @@ void  bb_ui_poll_update( UIState *s) {
     bb_polls[4].socket = s->b.gps_sock_raw;
     bb_polls[4].events = ZMQ_POLLIN;
     
+    //check tri-state switch
+    bb_ui_read_triState_switch(s);
+    
     while (true) {
         
 
@@ -961,7 +965,7 @@ void  bb_ui_poll_update( UIState *s) {
             }
           }
 
-          if (strlen(s->scene.alert_text1) > 0) {
+          if ((strlen(s->scene.alert_text1) > 0) || (strlen(s->scene.alert_text2) > 0) ) {
             set_awake(s, true);
           }
           

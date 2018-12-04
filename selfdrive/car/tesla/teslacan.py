@@ -110,6 +110,20 @@ def create_DAS_info_msg(mid):
 
   return [msg_id, 0, msg.raw, 0]
 
+def create_DAS_chNm():
+  msg_id = 0x409
+  msg_len = 1
+  msg = create_string_buffer(msg_len)
+  struct.pack_into('B', msg, 0, 0x00)
+  return [msg_id, 0, msg.raw, 0]
+
+def create_DAS_visualDebug_msg():
+  msg_id = 0x249
+  msg_len = 8
+  msg = create_string_buffer(msg_len)
+  struct.pack_into('BBBBBBBB', msg, 0, 0x00,0x06,0x21,0x10,0x00,0x00,0x00,0x00)
+  return [msg_id, 0, msg.raw, 0]
+
 def create_DAS_bootID_msg():
   msg_id = 0x639
   msg_len = 8
@@ -117,16 +131,11 @@ def create_DAS_bootID_msg():
   struct.pack_into('BBBBBBBB', msg, 0, 0x55,0x00,0xE3,0x00,0xBD,0x03,0x20,0x00)
   return [msg_id, 0, msg.raw, 0]
 
-def create_DAS_warningMatrix3(idx):
+def create_DAS_warningMatrix3(idx,driverResumeRequired):
   msg_id = 0x349
   msg_len = 8
   msg = create_string_buffer(msg_len)
-  if idx % 2 == 0:
-    #struct.pack_into('BBBBBBBB', msg, 0, 0x17, 0x17, 0x80, 0x27, 0x0C, 0x01, 0xAE, 0xCB)
-    struct.pack_into('BBBBBBBB', msg, 0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)
-  else:
-    #struct.pack_into('BBBBBBBB', msg, 0, 0x17, 0x17, 0x80, 0x27, 0x0C, 0x01, 0xAE, 0x4B)
-    struct.pack_into('BBBBBBBB', msg, 0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)
+  struct.pack_into('BBBBBBBB', msg, 0, driverResumeRequired << 1, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)
   return [msg_id, 0, msg.raw, 0]
 
 def create_DAS_warningMatrix1(idx):
@@ -249,13 +258,6 @@ def create_DAS_telemetryEvent(midP,mid):
     struct.pack_into('BBBBBBBB', msg, 0, (midP << 4) + mid,0x00,0x00,0x28,0x82,0xa0,0x00,0x20)
   else:
     struct.pack_into('BBBBBBBB', msg, 0, (midP << 4) + mid,0x00,0xff,0xff,0xff,0xff,0x10,0x20)
-  return [msg_id, 0, msg.raw, 0]
-
-def create_DAS_chNm():
-  msg_id = 0x409
-  msg_len = 8
-  msg = create_string_buffer(msg_len)
-  struct.pack_into('BBBBBBBB', msg, 0, 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00 )
   return [msg_id, 0, msg.raw, 0]
 
 def create_DAS_control(idx,enabled,acc_speed_kph,accel_min,accel_max):
