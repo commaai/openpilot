@@ -235,13 +235,13 @@ class LongitudinalMpc(object):
     
     # Defining some variables to make the logic more human readable for auto distance override below
     # Is the car tailgating the lead car?
-    if x_lead < 7.5 and self.v_rel >= -1 and self.v_rel < 0.25:
+    if x_lead < 15 and self.v_rel >= -1 and self.v_rel < 1:
       self.tailgating = 1
     else:
       self.tailgating = 0
       
     # Is the car running surface street speeds?
-    if CS.vEgo < 18.06:
+    if CS.vEgo < 19.44:
       self.street_speed = 1
     else:
       self.street_speed = 0
@@ -256,9 +256,9 @@ class LongitudinalMpc(object):
     if CS.readdistancelines == 1:
       # If one bar distance, auto set to 2 bar distance under current conditions to prevent rear ending lead car
       if self.street_speed and (self.lead_car_gap_shrinking or self.tailgating):
-        TR=1.8
+        TR=2.0
         if self.lastTR != 0:
-          self.libmpc.init(MPC_COST_LONG.TTC, 0.1, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
+          self.libmpc.init(MPC_COST_LONG.TTC, 0.0875, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
           self.lastTR = 0
       else:
         TR=0.9 # 10m at 40km/hr
