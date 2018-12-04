@@ -105,7 +105,7 @@ class CarInterface(object):
       ret.steerRatio = 14.4  #end to end is 13.46
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.4
-
+      
     elif candidate == CAR.CADILLAC_CT6:
       # engage speed is decided by pcm
       ret.minEnableSpeed = -1
