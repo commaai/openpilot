@@ -163,7 +163,8 @@ class CarInterface(object):
     ret.steerLimitAlert = True
 
     ret.stoppingControl = True
-    ret.startAccel = 0.5
+    # Volt PID controller gets upset in heavy low speed stop-go traffic as startAccel interferes with it.
+    ret.startAccel = 0.0
 
     ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
     ret.steerRateCost = 1.0
@@ -218,6 +219,11 @@ class CarInterface(object):
     ret.doorOpen = not self.CS.door_all_closed
     ret.seatbeltUnlatched = not self.CS.seatbelt
     ret.gearShifter = self.CS.gear_shifter
+    ret.readdistancelines = self.CS.follow_level
+    ret.genericToggle = False
+    ret.laneDepartureToggle = False
+    ret.distanceToggle = self.CS.follow_level
+    ret.accSlowToggle = False
 
     buttonEvents = []
 
@@ -255,6 +261,10 @@ class CarInterface(object):
       buttonEvents.append(be)
 
     ret.buttonEvents = buttonEvents
+    if self.CS.distance_button and self.CS.distance_button != self.CS.prev_distance_button:
+      self.CS.follow_level -= 1
+      if self.CS.follow_level < 1:
+        self.CS.follow_level = 3
     ret.gasbuttonstatus = self.CS.cstm_btns.get_button_status("gas")
     events = []
     if not self.CS.can_valid:
