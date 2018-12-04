@@ -689,7 +689,7 @@ def _accel_limit_multiplier(v_ego, lead):
   """Limits acceleration in the presence of a lead car. The further the lead car
   is, the more accel is allowed. Range: 0 to 1, so that it can be multiplied
   with other accel limits."""
-  if lead and lead.dRel:
+  if _is_present(lead):
     safe_dist_m = _safe_distance_m(v_ego)
     accel_multipliers = OrderedDict([
       # (distance in m, acceleration fraction)
@@ -700,7 +700,7 @@ def _accel_limit_multiplier(v_ego, lead):
     return 1.0
 
 def _decel_limit_multiplier(v_ego, lead):
-  if lead and lead.dRel:
+  if _is_present(lead):
     decel_map = OrderedDict([
       # (sec to collision, decel)
       (1, 1.0),
@@ -719,7 +719,7 @@ def _jerk_limits(v_ego, lead, max_speed_kph, lead_last_seen_time_ms):
     (3, 1.0)])
   near_max_speed_multiplier = _interp_map(max_speed_kph - v_ego * CV.MS_TO_KPH, near_max_speed_multipliers)
   
-  if lead and lead.dRel:
+  if _is_present(lead):
     # pick decel jerk based on how much time we have til collision
     decel_jerk_map = OrderedDict([
       # (sec to collision, decel jerk)
