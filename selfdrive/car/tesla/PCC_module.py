@@ -559,16 +559,26 @@ class PCCController(object):
         if lead_dist_m < MIN_SAFE_DIST_M:
           new_speed_kph = MIN_PCC_V_KPH
         else:
-          desired_speeds = OrderedDict([
-            # (distance in m, desired speed in kph)
-            # if too close, make sure we're falling back.
-            (0.5 * safe_dist_m, clip(actual_speed_kph, lead_absolute_speed_kph - 20, lead_absolute_speed_kph - 1)),
-            # if at the comfort point, match lead speed.
-            (1.0 * safe_dist_m, clip(actual_speed_kph, lead_absolute_speed_kph - 7, lead_absolute_speed_kph + 6)),
-            (1.5 * safe_dist_m, clip(actual_speed_kph, lead_absolute_speed_kph - 6, lead_absolute_speed_kph + 7)),
-             # if too far, make sure we're closing.
-            (3.5 * safe_dist_m, clip(actual_speed_kph, lead_absolute_speed_kph + 1, lead_absolute_speed_kph + 20))])
-          new_speed_kph = _interp_map(lead_dist_m, desired_speeds)
+          # Force speed into a band that is generally slower than lead if too
+          # close, and faster than lead if too far. Allow a range of speeds at
+          # any given distance, to prevent continuous jerky adjustments.
+          min_vrel_kph_map = OrderedDict([
+            # (distance in m, min allowed relative kph)
+            (0.5 * safe_dist_m, 2),
+            (1.0 * safe_dist_m, -5),
+            (1.5 * safe_dist_m, -7),
+            (3.5 * safe_dist_m, -20)])
+          min_vrel_kph = _interp_map(lead_dist_m, min_vrel_kph_map)
+          max_vrel_kph_map = OrderedDict([
+            # (distance in m, max allowed relative kph)
+            (0.5 * safe_dist_m, 15),
+            (1.0 * safe_dist_m, 7),
+            (1.5 * safe_dist_m, 5),
+            (2.0 * safe_dist_m, -1)])
+          max_vrel_kph = _interp_map(lead_dist_m, max_vrel_kph_map)
+          min_kph = lead_absolute_speed_kph - max_vrel_kph
+          max_kph = lead_absolute_speed_kph - min_vrel_kph
+          new_speed_kph =  clip(actual_speed_kph, min_kph, max_kph)
           
         # Enforce limits on speed in the presence of a lead car.
         new_speed_kph = min(new_speed_kph,
