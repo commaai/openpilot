@@ -566,14 +566,14 @@ class PCCController(object):
             # (distance in m, min allowed relative kph)
             (0.5 * safe_dist_m, 2),
             (1.0 * safe_dist_m, -5),
-            (1.5 * safe_dist_m, -7),
-            (3.5 * safe_dist_m, -20)])
+            (1.5 * safe_dist_m, -8),
+            (3.0 * safe_dist_m, -20)])
           min_vrel_kph = _interp_map(lead_dist_m, min_vrel_kph_map)
           max_vrel_kph_map = OrderedDict([
             # (distance in m, max allowed relative kph)
             (0.5 * safe_dist_m, 15),
             (1.0 * safe_dist_m, 7),
-            (1.5 * safe_dist_m, 5),
+            (1.5 * safe_dist_m, 4),
             (2.0 * safe_dist_m, -1)])
           max_vrel_kph = _interp_map(lead_dist_m, max_vrel_kph_map)
           min_kph = lead_absolute_speed_kph - max_vrel_kph
