@@ -96,7 +96,7 @@ class CarInterface(object):
       ret.safetyModel = car.CarParams.SafetyModels.gm
       ret.steerRatio = 15.7
       ret.steerRatioRear = 0.
-      
+
     elif candidate == CAR.ACADIA:
       ret.minEnableSpeed = -1 # engage speed is decided by pcm
       ret.mass = 4353. * CV.LB_TO_KG + std_cargo
