@@ -18,10 +18,6 @@ import numpy as np
 from collections import OrderedDict
 
 
-DEBUG = False
-
-PCC_SPEED_FACTOR = 2.
-
 # TODO: these should end up in values.py at some point, probably variable by trim
 # Accel limits
 ACCEL_HYST_GAP = 0.5  # don't change accel command for small oscilalitons within this value
@@ -29,13 +25,8 @@ ACCEL_HYST_GAP = 0.5  # don't change accel command for small oscilalitons within
 PEDAL_MAX_UP = 4.
 PEDAL_MAX_DOWN = 150.
 #BB
-# min safe distance in meters. This sounds too large, but visual radar sucks
-# at estimating short distances and rarely gives a reading below 10m.
+# min safe distance in meters. Roughly 2 car lengths.
 MIN_SAFE_DIST_M = 10.
-FRAMES_PER_SEC = 20.
-
-SPEED_UP = 3. / FRAMES_PER_SEC   # 2 m/s = 7.5 mph = 12 kph 
-SPEED_DOWN = 3. / FRAMES_PER_SEC
 
 MAX_PEDAL_VALUE = 112.
 
@@ -48,16 +39,11 @@ MAX_PCC_V_KPH = 170.
 
 MIN_CAN_SPEED = 0.3  #TODO: parametrize this in car interface
 
-AWARENESS_DECEL = -0.2     # car smoothly decel at .2m/s^2 when user is distracted
-
 # Map of speed to max allowed decel.
 # Make sure these accelerations are smaller than mpc limits.
 _A_CRUISE_MIN = OrderedDict([
   # (speed in m/s, allowed deceleration)
   (0.0, 2),
-  (5.0, 2),
-  (10., 2),
-  (20., 2),
   (40., 2)])
 
 # Map of speed to max allowed acceleration.
@@ -566,14 +552,14 @@ class PCCController(object):
             # (distance in m, min allowed relative kph)
             (0.5 * safe_dist_m, 2),
             (1.0 * safe_dist_m, -5),
-            (1.5 * safe_dist_m, -8),
-            (3.0 * safe_dist_m, -20)])
+            (1.5 * safe_dist_m, -7),
+            (3.5 * safe_dist_m, -20)])
           min_vrel_kph = _interp_map(lead_dist_m, min_vrel_kph_map)
           max_vrel_kph_map = OrderedDict([
             # (distance in m, max allowed relative kph)
             (0.5 * safe_dist_m, 15),
             (1.0 * safe_dist_m, 7),
-            (1.5 * safe_dist_m, 4),
+            (1.5 * safe_dist_m, 5),
             (2.0 * safe_dist_m, -1)])
           max_vrel_kph = _interp_map(lead_dist_m, max_vrel_kph_map)
           min_kph = lead_absolute_speed_kph - max_vrel_kph
