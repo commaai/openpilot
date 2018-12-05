@@ -588,7 +588,7 @@ def _jerk_limits(v_ego, lead, max_speed_kph, lead_last_seen_time_ms):
   # prevent high accel jerk near max speed
   near_max_speed_multipliers = OrderedDict([
     # (kph under max speed, accel jerk multiplier)
-    (0, 0.1),
+    (0, 0.01),
     (3, 1.0)])
   near_max_speed_multiplier = _interp_map(max_speed_kph - v_ego * CV.MS_TO_KPH, near_max_speed_multipliers)
   
@@ -621,6 +621,11 @@ def _jerk_limits(v_ego, lead, max_speed_kph, lead_last_seen_time_ms):
       (0,    0.01),
       (3000, 1.0)])
     time_since_lead_seen_multiplier = _interp_map(time_since_lead_seen_ms, time_since_lead_seen_multipliers)
-    # Limit accel jerk near max speed.
-    accel_jerk = 0.12 * near_max_speed_multiplier * time_since_lead_seen_multiplier
+    # Allow higher jerk at low speed, to get started
+    accel_jerk_by_speed = OrderedDict([
+      # (Speed in m/s, accel jerk)
+      (0,  0.18),
+      (12, 0.10)])
+    accel_jerk = _interp_map(v_ego, accel_jerk_by_speed)
+    accel_jerk *= near_max_speed_multiplier * time_since_lead_seen_multiplier
     return decel_jerk, accel_jerk
