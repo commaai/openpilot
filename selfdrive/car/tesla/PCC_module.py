@@ -77,9 +77,6 @@ class OpMode(Mode):
 
 class FollowMode(Mode):
   label = 'FOLLOW'
-
-class ExperimentalMode(Mode):
-  label = 'DEVEL'
   
 class PCCModes(object):
   _all_modes = [OffMode(), OpMode(), FollowMode()]
@@ -422,59 +419,6 @@ class PCCController(object):
     elif PCCModes.is_selected(OpMode(), CS.cstm_btns):
       output_gb = actuators.gas - actuators.brake
 
-    ##############################################################
-    # This is an experimental mode that is probably broken.
-    #
-    # Don't use it.
-    #
-    # Ratios are centered at 1. They can be multiplied together.
-    # Factors are centered around 0. They can be multiplied by constants.
-    # For example +9% is a 1.06 ratio or 0.09 factor.
-    ##############################################################
-    elif PCCModes.is_selected(ExperimentalMode(), CS.cstm_btns):
-      output_gb = 0.0
-      if enabled and self.enable_pedal_cruise:
-        MAX_DECEL_RATIO = 0
-        MAX_ACCEL_RATIO = 1.1
-        available_speed_kph = self.pedal_speed_kph - CS.v_ego * CV.MS_TO_KPH
-        # Hold accel if radar gives intermittent readings at great distance.
-        # Makes the car less skittish when first making radar contact.
-        if (_is_present(self.lead_1)
-            and self.continuous_lead_sightings < 8
-            and _sec_til_collision(self.lead_1) > 3
-            and self.lead_1.dRel > 60):
-          output_gb = self.last_output_gb
-        # Hold speed in turns if no car is seen
-        elif CS.angle_steers >= 5.0 and not _is_present(self.lead_1):
-          pass
-        # Try to stay 2 seconds behind lead, matching their speed.
-        elif _is_present(self.lead_1):
-          weighted_d_ratio = _weighted_distance_ratio(self.lead_1, CS.v_ego, MAX_DECEL_RATIO, MAX_ACCEL_RATIO)
-          weighted_v_ratio = _weighted_velocity_ratio(self.lead_1, CS.v_ego, MAX_DECEL_RATIO, MAX_ACCEL_RATIO)
-          # Don't bother decelerating if the lead is already pulling away
-          if weighted_d_ratio < 1 and weighted_v_ratio > 1.01:
-            gas_brake_ratio = max(1, self.last_output_gb + 1)
-          else:
-            gas_brake_ratio = weighted_d_ratio * weighted_v_ratio
-          # rescale around 0 rather than 1.
-          output_gb = gas_brake_ratio - 1
-        # If no lead has been seen recently, accelerate to max speed.
-        else:
-          # An acceleration factor that drops off as we aproach max speed.
-          max_speed_factor = min(available_speed_kph, 3) / 3
-          # An acceleration factor that increases as time passes without seeing
-          # a lead car.
-          time_factor = (_current_time_millis() - self.lead_last_seen_time_ms) / 3000
-          time_factor = clip(time_factor, 0, 1)
-          output_gb = 0.14 * max_speed_factor * time_factor
-        # If going above the max configured PCC speed, slow. This should always
-        # be in force so it is not part of the if/else block above.
-        if available_speed_kph < 0:
-          # linearly brake harder, hitting -1 at 10kph over
-          speed_limited_gb = max(available_speed_kph, -10) / 10.0
-          # This is a minimum braking amount. The logic above may ask for more.
-          output_gb = min(output_gb, speed_limited_gb)
-
     ######################################################################################
     # Determine pedal "zero"
     #
@@ -592,10 +536,6 @@ def _visual_radar_adjusted_dist_m(m):
 
 def _safe_distance_m(v_ego_ms):
   return max(FOLLOW_TIME_S * v_ego_ms, MIN_SAFE_DIST_M)
-  
-def _distance_is_safe(v_ego_ms, lead):
-  lead_too_close = bool(_is_present(lead) and _visual_radar_adjusted_dist_m(lead.dRel) <= _safe_distance_m(v_ego_ms))
-  return not lead_too_close
 
 def _max_safe_speed_kph(m):
   return CV.MS_TO_KPH * m / FOLLOW_TIME_S
@@ -616,65 +556,6 @@ def _sec_til_collision(lead):
     return _visual_radar_adjusted_dist_m(lead.dRel) / abs(lead.vRel)
   else:
     return 60  # Arbitrary, but better than MAXINT because we can still do math on it.
-    
-def _sec_to_travel(positive_distance, speed):
-  if speed > 0:
-    return positive_distance / speed
-  else:
-    return 60*60  # 1 hour, an arbitrary big time.
-
-def _weighted_distance_ratio(lead, v_ego, max_decel_ratio, max_accel_ratio):
-  """Decide how to accel/decel based on how far away the lead is.
-  
-  Args:
-    ...
-    max_decel_ratio: a number between 0 and 1 that limits deceleration.
-    max_accel_ratio: a number between 1 and 2 that limits acceleration.
-  
-  Returns:
-    0 to 1: deceleration suggested to increase distance.
-    1:      no change needed.
-    1 to 2: acceleration suggested to decrease distance.
-  """
-  optimal_dist_m = _safe_distance_m(v_ego)
-  # Scale to use max accel outside of 2x optimal_dist_m
-  # and max decel within 1/3 optimal_dist_m.
-  d_weights = OrderedDict([
-    # relative distance : acceleration ratio
-    (optimal_dist_m/3, max_decel_ratio),
-    (optimal_dist_m*1, 1),
-    (optimal_dist_m*2, max_accel_ratio)])
-  dist = _visual_radar_adjusted_dist_m(lead.dRel)
-  return  _interp_map(dist, d_weights)
-  
-def _weighted_velocity_ratio(lead, v_ego, max_decel_ratio, max_accel_ratio):
-  """Decide how to accel/decel based on how fast the lead is.
-  
-  Args:
-    ...
-    max_decel_ratio: a number between 0 and 1 that limits deceleration.
-    max_accel_ratio: a number between 1 and 2 that limits acceleration.
-  
-  Returns:
-    0 to 1: deceleration suggested to match speed.
-    1:      no change needed.
-    1 to 2: acceleration suggested to match speed.
-  """
-  lead_absolute_velocity_ms = v_ego + lead.vRel
-  # Ratio of our speed vs the lead's speed
-  velocity_ratio = lead_absolute_velocity_ms / max(v_ego, 0.01)
-  velocity_ratio = clip(velocity_ratio, max_decel_ratio, max_accel_ratio)
-  # Discount speed reading if the time til potential collision is great.
-  # This accounts for poor visual radar at distances. It also means that
-  # at very low speed, distance logic dominates.
-  v_weights = OrderedDict([
-    # seconds to travel distance : importance of relative speed
-    (FOLLOW_TIME_S * 1.5,  1.),  # full weight near desired follow distance
-    (FOLLOW_TIME_S * 5,    0.),  # zero weight when distant
-  ])
-  dist = _visual_radar_adjusted_dist_m(lead.dRel)
-  v_weight = _interp_map(_sec_to_travel(dist, v_ego), v_weights)
-  return velocity_ratio ** v_weight
   
 def _interp_map(val, val_map):
   """Helper to call interp with an OrderedDict for the mapping. I find
