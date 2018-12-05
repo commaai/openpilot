@@ -410,18 +410,18 @@ static int tesla_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd)
     // remove EPB_epasControl
     if (addr == 0x214)
     {
-      return false;
+      return -1;
     }
 
     return 2; // Custom EPAS bus
   }
 
-  if (bus_num == 1) {
+  if ((bus_num != 0) && (bus_num != 2)) {
     //everything but the radar data 0x300-0x3FF will be forwarded to can 0
-    if ((addr < 0x300) || (addr > 0x3FF)) {
-      return 0;
+    if ((addr > 0x300) && (addr <= 0x3FF)){ 
+      return -1;
     }
-    return false;
+    return 0;
   }
 
   if (bus_num == 2)
@@ -430,17 +430,17 @@ static int tesla_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd)
     // remove GTW_epasControl in forwards
     if (addr == 0x101)
     {
-      return false;
+      return -1;
     }
 
     // remove Pedal in forwards
     if ((addr == 0x520) || (addr == 0x521)) {
-      return false;
+      return -1;
     }
 
     return 0; // Chassis CAN
   }
-  return false;
+  return -1;
 }
 
 const safety_hooks tesla_hooks = {
