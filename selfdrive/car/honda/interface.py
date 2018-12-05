@@ -310,6 +310,7 @@ class CarInterface(object):
       ret.steerRatio = 16.0         # as spec
       tire_stiffness_factor = 0.82
       ret.steerKpV, ret.steerKiV = [[0.5], [0.22]]
+      ret.steerKf = 0.00006 * 1.3 # conservative feed-forward + Gernby boost for FFsteer
       ret.longitudinalKpBP = [0., 5., 35.]
       ret.longitudinalKpV = [1.2, 0.8, 0.5]
       ret.longitudinalKiBP = [0., 35.]
