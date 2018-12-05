@@ -326,9 +326,9 @@ static void tesla_fwd_to_radar_modded(int bus_num, CAN_FIFOMailBox_TypeDef *to_f
   {
     //change frontradarHW = 1 and dashw = 1
     //SG_ GTW_dasHw : 7|2@0+ (1,0) [0|0] ""  NEO
-    //SG_ GTW_parkAssistInstalled : 9|2@0+ (1,0) [0|0] ""  NEO
-    to_send.RDLR = to_send.RDLR & 0xFFFFFC3F;
-    to_send.RDLR = to_send.RDLR | 0x140;
+    //SG_ GTW_parkAssistInstalled : 11|2@0+ (1,0) [0|0] ""  NEO
+    to_send.RDLR = to_send.RDLR & 0xFFFFF33F;
+    to_send.RDLR = to_send.RDLR | 0x440;
     to_send.RIR = (0x2A9 << 21) + (addr_mask & (to_fwd->RIR | 1));
   }
   if (addr == 0x00E )
