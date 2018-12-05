@@ -55,7 +55,8 @@ def get_powertrain_can_parser(CP, canbus):
 class CarState(object):
   def __init__(self, CP, canbus):
     # initialize can parser
-
+    self.alcaLabels = ["MadMax","Normal","Wifey"]
+    self.alcaMode = 0
     self.car_fingerprint = CP.carFingerprint
     self.cruise_buttons = CruiseButtons.UNPRESS
     self.prev_distance_button = 0
@@ -89,7 +90,7 @@ class CarState(object):
   def init_ui_buttons(self):
     btns = []
     btns.append(UIButton("sound", "SND", 0, "", 0))
-    btns.append(UIButton("","",0,"",1))
+    btns.append(UIButton("alca", "ALC", 1, self.alcaLabels[self.alcaMode], 1))
     btns.append(UIButton("","",0,"",2))
     btns.append(UIButton("","",0,"",3))
     btns.append(UIButton("gas","GAS",0,"",4))
@@ -98,10 +99,18 @@ class CarState(object):
   #BB update ui buttons
   def update_ui_buttons(self,id,btn_status):
     if self.cstm_btns.btns[id].btn_status > 0:
+      if (id == 1) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="alca":
+          if self.cstm_btns.btns[id].btn_label2 == self.alcaLabels[self.alcaMode]:
+            self.alcaMode = (self.alcaMode + 1 ) % 3
+          else:
+            self.alcaMode = 0
+          self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
+          self.cstm_btns.hasChanges = True
+      else:
         self.cstm_btns.btns[id].btn_status = btn_status * self.cstm_btns.btns[id].btn_status
     else:
         self.cstm_btns.btns[id].btn_status = btn_status
- 
+
   def update(self, pt_cp):
 
     self.can_valid = pt_cp.can_valid
