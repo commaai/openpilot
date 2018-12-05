@@ -97,6 +97,15 @@ class CarInterface(object):
       ret.steerRatio = 15.7
       ret.steerRatioRear = 0.
 
+    elif candidate == CAR.ACADIA:
+      ret.minEnableSpeed = -1 # engage speed is decided by pcm
+      ret.mass = 4353. * CV.LB_TO_KG + std_cargo
+      ret.safetyModel = car.CarParams.SafetyModels.gm
+      ret.wheelbase = 2.86
+      ret.steerRatio = 14.4  #end to end is 13.46
+      ret.steerRatioRear = 0.
+      ret.centerToFront = ret.wheelbase * 0.4
+
     elif candidate == CAR.CADILLAC_CT6:
       # engage speed is decided by pcm
       ret.minEnableSpeed = -1
@@ -266,7 +275,7 @@ class CarInterface(object):
     if ret.seatbeltUnlatched:
       events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
 
-    if self.CS.car_fingerprint in (CAR.VOLT, CAR.MALIBU, CAR.HOLDEN_ASTRA):
+    if self.CS.car_fingerprint in (CAR.VOLT, CAR.MALIBU, CAR.HOLDEN_ASTRA, CAR.ACADIA):
       if self.CS.brake_error:
         events.append(create_event('brakeUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
       if not self.CS.gear_shifter_valid:
