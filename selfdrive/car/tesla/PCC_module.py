@@ -492,15 +492,15 @@ class PCCController(object):
           min_vrel_kph_map = OrderedDict([
             # (distance in m, min allowed relative kph)
             (0.5 * safe_dist_m, 2),
-            (1.0 * safe_dist_m, -5),
+            (1.0 * safe_dist_m, -4),
             (1.5 * safe_dist_m, -7),
-            (3.5 * safe_dist_m, -20)])
+            (3.0 * safe_dist_m, -20)])
           min_vrel_kph = _interp_map(lead_dist_m, min_vrel_kph_map)
           max_vrel_kph_map = OrderedDict([
             # (distance in m, max allowed relative kph)
             (0.5 * safe_dist_m, 15),
             (1.0 * safe_dist_m, 7),
-            (1.5 * safe_dist_m, 5),
+            (1.5 * safe_dist_m, 4),
             (2.0 * safe_dist_m, -1)])
           max_vrel_kph = _interp_map(lead_dist_m, max_vrel_kph_map)
           min_kph = lead_absolute_speed_kph - max_vrel_kph
@@ -577,8 +577,7 @@ def _decel_limit_multiplier(v_ego, lead):
   if _is_present(lead):
     decel_map = OrderedDict([
       # (sec to collision, decel)
-      (1, 1.0),
-      (2, 0.8),
+      (2, 1.0),
       (4, 0.4),
       (8, 0.1)])
     return _interp_map(_sec_til_collision(lead), decel_map)
