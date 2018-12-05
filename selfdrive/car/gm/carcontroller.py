@@ -69,7 +69,8 @@ class CarController(object):
     self.car_fingerprint = car_fingerprint
     self.allow_controls = allow_controls
     self.lka_icon_status_last = (False, False)
-
+    self.ALCA = ALCAController(self,True,False)  # Enabled  True and SteerByAngle only False
+    
     # Setup detection helper. Routes commands to
     # an appropriate CAN bus number.
     self.canbus = canbus
