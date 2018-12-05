@@ -19,9 +19,6 @@ except ImportError:
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
-K_MULT = 0.8 
-K_MULTi = 280000.
-
 def tesla_compute_gb(accel, speed):
   return float(accel) / 3.
 
@@ -122,10 +119,12 @@ class CarInterface(object):
       ret.steerActuatorDelay = 0.09
       
       # Kp and Ki for the longitudinal control
+      KP_BASE = 1.45
       ret.longitudinalKpBP = [0., 5., 35.]
-      ret.longitudinalKpV = [1.27/K_MULT , 1.05/K_MULT, 0.85/K_MULT]
+      ret.longitudinalKpV = [KP_BASE, 0.82 * KP_BASE, 0.67 * KP_BASE]
+      KI_BASE = 0.000000393
       ret.longitudinalKiBP = [0., 5., 35.]
-      ret.longitudinalKiV = [0.11/K_MULTi, 0.09/K_MULTi, 0.06/K_MULTi]
+      ret.longitudinalKiV = [KI_BASE, 0.82 * KI_BASE, 0.55 * KI_BASE]
       
       #from honda
       #ret.longitudinalKpBP = [0., 5., 35.]
