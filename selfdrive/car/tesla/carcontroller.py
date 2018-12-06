@@ -174,7 +174,8 @@ class CarController(object):
     human_lane_changing = changing_lanes and not alca_enabled
     enable_steer_control = (enabled
                             and not human_lane_changing
-                            and not human_control)
+                            and not human_control 
+                            and  vehicle_moving)
     
     angle_lim = interp(CS.v_ego, ANGLE_MAX_BP, ANGLE_MAX_V)
     apply_angle = clip(apply_angle, -angle_lim, angle_lim)
