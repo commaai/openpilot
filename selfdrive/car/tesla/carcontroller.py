@@ -237,7 +237,7 @@ class CarController(object):
           acc_speed_limit_mph = CS.v_cruise_pcm * CV.KPH_TO_MPH
           if hud_alert == AH.FCW:
             collision_warning = 0x01
-          can_sends.append(teslacan.create_DAS_status2_msg(CS.DAS_status2_idx,acc_speed_limit_mph,collision_warning))
+          can_sends.append(teslacan.create_DAS_status2_msg(CS.DAS_status2_idx,max(1,acc_speed_limit_mph),collision_warning))
           CS.DAS_status2_idx += 1
           CS.DAS_status2_idx = CS.DAS_status2_idx % 16
         #send DAS_bodyControl
