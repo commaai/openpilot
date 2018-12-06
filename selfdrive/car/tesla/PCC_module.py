@@ -505,7 +505,7 @@ class PCCController(object):
           max_vrel_kph = _interp_map(lead_dist_m, max_vrel_kph_map)
           min_kph = lead_absolute_speed_kph - max_vrel_kph
           max_kph = lead_absolute_speed_kph - min_vrel_kph
-          new_speed_kph =  clip(actual_speed_kph, min_kph, max_kph)
+          new_speed_kph =  clip(new_speed_kph, min_kph, max_kph)
           
         # Enforce limits on speed in the presence of a lead car.
         new_speed_kph = min(new_speed_kph,
