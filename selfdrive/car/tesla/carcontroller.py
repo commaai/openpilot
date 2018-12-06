@@ -174,7 +174,8 @@ class CarController(object):
     human_lane_changing = changing_lanes and not alca_enabled
     enable_steer_control = (enabled
                             and not human_lane_changing
-                            and not human_control)
+                            and not human_control 
+                            and  vehicle_moving)
     
     angle_lim = interp(CS.v_ego, ANGLE_MAX_BP, ANGLE_MAX_V)
     apply_angle = clip(apply_angle, -angle_lim, angle_lim)
@@ -237,7 +238,7 @@ class CarController(object):
           acc_speed_limit_mph = CS.v_cruise_pcm * CV.KPH_TO_MPH
           if hud_alert == AH.FCW:
             collision_warning = 0x01
-          can_sends.append(teslacan.create_DAS_status2_msg(CS.DAS_status2_idx,acc_speed_limit_mph,collision_warning))
+          can_sends.append(teslacan.create_DAS_status2_msg(CS.DAS_status2_idx,max(1,acc_speed_limit_mph),collision_warning))
           CS.DAS_status2_idx += 1
           CS.DAS_status2_idx = CS.DAS_status2_idx % 16
         #send DAS_bodyControl
