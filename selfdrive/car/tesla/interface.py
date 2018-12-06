@@ -119,7 +119,7 @@ class CarInterface(object):
       ret.steerActuatorDelay = 0.09
       
       # Kp and Ki for the longitudinal control
-      KP_BASE = 1.45
+      KP_BASE = 1.3
       ret.longitudinalKpBP = [0., 5., 35.]
       ret.longitudinalKpV = [KP_BASE, 0.82 * KP_BASE, 0.67 * KP_BASE]
       KI_BASE = 0.000000393
