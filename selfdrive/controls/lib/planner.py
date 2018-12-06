@@ -235,7 +235,7 @@ class LongitudinalMpc(object):
     
     # Defining some variables to make the logic more human readable for auto distance override below
     # Is the car tailgating the lead car?
-    if x_lead < 15 and self.v_rel >= -1 and self.v_rel < 1:
+    if x_lead < 7.5 or (x_lead < 17.5 and self.v_rel < 1):
       self.tailgating = 1
     else:
       self.tailgating = 0
