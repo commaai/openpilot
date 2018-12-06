@@ -321,9 +321,26 @@ static void tesla_fwd_to_radar_modded(int bus_num, CAN_FIFOMailBox_TypeDef *to_f
   if (addr == 0x405 )
   {
     to_send.RIR = (0x2B9 << 21) + (addr_mask & (to_fwd->RIR | 1));
+    if ((to_send.RDLR & 0x10) == 0x10)
+    {
+      int rec = to_send.RDLR &  0xFF;
+      to_send.RDHR = 0xFFFFFFFF;
+      to_send.RDLR = 0xFFFFFF00 | rec;
+      if (rec == 0x12) {
+        to_send.RDLR = 0x00000000 | rec;
+        to_send.RDHR = 0xFFFFFF00;
+      } 
+    }
   }
   if (addr == 0x398 )
   {
+    //change frontradarHW = 1 and dashw = 1
+    //SG_ GTW_dasHw : 7|2@0+ (1,0) [0|0] ""  NEO
+    //SG_ GTW_parkAssistInstalled : 11|2@0+ (1,0) [0|0] ""  NEO
+    to_send.RDLR = to_send.RDLR & 0xFFFFF33F;
+    to_send.RDLR = to_send.RDLR | 0x440;
+    to_send.RDHR = to_send.RDHR & 0xCFFFFFFF;
+    to_send.RDHR = to_send.RDHR & 0x30000000;
     to_send.RIR = (0x2A9 << 21) + (addr_mask & (to_fwd->RIR | 1));
   }
   if (addr == 0x00E )
@@ -410,18 +427,18 @@ static int tesla_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd)
     // remove EPB_epasControl
     if (addr == 0x214)
     {
-      return false;
+      return -1;
     }
 
     return 2; // Custom EPAS bus
   }
 
-  if (bus_num == 1) {
+  if ((bus_num != 0) && (bus_num != 2)) {
     //everything but the radar data 0x300-0x3FF will be forwarded to can 0
-    if ((addr < 0x300) || (addr > 0x3FF)) {
-      return 0;
+    if ((addr > 0x300) && (addr <= 0x3FF)){ 
+      return -1;
     }
-    return false;
+    return 0;
   }
 
   if (bus_num == 2)
@@ -430,17 +447,17 @@ static int tesla_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd)
     // remove GTW_epasControl in forwards
     if (addr == 0x101)
     {
-      return false;
+      return -1;
     }
 
     // remove Pedal in forwards
     if ((addr == 0x520) || (addr == 0x521)) {
-      return false;
+      return -1;
     }
 
     return 0; // Chassis CAN
   }
-  return false;
+  return -1;
 }
 
 const safety_hooks tesla_hooks = {
