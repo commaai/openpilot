@@ -21,6 +21,14 @@ def calc_states_after_delay(states, v_ego, steer_angle, curvature_factor, steer_
 def get_steer_max(CP, v_ego):
   return interp(v_ego, CP.steerMaxBP, CP.steerMaxV)
 
+def apply_deadzone(angle, deadzone):
+  if angle > deadzone:
+    angle -= deadzone
+  elif angle < -deadzone:
+    angle += deadzone
+  else:
+    angle = 0.
+  return angle
 
 class LatControl(object):
   def __init__(self, CP):
@@ -46,19 +54,21 @@ class LatControl(object):
     self.last_mpc_ts = 0.0
     self.angle_steers_des = 0.0
     self.angle_steers_des_mpc = 0.0
-    self.angle_steers_des_prev = 0.0
-    self.angle_steers_des_time = 0.0
+    self.starting_angle_steers = 0.0
+    self.avg_angle_rate = 0.0
+    self.angle_rate_count = 0.0
 
   def reset(self):
     self.pid.reset()
 
-  def update(self, active, v_ego, angle_steers, steer_override, d_poly, angle_offset, CP, VM, PL):
-    cur_time = sec_since_boot()
+  def update(self, active, v_ego, angle_steers, angle_rate, steer_override, d_poly, angle_offset, CP, VM, PL):
     self.mpc_updated = False
     # TODO: this creates issues in replay when rewinding time: mpc won't run
     if self.last_mpc_ts < PL.last_md_ts:
       self.last_mpc_ts = PL.last_md_ts
-      self.angle_steers_des_prev = self.angle_steers_des_mpc
+      self.starting_angle_steers = angle_steers
+      self.avg_angle_rate = 0.0
+      self.angle_rate_count = 0.0
 
       curvature_factor = VM.curvature_factor(v_ego)
 
@@ -83,7 +93,6 @@ class LatControl(object):
       self.cur_state[0].delta = delta_desired
 
       self.angle_steers_des_mpc = float(math.degrees(delta_desired * CP.steerRatio) + angle_offset)
-      self.angle_steers_des_time = cur_time
       self.mpc_updated = True
 
       #  Check for infeasable MPC solution
@@ -101,20 +110,28 @@ class LatControl(object):
       output_steer = 0.0
       self.pid.reset()
     else:
-      # TODO: ideally we should interp, but for tuning reasons we keep the mpc solution
-      # constant for 0.05s.
-      #dt = min(cur_time - self.angle_steers_des_time, _DT_MPC + _DT) + _DT  # no greater than dt mpc + dt, to prevent too high extraps
-      #self.angle_steers_des = self.angle_steers_des_prev + (dt / _DT_MPC) * (self.angle_steers_des_mpc - self.angle_steers_des_prev)
-      self.angle_steers_des = self.angle_steers_des_mpc
+      # Calculate average steering rate since last MPC update
+      self.avg_angle_rate = (self.avg_angle_rate * self.angle_rate_count + angle_rate) / (self.angle_rate_count + 1.) 
+      self.angle_rate_count += 1.0
+
+      if abs(angle_rate) <= 1. or abs(angle_steers - self.angle_steers_des_mpc) <= 0.2:
+        # For small steering error, use instantaneous angle for torque calculation
+        future_angle_steers = angle_steers
+      else:
+        # Otherwise, use average steering rate since last MPC update to project future steering error
+        future_angle_steers = (self.avg_angle_rate * _DT_MPC) + self.starting_angle_steers
+
       steers_max = get_steer_max(CP, v_ego)
       self.pid.pos_limit = steers_max
       self.pid.neg_limit = -steers_max
-      steer_feedforward = self.angle_steers_des   # feedforward desired angle
       if CP.steerControlType == car.CarParams.SteerControlType.torque:
+        steer_feedforward = apply_deadzone(self.angle_steers_des_mpc - float(angle_offset), 0.5) 
         steer_feedforward *= v_ego**2  # proportional to realigning tire momentum (~ lateral accel)
+      else:
+        steer_feedforward = self.angle_steers_des_mpc   # feedforward desired angle
       deadzone = 0.0
-      output_steer = self.pid.update(self.angle_steers_des, angle_steers, check_saturation=(v_ego > 10), override=steer_override,
-                                     feedforward=steer_feedforward, speed=v_ego, deadzone=deadzone)
 
+      output_steer = self.pid.update(self.angle_steers_des_mpc, future_angle_steers, check_saturation=(v_ego > 10), override=steer_override,
+                                     feedforward=steer_feedforward, speed=v_ego, deadzone=deadzone)
     self.sat_flag = self.pid.saturated
-    return output_steer, float(self.angle_steers_des)
+    return output_steer, float(self.angle_steers_des_mpc)
