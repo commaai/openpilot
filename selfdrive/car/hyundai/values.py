@@ -1,8 +1,12 @@
+from cereal import car
 from selfdrive.car import dbc_dict
 
-def get_hud_alerts(visual_alert, audble_alert):
-  if visual_alert == "steerRequired":
-    return 4 if audble_alert != "none" else 5
+VisualAlert = car.CarControl.HUDControl.VisualAlert
+AudibleAlert = car.CarControl.HUDControl.AudibleAlert
+
+def get_hud_alerts(visual_alert, audible_alert):
+  if visual_alert == VisualAlert.steerRequired:
+    return 4 if audible_alert != AudibleAlert.none else 5
   else:
     return 0
 
