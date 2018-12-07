@@ -7,3 +7,6 @@ from values import CAR
 print ' '.join('{:02x}'.format(ord(c)) for c in dat)
 [addr, _, dat, _] = chryslercan.create_292(-10, 3, True)
 print ' '.join('{:02x}'.format(ord(c)) for c in dat)
+
+checksum = chryslercan.calc_checksum([0x01, 0x20])  # 0x75 expected
+print '{:02x}'.format(checksum)

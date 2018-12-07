@@ -206,6 +206,7 @@ BO_ 571 WHEEL_BUTTONS: 3 XXX
  SG_ ACC_SPEED_INC : 2|1@0+ (1,0) [0|255] "" XXX
  SG_ ACC_SPEED_DEC : 3|1@1+ (1,0) [0|3] "" XXX
  SG_ ACC_FOLLOW_INC : 8|1@1+ (1,0) [0|15] "" XXX
+ SG_ ACC_CANCEL : 0|1@0+ (1,0) [0|15] "" XXX
  SG_ COUNTER : 15|4@0+ (1,0) [0|15] "" XXX
 
 BO_ 669 NEW_MSG_29d: 3 XXX
@@ -402,6 +403,7 @@ CM_ SG_ 729 LKAS_STATUS_OK "Set to 0x0820 when LKAS system is plugged in.";
 CM_ SG_ 288 UNKNOWN_CHECKSUM_120 "not the LKAS checksum";
 CM_ SG_ 288 GAS_ENGINE_RPM_MAYBE "lags acceleration, perhaps gas engine";
 CM_ SG_ 257 ENERGY_OR_RPM "perhaps energy consumption or RPMs";
+CM_ SG_ 571 CHECKSUM_23B "standard checksum";
 CM_ SG_ 270 ELECTRIC_MOTOR "0x7fff indicates electric motor not in use";
 CM_ SG_ 291 ENERGY_GAIN_LOSS "unsure what this actually is";
 CM_ SG_ 291 ENERGY_SMOOTHER_CURVE "unusre what it is, but smoother";
