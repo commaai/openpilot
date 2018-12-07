@@ -191,13 +191,10 @@ typedef struct UIState {
   void *livempc_sock_raw;
   zsock_t *plus_sock;
   void *plus_sock_raw;
-<<<<<<< HEAD
   zsock_t *gps_sock;
   void *gps_sock_raw;
-=======
   zsock_t *map_data_sock;
   void *map_data_sock_raw;
->>>>>>> upstream/devel
 
   zsock_t *uilayout_sock;
   void *uilayout_sock_raw;
