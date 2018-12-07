@@ -29,15 +29,14 @@ class ACCMode(object):
   # Possible ACC modes, controlling how ACC behaves.
   # This is separate from ACC state. For example, you could
   # have ACC in "Autoresume" mode in "Standby" state.
-  OFF  = _Mode(label="off",  autoresume=False, state=ACCState.OFF)
-  ON   = _Mode(label="on",   autoresume=False, state=ACCState.STANDBY)
-  AUTO = _Mode(label="auto", autoresume=True,  state=ACCState.STANDBY)
+  FOLLOW = _Mode(label="follow",   autoresume=False, state=ACCState.STANDBY)
+  AUTO =   _Mode(label="auto", autoresume=True,  state=ACCState.STANDBY)
   
   BUTTON_NAME = 'acc'
   BUTTON_ABREVIATION = 'ACC'
   
   # Toggle order: OFF -> ON -> AUTO -> OFF
-  _all_modes = [OFF, ON, AUTO]
+  _all_modes = [FOLLOW, AUTO]
   for index, mode in enumerate(_all_modes):
     mode.next = _all_modes[(index + 1) % len(_all_modes)]
     
@@ -45,7 +44,7 @@ class ACCMode(object):
   _label_to_mode = {mode.label: mode for mode in _all_modes}
   @ classmethod
   def from_label(cls, label):
-    return cls._label_to_mode.get(label, cls.OFF)  # Default to OFF.
+    return cls._label_to_mode.get(label, cls.FOLLOW)
       
   @ classmethod
   def labels(cls):
