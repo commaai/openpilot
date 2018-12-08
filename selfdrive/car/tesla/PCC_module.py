@@ -597,7 +597,7 @@ def _jerk_limits(v_ego, lead, max_speed_kph, lead_last_seen_time_ms):
     decel_jerk_map = OrderedDict([
       # (sec to collision, decel jerk)
       (0, -1.00),
-      (2, -0.20),
+      (2, -0.25),
       (4, -0.01),
       (8, -0.001)])
     decel_jerk = _interp_map(_sec_til_collision, decel_jerk_map)
@@ -606,7 +606,7 @@ def _jerk_limits(v_ego, lead, max_speed_kph, lead_last_seen_time_ms):
     accel_jerk_map = OrderedDict([
       # (distance in m, accel jerk)
       (1.0 * safe_dist_m, 0.01),
-      (2.8 * safe_dist_m, 0.12)])
+      (2.8 * safe_dist_m, 0.11)])
     accel_jerk = _interp_map(lead.dRel, accel_jerk_map)
     accel_jerk *= near_max_speed_multiplier
     return decel_jerk, accel_jerk
