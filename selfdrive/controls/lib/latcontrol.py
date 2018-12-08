@@ -160,22 +160,23 @@ class LatControl(object):
       self.pid.pos_limit = steers_max
       self.pid.neg_limit = -steers_max
 
-      if CP.steerControlType == car.CarParams.SteerControlType.torque:
-        # Decide which feed forward mode should be used (angle or rate).  Use more dominant mode, and only if conditions are met
-        # Spread feed forward out over a period of time to make it more inductive (for resonance)
-        if abs(self.ff_rate_factor * float(restricted_steer_rate)) > abs(self.ff_angle_factor * float(self.angle_steers_des) - float(angle_offset)) - 0.5 \
-            and (abs(float(restricted_steer_rate)) > abs(angle_rate) or (float(restricted_steer_rate) < 0) != (angle_rate < 0)) \
-            and (float(restricted_steer_rate) < 0) == (float(self.angle_steers_des) - float(angle_offset) - 0.5 < 0):
-          ff_type = "r"
-          self.feed_forward = (((self.smooth_factor - 1.) * self.feed_forward) + self.ff_rate_factor * v_ego**2 * float(restricted_steer_rate)) / self.smooth_factor  
-        elif abs(self.angle_steers_des - float(angle_offset)) > 0.5:
-          ff_type = "a"
-          self.feed_forward = (((self.smooth_factor - 1.) * self.feed_forward) + self.ff_angle_factor * v_ego**2 * float(apply_deadzone(float(self.angle_steers_des) - float(angle_offset), 0.5))) / self.smooth_factor  
-        else:
-          ff_type = "r"
-          self.feed_forward = (((self.smooth_factor - 1.) * self.feed_forward) + 0.0) / self.smooth_factor  
+      # Decide which feed forward mode should be used (angle or rate).  Use more dominant mode, and only if conditions are met
+      # Spread feed forward out over a period of time to make it more inductive (for resonance)
+      if abs(self.ff_rate_factor * float(restricted_steer_rate)) > abs(self.ff_angle_factor * float(self.angle_steers_des) - float(angle_offset)) - 0.5 \
+          and (abs(float(restricted_steer_rate)) > abs(angle_rate) or (float(restricted_steer_rate) < 0) != (angle_rate < 0)) \
+          and (float(restricted_steer_rate) < 0) == (float(self.angle_steers_des) - float(angle_offset) - 0.5 < 0):
+        ff_type = "r"
+        self.feed_forward = (((self.smooth_factor - 1.) * self.feed_forward) + self.ff_rate_factor * float(restricted_steer_rate)) / self.smooth_factor  
+      elif abs(self.angle_steers_des - float(angle_offset)) > 0.5:
+        ff_type = "a"
+        self.feed_forward = (((self.smooth_factor - 1.) * self.feed_forward) + self.ff_angle_factor * float(apply_deadzone(float(self.angle_steers_des) - float(angle_offset), 0.5))) / self.smooth_factor  
       else:
-        self.feed_forward = float(self.angle_steers_des)
+        ff_type = "r"
+        self.feed_forward = (((self.smooth_factor - 1.) * self.feed_forward) + 0.0) / self.smooth_factor  
+
+      if CP.steerControlType == car.CarParams.SteerControlType.torque:
+          self.feed_forward *= v_ego**2
+
       deadzone = 0.0
 
       # Use projected desired and actual angles instead of "current" values, in order to make PI more reactive (for resonance)
