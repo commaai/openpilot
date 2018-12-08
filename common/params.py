@@ -69,6 +69,9 @@ keys = {
 # written: controlsd
 # read:    radard
   "CarParams": TxType.CLEAR_ON_CAR_START,
+# written: controlsd???
+# read:    flexrayd
+  "FlexRayParams": TxType.CLEAR_ON_CAR_START,
 
   "Passive": TxType.PERSISTENT,
   "DoUninstall": TxType.CLEAR_ON_MANAGER_START,

@@ -1,0 +1,17 @@
+core=MPC5748G_Z4_0
+coreType=MPC5748G_Z4
+eclipse.preferences.version=1
+flashSize=1d0000
+flashStart=1000000
+fpu=None
+groupName=
+io=
+language=c
+library=ewl_c9x
+pinSet=
+processor=MPC5748G
+productVersion=v1.2 b161201
+ramSize=40000
+ramStart=40000000
+toolchainVersion=
+wizardVersion=1.0.0.201612011055

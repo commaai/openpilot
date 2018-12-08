@@ -254,6 +254,11 @@ struct CanData {
   src     @3 :UInt8;
 }
 
+struct FlexRayData {
+  frameId @0 :UInt16;
+  dat     @1 :Data;
+}
+
 struct ThermalData {
   cpu0 @0 :UInt16;
   cpu1 @1 :UInt16;
@@ -1639,5 +1644,7 @@ struct Event {
     boot @60 :Boot;
     liveParameters @61 :LiveParametersData;
     liveMapData @62 :LiveMapData;
+    flexRay @63 :List(FlexRayData);
+    sendFlexRay @64 :List(FlexRayData);
   }
 }

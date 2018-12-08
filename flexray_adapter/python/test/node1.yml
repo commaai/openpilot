@@ -1,0 +1,239 @@
+BIT_RATE: 0
+CLOCK_SRC: 0
+FIFOA_Depth: 0
+FIFOA_EN: 0
+FIFOA_F0_EN: 0
+FIFOA_F0_MODE: 0
+FIFOA_F0_SID_LOWER: 0
+FIFOA_F0_SID_UPPER: 0
+FIFOA_F1_EN: 0
+FIFOA_F1_MODE: 0
+FIFOA_F1_SID_LOWER: 0
+FIFOA_F1_SID_UPPER: 0
+FIFOA_F2_EN: 0
+FIFOA_F2_MODE: 0
+FIFOA_F2_SID_LOWER: 0
+FIFOA_F2_SID_UPPER: 0
+FIFOA_F3_EN: 0
+FIFOA_F3_MODE: 0
+FIFOA_F3_SID_LOWER: 0
+FIFOA_F3_SID_UPPER: 0
+FIFOA_MIAFM: 0
+FIFOA_MIAFV: 0
+FIFOB_Depth: 0
+FIFOB_EN: 0
+FIFOB_F0_EN: 0
+FIFOB_F0_MODE: 0
+FIFOB_F0_SID_LOWER: 0
+FIFOB_F0_SID_UPPER: 0
+FIFOB_F1_EN: 0
+FIFOB_F1_MODE: 0
+FIFOB_F1_SID_LOWER: 0
+FIFOB_F1_SID_UPPER: 0
+FIFOB_F2_EN: 0
+FIFOB_F2_MODE: 0
+FIFOB_F2_SID_LOWER: 0
+FIFOB_F2_SID_UPPER: 0
+FIFOB_F3_EN: 0
+FIFOB_F3_MODE: 0
+FIFOB_F3_SID_LOWER: 0
+FIFOB_F3_SID_UPPER: 0
+FIFOB_MIAFM: 0
+FIFOB_MIAFV: 0
+LOG_STATUS_DATA: 0
+LineLength: 24
+RxMsgBufs:
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, FrameId: 2}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, FrameId: 3}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, FrameId: 4}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, FrameId: 5}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, FrameId: 6}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, FrameId: 7}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, FrameId: 8}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, FrameId: 9}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, FrameId: 10}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, FrameId: 11}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, FrameId: 12}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, FrameId: 13}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, FrameId: 14}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, FrameId: 15}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, FrameId: 16}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, FrameId: 17}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, FrameId: 18}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, FrameId: 19}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, FrameId: 20}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, FrameId: 21}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, FrameId: 22}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, FrameId: 23}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, FrameId: 24}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, FrameId: 25}
+SCM_EN: 0
+TxMsgBufs:
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 1,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 26,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 27,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 28,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 29,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 30,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 31,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 32,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 33,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 34,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 35,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 36,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 37,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 38,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 39,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 40,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 41,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 42,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 43,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 44,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 45,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 46,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 47,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 48,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 49,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 50,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 51,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 52,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 53,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 54,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 55,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 56,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 57,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 58,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 59,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 60,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 61,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 62,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 63,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 64,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 65,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 66,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 67,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 68,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 69,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 70,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 71,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 72,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 73,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 74,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 75,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 76,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 77,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 78,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 79,
+  PPI: 0, PayloadLenMax: 32}
+- {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, DynPayloadLen: 0, FrameId: 80,
+  PPI: 0, PayloadLenMax: 32}
+gColdStartAttempts: 10
+gListenNoise: 2
+gMaxWithoutClockCorrectionFatal: 14
+gMaxWithoutClockCorrectionPassive: 10
+gNetworkManagementVectorLength: 2
+gNumberOfMinislots: 163
+gNumberOfStaticSlots: 60
+gOffsetCorrectionMax: 12.0
+gOffsetCorrectionStart: 4000
+gPayloadLengthStatic: 32
+gSyncFrameIDCountMax: 5
+gdActionPointOffset: 6
+gdCasRxLowMax: 91
+gdDynamicSlotIdlePhase: 1
+gdMacrotick: 2
+gdMaxInitializationError: 0.5
+gdMinPropagationDelay: 0.4
+gdMiniSlotActionPointOffset: 3
+gdMinislot: 6
+gdNIT: 103
+gdStaticSlot: 50
+gdSymbolWindow: 16
+gdTSSTransmitter: 11
+gdWakeupRxWindow: 301
+gdWakeupSymbolRxIdle: 59
+gdWakeupSymbolRxLow: 55
+gdWakeupSymbolTxActive: 60
+gdWakeupSymbolTxIdle: 180
+nStar: 0
+pAllowHaltDueToClock: 1
+pAllowPassiveToActive: 0
+pChannels: 0
+pClusterDriftDamping: 1
+pDecodingCorrection: 56
+pDelayCompensationA: 0
+pDelayCompensationB: 0
+pKeySlotId: 1
+pKeySlotOnlyEnabled: 0
+pKeySlotUsedForStartup: 1
+pKeySlotUsedForSync: 1
+pLatestTx: 155
+pMacroInitialOffsetA: 7
+pMacroInitialOffsetB: 7
+pMicroInitialOffsetA: 24
+pMicroInitialOffsetB: 24
+pMicroPerCycle: 328000
+pOffsetCorrectionOut: 986
+pPayloadLengthDynMax: 32
+pRateCorrectionOut: 986
+pWakeupChannel: 0
+pWakeupPattern: 63
+pdAcceptedStartupRange: 110
+pdBDRx: 0.1
+pdBDTx: 0.1
+pdListenTimeout: 657972
+pdStarDelay: 0.25
