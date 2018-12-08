@@ -179,7 +179,7 @@ class CarInterface(object):
     ret.stoppingControl = True
     ret.steerLimitAlert = False
     ret.startAccel = 0.5
-    ret.steerRateCost = 2.
+    ret.steerRateCost = 2.0
 
     return ret
 
