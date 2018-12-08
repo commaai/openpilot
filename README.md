@@ -35,7 +35,7 @@ Also, we have a several thousand people community on [slack](https://slack.comma
 
 <table>
   <tr>
-    <td><a href="https://www.youtube.com/watch?v=9TDi0BHgXyo" title="YouTube" rel="noopener"><img src="https://i.imgur.com/gBTo7yB.png"></a></td>
+    <td><a href="https://www.youtube.com/watch?v=ICOIin4p70w" title="YouTube" rel="noopener"><img src="https://i.imgur.com/gBTo7yB.png"></a></td>
     <td><a href="https://www.youtube.com/watch?v=1zCtj3ckGFo" title="YouTube" rel="noopener"><img src="https://i.imgur.com/gNhhcep.png"></a></td>
     <td><a href="https://www.youtube.com/watch?v=Qd2mjkBIRx0" title="YouTube" rel="noopener"><img src="https://i.imgur.com/tFnSexp.png"></a></td>
     <td><a href="https://www.youtube.com/watch?v=ju12vlBm59E" title="YouTube" rel="noopener"><img src="https://i.imgur.com/3BKiJVy.png"></a></td>
@@ -62,7 +62,7 @@ Supported Cars
 | ---------------------| ------------------------| ---------------------| --------| ---------------| -----------------| ---------------|-------------------|
 | Acura                | ILX 2016-17             | AcuraWatch Plus      | Yes     | Yes            | 25mph<sup>1</sup>| 25mph          | Nidec             |
 | Acura                | RDX 2018                | AcuraWatch Plus      | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          | Nidec             |
-| Cadillac<sup>3</sup> | ATS 2018                | Adaptive Cruise      | yes     | yes            | 0mph             | 7mph           | Custom<sup>7</sup>|
+| Cadillac<sup>3</sup> | ATS 2018                | Adaptive Cruise      | Yes     | Yes            | 0mph             | 7mph           | Custom<sup>7</sup>|
 | Chevrolet<sup>3</sup>| Malibu 2017             | Adaptive Cruise      | Yes     | Yes            | 0mph             | 7mph           | Custom<sup>7</sup>|
 | Chevrolet<sup>3</sup>| Volt 2017-18            | Adaptive Cruise      | Yes     | Yes            | 0mph             | 7mph           | Custom<sup>7</sup>|
 | GMC<sup>3</sup>| Acadia Denali 2018            | Adaptive Cruise      | Yes     | Yes            | 0mph             | 7mph           | Custom<sup>7</sup>|
