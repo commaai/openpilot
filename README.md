@@ -62,8 +62,11 @@ Supported Cars
 | ---------------------| ------------------------| ---------------------| --------| ---------------| -----------------| ---------------|-------------------|
 | Acura                | ILX 2016-17             | AcuraWatch Plus      | Yes     | Yes            | 25mph<sup>1</sup>| 25mph          | Nidec             |
 | Acura                | RDX 2018                | AcuraWatch Plus      | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          | Nidec             |
+| Cadillac<sup>3</sup> | ATS 2018                | Adaptive Cruise      | yes     | yes            | 0mph             | 7mph           | Custom<sup>7</sup>|
 | Chevrolet<sup>3</sup>| Malibu 2017             | Adaptive Cruise      | Yes     | Yes            | 0mph             | 7mph           | Custom<sup>7</sup>|
 | Chevrolet<sup>3</sup>| Volt 2017-18            | Adaptive Cruise      | Yes     | Yes            | 0mph             | 7mph           | Custom<sup>7</sup>|
+| GMC<sup>3</sup>| Acadia Denali 2018            | Adaptive Cruise      | Yes     | Yes            | 0mph             | 7mph           | Custom<sup>7</sup>|
+| Holden<sup>3</sup>   | Astra 2017              | Adaptive Cruise      | Yes     | Yes            | 0mph             | 7mph           | Custom<sup>7</sup>|
 | Honda                | Accord 2018             | All                  | Yes     | Stock          | 0mph             | 3mph           | Bosch             |
 | Honda                | Civic 2016-18           | Honda Sensing        | Yes     | Yes            | 0mph             | 12mph          | Nidec             |
 | Honda                | Civic 2017-18 *(Hatch)* | Honda Sensing        | Yes     | Stock          | 0mph             | 12mph          | Bosch             |

@@ -246,8 +246,7 @@ typedef struct UIState {
   float light_sensor;
 } UIState;
 
-#include "dashcam.h"
-#include "bbui.h"
+
 
 static int last_brightness = -1;
 static void set_brightness(UIState *s, int brightness) {
@@ -264,13 +263,18 @@ static void set_brightness(UIState *s, int brightness) {
 static void set_awake(UIState *s, bool awake) {
   if (awake) {
     // 30 second timeout at 30 fps
-    s->awake_timeout = 30*30;
+    if (s->b.tri_state_switch < 3) {
+      s->awake_timeout = 30*30;
+    } else {
+      s->awake_timeout = 3*30;
+    }
   }
   if (s->awake != awake) {
     s->awake = awake;
 
     if (awake) {
       LOG("awake normal");
+      set_brightness(s, 150);
       framebuffer_set_power(s->fb, HWC_POWER_MODE_NORMAL);
     } else {
       LOG("awake off");
@@ -279,6 +283,9 @@ static void set_awake(UIState *s, bool awake) {
     }
   }
 }
+
+#include "dashcam.h"
+#include "bbui.h"
 
 static void set_volume(UIState *s, int volume) {
   char volume_change_cmd[64];
@@ -637,6 +644,10 @@ static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
   float g_xo = sz/5;
   float g_yo = sz/10;
   //BB added for printing the car
+  //if position is 3 do nothing
+  if (s->b.tri_state_switch == 3) {
+    return;
+  }
   if (s->b.tri_state_switch == 2) {
     nvgRestore(s->vg);
     bb_ui_draw_car(s);
@@ -717,7 +728,7 @@ static void ui_draw_lane_line(UIState *s, const float *points, float off,
 
 static void ui_draw_lane(UIState *s, const PathData path, NVGcolor color) {
   //BB added to make the line blue
-  if (s->b.tri_state_switch == 2) {
+  if (s->b.tri_state_switch >= 2) {
     color = nvgRGBA(66, 220, 244,250);
   }
   //BB end  
@@ -861,7 +872,7 @@ static void draw_frame(UIState *s) {
 
   glActiveTexture(GL_TEXTURE0);
   //BB added to suppress video printing
-  if (s->b.tri_state_switch != 2) {
+  if (s->b.tri_state_switch == 1) {
     if (s->scene.frontview && s->cur_vision_front_idx >= 0) {
       glBindTexture(GL_TEXTURE_2D, s->frame_front_texs[s->cur_vision_front_idx]);
     } else if (!scene->frontview && s->cur_vision_idx >= 0) {
@@ -889,6 +900,10 @@ static void draw_frame(UIState *s) {
 
 static void ui_draw_vision_lanes(UIState *s) {
   const UIScene *scene = &s->scene;
+  //draw nothing if position is 3
+  if (s->b.tri_state_switch == 3) {
+    return;
+  }
   //BB add to draw our lanes
   if (s->b.tri_state_switch == 2) {
     bb_draw_lane_fill(s);
@@ -1240,6 +1255,7 @@ static void ui_draw_vision_alert(UIState *s, int va_size, int va_color,
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BOTTOM);
     nvgTextBox(s->vg, alr_x, alr_h-(longAlert1?300:360), alr_w-60, va_text2, NULL);
   }
+  
 }
 
 
@@ -1370,6 +1386,7 @@ static void update_status(UIState *s, int status) {
   int old_status = s->status;
   if (s->status != status) {
     s->status = status;
+    set_awake(s, true);
     // wake up bg thread to change
     pthread_cond_signal(&s->bg_cond);
     //BB add sound
@@ -1489,8 +1506,10 @@ static void ui_update(UIState *s) {
     if (polls[0].revents || polls[1].revents || polls[2].revents ||
         polls[3].revents || polls[4].revents || polls[6].revents ||
         polls[7].revents || polls[8].revents) {
-      // awake on any (old) activity
-      set_awake(s, true);
+      // awake on any (old) activity if tri-state in 1 or 2 position
+      if(s->b.tri_state_switch < 3) {
+        set_awake(s, true);
+      } 
     }
 
     if (s->vision_connected && polls[9].revents) {

@@ -210,7 +210,7 @@ class CarController(object):
         if frame % 100 == 0: 
           can_sends.append(teslacan.create_DAS_info_msg(CS.DAS_info_msg))
           CS.DAS_info_msg += 1
-          CS.DAS_info_msg = CS.DAS_info_msg % 8
+          CS.DAS_info_msg = CS.DAS_info_msg % 10
         #send DAS_status
         if frame % 50 == 0: 
           op_status = 0x02
@@ -220,8 +220,9 @@ class CarController(object):
           if enabled:
             op_status = 0x03
             alca_state = 0x08 + turn_signal_needed
-            if not enable_steer_control:
-              op_status = 0x04
+            #if not enable_steer_control:
+              #op_status = 0x04
+              #hands_on_state = 0x03
             if hud_alert == AH.STEER:
               if snd_chime == CM.MUTE:
                 hands_on_state = 0x03
@@ -244,6 +245,15 @@ class CarController(object):
           can_sends.append(teslacan.create_DAS_bodyControls_msg(CS.DAS_bodyControls_idx,turn_signal_needed))
           CS.DAS_bodyControls_idx += 1
           CS.DAS_bodyControls_idx = CS.DAS_bodyControls_idx % 16
+        #send DAS_control
+        if frame % 4 == 0:
+          acc_speed_limit_kph = self.ACC.new_speed #pcm_speed * CV.MS_TO_KPH
+          accel_min = -15
+          accel_max = 5
+          speed_control_enabled = enabled and (acc_speed_limit_kph > 0) 
+          can_sends.append(teslacan.create_DAS_control(CS.DAS_control_idx,speed_control_enabled,acc_speed_limit_kph,accel_min,accel_max))
+          CS.DAS_control_idx += 1
+          CS.DAS_control_idx = CS.DAS_control_idx % 8 
         #send DAS_lanes
         if frame % 10 == 0: 
           can_sends.append(teslacan.create_DAS_lanes_msg(CS.DAS_lanes_idx))
@@ -251,9 +261,31 @@ class CarController(object):
           CS.DAS_lanes_idx = CS.DAS_lanes_idx % 16
         #send DAS_pscControl
         if frame % 4 == 0: 
-          #can_sends.append(teslacan.create_DAS_pscControl_msg(CS.DAS_pscControl_idx))
+          can_sends.append(teslacan.create_DAS_pscControl_msg(CS.DAS_pscControl_idx))
           CS.DAS_pscControl_idx += 1
           CS.DAS_pscControl_idx = CS.DAS_pscControl_idx % 16
+        #send DAS_telemetryPeriodic
+        if frame % 4 == 0:
+          can_sends.append(teslacan.create_DAS_telemetryPeriodic(CS.DAS_telemetryPeriodic1_idx,CS.DAS_telemetryPeriodic2_idx))
+          CS.DAS_telemetryPeriodic2_idx += 1
+          CS.DAS_telemetryPeriodic2_idx = CS.DAS_telemetryPeriodic2_idx % 10
+          if CS.DAS_telemetryPeriodic2_idx == 0:
+            CS.DAS_telemetryPeriodic1_idx += 2
+            CS.DAS_telemetryPeriodic1_idx = CS.DAS_telemetryPeriodic1_idx % 16
+        #send DAS_telemetryEvent
+        if frame % 10 == 0:
+          #can_sends.append(teslacan.create_DAS_telemetryEvent(CS.DAS_telemetryEvent1_idx,CS.DAS_telemetryEvent2_idx))
+          CS.DAS_telemetryEvent2_idx += 1
+          CS.DAS_telemetryEvent2_idx = CS.DAS_telemetryEvent2_idx % 10
+          if CS.DAS_telemetryEvent2_idx == 0:
+            CS.DAS_telemetryEvent1_idx += 2
+            CS.DAS_telemetryEvent1_idx = CS.DAS_telemetryEvent1_idx % 16
+        #send DAS_visualDebug
+        if (frame + 1) % 10 == 0:
+          can_sends.append(teslacan.create_DAS_visualDebug_msg())
+        #send DAS_chNm
+        if (frame + 2) % 10 == 0:
+          can_sends.append(teslacan.create_DAS_chNm())
         #send DAS_objects
         if frame % 3 == 0: 
           can_sends.append(teslacan.create_DAS_objects_msg(CS.DAS_objects_idx))
@@ -266,7 +298,10 @@ class CarController(object):
           CS.DAS_warningMatrix0_idx = CS.DAS_warningMatrix0_idx % 16
         #send DAS_warningMatrix3
         if (frame + 3) % 6 == 0: 
-          can_sends.append(teslacan.create_DAS_warningMatrix3(CS.DAS_warningMatrix3_idx))
+          driverResumeRequired = 0
+          if enabled and not enable_steer_control:
+            driverResumeRequired = 1
+          can_sends.append(teslacan.create_DAS_warningMatrix3(CS.DAS_warningMatrix3_idx,driverResumeRequired))
           CS.DAS_warningMatrix3_idx += 1
           CS.DAS_warningMatrix3_idx = CS.DAS_warningMatrix3_idx % 16
         #send DAS_warningMatrix1
@@ -281,6 +316,16 @@ class CarController(object):
       cruise_btn = None
       if self.ACC.enable_adaptive_cruise and not CS.pedal_interceptor_available:
         cruise_btn = self.ACC.update_acc(enabled, CS, frame, actuators, pcm_speed)
+
+      #add fake carConfig to trigger IC to display AP
+      if frame % 2 == 0:
+        carConfig_msg = teslacan.create_GTW_carConfig_msg(
+          real_carConfig_data = CS.real_carConfig,
+          dasHw = 1,
+          autoPilot = 1,
+          fRadarHw = 1)
+        #can_sends.append(carConfig_msg)
+      
       if cruise_btn or (turn_signal_needed > 0 and frame % 2 == 0):
           cruise_msg = teslacan.create_cruise_adjust_msg(
             spdCtrlLvr_stat=cruise_btn,
