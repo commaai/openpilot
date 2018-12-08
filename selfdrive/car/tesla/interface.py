@@ -122,7 +122,7 @@ class CarInterface(object):
       KP = 0.8
       ret.longitudinalKpBP = [0., 5., 35.]
       ret.longitudinalKpV = [i * KP for i in [1, 0.82, 0.67]]
-      KI = 0.08
+      KI = 0.1
       ret.longitudinalKiBP = [0., 35.]
       ret.longitudinalKiV = [i * KI for i in [1, 0.67]]
       
