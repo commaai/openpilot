@@ -197,9 +197,8 @@ class CarInterface(object):
       # Civic at comma has modified steering FW, so different tuning for the Neo in that car
       is_fw_modified = os.getenv("DONGLE_ID") in ['99c94dc769b5d96e']
       ret.steerKpV, ret.steerKiV = [[0.33], [0.10]] if is_fw_modified else [[0.8], [0.24]]
-      #if is_fw_modified:
-      #  ret.steerKf = 0.00003
-      ret.steerKf = 0.00003
+      if is_fw_modified:
+        ret.steerKf = 0.00003
       ret.longitudinalKpBP = [0., 5., 35.]
       ret.longitudinalKpV = [3.6, 2.4, 1.5]
       ret.longitudinalKiBP = [0., 35.]
@@ -213,7 +212,6 @@ class CarInterface(object):
       ret.steerRatio = 14.63  # 10.93 is spec end-to-end
       tire_stiffness_factor = 1.
       ret.steerKpV, ret.steerKiV = [[0.8], [0.24]]
-      ret.steerKf = 0.00003
       ret.longitudinalKpBP = [0., 5., 35.]
       ret.longitudinalKpV = [1.2, 0.8, 0.5]
       ret.longitudinalKiBP = [0., 35.]
