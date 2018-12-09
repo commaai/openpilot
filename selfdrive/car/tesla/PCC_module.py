@@ -51,7 +51,7 @@ _A_CRUISE_MIN = OrderedDict([
 # make sure these accelerations are smaller than mpc limits.
 _A_CRUISE_MAX = OrderedDict([
   # (speed in m/s, allowed acceleration)
-  (0.0, 0.55),
+  (0.0, 0.50),
   (5.0, 0.28),
   (10., 0.18),
   (20., 0.14),
@@ -206,7 +206,6 @@ class PCCController(object):
     self.lead_last_seen_time_ms = 0
     self.continuous_lead_sightings = 0
 
-
   def reset(self, v_pid):
     if self.LoC:
       self.LoC.reset(v_pid)
@@ -214,7 +213,6 @@ class PCCController(object):
   def update_stat(self, CS, enabled, sendcan):
     if not self.LoC:
       self.LoC = LongControl(CS.CP, tesla_compute_gb)
-
 
     can_sends = []
     if CS.pedal_interceptor_available and not CS.cstm_btns.get_button_status("pedal"):
@@ -316,7 +314,6 @@ class PCCController(object):
     self.prev_cruise_buttons = CS.cruise_buttons
     self.prev_pcm_acc_status = CS.pcm_acc_status
     
-
   def update_pdl(self, enabled, CS, frame, actuators, pcm_speed):
     cur_time = sec_since_boot()
     idx = self.pedal_idx
@@ -498,9 +495,9 @@ class PCCController(object):
           min_vrel_kph = _interp_map(lead_dist_m, min_vrel_kph_map)
           max_vrel_kph_map = OrderedDict([
             # (distance in m, max allowed relative kph)
-            (0.5 * safe_dist_m, 15),
-            (1.0 * safe_dist_m, 7),
-            (1.5 * safe_dist_m, 4),
+            (0.5 * safe_dist_m, 100),
+            (1.0 * safe_dist_m, 6),
+            (1.5 * safe_dist_m, 3),
             (2.0 * safe_dist_m, -1)])
           max_vrel_kph = _interp_map(lead_dist_m, max_vrel_kph_map)
           min_kph = lead_absolute_speed_kph - max_vrel_kph
@@ -600,7 +597,7 @@ def _jerk_limits(v_ego, lead, max_speed_kph, lead_last_seen_time_ms):
       (2, -0.25),
       (4, -0.01),
       (8, -0.001)])
-    decel_jerk = _interp_map(_sec_til_collision, decel_jerk_map)
+    decel_jerk = _interp_map(_sec_til_collision(lead), decel_jerk_map)
    
     safe_dist_m = _safe_distance_m(v_ego) 
     accel_jerk_map = OrderedDict([
