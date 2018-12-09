@@ -1,7 +1,7 @@
 import logging
 from common.numpy_fast import clip, interp
 from selfdrive.boardd.boardd import can_list_to_can_capnp
-from selfdrive.car.chrysler.chryslercan import create_2d9, create_2a6, create_292
+from selfdrive.car.chrysler.chryslercan import create_2d9, create_2a6, create_292, create_23b
 from selfdrive.car.chrysler.values import ECU, STATIC_MSGS
 from selfdrive.can.packer import CANPacker
 
@@ -38,7 +38,7 @@ class CarController(object):
     #logging.info('CarController init')
 
   def update(self, sendcan, enabled, CS, frame, actuators,
-             pcm_cancel_cmd, hud_alert, audible_alert):
+             pcm_cancel_cmd, hud_alert, audible_alert, send_cancel_acc):
 
     # *** compute control surfaces ***
     # steer torque
@@ -67,6 +67,10 @@ class CarController(object):
     can_sends = []
 
     #*** control msgs ***
+
+    if send_cancel_acc:
+      new_msg = create_23b(CS.frame_23b)
+      sendcan.send(can_list_to_can_capnp([new_msg], msgtype='sendcan').to_bytes())
 
     # frame is 100Hz (0.01s period)
     if (self.ccframe % 10 == 0):  # 0.1s period

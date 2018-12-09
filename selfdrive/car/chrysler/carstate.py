@@ -45,6 +45,7 @@ def get_can_parser(CP):
     ("LKAS_IS_GREEN", "LKAS_INDICATOR_1", 1),
     ("TRACTION_OFF", "TRACTION_BUTTON", 0),
     ("SEATBELT_DRIVER_UNLATCHED", "SEATBELT_STATUS", 0),
+    ("COUNTER", "WHEEL_BUTTONS", -1),  # incrementing counter for 23b
   ]
 
   # It's considered invalid if it is not received for 10x the expected period (1/f).
@@ -95,6 +96,7 @@ class CarState(object):
     self.prev_right_blinker_on = self.right_blinker_on
 
     self.frame_220 = int(cp.vl["LKAS_INDICATOR_1"]['INCREMENTING_220'])
+    self.frame_23b = int(cp.vl["WHEEL_BUTTONS"]['COUNTER'])
     #logging.info('frame_220 %d' % self.frame_220)
 
     self.door_all_closed = not any([cp.vl["DOORS"]['DOOR_OPEN_FL'],
@@ -104,8 +106,8 @@ class CarState(object):
     self.seatbelt = (cp.vl["SEATBELT_STATUS"]['SEATBELT_DRIVER_UNLATCHED'] == 0)
 
     self.brake_pressed = cp.vl["BRAKE_2"]['BRAKE_PRESSED_2'] == 5 # human-only
-    self.pedal_gas = 0  # TODO Disabled until we can find the message on Pacifica 2018
-    # self.pedal_gas = cp.vl["ACCEL_PEDAL_MSG"]['ACCEL_PEDAL']
+    # self.pedal_gas = 0  # TODO Disabled until we can find the message on Pacifica 2018
+    self.pedal_gas = cp.vl["ACCEL_PEDAL_MSG"]['ACCEL_PEDAL']
     self.car_gas = self.pedal_gas
     self.esp_disabled = (cp.vl["TRACTION_BUTTON"]['TRACTION_OFF'] == 1)
 
