@@ -68,6 +68,9 @@ _DT_MPC = 0.05  # 20Hz
 
 class Mode(object):
   label = None
+  
+class OffMode(Mode):
+  label = 'OFF'
 
 class OpMode(Mode):
   label = 'OP'
@@ -76,14 +79,14 @@ class FollowMode(Mode):
   label = 'FOLLOW'
   
 class PCCModes(object):
-  _all_modes = [OpMode(), FollowMode()]
+  _all_modes = [OffMode(), OpMode(), FollowMode()]
   _mode_map = {mode.label : mode for mode in _all_modes}
   BUTTON_NAME = 'pedal'
   BUTTON_ABREVIATION = 'PDL'
   
   @classmethod
   def from_label(cls, label):
-    return cls._mode_map.get(label, OpMode())
+    return cls._mode_map.get(label, OffMode())
     
   @classmethod
   def from_buttons(cls, cstm_btns):
