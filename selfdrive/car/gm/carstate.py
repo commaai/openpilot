@@ -103,6 +103,8 @@ class CarState(object):
     self.CL_WAIT_BEFORE_START = 1
     #END OF ALCA PARAMS
     
+    self.CP = CP
+    
     #BB UIEvents
     self.UE = UIEvents(self)
     
