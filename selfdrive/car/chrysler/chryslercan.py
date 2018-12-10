@@ -43,18 +43,8 @@ def calc_checksum(data):
   return ~checksum & 0xFF
 
 
-def make_can_msg(addr, dat, alt=0, cks=False, counter=None):
-  # We're not actually using cks and counter, just doing manually in create_ TODO
-  # TODO what is the alt parameter? setting it to 0 works. 1 does not.
-  #      for alt, look at can_list_to_can_capnp. looks like messaging.new_message() .src
-  if counter != None:
-    dat = dat  # TODO!!! verify 0..15 and put counter in as high nibble
-  if cks:
-    dat = dat + struct.pack("B", calc_checksum(dat))
-  # if addr == 0x292:
-  #   print ('make_can_msg:%s  len:%d  %s' % ('0x{:02x}'.format(addr), len(dat),
-  #                                           ' '.join('{:02x}'.format(ord(c)) for c in dat)))
-  return [addr, 0, dat, alt]
+def make_can_msg(addr, dat):
+  return [addr, 0, dat, 0]
 
 def create_2d9(car_fingerprint):
   msg = '0000000820'.decode('hex')  # 2017
