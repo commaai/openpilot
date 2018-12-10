@@ -121,7 +121,7 @@ class LatControl(object):
       self.angle_steers_des_mpc = float(math.degrees(delta_desired * CP.steerRatio) + angle_offset)
       
       # Use the model's solve time instead of cur_time
-      self.angle_steers_des_time = float(PL.last_md_ts / 1000000000.0)
+      self.angle_steers_des_time = float(self.last_mpc_ts / 1000000000.0)
       
       # Use last 2 desired angles to determine the model's desired steer rate
       self.angle_rate_desired = (self.angle_steers_des_mpc - self.angle_steers_des_prev) / _DT_MPC
@@ -144,8 +144,8 @@ class LatControl(object):
       self.pid.reset()
     else:
       # Interpolate desired angle between MPC updates
-      self.angle_steers_des = np.clip(self.angle_steers_des_prev + self.angle_rate_desired * (cur_time - self.angle_steers_des_time), self.angle_steers_des_prev, self.angle_steers_des_mpc)
-      #self.angle_steers_des = self.angle_steers_des_prev + self.angle_rate_desired * np.clip(cur_time - self.angle_steers_des_time, 0, _DT_MPC + _DT)
+      #self.angle_steers_des = np.clip(self.angle_steers_des_prev + self.angle_rate_desired * (cur_time - self.angle_steers_des_time), self.angle_steers_des_prev, self.angle_steers_des_mpc)
+      self.angle_steers_des = self.angle_steers_des_prev + self.angle_rate_desired * np.clip(cur_time - self.angle_steers_des_time, 0, _DT_MPC + _DT)
 
       # Determine the target steer rate for desired angle, but prevent the acceleration limit from being exceeded
       # Restricting the steer rate creates the resistive component needed for resonance
