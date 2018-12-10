@@ -106,11 +106,7 @@ class CarState(object):
     self.seatbelt = (cp.vl["SEATBELT_STATUS"]['SEATBELT_DRIVER_UNLATCHED'] == 0)
 
     self.brake_pressed = cp.vl["BRAKE_2"]['BRAKE_PRESSED_2'] == 5 # human-only
-    if self.CP.carFingerprint in (CAR.PACIFICA_2017_HYBRID, PACIFICA_2018_HYBRID,
-                                  CHEROKEE):
-      self.pedal_gas = cp.vl["ACCEL_PEDAL_MSG"]['ACCEL_PEDAL']
-    else:
-      self.pedal_gas = 0  # TODO Find accel Pedal message on PACIFICA_2018.
+    self.pedal_gas = cp.vl["ACCEL_PEDAL_MSG"]['ACCEL_PEDAL']
     self.car_gas = self.pedal_gas
     self.esp_disabled = (cp.vl["TRACTION_BUTTON"]['TRACTION_OFF'] == 1)
 
