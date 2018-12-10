@@ -89,7 +89,7 @@ class CarController(object):
         can_sends.append(new_msg)
         self.send_new_status = False
         self.prev_2a6 = self.ccframe
-    new_msg = create_292(int(apply_steer * CAR_UNITS_PER_DEGREE), frame, moving_fast)
+    new_msg = create_292(int(apply_steer * CAR_UNITS_PER_DEGREE), frame)
     self.prev_frame = frame  # save so we do not reuse frames
     sendcan.send(can_list_to_can_capnp([new_msg], msgtype='sendcan').to_bytes())
     can_sends.append(new_msg)  # degrees * 5.1 -> car steering units
