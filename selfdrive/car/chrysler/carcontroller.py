@@ -69,7 +69,7 @@ class CarController(object):
     #*** control msgs ***
 
     if send_cancel_acc:
-      new_msg = create_23b(CS.frame_23b)
+      new_msg = create_23b(CS.frame_23b + 1)
       sendcan.send(can_list_to_can_capnp([new_msg], msgtype='sendcan').to_bytes())
 
     # frame is 100Hz (0.01s period)

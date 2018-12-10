@@ -133,7 +133,6 @@ def create_292(apply_angle, frame, moving_fast):
   return make_can_msg(0x292, str(bytearray(dat)))
   
 def create_23b(frame_23b):
-  # TODO create 23b ACC cancel messge
   start = [0x01]  # acc cancel set
   counter = (frame_23b % 10) << 4
   dat = start + [counter]

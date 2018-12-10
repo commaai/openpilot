@@ -10,3 +10,6 @@ print ' '.join('{:02x}'.format(ord(c)) for c in dat)
 
 checksum = chryslercan.calc_checksum([0x01, 0x20])  # 0x75 expected
 print '{:02x}'.format(checksum)
+
+[addr, _, dat, _] = chryslercan.create_23b(5)
+print ' '.join('{:02x}'.format(ord(c)) for c in dat)
