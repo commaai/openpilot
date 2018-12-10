@@ -151,10 +151,13 @@ class CarInterface(object):
       ret.safetyModel = car.CarParams.SafetyModels.hondaBosch
       ret.enableCamera = True
       ret.radarOffCan = True
+      ret.openpilotLongitudinalControl = False
     else:
       ret.safetyModel = car.CarParams.SafetyModels.honda
       ret.enableCamera = not any(x for x in CAMERA_MSGS if x in fingerprint)
       ret.enableGasInterceptor = 0x201 in fingerprint
+      ret.openpilotLongitudinalControl = ret.enableCamera
+
     cloudlog.warn("ECU Camera Simulated: %r", ret.enableCamera)
     cloudlog.warn("ECU Gas Interceptor: %r", ret.enableGasInterceptor)
 
@@ -485,8 +488,8 @@ class CarInterface(object):
     ret.buttonEvents = buttonEvents
 
     # events
-    # TODO: I don't like the way capnp does enums
-    # These strings aren't checked at compile time
+    # TODO: event names aren't checked at compile time.
+    # Maybe there is a way to use capnp enums directly
     events = []
     if not self.CS.can_valid:
       self.can_invalid_count += 1
