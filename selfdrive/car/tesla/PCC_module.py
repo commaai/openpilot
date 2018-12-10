@@ -392,7 +392,7 @@ class PCCController(object):
         #print "Output GB Follow:", output_gb
       else:
         self.LoC.reset(CS.v_ego)
-        print "PID reset"
+        #print "PID reset"
         output_gb = 0.
         starting = self.LoC.long_control_state == LongCtrlState.starting
         a_ego = min(CS.a_ego, 0.0)
@@ -493,15 +493,15 @@ class PCCController(object):
             # (distance in m, min allowed relative kph)
             (0.5 * safe_dist_m, 2),
             (1.0 * safe_dist_m, -4),
-            (1.5 * safe_dist_m, -7),
+            (1.5 * safe_dist_m, -8),
             (3.0 * safe_dist_m, -20)])
           min_vrel_kph = _interp_map(lead_dist_m, min_vrel_kph_map)
           max_vrel_kph_map = OrderedDict([
             # (distance in m, max allowed relative kph)
             (0.5 * safe_dist_m, 100),
             (1.0 * safe_dist_m, 6),
-            (1.5 * safe_dist_m, 3),
-            (2.0 * safe_dist_m, -1)])
+            (1.5 * safe_dist_m, 2),
+            (2.0 * safe_dist_m, -2)])
           max_vrel_kph = _interp_map(lead_dist_m, max_vrel_kph_map)
           min_kph = lead_absolute_speed_kph - max_vrel_kph
           max_kph = lead_absolute_speed_kph - min_vrel_kph
@@ -601,7 +601,6 @@ def _jerk_limits(v_ego, lead, max_speed_kph, lead_last_seen_time_ms):
       (4, -0.01),
       (8, -0.001)])
     decel_jerk = _interp_map(_sec_til_collision(lead), decel_jerk_map)
-   
     safe_dist_m = _safe_distance_m(v_ego) 
     accel_jerk_map = OrderedDict([
       # (distance in m, accel jerk)
