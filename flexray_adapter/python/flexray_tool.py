@@ -526,9 +526,9 @@ class ConnectOrConfigDialog(QDialog):
 
         if self.mode == 'config':
             btn_box = QDialogButtonBox(QDialogButtonBox.Close)
-            export_btn = QPushButton("&Save as...")
-            export_btn.clicked.connect(self.save_config_to_file)
-            btn_box.addButton(export_btn, QDialogButtonBox.ActionRole)
+            save_as_btn = QPushButton("&Save as...")
+            save_as_btn.clicked.connect(self.save_config_to_file)
+            btn_box.addButton(save_as_btn, QDialogButtonBox.ActionRole)
             verify_btn = QPushButton("&Verify")
             verify_btn.clicked.connect(self.verify_config)
             btn_box.addButton(verify_btn, QDialogButtonBox.ActionRole)
@@ -536,6 +536,9 @@ class ConnectOrConfigDialog(QDialog):
             self.setWindowTitle("Manage FlexRay configurations")
         else:
             btn_box = QDialogButtonBox(QDialogButtonBox.Cancel)
+            save_as_btn = QPushButton("&Save as...")
+            save_as_btn.clicked.connect(self.save_config_to_file)
+            btn_box.addButton(save_as_btn, QDialogButtonBox.ActionRole)
             connect_btn = QPushButton("&Connect")
             btn_box.addButton(connect_btn, QDialogButtonBox.AcceptRole)
             btn_box.accepted.connect(self.accept)
@@ -583,9 +586,6 @@ class ConnectOrConfigDialog(QDialog):
         else:
             QMessageBox(QMessageBox.Information, "Verify Result", 'Verify succeeded.\n\n' + '\n'.join(err)).exec()
 
-    def set_config_name(self, text):
-        self.config_name = text
-
     def show_progress_dlg(self, t):
         progress_dlg = QProgressDialog('Loading config', None, 0, 100, self, Qt.Window)
         progress_dlg.setAutoReset(True)
@@ -620,7 +620,7 @@ class ConnectOrConfigDialog(QDialog):
 
     def save_config_to_file(self):
         t = QFileDialog.getSaveFileName(
-            None, 'Save \'{}\'.yml to:'.format(self.config_name), os.path.expanduser("~"), "YAML files (*.yml)")
+            None, 'Save config to file', os.path.expanduser("~"), "YAML files (*.yml)")
         if len(t[0]) == 0:
             return
         mkdirs_exists_ok(os.path.dirname(t[0]))

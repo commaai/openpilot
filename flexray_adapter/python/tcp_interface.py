@@ -107,7 +107,7 @@ class Connection:
         corrections = 4
         if len(payload) // SIZEOF_UINT16 < (reg_vals + corrections):
             raise RuntimeError("Invalid payload len for health packet: {}".format(len(payload)))
-        t = struct.unpack('>{}H{}h{}H'.format(reg_vals, corrections, len(payload) // SIZEOF_UINT16 - reg_vals - corrections), payload)
+        t = struct.unpack('>{}H{}h{}h'.format(reg_vals, corrections, len(payload) // SIZEOF_UINT16 - reg_vals - corrections), payload)
         a_even_cnt = (t[5] & 0x0F00) >> 8
         b_even_cnt = (t[5] & 0xF000) >> 12
         a_odd_cnt = t[5] & 0x000F

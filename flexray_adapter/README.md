@@ -11,8 +11,8 @@ Features
 - Flexray boardd implementation for OpenPilot, forward FlexRay frames to ZMQ.
 - A GUI application running on PC for facilitating FlexRay configuration.
     - create/edit/load/export FlexRay configuration file.
-    - Validate/Auto-calculate FlexRay parameters according to the constraints defined in FlexRay spec 2.1 appendix A.
-    - Troubleshoot FlexRay configuration problems, view protocol status data on the board.
+    - Validate/Auto-calculate FlexRay parameters according to the constraints defined in FlexRay spec 2.1 appendix B.
+    - Troubleshoot FlexRay configuration problems, view protocol status data.
     - Start/stop FlexRay driver.
     - Change the FlexRay configuration on the adapter.
     - Sniff on FlexRay bus, display received frames.
@@ -62,11 +62,16 @@ How to compile
 
 How to debug
 ------
-- Connect DEVKIT MPC5748G to computer via the USB OpenSDA port.
+- Connect MPC5748G DEVKIT board to PC via the USB OpenSDA port.
 - Choose DEBUG_RAM configuration and build.
-- Set the debugger to OpenSDA in debug configuration window.
-- Start debugging.
-
+- Open debug settings window.
+    - From the left tree view, choose "flexray_adapter_debug_ram_pemicro".
+    - In "Debugger" tab, set the debugger to OpenSDA in debug configuration window and find the board in the dropdown list.
+    - Click "Debug" button to start debugging.
+- How to view debug log
+    - Connect LIN4 TX/RX ports(port name: PA5,PA6) on the board to PC using an USB to UART serial adapter.
+    - Use a tool to open the serial port created by the UART adapter
+    
 How to test
 ------
 
@@ -131,6 +136,7 @@ How to test
 
 Some thoughts on how to connect the adapter to car's FlexRay network 
 ------
+Currently the adapter has not been tested on cars, because I don't have a FlexRay car. If someone in the community want to have a try,
 - Capture the car's FlexRay traffic
     - Find the FlexRay port where the LKAS camera is connected.
     - Connect a oscilloscope(like [PicoScope](https://www.picotech.com/products/oscilloscope)) to the FlexRay BP or BM port.
