@@ -120,14 +120,14 @@ class CarInterface(object):
       
       # Kp and Ki for the longitudinal control
       # IC cars decrease their PID values as speed increases. Probably because
-      # their torque trends upward with more RP. Teslas have a different
+      # their torque trends upward with more RPM. Teslas have a different
       # torque curve: generally flat until ~70kph and then decreasing to 30% at
       # ~160kph.
       ret.longitudinalKpBP = [70., 160.]
-      KP = 0.78
+      KP = 0.52
       ret.longitudinalKpV = [KP, KP / 0.3]
       ret.longitudinalKiBP = [70., 160.]
-      KI = 0.12
+      KI = 0.08
       ret.longitudinalKiV = [KI, KI / 0.3]
       
       #from honda
