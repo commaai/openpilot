@@ -144,8 +144,8 @@ class LatControl(object):
       self.pid.reset()
     else:
       # Interpolate desired angle between MPC updates
-      #self.angle_steers_des = np.clip(self.angle_steers_des_prev + self.angle_rate_desired * (cur_time - self.angle_steers_des_time), self.angle_steers_des_prev, self.angle_steers_des_mpc)
-      self.angle_steers_des = self.angle_steers_des_prev + self.angle_rate_desired * np.clip(cur_time - self.angle_steers_des_time, 0, _DT_MPC + _DT)
+      self.angle_steers_des = np.clip(self.angle_steers_des_prev + self.angle_rate_desired * (cur_time - self.angle_steers_des_time), self.angle_steers_des_prev, self.angle_steers_des_mpc)
+      #self.angle_steers_des = self.angle_steers_des_prev + self.angle_rate_desired * np.clip(cur_time - self.angle_steers_des_time, 0, _DT_MPC + _DT)
 
       # Determine the target steer rate for desired angle, but prevent the acceleration limit from being exceeded
       # Restricting the steer rate creates the resistive component needed for resonance
@@ -186,5 +186,5 @@ class LatControl(object):
 
     self.sat_flag = self.pid.saturated
     self.prev_angle_rate = angle_rate
-    return output_steer, float(self.angle_steers_des)
-    #return output_steer, float(self.angle_steers_des_mpc)
+    #return output_steer, float(self.angle_steers_des)
+    return output_steer, float(self.angle_steers_des_mpc)
