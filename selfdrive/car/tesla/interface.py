@@ -119,12 +119,16 @@ class CarInterface(object):
       ret.steerActuatorDelay = 0.09
       
       # Kp and Ki for the longitudinal control
+      # IC cars decrease their PID values as speed increases. Probably because
+      # their torque trends upward with more RP. Teslas have a different
+      # torque curve: generally flat until ~70kph and then decreasing to 30% at
+      # ~160kph.
+      ret.longitudinalKpBP = [70., 160.]
       KP = 0.78
-      ret.longitudinalKpBP = [0., 5., 35.]
-      ret.longitudinalKpV = [i * KP for i in [1, 0.82, 0.67]]
+      ret.longitudinalKpV = [KP, KP / 0.3]
+      ret.longitudinalKiBP = [70., 160.]
       KI = 0.12
-      ret.longitudinalKiBP = [0., 35.]
-      ret.longitudinalKiV = [i * KI for i in [1, 0.67]]
+      ret.longitudinalKiV = [KI, KI / 0.3]
       
       #from honda
       #ret.longitudinalKpBP = [0., 5., 35.]
