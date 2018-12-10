@@ -1,7 +1,7 @@
 import logging
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
-from selfdrive.car.chrysler.values import DBC
+from selfdrive.car.chrysler.values import CAR, DBC
 from common.kalman.simple_kalman import KF1D
 import numpy as np
 
@@ -106,8 +106,11 @@ class CarState(object):
     self.seatbelt = (cp.vl["SEATBELT_STATUS"]['SEATBELT_DRIVER_UNLATCHED'] == 0)
 
     self.brake_pressed = cp.vl["BRAKE_2"]['BRAKE_PRESSED_2'] == 5 # human-only
-    # self.pedal_gas = 0  # TODO Disabled until we can find the message on Pacifica 2018
-    self.pedal_gas = cp.vl["ACCEL_PEDAL_MSG"]['ACCEL_PEDAL']
+    if self.CP.carFingerprint in (CAR.PACIFICA_2017_HYBRID, PACIFICA_2018_HYBRID,
+                                  CHEROKEE):
+      self.pedal_gas = cp.vl["ACCEL_PEDAL_MSG"]['ACCEL_PEDAL']
+    else:
+      self.pedal_gas = 0  # TODO Find accel Pedal message on PACIFICA_2018.
     self.car_gas = self.pedal_gas
     self.esp_disabled = (cp.vl["TRACTION_BUTTON"]['TRACTION_OFF'] == 1)
 
@@ -134,14 +137,13 @@ class CarState(object):
     self.left_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 1
     self.right_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 2
 
-    self.steer_override = False  # abs(cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_DRIVER']) > 100  # TODO
+    self.steer_override = False  # TODO
     self.steer_error = cp.vl["LKAS_INDICATOR_1"]['LKAS_IS_GREEN'] == 0  # 0 if wheel will not actuate
-    self.steer_torque_driver = 0 # cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_DRIVER'] # TODO
+    self.steer_torque_driver = 0  # TODO
 
     self.user_brake = 0
     self.brake_lights = self.brake_pressed
     self.v_cruise_pcm = cp.vl["DASHBOARD"]['ACC_SPEED_CONFIG_KPH']
     self.pcm_acc_status = self.main_on
-    # self.gas_pressed = not cp.vl["PCM_CRUISE"]['GAS_RELEASED']
 
     self.generic_toggle = bool(cp.vl["STEERING_LEVERS"]['HIGH_BEAM_FLASH'])
