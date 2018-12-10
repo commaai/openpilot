@@ -243,7 +243,7 @@ class CarState(object):
 
       #duration after we cross the line until we release is a factor of speed
       self.CL_TIMEA_BP = [10., 32., 44.]
-      self.CL_TIMEA_T = [0.7 ,0.30, 0.20]
+      self.CL_TIMEA_T = [0.7 ,0.50, 0.40]
 
       #duration to wait (in seconds) with blinkers on before starting to turn
       self.CL_WAIT_BEFORE_START = 1
