@@ -197,7 +197,7 @@ class Uploader(object):
     raise_on_thread(thread, SystemExit)
     thread.join()
 
-  def upload(self, key, fn):
+  def compress(self, key, fn):
     # write out the bz2 compress
     if fn.endswith("log"):
       ext = ".bz2"
@@ -210,6 +210,9 @@ class Uploader(object):
       key += ext
       fn += ext
 
+    return key, fn
+
+  def upload(self, key, fn):
     try:
       sz = os.path.getsize(fn)
     except OSError:
@@ -262,16 +265,18 @@ def uploader_fn(exit_event):
     if exit_event.is_set():
       return
 
+    d = uploader.next_file_to_upload(with_video=True)
+    key, fn, _ = d
+
+    if d is not None:
+      key, fn = uploader.compress(key, fn)
+    else:
+      time.sleep(5)
+      continue
+
     if not should_upload:
       time.sleep(5)
       continue
-
-    d = uploader.next_file_to_upload(with_video=True)
-    if d is None:
-      time.sleep(5)
-      continue
-
-    key, fn, _ = d
 
     cloudlog.info("to upload %r", d)
     success = uploader.upload(key, fn)
