@@ -194,11 +194,11 @@ void *flexray_send_thread(void *crap) {
 	tcp_send_msg(PACKET_TYPE_START_DRIVER, (const uint8_t *)value, value_sz);
 	free(value);
 	
-  // sendFlexRay = 8066
+  // sendFlexRay = 8067
   void *context = zmq_ctx_new();
   void *subscriber = zmq_socket(context, ZMQ_SUB);
   zmq_setsockopt(subscriber, ZMQ_SUBSCRIBE, "", 0);
-  zmq_connect(subscriber, "tcp://127.0.0.1:8066");
+  zmq_connect(subscriber, "tcp://127.0.0.1:8067");
 
   while (!stop_pending) {
     flexray_send(subscriber);
@@ -325,8 +325,8 @@ int main() {
   LOG("setpriority returns %d", err);
   void *context = zmq_ctx_new();
   void *publisher = zmq_socket(context, ZMQ_PUB);
-  // flexRay = 8065
-  zmq_bind(publisher, "tcp://*:8065");
+  // flexRay = 8066
+  zmq_bind(publisher, "tcp://*:8066");
 	// Do connect & recv in main thread
 	while(!do_exit) {
 		LOG("Attempting to connect");
