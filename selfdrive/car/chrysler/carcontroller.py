@@ -61,7 +61,6 @@ class CarController(object):
     self.last_steer = apply_steer
 
     if self.prev_frame == frame:
-      #logging.info('prev_frame == frame so skipping')
       return  # Do not reuse an old frame. This avoids repeating on shut-down.
 
     can_sends = []
@@ -73,6 +72,27 @@ class CarController(object):
       new_msg = create_23b(CS.frame_23b + 2)  # TODO try next
       sendcan.send(can_list_to_can_capnp([new_msg], msgtype='sendcan').to_bytes())
 
+    ################
+    # NEW ATTEMPT AT SIMPLE LOGIC
+    
+    # frame is 100Hz (0.01s period)
+    if (self.ccframe % 10 == 0):  # 0.1s period
+      new_msg = create_2d9(self.car_fingerprint)
+      can_sends.append(new_msg)
+    if (self.ccframe % 25 == 0):  # 0.25s period
+      new_msg = create_2a6(CS.gear_shifter, apply_steer, moving_fast, self.car_fingerprint)
+      can_sends.append(new_msg)
+    new_msg = create_292(int(apply_steer * CAR_UNITS_PER_DEGREE), frame)
+    self.prev_frame = frame  # save so we do not reuse frames
+    can_sends.append(new_msg)  # degrees * 5.1 -> car steering units
+
+    self.ccframe += 1
+    sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
+      
+    return
+    # TODO if simple works, to delete: self.send_new_status prev_2a6 
+    ################
+    # ORIGINAL WORKING LOGIC
     # frame is 100Hz (0.01s period)
     if (self.ccframe % 10 == 0):  # 0.1s period
       new_msg = create_2d9(self.car_fingerprint)
