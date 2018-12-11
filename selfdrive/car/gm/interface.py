@@ -224,6 +224,7 @@ class CarInterface(object):
     ret.laneDepartureToggle = False
     ret.distanceToggle = self.CS.follow_level
     ret.accSlowToggle = False
+    ret.blindspot = self.CS.blind_spot_on
 
     buttonEvents = []
 

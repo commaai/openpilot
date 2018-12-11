@@ -5,6 +5,7 @@ from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.gm import gmcan
 from selfdrive.car.gm.values import CAR, DBC, AccState
+from selfdrive.car.modules.ALCA_module import ALCAController
 from selfdrive.can.packer import CANPacker
 
 
@@ -68,7 +69,8 @@ class CarController(object):
     self.car_fingerprint = car_fingerprint
     self.allow_controls = allow_controls
     self.lka_icon_status_last = (False, False)
-
+    self.ALCA = ALCAController(self,True,False)  # Enabled  True and SteerByAngle only False
+    
     # Setup detection helper. Routes commands to
     # an appropriate CAN bus number.
     self.canbus = canbus
@@ -85,6 +87,20 @@ class CarController(object):
     if (frame % 1000 == 0):
       CS.cstm_btns.send_button_info()
       CS.UE.uiSetCarEvent(CS.cstm_btns.car_folder,CS.cstm_btns.car_name)
+
+    # Get the angle from ALCA.
+    alca_enabled = False
+    alca_steer = 0.
+    alca_angle = 0.
+    turn_signal_needed = 0
+    # Update ALCA status and custom button every 0.1 sec.
+    if self.ALCA.pid == None:
+      self.ALCA.set_pid(CS)
+    if (frame % 10 == 0):
+      self.ALCA.update_status(CS.cstm_btns.get_button_status("alca") > 0)
+    # steer torque
+    alca_angle, alca_steer, alca_enabled, turn_signal_needed = self.ALCA.update(enabled, CS, frame, actuators)
+
       
     # Sanity check.
     if not self.allow_controls:
@@ -100,7 +116,7 @@ class CarController(object):
     if (frame % P.STEER_STEP) == 0:
       lkas_enabled = enabled and not CS.steer_not_allowed and CS.v_ego > 3.
       if lkas_enabled:
-        apply_steer = actuators.steer * P.STEER_MAX
+        apply_steer = alca_steer * P.STEER_MAX
         apply_steer = apply_std_steer_torque_limits(apply_steer, self.apply_steer_last, CS.steer_torque_driver, P)
       else:
         apply_steer = 0

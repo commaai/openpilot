@@ -55,7 +55,8 @@ def get_powertrain_can_parser(CP, canbus):
 class CarState(object):
   def __init__(self, CP, canbus):
     # initialize can parser
-
+    self.alcaLabels = ["MadMax","Normal","Wifey"]
+    self.alcaMode = 0
     self.car_fingerprint = CP.carFingerprint
     self.cruise_buttons = CruiseButtons.UNPRESS
     self.prev_distance_button = 0
@@ -65,6 +66,45 @@ class CarState(object):
     self.right_blinker_on = False
     self.prev_right_blinker_on = False
     self.follow_level = 3
+    
+    # ALCA PARAMS
+    self.blind_spot_on = bool(0)
+    # max REAL delta angle for correction vs actuator
+    self.CL_MAX_ANGLE_DELTA_BP = [10., 32., 44.]
+    self.CL_MAX_ANGLE_DELTA = [2.0, 1., 0.5]
+    # adjustment factor for merging steer angle to actuator; should be over 4; the higher the smoother
+    self.CL_ADJUST_FACTOR_BP = [10., 44.]
+    self.CL_ADJUST_FACTOR = [16. , 8.]
+    # reenrey angle when to let go
+    self.CL_REENTRY_ANGLE_BP = [10., 44.]
+    self.CL_REENTRY_ANGLE = [5. , 5.]
+    # a jump in angle above the CL_LANE_DETECT_FACTOR means we crossed the line
+    self.CL_LANE_DETECT_BP = [10., 44.]
+    self.CL_LANE_DETECT_FACTOR = [1.5, 2.5]
+    self.CL_LANE_PASS_BP = [10., 20., 44.]
+    self.CL_LANE_PASS_TIME = [40.,10., 4.] 
+    # change lane delta angles and other params
+    self.CL_MAXD_BP = [10., 32., 44.]
+    self.CL_MAXD_A = [.358, 0.084, 0.040] #delta angle based on speed; needs fine tune, based on Tesla steer ratio of 16.75
+    self.CL_MIN_V = 8.9 # do not turn if speed less than x m/2; 20 mph = 8.9 m/s
+    # do not turn if actuator wants more than x deg for going straight; this should be interp based on speed
+    self.CL_MAX_A_BP = [10., 44.]
+    self.CL_MAX_A = [10., 10.] 
+    # define limits for angle change every 0.1 s
+    # we need to force correction above 10 deg but less than 20
+    # anything more means we are going to steep or not enough in a turn
+    self.CL_MAX_ACTUATOR_DELTA = 2.
+    self.CL_MIN_ACTUATOR_DELTA = 0. 
+    self.CL_CORRECTION_FACTOR = [1.,1.1,1.2]
+    self.CL_CORRECTION_FACTOR_BP = [10., 32., 44.]
+    #duration after we cross the line until we release is a factor of speed
+    self.CL_TIMEA_BP = [10., 32., 44.]
+    self.CL_TIMEA_T = [0.7 ,0.30, 0.30]
+    #duration to wait (in seconds) with blinkers on before starting to turn
+    self.CL_WAIT_BEFORE_START = 1
+    #END OF ALCA PARAMS
+    
+    self.CP = CP
     
     #BB UIEvents
     self.UE = UIEvents(self)
@@ -89,7 +129,7 @@ class CarState(object):
   def init_ui_buttons(self):
     btns = []
     btns.append(UIButton("sound", "SND", 0, "", 0))
-    btns.append(UIButton("","",0,"",1))
+    btns.append(UIButton("alca", "ALC", 1, self.alcaLabels[self.alcaMode], 1))
     btns.append(UIButton("","",0,"",2))
     btns.append(UIButton("","",0,"",3))
     btns.append(UIButton("gas","GAS",0,"",4))
@@ -98,10 +138,18 @@ class CarState(object):
   #BB update ui buttons
   def update_ui_buttons(self,id,btn_status):
     if self.cstm_btns.btns[id].btn_status > 0:
+      if (id == 1) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="alca":
+          if self.cstm_btns.btns[id].btn_label2 == self.alcaLabels[self.alcaMode]:
+            self.alcaMode = (self.alcaMode + 1 ) % 3
+          else:
+            self.alcaMode = 0
+          self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
+          self.cstm_btns.hasChanges = True
+      else:
         self.cstm_btns.btns[id].btn_status = btn_status * self.cstm_btns.btns[id].btn_status
     else:
         self.cstm_btns.btns[id].btn_status = btn_status
- 
+
   def update(self, pt_cp):
 
     self.can_valid = pt_cp.can_valid
