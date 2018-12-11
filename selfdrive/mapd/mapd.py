@@ -15,6 +15,8 @@ except ImportError as e:
   args.extend(sys.argv)
   os.execv(sys.executable, args)
 
+import os
+import sys
 import time
 import zmq
 import threading
@@ -22,10 +24,13 @@ import numpy as np
 import overpy
 from collections import defaultdict
 
+from common.params import Params
 from common.transformations.coordinates import geodetic2ecef
 from selfdrive.services import service_list
 import selfdrive.messaging as messaging
 from mapd_helpers import LOOKAHEAD_TIME, MAPS_LOOKAHEAD_DISTANCE, Way, circle_through_points
+import selfdrive.crash as crash
+from selfdrive.version import version, dirty
 
 
 OVERPASS_API_URL = "https://overpass.kumi.systems/api/interpreter"
@@ -39,13 +44,37 @@ last_query_result = None
 last_query_pos = None
 
 
+def setup_thread_excepthook():
+  """
+  Workaround for `sys.excepthook` thread bug from:
+  http://bugs.python.org/issue1230540
+  Call once from the main thread before creating any threads.
+  Source: https://stackoverflow.com/a/31622038
+  """
+  init_original = threading.Thread.__init__
+
+  def init(self, *args, **kwargs):
+    init_original(self, *args, **kwargs)
+    run_original = self.run
+
+    def run_with_except_hook(*args2, **kwargs2):
+      try:
+        run_original(*args2, **kwargs2)
+      except Exception:
+        sys.excepthook(*sys.exc_info())
+
+    self.run = run_with_except_hook
+
+  threading.Thread.__init__ = init
+
+
 def build_way_query(lat, lon, radius=50):
   """Builds a query to find all highways within a given radius around a point"""
   pos = "  (around:%f,%f,%f)" % (radius, lat, lon)
   q = """(
   way
   """ + pos + """
-  [highway];
+  [highway][highway!~"^(footway|path|bridleway|steps|cycleway|construction|bus_guideway|escape)$"];
   >;);out;
   """
   return q
@@ -56,6 +85,7 @@ def query_thread():
   api = overpy.Overpass(url=OVERPASS_API_URL, headers=OVERPASS_HEADERS, timeout=10.)
 
   while True:
+    time.sleep(1)
     if last_gps is not None:
       fix_ok = last_gps.flags & 1
       if not fix_ok:
@@ -99,7 +129,6 @@ def query_thread():
         query_lock.acquire()
         last_query_result = None
         query_lock.release()
-    time.sleep(1)
 
 
 def mapsd_thread():
@@ -145,7 +174,7 @@ def mapsd_thread():
       speed = gps.speed
 
       query_lock.acquire()
-      cur_way = Way.closest(last_query_result, lat, lon, heading)
+      cur_way = Way.closest(last_query_result, lat, lon, heading, cur_way)
       if cur_way is not None:
         pnts, curvature_valid = cur_way.get_lookahead(last_query_result, lat, lon, heading, MAPS_LOOKAHEAD_DISTANCE)
 
@@ -157,7 +186,7 @@ def mapsd_thread():
           curvature_valid = False
 
         # The curvature is valid when at least MAPS_LOOKAHEAD_DISTANCE of road is found
-        if curvature_valid:
+        if curvature_valid and pnts.shape[0] > 3:
           # Compute the curvature for each point
           with np.errstate(divide='ignore'):
             circles = [circle_through_points(*p) for p in zip(pnts, pnts[1:], pnts[2:])]
@@ -224,6 +253,13 @@ def mapsd_thread():
 
 
 def main(gctx=None):
+  params = Params()
+  dongle_id = params.get("DongleId")
+  crash.bind_user(id=dongle_id)
+  crash.bind_extra(version=version, dirty=dirty, is_eon=True)
+  crash.install()
+
+  setup_thread_excepthook()
   main_thread = threading.Thread(target=mapsd_thread)
   main_thread.daemon = True
   main_thread.start()
