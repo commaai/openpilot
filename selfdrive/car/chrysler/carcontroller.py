@@ -21,8 +21,6 @@ class CarController(object):
     # redundant safety check with the board
     self.controls_allowed = True
     self.last_steer = 0
-    self.send_new_status = False  # indicates we want to send 2a6 when we can.
-    self.prev_2a6 = -9999  # long time ago.
     self.prev_frame = -1  # previous frame from interface from 220 frame
     self.ccframe = 0
     self.car_fingerprint = car_fingerprint
@@ -33,9 +31,6 @@ class CarController(object):
 
     self.packer = CANPacker(dbc_name)
 
-    #logging.basicConfig(level=logging.DEBUG, filename="/tmp/chrylog", filemode="a+",
-    #                    format="%(asctime)-15s %(levelname)-8s %(message)s")
-    #logging.info('CarController init')
 
   def update(self, sendcan, enabled, CS, frame, actuators,
              pcm_cancel_cmd, hud_alert, audible_alert, send_cancel_acc):
@@ -56,8 +51,6 @@ class CarController(object):
       apply_steer = 0
       moving_fast = False
 
-    if self.last_steer == 0 and apply_steer != 0:
-      self.send_new_status = True
     self.last_steer = apply_steer
 
     if self.prev_frame == frame:
@@ -68,13 +61,9 @@ class CarController(object):
     #*** control msgs ***
 
     if send_cancel_acc:
-      # new_msg = create_23b(1)  # trying 1 because that worked on test
-      new_msg = create_23b(CS.frame_23b + 2)  # TODO try next
+      new_msg = create_23b(CS.frame_23b + 2)
       sendcan.send(can_list_to_can_capnp([new_msg], msgtype='sendcan').to_bytes())
 
-    ################
-    # NEW ATTEMPT AT SIMPLE LOGIC
-    
     # frame is 100Hz (0.01s period)
     if (self.ccframe % 10 == 0):  # 0.1s period
       new_msg = create_2d9(self.car_fingerprint)
@@ -88,37 +77,3 @@ class CarController(object):
 
     self.ccframe += 1
     sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
-      
-    return
-    # TODO if simple works, to delete: self.send_new_status prev_2a6 
-    ################
-    # ORIGINAL WORKING LOGIC
-    # frame is 100Hz (0.01s period)
-    if (self.ccframe % 10 == 0):  # 0.1s period
-      new_msg = create_2d9(self.car_fingerprint)
-      sendcan.send(can_list_to_can_capnp([new_msg], msgtype='sendcan').to_bytes())
-      can_sends.append(new_msg)
-    if (self.ccframe % 25 == 0) or self.send_new_status:  # 0.25s period
-      if (self.ccframe - self.prev_2a6) < 20:  # at least 200ms (20 frames) since last 2a6.
-        self.send_new_status = True  # will not send, so send next time.
-        apply_steer = 0  # cannot steer yet, waiting for 2a6 to be sent.
-        last_steer = 0
-      else:
-        new_msg = create_2a6(CS.gear_shifter, apply_steer, moving_fast, self.car_fingerprint)
-        sendcan.send(can_list_to_can_capnp([new_msg], msgtype='sendcan').to_bytes())
-        can_sends.append(new_msg)
-        self.send_new_status = False
-        self.prev_2a6 = self.ccframe
-    new_msg = create_292(int(apply_steer * CAR_UNITS_PER_DEGREE), frame)
-    self.prev_frame = frame  # save so we do not reuse frames
-    sendcan.send(can_list_to_can_capnp([new_msg], msgtype='sendcan').to_bytes())
-    can_sends.append(new_msg)  # degrees * 5.1 -> car steering units
-    for msg in can_sends:
-      [addr, _, dat, _] = msg
-      outp  = ('make_can_msg:%s  len:%d  %s' % ('0x{:02x}'.format(addr), len(dat),
-                                                ' '.join('{:02x}'.format(ord(c)) for c in dat)))
-      #logging.info(outp)
-
-
-    self.ccframe += 1
-    # sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())

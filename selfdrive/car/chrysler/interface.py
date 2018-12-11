@@ -171,7 +171,7 @@ class CarInterface(object):
     ret.steeringPressed = self.CS.steer_override
 
     # cruise state
-    ret.cruiseState.enabled = self.CS.pcm_acc_status  # is this the same as main_on an issue?
+    ret.cruiseState.enabled = self.CS.pcm_acc_status  # same as main_on
     ret.cruiseState.speed = self.CS.v_cruise_pcm * CV.KPH_TO_MS
     ret.cruiseState.available = self.CS.main_on
     ret.cruiseState.speedOffset = 0.
@@ -239,9 +239,6 @@ class CarInterface(object):
       events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
       if (ret.cruiseState.enabled):
         self.send_cancel_acc = True
-
-    #if ret.gasPressed:
-    #  events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
 
     if self.low_speed_alert:
       events.append(create_event('belowSteerSpeed', [ET.WARNING]))

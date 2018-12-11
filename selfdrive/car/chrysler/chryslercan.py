@@ -4,8 +4,6 @@ from common.numpy_fast import clip
 from selfdrive.car.chrysler.values import CAR
 
 
-# *** Chrysler specific ***
-
 def calc_checksum(data):
   """This function does not want the checksum byte in the input data.
 
@@ -47,6 +45,7 @@ def make_can_msg(addr, dat):
   return [addr, 0, dat, 0]
 
 def create_2d9(car_fingerprint):
+  # LKAS_STATUS_1 (729) Lane-keeping heartbeat.
   msg = '0000000820'.decode('hex')  # 2017
   if car_fingerprint == CAR.PACIFICA_2018:
     msg = '0000000020'.decode('hex')
@@ -57,6 +56,7 @@ def create_2d9(car_fingerprint):
   return make_can_msg(0x2d9, msg)
 
 def create_2a6(gear, apply_steer, moving_fast, car_fingerprint):
+  # LKAS_INDICATOR_3 (678) Controls what lane-keeping icon is displayed.
   msg = '0000000000000000'.decode('hex')  # park or neutral
   if car_fingerprint == CAR.PACIFICA_2018:
     msg = '0064000000000000'.decode('hex')  # Have not verified 2018 park with a real car.
@@ -101,9 +101,10 @@ def create_2a6(gear, apply_steer, moving_fast, car_fingerprint):
 
 LIMIT = 230  # 230 is documented limit # 171 is max from main example
 STEP = 3  # 3 is stock. originally 20. 100 is fine. 200 is too much it seems.
-_prev_angle = 0  # TODO if this is needed, refactor it.
+_prev_angle = 0
 
 def create_292(apply_angle, frame):
+  # LKAS_INDICATOR_2 (658) Lane-keeping signal to turn the wheel.
   global _prev_angle, LIMIT, STEP
   apply_angle = int(apply_angle)
   if apply_angle > LIMIT:
@@ -121,6 +122,7 @@ def create_292(apply_angle, frame):
   return make_can_msg(0x292, str(bytearray(dat)))
   
 def create_23b(frame_23b):
+  # WHEEL_BUTTONS (571) Message sent to cancel ACC.
   start = [0x01]  # acc cancel set
   counter = (frame_23b % 10) << 4
   dat = start + [counter]

@@ -51,7 +51,6 @@ def get_can_parser(CP):
   # It's considered invalid if it is not received for 10x the expected period (1/f).
   checks = [
     # sig_address, frequency
-    # ("GEAR", 50),
     ("BRAKE_2", 50),
     ("LKAS_INDICATOR_1", 100),
     ("SPEED_1", 100),
@@ -82,9 +81,6 @@ class CarState(object):
                          C=np.matrix([1.0, 0.0]),
                          K=np.matrix([[0.12287673], [0.29666309]]))
     self.v_ego = 0.0
-    #logging.basicConfig(level=logging.DEBUG, filename="/tmp/chrylog-cs", filemode="a+",
-    #                    format="%(asctime)-15s %(levelname)-8s %(message)s")
-    #logging.info('CarState init')
 
 
   def update(self, cp):
@@ -97,7 +93,6 @@ class CarState(object):
 
     self.frame_220 = int(cp.vl["LKAS_INDICATOR_1"]['INCREMENTING_220'])
     self.frame_23b = int(cp.vl["WHEEL_BUTTONS"]['COUNTER'])
-    #logging.info('frame_220 %d' % self.frame_220)
 
     self.door_all_closed = not any([cp.vl["DOORS"]['DOOR_OPEN_FL'],
                                     cp.vl["DOORS"]['DOOR_OPEN_FR'],
