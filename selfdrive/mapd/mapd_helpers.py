@@ -49,7 +49,7 @@ class Way:
     self.points = np.asarray(points)
 
   @classmethod
-  def closest(cls, query_results, lat, lon, heading):
+  def closest(cls, query_results, lat, lon, heading, prev_way=None):
     results, tree, real_nodes, node_to_way = query_results
 
     cur_pos = geodetic2ecef((lat, lon, 0))
@@ -104,6 +104,12 @@ class Way:
       # With a factor of 60 a 20m offset causes the same error as a 20 degree heading error
       # (A 20 degree heading offset results in an a of about 1/3)
       score = abs(a) * 60. + abs(b)
+
+      # Prefer same type of road
+      if prev_way is not None:
+        if way.way.tags.get('highway', '') == prev_way.way.tags.get('highway', ''):
+          score *= 0.5
+
       if closest_way is None or score < best_score:
         closest_way = way
         best_score = score
