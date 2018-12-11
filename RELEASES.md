@@ -7,6 +7,7 @@ Version 0.5.6 (2018-11-16)
  * More tuning to Honda positive accelerations
  * Reduce brake pump use on Hondas
  * Chevrolet Malibu support thanks to tylergets!
+ * Holden Astra support thanks to AlexHill!
 
 Version 0.5.5 (2018-10-20)
 ========================
