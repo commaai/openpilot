@@ -31,10 +31,10 @@ config_fields = {
         ['LineLength', 'LineLength', (1, 72), 'Meters'],
         ['pdBDTx', 'pdBDTx', (0.0, 0.9), 'µs'],
         ['pdBDRx', 'pdBDRx', (0.0, 0.9), 'µs'],
-        ['pdStarDelay', 'pdStarDelay', (0.0, 0.9), 'µs'],
-        ['gdMinPropagationDelay', 'gdMinPropagationDelay', (0.0, 2.5), 'µs']
+        ['pdStarDelay', 'pdStarDelay', (0.0, 0.9), 'µs']
     ],
     'Cluster': [
+        ['gdMinPropagationDelay', 'gdMinPropagationDelay', (0.0, 2.5), 'µs'],
         ['gdMaxInitializationError', 'gdMaxInitializationError', (0.0, 11.7), 'µs'],
         ['gdMacrotick', 'gdMacrotick', (1, 6), 'µs'],
         ['gdTSSTransmitter', 'gdTSSTransmitter', (1, 15), 'gdBit'],
@@ -65,21 +65,11 @@ config_fields = {
     ],
     'Node': [
         ['pChannels', 'pChannels', [('CHANNEL_A', 0),('CHANNEL_B', 1), ('CHANNEL_AB', 2)], ''],
-        ['pWakeupChannel', 'pWakeupChannel', [('CHANNEL_A', 0),('CHANNEL_B', 1)], ''],
-        ['pWakeupPattern', 'pWakeupPattern', (0, 63), ''],
-        ['pPayloadLengthDynMax', 'pPayloadLengthDynMax', (0, cPayloadLengthMax), 'words'],
         ['pMicroPerCycle', 'pMicroPerCycle', (960, 1280000), 'uT'],
         ['pdListenTimeout', 'pdListenTimeout', (1926, 2567692), 'uT'],
-        ['pRateCorrectionOut', 'pRateCorrectionOut', (3, 3846), 'uT'],
-        ['pKeySlotId', 'pKeySlotId', (0, 1023), ''],
-        ['pKeySlotOnlyEnabled', 'pKeySlotOnlyEnabled', {True: 1, False: 0}, ''],
-        ['pKeySlotUsedForStartup', 'pKeySlotUsedForStartup', {True: 1, False: 0}, ''],
-        ['pKeySlotUsedForSync', 'pKeySlotUsedForSync', {True: 1, False: 0}, ''],
-        ['pLatestTx', 'pLatestTx', (0, 7988), 'Minislot'],
         ['pOffsetCorrectionOut', 'pOffsetCorrectionOut', (15, 16082), 'ut'],
-        ['pdAcceptedStartupRange', 'pdAcceptedStartupRange', (0, 2743), 'uT'],
-        ['pAllowPassiveToActive', 'pAllowPassiveToActive', (0, 31), 'cycle pairs'],
-        ['pClusterDriftDamping', 'pClusterDriftDamping', (0, 10), 'uT'],
+        ['pRateCorrectionOut', 'pRateCorrectionOut', (3, 3846), 'uT'],
+        ['pLatestTx', 'pLatestTx', (0, 7988), 'Minislot'],
         ['pDecodingCorrection', 'pDecodingCorrection', (12, 136), 'uT'],
         ['pDelayCompensationA', 'pDelayCompensationA', (4, 211), 'uT'],
         ['pDelayCompensationB', 'pDelayCompensationB', (4, 211), 'uT'],
@@ -87,6 +77,16 @@ config_fields = {
         ['pMacroInitialOffsetB', 'pMacroInitialOffsetB', (2, 68), 'MT'],
         ['pMicroInitialOffsetA', 'pMicroInitialOffsetA', (0, 239), 'uT'],
         ['pMicroInitialOffsetB', 'pMicroInitialOffsetB', (0, 239), 'uT'],
+        ['pWakeupChannel', 'pWakeupChannel', [('CHANNEL_A', 0),('CHANNEL_B', 1)], ''],
+        ['pWakeupPattern', 'pWakeupPattern', (0, 63), ''],
+        ['pPayloadLengthDynMax', 'pPayloadLengthDynMax', (0, cPayloadLengthMax), 'words'],
+        ['pKeySlotId', 'pKeySlotId', (0, 1023), ''],
+        ['pKeySlotOnlyEnabled', 'pKeySlotOnlyEnabled', {True: 1, False: 0}, ''],
+        ['pKeySlotUsedForStartup', 'pKeySlotUsedForStartup', {True: 1, False: 0}, ''],
+        ['pKeySlotUsedForSync', 'pKeySlotUsedForSync', {True: 1, False: 0}, ''],
+        ['pdAcceptedStartupRange', 'pdAcceptedStartupRange', (0, 2743), 'uT'],
+        ['pAllowPassiveToActive', 'pAllowPassiveToActive', (0, 31), 'cycle pairs'],
+        ['pClusterDriftDamping', 'pClusterDriftDamping', (0, 10), 'uT'],
         ['pAllowHaltDueToClock', 'pAllowHaltDueToClock', {True: 1, False: 0}, ''],
     ],
     'Board': [
@@ -956,6 +956,7 @@ class SendFrameDialog(QDialog):
 class FlexRayGUI(QWidget):
     def __init__(self):
         super().__init__()
+
         self.timer = QTimer()
         self.timer.timeout.connect(self.on_timer)
         self.recv_packets_thread = None
@@ -1070,14 +1071,15 @@ class FlexRayGUI(QWidget):
             self.status_label_left.setText('Connecting...')
             self.connect_btn.setEnabled(False)
             ConnectThread(self.on_connected, self.on_connect_failed, self.cur_config).start()
+
         else:
             self.recv_packets_thread.stop()
             self.connect_btn.setEnabled(False)
 
     def manage_config(self):
-            cfg_dlg = ConnectOrConfigDialog(self.cur_config, mode='config')
-            cfg_dlg.exec()
-            self.cur_config = cfg_dlg.cur_config
+        cfg_dlg = ConnectOrConfigDialog(self.cur_config, mode='config')
+        cfg_dlg.exec()
+        self.cur_config = cfg_dlg.cur_config
 
     def on_connected(self, conn):
         self.conn = conn

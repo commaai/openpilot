@@ -6,11 +6,13 @@ from math import ceil, floor
 from constants import *
 
 default_fr_config = {
+    # Network topology parameters, use naming convention in FLexRay spec
     'nStar': 0,
     'LineLength': 24,
     'pdBDTx': 0.1,
     'pdBDRx': 0.1,
     'pdStarDelay': 0.25,
+    # Cluster parameters, use naming convention in FLexRay spec
     'gdMinPropagationDelay': 0.0,
     'gdMaxInitializationError': 0.5,
     'gOffsetCorrectionMax': 12.0,
@@ -39,6 +41,7 @@ default_fr_config = {
     'gdWakeupSymbolRxLow': 55,
     'gdWakeupSymbolTxActive': 60,
     'gdWakeupSymbolTxIdle': 180,
+    # Node parameters, use naming convention in FLexRay spec
     'pChannels': 0,
     'pWakeupChannel': 0,
     'pWakeupPattern': 63,
@@ -63,11 +66,11 @@ default_fr_config = {
     'pMicroInitialOffsetA': 24,
     'pMicroInitialOffsetB': 24,
     'pAllowHaltDueToClock': 1,
-    'CLOCK_SRC': 0,
-    'BIT_RATE': 0,
-    'SCM_EN': 0,
-    'LOG_STATUS_DATA': 1,
-    'FIFOA_EN': 0,
+    'CLOCK_SRC': 0,         # Protocol engine clock source
+    'BIT_RATE': 0,          # Bit rate
+    'SCM_EN': 0,            # Single channel mode enabled
+    'LOG_STATUS_DATA': 1,   # Log protocol status data defined in FlexRay spec 9.3.1.3
+    'FIFOA_EN': 0,          # Receive FIFO for channel A enabled
     'FIFOA_Depth': 0,
     'FIFOA_MIAFV': 0,
     'FIFOA_MIAFM': 0,
@@ -87,7 +90,7 @@ default_fr_config = {
     'FIFOA_F3_MODE': 0,
     'FIFOA_F3_SID_LOWER': 0,
     'FIFOA_F3_SID_UPPER': 0,
-    'FIFOB_EN': 0,
+    'FIFOB_EN': 0,          # Receive FIFO for channel B enabled
     'FIFOB_Depth': 0,
     'FIFOB_MIAFV': 0,
     'FIFOB_MIAFM': 0,
@@ -107,25 +110,25 @@ default_fr_config = {
     'FIFOB_F3_MODE': 0,
     'FIFOB_F3_SID_LOWER': 0,
     'FIFOB_F3_SID_UPPER': 0,
-    'RxMsgBufs': [
+    'RxMsgBufs': [                  # Receive frames configuration
         {
-            'FrameId': 2,
-            'Channels': 1,
-            'CCF_EN': 0,
-            'CCF_VAL': 0,
-            'CCF_MASK': 0,
+            'FrameId': 2,           # The slot id we are listening on
+            'Channels': 1,          # The channel we are listening on
+            'CCF_EN': 0,            # Cycle counter filter enabled
+            'CCF_VAL': 0,           # Cycle counter filter value
+            'CCF_MASK': 0,          # Cycle counter filter mask
         },
     ],
-    'TxMsgBufs': [
+    'TxMsgBufs': [                  # Transmit frames configuration
         {
-            'FrameId': 1,
-            'PayloadLenMax': 8,
-            'Channels': 1,
-            'CCF_EN': 0,
-            'CCF_VAL': 0,
-            'CCF_MASK': 0,
-            'DynPayloadLen': 0,
-            'PPI': 0,
+            'FrameId': 1,           # The id of the slot which frame will be send on
+            'PayloadLenMax': 8,     # Max payload length in words, for dynamic slot and DynPayloadLen=1 only
+            'Channels': 1,          # The channel which frame will be send to
+            'CCF_EN': 0,            # Cycle counter filter enabled
+            'CCF_VAL': 0,           # Cycle counter filter value
+            'CCF_MASK': 0,          # Cycle counter filter mask
+            'DynPayloadLen': 0,     # Dynamic payload length enabled, for dynamic slot only
+            'PPI': 0,               # Payload preempt flag
         },
     ]
 }
@@ -412,8 +415,6 @@ def verify_config(config):
         return False, 'Duplicated frame id found in Rx message buffers.'
 
     tx_slot_ids = [x['FrameId'] for x in config['TxMsgBufs']]
-    if len(tx_slot_ids) == 0:
-        return False, 'There should be at least one Tx message buffer.'
     if len(set(tx_slot_ids)) != len(tx_slot_ids):
         return False, 'Duplicated frame id found in Tx message buffers.'
 
