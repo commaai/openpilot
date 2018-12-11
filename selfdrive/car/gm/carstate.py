@@ -68,6 +68,7 @@ class CarState(object):
     self.follow_level = 3
     
     # ALCA PARAMS
+    self.blind_spot_on = bool(0)
     # max REAL delta angle for correction vs actuator
     self.CL_MAX_ANGLE_DELTA_BP = [10., 32., 44.]
     self.CL_MAX_ANGLE_DELTA = [2.0, 1., 0.5]
