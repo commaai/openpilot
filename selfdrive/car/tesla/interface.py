@@ -127,7 +127,7 @@ class CarInterface(object):
       KP = 0.5
       ret.longitudinalKpV = [KP, KP / 0.33]
       ret.longitudinalKiBP = [70., 160.]
-      KI = 0.1
+      KI = 0.12
       ret.longitudinalKiV = [KI, KI / 0.33]
       
       #from honda
