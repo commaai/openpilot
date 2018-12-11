@@ -41,7 +41,7 @@ Directory structure
     ..
     └── selfdrive
             └── flexrayd
-                ├── flexrayd.c          # FlexRay boardd
+                ├── flexrayd.cc         # FlexRay boardd
                 └── flexrayd_test.py    # flexrayd test program, send/receive FlexRay frame to/from ZMQ
 
 How to compile
@@ -67,8 +67,8 @@ How to debug
     - In "Debugger" tab, set the debugger to OpenSDA in debug configuration window and find the board in the dropdown list.
     - Click "Debug" button to start debugging.
 - How to view debug log
-    - Connect LIN4 TX/RX ports(port name: PA5,PA6) on the board to PC using an USB to UART serial adapter.
-    - Use a tool to open the serial port created by the UART adapter
+    1. Connect LIN4 TX/RX ports(port name: PA5,PA6) on the board to PC using an USB to UART serial adapter.
+    2. Use a tool(like PUTTY on windows) on PC to view the output of the serial port created by the UART adapter.
 
 How to establish FlexRay communication between PC and EON
 ------
