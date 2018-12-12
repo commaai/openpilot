@@ -56,6 +56,7 @@ def process_hud_alert(hud_alert):
   fcw_display = 0
   steer_required = 0
   acc_alert = 0
+  
   if hud_alert == AH.NONE:          # no alert
     pass
   elif hud_alert == AH.FCW:         # FCW
@@ -64,7 +65,7 @@ def process_hud_alert(hud_alert):
     steer_required = hud_alert[1]
   else:                             # any other ACC alert
     acc_alert = hud_alert[1]
-
+    
   return fcw_display, steer_required, acc_alert
 
 
@@ -124,8 +125,8 @@ class CarController(object):
       snd_beep = snd_beep if snd_beep is not 0 else snd_chime
       
     # Do not send audible alert when steering is disabled or blinkers on
-    if not CS.lkMode or CS.left_blinker_on or CS.right_blinker_on:
-      snd_chime = 0
+    #if not CS.lkMode or CS.left_blinker_on or CS.right_blinker_on:
+    #  snd_chime = 0
 
     #print chime, alert_id, hud_alert
     fcw_display, steer_required, acc_alert = process_hud_alert(hud_alert)
