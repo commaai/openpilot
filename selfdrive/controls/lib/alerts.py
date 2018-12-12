@@ -100,6 +100,20 @@ ALERTS = [
       "Steering Temporarily Unavailable",
       AlertStatus.userPrompt, AlertSize.mid,
       Priority.LOW, VisualAlert.none, AudibleAlert.none, .2, .2, .2),
+  
+  Alert(
+      "manualSteeringRequired",
+      "MANUAL STEERING REQUIRED",
+      "Steering is Off - Press LKAS button to turn On",
+      AlertStatus.userPrompt, AlertSize.mid,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, .2, .2, .2),
+  
+  Alert(
+      "manualSteeringRequiredBlinkersOn",
+      "MANUAL STEERING REQUIRED",
+      "Left or Right Signal is On",
+      AlertStatus.userPrompt, AlertSize.mid,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, .2, .2, .2),
 
   Alert(
       "preDriverDistracted",
