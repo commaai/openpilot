@@ -131,11 +131,11 @@ def create_DAS_bootID_msg():
   struct.pack_into('BBBBBBBB', msg, 0, 0x55,0x00,0xE3,0x00,0xBD,0x03,0x20,0x00)
   return [msg_id, 0, msg.raw, 0]
 
-def create_DAS_warningMatrix3(idx,driverResumeRequired):
+def create_DAS_warningMatrix3(idx,apUnavailable,alca_cancelled,gas_to_resume):
   msg_id = 0x349
   msg_len = 8
   msg = create_string_buffer(msg_len)
-  struct.pack_into('BBBBBBBB', msg, 0, driverResumeRequired << 1, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)
+  struct.pack_into('BBBBBBBB', msg, 0, gas_to_resume << 1, apUnavailable << 5, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)
   return [msg_id, 0, msg.raw, 0]
 
 def create_DAS_warningMatrix1(idx):
@@ -157,12 +157,12 @@ def create_DAS_warningMatrix0(idx):
     struct.pack_into('BBBBBBBB', msg, 0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)
   return [msg_id, 0, msg.raw, 0]
 
-def create_DAS_status_msg(idx,op_status,speed_limit_kph,alca_state,hands_on_state):
+def create_DAS_status_msg(idx,op_status,speed_limit_kph,alca_state,hands_on_state,forward_collission_warning,cc_state):
   msg_id = 0x399
   msg_len = 8
   msg = create_string_buffer(msg_len)
   sl = int(speed_limit_kph / 5)
-  struct.pack_into('BBBBBBB', msg, 0, op_status,sl,sl,0x00,0x08,(hands_on_state << 2) + ((alca_state & 0x03) << 6),((idx << 4) &0xF0 )+( 0x0F & (alca_state >>2)))
+  struct.pack_into('BBBBBBB', msg, 0, op_status,sl,(forward_collission_warning << 6) + sl,0x00,(cc_state << 3),(hands_on_state << 2) + ((alca_state & 0x03) << 6),((idx << 4) &0xF0 )+( 0x0F & (alca_state >>2)))
   struct.pack_into('B', msg, msg_len-1, add_tesla_checksum(msg_id,msg))
   return [msg_id, 0, msg.raw, 0]
 

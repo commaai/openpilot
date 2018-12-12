@@ -213,14 +213,21 @@ class CarController(object):
           CS.DAS_info_msg += 1
           CS.DAS_info_msg = CS.DAS_info_msg % 10
         #send DAS_status
+        # TODO: forward collission warning
         if frame % 50 == 0: 
           op_status = 0x02
           hands_on_state = 0x00
+          forward_collission_warning = 0 #1 if needed
+          if hud_alert == AH.FCW:
+            forward_collission_warning = 0x01
+          cc_state = 0 #cruise state: 0 unavailable, 1 available, 2 enabled, 3 hold
           speed_limit_kph = int(self.speedlimit_mph)
           alca_state = 0x08 
           if enabled:
             op_status = 0x03
             alca_state = 0x08 + turn_signal_needed
+            if self.ALCA.laneChange_cancelled:
+              alca_state = 0x14
             #if not enable_steer_control:
               #op_status = 0x04
               #hands_on_state = 0x03
@@ -229,7 +236,7 @@ class CarController(object):
                 hands_on_state = 0x03
               else:
                 hands_on_state = 0x05
-          can_sends.append(teslacan.create_DAS_status_msg(CS.DAS_status_idx,op_status,speed_limit_kph,alca_state,hands_on_state))
+          can_sends.append(teslacan.create_DAS_status_msg(CS.DAS_status_idx,op_status,speed_limit_kph,alca_state,hands_on_state,forward_collission_warning,cc_state))
           CS.DAS_status_idx += 1
           CS.DAS_status_idx = CS.DAS_status_idx % 16
         #send DAS_status2
@@ -299,10 +306,14 @@ class CarController(object):
           CS.DAS_warningMatrix0_idx = CS.DAS_warningMatrix0_idx % 16
         #send DAS_warningMatrix3
         if (frame + 3) % 6 == 0: 
-          driverResumeRequired = 0
+          apUnavailable = 0
+          gas_to_resume = 0
+          alca_cancelled = 0
           if enabled and not enable_steer_control:
-            driverResumeRequired = 1
-          can_sends.append(teslacan.create_DAS_warningMatrix3(CS.DAS_warningMatrix3_idx,driverResumeRequired))
+            apUnavailable = 1
+          if self.ALCA.laneChange_cancelled:
+            alca_cancelled = 1
+          can_sends.append(teslacan.create_DAS_warningMatrix3(CS.DAS_warningMatrix3_idx,apUnavailable,alca_cancelled,gas_to_resume))
           CS.DAS_warningMatrix3_idx += 1
           CS.DAS_warningMatrix3_idx = CS.DAS_warningMatrix3_idx % 16
         #send DAS_warningMatrix1
