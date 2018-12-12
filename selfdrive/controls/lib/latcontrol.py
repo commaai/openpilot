@@ -164,10 +164,10 @@ class LatControl(object):
           self.last_cloudlog_t = t
           cloudlog.warning("Lateral mpc - nan: True")
 
-    #elif self.frames > 20:
-    #  self.steerpub.send(self.steerdata)
-    #  self.frames = 0
-    #  self.steerdata = self.influxString
+    elif self.frames > 20:
+      self.steerpub.send(self.steerdata)
+      self.frames = 0
+      self.steerdata = self.influxString
 
     if v_ego < 0.3 or not active:
       output_steer = 0.0
@@ -220,39 +220,40 @@ class LatControl(object):
 
       
       # All but the last 3 lines after here are for real-time dashboarding
-      #self.pCost = 0.0
-      #self.lCost = 0.0
-      #self.rCost = 0.0
-      #self.hCost = 0.0
-      #self.srCost = 0.0
-      #self.last_ff_a = 0.0
-      #self.last_ff_r = 0.0
-      #self.center_angle = 0.0
-      #self.steer_zero_crossing = 0.0
-      #self.steer_rate_cost = 0.0
-      #self.avg_angle_rate = 0.0
-      #self.angle_rate_count = 0.0
-      #steer_motor = 0.0
-      #self.frames += 1
-      #steer_parameter1 = 0.0
-      #steer_parameter2 = 0.0
-      #steer_parameter3 = 0.0
-      #steer_parameter4 = 0.0
-      #steer_parameter5 = 0.0
-      #steer_parameter6 = 0.0
-      #steering_control_active = 0.0
-      #steer_torque_motor = 0.0
-      #steer_status = 0.0
-      #steer_stock_torque = 0.0
-      #steer_stock_torque_request = 0.0
+      self.pCost = 0.0
+      self.lCost = 0.0
+      self.rCost = 0.0
+      self.hCost = 0.0
+      self.srCost = 0.0
+      self.last_ff_a = 0.0
+      self.last_ff_r = 0.0
+      self.center_angle = 0.0
+      self.steer_zero_crossing = 0.0
+      self.steer_rate_cost = 0.0
+      self.avg_angle_rate = 0.0
+      self.angle_rate_count = 0.0
+      steer_motor = 0.0
+      self.frames += 1
+      steer_parameter1 = 0.0
+      steer_parameter2 = 0.0
+      steer_parameter3 = 0.0
+      steer_parameter4 = 0.0
+      steer_parameter5 = 0.0
+      steer_parameter6 = 0.0
+      steering_control_active = 0.0
+      steer_torque_motor = 0.0
+      driver_torque = 0.0
+      steer_status = 0.0
+      steer_stock_torque = 0.0
+      steer_stock_torque_request = 0.0
 
-      #self.steerdata += ("%d,%s,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d|" % (self.isActive, \
-      #ff_type, 1 if ff_type == "a" else 0, 1 if ff_type == "r" else 0, steer_status, steer_torque_motor, steering_control_active, steer_parameter1, steer_parameter2, steer_parameter3, steer_parameter4, steer_parameter5, steer_parameter6, steer_stock_torque, steer_stock_torque_request, self.cur_state[0].x, self.cur_state[0].y, self.lateral_error, self.mpc_solution[0].y[0], self.mpc_solution[0].y[1], self.mpc_solution[0].y[2], self.mpc_solution[0].y[3], self.mpc_solution[0].y[4], self.cur_state[0].psi, self.cur_state[0].delta, self.cur_state[0].t, self.curvature_factor, self.slip_factor ,self.smooth_factor, self.accel_limit, float(restricted_steer_rate) ,self.ff_angle_factor, self.ff_rate_factor, self.pCost, self.lCost, self.rCost, self.hCost, self.srCost, steer_motor, float(driver_torque), \
-      #self.angle_rate_count, self.angle_rate_desired, self.avg_angle_rate, projected_angle_steers, float(angle_rate), self.steer_zero_crossing, self.center_angle, angle_steers, self.angle_steers_des, angle_offset, \
-      #self.angle_steers_des_mpc, CP.steerRatio, CP.steerKf, CP.steerKpV[0], CP.steerKiV[0], CP.steerRateCost, PL.PP.l_prob, \
-      #PL.PP.r_prob, PL.PP.c_prob, PL.PP.p_prob, self.l_poly[0], self.l_poly[1], self.l_poly[2], self.l_poly[3], self.r_poly[0], self.r_poly[1], self.r_poly[2], self.r_poly[3], \
-      #self.p_poly[0], self.p_poly[1], self.p_poly[2], self.p_poly[3], PL.PP.c_poly[0], PL.PP.c_poly[1], PL.PP.c_poly[2], PL.PP.c_poly[3], PL.PP.d_poly[0], PL.PP.d_poly[1], \
-      #PL.PP.d_poly[2], PL.PP.lane_width, PL.PP.lane_width_estimate, PL.PP.lane_width_certainty, v_ego, self.pid.p, self.pid.i, self.pid.f, int(time.time() * 100) * 10000000))
+      self.steerdata += ("%d,%s,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d|" % (self.isActive, \
+      ff_type, 1 if ff_type == "a" else 0, 1 if ff_type == "r" else 0, steer_status, steer_torque_motor, steering_control_active, steer_parameter1, steer_parameter2, steer_parameter3, steer_parameter4, steer_parameter5, steer_parameter6, steer_stock_torque, steer_stock_torque_request, self.cur_state[0].x, self.cur_state[0].y, self.lateral_error, self.mpc_solution[0].y[0], self.mpc_solution[0].y[1], self.mpc_solution[0].y[2], self.mpc_solution[0].y[3], self.mpc_solution[0].y[4], self.cur_state[0].psi, self.cur_state[0].delta, self.cur_state[0].t, self.curvature_factor, self.slip_factor ,self.smooth_factor, self.accel_limit, float(restricted_steer_rate) ,self.ff_angle_factor, self.ff_rate_factor, self.pCost, self.lCost, self.rCost, self.hCost, self.srCost, steer_motor, float(driver_torque), \
+      self.angle_rate_count, self.angle_rate_desired, self.avg_angle_rate, projected_angle_steers, float(angle_rate), self.steer_zero_crossing, self.center_angle, angle_steers, self.angle_steers_des, angle_offset, \
+      self.angle_steers_des_mpc, CP.steerRatio, CP.steerKf, CP.steerKpV[0], CP.steerKiV[0], CP.steerRateCost, PL.PP.l_prob, \
+      PL.PP.r_prob, PL.PP.c_prob, PL.PP.p_prob, self.l_poly[0], self.l_poly[1], self.l_poly[2], self.l_poly[3], self.r_poly[0], self.r_poly[1], self.r_poly[2], self.r_poly[3], \
+      self.p_poly[0], self.p_poly[1], self.p_poly[2], self.p_poly[3], PL.PP.c_poly[0], PL.PP.c_poly[1], PL.PP.c_poly[2], PL.PP.c_poly[3], PL.PP.d_poly[0], PL.PP.d_poly[1], \
+      PL.PP.d_poly[2], PL.PP.lane_width, PL.PP.lane_width_estimate, PL.PP.lane_width_certainty, v_ego, self.pid.p, self.pid.i, self.pid.f, int(time.time() * 100) * 10000000))
       
     self.sat_flag = self.pid.saturated
     self.prev_angle_rate = angle_rate
