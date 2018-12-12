@@ -25,7 +25,10 @@ class PathPlanner(object):
       r_poly = model_polyfit(md.model.rightLane.points, self._path_pinv)  # right line
 
       angle_error = LaC.angle_steers_des_mpc - (0.05 * LaC.avg_angle_steers + 0.1 * LaC.projected_angle_steers) / 0.15
-      LaC.lateral_error = -np.clip(v_ego * 0.15 * math.tan(math.radians(angle_error)), -0.2, 0.2)
+      if angle_error == 0:
+        LaC.lateral_error = 0.0
+      else:
+        LaC.lateral_error = -np.clip(v_ego * 0.15 * math.tan(math.radians(angle_error)), -0.2, 0.2)
 
       # only offset left and right lane lines; offsetting p_poly does not make sense
       l_poly[3] += CAMERA_OFFSET + LaC.lateral_error
