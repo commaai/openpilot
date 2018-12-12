@@ -164,7 +164,7 @@ static int honda_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
 static int honda_bosch_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
   if (bus_num == 1 || bus_num == 2) {
     int addr = to_fwd->RIR>>21;
-    return addr != 0xE4 addr != 0x33D ? (uint8_t)(~bus_num & 0x3) : -1;
+    return addr != 0xE4 && addr != 0x33D ? (uint8_t)(~bus_num & 0x3) : -1;
   }
   return -1;
 }
