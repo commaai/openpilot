@@ -125,6 +125,8 @@ class ALCAController(object):
     self.keep_angle = False #local variable to keep certain angle delta vs. actuator
     self.pid = None
     self.last10delta = []
+    self.laneChange_cancelled = False
+    self.laneChange_cancelled_counter = 0
 
   def last10delta_reset(self):
     self.last10delta = []
@@ -177,6 +179,10 @@ class ALCAController(object):
     cl_min_v = CS.CL_MIN_V
     self.laneChange_wait = CS.CL_WAIT_BEFORE_START
 
+    if self.laneChange_cancelled_counter > 0:
+      self.laneChange_cancelled_counter -= 1
+      if self.laneChange_cancelled_counter == 0:
+        self.laneChange_cancelled = False
 
     # Basic highway lane change logic
     actuator_delta = 0.
@@ -228,6 +234,8 @@ class ALCAController(object):
       if (self.laneChange_enabled > 1) and (self.laneChange_direction <> laneChange_direction):
         # something is not right; signal in oposite direction; cancel
         CS.UE.custom_alert_message(3,"Auto Lane Change Canceled! (s)",200,5)
+        self.laneChange_cancelled = True
+        self.laneChange_cancelled_counter = 200
         self.laneChange_enabled = 1
         self.laneChange_counter = 0
         self.laneChange_direction = 0
@@ -257,6 +265,8 @@ class ALCAController(object):
     if self.laneChange_enabled > 1:
       if (CS.steer_override or (CS.v_ego < cl_min_v)):
         CS.UE.custom_alert_message(4,"Auto Lane Change Canceled! (u)",200,3)
+        self.laneChange_cancelled = True
+        self.laneChange_cancelled_counter = 200
         # if any steer override cancel process or if speed less than min speed
         self.laneChange_counter = 0
         self.laneChange_enabled = 1
@@ -343,6 +353,8 @@ class ALCAController(object):
           self.laneChange_enabled = 1
           self.laneChange_counter = 0
           CS.UE.custom_alert_message(4,"Auto Lane Change Canceled! (t)",200,5)
+          self.laneChange_cancelled = True
+          self.laneChange_cancelled_counter = 200
           self.laneChange_counter = 0
           CS.cstm_btns.set_button_status("alca",1)
       # this is the critical start of the turn
@@ -362,6 +374,8 @@ class ALCAController(object):
           CS.UE.custom_alert_message(2,"Auto Lane Change     Engaged! (3)",100)
         if (abs(self.laneChange_angle) > cl_max_a) and (self.laneChange_counter == 1):
             CS.UE.custom_alert_message(4,"Auto Lane Change Canceled! (a)",200,5)
+            self.laneChange_cancelled = True
+            self.laneChange_cancelled_counter = 200
             self.laneChange_enabled = 1
             self.laneChange_counter = 0
             self.laneChange_direction = 0
