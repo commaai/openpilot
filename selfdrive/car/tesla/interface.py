@@ -123,10 +123,10 @@ class CarInterface(object):
       # their torque trends upward with more RPM. Teslas have a different
       # torque curve: generally flat until ~70kph and then decreasing to 33% at
       # ~160kph.
-      ret.longitudinalKpBP = [70., 160.]
+      ret.longitudinalKpBP = [20., 45.] # m/s, presumably
       KP = 0.5
       ret.longitudinalKpV = [KP, KP / 0.33]
-      ret.longitudinalKiBP = [70., 160.]
+      ret.longitudinalKiBP = [20., 45.] # m/s, presumably
       KI = 0.12
       ret.longitudinalKiV = [KI, KI / 0.33]
       
