@@ -17,7 +17,6 @@ _DT_MPC = 0.05  # 20Hz
 
 def calc_states_after_delay(states, v_ego, steer_angle, curvature_factor, steer_ratio, delay):
   states[0].x = v_ego * delay
-  #states[0].y = np.clip(states[0].x * math.tan(math.radians(steer_error)), -0.01, 0.01)
   states[0].psi = v_ego * curvature_factor * math.radians(steer_angle) / steer_ratio * delay
   return states
 
@@ -51,6 +50,17 @@ class LatControl(object):
     self.prev_angle_rate = 0
     self.feed_forward = 0.0
     self.angle_rate_desired = 0.0
+    self.last_mpc_ts = 0.0
+    self.angle_steers_des = 0.0
+    self.angle_steers_des_mpc = 0.0
+    self.angle_steers_des_prev = 0.0
+    self.angle_steers_des_time = 0.0
+    self.avg_angle_steers = 0.0
+    self.last_y = 0.0
+    self.new_y = 0.0
+    self.angle_sample_count = 0.0
+    self.projected_angle_steers = 0.0
+    self.lateral_error = 0.0
 
     # variables for dashboarding
     self.context = zmq.Context()
@@ -84,18 +94,6 @@ class LatControl(object):
     self.cur_state[0].y = 0.0
     self.cur_state[0].psi = 0.0
     self.cur_state[0].delta = 0.0
-
-    self.last_mpc_ts = 0.0
-    self.angle_steers_des = 0.0
-    self.angle_steers_des_mpc = 0.0
-    self.angle_steers_des_prev = 0.0
-    self.angle_steers_des_time = 0.0
-    self.avg_angle_steers = 0.0
-    self.last_y = 0.0
-    self.new_y = 0.0
-    self.angle_sample_count = 0.0
-    self.projected_angle_steers = 0.0
-    self.lateral_error = 0.0
 
   def reset(self):
     self.pid.reset()
