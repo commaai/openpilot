@@ -5,6 +5,8 @@ from xml.sax import handler, make_parser
 import json
 import re
 import sys
+import time
+import requests
 
 from overpy import exception
 from overpy.__about__ import (
@@ -18,12 +20,15 @@ PY3 = sys.version_info[0] == 3
 XML_PARSER_DOM = 1
 XML_PARSER_SAX = 2
 
-if PY2:
-    from urllib2 import urlopen
-    from urllib2 import HTTPError
-elif PY3:
-    from urllib.request import urlopen
-    from urllib.error import HTTPError
+# Try to convert some common attributes
+# http://wiki.openstreetmap.org/wiki/Elements#Common_attributes
+GLOBAL_ATTRIBUTE_MODIFIERS = {
+    "changeset": int,
+    "timestamp": lambda ts: datetime.strptime(ts, "%Y-%m-%dT%H:%M:%SZ"),
+    "uid": int,
+    "version": int,
+    "visible": lambda v: v.lower() == "true"
+}
 
 
 def is_valid_type(element, cls):
@@ -41,11 +46,16 @@ def is_valid_type(element, cls):
 class Overpass(object):
     """
     Class to access the Overpass API
+
+    :cvar default_max_retry_count: Global max number of retries (Default: 0)
+    :cvar default_retry_timeout: Global time to wait between tries (Default: 1.0s)
     """
+    default_max_retry_count = 0
     default_read_chunk_size = 4096
+    default_retry_timeout = 1.0
     default_url = "http://overpass-api.de/api/interpreter"
 
-    def __init__(self, read_chunk_size=None, url=None, xml_parser=XML_PARSER_SAX):
+    def __init__(self, read_chunk_size=None, url=None, xml_parser=XML_PARSER_SAX, max_retry_count=None, retry_timeout=None, timeout=5.0, headers=None):
         """
         :param read_chunk_size: Max size of each chunk read from the server response
         :type read_chunk_size: Integer
@@ -53,6 +63,14 @@ class Overpass(object):
         :type url: str
         :param xml_parser: The xml parser to use
         :type xml_parser: Integer
+        :param max_retry_count: Max number of retries (Default: default_max_retry_count)
+        :type max_retry_count: Integer
+        :param retry_timeout: Time to wait between tries (Default: default_retry_timeout)
+        :type retry_timeout: float
+        :param timeout: HTTP request timeout
+        :type timeout: float
+        :param headers: HTTP request headers
+        :type headers: dict
         """
         self.url = self.default_url
         if url is not None:
@@ -63,7 +81,34 @@ class Overpass(object):
         if read_chunk_size is None:
             read_chunk_size = self.default_read_chunk_size
         self.read_chunk_size = read_chunk_size
+
+        if max_retry_count is None:
+            max_retry_count = self.default_max_retry_count
+        self.max_retry_count = max_retry_count
+
+        if retry_timeout is None:
+            retry_timeout = self.default_retry_timeout
+        self.retry_timeout = retry_timeout
+
         self.xml_parser = xml_parser
+        self.timeout = timeout
+        self.headers = headers
+
+    def _handle_remark_msg(self, msg):
+        """
+        Try to parse the message provided with the remark tag or element.
+
+        :param str msg: The message
+        :raises overpy.exception.OverpassRuntimeError: If message starts with 'runtime error:'
+        :raises overpy.exception.OverpassRuntimeRemark: If message starts with 'runtime remark:'
+        :raises overpy.exception.OverpassUnknownError: If we are unable to identify the error
+        """
+        msg = msg.strip()
+        if msg.startswith("runtime error:"):
+            raise exception.OverpassRuntimeError(msg=msg)
+        elif msg.startswith("runtime remark:"):
+            raise exception.OverpassRuntimeRemark(msg=msg)
+        raise exception.OverpassUnknownError(msg=msg)
 
     def query(self, query):
         """
@@ -76,56 +121,79 @@ class Overpass(object):
         if not isinstance(query, bytes):
             query = query.encode("utf-8")
 
-        try:
-            f = urlopen(self.url, query)
-        except HTTPError as e:
-            f = e
+        retry_num = 0
+        retry_exceptions = []
+        do_retry = True if self.max_retry_count > 0 else False
+        while retry_num <= self.max_retry_count:
+            if retry_num > 0:
+                time.sleep(self.retry_timeout)
+            retry_num += 1
 
-        response = f.read(self.read_chunk_size)
-        while True:
-            data = f.read(self.read_chunk_size)
-            if len(data) == 0:
-                break
-            response = response + data
-        f.close()
+            try:
+                if self.headers is not None:
+                    r = requests.post(self.url, query, timeout=self.timeout, headers=self.headers)
+                else:
+                    r = requests.post(self.url, query, timeout=self.timeout)
+                response = r.content
+            except (requests.exceptions.BaseHTTPError, requests.exceptions.RequestException) as e:
+                if not do_retry:
+                    raise e
+                retry_exceptions.append(e)
+                continue
 
-        if f.code == 200:
-            if PY2:
-                http_info = f.info()
-                content_type = http_info.getheader("content-type")
-            else:
-                content_type = f.getheader("Content-Type")
+            if r.status_code == 200:
+                content_type = r.headers["Content-Type"]
 
-            if content_type == "application/json":
-                return self.parse_json(response)
+                if content_type == "application/json":
+                    return self.parse_json(response)
 
-            if content_type == "application/osm3s+xml":
-                return self.parse_xml(response)
+                if content_type == "application/osm3s+xml":
+                    return self.parse_xml(response)
 
-            raise exception.OverpassUnknownContentType(content_type)
+                e = exception.OverpassUnknownContentType(content_type)
+                if not do_retry:
+                    raise e
+                retry_exceptions.append(e)
+                continue
+            elif r.status_code == 400:
+                msgs = []
+                for msg in self._regex_extract_error_msg.finditer(response):
+                    tmp = self._regex_remove_tag.sub(b"", msg.group("msg"))
+                    try:
+                        tmp = tmp.decode("utf-8")
+                    except UnicodeDecodeError:
+                        tmp = repr(tmp)
+                    msgs.append(tmp)
 
-        if f.code == 400:
-            msgs = []
-            for msg in self._regex_extract_error_msg.finditer(response):
-                tmp = self._regex_remove_tag.sub(b"", msg.group("msg"))
-                try:
-                    tmp = tmp.decode("utf-8")
-                except UnicodeDecodeError:
-                    tmp = repr(tmp)
-                msgs.append(tmp)
+                e = exception.OverpassBadRequest(
+                    query,
+                    msgs=msgs
+                )
+                if not do_retry:
+                    raise e
+                retry_exceptions.append(e)
+                continue
+            elif r.status_code == 429:
+                e = exception.OverpassTooManyRequests
+                if not do_retry:
+                    raise e
+                retry_exceptions.append(e)
+                continue
+            elif r.status_code == 504:
+                e = exception.OverpassGatewayTimeout
+                if not do_retry:
+                    raise e
+                retry_exceptions.append(e)
+                continue
 
-            raise exception.OverpassBadRequest(
-                query,
-                msgs=msgs
-            )
+            # No valid response code
+            e = exception.OverpassUnknownHTTPStatusCode(r.status_code)
+            if not do_retry:
+                raise e
+            retry_exceptions.append(e)
+            continue
 
-        if f.code == 429:
-            raise exception.OverpassTooManyRequests
-
-        if f.code == 504:
-            raise exception.OverpassGatewayTimeout
-
-        raise exception.OverpassUnknownHTTPStatusCode(f.code)
+        raise exception.MaxRetriesReached(retry_count=retry_num, exceptions=retry_exceptions)
 
     def parse_json(self, data, encoding="utf-8"):
         """
@@ -139,8 +207,11 @@ class Overpass(object):
         :rtype: overpy.Result
         """
         if isinstance(data, bytes):
-            data = data.decode(encoding)
+          data = data.decode(encoding)
+
         data = json.loads(data, parse_float=Decimal)
+        if "remark" in data:
+            self._handle_remark_msg(msg=data.get("remark"))
         return Result.from_json(data, api=self)
 
     def parse_xml(self, data, encoding="utf-8", parser=None):
@@ -155,12 +226,15 @@ class Overpass(object):
         """
         if parser is None:
             parser = self.xml_parser
-
         if isinstance(data, bytes):
             data = data.decode(encoding)
         if PY2 and not isinstance(data, str):
             # Python 2.x: Convert unicode strings
             data = data.encode(encoding)
+
+        m = re.compile("<remark>(?P<msg>[^<>]*)</remark>").search(data)
+        if m:
+            self._handle_remark_msg(m.group("msg"))
 
         return Result.from_xml(data, api=self, parser=parser)
 
@@ -279,23 +353,39 @@ class Result(object):
         return result
 
     @classmethod
-    def from_xml(cls, data, api=None, parser=XML_PARSER_SAX):
+    def from_xml(cls, data, api=None, parser=None):
         """
-        Create a new instance and load data from xml object.
+        Create a new instance and load data from xml data or object.
+
+        .. note::
+            If parser is set to None, the functions tries to find the best parse.
+            By default the SAX parser is chosen if a string is provided as data.
+            The parser is set to DOM if an xml.etree.ElementTree.Element is provided as data value.
 
         :param data: Root element
-        :type data: xml.etree.ElementTree.Element
-        :param api:
+        :type data: str | xml.etree.ElementTree.Element
+        :param api: The instance to query additional information if required.
         :type api: Overpass
-        :param parser: Specify the parser to use(DOM or SAX)
-        :type parser: Integer
+        :param parser: Specify the parser to use(DOM or SAX)(Default: None = autodetect, defaults to SAX)
+        :type parser: Integer | None
         :return: New instance of Result object
         :rtype: Result
         """
+        if parser is None:
+            if isinstance(data, str):
+                parser = XML_PARSER_SAX
+            else:
+                parser = XML_PARSER_DOM
+
         result = cls(api=api)
         if parser == XML_PARSER_DOM:
             import xml.etree.ElementTree as ET
-            root = ET.fromstring(data)
+            if isinstance(data, str):
+                root = ET.fromstring(data)
+            elif isinstance(data, ET.Element):
+                root = data
+            else:
+                raise exception.OverPyException("Unable to detect data type.")
 
             for elem_cls in [Node, Way, Relation, Area]:
                 for child in root:
@@ -522,17 +612,10 @@ class Element(object):
         """
 
         self._result = result
-        # Try to convert some common attributes
-        # http://wiki.openstreetmap.org/wiki/Elements#Common_attributes
-        self._attribute_modifiers = {
-            "changeset": int,
-            "timestamp": lambda ts: datetime.strptime(ts, "%Y-%m-%dT%H:%M:%SZ"),
-            "uid": int,
-            "version": int,
-            "visible": lambda v: v.lower() == "true"
-        }
         self.attributes = attributes
-        for n, m in self._attribute_modifiers.items():
+        # ToDo: Add option to modify attribute modifiers
+        attribute_modifiers = dict(GLOBAL_ATTRIBUTE_MODIFIERS.items())
+        for n, m in attribute_modifiers.items():
             if n in self.attributes:
                 self.attributes[n] = m(self.attributes[n])
         self.id = None
