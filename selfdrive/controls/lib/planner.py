@@ -6,6 +6,7 @@ import numpy as np
 from copy import copy
 from cereal import log
 from collections import defaultdict
+from common.params import Params
 from common.realtime import sec_since_boot
 from common.numpy_fast import interp
 import selfdrive.messaging as messaging
@@ -18,6 +19,10 @@ from selfdrive.controls.lib.longitudinal_mpc import libmpc_py
 from selfdrive.controls.lib.speed_smoother import speed_smoother
 from selfdrive.controls.lib.longcontrol import LongCtrlState, MIN_CAN_SPEED
 from selfdrive.controls.lib.radar_helpers import _LEAD_ACCEL_TAU
+
+# Max lateral acceleration, used to caclulate how much to slow down in turns
+A_Y_MAX = 2.0  # m/s^2
+NO_CURVATURE_SPEED = 200. * CV.MPH_TO_MS
 
 _DT = 0.01    # 100Hz
 _DT_MPC = 0.2  # 5Hz
@@ -249,8 +254,10 @@ class Planner(object):
     context = zmq.Context()
     self.CP = CP
     self.poller = zmq.Poller()
+
     self.live20 = messaging.sub_sock(context, service_list['live20'].port, conflate=True, poller=self.poller)
     self.model = messaging.sub_sock(context, service_list['model'].port, conflate=True, poller=self.poller)
+    self.live_map_data = messaging.sub_sock(context, service_list['liveMapData'].port, conflate=True, poller=self.poller)
 
     if os.environ.get('GPS_PLANNER_ACTIVE', False):
       self.gps_planner_plan = messaging.sub_sock(context, service_list['gpsPlannerPlan'].port, conflate=True, poller=self.poller, addr=GPS_PLANNER_ADDR)
@@ -293,7 +300,11 @@ class Planner(object):
 
     self.last_gps_planner_plan = None
     self.gps_planner_active = False
+    self.last_live_map_data = None
     self.perception_state = log.Live20Data.new_message()
+
+    self.params = Params()
+    self.v_speedlimit = NO_CURVATURE_SPEED
 
   def choose_solution(self, v_cruise_setpoint, enabled):
     if enabled:
@@ -327,7 +338,7 @@ class Planner(object):
     self.v_acc_future = min([self.mpc1.v_mpc_future, self.mpc2.v_mpc_future, v_cruise_setpoint])
 
   # this runs whenever we get a packet that can change the plan
-  def update(self, CS, LaC, LoC, v_cruise_kph, force_slow_decel):
+  def update(self, CS, CP, VM, LaC, LoC, v_cruise_kph, force_slow_decel):
     cur_time = sec_since_boot()
     v_cruise_setpoint = v_cruise_kph * CV.KPH_TO_MS
 
@@ -342,6 +353,8 @@ class Planner(object):
         l20 = messaging.recv_one(socket)
       elif socket is self.gps_planner_plan:
         gps_planner_plan = messaging.recv_one(socket)
+      elif socket is self.live_map_data:
+        self.last_live_map_data = messaging.recv_one(socket).liveMapData
 
     if gps_planner_plan is not None:
       self.last_gps_planner_plan = gps_planner_plan
@@ -381,9 +394,23 @@ class Planner(object):
       enabled = (LoC.long_control_state == LongCtrlState.pid) or (LoC.long_control_state == LongCtrlState.stopping)
       following = self.lead_1.status and self.lead_1.dRel < 45.0 and self.lead_1.vLeadK > CS.vEgo and self.lead_1.aLeadK > 0.0
 
+
+      if self.last_live_map_data:
+        self.v_speedlimit = NO_CURVATURE_SPEED
+
+        # Speed limit
+        if self.last_live_map_data.speedLimitValid:
+          speed_limit = self.last_live_map_data.speedLimit
+          set_speed_limit_active = self.params.get("LimitSetSpeed") == "1" and self.params.get("SpeedLimitOffset") is not None
+
+          if set_speed_limit_active:
+            offset = float(self.params.get("SpeedLimitOffset"))
+            self.v_speedlimit = speed_limit + offset
+
+      v_cruise_setpoint = min([v_cruise_setpoint, self.v_speedlimit])
+
       # Calculate speed for normal cruise control
       if enabled:
-
         accel_limits = map(float, calc_cruise_accel_limits(CS.vEgo, following))
         # TODO: make a separate lookup for jerk tuning
         jerk_limits = [min(-0.1, accel_limits[0]), max(0.1, accel_limits[1])]
