@@ -96,12 +96,12 @@ class LatControl(object):
     self.angle_sample_count = 0.0
     self.projected_angle_steers = 0.0
     self.lateral_error = 0.0
-  
+
   def reset(self):
     self.pid.reset()
 
   def update(self, active, v_ego, angle_steers, angle_rate, steer_override, d_poly, angle_offset, CP, VM, PL):
-    cur_time = sec_since_boot()    
+    cur_time = sec_since_boot()
     self.mpc_updated = False
     # TODO: this creates issues in replay when rewinding time: mpc won't run
     if self.last_mpc_ts < PL.last_md_ts:
@@ -109,18 +109,18 @@ class LatControl(object):
       self.angle_steers_des_prev = self.angle_steers_des_mpc
 
       # Use the model's solve time instead of cur_time
-      self.angle_steers_des_time = float(self.last_mpc_ts / 1000000000.0)      
+      self.angle_steers_des_time = float(self.last_mpc_ts / 1000000000.0)
       self.curvature_factor = VM.curvature_factor(v_ego)
 
       # This is currently disabled, but it is used to compensate for variable steering rate
       ratioDelayFactor = 1. + self.ratioDelayScale * abs(angle_steers / 100.) ** self.ratioDelayExp
 
       # Determine a proper delay time that includes the model's processing time, which is variable
-      plan_age = _DT_MPC + cur_time - float(self.last_mpc_ts / 1000000000.0) 
+      plan_age = _DT_MPC + cur_time - float(self.last_mpc_ts / 1000000000.0)
       total_delay = ratioDelayFactor * CP.steerActuatorDelay + plan_age
 
       # Use steering rate from the last 2 samples to estimate acceleration for a more realistic future steering rate
-      accelerated_angle_rate = 2.0 * angle_rate - self.prev_angle_rate    
+      accelerated_angle_rate = 2.0 * angle_rate - self.prev_angle_rate
 
       # Project the future steering angle for the actuator delay only (not model delay)
       self.projected_angle_steers = ratioDelayFactor * CP.steerActuatorDelay * accelerated_angle_rate + angle_steers
@@ -131,7 +131,7 @@ class LatControl(object):
 
       # account for actuation delay and the age of the plan
       self.cur_state = calc_states_after_delay(self.cur_state, v_ego, self.projected_angle_steers, self.curvature_factor, CP.steerRatio, total_delay)
-     
+
       v_ego_mpc = max(v_ego, 5.0)  # avoid mpc roughness due to low speed
       self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
                           self.l_poly, self.r_poly, self.p_poly,
@@ -203,13 +203,13 @@ class LatControl(object):
             and (abs(float(restricted_steer_rate)) > abs(angle_rate) or (float(restricted_steer_rate) < 0) != (angle_rate < 0)) \
             and (float(restricted_steer_rate) < 0) == (float(self.angle_steers_des) - float(angle_offset) - 0.5 < 0):
           ff_type = "r"
-          self.feed_forward = (((self.smooth_factor - 1.) * self.feed_forward) + self.ff_rate_factor * v_ego**2 * float(restricted_steer_rate)) / self.smooth_factor  
+          self.feed_forward = (((self.smooth_factor - 1.) * self.feed_forward) + self.ff_rate_factor * v_ego**2 * float(restricted_steer_rate)) / self.smooth_factor
         elif abs(self.angle_steers_des - float(angle_offset)) > 0.5:
           ff_type = "a"
-          self.feed_forward = (((self.smooth_factor - 1.) * self.feed_forward) + self.ff_angle_factor * v_ego**2 * float(apply_deadzone(float(self.angle_steers_des) - float(angle_offset), 0.5))) / self.smooth_factor  
+          self.feed_forward = (((self.smooth_factor - 1.) * self.feed_forward) + self.ff_angle_factor * v_ego**2 * float(apply_deadzone(float(self.angle_steers_des) - float(angle_offset), 0.5))) / self.smooth_factor
         else:
           ff_type = "r"
-          self.feed_forward = (((self.smooth_factor - 1.) * self.feed_forward) + 0.0) / self.smooth_factor  
+          self.feed_forward = (((self.smooth_factor - 1.) * self.feed_forward) + 0.0) / self.smooth_factor
       else:
         self.feed_forward = self.angle_steers_des   # feedforward desired angle
       deadzone = 0.0
@@ -218,7 +218,7 @@ class LatControl(object):
       output_steer = self.pid.update(projected_angle_steers_des, projected_angle_steers, check_saturation=(v_ego > 10), override=steer_override,
                                      feedforward=self.feed_forward, speed=v_ego, deadzone=deadzone)
 
-      
+
       # All but the last 3 lines after here are for real-time dashboarding
       self.pCost = 0.0
       self.lCost = 0.0
@@ -254,7 +254,7 @@ class LatControl(object):
       PL.PP.r_prob, PL.PP.c_prob, PL.PP.p_prob, self.l_poly[0], self.l_poly[1], self.l_poly[2], self.l_poly[3], self.r_poly[0], self.r_poly[1], self.r_poly[2], self.r_poly[3], \
       self.p_poly[0], self.p_poly[1], self.p_poly[2], self.p_poly[3], PL.PP.c_poly[0], PL.PP.c_poly[1], PL.PP.c_poly[2], PL.PP.c_poly[3], PL.PP.d_poly[0], PL.PP.d_poly[1], \
       PL.PP.d_poly[2], PL.PP.lane_width, PL.PP.lane_width_estimate, PL.PP.lane_width_certainty, v_ego, self.pid.p, self.pid.i, self.pid.f, int(time.time() * 100) * 10000000))
-      
+
     self.sat_flag = self.pid.saturated
     self.prev_angle_rate = angle_rate
     return output_steer, float(self.angle_steers_des)
