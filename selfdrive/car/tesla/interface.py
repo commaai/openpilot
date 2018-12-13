@@ -129,6 +129,7 @@ class CarInterface(object):
       ret.longitudinalKiBP = [70., 160.]
       KI = 0.12
       ret.longitudinalKiV = [KI, KI / 0.33]
+      ret.openpilotLongitudinalControl = True
       
       #from honda
       #ret.longitudinalKpBP = [0., 5., 35.]
