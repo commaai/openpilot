@@ -3,22 +3,20 @@ import os
 import zmq
 import cv2
 import copy
-import math
 import json
 import numpy as np
 import selfdrive.messaging as messaging
+from selfdrive.locationd.calibration_helpers import Calibration, Filter
 from selfdrive.swaglog import cloudlog
 from selfdrive.services import service_list
 from common.params import Params
 from common.ffi_wrapper import ffi_wrap
 import common.transformations.orientation as orient
-from common.transformations.model import model_height, get_camera_frame_from_model_frame
+from common.transformations.model import model_height, get_camera_frame_from_model_frame, get_camera_frame_from_bigmodel_frame
 from common.transformations.camera import view_frame_from_device_frame, get_view_frame_from_road_frame, \
                                           eon_intrinsics, get_calib_from_vp, normalize, denormalize, H, W
 
 
-MIN_SPEED_FILTER = 7 # m/s  (~15.5mph)
-MAX_YAW_RATE_FILTER = math.radians(3) # per second
 FRAMES_NEEDED = 120  # allow to update VP every so many frames
 VP_CYCLES_NEEDED = 2
 CALIBRATION_CYCLES_NEEDED = FRAMES_NEEDED * VP_CYCLES_NEEDED
@@ -40,12 +38,6 @@ c_code = "#define H %d\n" % H
 c_code += "#define W %d\n" % W
 c_code += "\n" + open(os.path.join(EXTERNAL_PATH, "get_vp.c")).read()
 ffi, lib = ffi_wrap('get_vp', c_code, c_header)
-
-
-class Calibration:
-  UNCALIBRATED = 0
-  CALIBRATED = 1
-  INVALID = 2
 
 
 def increment_grid_c(grid, lines, n):
@@ -131,8 +123,8 @@ class Calibrator(object):
 
   def update(self, uvs, yaw_rate, speed):
     if len(uvs) < 10 or \
-       abs(yaw_rate) > MAX_YAW_RATE_FILTER or \
-       speed < MIN_SPEED_FILTER:
+       abs(yaw_rate) > Filter.MAX_YAW_RATE or \
+       speed < Filter.MIN_SPEED:
       return
     rot_speeds = np.array([0.,0.,-yaw_rate])
     uvs[:,1,:] = denormalize(correct_pts(normalize(uvs[:,1,:]), rot_speeds, self.dt))
@@ -216,13 +208,15 @@ class Calibrator(object):
     calib = get_calib_from_vp(self.vp)
     extrinsic_matrix = get_view_frame_from_road_frame(0, calib[1], calib[2], model_height)
     ke = eon_intrinsics.dot(extrinsic_matrix)
-    warp_matrix = get_camera_frame_from_model_frame(ke, model_height)
+    warp_matrix = get_camera_frame_from_model_frame(ke)
+    warp_matrix_big = get_camera_frame_from_bigmodel_frame(ke)
 
     cal_send = messaging.new_message()
     cal_send.init('liveCalibration')
     cal_send.liveCalibration.calStatus = self.cal_status
     cal_send.liveCalibration.calPerc = min(self.frame_counter * 100 / CALIBRATION_CYCLES_NEEDED, 100)
     cal_send.liveCalibration.warpMatrix2 = map(float, warp_matrix.flatten())
+    cal_send.liveCalibration.warpMatrixBig = map(float, warp_matrix_big.flatten())
     cal_send.liveCalibration.extrinsicMatrix = map(float, extrinsic_matrix.flatten())
 
     livecalibration.send(cal_send.to_bytes())
