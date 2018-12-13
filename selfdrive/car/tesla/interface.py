@@ -119,16 +119,13 @@ class CarInterface(object):
       ret.steerActuatorDelay = 0.09
       
       # Kp and Ki for the longitudinal control
-      # IC cars decrease their PID values as speed increases. Probably because
-      # their torque trends upward with more RPM. Teslas have a different
-      # torque curve: generally flat until ~70kph and then decreasing to 33% at
-      # ~160kph.
-      ret.longitudinalKpBP = [20., 45.] # m/s, presumably
-      KP = 0.5
-      ret.longitudinalKpV = [KP, KP / 0.33]
-      ret.longitudinalKiBP = [20., 45.] # m/s, presumably
-      KI = 0.12
-      ret.longitudinalKiV = [KI, KI / 0.33]
+      # IC cars decrease their PID values as speed increases. Discussion on Slack suggests
+      # this is to reduce friction braking at highway speeds. But our regen-only braking is
+      # so weak that we probably don't want to reduce it further.
+      ret.longitudinalKpBP = [20.] # m/s, presumably
+      ret.longitudinalKpV = [0.5]
+      ret.longitudinalKiBP = [20.] # m/s, presumably
+      ret.longitudinalKiV = [0.12]
       
       #from honda
       #ret.longitudinalKpBP = [0., 5., 35.]
