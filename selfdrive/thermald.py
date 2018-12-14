@@ -195,16 +195,6 @@ def thermald_thread():
     msg.thermal.freeSpace = avail
     with open("/sys/class/power_supply/battery/capacity") as f:
       msg.thermal.batteryPercent = int(f.read())
-      
-      #begining of limit charging. read the charging enabled flag in to charging_enabled
-      with open("/sys/class/power_supply/battery/charging_enabled") as f:
-        charging_enabled = int(f.read())
-      if msg.thermal.batteryPercent > 70 and charging_enabled:
-        os.system("echo 0 > /sys/class/power_supply/battery/charging_enabled")
-      elif msg.thermal.batteryPercent < 67 and not charging_enabled:
-        os.system("echo 1 > /sys/class/power_supply/battery/charging_enabled")
-        #end limit charging
-      
     with open("/sys/class/power_supply/battery/status") as f:
       msg.thermal.batteryStatus = f.read().strip()
     with open("/sys/class/power_supply/battery/current_now") as f:
@@ -272,7 +262,7 @@ def thermald_thread():
     should_start = should_start and msg.thermal.freeSpace > 0.02
 
     # require usb power in passive mode
-    #should_start = should_start and (not passive or msg.thermal.usbOnline)
+    should_start = should_start and (not passive or msg.thermal.usbOnline)
 
     # confirm we have completed training and aren't uninstalling
     should_start = should_start and accepted_terms and (passive or completed_training) and (not do_uninstall)
