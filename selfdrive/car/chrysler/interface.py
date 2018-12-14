@@ -116,6 +116,7 @@ class CarInterface(object):
 
     ret.enableCamera = not check_ecu_msgs(fingerprint, candidate, ECU.CAM)
     print "ECU Camera Simulated: ", ret.enableCamera
+    ret.openpilotLongitudinalControl = False
 
     ret.steerLimitAlert = False
     ret.stoppingControl = False
