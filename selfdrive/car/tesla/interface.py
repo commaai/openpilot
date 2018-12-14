@@ -180,7 +180,7 @@ class CarInterface(object):
     ret.openpilotLongitudinalControl = True
     ret.steerLimitAlert = False
     ret.startAccel = 0.5
-    ret.steerRateCost = 2.0
+    ret.steerRateCost = 1.5
 
     return ret
 
