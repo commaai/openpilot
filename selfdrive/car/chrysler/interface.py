@@ -237,7 +237,7 @@ class CarInterface(object):
     self.send_cancel_acc = False
     if (ret.gasPressed and (not self.gas_pressed_prev) and ret.vEgo > 2.0):
       events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
-      if (ret.cruiseState.enabled):
+      if (ret.cruiseState.enabled and not self.CS.steer_error):
         self.send_cancel_acc = True
 
     if self.low_speed_alert:
