@@ -1,11 +1,19 @@
 import os
+import platform
 import subprocess
 
 from cffi import FFI
 
 mpc_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)))
-subprocess.check_call(["make", "-j4"], cwd=mpc_dir)
 
+if platform.machine() == "x86_64":
+  try:
+    FFI().dlopen(os.path.join(mpc_dir, "libmpc1.so"))
+  except OSError:
+    # libmpc1.so is likely built for aarch64. cleaning...
+    subprocess.check_call(["make", "clean"], cwd=mpc_dir)
+
+subprocess.check_call(["make", "-j4"], cwd=mpc_dir)
 
 def _get_libmpc(mpc_id):
     libmpc_fn = os.path.join(mpc_dir, "libmpc%d.so" % mpc_id)
@@ -36,9 +44,7 @@ def _get_libmpc(mpc_id):
 
     return (ffi, ffi.dlopen(libmpc_fn))
 
-
 mpcs = [_get_libmpc(1), _get_libmpc(2)]
-
 
 def get_libmpc(mpc_id):
     return mpcs[mpc_id - 1]
