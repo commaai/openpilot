@@ -92,6 +92,10 @@ CL_TIMEA_T = [0.7 ,0.30, 0.20]
 
 from common.numpy_fast import interp
 from selfdrive.controls.lib.pid import PIController
+from common.realtime import sec_since_boot
+
+#wait time after turn complete before enabling smoother
+WAIT_TIME_AFTER_TURN = 2.0
 
 class ALCAController(object):
   def __init__(self,carcontroller,alcaEnabled,steerByAngle):
@@ -127,6 +131,8 @@ class ALCAController(object):
     self.last10delta = []
     self.laneChange_cancelled = False
     self.laneChange_cancelled_counter = 0
+    self.last_time_enabled = 0
+  
 
   def last10delta_reset(self):
     self.last10delta = []
@@ -445,10 +451,13 @@ class ALCAController(object):
   def update(self,enabled,CS,frame,actuators):
     if self.alcaEnabled:
       # ALCA enabled
+        cur_time = sec_since_boot()
         new_angle = 0.
         new_ALCA_Enabled = False
         new_turn_signal = 0
         new_angle,new_ALCA_Enabled,new_turn_signal = self.update_angle(enabled,CS,frame,actuators)
+        if new_ALCA_Enabled:
+          self.last_time_enabled = sec_since_boot()
         output_steer = 0.
         if new_ALCA_Enabled and (self.laneChange_enabled < 5 ) and not self.laneChange_steerByAngle:
           steers_max = interp(CS.v_ego, CS.CP.steerMaxBP, CS.CP.steerMaxV)
@@ -457,8 +466,14 @@ class ALCAController(object):
           output_steer = self.pid.update(new_angle, CS.angle_steers , check_saturation=(CS.v_ego > 10), override=CS.steer_override, feedforward=new_angle * (CS.v_ego ** 2), speed=CS.v_ego, deadzone=0.0)
         else: 
           output_steer = actuators.steer
+        if self.laneChange_steerByAngle and (not new_ALCA_Enabled) and (cur_time - self.last_time_enabled > WAIT_TIME_AFTER_TURN):
+          new_angle = actuators.steer
         return [new_angle,output_steer,new_ALCA_Enabled,new_turn_signal]
     else:
       # ALCA disabled
-      return [actuators.steerAngle,actuators.steer,False,0]
+      if self.laneChange_steerByAngle:
+        # when steerByAngle, actuators.steer has the smoothed version of the angle by Grenby
+        return [actuators.steer,actuators.steer,False,0]
+      else
+        return [actuators.steerAngle,actuators.steer,False,0]
  
