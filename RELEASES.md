@@ -1,3 +1,13 @@
+Version 0.5.7 (2018-12-06)
+========================
+ * Speed limit from OpenStreetMap added to UI
+ * Highlight speed limit when speed exceeds road speed limit plus a delta
+ * Option to limit openpilot max speed to road speed limit plus a delta
+ * Cadillac ATS support thanks to vntarasov!
+ * GMC Acadia support thanks to CryptoKylan!
+ * Decrease GPU power consumption
+ * NEOSv8 autoupdate
+
 Version 0.5.6 (2018-11-16)
 ========================
  * Refresh settings layout and add feature descriptions
