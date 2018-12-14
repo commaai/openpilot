@@ -71,9 +71,10 @@ def __parse_can_buffer(dat):
 def can_send_many(arr):
   snds = []
   for addr, _, dat, alt in arr:
-    snd = struct.pack("II", ((addr << 21) | 1), len(dat) | (alt << 4)) + dat
-    snd = snd.ljust(0x10, '\x00')
-    snds.append(snd)
+    if addr < 0x800:  # only support 11 bit addr
+      snd = struct.pack("II", ((addr << 21) | 1), len(dat) | (alt << 4)) + dat
+      snd = snd.ljust(0x10, '\x00')
+      snds.append(snd)
   while 1:
     try:
       handle.bulkWrite(3, ''.join(snds))
