@@ -125,8 +125,9 @@ class Uploader(object):
 
   def next_file_to_compress(self):
     for name, key, fn in self.gen_upload_files():
-      if name in ["rlog"]:
+      if name == "rlog":
         return (key, fn, 0)
+    return None
 
   def next_file_to_upload(self, with_video):
     # try to upload log files first
