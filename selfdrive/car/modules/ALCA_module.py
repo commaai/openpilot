@@ -474,6 +474,6 @@ class ALCAController(object):
       if self.laneChange_steerByAngle:
         # when steerByAngle, actuators.steer has the smoothed version of the angle by Grenby
         return [actuators.steer,actuators.steer,False,0]
-      else
+      else:
         return [actuators.steerAngle,actuators.steer,False,0]
  
