@@ -53,9 +53,12 @@ How to compile
 - Install S32DS for Power Architecture 2017.R1 Update 7, make sure the MPC574xx SDK RTM 1.0.0 is installed:
   1. On the S32DS download page, find the Update 7, download and unzip to local folder.  
   2. Launch S32 design studio, open "Help" menu, choose "Install new software...", then click "Add..." button to open Add Repository dialog, click "Local..." button, browse to the folder where Update 7 is unzipped, click "OK" button. 
-  3. Make sure "MPC74xx SDK RTM 1.0.0" is checked, then begin installation.
-  ![]( https://i.ibb.co/C9JMbYr/SDK-RTM-1-0-0.png)
-- Create a workspace in S32DS, import flexray_adapter project into current workspace.
+  3. Click "Select All" button to select all items, then begin installation.
+  ![]( https://i.ibb.co/60TcY5T/select-all.png)
+- Open S32DS, import flexray_adapter project:
+    1. Open "File", choose "Import" to open import window.
+    2. Choose "Existing projects Into Workspace" in the list.
+    3. Click "Browse" button, find the flexray_adapter folder in openpilot repo folder, then import.
 - Build the project.
 
 How to debug
