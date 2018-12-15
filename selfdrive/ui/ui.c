@@ -1107,7 +1107,7 @@ static void bb_ui_draw_measures_left(UIState *s, int bb_x, int bb_y, int bb_w ) 
 			val_color = nvgRGBA(255, 0, 0, 200);
 		}
 
-		snprintf(val_str, sizeof(val_str), "%.1f", s->scene.freeSpace* 100);
+		snprintf(val_str, sizeof(val_str), "%.3f", s->scene.freeSpace* 100);
 		snprintf(uom_str, sizeof(uom_str), "%%");
 
 		bb_h +=bb_ui_draw_measure(s, val_str, uom_str, "FREE",
