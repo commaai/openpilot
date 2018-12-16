@@ -1012,25 +1012,21 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   // Draw Background
   nvgBeginPath(s->vg);
   nvgRoundedRect(s->vg, viz_maxspeed_x, viz_maxspeed_y, viz_maxspeed_w, viz_maxspeed_h, 30);
-  if (is_set_over_limit) {
-    nvgFillColor(s->vg, nvgRGBA(218, 111, 37, 180));
-  } else {
-    nvgFillColor(s->vg, nvgRGBA(0, 0, 0, 100));
-  }
+  nvgFillColor(s->vg, nvgRGBA(0, 0, 0, 100));
   nvgFill(s->vg);
 
   // Draw Border
   nvgBeginPath(s->vg);
   nvgRoundedRect(s->vg, viz_maxspeed_x, viz_maxspeed_y, viz_maxspeed_w, viz_maxspeed_h, 20);
-  if (is_set_over_limit) {
-    nvgStrokeColor(s->vg, nvgRGBA(218, 111, 37, 255));
-  } else if (is_speedlim_valid && !s->is_ego_over_limit) {
-    nvgStrokeColor(s->vg, nvgRGBA(255, 255, 255, 255));
-  } else if (is_speedlim_valid && s->is_ego_over_limit) {
-    nvgStrokeColor(s->vg, nvgRGBA(255, 255, 255, 20));
-  } else {
-    nvgStrokeColor(s->vg, nvgRGBA(255, 255, 255, 100));
-  }
+  // if (is_set_over_limit) {
+  //   nvgStrokeColor(s->vg, nvgRGBA(218, 111, 37, 255));
+  // } else if (is_speedlim_valid && !s->is_ego_over_limit) {
+  //   nvgStrokeColor(s->vg, nvgRGBA(255, 255, 255, 255));
+  // } else if (is_speedlim_valid && s->is_ego_over_limit) {
+  //   nvgStrokeColor(s->vg, nvgRGBA(255, 255, 255, 20));
+  // } else {
+       nvgStrokeColor(s->vg, nvgRGBA(255, 255, 255, 100));
+  // }
   nvgStrokeWidth(s->vg, 10);
   nvgStroke(s->vg);
 
@@ -1263,7 +1259,7 @@ static void ui_draw_vision_header(UIState *s) {
   nvgFill(s->vg);
 
   ui_draw_vision_maxspeed(s);
-  ui_draw_vision_speedlimit(s);
+  //ui_draw_vision_speedlimit(s);
   ui_draw_vision_speed(s);
   ui_draw_vision_wheel(s);
 }
