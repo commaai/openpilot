@@ -543,10 +543,8 @@ class CarInterface(object):
     # it can happen that car cruise disables while comma system is enabled: need to
     # keep braking if needed or if the speed is very low
     if self.CP.enableCruise and not ret.cruiseState.enabled and c.actuators.brake <= 0.:
-      # non loud alert if cruise disbales below 25mph as expected (+ a little margin)
+      # send loud alert if cruise disables below 25mph as expected (+ a little margin)
       if ret.vEgo < self.CP.minEnableSpeed + 2.:
-        events.append(create_event('speedTooLow', [ET.IMMEDIATE_DISABLE]))
-      else:
         events.append(create_event("cruiseDisabled", [ET.IMMEDIATE_DISABLE]))
     if self.CS.CP.minEnableSpeed > 0 and ret.vEgo < 0.001:
       events.append(create_event('manualRestart', [ET.WARNING]))
