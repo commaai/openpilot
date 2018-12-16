@@ -18,31 +18,29 @@ class PathPlanner(object):
     self.lane_width_certainty = 1.0
     self.lane_width = 3.2
 
-  def update(self, v_ego, md, CS=None, LaC=None):
+  def update(self, v_ego, md, LaC=None):
     if md is not None:
       p_poly = model_polyfit(md.model.path.points, self._path_pinv)  # predicted path
       l_poly = model_polyfit(md.model.leftLane.points, self._path_pinv)  # left line
       r_poly = model_polyfit(md.model.rightLane.points, self._path_pinv)  # right line
 
-      lateral_error = 0.0
       try:
-        lateral_error = 0.0
-        if LaC is not None and CS is not None and CS.CP is not None and LaC.angle_steers_des_mpc != 0.0:
-          angle_error = LaC.angle_steers_des_mpc - (0.05 * LaC.avg_angle_steers + CS.CP.steerActuatorDelay * LaC.projected_angle_steers) / (CS.CP.steerActuatorDelay + 0.05)
-        if angle_error == 0.0 or LaC is None or CS is None or CS.CP is None:
-          lateral_error = 0.0
+        if LaC is not None and LaC.angle_steers_des_mpc != 0.0:
+          angle_error = LaC.angle_steers_des_mpc - (0.05 * LaC.avg_angle_steers + LaC.steerActuatorDelay * LaC.projected_angle_steers) / (LaC.steerActuatorDelay + 0.05)
         else:
-          LaC.lateral_error = -1.0 * np.clip(v_ego * (CS.CP.steerActuatorDelay + 0.05) * math.tan(math.radians(angle_error)), -1.2, 1.2)
+          angle_error = 0.0
+        if angle_error != 0.0:
+          LaC.lateral_error = np.clip(v_ego * (LaC.steerActuatorDelay + 0.05) * math.tan(math.radians(angle_error)), -1.2, 1.2)
           lateral_error = LaC.lateral_error
-
-        # only offset left and right lane lines; offsetting p_poly does not make sense
-        l_poly[3] += CAMERA_OFFSET + lateral_error
-        r_poly[3] += CAMERA_OFFSET + lateral_error
+        else:
+          lateral_error = 0.0
       except:
-        print(4)
-        pass
+        lateral_error = 0.0
 
-      #print(lateral_error)
+      # only offset left and right lane lines; offsetting p_poly does not make sense
+      l_poly[3] += CAMERA_OFFSET - lateral_error
+      r_poly[3] += CAMERA_OFFSET - lateral_error
+
       p_prob = 1.  # model does not tell this probability yet, so set to 1 for now
       l_prob = md.model.leftLane.prob  # left line prob
       r_prob = md.model.rightLane.prob  # right line prob
@@ -59,7 +57,7 @@ class PathPlanner(object):
       lane_width_diff = abs(self.lane_width - current_lane_width)
       lane_r_prob = interp(lane_width_diff, [0.3, 1.0], [1.0, 0.0])
 
-      #r_prob *= lane_r_prob
+      r_prob *= lane_r_prob
 
       self.lead_dist = md.model.lead.dist
       self.lead_prob = md.model.lead.prob

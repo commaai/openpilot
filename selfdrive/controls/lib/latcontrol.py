@@ -49,6 +49,7 @@ class LatControl(object):
     self.ratioDelayScale = 0.0          # Multiplier for variable steering rate (delay)
     self.prev_angle_rate = 0
     self.feed_forward = 0.0
+    self.steerActuatorDelay = CP.steerActuatorDelay
     self.angle_rate_desired = 0.0
     self.last_mpc_ts = 0.0
     self.angle_steers_des = 0.0
@@ -68,7 +69,7 @@ class LatControl(object):
     self.steerpub.bind("tcp://*:8594")
     self.influxString = 'steerData3,testName=none,active=%s,ff_type=%s ff_type_a=%s,ff_type_r=%s,steer_status=%s,steer_torque_motor=%s,' \
                     'steering_control_active=%s,steer_parameter1=%s,steer_parameter2=%s,steer_parameter3=%s,steer_parameter4=%s,steer_parameter5=%s,' \
-                    'steer_parameter6=%s,steer_stock_torque=%s,steer_stock_torque_request=%s,x=%s,y=%s,yb=%s,y0=%s,y1=%s,y2=%s,y3=%s,y4=%s,psi=%s,delta=%s,t=%s,' \
+                    'steer_parameter6=%s,steer_stock_torque=%s,steer_stock_torque_request=%s,x=%s,y=%s,lateral_error=%s,y0=%s,y1=%s,y2=%s,y3=%s,y4=%s,psi=%s,delta=%s,t=%s,' \
                     'curvature_factor=%s,slip_factor=%s,resonant_period=%s,accel_limit=%s,restricted_steer_rate=%s,ff_angle_factor=%s,ff_rate_factor=%s,' \
                     'pCost=%s,lCost=%s,rCost=%s,hCost=%s,srCost=%s,torque_motor=%s,driver_torque=%s,angle_rate_count=%s,angle_rate_desired=%s,' \
                     'avg_angle_rate=%s,future_angle_steers=%s,angle_rate=%s,steer_zero_crossing=%s,center_angle=%s,angle_steers=%s,angle_steers_des=%s,' \
