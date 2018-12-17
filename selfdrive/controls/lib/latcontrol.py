@@ -186,5 +186,8 @@ class LatControl(object):
 
     self.sat_flag = self.pid.saturated
     self.prev_angle_rate = angle_rate
-    #return output_steer, float(self.angle_steers_des)
-    return output_steer, float(self.angle_steers_des_mpc)
+    
+    if CP.steerControlType == car.CarParams.SteerControlType.torque:
+      return output_steer, float(self.angle_steers_des_mpc)
+    else:
+      return float(self.angle_steers_des) ,float(self.angle_steers_des_mpc)
