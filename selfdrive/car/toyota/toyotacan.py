@@ -97,10 +97,11 @@ def create_fcw_command(packer, fcw):
   return packer.make_can_msg("ACC_HUD", 0, values)
 
 
-def create_ui_command(packer, steer, sound1, sound2):
+def create_ui_command(packer, steer, sound1, sound2, lkas_barriers, left_line, right_line):
   values = {
-    "RIGHT_LINE": 1,
-    "LEFT_LINE": 1,
+    "BARRIERS": lkas_barriers,
+    "RIGHT_LINE": right_line,
+    "LEFT_LINE": left_line,
     "SET_ME_X0C": 0x0c,
     "SET_ME_X2C": 0x2c,
     "SET_ME_X38": 0x38,
