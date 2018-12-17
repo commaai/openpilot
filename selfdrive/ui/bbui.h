@@ -778,55 +778,33 @@ void bb_ui_read_triState_switch( UIState *s) {
 }
 
 void bb_ui_draw_UI( UIState *s) {
-  
+  const UIScene *scene = &s->scene;
+	const int bb_dml_w = 180;
+	const int bb_dml_x =  (scene->ui_viz_rx + (bdr_s * 2));
+	const int bb_dml_y = (box_y + (bdr_s * 1.5)) + 220;
+	const int bb_dmr_w = 180;
+  const int bb_dmr_x = scene->ui_viz_rx + scene->ui_viz_rw - bb_dmr_w - (bdr_s * 2) ; 
+  const int bb_dmr_y = (box_y + (bdr_s * 1.5)) + 220;
   
   if (s->b.tri_state_switch == 1) {
-	  const UIScene *scene = &s->scene;
-	  const int bb_dml_w = 180;
-	  const int bb_dml_x =  (scene->ui_viz_rx + (bdr_s*2));
-	  const int bb_dml_y = (box_y + (bdr_s*1.5))+220;
-	  
-	  const int bb_dmr_w = 180;
-	  const int bb_dmr_x = scene->ui_viz_rx + scene->ui_viz_rw - bb_dmr_w - (bdr_s*2) ; 
-	  const int bb_dmr_y = (box_y + (bdr_s*1.5))+220;
+    // Normal mode: live camera background and all icons.
     bb_ui_draw_measures_left(s,bb_dml_x, bb_dml_y, bb_dml_w );
     bb_ui_draw_measures_right(s,bb_dmr_x, bb_dmr_y, bb_dmr_w );
     bb_draw_buttons(s);
-    bb_ui_draw_custom_alert(s);
     bb_ui_draw_logo(s);
-	 }
-   if (s->b.tri_state_switch ==2) {
-	 	const UIScene *scene = &s->scene;
-	  const int bb_dml_w = 180;
-	  const int bb_dml_x =  (scene->ui_viz_rx + (bdr_s*2));
-	  const int bb_dml_y = (box_y + (bdr_s*1.5))+220;
-	  
-	  const int bb_dmr_w = 180;
-	  const int bb_dmr_x = scene->ui_viz_rx + scene->ui_viz_rw - bb_dmr_w - (bdr_s*2) ; 
-	  const int bb_dmr_y = (box_y + (bdr_s*1.5))+220;
+  }
+  if (s->b.tri_state_switch ==2) {
+    // Simple mode: black background, animated cars, and fewer icons.
     bb_draw_buttons(s);
-    bb_ui_draw_custom_alert(s);
     bb_ui_draw_logo(s);
-    //bb_ui_draw_car(s);
-	 }
-	 if (s->b.tri_state_switch ==3) {
-    //we now use the state 3 for minimalistic data alerts
-	 	const UIScene *scene = &s->scene;
-	  const int bb_dml_w = 180;
-	  const int bb_dml_x =  (scene->ui_viz_rx + (bdr_s*2));
-	  const int bb_dml_y = (box_y + (bdr_s*1.5))+220;
-	  
-	  const int bb_dmr_w = 180;
-	  const int bb_dmr_x = scene->ui_viz_rx + scene->ui_viz_rw - bb_dmr_w - (bdr_s*2) ; 
-	  const int bb_dmr_y = (box_y + (bdr_s*1.5))+220;
-    //bb_ui_draw_measures_left(s,bb_dml_x, bb_dml_y, bb_dml_w );
-    //bb_ui_draw_measures_right(s,bb_dmr_x, bb_dmr_y, bb_dmr_w );
+  }
+  if (s->b.tri_state_switch ==3) {
+    // Minimal mode: a black screen that only shows alerts.
     bb_draw_buttons(s);
-    bb_ui_draw_custom_alert(s);
-    //bb_ui_draw_logo(s);
-	 }
+  }
+  
+  bb_ui_draw_custom_alert(s);
 }
-
 
 
 void bb_ui_init(UIState *s) {
