@@ -224,6 +224,18 @@ BO_ 1162 RSA2: 8 FCM
  SG_ SPDUNT : 63|2@0+ (1,0) [0|0] "" XXX
  SG_ TSRWMSG : 61|2@0+ (1,0) [0|0] "" XXX
  SG_ SYNCID2 : 59|4@0+ (1,0) [0|0] "" XXX
+ 
+ BO_ 1880 DEBUG: 8 XXX
+ SG_ BLINDSPOTSIDE : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ BLINDSPOT : 38|1@0+ (1,0) [0|15] "" XXX
+ SG_ BLINDSPOTD1 : 47|8@0+ (1,0) [0|255] "" XXX
+ SG_ BLINDSPOTD2 : 55|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 515 JOEL_ID: 8 XXX
+ SG_ ACC_DISTANCE : 1|2@0+ (1,0) [1|3] "" XXX
+ SG_ LANE_WARNING : 8|1@0+ (1,0) [0|1] "" XXX
+ SG_ ACC_SLOW : 16|1@0+ (1,0) [0|1] "" XXX
+
 
 CM_ SG_ 36 ACCEL_Y "unit is tbd";
 CM_ SG_ 36 YAW_RATE "verify";
