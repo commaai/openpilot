@@ -1255,7 +1255,7 @@ static void ui_draw_vision_header(UIState *s) {
   nvgFill(s->vg);
 
   ui_draw_vision_maxspeed(s);
-  ui_draw_vision_speedlimit(s);
+  //ui_draw_vision_speedlimit(s);
   ui_draw_vision_speed(s);
   ui_draw_vision_wheel(s);
 }
