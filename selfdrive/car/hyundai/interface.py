@@ -163,6 +163,7 @@ class CarInterface(object):
     ret.longPidDeadzoneV = [0.]
 
     ret.enableCamera = not any(x for x in CAMERA_MSGS if x in fingerprint)
+    ret.openpilotLongitudinalControl = False
 
     ret.steerLimitAlert = False
     ret.stoppingControl = False
