@@ -116,6 +116,7 @@ class CarInterface(object):
 
     ret.enableCamera = not check_ecu_msgs(fingerprint, candidate, ECU.CAM)
     print "ECU Camera Simulated: ", ret.enableCamera
+    ret.openpilotLongitudinalControl = False
 
     ret.steerLimitAlert = False
     ret.stoppingControl = False
@@ -171,7 +172,7 @@ class CarInterface(object):
     ret.steeringPressed = self.CS.steer_override
 
     # cruise state
-    ret.cruiseState.enabled = self.CS.pcm_acc_status  # is this the same as main_on an issue?
+    ret.cruiseState.enabled = self.CS.pcm_acc_status  # same as main_on
     ret.cruiseState.speed = self.CS.v_cruise_pcm * CV.KPH_TO_MS
     ret.cruiseState.available = self.CS.main_on
     ret.cruiseState.speedOffset = 0.
@@ -227,19 +228,18 @@ class CarInterface(object):
     if self.CS.steer_error:
       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
 
-    # enable request in prius is simple, as we activate when Toyota is active (rising edge)
     if ret.cruiseState.enabled and not self.cruise_enabled_prev:
       events.append(create_event('pcmEnable', [ET.ENABLE]))
     elif not ret.cruiseState.enabled:
       events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
 
-    # disable on pedals rising edge or when brake is pressed and speed isn't zero
-    if (ret.gasPressed and not self.gas_pressed_prev) or \
-       (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001)):
+    # disable on gas pedal and speed isn't zero. Gas pedal is used to resume ACC
+    # from a 3+ second stop.
+    self.send_cancel_acc = False
+    if (ret.gasPressed and (not self.gas_pressed_prev) and ret.vEgo > 2.0):
       events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
-
-    if ret.gasPressed:
-      events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
+      if (ret.cruiseState.enabled and not self.CS.steer_error):
+        self.send_cancel_acc = True
 
     if self.low_speed_alert:
       events.append(create_event('belowSteerSpeed', [ET.WARNING]))
@@ -262,6 +262,6 @@ class CarInterface(object):
 
     self.CC.update(self.sendcan, c.enabled, self.CS, self.frame,
                    c.actuators, c.cruiseControl.cancel, c.hudControl.visualAlert,
-                   c.hudControl.audibleAlert)
+                   c.hudControl.audibleAlert, self.send_cancel_acc)
 
     return False

@@ -1,7 +1,7 @@
 import logging
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
-from selfdrive.car.chrysler.values import DBC
+from selfdrive.car.chrysler.values import CAR, DBC
 from common.kalman.simple_kalman import KF1D
 import numpy as np
 
@@ -45,12 +45,12 @@ def get_can_parser(CP):
     ("LKAS_IS_GREEN", "LKAS_INDICATOR_1", 1),
     ("TRACTION_OFF", "TRACTION_BUTTON", 0),
     ("SEATBELT_DRIVER_UNLATCHED", "SEATBELT_STATUS", 0),
+    ("COUNTER", "WHEEL_BUTTONS", -1),  # incrementing counter for 23b
   ]
 
   # It's considered invalid if it is not received for 10x the expected period (1/f).
   checks = [
     # sig_address, frequency
-    # ("GEAR", 50),
     ("BRAKE_2", 50),
     ("LKAS_INDICATOR_1", 100),
     ("SPEED_1", 100),
@@ -81,9 +81,6 @@ class CarState(object):
                          C=np.matrix([1.0, 0.0]),
                          K=np.matrix([[0.12287673], [0.29666309]]))
     self.v_ego = 0.0
-    #logging.basicConfig(level=logging.DEBUG, filename="/tmp/chrylog-cs", filemode="a+",
-    #                    format="%(asctime)-15s %(levelname)-8s %(message)s")
-    #logging.info('CarState init')
 
 
   def update(self, cp):
@@ -95,7 +92,7 @@ class CarState(object):
     self.prev_right_blinker_on = self.right_blinker_on
 
     self.frame_220 = int(cp.vl["LKAS_INDICATOR_1"]['INCREMENTING_220'])
-    #logging.info('frame_220 %d' % self.frame_220)
+    self.frame_23b = int(cp.vl["WHEEL_BUTTONS"]['COUNTER'])
 
     self.door_all_closed = not any([cp.vl["DOORS"]['DOOR_OPEN_FL'],
                                     cp.vl["DOORS"]['DOOR_OPEN_FR'],
@@ -104,7 +101,7 @@ class CarState(object):
     self.seatbelt = (cp.vl["SEATBELT_STATUS"]['SEATBELT_DRIVER_UNLATCHED'] == 0)
 
     self.brake_pressed = cp.vl["BRAKE_2"]['BRAKE_PRESSED_2'] == 5 # human-only
-    self.pedal_gas = 0  # TODO Disabled until we can find the message on Pacifica 2018
+    self.pedal_gas = 0  # TODO disabled until we test that sending 23b doesn't fault any other cars.
     # self.pedal_gas = cp.vl["ACCEL_PEDAL_MSG"]['ACCEL_PEDAL']
     self.car_gas = self.pedal_gas
     self.esp_disabled = (cp.vl["TRACTION_BUTTON"]['TRACTION_OFF'] == 1)
@@ -125,21 +122,20 @@ class CarState(object):
     self.a_ego = float(v_ego_x[1])
     self.standstill = not self.v_wheel > 0.001
 
-    self.angle_steers = cp.vl["STEERING"]['STEER_ANGLE']  # TODO verify units op wants.
-    self.angle_steers_rate = cp.vl["STEERING"]['STEERING_RATE']  # TODO verify units op wants.
+    self.angle_steers = cp.vl["STEERING"]['STEER_ANGLE']
+    self.angle_steers_rate = cp.vl["STEERING"]['STEERING_RATE']
     self.gear_shifter = parse_gear_shifter(cp.vl['GEAR']['PRNDL'])
     self.main_on = cp.vl["ACC_2"]['ACC_STATUS_2'] == 7  # ACC is green.
     self.left_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 1
     self.right_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 2
 
-    self.steer_override = False  # abs(cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_DRIVER']) > 100  # TODO
+    self.steer_override = False  # TODO
     self.steer_error = cp.vl["LKAS_INDICATOR_1"]['LKAS_IS_GREEN'] == 0  # 0 if wheel will not actuate
-    self.steer_torque_driver = 0 # cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_DRIVER'] # TODO
+    self.steer_torque_driver = 0  # TODO
 
     self.user_brake = 0
     self.brake_lights = self.brake_pressed
     self.v_cruise_pcm = cp.vl["DASHBOARD"]['ACC_SPEED_CONFIG_KPH']
     self.pcm_acc_status = self.main_on
-    # self.gas_pressed = not cp.vl["PCM_CRUISE"]['GAS_RELEASED']
 
     self.generic_toggle = bool(cp.vl["STEERING_LEVERS"]['HIGH_BEAM_FLASH'])

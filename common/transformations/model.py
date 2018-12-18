@@ -83,7 +83,7 @@ def get_model_height_transform(camera_frame_from_road_frame, height):
 
 # camera_frame_from_model_frame aka 'warp matrix'
 # was: calibration.h/CalibrationTransform
-def get_camera_frame_from_model_frame(camera_frame_from_road_frame, height):
+def get_camera_frame_from_model_frame(camera_frame_from_road_frame, height=model_height):
   vp = vp_from_ke(camera_frame_from_road_frame)
 
   model_camera_from_model_frame = np.array([

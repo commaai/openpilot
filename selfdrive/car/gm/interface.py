@@ -12,15 +12,6 @@ try:
 except ImportError:
   CarController = None
 
-# Car chimes, beeps, blinker sounds etc
-class CM:
-  TOCK = 0x81
-  TICK = 0x82
-  LOW_BEEP = 0x84
-  HIGH_BEEP = 0x85
-  LOW_CHIME = 0x86
-  HIGH_CHIME = 0x87
-
 class CanBus(object):
   def __init__(self):
     self.powertrain = 0
@@ -71,13 +62,14 @@ class CarInterface(object):
     # Have to go passive if ASCM is online (ACC-enabled cars),
     # or camera is on powertrain bus (LKA cars without ACC).
     ret.enableCamera = not any(x for x in STOCK_CONTROL_MSGS[candidate] if x in fingerprint)
+    ret.openpilotLongitudinalControl = ret.enableCamera
 
     std_cargo = 136
 
     if candidate == CAR.VOLT:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
-      # kg of standard extra cargo to count for drive, gas, etc...
+      # kg of standard extra cargo to count for driver, gas, etc...
       ret.mass = 1607 + std_cargo
       ret.safetyModel = car.CarParams.SafetyModels.gm
       ret.wheelbase = 2.69
@@ -95,10 +87,39 @@ class CarInterface(object):
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.4 # wild guess
 
+    elif candidate == CAR.HOLDEN_ASTRA:
+      # kg of standard extra cargo to count for driver, gas, etc...
+      ret.mass = 1363 + std_cargo
+      ret.wheelbase = 2.662
+      # Remaining parameters copied from Volt for now
+      ret.centerToFront = ret.wheelbase * 0.4
+      ret.minEnableSpeed = 18 * CV.MPH_TO_MS
+      ret.safetyModel = car.CarParams.SafetyModels.gm
+      ret.steerRatio = 15.7
+      ret.steerRatioRear = 0.
+
+    elif candidate == CAR.ACADIA:
+      ret.minEnableSpeed = -1 # engage speed is decided by pcm
+      ret.mass = 4353. * CV.LB_TO_KG + std_cargo
+      ret.safetyModel = car.CarParams.SafetyModels.gm
+      ret.wheelbase = 2.86
+      ret.steerRatio = 14.4  #end to end is 13.46
+      ret.steerRatioRear = 0.
+      ret.centerToFront = ret.wheelbase * 0.4
+
+    elif candidate == CAR.CADILLAC_ATS:
+      ret.minEnableSpeed = 18 * CV.MPH_TO_MS
+      ret.mass = 1601 + std_cargo
+      ret.safetyModel = car.CarParams.SafetyModels.gm
+      ret.wheelbase = 2.78
+      ret.steerRatio = 15.3
+      ret.steerRatioRear = 0.
+      ret.centerToFront = ret.wheelbase * 0.49
+
     elif candidate == CAR.CADILLAC_CT6:
       # engage speed is decided by pcm
       ret.minEnableSpeed = -1
-      # kg of standard extra cargo to count for drive, gas, etc...
+      # kg of standard extra cargo to count for driver, gas, etc...
       ret.mass = 4016. * CV.LB_TO_KG + std_cargo
       ret.safetyModel = car.CarParams.SafetyModels.cadillac
       ret.wheelbase = 3.11
@@ -264,8 +285,7 @@ class CarInterface(object):
     if ret.seatbeltUnlatched:
       events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
 
-    if self.CS.car_fingerprint in (CAR.VOLT, CAR.MALIBU):
-
+    if self.CS.car_fingerprint in (CAR.VOLT, CAR.MALIBU, CAR.HOLDEN_ASTRA, CAR.ACADIA, CAR.CADILLAC_ATS):
       if self.CS.brake_error:
         events.append(create_event('brakeUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
       if not self.CS.gear_shifter_valid:

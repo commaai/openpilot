@@ -4,10 +4,8 @@ from common.numpy_fast import clip
 from selfdrive.car.chrysler.values import CAR
 
 
-# *** Chrysler specific ***
-
 def calc_checksum(data):
-  """This version does not want checksum byte in input data.
+  """This function does not want the checksum byte in the input data.
 
   jeep chrysler canbus checksum from http://illmatics.com/Remote%20Car%20Hacking.pdf
   """
@@ -43,20 +41,11 @@ def calc_checksum(data):
   return ~checksum & 0xFF
 
 
-def make_can_msg(addr, dat, alt=0, cks=False, counter=None):
-  # We're not actually using cks and counter, just doing manually in create_ TODO
-  # TODO what is the alt parameter? setting it to 0 works. 1 does not.
-  #      for alt, look at can_list_to_can_capnp. looks like messaging.new_message() .src
-  if counter != None:
-    dat = dat  # TODO!!! verify 0..15 and put counter in as high nibble
-  if cks:
-    dat = dat + struct.pack("B", calc_checksum(dat))
-  # if addr == 0x292:
-  #   print ('make_can_msg:%s  len:%d  %s' % ('0x{:02x}'.format(addr), len(dat),
-  #                                           ' '.join('{:02x}'.format(ord(c)) for c in dat)))
-  return [addr, 0, dat, alt]
+def make_can_msg(addr, dat):
+  return [addr, 0, dat, 0]
 
 def create_2d9(car_fingerprint):
+  # LKAS_STATUS_1 (729) Lane-keeping heartbeat.
   msg = '0000000820'.decode('hex')  # 2017
   if car_fingerprint == CAR.PACIFICA_2018:
     msg = '0000000020'.decode('hex')
@@ -67,6 +56,7 @@ def create_2d9(car_fingerprint):
   return make_can_msg(0x2d9, msg)
 
 def create_2a6(gear, apply_steer, moving_fast, car_fingerprint):
+  # LKAS_INDICATOR_3 (678) Controls what lane-keeping icon is displayed.
   msg = '0000000000000000'.decode('hex')  # park or neutral
   if car_fingerprint == CAR.PACIFICA_2018:
     msg = '0064000000000000'.decode('hex')  # Have not verified 2018 park with a real car.
@@ -111,9 +101,10 @@ def create_2a6(gear, apply_steer, moving_fast, car_fingerprint):
 
 LIMIT = 230  # 230 is documented limit # 171 is max from main example
 STEP = 3  # 3 is stock. originally 20. 100 is fine. 200 is too much it seems.
-_prev_angle = 0  # TODO if this is needed, refactor it.
+_prev_angle = 0
 
-def create_292(apply_angle, frame, moving_fast):
+def create_292(apply_angle, frame):
+  # LKAS_INDICATOR_2 (658) Lane-keeping signal to turn the wheel.
   global _prev_angle, LIMIT, STEP
   apply_angle = int(apply_angle)
   if apply_angle > LIMIT:
@@ -123,12 +114,17 @@ def create_292(apply_angle, frame, moving_fast):
   apply_angle = clip(apply_angle, _prev_angle - STEP, _prev_angle + STEP)
   _prev_angle = apply_angle
   combined_torque = apply_angle + 1024  # 1024 is straight. more is left, less is right.
-  high_status = 0x10  #!!  0x00 here is more correct, but can_game_sticky uses 0x10
-  if moving_fast:
-    high_status = 0x10
+  high_status = 0x10  # could send 0x00 if not moving fast
   start = [high_status | (combined_torque >> 8), combined_torque & 0xff, 00, 00]
   counter = (frame % 0x10) << 4
   dat = start + [counter]
   dat = dat + [calc_checksum(dat)]  # this calc_checksum does not include the length
   return make_can_msg(0x292, str(bytearray(dat)))
   
+def create_23b(frame_23b):
+  # WHEEL_BUTTONS (571) Message sent to cancel ACC.
+  start = [0x01]  # acc cancel set
+  counter = (frame_23b % 10) << 4
+  dat = start + [counter]
+  dat = dat + [calc_checksum(dat)]
+  return make_can_msg(0x23b, str(bytearray(dat)))
