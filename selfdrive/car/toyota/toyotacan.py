@@ -103,7 +103,7 @@ def create_ui_command(packer, steer, sound1, sound2, lkas_barriers, left_line, r
     "RIGHT_LINE": right_line,
     "LEFT_LINE": left_line,
     "SET_ME_X0C": 0x0c,
-    "SET_ME_X2C": 0x2c,
+    "SET_ME_X2C": 0x1c,
     "SET_ME_X38": 0x38,
     "SET_ME_X02": 0x02,
     "SET_ME_X01": 1,
