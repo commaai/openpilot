@@ -5,7 +5,7 @@ libusb1==1.5.0
 pycapnp==0.6.3
 pyzmq==15.4.0
 raven==5.23.0
-requests==2.10.0
+requests==2.20.0
 setproctitle==1.1.10
 simplejson==3.8.2
 pyyaml==3.12
@@ -16,4 +16,5 @@ filterpy==1.2.4
 smbus2==0.2.0
 pyflakes==1.6.0
 -e git+https://github.com/commaai/le_python.git@5eef8f5be5929d33973e1b10e686fa0cdcd6792f#egg=Logentries
+-e git+https://github.com/commaai/python-overpy.git@f86529af402d4642e1faeb146671c40284007323#egg=overpy
 Flask==1.0.2
