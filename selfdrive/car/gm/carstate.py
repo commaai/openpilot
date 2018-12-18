@@ -56,7 +56,7 @@ class CarState(object):
   def __init__(self, CP, canbus):
     # initialize can parser
     self.alcaLabels = ["MadMax","Normal","Wifey"]
-    self.alcaMode = 0
+    self.alcaMode = 2
     self.car_fingerprint = CP.carFingerprint
     self.cruise_buttons = CruiseButtons.UNPRESS
     self.prev_distance_button = 0
