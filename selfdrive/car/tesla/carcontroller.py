@@ -211,10 +211,7 @@ class CarController(object):
               self.speedlimit_ms = lmd.speedLimit
               self.speedlimit_valid = lmd.speedLimitValid
               params = Params()
-              if (params.get("IsMetric") == "1"):
-                self.speedlimit_units = self.speedlimit_ms * CV.MS_TO_KPH
-              else:
-                self.speedlimit_units = self.speedlimit_ms * CV.MS_TO_MPH
+              self.speedlimit_units = self.speedlimit_ms * CV.MS_TO_MPH + 0.5
 
         #send DAS_info
         if frame % 100 == 0: 
