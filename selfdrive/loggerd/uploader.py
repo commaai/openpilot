@@ -272,9 +272,8 @@ def uploader_fn(exit_event):
       continue
 
     key, fn, _ = d
-
     if _ == 0:
-      key, fn = self.compress(key, fn)
+      key, fn = uploader.compress(key, fn)
 
     if not should_upload:
       time.sleep(5)
