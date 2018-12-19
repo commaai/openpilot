@@ -998,7 +998,7 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   int viz_maxspeed_y = (box_y + (bdr_s*1.5));
   int viz_maxspeed_xo = 0;
   viz_maxspeed_w += viz_maxspeed_xo;
-  viz_maxspeed_x += viz_maxspeed_w - (viz_maxspeed_xo *2);
+  //viz_maxspeed_x += viz_maxspeed_w - (viz_maxspeed_xo *2);
 
   // Draw Background
   nvgBeginPath(s->vg);
