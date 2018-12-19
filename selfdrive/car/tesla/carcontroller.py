@@ -22,7 +22,6 @@ from selfdrive.car.tesla.HSO_module import HSOController
 import zmq
 import selfdrive.messaging as messaging
 from selfdrive.services import service_list
-from cereal import ui
 
 # Steer angle limits
 ANGLE_MAX_BP = [0., 27., 36.]
@@ -75,7 +74,7 @@ class CarController(object):
     self.speedlimit = messaging.sub_sock(context, service_list['liveMapData'].port, conflate=True, poller=self.poller)
     self.speedlimit_ms = 0
     self.speedlimit_valid = False
-
+    self.speedlimit_units = 0
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
              pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel, \
@@ -208,13 +207,14 @@ class CarController(object):
         #get speed limit
         for socket, _ in self.poller.poll(0):
             if socket is self.speedlimit:
-              self.speedlimit_ms = log.cereal_LiveMapData.from_bytes(socket.recv()).speedLimit
-              self.speedlimit_valid = log.cereal_LiveMapData.from_bytes(socket.recv()).speedLimitValid
+              lmd = messaging.recv_one(socket).liveMapData
+              self.speedlimit_ms = lmd.speedLimit
+              self.speedlimit_valid = lmd.speedLimitValid
               params = Params()
               if (params.get("IsMetric") == "1"):
-                self.speedlimit = self.speedlimit_ms * CV.MS_TO_KPH
+                self.speedlimit_units = self.speedlimit_ms * CV.MS_TO_KPH
               else:
-                self.speedlimit = self.speedlimit_ms * CV.MS_TO_MPH
+                self.speedlimit_units = self.speedlimit_ms * CV.MS_TO_MPH
 
         #send DAS_info
         if frame % 100 == 0: 
@@ -230,7 +230,7 @@ class CarController(object):
           if hud_alert == AH.FCW:
             forward_collission_warning = 0x01
           cc_state = 0 #cruise state: 0 unavailable, 1 available, 2 enabled, 3 hold
-          speed_limit_to_car = int(self.speedlimit)
+          speed_limit_to_car = int(self.speedlimit_units)
           alca_state = 0x08 
           if enabled:
             op_status = 0x03
