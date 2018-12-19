@@ -303,7 +303,12 @@ class CarState(object):
     self.user_brake = cp.vl["VSA_STATUS"]['USER_BRAKE']
     self.pcm_acc_status = cp.vl["POWERTRAIN_DATA"]['ACC_STATUS']
     self.hud_lead = cp.vl["ACC_HUD"]['HUD_LEAD']
-
+    
+    # gets rid of Pedal Grinding noise when brake is pressed at slow speeds for some models
+    if self.user_brake > 0.05 or self.brake_pressed:
+      self.brake_pressed = 1
+    else:
+      self.brake_pressed = 0
 
 # carstate standalone tester
 if __name__ == '__main__':
