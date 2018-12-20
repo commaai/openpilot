@@ -147,8 +147,8 @@ class CarInterface(object):
       ret.steerRatio = 16.0
       tire_stiffness_factor = 0.444 # not optimized yet
       ret.mass = 4590 * CV.LB_TO_KG + std_cargo #mean between normal (4505) and limited (4750)
-      ret.steerKpV, ret.steerKiV = [[0.6], [0.05]]
-      ret.steerKf = 0.00003
+      ret.steerKpV, ret.steerKiV = [[0.18], [0.0075]]
+      ret.steerKf = 0.0003
 
 
     ret.steerRateCost = 1.
