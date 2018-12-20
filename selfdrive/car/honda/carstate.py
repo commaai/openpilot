@@ -305,7 +305,7 @@ class CarState(object):
     self.hud_lead = cp.vl["ACC_HUD"]['HUD_LEAD']
     
     # gets rid of Pedal Grinding noise when brake is pressed at slow speeds for some models
-    if CP.carFingerprint in (CAR.PILOT, CAR.PILOT_2019):
+    if self.CP.carFingerprint in (CAR.PILOT, CAR.PILOT_2019):
       if self.user_brake > 0.05:
         self.brake_pressed = 1
 
