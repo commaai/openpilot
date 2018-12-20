@@ -80,6 +80,9 @@ class CarInterface(object):
     ret.steerActuatorDelay = 0.1
     ret.steerRateCost = 1.
 
+    if candidate == CAR.CHEROKEE:
+      ret.wheelbase = 2.91  # in meters
+
     ret.centerToFront = ret.wheelbase * 0.44
 
     ret.longPidDeadzoneBP = [0., 9.]
