@@ -445,7 +445,7 @@ class CarInterface(object):
 
     self.CC.update(self.sendcan, c.enabled, self.CS, self.frame,
                    c.actuators, c.cruiseControl.cancel, c.hudControl.visualAlert,
-                   c.hudControl.audibleAlert, self.forwarding_camera, c.HUDControl.leftLaneVisible,c.HUDControl.rightLaneVisible)
+                   c.hudControl.audibleAlert, self.forwarding_camera, c.hudControl.rightLaneVisible,c.hudControl.leftLaneVisible)
 
     self.frame += 1
     return False
