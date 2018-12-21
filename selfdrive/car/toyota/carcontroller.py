@@ -11,8 +11,6 @@ from selfdrive.car.modules.ALCA_module import ALCAController
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert
-leftLaneVisible = car.CarControl.HUDControl.leftLaneVisible
-rightLaneVisible = car.CarControl.HUDControl.rightLaneVisible
 
 # Accel limits
 ACCEL_HYST_GAP = 0.02  # don't change accel command for small oscilalitons within this value
@@ -342,7 +340,7 @@ class CarController(object):
       send_ui = False
 
     if (frame % 100 == 0 or send_ui) and ECU.CAM in self.fake_ecus:
-      can_sends.append(create_ui_command(self.packer, steer, sound1, sound2, CS.lkas_barriers,  leftLaneVisible, rightLaneVisible))
+      can_sends.append(create_ui_command(self.packer, steer, sound1, sound2, CS.lkas_barriers, CS.left_line, CS.right_line))
 
     if frame % 100 == 0 and ECU.DSU in self.fake_ecus:
       can_sends.append(create_fcw_command(self.packer, fcw))
