@@ -143,7 +143,7 @@ class CarController(object):
     self.packer = CANPacker(dbc_name)
 
   def update(self, sendcan, enabled, CS, frame, actuators,
-             pcm_cancel_cmd, hud_alert, audible_alert, forwarding_camera, left_line, right_line):
+             pcm_cancel_cmd, hud_alert, audible_alert, forwarding_camera, left_line, right_line, lead):
     #update custom UI buttons and alerts
     CS.UE.update_custom_ui()
     if (frame % 1000 == 0):
@@ -305,11 +305,16 @@ class CarController(object):
         can_sends.append(create_ipas_steer_command(self.packer, 0, 0, True))
     elif ECU.APGS in self.fake_ecus:
       can_sends.append(create_ipas_steer_command(self.packer, 0, 0, True))
-    
-    if CS.cstm_btns.get_button_status("tr") > 0:
-      distance = 0b01110011 #x73 comma with toggle - toggle is 5th bit from right
+    if lead:
+      if CS.cstm_btns.get_button_status("tr") > 0:
+        distance = 0b01110011 #x73 comma with toggle - toggle is 5th bit from right
+      else:
+        distance = 0b01100011 #x63 comma with toggle - toggle is 5th bit from right
     else:
-      distance = 0b01100011 #x63 comma with toggle - toggle is 5th bit from right
+      if CS.cstm_btns.get_button_status("tr") > 0:
+        distance = 0b01010011 #x73 comma with toggle - toggle is 6th bit from right
+      else:
+        distance = 0b01000011 #x53 comma with toggle 
     # accel cmd comes from DSU, but we can spam can to cancel the system even if we are using lat only control
     if (frame % 3 == 0 and ECU.DSU in self.fake_ecus) or (pcm_cancel_cmd and ECU.CAM in self.fake_ecus):
       if ECU.DSU in self.fake_ecus:
