@@ -129,7 +129,6 @@ class CarController(object):
     self.blindspot_blink_counter_left = 0
     self.blindspot_blink_counter_right = 0
     self.steer_angle_enabled = False
-    self.framesdisabled = 0
     self.ipas_reset_counter = 0
     self.last_fault_frame = -200
     self.blindspot_debug_enabled_left = False
@@ -306,11 +305,8 @@ class CarController(object):
         can_sends.append(create_ipas_steer_command(self.packer, 0, 0, True))
     elif ECU.APGS in self.fake_ecus:
       can_sends.append(create_ipas_steer_command(self.packer, 0, 0, True))
-    if not enabled and self.framesdisabled < 10:
-      self.framesdisabled += 1
-    if enabled and self.framesdisabled > 0:
-      self.framesdisabled -= 1
-    if lead or not enabled or self.framesdisabled > 0:
+    
+    if lead or CS.v_ego < 11.2:
       if CS.cstm_btns.get_button_status("tr") > 0:
         distance = 0b01110011 #x73 comma with toggle - toggle is 5th bit from right
       else:
