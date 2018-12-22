@@ -305,7 +305,7 @@ class CarController(object):
         can_sends.append(create_ipas_steer_command(self.packer, 0, 0, True))
     elif ECU.APGS in self.fake_ecus:
       can_sends.append(create_ipas_steer_command(self.packer, 0, 0, True))
-    if lead:
+    if lead or not enabled:
       if CS.cstm_btns.get_button_status("tr") > 0:
         distance = 0b01110011 #x73 comma with toggle - toggle is 5th bit from right
       else:
