@@ -166,6 +166,9 @@ class CANParser {
     subscriber = zmq_socket(context, ZMQ_SUB);
     zmq_setsockopt(subscriber, ZMQ_SUBSCRIBE, "", 0);
 
+    forwarder = zmq_socket(context, ZMQ_PUB);
+    zmq_bind(forwarder, "tcp://*:8592");
+
     std::string tcp_addr_str;
 
     if (sendcan) {
@@ -244,8 +247,17 @@ class CANParser {
       // parse the messages
       for (int i = 0; i < msg_count; i++) {
         auto cmsg = cans[i];
+
+        if (cmsg.getDat().size() > 8) continue; //shouldnt ever happen
+        uint8_t dat[8] = {0};
+        memcpy(dat, cmsg.getDat().begin(), cmsg.getDat().size());
+
+        if (can_forward_period_ns > 0) raw_can_values[cmsg.getSrc()][cmsg.getAddress()] = read_u64_be(dat);
+
+        //if (((cmsg.getAddress() == 0xe4 or cmsg.getAddress() == 0x33d) and cmsg.getSrc() == bus) or \
+        //     (cmsg.getSrc() != bus and cmsg.getAddress() != 0x33d and cmsg.getAddress() != 0xe4 and \
+        //     (cmsg.getAddress() < 0x240 or cmsg.getAddress() > 0x24A))) {
         if (cmsg.getSrc() != bus) {
-          // DEBUG("skip %d: wrong bus\n", cmsg.getAddress());
           continue;
         }
         auto state_it = message_states.find(cmsg.getAddress());
@@ -254,10 +266,6 @@ class CANParser {
           continue;
         }
 
-        if (cmsg.getDat().size() > 8) continue; //shouldnt ever happen
-        uint8_t dat[8] = {0};
-        memcpy(dat, cmsg.getDat().begin(), cmsg.getDat().size());
-
         // Assumes all signals in the message are of the same type (little or big endian)
         // TODO: allow signals within the same message to have different endianess
         auto& sig = message_states[cmsg.getAddress()].parse_sigs[0];
@@ -265,7 +273,7 @@ class CANParser {
             p = read_u64_le(dat);
         } else {
             p = read_u64_be(dat);
-        }
+        } 
 
         DEBUG("  proc %X: %llx\n", cmsg.getAddress(), p);
 
@@ -273,8 +281,23 @@ class CANParser {
       }
   }
 
+  void ForwardCANData(uint64_t sec) {
+      if (sec > next_can_forward_ns) {
+          next_can_forward_ns += can_forward_period_ns;
+          // next_can_forward_ns starts at 0, so it needs to be reset.  Also handle delays.
+          if (sec > next_can_forward_ns) next_can_forward_ns = sec + can_forward_period_ns;
+          std::string canOut = "";
+          for (auto src : raw_can_values) {
+              for (auto pid : src.second) {
+                  canOut = canOut + std::to_string(src.first) + " " + std::to_string(pid.first) + " " + std::to_string(pid.second) + "|";
+              }
+          }
+          zmq_send(forwarder, canOut.data(), canOut.size(), 0);
+      }
+  }
+
   void UpdateValid(uint64_t sec) {
-    can_valid = true;
+    can_valid = true; 
     for (const auto& kv : message_states) {
       const auto& state = kv.second;
       if (state.check_threshold > 0 && (sec - state.seen) > state.check_threshold) {
@@ -317,6 +340,8 @@ class CANParser {
       UpdateCans(sec, cans);
     }
 
+    if (can_forward_period_ns > 0) ForwardCANData(sec);
+
     UpdateValid(sec);
 
     zmq_msg_close(&msg);
@@ -350,6 +375,11 @@ class CANParser {
   // zmq vars
   void *context = NULL;
   void *subscriber = NULL;
+
+  void *forwarder = NULL;
+  uint64_t can_forward_period_ns = 100000000;
+  uint64_t next_can_forward_ns = 0;
+  std::unordered_map<uint32_t, std::unordered_map<uint32_t, uint64_t>> raw_can_values;
 
   const DBC *dbc = NULL;
   std::unordered_map<uint32_t, MessageState> message_states;
