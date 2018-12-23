@@ -30,7 +30,7 @@ class PathPlanner(object):
         else:
           angle_error = 0.0
         if angle_error != 0.0:
-          LaC.lateral_error = np.clip(v_ego * (LaC.steerActuatorDelay + 0.05) * math.tan(math.radians(angle_error)), -1.2, 1.2)
+          LaC.lateral_error = 2.0 * np.clip(v_ego * (LaC.steerActuatorDelay + 0.05) * math.tan(math.radians(angle_error)), -1.2, 1.2)
           lateral_error = LaC.lateral_error
         else:
           lateral_error = 0.0
