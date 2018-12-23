@@ -130,6 +130,9 @@ class CarController(object):
     self.blindspot_blink_counter_right = 0
     self.steer_angle_enabled = False
     self.ipas_reset_counter = 0
+    self.barriers = 0
+    self.left_line_values = 1
+    self.right_line_values = 1
     self.last_fault_frame = -200
     self.blindspot_debug_enabled_left = False
     self.blindspot_debug_enabled_right = False
@@ -344,9 +347,16 @@ class CarController(object):
       self.alert_active = not self.alert_active
     else:
       send_ui = False
-
+    self.left_line_values = 2 - left_line
+    self.right_line_values = 2 - right_line
+    if leftLaneDepart:
+      self.barriers = 3
+      self.left_line_values = 3
+    eif rightLaneDepart:
+      self.barriers = 2
+      self.right_line_values = 3
     if (frame % 100 == 0 or send_ui) and ECU.CAM in self.fake_ecus:
-      can_sends.append(create_ui_command(self.packer, steer, sound1, sound2, CS.lkas_barriers, 2 - left_line, 2 - right_line))
+      can_sends.append(create_ui_command(self.packer, steer, sound1, sound2, self.barriers, self.left_line_values, self.right_line_values))
 
     if frame % 100 == 0 and ECU.DSU in self.fake_ecus:
       can_sends.append(create_fcw_command(self.packer, fcw))
