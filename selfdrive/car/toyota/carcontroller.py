@@ -349,6 +349,7 @@ class CarController(object):
       send_ui = False
     self.left_line_values = 2 - left_line
     self.right_line_values = 2 - right_line
+    self.barriers = 0
     if leftLaneDepart:
       self.barriers = 3
       self.left_line_values = 3
