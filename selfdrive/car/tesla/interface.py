@@ -117,7 +117,7 @@ class CarInterface(object):
       ret.centerToFront = centerToFront_models
       ret.steerRatio = 15.75
       # Kp and Ki for the lateral control for 0, 20, 40, 60 mph
-      ret.steerKpV, ret.steerKiV = [[1.20, 0.80, 0.60, 0.30], [0.16, 0.12, 0.08, 0.04]]
+      ret.steerKpV, ret.steerKiV = [[1.20, 0.80, 0.60, 0.20], [0.16, 0.12, 0.08, 0.06]]
       ret.steerKf = 0.00006 # Initial test value TODO: investigate FF steer control for Model S?
       ret.steerActuatorDelay = 0.09
       
