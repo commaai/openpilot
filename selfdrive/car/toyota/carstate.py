@@ -295,9 +295,9 @@ class CarState(object):
     self.main_on = cp.vl["PCM_CRUISE_2"]['MAIN_ON']
     self.left_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 1
     self.right_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 2
-    self.lkas_barriers = cp.vl["LKAS_HUD"]['BARRIERS']
-    self.left_line = cp.vl["LKAS_HUD"]['LEFT_LINE']
-    self.right_line = cp.vl["LKAS_HUD"]['RIGHT_LINE']
+    self.lkas_barriers = cp_cam.vl["LKAS_HUD"]['BARRIERS']
+    self.left_line = cp_cam.vl["LKAS_HUD"]['LEFT_LINE']
+    self.right_line = cp_cam.vl["LKAS_HUD"]['RIGHT_LINE']
     #print self.lkas_barriers
     #print self.right_line
     #print self.left_line
