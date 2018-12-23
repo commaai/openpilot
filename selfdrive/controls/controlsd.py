@@ -305,7 +305,7 @@ def state_control(plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, 
 
 def data_send(perception_state, plan, plan_ts, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, carstate,
               carcontrol, live100, livempc, AM, driver_status,
-              LaC, LoC, angle_offset, passive):
+              LaC, LoC, angle_offset, passive, l_poly, r_poly):
   """Send actuators and hud commands to the car, send live100 and MPC logging"""
 
   CC = car.CarControl.new_message()
@@ -327,7 +327,9 @@ def data_send(perception_state, plan, plan_ts, CS, CI, CP, VM, state, events, ac
     CC.hudControl.lanesVisible = isEnabled(state)
     CC.hudControl.leadVisible = plan.hasLead
     CC.hudControl.rightLaneVisible = plan.hasRightLane
+    CC.hudControl.rightLaneDepart = r_poly[3]>-1.5 and not CS.rightBlinker
     CC.hudControl.leftLaneVisible = plan.hasLeftLane
+    CC.hudControl.leftLaneDepart = if l_poly[3]<1.5 and not CS.leftBlinker
     CC.hudControl.visualAlert = AM.visual_alert
     CC.hudControl.audibleAlert = AM.audible_alert
 
@@ -518,7 +520,7 @@ def controlsd_thread(gctx=None, rate=100, default_bias=0.):
 
     # Publish data
     CC = data_send(PL.perception_state, plan, plan_ts, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, carstate, carcontrol,
-      live100, livempc, AM, driver_status, LaC, LoC, angle_offset, passive)
+      live100, livempc, AM, driver_status, LaC, LoC, angle_offset, passive, PL.PP.l_poly, PL.PP.r_poly)
     prof.checkpoint("Sent")
 
     rk.keep_time()  # Run at 100Hz
