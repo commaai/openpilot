@@ -89,9 +89,6 @@ def get_can_parser(CP):
     ("LANE_WARNING", "JOEL_ID", 1),
     ("ACC_SLOW", "JOEL_ID", 0),
     ("DISTANCE_LINES", "PCM_CRUISE_SM", 0),
-    ("BARRIERS", "LKAS_HUD", 0),
-    ("RIGHT_LINE", "LKAS_HUD", 1),
-    ("LEFT_LINE", "LKAS_HUD", 1),
   ]
 
   checks = [
@@ -118,7 +115,11 @@ def get_can_parser(CP):
 
 def get_cam_can_parser(CP):
 
-  signals = []
+  signals = [
+    ("BARRIERS", "LKAS_HUD", 0),
+    ("RIGHT_LINE", "LKAS_HUD", 1),
+    ("LEFT_LINE", "LKAS_HUD", 1),
+  ]
 
   # use steering message to check if panda is connected to frc
   checks = [("STEERING_LKA", 42)]
