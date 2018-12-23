@@ -743,10 +743,10 @@ void bb_ui_draw_logo( UIState *s) {
   const UIScene *scene = &s->scene;
   const int ui_viz_rx = scene->ui_viz_rx;
   const int ui_viz_rw = scene->ui_viz_rw;
-  const int viz_event_w = (int)(820 * logop);
-  const int viz_event_h = 820;
+  const int viz_event_w = (int)(410 * logop);
+  const int viz_event_h = 410;
   const int viz_event_x = (ui_viz_rx + (ui_viz_rw - viz_event_w - bdr_s*2)/2);
-  const int viz_event_y = 200;
+  const int viz_event_y = 305;
   bool is_engageable = scene->engageable;
   float viz_event_alpha = 1.0f;
   nvgBeginPath(s->vg);
