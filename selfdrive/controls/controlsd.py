@@ -329,7 +329,7 @@ def data_send(perception_state, plan, plan_ts, CS, CI, CP, VM, state, events, ac
     CC.hudControl.rightLaneVisible = plan.hasRightLane
     CC.hudControl.rightLaneDepart = r_poly[3]>-1.5 and not CS.rightBlinker
     CC.hudControl.leftLaneVisible = plan.hasLeftLane
-    CC.hudControl.leftLaneDepart = if l_poly[3]<1.5 and not CS.leftBlinker
+    CC.hudControl.leftLaneDepart = l_poly[3]<1.5 and not CS.leftBlinker
     CC.hudControl.visualAlert = AM.visual_alert
     CC.hudControl.audibleAlert = AM.audible_alert
 
