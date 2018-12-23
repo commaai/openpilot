@@ -16,6 +16,9 @@ class PathPlanner(object):
     self.lane_width_certainty = 1.0
     self.lane_width = 2.85
 
+    self.l_prob = 0
+    self.r_prob = 0
+
   def update(self, v_ego, md):
     if md is not None:
       p_poly = model_polyfit(md.model.path.points, self._path_pinv)  # predicted path

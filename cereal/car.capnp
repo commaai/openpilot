@@ -123,6 +123,9 @@ struct CarState {
   blindspotside @30 :Float32;
   readdistancelines @31 :Float32;
   gasbuttonstatus @32 :Float32;
+  leftline @33 :Float32;
+  rightline @34 :Float32;
+  lkasbarriers @35 :Float32;
 
   # lock info
   doorOpen @24 :Bool;
@@ -251,6 +254,8 @@ struct CarControl {
     leadVisible @3: Bool;
     visualAlert @4: VisualAlert;
     audibleAlert @5: AudibleAlert;
+    rightLaneVisible @6: Bool;
+    leftLaneVisible @7: Bool;
 
     enum VisualAlert {
       # these are the choices from the Honda
