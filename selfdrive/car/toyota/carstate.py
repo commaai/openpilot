@@ -297,9 +297,9 @@ class CarState(object):
     self.lkas_barriers = cp.vl["LKAS_HUD"]['BARRIERS']
     self.left_line = cp.vl["LKAS_HUD"]['LEFT_LINE']
     self.right_line = cp.vl["LKAS_HUD"]['RIGHT_LINE']
-    print self.lkas_barriers
-    print self.right_line
-    print self.left_line
+    #print self.lkas_barriers
+    #print self.right_line
+    #print self.left_line
     self.blind_spot_side = cp.vl["DEBUG"]['BLINDSPOTSIDE']
 
     if (cp.vl["DEBUG"]['BLINDSPOTD1'] > 10) or (cp.vl["DEBUG"]['BLINDSPOTD1'] > 10):
