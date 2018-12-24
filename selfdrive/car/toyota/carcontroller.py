@@ -122,7 +122,7 @@ class CarController(object):
     self.packer = CANPacker(dbc_name)
 
   def update(self, sendcan, enabled, CS, frame, actuators,
-             pcm_cancel_cmd, hud_alert, audible_alert, forwarding_camera):
+             pcm_cancel_cmd, hud_alert, audible_alert, forwarding_camera, left_line, right_line, lead):
 
     # *** compute control surfaces ***
 
@@ -213,13 +213,16 @@ class CarController(object):
                                                  ECU.APGS in self.fake_ecus))
     elif ECU.APGS in self.fake_ecus:
       can_sends.append(create_ipas_steer_command(self.packer, 0, 0, True))
-
+    if lead or CS.v_ego < 11.2:
+      distance = 0b01100011 #x63 comma with toggle - toggle is 6th bit from right
+    else:
+      distance = 0b01000011 #x53 comma with toggle 
     # accel cmd comes from DSU, but we can spam can to cancel the system even if we are using lat only control
     if (frame % 3 == 0 and ECU.DSU in self.fake_ecus) or (pcm_cancel_cmd and ECU.CAM in self.fake_ecus):
       if ECU.DSU in self.fake_ecus:
-        can_sends.append(create_accel_command(self.packer, apply_accel, pcm_cancel_cmd, self.standstill_req))
+        can_sends.append(create_accel_command(self.packer, apply_accel, pcm_cancel_cmd, self.standstill_req, distance))
       else:
-        can_sends.append(create_accel_command(self.packer, 0, pcm_cancel_cmd, False))
+        can_sends.append(create_accel_command(self.packer, 0, pcm_cancel_cmd, False, distance))
 
     if frame % 10 == 0 and ECU.CAM in self.fake_ecus and not forwarding_camera:
       for addr in TARGET_IDS:
@@ -239,7 +242,7 @@ class CarController(object):
       send_ui = False
 
     if (frame % 100 == 0 or send_ui) and ECU.CAM in self.fake_ecus:
-      can_sends.append(create_ui_command(self.packer, steer, sound1, sound2))
+      can_sends.append(create_ui_command(self.packer, steer, sound1, sound2, 0, 2 - left_line, 2 - right_line))
 
     if frame % 100 == 0 and ECU.DSU in self.fake_ecus:
       can_sends.append(create_fcw_command(self.packer, fcw))
