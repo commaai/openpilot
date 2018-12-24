@@ -48,7 +48,6 @@ def get_can_signals(CP):
       ("HUD_LEAD", "ACC_HUD", 0),
       ("USER_BRAKE", "VSA_STATUS", 0),
       ("STEER_STATUS", "STEER_STATUS", 5),
-      ("GEAR_SHIFTER", "GEARBOX", 0),
       ("PEDAL_GAS", "POWERTRAIN_DATA", 0),
       ("CRUISE_SETTING", "SCM_BUTTONS", 0),
       ("ACC_STATUS", "POWERTRAIN_DATA", 0),
@@ -65,9 +64,10 @@ def get_can_signals(CP):
       ("VSA_STATUS", 50),
       ("SCM_BUTTONS", 25),
   ]
-  
+
   if CP.carFingerprint not in (CAR.CIVIC_HATCH_MANUAL_10):
-    signals += [(("GEAR", "GEARBOX", 0))]
+    signals += [("GEAR", "GEARBOX", 0),
+                 ("GEAR_SHIFTER", "GEARBOX", 0)]
     checks += [(("GEARBOX", 100))]
   if CP.radarOffCan:
     # Civic is only bosch to use the same brake message as other hondas.
@@ -239,7 +239,7 @@ class CarState(object):
       self.user_gas = cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS']
       self.user_gas_pressed = self.user_gas > 0 # this works because interceptor read < 0 when pedal position is 0. Once calibrated, this will change
 
-    self.gear = 0 if self.CP.carFingerprint == CAR.CIVIC else cp.vl["GEARBOX"]['GEAR']
+    self.gear = 0 if self.CP.carFingerprint == CAR.CIVIC or CAR.CIVIC_HATCH_MANUAL_10 else cp.vl["GEARBOX"]['GEAR']
     self.angle_steers = cp.vl["STEERING_SENSORS"]['STEER_ANGLE']
     self.angle_steers_rate = cp.vl["STEERING_SENSORS"]['STEER_ANGLE_RATE']
 
@@ -259,7 +259,7 @@ class CarState(object):
       self.brake_hold = 0  # TODO
       self.main_on = cp.vl["SCM_BUTTONS"]['MAIN_ON']
 
-    can_gear_shifter = int(cp.vl["GEARBOX"]['GEAR_SHIFTER'])
+    can_gear_shifter = 2 if self.CP.carFingerprint in (CAR.CIVIC_HATCH_MANUAL_10) else (cp.vl["GEARBOX"]['GEAR_SHIFTER'])
     self.gear_shifter = parse_gear_shifter(can_gear_shifter, self.shifter_values)
 
     self.pedal_gas = cp.vl["POWERTRAIN_DATA"]['PEDAL_GAS']
