@@ -146,7 +146,7 @@ class CarController(object):
     self.packer = CANPacker(dbc_name)
 
   def update(self, sendcan, enabled, CS, frame, actuators,
-             pcm_cancel_cmd, hud_alert, audible_alert, forwarding_camera, left_line, right_line, lead, leftLaneDepart, rightLaneDepart):
+             pcm_cancel_cmd, hud_alert, audible_alert, forwarding_camera, left_line, right_line, lead, leftLane_Depart, rightLane_Depart):
     #update custom UI buttons and alerts
     CS.UE.update_custom_ui()
     if (frame % 1000 == 0):
@@ -350,10 +350,10 @@ class CarController(object):
     self.left_line_values = 2 - left_line
     self.right_line_values = 2 - right_line
     self.barriers = 0
-    if leftLaneDepart:
+    if leftLane_Depart:
       self.barriers = 3
       self.left_line_values = 3
-    elif rightLaneDepart:
+    elif rightLane_Depart:
       self.barriers = 2
       self.right_line_values = 3
     if (frame % 100 == 0 or send_ui) and ECU.CAM in self.fake_ecus:
