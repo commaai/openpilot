@@ -115,11 +115,7 @@ def get_can_parser(CP):
 
 def get_cam_can_parser(CP):
 
-  signals = [
-    ("BARRIERS", "LKAS_HUD", 0),
-    ("RIGHT_LINE", "LKAS_HUD", 1),
-    ("LEFT_LINE", "LKAS_HUD", 1),
-  ]
+  signals = []
 
   # use steering message to check if panda is connected to frc
   checks = [("STEERING_LKA", 42)]
@@ -295,12 +291,12 @@ class CarState(object):
     self.main_on = cp.vl["PCM_CRUISE_2"]['MAIN_ON']
     self.left_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 1
     self.right_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 2
-    self.lkas_barriers = cp_cam.vl["LKAS_HUD"]['BARRIERS']
-    self.left_line = cp_cam.vl["LKAS_HUD"]['LEFT_LINE']
-    self.right_line = cp_cam.vl["LKAS_HUD"]['RIGHT_LINE']
-    print self.lkas_barriers
-    print self.right_line
-    print self.left_line
+    #self.lkas_barriers = cp_cam.vl["LKAS_HUD"]['BARRIERS']
+    #self.left_line = cp_cam.vl["LKAS_HUD"]['LEFT_LINE']
+    #self.right_line = cp_cam.vl["LKAS_HUD"]['RIGHT_LINE']
+    #print self.lkas_barriers
+    #print self.right_line
+    #print self.left_line
     self.blind_spot_side = cp.vl["DEBUG"]['BLINDSPOTSIDE']
 
     if (cp.vl["DEBUG"]['BLINDSPOTD1'] > 10) or (cp.vl["DEBUG"]['BLINDSPOTD1'] > 10):
