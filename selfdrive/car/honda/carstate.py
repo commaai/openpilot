@@ -39,7 +39,6 @@ def get_can_signals(CP):
       ("STEER_TORQUE_SENSOR", "STEER_STATUS", 0),
       ("LEFT_BLINKER", "SCM_FEEDBACK", 0),
       ("RIGHT_BLINKER", "SCM_FEEDBACK", 0),
-      ("GEAR", "GEARBOX", 0),
       ("SEATBELT_DRIVER_LAMP", "SEATBELT_STATUS", 1),
       ("SEATBELT_DRIVER_LATCHED", "SEATBELT_STATUS", 0),
       ("BRAKE_PRESSED", "POWERTRAIN_DATA", 0),
@@ -60,14 +59,16 @@ def get_can_signals(CP):
       ("WHEEL_SPEEDS", 50),
       ("STEERING_SENSORS", 100),
       ("SCM_FEEDBACK", 10),
-      ("GEARBOX", 100),
       ("SEATBELT_STATUS", 10),
       ("CRUISE", 10),
       ("POWERTRAIN_DATA", 100),
       ("VSA_STATUS", 50),
       ("SCM_BUTTONS", 25),
   ]
-
+  
+  if CP.carFingerprint not in (CAR.CIVIC_HATCH_MANUAL_10):
+    signals += [(("GEAR", "GEARBOX", 0))]
+    checks += [(("GEARBOX", 100))]
   if CP.radarOffCan:
     # Civic is only bosch to use the same brake message as other hondas.
     if CP.carFingerprint not in (CAR.ACCORDH, CAR.CIVIC_HATCH, CAR.CIVIC_HATCH_MANUAL_10):
