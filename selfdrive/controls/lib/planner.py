@@ -504,6 +504,8 @@ class Planner(object):
     plan_send.plan.aTarget = self.a_acc_sol
     plan_send.plan.vTargetFuture = self.v_acc_future
     plan_send.plan.hasLead = self.mpc1.prev_lead_status
+    plan_send.plan.hasLeftLane = bool(self.PP.l_prob > 0.5)
+    plan_send.plan.hasRightLane = bool(self.PP.r_prob > 0.5)
     plan_send.plan.longitudinalPlanSource = self.longitudinalPlanSource
 
     plan_send.plan.gpsPlannerActive = self.gps_planner_active
