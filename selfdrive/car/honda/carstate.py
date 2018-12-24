@@ -259,7 +259,7 @@ class CarState(object):
       self.brake_hold = 0  # TODO
       self.main_on = cp.vl["SCM_BUTTONS"]['MAIN_ON']
 
-    can_gear_shifter = 2 if self.CP.carFingerprint in (CAR.CIVIC_HATCH_MANUAL_10) else (cp.vl["GEARBOX"]['GEAR_SHIFTER'])
+    can_gear_shifter = 'D' if self.CP.carFingerprint in (CAR.CIVIC_HATCH_MANUAL_10) else (cp.vl["GEARBOX"]['GEAR_SHIFTER'])
     self.gear_shifter = parse_gear_shifter(can_gear_shifter, self.shifter_values)
 
     self.pedal_gas = cp.vl["POWERTRAIN_DATA"]['PEDAL_GAS']
