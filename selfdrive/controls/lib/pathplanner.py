@@ -17,6 +17,8 @@ class PathPlanner(object):
     self.lane_width = 2.85
 
     self.l_prob = 0
+    self.l_poly = [0., 0., 0., 0.]
+    self.r_poly = [0., 0., 0., 0.]
     self.r_prob = 0
 
   def update(self, v_ego, md):
