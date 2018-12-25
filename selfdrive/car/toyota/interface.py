@@ -214,8 +214,8 @@ class CarInterface(object):
       ret.steerRatio = 16.0
       tire_stiffness_factor = 0.444 # not optimized yet
       ret.mass = 4607 * CV.LB_TO_KG + std_cargo #mean between normal and hybrid limited
-      ret.steerKpV, ret.steerKiV = [[0.6], [0.05]]
-      ret.steerKf = 0.00006
+      ret.steerKpV, ret.steerKiV = [[0.18], [0.0075]]
+      ret.steerKf = 0.00030
       if ret.enableGasInterceptor:
         ret.gasMaxV = [0.2, 0.5, 0.7]
         ret.longitudinalKpV = [1.2, 0.8, 0.5]
@@ -363,6 +363,9 @@ class CarInterface(object):
     ret.buttonEvents = buttonEvents
     ret.leftBlinker = bool(self.CS.left_blinker_on)
     ret.rightBlinker = bool(self.CS.right_blinker_on)
+    ret.leftline = self.CS.left_line
+    ret.rightline = self.CS.right_line
+    ret.lkasbarriers = self.CS.lkas_barriers
     ret.blindspot = self.CS.blind_spot_on
     ret.blindspotside = self.CS.blind_spot_side
     ret.doorOpen = not self.CS.door_all_closed
@@ -443,7 +446,7 @@ class CarInterface(object):
 
     self.CC.update(self.sendcan, c.enabled, self.CS, self.frame,
                    c.actuators, c.cruiseControl.cancel, c.hudControl.visualAlert,
-                   c.hudControl.audibleAlert, self.forwarding_camera)
+                   c.hudControl.audibleAlert, self.forwarding_camera, c.hudControl.leftLaneVisible, c.hudControl.rightLaneVisible, c.hudControl.leadVisible)
 
     self.frame += 1
     return False

@@ -783,10 +783,10 @@ void bb_ui_draw_logo( UIState *s) {
   const UIScene *scene = &s->scene;
   const int ui_viz_rx = scene->ui_viz_rx;
   const int ui_viz_rw = scene->ui_viz_rw;
-  const int viz_event_w = (int)(820 * logop);
-  const int viz_event_h = 820;
-  const int viz_event_x = (ui_viz_rx + (ui_viz_rw - viz_event_w - bdr_s*2)/2);
-  const int viz_event_y = 200;
+  const int viz_event_w = (int)(410 * logop);
+  const int viz_event_h = 410;
+  const int viz_event_x = (ui_viz_rx + (ui_viz_rw - viz_event_w - bdr_s*2)/2) + 400;
+  const int viz_event_y = 255;
   bool is_engageable = scene->engageable;
   float viz_event_alpha = 1.0f;
   nvgBeginPath(s->vg);
@@ -1023,6 +1023,10 @@ void  bb_ui_poll_update( UIState *s) {
               s->b.img_logo = nvgCreateImage(s->vg, "../assets/img_spinner_comma.toyota.png", 1);
               s->b.img_logo2 = nvgCreateImage(s->vg, "../assets/img_spinner_comma.toyota2.png", 1);
               LOGW("Spinning logo set for Toyota");
+	    } else if (strcmp(s->b.car_folder,"gm")==0) {
+              s->b.img_logo = nvgCreateImage(s->vg, "../assets/img_spinner_comma.gm.png", 1);
+              s->b.img_logo2 = nvgCreateImage(s->vg, "../assets/img_spinner_comma.gm2.png", 1);
+              LOGW("Spinning logo set for GM");
             };
           }
           capn_free(&ctx);
