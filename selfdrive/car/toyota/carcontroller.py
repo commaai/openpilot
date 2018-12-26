@@ -350,10 +350,10 @@ class CarController(object):
     self.left_line_values = 2 - left_line
     self.right_line_values = 2 - right_line
     self.barriers = 0
-    if leftLane_Depart:
+    if leftLane_Depart and frame > 1000:
       self.barriers = 3
       self.left_line_values = 3
-    elif rightLane_Depart:
+    elif rightLane_Depart and frame > 1000:
       self.barriers = 2
       self.right_line_values = 3
     if (frame % 100 == 0 or send_ui) and ECU.CAM in self.fake_ecus:
