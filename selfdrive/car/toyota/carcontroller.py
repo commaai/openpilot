@@ -213,16 +213,16 @@ class CarController(object):
                                                  ECU.APGS in self.fake_ecus))
     elif ECU.APGS in self.fake_ecus:
       can_sends.append(create_ipas_steer_command(self.packer, 0, 0, True))
-    if lead or CS.v_ego < 11.2:
-      distance = 0b01100011 #x63 comma with toggle - toggle is 6th bit from right
+    if lead or CS.v_ego < 11.2: # cannot be on below 40 kph
+      mini_car = 1 #mini_car on
     else:
-      distance = 0b01000011 #x53 comma with toggle 
+      mini_car = 0 #mini_car off
     # accel cmd comes from DSU, but we can spam can to cancel the system even if we are using lat only control
     if (frame % 3 == 0 and ECU.DSU in self.fake_ecus) or (pcm_cancel_cmd and ECU.CAM in self.fake_ecus):
       if ECU.DSU in self.fake_ecus:
-        can_sends.append(create_accel_command(self.packer, apply_accel, pcm_cancel_cmd, self.standstill_req, distance))
+        can_sends.append(create_accel_command(self.packer, apply_accel, pcm_cancel_cmd, self.standstill_req, mini_car))
       else:
-        can_sends.append(create_accel_command(self.packer, 0, pcm_cancel_cmd, False, distance))
+        can_sends.append(create_accel_command(self.packer, 0, pcm_cancel_cmd, False, mini_car))
 
     if frame % 10 == 0 and ECU.CAM in self.fake_ecus and not forwarding_camera:
       for addr in TARGET_IDS:
