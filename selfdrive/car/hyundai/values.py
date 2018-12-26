@@ -43,10 +43,13 @@ FINGERPRINTS = {
 
 CAMERA_MSGS = [832, 1156, 1191, 1342]
 
-CHECKSUM = {
-  "crc8": [CAR.SANTA_FE],
-  "6B": [CAR.KIA_SORENTO, CAR.GENESIS],
-  "7B": [CAR.KIA_STINGER, CAR.ELANTRA],
+# Lane Keep Assist related Features and Limitations
+LKAS_FEATURES = {
+  "6B": [CAR.KIA_SORENTO, CAR.GENESIS],     # 6 Bytes used in Checksum
+  "7B": [CAR.KIA_STINGER, CAR.ELANTRA],			# 7 Bytes used in Checksum
+  "crc8": [CAR.SANTA_FE],		                # CRC Checksum
+  "icon_basic": [CAR.GENESIS],		          # Anything but 2 for LKAS_Icon causes MDPS Fault
+  "soft_disable": [CAR.GENESIS],			      # Any steer message sent below 16.5m/s faults MDPS
 }
 
 DBC = {
