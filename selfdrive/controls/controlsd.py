@@ -440,7 +440,9 @@ def controlsd_thread(gctx=None, rate=100, default_bias=0.):
     passive = True
     sendcan = None
 
-  if passive:
+  # GM needs CAN-based ignition hook, part of GM safety code.
+  # GM safety has internal logic to go completely silent in stock.
+  if passive and CP.safetyModel != car.CarParams.SafetyModels.gm:
     CP.safetyModel = car.CarParams.SafetyModels.noOutput
 
   # Get FCW toggle from settings
