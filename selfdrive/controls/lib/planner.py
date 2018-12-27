@@ -364,7 +364,7 @@ class Planner(object):
       self.last_model = cur_time
       self.model_dead = False
 
-      self.PP.update(CS.vEgo, md)
+      self.PP.update(CS.vEgo, md, LaC)
 
       if self.last_gps_planner_plan is not None:
         plan = self.last_gps_planner_plan.gpsPlannerPlan

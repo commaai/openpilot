@@ -3,6 +3,7 @@ import subprocess
 from  threading import Thread
 import traceback
 import shlex
+from common.params import Params
 from collections import namedtuple
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.controls.lib.drive_helpers import rate_limit
@@ -21,7 +22,6 @@ from selfdrive.car.tesla.HSO_module import HSOController
 import zmq
 import selfdrive.messaging as messaging
 from selfdrive.services import service_list
-from cereal import ui
 
 # Steer angle limits
 ANGLE_MAX_BP = [0., 27., 36.]
@@ -71,9 +71,10 @@ class CarController(object):
     self.sent_DAS_bootID = False
     context = zmq.Context()
     self.poller = zmq.Poller()
-    self.speedlimit = messaging.sub_sock(context, service_list['speedLimit'].port, conflate=True, poller=self.poller)
-    self.speedlimit_mph = 0
-
+    self.speedlimit = messaging.sub_sock(context, service_list['liveMapData'].port, conflate=True, poller=self.poller)
+    self.speedlimit_ms = 0
+    self.speedlimit_valid = False
+    self.speedlimit_units = 0
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
              pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel, \
@@ -206,7 +207,12 @@ class CarController(object):
         #get speed limit
         for socket, _ in self.poller.poll(0):
             if socket is self.speedlimit:
-              self.speedlimit_mph = ui.SpeedLimitData.from_bytes(socket.recv()).speed * CV.MS_TO_MPH
+              lmd = messaging.recv_one(socket).liveMapData
+              self.speedlimit_ms = lmd.speedLimit
+              self.speedlimit_valid = lmd.speedLimitValid
+              params = Params()
+              self.speedlimit_units = self.speedlimit_ms * CV.MS_TO_MPH + 0.5
+
         #send DAS_info
         if frame % 100 == 0: 
           can_sends.append(teslacan.create_DAS_info_msg(CS.DAS_info_msg))
@@ -221,7 +227,7 @@ class CarController(object):
           if hud_alert == AH.FCW:
             forward_collission_warning = 0x01
           cc_state = 0 #cruise state: 0 unavailable, 1 available, 2 enabled, 3 hold
-          speed_limit_kph = int(self.speedlimit_mph)
+          speed_limit_to_car = int(self.speedlimit_units)
           alca_state = 0x08 
           if enabled:
             op_status = 0x03
@@ -236,7 +242,7 @@ class CarController(object):
                 hands_on_state = 0x03
               else:
                 hands_on_state = 0x05
-          can_sends.append(teslacan.create_DAS_status_msg(CS.DAS_status_idx,op_status,speed_limit_kph,alca_state,hands_on_state,forward_collission_warning,cc_state))
+          can_sends.append(teslacan.create_DAS_status_msg(CS.DAS_status_idx,op_status,speed_limit_to_car,alca_state,hands_on_state,forward_collission_warning,cc_state))
           CS.DAS_status_idx += 1
           CS.DAS_status_idx = CS.DAS_status_idx % 16
         #send DAS_status2

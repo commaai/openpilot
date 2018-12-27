@@ -49,10 +49,6 @@ struct UIUpdate {
     uiCanDisplayMessage @2 :Int8;
 }
 
-struct SpeedLimitData {
-  speed @0 :Float32;
-}
-
 #struct UIEvent {
 #    # in nanoseconds?
 #    logMonoTime @0 :UInt64;
