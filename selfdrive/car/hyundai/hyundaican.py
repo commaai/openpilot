@@ -28,8 +28,6 @@ def create_lkas11(packer, car_fingerprint, apply_steer, steer_req, cnt, enabled,
     "CF_Lkas_Chksum": 0,
     "CF_Lkas_FcwOpt_USM": lkas11["CF_Lkas_FcwOpt_USM"] if keep_stock else (2 if enabled else 1),
     "CF_Lkas_LdwsOpt_USM": lkas11["CF_Lkas_LdwsOpt_USM"] if keep_stock else 3,
-    "CF_Lkas_Unknown1": lkas11["CF_Lkas_Unknown1"] if keep_stock else 0,
-    "CF_Lkas_Unknown2": lkas11["CF_Lkas_Unknown2"] if keep_stock else 0,
   }
 
   dat = packer.make_can_msg("LKAS11", 0, values)[2]
