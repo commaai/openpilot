@@ -201,7 +201,7 @@ def thermald_thread():
       msg.thermal.batteryCurrent = int(f.read())
     with open("/sys/class/power_supply/battery/voltage_now") as f:
       msg.thermal.batteryVoltage = int(f.read())
-    with open("/sys/class/power_supply/usb/online") as f:
+    with open("/sys/class/power_supply/usb/present") as f:
       msg.thermal.usbOnline = bool(int(f.read()))
 
     current_filter.update(msg.thermal.batteryCurrent / 1e6)
