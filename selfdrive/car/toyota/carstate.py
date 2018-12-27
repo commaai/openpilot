@@ -132,7 +132,7 @@ class CarState(object):
     self.Angle_Speed = [255,160,100,80,70,60,55,50,40,33,27,17,12]
     #labels for ALCA modes
     self.alcaLabels = ["MadMax","Normal","Wifey"]
-    self.alcaMode = 0
+    self.alcaMode = 1
     #if (CP.carFingerprint == CAR.MODELS):
     # ALCA PARAMS
     # max REAL delta angle for correction vs actuator
