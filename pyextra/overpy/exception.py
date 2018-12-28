@@ -37,6 +37,18 @@ class ElementDataWrongType(OverPyException):
         )
 
 
+class MaxRetriesReached(OverPyException):
+    """
+    Raised if max retries reached and the Overpass server didn't respond with a result.
+    """
+    def __init__(self, retry_count, exceptions):
+        self.exceptions = exceptions
+        self.retry_count = retry_count
+
+    def __str__(self):
+        return "Unable get any result from the Overpass API server after %d retries." % self.retry_count
+
+
 class OverpassBadRequest(OverPyException):
     """
     Raised if the Overpass API service returns a syntax error.
@@ -62,12 +74,51 @@ class OverpassBadRequest(OverPyException):
         return "\n".join(tmp_msgs)
 
 
+class OverpassError(OverPyException):
+    """
+    Base exception to report errors if the response returns a remark tag or element.
+    
+    .. note::
+        If you are not sure which of the subexceptions you should use, use this one and try to parse the message.
+
+        For more information have a look at https://github.com/DinoTools/python-overpy/issues/62
+    
+    :param str msg: The message from the remark tag or element
+    """
+    def __init__(self, msg=None):
+        #: The message from the remark tag or element
+        self.msg = msg
+
+    def __str__(self):
+        if self.msg is None:
+            return "No error message provided"
+        if not isinstance(self.msg, str):
+            return str(self.msg)
+        return self.msg
+
+
 class OverpassGatewayTimeout(OverPyException):
     """
     Raised if load of the Overpass API service is too high and it can't handle the request.
     """
     def __init__(self):
         OverPyException.__init__(self, "Server load too high")
+
+
+class OverpassRuntimeError(OverpassError):
+    """
+    Raised if the server returns a remark-tag(xml) or remark element(json) with a message starting with
+    'runtime error:'.
+    """
+    pass
+
+
+class OverpassRuntimeRemark(OverpassError):
+    """
+    Raised if the server returns a remark-tag(xml) or remark element(json) with a message starting with
+    'runtime remark:'.
+    """
+    pass
 
 
 class OverpassTooManyRequests(OverPyException):
@@ -92,6 +143,13 @@ class OverpassUnknownContentType(OverPyException):
         if self.content_type is None:
             return "No content type returned"
         return "Unknown content type: %s" % self.content_type
+
+
+class OverpassUnknownError(OverpassError):
+    """
+    Raised if the server returns a remark-tag(xml) or remark element(json) and we are unable to find any reason.
+    """
+    pass
 
 
 class OverpassUnknownHTTPStatusCode(OverPyException):

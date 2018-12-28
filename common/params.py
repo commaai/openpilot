@@ -63,6 +63,7 @@ keys = {
   "IsUploadVideoOverCellularEnabled": TxType.PERSISTENT,
   "IsDriverMonitoringEnabled": TxType.PERSISTENT,
   "IsGeofenceEnabled": TxType.PERSISTENT,
+  "SpeedLimitOffset": TxType.PERSISTENT,
 # written: visiond
 # read:    visiond, controlsd
   "CalibrationParams": TxType.PERSISTENT,
@@ -74,6 +75,8 @@ keys = {
   "DoUninstall": TxType.CLEAR_ON_MANAGER_START,
   "ShouldDoUpdate": TxType.CLEAR_ON_MANAGER_START,
   "IsUpdateAvailable": TxType.PERSISTENT,
+  "LongitudinalControl": TxType.PERSISTENT,
+  "LimitSetSpeed": TxType.PERSISTENT,
 
   "RecordFront": TxType.PERSISTENT,
 }
