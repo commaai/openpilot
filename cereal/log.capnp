@@ -554,10 +554,10 @@ struct Plan {
   aTarget @18 :Float32;
   jerkFactor @6 :Float32;
   hasLead @7 :Bool;
-  hasLeftLane @21 :Bool;
-  hasRightLane @22 :Bool;
-  hasleftLaneDepart @23 :Bool;
-  hasrightLaneDepart @24 :Bool;
+  hasLeftLane @23 :Bool;
+  hasRightLane @24 :Bool;
+  hasleftLaneDepart @25 :Bool;
+  hasrightLaneDepart @26 :Bool;
   fcw @8 :Bool;
   longitudinalPlanSource @15 :LongitudinalPlanSource;
 
