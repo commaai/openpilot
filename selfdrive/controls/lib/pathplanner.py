@@ -65,10 +65,12 @@ class PathPlanner(object):
       
       self.r_poly = r_poly
       self.r_prob = r_prob
-      print self.r_poly[3] - self.r_poly_prev[3]
-      print self.l_poly[3] - self.l_poly_prev[3]
+      
       self.l_poly = l_poly
       self.l_prob = l_prob
-
+      
+      print self.r_poly[3] - self.r_poly_prev[3]
+      print self.l_poly[3] - self.l_poly_prev[3]
+      
       self.p_poly = p_poly
       self.p_prob = p_prob
