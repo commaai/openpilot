@@ -123,9 +123,6 @@ struct CarState {
   blindspotside @30 :Float32;
   readdistancelines @31 :Float32;
   gasbuttonstatus @32 :Float32;
-  leftline @33 :Float32;
-  rightline @34 :Float32;
-  lkasbarriers @35 :Float32;
 
   # lock info
   doorOpen @24 :Bool;
@@ -256,6 +253,8 @@ struct CarControl {
     audibleAlert @5: AudibleAlert;
     rightLaneVisible @6: Bool;
     leftLaneVisible @7: Bool;
+    rightLaneDepart @8: Bool;
+    leftLaneDepart @9: Bool;
 
     enum VisualAlert {
       # these are the choices from the Honda
@@ -367,6 +366,7 @@ struct CarParams {
   radarOffCan @47 :Bool; # True when radar objects aren't visible on CAN
 
   steerActuatorDelay @48 :Float32; # Steering wheel actuator delay in seconds
+  openpilotLongitudinalControl @50 :Bool; # is openpilot doing the longitudinal control?
 
   enum SteerControlType {
     torque @0;

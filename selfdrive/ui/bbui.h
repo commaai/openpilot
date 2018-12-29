@@ -512,7 +512,7 @@ void bb_ui_draw_measures_left( UIState *s, int bb_x, int bb_y, int bb_w ) {
 		bb_ry = bb_y + bb_h;
 	}
   //add free space - from bthaler1
-	if (true) {
+	if (false) {
 		char val_str[16];
 		char uom_str[3];
 		NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
@@ -534,6 +534,46 @@ void bb_ui_draw_measures_left( UIState *s, int bb_x, int bb_y, int bb_w ) {
 			value_fontSize, label_fontSize, uom_fontSize );
 		bb_ry = bb_y + bb_h;
 	}	
+	// add speedlimit value
+	if (true) {
+		char val_str[16];
+		char uom_str[3];
+		char speedlim_str[32];
+  		float speedlimit = s->scene.speedlimit;
+  		int speedlim_calc = speedlimit * 2.2369363 + 0.5;
+  		if (s->is_metric) {
+    			speedlim_calc = speedlimit * 3.6 + 0.5;
+  		}
+
+  		bool is_speedlim_valid = s->scene.speedlimit_valid;
+  		float hysteresis_offset = 0.5;
+  		if (s->is_ego_over_limit) {
+    			hysteresis_offset = 0.0;
+  		}
+  		s->is_ego_over_limit = is_speedlim_valid && s->scene.v_ego > (speedlimit + s->speed_lim_off + hysteresis_offset);
+
+		NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
+                //float speedlimit = s->b.speedlimit;
+		//show red/green if above or below speedlimit
+		if(is_speedlim_valid && s->is_ego_over_limit) {
+			val_color = nvgRGBA(0, 255, 0, 200);
+		} else {
+			val_color = nvgRGBA(255, 0, 0, 200);
+		}
+	      if (is_speedlim_valid) {
+			snprintf(val_str, sizeof(val_str), "%d", speedlim_calc);
+		} else {
+			snprintf(val_str, sizeof(val_str), "N/A");
+		}
+		
+		snprintf(uom_str, sizeof(uom_str), "");
+
+		bb_h +=bb_ui_draw_measure(s, val_str, uom_str, "Limit", 
+			bb_rx, bb_ry, bb_uom_dx,
+			val_color, lab_color, uom_color, 
+			value_fontSize, label_fontSize, uom_fontSize );
+		bb_ry = bb_y + bb_h;
+	}
 	//finally draw the frame
 	bb_h += 20;
 	nvgBeginPath(s->vg);
