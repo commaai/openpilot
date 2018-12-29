@@ -143,7 +143,7 @@ class CarInterface(object):
       tire_stiffness_factor = 0.444
       ret.mass = 2860 * CV.LB_TO_KG + std_cargo  # mean between normal and hybrid
       ret.steerKpV, ret.steerKiV = [[0.2], [0.05]]
-      ret.steerKf = 0.00003   # full torque for 20 deg at 80mph means 0.00007818594
+      ret.steerKf = 0.00003909297   # full torque for 20 deg at 80mph means 0.00007818594
       if ret.enableGasInterceptor:
         ret.gasMaxV = [0.2, 0.5, 0.7]
         ret.longitudinalKpV = [1.2, 0.8, 0.5]
@@ -179,7 +179,7 @@ class CarInterface(object):
       tire_stiffness_factor = 0.7933
       ret.mass = 3300. * CV.LB_TO_KG + std_cargo
       ret.steerKpV, ret.steerKiV = [[0.723], [0.0428]]
-      ret.steerKf = 0.00006
+      ret.steerKf = 0.00007818594
       if ret.enableGasInterceptor:
         ret.gasMaxV = [0.2, 0.5, 0.7]
         ret.longitudinalKpV = [1.2, 0.8, 0.5]
@@ -269,6 +269,7 @@ class CarInterface(object):
     ret.enableCamera = not check_ecu_msgs(fingerprint, ECU.CAM)
     ret.enableDsu = not check_ecu_msgs(fingerprint, ECU.DSU)
     ret.enableApgs = False #not check_ecu_msgs(fingerprint, ECU.APGS)
+    ret.openpilotLongitudinalControl = ret.enableCamera and ret.enableDsu
     cloudlog.warn("ECU Camera Simulated: %r", ret.enableCamera)
     cloudlog.warn("ECU DSU Simulated: %r", ret.enableDsu)
     cloudlog.warn("ECU APGS Simulated: %r", ret.enableApgs)
