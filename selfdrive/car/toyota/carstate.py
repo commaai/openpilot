@@ -89,9 +89,6 @@ def get_can_parser(CP):
     ("LANE_WARNING", "JOEL_ID", 1),
     ("ACC_SLOW", "JOEL_ID", 0),
     ("DISTANCE_LINES", "PCM_CRUISE_SM", 0),
-    ("BARRIERS", "LKAS_HUD", 0),
-    ("RIGHT_LINE", "LKAS_HUD", 1),
-    ("LEFT_LINE", "LKAS_HUD", 1),
   ]
 
   checks = [
@@ -294,9 +291,9 @@ class CarState(object):
     self.main_on = cp.vl["PCM_CRUISE_2"]['MAIN_ON']
     self.left_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 1
     self.right_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 2
-    self.lkas_barriers = cp.vl["LKAS_HUD"]['BARRIERS']
-    self.left_line = cp.vl["LKAS_HUD"]['LEFT_LINE']
-    self.right_line = cp.vl["LKAS_HUD"]['RIGHT_LINE']
+    #self.lkas_barriers = cp_cam.vl["LKAS_HUD"]['BARRIERS']
+    #self.left_line = cp_cam.vl["LKAS_HUD"]['LEFT_LINE']
+    #self.right_line = cp_cam.vl["LKAS_HUD"]['RIGHT_LINE']
     #print self.lkas_barriers
     #print self.right_line
     #print self.left_line

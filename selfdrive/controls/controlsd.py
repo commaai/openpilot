@@ -325,7 +325,9 @@ def data_send(perception_state, plan, plan_ts, CS, CI, CP, VM, state, events, ac
     CC.hudControl.lanesVisible = isEnabled(state)
     CC.hudControl.leadVisible = plan.hasLead
     CC.hudControl.rightLaneVisible = plan.hasRightLane
+    CC.hudControl.rightLaneDepart = plan.hasrightLaneDepart
     CC.hudControl.leftLaneVisible = plan.hasLeftLane
+    CC.hudControl.leftLaneDepart = plan.hasleftLaneDepart
     CC.hudControl.visualAlert = AM.visual_alert
     CC.hudControl.audibleAlert = AM.audible_alert
 

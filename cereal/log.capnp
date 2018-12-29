@@ -558,6 +558,10 @@ struct Plan {
   hasLead @7 :Bool;
   hasLeftLane @23 :Bool;
   hasRightLane @24 :Bool;
+
+  hasleftLaneDepart @25 :Bool;
+  hasrightLaneDepart @26 :Bool;
+
   fcw @8 :Bool;
   longitudinalPlanSource @15 :LongitudinalPlanSource;
 

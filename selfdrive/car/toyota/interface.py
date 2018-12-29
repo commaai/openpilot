@@ -363,9 +363,9 @@ class CarInterface(object):
     ret.buttonEvents = buttonEvents
     ret.leftBlinker = bool(self.CS.left_blinker_on)
     ret.rightBlinker = bool(self.CS.right_blinker_on)
-    ret.leftline = self.CS.left_line
-    ret.rightline = self.CS.right_line
-    ret.lkasbarriers = self.CS.lkas_barriers
+    #ret.leftline = self.CS.left_line
+    #ret.rightline = self.CS.right_line
+    #ret.lkasbarriers = self.CS.lkas_barriers
     ret.blindspot = self.CS.blind_spot_on
     ret.blindspotside = self.CS.blind_spot_side
     ret.doorOpen = not self.CS.door_all_closed
@@ -446,7 +446,8 @@ class CarInterface(object):
 
     self.CC.update(self.sendcan, c.enabled, self.CS, self.frame,
                    c.actuators, c.cruiseControl.cancel, c.hudControl.visualAlert,
-                   c.hudControl.audibleAlert, self.forwarding_camera, c.hudControl.leftLaneVisible, c.hudControl.rightLaneVisible, c.hudControl.leadVisible)
+                   c.hudControl.audibleAlert, self.forwarding_camera, c.hudControl.leftLaneVisible, 
+                   c.hudControl.rightLaneVisible, c.hudControl.leadVisible, c.hudControl.leftLaneDepart, c.hudControl.rightLaneDepart)
 
     self.frame += 1
     return False
