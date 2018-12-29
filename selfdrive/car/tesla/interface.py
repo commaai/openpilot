@@ -94,7 +94,7 @@ class CarInterface(object):
     ret.safetyModel = car.CarParams.SafetyModels.tesla
 
     ret.enableCamera = True
-    ret.enableGasInterceptor = False #keep this False for now
+    ret.enableGasInterceptor = True #keep this False for now
     print "ECU Camera Simulated: ", ret.enableCamera
     print "ECU Gas Interceptor: ", ret.enableGasInterceptor
 
