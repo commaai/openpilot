@@ -538,7 +538,7 @@ class Planner(object):
     plan_send.plan.hasLeftLane = bool(self.PP.l_prob > 0.5)
     plan_send.plan.hasrightLaneDepart = bool(self.PP.r_poly[3] > -1.2 and not CS.rightBlinker)
     plan_send.plan.hasRightLane = bool(self.PP.r_prob > 0.5)
-    plan_send.plan.hasleftLaneDepart = bool(self.PP.l_poly[3] < 1.0 and not CS.leftBlinker)
+    plan_send.plan.hasleftLaneDepart = bool(self.PP.l_poly[3] < 1.3 and not CS.leftBlinker)
     plan_send.plan.longitudinalPlanSource = self.longitudinalPlanSource
 
     plan_send.plan.gpsPlannerActive = self.gps_planner_active
