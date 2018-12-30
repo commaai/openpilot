@@ -18,9 +18,7 @@ class PathPlanner(object):
 
     self.l_prob = 0
     self.l_poly = [0., 0., 0., 0.]
-    self.l_poly_prev = [0., 0., 0., 0.]
     self.r_poly = [0., 0., 0., 0.]
-    self.r_poly_prev = [0., 0., 0., 0.]
     self.r_prob = 0
 
   def update(self, v_ego, md):
@@ -60,17 +58,11 @@ class PathPlanner(object):
       self.d_poly, self.c_poly, self.c_prob = calc_desired_path(
         l_poly, r_poly, p_poly, l_prob, r_prob, p_prob, v_ego, self.lane_width)
       
-      self.l_poly_prev = self.l_poly
-      self.r_poly_prev = self.r_poly
-      
       self.r_poly = r_poly
       self.r_prob = r_prob
       
       self.l_poly = l_poly
       self.l_prob = l_prob
-      
-      print self.r_poly[3] - self.r_poly_prev[3]
-      print self.l_poly[3] - self.l_poly_prev[3]
       
       self.p_poly = p_poly
       self.p_prob = p_prob
