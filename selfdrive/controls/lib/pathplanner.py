@@ -23,6 +23,7 @@ class PathPlanner(object):
 
   def update(self, v_ego, md):
     if md is not None:
+
       p_poly = model_polyfit(md.model.path.points, self._path_pinv)  # predicted path
       l_poly = model_polyfit(md.model.leftLane.points, self._path_pinv)  # left line
       r_poly = model_polyfit(md.model.rightLane.points, self._path_pinv)  # right line
@@ -56,12 +57,12 @@ class PathPlanner(object):
       # compute target path
       self.d_poly, self.c_poly, self.c_prob = calc_desired_path(
         l_poly, r_poly, p_poly, l_prob, r_prob, p_prob, v_ego, self.lane_width)
-
+      
       self.r_poly = r_poly
       self.r_prob = r_prob
-
+      
       self.l_poly = l_poly
       self.l_prob = l_prob
-
+      
       self.p_poly = p_poly
       self.p_prob = p_prob
