@@ -108,8 +108,8 @@ class CarInterface(object):
     centerToFront_civic = wheelbase_civic * 0.4
     centerToRear_civic = wheelbase_civic - centerToFront_civic
     rotationalInertia_civic = 2500
-    tireStiffnessFront_civic = 192150
-    tireStiffnessRear_civic = 202500
+    tireStiffnessFront_civic = 100000
+    tireStiffnessRear_civic = 125000
 
     #mass_models = 4722./2.205 + std_cargo
     #wheelbase_models = 2.959
