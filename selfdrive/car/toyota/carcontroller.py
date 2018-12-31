@@ -148,7 +148,8 @@ class CarController(object):
   def update(self, sendcan, enabled, CS, frame, actuators,
              pcm_cancel_cmd, hud_alert, audible_alert, forwarding_camera, left_line, right_line, lead, leftLane_Depart, rightLane_Depart):
     #update custom UI buttons and alerts
-    CS.UE.update_custom_ui()
+    if (frame % 10 == 0): # wait 100ms before trying again
+      CS.UE.update_custom_ui()
     if (frame % 1000 == 0):
       CS.cstm_btns.send_button_info()
       CS.UE.uiSetCarEvent(CS.cstm_btns.car_folder,CS.cstm_btns.car_name)
