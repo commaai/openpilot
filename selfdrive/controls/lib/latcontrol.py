@@ -21,7 +21,6 @@ def calc_states_after_delay(states, v_ego, steer_angle, curvature_factor, steer_
 def get_steer_max(CP, v_ego):
   return interp(v_ego, CP.steerMaxBP, CP.steerMaxV)
 
-
 def apply_deadzone(angle, deadzone):
   if angle > deadzone:
     angle -= deadzone
@@ -54,7 +53,6 @@ class LatControl(object):
     self.avg_angle_steers = 0.0
     self.projected_angle_steers = 0.0
 
-
   def setup_mpc(self, steer_rate_cost):
     self.libmpc = libmpc_py.libmpc
     self.libmpc.init(MPC_COST_LAT.PATH, MPC_COST_LAT.LANE, MPC_COST_LAT.HEADING, steer_rate_cost)
@@ -69,6 +67,9 @@ class LatControl(object):
     self.cur_state[0].y = 0.0
     self.cur_state[0].psi = 0.0
     self.cur_state[0].delta = 0.0
+
+    self.blindspot_blink_counter_left_check = 0
+    self.blindspot_blink_counter_right_check = 0
 
 
   def reset(self):
@@ -137,7 +138,6 @@ class LatControl(object):
       self.cur_state[0].delta = math.radians(angle_steers - angle_offset) / CP.steerRatio
     else:
       cur_time = sec_since_boot()
-
       # Interpolate desired angle between MPC updates
       self.angle_steers_des = np.interp(cur_time, self.mpc_times, self.mpc_angles)
       self.angle_steers_des_time = cur_time
@@ -199,6 +199,7 @@ class LatControl(object):
       if steer_override:
         self.projected_angle_steers = self.mpc_angles[1]
         self.avg_angle_steers = self.mpc_angles[1]
+        
     self.sat_flag = self.pid.saturated
     self.prev_angle_rate = angle_rate
 
