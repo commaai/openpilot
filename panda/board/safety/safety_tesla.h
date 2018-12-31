@@ -42,6 +42,10 @@ int eac_status = 0;
 
 int tesla_ignition_started = 0;
 
+int tesla_radar_status = 0; //0-not present, 1-initializing, 2-active
+uint32_t tesla_last_radar_signal = 0;
+const int TESLA_RADAR_TIMEOUT = 1000000; // 1 second between real time checks
+
 static int add_tesla_crc(CAN_FIFOMailBox_TypeDef *msg , int msg_len) {
   //"""Calculate CRC8 using 1D poly, FF start, FF end"""
   int crc_lookup[256] = { 0x00, 0x1D, 0x3A, 0x27, 0x74, 0x69, 0x4E, 0x53, 0xE8, 0xF5, 0xD2, 0xCF, 0x9C, 0x81, 0xA6, 0xBB, 
@@ -124,8 +128,9 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push)
   set_gmlan_digital_output(GMLAN_HIGH);
   reset_gmlan_switch_timeout(); //we're still in tesla safety mode, reset the timeout counter and make sure our output is enabled
 
-  //int bus_number = (to_push->RDTR >> 4) & 0xFF;
+  int bus_number = (to_push->RDTR >> 4) & 0xFF;
   uint32_t addr;
+
   if (to_push->RIR & 4)
   {
     // Extended
@@ -140,7 +145,7 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push)
   }
 
   // Record the current car time in current_car_time (for use with double-pulling cruise stalk)
-  if (addr == 0x318)
+  if ((addr == 0x318) && (bus_number == 0))
   {
     int hour = (to_push->RDLR & 0x1F000000) >> 24;
     int minute = (to_push->RDHR & 0x3F00) >> 8;
@@ -148,7 +153,45 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push)
     current_car_time = (hour * 3600) + (minute * 60) + second;
   }
 
-  if (addr == 0x45)
+  //looking for radar messages;
+  if ((addr == 0x300) && (bus_number ==1)) 
+  {
+    uint32_t ts = TIM2->CNT;
+    uint32_t ts_elapsed = get_ts_elapsed(ts, tesla_last_radar_signal);
+    if (tesla_radar_status == 1) {
+      tesla_radar_status = 2;
+      puts("Tesla Radar Active! \n");
+      tesla_last_radar_signal = ts;
+    } else
+    if ((ts_elapsed > TESLA_RADAR_TIMEOUT) && (tesla_radar_status > 0)) {
+      tesla_radar_status = 0;
+      puts("Tesla Radar Inactive! (timeout 1) \n");
+    } else 
+    if ((ts_elapsed <= TESLA_RADAR_TIMEOUT) && (tesla_radar_status == 2)) {
+      tesla_last_radar_signal = ts;
+    }
+  }
+
+  //0x631 is sent by radar to initiate the sync
+  if ((addr == 0x631) && (bus_number == 1))
+  {
+    uint32_t ts = TIM2->CNT;
+    uint32_t ts_elapsed = get_ts_elapsed(ts, tesla_last_radar_signal);
+    if (tesla_radar_status == 0) {
+      tesla_radar_status = 1;
+      tesla_last_radar_signal = ts;
+      puts("Tesla Radar Initializing... \n");
+    } else
+    if ((ts_elapsed > TESLA_RADAR_TIMEOUT) && (tesla_radar_status > 0)) {
+      tesla_radar_status = 0;
+      puts("Tesla Radar Inactive! (timeout 2) \n");
+    } else 
+    if ((ts_elapsed <= TESLA_RADAR_TIMEOUT) && (tesla_radar_status > 0)) {
+      tesla_last_radar_signal = ts;
+    }
+  }
+
+  if ((addr == 0x45) && (bus_number == 0))
   {
     // 6 bits starting at position 0
     int lever_position = (to_push->RDLR & 0x3F);
@@ -169,16 +212,24 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push)
   }
 
   // Detect drive rail on (ignition) (start recording)
-  if (addr == 0x348)
+  if ((addr == 0x348)  && (bus_number == 0))
   {
     // GTW_status
     int drive_rail_on = (to_push->RDLR & 0x0001);
     tesla_ignition_started = drive_rail_on == 1;
+
+    //ALSO use this for radar timeout, this message is always on
+    uint32_t ts = TIM2->CNT;
+    uint32_t ts_elapsed = get_ts_elapsed(ts, tesla_last_radar_signal);
+    if ((ts_elapsed > TESLA_RADAR_TIMEOUT) && (tesla_radar_status > 0)) {
+      tesla_radar_status = 0;
+      puts("Tesla Radar Inactive! (timeout 3) \n");
+    } 
   }
 
   // exit controls on brake press
   // DI_torque2::DI_brakePedal 0x118
-  if (addr == 0x118)
+  if ((addr == 0x118)  && (bus_number == 0))
   {
     // 1 bit at position 16
     if (((to_push->RDLR & 0x8000)) >> 15 == 1)
@@ -196,7 +247,7 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push)
 
   // exit controls on EPAS error
   // EPAS_sysStatus::EPAS_eacStatus 0x370
-  if (addr == 0x370)
+  if ((addr == 0x370)  && (bus_number == 1))
   {
     // if EPAS_eacStatus is not 1 or 2, disable control
     eac_status = ((to_push->RDHR >> 21)) & 0x7;
@@ -209,7 +260,7 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push)
     }
   }
   //get latest steering wheel angle
-  if (addr == 0x00E)
+  if ((addr == 0x00E)  && (bus_number == 0))
   {
     int angle_meas_now = (int)((((to_push->RDLR & 0x3F) << 8) + ((to_push->RDLR >> 8) & 0xFF)) * 0.1 - 819.2);
     uint32_t ts = TIM2->CNT;
@@ -307,7 +358,7 @@ static int tesla_tx_hook(CAN_FIFOMailBox_TypeDef *to_send)
       {
         violation = 1;
         controls_allowed = 0;
-        puts("Steering commads disallowed");
+        puts("Steering commads disallowed \n");
       }
     }
 
@@ -489,22 +540,18 @@ static int tesla_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd)
   if (bus_num == 0)
   {
 
-    //check all messages we need to also send to radar unmoddified
-    /*if ((addr == 0x649 ) || (addr == 0x730 ) || (addr == 0x647 ) || (addr == 0x644 ) || (addr == 0x645 ) || (addr == 0x7DF ) || (addr == 0x64D ) || (addr == 0x64C ) || (addr == 0x643 ) || 
-       (addr == 0x64E ) || (addr == 0x671 ) || (addr == 0x674 ) || (addr == 0x675 ) || (addr == 0x672 ) || (addr == 0x673 ) || (addr == 0x7F1 ) || (addr == 0x641 ) || (addr == 0x790 ) || (addr == 0x64B ) || 
-       (addr == 0x64F ) || (addr == 0x71800 ) || (addr == 0x72B)) */
-    /*if ((addr == 0x641) || (addr == 0x537))
-    {
-      //these messages are just forwarded with the same IDs
-      tesla_fwd_to_radar_as_is(1, to_fwd);
-    }*/
-
-    //check all messages we need to also send to radar moddified
+    //check all messages we need to also send to radar, moddified, after we receive 0x631 from radar
     //145 does not exist, we use 115 at the same frequency to trigger
     //175 does not exist, we use 118 at the same frequency to trigger and pass vehicle speed
-    if ((addr == 0x405 ) || (addr == 0x398 ) || (addr == 0xE ) || (addr == 0x20A ) || (addr == 0x118 ) || (addr == 0x108 ) || (addr == 0x308 ) || 
-    (addr == 0x115 ) || (addr == 0x45 ) || (addr == 0x148 ) || (addr == 0x30A)) 
+    if ((tesla_radar_status > 0 ) && ((addr == 0x20A ) || (addr == 0x118 ) || (addr == 0x108 ) ||  
+    (addr == 0x115 ) ||  (addr == 0x148 )))
     {
+      tesla_fwd_to_radar_modded(1, to_fwd);
+    }
+
+    //check all messages we need to also send to radar, moddified, all the time
+    if  ((addr == 0xE ) || (addr == 0x308 ) || (addr == 0x45 ) || (addr == 0x398 ) ||
+    (addr == 0x405 ) ||  (addr == 0x30A)) {
       tesla_fwd_to_radar_modded(1, to_fwd);
     }
 
@@ -527,12 +574,11 @@ static int tesla_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd)
     return 2; // Custom EPAS bus
   }
 
-  if ((bus_num != 0) && (bus_num != 2)) {
-    //everything but the radar data 0x300-0x3FF will be forwarded to can 0
-    if ((addr > 0x300) && (addr <= 0x3FF)){ 
-      return -1;
+  if (bus_num == 1) {
+    if (addr == 0x531) { 
+      return 0;
     }
-    return 0;
+    return -1;
   }
 
   if (bus_num == 2)

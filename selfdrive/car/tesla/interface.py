@@ -19,6 +19,7 @@ except ImportError:
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
+
 def tesla_compute_gb(accel, speed):
   return float(accel) / 3.
 
@@ -81,7 +82,8 @@ class CarInterface(object):
     std_cargo = 136
 
     # Scaled tire stiffness
-    ts_factor = 8 
+    #ts_factor = 0.8
+    tire_stiffness_factor = 8
 
     ret = car.CarParams.new_message()
 
@@ -97,27 +99,38 @@ class CarInterface(object):
 
     ret.enableCruise = not ret.enableGasInterceptor
 
-    mass_models = 4722./2.205 + std_cargo
-    wheelbase_models = 2.959
+    # FIXME: hardcoding honda civic 2016 touring params so they can be used to
+    # scale unknown params for other cars
+    mass_civic = 2923 * CV.LB_TO_KG + std_cargo
+    wheelbase_civic = 2.75
+    centerToFront_civic = wheelbase_civic * 0.48
+    centerToRear_civic = wheelbase_civic - centerToFront_civic
+    rotationalInertia_civic = 2500
+    tireStiffnessFront_civic = 100000
+    tireStiffnessRear_civic = 115000
+
+    #mass_models = 4722./2.205 + std_cargo
+    #wheelbase_models = 2.959
     # RC: I'm assuming center means center of mass, and I think Model S is pretty even between two axles
-    centerToFront_models = wheelbase_models * 0.48
-    centerToRear_models = wheelbase_models - centerToFront_models
-    rotationalInertia_models = 2500
-    tireStiffnessFront_models = 85400
-    tireStiffnessRear_models = 90000
+    #centerToFront_models = wheelbase_models * 0.48
+    #centerToRear_models = wheelbase_models - centerToFront_models
+    #rotationalInertia_models = 2500
+    #tireStiffnessFront_models = 85400
+    #tireStiffnessRear_models = 90000
+
     # will create Kp and Ki for 0, 20, 40, 60 mph
     ret.steerKiBP, ret.steerKpBP = [[0., 8.94, 17.88, 26.82 ], [0., 8.94, 17.88, 26.82]]
     if candidate == CAR.MODELS:
       stop_and_go = True
-      ret.mass = mass_models
-      ret.wheelbase = wheelbase_models
-      ret.centerToFront = centerToFront_models
+      ret.mass = 4722./2.205 + std_cargo
+      ret.wheelbase = 2.959
+      ret.centerToFront = ret.wheelbase * 0.48
       ret.steerRatio = 15.75
       # Kp and Ki for the lateral control for 0, 20, 40, 60 mph
       ret.steerKpV, ret.steerKiV = [[1.20, 0.80, 0.60, 0.30], [0.16, 0.12, 0.08, 0.04]]
       ret.steerKf = 0.00006 # Initial test value TODO: investigate FF steer control for Model S?
       ret.steerActuatorDelay = 0.09
-      
+
       # Kp and Ki for the longitudinal control
       # IC cars decrease their PID values as speed increases. Discussion on Slack suggests
       # this is to reduce friction braking at highway speeds. But our regen-only braking is
@@ -149,18 +162,19 @@ class CarInterface(object):
     ret.minEnableSpeed = -1. if (stop_and_go or ret.enableGasInterceptor) else 25.5 * CV.MPH_TO_MS
 
     centerToRear = ret.wheelbase - ret.centerToFront
-    # TODO: get actual value, for now starting with reasonable value for Model S
-    ret.rotationalInertia = rotationalInertia_models * \
-                            ret.mass * ret.wheelbase**2 / (mass_models * wheelbase_models**2)
+    # TODO: get actual value, for now starting with reasonable value for
+    # civic and scaling by mass and wheelbase
+    ret.rotationalInertia = rotationalInertia_civic * \
+                            ret.mass * ret.wheelbase**2 / (mass_civic * wheelbase_civic**2)
 
-    # TODO: start from empirically derived lateral slip stiffness and scale by
+    # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
-    ret.tireStiffnessFront = (tireStiffnessFront_models * ts_factor) * \
-                             ret.mass / mass_models * \
-                             (centerToRear / ret.wheelbase) / (centerToRear_models / wheelbase_models)
-    ret.tireStiffnessRear = (tireStiffnessRear_models * ts_factor) * \
-                            ret.mass / mass_models * \
-                            (ret.centerToFront / ret.wheelbase) / (centerToFront_models / wheelbase_models)
+    ret.tireStiffnessFront = (tireStiffnessFront_civic * tire_stiffness_factor) * \
+                             ret.mass / mass_civic * \
+                             (centerToRear / ret.wheelbase) / (centerToRear_civic / wheelbase_civic)
+    ret.tireStiffnessRear = (tireStiffnessRear_civic * tire_stiffness_factor) * \
+                            ret.mass / mass_civic * \
+                            (ret.centerToFront / ret.wheelbase) / (centerToFront_civic / wheelbase_civic)
 
     # no rear steering, at least on the listed cars above
     ret.steerRatioRear = 0.
@@ -178,6 +192,7 @@ class CarInterface(object):
     ret.longPidDeadzoneV = [0., 0.] #BB: added from Toyota to start pedal work; need to tune; changed to 0 for now
 
     ret.stoppingControl = True
+    ret.openpilotLongitudinalControl = True
     ret.steerLimitAlert = False
     ret.startAccel = 0.5
     ret.steerRateCost = 1.5
@@ -209,13 +224,13 @@ class CarInterface(object):
     ret.wheelSpeeds.rr = self.CS.v_wheel_rr
 
     # gas pedal, we don't use with with interceptor so it's always 0/False
-    ret.gas = self.CS.user_gas 
+    ret.gas = self.CS.user_gas
     if not self.CP.enableGasInterceptor:
       ret.gasPressed = self.CS.user_gas_pressed
     else:
       ret.gasPressed = self.CS.user_gas_pressed
 
-    
+
 
     # brake pedal
     ret.brakePressed = (self.CS.brake_pressed != 0) and (self.CS.cstm_btns.get_button_status("brake") == 0)
