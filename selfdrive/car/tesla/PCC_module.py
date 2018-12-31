@@ -33,7 +33,7 @@ MAX_PEDAL_VALUE = 112.
 #BBTODO: move the vehicle variables; maybe make them speed variable
 TORQUE_LEVEL_ACC = 0.
 TORQUE_LEVEL_DECEL = -30.
-FOLLOW_TIME_S = 1.8  # time in seconds to follow car in front
+FOLLOW_TIME_S = 1.5  # time in seconds to follow car in front
 MIN_PCC_V_KPH = 0. #
 MAX_PCC_V_KPH = 170.
 
@@ -492,14 +492,14 @@ class PCCController(object):
           min_vrel_kph_map = OrderedDict([
             # (distance in m, min allowed relative kph)
             (0.5 * safe_dist_m, 2),
-            (1.0 * safe_dist_m, -4),
+            (1.0 * safe_dist_m, -5),
             (1.5 * safe_dist_m, -8),
             (3.0 * safe_dist_m, -20)])
           min_vrel_kph = _interp_map(lead_dist_m, min_vrel_kph_map)
           max_vrel_kph_map = OrderedDict([
             # (distance in m, max allowed relative kph)
-            (0.5 * safe_dist_m, 100),
-            (1.0 * safe_dist_m, 4),
+            (0.5 * safe_dist_m, 10),
+            (1.0 * safe_dist_m, 3),
             (1.5 * safe_dist_m, 0),
             # With visual radar the relative velocity is 0 until the confidence
             # gets high. So even a small negative number here gives constant

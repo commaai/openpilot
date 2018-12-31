@@ -136,9 +136,9 @@ class CarInterface(object):
       # this is to reduce friction braking at highway speeds. But our regen-only braking is
       # so weak that we probably don't want to reduce it further.
       ret.longitudinalKpBP = [20.] # m/s, presumably
-      ret.longitudinalKpV = [0.5]
+      ret.longitudinalKpV = [0.6]
       ret.longitudinalKiBP = [20.] # m/s, presumably
-      ret.longitudinalKiV = [0.12]
+      ret.longitudinalKiV = [0.15]
       ret.openpilotLongitudinalControl = True
       
       #from honda
