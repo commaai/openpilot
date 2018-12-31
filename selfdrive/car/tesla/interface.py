@@ -85,7 +85,7 @@ class CarInterface(object):
 
     # Scaled tire stiffness
     #ts_factor = 0.8
-    tire_stiffness_factor = 6
+    tire_stiffness_factor = 8
 
     ret = car.CarParams.new_message()
 
