@@ -89,7 +89,7 @@ class LatControl(object):
       accelerated_angle_rate = 2.0 * angle_rate - self.prev_angle_rate
 
       # Determine future angle steers using accelerated steer rate
-      self.projected_angle_steers = float(angle_steers) + self.projection_factor * float(accelerated_angle_rate)
+      self.projected_angle_steers = float(angle_steers) + CP.steerActuatorDelay * float(accelerated_angle_rate)
 
       # Determine a proper delay time that includes the model's processing time, which is variable
       plan_age = cur_time - float(self.last_mpc_ts / 1000000000.0)
