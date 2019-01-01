@@ -161,9 +161,9 @@ class CarController(object):
         at_full_stop = enabled and standstill and car_stopping
         near_stop = enabled and (CS.v_ego < P.NEAR_STOP_BRAKE_PHASE) and car_stopping
         can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, canbus.chassis, apply_brake, idx, near_stop, at_full_stop))
+        acc_enabled = enabled
         if CS.cstm_btns.get_button_status("stop") > 0:
           # Auto-resume from full stop by resetting ACC control
-          acc_enabled = enabled
           if standstill and not car_stopping:
             acc_enabled = False
 
