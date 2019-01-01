@@ -330,7 +330,7 @@ def manager_thread():
     msg = messaging.recv_sock(thermal_sock, wait=True)
 
     # uploader is gated based on the phone temperature
-    if msg.thermal.thermalStatus >= ThermalStatus.yellow:
+    if msg.thermal.thermalStatus >= ThermalStatus.yellow or msg.thermal.started:
       kill_managed_process("uploader")
     else:
       start_managed_process("uploader")
