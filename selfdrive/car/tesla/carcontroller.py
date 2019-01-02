@@ -271,8 +271,8 @@ class CarController(object):
         #send DAS_lanes
         if frame % 10 == 0: 
           can_sends.append(teslacan.create_DAS_lanes_msg(CS.DAS_lanes_idx))
-          CS.DAS_lanes_idx += 1
-          CS.DAS_lanes_idx = CS.DAS_lanes_idx % 16
+          # CS.DAS_lanes_idx += 1
+          # CS.DAS_lanes_idx = CS.DAS_lanes_idx % 16
         #send DAS_pscControl
         if frame % 4 == 0: 
           can_sends.append(teslacan.create_DAS_pscControl_msg(CS.DAS_pscControl_idx))

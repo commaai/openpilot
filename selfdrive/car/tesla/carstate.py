@@ -282,8 +282,8 @@ class CarState(object):
     self.DAS_status2_idx = 0
     self.DAS_bodyControls_frm = 0
     self.DAS_bodyControls_idx = 0
-    self.DAS_lanes_frm = 0
-    self.DAS_lanes_idx = 0
+    self.DAS_lanes_frm = 1
+    self.DAS_lanes_idx = 1
     self.DAS_objects_frm = 0
     self.DAS_objects_idx = 0
     self.DAS_pscControl_frm = 0
@@ -295,7 +295,7 @@ class CarState(object):
     self.DAS_telemetryPeriodic2_idx = 0
     self.DAS_telemetryEvent1_idx = 0
     self.DAS_telemetryEvent2_idx = 0
-    self.DAS_control_idx = 0
+    self.DAS_control_idx = 1
 
     #BB variables for pedal CC
     self.pedal_speed_kph = 0.
