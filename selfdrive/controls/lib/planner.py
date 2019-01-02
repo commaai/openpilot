@@ -389,7 +389,7 @@ class Planner(object):
       elif socket is self.live_map_data:
         self.last_live_map_data = messaging.recv_one(socket).liveMapData
       elif socket is self.lat_Control:
-        self.lastlat_Control = messaging.recv_one(socket).lat_Control
+        self.lastlat_Control = messaging.recv_one(socket).latControl
 
     if gps_planner_plan is not None:
       self.last_gps_planner_plan = gps_planner_plan
