@@ -289,6 +289,7 @@ class Planner(object):
     self.live20 = messaging.sub_sock(context, service_list['live20'].port, conflate=True, poller=self.poller)
     self.model = messaging.sub_sock(context, service_list['model'].port, conflate=True, poller=self.poller)
     self.live_map_data = messaging.sub_sock(context, service_list['liveMapData'].port, conflate=True, poller=self.poller)
+    self.lat_Control = messaging.sub_sock(context, service_list['latControl'].port, conflate=True, poller=self.poller)
 
     if os.environ.get('GPS_PLANNER_ACTIVE', False):
       self.gps_planner_plan = messaging.sub_sock(context, service_list['gpsPlannerPlan'].port, conflate=True, poller=self.poller, addr=GPS_PLANNER_ADDR)
@@ -332,6 +333,7 @@ class Planner(object):
     self.last_gps_planner_plan = None
     self.gps_planner_active = False
     self.last_live_map_data = None
+    self.lastlat_Control = None
     self.perception_state = log.Live20Data.new_message()
 
     self.params = Params()
@@ -386,6 +388,8 @@ class Planner(object):
         gps_planner_plan = messaging.recv_one(socket)
       elif socket is self.live_map_data:
         self.last_live_map_data = messaging.recv_one(socket).liveMapData
+      elif socket is self.lat_Control:
+        self.lastlat_Control = messaging.recv_one(socket).lat_Control
 
     if gps_planner_plan is not None:
       self.last_gps_planner_plan = gps_planner_plan
@@ -445,7 +449,8 @@ class Planner(object):
         accel_limits = map(float, calc_cruise_accel_limits(CS.vEgo, following))
         # TODO: make a separate lookup for jerk tuning
         jerk_limits = [min(-0.1, accel_limits[0]), max(0.1, accel_limits[1])]
-        print self.last_live_map_data.curvature
+        if self.lastlat_Control:
+          print self.lastlat_Control.angle_later 
         accel_limits = limit_accel_in_turns(CS.vEgo, CS.steeringAngle, accel_limits, self.CP)
 
         if force_slow_decel:
