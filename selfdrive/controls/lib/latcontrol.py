@@ -1,5 +1,8 @@
 import math
+import zmq
 import numpy as np
+from selfdrive.services import service_list
+import selfdrive.messaging as messaging
 from selfdrive.controls.lib.pid import PIController
 from selfdrive.controls.lib.drive_helpers import MPC_COST_LAT
 from selfdrive.controls.lib.lateral_mpc import libmpc_py
@@ -52,6 +55,8 @@ class LatControl(object):
     self.angle_steers_des_time = 0.0
     self.avg_angle_steers = 0.0
     self.projected_angle_steers = 0.0
+    context = zmq.Context()
+    latControl_sock = messaging.pub_sock(context, service_list['latControl'].port)
 
   def setup_mpc(self, steer_rate_cost):
     self.libmpc = libmpc_py.libmpc
@@ -202,6 +207,10 @@ class LatControl(object):
         
     self.sat_flag = self.pid.saturated
     self.prev_angle_rate = angle_rate
+    dat = messaging.new_message()
+    dat.init('latControl')
+    dat.latControl.angle_later = math.degrees(list(self.mpc_solution[0].delta)[-1] * VM.CP.steerRatio)
+    latControl_sock.send(dat.to_bytes())
 
     # ALCA works better with the non-interpolated angle
     if CP.steerControlType == car.CarParams.SteerControlType.torque:
