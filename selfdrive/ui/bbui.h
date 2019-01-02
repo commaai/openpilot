@@ -556,9 +556,9 @@ void bb_ui_draw_measures_left( UIState *s, int bb_x, int bb_y, int bb_w ) {
                 //float speedlimit = s->b.speedlimit;
 		//show red/green if above or below speedlimit
 		if(is_speedlim_valid && s->is_ego_over_limit) {
-			val_color = nvgRGBA(0, 255, 0, 200);
-		} else {
 			val_color = nvgRGBA(255, 0, 0, 200);
+		} else {
+			val_color = nvgRGBA(0, 255, 0, 200);
 		}
 	      if (is_speedlim_valid) {
 			snprintf(val_str, sizeof(val_str), "%d", speedlim_calc);
