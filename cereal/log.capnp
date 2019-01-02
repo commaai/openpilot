@@ -1592,8 +1592,8 @@ struct LiveMapData {
   distToTurn @10 :Float32;
 }
 
-struct latControl {
-  angle_later @0 :Float32;
+struct LatControl {
+  anglelater @0 :Float32;
 }
 
 
@@ -1664,6 +1664,6 @@ struct Event {
     boot @60 :Boot;
     liveParameters @61 :LiveParametersData;
     liveMapData @62 :LiveMapData;
-    latControl @63 :latControl;
+    latControl @63 :LatControl;
   }
 }

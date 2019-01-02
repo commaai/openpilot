@@ -450,7 +450,7 @@ class Planner(object):
         # TODO: make a separate lookup for jerk tuning
         jerk_limits = [min(-0.1, accel_limits[0]), max(0.1, accel_limits[1])]
         if self.lastlat_Control:
-          print self.lastlat_Control.angle_later 
+          print self.lastlat_Control.anglelater 
         accel_limits = limit_accel_in_turns(CS.vEgo, CS.steeringAngle, accel_limits, self.CP)
 
         if force_slow_decel:

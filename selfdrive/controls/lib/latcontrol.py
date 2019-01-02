@@ -209,7 +209,7 @@ class LatControl(object):
     self.prev_angle_rate = angle_rate
     dat = messaging.new_message()
     dat.init('latControl')
-    dat.latControl.angle_later = math.degrees(list(self.mpc_solution[0].delta)[-1] * VM.CP.steerRatio)
+    dat.latControl.anglelater = math.degrees(list(self.mpc_solution[0].delta)[-1] * VM.CP.steerRatio)
     latControl_sock.send(dat.to_bytes())
 
     # ALCA works better with the non-interpolated angle
