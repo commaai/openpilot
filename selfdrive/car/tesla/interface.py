@@ -19,8 +19,6 @@ except ImportError:
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
-K_MULT = 0.8
-K_MULTi = 280000.
 
 def tesla_compute_gb(accel, speed):
   return float(accel) / 3.
@@ -134,11 +132,15 @@ class CarInterface(object):
       ret.steerActuatorDelay = 0.09
 
       # Kp and Ki for the longitudinal control
-      ret.longitudinalKpBP = [0., 5., 35.]
-      ret.longitudinalKpV = [1.27/K_MULT , 1.05/K_MULT, 0.85/K_MULT]
-      ret.longitudinalKiBP = [0., 5., 35.]
-      ret.longitudinalKiV = [0.11/K_MULTi, 0.09/K_MULTi, 0.06/K_MULTi]
-
+      # IC cars decrease their PID values as speed increases. Discussion on Slack suggests
+      # this is to reduce friction braking at highway speeds. But our regen-only braking is
+      # so weak that we probably don't want to reduce it further.
+      ret.longitudinalKpBP = [20.] # m/s, presumably
+      ret.longitudinalKpV = [0.6]
+      ret.longitudinalKiBP = [20.] # m/s, presumably
+      ret.longitudinalKiV = [0.15]
+      ret.openpilotLongitudinalControl = True
+      
       #from honda
       #ret.longitudinalKpBP = [0., 5., 35.]
       #ret.longitudinalKpV = [1.2, 0.8, 0.5]

@@ -767,7 +767,7 @@ void bb_ui_read_triState_switch( UIState *s) {
     tri_state_fd = open ("/sys/devices/virtual/switch/tri-state-key/state", O_RDONLY);
     //if we can't open then switch should be considered in the middle, nothing done
     if (tri_state_fd == -1) {
-      s->b.tri_state_switch = 2;
+      s->b.tri_state_switch = 1;  // Default value
     } else {
       read (tri_state_fd, &buffer, 10);
       s->b.tri_state_switch = buffer[0] -48;
@@ -1068,5 +1068,3 @@ void  bb_ui_poll_update( UIState *s) {
             
     }
 }
-
- 
