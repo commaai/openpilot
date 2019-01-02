@@ -445,6 +445,7 @@ class Planner(object):
         accel_limits = map(float, calc_cruise_accel_limits(CS.vEgo, following))
         # TODO: make a separate lookup for jerk tuning
         jerk_limits = [min(-0.1, accel_limits[0]), max(0.1, accel_limits[1])]
+        print self.last_live_map_data.curvature
         accel_limits = limit_accel_in_turns(CS.vEgo, CS.steeringAngle, accel_limits, self.CP)
 
         if force_slow_decel:
