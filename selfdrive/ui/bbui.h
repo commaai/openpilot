@@ -767,7 +767,7 @@ void bb_ui_read_triState_switch( UIState *s) {
     tri_state_fd = open ("/sys/devices/virtual/switch/tri-state-key/state", O_RDONLY);
     //if we can't open then switch should be considered in the middle, nothing done
     if (tri_state_fd == -1) {
-      s->b.tri_state_switch = 1; // default value
+      s->b.tri_state_switch = 1;  // Default value
     } else {
       read (tri_state_fd, &buffer, 10);
       s->b.tri_state_switch = buffer[0] -48;
@@ -778,21 +778,22 @@ void bb_ui_read_triState_switch( UIState *s) {
 }
 
 void bb_ui_draw_UI( UIState *s) {
-  const UIScene *scene = &s->scene;
-	const int bb_dml_w = 180;
-	const int bb_dml_x =  (scene->ui_viz_rx + (bdr_s * 2));
-	const int bb_dml_y = (box_y + (bdr_s * 1.5)) + 220;
-	const int bb_dmr_w = 180;
-  const int bb_dmr_x = scene->ui_viz_rx + scene->ui_viz_rw - bb_dmr_w - (bdr_s * 2) ; 
-  const int bb_dmr_y = (box_y + (bdr_s * 1.5)) + 220;
+  
   
   if (s->b.tri_state_switch == 1) {
-    // Normal mode: live camera background and all icons.
+	  const UIScene *scene = &s->scene;
+	  const int bb_dml_w = 180;
+	  const int bb_dml_x =  (scene->ui_viz_rx + (bdr_s*2));
+	  const int bb_dml_y = (box_y + (bdr_s*1.5))+220;
+	  
+	  const int bb_dmr_w = 180;
+	  const int bb_dmr_x = scene->ui_viz_rx + scene->ui_viz_rw - bb_dmr_w - (bdr_s*2) ; 
+	  const int bb_dmr_y = (box_y + (bdr_s*1.5))+220;
     bb_ui_draw_measures_left(s,bb_dml_x, bb_dml_y, bb_dml_w );
     bb_ui_draw_measures_right(s,bb_dmr_x, bb_dmr_y, bb_dmr_w );
     bb_draw_buttons(s);
     bb_ui_draw_custom_alert(s);
-    //bb_ui_draw_logo(s);
+    bb_ui_draw_logo(s);
 	 }
    if (s->b.tri_state_switch ==2) {
 	 	const UIScene *scene = &s->scene;
@@ -805,7 +806,7 @@ void bb_ui_draw_UI( UIState *s) {
 	  const int bb_dmr_y = (box_y + (bdr_s*1.5))+220;
     bb_draw_buttons(s);
     bb_ui_draw_custom_alert(s);
-    //bb_ui_draw_logo(s);
+    bb_ui_draw_logo(s);
     //bb_ui_draw_car(s);
 	 }
 	 if (s->b.tri_state_switch ==3) {
@@ -821,10 +822,11 @@ void bb_ui_draw_UI( UIState *s) {
     //bb_ui_draw_measures_left(s,bb_dml_x, bb_dml_y, bb_dml_w );
     //bb_ui_draw_measures_right(s,bb_dmr_x, bb_dmr_y, bb_dmr_w );
     bb_draw_buttons(s);
-  }
-  
-  bb_ui_draw_custom_alert(s);
+    bb_ui_draw_custom_alert(s);
+    //bb_ui_draw_logo(s);
+	 }
 }
+
 
 
 void bb_ui_init(UIState *s) {
@@ -1066,5 +1068,3 @@ void  bb_ui_poll_update( UIState *s) {
             
     }
 }
-
- 
