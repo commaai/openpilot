@@ -2102,7 +2102,7 @@ int main() {
     bb_ui_poll_update(s);
     // awake on any touch
     int touch_x = -1, touch_y = -1;
-    int touched = touch_poll(&touch, &touch_x, &touch_y, s->awake ? 0 : 100);
+    int touched = touch_poll(&touch, &touch_x, &touch_y, s->awake ? 0 : 500);
     if (touched == 1) {
       // touch event will still happen :(
       set_awake(s, true);
