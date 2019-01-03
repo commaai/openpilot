@@ -440,10 +440,11 @@ static void tesla_fwd_to_radar_modded(int bus_num, CAN_FIFOMailBox_TypeDef *to_f
   if (addr == 0x398 )
   {
     //change frontradarHW = 1 and dashw = 1
+    //also change to AWD if needed (most likely)
     //SG_ GTW_dasHw : 7|2@0+ (1,0) [0|0] ""  NEO
     //SG_ GTW_parkAssistInstalled : 11|2@0+ (1,0) [0|0] ""  NEO
     to_send.RDLR = to_send.RDLR & 0xFFFFF33F;
-    to_send.RDLR = to_send.RDLR | 0x440;
+    to_send.RDLR = to_send.RDLR | 0x440 | 0x08;
     to_send.RDHR = to_send.RDHR & 0xCFFFFFFF;
     to_send.RDHR = to_send.RDHR | 0x10000000;
     to_send.RIR = (0x2A9 << 21) + (addr_mask & (to_fwd->RIR | 1));
@@ -459,29 +460,35 @@ static void tesla_fwd_to_radar_modded(int bus_num, CAN_FIFOMailBox_TypeDef *to_f
   if (addr == 0x115 )
   {
     
-    int counter = ((to_fwd->RDLR & 0x000F0000) >> 16 ) & 0x0F;
+    int counter = ((to_fwd->RDHR & 0xF0) >> 4 ) & 0x0F;
 
-    to_send.RDTR = (to_fwd->RDTR & 0xFFFFFFF0) | 0x06;
+    //to_send.RDTR = (to_fwd->RDTR & 0xFFFFFFF0) | 0x06;
     to_send.RIR = (0x129 << 21) + (addr_mask & (to_fwd->RIR | 1));
-    to_send.RDLR = 0x00000000 ;
+    //to_send.RDLR = 0x00000000 ;
+    //to_send.RDHR = 0x00000000 ;
     int cksm = (0x16 + (counter << 4)) & 0xFF;
-    to_send.RDHR = (cksm << 8 ) + (counter << 4);
+    //to_send.RDHR = (cksm << 8 ) + (counter << 4);
     can_send(&to_send, bus_num);
 
-    to_send.RDTR = (to_fwd->RDTR & 0xFFFFFFF0) | 0x08;
-    to_send.RIR = (0x149 << 21) + (addr_mask & (to_fwd->RIR | 1));
-    to_send.RDLR = 0x6A022600;
-    cksm = (0x95 + (counter << 4)) & 0xFF;
-    to_send.RDHR = 0x000F04AA | (counter << 20) | (cksm << 24);
-    can_send(&to_send, bus_num);
+    //to_send.RDTR = (to_fwd->RDTR & 0xFFFFFFF0) | 0x08;
+    //to_send.RIR = (0x149 << 21) + (addr_mask & (to_fwd->RIR | 1));
+    //to_send.RDLR = 0x6A022600;
+    //cksm = (0x95 + (counter << 4)) & 0xFF;
+    //to_send.RDHR = 0x000F04AA | (counter << 20) | (cksm << 24);
+    //can_send(&to_send, bus_num);
 
     
 
     to_send.RDTR = (to_fwd->RDTR & 0xFFFFFFF0) | 0x05;
     to_send.RIR = (0x1A9 << 21) + (addr_mask & (to_fwd->RIR | 1));
     to_send.RDLR = 0x000C0000 | (counter << 28);
-    cksm = (0x49 + 0x0C + (counter << 4)) & 0xFF;
+    cksm = (0x38 + 0x0C + (counter << 4)) & 0xFF;
     to_send.RDHR = cksm;
+  }
+
+  if (addr == 0x145) 
+  {
+    to_send.RIR = (0x149 << 21) + (addr_mask & (to_fwd->RIR | 1));
   }
 
   if (addr == 0x118 )
@@ -496,7 +503,7 @@ static void tesla_fwd_to_radar_modded(int bus_num, CAN_FIFOMailBox_TypeDef *to_f
     if (speed_kph < 0) {
       speed_kph = 0;
     }
-    speed_kph = 20; //force it at 20 kph for debug
+    //speed_kph = 20; //force it at 20 kph for debug
     speed_kph = (int)(speed_kph/0.04) & 0x1FFF;
     to_send.RDLR = (speed_kph | (speed_kph << 13) | (speed_kph << 26)) & 0xFFFFFFFF;
     to_send.RDHR = ((speed_kph  >> 6) | (speed_kph << 7) | (counter << 20)) & 0x00FFFFFF;
@@ -516,10 +523,10 @@ static void tesla_fwd_to_radar_modded(int bus_num, CAN_FIFOMailBox_TypeDef *to_f
   if (addr == 0x45 )
   {
     to_send.RIR = (0x219 << 21) + (addr_mask & (to_fwd->RIR | 1));
-    to_send.RDLR = to_send.RDLR & 0xFFFF00FF;
-    to_send.RDHR = to_send.RDHR & 0x00FFFFFF;
-    int crc = add_tesla_crc(&to_send,7);
-    to_send.RDHR = to_send.RDHR | (crc << 24);
+    //to_send.RDLR = to_send.RDLR & 0xFFFF00FF;
+    //to_send.RDHR = to_send.RDHR & 0x00FFFFFF;
+    //int crc = add_tesla_crc(&to_send,7);
+    //to_send.RDHR = to_send.RDHR | (crc << 24);
   }
   if (addr == 0x148 )
   {
@@ -544,7 +551,7 @@ static int tesla_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd)
     //145 does not exist, we use 115 at the same frequency to trigger
     //175 does not exist, we use 118 at the same frequency to trigger and pass vehicle speed
     if ((tesla_radar_status > 0 ) && ((addr == 0x20A ) || (addr == 0x118 ) || (addr == 0x108 ) ||  
-    (addr == 0x115 ) ||  (addr == 0x148 )))
+    (addr == 0x115 ) ||  (addr == 0x148 ) || (addr == 0x145)))
     {
       tesla_fwd_to_radar_modded(1, to_fwd);
     }
