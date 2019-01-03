@@ -56,7 +56,7 @@ class LatControl(object):
     self.avg_angle_steers = 0.0
     self.projected_angle_steers = 0.0
     context = zmq.Context()
-    latControl_sock = messaging.pub_sock(context, service_list['latControl'].port)
+    self.latControl_sock = messaging.pub_sock(context, service_list['latControl'].port)
 
   def setup_mpc(self, steer_rate_cost):
     self.libmpc = libmpc_py.libmpc
@@ -209,8 +209,8 @@ class LatControl(object):
     self.prev_angle_rate = angle_rate
     dat = messaging.new_message()
     dat.init('latControl')
-    dat.latControl.anglelater = math.degrees(list(self.mpc_solution[0].delta)[-1] * VM.CP.steerRatio)
-    latControl_sock.send(dat.to_bytes())
+    dat.latControl.anglelater = math.degrees(list(self.mpc_solution[0].delta)[-1])
+    self.latControl_sock.send(dat.to_bytes())
 
     # ALCA works better with the non-interpolated angle
     if CP.steerControlType == car.CarParams.SteerControlType.torque:
