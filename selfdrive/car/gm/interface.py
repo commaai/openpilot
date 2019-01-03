@@ -108,11 +108,11 @@ class CarInterface(object):
       ret.centerToFront = ret.wheelbase * 0.4
 
     elif candidate == CAR.REGAL:
-      ret.minEnableSpeed = -1 # engage speed is decided by pcm
+      ret.minEnableSpeed = 18 * CV.MPH_TO_MS
       ret.mass = 3779. * CV.LB_TO_KG + std_cargo # (3849+3708)/2
       ret.safetyModel = car.CarParams.SafetyModels.gm
       ret.wheelbase = 2.83 #111.4 inches in meters
-      ret.steerRatio = 16 # guess for tourx
+      ret.steerRatio = 14.4 # guess for tourx
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.4 # guess for tourx
 
