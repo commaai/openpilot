@@ -61,7 +61,7 @@ def calc_cruise_accel_limits(v_ego, following):
   return np.vstack([a_cruise_min, a_cruise_max])
 
 
-def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
+def limit_accel_in_turns(v_ego, angle_steers, a_target, CP, angle_later):
   """
   This function returns a limited long acceleration allowed, depending on the existing lateral acceleration
   this should avoid accelerating when losing the target in turns
@@ -69,9 +69,11 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
 
   a_total_max = interp(v_ego, _A_TOTAL_MAX_BP, _A_TOTAL_MAX_V)
   a_y = v_ego**2 * abs(angle_steers) * CV.DEG_TO_RAD / (CP.steerRatio * CP.wheelbase)
+  a_y2 = v_ego**2 * abs(angle_later) * CV.DEG_TO_RAD / (CP.steerRatio * CP.wheelbase)
   a_x_allowed = a_total_max - a_y
+  a_x_allowed2 = a_total_max - a_y2
 
-  a_target[1] = min(a_target[1], a_x_allowed)
+  a_target[1] = min(a_target[1], a_x_allowed, a_x_allowed2)
   return a_target
 
 
@@ -449,9 +451,11 @@ class Planner(object):
         accel_limits = map(float, calc_cruise_accel_limits(CS.vEgo, following))
         # TODO: make a separate lookup for jerk tuning
         jerk_limits = [min(-0.1, accel_limits[0]), max(0.1, accel_limits[1])]
-        if self.lastlat_Control:
-          print self.lastlat_Control.anglelater 
-        accel_limits = limit_accel_in_turns(CS.vEgo, CS.steeringAngle, accel_limits, self.CP)
+        if self.lastlat_Control and CS.vEgo > 11:
+          angle_later = self.lastlat_Control.anglelater 
+        else:
+          angle_later = 0
+        accel_limits = limit_accel_in_turns(CS.vEgo, CS.steeringAngle, accel_limits, self.CP, angle_later * self.CP.steerRatio)
 
         if force_slow_decel:
           # if required so, force a smooth deceleration
