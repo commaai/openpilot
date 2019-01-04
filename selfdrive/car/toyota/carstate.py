@@ -288,7 +288,7 @@ class CarState(object):
     self.v_ego_raw = self.v_wheel
     v_ego_x = self.v_ego_kf.update(self.v_wheel)
     self.v_ego = float(v_ego_x[0])
-    if self.lastlat_Control and self.v_Ego > 11:
+    if self.lastlat_Control and self.v_ego > 11:
       angle_later = self.lastlat_Control.anglelater
     else:
       angle_later = 0
