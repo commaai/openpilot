@@ -168,8 +168,11 @@ class CarState(object):
     #END OF ALCA PARAMS
     
     context = zmq.Context()
+    self.poller = zmq.Poller()
+    self.lastlat_Control = None
     #gps_ext_sock = messaging.sub_sock(context, service_list['gpsLocationExternal'].port, poller)
-    self.gps_location = messaging.sub_sock(context, service_list['gpsLocationExternal'].port)
+    self.gps_location = messaging.sub_sock(context, service_list['gpsLocationExternal'].port, conflate=True, poller=self.poller)
+    self.lat_Control = messaging.sub_sock(context, service_list['latControl'].port, conflate=True, poller=self.poller)
     self.CP = CP
     self.can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
     self.shifter_values = self.can_define.dv["GEAR_PACKET"]['GEAR']
@@ -242,8 +245,13 @@ class CarState(object):
     # copy can_valid
     self.can_valid = cp.can_valid
     self.cam_can_valid = cp_cam.can_valid
-
-    msg = messaging.recv_one_or_none(self.gps_location)
+    msg = None
+    for socket, event in self.poller.poll(0):
+      if socket is self.gps_location:
+        msg = messaging.recv_one(socket)
+      elif socket is self.lat_Control:
+        self.lastlat_Control = messaging.recv_one(socket).latControl
+    
     if msg is not None:
       gps_pkt = msg.gpsLocationExternal
       self.inaccuracy = gps_pkt.accuracy
@@ -280,6 +288,10 @@ class CarState(object):
     self.v_ego_raw = self.v_wheel
     v_ego_x = self.v_ego_kf.update(self.v_wheel)
     self.v_ego = float(v_ego_x[0])
+    if self.lastlat_Control and self.v_Ego > 11:
+      angle_later = self.lastlat_Control.anglelater
+    else:
+      angle_later = 0
     self.a_ego = float(v_ego_x[1])
     #self.standstill = not self.v_wheel > 0.001
     self.standstill = False
@@ -366,6 +378,7 @@ class CarState(object):
     else:
       self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED']
     self.v_cruise_pcm = int(min(self.v_cruise_pcm, interp(abs(self.angle_steers), self.Angle, self.Angle_Speed)))
+    self.v_cruise_pcm = int(min(self.v_cruise_pcm, interp(abs(angle_later), self.Angle, self.Angle_Speed)))
     #print "distane"
     #print self.distance
     if self.distance < self.approachradius + self.includeradius:
