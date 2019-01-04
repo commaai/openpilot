@@ -5,7 +5,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.hyundai.carstate import CarState, get_can_parser, get_camera_parser
-from selfdrive.car.hyundai.values import CAMERA_MSGS, CAR, get_hud_alerts
+from selfdrive.car.hyundai.values import CAMERA_MSGS, CAR, get_hud_alerts, FEATURES
 
 try:
   from selfdrive.car.hyundai.carcontroller import CarController
@@ -196,7 +196,7 @@ class CarInterface(object):
     ret.wheelSpeeds.rr = self.CS.v_wheel_rr
 
     # gear shifter
-    if self.CP.carFingerprint == CAR.ELANTRA:
+    if car_fingerprint in FEATURES["use_cluster_gears"]:
       ret.gearShifter = self.CS.gear_shifter_cluster
     else:
       ret.gearShifter = self.CS.gear_shifter
