@@ -74,6 +74,7 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP, angle_later):
   a_x_allowed2 = a_total_max - a_y2
 
   a_target[1] = min(a_target[1], a_x_allowed, a_x_allowed2)
+  print a_target[1]
   return a_target
 
 
