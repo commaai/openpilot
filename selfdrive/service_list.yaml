@@ -72,6 +72,7 @@ orbFeaturesSummary: [8062, true]
 driverMonitoring: [8063, true]
 liveParameters: [8064, true]
 liveMapData: [8065, true]
+latControl: [8069, true]
 
 testModel: [8040, false]
 testLiveLocation: [8045, false]
