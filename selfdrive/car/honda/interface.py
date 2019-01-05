@@ -241,7 +241,7 @@ class CarInterface(object):
       tire_stiffness_factor = 0.72
       # Acura at comma has modified steering FW, so different tuning for the Neo in that car
       is_fw_modified = os.getenv("DONGLE_ID") in ['ff83f397542ab647']
-      ret.steerKpV, ret.steerKiV = [[0.45], [0.00]] if is_fw_modified else [[0.8], [0.24]]
+      ret.steerKpV, ret.steerKiV = [[0.45], [0.00]] if is_fw_modified else [[0.6], [0.18]]
       if is_fw_modified:
         ret.steerKf = 0.00003
       ret.longitudinalKpBP = [0., 5., 35.]
