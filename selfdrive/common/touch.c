@@ -25,17 +25,27 @@ static int find_dev() {
     assert(fd >= 0);
     
     FILE *fp;
+    FILE *fp2;
     char str[1000];
+    char str2[5];
     char* filename = "/proc/cmdline";
+    char* filename2 = "/VERSION";
 
     fp = fopen(filename, "r");
+    fp2 = fopen(filename2, "r");
     if (fp == NULL){
       printf("Could not open file %s",filename);
       return 0;
     }
+    if (fp2 == NULL){
+      printf("Could not open file %s", filename2);
+      return 0;
+    }
     fgets(str, 1000, fp);
+    fgets(str2, 5, fp2);
     fclose(fp);
-    if (strstr(str, "letv") != NULL){
+    fclose(fp2);
+    if (strstr(str, "letv") != NULL || strstr(str2, "6") != NULL){
       char name[128] = {0};
       err = ioctl(fd, EVIOCGNAME(sizeof(name) - 1), &name);
       assert(err >= 0);
@@ -97,17 +107,27 @@ int touch_poll(TouchState *s, int* out_x, int* out_y, int timeout) {
       return -1;
     }
     FILE *fp;
+    FILE *fp2;
     char str[1000];
+    char str2[5];
     char* filename = "/proc/cmdline";
+    char* filename2 = "/VERSION";
 
     fp = fopen(filename, "r");
+    fp2 = fopen(filename2, "r");
     if (fp == NULL){
       printf("Could not open file %s",filename);
       return 0;
     }
+    if (fp2 == NULL){
+      printf("Could not open file %s", filename2);
+      return 0;
+    }
     fgets(str, 1000, fp);
+    fgets(str2, 5, fp2);
     fclose(fp);
-    if (strstr(str, "letv") != NULL){
+    fclose(fp2);
+    if (strstr(str, "letv") != NULL || strstr(str2, "6") != NULL){
       switch (event.type) { 
       case EV_ABS:
         if (event.code == ABS_MT_POSITION_X) {
