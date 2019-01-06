@@ -15,7 +15,7 @@ from selfdrive.car.modules.UIEV_module import UIEvents
 def gps_distance(gpsLat, gpsLon, gpsAlt, gpsAcc):
   A = np.array([(6371010+gpsAlt)*sin(radians(gpsLat-90))*cos(radians(gpsLon)),(6371010+gpsAlt)*sin(radians(gpsLat-90))*sin(radians(gpsLon)),(6371010+gpsAlt)*cos(radians(gpsLat-90))])
   #x y z alt altacc includeradius approachradius speedlimit
-  B = np.array([[-4190726.5,-723704.4,4744593.25,575.5,15.000001,22.000001,100.000001,25.000001],[-4182729.45,-730269.75,4750656.55,587.7,15.000001,22.000001,100.000001,25.000001],[-4182656.23190573,-728404.35947068,4750970.77416399,560.4,5.000001,25.000001,100.000001,25.000001],[-4182340.93735163,-728347.57108258,4751257.30835904,560.6,15.000001,23.000001,100.000001,25.000001],[1997559.7577528,4923507.37728524,3516097.79232965,341.001,150.000001,22.000001,100.000001,35.000001],[1999313.05346417,4923689.65187786,3514838.56252996,341.001,150.000001,22.000001,100.000001,35.000001],[1999253.66753953,  4922766.06552066,  3516116.35225406, 309.701,15.000001,22.000001,100.000001,35.000001],[-4182320.6274785 ,  -730005.73911391,  4751044.43828149, 578.3, 15.000001, 22.000001, 100.000001, 25.000001],[-4182345.88899318,  -728795.63713204,  4751183.59492766, 560.118, 15.000001, 22.000001, 100.000001, 25.000001], [-4182931.58602671,  -728489.69646177,  4750713.11298657, 558.8, 5.000001, 22.000001, 100.000001, 25.000001], [-4186031.59144309,  -727929.40092471,  4748086.79665809, 573.0, 15.000001, 22.000001, 100.000001, 25.000001]])
+  B = np.array([[-4190726.5,-723704.4,4744593.25,575.5,15.000001,22.000001,100.000001,25.000001],[-4182729.45,-730269.75,4750656.55,587.7,15.000001,22.000001,150.000001,25.000001],[-4182656.23190573,-728404.35947068,4750970.77416399,560.4,5.000001,25.000001,200.000001,25.000001],[-4182340.93735163,-728347.57108258,4751257.30835904,560.6,15.000001,23.000001,100.000001,25.000001],[1997559.7577528,4923507.37728524,3516097.79232965,341.001,150.000001,22.000001,100.000001,35.000001],[1999313.05346417,4923689.65187786,3514838.56252996,341.001,150.000001,22.000001,100.000001,35.000001],[1999253.66753953,  4922766.06552066,  3516116.35225406, 309.701,15.000001,22.000001,100.000001,35.000001],[-4182320.6274785 ,  -730005.73911391,  4751044.43828149, 578.3, 15.000001, 22.000001, 150.000001, 25.000001],[-4182345.88899318,  -728795.63713204,  4751183.59492766, 560.118, 15.000001, 22.000001, 150.000001, 25.000001], [-4182931.58602671,  -728489.69646177,  4750713.11298657, 558.8, 5.000001, 22.000001, 150.000001, 25.000001], [-4186031.59144309,  -727929.40092471,  4748086.79665809, 573.0, 15.000001, 22.000001, 150.000001, 25.000001]])
   dist = 999.000001
   #lat=48.128939
   #lon=9.797879048
@@ -168,8 +168,11 @@ class CarState(object):
     #END OF ALCA PARAMS
     
     context = zmq.Context()
+    self.poller = zmq.Poller()
+    self.lastlat_Control = None
     #gps_ext_sock = messaging.sub_sock(context, service_list['gpsLocationExternal'].port, poller)
-    self.gps_location = messaging.sub_sock(context, service_list['gpsLocationExternal'].port)
+    self.gps_location = messaging.sub_sock(context, service_list['gpsLocationExternal'].port, conflate=True, poller=self.poller)
+    self.lat_Control = messaging.sub_sock(context, service_list['latControl'].port, conflate=True, poller=self.poller)
     self.CP = CP
     self.can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
     self.shifter_values = self.can_define.dv["GEAR_PACKET"]['GEAR']
@@ -242,8 +245,13 @@ class CarState(object):
     # copy can_valid
     self.can_valid = cp.can_valid
     self.cam_can_valid = cp_cam.can_valid
-
-    msg = messaging.recv_one_or_none(self.gps_location)
+    msg = None
+    for socket, event in self.poller.poll(0):
+      if socket is self.gps_location:
+        msg = messaging.recv_one(socket)
+      elif socket is self.lat_Control:
+        self.lastlat_Control = messaging.recv_one(socket).latControl
+    
     if msg is not None:
       gps_pkt = msg.gpsLocationExternal
       self.inaccuracy = gps_pkt.accuracy
@@ -280,6 +288,10 @@ class CarState(object):
     self.v_ego_raw = self.v_wheel
     v_ego_x = self.v_ego_kf.update(self.v_wheel)
     self.v_ego = float(v_ego_x[0])
+    if self.lastlat_Control and self.v_ego > 11:
+      angle_later = self.lastlat_Control.anglelater
+    else:
+      angle_later = 0
     self.a_ego = float(v_ego_x[1])
     #self.standstill = not self.v_wheel > 0.001
     self.standstill = False
@@ -366,6 +378,7 @@ class CarState(object):
     else:
       self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED']
     self.v_cruise_pcm = int(min(self.v_cruise_pcm, interp(abs(self.angle_steers), self.Angle, self.Angle_Speed)))
+    self.v_cruise_pcm = int(min(self.v_cruise_pcm, interp(abs(angle_later), self.Angle, self.Angle_Speed)))
     #print "distane"
     #print self.distance
     if self.distance < self.approachradius + self.includeradius:
