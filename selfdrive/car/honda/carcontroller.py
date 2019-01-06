@@ -6,6 +6,7 @@ from common.numpy_fast import clip
 from selfdrive.car.honda import hondacan
 from selfdrive.car.honda.values import AH, CruiseButtons, CAR
 from selfdrive.can.packer import CANPacker
+from common.params import Params
 
 def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
   # hyst params
@@ -71,7 +72,7 @@ def process_hud_alert(hud_alert):
 
 HUDData = namedtuple("HUDData",
                      ["pcm_accel", "v_cruise", "mini_car", "car", "X4",
-                      "lanes", "beep", "chime", "fcw", "acc_alert", "steer_required", "dist_lines", "dashed_lanes"])
+                      "lanes", "beep", "chime", "fcw", "acc_alert", "steer_required", "dist_lines", "dashed_lanes", "speed_units"])
 
 
 class CarController(object):
@@ -84,6 +85,14 @@ class CarController(object):
     self.enable_camera = enable_camera
     self.packer = CANPacker(dbc_name)
     self.new_radar_config = False
+    #self.params = Params()
+    self.is_metric = Params().get("IsMetric") == "1"
+    if self.is_metric:
+      self.speed_units = 2
+    else:
+      self.speed_units = 3
+
+
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
              pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel, \
@@ -132,7 +141,7 @@ class CarController(object):
     fcw_display, steer_required, acc_alert = process_hud_alert(hud_alert)
 
     hud = HUDData(int(pcm_accel), int(round(hud_v_cruise)), 1, hud_car,
-                  0xc1, hud_lanes, int(snd_beep), snd_chime, fcw_display, acc_alert, steer_required, CS.read_distance_lines, CS.lkMode)
+                  0xc1, hud_lanes, int(snd_beep), snd_chime, fcw_display, acc_alert, steer_required, CS.read_distance_lines, CS.lkMode, self.speed_units)
 
     # **** process the car messages ****
 
