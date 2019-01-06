@@ -33,7 +33,7 @@ static int find_dev() {
       printf("Could not open file %s",filename);
       return 0;
     }
-    fgets(str, MAXCHAR, fp);
+    fgets(str, 1000, fp);
     fclose(fp);
     if (strstr(str, "letv") != NULL){
       char name[128] = {0};
@@ -105,7 +105,7 @@ int touch_poll(TouchState *s, int* out_x, int* out_y, int timeout) {
       printf("Could not open file %s",filename);
       return 0;
     }
-    fgets(str, MAXCHAR, fp);
+    fgets(str, 1000, fp);
     fclose(fp);
     if (strstr(str, "letv") != NULL){
       switch (event.type) { 
