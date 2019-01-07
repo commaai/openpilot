@@ -2,11 +2,17 @@
 cd /data/openpilot/selfdrive/visiond
 if [ "$1" = "wiggly" ]; then
   ln -sf ./visiond-wiggly ./visiond
+  sleep 2
+  reboot
 else
-  ln -sf ./visiond-normal ./visiond
+  if [ "$1" = "normal" ]; then
+    ln -sf ./visiond-normal ./visiond
+    sleep 2
+    reboot
+  fi
 fi
 
-reboot
+
 
 #tmux has-session -t comma
 ## if [ $? == 0 ]
