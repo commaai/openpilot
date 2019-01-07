@@ -14,7 +14,8 @@ class HSOController(object):
 
     def update_stat(self,CS,enabled,actuators,frame):
         human_control = False
-        if (CS.cstm_btns.get_button_status("steer") >0) and enabled:
+        #if (CS.cstm_btns.get_button_status("steer") >0) and enabled:
+        if enabled:
           #if steering but not by ALCA
           if (CS.right_blinker_on or CS.left_blinker_on) and (self.CC.ALCA.laneChange_enabled <= 1):
             self.frame_humanSteered = frame
@@ -29,14 +30,14 @@ class HSOController(object):
               if angle > 5.:
                 self.frame_humanSteered = frame
         if enabled:
-            if CS.cstm_btns.get_button_status("steer") > 0:
+            #if CS.cstm_btns.get_button_status("steer") > 0:
               if (frame - self.frame_humanSteered < 50):
                 human_control = True
-                CS.cstm_btns.set_button_status("steer",3)
+                #CS.cstm_btns.set_button_status("steer",3)
                 CS.UE.custom_alert_message(3,"Manual Steering Enabled",51,4)
-              else:
-                CS.cstm_btns.set_button_status("steer",2)
-        else:
-            if CS.cstm_btns.get_button_status("steer") > 0:
-              CS.cstm_btns.set_button_status("steer",1)
+              #else:
+              #  CS.cstm_btns.set_button_status("steer",2)
+        #else:
+        #    if CS.cstm_btns.get_button_status("steer") > 0:
+        #      CS.cstm_btns.set_button_status("steer",1)
         return human_control and enabled

@@ -764,16 +764,28 @@ void bb_ui_read_triState_switch( UIState *s) {
   int tri_state_fd;
   char buffer[10];
   if  (bb_currentTimeInMilis() - s->b.tri_state_switch_last_read > 2000)  {
-    tri_state_fd = open ("/sys/devices/virtual/switch/tri-state-key/state", O_RDONLY);
+    //tri_stated_fd = open ("/sys/devices/virtual/switch/tri-state-key/state", O_RDONLY);
     //if we can't open then switch should be considered in the middle, nothing done
-    if (tri_state_fd == -1) {
+    /* if (tri_state_fd == -1) {
       s->b.tri_state_switch = 3;
     } else {
       read (tri_state_fd, &buffer, 10);
       s->b.tri_state_switch = buffer[0] -48;
       close(tri_state_fd);
       s->b.tri_state_switch_last_read = bb_currentTimeInMilis();
+    }*/
+    s->b.tri_state_switch_last_read = bb_currentTimeInMilis(); 
+    s->b.tri_state_switch = 1;
+    if (strcmp(s->b.btns[2].btn_label2,"Left")==0) {
+      s->b.tri_state_switch = 1;
     }
+    if (strcmp(s->b.btns[2].btn_label2,"Middle")==0) {
+      s->b.tri_state_switch = 2;
+    }
+    if (strcmp(s->b.btns[2].btn_label2,"Right")==0) {
+      s->b.tri_state_switch = 3;
+    }
+    
   }
 }
 
