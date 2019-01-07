@@ -15,9 +15,9 @@ Table of Contents
 * [Supported Cars](#supported-cars)
 * [Community Maintained Cars](#community-maintained-cars)
 * [In Progress Cars](#in-progress-cars)
-* [How can I add support for my car?](#how-can-i-add-support-for-my-car-)
+* [How can I add support for my car?](#how-can-i-add-support-for-my-car)
 * [Directory structure](#directory-structure)
-* [User Data / chffr Account / Crash Reporting](#user-data-chffr-account-crash-reporting)
+* [User Data / chffr Account / Crash Reporting](#user-data--chffr-account--crash-reporting)
 * [Testing on PC](#testing-on-pc)
 * [Contributing](#contributing)
 * [Licensing](#licensing)
@@ -76,7 +76,7 @@ Supported Cars
 | Honda                | Odyssey 2017-19          | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 0mph           | Inverted Nidec    |
 | Honda                | Pilot 2016-18            | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          | Nidec             |
 | Honda                | Pilot 2019               | All                  | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          | Inverted Nidec    |
-| Honda                | Ridgeline 2017-18        | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          | Nidec             |
+| Honda                | Ridgeline 2017-19        | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          | Nidec             |
 | Hyundai              | Santa Fe 2019            | All                  | Yes     | Stock          | 0mph             | 0mph           | Custom<sup>6</sup>|
 | Hyundai              | Elantra 2017             | SCC + LKAS           | Yes     | Stock          | 19mph            | 34mph          | Custom<sup>6</sup>|
 | Hyundai              | Genesis 2018             | All                  | Yes     | Stock          | 19mph            | 34mph          | Custom<sup>6</sup>|
