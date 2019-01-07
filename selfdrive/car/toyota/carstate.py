@@ -125,6 +125,9 @@ def get_cam_can_parser(CP):
 
 class CarState(object):
   def __init__(self, CP):
+    self.Angles = np.zeros(250)
+    self.Angles_later = np.zeros(250)
+    self.Angle_counter = 0
     self.Angle = [0, 5, 10, 15,20,25,30,35,60,100,180,270,500]
     self.Angle_Speed = [255,160,100,80,70,60,55,50,40,33,27,17,12]
     #labels for ALCA modes
@@ -377,8 +380,11 @@ class CarState(object):
       self.v_cruise_pcm = max(7, cp.vl["PCM_CRUISE_2"]['SET_SPEED'] - 34.0)
     else:
       self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED']
-    self.v_cruise_pcm = int(min(self.v_cruise_pcm, interp(abs(self.angle_steers), self.Angle, self.Angle_Speed)))
-    self.v_cruise_pcm = int(min(self.v_cruise_pcm, interp(abs(angle_later), self.Angle, self.Angle_Speed)))
+    self.Angles[self.Angle_counter] = abs(self.angle_steers)
+    self.Angles_later[self.Angle_counter] = abs(angle_later)
+    self.Angle_counter = (self.Angle_counter + 1 ) % 250
+    self.v_cruise_pcm = int(min(self.v_cruise_pcm, interp(np.max(self.Angles), self.Angle, self.Angle_Speed)))
+    self.v_cruise_pcm = int(min(self.v_cruise_pcm, interp(np.max(self.Angles_later), self.Angle, self.Angle_Speed)))
     #print "distane"
     #print self.distance
     if self.distance < self.approachradius + self.includeradius:
