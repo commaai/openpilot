@@ -218,7 +218,7 @@ class CarInterface(object):
     
 
     # brake pedal
-    ret.brakePressed = (self.CS.brake_pressed != 0) and (self.CS.cstm_btns.get_button_status("brake") == 0)
+    ret.brakePressed =False # (self.CS.brake_pressed != 0) and (self.CS.cstm_btns.get_button_status("brake") == 0)
     # FIXME: read sendcan for brakelights
     brakelights_threshold = 0.1
     ret.brakeLights = bool(self.CS.brake_switch or
@@ -333,12 +333,12 @@ class CarInterface(object):
 #       (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001)):
 #      events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
 
-    if (self.CS.cstm_btns.get_button_status("brake")>0):
-      if ((self.CS.brake_pressed !=0) != self.brake_pressed_prev): #break not canceling when pressed
-        self.CS.cstm_btns.set_button_status("brake", 2 if self.CS.brake_pressed != 0 else 1)
-    else:
-      if ret.brakePressed:
-        events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
+    #if (self.CS.cstm_btns.get_button_status("brake")>0):
+    #  if ((self.CS.brake_pressed !=0) != self.brake_pressed_prev): #break not canceling when pressed
+    #  self.CS.cstm_btns.set_button_status("brake", 2 if self.CS.brake_pressed != 0 else 1)
+    #else:
+    #  if ret.brakePressed:
+    #    events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
     if ret.gasPressed:
       events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
 
