@@ -325,6 +325,9 @@ class CarState(object):
     #BB carConfig data used to change IC info
     self.real_carConfig = None
     self.real_dasHw = 0
+
+    #BB visiond last type
+    self.last_visiond = self.cstm_btns.btns[3].btn_label2
     
      
     # vEgo kalman filter
@@ -360,7 +363,8 @@ class CarState(object):
 
   def update_ui_buttons(self,id,btn_status):
     # we only focus on id=3, which is for visiond
-    if (id == 3) and (self.cstm_btns.btns[id].btn_status > 0):
+    if (id == 3) and (self.cstm_btns.btns[id].btn_status > 0) and (self.last_visiond != self.cstm_btns.btns[3].btn_label2):
+      self.last_visiond = self.cstm_btns.btns[3].btn_label2
       # we switched between wiggly and normal
       args = ["/data/openpilot/selfdrive/car/modules/ch_visiond.sh", self.cstm_btns.btns[id].btn_label2]
       subprocess.Popen(args, shell = False, stdin=None, stdout=None, stderr=None, env = dict(os.environ), close_fds=True)
