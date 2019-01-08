@@ -132,7 +132,7 @@ class CarState(object):
     btns.append(UIButton("alca", "ALC", 0, self.alcaLabels[self.alcaMode], 1))
     btns.append(UIButton("stop","",1,"SNG",2))
     btns.append(UIButton("","",0,"",3))
-    btns.append(UIButton("gas","GAS",0,"",4))
+    btns.append(UIButton("gas","GAS",1,"",4))
     btns.append(UIButton("lka","LKA",1,"",5))
     return btns
   #BB update ui buttons
