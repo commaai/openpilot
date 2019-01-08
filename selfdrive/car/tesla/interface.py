@@ -101,13 +101,13 @@ class CarInterface(object):
 
     # FIXME: hardcoding honda civic 2016 touring params so they can be used to
     # scale unknown params for other cars
-    mass_civic = 2923 * CV.LB_TO_KG + std_cargo
-    wheelbase_civic = 2.75
-    centerToFront_civic = wheelbase_civic * 0.48
-    centerToRear_civic = wheelbase_civic - centerToFront_civic
-    rotationalInertia_civic = 2500
-    tireStiffnessFront_civic = 95400
-    tireStiffnessRear_civic = 100000
+    mass = 2923 * CV.LB_TO_KG + std_cargo
+    wheelbase = 2.75
+    centerToFront = wheelbase * 0.48
+    centerToRear = wheelbase - centerToFront
+    rotationalInertia = 2500
+    tireStiffnessFront = 85400
+    tireStiffnessRear = 90000
 
     #mass_models = 4722./2.205 + std_cargo
     #wheelbase_models = 2.959
@@ -123,11 +123,11 @@ class CarInterface(object):
     if candidate == CAR.MODELS:
       stop_and_go = True
       ret.mass = 4722./2.205 + std_cargo
-      ret.wheelbase = 2.959
+      ret.wheelbase = 2.859
       ret.centerToFront = ret.wheelbase * 0.48
-      ret.steerRatio = 15.5
+      ret.steerRatio = 15
       # Kp and Ki for the lateral control for 0, 20, 40, 60 mph
-      ret.steerKpV, ret.steerKiV = [[1.20, 0.80, 0.60, 0.30], [0.16, 0.12, 0.08, 0.04]]
+      ret.steerKpV, ret.steerKiV = [[1.20, 0.80, 0.60, 0.35], [0.16, 0.12, 0.08, 0.03]]
       ret.steerKf = 0.00006 # Initial test value TODO: investigate FF steer control for Model S?
       ret.steerActuatorDelay = 0.09
 
@@ -164,17 +164,17 @@ class CarInterface(object):
     centerToRear = ret.wheelbase - ret.centerToFront
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
-    ret.rotationalInertia = rotationalInertia_civic * \
-                            ret.mass * ret.wheelbase**2 / (mass_civic * wheelbase_civic**2)
+    ret.rotationalInertia = rotationalInertia * \
+                            ret.mass * ret.wheelbase**2 / (mass * wheelbase**2)
 
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
-    ret.tireStiffnessFront = (tireStiffnessFront_civic * tire_stiffness_factor) * \
-                             ret.mass / mass_civic * \
-                             (centerToRear / ret.wheelbase) / (centerToRear_civic / wheelbase_civic)
-    ret.tireStiffnessRear = (tireStiffnessRear_civic * tire_stiffness_factor) * \
-                            ret.mass / mass_civic * \
-                            (ret.centerToFront / ret.wheelbase) / (centerToFront_civic / wheelbase_civic)
+    ret.tireStiffnessFront = (tireStiffnessFront * tire_stiffness_factor) * \
+                             ret.mass / mass * \
+                             (centerToRear / ret.wheelbase) / (centerToRear / wheelbase)
+    ret.tireStiffnessRear = (tireStiffnessRear * tire_stiffness_factor) * \
+                            ret.mass / mass * \
+                            (ret.centerToFront / ret.wheelbase) / (centerToFront / wheelbase)
 
     # no rear steering, at least on the listed cars above
     ret.steerRatioRear = 0.
