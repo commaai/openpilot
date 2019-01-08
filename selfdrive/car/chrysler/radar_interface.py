@@ -66,7 +66,7 @@ class RadarInterface(object):
     while 1:
       tm = int(sec_since_boot() * 1e9)
       updated_messages.update(self.rcp.update(tm, True))
-      if len(updated_messages) == NUMBER_MSGS:  # got at least one of each message
+      if LAST_MSG in updated_messages:
         break
 
     ret = car.RadarState.new_message()

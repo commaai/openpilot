@@ -69,18 +69,17 @@ class CarInterface(object):
     tireStiffnessFront_civic = 85400 * 2.0
     tireStiffnessRear_civic = 90000 * 2.0
 
-    # Speed conversion:                0,  20,  45,  75 mph
-    ret.steerKpBP, ret.steerKiBP = [[  0.,  9., 20., 34.], [  0.,  9., 20., 34.]]
-    ret.safetyParam = 73  # see conversion factor for STEER_TORQUE_EPS in dbc file
+    # Speed conversion:              20, 45 mph
+    ret.steerKpBP, ret.steerKiBP = [[9., 20.], [9., 20.]]
     ret.wheelbase = 3.089  # in meters for Pacifica Hybrid 2017
     ret.steerRatio = 16.2 # Pacifica Hybrid 2017
     ret.mass = 2858 + std_cargo  # kg curb weight Pacifica Hybrid 2017
-    ret.steerKpV, ret.steerKiV =   [[0.15,0.15,0.34,0.34], [0.03,0.03,0.03,0.03]]
+    ret.steerKpV, ret.steerKiV =   [[0.15,0.30], [0.03,0.05]]
     ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
     ret.steerActuatorDelay = 0.1
-    ret.steerRateCost = 1.
+    ret.steerRateCost = 0.7
 
-    if candidate == CAR.CHEROKEE:
+    if candidate == CAR.JEEP_CHEROKEE:
       ret.wheelbase = 2.91  # in meters
 
     ret.centerToFront = ret.wheelbase * 0.44
@@ -117,11 +116,11 @@ class CarInterface(object):
     ret.brakeMaxBP = [5., 20.]
     ret.brakeMaxV = [1., 0.8]
 
-    ret.enableCamera = not check_ecu_msgs(fingerprint, candidate, ECU.CAM)
+    ret.enableCamera = not check_ecu_msgs(fingerprint, ECU.CAM)
     print "ECU Camera Simulated: ", ret.enableCamera
     ret.openpilotLongitudinalControl = False
 
-    ret.steerLimitAlert = False
+    ret.steerLimitAlert = True
     ret.stoppingControl = False
     ret.startAccel = 0.0
 
@@ -229,7 +228,7 @@ class CarInterface(object):
     if ret.gearShifter == 'reverse':
       events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     if self.CS.steer_error:
-      events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
+      events.append(create_event('steerUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
 
     if ret.cruiseState.enabled and not self.cruise_enabled_prev:
       events.append(create_event('pcmEnable', [ET.ENABLE]))
@@ -238,11 +237,8 @@ class CarInterface(object):
 
     # disable on gas pedal and speed isn't zero. Gas pedal is used to resume ACC
     # from a 3+ second stop.
-    self.send_cancel_acc = False
     if (ret.gasPressed and (not self.gas_pressed_prev) and ret.vEgo > 2.0):
       events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
-      if (ret.cruiseState.enabled and not self.CS.steer_error):
-        self.send_cancel_acc = True
 
     if self.low_speed_alert:
       events.append(create_event('belowSteerSpeed', [ET.WARNING]))
@@ -259,12 +255,13 @@ class CarInterface(object):
   # pass in a car.CarControl
   # to be called @ 100hz
   def apply(self, c, perception_state=log.Live20Data.new_message()):
-    if (self.CS.frame_220 == -1):
-      return False # if we haven't seen a frame 220, then do not update.
-    self.frame = self.CS.frame_220
 
+    if (self.CS.frame == -1):
+      return False # if we haven't seen a frame 220, then do not update.
+
+    self.frame = self.CS.frame
     self.CC.update(self.sendcan, c.enabled, self.CS, self.frame,
                    c.actuators, c.cruiseControl.cancel, c.hudControl.visualAlert,
-                   c.hudControl.audibleAlert, self.send_cancel_acc)
+                   c.hudControl.audibleAlert)
 
     return False
