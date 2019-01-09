@@ -2121,13 +2121,30 @@ int main() {
     bb_ui_poll_update(s);
     // awake on any touch
     int touch_x = -1, touch_y = -1;
-    int touched = touch_poll(&touch, &touch_x, &touch_y, s->awake ? 0 : 500);
+    int touched = touch_poll(&touch, &touch_x, &touch_y, s->awake ? 0 : 100);
+    int dc_touch_x = -1, dc_touch_y = -1;
+    s->b.touch_timeout = max(s->b.touch_timeout -1,0);
+    
     if (touched == 1) {
       // touch event will still happen :(
       set_awake(s, true);
-      // BB check touch area
-      bb_handle_ui_touch(s,touch_x,touch_y);
+      s->b.touch_last = true;
+      s->b.touch_last_x = touch_x;
+      s->b.touch_last_y = touch_y;
+      s->b.touch_timeout = touch_timeout;
+
+    } else {
+      //BB check touch
+      if ((s->b.touch_last) && (s->b.touch_timeout == 0)) {
+        bb_handle_ui_touch(s,s->b.touch_last_x,s->b.touch_last_y);
+        dc_touch_x = s->b.touch_last_x;
+        dc_touch_y = s->b.touch_last_y;
+        s->b.touch_last = false;
+        s->b.touch_last_x = 0;
+        s->b.touch_last_y = 0;
+      }
     }
+
 
     // manage wakefulness
     if (s->awake_timeout > 0) {
@@ -2137,7 +2154,7 @@ int main() {
     }
 
     if (s->awake) {
-      dashcam(s, touch_x, touch_y);
+      dashcam(s, dc_touch_x, dc_touch_y);
       ui_draw(s);
       glFinish();
       should_swap = true;
