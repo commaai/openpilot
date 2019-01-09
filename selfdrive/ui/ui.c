@@ -2117,11 +2117,10 @@ int main() {
     }
 
     ui_update(s);
-    //BB Update our cereal polls
-    bb_ui_poll_update(s);
+
     // awake on any touch
     int touch_x = -1, touch_y = -1;
-    int touched = touch_poll(&touch, &touch_x, &touch_y, s->awake ? 0 : 100);
+    int touched = touch_poll(&touch, &touch_x, &touch_y, s->awake ? 100 : 500);
     int dc_touch_x = -1, dc_touch_y = -1;
     s->b.touch_timeout = max(s->b.touch_timeout -1,0);
     
@@ -2132,19 +2131,23 @@ int main() {
       s->b.touch_last_x = touch_x;
       s->b.touch_last_y = touch_y;
       s->b.touch_timeout = touch_timeout;
-
-    } else {
+      s->b.touch_last_width = s->scene.ui_viz_rw;
+    } 
       //BB check touch
-      if ((s->b.touch_last) && (s->b.touch_timeout == 0)) {
+      if ((s->b.touch_last) && (s->b.touch_last_width != s->scene.ui_viz_rw)) {
         bb_handle_ui_touch(s,s->b.touch_last_x,s->b.touch_last_y);
         dc_touch_x = s->b.touch_last_x;
         dc_touch_y = s->b.touch_last_y;
         s->b.touch_last = false;
         s->b.touch_last_x = 0;
         s->b.touch_last_y = 0;
+        s->b.touch_last_width=s->scene.ui_viz_rw;
       }
-    }
-
+    
+    //s->b.touch_last_width = s->scene.ui_viz_rw;
+    //BB Update our cereal polls
+    bb_ui_poll_update(s);
+    
 
     // manage wakefulness
     if (s->awake_timeout > 0) {

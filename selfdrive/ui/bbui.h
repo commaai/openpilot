@@ -853,6 +853,7 @@ void bb_ui_init(UIState *s) {
     s->b.touch_last = false;
     s->b.touch_last_x = 0;
     s->b.touch_last_y =0;
+    s->b.touch_last_width = s->scene.ui_viz_rw;
 
     //BB Define CAPNP sock
     s->b.uiButtonInfo_sock = zsock_new_sub(">tcp://127.0.0.1:8201", "");
