@@ -81,6 +81,12 @@ void set_hyundai_rt_torque_last(int t);
 void toyota_ipas_rx_hook(CAN_FIFOMailBox_TypeDef *to_push);
 int toyota_ipas_tx_hook(CAN_FIFOMailBox_TypeDef *to_send);
 
+void init_tests_chrysler(void);
+void chrysler_rx_hook(CAN_FIFOMailBox_TypeDef *to_push);
+int chrysler_tx_hook(CAN_FIFOMailBox_TypeDef *to_send);
+void chrysler_init(int16_t param);
+void set_chrysler_desired_torque_last(int t);
+
 """)
 
 libpandasafety = ffi.dlopen(libpandasafety_fn)

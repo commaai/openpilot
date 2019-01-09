@@ -82,63 +82,106 @@ def create_pedal_command_msg(accelCommand, enable, idx):
   struct.pack_into('B', msg, msg_len-1, add_tesla_checksum(msg_id,msg))
   return [msg_id, 0, msg.raw, 2]    
   
-def create_das_status_msg(autopilotState,idx):
-  """Create DAS_status (0x399) message to generate AP sounds"""
-  msg_id = 0x399
-  msg_len = 8
-  msg = create_string_buffer(msg_len)
-  struct.pack_into('BBBBBBB', msg, 0,  (autopilotState << 4) & 0xFF, 0, 0, 0, 0, 0, idx)
-  struct.pack_into('B', msg, msg_len-1, add_tesla_checksum(msg_id,msg))
-  return [msg_id, 0, msg.raw, 0]
 
 def create_DAS_info_msg(mid):
   msg_id = 0x539
   msg_len = 8
   msg = create_string_buffer(msg_len)
   if (mid == 0):
-    struct.pack_into('BBBBBBBB', msg, 0, 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00)
+    struct.pack_into('BBBBBBBB', msg, 0, 0x0a,0x01,0x03,0x00,0x00,0x00,0x4e,0x00)
   elif (mid == 1):
-    struct.pack_into('BBBBBBBB', msg, 0, 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00)
+    struct.pack_into('BBBBBBBB', msg, 0, 0x0b,0x00,0x02,0x01,0x01,0x00,0x00,0x00)
   elif (mid == 2):
-    struct.pack_into('BBBBBBBB', msg, 0, 0x0a,0x01,0x11,0x00,0x00,0x00,0x8b,0x00)
+    struct.pack_into('BBBBBBBB', msg, 0, 0x0d,0x00,0x00,0x00,0x5b,0x8e,0xac,0x3e)
   elif (mid == 3):
-    struct.pack_into('BBBBBBBB', msg, 0, 0x0b,0x00,0x07,0x01,0x01,0x00,0x00,0x00)
+    struct.pack_into('BBBBBBBB', msg, 0, 0x10,0x00,0x06,0xc9,0xb9,0x21,0x00,0x00)
   elif (mid == 4):
-    struct.pack_into('BBBBBBBB', msg, 0, 0x0d,0x00,0x00,0x00,0xa8,0x6a,0xbd,0xc9)
-  elif (mid == 5):
-    struct.pack_into('BBBBBBBB', msg, 0, 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00)
-  elif (mid == 6):
     struct.pack_into('BBBBBBBB', msg, 0, 0x11,0x00,0x00,0x00,0x00,0x00,0x00,0x00)
-  elif (mid == 7):
-    struct.pack_into('BBBBBBBB', msg, 0, 0x12,0xca,0x0a,0x51,0x21,0xf4,0x38,0xd3)
-  elif (mid == 8):
+  elif (mid == 5):
+    struct.pack_into('BBBBBBBB', msg, 0, 0x12,0x7f,0x57,0x34,0x6f,0x70,0x89,0x0b)
+  elif (mid == 6):
     struct.pack_into('BBBBBBBB', msg, 0, 0x13,0x01,0xff,0xff,0xff,0xfc,0x00,0x00)
+  elif (mid == 7):
+    struct.pack_into('BBBBBBBB', msg, 0, 0x14,0x05,0x00,0x00,0xe5,0xfc,0x09,0xc3)
+  elif (mid == 8):
+    struct.pack_into('BBBBBBBB', msg, 0, 0x17,0x00,0x70,0xe7,0xc4,0x91,0x00,0x00)
   else:
-    struct.pack_into('BBBBBBBB', msg, 0, 0x14,0x05,0x00,0x00,0x91,0x53,0x86,0x6a)
+    struct.pack_into('BBBBBBBB', msg, 0, 0x18,0x00,0xd5,0xb2,0x6c,0x78,0x00,0x00)
+
   return [msg_id, 0, msg.raw, 0]
 
+def create_DAS_chNm():
+  msg_id = 0x409
+  msg_len = 1
+  msg = create_string_buffer(msg_len)
+  struct.pack_into('B', msg, 0, 0x00)
+  return [msg_id, 0, msg.raw, 0]
 
-def create_DAS_status_msg(idx):
+def create_DAS_visualDebug_msg():
+  msg_id = 0x249
+  msg_len = 8
+  msg = create_string_buffer(msg_len)
+  struct.pack_into('BBBBBBBB', msg, 0, 0x00,0x06,0x21,0x10,0x00,0x00,0x00,0x00)
+  return [msg_id, 0, msg.raw, 0]
+
+def create_DAS_bootID_msg():
+  msg_id = 0x639
+  msg_len = 8
+  msg = create_string_buffer(msg_len)
+  struct.pack_into('BBBBBBBB', msg, 0, 0x55,0x00,0xE3,0x00,0xBD,0x03,0x20,0x00)
+  return [msg_id, 0, msg.raw, 0]
+
+def create_DAS_warningMatrix3(idx,driverResumeRequired):
+  msg_id = 0x349
+  msg_len = 8
+  msg = create_string_buffer(msg_len)
+  struct.pack_into('BBBBBBBB', msg, 0, driverResumeRequired << 1, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)
+  return [msg_id, 0, msg.raw, 0]
+
+def create_DAS_warningMatrix1(idx):
+  msg_id = 0x369
+  msg_len = 8
+  msg = create_string_buffer(msg_len)
+  struct.pack_into('BBBBBBBB', msg, 0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)
+  return [msg_id, 0, msg.raw, 0]
+
+def create_DAS_warningMatrix0(idx):
+  msg_id = 0x329
+  msg_len = 8
+  msg = create_string_buffer(msg_len)
+  if idx % 2 == 0:
+    #struct.pack_into('BBBBBBBB', msg, 0, 0x00, 0x02, 0xCE, 0x45, 0x21, 0x1D, 0x08, 0x00)
+    struct.pack_into('BBBBBBBB', msg, 0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)
+  else:
+    #struct.pack_into('BBBBBBBB', msg, 0, 0x00, 0x02, 0xCE, 0x45, 0x21, 0x1D, 0x08, 0x80)
+    struct.pack_into('BBBBBBBB', msg, 0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)
+  return [msg_id, 0, msg.raw, 0]
+
+def create_DAS_status_msg(idx,op_status,speed_limit_kph,alca_state,hands_on_state):
   msg_id = 0x399
   msg_len = 8
   msg = create_string_buffer(msg_len)
-  struct.pack_into('BBBBBBB', msg, 0, 0x03,0x0b,0x20,0x00,0x08,0x08,(idx << 4) + 8)
+  sl = int(speed_limit_kph / 5)
+  struct.pack_into('BBBBBBB', msg, 0, op_status,sl,sl,0x00,0x08,(hands_on_state << 2) + ((alca_state & 0x03) << 6),((idx << 4) &0xF0 )+( 0x0F & (alca_state >>2)))
   struct.pack_into('B', msg, msg_len-1, add_tesla_checksum(msg_id,msg))
   return [msg_id, 0, msg.raw, 0]
 
-def create_DAS_status2_msg(idx):
+def create_DAS_status2_msg(idx,acc_speed_limit_mph,collision_warning):
   msg_id = 0x389
   msg_len = 8
+  sl = int(acc_speed_limit_mph / 0.2)
+  if acc_speed_limit_mph == 0:
+    sl = 0x3FF
   msg = create_string_buffer(msg_len)
-  struct.pack_into('BBBBBBB', msg, 0, 0xff,0x03,0x44,0x04,0x00,0x80,(idx << 4) )
+  struct.pack_into('BBBBBBB', msg, 0, sl & 0xFF, (sl & 0xF00) >> 8,0x00,0x00,0x07 + 16,0x80,(idx << 4) + collision_warning )
   struct.pack_into('B', msg, msg_len-1, add_tesla_checksum(msg_id,msg))
   return [msg_id, 0, msg.raw, 0]
 
-def create_DAS_bodyControls_msg(idx):
+def create_DAS_bodyControls_msg(idx,turn_signal_request):
   msg_id = 0x3E9
   msg_len = 8
   msg = create_string_buffer(msg_len)
-  struct.pack_into('BBBBBBB', msg, 0, 0xf1,0x0c,0x00,0x00,0x00,0x00,(idx << 4) )
+  struct.pack_into('BBBBBBB', msg, 0, 0xf1,0x0c + turn_signal_request,0x00,0x00,0x00,0x00,(idx << 4) )
   struct.pack_into('B', msg, msg_len-1, add_tesla_checksum(msg_id,msg))
   return [msg_id, 0, msg.raw, 0]
 
@@ -154,18 +197,135 @@ def create_DAS_lanes_msg(idx):
   msg_id = 0x239
   msg_len = 8
   msg = create_string_buffer(msg_len)
-  struct.pack_into('BBBBBBBB', msg, 0, 0x62,0x28,0x62,0x7b,0x65,0x7d,0x30,0x2c)
+  struct.pack_into('BBBBBBBB', msg, 0, 0x33,0xC8,0xF0,0x7F,0x70,0x70,0x33,(idx << 4)+0x0F)
   return [msg_id, 0, msg.raw, 0]
 
 def create_DAS_objects_msg(idx):
   msg_id = 0x309
   msg_len = 8
   msg = create_string_buffer(msg_len)
-  struct.pack_into('BBBBBBBB', msg, 0, 0x01,0xff,0xff,0xff,0x83,0xff,0xff,0x03)
+  struct.pack_into('BBBBBBBB', msg, 0, 0x81,0xC0,0xF8,0xF3,0x43,0x7F,0xFD,0xF1)
   return [msg_id, 0, msg.raw, 0]
 
 
+def create_DAS_telemetryPeriodic(midP,mid):
+  msg_id = 0x379
+  msg_len = 8
+  msg = create_string_buffer(msg_len)
+  if (mid == 0):
+    struct.pack_into('BBBBBBBB', msg, 0, (midP << 4) + mid,0x35,0xb4,0xf4,0xe9,0x03,0x2c,0x11)
+  elif (mid == 1):
+    struct.pack_into('BBBBBBBB', msg, 0, (midP << 4) + mid,0x99,0x0b,0xb8,0x07,0x0e,0x04,0x00)
+  elif (mid == 2):
+    struct.pack_into('BBBBBBBB', msg, 0, (midP << 4) + mid,0x89,0xd8,0xa7,0x02,0xfc,0x08,0x00)
+  elif (mid == 3):
+    struct.pack_into('BBBBBBBB', msg, 0, (midP << 4) + mid,0xa9,0x07,0x72,0xda,0x6b,0x10,0x3a)
+  elif (mid == 4):
+    struct.pack_into('BBBBBBBB', msg, 0, (midP << 4) + mid,0x00,0x00,0x00,0x00,0x00,0x00,0x00)
+  elif (mid == 5):
+    struct.pack_into('BBBBBBBB', msg, 0, (midP << 4) + mid,0xd6,0x33,0x32,0x49,0xb4,0xf7,0xb2)
+  elif (mid == 6):
+    struct.pack_into('BBBBBBBB', msg, 0, (midP << 4) + mid,0x00,0x48,0x00,0x00,0x00,0x00,0x00)
+  elif (mid == 7):
+    struct.pack_into('BBBBBBBB', msg, 0, (midP << 4) + mid,0x00,0x48,0x00,0x00,0x00,0x00,0x00)
+  elif (mid == 8):
+    struct.pack_into('BBBBBBBB', msg, 0, (midP << 4) + mid,0x00,0x00,0x00,0x00,0x05,0x00,0x01)
+  else:
+    struct.pack_into('BBBBBBBB', msg, 0, (midP << 4) + mid,0xf9,0x11,0x00,0x00,0x00,0x00,0x0c)
+  return [msg_id, 0, msg.raw, 0]
 
+def create_DAS_telemetryEvent(midP,mid):
+  msg_id = 0x3D9
+  msg_len = 8
+  msg = create_string_buffer(msg_len)
+  if (mid == 0):
+    struct.pack_into('BBBBBBBB', msg, 0, (midP << 4) + mid,0x01,0x00,0x01,0x1f,0x00,0x00,0x00)
+  elif (mid == 1):
+    struct.pack_into('BBBBBBBB', msg, 0, (midP << 4) + mid,0xc8,0x53,0xe0,0x22,0xb0,0x04,0x00)
+  elif (mid == 2):
+    struct.pack_into('BBBBBBBB', msg, 0, (midP << 4) + mid,0x89,0xd8,0xa7,0x02,0xfc,0x08,0x00)
+  elif (mid == 3):
+    struct.pack_into('BBBBBBBB', msg, 0, (midP << 4) + mid,0x13,0xa0,0x68,0xf4,0xcd,0x07,0x3e)
+  elif (mid == 4):
+    struct.pack_into('BBBBBBBB', msg, 0, (midP << 4) + mid,0x4c,0x20,0x08,0x14,0xd8,0xe9,0xa0)
+  elif (mid == 5):
+    struct.pack_into('BBBBBBBB', msg, 0, (midP << 4) + mid,0x0a,0x2c,0x60,0x13,0x06,0xeb,0x21)
+  elif (mid == 6):
+    struct.pack_into('BBBBBBBB', msg, 0, (midP << 4) + mid,0x3f,0xf8,0x03,0xdc,0x07,0xeb,0x21)
+  elif (mid == 7):
+    struct.pack_into('BBBBBBBB', msg, 0, (midP << 4) + mid,0x00,0xe0,0xff,0x01,0xa0,0xe9,0x21)
+  elif (mid == 8):
+    struct.pack_into('BBBBBBBB', msg, 0, (midP << 4) + mid,0x00,0x00,0x28,0x82,0xa0,0x00,0x20)
+  else:
+    struct.pack_into('BBBBBBBB', msg, 0, (midP << 4) + mid,0x00,0xff,0xff,0xff,0xff,0x10,0x20)
+  return [msg_id, 0, msg.raw, 0]
+
+def create_DAS_control(idx,enabled,acc_speed_kph,accel_min,accel_max):
+  msg_id = 0x2B9
+  msg_len = 8
+  msg = create_string_buffer(msg_len)
+  acc_state = 0x00
+  aeb_event = 0x00
+  jerk_min = 0x000
+  jerk_max = 0x0F
+  if enabled:
+    acc_state = 0x04
+    acc_speed_kph = int(acc_speed_kph * 10)
+    accel_min = int((accel_min + 15 ) / 0.04)
+    accel_max = int((accel_max + 15 ) / 0.04)
+  else:
+    acc_speed_kph = 0xFFF
+    jerk_min = 0x1FF
+    jerk_max = 0x1FF
+    accel_min = 0x1FF
+    accel_max = 0x1FF
+  struct.pack_into('BBBBBBB', msg, 0, 0xff & acc_speed_kph,(acc_state << 4) + ((acc_speed_kph & 0xF00) >> 8),((jerk_min << 2) & 0xFF) + aeb_event,((jerk_max << 3) & 0xFF) +((jerk_min >> 6) & 0x07),((accel_min << 3) & 0xFF) + ((jerk_max >> 5) & 0x07),((accel_max << 4) & 0xFF) + ((accel_min >> 5) & 0x0F),(idx << 5) + ((accel_max >> 4) & 0x1F))
+  struct.pack_into('B', msg, msg_len-1, add_tesla_checksum(msg_id,msg))
+  return [msg_id, 0, msg.raw, 0]
+
+def create_GTW_carConfig_msg(real_carConfig_data,dasHw,autoPilot,fRadarHw):
+  msg_id = 0x398
+  msg_len = 8
+  msg = create_string_buffer(msg_len)
+  fake_carConfig_data = real_carConfig_data.copy()
+  fake_carConfig_data['GTW_dasHw'] = dasHw
+  fake_carConfig_data['GTW_autopilot'] = autoPilot
+  fake_carConfig_data['GTW_forwardRadarHw'] = fRadarHw
+
+  struct.pack_into('B', msg, 0, 
+                (int(fake_carConfig_data['GTW_dasHw']) << 6) + 
+                (int(fake_carConfig_data['GTW_unknown1']) << 5) +
+                (int(fake_carConfig_data['GTW_fourWheelDrive']) << 3) +
+                (int(fake_carConfig_data['GTW_performanceConfig'])))
+  struct.pack_into('B', msg, 1, 
+                (int(fake_carConfig_data['GTW_unknown2']) << 7) + 
+                (int(fake_carConfig_data['GTW_airSuspensionInstalled']) << 4) +
+                (int(fake_carConfig_data['GTW_forwardRadarHw']) << 2) +
+                (int(fake_carConfig_data['GTW_parkAssistInstalled'])))
+  struct.pack_into('B', msg, 2, 
+                ((int(fake_carConfig_data['GTW_country'])  & 0xFF00) >> 8))
+  struct.pack_into('B', msg, 3, 
+                ((int(fake_carConfig_data['GTW_country'])  & 0xFF)))
+  struct.pack_into('B', msg, 4, 
+                (int(fake_carConfig_data['GTW_radarPosition']) << 4) + 
+                (int(fake_carConfig_data['GTW_bodyControlsType']) << 3) +
+                (int(fake_carConfig_data['GTW_rhd']) << 2) +
+                (int(fake_carConfig_data['GTW_parkSensorGeometryType'])))
+  struct.pack_into('B', msg, 5, 
+                (int(fake_carConfig_data['GTW_chassisType']) << 6) + 
+                (int(fake_carConfig_data['GTW_epasType']) << 4) +
+                (int(fake_carConfig_data['GTW_frontCornerRadarHw']) << 2) +
+                (int(fake_carConfig_data['GTW_rearCornerRadarHw'])))
+  struct.pack_into('B', msg, 6, 
+                (int(fake_carConfig_data['GTW_rearSeatControllerMask']) << 5) + 
+                (int(fake_carConfig_data['GTW_wheelType'])))
+  struct.pack_into('B', msg, 7, 
+                (int(fake_carConfig_data['GTW_unknown3']) << 6) + 
+                (int(fake_carConfig_data['GTW_autopilot']) << 4) +
+                (int(fake_carConfig_data['GTW_brakeHwType']) << 2) +
+                (int(fake_carConfig_data['GTW_foldingMirrorsInstalled']) << 1) +
+                (int(fake_carConfig_data['GTW_euVehicle'])))
+  return [msg_id, 0, msg.raw, 0]
 
 def create_cruise_adjust_msg(spdCtrlLvr_stat, turnIndLvr_Stat, real_steering_wheel_stalk):
   """Creates a CAN message from the cruise control stalk.

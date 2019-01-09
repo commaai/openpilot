@@ -20,6 +20,7 @@ vec3 bb_car_space_to_full_frame(const  UIState *s, vec4 car_space_projective) {
 }
 
 
+
 void bb_ui_draw_vision_alert( UIState *s, int va_size, int va_color,
                                   const char* va_text1, const char* va_text2) {
   const UIScene *scene = &s->scene;
@@ -413,6 +414,7 @@ void bb_ui_draw_custom_alert( UIState *s) {
       if (!((bb_get_button_status(s,"msg") == 0) && (s->b.custom_message_status<=3))) {
         bb_ui_draw_vision_alert(s, ALERTSIZE_SMALL, s->b.custom_message_status,
                               s->b.custom_message,"");
+                              
       }
     } 
 }
@@ -757,9 +759,7 @@ void bb_ui_draw_logo( UIState *s) {
   nvgFill(s->vg);
 }
 
-
-
-void bb_ui_draw_UI( UIState *s) {
+void bb_ui_read_triState_switch( UIState *s) {
   //get 3-state switch position
   int tri_state_fd;
   char buffer[10];
@@ -775,6 +775,10 @@ void bb_ui_draw_UI( UIState *s) {
       s->b.tri_state_switch_last_read = bb_currentTimeInMilis();
     }
   }
+}
+
+void bb_ui_draw_UI( UIState *s) {
+  
   
   if (s->b.tri_state_switch == 1) {
 	  const UIScene *scene = &s->scene;
@@ -791,7 +795,6 @@ void bb_ui_draw_UI( UIState *s) {
     bb_ui_draw_custom_alert(s);
     bb_ui_draw_logo(s);
 	 }
-
    if (s->b.tri_state_switch ==2) {
 	 	const UIScene *scene = &s->scene;
 	  const int bb_dml_w = 180;
@@ -807,7 +810,20 @@ void bb_ui_draw_UI( UIState *s) {
     //bb_ui_draw_car(s);
 	 }
 	 if (s->b.tri_state_switch ==3) {
-	 	ui_draw_vision_grid(s);
+    //we now use the state 3 for minimalistic data alerts
+	 	const UIScene *scene = &s->scene;
+	  const int bb_dml_w = 180;
+	  const int bb_dml_x =  (scene->ui_viz_rx + (bdr_s*2));
+	  const int bb_dml_y = (box_y + (bdr_s*1.5))+220;
+	  
+	  const int bb_dmr_w = 180;
+	  const int bb_dmr_x = scene->ui_viz_rx + scene->ui_viz_rw - bb_dmr_w - (bdr_s*2) ; 
+	  const int bb_dmr_y = (box_y + (bdr_s*1.5))+220;
+    //bb_ui_draw_measures_left(s,bb_dml_x, bb_dml_y, bb_dml_w );
+    //bb_ui_draw_measures_right(s,bb_dmr_x, bb_dmr_y, bb_dmr_w );
+    bb_draw_buttons(s);
+    bb_ui_draw_custom_alert(s);
+    //bb_ui_draw_logo(s);
 	 }
 }
 
@@ -882,6 +898,9 @@ void  bb_ui_poll_update( UIState *s) {
     bb_polls[4].socket = s->b.gps_sock_raw;
     bb_polls[4].events = ZMQ_POLLIN;
     
+    //check tri-state switch
+    bb_ui_read_triState_switch(s);
+    
     while (true) {
         
 
@@ -939,6 +958,16 @@ void  bb_ui_poll_update( UIState *s) {
 
           strcpy(s->b.custom_message,datad.caText.str);
           s->b.custom_message_status = datad.caStatus;
+
+          if ((strlen(s->b.custom_message) > 0) && (strlen(s->scene.alert_text1)==0)){
+            if (!((bb_get_button_status(s,"msg") == 0) && (s->b.custom_message_status<=3))) {
+              set_awake(s, true);
+            }
+          }
+
+          if ((strlen(s->scene.alert_text1) > 0) || (strlen(s->scene.alert_text2) > 0) ) {
+            set_awake(s, true);
+          }
           
           capn_free(&ctx);
           zmq_msg_close(&msg);

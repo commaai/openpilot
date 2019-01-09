@@ -44,9 +44,6 @@ _A_TOTAL_MAX_BP = [0., 20., 40.]
 _FCW_A_ACT_V = [-3., -2.]
 _FCW_A_ACT_BP = [0., 30.]
 
-# max acceleration allowed in acc, which happens in restart
-A_ACC_MAX = max(_A_CRUISE_MAX_V_FOLLOWING)
-
 
 def calc_cruise_accel_limits(v_ego, following):
   a_cruise_min = interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V)
@@ -452,9 +449,9 @@ class Planner(object):
     if self.model_dead:
       events.append(create_event('modelCommIssue', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     if self.radar_dead or 'commIssue' in self.radar_errors:
-      events.append(create_event('radarCommIssue', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
+      events.append(create_event('radarCommIssue', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if 'fault' in self.radar_errors:
-      events.append(create_event('radarFault', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
+      events.append(create_event('radarFault', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if LaC.mpc_solution[0].cost > 10000. or LaC.mpc_nans:   # TODO: find a better way to detect when MPC did not converge
       events.append(create_event('plannerError', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
 

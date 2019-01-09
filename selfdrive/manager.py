@@ -95,13 +95,14 @@ managed_processes = {
   "proclogd": ("selfdrive/proclogd", ["./proclogd"]),
   "boardd": ("selfdrive/boardd", ["./boardd"]),   # not used directly
   "pandad": "selfdrive.pandad",
-  "ui": ("selfdrive/ui", ["./ui"]),
+  "ui": ("selfdrive/ui", ["./start.sh"]),
   "calibrationd": "selfdrive.locationd.calibrationd",
   "visiond": ("selfdrive/visiond", ["./visiond"]),
   "sensord": ("selfdrive/sensord", ["./sensord"]),
   "gpsd": ("selfdrive/sensord", ["./gpsd"]),
   "orbd": ("selfdrive/orbd", ["./orbd_wrapper.sh"]),
   "updated": "selfdrive.updated",
+  "speedlimitd": "selfdrive.speedlimitd",
 }
 android_packages = ("ai.comma.plus.offroad", "ai.comma.plus.frame")
 
@@ -128,6 +129,7 @@ persistent_processes = [
 
 car_started_processes = [
   'controlsd',
+  'speedlimitd',
   'loggerd',
   'sensord',
   'radard',
@@ -448,8 +450,6 @@ def main():
   if os.getenv("NOCONTROL") is not None:
     del managed_processes['controlsd']
     del managed_processes['radard']
-  if os.getenv("DEFAULTD") is not None:
-    managed_processes["controlsd"] = "selfdrive.controls.defaultd"
 
   # support additional internal only extensions
   try:
@@ -521,4 +521,3 @@ if __name__ == "__main__":
   main()
   # manual exit because we are forked
   sys.exit(0)
-

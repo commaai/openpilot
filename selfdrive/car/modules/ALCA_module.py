@@ -160,13 +160,18 @@ class ALCAController(object):
                             k_f=CS.CP.steerKf, pos_limit=1.0)
 
   def update_angle(self,enabled,CS,frame,actuators):
+    alcaMode = CS.cstm_btns.get_button_label2_index("alca")
+    #parameters that define the speed/aggressiveness of lane change modes
+    alca_m1 = [1., .9, .8]
+    alca_m2 = [1., 1., 1.7]
+    alca_m3 = [1., 0.5, 0.5]
     # speed variable parameters
-    cl_max_angle_delta = interp(CS.v_ego,CS.CL_MAX_ANGLE_DELTA_BP,CS.CL_MAX_ANGLE_DELTA)
-    cl_maxd_a =  interp(CS.v_ego, CS.CL_MAXD_BP, CS.CL_MAXD_A)
-    cl_lane_pass_time = interp(CS.v_ego,CS.CL_LANE_PASS_BP,CS.CL_LANE_PASS_TIME)
-    cl_timea_t = interp(CS.v_ego,CS.CL_TIMEA_BP,CS.CL_TIMEA_T)
+    cl_max_angle_delta = interp(CS.v_ego,CS.CL_MAX_ANGLE_DELTA_BP,CS.CL_MAX_ANGLE_DELTA) * alca_m1[alcaMode]
+    cl_maxd_a =  interp(CS.v_ego, CS.CL_MAXD_BP, CS.CL_MAXD_A) * alca_m3[alcaMode]
+    cl_lane_pass_time = interp(CS.v_ego,CS.CL_LANE_PASS_BP,CS.CL_LANE_PASS_TIME) * alca_m2[alcaMode]
+    cl_timea_t = interp(CS.v_ego,CS.CL_TIMEA_BP,CS.CL_TIMEA_T) * alca_m2[alcaMode]
     cl_lane_detect_factor = interp(CS.v_ego, CS.CL_LANE_DETECT_BP, CS.CL_LANE_DETECT_FACTOR)
-    cl_max_a = interp(CS.v_ego, CS.CL_MAX_A, CS.CL_MAX_A_BP)
+    cl_max_a = interp(CS.v_ego, CS.CL_MAX_A_BP, CS.CL_MAX_A)
     cl_adjust_factor = interp(CS.v_ego, CS.CL_ADJUST_FACTOR_BP, CS.CL_ADJUST_FACTOR)
     cl_reentry_angle = interp(CS.v_ego, CS.CL_REENTRY_ANGLE_BP, CS.CL_REENTRY_ANGLE)
     cl_min_v = CS.CL_MIN_V
@@ -435,7 +440,7 @@ class ALCAController(object):
           steers_max = interp(CS.v_ego, CS.CP.steerMaxBP, CS.CP.steerMaxV)
           self.pid.pos_limit = steers_max
           self.pid.neg_limit = -steers_max
-          output_steer = self.pid.update(new_angle, CS.angle_steers , check_saturation=(CS.v_ego > 10), override=CS.steer_override, feedforward=new_angle, speed=CS.v_ego, deadzone=0.0)
+          output_steer = self.pid.update(new_angle, CS.angle_steers , check_saturation=(CS.v_ego > 10), override=CS.steer_override, feedforward=new_angle * (CS.v_ego ** 2), speed=CS.v_ego, deadzone=0.0)
         else: 
           output_steer = actuators.steer
         return [new_angle,output_steer,new_ALCA_Enabled,new_turn_signal]

@@ -324,6 +324,35 @@ BO_ 1362 GAS_SENSOR: 6 INTERCEPTOR
  SG_ IDX : 39|4@0+ (1,0) [0|15] "" EON
  SG_ CHECKSUM : 47|8@0+ (1,0) [0|3] "" EON
 
+BO_ 920 GTW_carConfig: 8 GTW
+ SG_ GTW_performanceConfig : 2|3@0+ (1,0) [0|0] "" NEO
+ SG_ GTW_fourWheelDrive : 4|2@0+ (1,0) [0|0] ""  NEO
+ SG_ GTW_unknown1 : 5|1@0+ (1,0) [0|0] ""  NEO
+ SG_ GTW_dasHw : 7|2@0+ (1,0) [0|0] ""  NEO
+ SG_ GTW_parkAssistInstalled : 9|2@0+ (1,0) [0|0] ""  NEO
+ SG_ GTW_forwardRadarHw : 11|2@0+ (1,0) [0|0] "" NEO
+ SG_ GTW_airSuspensionInstalled : 14|3@0+ (1,0) [0|0] ""  NEO
+ SG_ GTW_unknown2 : 15|1@0+ (1,0) [0|0] ""  NEO
+ SG_ GTW_country : 23|16@0+ (1,0) [0|0] ""  NEO
+ SG_ GTW_parkSensorGeometryType : 33|2@0+ (1,0) [0|0] ""  NEO
+ SG_ GTW_rhd : 34|1@0+ (1,0) [0|0] ""  NEO
+ SG_ GTW_bodyControlsType : 35|1@0+ (1,0) [0|0] "" NEO
+ SG_ GTW_radarPosition : 39|4@0+ (1,0) [0|0] ""  NEO
+ SG_ GTW_rearCornerRadarHw : 41|2@0+ (1,0) [0|0] ""  NEO
+ SG_ GTW_frontCornerRadarHw : 43|2@0+ (1,0) [0|0] ""  NEO
+ SG_ GTW_epasType : 45|2@0+ (1,0) [0|0] ""  NEO
+ SG_ GTW_chassisType : 47|2@0+ (1,0) [0|2] ""  NEO
+ SG_ GTW_wheelType : 52|5@0+ (1,0) [0|0] ""  NEO
+ SG_ GTW_rearSeatControllerMask : 55|3@0+ (1,0) [0|7] ""  NEO
+ SG_ GTW_euVehicle : 56|1@0+ (1,0) [0|0] "" NEO
+ SG_ GTW_foldingMirrorsInstalled : 57|1@0+ (1,0) [0|0] ""  NEO
+ SG_ GTW_brakeHwType : 59|2@0+ (1,0) [0|2] ""  NEO
+ SG_ GTW_autopilot : 61|2@0+ (1,0) [0|0] ""  NEO
+ SG_ GTW_unknown3 : 63|2@0+ (1,0) [0|0] ""  NEO
+
+
+
+
 
 VAL_ 3 StW_Angl 16383 "SNA" ;
 VAL_ 3 StW_AnglSens_Id 2 "MUST" 0 "PSBL" 1 "SELF" ;

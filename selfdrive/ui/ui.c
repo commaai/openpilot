@@ -33,6 +33,7 @@
 #include "common/params.h"
 
 #include "cereal/gen/c/log.capnp.h"
+#include "slplay.h"
 
 //BB include BBUIState def
 #include "bbuistate.h"
@@ -117,6 +118,10 @@ typedef struct UIScene {
   float v_cruise;
   uint64_t v_cruise_update_ts;
   float v_ego;
+
+  float speedlimit;
+  bool speedlimit_valid;
+
   float curvature;
   int engaged;
   bool engageable;
@@ -148,6 +153,7 @@ typedef struct UIScene {
   // Used to show gps planner status
   bool gps_planner_active;
 
+  bool is_playing_alert;
 } UIScene;
 
 typedef struct UIState {
@@ -185,6 +191,8 @@ typedef struct UIState {
   void *livempc_sock_raw;
   zsock_t *plus_sock;
   void *plus_sock_raw;
+  zsock_t *map_data_sock;
+  void *map_data_sock_raw;
 
   zsock_t *uilayout_sock;
   void *uilayout_sock_raw;
@@ -224,9 +232,13 @@ typedef struct UIState {
   bool awake;
   int awake_timeout;
 
+  int volume_timeout;
+
   int status;
   bool is_metric;
   bool passive;
+  char alert_type[64];
+  char alert_sound[64];
   int alert_size;
   float alert_blinking_alpha;
   bool alert_blinked;
@@ -235,7 +247,6 @@ typedef struct UIState {
 } UIState;
 
 
-#include "bbui.h"
 
 static int last_brightness = -1;
 static void set_brightness(UIState *s, int brightness) {
@@ -252,13 +263,18 @@ static void set_brightness(UIState *s, int brightness) {
 static void set_awake(UIState *s, bool awake) {
   if (awake) {
     // 30 second timeout at 30 fps
-    s->awake_timeout = 30*30;
+    if (s->b.tri_state_switch < 3) {
+      s->awake_timeout = 30*30;
+    } else {
+      s->awake_timeout = 3*30;
+    }
   }
   if (s->awake != awake) {
     s->awake = awake;
 
     if (awake) {
       LOG("awake normal");
+      set_brightness(s, 150);
       framebuffer_set_power(s->fb, HWC_POWER_MODE_NORMAL);
     } else {
       LOG("awake off");
@@ -266,6 +282,18 @@ static void set_awake(UIState *s, bool awake) {
       framebuffer_set_power(s->fb, HWC_POWER_MODE_OFF);
     }
   }
+}
+
+#include "dashcam.h"
+#include "bbui.h"
+
+static void set_volume(UIState *s, int volume) {
+  char volume_change_cmd[64];
+  sprintf(volume_change_cmd, "service call audio 3 i32 3 i32 %d i32 1", volume);
+
+  // 5 second timeout at 60fps
+  s->volume_timeout = 5 * 60;
+  int volume_changed = system(volume_change_cmd);
 }
 
 volatile int do_exit = 0;
@@ -334,6 +362,43 @@ static const mat4 full_to_wide_frame_transform = {{
   0.0,  0.0, 0.0, 1.0,
 }};
 
+typedef struct {
+  const char* name;
+  const char* uri;
+  bool loop;
+} sound_file;
+
+sound_file sound_table[] = {
+  { "chimeDisengage", "../assets/sounds/disengaged.wav", false },
+  { "chimeEngage", "../assets/sounds/engaged.wav", false },
+  { "chimeWarning1", "../assets/sounds/warning_1.wav", false },
+  { "chimeWarning2", "../assets/sounds/warning_2.wav", false },
+  { "chimeWarningRepeat", "../assets/sounds/warning_2.wav", true },
+  { "chimeError", "../assets/sounds/error.wav", false },
+  { "chimePrompt", "../assets/sounds/error.wav", false },
+  { NULL, NULL, false },
+};
+
+sound_file* get_sound_file_by_name(const char* name) {
+  for (sound_file *s = sound_table; s->name != NULL; s++) {
+    if (strcmp(s->name, name) == 0) {
+      return s;
+    }
+  }
+
+  return NULL;
+}
+
+void ui_sound_init(char **error) {
+  slplay_setup(error);
+  if (*error) return;
+
+  for (sound_file *s = sound_table; s->name != NULL; s++) {
+    slplay_create_player_for_uri(s->uri, error);
+    if (*error) return;
+  }
+}
+
 static void ui_init(UIState *s) {
   memset(s, 0, sizeof(UIState));
 
@@ -373,6 +438,10 @@ static void ui_init(UIState *s) {
   s->plus_sock = zsock_new_sub(">tcp://127.0.0.1:8037", "");
   assert(s->plus_sock);
   s->plus_sock_raw = zsock_resolve(s->plus_sock);
+
+  s->map_data_sock = zsock_new_sub(">tcp://127.0.0.1:8065", "");
+  assert(s->map_data_sock);
+  s->map_data_sock_raw = zsock_resolve(s->map_data_sock);
 
   s->ipc_fd = -1;
 
@@ -575,6 +644,10 @@ static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
   float g_xo = sz/5;
   float g_yo = sz/10;
   //BB added for printing the car
+  //if position is 3 do nothing
+  if (s->b.tri_state_switch == 3) {
+    return;
+  }
   if (s->b.tri_state_switch == 2) {
     nvgRestore(s->vg);
     bb_ui_draw_car(s);
@@ -655,7 +728,7 @@ static void ui_draw_lane_line(UIState *s, const float *points, float off,
 
 static void ui_draw_lane(UIState *s, const PathData path, NVGcolor color) {
   //BB added to make the line blue
-  if (s->b.tri_state_switch == 2) {
+  if (s->b.tri_state_switch >= 2) {
     color = nvgRGBA(66, 220, 244,250);
   }
   //BB end  
@@ -799,7 +872,7 @@ static void draw_frame(UIState *s) {
 
   glActiveTexture(GL_TEXTURE0);
   //BB added to suppress video printing
-  if (s->b.tri_state_switch != 2) {
+  if (s->b.tri_state_switch == 1) {
     if (s->scene.frontview && s->cur_vision_front_idx >= 0) {
       glBindTexture(GL_TEXTURE_2D, s->frame_front_texs[s->cur_vision_front_idx]);
     } else if (!scene->frontview && s->cur_vision_idx >= 0) {
@@ -827,6 +900,10 @@ static void draw_frame(UIState *s) {
 
 static void ui_draw_vision_lanes(UIState *s) {
   const UIScene *scene = &s->scene;
+  //draw nothing if position is 3
+  if (s->b.tri_state_switch == 3) {
+    return;
+  }
   //BB add to draw our lanes
   if (s->b.tri_state_switch == 2) {
     bb_draw_lane_fill(s);
@@ -921,6 +998,76 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   //BB START: add new measures panel  const int bb_dml_w = 180;
 	bb_ui_draw_UI(s) ;
   //BB END: add new measures panel
+}
+
+static void ui_draw_vision_speedlimit(UIState *s) {
+  const UIScene *scene = &s->scene;
+  int ui_viz_rx = scene->ui_viz_rx;
+  int ui_viz_rw = scene->ui_viz_rw;
+
+  if (!s->scene.speedlimit_valid){
+    return;
+  }
+
+  float speedlimit = s->scene.speedlimit;
+
+  const int viz_maxspeed_w = 180;
+  const int viz_maxspeed_h = 202;
+
+  const int viz_event_w = 220;
+  const int viz_event_x = ((ui_viz_rx + ui_viz_rw) - (viz_event_w + (bdr_s*2)));
+
+  const int viz_maxspeed_x = viz_event_x + (viz_event_w-viz_maxspeed_w);
+  const int viz_maxspeed_y = (footer_y + ((footer_h - viz_maxspeed_h) / 2)) - 20;
+
+  char maxspeed_str[32];
+
+  if (s->is_metric) {
+    nvgBeginPath(s->vg);
+    nvgCircle(s->vg, viz_maxspeed_x + viz_maxspeed_w / 2, viz_maxspeed_y + viz_maxspeed_h / 2, 127);
+    nvgFillColor(s->vg, nvgRGBA(195, 0, 0, 255));
+    nvgFill(s->vg);
+
+    nvgBeginPath(s->vg);
+    nvgCircle(s->vg, viz_maxspeed_x + viz_maxspeed_w / 2, viz_maxspeed_y + viz_maxspeed_h / 2, 100);
+    nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 255));
+    nvgFill(s->vg);
+
+    nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
+    nvgFontFace(s->vg, "sans-bold");
+    nvgFontSize(s->vg, 130);
+    nvgFillColor(s->vg, nvgRGBA(0, 0, 0, 255));
+
+    snprintf(maxspeed_str, sizeof(maxspeed_str), "%d", (int)(speedlimit * 3.6 + 0.5));
+    nvgText(s->vg, viz_maxspeed_x+viz_maxspeed_w/2, viz_maxspeed_y + 135, maxspeed_str, NULL);
+  } else {
+    const int border = 10;
+    nvgBeginPath(s->vg);
+    nvgRoundedRect(s->vg, viz_maxspeed_x - border, viz_maxspeed_y - border, viz_maxspeed_w + 2 * border, viz_maxspeed_h + 2 * border, 30);
+    nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 255));
+    nvgFill(s->vg);
+
+    nvgBeginPath(s->vg);
+    nvgRoundedRect(s->vg, viz_maxspeed_x, viz_maxspeed_y, viz_maxspeed_w, viz_maxspeed_h, 20);
+    nvgStrokeColor(s->vg, nvgRGBA(0, 0, 0, 255));
+    nvgStrokeWidth(s->vg, 8);
+    nvgStroke(s->vg);
+
+
+    nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
+    nvgFontFace(s->vg, "sans-semibold");
+    nvgFontSize(s->vg, 50);
+    nvgFillColor(s->vg, nvgRGBA(0, 0, 0, 255));
+    nvgText(s->vg, viz_maxspeed_x+viz_maxspeed_w/2, viz_maxspeed_y + 50, "SPEED", NULL);
+    nvgText(s->vg, viz_maxspeed_x+viz_maxspeed_w/2, viz_maxspeed_y + 90, "LIMIT", NULL);
+
+    nvgFontFace(s->vg, "sans-bold");
+    nvgFontSize(s->vg, 120);
+    nvgFillColor(s->vg, nvgRGBA(0, 0, 0, 255));
+
+    snprintf(maxspeed_str, sizeof(maxspeed_str), "%d", (int)(speedlimit * 2.2369363 + 0.5));
+    nvgText(s->vg, viz_maxspeed_x+viz_maxspeed_w/2, viz_maxspeed_y + 170, maxspeed_str, NULL);
+ }
 }
 
 static void ui_draw_vision_speed(UIState *s) {
@@ -1052,6 +1199,8 @@ static void ui_draw_vision_footer(UIState *s) {
 
   // Driver Monitoring
   ui_draw_vision_face(s);
+
+  ui_draw_vision_speedlimit(s);
 }
 
 static void ui_draw_vision_alert(UIState *s, int va_size, int va_color,
@@ -1106,6 +1255,7 @@ static void ui_draw_vision_alert(UIState *s, int va_size, int va_color,
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BOTTOM);
     nvgTextBox(s->vg, alr_x, alr_h-(longAlert1?300:360), alr_w-60, va_text2, NULL);
   }
+  
 }
 
 
@@ -1236,6 +1386,7 @@ static void update_status(UIState *s, int status) {
   int old_status = s->status;
   if (s->status != status) {
     s->status = status;
+    set_awake(s, true);
     // wake up bg thread to change
     pthread_cond_signal(&s->bg_cond);
     //BB add sound
@@ -1315,7 +1466,7 @@ static void ui_update(UIState *s) {
 
   // poll for events
   while (true) {
-    zmq_pollitem_t polls[9] = {{0}};
+    zmq_pollitem_t polls[10] = {{0}};
     polls[0].socket = s->live100_sock_raw;
     polls[0].events = ZMQ_POLLIN;
     polls[1].socket = s->livecalibration_sock_raw;
@@ -1330,14 +1481,16 @@ static void ui_update(UIState *s) {
     polls[5].events = ZMQ_POLLIN;
     polls[6].socket = s->uilayout_sock_raw;
     polls[6].events = ZMQ_POLLIN;
-    polls[7].socket = s->plus_sock_raw;
+    polls[7].socket = s->map_data_sock_raw;
     polls[7].events = ZMQ_POLLIN;
+    polls[8].socket = s->plus_sock_raw; // plus_sock should be last
+    polls[8].events = ZMQ_POLLIN;
 
-    int num_polls = 8;
+    int num_polls = 9;
     if (s->vision_connected) {
       assert(s->ipc_fd >= 0);
-      polls[8].fd = s->ipc_fd;
-      polls[8].events = ZMQ_POLLIN;
+      polls[9].fd = s->ipc_fd;
+      polls[9].events = ZMQ_POLLIN;
       num_polls++;
     }
 
@@ -1351,12 +1504,15 @@ static void ui_update(UIState *s) {
     }
 
     if (polls[0].revents || polls[1].revents || polls[2].revents ||
-        polls[3].revents || polls[4].revents || polls[6].revents || polls[7].revents) {
-      // awake on any (old) activity
-      set_awake(s, true);
+        polls[3].revents || polls[4].revents || polls[6].revents ||
+        polls[7].revents || polls[8].revents) {
+      // awake on any (old) activity if tri-state in 1 or 2 position
+      if(s->b.tri_state_switch < 3) {
+        set_awake(s, true);
+      } 
     }
 
-    if (s->vision_connected && polls[8].revents) {
+    if (s->vision_connected && polls[9].revents) {
       // vision ipc event
       VisionPacket rp;
       err = vipc_recv(s->ipc_fd, &rp);
@@ -1399,7 +1555,7 @@ static void ui_update(UIState *s) {
       } else {
         assert(false);
       }
-    } else if (polls[7].revents) {
+    } else if (polls[8].revents) {
       // plus socket
 
       zmq_msg_t msg;
@@ -1459,9 +1615,40 @@ static void ui_update(UIState *s) {
         s->scene.engageable = datad.engageable;
         s->scene.gps_planner_active = datad.gpsPlannerActive;
         s->scene.monitoring_active = datad.driverMonitoringOn;
-        // printf("recv %f\n", datad.vEgo);
 
         s->scene.frontview = datad.rearViewCam;
+
+        if (datad.alertSound.str && datad.alertSound.str[0] != '\0' && strcmp(s->alert_type, datad.alertType.str) != 0) {
+          char* error = NULL;
+          if (s->alert_sound[0] != '\0') {
+            sound_file* active_sound = get_sound_file_by_name(s->alert_sound);
+            slplay_stop_uri(active_sound->uri, &error);
+            if (error) {
+              LOGW("error stopping active sound %s", error);
+            }
+          }
+
+          sound_file* sound = get_sound_file_by_name(datad.alertSound.str);
+          slplay_play(sound->uri, sound->loop, &error);
+          if(error) {
+            LOGW("error playing sound: %s", error);
+          }
+
+          snprintf(s->alert_sound, sizeof(s->alert_sound), "%s", datad.alertSound.str);
+          snprintf(s->alert_type, sizeof(s->alert_type), "%s", datad.alertType.str);
+        } else if ((!datad.alertSound.str || datad.alertSound.str[0] == '\0') && s->alert_sound[0] != '\0') {
+          sound_file* sound = get_sound_file_by_name(s->alert_sound);
+
+          char* error = NULL;
+
+          slplay_stop_uri(sound->uri, &error);
+          if(error) {
+            LOGW("error stopping sound: %s", error);
+          }
+          s->alert_type[0] = '\0';
+          s->alert_sound[0] = '\0';
+        }
+
         if (datad.alertText1.str) {
           snprintf(s->scene.alert_text1, sizeof(s->scene.alert_text1), "%s", datad.alertText1.str);
         } else {
@@ -1514,7 +1701,6 @@ static void ui_update(UIState *s) {
             }
           }
         }
-
       } else if (eventd.which == cereal_Event_live20) {
         struct cereal_Live20Data datad;
         cereal_read_Live20Data(&datad, eventd.live20);
@@ -1609,6 +1795,11 @@ static void ui_update(UIState *s) {
             s->scene.ui_viz_rw = hasSidebar ? box_w : (box_w+sbr_w-(bdr_s*2));
             s->scene.ui_viz_ro = hasSidebar ? -(sbr_w - 6*bdr_s) : 0;
           }
+      } else if (eventd.which == cereal_Event_liveMapData) {
+        struct cereal_LiveMapData datad;
+        cereal_read_LiveMapData(&datad, eventd.liveMapData);
+        s->scene.speedlimit = datad.speedLimit;
+        s->scene.speedlimit_valid = datad.valid;
       }
       capn_free(&ctx);
       zmq_msg_close(&msg);
@@ -1813,6 +2004,13 @@ int main() {
   TouchState touch = {0};
   touch_init(&touch);
 
+  char* error = NULL;
+  ui_sound_init(&error);
+  if (error) {
+    LOGW(error);
+    exit(1);
+  }
+
   // light sensor scaling params
   const int EON = (access("/EON", F_OK) != -1);
   const int LEON = is_leon();
@@ -1822,6 +2020,8 @@ int main() {
   #define NEO_BRIGHTNESS 100
 
   float smooth_brightness = BRIGHTNESS_B;
+
+  set_volume(s, 0);
 
   while (!do_exit) {
     bool should_swap = false;
@@ -1860,9 +2060,17 @@ int main() {
     }
 
     if (s->awake) {
+      dashcam(s, touch_x, touch_y);
       ui_draw(s);
       glFinish();
       should_swap = true;
+    }
+
+    if (s->volume_timeout > 0) {
+      s->volume_timeout--;
+    } else {
+      int volume = min(13, 11 + s->scene.v_ego / 15);  // up one notch every 15 m/s, starting at 11
+      set_volume(s, volume);
     }
 
     pthread_mutex_unlock(&s->lock);
@@ -1875,6 +2083,8 @@ int main() {
   }
 
   set_awake(s, true);
+
+  slplay_destroy();
 
   // wake up bg thread to exit
   pthread_mutex_lock(&s->lock);

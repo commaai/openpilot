@@ -9,23 +9,21 @@ from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET,
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.tesla.carstate import CarState, get_can_parser, get_epas_parser
 from selfdrive.car.tesla.values import CruiseButtons, CM, BP, AH, CAR
-from selfdrive.controls.lib.planner import A_ACC_MAX
+from selfdrive.controls.lib.planner import _A_CRUISE_MAX_V_FOLLOWING
 
 try:
   from selfdrive.car.tesla.carcontroller import CarController
 except ImportError:
   CarController = None
 
-K_MULT = .8
-K_MULTi = 280.
+AudibleAlert = car.CarControl.HUDControl.AudibleAlert
+VisualAlert = car.CarControl.HUDControl.VisualAlert
+
+K_MULT = 0.8 
+K_MULTi = 280000.
+
 def tesla_compute_gb(accel, speed):
-  creep_brake = 0.0
-  creep_speed = 2.3
-  creep_brake_value = 0.15
-  if speed < creep_speed:
-    creep_brake = (creep_speed - speed) / creep_speed * creep_brake_value
-  return float(accel) / 4.8 - creep_brake
-  #return float(accel)
+  return float(accel) / 3.
 
 
 class CarInterface(object):
@@ -77,7 +75,7 @@ class CarInterface(object):
     # accelOverride is more or less the max throttle allowed to pcm: usually set to a constant
     # unless aTargetMax is very high and then we scale with it; this help in quicker restart
 
-    return float(max(0.714, a_target / A_ACC_MAX)) * min(speedLimiter, accelLimiter)
+    return float(max(0.714, a_target / max(_A_CRUISE_MAX_V_FOLLOWING))) * min(speedLimiter, accelLimiter)
 
   @staticmethod
   def get_params(candidate, fingerprint):
@@ -171,7 +169,7 @@ class CarInterface(object):
     ret.steerMaxV = [420.,420.]   # max steer allowed
 
     ret.gasMaxBP = [0.]  # m/s
-    ret.gasMaxV = [0.6] #if ret.enableGasInterceptor else [0.] # max gas allowed
+    ret.gasMaxV = [0.3] #if ret.enableGasInterceptor else [0.] # max gas allowed
     ret.brakeMaxBP = [0., 20.]  # m/s
     ret.brakeMaxV = [1., 1.]   # max brake allowed - BB: since we are using regen, make this even
 
@@ -282,13 +280,10 @@ class CarInterface(object):
         be.type = 'altButton3'
       buttonEvents.append(be)
 
-    if self.CS.cruise_setting != self.CS.prev_cruise_setting:
+    if self.CS.cruise_buttons != self.CS.prev_cruise_buttons:
       be = car.CarState.ButtonEvent.new_message()
       be.type = 'unknown'
-      if self.CS.cruise_setting != 0:
-        be.pressed = True
-      else:
-        be.pressed = False
+      be.pressed = bool(self.CS.cruise_buttons)
       buttonEvents.append(be)
     ret.buttonEvents = buttonEvents
 
@@ -404,24 +399,27 @@ class CarInterface(object):
     else:
       hud_v_cruise = 255
 
-    hud_alert = {
-      "none": AH.NONE,
-      "fcw": AH.FCW,
-      "steerRequired": AH.STEER,
-      "brakePressed": AH.BRAKE_PRESSED,
-      "wrongGear": AH.GEAR_NOT_D,
-      "seatbeltUnbuckled": AH.SEATBELT,
-      "speedTooHigh": AH.SPEED_TOO_HIGH}[str(c.hudControl.visualAlert)]
+    VISUAL_HUD = {
+      VisualAlert.none: AH.NONE,
+      VisualAlert.fcw: AH.FCW,
+      VisualAlert.steerRequired: AH.STEER,
+      VisualAlert.brakePressed: AH.BRAKE_PRESSED,
+      VisualAlert.wrongGear: AH.GEAR_NOT_D,
+      VisualAlert.seatbeltUnbuckled: AH.SEATBELT,
+      VisualAlert.speedTooHigh: AH.SPEED_TOO_HIGH}
 
-    snd_beep, snd_chime = {
-      "none": (BP.MUTE, CM.MUTE),
-      "beepSingle": (BP.SINGLE, CM.MUTE),
-      "beepTriple": (BP.TRIPLE, CM.MUTE),
-      "beepRepeated": (BP.REPEATED, CM.MUTE),
-      "chimeSingle": (BP.MUTE, CM.SINGLE),
-      "chimeDouble": (BP.MUTE, CM.DOUBLE),
-      "chimeRepeated": (BP.MUTE, CM.REPEATED),
-      "chimeContinuous": (BP.MUTE, CM.CONTINUOUS)}[str(c.hudControl.audibleAlert)]
+    AUDIO_HUD = {
+      AudibleAlert.none: (BP.MUTE, CM.MUTE),
+      AudibleAlert.chimeEngage: (BP.SINGLE, CM.MUTE),
+      AudibleAlert.chimeDisengage: (BP.SINGLE, CM.MUTE),
+      AudibleAlert.chimeError: (BP.MUTE, CM.DOUBLE),
+      AudibleAlert.chimePrompt: (BP.MUTE, CM.SINGLE),
+      AudibleAlert.chimeWarning1: (BP.MUTE, CM.DOUBLE),
+      AudibleAlert.chimeWarning2: (BP.MUTE, CM.REPEATED),
+      AudibleAlert.chimeWarningRepeat: (BP.MUTE, CM.REPEATED)}
+
+    hud_alert = VISUAL_HUD[c.hudControl.visualAlert.raw]
+    snd_beep, snd_chime = AUDIO_HUD[c.hudControl.audibleAlert.raw]
 
     pcm_accel = int(clip(c.cruiseControl.accelOverride,0,1)*0xc6)
 
