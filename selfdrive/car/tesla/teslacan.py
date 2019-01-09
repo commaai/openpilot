@@ -291,40 +291,7 @@ def create_GTW_carConfig_msg(real_carConfig_data,dasHw,autoPilot,fRadarHw):
   fake_carConfig_data['GTW_dasHw'] = dasHw
   fake_carConfig_data['GTW_autopilot'] = autoPilot
   fake_carConfig_data['GTW_forwardRadarHw'] = fRadarHw
-
-  struct.pack_into('B', msg, 0, 
-                (int(fake_carConfig_data['GTW_dasHw']) << 6) + 
-                (int(fake_carConfig_data['GTW_unknown1']) << 5) +
-                (int(fake_carConfig_data['GTW_fourWheelDrive']) << 3) +
-                (int(fake_carConfig_data['GTW_performanceConfig'])))
-  struct.pack_into('B', msg, 1, 
-                (int(fake_carConfig_data['GTW_unknown2']) << 7) + 
-                (int(fake_carConfig_data['GTW_airSuspensionInstalled']) << 4) +
-                (int(fake_carConfig_data['GTW_forwardRadarHw']) << 2) +
-                (int(fake_carConfig_data['GTW_parkAssistInstalled'])))
-  struct.pack_into('B', msg, 2, 
-                ((int(fake_carConfig_data['GTW_country'])  & 0xFF00) >> 8))
-  struct.pack_into('B', msg, 3, 
-                ((int(fake_carConfig_data['GTW_country'])  & 0xFF)))
-  struct.pack_into('B', msg, 4, 
-                (int(fake_carConfig_data['GTW_radarPosition']) << 4) + 
-                (int(fake_carConfig_data['GTW_bodyControlsType']) << 3) +
-                (int(fake_carConfig_data['GTW_rhd']) << 2) +
-                (int(fake_carConfig_data['GTW_parkSensorGeometryType'])))
-  struct.pack_into('B', msg, 5, 
-                (int(fake_carConfig_data['GTW_chassisType']) << 6) + 
-                (int(fake_carConfig_data['GTW_epasType']) << 4) +
-                (int(fake_carConfig_data['GTW_frontCornerRadarHw']) << 2) +
-                (int(fake_carConfig_data['GTW_rearCornerRadarHw'])))
-  struct.pack_into('B', msg, 6, 
-                (int(fake_carConfig_data['GTW_rearSeatControllerMask']) << 5) + 
-                (int(fake_carConfig_data['GTW_wheelType'])))
-  struct.pack_into('B', msg, 7, 
-                (int(fake_carConfig_data['GTW_unknown3']) << 6) + 
-                (int(fake_carConfig_data['GTW_autopilot']) << 4) +
-                (int(fake_carConfig_data['GTW_brakeHwType']) << 2) +
-                (int(fake_carConfig_data['GTW_foldingMirrorsInstalled']) << 1) +
-                (int(fake_carConfig_data['GTW_euVehicle'])))
+  struct.pack_into('BBBBBBBB',msg,0,0x01,0x00,0x55,0x53,0x00,0x01,0x00,0x00)
   return [msg_id, 0, msg.raw, 0]
 
 def create_cruise_adjust_msg(spdCtrlLvr_stat, turnIndLvr_Stat, real_steering_wheel_stalk):

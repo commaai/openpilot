@@ -9,6 +9,9 @@ from selfdrive.car.modules.UIBT_module import UIButtons, UIButton
 import numpy as np
 from ctypes import create_string_buffer
 from selfdrive.car.modules.UIEV_module import UIEvents
+import os
+import subprocess
+import sys
  
 def parse_gear_shifter(can_gear_shifter, car_fingerprint):
 
@@ -196,8 +199,8 @@ class CarState(object):
     # labels for buttons
     self.btns_init = [["alca",                "ALC",                      ["MadMax", "Normal", "Calm"]],
                       [ACCMode.BUTTON_NAME,   ACCMode.BUTTON_ABREVIATION, ACCMode.labels()],
-                      ["steer",               "STR",                      [""]],
-                      ["brake",               "BRK",                      [""]],
+                      ["tsk",               "TSK",                      ["Left","Middle","Right"]],
+                      ["vision",               "VIS",                      ["wiggly","normal"]],
                       ["msg",                 "MSG",                      [""]],
                       ["sound",               "SND",                      [""]]]
 
@@ -322,6 +325,9 @@ class CarState(object):
     #BB carConfig data used to change IC info
     self.real_carConfig = None
     self.real_dasHw = 0
+
+    #BB visiond last type
+    self.last_visiond = self.cstm_btns.btns[3].btn_label2
     
      
     # vEgo kalman filter
@@ -354,6 +360,15 @@ class CarState(object):
     btn.btn_label2 = self.btns_init[1][2][0]
     btn.btn_status = 1
     self.cstm_btns.update_ui_buttons(1, 1)    
+
+  def update_ui_buttons(self,id,btn_status):
+    # we only focus on id=3, which is for visiond
+    if (id == 3) and (self.cstm_btns.btns[id].btn_status > 0) and (self.last_visiond != self.cstm_btns.btns[id].btn_label2):
+      self.last_visiond = self.cstm_btns.btns[id].btn_label2
+      # we switched between wiggly and normal
+      args = ["/data/openpilot/selfdrive/car/modules/ch_visiond.sh", self.cstm_btns.btns[id].btn_label2]
+      subprocess.Popen(args, shell = False, stdin=None, stdout=None, stderr=None, env = dict(os.environ), close_fds=True)
+
 
   def update(self, cp, epas_cp):
 

@@ -192,3 +192,9 @@ class UIButtons:
                 self.CS.cstm_btns.btns[id].btn_status = btn_status * self.CS.cstm_btns.btns[id].btn_status
         else:
             self.CS.cstm_btns.btns[id].btn_status = btn_status
+        try:
+            #try to see if there is custom CS function for updating ui buttons
+            self.CS.update_ui_buttons(id,btn_status)
+        except AttributeError:
+            # no update method
+            print "Buttons updated with just base code"
