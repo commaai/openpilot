@@ -106,8 +106,8 @@ class CarInterface(object):
     centerToFront = wheelbase * 0.48
     centerToRear = wheelbase - centerToFront
     rotationalInertia = 2500
-    tireStiffnessFront = 85400
-    tireStiffnessRear = 90000
+    tireStiffnessFront = 95400
+    tireStiffnessRear = 100000
 
     #mass_models = 4722./2.205 + std_cargo
     #wheelbase_models = 2.959
@@ -127,7 +127,7 @@ class CarInterface(object):
       ret.centerToFront = ret.wheelbase * 0.48
       ret.steerRatio = 15
       # Kp and Ki for the lateral control for 0, 20, 40, 60 mph
-      ret.steerKpV, ret.steerKiV = [[1.20, 0.80, 0.60, 0.35], [0.16, 0.12, 0.08, 0.03]]
+      ret.steerKpV, ret.steerKiV = [[1.20, 0.80, 0.60, 0.375], [0.16, 0.12, 0.08, 0.03]]
       ret.steerKf = 0.00006 # Initial test value TODO: investigate FF steer control for Model S?
       ret.steerActuatorDelay = 0.09
 
