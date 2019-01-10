@@ -867,6 +867,7 @@ void bb_ui_init(UIState *s) {
     strcpy(s->b.car_folder,"tesla");
     s->b.tri_state_switch = -1;
     s->b.tri_state_switch_last_read = 0;
+    s->b.touch_last_width = s->scene.ui_viz_rw;
 
     //BB Define CAPNP sock
     s->b.uiButtonInfo_sock = zsock_new_sub(">tcp://127.0.0.1:8201", "");
