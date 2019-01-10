@@ -133,7 +133,7 @@ class CarController(object):
 
     # *** compute control surfaces ***
     BRAKE_MAX = 1024/4
-    if CS.CP.carFingerprint in (CAR.ACURA_ILX):
+    if CS.CP.carFingerprint in (CAR.ACURA_ILX, CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH):
       STEER_MAX = 0xF00
       STEER_SCALE = STEER_MAX
     elif CS.CP.carFingerprint in (CAR.CRV, CAR.ACURA_RDX):
