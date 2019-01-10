@@ -489,18 +489,18 @@ class PCCController(object):
           min_vrel_kph_map = OrderedDict([
             # (distance in m, min allowed relative kph)
             (0.5 * safe_dist_m, 2),
-            (1.0 * safe_dist_m, -5),
-            (1.5 * safe_dist_m, -8),
+            (1.0 * safe_dist_m, -6),
+            (1.5 * safe_dist_m, -10),
             (3.0 * safe_dist_m, -20)])
           min_vrel_kph = _interp_map(lead_dist_m, min_vrel_kph_map)
           max_vrel_kph_map = OrderedDict([
             # (distance in m, max allowed relative kph)
-            (0.5 * safe_dist_m, 10),
-            (1.0 * safe_dist_m, 3),
+            (0.5 * safe_dist_m, 8),
+            (1.0 * safe_dist_m, 1),
             (1.5 * safe_dist_m, 0),
             # With visual radar the relative velocity is 0 until the confidence
             # gets high. So even a small negative number here gives constant
-            # accel until lead car gets close.
+            # accel until lead lead car gets close enough to read.
             (2.0 * safe_dist_m, -2)])
           max_vrel_kph = _interp_map(lead_dist_m, max_vrel_kph_map)
           min_kph = lead_absolute_speed_kph - max_vrel_kph
@@ -567,7 +567,7 @@ def _accel_limit_multiplier(v_ego, lead):
     safe_dist_m = _safe_distance_m(v_ego)
     accel_multipliers = OrderedDict([
       # (distance in m, acceleration fraction)
-      (0.7 * safe_dist_m, 0.0),
+      (0.6 * safe_dist_m, 0.0),
       (1.0 * safe_dist_m, 0.4),
       (3.0 * safe_dist_m, 1.0)])
     return _interp_map(lead.dRel, accel_multipliers)
@@ -605,7 +605,7 @@ def _jerk_limits(v_ego, lead, max_speed_kph, lead_last_seen_time_ms):
     safe_dist_m = _safe_distance_m(v_ego) 
     accel_jerk_map = OrderedDict([
       # (distance in m, accel jerk)
-      (1.0 * safe_dist_m, 0.01),
+      (0.8 * safe_dist_m, 0.01),
       (2.8 * safe_dist_m, 0.11)])
     accel_jerk = _interp_map(lead.dRel, accel_jerk_map)
     accel_jerk *= near_max_speed_multiplier
