@@ -39,7 +39,7 @@ class CarController(object):
   def update(self, sendcan, enabled, CS, frame, actuators,
              pcm_cancel_cmd, hud_alert, audible_alert):
 
-    # this seems needed to avoid steerign faults and to force the sync with the EPS counter
+    # this seems needed to avoid steering faults and to force the sync with the EPS counter
     if self.prev_frame == frame:
       return
 
