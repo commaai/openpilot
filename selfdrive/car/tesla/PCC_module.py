@@ -18,16 +18,20 @@ import numpy as np
 from collections import OrderedDict
 
 
+_DT = 0.05    # 20Hz in our case, since we don't want to process more than once the same live20 message
+_DT_MPC = 0.05  # 20Hz
+
 # TODO: these should end up in values.py at some point, probably variable by trim
 # Accel limits
+MAX_PEDAL_VALUE = 112.
 PEDAL_HYST_GAP = 0.5  # don't change pedal command for small oscilalitons within this value
-PEDAL_MAX_UP = 3.
-PEDAL_MAX_DOWN = 50.
+# Cap the pedal to go from 0 to max in 2 seconds
+PEDAL_MAX_UP = MAX_PEDAL_VALUE * _DT / 2
+# Cap the pedal to go from max to 0 in 0.5 seconds
+PEDAL_MAX_DOWN = MAX_PEDAL_VALUE * _DT / 0.5
 
 # min safe distance in meters. Roughly 2 car lengths.
 MIN_SAFE_DIST_M = 10.
-
-MAX_PEDAL_VALUE = 112.
 
 #BBTODO: move the vehicle variables; maybe make them speed variable
 TORQUE_LEVEL_ACC = 0.
@@ -61,9 +65,6 @@ _A_TOTAL_MAX = OrderedDict([
   (0.0, 1.5),
   (20., 1.5),
   (40., 1.5)])
-
-_DT = 0.05    # 20Hz in our case, since we don't want to process more than once the same live20 message
-_DT_MPC = 0.05  # 20Hz
 
 class Mode(object):
   label = None
