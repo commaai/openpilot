@@ -20,11 +20,10 @@ from collections import OrderedDict
 
 # TODO: these should end up in values.py at some point, probably variable by trim
 # Accel limits
-ACCEL_HYST_GAP = 0.5  # don't change accel command for small oscilalitons within this value
+PEDAL_HYST_GAP = 0.5  # don't change pedal command for small oscilalitons within this value
+PEDAL_MAX_UP = 3.
+PEDAL_MAX_DOWN = 50.
 
-PEDAL_MAX_UP = 4.
-PEDAL_MAX_DOWN = 150.
-#BB
 # min safe distance in meters. Roughly 2 car lengths.
 MIN_SAFE_DIST_M = 10.
 
@@ -137,22 +136,8 @@ class PCCState(object):
   NOT_READY = 9   # Not ready to be engaged due to the state of the car.
 
 
-
 def _current_time_millis():
   return int(round(time.time() * 1000))
-
-def accel_hysteresis(accel, accel_steady, enabled):
-
-  # for small accel oscillations within ACCEL_HYST_GAP, don't change the accel command
-  if not enabled:
-    # send 0 when disabled, otherwise acc faults
-    accel_steady = 0.
-  elif accel > accel_steady + ACCEL_HYST_GAP:
-    accel_steady = accel - ACCEL_HYST_GAP
-  elif accel < accel_steady - ACCEL_HYST_GAP:
-    accel_steady = accel + ACCEL_HYST_GAP
-  accel = accel_steady
-  return accel, accel_steady
 
 
 #this is for the pedal cruise control
@@ -173,7 +158,7 @@ class PCCController(object):
     self.prev_cruise_buttons = CruiseButtons.IDLE
     self.pedal_speed_kph = 0.
     self.pedal_idx = 0
-    self.accel_steady = 0.
+    self.pedal_steady = 0.
     self.prev_tesla_accel = 0.
     self.prev_tesla_pedal = 0.
     self.pedal_interceptor_state = 0
@@ -442,7 +427,7 @@ class PCCController(object):
     tesla_accel = clip(apply_accel * MAX_PEDAL_VALUE, 0, MAX_PEDAL_VALUE - tesla_brake)
     tesla_pedal = tesla_brake + tesla_accel
 
-    tesla_pedal, self.accel_steady = accel_hysteresis(tesla_pedal, self.accel_steady, enabled)
+    tesla_pedal = self.pedal_hysteresis(tesla_pedal, enabled)
     
     tesla_pedal = clip(tesla_pedal, self.prev_tesla_pedal - PEDAL_MAX_DOWN, self.prev_tesla_pedal + PEDAL_MAX_UP)
     tesla_pedal = clip(tesla_pedal, 0., MAX_PEDAL_VALUE) if self.enable_pedal_cruise else 0.
@@ -521,6 +506,17 @@ class PCCController(object):
       self.last_speed_kph = new_speed_kph
 
     return new_speed_kph * CV.KPH_TO_MS
+    
+  def pedal_hysteresis(self, pedal, enabled):
+    # for small accel oscillations within PEDAL_HYST_GAP, don't change the command
+    if not enabled:
+      # send 0 when disabled, otherwise acc faults
+      self.pedal_steady = 0.
+    elif pedal > self.pedal_steady + PEDAL_HYST_GAP:
+      self.pedal_steady = pedal - PEDAL_HYST_GAP
+    elif pedal < self.pedal_steady - PEDAL_HYST_GAP:
+      self.pedal_steady = pedal + PEDAL_HYST_GAP
+    return self.pedal_steady
 
 def _visual_radar_adjusted_dist_m(m):
   # visual radar sucks at short distances. It rarely shows readings below 7m.
