@@ -1,7 +1,9 @@
-import struct
-import binascii
-from common.numpy_fast import clip
+from cereal import car
 from selfdrive.car.chrysler.values import CAR
+
+
+VisualAlert = car.CarControl.HUDControl.VisualAlert
+AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 
 
 def calc_checksum(data):
@@ -44,87 +46,82 @@ def calc_checksum(data):
 def make_can_msg(addr, dat):
   return [addr, 0, dat, 0]
 
-def create_2d9(car_fingerprint):
-  # LKAS_STATUS_1 (729) Lane-keeping heartbeat.
+def create_lkas_heartbit(car_fingerprint):
+  # LKAS_HEARTBIT (729) Lane-keeping heartbeat.
   msg = '0000000820'.decode('hex')  # 2017
-  if car_fingerprint == CAR.PACIFICA_2018:
-    msg = '0000000020'.decode('hex')
-  elif car_fingerprint == CAR.CHEROKEE:
-    msg = '0000000040'.decode('hex')
-  elif car_fingerprint == CAR.PACIFICA_2018_HYBRID:
-    msg = '0000000440'.decode('hex')
   return make_can_msg(0x2d9, msg)
 
-def create_2a6(gear, apply_steer, moving_fast, car_fingerprint):
-  # LKAS_INDICATOR_3 (678) Controls what lane-keeping icon is displayed.
+def create_lkas_hud(gear, lkas_active, hud_alert, car_fingerprint):
+  # LKAS_HUD (678) Controls what lane-keeping icon is displayed.
+
+  if hud_alert == VisualAlert.steerRequired:
+    msg = msg = '0000000300000000'.decode('hex')
+    return make_can_msg(0x2a6, msg)
+
+  # TODO: use can packer
   msg = '0000000000000000'.decode('hex')  # park or neutral
   if car_fingerprint == CAR.PACIFICA_2018:
     msg = '0064000000000000'.decode('hex')  # Have not verified 2018 park with a real car.
-  elif car_fingerprint == CAR.CHEROKEE:
+  elif car_fingerprint == CAR.JEEP_CHEROKEE:
     msg = '00a4000000000000'.decode('hex')  # Have not verified 2018 park with a real car.
   elif car_fingerprint == CAR.PACIFICA_2018_HYBRID:
     msg = '01a8010000000000'.decode('hex')
+  elif car_fingerprint == CAR.PACIFICA_2019_HYBRID:
+    msg = '01a8010000000000'.decode('hex')
   if (gear == 'drive' or gear == 'reverse'):
-    if moving_fast:
-      msg = '0200060000000000'.decode('hex') # moving fast, display green.
+    if lkas_active:
+      msg = '0200060000000000'.decode('hex') # control active, display green.
       if car_fingerprint == CAR.PACIFICA_2018:
         msg = '0264060000000000'.decode('hex')
-      elif car_fingerprint == CAR.CHEROKEE:
+      elif car_fingerprint == CAR.JEEP_CHEROKEE:
         msg = '02a4060000000000'.decode('hex')
       elif car_fingerprint == CAR.PACIFICA_2018_HYBRID:
         msg = '02a8060000000000'.decode('hex')
+      elif car_fingerprint == CAR.PACIFICA_2019_HYBRID:
+        msg = '02a8060000000000'.decode('hex')
     else:
-      msg = '0100010000000000'.decode('hex') # moving slowly, display white.
+      msg = '0100010000000000'.decode('hex') # control off, display white.
       if car_fingerprint == CAR.PACIFICA_2018:
         msg = '0164010000000000'.decode('hex')
-      elif car_fingerprint == CAR.CHEROKEE:
+      elif car_fingerprint == CAR.JEEP_CHEROKEE:
         msg = '01a4010000000000'.decode('hex')
       elif car_fingerprint == CAR.PACIFICA_2018_HYBRID:
         msg = '01a8010000000000'.decode('hex')
-  if apply_steer > 0:  # steering left
-    msg = '03000a0000000000'.decode('hex')  # when torqueing, display yellow.
-    if car_fingerprint == CAR.PACIFICA_2018:
-      msg = '03640a0000000000'.decode('hex')
-    elif car_fingerprint == CAR.CHEROKEE:
-      msg = '03a40a0000000000'.decode('hex')
-    elif car_fingerprint == CAR.PACIFICA_2018_HYBRID:
-      msg = '03a80a0000000000'.decode('hex')
-  elif apply_steer < 0:  # steering right
-    msg = '0300080000000000'.decode('hex')  # when torqueing, display yellow.
-    if car_fingerprint == CAR.PACIFICA_2018:
-      msg = '0364080000000000'.decode('hex')
-    elif car_fingerprint == CAR.CHEROKEE:
-      msg = '03a4080000000000'.decode('hex')
-    elif car_fingerprint == CAR.PACIFICA_2018_HYBRID:
-      msg = '03a8080000000000'.decode('hex')
+      elif car_fingerprint == CAR.PACIFICA_2019_HYBRID:
+        msg = '01a8010000000000'.decode('hex')
+
   return make_can_msg(0x2a6, msg)
 
-LIMIT = 230  # 230 is documented limit # 171 is max from main example
-STEP = 3  # 3 is stock. originally 20. 100 is fine. 200 is too much it seems.
-_prev_angle = 0
 
-def create_292(apply_angle, frame):
-  # LKAS_INDICATOR_2 (658) Lane-keeping signal to turn the wheel.
-  global _prev_angle, LIMIT, STEP
-  apply_angle = int(apply_angle)
-  if apply_angle > LIMIT:
-    apply_angle = LIMIT
-  if apply_angle < -LIMIT:
-    apply_angle = -LIMIT
-  apply_angle = clip(apply_angle, _prev_angle - STEP, _prev_angle + STEP)
-  _prev_angle = apply_angle
-  combined_torque = apply_angle + 1024  # 1024 is straight. more is left, less is right.
-  high_status = 0x10  # could send 0x00 if not moving fast
-  start = [high_status | (combined_torque >> 8), combined_torque & 0xff, 00, 00]
-  counter = (frame % 0x10) << 4
-  dat = start + [counter]
-  dat = dat + [calc_checksum(dat)]  # this calc_checksum does not include the length
-  return make_can_msg(0x292, str(bytearray(dat)))
-  
-def create_23b(frame_23b):
+def create_lkas_command(packer, apply_steer, frame):
+  # LKAS_COMMAND (658) Lane-keeping signal to turn the wheel.
+  values = {
+    "LKAS_STEERING_TORQUE": apply_steer,
+    "LKAS_HIGH_TORQUE": 1,
+    "COUNTER": frame % 0x10,
+  }
+
+  dat = packer.make_can_msg("LKAS_COMMAND", 0, values)[2]
+  dat = [ord(i) for i in dat][:-1]
+  checksum = calc_checksum(dat)
+
+  values["CHECKSUM"] = checksum
+  return packer.make_can_msg("LKAS_COMMAND", 0, values)
+
+
+def create_chimes(audible_alert):
+  # '0050' nothing, chime '4f55'
+  if audible_alert == AudibleAlert.none:
+    msg = '0050'.decode('hex')
+  else:
+    msg = '4f55'.decode('hex')
+  return make_can_msg(0x339, msg)
+
+
+def create_wheel_buttons(frame):
   # WHEEL_BUTTONS (571) Message sent to cancel ACC.
   start = [0x01]  # acc cancel set
-  counter = (frame_23b % 10) << 4
+  counter = (frame % 10) << 4
   dat = start + [counter]
   dat = dat + [calc_checksum(dat)]
   return make_can_msg(0x23b, str(bytearray(dat)))

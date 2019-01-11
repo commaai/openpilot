@@ -1,7 +1,5 @@
-import logging
 from selfdrive.can.parser import CANParser
-from selfdrive.config import Conversions as CV
-from selfdrive.car.chrysler.values import CAR, DBC
+from selfdrive.car.chrysler.values import DBC, STEER_THRESHOLD
 from common.kalman.simple_kalman import KF1D
 import numpy as np
 
@@ -41,8 +39,10 @@ def get_can_parser(CP):
     ("ACC_STATUS_2", "ACC_2", 0),
     ("HIGH_BEAM_FLASH", "STEERING_LEVERS", 0),
     ("ACC_SPEED_CONFIG_KPH", "DASHBOARD", 0),
-    ("INCREMENTING_220", "LKAS_INDICATOR_1", -1),
-    ("LKAS_IS_GREEN", "LKAS_INDICATOR_1", 1),
+    ("TORQUE_DRIVER", "EPS_STATUS", 0),
+    ("TORQUE_MOTOR", "EPS_STATUS", 0),
+    ("LKAS_STATE", "EPS_STATUS", 1),
+    ("COUNTER", "EPS_STATUS", -1),
     ("TRACTION_OFF", "TRACTION_BUTTON", 0),
     ("SEATBELT_DRIVER_UNLATCHED", "SEATBELT_STATUS", 0),
     ("COUNTER", "WHEEL_BUTTONS", -1),  # incrementing counter for 23b
@@ -52,7 +52,7 @@ def get_can_parser(CP):
   checks = [
     # sig_address, frequency
     ("BRAKE_2", 50),
-    ("LKAS_INDICATOR_1", 100),
+    ("EPS_STATUS", 100),
     ("SPEED_1", 100),
     ("WHEEL_SPEEDS", 50),
     ("STEERING", 100),
@@ -91,8 +91,8 @@ class CarState(object):
     self.prev_left_blinker_on = self.left_blinker_on
     self.prev_right_blinker_on = self.right_blinker_on
 
-    self.frame_220 = int(cp.vl["LKAS_INDICATOR_1"]['INCREMENTING_220'])
     self.frame_23b = int(cp.vl["WHEEL_BUTTONS"]['COUNTER'])
+    self.frame = int(cp.vl["EPS_STATUS"]['COUNTER'])
 
     self.door_all_closed = not any([cp.vl["DOORS"]['DOOR_OPEN_FL'],
                                     cp.vl["DOORS"]['DOOR_OPEN_FR'],
@@ -129,9 +129,11 @@ class CarState(object):
     self.left_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 1
     self.right_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 2
 
-    self.steer_override = False  # TODO
-    self.steer_error = cp.vl["LKAS_INDICATOR_1"]['LKAS_IS_GREEN'] == 0  # 0 if wheel will not actuate
-    self.steer_torque_driver = 0  # TODO
+    self.steer_torque_driver = cp.vl["EPS_STATUS"]["TORQUE_DRIVER"]
+    self.steer_torque_motor = cp.vl["EPS_STATUS"]["TORQUE_MOTOR"]
+    self.steer_override = abs(self.steer_torque_driver) > STEER_THRESHOLD
+    steer_state = cp.vl["EPS_STATUS"]["LKAS_STATE"]
+    self.steer_error = steer_state == 4 or (steer_state == 0 and self.v_ego > self.CP.minSteerSpeed)
 
     self.user_brake = 0
     self.brake_lights = self.brake_pressed
