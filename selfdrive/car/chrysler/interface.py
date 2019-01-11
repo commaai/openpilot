@@ -81,6 +81,8 @@ class CarInterface(object):
 
     if candidate == CAR.JEEP_CHEROKEE:
       ret.wheelbase = 2.91  # in meters
+      ret.steerRatio = 12.7
+      ret.steerActuatorDelay = 0.2  # in seconds
 
     ret.centerToFront = ret.wheelbase * 0.44
 
