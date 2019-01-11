@@ -66,6 +66,8 @@ def create_lkas_hud(gear, lkas_active, hud_alert, car_fingerprint):
     msg = '00a4000000000000'.decode('hex')  # Have not verified 2018 park with a real car.
   elif car_fingerprint == CAR.PACIFICA_2018_HYBRID:
     msg = '01a8010000000000'.decode('hex')
+  elif car_fingerprint == CAR.PACIFICA_2019_HYBRID:
+    msg = '01a8010000000000'.decode('hex')
   if (gear == 'drive' or gear == 'reverse'):
     if lkas_active:
       msg = '0200060000000000'.decode('hex') # control active, display green.
@@ -75,6 +77,8 @@ def create_lkas_hud(gear, lkas_active, hud_alert, car_fingerprint):
         msg = '02a4060000000000'.decode('hex')
       elif car_fingerprint == CAR.PACIFICA_2018_HYBRID:
         msg = '02a8060000000000'.decode('hex')
+      elif car_fingerprint == CAR.PACIFICA_2019_HYBRID:
+        msg = '02a8060000000000'.decode('hex')
     else:
       msg = '0100010000000000'.decode('hex') # control off, display white.
       if car_fingerprint == CAR.PACIFICA_2018:
@@ -82,6 +86,8 @@ def create_lkas_hud(gear, lkas_active, hud_alert, car_fingerprint):
       elif car_fingerprint == CAR.JEEP_CHEROKEE:
         msg = '01a4010000000000'.decode('hex')
       elif car_fingerprint == CAR.PACIFICA_2018_HYBRID:
+        msg = '01a8010000000000'.decode('hex')
+      elif car_fingerprint == CAR.PACIFICA_2019_HYBRID:
         msg = '01a8010000000000'.decode('hex')
 
   return make_can_msg(0x2a6, msg)
