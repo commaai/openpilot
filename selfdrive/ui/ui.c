@@ -2130,7 +2130,7 @@ int main() {
 
     // awake on any touch
     int touch_x = -1, touch_y = -1;
-    int touched = touch_poll(&touch, &touch_x, &touch_y, s->awake ? 100 : 500);
+    int touched = touch_poll(&touch, &touch_x, &touch_y, s->awake ? 0 : 500);
     int dc_touch_x = -1, dc_touch_y = -1;
     s->b.touch_timeout = max(s->b.touch_timeout -1,0);
     
