@@ -7,6 +7,7 @@ class CAR:
   PACIFICA_2018 = "CHRYSLER PACIFICA 2018"
   JEEP_CHEROKEE = "JEEP GRAND CHEROKEE V6 2018"  # Also covers Tailhawk 2017.
 
+
 # Unique can messages:
 # Only the hybrids have 270: 8
 # Only the gas have 55: 8, 416: 7
