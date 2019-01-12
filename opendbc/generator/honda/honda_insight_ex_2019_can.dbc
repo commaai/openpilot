@@ -7,11 +7,6 @@ BO_ 419 GEARBOX: 8 PCM
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
 
 BO_ 432 STANDSTILL: 7 VSA
-<<<<<<< HEAD
- SG_ BRAKE_ERROR_1 : 13|1@0+ (1,0) [0|1] "" EON
- SG_ BRAKE_ERROR_2 : 12|1@0+ (1,0) [0|1] "" EON
-=======
->>>>>>> 0c9ba7a18e9238b9f8ab0c4e7c0e6adc0816c473
  SG_ COUNTER : 53|2@0+ (1,0) [0|3] "" EON
  SG_ CHECKSUM : 51|4@0+ (1,0) [0|15] "" EON
 
