@@ -204,9 +204,9 @@ class CarInterface(object):
       ret.longitudinalKiBP = [0., 35.]
       ret.longitudinalKiV = [0.54, 0.36]
 
-    elif candidate == CAR.CIVIC_HATCH:
+    elif candidate == CAR.CIVIC_BOSCH:
       stop_and_go = True
-      ret.mass = 2916. * CV.LB_TO_KG + std_cargo
+      ret.mass = mass_civic
       ret.wheelbase = wheelbase_civic
       ret.centerToFront = centerToFront_civic
       ret.steerRatio = 14.63  # 10.93 is spec end-to-end
