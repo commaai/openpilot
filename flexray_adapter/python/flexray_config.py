@@ -281,6 +281,7 @@ def verify_config(config):
 
     # Constraint 15
     aFrameLengthStatic = config['gdTSSTransmitter'] + cdFSS + 80 + config['gPayloadLengthStatic'] * 20 + cdFES
+    result.append('aFrameLengthStatic {} gdBit'.format(aFrameLengthStatic))
     gdStaticSlot = 2 * config['gdActionPointOffset'] + ceil(((aFrameLengthStatic + cChannelIdleDelimiter) * gdBitMax +
         config['gdMinPropagationDelay'] + gdMaxPropagationDelay) / (config['gdMacrotick'] * (1 - cClockDeviationMax)))
     if config['gdStaticSlot'] != gdStaticSlot:

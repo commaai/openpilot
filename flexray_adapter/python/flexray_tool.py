@@ -727,6 +727,8 @@ class ConnectOrConfigDialog(QDialog):
             opts = [('CHANNEL_A', 1), ('CHANNEL_B', 2), ('CHANNEL_AB', 3)]
             for k, v in opts:
                 cb.addItem(k)
+            selected = [index for index, v in enumerate(opts) if v[1] == rmb['Channels']]
+            cb.setCurrentIndex(selected[0])
             cb.currentIndexChanged.connect(
                 lambda selected_idx, rmb=rmb, key='Channels', opts=opts: rmb.__setitem__(key, opts[selected_idx][1]))
             self.rx_msg_bufs_table.setCellWidget(i, 2, cb)
@@ -768,6 +770,8 @@ class ConnectOrConfigDialog(QDialog):
             opts = [('CHANNEL_A', 1), ('CHANNEL_B', 2), ('CHANNEL_AB', 3)]
             for k, v in opts:
                 cb.addItem(k)
+            selected = [index for index, v in enumerate(opts) if v[1] == rmb['Channels']]
+            cb.setCurrentIndex(selected[0])
             cb.currentIndexChanged.connect(
                 lambda selected_idx, rmb=rmb, key='Channels', opts=opts: rmb.__setitem__(key, opts[selected_idx][1]))
             self.tx_msg_bufs_table.setCellWidget(i, 2, cb)
