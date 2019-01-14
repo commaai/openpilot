@@ -31,7 +31,7 @@ openpilot is developed by [comma.ai](https://comma.ai/) and users like you.
 
 We have a [Twitter you should follow](https://twitter.com/comma_ai).
 
-Also, we have a several thousand people community on [slack](https://slack.comma.ai).
+Also, we have a community of helpful people on [Discord](https://discord.gg/Wyna3qy).
 
 <table>
   <tr>
