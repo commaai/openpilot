@@ -135,10 +135,15 @@ class CarInterface(object):
       # IC cars decrease their PID values as speed increases. Discussion on Slack suggests
       # this is to reduce friction braking at highway speeds. But our regen-only braking is
       # so weak that we probably don't want to reduce it further.
+      # "BP" and "V" are OpenPilot name conventions. BP are basis points
+      # and V are corresponding values. Think of it as a map, but if a
+      # key isn't found then a value is returned by interpolating the nearest keys.
+      # If we offer only one basis point, then there's no interpolation. Its
+      # corresponding value will be used at all speeds.
       ret.longitudinalKpBP = [20.] # m/s, presumably
       ret.longitudinalKpV = [0.6]
       ret.longitudinalKiBP = [20.] # m/s, presumably
-      ret.longitudinalKiV = [0.15]
+      ret.longitudinalKiV = [0.18]
       ret.openpilotLongitudinalControl = True
       
       #from honda
