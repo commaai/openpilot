@@ -11,8 +11,9 @@ I will attempt to detail the changes in each of the branches here:
 <b>testing-GernbyPRcandidate</b> - this is kegman branch + Gernby's latest resonant feed forward steering which Gernby is planning to submit to comma as a pull request to have it included as part of base code.  <b>new GM code is in this branch</b>
 
 
+
 List of changes and tweaks (latest changes at the top:
-<u>
+
 <b>Display km/h for set speed in ACC HUD</b>: For Nidec Hondas, Openpilot overrides Honda's global metric settings and displays mph no matter what. This change makes the ACC HUD show km/h or mph and abides by the metric setting on the Eon. I plan on upstreaming this change to comma in the near future.
 
 <b>Kill the video uploader when the car is running</b>: Some people like to tether the Eon to a wifi hotspot on their cellphone instead of purchasing a dedicated SIM card to run on the Eon. When this occurs default comma code will upload large video files even while you are driving chewing up your monthly data limits. This change stops the video from uploading when the car is running. caution when you stop the car, the videos will resume uploading on your cellular hotspot if you forget to disconnect it.
@@ -38,5 +39,5 @@ List of changes and tweaks (latest changes at the top:
 <b>3 Step adjustable follow distance</b>: The default behaviour for following distance is 1.8s of following distance. It is not adjustable. This typically causes, in some traffic conditions, the user to be constantly cut off by other drivers, and 1.8s of follow distance instantly becomes much shorter (like 0.2-0.5s). I wanted to reintroduce honda 'stock-like' ACC behaviour back into the mix to prevent people from getting cutoff so often. Here is a summary of follow distance in seconds: 1 bar = 1s, 2 bars = 2s, 3 bars = 3s of follow distance. Thanks to @arne182, whose code I built upon, distance adjustment is back.
 
 <b>Honda Pilot PID</b>: I wasn't happy with the way Honda Pilot performed on curves where the car often would hug the inside line of the turn and this was very hazardous in 2 lane highways where it got very close to the oncoming traffic. Also, on crowned roads (where the fast lane slants to the left and where the slow lane slants to the right), the car would not overcome the gravity of the slanted road and "hug" in the direction of the slant. After many hours of on the road testing, I have mitigated this issue. When combined with Gernby's steering it is quite a robust setup. This combination is found in kegman-plusPilotAwesomeness.
-</u>
+
 Enjoy everyone.
