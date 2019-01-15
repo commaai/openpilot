@@ -113,6 +113,15 @@ class CarInterface(object):
       ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
       ret.steerKpV, ret.steerKiV = [[0.16], [0.01]]
       ret.minSteerSpeed = 35 * CV.MPH_TO_MS
+    elif candidate == CAR.GENESIS_2:
+      ret.steerKf = 0.00005
+      ret.steerRateCost = 0.5
+      ret.mass = 2060 + std_cargo
+      ret.wheelbase = 3.01
+      ret.steerRatio = 16.5
+      ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
+      ret.steerKpV, ret.steerKiV = [[0.16], [0.01]]
+      ret.minSteerSpeed = 38 * CV.MPH_TO_MS
     elif candidate == CAR.KIA_STINGER:
       ret.steerKf = 0.00005
       ret.steerRateCost = 0.5
