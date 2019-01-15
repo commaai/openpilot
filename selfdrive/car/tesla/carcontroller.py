@@ -221,6 +221,7 @@ class CarController(object):
         # DAS_turn_signal_request (2),DAS_forward_collission_warning (2), DAS_hands_on_state (4), 
         # DAS_cc_state (4), DAS_alca_state (3),
         # DAS_acc_speed_limit_mph (8), 
+        # DAS_speed_limit_units(8)
         #send fake_das data as 0x553
         # TODO: forward collission warning
         if frame % 10 == 0: 
@@ -254,18 +255,19 @@ class CarController(object):
             alca_cancelled = 1
           collision_warning = 0x00
           #acc_speed_limit_mph = CS.v_cruise_pcm * CV.KPH_TO_MPH
-          acc_speed_limit_mph = min(CS.v_cruise_pcm * CV.KPH_TO_MPH,20)
+          acc_speed_limit_mph = min(CS.v_cruise_pcm * CV.KPH_TO_MPH,1)
           if hud_alert == AH.FCW:
             collision_warning = 0x01
-          acc_speed_limit_kph = self.ACC.new_speed #pcm_speed * CV.MS_TO_KPH
+          acc_speed_kph = self.ACC.new_speed #pcm_speed * CV.MS_TO_KPH
           accel_min = -15
           accel_max = 5
           speed_control_enabled = enabled and (acc_speed_limit_kph > 0)
           can_sends.append(teslacan.create_fake_DAS_msg(speed_control_enabled,gas_to_resume,apUnavailable, collision_warning, op_status, \
-                 acc_speed_limit_kph, \
+                 acc_speed_kph, \
                  turn_signal_needed,forward_collission_warning,hands_on_state, \
                  cc_state, alca_state, \
-                 acc_speed_limit_mph))
+                 acc_speed_limit_mph,
+                 speed_limit_to_car))
       # end of DAS emulation """
 
       idx = frame % 16

@@ -85,18 +85,20 @@ def create_pedal_command_msg(accelCommand, enable, idx):
 
 
 def create_fake_DAS_msg(speed_control_enabled,gas_to_resume,apUnavailable, collision_warning, op_status, \
-                 acc_speed_limit_kph, \
+                 acc_speed_kph, \
                  turn_signal_needed,forward_collission_warning,hands_on_state, \
                  cc_state, alca_state, \
-                 acc_speed_limit_mph):
+                 acc_speed_limit_mph,
+                 legal_speed_limit):
   msg_id = 0x553
-  msg_len = 5
+  msg_len = 6
   msg = create_string_buffer(msg_len)
-  struct.pack_into('BBBBB', msg, 0,(speed_control_enabled << 7) + (gas_to_resume << 6) + (apUnavailable << 5) + (collision_warning << 4) + op_status, \
+  struct.pack_into('BBBBBB', msg, 0,(speed_control_enabled << 7) + (gas_to_resume << 6) + (apUnavailable << 5) + (collision_warning << 4) + op_status, \
       acc_speed_limit_kph, \
       (turn_signal_needed << 6) + (forward_collission_warning << 4) + hands_on_state, \
       (cc_state << 4) + alca_state, \
-      acc_speed_limit_mph)
+      acc_speed_limit_mph,
+      legal_speed_limit)
   return [msg_id, 0, msg.raw, 0]
 
 

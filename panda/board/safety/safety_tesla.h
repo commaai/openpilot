@@ -81,6 +81,7 @@ int DAS_hands_on_state = 0;
 int DAS_forward_collission_warning = 0;
 int DAS_cc_state = 0;
 int DAS_acc_speed_limit_mph = 0;
+int DAS_acc_speed_kph = 0;
 int DAS_collision_warning = 0;
 
 //fake DAS for telemetry
@@ -248,7 +249,7 @@ static void do_fake_DAS(uint32_t RIR, uint32_t RDTR) {
       acc_state = 0x04;
       jerk_min = 0x000;
       jerk_max = 0x0F;
-      acc_speed_kph = (int)(DAS_acc_speed_limit_mph * 10.0 /1.609);
+      acc_speed_kph = (int)(DAS_acc_speed_kph * 10.0);
       accel_max = (int)((DAS_accel_max + 15 ) / 0.04);
       accel_min = (int)((DAS_accel_min + 15 ) / 0.04);
     }
@@ -686,7 +687,8 @@ static int tesla_tx_hook(CAN_FIFOMailBox_TypeDef *to_send)
     int b2 = ((to_send->RDLR >> 16) & 0xFF);
     int b3 = ((to_send->RDLR >> 24) & 0xFF);
     int b4 = (to_send->RDHR & 0xFF);
-    DAS_speed_limit_kph = b1;
+    int b5 = ((to_send->RDHR >> 8) & 0xFF);
+    DAS_acc_speed_kph = b1;
     DAS_acc_speed_limit_mph = b4;
     DAS_enabled = ((b0 & 0x80) >> 7);
     DAS_gas_to_resume = ((b0 & 0x40) >> 6);
@@ -698,6 +700,7 @@ static int tesla_tx_hook(CAN_FIFOMailBox_TypeDef *to_send)
     DAS_hands_on_state = (b2 & 0x0F);
     DAS_cc_state = ((b3 & 0xF0)>>4);
     DAS_alca_state = (b3 & 0x0F);
+    DAS_speed_limit_kph = b5;
     return false;
   }
 
