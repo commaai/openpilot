@@ -38,7 +38,6 @@ List of changes and tweaks (latest changes at the top:
 
 - <b>Honda Pilot PID</b>:  I wasn't happy with the way Honda Pilot performed on curves where the car often would hug the inside line of the turn and this was very hazardous in 2 lane highways where it got very close to the oncoming traffic.
 Also, on crowned roads (where the fast lane slants to the left and where the slow lane slants to the right), the car would not overcome the gravity of the slanted road and "hug" in the direction of the slant.  After many hours of on the road testing, I have mitigated this issue.  When combined with Gernby's steering it is quite a robust setup.  This combination is found in kegman-plusPilotAwesomeness.
->>>>>>> parent of 8dc72be... Update README.md
 
 <b>Honda Pilot PID</b>: I wasn't happy with the way Honda Pilot performed on curves where the car often would hug the inside line of the turn and this was very hazardous in 2 lane highways where it got very close to the oncoming traffic. Also, on crowned roads (where the fast lane slants to the left and where the slow lane slants to the right), the car would not overcome the gravity of the slanted road and "hug" in the direction of the slant. After many hours of on the road testing, I have mitigated this issue. When combined with Gernby's steering it is quite a robust setup. This combination is found in kegman-plusPilotAwesomeness.
 </u>
