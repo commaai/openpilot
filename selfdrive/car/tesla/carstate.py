@@ -156,7 +156,7 @@ def get_can_signals(CP):
       ("DI_state", 5), #JCT Actual message freq is 1 Hz (1 sec)
       ("EPAS_sysStatus", 0), #JCT Actual message freq is 1.3 Hz (0.76 sec)
       ("MCU_locationStatus", 5), #JCT Actual message freq is 1.3 Hz (0.76 sec)
-      ("GTW_carConfig",  10), #BB Actual message freq is 1 Hz
+      ("GTW_carConfig", 5), #BB Actual message freq  is 1 Hz (1 sec)
   ]
 
 
@@ -179,7 +179,7 @@ def get_epas_can_signals(CP):
 
   checks = [
       ("EPAS_sysStatus", 5), #JCT Actual message freq is 1.3 Hz (0.76 sec)
-      ("GAS_SENSOR", 3),
+      ("GAS_SENSOR", 50), # BB Actual message freq is 10 Hz (0.1 sec)
   ]
 
 
