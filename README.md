@@ -1,4 +1,4 @@
-This is a fork of comma's openpilot, and contains tweaks for Hondas and some GM vehicles
+This is a fork of comma's openpilot, and contains tweaks for Hondas and some GM vehicles (thx to @Kylan for the GM stuff!)
 
 I will attempt to detail the changes in each of the branches here:
 
