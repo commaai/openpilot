@@ -1,17 +1,15 @@
-This is a fork of comma's openpilot, and contains tweaks for (mostly) Hondas
+This is a fork of comma's openpilot, and contains tweaks for Hondas and some GM vehicles 
 
 I will attempt to detail the changes in each of the branches here:
 
 <b>kegman</b> - this is the default branch which does not include Gernby's resonant feed forward steering (i.e. it's comma's default steering)
 
-<b>kegman-plusGernbySteering</b> - this branch is everything in the kegman branch PLUS a previous version of Gernby's feed forward steering which worked reasonably well
+<b>kegman-plusGernbySteering</b> - this branch is everything in the kegman branch PLUS a Gernby's LATEST feed forward steering.  This also includes working code for GM cars.  (thx to @jamezz for the code and @cryptokylan for submitting the GM stuff!)
 
 <b>kegman-plusPilotAwesomeness</b> - <u>If you have a Honda Pilot, use this branch.</u>  It has everything in kegman branch, uses my PID tuning + a magical older version of Gernby's FF steering which just happened to work very well across all driving conditions including slanted (crowned roads), wind gusts, road bumps, centering on curves, and keeping proper distance from curbs.  I have yet to test a combination of FF steering and PID tuning that can beat the performance of this for Honda Pilots.
 
-<b>testing-GernbyPRcandidate</b> - this is kegman branch + Gernby's latest resonant feed forward steering which Gernby is planning to submit to comma as a pull request to have it included as part of base code.
+<b>testing-GernbyPRcandidate</b> - this has been MERGED with kegman-plusGernbySteering
 
-
-The fork has been confirmed to work for Bosch and Nidec based Hondas. 
 
 List of changes and tweaks (latest changes at the top:
 - <b>Display km/h for set speed in ACC HUD</b>:  For Nidec Hondas, Openpilot overrides Honda's global metric settings and displays mph no matter what.  This change makes the ACC HUD show km/h or mph and abides by the metric setting on the Eon.  I plan on upstreaming this change to comma in the near future.
@@ -30,7 +28,7 @@ List of changes and tweaks (latest changes at the top:
 
 - <b>Dev UI</b>:  Thanks to @zeeexaris who made this work post 0.5.7 - displays widgets with steering information and temperature as well as lead car velocity and distance.  Very useful when entering turns to know how tight the turn is and more certainty as to whether you have to intervene.  Also great when PID tuning.
 
-- <b>Gernby's Resonant Feed Forward Steering</b>:  This is still a work in progress.  Some cars respond very well while there is more variance with other cars.  You may need to tweak some parameters to make it work well but once it's dialed in it makes the wheel very stiff and more impervious to wind / bumps and in some cases makes car centering better (such as on the PilotAwesomeness branch).  Give it a try and let @gernby know what you find.  Gernby's steering is available on kegman-plusGernbySteering, kegman-plusPilotAwesomeness and testing-GernbyPRcandidate (which is his latest code).  
+- <b>Gernby's Resonant Feed Forward Steering</b>:  This is still a work in progress.  Some cars respond very well while there is more variance with other cars.  You may need to tweak some parameters to make it work well but once it's dialed in it makes the wheel very stiff and more impervious to wind / bumps and in some cases makes car centering better (such as on the PilotAwesomeness branch).  Give it a try and let @gernby know what you find.  Gernby's steering is available on kegman-plusGernbySteering, kegman-plusPilotAwesomeness.  
 
 - <b>Steering off when blinkers on</b>:  The default behaviour when changing lanes is the user overrides the wheel, a bunch of steering required alarms sound and the user lets go of the wheel.  I didn't like fighting the wheel so when the blinkers are on I've disabled the OP steering.  Note that the blinker stock must be fully left or right or held in position for the steering to be off.  The "3 blink" tap of the stock does not deactive steering for long enough to be noticeable.
 
