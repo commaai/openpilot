@@ -237,7 +237,7 @@ static void do_fake_DAS(uint32_t RIR, uint32_t RDTR) {
   
   if (fake_DAS_counter % 4 == 0) {
     int acc_speed_kph = 0xFFF;
-    int acc_state = 0x01;
+    int acc_state = 0x04;
     int aeb_event = 0x00;
     int jerk_min = 0x1FF;
     int jerk_max = 0x1FF;
