@@ -90,19 +90,20 @@ class CarInterface(object):
       ret.steerRateCost = 0.5
       ret.mass = 1985 + std_cargo
       ret.wheelbase = 2.78
-      ret.steerRatio = 14.4 * 1.1   # 10% higher at the center seems reasonable
-      ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
-      ret.steerKpV, ret.steerKiV = [[0.25], [0.05]]
+      ret.steerRatio = 14.8         # Stock Value
+      tire_stiffness_factor = 0.75  # Based on testing
+      ret.steerKiBP, ret.steerKpBP = [[0., 9., 20., 34.], [0., 9., 20., 34.]]
+      ret.steerKpV, ret.steerKiV = [[0.08, 0.18, 0.25, 0.3], [0.02, 0.02, 0.04, 0.04]]
       ret.minSteerSpeed = 0.
     elif candidate == CAR.ELANTRA:
       ret.steerKf = 0.00006
       ret.steerRateCost = 0.5
       ret.mass = 1275 + std_cargo
       ret.wheelbase = 2.7
-      ret.steerRatio = 13.73   #Spec
+      ret.steerRatio = 13.73        # Spec
       tire_stiffness_factor = 0.385
-      ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
-      ret.steerKpV, ret.steerKiV = [[0.25], [0.05]]
+      ret.steerKiBP, ret.steerKpBP = [[0., 9., 20., 34.], [0., 9., 20., 34.]]
+      ret.steerKpV, ret.steerKiV = [[0.1, 0.15, 0.25, 0.25], [0.02, 0.03, 0.05, 0.05]]
       ret.minSteerSpeed = 32 * CV.MPH_TO_MS
     elif candidate == CAR.GENESIS:
       ret.steerKf = 0.00005
@@ -112,16 +113,19 @@ class CarInterface(object):
       ret.steerRatio = 16.5
       ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
       ret.steerKpV, ret.steerKiV = [[0.16], [0.01]]
-      ret.minSteerSpeed = 35 * CV.MPH_TO_MS
+      ret.minSteerSpeed = 38 * CV.MPH_TO_MS
     elif candidate == CAR.KIA_STINGER:
-      ret.steerKf = 0.00005
+      ret.steerKf = 0.000025
       ret.steerRateCost = 0.5
-      ret.mass = 1825 + std_cargo
-      ret.wheelbase = 2.78
-      ret.steerRatio = 14.4 * 1.15   # 15% higher at the center seems reasonable
-      ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
-      ret.steerKpV, ret.steerKiV = [[0.25], [0.05]]
+      ret.mass = 3637 * CV.LB_TO_KG + std_cargo
+      ret.wheelbase = 2.91
+      ret.steerRatio = 12.6
+      tire_stiffness_factor = 1.23
+      # Speed conversion:                0,  20,  45,  75 mph
+      ret.steerKpBP, ret.steerKiBP = [[  0.,  9., 20., 34.], [  0.,  9., 20., 34.]]
+      ret.steerKpV, ret.steerKiV =   [[0.15,0.15,0.31,0.31], [0.03,0.03,0.05,0.05]]
       ret.minSteerSpeed = 0.
+      ret.steerActuatorDelay = 0.125
 
     ret.minEnableSpeed = -1.   # enable is done by stock ACC, so ignore this
     ret.longitudinalKpBP = [0.]
