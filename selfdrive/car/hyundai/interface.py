@@ -122,6 +122,17 @@ class CarInterface(object):
       ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
       ret.steerKpV, ret.steerKiV = [[0.25], [0.05]]
       ret.minSteerSpeed = 0.
+    elif candidate == CAR.SANTA_FE_2:
+      ret.steerKf = 0.00005
+      ret.steerRateCost = 0.5
+      ret.mass = 3982 * CV.LB_TO_KG + std_cargo
+      ret.wheelbase = 2.766
+      # Values from optimizer
+      ret.steerRatio = 16.55  # 13.8 is spec end-to-end
+      tire_stiffness_factor = 0.82
+      ret.steerKiBP, ret.steerKpBP = [[0., 9., 20., 34.], [0., 9., 20., 34.]]
+      ret.steerKpV, ret.steerKiV = [[0.15, 0.15, 0.25, 0.25], [0.02, 0.03, 0.05, 0.05]]
+      ret.minSteerSpeed = 0.
 
     ret.minEnableSpeed = -1.   # enable is done by stock ACC, so ignore this
     ret.longitudinalKpBP = [0.]
