@@ -261,7 +261,7 @@ class CarController(object):
           acc_speed_kph = self.ACC.new_speed #pcm_speed * CV.MS_TO_KPH
           accel_min = -15
           accel_max = 5
-          speed_control_enabled = enabled and (acc_speed_limit_kph > 0)
+          speed_control_enabled = enabled and (acc_speed_limit_mph > 0)
           can_sends.append(teslacan.create_fake_DAS_msg(speed_control_enabled,gas_to_resume,apUnavailable, collision_warning, op_status, \
                  acc_speed_kph, \
                  turn_signal_needed,forward_collission_warning,hands_on_state, \

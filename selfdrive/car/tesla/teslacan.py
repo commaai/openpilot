@@ -94,7 +94,7 @@ def create_fake_DAS_msg(speed_control_enabled,gas_to_resume,apUnavailable, colli
   msg_len = 6
   msg = create_string_buffer(msg_len)
   struct.pack_into('BBBBBB', msg, 0,(speed_control_enabled << 7) + (gas_to_resume << 6) + (apUnavailable << 5) + (collision_warning << 4) + op_status, \
-      acc_speed_limit_kph, \
+      acc_speed_kph, \
       (turn_signal_needed << 6) + (forward_collission_warning << 4) + hands_on_state, \
       (cc_state << 4) + alca_state, \
       acc_speed_limit_mph,
