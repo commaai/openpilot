@@ -99,7 +99,7 @@ STOCK_CONTROL_MSGS = {
   CAR.MALIBU: [384, 715], # 384 = "ASCMLKASteeringCmd", 715 = "ASCMGasRegenCmd"
   CAR.ACADIA: [384, 715], # 384 = "ASCMLKASteeringCmd", 715 = "ASCMGasRegenCmd"
   CAR.CADILLAC_ATS: [384, 715], # 384 = "ASCMLKASteeringCmd", 715 = "ASCMGasRegenCmd"
-  CAR.CADILLAC_CT6: [], # Cadillac does not require ASCMs to be disconnected
+  CAR.CADILLAC_CT6: [], # CT6 does not require ASCMs to be disconnected
 }
 
 DBC = {

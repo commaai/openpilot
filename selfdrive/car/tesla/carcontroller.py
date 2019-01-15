@@ -3,6 +3,7 @@ import subprocess
 from  threading import Thread
 import traceback
 import shlex
+from common.params import Params
 from collections import namedtuple
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.controls.lib.drive_helpers import rate_limit
@@ -21,7 +22,6 @@ from selfdrive.car.tesla.HSO_module import HSOController
 import zmq
 import selfdrive.messaging as messaging
 from selfdrive.services import service_list
-from cereal import ui
 
 # Steer angle limits
 ANGLE_MAX_BP = [0., 27., 36.]
@@ -71,9 +71,10 @@ class CarController(object):
     self.sent_DAS_bootID = False
     context = zmq.Context()
     self.poller = zmq.Poller()
-    self.speedlimit = messaging.sub_sock(context, service_list['speedLimit'].port, conflate=True, poller=self.poller)
-    self.speedlimit_mph = 0
-
+    self.speedlimit = messaging.sub_sock(context, service_list['liveMapData'].port, conflate=True, poller=self.poller)
+    self.speedlimit_ms = 0
+    self.speedlimit_valid = False
+    self.speedlimit_units = 0
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
              pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel, \
@@ -174,7 +175,8 @@ class CarController(object):
     human_lane_changing = changing_lanes and not alca_enabled
     enable_steer_control = (enabled
                             and not human_lane_changing
-                            and not human_control)
+                            and not human_control 
+                            and  vehicle_moving)
     
     angle_lim = interp(CS.v_ego, ANGLE_MAX_BP, ANGLE_MAX_V)
     apply_angle = clip(apply_angle, -angle_lim, angle_lim)
@@ -205,21 +207,36 @@ class CarController(object):
         #get speed limit
         for socket, _ in self.poller.poll(0):
             if socket is self.speedlimit:
-              self.speedlimit_mph = ui.SpeedLimitData.from_bytes(socket.recv()).speed * CV.MS_TO_MPH
+              lmd = messaging.recv_one(socket).liveMapData
+              self.speedlimit_ms = lmd.speedLimit
+              self.speedlimit_valid = lmd.speedLimitValid
+              params = Params()
+              if (params.get("IsMetric") == "1"):
+                self.speedlimit_units = self.speedlimit_ms * CV.MS_TO_KPH + 0.5
+              else:
+                self.speedlimit_units = self.speedlimit_ms * CV.MS_TO_MPH + 0.5
+
         #send DAS_info
         if frame % 100 == 0: 
           can_sends.append(teslacan.create_DAS_info_msg(CS.DAS_info_msg))
           CS.DAS_info_msg += 1
           CS.DAS_info_msg = CS.DAS_info_msg % 10
         #send DAS_status
+        # TODO: forward collission warning
         if frame % 50 == 0: 
           op_status = 0x02
           hands_on_state = 0x00
-          speed_limit_kph = int(self.speedlimit_mph)
+          forward_collission_warning = 0 #1 if needed
+          if hud_alert == AH.FCW:
+            forward_collission_warning = 0x01
+          cc_state = 0 #cruise state: 0 unavailable, 1 available, 2 enabled, 3 hold
+          speed_limit_to_car = int(self.speedlimit_units)
           alca_state = 0x08 
           if enabled:
             op_status = 0x03
             alca_state = 0x08 + turn_signal_needed
+            if self.ALCA.laneChange_cancelled:
+              alca_state = 0x14
             #if not enable_steer_control:
               #op_status = 0x04
               #hands_on_state = 0x03
@@ -228,7 +245,7 @@ class CarController(object):
                 hands_on_state = 0x03
               else:
                 hands_on_state = 0x05
-          can_sends.append(teslacan.create_DAS_status_msg(CS.DAS_status_idx,op_status,speed_limit_kph,alca_state,hands_on_state))
+          can_sends.append(teslacan.create_DAS_status_msg(CS.DAS_status_idx,op_status,speed_limit_to_car,alca_state,hands_on_state,forward_collission_warning,cc_state))
           CS.DAS_status_idx += 1
           CS.DAS_status_idx = CS.DAS_status_idx % 16
         #send DAS_status2
@@ -237,7 +254,7 @@ class CarController(object):
           acc_speed_limit_mph = CS.v_cruise_pcm * CV.KPH_TO_MPH
           if hud_alert == AH.FCW:
             collision_warning = 0x01
-          can_sends.append(teslacan.create_DAS_status2_msg(CS.DAS_status2_idx,acc_speed_limit_mph,collision_warning))
+          can_sends.append(teslacan.create_DAS_status2_msg(CS.DAS_status2_idx,max(1,acc_speed_limit_mph),collision_warning))
           CS.DAS_status2_idx += 1
           CS.DAS_status2_idx = CS.DAS_status2_idx % 16
         #send DAS_bodyControl
@@ -257,8 +274,8 @@ class CarController(object):
         #send DAS_lanes
         if frame % 10 == 0: 
           can_sends.append(teslacan.create_DAS_lanes_msg(CS.DAS_lanes_idx))
-          CS.DAS_lanes_idx += 1
-          CS.DAS_lanes_idx = CS.DAS_lanes_idx % 16
+          # CS.DAS_lanes_idx += 1
+          # CS.DAS_lanes_idx = CS.DAS_lanes_idx % 16
         #send DAS_pscControl
         if frame % 4 == 0: 
           can_sends.append(teslacan.create_DAS_pscControl_msg(CS.DAS_pscControl_idx))
@@ -298,10 +315,14 @@ class CarController(object):
           CS.DAS_warningMatrix0_idx = CS.DAS_warningMatrix0_idx % 16
         #send DAS_warningMatrix3
         if (frame + 3) % 6 == 0: 
-          driverResumeRequired = 0
+          apUnavailable = 0
+          gas_to_resume = 0
+          alca_cancelled = 0
           if enabled and not enable_steer_control:
-            driverResumeRequired = 1
-          can_sends.append(teslacan.create_DAS_warningMatrix3(CS.DAS_warningMatrix3_idx,driverResumeRequired))
+            apUnavailable = 1
+          if self.ALCA.laneChange_cancelled:
+            alca_cancelled = 1
+          can_sends.append(teslacan.create_DAS_warningMatrix3(CS.DAS_warningMatrix3_idx,apUnavailable,alca_cancelled,gas_to_resume))
           CS.DAS_warningMatrix3_idx += 1
           CS.DAS_warningMatrix3_idx = CS.DAS_warningMatrix3_idx % 16
         #send DAS_warningMatrix1
@@ -324,7 +345,7 @@ class CarController(object):
           dasHw = 1,
           autoPilot = 1,
           fRadarHw = 1)
-        #can_sends.append(carConfig_msg)
+        can_sends.append(carConfig_msg)
       
       if cruise_btn or (turn_signal_needed > 0 and frame % 2 == 0):
           cruise_msg = teslacan.create_cruise_adjust_msg(
@@ -334,7 +355,7 @@ class CarController(object):
           # Send this CAN msg first because it is racing against the real stalk.
           can_sends.insert(0, cruise_msg)
       apply_accel = 0.
-      if CS.pedal_interceptor_available and frame % 5 == 0: # pedal processed at 20Hz
+      if CS.pedal_interceptor_available and frame % 5 == 0: # pedal processed at 20Hz. This must match the "_DT" value in PCC_module.py
         apply_accel, accel_needed, accel_idx = self.PCC.update_pdl(enabled, CS, frame, actuators, pcm_speed)
         can_sends.append(teslacan.create_pedal_command_msg(apply_accel, int(accel_needed), accel_idx))
       self.last_angle = apply_angle

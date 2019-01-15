@@ -92,6 +92,10 @@ CL_TIMEA_T = [0.7 ,0.30, 0.20]
 
 from common.numpy_fast import interp
 from selfdrive.controls.lib.pid import PIController
+from common.realtime import sec_since_boot
+
+#wait time after turn complete before enabling smoother
+WAIT_TIME_AFTER_TURN = 2.0
 
 class ALCAController(object):
   def __init__(self,carcontroller,alcaEnabled,steerByAngle):
@@ -125,6 +129,10 @@ class ALCAController(object):
     self.keep_angle = False #local variable to keep certain angle delta vs. actuator
     self.pid = None
     self.last10delta = []
+    self.laneChange_cancelled = False
+    self.laneChange_cancelled_counter = 0
+    self.last_time_enabled = 0
+  
 
   def last10delta_reset(self):
     self.last10delta = []
@@ -177,6 +185,10 @@ class ALCAController(object):
     cl_min_v = CS.CL_MIN_V
     self.laneChange_wait = CS.CL_WAIT_BEFORE_START
 
+    if self.laneChange_cancelled_counter > 0:
+      self.laneChange_cancelled_counter -= 1
+      if self.laneChange_cancelled_counter == 0:
+        self.laneChange_cancelled = False
 
     # Basic highway lane change logic
     actuator_delta = 0.
@@ -228,6 +240,8 @@ class ALCAController(object):
       if (self.laneChange_enabled > 1) and (self.laneChange_direction <> laneChange_direction):
         # something is not right; signal in oposite direction; cancel
         CS.UE.custom_alert_message(3,"Auto Lane Change Canceled! (s)",200,5)
+        self.laneChange_cancelled = True
+        self.laneChange_cancelled_counter = 200
         self.laneChange_enabled = 1
         self.laneChange_counter = 0
         self.laneChange_direction = 0
@@ -257,6 +271,8 @@ class ALCAController(object):
     if self.laneChange_enabled > 1:
       if (CS.steer_override or (CS.v_ego < cl_min_v)):
         CS.UE.custom_alert_message(4,"Auto Lane Change Canceled! (u)",200,3)
+        self.laneChange_cancelled = True
+        self.laneChange_cancelled_counter = 200
         # if any steer override cancel process or if speed less than min speed
         self.laneChange_counter = 0
         self.laneChange_enabled = 1
@@ -343,6 +359,8 @@ class ALCAController(object):
           self.laneChange_enabled = 1
           self.laneChange_counter = 0
           CS.UE.custom_alert_message(4,"Auto Lane Change Canceled! (t)",200,5)
+          self.laneChange_cancelled = True
+          self.laneChange_cancelled_counter = 200
           self.laneChange_counter = 0
           CS.cstm_btns.set_button_status("alca",1)
       # this is the critical start of the turn
@@ -362,6 +380,8 @@ class ALCAController(object):
           CS.UE.custom_alert_message(2,"Auto Lane Change     Engaged! (3)",100)
         if (abs(self.laneChange_angle) > cl_max_a) and (self.laneChange_counter == 1):
             CS.UE.custom_alert_message(4,"Auto Lane Change Canceled! (a)",200,5)
+            self.laneChange_cancelled = True
+            self.laneChange_cancelled_counter = 200
             self.laneChange_enabled = 1
             self.laneChange_counter = 0
             self.laneChange_direction = 0
@@ -431,10 +451,13 @@ class ALCAController(object):
   def update(self,enabled,CS,frame,actuators):
     if self.alcaEnabled:
       # ALCA enabled
+        cur_time = sec_since_boot()
         new_angle = 0.
         new_ALCA_Enabled = False
         new_turn_signal = 0
         new_angle,new_ALCA_Enabled,new_turn_signal = self.update_angle(enabled,CS,frame,actuators)
+        if new_ALCA_Enabled:
+          self.last_time_enabled = sec_since_boot()
         output_steer = 0.
         if new_ALCA_Enabled and (self.laneChange_enabled < 5 ) and not self.laneChange_steerByAngle:
           steers_max = interp(CS.v_ego, CS.CP.steerMaxBP, CS.CP.steerMaxV)
@@ -443,8 +466,14 @@ class ALCAController(object):
           output_steer = self.pid.update(new_angle, CS.angle_steers , check_saturation=(CS.v_ego > 10), override=CS.steer_override, feedforward=new_angle * (CS.v_ego ** 2), speed=CS.v_ego, deadzone=0.0)
         else: 
           output_steer = actuators.steer
+        if self.laneChange_steerByAngle and (not new_ALCA_Enabled) and (cur_time - self.last_time_enabled > WAIT_TIME_AFTER_TURN):
+          new_angle = actuators.steer
         return [new_angle,output_steer,new_ALCA_Enabled,new_turn_signal]
     else:
       # ALCA disabled
-      return [actuators.steerAngle,actuators.steer,False,0]
+      if self.laneChange_steerByAngle:
+        # when steerByAngle, actuators.steer has the smoothed version of the angle by Grenby
+        return [actuators.steer,actuators.steer,False,0]
+      else:
+        return [actuators.steerAngle,actuators.steer,False,0]
  

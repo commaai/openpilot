@@ -131,11 +131,11 @@ def create_DAS_bootID_msg():
   struct.pack_into('BBBBBBBB', msg, 0, 0x55,0x00,0xE3,0x00,0xBD,0x03,0x20,0x00)
   return [msg_id, 0, msg.raw, 0]
 
-def create_DAS_warningMatrix3(idx,driverResumeRequired):
+def create_DAS_warningMatrix3(idx,apUnavailable,alca_cancelled,gas_to_resume):
   msg_id = 0x349
   msg_len = 8
   msg = create_string_buffer(msg_len)
-  struct.pack_into('BBBBBBBB', msg, 0, driverResumeRequired << 1, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)
+  struct.pack_into('BBBBBBBB', msg, 0, gas_to_resume << 1, apUnavailable << 5, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)
   return [msg_id, 0, msg.raw, 0]
 
 def create_DAS_warningMatrix1(idx):
@@ -157,12 +157,12 @@ def create_DAS_warningMatrix0(idx):
     struct.pack_into('BBBBBBBB', msg, 0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)
   return [msg_id, 0, msg.raw, 0]
 
-def create_DAS_status_msg(idx,op_status,speed_limit_kph,alca_state,hands_on_state):
+def create_DAS_status_msg(idx,op_status,speed_limit_kph,alca_state,hands_on_state,forward_collission_warning,cc_state):
   msg_id = 0x399
   msg_len = 8
   msg = create_string_buffer(msg_len)
   sl = int(speed_limit_kph / 5)
-  struct.pack_into('BBBBBBB', msg, 0, op_status,sl,sl,0x00,0x08,(hands_on_state << 2) + ((alca_state & 0x03) << 6),((idx << 4) &0xF0 )+( 0x0F & (alca_state >>2)))
+  struct.pack_into('BBBBBBB', msg, 0, op_status,sl,(forward_collission_warning << 6) + sl,0x00,(cc_state << 3),(hands_on_state << 2) + ((alca_state & 0x03) << 6),((idx << 4) &0xF0 )+( 0x0F & (alca_state >>2)))
   struct.pack_into('B', msg, msg_len-1, add_tesla_checksum(msg_id,msg))
   return [msg_id, 0, msg.raw, 0]
 
@@ -291,40 +291,7 @@ def create_GTW_carConfig_msg(real_carConfig_data,dasHw,autoPilot,fRadarHw):
   fake_carConfig_data['GTW_dasHw'] = dasHw
   fake_carConfig_data['GTW_autopilot'] = autoPilot
   fake_carConfig_data['GTW_forwardRadarHw'] = fRadarHw
-
-  struct.pack_into('B', msg, 0, 
-                (int(fake_carConfig_data['GTW_dasHw']) << 6) + 
-                (int(fake_carConfig_data['GTW_unknown1']) << 5) +
-                (int(fake_carConfig_data['GTW_fourWheelDrive']) << 3) +
-                (int(fake_carConfig_data['GTW_performanceConfig'])))
-  struct.pack_into('B', msg, 1, 
-                (int(fake_carConfig_data['GTW_unknown2']) << 7) + 
-                (int(fake_carConfig_data['GTW_airSuspensionInstalled']) << 4) +
-                (int(fake_carConfig_data['GTW_forwardRadarHw']) << 2) +
-                (int(fake_carConfig_data['GTW_parkAssistInstalled'])))
-  struct.pack_into('B', msg, 2, 
-                ((int(fake_carConfig_data['GTW_country'])  & 0xFF00) >> 8))
-  struct.pack_into('B', msg, 3, 
-                ((int(fake_carConfig_data['GTW_country'])  & 0xFF)))
-  struct.pack_into('B', msg, 4, 
-                (int(fake_carConfig_data['GTW_radarPosition']) << 4) + 
-                (int(fake_carConfig_data['GTW_bodyControlsType']) << 3) +
-                (int(fake_carConfig_data['GTW_rhd']) << 2) +
-                (int(fake_carConfig_data['GTW_parkSensorGeometryType'])))
-  struct.pack_into('B', msg, 5, 
-                (int(fake_carConfig_data['GTW_chassisType']) << 6) + 
-                (int(fake_carConfig_data['GTW_epasType']) << 4) +
-                (int(fake_carConfig_data['GTW_frontCornerRadarHw']) << 2) +
-                (int(fake_carConfig_data['GTW_rearCornerRadarHw'])))
-  struct.pack_into('B', msg, 6, 
-                (int(fake_carConfig_data['GTW_rearSeatControllerMask']) << 5) + 
-                (int(fake_carConfig_data['GTW_wheelType'])))
-  struct.pack_into('B', msg, 7, 
-                (int(fake_carConfig_data['GTW_unknown3']) << 6) + 
-                (int(fake_carConfig_data['GTW_autopilot']) << 4) +
-                (int(fake_carConfig_data['GTW_brakeHwType']) << 2) +
-                (int(fake_carConfig_data['GTW_foldingMirrorsInstalled']) << 1) +
-                (int(fake_carConfig_data['GTW_euVehicle'])))
+  struct.pack_into('BBBBBBBB',msg,0,0x01,0x00,0x55,0x53,0x00,0x01,0x00,0x00)
   return [msg_id, 0, msg.raw, 0]
 
 def create_cruise_adjust_msg(spdCtrlLvr_stat, turnIndLvr_Stat, real_steering_wheel_stalk):
