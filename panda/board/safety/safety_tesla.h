@@ -796,6 +796,7 @@ static void tesla_init(int16_t param)
 {
   controls_allowed = 0;
   tesla_ignition_started = 0;
+  uja1023_init();
   gmlan_switch_init(1); //init the gmlan switch with 1s timeout enabled
 }
 
