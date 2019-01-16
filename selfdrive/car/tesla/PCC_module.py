@@ -62,9 +62,9 @@ _A_CRUISE_MAX = OrderedDict([
   
 # Lookup table for turns
 _A_TOTAL_MAX = OrderedDict([
-  (0.0, 1.5),
-  (20., 1.5),
-  (40., 1.5)])
+  (0.0, 2.5),
+  (20., 2.5),
+  (40., 2.5)])
 
 class Mode(object):
   label = None
