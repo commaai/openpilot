@@ -2,7 +2,7 @@ This is a fork of comma's openpilot, and contains tweaks for Hondas and some GM 
 
 I will attempt to detail the changes in each of the branches here:
 
-<b>kegman</b> - this is the default branch which does not include Gernby's resonant feed forward steering (i.e. it's comma's default steering)
+<b>kegman</b> - this is the default branch which does not include Gernby's resonant feed forward steering (i.e. it's comma's default steering) - it now includes GM code (needs testing)
 
 <b>kegman-plusGernbySteering</b> - this branch is everything in the kegman branch PLUS a Gernby's LATEST feed forward steering.  This also includes working code for GM cars.  (thx to @jamezz for the code and @cryptokylan for submitting the GM stuff!)
 
