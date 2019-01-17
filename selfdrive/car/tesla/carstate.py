@@ -156,10 +156,10 @@ def get_can_signals(CP):
       ("DI_state", 5), #JCT Actual message freq is 1 Hz (1 sec)
       ("EPAS_sysStatus", 0), #JCT Actual message freq is 1.3 Hz (0.76 sec)
       ("MCU_locationStatus", 5), #JCT Actual message freq is 1.3 Hz (0.76 sec)
-      ("GTW_carConfig", 5), #BB Actual message freq  is 1 Hz (1 sec)
+      #("GTW_carConfig", 5), #BB Actual message freq  is 1 Hz (1 sec)
   ]
 
-
+  #checks = []
   return signals, checks
   
 def get_epas_can_signals(CP):
@@ -179,10 +179,10 @@ def get_epas_can_signals(CP):
 
   checks = [
       ("EPAS_sysStatus", 5), #JCT Actual message freq is 1.3 Hz (0.76 sec)
-      ("GAS_SENSOR", 50), # BB Actual message freq is 10 Hz (0.1 sec)
+      #("GAS_SENSOR", 50), # BB Actual message freq is 10 Hz (0.1 sec)
   ]
 
-
+  #checks = []
   return signals, checks
   
 def get_can_parser(CP):
@@ -225,7 +225,7 @@ class CarState(object):
       self.CL_LANE_DETECT_FACTOR = [1.5, 1.5]
 
       self.CL_LANE_PASS_BP = [10., 20., 44.]
-      self.CL_LANE_PASS_TIME = [40.,10., 3.] 
+      self.CL_LANE_PASS_TIME = [40.,20., 13.] 
 
       # change lane delta angles and other params
       self.CL_MAXD_BP = [10., 32., 44.]

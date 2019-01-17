@@ -190,113 +190,95 @@ class CarController(object):
     # If human control, send the steering angle as read at steering wheel.
     if human_control:
       apply_angle = CS.angle_steers
-    # If blinker is on send the actual angle.
-    #if (changing_lanes and (CS.laneChange_enabled < 2)):
-    #  apply_angle = CS.angle_steers
+
     # Send CAN commands.
     can_sends = []
     send_step = 5
 
-    if  (True):
-      #First we emulate DAS.
-      #send DAS_bootID
-      if not self.sent_DAS_bootID:
-        #can_sends.append(teslacan.create_DAS_bootID_msg())
-        self.sent_DAS_bootID = True
-      else:
-        #get speed limit
-        for socket, _ in self.poller.poll(0):
-            if socket is self.speedlimit:
-              lmd = messaging.recv_one(socket).liveMapData
-              self.speedlimit_ms = lmd.speedLimit
-              self.speedlimit_valid = lmd.speedLimitValid
-              params = Params()
-              if (params.get("IsMetric") == "1"):
-                self.speedlimit_units = self.speedlimit_ms * CV.MS_TO_KPH + 0.5
-              else:
-                self.speedlimit_units = self.speedlimit_ms * CV.MS_TO_MPH + 0.5
+    #First we emulate DAS.
+    # DAS_enabled (1),DAS_gas_to_resume (1),DAS_apUnavailable (1), DAS_collision_warning (1),  DAS_op_status (4)
+    # DAS_speed_kph(8), 
+    # DAS_turn_signal_request (2),DAS_forward_collission_warning (2), DAS_hands_on_state (4), 
+    # DAS_cc_state (4), DAS_alca_state (3),
+    # DAS_acc_speed_limit_mph (8), 
+    # DAS_speed_limit_units(8)
+    #send fake_das data as 0x553
+    # TODO: forward collission warning
+    if frame % 10 == 0:
+      #get speed limit
+      for socket, _ in self.poller.poll(0):
+        if socket is self.speedlimit:
+          lmd = messaging.recv_one(socket).liveMapData
+          self.speedlimit_ms = lmd.speedLimit
+          self.speedlimit_valid = lmd.speedLimitValid
+          params = Params()
+          if (params.get("IsMetric") == "1"):
+            self.speedlimit_units = self.speedlimit_ms * CV.MS_TO_KPH + 0.5
+          else:
+            self.speedlimit_units = self.speedlimit_ms * CV.MS_TO_MPH + 0.5 
+    op_status = 0x02
+    hands_on_state = 0x00
+    forward_collission_warning = 0 #1 if needed
+    if hud_alert == AH.FCW:
+      forward_collission_warning = 0x01
+    cc_state = 1 #cruise state: 0 unavailable, 1 available, 2 enabled, 3 hold
+    speed_limit_to_car = int(self.speedlimit_units)
+    alca_state = 0x08 
+    if enabled:
+      op_status = 0x03
+      alca_state = 0x08 + turn_signal_needed
+      if self.ALCA.laneChange_cancelled:
+        alca_state = 0x14
+      #if not enable_steer_control:
+        #op_status = 0x04
+        #hands_on_state = 0x03
+      if hud_alert == AH.STEER:
+        if snd_chime == CM.MUTE:
+          hands_on_state = 0x03
+        else:
+          hands_on_state = 0x05
+    apUnavailable = 0
+    gas_to_resume = 0
+    alca_cancelled = 0
+    if enabled and not enable_steer_control:
+      apUnavailable = 1
+    if self.ALCA.laneChange_cancelled:
+      alca_cancelled = 1
+    collision_warning = 0x00
+    #acc_speed_limit_mph = CS.v_cruise_pcm * CV.KPH_TO_MPH
+    acc_speed_limit_mph = max(CS.v_cruise_pcm * CV.KPH_TO_MPH,1)
+    if hud_alert == AH.FCW:
+      collision_warning = 0x01
+    acc_speed_kph = self.ACC.new_speed #pcm_speed * CV.MS_TO_KPH
+    accel_min = -15
+    accel_max = 5
+    speed_control_enabled = enabled and (acc_speed_limit_mph > 0)
+    can_sends.append(teslacan.create_fake_DAS_msg(speed_control_enabled,gas_to_resume,apUnavailable, collision_warning, op_status, \
+            acc_speed_kph, \
+            turn_signal_needed,forward_collission_warning,hands_on_state, \
+            cc_state, alca_state, \
+            acc_speed_limit_mph,
+            speed_limit_to_car,
+            apply_angle,
+            1 if enable_steer_control else 0))
+    # end of DAS emulation """
 
-        # DAS_enabled (1),DAS_gas_to_resume (1),DAS_apUnavailable (1), DAS_collision_warning (1),  DAS_op_status (4)
-        # DAS_speed_kph(8), 
-        # DAS_turn_signal_request (2),DAS_forward_collission_warning (2), DAS_hands_on_state (4), 
-        # DAS_cc_state (4), DAS_alca_state (3),
-        # DAS_acc_speed_limit_mph (8), 
-        # DAS_speed_limit_units(8)
-        #send fake_das data as 0x553
-        # TODO: forward collission warning
-        if frame % 10 == 0: 
-          op_status = 0x02
-          hands_on_state = 0x00
-          forward_collission_warning = 0 #1 if needed
-          if hud_alert == AH.FCW:
-            forward_collission_warning = 0x01
-          cc_state = 1 #cruise state: 0 unavailable, 1 available, 2 enabled, 3 hold
-          speed_limit_to_car = int(self.speedlimit_units)
-          alca_state = 0x08 
-          if enabled:
-            op_status = 0x03
-            alca_state = 0x08 + turn_signal_needed
-            if self.ALCA.laneChange_cancelled:
-              alca_state = 0x14
-            #if not enable_steer_control:
-              #op_status = 0x04
-              #hands_on_state = 0x03
-            if hud_alert == AH.STEER:
-              if snd_chime == CM.MUTE:
-                hands_on_state = 0x03
-              else:
-                hands_on_state = 0x05
-          apUnavailable = 0
-          gas_to_resume = 0
-          alca_cancelled = 0
-          if enabled and not enable_steer_control:
-            apUnavailable = 1
-          if self.ALCA.laneChange_cancelled:
-            alca_cancelled = 1
-          collision_warning = 0x00
-          #acc_speed_limit_mph = CS.v_cruise_pcm * CV.KPH_TO_MPH
-          acc_speed_limit_mph = min(CS.v_cruise_pcm * CV.KPH_TO_MPH,1)
-          if hud_alert == AH.FCW:
-            collision_warning = 0x01
-          acc_speed_kph = self.ACC.new_speed #pcm_speed * CV.MS_TO_KPH
-          accel_min = -15
-          accel_max = 5
-          speed_control_enabled = enabled and (acc_speed_limit_mph > 0)
-          can_sends.append(teslacan.create_fake_DAS_msg(speed_control_enabled,gas_to_resume,apUnavailable, collision_warning, op_status, \
-                 acc_speed_kph, \
-                 turn_signal_needed,forward_collission_warning,hands_on_state, \
-                 cc_state, alca_state, \
-                 acc_speed_limit_mph,
-                 speed_limit_to_car))
-      # end of DAS emulation """
-
-      idx = frame % 16
-      can_sends.append(teslacan.create_steering_control(enable_steer_control, apply_angle, idx))
-      can_sends.append(teslacan.create_epb_enable_signal(idx))
-      cruise_btn = None
-      if self.ACC.enable_adaptive_cruise and not CS.pedal_interceptor_available:
-        cruise_btn = self.ACC.update_acc(enabled, CS, frame, actuators, pcm_speed)
-
-      #add fake carConfig to trigger IC to display AP
-      if frame % 2 == 0:
-        carConfig_msg = teslacan.create_GTW_carConfig_msg(
-          real_carConfig_data = CS.real_carConfig,
-          dasHw = 1,
-          autoPilot = 1,
-          fRadarHw = 1)
-        #can_sends.append(carConfig_msg)
-      
-      if cruise_btn or (turn_signal_needed > 0 and frame % 2 == 0):
-          cruise_msg = teslacan.create_cruise_adjust_msg(
-            spdCtrlLvr_stat=cruise_btn,
-            turnIndLvr_Stat= 0, #turn_signal_needed,
-            real_steering_wheel_stalk=CS.steering_wheel_stalk)
-          # Send this CAN msg first because it is racing against the real stalk.
-          can_sends.insert(0, cruise_msg)
-      apply_accel = 0.
-      if CS.pedal_interceptor_available and frame % 5 == 0: # pedal processed at 20Hz
-        apply_accel, accel_needed, accel_idx = self.PCC.update_pdl(enabled, CS, frame, actuators, pcm_speed)
-        can_sends.append(teslacan.create_pedal_command_msg(apply_accel, int(accel_needed), accel_idx))
-      self.last_angle = apply_angle
-      self.last_accel = apply_accel
-      sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
+    idx = frame % 16
+    cruise_btn = None
+    if self.ACC.enable_adaptive_cruise and not CS.pedal_interceptor_available:
+      cruise_btn = self.ACC.update_acc(enabled, CS, frame, actuators, pcm_speed)
+    
+    if cruise_btn:
+        cruise_msg = teslacan.create_cruise_adjust_msg(
+          spdCtrlLvr_stat=cruise_btn,
+          turnIndLvr_Stat= 0, #turn_signal_needed,
+          real_steering_wheel_stalk=CS.steering_wheel_stalk)
+        # Send this CAN msg first because it is racing against the real stalk.
+        can_sends.insert(0, cruise_msg)
+    apply_accel = 0.
+    if CS.pedal_interceptor_available and frame % 5 == 0: # pedal processed at 20Hz
+      apply_accel, accel_needed, accel_idx = self.PCC.update_pdl(enabled, CS, frame, actuators, pcm_speed)
+      can_sends.append(teslacan.create_pedal_command_msg(apply_accel, int(accel_needed), accel_idx))
+    self.last_angle = apply_angle
+    self.last_accel = apply_accel
+    sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())

@@ -34,34 +34,6 @@ def add_tesla_checksum(msg_id,msg):
  return checksum
 
 
-
-def create_steering_control(enabled, apply_steer, idx):
- """Creates a CAN message for the Tesla DBC DAS_steeringControl."""
- msg_id = 0x488
- msg_len = 4
- msg = create_string_buffer(msg_len)
- if enabled == False:
-  steering_type = 0
- else:
-  steering_type = 1
- type_counter = steering_type << 6
- type_counter += idx
- #change angle to the Tesla * 10 + 0x4000
- apply_steer = int( apply_steer * 10 + 0x4000 ) & 0xFFFF
- struct.pack_into('!hB', msg, 0,  apply_steer, type_counter)
- struct.pack_into('B', msg, msg_len-1, add_tesla_checksum(msg_id,msg))
- return [msg_id, 0, msg.raw, 2]
-
-
-def create_epb_enable_signal(idx):
-  """Creates a CAN message to simulate EPB enable message"""
-  msg_id = 0x214
-  msg_len = 3
-  msg = create_string_buffer(msg_len)
-  struct.pack_into('BB', msg, 0,  1, idx)
-  struct.pack_into('B', msg, msg_len-1, add_tesla_checksum(msg_id,msg))
-  return [msg_id, 0, msg.raw, 2]
-
 def create_pedal_command_msg(accelCommand, enable, idx):
   """Create GAS_COMMAND (0x551) message to comma pedal"""
   msg_id = 0x551
@@ -89,28 +61,21 @@ def create_fake_DAS_msg(speed_control_enabled,gas_to_resume,apUnavailable, colli
                  turn_signal_needed,forward_collission_warning,hands_on_state, \
                  cc_state, alca_state, \
                  acc_speed_limit_mph,
-                 legal_speed_limit):
+                 legal_speed_limit,
+                 apply_angle,
+                 enable_steer_control):
   msg_id = 0x553
-  msg_len = 6
+  msg_len = 8
   msg = create_string_buffer(msg_len)
-  struct.pack_into('BBBBBB', msg, 0,(speed_control_enabled << 7) + (gas_to_resume << 6) + (apUnavailable << 5) + (collision_warning << 4) + op_status, \
+  c_apply_steer = ((int( apply_angle * 10 + 0x4000 )) & 0x7FFF) + (enable_steer_control << 15)
+  struct.pack_into('BBBBBBBB', msg, 0,(speed_control_enabled << 7) + (gas_to_resume << 6) + (apUnavailable << 5) + (collision_warning << 4) + op_status, \
       acc_speed_kph, \
       (turn_signal_needed << 6) + (forward_collission_warning << 4) + hands_on_state, \
       (cc_state << 4) + alca_state, \
       acc_speed_limit_mph,
-      legal_speed_limit)
-  return [msg_id, 0, msg.raw, 0]
-
-
-def create_GTW_carConfig_msg(real_carConfig_data,dasHw,autoPilot,fRadarHw):
-  msg_id = 0x398
-  msg_len = 8
-  msg = create_string_buffer(msg_len)
-  fake_carConfig_data = real_carConfig_data.copy()
-  fake_carConfig_data['GTW_dasHw'] = dasHw
-  fake_carConfig_data['GTW_autopilot'] = autoPilot
-  fake_carConfig_data['GTW_forwardRadarHw'] = fRadarHw
-  struct.pack_into('BBBBBBBB',msg,0,0x01,0x00,0x55,0x53,0x00,0x01,0x00,0x00)
+      legal_speed_limit,
+      c_apply_steer & 0xFF,
+      (c_apply_steer >> 8) & 0xFF)
   return [msg_id, 0, msg.raw, 0]
 
 def create_cruise_adjust_msg(spdCtrlLvr_stat, turnIndLvr_Stat, real_steering_wheel_stalk):

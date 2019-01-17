@@ -253,6 +253,10 @@ void TIM4_IRQHandler(void) {
     }
     TIM4->SR = 0;
   } //gmlan switch mode
+  else {
+    //disable timer; not a valid mode
+    TIM4->CR1 &= ~TIM_CR1_CEN;
+  }
 }
 
 void bitbang_gmlan(CAN_FIFOMailBox_TypeDef *to_bang) {
