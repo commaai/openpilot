@@ -345,7 +345,7 @@ class CarController(object):
           dasHw = 1,
           autoPilot = 1,
           fRadarHw = 1)
-        can_sends.append(carConfig_msg)
+        #can_sends.append(carConfig_msg)
       
       if cruise_btn or (turn_signal_needed > 0 and frame % 2 == 0):
           cruise_msg = teslacan.create_cruise_adjust_msg(
