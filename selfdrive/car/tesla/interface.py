@@ -123,9 +123,9 @@ class CarInterface(object):
       
       # Kp and Ki for the longitudinal control
       ret.longitudinalKpBP = [0., 5., 35.]
-      ret.longitudinalKpV = [1.27/K_MULT , 1.05/K_MULT, 0.85/K_MULT]
+      ret.longitudinalKpV = [0.6, 0.6, 0.6]
       ret.longitudinalKiBP = [0., 5., 35.]
-      ret.longitudinalKiV = [0.11/K_MULTi, 0.09/K_MULTi, 0.06/K_MULTi]
+      ret.longitudinalKiV = [0.18,0.18,0.18]
       
       #from honda
       #ret.longitudinalKpBP = [0., 5., 35.]

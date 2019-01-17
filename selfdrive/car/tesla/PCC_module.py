@@ -18,22 +18,25 @@ import numpy as np
 from collections import OrderedDict
 
 
+_DT = 0.05    # 20Hz in our case, since we don't want to process more than once the same live20 message
+_DT_MPC = 0.05  # 20Hz
+
 # TODO: these should end up in values.py at some point, probably variable by trim
 # Accel limits
-ACCEL_HYST_GAP = 0.5  # don't change accel command for small oscilalitons within this value
+MAX_PEDAL_VALUE = 112.
+PEDAL_HYST_GAP = 0.75  # don't change pedal command for small oscilalitons within this value
+# Cap the pedal to go from 0 to max in 3 seconds
+PEDAL_MAX_UP = MAX_PEDAL_VALUE * _DT / 3
+# Cap the pedal to go from max to 0 in 0.4 seconds
+PEDAL_MAX_DOWN = MAX_PEDAL_VALUE * _DT / 0.4
 
-PEDAL_MAX_UP = 4.
-PEDAL_MAX_DOWN = 150.
-#BB
 # min safe distance in meters. Roughly 2 car lengths.
 MIN_SAFE_DIST_M = 10.
-
-MAX_PEDAL_VALUE = 112.
 
 #BBTODO: move the vehicle variables; maybe make them speed variable
 TORQUE_LEVEL_ACC = 0.
 TORQUE_LEVEL_DECEL = -30.
-FOLLOW_TIME_S = 1.8  # time in seconds to follow car in front
+FOLLOW_TIME_S = 1.5  # time in seconds to follow car in front
 MIN_PCC_V_KPH = 0. #
 MAX_PCC_V_KPH = 170.
 
@@ -51,20 +54,17 @@ _A_CRUISE_MIN = OrderedDict([
 # make sure these accelerations are smaller than mpc limits.
 _A_CRUISE_MAX = OrderedDict([
   # (speed in m/s, allowed acceleration)
-  (0.0, 0.55),
-  (5.0, 0.38),
-  (10., 0.28),
-  (20., 0.24),
-  (40., 0.15)])
+  (0.0, 0.50),
+  (5.0, 0.30),
+  (10., 0.22),
+  (20., 0.17),
+  (40., 0.14)])
   
 # Lookup table for turns
 _A_TOTAL_MAX = OrderedDict([
-  (0.0, 1.5),
-  (20., 1.5),
-  (40., 1.5)])
-
-_DT = 0.05    # 20Hz in our case, since we don't want to process more than once the same live20 message
-_DT_MPC = 0.05  # 20Hz
+  (0.0, 2.5),
+  (20., 2.5),
+  (40., 2.5)])
 
 class Mode(object):
   label = None
@@ -137,22 +137,8 @@ class PCCState(object):
   NOT_READY = 9   # Not ready to be engaged due to the state of the car.
 
 
-
 def _current_time_millis():
   return int(round(time.time() * 1000))
-
-def accel_hysteresis(accel, accel_steady, enabled):
-
-  # for small accel oscillations within ACCEL_HYST_GAP, don't change the accel command
-  if not enabled:
-    # send 0 when disabled, otherwise acc faults
-    accel_steady = 0.
-  elif accel > accel_steady + ACCEL_HYST_GAP:
-    accel_steady = accel - ACCEL_HYST_GAP
-  elif accel < accel_steady - ACCEL_HYST_GAP:
-    accel_steady = accel + ACCEL_HYST_GAP
-  accel = accel_steady
-  return accel, accel_steady
 
 
 #this is for the pedal cruise control
@@ -173,7 +159,7 @@ class PCCController(object):
     self.prev_cruise_buttons = CruiseButtons.IDLE
     self.pedal_speed_kph = 0.
     self.pedal_idx = 0
-    self.accel_steady = 0.
+    self.pedal_steady = 0.
     self.prev_tesla_accel = 0.
     self.prev_tesla_pedal = 0.
     self.pedal_interceptor_state = 0
@@ -206,7 +192,6 @@ class PCCController(object):
     self.lead_last_seen_time_ms = 0
     self.continuous_lead_sightings = 0
 
-
   def reset(self, v_pid):
     if self.LoC:
       self.LoC.reset(v_pid)
@@ -214,7 +199,6 @@ class PCCController(object):
   def update_stat(self, CS, enabled, sendcan):
     if not self.LoC:
       self.LoC = LongControl(CS.CP, tesla_compute_gb)
-
 
     can_sends = []
     if CS.pedal_interceptor_available and not CS.cstm_btns.get_button_status("pedal"):
@@ -262,7 +246,7 @@ class PCCController(object):
       self.last_cruise_stalk_pull_time = curr_time_ms
       ready = (CS.cstm_btns.get_button_status("pedal") > PCCState.OFF
                and enabled
-               and CruiseState.is_off(CS.pcm_acc_status))
+               and (CruiseState.is_off(CS.pcm_acc_status)) or CS.forcePedal == 1)
       if ready and double_pull:
         # A double pull enables ACC. updating the max ACC speed if necessary.
         self.enable_pedal_cruise = True
@@ -294,7 +278,7 @@ class PCCController(object):
       # Clip PCC speed between 0 and 170 KPH.
       self.pedal_speed_kph = clip(self.pedal_speed_kph, MIN_PCC_V_KPH, MAX_PCC_V_KPH)
     # If something disabled cruise control, disable PCC too
-    elif self.enable_pedal_cruise and CS.pcm_acc_status:
+    elif self.enable_pedal_cruise and CS.pcm_acc_status and (CS.forcePedal == 0):
       self.enable_pedal_cruise = False
     
     # Notify if PCC was toggled
@@ -307,7 +291,7 @@ class PCCController(object):
 
     # Update the UI to show whether the current car state allows PCC.
     if CS.cstm_btns.get_button_status("pedal") in [PCCState.STANDBY, PCCState.NOT_READY]:
-      if enabled and CruiseState.is_off(CS.pcm_acc_status):
+      if enabled and (CruiseState.is_off(CS.pcm_acc_status) or (CS.forcePedal == 1)):
         CS.cstm_btns.set_button_status("pedal", PCCState.STANDBY)
       else:
         CS.cstm_btns.set_button_status("pedal", PCCState.NOT_READY)
@@ -316,7 +300,6 @@ class PCCController(object):
     self.prev_cruise_buttons = CS.cruise_buttons
     self.prev_pcm_acc_status = CS.pcm_acc_status
     
-
   def update_pdl(self, enabled, CS, frame, actuators, pcm_speed):
     cur_time = sec_since_boot()
     idx = self.pedal_idx
@@ -392,7 +375,7 @@ class PCCController(object):
         #print "Output GB Follow:", output_gb
       else:
         self.LoC.reset(CS.v_ego)
-        print "PID reset"
+        #print "PID reset"
         output_gb = 0.
         starting = self.LoC.long_control_state == LongCtrlState.starting
         a_ego = min(CS.a_ego, 0.0)
@@ -445,7 +428,7 @@ class PCCController(object):
     tesla_accel = clip(apply_accel * MAX_PEDAL_VALUE, 0, MAX_PEDAL_VALUE - tesla_brake)
     tesla_pedal = tesla_brake + tesla_accel
 
-    tesla_pedal, self.accel_steady = accel_hysteresis(tesla_pedal, self.accel_steady, enabled)
+    tesla_pedal = self.pedal_hysteresis(tesla_pedal, enabled)
     
     tesla_pedal = clip(tesla_pedal, self.prev_tesla_pedal - PEDAL_MAX_DOWN, self.prev_tesla_pedal + PEDAL_MAX_UP)
     tesla_pedal = clip(tesla_pedal, 0., MAX_PEDAL_VALUE) if self.enable_pedal_cruise else 0.
@@ -492,20 +475,23 @@ class PCCController(object):
           min_vrel_kph_map = OrderedDict([
             # (distance in m, min allowed relative kph)
             (0.5 * safe_dist_m, 2),
-            (1.0 * safe_dist_m, -4),
-            (1.5 * safe_dist_m, -7),
+            (1.0 * safe_dist_m, -6),
+            (1.5 * safe_dist_m, -10),
             (3.0 * safe_dist_m, -20)])
           min_vrel_kph = _interp_map(lead_dist_m, min_vrel_kph_map)
           max_vrel_kph_map = OrderedDict([
             # (distance in m, max allowed relative kph)
-            (0.5 * safe_dist_m, 15),
-            (1.0 * safe_dist_m, 7),
-            (1.5 * safe_dist_m, 4),
-            (2.0 * safe_dist_m, -1)])
+            (0.5 * safe_dist_m, 8),
+            (1.0 * safe_dist_m, 1),
+            (1.5 * safe_dist_m, 0),
+            # With visual radar the relative velocity is 0 until the confidence
+            # gets high. So even a small negative number here gives constant
+            # accel until lead lead car gets close enough to read.
+            (2.0 * safe_dist_m, -2)])
           max_vrel_kph = _interp_map(lead_dist_m, max_vrel_kph_map)
           min_kph = lead_absolute_speed_kph - max_vrel_kph
           max_kph = lead_absolute_speed_kph - min_vrel_kph
-          new_speed_kph =  clip(actual_speed_kph, min_kph, max_kph)
+          new_speed_kph =  clip(new_speed_kph, min_kph, max_kph)
           
         # Enforce limits on speed in the presence of a lead car.
         new_speed_kph = min(new_speed_kph,
@@ -521,6 +507,17 @@ class PCCController(object):
       self.last_speed_kph = new_speed_kph
 
     return new_speed_kph * CV.KPH_TO_MS
+    
+  def pedal_hysteresis(self, pedal, enabled):
+    # for small accel oscillations within PEDAL_HYST_GAP, don't change the command
+    if not enabled:
+      # send 0 when disabled, otherwise acc faults
+      self.pedal_steady = 0.
+    elif pedal > self.pedal_steady + PEDAL_HYST_GAP:
+      self.pedal_steady = pedal - PEDAL_HYST_GAP
+    elif pedal < self.pedal_steady - PEDAL_HYST_GAP:
+      self.pedal_steady = pedal + PEDAL_HYST_GAP
+    return self.pedal_steady
 
 def _visual_radar_adjusted_dist_m(m):
   # visual radar sucks at short distances. It rarely shows readings below 7m.
@@ -567,7 +564,8 @@ def _accel_limit_multiplier(v_ego, lead):
     safe_dist_m = _safe_distance_m(v_ego)
     accel_multipliers = OrderedDict([
       # (distance in m, acceleration fraction)
-      (0.7 * safe_dist_m, 0.0),
+      (0.6 * safe_dist_m, 0.0),
+      (1.0 * safe_dist_m, 0.4),
       (3.0 * safe_dist_m, 1.0)])
     return _interp_map(lead.dRel, accel_multipliers)
   else:
@@ -588,8 +586,8 @@ def _jerk_limits(v_ego, lead, max_speed_kph, lead_last_seen_time_ms):
   # prevent high accel jerk near max speed
   near_max_speed_multipliers = OrderedDict([
     # (kph under max speed, accel jerk multiplier)
-    (0, 0.1),
-    (3, 1.0)])
+    (0, 0.01),
+    (4, 1.0)])
   near_max_speed_multiplier = _interp_map(max_speed_kph - v_ego * CV.MS_TO_KPH, near_max_speed_multipliers)
   
   if _is_present(lead):
@@ -597,16 +595,15 @@ def _jerk_limits(v_ego, lead, max_speed_kph, lead_last_seen_time_ms):
     decel_jerk_map = OrderedDict([
       # (sec to collision, decel jerk)
       (0, -1.00),
-      (2, -0.20),
+      (2, -0.25),
       (4, -0.01),
       (8, -0.001)])
-    decel_jerk = _interp_map(_sec_til_collision, decel_jerk_map)
-   
+    decel_jerk = _interp_map(_sec_til_collision(lead), decel_jerk_map)
     safe_dist_m = _safe_distance_m(v_ego) 
     accel_jerk_map = OrderedDict([
       # (distance in m, accel jerk)
-      (1.0 * safe_dist_m, 0.01),
-      (2.8 * safe_dist_m, 0.12)])
+      (0.8 * safe_dist_m, 0.01),
+      (2.8 * safe_dist_m, 0.11)])
     accel_jerk = _interp_map(lead.dRel, accel_jerk_map)
     accel_jerk *= near_max_speed_multiplier
     return decel_jerk, accel_jerk
@@ -618,9 +615,14 @@ def _jerk_limits(v_ego, lead, max_speed_kph, lead_last_seen_time_ms):
     time_since_lead_seen_ms = _current_time_millis() - lead_last_seen_time_ms
     time_since_lead_seen_multipliers = OrderedDict([
       # (ms since last lead sighting, accel jerk multiplier)
-      (0,    0.01),
-      (3000, 1.0)])
+      (0,    0.1),
+      (2000, 1.0)])
     time_since_lead_seen_multiplier = _interp_map(time_since_lead_seen_ms, time_since_lead_seen_multipliers)
-    # Limit accel jerk near max speed.
-    accel_jerk = 0.12 * near_max_speed_multiplier * time_since_lead_seen_multiplier
+    # Allow higher jerk at low speed, to get started
+    accel_jerk_by_speed = OrderedDict([
+      # (Speed in m/s, accel jerk)
+      (0,  0.18),
+      (12, 0.10)])
+    accel_jerk = _interp_map(v_ego, accel_jerk_by_speed)
+    accel_jerk *= near_max_speed_multiplier * time_since_lead_seen_multiplier
     return decel_jerk, accel_jerk

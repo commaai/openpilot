@@ -253,6 +253,8 @@ class CarState(object):
 
       #END OF ALCA PARAMS
       
+    self.forcePedal = 1
+
     self.brake_only = CP.enableCruise
     self.last_cruise_stalk_pull_time = 0
     self.CP = CP
@@ -479,7 +481,7 @@ class CarState(object):
       self.pedal_interceptor_missed_counter += 1
     pedal_interceptor_present = self.pedal_interceptor_missed_counter < 10
     # Mark pedal unavailable while traditional cruise is on.
-    self.pedal_interceptor_available = pedal_interceptor_present and not bool(self.pcm_acc_status)
+    self.pedal_interceptor_available = pedal_interceptor_present and ((self.forcePedal == 1) or not bool(self.pcm_acc_status))
     if self.pedal_interceptor_available != self.prev_pedal_interceptor_available:
         self.config_ui_buttons(self.pedal_interceptor_available)
 

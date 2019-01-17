@@ -107,7 +107,10 @@ int DAS_steeringEnabled = 0;
 //fake DAS controll
 int time_last_DAS_data = -1;
 
-static int add_tesla_crc(CAN_FIFOMailBox_TypeDef *msg , int msg_len) {
+//fake DAS using pedal
+int DAS_usingPedal = 0;
+
+static int add_tesla_crc(uint32_t MLB, uint32_t MHB , int msg_len) {
   //"""Calculate CRC8 using 1D poly, FF start, FF end"""
   int crc_lookup[256] = { 0x00, 0x1D, 0x3A, 0x27, 0x74, 0x69, 0x4E, 0x53, 0xE8, 0xF5, 0xD2, 0xCF, 0x9C, 0x81, 0xA6, 0xBB, 
     0xCD, 0xD0, 0xF7, 0xEA, 0xB9, 0xA4, 0x83, 0x9E, 0x25, 0x38, 0x1F, 0x02, 0x51, 0x4C, 0x6B, 0x76, 
@@ -129,9 +132,9 @@ static int add_tesla_crc(CAN_FIFOMailBox_TypeDef *msg , int msg_len) {
   for (int x = 0; x < msg_len; x++) {
     int v = 0;
     if (x <= 3) {
-      v = (msg->RDLR >> (x * 8)) & 0xFF;
+      v = (MLB >> (x * 8)) & 0xFF;
     } else {
-      v = (msg->RDHR >> ( (x-4) * 8)) & 0xFF;
+      v = (MHB >> ( (x-4) * 8)) & 0xFF;
     }
     crc = crc_lookup[crc ^ v];
   }
@@ -232,6 +235,7 @@ static void reset_DAS_data() {
   DAS_turn_signal_request = 0;
   DAS_steeringAngle = 0x4000;
   DAS_steeringEnabled = 0;
+  DAS_usingPedal = 0;
 }
 
 static void do_fake_DAS(uint32_t RIR, uint32_t RDTR) {
@@ -570,6 +574,16 @@ static void do_EPB_epasControl(uint32_t RIR, uint32_t RDTR) {
   EPB_epasControl_idx = EPB_epasControl_idx % 16;
 }
 
+static void do_fake_stalk_cancel(CAN_FIFOMailBox_TypeDef *to_push) {
+  uint32_t MLB;
+  uint32_t MHB; 
+  MLB = (to_push->RDLR & 0xFFFFFFC0) + 0x01;
+  MHB = (to_push->RDHR & 0x00FFFFFF);
+  int crc = add_tesla_crc(MLB, MHB,7);
+  MHB = MHB + (crc << 16);
+  send_fake_message(to_push->RIR,to_push->RDTR,8,0x45,0,MLB,MHB);
+}
+
 static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push)
 {
   set_gmlan_digital_output(GMLAN_HIGH);
@@ -664,6 +678,10 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push)
     { // push towards the back
       // deactivate openpilot
       controls_allowed = 0;
+    }
+    //if using pedal, send a cancel immediately to cancel the pedal
+    if ((DAS_usingPedal == 1) && (lever_position != 1)) {
+      do_fake_stalk_cancel(to_push);
     }
   }
 
@@ -792,7 +810,8 @@ static int tesla_tx_hook(CAN_FIFOMailBox_TypeDef *to_send)
     DAS_forward_collission_warning = ((b2 & 0x30) >> 4);
     DAS_hands_on_state = (b2 & 0x0F);
     DAS_cc_state = ((b3 & 0xF0)>>4);
-    DAS_alca_state = (b3 & 0x0F);
+    DAS_usingPedal = ((b3 & 0x08) >> 3);
+    DAS_alca_state = (b3 & 0x07);
     DAS_speed_limit_kph = b5;
     time_last_DAS_data = current_car_time;
     DAS_steeringAngle = ((b7 << 8) + b6) & 0x7FFF;
