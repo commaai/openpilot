@@ -224,7 +224,7 @@ class CarController(object):
     #cruise state: 0 unavailable, 1 available, 2 enabled, 3 hold
     cc_state = 1 
     speed_limit_to_car = int(self.speedlimit_units)
-    alca_state = 0x08 
+    alca_state = 0x00 
     apUnavailable = 0
     gas_to_resume = 0
     collision_warning = 0x00

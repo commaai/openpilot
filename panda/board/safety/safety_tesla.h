@@ -601,6 +601,9 @@ static void do_EPB_epasControl(uint32_t RIR, uint32_t RDTR) {
 static void do_fake_stalk_cancel(uint32_t RIR, uint32_t RDTR) {
   uint32_t MLB;
   uint32_t MHB; 
+  if ((DAS_lastStalkL == 0x00) && (DAS_lastStalkL == 0x00)) {
+    return;
+  }
   MLB = (DAS_lastStalkL & 0xFFFFFFC0) + 0x01;
   MHB = (DAS_lastStalkH & 0x00FFFFFF);
   int crc = add_tesla_crc(MLB, MHB,7);
