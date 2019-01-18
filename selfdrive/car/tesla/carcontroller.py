@@ -268,7 +268,7 @@ class CarController(object):
     can_sends.append(teslacan.create_fake_DAS_msg(speed_control_enabled,gas_to_resume,apUnavailable, collision_warning, op_status, \
             acc_speed_kph, \
             turn_signal_needed,forward_collission_warning,hands_on_state, \
-            cc_state, 1 if (self.PCC.enable_pedal_cruise or CS.forcePedal) else 0,alca_state, \
+            cc_state, 1 if (CS.pedal_interceptor_available) else 0,alca_state, \
             acc_speed_limit_mph,
             speed_limit_to_car,
             apply_angle,

@@ -132,6 +132,9 @@ int DAS_inDrive_prev = 0;
 uint32_t DAS_lastStalkL =0x00;
 uint32_t DAS_lastStalkH = 0x00;
 
+//fake DAS - pedal pressed (with Pedal)
+int DAS_pedalPressed = 0;
+
 static int add_tesla_crc(uint32_t MLB, uint32_t MHB , int msg_len) {
   //"""Calculate CRC8 using 1D poly, FF start, FF end"""
   int crc_lookup[256] = { 0x00, 0x1D, 0x3A, 0x27, 0x74, 0x69, 0x4E, 0x53, 0xE8, 0xF5, 0xD2, 0xCF, 0x9C, 0x81, 0xA6, 0xBB, 
@@ -260,6 +263,7 @@ static void reset_DAS_data() {
   DAS_usingPedal = 0;
   DAS_lastStalkL =0x00;
   DAS_lastStalkH = 0x00;
+  DAS_pedalPressed = 0;
 }
 
 static void do_fake_DAS(uint32_t RIR, uint32_t RDTR) {
@@ -579,7 +583,11 @@ static void do_fake_DAS(uint32_t RIR, uint32_t RDTR) {
     DAS_warningMatrix1_idx = DAS_warningMatrix1_idx % 16;
 
     //send DAS_warningMatrix3 - 0x349
-    MLB = 0x00 + (DAS_gas_to_resume << 1) + ((DAS_apUnavailable << 5) << 8);
+    int ovr = 0;
+    if ((DAS_cc_state >= 2) && (DAS_pedalPressed > 0)) {
+      ovr = 1;
+    }
+    MLB = 0x00 + (DAS_gas_to_resume << 1) + ((DAS_apUnavailable << 5) << 8) + (ovr << 23);
     MHB = 0x00;
     send_fake_message(RIR,RDTR,8,0x349,0,MLB,MHB);
     DAS_warningMatrix3_idx ++;
@@ -636,6 +644,14 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push)
   {
     // Normal
     addr = to_push->RIR >> 21;
+  }
+
+  //let's see if the pedal was pressed
+  if ((addr == 0x552) && (bus_number == 0)) {
+    //m1 = 0.050796813
+    //m2 = 0.101593626
+    //d = -22.85856576
+    DAS_pedalPressed = (int)((((to_push->RDLR & 0xFF00) >> 8) + ((to_push->RDLR & 0xFF) << 8)) * 0.050796813 -22.85856576);
   }
 
   //we use 0x108 at 100Hz to detect timing of messages sent by our fake DAS and EPB
