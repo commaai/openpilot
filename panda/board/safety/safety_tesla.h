@@ -280,7 +280,7 @@ static void do_fake_DI_state(uint32_t RIR, uint32_t RDTR) {
   }
   MLB = (DAS_diStateL & 0xFFFF0FFF)+ 0x2000;
   MHB = (DAS_diStateH & 0x00FF0E00) + ((DAS_acc_speed_limit_mph *10) & 0x1FF);
-  int idx = (DAS_lastStalkH & 0xF000 ) >> 12;
+  int idx = (DAS_diStateH & 0xF000 ) >> 12;
   idx = ( idx + 1 ) % 16;
   MHB = MHB + (idx << 12);
   //cksm is different as DI_Status comes via gateway from another bus, so it's 88 or 0x058 what we need)
@@ -324,9 +324,12 @@ static void do_fake_DAS(uint32_t RIR, uint32_t RDTR) {
     send_fake_message(RIR,RDTR,4,0x488,0,MLB,MHB);
     DAS_steeringControl_idx ++;
     DAS_steeringControl_idx = DAS_steeringControl_idx % 16;
+  }
+
+  if (fake_DAS_counter %10 ==7) {
     //spam DI_State if we control speed as well
     if (DAS_cc_state == 2) {
-      //do_fake_DI_state(RIR,RDTR);
+      do_fake_DI_state(RIR,RDTR);
     }
   }
 
@@ -703,6 +706,10 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push)
     if ((DAS_usingPedal == 1) && ( acc_state >= 2) && ( acc_state <= 4)) {
       do_fake_stalk_cancel(to_push->RIR, to_push->RDTR);
     } 
+    if (DAS_cc_state == 2) {
+      do_fake_DI_state(to_push->RIR,to_push->RDTR);
+    }
+
   }
 
   // Record the current car time in current_car_time (for use with double-pulling cruise stalk)
