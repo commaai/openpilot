@@ -260,6 +260,10 @@ class CarController(object):
       if (CS.pedal_interceptor_available and self.PCC.enable_pedal_cruise) or (self.ACC.enable_adaptive_cruise):
         speed_control_enabled = 1
         cc_state = 2
+      else:
+        if (CS.pcm_acc_status):
+          #car CC enabled but not OP, display the HOLD message
+          cc_state = 3
     can_sends.append(teslacan.create_fake_DAS_msg(speed_control_enabled,gas_to_resume,apUnavailable, collision_warning, op_status, \
             acc_speed_kph, \
             turn_signal_needed,forward_collission_warning,hands_on_state, \

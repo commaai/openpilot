@@ -114,6 +114,10 @@ int DAS_usingPedal = 0;
 int DAS_inDrive = 0;
 int DAS_inDrive_prev = 0;
 
+//fake DAS - last stalk data used to cancel
+uint32_t DAS_lastStalkL =0x00;
+uint32_t DAS_lastStalkH = 0x00;
+
 static int add_tesla_crc(uint32_t MLB, uint32_t MHB , int msg_len) {
   //"""Calculate CRC8 using 1D poly, FF start, FF end"""
   int crc_lookup[256] = { 0x00, 0x1D, 0x3A, 0x27, 0x74, 0x69, 0x4E, 0x53, 0xE8, 0xF5, 0xD2, 0xCF, 0x9C, 0x81, 0xA6, 0xBB, 
@@ -240,6 +244,8 @@ static void reset_DAS_data() {
   DAS_steeringAngle = 0x4000;
   DAS_steeringEnabled = 0;
   DAS_usingPedal = 0;
+  DAS_lastStalkL =0x00;
+  DAS_lastStalkH = 0x00;
 }
 
 static void do_fake_DAS(uint32_t RIR, uint32_t RDTR) {
@@ -578,14 +584,14 @@ static void do_EPB_epasControl(uint32_t RIR, uint32_t RDTR) {
   EPB_epasControl_idx = EPB_epasControl_idx % 16;
 }
 
-static void do_fake_stalk_cancel(CAN_FIFOMailBox_TypeDef *to_push) {
+static void do_fake_stalk_cancel(uint32_t RIR, uint32_t RDTR) {
   uint32_t MLB;
   uint32_t MHB; 
-  MLB = (to_push->RDLR & 0xFFFFFFC0) + 0x01;
-  MHB = (to_push->RDHR & 0x00FFFFFF);
+  MLB = (DAS_lastStalkL & 0xFFFFFFC0) + 0x01;
+  MHB = (DAS_lastStalkH & 0x00FFFFFF);
   int crc = add_tesla_crc(MLB, MHB,7);
-  MHB = MHB + (crc << 16);
-  send_fake_message(to_push->RIR,to_push->RDTR,8,0x45,0,MLB,MHB);
+  MHB = MHB + (crc << 24);
+  send_fake_message(RIR,RDTR,8,0x45,0,MLB,MHB);
 }
 
 static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push)
@@ -616,6 +622,14 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push)
     }
     do_fake_DAS(to_push->RIR,to_push->RDTR);
     return;
+  }
+
+  //see if cruise is enabled [Enabled, standstill or Override] and cancel if using pedal
+  if ((addr == 0x368) && (bus_number == 0)) {
+    int acc_state = (to_push->RDLR & 0xF000) >> 12;
+    if ((DAS_usingPedal == 1) && ( acc_state >= 2) && ( acc_state <= 4)) {
+      do_fake_stalk_cancel(to_push->RIR, to_push->RDTR);
+    } 
   }
 
   // Record the current car time in current_car_time (for use with double-pulling cruise stalk)
@@ -667,6 +681,9 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push)
 
   if ((addr == 0x45) && (bus_number == 0))
   {
+    //first save for future use
+    DAS_lastStalkL = to_push->RDLR;
+    DAS_lastStalkH = to_push->RDHR;
     // 6 bits starting at position 0
     int lever_position = (to_push->RDLR & 0x3F);
     if (lever_position == 2)
@@ -685,7 +702,7 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push)
     }
     //if using pedal, send a cancel immediately to cancel the pedal
     if ((DAS_usingPedal == 1) && (lever_position != 1)) {
-      do_fake_stalk_cancel(to_push);
+      do_fake_stalk_cancel(to_push->RIR, to_push->RDTR);
     }
   }
 
