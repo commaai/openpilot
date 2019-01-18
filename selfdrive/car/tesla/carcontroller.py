@@ -221,38 +221,45 @@ class CarController(object):
     forward_collission_warning = 0 #1 if needed
     if hud_alert == AH.FCW:
       forward_collission_warning = 0x01
-    cc_state = 1 #cruise state: 0 unavailable, 1 available, 2 enabled, 3 hold
+    #cruise state: 0 unavailable, 1 available, 2 enabled, 3 hold
+    cc_state = 1 
     speed_limit_to_car = int(self.speedlimit_units)
     alca_state = 0x08 
+    apUnavailable = 0
+    gas_to_resume = 0
+    collision_warning = 0x00
+    acc_speed_limit_mph = 0
+    speed_control_enabled = 0
+    accel_min = -15
+    accel_max = 5
     if enabled:
       op_status = 0x03
       alca_state = 0x08 + turn_signal_needed
+      #canceled by user
       if self.ALCA.laneChange_cancelled:
         alca_state = 0x14
-      #if not enable_steer_control:
+      #min speed for ALCA
+      if CS.CL_MIN_V > CS.v_ego:
+        alca_state = 0x05
+      if not enable_steer_control:
         #op_status = 0x04
-        #hands_on_state = 0x03
+        hands_on_state = 0x02
+        apUnavailable = 1
       if hud_alert == AH.STEER:
         if snd_chime == CM.MUTE:
           hands_on_state = 0x03
         else:
           hands_on_state = 0x05
-    apUnavailable = 0
-    gas_to_resume = 0
-    alca_cancelled = 0
-    if enabled and not enable_steer_control:
-      apUnavailable = 1
-    if self.ALCA.laneChange_cancelled:
-      alca_cancelled = 1
-    collision_warning = 0x00
-    #acc_speed_limit_mph = CS.v_cruise_pcm * CV.KPH_TO_MPH
-    acc_speed_limit_mph = max(CS.v_cruise_pcm * CV.KPH_TO_MPH,1)
-    if hud_alert == AH.FCW:
-      collision_warning = 0x01
-    acc_speed_kph = self.ACC.new_speed #pcm_speed * CV.MS_TO_KPH
-    accel_min = -15
-    accel_max = 5
-    speed_control_enabled = enabled and (acc_speed_limit_mph > 0)
+      acc_speed_limit_mph = max(self.ACC.acc_speed_kph * CV.KPH_TO_MPH,1)
+      if CS.pedal_interceptor_available:
+        acc_speed_limit_mph = max(self.PCC.pedal_speed_kph * CV.KPH_TO_MPH,1)
+      if hud_alert == AH.FCW:
+        collision_warning = 0x01
+      if self.ACC.enable_adaptive_cruise:
+        acc_speed_kph = self.ACC.new_speed #pcm_speed * CV.MS_TO_KPH
+      if (CS.pedal_interceptor_available and self.PCC.enable_pedal_cruise) or (self.ACC.enable_adaptive_cruise):
+        speed_control_enabled = 1
+        cc_state = 2
     can_sends.append(teslacan.create_fake_DAS_msg(speed_control_enabled,gas_to_resume,apUnavailable, collision_warning, op_status, \
             acc_speed_kph, \
             turn_signal_needed,forward_collission_warning,hands_on_state, \

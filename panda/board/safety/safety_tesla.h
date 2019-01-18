@@ -110,6 +110,10 @@ int time_last_DAS_data = -1;
 //fake DAS using pedal
 int DAS_usingPedal = 0;
 
+//fake DAS - are we in drive?
+int DAS_inDrive = 0;
+int DAS_inDrive_prev = 0;
+
 static int add_tesla_crc(uint32_t MLB, uint32_t MHB , int msg_len) {
   //"""Calculate CRC8 using 1D poly, FF start, FF end"""
   int crc_lookup[256] = { 0x00, 0x1D, 0x3A, 0x27, 0x74, 0x69, 0x4E, 0x53, 0xE8, 0xF5, 0xD2, 0xCF, 0x9C, 0x81, 0xA6, 0xBB, 
@@ -716,6 +720,15 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push)
     if (tesla_speed < 0)
     {
       tesla_speed = 0;
+    }
+    DAS_inDrive_prev = DAS_inDrive;
+    if (((to_push->RDLR & 0x7000 ) >> 12) == 4) {
+      DAS_inDrive = 1;
+    } else {
+      DAS_inDrive = 0;
+    }
+    if ((DAS_inDrive == 0) && (DAS_inDrive_prev == 1)) {
+      reset_DAS_data();
     }
   }
 
