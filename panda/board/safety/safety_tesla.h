@@ -602,6 +602,7 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push)
 {
   set_gmlan_digital_output(GMLAN_HIGH);
   reset_gmlan_switch_timeout(); //we're still in tesla safety mode, reset the timeout counter and make sure our output is enabled
+  uint32_t ts = TIM2->CNT;
 
   int bus_number = (to_push->RDTR >> 4) & 0xFF;
   uint32_t addr;
