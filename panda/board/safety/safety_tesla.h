@@ -584,7 +584,7 @@ static void do_fake_DAS(uint32_t RIR, uint32_t RDTR) {
 
     //send DAS_warningMatrix3 - 0x349
     int ovr = 0;
-    if ((DAS_cc_state >= 2) && (DAS_pedalPressed > 0)) {
+    if ((DAS_cc_state >= 2) && (DAS_pedalPressed > 10)) {
       ovr = 1;
     }
     MLB = 0x00 + (DAS_gas_to_resume << 1) + ((DAS_apUnavailable << 5) << 8) + (ovr << 23);
@@ -647,7 +647,7 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push)
   }
 
   //let's see if the pedal was pressed
-  if ((addr == 0x552) && (bus_number == 0)) {
+  if ((addr == 0x552) && (bus_number == 2)) {
     //m1 = 0.050796813
     //m2 = 0.101593626
     //d = -22.85856576
