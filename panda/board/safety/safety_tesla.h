@@ -135,6 +135,10 @@ uint32_t DAS_lastStalkH = 0x00;
 //fake DAS - pedal pressed (with Pedal)
 int DAS_pedalPressed = 0;
 
+//fake DAS - DI_state spamming
+uint32_t DAS_diStateL =0x00;
+uint32_t DAS_diStateH = 0x00;
+
 static int add_tesla_crc(uint32_t MLB, uint32_t MHB , int msg_len) {
   //"""Calculate CRC8 using 1D poly, FF start, FF end"""
   int crc_lookup[256] = { 0x00, 0x1D, 0x3A, 0x27, 0x74, 0x69, 0x4E, 0x53, 0xE8, 0xF5, 0xD2, 0xCF, 0x9C, 0x81, 0xA6, 0xBB, 
@@ -264,6 +268,27 @@ static void reset_DAS_data() {
   DAS_lastStalkL =0x00;
   DAS_lastStalkH = 0x00;
   DAS_pedalPressed = 0;
+  DAS_diStateL =0x00;
+  DAS_diStateH = 0x00;
+}
+
+static void do_fake_DI_state(uint32_t RIR, uint32_t RDTR) {
+  uint32_t MLB;
+  uint32_t MHB; 
+  if (((DAS_diStateL == 0x00) && (DAS_diStateH == 0x00)) || (DAS_cc_state != 2)) {
+    return;
+  }
+  MLB = (DAS_diStateL & 0xFFFF0FFF)+ 0x2000;
+  MHB = (DAS_diStateH & 0x00FF0E00) + ((DAS_acc_speed_limit_mph *10) & 0x1FF);
+  int idx = (DAS_lastStalkH & 0xF000 ) >> 12;
+  idx = ( idx + 1 ) % 16;
+  MHB = MHB + (idx << 12);
+  //cksm is different as DI_Status comes via gateway from another bus, so it's 88 or 0x058 what we need)
+  int cksm = add_tesla_cksm2(MLB, MHB, 0x058, 7);
+  MHB = MHB + (cksm << 24);
+  DAS_diStateL = MLB;
+  DAS_diStateL = MHB;
+  send_fake_message(RIR,RDTR,8,0x368,0,MLB,MHB);
 }
 
 static void do_fake_DAS(uint32_t RIR, uint32_t RDTR) {
@@ -299,6 +324,10 @@ static void do_fake_DAS(uint32_t RIR, uint32_t RDTR) {
     send_fake_message(RIR,RDTR,4,0x488,0,MLB,MHB);
     DAS_steeringControl_idx ++;
     DAS_steeringControl_idx = DAS_steeringControl_idx % 16;
+    //spam DI_State if we control speed as well
+    if (DAS_cc_state == 2) {
+      //do_fake_DI_state(RIR,RDTR);
+    }
   }
 
   if (fake_DAS_counter % 3 == 0) {
@@ -624,6 +653,8 @@ static void do_fake_stalk_cancel(uint32_t RIR, uint32_t RDTR) {
   send_fake_message(RIR,RDTR,8,0x45,0,MLB,MHB);
 }
 
+
+
 static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push)
 {
   set_gmlan_digital_output(GMLAN_HIGH);
@@ -665,6 +696,9 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push)
 
   //see if cruise is enabled [Enabled, standstill or Override] and cancel if using pedal
   if (addr == 0x368) {
+    //first save values for spamming
+    DAS_diStateL = to_push->RDLR;
+    DAS_diStateH = to_push->RDHR;
     int acc_state = ((to_push->RDLR & 0xF000) >> 12);
     if ((DAS_usingPedal == 1) && ( acc_state >= 2) && ( acc_state <= 4)) {
       do_fake_stalk_cancel(to_push->RIR, to_push->RDTR);
