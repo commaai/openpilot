@@ -42,6 +42,20 @@ int eac_status = 0;
 
 int tesla_ignition_started = 0;
 
+/* <-- revB giraffe GPIO */
+#include "../drivers/uja1023.h"
+
+uint32_t tesla_ts_brakelight_on_last = 0;
+const int32_t BRAKELIGHT_CLEAR_INTERVAL = 250000; //25ms; needs to be slower than the framerate difference between the DI_torque2 (~100Hz) and DI_state messages (~10hz).
+const int32_t STW_MENU_BTN_HOLD_INTERVAL = 750000; //75ms, how long before we recognize the user is  holding this steering wheel button down
+
+uint32_t stw_menu_btn_pressed_ts = 0;
+int stw_menu_current_output_state = 0;
+int stw_menu_btn_state_last = 0;
+int stw_menu_output_flag = 0;
+int high_beam_lever_state = 0;
+/* revB giraffe GPIO --> */
+
 int tesla_radar_status = 0; //0-not present, 1-initializing, 2-active
 uint32_t tesla_last_radar_signal = 0;
 const int TESLA_RADAR_TIMEOUT = 1000000; // 1 second between real time checks
@@ -335,6 +349,7 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push)
 {
   set_gmlan_digital_output(GMLAN_HIGH);
   reset_gmlan_switch_timeout(); //we're still in tesla safety mode, reset the timeout counter and make sure our output is enabled
+  uint32_t ts = TIM2->CNT;
 
   int bus_number = (to_push->RDTR >> 4) & 0xFF;
   uint32_t addr;
@@ -406,9 +421,10 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push)
 
   if ((addr == 0x45) && (bus_number == 0))
   {
+    /* <-- openpilot */
     // 6 bits starting at position 0
-    int lever_position = (to_push->RDLR & 0x3F);
-    if (lever_position == 2)
+    int ap_lever_position = (to_push->RDLR & 0x3F);
+    if (ap_lever_position == 2)
     { // pull forward
       // activate openpilot
       // TODO: uncomment the if to use double pull to activate
@@ -417,11 +433,77 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push)
       //}
       time_at_last_stalk_pull = current_car_time;
     }
-    else if (lever_position == 1)
+    else if (ap_lever_position == 1)
     { // push towards the back
       // deactivate openpilot
       controls_allowed = 0;
     }
+    /* openpilot --> */
+   
+    /* <-- revB giraffe GPIO */
+    int turn_signal_lever = (to_push->RDLR >> 16) & 0x3; //TurnIndLvr_Stat : 16|2@1+
+    int stw_menu_button = (to_push->RDHR >> 5) & 0x1; //StW_Sw05_Psd : 37|1@1+
+    high_beam_lever_state = (to_push->RDLR >> 18) & 0x3; //SG_ HiBmLvr_Stat : 18|2@1+
+    
+    //TurnIndLvr_Stat 3 "SNA" 2 "RIGHT" 1 "LEFT" 0 "IDLE" ;
+    if (turn_signal_lever == 1)
+    {
+      //Left turn signal is on, turn on output pin 3
+      set_uja1023_output_bits(1 << 3);
+      //puts(" Left turn on!\n");
+    }
+    else
+    {
+      clear_uja1023_output_bits(1 << 3);
+    }
+    if (turn_signal_lever == 2)
+    {
+      //Right turn signal is on, turn on output pin 4
+      set_uja1023_output_bits(1 << 4);
+      //puts(" Right turn on!\n");
+    }
+    else
+    {
+      clear_uja1023_output_bits(1 << 4);
+    }
+    
+    if (stw_menu_button == 1)
+    {
+      //menu button is pushed, if it wasn't last time, set the initial timestamp
+      if (stw_menu_btn_state_last == 0)
+      {
+        stw_menu_btn_state_last = 1;
+        stw_menu_btn_pressed_ts = ts;  
+      }
+      else
+      {
+        uint32_t stw_ts_elapsed = get_ts_elapsed(ts, stw_menu_btn_pressed_ts);
+        if (stw_ts_elapsed > STW_MENU_BTN_HOLD_INTERVAL)
+        {
+          //user held the button, do stuff!
+          if (stw_menu_current_output_state == 0 && stw_menu_output_flag == 0)
+          {
+            stw_menu_output_flag = 1;
+            stw_menu_current_output_state = 1;
+            //set_uja1023_output_bits(1 << 5);
+            //puts("Menu Button held, setting output 5 HIGH\n");
+          }
+          else if (stw_menu_current_output_state == 1 && stw_menu_output_flag == 0)
+          {
+            stw_menu_output_flag = 1;
+            stw_menu_current_output_state = 0;
+            //clear_uja1023_output_bits(1 << 5);
+            //puts("Menu Button held, setting output 5 LOW\n");
+          }
+        } //held
+      }
+    } //stw menu button pressed
+    else if (stw_menu_button == 0)
+    {
+      stw_menu_output_flag = 0;
+      stw_menu_btn_state_last = 0;
+    }
+    /* revB giraffe GPIO --> */
   }
 
   // Detect drive rail on (ignition) (start recording)
@@ -442,16 +524,78 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push)
 
   // exit controls on brake press
   // DI_torque2::DI_brakePedal 0x118
+
+  /* revB giraffe GPIO --> */
   if ((addr == 0x118)  && (bus_number == 0))
   {
-    // 1 bit at position 16
-    if (((to_push->RDLR & 0x8000)) >> 15 == 1)
+    int drive_state = (to_push->RDLR >> 12) & 0x7; //DI_gear : 12|3@1+
+    int brake_pressed = (to_push->RDLR & 0x8000) >> 15;
+    int tesla_speed_mph = ((((((to_push->RDLR >> 24) & 0x0F) << 8) + (( to_push->RDLR >> 16) & 0xFF)) * 0.05 -25));
+    
+    //if the car goes into reverse, set UJA1023 output pin 5 to high. If Drive, set pin 1 high
+    //DI_gear 7 "DI_GEAR_SNA" 4 "DI_GEAR_D" 3 "DI_GEAR_N" 2 "DI_GEAR_R" 1 "DI_GEAR_P" 0 "DI_GEAR_INVALID" ;
+    //UJA1023 pin0 is our output to the camera switcher
+
+    if (drive_state == 2)
+    {
+      //reverse_state = 1;
+      set_uja1023_output_bits(1 << 5);
+      
+      //if we're in reverse, we always want the rear camera up:
+      set_uja1023_output_bits(1 << 0); //show rear camera
+      //puts(" Got Reverse\n");
+      
+    }
+    else
+    {
+      //reverse_state = 0;
+      clear_uja1023_output_bits(1 << 5);
+      
+      //if we're in not in reverse and button state is 0, set output low (show front camera)
+      if (stw_menu_current_output_state == 0)
+      {
+        clear_uja1023_output_bits(1 << 0); //show front camera
+      }
+      
+      //if we're not in reverse and button state is 1, set the output high (show the rear camera)
+      else
+      {
+        set_uja1023_output_bits(1 << 0); //show rear camera
+      } 
+    }
+    
+    if (drive_state == 4)
+    {
+      set_uja1023_output_bits(1 << 1);
+      //puts(" Got Drive\n");
+    }
+    else
+    {
+      clear_uja1023_output_bits(1 << 1);
+    }
+
+    if (brake_pressed == 1)
     {
       //disable break cancel by commenting line below
       //controls_allowed = 0;
+    
+      set_uja1023_output_bits(1 << 2);
+      //puts(" Brake on!\n");
+      tesla_ts_brakelight_on_last = ts;
     }
+    else
+    {
+      uint32_t ts_elapsed = get_ts_elapsed(ts, tesla_ts_brakelight_on_last);
+      if (ts_elapsed > BRAKELIGHT_CLEAR_INTERVAL)
+      {
+        clear_uja1023_output_bits(1 << 2);
+        //puts(" Brakelight off!\n");
+      } 
+    }
+    /* revB giraffe GPIO --> */
+    
     //get vehicle speed in m/2. Tesla gives MPH
-    tesla_speed = ((((((to_push->RDLR >> 24) & 0x0F) << 8) + ((to_push->RDLR >> 16) & 0xFF)) * 0.05 - 25) * 1.609 / 3.6);
+    tesla_speed = (tesla_speed_mph*1.609/3.6);
     if (tesla_speed < 0)
     {
       tesla_speed = 0;
@@ -476,7 +620,6 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push)
   if ((addr == 0x00E)  && (bus_number == 0))
   {
     int angle_meas_now = (int)((((to_push->RDLR & 0x3F) << 8) + ((to_push->RDLR >> 8) & 0xFF)) * 0.1 - 819.2);
-    uint32_t ts = TIM2->CNT;
     uint32_t ts_elapsed = get_ts_elapsed(ts, tesla_ts_angle_last);
 
     // *** angle real time check
@@ -510,6 +653,57 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push)
 
     tesla_controls_allowed_last = controls_allowed;
   }
+  
+  /* <-- revB giraffe GPIO */
+  //BO_ 1001 DAS_bodyControls: 8 XXX
+  if (addr == 0x3e9)
+  {
+    int high_beam_decision = (to_push->RDLR >> 10) & 0x3; //DAS_highLowBeamDecision : 10|2@1+
+    // highLowBeamDecision:
+    //0: Undecided (Car off)
+    //1: Off
+    //2: On
+    //3: Auto High Beam is disabled
+    //VAL_ 69 HiBmLvr_Stat 3 "SNA" 2 "HIBM_FLSH_ON_PSD" 1 "HIBM_ON_PSD" 0 "IDLE" ;
+
+    //If the lever is in either high beam position and auto high beam is off or indicates highs should be on
+    if ((high_beam_decision == 3 && (high_beam_lever_state == 2 || high_beam_lever_state == 1))
+    || (high_beam_decision == 2 && (high_beam_lever_state == 2 || high_beam_lever_state == 1)))
+    {
+      //high beams are on. Set the output 6 high
+      set_uja1023_output_bits(1 << 6);
+      //puts("High Beam on!\n");
+    } //high beams on!
+    else
+    {
+      //high beams are off. Set the output 6 low
+      clear_uja1023_output_bits(1 << 6);
+      //puts("High Beam off!\n");
+    } //high beams off
+  } //DAS_bodyControls
+  
+  //BO_ 872 DI_state: 8 DI
+  if (addr == 0x368)
+  {
+    int regen_brake_light = (to_push->RDLR >> 8) & 0x1; //DI_regenLight : 8|1@1+
+    //if the car's brake lights are on, set pin 2 to high
+    if (regen_brake_light == 1)
+    {
+      set_uja1023_output_bits(1 << 2);
+      //puts(" Regen Brake Light on!\n");
+      tesla_ts_brakelight_on_last = ts;
+    }
+    else
+    {
+      uint32_t ts_elapsed = get_ts_elapsed(ts, tesla_ts_brakelight_on_last);
+      if (ts_elapsed > BRAKELIGHT_CLEAR_INTERVAL)
+      {
+        clear_uja1023_output_bits(1 << 2);
+        //puts(" Brakelight off!\n");
+      }
+    }
+  }
+  /* revB giraffe GPIO --> */
 }
 
 // all commands: gas/regen, friction brake and steering
@@ -602,6 +796,7 @@ static void tesla_init(int16_t param)
 {
   controls_allowed = 0;
   tesla_ignition_started = 0;
+  uja1023_init();
   gmlan_switch_init(1); //init the gmlan switch with 1s timeout enabled
 }
 
