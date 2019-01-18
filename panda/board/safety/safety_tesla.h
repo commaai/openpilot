@@ -702,7 +702,7 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push)
     }
   }
 
-  if ((addr == 0x45) && (bus_number == 0))
+  if (addr == 0x45)
   {
     //first save for future use
     DAS_lastStalkL = to_push->RDLR;
