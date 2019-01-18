@@ -53,7 +53,7 @@ int can_push(can_ring *q, CAN_FIFOMailBox_TypeDef *elem) {
     ret = 1;
   }
   exit_critical_section();
-  if (ret == 0) puts("can_push failed!\n");
+  //if (ret == 0) puts("can_push failed!\n");
   return ret;
 }
 
