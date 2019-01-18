@@ -260,6 +260,18 @@ class CarInterface(object):
       ret.longitudinalKiBP = [0., 35.]
       ret.longitudinalKiV = [0.18, 0.12]
 
+    elif candidate == CAR.FIT:
+      stop_and_go = False
+      ret.mass = 2644. * CV.LB_TO_KG + std_cargo
+      ret.wheelbase = 2.53
+      ret.centerToFront = ret.wheelbase * 0.39
+      ret.steerRatio = 13.06
+      ret.steerKpV, ret.steerKiV = [[0.8], [0.24]]
+      ret.longitudinalKpBP = [0., 5., 35.]
+      ret.longitudinalKpV = [1.2, 0.8, 0.5]
+      ret.longitudinalKiBP = [0., 35.]
+      ret.longitudinalKiV = [0.18, 0.12]
+
     elif candidate == CAR.ACURA_RDX:
       stop_and_go = False
       ret.mass = 3935 * CV.LB_TO_KG + std_cargo
