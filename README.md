@@ -74,6 +74,7 @@ Supported Cars
 | Honda                | Civic Hatchback 2017-19  | Honda Sensing        | Yes     | Stock          | 0mph             | 12mph          | Bosch             |
 | Honda                | CR-V 2015-16             | Touring              | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          | Nidec             |
 | Honda                | CR-V 2017-18             | Honda Sensing        | Yes     | Stock          | 0mph             | 12mph          | Bosch             |
+| Honda                | Fit 2018                 | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          | Inverted Nidec    |
 | Honda                | Odyssey 2017-19          | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 0mph           | Inverted Nidec    |
 | Honda                | Pilot 2016-18            | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          | Nidec             |
 | Honda                | Pilot 2019               | All                  | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          | Inverted Nidec    |
@@ -108,11 +109,10 @@ Supported Cars
 Community Maintained Cars
 ------
 
-| Make                 | Model                    | Supported Package    | Lateral | Longitudinal   | No Accel Below   | No Steer Below | Giraffe           |
-| ---------------------| -------------------------| ---------------------| --------| ---------------| -----------------| ---------------|-------------------|
-| Honda                | Fit 2018                 | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          | Inverted Nidec    |
-| Tesla                | Model S 2012             | All                  | Yes     | Not yet        | Not applicable   | 0mph           | Custom<sup>9</sup>|
-| Tesla                | Model S 2013             | All                  | Yes     | Not yet        | Not applicable   | 0mph           | Custom<sup>9</sup>|
+| Make          | Model                     | Supported Package    | Lateral | Longitudinal   | No Accel Below   | No Steer Below | Giraffe           |
+| -------       | ----------------------    | -------------------- | ------- | ------------   | --------------   | -------------- | ------------------|
+| Tesla         | Model S 2012              | All                  | Yes     | Not yet        | Not applicable   | 0mph           | Custom<sup>8</sup>|
+| Tesla         | Model S 2013              | All                  | Yes     | Not yet        | Not applicable   | 0mph           | Custom<sup>8</sup>|
 
 [[Honda Fit Pull Request]](https://github.com/commaai/openpilot/pull/266). <br />
 [[Tesla Model S Pull Request]](https://github.com/commaai/openpilot/pull/246) <br />
