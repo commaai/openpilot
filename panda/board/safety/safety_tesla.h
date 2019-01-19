@@ -616,7 +616,7 @@ static void do_fake_DAS(uint32_t RIR, uint32_t RDTR) {
 
     //send DAS_warningMatrix3 - 0x349
     int ovr = 0;
-    if ((DAS_cc_state >= 2) && (DAS_pedalPressed > 10)) {
+    if ((DAS_cc_state == 2) && (DAS_pedalPressed > 10)) {
       ovr = 1;
     }
     MLB = 0x00 + (DAS_gas_to_resume << 1) + ((DAS_apUnavailable << 5) << 8) + (ovr << 23);
