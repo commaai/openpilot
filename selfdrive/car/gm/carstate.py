@@ -21,6 +21,7 @@ def get_powertrain_can_parser(CP, canbus):
     ("TurnSignals", "BCMTurnSignals", 0),
     ("AcceleratorPedal", "AcceleratorPedal", 0),
     ("ACCButtons", "ASCMSteeringButton", CruiseButtons.UNPRESS),
+    ("LKAButton", "ASCMSteeringButton", 0),
     ("SteeringWheelAngle", "PSCMSteeringAngle", 0),
     ("SteeringWheelRate", "PSCMSteeringAngle", 0),
     ("FLWheelSpd", "EBCMWheelSpdFront", 0),
@@ -63,6 +64,8 @@ class CarState(object):
     self.right_blinker_on = False
     self.prev_right_blinker_on = False
     self.prev_distance_button = 0
+    self.prev_lka_button = 0
+    self.lka_button = 0
     self.distance_button = 0
     self.follow_level = 3
     self.lkMode = True
@@ -80,6 +83,8 @@ class CarState(object):
     self.can_valid = pt_cp.can_valid
     self.prev_cruise_buttons = self.cruise_buttons
     self.cruise_buttons = pt_cp.vl["ASCMSteeringButton"]['ACCButtons']
+    self.prev_lka_button = self.lka_button
+    self.lka_button = pt_cp.vl["ASCMSteeringButton"]["LKAButton"]
     self.prev_distance_button = self.distance_button
     self.distance_button = pt_cp.vl["ASCMSteeringButton"]["DistanceButton"]
 
