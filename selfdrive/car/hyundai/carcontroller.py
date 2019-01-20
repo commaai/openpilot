@@ -30,6 +30,13 @@ class CarController(object):
     self.camera_disconnected = False
 
     self.packer = CANPacker(dbc_name)
+    context = zmq.Context()
+    self.params = Params()
+    self.map_data_sock = messaging.sub_sock(context, service_list['liveMapData'].port, conflate=True)
+    self.speed_conv = 3.6
+    self.speed_adjusted = False
+
+
 
   def update(self, sendcan, enabled, CS, actuators, pcm_cancel_cmd, hud_alert):
 
@@ -65,10 +72,55 @@ class CarController(object):
                                    enabled, CS.lkas11, hud_alert, keep_stock=(not self.camera_disconnected)))
 
     if pcm_cancel_cmd:
-      can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.CANCEL))
+      can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.CANCEL, 0))
     elif CS.stopped and (self.cnt - self.last_resume_cnt) > 5:
       self.last_resume_cnt = self.cnt
-      can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.RES_ACCEL))
+      can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.RES_ACCEL, 0))
+
+
+    # Speed Limit Related Stuff  Lot's of comments for others to understand!
+    # Run this twice a second
+    if (self.cnt % 50) == 0:
+      # If Not Enabled, or cruise not set, allow auto speed adjustment again
+      if not enabled or not CS.acc_active:
+          self.speed_adjusted = False
+      # Attempt to read the speed limit from zmq
+      map_data = messaging.recv_one_or_none(self.map_data_sock)
+      # If we got a message
+      if map_data != None:
+        # See if we use Metric or dead kings ligaments for measurements, and set a variable to the conversion value
+        if bool(self.params.get("IsMetric")):
+          self.speed_conv = CV.MS_TO_KPH
+        else:
+          self.speed_conv = CV.MS_TO_MPH
+
+        # If the speed limit is valid
+        if map_data.liveMapData.speedLimitValid == True and map_data.liveMapData.speedLimit > 0:
+          last_speed = self.map_speed
+          # Get the speed limit, and add the offset to it,
+          self.map_speed = (map_data.liveMapData.speedLimit + float(self.params.get("SpeedLimitOffset"))) * self.speed_conv
+          # Compare it to the last time the speed was read.  If it is different, set the flag to allow it to auto set out speed
+          if last_speed != self.map_speed:
+              self.speed_adjusted = False
+          print self.map_speed
+        else:
+          # If it is not valid, set the flag so the cruise speed won't be changed.
+          self.map_speed = 0
+          self.speed_adjusted = True
+
+    # Ensure we have cruise IN CONTROL, so we don't do anything dangerous, like turn cruise on
+    # Ensure the speed limit is within range of the stock cruise control capabilities
+    # Do the spamming 10 times a second, we might get from 0 to 10 successful
+    # Only do this if we have not yet set the cruise speed
+    if CS.acc_active and not self.speed_adjusted and self.map_speed > (8.5 * self.speed_conv) and (self.cnt % 9 == 0 or self.cnt % 9 == 1):
+        # Use some tolerance because of Floats being what they are...
+        if (CS.cruise_set_speed * self.speed_conv) > (self.map_speed * 1.005):
+            can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.SET_DECEL, (1 if self.cnt % 9 == 1 else 0)))
+        elif (CS.cruise_set_speed * self.speed_conv) < (self.map_speed / 1.005):
+            can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.RES_ACCEL, (1 if self.cnt % 9 == 1 else 0)))
+        # If nothing needed adjusting, then the speed has been set, which will lock out this control
+        else:
+            self.speed_adjusted = True
 
     ### Send messages to canbus
     sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
