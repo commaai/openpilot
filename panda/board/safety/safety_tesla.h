@@ -329,7 +329,7 @@ static void do_fake_DAS(uint32_t RIR, uint32_t RDTR) {
   if (fake_DAS_counter %10 ==7) {
     //spam DI_State if we control speed as well
     if (DAS_cc_state == 2) {
-      do_fake_DI_state(RIR,RDTR);
+      //do_fake_DI_state(RIR,RDTR);
     }
   }
 
@@ -713,7 +713,7 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push)
       do_fake_stalk_cancel(to_push->RIR, to_push->RDTR);
     } 
     if (DAS_cc_state == 2) {
-      do_fake_DI_state(to_push->RIR,to_push->RDTR);
+      //do_fake_DI_state(to_push->RIR,to_push->RDTR);
     }
 
   }
