@@ -142,7 +142,7 @@ class CarController(object):
     if self.ALCA.pid == None:
       self.ALCA.set_pid(CS)
     if (frame % 10 == 0):
-      self.ALCA.update_status(CS.cstm_btns.get_button_status("alca") > 0)
+      self.ALCA.update_status(CS.cstm_btns.get_button_status("alca") > 0 and CS.enableALCA)
       #print CS.cstm_btns.get_button_status("alca")
 
     
@@ -198,8 +198,8 @@ class CarController(object):
     #First we emulate DAS.
     # DAS_enabled (1),DAS_gas_to_resume (1),DAS_apUnavailable (1), DAS_collision_warning (1),  DAS_op_status (4)
     # DAS_speed_kph(8), 
-    # DAS_turn_signal_request (2),DAS_forward_collission_warning (2), DAS_hands_on_state (4), 
-    # DAS_cc_state (2), DAS_forcePedal(1),DAS_alca_state (5),
+    # DAS_turn_signal_request (2),DAS_forward_collision_warning (2), DAS_hands_on_state (4), 
+    # DAS_cc_state (2), using_pedal(1),DAS_alca_state (5),
     # DAS_acc_speed_limit_mph (8), 
     # DAS_speed_limit_units(8)
     #send fake_das data as 0x553
@@ -218,9 +218,9 @@ class CarController(object):
             self.speedlimit_units = self.speedlimit_ms * CV.MS_TO_MPH + 0.5 
     op_status = 0x02
     hands_on_state = 0x00
-    forward_collission_warning = 0 #1 if needed
+    forward_collision_warning = 0 #1 if needed
     if hud_alert == AH.FCW:
-      forward_collission_warning = 0x01
+      forward_collision_warning = 0x01
     #cruise state: 0 unavailable, 1 available, 2 enabled, 3 hold
     cc_state = 1 
     speed_limit_to_car = int(self.speedlimit_units)
@@ -243,7 +243,7 @@ class CarController(object):
       if CS.CL_MIN_V > CS.v_ego:
         alca_state = 0x05
       if not enable_steer_control:
-        #op_status = 0x04
+        #op_status = 0x08
         hands_on_state = 0x02
         apUnavailable = 1
       if hud_alert == AH.STEER:
@@ -267,7 +267,7 @@ class CarController(object):
           cc_state = 3
     can_sends.append(teslacan.create_fake_DAS_msg(speed_control_enabled,gas_to_resume,apUnavailable, collision_warning, op_status, \
             acc_speed_kph, \
-            turn_signal_needed,forward_collission_warning,hands_on_state, \
+            turn_signal_needed,forward_collision_warning,hands_on_state, \
             cc_state, 1 if (CS.pedal_interceptor_available) else 0,alca_state, \
             acc_speed_limit_mph,
             speed_limit_to_car,

@@ -253,7 +253,11 @@ class CarState(object):
 
       #END OF ALCA PARAMS
       
-    self.forcePedal = 1
+    ### START OF MAIN CONFIG OPTIONS ###
+    self.forcePedalOverCC = True
+    self.enableHSO = True 
+    self.enableALCA = True
+    ### END OF MAIN CONFIG OPTIONS ###
 
     self.brake_only = CP.enableCruise
     self.last_cruise_stalk_pull_time = 0
@@ -276,7 +280,6 @@ class CarState(object):
     self.steer_warning = 0
     
     self.stopped = 0
-    self.frame_humanSteered = 0    # Last frame human steered
 
     # variables used for the fake DAS creation
     self.DAS_info_frm = -1
@@ -481,7 +484,7 @@ class CarState(object):
       self.pedal_interceptor_missed_counter += 1
     pedal_interceptor_present = self.pedal_interceptor_missed_counter < 10
     # Mark pedal unavailable while traditional cruise is on.
-    self.pedal_interceptor_available = pedal_interceptor_present and ((self.forcePedal == 1) or not bool(self.pcm_acc_status))
+    self.pedal_interceptor_available = pedal_interceptor_present and (self.forcePedalOverCC or not bool(self.pcm_acc_status))
     if self.pedal_interceptor_available != self.prev_pedal_interceptor_available:
         self.config_ui_buttons(self.pedal_interceptor_available)
 

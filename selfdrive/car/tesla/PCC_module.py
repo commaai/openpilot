@@ -246,7 +246,7 @@ class PCCController(object):
       self.last_cruise_stalk_pull_time = curr_time_ms
       ready = (CS.cstm_btns.get_button_status("pedal") > PCCState.OFF
                and enabled
-               and (CruiseState.is_off(CS.pcm_acc_status)) or CS.forcePedal == 1)
+               and (CruiseState.is_off(CS.pcm_acc_status)) or CS.forcePedalOverCC)
       if ready and double_pull:
         # A double pull enables ACC. updating the max ACC speed if necessary.
         self.enable_pedal_cruise = True
@@ -278,7 +278,7 @@ class PCCController(object):
       # Clip PCC speed between 0 and 170 KPH.
       self.pedal_speed_kph = clip(self.pedal_speed_kph, MIN_PCC_V_KPH, MAX_PCC_V_KPH)
     # If something disabled cruise control, disable PCC too
-    elif self.enable_pedal_cruise and CS.pcm_acc_status and (CS.forcePedal == 0):
+    elif self.enable_pedal_cruise and CS.pcm_acc_status and not CS.forcePedalOverCC:
       self.enable_pedal_cruise = False
     
     # Notify if PCC was toggled
@@ -291,7 +291,7 @@ class PCCController(object):
 
     # Update the UI to show whether the current car state allows PCC.
     if CS.cstm_btns.get_button_status("pedal") in [PCCState.STANDBY, PCCState.NOT_READY]:
-      if enabled and (CruiseState.is_off(CS.pcm_acc_status) or (CS.forcePedal == 1)):
+      if enabled and (CruiseState.is_off(CS.pcm_acc_status) or CS.forcePedalOverCC):
         CS.cstm_btns.set_button_status("pedal", PCCState.STANDBY)
       else:
         CS.cstm_btns.set_button_status("pedal", PCCState.NOT_READY)
