@@ -193,13 +193,15 @@ class CarController(object):
 
     # Send CAN commands.
     can_sends = []
-    send_step = 5
+    # if no pedal detected still send a reset once a second
+    if frame % 100 == 0 and not CS.pedal_interceptor_available:
+      can_sends.append(teslacan.create_pedal_command_msg(0, 0, 0))
 
     #First we emulate DAS.
-    # DAS_enabled (1),DAS_gas_to_resume (1),DAS_apUnavailable (1), DAS_collision_warning (1),  DAS_op_status (4)
+    # DAS_longC_enabled (1),DAS_gas_to_resume (1),DAS_apUnavailable (1), DAS_collision_warning (1),  DAS_op_status (4)
     # DAS_speed_kph(8), 
     # DAS_turn_signal_request (2),DAS_forward_collision_warning (2), DAS_hands_on_state (4), 
-    # DAS_cc_state (2), using_pedal(1),DAS_alca_state (5),
+    # DAS_cc_state (2), DAS_usingPedal(1),DAS_alca_state (5),
     # DAS_acc_speed_limit_mph (8), 
     # DAS_speed_limit_units(8)
     #send fake_das data as 0x553
@@ -262,7 +264,7 @@ class CarController(object):
         speed_control_enabled = 1
         cc_state = 2
       else:
-        if (CS.pcm_acc_status):
+        if (CS.pcm_acc_status == 4):
           #car CC enabled but not OP, display the HOLD message
           cc_state = 3
     can_sends.append(teslacan.create_fake_DAS_msg(speed_control_enabled,gas_to_resume,apUnavailable, collision_warning, op_status, \
@@ -279,14 +281,13 @@ class CarController(object):
     cruise_btn = None
     if self.ACC.enable_adaptive_cruise and not CS.pedal_interceptor_available:
       cruise_btn = self.ACC.update_acc(enabled, CS, frame, actuators, pcm_speed)
-    
-    if cruise_btn:
-        cruise_msg = teslacan.create_cruise_adjust_msg(
-          spdCtrlLvr_stat=cruise_btn,
-          turnIndLvr_Stat= 0, #turn_signal_needed,
-          real_steering_wheel_stalk=CS.steering_wheel_stalk)
-        # Send this CAN msg first because it is racing against the real stalk.
-        can_sends.insert(0, cruise_msg)
+      if cruise_btn:
+          cruise_msg = teslacan.create_cruise_adjust_msg(
+            spdCtrlLvr_stat=cruise_btn,
+            turnIndLvr_Stat= 0, #turn_signal_needed,
+            real_steering_wheel_stalk=CS.steering_wheel_stalk)
+          # Send this CAN msg first because it is racing against the real stalk.
+          can_sends.insert(0, cruise_msg)
     apply_accel = 0.
     if CS.pedal_interceptor_available and frame % 5 == 0: # pedal processed at 20Hz
       apply_accel, accel_needed, accel_idx = self.PCC.update_pdl(enabled, CS, frame, actuators, pcm_speed)

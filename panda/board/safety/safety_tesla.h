@@ -82,7 +82,7 @@ int DAS_warningMatrix1_idx = 0;
 int DAS_warningMatrix3_idx = 0;
 int DAS_steeringControl_idx = 0;
 //fake DAS variables
-int DAS_enabled = 0;
+int DAS_longC_enabled = 0;
 int DAS_speed_limit_kph = 0;
 int DAS_accel_min = 0;
 int DAS_accel_max = 0;
@@ -93,8 +93,8 @@ int DAS_jerk_max = 0x0F;
 int DAS_gas_to_resume = 0;
 int DAS_apUnavailable = 0;
 //fake DAS for DAS_status and DAS_status2
-int DAS_op_status = 0;
-int DAS_alca_state = 0;
+int DAS_op_status = 1;
+int DAS_alca_state = 0x05;
 int DAS_hands_on_state = 0;
 int DAS_forward_collision_warning = 0;
 int DAS_cc_state = 0;
@@ -235,7 +235,7 @@ static void send_fake_message(uint32_t RIR, uint32_t RDTR,int msg_len, int msg_a
 
 static void reset_DAS_data() {
   //fake DAS variables
-  DAS_enabled = 0;
+  DAS_longC_enabled = 0;
   DAS_speed_limit_kph = 0;
   DAS_accel_min = 0;
   DAS_accel_max = 0;
@@ -246,7 +246,7 @@ static void reset_DAS_data() {
   DAS_gas_to_resume = 0;
   DAS_apUnavailable = 0;
   DAS_op_status = 1; //unavailable
-  DAS_alca_state = 0;
+  DAS_alca_state = 0x05;
   DAS_hands_on_state = 0;
   DAS_forward_collision_warning = 0;
   DAS_cc_state = 0;
@@ -255,7 +255,7 @@ static void reset_DAS_data() {
   DAS_collision_warning = 0;
   DAS_telLeftMarkerQuality = 3; //3-high, 2-medium, 1-low 0-lowest
   DAS_telRightMarkerQuality = 3; //3-high, 2-medium, 1-low 0-lowest
-  DAS_telRightLaneType = 3;//0-undecided, 1-solid, 2-road edge, 3-dashed 4-double 5-botts dots 6-barrier
+  DAS_telRightLaneType = 3; //0-undecided, 1-solid, 2-road edge, 3-dashed 4-double 5-botts dots 6-barrier
   DAS_telLeftLaneType = 3; //0-undecided, 1-solid, 2-road edge, 3-dashed 4-double 5-botts dots 6-barrier
   DAS_telRightLaneCrossing = 0; //0-not crossing 1-crossing
   DAS_telLeftLaneCrossing = 0; //0-not crossing 1-crossing
@@ -287,7 +287,7 @@ static void do_fake_DI_state(uint32_t RIR, uint32_t RDTR) {
   int cksm = add_tesla_cksm2(MLB, MHB, 0x058, 7);
   MHB = MHB + (cksm << 24);
   DAS_diStateL = MLB;
-  DAS_diStateL = MHB;
+  DAS_diStateH = MHB;
   send_fake_message(RIR,RDTR,8,0x368,0,MLB,MHB);
 }
 
@@ -312,7 +312,7 @@ static void do_fake_DAS(uint32_t RIR, uint32_t RDTR) {
     DAS_bootID_sent = 1;
   }
 
-  if (fake_DAS_counter %2 == 0) {
+  if (fake_DAS_counter % 2 == 0) {
     //send DAS_steeringControl - 0x488
     MHB = 0x00;
     MLB = ((DAS_steeringAngle >> 8) & 0x7F) + 
@@ -326,7 +326,7 @@ static void do_fake_DAS(uint32_t RIR, uint32_t RDTR) {
     DAS_steeringControl_idx = DAS_steeringControl_idx % 16;
   }
 
-  if (fake_DAS_counter %10 ==7) {
+  if (fake_DAS_counter % 10 ==7) {
     //spam DI_State if we control speed as well
     if (DAS_cc_state == 2) {
       //do_fake_DI_state(RIR,RDTR);
@@ -375,7 +375,7 @@ static void do_fake_DAS(uint32_t RIR, uint32_t RDTR) {
     //send DAS_control - 0x2B9
     //when not in drive it should send FF 0F FE FF FF FF XF YY - X counter YY Checksum
     if (DAS_inDrive ==1) {
-      if (DAS_enabled > 0) {
+      if (DAS_longC_enabled > 0) {
         acc_state = 0x04;
         jerk_min = 0x000;
         jerk_max = 0x0F;
@@ -554,7 +554,7 @@ static void do_fake_DAS(uint32_t RIR, uint32_t RDTR) {
     DAS_bodyControls_idx = DAS_bodyControls_idx % 16;
   }
 
-  if (fake_DAS_counter %100 == 0) {
+  if (fake_DAS_counter % 100 == 0) {
     //send DAS_dtcMatrix - 0x669
     //NOT SENDING FOR NOW
 
@@ -605,7 +605,7 @@ static void do_fake_DAS(uint32_t RIR, uint32_t RDTR) {
     DAS_info_idx ++;
     DAS_info_idx = DAS_info_idx % 10;
   }
-  if (fake_DAS_counter %100 == 45) {
+  if (fake_DAS_counter % 100 == 45) {
     //send DAS_warningMatrix0 - 0x329
     MLB = 0x00;
     MHB = 0x00;
@@ -719,7 +719,7 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push)
   }
 
   // Record the current car time in current_car_time (for use with double-pulling cruise stalk)
-  if ((addr == 0x318) && (bus_number == 0))
+  if (addr == 0x318)
   {
     int hour = (to_push->RDLR & 0x1F000000) >> 24;
     int minute = (to_push->RDHR & 0x3F00) >> 8;
@@ -1094,7 +1094,7 @@ static int tesla_tx_hook(CAN_FIFOMailBox_TypeDef *to_send)
 
     DAS_acc_speed_kph = b1;
     DAS_acc_speed_limit_mph = b4;
-    DAS_enabled = ((b0 & 0x80) >> 7);
+    DAS_longC_enabled = ((b0 & 0x80) >> 7);
     DAS_gas_to_resume = ((b0 & 0x40) >> 6);
     DAS_apUnavailable = ((b0 & 0x20) >> 5);
     DAS_collision_warning = ((b0 & 0x10) >> 4);
@@ -1116,41 +1116,29 @@ static int tesla_tx_hook(CAN_FIFOMailBox_TypeDef *to_send)
     if (DAS_steeringEnabled == 0) {
       //steering is not enabled, do not check angles and do send
       tesla_desired_angle_last = desired_angle;
-    }
-
+    } else
     if (controls_allowed)
     {
-      if (steer_allowed)
-      {
+      // add 1 to not false trigger the violation
+      int delta_angle_up = (int)(tesla_interpolate(TESLA_LOOKUP_ANGLE_RATE_UP, tesla_speed) * 25. + 1.);
+      int delta_angle_down = (int)(tesla_interpolate(TESLA_LOOKUP_ANGLE_RATE_DOWN, tesla_speed) * 25. + 1.);
+      int highest_desired_angle = tesla_desired_angle_last + (tesla_desired_angle_last > 0 ? delta_angle_up : delta_angle_down);
+      int lowest_desired_angle = tesla_desired_angle_last - (tesla_desired_angle_last > 0 ? delta_angle_down : delta_angle_up);
+      int TESLA_MAX_ANGLE = (int)(tesla_interpolate(TESLA_LOOKUP_MAX_ANGLE, tesla_speed) + 1.);
 
-        // add 1 to not false trigger the violation
-        int delta_angle_up = (int)(tesla_interpolate(TESLA_LOOKUP_ANGLE_RATE_UP, tesla_speed) * 25. + 1.);
-        int delta_angle_down = (int)(tesla_interpolate(TESLA_LOOKUP_ANGLE_RATE_DOWN, tesla_speed) * 25. + 1.);
-        int highest_desired_angle = tesla_desired_angle_last + (tesla_desired_angle_last > 0 ? delta_angle_up : delta_angle_down);
-        int lowest_desired_angle = tesla_desired_angle_last - (tesla_desired_angle_last > 0 ? delta_angle_down : delta_angle_up);
-        int TESLA_MAX_ANGLE = (int)(tesla_interpolate(TESLA_LOOKUP_MAX_ANGLE, tesla_speed) + 1.);
-
-        if (max_limit_check(desired_angle, highest_desired_angle, lowest_desired_angle))
-        {
-          violation = 1;
-          controls_allowed = 0;
-          puts("Angle limit - delta! \n");
-        }
-        if (max_limit_check(desired_angle, TESLA_MAX_ANGLE, -TESLA_MAX_ANGLE))
-        {
-          violation = 1;
-          controls_allowed = 0;
-          puts("Angle limit - max! \n");
-        }
-      }
-      else
+      if (max_limit_check(desired_angle, highest_desired_angle, lowest_desired_angle))
       {
         violation = 1;
         controls_allowed = 0;
-        puts("Steering commads disallowed \n");
+        puts("Angle limit - delta! \n");
+      }
+      if (max_limit_check(desired_angle, TESLA_MAX_ANGLE, -TESLA_MAX_ANGLE))
+      {
+        violation = 1;
+        controls_allowed = 0;
+        puts("Angle limit - max! \n");
       }
     }
-
     tesla_desired_angle_last = desired_angle;
 
     return false;

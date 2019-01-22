@@ -478,11 +478,13 @@ class CarState(object):
     pedal_has_value = bool(self.pedal_interceptor_value) or bool(self.pedal_interceptor_value2)
     pedal_interceptor_present = self.pedal_interceptor_state in [0, 5] and pedal_has_value
     # Add loggic if we just miss some CAN messages so we don't immediately disable pedal
+    if pedal_has_value:
+      self.pedal_interceptor_missed_counter = 0
     if pedal_interceptor_present:
       self.pedal_interceptor_missed_counter = 0
     else:
       self.pedal_interceptor_missed_counter += 1
-    pedal_interceptor_present = self.pedal_interceptor_missed_counter < 10
+    pedal_interceptor_present = pedal_interceptor_present and (self.pedal_interceptor_missed_counter < 10)
     # Mark pedal unavailable while traditional cruise is on.
     self.pedal_interceptor_available = pedal_interceptor_present and (self.forcePedalOverCC or not bool(self.pcm_acc_status))
     if self.pedal_interceptor_available != self.prev_pedal_interceptor_available:
