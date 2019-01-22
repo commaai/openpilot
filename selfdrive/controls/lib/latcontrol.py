@@ -55,11 +55,13 @@ class LatControl(object):
     self.context = zmq.Context()
     self.steerpub = self.context.socket(zmq.PUB)
     self.steerpub.bind("tcp://*:8594")
-    self.steerdata = ""
     self.frames = 0
     self.curvature_factor = 0.0
     self.slip_factor = 0.0
-
+    self.influxString = 'steerData3,testName=none,active=%s,ff_type=%s ff_type_a=%s,ff_type_r=%s,' \
+                    'angle_rate=%s,angle_steers=%s,angle_steers_des=%s,angle_steers_des_mpc=%s,p=%s,i=%s,f=%s %s\n~'
+    self.steerdata = self.influxString
+    
   def setup_mpc(self, steer_rate_cost):
     self.libmpc = libmpc_py.libmpc
     self.libmpc.init(MPC_COST_LAT.PATH, MPC_COST_LAT.LANE, MPC_COST_LAT.HEADING, steer_rate_cost)
@@ -150,7 +152,7 @@ class LatControl(object):
     elif self.steerdata != "" and self.frames > 10:
       self.steerpub.send(self.steerdata)
       self.frames = 0
-      self.steerdata = ""
+      self.steerdata = self.influxString
 
     if v_ego < 0.3 or not active:
       output_steer = 0.0
@@ -214,13 +216,10 @@ class LatControl(object):
       steer_motor = 0.0
       self.frames += 1
 
-      self.steerdata += ("%d,%s,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d|" % (self.isActive, \
-      ff_type, 1 if ff_type == "a" else 0, 1 if ff_type == "r" else 0, self.cur_state[0].x, self.cur_state[0].y, self.cur_state[0].psi, self.cur_state[0].delta, self.cur_state[0].t, self.curvature_factor, self.slip_factor ,self.smooth_factor, self.accel_limit, float(restricted_steer_rate) ,self.ff_angle_factor, self.ff_rate_factor, self.pCost, self.lCost, self.rCost, self.hCost, self.srCost, steer_motor, float(driver_torque), \
-      self.angle_rate_count, self.angle_rate_desired, self.avg_angle_rate, projected_angle_steers, float(angle_rate), self.steer_zero_crossing, self.center_angle, angle_steers, self.angle_steers_des, angle_offset, \
-      self.angle_steers_des_mpc, CP.steerRatio, CP.steerKf, CP.steerKpV[0], CP.steerKiV[0], CP.steerRateCost, PL.PP.l_prob, \
-      PL.PP.r_prob, PL.PP.c_prob, PL.PP.p_prob, self.l_poly[0], self.l_poly[1], self.l_poly[2], self.l_poly[3], self.r_poly[0], self.r_poly[1], self.r_poly[2], self.r_poly[3], \
-      self.p_poly[0], self.p_poly[1], self.p_poly[2], self.p_poly[3], PL.PP.c_poly[0], PL.PP.c_poly[1], PL.PP.c_poly[2], PL.PP.c_poly[3], PL.PP.d_poly[0], PL.PP.d_poly[1], \
-      PL.PP.d_poly[2], PL.PP.lane_width, PL.PP.lane_width_estimate, PL.PP.lane_width_certainty, v_ego, self.pid.p, self.pid.i, self.pid.f, int(time.time() * 100) * 10000000))
+      self.steerdata += ("%d,%s,%d,%d,%f,%f,%f,%f,%f,%f,%f,%d|" % \
+        (1, ff_type, 1 if ff_type == "a" else 0, 1 if ff_type == "r" else 0, \
+        float(angle_rate), angle_steers, self.angle_steers_des, self.angle_steers_des_mpc, \
+        self.pid.p, self.pid.i, self.pid.f, int(time.time() * 100) * 10000000))
 
     self.sat_flag = self.pid.saturated
     self.prev_angle_rate = angle_rate
