@@ -293,7 +293,7 @@ VAL_ 1162 SPLSGN3 15 "conditional blank" 5 "rain" 0 "none";
 
 CM_ "CHFFR_METRIC 37 STEER_ANGLE STEER_ANGLE 0.36 180";
 
-CM_ "toyota_avalon_2017_pt.dbc starts here"
+CM_ "toyota_sienna_xle_2018_pt.dbc starts here"
 
 
 
@@ -326,4 +326,4 @@ CM_ SG_ 548 BRAKE_POSITION "seems proportional to pedal displacement, unclear th
 CM_ SG_ 610 TYPE "seems 1 on Corolla, 0 on all others";
 VAL_ 956 GEAR 0 "D" 1 "S" 8 "N" 16 "R" 32 "P";
 VAL_ 610 IPAS_STATE 5 "override" 3 "enabled" 1 "disabled";
-VAL_ 610 LKA_STATE 25 "temporary_fault" 9 "temporary_fault2" 5 "active" 1 "standby";
+VAL_ 610 LKA_STATE 25 "temporary_fault" 9 "temporary_fault2" 5 "active" 1 "standby"
