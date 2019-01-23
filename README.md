@@ -2,15 +2,13 @@ This is a fork of comma's openpilot, and contains tweaks for Hondas and some GM 
 
 I will attempt to detail the changes in each of the branches here:
 
-<b>kegman</b> - this is the default branch which does not include Gernby's resonant feed forward steering (i.e. it's comma's default steering)
+<b>kegman</b> - this is the default branch which does not include Gernby's resonant feed forward steering (i.e. it's comma's default steering) - it now includes GM code (needs testing)
 
 <b>kegman-plusGernbySteering (Updated Jan 22)</b> - this branch is everything in the kegman branch PLUS a Gernby's LATEST feed forward steering.  This also includes working code for GM cars.  (thx to @jamezz for the code and @cryptokylan for submitting the GM stuff!)
 
+<b>kegman-plusGernbyResStagedRollingTune</b> - this is the companion tuning branch to kegman-plusGernbySteering. You will need to get Gernby's OpenPilot Dashboard to capture data when running this branch.  Please contact @gernby on Comma discord channel for more information.
+
 <b>kegman-plusPilotAwesomeness</b> - <u>If you have a Honda Pilot, OR Honda Ridgeline use this branch.</u>  It has everything in kegman branch, uses my PID tuning + a magical older version of Gernby's FF steering which just happened to work very well across all driving conditions including slanted (crowned roads), wind gusts, road bumps, centering on curves, and keeping proper distance from curbs.  I have yet to test a combination of FF steering and PID tuning that can beat the performance of this for Honda Pilots.
-
-<b>kegman-plusPilotAwesomeness2</b> - <u>If you have a Honda Pilot, OR Honda Ridgeline you can use this branch as well.</u>  It uses the latest Gernby Resonant steering and I spent a few hours using his OpenPilot Dashboard and staged resonant rolling branch to figure out the optimal values for resistive, inductive and reactive parameters.  You should notice a stiffer steering wheel, which in theory should let to even better response.  On slower curves when you give the steering a nudge it may "stick" and maintain the steering angle.  Let me know how it goes and which Honda Pilot branch you prefer.
-
-<b>testing-GernbyPRcandidate</b> - this has been MERGED with kegman-plusGernbySteering
 
 
 List of changes and tweaks (latest changes at the top:
