@@ -4,7 +4,7 @@ I will attempt to detail the changes in each of the branches here:
 
 <b>kegman</b> - this is the default branch which does not include Gernby's resonant feed forward steering (i.e. it's comma's default steering)
 
-<b>kegman-plusGernbySteering</b> - this branch is everything in the kegman branch PLUS a Gernby's LATEST feed forward steering.  This also includes working code for GM cars.  (thx to @jamezz for the code and @cryptokylan for submitting the GM stuff!)
+<b>kegman-plusGernbySteering (Updated Jan 22)</b> - this branch is everything in the kegman branch PLUS a Gernby's LATEST feed forward steering.  This also includes working code for GM cars.  (thx to @jamezz for the code and @cryptokylan for submitting the GM stuff!)
 
 <b>kegman-plusPilotAwesomeness</b> - <u>If you have a Honda Pilot, OR Honda Ridgeline use this branch.</u>  It has everything in kegman branch, uses my PID tuning + a magical older version of Gernby's FF steering which just happened to work very well across all driving conditions including slanted (crowned roads), wind gusts, road bumps, centering on curves, and keeping proper distance from curbs.  I have yet to test a combination of FF steering and PID tuning that can beat the performance of this for Honda Pilots.
 
