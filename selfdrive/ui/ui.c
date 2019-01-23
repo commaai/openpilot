@@ -48,6 +48,7 @@
 #define ALERTSIZE_FULL 3
 
 #define UI_BUF_COUNT 4
+//#define DEBUG_TURN
 
 const int vwp_w = 1920;
 const int vwp_h = 1080;
@@ -63,6 +64,8 @@ const int viz_w = vwp_w-(bdr_s*2);
 const int header_h = 420;
 const int footer_h = 280;
 const int footer_y = vwp_h-bdr_s-footer_h;
+
+const int UI_FREQ = 60;   // Hz
 
 const uint8_t bg_colors[][4] = {
   [STATUS_STOPPED] = {0x07, 0x23, 0x39, 0xff},
@@ -115,9 +118,12 @@ typedef struct UIScene {
   float v_cruise;
   uint64_t v_cruise_update_ts;
   float v_ego;
+  float v_curvature;
+  bool decel_for_turn;
 
   float speedlimit;
   bool speedlimit_valid;
+  bool map_valid;
 
   float curvature;
   int engaged;
@@ -168,7 +174,9 @@ typedef struct UIState {
   int font_sans_semibold;
   int font_sans_bold;
   int img_wheel;
+  int img_turn;
   int img_face;
+  int img_map;
 
   zsock_t *thermal_sock;
   void *thermal_sock_raw;
@@ -228,9 +236,11 @@ typedef struct UIState {
   int volume_timeout;
   int speed_lim_off_timeout;
   int is_metric_timeout;
+  int limit_set_speed_timeout;
 
   int status;
   bool is_metric;
+  bool limit_set_speed;
   float speed_lim_off;
   bool is_ego_over_limit;
   bool passive;
@@ -279,7 +289,7 @@ static void set_volume(UIState *s, int volume) {
   sprintf(volume_change_cmd, "service call audio 3 i32 3 i32 %d i32 1", volume);
 
   // 5 second timeout at 60fps
-  s->volume_timeout = 5 * 60;
+  s->volume_timeout = 5 * UI_FREQ;
   int volume_changed = system(volume_change_cmd);
 }
 
@@ -296,7 +306,7 @@ static void read_speed_lim_off(UIState *s) {
     s->speed_lim_off = strtod(speed_lim_off, NULL);
     free(speed_lim_off);
   }
-  s->speed_lim_off_timeout = 2 * 60; // 2Hz
+  s->speed_lim_off_timeout = 2 * UI_FREQ; // 0.5Hz
 }
 
 static void read_is_metric(UIState *s) {
@@ -306,9 +316,18 @@ static void read_is_metric(UIState *s) {
     s->is_metric = is_metric[0] == '1';
     free(is_metric);
   }
-  s->is_metric_timeout = 2 * 60; // 2Hz
+  s->is_metric_timeout = 2 * UI_FREQ; // 0.5Hz
 }
 
+static void read_limit_set_speed(UIState *s) {
+  char *limit_set_speed;
+  const int result = read_db_value(NULL, "LimitSetSpeed", &limit_set_speed, NULL);
+  if (result == 0) {
+    s->limit_set_speed = limit_set_speed[0] == '1';
+    free(limit_set_speed);
+  }
+  s->limit_set_speed_timeout =  2 * UI_FREQ; // 0.2Hz
+}
 static const char frame_vertex_shader[] =
   "attribute vec4 aPosition;\n"
   "attribute vec4 aTexCoord;\n"
@@ -475,8 +494,14 @@ static void ui_init(UIState *s) {
   assert(s->img_wheel >= 0);
   s->img_wheel = nvgCreateImage(s->vg, "../assets/img_chffr_wheel.png", 1);
 
+  assert(s->img_turn >= 0);
+  s->img_turn = nvgCreateImage(s->vg, "../assets/img_trafficSign_turn.png", 1);
+
   assert(s->img_face >= 0);
   s->img_face = nvgCreateImage(s->vg, "../assets/img_driver_face.png", 1);
+
+  assert(s->img_map >= 0);
+  s->img_map = nvgCreateImage(s->vg, "../assets/img_map.png", 1);
 
   // init gl
   s->frame_program = load_program(frame_vertex_shader, frame_fragment_shader);
@@ -558,7 +583,9 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
 
   read_speed_lim_off(s);
   read_is_metric(s);
-  s->is_metric_timeout = 60; // offset so values isn't read together with limit offset
+  read_limit_set_speed(s);
+  s->is_metric_timeout = UI_FREQ / 2; // offset so values isn't read together with limit offset
+  s->limit_set_speed_timeout = UI_FREQ; // offset so values isn't read together with limit offset
 }
 
 static void ui_draw_transformed_box(UIState *s, uint32_t color) {
@@ -1013,6 +1040,18 @@ static void ui_draw_vision_maxspeed(UIState *s) {
     nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 100));
     nvgText(s->vg, viz_maxspeed_x+(viz_maxspeed_xo/2)+(viz_maxspeed_w/2), 242, "N/A", NULL);
   }
+
+#ifdef DEBUG_TURN
+  if (s->scene.decel_for_turn && s->scene.engaged){
+    int v_curvature = s->scene.v_curvature * 2.2369363 + 0.5;
+    snprintf(maxspeed_str, sizeof(maxspeed_str), "%d", v_curvature);
+    nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 255));
+    nvgFontSize(s->vg, 25*2.5);
+    nvgText(s->vg, 200 + viz_maxspeed_x+(viz_maxspeed_xo/2)+(viz_maxspeed_w/2), 148, "TURN", NULL);
+    nvgFontSize(s->vg, 50*2.5);
+    nvgText(s->vg, 200 + viz_maxspeed_x+(viz_maxspeed_xo/2)+(viz_maxspeed_w/2), 242, maxspeed_str, NULL);
+  }
+#endif
 }
 
 static void ui_draw_vision_speedlimit(UIState *s) {
@@ -1135,7 +1174,7 @@ static void ui_draw_vision_speed(UIState *s) {
   }
 }
 
-static void ui_draw_vision_wheel(UIState *s) {
+static void ui_draw_vision_event(UIState *s) {
   const UIScene *scene = &s->scene;
   const int ui_viz_rx = scene->ui_viz_rx;
   const int ui_viz_rw = scene->ui_viz_rw;
@@ -1143,35 +1182,76 @@ static void ui_draw_vision_wheel(UIState *s) {
   const int viz_event_x = ((ui_viz_rx + ui_viz_rw) - (viz_event_w + (bdr_s*2)));
   const int viz_event_y = (box_y + (bdr_s*1.5));
   const int viz_event_h = (header_h - (bdr_s*1.5));
-  // draw steering wheel
-  const int bg_wheel_size = 96;
-  const int bg_wheel_x = viz_event_x + (viz_event_w-bg_wheel_size);
-  const int bg_wheel_y = viz_event_y + (bg_wheel_size/2);
-  const int img_wheel_size = bg_wheel_size*1.5;
-  const int img_wheel_x = bg_wheel_x-(img_wheel_size/2);
-  const int img_wheel_y = bg_wheel_y-25;
-  float img_wheel_alpha = 0.1f;
-  bool is_engaged = (s->status == STATUS_ENGAGED);
-  bool is_warning = (s->status == STATUS_WARNING);
-  bool is_engageable = scene->engageable;
-  if (is_engaged || is_warning || is_engageable) {
+  if (s->scene.decel_for_turn && s->scene.engaged && s->limit_set_speed) {
+    // draw winding road sign
+    const int img_turn_size = 160*1.5;
+    const int img_turn_x = viz_event_x-(img_turn_size/4);
+    const int img_turn_y = viz_event_y+bdr_s-25;
+    float img_turn_alpha = 1.0f;
     nvgBeginPath(s->vg);
-    nvgCircle(s->vg, bg_wheel_x, (bg_wheel_y + (bdr_s*1.5)), bg_wheel_size);
-    if (is_engaged) {
-      nvgFillColor(s->vg, nvgRGBA(23, 134, 68, 255));
-    } else if (is_warning) {
-      nvgFillColor(s->vg, nvgRGBA(218, 111, 37, 255));
-    } else if (is_engageable) {
-      nvgFillColor(s->vg, nvgRGBA(23, 51, 73, 255));
-    }
+    NVGpaint imgPaint = nvgImagePattern(s->vg, img_turn_x, img_turn_y,
+      img_turn_size, img_turn_size, 0, s->img_turn, img_turn_alpha);
+    nvgRect(s->vg, img_turn_x, img_turn_y, img_turn_size, img_turn_size);
+    nvgFillPaint(s->vg, imgPaint);
     nvgFill(s->vg);
-    img_wheel_alpha = 1.0f;
+  } else {
+    // draw steering wheel
+    const int bg_wheel_size = 96;
+    const int bg_wheel_x = viz_event_x + (viz_event_w-bg_wheel_size);
+    const int bg_wheel_y = viz_event_y + (bg_wheel_size/2);
+    const int img_wheel_size = bg_wheel_size*1.5;
+    const int img_wheel_x = bg_wheel_x-(img_wheel_size/2);
+    const int img_wheel_y = bg_wheel_y-25;
+    float img_wheel_alpha = 0.1f;
+    bool is_engaged = (s->status == STATUS_ENGAGED);
+    bool is_warning = (s->status == STATUS_WARNING);
+    bool is_engageable = scene->engageable;
+    if (is_engaged || is_warning || is_engageable) {
+      nvgBeginPath(s->vg);
+      nvgCircle(s->vg, bg_wheel_x, (bg_wheel_y + (bdr_s*1.5)), bg_wheel_size);
+      if (is_engaged) {
+        nvgFillColor(s->vg, nvgRGBA(23, 134, 68, 255));
+      } else if (is_warning) {
+        nvgFillColor(s->vg, nvgRGBA(218, 111, 37, 255));
+      } else if (is_engageable) {
+        nvgFillColor(s->vg, nvgRGBA(23, 51, 73, 255));
+      }
+      nvgFill(s->vg);
+      img_wheel_alpha = 1.0f;
+    }
+    nvgBeginPath(s->vg);
+    NVGpaint imgPaint = nvgImagePattern(s->vg, img_wheel_x, img_wheel_y,
+      img_wheel_size, img_wheel_size, 0, s->img_wheel, img_wheel_alpha);
+    nvgRect(s->vg, img_wheel_x, img_wheel_y, img_wheel_size, img_wheel_size);
+    nvgFillPaint(s->vg, imgPaint);
+    nvgFill(s->vg);
   }
+}
+
+static void ui_draw_vision_map(UIState *s) {
+  const UIScene *scene = &s->scene;
+  const int map_size = 96;
+  const int map_x = (scene->ui_viz_rx + (map_size * 3) + (bdr_s * 3));
+  const int map_y = (footer_y + ((footer_h - map_size) / 2));
+  const int map_img_size = (map_size * 1.5);
+  const int map_img_x = (map_x - (map_img_size / 2));
+  const int map_img_y = (map_y - (map_size / 4));
+
+  bool map_valid = s->scene.map_valid;
+  float map_img_alpha = map_valid ? 1.0f : 0.15f;
+  float map_bg_alpha = map_valid ? 0.3f : 0.1f;
+  NVGcolor map_bg = nvgRGBA(0, 0, 0, (255 * map_bg_alpha));
+  NVGpaint map_img = nvgImagePattern(s->vg, map_img_x, map_img_y,
+    map_img_size, map_img_size, 0, s->img_map, map_img_alpha);
+
   nvgBeginPath(s->vg);
-  NVGpaint imgPaint = nvgImagePattern(s->vg, img_wheel_x, img_wheel_y,
-    img_wheel_size, img_wheel_size, 0, s->img_wheel, img_wheel_alpha);
-  nvgRect(s->vg, img_wheel_x, img_wheel_y, img_wheel_size, img_wheel_size);
-  nvgFillPaint(s->vg, imgPaint);
+  nvgCircle(s->vg, map_x, (map_y + (bdr_s * 1.5)), map_size);
+  nvgFillColor(s->vg, map_bg);
+  nvgFill(s->vg);
+
+  nvgBeginPath(s->vg);
+  nvgRect(s->vg, map_img_x, map_img_y, map_img_size, map_img_size);
+  nvgFillPaint(s->vg, map_img);
   nvgFill(s->vg);
 }
 
@@ -1217,7 +1297,7 @@ static void ui_draw_vision_header(UIState *s) {
   ui_draw_vision_maxspeed(s);
   ui_draw_vision_speedlimit(s);
   ui_draw_vision_speed(s);
-  ui_draw_vision_wheel(s);
+  ui_draw_vision_event(s);
 }
 
 static void ui_draw_vision_footer(UIState *s) {
@@ -1228,8 +1308,8 @@ static void ui_draw_vision_footer(UIState *s) {
   nvgBeginPath(s->vg);
   nvgRect(s->vg, ui_viz_rx, footer_y, ui_viz_rw, footer_h);
 
-  // Driver Monitoring
   ui_draw_vision_face(s);
+  ui_draw_vision_map(s);
 }
 
 static void ui_draw_vision_alert(UIState *s, int va_size, int va_color,
@@ -1624,6 +1704,9 @@ static void ui_update(UIState *s) {
 
         s->scene.frontview = datad.rearViewCam;
 
+        s->scene.v_curvature = datad.vCurvature;
+        s->scene.decel_for_turn = datad.decelForTurn;
+
         if (datad.alertSound.str && datad.alertSound.str[0] != '\0' && strcmp(s->alert_type, datad.alertType.str) != 0) {
           char* error = NULL;
           if (s->alert_sound[0] != '\0') {
@@ -1788,6 +1871,7 @@ static void ui_update(UIState *s) {
         cereal_read_LiveMapData(&datad, eventd.liveMapData);
         s->scene.speedlimit = datad.speedLimit;
         s->scene.speedlimit_valid = datad.speedLimitValid;
+        s->scene.map_valid = datad.mapValid;
       }
       capn_free(&ctx);
       zmq_msg_close(&msg);
@@ -2062,6 +2146,12 @@ int main() {
       s->is_metric_timeout--;
     } else {
       read_is_metric(s);
+    }
+
+    if (s->limit_set_speed_timeout > 0) {
+      s->limit_set_speed_timeout--;
+    } else {
+      read_limit_set_speed(s);
     }
 
     pthread_mutex_unlock(&s->lock);
