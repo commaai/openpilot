@@ -1,0 +1,186 @@
+'\" t
+.\"     Title: zmq_ctx_set
+.\"    Author: [see the "AUTHORS" section]
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 02/18/2017
+.\"    Manual: 0MQ Manual
+.\"    Source: 0MQ 4.2.2
+.\"  Language: English
+.\"
+.TH "ZMQ_CTX_SET" "3" "02/18/2017" "0MQ 4\&.2\&.2" "0MQ Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+zmq_ctx_set \- set context options
+.SH "SYNOPSIS"
+.sp
+\fBint zmq_ctx_set (void \fR\fB\fI*context\fR\fR\fB, int \fR\fB\fIoption_name\fR\fR\fB, int \fR\fB\fIoption_value\fR\fR\fB);\fR
+.SH "DESCRIPTION"
+.sp
+The \fIzmq_ctx_set()\fR function shall set the option specified by the \fIoption_name\fR argument to the value of the \fIoption_value\fR argument\&.
+.sp
+The \fIzmq_ctx_set()\fR function accepts the following options:
+.SS "ZMQ_BLOCKY: Fix blocky behavior"
+.sp
+By default the context will block, forever, on a zmq_ctx_term call\&. The assumption behind this behavior is that abrupt termination will cause message loss\&. Most real applications use some form of handshaking to ensure applications receive termination messages, and then terminate the context with \fIZMQ_LINGER\fR set to zero on all sockets\&. This setting is an easier way to get the same result\&. When \fIZMQ_BLOCKY\fR is set to false, all new sockets are given a linger timeout of zero\&. You must still close all sockets before calling zmq_ctx_term\&.
+.TS
+tab(:);
+lt lt.
+T{
+.sp
+Default value
+T}:T{
+.sp
+true (old behavior)
+T}
+.TE
+.sp 1
+.SS "ZMQ_IO_THREADS: Set number of I/O threads"
+.sp
+The \fIZMQ_IO_THREADS\fR argument specifies the size of the 0MQ thread pool to handle I/O operations\&. If your application is using only the \fIinproc\fR transport for messaging you may set this to zero, otherwise set it to at least one\&. This option only applies before creating any sockets on the context\&.
+.TS
+tab(:);
+lt lt.
+T{
+.sp
+Default value
+T}:T{
+.sp
+1
+T}
+.TE
+.sp 1
+.SS "ZMQ_THREAD_SCHED_POLICY: Set scheduling policy for I/O threads"
+.sp
+The \fIZMQ_THREAD_SCHED_POLICY\fR argument sets the scheduling policy for internal context\(cqs thread pool\&. This option is not available on windows\&. Supported values for this option can be found in sched\&.h file, or at \m[blue]\fBhttp://man7\&.org/linux/man\-pages/man2/sched_setscheduler\&.2\&.html\fR\m[]\&. This option only applies before creating any sockets on the context\&.
+.TS
+tab(:);
+lt lt.
+T{
+.sp
+Default value
+T}:T{
+.sp
+\-1
+T}
+.TE
+.sp 1
+.SS "ZMQ_THREAD_PRIORITY: Set scheduling priority for I/O threads"
+.sp
+The \fIZMQ_THREAD_PRIORITY\fR argument sets scheduling priority for internal context\(cqs thread pool\&. This option is not available on windows\&. Supported values for this option depend on chosen scheduling policy\&. Details can be found in sched\&.h file, or at \m[blue]\fBhttp://man7\&.org/linux/man\-pages/man2/sched_setscheduler\&.2\&.html\fR\m[]\&. This option only applies before creating any sockets on the context\&.
+.TS
+tab(:);
+lt lt.
+T{
+.sp
+Default value
+T}:T{
+.sp
+\-1
+T}
+.TE
+.sp 1
+.SS "ZMQ_MAX_MSGSZ: Set maximum message size"
+.sp
+The \fIZMQ_MAX_MSGSZ\fR argument sets the maximum allowed size of a message sent in the context\&. You can query the maximal allowed value with \fBzmq_ctx_get\fR(3) using the \fIZMQ_MAX_MSGSZ\fR option\&.
+.TS
+tab(:);
+lt lt
+lt lt.
+T{
+.sp
+Default value
+T}:T{
+.sp
+INT_MAX
+T}
+T{
+.sp
+Maximum value
+T}:T{
+.sp
+INT_MAX
+T}
+.TE
+.sp 1
+.SS "ZMQ_MAX_SOCKETS: Set maximum number of sockets"
+.sp
+The \fIZMQ_MAX_SOCKETS\fR argument sets the maximum number of sockets allowed on the context\&. You can query the maximal allowed value with \fBzmq_ctx_get\fR(3) using the \fIZMQ_SOCKET_LIMIT\fR option\&.
+.TS
+tab(:);
+lt lt.
+T{
+.sp
+Default value
+T}:T{
+.sp
+1024
+T}
+.TE
+.sp 1
+.SS "ZMQ_IPV6: Set IPv6 option"
+.sp
+The \fIZMQ_IPV6\fR argument sets the IPv6 value for all sockets created in the context from this point onwards\&. A value of 1 means IPv6 is enabled, while 0 means the socket will use only IPv4\&. When IPv6 is enabled, a socket will connect to, or accept connections from, both IPv4 and IPv6 hosts\&.
+.TS
+tab(:);
+lt lt.
+T{
+.sp
+Default value
+T}:T{
+.sp
+0
+T}
+.TE
+.sp 1
+.SH "RETURN VALUE"
+.sp
+The \fIzmq_ctx_set()\fR function returns zero if successful\&. Otherwise it returns \-1 and sets \fIerrno\fR to one of the values defined below\&.
+.SH "ERRORS"
+.PP
+\fBEINVAL\fR
+.RS 4
+The requested option
+\fIoption_name\fR
+is unknown\&.
+.RE
+.SH "EXAMPLE"
+.PP
+\fBSetting a limit on the number of sockets\fR. 
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+void *context = zmq_ctx_new ();
+zmq_ctx_set (context, ZMQ_MAX_SOCKETS, 256);
+int max_sockets = zmq_ctx_get (context, ZMQ_MAX_SOCKETS);
+assert (max_sockets == 256);
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "SEE ALSO"
+.sp
+\fBzmq_ctx_get\fR(3) \fBzmq\fR(7)
+.SH "AUTHORS"
+.sp
+This page was written by the 0MQ community\&. To make a change please read the 0MQ Contribution Policy at \m[blue]\fBhttp://www\&.zeromq\&.org/docs:contributing\fR\m[]\&.
