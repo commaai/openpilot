@@ -48,6 +48,8 @@ class CarInterface(object):
       self.CC = CarController(self.cp.dbc_name, CP.enableCamera)
 
     self.compute_gb = tesla_compute_gb
+    
+
 
   @staticmethod
   def calc_accel_override(a_ego, a_target, v_ego, v_target):
@@ -132,19 +134,10 @@ class CarInterface(object):
       ret.steerActuatorDelay = 0.09
 
       # Kp and Ki for the longitudinal control
-      # IC cars decrease their PID values as speed increases. Discussion on Slack suggests
-      # this is to reduce friction braking at highway speeds. But our regen-only braking is
-      # so weak that we probably don't want to reduce it further.
-      # "BP" and "V" are OpenPilot name conventions. BP are basis points
-      # and V are corresponding values. Think of it as a map, but if a
-      # key isn't found then a value is returned by interpolating the nearest keys.
-      # If we offer only one basis point, then there's no interpolation. Its
-      # corresponding value will be used at all speeds.
-      ret.longitudinalKpBP = [20.] # m/s, presumably
-      ret.longitudinalKpV = [0.6]
-      ret.longitudinalKiBP = [20.] # m/s, presumably
-      ret.longitudinalKiV = [0.18]
-      ret.openpilotLongitudinalControl = True
+      ret.longitudinalKpBP = [0., 5., 35.]
+      ret.longitudinalKpV = [0.6, 0.6, 0.6]
+      ret.longitudinalKiBP = [0., 5., 35.]
+      ret.longitudinalKiV = [0.18,0.18,0.18]
       
       #from honda
       #ret.longitudinalKpBP = [0., 5., 35.]
@@ -312,32 +305,46 @@ class CarInterface(object):
     # TODO: I don't like the way capnp does enums
     # These strings aren't checked at compile time
     events = []
+
+    #notification messages for DAS
+    self.CS.DAS_noSeatbelt = 0
+    self.CS.DAS_canErrors = 0
+    self.CS.DAS_plannerErrors = 0
+    self.CS.DAS_doorOpen = 0
+    self.CS.DAS_notInDrive = 0
+   
     if not self.CS.can_valid:
       self.can_invalid_count += 1
-      if self.can_invalid_count >= 5:
+      if self.can_invalid_count >= 25: #BB increased to 25 to see if we still get the can error messages
         events.append(create_event('commIssue', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
+        self.CS.DAS_canErrors = 1
     else:
       self.can_invalid_count = 0
     if self.CS.steer_error:
-      if self.CS.cstm_btns.get_button_status("steer") == 0:
+      if not self.CS.enableHSO:
         events.append(create_event('steerUnavailable', [ET.NO_ENTRY, ET.WARNING]))
     elif self.CS.steer_warning:
-      if self.CS.cstm_btns.get_button_status("steer") == 0:
+      if not self.CS.enableHSO:
          events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     if self.CS.brake_error:
       events.append(create_event('brakeUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
     if not ret.gearShifter == 'drive':
       events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+      self.CS.DAS_notInDrive = 1
     if ret.doorOpen:
       events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+      self.CS.DAS_doorOpen = 1
     if ret.seatbeltUnlatched:
       events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+      if c.enabled:
+        self.CS.DAS_noSeatbelt = 1
     if self.CS.esp_disabled:
       events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if not self.CS.main_on:
       events.append(create_event('wrongCarMode', [ET.NO_ENTRY, ET.USER_DISABLE]))
     if ret.gearShifter == 'reverse':
       events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
+      self.CS.DAS_notInDrive = 1
     if self.CS.brake_hold:
       events.append(create_event('brakeHold', [ET.NO_ENTRY, ET.USER_DISABLE]))
     if self.CS.park_brake:

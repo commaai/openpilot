@@ -141,6 +141,7 @@ def get_can_signals(CP):
       ("GTW_brakeHwType", "GTW_carConfig",0),
       ("GTW_autopilot", "GTW_carConfig",0),
       ("GTW_unknown3", "GTW_carConfig",0),
+      ("SDM_bcklDrivStatus", "SDM1", 0),
       
   ]
 
@@ -156,10 +157,10 @@ def get_can_signals(CP):
       ("DI_state", 5), #JCT Actual message freq is 1 Hz (1 sec)
       ("EPAS_sysStatus", 0), #JCT Actual message freq is 1.3 Hz (0.76 sec)
       ("MCU_locationStatus", 5), #JCT Actual message freq is 1.3 Hz (0.76 sec)
-      ("GTW_carConfig",  10), #BB Actual message freq is 1 Hz
+      #("GTW_carConfig", 5), #BB Actual message freq  is 1 Hz (1 sec)
   ]
 
-
+  #checks = []
   return signals, checks
   
 def get_epas_can_signals(CP):
@@ -179,10 +180,10 @@ def get_epas_can_signals(CP):
 
   checks = [
       ("EPAS_sysStatus", 5), #JCT Actual message freq is 1.3 Hz (0.76 sec)
-      ("GAS_SENSOR", 3),
+      #("GAS_SENSOR", 50), # BB Actual message freq is 10 Hz (0.1 sec)
   ]
 
-
+  #checks = []
   return signals, checks
   
 def get_can_parser(CP):
@@ -225,7 +226,7 @@ class CarState(object):
       self.CL_LANE_DETECT_FACTOR = [1.5, 1.5]
 
       self.CL_LANE_PASS_BP = [10., 20., 44.]
-      self.CL_LANE_PASS_TIME = [40.,10., 3.] 
+      self.CL_LANE_PASS_TIME = [40.,20., 13.] 
 
       # change lane delta angles and other params
       self.CL_MAXD_BP = [10., 32., 44.]
@@ -253,6 +254,12 @@ class CarState(object):
 
       #END OF ALCA PARAMS
       
+    ### START OF MAIN CONFIG OPTIONS ###
+    self.forcePedalOverCC = True
+    self.enableHSO = True 
+    self.enableALCA = True
+    ### END OF MAIN CONFIG OPTIONS ###
+
     self.brake_only = CP.enableCruise
     self.last_cruise_stalk_pull_time = 0
     self.CP = CP
@@ -274,7 +281,6 @@ class CarState(object):
     self.steer_warning = 0
     
     self.stopped = 0
-    self.frame_humanSteered = 0    # Last frame human steered
 
     # variables used for the fake DAS creation
     self.DAS_info_frm = -1
@@ -298,7 +304,14 @@ class CarState(object):
     self.DAS_telemetryPeriodic2_idx = 0
     self.DAS_telemetryEvent1_idx = 0
     self.DAS_telemetryEvent2_idx = 0
-    self.DAS_control_idx = 1
+    self.DAS_control_idx = 0
+
+    #BB notification messages for DAS
+    self.DAS_noSeatbelt = 0
+    self.DAS_canErrors = 0
+    self.DAS_plannerErrors = 0
+    self.DAS_doorOpen = 0
+    self.DAS_notInDrive = 0
 
     #BB variables for pedal CC
     self.pedal_speed_kph = 0.
@@ -395,7 +408,8 @@ class CarState(object):
     # ******************* parse out can *******************
     self.door_all_closed = not any([cp.vl["GTW_carState"]['DOOR_STATE_FL'], cp.vl["GTW_carState"]['DOOR_STATE_FR'],
                                cp.vl["GTW_carState"]['DOOR_STATE_RL'], cp.vl["GTW_carState"]['DOOR_STATE_RR']])  #JCT
-    self.seatbelt = cp.vl["GTW_status"]['GTW_driverPresent']
+    self.seatbelt = cp.vl["SDM1"]['SDM_bcklDrivStatus']
+    #self.seatbelt = cp.vl["SDM1"]['SDM_bcklDrivStatus'] and cp.vl["GTW_status"]['GTW_driverPresent']
 
     # 2 = temporary 3= TBD 4 = temporary, hit a bump 5 (permanent) 6 = temporary 7 (permanent)
     # TODO: Use values from DBC to parse this field
@@ -473,13 +487,15 @@ class CarState(object):
     pedal_has_value = bool(self.pedal_interceptor_value) or bool(self.pedal_interceptor_value2)
     pedal_interceptor_present = self.pedal_interceptor_state in [0, 5] and pedal_has_value
     # Add loggic if we just miss some CAN messages so we don't immediately disable pedal
+    if pedal_has_value:
+      self.pedal_interceptor_missed_counter = 0
     if pedal_interceptor_present:
       self.pedal_interceptor_missed_counter = 0
     else:
       self.pedal_interceptor_missed_counter += 1
-    pedal_interceptor_present = self.pedal_interceptor_missed_counter < 10
+    pedal_interceptor_present = pedal_interceptor_present and (self.pedal_interceptor_missed_counter < 10)
     # Mark pedal unavailable while traditional cruise is on.
-    self.pedal_interceptor_available = pedal_interceptor_present and not bool(self.pcm_acc_status)
+    self.pedal_interceptor_available = pedal_interceptor_present and (self.forcePedalOverCC or not bool(self.pcm_acc_status))
     if self.pedal_interceptor_available != self.prev_pedal_interceptor_available:
         self.config_ui_buttons(self.pedal_interceptor_available)
 
