@@ -26,6 +26,7 @@ struct sample_t toyota_torque_meas;
 struct sample_t cadillac_torque_driver;
 struct sample_t gm_torque_driver;
 struct sample_t hyundai_torque_driver;
+struct sample_t chrysler_torque_driver;
 
 TIM_TypeDef timer;
 TIM_TypeDef *TIM2 = &timer;
@@ -81,6 +82,19 @@ void set_hyundai_torque_driver(int min, int max){
   hyundai_torque_driver.max = max;
 }
 
+void set_chrysler_torque_meas(int min, int max){
+  chrysler_torque_meas.min = min;
+  chrysler_torque_meas.max = max;
+}
+
+int get_chrysler_torque_meas_min(void){
+  return chrysler_torque_meas.min;
+}
+
+int get_chrysler_torque_meas_max(void){
+  return chrysler_torque_meas.max;
+}
+
 int get_toyota_torque_meas_min(void){
   return toyota_torque_meas.min;
 }
@@ -103,6 +117,10 @@ void set_gm_rt_torque_last(int t){
 
 void set_hyundai_rt_torque_last(int t){
   hyundai_rt_torque_last = t;
+}
+
+void set_chrysler_rt_torque_last(int t){
+  chrysler_rt_torque_last = t;
 }
 
 void set_toyota_desired_torque_last(int t){
@@ -181,16 +199,20 @@ void init_tests_hyundai(void){
   set_timer(0);
 }
 
+void init_tests_chrysler(void){
+  chrysler_torque_driver.min = 0;
+  chrysler_torque_driver.max = 0;
+  chrysler_desired_torque_last = 0;
+  chrysler_rt_torque_last = 0;
+  chrysler_ts_last = 0;
+  set_timer(0);
+}
+
 void init_tests_honda(void){
   ego_speed = 0;
   gas_interceptor_detected = 0;
   brake_prev = 0;
   gas_prev = 0;
-}
-
-void init_tests_chrysler(void){
-  chrysler_desired_torque_last = 0;
-  set_timer(0);
 }
 
 void set_gmlan_digital_output(int to_set){
