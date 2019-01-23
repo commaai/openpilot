@@ -193,9 +193,6 @@ class CarController(object):
 
     # Send CAN commands.
     can_sends = []
-    # if no pedal detected still send a reset once a second
-    if frame % 100 == 0 and not CS.pedal_interceptor_available:
-      can_sends.append(teslacan.create_pedal_command_msg(0, 0, 0))
 
     #First we emulate DAS.
     # DAS_longC_enabled (1),DAS_gas_to_resume (1),DAS_apUnavailable (1), DAS_collision_warning (1),  DAS_op_status (4)
@@ -267,7 +264,20 @@ class CarController(object):
         if (CS.pcm_acc_status == 4):
           #car CC enabled but not OP, display the HOLD message
           cc_state = 3
-    can_sends.append(teslacan.create_fake_DAS_msg(speed_control_enabled,gas_to_resume,apUnavailable, collision_warning, op_status, \
+    send_fake_msg = False
+    send_fake_warning = False
+    if enabled:
+      if frame % 2 == 0:
+        send_fake_msg = True
+      if frame % 25 == 0:
+        send_fake_warning = True
+    else:
+      if frame % 23 == 0:
+        send_fake_msg = True
+      if frame % 60 == 0:
+        send_fake_warning = True
+    if send_fake_msg:
+      can_sends.append(teslacan.create_fake_DAS_msg(speed_control_enabled,gas_to_resume,apUnavailable, collision_warning, op_status, \
             acc_speed_kph, \
             turn_signal_needed,forward_collision_warning,hands_on_state, \
             cc_state, 1 if (CS.pedal_interceptor_available) else 0,alca_state, \
@@ -275,6 +285,9 @@ class CarController(object):
             speed_limit_to_car,
             apply_angle,
             1 if enable_steer_control else 0))
+    if send_fake_warning:
+      can_sends.append(teslacan.create_fake_DAS_warning(CS.DAS_noSeatbelt, CS.DAS_canErrors, \
+            CS.DAS_plannerErrors, CS.DAS_doorOpen, CS.DAS_notInDrive))
     # end of DAS emulation """
 
     idx = frame % 16

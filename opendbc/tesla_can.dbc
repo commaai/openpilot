@@ -160,6 +160,10 @@ BO_ 341 ESP_B: 8 ESP
  SG_ ESP_wheelPulseCountReL : 23|8@0+ (1,0) [0|254] ""  NEO,EPAS 
  SG_ ESP_wheelPulseCountReR : 31|8@0+ (1,0) [0|254] ""  NEO,EPAS
 
+BO_ 513 SDM1: 5 GTW
+ SG_ SDM_bcklPassStatus : 3|2@0+ (1,0) [0|3] "" NEO
+ SG_ SDM_bcklDrivStatus : 5|2@0+ (1,0) [0|3] "" NEO 
+
 BO_ 532 EPB_epasControl: 3 EPB
  SG_ EPB_epasControlChecksum : 23|8@0+ (1,0) [0|255] ""  NEO,EPAS 
  SG_ EPB_epasControlCounter : 11|4@0+ (1,0) [0|15] ""  NEO,EPAS

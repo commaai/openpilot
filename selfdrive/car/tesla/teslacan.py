@@ -78,6 +78,15 @@ def create_fake_DAS_msg(speed_control_enabled,gas_to_resume,apUnavailable, colli
       (c_apply_steer >> 8) & 0xFF)
   return [msg_id, 0, msg.raw, 0]
 
+def create_fake_DAS_warning(DAS_noSeatbelt, DAS_canErrors, DAS_plannerErrors, DAS_doorOpen, DAS_notInDrive):
+  msg_id = 0x554
+  msg_len = 1
+  warn = (DAS_noSeatbelt << 4) + (DAS_canErrors << 3) + (DAS_plannerErrors << 2) + (DAS_doorOpen << 1) + DAS_notInDrive
+  msg = create_string_buffer(msg_len)
+  struct.pack_into('B',msg ,0 , warn)
+  return [msg_id,0,msg.raw,0]
+
+
 def create_cruise_adjust_msg(spdCtrlLvr_stat, turnIndLvr_Stat, real_steering_wheel_stalk):
   """Creates a CAN message from the cruise control stalk.
   Simluates pressing the cruise control stalk (STW_ACTN_RQ.SpdCtrlLvr_Stat) 

@@ -141,6 +141,7 @@ def get_can_signals(CP):
       ("GTW_brakeHwType", "GTW_carConfig",0),
       ("GTW_autopilot", "GTW_carConfig",0),
       ("GTW_unknown3", "GTW_carConfig",0),
+      ("SDM_bcklDrivStatus", "SDM1", 0),
       
   ]
 
@@ -305,6 +306,13 @@ class CarState(object):
     self.DAS_telemetryEvent2_idx = 0
     self.DAS_control_idx = 0
 
+    #BB notification messages for DAS
+    self.DAS_noSeatbelt = 0
+    self.DAS_canErrors = 0
+    self.DAS_plannerErrors = 0
+    self.DAS_doorOpen = 0
+    self.DAS_notInDrive = 0
+
     #BB variables for pedal CC
     self.pedal_speed_kph = 0.
     # Pedal mode is ready, i.e. hardware is present and normal cruise is off.
@@ -400,7 +408,8 @@ class CarState(object):
     # ******************* parse out can *******************
     self.door_all_closed = not any([cp.vl["GTW_carState"]['DOOR_STATE_FL'], cp.vl["GTW_carState"]['DOOR_STATE_FR'],
                                cp.vl["GTW_carState"]['DOOR_STATE_RL'], cp.vl["GTW_carState"]['DOOR_STATE_RR']])  #JCT
-    self.seatbelt = cp.vl["GTW_status"]['GTW_driverPresent']
+    self.seatbelt = cp.vl["SDM1"]['SDM_bcklDrivStatus']
+    #self.seatbelt = cp.vl["SDM1"]['SDM_bcklDrivStatus'] and cp.vl["GTW_status"]['GTW_driverPresent']
 
     # 2 = temporary 3= TBD 4 = temporary, hit a bump 5 (permanent) 6 = temporary 7 (permanent)
     # TODO: Use values from DBC to parse this field

@@ -139,6 +139,13 @@ int DAS_pedalPressed = 0;
 uint32_t DAS_diStateL =0x00;
 uint32_t DAS_diStateH = 0x00;
 
+//fake DAS - warning messages
+int DAS_noSeatbelt = 0x00;
+int DAS_canErrors = 0x00;
+int DAS_plannerErrors = 0x00;
+int DAS_doorOpen = 0x00;
+int DAS_notInDrive = 0x00;
+
 static int add_tesla_crc(uint32_t MLB, uint32_t MHB , int msg_len) {
   //"""Calculate CRC8 using 1D poly, FF start, FF end"""
   int crc_lookup[256] = { 0x00, 0x1D, 0x3A, 0x27, 0x74, 0x69, 0x4E, 0x53, 0xE8, 0xF5, 0xD2, 0xCF, 0x9C, 0x81, 0xA6, 0xBB, 
@@ -221,6 +228,12 @@ float tesla_interpolate(struct lookup_t xy, float x)
     // if no such point is found, then x > xy.x[size-1]. Return last point
     return xy.y[size - 1];
   }
+}
+
+static uint32_t bitShift(int value, int which_octet, int starting_bit_in_octet) {
+  //which octet - 1-4
+  //starting_bit_in_octet 1-8
+  return ( value << ((starting_bit_in_octet - 1) + (which_octet -1) * 8));
 }
 
 static void send_fake_message(uint32_t RIR, uint32_t RDTR,int msg_len, int msg_addr, int bus_num, uint32_t data_lo, uint32_t data_hi) {
@@ -607,8 +620,8 @@ static void do_fake_DAS(uint32_t RIR, uint32_t RDTR) {
   }
   if (fake_DAS_counter % 100 == 45) {
     //send DAS_warningMatrix0 - 0x329
-    MLB = 0x00;
-    MHB = 0x00;
+    MLB = 0x00 + bitShift(DAS_canErrors,4,7);
+    MHB = 0x00 + bitShift(DAS_notInDrive,2,2);
     send_fake_message(RIR,RDTR,8,0x329,0,MLB,MHB);
     DAS_warningMatrix0_idx ++;
     DAS_warningMatrix0_idx = DAS_warningMatrix0_idx % 16;
@@ -622,10 +635,19 @@ static void do_fake_DAS(uint32_t RIR, uint32_t RDTR) {
 
     //send DAS_warningMatrix3 - 0x349
     int ovr = 0;
+    int lcAborting = 0;
+    int lcUnavailableSpeed = 0;
+    if (DAS_alca_state == 0x14) {
+      lcAborting == 1;
+    }
+    if (DAS_alca_state == 0x05) {
+      lcUnavailableSpeed == 1;
+    }
     if ((DAS_cc_state == 2) && (DAS_pedalPressed > 10)) {
       ovr = 1;
     }
-    MLB = 0x00 + (DAS_gas_to_resume << 1) + ((DAS_apUnavailable << 5) << 8) + (ovr << 23);
+    MLB = 0x00 + bitShift(DAS_gas_to_resume,1,2) + bitShift(DAS_apUnavailable,2,6) + bitShift(ovr,3,8) +
+         bitShift(lcAborting,2,1) + bitShift(lcUnavailableSpeed,4,3) + bitShift(DAS_noSeatbelt,3,3) + bitShift(DAS_plannerErrors,4,6);
     MHB = 0x00;
     send_fake_message(RIR,RDTR,8,0x349,0,MLB,MHB);
     DAS_warningMatrix3_idx ++;
@@ -1081,6 +1103,17 @@ static int tesla_tx_hook(CAN_FIFOMailBox_TypeDef *to_send)
 
   addr = to_send->RIR >> 21;
 
+
+  //capture message for fake DAS warning
+  if (addr == 0x554) {
+    int b0 = (to_send->RDLR & 0xFF); 
+    DAS_noSeatbelt = ((b0 >> 4) & 0x01);
+    DAS_canErrors = ((b0 >> 3) & 0x01);
+    DAS_plannerErrors = ((b0 >> 2) & 0x01);
+    DAS_doorOpen = ((b0 >> 1) & 0x01);
+    DAS_notInDrive = ((b0 >> 0) & 0x01);
+    return false;
+  }
   //capture message for fake DAS and parse
   if (addr == 0x553) {
     int b0 = (to_send->RDLR & 0xFF);
