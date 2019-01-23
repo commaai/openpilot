@@ -3,7 +3,7 @@ Welcome to panda
 
 [panda](http://github.com/commaai/panda) is the nicest universal car interface ever.
 
-<a href="https://www.amazon.com/chffr-panda-OBD-II-Interface/dp/B07D6Y3GN2/"><img src="https://github.com/commaai/panda/blob/master/panda.png">
+<a href="https://comma.ai/shop/products/panda-obd-ii-dongle"><img src="https://github.com/commaai/panda/blob/master/panda.png">
 
 <img src="https://github.com/commaai/panda/blob/master/buy.png"></a>
 
