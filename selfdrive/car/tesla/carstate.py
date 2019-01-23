@@ -304,7 +304,7 @@ class CarState(object):
     self.DAS_telemetryPeriodic2_idx = 0
     self.DAS_telemetryEvent1_idx = 0
     self.DAS_telemetryEvent2_idx = 0
-    self.DAS_control_idx = 1
+    self.DAS_control_idx = 0
 
     #BB notification messages for DAS
     self.DAS_noSeatbelt = 0
