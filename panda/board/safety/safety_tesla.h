@@ -11,15 +11,15 @@
 // 2m/s are added to be less restrictive
 const struct lookup_t TESLA_LOOKUP_ANGLE_RATE_UP = {
     {2., 7., 17.},
-    {15., 15.8, 15.25}};
+    {25., 25., 25.}};
 
 const struct lookup_t TESLA_LOOKUP_ANGLE_RATE_DOWN = {
     {2., 7., 17.},
-    {15., 13.5, 15.8}};
+    {25., 26., 25.}};
 
 const struct lookup_t TESLA_LOOKUP_MAX_ANGLE = {
     {2., 29., 38.},
-    {410., 492., 436.}};
+    {500., 500., 500.}};
 
 const int TESLA_RT_INTERVAL = 250000; // 250ms between real time checks
 
@@ -61,7 +61,11 @@ uint32_t tesla_last_radar_signal = 0;
 const int TESLA_RADAR_TIMEOUT = 1000000; // 1 second between real time checks
 char radar_VIN[] = "5YJSA1H27FF087536"; //leave empty if your radar VIN matches the car VIN
 
+//EPB enable counter
+int EPB_epasControl_idx = 0;
+
 //fake DAS counters
+int DAS_bootID_sent = 0;
 int fake_DAS_counter = 0;
 int DAS_object_idx = 0;
 int DAS_control_idx = 0;
@@ -76,9 +80,10 @@ int DAS_info_idx = 0;
 int DAS_warningMatrix0_idx = 0;
 int DAS_warningMatrix1_idx = 0;
 int DAS_warningMatrix3_idx = 0;
+int DAS_steeringControl_idx = 0;
 //fake DAS variables
-int DAS_enabled = 0;
-int DAS_speed_kph = 0;
+int DAS_longC_enabled = 0;
+int DAS_speed_limit_kph = 0;
 int DAS_accel_min = 0;
 int DAS_accel_max = 0;
 int DAS_aeb_event = 0x00;
@@ -87,8 +92,61 @@ int DAS_jerk_min = 0x000;
 int DAS_jerk_max = 0x0F;
 int DAS_gas_to_resume = 0;
 int DAS_apUnavailable = 0;
+//fake DAS for DAS_status and DAS_status2
+int DAS_op_status = 1;
+int DAS_alca_state = 0x05;
+int DAS_hands_on_state = 0;
+int DAS_forward_collision_warning = 0;
+int DAS_cc_state = 0;
+int DAS_acc_speed_limit_mph = 0;
+int DAS_acc_speed_kph = 0;
+int DAS_collision_warning = 0;
 
-static int add_tesla_crc(CAN_FIFOMailBox_TypeDef *msg , int msg_len) {
+//fake DAS for telemetry
+int DAS_telLeftMarkerQuality = 3; //3-high, 2-medium, 1-low 0-lowest
+int DAS_telRightMarkerQuality = 3; //3-high, 2-medium, 1-low 0-lowest
+int DAS_telRightLaneType = 3;//0-undecided, 1-solid, 2-road edge, 3-dashed 4-double 5-botts dots 6-barrier
+int DAS_telLeftLaneType = 3; //0-undecided, 1-solid, 2-road edge, 3-dashed 4-double 5-botts dots 6-barrier
+int DAS_telRightLaneCrossing = 0; //0-not crossing 1-crossing
+int DAS_telLeftLaneCrossing = 0; //0-not crossing 1-crossing
+int DAS_telLeftMarkerColor = 1; //0-unknown, 1-white, 2-yellow, 3-blue
+int DAS_telRightMarkerColor = 1; //0-unknown, 1-white, 2-yellow, 3-blue
+//fake DAS for DAS_bodyControls
+int DAS_turn_signal_request = 0;
+
+//fake DAS for DAS_steeringControls
+int DAS_steeringAngle = 0x4000;
+int DAS_steeringEnabled = 0;
+
+//fake DAS controll
+int time_last_DAS_data = -1;
+
+//fake DAS using pedal
+int DAS_usingPedal = 0;
+
+//fake DAS - are we in drive?
+int DAS_inDrive = 0;
+int DAS_inDrive_prev = 0;
+
+//fake DAS - last stalk data used to cancel
+uint32_t DAS_lastStalkL =0x00;
+uint32_t DAS_lastStalkH = 0x00;
+
+//fake DAS - pedal pressed (with Pedal)
+int DAS_pedalPressed = 0;
+
+//fake DAS - DI_state spamming
+uint32_t DAS_diStateL =0x00;
+uint32_t DAS_diStateH = 0x00;
+
+//fake DAS - warning messages
+int DAS_noSeatbelt = 0x00;
+int DAS_canErrors = 0x00;
+int DAS_plannerErrors = 0x00;
+int DAS_doorOpen = 0x00;
+int DAS_notInDrive = 0x00;
+
+static int add_tesla_crc(uint32_t MLB, uint32_t MHB , int msg_len) {
   //"""Calculate CRC8 using 1D poly, FF start, FF end"""
   int crc_lookup[256] = { 0x00, 0x1D, 0x3A, 0x27, 0x74, 0x69, 0x4E, 0x53, 0xE8, 0xF5, 0xD2, 0xCF, 0x9C, 0x81, 0xA6, 0xBB, 
     0xCD, 0xD0, 0xF7, 0xEA, 0xB9, 0xA4, 0x83, 0x9E, 0x25, 0x38, 0x1F, 0x02, 0x51, 0x4C, 0x6B, 0x76, 
@@ -110,9 +168,9 @@ static int add_tesla_crc(CAN_FIFOMailBox_TypeDef *msg , int msg_len) {
   for (int x = 0; x < msg_len; x++) {
     int v = 0;
     if (x <= 3) {
-      v = (msg->RDLR >> (x * 8)) & 0xFF;
+      v = (MLB >> (x * 8)) & 0xFF;
     } else {
-      v = (msg->RDHR >> ( (x-4) * 8)) & 0xFF;
+      v = (MHB >> ( (x-4) * 8)) & 0xFF;
     }
     crc = crc_lookup[crc ^ v];
   }
@@ -172,21 +230,121 @@ float tesla_interpolate(struct lookup_t xy, float x)
   }
 }
 
-static void fake_DAS_message(uint32_t RIR, uint32_t RDTR,int msg_len, int msg_addr, int bus_num, uint32_t data_lo, uint32_t data_hi) {
+static uint32_t bitShift(int value, int which_octet, int starting_bit_in_octet) {
+  //which octet - 1-4
+  //starting_bit_in_octet 1-8
+  return ( value << ((starting_bit_in_octet - 1) + (which_octet -1) * 8));
+}
+
+static void send_fake_message(uint32_t RIR, uint32_t RDTR,int msg_len, int msg_addr, int bus_num, uint32_t data_lo, uint32_t data_hi) {
   CAN_FIFOMailBox_TypeDef to_send;
   uint32_t addr_mask = 0x001FFFFF;
   to_send.RIR = (msg_addr << 21) + (addr_mask & (RIR | 1));
   to_send.RDTR = (RDTR & 0xFFFFFFF0) | msg_len;
   to_send.RDLR = data_lo;
   to_send.RDHR = data_hi;
-   can_send(&to_send, bus_num);
+  can_send(&to_send, bus_num);
+}
+
+static void reset_DAS_data() {
+  //fake DAS variables
+  DAS_longC_enabled = 0;
+  DAS_speed_limit_kph = 0;
+  DAS_accel_min = 0;
+  DAS_accel_max = 0;
+  DAS_aeb_event = 0x00;
+  DAS_acc_state = 0x00;
+  DAS_jerk_min = 0x000;
+  DAS_jerk_max = 0x0F;
+  DAS_gas_to_resume = 0;
+  DAS_apUnavailable = 0;
+  DAS_op_status = 1; //unavailable
+  DAS_alca_state = 0x05;
+  DAS_hands_on_state = 0;
+  DAS_forward_collision_warning = 0;
+  DAS_cc_state = 0;
+  DAS_acc_speed_limit_mph = 0;
+  DAS_acc_speed_kph = 0;
+  DAS_collision_warning = 0;
+  DAS_telLeftMarkerQuality = 3; //3-high, 2-medium, 1-low 0-lowest
+  DAS_telRightMarkerQuality = 3; //3-high, 2-medium, 1-low 0-lowest
+  DAS_telRightLaneType = 3; //0-undecided, 1-solid, 2-road edge, 3-dashed 4-double 5-botts dots 6-barrier
+  DAS_telLeftLaneType = 3; //0-undecided, 1-solid, 2-road edge, 3-dashed 4-double 5-botts dots 6-barrier
+  DAS_telRightLaneCrossing = 0; //0-not crossing 1-crossing
+  DAS_telLeftLaneCrossing = 0; //0-not crossing 1-crossing
+  DAS_telLeftMarkerColor = 1; //0-unknown, 1-white, 2-yellow, 3-blue
+  DAS_telRightMarkerColor = 1; //0-unknown, 1-white, 2-yellow, 3-blue
+  DAS_turn_signal_request = 0;
+  DAS_steeringAngle = 0x4000;
+  DAS_steeringEnabled = 0;
+  DAS_usingPedal = 0;
+  DAS_lastStalkL =0x00;
+  DAS_lastStalkH = 0x00;
+  DAS_pedalPressed = 0;
+  DAS_diStateL =0x00;
+  DAS_diStateH = 0x00;
+}
+
+static void do_fake_DI_state(uint32_t RIR, uint32_t RDTR) {
+  uint32_t MLB;
+  uint32_t MHB; 
+  if (((DAS_diStateL == 0x00) && (DAS_diStateH == 0x00)) || (DAS_cc_state != 2)) {
+    return;
+  }
+  MLB = (DAS_diStateL & 0xFFFF0FFF)+ 0x2000;
+  MHB = (DAS_diStateH & 0x00FF0E00) + ((DAS_acc_speed_limit_mph *10) & 0x1FF);
+  int idx = (DAS_diStateH & 0xF000 ) >> 12;
+  idx = ( idx + 1 ) % 16;
+  MHB = MHB + (idx << 12);
+  //cksm is different as DI_Status comes via gateway from another bus, so it's 88 or 0x058 what we need)
+  int cksm = add_tesla_cksm2(MLB, MHB, 0x058, 7);
+  MHB = MHB + (cksm << 24);
+  DAS_diStateL = MLB;
+  DAS_diStateH = MHB;
+  send_fake_message(RIR,RDTR,8,0x368,0,MLB,MHB);
 }
 
 static void do_fake_DAS(uint32_t RIR, uint32_t RDTR) {
+
+  //check if we got data from OP in the last two seconds
+  if (current_car_time - time_last_DAS_data > 2) {
+    //no message in the last 2 seconds, reset all variables
+    reset_DAS_data();
+  }
+
   fake_DAS_counter++;
   fake_DAS_counter = fake_DAS_counter % 300;
   uint32_t MLB;
   uint32_t MHB;
+
+  //if we never sent DAS_bootID message, send it now
+  if (DAS_bootID_sent == 0) {
+    MLB = 0x00E30055;
+    MHB = 0x002003BD;
+    send_fake_message(RIR,RDTR,8,0x639,0,MLB,MHB);
+    DAS_bootID_sent = 1;
+  }
+
+  if (fake_DAS_counter % 2 == 0) {
+    //send DAS_steeringControl - 0x488
+    MHB = 0x00;
+    MLB = ((DAS_steeringAngle >> 8) & 0x7F) + 
+        ((DAS_steeringAngle & 0xFF) << 8) + 
+        ((((DAS_steeringEnabled & controls_allowed & DAS_inDrive)<< 6) + DAS_steeringControl_idx) << 16);
+    int cksm = add_tesla_cksm2(MLB, MHB, 0x488, 3);
+    MLB = MLB + (cksm << 24);
+    send_fake_message(RIR,RDTR,4,0x488,2,MLB,MHB);
+    send_fake_message(RIR,RDTR,4,0x488,0,MLB,MHB);
+    DAS_steeringControl_idx ++;
+    DAS_steeringControl_idx = DAS_steeringControl_idx % 16;
+  }
+
+  if (fake_DAS_counter % 10 ==7) {
+    //spam DI_State if we control speed as well
+    if (DAS_cc_state == 2) {
+      //do_fake_DI_state(RIR,RDTR);
+    }
+  }
 
   if (fake_DAS_counter % 3 == 0) {
     //send DAS_object - 0x309
@@ -208,62 +366,120 @@ static void do_fake_DAS(uint32_t RIR, uint32_t RDTR) {
       MLB = 0xFFFFFF03;
       MHB = 0x02040003;
     }
-    //when idx ==4 we actually use 5 ; 4 is for road sign and we don't send
+    //when idx == 4 we actually use 5 ; 4 is for road sign and we don't send
     //05 FF FF FF FF FF FF FF
     if (DAS_object_idx == 4) {
       MLB = 0xFFFFFF05;
       MHB = 0xFFFFFFFF;
     }
-    fake_DAS_message(RIR,RDTR,8,0x309,0,MLB,MHB);
+    send_fake_message(RIR,RDTR,8,0x309,0,MLB,MHB);
     DAS_object_idx++;
     DAS_object_idx = DAS_object_idx % 5;
   }
-
+  
   if (fake_DAS_counter % 4 == 0) {
+    int acc_speed_kph = 0xFFF;
+    int acc_state = 0x04;
+    int aeb_event = 0x00;
+    int jerk_min = 0x1FF;
+    int jerk_max = 0x1FF;
+    int accel_min = 0x1FF;
+    int accel_max = 0x1FF;
     //send DAS_control - 0x2B9
-    if (DAS_enabled == 0) {
-      DAS_speed_kph = 0xFFF;
-      DAS_accel_min = 0x1FF;
-      DAS_accel_max = 0x1FF;
-      DAS_aeb_event = 0x00;
-      DAS_acc_state = 0x00;
-      DAS_jerk_min = 0x1FF;
-      DAS_jerk_max = 0x1FF;
-
-      MLB = (0xff & DAS_speed_kph) + 
-        (((DAS_acc_state << 4) + ((DAS_speed_kph & 0xF00) >> 8)) << 8) +
-        ((((DAS_jerk_min << 2) & 0xFF) + DAS_aeb_event) << 16 ) +
-        ((((DAS_jerk_max << 3) & 0xFF) +((DAS_jerk_min >> 6) & 0x07)) << 24);
-      MHB = ((((DAS_accel_min << 3) & 0xFF) + ((DAS_jerk_max >> 5) & 0x07)) ) +
-        ((((DAS_accel_max << 4) & 0xFF) + ((DAS_accel_min >> 5) & 0x0F)) << 8) +
-        (((DAS_control_idx << 5) + ((DAS_accel_max >> 4) & 0x1F))<< 16);
-      int cksm = add_tesla_cksm2(MLB, MHB, 0x2B9, 7);
-      MHB = MHB + (cksm << 24);
+    //when not in drive it should send FF 0F FE FF FF FF XF YY - X counter YY Checksum
+    if (DAS_inDrive ==1) {
+      if (DAS_longC_enabled > 0) {
+        acc_state = 0x04;
+        jerk_min = 0x000;
+        jerk_max = 0x0F;
+        acc_speed_kph = (int)(DAS_acc_speed_kph * 10.0);
+        accel_max = (int)((DAS_accel_max + 15 ) / 0.04);
+        accel_min = (int)((DAS_accel_min + 15 ) / 0.04);
+      }
+      MLB = (0xff & acc_speed_kph) + 
+        (((acc_state << 4) + ((acc_speed_kph & 0xF00) >> 8)) << 8) +
+        ((((jerk_min << 2) & 0xFF) + aeb_event) << 16 ) +
+        ((((jerk_max << 3) & 0xFF) +((jerk_min >> 6) & 0x07)) << 24);
+      MHB = ((((accel_min << 3) & 0xFF) + ((jerk_max >> 5) & 0x07)) ) +
+        ((((accel_max << 4) & 0xFF) + ((accel_min >> 5) & 0x0F)) << 8) +
+        (((DAS_control_idx << 5) + ((accel_max >> 4) & 0x1F))<< 16);
+    } else {
+      MLB = 0xFFFE0FFF;
+      MHB = 0x000FFFFF + (DAS_control_idx << 21);
     }
-    fake_DAS_message(RIR,RDTR,8,0x2B9,0,MLB,MHB);
+    int cksm = add_tesla_cksm2(MLB, MHB, 0x2B9, 7);
+    MHB = MHB + (cksm << 24);
+    send_fake_message(RIR,RDTR,8,0x2B9,0,MLB,MHB);
     DAS_control_idx++;
     DAS_control_idx = DAS_control_idx % 8;
-
+  }
+  if (fake_DAS_counter % 4 == 2) {
     //send DAS_pscControl - 0x219
     // 0x90 + DAS_pscControl_idx,0x00,0x00,0x00,0x00,0x00,0x00,0x00
     MLB = 0x90 + DAS_pscControl_idx;
     MHB = 0x00;
     int cksm = add_tesla_cksm2(MLB, MHB, 0x219, 2);
     MLB = MLB + (cksm << 16);
-    fake_DAS_message(RIR,RDTR,3,0x219,0,MLB,MHB);
+    send_fake_message(RIR,RDTR,3,0x219,0,MLB,MHB);
     DAS_pscControl_idx++;
     DAS_pscControl_idx = DAS_pscControl_idx % 16;
 
     //send DAS_telemetryFurniture - 0x3B1
     //NOT SENDING FOR NOW
+  }
 
+  if (fake_DAS_counter % 4 == 3) {
     //send DAS_telemetryPeriodic - 0x379
-    
+    //static for now
+    switch (DAS_telemetryPeriodic_idx2) {
+      case 0: //Y0 3A 83 D3 E8 07 6D 11
+        MLB = 0xd3833a00;
+        MHB = 0x116d07e8;
+        break;
+      case 1: //Y1 E1 D7 E6 FB BF 7D 00
+        MLB = 0xE6D7E101;
+        MHB = 0x007DBFFB;
+        break;
+      case 2: //42 49 F4 27 FF D1 7D 00
+        MLB = 0x27F44902;
+        MHB = 0x007DD1FF;
+        break;
+      case 3: //43 D7 AB A7 FF F3 FE C0
+        MLB = 0xA7ABD703;
+        MHB = 0xC0FEF3FF;
+        break;
+      case 4: //44 7B FB B7 F1 33 83 FF
+        MLB = 0xB7FB7B04;
+        MHB = 0xFF8333F1;
+        break;
+      case 5: //45 EA C7 5F F7 27 83 40
+        MLB = 0x5Fc7EA05;
+        MHB = 0x408327F7;
+        break;
+      case 6: //46 01 48 00 00 00 00 00
+        MLB = 0x00480106;
+        MHB = 0x00000000;
+        break;
+      case 7: //47 01 48 00 00 00 00 00
+        MLB = 0x00480107;
+        MHB = 0x00000000;
+        break;
+      case 8: //48 00 00 00 00 00 00 00
+        MLB = 0x00000008;
+        MHB = 0x00000000;
+        break;
+      default: //49 FA 37 00 00 00 00 08
+        MLB = 0x0037FA09;
+        MHB = 0x08000000;
+        break;
+    } 
+    MLB = MLB + (DAS_telemetryPeriodic_idx2 << 5);
+    send_fake_message(RIR,RDTR,1,0x379,0,MLB,MHB);
     DAS_telemetryPeriodic_idx2++;
     DAS_telemetryPeriodic_idx2 = DAS_telemetryPeriodic_idx2 % 10;
     if (DAS_telemetryPeriodic_idx2 == 0) {
-      DAS_telemetryPeriodic_idx1 += 2;
-      DAS_telemetryPeriodic_idx1 = DAS_telemetryPeriodic_idx1 % 16;
+      DAS_telemetryPeriodic_idx1 += 1;
+      DAS_telemetryPeriodic_idx1 = DAS_telemetryPeriodic_idx1 % 8;
     }
     
   }
@@ -274,76 +490,201 @@ static void do_fake_DAS(uint32_t RIR, uint32_t RDTR) {
 
   }
 
-  if (fake_DAS_counter % 10 == 0) {
-    //send DAS_chNm - 0x409
-    //no counter
-    MLB = 0x00;
-    MHB = 0x00;
-    fake_DAS_message(RIR,RDTR,1,0x409,0,MLB,MHB);
-
+  if (fake_DAS_counter % 10 == 3) {
     //send DAS_lanes - 0x239
     //for now fixed 0x33,0xC8,0xF0,0x7F,0x70,0x70,0x33,(idx << 4)+0x0F
     MLB = 0x7FF0C833;
     MHB = 0x0F337070 + (DAS_lanes_idx << 28);
-    fake_DAS_message(RIR,RDTR,8,0x239,0,MLB,MHB);
+    send_fake_message(RIR,RDTR,8,0x239,0,MLB,MHB);
     DAS_lanes_idx ++;
     DAS_lanes_idx = DAS_lanes_idx % 16;
+  }
 
+  if (fake_DAS_counter % 10 == 4) {
     //send DAS_telemetry - 0x3A9
     //no counter - 00 00 00 00 00 00 00 00
+    MLB = 0x00 + ((DAS_telLeftLaneType + (DAS_telRightLaneType << 3) + (DAS_telLeftMarkerQuality << 6)) << 8 ) +
+        ((DAS_telRightMarkerQuality +(DAS_telLeftMarkerColor << 2) + 
+        (DAS_telRightMarkerColor << 4) + (DAS_telLeftLaneCrossing << 6) +(DAS_telRightLaneCrossing <<6)) << 16);
+    MHB =0x00;
+    send_fake_message(RIR,RDTR,8,0x3A9,0,MLB,MHB);
+  }
+
+  if (fake_DAS_counter % 10 == 5) {
+    //send DAS_chNm - 0x409
+    //no counter
+    MLB = 0x00;
+    MHB = 0x00;
+    send_fake_message(RIR,RDTR,1,0x409,0,MLB,MHB);
 
     //send DAS_telemetryEvent - 0x3D9
     //NOT SENDING FOR NOW
 
     //send DAS_visualDebug - 0x249
-    //no counter - 02 06 21 10 00 00 00 00
+    //no counter - 8A 06 21 1F 00 00 00 00
+    MLB = 0x1F21068A;
+    MHB =0x00;
+    send_fake_message(RIR,RDTR,8,0x249,0,MLB,MHB);
 
   }
+    
 
   if (fake_DAS_counter % 50 == 0) {
     //send DAS_status - 0x399
+    int sl = (int)(DAS_speed_limit_kph / 5); 
+    MLB = DAS_op_status + (sl << 8) + (((DAS_collision_warning << 6) + sl) << 16);
+    MHB = (DAS_cc_state << 3) + 
+        (((DAS_hands_on_state << 2) + ((DAS_alca_state & 0x03) << 6)) << 8) +
+       ((( DAS_status_idx << 4) + (DAS_alca_state >> 2)) << 16);
+    int cksm = add_tesla_cksm2(MLB, MHB, 0x399, 7);
+    MHB = MHB + (cksm << 24);
+    send_fake_message(RIR,RDTR,8,0x399,0,MLB,MHB);
     DAS_status_idx ++;
     DAS_status_idx = DAS_status_idx % 16;
 
     //send DAS_status2 - 0x389
+    int sl2 = (int)(DAS_acc_speed_limit_mph / 0.2);
+    if (sl2 == 0) {
+      sl2 = 0x3FF;
+    }
+    MLB = sl2;
+    MHB = 0x8017 + (DAS_status2_idx << 20) + (DAS_forward_collision_warning << 16);
+    cksm = add_tesla_cksm2(MLB, MHB, 0x389, 7);
+    MHB = MHB + (cksm << 24);
+    send_fake_message(RIR,RDTR,8,0x389,0,MLB,MHB);
     DAS_status2_idx ++;
     DAS_status2_idx = DAS_status2_idx % 16;
-
+  }
+  if (fake_DAS_counter % 50 == 9) {
     //send DAS_bodyControls - 0x3E9
+    //0xf1,0x0c + turn_signal_request,0x00,0x00,0x00,0x00,(idx << 4)
+    MLB = 0x00000CF1 + (DAS_turn_signal_request << 8);
+    MHB = 0x00 + (DAS_bodyControls_idx << 20);
+    int cksm = add_tesla_cksm2(MLB, MHB, 0x3E9, 7);
+    MHB = MHB + (cksm << 24);
+    send_fake_message(RIR,RDTR,8,0x3E9,0,MLB,MHB);
     DAS_bodyControls_idx ++;
     DAS_bodyControls_idx = DAS_bodyControls_idx % 16;
   }
 
-  if (fake_DAS_counter %100 == 0) {
+  if (fake_DAS_counter % 100 == 0) {
     //send DAS_dtcMatrix - 0x669
     //NOT SENDING FOR NOW
 
     //send DAS_info - 0x539
+    switch (DAS_info_idx) {
+      case 0: 
+        MLB = 0x0003010a;
+        MHB = 0x004e0000;
+        break;
+      case 1: 
+        MLB = 0x0102000b;
+        MHB = 0x00000001;
+        break;
+      case 2:
+        MLB = 0x0000000d;
+        MHB = 0x3eac8e5b;
+        break;
+      case 3:
+        MLB = 0xc9060010;
+        MHB = 0x000021b9;
+        break;
+      case 4:
+        MLB = 0x00000011;
+        MHB = 0x00000000;
+        break;
+      case 5:
+        MLB = 0x34577f12;
+        MHB = 0x0b89706f;
+        break;
+      case 6:
+        MLB = 0xffff0113;
+        MHB = 0x0000fcff;
+        break;
+      case 7:
+        MLB = 0x00000514;
+        MHB = 0xc309fce5;
+        break;
+      case 8:
+        MLB = 0xe7700017;
+        MHB = 0x000091c4;
+        break;
+      default:
+        MLB = 0xb2d50018;
+        MHB = 0x0000786c;
+        break;
+    } 
+    send_fake_message(RIR,RDTR,8,0x539,0,MLB,MHB);
     DAS_info_idx ++;
     DAS_info_idx = DAS_info_idx % 10;
-
+  }
+  if (fake_DAS_counter % 100 == 45) {
     //send DAS_warningMatrix0 - 0x329
-    MLB = 0x00;
-    MHB = 0x00;
-    fake_DAS_message(RIR,RDTR,8,0x329,0,MLB,MHB);
+    MLB = 0x00 + bitShift(DAS_canErrors,4,7);
+    MHB = 0x00 + bitShift(DAS_notInDrive,2,2);
+    send_fake_message(RIR,RDTR,8,0x329,0,MLB,MHB);
     DAS_warningMatrix0_idx ++;
     DAS_warningMatrix0_idx = DAS_warningMatrix0_idx % 16;
 
     //send DAS_warningMatrix1 - 0x369
     MLB = 0x00;
     MHB = 0x00;
-    fake_DAS_message(RIR,RDTR,8,0x369,0,MLB,MHB);
+    send_fake_message(RIR,RDTR,8,0x369,0,MLB,MHB);
     DAS_warningMatrix1_idx ++;
     DAS_warningMatrix1_idx = DAS_warningMatrix1_idx % 16;
 
     //send DAS_warningMatrix3 - 0x349
-    MLB = 0x00 + (DAS_gas_to_resume << 1) + ((DAS_apUnavailable << 5) << 8);
+    int ovr = 0;
+    int lcAborting = 0;
+    int lcUnavailableSpeed = 0;
+    if (DAS_alca_state == 0x14) {
+      lcAborting == 1;
+    }
+    if (DAS_alca_state == 0x05) {
+      lcUnavailableSpeed == 1;
+    }
+    if ((DAS_cc_state == 2) && (DAS_pedalPressed > 10)) {
+      ovr = 1;
+    }
+    MLB = 0x00 + bitShift(DAS_gas_to_resume,1,2) + bitShift(DAS_apUnavailable,2,6) + bitShift(ovr,3,8) +
+         bitShift(lcAborting,2,1) + bitShift(lcUnavailableSpeed,4,3) + bitShift(DAS_noSeatbelt,3,3) + bitShift(DAS_plannerErrors,4,6);
     MHB = 0x00;
-    fake_DAS_message(RIR,RDTR,8,0x349,0,MLB,MHB);
+    send_fake_message(RIR,RDTR,8,0x349,0,MLB,MHB);
     DAS_warningMatrix3_idx ++;
     DAS_warningMatrix3_idx = DAS_warningMatrix3_idx % 16;
   }
 }
+
+static void do_EPB_epasControl(uint32_t RIR, uint32_t RDTR) {
+  uint32_t MLB;
+  uint32_t MHB; 
+  MLB = 0x01 + (EPB_epasControl_idx << 8);
+  MHB = 0x00;
+  int cksm = add_tesla_cksm2(MLB, MHB, 0x214, 2);
+  MLB = MLB + (cksm << 16);
+  send_fake_message(RIR,RDTR,3,0x214,2,MLB,MHB);
+  EPB_epasControl_idx++;
+  EPB_epasControl_idx = EPB_epasControl_idx % 16;
+}
+
+static void do_fake_stalk_cancel(uint32_t RIR, uint32_t RDTR) {
+  uint32_t MLB;
+  uint32_t MHB; 
+  if ((DAS_lastStalkL == 0x00) && (DAS_lastStalkH == 0x00)) {
+    return;
+  }
+  MLB = (DAS_lastStalkL & 0xFFFFFFC0) + 0x01;
+  MHB = (DAS_lastStalkH & 0x000FFFFF);
+  int idx = (DAS_lastStalkH & 0xF00000 ) >> 20;
+  idx = ( idx + 1 ) % 16;
+  MHB = MHB + (idx << 20);
+  int crc = add_tesla_crc(MLB, MHB,7);
+  MHB = MHB + (crc << 24);
+  DAS_lastStalkH = MHB;
+  send_fake_message(RIR,RDTR,8,0x45,0,MLB,MHB);
+}
+
+
 
 static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push)
 {
@@ -367,13 +708,40 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push)
     addr = to_push->RIR >> 21;
   }
 
-  //we use 0x118 at 10Hz to detect timing of messages sent by our fake DAS
-  if (addr == 0x118) {
-    //do_fake_DAS(to_push->RIR,to_push->RDTR);
+  //let's see if the pedal was pressed
+  if ((addr == 0x552) && (bus_number == 2)) {
+    //m1 = 0.050796813
+    //m2 = 0.101593626
+    //d = -22.85856576
+    DAS_pedalPressed = (int)((((to_push->RDLR & 0xFF00) >> 8) + ((to_push->RDLR & 0xFF) << 8)) * 0.050796813 -22.85856576);
+  }
+
+  //we use 0x108 at 100Hz to detect timing of messages sent by our fake DAS and EPB
+  if (addr == 0x108) {
+    if (fake_DAS_counter % 10 == 5) {
+      do_EPB_epasControl(to_push->RIR,to_push->RDTR);
+    }
+    do_fake_DAS(to_push->RIR,to_push->RDTR);
+    return;
+  }
+
+  //see if cruise is enabled [Enabled, standstill or Override] and cancel if using pedal
+  if (addr == 0x368) {
+    //first save values for spamming
+    DAS_diStateL = to_push->RDLR;
+    DAS_diStateH = to_push->RDHR;
+    int acc_state = ((to_push->RDLR & 0xF000) >> 12);
+    if ((DAS_usingPedal == 1) && ( acc_state >= 2) && ( acc_state <= 4)) {
+      do_fake_stalk_cancel(to_push->RIR, to_push->RDTR);
+    } 
+    if (DAS_cc_state == 2) {
+      //do_fake_DI_state(to_push->RIR,to_push->RDTR);
+    }
+
   }
 
   // Record the current car time in current_car_time (for use with double-pulling cruise stalk)
-  if ((addr == 0x318) && (bus_number == 0))
+  if (addr == 0x318)
   {
     int hour = (to_push->RDLR & 0x1F000000) >> 24;
     int minute = (to_push->RDHR & 0x3F00) >> 8;
@@ -419,9 +787,11 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push)
     }
   }
 
-  if ((addr == 0x45) && (bus_number == 0))
+  if (addr == 0x45)
   {
-    /* <-- openpilot */
+    //first save for future use
+    DAS_lastStalkL = to_push->RDLR;
+    DAS_lastStalkH = to_push->RDHR;
     // 6 bits starting at position 0
     int ap_lever_position = (to_push->RDLR & 0x3F);
     if (ap_lever_position == 2)
@@ -438,8 +808,10 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push)
       // deactivate openpilot
       controls_allowed = 0;
     }
-    /* openpilot --> */
-   
+    //if using pedal, send a cancel immediately to cancel the pedal
+    if ((DAS_usingPedal == 1) && (ap_lever_position > 1)) {
+      do_fake_stalk_cancel(to_push->RIR, to_push->RDTR);
+    }
     /* <-- revB giraffe GPIO */
     int turn_signal_lever = (to_push->RDLR >> 16) & 0x3; //TurnIndLvr_Stat : 16|2@1+
     int stw_menu_button = (to_push->RDHR >> 5) & 0x1; //StW_Sw05_Psd : 37|1@1+
@@ -600,6 +972,15 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push)
     {
       tesla_speed = 0;
     }
+    DAS_inDrive_prev = DAS_inDrive;
+    if (((to_push->RDLR & 0x7000 ) >> 12) == 4) {
+      DAS_inDrive = 1;
+    } else {
+      DAS_inDrive = 0;
+    }
+    if ((DAS_inDrive == 0) && (DAS_inDrive_prev == 1)) {
+      reset_DAS_data();
+    }
   }
 
   // exit controls on EPAS error
@@ -620,6 +1001,7 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push)
   if ((addr == 0x00E)  && (bus_number == 0))
   {
     int angle_meas_now = (int)((((to_push->RDLR & 0x3F) << 8) + ((to_push->RDLR >> 8) & 0xFF)) * 0.1 - 819.2);
+    uint32_t ts = TIM2->CNT;
     uint32_t ts_elapsed = get_ts_elapsed(ts, tesla_ts_angle_last);
 
     // *** angle real time check
@@ -654,7 +1036,7 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push)
     tesla_controls_allowed_last = controls_allowed;
   }
   
-  /* <-- revB giraffe GPIO */
+    /* <-- revB giraffe GPIO */
   //BO_ 1001 DAS_bodyControls: 8 XXX
   if (addr == 0x3e9)
   {
@@ -721,68 +1103,80 @@ static int tesla_tx_hook(CAN_FIFOMailBox_TypeDef *to_send)
 
   addr = to_send->RIR >> 21;
 
-  // do not transmit CAN message if steering angle too high
-  // DAS_steeringControl::DAS_steeringAngleRequest
-  if (addr == 0x488)
-  {
-    angle_raw = ((to_send->RDLR & 0x7F) << 8) + ((to_send->RDLR & 0xFF00) >> 8);
-    desired_angle = angle_raw * 0.1 - 1638.35;
-    int16_t violation = 0;
-    int st_enabled = (to_send->RDLR & 0x400000) >> 22;
 
-    if (st_enabled == 0) {
+  //capture message for fake DAS warning
+  if (addr == 0x554) {
+    int b0 = (to_send->RDLR & 0xFF); 
+    DAS_noSeatbelt = ((b0 >> 4) & 0x01);
+    DAS_canErrors = ((b0 >> 3) & 0x01);
+    DAS_plannerErrors = ((b0 >> 2) & 0x01);
+    DAS_doorOpen = ((b0 >> 1) & 0x01);
+    DAS_notInDrive = ((b0 >> 0) & 0x01);
+    return false;
+  }
+  //capture message for fake DAS and parse
+  if (addr == 0x553) {
+    int b0 = (to_send->RDLR & 0xFF);
+    int b1 = ((to_send->RDLR >> 8) & 0xFF);
+    int b2 = ((to_send->RDLR >> 16) & 0xFF);
+    int b3 = ((to_send->RDLR >> 24) & 0xFF);
+    int b4 = (to_send->RDHR & 0xFF);
+    int b5 = ((to_send->RDHR >> 8) & 0xFF);
+    int b6 = ((to_send->RDHR >> 16) & 0xFF);
+    int b7 = ((to_send->RDHR >> 24) & 0xFF);
+
+    DAS_acc_speed_kph = b1;
+    DAS_acc_speed_limit_mph = b4;
+    DAS_longC_enabled = ((b0 & 0x80) >> 7);
+    DAS_gas_to_resume = ((b0 & 0x40) >> 6);
+    DAS_apUnavailable = ((b0 & 0x20) >> 5);
+    DAS_collision_warning = ((b0 & 0x10) >> 4);
+    DAS_op_status = (b0 & 0x0F);
+    DAS_turn_signal_request = ((b2 & 0xC0) >> 6);
+    DAS_forward_collision_warning = ((b2 & 0x30) >> 4);
+    DAS_hands_on_state = (b2 & 0x0F);
+    DAS_cc_state = ((b3 & 0xC0)>>6);
+    DAS_usingPedal = ((b3 & 0x20) >> 5);
+    DAS_alca_state = (b3 & 0x1F);
+    DAS_speed_limit_kph = b5;
+    time_last_DAS_data = current_car_time;
+    DAS_steeringAngle = ((b7 << 8) + b6) & 0x7FFF;
+    DAS_steeringEnabled = (b7 >> 7);
+
+    desired_angle = DAS_steeringAngle * 0.1 - 1638.35;
+    int16_t violation = 0;
+
+    if (DAS_steeringEnabled == 0) {
       //steering is not enabled, do not check angles and do send
       tesla_desired_angle_last = desired_angle;
-      return true;
-    }
-
+    } else
     if (controls_allowed)
     {
-      if (steer_allowed)
-      {
+      // add 1 to not false trigger the violation
+      int delta_angle_up = (int)(tesla_interpolate(TESLA_LOOKUP_ANGLE_RATE_UP, tesla_speed) * 25. + 1.);
+      int delta_angle_down = (int)(tesla_interpolate(TESLA_LOOKUP_ANGLE_RATE_DOWN, tesla_speed) * 25. + 1.);
+      int highest_desired_angle = tesla_desired_angle_last + (tesla_desired_angle_last > 0 ? delta_angle_up : delta_angle_down);
+      int lowest_desired_angle = tesla_desired_angle_last - (tesla_desired_angle_last > 0 ? delta_angle_down : delta_angle_up);
+      int TESLA_MAX_ANGLE = (int)(tesla_interpolate(TESLA_LOOKUP_MAX_ANGLE, tesla_speed) + 1.);
 
-        // add 1 to not false trigger the violation
-        int delta_angle_up = (int)(tesla_interpolate(TESLA_LOOKUP_ANGLE_RATE_UP, tesla_speed) * 25. + 1.);
-        int delta_angle_down = (int)(tesla_interpolate(TESLA_LOOKUP_ANGLE_RATE_DOWN, tesla_speed) * 25. + 1.);
-        int highest_desired_angle = tesla_desired_angle_last + (tesla_desired_angle_last > 0 ? delta_angle_up : delta_angle_down);
-        int lowest_desired_angle = tesla_desired_angle_last - (tesla_desired_angle_last > 0 ? delta_angle_down : delta_angle_up);
-        int TESLA_MAX_ANGLE = (int)(tesla_interpolate(TESLA_LOOKUP_MAX_ANGLE, tesla_speed) + 1.);
-
-        if (max_limit_check(desired_angle, highest_desired_angle, lowest_desired_angle))
-        {
-          violation = 1;
-          controls_allowed = 0;
-          puts("Angle limit - delta! \n");
-        }
-        if (max_limit_check(desired_angle, TESLA_MAX_ANGLE, -TESLA_MAX_ANGLE))
-        {
-          violation = 1;
-          controls_allowed = 0;
-          puts("Angle limit - max! \n");
-        }
-      }
-      else
+      if (max_limit_check(desired_angle, highest_desired_angle, lowest_desired_angle))
       {
         violation = 1;
         controls_allowed = 0;
-        puts("Steering commads disallowed \n");
+        puts("Angle limit - delta! \n");
+      }
+      if (max_limit_check(desired_angle, TESLA_MAX_ANGLE, -TESLA_MAX_ANGLE))
+      {
+        violation = 1;
+        controls_allowed = 0;
+        puts("Angle limit - max! \n");
       }
     }
-
-    // makes no sense to have angle limits when not engaged
-    //    if ((!controls_allowed) && max_limit_check(desired_angle, tesla_angle_meas.max + 1, tesla_angle_meas.min -1)) {
-    //       violation = 1;
-    //       puts("Angle limit when not engaged! \n");
-    //    }
-
     tesla_desired_angle_last = desired_angle;
 
-    if (violation)
-    {
-      return false;
-    }
-    return true;
+    return false;
   }
+
   return true;
 }
 
@@ -796,7 +1190,6 @@ static void tesla_init(int16_t param)
 {
   controls_allowed = 0;
   tesla_ignition_started = 0;
-  uja1023_init();
   gmlan_switch_init(1); //init the gmlan switch with 1s timeout enabled
 }
 
@@ -859,7 +1252,6 @@ static void tesla_fwd_to_radar_modded(int bus_num, CAN_FIFOMailBox_TypeDef *to_f
   if (addr == 0x398 )
   {
     //change frontradarHW = 1 and dashw = 1
-    //also change to AWD if needed (most likely)
     //SG_ GTW_dasHw : 7|2@0+ (1,0) [0|0] ""  NEO
     //SG_ GTW_parkAssistInstalled : 11|2@0+ (1,0) [0|0] ""  NEO
     to_send.RDHR = to_send.RDHR | 0x100;

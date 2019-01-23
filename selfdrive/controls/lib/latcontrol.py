@@ -12,7 +12,7 @@ _DT = 0.01    # 100Hz
 _DT_MPC = 0.05  # 20Hz
 
 def calc_states_after_delay(states, v_ego, steer_angle, curvature_factor, steer_ratio, delay):
-  states[0].x = v_ego * delay + 2.0  # Add advance steering angle by 1 meter longitudinally
+  states[0].x = v_ego * delay + 2
   states[0].psi = v_ego * curvature_factor * math.radians(steer_angle) / steer_ratio * delay
   return states
 
@@ -89,7 +89,7 @@ class LatControl(object):
       self.curvature_factor = VM.curvature_factor(v_ego)
 
       # Determine a proper delay time that includes the model's processing time, which is variable
-      plan_age = _DT_MPC + cur_time - float(self.last_mpc_ts / 1000000000.0)
+      plan_age = cur_time - float(self.last_mpc_ts / 1000000000.0)
       total_delay = CP.steerActuatorDelay + plan_age
 
       self.l_poly = libmpc_py.ffi.new("double[4]", list(PL.PP.l_poly))
