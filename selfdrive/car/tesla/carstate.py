@@ -9,6 +9,7 @@ from selfdrive.car.modules.UIBT_module import UIButtons, UIButton
 import numpy as np
 from ctypes import create_string_buffer
 from selfdrive.car.modules.UIEV_module import UIEvents
+from selfdrive.car.tesla.readconfig import read_config_file
 import os
 import subprocess
 import sys
@@ -204,6 +205,20 @@ class CarState(object):
                       ["vision",               "VIS",                      ["wiggly","normal"]],
                       ["msg",                 "MSG",                      [""]],
                       ["sound",               "SND",                      [""]]]
+    
+    ### START OF MAIN CONFIG OPTIONS ###
+    ### Do NOT modify here, modify in /data/bb_openpilot.cfg and reboot
+    self.forcePedalOverCC = True
+    self.enableHSO = True 
+    self.enableALCA = True
+    self.enableDasEmulation = True
+    self.enableRadarEmulation = True
+    self.enableSpeedVariableDesAngle = True
+    #read config file
+    read_config_file(self)
+    ### END OF MAIN CONFIG OPTIONS ###
+
+
 
     if (CP.carFingerprint == CAR.MODELS):
       # ALCA PARAMS
@@ -254,11 +269,7 @@ class CarState(object):
 
       #END OF ALCA PARAMS
       
-    ### START OF MAIN CONFIG OPTIONS ###
-    self.forcePedalOverCC = True
-    self.enableHSO = True 
-    self.enableALCA = True
-    ### END OF MAIN CONFIG OPTIONS ###
+    
 
     self.brake_only = CP.enableCruise
     self.last_cruise_stalk_pull_time = 0

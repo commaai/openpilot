@@ -64,6 +64,11 @@ char radar_VIN[] = "5YJSA1H27FF087536"; //leave empty if your radar VIN matches 
 //EPB enable counter
 int EPB_epasControl_idx = 0;
 
+//settings from bb_openpilot.cfg
+
+int enable_das_emulation = 0;
+int enable_radar_emulation = 0;
+
 //fake DAS counters
 int DAS_bootID_sent = 0;
 int fake_DAS_counter = 0;
@@ -288,6 +293,9 @@ static void reset_DAS_data() {
 static void do_fake_DI_state(uint32_t RIR, uint32_t RDTR) {
   uint32_t MLB;
   uint32_t MHB; 
+  if (enable_das_emulation == 0) {
+    return;
+  }
   if (((DAS_diStateL == 0x00) && (DAS_diStateH == 0x00)) || (DAS_cc_state != 2)) {
     return;
   }
@@ -306,6 +314,9 @@ static void do_fake_DI_state(uint32_t RIR, uint32_t RDTR) {
 
 static void do_fake_DAS(uint32_t RIR, uint32_t RDTR) {
 
+  if (enable_das_emulation == 0) {
+    return;
+  }
   //check if we got data from OP in the last two seconds
   if (current_car_time - time_last_DAS_data > 2) {
     //no message in the last 2 seconds, reset all variables
@@ -1112,6 +1123,8 @@ static int tesla_tx_hook(CAN_FIFOMailBox_TypeDef *to_send)
     DAS_plannerErrors = ((b0 >> 2) & 0x01);
     DAS_doorOpen = ((b0 >> 1) & 0x01);
     DAS_notInDrive = ((b0 >> 0) & 0x01);
+    enable_das_emulation = ((b0 >> 5) & 0x01);
+    enable_radar_emulation = ((b0 >> 6) & 0x01);
     return false;
   }
   //capture message for fake DAS and parse
@@ -1199,6 +1212,9 @@ static int tesla_ign_hook()
 }
 
 static void tesla_fwd_to_radar_as_is(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
+  if (enable_radar_emulation == 0) {
+    return;
+  }
   CAN_FIFOMailBox_TypeDef to_send;
   to_send.RIR = to_fwd->RIR | 1; // TXRQ
   to_send.RDTR = to_fwd->RDTR;
@@ -1213,6 +1229,9 @@ static uint32_t radar_VIN_char(int pos, int shift) {
 
 
 static void tesla_fwd_to_radar_modded(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
+  if (enable_radar_emulation == 0) {
+    return;
+  }
   int32_t addr = to_fwd->RIR >> 21;
   CAN_FIFOMailBox_TypeDef to_send;
   to_send.RIR = to_fwd->RIR | 1; // TXRQ
@@ -1398,15 +1417,15 @@ static int tesla_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd)
     //check all messages we need to also send to radar, moddified, after we receive 0x631 from radar
     //148 does not exist, we use 115 at the same frequency to trigger and pass static vals
     //175 does not exist, we use 118 at the same frequency to trigger and pass vehicle speed
-    if ((tesla_radar_status > 0 ) && ((addr == 0x20A ) || (addr == 0x118 ) || (addr == 0x108 ) ||  
+    if ((tesla_radar_status > 0 ) && (enable_radar_emulation == 1) && ((addr == 0x20A ) || (addr == 0x118 ) || (addr == 0x108 ) ||  
     (addr == 0x115 ) ||  (addr == 0x148 ) || (addr == 0x145)))
     {
       tesla_fwd_to_radar_modded(1, to_fwd);
     }
 
     //check all messages we need to also send to radar, moddified, all the time
-    if  ((addr == 0xE ) || (addr == 0x308 ) || (addr == 0x45 ) || (addr == 0x398 ) ||
-    (addr == 0x405 ) ||  (addr == 0x30A)) {
+    if  (((addr == 0xE ) || (addr == 0x308 ) || (addr == 0x45 ) || (addr == 0x398 ) ||
+    (addr == 0x405 ) ||  (addr == 0x30A)) && (enable_radar_emulation == 1))  {
       tesla_fwd_to_radar_modded(1, to_fwd);
     }
 
