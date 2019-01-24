@@ -7,6 +7,7 @@ from common.numpy_fast import interp
 from common.realtime import sec_since_boot
 from selfdrive.swaglog import cloudlog
 from cereal import car
+from datetime import datetime
 
 _DT = 0.01    # 100Hz
 _DT_MPC = 0.05  # 20Hz
@@ -49,6 +50,20 @@ class LatControl(object):
     self.angle_steers_des_prev = 0.0
     self.angle_steers_des_time = 0.0
 
+    # Stuck actuator tracking
+    self.angle_jolt = 1.0                      # When stuck, set the next mpc angle to at least this much, right or left
+    self.stuck_ms = 100                        # Declare actuator stuck after x milliseconds. latcontrol seems to run every 60ms though
+    self.stuck_check1 = 1500.0                 # Save the previously recorded angle_steers (start with impossible value)
+    self.stuck_check2 = 2000.0                 # Check a second, adjeacent angle to detect rapid oscillations
+    self.angle_steers_same = 0                 # Save a total count of near-identical angle_steers values
+    self.stuck_start_time = 9000000000.000000  # Track time since angle_steers has shown the same value (start with far future date)
+    #self.actuator_stuck = False                # Track if actuator is likely stuck
+    self.orig_mpc = 0.0
+    self.jolt_mpc = 0.0
+    self.jolt_loops = 0
+    self.jolt_corr_loops = 0
+
+
   def reset(self):
     self.pid.reset()
 
@@ -85,6 +100,129 @@ class LatControl(object):
       self.angle_steers_des_mpc = float(math.degrees(delta_desired * CP.steerRatio) + angle_offset)
       self.angle_steers_des_time = cur_time
       self.mpc_updated = True
+
+
+
+
+
+# tmux logging
+print(datetime.utcfromtimestamp(cur_time - 28800).strftime('%Y-%m-%d %H:%M:%S'), " "),
+print("angle_steers: ", angle_steers, " "),
+print("MPC: ", round(self.angle_steers_des_mpc, 2), " "),
+print("O-MPC: ", round(self.orig_mpc, 2), " "),
+print("jolt_mpc: ", round(self.jolt_mpc, 2), " "),
+print("jolt_loops: ", self.jolt_loops, " ")
+# new line
+print("time stuck: ", round(self.stuck_start_time, 3), " "),
+print("angle_jolt: ", round(self.angle_jolt, 2), " "),
+print("corr_loops: ", self.jolt_corr_loops, " ")
+
+# Check for a desired angle between x1 and x2
+if not self.jolt_loops and not self.jolt_corr_loops and 0.1 < abs((angle_steers + 1000) - (self.angle_steers_des_mpc + 1000)) < 1.5:
+  # check-for-stagnant-steering code goes here
+  # Don't want to interfere with cornering for now. May want to try lowering this value depending on speed
+  #--------------------------------------------------
+  # Attempt to determine if steering has stopped moving so we can try and force a move at low angles.
+  # How long has angle_steers been one of two values no more than 0.1 apart?
+  # Cabana graphs for Prius often lands right between two 1/10th numbers.
+
+  if abs(angle_steers) < 5:  # Might move this as an AND to the above (unless we want to something for corners too)
+    if (abs((angle_steers + 1000) - (self.stuck_check1 + 1000)) < 0.04 or abs((angle_steers + 1000) - (self.stuck_check2 + 1000)) < 0.04) and abs((self.stuck_check1 + 1000) - (self.stuck_check2 + 1000)) <= 0.14:
+      self.angle_steers_same += 1
+      if self.stuck_check2 == 2000.0:
+        self.stuck_check2 = angle_steers
+    # Is angle_steers about 0.1 away from either tracked value AND more than 0.1 away from the other?
+    elif (abs((angle_steers + 1000) - (self.stuck_check1 + 1000)) <= 0.14 or abs((angle_steers + 1000) - (self.stuck_check2 + 1000)) <= 0.14) and (abs((angle_steers + 1000) - (self.stuck_check1 + 1000)) > 0.14 or abs((angle_steers + 1000) - (self.stuck_check2 + 1000)) > 0.14):
+      if abs((angle_steers + 1000) - (self.stuck_check1 + 1000)) > 0.14:
+        self.stuck_check2 = 2000.0
+        self.stuck_check1 = angle_steers
+      self.angle_steers_same = 0
+      self.jolt_loops = 1
+      self.stuck_check2 = angle_steers
+      self.stuck_start_time = sec_since_boot() # Comes from time.time() [via panda] or seconds/nanoseconds since 1970. 0.5095601 = 509560100 nanoseconds
+    elif abs((angle_steers + 1000) - (self.stuck_check1 + 1000)) < 0.04:
+      self.angle_steers_same += 1
+    else:
+      self.angle_steers_same = 0
+      self.jolt_loops = 0
+      self.stuck_check1 = angle_steers
+      self.stuck_check2 = 2000.0
+      self.stuck_start_time = sec_since_boot()
+
+  if self.angle_steers_same and sec_since_boot() - self.stuck_start_time >= self.stuck_ms * 0.001: # Turn ms into sec
+    self.jolt_loops = 1
+    self.orig_mpc = self.angle_steers_des_mpc
+    #print("O-MPC: ", round(self.orig_mpc, 2), " "),
+    
+  #if self.angle_steers_des_mpc + 1000 > angle_steers + 1000:
+  #  self.steer_direction = "left"
+    # left calc here
+
+  #else:
+  #  self.steer_direction = "right"
+    # right calc here
+
+# self.jolt_loops will now be incremented by stuck detection code vs actuator_stuck
+
+if self.jolt_loops:
+  if (self.angle_steers_des_mpc and angle_steers) or (not self.angle_steers_des_mpc and not angle_steers):
+    # Both are positive or both are negative so use subtraction
+    # Is the difference less than self.angle_jolt in degrees?
+    # This is the positive calculation
+    if 0.01 < abs(self.angle_steers_des_mpc - angle_steers) < self.angle_jolt:        # Don't care if it's zero
+      # Angle falls within angle_jolt window
+      # Is the desired turn, to the left or to the right of the CURRENT position?
+      if self.angle_steers_des_mpc < angle_steers:
+        # It's to the right (smaller number than angle_steers)
+        # Find the difference from 0.5 and make the new angle 0.5d _smaller_ than angle_steers
+        # If we SAVE this difference to a variable, we could use it to immediately turn back to the correct position
+        self.jolt_mpc = self.angle_steers_des_mpc - float(self.angle_jolt - (self.angle_jolt - abs((self.angle_steers_des_mpc - angle_steers))))
+      else:
+        # It's to the left
+        # Find the difference from 0.5 and make the new angle 0.5d _bigger_ than angle_steers
+        self.jolt_mpc = self.angle_steers_des_mpc + float(self.angle_jolt - (self.angle_jolt - abs((self.angle_steers_des_mpc - angle_steers))))
+  else:
+    # Only one is negative so use addition
+    # Is the difference less than self.angle_jolt in degrees?
+    # This is the addition calculation
+    if 0.01 < abs(self.angle_steers_des_mpc + angle_steers) < self.angle_jolt:
+      # Angle falls within angle_jolt window
+      # Is the desired turn, to the left or to the right?
+      if self.angle_steers_des_mpc < angle_steers:
+        # It's to the right (smaller number than angle_steers)
+        # Find the difference from 0.5 and make the new angle 0.5d _smaller_ than angle_steers
+        self.jolt_mpc = self.angle_steers_des_mpc - float(self.angle_jolt - (self.angle_jolt - abs((self.angle_steers_des_mpc + angle_steers))))
+      else:
+        # It's to the left
+        # Find the difference from 0.5 and make the new angle 0.5d _bigger_ than angle_steers
+        self.jolt_mpc = self.angle_steers_des_mpc + float(self.angle_jolt - (self.angle_jolt - abs((self.angle_steers_des_mpc + angle_steers))))
+  #print("jolt_mpc: ", round(self.jolt_mpc, 2), " "),
+
+  # See if we've arrived near the intended jolt angle
+  if abs((angle_steers + 1000) - (self.jolt_mpc + 1000)) <= abs(0.05 * self.jolt_mpc):  # within 5% of jolt_mpc. But, what if it's negative HUH? added abs to right side fixes it
+    # jolt move done so correction move code goes here
+    self.angle_steers_des_mpc = self.orig_mpc  # need to figure out how to apply multiplier; move slightly farther in the correction direction
+    self.jolt_loops = 0
+    self.jolt_corr_loops = 1
+  else:
+    self.angle_steers_des_mpc = self.jolt_mpc
+    self.jolt_loops += 1
+    self.jolt_corr_loops = 0  # necessary?
+
+elif self.jolt_corr_loops:
+  if abs((angle_steers + 1000) - (self.orig_mpc + 1000)) <= abs(0.05 * self.orig_mpc): # SHOULD be equal to or "farther left/right" of orig_mpc
+  self.angle_steers_des_mpc = self.orig_mpc  # need to figure out how to apply multiplier; move slightly farther in the correction direction
+  self.jolt_corr_loops += 1
+  self.jolt_loops = 0  # necessary?
+
+
+
+
+
+
+
+
+
 
       #  Check for infeasable MPC solution
       self.mpc_nans = np.any(np.isnan(list(self.mpc_solution[0].delta)))
