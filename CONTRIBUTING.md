@@ -2,11 +2,11 @@
 
 Our software is open source so you can solve your own problems without needing help from others. And if you solve a problem and are so kind, you can upstream it for the rest of the world to use.
 
-Most open source development activity is coordinated through our [slack](https://slack.comma.ai). A lot of documentation is available on our [medium](https://medium.com/@comma_ai/)
+Most open source development activity is coordinated through our [Discord](https://discord.comma.ai). A lot of documentation is available on our [medium](https://medium.com/@comma_ai/)
 
 ## Getting Started
 
- * Join our slack [slack.comma.ai](https://slack.comma.ai)
+ * Join our [Discord](https://discord.comma.ai)
  * Make sure you have a [GitHub account](https://github.com/signup/free)
  * Fork [our repositories](https://github.com/commaai) on GitHub
 

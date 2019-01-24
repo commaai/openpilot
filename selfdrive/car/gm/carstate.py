@@ -22,6 +22,7 @@ def get_powertrain_can_parser(CP, canbus):
     ("AcceleratorPedal", "AcceleratorPedal", 0),
     ("ACCButtons", "ASCMSteeringButton", CruiseButtons.UNPRESS),
     ("SteeringWheelAngle", "PSCMSteeringAngle", 0),
+    ("SteeringWheelRate", "PSCMSteeringAngle", 0),
     ("FLWheelSpd", "EBCMWheelSpdFront", 0),
     ("FRWheelSpd", "EBCMWheelSpdFront", 0),
     ("RLWheelSpd", "EBCMWheelSpdRear", 0),
@@ -31,11 +32,11 @@ def get_powertrain_can_parser(CP, canbus):
     ("LKATorqueDeliveredStatus", "PSCMStatus", 0),
   ]
 
-  if CP.carFingerprint in (CAR.VOLT, CAR.MALIBU):
+  if CP.carFingerprint == CAR.VOLT:
     signals += [
       ("RegenPaddle", "EBCMRegenPaddle", 0),
     ]
-  if CP.carFingerprint in (CAR.VOLT, CAR.MALIBU, CAR.HOLDEN_ASTRA):
+  if CP.carFingerprint in (CAR.VOLT, CAR.MALIBU, CAR.HOLDEN_ASTRA, CAR.ACADIA, CAR.CADILLAC_ATS):
     signals += [
       ("TractionControlOn", "ESPStatus", 0),
       ("EPBClosed", "EPBStatus", 0),
@@ -51,6 +52,7 @@ def get_powertrain_can_parser(CP, canbus):
 
 class CarState(object):
   def __init__(self, CP, canbus):
+    self.CP = CP
     # initialize can parser
 
     self.car_fingerprint = CP.carFingerprint
@@ -88,6 +90,7 @@ class CarState(object):
     self.standstill = self.v_ego_raw < 0.01
 
     self.angle_steers = pt_cp.vl["PSCMSteeringAngle"]['SteeringWheelAngle']
+    self.angle_steers_rate = pt_cp.vl["PSCMSteeringAngle"]['SteeringWheelRate']
     self.gear_shifter = parse_gear_shifter(pt_cp.vl["ECMPRDNL"]['PRNDL'])
     self.user_brake = pt_cp.vl["EBCMBrakePedalPosition"]['BrakePedalPosition']
 
@@ -120,13 +123,13 @@ class CarState(object):
     self.left_blinker_on = pt_cp.vl["BCMTurnSignals"]['TurnSignals'] == 1
     self.right_blinker_on = pt_cp.vl["BCMTurnSignals"]['TurnSignals'] == 2
 
-    if self.car_fingerprint in (CAR.VOLT, CAR.MALIBU, CAR.HOLDEN_ASTRA):
+    if self.car_fingerprint in (CAR.VOLT, CAR.MALIBU, CAR.HOLDEN_ASTRA, CAR.ACADIA, CAR.CADILLAC_ATS):
       self.park_brake = pt_cp.vl["EPBStatus"]['EPBClosed']
       self.main_on = pt_cp.vl["ECMEngineStatus"]['CruiseMainOn']
       self.acc_active = False
       self.esp_disabled = pt_cp.vl["ESPStatus"]['TractionControlOn'] != 1
       self.pcm_acc_status = pt_cp.vl["AcceleratorPedal2"]['CruiseState']
-      if self.car_fingerprint in (CAR.VOLT, CAR.MALIBU):
+      if self.car_fingerprint == CAR.VOLT:
         self.regen_pressed = bool(pt_cp.vl["EBCMRegenPaddle"]['RegenPaddle'])
       else:
         self.regen_pressed = False
