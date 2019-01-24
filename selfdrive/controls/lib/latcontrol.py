@@ -211,9 +211,9 @@ if self.jolt_loops:
 
 elif self.jolt_corr_loops:
   if abs((angle_steers + 1000) - (self.orig_mpc + 1000)) <= abs(0.05 * self.orig_mpc): # SHOULD be equal to or "farther left/right" of orig_mpc
-  self.angle_steers_des_mpc = self.orig_mpc  # need to figure out how to apply multiplier; move slightly farther in the correction direction
-  self.jolt_corr_loops += 1
-  self.jolt_loops = 0  # necessary?
+    self.angle_steers_des_mpc = self.orig_mpc  # need to figure out how to apply multiplier; move slightly farther in the correction direction
+    self.jolt_corr_loops += 1
+    self.jolt_loops = 0  # necessary?
 
 
 
