@@ -1,6 +1,6 @@
 ## stiction_whip (aka deadband)
 
- ## Untested !!
+ ## At least one major bug. DO NOT USE !!
  ## No PEDAL !!
 
 Prius has a problem with static friction somewhere in steering.
