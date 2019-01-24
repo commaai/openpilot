@@ -275,6 +275,9 @@ class CarController(object):
         collision_warning = hud_alert[1]
         if collision_warning > 1:
           collision_warning = 1
+        #use disabling for alerts/errors to make them aware someting is goin going on
+      if (snd_chime == CM.DOUBLE) or (hud_alert == AH.FCW):
+        op_status = 0x08
       if self.ACC.enable_adaptive_cruise:
         acc_speed_kph = self.ACC.new_speed #pcm_speed * CV.MS_TO_KPH
       if (CS.pedal_interceptor_available and self.PCC.enable_pedal_cruise) or (self.ACC.enable_adaptive_cruise):
@@ -305,7 +308,8 @@ class CarController(object):
             speed_limit_to_car,
             apply_angle,
             1 if enable_steer_control else 0))
-    if send_fake_warning:
+    if send_fake_warning or (self.opState == 2) or (self.opState == 5):
+      #if it's time to send OR we have a warning or emergency disable
       can_sends.append(teslacan.create_fake_DAS_warning(CS.DAS_noSeatbelt, CS.DAS_canErrors, \
             CS.DAS_plannerErrors, CS.DAS_doorOpen, CS.DAS_notInDrive, CS.enableDasEmulation, CS.enableRadarEmulation))
     # end of DAS emulation """
