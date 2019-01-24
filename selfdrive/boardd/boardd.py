@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+
+# TODO: merge the extra functionalities of this file (like MOCK) in boardd.c and
+# delete this python version of boardd
+
 import os
 import struct
 import zmq
@@ -15,8 +19,6 @@ try:
   from usb1 import USBErrorIO, USBErrorOverflow  #pylint: disable=no-name-in-module
 except Exception:
   pass
-
-# TODO: rewrite in C to save CPU
 
 SAFETY_NOOUTPUT = 0
 SAFETY_HONDA = 1
@@ -69,9 +71,10 @@ def __parse_can_buffer(dat):
 def can_send_many(arr):
   snds = []
   for addr, _, dat, alt in arr:
-    snd = struct.pack("II", ((addr << 21) | 1), len(dat) | (alt << 4)) + dat
-    snd = snd.ljust(0x10, '\x00')
-    snds.append(snd)
+    if addr < 0x800:  # only support 11 bit addr
+      snd = struct.pack("II", ((addr << 21) | 1), len(dat) | (alt << 4)) + dat
+      snd = snd.ljust(0x10, '\x00')
+      snds.append(snd)
   while 1:
     try:
       handle.bulkWrite(3, ''.join(snds))

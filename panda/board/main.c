@@ -10,14 +10,16 @@
 
 #include "drivers/llgpio.h"
 #include "gpio.h"
-#include "safety.h"
 
 #include "drivers/uart.h"
+#include "drivers/lin.h"
 #include "drivers/adc.h"
 #include "drivers/usb.h"
+#include "drivers/gmlan_alt.h"
 #include "drivers/can.h"
 #include "drivers/spi.h"
 #include "drivers/timer.h"
+#include "safety.h"
 
 
 // ***************************** fan *****************************
@@ -108,7 +110,6 @@ int get_health_pkt(void *dat) {
   if (safety_ignition < 0) {
     //Use the GPIO pin to determine ignition
     health->started = (GPIOA->IDR & (1 << 1)) == 0;
-    //health->started = 1; // Needed for Tesla only. Another way needs to be found
   } else {
     //Current safety hooks want to determine ignition (ex: GM)
     health->started = safety_ignition;

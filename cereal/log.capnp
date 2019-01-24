@@ -21,6 +21,8 @@ struct Map(Key, Value) {
 
 struct InitData {
   kernelArgs @0 :List(Text);
+  kernelVersion @15 :Text;
+
   gctx @1 :Text;
   dongleId @2 :Text;
 
@@ -32,6 +34,7 @@ struct InitData {
 
   androidBuildInfo @5 :AndroidBuildInfo;
   androidSensors @6 :List(AndroidSensor);
+  androidProperties @16 :Map(Text, Text);
   chffrAndroidExtra @7 :ChffrAndroidExtra;
   iosBuildInfo @14 :IosBuildInfo;
 
@@ -39,6 +42,7 @@ struct InitData {
 
   dirty @9 :Bool;
   passive @12 :Bool;
+  params @17 :Map(Text, Text);
 
   enum DeviceType {
     unknown @0;
@@ -183,6 +187,10 @@ struct SensorEventData {
     iOS @1;
     fiber @2;
     velodyne @3;  # Velodyne IMU
+    # c3 sensors below
+    bno055 @4;
+    lsm6ds3 @5;
+    bmp280 @6;
   }
 }
 
@@ -259,6 +267,8 @@ struct ThermalData {
   freeSpace @7 :Float32;
   batteryPercent @8 :Int16;
   batteryStatus @9 :Text;
+  batteryCurrent @15 :Int32;
+  batteryVoltage @16 :Int32;
   usbOnline @12 :Bool;
 
   fanSpeed @10 :UInt16;
@@ -266,6 +276,8 @@ struct ThermalData {
   startedTs @13 :UInt64;
 
   thermalStatus @14 :ThermalStatus;
+  chargingError @17 :Bool;
+  chargingDisabled @18 :Bool;
 
   enum ThermalStatus {
     green @0;   # all processes run
@@ -324,17 +336,22 @@ struct Live20Data {
     aLeadK @9 :Float32;
     fcw @10 :Bool;
     status @11 :Bool;
+    aLeadTau @12 :Float32;
   }
 }
 
 struct LiveCalibrationData {
+  # deprecated
   warpMatrix @0 :List(Float32);
+  # camera_frame_from_model_frame
   warpMatrix2 @5 :List(Float32);
+  warpMatrixBig @6 :List(Float32);
   calStatus @1 :Int8;
   calCycle @2 :Int32;
   calPerc @3 :Int8;
 
-  # Maps car space to normalized image space.
+  # view_frame_from_road_frame
+  # ui's is inversed needs new
   extrinsicMatrix @4 :List(Float32);
 }
 
@@ -395,10 +412,13 @@ struct Live100Data {
   alertStatus @38 :AlertStatus;
   alertSize @39 :AlertSize;
   alertBlinkingRate @42 :Float32;
+  alertType @44 :Text;
+  alertSound @45 :Text;
   awarenessStatus @26 :Float32;
   angleOffset @27 :Float32;
   gpsPlannerActive @40 :Bool;
   engageable @41 :Bool;  # can OP be engaged?
+  driverMonitoringOn @43 :Bool;
 
   enum ControlState {
     disabled @0;
@@ -543,6 +563,10 @@ struct Plan {
   gpsTrajectory @12 :GpsTrajectory;
 
   gpsPlannerActive @19 :Bool;
+
+  # maps
+  vCurvature @21 :Float32;
+  decelForTurn @22 :Bool;
 
   struct GpsTrajectory {
     x @0 :List(Float32);
@@ -1533,7 +1557,35 @@ struct OrbKeyFrame {
 struct DriverMonitoring {
   frameId @0 :UInt32;
   descriptor @1 :List(Float32);
+  std @2 :Float32;
 }
+
+struct Boot {
+  wallTimeNanos @0 :UInt64;
+  lastKmsg @1 :Data;
+  lastPmsg @2 :Data;
+}
+
+struct LiveParametersData {
+  valid @0 :Bool;
+  gyroBias @1 :Float32;
+  angleOffset @2 :Float32;
+}
+
+struct LiveMapData {
+  speedLimitValid @0 :Bool;
+  speedLimit @1 :Float32;
+  curvatureValid @2 :Bool;
+  curvature @3 :Float32;
+  wayId @4 :UInt64;
+  roadX @5 :List(Float32);
+  roadY @6 :List(Float32);
+  lastGps @7: GpsLocationData;
+  roadCurvatureX @8 :List(Float32);
+  roadCurvature @9 :List(Float32);
+  distToTurn @10 :Float32;
+}
+
 
 struct Event {
   # in nanoseconds?
@@ -1599,5 +1651,8 @@ struct Event {
     uiLayoutState @57 :UiLayoutState;
     orbFeaturesSummary @58 :OrbFeaturesSummary;
     driverMonitoring @59 :DriverMonitoring;
+    boot @60 :Boot;
+    liveParameters @61 :LiveParametersData;
+    liveMapData @62 :LiveMapData;
   }
 }

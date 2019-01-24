@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import zmq
-from cereal import car
+from cereal import car, log
 from selfdrive.config import Conversions as CV
 from selfdrive.services import service_list
 from selfdrive.swaglog import cloudlog
@@ -47,6 +47,7 @@ class CarInterface(object):
     ret.carFingerprint = candidate
 
     ret.safetyModel = car.CarParams.SafetyModels.noOutput
+    ret.openpilotLongitudinalControl = False
 
     # FIXME: hardcoding honda civic 2016 touring params so they can be used to
     # scale unknown params for other cars
@@ -117,6 +118,6 @@ class CarInterface(object):
 
     return ret.as_reader()
 
-  def apply(self, c):
+  def apply(self, c, perception_state=log.Live20Data.new_message()):
     # in mock no carcontrols
     return False

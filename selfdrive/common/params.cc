@@ -1,15 +1,20 @@
-#include "selfdrive/common/params.h"
-
-#include "selfdrive/common/util.h"
+#include "common/params.h"
 
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif  // _GNU_SOURCE
 
-#include <sys/file.h>
-#include <unistd.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <dirent.h>
+#include <sys/file.h>
+
+#include <map>
+#include <string>
+
+#include "common/util.h"
+#include "common/utilpp.h"
 
 namespace {
 
@@ -151,4 +156,41 @@ void read_db_value_blocking(const char* params_path, const char* key,
       usleep(100000);
     }
   }
+}
+
+int read_db_all(const char* params_path, std::map<std::string, std::string> *params) {
+  int err = 0;
+
+  if (params_path == NULL) {
+    params_path = default_params_path;
+  }
+
+  std::string lock_path = util::string_format("%s/.lock", params_path);
+
+  int lock_fd = open(lock_path.c_str(), 0);
+  if (lock_fd < 0) return -1;
+
+  err = flock(lock_fd, LOCK_EX);
+  if (err < 0) return err;
+
+  std::string key_path = util::string_format("%s/d", params_path);
+  DIR *d = opendir(key_path.c_str());
+  if (!d) {
+    close(lock_fd);
+    return -1;
+  }
+
+  struct dirent *de = NULL;
+  while ((de = readdir(d))) {
+    if (!isalnum(de->d_name[0])) continue;
+    std::string key = std::string(de->d_name);
+    std::string value = util::read_file(util::string_format("%s/%s", key_path.c_str(), key.c_str()));
+
+    (*params)[key] = value;
+  }
+
+  closedir(d);
+
+  close(lock_fd);
+  return 0;
 }

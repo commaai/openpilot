@@ -1,16 +1,42 @@
 #!/usr/bin/env python
 import numpy as np
-from numpy.linalg import inv
+from numpy.linalg import solve
 
-# dynamic bycicle model from "The Science of Vehicle Dynamics (2014), M. Guiggiani"##
-# Xdot = A*X + B*U
-# where X = [v, r], with v and r lateral speed and rotational speed, respectively
-# and U is the steering angle (controller input)
-#
-# A depends on longitudinal speed, u, and vehicle parameters CP
+"""
+Dynamic bycicle model from "The Science of Vehicle Dynamics (2014), M. Guiggiani"
+
+The state is x = [v, r]^T
+with v lateral speed [m/s], and r rotational speed [rad/s]
+
+The input u is the steering angle [rad]
+
+The system is defined by
+x_dot = A*x + B*u
+
+A depends on longitudinal speed, u [m/s], and vehicle parameters CP
+"""
 
 
 def create_dyn_state_matrices(u, VM):
+  """Returns the A and B matrix for the dynamics system
+
+  Args:
+    u: Vehicle speed [m/s]
+    VM: Vehicle model
+
+  Returns:
+    A tuple with the 2x2 A matrix, and 2x1 B matrix
+
+  Parameters in the vehicle model:
+    cF: Tire stiffnes Front [N/rad]
+    cR: Tire stiffnes Front [N/rad]
+    aF: Distance from CG to front wheels [m]
+    aR: Distance from CG to rear wheels [m]
+    m: Mass [kg]
+    j: Rotational inertia [kg m^2]
+    sR: Steering ratio [-]
+    chi: Steer ratio rear [-]
+  """
   A = np.zeros((2, 2))
   B = np.zeros((2, 1))
   A[0, 0] = - (VM.cF + VM.cR) / (VM.m * u)
@@ -23,7 +49,18 @@ def create_dyn_state_matrices(u, VM):
 
 
 def kin_ss_sol(sa, u, VM):
-  # kinematic solution, useful when speed ~ 0
+  """Calculate the steady state solution at low speeds
+  At low speeds the tire slip is undefined, so a kinematic
+  model is used.
+
+  Args:
+    sa: Steering angle [rad]
+    u: Speed [m/s]
+    VM: Vehicle model
+
+  Returns:
+    2x1 matrix with steady state solution
+  """
   K = np.zeros((2, 1))
   K[0, 0] = VM.aR / VM.sR / VM.l * u
   K[1, 0] = 1. / VM.sR / VM.l * u
@@ -31,25 +68,34 @@ def kin_ss_sol(sa, u, VM):
 
 
 def dyn_ss_sol(sa, u, VM):
-  # Dynamic solution, useful when speed > 0
+  """Calculate the steady state solution when x_dot = 0,
+  Ax + Bu = 0 => x = A^{-1} B u
+
+  Args:
+    sa: Steering angle [rad]
+    u: Speed [m/s]
+    VM: Vehicle model
+
+  Returns:
+    2x1 matrix with steady state solution
+  """
   A, B = create_dyn_state_matrices(u, VM)
-  return - np.matmul(inv(A), B) * sa
+  return -solve(A, B) * sa
 
 
 def calc_slip_factor(VM):
-  # the slip factor is a measure of how the curvature changes with speed
-  # it's positive for Oversteering vehicle, negative (usual case) otherwise
+  """The slip factor is a measure of how the curvature changes with speed
+  it's positive for Oversteering vehicle, negative (usual case) otherwise.
+  """
   return VM.m * (VM.cF * VM.aF - VM.cR * VM.aR) / (VM.l**2 * VM.cF * VM.cR)
 
 
 class VehicleModel(object):
-  def __init__(self, CP, init_state=np.asarray([[0.], [0.]])):
-    self.dt = 0.1
-    lookahead = 2.    # s
-    self.steps = int(lookahead / self.dt)
-    self.update_state(init_state)
-    self.state_pred = np.zeros((self.steps, self.state.shape[0]))
-    self.CP = CP
+  def __init__(self, CP):
+    """
+    Args:
+      CP: Car Parameters
+    """
     # for math readability, convert long names car params into short names
     self.m = CP.mass
     self.j = CP.rotationalInertia
@@ -61,45 +107,80 @@ class VehicleModel(object):
     self.sR = CP.steerRatio
     self.chi = CP.steerRatioRear
 
-  def update_state(self, state):
-    self.state = state
-
   def steady_state_sol(self, sa, u):
-    # if the speed is too small we can't use the dynamic model
-    # (tire slip is undefined), we then use the kinematic model
+    """Returns the steady state solution.
+
+    If the speed is too small we can't use the dynamic model (tire slip is undefined),
+    we then have to use the kinematic model
+
+    Args:
+      sa: Steering wheel angle [rad]
+      u: Speed [m/s]
+
+    Returns:
+      2x1 matrix with steady state solution (lateral speed, rotational speed)
+    """
     if u > 0.1:
       return dyn_ss_sol(sa, u, self)
     else:
       return kin_ss_sol(sa, u, self)
 
   def calc_curvature(self, sa, u):
-    # this formula can be derived from state equations in steady state conditions
+    """Returns the curvature. Multiplied by the speed this will give the yaw rate.
+
+    Args:
+      sa: Steering wheel angle [rad]
+      u: Speed [m/s]
+
+    Returns:
+      Curvature factor [rad/m]
+    """
     return self.curvature_factor(u) * sa / self.sR
 
   def curvature_factor(self, u):
+    """Returns the curvature factor.
+    Multiplied by wheel angle (not steering wheel angle) this will give the curvature.
+
+    Args:
+      u: Speed [m/s]
+
+    Returns:
+      Curvature factor [1/m]
+    """
     sf = calc_slip_factor(self)
-    return (1. - self.chi)/(1. - sf * u**2) / self.l
+    return (1. - self.chi) / (1. - sf * u**2) / self.l
 
   def get_steer_from_curvature(self, curv, u):
+    """Calculates the required steering wheel angle for a given curvature
+
+    Args:
+      curv: Desired curvature [rad/s]
+      u: Speed [m/s]
+
+    Returns:
+      Steering wheel angle [rad]
+    """
+
     return curv * self.sR * 1.0 / self.curvature_factor(u)
 
-  def state_prediction(self, sa, u):
-    # U is the matrix of the controls
-    # u is the long speed
-    A, B = create_dyn_state_matrices(u, self)
-    return np.matmul((A * self.dt + np.identity(2)), self.state) + B * sa * self.dt
-
   def yaw_rate(self, sa, u):
+    """Calculate yaw rate
+
+    Args:
+      sa: Steering wheel angle [rad]
+      u: Speed [m/s]
+
+    Returns:
+      Yaw rate [rad/s]
+    """
     return self.calc_curvature(sa, u) * u
 
+
 if __name__ == '__main__':
+  import math
   from selfdrive.car.honda.interface import CarInterface
-  # load car params
-  #CP = CarInterface.get_params("TOYOTA PRIUS 2017", {})
-  CP = CarInterface.get_params("HONDA CIVIC 2016 TOURING", {})
-  #print CP
+  from selfdrive.car.honda.values import CAR
+
+  CP = CarInterface.get_params(CAR.CIVIC, {})
   VM = VehicleModel(CP)
-  #print VM.steady_state_sol(.1, 0.15)
-  #print calc_slip_factor(VM)
-  #print VM.yaw_rate(3.*np.pi/180, 32.) * 180./np.pi
-  #print VM.curvature_factor(32)
+  print(VM.yaw_rate(math.radians(20), 10.))

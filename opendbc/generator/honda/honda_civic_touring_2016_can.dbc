@@ -126,10 +126,10 @@ BO_ 1302 ODOMETER: 8 XXX
 
 CM_ SG_ 401 GEAR "10 = reverse, 11 = transition";
 CM_ SG_ 420 BRAKE_HOLD_RELATED "On when Brake Hold engaged";
-CM_ SG_ 450 EPB_STATE "3 "engaged" 2 "disengaging" 1 "engaging" 0 "disengaged"";
+CM_ SG_ 450 EPB_STATE "3 \"engaged\" 2 \"disengaging\" 1 \"engaging\" 0 \"disengaged\"";
 CM_ SG_ 806 REVERSE_LIGHT "Might be reverse gear selected and not the lights";
 
-VAL_ 399 STEER_STATUS 5 "fault" 4 "no_torque_alert_2" 2 "no_torque_alert_1" 0 "normal" ;
+VAL_ 399 STEER_STATUS 6 "tmp_fault" 5 "fault_1" 4 "no_torque_alert_2" 3 "low_speed_lockout" 2 "no_torque_alert_1" 0 "normal" ;
 VAL_ 401 GEAR_SHIFTER 32 "L" 16 "S" 8 "D" 4 "N" 2 "R" 1 "P" ;
 VAL_ 401 GEAR 7 "L" 10 "S" 4 "D" 3 "N" 2 "R" 1 "P" ;
 VAL_ 450 EPB_STATE 3 "engaged" 2 "disengaging" 1 "engaging" 0 "disengaged" ;

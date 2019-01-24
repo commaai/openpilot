@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import numpy as np
 from common.kalman.simple_kalman import KF1D
-from cereal import car
+from cereal import car, log
 from common.numpy_fast import clip, interp
 from common.realtime import sec_since_boot
 from selfdrive.config import Conversions as CV
@@ -9,21 +9,21 @@ from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET,
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.tesla.carstate import CarState, get_can_parser, get_epas_parser
 from selfdrive.car.tesla.values import CruiseButtons, CM, BP, AH, CAR
-from selfdrive.controls.lib.planner import A_ACC_MAX
+from selfdrive.controls.lib.planner import _A_CRUISE_MAX_V_FOLLOWING
 
 try:
   from selfdrive.car.tesla.carcontroller import CarController
 except ImportError:
   CarController = None
 
+AudibleAlert = car.CarControl.HUDControl.AudibleAlert
+VisualAlert = car.CarControl.HUDControl.VisualAlert
 
-def get_compute_gb_models(accel, speed):
-  creep_brake = 0.0
-  creep_speed = 2.3
-  creep_brake_value = 0.15
-  if speed < creep_speed:
-    creep_brake = (creep_speed - speed) / creep_speed * creep_brake_value
-  return float(accel) / 4.8 - creep_brake
+K_MULT = 0.8 
+K_MULTi = 280000.
+
+def tesla_compute_gb(accel, speed):
+  return float(accel) / 3.
 
 
 class CarInterface(object):
@@ -49,7 +49,9 @@ class CarInterface(object):
       self.sendcan = sendcan
       self.CC = CarController(self.cp.dbc_name, CP.enableCamera)
 
-    self.compute_gb = get_compute_gb_models
+    self.compute_gb = tesla_compute_gb
+    
+
 
   @staticmethod
   def calc_accel_override(a_ego, a_target, v_ego, v_target):
@@ -75,7 +77,7 @@ class CarInterface(object):
     # accelOverride is more or less the max throttle allowed to pcm: usually set to a constant
     # unless aTargetMax is very high and then we scale with it; this help in quicker restart
 
-    return float(max(0.714, a_target / A_ACC_MAX)) * min(speedLimiter, accelLimiter)
+    return float(max(0.714, a_target / max(_A_CRUISE_MAX_V_FOLLOWING))) * min(speedLimiter, accelLimiter)
 
   @staticmethod
   def get_params(candidate, fingerprint):
@@ -83,8 +85,8 @@ class CarInterface(object):
     # kg of standard extra cargo to count for drive, gas, etc...
     std_cargo = 136
 
-    # Ridgeline reqires scaled tire stiffness
-    ts_factor = 1
+    # Scaled tire stiffness
+    ts_factor = 8 
 
     ret = car.CarParams.new_message()
 
@@ -94,41 +96,49 @@ class CarInterface(object):
     ret.safetyModel = car.CarParams.SafetyModels.tesla
 
     ret.enableCamera = True
-    # ret.enableGasInterceptor = 0x201 in fingerprint
-    ret.enableGasInterceptor = False
+    ret.enableGasInterceptor = False #keep this False for now
     print "ECU Camera Simulated: ", ret.enableCamera
     print "ECU Gas Interceptor: ", ret.enableGasInterceptor
 
     ret.enableCruise = not ret.enableGasInterceptor
 
-    # FIXME: hardcoding honda civic 2016 touring params so they can be used to
-    # scale unknown params for other cars
-    mass_models = 4647./2.205 + std_cargo
+    mass_models = 4722./2.205 + std_cargo
     wheelbase_models = 2.959
     # RC: I'm assuming center means center of mass, and I think Model S is pretty even between two axles
-    centerToFront_models = wheelbase_models * 0.5
+    centerToFront_models = wheelbase_models * 0.48
     centerToRear_models = wheelbase_models - centerToFront_models
     rotationalInertia_models = 2500
     tireStiffnessFront_models = 85400
     tireStiffnessRear_models = 90000
-
-    ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
+    # will create Kp and Ki for 0, 20, 40, 60 mph
+    ret.steerKiBP, ret.steerKpBP = [[0., 8.94, 17.88, 26.82 ], [0., 8.94, 17.88, 26.82]]
     if candidate == CAR.MODELS:
       stop_and_go = True
       ret.mass = mass_models
       ret.wheelbase = wheelbase_models
       ret.centerToFront = centerToFront_models
-      ret.steerRatio = 13.0
-      # Kp and Ki for the lateral control
-      ret.steerKpV, ret.steerKiV = [[0.09], [0.0125]]
-      ret.steerKf = 0.00003 # Initial test value TODO: investigate FF steer control for Model S?
+      ret.steerRatio = 15.75
+      # Kp and Ki for the lateral control for 0, 20, 40, 60 mph
+      ret.steerKpV, ret.steerKiV = [[1.20, 0.80, 0.60, 0.30], [0.16, 0.12, 0.08, 0.04]]
+      ret.steerKf = 0.00006 # Initial test value TODO: investigate FF steer control for Model S?
       ret.steerActuatorDelay = 0.09
       
       # Kp and Ki for the longitudinal control
       ret.longitudinalKpBP = [0., 5., 35.]
-      ret.longitudinalKpV = [3.6, 2.4, 1.5]
-      ret.longitudinalKiBP = [0., 35.]
-      ret.longitudinalKiV = [0.54, 0.36]
+      ret.longitudinalKpV = [0.6, 0.6, 0.6]
+      ret.longitudinalKiBP = [0., 5., 35.]
+      ret.longitudinalKiV = [0.18,0.18,0.18]
+      
+      #from honda
+      #ret.longitudinalKpBP = [0., 5., 35.]
+      #ret.longitudinalKpV = [1.2, 0.8, 0.5]
+      #ret.longitudinalKiBP = [0., 35.]
+      #ret.longitudinalKiV = [0.18, 0.12]
+      # from toyota
+      #ret.longitudinalKpBP = [0., 5., 35.]
+      #ret.longitudinalKpV = [3.6, 2.4, 1.5]
+      #ret.longitudinalKiBP = [0., 35.]
+      #ret.longitudinalKiV = [0.54, 0.36]
     else:
       raise ValueError("unsupported car %s" % candidate)
 
@@ -144,7 +154,7 @@ class CarInterface(object):
     ret.rotationalInertia = rotationalInertia_models * \
                             ret.mass * ret.wheelbase**2 / (mass_models * wheelbase_models**2)
 
-    # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
+    # TODO: start from empirically derived lateral slip stiffness and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
     ret.tireStiffnessFront = (tireStiffnessFront_models * ts_factor) * \
                              ret.mass / mass_models * \
@@ -157,21 +167,22 @@ class CarInterface(object):
     ret.steerRatioRear = 0.
 
     # no max steer limit VS speed
-    ret.steerMaxBP = [0.]  # m/s
-    ret.steerMaxV = [1.]   # max steer allowed
+    ret.steerMaxBP = [0.,15.]  # m/s
+    ret.steerMaxV = [420.,420.]   # max steer allowed
 
     ret.gasMaxBP = [0.]  # m/s
-    ret.gasMaxV = [0.6] if ret.enableGasInterceptor else [0.] # max gas allowed
-    ret.brakeMaxBP = [5., 20.]  # m/s
-    ret.brakeMaxV = [1., 0.8]   # max brake allowed
+    ret.gasMaxV = [0.3] #if ret.enableGasInterceptor else [0.] # max gas allowed
+    ret.brakeMaxBP = [0., 20.]  # m/s
+    ret.brakeMaxV = [1., 1.]   # max brake allowed - BB: since we are using regen, make this even
 
-    ret.longPidDeadzoneBP = [0.]
-    ret.longPidDeadzoneV = [0.]
+    ret.longPidDeadzoneBP = [0., 9.] #BB: added from Toyota to start pedal work; need to tune
+    ret.longPidDeadzoneV = [0., 0.] #BB: added from Toyota to start pedal work; need to tune; changed to 0 for now
 
     ret.stoppingControl = True
+    ret.openpilotLongitudinalControl = True
     ret.steerLimitAlert = False
     ret.startAccel = 0.5
-    ret.steerRateCost = 1.
+    ret.steerRateCost = 1.5
 
     return ret
 
@@ -180,7 +191,6 @@ class CarInterface(object):
     # ******************* do can recv *******************
     canMonoTimes = []
 
-    # print "c.actuators.SteerAngle = " + str(c.actuators.steerAngle)
     self.cp.update(int(sec_since_boot() * 1e9), False)
     self.epas_cp.update(int(sec_since_boot() * 1e9), False)
 
@@ -200,16 +210,17 @@ class CarInterface(object):
     ret.wheelSpeeds.rl = self.CS.v_wheel_rl
     ret.wheelSpeeds.rr = self.CS.v_wheel_rr
 
-    # gas pedal
-    ret.gas = self.CS.car_gas / 256.0
+    # gas pedal, we don't use with with interceptor so it's always 0/False
+    ret.gas = self.CS.user_gas 
     if not self.CP.enableGasInterceptor:
-      ret.gasPressed = self.CS.pedal_gas > 0
+      ret.gasPressed = self.CS.user_gas_pressed
     else:
       ret.gasPressed = self.CS.user_gas_pressed
 
+    
+
     # brake pedal
-    ret.brake = self.CS.user_brake
-    ret.brakePressed = self.CS.brake_pressed != 0
+    ret.brakePressed =False # (self.CS.brake_pressed != 0) and (self.CS.cstm_btns.get_button_status("brake") == 0)
     # FIXME: read sendcan for brakelights
     brakelights_threshold = 0.1
     ret.brakeLights = bool(self.CS.brake_switch or
@@ -236,6 +247,7 @@ class CarInterface(object):
     buttonEvents = []
     ret.leftBlinker = bool(self.CS.left_blinker_on)
     ret.rightBlinker = bool(self.CS.right_blinker_on)
+
 
     ret.doorOpen = not self.CS.door_all_closed
     ret.seatbeltUnlatched = not self.CS.seatbelt
@@ -271,18 +283,10 @@ class CarInterface(object):
         be.type = 'altButton3'
       buttonEvents.append(be)
 
-    if self.CS.cruise_setting != self.CS.prev_cruise_setting:
+    if self.CS.cruise_buttons != self.CS.prev_cruise_buttons:
       be = car.CarState.ButtonEvent.new_message()
       be.type = 'unknown'
-      if self.CS.cruise_setting != 0:
-        be.pressed = True
-        but = self.CS.cruise_setting
-      else:
-        be.pressed = False
-        but = self.CS.prev_cruise_setting
-      #if but == 1:
-      #  be.type = 'altButton1'
-      # TODO: more buttons?
+      be.pressed = bool(self.CS.cruise_buttons)
       buttonEvents.append(be)
     ret.buttonEvents = buttonEvents
 
@@ -290,44 +294,67 @@ class CarInterface(object):
     # TODO: I don't like the way capnp does enums
     # These strings aren't checked at compile time
     events = []
+
+    #notification messages for DAS
+    self.CS.DAS_noSeatbelt = 0
+    self.CS.DAS_canErrors = 0
+    self.CS.DAS_plannerErrors = 0
+    self.CS.DAS_doorOpen = 0
+    self.CS.DAS_notInDrive = 0
+   
     if not self.CS.can_valid:
       self.can_invalid_count += 1
-      if self.can_invalid_count >= 5:
+      if self.can_invalid_count >= 25: #BB increased to 25 to see if we still get the can error messages
         events.append(create_event('commIssue', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
+        self.CS.DAS_canErrors = 1
     else:
       self.can_invalid_count = 0
     if self.CS.steer_error:
-      events.append(create_event('steerUnavailable', [ET.NO_ENTRY, ET.WARNING]))
+      if not self.CS.enableHSO:
+        events.append(create_event('steerUnavailable', [ET.NO_ENTRY, ET.WARNING]))
     elif self.CS.steer_warning:
-      events.append(create_event('steerTempUnavailableMute', [ET.NO_ENTRY, ET.WARNING]))
+      if not self.CS.enableHSO:
+         events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     if self.CS.brake_error:
       events.append(create_event('brakeUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
     if not ret.gearShifter == 'drive':
       events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+      self.CS.DAS_notInDrive = 1
     if ret.doorOpen:
       events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+      self.CS.DAS_doorOpen = 1
     if ret.seatbeltUnlatched:
       events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+      if c.enabled:
+        self.CS.DAS_noSeatbelt = 1
     if self.CS.esp_disabled:
       events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if not self.CS.main_on:
       events.append(create_event('wrongCarMode', [ET.NO_ENTRY, ET.USER_DISABLE]))
     if ret.gearShifter == 'reverse':
       events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
+      self.CS.DAS_notInDrive = 1
     if self.CS.brake_hold:
       events.append(create_event('brakeHold', [ET.NO_ENTRY, ET.USER_DISABLE]))
     if self.CS.park_brake:
       events.append(create_event('parkBrake', [ET.NO_ENTRY, ET.USER_DISABLE]))
 
+
     if self.CP.enableCruise and ret.vEgo < self.CP.minEnableSpeed:
       events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
 
-    # disable on pedals rising edge or when brake is pressed and speed isn't zero
-    if (ret.gasPressed and not self.gas_pressed_prev) or \
-       (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001)):
-      events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
-      #Note: This event is thrown for steering override (needs more refactoring)
+# Standard OP method to disengage:
+# disable on pedals rising edge or when brake is pressed and speed isn't zero
+#    if (ret.gasPressed and not self.gas_pressed_prev) or \
+#       (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001)):
+#      events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
 
+    #if (self.CS.cstm_btns.get_button_status("brake")>0):
+    #  if ((self.CS.brake_pressed !=0) != self.brake_pressed_prev): #break not canceling when pressed
+    #  self.CS.cstm_btns.set_button_status("brake", 2 if self.CS.brake_pressed != 0 else 1)
+    #else:
+    #  if ret.brakePressed:
+    #    events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
     if ret.gasPressed:
       events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
 
@@ -376,37 +403,40 @@ class CarInterface(object):
 
     # update previous brake/gas pressed
     self.gas_pressed_prev = ret.gasPressed
-    self.brake_pressed_prev = ret.brakePressed
+    self.brake_pressed_prev = self.CS.brake_pressed != 0
 
     # cast to reader so it can't be modified
     return ret.as_reader()
 
   # pass in a car.CarControl
   # to be called @ 100hz
-  def apply(self, c):
+  def apply(self, c, perception_state=log.Live20Data.new_message()):
     if c.hudControl.speedVisible:
       hud_v_cruise = c.hudControl.setSpeed * CV.MS_TO_KPH
     else:
       hud_v_cruise = 255
 
-    hud_alert = {
-      "none": AH.NONE,
-      "fcw": AH.FCW,
-      "steerRequired": AH.STEER,
-      "brakePressed": AH.BRAKE_PRESSED,
-      "wrongGear": AH.GEAR_NOT_D,
-      "seatbeltUnbuckled": AH.SEATBELT,
-      "speedTooHigh": AH.SPEED_TOO_HIGH}[str(c.hudControl.visualAlert)]
+    VISUAL_HUD = {
+      VisualAlert.none: AH.NONE,
+      VisualAlert.fcw: AH.FCW,
+      VisualAlert.steerRequired: AH.STEER,
+      VisualAlert.brakePressed: AH.BRAKE_PRESSED,
+      VisualAlert.wrongGear: AH.GEAR_NOT_D,
+      VisualAlert.seatbeltUnbuckled: AH.SEATBELT,
+      VisualAlert.speedTooHigh: AH.SPEED_TOO_HIGH}
 
-    snd_beep, snd_chime = {
-      "none": (BP.MUTE, CM.MUTE),
-      "beepSingle": (BP.SINGLE, CM.MUTE),
-      "beepTriple": (BP.TRIPLE, CM.MUTE),
-      "beepRepeated": (BP.REPEATED, CM.MUTE),
-      "chimeSingle": (BP.MUTE, CM.SINGLE),
-      "chimeDouble": (BP.MUTE, CM.DOUBLE),
-      "chimeRepeated": (BP.MUTE, CM.REPEATED),
-      "chimeContinuous": (BP.MUTE, CM.CONTINUOUS)}[str(c.hudControl.audibleAlert)]
+    AUDIO_HUD = {
+      AudibleAlert.none: (BP.MUTE, CM.MUTE),
+      AudibleAlert.chimeEngage: (BP.SINGLE, CM.MUTE),
+      AudibleAlert.chimeDisengage: (BP.SINGLE, CM.MUTE),
+      AudibleAlert.chimeError: (BP.MUTE, CM.DOUBLE),
+      AudibleAlert.chimePrompt: (BP.MUTE, CM.SINGLE),
+      AudibleAlert.chimeWarning1: (BP.MUTE, CM.DOUBLE),
+      AudibleAlert.chimeWarning2: (BP.MUTE, CM.REPEATED),
+      AudibleAlert.chimeWarningRepeat: (BP.MUTE, CM.REPEATED)}
+
+    hud_alert = VISUAL_HUD[c.hudControl.visualAlert.raw]
+    snd_beep, snd_chime = AUDIO_HUD[c.hudControl.audibleAlert.raw]
 
     pcm_accel = int(clip(c.cruiseControl.accelOverride,0,1)*0xc6)
 

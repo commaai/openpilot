@@ -52,11 +52,11 @@ def create_ipas_steer_command(packer, steer, enabled, apgs_enabled):
     return packer.make_can_msg("STEERING_IPAS_COMMA", 0, values)
 
 
-def create_steer_command(packer, steer, raw_cnt):
+def create_steer_command(packer, steer, steer_req, raw_cnt):
   """Creates a CAN message for the Toyota Steer Command."""
 
   values = {
-    "STEER_REQUEST": abs(steer) > 0.001,
+    "STEER_REQUEST": steer_req,
     "STEER_TORQUE_CMD": steer,
     "COUNTER": raw_cnt,
     "SET_ME_1": 1,
@@ -65,7 +65,7 @@ def create_steer_command(packer, steer, raw_cnt):
 
 
 def create_accel_command(packer, accel, pcm_cancel, standstill_req):
-  # TODO: find the exact canceling bit
+  # TODO: find the exact canceling bit that does not create a chime
   values = {
     "ACCEL_CMD": accel,
     "SET_ME_X63": 0x63,

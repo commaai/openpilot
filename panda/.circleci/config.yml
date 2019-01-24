@@ -25,9 +25,17 @@ jobs:
           command: |
             docker run panda_build /bin/bash -c "cd /panda; python setup.py install"
       - run:
-          name: Build STM image
+          name: Build Panda STM image
           command: |
             docker run panda_build /bin/bash -c "cd /panda/board; make bin"
+      - run:
+          name: Build Pedal STM image
+          command: |
+            docker run panda_build /bin/bash -c "cd /panda/board/pedal; make obj/comma.bin"
+      - run:
+          name: Build NEO STM image
+          command: |
+            docker run panda_build /bin/bash -c "cd /panda/board; make clean; make -f Makefile.legacy obj/comma.bin"
       - run:
           name: Build ESP image
           command: |
