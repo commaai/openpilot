@@ -32,7 +32,7 @@ ANGLE_DELTA_V = [5., .8, .25]     # windup limit
 ANGLE_DELTA_VU = [5., 3.5, 0.8]   # unwind limit
 #steering adjustment with speed
 DES_ANGLE_ADJUST_FACTOR_BP = [0.,13., 44.]
-DES_ANGLE_ADJUST_FACTOR = [.60, .70, .99]
+DES_ANGLE_ADJUST_FACTOR = [.70, .80, .99]
 
 def process_hud_alert(hud_alert):
   # initialize to no alert
