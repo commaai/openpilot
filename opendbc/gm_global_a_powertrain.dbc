@@ -66,9 +66,11 @@ BO_ 190 ECMAcceleratorPos: 6 K20_ECM
  SG_ GasPedalAndAcc : 23|8@0+ (1,0) [0|0] ""  NEO
 
 BO_ 201 ECMEngineStatus: 8 K20_ECM
- SG_ EngineTPS : 39|8@0+ (0.392156863,0) [0|100.000000065] "%"  NEO
- SG_ EngineRPM : 15|16@0+ (0.25,0) [0|0] "RPM"  NEO
- SG_ CruiseMainOn : 29|1@0+ (1,0) [0|1] ""  NEO
+ SG_ EngineTPS : 39|8@0+ (0.392156863,0) [0|100.000000065] "%" NEO
+ SG_ EngineRPM : 13|14@0+ (0.25,0) [0|0] "RPM" NEO
+ SG_ CruiseMainOn : 29|1@0+ (1,0) [0|1] "" NEO
+ SG_ Brake_Pressed : 40|1@0+ (1,0) [0|1] "" NEO
+ SG_ Standstill : 2|1@0+ (1,0) [0|1] "" NEO
 
 BO_ 209 EBCMBrakePedalTorque: 7 K17_EBCM
  SG_ BrakePedalTorque : 3|12@0+ (1,0) [0|0] ""  NEO
@@ -107,11 +109,12 @@ BO_ 384 ASCMLKASteeringCmd: 4 NEO
  SG_ LKASteeringCmd : 2|11@0- (1,0) [0|0] ""  NEO
 
 BO_ 388 PSCMStatus: 8 K43_PSCM
- SG_ HandsOffSWDetectionMode : 20|2@0+ (1,0) [0|3] ""  NEO
- SG_ HandsOffSWlDetectionStatus : 21|1@0+ (1,0) [0|1] ""  NEO
- SG_ LKATorqueDeliveredStatus : 5|3@0+ (1,0) [0|7] ""  NEO
- SG_ LKADriverAppldTrq : 50|11@0- (0.01,0) [-10.24|10.23] "Nm"  NEO
- SG_ LKATotalTorqueDelivered : 2|11@0- (0.01,0) [-10.24|10.23] "Nm"  NEO
+ SG_ HandsOffSWDetectionMode : 20|2@0+ (1,0) [0|3] "" NEO
+ SG_ HandsOffSWlDetectionStatus : 21|1@0+ (1,0) [0|1] "" NEO
+ SG_ LKATorqueDeliveredStatus : 5|3@0+ (1,0) [0|7] "" NEO
+ SG_ LKADriverAppldTrq : 50|11@0- (0.01,0) [-10.24|10.23] "Nm" NEO
+ SG_ LKATorqueDelivered : 18|11@0- (0.01,0) [0|1] "" NEO
+ SG_ LKATotalTorqueDelivered : 2|11@0- (0.01,0) [-10.24|10.23] "Nm" NEO
 
 BO_ 417 AcceleratorPedal: 8 XXX
  SG_ AcceleratorPedal : 55|8@0+ (1,0) [0|0] ""  NEO
@@ -134,9 +137,10 @@ BO_ 485 PSCMSteeringAngle: 8 K43_PSCM
  SG_ SteeringWheelRate : 27|12@0- (0.5,0) [-100|100] "deg/s"  NEO
 
 BO_ 489 EBCMVehicleDynamic: 8 K17_EBCM
- SG_ YawRate : 51|12@0- (0.0625,0) [-2047|2047] "grad/s"  NEO
- SG_ LateralAcceleration : 3|12@0- (0.0161,0) [-2047|2047] "m/s2"  NEO
- SG_ BrakePedalPressed : 6|1@0+ (1,0) [0|0] ""  NEO
+ SG_ BrakePedalPressed : 6|1@0+ (1,0) [0|0] "" NEO
+ SG_ LateralAcceleration : 3|10@0- (0.161,0) [-2047|2047] "m/s2" NEO
+ SG_ YawRate : 35|12@0- (0.625,0) [0|1] "" NEO
+ SG_ YawRate2 : 51|12@0- (0.0625,0) [-2047|2047] "grad/s" NEO
 
 BO_ 560 EPBStatus: 8 EPB
  SG_ EPBClosed : 12|1@0+ (1,0) [0|1] ""  NEO
@@ -253,4 +257,3 @@ VAL_ 715 GasRegenCmdActive 1 "Active" 0 "Inactive" ;
 VAL_ 320 Intellibeam 1 "Active" 0 "Inactive" ;
 VAL_ 320 HighBeamsActive 1 "Active" 0 "Inactive" ;
 VAL_ 320 HighBeamsTemporary 1 "Active" 0 "Inactive" ;
-

@@ -1,0 +1,5 @@
+# with neos tree
+cd ~/android/system
+mka libz
+
+cp ~/android/system/out/target/product/oneplus3/obj/STATIC_LIBRARIES/libz_intermediates/libz.a lib/
