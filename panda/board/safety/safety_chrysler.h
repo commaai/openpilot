@@ -1,20 +1,19 @@
-// board enforces
-//   in-state
-//      ACC is active (green)
-//   out-state
-//      brake pressed
-//      stock LKAS ECU is online
-//      ACC is not active (white or disabled)
+const int CHRYSLER_MAX_STEER = 261;
+const int CHRYSLER_MAX_RT_DELTA = 112;        // max delta torque allowed for real time checks
+const int32_t CHRYSLER_RT_INTERVAL = 250000;  // 250ms between real time checks
+const int CHRYSLER_MAX_RATE_UP = 3;
+const int CHRYSLER_MAX_RATE_DOWN = 3;
+const int CHRYSLER_MAX_TORQUE_ERROR = 80;    // max torque cmd in excess of torque motor
 
-// chrysler_: namespacing
-int chrysler_speed = 0;
-
-// silence everything if stock ECUs are still online
-int chrysler_lkas_detected = 0;
+int chrysler_camera_detected = 0;
+int chrysler_rt_torque_last = 0;
 int chrysler_desired_torque_last = 0;
+int chrysler_cruise_engaged_last = 0;
+uint32_t chrysler_ts_last = 0;
+struct sample_t chrysler_torque_meas;         // last few torques measured
 
 static void chrysler_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
-  int bus_number = (to_push->RDTR >> 4) & 0xFF;
+  int bus = (to_push->RDTR >> 4) & 0xFF;
   uint32_t addr;
   if (to_push->RIR & 4) {
     // Extended
@@ -26,40 +25,37 @@ static void chrysler_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     addr = to_push->RIR >> 21;
   }
 
-  if (addr == 0x144 && bus_number == 0) {
-    chrysler_speed = ((to_push->RDLR & 0xFF000000) >> 16) | (to_push->RDHR & 0xFF);
+  // Measured eps torque
+  if (addr == 544) {
+    int rdhr = to_push->RDHR;
+    int torque_meas_new = ((rdhr & 0x7) << 8) + ((rdhr & 0xFF00) >> 8) - 1024;
+
+    // update array of samples
+    update_sample(&chrysler_torque_meas, torque_meas_new);
   }
 
-  // check if stock LKAS ECU is still online
-  if (addr == 0x292 && bus_number == 0) {
-    chrysler_lkas_detected = 1;
-    controls_allowed = 0;
-  }
-
-  // ["ACC_2"]['ACC_STATUS_2'] == 7 for active (green) Adaptive Cruise Control
-  if (addr == 0x1f4 && bus_number == 0) {
-    if (((to_push->RDLR & 0x380000) >> 19) == 7) {
+  // enter controls on rising edge of ACC, exit controls on ACC off
+  if (addr == 0x1f4) {
+    int cruise_engaged = ((to_push->RDLR & 0x380000) >> 19) == 7;
+    if (cruise_engaged && !chrysler_cruise_engaged_last) {
       controls_allowed = 1;
-    } else {
+    } else if (!cruise_engaged) {
       controls_allowed = 0;
     }
+    chrysler_cruise_engaged_last = cruise_engaged;
   }
 
-  // exit controls on brake press by human
-  if (addr == 0x140) {
-    if (to_push->RDLR & 0x4) {
-      controls_allowed = 0;
-    }
+  // check if stock camera ECU is still online
+  if (bus == 0 && addr == 0x292) {
+    chrysler_camera_detected = 1;
+    controls_allowed = 0;
   }
 }
 
-// if controls_allowed
-//     allow steering up to limit
-// else
-//     block all commands that produce actuation
 static int chrysler_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
-  // There can be only one! (LKAS)
-  if (chrysler_lkas_detected) {
+
+  // There can be only one! (camera)
+  if (chrysler_camera_detected) {
     return 0;
   }
 
@@ -72,65 +68,69 @@ static int chrysler_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
     addr = to_send->RIR >> 21;
   }
 
-  // LKA STEER: Too large of values cause the steering actuator ECU to silently
-  // fault and no longer actuate the wheel until the car is rebooted.
+
+  // LKA STEER
   if (addr == 0x292) {
     int rdlr = to_send->RDLR;
-    int straight = 1024;
-    int steer = ((rdlr & 0x7) << 8) + ((rdlr & 0xFF00) >> 8) - straight;
-    int max_steer = 230;
-    int max_rate = 50; // ECU is fine with 100, but 3 is typical.
-    if (steer > max_steer) {
-      return false;
-    }
-    if (steer < -max_steer) {
-      return false;
-    }
-    if (!controls_allowed && steer != 0) {
-      // If controls not allowed, only allow steering to move closer to 0.
-      if (chrysler_desired_torque_last == 0) {
-	return false;
+    int desired_torque = ((rdlr & 0x7) << 8) + ((rdlr & 0xFF00) >> 8) - 1024;
+    uint32_t ts = TIM2->CNT;
+    int violation = 0;
+
+    if (controls_allowed) {
+
+      // *** global torque limit check ***
+      violation |= max_limit_check(desired_torque, CHRYSLER_MAX_STEER, -CHRYSLER_MAX_STEER);
+
+      // *** torque rate limit check ***
+      violation |= dist_to_meas_check(desired_torque, chrysler_desired_torque_last,
+        &chrysler_torque_meas, CHRYSLER_MAX_RATE_UP, CHRYSLER_MAX_RATE_DOWN, CHRYSLER_MAX_TORQUE_ERROR);
+
+      // used next time
+      chrysler_desired_torque_last = desired_torque;
+
+      // *** torque real time rate limit check ***
+      violation |= rt_rate_limit_check(desired_torque, chrysler_rt_torque_last, CHRYSLER_MAX_RT_DELTA);
+
+      // every RT_INTERVAL set the new limits
+      uint32_t ts_elapsed = get_ts_elapsed(ts, chrysler_ts_last);
+      if (ts_elapsed > CHRYSLER_RT_INTERVAL) {
+        chrysler_rt_torque_last = desired_torque;
+        chrysler_ts_last = ts;
       }
-      if ((chrysler_desired_torque_last > 0) && (steer >= chrysler_desired_torque_last)) {
-	return false;
-      }
-      if ((chrysler_desired_torque_last < 0) && (steer <= chrysler_desired_torque_last)) {
-	return false;
-      }
     }
-    if (steer < (chrysler_desired_torque_last - max_rate)) {
+
+    // no torque if controls is not allowed
+    if (!controls_allowed && (desired_torque != 0)) {
+      violation = 1;
+    }
+
+    // reset to 0 if either controls is not allowed or there's a violation
+    if (violation || !controls_allowed) {
+      chrysler_desired_torque_last = 0;
+      chrysler_rt_torque_last = 0;
+      chrysler_ts_last = ts;
+    }
+
+    if (violation) {
       return false;
     }
-    if (steer > (chrysler_desired_torque_last + max_rate)) {
-      return false;
-    }
-    
-    chrysler_desired_torque_last = steer;
   }
+
+  // FORCE CANCEL: safety check only relevant when spamming the cancel button.
+  // ensuring that only the cancel button press is sent when controls are off.
+  // This avoids unintended engagements while still allowing resume spam
+  // TODO: fix bug preventing the button msg to be fwd'd on bus 2
 
   // 1 allows the message through
   return true;
 }
 
-static int chrysler_tx_lin_hook(int lin_num, uint8_t *data, int len) {
-  // LIN is not used.
-  return false;
-}
-
-static void chrysler_init(int16_t param) {
-  controls_allowed = 0;
-}
-
-static int chrysler_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
-  return -1;
-}
 
 const safety_hooks chrysler_hooks = {
-  .init = chrysler_init,
+  .init = nooutput_init,
   .rx = chrysler_rx_hook,
   .tx = chrysler_tx_hook,
-  .tx_lin = chrysler_tx_lin_hook,
+  .tx_lin = nooutput_tx_lin_hook,
   .ignition = default_ign_hook,
-  .fwd = chrysler_fwd_hook,
+  .fwd = nooutput_fwd_hook,
 };
-

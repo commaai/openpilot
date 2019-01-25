@@ -1,0 +1,188 @@
+'\" t
+.\"     Title: zmq_tcp
+.\"    Author: [see the "AUTHORS" section]
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 02/18/2017
+.\"    Manual: 0MQ Manual
+.\"    Source: 0MQ 4.2.2
+.\"  Language: English
+.\"
+.TH "ZMQ_TCP" "7" "02/18/2017" "0MQ 4\&.2\&.2" "0MQ Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+zmq_tcp \- 0MQ unicast transport using TCP
+.SH "SYNOPSIS"
+.sp
+TCP is an ubiquitous, reliable, unicast transport\&. When connecting distributed applications over a network with 0MQ, using the TCP transport will likely be your first choice\&.
+.SH "ADDRESSING"
+.sp
+A 0MQ endpoint is a string consisting of a \fItransport\fR:// followed by an \fIaddress\fR\&. The \fItransport\fR specifies the underlying protocol to use\&. The \fIaddress\fR specifies the transport\-specific address to connect to\&.
+.sp
+For the TCP transport, the transport is tcp, and the meaning of the \fIaddress\fR part is defined below\&.
+.SS "Assigning a local address to a socket"
+.sp
+When assigning a local address to a socket using \fIzmq_bind()\fR with the \fItcp\fR transport, the \fIendpoint\fR shall be interpreted as an \fIinterface\fR followed by a colon and the TCP port number to use\&.
+.sp
+An \fIinterface\fR may be specified by either of the following:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The wild\-card
+*, meaning all available interfaces\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The primary IPv4 or IPv6 address assigned to the interface, in its numeric representation\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The non\-portable interface name as defined by the operating system\&.
+.RE
+.sp
+The TCP port number may be specified by:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+A numeric value, usually above 1024 on POSIX systems\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The wild\-card
+*, meaning a system\-assigned ephemeral port\&.
+.RE
+.sp
+When using ephemeral ports, the caller should retrieve the actual assigned port using the ZMQ_LAST_ENDPOINT socket option\&. See \fBzmq_getsockopt\fR(3) for details\&.
+.SS "Unbinding wild\-card address from a socket"
+.sp
+When wild\-card * \fIendpoint\fR was used in \fIzmq_bind()\fR, the caller should use real \fIendpoint\fR obtained from the ZMQ_LAST_ENDPOINT socket option to unbind this \fIendpoint\fR from a socket using \fIzmq_unbind()\fR\&.
+.SS "Connecting a socket"
+.sp
+When connecting a socket to a peer address using \fIzmq_connect()\fR with the \fItcp\fR transport, the \fIendpoint\fR shall be interpreted as a \fIpeer address\fR followed by a colon and the TCP port number to use\&. You can optionally specify a \fIsource_endpoint\fR which will be used as the source address for your connection; tcp://\fIsource_endpoint\fR;\*(Aqendpoint\*(Aq, see the \fIinterface\fR description above for details\&.
+.sp
+A \fIpeer address\fR may be specified by either of the following:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The DNS name of the peer\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The IPv4 or IPv6 address of the peer, in its numeric representation\&.
+.RE
+.sp
+Note: A description of the ZeroMQ Message Transport Protocol (ZMTP) which is used by the TCP transport can be found at \m[blue]\fBhttp://rfc\&.zeromq\&.org/spec:15\fR\m[]
+.SH "EXAMPLES"
+.PP
+\fBAssigning a local address to a socket\fR. 
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+//  TCP port 5555 on all available interfaces
+rc = zmq_bind(socket, "tcp://*:5555");
+assert (rc == 0);
+//  TCP port 5555 on the local loop\-back interface on all platforms
+rc = zmq_bind(socket, "tcp://127\&.0\&.0\&.1:5555");
+assert (rc == 0);
+//  TCP port 5555 on the first Ethernet network interface on Linux
+rc = zmq_bind(socket, "tcp://eth0:5555");
+assert (rc == 0);
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+\fBConnecting a socket\fR. 
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+//  Connecting using an IP address
+rc = zmq_connect(socket, "tcp://192\&.168\&.1\&.1:5555");
+assert (rc == 0);
+//  Connecting using a DNS name
+rc = zmq_connect(socket, "tcp://server1:5555");
+assert (rc == 0);
+//  Connecting using a DNS name and bind to eth1
+rc = zmq_connect(socket, "tcp://eth1:0;server1:5555");
+assert (rc == 0);
+//  Connecting using a IP address and bind to an IP address
+rc = zmq_connect(socket, "tcp://192\&.168\&.1\&.17:5555;192\&.168\&.1\&.1:5555");
+assert (rc == 0);
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "SEE ALSO"
+.sp
+\fBzmq_bind\fR(3) \fBzmq_connect\fR(3) \fBzmq_pgm\fR(7) \fBzmq_ipc\fR(7) \fBzmq_inproc\fR(7) \fBzmq_vmci\fR(7) \fBzmq\fR(7)
+.SH "AUTHORS"
+.sp
+This page was written by the 0MQ community\&. To make a change please read the 0MQ Contribution Policy at \m[blue]\fBhttp://www\&.zeromq\&.org/docs:contributing\fR\m[]\&.
