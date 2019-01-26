@@ -1,0 +1,106 @@
+'\" t
+.\"     Title: zmq_msg_copy
+.\"    Author: [see the "AUTHORS" section]
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 02/18/2017
+.\"    Manual: 0MQ Manual
+.\"    Source: 0MQ 4.2.2
+.\"  Language: English
+.\"
+.TH "ZMQ_MSG_COPY" "3" "02/18/2017" "0MQ 4\&.2\&.2" "0MQ Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+zmq_msg_copy \- copy content of a message to another message
+.SH "SYNOPSIS"
+.sp
+\fBint zmq_msg_copy (zmq_msg_t \fR\fB\fI*dest\fR\fR\fB, zmq_msg_t \fR\fB\fI*src\fR\fR\fB);\fR
+.SH "DESCRIPTION"
+.sp
+The \fIzmq_msg_copy()\fR function shall copy the message object referenced by \fIsrc\fR to the message object referenced by \fIdest\fR\&. The original content of \fIdest\fR, if any, shall be released\&. You must initialise \fIdest\fR before copying to it\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBCaution\fR
+.ps -1
+.br
+.sp
+The implementation may choose not to physically copy the message content, rather to share the underlying buffer between \fIsrc\fR and \fIdest\fR\&. Avoid modifying message content after a message has been copied with \fIzmq_msg_copy()\fR, doing so can result in undefined behaviour\&. If what you need is an actual hard copy, allocate a new message using \fIzmq_msg_init_size()\fR and copy the message content using \fImemcpy()\fR\&.
+.sp .5v
+.RE
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBCaution\fR
+.ps -1
+.br
+.sp
+Never access \fIzmq_msg_t\fR members directly, instead always use the \fIzmq_msg\fR family of functions\&.
+.sp .5v
+.RE
+.SH "RETURN VALUE"
+.sp
+The \fIzmq_msg_copy()\fR function shall return zero if successful\&. Otherwise it shall return \-1 and set \fIerrno\fR to one of the values defined below\&.
+.SH "ERRORS"
+.PP
+\fBEFAULT\fR
+.RS 4
+Invalid message\&.
+.RE
+.SH "EXAMPLE"
+.PP
+\fBCopying a message\fR. 
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+zmq_msg_t msg;
+zmq_msg_init_size (&msg, 255);
+memcpy (zmq_msg_data (&msg, "Hello, World", 12);
+zmq_msg_t copy;
+zmq_msg_init (&copy);
+zmq_msg_copy (&copy, &msg);
+\&.\&.\&.
+zmq_msg_close (&copy);
+zmq_msg_close (&msg);
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "SEE ALSO"
+.sp
+\fBzmq_msg_move\fR(3) \fBzmq_msg_init\fR(3) \fBzmq_msg_init_size\fR(3) \fBzmq_msg_init_data\fR(3) \fBzmq_msg_close\fR(3) \fBzmq\fR(7)
+.SH "AUTHORS"
+.sp
+This page was written by the 0MQ community\&. To make a change please read the 0MQ Contribution Policy at \m[blue]\fBhttp://www\&.zeromq\&.org/docs:contributing\fR\m[]\&.
