@@ -39,6 +39,7 @@ def _get_interface_names():
 interfaces = load_interfaces(_get_interface_names())
 
 
+# BOUNTY: every added fingerprint in selfdrive/car/*/values.py is a $100 coupon code on shop.comma.ai
 # **** for use live only ****
 def fingerprint(logcan, timeout):
   if os.getenv("SIMULATOR2") is not None:
