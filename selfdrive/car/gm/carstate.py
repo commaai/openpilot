@@ -23,7 +23,6 @@ def get_powertrain_can_parser(CP, canbus):
     ("ACCButtons", "ASCMSteeringButton", CruiseButtons.UNPRESS),
     ("LKAButton", "ASCMSteeringButton", 0),
     ("SteeringWheelAngle", "PSCMSteeringAngle", 0),
-    ("SteeringWheelRate", "PSCMSteeringAngle", 0),
     ("FLWheelSpd", "EBCMWheelSpdFront", 0),
     ("FRWheelSpd", "EBCMWheelSpdFront", 0),
     ("RLWheelSpd", "EBCMWheelSpdRear", 0),
@@ -102,7 +101,6 @@ class CarState(object):
     self.standstill = self.v_ego_raw < 0.01
 
     self.angle_steers = pt_cp.vl["PSCMSteeringAngle"]['SteeringWheelAngle']
-    self.angle_steers_rate = pt_cp.vl["PSCMSteeringAngle"]['SteeringWheelRate']
     self.gear_shifter = parse_gear_shifter(pt_cp.vl["ECMPRDNL"]['PRNDL'])
     self.user_brake = pt_cp.vl["EBCMBrakePedalPosition"]['BrakePedalPosition']
 

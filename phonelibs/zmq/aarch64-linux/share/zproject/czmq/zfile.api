@@ -1,0 +1,152 @@
+<class name = "zfile" state = "stable">
+    <!--
+    Copyright (c) the Contributors as noted in the AUTHORS file.
+    This file is part of CZMQ, the high-level C binding for 0MQ:
+    http://czmq.zeromq.org.
+
+    This Source Code Form is subject to the terms of the Mozilla Public
+    License, v. 2.0. If a copy of the MPL was not distributed with this
+    file, You can obtain one at http://mozilla.org/MPL/2.0/.
+    -->
+    helper functions for working with files.
+
+    <constructor>
+        If file exists, populates properties. CZMQ supports portable symbolic
+        links, which are files with the extension ".ln". A symbolic link is a
+        text file containing one line, the filename of a target file. Reading
+        data from the symbolic link actually reads from the target file. Path
+        may be NULL, in which case it is not used.
+        <argument name = "path" type = "string" />
+        <argument name = "name" type = "string" />
+    </constructor>
+
+    <destructor>
+        Destroy a file item
+    </destructor>
+
+    <method name = "dup">
+        Duplicate a file item, returns a newly constructed item. If the file
+        is null, or memory was exhausted, returns null.
+        <return type = "zfile" fresh = "1" />
+    </method>
+
+    <method name = "filename">
+        Return file name, remove path if provided
+        <argument name = "path" type = "string" />
+        <return type = "string" />
+    </method>
+
+    <method name = "restat">
+        Refresh file properties from disk; this is not done automatically
+        on access methods, otherwise it is not possible to compare directory
+        snapshots.
+    </method>
+
+    <method name = "modified">
+        Return when the file was last modified. If you want this to reflect the
+        current situation, call zfile_restat before checking this property.
+        <return type = "time" />
+    </method>
+
+    <method name = "cursize">
+        Return the last-known size of the file. If you want this to reflect the
+        current situation, call zfile_restat before checking this property.
+        <return type = "file_size" />
+    </method>
+
+    <method name = "is directory">
+        Return true if the file is a directory. If you want this to reflect
+        any external changes, call zfile_restat before checking this property.
+        <return type = "boolean" />
+    </method>
+
+    <method name = "is regular">
+        Return true if the file is a regular file. If you want this to reflect
+        any external changes, call zfile_restat before checking this property.
+        <return type = "boolean" />
+    </method>
+
+    <method name = "is readable">
+        Return true if the file is readable by this process. If you want this to
+        reflect any external changes, call zfile_restat before checking this
+        property.
+        <return type = "boolean" />
+    </method>
+
+    <method name = "is writeable">
+        Return true if the file is writeable by this process. If you want this
+        to reflect any external changes, call zfile_restat before checking this
+        property.
+        <return type = "boolean" />
+    </method>
+
+    <method name = "is stable">
+        Check if file has stopped changing and can be safely processed.
+        Updates the file statistics from disk at every call.
+        <return type = "boolean" />
+    </method>
+
+    <method name = "has changed">
+        Return true if the file was changed on disk since the zfile_t object
+        was created, or the last zfile_restat() call made on it.
+        <return type = "boolean" />
+    </method>
+
+    <method name = "remove">
+        Remove the file from disk
+    </method>
+
+    <method name = "input">
+        Open file for reading
+        Returns 0 if OK, -1 if not found or not accessible
+        <return type = "integer" />
+    </method>
+
+    <method name = "output">
+        Open file for writing, creating directory if needed
+        File is created if necessary; chunks can be written to file at any
+        location. Returns 0 if OK, -1 if error.
+        <return type = "integer" />
+    </method>
+
+    <method name = "read">
+        Read chunk from file at specified position. If this was the last chunk,
+        sets the eof property. Returns a null chunk in case of error.
+        <argument name = "bytes" type = "size" />
+        <argument name = "offset" type = "file_size" />
+        <return type = "zchunk" fresh = "1" />
+    </method>
+
+    <method name = "eof">
+        Returns true if zfile_read() just read the last chunk in the file.
+        <return type = "boolean" />
+    </method>
+
+    <method name = "write">
+        Write chunk to file at specified position
+        Return 0 if OK, else -1
+        <argument name = "chunk" type = "zchunk" />
+        <argument name = "offset" type = "file_size" />
+        <return type = "integer" />
+    </method>
+
+    <method name = "readln">
+        Read next line of text from file. Returns a pointer to the text line,
+        or NULL if there was nothing more to read from the file.
+        <return type = "string" />
+    </method>
+
+    <method name = "close">
+        Close file, if open
+    </method>
+
+    <method name = "handle">
+        Return file handle, if opened
+        <return type = "FILE" />
+    </method>
+
+    <method name = "digest">
+        Calculate SHA1 digest for file, using zdigest class.
+        <return type = "string" />
+    </method>
+</class>
