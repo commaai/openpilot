@@ -198,7 +198,8 @@ class CarState(object):
     self.steer_torque_driver = cp.vl["MDPS11"]['CR_Mdps_DrvTq']
     self.steer_torque_motor = cp.vl["MDPS12"]['CR_Mdps_OutTq']
     self.stopped = cp.vl["SCC11"]['SCCInfoDisplay'] == 4.
-
+    self.cruise_sw_accel = cp.vl["CLU11"]['CF_Clu_CruiseSwState'] == 1
+    self.cruise_sw_decel = cp.vl["CLU11"]['CF_Clu_CruiseSwState'] == 2
     self.user_brake = 0
 
     self.brake_pressed = cp.vl["TCS13"]['DriverBraking']

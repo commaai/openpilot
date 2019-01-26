@@ -82,7 +82,7 @@ class CarController(object):
     # Run this twice a second
     if (self.cnt % 50) == 0:
       # If Not Enabled, or cruise not set, allow auto speed adjustment again
-      if not enabled or not CS.acc_active:
+      if not (enabled and CS.acc_active_real and self.params.get("LimitSetSpeed") == "1" and self.params.get("SpeedLimitOffset") is not None):
           self.speed_adjusted = False
       # Attempt to read the speed limit from zmq
       map_data = messaging.recv_one_or_none(self.map_data_sock)
@@ -95,11 +95,17 @@ class CarController(object):
           self.speed_conv = CV.MS_TO_MPH
 
         # If the speed limit is valid
-        if map_data.liveMapData.speedLimitValid == True and map_data.liveMapData.speedLimit > 0:
+        if map_data.liveMapData.speedLimitValid:
           last_speed = self.map_speed
           # Get the speed limit, and add the offset to it,
-          self.map_speed = (map_data.liveMapData.speedLimit + float(self.params.get("SpeedLimitOffset"))) * self.speed_conv
-          # Compare it to the last time the speed was read.  If it is different, set the flag to allow it to auto set out speed
+          v_speed = (map_data.liveMapData.speedLimit + float(self.params.get("SpeedLimitOffset")))
+          ## Stolen curvature code from planner.py, and updated it for us
+          if map_data.liveMapData.curvatureValid:
+            curvature = abs(map_data.liveMapData.curvature)
+            v_curvature = math.sqrt(1.9 / max(1e-4, curvature))
+          # Use the minimum between Speed Limit and Curve Limit, and convert it as needed
+          self.map_speed = min(v_speed, v_curvature, 45.) * self.speed_conv
+          # Compare it to the last time the speed was read.  If it is different, set the flag to allow it to auto set our speed
           if last_speed != self.map_speed:
               self.speed_adjusted = False
           print self.map_speed
@@ -107,6 +113,13 @@ class CarController(object):
           # If it is not valid, set the flag so the cruise speed won't be changed.
           self.map_speed = 0
           self.speed_adjusted = True
+
+    # An additional way of cancelling the speed from changing....
+    # If the driver hits ACCEL or DECEL (whichever is opposite to direction being driven) set flag immadiately
+    if not self.speed_adjusted and \
+            ((CS.cruise_sw_accel and (CS.cruise_set_speed * self.speed_conv) > (self.map_speed * 1.005)) or \
+            (CS.cruise_sw_decel and (CS.cruise_set_speed * self.speed_conv) < (self.map_speed / 1.005))):
+        self.speed_adjusted = True
 
     # Ensure we have cruise IN CONTROL, so we don't do anything dangerous, like turn cruise on
     # Ensure the speed limit is within range of the stock cruise control capabilities
