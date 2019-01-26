@@ -16,6 +16,7 @@ class CAR:
   KIA_SORENTO = "KIA SORENTO GT LINE 2018"
   KIA_STINGER = "KIA STINGER GT2 2018"
   SANTA_FE = "HYUNDAI SANTA FE LIMITED 2019"
+  KONA = "HYUNDAI KONA 2019"
 
 class Buttons:
   NONE = 0
@@ -46,6 +47,9 @@ FINGERPRINTS = {
     67: 8, 127: 8, 304: 8, 320: 8, 339: 8, 356: 4, 544: 8, 593: 8, 608: 8, 688: 6, 764: 8, 809: 8, 854: 7, 870: 7, 871: 8, 872: 8, 897: 8, 902: 8, 903: 8, 905: 8, 909: 8, 916: 8, 1040: 8, 1042: 8, 1056: 8, 1057: 8, 1064: 8, 1078: 4, 1107: 5, 1136: 8, 1151: 6, 1155: 8, 1162: 8, 1164: 8, 1168: 7, 1170: 8, 1173: 8, 1180: 8, 1183: 8, 1186: 2, 1227: 8, 1265: 4, 1280: 1, 1287: 4, 1290: 8, 1292: 8, 1294: 8, 1312: 8, 1322: 8, 1345: 8, 1348: 8, 1363: 8, 1369: 8, 1371: 8, 1378: 8, 1384: 8, 1407: 8, 1414: 3, 1419: 8, 1427: 6, 1456: 4, 1470: 8, 1988: 8, 2000: 8, 2004: 8, 2008: 8, 2012: 8
   }
   ],
+  CAR.KONA: [{
+    67: 8, 127: 8, 304: 8, 320: 8, 339: 8, 354: 3, 356: 4, 544: 8, 593: 8, 608: 8, 688: 5, 809: 8, 832: 8, 854: 7, 870: 7, 871: 8, 872: 8, 897: 8, 902: 8, 903: 8, 909: 8, 916: 8, 1040: 8, 1078: 4, 1107: 5, 1136: 8, 1156: 8, 1170: 8, 1173: 8, 1191: 2, 1265: 4, 1280: 1, 1287: 4, 1292: 8, 1294: 8, 1312: 8, 1322: 8, 1342: 6, 1345: 8, 1348: 8, 1363: 8, 1369: 8, 1384: 8, 1394: 8,1407: 8, 1414: 3, 1419: 8, 1427: 6, 1456: 4, 1470: 8, 2004: 8, 2009: 8, 2012: 8
+  }],
 }
 
 CAMERA_MSGS = [832, 1156, 1191, 1342]
@@ -53,7 +57,12 @@ CAMERA_MSGS = [832, 1156, 1191, 1342]
 CHECKSUM = {
   "crc8": [CAR.SANTA_FE],
   "6B": [CAR.KIA_SORENTO, CAR.GENESIS],
-  "7B": [CAR.KIA_STINGER, CAR.ELANTRA],
+  "7B": [CAR.KIA_STINGER, CAR.ELANTRA, CAR.KONA],
+}
+
+# Lane Keep Assist related Features and Limitations
+FEATURES = {
+  "no_scc": [CAR.KONA],
 }
 
 DBC = {
@@ -62,6 +71,7 @@ DBC = {
   CAR.KIA_SORENTO: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_STINGER: dbc_dict('hyundai_kia_generic', None),
   CAR.SANTA_FE: dbc_dict('hyundai_kia_generic', None),
+  CAR.KONA: dbc_dict('hyundai_kia_generic', None),
 }
 
 STEER_THRESHOLD = 100

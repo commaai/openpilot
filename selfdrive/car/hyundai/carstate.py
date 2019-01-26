@@ -1,4 +1,4 @@
-from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD
+from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD, FEATURES
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from common.kalman.simple_kalman import KF1D
@@ -50,6 +50,7 @@ def get_can_parser(CP):
     ("CF_Clu_InhibitR", "CLU15", 0),
 
     ("CF_Lvr_Gear","LVR12",0),
+    ("CF_Lvr_CruiseSet", "LVR12", 0),
 
     ("ACCEnable", "TCS13", 0),
     ("ACC_REQ", "TCS13", 0),
@@ -158,7 +159,7 @@ class CarState(object):
 
     self.park_brake = cp.vl["CGW1"]['CF_Gway_ParkBrakeSw']
     self.main_on = True
-    self.acc_active = cp.vl["SCC12"]['ACCMode'] != 0
+    self.acc_active = (cp.vl["LVR12"]["CF_Lvr_CruiseSet"] > 1) if self.car_fingerprint in FEATURES["no_scc"] else cp.vl["SCC12"]['ACCMode'] != 0
     self.pcm_acc_status = int(self.acc_active)
 
     # calc best v_ego estimate, by averaging two opposite corners
@@ -180,7 +181,7 @@ class CarState(object):
     self.a_ego = float(v_ego_x[1])
     is_set_speed_in_mph = int(cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"])
     speed_conv = CV.MPH_TO_MS if is_set_speed_in_mph else CV.KPH_TO_MS
-    self.cruise_set_speed = cp.vl["SCC11"]['VSetDis'] * speed_conv
+    self.cruise_set_speed = cp.vl["LVR12"]["CF_Lvr_CruiseSet"] * speed_conv if self.car_fingerprint in FEATURES["no_scc"] else cp.vl["SCC11"]['VSetDis'] * speed_conv
     self.standstill = not self.v_wheel > 0.1
 
     self.angle_steers = cp.vl["SAS11"]['SAS_Angle']
@@ -197,13 +198,13 @@ class CarState(object):
     self.brake_error = 0
     self.steer_torque_driver = cp.vl["MDPS11"]['CR_Mdps_DrvTq']
     self.steer_torque_motor = cp.vl["MDPS12"]['CR_Mdps_OutTq']
-    self.stopped = cp.vl["SCC11"]['SCCInfoDisplay'] == 4.
+    self.stopped = False if self.car_fingerprint in FEATURES["no_scc"] else cp.vl["SCC11"]['SCCInfoDisplay'] == 4.
 
     self.user_brake = 0
 
     self.brake_pressed = cp.vl["TCS13"]['DriverBraking']
     self.brake_lights = bool(self.brake_pressed)
-    if (cp.vl["TCS13"]["DriverOverride"] == 0 and cp.vl["TCS13"]['ACC_REQ'] == 1):
+    if (cp.vl["TCS13"]["DriverOverride"] == 0 and (cp.vl["TCS13"]['ACC_REQ'] == 1 or self.car_fingerprint in FEATURES["no_scc"])):
       self.pedal_gas = 0
     else:
       self.pedal_gas = cp.vl["EMS12"]['TPS']
