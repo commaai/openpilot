@@ -139,7 +139,7 @@ class CarInterface(object):
       tire_stiffness_factor = 1.0
       ret.mass = 4607 * CV.LB_TO_KG + std_cargo #mean between normal and hybrid limited
       ret.steerKpV, ret.steerKiV = [[0.18], [0.0075]] #experimentally derived
-      ret.steerKf = 0.0003 #experimentally derived
+      ret.steerKf = 0.00015 #experimentally derived, PR#464 edit
 
     ret.steerRateCost = 1.
     ret.centerToFront = ret.wheelbase * 0.44
