@@ -78,10 +78,17 @@ def create_fake_DAS_msg(speed_control_enabled,gas_to_resume,apUnavailable, colli
       (c_apply_steer >> 8) & 0xFF)
   return [msg_id, 0, msg.raw, 0]
 
-def create_fake_DAS_warning(DAS_noSeatbelt, DAS_canErrors, DAS_plannerErrors, DAS_doorOpen, DAS_notInDrive):
+def create_fake_DAS_warning(DAS_noSeatbelt, DAS_canErrors, DAS_plannerErrors, DAS_doorOpen, DAS_notInDrive,\
+      enableFakeDas,enableRadar):
   msg_id = 0x554
   msg_len = 1
-  warn = (DAS_noSeatbelt << 4) + (DAS_canErrors << 3) + (DAS_plannerErrors << 2) + (DAS_doorOpen << 1) + DAS_notInDrive
+  fd = 0
+  rd = 0
+  if enableFakeDas:
+    fd = 1
+  if enableRadar:
+    rd = 1
+  warn = (rd << 6) + (fd << 5) + (DAS_noSeatbelt << 4) + (DAS_canErrors << 3) + (DAS_plannerErrors << 2) + (DAS_doorOpen << 1) + DAS_notInDrive
   msg = create_string_buffer(msg_len)
   struct.pack_into('B',msg ,0 , warn)
   return [msg_id,0,msg.raw,0]
