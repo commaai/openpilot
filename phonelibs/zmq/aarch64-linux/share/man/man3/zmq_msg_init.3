@@ -1,0 +1,99 @@
+'\" t
+.\"     Title: zmq_msg_init
+.\"    Author: [see the "AUTHORS" section]
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 02/18/2017
+.\"    Manual: 0MQ Manual
+.\"    Source: 0MQ 4.2.2
+.\"  Language: English
+.\"
+.TH "ZMQ_MSG_INIT" "3" "02/18/2017" "0MQ 4\&.2\&.2" "0MQ Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+zmq_msg_init \- initialise empty 0MQ message
+.SH "SYNOPSIS"
+.sp
+\fBint zmq_msg_init (zmq_msg_t \fR\fB\fI*msg\fR\fR\fB);\fR
+.SH "DESCRIPTION"
+.sp
+The \fIzmq_msg_init()\fR function shall initialise the message object referenced by \fImsg\fR to represent an empty message\&. This function is most useful when called before receiving a message with \fIzmq_recv()\fR\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBCaution\fR
+.ps -1
+.br
+.sp
+Never access \fIzmq_msg_t\fR members directly, instead always use the \fIzmq_msg\fR family of functions\&.
+.sp .5v
+.RE
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBCaution\fR
+.ps -1
+.br
+.sp
+The functions \fIzmq_msg_init()\fR, \fIzmq_msg_init_data()\fR and \fIzmq_msg_init_size()\fR are mutually exclusive\&. Never initialise the same \fIzmq_msg_t\fR twice\&.
+.sp .5v
+.RE
+.SH "RETURN VALUE"
+.sp
+The \fIzmq_msg_init()\fR function always returns zero\&.
+.SH "ERRORS"
+.sp
+No errors are defined\&.
+.SH "EXAMPLE"
+.PP
+\fBReceiving a message from a socket\fR. 
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+zmq_msg_t msg;
+rc = zmq_msg_init (&msg);
+assert (rc == 0);
+int nbytes = zmq_recv (socket, &msg, 0);
+assert (nbytes != \-1);
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "SEE ALSO"
+.sp
+\fBzmq_msg_init_size\fR(3) \fBzmq_msg_init_data\fR(3) \fBzmq_msg_close\fR(3) \fBzmq_msg_data\fR(3) \fBzmq_msg_size\fR(3) \fBzmq\fR(7)
+.SH "AUTHORS"
+.sp
+This page was written by the 0MQ community\&. To make a change please read the 0MQ Contribution Policy at \m[blue]\fBhttp://www\&.zeromq\&.org/docs:contributing\fR\m[]\&.
