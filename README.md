@@ -126,7 +126,7 @@ In Progress Cars
   - Only remaining Toyota cars with no port yet are the Avalon and the Sienna.
 - All Hyundai with SmartSense.
 - All Kia with SCC and LKAS.
-- All Chrysler, Jeep, Fiat with Adaprive Cruise Control and LaneSense.
+- All Chrysler, Jeep, Fiat with Adaptive Cruise Control and LaneSense.
 
 How can I add support for my car?
 ------
