@@ -81,6 +81,7 @@ Supported Cars
 | Hyundai              | Santa Fe 2019            | All                  | Yes     | Stock          | 0mph             | 0mph           | Custom<sup>6</sup>|
 | Hyundai              | Elantra 2017             | SCC + LKAS           | Yes     | Stock          | 19mph            | 34mph          | Custom<sup>6</sup>|
 | Hyundai              | Genesis 2018             | All                  | Yes     | Stock          | 19mph            | 34mph          | Custom<sup>6</sup>|
+| Hyundai              | Kona 2019                | LKAS                 | Yes     | No<sup>9</sup> | **WIP**          | **WIP**        | Custom<sup>6</sup>|
 | Kia                  | Sorento 2018             | All                  | Yes     | Stock          | 0mph             | 0mph           | Custom<sup>6</sup>|
 | Kia                  | Stinger 2018             | SCC + LKAS           | Yes     | Stock          | 0mph             | 0mph           | Custom<sup>6</sup>|
 | Lexus                | RX Hybrid 2016-18        | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           | Toyota            |
@@ -104,6 +105,7 @@ Supported Cars
 <sup>6</sup>Open sourced [Hyundai Giraffe](https://github.com/commaai/neo/tree/master/giraffe/hyundai) is designed for the 2019 Sante Fe; pinout may differ for other Hyundais.  
 <sup>7</sup>Community built Giraffe, find more information [here](https://zoneos.com/shop/).  
 <sup>8</sup>Community built Giraffe, find more information [here](https://github.com/adhintz/openpilot/wiki). Comma official Giraffe coming soon.  
+<sup>9</sup>Car does not come with Smart/Adaptive Cruise Control. Open Pilot will only engage when Cruise is set, but will not adjust vehicle speed for traffic.
 
 Community Maintained Cars
 ------
