@@ -692,7 +692,7 @@ BO_ 1365 FPCM11: 8 FPCM
  SG_ CF_Fpcm_LPCtrCirFlt : 15|1@1+ (1.0,0.0) [0.0|1.0] ""  EMS
 
 BO_ 871 LVR12: 8 LVR
- SG_ CF_Lvr_CruiseSet : 7|8@1+ (1.0,0.0) [0.0|255.0] "" CLU,TCU
+ SG_ CF_Lvr_CruiseSet : 0|8@1+ (1.0,0.0) [0.0|255.0] "" CLU,TCU
  SG_ CF_Lvr_Gear : 32|4@1+ (1.0,0.0) [0.0|15.0] ""  CLU,TCU
 
 BO_ 872 LVR11: 8 LVR
