@@ -5,6 +5,14 @@ from selfdrive.car.hyundai.hyundaican import create_lkas11, create_lkas12, \
                                              create_clu11
 from selfdrive.car.hyundai.values import Buttons
 from selfdrive.can.packer import CANPacker
+import numpy as np
+import zmq
+import math
+from selfdrive.services import service_list
+import selfdrive.messaging as messaging
+from common.params import Params
+from selfdrive.config import Conversions as CV
+
 
 
 # Steer torque limits
@@ -102,7 +110,7 @@ class CarController(object):
           ## Stolen curvature code from planner.py, and updated it for us
           v_curvature = 45.0
           if map_data.liveMapData.curvatureValid:
-            v_curvature = math.sqrt(1.9 / max(1e-4, abs(map_data.liveMapData.curvature)))
+            v_curvature = math.sqrt(1.85 / max(1e-4, abs(map_data.liveMapData.curvature)))
           # Use the minimum between Speed Limit and Curve Limit, and convert it as needed
           self.map_speed = min(v_speed, v_curvature) * self.speed_conv
           # Compare it to the last time the speed was read.  If it is different, set the flag to allow it to auto set our speed
@@ -114,18 +122,11 @@ class CarController(object):
           self.map_speed = 0
           self.speed_adjusted = True
 
-    # An additional way of cancelling the speed from changing....
-    # If the driver hits ACCEL or DECEL (whichever is opposite to direction being driven) set flag immadiately
-    if not self.speed_adjusted and \
-            ((CS.cruise_sw_accel and (CS.cruise_set_speed * self.speed_conv) > (self.map_speed * 1.005)) or \
-            (CS.cruise_sw_decel and (CS.cruise_set_speed * self.speed_conv) < (self.map_speed / 1.005))):
-        self.speed_adjusted = True
-
     # Ensure we have cruise IN CONTROL, so we don't do anything dangerous, like turn cruise on
     # Ensure the speed limit is within range of the stock cruise control capabilities
     # Do the spamming 10 times a second, we might get from 0 to 10 successful
     # Only do this if we have not yet set the cruise speed
-    if CS.acc_active and not self.speed_adjusted and self.map_speed > (8.5 * self.speed_conv) and (self.cnt % 9 == 0 or self.cnt % 9 == 1):
+    if CS.acc_active_real and not self.speed_adjusted and self.map_speed > (8.5 * self.speed_conv) and (self.cnt % 9 == 0 or self.cnt % 9 == 1):
         # Use some tolerance because of Floats being what they are...
         if (CS.cruise_set_speed * self.speed_conv) > (self.map_speed * 1.005):
             can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.SET_DECEL, (1 if self.cnt % 9 == 1 else 0)))
@@ -134,6 +135,7 @@ class CarController(object):
         # If nothing needed adjusting, then the speed has been set, which will lock out this control
         else:
             self.speed_adjusted = True
+
 
     ### Send messages to canbus
     sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
