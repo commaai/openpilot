@@ -1,0 +1,406 @@
+<class name = "zsock" state = "stable">
+    <!--
+    Copyright (c) the Contributors as noted in the AUTHORS file.
+    This file is part of CZMQ, the high-level C binding for 0MQ:
+    http://czmq.zeromq.org.
+
+    This Source Code Form is subject to the terms of the Mozilla Public
+    License, v. 2.0. If a copy of the MPL was not distributed with this
+    file, You can obtain one at http://mozilla.org/MPL/2.0/.
+    -->
+    high-level socket API that hides libzmq contexts and sockets
+
+    <constructor>
+        Create a new socket. Returns the new socket, or NULL if the new socket
+        could not be created. Note that the symbol zsock_new (and other
+        constructors/destructors for zsock) are redirected to the *_checked
+        variant, enabling intelligent socket leak detection. This can have
+        performance implications if you use a LOT of sockets. To turn off this
+        redirection behaviour, define ZSOCK_NOCHECK.
+        <argument name = "type" type = "integer">
+            <!-- Allow text names in binding APIs -->
+            <map name = "PAIR" value = "ZMQ_PAIR" />
+            <map name = "PUB"  value = "ZMQ_PUB" />
+            <map name = "SUB"  value = "ZMQ_SUB" />
+            <map name = "REQ"  value = "ZMQ_REQ" />
+            <map name = "REP"  value = "ZMQ_REP" />
+            <map name = "DEALER"  value = "ZMQ_DEALER" />
+            <map name = "ROUTER"  value = "ZMQ_ROUTER" />
+            <map name = "PULL"  value = "ZMQ_PULL" />
+            <map name = "PUSH"  value = "ZMQ_PUSH" />
+            <map name = "XPUB"  value = "ZMQ_XPUB" />
+            <map name = "XSUB"  value = "ZMQ_XSUB" />
+            <!-- These macros only exist in 4.x, so use the magic values instead -->
+            <map name = "STREAM"  value = "11" />
+            <map name = "SERVER"  value = "12" />
+            <map name = "CLIENT"  value = "13" />
+            <map name = "RADIO"  value = "14" />
+            <map name = "DISH"  value = "15" />
+            <map name = "GATHER"  value = "16" />
+            <map name = "SCATTER"  value = "17" />
+        </argument>
+    </constructor>
+
+    <destructor>
+        Destroy the socket. You must use this for any socket created via the
+        zsock_new method.
+    </destructor>
+
+    <constructor name = "new pub">
+        Create a PUB socket. Default action is bind.
+        <argument name = "endpoint" type = "string" />
+    </constructor>
+
+    <constructor name = "new sub">
+        Create a SUB socket, and optionally subscribe to some prefix string. Default
+        action is connect.
+        <argument name = "endpoint" type = "string" />
+        <argument name = "subscribe" type = "string" />
+    </constructor>
+
+    <constructor name = "new req">
+        Create a REQ socket. Default action is connect.
+        <argument name = "endpoint" type = "string" />
+    </constructor>
+
+    <constructor name = "new rep">
+        Create a REP socket. Default action is bind.
+        <argument name = "endpoint" type = "string" />
+    </constructor>
+
+    <constructor name = "new dealer">
+        Create a DEALER socket. Default action is connect.
+        <argument name = "endpoint" type = "string" />
+    </constructor>
+
+    <constructor name = "new router">
+        Create a ROUTER socket. Default action is bind.
+        <argument name = "endpoint" type = "string" />
+    </constructor>
+
+    <constructor name = "new push">
+        Create a PUSH socket. Default action is connect.
+        <argument name = "endpoint" type = "string" />
+    </constructor>
+
+    <constructor name = "new pull">
+        Create a PULL socket. Default action is bind.
+        <argument name = "endpoint" type = "string" />
+    </constructor>
+
+    <constructor name = "new xpub">
+        Create an XPUB socket. Default action is bind.
+        <argument name = "endpoint" type = "string" />
+    </constructor>
+
+    <constructor name = "new xsub">
+        Create an XSUB socket. Default action is connect.
+        <argument name = "endpoint" type = "string" />
+    </constructor>
+
+    <constructor name = "new pair">
+        Create a PAIR socket. Default action is connect.
+        <argument name = "endpoint" type = "string" />
+    </constructor>
+
+    <constructor name = "new stream">
+        Create a STREAM socket. Default action is connect.
+        <argument name = "endpoint" type = "string" />
+    </constructor>
+
+    <constructor name = "new server" state = "draft">
+        Create a SERVER socket. Default action is bind.
+        <argument name = "endpoint" type = "string" />
+    </constructor>
+
+    <constructor name = "new client" state = "draft">
+        Create a CLIENT socket. Default action is connect.
+        <argument name = "endpoint" type = "string" />
+    </constructor>
+
+    <constructor name = "new radio" state = "draft">
+        Create a RADIO socket. Default action is bind.
+        <argument name = "endpoint" type = "string" />
+    </constructor>
+
+    <constructor name = "new dish" state = "draft">
+        Create a DISH socket. Default action is connect.
+        <argument name = "endpoint" type = "string" />
+    </constructor>
+
+    <constructor name = "new gather" state = "draft">
+        Create a GATHER socket. Default action is bind.
+        <argument name = "endpoint" type = "string" />
+    </constructor>
+
+    <constructor name = "new scatter" state = "draft">
+        Create a SCATTER socket. Default action is connect.
+        <argument name = "endpoint" type = "string" />
+    </constructor>
+
+    <method name = "bind">
+        Bind a socket to a formatted endpoint. For tcp:// endpoints, supports
+        ephemeral ports, if you specify the port number as "*". By default
+        zsock uses the IANA designated range from C000 (49152) to FFFF (65535).
+        To override this range, follow the "*" with "[first-last]". Either or
+        both first and last may be empty. To bind to a random port within the
+        range, use "!" in place of "*".
+
+        Examples:
+            tcp://127.0.0.1:*           bind to first free port from C000 up
+            tcp://127.0.0.1:!           bind to random port from C000 to FFFF
+            tcp://127.0.0.1:*[60000-]   bind to first free port from 60000 up
+            tcp://127.0.0.1:![-60000]   bind to random port from C000 to 60000
+            tcp://127.0.0.1:![55000-55999]
+                                        bind to random port from 55000 to 55999
+
+        On success, returns the actual port number used, for tcp:// endpoints,
+        and 0 for other transports. On failure, returns -1. Note that when using
+        ephemeral ports, a port may be reused by different services without
+        clients being aware. Protocols that run on ephemeral ports should take
+        this into account.
+        <argument name = "format" type = "format" />
+        <return type = "integer" />
+    </method>
+
+    <method name = "endpoint">
+        Returns last bound endpoint, if any.
+        <return type = "string" />
+    </method>
+
+    <method name = "unbind">
+        Unbind a socket from a formatted endpoint.
+        Returns 0 if OK, -1 if the endpoint was invalid or the function
+        isn't supported.
+        <argument name = "format" type = "format" />
+        <return type = "integer" />
+    </method>
+
+    <method name = "connect">
+        Connect a socket to a formatted endpoint
+        Returns 0 if OK, -1 if the endpoint was invalid.
+        <argument name = "format" type = "format" />
+        <return type = "integer" />
+    </method>
+
+    <method name = "disconnect">
+        Disconnect a socket from a formatted endpoint
+        Returns 0 if OK, -1 if the endpoint was invalid or the function
+        isn't supported.
+        <argument name = "format" type = "format" />
+        <return type = "integer" />
+    </method>
+
+    <method name = "attach">
+        Attach a socket to zero or more endpoints. If endpoints is not null,
+        parses as list of ZeroMQ endpoints, separated by commas, and prefixed by
+        '@' (to bind the socket) or '>' (to connect the socket). Returns 0 if all
+        endpoints were valid, or -1 if there was a syntax error. If the endpoint
+        does not start with '@' or '>', the serverish argument defines whether
+        it is used to bind (serverish = true) or connect (serverish = false).
+        <argument name = "endpoints" type = "string" />
+        <argument name = "serverish" type = "boolean" />
+        <return type = "integer" />
+    </method>
+
+    <method name = "type str">
+        Returns socket type as printable constant string.
+        <return type = "string" />
+    </method>
+
+    <method name = "send" polymorphic = "1">
+        Send a 'picture' message to the socket (or actor). The picture is a
+        string that defines the type of each frame. This makes it easy to send
+        a complex multiframe message in one call. The picture can contain any
+        of these characters, each corresponding to one or two arguments:
+
+            i = int (signed)
+            1 = uint8_t
+            2 = uint16_t
+            4 = uint32_t
+            8 = uint64_t
+            s = char *
+            b = byte *, size_t (2 arguments)
+            c = zchunk_t *
+            f = zframe_t *
+            h = zhashx_t *
+            U = zuuid_t *
+            p = void * (sends the pointer value, only meaningful over inproc)
+            m = zmsg_t * (sends all frames in the zmsg)
+            z = sends zero-sized frame (0 arguments)
+            u = uint (deprecated)
+
+        Note that s, b, c, and f are encoded the same way and the choice is
+        offered as a convenience to the sender, which may or may not already
+        have data in a zchunk or zframe. Does not change or take ownership of
+        any arguments. Returns 0 if successful, -1 if sending failed for any
+        reason.
+        <argument name = "picture" type = "string" variadic = "1" />
+        <return type = "integer" />
+    </method>
+
+    <method name = "vsend" polymorphic = "1">
+        Send a 'picture' message to the socket (or actor). This is a va_list
+        version of zsock_send (), so please consult its documentation for the
+        details.
+        <argument name = "picture" type = "string" />
+        <argument name = "argptr" type = "va_list" />
+        <return type = "integer" />
+    </method>
+
+    <method name = "recv" polymorphic = "1">
+        Receive a 'picture' message to the socket (or actor). See zsock_send for
+        the format and meaning of the picture. Returns the picture elements into
+        a series of pointers as provided by the caller:
+
+            i = int * (stores signed integer)
+            4 = uint32_t * (stores 32-bit unsigned integer)
+            8 = uint64_t * (stores 64-bit unsigned integer)
+            s = char ** (allocates new string)
+            b = byte **, size_t * (2 arguments) (allocates memory)
+            c = zchunk_t ** (creates zchunk)
+            f = zframe_t ** (creates zframe)
+            U = zuuid_t * (creates a zuuid with the data)
+            h = zhashx_t ** (creates zhashx)
+            p = void ** (stores pointer)
+            m = zmsg_t ** (creates a zmsg with the remaing frames)
+            z = null, asserts empty frame (0 arguments)
+            u = uint * (stores unsigned integer, deprecated)
+
+        Note that zsock_recv creates the returned objects, and the caller must
+        destroy them when finished with them. The supplied pointers do not need
+        to be initialized. Returns 0 if successful, or -1 if it failed to recv
+        a message, in which case the pointers are not modified. When message
+        frames are truncated (a short message), sets return values to zero/null.
+        If an argument pointer is NULL, does not store any value (skips it).
+        An 'n' picture matches an empty frame; if the message does not match,
+        the method will return -1.
+        <argument name = "picture" type = "string" variadic = "1" />
+        <return type = "integer" />
+    </method>
+
+    <method name = "vrecv" polymorphic = "1">
+        Receive a 'picture' message from the socket (or actor). This is a
+        va_list version of zsock_recv (), so please consult its documentation
+        for the details.
+        <argument name = "picture" type = "string" />
+        <argument name = "argptr" type = "va_list" />
+        <return type = "integer" />
+    </method>
+
+    <method name = "bsend" polymorphic = "1">
+        Send a binary encoded 'picture' message to the socket (or actor). This
+        method is similar to zsock_send, except the arguments are encoded in a
+        binary format that is compatible with zproto, and is designed to reduce
+        memory allocations. The pattern argument is a string that defines the
+        type of each argument. Supports these argument types:
+
+         pattern    C type                  zproto type:
+            1       uint8_t                 type = "number" size = "1"
+            2       uint16_t                type = "number" size = "2"
+            4       uint32_t                type = "number" size = "3"
+            8       uint64_t                type = "number" size = "4"
+            s       char *, 0-255 chars     type = "string"
+            S       char *, 0-2^32-1 chars  type = "longstr"
+            c       zchunk_t *              type = "chunk"
+            f       zframe_t *              type = "frame"
+            u       zuuid_t *               type = "uuid"
+            m       zmsg_t *                type = "msg"
+            p       void *, sends pointer value, only over inproc
+
+        Does not change or take ownership of any arguments. Returns 0 if
+        successful, -1 if sending failed for any reason.
+        <argument name = "picture" type = "string" variadic = "1" />
+        <return type = "integer" />
+    </method>
+
+    <method name = "brecv" polymorphic = "1">
+        Receive a binary encoded 'picture' message from the socket (or actor).
+        This method is similar to zsock_recv, except the arguments are encoded
+        in a binary format that is compatible with zproto, and is designed to
+        reduce memory allocations. The pattern argument is a string that defines
+        the type of each argument. See zsock_bsend for the supported argument
+        types. All arguments must be pointers; this call sets them to point to
+        values held on a per-socket basis.
+        Note that zsock_brecv creates the returned objects, and the caller must
+        destroy them when finished with them. The supplied pointers do not need
+        to be initialized. Returns 0 if successful, or -1 if it failed to read
+        a message.
+        <argument name = "picture" type = "string" variadic = "1" />
+        <return type = "integer" />
+    </method>
+
+    <method name = "routing id" state = "draft">
+        Return socket routing ID if any. This returns 0 if the socket is not
+        of type ZMQ_SERVER or if no request was already received on it.
+        <return type = "number" size = "4" />
+    </method>
+
+    <method name = "set routing id" state = "draft">
+        Set routing ID on socket. The socket MUST be of type ZMQ_SERVER.
+        This will be used when sending messages on the socket via the zsock API.
+        <argument name = "routing id" type = "number" size = "4" />
+    </method>
+
+    <method name = "set unbounded" polymorphic = "1">
+        Set socket to use unbounded pipes (HWM=0); use this in cases when you are
+        totally certain the message volume can fit in memory. This method works
+        across all versions of ZeroMQ. Takes a polymorphic socket reference.
+    </method>
+
+    <method name = "signal" polymorphic = "1">
+        Send a signal over a socket. A signal is a short message carrying a
+        success/failure code (by convention, 0 means OK). Signals are encoded
+        to be distinguishable from "normal" messages. Accepts a zsock_t or a
+        zactor_t argument, and returns 0 if successful, -1 if the signal could
+        not be sent. Takes a polymorphic socket reference.
+        <argument name = "status" type = "byte" />
+        <return type = "integer" />
+    </method>
+
+    <method name = "wait" polymorphic = "1">
+        Wait on a signal. Use this to coordinate between threads, over pipe
+        pairs. Blocks until the signal is received. Returns -1 on error, 0 or
+        greater on success. Accepts a zsock_t or a zactor_t as argument.
+        Takes a polymorphic socket reference.
+        <return type = "integer" />
+    </method>
+
+    <method name = "flush" polymorphic = "1">
+        If there is a partial message still waiting on the socket, remove and
+        discard it. This is useful when reading partial messages, to get specific
+        message types.
+    </method>
+
+    <method name = "join" state = "draft"  polymorphic = "1">
+        Join a group for the RADIO-DISH pattern. Call only on ZMQ_DISH.
+        Returns 0 if OK, -1 if failed.
+        <argument name = "group" type = "string" />
+        <return type = "integer" />
+    </method>
+
+    <method name = "leave" state = "draft"  polymorphic = "1">
+        Leave a group for the RADIO-DISH pattern. Call only on ZMQ_DISH.
+        Returns 0 if OK, -1 if failed.
+        <argument name = "group" type = "string" />
+        <return type = "integer" />
+    </method>
+
+    <method name = "is" singleton = "1">
+        Probe the supplied object, and report if it looks like a zsock_t.
+        Takes a polymorphic socket reference.
+        <argument name = "self" type = "anything" />
+        <return type = "boolean" />
+    </method>
+
+    <method name = "resolve" singleton = "1" polymorphic = "1">
+        Probe the supplied reference. If it looks like a zsock_t instance, return
+        the underlying libzmq socket handle; else if it looks like a file
+        descriptor, return NULL; else if it looks like a libzmq socket handle,
+        return the supplied value. Takes a polymorphic socket reference.
+        <argument name = "self" type = "anything" />
+        <return type = "anything" />
+    </method>
+
+    <include filename = "zsock_option.api" />
+</class>
