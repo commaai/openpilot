@@ -76,7 +76,7 @@ BO_ 37 STEER_ANGLE_SENSOR: 8 XXX
  SG_ STEER_ANGLE : 3|12@0- (1.5,0) [-500|500] "deg" XXX
  SG_ STEER_FRACTION : 39|4@0- (0.1,0) [-0.7|0.7] "deg" XXX
  SG_ STEER_RATE : 35|12@0- (1,0) [-2000|2000] "deg/s" XXX
- 
+
 BO_ 166 BRAKE: 8 XXX
  SG_ BRAKE_AMOUNT : 7|8@0+ (1,0) [0|255] "" XXX
  SG_ BRAKE_PEDAL : 23|8@0+ (1,0) [0|255] "" XXX
@@ -91,6 +91,9 @@ BO_ 180 SPEED: 8 XXX
  SG_ ENCODER : 39|8@0+ (1,0) [0|255] "" XXX
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
  SG_ SPEED : 47|16@0+ (0.01,0) [0|250] "kph" XXX
+
+BO_ 353 DSU_SPEED: 8 XXX
+ SG_ FORWARD_SPEED : 15|16@0- (0.00390625,-30) [0|255] "kph" XXX
 
 BO_ 466 PCM_CRUISE: 8 XXX
  SG_ GAS_RELEASED : 4|1@0+ (1,0) [0|1] "" XXX
@@ -140,7 +143,10 @@ BO_ 742 LEAD_INFO: 8 DSU
 
 BO_ 835 ACC_CONTROL: 8 DSU
  SG_ ACCEL_CMD : 7|16@0- (0.001,0) [-20|20] "m/s2" HCU
- SG_ SET_ME_X63 : 23|8@0+ (1,0) [0|255] "" HCU
+ SG_ SET_ME_X01 : 23|2@0+ (1,0) [0|3] "" HCU
+ SG_ DISTANCE : 20|1@0+ (1,0) [0|1] "" XXX
+ SG_ MINI_CAR : 21|1@0+ (1,0) [0|1] "" XXX
+ SG_ SET_ME_X3 : 19|4@0+ (1,0) [0|15] "" XXX
  SG_ SET_ME_1 : 30|1@0+ (1,0) [0|1] "" HCU
  SG_ RELEASE_STANDSTILL : 31|1@0+ (1,0) [0|1] "" HCU
  SG_ CANCEL_REQ : 24|1@0+ (1,0) [0|1] "" HCU
@@ -180,7 +186,7 @@ BO_ 1042 LKAS_HUD: 8 XXX
 
 BO_ 1553 UI_SEETING: 8 XXX
  SG_ UNITS : 26|2@0+ (1,0) [0|3] "" XXX
- 
+
 BO_ 1556 STEERING_LEVERS: 8 XXX
  SG_ TURN_SIGNALS : 29|2@0+ (1,0) [0|3] "" XXX
 
@@ -224,7 +230,7 @@ BO_ 1162 RSA2: 8 FCM
  SG_ SPDUNT : 63|2@0+ (1,0) [0|0] "" XXX
  SG_ TSRWMSG : 61|2@0+ (1,0) [0|0] "" XXX
  SG_ SYNCID2 : 59|4@0+ (1,0) [0|0] "" XXX
- 
+
 BO_ 1163 RSA3: 8 FCM
  SG_ TSREQPD : 7|1@0+ (1,0) [0|0] "" XXX
  SG_ TSRMSW : 6|1@0+ (1,0) [0|0] "" XXX
@@ -274,15 +280,15 @@ VAL_ 614 DIRECTION_CMD 3 "right" 2 "center" 1 "left";
 VAL_ 921 CRUISE_CONTROL_STATE 2 "disabled" 11 "hold" 10 "hold_waiting_user_cmd" 6 "enabled" 5 "faulted";
 VAL_ 1042 LDA_ALERT 3 "hold with continuous beep" 2 "LDA unavailable" 1 "hold" 0 "none";
 VAL_ 1042 BARRIERS 3 "both" 2 "right" 1 "left" 0 "none";
-VAL_ 1042 RIGHT_LINE 3 "orange" 2 "double" 1 "solid" 0 "none";
-VAL_ 1042 LEFT_LINE 3 "orange" 2 "double" 1 "solid" 0 "none";
+VAL_ 1042 RIGHT_LINE 3 "orange" 2 "faded" 1 "solid" 0 "none";
+VAL_ 1042 LEFT_LINE 3 "orange" 2 "faded" 1 "solid" 0 "none";
 VAL_ 1553 UNITS 1 "km" 2 "miles";
 VAL_ 1556 TURN_SIGNALS 3 "none" 2 "right" 1 "left";
 VAL_ 1161 TSGN1 1 "speed sign" 0 "none";
 VAL_ 1161 TSGN2 1 "speed sign" 0 "none";
-VAL_ 1161 SPLSGN2 15 "conditional" 0 "none";
+VAL_ 1161 SPLSGN2 15 "conditional blank" 5 "rain" 0 "none";
 VAL_ 1162 TSGN3 0 "none" 1 "speed sign" 2 "0 unlimited" 7 "unlimited" 16 "highway" 17 "no highway" 18 "motorway" 19 "no motorway" 20 "in city" 21 "outside city" 22 "pedestrian area" 23 "no pedestrian area" 65 "no overtaking left" 66 "no overtaking right" 67 "overtaking allowed again" 65 "no overtake" 129 "no entry";
-VAL_ 1162 SPLSGN3 15 "conditional" 0 "none";
+VAL_ 1162 SPLSGN3 15 "conditional blank" 5 "rain" 0 "none";
 
 
 CM_ "CHFFR_METRIC 37 STEER_ANGLE STEER_ANGLE 0.36 180";
