@@ -1330,16 +1330,16 @@ static void bb_ui_draw_UI(UIState *s) {
   int tri_state_fd;
   int tri_state_switch;
   char buffer[10];
-  tri_state_switch = 0;
-  tri_state_fd = open ("/sys/class/switch/tri-state-key/state", O_RDONLY);
+  tri_state_switch = 1; //set to 2 for default UI
+  //tri_state_fd = open ("/sys/devices/virtual/switch/tri-state-key/state", O_RDONLY);
   //if we can't open then switch should be considered in the middle, nothing done
-  if (tri_state_fd == -1) {
-      tri_state_switch = 1; // Fix for LEON, which don't have a tri-state switch
-  } else {
-  	read (tri_state_fd, &buffer, 10);
-	tri_state_switch = buffer[0] -48;
-	close(tri_state_fd);
-  }
+  //if (tri_state_fd == -1) {
+  //          tri_state_switch = 2;
+  //} else {
+  //	read (tri_state_fd, &buffer, 10);
+	///tri_state_switch = buffer[0] -48;
+	///close(tri_state_fd);
+  ///}
   if (tri_state_switch == 1) {
 	  const UIScene *scene = &s->scene;
 	  const int bb_dml_w = 180;
