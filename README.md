@@ -1,10 +1,10 @@
-## stiction_whip (aka deadband)
+## stiction_whip
 
  ## No PEDAL !!
 
 Prius has a problem with static friction somewhere in steering.
 
-Try to overcome small movement limitation with exaggerated desired angle, until something close to the desired angle is reached.
+Try to overcome small movement limitation with exaggerated desired angle until something close to the desired angle is reached.
 
   -'Stuck' detection
 
