@@ -61,7 +61,7 @@ class CarInterface(object):
     ret.safetyModel = car.CarParams.SafetyModels.toyota
 
     # pedal
-    ret.enableCruise = True
+    ret.enableCruise = not ret.enableGasInterceptor
 
     # FIXME: hardcoding honda civic 2016 touring params so they can be used to
     # scale unknown params for other cars
@@ -77,69 +77,76 @@ class CarInterface(object):
     ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
 
     if candidate == CAR.PRIUS:
+      stop_and_go = True
       ret.safetyParam = 66  # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.70
       ret.steerRatio = 15.00   # unknown end-to-end spec
       tire_stiffness_factor = 0.6371   # hand-tune
       ret.mass = 3045 * CV.LB_TO_KG + std_cargo
       ret.steerKpV, ret.steerKiV = [[0.4], [0.01]]
-      ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
+      ret.steerKf = 0.00007818594   # full torque for 10 deg at 80mph means 0.00007818594
       # TODO: Prius seem to have very laggy actuators. Understand if it is lag or hysteresis
       ret.steerActuatorDelay = 0.25
 
     elif candidate in [CAR.RAV4, CAR.RAV4H]:
+      stop_and_go = True if (candidate in CAR.RAV4H) else False
       ret.safetyParam = 73  # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.65
       ret.steerRatio = 16.30   # 14.5 is spec end-to-end
       tire_stiffness_factor = 0.5533
       ret.mass = 3650 * CV.LB_TO_KG + std_cargo  # mean between normal and hybrid
       ret.steerKpV, ret.steerKiV = [[0.6], [0.05]]
-      ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
+      ret.steerKf = 0.00007818594   # full torque for 10 deg at 80mph means 0.00007818594
 
     elif candidate == CAR.COROLLA:
+      stop_and_go = False
       ret.safetyParam = 100 # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.70
       ret.steerRatio = 17.8
       tire_stiffness_factor = 0.444
       ret.mass = 2860 * CV.LB_TO_KG + std_cargo  # mean between normal and hybrid
       ret.steerKpV, ret.steerKiV = [[0.2], [0.05]]
-      ret.steerKf = 0.00003   # full torque for 20 deg at 80mph means 0.00007818594
+      ret.steerKf = 0.00003909297   # full torque for 20 deg at 80mph means 0.00007818594
 
     elif candidate == CAR.LEXUS_RXH:
+      stop_and_go = True
       ret.safetyParam = 100 # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.79
       ret.steerRatio = 16.  # 14.8 is spec end-to-end
       tire_stiffness_factor = 0.444  # not optimized yet
       ret.mass = 4481 * CV.LB_TO_KG + std_cargo  # mean between min and max
       ret.steerKpV, ret.steerKiV = [[0.6], [0.1]]
-      ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
+      ret.steerKf = 0.00007818594   # full torque for 10 deg at 80mph means 0.00007818594
 
     elif candidate in [CAR.CHR, CAR.CHRH]:
+      stop_and_go = True
       ret.safetyParam = 100
       ret.wheelbase = 2.63906
       ret.steerRatio = 13.6
       tire_stiffness_factor = 0.7933
       ret.mass = 3300. * CV.LB_TO_KG + std_cargo
       ret.steerKpV, ret.steerKiV = [[0.723], [0.0428]]
-      ret.steerKf = 0.00006
+      ret.steerKf = 0.00007818594
 
     elif candidate in [CAR.CAMRY, CAR.CAMRYH]:
+      stop_and_go = True
       ret.safetyParam = 100
       ret.wheelbase = 2.82448
       ret.steerRatio = 13.7
       tire_stiffness_factor = 0.7933
       ret.mass = 3400 * CV.LB_TO_KG + std_cargo #mean between normal and hybrid
-      ret.steerKpV, ret.steerKiV = [[0.6], [0.1]]
-      ret.steerKf = 0.00006
+      ret.steerKpV, ret.steerKiV = [[0.723], [0.0428]]
+      ret.steerKf = 0.00007818594
 
     elif candidate in [CAR.HIGHLANDER, CAR.HIGHLANDERH]:
+      stop_and_go = True
       ret.safetyParam = 100
       ret.wheelbase = 2.78
       ret.steerRatio = 16.0
       tire_stiffness_factor = 0.444 # not optimized yet
       ret.mass = 4607 * CV.LB_TO_KG + std_cargo #mean between normal and hybrid limited
       ret.steerKpV, ret.steerKiV = [[0.6], [0.05]]
-      ret.steerKf = 0.00006
+      ret.steerKf = 0.00007818594
 
     ret.steerRateCost = 1.
     ret.centerToFront = ret.wheelbase * 0.44
@@ -147,14 +154,13 @@ class CarInterface(object):
     ret.longPidDeadzoneBP = [0., 9.]
     ret.longPidDeadzoneV = [0., .15]
 
+    #detect the Pedal address
+    ret.enableGasInterceptor = 0x201 in fingerprint
+
+
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter.
-    # hybrid models can't do stop and go even though the stock ACC can't
-    if candidate in [CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH, CAR.CHR,
-                     CAR.CHRH, CAR.CAMRY, CAR.CAMRYH, CAR.HIGHLANDERH, CAR.HIGHLANDER]:
-      ret.minEnableSpeed = -1.
-    elif candidate in [CAR.RAV4, CAR.COROLLA]: # TODO: hack ICE to do stop and go
-      ret.minEnableSpeed = 19. * CV.MPH_TO_MS
+    ret.minEnableSpeed = -1. if (stop_and_go or ret.enableGasInterceptor) else 19. * CV.MPH_TO_MS
 
     centerToRear = ret.wheelbase - ret.centerToFront
     # TODO: get actual value, for now starting with reasonable value for
@@ -178,8 +184,6 @@ class CarInterface(object):
     # steer, gas, brake limitations VS speed
     ret.steerMaxBP = [16. * CV.KPH_TO_MS, 45. * CV.KPH_TO_MS]  # breakpoints at 1 and 40 kph
     ret.steerMaxV = [1., 1.]  # 2/3rd torque allowed above 45 kph
-    ret.gasMaxBP = [0.]
-    ret.gasMaxV = [0.5]
     ret.brakeMaxBP = [5., 20.]
     ret.brakeMaxV = [1., 0.8]
 
@@ -190,15 +194,23 @@ class CarInterface(object):
     cloudlog.warn("ECU Camera Simulated: %r", ret.enableCamera)
     cloudlog.warn("ECU DSU Simulated: %r", ret.enableDsu)
     cloudlog.warn("ECU APGS Simulated: %r", ret.enableApgs)
+    cloudlog.warn("ECU Gas Interceptor: %r", ret.enableGasInterceptor)
 
     ret.steerLimitAlert = False
-    ret.stoppingControl = False
-    ret.startAccel = 0.0
-
     ret.longitudinalKpBP = [0., 5., 35.]
-    ret.longitudinalKpV = [3.6, 2.4, 1.5]
     ret.longitudinalKiBP = [0., 35.]
-    ret.longitudinalKiV = [0.54, 0.36]
+    ret.stoppingControl = False
+
+    if ret.enableGasInterceptor:
+      ret.gasMaxBP = [0., 9., 35]
+      ret.gasMaxV = [0.2, 0.5, 0.7]
+      ret.longitudinalKpV = [1.2, 0.8, 0.5]
+      ret.longitudinalKiV = [0.18, 0.12]
+    else:
+      ret.gasMaxBP = [0.]
+      ret.gasMaxV = [0.5]
+      ret.longitudinalKpV = [3.6, 2.4, 1.5]
+      ret.longitudinalKiV = [0.54, 0.36]
 
     return ret
 
@@ -234,7 +246,11 @@ class CarInterface(object):
 
     # gas pedal
     ret.gas = self.CS.car_gas
-    ret.gasPressed = self.CS.pedal_gas > 0
+    if self.CP.enableGasInterceptor:
+    # use interceptor values to disengage on pedal press
+      ret.gasPressed = self.CS.pedal_gas > 15
+    else:
+      ret.gasPressed = self.CS.pedal_gas > 0
 
     # brake pedal
     ret.brake = self.CS.user_brake
@@ -253,9 +269,11 @@ class CarInterface(object):
     ret.cruiseState.speed = self.CS.v_cruise_pcm * CV.KPH_TO_MS
     ret.cruiseState.available = bool(self.CS.main_on)
     ret.cruiseState.speedOffset = 0.
-    if self.CP.carFingerprint in [CAR.RAV4H, CAR.HIGHLANDERH, CAR.HIGHLANDER]:
+
+    if self.CP.carFingerprint in [CAR.RAV4H, CAR.HIGHLANDERH, CAR.HIGHLANDER] or self.CP.enableGasInterceptor:
       # ignore standstill in hybrid vehicles, since pcm allows to restart without
       # receiving any special command
+      # also if interceptor is detected
       ret.cruiseState.standstill = False
     else:
       ret.cruiseState.standstill = self.CS.pcm_acc_status == 7

@@ -36,6 +36,7 @@ def get_can_signals(CP):
       ("WHEEL_SPEED_RR", "WHEEL_SPEEDS", 0),
       ("STEER_ANGLE", "STEERING_SENSORS", 0),
       ("STEER_ANGLE_RATE", "STEERING_SENSORS", 0),
+      ("STEER_ANGLE_OFFSET", "STEERING_SENSORS", 0),
       ("STEER_TORQUE_SENSOR", "STEER_STATUS", 0),
       ("LEFT_BLINKER", "SCM_FEEDBACK", 0),
       ("RIGHT_BLINKER", "SCM_FEEDBACK", 0),
@@ -239,9 +240,19 @@ class CarState(object):
       self.user_gas_pressed = self.user_gas > 0 # this works because interceptor read < 0 when pedal position is 0. Once calibrated, this will change
 
     self.gear = 0 if self.CP.carFingerprint == CAR.CIVIC else cp.vl["GEARBOX"]['GEAR']
-    self.angle_steers = cp.vl["STEERING_SENSORS"]['STEER_ANGLE']
-    self.angle_steers_rate = cp.vl["STEERING_SENSORS"]['STEER_ANGLE_RATE']
+    if self.CP.carFingerprint in HONDA_BOSCH:
+      self.angle_steers = cp.vl["STEERING_SENSORS"]['STEER_ANGLE'] + cp.vl["STEERING_SENSORS"]['STEER_ANGLE_OFFSET']
+    else:
+      self.angle_steers = cp.vl["STEERING_SENSORS"]['STEER_ANGLE']
 
+    self.angle_steers_rate = cp.vl["STEERING_SENSORS"]['STEER_ANGLE_RATE']
+    self.steer_rack = cp.vl["NEW_MSG_1"]["NEW_SIGNAL_1"]
+    '''
+    if self.steer_rack != 0:
+      print(int(self.angle_steers), int(self.steer_rack), self.angle_steers / self.steer_rack )
+    else:
+      print(int(self.angle_steers), int(self.steer_rack))
+    '''
     self.cruise_setting = cp.vl["SCM_BUTTONS"]['CRUISE_SETTING']
     self.cruise_buttons = cp.vl["SCM_BUTTONS"]['CRUISE_BUTTONS']
 
