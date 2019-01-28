@@ -1,0 +1,156 @@
+<class name = "zframe" state = "stable">
+    <!--
+    Copyright (c) the Contributors as noted in the AUTHORS file.
+    This file is part of CZMQ, the high-level C binding for 0MQ:
+    http://czmq.zeromq.org.
+
+    This Source Code Form is subject to the terms of the Mozilla Public
+    License, v. 2.0. If a copy of the MPL was not distributed with this
+    file, You can obtain one at http://mozilla.org/MPL/2.0/.
+    -->
+    working with single message frames
+
+    <constant name = "more" value = "1" />
+    <constant name = "reuse" value = "2" />
+    <constant name = "dontwait" value = "4" />
+
+    <constructor>
+        Create a new frame. If size is not null, allocates the frame data
+        to the specified size. If additionally, data is not null, copies
+        size octets from the specified data into the frame body.
+        <argument name = "data" type = "buffer" c_type = "const void *" />
+        <argument name = "size" type = "size" />
+    </constructor>
+
+    <destructor>
+        Destroy a frame
+    </destructor>
+
+    <constructor name = "new empty">
+        Create an empty (zero-sized) frame
+    </constructor>
+
+    <constructor name = "from">
+        Create a frame with a specified string content.
+        <argument name = "string" type = "string" />
+    </constructor>
+
+    <constructor name = "recv">
+        Receive frame from socket, returns zframe_t object or NULL if the recv
+        was interrupted. Does a blocking recv, if you want to not block then use
+        zpoller or zloop.
+        <argument name = "source" type = "sockish" />
+    </constructor>
+
+    <method name = "send" singleton = "1">
+        Send a frame to a socket, destroy frame after sending.
+        Return -1 on error, 0 on success.
+        <argument name = "self_p" type = "zframe" by_reference = "1" />
+        <argument name = "dest" type = "sockish" />
+        <argument name = "flags" type = "integer" />
+        <return type = "integer" />
+    </method>
+
+    <method name = "size">
+        Return number of bytes in frame data
+        <return type = "size" />
+    </method>
+
+    <method name = "data">
+        Return address of frame data
+        <return type = "buffer" mutable = "1" size = ".size" />
+    </method>
+
+    <method name = "meta">
+        Return meta data property for frame
+        Caller must free string when finished with it.
+        <argument name = "property" type = "string" />
+        <return type = "string" fresh = "0" />
+    </method>
+
+    <method name = "dup">
+        Create a new frame that duplicates an existing frame. If frame is null,
+        or memory was exhausted, returns null.
+        <return type = "zframe" fresh = "1" />
+    </method>
+
+    <method name = "strhex">
+        Return frame data encoded as printable hex string, useful for 0MQ UUIDs.
+        Caller must free string when finished with it.
+        <return type = "string" fresh = "1" />
+    </method>
+
+    <method name = "strdup">
+        Return frame data copied into freshly allocated string
+        Caller must free string when finished with it.
+        <return type = "string" fresh = "1" />
+    </method>
+
+    <method name = "streq">
+        Return TRUE if frame body is equal to string, excluding terminator
+        <argument name = "string" type = "string" />
+        <return type = "boolean" />
+    </method>
+
+    <method name = "more">
+        Return frame MORE indicator (1 or 0), set when reading frame from socket
+        or by the zframe_set_more() method
+        <return type = "integer" />
+    </method>
+
+    <method name = "set more">
+        Set frame MORE indicator (1 or 0). Note this is NOT used when sending
+        frame to socket, you have to specify flag explicitly.
+        <argument name = "more" type = "integer" />
+    </method>
+
+    <method name = "routing id" state = "draft" >
+        Return frame routing ID, if the frame came from a ZMQ_SERVER socket.
+        Else returns zero.
+        <return type = "number" size = "4" />
+    </method>
+
+    <method name = "set routing id" state = "draft" >
+        Set routing ID on frame. This is used if/when the frame is sent to a
+        ZMQ_SERVER socket.
+        <argument name = "routing id" type = "number" size = "4" />
+    </method>
+
+    <method name = "group" state = "draft" >
+        Return frame group of radio-dish pattern.
+        <return type = "string" />
+    </method>
+
+    <method name = "set group" state = "draft" >
+        Set group on frame. This is used if/when the frame is sent to a
+        ZMQ_RADIO socket.
+        Return -1 on error, 0 on success.
+        <argument name = "group" type = "string" />
+        <return type = "integer" />
+    </method>
+
+    <method name = "eq">
+        Return TRUE if two frames have identical size and data
+        If either frame is NULL, equality is always false.
+        <argument name = "other" type = "zframe" />
+        <return type = "boolean" />
+    </method>
+
+    <method name = "reset">
+        Set new contents for frame
+        <argument name = "data" type = "buffer" c_type = "const void *" />
+        <argument name = "size" type = "size" />
+    </method>
+
+    <method name = "print">
+        Send message to zsys log sink (may be stdout, or system facility as
+        configured by zsys_set_logstream). Prefix shows before frame, if not null.
+        <argument name = "prefix" type = "string" />
+    </method>
+
+    <method name = "is" singleton = "1">
+        Probe the supplied object, and report if it looks like a zframe_t.
+        <argument name = "self" type = "anything" />
+        <return type = "boolean" />
+    </method>
+</class>
