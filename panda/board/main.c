@@ -286,7 +286,7 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, int hardwired) {
         safety_set_mode(setup->b.wValue.w, (int16_t)setup->b.wIndex.w);
         switch (setup->b.wValue.w) {
           case SAFETY_NOOUTPUT:
-            can_silent = ALL_CAN_SILENT;
+            can_silent = ALL_CAN_LIVE;
             break;
           case SAFETY_ELM327:
             can_silent = ALL_CAN_BUT_MAIN_SILENT;
@@ -569,8 +569,8 @@ int main() {
   usb_init();
 
   // default to silent mode to prevent issues with Ford
-  safety_set_mode(SAFETY_NOOUTPUT, 0);
-  can_silent = ALL_CAN_SILENT;
+  safety_set_mode(SAFETY_TESLA, 0);
+  can_silent = ALL_CAN_LIVE;
   can_init_all();
 
   adc_init();

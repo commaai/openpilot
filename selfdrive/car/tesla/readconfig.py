@@ -6,7 +6,10 @@ config_file_w = 'wb'
 
 def read_config_file(CS):
     configr = ConfigParser.ConfigParser()
-    configr.read(config_path)
+    try:
+      configr.read(config_path)
+    except:
+      print "no config file, creating with defaults..."
     config = ConfigParser.RawConfigParser()
     config.add_section('OP_CONFIG')
     

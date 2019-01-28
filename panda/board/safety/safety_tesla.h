@@ -8,6 +8,8 @@
 //      brake rising edge
 //      brake > 0mph
 
+int gas_interceptor_detected = 0;
+
 // 2m/s are added to be less restrictive
 const struct lookup_t TESLA_LOOKUP_ANGLE_RATE_UP = {
     {2., 7., 17.},
