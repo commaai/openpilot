@@ -54,7 +54,7 @@ class LatControl(object):
     self.angle_steers_des_time = 0.0
 
     # Jolt config
-    self.angle_jolt = 1.2                      # When stuck, set the next mpc angle to at least this much, right or left
+    self.angle_jolt = 1.0                      # When stuck, set the next mpc angle to at least this much, right or left
     self.stuck_ms = 150                        # Declare actuator stuck after x milliseconds. latcontrol seems to run every 60ms though
     self.jolt_debug = False                    # Print debug messages?
 
