@@ -29,13 +29,13 @@ THREE_BAR_DISTANCE = 2.7  # in seconds
 CITY_SPEED = 19.44  # braking profile changes when below this speed based on following dynamics below [m/s]
 GAP_CLOSURE_SPEED = -1  # relative velocity between you and lead car which activates braking profile change [m/s]
 TAILGATE_DISTANCE = 17.5  # when below this distance between you and lead car, braking profile change is active based on PULLAWAY_REL_V [m]
-PULLAWAY_REL_V = 0.5  # within TAILGATE_DISTANCE, if the car is pulling away w/ rel velocity that exceeds this value, then change BACK to set bar distance [m/s]
+PULLAWAY_REL_V = 0.25  # within TAILGATE_DISTANCE, if the car is pulling away w/ rel velocity that exceeds this value, then change BACK to set bar distance [m/s]
 MIN_DISTANCE = 7  # keep a minimum distance between you and lead car (when below this, activates braking profile change) [m]
 
 
 # Braking profile changes (makes the car brake harder because it wants to be farther from the lead car - increase to brake harder)
-BRAKING_ONE_BAR_DISTANCE = 2.1  # more aggressive braking when using one bar distance by increasing follow distance [s]
-BRAKING_TWO_BAR_DISTANCE = 2.0  # more aggressive braking when using two bar distance by increasing follow distance [s]
+BRAKING_ONE_BAR_DISTANCE = 2.2  # more aggressive braking when using one bar distance by increasing follow distance [s]
+BRAKING_TWO_BAR_DISTANCE = 2.1  # more aggressive braking when using two bar distance by increasing follow distance [s]
 
 
 # Max lateral acceleration, used to caclulate how much to slow down in turns
