@@ -88,9 +88,9 @@ class CarController(object):
 
     # Speed Limit Related Stuff  Lot's of comments for others to understand!
     # Run this twice a second
-    if (self.cnt % 50) == 0:
+    if (self.cnt % 50) == 0 and self.params.get("LimitSetSpeed") == "1" and self.params.get("SpeedLimitOffset") is not None:
       # If Not Enabled, or cruise not set, allow auto speed adjustment again
-      if not (enabled and CS.acc_active_real and self.params.get("LimitSetSpeed") == "1" and self.params.get("SpeedLimitOffset") is not None):
+      if not (enabled and CS.acc_active_real):
           self.speed_adjusted = False
       # Attempt to read the speed limit from zmq
       map_data = messaging.recv_one_or_none(self.map_data_sock)
@@ -121,6 +121,8 @@ class CarController(object):
           # If it is not valid, set the flag so the cruise speed won't be changed.
           self.map_speed = 0
           self.speed_adjusted = True
+    else:
+      self.speed_adjusted = True
 
     # Ensure we have cruise IN CONTROL, so we don't do anything dangerous, like turn cruise on
     # Ensure the speed limit is within range of the stock cruise control capabilities
