@@ -90,7 +90,7 @@ class CarController(object):
     # Run this twice a second
     if (self.cnt % 50) == 0 and self.params.get("LimitSetSpeed") == "1" and self.params.get("SpeedLimitOffset") is not None:
       # If Not Enabled, or cruise not set, allow auto speed adjustment again
-      if not (enabled and CS.acc_active_real):
+      if not (enabled and CS.acc_active):
           self.speed_adjusted = False
       # Attempt to read the speed limit from zmq
       map_data = messaging.recv_one_or_none(self.map_data_sock)
