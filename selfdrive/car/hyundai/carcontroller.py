@@ -88,41 +88,42 @@ class CarController(object):
 
     # Speed Limit Related Stuff  Lot's of comments for others to understand!
     # Run this twice a second
-    if (self.cnt % 50) == 0 and self.params.get("LimitSetSpeed") == "1" and self.params.get("SpeedLimitOffset") is not None:
-      # If Not Enabled, or cruise not set, allow auto speed adjustment again
-      if not (enabled and CS.acc_active):
-          self.speed_adjusted = False
-      # Attempt to read the speed limit from zmq
-      map_data = messaging.recv_one_or_none(self.map_data_sock)
-      # If we got a message
-      if map_data != None:
-        # See if we use Metric or dead kings ligaments for measurements, and set a variable to the conversion value
-        if bool(self.params.get("IsMetric")):
-          self.speed_conv = CV.MS_TO_KPH
-        else:
-          self.speed_conv = CV.MS_TO_MPH
-
-        # If the speed limit is valid
-        if map_data.liveMapData.speedLimitValid:
-          last_speed = self.map_speed
-          # Get the speed limit, and add the offset to it,
-          v_speed = (map_data.liveMapData.speedLimit + float(self.params.get("SpeedLimitOffset")))
-          ## Stolen curvature code from planner.py, and updated it for us
-          v_curvature = 45.0
-          if map_data.liveMapData.curvatureValid:
-            v_curvature = math.sqrt(1.85 / max(1e-4, abs(map_data.liveMapData.curvature)))
-          # Use the minimum between Speed Limit and Curve Limit, and convert it as needed
-          self.map_speed = min(v_speed, v_curvature) * self.speed_conv
-          # Compare it to the last time the speed was read.  If it is different, set the flag to allow it to auto set our speed
-          if last_speed != self.map_speed:
+    if (self.cnt % 50) == 0:
+      if self.params.get("LimitSetSpeed") == "1" and self.params.get("SpeedLimitOffset") is not None:
+          # If Not Enabled, or cruise not set, allow auto speed adjustment again
+          if not (enabled and CS.acc_active):
               self.speed_adjusted = False
-          print self.map_speed
-        else:
-          # If it is not valid, set the flag so the cruise speed won't be changed.
-          self.map_speed = 0
-          self.speed_adjusted = True
-    else:
-      self.speed_adjusted = True
+          # Attempt to read the speed limit from zmq
+          map_data = messaging.recv_one_or_none(self.map_data_sock)
+          # If we got a message
+          if map_data != None:
+            # See if we use Metric or dead kings ligaments for measurements, and set a variable to the conversion value
+            if bool(self.params.get("IsMetric")):
+              self.speed_conv = CV.MS_TO_KPH
+            else:
+              self.speed_conv = CV.MS_TO_MPH
+
+            # If the speed limit is valid
+            if map_data.liveMapData.speedLimitValid:
+              last_speed = self.map_speed
+              # Get the speed limit, and add the offset to it,
+              v_speed = (map_data.liveMapData.speedLimit + float(self.params.get("SpeedLimitOffset")))
+              ## Stolen curvature code from planner.py, and updated it for us
+              v_curvature = 45.0
+              if map_data.liveMapData.curvatureValid:
+                v_curvature = math.sqrt(1.85 / max(1e-4, abs(map_data.liveMapData.curvature)))
+              # Use the minimum between Speed Limit and Curve Limit, and convert it as needed
+              self.map_speed = min(v_speed, v_curvature) * self.speed_conv
+              # Compare it to the last time the speed was read.  If it is different, set the flag to allow it to auto set our speed
+              if last_speed != self.map_speed:
+                  self.speed_adjusted = False
+              print self.map_speed
+            else:
+              # If it is not valid, set the flag so the cruise speed won't be changed.
+              self.map_speed = 0
+              self.speed_adjusted = True
+      else:
+        self.speed_adjusted = True
 
     # Ensure we have cruise IN CONTROL, so we don't do anything dangerous, like turn cruise on
     # Ensure the speed limit is within range of the stock cruise control capabilities
