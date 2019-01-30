@@ -1676,7 +1676,7 @@ static void ui_draw_vision_speedlimit(UIState *s) {
 }
 
 static void ui_draw_vision_speed(UIState *s) {
-  const UIScene *scene = &s->scene;
+  UIScene *scene = &s->scene;
   int ui_viz_rx = scene->ui_viz_rx;
   int ui_viz_rw = scene->ui_viz_rw;
   float speed = s->scene.v_ego;
