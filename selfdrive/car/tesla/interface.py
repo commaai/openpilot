@@ -302,8 +302,6 @@ class CarInterface(object):
     self.CS.DAS_doorOpen = 0
     self.CS.DAS_notInDrive = 0
     self.CC.opState = 0
-    if c.enabled:
-      self.CC.opState = 1
     if not self.CS.can_valid:
       self.can_invalid_count += 1
       if self.can_invalid_count >= 25: #BB increased to 25 to see if we still get the can error messages
@@ -362,7 +360,8 @@ class CarInterface(object):
       events.append(create_event('parkBrake', [ET.NO_ENTRY, ET.USER_DISABLE]))
       if self.CC.opState > 0:
           self.CC.opState = 0
-
+    if c.enabled and self.CC.opState == 0:
+      self.CC.opState = 1
 
     if self.CP.enableCruise and ret.vEgo < self.CP.minEnableSpeed:
       events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
