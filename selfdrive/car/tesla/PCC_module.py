@@ -24,9 +24,9 @@ _DT_MPC = 0.05  # 20Hz
 # TODO: these should end up in values.py at some point, probably variable by trim
 # Accel limits
 MAX_PEDAL_VALUE = 112.
-PEDAL_HYST_GAP = 0.75  # don't change pedal command for small oscilalitons within this value
-# Cap the pedal to go from 0 to max in 3 seconds
-PEDAL_MAX_UP = MAX_PEDAL_VALUE * _DT / 3
+PEDAL_HYST_GAP = 1.0  # don't change pedal command for small oscilalitons within this value
+# Cap the pedal to go from 0 to max in 4 seconds
+PEDAL_MAX_UP = MAX_PEDAL_VALUE * _DT / 4
 # Cap the pedal to go from max to 0 in 0.4 seconds
 PEDAL_MAX_DOWN = MAX_PEDAL_VALUE * _DT / 0.4
 
@@ -41,6 +41,9 @@ MIN_PCC_V_KPH = 0. #
 MAX_PCC_V_KPH = 170.
 
 MIN_CAN_SPEED = 0.3  #TODO: parametrize this in car interface
+
+# Pull the cruise stalk twice in this many ms for a 'double pull'
+STALK_DOUBLE_PULL_MS = 750
 
 # Map of speed to max allowed decel.
 # Make sure these accelerations are smaller than mpc limits.
@@ -154,7 +157,8 @@ class PCCController(object):
     self.lead_1 = None
     self.last_update_time = 0
     self.enable_pedal_cruise = False
-    self.last_cruise_stalk_pull_time = 0
+    self.stalk_pull_time_ms = 0
+    self.prev_stalk_pull_time_ms = -1000
     self.prev_pcm_acc_status = 0
     self.prev_cruise_buttons = CruiseButtons.IDLE
     self.pedal_speed_kph = 0.
@@ -242,8 +246,9 @@ class PCCController(object):
       speed_uom_kph = CV.MPH_TO_KPH
     if (CS.cruise_buttons == CruiseButtons.MAIN and
         self.prev_cruise_buttons != CruiseButtons.MAIN):
-      double_pull = curr_time_ms - self.last_cruise_stalk_pull_time < 750
-      self.last_cruise_stalk_pull_time = curr_time_ms
+      self.prev_stalk_pull_time_ms = self.stalk_pull_time_ms
+      self.stalk_pull_time_ms = curr_time_ms
+      double_pull = self.stalk_pull_time_ms - self.prev_stalk_pull_time_ms < STALK_DOUBLE_PULL_MS
       ready = (CS.cstm_btns.get_button_status("pedal") > PCCState.OFF
                and enabled
                and (CruiseState.is_off(CS.pcm_acc_status)) or CS.forcePedalOverCC)
@@ -253,14 +258,12 @@ class PCCController(object):
         self.LoC.reset(CS.v_ego)
         # Increase PCC speed to match current, if applicable.
         self.pedal_speed_kph = max(CS.v_ego * CV.MS_TO_KPH, self.pedal_speed_kph)
-      else:
-        # A single pull disables PCC (falling back to just steering).
-        self.enable_pedal_cruise = False
     # Handle pressing the cancel button.
     elif CS.cruise_buttons == CruiseButtons.CANCEL:
       self.enable_pedal_cruise = False
       self.pedal_speed_kph = 0. 
-      self.last_cruise_stalk_pull_time = 0
+      self.stalk_pull_time_ms = 0
+      self.prev_stalk_pull_time_ms = -1000
     # Handle pressing up and down buttons.
     elif (self.enable_pedal_cruise 
           and CS.cruise_buttons != self.prev_cruise_buttons):
@@ -279,6 +282,12 @@ class PCCController(object):
       self.pedal_speed_kph = clip(self.pedal_speed_kph, MIN_PCC_V_KPH, MAX_PCC_V_KPH)
     # If something disabled cruise control, disable PCC too
     elif self.enable_pedal_cruise and CS.pcm_acc_status and not CS.forcePedalOverCC:
+      self.enable_pedal_cruise = False
+    # A single pull disables PCC (falling back to just steering). Wait some time
+    # in case a double pull comes along.
+    elif (self.enable_pedal_cruise
+          and curr_time_ms - self.stalk_pull_time_ms > STALK_DOUBLE_PULL_MS
+          and self.stalk_pull_time_ms - self.prev_stalk_pull_time_ms > STALK_DOUBLE_PULL_MS): 
       self.enable_pedal_cruise = False
     
     # Notify if PCC was toggled
@@ -491,6 +500,13 @@ class PCCController(object):
           max_vrel_kph = _interp_map(lead_dist_m, max_vrel_kph_map)
           min_kph = lead_absolute_speed_kph - max_vrel_kph
           max_kph = lead_absolute_speed_kph - min_vrel_kph
+          # In the special case were we are going faster than intended but it's
+          # still an acceptable speed, accept it. This could happen if the
+          # driver manually accelerates, or if we roll down a hill. In either
+          # case, don't fight the extra velocity unless necessary.
+          if actual_speed_kph > new_speed_kph and min_kph < actual_speed_kph < max_kph:
+            new_speed_kph = actual_speed_kph
+
           new_speed_kph =  clip(new_speed_kph, min_kph, max_kph)
           
         # Enforce limits on speed in the presence of a lead car.
