@@ -1,3 +1,6 @@
+WARNING: TESLA ONLY OPENPILOT 0.5.8
+======
+This repo contains code that was modified specifically for Tesla and will not work on other cars!
 [![](https://i.imgur.com/UetIFyH.jpg)](#)
 
 Welcome to openpilot
