@@ -1,9 +1,0 @@
-libc++_shared.so filter=lfs diff=lfs merge=lfs -text
-libsnpe_adsp.so filter=lfs diff=lfs merge=lfs -text
-libsnpe_dsp_domains.so filter=lfs diff=lfs merge=lfs -text
-libsnpe_dsp_domains_system.so filter=lfs diff=lfs merge=lfs -text
-libsnpe_dsp_domains_v2.so filter=lfs diff=lfs merge=lfs -text
-libSNPE_G.so filter=lfs diff=lfs merge=lfs -text
-libSNPE.so filter=lfs diff=lfs merge=lfs -text
-libsymphony-cpu.so filter=lfs diff=lfs merge=lfs -text
-libsymphonypower.so filter=lfs diff=lfs merge=lfs -text
