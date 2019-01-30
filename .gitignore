@@ -32,3 +32,10 @@ selfdrive/test/tests/plant/out
 /src/
 
 one
+phonelibs/capnp-cpp/aarch64/bin/capnpc
+phonelibs/libyuv/x64/include
+phonelibs/openblas/libopenblas.so
+phonelibs/zmq/aarch64-linux/lib/libczmq.so
+phonelibs/zmq/aarch64-linux/lib/libczmq.so.4
+phonelibs/zmq/aarch64-linux/lib/libzmq.so
+phonelibs/zmq/aarch64-linux/lib/libzmq.so.5
