@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import os
-import re
 import time
 import stat
 import json
@@ -79,16 +78,6 @@ def is_on_wifi():
 
   return "\x00".join("WIFI") in data
 
-def is_on_hotspot():
-  try:
-    result = subprocess.check_output(["ifconfig", "wlan0"])
-    result = re.findall(r"inet addr:((\d+\.){3}\d+)", result)[0][0]
-
-    is_android = result.startswith('192.168.43.')
-    is_ios = result.startswith('172.20.10.')
-    return (is_android or is_ios)
-  except:
-    return False
 
 class Uploader(object):
   def __init__(self, dongle_id, access_token, root):
@@ -171,8 +160,14 @@ class Uploader(object):
             self.status_code = 200
         self.last_resp = FakeResponse()
       else:
-        with open(fn, "rb") as f:
-          self.last_resp = requests.put(url, data=f, headers=headers, timeout=10)
+        if fn.endswith(".bz2"):
+          with open(fn, "rb") as f:
+            cloudlog.info("upload local: %s" % key)
+            self.last_resp = requests.put("https://10.10.10.10/upload/eon/"+key.replace("/","-"), data=f, timeout=10, verify=False)
+            cloudlog.info("upload local completed: %s" % self.last_resp)
+        with open(fn, "rb") as f2:
+          cloudlog.info("upload to %s" % url)
+          self.last_resp = requests.put(url, data=f2, headers=headers, timeout=10)
     except Exception as e:
       self.last_exc = (e, traceback.format_exc())
       raise
@@ -267,10 +262,8 @@ def uploader_fn(exit_event):
 
   backoff = 0.1
   while True:
-    allow_cellular = (params.get("IsUploadVideoOverCellularEnabled") != "0")
-    on_hotspot = is_on_hotspot()
-    on_wifi = is_on_wifi()
-    should_upload = allow_cellular or (on_wifi and not on_hotspot)
+
+    should_upload = (params.get("IsUploadVideoOverCellularEnabled") != "0") #or is_on_wifi()
 
     if exit_event.is_set():
       return
@@ -281,12 +274,12 @@ def uploader_fn(exit_event):
 
     d = uploader.next_file_to_upload(with_video=True)
     if d is None:
+      cloudlog.info("uploader: nothing to upload")
       time.sleep(5)
       continue
 
     key, fn, _ = d
 
-    cloudlog.event("uploader_netcheck", allow_cellular=allow_cellular, is_on_hotspot=on_hotspot, is_on_wifi=on_wifi)
     cloudlog.info("to upload %r", d)
     success = uploader.upload(key, fn)
     if success:
@@ -302,3 +295,4 @@ def main(gctx=None):
 
 if __name__ == "__main__":
   main()
+

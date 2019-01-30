@@ -15,7 +15,7 @@ int gas_prev = 0;
 int gas_interceptor_prev = 0;
 int ego_speed = 0;
 // TODO: auto-detect bosch hardware based on CAN messages?
-bool bosch_hardware = false;
+bool bosch_hardware = true; // default to Bosch hardware
 bool honda_alt_brake_msg = false;
 
 static void honda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
@@ -67,11 +67,12 @@ static void honda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     gas_interceptor_prev = gas_interceptor;
   }
 
+  // stock ACC on Bosch allows pressing gas pedal while ACC is enabled, so skip disabling
   // exit controls on rising edge of gas press if no interceptor
   if (!gas_interceptor_detected) {
     if ((to_push->RIR>>21) == 0x17C) {
       int gas = to_push->RDLR & 0xFF;
-      if (gas && !(gas_prev)) {
+      if (gas && !(gas_prev) && !bosch_hardware) {
         controls_allowed = 0;
       }
       gas_prev = gas;
@@ -87,9 +88,9 @@ static void honda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
 static int honda_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 
-  // disallow actuator commands if gas or brake (with vehicle moving) are pressed
+  // disallow actuator commands if gas (on non Bosch hardware) or brake (with vehicle moving) are pressed
   // and the the latching controls_allowed flag is True
-  int pedal_pressed = gas_prev || (gas_interceptor_prev > gas_interceptor_threshold) ||
+  int pedal_pressed = (!bosch_hardware && (gas_prev || (gas_interceptor_prev > gas_interceptor_threshold))) ||
                       (brake_prev && ego_speed);
   int current_controls_allowed = controls_allowed && !(pedal_pressed);
 
@@ -123,9 +124,17 @@ static int honda_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   // FORCE CANCEL: safety check only relevant when spamming the cancel button in Bosch HW
   // ensuring that only the cancel button press is sent (VAL 2) when controls are off.
   // This avoids unintended engagements while still allowing resume spam
-  if (((to_send->RIR>>21) == 0x296) && bosch_hardware &&
-      !current_controls_allowed && ((to_send->RDTR >> 4) & 0xFF) == 0) {
-    if (((to_send->RDLR >> 5) & 0x7) != 2) return 0;
+  //if (((to_send->RIR>>21) == 0x296) && bosch_hardware &&
+  //    !current_controls_allowed && ((to_send->RDTR >> 4) & 0xFF) == 0) {
+  //  if (((to_send->RDLR >> 5) & 0x7) != 2) return 0;
+  //}
+  if (bosch_hardware && ((to_send->RIR>>21) == 0x296)) {
+    int buttons = (to_send->RDLR & 0xE0) >> 5;
+    if (buttons == 4 || buttons == 3) {
+      controls_allowed = 1;
+    } else if (buttons == 2) {
+      controls_allowed = 0;
+    }
   }
 
   // 1 allows the message through
@@ -134,7 +143,7 @@ static int honda_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 
 static void honda_init(int16_t param) {
   controls_allowed = 0;
-  bosch_hardware = false;
+  bosch_hardware = true;
   honda_alt_brake_msg = false;
 }
 

@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 import os
 import numpy as np
+import zmq
+import selfdrive.messaging as messaging
 from cereal import car, log
 from common.numpy_fast import clip, interp
 from common.realtime import sec_since_boot
@@ -97,6 +99,9 @@ class CarInterface(object):
     # *** init the major players ***
     self.CS = CarState(CP)
     self.VM = VehicleModel(CP)
+
+    self.uievent = messaging.sub_sock(zmq.Context(), 8064)
+    self.cruise_speed_override = 0
 
     # sending if read only is False
     if sendcan is not None:
@@ -371,6 +376,43 @@ class CarInterface(object):
 
     self.CS.update(self.cp, self.cp_cam)
 
+    # receive UI events
+    uie = None
+    self.CS.cruise_virtualPress = False
+    try:
+      uie = self.uievent.recv(zmq.NOBLOCK)
+    except zmq.error.Again:
+      uie = None
+    if uie is not None:
+      uie = int(uie)
+      # don't override physical button presses
+      if uie in [4,5,6] and self.CS.cruise_buttons==0:
+        self.CS.cruise_buttons = [ CruiseButtons.CANCEL, CruiseButtons.DECEL_SET, CruiseButtons.RES_ACCEL][uie-4]
+        self.CS.cruise_virtualPress = True
+      elif uie in [1,2,3]:
+        self.cruise_speed_override = int([35,55,75][uie-1] * CV.MPH_TO_KPH)
+        if self.CS.v_cruise_pcm > self.cruise_speed_override:
+          self.cruise_speed_override = -self.cruise_speed_override
+
+    # reset override if physical or virtual buttons were pressed, or brake was pressed
+    if self.CS.cruise_buttons!=0 or self.CS.brake_pressed != 0:
+      self.cruise_speed_override = 0
+
+    # simulate button presses to adjust cruise speed
+    if self.cruise_speed_override!=0:
+      if self.cruise_speed_override<0:
+        if self.CS.v_cruise_pcm > -self.cruise_speed_override+8:
+          self.CS.cruise_buttons = CruiseButtons.DECEL_SET
+          self.CS.cruise_virtualPress = True
+        else:
+          self.cruise_speed_override = 0
+      else:
+        if self.CS.v_cruise_pcm < self.cruise_speed_override-6:
+          self.CS.cruise_buttons = CruiseButtons.RES_ACCEL
+          self.CS.cruise_virtualPress = True
+        else:
+          self.cruise_speed_override = 0
+
     # create message
     ret = car.CarState.new_message()
 
@@ -396,6 +438,9 @@ class CarInterface(object):
     ret.brake = self.CS.user_brake
     ret.brakePressed = self.CS.brake_pressed != 0
     # FIXME: read sendcan for brakelights
+    if self.CS.CP.carFingerprint in (CAR.ACCORDH):
+      ret.brakeLights = bool(self.CS.brake_switch or self.CS.braking1!=0)
+    else:
     brakelights_threshold = 0.02 if self.CS.CP.carFingerprint == CAR.CIVIC else 0.1
     ret.brakeLights = bool(self.CS.brake_switch or
                            c.actuators.brake > brakelights_threshold)
@@ -454,6 +499,8 @@ class CarInterface(object):
         be.type = 'cancel'
       elif but == CruiseButtons.MAIN:
         be.type = 'altButton3'
+      else:
+        cloudlog.info("button in cruise_buttons %r" % but)
       buttonEvents.append(be)
 
     if self.CS.cruise_setting != self.CS.prev_cruise_setting:
@@ -466,7 +513,11 @@ class CarInterface(object):
         be.pressed = False
         but = self.CS.prev_cruise_setting
       if but == 1:
-        be.type = 'altButton1'
+        be.type = 'altButton1' # lkas
+      elif but == 3:
+        be.type = 'altButton2' # acc distance setting
+      else:
+        cloudlog.info("button in cruise_setting %r" % but)
       # TODO: more buttons?
       buttonEvents.append(be)
     ret.buttonEvents = buttonEvents
@@ -517,11 +568,11 @@ class CarInterface(object):
       events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
 
     # disable on pedals rising edge or when brake is pressed and speed isn't zero
-    if (ret.gasPressed and not self.gas_pressed_prev) or \
+    if ((not self.CS.CP.carFingerprint in HONDA_BOSCH) and ret.gasPressed and not self.gas_pressed_prev) or \
        (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001)):
       events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
 
-    if ret.gasPressed:
+    if (not self.CS.CP.carFingerprint in HONDA_BOSCH) and ret.gasPressed:
       events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
 
     # it can happen that car cruise disables while comma system is enabled: need to

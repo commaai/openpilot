@@ -74,6 +74,13 @@ ALERTS = [
       Priority.MID, VisualAlert.none, AudibleAlert.chimeDisengage, .2, 0., 0.),
 
   Alert(
+      "userdisable",
+      "",
+      "",
+      AlertStatus.normal, AlertSize.none,
+      Priority.MID, VisualAlert.none, AudibleAlert.none, .2, 0., 0.),
+      
+  Alert(
       "fcw",
       "BRAKE!",
       "Risk of Collision",

@@ -120,12 +120,14 @@ BO_ 464 WHEEL_SPEEDS: 8 VSA
 BO_ 479 ACC_CONTROL: 8 EON
  SG_ SET_TO_1 : 20|5@0+ (1,0) [0|1] "" PCM
  SG_ CONTROL_ON : 23|3@0+ (1,0) [0|5] "" XXX
- SG_ RELATED_TO_GAS : 7|7@0+ (1,0) [0|69] "" XXX
- SG_ GAS_COMMAND : 0|9@0+ (1,0) [0|1] "" PCM
- SG_ GAS_BRAKE : 31|14@0- (1,0) [0|1] "" XXX
  SG_ ZEROS_BOH : 33|18@0+ (1,0) [100|100] "" XXX
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
+ SG_ STATE_FLAG : 7|7@0+ (1,0) [0|69] "" XXX
+ SG_ GAS_COMMAND : 0|9@0+ (0.001,0) [0|1] "" PCM
+ SG_ GAS_BRAKE : 31|13@0- (0.001,0) [0|1] "" XXX
+ SG_ BRAKING_1 : 62|1@0+ (1,0) [0|1] "" XXX
+ SG_ BRAKING_2 : 34|1@0+ (1,0) [0|1] "" XXX
 
 BO_ 495 ACC_CONTROL_ON: 8 XXX
  SG_ SET_TO_75 : 31|8@0+ (1,0) [0|255] "" XXX
@@ -139,6 +141,7 @@ BO_ 495 ACC_CONTROL_ON: 8 XXX
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
 
 BO_ 545 XXX_16: 6 SCM
+ SG_ CONTEXT : 7|8@0+ (1,0) [0|255] "" XXX
  SG_ ECON_ON : 23|1@0+ (1,0) [0|1] "" XXX
  SG_ DRIVE_MODE : 37|2@0+ (1,0) [0|3] "" XXX
  SG_ COUNTER : 45|2@0+ (1,0) [0|3] "" BDY
@@ -240,13 +243,14 @@ BO_ 829 LKAS_HUD: 5 ADAS
  SG_ CHECKSUM : 35|4@0+ (1,0) [0|15] "" BDY
 
 BO_ 862 CAMERA_MESSAGES: 8 CAM
- SG_ ZEROS_BOH : 7|50@0+ (1,0) [0|127] "" BDY
+ SG_ ZEROS_BOH : 7|18@0+ (1,0) [0|127] "" BDY
+ SG_ SPEED_LIMIT : 21|6@0- (5,0) [0|31] "" XXX
  SG_ AUTO_HIGHBEAMS_ACTIVE : 53|1@0+ (1,0) [0|1] "" XXX
  SG_ HIGHBEAMS_ON : 52|1@0+ (1,0) [0|1] "" XXX
  SG_ ZEROS_BOH_2 : 51|4@0+ (1,0) [0|15] "" XXX
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
-
+ 
 BO_ 884 STALK_STATUS: 8 XXX
  SG_ AUTO_HEADLIGHTS : 46|1@0+ (1,0) [0|1] "" EON
  SG_ HIGH_BEAM_HOLD : 47|1@0+ (1,0) [0|1] "" EON
@@ -267,6 +271,11 @@ BO_ 891 STALK_STATUS_2: 8 XXX
 VAL_ 399 STEER_STATUS 6 "tmp_fault" 5 "fault_1" 4 "no_torque_alert_2" 3 "low_speed_lockout" 2 "no_torque_alert_1" 0 "normal" ;
 CM_ "honda_accord_s2t_2018_can.dbc starts here"
 
+BO_ 148 KINEMATICS: 8 XXX
+ SG_ LAT_ACCEL : 7|10@0+ (0.02,-512) [-20|20] "m/s2" EON
+ SG_ LONG_ACCEL : 24|9@0- (-0.02,0) [-20|20] "m/s2" EON
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
 
 BO_ 419 GEARBOX: 8 PCM
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
@@ -284,6 +293,11 @@ BO_ 446 BRAKE_MODULE: 3 VSA
  SG_ BRAKE_PRESSED : 4|1@0+ (1,0) [0|1] "" XXX
  SG_ COUNTER : 21|2@0+ (1,0) [0|3] "" XXX
  SG_ CHECKSUM : 19|4@0+ (1,0) [0|15] "" XXX
+
+BO_ 576 LANE_POSITION: 8 XXX
+ SG_ LANE_1 : 6|11@0- (1,0) [-1023|1023] "" XXX
+ SG_ LANE_3 : 39|16@0+ (1,0) [0|32767] "" XXX
+ SG_ LANE_2 : 22|11@0+ (1,0) [0|2047] "" XXX
 
 BO_ 927 RADAR_HUD: 8 RADAR
  SG_ ZEROS_BOH : 7|10@0+ (1,0) [0|127] "" BDY
