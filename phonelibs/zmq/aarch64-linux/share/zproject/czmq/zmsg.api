@@ -1,0 +1,250 @@
+<class name = "zmsg" state = "stable">
+    <!--
+    Copyright (c) the Contributors as noted in the AUTHORS file.
+    This file is part of CZMQ, the high-level C binding for 0MQ:
+    http://czmq.zeromq.org.
+
+    This Source Code Form is subject to the terms of the Mozilla Public
+    License, v. 2.0. If a copy of the MPL was not distributed with this
+    file, You can obtain one at http://mozilla.org/MPL/2.0/.
+    -->
+    working with multipart messages
+
+    <constructor>
+        Create a new empty message object
+    </constructor>
+
+    <destructor>
+        Destroy a message object and all frames it contains
+    </destructor>
+
+    <constructor name = "recv">
+        Receive message from socket, returns zmsg_t object or NULL if the recv
+        was interrupted. Does a blocking recv. If you want to not block then use
+        the zloop class or zmsg_recv_nowait or zmq_poll to check for socket input
+        before receiving.
+        <argument name = "source" type = "sockish" />
+    </constructor>
+
+    <method name = "send" singleton = "1">
+        Send message to destination socket, and destroy the message after sending
+        it successfully. If the message has no frames, sends nothing but destroys
+        the message anyhow. Nullifies the caller's reference to the message (as
+        it is a destructor).
+        <argument name = "self_p" type = "zmsg" by_reference = "1" />
+        <argument name = "dest" type = "sockish" />
+        <return type = "integer" />
+    </method>
+
+    <method name = "sendm" singleton = "1">
+        Send message to destination socket as part of a multipart sequence, and
+        destroy the message after sending it successfully. Note that after a
+        zmsg_sendm, you must call zmsg_send or another method that sends a final
+        message part. If the message has no frames, sends nothing but destroys
+        the message anyhow. Nullifies the caller's reference to the message (as
+        it is a destructor).
+        <argument name = "self_p" type = "zmsg" by_reference = "1" />
+        <argument name = "dest" type = "sockish" />
+        <return type = "integer" />
+    </method>
+
+    <method name = "size">
+        Return size of message, i.e. number of frames (0 or more).
+        <return type = "size" />
+    </method>
+
+    <method name = "content size">
+        Return total size of all frames in message.
+        <return type = "size" />
+    </method>
+
+    <method name = "routing id" state = "draft" >
+        Return message routing ID, if the message came from a ZMQ_SERVER socket.
+        Else returns zero.
+        <return type = "number" size = "4" />
+    </method>
+
+    <method name = "set routing id" state = "draft" >
+        Set routing ID on message. This is used if/when the message is sent to a
+        ZMQ_SERVER socket.
+        <argument name = "routing id" type = "number" size = "4" />
+    </method>
+
+    <method name = "prepend">
+        Push frame to the front of the message, i.e. before all other frames.
+        Message takes ownership of frame, will destroy it when message is sent.
+        Returns 0 on success, -1 on error. Deprecates zmsg_push, which did not
+        nullify the caller's frame reference.
+        <argument name = "frame_p" type = "zframe" by_reference = "1" />
+        <return type = "integer" />
+    </method>
+
+    <method name = "append">
+        Add frame to the end of the message, i.e. after all other frames.
+        Message takes ownership of frame, will destroy it when message is sent.
+        Returns 0 on success. Deprecates zmsg_add, which did not nullify the
+        caller's frame reference.
+        <argument name = "frame_p" type = "zframe" by_reference = "1" />
+        <return type = "integer" />
+    </method>
+
+    <method name = "pop">
+        Remove first frame from message, if any. Returns frame, or NULL.
+        <return type = "zframe" fresh = "1" />
+    </method>
+
+    <method name = "pushmem">
+        Push block of memory to front of message, as a new frame.
+        Returns 0 on success, -1 on error.
+        <argument name = "data" type = "buffer" c_type = "const void *" />
+        <argument name = "size" type = "size" />
+        <return type = "integer" />
+    </method>
+
+    <method name = "addmem">
+        Add block of memory to the end of the message, as a new frame.
+        Returns 0 on success, -1 on error.
+        <argument name = "data" type = "buffer" c_type = "const void *" />
+        <argument name = "size" type = "size" />
+        <return type = "integer" />
+    </method>
+
+    <method name = "pushstr">
+        Push string as new frame to front of message.
+        Returns 0 on success, -1 on error.
+        <argument name = "string" type = "string" />
+        <return type = "integer" />
+    </method>
+
+    <method name = "addstr">
+        Push string as new frame to end of message.
+        Returns 0 on success, -1 on error.
+        <argument name = "string" type = "string" />
+        <return type = "integer" />
+    </method>
+
+    <method name = "pushstrf">
+        Push formatted string as new frame to front of message.
+        Returns 0 on success, -1 on error.
+        <argument name = "format" type = "format" />
+        <return type = "integer" />
+    </method>
+
+    <method name = "addstrf">
+        Push formatted string as new frame to end of message.
+        Returns 0 on success, -1 on error.
+        <argument name = "format" type = "format" />
+        <return type = "integer" />
+    </method>
+
+    <method name = "popstr">
+        Pop frame off front of message, return as fresh string. If there were
+        no more frames in the message, returns NULL.
+        <return type = "string" fresh = "1" />
+    </method>
+
+    <method name = "addmsg">
+        Push encoded message as a new frame. Message takes ownership of
+        submessage, so the original is destroyed in this call. Returns 0 on
+        success, -1 on error.
+        <argument name = "msg_p" type = "zmsg" by_reference = "1" />
+        <return type = "integer" />
+    </method>
+
+    <method name = "popmsg">
+        Remove first submessage from message, if any. Returns zmsg_t, or NULL if
+        decoding was not successful.
+        <return type = "zmsg" fresh = "1" />
+    </method>
+
+    <method name = "remove">
+        Remove specified frame from list, if present. Does not destroy frame.
+        <argument name = "frame" type = "zframe" />
+    </method>
+
+    <method name = "first">
+        Set cursor to first frame in message. Returns frame, or NULL, if the
+        message is empty. Use this to navigate the frames as a list.
+        <return type = "zframe" />
+    </method>
+
+    <method name = "next">
+        Return the next frame. If there are no more frames, returns NULL. To move
+        to the first frame call zmsg_first(). Advances the cursor.
+        <return type = "zframe" />
+    </method>
+
+    <method name = "last">
+        Return the last frame. If there are no frames, returns NULL.
+        <return type = "zframe" />
+    </method>
+
+    <method name = "save">
+        Save message to an open file, return 0 if OK, else -1. The message is
+        saved as a series of frames, each with length and data. Note that the
+        file is NOT guaranteed to be portable between operating systems, not
+        versions of CZMQ. The file format is at present undocumented and liable
+        to arbitrary change.
+        <argument name = "file" type = "FILE" />
+        <return type = "integer" />
+    </method>
+
+    <constructor name = "load">
+        Load/append an open file into new message, return the message.
+        Returns NULL if the message could not be loaded.
+        <argument name = "file" type = "FILE" />
+    </constructor>
+
+    <method name = "encode">
+        Serialize multipart message to a single message frame. Use this method
+        to send structured messages across transports that do not support
+        multipart data. Allocates and returns a new frame containing the
+        serialized message. To decode a serialized message frame, use
+        zmsg_decode ().
+        <return type = "zframe" fresh = "1" />
+    </method>
+
+    <constructor name = "decode">
+        Decodes a serialized message frame created by zmsg_encode () and returns
+        a new zmsg_t object. Returns NULL if the frame was badly formatted or
+        there was insufficient memory to work.
+        <argument name = "frame" type = "zframe" />
+    </constructor>
+
+    <method name = "dup">
+        Create copy of message, as new message object. Returns a fresh zmsg_t
+        object. If message is null, or memory was exhausted, returns null.
+        <return type = "zmsg" fresh = "1" />
+    </method>
+
+    <method name = "print">
+        Send message to zsys log sink (may be stdout, or system facility as
+        configured by zsys_set_logstream).
+    </method>
+
+    <method name = "eq">
+        Return true if the two messages have the same number of frames and each
+        frame in the first message is identical to the corresponding frame in the
+        other message. As with zframe_eq, return false if either message is NULL.
+        <argument name = "other" type = "zmsg" />
+        <return type = "boolean" />
+    </method>
+
+    <constructor name = "new signal">
+        Generate a signal message encoding the given status. A signal is a short
+        message carrying a 1-byte success/failure code (by convention, 0 means
+        OK). Signals are encoded to be distinguishable from "normal" messages.
+        <argument name = "status" type = "byte" />
+    </constructor>
+
+    <method name = "signal">
+        Return signal value, 0 or greater, if message is a signal, -1 if not.
+        <return type = "integer" />
+    </method>
+
+    <method name = "is" singleton = "1">
+        Probe the supplied object, and report if it looks like a zmsg_t.
+        <argument name = "self" type = "anything" />
+        <return type = "boolean" />
+    </method>
+</class>
