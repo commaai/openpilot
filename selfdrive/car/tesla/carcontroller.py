@@ -192,7 +192,8 @@ class CarController(object):
     des_angle_factor = interp(CS.v_ego, DES_ANGLE_ADJUST_FACTOR_BP, DES_ANGLE_ADJUST_FACTOR )
     if alca_enabled or not CS.enableSpeedVariableDesAngle:
       des_angle_factor = 1.
-    apply_angle = clip(apply_angle * des_angle_factor, self.last_angle - angle_rate_lim, self.last_angle + angle_rate_lim) 
+    #BB disable limits to test 0.5.8
+    # apply_angle = clip(apply_angle * des_angle_factor, self.last_angle - angle_rate_lim, self.last_angle + angle_rate_lim) 
     # If human control, send the steering angle as read at steering wheel.
     if human_control:
       apply_angle = CS.angle_steers

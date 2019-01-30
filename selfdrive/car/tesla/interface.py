@@ -301,13 +301,16 @@ class CarInterface(object):
     self.CS.DAS_plannerErrors = 0
     self.CS.DAS_doorOpen = 0
     self.CS.DAS_notInDrive = 0
-    self.CC.opState = 0
+    if not c.enabled and self.CC.opState == 2:
+      self.CC.opState = 0
+    if c.enabled and self.CC.opState == 0:
+      self.CC.opState = 1
     if not self.CS.can_valid:
       self.can_invalid_count += 1
       if self.can_invalid_count >= 25: #BB increased to 25 to see if we still get the can error messages
         events.append(create_event('commIssue', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
         self.CS.DAS_canErrors = 1
-        if self.CC.opState > 0:
+        if self.CC.opState == 1:
           self.CC.opState = 2
     else:
       self.can_invalid_count = 0
@@ -317,51 +320,51 @@ class CarInterface(object):
     elif self.CS.steer_warning:
       if not self.CS.enableHSO:
          events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
-         if self.CC.opState > 0:
-           self.CC.opState = 2
+         if self.CC.opState == 1:
+          self.CC.opState = 2
     if self.CS.brake_error:
       events.append(create_event('brakeUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
-      if self.CC.opState > 0:
-        self.CC.opState = 2
+      if self.CC.opState == 1:
+          self.CC.opState = 2
     if not ret.gearShifter == 'drive':
       events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
       self.CS.DAS_notInDrive = 1
-      if self.CC.opState > 0:
+      if self.CC.opState == 1:
           self.CC.opState = 0
     if ret.doorOpen:
       events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
       self.CS.DAS_doorOpen = 1
-      if self.CC.opState > 0:
+      if self.CC.opState == 1:
         self.CC.opState = 0
     if ret.seatbeltUnlatched:
       events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
       if c.enabled:
         self.CS.DAS_noSeatbelt = 1
-      if self.CC.opState > 0:
+      if self.CC.opState == 1:
         self.CC.opState = 2
     if self.CS.esp_disabled:
       events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-      if self.CC.opState > 0:
+      if self.CC.opState == 1:
           self.CC.opState = 2
     if not self.CS.main_on:
       events.append(create_event('wrongCarMode', [ET.NO_ENTRY, ET.USER_DISABLE]))
-      if self.CC.opState > 0:
+      if self.CC.opState == 1:
           self.CC.opState = 0
     if ret.gearShifter == 'reverse':
       events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
       self.CS.DAS_notInDrive = 1
-      if self.CC.opState > 0:
+      if self.CC.opState == 1:
           self.CC.opState = 0
     if self.CS.brake_hold:
       events.append(create_event('brakeHold', [ET.NO_ENTRY, ET.USER_DISABLE]))
-      if self.CC.opState > 0:
+      if self.CC.opState == 1:
           self.CC.opState = 0
     if self.CS.park_brake:
       events.append(create_event('parkBrake', [ET.NO_ENTRY, ET.USER_DISABLE]))
-      if self.CC.opState > 0:
+      if self.CC.opState == 1:
           self.CC.opState = 0
-    if c.enabled and self.CC.opState == 0:
-      self.CC.opState = 1
+    if not c.enabled and self.CC.opState == 1:
+      self.CC.opState = 0
 
     if self.CP.enableCruise and ret.vEgo < self.CP.minEnableSpeed:
       events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
