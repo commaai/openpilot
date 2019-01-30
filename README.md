@@ -126,7 +126,7 @@ In Progress Cars
   - Only remaining Toyota cars with no port yet are the Avalon and the Sienna.
 - All Hyundai with SmartSense.
 - All Kia with SCC and LKAS.
-- All Chrysler, Jeep, Fiat with Adaprive Cruise Control and LaneSense.
+- All Chrysler, Jeep, Fiat with Adaptive Cruise Control and LaneSense.
 
 How can I add support for my car?
 ------
@@ -161,6 +161,8 @@ Directory structure
         ├── locationd       # Soon to be home of precise location
         ├── logcatd         # Android logcat as a service
         ├── loggerd         # Logger and uploader of car data
+        ├── mapd            # Fetches map data and computes next global path
+        ├── orbd            # Computes ORB features from frames
         ├── proclogd        # Logs information from proc
         ├── sensord         # IMU / GPS interface code
         ├── test            # Car simulator running code through virtual maneuvers
