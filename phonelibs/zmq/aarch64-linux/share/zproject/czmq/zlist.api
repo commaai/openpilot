@@ -1,0 +1,158 @@
+<class name = "zlist" state = "stable">
+    <!--
+    Copyright (c) the Contributors as noted in the AUTHORS file.
+    This file is part of CZMQ, the high-level C binding for 0MQ:
+    http://czmq.zeromq.org.
+
+    This Source Code Form is subject to the terms of the Mozilla Public
+    License, v. 2.0. If a copy of the MPL was not distributed with this
+    file, You can obtain one at http://mozilla.org/MPL/2.0/.
+    -->
+    simple generic list container
+
+    <callback_type name = "compare_fn">
+        Comparison function e.g. for sorting and removing.
+        <argument name = "item1" type = "anything" />
+        <argument name = "item2" type = "anything" />
+        <return type = "integer" />
+    </callback_type>
+
+    <callback_type name = "free_fn">
+        Callback function for zlist_freefn method
+        <argument name = "data" type = "anything" />
+    </callback_type>
+
+    <constructor>
+        Create a new list container
+    </constructor>
+
+    <destructor>
+        Destroy a list container
+    </destructor>
+
+    <method name = "first">
+        Return the item at the head of list. If the list is empty, returns NULL.
+        Leaves cursor pointing at the head item, or NULL if the list is empty.
+        <return type = "anything" />
+    </method>
+
+    <method name = "next">
+        Return the next item. If the list is empty, returns NULL. To move to
+        the start of the list call zlist_first (). Advances the cursor.
+        <return type = "anything" />
+    </method>
+
+    <method name = "last">
+        Return the item at the tail of list. If the list is empty, returns NULL.
+        Leaves cursor pointing at the tail item, or NULL if the list is empty.
+        <return type = "anything" />
+    </method>
+
+    <method name = "head">
+        Return first item in the list, or null, leaves the cursor
+        <return type = "anything" />
+    </method>
+
+    <method name = "tail">
+        Return last item in the list, or null, leaves the cursor
+        <return type = "anything" />
+    </method>
+
+    <method name = "item">
+        Return the current item of list. If the list is empty, returns NULL.
+        Leaves cursor pointing at the current item, or NULL if the list is empty.
+        <return type = "anything" />
+    </method>
+
+    <method name = "append">
+        Append an item to the end of the list, return 0 if OK or -1 if this
+        failed for some reason (out of memory). Note that if a duplicator has
+        been set, this method will also duplicate the item.
+        <argument name = "item" type = "anything" />
+        <return type = "integer" />
+    </method>
+
+    <method name = "push">
+        Push an item to the start of the list, return 0 if OK or -1 if this
+        failed for some reason (out of memory). Note that if a duplicator has
+        been set, this method will also duplicate the item.
+        <argument name = "item" type = "anything" />
+        <return type = "integer" />
+    </method>
+
+    <method name = "pop">
+        Pop the item off the start of the list, if any
+        <return type = "anything" />
+    </method>
+
+    <method name = "exists">
+        Checks if an item already is present. Uses compare method to determine if
+        items are equal. If the compare method is NULL the check will only compare
+        pointers. Returns true if item is present else false.
+        <argument name = "item" type = "anything" />
+        <return type = "boolean" />
+    </method>
+
+    <method name = "remove">
+        Remove the specified item from the list if present
+        <argument name = "item" type = "anything" />
+    </method>
+
+    <method name = "dup">
+        Make a copy of list. If the list has autofree set, the copied list will
+        duplicate all items, which must be strings. Otherwise, the list will hold
+        pointers back to the items in the original list. If list is null, returns
+        NULL.
+        <return type = "zlist" fresh = "1" />
+    </method>
+
+    <method name = "purge">
+        Purge all items from list
+    </method>
+
+    <method name = "size">
+        Return number of items in the list
+        <return type = "size" />
+    </method>
+
+    <method name = "sort">
+        Sort the list. If the compare function is null, sorts the list by
+        ascending key value using a straight ASCII comparison. If you specify
+        a compare function, this decides how items are sorted. The sort is not
+        stable, so may reorder items with the same keys. The algorithm used is
+        combsort, a compromise between performance and simplicity.
+        <argument name = "compare" type = "zlist_compare_fn" callback = "1" />
+    </method>
+
+    <method name = "autofree">
+        Set list for automatic item destruction; item values MUST be strings.
+        By default a list item refers to a value held elsewhere. When you set
+        this, each time you append or push a list item, zlist will take a copy
+        of the string value. Then, when you destroy the list, it will free all
+        item values automatically. If you use any other technique to allocate
+        list values, you must free them explicitly before destroying the list.
+        The usual technique is to pop list items and destroy them, until the
+        list is empty.
+    </method>
+
+    <method name = "comparefn">
+        Sets a compare function for this list. The function compares two items.
+        It returns an integer less than, equal to, or greater than zero if the
+        first item is found, respectively, to be less than, to match, or be
+        greater than the second item.
+        This function is used for sorting, removal and exists checking.
+        <argument name = "fn" type = "zlist_compare_fn" callback = "1" />
+    </method>
+
+    <method name = "freefn">
+        Set a free function for the specified list item. When the item is
+        destroyed, the free function, if any, is called on that item.
+        Use this when list items are dynamically allocated, to ensure that
+        you don't have memory leaks. You can pass 'free' or NULL as a free_fn.
+        Returns the item, or NULL if there is no such item.
+        <argument name = "item" type = "anything" />
+        <argument name = "fn" type = "zlist_free_fn" callback = "1" />
+        <argument name = "at tail" type = "boolean" />
+        <return type = "anything" />
+    </method>
+</class>
