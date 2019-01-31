@@ -441,8 +441,8 @@ class CarInterface(object):
     if self.CS.CP.carFingerprint in (CAR.ACCORDH):
       ret.brakeLights = bool(self.CS.brake_switch or self.CS.braking1!=0)
     else:
-    brakelights_threshold = 0.02 if self.CS.CP.carFingerprint == CAR.CIVIC else 0.1
-    ret.brakeLights = bool(self.CS.brake_switch or
+      brakelights_threshold = 0.02 if self.CS.CP.carFingerprint == CAR.CIVIC else 0.1
+      ret.brakeLights = bool(self.CS.brake_switch or
                            c.actuators.brake > brakelights_threshold)
 
     # steering wheel
