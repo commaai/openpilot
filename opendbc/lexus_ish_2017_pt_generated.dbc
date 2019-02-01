@@ -103,7 +103,7 @@ BO_ 951 ESP_CONTROL: 8 ESP
  SG_ BRAKE_LIGHTS_ACC : 18|1@0+ (1,0) [0|1] "" XXX
 
 BO_ 1041 ACC_HUD: 8 DSU
- SG_ FCW : 4|1@0+ (1,0) [0|1] "" XXX
+ SG_ FCW : 5|2@0+ (1,0) [0|0] "" FCM
  SG_ SET_ME_X20 : 15|8@0+ (1,0) [0|1] "" XXX
  SG_ SET_ME_X10 : 39|8@0+ (1,0) [0|1] "" XXX
  SG_ SET_ME_X80 : 55|8@0+ (1,0) [0|1] "" XXX
@@ -184,8 +184,18 @@ BO_ 1009 PCM_CRUISE_2: 8 XXX
  SG_ CRUISE_STATE : 10|1@0+ (1,0) [0|1] "" XXX
  SG_ SET_SPEED : 23|8@0+ (1,0) [0|255] "kph" XXX
 
+BO_ 869 DS11D70: 7 DS1
+ SG_ D_RESSW : 3|1@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ D_SETSW : 2|1@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ D_CANSW : 1|1@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ D_MAINSW : 0|1@0+ (1,0) [0|0] "" Vector__XXX
+
 CM_ SG_ 581 GAS_PEDAL "it seems slightly filtered";
 CM_ SG_ 610 TYPE "seems 1 on Corolla, 0 on all others";
 VAL_ 610 IPAS_STATE 5 "override" 3 "enabled" 1 "disabled";
 VAL_ 610 LKA_STATE 25 "temporary_fault" 9 "temporary_fault2" 5 "active" 1 "standby";
 VAL_ 956 GEAR 0 "D" 1 "S" 8 "N" 16 "R" 32 "P";
+CM_ SG_ 869 D_MAINSW "ACC Switch";
+CM_ SG_ 869 D_CANSW "ACC Cancel toggle";
+CM_ SG_ 869 D_SETSW "ACC SET/- toggle";
+CM_ SG_ 869 D_RESSW "ACC RES/+ toggle";
