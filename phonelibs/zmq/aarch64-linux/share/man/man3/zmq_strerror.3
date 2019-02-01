@@ -1,0 +1,67 @@
+'\" t
+.\"     Title: zmq_strerror
+.\"    Author: [see the "AUTHORS" section]
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 02/18/2017
+.\"    Manual: 0MQ Manual
+.\"    Source: 0MQ 4.2.2
+.\"  Language: English
+.\"
+.TH "ZMQ_STRERROR" "3" "02/18/2017" "0MQ 4\&.2\&.2" "0MQ Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+zmq_strerror \- get 0MQ error message string
+.SH "SYNOPSIS"
+.sp
+\fBconst char *zmq_strerror (int \fR\fB\fIerrnum\fR\fR\fB);\fR
+.SH "DESCRIPTION"
+.sp
+The \fIzmq_strerror()\fR function shall return a pointer to an error message string corresponding to the error number specified by the \fIerrnum\fR argument\&. As 0MQ defines additional error numbers over and above those defined by the operating system, applications should use \fIzmq_strerror()\fR in preference to the standard \fIstrerror()\fR function\&.
+.SH "RETURN VALUE"
+.sp
+The \fIzmq_strerror()\fR function shall return a pointer to an error message string\&.
+.SH "ERRORS"
+.sp
+No errors are defined\&.
+.SH "EXAMPLE"
+.PP
+\fBDisplaying an error message when a 0MQ context cannot be initialised\fR. 
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+void *ctx = zmq_init (1, 1, 0);
+if (!ctx) {
+    printf ("Error occurred during zmq_init(): %s\en", zmq_strerror (errno));
+    abort ();
+}
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "SEE ALSO"
+.sp
+\fBzmq\fR(7)
+.SH "AUTHORS"
+.sp
+This page was written by the 0MQ community\&. To make a change please read the 0MQ Contribution Policy at \m[blue]\fBhttp://www\&.zeromq\&.org/docs:contributing\fR\m[]\&.

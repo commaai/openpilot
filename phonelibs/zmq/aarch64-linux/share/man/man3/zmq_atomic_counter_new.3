@@ -1,0 +1,73 @@
+'\" t
+.\"     Title: zmq_atomic_counter_new
+.\"    Author: [see the "AUTHORS" section]
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 02/18/2017
+.\"    Manual: 0MQ Manual
+.\"    Source: 0MQ 4.2.2
+.\"  Language: English
+.\"
+.TH "ZMQ_ATOMIC_COUNTER_N" "3" "02/18/2017" "0MQ 4\&.2\&.2" "0MQ Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+zmq_atomic_counter_new \- create a new atomic counter
+.SH "SYNOPSIS"
+.sp
+\fBvoid *zmq_atomic_counter_new (void);\fR
+.SH "DESCRIPTION"
+.sp
+The \fIzmq_atomic_counter_new\fR function creates a new atomic counter\&. You can use this in multithreaded applications to do, for example, reference counting of shared objects\&. The atomic counter is at least 32 bits large\&. This function uses platform specific atomic operations\&.
+.SH "RETURN VALUE"
+.sp
+The \fIzmq_atomic_counter_new()\fR function returns the new atomic counter if successful\&. Otherwise it returns NULL\&.
+.SH "EXAMPLE"
+.PP
+\fBTest code for atomic counters\fR. 
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+void *counter = zmq_atomic_counter_new ();
+assert (zmq_atomic_counter_value (counter) == 0);
+assert (zmq_atomic_counter_inc (counter) == 0);
+assert (zmq_atomic_counter_inc (counter) == 1);
+assert (zmq_atomic_counter_inc (counter) == 2);
+assert (zmq_atomic_counter_value (counter) == 3);
+assert (zmq_atomic_counter_dec (counter) == 1);
+assert (zmq_atomic_counter_dec (counter) == 1);
+assert (zmq_atomic_counter_dec (counter) == 0);
+zmq_atomic_counter_set (counter, 2);
+assert (zmq_atomic_counter_dec (counter) == 1);
+assert (zmq_atomic_counter_dec (counter) == 0);
+zmq_atomic_counter_destroy (&counter);
+return 0;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "SEE ALSO"
+.sp
+\fBzmq_atomic_counter_set\fR(3) \fBzmq_atomic_counter_inc\fR(3) \fBzmq_atomic_counter_dec\fR(3) \fBzmq_atomic_counter_value\fR(3) \fBzmq_atomic_counter_destroy\fR(3)
+.SH "AUTHORS"
+.sp
+This page was written by the 0MQ community\&. To make a change please read the 0MQ Contribution Policy at \m[blue]\fBhttp://www\&.zeromq\&.org/docs:contributing\fR\m[]\&.

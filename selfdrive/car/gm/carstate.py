@@ -54,6 +54,7 @@ def get_powertrain_can_parser(CP, canbus):
 
 class CarState(object):
   def __init__(self, CP, canbus):
+    self.CP = CP
     # initialize can parser
     self.alcaLabels = ["MadMax","Normal","Wifey"]
     self.alcaMode = 2

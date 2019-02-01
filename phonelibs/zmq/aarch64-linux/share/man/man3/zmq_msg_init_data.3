@@ -1,0 +1,146 @@
+'\" t
+.\"     Title: zmq_msg_init_data
+.\"    Author: [see the "AUTHORS" section]
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 02/18/2017
+.\"    Manual: 0MQ Manual
+.\"    Source: 0MQ 4.2.2
+.\"  Language: English
+.\"
+.TH "ZMQ_MSG_INIT_DATA" "3" "02/18/2017" "0MQ 4\&.2\&.2" "0MQ Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+zmq_msg_init_data \- initialise 0MQ message from a supplied buffer
+.SH "SYNOPSIS"
+.sp
+\fBtypedef void (zmq_free_fn) (void \fR\fB\fI*data\fR\fR\fB, void \fR\fB\fI*hint\fR\fR\fB);\fR
+.sp
+\fBint zmq_msg_init_data (zmq_msg_t \fR\fB\fI*msg\fR\fR\fB, void \fR\fB\fI*data\fR\fR\fB, size_t \fR\fB\fIsize\fR\fR\fB, zmq_free_fn \fR\fB\fI*ffn\fR\fR\fB, void \fR\fB\fI*hint\fR\fR\fB);\fR
+.SH "DESCRIPTION"
+.sp
+The \fIzmq_msg_init_data()\fR function shall initialise the message object referenced by \fImsg\fR to represent the content referenced by the buffer located at address \fIdata\fR, \fIsize\fR bytes long\&. No copy of \fIdata\fR shall be performed and 0MQ shall take ownership of the supplied buffer\&.
+.sp
+If provided, the deallocation function \fIffn\fR shall be called once the data buffer is no longer required by 0MQ, with the \fIdata\fR and \fIhint\fR arguments supplied to \fIzmq_msg_init_data()\fR\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBCaution\fR
+.ps -1
+.br
+.sp
+Never access \fIzmq_msg_t\fR members directly, instead always use the \fIzmq_msg\fR family of functions\&.
+.sp .5v
+.RE
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBCaution\fR
+.ps -1
+.br
+.sp
+The deallocation function \fIffn\fR needs to be thread\-safe, since it will be called from an arbitrary thread\&.
+.sp .5v
+.RE
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBCaution\fR
+.ps -1
+.br
+.sp
+If the deallocation function is not provided, the allocated memory will not be freed, and this may cause a memory leak\&.
+.sp .5v
+.RE
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBCaution\fR
+.ps -1
+.br
+.sp
+The functions \fIzmq_msg_init()\fR, \fIzmq_msg_init_data()\fR and \fIzmq_msg_init_size()\fR are mutually exclusive\&. Never initialise the same \fIzmq_msg_t\fR twice\&.
+.sp .5v
+.RE
+.SH "RETURN VALUE"
+.sp
+The \fIzmq_msg_init_data()\fR function shall return zero if successful\&. Otherwise it shall return \-1 and set \fIerrno\fR to one of the values defined below\&.
+.SH "ERRORS"
+.PP
+\fBENOMEM\fR
+.RS 4
+Insufficient storage space is available\&.
+.RE
+.SH "EXAMPLE"
+.PP
+\fBInitialising a message from a supplied buffer\fR. 
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+void my_free (void *data, void *hint)
+{
+    free (data);
+}
+
+    /*  \&.\&.\&.  */
+
+void *data = malloc (6);
+assert (data);
+memcpy (data, "ABCDEF", 6);
+zmq_msg_t msg;
+rc = zmq_msg_init_data (&msg, data, 6, my_free, NULL);
+assert (rc == 0);
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "SEE ALSO"
+.sp
+\fBzmq_msg_init_size\fR(3) \fBzmq_msg_init\fR(3) \fBzmq_msg_close\fR(3) \fBzmq_msg_data\fR(3) \fBzmq_msg_size\fR(3) \fBzmq\fR(7)
+.SH "AUTHORS"
+.sp
+This page was written by the 0MQ community\&. To make a change please read the 0MQ Contribution Policy at \m[blue]\fBhttp://www\&.zeromq\&.org/docs:contributing\fR\m[]\&.
