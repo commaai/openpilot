@@ -1739,48 +1739,6 @@ static void ui_draw_vision_speed(UIState *s) {
   }
 }
 
-/*
-static void ui_draw_vision_wheel(UIState *s) {
-  const UIScene *scene = &s->scene;
-  const int ui_viz_rx = scene->ui_viz_rx;
-  const int ui_viz_rw = scene->ui_viz_rw;
-  const int viz_event_w = 220;
-  const int viz_event_x = ((ui_viz_rx + ui_viz_rw) - (viz_event_w + (2*bdr_is)));
-  const int viz_event_y = (box_y + (bdr_is*1.5));
-  const int viz_event_h = (header_h - (bdr_is*1.5));
-  // draw steering wheel
-  const int bg_wheel_size = 96;
-  const int bg_wheel_x = viz_event_x + (viz_event_w-bg_wheel_size);
-  const int bg_wheel_y = viz_event_y + (bg_wheel_size/2);
-  const int img_wheel_size = bg_wheel_size*1.5;
-  const int img_wheel_x = bg_wheel_x-(img_wheel_size/2);
-  const int img_wheel_y = bg_wheel_y-25;
-  float img_wheel_alpha = 0.1f;
-  bool is_engaged = (s->status == STATUS_ENGAGED) && !scene->steerOverride;
-  bool is_warning = (s->status == STATUS_WARNING);
-  bool is_engageable = scene->engageable;
-  if (is_engaged || is_warning || is_engageable) {
-    nvgBeginPath(s->vg);
-    nvgCircle(s->vg, bg_wheel_x, (bg_wheel_y + (bdr_is*1.5)), bg_wheel_size);
-    if (is_engaged) {
-      nvgFillColor(s->vg, nvgRGBA(23, 134, 68, 255));
-    } else if (is_warning) {
-      nvgFillColor(s->vg, nvgRGBA(218, 111, 37, 255));
-    } else if (is_engageable) {
-      nvgFillColor(s->vg, nvgRGBA(23, 51, 73, 255));
-    }
-    nvgFill(s->vg);
-    img_wheel_alpha = 1.0f;
-  }
-  nvgBeginPath(s->vg);
-  NVGpaint imgPaint = nvgImagePattern(s->vg, img_wheel_x, img_wheel_y,
-    img_wheel_size, img_wheel_size, 0, s->img_wheel, img_wheel_alpha);
-  nvgRect(s->vg, img_wheel_x, img_wheel_y, img_wheel_size, img_wheel_size);
-  nvgFillPaint(s->vg, imgPaint);
-  nvgFill(s->vg);
-}
-*/
-
 static void ui_draw_vision_event(UIState *s) {
   const UIScene *scene = &s->scene;
   const int ui_viz_rx = scene->ui_viz_rx;
@@ -1810,12 +1768,12 @@ static void ui_draw_vision_event(UIState *s) {
     const int img_wheel_x = bg_wheel_x-(img_wheel_size/2);
     const int img_wheel_y = bg_wheel_y-25;
     float img_wheel_alpha = 0.1f;
-    bool is_engaged = (s->status == STATUS_ENGAGED);
+    bool is_engaged = (s->status == STATUS_ENGAGED) && !scene->steerOverride;
     bool is_warning = (s->status == STATUS_WARNING);
     bool is_engageable = scene->engageable;
     if (is_engaged || is_warning || is_engageable) {
       nvgBeginPath(s->vg);
-      nvgCircle(s->vg, bg_wheel_x, (bg_wheel_y + (bdr_s*1.5)), bg_wheel_size);
+      nvgCircle(s->vg, bg_wheel_x, (bg_wheel_y + (bdr_is*1.5)), bg_wheel_size);
       if (is_engaged) {
         nvgFillColor(s->vg, nvgRGBA(23, 134, 68, 255));
       } else if (is_warning) {
@@ -1838,7 +1796,7 @@ static void ui_draw_vision_event(UIState *s) {
 static void ui_draw_vision_map(UIState *s) {
   const UIScene *scene = &s->scene;
   const int map_size = 96;
-  const int map_x = (scene->ui_viz_rx + (map_size * 3) + (bdr_s * 3));
+  const int map_x = (scene->ui_viz_rx + (map_size * 3) + (bdr_is * 3));
   const int map_y = (footer_y + ((footer_h - map_size) / 2));
   const int map_img_size = (map_size * 1.5);
   const int map_img_x = (map_x - (map_img_size / 2));
@@ -1852,7 +1810,7 @@ static void ui_draw_vision_map(UIState *s) {
     map_img_size, map_img_size, 0, s->img_map, map_img_alpha);
 
   nvgBeginPath(s->vg);
-  nvgCircle(s->vg, map_x, (map_y + (bdr_s * 1.5)), map_size);
+  nvgCircle(s->vg, map_x, (map_y + (bdr_is * 1.5)), map_size);
   nvgFillColor(s->vg, map_bg);
   nvgFill(s->vg);
 
