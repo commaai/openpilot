@@ -577,7 +577,7 @@ struct Plan {
   # maps
   vCurvature @21 :Float32;
   decelForTurn @22 :Bool;
-  mapValid @25 :Bool;
+  mapValid @27 :Bool;
 
   struct GpsTrajectory {
     x @0 :List(Float32);
