@@ -3,22 +3,20 @@ import os
 import zmq
 import cv2
 import copy
-import math
 import json
 import numpy as np
 import selfdrive.messaging as messaging
+from selfdrive.locationd.calibration_helpers import Calibration, Filter
 from selfdrive.swaglog import cloudlog
 from selfdrive.services import service_list
 from common.params import Params
 from common.ffi_wrapper import ffi_wrap
 import common.transformations.orientation as orient
-from common.transformations.model import model_height, get_camera_frame_from_model_frame
+from common.transformations.model import model_height, get_camera_frame_from_model_frame, get_camera_frame_from_bigmodel_frame
 from common.transformations.camera import view_frame_from_device_frame, get_view_frame_from_road_frame, \
                                           eon_intrinsics, get_calib_from_vp, normalize, denormalize, H, W
 
 
-MIN_SPEED_FILTER = 7 # m/s  (~15.5mph)
-MAX_YAW_RATE_FILTER = math.radians(3) # per second
 FRAMES_NEEDED = 120  # allow to update VP every so many frames
 VP_CYCLES_NEEDED = 2
 CALIBRATION_CYCLES_NEEDED = FRAMES_NEEDED * VP_CYCLES_NEEDED
@@ -30,6 +28,7 @@ EXTERNAL_PATH = os.path.dirname(os.path.abspath(__file__))
 VP_VALIDITY_CORNERS = np.array([[-150., -200.], [150., 200.]])  + VP_INIT
 GRID_WEIGHT_INIT = 2e6
 MAX_LINES = 500    # max lines to avoid over computation
+HOOD_HEIGHT = H*3/4 # the part of image usually free from the car's hood
 
 DEBUG = os.getenv("DEBUG") is not None
 
@@ -39,12 +38,6 @@ c_code = "#define H %d\n" % H
 c_code += "#define W %d\n" % W
 c_code += "\n" + open(os.path.join(EXTERNAL_PATH, "get_vp.c")).read()
 ffi, lib = ffi_wrap('get_vp', c_code, c_header)
-
-
-class Calibration:
-  UNCALIBRATED = 0
-  CALIBRATED = 1
-  INVALID = 2
 
 
 def increment_grid_c(grid, lines, n):
@@ -72,8 +65,15 @@ def gaussian_kernel(sizex, sizey, stdx, stdy, dx, dy):
   g = np.exp(-((x - dx)**2 / (2. * stdx**2) + (y - dy)**2 / (2. * stdy**2)))
   return g / g.sum()
 
-def blur_image(img, kernel):
-  return cv2.filter2D(img.astype(np.uint16), -1, kernel)
+def gaussian_kernel_1d(kernel):
+  #creates separable gaussian filter
+  u,s,v = np.linalg.svd(kernel)
+  x = u[:,0]*np.sqrt(s[0])
+  y = np.sqrt(s[0])*v[0,:]
+  return x, y
+
+def blur_image(img, kernel_x, kernel_y):
+  return cv2.sepFilter2D(img.astype(np.uint16), -1, kernel_x, kernel_y)
 
 def is_calibration_valid(vp):
   return vp[0] > VP_VALIDITY_CORNERS[0,0] and vp[0] < VP_VALIDITY_CORNERS[1,0] and \
@@ -89,6 +89,7 @@ class Calibrator(object):
     self.l100_last_updated = 0
     self.prev_orbs = None
     self.kernel = gaussian_kernel(11, 11, 2.35, 2.35, 0, 0)
+    self.kernel_x, self.kernel_y = gaussian_kernel_1d(self.kernel)
 
     self.vp = copy.copy(VP_INIT)
     self.cal_status = Calibration.UNCALIBRATED
@@ -122,12 +123,17 @@ class Calibrator(object):
 
   def update(self, uvs, yaw_rate, speed):
     if len(uvs) < 10 or \
-       abs(yaw_rate) > MAX_YAW_RATE_FILTER or \
-       speed < MIN_SPEED_FILTER:
+       abs(yaw_rate) > Filter.MAX_YAW_RATE or \
+       speed < Filter.MIN_SPEED:
       return
     rot_speeds = np.array([0.,0.,-yaw_rate])
     uvs[:,1,:] = denormalize(correct_pts(normalize(uvs[:,1,:]), rot_speeds, self.dt))
-    good_tracks = np.linalg.norm(uvs[:,1,:] - uvs[:,0,:], axis=1) > 10
+    # exclude tracks where:
+    # - pixel movement was less than 10 pixels
+    # - tracks are in the "hood region"
+    good_tracks = np.all([np.linalg.norm(uvs[:,1,:] - uvs[:,0,:], axis=1) > 10,
+                  uvs[:,0,1] < HOOD_HEIGHT,
+                  uvs[:,1,1] < HOOD_HEIGHT], axis = 0)
     uvs = uvs[good_tracks]
     if uvs.shape[0] > MAX_LINES:
       uvs = uvs[np.random.choice(uvs.shape[0], MAX_LINES, replace=False), :]
@@ -136,7 +142,7 @@ class Calibrator(object):
     increment_grid_c(self.grid, lines, len(lines))
     self.frame_counter += 1
     if (self.frame_counter % FRAMES_NEEDED) == 0:
-      grid = blur_image(self.grid, self.kernel)
+      grid = blur_image(self.grid, self.kernel_x, self.kernel_y)
       argmax_vp = np.unravel_index(np.argmax(grid), grid.shape)[::-1]
       self.rescale_grid()
       self.vp_unfilt = np.array(argmax_vp)
@@ -189,7 +195,7 @@ class Calibrator(object):
     self.yaw_rate = log.live100.curvature * self.speed
 
   def handle_debug(self):
-    grid_blurred = blur_image(self.grid, self.kernel)
+    grid_blurred = blur_image(self.grid, self.kernel_x, self.kernel_y)
     grid_grey = np.clip(grid_blurred/(0.1 + np.max(grid_blurred))*255, 0, 255)
     grid_color = np.repeat(grid_grey[:,:,np.newaxis], 3, axis=2)
     grid_color[:,:,0] = 0
@@ -202,13 +208,15 @@ class Calibrator(object):
     calib = get_calib_from_vp(self.vp)
     extrinsic_matrix = get_view_frame_from_road_frame(0, calib[1], calib[2], model_height)
     ke = eon_intrinsics.dot(extrinsic_matrix)
-    warp_matrix = get_camera_frame_from_model_frame(ke, model_height)
+    warp_matrix = get_camera_frame_from_model_frame(ke)
+    warp_matrix_big = get_camera_frame_from_bigmodel_frame(ke)
 
     cal_send = messaging.new_message()
     cal_send.init('liveCalibration')
     cal_send.liveCalibration.calStatus = self.cal_status
     cal_send.liveCalibration.calPerc = min(self.frame_counter * 100 / CALIBRATION_CYCLES_NEEDED, 100)
     cal_send.liveCalibration.warpMatrix2 = map(float, warp_matrix.flatten())
+    cal_send.liveCalibration.warpMatrixBig = map(float, warp_matrix_big.flatten())
     cal_send.liveCalibration.extrinsicMatrix = map(float, extrinsic_matrix.flatten())
 
     livecalibration.send(cal_send.to_bytes())

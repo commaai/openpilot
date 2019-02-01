@@ -71,6 +71,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     belowSteerSpeed @46;
     calibrationProgress @47;
     lowBattery @48;
+    invalidGiraffeHonda @49;
   }
 }
 
@@ -243,6 +244,8 @@ struct CarControl {
     leadVisible @3: Bool;
     visualAlert @4: VisualAlert;
     audibleAlert @5: AudibleAlert;
+    rightLaneVisible @6: Bool;
+    leftLaneVisible @7: Bool;
 
     enum VisualAlert {
       # these are the choices from the Honda
@@ -260,13 +263,13 @@ struct CarControl {
       # these are the choices from the Honda
       # map as good as you can for your car
       none @0;
-      beepSingle @1;
-      beepTriple @2;
-      beepRepeated @3;
-      chimeSingle @4;
-      chimeDouble @5;
-      chimeRepeated @6;
-      chimeContinuous @7;
+      chimeEngage @1;
+      chimeDisengage @2;
+      chimeError @3;
+      chimeWarning1 @4;
+      chimeWarning2 @5;
+      chimeWarningRepeat @6;
+      chimePrompt @7;
     }
   }
 }
@@ -354,6 +357,7 @@ struct CarParams {
   radarOffCan @47 :Bool; # True when radar objects aren't visible on CAN
 
   steerActuatorDelay @48 :Float32; # Steering wheel actuator delay in seconds
+  openpilotLongitudinalControl @50 :Bool; # is openpilot doing the longitudinal control?
 
   enum SteerControlType {
     torque @0;
