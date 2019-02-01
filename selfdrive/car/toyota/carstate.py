@@ -129,7 +129,7 @@ class CarState(object):
     self.Angles_later = np.zeros(250)
     self.Angle_counter = 0
     self.Angle = [0, 5, 10, 15,20,25,30,35,60,100,180,270,500]
-    self.Angle_Speed = [255,160,100,80,70,60,55,50,40,33,27,17,12]
+    self.Angle_Speed = [255,160,100,80,70,60,55,50,40,33,27,17,12] * 1.2
     #labels for ALCA modes
     self.alcaLabels = ["MadMax","Normal","Wifey"]
     self.alcaMode = 1
