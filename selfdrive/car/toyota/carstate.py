@@ -129,7 +129,7 @@ class CarState(object):
     self.Angles_later = np.zeros(250)
     self.Angle_counter = 0
     self.Angle = [0, 5, 10, 15,20,25,30,35,60,100,180,270,500]
-    self.Angle_Speed = [255,160,100,80,70,60,55,50,40,33,27,17,12] * 1.2
+    self.Angle_Speed = [255,160,100,80,70,60,55,50,40,33,27,17,12]
     #labels for ALCA modes
     self.alcaLabels = ["MadMax","Normal","Wifey"]
     self.alcaMode = 1
@@ -381,8 +381,8 @@ class CarState(object):
       self.Angles[self.Angle_counter] = abs(self.angle_steers)
       self.Angles_later[self.Angle_counter] = abs(angle_later)
       self.Angle_counter = (self.Angle_counter + 1 ) % 250
-      self.v_cruise_pcm = int(min(self.v_cruise_pcm, interp(np.max(self.Angles), self.Angle, self.Angle_Speed)))
-      self.v_cruise_pcm = int(min(self.v_cruise_pcm, interp(np.max(self.Angles_later), self.Angle, self.Angle_Speed)))
+      self.v_cruise_pcm = int(min(self.v_cruise_pcm, 1.2 * interp(np.max(self.Angles), self.Angle, self.Angle_Speed)))
+      self.v_cruise_pcm = int(min(self.v_cruise_pcm, 1.2 * interp(np.max(self.Angles_later), self.Angle, self.Angle_Speed)))
     else:
       self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED']
 
