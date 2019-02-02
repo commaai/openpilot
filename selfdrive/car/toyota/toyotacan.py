@@ -64,12 +64,12 @@ def create_steer_command(packer, steer, steer_req, raw_cnt):
   return packer.make_can_msg("STEERING_LKA", 0, values)
 
 
-def create_accel_command(packer, accel, pcm_cancel, standstill_req, lead):
+def create_accel_command(packer, accel, pcm_cancel, standstill_req, lead, distance):
   # TODO: find the exact canceling bit that does not create a chime
   values = {
     "ACCEL_CMD": accel,
     "SET_ME_X01": 1,
-    "DISTANCE": 0,
+    "DISTANCE": distance,
     "MINI_CAR": lead,
     "SET_ME_X3": 3,
     "SET_ME_1": 1,
