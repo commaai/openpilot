@@ -180,10 +180,10 @@ class CarController(object):
       self.ALCA.update_status(CS.cstm_btns.get_button_status("alca") > 0)
     # steer torque
     alca_angle, alca_steer, alca_enabled, turn_signal_needed = self.ALCA.update(enabled, CS, frame, actuators)
-    apply_steer = int(round(alca_steer * STEER_MAX))
+    #apply_steer = int(round(alca_steer * STEER_MAX))
 
     # steer torque
-    #apply_steer = int(round(actuators.steer * SteerLimitParams.STEER_MAX))
+    apply_steer = int(round(alca_steer * SteerLimitParams.STEER_MAX))
 
     apply_steer = apply_toyota_steer_torque_limits(apply_steer, self.last_steer, CS.steer_torque_motor, SteerLimitParams)
 
