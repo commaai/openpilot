@@ -225,8 +225,8 @@ class CarState(object):
     self.custom_alert_counter = -1 #set to 100 for 1 second display; carcontroller will take down to zero
     
     #BB visiond last type
-    self.last_visiond = self.cstm_btns.btns[2].btn_label2
-    
+    self.last_visiond = self.cstm_btns.btns[2].btn_label2
+    
     # vEgo kalman filter
     dt = 0.01
     # Q = np.matrix([[10.0, 0.0], [0.0, 100.0]])
