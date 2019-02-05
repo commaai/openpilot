@@ -238,7 +238,7 @@ class CarState(object):
   def update_ui_buttons(self,id,btn_status):
     if self.cstm_btns.btns[id].btn_status > 0:
       if (id == 0) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="vision":
-          if self.cstm_btns.btns[id].btn_label2 == self.alcaLabels[self.visionMode]:
+          if self.cstm_btns.btns[id].btn_label2 == self.visionLabels[self.visionMode]:
             self.visionMode = (self.visionMode + 1 ) % 2
           else:
             self.visionMode = 0
