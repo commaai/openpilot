@@ -232,8 +232,8 @@ class CarState(object):
   #BB update ui buttons
   def update_ui_buttons(self,id,btn_status):
     # we only focus on id=0, which is for visiond
-    if (id == 0) and (self.cstm_btns.btns[id].btn_status > 0) and (self.last_visiond != self.cstm_btns.btns[id].btn_label2):
-      self.last_visiond = self.cstm_btns.btns[id].btn_label2
+    if (id == 0) and (self.cstm_btns.btns[id].btn_status > 0) and (self.last_visiond != self.cstm_btns.btns[id].btn_label2):
+      self.last_visiond = self.cstm_btns.btns[id].btn_label2
       # we switched between wiggly and normal
       args = ["/data/openpilot/selfdrive/car/modules/ch_visiond.sh", self.cstm_btns.btns[id].btn_label2]
       subprocess.Popen(args, shell = False, stdin=None, stdout=None, stderr=None, env = dict(os.environ), close_fds=True)
