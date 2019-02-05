@@ -292,8 +292,8 @@ class CarState(object):
     self.v_wheel = float(np.mean([self.v_wheel_fl, self.v_wheel_fr, self.v_wheel_rl, self.v_wheel_rr]))
     
     #BB visiond last type
-    self.last_visiond = self.cstm_btns.btns[0].btn_label2
-
+    self.last_visiond = self.cstm_btns.btns[0].btn_label2
+    
     # Kalman filter
     if abs(self.v_wheel - self.v_ego) > 2.0:  # Prevent large accelerations when car starts at non zero speed
       self.v_ego_x = np.matrix([[self.v_wheel], [0.0]])
