@@ -185,10 +185,80 @@ BO_ 1009 PCM_CRUISE_2: 8 XXX
  SG_ SET_SPEED : 23|8@0+ (1,0) [0|255] "kph" XXX
 
 BO_ 869 DS11D70: 7 DS1
+ SG_ D_TRGJDG : 7|4@0+ (1,0) [0|0] "" Vector__XXX
  SG_ D_RESSW : 3|1@0+ (1,0) [0|0] "" Vector__XXX
  SG_ D_SETSW : 2|1@0+ (1,0) [0|0] "" Vector__XXX
  SG_ D_CANSW : 1|1@0+ (1,0) [0|0] "" Vector__XXX
  SG_ D_MAINSW : 0|1@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ D_VMCC : 15|8@0+ (1,0) [0|0] "km/h" Vector__XXX
+ SG_ D_VNCC : 23|8@0+ (1,0) [0|0] "km/h" Vector__XXX
+ SG_ D_CCREQ : 31|8@0+ (100,-12800) [0|0] "N" Vector__XXX
+ SG_ D_TGTDST : 39|8@0+ (1,0) [0|0] "m" Vector__XXX
+ SG_ D_VRCC : 47|8@0- (1,0) [0|0] "km/h" Vector__XXX
+ SG_ D_WSTL : 55|1@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ D_DSW : 54|1@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ D_FDJDG : 52|1@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ D_DSSJDG : 51|1@0+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 870 DS11D71: 7 DS1
+ SG_ XREQALM : 7|1@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ XREQABK : 6|1@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ TGT_DIST : 5|14@0+ (0.01,0) [0|0] "m" Vector__XXX
+ SG_ XREQPBA : 23|1@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ XREQFPB : 22|1@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ XREQPB : 21|1@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ XREQEXT : 20|1@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ XREQPSB : 19|1@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ TGT_VGAP : 18|11@0+ (0.025,-51.175) [0|0] "m/s" Vector__XXX
+ SG_ PCSDISP : 39|4@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ XPCSRDY : 35|1@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ TGT_NUMB : 34|3@0+ (1,1) [0|0] "" Vector__XXX
+ SG_ TGT_POSX : 47|8@0- (0.04,0) [0|0] "m" Vector__XXX
+
+BO_ 643 DS11F01: 7 DS1
+ SG_ DSCOUNT : 7|8@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ DSLCCW1 : 15|1@0+ (1,0) [0|0] "" FCM
+ SG_ DSSTPBZ : 14|1@0+ (1,0) [0|0] "" FCM
+ SG_ PBRTRGR2 : 12|1@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ DSSFTRQD : 11|4@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ DSS1FDRV : 23|16@0- (2,0) [0|0] "N" Vector__XXX
+ SG_ DSS1STBK : 39|3@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ DSS1STAT : 36|3@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ DSBHOK : 33|1@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ PPTRGR2 : 32|1@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ DSRQBH : 47|2@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ IBTRGR2 : 45|1@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ PCSABK2 : 44|1@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ PCSNOCHG : 41|1@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ DS1F01SM : 55|8@0+ (1,0) [0|0] "" FCM
+
+BO_ 836 ACC1F01: 8 DS1
+ SG_ DSS1GDRV : 7|10@0- (0.1,0) [0|0] "m/s^2" Vector__XXX
+ SG_ DS1STAT2 : 13|3@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ DS1STBK2 : 10|3@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ PCSWAR : 18|1@0+ (1,0) [0|0] "" FCM
+ SG_ PCSALM : 17|1@0+ (1,0) [0|0] "" FCM
+ SG_ PCSOPR : 16|1@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ PCSABK : 31|1@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ PBATRGR : 30|2@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ PPTRGR : 28|1@0+ (1,0) [0|0] "" FCM
+ SG_ IBTRGR : 27|1@0+ (1,0) [0|0] "" FCM
+ SG_ CLEXTRGR : 26|1@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ IRLT_REQ : 25|2@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ BRKHLD : 37|1@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ AVSTRGR : 36|1@0+ (1,0) [0|0] "" SCS
+ SG_ VGRSTRGR : 35|2@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ PREFILL : 33|1@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ PBRTRGR : 32|1@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ PCSDIS : 43|1@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ PBPREPMP : 40|1@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ ACCF01SM : 63|8@0+ (1,0) [0|0] "" FCM
+
+BO_ 1227 ACC1N01: 8 DS1
+ SG_ ACCNID : 7|8@0+ (1,0) [0|0] "" CGW
+ SG_ ACCSNG : 15|1@0+ (1,0) [0|0] "" CGW
+ SG_ ACCSPF : 23|16@0+ (1,0) [0|0] "" CGW
+ SG_ ACCREV : 39|32@0+ (1,0) [0|0] "" CGW
 
 CM_ SG_ 581 GAS_PEDAL "it seems slightly filtered";
 CM_ SG_ 610 TYPE "seems 1 on Corolla, 0 on all others";
