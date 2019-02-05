@@ -254,7 +254,6 @@ class CarState(object):
     # we only focus on id=2, which is for visiond
     if (id == 2) and (self.cstm_btns.btns[id].btn_status > 0) and (self.last_visiond != self.cstm_btns.btns[id].btn_label2):
       self.last_visiond = self.cstm_btns.btns[id].btn_label2
-      # we switched between wiggly and normal
       args = ["/data/openpilot/selfdrive/car/modules/ch_visiond.sh", self.cstm_btns.btns[id].btn_label2]
       subprocess.Popen(args, shell = False, stdin=None, stdout=None, stderr=None, env = dict(os.environ), close_fds=True)
     if self.cstm_btns.btns[id].btn_status > 0:
