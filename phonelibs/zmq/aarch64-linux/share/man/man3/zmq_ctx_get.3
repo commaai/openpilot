@@ -1,0 +1,106 @@
+'\" t
+.\"     Title: zmq_ctx_get
+.\"    Author: [see the "AUTHORS" section]
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 02/18/2017
+.\"    Manual: 0MQ Manual
+.\"    Source: 0MQ 4.2.2
+.\"  Language: English
+.\"
+.TH "ZMQ_CTX_GET" "3" "02/18/2017" "0MQ 4\&.2\&.2" "0MQ Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+zmq_ctx_get \- get context options
+.SH "SYNOPSIS"
+.sp
+\fBint zmq_ctx_get (void \fR\fB\fI*context\fR\fR\fB, int \fR\fB\fIoption_name\fR\fR\fB);\fR
+.SH "DESCRIPTION"
+.sp
+The \fIzmq_ctx_get()\fR function shall return the option specified by the \fIoption_name\fR argument\&.
+.sp
+The \fIzmq_ctx_get()\fR function accepts the following option names:
+.SS "ZMQ_IO_THREADS: Get number of I/O threads"
+.sp
+The \fIZMQ_IO_THREADS\fR argument returns the size of the 0MQ thread pool for this context\&.
+.SS "ZMQ_MAX_SOCKETS: Get maximum number of sockets"
+.sp
+The \fIZMQ_MAX_SOCKETS\fR argument returns the maximum number of sockets allowed for this context\&.
+.SS "ZMQ_MAX_MSGSZ: Get maximum message size"
+.sp
+The \fIZMQ_MAX_MSGSZ\fR argument returns the maximum size of a message allowed for this context\&. Default value is INT_MAX\&.
+.SS "ZMQ_SOCKET_LIMIT: Get largest configurable number of sockets"
+.sp
+The \fIZMQ_SOCKET_LIMIT\fR argument returns the largest number of sockets that \fBzmq_ctx_set\fR(3) will accept\&.
+.SS "ZMQ_IPV6: Set IPv6 option"
+.sp
+The \fIZMQ_IPV6\fR argument returns the IPv6 option for the context\&.
+.SS "ZMQ_BLOCKY: Get blocky setting"
+.sp
+The \fIZMQ_BLOCKY\fR argument returns 1 if the context will block on terminate, zero if the "block forever on context termination" gambit was disabled by setting ZMQ_BLOCKY to false on all new contexts\&.
+.SS "ZMQ_MSG_T_SIZE: Get the zmq_msg_t size at runtime"
+.sp
+The \fIZMQ_MSG_T_SIZE\fR argument returns the size of the zmq_msg_t structure at runtime, as defined in the include/zmq\&.h public header\&. This is useful for example for FFI bindings that can\(cqt simply do a sizeof()\&. NOTE: in DRAFT state, not yet available in stable releases\&.
+.SH "RETURN VALUE"
+.sp
+The \fIzmq_ctx_get()\fR function returns a value of 0 or greater if successful\&. Otherwise it returns \-1 and sets \fIerrno\fR to one of the values defined below\&.
+.SH "ERRORS"
+.PP
+\fBEINVAL\fR
+.RS 4
+The requested option
+\fIoption_name\fR
+is unknown\&.
+.RE
+.SH "EXAMPLE"
+.PP
+\fBSetting a limit on the number of sockets\fR. 
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+void *context = zmq_ctx_new ();
+zmq_ctx_set (context, ZMQ_MAX_SOCKETS, 256);
+int max_sockets = zmq_ctx_get (context, ZMQ_MAX_SOCKETS);
+assert (max_sockets == 256);
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+\fBSwitching off the context deadlock gambit\fR. 
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+zmq_ctx_set (ctx, ZMQ_BLOCKY, false);
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "SEE ALSO"
+.sp
+\fBzmq_ctx_set\fR(3) \fBzmq\fR(7)
+.SH "AUTHORS"
+.sp
+This page was written by the 0MQ community\&. To make a change please read the 0MQ Contribution Policy at \m[blue]\fBhttp://www\&.zeromq\&.org/docs:contributing\fR\m[]\&.

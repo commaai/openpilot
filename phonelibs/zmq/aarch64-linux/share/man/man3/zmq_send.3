@@ -1,0 +1,158 @@
+'\" t
+.\"     Title: zmq_send
+.\"    Author: [see the "AUTHORS" section]
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 02/18/2017
+.\"    Manual: 0MQ Manual
+.\"    Source: 0MQ 4.2.2
+.\"  Language: English
+.\"
+.TH "ZMQ_SEND" "3" "02/18/2017" "0MQ 4\&.2\&.2" "0MQ Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+zmq_send \- send a message part on a socket
+.SH "SYNOPSIS"
+.sp
+\fBint zmq_send (void \fR\fB\fI*socket\fR\fR\fB, void \fR\fB\fI*buf\fR\fR\fB, size_t \fR\fB\fIlen\fR\fR\fB, int \fR\fB\fIflags\fR\fR\fB);\fR
+.SH "DESCRIPTION"
+.sp
+The \fIzmq_send()\fR function shall queue a message created from the buffer referenced by the \fIbuf\fR and \fIlen\fR arguments\&. The \fIflags\fR argument is a combination of the flags defined below:
+.PP
+\fBZMQ_DONTWAIT\fR
+.RS 4
+For socket types (DEALER, PUSH) that block when there are no available peers (or all peers have full high\-water mark), specifies that the operation should be performed in non\-blocking mode\&. If the message cannot be queued on the
+\fIsocket\fR, the
+\fIzmq_send()\fR
+function shall fail with
+\fIerrno\fR
+set to EAGAIN\&.
+.RE
+.PP
+\fBZMQ_SNDMORE\fR
+.RS 4
+Specifies that the message being sent is a multi\-part message, and that further message parts are to follow\&. Refer to the section regarding multi\-part messages below for a detailed description\&.
+.RE
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+A successful invocation of \fIzmq_send()\fR does not indicate that the message has been transmitted to the network, only that it has been queued on the \fIsocket\fR and 0MQ has assumed responsibility for the message\&.
+.sp .5v
+.RE
+.SS "Multi\-part messages"
+.sp
+A 0MQ message is composed of 1 or more message parts\&. 0MQ ensures atomic delivery of messages: peers shall receive either all \fImessage parts\fR of a message or none at all\&. The total number of message parts is unlimited except by available memory\&.
+.sp
+An application that sends multi\-part messages must use the \fIZMQ_SNDMORE\fR flag when sending each message part except the final one\&.
+.SH "RETURN VALUE"
+.sp
+The \fIzmq_send()\fR function shall return number of bytes in the message if successful\&. Otherwise it shall return \-1 and set \fIerrno\fR to one of the values defined below\&.
+.SH "ERRORS"
+.PP
+\fBEAGAIN\fR
+.RS 4
+Non\-blocking mode was requested and the message cannot be sent at the moment\&.
+.RE
+.PP
+\fBENOTSUP\fR
+.RS 4
+The
+\fIzmq_send()\fR
+operation is not supported by this socket type\&.
+.RE
+.PP
+\fBEINVAL\fR
+.RS 4
+The sender tried to send multipart data, which the socket type does not allow\&.
+.RE
+.PP
+\fBEFSM\fR
+.RS 4
+The
+\fIzmq_send()\fR
+operation cannot be performed on this socket at the moment due to the socket not being in the appropriate state\&. This error may occur with socket types that switch between several states, such as ZMQ_REP\&. See the
+\fImessaging patterns\fR
+section of
+\fBzmq_socket\fR(3)
+for more information\&.
+.RE
+.PP
+\fBETERM\fR
+.RS 4
+The 0MQ
+\fIcontext\fR
+associated with the specified
+\fIsocket\fR
+was terminated\&.
+.RE
+.PP
+\fBENOTSOCK\fR
+.RS 4
+The provided
+\fIsocket\fR
+was invalid\&.
+.RE
+.PP
+\fBEINTR\fR
+.RS 4
+The operation was interrupted by delivery of a signal before the message was sent\&.
+.RE
+.PP
+\fBEHOSTUNREACH\fR
+.RS 4
+The message cannot be routed\&.
+.RE
+.SH "EXAMPLE"
+.PP
+\fBSending a multi-part message\fR. 
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+/* Send a multi\-part message consisting of three parts to socket */
+rc = zmq_send (socket, "ABC", 3, ZMQ_SNDMORE);
+assert (rc == 3);
+rc = zmq_send (socket, "DEFGH", 5, ZMQ_SNDMORE);
+assert (rc == 5);
+/* Final part; no more parts to follow */
+rc = zmq_send (socket, "JK", 2, 0);
+assert (rc == 2);
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "SEE ALSO"
+.sp
+\fBzmq_send_const\fR(3) \fBzmq_recv\fR(3) \fBzmq_socket\fR(7) \fBzmq\fR(7)
+.SH "AUTHORS"
+.sp
+This page was written by the 0MQ community\&. To make a change please read the 0MQ Contribution Policy at \m[blue]\fBhttp://www\&.zeromq\&.org/docs:contributing\fR\m[]\&.
