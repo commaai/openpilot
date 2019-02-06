@@ -55,6 +55,20 @@ def read_config_file(CS):
       CS.enableSpeedVariableDesAngle = True
     config.set('OP_CONFIG', 'enable_speed_variable_angle', CS.enableSpeedVariableDesAngle)
 
+    #enable_roll_angle_correction -> CS.enableRollAngleCorrection
+    try:
+      CS.enableRollAngleCorrection = configr.getboolean('OP_CONFIG','enable_roll_angle_correction')
+    except:
+      CS.enableRollAngleCorrection = False
+    config.set('OP_CONFIG', 'enable_roll_angle_correction', CS.enableRollAngleCorrection)
+
+    #enable_feed_forward_angle_correction -> CS.enableFeedForwardAngleCorrection
+    try:
+      CS.enableFeedForwardAngleCorrection = configr.getboolean('OP_CONFIG','enable_feed_forward_angle_correction')
+    except:
+      CS.enableFeedForwardAngleCorrection = True
+    config.set('OP_CONFIG', 'enable_feed_forward_angle_correction', CS.enableFeedForwardAngleCorrection)
+
     with open(config_path, config_file_w) as configfile:
       config.write(configfile)
     

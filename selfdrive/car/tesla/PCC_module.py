@@ -366,7 +366,7 @@ class PCCController(object):
     if PCCModes.is_selected(FollowMode(), CS.cstm_btns):
       self.v_pid = self.calc_follow_speed_ms(CS)
       if map:
-        v_curve = max_v_in_mapped_curve_ms(map, self.pedal_speed_kph)
+        v_curve = max_v_in_mapped_curve_ms(map.liveMapData, self.pedal_speed_kph)
         if v_curve:
           self.v_pid = min(self.v_pid, v_curve)
       # cruise speed can't be negative even is user is distracted

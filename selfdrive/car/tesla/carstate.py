@@ -173,6 +173,8 @@ class CarState(object):
     self.enableDasEmulation = True
     self.enableRadarEmulation = True
     self.enableSpeedVariableDesAngle = True
+    self.enableRollAngleCorrection = False
+    self.enableFeedForwardAngleCorrection = True
     #read config file
     read_config_file(self)
     ### END OF MAIN CONFIG OPTIONS ###
