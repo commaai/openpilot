@@ -338,13 +338,13 @@ class PCCController(object):
     # and speed more directly.
     # Bring in the lead car distance from the Live20 feed
     l20 = None
-    map = None
+    mapd = None
     if enabled:
       for socket, _ in self.poller.poll(0):
         if socket is self.live20:
           l20 = messaging.recv_one(socket)
         elif socket is self.live_map_data:
-          map = messaging.recv_one(socket)
+          mapd = messaging.recv_one(socket)
     if l20 is not None:
       self.lead_1 = l20.live20.leadOne
       if _is_present(self.lead_1):
@@ -365,8 +365,8 @@ class PCCController(object):
     ####################################################################
     if PCCModes.is_selected(FollowMode(), CS.cstm_btns):
       self.v_pid = self.calc_follow_speed_ms(CS)
-      if map:
-        v_curve = max_v_in_mapped_curve_ms(map.liveMapData, self.pedal_speed_kph)
+      if mapd is not None:
+        v_curve = max_v_in_mapped_curve_ms(mapd.liveMapData, self.pedal_speed_kph)
         if v_curve:
           self.v_pid = min(self.v_pid, v_curve)
       # cruise speed can't be negative even is user is distracted

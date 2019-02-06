@@ -138,7 +138,7 @@ class ALCAController(object):
     #we will read pitch and roll from LiveLocationData
     context = zmq.Context()
     self.poller = zmq.Poller()
-    self.liveLocation = messaging.sub_sock(context, service_list['liveLocation'].port, conflate=True, poller=self.poller)
+    self.liveLocation = messaging.sub_sock(context, service_list['liveLocationTiming'].port, conflate=True, poller=self.poller)
     self.roll_angle = 0.
     self.roll_accuracy = -1.
     self.roll_correction_factor = 0.
@@ -467,7 +467,7 @@ class ALCAController(object):
     for socket, _ in self.poller.poll(0):
         if socket is self.liveLocation:
           ll_data = messaging.recv_one(socket)
-    if ll_data:
+    if ll_data is not None:
       self.roll_angle = ll_data.liveLocation.roll
       self.roll_accuracy = ll_data.liveLocation.accuracy.rollError
       self.pitch_angle = ll_data.liveLocation.pitch
