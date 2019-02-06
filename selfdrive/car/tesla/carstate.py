@@ -51,38 +51,21 @@ def get_can_signals(CP):
       ("MCU_gpsAccuracy", "MCU_locationStatus", 0),
       ("MCU_latitude", "MCU_locationStatus", 0),
       ("MCU_longitude", "MCU_locationStatus", 0),
-      ("DI_vehicleSpeed", "DI_torque2", 0),
-      ("StW_AnglHP", "STW_ANGLHP_STAT", 0),
-      ("EPAS_torsionBarTorque", "EPAS_sysStatus", 0), # Used in interface.py
-      ("EPAS_eacStatus", "EPAS_sysStatus", 0),
-      ("EPAS_handsOnLevel", "EPAS_sysStatus", 0),
-      ("EPAS_steeringFault", "EPAS_sysStatus", 0),
+      #("StW_AnglHP", "STW_ANGLHP_STAT", 0),
       ("DI_gear", "DI_torque2", 3),
+      ("DI_brakePedal", "DI_torque2", 0),
+      ("DI_vehicleSpeed", "DI_torque2", 0),
       ("DOOR_STATE_FL", "GTW_carState", 1),
       ("DOOR_STATE_FR", "GTW_carState", 1),
       ("DOOR_STATE_RL", "GTW_carState", 1),
       ("DOOR_STATE_RR", "GTW_carState", 1),
-      ("YEAR", "GTW_carState", 1), # Added for debug
-      ("MONTH", "GTW_carState", 1), # Added for debug
-      ("DAY", "GTW_carState", 1), # Added for debug
-      ("MINUTE", "GTW_carState", 1), # Added for debug
-      ("HOUR", "GTW_carState", 1), # Added for debug
-      ("SECOND", "GTW_carState", 1), # Added for debug
-      # Added for debug ---below
-      ("DI_torque2Counter", "DI_torque2", 0),
-      ("DI_brakePedalState", "DI_torque2", 0),
-      ("DI_epbParkRequest", "DI_torque2", 0),
-      ("DI_epbInterfaceReady", "DI_torque2", 0),
-      ("DI_torqueEstimate", "DI_torque2", 0),
-      # Added for debug --above
-      ("DI_stateCounter", "DI_state", 0),
-      ("GTW_driverPresent", "GTW_status", 0),
-      ("DI_brakePedal", "DI_torque2", 0),
+      #("DI_stateCounter", "DI_state", 0),
+      #("GTW_driverPresent", "GTW_status", 0),
       ("DI_cruiseSet", "DI_state", 0),
       ("DI_cruiseState", "DI_state", 0),
-      ("TSL_P_Psd_StW","SBW_RQ_SCCM" , 0),
-      ("DI_motorRPM", "DI_torque1", 0),
-      ("DI_pedalPos", "DI_torque1", 0),
+      #("TSL_P_Psd_StW","SBW_RQ_SCCM" , 0),
+      #("DI_motorRPM", "DI_torque1", 0),
+      #("DI_pedalPos", "DI_torque1", 0),
       ("DI_torqueMotor", "DI_torque1",0),
       ("DI_speedUnits", "DI_state", 0),
       # Steering wheel stalk signals (useful for managing cruise control)
@@ -118,47 +101,23 @@ def get_can_signals(CP):
       ("MC_STW_ACTN_RQ", "STW_ACTN_RQ", 0),
       ("CRC_STW_ACTN_RQ", "STW_ACTN_RQ", 0),
       ("DI_regenLight", "DI_state",0),
-      ("GTW_performanceConfig", "GTW_carConfig",0),
-      ("GTW_fourWheelDrive", "GTW_carConfig",0),
-      ("GTW_unknown1", "GTW_carConfig",0),
       ("GTW_dasHw", "GTW_carConfig",0),
-      ("GTW_parkAssistInstalled", "GTW_carConfig",0),
-      ("GTW_forwardRadarHw", "GTW_carConfig",0),
-      ("GTW_airSuspensionInstalled", "GTW_carConfig",0),
-      ("GTW_unknown2", "GTW_carConfig",0),
-      ("GTW_country", "GTW_carConfig",0),
-      ("GTW_parkSensorGeometryType", "GTW_carConfig",0),
-      ("GTW_rhd", "GTW_carConfig",0),
-      ("GTW_bodyControlsType", "GTW_carConfig",0),
-      ("GTW_radarPosition", "GTW_carConfig",0),
-      ("GTW_rearCornerRadarHw", "GTW_carConfig",0),
-      ("GTW_frontCornerRadarHw", "GTW_carConfig",0),
-      ("GTW_epasType", "GTW_carConfig",0),
-      ("GTW_chassisType", "GTW_carConfig",0),
-      ("GTW_wheelType", "GTW_carConfig",0),
-      ("GTW_rearSeatControllerMask", "GTW_carConfig",0),
-      ("GTW_euVehicle", "GTW_carConfig",0),
-      ("GTW_foldingMirrorsInstalled", "GTW_carConfig",0),
-      ("GTW_brakeHwType", "GTW_carConfig",0),
-      ("GTW_autopilot", "GTW_carConfig",0),
-      ("GTW_unknown3", "GTW_carConfig",0),
       ("SDM_bcklDrivStatus", "SDM1", 0),
       
   ]
 
   checks = [
-      ("STW_ANGLHP_STAT",  200), #JCT Actual message freq is 40 Hz (0.025 sec)
+      #("STW_ANGLHP_STAT",  200), #JCT Actual message freq is 40 Hz (0.025 sec)
       ("STW_ACTN_RQ",  17), #JCT Actual message freq is 3.5 Hz (0.285 sec)
-      ("SBW_RQ_SCCM", 175), #JCT Actual message freq is 35 Hz (0.0286 sec)
+      #("SBW_RQ_SCCM", 175), #JCT Actual message freq is 35 Hz (0.0286 sec)
       ("DI_torque1", 59), #JCT Actual message freq is 11.8 Hz (0.084 sec)
       ("DI_torque2", 18), #JCT Actual message freq is 3.7 Hz (0.275 sec)
-      ("MCU_gpsVehicleSpeed", 2), #JCT Actual message freq is 0.487 Hz (2.05 sec)
+      #("MCU_gpsVehicleSpeed", 2), #JCT Actual message freq is 0.487 Hz (2.05 sec)
       ("GTW_carState", 16), #JCT Actual message freq is 3.3 Hz (0.3 sec)
-      ("GTW_status", 2), #JCT Actual message freq is 0.5 Hz (2 sec)
+      #("GTW_status", 2), #JCT Actual message freq is 0.5 Hz (2 sec)
       ("DI_state", 5), #JCT Actual message freq is 1 Hz (1 sec)
-      ("EPAS_sysStatus", 0), #JCT Actual message freq is 1.3 Hz (0.76 sec)
-      ("MCU_locationStatus", 5), #JCT Actual message freq is 1.3 Hz (0.76 sec)
-      #("GTW_carConfig", 5), #BB Actual message freq  is 1 Hz (1 sec)
+      #("MCU_locationStatus", 5), #JCT Actual message freq is 1.3 Hz (0.76 sec)
+      ("GTW_carConfig", 5), #BB Actual message freq  is 1 Hz (1 sec)
   ]
 
   #checks = []
@@ -180,7 +139,7 @@ def get_epas_can_signals(CP):
   ]
 
   checks = [
-      ("EPAS_sysStatus", 5), #JCT Actual message freq is 1.3 Hz (0.76 sec)
+      ("EPAS_sysStatus", 7), #JCT Actual message freq is 1.3 Hz (0.76 sec)
       #("GAS_SENSOR", 50), # BB Actual message freq is 10 Hz (0.1 sec)
   ]
 
@@ -225,14 +184,14 @@ class CarState(object):
 
       # max REAL delta angle for correction vs actuator
       self.CL_MAX_ANGLE_DELTA_BP = [10., 44.]
-      self.CL_MAX_ANGLE_DELTA = [2.2, .3]
+      self.CL_MAX_ANGLE_DELTA = [2.2, .4] # was [2.2, .3] - BB 05.Feb.2019
 
       # adjustment factor for merging steer angle to actuator; should be over 4; the higher the smoother
       self.CL_ADJUST_FACTOR_BP = [10., 44.]
       self.CL_ADJUST_FACTOR = [16. , 8.]
 
 
-      # reenrey angle when to let go
+      # reentry angle when to let go
       self.CL_REENTRY_ANGLE_BP = [10., 44.]
       self.CL_REENTRY_ANGLE = [5. , 5.]
 
@@ -241,11 +200,11 @@ class CarState(object):
       self.CL_LANE_DETECT_FACTOR = [1.5, 1.5]
 
       self.CL_LANE_PASS_BP = [10., 20., 44.]
-      self.CL_LANE_PASS_TIME = [40.,20., 13.] 
+      self.CL_LANE_PASS_TIME = [40., 20., 20.] 
 
       # change lane delta angles and other params
       self.CL_MAXD_BP = [10., 32., 44.]
-      self.CL_MAXD_A = [.358, 0.084, 0.042] #delta angle based on speed; needs fine tune, based on Tesla steer ratio of 16.75
+      self.CL_MAXD_A = [.358, 0.084, 0.062] #delta angle based on speed; needs fine tune, based on Tesla steer ratio of 16.75
 
       self.CL_MIN_V = 8.9 # do not turn if speed less than x m/2; 20 mph = 8.9 m/s
 
@@ -262,7 +221,7 @@ class CarState(object):
 
       #duration after we cross the line until we release is a factor of speed
       self.CL_TIMEA_BP = [10., 32., 44.]
-      self.CL_TIMEA_T = [0.7 ,0.50, 0.40]
+      self.CL_TIMEA_T = [0.7 ,0.50, 0.45]
 
       #duration to wait (in seconds) with blinkers on before starting to turn
       self.CL_WAIT_BEFORE_START = 1
