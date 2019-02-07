@@ -32,7 +32,7 @@ ANGLE_DELTA_V = [5., .8, .25]     # windup limit
 ANGLE_DELTA_VU = [5., 3.5, 0.8]   # unwind limit
 #steering adjustment with speed
 DES_ANGLE_ADJUST_FACTOR_BP = [0.,13., 44.]
-DES_ANGLE_ADJUST_FACTOR = [.70, .80, .99]
+DES_ANGLE_ADJUST_FACTOR = [1.0, 1.0, 1.0]
 
 def process_hud_alert(hud_alert):
   # initialize to no alert
@@ -77,6 +77,7 @@ class CarController(object):
     self.speedlimit_ms = 0
     self.speedlimit_valid = False
     self.speedlimit_units = 0
+    self.opState = 0 # 0-disabled, 1-enabled, 2-disabling, 3-unavailable, 5-warning
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
              pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel, \
@@ -189,9 +190,10 @@ class CarController(object):
       angle_rate_lim = interp(CS.v_ego, ANGLE_DELTA_BP, ANGLE_DELTA_VU)
 
     des_angle_factor = interp(CS.v_ego, DES_ANGLE_ADJUST_FACTOR_BP, DES_ANGLE_ADJUST_FACTOR )
-    if alca_enabled:
+    if alca_enabled or not CS.enableSpeedVariableDesAngle:
       des_angle_factor = 1.
-    apply_angle = clip(apply_angle * des_angle_factor, self.last_angle - angle_rate_lim, self.last_angle + angle_rate_lim) 
+    #BB disable limits to test 0.5.8
+    # apply_angle = clip(apply_angle * des_angle_factor, self.last_angle - angle_rate_lim, self.last_angle + angle_rate_lim) 
     # If human control, send the steering angle as read at steering wheel.
     if human_control:
       apply_angle = CS.angle_steers
@@ -224,7 +226,9 @@ class CarController(object):
     hands_on_state = 0x00
     forward_collision_warning = 0 #1 if needed
     if hud_alert == AH.FCW:
-      forward_collision_warning = 0x01
+      forward_collision_warning = hud_alert[1]
+      if forward_collision_warning > 1:
+        forward_collision_warning = 1
     #cruise state: 0 unavailable, 1 available, 2 enabled, 3 hold
     cc_state = 1 
     speed_limit_to_car = int(self.speedlimit_units)
@@ -238,7 +242,17 @@ class CarController(object):
     accel_max = 5
     acc_speed_kph = 0
     if enabled:
-      op_status = 0x03
+      #self.opState  0-disabled, 1-enabled, 2-disabling, 3-unavailable, 5-warning
+      if self.opState == 0:
+        op_status = 0x02
+      if self.opState == 1:
+        op_status = 0x03
+      if self.opState == 2:
+        op_status = 0x08
+      if self.opState == 3:
+        op_status = 0x01
+      if self.opState == 5:
+        op_status = 0x03
       alca_state = 0x08 + turn_signal_needed
       #canceled by user
       if self.ALCA.laneChange_cancelled and (self.ALCA.laneChange_cancelled_counter > 0):
@@ -259,7 +273,12 @@ class CarController(object):
       if CS.pedal_interceptor_available:
         acc_speed_limit_mph = max(self.PCC.pedal_speed_kph * CV.KPH_TO_MPH,1)
       if hud_alert == AH.FCW:
-        collision_warning = 0x01
+        collision_warning = hud_alert[1]
+        if collision_warning > 1:
+          collision_warning = 1
+        #use disabling for alerts/errors to make them aware someting is goin going on
+      if (snd_chime == CM.DOUBLE) or (hud_alert == AH.FCW):
+        op_status = 0x08
       if self.ACC.enable_adaptive_cruise:
         acc_speed_kph = self.ACC.new_speed #pcm_speed * CV.MS_TO_KPH
       if (CS.pedal_interceptor_available and self.PCC.enable_pedal_cruise) or (self.ACC.enable_adaptive_cruise):
@@ -290,9 +309,10 @@ class CarController(object):
             speed_limit_to_car,
             apply_angle,
             1 if enable_steer_control else 0))
-    if send_fake_warning:
+    if send_fake_warning or (self.opState == 2) or (self.opState == 5):
+      #if it's time to send OR we have a warning or emergency disable
       can_sends.append(teslacan.create_fake_DAS_warning(CS.DAS_noSeatbelt, CS.DAS_canErrors, \
-            CS.DAS_plannerErrors, CS.DAS_doorOpen, CS.DAS_notInDrive))
+            CS.DAS_plannerErrors, CS.DAS_doorOpen, CS.DAS_notInDrive, CS.enableDasEmulation, CS.enableRadarEmulation))
     # end of DAS emulation """
 
     idx = frame % 16

@@ -129,6 +129,24 @@ def max_accel_in_turns(v_ego, angle_steers, CP):
   a_y = v_ego**2 * angle_steers * CV.DEG_TO_RAD / (CP.steerRatio * CP.wheelbase)
   a_x_allowed = math.sqrt(max(a_total_max**2 - a_y**2, 0.))
   return a_x_allowed
+  
+def max_v_in_mapped_curve_ms(map_data, pedal_set_speed_kph):
+  """Use HD map data to limit speed in sharper turns."""
+  if map_data and map_data.curvatureValid:
+    pedal_set_speed_ms = pedal_set_speed_kph * CV.KPH_TO_MS
+    # Max lateral acceleration, used to caclulate how much to slow down in turns
+    a_y_max = 1.85  # m/s^2
+    curvature = abs(map_data.curvature)
+    v_curvature_ms = math.sqrt(a_y_max / max(1e-4, curvature))
+    time_to_turn_s = max(0, map_data.distToTurn / max(pedal_set_speed_ms, 1.))
+    v_approaching_turn_ms = OrderedDict([
+      # seconds til turn, max allowed velocity
+      (8, pedal_set_speed_ms),
+      (0, v_curvature_ms)
+    ])
+    return _interp_map(time_to_turn_s, v_approaching_turn_ms)
+  else:
+    return None
 
 
 class PCCState(object):
@@ -154,6 +172,7 @@ class PCCController(object):
     context = zmq.Context()
     self.poller = zmq.Poller()
     self.live20 = messaging.sub_sock(context, service_list['live20'].port, conflate=True, poller=self.poller)
+    self.live_map_data = messaging.sub_sock(context, service_list['liveMapData'].port, conflate=True, poller=self.poller)
     self.lead_1 = None
     self.last_update_time = 0
     self.enable_pedal_cruise = False
@@ -319,11 +338,13 @@ class PCCController(object):
     # and speed more directly.
     # Bring in the lead car distance from the Live20 feed
     l20 = None
+    mapd = None
     if enabled:
       for socket, _ in self.poller.poll(0):
         if socket is self.live20:
           l20 = messaging.recv_one(socket)
-          break
+        elif socket is self.live_map_data:
+          mapd = messaging.recv_one(socket)
     if l20 is not None:
       self.lead_1 = l20.live20.leadOne
       if _is_present(self.lead_1):
@@ -344,6 +365,10 @@ class PCCController(object):
     ####################################################################
     if PCCModes.is_selected(FollowMode(), CS.cstm_btns):
       self.v_pid = self.calc_follow_speed_ms(CS)
+      if mapd is not None:
+        v_curve = max_v_in_mapped_curve_ms(mapd.liveMapData, self.pedal_speed_kph)
+        if v_curve:
+          self.v_pid = min(self.v_pid, v_curve)
       # cruise speed can't be negative even is user is distracted
       self.v_pid = max(self.v_pid, 0.)
 

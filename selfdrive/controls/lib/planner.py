@@ -21,7 +21,7 @@ from selfdrive.controls.lib.longcontrol import LongCtrlState, MIN_CAN_SPEED
 from selfdrive.controls.lib.radar_helpers import _LEAD_ACCEL_TAU
 
 # Max lateral acceleration, used to caclulate how much to slow down in turns
-A_Y_MAX = 2.0  # m/s^2
+A_Y_MAX = 1.85  # m/s^2
 NO_CURVATURE_SPEED = 200. * CV.MPH_TO_MS
 
 _DT = 0.01    # 100Hz
@@ -304,7 +304,10 @@ class Planner(object):
     self.perception_state = log.Live20Data.new_message()
 
     self.params = Params()
+    self.v_curvature = NO_CURVATURE_SPEED
     self.v_speedlimit = NO_CURVATURE_SPEED
+    self.decel_for_turn = False
+    self.map_valid = False
 
   def choose_solution(self, v_cruise_setpoint, enabled):
     if enabled:
@@ -394,9 +397,10 @@ class Planner(object):
       enabled = (LoC.long_control_state == LongCtrlState.pid) or (LoC.long_control_state == LongCtrlState.stopping)
       following = self.lead_1.status and self.lead_1.dRel < 45.0 and self.lead_1.vLeadK > CS.vEgo and self.lead_1.aLeadK > 0.0
 
-
       if self.last_live_map_data:
         self.v_speedlimit = NO_CURVATURE_SPEED
+        self.v_curvature = NO_CURVATURE_SPEED
+        self.map_valid = self.last_live_map_data.mapValid
 
         # Speed limit
         if self.last_live_map_data.speedLimitValid:
@@ -407,7 +411,15 @@ class Planner(object):
             offset = float(self.params.get("SpeedLimitOffset"))
             self.v_speedlimit = speed_limit + offset
 
-      v_cruise_setpoint = min([v_cruise_setpoint, self.v_speedlimit])
+            # Curvature
+            if self.last_live_map_data.curvatureValid:
+              curvature = abs(self.last_live_map_data.curvature)
+              v_curvature = math.sqrt(A_Y_MAX / max(1e-4, curvature))
+              self.v_curvature = min(NO_CURVATURE_SPEED, v_curvature)
+
+      # leave 1m/s margin on vEgo to asses if turn is limiting our speed.
+      self.decel_for_turn = bool(self.v_curvature < min([v_cruise_setpoint, self.v_speedlimit, CS.vEgo + 1.]))
+      v_cruise_setpoint = min([v_cruise_setpoint, self.v_curvature, self.v_speedlimit])
 
       # Calculate speed for normal cruise control
       if enabled:
@@ -420,6 +432,12 @@ class Planner(object):
           # if required so, force a smooth deceleration
           accel_limits[1] = min(accel_limits[1], AWARENESS_DECEL)
           accel_limits[0] = min(accel_limits[0], accel_limits[1])
+
+        # Change accel limits based on time remaining to turn
+        if self.decel_for_turn:
+          time_to_turn = max(1.0, self.last_live_map_data.distToTurn / max(self.v_cruise, 1.))
+          required_decel = min(0, (self.v_curvature - self.v_cruise) / time_to_turn)
+          accel_limits[0] = max(accel_limits[0], required_decel)
 
         self.v_cruise, self.a_cruise = speed_smoother(self.v_acc_start, self.a_acc_start,
                                                       v_cruise_setpoint,
@@ -504,9 +522,15 @@ class Planner(object):
     plan_send.plan.aTarget = self.a_acc_sol
     plan_send.plan.vTargetFuture = self.v_acc_future
     plan_send.plan.hasLead = self.mpc1.prev_lead_status
+    plan_send.plan.hasLeftLane = bool(self.PP.l_prob > 0.5)
+    plan_send.plan.hasRightLane = bool(self.PP.r_prob > 0.5)
     plan_send.plan.longitudinalPlanSource = self.longitudinalPlanSource
 
     plan_send.plan.gpsPlannerActive = self.gps_planner_active
+
+    plan_send.plan.vCurvature = self.v_curvature
+    plan_send.plan.decelForTurn = self.decel_for_turn
+    plan_send.plan.mapValid = self.map_valid
 
     # Send out fcw
     fcw = self.fcw and (self.fcw_enabled or LoC.long_control_state != LongCtrlState.off)

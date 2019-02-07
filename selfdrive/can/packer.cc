@@ -100,7 +100,7 @@ namespace {
           unsigned int chksm = toyota_checksum(address, ret, message_lookup[address].size);
           ret = set_value(ret, sig, chksm);
         } else {
-          WARN("CHECKSUM signal type not valid\n");
+          //WARN("CHECKSUM signal type not valid\n");
         }
       }
 
