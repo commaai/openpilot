@@ -21,22 +21,24 @@ from selfdrive.controls.lib.longcontrol import LongCtrlState, MIN_CAN_SPEED
 from selfdrive.controls.lib.radar_helpers import _LEAD_ACCEL_TAU
 
 # One, two and three bar distances (in s)
-ONE_BAR_DISTANCE = 0.9  # in seconds
-TWO_BAR_DISTANCE = 1.8  # in seconds
-THREE_BAR_DISTANCE = 2.7  # in seconds
+ONE_BAR_DISTANCE = 1.1  # in seconds
+TWO_BAR_DISTANCE = 1.5  # in seconds
+THREE_BAR_DISTANCE = 2.1  # in seconds
+FOUR_BAR_DISTANCE = 2.8   # in seconds
 
 # Variables that change braking profiles
 CITY_SPEED = 19.44  # braking profile changes when below this speed based on following dynamics below [m/s]
 GAP_CLOSURE_SPEED = -1  # relative velocity between you and lead car which activates braking profile change [m/s]
+RAPID_GAP_CLOSURE_SPEED = -5  # relative velocity between you and lead car which activates a broking profile change + RAPID_DELTA [m/s]
+RAPID_DELTA = 0.25  # increased braking profile for approaching lead car at RAPID_GAP_CLOSURE_SPEED [s]
 TAILGATE_DISTANCE = 17.5  # when below this distance between you and lead car, braking profile change is active based on PULLAWAY_REL_V [m]
 PULLAWAY_REL_V = 0.25  # within TAILGATE_DISTANCE, if the car is pulling away w/ rel velocity that exceeds this value, then change BACK to set bar distance [m/s]
 MIN_DISTANCE = 7  # keep a minimum distance between you and lead car (when below this, activates braking profile change) [m]
 
-
 # Braking profile changes (makes the car brake harder because it wants to be farther from the lead car - increase to brake harder)
 BRAKING_ONE_BAR_DISTANCE = 2.2  # more aggressive braking when using one bar distance by increasing follow distance [s]
 BRAKING_TWO_BAR_DISTANCE = 2.1  # more aggressive braking when using two bar distance by increasing follow distance [s]
-
+BRAKING_THREE_BAR_DISTANCE = 2.1  # no change in braking profile
 
 # Max lateral acceleration, used to caclulate how much to slow down in turns
 A_Y_MAX = 1.85  # m/s^2
@@ -178,6 +180,7 @@ class LongitudinalMpc(object):
     self.tailgating = 0
     self.street_speed = 0
     self.lead_car_gap_shrinking = 0
+    self.lead_car_rapid_gap_shrinking = 0
 
   def send_mpc_solution(self, qp_iterations, calculation_time):
     qp_iterations = max(0, qp_iterations)
@@ -216,7 +219,7 @@ class LongitudinalMpc(object):
 
     if lead is not None and lead.status:
       #x_lead = lead.dRel
-      x_lead = max(0, lead.dRel - 2)  # increase stopping distance to car by 2m
+      x_lead = max(0, lead.dRel - 1)  # increase stopping distance to car by 1m
       v_lead = max(0.0, lead.vLead)
       a_lead = lead.aLeadK
 
@@ -270,43 +273,66 @@ class LongitudinalMpc(object):
       self.tailgating = 1
     else:
       self.tailgating = 0
-  
-  
+      
+    # Is the lead car gap closing fast?
+    if self.v_rel < RAPID_GAP_CLOSURE_SPEED:
+      self.lead_car_rapid_gap_shrinking = 1
+    else:
+      self.lead_car_rapid_gap_shrinking = 0
+      
+      
     # Adjust distance from lead car when distance button pressed 
     if CS.readdistancelines == 1:
-      # If one bar distance, auto set to 2 bar distance under current conditions to prevent rear ending lead car
       if self.street_speed and (self.lead_car_gap_shrinking or self.tailgating):
         TR = BRAKING_ONE_BAR_DISTANCE
+        if self.lead_car_rapid_gap_shrinking:
+          TR = TR + RAPID_DELTA   # add more braking if lead car is coming in fast
         if self.lastTR != -CS.readdistancelines:
           self.libmpc.init(MPC_COST_LONG.TTC, 0.0850, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
           self.lastTR = -CS.readdistancelines
       else:
-        TR = ONE_BAR_DISTANCE # 10m at 40km/hr
+        TR = ONE_BAR_DISTANCE 
         if CS.readdistancelines != self.lastTR:
           self.libmpc.init(MPC_COST_LONG.TTC, 1.0, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
           self.lastTR = CS.readdistancelines  
       
     elif CS.readdistancelines == 2:
-      # Tweaks braking for 2 bar distance (default comma - because sometimes it stops too close to the lead car)
       if self.street_speed and (self.lead_car_gap_shrinking or self.tailgating):
         TR = BRAKING_TWO_BAR_DISTANCE
+        if self.lead_car_rapid_gap_shrinking:
+          TR = TR + RAPID_DELTA   # add more braking if lead car is coming in fast
         if self.lastTR != -CS.readdistancelines:
           self.libmpc.init(MPC_COST_LONG.TTC, 0.0875, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
           self.lastTR = -CS.readdistancelines
       else:
-        TR = TWO_BAR_DISTANCE # 20m at 40km/hr
+        TR = TWO_BAR_DISTANCE 
         if CS.readdistancelines != self.lastTR:
-          self.libmpc.init(MPC_COST_LONG.TTC, 0.1, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
+          self.libmpc.init(MPC_COST_LONG.TTC, MPC_COST_LONG.DISTANCE, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
           self.lastTR = CS.readdistancelines  
               
     elif CS.readdistancelines == 3:
-      TR = THREE_BAR_DISTANCE # 30m at 40km/hr
+      if self.street_speed and (self.lead_car_gap_shrinking or self.tailgating):
+        TR = BRAKING_THREE_BAR_DISTANCE
+        if self.lead_car_rapid_gap_shrinking:
+          TR = TR + RAPID_DELTA   # add more braking if lead car is coming in fast
+        if self.lastTR != -CS.readdistancelines:
+          self.libmpc.init(MPC_COST_LONG.TTC, MPC_COST_LONG.DISTANCE, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
+          self.lastTR = -CS.readdistancelines
+      else:
+        TR = THREE_BAR_DISTANCE 
+        if CS.readdistancelines != self.lastTR:
+          self.libmpc.init(MPC_COST_LONG.TTC, MPC_COST_LONG.DISTANCE, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
+          self.lastTR = CS.readdistancelines   
+        
+    elif CS.readdistancelines == 4:
+      TR = FOUR_BAR_DISTANCE
       if CS.readdistancelines != self.lastTR:
         self.libmpc.init(MPC_COST_LONG.TTC, 0.05, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK) 
-        self.lastTR = CS.readdistancelines  
+        self.lastTR = CS.readdistancelines      
           
     else:
-      TR = TWO_BAR_DISTANCE # if readdistancelines = 0
+      TR = TWO_BAR_DISTANCE # if readdistancelines != 1,2,3,4
+      self.libmpc.init(MPC_COST_LONG.TTC, MPC_COST_LONG.DISTANCE, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
     
     n_its = self.libmpc.run_mpc(self.cur_state, self.mpc_solution, self.a_lead_tau, a_lead, TR)
     duration = int((sec_since_boot() - t) * 1e9)
