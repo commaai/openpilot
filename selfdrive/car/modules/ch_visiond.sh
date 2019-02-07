@@ -3,7 +3,7 @@ cd /data/openpilot/selfdrive/visiond
 if [ "$1" = "wiggly" ]; then
   if [ "$(readlink ./visiond)" != "./visiond-wiggly" ]; then
     ln -sf ./visiond-wiggly ./visiond
-    sleep 2
+    #sleep 2
     #echo "Rebooting"
     #reboot
   fi
@@ -11,7 +11,7 @@ else
   if [ "$1" = "normal" ]; then
     if [ "$(readlink ./visiond)" != "./visiond-normal" ]; then
       ln -sf ./visiond-normal ./visiond
-      sleep 2
+      #sleep 2
       #echo "Rebooting"
       #reboot
     fi
