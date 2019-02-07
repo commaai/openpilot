@@ -73,7 +73,7 @@ def setup_thread_excepthook():
 def build_way_query(lat, lon, radius=50):
   """Builds a query to find all highways within a given radius around a point"""
   pos = "  (around:%f,%f,%f)" % (radius, lat, lon)
-  q = """(
+  q = """[output:json];(
   way
   """ + pos + """
   [highway][highway!~"^(footway|path|bridleway|steps|cycleway|construction|bus_guideway|escape)$"];
