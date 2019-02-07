@@ -1,3 +1,6 @@
+import os
+import subprocess
+import sys
 import numpy as np
 from cereal import car
 from common.kalman.simple_kalman import KF1D
