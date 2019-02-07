@@ -851,7 +851,7 @@ void bb_ui_draw_UI( UIState *s) {
     //bb_ui_draw_car(s);
 	 }
 	 if (s->b.tri_state_switch ==3) {
-	 	ui_draw_vision_grid(s);
+	 	//ui_draw_vision_grid(s);
 		draw_date_time(s);
 	 }
 }
