@@ -1,0 +1,200 @@
+'\" t
+.\"     Title: zmq_pgm
+.\"    Author: [see the "AUTHORS" section]
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 02/18/2017
+.\"    Manual: 0MQ Manual
+.\"    Source: 0MQ 4.2.2
+.\"  Language: English
+.\"
+.TH "ZMQ_PGM" "7" "02/18/2017" "0MQ 4\&.2\&.2" "0MQ Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+zmq_pgm \- 0MQ reliable multicast transport using PGM
+.SH "SYNOPSIS"
+.sp
+PGM (Pragmatic General Multicast) is a protocol for reliable multicast transport of data over IP networks\&.
+.SH "DESCRIPTION"
+.sp
+0MQ implements two variants of PGM, the standard protocol where PGM datagrams are layered directly on top of IP datagrams as defined by RFC 3208 (the \fIpgm\fR transport) and "Encapsulated PGM" or EPGM where PGM datagrams are encapsulated inside UDP datagrams (the \fIepgm\fR transport)\&.
+.sp
+The \fIpgm\fR and \fIepgm\fR transports can only be used with the \fIZMQ_PUB\fR and \fIZMQ_SUB\fR socket types\&.
+.sp
+Further, PGM sockets are rate limited by default\&. For details, refer to the \fIZMQ_RATE\fR, and \fIZMQ_RECOVERY_IVL\fR options documented in \fBzmq_setsockopt\fR(3)\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBCaution\fR
+.ps -1
+.br
+.sp
+The \fIpgm\fR transport implementation requires access to raw IP sockets\&. Additional privileges may be required on some operating systems for this operation\&. Applications not requiring direct interoperability with other PGM implementations are encouraged to use the \fIepgm\fR transport instead which does not require any special privileges\&.
+.sp .5v
+.RE
+.SH "ADDRESSING"
+.sp
+A 0MQ endpoint is a string consisting of a \fItransport\fR:// followed by an \fIaddress\fR\&. The \fItransport\fR specifies the underlying protocol to use\&. The \fIaddress\fR specifies the transport\-specific address to connect to\&.
+.sp
+For the PGM transport, the transport is pgm, and for the EPGM protocol the transport is epgm\&. The meaning of the \fIaddress\fR part is defined below\&.
+.SS "Connecting a socket"
+.sp
+When connecting a socket to a peer address using \fIzmq_connect()\fR with the \fIpgm\fR or \fIepgm\fR transport, the \fIendpoint\fR shall be interpreted as an \fIinterface\fR followed by a semicolon, followed by a \fImulticast address\fR, followed by a colon and a port number\&.
+.sp
+An \fIinterface\fR may be specified by either of the following:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The interface name as defined by the operating system\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The primary IPv4 address assigned to the interface, in its numeric representation\&.
+.RE
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+Interface names are not standardised in any way and should be assumed to be arbitrary and platform dependent\&. On Win32 platforms no short interface names exist, thus only the primary IPv4 address may be used to specify an \fIinterface\fR\&. The \fIinterface\fR part can be omitted, in that case the default one will be selected\&.
+.sp .5v
+.RE
+.sp
+A \fImulticast address\fR is specified by an IPv4 multicast address in its numeric representation\&.
+.SH "WIRE FORMAT"
+.sp
+Consecutive PGM datagrams are interpreted by 0MQ as a single continuous stream of data where 0MQ messages are not necessarily aligned with PGM datagram boundaries and a single 0MQ message may span several PGM datagrams\&. This stream of data consists of 0MQ messages encapsulated in \fIframes\fR as described in \fBzmq_tcp\fR(7)\&.
+.SS "PGM datagram payload"
+.sp
+The following ABNF grammar represents the payload of a single PGM datagram as used by 0MQ:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+datagram               = (offset data)
+offset                 = 2OCTET
+data                   = *OCTET
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+In order for late joining consumers to be able to identify message boundaries, each PGM datagram payload starts with a 16\-bit unsigned integer in network byte order specifying either the offset of the first message \fIframe\fR in the datagram or containing the value 0xFFFF if the datagram contains solely an intermediate part of a larger message\&.
+.sp
+Note that offset specifies where the first message begins rather than the first message part\&. Thus, if there are trailing message parts at the beginning of the packet the offset ignores them and points to first initial message part in the packet\&.
+.sp
+The following diagram illustrates the layout of a single PGM datagram payload:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
++\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-+
+| offset (16 bits) |         data         |
++\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-+
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+The following diagram further illustrates how three example 0MQ frames are laid out in consecutive PGM datagram payloads:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+First datagram payload
++\-\-\-\-\-\-\-\-\-\-\-\-\-\-+\-\-\-\-\-\-\-\-\-\-\-\-\-+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-+
+| Frame offset |   Frame 1   |   Frame 2, part 1   |
+|    0x0000    | (Message 1) | (Message 2, part 1) |
++\-\-\-\-\-\-\-\-\-\-\-\-\-\-+\-\-\-\-\-\-\-\-\-\-\-\-\-+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-+
+
+Second datagram payload
++\-\-\-\-\-\-\-\-\-\-\-\-\-\-+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-+
+| Frame offset |   Frame 2, part 2   |
+| 0xFFFF       | (Message 2, part 2) |
++\-\-\-\-\-\-\-\-\-\-\-\-\-\-+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-+
+
+Third datagram payload
++\-\-\-\-\-\-\-\-\-\-\-\-\-\-+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-+\-\-\-\-\-\-\-\-\-\-\-\-\-+
+| Frame offset |   Frame 2, final 8 bytes   |   Frame 3   |
+| 0x0008       | (Message 2, final 8 bytes) | (Message 3) |
++\-\-\-\-\-\-\-\-\-\-\-\-\-\-+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-+\-\-\-\-\-\-\-\-\-\-\-\-\-+
+.fi
+.if n \{\
+.RE
+.\}
+.SH "EXAMPLE"
+.PP
+\fBConnecting a socket\fR. 
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+//  Connecting to the multicast address 239\&.192\&.1\&.1, port 5555,
+//  using the first Ethernet network interface on Linux
+//  and the Encapsulated PGM protocol
+rc = zmq_connect(socket, "epgm://eth0;239\&.192\&.1\&.1:5555");
+assert (rc == 0);
+//  Connecting to the multicast address 239\&.192\&.1\&.1, port 5555,
+//  using the network interface with the address 192\&.168\&.1\&.1
+//  and the standard PGM protocol
+rc = zmq_connect(socket, "pgm://192\&.168\&.1\&.1;239\&.192\&.1\&.1:5555");
+assert (rc == 0);
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "SEE ALSO"
+.sp
+\fBzmq_connect\fR(3) \fBzmq_setsockopt\fR(3) \fBzmq_tcp\fR(7) \fBzmq_ipc\fR(7) \fBzmq_inproc\fR(7) \fBzmq_vmci\fR(7) \fBzmq\fR(7)
+.SH "AUTHORS"
+.sp
+This page was written by the 0MQ community\&. To make a change please read the 0MQ Contribution Policy at \m[blue]\fBhttp://www\&.zeromq\&.org/docs:contributing\fR\m[]\&.

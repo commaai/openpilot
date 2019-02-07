@@ -11,6 +11,9 @@ from selfdrive.car.toyota.values import CAR, DBC, STEER_THRESHOLD
 from common.kalman.simple_kalman import KF1D
 from selfdrive.car.modules.UIBT_module import UIButtons,UIButton
 from selfdrive.car.modules.UIEV_module import UIEvents
+import os
+import subprocess
+import sys
 
 def gps_distance(gpsLat, gpsLon, gpsAlt, gpsAcc):
   A = np.array([(6371010+gpsAlt)*sin(radians(gpsLat-90))*cos(radians(gpsLon)),(6371010+gpsAlt)*sin(radians(gpsLat-90))*sin(radians(gpsLon)),(6371010+gpsAlt)*cos(radians(gpsLat-90))])
@@ -132,6 +135,8 @@ class CarState(object):
     self.Angle_Speed = [255,160,100,80,70,60,55,50,40,33,27,17,12]
     #labels for ALCA modes
     self.alcaLabels = ["MadMax","Normal","Wifey"]
+    self.visionLabels = ["normal","wiggly"]
+    self.visionMode = 0
     self.alcaMode = 1
     #if (CP.carFingerprint == CAR.MODELS):
     # ALCA PARAMS
@@ -208,6 +213,9 @@ class CarState(object):
     # initialize can parser
     self.car_fingerprint = CP.carFingerprint
 
+    #BB visiond last type
+    self.last_visiond = self.cstm_btns.btns[0].btn_label2
+    
     # vEgo kalman filter
     dt = 0.01
     # Q = np.matrix([[10.0, 0.0], [0.0, 100.0]])
@@ -221,7 +229,7 @@ class CarState(object):
  #BB init ui buttons
   def init_ui_buttons(self):
     btns = []
-    btns.append(UIButton("sound", "SND", 0, "", 0))
+    btns.append(UIButton("vision", "VIS", 0, self.visionLabels[self.visionMode], 0))
     btns.append(UIButton("alca", "ALC", 1, self.alcaLabels[self.alcaMode], 1))
     btns.append(UIButton("slow", "SLO", 1, "", 2))
     btns.append(UIButton("lka", "LKA", 1, "", 3))
@@ -232,7 +240,17 @@ class CarState(object):
   #BB update ui buttons
   def update_ui_buttons(self,id,btn_status):
     if self.cstm_btns.btns[id].btn_status > 0:
-      if (id == 1) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="alca":
+      if (id == 0) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="vision":
+          if self.cstm_btns.btns[id].btn_label2 == self.visionLabels[self.visionMode]:
+            self.visionMode = (self.visionMode + 1 ) % 2
+          else:
+            self.alcaMode = 0
+          self.cstm_btns.btns[id].btn_label2 = self.visionLabels[self.visionMode]
+          self.cstm_btns.hasChanges = True
+          self.last_visiond = self.cstm_btns.btns[id].btn_label2
+          args = ["/data/openpilot/selfdrive/car/modules/ch_visiond.sh", self.cstm_btns.btns[id].btn_label2]
+          subprocess.Popen(args, shell = False, stdin=None, stdout=None, stderr=None, env = dict(os.environ), close_fds=True)
+      elif (id == 1) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="alca":
           if self.cstm_btns.btns[id].btn_label2 == self.alcaLabels[self.alcaMode]:
             self.alcaMode = (self.alcaMode + 1 ) % 3
           else:
@@ -283,7 +301,7 @@ class CarState(object):
     self.v_wheel_rl = cp.vl["WHEEL_SPEEDS"]['WHEEL_SPEED_RL'] * CV.KPH_TO_MS
     self.v_wheel_rr = cp.vl["WHEEL_SPEEDS"]['WHEEL_SPEED_RR'] * CV.KPH_TO_MS
     self.v_wheel = float(np.mean([self.v_wheel_fl, self.v_wheel_fr, self.v_wheel_rl, self.v_wheel_rr]))
-
+    
     # Kalman filter
     if abs(self.v_wheel - self.v_ego) > 2.0:  # Prevent large accelerations when car starts at non zero speed
       self.v_ego_x = np.matrix([[self.v_wheel], [0.0]])
@@ -381,8 +399,8 @@ class CarState(object):
       self.Angles[self.Angle_counter] = abs(self.angle_steers)
       self.Angles_later[self.Angle_counter] = abs(angle_later)
       self.Angle_counter = (self.Angle_counter + 1 ) % 250
-      self.v_cruise_pcm = int(min(self.v_cruise_pcm, interp(np.max(self.Angles), self.Angle, self.Angle_Speed)))
-      self.v_cruise_pcm = int(min(self.v_cruise_pcm, interp(np.max(self.Angles_later), self.Angle, self.Angle_Speed)))
+      self.v_cruise_pcm = int(min(self.v_cruise_pcm, 1.2 * interp(np.max(self.Angles), self.Angle, self.Angle_Speed)))
+      self.v_cruise_pcm = int(min(self.v_cruise_pcm, 1.2 * interp(np.max(self.Angles_later), self.Angle, self.Angle_Speed)))
     else:
       self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED']
 
