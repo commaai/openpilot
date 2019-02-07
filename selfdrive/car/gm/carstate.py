@@ -58,6 +58,8 @@ class CarState(object):
     # initialize can parser
     self.alcaLabels = ["MadMax","Normal","Wifey"]
     self.alcaMode = 2
+    self.visionLabels = ["normal","wiggly"]
+    self.visionMode = 0
     self.car_fingerprint = CP.carFingerprint
     self.cruise_buttons = CruiseButtons.UNPRESS
     self.prev_distance_button = 0
@@ -132,7 +134,7 @@ class CarState(object):
     btns.append(UIButton("sound", "SND", 0, "", 0))
     btns.append(UIButton("alca", "ALC", 0, self.alcaLabels[self.alcaMode], 1))
     btns.append(UIButton("stop","",1,"SNG",2))
-    btns.append(UIButton("","",0,"",3))
+    btns.append(UIButton("vision","VIS",0,self.visionLabels[self.visionMode],3))
     btns.append(UIButton("gas","GAS",1,"",4))
     btns.append(UIButton("lka","LKA",1,"",5))
     return btns
@@ -146,6 +148,16 @@ class CarState(object):
             self.alcaMode = 0
           self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
           self.cstm_btns.hasChanges = True
+      if (id == 3) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="vision":
+          if self.cstm_btns.btns[id].btn_label2 == self.visionLabels[self.visionMode]:
+            self.visionMode = (self.visionMode + 1 ) % 2
+          else:
+            self.visionMode = 0
+          self.cstm_btns.btns[id].btn_label2 = self.visionLabels[self.visionMode]
+          self.cstm_btns.hasChanges = True
+          self.last_visiond = self.cstm_btns.btns[id].btn_label2
+          args = ["/data/openpilot/selfdrive/car/modules/ch_visiond.sh", self.cstm_btns.btns[id].btn_label2]
+          subprocess.Popen(args, shell = False, stdin=None, stdout=None, stderr=None, env = dict(os.environ), close_fds=True)
       else:
         self.cstm_btns.btns[id].btn_status = btn_status * self.cstm_btns.btns[id].btn_status
     else:
