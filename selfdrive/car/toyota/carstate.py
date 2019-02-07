@@ -11,6 +11,9 @@ from selfdrive.car.toyota.values import CAR, DBC, STEER_THRESHOLD
 from common.kalman.simple_kalman import KF1D
 from selfdrive.car.modules.UIBT_module import UIButtons,UIButton
 from selfdrive.car.modules.UIEV_module import UIEvents
+import os
+import subprocess
+import sys
 
 def gps_distance(gpsLat, gpsLon, gpsAlt, gpsAcc):
   A = np.array([(6371010+gpsAlt)*sin(radians(gpsLat-90))*cos(radians(gpsLon)),(6371010+gpsAlt)*sin(radians(gpsLat-90))*sin(radians(gpsLon)),(6371010+gpsAlt)*cos(radians(gpsLat-90))])
@@ -238,13 +241,15 @@ class CarState(object):
   def update_ui_buttons(self,id,btn_status):
     if self.cstm_btns.btns[id].btn_status > 0:
       if (id == 0) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="vision":
-          self.visionMode = (self.visionMode + 1 ) % 2
+          if self.cstm_btns.btns[id].btn_label2 == self.visionLabels[self.visionMode]:
+            self.visionMode = (self.visionMode + 1 ) % 2
+          else:
+            self.alcaMode = 0
           self.cstm_btns.btns[id].btn_label2 = self.visionLabels[self.visionMode]
           self.cstm_btns.hasChanges = True
           self.last_visiond = self.cstm_btns.btns[id].btn_label2
           args = ["/data/openpilot/selfdrive/car/modules/ch_visiond.sh", self.cstm_btns.btns[id].btn_label2]
           subprocess.Popen(args, shell = False, stdin=None, stdout=None, stderr=None, env = dict(os.environ), close_fds=True)
-          
       elif (id == 1) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="alca":
           if self.cstm_btns.btns[id].btn_label2 == self.alcaLabels[self.alcaMode]:
             self.alcaMode = (self.alcaMode + 1 ) % 3
