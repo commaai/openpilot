@@ -1,4 +1,5 @@
-*** IMPORTANT ******************************************************* 
+**********************************************************************
+<b>IMPORTANT!</b>
 <b>Distance Intervals have Changed</b>
 PRIOR distance intervals:
 One bar: 0.9s
