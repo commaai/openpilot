@@ -67,7 +67,17 @@ def read_config_file(CS):
       CS.enableFeedForwardAngleCorrection = configr.getboolean('OP_CONFIG','enable_feed_forward_angle_correction')
     except:
       CS.enableFeedForwardAngleCorrection = True
+
     config.set('OP_CONFIG', 'enable_feed_forward_angle_correction', CS.enableFeedForwardAngleCorrection)
+
+    #enable_driver_monitor -> CS.enableDriverMonitor
+    try:
+      CS.enableDriverMonitor = configr.getboolean('OP_CONFIG','enable_driver_monitor')
+    except:
+      CS.enableDriverMonitor = True
+
+    config.set('OP_CONFIG', 'enable_driver_monitor', CS.enableDriverMonitor)
+
 
     with open(config_path, config_file_w) as configfile:
       config.write(configfile)

@@ -175,6 +175,7 @@ class CarState(object):
     self.enableSpeedVariableDesAngle = True
     self.enableRollAngleCorrection = False
     self.enableFeedForwardAngleCorrection = True
+    self.enableDriverMonitor = True
     #read config file
     read_config_file(self)
     ### END OF MAIN CONFIG OPTIONS ###
