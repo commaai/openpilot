@@ -1,3 +1,19 @@
+*** IMPORTANT ******************************************************* 
+<b>Distance Intervals have Changed</b>
+PRIOR distance intervals:
+One bar: 0.9s
+Two bar: 1.8s
+Three bar: 2.7s
+
+NEW distance intervals (matches Honda stock ACC distance intervals):
+One bar: 1.1s
+Two bar: 1.5s
+Three bar: 2.1s
+Four bar: 2.8s
+
+I have also improved braking for fast lead-car approach
+**********************************************************************
+
 This is a fork of comma's openpilot, and contains tweaks for Hondas and some GM vehicles 
 
 I will attempt to detail the changes in each of the branches here:
@@ -38,7 +54,7 @@ List of changes and tweaks (latest changes at the top:
 
 - <b>LKAS button toggles steering</b>:  Stock Openpilot deactivates the LKAS button.  In some cases while driving you may have to fight the wheel for a long period of time.  By pressing the LKAS button you can toggle steering off or on so that you don't have to fight the wheel, which can get tiring and probably isn't good for the EPS motor.  When LKAS is toggled off OP still controls gas and brake so it's more like standard ACC.
 
-- <b>3 Step adjustable follow distance</b>:  The default behaviour for following distance is 1.8s of following distance.  It is not adjustable.  This typically causes, in some traffic conditions, the user to be constantly cut off by other drivers, and 1.8s of follow distance instantly becomes much shorter (like 0.2-0.5s).  I wanted to reintroduce honda 'stock-like' ACC behaviour back into the mix to prevent people from getting cutoff so often.  Here is a summary of follow distance in seconds:  1 bar = 1s, 2 bars = 2s, 3 bars = 3s of follow distance. Thanks to @arne182, whose code I built upon, distance adjustment is back.
+- <b>3 Step adjustable follow distance</b>:  The default behaviour for following distance is 1.8s of following distance.  It is not adjustable.  This typically causes, in some traffic conditions, the user to be constantly cut off by other drivers, and 1.8s of follow distance instantly becomes much shorter (like 0.2-0.5s).  I wanted to reintroduce honda 'stock-like' ACC behaviour back into the mix to prevent people from getting cutoff so often.  Here is a summary of follow distance in seconds:  <b>1 bar = 1.1s, 2 bars = 1.5s, 3 bars = 2.1, 4 bars = 2.8s of follow distance</b>. Thanks to @arne182, whose code I built upon.
 
 - <b>Honda Pilot and Ridgeline PID</b>:  I wasn't happy with the way Honda Pilot performed on curves where the car often would hug the inside line of the turn and this was very hazardous in 2 lane highways where it got very close to the oncoming traffic.  Also, on crowned roads (where the fast lane slants to the left and where the slow lane slants to the right), the car would not overcome the gravity of the slanted road and "hug" in the direction of the slant.  After many hours of on the road testing, I have mitigated this issue.  When combined with Gernby's steering it is quite a robust setup.  This combination is found in kegman-plusPilotAwesomeness.  Apparently this branch works well with RIDGELINES too!
 
