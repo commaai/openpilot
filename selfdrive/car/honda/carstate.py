@@ -143,10 +143,9 @@ def get_cam_can_parser(CP):
 
 class CarState(object):
   def __init__(self, CP):
-    self.trLabels = ["0.9","1.8","2.7"]
     self.trMode = 1
     self.lkMode = True
-    self.read_distance_lines_prev = 3
+    self.read_distance_lines_prev = 4
     self.CP = CP
     self.can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
     self.shifter_values = self.can_define.dv["GEARBOX"]["GEAR_SHIFTER"]
@@ -315,7 +314,7 @@ class CarState(object):
     # when user presses distance button on steering wheel
     if self.cruise_setting == 3:
       if cp.vl["SCM_BUTTONS"]["CRUISE_SETTING"] == 0:
-        self.trMode = (self.trMode + 1 ) % 3
+        self.trMode = (self.trMode + 1 ) % 4
         
     # when user presses LKAS button on steering wheel
     if self.cruise_setting == 1:
