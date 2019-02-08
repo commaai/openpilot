@@ -55,7 +55,7 @@ obj/$(PROJ_NAME).bin: obj/$(STARTUP_FILE).o obj/main.$(PROJ_NAME).o
 
 
 obj/bootstub.$(PROJ_NAME).bin: obj/$(STARTUP_FILE).o obj/bootstub.$(PROJ_NAME).o obj/sha.$(PROJ_NAME).o obj/rsa.$(PROJ_NAME).o
-	$(CC) $(CFLAGS) -o obj/bootstub.$(PROJ_NAME).elf $^
+	$(CC) $(CFLAGS) -o obj/bootstub.$(PROJ_NAME).elf $^ -lgcc
 	$(OBJCOPY) -v -O binary obj/bootstub.$(PROJ_NAME).elf $@
 
 clean:

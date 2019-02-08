@@ -56,4 +56,3 @@ obj/bootstub.bin: obj/$(STARTUP_FILE).o obj/bootstub.o obj/sha.o obj/rsa.o
 	
 clean:
 	rm -f obj/*
-

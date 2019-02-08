@@ -559,6 +559,7 @@ int main() {
   usb_init();
 
   // default to silent mode to prevent issues with Ford
+  // hardcode a specific safety mode if you want to force the panda to be in a specific mode
   safety_set_mode(SAFETY_NOOUTPUT, 0);
   can_silent = ALL_CAN_SILENT;
   can_init_all();
