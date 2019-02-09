@@ -21,7 +21,7 @@ except ImportError:
 # msgs sent for steering controller by camera module on can 0.
 # those messages are mutually exclusive on CRV and non-CRV cars
 CAMERA_MSGS = [0xe4, 0x194]
-AUTO_TRANSMISSION = [0x1a3]
+AUTO_TRANSMISSION = [0x1a3, 0x191]
 
 A_ACC_MAX = max(_A_CRUISE_MAX_V_FOLLOWING)
 
