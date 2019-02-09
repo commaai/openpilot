@@ -29,10 +29,10 @@ FOUR_BAR_DISTANCE = 2.8   # in seconds
 # Variables that change braking profiles
 CITY_SPEED = 19.44  # braking profile changes when below this speed based on following dynamics below [m/s]
 GAP_CLOSURE_SPEED = -1  # relative velocity between you and lead car which activates braking profile change [m/s]
-RAPID_GAP_CLOSURE_SPEED = -5  # relative velocity between you and lead car which activates a broking profile change + RAPID_DELTA [m/s]
-RAPID_DELTA = 0.25  # increased braking profile for approaching lead car at RAPID_GAP_CLOSURE_SPEED [s]
+RAPID_GAP_CLOSURE_SPEED = -3  # relative velocity between you and lead car which activates a broking profile change + RAPID_DELTA [m/s]
+RAPID_DELTA = 0.15  # increased braking profile for approaching lead car at RAPID_GAP_CLOSURE_SPEED [s]
 TAILGATE_DISTANCE = 17.5  # when below this distance between you and lead car, braking profile change is active based on PULLAWAY_REL_V [m]
-PULLAWAY_REL_V = 0.5  # within TAILGATE_DISTANCE, if the car is pulling away w/ rel velocity that exceeds this value, then change BACK to set bar distance [m/s]
+PULLAWAY_REL_V = 0.25  # within TAILGATE_DISTANCE, if the car is pulling away w/ rel velocity that exceeds this value, then change BACK to set bar distance [m/s]
 MIN_DISTANCE = 7  # keep a minimum distance between you and lead car (when below this, activates braking profile change) [m]
 STOPPING_DISTANCE = 2  # increase distance from lead car when stopped
 
