@@ -147,7 +147,6 @@ class CarInterface(object):
     ret = car.CarParams.new_message()
     ret.carName = "honda"
     ret.carFingerprint = candidate
-    ret.autoTransmission = any(x for x in AUTO_TRANSMISSION if x in fingerprint)
 
     if candidate in HONDA_BOSCH:
       ret.safetyModel = car.CarParams.SafetyModels.hondaBosch
@@ -160,8 +159,11 @@ class CarInterface(object):
       ret.enableGasInterceptor = 0x201 in fingerprint
       ret.openpilotLongitudinalControl = ret.enableCamera
 
+    ret.autoTransmission = any(x for x in AUTO_TRANSMISSION if x in fingerprint)
+
     cloudlog.warn("ECU Camera Simulated: %r", ret.enableCamera)
     cloudlog.warn("ECU Gas Interceptor: %r", ret.enableGasInterceptor)
+    cloudlog.warn("autoTransmisson: %r", ret.autoTransmisson)
 
     ret.enableCruise = not ret.enableGasInterceptor
 
