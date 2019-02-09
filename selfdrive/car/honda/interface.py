@@ -163,7 +163,7 @@ class CarInterface(object):
 
     cloudlog.warn("ECU Camera Simulated: %r", ret.enableCamera)
     cloudlog.warn("ECU Gas Interceptor: %r", ret.enableGasInterceptor)
-    cloudlog.warn("autoTransmisson: %r", ret.autoTransmisson)
+    cloudlog.warn("autoTransmission: %r", ret.autoTransmission)
 
     ret.enableCruise = not ret.enableGasInterceptor
 
