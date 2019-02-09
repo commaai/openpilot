@@ -109,7 +109,7 @@ else
 endif
 
 OBJS = visiond.o
-OUTPUT = visiond
+OUTPUT = visiond-normal
 
 .PHONY: all
 all: $(OUTPUT)
@@ -222,6 +222,6 @@ $(MODEL_OBJS): %.o: %.dlc
 
 .PHONY: clean
 clean:
-	rm -f visiond $(OBJS) $(DEPS)
+	rm -f visiond-normal $(OBJS) $(DEPS)
 
 -include $(DEPS)

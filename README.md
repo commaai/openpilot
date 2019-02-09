@@ -1,6 +1,7 @@
 [![](https://i.imgur.com/UetIFyH.jpg)](#)
 
-Welcome to openpilot
+Welcome to openpilot by Arne Schwarck
+https://youtu.be/WKwSq8TPdpo
 ======
 
 [openpilot](http://github.com/commaai/openpilot) is an open source driving agent. Currently, it performs the functions of Adaptive Cruise Control (ACC) and Lane Keeping Assist System (LKAS) for selected Honda, Toyota, Acura, Lexus, Chevrolet, Hyundai, Kia. It's about on par with Tesla Autopilot and GM Super Cruise, and better than [all other manufacturers](http://www.thedrive.com/tech/5707/the-war-for-autonomous-driving-part-iii-us-vs-germany-vs-japan).
@@ -126,7 +127,7 @@ In Progress Cars
   - Only remaining Toyota cars with no port yet are the Avalon and the Sienna.
 - All Hyundai with SmartSense.
 - All Kia with SCC and LKAS.
-- All Chrysler, Jeep, Fiat with Adaprive Cruise Control and LaneSense.
+- All Chrysler, Jeep, Fiat with Adaptive Cruise Control and LaneSense.
 
 How can I add support for my car?
 ------
@@ -161,6 +162,8 @@ Directory structure
         ├── locationd       # Soon to be home of precise location
         ├── logcatd         # Android logcat as a service
         ├── loggerd         # Logger and uploader of car data
+        ├── mapd            # Fetches map data and computes next global path
+        ├── orbd            # Computes ORB features from frames
         ├── proclogd        # Logs information from proc
         ├── sensord         # IMU / GPS interface code
         ├── test            # Car simulator running code through virtual maneuvers

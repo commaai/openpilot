@@ -268,15 +268,19 @@ def state_control(plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, 
     angle_offset = learn_angle_offset(active, CS.vEgo, angle_offset,
                                       PL.PP.c_poly, PL.PP.c_prob, CS.steeringAngle,
                                       CS.steeringPressed)
-
+  if CS.gasbuttonstatus == 0:
+    CP.gasMaxV = [0.2, 0.2, 0.2]
+  else:
+    CP.gasMaxV = [0.3, 0.7, 0.9]
   # Gas/Brake PID loop
   actuators.gas, actuators.brake = LoC.update(active, CS.vEgo, CS.brakePressed, CS.standstill, CS.cruiseState.standstill,
                                               v_cruise_kph, plan.vTarget, plan.vTargetFuture, plan.aTarget,
                                               CP, PL.lead_1)
   # Steering PID loop and lateral MPC
-  actuators.steer, actuators.steerAngle = LaC.update(active, CS.vEgo, CS.steeringAngle,
-                                                     CS.steeringPressed, plan.dPoly, angle_offset, CP, VM, PL)
-
+  actuators.steer, actuators.steerAngle = LaC.update(active, CS.vEgo, CS.steeringAngle, CS.steeringRate, 
+                                                     CS.steeringPressed, plan.dPoly, angle_offset, CP, VM, PL,CS.blindspot,CS.leftBlinker,CS.rightBlinker)
+ #BB added for ALCA support
+  #CS.pid = LaC.pid
   # Send a "steering required alert" if saturation count has reached the limit
   if LaC.sat_flag and CP.steerLimitAlert:
     AM.add("steerSaturated", enabled)
@@ -321,7 +325,9 @@ def data_send(perception_state, plan, plan_ts, CS, CI, CP, VM, state, events, ac
     CC.hudControl.lanesVisible = isEnabled(state)
     CC.hudControl.leadVisible = plan.hasLead
     CC.hudControl.rightLaneVisible = plan.hasRightLane
+    CC.hudControl.rightLaneDepart = plan.hasrightLaneDepart
     CC.hudControl.leftLaneVisible = plan.hasLeftLane
+    CC.hudControl.leftLaneDepart = plan.hasleftLaneDepart
     CC.hudControl.visualAlert = AM.visual_alert
     CC.hudControl.audibleAlert = AM.audible_alert
 

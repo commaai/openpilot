@@ -16,7 +16,7 @@ Version 0.5.7 (2018-12-06)
  * Cadillac ATS support thanks to vntarasov!
  * GMC Acadia support thanks to CryptoKylan!
  * Decrease GPU power consumption
- * NEOSv8 autoupdate
+ * no NEOSv8 autoupdate
 
 Version 0.5.6 (2018-11-16)
 ========================

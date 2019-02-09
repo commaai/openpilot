@@ -28,6 +28,7 @@ _DT = 0.01    # 100Hz
 _DT_MPC = 0.2  # 5Hz
 MAX_SPEED_ERROR = 2.0
 AWARENESS_DECEL = -0.2     # car smoothly decel at .2m/s^2 when user is distracted
+TR=1.8 # CS.readdistancelines
 
 GPS_PLANNER_ADDR = "192.168.5.1"
 
@@ -43,8 +44,8 @@ _A_CRUISE_MAX_V_FOLLOWING = [1.6, 1.6, 1.2, .7, .3]
 _A_CRUISE_MAX_BP = [0.,  5., 10., 20., 40.]
 
 # Lookup table for turns
-_A_TOTAL_MAX_V = [1.5, 1.9, 3.2]
-_A_TOTAL_MAX_BP = [0., 20., 40.]
+_A_TOTAL_MAX_V = [3.0, 3.5, 4.0]
+_A_TOTAL_MAX_BP = [0., 25., 40.]
 
 _FCW_A_ACT_V = [-3., -2.]
 _FCW_A_ACT_BP = [0., 30.]
@@ -60,17 +61,21 @@ def calc_cruise_accel_limits(v_ego, following):
   return np.vstack([a_cruise_min, a_cruise_max])
 
 
-def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
+def limit_accel_in_turns(v_ego, angle_steers, a_target, CP, angle_later):
   """
   This function returns a limited long acceleration allowed, depending on the existing lateral acceleration
   this should avoid accelerating when losing the target in turns
   """
 
   a_total_max = interp(v_ego, _A_TOTAL_MAX_BP, _A_TOTAL_MAX_V)
-  a_y = v_ego**2 * angle_steers * CV.DEG_TO_RAD / (CP.steerRatio * CP.wheelbase)
-  a_x_allowed = math.sqrt(max(a_total_max**2 - a_y**2, 0.))
+  a_y = v_ego**2 * abs(angle_steers) * CV.DEG_TO_RAD / (CP.steerRatio * CP.wheelbase)
+  a_y2 = v_ego**2 * abs(angle_later) * CV.DEG_TO_RAD / (CP.steerRatio * CP.wheelbase)
+  a_x_allowed = a_total_max - a_y
+  a_x_allowed2 = a_total_max - a_y2
 
-  a_target[1] = min(a_target[1], a_x_allowed)
+  a_target[1] = min(a_target[1], a_x_allowed, a_x_allowed2)
+  a_target[0] = min(a_target[0], a_target[1])
+  #print a_target[1]
   return a_target
 
 
@@ -151,7 +156,7 @@ class LongitudinalMpc(object):
     self.prev_lead_status = False
     self.prev_lead_x = 0.0
     self.new_lead = False
-
+    self.lastTR = 2
     self.last_cloudlog_t = 0.0
 
   def send_mpc_solution(self, qp_iterations, calculation_time):
@@ -190,7 +195,7 @@ class LongitudinalMpc(object):
     self.cur_state[0].x_ego = 0.0
 
     if lead is not None and lead.status:
-      x_lead = lead.dRel
+      x_lead = max(0, lead.dRel - 1)
       v_lead = max(0.0, lead.vLead)
       a_lead = lead.aLeadK
 
@@ -219,7 +224,37 @@ class LongitudinalMpc(object):
 
     # Calculate mpc
     t = sec_since_boot()
-    n_its = self.libmpc.run_mpc(self.cur_state, self.mpc_solution, self.a_lead_tau, a_lead)
+    if CS.vEgo < 11.4:
+      TR=1.8 # under 41km/hr use a TR of 1.8 seconds
+      #if self.lastTR > 0:
+        #self.libmpc.init(MPC_COST_LONG.TTC, 0.1, PC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
+        #self.lastTR = 0
+    else:
+      if CS.readdistancelines == 2:
+        if CS.readdistancelines == self.lastTR:
+          TR=1.8 # 20m at 40km/hr
+        else:
+          TR=1.8
+          self.libmpc.init(MPC_COST_LONG.TTC, 0.1, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
+          self.lastTR = CS.readdistancelines
+      elif CS.readdistancelines == 1:
+        if CS.readdistancelines == self.lastTR:
+          TR=0.9 # 10m at 40km/hr
+        else:
+          TR=0.9
+          self.libmpc.init(MPC_COST_LONG.TTC, 1.0, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
+          self.lastTR = CS.readdistancelines
+      elif CS.readdistancelines == 3:
+        if CS.readdistancelines == self.lastTR:
+          TR=2.7
+        else:
+          TR=2.7 # 30m at 40km/hr
+          self.libmpc.init(MPC_COST_LONG.TTC, 0.05, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
+          self.lastTR = CS.readdistancelines
+      else:
+        TR=1.8 # if readdistancelines = 0
+    #print TR
+    n_its = self.libmpc.run_mpc(self.cur_state, self.mpc_solution, self.a_lead_tau, a_lead, TR)
     duration = int((sec_since_boot() - t) * 1e9)
     self.send_mpc_solution(n_its, duration)
 
@@ -258,6 +293,7 @@ class Planner(object):
     self.live20 = messaging.sub_sock(context, service_list['live20'].port, conflate=True, poller=self.poller)
     self.model = messaging.sub_sock(context, service_list['model'].port, conflate=True, poller=self.poller)
     self.live_map_data = messaging.sub_sock(context, service_list['liveMapData'].port, conflate=True, poller=self.poller)
+    self.lat_Control = messaging.sub_sock(context, service_list['latControl'].port, conflate=True, poller=self.poller)
 
     if os.environ.get('GPS_PLANNER_ACTIVE', False):
       self.gps_planner_plan = messaging.sub_sock(context, service_list['gpsPlannerPlan'].port, conflate=True, poller=self.poller, addr=GPS_PLANNER_ADDR)
@@ -301,6 +337,7 @@ class Planner(object):
     self.last_gps_planner_plan = None
     self.gps_planner_active = False
     self.last_live_map_data = None
+    self.lastlat_Control = None
     self.perception_state = log.Live20Data.new_message()
 
     self.params = Params()
@@ -358,6 +395,8 @@ class Planner(object):
         gps_planner_plan = messaging.recv_one(socket)
       elif socket is self.live_map_data:
         self.last_live_map_data = messaging.recv_one(socket).liveMapData
+      elif socket is self.lat_Control:
+        self.lastlat_Control = messaging.recv_one(socket).latControl
 
     if gps_planner_plan is not None:
       self.last_gps_planner_plan = gps_planner_plan
@@ -367,7 +406,7 @@ class Planner(object):
       self.last_model = cur_time
       self.model_dead = False
 
-      self.PP.update(CS.vEgo, md)
+      self.PP.update(CS.vEgo, md, LaC)
 
       if self.last_gps_planner_plan is not None:
         plan = self.last_gps_planner_plan.gpsPlannerPlan
@@ -426,7 +465,11 @@ class Planner(object):
         accel_limits = map(float, calc_cruise_accel_limits(CS.vEgo, following))
         # TODO: make a separate lookup for jerk tuning
         jerk_limits = [min(-0.1, accel_limits[0]), max(0.1, accel_limits[1])]
-        accel_limits = limit_accel_in_turns(CS.vEgo, CS.steeringAngle, accel_limits, self.CP)
+        if self.lastlat_Control and CS.vEgo > 11:
+          angle_later = self.lastlat_Control.anglelater 
+        else:
+          angle_later = 0
+        accel_limits = limit_accel_in_turns(CS.vEgo, CS.steeringAngle, accel_limits, self.CP, angle_later * self.CP.steerRatio)
 
         if force_slow_decel:
           # if required so, force a smooth deceleration
@@ -523,7 +566,9 @@ class Planner(object):
     plan_send.plan.vTargetFuture = self.v_acc_future
     plan_send.plan.hasLead = self.mpc1.prev_lead_status
     plan_send.plan.hasLeftLane = bool(self.PP.l_prob > 0.5)
+    plan_send.plan.hasrightLaneDepart = bool(self.PP.r_poly[3] > -1.15 and not CS.rightBlinker)
     plan_send.plan.hasRightLane = bool(self.PP.r_prob > 0.5)
+    plan_send.plan.hasleftLaneDepart = bool(self.PP.l_poly[3] < 1.15 and not CS.leftBlinker)
     plan_send.plan.longitudinalPlanSource = self.longitudinalPlanSource
 
     plan_send.plan.gpsPlannerActive = self.gps_planner_active

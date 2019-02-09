@@ -564,6 +564,8 @@ struct Plan {
   hasLead @7 :Bool;
   hasLeftLane @23 :Bool;
   hasRightLane @24 :Bool;
+  hasleftLaneDepart @25 :Bool;
+  hasrightLaneDepart @26 :Bool;
   fcw @8 :Bool;
   longitudinalPlanSource @15 :LongitudinalPlanSource;
 
@@ -575,7 +577,7 @@ struct Plan {
   # maps
   vCurvature @21 :Float32;
   decelForTurn @22 :Bool;
-  mapValid @25 :Bool;
+  mapValid @27 :Bool;
 
   struct GpsTrajectory {
     x @0 :List(Float32);
@@ -1596,6 +1598,10 @@ struct LiveMapData {
   mapValid @11 :Bool;
 }
 
+struct LatControl {
+  anglelater @0 :Float32;
+}
+
 struct CameraOdometry {
   trans @0 :List(Float32); # m/s in device frame
   rot @1 :List(Float32); # rad/s in device frame
@@ -1670,6 +1676,7 @@ struct Event {
     boot @60 :Boot;
     liveParameters @61 :LiveParametersData;
     liveMapData @62 :LiveMapData;
-    cameraOdometry @63 :CameraOdometry;
+    latControl @63 :LatControl;
+    cameraOdometry @64 :CameraOdometry;
   }
 }

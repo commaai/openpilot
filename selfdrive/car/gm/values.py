@@ -18,6 +18,12 @@ class CruiseButtons:
   MAIN        = 5
   CANCEL      = 6
 
+class AccState:
+  OFF        = 0
+  ACTIVE     = 1
+  FAULTED    = 3
+  STANDSTILL = 4
+
 # Car chimes, beeps, blinker sounds etc
 class CM:
   TOCK = 0x81
@@ -92,6 +98,7 @@ FINGERPRINTS = {
 }
 
 STEER_THRESHOLD = 1.0
+
 
 STOCK_CONTROL_MSGS = {
   CAR.HOLDEN_ASTRA: [384, 715],

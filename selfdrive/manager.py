@@ -42,7 +42,7 @@ def unblock_stdout():
 
 if __name__ == "__main__":
   neos_update_required = os.path.isfile("/init.qcom.rc") \
-    and (not os.path.isfile("/VERSION") or int(open("/VERSION").read()) < 8)
+    and (not os.path.isfile("/VERSION") or int(open("/VERSION").read()) < 6)
   if neos_update_required:
     # update continue.sh before updating NEOS
     if os.path.isfile(os.path.join(BASEDIR, "scripts", "continue.sh")):
