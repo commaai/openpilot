@@ -21,6 +21,7 @@ except ImportError:
 # msgs sent for steering controller by camera module on can 0.
 # those messages are mutually exclusive on CRV and non-CRV cars
 CAMERA_MSGS = [0xe4, 0x194]
+AUTO_TRANSMISSION = [0x1a3]
 
 A_ACC_MAX = max(_A_CRUISE_MAX_V_FOLLOWING)
 
@@ -146,6 +147,7 @@ class CarInterface(object):
     ret = car.CarParams.new_message()
     ret.carName = "honda"
     ret.carFingerprint = candidate
+    ret.autoTransmission = any(x for x in AUTO_TRANSMISSION if x in fingerprint)
 
     if candidate in HONDA_BOSCH:
       ret.safetyModel = car.CarParams.SafetyModels.hondaBosch
