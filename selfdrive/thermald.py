@@ -84,6 +84,7 @@ _FAN_SPEEDS = [0, 16384, 32768, 65535]
 # max fan speed only allowed if battery is hot
 _BAT_TEMP_THERSHOLD = 45.
 
+
 def handle_fan(max_cpu_temp, bat_temp, fan_speed):
   new_speed_h = next(speed for speed, temp_h in zip(_FAN_SPEEDS, _TEMP_THRS_H) if temp_h > max_cpu_temp)
   new_speed_l = next(speed for speed, temp_l in zip(_FAN_SPEEDS, _TEMP_THRS_L) if temp_l > max_cpu_temp)
@@ -102,6 +103,27 @@ def handle_fan(max_cpu_temp, bat_temp, fan_speed):
   set_eon_fan(fan_speed/16384)
 
   return fan_speed
+
+
+def check_car_battery_voltage(should_start, health, charging_disabled, msg):
+
+  # charging disallowed if:
+  #   - there are health packets from panda, and;
+  #   - 12V battery voltage is too low, and;
+  #   - onroad isn't started
+  #   - keep battery within 67-70% State of Charge to preserve longevity
+  if charging_disabled and (health is None or health.health.voltage > 11500) and msg.thermal.batteryPercent < 60:
+    charging_disabled = False
+    os.system('echo "1" > /sys/class/power_supply/battery/charging_enabled')
+  elif not charging_disabled and (msg.thermal.batteryPercent > 70 or (health is not None and health.health.voltage < 11000 and not should_start)):
+    charging_disabled = True
+    os.system('echo "0" > /sys/class/power_supply/battery/charging_enabled')
+  elif msg.thermal.batteryCurrent < 0 and msg.thermal.batteryPercent > 70:
+    charging_disabled = True
+    os.system('echo "0" > /sys/class/power_supply/battery/charging_enabled')
+
+  return charging_disabled
+
 
 class LocationStarter(object):
   def __init__(self):
@@ -133,6 +155,7 @@ class LocationStarter(object):
       cloudlog.event("location_start", location=location.to_dict() if location else None)
       return location.speed*3.6 > 10
 
+
 def thermald_thread():
   setup_eon_fan()
 
@@ -156,8 +179,12 @@ def thermald_thread():
   health_sock.RCVTIMEO = 1500
   current_filter = FirstOrderFilter(0., CURRENT_TAU, 1.)
 
-  params = Params()
+  # Make sure charging is enabled
+  charging_disabled = False
+  os.system('echo "1" > /sys/class/power_supply/battery/charging_enabled')
 
+  params = Params()
+  
   while 1:
     health = messaging.recv_sock(health_sock, wait=True)
     location = messaging.recv_sock(location_sock)
@@ -180,9 +207,8 @@ def thermald_thread():
       msg.thermal.batteryVoltage = int(f.read())
     with open("/sys/class/power_supply/usb/online") as f:
       msg.thermal.usbOnline = bool(int(f.read()))
-
+        
     current_filter.update(msg.thermal.batteryCurrent / 1e6)
-    msg.thermal.chargerDisabled = current_filter.x > 1.0   # if current is ? 1A out, then charger might be off
 
     # TODO: add car battery voltage check
     max_cpu_temp = max(msg.thermal.cpu0, msg.thermal.cpu1,
@@ -268,6 +294,16 @@ def thermald_thread():
          started_seen and (sec_since_boot() - off_ts) > 60:
         os.system('LD_LIBRARY_PATH="" svc power shutdown')
 
+    charging_disabled = check_car_battery_voltage(should_start, health, charging_disabled, msg)
+    
+    # need to force batteryStatus because after NEOS update for 0.5.7 this doesn't work properly
+    if msg.thermal.batteryCurrent > 0:
+      msg.thermal.batteryStatus = "Discharging"
+    else:
+      msg.thermal.batteryStatus = "Charging"
+      
+    msg.thermal.chargingDisabled = charging_disabled
+    msg.thermal.chargingError = current_filter.x > 1.0   # if current is > 1A out, then charger might be off
     msg.thermal.started = started_ts is not None
     msg.thermal.startedTs = int(1e9*(started_ts or 0))
 
@@ -291,4 +327,3 @@ def main(gctx=None):
 
 if __name__ == "__main__":
   main()
-
