@@ -903,7 +903,7 @@ void bb_ui_init(UIState *s) {
 void bb_ui_play_sound( UIState *s, int sound) {
     char* snd_command;
     int bts = bb_get_button_status(s,"sound");
-    if ((bts > 0) || (bts == -1)) {
+    if (bts > 0) {
         asprintf(&snd_command, "python /data/openpilot/selfdrive/car/modules/snd/playsound.py %d &", sound);
         system(snd_command);
     }
