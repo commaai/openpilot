@@ -149,7 +149,6 @@ class CarInterface(object):
     ret.carFingerprint = candidate
     ret.autoTransmission = any(x for x in AUTO_TRANSMISSION if x in fingerprint)
 
-
     if candidate in HONDA_BOSCH:
       ret.safetyModel = car.CarParams.SafetyModels.hondaBosch
       ret.enableCamera = True
