@@ -33,7 +33,12 @@ def parse_speed_unit(max_speed):
     max_speed = max_speed.replace(' mph', '')
     conversion = CV.MPH_TO_MS
 
-  return float(max_speed) * conversion
+  try:
+    max_speed = float(max_speed) * conversion
+  except ValueError:
+    max_speed = None
+
+  return max_speed
 
 
 class Way:
@@ -131,17 +136,20 @@ class Way:
     if 'maxspeed' in tags:
       max_speed = parse_speed_unit(tags['maxspeed'])
 
-    if 'maxspeed:conditional' in tags:
-      max_speed_cond, cond = tags['maxspeed:conditional'].split(' @ ')
-      cond = cond[1:-1]
+    try:
+      if 'maxspeed:conditional' in tags:
+        max_speed_cond, cond = tags['maxspeed:conditional'].split(' @ ')
+        cond = cond[1:-1]
 
-      start, end = cond.split('-')
-      now = datetime.now()  # TODO: Get time and timezone from gps fix so this will work correctly on replays
-      start = datetime.strptime(start, "%H:%M").replace(year=now.year, month=now.month, day=now.day)
-      end = datetime.strptime(end, "%H:%M").replace(year=now.year, month=now.month, day=now.day)
+        start, end = cond.split('-')
+        now = datetime.now()  # TODO: Get time and timezone from gps fix so this will work correctly on replays
+        start = datetime.strptime(start, "%H:%M").replace(year=now.year, month=now.month, day=now.day)
+        end = datetime.strptime(end, "%H:%M").replace(year=now.year, month=now.month, day=now.day)
 
-      if start <= now <= end:
-        max_speed = parse_speed_unit(max_speed_cond)
+        if start <= now <= end:
+          max_speed = parse_speed_unit(max_speed_cond)
+    except ValueError:
+      pass
 
     return max_speed
 
@@ -191,10 +199,29 @@ class Way:
     way = None
     try:
       # Simple heuristic to find next way
-      ways = [w for w in ways if w.id != self.id and w.tags['highway'] == self.way.tags['highway']]
+      ways = [w for w in ways if w.id != self.id]
+      ways = [w for w in ways if w.nodes[0] == node]
+
+      # Filter on highway tag
+      acceptable_tags = list()
+      cur_tag = self.way.tags['highway']
+      acceptable_tags.append(cur_tag)
+      if cur_tag == 'motorway_link':
+        acceptable_tags.append('motorway')
+        acceptable_tags.append('trunk')
+        acceptable_tags.append('primary')
+      ways = [w for w in ways if w.tags['highway'] in acceptable_tags]
+
+      # Filter on number of lanes
+      cur_num_lanes = int(self.way.tags['lanes'])
+      if len(ways) > 1:
+        ways = [w for w in ways if int(w.tags['lanes']) == cur_num_lanes]
+      if len(ways) > 1:
+        ways = [w for w in ways if int(w.tags['lanes']) > cur_num_lanes]
       if len(ways) == 1:
         way = Way(ways[0])
-    except KeyError:
+
+    except (KeyError, ValueError):
       pass
 
     return way

@@ -32,7 +32,7 @@ ANGLE_DELTA_V = [5., .8, .25]     # windup limit
 ANGLE_DELTA_VU = [5., 3.5, 0.8]   # unwind limit
 #steering adjustment with speed
 DES_ANGLE_ADJUST_FACTOR_BP = [0.,13., 44.]
-DES_ANGLE_ADJUST_FACTOR = [.70, .80, .99]
+DES_ANGLE_ADJUST_FACTOR = [1.0, 1.0, 1.0]
 
 def process_hud_alert(hud_alert):
   # initialize to no alert
@@ -192,7 +192,8 @@ class CarController(object):
     des_angle_factor = interp(CS.v_ego, DES_ANGLE_ADJUST_FACTOR_BP, DES_ANGLE_ADJUST_FACTOR )
     if alca_enabled or not CS.enableSpeedVariableDesAngle:
       des_angle_factor = 1.
-    apply_angle = clip(apply_angle * des_angle_factor, self.last_angle - angle_rate_lim, self.last_angle + angle_rate_lim) 
+    #BB disable limits to test 0.5.8
+    # apply_angle = clip(apply_angle * des_angle_factor, self.last_angle - angle_rate_lim, self.last_angle + angle_rate_lim) 
     # If human control, send the steering angle as read at steering wheel.
     if human_control:
       apply_angle = CS.angle_steers

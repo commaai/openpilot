@@ -93,6 +93,9 @@ CL_TIMEA_T = [0.7 ,0.30, 0.20]
 from common.numpy_fast import interp
 from selfdrive.controls.lib.pid import PIController
 from common.realtime import sec_since_boot
+from selfdrive.services import service_list
+import selfdrive.messaging as messaging
+import zmq
 
 #wait time after turn complete before enabling smoother
 WAIT_TIME_AFTER_TURN = 2.0
@@ -132,7 +135,16 @@ class ALCAController(object):
     self.laneChange_cancelled = False
     self.laneChange_cancelled_counter = 0
     self.last_time_enabled = 0
-  
+    #we will read pitch and roll from LiveLocationData
+    context = zmq.Context()
+    self.poller = zmq.Poller()
+    self.liveLocation = messaging.sub_sock(context, service_list['liveLocationTiming'].port, conflate=True, poller=self.poller)
+    self.roll_angle = 0.
+    self.roll_accuracy = -1.
+    self.roll_correction_factor = 0.
+    self.pitch_angle = 0.
+    self.pitch_accuracy = -1.
+
 
   def last10delta_reset(self):
     self.last10delta = []
@@ -169,19 +181,20 @@ class ALCAController(object):
 
   def update_angle(self,enabled,CS,frame,actuators):
     alcaMode = CS.cstm_btns.get_button_label2_index("alca")
+    adj058 = 0.8
     #parameters that define the speed/aggressiveness of lane change modes
-    alca_m1 = [1., .9, .8]
-    alca_m2 = [1., 1., 1.7]
-    alca_m3 = [1., 0.5, 0.5]
+    alca_m1 = [1., .9, .8] 
+    alca_m2 = [1., 1., 1.7] 
+    alca_m3 = [1., 0.5, 0.5] 
     # speed variable parameters
-    cl_max_angle_delta = interp(CS.v_ego,CS.CL_MAX_ANGLE_DELTA_BP,CS.CL_MAX_ANGLE_DELTA) * alca_m1[alcaMode]
-    cl_maxd_a =  interp(CS.v_ego, CS.CL_MAXD_BP, CS.CL_MAXD_A) * alca_m3[alcaMode]
-    cl_lane_pass_time = interp(CS.v_ego,CS.CL_LANE_PASS_BP,CS.CL_LANE_PASS_TIME) * alca_m2[alcaMode]
-    cl_timea_t = interp(CS.v_ego,CS.CL_TIMEA_BP,CS.CL_TIMEA_T) * alca_m2[alcaMode]
-    cl_lane_detect_factor = interp(CS.v_ego, CS.CL_LANE_DETECT_BP, CS.CL_LANE_DETECT_FACTOR)
-    cl_max_a = interp(CS.v_ego, CS.CL_MAX_A_BP, CS.CL_MAX_A)
-    cl_adjust_factor = interp(CS.v_ego, CS.CL_ADJUST_FACTOR_BP, CS.CL_ADJUST_FACTOR)
-    cl_reentry_angle = interp(CS.v_ego, CS.CL_REENTRY_ANGLE_BP, CS.CL_REENTRY_ANGLE)
+    cl_max_angle_delta = interp(CS.v_ego,CS.CL_MAX_ANGLE_DELTA_BP,CS.CL_MAX_ANGLE_DELTA) * alca_m1[alcaMode] * adj058
+    cl_maxd_a =  interp(CS.v_ego, CS.CL_MAXD_BP, CS.CL_MAXD_A) * alca_m3[alcaMode] * adj058
+    cl_lane_pass_time = interp(CS.v_ego,CS.CL_LANE_PASS_BP,CS.CL_LANE_PASS_TIME) * alca_m2[alcaMode] / adj058
+    cl_timea_t = interp(CS.v_ego,CS.CL_TIMEA_BP,CS.CL_TIMEA_T) * alca_m2[alcaMode] / adj058
+    cl_lane_detect_factor = interp(CS.v_ego, CS.CL_LANE_DETECT_BP, CS.CL_LANE_DETECT_FACTOR) * alca_m1[alcaMode] * adj058
+    cl_max_a = interp(CS.v_ego, CS.CL_MAX_A_BP, CS.CL_MAX_A) * alca_m1[alcaMode] * adj058
+    cl_adjust_factor = interp(CS.v_ego, CS.CL_ADJUST_FACTOR_BP, CS.CL_ADJUST_FACTOR) * alca_m1[alcaMode] * adj058
+    cl_reentry_angle = interp(CS.v_ego, CS.CL_REENTRY_ANGLE_BP, CS.CL_REENTRY_ANGLE) * alca_m1[alcaMode] * adj058
     cl_min_v = CS.CL_MIN_V
     self.laneChange_wait = CS.CL_WAIT_BEFORE_START
 
@@ -449,6 +462,25 @@ class ALCAController(object):
 
 
   def update(self,enabled,CS,frame,actuators):
+    # we will read 'roll' from liveLocation and use to correct for road crown
+    ll_data = None
+    for socket, _ in self.poller.poll(0):
+        if socket is self.liveLocation:
+          ll_data = messaging.recv_one(socket)
+    if ll_data is not None:
+      self.roll_angle = ll_data.liveLocation.roll
+      self.roll_accuracy = ll_data.liveLocation.accuracy.rollError
+      self.pitch_angle = ll_data.liveLocation.pitch
+      self.pitch_accurcy = ll_data.liveLocation.accuracy.pitchError
+      if CS.enableRollAngleCorrection:
+        # compute roll correction factor
+        self.roll_correction_factor = 0.
+      else:
+        self.roll_correction_factor = 0.
+      print "LiveLocation Data Rcvd: "
+      print "   Roll=[",self.roll_angle,"]  Roll_Error=[",self.roll_accuracy,"]"
+      print "   Pitch=[",self.pitch_angle,"]  Pitch_Error=[",self.pitch_accuracy,"]"
+      print "   Correction Factor=[",self.roll_correction_factor,"]"
     if self.alcaEnabled:
       # ALCA enabled
         cur_time = sec_since_boot()
@@ -468,12 +500,22 @@ class ALCAController(object):
           output_steer = actuators.steer
         if self.laneChange_steerByAngle and (not new_ALCA_Enabled) and (cur_time - self.last_time_enabled > WAIT_TIME_AFTER_TURN):
           new_angle = actuators.steer
+        direction = 1
+        if new_angle != 0:
+          direction = new_angle/abs(new_angle)
+        new_angle = new_angle * (1 + direction * self.roll_correction_factor)
         return [new_angle,output_steer,new_ALCA_Enabled,new_turn_signal]
     else:
       # ALCA disabled
       if self.laneChange_steerByAngle:
-        # when steerByAngle, actuators.steer has the smoothed version of the angle by Grenby
-        return [actuators.steer,actuators.steer,False,0]
+        direction = 1
+        if actuators.steerAngle != 0:
+          direction = actuators.steerAngle/abs(actuators.steerAngle)
+        if CS.enableFeedForwardAngleCorrection:
+          # when steerByAngle, actuators.steer has the smoothed version of the angle by Grenby
+          return [actuators.steer * (1 + direction * self.roll_correction_factor) ,actuators.steer,False,0]
+        else:
+          return [actuators.steerAngle * (1 + direction * self.roll_correction_factor),actuators.steer,False,0]
       else:
         return [actuators.steerAngle,actuators.steer,False,0]
  

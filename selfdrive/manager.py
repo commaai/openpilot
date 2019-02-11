@@ -41,9 +41,9 @@ def unblock_stdout():
     os._exit(os.wait()[1])
 
 if __name__ == "__main__":
-  if os.path.isfile("/init.qcom.rc") \
-      and (not os.path.isfile("/VERSION") or int(open("/VERSION").read()) < 8):
-
+  neos_update_required = os.path.isfile("/init.qcom.rc") \
+    and (not os.path.isfile("/VERSION") or int(open("/VERSION").read()) < 8)
+  if neos_update_required:
     # update continue.sh before updating NEOS
     if os.path.isfile(os.path.join(BASEDIR, "scripts", "continue.sh")):
       from shutil import copyfile
@@ -54,6 +54,9 @@ if __name__ == "__main__":
     subprocess.check_call(["git", "clean", "-xdf"], cwd=BASEDIR)
     os.system(os.path.join(BASEDIR, "installer", "updater", "updater"))
     raise Exception("NEOS outdated")
+  elif os.path.isdir("/data/neoupdate"):
+    from shutil import rmtree
+    rmtree("/data/neoupdate")
 
   unblock_stdout()
 

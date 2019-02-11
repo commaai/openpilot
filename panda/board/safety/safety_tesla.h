@@ -8,6 +8,8 @@
 //      brake rising edge
 //      brake > 0mph
 
+int gas_interceptor_detected = 0;
+
 // 2m/s are added to be less restrictive
 const struct lookup_t TESLA_LOOKUP_ANGLE_RATE_UP = {
     {2., 7., 17.},
@@ -66,8 +68,8 @@ int EPB_epasControl_idx = 0;
 
 //settings from bb_openpilot.cfg
 
-int enable_das_emulation = 0;
-int enable_radar_emulation = 0;
+int enable_das_emulation = 1;
+int enable_radar_emulation = 1;
 
 //fake DAS counters
 int DAS_bootID_sent = 0;
@@ -314,26 +316,15 @@ static void do_fake_DI_state(uint32_t RIR, uint32_t RDTR) {
 
 static void do_fake_DAS(uint32_t RIR, uint32_t RDTR) {
 
-  if (enable_das_emulation == 0) {
-    return;
-  }
-  //check if we got data from OP in the last two seconds
-  if (current_car_time - time_last_DAS_data > 2) {
-    //no message in the last 2 seconds, reset all variables
-    reset_DAS_data();
-  }
-
   fake_DAS_counter++;
   fake_DAS_counter = fake_DAS_counter % 300;
   uint32_t MLB;
   uint32_t MHB;
 
-  //if we never sent DAS_bootID message, send it now
-  if (DAS_bootID_sent == 0) {
-    MLB = 0x00E30055;
-    MHB = 0x002003BD;
-    send_fake_message(RIR,RDTR,8,0x639,0,MLB,MHB);
-    DAS_bootID_sent = 1;
+  //check if we got data from OP in the last two seconds
+  if (current_car_time - time_last_DAS_data > 2) {
+    //no message in the last 2 seconds, reset all variables
+    reset_DAS_data();
   }
 
   if (fake_DAS_counter % 2 == 0) {
@@ -348,6 +339,18 @@ static void do_fake_DAS(uint32_t RIR, uint32_t RDTR) {
     send_fake_message(RIR,RDTR,4,0x488,0,MLB,MHB);
     DAS_steeringControl_idx ++;
     DAS_steeringControl_idx = DAS_steeringControl_idx % 16;
+  }
+
+  if (enable_das_emulation == 0) {
+    return;
+  }
+
+  //if we never sent DAS_bootID message, send it now
+  if (DAS_bootID_sent == 0) {
+    MLB = 0x00E30055;
+    MHB = 0x002003BD;
+    send_fake_message(RIR,RDTR,8,0x639,0,MLB,MHB);
+    DAS_bootID_sent = 1;
   }
 
   if (fake_DAS_counter % 10 ==7) {
