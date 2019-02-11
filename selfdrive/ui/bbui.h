@@ -764,16 +764,30 @@ void bb_ui_read_triState_switch( UIState *s) {
   int tri_state_fd;
   char buffer[10];
   if  (bb_currentTimeInMilis() - s->b.tri_state_switch_last_read > 2000)  {
-    tri_state_fd = open ("/sys/devices/virtual/switch/tri-state-key/state", O_RDONLY);
+    //tri_stated_fd = open ("/sys/devices/virtual/switch/tri-state-key/state", O_RDONLY);
     //if we can't open then switch should be considered in the middle, nothing done
+    /*
     if (tri_state_fd == -1) {
-      s->b.tri_state_switch = 2;
+      s->b.tri_state_switch = 3;
     } else {
       read (tri_state_fd, &buffer, 10);
       s->b.tri_state_switch = buffer[0] -48;
       close(tri_state_fd);
       s->b.tri_state_switch_last_read = bb_currentTimeInMilis();
     }
+    */
+    s->b.tri_state_switch_last_read = bb_currentTimeInMilis(); 
+    s->b.tri_state_switch = 1;
+    if (strcmp(s->b.btns[2].btn_label2,"Left")==0) {
+      s->b.tri_state_switch = 1;
+    }
+    if (strcmp(s->b.btns[2].btn_label2,"Middle")==0) {
+      s->b.tri_state_switch = 2;
+    }
+    if (strcmp(s->b.btns[2].btn_label2,"Right")==0) {
+      s->b.tri_state_switch = 3;
+    }
+    
   }
 }
 
@@ -793,7 +807,7 @@ void bb_ui_draw_UI( UIState *s) {
     bb_ui_draw_measures_right(s,bb_dmr_x, bb_dmr_y, bb_dmr_w );
     bb_draw_buttons(s);
     bb_ui_draw_custom_alert(s);
-    bb_ui_draw_logo(s);
+    //bb_ui_draw_logo(s);
 	 }
    if (s->b.tri_state_switch ==2) {
 	 	const UIScene *scene = &s->scene;
@@ -806,7 +820,7 @@ void bb_ui_draw_UI( UIState *s) {
 	  const int bb_dmr_y = (box_y + (bdr_s*1.5))+220;
     bb_draw_buttons(s);
     bb_ui_draw_custom_alert(s);
-    bb_ui_draw_logo(s);
+    //bb_ui_draw_logo(s);
     //bb_ui_draw_car(s);
 	 }
 	 if (s->b.tri_state_switch ==3) {
@@ -838,6 +852,10 @@ void bb_ui_init(UIState *s) {
     strcpy(s->b.car_folder,"tesla");
     s->b.tri_state_switch = -1;
     s->b.tri_state_switch_last_read = 0;
+    s->b.touch_last = false;
+    s->b.touch_last_x = 0;
+    s->b.touch_last_y =0;
+    s->b.touch_last_width = s->scene.ui_viz_rw;
 
     //BB Define CAPNP sock
     s->b.uiButtonInfo_sock = zsock_new_sub(">tcp://127.0.0.1:8201", "");
@@ -1068,5 +1086,3 @@ void  bb_ui_poll_update( UIState *s) {
             
     }
 }
-
- 

@@ -12,6 +12,7 @@
 #include "gpio.h"
 
 #include "drivers/uart.h"
+#include "drivers/lin.h"
 #include "drivers/adc.h"
 #include "drivers/usb.h"
 #include "drivers/gmlan_alt.h"

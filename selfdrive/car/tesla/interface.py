@@ -19,8 +19,6 @@ except ImportError:
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
-K_MULT = 0.8 
-K_MULTi = 280000.
 
 def tesla_compute_gb(accel, speed):
   return float(accel) / 3.
@@ -50,6 +48,8 @@ class CarInterface(object):
       self.CC = CarController(self.cp.dbc_name, CP.enableCamera)
 
     self.compute_gb = tesla_compute_gb
+    
+
 
   @staticmethod
   def calc_accel_override(a_ego, a_target, v_ego, v_target):
@@ -84,7 +84,8 @@ class CarInterface(object):
     std_cargo = 136
 
     # Scaled tire stiffness
-    ts_factor = 8 
+    #ts_factor = 0.8
+    tire_stiffness_factor = 8
 
     ret = car.CarParams.new_message()
 
@@ -100,32 +101,43 @@ class CarInterface(object):
 
     ret.enableCruise = not ret.enableGasInterceptor
 
-    mass_models = 4722./2.205 + std_cargo
-    wheelbase_models = 2.959
+    # FIXME: hardcoding honda civic 2016 touring params so they can be used to
+    # scale unknown params for other cars
+    mass = 2923 * CV.LB_TO_KG + std_cargo
+    wheelbase = 2.75
+    centerToFront = wheelbase * 0.48
+    centerToRear = wheelbase - centerToFront
+    rotationalInertia = 2500
+    tireStiffnessFront = 95400
+    tireStiffnessRear = 100000
+
+    #mass_models = 4722./2.205 + std_cargo
+    #wheelbase_models = 2.959
     # RC: I'm assuming center means center of mass, and I think Model S is pretty even between two axles
-    centerToFront_models = wheelbase_models * 0.48
-    centerToRear_models = wheelbase_models - centerToFront_models
-    rotationalInertia_models = 2500
-    tireStiffnessFront_models = 85400
-    tireStiffnessRear_models = 90000
+    #centerToFront_models = wheelbase_models * 0.48
+    #centerToRear_models = wheelbase_models - centerToFront_models
+    #rotationalInertia_models = 2500
+    #tireStiffnessFront_models = 85400
+    #tireStiffnessRear_models = 90000
+
     # will create Kp and Ki for 0, 20, 40, 60 mph
     ret.steerKiBP, ret.steerKpBP = [[0., 8.94, 17.88, 26.82 ], [0., 8.94, 17.88, 26.82]]
     if candidate == CAR.MODELS:
       stop_and_go = True
-      ret.mass = mass_models
-      ret.wheelbase = wheelbase_models
-      ret.centerToFront = centerToFront_models
-      ret.steerRatio = 15.75
+      ret.mass = 4722./2.205 + std_cargo
+      ret.wheelbase = 2.859
+      ret.centerToFront = ret.wheelbase * 0.48
+      ret.steerRatio = 15
       # Kp and Ki for the lateral control for 0, 20, 40, 60 mph
-      ret.steerKpV, ret.steerKiV = [[1.20, 0.80, 0.60, 0.30], [0.16, 0.12, 0.08, 0.04]]
+      ret.steerKpV, ret.steerKiV = [[1.20, 0.80, 0.60, 0.4], [0.16, 0.12, 0.08, 0.04]]
       ret.steerKf = 0.00006 # Initial test value TODO: investigate FF steer control for Model S?
       ret.steerActuatorDelay = 0.09
-      
+
       # Kp and Ki for the longitudinal control
       ret.longitudinalKpBP = [0., 5., 35.]
-      ret.longitudinalKpV = [1.27/K_MULT , 1.05/K_MULT, 0.85/K_MULT]
+      ret.longitudinalKpV = [0.6, 0.6, 0.6]
       ret.longitudinalKiBP = [0., 5., 35.]
-      ret.longitudinalKiV = [0.11/K_MULTi, 0.09/K_MULTi, 0.06/K_MULTi]
+      ret.longitudinalKiV = [0.18,0.18,0.18]
       
       #from honda
       #ret.longitudinalKpBP = [0., 5., 35.]
@@ -148,18 +160,19 @@ class CarInterface(object):
     ret.minEnableSpeed = -1. if (stop_and_go or ret.enableGasInterceptor) else 25.5 * CV.MPH_TO_MS
 
     centerToRear = ret.wheelbase - ret.centerToFront
-    # TODO: get actual value, for now starting with reasonable value for Model S
-    ret.rotationalInertia = rotationalInertia_models * \
-                            ret.mass * ret.wheelbase**2 / (mass_models * wheelbase_models**2)
+    # TODO: get actual value, for now starting with reasonable value for
+    # civic and scaling by mass and wheelbase
+    ret.rotationalInertia = rotationalInertia * \
+                            ret.mass * ret.wheelbase**2 / (mass * wheelbase**2)
 
-    # TODO: start from empirically derived lateral slip stiffness and scale by
+    # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
-    ret.tireStiffnessFront = (tireStiffnessFront_models * ts_factor) * \
-                             ret.mass / mass_models * \
-                             (centerToRear / ret.wheelbase) / (centerToRear_models / wheelbase_models)
-    ret.tireStiffnessRear = (tireStiffnessRear_models * ts_factor) * \
-                            ret.mass / mass_models * \
-                            (ret.centerToFront / ret.wheelbase) / (centerToFront_models / wheelbase_models)
+    ret.tireStiffnessFront = (tireStiffnessFront * tire_stiffness_factor) * \
+                             ret.mass / mass * \
+                             (centerToRear / ret.wheelbase) / (centerToRear / wheelbase)
+    ret.tireStiffnessRear = (tireStiffnessRear * tire_stiffness_factor) * \
+                            ret.mass / mass * \
+                            (ret.centerToFront / ret.wheelbase) / (centerToFront / wheelbase)
 
     # no rear steering, at least on the listed cars above
     ret.steerRatioRear = 0.
@@ -177,9 +190,10 @@ class CarInterface(object):
     ret.longPidDeadzoneV = [0., 0.] #BB: added from Toyota to start pedal work; need to tune; changed to 0 for now
 
     ret.stoppingControl = True
+    ret.openpilotLongitudinalControl = True
     ret.steerLimitAlert = False
     ret.startAccel = 0.5
-    ret.steerRateCost = 1.
+    ret.steerRateCost = 1.5
 
     return ret
 
@@ -208,16 +222,16 @@ class CarInterface(object):
     ret.wheelSpeeds.rr = self.CS.v_wheel_rr
 
     # gas pedal, we don't use with with interceptor so it's always 0/False
-    ret.gas = self.CS.user_gas 
+    ret.gas = self.CS.user_gas
     if not self.CP.enableGasInterceptor:
       ret.gasPressed = self.CS.user_gas_pressed
     else:
       ret.gasPressed = self.CS.user_gas_pressed
 
-    
+
 
     # brake pedal
-    ret.brakePressed = (self.CS.brake_pressed != 0) and (self.CS.cstm_btns.get_button_status("brake") == 0)
+    ret.brakePressed =False # (self.CS.brake_pressed != 0) and (self.CS.cstm_btns.get_button_status("brake") == 0)
     # FIXME: read sendcan for brakelights
     brakelights_threshold = 0.1
     ret.brakeLights = bool(self.CS.brake_switch or
@@ -291,36 +305,74 @@ class CarInterface(object):
     # TODO: I don't like the way capnp does enums
     # These strings aren't checked at compile time
     events = []
+
+    #notification messages for DAS
+    self.CS.DAS_noSeatbelt = 0
+    self.CS.DAS_canErrors = 0
+    self.CS.DAS_plannerErrors = 0
+    self.CS.DAS_doorOpen = 0
+    self.CS.DAS_notInDrive = 0
+    self.CC.opState = 0
+    if c.enabled:
+      self.CC.opState = 1
     if not self.CS.can_valid:
       self.can_invalid_count += 1
-      if self.can_invalid_count >= 5:
+      if self.can_invalid_count >= 25: #BB increased to 25 to see if we still get the can error messages
         events.append(create_event('commIssue', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
+        self.CS.DAS_canErrors = 1
+        if self.CC.opState > 0:
+          self.CC.opState = 2
     else:
       self.can_invalid_count = 0
     if self.CS.steer_error:
-      if self.CS.cstm_btns.get_button_status("steer") == 0:
+      if not self.CS.enableHSO:
         events.append(create_event('steerUnavailable', [ET.NO_ENTRY, ET.WARNING]))
     elif self.CS.steer_warning:
-      if self.CS.cstm_btns.get_button_status("steer") == 0:
+      if not self.CS.enableHSO:
          events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
+         if self.CC.opState > 0:
+           self.CC.opState = 2
     if self.CS.brake_error:
       events.append(create_event('brakeUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
+      if self.CC.opState > 0:
+        self.CC.opState = 2
     if not ret.gearShifter == 'drive':
       events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+      self.CS.DAS_notInDrive = 1
+      if self.CC.opState > 0:
+          self.CC.opState = 0
     if ret.doorOpen:
       events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+      self.CS.DAS_doorOpen = 1
+      if self.CC.opState > 0:
+        self.CC.opState = 0
     if ret.seatbeltUnlatched:
       events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+      if c.enabled:
+        self.CS.DAS_noSeatbelt = 1
+      if self.CC.opState > 0:
+        self.CC.opState = 2
     if self.CS.esp_disabled:
       events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+      if self.CC.opState > 0:
+          self.CC.opState = 2
     if not self.CS.main_on:
       events.append(create_event('wrongCarMode', [ET.NO_ENTRY, ET.USER_DISABLE]))
+      if self.CC.opState > 0:
+          self.CC.opState = 0
     if ret.gearShifter == 'reverse':
       events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
+      self.CS.DAS_notInDrive = 1
+      if self.CC.opState > 0:
+          self.CC.opState = 0
     if self.CS.brake_hold:
       events.append(create_event('brakeHold', [ET.NO_ENTRY, ET.USER_DISABLE]))
+      if self.CC.opState > 0:
+          self.CC.opState = 0
     if self.CS.park_brake:
       events.append(create_event('parkBrake', [ET.NO_ENTRY, ET.USER_DISABLE]))
+      if self.CC.opState > 0:
+          self.CC.opState = 0
 
 
     if self.CP.enableCruise and ret.vEgo < self.CP.minEnableSpeed:
@@ -332,12 +384,12 @@ class CarInterface(object):
 #       (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001)):
 #      events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
 
-    if (self.CS.cstm_btns.get_button_status("brake")>0):
-      if ((self.CS.brake_pressed !=0) != self.brake_pressed_prev): #break not canceling when pressed
-        self.CS.cstm_btns.set_button_status("brake", 2 if self.CS.brake_pressed != 0 else 1)
-    else:
-      if ret.brakePressed:
-        events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
+    #if (self.CS.cstm_btns.get_button_status("brake")>0):
+    #  if ((self.CS.brake_pressed !=0) != self.brake_pressed_prev): #break not canceling when pressed
+    #  self.CS.cstm_btns.set_button_status("brake", 2 if self.CS.brake_pressed != 0 else 1)
+    #else:
+    #  if ret.brakePressed:
+    #    events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
     if ret.gasPressed:
       events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
 

@@ -161,6 +161,7 @@ void reset_gmlan_switch_timeout(void) {
   can_timeout_counter = GMLAN_TICKS_PER_SECOND;
   gmlan_switch_below_timeout = 1;
   gmlan_alt_mode = GPIO_SWITCH;
+  TIM4->CR1 = TIM_CR1_CEN; // Enable timer again in case we were timed out
 }
 
 void set_bitbanged_gmlan(int val) {
@@ -253,6 +254,10 @@ void TIM4_IRQHandler(void) {
     }
     TIM4->SR = 0;
   } //gmlan switch mode
+  else {
+    //disable timer; not a valid mode
+    TIM4->CR1 &= ~TIM_CR1_CEN;
+  }
 }
 
 void bitbang_gmlan(CAN_FIFOMailBox_TypeDef *to_bang) {
