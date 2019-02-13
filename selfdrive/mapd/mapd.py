@@ -35,7 +35,8 @@ from selfdrive.version import version, dirty
 
 OVERPASS_API_URL = "https://overpass.kumi.systems/api/interpreter"
 OVERPASS_HEADERS = {
-    'User-Agent': 'NEOS (comma.ai)'
+    'User-Agent': 'NEOS (comma.ai)',
+    'Accept-Encoding': 'gzip'
 }
 
 last_gps = None
