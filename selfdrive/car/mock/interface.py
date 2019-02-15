@@ -74,6 +74,10 @@ class CarInterface(object):
     ret.longitudinalKiBP = [0.]
     ret.longitudinalKiV = [0.]
     ret.steerActuatorDelay = 0.
+    ret.steerReactance = 0.7
+    ret.steerInductance = 1.0
+    ret.steerResistance = 1.0
+    ret.eonToFront = 0.5
 
     return ret
 

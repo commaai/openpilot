@@ -69,6 +69,11 @@ class CarInterface(object):
     tireStiffnessFront_civic = 192150
     tireStiffnessRear_civic = 202500
 
+    ret.steerReactance = 0.7
+    ret.steerInductance = 1.0
+    ret.steerResistance = 1.0
+    ret.eonToFront = 0.5
+
     ret.steerActuatorDelay = 0.1  # Default delay
     tire_stiffness_factor = 1.
 
