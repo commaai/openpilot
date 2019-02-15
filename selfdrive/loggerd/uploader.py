@@ -85,6 +85,7 @@ def is_on_hotspot():
     result = re.findall(r"inet addr:((\d+\.){3}\d+)", result)[0][0]
 
     is_android = result.startswith('192.168.43.')
+    #is_android = result.startswith('192.168.49.') when using proxy through android IP is different
     is_ios = result.startswith('172.20.10.')
     return (is_android or is_ios)
   except:
