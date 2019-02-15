@@ -2,13 +2,11 @@
 import gc
 import zmq
 import json
-
 from cereal import car, log
 from common.numpy_fast import clip
 from common.realtime import sec_since_boot, set_realtime_priority, Ratekeeper
 from common.profiler import Profiler
 from common.params import Params
-
 import selfdrive.messaging as messaging
 from selfdrive.config import Conversions as CV
 from selfdrive.services import service_list
@@ -25,15 +23,10 @@ from selfdrive.controls.lib.latcontrol import LatControl
 from selfdrive.controls.lib.alertmanager import AlertManager
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.controls.lib.driver_monitor import DriverStatus
+from selfdrive.locationd.calibration_helpers import Calibration, Filter
 
 ThermalStatus = log.ThermalData.ThermalStatus
 State = log.Live100Data.ControlState
-
-
-class Calibration:
-  UNCALIBRATED = 0
-  CALIBRATED = 1
-  INVALID = 2
 
 
 def isActive(state):
@@ -77,7 +70,7 @@ def data_sample(CI, CC, thermal, calibration, health, driver_monitor, gps_locati
 
   if td is not None:
     overtemp = td.thermal.thermalStatus >= ThermalStatus.red
-    free_space = td.thermal.freeSpace < 0.15  # under 15% of space free no enable allowed
+    free_space = td.thermal.freeSpace < 0.07  # under 7% of space free no enable allowed
     low_battery = td.thermal.batteryPercent < 1  # at zero percent battery, OP should not be allowed
 
   # Create events for battery, temperature and disk space
@@ -126,14 +119,14 @@ def data_sample(CI, CC, thermal, calibration, health, driver_monitor, gps_locati
   return CS, events, cal_status, cal_perc, overtemp, free_space, low_battery, mismatch_counter
 
 
-def calc_plan(CS, CP, events, PL, LaC, LoC, v_cruise_kph, driver_status, geofence):
+def calc_plan(CS, CP, VM, events, PL, LaC, LoC, v_cruise_kph, driver_status, geofence):
   """Calculate a longitudinal plan using MPC"""
 
   # Slow down when based on driver monitoring or geofence
   force_decel = driver_status.awareness < 0. or (geofence is not None and not geofence.in_geofence)
 
   # Update planner
-  plan_packet = PL.update(CS, LaC, LoC, v_cruise_kph, force_decel)
+  plan_packet = PL.update(CS, CP, VM, LaC, LoC, v_cruise_kph, force_decel)
   plan = plan_packet.plan
   plan_ts = plan_packet.logMonoTime
   events += list(plan.events)
@@ -293,7 +286,10 @@ def state_control(plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, 
     extra_text_1, extra_text_2 = "", ""
     if e == "calibrationIncomplete":
       extra_text_1 = str(cal_perc) + "%"
-      extra_text_2 = "35 kph" if is_metric else "15 mph"
+      if is_metric:
+        extra_text_2 = str(int(round(Filter.MIN_SPEED * CV.MS_TO_KPH))) + " kph"
+      else:
+        extra_text_2 = str(int(round(Filter.MIN_SPEED * CV.MS_TO_MPH))) + " mph"
     AM.add(str(e) + "Permanent", enabled, extra_text_1=extra_text_1, extra_text_2=extra_text_2)
 
   AM.process_alerts(sec_since_boot())
@@ -303,7 +299,7 @@ def state_control(plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, 
 
 def data_send(perception_state, plan, plan_ts, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, carstate,
               carcontrol, live100, livempc, AM, driver_status,
-              LaC, LoC, angle_offset, passive):
+              LaC, LoC, angle_offset, passive, start_time):
   """Send actuators and hud commands to the car, send live100 and MPC logging"""
 
   CC = car.CarControl.new_message()
@@ -324,6 +320,8 @@ def data_send(perception_state, plan, plan_ts, CS, CI, CP, VM, state, events, ac
     CC.hudControl.speedVisible = isEnabled(state)
     CC.hudControl.lanesVisible = isEnabled(state)
     CC.hudControl.leadVisible = plan.hasLead
+    CC.hudControl.rightLaneVisible = plan.hasRightLane
+    CC.hudControl.leftLaneVisible = plan.hasLeftLane
     CC.hudControl.visualAlert = AM.visual_alert
     CC.hudControl.audibleAlert = AM.audible_alert
 
@@ -369,7 +367,11 @@ def data_send(perception_state, plan, plan_ts, CS, CI, CP, VM, state, events, ac
     "jerkFactor": float(plan.jerkFactor),
     "angleOffset": float(angle_offset),
     "gpsPlannerActive": plan.gpsPlannerActive,
+    "vCurvature": plan.vCurvature,
+    "decelForTurn": plan.decelForTurn,
     "cumLagMs": -rk.remaining * 1000.,
+    "startMonoTime": start_time,
+    "mapValid": plan.mapValid,
   }
   live100.send(dat.to_bytes())
 
@@ -463,6 +465,7 @@ def controlsd_thread(gctx=None, rate=100, default_bias=0.):
 
   # Write CarParams for radard and boardd safety mode
   params.put("CarParams", CP.to_bytes())
+  params.put("LongitudinalControl", "1" if CP.openpilotLongitudinalControl else "0")
 
   state = State.disabled
   soft_disable_timer = 0
@@ -490,6 +493,7 @@ def controlsd_thread(gctx=None, rate=100, default_bias=0.):
   prof = Profiler(False)  # off by default
 
   while True:
+    start_time = int(sec_since_boot() * 1e9)
     prof.checkpoint("Ratekeeper", ignore=True)
 
     # Sample data and compute car events
@@ -498,7 +502,7 @@ def controlsd_thread(gctx=None, rate=100, default_bias=0.):
     prof.checkpoint("Sample")
 
     # Define longitudinal plan (MPC)
-    plan, plan_ts = calc_plan(CS, CP, events, PL, LaC, LoC, v_cruise_kph, driver_status, geofence)
+    plan, plan_ts = calc_plan(CS, CP, VM, events, PL, LaC, LoC, v_cruise_kph, driver_status, geofence)
     prof.checkpoint("Plan")
 
     if not passive:
@@ -514,7 +518,7 @@ def controlsd_thread(gctx=None, rate=100, default_bias=0.):
 
     # Publish data
     CC = data_send(PL.perception_state, plan, plan_ts, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, carstate, carcontrol,
-      live100, livempc, AM, driver_status, LaC, LoC, angle_offset, passive)
+                   live100, livempc, AM, driver_status, LaC, LoC, angle_offset, passive, start_time)
     prof.checkpoint("Sent")
 
     rk.keep_time()  # Run at 100Hz

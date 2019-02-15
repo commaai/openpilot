@@ -3,86 +3,169 @@ import unittest
 import numpy as np
 import libpandasafety_py
 
+MAX_RATE_UP = 3
+MAX_RATE_DOWN = 3
+MAX_STEER = 261
+
+MAX_RT_DELTA = 112
+RT_INTERVAL = 250000
+
+MAX_TORQUE_ERROR = 80
+
+def twos_comp(val, bits):
+  if val >= 0:
+    return val
+  else:
+    return (2**bits) + val
+
+def sign(a):
+  if a > 0:
+    return 1
+  else:
+    return -1
 
 class TestChryslerSafety(unittest.TestCase):
   @classmethod
   def setUp(cls):
     cls.safety = libpandasafety_py.libpandasafety
-    cls.safety.chrysler_init(0)
+    cls.safety.nooutput_init(0)
     cls.safety.init_tests_chrysler()
 
-  def _acc_msg(self, active):
+  def _button_msg(self, buttons):
     to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_send[0].RIR = 0x1f4 << 21
-    to_send[0].RDLR = 0xfe3fff1f if active else 0xfe0fff1f
-    return to_send
-    
-
-  def _brake_msg(self, brake):
-    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_send[0].RIR = 0x140 << 21
-    to_send[0].RDLR = 0x485 if brake else 0x480
+    to_send[0].RIR = 1265 << 21
+    to_send[0].RDLR = buttons
     return to_send
 
-  def _steer_msg(self, angle):
+  def _set_prev_torque(self, t):
+    self.safety.set_chrysler_desired_torque_last(t)
+    self.safety.set_chrysler_rt_torque_last(t)
+    self.safety.set_chrysler_torque_meas(t, t)
+
+  def _torque_meas_msg(self, torque):
+    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
+    to_send[0].RIR = 544 << 21
+    to_send[0].RDHR = ((torque + 1024) >> 8) + (((torque + 1024) & 0xff) << 8)
+    return to_send
+
+  def _torque_msg(self, torque):
     to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
     to_send[0].RIR = 0x292 << 21
-    c_angle = (1024 + angle)
-    to_send[0].RDLR = 0x10 | ((c_angle & 0xf00) >> 8) | ((c_angle & 0xff) << 8)
+    to_send[0].RDLR = ((torque + 1024) >> 8) + (((torque + 1024) & 0xff) << 8)
     return to_send
 
   def test_default_controls_not_allowed(self):
     self.assertFalse(self.safety.get_controls_allowed())
 
-  def test_acc_enables_controls(self):
-    self.safety.set_controls_allowed(0)
-    self.safety.chrysler_rx_hook(self._acc_msg(0))
-    self.assertFalse(self.safety.get_controls_allowed())
-    self.safety.chrysler_rx_hook(self._acc_msg(1))
-    self.assertTrue(self.safety.get_controls_allowed())
-    self.safety.chrysler_rx_hook(self._acc_msg(0))
-    self.assertFalse(self.safety.get_controls_allowed())
+  def test_steer_safety_check(self):
+    for enabled in [0, 1]:
+      for t in range(-MAX_STEER*2, MAX_STEER*2):
+        self.safety.set_controls_allowed(enabled)
+        self._set_prev_torque(t)
+        if abs(t) > MAX_STEER or (not enabled and abs(t) > 0):
+          self.assertFalse(self.safety.chrysler_tx_hook(self._torque_msg(t)))
+        else:
+          self.assertTrue(self.safety.chrysler_tx_hook(self._torque_msg(t)))
 
-  def test_disengage_on_brake(self):
+  def test_manually_enable_controls_allowed(self):
     self.safety.set_controls_allowed(1)
-    self.safety.chrysler_rx_hook(self._brake_msg(0))
     self.assertTrue(self.safety.get_controls_allowed())
-    self.safety.chrysler_rx_hook(self._brake_msg(1))
+    self.safety.set_controls_allowed(0)
     self.assertFalse(self.safety.get_controls_allowed())
 
-  def test_steer_calculation(self):
-    self.assertEqual(0x14, self._steer_msg(0)[0].RDLR)  # straight, no steering
+  def test_enable_control_allowed_from_cruise(self):
+    to_push = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
+    to_push[0].RIR = 0x1f4 << 21
+    to_push[0].RDLR = 0x380000
 
-  def test_steer_tx(self):
+    self.safety.chrysler_rx_hook(to_push)
+    self.assertTrue(self.safety.get_controls_allowed())
+
+  def test_disable_control_allowed_from_cruise(self):
+    to_push = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
+    to_push[0].RIR = 0x1f4 << 21
+    to_push[0].RDLR = 0
+
     self.safety.set_controls_allowed(1)
-    self.assertTrue(self.safety.chrysler_tx_hook(self._steer_msg(0)))
-    self.safety.set_chrysler_desired_torque_last(227)
-    self.assertTrue(self.safety.chrysler_tx_hook(self._steer_msg(230)))
-    self.assertFalse(self.safety.chrysler_tx_hook(self._steer_msg(231)))
-    self.safety.set_chrysler_desired_torque_last(-227)
-    self.assertFalse(self.safety.chrysler_tx_hook(self._steer_msg(-231)))
-    self.assertTrue(self.safety.chrysler_tx_hook(self._steer_msg(-230)))
-    # verify max change
-    self.safety.set_chrysler_desired_torque_last(0)
-    self.assertFalse(self.safety.chrysler_tx_hook(self._steer_msg(230)))
-    
-    self.safety.set_controls_allowed(0)
-    self.safety.set_chrysler_desired_torque_last(0)
-    self.assertFalse(self.safety.chrysler_tx_hook(self._steer_msg(3)))
-    self.assertTrue(self.safety.chrysler_tx_hook(self._steer_msg(0)))
-    # verify when controls not allowed we can still go back towards 0
-    self.safety.set_chrysler_desired_torque_last(10)
-    self.assertFalse(self.safety.chrysler_tx_hook(self._steer_msg(10)))
-    self.assertFalse(self.safety.chrysler_tx_hook(self._steer_msg(11)))
-    self.assertTrue(self.safety.chrysler_tx_hook(self._steer_msg(7)))
-    self.assertTrue(self.safety.chrysler_tx_hook(self._steer_msg(4)))
-    self.assertTrue(self.safety.chrysler_tx_hook(self._steer_msg(0)))
-    self.safety.set_chrysler_desired_torque_last(-10)
-    self.assertFalse(self.safety.chrysler_tx_hook(self._steer_msg(-10)))
-    self.assertFalse(self.safety.chrysler_tx_hook(self._steer_msg(-11)))
-    self.assertTrue(self.safety.chrysler_tx_hook(self._steer_msg(-7)))
-    self.assertTrue(self.safety.chrysler_tx_hook(self._steer_msg(-4)))
-    self.assertTrue(self.safety.chrysler_tx_hook(self._steer_msg(0)))
+    self.safety.chrysler_rx_hook(to_push)
+    self.assertFalse(self.safety.get_controls_allowed())
+
+  def test_non_realtime_limit_up(self):
+    self.safety.set_controls_allowed(True)
+
+    self._set_prev_torque(0)
+    self.assertTrue(self.safety.chrysler_tx_hook(self._torque_msg(MAX_RATE_UP)))
+
+    self._set_prev_torque(0)
+    self.assertFalse(self.safety.chrysler_tx_hook(self._torque_msg(MAX_RATE_UP + 1)))
+
+  def test_non_realtime_limit_down(self):
+    self.safety.set_controls_allowed(True)
+
+    self.safety.set_chrysler_rt_torque_last(MAX_STEER)
+    torque_meas = MAX_STEER - MAX_TORQUE_ERROR - 20
+    self.safety.set_chrysler_torque_meas(torque_meas, torque_meas)
+    self.safety.set_chrysler_desired_torque_last(MAX_STEER)
+    self.assertTrue(self.safety.chrysler_tx_hook(self._torque_msg(MAX_STEER - MAX_RATE_DOWN)))
+
+    self.safety.set_chrysler_rt_torque_last(MAX_STEER)
+    self.safety.set_chrysler_torque_meas(torque_meas, torque_meas)
+    self.safety.set_chrysler_desired_torque_last(MAX_STEER)
+    self.assertFalse(self.safety.chrysler_tx_hook(self._torque_msg(MAX_STEER - MAX_RATE_DOWN + 1)))
+
+  def test_exceed_torque_sensor(self):
+    self.safety.set_controls_allowed(True)
+
+    for sign in [-1, 1]:
+      self._set_prev_torque(0)
+      for t in np.arange(0, MAX_TORQUE_ERROR + 2, 2):  # step needs to be smaller than MAX_TORQUE_ERROR
+        t *= sign
+        self.assertTrue(self.safety.chrysler_tx_hook(self._torque_msg(t)))
+
+      self.assertFalse(self.safety.chrysler_tx_hook(self._torque_msg(sign * (MAX_TORQUE_ERROR + 2))))
+
+  def test_realtime_limit_up(self):
+    self.safety.set_controls_allowed(True)
+
+    for sign in [-1, 1]:
+      self.safety.init_tests_chrysler()
+      self._set_prev_torque(0)
+      for t in np.arange(0, MAX_RT_DELTA+1, 1):
+        t *= sign
+        self.safety.set_chrysler_torque_meas(t, t)
+        self.assertTrue(self.safety.chrysler_tx_hook(self._torque_msg(t)))
+      self.assertFalse(self.safety.chrysler_tx_hook(self._torque_msg(sign * (MAX_RT_DELTA + 1))))
+
+      self._set_prev_torque(0)
+      for t in np.arange(0, MAX_RT_DELTA+1, 1):
+        t *= sign
+        self.safety.set_chrysler_torque_meas(t, t)
+        self.assertTrue(self.safety.chrysler_tx_hook(self._torque_msg(t)))
+
+      # Increase timer to update rt_torque_last
+      self.safety.set_timer(RT_INTERVAL + 1)
+      self.assertTrue(self.safety.chrysler_tx_hook(self._torque_msg(sign * MAX_RT_DELTA)))
+      self.assertTrue(self.safety.chrysler_tx_hook(self._torque_msg(sign * (MAX_RT_DELTA + 1))))
+
+  def test_torque_measurements(self):
+    self.safety.chrysler_rx_hook(self._torque_meas_msg(50))
+    self.safety.chrysler_rx_hook(self._torque_meas_msg(-50))
+    self.safety.chrysler_rx_hook(self._torque_meas_msg(0))
+    self.safety.chrysler_rx_hook(self._torque_meas_msg(0))
+    self.safety.chrysler_rx_hook(self._torque_meas_msg(0))
+    self.safety.chrysler_rx_hook(self._torque_meas_msg(0))
+
+    self.assertEqual(-50, self.safety.get_chrysler_torque_meas_min())
+    self.assertEqual(50, self.safety.get_chrysler_torque_meas_max())
+
+    self.safety.chrysler_rx_hook(self._torque_meas_msg(0))
+    self.assertEqual(0, self.safety.get_chrysler_torque_meas_max())
+    self.assertEqual(-50, self.safety.get_chrysler_torque_meas_min())
+
+    self.safety.chrysler_rx_hook(self._torque_meas_msg(0))
+    self.assertEqual(0, self.safety.get_chrysler_torque_meas_max())
+    self.assertEqual(0, self.safety.get_chrysler_torque_meas_min())
+
 
 if __name__ == "__main__":
   unittest.main()
