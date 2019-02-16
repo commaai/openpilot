@@ -26,6 +26,7 @@ def get_powertrain_can_parser(CP, canbus):
     ("TurnSignals", "BCMTurnSignals", 0),
     ("AcceleratorPedal", "AcceleratorPedal", 0),
     ("ACCButtons", "ASCMSteeringButton", CruiseButtons.UNPRESS),
+    ("LKAButton", "ASCMSteeringButton", 0),
     ("SteeringWheelAngle", "PSCMSteeringAngle", 0),
     ("FLWheelSpd", "EBCMWheelSpdFront", 0),
     ("FRWheelSpd", "EBCMWheelSpdFront", 0),
@@ -72,6 +73,9 @@ class CarState(object):
     self.right_blinker_on = False
     self.prev_right_blinker_on = False
     self.follow_level = 3
+    self.prev_lka_button = 0
+    self.lka_button = 0
+    self.lkMode = True
     
     # ALCA PARAMS
     self.blind_spot_on = bool(0)
@@ -187,6 +191,9 @@ class CarState(object):
     self.v_ego = float(v_ego_x[0])
     self.a_ego = float(v_ego_x[1])
 
+    self.prev_lka_button = self.lka_button
+    self.lka_button = pt_cp.vl["ASCMSteeringButton"]['LKAButton']
+    
     self.standstill = self.v_ego_raw < 0.01
 
     self.angle_steers = pt_cp.vl["PSCMSteeringAngle"]['SteeringWheelAngle']
