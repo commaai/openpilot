@@ -1,5 +1,4 @@
 [![](https://i.imgur.com/UetIFyH.jpg)](#)
-[![https://snapshot.raintank.io/dashboard/snapshot/1h9hWft293zeuLtKNPIa9IqbOoXDKMJq?orgId=2](https://user-images.githubusercontent.com/6308011/52903845-14f12600-31e9-11e9-949e-59f19defce89.png)](#)
 Welcome to openpilot
 ======
 
