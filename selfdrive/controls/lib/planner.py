@@ -21,10 +21,10 @@ from selfdrive.controls.lib.longcontrol import LongCtrlState, MIN_CAN_SPEED
 from selfdrive.controls.lib.radar_helpers import _LEAD_ACCEL_TAU
 
 # One, two and three bar distances (in s)
-ONE_BAR_DISTANCE = 1.1  # in seconds
-TWO_BAR_DISTANCE = 1.5  # in seconds
-THREE_BAR_DISTANCE = 2.1  # in seconds
-FOUR_BAR_DISTANCE = 2.8   # in seconds
+ONE_BAR_DISTANCE = 0.9  # in seconds
+TWO_BAR_DISTANCE = 1.3  # in seconds
+THREE_BAR_DISTANCE = 1.8  # in seconds
+FOUR_BAR_DISTANCE = 2.5   # in seconds
 
 # Variables that change braking profiles
 CITY_SPEED = 19.44  # braking profile changes when below this speed based on following dynamics below [m/s]
@@ -37,8 +37,8 @@ MIN_DISTANCE = 7  # keep a minimum distance between you and lead car (when below
 STOPPING_DISTANCE = 2  # increase distance from lead car when stopped
 
 # Braking profile changes (makes the car brake harder because it wants to be farther from the lead car - increase to brake harder)
-BRAKING_ONE_BAR_DISTANCE = 2.2  # more aggressive braking when using one bar distance by increasing follow distance [s]
-BRAKING_TWO_BAR_DISTANCE = 2.1  # more aggressive braking when using two bar distance by increasing follow distance [s]
+BRAKING_ONE_BAR_DISTANCE = 2.3  # more aggressive braking when using one bar distance by increasing follow distance [s]
+BRAKING_TWO_BAR_DISTANCE = 2.2  # more aggressive braking when using two bar distance by increasing follow distance [s]
 BRAKING_THREE_BAR_DISTANCE = 2.1  # no change in braking profile
 
 # Max lateral acceleration, used to caclulate how much to slow down in turns
@@ -60,7 +60,8 @@ _A_CRUISE_MIN_BP = [   0., 5.,  10., 20.,  40.]
 
 # need fast accel at very low speed for stop and go
 # make sure these accelerations are smaller than mpc limits
-_A_CRUISE_MAX_V = [1.1, 1.1, .8, .5, .3]
+#_A_CRUISE_MAX_V = [1.1, 1.1, .8, .5, .3]
+_A_CRUISE_MAX_V = [1.6, 1.6, 1.2, .7, .3]
 _A_CRUISE_MAX_V_FOLLOWING = [1.6, 1.6, 1.2, .7, .3]
 _A_CRUISE_MAX_BP = [0.,  5., 10., 20., 40.]
 
