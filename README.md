@@ -1,21 +1,14 @@
-**********************************************************************
+This is a fork of comma's openpilot, and contains tweaks for Hondas and GM vehicles 
+
 <b>IMPORTANT!</b>
-<b>Distance Intervals have Changed</b>
-PRIOR distance intervals:
+<b>Distance Intervals have Changed (AGAIN)</b>
 One bar: 0.9s
-Two bar: 1.8s
-Three bar: 2.7s
+Two bar: 1.3s (initial value)
+Three bar: 1.8s (comma default)
+Four bar: 2.5s
 
-NEW distance intervals (matches Honda stock ACC distance intervals):
-One bar: 1.1s
-Two bar: 1.5s
-Three bar: 2.1s
-Four bar: 2.8s
+<b>WARNING:</b>  Do NOT depend on OP to stop the car in time if you are approaching an object which is not in motion in the same direction as your car.  The radar will NOT detect the stationary object in time to slow your car enough to stop.  If you are approaching a stopped vehicle you must disengage and brake as radars ignore objects that are not in motion.
 
-I have also improved braking for fast lead-car approach
-**********************************************************************
-
-This is a fork of comma's openpilot, and contains tweaks for Hondas and some GM vehicles 
 
 I will attempt to detail the changes in each of the branches here:
 
@@ -31,7 +24,9 @@ Note above comments apply to Clarity testing branches as well.
 
 
 List of changes and tweaks (latest changes at the top:
-- <b>FOUR (new) Step adjustable follow distance</b>:  The default behaviour for following distance is 1.8s of following distance.  It is not adjustable.  This typically causes, in some traffic conditions, the user to be constantly cut off by other drivers, and 1.8s of follow distance instantly becomes much shorter (like 0.2-0.5s).  I wanted to reintroduce honda 'stock-like' ACC behaviour back into the mix to prevent people from getting cutoff so often.  Here is a summary of follow distance in seconds:  <b>1 bar = 1.1s, 2 bars = 1.5s, 3 bars = 2.1, 4 bars = 2.8s of follow distance</b>. Thanks to @arne182, whose code I built upon.
+- <b>Increase acceleration profile when lead car pulls away too quickly or no lead car</b>:  OP has two acceleration profiles, one occurs when following a lead car, and one without a lead car.  Oddly the acceleration profile when following is greater than when not following.  So sometimes a lead car will pull away so quickly, that the car goes from following to not following mode and the acceleration profile actually drops.  I've made the acceleration profiles the same so that the the car doesn't stop accelerating at the same rate when the lead car rips away quickly from a stop. 
+
+- <b>FOUR (new) Step adjustable follow distance</b>:  The default behaviour for following distance is 1.8s of following distance.  It is not adjustable.  This typically causes, in some traffic conditions, the user to be constantly cut off by other drivers, and 1.8s of follow distance instantly becomes much shorter (like 0.2-0.5s).  I wanted to reintroduce honda 'stock-like' ACC behaviour back into the mix to prevent people from getting cutoff so often.  Here is a summary of follow distance in seconds:  <b>1 bar = 0.9s, 2 bars = 1.3s, 3 bars = 1.8, 4 bars = 2.5s of follow distance</b>. Thanks to @arne182, whose code I built upon.
 
 - <b>Reduce speed dependent lane width to 2.85 to 3.5 (from 3.0 to 3.7) [meters]</b>:  This has the effect of making the car veer less towards a disappearing lane line because it assumes that the lane width is less.  It may also improve curb performance.
 
