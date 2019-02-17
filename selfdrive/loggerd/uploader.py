@@ -88,7 +88,7 @@ def is_on_hotspot():
     #is_android = result.startswith('192.168.49.') when using proxy through android IP is different
     
     #not sure which method is valid.                 
-    is_android = result.startswith('192.168.43.',192.168.49.')
+    is_android = result.startswith('192.168.43.','192.168.49.')
    # is_android = result.startswith("192.168.43.","192.168.49.")
     #confrmed either or method will do the trick will submit PR again.
 
