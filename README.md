@@ -20,8 +20,6 @@ I will attempt to detail the changes in each of the branches here:
 
 <b>kegman-plusGernbySteering (Updated Jan 22)</b> - this branch is everything in the kegman branch PLUS a Gernby's LATEST feed forward steering.  This also includes working code for GM cars.  (thx to @jamezz for the code and @cryptokylan for submitting the GM stuff!)
 
-<b>kegman-plusGernbyResStagedRollingTune</b> - this is the companion tuning branch to kegman-plusGernbySteering. You will need to get Gernby's OpenPilot Dashboard to capture data when running this branch.  Please contact @gernby on Comma discord channel for more information.
-
 <b>kegman-plusPilotAwesomeness</b> - <u>If you have a Honda Pilot, OR Honda Ridgeline use this branch.</u>  It has everything in kegman branch, uses my PID tuning + a magical older version of Gernby's FF steering which just happened to work very well across all driving conditions including slanted (crowned roads), wind gusts, road bumps, centering on curves, and keeping proper distance from curbs.  I have yet to test a combination of FF steering and PID tuning that can beat the performance of this for Honda Pilots.
 
 Note above comments apply to Clarity testing branches as well.
