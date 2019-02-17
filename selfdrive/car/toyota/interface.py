@@ -147,7 +147,7 @@ class CarInterface(object):
       ret.steerRatio = 13.3 # in spec
       tire_stiffness_factor = 0.444 # from camry
       ret.mass = 3736.8 * CV.LB_TO_KG + std_cargo # in spec, mean of is300 (1680 kg) / is300h (1720 kg) / is350 (1685 kg)
-      ret.steerKpV, ret.steerKiV = [[0.19], [0.04]]
+      ret.steerKpV, ret.steerKiV = [[0.3], [0.1]]
       ret.steerKf = 0.00006 # from camry
 
     ret.steerRateCost = 1.

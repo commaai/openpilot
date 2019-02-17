@@ -39,12 +39,10 @@ def get_can_parser(CP):
     ("CRUISE_STATE", "PCM_CRUISE", 0),
     ("MAIN_ON", "PCM_CRUISE_2", 0),
     ("SET_SPEED", "PCM_CRUISE_2", 0),
-    # ("LOW_SPEED_LOCKOUT", "PCM_CRUISE_2", 0),
     ("STEER_TORQUE_DRIVER", "STEER_TORQUE_SENSOR", 0),
     ("STEER_TORQUE_EPS", "STEER_TORQUE_SENSOR", 0),
     ("TURN_SIGNALS", "STEERING_LEVERS", 3),   # 3 is no blinkers
     ("LKA_STATE", "EPS_STATUS", 0),
-    # ("IPAS_STATE", "EPS_STATUS", 1),
     ("BRAKE_LIGHTS_ACC", "ESP_CONTROL", 0),
     ("AUTO_HIGH_BEAM", "LIGHT_STALK", 0),
   ]
@@ -60,18 +58,18 @@ def get_can_parser(CP):
     ("EPS_STATUS", 25),
   ]
 
-  if not CP.carFingerprint == CAR.LEXUS_ISH:
-  #   checks = [
-  #     ("BRAKE_MODULE", 50),
-  #     ("GAS_PEDAL", 50),
-  #     ("WHEEL_SPEEDS", 80),
-  #     ("STEER_ANGLE_SENSOR", 80),
-  #     ("PCM_CRUISE", 33),
-  #     ("PCM_CRUISE_2", 1),
-  #     ("STEER_TORQUE_SENSOR", 50),
-  #     ("EPS_STATUS", 25),
-  #   ]
-  # else:
+  if CP.carFingerprint == CAR.LEXUS_ISH:
+    checks = [
+      ("BRAKE_MODULE", 50),
+      ("GAS_PEDAL", 50),
+      ("WHEEL_SPEEDS", 80),
+      ("STEER_ANGLE_SENSOR", 80),
+      ("PCM_CRUISE", 33),
+      ("PCM_CRUISE_2", 1),
+      ("STEER_TORQUE_SENSOR", 50),
+      ("EPS_STATUS", 25),
+    ]
+  else:
     signals += [
       ("LOW_SPEED_LOCKOUT", "PCM_CRUISE_2", 0),
       ("IPAS_STATE", "EPS_STATUS", 1),
