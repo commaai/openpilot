@@ -84,13 +84,13 @@ def is_on_hotspot():
     result = subprocess.check_output(["ifconfig", "wlan0"])
     result = re.findall(r"inet addr:((\d+\.){3}\d+)", result)[0][0]
 
-    is_android = result.startswith('192.168.43.')
+    #is_android = result.startswith('192.168.43.')
     #is_android = result.startswith('192.168.49.') when using proxy through android IP is different
     
     #not sure which method is valid.                 
-   # is_android = result.startswith('192.168.43.',192.168.49.')
+    is_android = result.startswith('192.168.43.',192.168.49.')
    # is_android = result.startswith("192.168.43.","192.168.49.")
-
+    #confrmed either or method will do the trick will submit PR again.
 
     is_ios = result.startswith('172.20.10.')
     return (is_android or is_ios)
