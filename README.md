@@ -1,3 +1,5 @@
+<b><u>PLEASE DO A FRESH CLONE INSTEAD OF GIT PULL FOR THE LATEST CHANGES</u></b>
+
 This is a fork of comma's openpilot, and contains tweaks for Hondas and GM vehicles 
 
 <b>IMPORTANT!</b>
