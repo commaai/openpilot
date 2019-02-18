@@ -3,6 +3,7 @@ from common.kalman.simple_kalman import KF1D
 from selfdrive.can.parser import CANParser, CANDefine
 from selfdrive.config import Conversions as CV
 from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, SPEED_FACTOR, HONDA_BOSCH
+import json
 
 def parse_gear_shifter(gear, vals):
 
@@ -143,7 +144,9 @@ def get_cam_can_parser(CP):
 
 class CarState(object):
   def __init__(self, CP):
-    self.trMode = 1
+    with open('/data/openpilot/kegman.json', 'r') as f:    # fetch last distance interval bar from file
+      self.kegman = json.load(f)
+    self.trMode = int(self.kegman['lastTrMode'])     # default to last distance interval on startup
     self.lkMode = True
     self.read_distance_lines_prev = 4
     self.CP = CP
@@ -315,6 +318,9 @@ class CarState(object):
     if self.cruise_setting == 3:
       if cp.vl["SCM_BUTTONS"]["CRUISE_SETTING"] == 0:
         self.trMode = (self.trMode + 1 ) % 4
+        self.kegman['lastTrMode'] = str(self.trMode)
+        with open('/data/openpilot/kegman.json', 'w') as f:                  # record current distance bar to file for retrieval on startup
+          json.dump(self.kegman, f, indent=2, sort_keys=True)
         
     # when user presses LKAS button on steering wheel
     if self.cruise_setting == 1:
