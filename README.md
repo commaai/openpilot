@@ -27,13 +27,19 @@ Note above comments apply to Clarity testing branches as well.
 
 List of changes and tweaks (latest changes at the top):
 - <b>Persist some configuration data in JSON file</b>:  Sometimes you just want to make a tweak and persist some data that doesn't get wiped out the next time OP is updated.  Stuff like:
-  1 {
-  2   "battChargeMax": "70",  (Max limit % to stop charging Eon battery)
-  3   "battChargeMin": "60",  (Min limit % to start charging Eon battery)
-  4   "cameraOffset": "0.06", (CAMERA_OFFSET - distance from the center of car to Eon camera)
-  5   "lastTrMode": "2",      (last distance interval bars you used - (auto generated)
-  6   "wheelTouchSeconds": "180"  (time interval between wheel touches when driver facial monitoring is not on)
-  7 }
+
+
+"battChargeMax": "70",  (Max limit % to stop charging Eon battery)
+
+"battChargeMin": "60",  (Min limit % to start charging Eon battery)
+
+"cameraOffset": "0.06", (CAMERA_OFFSET - distance from the center of car to Eon camera)
+
+"lastTrMode": "2",      (last distance interval bars you used - (auto generated - do not touch this)
+
+"wheelTouchSeconds": "180"  (time interval between wheel touches when driver facial monitoring is not on - MAX LIMIT 600 seconds)
+
+
 ^^^ This file is auto generated in /data directory so it will remain even when you do a fresh clone.  If you mess something up, just delete the file and it will auto generate to default values.  Use vim or nano to edit this file to your heart's content.
 
 - <b>Remember last distance bar interval</b>:  On startup, the car will bring up the last distance interval used before the car was turned off.  For example:  If you were at X bars before you stopped the car or shut the Eon down, the next time you start the car, the distance setting will be X bars.  
@@ -64,7 +70,7 @@ List of changes and tweaks (latest changes at the top):
 
 - <b>Gernby's Resonant Feed Forward Steering</b>:  This is still a work in progress.  Some cars respond very well while there is more variance with other cars.  You may need to tweak some parameters to make it work well but once it's dialed in it makes the wheel very stiff and more impervious to wind / bumps and in some cases makes car centering better (such as on the PilotAwesomeness branch).  Give it a try and let @gernby know what you find.  Gernby's steering is available on kegman-plusGernbySteering, kegman-plusPilotAwesomeness.  
 
-- <b>Steering off when blinkers on</b>:  The default behaviour when changing lanes is the user overrides the wheel, a bunch of steering required alarms sound and the user lets go of the wheel.  I didn't like fighting the wheel so when the blinkers are on I've disabled the OP steering.  Note that the blinker stock must be fully left or right or held in position for the steering to be off.  The "3 blink" tap of the stock does not deactive steering for long enough to be noticeable.
+- <b>Steering off when blinkers on</b>:  The default behaviour when changing lanes is the user overrides the wheel, a bunch of steering required alarms sound and the user lets go of the wheel.  I didn't like fighting the wheel so when the blinkers are on I've disabled the OP steering.  Note that the blinker stock must be fully left or right or held in position for the steering to be off.  The "3 blink" tap of the stock does not deactivate steering for long enough to be noticeable.
 
 - <b>LKAS button toggles steering</b>:  Stock Openpilot deactivates the LKAS button.  In some cases while driving you may have to fight the wheel for a long period of time.  By pressing the LKAS button you can toggle steering off or on so that you don't have to fight the wheel, which can get tiring and probably isn't good for the EPS motor.  When LKAS is toggled off OP still controls gas and brake so it's more like standard ACC.
 
