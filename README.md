@@ -26,7 +26,7 @@ Note above comments apply to Clarity testing branches as well.
 
 
 List of changes and tweaks (latest changes at the top):
-- <b>Persist some configuration data in JSON file</b>:  Sometimes you just want to make a tweak and persist some data that doesn't get wiped out the next time OP is updated.  Stuff like:
+- <b>Persist some configuration data in JSON file (/data/kegman/json)</b>:  Sometimes you just want to make a tweak and persist some data that doesn't get wiped out the next time OP is updated.  Stuff like:
 
 
 "battChargeMax": "70",  (Max limit % to stop charging Eon battery)
@@ -40,7 +40,7 @@ List of changes and tweaks (latest changes at the top):
 "wheelTouchSeconds": "180"  (time interval between wheel touches when driver facial monitoring is not on - MAX LIMIT 600 seconds)
 
 
-^^^ This file is auto generated in /data directory so it will remain even when you do a fresh clone.  If you mess something up, just delete the file and it will auto generate to default values.  Use vim or nano to edit this file to your heart's content.
+^^^ This file is auto generated here:  <b>/data/kegman.json</b> so it will remain even when you do a fresh clone.  If you mess something up, just delete the file and it will auto generate to default values.  Use vim or nano to edit this file to your heart's content.
 
 - <b>Remember last distance bar interval</b>:  On startup, the car will bring up the last distance interval used before the car was turned off.  For example:  If you were at X bars before you stopped the car or shut the Eon down, the next time you start the car, the distance setting will be X bars.  
 
