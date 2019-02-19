@@ -26,6 +26,16 @@ Note above comments apply to Clarity testing branches as well.
 
 
 List of changes and tweaks (latest changes at the top):
+- <b>Persist some configuration data in JSON file</b>:  Sometimes you just want to make a tweak and persist some data that doesn't get wiped out the next time OP is updated.  Stuff like:
+  1 {
+  2   "battChargeMax": "70",  (Max limit % to stop charging Eon battery)
+  3   "battChargeMin": "60",  (Min limit % to start charging Eon battery)
+  4   "cameraOffset": "0.06", (CAMERA_OFFSET - distance from the center of car to Eon camera)
+  5   "lastTrMode": "2",      (last distance interval bars you used - (auto generated)
+  6   "wheelTouchSeconds": "180"  (time interval between wheel touches when driver facial monitoring is not on)
+  7 }
+^^^ This file is auto generated in /data directory so it will remain even when you do a fresh clone.  If you mess something up, just delete the file and it will auto generate to default values.  Use vim or nano to edit this file to your heart's content.
+
 - <b>Remember last distance bar interval</b>:  On startup, the car will bring up the last distance interval used before the car was turned off.  For example:  If you were at X bars before you stopped the car or shut the Eon down, the next time you start the car, the distance setting will be X bars.  
 
 - <b>OTA Updates turned on</b>:  Previously I had turned off OTA updates for safety reasons - I didn't want anyone to get an unexpected result when I made changes.  It appears that many more users want OTA updates for convenience so I have turned this feature back on.  IMPORTANT: If you DO NOT want OTA updates then create a file called "/data/no_ota_updates" and it will not perform OTA updates as long as that file exists.
