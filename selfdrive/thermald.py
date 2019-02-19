@@ -12,6 +12,7 @@ from common.params import Params
 from common.realtime import sec_since_boot
 from common.numpy_fast import clip
 from common.filter_simple import FirstOrderFilter
+from selfdrive.kegman_conf import kegman_conf
 
 ThermalStatus = log.ThermalData.ThermalStatus
 CURRENT_TAU = 2.   # 2s time constant
@@ -112,13 +113,16 @@ def check_car_battery_voltage(should_start, health, charging_disabled, msg):
   #   - 12V battery voltage is too low, and;
   #   - onroad isn't started
   #   - keep battery within 67-70% State of Charge to preserve longevity
-  if charging_disabled and (health is None or health.health.voltage > 11800) and msg.thermal.batteryPercent < 60:
+  k = kegman_conf()
+  print k
+
+  if charging_disabled and (health is None or health.health.voltage > 11800) and msg.thermal.batteryPercent < int(k.conf['battChargeMin']):
     charging_disabled = False
     os.system('echo "1" > /sys/class/power_supply/battery/charging_enabled')
-  elif not charging_disabled and (msg.thermal.batteryPercent > 70 or (health is not None and health.health.voltage < 11500 and not should_start)):
+  elif not charging_disabled and (msg.thermal.batteryPercent > int(k.conf['battChargeMax']) or (health is not None and health.health.voltage < 11500 and not should_start)):
     charging_disabled = True
     os.system('echo "0" > /sys/class/power_supply/battery/charging_enabled')
-  elif msg.thermal.batteryCurrent < 0 and msg.thermal.batteryPercent > 70:
+  elif msg.thermal.batteryCurrent < 0 and msg.thermal.batteryPercent > int(k.conf['battChargeMax']):
     charging_disabled = True
     os.system('echo "0" > /sys/class/power_supply/battery/charging_enabled')
 
