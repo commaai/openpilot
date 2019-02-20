@@ -15,14 +15,14 @@ BO_ 359 STEERING_IPAS_COMMA: 8 IPAS
 CM BO_ STEERING_IPAS_COMMA "Copy of msg 614 so we can do angle control while the Park Assist ECU is connected (Panda spoofs 614 with 359 on connector J70). Note that addresses 0x266 and 0x167 are checksum-invariant";
 
  BO_ 512 GAS_COMMAND: 6 EON
-  SG_ GAS_COMMAND : 7|16@0+ (0.0244140625,0) [0|1] "" INTERCEPTOR
-  SG_ GAS_COMMAND2 : 23|16@0+ (0.0244140625,-11.962890625) [0|1] "" INTERCEPTOR
+  SG_ GAS_COMMAND : 7|16@0+ (0.159375,-75.555) [0|1] "" INTERCEPTOR
+  SG_ GAS_COMMAND2 : 23|16@0+ (0.159375,-151.111) [0|1] "" INTERCEPTOR
   SG_ ENABLE : 39|1@0+ (1,0) [0|1] "" INTERCEPTOR
   SG_ CHECKSUM : 47|8@0+ (1,0) [0|3] "" INTERCEPTOR
 
  BO_ 513 GAS_SENSOR: 6 INTERCEPTOR
-  SG_ INTERCEPTOR_GAS : 7|16@0+ (0.0244140625,0) [0|1] "" EON
-  SG_ INTERCEPTOR_GAS2 : 23|16@0+ (0.0244140625,-11.962890625) [0|1] "" EON
+  SG_ INTERCEPTOR_GAS : 7|16@0+ (0.159375,-75.555) [0|1] "" EON
+  SG_ INTERCEPTOR_GAS2 : 23|16@0+ (0.159375,-151.111) [0|1] "" EON
   SG_ STATE : 39|8@0+ (1,0) [0|255] "" EON
   SG_ CHECKSUM : 47|8@0+ (1,0) [0|3] "" EON
 
@@ -319,11 +319,15 @@ BO_ 610 EPS_STATUS: 8 EPS
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
 
 BO_ 956 GEAR_PACKET: 8 XXX
+ SG_ SPORT_ON : 2|1@0+ (1,0) [0|1] "" XXX
  SG_ GEAR : 13|6@0+ (1,0) [0|63] "" XXX
+ SG_ ECON_ON : 40|1@0+ (1,0) [0|1] "" XXX
 
 CM_ SG_ 548 BRAKE_PRESSURE "seems prop to pedal force";
 CM_ SG_ 548 BRAKE_POSITION "seems proportional to pedal displacement, unclear the max value of 0x1c8";
 CM_ SG_ 610 TYPE "seems 1 on Corolla, 0 on all others";
-VAL_ 956 GEAR 0 "D" 1 "S" 8 "N" 16 "R" 32 "P";
 VAL_ 610 IPAS_STATE 5 "override" 3 "enabled" 1 "disabled";
 VAL_ 610 LKA_STATE 25 "temporary_fault" 9 "temporary_fault2" 5 "active" 1 "standby";
+VAL_ 956 GEAR 0 "D" 1 "S" 8 "N" 16 "R" 32 "P";
+VAL_ 956 SPORT_ON 0 "off" 1 "on";
+VAL_ 956 ECON_ON 0 "off" 1 "on";
