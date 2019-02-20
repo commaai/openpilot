@@ -1,11 +1,11 @@
 #!/usr/bin/env python
-from cereal import car, log
+from cereal import car
 from common.realtime import sec_since_boot
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.hyundai.carstate import CarState, get_can_parser, get_camera_parser
-from selfdrive.car.hyundai.values import CAMERA_MSGS, CAR, get_hud_alerts
+from selfdrive.car.hyundai.values import CAMERA_MSGS, CAR, get_hud_alerts, FEATURES
 
 try:
   from selfdrive.car.hyundai.carcontroller import CarController
@@ -113,6 +113,14 @@ class CarInterface(object):
       ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
       ret.steerKpV, ret.steerKiV = [[0.16], [0.01]]
       ret.minSteerSpeed = 35 * CV.MPH_TO_MS
+    elif candidate == CAR.KIA_OPTIMA:
+      ret.steerKf = 0.00005
+      ret.mass = 3558 * CV.LB_TO_KG
+      ret.wheelbase = 2.80
+      ret.steerRatio = 13.75
+      tire_stiffness_factor = 0.5
+      ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
+      ret.steerKpV, ret.steerKiV = [[0.25], [0.05]]
     elif candidate == CAR.KIA_STINGER:
       ret.steerKf = 0.00005
       ret.steerRateCost = 0.5
@@ -192,8 +200,10 @@ class CarInterface(object):
     ret.wheelSpeeds.rr = self.CS.v_wheel_rr
 
     # gear shifter
-    if self.CP.carFingerprint == CAR.ELANTRA:
+    if self.CP.carFingerprint in FEATURES["use_cluster_gears"]:
       ret.gearShifter = self.CS.gear_shifter_cluster
+    elif self.CP.carFingerprint in FEATURES["use_tcu_gears"]:
+      ret.gearShifter = self.CS.gear_tcu
     else:
       ret.gearShifter = self.CS.gear_shifter
 
@@ -300,7 +310,7 @@ class CarInterface(object):
 
     return ret.as_reader()
 
-  def apply(self, c, perception_state=log.Live20Data.new_message()):
+  def apply(self, c):
 
     hud_alert = get_hud_alerts(c.hudControl.visualAlert, c.hudControl.audibleAlert)
 

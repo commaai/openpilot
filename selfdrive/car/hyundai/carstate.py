@@ -50,6 +50,7 @@ def get_can_parser(CP):
     ("CF_Clu_InhibitR", "CLU15", 0),
 
     ("CF_Lvr_Gear","LVR12",0),
+    ("CUR_GR", "TCU12",0),
 
     ("ACCEnable", "TCS13", 0),
     ("ACC_REQ", "TCS13", 0),
@@ -233,6 +234,17 @@ class CarState(object):
       self.gear_shifter_cluster = "reverse"
     else:
       self.gear_shifter_cluster = "unknown"
+
+    # Gear Selecton via TCU12
+    gear2 = cp.vl["TCU12"]["CUR_GR"]
+    if gear2 == 0:
+      self.gear_tcu = "park"
+    elif gear2 == 14:
+      self.gear_tcu = "reverse"
+    elif gear2 > 0 and gear2 < 9:    # unaware of anything over 8 currently
+      self.gear_tcu = "drive"
+    else:
+      self.gear_tcu = "unknown"
 
     # save the entire LKAS11 and CLU11
     self.lkas11 = cp_cam.vl["LKAS11"]
