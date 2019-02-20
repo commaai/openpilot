@@ -136,7 +136,7 @@ class Uploader(object):
 
   def next_file_to_compress(self):
     for name, key, fn in self.gen_upload_files():
-      if name == "rlog":
+      if name.endswith("log"):
         return (key, fn, 0)
     return None
 

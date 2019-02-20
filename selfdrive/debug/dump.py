@@ -26,6 +26,7 @@ if __name__ == "__main__":
   parser.add_argument('--proxy', action='store_true', help='republish on localhost')
   parser.add_argument('--map', action='store_true')
   parser.add_argument('--addr', default='127.0.0.1')
+  parser.add_argument('--values', help='values to monitor (instead of entire event)')
   parser.add_argument("socket", type=str, nargs='*', help="socket name")
   args = parser.parse_args()
 
@@ -53,6 +54,10 @@ if __name__ == "__main__":
     server_thread.start()
     print 'server running'
 
+  values = None
+  if args.values:
+    values = [s.strip().split(".") for s in args.values.split(",")]
+
   while 1:
     polld = poller.poll(timeout=1000)
     for sock, mode in polld:
@@ -79,5 +84,14 @@ if __name__ == "__main__":
           print(json.loads(msg))
         elif args.dump_json:
           print json.dumps(evt.to_dict())
+        elif values:
+          print "logMonotime = {}".format(evt.logMonoTime)
+          for value in values:
+            if hasattr(evt, value[0]):
+              item = evt
+              for key in value:
+                item = getattr(item, key)
+              print "{} = {}".format(".".join(value), item)
+          print ""
         else:
           print evt

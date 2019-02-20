@@ -1,0 +1,454 @@
+{
+  "CA": {
+    "Default": [
+      {
+        "speed": "100", 
+        "tags": {
+          "highway": "motorway"
+        }
+      }, 
+      {
+        "speed": "80", 
+        "tags": {
+          "highway": "trunk"
+        }
+      }, 
+      {
+        "speed": "80", 
+        "tags": {
+          "highway": "primary"
+        }
+      }, 
+      {
+        "speed": "50", 
+        "tags": {
+          "highway": "secondary"
+        }
+      }, 
+      {
+        "speed": "50", 
+        "tags": {
+          "highway": "tertiary"
+        }
+      }, 
+      {
+        "speed": "80", 
+        "tags": {
+          "highway": "unclassified"
+        }
+      }, 
+      {
+        "speed": "40", 
+        "tags": {
+          "highway": "residential"
+        }
+      }, 
+      {
+        "speed": "40", 
+        "tags": {
+          "highway": "service"
+        }
+      }, 
+      {
+        "speed": "90", 
+        "tags": {
+          "highway": "motorway_link"
+        }
+      }, 
+      {
+        "speed": "80", 
+        "tags": {
+          "highway": "trunk_link"
+        }
+      }, 
+      {
+        "speed": "80", 
+        "tags": {
+          "highway": "primary_link"
+        }
+      }, 
+      {
+        "speed": "50", 
+        "tags": {
+          "highway": "secondary_link"
+        }
+      }, 
+      {
+        "speed": "50", 
+        "tags": {
+          "highway": "tertiary_link"
+        }
+      }, 
+      {
+        "speed": "20", 
+        "tags": {
+          "highway": "living_street"
+        }
+      }
+    ]
+  }, 
+  "DE": {
+    "Default": [
+      {
+        "speed": "none", 
+        "tags": {
+          "highway": "motorway"
+        }
+      }, 
+      {
+        "speed": "10", 
+        "tags": {
+          "highway": "living_street"
+        }
+      }, 
+      {
+        "speed": "100", 
+        "tags": {
+          "zone:traffic": "DE:rural"
+        }
+      }, 
+      {
+        "speed": "50", 
+        "tags": {
+          "zone:traffic": "DE:urban"
+        }
+      }, 
+      {
+        "speed": "30", 
+        "tags": {
+          "bicycle_road": "yes"
+        }
+      }
+    ]
+  }, 
+  "AU": {
+    "Default": [
+      {
+        "speed": "100", 
+        "tags": {
+          "highway": "motorway"
+        }
+      }, 
+      {
+        "speed": "80", 
+        "tags": {
+          "highway": "trunk"
+        }
+      }, 
+      {
+        "speed": "80", 
+        "tags": {
+          "highway": "primary"
+        }
+      }, 
+      {
+        "speed": "50", 
+        "tags": {
+          "highway": "secondary"
+        }
+      }, 
+      {
+        "speed": "50", 
+        "tags": {
+          "highway": "tertiary"
+        }
+      }, 
+      {
+        "speed": "80", 
+        "tags": {
+          "highway": "unclassified"
+        }
+      }, 
+      {
+        "speed": "50", 
+        "tags": {
+          "highway": "residential"
+        }
+      }, 
+      {
+        "speed": "40", 
+        "tags": {
+          "highway": "service"
+        }
+      }, 
+      {
+        "speed": "90", 
+        "tags": {
+          "highway": "motorway_link"
+        }
+      }, 
+      {
+        "speed": "80", 
+        "tags": {
+          "highway": "trunk_link"
+        }
+      }, 
+      {
+        "speed": "80", 
+        "tags": {
+          "highway": "primary_link"
+        }
+      }, 
+      {
+        "speed": "50", 
+        "tags": {
+          "highway": "secondary_link"
+        }
+      }, 
+      {
+        "speed": "50", 
+        "tags": {
+          "highway": "tertiary_link"
+        }
+      }, 
+      {
+        "speed": "30", 
+        "tags": {
+          "highway": "living_street"
+        }
+      }
+    ]
+  }, 
+  "US": {
+    "South Dakota": [
+      {
+        "speed": "80 mph", 
+        "tags": {
+          "highway": "motorway"
+        }
+      }, 
+      {
+        "speed": "70 mph", 
+        "tags": {
+          "highway": "trunk"
+        }
+      }, 
+      {
+        "speed": "65 mph", 
+        "tags": {
+          "highway": "primary"
+        }
+      }, 
+      {
+        "speed": "70 mph", 
+        "tags": {
+          "highway": "trunk_link"
+        }
+      }, 
+      {
+        "speed": "65 mph", 
+        "tags": {
+          "highway": "primary_link"
+        }
+      }
+    ], 
+    "Wisconsin": [
+      {
+        "speed": "65 mph", 
+        "tags": {
+          "highway": "trunk"
+        }
+      }, 
+      {
+        "speed": "45 mph", 
+        "tags": {
+          "highway": "tertiary"
+        }
+      }, 
+      {
+        "speed": "35 mph", 
+        "tags": {
+          "highway": "unclassified"
+        }
+      }, 
+      {
+        "speed": "65 mph", 
+        "tags": {
+          "highway": "trunk_link"
+        }
+      }, 
+      {
+        "speed": "45 mph", 
+        "tags": {
+          "highway": "tertiary_link"
+        }
+      }
+    ], 
+    "Default": [
+      {
+        "speed": "65 mph", 
+        "tags": {
+          "highway": "motorway"
+        }
+      }, 
+      {
+        "speed": "55 mph", 
+        "tags": {
+          "highway": "trunk"
+        }
+      }, 
+      {
+        "speed": "55 mph", 
+        "tags": {
+          "highway": "primary"
+        }
+      }, 
+      {
+        "speed": "45 mph", 
+        "tags": {
+          "highway": "secondary"
+        }
+      }, 
+      {
+        "speed": "35 mph", 
+        "tags": {
+          "highway": "tertiary"
+        }
+      }, 
+      {
+        "speed": "55 mph", 
+        "tags": {
+          "highway": "unclassified"
+        }
+      }, 
+      {
+        "speed": "25 mph", 
+        "tags": {
+          "highway": "residential"
+        }
+      }, 
+      {
+        "speed": "25 mph", 
+        "tags": {
+          "highway": "service"
+        }
+      }, 
+      {
+        "speed": "55 mph", 
+        "tags": {
+          "highway": "motorway_link"
+        }
+      }, 
+      {
+        "speed": "55 mph", 
+        "tags": {
+          "highway": "trunk_link"
+        }
+      }, 
+      {
+        "speed": "55 mph", 
+        "tags": {
+          "highway": "primary_link"
+        }
+      }, 
+      {
+        "speed": "45 mph", 
+        "tags": {
+          "highway": "secondary_link"
+        }
+      }, 
+      {
+        "speed": "35 mph", 
+        "tags": {
+          "highway": "tertiary_link"
+        }
+      }, 
+      {
+        "speed": "15 mph", 
+        "tags": {
+          "highway": "living_street"
+        }
+      }
+    ], 
+    "Michigan": [
+      {
+        "speed": "70 mph", 
+        "tags": {
+          "highway": "motorway"
+        }
+      }
+    ], 
+    "Oregon": [
+      {
+        "speed": "55 mph", 
+        "tags": {
+          "highway": "motorway"
+        }
+      }, 
+      {
+        "speed": "35 mph", 
+        "tags": {
+          "highway": "secondary"
+        }
+      }, 
+      {
+        "speed": "30 mph", 
+        "tags": {
+          "highway": "tertiary"
+        }
+      }, 
+      {
+        "speed": "15 mph", 
+        "tags": {
+          "highway": "service"
+        }
+      }, 
+      {
+        "speed": "35 mph", 
+        "tags": {
+          "highway": "secondary_link"
+        }
+      }, 
+      {
+        "speed": "30 mph", 
+        "tags": {
+          "highway": "tertiary_link"
+        }
+      }
+    ], 
+    "New York": [
+      {
+        "speed": "45 mph", 
+        "tags": {
+          "highway": "primary"
+        }
+      }, 
+      {
+        "speed": "55 mph", 
+        "tags": {
+          "highway": "secondary"
+        }
+      }, 
+      {
+        "speed": "55 mph", 
+        "tags": {
+          "highway": "tertiary"
+        }
+      }, 
+      {
+        "speed": "30 mph", 
+        "tags": {
+          "highway": "residential"
+        }
+      }, 
+      {
+        "speed": "45 mph", 
+        "tags": {
+          "highway": "primary_link"
+        }
+      }, 
+      {
+        "speed": "55 mph", 
+        "tags": {
+          "highway": "secondary_link"
+        }
+      }, 
+      {
+        "speed": "55 mph", 
+        "tags": {
+          "highway": "tertiary_link"
+        }
+      }
+    ]
+  }
+}
