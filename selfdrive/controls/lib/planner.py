@@ -36,13 +36,13 @@ STOPPING_DISTANCE = 2  # increase distance from lead car when stopped
 
 # Braking profile changes (makes the car brake harder because it wants to be farther from the lead car - increase to brake harder)
 ONE_BAR_PROFILE = [ONE_BAR_DISTANCE, FOUR_BAR_DISTANCE]
-ONE_BAR_PROFILE_BP = [GAP_CLOSURE_SPEED, -10.0]
+ONE_BAR_PROFILE_BP = [-GAP_CLOSURE_SPEED, 10.0]
 
 TWO_BAR_PROFILE = [TWO_BAR_DISTANCE, FOUR_BAR_DISTANCE]
-TWO_BAR_PROFILE_BP = [GAP_CLOSURE_SPEED, -10.0]
+TWO_BAR_PROFILE_BP = [-GAP_CLOSURE_SPEED, 10.0]
 
 THREE_BAR_PROFILE = [THREE_BAR_DISTANCE, FOUR_BAR_DISTANCE]
-THREE_BAR_PROFILE_BP = [GAP_CLOSURE_SPEED, -10.0]
+THREE_BAR_PROFILE_BP = [-GAP_CLOSURE_SPEED, 10.0]
 
                        
 # Max lateral acceleration, used to caclulate how much to slow down in turns
@@ -78,7 +78,7 @@ _FCW_A_ACT_BP = [0., 30.]
 
 
 def calc_cruise_accel_limits(v_ego, following):
-  a_cruise_min = interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V)
+  a_cruise_min = (v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V)
 
   if following:
     a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V_FOLLOWING)
@@ -290,7 +290,7 @@ class LongitudinalMpc(object):
     # Adjust distance from lead car when distance button pressed 
     if CS.readdistancelines == 1:
       if self.street_speed and (self.lead_car_gap_shrinking or self.tailgating):
-        TR = np.interp(v_rel, ONE_BAR_PROFILE_BP, ONE_BAR_PROFILE)
+        TR = np.interp(-v_rel, ONE_BAR_PROFILE_BP, ONE_BAR_PROFILE)
         if self.lastTR != -CS.readdistancelines:
           self.libmpc.init(MPC_COST_LONG.TTC, 0.0850, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
           self.lastTR = -CS.readdistancelines
@@ -302,7 +302,7 @@ class LongitudinalMpc(object):
       
     elif CS.readdistancelines == 2:
       if self.street_speed and (self.lead_car_gap_shrinking or self.tailgating):
-        TR = np.interp(v_rel, TWO_BAR_PROFILE_BP, TWO_BAR_PROFILE)
+        TR = np.interp(-v_rel, TWO_BAR_PROFILE_BP, TWO_BAR_PROFILE)
         if self.lastTR != -CS.readdistancelines:
           self.libmpc.init(MPC_COST_LONG.TTC, 0.0875, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
           self.lastTR = -CS.readdistancelines
@@ -314,7 +314,7 @@ class LongitudinalMpc(object):
               
     elif CS.readdistancelines == 3:
       if self.street_speed and (self.lead_car_gap_shrinking or self.tailgating):
-        TR = np.interp(v_rel, THREE_BAR_PROFILE_BP, THREE_BAR_PROFILE)
+        TR = np.interp(-v_rel, THREE_BAR_PROFILE_BP, THREE_BAR_PROFILE)
         if self.lastTR != -CS.readdistancelines:
           self.libmpc.init(MPC_COST_LONG.TTC, MPC_COST_LONG.DISTANCE, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
           self.lastTR = -CS.readdistancelines
