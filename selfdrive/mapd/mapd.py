@@ -73,11 +73,14 @@ def setup_thread_excepthook():
 def build_way_query(lat, lon, radius=50):
   """Builds a query to find all highways within a given radius around a point"""
   pos = "  (around:%f,%f,%f)" % (radius, lat, lon)
+  lat_lon = "(%f,%f)" % (lat, lon)
   q = """(
   way
   """ + pos + """
   [highway][highway!~"^(footway|path|bridleway|steps|cycleway|construction|bus_guideway|escape)$"];
-  >;);out;
+  >;);out;""" + """is_in""" + lat_lon + """;area._[admin_level~"[24]"];
+  convert area ::id = id(), admin_level = t['admin_level'],
+  name = t['name'], "ISO3166-1:alpha2" = t['ISO3166-1:alpha2'];out;
   """
   return q
 
@@ -97,7 +100,7 @@ def query_thread():
         cur_ecef = geodetic2ecef((last_gps.latitude, last_gps.longitude, last_gps.altitude))
         prev_ecef = geodetic2ecef((last_query_pos.latitude, last_query_pos.longitude, last_query_pos.altitude))
         dist = np.linalg.norm(cur_ecef - prev_ecef)
-        if dist < 1000:
+        if dist < 1000: #updated when we are 1km from the edge of the downloaded circle
           continue
 
         if dist > 3000:
@@ -111,6 +114,7 @@ def query_thread():
         nodes = []
         real_nodes = []
         node_to_way = defaultdict(list)
+        location_info = {}
 
         for n in new_result.nodes:
           nodes.append((float(n.lat), float(n.lon), 0))
@@ -120,12 +124,18 @@ def query_thread():
           for n in way.nodes:
             node_to_way[n.id].append(way)
 
+        for area in new_result.areas:
+          if area.tags.get('admin_level', '') == "2":
+            location_info['country'] = area.tags.get('ISO3166-1:alpha2', '')
+          if area.tags.get('admin_level', '') == "4":
+            location_info['region'] = area.tags.get('name', '')
+
         nodes = np.asarray(nodes)
         nodes = geodetic2ecef(nodes)
         tree = spatial.cKDTree(nodes)
 
         query_lock.acquire()
-        last_query_result = new_result, tree, real_nodes, node_to_way
+        last_query_result = new_result, tree, real_nodes, node_to_way, location_info
         last_query_pos = last_gps
         cache_valid = True
         query_lock.release()
@@ -182,7 +192,7 @@ def mapsd_thread():
       query_lock.acquire()
       cur_way = Way.closest(last_query_result, lat, lon, heading, cur_way)
       if cur_way is not None:
-        pnts, curvature_valid = cur_way.get_lookahead(last_query_result, lat, lon, heading, MAPS_LOOKAHEAD_DISTANCE)
+        pnts, curvature_valid = cur_way.get_lookahead(lat, lon, heading, MAPS_LOOKAHEAD_DISTANCE)
 
         xs = pnts[:, 0]
         ys = pnts[:, 1]
@@ -251,10 +261,23 @@ def mapsd_thread():
       dat.liveMapData.wayId = cur_way.id
 
       # Seed limit
-      max_speed = cur_way.max_speed
+      max_speed = cur_way.max_speed()
       if max_speed is not None:
         dat.liveMapData.speedLimitValid = True
         dat.liveMapData.speedLimit = max_speed
+
+        # TODO: use the function below to anticipate upcoming speed limits
+        #max_speed_ahead, max_speed_ahead_dist = cur_way.max_speed_ahead(max_speed, lat, lon, heading, MAPS_LOOKAHEAD_DISTANCE)
+        #if max_speed_ahead is not None and max_speed_ahead_dist is not None:
+        #  dat.liveMapData.speedLimitAheadValid = True
+        #  dat.liveMapData.speedLimitAhead = float(max_speed_ahead)
+        #  dat.liveMapData.speedLimitAheadDistance = float(max_speed_ahead_dist)
+
+
+      advisory_max_speed = cur_way.advisory_max_speed()
+      if advisory_max_speed is not None:
+        dat.liveMapData.speedAdvisoryValid = True
+        dat.liveMapData.speedAdvisory = advisory_max_speed
 
       # Curvature
       dat.liveMapData.curvatureValid = curvature_valid

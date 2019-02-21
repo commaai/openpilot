@@ -692,6 +692,7 @@ BO_ 1365 FPCM11: 8 FPCM
  SG_ CF_Fpcm_LPCtrCirFlt : 15|1@1+ (1.0,0.0) [0.0|1.0] ""  EMS
 
 BO_ 871 LVR12: 8 LVR
+ SG_ CF_Lvr_CruiseSet : 0|8@1+ (1.0,0.0) [0.0|255.0] "" CLU,TCU
  SG_ CF_Lvr_Gear : 32|4@1+ (1.0,0.0) [0.0|15.0] ""  CLU,TCU
 
 BO_ 872 LVR11: 8 LVR
@@ -896,11 +897,11 @@ BO_ 67 DATC13: 8 DATC
 
 BO_ 66 DATC12: 8 DATC
  SG_ CR_Datc_DrTempDispC : 0|8@1+ (0.5,14.0) [15.0|32.0] "deg"  CLU,IBOX
- SG_ CR_Datc_DrTempDispF : 8|8@1+ (1.0,56.0) [58.0|90.0] "¢µ"  CLU,IBOX
+ SG_ CR_Datc_DrTempDispF : 8|8@1+ (1.0,56.0) [58.0|90.0] "deg"  CLU,IBOX
  SG_ CR_Datc_PsTempDispC : 16|8@1+ (0.5,14.0) [15.0|32.0] "deg"  CLU,IBOX
- SG_ CR_Datc_PsTempDispF : 24|8@1+ (1.0,56.0) [58.0|90.0] "¢µ"  CLU,IBOX
+ SG_ CR_Datc_PsTempDispF : 24|8@1+ (1.0,56.0) [58.0|90.0] "deg"  CLU,IBOX
  SG_ CR_Datc_RearDrTempDispC : 40|8@1+ (0.5,14.0) [15.0|32.0] "deg"  CLU
- SG_ CR_Datc_RearDrTempDispF : 48|8@1+ (1.0,58.0) [58.0|90.0] "¢µ"  CLU
+ SG_ CR_Datc_RearDrTempDispF : 48|8@1+ (1.0,58.0) [58.0|90.0] "deg"  CLU
  SG_ CF_Datc_CO2_Warning : 56|8@1+ (1.0,0.0) [0.0|3.0] ""  CLU
 
 BO_ 1345 CGW1: 8 BCM
@@ -980,6 +981,8 @@ BO_ 832 LKAS11: 8 LDWS_LKAS
  SG_ CF_Lkas_Chksum : 48|8@1+ (1.0,0.0) [0.0|255.0] ""  MDPS
  SG_ CF_Lkas_FcwOpt_USM : 56|3@1+ (1.0,0.0) [0.0|7.0] ""  CLU
  SG_ CF_Lkas_LdwsOpt_USM : 59|3@1+ (1.0,0.0) [0.0|7.0] ""  CLU,MDPS
+ SG_ CF_Lkas_Unknown1 : 47|1@1+ (1,0) [0|3] "" XXX
+ SG_ CF_Lkas_Unknown2 : 63|2@0+ (1,0) [0|3] "" XXX
 
 BO_ 1342 LKAS12: 6 LDWS_LKAS
  SG_ CF_Lkas_TsrSlifOpt : 10|2@1+ (1.0,0.0) [0.0|3.0] ""  CLU
