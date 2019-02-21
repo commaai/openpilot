@@ -96,7 +96,7 @@ class CarController(object):
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
              pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel, \
-             radar_error, hud_v_cruise, hud_show_lanes, hud_show_car, \
+             hud_v_cruise, hud_show_lanes, hud_show_car, \
              hud_alert, snd_beep, snd_chime):
 
     """ Controls thread """
