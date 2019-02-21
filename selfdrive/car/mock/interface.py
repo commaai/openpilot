@@ -118,6 +118,6 @@ class CarInterface(object):
 
     return ret.as_reader()
 
-  def apply(self, c, perception_state=log.Live20Data.new_message()):
+  def apply(self, c):
     # in mock no carcontrols
     return False
