@@ -108,7 +108,7 @@ int get_health_pkt(void *dat) {
   int safety_ignition = safety_ignition_hook();
   if (safety_ignition < 0) {
     //Use the GPIO pin to determine ignition
-    health->started = can_live;
+    health->started = (GPIOA->IDR & (1 << 1)) == 0;
   } else {
     //Current safety hooks want to determine ignition (ex: GM)
     health->started = safety_ignition;
