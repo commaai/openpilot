@@ -195,6 +195,7 @@ def gen_raw(msg):
                       'halfCycleSubtracted': trackingStatus_bools[3]}
     measurements_parsed.append({
         'svId': m['svId'],
+        'sigId': m['sigId'],
         'pseudorange': m['prMes'],
         'carrierCycles': m['cpMes'],
         'doppler': m['doMes'],

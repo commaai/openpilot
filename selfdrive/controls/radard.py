@@ -8,7 +8,7 @@ from fastcluster import linkage_vector
 import selfdrive.messaging as messaging
 from selfdrive.services import service_list
 from selfdrive.controls.lib.latcontrol_helpers import calc_lookahead_offset
-from selfdrive.controls.lib.pathplanner import PathPlanner
+from selfdrive.controls.lib.model_parser import ModelParser
 from selfdrive.controls.lib.radar_helpers import Track, Cluster, fcluster, \
                                                  RDR_TO_LDR, NO_FUSION_SCORE
 from selfdrive.controls.lib.vehicle_model import VehicleModel
@@ -66,7 +66,7 @@ def radard_thread(gctx=None):
   model = messaging.sub_sock(context, service_list['model'].port, conflate=True, poller=poller)
   live100 = messaging.sub_sock(context, service_list['live100'].port, conflate=True, poller=poller)
 
-  PP = PathPlanner()
+  MP = ModelParser()
   RI = RadarInterface(CP)
 
   last_md_ts = 0
@@ -134,26 +134,26 @@ def radard_thread(gctx=None):
       last_md_ts = md.logMonoTime
 
     # *** get path prediction from the model ***
-    PP.update(v_ego, md)
+    MP.update(v_ego, md)
 
     # run kalman filter only if prob is high enough
-    if PP.lead_prob > 0.7:
-      reading = speedSensorV.read(PP.lead_dist, covar=np.matrix(PP.lead_var))
+    if MP.lead_prob > 0.7:
+      reading = speedSensorV.read(MP.lead_dist, covar=np.matrix(MP.lead_var))
       ekfv.update_scalar(reading)
       ekfv.predict(tsv)
 
       # When changing lanes the distance to the lead car can suddenly change,
       # which makes the Kalman filter output large relative acceleration
-      if mocked and abs(PP.lead_dist - ekfv.state[XV]) > 2.0:
-        ekfv.state[XV] = PP.lead_dist
-        ekfv.covar = (np.diag([PP.lead_var, ekfv.var_init]))
+      if mocked and abs(MP.lead_dist - ekfv.state[XV]) > 2.0:
+        ekfv.state[XV] = MP.lead_dist
+        ekfv.covar = (np.diag([MP.lead_var, ekfv.var_init]))
         ekfv.state[SPEEDV] = 0.
 
-      ar_pts[VISION_POINT] = (float(ekfv.state[XV]), np.polyval(PP.d_poly, float(ekfv.state[XV])),
+      ar_pts[VISION_POINT] = (float(ekfv.state[XV]), np.polyval(MP.d_poly, float(ekfv.state[XV])),
                               float(ekfv.state[SPEEDV]), False)
     else:
-      ekfv.state[XV] = PP.lead_dist
-      ekfv.covar = (np.diag([PP.lead_var, ekfv.var_init]))
+      ekfv.state[XV] = MP.lead_dist
+      ekfv.covar = (np.diag([MP.lead_var, ekfv.var_init]))
       ekfv.state[SPEEDV] = 0.
 
       if VISION_POINT in ar_pts:
@@ -162,7 +162,7 @@ def radard_thread(gctx=None):
     # *** compute the likely path_y ***
     if (active and not steer_override) or mocked:
       # use path from model (always when mocking as steering is too noisy)
-      path_y = np.polyval(PP.d_poly, path_x)
+      path_y = np.polyval(MP.d_poly, path_x)
     else:
       # use path from steer, set angle_offset to 0 it does not only report the physical offset
       path_y = calc_lookahead_offset(v_ego, steer_angle, path_x, VM, angle_offset=0)[0]

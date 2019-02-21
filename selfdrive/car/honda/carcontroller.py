@@ -86,7 +86,7 @@ class CarController(object):
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
              pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel, \
-             radar_error, hud_v_cruise, hud_show_lanes, hud_show_car, \
+             hud_v_cruise, hud_show_lanes, hud_show_car, \
              hud_alert, snd_beep, snd_chime):
 
     """ Controls thread """
@@ -121,7 +121,7 @@ class CarController(object):
 
     # For lateral control-only, send chimes as a beep since we don't send 0x1fa
     if CS.CP.radarOffCan:
-      snd_beep = snd_beep if snd_beep is not 0 else snd_chime
+      snd_beep = snd_beep if snd_beep != 0 else snd_chime
 
     #print chime, alert_id, hud_alert
     fcw_display, steer_required, acc_alert = process_hud_alert(hud_alert)

@@ -293,14 +293,17 @@ class LongitudinalControl(unittest.TestCase):
     manager.gctx = {}
     manager.prepare_managed_process('radard')
     manager.prepare_managed_process('controlsd')
+    manager.prepare_managed_process('plannerd')
 
     manager.start_managed_process('radard')
     manager.start_managed_process('controlsd')
+    manager.start_managed_process('plannerd')
 
   @classmethod
   def tearDownClass(cls):
     manager.kill_managed_process('radard')
     manager.kill_managed_process('controlsd')
+    manager.kill_managed_process('plannerd')
     time.sleep(5)
 
   # hack
@@ -321,4 +324,3 @@ for k in xrange(WORKERS):
 
 if __name__ == "__main__":
   unittest.main()
-
