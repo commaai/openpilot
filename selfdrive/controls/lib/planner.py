@@ -29,18 +29,22 @@ FOUR_BAR_DISTANCE = 2.5   # in seconds
 # Variables that change braking profiles
 CITY_SPEED = 19.44  # braking profile changes when below this speed based on following dynamics below [m/s]
 GAP_CLOSURE_SPEED = -1  # relative velocity between you and lead car which activates braking profile change [m/s]
-RAPID_GAP_CLOSURE_SPEED = -3  # relative velocity between you and lead car which activates a broking profile change + RAPID_DELTA [m/s]
-RAPID_DELTA = 0.25  # increased braking profile for approaching lead car at RAPID_GAP_CLOSURE_SPEED [s]
 TAILGATE_DISTANCE = 17.5  # when below this distance between you and lead car, braking profile change is active based on PULLAWAY_REL_V [m]
 PULLAWAY_REL_V = 0.25  # within TAILGATE_DISTANCE, if the car is pulling away w/ rel velocity that exceeds this value, then change BACK to set bar distance [m/s]
 MIN_DISTANCE = 7  # keep a minimum distance between you and lead car (when below this, activates braking profile change) [m]
 STOPPING_DISTANCE = 2  # increase distance from lead car when stopped
 
 # Braking profile changes (makes the car brake harder because it wants to be farther from the lead car - increase to brake harder)
-BRAKING_ONE_BAR_DISTANCE = 2.1  # more aggressive braking when using one bar distance by increasing follow distance [s]
-BRAKING_TWO_BAR_DISTANCE = 2.1  # more aggressive braking when using two bar distance by increasing follow distance [s]
-BRAKING_THREE_BAR_DISTANCE = 2.1  # no change in braking profile
+ONE_BAR_PROFILE = [ONE_BAR_DISTANCE 2.6]
+ONE_BAR_PROFILE_BP = [GAP_CLOSURE_SPEED -5.0]
 
+TWO_BAR_PROFILE = [TWO_BAR_DISTANCE 2.5]
+TWO_BAR_PROFILE_BP = [GAP_CLOSURE_SPEED -7.5]
+
+THREE_BAR_PROFILE = [THREE_BAR_DISTANCE 2.4]
+THREE_BAR_PROFILE_BP = [GAP_CLOSURE_SPEED -10.0]
+
+                       
 # Max lateral acceleration, used to caclulate how much to slow down in turns
 A_Y_MAX = 1.85  # m/s^2
 NO_CURVATURE_SPEED = 200. * CV.MPH_TO_MS
@@ -286,9 +290,7 @@ class LongitudinalMpc(object):
     # Adjust distance from lead car when distance button pressed 
     if CS.readdistancelines == 1:
       if self.street_speed and (self.lead_car_gap_shrinking or self.tailgating):
-        TR = BRAKING_ONE_BAR_DISTANCE
-        if self.lead_car_rapid_gap_shrinking:
-          TR = TR + RAPID_DELTA   # add more braking if lead car is coming in fast
+        TR = np.interp(v_rel, ONE_BAR_PROFILE_BP, ONE_BAR_PROFILE)
         if self.lastTR != -CS.readdistancelines:
           self.libmpc.init(MPC_COST_LONG.TTC, 0.0850, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
           self.lastTR = -CS.readdistancelines
@@ -300,9 +302,7 @@ class LongitudinalMpc(object):
       
     elif CS.readdistancelines == 2:
       if self.street_speed and (self.lead_car_gap_shrinking or self.tailgating):
-        TR = BRAKING_TWO_BAR_DISTANCE
-        if self.lead_car_rapid_gap_shrinking:
-          TR = TR + RAPID_DELTA   # add more braking if lead car is coming in fast
+        TR = np.interp(v_rel, TWO_BAR_PROFILE_BP, TWO_BAR_PROFILE)
         if self.lastTR != -CS.readdistancelines:
           self.libmpc.init(MPC_COST_LONG.TTC, 0.0875, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
           self.lastTR = -CS.readdistancelines
@@ -314,9 +314,7 @@ class LongitudinalMpc(object):
               
     elif CS.readdistancelines == 3:
       if self.street_speed and (self.lead_car_gap_shrinking or self.tailgating):
-        TR = BRAKING_THREE_BAR_DISTANCE
-        if self.lead_car_rapid_gap_shrinking:
-          TR = TR + RAPID_DELTA   # add more braking if lead car is coming in fast
+        TR = np.interp(v_rel, THREE_BAR_PROFILE_BP, THREE_BAR_PROFILE)
         if self.lastTR != -CS.readdistancelines:
           self.libmpc.init(MPC_COST_LONG.TTC, MPC_COST_LONG.DISTANCE, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
           self.lastTR = -CS.readdistancelines
