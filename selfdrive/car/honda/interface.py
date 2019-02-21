@@ -158,7 +158,7 @@ class CarInterface(object):
       ret.enableGasInterceptor = 0x201 in fingerprint
       ret.openpilotLongitudinalControl = ret.enableCamera
 
-    ret.autoTransmission = self.CS.CP.carFingerprint not in MANUAL_TRANSMISSION
+    ret.autoTransmission = fingerprint not in MANUAL_TRANSMISSION
 
     cloudlog.warn("ECU Camera Simulated: %r", ret.enableCamera)
     cloudlog.warn("ECU Gas Interceptor: %r", ret.enableGasInterceptor)
