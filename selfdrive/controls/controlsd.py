@@ -311,7 +311,7 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
     CC.hudControl.audibleAlert = AM.audible_alert
 
     # send car controls over can
-    CI.apply(CC, perception_state)
+    CI.apply(CC)
 
   force_decel = driver_status.awareness < 0.
 
