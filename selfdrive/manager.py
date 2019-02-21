@@ -88,7 +88,7 @@ from selfdrive.loggerd.config import ROOT
 managed_processes = {
   "thermald": "selfdrive.thermald",
   "uploader": "selfdrive.loggerd.uploader",
-  "controlsd": "selfdrive.controls.controlsd",
+  #"controlsd": "selfdrive.controls.controlsd",
   "radard": "selfdrive.controls.radard",
   "ubloxd": "selfdrive.locationd.ubloxd",
   "mapd": "selfdrive.mapd.mapd",
