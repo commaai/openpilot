@@ -149,7 +149,8 @@ class CarInterface(object):
       ret.steerKf = 0.00006
 
     elif candidate == CAR.LEXUS_ISH:
-      ret.safetyParam = 66
+      stop_and_go = True
+      ret.safetyParam = 73
       ret.wheelbase = 2.80 # in spec
       ret.steerRatio = 13.3 # in spec
       tire_stiffness_factor = 0.444 # from camry
