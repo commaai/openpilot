@@ -13,6 +13,8 @@ def parse_gear_shifter(can_gear):
     return "neutral"
   elif can_gear == 0x4:
     return "drive"
+  elif can_gear == 0x5:
+    return "low"
   return "unknown"
 
 
