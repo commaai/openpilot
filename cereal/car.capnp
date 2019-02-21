@@ -280,6 +280,7 @@ struct CarParams {
   carName @0 :Text;
   radarNameDEPRECATED @1 :Text;
   carFingerprint @2 :Text;
+  manualTransmission @ 51 :Bool; #set true if we have a manual transmission
 
   enableSteerDEPRECATED @3 :Bool;
   enableGasInterceptor @4 :Bool;
@@ -358,7 +359,6 @@ struct CarParams {
 
   steerActuatorDelay @48 :Float32; # Steering wheel actuator delay in seconds
   openpilotLongitudinalControl @50 :Bool; # is openpilot doing the longitudinal control?
-  autoTransmission @ 51 :Bool; #set true if we have an automatic transmission
 
   enum SteerControlType {
     torque @0;

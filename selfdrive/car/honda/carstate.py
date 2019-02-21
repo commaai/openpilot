@@ -66,7 +66,7 @@ def get_can_signals(CP):
       ("SCM_BUTTONS", 25),
   ]
 
-  if CP.autoTransmission:
+  if not CP.manualTransmission:
     signals += [("GEAR", "GEARBOX", 0),
                  ("GEAR_SHIFTER", "GEARBOX", 0)]
     checks += [(("GEARBOX", 100))]
@@ -238,7 +238,7 @@ class CarState(object):
       self.user_gas = cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS']
       self.user_gas_pressed = self.user_gas > 0 # this works because interceptor read < 0 when pedal position is 0. Once calibrated, this will change
 
-    self.gear = 0 if self.CP.carFingerprint == CAR.CIVIC or not self.CP.autoTransmission else cp.vl["GEARBOX"]['GEAR']
+    self.gear = 0 if self.CP.carFingerprint == CAR.CIVIC or self.CP.manualTransmission else cp.vl["GEARBOX"]['GEAR']
     self.angle_steers = cp.vl["STEERING_SENSORS"]['STEER_ANGLE']
     self.angle_steers_rate = cp.vl["STEERING_SENSORS"]['STEER_ANGLE_RATE']
 
@@ -257,7 +257,7 @@ class CarState(object):
       self.park_brake = 0  # TODO
       self.main_on = cp.vl["SCM_BUTTONS"]['MAIN_ON']
 
-    can_gear_shifter = 8 if not self.CP.autoTransmission else (cp.vl["GEARBOX"]['GEAR_SHIFTER'])
+    can_gear_shifter = 8 if self.CP.manualTransmission else (cp.vl["GEARBOX"]['GEAR_SHIFTER'])
     self.gear_shifter = parse_gear_shifter(can_gear_shifter, self.shifter_values)
 
     self.pedal_gas = cp.vl["POWERTRAIN_DATA"]['PEDAL_GAS']
