@@ -277,47 +277,38 @@ class LongitudinalMpc(object):
       
       
     # Adjust distance from lead car when distance button pressed 
-    if CS.readdistancelines == 1:
+    if CS.carState.readdistancelines == 1:
       if self.street_speed and (self.lead_car_gap_shrinking or self.tailgating):
-        TR = interp(-self.v_rel, ONE_BAR_PROFILE_BP, ONE_BAR_PROFILE)
-        #if self.lastTR != -CS.readdistancelines:
-        #  self.libmpc.init(MPC_COST_LONG.TTC, 0.0850, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
-        #  self.lastTR = -CS.readdistancelines
+        TR = interp(-self.v_rel, ONE_BAR_PROFILE_BP, ONE_BAR_PROFILE)  
       else:
         TR = ONE_BAR_DISTANCE 
-        if CS.readdistancelines != self.lastTR:
+        if CS.carState.readdistancelines != self.lastTR:
           self.libmpc.init(MPC_COST_LONG.TTC, 1.0, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
-          self.lastTR = CS.readdistancelines  
+          self.lastTR = CS.carState.readdistancelines  
       
-    elif CS.readdistancelines == 2:
+    elif CS.carState.readdistancelines == 2:
       if self.street_speed and (self.lead_car_gap_shrinking or self.tailgating):
         TR = interp(-self.v_rel, TWO_BAR_PROFILE_BP, TWO_BAR_PROFILE)
-        #if self.lastTR != -CS.readdistancelines:
-        #  self.libmpc.init(MPC_COST_LONG.TTC, 0.0875, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
-        #  self.lastTR = -CS.readdistancelines
       else:
         TR = TWO_BAR_DISTANCE 
-        if CS.readdistancelines != self.lastTR:
+        if CS.carState.readdistancelines != self.lastTR:
           self.libmpc.init(MPC_COST_LONG.TTC, MPC_COST_LONG.DISTANCE, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
-          self.lastTR = CS.readdistancelines  
+          self.lastTR = CS.carState.readdistancelines  
               
-    elif CS.readdistancelines == 3:
+    elif CS.carState.readdistancelines == 3:
       if self.street_speed and (self.lead_car_gap_shrinking or self.tailgating):
         TR = interp(-self.v_rel, THREE_BAR_PROFILE_BP, THREE_BAR_PROFILE)
-        #if self.lastTR != -CS.readdistancelines:
-        #  self.libmpc.init(MPC_COST_LONG.TTC, MPC_COST_LONG.DISTANCE, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
-        #  self.lastTR = -CS.readdistancelines
       else:
         TR = THREE_BAR_DISTANCE 
-        if CS.readdistancelines != self.lastTR:
+        if CS.carState.readdistancelines != self.lastTR:
           self.libmpc.init(MPC_COST_LONG.TTC, MPC_COST_LONG.DISTANCE, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
-          self.lastTR = CS.readdistancelines   
+          self.lastTR = CS.carState.readdistancelines   
         
-    elif CS.readdistancelines == 4:
+    elif CS.carState.readdistancelines == 4:
       TR = FOUR_BAR_DISTANCE
-      if CS.readdistancelines != self.lastTR:
+      if CS.carState.readdistancelines != self.lastTR:
         self.libmpc.init(MPC_COST_LONG.TTC, 0.05, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK) 
-        self.lastTR = CS.readdistancelines      
+        self.lastTR = CS.carState.readdistancelines      
           
     else:
       TR = TWO_BAR_DISTANCE # if readdistancelines != 1,2,3,4
