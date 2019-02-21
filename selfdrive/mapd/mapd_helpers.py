@@ -1,13 +1,23 @@
 import math
+import json
 import numpy as np
 from datetime import datetime
-
+from common.basedir import BASEDIR
 from selfdrive.config import Conversions as CV
 from common.transformations.coordinates import LocalCoord, geodetic2ecef
 
 LOOKAHEAD_TIME = 10.
 MAPS_LOOKAHEAD_DISTANCE = 50 * LOOKAHEAD_TIME
 
+DEFAULT_SPEEDS_JSON_FILE = BASEDIR + "/selfdrive/mapd/default_speeds.json"
+DEFAULT_SPEEDS = {}
+with open(DEFAULT_SPEEDS_JSON_FILE, "rb") as f:
+  DEFAULT_SPEEDS = json.loads(f.read())
+
+DEFAULT_SPEEDS_BY_REGION_JSON_FILE = BASEDIR + "/selfdrive/mapd/default_speeds_by_region.json"
+DEFAULT_SPEEDS_BY_REGION = {}
+with open(DEFAULT_SPEEDS_BY_REGION_JSON_FILE, "rb") as f:
+  DEFAULT_SPEEDS_BY_REGION = json.loads(f.read())
 
 def circle_through_points(p1, p2, p3):
   """Fits a circle through three points
@@ -23,28 +33,90 @@ def circle_through_points(p1, p2, p3):
 
   return (-B / (2 * A), - C / (2 * A), np.sqrt((B**2 + C**2 - 4 * A * D) / (4 * A**2)))
 
-
 def parse_speed_unit(max_speed):
   """Converts a maxspeed string to m/s based on the unit present in the input.
   OpenStreetMap defaults to kph if no unit is present. """
+
+  if not max_speed:
+    return None
 
   conversion = CV.KPH_TO_MS
   if 'mph' in max_speed:
     max_speed = max_speed.replace(' mph', '')
     conversion = CV.MPH_TO_MS
-
   try:
-    max_speed = float(max_speed) * conversion
+    return float(max_speed) * conversion
   except ValueError:
-    max_speed = None
+    return None
 
+def parse_speed_tags(tags):
+  """Parses tags on a way to find the maxspeed string"""
+  max_speed = None
+
+  if 'maxspeed' in tags:
+    max_speed = tags['maxspeed']
+
+  if 'maxspeed:conditional' in tags:
+    try:
+      max_speed_cond, cond = tags['maxspeed:conditional'].split(' @ ')
+      cond = cond[1:-1]
+
+      start, end = cond.split('-')
+      now = datetime.now()  # TODO: Get time and timezone from gps fix so this will work correctly on replays
+      start = datetime.strptime(start, "%H:%M").replace(year=now.year, month=now.month, day=now.day)
+      end = datetime.strptime(end, "%H:%M").replace(year=now.year, month=now.month, day=now.day)
+
+      if start <= now <= end:
+        max_speed = max_speed_cond
+    except ValueError:
+      pass
+
+  if not max_speed and 'source:maxspeed' in tags:
+    max_speed = DEFAULT_SPEEDS.get(tags['source:maxspeed'], None)
+  if not max_speed and 'maxspeed:type' in tags:
+    max_speed = DEFAULT_SPEEDS.get(tags['maxspeed:type'], None)
+
+  max_speed = parse_speed_unit(max_speed)
   return max_speed
 
+def geocode_maxspeed(tags, location_info):
+  max_speed = None
+  try:
+    geocode_country = location_info.get('country', '')
+    geocode_region = location_info.get('region', '')
+
+    country_rules = DEFAULT_SPEEDS_BY_REGION.get(geocode_country, {})
+    country_defaults = country_rules.get('Default', [])
+    for rule in country_defaults:
+      rule_valid = all(
+        tag_name in tags
+        and tags[tag_name] == value
+        for tag_name, value in rule['tags'].iteritems()
+      )
+      if rule_valid:
+        max_speed = rule['speed']
+        break #stop searching country
+
+    region_rules = country_rules.get(geocode_region, [])
+    for rule in region_rules:
+      rule_valid = all(
+        tag_name in tags
+        and tags[tag_name] == value
+        for tag_name, value in rule['tags'].iteritems()
+      )
+      if rule_valid:
+        max_speed = rule['speed']
+        break #stop searching region
+  except KeyError:
+    pass
+  max_speed = parse_speed_unit(max_speed)
+  return max_speed
 
 class Way:
-  def __init__(self, way):
+  def __init__(self, way, query_results):
     self.id = way.id
     self.way = way
+    self.query_results = query_results
 
     points = list()
 
@@ -55,7 +127,7 @@ class Way:
 
   @classmethod
   def closest(cls, query_results, lat, lon, heading, prev_way=None):
-    results, tree, real_nodes, node_to_way = query_results
+    results, tree, real_nodes, node_to_way, location_info = query_results
 
     cur_pos = geodetic2ecef((lat, lon, 0))
     nodes = tree.query_ball_point(cur_pos, 500)
@@ -73,7 +145,7 @@ class Way:
     closest_way = None
     best_score = None
     for way in ways:
-      way = Way(way)
+      way = Way(way, query_results)
       points = way.points_in_car_frame(lat, lon, heading)
 
       on_way = way.on_way(lat, lon, heading, points)
@@ -124,34 +196,64 @@ class Way:
   def __str__(self):
     return "%s %s" % (self.id, self.way.tags)
 
-  @property
   def max_speed(self):
     """Extracts the (conditional) speed limit from a way"""
     if not self.way:
       return None
 
-    tags = self.way.tags
-    max_speed = None
-
-    if 'maxspeed' in tags:
-      max_speed = parse_speed_unit(tags['maxspeed'])
-
-    try:
-      if 'maxspeed:conditional' in tags:
-        max_speed_cond, cond = tags['maxspeed:conditional'].split(' @ ')
-        cond = cond[1:-1]
-
-        start, end = cond.split('-')
-        now = datetime.now()  # TODO: Get time and timezone from gps fix so this will work correctly on replays
-        start = datetime.strptime(start, "%H:%M").replace(year=now.year, month=now.month, day=now.day)
-        end = datetime.strptime(end, "%H:%M").replace(year=now.year, month=now.month, day=now.day)
-
-        if start <= now <= end:
-          max_speed = parse_speed_unit(max_speed_cond)
-    except ValueError:
-      pass
+    max_speed = parse_speed_tags(self.way.tags)
+    if not max_speed:
+      location_info = self.query_results[4]
+      max_speed = geocode_maxspeed(self.way.tags, location_info)
 
     return max_speed
+
+  def max_speed_ahead(self, current_speed_limit, lat, lon, heading, lookahead):
+    """Look ahead for a max speed"""
+    if not self.way:
+      return None
+
+    speed_ahead = None
+    speed_ahead_dist = None
+    lookahead_ways = 5
+    way = self
+    for i in range(lookahead_ways):
+      way_pts = way.points_in_car_frame(lat, lon, heading)
+
+      # Check current lookahead distance
+      max_dist = np.linalg.norm(way_pts[-1, :])
+
+      if max_dist > 2 * lookahead:
+        break
+
+      if 'maxspeed' in way.way.tags:
+        spd = parse_speed_tags(way.way.tags)
+        if not spd:
+          location_info = self.query_results[4]
+          spd = geocode_maxspeed(way.way.tags, location_info)
+        if spd < current_speed_limit:
+          speed_ahead = spd
+          min_dist = np.linalg.norm(way_pts[1, :])
+          speed_ahead_dist = min_dist
+          break
+      # Find next way
+      way = way.next_way()
+      if not way:
+        break
+
+    return speed_ahead, speed_ahead_dist
+
+  def advisory_max_speed(self):
+    if not self.way:
+      return None
+
+    tags = self.way.tags
+    adv_speed = None
+
+    if 'maxspeed:advisory' in tags:
+      adv_speed = tags['maxspeed:advisory']
+      adv_speed = parse_speed_unit(adv_speed)
+    return adv_speed
 
   def on_way(self, lat, lon, heading, points=None):
     if points is None:
@@ -186,8 +288,8 @@ class Way:
 
     return points_carframe
 
-  def next_way(self, query_results, lat, lon, heading, backwards=False):
-    results, tree, real_nodes, node_to_way = query_results
+  def next_way(self, backwards=False):
+    results, tree, real_nodes, node_to_way, location_info = self.query_results
 
     if backwards:
       node = self.way.nodes[0]
@@ -215,18 +317,20 @@ class Way:
       # Filter on number of lanes
       cur_num_lanes = int(self.way.tags['lanes'])
       if len(ways) > 1:
-        ways = [w for w in ways if int(w.tags['lanes']) == cur_num_lanes]
+        ways_same_lanes = [w for w in ways if int(w.tags['lanes']) == cur_num_lanes]
+        if len(ways_same_lanes) == 1:
+          ways = ways_same_lanes
       if len(ways) > 1:
         ways = [w for w in ways if int(w.tags['lanes']) > cur_num_lanes]
       if len(ways) == 1:
-        way = Way(ways[0])
+        way = Way(ways[0], self.query_results)
 
     except (KeyError, ValueError):
       pass
 
     return way
 
-  def get_lookahead(self, query_results, lat, lon, heading, lookahead):
+  def get_lookahead(self, lat, lon, heading, lookahead):
     pnts = None
     way = self
     valid = False
@@ -249,7 +353,7 @@ class Way:
         break
 
       # Find next way
-      way = way.next_way(query_results, lat, lon, heading)
+      way = way.next_way()
       if not way:
         break
 
