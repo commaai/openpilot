@@ -218,8 +218,8 @@ class CarInterface(object):
     else:
       ret.gasMaxBP = [0.]
       ret.gasMaxV = [0.5]
-    ret.longitudinalKpV = [3.6, 2.4, 1.5]
-    ret.longitudinalKiV = [0.54, 0.36]
+      ret.longitudinalKpV = [3.6, 2.4, 1.5]
+      ret.longitudinalKiV = [0.54, 0.36]
 
     return ret
 
