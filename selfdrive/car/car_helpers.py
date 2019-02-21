@@ -87,7 +87,7 @@ def fingerprint(logcan, timeout):
 
 def get_car(logcan, sendcan=None, passive=True):
   # TODO: timeout only useful for replays so controlsd can start before unlogger
-  timeout = 2. if passive else None
+  timeout = 2.
   candidate, fingerprints = fingerprint(logcan, timeout)
 
   if candidate is None:
