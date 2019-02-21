@@ -97,7 +97,7 @@ else
   OPENGL_LIBS = -lGLESv3 -lEGL
 
   SNPE_FLAGS = -I$(PHONELIBS)/snpe/include/
-  SNPE_LIBS = -L$(PHONELIBS)/snpe/lib -lSNPE -lsymphony-cpu -lsymphonypower
+  SNPE_LIBS = -lSNPE -lsymphony-cpu -lsymphonypower
 
   OTHER_LIBS = -lz -lcutils -lm -llog -lui -ladreno_utils
 
@@ -137,7 +137,7 @@ OBJS += $(PLATFORM_OBJS) \
         $(CEREAL_OBJS)
 
 #MODEL_DATA = ../../models/driving_bigmodel.dlc ../../models/monitoring_model.dlc
-MODEL_DATA = ../../models/driving_model.dlc ../../models/monitoring_model.dlc
+MODEL_DATA = ../../models/driving_model.dlc ../../models/monitoring_model.dlc ../../models/posenet.dlc
 MODEL_OBJS = $(MODEL_DATA:.dlc=.o)
 OBJS += $(MODEL_OBJS)
 

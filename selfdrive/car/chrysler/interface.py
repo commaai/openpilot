@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from common.realtime import sec_since_boot
-from cereal import car, log
+from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
@@ -81,6 +81,8 @@ class CarInterface(object):
 
     if candidate == CAR.JEEP_CHEROKEE:
       ret.wheelbase = 2.91  # in meters
+      ret.steerRatio = 12.7
+      ret.steerActuatorDelay = 0.2  # in seconds
 
     ret.centerToFront = ret.wheelbase * 0.44
 
@@ -254,7 +256,7 @@ class CarInterface(object):
 
   # pass in a car.CarControl
   # to be called @ 100hz
-  def apply(self, c, perception_state=log.Live20Data.new_message()):
+  def apply(self, c):
 
     if (self.CS.frame == -1):
       return False # if we haven't seen a frame 220, then do not update.

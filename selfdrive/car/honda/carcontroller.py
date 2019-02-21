@@ -6,7 +6,6 @@ from common.numpy_fast import clip
 from selfdrive.car.honda import hondacan
 from selfdrive.car.honda.values import AH, CruiseButtons, CAR
 from selfdrive.can.packer import CANPacker
-from common.params import Params
 
 def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
   # hyst params
@@ -168,7 +167,7 @@ class CarController(object):
     idx = frame % 4
     can_sends.append(hondacan.create_steering_control(self.packer, apply_steer,
       lkas_active, CS.CP.carFingerprint, idx))
-   
+    
     # Send dashboard UI commands.
     if (frame % 10) == 0:
       idx = (frame/10) % 4

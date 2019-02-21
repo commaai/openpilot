@@ -211,7 +211,7 @@ def thermald_thread():
       msg.thermal.batteryVoltage = int(f.read())
     with open("/sys/class/power_supply/usb/present") as f:
       msg.thermal.usbOnline = bool(int(f.read()))
-        
+
     current_filter.update(msg.thermal.batteryCurrent / 1e6)
 
     # TODO: add car battery voltage check

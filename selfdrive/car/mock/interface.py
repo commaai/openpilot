@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import zmq
-from cereal import car, log
+from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.services import service_list
 from selfdrive.swaglog import cloudlog

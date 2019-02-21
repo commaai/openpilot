@@ -89,6 +89,7 @@ managed_processes = {
   "thermald": "selfdrive.thermald",
   "uploader": "selfdrive.loggerd.uploader",
   "controlsd": "selfdrive.controls.controlsd",
+  "plannerd": "selfdrive.controls.plannerd",
   "radard": "selfdrive.controls.radard",
   "ubloxd": "selfdrive.locationd.ubloxd",
   "mapd": "selfdrive.mapd.mapd",
@@ -132,6 +133,7 @@ persistent_processes = [
 
 car_started_processes = [
   'controlsd',
+  'plannerd',
   'loggerd',
   'sensord',
   'radard',
@@ -139,7 +141,6 @@ car_started_processes = [
   'visiond',
   'proclogd',
   'ubloxd',
-  'orbd',
   'mapd',
 ]
 
@@ -330,7 +331,7 @@ def manager_thread():
     msg = messaging.recv_sock(thermal_sock, wait=True)
 
     # uploader is gated based on the phone temperature
-    if msg.thermal.thermalStatus >= ThermalStatus.yellow or msg.thermal.started:
+    if msg.thermal.thermalStatus >= ThermalStatus.yellow:
       kill_managed_process("uploader")
     else:
       start_managed_process("uploader")
@@ -452,6 +453,7 @@ def main():
     del managed_processes['proclogd']
   if os.getenv("NOCONTROL") is not None:
     del managed_processes['controlsd']
+    del managed_processes['plannerd']
     del managed_processes['radard']
 
   # support additional internal only extensions

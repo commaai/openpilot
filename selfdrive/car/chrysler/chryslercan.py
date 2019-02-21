@@ -55,7 +55,7 @@ def create_lkas_hud(gear, lkas_active, hud_alert, car_fingerprint):
   # LKAS_HUD (678) Controls what lane-keeping icon is displayed.
 
   if hud_alert == VisualAlert.steerRequired:
-    msg = msg = '0000000300000000'.decode('hex')
+    msg = '0000000300000000'.decode('hex')
     return make_can_msg(0x2a6, msg)
 
   # TODO: use can packer
