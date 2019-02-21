@@ -280,17 +280,11 @@ class LongitudinalMpc(object):
     else:
       self.tailgating = 0
       
-    # Is the lead car gap closing fast?
-    if self.v_rel < RAPID_GAP_CLOSURE_SPEED:
-      self.lead_car_rapid_gap_shrinking = 1
-    else:
-      self.lead_car_rapid_gap_shrinking = 0
-      
       
     # Adjust distance from lead car when distance button pressed 
     if CS.readdistancelines == 1:
       if self.street_speed and (self.lead_car_gap_shrinking or self.tailgating):
-        TR = np.interp(-v_rel, ONE_BAR_PROFILE_BP, ONE_BAR_PROFILE)
+        TR = np.interp(-self.v_rel, ONE_BAR_PROFILE_BP, ONE_BAR_PROFILE)
         #if self.lastTR != -CS.readdistancelines:
         #  self.libmpc.init(MPC_COST_LONG.TTC, 0.0850, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
         #  self.lastTR = -CS.readdistancelines
@@ -302,7 +296,7 @@ class LongitudinalMpc(object):
       
     elif CS.readdistancelines == 2:
       if self.street_speed and (self.lead_car_gap_shrinking or self.tailgating):
-        TR = np.interp(-v_rel, TWO_BAR_PROFILE_BP, TWO_BAR_PROFILE)
+        TR = np.interp(-self.v_rel, TWO_BAR_PROFILE_BP, TWO_BAR_PROFILE)
         #if self.lastTR != -CS.readdistancelines:
         #  self.libmpc.init(MPC_COST_LONG.TTC, 0.0875, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
         #  self.lastTR = -CS.readdistancelines
@@ -314,7 +308,7 @@ class LongitudinalMpc(object):
               
     elif CS.readdistancelines == 3:
       if self.street_speed and (self.lead_car_gap_shrinking or self.tailgating):
-        TR = np.interp(-v_rel, THREE_BAR_PROFILE_BP, THREE_BAR_PROFILE)
+        TR = np.interp(-self.v_rel, THREE_BAR_PROFILE_BP, THREE_BAR_PROFILE)
         #if self.lastTR != -CS.readdistancelines:
         #  self.libmpc.init(MPC_COST_LONG.TTC, MPC_COST_LONG.DISTANCE, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
         #  self.lastTR = -CS.readdistancelines
