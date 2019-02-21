@@ -36,13 +36,13 @@ STOPPING_DISTANCE = 2  # increase distance from lead car when stopped
 
 # Braking profile changes (makes the car brake harder because it wants to be farther from the lead car - increase to brake harder)
 ONE_BAR_PROFILE = [ONE_BAR_DISTANCE, FOUR_BAR_DISTANCE]
-ONE_BAR_PROFILE_BP = [GAP_CLOSURE_SPEED, -5.0]
+ONE_BAR_PROFILE_BP = [GAP_CLOSURE_SPEED, -10.0]
 
 TWO_BAR_PROFILE = [TWO_BAR_DISTANCE, FOUR_BAR_DISTANCE]
-TWO_BAR_PROFILE_BP = [GAP_CLOSURE_SPEED, -5.0]
+TWO_BAR_PROFILE_BP = [GAP_CLOSURE_SPEED, -10.0]
 
 THREE_BAR_PROFILE = [THREE_BAR_DISTANCE, FOUR_BAR_DISTANCE]
-THREE_BAR_PROFILE_BP = [GAP_CLOSURE_SPEED, -5.0]
+THREE_BAR_PROFILE_BP = [GAP_CLOSURE_SPEED, -10.0]
 
                        
 # Max lateral acceleration, used to caclulate how much to slow down in turns
