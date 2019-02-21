@@ -360,7 +360,6 @@ struct CarParams {
   openpilotLongitudinalControl @50 :Bool; # is openpilot doing the longitudinal control?
   autoTransmission @ 51 :Bool; #set true if we have an automatic transmission
 
-
   enum SteerControlType {
     torque @0;
     angle @1;
