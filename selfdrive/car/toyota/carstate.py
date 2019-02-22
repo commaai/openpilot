@@ -45,41 +45,37 @@ def get_can_parser(CP):
   ]
 
   checks = [
-    ("BRAKE_MODULE", 40),
-    ("GAS_PEDAL", 33),
     ("WHEEL_SPEEDS", 80),
     ("STEER_ANGLE_SENSOR", 80),
     ("PCM_CRUISE", 33),
-    ("PCM_CRUISE_2", 33),
     ("STEER_TORQUE_SENSOR", 50),
     ("EPS_STATUS", 25),
   ]
-
-  if not CP.carFingerprint == CAR.LEXUS_ISH:
-    signals += [
-      ("MAIN_ON", "PCM_CRUISE_2", 0),
-      ("SET_SPEED", "PCM_CRUISE_2", 0),
-      ("LOW_SPEED_LOCKOUT", "PCM_CRUISE_2", 0),
-      ("IPAS_STATE", "EPS_STATUS", 1),
-      ("AUTO_HIGH_BEAM", "LIGHT_STALK", 0),
-    ]
 
   if CP.carFingerprint == CAR.LEXUS_ISH:
     checks = [
       ("BRAKE_MODULE", 50),
       ("GAS_PEDAL", 50),
-      ("WHEEL_SPEEDS", 80),
-      ("STEER_ANGLE_SENSOR", 80),
-      ("PCM_CRUISE", 33),
       ("PCM_CRUISE_ISH", 1),
-      ("STEER_TORQUE_SENSOR", 50),
-      ("EPS_STATUS", 25),
     ]
 
     signals += [
       ("MAIN_ON", "PCM_CRUISE_ISH", 0),
       ("SET_SPEED", "PCM_CRUISE_ISH", 0),
       ("AUTO_HIGH_BEAM", "LIGHT_STALK_ISH", 0),
+    ]
+  else:
+    checks = [
+      ("BRAKE_MODULE", 40),
+      ("GAS_PEDAL", 33),
+      ("PCM_CRUISE_2", 33),
+    ]
+    signals += [
+      ("MAIN_ON", "PCM_CRUISE_2", 0),
+      ("SET_SPEED", "PCM_CRUISE_2", 0),
+      ("LOW_SPEED_LOCKOUT", "PCM_CRUISE_2", 0),
+      ("IPAS_STATE", "EPS_STATUS", 1),
+      ("AUTO_HIGH_BEAM", "LIGHT_STALK", 0),
     ]
 
   if CP.carFingerprint == CAR.PRIUS:
@@ -193,14 +189,13 @@ class CarState(object):
       # ish does not have curise status value (always 0), so we use curise_active value instead
       self.pcm_acc_status = cp.vl["PCM_CRUISE"]['CRUISE_ACTIVE']
       self.pcm_acc_active = bool(cp.vl["PCM_CRUISE"]['CRUISE_ACTIVE'])
-      self.gas_pressed = not cp.vl["PCM_CRUISE"]['GAS_RELEASED']
       self.low_speed_lockout = False
     else:
       self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED']
       self.pcm_acc_status = cp.vl["PCM_CRUISE"]['CRUISE_STATE']
       self.pcm_acc_active = bool(cp.vl["PCM_CRUISE"]['CRUISE_ACTIVE'])
-      self.gas_pressed = not cp.vl["PCM_CRUISE"]['GAS_RELEASED']
       self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]['LOW_SPEED_LOCKOUT'] == 2
+    self.gas_pressed = not cp.vl["PCM_CRUISE"]['GAS_RELEASED']
     self.brake_lights = bool(cp.vl["ESP_CONTROL"]['BRAKE_LIGHTS_ACC'] or self.brake_pressed)
     if self.CP.carFingerprint == CAR.PRIUS:
       self.generic_toggle = cp.vl["AUTOPARK_STATUS"]['STATE'] != 0
