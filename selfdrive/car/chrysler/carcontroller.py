@@ -25,6 +25,7 @@ class CarController(object):
     self.apply_steer_last = 0
     self.ccframe = 0
     self.prev_frame = -1
+    self.hud_count = 0
     self.car_fingerprint = car_fingerprint
     self.alert_active = False
     self.send_chime = False
@@ -39,7 +40,7 @@ class CarController(object):
   def update(self, sendcan, enabled, CS, frame, actuators,
              pcm_cancel_cmd, hud_alert, audible_alert):
 
-    # this seems needed to avoid steerign faults and to force the sync with the EPS counter
+    # this seems needed to avoid steering faults and to force the sync with the EPS counter
     if self.prev_frame == frame:
       return
 
@@ -81,8 +82,10 @@ class CarController(object):
       can_sends.append(new_msg)
 
     if (self.ccframe % 25 == 0):  # 0.25s period
-      new_msg = create_lkas_hud(CS.gear_shifter, lkas_active, hud_alert, self.car_fingerprint)
+      new_msg = create_lkas_hud(self.packer, CS.gear_shifter, lkas_active, hud_alert, self.car_fingerprint,
+                                self.hud_count)
       can_sends.append(new_msg)
+      self.hud_count += 1
 
     new_msg = create_lkas_command(self.packer, int(apply_steer), frame)
     can_sends.append(new_msg)
