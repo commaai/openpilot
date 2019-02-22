@@ -22,6 +22,7 @@ a.out
 *.vcd
 config.json
 clcache
+.vscode/*.json
 
 board/obj/
 selfdrive/boardd/boardd
