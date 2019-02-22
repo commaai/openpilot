@@ -6,6 +6,7 @@ from common.numpy_fast import clip
 from selfdrive.car.honda import hondacan
 from selfdrive.car.honda.values import AH, CruiseButtons, CAR
 from selfdrive.can.packer import CANPacker
+from common.params import Params
 
 def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
   # hyst params
@@ -95,7 +96,7 @@ class CarController(object):
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
              pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel, \
-             radar_error, hud_v_cruise, hud_show_lanes, hud_show_car, \
+             hud_v_cruise, hud_show_lanes, hud_show_car, \
              hud_alert, snd_beep, snd_chime):
 
     """ Controls thread """
