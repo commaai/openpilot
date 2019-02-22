@@ -8,6 +8,7 @@ import usb1
 import os
 import time
 import traceback
+import subprocess
 from dfu import PandaDFU
 from esptool import ESPROM, CesantaFlasher
 from flash_release import flash_release
@@ -25,7 +26,13 @@ DEBUG = os.getenv("PANDADEBUG") is not None
 
 def build_st(target, mkfile="Makefile"):
   from panda import BASEDIR
-  assert(os.system('cd %s && make -f %s clean && make -f %s %s >/dev/null' % (os.path.join(BASEDIR, "board"), mkfile, mkfile, target)) == 0)
+  cmd = 'cd %s && make -f %s clean && make -f %s %s >/dev/null' % (os.path.join(BASEDIR, "board"), mkfile, mkfile, target)
+  try:
+    output = subprocess.check_output(cmd, stderr=subprocess.STDOUT, shell=True)
+  except subprocess.CalledProcessError as exception:
+    output = exception.output
+    returncode = exception.returncode
+    raise
 
 def parse_can_buffer(dat):
   ret = []
@@ -541,4 +548,3 @@ class Panda(object):
     msg = self.kline_ll_recv(2, bus=bus)
     msg += self.kline_ll_recv(ord(msg[1])-2, bus=bus)
     return msg
-
