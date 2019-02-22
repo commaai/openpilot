@@ -29,6 +29,7 @@ selfdrive/logcatd/logcatd
 selfdrive/proclogd/proclogd
 selfdrive/ui/ui
 selfdrive/test/tests/plant/out
+openpilot_tools/
 /src/
 
 one
