@@ -23,6 +23,7 @@ a.out
 *.vcd
 config.json
 clcache
+.vscode/*.json
 
 .vscode/
 board/obj/
