@@ -583,6 +583,7 @@ struct Plan {
   decelForTurn @22 :Bool;
   mapValid @25 :Bool;
 
+
   struct GpsTrajectory {
     x @0 :List(Float32);
     y @1 :List(Float32);
