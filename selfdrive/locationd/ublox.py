@@ -459,7 +459,7 @@ msg_types = {
   UBloxDescriptor('RXM_RAW', '<dHbBB3B', [
     'rcvTow', 'week', 'leapS', 'numMeas', 'recStat', 'reserved1[3]'
   ], 'numMeas', '<ddfBBBBHBBBBBB', [
-    'prMes', 'cpMes', 'doMes', 'gnssId', 'svId', 'reserved2', 'freqId', 'locktime', 'cno',
+    'prMes', 'cpMes', 'doMes', 'gnssId', 'svId', 'sigId', 'freqId', 'locktime', 'cno',
     'prStdev', 'cpStdev', 'doStdev', 'trkStat', 'reserved3'
   ]),
   (CLASS_RXM, MSG_RXM_SFRB):
