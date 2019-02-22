@@ -3,6 +3,7 @@
 .ipynb_checkpoints
 .idea
 .sconsign.dblite
+.vscode
 model2.png
 a.out
 
@@ -22,8 +23,8 @@ a.out
 *.vcd
 config.json
 clcache
-.vscode/*.json
 
+.vscode/
 board/obj/
 selfdrive/boardd/boardd
 selfdrive/logcatd/logcatd
