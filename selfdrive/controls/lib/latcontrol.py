@@ -30,7 +30,6 @@ class LatControl(object):
       # constant for 0.05s.
       #dt = min(cur_time - self.angle_steers_des_time, _DT_MPC + _DT) + _DT  # no greater than dt mpc + dt, to prevent too high extraps
       #self.angle_steers_des = self.angle_steers_des_prev + (dt / _DT_MPC) * (self.angle_steers_des_mpc - self.angle_steers_des_prev)
-      self.angle_steers_des = self.angle_steers_des_mpc
       steers_max = get_steer_max(CP, v_ego)
       self.pid.pos_limit = steers_max
       self.pid.neg_limit = -steers_max
