@@ -188,7 +188,7 @@ def thermald_thread():
   os.system('echo "1" > /sys/class/power_supply/battery/charging_enabled')
 
   params = Params()
-  
+
   while 1:
     health = messaging.recv_sock(health_sock, wait=True)
     location = messaging.recv_sock(location_sock)
