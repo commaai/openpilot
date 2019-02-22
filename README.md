@@ -16,11 +16,13 @@ Four bar: 2.5s
 
 I will attempt to detail the changes in each of the branches here:
 
-<b>kegman</b> - this is the default branch which does not include Gernby's resonant feed forward steering (i.e. it's comma's default steering) - it now includes GM code (needs testing)
+Note that only the kegman branch is 0.5.9 as it breaks Gernby's lat control.  I am still trying to get it to work with Clarity.  This may take time.
 
-<b>kegman-plusGernbySteering (Updated Jan 22)</b> - this branch is everything in the kegman branch PLUS a Gernby's LATEST feed forward steering.  This also includes working code for GM cars.  (thx to @jamezz for the code and @cryptokylan for submitting the GM stuff!)
+<b>kegman (0.5.9)</b> - this is the default branch which does not include Gernby's resonant feed forward steering (i.e. it's comma's default steering) - it now includes GM code (needs testing)
 
-<b>kegman-plusPilotAwesomeness</b> - <u>If you have a Honda Pilot, OR Honda Ridgeline use this branch.</u>  It has everything in kegman branch, uses my PID tuning + a magical older version of Gernby's FF steering which just happened to work very well across all driving conditions including slanted (crowned roads), wind gusts, road bumps, centering on curves, and keeping proper distance from curbs.  I have yet to test a combination of FF steering and PID tuning that can beat the performance of this for Honda Pilots.
+<b>kegman-plusGernbySteering (0.5.8 only)</b> - this branch is everything in the kegman branch PLUS a Gernby's LATEST feed forward steering.  This also includes working code for GM cars.  (thx to @jamezz for the code and @cryptokylan for submitting the GM stuff!)
+
+<b>kegman-plusPilotAwesomeness (0.5.8 only)</b> - <u>If you have a Honda Pilot, OR Honda Ridgeline use this branch.</u>  It has everything in kegman branch, uses my PID tuning + a magical older version of Gernby's FF steering which just happened to work very well across all driving conditions including slanted (crowned roads), wind gusts, road bumps, centering on curves, and keeping proper distance from curbs.  I have yet to test a combination of FF steering and PID tuning that can beat the performance of this for Honda Pilots.
 
 Note above comments apply to Clarity testing branches as well.
 
@@ -41,6 +43,8 @@ List of changes and tweaks (latest changes at the top):
 
 
 ^^^ This file is auto generated here:  <b>/data/kegman.json</b> so it will remain even when you do a fresh clone.  If you mess something up, just delete the file and it will auto generate to default values.  Use vim or nano to edit this file to your heart's content.
+
+- <b>Interpolated (smoothed) the discontinuity of longitudinal braking profiles</b>:  Prior to this enhancement the braking profiles changed very abruptly like a step function, leading to excessive ping-ponging and late braking.  This feature reduces the ping-ponging and varies the braking strength linearly with gap closure speed (the faster the gap closes between you and the lead car, the harder the braking).
 
 - <b>Remember last distance bar interval</b>:  On startup, the car will bring up the last distance interval used before the car was turned off.  For example:  If you were at X bars before you stopped the car or shut the Eon down, the next time you start the car, the distance setting will be X bars.  
 
