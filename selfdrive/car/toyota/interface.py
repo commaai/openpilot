@@ -150,7 +150,7 @@ class CarInterface(object):
 
     elif candidate == CAR.LEXUS_ISH:
       stop_and_go = True
-      ret.safetyParam = 73
+      ret.safetyParam = 66
       ret.wheelbase = 2.80 # in spec
       ret.steerRatio = 13.3 # in spec
       tire_stiffness_factor = 0.444 # from camry
