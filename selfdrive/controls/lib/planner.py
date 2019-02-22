@@ -529,13 +529,7 @@ class Planner(object):
     plan_send.plan.aTarget = self.a_acc
     plan_send.plan.vTargetFuture = self.v_acc_future
     plan_send.plan.hasLead = self.mpc1.prev_lead_status
-    plan_send.plan.hasLeftLane = bool(self.PP.l_prob > 0.5)
-    plan_send.plan.hasRightLane = bool(self.PP.r_prob > 0.5)
     plan_send.plan.longitudinalPlanSource = self.longitudinalPlanSource
-
-    plan_send.plan.vCurvature = self.v_curvature
-    plan_send.plan.decelForTurn = self.decel_for_turn
-    plan_send.plan.mapValid = self.map_valid
 
     plan_send.plan.vCurvature = self.v_curvature
     plan_send.plan.decelForTurn = self.decel_for_turn
