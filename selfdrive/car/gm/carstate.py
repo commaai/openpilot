@@ -160,3 +160,6 @@ class CarState(object):
     self.brake_pressed = self.user_brake > 10 or self.regen_pressed
 
     self.gear_shifter_valid = self.gear_shifter == car.CarState.GearShifter.drive
+    
+  def get_follow_level(self):
+    return self.follow_level
