@@ -2,7 +2,7 @@ import numpy as np
 from common.realtime import sec_since_boot
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from common.filter_simple import FirstOrderFilter
-from kegman_conf import kegman_conf
+from selfdrive.kegman_conf import kegman_conf
 
 k = kegman_conf()
 
