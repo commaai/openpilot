@@ -143,6 +143,7 @@ class CarController(object):
         can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, canbus.powertrain, apply_gas, idx, enabled, at_full_stop))
 
       # Send dashboard UI commands (ACC status), 25hz
+      follow_level = CS.get_follow_level()
       if (frame % 4) == 0:
         can_sends.append(gmcan.create_acc_dashboard_command(self.packer_pt, canbus.powertrain, enabled, hud_v_cruise * CV.MS_TO_KPH, hud_show_car, follow_level))
 
