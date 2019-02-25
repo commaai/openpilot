@@ -40,8 +40,7 @@ FIFOB_F3_SID_LOWER: 0
 FIFOB_F3_SID_UPPER: 0
 FIFOB_MIAFM: 0
 FIFOB_MIAFV: 0
-LOG_STATUS_DATA: 0
-LineLength: 24
+LOG_STATUS_DATA: 1
 RxMsgBufs:
 - {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, FrameId: 2}
 - {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, FrameId: 3}
@@ -209,7 +208,6 @@ gdWakeupSymbolRxIdle: 59
 gdWakeupSymbolRxLow: 55
 gdWakeupSymbolTxActive: 60
 gdWakeupSymbolTxIdle: 180
-nStar: 0
 pAllowHaltDueToClock: 1
 pAllowPassiveToActive: 0
 pChannels: 0
@@ -233,7 +231,5 @@ pRateCorrectionOut: 986
 pWakeupChannel: 0
 pWakeupPattern: 63
 pdAcceptedStartupRange: 110
-pdBDRx: 0.1
-pdBDTx: 0.1
-pdListenTimeout: 657972
-pdStarDelay: 0.25
+pdListenTimeout: 657200
+pdMaxDrift: 600

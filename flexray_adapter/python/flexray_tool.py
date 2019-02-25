@@ -26,13 +26,6 @@ from constants import *
 #               (min, max) or [(opt1_name, opt1_value), (opt2_name, opt2_value)] or {True: value1, False: value2},
 #               unit_name]
 config_fields = {
-    'Topology': [
-        ['nStar', 'nStar', (0, 2), ''],
-        ['LineLength', 'LineLength', (1, 72), 'Meters'],
-        ['pdBDTx', 'pdBDTx', (0.0, 0.9), 'µs'],
-        ['pdBDRx', 'pdBDRx', (0.0, 0.9), 'µs'],
-        ['pdStarDelay', 'pdStarDelay', (0.0, 0.9), 'µs']
-    ],
     'Cluster': [
         ['gdMinPropagationDelay', 'gdMinPropagationDelay', (0.0, 2.5), 'µs'],
         ['gdMaxInitializationError', 'gdMaxInitializationError', (0.0, 11.7), 'µs'],
@@ -88,6 +81,7 @@ config_fields = {
         ['pAllowPassiveToActive', 'pAllowPassiveToActive', (0, 31), 'cycle pairs'],
         ['pClusterDriftDamping', 'pClusterDriftDamping', (0, 10), 'uT'],
         ['pAllowHaltDueToClock', 'pAllowHaltDueToClock', {True: 1, False: 0}, ''],
+        ['pdMaxDrift', 'pdMaxDrift', (2, 1923), 'uT'],
     ],
     'Board': [
         ['CLOCK_SRC', 'Clock Source', [('Crystal Oscillator', 0), ('PLL', 1)], ''],

@@ -78,7 +78,6 @@ static void init_fifo(const fr_fifo_queue_config * const p_fifo_queue_cfg, uint8
 uint8_t flexray_driver_init() {
     uint16_t reg_val = 0U;
     uint32_t reg_val32 = 0U;
-    uint32_t max_drift = 0U;
     if (READ_FR_REGISTER16(FR_MVR_OFFSET) != MPC5748G_MVR_VALUE) {
     	DBG_PRINT("Invalid MVR, wrong hardware?");
 		return FAILED;
@@ -186,13 +185,12 @@ uint8_t flexray_driver_init() {
 	reg_val32 = ((g_fr_config.pdAcceptedStartupRange - g_fr_config.pDelayCompensationA) << 4) | ((g_fr_config.pMicroPerCycle & 0x000F0000U) >> 16);
 	reg_val32 = (reg_val32 << 16) | g_fr_config.pMicroPerCycle;
 	WRITE_FR_REGISTER32(FR_PCR22_OFFSET, reg_val32);
-	max_drift = ceil((double)g_fr_config.pMicroPerCycle * 2.0 * cClockDeviationMax / (1 - cClockDeviationMax));
-	reg_val32 = (((g_fr_config.pClusterDriftDamping << 7) | (g_fr_config.pPayloadLengthDynMax & 0x0000007FU)) << 4) | (((g_fr_config.pMicroPerCycle - max_drift) & 0x000F0000U) >> 16);
-	reg_val32 = (reg_val32 << 16) | (g_fr_config.pMicroPerCycle - max_drift);
+	reg_val32 = (((g_fr_config.pClusterDriftDamping << 7) | (g_fr_config.pPayloadLengthDynMax & 0x0000007FU)) << 4) | (((g_fr_config.pMicroPerCycle - g_fr_config.pdMaxDrift) & 0x000F0000U) >> 16);
+	reg_val32 = (reg_val32 << 16) | (g_fr_config.pMicroPerCycle - g_fr_config.pdMaxDrift);
 	WRITE_FR_REGISTER32(FR_PCR24_OFFSET, reg_val32);
 	reg_val32 = (((g_fr_config.pAllowHaltDueToClock << 11) | ((g_fr_config.pdAcceptedStartupRange - g_fr_config.pDelayCompensationB) & 0x000007FFU)) << 4) |
-		(((g_fr_config.pMicroPerCycle + max_drift) & 0x000F0000U) >> 16);
-	reg_val32 = (reg_val32 << 16) | (g_fr_config.pMicroPerCycle + max_drift);
+		(((g_fr_config.pMicroPerCycle + g_fr_config.pdMaxDrift) & 0x000F0000U) >> 16);
+	reg_val32 = (reg_val32 << 16) | (g_fr_config.pMicroPerCycle + g_fr_config.pdMaxDrift);
 	WRITE_FR_REGISTER32(FR_PCR26_OFFSET, reg_val32);
 	reg_val32 = (g_fr_config.gdDynamicSlotIdlePhase << 14) |((gMacroPerCycle - g_fr_config.gOffsetCorrectionStart) & 0x00003FFFU);
 	reg_val32 = (reg_val32 << 16) | ((g_fr_config.gNumberOfMinislots -1 ) & 0x00001FFFU);

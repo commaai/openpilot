@@ -55,7 +55,7 @@ fr_config g_fr_config ={
 	.pMicroInitialOffsetA  = 24U,
 	.pMicroInitialOffsetB  = 24U,
 	.pAllowHaltDueToClock  = 1U,
-
+	.pdMaxDrift = 600U,
 	.flags = 0,
 	.bit_rate = 0U,  /* Bus speed: 10 Mb/s */
 	{},

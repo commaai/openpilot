@@ -41,7 +41,6 @@ FIFOB_F3_SID_UPPER: 0
 FIFOB_MIAFM: 0
 FIFOB_MIAFV: 0
 LOG_STATUS_DATA: 1
-LineLength: 24
 RxMsgBufs:
 - {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, FrameId: 1, PayloadLenMax: 8}
 - {CCF_EN: 0, CCF_MASK: 0, CCF_VAL: 0, Channels: 3, FrameId: 26, PayloadLenMax: 8}
@@ -201,7 +200,5 @@ pRateCorrectionOut: 986
 pWakeupChannel: 0
 pWakeupPattern: 63
 pdAcceptedStartupRange: 110
-pdBDRx: 0.1
-pdBDTx: 0.1
-pdListenTimeout: 657972
-pdStarDelay: 0.25
+pdListenTimeout: 657200
+pdMaxDrift: 600

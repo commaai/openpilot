@@ -6,12 +6,6 @@ from math import ceil, floor
 from constants import *
 
 default_fr_config = {
-    # Network topology parameters, use naming convention in FLexRay spec
-    'nStar': 0,
-    'LineLength': 24,
-    'pdBDTx': 0.1,
-    'pdBDRx': 0.1,
-    'pdStarDelay': 0.25,
     # Cluster parameters, use naming convention in FLexRay spec
     'gdMinPropagationDelay': 0.0,
     'gdMaxInitializationError': 0.5,
@@ -47,7 +41,7 @@ default_fr_config = {
     'pWakeupPattern': 63,
     'pPayloadLengthDynMax': 8,
     'pMicroPerCycle': 212800,
-    'pdListenTimeout': 426880,
+    'pdListenTimeout': 426800,
     'pRateCorrectionOut': 640,
     'pKeySlotId': 1,
     'pKeySlotOnlyEnabled': 0,
@@ -66,6 +60,7 @@ default_fr_config = {
     'pMicroInitialOffsetA': 24,
     'pMicroInitialOffsetB': 24,
     'pAllowHaltDueToClock': 1,
+    'pdMaxDrift': 600,
     'CLOCK_SRC': 0,         # Protocol engine clock source
     'BIT_RATE': 0,          # Bit rate
     'SCM_EN': 0,            # Single channel mode enabled
@@ -145,7 +140,7 @@ def config_to_c_struct(config):
                    'pPayloadLengthDynMax', 'pMicroPerCycle', 'pdListenTimeout', 'pRateCorrectionOut', 'pKeySlotId', 'pKeySlotOnlyEnabled',
                    'pKeySlotUsedForStartup', 'pKeySlotUsedForSync', 'pLatestTx', 'pOffsetCorrectionOut', 'pdAcceptedStartupRange',
                    'pAllowPassiveToActive', 'pClusterDriftDamping', 'pDecodingCorrection', 'pDelayCompensationA', 'pDelayCompensationB',
-                   'pMacroInitialOffsetA', 'pMacroInitialOffsetB', 'pMicroInitialOffsetA', 'pMicroInitialOffsetB', 'pAllowHaltDueToClock']
+                   'pMacroInitialOffsetA', 'pMacroInitialOffsetB', 'pMicroInitialOffsetA', 'pMicroInitialOffsetB', 'pAllowHaltDueToClock', 'pdMaxDrift']
     for f in field_names:
         r += struct.pack('>I', config[f])
     r += struct.pack('>H', config['SCM_EN'] | (config['CLOCK_SRC'] << 1) | (config['FIFOA_EN'] << 2) | (config['FIFOB_EN'] << 3) | (config['LOG_STATUS_DATA'] << 4))
@@ -211,8 +206,6 @@ def verify_config_format(config):
     missed_keys = set(default_fr_config.keys()) - set(config.keys())
     if len(config['RxMsgBufs']) == 0:
         missed_keys.add('RxMsgBufs')
-    if len(config['TxMsgBufs']) == 0:
-        missed_keys.add('TxMsgBufs')
     if len(missed_keys) > 0:
         return False, missed_keys
     return True, ()
@@ -236,66 +229,11 @@ def verify_config(config):
     gdBitMax = gdBit * (1 + cClockDeviationMax)
     pdMicrotick = pdMicrotick_values[config['BIT_RATE']] / 1000.0
     result.append('pdMicrotick {} µs'.format(pdMicrotick))
-    # Constraint 3
-    T0 = 0.01
-    gdMaxPropagationDelay = config['pdBDTx'] + config['LineLength'] * T0 + config['pdStarDelay'] * config['nStar'] + config['pdBDRx']
-    result.append('gdMaxPropagationDelay {} µs'.format(gdMaxPropagationDelay))
-    if config['gdMinPropagationDelay'] > gdMaxPropagationDelay:
-        return False, 'gdMinPropagationDelay should be equal or less than {}'.format(gdMaxPropagationDelay)
-    # Constraint 4
-    gdMaxMicrotick = pdMicrotick
-    gAssumedPrecision = (34 + 20 * config['pClusterDriftDamping']) * gdMaxMicrotick + 2 * gdMaxPropagationDelay
-    result.append('gAssumedPrecision {} µs'.format(gAssumedPrecision))
 
     # Constraint 6
     gdMacrotick_min = cMicroPerMacroNomMin * pdMicrotick
     if config['gdMacrotick'] < cMicroPerMacroNomMin * pdMicrotick:
         return False, 'gdMacrotick should be equal or greater than {}'.format(gdMacrotick_min)
-
-    # Constraint 8
-    if config['gdMaxInitializationError'] > gAssumedPrecision:
-        return False, 'gdMinPropagationDelay should be equal or less than {}'.format(gAssumedPrecision)
-    min_val = 2 * (gdMaxMicrotick * (1 + cClockDeviationMax)) + gdMaxPropagationDelay
-    if config['gdMaxInitializationError'] < min_val:
-        return False, 'gdMaxInitializationError should be equal or greater than {}'.format(min_val)
-
-    # Constraint 9
-    min_val = ceil((gAssumedPrecision + config['gdMaxInitializationError']) / (pdMicrotick * (1 - cClockDeviationMax)))
-    if config['pdAcceptedStartupRange'] < min_val:
-        return False, 'pdAcceptedStartupRange should be equal or greater than {}'.format(min_val)
-
-    # Constraint 12
-    min_val = ceil((gAssumedPrecision - config['gdMinPropagationDelay'] + 2 * config['gdMaxInitializationError']) / (config['gdMacrotick'] * (1 - cClockDeviationMax)))
-    if config['gdActionPointOffset'] < min_val:
-        return False, 'gdActionPointOffset should be equal or greater than {}'.format(min_val)
-
-    # Constraint 13
-    min_val = ceil( (gAssumedPrecision - config['gdMinPropagationDelay']) / (config['gdMacrotick'] * (1 - cClockDeviationMax)) )
-    if config['gdMiniSlotActionPointOffset'] < min_val:
-        return False, 'gdMinislotActionPointOffset should be equal or greater than {}'.format(min_val)
-
-    # Constraint 14:
-    min_val = config['gdMiniSlotActionPointOffset'] + ceil( (gdMaxPropagationDelay + gAssumedPrecision) / (config['gdMacrotick'] * (1 - cClockDeviationMax)) )
-    if config['gdMinislot'] < min_val:
-        return False, 'gdMinislot should be equal or greater than {}'.format(min_val)
-
-    # Constraint 15
-    aFrameLengthStatic = config['gdTSSTransmitter'] + cdFSS + 80 + config['gPayloadLengthStatic'] * 20 + cdFES
-    result.append('aFrameLengthStatic {} gdBit'.format(aFrameLengthStatic))
-    gdStaticSlot = 2 * config['gdActionPointOffset'] + ceil(((aFrameLengthStatic + cChannelIdleDelimiter) * gdBitMax +
-        config['gdMinPropagationDelay'] + gdMaxPropagationDelay) / (config['gdMacrotick'] * (1 - cClockDeviationMax)))
-    if config['gdStaticSlot'] != gdStaticSlot:
-        return False, ('gdStaticSlot', gdStaticSlot)
-
-    # Constraint 16
-    gdSymbolWindow_f = lambda dBDRxai: 2 * config['gdActionPointOffset'] + ceil( ((config['gdTSSTransmitter'] + cdCAS +
-        cChannelIdleDelimiter) * gdBitMax + dBDRxai + config['gdMinPropagationDelay'] + gdMaxPropagationDelay) / (config['gdMacrotick'] * (1 - cClockDeviationMax)) )
-    dBDRxai_min = 0.0
-    if config['gdSymbolWindow'] < gdSymbolWindow_f(dBDRxai_min):
-        return False, 'gdSymbolWindow should be equal or greater than {}'.format(gdSymbolWindow_f(dBDRxai_min))
-    dBDRxai_max = 0.4
-    if config['gdSymbolWindow'] > gdSymbolWindow_f(dBDRxai_max):
-        return False, 'gdSymbolWindow should be equal or less than {}'.format(gdSymbolWindow_f(dBDRxai_max))
 
     if (config['gdActionPointOffset'] <= config['gdMiniSlotActionPointOffset'] or config['gNumberOfMinislots'] == 0):
         adActionPointDifference = 0
@@ -315,13 +253,6 @@ def verify_config(config):
     if config['pMicroPerCycle'] != pMicroPerCycle:
         return False, ('pMicroPerCycle', pMicroPerCycle)
 
-    # Constraint 20
-    gdDynamicSlotIdlePhase_min = ceil((ceil((cChannelIdleDelimiter * gdBitMax +
-        gAssumedPrecision + gdMaxPropagationDelay) / (config['gdMacrotick'] * (1 - cClockDeviationMax))) - (
-        config['gdMinislot'] - config['gdMiniSlotActionPointOffset'])) / config['gdMinislot'])
-    if config['gdDynamicSlotIdlePhase'] < gdDynamicSlotIdlePhase_min:
-        return False, 'gdDynamicSlotIdlePhase should be equal or greater than {}'.format(gdDynamicSlotIdlePhase_min)
-
     # Constraint 21
     gNumberOfMinislots = \
         (gMacroPerCycle - config['gdNIT'] - adActionPointDifference - config['gNumberOfStaticSlots'] * config['gdStaticSlot'] - config['gdSymbolWindow']) * 1.0 / config['gdMinislot']
@@ -330,43 +261,13 @@ def verify_config(config):
     if config['gNumberOfMinislots'] != int(gNumberOfMinislots):
         return False, ('gNumberOfMinislots', gNumberOfMinislots)
 
-    # Constraint 22
-    pRateCorrectionOut = ceil(config['pMicroPerCycle'] * 2 * cClockDeviationMax / (1 - cClockDeviationMax))
-    if config['pRateCorrectionOut'] != pRateCorrectionOut:
-        return False, ('pRateCorrectionOut', pRateCorrectionOut)
-
-    # Constraint 23
-    min_val = gAssumedPrecision + gdMaxPropagationDelay - config['gdMinPropagationDelay']
-    if config['gOffsetCorrectionMax'] < min_val:
-        return False, 'gOffsetCorrectionMax should be equal or greater than {}'.format(min_val)
-
-    # Constraint 24
-    max_val = config['gdActionPointOffset'] * config['gdMacrotick'] * (1 + cClockDeviationMax) + config['gdMinPropagationDelay'] + gdMaxPropagationDelay
-    if config['gOffsetCorrectionMax'] > max_val:
-        return False, 'gOffsetCorrectionMax should be equal or less than {}'.format(max_val)
-
-    # Constraint 25
-    pOffsetCorrectionOut = ceil(config['gOffsetCorrectionMax'] / (pdMicrotick * (1 - cClockDeviationMax)))
-    if config['pOffsetCorrectionOut'] != pRateCorrectionOut:
-        return False, ('pOffsetCorrectionOut', pRateCorrectionOut)
-
-    adOffsetCorrection_min = \
-        ceil(config['gOffsetCorrectionMax'] /
-             (config['gdMacrotick'] * (1 - cClockDeviationMax) - gdMaxMicrotick * cMicroPerMacroMin * (1 + cClockDeviationMax)))
-    result.append('adOffsetCorrection min {} MT'.format(adOffsetCorrection_min))
-    # Constraint 26
-    max_val = gMacroPerCycle - adOffsetCorrection_min
-    if config['gOffsetCorrectionStart'] > max_val:
-        return False, 'gOffsetCorrectionStart should be equal or less than {}'.format(max_val)
-    if config['gOffsetCorrectionStart'] + config['gdNIT'] <= gMacroPerCycle:
-        return False, 'gOffsetCorrectionStart should be greater than {}'.format(gMacroPerCycle - config['gdNIT'])
-
-    # Constraint 29
-    pdMaxDrift = ceil(config['pMicroPerCycle'] * 2 * cClockDeviationMax / (1 - cClockDeviationMax))
-    result.append('pdMaxDrift {} µT'.format(pdMaxDrift))
+    # Constraint 30
+    max_val = ceil(config['pMicroPerCycle'] * 2 * cClockDeviationMax / (1 - cClockDeviationMax))
+    if config['pdMaxDrift'] > max_val:
+        return False, 'pdMaxDrift should be equal or less than {}'.format(max_val)
 
     # Constraint 31
-    pdListenTimeout = 2 * (config['pMicroPerCycle'] + pdMaxDrift)
+    pdListenTimeout = 2 * (config['pMicroPerCycle'] + config['pdMaxDrift'])
     if config['pdListenTimeout'] != pdListenTimeout:
         return False, ('pdListenTimeout', pdListenTimeout)
 
@@ -376,30 +277,6 @@ def verify_config(config):
     if config['pDecodingCorrection'] != pDecodingCorrection:
         return False, ('pDecodingCorrection', pDecodingCorrection)
 
-    pMicroPerMacroNom = config['pMicroPerCycle'] / gMacroPerCycle
-    result.append('pMicroPerMacroNom {} µT/MT'.format(pMicroPerMacroNom))
-    # Constraint 33
-    pMacroInitialOffsetA = config['gdActionPointOffset'] + ceil((config['pDecodingCorrection'] + config['pDelayCompensationA']) / pMicroPerMacroNom)
-    if config['pMacroInitialOffsetA'] != pMacroInitialOffsetA:
-        return False, ('pMacroInitialOffsetA', pMacroInitialOffsetA)
-    pMacroInitialOffsetB = config['gdActionPointOffset'] + ceil((config['pDecodingCorrection'] + config['pDelayCompensationB']) / pMicroPerMacroNom)
-    if config['pMacroInitialOffsetB'] != pMacroInitialOffsetB:
-        return False, ('pMacroInitialOffsetB', pMacroInitialOffsetB)
-    # Constraint 34
-    pMicroInitialOffsetA = round((ceil(pMicroPerMacroNom) - ((config['pDecodingCorrection'] + config['pDelayCompensationA']) % pMicroPerMacroNom)) % pMicroPerMacroNom)
-    if config['pMicroInitialOffsetA'] != pMicroInitialOffsetA:
-        return False, ('pMicroInitialOffsetA', pMicroInitialOffsetA)
-    pMicroInitialOffsetB = round((ceil(pMicroPerMacroNom) - ((config['pDecodingCorrection'] + config['pDelayCompensationB']) % pMicroPerMacroNom)) % pMicroPerMacroNom)
-    if config['pMicroInitialOffsetB'] != pMicroInitialOffsetB:
-        return False, ('pMicroInitialOffsetB', pMicroInitialOffsetB)
-    # Constraint 36
-    vDTSLowMin = 1
-    aFrameLengthDynamic = config['gdTSSTransmitter'] + cdFSS + 80 + config['pPayloadLengthDynMax'] * 20 + cdFES
-    pLatestTx_max = \
-        floor(config['gNumberOfMinislots'] - (((aFrameLengthDynamic + vDTSLowMin) * gdBitMax) / (config['gdMacrotick'] * (1 - cClockDeviationMax) * config['gdMinislot'])) - config['gdDynamicSlotIdlePhase'])
-    result.append('pLatestTx max {} Minislot'.format(pLatestTx_max))
-    if config['pLatestTx'] > pLatestTx_max:
-        return False, 'pLatestTx should be equal or less than {}'.format(pLatestTx_max)
     # Constraint 39
     gdWakeupSymbolTxIdle = ceil(cdWakeupSymbolTxIdle / gdBit)
     if config['gdWakeupSymbolTxIdle'] != gdWakeupSymbolTxIdle:

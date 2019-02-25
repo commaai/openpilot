@@ -149,6 +149,7 @@ typedef struct
 	uint32_t pMicroInitialOffsetA;
 	uint32_t pMicroInitialOffsetB;
 	uint32_t pAllowHaltDueToClock;
+	uint32_t pdMaxDrift;
 	/* Board configuration flags: Bit 0: Single channel mode enable, Bit 1: Clock Source Choose, Bit 2: FIFOA enable, Bit 3: FIFOB enable */
 	uint16_t flags;
     uint16_t bit_rate;
