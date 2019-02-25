@@ -4,22 +4,24 @@ from selfdrive.config import Conversions as CV
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.gm import gmcan
-from selfdrive.car.gm.values import CAR, DBC
+from selfdrive.car.gm.values import DBC, SUPERCRUISE_CARS
 from selfdrive.can.packer import CANPacker
 
 
 class CarControllerParams():
   def __init__(self, car_fingerprint):
-    if car_fingerprint in (CAR.VOLT, CAR.MALIBU, CAR.HOLDEN_ASTRA, CAR.ACADIA, CAR.CADILLAC_ATS):
-      self.STEER_MAX = 300
-      self.STEER_STEP = 2              # how often we update the steer cmd
-      self.STEER_DELTA_UP = 7          # ~0.75s time to peak torque (255/50hz/0.75s)
-      self.STEER_DELTA_DOWN = 17       # ~0.3s from peak torque to zero
-    elif car_fingerprint == CAR.CADILLAC_CT6:
+    if car_fingerprint in SUPERCRUISE_CARS:
       self.STEER_MAX = 150
       self.STEER_STEP = 1              # how often we update the steer cmd
       self.STEER_DELTA_UP = 2          # 0.75s time to peak torque
       self.STEER_DELTA_DOWN = 5        # 0.3s from peak torque to zero
+      self.MIN_STEER_SPEED = -1.       # can steer down to zero
+    else:
+      self.STEER_MAX = 300
+      self.STEER_STEP = 2              # how often we update the steer cmd
+      self.STEER_DELTA_UP = 7          # ~0.75s time to peak torque (255/50hz/0.75s)
+      self.STEER_DELTA_DOWN = 17       # ~0.3s from peak torque to zero
+      self.MIN_STEER_SPEED = 3.
 
     self.STEER_DRIVER_ALLOWANCE = 50   # allowed driver torque before start limiting
     self.STEER_DRIVER_MULTIPLIER = 4   # weight driver torque heavily
@@ -94,7 +96,7 @@ class CarController(object):
     ### STEER ###
 
     if (frame % P.STEER_STEP) == 0:
-      lkas_enabled = enabled and not CS.steer_not_allowed and CS.v_ego > 3.
+      lkas_enabled = enabled and not CS.steer_not_allowed and CS.v_ego > P.MIN_STEER_SPEED
       if lkas_enabled:
         apply_steer = actuators.steer * P.STEER_MAX
         apply_steer = apply_std_steer_torque_limits(apply_steer, self.apply_steer_last, CS.steer_torque_driver, P)
@@ -104,16 +106,16 @@ class CarController(object):
       self.apply_steer_last = apply_steer
       idx = (frame / P.STEER_STEP) % 4
 
-      if self.car_fingerprint in (CAR.VOLT, CAR.MALIBU, CAR.HOLDEN_ASTRA, CAR.ACADIA, CAR.CADILLAC_ATS):
-        can_sends.append(gmcan.create_steering_control(self.packer_pt,
-          canbus.powertrain, apply_steer, idx, lkas_enabled))
-      if self.car_fingerprint == CAR.CADILLAC_CT6:
+      if self.car_fingerprint in SUPERCRUISE_CARS:
         can_sends += gmcan.create_steering_control_ct6(self.packer_pt,
           canbus, apply_steer, CS.v_ego, idx, lkas_enabled)
+      else:
+        can_sends.append(gmcan.create_steering_control(self.packer_pt,
+          canbus.powertrain, apply_steer, idx, lkas_enabled))
 
     ### GAS/BRAKE ###
 
-    if self.car_fingerprint in (CAR.VOLT, CAR.MALIBU, CAR.HOLDEN_ASTRA, CAR.ACADIA, CAR.CADILLAC_ATS):
+    if self.car_fingerprint not in SUPERCRUISE_CARS:
       # no output if not enabled, but keep sending keepalive messages
       # treat pedals as one
       final_pedal = actuators.gas - actuators.brake
@@ -164,17 +166,17 @@ class CarController(object):
       if frame % P.ADAS_KEEPALIVE_STEP == 0:
         can_sends += gmcan.create_adas_keepalive(canbus.powertrain)
 
-    # Show green icon when LKA torque is applied, and
-    # alarming orange icon when approaching torque limit.
-    # If not sent again, LKA icon disappears in about 5 seconds.
-    # Conveniently, sending camera message periodically also works as a keepalive.
-    lka_active = CS.lkas_status == 1
-    lka_critical = lka_active and abs(actuators.steer) > 0.9
-    lka_icon_status = (lka_active, lka_critical)
-    if frame % P.CAMERA_KEEPALIVE_STEP == 0 \
-        or lka_icon_status != self.lka_icon_status_last:
-      can_sends.append(gmcan.create_lka_icon_command(canbus.sw_gmlan, lka_active, lka_critical))
-      self.lka_icon_status_last = lka_icon_status
+      # Show green icon when LKA torque is applied, and
+      # alarming orange icon when approaching torque limit.
+      # If not sent again, LKA icon disappears in about 5 seconds.
+      # Conveniently, sending camera message periodically also works as a keepalive.
+      lka_active = CS.lkas_status == 1
+      lka_critical = lka_active and abs(actuators.steer) > 0.9
+      lka_icon_status = (lka_active, lka_critical)
+      if frame % P.CAMERA_KEEPALIVE_STEP == 0 \
+          or lka_icon_status != self.lka_icon_status_last:
+        can_sends.append(gmcan.create_lka_icon_command(canbus.sw_gmlan, lka_active, lka_critical))
+        self.lka_icon_status_last = lka_icon_status
 
     # Send chimes
     if self.chime != chime:
