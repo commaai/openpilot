@@ -67,6 +67,7 @@ keys = {
 # written: visiond
 # read:    visiond, controlsd
   "CalibrationParams": TxType.PERSISTENT,
+  "ControlsParams": TxType.PERSISTENT,
 # written: controlsd
 # read:    radard
   "CarParams": TxType.CLEAR_ON_CAR_START,

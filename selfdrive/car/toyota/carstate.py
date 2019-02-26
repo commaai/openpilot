@@ -107,6 +107,11 @@ def get_can_parser(CP):
 
   if CP.carFingerprint == CAR.PRIUS:
     signals += [("STATE", "AUTOPARK_STATUS", 0)]
+  
+  # add gas interceptor reading if we are using it
+  if CP.enableGasInterceptor:
+      signals.append(("INTERCEPTOR_GAS", "GAS_SENSOR", 0))
+      checks.append(("GAS_SENSOR", 50))
 
   # add gas interceptor reading if we are using it
   if CP.enableGasInterceptor:
