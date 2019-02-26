@@ -563,7 +563,7 @@ struct Plan {
   aTargetMaxDEPRECATED @5 :Float32;
   aTarget @18 :Float32;
 
-  vStart @26 :Float32;
+  vStart @28 :Float32;
   aStart @27 :Float32;
 
   jerkFactor @6 :Float32;
