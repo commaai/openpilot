@@ -120,4 +120,3 @@ class PathPlanner(object):
     dat.liveMpc.delta = list(self.mpc_solution[0].delta)
     dat.liveMpc.cost = self.mpc_solution[0].cost
     self.livempc.send(dat.to_bytes())
->>>>>>> ad145da3bcded0fe75306df02061d07a633963c3
