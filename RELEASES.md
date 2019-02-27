@@ -8,6 +8,7 @@ Version 0.5.9 (2019-02-10)
  * Kia Optima support thanks to emmertex!
  * Buick Regal 2018 support thanks to HOYS!
  * Comma pedal support for Toyota thanks to wocsor! Note: tuning needed and not maintained by comma
+ * Chrysler Pacifica and Jeep Grand Cherokee suppor thanks to adhintz!
 
 Version 0.5.8 (2019-01-17)
 ========================
