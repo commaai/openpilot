@@ -73,7 +73,7 @@ class LatControl(object):
                                      feedforward=steer_feedforward, speed=v_ego, deadzone=deadzone)
     dat = messaging.new_message()
     dat.init('latControl')
-    dat.latControl.anglelater = math.degrees(list(self.mpc_solution[0].delta)[-1])
+    dat.latControl.anglelater = 0#math.degrees(list(self.mpc_solution[0].delta)[-1])
     self.latControl_sock.send(dat.to_bytes())
 
     self.sat_flag = self.pid.saturated
