@@ -1,4 +1,5 @@
 import zmq
+import math
 from selfdrive.services import service_list
 import selfdrive.messaging as messaging
 from selfdrive.controls.lib.pid import PIController
@@ -11,15 +12,6 @@ _DT_MPC = 0.05  # 20Hz
 
 def get_steer_max(CP, v_ego):
   return interp(v_ego, CP.steerMaxBP, CP.steerMaxV)
-
-def apply_deadzone(angle, deadzone):
-  if angle > deadzone:
-    angle -= deadzone
-  elif angle < -deadzone:
-    angle += deadzone
-  else:
-    angle = 0.
-  return angle
 
 
 class LatControl(object):
@@ -56,22 +48,7 @@ class LatControl(object):
       steers_max = get_steer_max(CP, v_ego)
       self.pid.pos_limit = steers_max
       self.pid.neg_limit = -steers_max
-
-      if CP.steerControlType == car.CarParams.SteerControlType.torque:
-        # Decide which feed forward mode should be used (angle or rate).  Use more dominant mode, and only if conditions are met
-        # Spread feed forward out over a period of time to make it more inductive (for resonance)
-        if abs(self.ff_rate_factor * float(restricted_steer_rate)) > abs(self.ff_angle_factor * float(self.angle_steers_des) - float(angle_offset)) - 0.5 \
-            and (abs(float(restricted_steer_rate)) > abs(angle_rate) or (float(restricted_steer_rate) < 0) != (angle_rate < 0)) \
-            and (float(restricted_steer_rate) < 0) == (float(self.angle_steers_des) - float(angle_offset) - 0.5 < 0):
-          self.feed_forward = (((self.smooth_factor - 1.) * self.feed_forward) + self.ff_rate_factor * v_ego**2 * float(restricted_steer_rate)) / self.smooth_factor
-        elif abs(self.angle_steers_des - float(angle_offset)) > 0.5:
-          self.feed_forward = (((self.smooth_factor - 1.) * self.feed_forward) + self.ff_angle_factor * v_ego**2 * float(apply_deadzone(float(self.angle_steers_des) - float(angle_offset), 0.5))) / self.smooth_factor
-        else:
-          self.feed_forward = (((self.smooth_factor - 1.) * self.feed_forward) + 0.0) / self.smooth_factor
-
-      # Use projected desired and actual angles instead of "current" values, in order to make PI more reactive (for resonance)
-      output_steer = self.pid.update(projected_angle_steers_des, self.projected_angle_steers, check_saturation=(v_ego > 10), override=steer_override,
-                                     feedforward=self.feed_forward, speed=v_ego, deadzone=deadzone)
+      steer_feedforward = self.angle_steers_des   # feedforward desired angle
 
       if rightBlinker:
         if blindspot:
@@ -93,13 +70,7 @@ class LatControl(object):
           self.angle_steers_des += 0#15
       else:
         self.blindspot_blink_counter_left_check = 0
-      # Hide angle error if being overriden
-      if steer_override:
-        self.projected_angle_steers = self.mpc_angles[1]
-        self.avg_angle_steers = self.mpc_angles[1]
-        
-    self.sat_flag = self.pid.saturated
-    self.prev_angle_rate = angle_rate
+
     dat = messaging.new_message()
     dat.init('latControl')
     dat.latControl.anglelater = math.degrees(list(self.mpc_solution[0].delta)[-1])
