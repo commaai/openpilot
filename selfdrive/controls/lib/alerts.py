@@ -103,14 +103,14 @@ ALERTS = [
   
   Alert(
       "manualSteeringRequired",
-      "STEERING REQUIRED: LKAS button is off",
+      "STEERING REQUIRED: LKAS button is OFF",
       "",
       AlertStatus.normal, AlertSize.small,
       Priority.LOW, VisualAlert.none, AudibleAlert.none, .0, .1, .1, alert_rate=0.75),
   
   Alert(
       "manualSteeringRequiredBlinkersOn",
-      "STEERING REQUIRED: Blinkers are on",
+      "STEERING REQUIRED: Blinkers are ON",
       "",
       AlertStatus.normal, AlertSize.small,
       Priority.LOW, VisualAlert.none, AudibleAlert.none, .0, .1, .1, alert_rate=0.75),
