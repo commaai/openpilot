@@ -1,6 +1,3 @@
-import zmq
-from selfdrive.services import service_list
-import selfdrive.messaging as messaging
 from selfdrive.controls.lib.pid import PIController
 from common.numpy_fast import interp
 from cereal import car
@@ -38,7 +35,6 @@ class LatControl(object):
       steers_max = get_steer_max(CP, v_ego)
       self.pid.pos_limit = steers_max
       self.pid.neg_limit = -steers_max
-
       steer_feedforward = self.angle_steers_des   # feedforward desired angle
       if CP.steerControlType == car.CarParams.SteerControlType.torque:
         steer_feedforward *= v_ego**2  # proportional to realigning tire momentum (~ lateral accel)
