@@ -1,5 +1,4 @@
 import zmq
-import math
 from selfdrive.services import service_list
 import selfdrive.messaging as messaging
 from selfdrive.controls.lib.pid import PIController
@@ -20,17 +19,12 @@ class LatControl(object):
                             (CP.steerKiBP, CP.steerKiV),
                             k_f=CP.steerKf, pos_limit=1.0)
     self.last_cloudlog_t = 0.0
-
-    context = zmq.Context()
-    self.latControl_sock = messaging.pub_sock(context, service_list['latControl'].port)
-    self.blindspot_blink_counter_right_check = 0
-    self.blindspot_blink_counter_left_check = 0
     self.angle_steers_des = 0.
 
   def reset(self):
     self.pid.reset()
 
-  def update(self, active, v_ego, angle_steers, steer_override, CP, VM, path_plan,blindspot,leftBlinker,rightBlinker):
+  def update(self, active, v_ego, angle_steers, steer_override, CP, VM, path_plan):
     if v_ego < 0.3 or not active:
       output_steer = 0.0
       self.pid.reset()
@@ -45,37 +39,13 @@ class LatControl(object):
       self.pid.pos_limit = steers_max
       self.pid.neg_limit = -steers_max
 
-      if rightBlinker:
-        if blindspot:
-          self.blindspot_blink_counter_right_check = 0
-          print "debug: blindspot detected"
-        self.blindspot_blink_counter_right_check += 1
-        if self.blindspot_blink_counter_right_check > 150:
-          self.angle_steers_des -= 0#15
-
-      else:
-        self.blindspot_blink_counter_right_check = 0
-
-      if leftBlinker:
-        if blindspot:
-          self.blindspot_blink_counter_left_check = 0
-          print "debug: blindspot detected"
-        self.blindspot_blink_counter_left_check += 1
-        if self.blindspot_blink_counter_left_check > 150:
-          self.angle_steers_des += 0#15
-      else:
-        self.blindspot_blink_counter_left_check = 0
       steer_feedforward = self.angle_steers_des   # feedforward desired angle
       if CP.steerControlType == car.CarParams.SteerControlType.torque:
         steer_feedforward *= v_ego**2  # proportional to realigning tire momentum (~ lateral accel)
       deadzone = 0.0
       output_steer = self.pid.update(self.angle_steers_des, angle_steers, check_saturation=(v_ego > 10), override=steer_override,
                                      feedforward=steer_feedforward, speed=v_ego, deadzone=deadzone)
-    dat = messaging.new_message()
-    dat.init('latControl')
-    dat.latControl.anglelater = 0#math.degrees(list(self.mpc_solution[0].delta)[-1])
-    self.latControl_sock.send(dat.to_bytes())
-
+    
     self.sat_flag = self.pid.saturated
     return output_steer, float(self.angle_steers_des)    
     
