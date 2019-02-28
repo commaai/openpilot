@@ -262,7 +262,7 @@ def state_control(plan, path_plan, CS, CP, state, events, v_cruise_kph, v_cruise
                                               v_cruise_kph, v_acc_sol, plan.vTargetFuture, a_acc_sol, CP)
   # Steering PID loop and lateral MPC
   actuators.steer, actuators.steerAngle = LaC.update(active, CS.vEgo, CS.steeringAngle, 
-                                                     CS.steeringPressed, CP, VM, path_plan,CS.blindspot,CS.leftBlinker,CS.rightBlinker)
+                                                     CS.steeringPressed, CP, VM, path_plan)
  #BB added for ALCA support
   #CS.pid = LaC.pid
   # Send a "steering required alert" if saturation count has reached the limit
