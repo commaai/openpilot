@@ -1,6 +1,6 @@
 #include "camera_eon_stream.h"
 
-#include <cstring>
+#include <string>
 #include <unistd.h>
 #include <vector>
 #include <string.h>
@@ -76,7 +76,15 @@ void run_eon_stream(DualCameraState *s) {
   AVFrame *frame = av_frame_alloc();
   assert(frame);
 
-  zsock_t *frame_sock = zsock_new_sub(">tcp://192.168.1.105:9002", "");
+  std::string zmq_uri(">tcp://");
+  const char *eon_ip = getenv("EON_IP");
+  if(eon_ip)
+    zmq_uri += eon_ip;
+  else
+    zmq_uri += "192.168.1.105";
+  zmq_uri += ":9002";
+  LOG("Connecting to Eon stream: %s", zmq_uri.c_str());
+  zsock_t *frame_sock = zsock_new_sub(zmq_uri.c_str(), "");
   assert(frame_sock);
   void *frame_sock_raw = zsock_resolve(frame_sock);
 
