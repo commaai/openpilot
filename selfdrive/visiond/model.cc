@@ -1,3 +1,7 @@
+#include <string.h>
+#include <assert.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include "common/timing.h"
 #include "model.h"
 
@@ -92,5 +96,6 @@ ModelData model_eval_frame(ModelState* s, cl_command_queue q,
 void model_free(ModelState* s) {
   model_input_free(&s->in);
   delete s->m;
+  free(s->output);
 }
 

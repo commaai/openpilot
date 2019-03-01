@@ -38,34 +38,35 @@ ifeq ($(UNAME_S),Darwin)
              $(PHONELIBS)/zmq/mac/lib/libzmq.a
 
   OPENCL_LIBS = -framework OpenCL
-else
-  LIBYUV_FLAGS = -I$(PHONELIBS)/libyuv/x64/include
-  LIBYUV_LIBS = $(PHONELIBS)/libyuv/x64/lib/libyuv.a
 
-  ZMQ_FLAGS = -I$(EXTERNAL)/zmq/include
-  ZMQ_LIBS = -L$(EXTERNAL)/zmq/lib \
-             -l:libczmq.a -l:libzmq.a
+  PLATFORM_OBJS = camera_fake.o \
+                  ../common/visionbuf_cl.o
+else
+  # assuem x86_64 linux
+
+  ZMQ_FLAGS = -I$(PHONELIBS)/zmq/aarch64/include
+  ZMQ_LIBS = -l:libczmq.a -l:libzmq.a -luuid
 
   OPENCL_LIBS = -lOpenCL
-endif
 
-  CURL_FLAGS = -I/usr/include/curl
-  CURL_LIBS = -lcurl -lz
+  SNPE_FLAGS = -I$(SNPE_ROOT)/include/zdl
+  SNPE_LIBS = -L$(SNPE_ROOT)/lib/x86_64-linux-clang/ \
+              -lSNPE -lsymphony-cpu
+
+  CXXFLAGS += -I../common
+
+  PLATFORM_OBJS = camera_eon_stream.o
+endif
 
   SSL_FLAGS = -I/usr/include/openssl/
   SSL_LIBS = -lssl -lcrypto
 
-  OPENCV_FLAGS =
-  OPENCV_LIBS = -lopencv_video \
-                -lopencv_imgproc \
-                -lopencv_core
-  OTHER_LIBS = -lz -lm -lpthread
+  OTHER_LIBS = -lz -lm -lpthread -lavcodec -lavutil
 
-  PLATFORM_OBJS = camera_fake.o \
-                  ../common/visionbuf_cl.o
 
   CFLAGS += -D_GNU_SOURCE \
             -DCLU_NO_CACHE
+  OBJS = visiond_pc.o
 else
 	# assume phone
 
@@ -102,13 +103,15 @@ else
   OTHER_LIBS = -lz -lcutils -lm -llog -lui -ladreno_utils
 
   PLATFORM_OBJS = camera_qcom.o \
-                  ../common/visionbuf_ion.o
+                  ../common/visionbuf_ion.o \
+                  ../common/visionimg.o
+
 
   CFLAGS += -DQCOM
   CXXFLAGS += -DQCOM
+  OBJS = visiond.o
 endif
 
-OBJS = visiond.o
 OUTPUT = visiond
 
 .PHONY: all
@@ -120,7 +123,6 @@ OBJS += $(PLATFORM_OBJS) \
         ../common/swaglog.o \
         ../common/ipc.o \
         ../common/visionipc.o \
-        ../common/visionimg.o \
         ../common/util.o \
         ../common/params.o \
         ../common/efd.o \
