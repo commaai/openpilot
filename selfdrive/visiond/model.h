@@ -2,7 +2,7 @@
 #define MODEL_H
 
 // gate this here
-//#define BIGMODEL
+#define BIGMODEL
 #define TEMPORAL
 
 #include "common/mat.h"

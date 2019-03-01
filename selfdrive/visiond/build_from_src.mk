@@ -136,8 +136,8 @@ OBJS += $(PLATFORM_OBJS) \
         $(PHONELIBS)/json11/json11.o \
         $(CEREAL_OBJS)
 
-#MODEL_DATA = ../../models/driving_bigmodel.dlc ../../models/monitoring_model.dlc
-MODEL_DATA = ../../models/driving_model.dlc ../../models/monitoring_model.dlc ../../models/posenet.dlc
+MODEL_DATA = ../../models/driving_bigmodel.dlc ../../models/monitoring_model.dlc ../../models/posenet.dlc
+#MODEL_DATA = ../../models/driving_model.dlc ../../models/monitoring_model.dlc ../../models/posenet.dlc
 MODEL_OBJS = $(MODEL_DATA:.dlc=.o)
 OBJS += $(MODEL_OBJS)
 
