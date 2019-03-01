@@ -222,27 +222,27 @@ class LongitudinalMpc(object):
         #self.libmpc.init(MPC_COST_LONG.TTC, 0.1, PC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
         #self.lastTR = 0
     else:
-      if CS.readdistancelines == 2:
-        if CS.readdistancelines == self.lastTR:
+      if CS.carState.readdistancelines == 2:
+        if CS.carState.readdistancelines == self.lastTR:
           TR=1.8 # 20m at 40km/hr
         else:
           TR=1.8
           self.libmpc.init(MPC_COST_LONG.TTC, 0.1, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
-          self.lastTR = CS.readdistancelines
-      elif CS.readdistancelines == 1:
-        if CS.readdistancelines == self.lastTR:
+          self.lastTR = CS.carState.readdistancelines
+      elif CS.carState.readdistancelines == 1:
+        if CS.carState.readdistancelines == self.lastTR:
           TR=0.9 # 10m at 40km/hr
         else:
           TR=0.9
           self.libmpc.init(MPC_COST_LONG.TTC, 1.0, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
-          self.lastTR = CS.readdistancelines
-      elif CS.readdistancelines == 3:
-        if CS.readdistancelines == self.lastTR:
+          self.lastTR = CS.carState.readdistancelines
+      elif CS.carState.readdistancelines == 3:
+        if CS.carState.readdistancelines == self.lastTR:
           TR=2.7
         else:
           TR=2.7 # 30m at 40km/hr
           self.libmpc.init(MPC_COST_LONG.TTC, 0.05, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
-          self.lastTR = CS.readdistancelines
+          self.lastTR = CS.carState.readdistancelines
       else:
         TR=1.8 # if readdistancelines = 0
     #print TR
@@ -474,8 +474,8 @@ class Planner(object):
     plan_send.plan.aTarget = self.a_acc
     plan_send.plan.vTargetFuture = self.v_acc_future
     plan_send.plan.hasLead = self.mpc1.prev_lead_status
-    plan_send.plan.hasrightLaneDepart = bool(PP.r_poly[3] > -1.15 and not CS.rightBlinker)
-    plan_send.plan.hasleftLaneDepart = bool(PP.l_poly[3] < 1.15 and not CS.leftBlinker)
+    plan_send.plan.hasrightLaneDepart = bool(PP.r_poly[3] > -1.15 and not CS.carState.rightBlinker)
+    plan_send.plan.hasleftLaneDepart = bool(PP.l_poly[3] < 1.15 and not CS.carState.leftBlinker)
     plan_send.plan.longitudinalPlanSource = self.longitudinalPlanSource
 
     plan_send.plan.vCurvature = self.v_curvature
