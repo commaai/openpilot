@@ -25,6 +25,7 @@ config.json
 clcache
 launch_chffrplus.sh
 .vscode/*.json
+selfdrive/visiond/visiond
 
 .vscode/
 board/obj/
