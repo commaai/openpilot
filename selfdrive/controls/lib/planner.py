@@ -392,7 +392,7 @@ class Planner(object):
       accel_limits = map(float, calc_cruise_accel_limits(v_ego, following))
       jerk_limits = [min(-0.1, accel_limits[0]), max(0.1, accel_limits[1])]  # TODO: make a separate lookup for jerk tuning
       
-      if self.lastlat_Control and CS.vEgo > 11:      
+      if self.lastlat_Control and v_ego > 11:      
         angle_later = self.lastlat_Control.anglelater
       else:
         angle_later = 0
