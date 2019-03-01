@@ -474,8 +474,8 @@ class Planner(object):
     plan_send.plan.aTarget = self.a_acc
     plan_send.plan.vTargetFuture = self.v_acc_future
     plan_send.plan.hasLead = self.mpc1.prev_lead_status
-    plan_send.plan.hasrightLaneDepart = bool(PP.rPoly[3] > -1.15 and not CS.rightBlinker)
-    plan_send.plan.hasleftLaneDepart = bool(PP.lPoly[3] < 1.15 and not CS.leftBlinker)
+    plan_send.plan.hasrightLaneDepart = bool(PP.r_poly[3] > -1.15 and not CS.rightBlinker)
+    plan_send.plan.hasleftLaneDepart = bool(PP.l_poly[3] < 1.15 and not CS.leftBlinker)
     plan_send.plan.longitudinalPlanSource = self.longitudinalPlanSource
 
     plan_send.plan.vCurvature = self.v_curvature
