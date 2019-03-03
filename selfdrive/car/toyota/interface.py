@@ -135,8 +135,9 @@ class CarInterface(object):
       ret.steerRatio = 13.7
       tire_stiffness_factor = 0.7933
       ret.mass = 3400 * CV.LB_TO_KG + std_cargo #mean between normal and hybrid
-      ret.steerKpV, ret.steerKiV = [[0.6], [0.1]]
+      ret.steerKpV, ret.steerKiV = [[0.6], [0.05]]
       ret.steerKf = 0.00006
+      ret.steerActuatorDelay = 0.09
 
     elif candidate in [CAR.HIGHLANDER, CAR.HIGHLANDERH]:
       stop_and_go = True
