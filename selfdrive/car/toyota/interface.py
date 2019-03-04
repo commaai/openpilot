@@ -219,7 +219,7 @@ class CarInterface(object):
     # ******************* do can recv *******************
     canMonoTimes = []
 
-    self.cp.update(int(sec_since_boot() * 1e9), False)
+    self.cp.update(int(sec_since_boot() * 1e9), True)
 
     # run the cam can update for 10s as we just need to know if the camera is alive
     if self.frame < 1000:

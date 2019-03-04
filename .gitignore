@@ -3,7 +3,6 @@
 .ipynb_checkpoints
 .idea
 .sconsign.dblite
-.vscode
 model2.png
 a.out
 
@@ -23,18 +22,13 @@ a.out
 *.vcd
 config.json
 clcache
-launch_chffrplus.sh
-.vscode/*.json
-selfdrive/visiond/visiond
 
-.vscode/
 board/obj/
 selfdrive/boardd/boardd
 selfdrive/logcatd/logcatd
 selfdrive/proclogd/proclogd
 selfdrive/ui/ui
 selfdrive/test/tests/plant/out
-openpilot_tools/
 /src/
 
 one
