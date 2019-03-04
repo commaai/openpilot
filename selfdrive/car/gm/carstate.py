@@ -72,7 +72,7 @@ class CarState(object):
     self.prev_left_blinker_on = False
     self.right_blinker_on = False
     self.prev_right_blinker_on = False
-    self.follow_level = 3
+    self.follow_level = 2
     self.prev_lka_button = 0
     self.lka_button = 0
     self.lkMode = True
