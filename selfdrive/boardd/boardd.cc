@@ -485,7 +485,6 @@ void *can_recv_thread(void *crap) {
   bool frame_sent, skip_once, force_send;
   uint64_t wake_time, locked_wake_time, cur_time;
   force_send = true;
-  int sleepTime;
   cur_time = 1e-3 * nanos_since_boot();
   wake_time = cur_time;
 
@@ -496,6 +495,7 @@ void *can_recv_thread(void *crap) {
       cur_time = 1e-3 * nanos_since_boot();
       skip_once = frame_sent;
       wake_time += 4500;
+      force_send = false;
       if (cur_time < wake_time) {
         usleep(wake_time - cur_time);
       }
