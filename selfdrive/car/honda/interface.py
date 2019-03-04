@@ -204,6 +204,7 @@ class CarInterface(object):
       ret.longitudinalKpV = [3.6, 2.4, 1.5]
       ret.longitudinalKiBP = [0., 35.]
       ret.longitudinalKiV = [0.54, 0.36]
+      ret.syncID = 330
 
     elif candidate in (CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH):
       stop_and_go = True
