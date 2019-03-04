@@ -204,6 +204,7 @@ class CarInterface(object):
       ret.longitudinalKpV = [3.6, 2.4, 1.5]
       ret.longitudinalKiBP = [0., 35.]
       ret.longitudinalKiV = [0.54, 0.36]
+      # This is optional, and will cause boardd to synchnonize with the bus instead of time
       ret.syncID = 330
 
     elif candidate in (CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH):
@@ -367,6 +368,7 @@ class CarInterface(object):
     # ******************* do can recv *******************
     canMonoTimes = []
 
+    # use CAN packet from boardd as primary time keeper
     self.cp.update(int(sec_since_boot() * 1e9), True)
     self.cp_cam.update(int(sec_since_boot() * 1e9), False)
 
