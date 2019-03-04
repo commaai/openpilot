@@ -459,7 +459,7 @@ def controlsd_thread(gctx=None, rate=100):
   path_plan = messaging.new_message()
   path_plan.init('pathPlan')
 
-  rk = Ratekeeper(rate, print_delay_threshold=2. / 10000)
+  rk = Ratekeeper(rate, print_delay_threshold=2. / 1000)
   controls_params = params.get("ControlsParams")
   # Read angle offset from previous drive
   if controls_params is not None:
@@ -503,7 +503,7 @@ def controlsd_thread(gctx=None, rate=100):
                     v_cruise_kph_last, AM, rk, driver_status,
                     LaC, LoC, VM, angle_offset, passive, is_metric, cal_perc)
 
-    rk.keep_time(1. / 100000)   # use "soft" time keeping for data OUT to vehicle
+    rk.keep_time(2. / 10000)   # use "soft" time keeping for data OUT to vehicle
     prof.checkpoint("State Control")
 
     # Publish data
