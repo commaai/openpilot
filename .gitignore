@@ -3,6 +3,7 @@
 .ipynb_checkpoints
 .idea
 .sconsign.dblite
+.vscode/
 model2.png
 a.out
 
