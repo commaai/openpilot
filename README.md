@@ -1,13 +1,4 @@
-<b><u>PLEASE DO A FRESH CLONE INSTEAD OF GIT PULL FOR THE LATEST CHANGES</u></b>
-
 This is a fork of comma's openpilot, and contains tweaks for Hondas and GM vehicles 
-
-<b>IMPORTANT!</b>
-<b>Distance Intervals have Changed (AGAIN)</b>
-One bar: 0.9s
-Two bar: 1.3s (initial value)
-Three bar: 1.8s (comma default)
-Four bar: 2.5s
 
 <b>WARNING:</b>  Do NOT depend on OP to stop the car in time if you are approaching an object which is not in motion in the same direction as your car.  The radar will NOT detect the stationary object in time to slow your car enough to stop.  If you are approaching a stopped vehicle you must disengage and brake as radars ignore objects that are not in motion.
 
@@ -16,7 +7,6 @@ Four bar: 2.5s
 
 I will attempt to detail the changes in each of the branches here:
 
-Note that only the kegman branch is 0.5.9 as it breaks Gernby's lat control.  I am still trying to get it to work with Clarity.  This may take time.
 
 <b>kegman (0.5.9)</b> - this is the default branch which does not include Gernby's resonant feed forward steering (i.e. it's comma's default steering) - it now includes GM code (needs testing)
 
@@ -28,6 +18,20 @@ Note above comments apply to Clarity testing branches as well.
 
 
 List of changes and tweaks (latest changes at the top):
+- <b>Added moar JSON parameters</b>:  
+
+<b>Note</b> that because Big Model sucks up more power I've forced the battery limit charging to 85-90% until I get a handle on the charge rates necessary to support Big Model in the car.  For now you cannot change the values.  (I will relax this in a future update)
+
+"battPercOff": "25",  Turn off the Eon if the Eon battery percentage dips below this value - NOTE this only works when the Eon is NOT powered by the USB cable!
+
+"brakeStoppingTarget": "0.25",  How much OP should mash the brakes when the car is stopped.  Increase if you live in hilly areas and need more standstill braking pressure.
+
+"carVoltageMinEonShutdown": "12200",  Eon stops charging if car battery goes below this level.  NOTE:  12.8V is 100%,  11.8V is 0%.  I would recommended that you unplug your Eon if you are away from your vehicle for more than a few hours and put a battery charger on your car's battery weekly to avoid wrecking your battery if your Eon stays powered when you shut off the car.
+
+- <b>Big Model preview</b>:  Applied Big Model commit.  
+
+- <b>Tone down PID tuning for Pilot and Ridgline for 0.5.9</b>:  Comma changed latcontrol for 0.5.9, so I had to tone down the PID tuning, reducing steerKpV and steerKiV (to 0.45 and 0.135) because of a slow ping-pong on my 2018 Pilot.  Wheel shaking on 2017 Pilots with 0.5.9 have been reported and this change should help, but may not be sufficient for the 2017 model (and possibly 2016).  2016/7 owners may need to adjust steerKpV and steerKiV manually back to 0.38 and 0.11 in /data/openpilot/selfdrive/car/honda/interface.py to reduce the shake.
+
 - <b>Persist some configuration data in JSON file (/data/kegman.json)</b>:  Sometimes you just want to make a tweak and persist some data that doesn't get wiped out the next time OP is updated.  Stuff like:
 
 
