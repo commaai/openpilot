@@ -503,7 +503,7 @@ def controlsd_thread(gctx=None, rate=100):
                     v_cruise_kph_last, AM, rk, driver_status,
                     LaC, LoC, VM, angle_offset, passive, is_metric, cal_perc)
 
-    rk.keep_time(2. / 1000000)  # use "soft" time keeping for data OUT to vehicle
+    rk.keep_time(1. / 100000)   # use "soft" time keeping for data OUT to vehicle
     prof.checkpoint("State Control")
 
     # Publish data
