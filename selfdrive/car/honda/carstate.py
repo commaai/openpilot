@@ -154,7 +154,7 @@ class CarState(object):
     self.alcaLabels = ["MadMax","Normal","Wifey"]
     self.visionLabels = ["normal","wiggly"]
     self.visionMode = 0
-    self.trLabels = ["0.9","1.8","2.7"]
+    self.trLabels = ["0.9","dyn","2.7"]
     self.alcaMode = 0
     self.trMode = 1
     #if (CP.carFingerprint == CAR.MODELS):
@@ -427,7 +427,7 @@ class CarState(object):
       if self.read_distance_lines == 1:
         self.UE.custom_alert_message(2,"Following distance set to 0.9s",200,3)
       if self.read_distance_lines == 2:
-        self.UE.custom_alert_message(2,"Following distance set to 1.8s",200,3)
+        self.UE.custom_alert_message(2,"Dynamic Following distance",200,3)
       if self.read_distance_lines == 3:
         self.UE.custom_alert_message(2,"Following distance set to 2.7s",200,3)
       self.read_distance_lines_prev = self.read_distance_lines
