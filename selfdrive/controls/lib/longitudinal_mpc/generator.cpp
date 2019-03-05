@@ -5,10 +5,9 @@ const int controlHorizon = 50;
 using namespace std;
 
 #define G 9.81
-#define TR 1.8
 
-#define RW(v_ego, v_l) (v_ego * TR - (v_l - v_ego) * TR + v_ego*v_ego/(2*G) - v_l*v_l / (2*G))
-#define NORM_RW_ERROR(v_ego, v_l, p) ((RW(v_ego, v_l) + 4.0 - p)/(sqrt(v_ego + 0.5) + 0.1))
+#define RW(v_ego, v_l, follow_time) (v_ego * follow_time - (v_l - v_ego) * follow_time + v_ego*v_ego/(2*G) - v_l*v_l / (2*G))
+#define NORM_RW_ERROR(v_ego, v_l, p, follow_time) ((RW(v_ego, v_l, follow_time) + 4.0 - p)/(sqrt(v_ego + 0.5) + 0.1))
 
 int main( )
 {
@@ -24,7 +23,12 @@ int main( )
 
   Control j_ego;
 
-  auto desired = 4.0 + RW(v_ego, v_l);
+  // follow distance expressed as a stopping distance in seconds
+  // see https://github.com/rhinodavid/CommaButtons
+  // see https://github.com/acado/acado/issues/54 for a discussion of `OnlineData`
+  OnlineData follow_time;
+
+  auto desired = 4.0 + RW(v_ego, v_l, follow_time);
   auto d_l = x_l - x_ego;
 
   // Directly calculate a_l to prevent instabilites due to discretization
@@ -41,7 +45,7 @@ int main( )
 
   // Running cost
   Function h;
-  h << exp(0.3 * NORM_RW_ERROR(v_ego, v_l, d_l)) - exp(0.3 * NORM_RW_ERROR(v_ego, v_l, desired));
+  h << exp(0.3 * NORM_RW_ERROR(v_ego, v_l, d_l, follow_time)) - exp(0.3 * NORM_RW_ERROR(v_ego, v_l, desired, follow_time));
   h << (d_l - desired) / (0.05 * v_ego + 0.5);
   h << a_ego * (0.1 * v_ego + 1.0);
   h << j_ego * (0.1 * v_ego + 1.0);
@@ -51,7 +55,7 @@ int main( )
 
   // Terminal cost
   Function hN;
-  hN << exp(0.3 * NORM_RW_ERROR(v_ego, v_l, d_l)) - exp(0.3 * NORM_RW_ERROR(v_ego, v_l, desired));
+  hN << exp(0.3 * NORM_RW_ERROR(v_ego, v_l, d_l, follow_time)) - exp(0.3 * NORM_RW_ERROR(v_ego, v_l, desired, follow_time));
   hN << (d_l - desired) / (0.05 * v_ego + 0.5);
   hN << a_ego * (0.1 * v_ego + 1.0);
 
@@ -79,7 +83,7 @@ int main( )
   ocp.minimizeLSQEndTerm(QN, hN);
 
   ocp.subjectTo( 0.0 <= v_ego);
-  ocp.setNOD(2);
+  ocp.setNOD(3);
 
   OCPexport mpc(ocp);
   mpc.set( HESSIAN_APPROXIMATION, GAUSS_NEWTON );

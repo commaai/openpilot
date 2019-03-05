@@ -118,12 +118,13 @@ void init_with_simulation(double v_ego, double x_l_0, double v_l_0, double a_l_0
   for (i = 0; i < NYN; ++i)  acadoVariables.yN[ i ] = 0.0;
 }
 
-int run_mpc(state_t * x0, log_t * solution, double l, double a_l_0){
+int run_mpc(state_t * x0, log_t * solution, double l, double a_l_0, double follow_time){
   int i;
 
   for (i = 0; i <= NOD * N; i+= NOD){
     acadoVariables.od[i] = l;
     acadoVariables.od[i+1] = a_l_0;
+    acadoVariables.od[i+2] = follow_time;
   }
 
   acadoVariables.x[0] = acadoVariables.x0[0] = x0->x_ego;
