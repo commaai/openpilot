@@ -1,3 +1,5 @@
+<b>PLEASE DO A FRESH CLONE</b>
+
 This is a fork of comma's openpilot, and contains tweaks for Hondas and GM vehicles 
 
 <b>WARNING:</b>  Do NOT depend on OP to stop the car in time if you are approaching an object which is not in motion in the same direction as your car.  The radar will NOT detect the stationary object in time to slow your car enough to stop.  If you are approaching a stopped vehicle you must disengage and brake as radars ignore objects that are not in motion.
