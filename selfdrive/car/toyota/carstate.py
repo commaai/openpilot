@@ -133,6 +133,7 @@ def get_cam_can_parser(CP):
 
 class CarState(object):
   def __init__(self, CP):
+    self.trfix = False
     self.Angles = np.zeros(250)
     self.Angles_later = np.zeros(250)
     self.Angle_counter = 0
@@ -366,7 +367,12 @@ class CarState(object):
         self.lane_departure_toggle_on = True
       
     self.distance_toggle = cp.vl["JOEL_ID"]['ACC_DISTANCE']
-    self.read_distance_lines = cp.vl["PCM_CRUISE_SM"]['DISTANCE_LINES']
+    if cp.vl["PCM_CRUISE_SM"]['DISTANCE_LINES'] == 2:
+      self.trfix = True
+    if self.trfix:
+      self.read_distance_lines = cp.vl["PCM_CRUISE_SM"]['DISTANCE_LINES']
+    else:
+      self.read_distance_lines = 2
     if self.distance_toggle <> self.distance_toggle_prev:
       if self.read_distance_lines == self.distance_toggle:
         self.distance_toggle_prev = self.distance_toggle
@@ -377,7 +383,7 @@ class CarState(object):
       if self.read_distance_lines == 1:
         self.UE.custom_alert_message(2,"Following distance set to 0.9s",200,3)
       if self.read_distance_lines == 2:
-        self.UE.custom_alert_message(2,"Following distance set to 1.8s",200,3)
+        self.UE.custom_alert_message(2,"Dynamic Following distance",200,3)
       if self.read_distance_lines == 3:
         self.UE.custom_alert_message(2,"Following distance set to 2.7s",200,3)
       self.read_distance_lines_prev = self.read_distance_lines

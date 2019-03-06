@@ -15,6 +15,7 @@ from selfdrive.controls.lib.longitudinal_mpc import libmpc_py
 from selfdrive.controls.lib.speed_smoother import speed_smoother
 from selfdrive.controls.lib.longcontrol import LongCtrlState, MIN_CAN_SPEED
 from selfdrive.controls.lib.radar_helpers import _LEAD_ACCEL_TAU
+from scipy import interpolate
 
 NO_CURVATURE_SPEED = 200. * CV.MPH_TO_MS
 
@@ -149,6 +150,9 @@ class LongitudinalMpc(object):
     self.new_lead = False
     self.lastTR = 2
     self.last_cloudlog_t = 0.0
+    self.last_cost = 0
+    self.speed_list = []
+    self.rel_vel = 0
 
   def send_mpc_solution(self, qp_iterations, calculation_time):
     qp_iterations = max(0, qp_iterations)
@@ -181,6 +185,54 @@ class LongitudinalMpc(object):
     self.cur_state[0].v_ego = v
     self.cur_state[0].a_ego = a
 
+  def get_average(self, numbers):
+    try:
+      return float(sum(numbers)) / len(numbers)
+    except ZeroDivisionError:
+      return 0.0
+
+  def split_list(self, a_list):
+    half = len(a_list) // 2
+    return a_list[:half], a_list[half:]
+
+  def get_velocity(self, l):
+    self.rel_vel = l
+
+  def acceleration_status(self):
+    s = self.split_list(self.speed_list)
+    percentage_value = 0.0268  # this is .5 mph/second
+    percentage_change = abs(abs(self.get_average(s[0]) - self.get_average(s[1])) / self.get_average([self.get_average(s[0]), self.get_average(s[1])]))
+
+    if (self.get_average(s[0]) > self.get_average(s[1]) and percentage_change > percentage_value) or self.rel_vel <= -6.710808: # should increase following distance sooner than detecting car's own deceleration, -6.7... is -3mph
+      return -1 # decelerating
+    elif self.get_average(s[0]) < self.get_average(s[1]) and percentage_change > percentage_value or self.rel_vel >= 6.710808: # true if car is accelerating at .5mph/s in latest two second period
+      return 1 # accelerating
+    else:
+      return 0 # constant speed
+
+  def generateTR(self, speed):
+    acceleration_code = self.acceleration_status()
+    if acceleration_code == 1:
+      x = [0, 30, 90, 110, 120, 180]
+      y = [1.0, 1.2, 1.8, 2.0, 2.2, 2.5]
+    elif acceleration_code == -1:
+      x = [0, 7, 30, 90, 110, 120, 180]
+      y = [1.6, 1.8, 1.9, 1.8, 2.2, 2.5, 2.7]
+    else: # constant speed
+      x = [0, 30, 90, 110, 120, 180]
+      y = [1.6, 1.4, 1.8, 2.0, 2.5, 2.7]
+    # return round(np.interp(speed, x, y), 2)
+    f = interpolate.interp1d(x, y, fill_value='extrapolate') # interpolate above array
+    return round(float(f(speed)[()]), 2)
+
+  def generate_cost(self, distance):
+    x = [.9, 1.8, 2.7]
+    y = [1.0, .1, .05]
+
+    #diff = [abs(i - distance) for i in x]
+    #return y[diff.index(min(diff))] # find closest cost, should fix beow
+    return round(float(np.interp(distance, x, y)), 2) # used to cause stuttering, but now we're doing a percentage change check before changing
+  
   def update(self, CS, lead, v_cruise_setpoint):
     v_ego = CS.carState.vEgo
 
@@ -216,19 +268,24 @@ class LongitudinalMpc(object):
 
     # Calculate mpc
     t = sec_since_boot()
-    if v_ego < 11.4:
+    if v_ego < 2.0:
       TR=1.8 # under 41km/hr use a TR of 1.8 seconds
       #if self.lastTR > 0:
         #self.libmpc.init(MPC_COST_LONG.TTC, 0.1, PC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
         #self.lastTR = 0
     else:
       if CS.carState.readdistancelines == 2:
-        if CS.carState.readdistancelines == self.lastTR:
-          TR=1.8 # 20m at 40km/hr
-        else:
-          TR=1.8
-          self.libmpc.init(MPC_COST_LONG.TTC, 0.1, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
-          self.lastTR = CS.carState.readdistancelines
+        if len(self.speed_list) > 200 and len(self.speed_list) != 0:
+          self.speed_list.pop(0)
+        self.speed_list.append(v_ego * 3.6)
+
+        generatedTR = self.generateTR(v_ego * 3.6)
+        TR = generatedTR
+
+        if abs(self.generate_cost(generatedTR)-self.last_cost) > .15:
+          self.libmpc.init(MPC_COST_LONG.TTC, self.generate_cost(generatedTR), MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
+          self.last_cost = self.generate_cost(generatedTR)
+          
       elif CS.carState.readdistancelines == 1:
         if CS.carState.readdistancelines == self.lastTR:
           TR=0.9 # 10m at 40km/hr
@@ -362,6 +419,11 @@ class Planner(object):
 
     self.lead_1 = live20.live20.leadOne
     self.lead_2 = live20.live20.leadTwo
+    
+    try:
+      LongitudinalMpc.get_velocity(self.lead_1.vRel)
+    except:
+      None    
 
     enabled = (long_control_state == LongCtrlState.pid) or (long_control_state == LongCtrlState.stopping)
     following = self.lead_1.status and self.lead_1.dRel < 45.0 and self.lead_1.vLeadK > v_ego and self.lead_1.aLeadK > 0.0
