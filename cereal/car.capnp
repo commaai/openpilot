@@ -358,6 +358,7 @@ struct CarParams {
 
   steerActuatorDelay @48 :Float32; # Steering wheel actuator delay in seconds
   openpilotLongitudinalControl @50 :Bool; # is openpilot doing the longitudinal control?
+  eonToFront  @51  :Float32;    # [m] longitudinal offset low speed steering characteristics
 
   enum SteerControlType {
     torque @0;
