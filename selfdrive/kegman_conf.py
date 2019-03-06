@@ -22,10 +22,10 @@ class kegman_conf():
         self.element_updated = True
       
       # Force update battery charge limits to higher values for Big Model
-      if self.config['battChargeMin'] != "75":
-        self.config.update({"battChargeMin":"75"})
-        self.config.update({"battChargeMax":"80"})
-        self.element_updated = True
+      #if self.config['battChargeMin'] != "75":
+      #  self.config.update({"battChargeMin":"75"})
+      #  self.config.update({"battChargeMax":"80"})
+      #  self.element_updated = True
       
       if self.element_updated:      
         self.write_config(self.config)
