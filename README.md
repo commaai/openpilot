@@ -30,7 +30,7 @@ List of changes and tweaks (latest changes at the top):
 
 "brakeStoppingTarget": "0.25",  How much OP should mash the brakes when the car is stopped.  Increase if you live in hilly areas and need more standstill braking pressure.
 
-"carVoltageMinEonShutdown": "12200",  Eon stops charging if car battery goes below this level.  NOTE:  12.8V is 100%,  11.8V is 0%.  I would recommended that you unplug your Eon if you are away from your vehicle for more than a few hours and put a battery charger on your car's battery weekly to avoid wrecking your battery if your Eon stays powered when you shut off the car.
+"carVoltageMinEonShutdown": "11800", in mV.  Eon stops charging if car battery goes below this level - NOTE: this is the DISCHARGING voltage.  When the Eon is drawing current the voltage on the battery DROPS.  This is NOT the standing no-load voltage.  I would recommended that you unplug your Eon if you are away from your vehicle for more than a few hours and put a battery charger on your car's battery weekly to avoid wrecking your battery if your Eon stays powered when you shut off the car.
 
 - <b>Big Model preview</b>:  Applied Big Model commit.  
 
