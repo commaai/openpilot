@@ -610,6 +610,8 @@ struct PathPlan {
 
   angleSteers @8 :Float32;
   valid @9 :Bool;
+  mpcAngles @10 :List(Float64);
+  mpcTimes @11 :List(Float64);
 }
 
 struct LiveLocationData {
