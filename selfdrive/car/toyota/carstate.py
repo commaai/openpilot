@@ -141,8 +141,6 @@ class CarState(object):
     self.Angle_Speed = [255,160,100,80,70,60,55,50,40,33,27,17,12]
     #labels for ALCA modes
     self.alcaLabels = ["MadMax","Normal","Wifey"]
-    self.visionLabels = ["normal","wiggly"]
-    self.visionMode = 0
     self.alcaMode = 1
     #if (CP.carFingerprint == CAR.MODELS):
     # ALCA PARAMS
@@ -218,9 +216,6 @@ class CarState(object):
     self.custom_alert_counter = 100 #set to 100 for 1 second display; carcontroller will take down to zero
     # initialize can parser
     self.car_fingerprint = CP.carFingerprint
-
-    #BB visiond last type
-    self.last_visiond = self.cstm_btns.btns[0].btn_label2
     
     # vEgo kalman filter
     dt = 0.01
@@ -235,7 +230,7 @@ class CarState(object):
  #BB init ui buttons
   def init_ui_buttons(self):
     btns = []
-    btns.append(UIButton("vision", "VIS", 0, self.visionLabels[self.visionMode], 0))
+    btns.append(UIButton("sound", "SND", 0, "", 0))
     btns.append(UIButton("alca", "ALC", 1, self.alcaLabels[self.alcaMode], 1))
     btns.append(UIButton("slow", "SLO", 1, "", 2))
     btns.append(UIButton("lka", "LKA", 1, "", 3))
@@ -246,17 +241,7 @@ class CarState(object):
   #BB update ui buttons
   def update_ui_buttons(self,id,btn_status):
     if self.cstm_btns.btns[id].btn_status > 0:
-      if (id == 0) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="vision":
-          if self.cstm_btns.btns[id].btn_label2 == self.visionLabels[self.visionMode]:
-            self.visionMode = (self.visionMode + 1 ) % 2
-          else:
-            self.alcaMode = 0
-          self.cstm_btns.btns[id].btn_label2 = self.visionLabels[self.visionMode]
-          self.cstm_btns.hasChanges = True
-          self.last_visiond = self.cstm_btns.btns[id].btn_label2
-          args = ["/data/openpilot/selfdrive/car/modules/ch_visiond.sh", self.cstm_btns.btns[id].btn_label2]
-          subprocess.Popen(args, shell = False, stdin=None, stdout=None, stderr=None, env = dict(os.environ), close_fds=True)
-      elif (id == 1) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="alca":
+      if (id == 1) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="alca":
           if self.cstm_btns.btns[id].btn_label2 == self.alcaLabels[self.alcaMode]:
             self.alcaMode = (self.alcaMode + 1 ) % 3
           else:
