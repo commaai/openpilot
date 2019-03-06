@@ -25,7 +25,6 @@ clcache
 
 board/obj/
 selfdrive/boardd/boardd
-selfdrive/visiond/visiond
 selfdrive/logcatd/logcatd
 selfdrive/proclogd/proclogd
 selfdrive/ui/ui
