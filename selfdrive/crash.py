@@ -29,7 +29,7 @@ else:
   
   def capture_info(info_string):
     client.captureMessage(info_string, level='info')
-    
+
   def bind_user(**kwargs):
     client.user_context(kwargs)
 

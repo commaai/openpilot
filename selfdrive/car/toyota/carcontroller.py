@@ -157,15 +157,16 @@ class CarController(object):
     # *** compute control surfaces ***
 
     # gas and brake
-    
+
     apply_gas = clip(actuators.gas, 0., 1.)
-    
+
     if CS.CP.enableGasInterceptor:
-    # send only send brake values if interceptor is detected. otherwise, send the regular value
-    # +0.06 offset to reduce ABS pump usage when OP is engaged
+      # send only negative accel if interceptor is detected. otherwise, send the regular value
+      # +0.06 offset to reduce ABS pump usage when OP is engaged
       apply_accel = 0.06 - actuators.brake
     else:
       apply_accel = actuators.gas - actuators.brake
+
     apply_accel, self.accel_steady = accel_hysteresis(apply_accel, self.accel_steady, enabled)
     apply_accel = clip(apply_accel * ACCEL_SCALE, ACCEL_MIN, ACCEL_MAX)
     # Get the angle from ALCA.
@@ -315,10 +316,10 @@ class CarController(object):
         can_sends.append(create_accel_command(self.packer, 0, pcm_cancel_cmd, False, lead, distance))
 
     if CS.CP.enableGasInterceptor:
-      # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
-      # This prevents unexpected pedal range rescaling
-      can_sends.append(create_gas_command(self.packer, apply_gas))
-      
+        # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
+        # This prevents unexpected pedal range rescaling
+        can_sends.append(create_gas_command(self.packer, apply_gas))
+
     if frame % 10 == 0 and ECU.CAM in self.fake_ecus and not forwarding_camera:
       for addr in TARGET_IDS:
         can_sends.append(create_video_target(frame/10, addr))

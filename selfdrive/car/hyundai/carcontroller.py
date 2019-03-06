@@ -10,7 +10,7 @@ from selfdrive.can.packer import CANPacker
 # Steer torque limits
 
 class SteerLimitParams:
-  STEER_MAX = 250   # 409 is the max
+  STEER_MAX = 255   # 409 is the max, 255 is stock
   STEER_DELTA_UP = 3
   STEER_DELTA_DOWN = 7
   STEER_DRIVER_ALLOWANCE = 50

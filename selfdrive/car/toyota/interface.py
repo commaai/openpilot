@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from common.realtime import sec_since_boot
-from cereal import car, log
+from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
@@ -232,12 +232,11 @@ class CarInterface(object):
 
     #detect the Pedal address
     ret.enableGasInterceptor = 0x201 in fingerprint
-    
-    
+
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter.
     ret.minEnableSpeed = -1. if (stop_and_go or ret.enableGasInterceptor) else 19. * CV.MPH_TO_MS
-    
+
     centerToRear = ret.wheelbase - ret.centerToFront
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
@@ -275,15 +274,17 @@ class CarInterface(object):
     cloudlog.warn("ECU Gas Interceptor: %r", ret.enableGasInterceptor)
 
     ret.steerLimitAlert = False
+    ret.longitudinalKpBP = [0., 5., 35.]
+    ret.longitudinalKiBP = [0., 35.]
     ret.stoppingControl = False
     ret.startAccel = 0.0
 
     ret.longitudinalKpBP = [0., 5., 35.]
     ret.longitudinalKiBP = [0., 35.]
     
+  # returns a car.CarState
     return ret
 
-  # returns a car.CarState
   def update(self, c):
     # ******************* do can recv *******************
     canMonoTimes = []
@@ -316,7 +317,7 @@ class CarInterface(object):
     # gas pedal
     ret.gas = self.CS.car_gas
     if self.CP.enableGasInterceptor:
-      # use interceptor values to disengage on pedal press
+    # use interceptor values to disengage on pedal press
       ret.gasPressed = self.CS.pedal_gas > 15
     else:
       ret.gasPressed = self.CS.pedal_gas > 0
@@ -338,6 +339,7 @@ class CarInterface(object):
     ret.cruiseState.speed = self.CS.v_cruise_pcm * CV.KPH_TO_MS
     ret.cruiseState.available = bool(self.CS.main_on)
     ret.cruiseState.speedOffset = 0.
+
     if self.CP.carFingerprint in [CAR.RAV4H, CAR.HIGHLANDERH, CAR.HIGHLANDER] or self.CP.enableGasInterceptor:
       # ignore standstill in hybrid vehicles, since pcm allows to restart without
       # receiving any special command
@@ -441,7 +443,7 @@ class CarInterface(object):
 
   # pass in a car.CarControl
   # to be called @ 100hz
-  def apply(self, c, perception_state=log.Live20Data.new_message()):
+  def apply(self, c):
 
     self.CC.update(self.sendcan, c.enabled, self.CS, self.frame,
                    c.actuators, c.cruiseControl.cancel, c.hudControl.visualAlert,
