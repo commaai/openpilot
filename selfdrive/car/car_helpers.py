@@ -5,6 +5,7 @@ from common.realtime import sec_since_boot
 from common.fingerprints import eliminate_incompatible_cars, all_known_cars
 from selfdrive.swaglog import cloudlog
 import selfdrive.messaging as messaging
+import selfdrive.crash as crash
 
 def load_interfaces(x):
   ret = {}
@@ -82,6 +83,7 @@ def fingerprint(logcan, timeout):
     time.sleep(0.01)
 
   cloudlog.warning("fingerprinted %s", candidate_cars[0])
+  crash.capture_warning("fingerprinted %s" % candidate_cars[0])
   return (candidate_cars[0], finger)
 
 
