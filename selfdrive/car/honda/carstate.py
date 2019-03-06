@@ -152,8 +152,6 @@ class CarState(object):
     self.blind_spot_on = bool(0)
     #labels for ALCA modes
     self.alcaLabels = ["MadMax","Normal","Wifey"]
-    self.visionLabels = ["normal","wiggly"]
-    self.visionMode = 0
     self.trLabels = ["0.9","dyn","2.7"]
     self.alcaMode = 0
     self.trMode = 1
@@ -227,9 +225,6 @@ class CarState(object):
     #BB custom message counter
     self.custom_alert_counter = -1 #set to 100 for 1 second display; carcontroller will take down to zero
     
-    #BB visiond last type
-    self.last_visiond = self.cstm_btns.btns[2].btn_label2
-    
     # vEgo kalman filter
     dt = 0.01
     # Q = np.matrix([[10.0, 0.0], [0.0, 100.0]])
@@ -244,7 +239,7 @@ class CarState(object):
     btns = []
     btns.append(UIButton("alca", "ALC", 1, self.alcaLabels[self.alcaMode], 0))
     btns.append(UIButton("lka","LKA",1,"",1))
-    btns.append(UIButton("vision","VIS",0,self.visionLabels[self.visionMode],2))
+    btns.append(UIButton("","",0,"",2))
     btns.append(UIButton("sound","SND",0,"",3))
     btns.append(UIButton("tr","TR",0,self.trLabels[self.trMode],4))
     btns.append(UIButton("gas","Gas",1,"",5))
@@ -261,17 +256,6 @@ class CarState(object):
           self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
           self.cstm_btns.hasChanges = True
           
-      elif (id == 2) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="vision":
-          if self.cstm_btns.btns[id].btn_label2 == self.visionLabels[self.visionMode]:
-            self.visionMode = (self.visionMode + 1) % 2
-          else:
-            self.visionMode = 0
-          self.cstm_btns.btns[id].btn_label2 = self.visionLabels[self.visionMode]
-          self.cstm_btns.hasChanges = True
-          self.last_visiond = self.cstm_btns.btns[id].btn_label2
-          args = ["/data/openpilot/selfdrive/car/modules/ch_visiond.sh", self.cstm_btns.btns[id].btn_label2]
-          subprocess.Popen(args, shell = False, stdin=None, stdout=None, stderr=None, env = dict(os.environ), close_fds=True)
-        
       elif (id == 4) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="tr":
           if self.cstm_btns.btns[id].btn_label2 == self.trLabels[self.trMode]:
             self.trMode = (self.trMode + 1 ) % 3
