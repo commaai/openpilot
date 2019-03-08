@@ -22,7 +22,7 @@ Note above comments apply to Clarity testing branches as well.
 
 
 List of changes and tweaks (latest changes at the top):
-- <b>Replaced dev UI with @perpetuoviator dev UI with brake light icon by @berno22 - Thank you both!
+- <b>Replaced dev UI</b> with @perpetuoviator dev UI with brake light icon by @berno22 - Thank you both!
 
 - <b>Added moar JSON parameters</b>:  
 
