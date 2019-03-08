@@ -22,6 +22,8 @@ Note above comments apply to Clarity testing branches as well.
 
 
 List of changes and tweaks (latest changes at the top):
+- <b>Replaced dev UI with @perpetuoviator dev UI with brake light icon by @berno22 - Thank you both!
+
 - <b>Added moar JSON parameters</b>:  
 
 <b>Note</b> that because Big Model sucks up more power I've forced the battery limit charging to 85-90% until I get a handle on the charge rates necessary to support Big Model in the car.  For now you cannot change the values.  (I will relax this in a future update)
