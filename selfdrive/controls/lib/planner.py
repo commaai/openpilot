@@ -431,7 +431,10 @@ class Planner(object):
     try:
       LongitudinalMpc.get_relative_velocity(self.lead_1.vRel)
     except: #if no lead car
-      LongitudinalMpc.get_relative_velocity(0)
+      try:
+        LongitudinalMpc.get_relative_velocity(0.0)
+      except TypeError:
+        None
 
     enabled = (long_control_state == LongCtrlState.pid) or (long_control_state == LongCtrlState.stopping)
     following = self.lead_1.status and self.lead_1.dRel < 45.0 and self.lead_1.vLeadK > v_ego and self.lead_1.aLeadK > 0.0
