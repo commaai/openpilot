@@ -42,6 +42,7 @@ _A_TOTAL_MAX_BP = [0., 25., 40.]
 _FCW_A_ACT_V = [-3., -2.]
 _FCW_A_ACT_BP = [0., 30.]
 
+relative_velocity = 0.0 #lead car velocity
 
 def calc_cruise_accel_limits(v_ego, following):
   a_cruise_min = interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V)
@@ -197,7 +198,6 @@ class LongitudinalMpc(object):
     self.lastTR = 2
     self.last_cloudlog_t = 0.0
     self.last_cost = 0
-    self.rel_vel = 0
 
   def send_mpc_solution(self, qp_iterations, calculation_time):
     qp_iterations = max(0, qp_iterations)
@@ -230,12 +230,9 @@ class LongitudinalMpc(object):
     self.cur_state[0].v_ego = v
     self.cur_state[0].a_ego = a
 
-  def get_relative_velocity(self, l):
-    self.rel_vel = l
-
   def generateTR(self, velocity):
     neural_network = FDistanceNet()
-    return round(neural_network.think(np.array([velocity, self.rel_vel])), 2)
+    return round(neural_network.think(np.array([velocity, relative_velocity])), 2)
 
   def generate_cost(self, distance):
     x = [.9, 1.8, 2.7]
@@ -408,6 +405,8 @@ class Planner(object):
     self.v_acc_future = min([self.mpc1.v_mpc_future, self.mpc2.v_mpc_future, v_cruise_setpoint])
 
   def update(self, CS, CP, VM, PP, live20, live100, md, live_map_data):
+    global relative_velocity
+    
     """Gets called when new live20 is available"""
     cur_time = live20.logMonoTime / 1e9
     v_ego = CS.carState.vEgo
@@ -429,12 +428,9 @@ class Planner(object):
     self.lead_2 = live20.live20.leadTwo
     
     try:
-      LongitudinalMpc.get_relative_velocity(self.lead_1.vRel)
+      relative_velocity = self.lead_1.vRel
     except: #if no lead car
-      try:
-        LongitudinalMpc.get_relative_velocity(0.0)
-      except TypeError:
-        None
+      relative_velocity = 0.0
 
     enabled = (long_control_state == LongCtrlState.pid) or (long_control_state == LongCtrlState.stopping)
     following = self.lead_1.status and self.lead_1.dRel < 45.0 and self.lead_1.vLeadK > v_ego and self.lead_1.aLeadK > 0.0
