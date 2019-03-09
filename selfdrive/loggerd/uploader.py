@@ -11,7 +11,6 @@ import requests
 import traceback
 import threading
 import subprocess
-from selfdrive.car.modules.UIEV_module import UIEvents
 
 from collections import Counter
 from selfdrive.swaglog import cloudlog
@@ -96,7 +95,6 @@ class Uploader(object):
     self.dongle_id = dongle_id
     self.access_token = access_token
     self.root = root
-    self.UE = UIEvents(self)
     self.upload_thread = None
 
     self.last_resp = None
@@ -254,7 +252,6 @@ class Uploader(object):
         try:
           os.unlink(fn) # delete the file
         except OSError:
-          self.UE.custom_alert_message(2,"Delete Error. Contact Arne Immediately",200,3)
           pass
           
         success = True
