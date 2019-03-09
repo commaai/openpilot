@@ -137,9 +137,15 @@ def main():
   """ Default rules """
   DE.add_rule({"highway": "motorway"}, "none")
   DE.add_rule({"highway": "living_street"}, "10")
+  DE.add_rule({"highway": "residential"}, "30")
   DE.add_rule({"zone:traffic": "DE:rural"}, "100")
   DE.add_rule({"zone:traffic": "DE:urban"}, "50")
+  DE.add_rule({"zone:maxspeed": "DE:30"}, "30")
+  DE.add_rule({"zone:maxspeed": "DE:urban"}, "50")
+  DE.add_rule({"zone:maxspeed": "DE:rural"}, "100")
+  DE.add_rule({"zone:maxspeed": "DE:motorway"}, "none")
   DE.add_rule({"bicycle_road": "yes"}, "30")
+  
 
   """ --- DO NOT MODIFY CODE BELOW THIS LINE --- """
   """ --- ADD YOUR COUNTRY OR STATE ABOVE --- """
