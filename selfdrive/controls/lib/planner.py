@@ -134,7 +134,53 @@ class FCWChecker(object):
 
     return False
 
+class FDistanceNet(): # basic neural network based off sigmoid function
+  def __init__(self):
+    self.synaptic_weights = np.array([[3.0327508], [-2.07414288]]) # accurate trained values
 
+  def remap_range(self, value, remapType):
+    if remapType == "dist":
+      x = [1.0, 2.7] # in seconds
+      y = [0, 1.0]
+    elif remapType == "vel":
+      x = [0, 53.6448] # 120 mph
+      y = [0, 1.0]
+    elif remapType == "rel_vel":
+      x = [-8.9408, 3.12928] # -20 mph, 7 mph
+      y = [0, 1.0]
+    elif remapType == "rvs_dist":
+      x = [0, 1.0]
+      y = [.67, 2.7]
+    elif remapType == "rvs_vel":
+      x = [0, 1.0]
+      y = [0, 53.6448]
+    elif remapType == "rvs_rel_vel":
+      x = [0, 1.0]
+      y = [-8.9408, 3.12928]
+
+    remapped = (float(value) - float(x[0])) / (float(x[1]) - float(x[0])) * (float(y[1]) - float(y[0])) + float(y[0])
+    remapped = min(max(remapped, y[0]), y[1]) # limit range output between min and max outputs
+    return remapped
+
+  def sigmoid(self, x):
+    return 1 / (1 + np.exp(-x))
+
+  def sigmoid_derivative(self, x):
+    return x * (1 - x)
+
+  def think(self, inputs):
+    inputs = inputs.astype(float)
+    inputs[0] = self.remap_range(inputs[0], "vel") # remap input values to 0 to 1 so we can evaluate with sigmoid function
+    inputs[1] = self.remap_range(inputs[1], "rel_vel")
+    try:
+      output = self.sigmoid(np.dot(inputs, self.synaptic_weights))
+    except:
+      print(inputs)
+      print(self.synaptic_weights)
+      output = self.sigmoid(np.dot(inputs, self.synaptic_weights))
+
+    return self.remap_range(output[0], "rvs_dist") # reverse remap back to seconds
+  
 class LongitudinalMpc(object):
   def __init__(self, mpc_id, live_longitudinal_mpc):
     self.live_longitudinal_mpc = live_longitudinal_mpc
@@ -151,7 +197,6 @@ class LongitudinalMpc(object):
     self.lastTR = 2
     self.last_cloudlog_t = 0.0
     self.last_cost = 0
-    self.speed_list = []
     self.rel_vel = 0
 
   def send_mpc_solution(self, qp_iterations, calculation_time):
@@ -185,45 +230,12 @@ class LongitudinalMpc(object):
     self.cur_state[0].v_ego = v
     self.cur_state[0].a_ego = a
 
-  def get_average(self, numbers):
-    try:
-      return float(sum(numbers)) / len(numbers)
-    except ZeroDivisionError:
-      return 0.0
-
-  def split_list(self, a_list):
-    half = len(a_list) // 2
-    return a_list[:half], a_list[half:]
-
-  def get_velocity(self, l):
+  def get_relative_velocity(self, l):
     self.rel_vel = l
 
-  def acceleration_status(self):
-    s = self.split_list(self.speed_list)
-    percentage_value = 0.0268  # this is .5 mph/second
-    percentage_change = abs(abs(self.get_average(s[0]) - self.get_average(s[1])) / self.get_average([self.get_average(s[0]), self.get_average(s[1])]))
-
-    if (self.get_average(s[0]) > self.get_average(s[1]) and percentage_change > percentage_value) or self.rel_vel <= -6.710808: # should increase following distance sooner than detecting car's own deceleration, -6.7... is -3mph
-      return -1 # decelerating
-    elif self.get_average(s[0]) < self.get_average(s[1]) and percentage_change > percentage_value or self.rel_vel >= 6.710808: # true if car is accelerating at .5mph/s in latest two second period
-      return 1 # accelerating
-    else:
-      return 0 # constant speed
-
-  def generateTR(self, speed):
-    acceleration_code = self.acceleration_status()
-    if acceleration_code == 1:
-      x = [0, 30, 90, 110, 120, 180]
-      y = [1.0, 1.2, 1.8, 2.0, 2.2, 2.5]
-    elif acceleration_code == -1:
-      x = [0, 7, 30, 90, 110, 120, 180]
-      y = [1.6, 1.8, 1.9, 1.8, 2.2, 2.5, 2.7]
-    else: # constant speed
-      x = [0, 30, 90, 110, 120, 180]
-      y = [1.6, 1.4, 1.8, 2.0, 2.5, 2.7]
-    # return round(np.interp(speed, x, y), 2)
-    f = interpolate.interp1d(x, y, fill_value='extrapolate') # interpolate above array
-    return round(float(f(speed)[()]), 2)
+  def generateTR(self, velocity):
+    neural_network = FDistanceNet()
+    return round(neural_network.think(np.array([velocity, self.rel_vel])), 2)
 
   def generate_cost(self, distance):
     x = [.9, 1.8, 2.7]
@@ -275,14 +287,10 @@ class LongitudinalMpc(object):
         #self.lastTR = 0
     else:
       if CS.carState.readdistancelines == 2:
-        if len(self.speed_list) > 200 and len(self.speed_list) != 0:
-          self.speed_list.pop(0)
-        self.speed_list.append(v_ego * 3.6)
-
-        generatedTR = self.generateTR(v_ego * 3.6)
+        generatedTR = self.generateTR(v_ego)
         TR = generatedTR
 
-        if abs(self.generate_cost(generatedTR)-self.last_cost) > .15:
+        if abs(self.generate_cost(generatedTR) - self.last_cost) > .15:
           self.libmpc.init(MPC_COST_LONG.TTC, self.generate_cost(generatedTR), MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
           self.last_cost = self.generate_cost(generatedTR)
           
@@ -421,9 +429,9 @@ class Planner(object):
     self.lead_2 = live20.live20.leadTwo
     
     try:
-      LongitudinalMpc.get_velocity(self.lead_1.vRel)
-    except:
-      None    
+      LongitudinalMpc.get_relative_velocity(self.lead_1.vRel)
+    except: #if no lead car
+      LongitudinalMpc.get_relative_velocity(0)
 
     enabled = (long_control_state == LongCtrlState.pid) or (long_control_state == LongCtrlState.stopping)
     following = self.lead_1.status and self.lead_1.dRel < 45.0 and self.lead_1.vLeadK > v_ego and self.lead_1.aLeadK > 0.0
