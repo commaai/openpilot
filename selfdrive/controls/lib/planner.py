@@ -233,7 +233,7 @@ class LongitudinalMpc(object):
   def get_relative_velocity(self, l):
     self.rel_vel = l
 
-  def generateTR(self, speed):
+  def generateTR(self, velocity):
     neural_network = FDistanceNet()
     return round(neural_network.think(np.array([velocity, self.rel_vel])), 2)
 
