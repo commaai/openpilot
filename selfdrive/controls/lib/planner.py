@@ -429,7 +429,7 @@ class Planner(object):
     self.lead_2 = live20.live20.leadTwo
     
     try:
-      LongitudinalMpc.relative(self.lead_1.vRel)
+      LongitudinalMpc.get_relative_velocity(self.lead_1.vRel)
     except: #if no lead car
       LongitudinalMpc.get_relative_velocity(0)
 
