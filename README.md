@@ -26,15 +26,11 @@ List of changes and tweaks (latest changes at the top):
 
 - <b>Added moar JSON parameters</b>:  
 
-<b>Note</b> that because Big Model sucks up more power I've forced the battery limit charging to 85-90% until I get a handle on the charge rates necessary to support Big Model in the car.  For now you cannot change the values.  (I will relax this in a future update)
-
 "battPercOff": "25",  Turn off the Eon if the Eon battery percentage dips below this value - NOTE this only works when the Eon is NOT powered by the USB cable!
 
 "brakeStoppingTarget": "0.25",  How much OP should mash the brakes when the car is stopped.  Increase if you live in hilly areas and need more standstill braking pressure.
 
 "carVoltageMinEonShutdown": "11800", in mV.  Eon stops charging if car battery goes below this level - NOTE: this is the DISCHARGING voltage.  When the Eon is drawing current the voltage on the battery DROPS.  This is NOT the standing no-load voltage.  I would recommended that you unplug your Eon if you are away from your vehicle for more than a few hours and put a battery charger on your car's battery weekly to avoid wrecking your battery if your Eon stays powered when you shut off the car.
-
-- <b>Big Model preview</b>:  NOTE I HAVE REMOVED THIS FOR NOW DUE TO BIG BATTERY DRAIN AND NO PERCEIVED BENEFIT:  Applied Big Model commit.  
 
 - <b>Tone down PID tuning for Pilot and Ridgline for 0.5.9</b>:  Comma changed latcontrol for 0.5.9, so I had to tone down the PID tuning, reducing steerKpV and steerKiV (to 0.45 and 0.135) because of a slow ping-pong on my 2018 Pilot.  Wheel shaking on 2017 Pilots with 0.5.9 have been reported and this change should help, but may not be sufficient for the 2017 model (and possibly 2016).  2016/7 owners may need to adjust steerKpV and steerKiV manually back to 0.38 and 0.11 in /data/openpilot/selfdrive/car/honda/interface.py to reduce the shake.
 
