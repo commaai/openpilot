@@ -63,7 +63,7 @@ class CarState(object):
     self.CP = CP
     # initialize can parser
     self.alcaLabels = ["MadMax","Normal","Wifey"]
-    self.alcaMode = 2
+    self.alcaMode = int(self.kegman.conf['lastALCAMode'])     # default to last ALCAmode on startup
     self.car_fingerprint = CP.carFingerprint
     self.cruise_buttons = CruiseButtons.UNPRESS
     self.prev_distance_button = 0
@@ -151,8 +151,12 @@ class CarState(object):
       if (id == 1) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="alca":
           if self.cstm_btns.btns[id].btn_label2 == self.alcaLabels[self.alcaMode]:
             self.alcaMode = (self.alcaMode + 1 ) % 3
+            self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last distance bar setting to file
+            self.kegman.write_config(self.kegman.conf)
           else:
             self.alcaMode = 0
+            self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last distance bar setting to file
+            self.kegman.write_config(self.kegman.conf)
           self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
           self.cstm_btns.hasChanges = True
       else:
