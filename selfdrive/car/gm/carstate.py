@@ -11,6 +11,7 @@ from selfdrive.car.modules.UIEV_module import UIEvents
 from selfdrive.car.gm.values import DBC, CAR, parse_gear_shifter, \
                                     CruiseButtons, is_eps_status_ok, \
                                     STEER_THRESHOLD, SUPERCRUISE_CARS
+from selfdrive.kegman_conf import kegman_conf
 
 def get_powertrain_can_parser(CP, canbus):
   # this function generates lists for signal, messages and initial values
@@ -58,6 +59,7 @@ def get_powertrain_can_parser(CP, canbus):
 
 class CarState(object):
   def __init__(self, CP, canbus):
+    self.kegman = kegman_conf()
     self.CP = CP
     # initialize can parser
     self.alcaLabels = ["MadMax","Normal","Wifey"]
@@ -70,7 +72,7 @@ class CarState(object):
     self.prev_left_blinker_on = False
     self.right_blinker_on = False
     self.prev_right_blinker_on = False
-    self.follow_level = 2
+    self.follow_level = int(self.kegman.conf['lastTrMode'])
     self.prev_lka_button = 0
     self.lka_button = 0
     self.lkMode = True
