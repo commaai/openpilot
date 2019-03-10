@@ -11,6 +11,7 @@ from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.honda.carstate import CarState, get_can_parser, get_cam_can_parser
 from selfdrive.car.honda.values import CruiseButtons, CAR, HONDA_BOSCH, AUDIO_HUD, VISUAL_HUD
 from selfdrive.controls.lib.planner import _A_CRUISE_MAX_V_FOLLOWING
+from selfdrive.kegman_conf import kegman_conf
 
 try:
   from selfdrive.car.honda.carcontroller import CarController
@@ -81,6 +82,7 @@ def get_compute_gb_acura():
 
 class CarInterface(object):
   def __init__(self, CP, sendcan=None):
+    kegman = kegman_conf()
     self.CP = CP
 
     self.frame = 0
@@ -424,7 +426,7 @@ class CarInterface(object):
                            c.actuators.brake > brakelights_threshold)
 
     # steering wheel
-    ret.steeringAngle = self.CS.angle_steers
+    ret.steeringAngle = self.CS.angle_steers + float(kegman.conf['angle_steers_offset'])  # deg offset
     ret.steeringRate = self.CS.angle_steers_rate
 
     # gear shifter lever
