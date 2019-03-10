@@ -246,11 +246,11 @@ class CarState(object):
       if (id == 1) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="alca":
           if self.cstm_btns.btns[id].btn_label2 == self.alcaLabels[self.alcaMode]:
             self.alcaMode = (self.alcaMode + 1 ) % 3
-            self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last distance bar setting to file
+            self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last ALCAMode setting to file
             self.kegman.write_config(self.kegman.conf)
           else:
             self.alcaMode = 0
-            self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last distance bar setting to file
+            self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last ALCAMode setting to file
             self.kegman.write_config(self.kegman.conf)
           self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
           self.cstm_btns.hasChanges = True
