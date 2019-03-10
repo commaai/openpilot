@@ -23,7 +23,7 @@ class kegman_conf():
       if "angle_steers_offset" not in self.config:
         self.config.update({"angle_steers_offset":"0"})
         self.element_updated = True
-      if "angle_steers_offset" not in self.config:
+      if "brake_distance_extra" not in self.config: # extra braking distance in m
         self.config.update({"brake_distance_extra":"1"})
         self.element_updated = True
 
@@ -37,7 +37,7 @@ class kegman_conf():
         self.write_config(self.config)
 
     else:
-      self.config = {"cameraOffset":"0.06", "lastTrMode":"1", "battChargeMin":"85", "battChargeMax":"90", "wheelTouchSeconds":"180", "battPercOff":"25", "carVoltageMinEonShutdown":"11800", "brakeStoppingTarget":"0.25", "angle_steers_offset":"0" , "brake_distance_extra":"1"}
+      self.config = {"cameraOffset":"0.06", "lastTrMode":"1", "battChargeMin":"85", "battChargeMax":"90", "wheelTouchSeconds":"1800", "battPercOff":"25", "carVoltageMinEonShutdown":"11800", "brakeStoppingTarget":"0.25", "angle_steers_offset":"0" , "brake_distance_extra":"1"}
       self.write_config(self.config)
     return self.config
 
