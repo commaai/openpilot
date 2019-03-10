@@ -155,7 +155,7 @@ class CarState(object):
     #labels for ALCA modes
     self.alcaLabels = ["MadMax","Normal","Wifey"]
     self.trLabels = ["0.9","dyn","2.7"]
-    self.alcaMode = 0
+    self.alcaMode = int(self.kegman.conf['lastALCAMode'])     # default to last ALCA Mode on startup
     self.trMode = int(self.kegman.conf['lastTrMode'])     # default to last distance interval on startup
     #if (CP.carFingerprint == CAR.MODELS):
     # ALCA PARAMS
@@ -253,16 +253,24 @@ class CarState(object):
       if (id == 0) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="alca":
           if self.cstm_btns.btns[id].btn_label2 == self.alcaLabels[self.alcaMode]:
             self.alcaMode = (self.alcaMode + 1 ) % 3
+            self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last distance bar setting to file
+            self.kegman.write_config(self.kegman.conf) 
           else:
             self.alcaMode = 0
+            self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last distance bar setting to file
+            self.kegman.write_config(self.kegman.conf) 
           self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
           self.cstm_btns.hasChanges = True
           
       elif (id == 4) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="tr":
           if self.cstm_btns.btns[id].btn_label2 == self.trLabels[self.trMode]:
             self.trMode = (self.trMode + 1 ) % 3
+            self.kegman.conf['lastTrMode'] = str(self.trMode)   # write last distance bar setting to file
+            self.kegman.write_config(self.kegman.conf)
           else:
             self.trMode = 0
+            self.kegman.conf['lastTrMode'] = str(self.trMode)   # write last distance bar setting to file
+            self.kegman.write_config(self.kegman.conf)
           self.cstm_btns.btns[id].btn_label2 = self.trLabels[self.trMode]
           self.cstm_btns.hasChanges = True
 
