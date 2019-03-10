@@ -6,6 +6,7 @@ from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.gm.values import DBC, CAR, STOCK_CONTROL_MSGS, AUDIO_HUD, SUPERCRUISE_CARS
 from selfdrive.car.gm.carstate import CarState, CruiseButtons, get_powertrain_can_parser
+from selfdrive.kegman_conf import kegman_conf
 
 try:
   from selfdrive.car.gm.carcontroller import CarController
@@ -21,6 +22,7 @@ class CanBus(object):
 
 class CarInterface(object):
   def __init__(self, CP, sendcan=None):
+    kegman = kegman_conf()
     self.CP = CP
 
     self.frame = 0
@@ -229,7 +231,7 @@ class CarInterface(object):
     ret.brakePressed = self.CS.brake_pressed
 
     # steering wheel
-    ret.steeringAngle = self.CS.angle_steers
+    ret.steeringAngle = self.CS.angle_steers + float(kegman.conf['angle_steers_offset'])  # deg offset
 
     # torque and user override. Driver awareness
     # timer resets when the user uses the steering wheel.
