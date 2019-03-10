@@ -1,27 +1,27 @@
-<b>PLEASE DO A FRESH CLONE</b>
-
 This is a fork of comma's openpilot, and contains tweaks for Hondas and GM vehicles 
 
 <b>WARNING:</b>  Do NOT depend on OP to stop the car in time if you are approaching an object which is not in motion in the same direction as your car.  The radar will NOT detect the stationary object in time to slow your car enough to stop.  If you are approaching a stopped vehicle you must disengage and brake as radars ignore objects that are not in motion.
 
-<b>NOTICE:</b>  Due to feedback I have turned on OTA updates.  You will receive updates automatically on your Eon so you don't have to reclone or git pull any longer to receive new features.  If you DO NOT want OTA updates then create a file called "/data/no_ota_updates" and it will not perform OTA updates as long as that file exists.  
+<b>NOTICE:</b>  Due to feedback I have turned on OTA updates.  You will receive updates automatically (after rebooting 2X) on your Eon so you don't have to reclone or git pull any longer to receive new features.  If you DO NOT want OTA updates then create a file called "/data/no_ota_updates" and it will not perform OTA updates as long as that file exists.  
 
 
 I will attempt to detail the changes in each of the branches here:
 
 
-<b>kegman (0.5.9)</b> - this is the default branch which does not include Gernby's resonant feed forward steering (i.e. it's comma's default steering) - it now includes GM code (needs testing)
+<b>kegman (0.5.9)</b> - this is the default branch which does not include Gernby's resonant feed forward steering (i.e. it's comma's default steering)
 
-<b>kegman-plusGernbySteering (0.5.9)</b> - this branch has everything in the kegman branch PLUS Gernby's latest resonant mpc interp steering
+<b>kegman-plusGernbySteering (0.5.9)</b> - this branch has everything in the kegman branch PLUS Gernby's latest resonant mpc interp steering.  NEW! Now includes a primitive tuning script for your cell phone (or laptop) for live tuning (see feature section below for details)
 
-<b>kegman-plusGernbySteering (0.5.8)</b> - this branch is everything in the kegman branch PLUS a Gernby's LATEST feed forward steering.  This also includes working code for GM cars.  (thx to @jamezz for the code and @cryptokylan for submitting the GM stuff!)
+<b>kegman-plusGernbySteering-0.5.8</b> - Older version of Gernby's steering branch.  Will not be updated.
 
-<b>kegman-plusPilotAwesomeness (0.5.8 only)</b> - <u>If you have a Honda Pilot, OR Honda Ridgeline use this branch.</u>  It has everything in kegman branch, uses my PID tuning + a magical older version of Gernby's FF steering which just happened to work very well across all driving conditions including slanted (crowned roads), wind gusts, road bumps, centering on curves, and keeping proper distance from curbs.  I have yet to test a combination of FF steering and PID tuning that can beat the performance of this for Honda Pilots.
-
-Note above comments apply to Clarity testing branches as well.
+<b>kegman-plusPilotAwesomeness (0.5.8 only)</b> - <u>Older version of Gernbys steering branch.  Will not be updated.
+  
+<b>kegman-plusClarity (0.5.9)</b> - branch specifically for the Honda Clarity (does not contain Gernby steering)
 
 
 List of changes and tweaks (latest changes at the top):
+- <b>Added primitive tuning script</b>: To invoke live tuning:  (a) turn on tethering on your Eon,  (b) install JuiceSSH or similar and connect your cellphone to the wifi of the Eon using 192.168.43.1 and import the Comma private key,  (c) in JuiceSSH in the SSH session on the Eon issue cd /data/openpilot command, then ./tune.sh.  The text UI will be shown.  (d) turn "tuneGernby" to a "1"  (e) start driving and change the values to tune your steering.  It is best to have a cell phone mount in your car.  Note:  It takes 3 seconds for any changes to take effect.  
+
 - <b>Replaced dev UI</b> with @perpetuoviator dev UI with brake light icon by @berno22 - Thank you both!
 
 - <b>Added moar JSON parameters</b>:  
