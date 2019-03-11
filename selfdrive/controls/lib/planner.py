@@ -64,6 +64,24 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   a_target[1] = min(a_target[1], a_x_allowed)
   return a_target
 
+def scale_time_gap(v_ego, commanded_time_gap):
+  """
+  Raise the time gap as we slow down. Use the full time gap at 30mph and increase
+  it to 1.8s at 25mph
+
+  Keyword arguments:
+  v_ego -- the vehicle speed in m/s
+  commanded_time_gap -- the time gap the set by the user in s
+
+  See Comma Buttons -- https://github.com/rhinodavid/CommaButtons
+  """
+  ms30 = 30 * CV.MPH_TO_MS
+  ms25 = 25 * CV.MPH_TO_MS
+  if v_ego > ms30:
+    return commanded_time_gap
+  if v_ego < ms25:
+    return 1.8
+  return round(float(np.interp(v_ego, [ms25, ms30], [1.8, commanded_time_gap])), 2)
 
 class FCWChecker(object):
   def __init__(self):
@@ -212,9 +230,10 @@ class LongitudinalMpc(object):
     # Calculate mpc
     t = sec_since_boot()
     # hardcode follow time for now
-    follow_time = 1.8
+    commanded_time_gap = 1.8
     distance_cost = 0.1
-    n_its = self.libmpc.run_mpc(self.cur_state, self.mpc_solution, self.a_lead_tau, a_lead, follow_time, distance_cost)
+    time_gap_value = scale_time_gap(v_ego, commanded_time_gap)
+    n_its = self.libmpc.run_mpc(self.cur_state, self.mpc_solution, self.a_lead_tau, a_lead, time_gap_value, distance_cost)
     duration = int((sec_since_boot() - t) * 1e9)
     self.send_mpc_solution(n_its, duration)
 
