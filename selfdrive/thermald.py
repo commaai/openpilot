@@ -188,7 +188,11 @@ def thermald_thread():
     msg = read_thermal()
 
     # loggerd is gated based on free space
-    statvfs = os.statvfs(ROOT)
+    try:
+      statvfs = os.statvfs(ROOT)
+    except OSError:
+      os.mkdir(ROOT)
+      statvfs = os.statvfs(ROOT)
     avail = (statvfs.f_bavail * 1.0)/statvfs.f_blocks
 
     # thermal message now also includes free space
