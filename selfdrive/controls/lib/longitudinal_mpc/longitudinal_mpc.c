@@ -14,13 +14,14 @@
 
 #define N           ACADO_N   /* Number of intervals in the horizon. */
 
+const int STEP_MULTIPLIER = 3;
+
 ACADOvariables acadoVariables;
 ACADOworkspace acadoWorkspace;
 
 typedef struct {
   double x_ego, v_ego, a_ego, x_l, v_l, a_l;
 } state_t;
-
 
 typedef struct {
   double x_ego[N+1];
@@ -33,10 +34,13 @@ typedef struct {
 	double cost;
 } log_t;
 
-void init(double ttcCost, double distanceCost, double accelerationCost, double jerkCost){
+void init(double ttcCost, double defaultDistanceCost, double accelerationCost, double jerkCost){
+  // Comma Buttons https://github.com/rhinodavid/CommaButtons
+  // set the defaultFollowDistance cost here, but we'll add it as a parameter of the update
+  // function in order to change it as we change the time gap
+
   acado_initializeSolver();
   int    i;
-  const int STEP_MULTIPLIER = 3;
 
   /* Initialize the states and controls. */
   for (i = 0; i < NX * (N + 1); ++i)  acadoVariables.x[ i ] = 0.0;
@@ -56,12 +60,12 @@ void init(double ttcCost, double distanceCost, double accelerationCost, double j
       f = STEP_MULTIPLIER;
     }
     acadoVariables.W[16 * i + 0] = ttcCost * f; // exponential cost for time-to-collision (ttc)
-    acadoVariables.W[16 * i + 5] = distanceCost * f; // desired distance
+    acadoVariables.W[16 * i + 5] = defaultDistanceCost * f; // desired distance
     acadoVariables.W[16 * i + 10] = accelerationCost * f; // acceleration
     acadoVariables.W[16 * i + 15] = jerkCost * f; // jerk
   }
   acadoVariables.WN[0] = ttcCost * STEP_MULTIPLIER; // exponential cost for danger zone
-  acadoVariables.WN[4] = distanceCost * STEP_MULTIPLIER; // desired distance
+  acadoVariables.WN[4] = defaultDistanceCost * STEP_MULTIPLIER; // desired distance
   acadoVariables.WN[8] = accelerationCost * STEP_MULTIPLIER; // acceleration
 
 }
@@ -118,13 +122,24 @@ void init_with_simulation(double v_ego, double x_l_0, double v_l_0, double a_l_0
   for (i = 0; i < NYN; ++i)  acadoVariables.yN[ i ] = 0.0;
 }
 
-int run_mpc(state_t * x0, log_t * solution, double l, double a_l_0, double follow_time){
+int run_mpc(state_t * x0, log_t * solution, double l, double a_l_0, double time_gap, double distance_cost){
   int i;
+
+  // For CommaButtons https://github.com/rhinodavid/CommaButtons
+  // Update the distance_cost as we change the time gap
+  for (i = 0; i < N; i++) {
+    int f = 1;
+    if (i > 4) {
+      f = STEP_MULTIPLIER;
+    }
+    acadoVariables.W[16 * i + 5] = distance_cost * f; // desired distance
+  }
+  acadoVariables.WN[4] = distance_cost * STEP_MULTIPLIER; // desired distance
 
   for (i = 0; i <= NOD * N; i+= NOD){
     acadoVariables.od[i] = l;
     acadoVariables.od[i+1] = a_l_0;
-    acadoVariables.od[i+2] = follow_time;
+    acadoVariables.od[i+2] = time_gap;
   }
 
   acadoVariables.x[0] = acadoVariables.x0[0] = x0->x_ego;
