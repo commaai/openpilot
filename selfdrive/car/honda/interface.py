@@ -13,6 +13,8 @@ from selfdrive.car.honda.values import CruiseButtons, CAR, HONDA_BOSCH, AUDIO_HU
 from selfdrive.controls.lib.planner import _A_CRUISE_MAX_V_FOLLOWING
 from selfdrive.kegman_conf import kegman_conf
 
+kegman = kegman_conf()
+
 try:
   from selfdrive.car.honda.carcontroller import CarController
 except ImportError:
@@ -82,7 +84,6 @@ def get_compute_gb_acura():
 
 class CarInterface(object):
   def __init__(self, CP, sendcan=None):
-    kegman = kegman_conf()
     self.CP = CP
 
     self.frame = 0
