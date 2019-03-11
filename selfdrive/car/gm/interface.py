@@ -8,6 +8,8 @@ from selfdrive.car.gm.values import DBC, CAR, STOCK_CONTROL_MSGS, AUDIO_HUD, SUP
 from selfdrive.car.gm.carstate import CarState, CruiseButtons, get_powertrain_can_parser
 from selfdrive.kegman_conf import kegman_conf
 
+kegman = kegman_conf()
+
 try:
   from selfdrive.car.gm.carcontroller import CarController
 except ImportError:
@@ -22,7 +24,6 @@ class CanBus(object):
 
 class CarInterface(object):
   def __init__(self, CP, sendcan=None):
-    kegman = kegman_conf()
     self.CP = CP
 
     self.frame = 0
