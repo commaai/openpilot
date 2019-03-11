@@ -9,7 +9,7 @@ from selfdrive.car.toyota.values import ECU, check_ecu_msgs, CAR
 from selfdrive.swaglog import cloudlog
 from selfdrive.kegman_conf import kegman_conf
 
-
+kegman = kegman_conf()
 
 try:
   from selfdrive.car.toyota.carcontroller import CarController
@@ -19,7 +19,6 @@ except ImportError:
 
 class CarInterface(object):
   def __init__(self, CP, sendcan=None):
-    kegman = kegman_conf()
     self.CP = CP
     self.VM = VehicleModel(CP)
 
