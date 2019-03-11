@@ -213,8 +213,6 @@ typedef struct UIState {
   int img_map;
   int img_brake;
 
-  zsock_t *uievent_sock;
-
   zsock_t *thermal_sock;
   void *thermal_sock_raw;
   zsock_t *model_sock;
@@ -300,7 +298,6 @@ typedef struct UIState {
   int touchTimeout;
 
 } UIState;
-
 
 static int last_brightness = -1;
 static void set_brightness(UIState *s, int brightness) {
@@ -484,9 +481,6 @@ static void ui_init(UIState *s) {
   pthread_cond_init(&s->bg_cond, NULL);
 
   // init connections
-  s->uievent_sock = zsock_new_pub("tcp://0.0.0.0:8064");
-  assert(s->uievent_sock);
-
   s->thermal_sock = zsock_new_sub(">tcp://127.0.0.1:8005", "");
   assert(s->thermal_sock);
   s->thermal_sock_raw = zsock_resolve(s->thermal_sock);
@@ -598,8 +592,6 @@ static void ui_init(UIState *s) {
       free(value);
     }
   }
-
-  zsock_send(s->uievent_sock, "i", UIEVENT_STARTUP);
 }
 
 static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
@@ -925,25 +917,21 @@ static void draw_steering(UIState *s, float curvature) {
 static void draw_frame(UIState *s) {
   const UIScene *scene = &s->scene;
 
+  mat4 out_mat;
   float x1, x2, y1, y2;
   if (s->scene.frontview) {
+    out_mat = device_transform; // full 16/9
     // flip horizontally so it looks like a mirror
-    x1 = 0.0;
-    x2 = 1.0;
-    y1 = 1.0;
-    y2 = 0.0;
+    x1 = (float)scene->front_box_x / s->rgb_front_width;
+    x2 = (float)(scene->front_box_x + scene->front_box_width) / s->rgb_front_width;
+    y2 = (float)scene->front_box_y / s->rgb_front_height;
+    y1 = (float)(scene->front_box_y + scene->front_box_height) / s->rgb_front_height;
   } else {
+    out_mat = matmul(device_transform, frame_transform);
     x1 = 1.0;
     x2 = 0.0;
     y1 = 1.0;
     y2 = 0.0;
-  }
-
-  mat4 out_mat;
-  if (s->scene.frontview || s->scene.fullview) {
-    out_mat = matmul(device_transform, full_to_wide_frame_transform);
-  } else {
-    out_mat = matmul(device_transform, frame_transform);
   }
 
   const uint8_t frame_indicies[] = {0, 1, 2, 0, 2, 3};
@@ -1369,32 +1357,6 @@ static void ui_draw_button(NVGcontext *vg, int x, int y, int w, int h, const cha
   nvgFillColor(vg, nvgRGBA(255, 255, 255, 200));
   nvgText(vg, x + w/2, y + (int)(40 * 2.5) + 5, label, NULL);
 }
-
-const int buttonCount = 4;
-const char *buttons[] = { "35", "55", "75", "OFF" };
-
-static void ui_draw_buttons(UIState *s) {
-    const UIScene *scene = &s->scene;
-    const int w = 180;
-    const int x = scene->ui_viz_rx + scene->ui_viz_rw/2 - ((buttonCount*w + (buttonCount-1)*20)/2);
-    const int y = box_h - bdr_is - 140;
-    const int h = 150;
-    for(int i=0;i<buttonCount;i++)
-      ui_draw_button(s->vg, x + (w+20) * i, y, w, h, buttons[i], scene->spammedButton==i);
-}
-
-static int test_button_touch(UIState *s, int tx, int ty) {
-    const UIScene *scene = &s->scene;
-    const int w = 180;
-    const int x = scene->ui_viz_rx + scene->ui_viz_rw/2 - ((buttonCount*w + (buttonCount-1)*20)/2);
-    const int y = box_h - bdr_is - 140;
-    const int h = 150;
-    for(int i=0;i<buttonCount;i++)
-      if(tx>=x+i*(w+20) && tx<=x+w+i*(w+20) && ty>=y && ty<=y+h)
-        return i;
-    return -1;
-}
-
 static void bb_ui_draw_UI(UIState *s)
 {
   /*
@@ -1432,16 +1394,6 @@ static void bb_ui_draw_UI(UIState *s)
     bb_ui_draw_measures_right(s, bb_dml_x, bb_dml_y, bb_dml_w);
     bb_ui_draw_measures_left(s, bb_dmr_x, bb_dmr_y, bb_dmr_w);
 
-    if(ds.buttonsOn)
-      ui_draw_buttons(s);
-  /*
-  }
-  if (tri_state_switch == 3)
-  {
-    ui_draw_buttons(s);
-    //ui_draw_vision_grid(s);
-  }
-  */
 }
 
 //BB END: functions added for the display of various items
@@ -1672,7 +1624,7 @@ static void ui_draw_vision_speed(UIState *s) {
   if (s->is_metric) {
     snprintf(speed_str, sizeof(speed_str), "%d", (int)(speed * 3.6 + 0.5));
   } else {
-    snprintf(speed_str, sizeof(speed_str), "%d", (int)(speed * 2.2369363 + 0.5));
+    snprintf(speed_str, sizeof(speed_str), "%d", (int)(speed * 2.2374144 + 0.5));
   }
   nvgFontFace(s->vg, "sans-bold");
   nvgFontSize(s->vg, 96*2.5);
@@ -1969,13 +1921,13 @@ static void ui_draw_blank(UIState *s) {
   // draw IP address
   nvgBeginPath(s->vg);
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER| NVG_ALIGN_TOP);
-  nvgFontFace(s->vg, "OpenSans-SemiBold");
+  nvgFontFace(s->vg, "sans-semibold");
   nvgFontSize(s->vg, 15 * 2.5);
   nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 200));
   nvgText(s->vg, 150, 292, ds.ipAddress, NULL);
   if(ds.tx_throughput>0) {
     char str[64];
-    sprintf(str, "Upload Speed: %d KB/s", ds.tx_throughput);
+    sprintf(str, "%d KB/s", ds.tx_throughput);
     nvgText(s->vg, 150, 217, str, NULL);
   }
 }
@@ -2833,11 +2785,6 @@ int main() {
       // touch event will still happen :(
       set_awake(s, true);
 
-      if(s->vision_connected && s->plus_state == 0 && s->ignoreLayout) {
-        s->scene.spammedButton = test_button_touch(s, touch_x, touch_y);
-        s->scene.spammedButtonTimeout = s->scene.spammedButton>3?6:1; // 6 = approx 200ms @ 30 fps
-      }
-      
       if(touch_x>=vwp_w-100 && touch_y>=vwp_h-100 && s->touchTimeout==0) {
         toggleLog();
         s->touchTimeout = 30;
@@ -2848,10 +2795,6 @@ int main() {
     }
     if(s->touchTimeout>0)
       s->touchTimeout--;
-
-    // send button event
-    if(s->scene.spammedButton!=-1) 
-      zsock_send(s->uievent_sock, "i", s->scene.spammedButton+1);
 
     // manage wakefulness
     if (s->awake_timeout > 0) {
@@ -2920,9 +2863,6 @@ int main() {
 
   err = pthread_join(connect_thread_handle, NULL);
   assert(err == 0);
-
-  zsock_send(s->uievent_sock, "i", UIEVENT_SHUTDOWN);
-  zsock_destroy(&s->uievent_sock);
 
   return 0;
 }
