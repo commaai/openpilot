@@ -202,6 +202,41 @@ class LongitudinalMpc(object):
     self.last_cloudlog_t = 0.0
     self.last_cost = 0
 
+  def calculate_tr(self, v_ego, read_distance_lines):
+    """
+    Returns a follow time gap in seconds based on car state values
+
+    Parameters:
+    v_ego: Vehicle speed [m/s]
+    read_distance_lines: ACC setting showing how much follow distance the user has set [1|2|3]
+    """
+    if v_ego < 2.0:
+      return 1.8 # under 7km/hr use a TR of 1.8 seconds
+
+    if read_distance_lines == 2:
+      generatedTR = self.generateTR(v_ego)
+
+      if abs(self.generate_cost(generatedTR) - self.last_cost) > .15:
+        self.libmpc.init(MPC_COST_LONG.TTC, self.generate_cost(generatedTR), MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
+        self.last_cost = self.generate_cost(generatedTR)
+
+      return generatedTR
+
+    if read_distance_lines == 1:
+      if read_distance_lines != self.lastTR:
+        self.libmpc.init(MPC_COST_LONG.TTC, 1.0, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
+        self.lastTR = read_distance_lines
+      return 0.9 # 10m at 40km/hr
+
+    if read_distance_lines == 3:
+      if read_distance_lines != self.lastTR:
+        self.libmpc.init(MPC_COST_LONG.TTC, 0.05, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
+        self.lastTR = read_distance_lines
+        return 2.7 # 30m at 40km/hr
+
+    return 1.8 # if readdistancelines = 0
+
+
   def send_mpc_solution(self, qp_iterations, calculation_time):
     qp_iterations = max(0, qp_iterations)
     dat = messaging.new_message()
@@ -280,37 +315,7 @@ class LongitudinalMpc(object):
 
     # Calculate mpc
     t = sec_since_boot()
-    if v_ego < 2.0:
-      TR=1.8 # under 7km/hr use a TR of 1.8 seconds
-      #if self.lastTR > 0:
-        #self.libmpc.init(MPC_COST_LONG.TTC, 0.1, PC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
-        #self.lastTR = 0
-    else:
-      if CS.carState.readdistancelines == 2:
-        generatedTR = self.generateTR(v_ego)
-        TR = generatedTR
-
-        if abs(self.generate_cost(generatedTR) - self.last_cost) > .15:
-          self.libmpc.init(MPC_COST_LONG.TTC, self.generate_cost(generatedTR), MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
-          self.last_cost = self.generate_cost(generatedTR)
-          
-      elif CS.carState.readdistancelines == 1:
-        if CS.carState.readdistancelines == self.lastTR:
-          TR=0.9 # 10m at 40km/hr
-        else:
-          TR=0.9
-          self.libmpc.init(MPC_COST_LONG.TTC, 1.0, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
-          self.lastTR = CS.carState.readdistancelines
-      elif CS.carState.readdistancelines == 3:
-        if CS.carState.readdistancelines == self.lastTR:
-          TR=2.7
-        else:
-          TR=2.7 # 30m at 40km/hr
-          self.libmpc.init(MPC_COST_LONG.TTC, 0.05, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
-          self.lastTR = CS.carState.readdistancelines
-      else:
-        TR=1.8 # if readdistancelines = 0
-    #print TR
+    TR = self.calculate_tr(v_ego, CS.carState.readdistancelines)
     n_its = self.libmpc.run_mpc(self.cur_state, self.mpc_solution, self.a_lead_tau, a_lead, TR)
     duration = int((sec_since_boot() - t) * 1e9)
     self.send_mpc_solution(n_its, duration)
