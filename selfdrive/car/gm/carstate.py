@@ -11,6 +11,7 @@ from selfdrive.car.modules.UIEV_module import UIEvents
 from selfdrive.car.gm.values import DBC, CAR, parse_gear_shifter, \
                                     CruiseButtons, is_eps_status_ok, \
                                     STEER_THRESHOLD, SUPERCRUISE_CARS
+from selfdrive.kegman_conf import kegman_conf
 
 def get_powertrain_can_parser(CP, canbus):
   # this function generates lists for signal, messages and initial values
@@ -58,10 +59,11 @@ def get_powertrain_can_parser(CP, canbus):
 
 class CarState(object):
   def __init__(self, CP, canbus):
+    self.kegman = kegman_conf()
     self.CP = CP
     # initialize can parser
     self.alcaLabels = ["MadMax","Normal","Wifey"]
-    self.alcaMode = 2
+    self.alcaMode = int(self.kegman.conf['lastALCAMode'])     # default to last ALCAmode on startup
     self.car_fingerprint = CP.carFingerprint
     self.cruise_buttons = CruiseButtons.UNPRESS
     self.prev_distance_button = 0
@@ -70,7 +72,7 @@ class CarState(object):
     self.prev_left_blinker_on = False
     self.right_blinker_on = False
     self.prev_right_blinker_on = False
-    self.follow_level = 2
+    self.follow_level = int(self.kegman.conf['lastTrMode'])
     self.prev_lka_button = 0
     self.lka_button = 0
     self.lkMode = True
@@ -149,8 +151,12 @@ class CarState(object):
       if (id == 1) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="alca":
           if self.cstm_btns.btns[id].btn_label2 == self.alcaLabels[self.alcaMode]:
             self.alcaMode = (self.alcaMode + 1 ) % 3
+            self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last distance bar setting to file
+            self.kegman.write_config(self.kegman.conf)
           else:
             self.alcaMode = 0
+            self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last distance bar setting to file
+            self.kegman.write_config(self.kegman.conf)
           self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
           self.cstm_btns.hasChanges = True
       else:

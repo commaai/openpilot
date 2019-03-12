@@ -16,6 +16,9 @@ from selfdrive.controls.lib.speed_smoother import speed_smoother
 from selfdrive.controls.lib.longcontrol import LongCtrlState, MIN_CAN_SPEED
 from selfdrive.controls.lib.radar_helpers import _LEAD_ACCEL_TAU
 from scipy import interpolate
+from selfdrive.kegman_conf import kegman_conf
+
+kegman = kegman_conf()
 
 NO_CURVATURE_SPEED = 200. * CV.MPH_TO_MS
 
@@ -249,7 +252,7 @@ class LongitudinalMpc(object):
     self.cur_state[0].x_ego = 0.0
 
     if lead is not None and lead.status:
-      x_lead = max(0, lead.dRel - 1)
+      x_lead = max(0, lead.dRel - float(kegman.conf['brake_distance_extra']))
       v_lead = max(0.0, lead.vLead)
       a_lead = lead.aLeadK
 
