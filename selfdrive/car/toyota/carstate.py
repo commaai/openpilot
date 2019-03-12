@@ -53,7 +53,7 @@ def get_can_parser(CP):
   ]
 
   if CP.carFingerprint == CAR.LEXUS_ISH:
-    checks = [
+    checks += [
       ("BRAKE_MODULE", 50),
       ("GAS_PEDAL", 50),
       ("PCM_CRUISE_ISH", 1),
@@ -65,7 +65,7 @@ def get_can_parser(CP):
       ("AUTO_HIGH_BEAM", "LIGHT_STALK_ISH", 0),
     ]
   else:
-    checks = [
+    checks += [
       ("BRAKE_MODULE", 40),
       ("GAS_PEDAL", 33),
       ("PCM_CRUISE_2", 33),
