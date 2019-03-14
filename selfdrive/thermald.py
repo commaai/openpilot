@@ -12,7 +12,9 @@ from common.params import Params
 from common.realtime import sec_since_boot
 from common.numpy_fast import clip
 from common.filter_simple import FirstOrderFilter
+from selfdrive.kegman_conf import kegman_conf
 
+kegman = kegman_conf()
 ThermalStatus = log.ThermalData.ThermalStatus
 CURRENT_TAU = 2.   # 2s time constant
 
@@ -105,19 +107,24 @@ def handle_fan(max_cpu_temp, bat_temp, fan_speed):
   return fan_speed
 
 
-def check_car_battery_voltage(should_start, health, charging_disabled):
+def check_car_battery_voltage(should_start, health, charging_disabled, msg):
 
   # charging disallowed if:
   #   - there are health packets from panda, and;
   #   - 12V battery voltage is too low, and;
   #   - onroad isn't started
-  if charging_disabled and (health is None or health.health.voltage > 11800):
+  print health
+  
+  if charging_disabled and (health is None or health.health.voltage > (int(kegman.conf['carVoltageMinEonShutdown'])+400)) and msg.thermal.batteryPercent < int(kegman.conf['battChargeMin']):
     charging_disabled = False
     os.system('echo "1" > /sys/class/power_supply/battery/charging_enabled')
-  elif not charging_disabled and health is not None and health.health.voltage < 11500 and not should_start:
+  elif not charging_disabled and (msg.thermal.batteryPercent > int(kegman.conf['battChargeMax']) or (health is not None and health.health.voltage < int(kegman.conf['carVoltageMinEonShutdown']) and not should_start)):
     charging_disabled = True
     os.system('echo "0" > /sys/class/power_supply/battery/charging_enabled')
-
+  elif msg.thermal.batteryCurrent < 0 and msg.thermal.batteryPercent > int(kegman.conf['battChargeMax']):
+    charging_disabled = True
+    os.system('echo "0" > /sys/class/power_supply/battery/charging_enabled')
+    
   return charging_disabled
 
 
@@ -156,7 +163,7 @@ def thermald_thread():
   setup_eon_fan()
 
   # prevent LEECO from undervoltage
-  BATT_PERC_OFF = 10 if LEON else 3
+  BATT_PERC_OFF = int(kegman.conf['battPercOff'])
 
   # now loop
   context = zmq.Context()
@@ -188,7 +195,11 @@ def thermald_thread():
     msg = read_thermal()
 
     # loggerd is gated based on free space
-    statvfs = os.statvfs(ROOT)
+    try:
+      statvfs = os.statvfs(ROOT)
+    except OSError:
+      os.mkdir(ROOT)
+      statvfs = os.statvfs(ROOT)
     avail = (statvfs.f_bavail * 1.0)/statvfs.f_blocks
 
     # thermal message now also includes free space
@@ -290,8 +301,14 @@ def thermald_thread():
          started_seen and (sec_since_boot() - off_ts) > 60:
         os.system('LD_LIBRARY_PATH="" svc power shutdown')
 
-    charging_disabled = check_car_battery_voltage(should_start, health, charging_disabled)
+    charging_disabled = check_car_battery_voltage(should_start, health, charging_disabled, msg)
 
+    # need to force batteryStatus because after NEOS update for 0.5.7 this doesn't work properly
+    if msg.thermal.batteryCurrent > 0:
+      msg.thermal.batteryStatus = "Discharging"
+    else:
+      msg.thermal.batteryStatus = "Charging"
+    
     msg.thermal.chargingDisabled = charging_disabled
     msg.thermal.chargingError = current_filter.x > 1.0   # if current is > 1A out, then charger might be off
     msg.thermal.started = started_ts is not None

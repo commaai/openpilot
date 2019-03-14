@@ -95,7 +95,6 @@ class Uploader(object):
     self.dongle_id = dongle_id
     self.access_token = access_token
     self.root = root
-
     self.upload_thread = None
 
     self.last_resp = None
@@ -250,7 +249,11 @@ class Uploader(object):
       stat = self.normal_upload(key, fn)
       if stat is not None and stat.status_code in (200, 201):
         cloudlog.event("upload_success", key=key, fn=fn, sz=sz)
-        os.unlink(fn) # delete the file
+        try:
+          os.unlink(fn) # delete the file
+        except OSError:
+          pass
+          
         success = True
       else:
         cloudlog.event("upload_failed", stat=stat, exc=self.last_exc, key=key, fn=fn, sz=sz)

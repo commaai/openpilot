@@ -2,10 +2,13 @@ import numpy as np
 from common.realtime import sec_since_boot
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from common.filter_simple import FirstOrderFilter
+from selfdrive.kegman_conf import kegman_conf
+
+kegman = kegman_conf()
 
 _DT = 0.01                  # update runs at 100Hz
 _DTM = 0.1                  # DM runs at 10Hz
-_AWARENESS_TIME = 1800       # 3 minutes limit without user touching steering wheels make the car enter a terminal status
+_AWARENESS_TIME = int(kegman.conf['wheelTouchSeconds'])       # 3 minutes limit without user touching steering wheels make the car enter a terminal status
 _AWARENESS_PRE_TIME = 200.   # a first alert is issued 20s before expiration
 _AWARENESS_PROMPT_TIME = 50. # a second alert is issued 5s before start decelerating the car
 _DISTRACTED_TIME = 70.

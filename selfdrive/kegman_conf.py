@@ -20,7 +20,16 @@ class kegman_conf():
       if "brakeStoppingTarget" not in self.config:
         self.config.update({"brakeStoppingTarget":"0.25"})
         self.element_updated = True
-      
+      if "angle_steers_offset" not in self.config:
+        self.config.update({"angle_steers_offset":"0"})
+        self.element_updated = True
+      if "brake_distance_extra" not in self.config: # extra braking distance in m
+        self.config.update({"brake_distance_extra":"1"})
+        self.element_updated = True
+      if "lastALCAMode" not in self.config: # extra braking distance in m
+        self.config.update({"lastALCAMode":"1"})
+        self.element_updated = True
+
       # Force update battery charge limits to higher values for Big Model
       #if self.config['battChargeMin'] != "75":
       #  self.config.update({"battChargeMin":"75"})
@@ -31,7 +40,7 @@ class kegman_conf():
         self.write_config(self.config)
 
     else:
-      self.config = {"cameraOffset":"0.06", "lastTrMode":"1", "battChargeMin":"85", "battChargeMax":"90", "wheelTouchSeconds":"180", "battPercOff":"25", "carVoltageMinEonShutdown":"11800", "brakeStoppingTarget":"0.25" }
+      self.config = {"cameraOffset":"0.06", "lastTrMode":"1", "battChargeMin":"85", "battChargeMax":"90", "wheelTouchSeconds":"1800", "battPercOff":"25", "carVoltageMinEonShutdown":"11800", "brakeStoppingTarget":"0.25", "angle_steers_offset":"0" , "brake_distance_extra":"1" , "lastALCAMode":"1"}
       self.write_config(self.config)
     return self.config
 
