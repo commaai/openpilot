@@ -1590,27 +1590,27 @@ static void ui_draw_vision_speed(UIState *s) {
   
   if(scene->leftBlinker) {
     nvgBeginPath(s->vg);
-    nvgMoveTo(s->vg, viz_speed_x, box_y);
-    nvgLineTo(s->vg, viz_speed_x - viz_speed_w/2, box_y + header_h/2);
-    nvgLineTo(s->vg, viz_speed_x, box_y + header_h);
-    nvgLineTo(s->vg, viz_speed_x, box_y);
-    nvgFillColor(s->vg, nvgRGBA(255,165,0,scene->blinker_blinkingrate>=50?160:60)); 
+    nvgMoveTo(s->vg, viz_speed_x, box_y + header_h/4);
+    nvgLineTo(s->vg, viz_speed_x - viz_speed_w/2, box_y + header_h/4 + header_h/4);
+    nvgLineTo(s->vg, viz_speed_x, box_y + header_h/2 + header_h/4);
+    nvgLineTo(s->vg, viz_speed_x, box_y + header_h/4);
+    nvgFillColor(s->vg, nvgRGBA(23,134,68,scene->blinker_blinkingrate>=50?120:60)); 
     nvgFill(s->vg);
   }
 
   if(scene->rightBlinker) {
     nvgBeginPath(s->vg);
-    nvgMoveTo(s->vg, viz_speed_x+viz_speed_w, box_y);
-    nvgLineTo(s->vg, viz_speed_x+viz_speed_w + viz_speed_w/2, box_y + header_h/2);
-    nvgLineTo(s->vg, viz_speed_x+viz_speed_w, box_y + header_h);
-    nvgLineTo(s->vg, viz_speed_x+viz_speed_w, box_y);
-    nvgFillColor(s->vg, nvgRGBA(255,165,0,scene->blinker_blinkingrate>=50?160:60)); 
+    nvgMoveTo(s->vg, viz_speed_x+viz_speed_w, box_y + header_h/4);
+    nvgLineTo(s->vg, viz_speed_x+viz_speed_w + viz_speed_w/2, box_y + header_h/4 + header_h/4);
+    nvgLineTo(s->vg, viz_speed_x+viz_speed_w, box_y + header_h/2 + header_h/4);
+    nvgLineTo(s->vg, viz_speed_x+viz_speed_w, box_y + header_h/4);
+    nvgFillColor(s->vg, nvgRGBA(23,134,68,scene->blinker_blinkingrate>=50?120:60)); 
     nvgFill(s->vg);
   }
 
   if(scene->leftBlinker || scene->rightBlinker) {
     scene->blinker_blinkingrate -= 3;
-    if(scene->blinker_blinkingrate<0) scene->blinker_blinkingrate = 100;
+    if(scene->blinker_blinkingrate<0) scene->blinker_blinkingrate = 120;
   }
   
   // nvgBeginPath(s->vg);
