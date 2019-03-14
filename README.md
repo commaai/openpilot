@@ -14,6 +14,8 @@ I will attempt to detail the changes in each of the branches here:
 
 <b>kegman-plusGernbySteering-0.5.8</b> - Older version of Gernby's steering branch.  Will not be updated.
 
+<b>kegman-plusNewGernbySteering</b> - Newer version of Gernby's steering branch which is much easier to live tune using tuning script /data/openpilot/tune.sh
+
 <b>kegman-plusPilotAwesomeness (0.5.8 only)</b> - <u>Older version of Gernbys steering branch.  Will not be updated.
   
 <b>kegman-plusClarity (0.5.9)</b> - branch specifically for the Honda Clarity (does not contain Gernby steering)
