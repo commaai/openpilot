@@ -163,7 +163,7 @@ def write_json(countries):
 
 
 class Region(object):
-  ALLOWABLE_TAG_KEYS = ["highway", "zone:traffic", "bicycle_road"]
+  ALLOWABLE_TAG_KEYS = ["highway", "zone:traffic", "bicycle_road", "zone:maxspeed"]
   ALLOWABLE_HIGHWAY_TYPES = ["motorway", "trunk", "primary", "secondary", "tertiary", "unclassified", "residential", "service", "motorway_link", "trunk_link", "primary_link", "secondary_link", "tertiary_link", "living_street"]
   def __init__(self, name):
     self.name = name
