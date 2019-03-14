@@ -102,6 +102,12 @@
         }
       }, 
       {
+        "speed": "30", 
+        "tags": {
+          "highway": "residential"
+        }
+      }, 
+      {
         "speed": "100", 
         "tags": {
           "zone:traffic": "DE:rural"
@@ -111,6 +117,30 @@
         "speed": "50", 
         "tags": {
           "zone:traffic": "DE:urban"
+        }
+      }, 
+      {
+        "speed": "30", 
+        "tags": {
+          "zone:maxspeed": "DE:30"
+        }
+      }, 
+      {
+        "speed": "50", 
+        "tags": {
+          "zone:maxspeed": "DE:urban"
+        }
+      }, 
+      {
+        "speed": "100", 
+        "tags": {
+          "zone:maxspeed": "DE:rural"
+        }
+      }, 
+      {
+        "speed": "none", 
+        "tags": {
+          "zone:maxspeed": "DE:motorway"
         }
       }, 
       {
