@@ -6,7 +6,7 @@ from selfdrive.config import Conversions as CV
 V_CRUISE_MAX = 144
 V_CRUISE_MIN = 8
 V_CRUISE_DELTA = 8
-V_CRUISE_ENABLE_MIN = 40
+V_CRUISE_ENABLE_MIN = 24
 
 
 class MPC_COST_LAT:
