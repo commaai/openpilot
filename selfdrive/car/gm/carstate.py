@@ -51,6 +51,15 @@ def get_powertrain_can_parser(CP, canbus):
 
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, [], canbus.powertrain)
 
+def get_chassis_can_parser(CP, canbus):
+  # this function generates lists for signal, messages and initial values
+  signals = [
+      # sig_name, sig_address, default
+      ("FrictionBrakePressure", "EBCMFrictionBrakeStatus", 0),
+  ]
+
+  return CANParser(DBC[CP.carFingerprint]['chassis'], signals, [], canbus.chassis)
+
 class CarState(object):
   def __init__(self, CP, canbus):
     self.CP = CP
@@ -68,6 +77,7 @@ class CarState(object):
     self.distance_button = 0
     self.follow_level = 3
     self.lkMode = True
+    self.frictionBrakesActive = False
 
     # vEgo kalman filter
     dt = 0.01
@@ -77,7 +87,7 @@ class CarState(object):
                          K=np.matrix([[0.12287673], [0.29666309]]))
     self.v_ego = 0.
 
-  def update(self, pt_cp):
+  def update(self, pt_cp, ch_cp):
 
     self.can_valid = pt_cp.can_valid
     self.prev_cruise_buttons = self.cruise_buttons
@@ -160,6 +170,9 @@ class CarState(object):
     self.brake_pressed = self.user_brake > 10 or self.regen_pressed
 
     self.gear_shifter_valid = self.gear_shifter == car.CarState.GearShifter.drive
+
+    # Update Friction Brakes from Chassis Canbus
+    self.frictionBrakesActive = bool(ch_cp.vl["EBCMFrictionBrakeStatus"]["FrictionBrakePressure"] != 0)
     
   def get_follow_level(self):
     return self.follow_level

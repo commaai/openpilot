@@ -5,7 +5,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.gm.values import DBC, CAR, STOCK_CONTROL_MSGS, AUDIO_HUD, SUPERCRUISE_CARS
-from selfdrive.car.gm.carstate import CarState, CruiseButtons, get_powertrain_can_parser
+from selfdrive.car.gm.carstate import CarState, CruiseButtons, get_powertrain_can_parser, get_chassis_can_parser
 
 try:
   from selfdrive.car.gm.carcontroller import CarController
@@ -34,6 +34,7 @@ class CarInterface(object):
     self.CS = CarState(CP, canbus)
     self.VM = VehicleModel(CP)
     self.pt_cp = get_powertrain_can_parser(CP, canbus)
+    self.ch_cp = get_chassis_can_parser(CP, canbus)
     self.ch_cp_dbc_name = DBC[CP.carFingerprint]['chassis']
 
     # sending if read only is False
@@ -196,8 +197,9 @@ class CarInterface(object):
   # returns a car.CarState
   def update(self, c):
 
-    self.pt_cp.update(int(sec_since_boot() * 1e9), False)
-    self.CS.update(self.pt_cp)
+    self.pt_cp.update(int(sec_since_boot() * 1e9), True)
+    self.ch_cp.update(int(sec_since_boot() * 1e9), True)
+    self.CS.update(self.pt_cp, self.ch_cp)
 
     # create message
     ret = car.CarState.new_message()
@@ -220,7 +222,8 @@ class CarInterface(object):
     # brake pedal
     ret.brake = self.CS.user_brake / 0xd0
     ret.brakePressed = self.CS.brake_pressed
-
+    ret.brakeLights = self.CS.frictionBrakesActive
+    
     # steering wheel
     ret.steeringAngle = self.CS.angle_steers
 
