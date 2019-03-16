@@ -57,6 +57,8 @@ def get_can_parser(CP):
   signals = [
     # sig_name, sig_address, default
     ("GEAR", "GEAR_PACKET", 0),
+    ("SPORT_ON", "GEAR_PACKET", 0),
+    ("ECON_ON", "GEAR_PACKET", 0),
     ("BRAKE_PRESSED", "BRAKE_MODULE", 0),
     ("GAS_PEDAL", "GAS_PEDAL", 0),
     ("WHEEL_SPEED_FL", "WHEEL_SPEEDS", 0),
@@ -201,6 +203,9 @@ class CarState(object):
     self.approachradius = 100
     self.includeradius = 22
     self.blind_spot_on = bool(0)
+    self.econ_on = 0
+    self.sport_on = 0
+    
     self.distance_toggle_prev = 2
     self.read_distance_lines_prev = 3
     self.lane_departure_toggle_on_prev = True
@@ -317,6 +322,8 @@ class CarState(object):
     self.angle_steers = cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']
     self.angle_steers_rate = cp.vl["STEER_ANGLE_SENSOR"]['STEER_RATE']
     can_gear = int(cp.vl["GEAR_PACKET"]['GEAR'])
+    self.econ_on = cp.vl["GEAR_PACKET"]['ECON_ON']
+    self.sport_on = cp.vl["GEAR_PACKET"]['SPORT_ON']
     self.gear_shifter = parse_gear_shifter(can_gear, self.shifter_values)
     self.main_on = cp.vl["PCM_CRUISE_2"]['MAIN_ON']
     self.left_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 1
