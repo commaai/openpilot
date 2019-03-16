@@ -244,7 +244,11 @@ def state_control(plan, path_plan, CS, CP, state, events, v_cruise_kph, v_cruise
     angle_offset = learn_angle_offset(active, CS.vEgo, angle_offset,
                                       path_plan.cPoly, path_plan.cProb, CS.steeringAngle,
                                       CS.steeringPressed)
-  if CP.enableGasInterceptor:
+  try:
+    gasinterceptor = CP.enableGasInterceptor
+  except AttributeError:
+    gasinterceptor = False
+  if gasinterceptor:
     if CS.gasbuttonstatus == 0:
       CP.gasMaxV = [0.2, 0.5, 0.7]
     elif CS.gasbuttonstatus == 1:
