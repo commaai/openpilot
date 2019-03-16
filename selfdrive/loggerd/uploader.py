@@ -115,7 +115,10 @@ class Uploader(object):
       return
     for logname in listdir_by_creation_date(self.root):
       path = os.path.join(self.root, logname)
-      names = os.listdir(path)
+      try:
+        names = os.listdir(path)
+      except OSError:
+        pass
       if any(name.endswith(".lock") for name in names):
         continue
 
