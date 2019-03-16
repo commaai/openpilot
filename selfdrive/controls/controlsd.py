@@ -244,10 +244,20 @@ def state_control(plan, path_plan, CS, CP, state, events, v_cruise_kph, v_cruise
     angle_offset = learn_angle_offset(active, CS.vEgo, angle_offset,
                                       path_plan.cPoly, path_plan.cProb, CS.steeringAngle,
                                       CS.steeringPressed)
-  if CS.gasbuttonstatus == 0:
-    CP.gasMaxV = [0.2, 0.5, 0.7]
+  if CP.enableGasInterceptor:
+    if CS.gasbuttonstatus == 0:
+      CP.gasMaxV = [0.2, 0.5, 0.7]
+    elif CS.gasbuttonstatus == 1:
+      CP.gasMaxV = [0.25, 0.9, 0.9]
+    elif CS.gasbuttonstatus == 2:
+      CP.gasMaxV = [0.2, 0.2, 0.2]    
   else:
-    CP.gasMaxV = [0.25, 0.9, 0.9]
+    if CS.gasbuttonstatus == 0:
+      CP.gasMaxV = [0.5, 0.7, 0.9]
+    elif CS.gasbuttonstatus == 1:
+      CP.gasMaxV = [0.7, 0.9, 0.9]
+    elif CS.gasbuttonstatus == 2:
+      CP.gasMaxV = [0.2, 0.2, 0.2]
 
   cur_time = sec_since_boot()  # TODO: This won't work in replay
   mpc_time = plan.l20MonoTime / 1e9
