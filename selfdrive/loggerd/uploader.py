@@ -118,6 +118,7 @@ class Uploader(object):
       try:
         names = os.listdir(path)
       except OSError:
+        names = []
         pass
       if any(name.endswith(".lock") for name in names):
         continue
