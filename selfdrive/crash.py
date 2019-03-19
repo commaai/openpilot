@@ -17,8 +17,17 @@ if os.getenv("NOLOG") or os.getenv("NOCRASH"):
 else:
   from raven import Client
   from raven.transport.http import HTTPTransport
+
+  with open("/data/data/ai.comma.plus.offroad/files/persistStore/persist-auth", "r") as f:
+    auth = f.read()
+
+  indexBegin = auth.index('username\\":\\"') # finds username
+  substring = auth[indexBegin + 13:]
+  indexEnd = substring.index('\\"')
+  username = str(substring[:indexEnd])
+
   client = Client('https://137e8e621f114f858f4c392c52e18c6d:8aba82f49af040c8aac45e95a8484970@sentry.io/1404547',
-                  install_sys_hook=False, transport=HTTPTransport, release=version, tags={'dirty': dirty})
+                  install_sys_hook=False, transport=HTTPTransport, release=version, tags={'dirty': dirty, 'username': username})
 
   def capture_exception(*args, **kwargs):
     client.captureException(*args, **kwargs)
