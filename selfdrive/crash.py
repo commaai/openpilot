@@ -1,6 +1,7 @@
 """Install exception handler for process crash."""
 import os
 import sys
+import json
 from selfdrive.version import version, dirty
 
 from selfdrive.swaglog import cloudlog
@@ -19,15 +20,10 @@ else:
   from raven.transport.http import HTTPTransport
 
   with open("/data/data/ai.comma.plus.offroad/files/persistStore/persist-auth", "r") as f:
-    auth = f.read()
-
-  indexBegin = auth.index('username\\":\\"') # finds username
-  substring = auth[indexBegin + 13:]
-  indexEnd = substring.index('\\"')
-  username = str(substring[:indexEnd])
+    auth = json.loads(f.read())
 
   client = Client('https://137e8e621f114f858f4c392c52e18c6d:8aba82f49af040c8aac45e95a8484970@sentry.io/1404547',
-                  install_sys_hook=False, transport=HTTPTransport, release=version, tags={'dirty': dirty, 'username': username})
+                  install_sys_hook=False, transport=HTTPTransport, release=version, tags={'dirty': dirty, 'email': json.loads(auth['commaUser'])['email'], 'username': str(json.loads(auth['commaUser'])['username'])})
 
   def capture_exception(*args, **kwargs):
     client.captureException(*args, **kwargs)
