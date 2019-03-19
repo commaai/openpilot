@@ -22,8 +22,10 @@ else:
   with open("/data/data/ai.comma.plus.offroad/files/persistStore/persist-auth", "r") as f:
     auth = json.loads(f.read())
 
+  auth = json.loads(auth['commaUser'])
+
   client = Client('https://137e8e621f114f858f4c392c52e18c6d:8aba82f49af040c8aac45e95a8484970@sentry.io/1404547',
-                  install_sys_hook=False, transport=HTTPTransport, release=version, tags={'dirty': dirty, 'email': json.loads(auth['commaUser'])['email'], 'username': str(json.loads(auth['commaUser'])['username'])})
+                  install_sys_hook=False, transport=HTTPTransport, release=version, tags={'dirty': dirty, 'email': auth['email'], 'username': auth['username']})
 
   def capture_exception(*args, **kwargs):
     client.captureException(*args, **kwargs)
