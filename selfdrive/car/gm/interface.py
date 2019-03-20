@@ -2,8 +2,6 @@
 from cereal import car
 from common.realtime import sec_since_boot
 from selfdrive.config import Conversions as CV
-from common.numpy_fast import clip, interp
-from selfdrive.controls.lib.planner import A_ACC_MAX
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.gm.values import DBC, CAR, STOCK_CONTROL_MSGS, AUDIO_HUD, SUPERCRUISE_CARS
@@ -50,29 +48,7 @@ class CarInterface(object):
 
   @staticmethod
   def calc_accel_override(a_ego, a_target, v_ego, v_target):
-    # limit the pcm accel cmd if:
-    # - v_ego exceeds v_target, or
-    # - a_ego exceeds a_target and v_ego is close to v_target
-
-    eA = a_ego - a_target
-    valuesA = [1.0, 0.1]
-    bpA = [0.3, 1.1]
-
-    eV = v_ego - v_target
-    valuesV = [1.0, 0.1]
-    bpV = [0.0, 0.5]
-
-    valuesRangeV = [1., 0.]
-    bpRangeV = [-1., 0.]
-
-    # only limit if v_ego is close to v_target
-    speedLimiter = interp(eV, bpV, valuesV)
-    accelLimiter = max(interp(eA, bpA, valuesA), interp(eV, bpRangeV, valuesRangeV))
-
-    # accelOverride is more or less the max throttle allowed to pcm: usually set to a constant
-    # unless aTargetMax is very high and then we scale with it; this help in quicker restart
-
-    return float(max(0.714, a_target / A_ACC_MAX)) * min(speedLimiter, accelLimiter)
+    return 1.0
 
   @staticmethod
   def get_params(candidate, fingerprint):
@@ -202,10 +178,10 @@ class CarInterface(object):
     ret.longPidDeadzoneBP = [0.]
     ret.longPidDeadzoneV = [0.]
 
-    ret.longitudinalKpBP = [0., 5., 35.]
-    ret.longitudinalKpV = [3.3, 2.425, 2.2]
-    ret.longitudinalKiBP = [0., 35.]
-    ret.longitudinalKiV = [0.18, 0.36]
+    ret.longitudinalKpBP = [5., 35.]
+    ret.longitudinalKpV = [2.4, 1.5]
+    ret.longitudinalKiBP = [0.]
+    ret.longitudinalKiV = [0.36]
 
     ret.steerLimitAlert = True
 
