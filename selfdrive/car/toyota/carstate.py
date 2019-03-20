@@ -143,7 +143,10 @@ class CarState(object):
     self.Angle_counter = 0
     self.Angle = [0, 5, 10, 15,20,25,30,35,60,100,180,270,500]
     self.Angle_Speed = [255,160,100,80,70,60,55,50,40,33,27,17,12]
-    #labels for ALCA modes
+    #labels for gas mode
+    self.gasModes = 0
+    self.gasLabels = ["normal","sport","eco"]
+    #labelslabels for ALCA modes
     self.alcaLabels = ["MadMax","Normal","Wifey"]
     self.alcaMode = int(self.kegman.conf['lastALCAMode'])     # default to last ALCAmode on startup
     #if (CP.carFingerprint == CAR.MODELS):
