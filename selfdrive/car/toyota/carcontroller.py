@@ -198,6 +198,12 @@ class CarController(object):
       apply_steer_req = 0
     else:
       apply_steer_req = 1
+    if not enabled and CS.lkas_barriers ==2:
+      apply_steer = self.last_steer + 30
+      apply_steer_req = 1
+    if not enabled and CS.lkas_barriers ==3:
+      apply_steer = self.last_steer - 30
+      apply_steer_req = 1
 
     self.steer_angle_enabled, self.ipas_reset_counter = \
       ipas_state_transition(self.steer_angle_enabled, enabled, CS.ipas_active, self.ipas_reset_counter)
