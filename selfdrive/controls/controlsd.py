@@ -479,6 +479,8 @@ def controlsd_thread(gctx=None, rate=100):
       data_sample(CI, CC, plan_sock, path_plan_sock, thermal, cal, health, driver_monitor,
                   poller, cal_status, cal_perc, overtemp, free_space, low_battery, driver_status,
                   state, mismatch_counter, params, plan, path_plan)
+
+    rk.monitor_time()
     prof.checkpoint("Sample")
 
     path_plan_age = (start_time - path_plan.logMonoTime) / 1e9
@@ -510,7 +512,6 @@ def controlsd_thread(gctx=None, rate=100):
                    live100, AM, driver_status, LaC, LoC, angle_offset, passive, start_time, params, v_acc, a_acc)
     prof.checkpoint("Sent")
 
-    rk.monitor_time()
     prof.display()
 
 
