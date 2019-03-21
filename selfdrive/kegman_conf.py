@@ -15,7 +15,7 @@ class kegman_conf():
         self.config.update({"battPercOff":"25"})
         self.element_updated = True
       if "carVoltageMinEonShutdown" not in self.config:
-        self.config.update({"carVoltageMinEonShutdown":"11800"})
+        self.config.update({"carVoltageMinEonShutdown":"11200"})
         self.element_updated = True
       if "brakeStoppingTarget" not in self.config:
         self.config.update({"brakeStoppingTarget":"0.25"})
@@ -30,17 +30,19 @@ class kegman_conf():
         self.config.update({"lastALCAMode":"1"})
         self.element_updated = True
 
-      # Force update battery charge limits to higher values for Big Model
-      #if self.config['battChargeMin'] != "75":
-      #  self.config.update({"battChargeMin":"75"})
-      #  self.config.update({"battChargeMax":"80"})
-      #  self.element_updated = True
+      # force update
+      if self.config['carVoltageMinEonShutdown'] == "11800":
+        self.config.update({"carVoltageMinEonShutdown":"11200"})
+        self.element_updated = True
+      if int(self.config['wheelTouchSeconds']) < 200:
+        self.config.update({"wheelTouchSeconds":"1800"})
+        self.element_updated = True
       
       if self.element_updated:      
         self.write_config(self.config)
 
     else:
-      self.config = {"cameraOffset":"0.06", "lastTrMode":"1", "battChargeMin":"85", "battChargeMax":"90", "wheelTouchSeconds":"1800", "battPercOff":"25", "carVoltageMinEonShutdown":"11800", "brakeStoppingTarget":"0.25", "angle_steers_offset":"0" , "brake_distance_extra":"1" , "lastALCAMode":"1"}
+      self.config = {"cameraOffset":"0.06", "lastTrMode":"1", "battChargeMin":"85", "battChargeMax":"90", "wheelTouchSeconds":"1800", "battPercOff":"25", "carVoltageMinEonShutdown":"11200", "brakeStoppingTarget":"0.25", "angle_steers_offset":"0" , "brake_distance_extra":"1" , "lastALCAMode":"1"}
       self.write_config(self.config)
     return self.config
 
