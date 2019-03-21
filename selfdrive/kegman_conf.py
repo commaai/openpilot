@@ -33,6 +33,8 @@ class kegman_conf():
       # force update
       if self.config['carVoltageMinEonShutdown'] == "11800":
         self.config.update({"carVoltageMinEonShutdown":"11200"})
+        self.element_updated = True
+      if int(self.config['wheelTouchSeconds']) < 200:
         self.config.update({"wheelTouchSeconds":"1800"})
         self.element_updated = True
       
