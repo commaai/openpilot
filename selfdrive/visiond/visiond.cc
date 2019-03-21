@@ -1129,7 +1129,7 @@ void* processing_thread(void *arg) {
       //printf("avg %f\n", pose_output[0]);
       posenet->execute(posenet_input);
 
-        
+
       // fix stddevs
       for (int i = 6; i < 12; i++) {
         pose_output[i] = log1p(exp(pose_output[i])) + 1e-6;

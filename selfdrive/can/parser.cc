@@ -303,15 +303,19 @@ class CANParser {
 
     // multiple recv is fine
     bool first = wait;
-    while (1) {
+    while (first || drain) {
       if (first) {
         err = zmq_msg_recv(&msg, subscriber, 0);
         first = false;
       } else {
+        // Drain the queue at startup
+        usleep(500);
         err = zmq_msg_recv(&msg, subscriber, ZMQ_DONTWAIT);
       }
-      if (err < 0) break;
-
+      if (err < 0) {
+        drain = false;
+        break;
+      }
       // format for board, make copy due to alignment issues, will be freed on out of scope
       auto amsg = kj::heapArray<capnp::word>((zmq_msg_size(&msg) / sizeof(capnp::word)) + 1);
       memcpy(amsg.begin(), zmq_msg_data(&msg), zmq_msg_size(&msg));
@@ -355,6 +359,7 @@ class CANParser {
 
  private:
   const int bus;
+  bool drain = true;
   // zmq vars
   void *context = NULL;
   void *subscriber = NULL;

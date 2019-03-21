@@ -194,6 +194,7 @@ class CarInterface(object):
       ret.centerToFront = centerToFront_civic
       ret.steerRatio = 14.63  # 10.93 is end-to-end spec
       tire_stiffness_factor = 1.
+      ret.syncID = 330
       # Civic at comma has modified steering FW, so different tuning for the Neo in that car
       is_fw_modified = os.getenv("DONGLE_ID") in ['99c94dc769b5d96e']
       ret.steerKpV, ret.steerKiV = [[0.4], [0.12]] if is_fw_modified else [[0.8], [0.24]]
@@ -214,18 +215,18 @@ class CarInterface(object):
       ret.centerToFront = ret.wheelbase * 0.39
       ret.steerRatio = 15.96  # 11.82 is spec end-to-end
       tire_stiffness_factor = 0.8467
+      #ret.syncID = 330
       ret.steerKpV, ret.steerKiV = [[0.6], [0.18]]
       ret.longitudinalKpBP = [0., 5., 35.]
       ret.longitudinalKpV = [1.2, 0.8, 0.5]
       ret.longitudinalKiBP = [0., 35.]
       ret.longitudinalKiV = [0.18, 0.12]
-      # This is optional, and will cause boardd to synchnonize with the bus instead of time
-      ret.syncID = 330
 
     elif candidate == CAR.ACURA_ILX:
       stop_and_go = False
       ret.mass = 3095 * CV.LB_TO_KG + std_cargo
       ret.wheelbase = 2.67
+      ret.syncID = 342
       ret.centerToFront = ret.wheelbase * 0.37
       ret.steerRatio = 18.61  # 15.3 is spec end-to-end
       tire_stiffness_factor = 0.72
@@ -239,6 +240,7 @@ class CarInterface(object):
       stop_and_go = False
       ret.mass = 3572 * CV.LB_TO_KG + std_cargo
       ret.wheelbase = 2.62
+      ret.syncID = 330
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 15.3         # as spec
       tire_stiffness_factor = 0.444 # not optimized yet
@@ -250,6 +252,7 @@ class CarInterface(object):
 
     elif candidate == CAR.CRV_5G:
       stop_and_go = True
+      ret.syncID = 342
       ret.safetyParam = 1 # Accord and CRV 5G use an alternate user brake msg
       ret.mass = 3410. * CV.LB_TO_KG + std_cargo
       ret.wheelbase = 2.66
@@ -266,6 +269,7 @@ class CarInterface(object):
       stop_and_go = False
       ret.mass = 3935 * CV.LB_TO_KG + std_cargo
       ret.wheelbase = 2.68
+      ret.syncID = 342
       ret.centerToFront = ret.wheelbase * 0.38
       ret.steerRatio = 15.0         # as spec
       tire_stiffness_factor = 0.444 # not optimized yet
@@ -279,6 +283,7 @@ class CarInterface(object):
       stop_and_go = False
       ret.mass = 4471 * CV.LB_TO_KG + std_cargo
       ret.wheelbase = 3.00
+      ret.syncID = 342
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 14.35        # as spec
       tire_stiffness_factor = 0.82
@@ -292,6 +297,7 @@ class CarInterface(object):
       stop_and_go = False
       ret.mass = 4303 * CV.LB_TO_KG + std_cargo
       ret.wheelbase = 2.81
+      ret.syncID = 342
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 16.0         # as spec
       tire_stiffness_factor = 0.444 # not optimized yet
@@ -304,6 +310,7 @@ class CarInterface(object):
     elif candidate == CAR.RIDGELINE:
       stop_and_go = False
       ret.mass = 4515 * CV.LB_TO_KG + std_cargo
+      ret.syncID = 342
       ret.wheelbase = 3.18
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 15.59        # as spec
@@ -368,7 +375,6 @@ class CarInterface(object):
     # ******************* do can recv *******************
     canMonoTimes = []
 
-    # use CAN packet from boardd as primary time keeper
     self.cp.update(int(sec_since_boot() * 1e9), True)
     self.cp_cam.update(int(sec_since_boot() * 1e9), False)
 
