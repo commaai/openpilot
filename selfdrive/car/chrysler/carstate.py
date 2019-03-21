@@ -69,7 +69,7 @@ def get_can_parser(CP):
 class CarState(object):
   def __init__(self, CP):
     self.alcaLabels = ["MadMax","Normal","Wifey"]
-    self.alcaMode = int(self.kegman.conf['lastALCAMode'])     # default to last ALCAmode on startup
+    self.alcaMode = 1     # default to normal ode on startup
     self.prev_distance_button = 0
     self.distance_button = 0
     self.prev_lka_button = 0
@@ -148,7 +148,7 @@ class CarState(object):
     btns = []
     btns.append(UIButton("sound", "SND", 0, "", 0))
     btns.append(UIButton("alca", "ALC", 0, self.alcaLabels[self.alcaMode], 1))
-    btns.append(UIButton("stop","",1,"SNG",2))
+    btns.append(UIButton("","",,"",2))
     btns.append(UIButton("","",0,"",3))
     btns.append(UIButton("gas","GAS",1,"",4))
     btns.append(UIButton("lka","LKA",1,"",5))
@@ -159,12 +159,8 @@ class CarState(object):
       if (id == 1) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="alca":
           if self.cstm_btns.btns[id].btn_label2 == self.alcaLabels[self.alcaMode]:
             self.alcaMode = (self.alcaMode + 1 ) % 3
-            self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last distance bar setting to file
-            self.kegman.write_config(self.kegman.conf)
           else:
             self.alcaMode = 0
-            self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last distance bar setting to file
-            self.kegman.write_config(self.kegman.conf)
           self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
           self.cstm_btns.hasChanges = True
       else:
