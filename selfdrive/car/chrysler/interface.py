@@ -183,6 +183,13 @@ class CarInterface(object):
     # ignore standstill in hybrid rav4, since pcm allows to restart without
     # receiving any special command
     ret.cruiseState.standstill = False
+    
+    ret.readdistancelines = 1
+    ret.genericToggle = False
+    ret.laneDepartureToggle = False
+    ret.distanceToggle = 1
+    ret.accSlowToggle = False
+    ret.blindspot = False
 
     # TODO: button presses
     buttonEvents = []
@@ -208,7 +215,8 @@ class CarInterface(object):
     self.low_speed_alert = (ret.vEgo < self.CP.minSteerSpeed)
 
     ret.genericToggle = self.CS.generic_toggle
-
+    
+    ret.gasbuttonstatus = self.CS.cstm_btns.get_button_status("gas")
     # events
     events = []
     if not self.CS.can_valid:
