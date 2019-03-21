@@ -198,11 +198,13 @@ class CarController(object):
       apply_steer_req = 0
     else:
       apply_steer_req = 1
-    if not enabled and CS.lkas_barriers ==2:
+    if not enabled and CS.lkas_barriers ==2 and not CS.right_blinker_on:
       apply_steer = self.last_steer + 30
+      apply_steer = min(apply_steer , 800)
       apply_steer_req = 1
-    if not enabled and CS.lkas_barriers ==3:
+    if not enabled and CS.lkas_barriers ==3 and not CS.left_blinker_on:
       apply_steer = self.last_steer - 30
+      apply_steer = max(apply_steer , -800)
       apply_steer_req = 1
 
     self.steer_angle_enabled, self.ipas_reset_counter = \
