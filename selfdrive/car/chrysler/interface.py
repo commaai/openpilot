@@ -4,7 +4,7 @@ from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
-from selfdrive.car.chrysler.carstate import CarState, get_can_parser
+from selfdrive.car.chrysler.carstate import CarState, get_can_parser, get_camera_parser
 from selfdrive.car.chrysler.values import ECU, check_ecu_msgs, CAR
 
 try:
