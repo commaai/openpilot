@@ -198,14 +198,14 @@ class CarController(object):
       apply_steer_req = 0
     else:
       apply_steer_req = 1
-    if not enabled and rightLane_Depart and not CS.right_blinker_on:
+    if not enabled and rightLane_Depart and CS.v_ego > 12.5 and not CS.right_blinker_on:
       apply_steer = self.last_steer + 3
       apply_steer = min(apply_steer , 800)
       print "right"
       print apply_steer
       apply_steer_req = 1
       
-    if not enabled and leftLane_Depart and not CS.left_blinker_on:
+    if not enabled and leftLane_Depart and CS.v_ego > 12.5 and not CS.left_blinker_on:
       apply_steer = self.last_steer - 3
       apply_steer = max(apply_steer , -800)
       print "left"
@@ -301,6 +301,7 @@ class CarController(object):
       else:
         if CS.lane_departure_toggle_on:
           can_sends.append(create_steer_command(self.packer, apply_steer, apply_steer_req, frame))
+          print "here"
         else:
           can_sends.append(create_steer_command(self.packer, 0., 0, frame))
         # rav4h with dsu disconnected
