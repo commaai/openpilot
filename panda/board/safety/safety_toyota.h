@@ -54,7 +54,7 @@ static void toyota_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     if (cruise_engaged && !toyota_cruise_engaged_last) {
       controls_allowed = 1;
     } else if (!cruise_engaged) {
-      controls_allowed = 0;
+      controls_allowed = 1;
     }
     toyota_cruise_engaged_last = cruise_engaged;
   }
