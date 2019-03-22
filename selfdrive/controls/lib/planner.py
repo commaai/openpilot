@@ -156,7 +156,7 @@ class LongitudinalMpc(object):
     self.last_cost = 0
     self.velocity_list = []
 
-  def calculate_tr(self, v_ego, read_distance_lines):
+  def calculate_tr(self, v_ego, car_state):
     """
     Returns a follow time gap in seconds based on car state values
 
@@ -164,8 +164,24 @@ class LongitudinalMpc(object):
     v_ego: Vehicle speed [m/s]
     read_distance_lines: ACC setting showing how much follow distance the user has set [1|2|3]
     """
+
+    read_distance_lines = car_state.readdistancelines
+
     if v_ego < 2.0:
       return 1.8 # under 7km/hr use a TR of 1.8 seconds
+
+    if (read_distance_lines == 2 or read_distance_lines == 3) and (car_state.leftBlinker or car_state.rightBlinker): # if car is changing lanes and not already .9s
+      if self.last_cost != 1.0:
+        self.libmpc.init(MPC_COST_LONG.TTC, 1.0, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
+        self.last_cost = 1.0
+      return 0.9
+
+    if read_distance_lines == 1:
+      if read_distance_lines != self.lastTR or self.last_cost != 1.0:
+        self.libmpc.init(MPC_COST_LONG.TTC, 1.0, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
+        self.lastTR = read_distance_lines
+        self.last_cost = 1.0
+      return 0.9 # 10m at 40km/hr
 
     if read_distance_lines == 2:
       if len(self.velocity_list) > 200 and len(self.velocity_list) != 0: #100hz, so 200 items is 2 seconds
@@ -179,21 +195,15 @@ class LongitudinalMpc(object):
         self.libmpc.init(MPC_COST_LONG.TTC, generated_cost, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
         self.last_cost = generated_cost
       return generatedTR
-    
-    if read_distance_lines == 1:
-      if read_distance_lines != self.lastTR:
-        self.libmpc.init(MPC_COST_LONG.TTC, 1.0, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
-        self.lastTR = read_distance_lines
-      return 0.9 # 10m at 40km/hr
 
     if read_distance_lines == 3:
-      if read_distance_lines != self.lastTR:
+      if read_distance_lines != self.lastTR or self.last_cost != 0.05:
         self.libmpc.init(MPC_COST_LONG.TTC, 0.05, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
         self.lastTR = read_distance_lines
-        return 2.7 # 30m at 40km/hr
+        self.last_cost = 0.05
+      return 2.7 # 30m at 40km/hr
       
     return 1.8 # if readdistancelines = 0
-
 
   def send_mpc_solution(self, qp_iterations, calculation_time):
     qp_iterations = max(0, qp_iterations)
@@ -296,7 +306,7 @@ class LongitudinalMpc(object):
 
     # Calculate mpc
     t = sec_since_boot()
-    TR = self.calculate_tr(v_ego, CS.carState.readdistancelines)
+    TR = self.calculate_tr(v_ego, CS.carState)
     n_its = self.libmpc.run_mpc(self.cur_state, self.mpc_solution, self.a_lead_tau, a_lead, TR)
     duration = int((sec_since_boot() - t) * 1e9)
     self.send_mpc_solution(n_its, duration)
