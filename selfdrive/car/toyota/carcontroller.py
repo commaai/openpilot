@@ -199,14 +199,14 @@ class CarController(object):
     else:
       apply_steer_req = 1
     if not enabled and rightLane_Depart and not CS.right_blinker_on:
-      apply_steer = self.last_steer + 30
+      apply_steer = self.last_steer + 3
       apply_steer = min(apply_steer , 800)
       print "right"
       print apply_steer
       apply_steer_req = 1
       
     if not enabled and leftLane_Depart and not CS.left_blinker_on:
-      apply_steer = self.last_steer - 30
+      apply_steer = self.last_steer - 3
       apply_steer = max(apply_steer , -800)
       print "left"
       print apply_steer
