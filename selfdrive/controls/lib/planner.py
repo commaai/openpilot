@@ -247,7 +247,7 @@ class LongitudinalMpc(object):
   def generateTR(self, velocity): # in m/s
     global relative_velocity
     x = [0, 8.9408, 22.352, 31.2928, 35.7632, 40.2336] # in mph: [0, 20, 50, 70, 80, 90]
-    y = [1.0, 1.4, 1.6, 1.7, 1.85, 2.0] # distances
+    y = [1.0, 1.35, 1.6, 1.7, 1.85, 2.0] # distances
 
     TR = interpolate.interp1d(x, y, fill_value='extrapolate')  # extrapolate above 90 mph
 
