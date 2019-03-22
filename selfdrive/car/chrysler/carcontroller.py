@@ -5,7 +5,7 @@ from selfdrive.car.chrysler.chryslercan import create_lkas_hud, create_lkas_comm
                                                create_wheel_buttons, create_lkas_heartbit, \
                                                create_chimes
 from selfdrive.car.modules.ALCA_module import ALCAController
-from selfdrive.car.chrysler.values import ECU
+from selfdrive.car.chrysler.values import ECU, CAR
 from selfdrive.can.packer import CANPacker
 
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert
@@ -30,6 +30,7 @@ class CarController(object):
     self.car_fingerprint = car_fingerprint
     self.alert_active = False
     self.send_chime = False
+    self.gone_fast_yet = False
     
     self.ALCA = ALCAController(self,True,False)  # Enabled  True and SteerByAngle only False
     
@@ -62,6 +63,7 @@ class CarController(object):
     alca_angle, alca_steer, alca_enabled, turn_signal_needed = self.ALCA.update(enabled, CS, frame, actuators)
     
     # this seems needed to avoid steering faults and to force the sync with the EPS counter
+    frame = CS.lkas_counter
     if self.prev_frame == frame:
       return
 
@@ -72,6 +74,11 @@ class CarController(object):
                                                    CS.steer_torque_motor, SteerLimitParams)
 
     moving_fast = CS.v_ego > CS.CP.minSteerSpeed  # for status message
+    if CS.v_ego > (CS.CP.minSteerSpeed - 0.5):  # for command high bit
+      self.gone_fast_yet = True
+    elif self.car_fingerprint in (CAR.PACIFICA_2019_HYBRID, CAR.JEEP_CHEROKEE_2019):
+      if CS.v_ego < (CS.CP.minSteerSpeed - 3.0):
+        self.gone_fast_yet = False  # < 14.5m/s stock turns off this bit, but fine down to 13.5
     lkas_active = moving_fast and enabled
 
     if not lkas_active:
@@ -106,12 +113,14 @@ class CarController(object):
       can_sends.append(new_msg)
 
     if (self.ccframe % 25 == 0):  # 0.25s period
-      new_msg = create_lkas_hud(self.packer, CS.gear_shifter, lkas_active, hud_alert, self.car_fingerprint,
-                                self.hud_count)
-      can_sends.append(new_msg)
-      self.hud_count += 1
+      if (CS.lkas_car_model != -1):
+        new_msg = create_lkas_hud(
+            self.packer, CS.gear_shifter, lkas_active, hud_alert,
+            self.hud_count, CS.lkas_car_model)
+        can_sends.append(new_msg)
+        self.hud_count += 1
 
-    new_msg = create_lkas_command(self.packer, int(apply_steer), frame)
+    new_msg = create_lkas_command(self.packer, int(apply_steer), self.gone_fast_yet, frame)
     can_sends.append(new_msg)
 
     self.ccframe += 1
