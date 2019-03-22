@@ -179,7 +179,7 @@ class CarState(object):
     else:
         self.cstm_btns.btns[id].btn_status = btn_status
 
-  def update(self, cp):
+  def update(self, cp, cp_cam):
     # copy can_valid
     self.can_valid = cp.can_valid
 
