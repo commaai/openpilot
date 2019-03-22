@@ -65,6 +65,17 @@ def get_can_parser(CP):
 
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
+def get_camera_parser(CP):
+  signals = [
+    # sig_name, sig_address, default
+    # TODO read in all the other values
+    ("COUNTER", "LKAS_COMMAND", -1),
+    ("CAR_MODEL", "LKAS_HUD", -1),
+    ("LKAS_STATUS_OK", "LKAS_HEARTBIT", -1)
+  ]
+  checks = []
+  
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
 
 class CarState(object):
   def __init__(self, CP):
@@ -225,3 +236,7 @@ class CarState(object):
     self.pcm_acc_status = self.main_on
 
     self.generic_toggle = bool(cp.vl["STEERING_LEVERS"]['HIGH_BEAM_FLASH'])
+    
+    self.lkas_counter = cp_cam.vl["LKAS_COMMAND"]['COUNTER']
+    self.lkas_car_model = cp_cam.vl["LKAS_HUD"]['CAR_MODEL']
+    self.lkas_status_ok = cp_cam.vl["LKAS_HEARTBIT"]['LKAS_STATUS_OK']
