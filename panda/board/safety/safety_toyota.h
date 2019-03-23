@@ -54,7 +54,7 @@ static void toyota_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     if (cruise_engaged && !toyota_cruise_engaged_last) {
       controls_allowed = 1;
     } else if (!cruise_engaged) {
-      controls_allowed = 1;
+      controls_allowed = 0;
     }
     toyota_cruise_engaged_last = cruise_engaged;
   }
@@ -100,7 +100,7 @@ static int toyota_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
       uint32_t ts = TIM2->CNT;
 
       // only check if controls are allowed and actuation_limits are imposed
-      if (controls_allowed && toyota_actuation_limits) {
+      if (toyota_actuation_limits) {
 
         // *** global torque limit check ***
         violation |= max_limit_check(desired_torque, TOYOTA_MAX_TORQUE, -TOYOTA_MAX_TORQUE);
@@ -124,12 +124,12 @@ static int toyota_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
       }
 
       // no torque if controls is not allowed
-      if (!controls_allowed && (desired_torque != 0)) {
-        violation = 1;
-      }
+      //if (!controls_allowed && (desired_torque != 0)) {
+      //  violation = 1;
+      //}
 
       // reset to 0 if either controls is not allowed or there's a violation
-      if (violation || !controls_allowed) {
+      if (violation) {
         toyota_desired_torque_last = 0;
         toyota_rt_torque_last = 0;
         toyota_ts_last = ts;
