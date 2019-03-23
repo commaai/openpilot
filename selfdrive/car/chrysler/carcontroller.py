@@ -109,7 +109,7 @@ class CarController(object):
 
     # frame is 100Hz (0.01s period)
     if (self.ccframe % 10 == 0):  # 0.1s period
-      new_msg = create_lkas_heartbit(self.car_fingerprint)
+      new_msg = create_lkas_heartbit(self.packer, CS.lkas_status_ok)
       can_sends.append(new_msg)
 
     if (self.ccframe % 25 == 0):  # 0.25s period
