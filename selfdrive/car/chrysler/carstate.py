@@ -80,7 +80,7 @@ def get_camera_parser(CP):
 class CarState(object):
   def __init__(self, CP):
     self.alcaLabels = ["MadMax","Normal","Wifey"]
-    self.alcaMode = 1     # default to normal ode on startup
+    self.alcaMode = 2     # default to wifey on startup
     self.prev_distance_button = 0
     self.distance_button = 0
     self.prev_lka_button = 0
