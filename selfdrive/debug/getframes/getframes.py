@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 import os
 import subprocess
+import numpy as np
+
 from cffi import FFI
 
-import numpy as np
 
 gf_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -62,40 +63,40 @@ typedef struct VisionStream {
   VIPCBuf *bufs;
 } VisionStream;
 
-int visionstream_init(VisionStream *s, VisionStreamType type, bool tbuffer, VisionStreamBufs *out_bufs_info);
+int visionstream_init(VisionStream *s, VisionStreamType type, bool tbuffer,
+    VisionStreamBufs *out_bufs_info);
 VIPCBuf* visionstream_get(VisionStream *s, VIPCBufExtra *out_extra);
 void visionstream_destroy(VisionStream *s);
 
-"""
-)
+""")
 
 clib = ffi.dlopen(os.path.join(gf_dir, "libvisionipc.so"))
 
 
 def getframes(front=False):
-  s = ffi.new("VisionStream*")
-  buf_info = ffi.new("VisionStreamBufs*")
+    s = ffi.new("VisionStream*")
+    buf_info = ffi.new("VisionStreamBufs*")
 
-  if front:
-   stream_type = clib.VISION_STREAM_RGB_FRONT
-  else:
-   stream_type = clib.VISION_STREAM_RGB_BACK
+    if front:
+        stream_type = clib.VISION_STREAM_RGB_FRONT
+    else:
+        stream_type = clib.VISION_STREAM_RGB_BACK
 
-  err = clib.visionstream_init(s, stream_type, True, buf_info)
-  assert err == 0
+    err = clib.visionstream_init(s, stream_type, True, buf_info)
+    assert err == 0
 
-  w = buf_info.width
-  h = buf_info.height
-  assert buf_info.stride == w*3
-  assert buf_info.buf_len == w*h*3
+    w = buf_info.width
+    h = buf_info.height
+    assert buf_info.stride == w*3
+    assert buf_info.buf_len == w*h*3
 
-  while True:
-    buf = clib.visionstream_get(s, ffi.NULL)
+    while True:
+        buf = clib.visionstream_get(s, ffi.NULL)
 
-    pbuf = ffi.buffer(buf.addr, buf.len)
-    yield np.frombuffer(pbuf, dtype=np.uint8).reshape((h, w, 3))
+        pbuf = ffi.buffer(buf.addr, buf.len)
+        yield np.frombuffer(pbuf, dtype=np.uint8).reshape((h, w, 3))
 
 
 if __name__ == "__main__":
-  for buf in getframes():
-    print buf.shape, buf[101, 101]
+    for buf in getframes():
+        print("{0} {1}".format(buf.shape, buf[101, 101]))
