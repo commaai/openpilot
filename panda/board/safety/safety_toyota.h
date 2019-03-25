@@ -103,9 +103,11 @@ static int toyota_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
       if (toyota_actuation_limits) {
 
         // *** global torque limit check ***
-        violation |= max_limit_check(desired_torque, TOYOTA_MAX_TORQUE, -TOYOTA_MAX_TORQUE);
+        
         if (!toyota_cruise_engaged_last){
           violation |= max_limit_check(desired_torque, 800, -800);
+        } else {
+          violation |= max_limit_check(desired_torque, TOYOTA_MAX_TORQUE, -TOYOTA_MAX_TORQUE);
         }
         // *** torque rate limit check ***
         violation |= dist_to_meas_check(desired_torque, toyota_desired_torque_last,
