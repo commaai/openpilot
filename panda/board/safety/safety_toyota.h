@@ -79,6 +79,15 @@ static int toyota_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
     // no IPAS in non IPAS mode
     if (((to_send->RIR>>21) == 0x266) || ((to_send->RIR>>21) == 0x167)) return false;
 
+    // GAS PEDAL: safety check
+    if ((to_send->RIR>>21) == 0x200) {
+      if (controls_allowed && toyota_actuation_limits) {
+        // all messages are fine here
+      } else {
+        if ((to_send->RDLR & 0xFFFF0000) != to_send->RDLR) return 0;
+      }
+    }
+
     // ACCEL: safety check on byte 1-2
     if ((to_send->RIR>>21) == 0x343) {
       int desired_accel = ((to_send->RDLR & 0xFF) << 8) | ((to_send->RDLR >> 8) & 0xFF);
