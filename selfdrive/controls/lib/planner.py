@@ -460,11 +460,16 @@ class Planner(object):
       accel_limits = map(float, calc_cruise_accel_limits(v_ego, following))
       jerk_limits = [min(-0.1, accel_limits[0]), max(0.1, accel_limits[1])]  # TODO: make a separate lookup for jerk tuning
       
-      if self.lastlat_Control and v_ego > 11:      
-        angle_later = self.lastlat_Control.anglelater
+      if not CS.carState.leftBlinker and not CS.carState.rightBlinker:
+        steering_angle = CS.carState.steeringAngle
+        if self.lastlat_Control and v_ego > 11:      
+          angle_later = self.lastlat_Control.anglelater
+        else:
+          angle_later = 0
       else:
         angle_later = 0
-      accel_limits = limit_accel_in_turns(v_ego, CS.carState.steeringAngle, accel_limits, self.CP, angle_later * self.CP.steerRatio)
+        steering_angle = 0
+      accel_limits = limit_accel_in_turns(v_ego, steering_angle, accel_limits, self.CP, angle_later * self.CP.steerRatio)
 
       if force_slow_decel:
         # if required so, force a smooth deceleration
