@@ -31,6 +31,18 @@ model_intrinsics = np.array(
    [   0. ,                            0. ,   1.]])
 
 
+# MED model
+MEDMODEL_INPUT_SIZE = (640, 240)
+MEDMODEL_YUV_SIZE = (MEDMODEL_INPUT_SIZE[0], MEDMODEL_INPUT_SIZE[1] * 3 // 2)
+MEDMODEL_CY = 47.6
+
+medmodel_zoom = 1.
+medmodel_intrinsics = np.array(
+  [[ eon_focal_length / medmodel_zoom,    0. ,  0.5 * MEDMODEL_INPUT_SIZE[0]],
+   [   0. ,  eon_focal_length / medmodel_zoom,  MEDMODEL_CY],
+   [   0. ,                            0. ,   1.]])
+
+
 # BIG model
 
 BIGMODEL_INPUT_SIZE = (864, 288)
@@ -55,6 +67,9 @@ model_frame_from_road_frame = np.dot(model_intrinsics,
   get_view_frame_from_road_frame(0, 0, 0, model_height))
 
 bigmodel_frame_from_road_frame = np.dot(bigmodel_intrinsics,
+  get_view_frame_from_road_frame(0, 0, 0, model_height))
+
+medmodel_frame_from_road_frame = np.dot(medmodel_intrinsics,
   get_view_frame_from_road_frame(0, 0, 0, model_height))
 
 model_frame_from_bigmodel_frame = np.dot(model_intrinsics, np.linalg.inv(bigmodel_intrinsics))
@@ -110,3 +125,17 @@ def get_camera_frame_from_bigmodel_frame(camera_frame_from_road_frame):
   camera_frame_from_bigmodel_frame = np.dot(camera_frame_from_ground, ground_from_bigmodel_frame)
 
   return camera_frame_from_bigmodel_frame
+
+
+def get_model_frame(snu_full, camera_frame_from_model_frame, size):
+  idxs = camera_frame_from_model_frame.dot(np.column_stack([np.tile(np.arange(size[0]), size[1]),
+                                                            np.tile(np.arange(size[1]), (size[0],1)).T.flatten(),
+                                                            np.ones(size[0] * size[1])]).T).T.astype(int)
+  calib_flat = snu_full[idxs[:,1], idxs[:,0]]
+  if len(snu_full.shape) == 3:
+    calib = calib_flat.reshape((size[1], size[0], 3))
+  elif len(snu_full.shape) == 2:
+    calib = calib_flat.reshape((size[1], size[0]))
+  else:
+    raise ValueError("shape of input img is weird")
+  return calib

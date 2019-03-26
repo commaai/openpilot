@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 import json
 
-OUTPUT_FILENAME = "default_speeds_by_region.json"
+DEFAULT_OUTPUT_FILENAME = "default_speeds_by_region.json"
 
-def main():
+def main(filename = DEFAULT_OUTPUT_FILENAME):
   countries = []
 
   """
@@ -137,27 +137,33 @@ def main():
   """ Default rules """
   DE.add_rule({"highway": "motorway"}, "none")
   DE.add_rule({"highway": "living_street"}, "10")
+  DE.add_rule({"highway": "residential"}, "30")
   DE.add_rule({"zone:traffic": "DE:rural"}, "100")
   DE.add_rule({"zone:traffic": "DE:urban"}, "50")
+  DE.add_rule({"zone:maxspeed": "DE:30"}, "30")
+  DE.add_rule({"zone:maxspeed": "DE:urban"}, "50")
+  DE.add_rule({"zone:maxspeed": "DE:rural"}, "100")
+  DE.add_rule({"zone:maxspeed": "DE:motorway"}, "none")
   DE.add_rule({"bicycle_road": "yes"}, "30")
+  
 
   """ --- DO NOT MODIFY CODE BELOW THIS LINE --- """
   """ --- ADD YOUR COUNTRY OR STATE ABOVE --- """
 
   # Final step
-  write_json(countries)
+  write_json(countries, filename)
 
-def write_json(countries):
+def write_json(countries, filename = DEFAULT_OUTPUT_FILENAME):
   out_dict = {}
   for country in countries:
     out_dict.update(country.jsonify())
   json_string = json.dumps(out_dict, indent=2)
-  with open(OUTPUT_FILENAME, "wb") as f:
+  with open(filename, "wb") as f:
     f.write(json_string)
 
 
 class Region(object):
-  ALLOWABLE_TAG_KEYS = ["highway", "zone:traffic", "bicycle_road"]
+  ALLOWABLE_TAG_KEYS = ["highway", "zone:traffic", "bicycle_road", "zone:maxspeed"]
   ALLOWABLE_HIGHWAY_TYPES = ["motorway", "trunk", "primary", "secondary", "tertiary", "unclassified", "residential", "service", "motorway_link", "trunk_link", "primary_link", "secondary_link", "tertiary_link", "living_street"]
   def __init__(self, name):
     self.name = name

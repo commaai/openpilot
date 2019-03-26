@@ -11,7 +11,7 @@ import selfdrive.messaging as messaging
 from selfdrive.config import Conversions as CV
 from selfdrive.services import service_list
 from selfdrive.car.car_helpers import get_car
-from selfdrive.controls.lib.drive_helpers import learn_angle_offset, \
+from selfdrive.controls.lib.drive_helpers import learn_angle_model_bias, \
                                                  get_events, \
                                                  create_event, \
                                                  EventTypes as ET, \
@@ -202,7 +202,7 @@ def state_transition(CS, CP, state, events, soft_disable_timer, v_cruise_kph, AM
 
 
 def state_control(plan, path_plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, AM, rk,
-                  driver_status, LaC, LoC, VM, angle_offset, passive, is_metric, cal_perc):
+                  driver_status, LaC, LoC, VM, angle_model_bias, passive, is_metric, cal_perc):
   """Given the state, this function returns an actuators packet"""
 
   actuators = car.CarControl.Actuators.new_message()
@@ -241,7 +241,7 @@ def state_control(plan, path_plan, CS, CP, state, events, v_cruise_kph, v_cruise
 
   # Run angle offset learner at 20 Hz
   if rk.frame % 5 == 2:
-    angle_offset = learn_angle_offset(active, CS.vEgo, angle_offset,
+    angle_model_bias = learn_angle_model_bias(active, CS.vEgo, angle_model_bias,
                                       path_plan.cPoly, path_plan.cProb, CS.steeringAngle,
                                       CS.steeringPressed)
 
@@ -277,12 +277,12 @@ def state_control(plan, path_plan, CS, CP, state, events, v_cruise_kph, v_cruise
 
   AM.process_alerts(sec_since_boot())
 
-  return actuators, v_cruise_kph, driver_status, angle_offset, v_acc_sol, a_acc_sol
+  return actuators, v_cruise_kph, driver_status, angle_model_bias, v_acc_sol, a_acc_sol
 
 
 def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, carstate,
               carcontrol, live100, AM, driver_status,
-              LaC, LoC, angle_offset, passive, start_time, params, v_acc, a_acc):
+              LaC, LoC, angle_model_bias, passive, start_time, params, v_acc, a_acc):
   """Send actuators and hud commands to the car, send live100 and MPC logging"""
   plan_ts = plan.logMonoTime
   plan = plan.plan
@@ -353,7 +353,7 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
     "vTargetLead": float(v_acc),
     "aTarget": float(a_acc),
     "jerkFactor": float(plan.jerkFactor),
-    "angleOffset": float(angle_offset),
+    "angleModelBias": float(angle_model_bias),
     "gpsPlannerActive": plan.gpsPlannerActive,
     "vCurvature": plan.vCurvature,
     "decelForTurn": plan.decelForTurn,
@@ -378,7 +378,7 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
   carcontrol.send(cc_send.to_bytes())
 
   if (rk.frame % 36000) == 0:    # update angle offset every 6 minutes
-    params.put("ControlsParams", json.dumps({'angle_offset': angle_offset}))
+    params.put("ControlsParams", json.dumps({'angle_model_bias': angle_model_bias}))
 
   return CC
 
@@ -461,12 +461,15 @@ def controlsd_thread(gctx=None, rate=100):
 
   rk = Ratekeeper(rate, print_delay_threshold=2. / 1000)
   controls_params = params.get("ControlsParams")
+
   # Read angle offset from previous drive
+  angle_model_bias = 0.
   if controls_params is not None:
-    controls_params = json.loads(controls_params)
-    angle_offset = controls_params['angle_offset']
-  else:
-    angle_offset = 0.
+    try:
+      controls_params = json.loads(controls_params)
+      angle_model_bias = controls_params['angle_model_bias']
+    except (ValueError, KeyError):
+      pass
 
   prof = Profiler(False)  # off by default
 
@@ -485,6 +488,8 @@ def controlsd_thread(gctx=None, rate=100):
     plan_age = (start_time - plan.logMonoTime) / 1e9
     if not path_plan.pathPlan.valid or plan_age > 0.5 or path_plan_age > 0.5:
       events.append(create_event('plannerError', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+    if not path_plan.pathPlan.paramsValid:
+      events.append(create_event('vehicleModelInvalid', [ET.WARNING]))
     events += list(plan.plan.events)
 
     # Only allow engagement with brake pressed when stopped behind another stopped car
@@ -498,16 +503,16 @@ def controlsd_thread(gctx=None, rate=100):
       prof.checkpoint("State transition")
 
     # Compute actuators (runs PID loops and lateral MPC)
-    actuators, v_cruise_kph, driver_status, angle_offset, v_acc, a_acc = \
+    actuators, v_cruise_kph, driver_status, angle_model_bias, v_acc, a_acc = \
       state_control(plan.plan, path_plan.pathPlan, CS, CP, state, events, v_cruise_kph,
                     v_cruise_kph_last, AM, rk, driver_status,
-                    LaC, LoC, VM, angle_offset, passive, is_metric, cal_perc)
+                    LaC, LoC, VM, angle_model_bias, passive, is_metric, cal_perc)
 
     prof.checkpoint("State Control")
 
     # Publish data
     CC = data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, carstate, carcontrol,
-                   live100, AM, driver_status, LaC, LoC, angle_offset, passive, start_time, params, v_acc, a_acc)
+                   live100, AM, driver_status, LaC, LoC, angle_model_bias, passive, start_time, params, v_acc, a_acc)
     prof.checkpoint("Sent")
 
     rk.keep_time()  # Run at 100Hz

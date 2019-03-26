@@ -72,6 +72,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     calibrationProgress @47;
     lowBattery @48;
     invalidGiraffeHonda @49;
+    vehicleModelInvalid @50;
   }
 }
 
@@ -317,6 +318,7 @@ struct CarParams {
     hyundai @8;
     chrysler @9;
     tesla @10;
+    subaru @11;
   }
 
   # things about the car in the manual

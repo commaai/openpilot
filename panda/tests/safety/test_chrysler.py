@@ -1,4 +1,6 @@
 #!/usr/bin/env python2
+import csv
+import glob
 import unittest
 import numpy as np
 import libpandasafety_py
@@ -23,6 +25,11 @@ def sign(a):
     return 1
   else:
     return -1
+
+def swap_bytes(data_str):
+  """Accepts string with hex, returns integer with order swapped for CAN."""
+  a = int(data_str, 16)
+  return ((a & 0xff) << 24) + ((a & 0xff00) << 8) + ((a & 0x00ff0000) >> 8) + ((a & 0xff000000) >> 24)
 
 class TestChryslerSafety(unittest.TestCase):
   @classmethod
@@ -165,6 +172,33 @@ class TestChryslerSafety(unittest.TestCase):
     self.safety.chrysler_rx_hook(self._torque_meas_msg(0))
     self.assertEqual(0, self.safety.get_chrysler_torque_meas_max())
     self.assertEqual(0, self.safety.get_chrysler_torque_meas_min())
+
+  def _replay_drive(self, csv_reader):
+    for row in csv_reader:
+      if len(row) != 4:  # sometimes truncated at end of the file
+        continue
+      if row[0] == 'time':  # skip CSV header
+        continue
+      addr = int(row[1])
+      bus = int(row[2])
+      data_str = row[3]  # Example '081407ff0806e06f'
+      to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
+      to_send[0].RIR = addr << 21
+      to_send[0].RDHR = swap_bytes(data_str[8:])
+      to_send[0].RDLR = swap_bytes(data_str[:8])
+      if (bus == 128):
+        self.assertTrue(self.safety.chrysler_tx_hook(to_send), msg=row)
+      else:
+        self.safety.chrysler_rx_hook(to_send)
+
+  def test_replay_drive(self):
+    # In Cabana, click "Save Log" and then put the downloaded CSV in this directory.
+    test_files = glob.glob('chrysler_*.csv')
+    for filename in test_files:
+      print 'testing %s' % filename
+      with open(filename) as csvfile:
+        reader = csv.reader(csvfile)
+        self._replay_drive(reader)
 
 
 if __name__ == "__main__":
