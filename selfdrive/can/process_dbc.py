@@ -50,7 +50,11 @@ for address, msg_name, msg_size, sigs in msgs:
         sys.exit("COUNTER is not 2 bits longs %s" % msg_name)
       if sig.start_bit % 8 != 5:
         sys.exit("COUNTER starts at wrong bit %s" % msg_name)
-
+    if address in [0x200, 0x201]:
+      if sig.name == "COUNTER_PEDAL" and sig.size != 4:
+        sys.exit("PEDAL COUNTER is not 4 bits longs %s" % msg_name)
+      if sig.name == "CHECKSUM_PEDAL" and sig.size != 8:
+        sys.exit("PEDAL CHECKSUM is not 8 bits longs %s" % msg_name)
 
 # Fail on duplicate message names
 c = Counter([msg_name for address, msg_name, msg_size, sigs in msgs])

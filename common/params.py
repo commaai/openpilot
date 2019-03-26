@@ -29,6 +29,7 @@ import fcntl
 import tempfile
 from enum import Enum
 
+
 def mkdirs_exists_ok(path):
   try:
     os.makedirs(path)
@@ -36,51 +37,46 @@ def mkdirs_exists_ok(path):
     if not os.path.isdir(path):
       raise
 
+
 class TxType(Enum):
   PERSISTENT = 1
   CLEAR_ON_MANAGER_START = 2
   CLEAR_ON_CAR_START = 3
 
+
 class UnknownKeyName(Exception):
   pass
 
+
 keys = {
-# written: manager
-# read:    loggerd, uploaderd, offroad
-  "DongleId": TxType.PERSISTENT,
   "AccessToken": TxType.PERSISTENT,
-  "Version": TxType.PERSISTENT,
-  "TrainingVersion": TxType.PERSISTENT,
-  "GitCommit": TxType.PERSISTENT,
-  "GitBranch": TxType.PERSISTENT,
-  "GitRemote": TxType.PERSISTENT,
-# written: baseui
-# read:    ui, controls
-  "IsMetric": TxType.PERSISTENT,
-  "IsFcwEnabled": TxType.PERSISTENT,
-  "HasAcceptedTerms": TxType.PERSISTENT,
-  "CompletedTrainingVersion": TxType.PERSISTENT,
-  "IsUploadVideoOverCellularEnabled": TxType.PERSISTENT,
-  "IsDriverMonitoringEnabled": TxType.PERSISTENT,
-  "IsGeofenceEnabled": TxType.PERSISTENT,
-  "SpeedLimitOffset": TxType.PERSISTENT,
-# written: visiond
-# read:    visiond, controlsd
   "CalibrationParams": TxType.PERSISTENT,
-  "ControlsParams": TxType.PERSISTENT,
-# written: controlsd
-# read:    radard
   "CarParams": TxType.CLEAR_ON_CAR_START,
-
-  "Passive": TxType.PERSISTENT,
+  "CompletedTrainingVersion": TxType.PERSISTENT,
+  "ControlsParams": TxType.PERSISTENT,
   "DoUninstall": TxType.CLEAR_ON_MANAGER_START,
-  "ShouldDoUpdate": TxType.CLEAR_ON_MANAGER_START,
+  "DongleId": TxType.PERSISTENT,
+  "GitBranch": TxType.PERSISTENT,
+  "GitCommit": TxType.PERSISTENT,
+  "GitRemote": TxType.PERSISTENT,
+  "HasAcceptedTerms": TxType.PERSISTENT,
+  "IsDriverMonitoringEnabled": TxType.PERSISTENT,
+  "IsFcwEnabled": TxType.PERSISTENT,
+  "IsGeofenceEnabled": TxType.PERSISTENT,
+  "IsMetric": TxType.PERSISTENT,
   "IsUpdateAvailable": TxType.PERSISTENT,
-  "LongitudinalControl": TxType.PERSISTENT,
+  "IsUploadVideoOverCellularEnabled": TxType.PERSISTENT,
   "LimitSetSpeed": TxType.PERSISTENT,
-
+  "LiveParameters": TxType.PERSISTENT,
+  "LongitudinalControl": TxType.PERSISTENT,
+  "Passive": TxType.PERSISTENT,
   "RecordFront": TxType.PERSISTENT,
+  "ShouldDoUpdate": TxType.CLEAR_ON_MANAGER_START,
+  "SpeedLimitOffset": TxType.PERSISTENT,
+  "TrainingVersion": TxType.PERSISTENT,
+  "Version": TxType.PERSISTENT,
 }
+
 
 def fsync_dir(path):
   fd = os.open(path, os.O_RDONLY)

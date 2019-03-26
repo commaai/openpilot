@@ -3,8 +3,9 @@ import zmq
 import numpy as np
 import numpy.matlib
 import importlib
-from collections import defaultdict
+from collections import defaultdict, deque
 from fastcluster import linkage_vector
+
 import selfdrive.messaging as messaging
 from selfdrive.services import service_list
 from selfdrive.controls.lib.latcontrol_helpers import calc_lookahead_offset
@@ -65,6 +66,14 @@ def radard_thread(gctx=None):
   poller = zmq.Poller()
   model = messaging.sub_sock(context, service_list['model'].port, conflate=True, poller=poller)
   live100 = messaging.sub_sock(context, service_list['live100'].port, conflate=True, poller=poller)
+  live_parameters_sock = messaging.sub_sock(context, service_list['liveParameters'].port, conflate=True, poller=poller)
+
+  # Default parameters
+  live_parameters = messaging.new_message()
+  live_parameters.init('liveParameters')
+  live_parameters.liveParameters.valid = True
+  live_parameters.liveParameters.steerRatio = CP.steerRatio
+  live_parameters.liveParameters.stiffnessFactor = 1.0
 
   MP = ModelParser()
   RI = RadarInterface(CP)
@@ -95,7 +104,8 @@ def radard_thread(gctx=None):
 
   # v_ego
   v_ego = None
-  v_ego_array = np.zeros([2, v_len])
+  v_ego_hist_t = deque(maxlen=v_len)
+  v_ego_hist_v = deque(maxlen=v_len)
   v_ego_t_aligned = 0.
 
   rk = Ratekeeper(rate, print_delay_threshold=np.inf)
@@ -115,6 +125,9 @@ def radard_thread(gctx=None):
         l100 = messaging.recv_one(socket)
       elif socket is model:
         md = messaging.recv_one(socket)
+      elif socket is live_parameters_sock:
+        live_parameters = messaging.recv_one(socket)
+        VM.update_params(live_parameters.liveParameters.stiffnessFactor, live_parameters.liveParameters.steerRatio)
 
     if l100 is not None:
       active = l100.live100.active
@@ -122,8 +135,8 @@ def radard_thread(gctx=None):
       steer_angle = l100.live100.angleSteers
       steer_override = l100.live100.steerOverride
 
-      v_ego_array = np.append(v_ego_array, [[v_ego], [float(rk.frame)/rate]], 1)
-      v_ego_array = v_ego_array[:, 1:]
+      v_ego_hist_v.append(v_ego)
+      v_ego_hist_t.append(float(rk.frame)/rate)
 
       last_l100_ts = l100.logMonoTime
 
@@ -165,7 +178,7 @@ def radard_thread(gctx=None):
       path_y = np.polyval(MP.d_poly, path_x)
     else:
       # use path from steer, set angle_offset to 0 it does not only report the physical offset
-      path_y = calc_lookahead_offset(v_ego, steer_angle, path_x, VM, angle_offset=0)[0]
+      path_y = calc_lookahead_offset(v_ego, steer_angle, path_x, VM, angle_offset=live_parameters.liveParameters.angleOffsetAverage)[0]
 
     # *** remove missing points from meta data ***
     for ids in tracks.keys():
@@ -181,7 +194,8 @@ def radard_thread(gctx=None):
 
       # align v_ego by a fixed time to align it with the radar measurement
       cur_time = float(rk.frame)/rate
-      v_ego_t_aligned = np.interp(cur_time - RI.delay, v_ego_array[1], v_ego_array[0])
+      v_ego_t_aligned = np.interp(cur_time - RI.delay, v_ego_hist_t, v_ego_hist_v)
+
       d_path = np.sqrt(np.amin((path_x - rpt[0]) ** 2 + (path_y - rpt[1]) ** 2))
       # add sign
       d_path *= np.sign(rpt[1] - np.interp(rpt[0], path_x, path_y))
