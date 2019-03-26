@@ -624,4 +624,11 @@ ALERTS = [
       "Set 0111 for openpilot. 1011 for stock",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOW_LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
+
+  Alert(
+      "vehicleModelInvalid",
+      "Vehicle Parameter Identification Failed",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOWEST, VisualAlert.steerRequired, AudibleAlert.none, .0, .0, .1),
 ]
