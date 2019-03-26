@@ -12,12 +12,14 @@ from selfdrive.swaglog import cloudlog
 
 
 def get_tombstones():
+
+    dir_data = "/data/tombstones/"
     return [(
-         "/data/tombstones/" + fn,
-         int(os.stat("/data/tombstones/"+fn).st_ctime)
+         dir_data + fn,
+         int(os.stat(dir_data + fn).st_ctime)
          )
          for fn in os.listdir(
-             "/data/tombstones"
+             dir_data
          ) if fn.startswith("tombstone")
     ]
 
