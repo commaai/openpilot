@@ -6,7 +6,11 @@ from cffi import FFI
 
 TMPDIR = "/tmp/ccache"
 
-def ffi_wrap(name, c_code, c_header, tmpdir=TMPDIR, cflags="", libraries=[]):
+
+def ffi_wrap(name, c_code, c_header, tmpdir=TMPDIR, cflags="", libraries=None):
+  if libraries is None:
+    libraries = []
+
   cache = name + "_" + hashlib.sha1(c_code).hexdigest()
   try:
     os.mkdir(tmpdir)
@@ -28,13 +32,18 @@ def ffi_wrap(name, c_code, c_header, tmpdir=TMPDIR, cflags="", libraries=[]):
 
   return mod.ffi, mod.lib
 
-def compile_code(name, c_code, c_header, directory, cflags="", libraries=[]):
+
+def compile_code(name, c_code, c_header, directory, cflags="", libraries=None):
+  if libraries is None:
+    libraries = []
+
   ffibuilder = FFI()
   ffibuilder.set_source(name, c_code, source_extension='.cpp', libraries=libraries)
   ffibuilder.cdef(c_header)
   os.environ['OPT'] = "-fwrapv -O2 -DNDEBUG -std=c++11"
   os.environ['CFLAGS'] = cflags
   ffibuilder.compile(verbose=True, debug=False, tmpdir=directory)
+
 
 def wrap_compiled(name, directory):
   sys.path.append(directory)

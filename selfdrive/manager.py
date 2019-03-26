@@ -102,10 +102,12 @@ managed_processes = {
   "pandad": "selfdrive.pandad",
   "ui": ("selfdrive/ui", ["./start.sh"]),
   "calibrationd": "selfdrive.locationd.calibrationd",
+  "locationd": "selfdrive.locationd.locationd_local",
   "visiond": ("selfdrive/visiond", ["./visiond"]),
   "sensord": ("selfdrive/sensord", ["./sensord"]),
   "gpsd": ("selfdrive/sensord", ["./gpsd"]),
   "updated": "selfdrive.updated",
+  "athena": "selfdrive.athena.athenad",
 }
 android_packages = ("ai.comma.plus.offroad", "ai.comma.plus.frame")
 
@@ -128,6 +130,7 @@ persistent_processes = [
   'ui',
   'gpsd',
   'updated',
+  'athena'
 ]
 
 car_started_processes = [
@@ -137,6 +140,7 @@ car_started_processes = [
   'sensord',
   'radard',
   'calibrationd',
+  'locationd',
   'visiond',
   'proclogd',
   'ubloxd',

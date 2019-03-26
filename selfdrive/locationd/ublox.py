@@ -207,10 +207,13 @@ class UBloxDescriptor:
   def __init__(self,
                name,
                msg_format,
-               fields=[],
+               fields=None,
                count_field=None,
                format2=None,
                fields2=None):
+    if fields is None:
+      fields = []
+
     self.name = name
     self.msg_format = msg_format
     self.fields = fields
@@ -465,7 +468,7 @@ msg_types = {
   (CLASS_RXM, MSG_RXM_SFRB):
   UBloxDescriptor('RXM_SFRB', '<BB10I', ['chn', 'svid', 'dwrd[10]']),
   (CLASS_RXM, MSG_RXM_SFRBX):
-  UBloxDescriptor('RXM_SFRBX', '<8B', ['gnssId', 'svid', 'reserved1', 'freqId', 'numWords', 
+  UBloxDescriptor('RXM_SFRBX', '<8B', ['gnssId', 'svid', 'reserved1', 'freqId', 'numWords',
       'reserved2', 'version', 'reserved3'], 'numWords', 'I', ['dwrd']),
   (CLASS_AID, MSG_AID_ALM):
   UBloxDescriptor('AID_ALM', '<II', '_remaining', 'I', ['dwrd']),
@@ -704,7 +707,7 @@ class UBlox:
       time.sleep(0.1)
       self.panda.set_esp_power(1)
       time.sleep(0.5)
-     
+
       # can't set above 9600 now...
       self.baudrate = 9600
       self.dev = PandaSerial(self.panda, 1, self.baudrate)

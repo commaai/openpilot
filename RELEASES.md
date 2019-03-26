@@ -1,3 +1,15 @@
+Version 0.5.10 (2019-03-19)
+========================
+ * Self-tuning vehicle parameters: steering offset, tires stiffness and steering ratio
+ * Improve longitudinal control at low speed when lead vehicle harshly decelerates
+ * Fix panda bug going unexpectedly in DCP mode when EON is connected
+ * Reduce white panda power consumption by 500mW when EON is disconnected by turning off WIFI
+ * New Driver Monitoring Model
+ * Support QR codes for login using comma connect
+ * Refactor comma pedal FW and use CRC-8 checksum algorithm for safety. Reflashing pedal is required. 
+   Please see `#hw-pedal` on [discord](discord.comma.ai) for assistance updating comma pedal. 
+ * Additional speed limit rules for Germany thanks to arne182
+
 Version 0.5.9 (2019-02-10)
 ========================
  * Improve calibration using a dedicated neural network
@@ -8,7 +20,7 @@ Version 0.5.9 (2019-02-10)
  * Kia Optima support thanks to emmertex!
  * Buick Regal 2018 support thanks to HOYS!
  * Comma pedal support for Toyota thanks to wocsor! Note: tuning needed and not maintained by comma
- * Chrysler Pacifica and Jeep Grand Cherokee suppor thanks to adhintz!
+ * Chrysler Pacifica and Jeep Grand Cherokee support thanks to adhintz!
 
 Version 0.5.8 (2019-01-17)
 ========================

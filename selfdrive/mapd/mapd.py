@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
 # Add phonelibs openblas to LD_LIBRARY_PATH if import fails
+from common.basedir import BASEDIR
 try:
   from scipy import spatial
 except ImportError as e:
   import os
   import sys
-  from common.basedir import BASEDIR
+
 
   openblas_path = os.path.join(BASEDIR, "phonelibs/openblas/")
   os.environ['LD_LIBRARY_PATH'] += ':' + openblas_path
@@ -14,6 +15,10 @@ except ImportError as e:
   args = [sys.executable]
   args.extend(sys.argv)
   os.execv(sys.executable, args)
+
+DEFAULT_SPEEDS_BY_REGION_JSON_FILE = BASEDIR + "/selfdrive/mapd/default_speeds_by_region.json"
+import default_speeds_generator
+default_speeds_generator.main(DEFAULT_SPEEDS_BY_REGION_JSON_FILE)
 
 import os
 import sys
@@ -44,31 +49,6 @@ query_lock = threading.Lock()
 last_query_result = None
 last_query_pos = None
 cache_valid = False
-
-
-def setup_thread_excepthook():
-  """
-  Workaround for `sys.excepthook` thread bug from:
-  http://bugs.python.org/issue1230540
-  Call once from the main thread before creating any threads.
-  Source: https://stackoverflow.com/a/31622038
-  """
-  init_original = threading.Thread.__init__
-
-  def init(self, *args, **kwargs):
-    init_original(self, *args, **kwargs)
-    run_original = self.run
-
-    def run_with_except_hook(*args2, **kwargs2):
-      try:
-        run_original(*args2, **kwargs2)
-      except Exception:
-        sys.excepthook(*sys.exc_info())
-
-    self.run = run_with_except_hook
-
-  threading.Thread.__init__ = init
-
 
 def build_way_query(lat, lon, radius=50):
   """Builds a query to find all highways within a given radius around a point"""
@@ -301,7 +281,6 @@ def main(gctx=None):
   crash.bind_extra(version=version, dirty=dirty, is_eon=True)
   crash.install()
 
-  setup_thread_excepthook()
   main_thread = threading.Thread(target=mapsd_thread)
   main_thread.daemon = True
   main_thread.start()
