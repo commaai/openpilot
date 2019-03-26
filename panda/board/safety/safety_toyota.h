@@ -28,7 +28,7 @@ int toyota_desired_torque_last = 0;       // last desired steer torque
 int toyota_rt_torque_last = 0;            // last desired torque for real time check
 uint32_t toyota_ts_last = 0;
 int toyota_cruise_engaged_last = 0;       // cruise state
-//int ego_speed = 0;                        // speed
+int ego_speed_toyota = 0;                        // speed
 struct sample_t toyota_torque_meas;       // last 3 motor torques produced by the eps
 
 
@@ -36,7 +36,7 @@ static void toyota_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   // sample speed
   if ((to_push->RIR>>21) == 0xb4) {
     // Middle bytes needed
-    ego_speed = (to_push->RDLR >>  (5*8)) & 0xFFFF; //Speed is 100x
+    ego_speed_toyota = (to_push->RDLR >>  (5*8)) & 0xFFFF; //Speed is 100x
   }// Special thanks to Willem Melching for the code
   
   // get eps motor torque (0.66 factor in dbc)
@@ -112,7 +112,7 @@ static int toyota_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
         // *** global torque limit check ***
         
         if (!toyota_cruise_engaged_last){
-          if (ego_speed > 4500){
+          if (ego_speed_toyota > 4500){
             violation |= max_limit_check(desired_torque, 800, -800);
           } else {
             violation = 1;
