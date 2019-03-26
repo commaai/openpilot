@@ -2,6 +2,14 @@ CFLAGS += -I inc -I ../ -nostdlib -fno-builtin -std=gnu11 -Os
 
 CFLAGS += -Tstm32_flash.ld
 
+# Compile fast charge (DCP) only not on EON
+ifeq (,$(wildcard /EON))
+  BUILDER = DEV
+else
+  CFLAGS += "-DEON"
+  BUILDER = EON
+endif
+
 CC = arm-none-eabi-gcc
 OBJCOPY = arm-none-eabi-objcopy
 OBJDUMP = arm-none-eabi-objdump
