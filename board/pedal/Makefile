@@ -30,12 +30,20 @@ recover: obj/bootstub.bin obj/$(PROJ_NAME).bin
 	$(DFU_UTIL) -d 0483:df11 -a 0 -s 0x08004000 -D obj/$(PROJ_NAME).bin
 	$(DFU_UTIL) -d 0483:df11 -a 0 -s 0x08000000:leave -D obj/bootstub.bin
 
+include ../../common/version.mk
+
+obj/cert.h: ../../crypto/getcertheader.py
+	../../crypto/getcertheader.py ../../certs/debug.pub ../../certs/release.pub > $@
+
 obj/main.o: main.c ../*.h
 	mkdir -p obj
 	$(CC) $(CFLAGS) -o $@ -c $<
 
-obj/bootstub.o: ../bootstub.c ../*.h
+obj/bootstub.o: ../bootstub.c ../*.h obj/gitversion.h obj/cert.h
 	mkdir -p obj
+	mkdir -p ../obj
+	cp obj/gitversion.h ../obj/gitversion.h
+	cp obj/cert.h  ../obj/cert.h
 	$(CC) $(CFLAGS) -o $@ -c $<
 
 obj/$(STARTUP_FILE).o: ../$(STARTUP_FILE).s
@@ -56,3 +64,4 @@ obj/bootstub.bin: obj/$(STARTUP_FILE).o obj/bootstub.o obj/sha.o obj/rsa.o
 	
 clean:
 	rm -f obj/*
+
