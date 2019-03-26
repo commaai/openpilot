@@ -2,6 +2,7 @@
 import os
 import sys
 import json
+from subprocess import check_output
 from selfdrive.version import version, dirty
 
 from selfdrive.swaglog import cloudlog
@@ -23,8 +24,12 @@ else:
     auth = json.loads(f.read())
 
   auth = json.loads(auth['commaUser'])
+
+  out = check_output(["git", "branch"]).decode("utf8")
+  current_branch = next(line for line in out.split("\n") if line.startswith("*")).strip("*").strip()
+
   try:
-    client = Client('https://137e8e621f114f858f4c392c52e18c6d:8aba82f49af040c8aac45e95a8484970@sentry.io/1404547',install_sys_hook=False, transport=HTTPTransport, release=version, tags={'dirty': dirty, 'email': auth['email'], 'username': auth['username']})
+    client = Client('https://137e8e621f114f858f4c392c52e18c6d:8aba82f49af040c8aac45e95a8484970@sentry.io/1404547',install_sys_hook=False, transport=HTTPTransport, release=version, tags={'dirty': dirty, 'email': auth['email'], 'username': auth['username'], 'branch': current_branch})
   except TypeError:
     client = Client('https://137e8e621f114f858f4c392c52e18c6d:8aba82f49af040c8aac45e95a8484970@sentry.io/1404547',install_sys_hook=False, transport=HTTPTransport, release=version, tags={'dirty': dirty})
     pass
