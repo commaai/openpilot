@@ -28,7 +28,7 @@ int toyota_desired_torque_last = 0;       // last desired steer torque
 int toyota_rt_torque_last = 0;            // last desired torque for real time check
 uint32_t toyota_ts_last = 0;
 int toyota_cruise_engaged_last = 0;       // cruise state
-int ego_speed = 0;                        // speed
+//int ego_speed = 0;                        // speed
 struct sample_t toyota_torque_meas;       // last 3 motor torques produced by the eps
 
 
