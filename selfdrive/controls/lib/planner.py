@@ -39,7 +39,8 @@ _A_CRUISE_MAX_V_FOLLOWING = [1.6, 1.6, 1.2, .7, .3]
 _A_CRUISE_MAX_BP = [0.,  5., 10., 20., 40.]
 
 # Lookup table for turns
-_A_TOTAL_MAX_V = [3.0, 3.5, 4.0]
+_brake_factor = kegman.conf['brakefactor']
+_A_TOTAL_MAX_V = [2.0 * _brake_factor, 2.7 * _brake_factor, 3.5 * _brake_factor]
 _A_TOTAL_MAX_BP = [0., 25., 40.]
 
 _FCW_A_ACT_V = [-3., -2.]
