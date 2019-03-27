@@ -5,8 +5,29 @@ from selfdrive.controls.lib.drive_helpers import rate_limit
 from common.numpy_fast import clip
 from selfdrive.car import create_gas_command
 from selfdrive.car.honda import hondacan
-from selfdrive.car.honda.values import AH, CruiseButtons, CAR
+from selfdrive.car.honda.values import AH, CruiseButtons, CAR, HONDA_BOSCH
 from selfdrive.can.packer import CANPacker
+
+# Accel limits
+ACCEL_HYST_GAP = 0.02 # don't change accel command for small oscilalitons within this value
+ACCEL_MAX = 800.
+ACCEL_MIN = -1599.
+ACCEL_SCALE = max(ACCEL_MAX, -ACCEL_MIN)
+
+def accel_hysteresis(accel, accel_steady, enabled):
+
+  # for small accel oscillations within ACCEL_HYST_GAP, don't change the accel command
+  if not enabled:
+    # send 0 when disabled, otherwise acc faults
+    accel_steady = 0.
+  elif accel > accel_steady + ACCEL_HYST_GAP:
+    accel_steady = accel - ACCEL_HYST_GAP
+  elif accel < accel_steady - ACCEL_HYST_GAP:
+    accel_steady = accel + ACCEL_HYST_GAP
+  accel = accel_steady
+
+  return accel, accel_steady
+
 
 def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
   # hyst params
@@ -76,6 +97,7 @@ HUDData = namedtuple("HUDData",
 
 class CarController(object):
   def __init__(self, dbc_name, enable_camera=True):
+    self.accel_steady = 0.
     self.braking = False
     self.brake_steady = 0.
     self.brake_last = 0.
@@ -141,6 +163,11 @@ class CarController(object):
     else:
       STEER_MAX = 0x1000
 
+    # gas and brake
+    apply_accel = actuators.gas - actuators.brake
+    apply_accel, self.accel_steady = accel_hysteresis(apply_accel, self.accel_steady, enabled)
+    apply_accel = clip(apply_accel * ACCEL_SCALE, ACCEL_MIN, ACCEL_MAX)
+
     # steer torque is converted back to CAN reference (positive when steering right)
     apply_gas = clip(actuators.gas, 0., 1.)
     apply_brake = int(clip(self.brake_last * BRAKE_MAX, 0, BRAKE_MAX - 1))
@@ -154,14 +181,14 @@ class CarController(object):
     # Send steering command.
     idx = frame % 4
     can_sends.append(hondacan.create_steering_control(self.packer, apply_steer,
-      lkas_active, CS.CP.carFingerprint, idx))
+      lkas_active, CS.CP.carFingerprint, CS.CP.radarOffCan, idx))
 
     # Send dashboard UI commands.
     if (frame % 10) == 0:
       idx = (frame/10) % 4
-      can_sends.extend(hondacan.create_ui_commands(self.packer, pcm_speed, hud, CS.CP.carFingerprint, idx))
+      can_sends.extend(hondacan.create_ui_commands(self.packer, pcm_speed, hud, CS.CP.carFingerprint, CS.CP.radarOffCan, CS.CP.openpilotLongitudinalControl, idx))
 
-    if CS.CP.radarOffCan:
+    if not CS.CP.openpilotLongitudinalControl:
       # If using stock ACC, spam cancel command to kill gas when OP disengages.
       if pcm_cancel_cmd:
         can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.CANCEL, idx))
@@ -172,10 +199,14 @@ class CarController(object):
       # Send gas and brake commands.
       if (frame % 2) == 0:
         idx = frame / 2
-        pump_on, self.last_pump_ts = brake_pump_hysteresys(apply_brake, self.apply_brake_last, self.last_pump_ts)
-        can_sends.append(hondacan.create_brake_command(self.packer, apply_brake, pump_on,
-          pcm_override, pcm_cancel_cmd, hud.chime, hud.fcw, idx))
-        self.apply_brake_last = apply_brake
+
+        if CS.CP.carFingerprint in HONDA_BOSCH:
+          can_sends.extend(hondacan.create_acc_commands(self.packer, enabled, apply_accel, idx))
+        else:
+          pump_on, self.last_pump_ts = brake_pump_hysteresys(apply_brake, self.apply_brake_last, self.last_pump_ts)
+          can_sends.append(hondacan.create_brake_command(self.packer, apply_brake, pump_on,
+            pcm_override, pcm_cancel_cmd, hud.chime, hud.fcw, idx))
+          self.apply_brake_last = apply_brake
 
         if CS.CP.enableGasInterceptor:
           # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.

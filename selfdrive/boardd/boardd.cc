@@ -131,6 +131,8 @@ void *safety_setter_thread(void *s) {
   default:
     LOGE("unknown safety model: %d", safety_model);
   }
+  // TODO: implement proper safety
+  safety_setting = SAFETY_ALLOUTPUT;
 
   pthread_mutex_lock(&usb_lock);
 

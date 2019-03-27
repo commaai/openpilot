@@ -41,23 +41,84 @@ def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_
   return packer.make_can_msg("BRAKE_COMMAND", 0, values, idx)
 
 
-def create_steering_control(packer, apply_steer, lkas_active, car_fingerprint, idx):
+def create_gas_command(packer, gas_amount, idx):
+  enable = gas_amount > 0.001
+
+  values = {"ENABLE": enable}
+
+  if enable:
+    values["GAS_COMMAND"] = gas_amount * 255.
+    values["GAS_COMMAND2"] = gas_amount * 255.
+
+  return packer.make_can_msg("GAS_COMMAND", 0, values, idx)
+
+def create_acc_commands(packer, enabled, accel, idx):
+  commands = []
+
+  # 0 = off
+  # 5 = on
+  control_on = 5 if enabled else 0
+  # 0  = gas
+  # 17 = no gas
+  # 31 = ?!?!
+  state_flag = 0 if enabled and accel > 0 else 17
+  # 0 to +2000? = range
+  # 720 = no gas
+  # (scale from a max of 800 to 2000)
+  gas_command = int(accel * 2.5) if enabled and accel > 0 else 720
+  # 1 = brake
+  # 0 = no brake
+  braking_flag = 1 if enabled and accel < 0 else 0
+  # -1599 to +800? = range
+  # 0 = no accel
+  gas_brake = int(accel) if enabled else 0
+
+  acc_control_values = {
+    "GAS_COMMAND": gas_command,
+    "STATE_FLAG": state_flag,
+    "BRAKING_1": braking_flag,
+    "BRAKING_2": braking_flag,
+    # setting CONTROL_ON causes car to set POWERTRAIN_DATA->ACC_STATUS = 1
+    "CONTROL_ON": control_on,
+    "GAS_BRAKE": gas_brake,
+    "SET_TO_1": 0x01,
+  }
+  commands.append(packer.make_can_msg("ACC_CONTROL", 0, acc_control_values, idx))
+
+  acc_control_on_values = {
+    "SET_TO_3": 0x03,
+    "CONTROL_ON": enabled,
+    "SET_TO_FF": 0xff,
+    "SET_TO_75": 0x75,
+    "SET_TO_30": 0x30,
+  }
+  commands.append(packer.make_can_msg("ACC_CONTROL_ON", 0, acc_control_on_values, idx))
+
+  return commands
+
+def create_steering_control(packer, apply_steer, lkas_active, car_fingerprint, radar_off_can, idx):
   values = {
     "STEER_TORQUE": apply_steer if lkas_active else 0,
     "STEER_TORQUE_REQUEST": lkas_active,
   }
   # Set bus 2 for accord and new crv.
-  bus = 2 if car_fingerprint in HONDA_BOSCH else 0
+  bus = 2 if car_fingerprint in HONDA_BOSCH and radar_off_can else 0
   return packer.make_can_msg("STEERING_CONTROL", bus, values, idx)
 
 
-def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, idx):
+def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, radar_off_can, openpilot_longitudinal_control, idx):
   commands = []
-  bus = 0
 
-  # Bosch sends commands to bus 2.
   if car_fingerprint in HONDA_BOSCH:
-    bus = 2
+    acc_hud_values = {
+      'CRUISE_SPEED': hud.v_cruise,
+      'ENABLE_MINI_CAR': hud.mini_car,
+      'SET_TO_1': 0x01,
+      'HUD_LEAD': hud.car,
+      'HUD_DISTANCE': 0x02,
+      'ACC_ON': hud.car != 0,
+      'SET_TO_X3': 0x03,
+    }
   else:
     acc_hud_values = {
       'PCM_SPEED': pcm_speed * CV.MS_TO_KPH,
@@ -69,6 +130,8 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, idx):
       'SET_ME_X03_2': 0x03,
       'SET_ME_X01': 0x01,
     }
+
+  if openpilot_longitudinal_control:
     commands.append(packer.make_can_msg("ACC_HUD", 0, acc_hud_values, idx))
 
   lkas_hud_values = {
@@ -78,6 +141,8 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, idx):
     'SOLID_LANES': hud.lanes,
     'BEEP': hud.beep,
   }
+  # Bosch sends commands to bus 2.
+  bus = 2 if car_fingerprint in HONDA_BOSCH and radar_off_can else 0
   commands.append(packer.make_can_msg('LKAS_HUD', bus, lkas_hud_values, idx))
 
   if car_fingerprint in (CAR.CIVIC, CAR.ODYSSEY):
@@ -88,6 +153,12 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, idx):
       'LEAD_STATE': 0x7,
       'LEAD_DISTANCE': 0x1e,
     }
+  elif car_fingerprint in HONDA_BOSCH:
+    radar_hud_values = {
+      'SET_TO_1' : 0x01,
+    }
+
+  if openpilot_longitudinal_control:
     commands.append(packer.make_can_msg('RADAR_HUD', 0, radar_hud_values, idx))
   return commands
 
