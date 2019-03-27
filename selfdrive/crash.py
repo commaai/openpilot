@@ -2,6 +2,7 @@
 import os
 import sys
 import json
+from subprocess import check_output
 from selfdrive.version import version, dirty
 
 from selfdrive.swaglog import cloudlog
@@ -19,15 +20,20 @@ else:
   from raven import Client
   from raven.transport.http import HTTPTransport
 
-  with open("/data/data/ai.comma.plus.offroad/files/persistStore/persist-auth", "r") as f:
-    auth = json.loads(f.read())
+  error_tags = {'dirty': dirty, 'branch': 'release2'}
 
-  auth = json.loads(auth['commaUser'])
   try:
-    client = Client('https://137e8e621f114f858f4c392c52e18c6d:8aba82f49af040c8aac45e95a8484970@sentry.io/1404547',install_sys_hook=False, transport=HTTPTransport, release=version, tags={'dirty': dirty, 'email': auth['email'], 'username': auth['username']})
-  except TypeError:
-    client = Client('https://137e8e621f114f858f4c392c52e18c6d:8aba82f49af040c8aac45e95a8484970@sentry.io/1404547',install_sys_hook=False, transport=HTTPTransport, release=version, tags={'dirty': dirty})
+    with open("/data/data/ai.comma.plus.offroad/files/persistStore/persist-auth", "r") as f:
+      auth = json.loads(f.read())
+    auth = json.loads(auth['commaUser'])
+    error_tags['username'] = auth['username']
+    error_tags['email'] = auth['email']
+  except:
     pass
+
+  client = Client('https://137e8e621f114f858f4c392c52e18c6d:8aba82f49af040c8aac45e95a8484970@sentry.io/1404547',
+                  install_sys_hook=False, transport=HTTPTransport, release=version, tags=error_tags)
+
   def capture_exception(*args, **kwargs):
     client.captureException(*args, **kwargs)
     cloudlog.error("crash", exc_info=kwargs.get('exc_info', 1))
