@@ -30,13 +30,8 @@ else:
     error_tags['email'] = auth['email']
   except:
     pass
-
-  try:
-    out = check_output(["git", "branch"]).decode("utf8")
-    current_branch = next(line for line in out.split("\n") if line.startswith("*")).strip("*").strip()
-    error_tags['branch'] = current_branch
-  except:
-    pass
+  
+  error_tags['branch'] = 'release2'
 
   client = Client('https://137e8e621f114f858f4c392c52e18c6d:8aba82f49af040c8aac45e95a8484970@sentry.io/1404547',
                   install_sys_hook=False, transport=HTTPTransport, release=version, tags=error_tags)
