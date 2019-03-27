@@ -254,7 +254,10 @@ class CarInterface(object):
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 16.0   # 12.3 is spec end-to-end
       tire_stiffness_factor = 0.677
-      ret.steerKpV, ret.steerKiV = [[0.6], [0.18]]
+      is_fw_modified = os.getenv("DONGLE_ID") in ['91c9befc4a0603cd']
+      ret.steerKpV, ret.steerKiV = [[0.075], [0.0225]] if is_fw_modified else [[0.6], [0.18]]
+      if is_fw_modified:
+        ret.steerKf = 0.00001
       ret.longitudinalKpBP = [0., 5., 35.]
       ret.longitudinalKpV = [1.2, 0.8, 0.5]
       ret.longitudinalKiBP = [0., 35.]
