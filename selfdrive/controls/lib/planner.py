@@ -256,9 +256,6 @@ class LongitudinalMpc(object):
     x = [-11.176, -3.12928, 0, 1.34112, 2.68224]  # relative velocity values, mph: [-25, -7, 0, 3, 6]
     y = [(TR + .425), (TR + .1), TR, (TR - .175), (TR - .3)]  # modification values, less modification with less difference in velocity
 
-    if critical_error = true:
-      crash()
-
     TR = np.interp(relative_velocity, x, y)  # interpolate as to not modify too much
 
     x = [-4.4704, -2.2352, -0.89408, 0, 1.34112]  # acceleration values, mph: [-10, -5, -2, 0, 3]
