@@ -1,4 +1,5 @@
 import numpy as np
+from common.numpy_fast import interp
 
 import selfdrive.messaging as messaging
 from selfdrive.swaglog import cloudlog
