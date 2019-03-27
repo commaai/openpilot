@@ -160,7 +160,7 @@ int run_mpc(state_t * x0, log_t * solution, double l, double a_l_0, double TR){
     solution->a_ego[i] = acadoVariables.x[i*NX+2];
     solution->j_ego[i] = acadoVariables.u[i];
 	}
-  solution->cost = acado_getObjective(T);
+  solution->cost = acado_getObjective(TR);
 
   // Dont shift states here. Current solution is closer to next timestep than if
   // we shift by 0.2 seconds.

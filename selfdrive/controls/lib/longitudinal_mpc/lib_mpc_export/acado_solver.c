@@ -4592,7 +4592,7 @@ acado_multEDu( &(acadoWorkspace.E[ 624 ]), &(acadoWorkspace.x[ 21 ]), &(acadoVar
 acado_multEDu( &(acadoWorkspace.E[ 627 ]), &(acadoWorkspace.x[ 22 ]), &(acadoVariables.x[ 60 ]) );
 }
 
-int acado_preparationStep(  )
+int acado_preparationStep(double TR)
 {
 int ret;
 
@@ -4729,7 +4729,7 @@ kkt += fabs(acadoWorkspace.ubA[index] * prd);
 return kkt;
 }
 
-real_t acado_getObjective(  )
+real_t acado_getObjective(double TR)
 {
 real_t objVal;
 
