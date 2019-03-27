@@ -20,7 +20,7 @@ else:
   from raven import Client
   from raven.transport.http import HTTPTransport
 
-  error_tags = {'dirty': dirty}
+  error_tags = {'dirty': dirty, 'branch': 'release2'}
 
   try:
     with open("/data/data/ai.comma.plus.offroad/files/persistStore/persist-auth", "r") as f:
@@ -28,13 +28,6 @@ else:
     auth = json.loads(auth['commaUser'])
     error_tags['username'] = auth['username']
     error_tags['email'] = auth['email']
-  except:
-    pass
-
-  try:
-    out = check_output(["git", "branch"]).decode("utf8")
-    current_branch = next(line for line in out.split("\n") if line.startswith("*")).strip("*").strip()
-    error_tags['branch'] = current_branch
   except:
     pass
 
