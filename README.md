@@ -1,3 +1,5 @@
+<b>NOTE:  If you have upgraded at any time to v0.5.10 and you want to go back to a branch with v0.5.9, then you have to go SSH into the Eon and edit the file /data/params/d/ControlsParams and rename "angle_model_bias" to "angle_offset" or your car will have Dash Errors! </b>
+
 This is a fork of comma's openpilot, and contains tweaks for Hondas and GM vehicles 
 
 <b>WARNING:</b>  Do NOT depend on OP to stop the car in time if you are approaching an object which is not in motion in the same direction as your car.  The radar will NOT detect the stationary object in time to slow your car enough to stop.  If you are approaching a stopped vehicle you must disengage and brake as radars ignore objects that are not in motion.
