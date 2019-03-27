@@ -210,7 +210,7 @@ tmpQN1[7] = + tmpQN2[6]*tmpFx[1] + tmpQN2[7]*tmpFx[4] + tmpQN2[8]*tmpFx[7];
 tmpQN1[8] = + tmpQN2[6]*tmpFx[2] + tmpQN2[7]*tmpFx[5] + tmpQN2[8]*tmpFx[8];
 }
 
-void acado_evaluateObjective(  )
+void acado_evaluateObjective(double TR)
 {
 int runObj;
 for (runObj = 0; runObj < 20; ++runObj)
@@ -4597,7 +4597,7 @@ int acado_preparationStep(  )
 int ret;
 
 ret = acado_modelSimulation();
-acado_evaluateObjective(  );
+acado_evaluateObjective(TR);
 acado_condensePrep(  );
 return ret;
 }
