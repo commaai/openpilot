@@ -44,6 +44,7 @@ class LongitudinalMpc(object):
     self.prev_lead_x = 0.0
     self.new_lead = False
     self.v_rel = 0.0
+    v_lead = 0.0
 
     self.last_cloudlog_t = 0.0
 
