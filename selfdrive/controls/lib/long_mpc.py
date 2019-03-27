@@ -45,7 +45,6 @@ class LongitudinalMpc(object):
     self.new_lead = False
     self.v_rel = 0.0
     v_lead = 0.0
-
     self.last_cloudlog_t = 0.0
 
   def send_mpc_solution(self, qp_iterations, calculation_time):
@@ -110,6 +109,7 @@ class LongitudinalMpc(object):
       self.cur_state[0].x_l = 50.0
       self.cur_state[0].v_l = v_ego + 10.0
       a_lead = 0.0
+      v_lead = 0.0
       self.a_lead_tau = _LEAD_ACCEL_TAU
 
     # Calculate conditions

@@ -15,39 +15,11 @@ from selfdrive.controls.lib.longcontrol import LongCtrlState, MIN_CAN_SPEED
 from selfdrive.controls.lib.fcw import FCWChecker
 from selfdrive.controls.lib.long_mpc import LongitudinalMpc
 
-# One, two and three bar distances (in s)
-ONE_BAR_DISTANCE = 0.9  # in seconds
-TWO_BAR_DISTANCE = 1.3  # in seconds
-THREE_BAR_DISTANCE = 1.8  # in seconds
-FOUR_BAR_DISTANCE = 2.5   # in seconds
-
-# Variables that change braking profiles
-CITY_SPEED = 19.44  # braking profile changes when below this speed based on following dynamics below [m/s]
-#GAP_CLOSURE_SPEED = -1  # relative velocity between you and lead car which activates braking profile change [m/s]
-#TAILGATE_DISTANCE = 17.5  # when below this distance between you and lead car, braking profile change is active based on PULLAWAY_REL_V [m]
-#PULLAWAY_REL_V = 0.25  # within TAILGATE_DISTANCE, if the car is pulling away w/ rel velocity that exceeds this value, then change BACK to set bar distance [m/s]
-#MIN_DISTANCE = 7  # keep a minimum distance between you and lead car (when below this, activates braking profile change) [m]
-STOPPING_DISTANCE = 2  # increase distance from lead car when stopped
-
-# Braking profile changes (makes the car brake harder because it wants to be farther from the lead car - increase to brake harder)
-ONE_BAR_PROFILE = [ONE_BAR_DISTANCE, FOUR_BAR_DISTANCE]
-ONE_BAR_PROFILE_BP = [0.0, 3.0]
-
-TWO_BAR_PROFILE = [TWO_BAR_DISTANCE, FOUR_BAR_DISTANCE]
-TWO_BAR_PROFILE_BP = [0.0, 3.5]
-
-THREE_BAR_PROFILE = [THREE_BAR_DISTANCE, FOUR_BAR_DISTANCE]
-THREE_BAR_PROFILE_BP = [0.0, 4.0]
-
-# Max lateral acceleration, used to caclulate how much to slow down in turns
-A_Y_MAX = 1.85  # m/s^2
 NO_CURVATURE_SPEED = 200. * CV.MPH_TO_MS
 
 _DT_MPC = 0.2  # 5Hz
 MAX_SPEED_ERROR = 2.0
 AWARENESS_DECEL = -0.2     # car smoothly decel at .2m/s^2 when user is distracted
-TR = TWO_BAR_DISTANCE # CS.readdistancelines
-
 
 # lookup tables VS speed to determine min and max accels in cruise
 # make sure these accelerations are smaller than mpc limits
@@ -56,11 +28,8 @@ _A_CRUISE_MIN_BP = [   0., 5.,  10., 20.,  40.]
 
 # need fast accel at very low speed for stop and go
 # make sure these accelerations are smaller than mpc limits
-#_A_CRUISE_MAX_V = [1.1, 1.1, .8, .5, .3] comma default 
-#_A_CRUISE_MAX_V = [1.6, 1.6, 1.2, .7, .3] kegman
-_A_CRUISE_MAX_V = [1.6, 1.6, 1.5, .7, .3] #better (regain speed faster)
-#_A_CRUISE_MAX_V_FOLLOWING = [1.6, 1.6, 1.2, .7, .3] comma default
-_A_CRUISE_MAX_V_FOLLOWING = [1.1, 1.6, 1.3, .7, .3] #better (less agressive accel on jams)
+_A_CRUISE_MAX_V = [1.1, 1.1, .8, .5, .3]
+_A_CRUISE_MAX_V_FOLLOWING = [1.6, 1.6, 1.2, .7, .3]
 _A_CRUISE_MAX_BP = [0.,  5., 10., 20., 40.]
 
 # Lookup table for turns
