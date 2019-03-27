@@ -39,7 +39,7 @@ if __name__ == "__main__":
       port = int(m)
     else:
       print("service not found")
-      exit(-1)
+      sys.exit(-1)
     sock = messaging.sub_sock(context, port, poller, addr=args.addr)
     if args.proxy:
       republish_socks[sock] = messaging.pub_sock(context, port)
