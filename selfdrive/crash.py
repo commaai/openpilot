@@ -20,7 +20,7 @@ else:
   from raven import Client
   from raven.transport.http import HTTPTransport
 
-  error_tags = {'dirty': dirty}
+  error_tags = {'dirty': dirty, 'branch': 'release2'}
 
   try:
     with open("/data/data/ai.comma.plus.offroad/files/persistStore/persist-auth", "r") as f:
@@ -30,8 +30,6 @@ else:
     error_tags['email'] = auth['email']
   except:
     pass
-  
-  error_tags['branch'] = 'release2'
 
   client = Client('https://137e8e621f114f858f4c392c52e18c6d:8aba82f49af040c8aac45e95a8484970@sentry.io/1404547',
                   install_sys_hook=False, transport=HTTPTransport, release=version, tags=error_tags)
