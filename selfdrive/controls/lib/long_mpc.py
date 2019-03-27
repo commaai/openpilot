@@ -7,6 +7,27 @@ from selfdrive.controls.lib.radar_helpers import _LEAD_ACCEL_TAU
 from selfdrive.controls.lib.longitudinal_mpc import libmpc_py
 from selfdrive.controls.lib.drive_helpers import MPC_COST_LONG
 
+# One, two and three bar distances (in s)
+ONE_BAR_DISTANCE = 0.9  # in seconds
+TWO_BAR_DISTANCE = 1.3  # in seconds
+THREE_BAR_DISTANCE = 1.8  # in seconds
+FOUR_BAR_DISTANCE = 2.5   # in seconds
+
+TR = TWO_BAR_DISTANCE  # default interval
+
+ # Variables that change braking profiles
+CITY_SPEED = 19.44  # braking profile changes when below this speed based on following dynamics below [m/s]
+STOPPING_DISTANCE = 2  # increase distance from lead car when stopped
+
+# Braking profile changes (makes the car brake harder because it wants to be farther from the lead car - increase to brake harder)
+ONE_BAR_PROFILE = [ONE_BAR_DISTANCE, FOUR_BAR_DISTANCE]
+ONE_BAR_PROFILE_BP = [0.0, 3.0]
+
+TWO_BAR_PROFILE = [TWO_BAR_DISTANCE, FOUR_BAR_DISTANCE]
+TWO_BAR_PROFILE_BP = [0.0, 3.5]
+
+THREE_BAR_PROFILE = [THREE_BAR_DISTANCE, FOUR_BAR_DISTANCE]
+THREE_BAR_PROFILE_BP = [0.0, 4.0]
 
 class LongitudinalMpc(object):
   def __init__(self, mpc_id, live_longitudinal_mpc):
@@ -62,7 +83,7 @@ class LongitudinalMpc(object):
     self.cur_state[0].x_ego = 0.0
 
     if lead is not None and lead.status:
-      x_lead = lead.dRel
+      x_lead = max(0, lead.dRel - STOPPING_DISTANCE)  # increase stopping distance to car by X [m]
       v_lead = max(0.0, lead.vLead)
       a_lead = lead.aLeadK
 
@@ -88,7 +109,61 @@ class LongitudinalMpc(object):
       a_lead = 0.0
       self.a_lead_tau = _LEAD_ACCEL_TAU
 
+    # Calculate conditions
+    self.v_rel = v_lead - v_ego   # calculate relative velocity vs lead car
+
+   
+    # Is the car running surface street speeds?
+    if v_ego < CITY_SPEED:
+      self.street_speed = 1
+    else:
+      self.street_speed = 0
+
+
     # Calculate mpc
+    # Adjust distance from lead car when distance button pressed 
+    if CS.carState.readdistancelines == 1:
+      #if self.street_speed and (self.lead_car_gap_shrinking or self.tailgating):
+      if self.street_speed:
+        TR = interp(-self.v_rel, ONE_BAR_PROFILE_BP, ONE_BAR_PROFILE)  
+      else:
+        TR = ONE_BAR_DISTANCE 
+      if CS.carState.readdistancelines != self.lastTR:
+        self.libmpc.init(MPC_COST_LONG.TTC, 1.0, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
+        self.lastTR = CS.carState.readdistancelines  
+
+    elif CS.carState.readdistancelines == 2:
+      #if self.street_speed and (self.lead_car_gap_shrinking or self.tailgating):
+      if self.street_speed:
+        TR = interp(-self.v_rel, TWO_BAR_PROFILE_BP, TWO_BAR_PROFILE)
+      else:
+        TR = TWO_BAR_DISTANCE 
+      if CS.carState.readdistancelines != self.lastTR:
+        self.libmpc.init(MPC_COST_LONG.TTC, MPC_COST_LONG.DISTANCE, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
+        self.lastTR = CS.carState.readdistancelines  
+
+    elif CS.carState.readdistancelines == 3:
+      if self.street_speed:
+      #if self.street_speed and (self.lead_car_gap_shrinking or self.tailgating):
+        TR = interp(-self.v_rel, THREE_BAR_PROFILE_BP, THREE_BAR_PROFILE)
+      else:
+        TR = THREE_BAR_DISTANCE 
+      if CS.carState.readdistancelines != self.lastTR:
+        self.libmpc.init(MPC_COST_LONG.TTC, MPC_COST_LONG.DISTANCE, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
+        self.lastTR = CS.carState.readdistancelines   
+
+    elif CS.carState.readdistancelines == 4:
+      TR = FOUR_BAR_DISTANCE
+      if CS.carState.readdistancelines != self.lastTR:
+        self.libmpc.init(MPC_COST_LONG.TTC, 0.05, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK) 
+        self.lastTR = CS.carState.readdistancelines      
+
+    else:
+     TR = TWO_BAR_DISTANCE # if readdistancelines != 1,2,3,4
+     self.libmpc.init(MPC_COST_LONG.TTC, MPC_COST_LONG.DISTANCE, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
+
+    
+    
     t = sec_since_boot()
     n_its = self.libmpc.run_mpc(self.cur_state, self.mpc_solution, self.a_lead_tau, a_lead)
     duration = int((sec_since_boot() - t) * 1e9)
