@@ -92,11 +92,11 @@ class CarInterface(object):
       stop_and_go = True if (candidate in CAR.RAV4H) else False
       ret.safetyParam = 73  # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.65
-      ret.steerRatio = 16.30   # 14.5 is spec end-to-end
+      ret.steerRatio = 15.50   # 14.5 is spec end-to-end
       tire_stiffness_factor = 0.5533
-      ret.mass = 3650 * CV.LB_TO_KG + std_cargo  # mean between normal and hybrid
-      ret.steerKpV, ret.steerKiV = [[0.6], [0.05]]
-      ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
+      ret.mass = 4100./2.205 * CV.LB_TO_KG + std_cargo  # mean between normal and hybrid
+      ret.steerKpV, ret.steerKiV = [[0.495], [0.045]]
+      ret.steerKf = 0.000078   # full torque for 10 deg at 80mph means 0.00007818594
 
     elif candidate == CAR.COROLLA:
       stop_and_go = False
