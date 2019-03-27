@@ -1,4 +1,9 @@
-<b>NOTE:  If you have upgraded at any time to v0.5.10 and you want to go back to a branch with v0.5.9, then you have to go SSH into the Eon and edit the file /data/params/d/ControlsParams and rename "angle_model_bias" to "angle_offset" or your car will have Dash Errors! </b>
+<b>NOTE:  If you have upgraded at any time to v0.5.10 and you want to go back to a branch with v0.5.9 or v0.5.8, then you have to SSH into the Eon and edit the file /data/params/d/ControlsParams and rename "angle_model_bias" to "angle_offset" or your car will have Dash Errors and you'll be scratching your head for hours! 
+
+Pedal Users: Also note that you need to flash your Pedal to go to v0.5.10.  If you want to go back to 0.5.9 or 0.5.8 you need to flash your pedal back to 0.5.9.  Instructions are here:  https://medium.com/@jfrux/comma-pedal-updating-the-firmware-over-can-fa438a3cf910
+</b>
+
+
 
 This is a fork of comma's openpilot, and contains tweaks for Hondas and GM vehicles 
 
