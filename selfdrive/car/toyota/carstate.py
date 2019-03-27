@@ -378,7 +378,8 @@ class CarState(object):
       if self.read_distance_lines == 3:
         self.UE.custom_alert_message(2,"Following distance set to 2.7s",200,3)
       self.read_distance_lines_prev = self.read_distance_lines
-    
+    if cp.vl["EPS_STATUS"]['LKA_STATE'] == 17:
+      self.cstm_btns.set_button_status("lka", 0)
     if bool(cp.vl["JOEL_ID"]['ACC_SLOW']) <> self.acc_slow_on_prev:
       self.acc_slow_on = bool(cp.vl["JOEL_ID"]['ACC_SLOW'])
       if self.acc_slow_on:
