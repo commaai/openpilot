@@ -2,7 +2,7 @@ int toyota_giraffe_switch_1 = 0;          // is giraffe switch 1 high?
 int toyota_camera_forwarded = 0;          // should we forward the camera bus?
 
 // global torque limit
-const int TOYOTA_MAX_TORQUE = 1500;       // max torque cmd allowed ever
+const int TOYOTA_MAX_TORQUE = 1800;       // max torque cmd allowed ever
 
 // rate based torque limit + stay within actually applied
 // packet is sent at 100hz, so this limit is 1000/sec
@@ -16,8 +16,8 @@ const int TOYOTA_MAX_RT_DELTA = 375;      // max delta torque allowed for real t
 const int TOYOTA_RT_INTERVAL = 250000;    // 250ms between real time checks
 
 // longitudinal limits
-const int TOYOTA_MAX_ACCEL = 1500;        // 1.5 m/s2
-const int TOYOTA_MIN_ACCEL = -3000;       // 3.0 m/s2
+const int TOYOTA_MAX_ACCEL = 1800;        // 1.8 m/s2
+const int TOYOTA_MIN_ACCEL = -3600;       // 3.6 m/s2
 
 // global actuation limit state
 int toyota_actuation_limits = 1;          // by default steer limits are imposed
@@ -28,10 +28,17 @@ int toyota_desired_torque_last = 0;       // last desired steer torque
 int toyota_rt_torque_last = 0;            // last desired torque for real time check
 uint32_t toyota_ts_last = 0;
 int toyota_cruise_engaged_last = 0;       // cruise state
+int ego_speed_toyota = 0;                        // speed
 struct sample_t toyota_torque_meas;       // last 3 motor torques produced by the eps
 
 
 static void toyota_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
+  // sample speed
+  if ((to_push->RIR>>21) == 0xb4) {
+    // Middle bytes needed
+    ego_speed_toyota = (to_push->RDHR >>  8) & 0xFFFF; //Speed is 100x
+  }// Special thanks to Willem Melching for the code
+  
   // get eps motor torque (0.66 factor in dbc)
   if ((to_push->RIR>>21) == 0x260) {
     int torque_meas_new = (((to_push->RDHR) & 0xFF00) | ((to_push->RDHR >> 16) & 0xFF));
@@ -100,11 +107,20 @@ static int toyota_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
       uint32_t ts = TIM2->CNT;
 
       // only check if controls are allowed and actuation_limits are imposed
-      if (controls_allowed && toyota_actuation_limits) {
+      if (toyota_actuation_limits) {
 
         // *** global torque limit check ***
-        violation |= max_limit_check(desired_torque, TOYOTA_MAX_TORQUE, -TOYOTA_MAX_TORQUE);
-
+        
+        if (!toyota_cruise_engaged_last){
+          if (ego_speed_toyota > 4500){
+            violation |= max_limit_check(desired_torque, 805, -805);
+          } else {
+            violation = 1;
+          }
+          
+        } else {
+          violation |= max_limit_check(desired_torque, TOYOTA_MAX_TORQUE, -TOYOTA_MAX_TORQUE);
+        }
         // *** torque rate limit check ***
         violation |= dist_to_meas_check(desired_torque, toyota_desired_torque_last,
           &toyota_torque_meas, TOYOTA_MAX_RATE_UP, TOYOTA_MAX_RATE_DOWN, TOYOTA_MAX_TORQUE_ERROR);
@@ -124,12 +140,12 @@ static int toyota_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
       }
 
       // no torque if controls is not allowed
-      if (!controls_allowed && (desired_torque != 0)) {
-        violation = 1;
-      }
+      //if (!controls_allowed && (desired_torque != 0)) {
+      //  violation = 1;
+      //}
 
       // reset to 0 if either controls is not allowed or there's a violation
-      if (violation || !controls_allowed) {
+      if (violation) {
         toyota_desired_torque_last = 0;
         toyota_rt_torque_last = 0;
         toyota_ts_last = ts;
