@@ -113,7 +113,7 @@ static int toyota_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
         
         if (!toyota_cruise_engaged_last){
           if (ego_speed_toyota > 4500){
-            violation |= max_limit_check(desired_torque, 800, -800);
+            violation |= max_limit_check(desired_torque, 805, -805);
           } else {
             violation = 1;
           }
