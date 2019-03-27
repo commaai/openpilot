@@ -21,13 +21,13 @@ CITY_SPEED = 19.44  # braking profile changes when below this speed based on fol
 STOPPING_DISTANCE = 2  # increase distance from lead car when stopped
 
 # Braking profile changes (makes the car brake harder because it wants to be farther from the lead car - increase to brake harder)
-ONE_BAR_PROFILE = [ONE_BAR_DISTANCE, FOUR_BAR_DISTANCE]
+ONE_BAR_PROFILE = [ONE_BAR_DISTANCE, ONE_BAR_DISTANCE]
 ONE_BAR_PROFILE_BP = [0.0, 3.0]
 
-TWO_BAR_PROFILE = [TWO_BAR_DISTANCE, FOUR_BAR_DISTANCE]
+TWO_BAR_PROFILE = [TWO_BAR_DISTANCE, TWO_BAR_DISTANCE]
 TWO_BAR_PROFILE_BP = [0.0, 3.5]
 
-THREE_BAR_PROFILE = [THREE_BAR_DISTANCE, FOUR_BAR_DISTANCE]
+THREE_BAR_PROFILE = [THREE_BAR_DISTANCE, THREE_BAR_DISTANCE]
 THREE_BAR_PROFILE_BP = [0.0, 4.0]
 
 class LongitudinalMpc(object):
@@ -44,7 +44,9 @@ class LongitudinalMpc(object):
     self.prev_lead_x = 0.0
     self.new_lead = False
     self.v_rel = 0.0
-    v_lead = 0.0
+    self.lastTR = 2
+    self.last_cloudlog_t = 0.0
+    self.v_rel = 10
     self.last_cloudlog_t = 0.0
 
   def send_mpc_solution(self, qp_iterations, calculation_time):
