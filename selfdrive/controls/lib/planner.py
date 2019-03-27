@@ -251,7 +251,7 @@ class LongitudinalMpc(object):
 
     TR = interpolate.interp1d(x, y, fill_value='extrapolate')  # extrapolate above 90 mph
 
-    TR = TR(velocity)[()]
+    #TR = TR(velocity)[()] # critical d-f error here
 
     x = [-11.176, -3.12928, 0, 1.34112, 2.68224]  # relative velocity values, mph: [-25, -7, 0, 3, 6]
     y = [(TR + .425), (TR + .1), TR, (TR - .175), (TR - .3)]  # modification values, less modification with less difference in velocity
