@@ -74,6 +74,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     invalidGiraffeHonda @49;
     manualSteeringRequired @50;
     manualSteeringRequiredBlinkersOn @51;
+    vehicleModelInvalid @52;
   }
 }
 
@@ -321,6 +322,7 @@ struct CarParams {
     hyundai @8;
     chrysler @9;
     tesla @10;
+    subaru @11;
   }
 
   # things about the car in the manual

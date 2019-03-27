@@ -26,6 +26,7 @@ typedef struct {
   double y[N+1];
   double psi[N+1];
   double delta[N+1];
+  double rate[N+1];
   double cost;
 } log_t;
 
@@ -103,7 +104,7 @@ int run_mpc(state_t * x0, log_t * solution,
 
   acado_preparationStep();
   acado_feedbackStep();
-  
+
   /* printf("lat its: %d\n", acado_getNWSR());  // n iterations
   printf("Objective: %.6f\n", acado_getObjective());  // solution cost */
 
@@ -112,6 +113,7 @@ int run_mpc(state_t * x0, log_t * solution,
     solution->y[i] = acadoVariables.x[i*NX+1];
     solution->psi[i] = acadoVariables.x[i*NX+2];
     solution->delta[i] = acadoVariables.x[i*NX+3];
+    solution->rate[i] = acadoVariables.u[i];
   }
   solution->cost = acado_getObjective();
 

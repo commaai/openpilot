@@ -112,6 +112,7 @@ def img_from_device(pt_device):
   return pt_img.reshape(input_shape)[:,:2]
 
 
+#TODO please use generic img transform below
 def rotate_img(img, eulers, crop=None, intrinsics=eon_intrinsics):
   size = img.shape[:2]
   rot = orient.rot_from_euler(eulers)
@@ -138,3 +139,36 @@ def rotate_img(img, eulers, crop=None, intrinsics=eon_intrinsics):
   img_warped = cv2.warpPerspective(img, M, size[::-1])
   return img_warped[H_border: size[0] - H_border,
                     W_border: size[1] - W_border]
+
+
+def transform_img(base_img,
+                 augment_trans=np.array([0,0,0]),
+                 augment_eulers=np.array([0,0,0]),
+                 from_intr=eon_intrinsics,
+                 to_intr=eon_intrinsics,
+                 calib_rot_view=None,
+                 output_size=None):
+  cy = from_intr[1,2]
+  size = base_img.shape[:2]
+  if not output_size:
+    output_size = size[::-1]
+  h = 1.22
+  quadrangle = np.array([[0, cy + 20],
+                         [size[1]-1, cy + 20],
+                         [0, size[0]-1],
+                         [size[1]-1, size[0]-1]], dtype=np.float32)
+  quadrangle_norm = np.hstack((normalize(quadrangle, intrinsics=from_intr), np.ones((4,1))))
+  quadrangle_world = np.column_stack((h*quadrangle_norm[:,0]/quadrangle_norm[:,1],
+                                      h*np.ones(4),
+                                      h/quadrangle_norm[:,1]))
+  rot = orient.rot_from_euler(augment_eulers)
+  if calib_rot_view is not None:
+    rot = calib_rot_view.dot(rot)
+  to_extrinsics = np.hstack((rot.T, -augment_trans[:,None]))
+  to_KE = to_intr.dot(to_extrinsics)
+  warped_quadrangle_full = np.einsum('jk,ik->ij', to_KE, np.hstack((quadrangle_world, np.ones((4,1)))))
+  warped_quadrangle = np.column_stack((warped_quadrangle_full[:,0]/warped_quadrangle_full[:,2],
+                                       warped_quadrangle_full[:,1]/warped_quadrangle_full[:,2])).astype(np.float32)
+  M = cv2.getPerspectiveTransform(quadrangle, warped_quadrangle.astype(np.float32))
+  augmented_rgb = cv2.warpPerspective(base_img, M, output_size, borderMode=cv2.BORDER_REPLICATE)
+  return augmented_rgb

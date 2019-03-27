@@ -11,8 +11,9 @@ from selfdrive.version import version, dirty
 from selfdrive.swaglog import cloudlog
 
 def get_tombstones():
-  return [("/data/tombstones/"+fn, int(os.stat("/data/tombstones/"+fn).st_ctime) )
-          for fn in os.listdir("/data/tombstones") if fn.startswith("tombstone")]
+  DIR_DATA = "/data/tombstones/"
+  return [(DIR_DATA + fn, int(os.stat(DIR_DATA + fn).st_ctime) )
+          for fn in os.listdir(DIR_DATA) if fn.startswith("tombstone")]
 
 def report_tombstone(fn, client):
   mtime = os.path.getmtime(fn)

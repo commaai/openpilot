@@ -29,6 +29,7 @@
   "DK:rural": "80",
   "DK:motorway": "130",
   "DE:living_street": "7",
+  "DE:residential": "30",
   "DE:urban": "50",
   "DE:rural": "100",
   "DE:trunk": "none",
