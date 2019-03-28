@@ -403,8 +403,8 @@ class CarState(object):
       self.Angles_later[self.Angle_counter] = abs(angle_later)
       self.Angle_counter = (self.Angle_counter + 1 ) % 250
       if not self.left_blinker_on and not self.right_blinker_on:
-        self.v_cruise_pcm = int(min(self.v_cruise_pcm, self.kegman.conf['brakefactor'] * interp(np.max(self.Angles), self.Angle, self.Angle_Speed)))
-        self.v_cruise_pcm = int(min(self.v_cruise_pcm, self.kegman.conf['brakefactor'] * interp(np.max(self.Angles_later), self.Angle, self.Angle_Speed)))
+        self.v_cruise_pcm = int(min(self.v_cruise_pcm, float(self.kegman.conf['brakefactor']) * interp(np.max(self.Angles), self.Angle, self.Angle_Speed)))
+        self.v_cruise_pcm = int(min(self.v_cruise_pcm, float(self.kegman.conf['brakefactor']) * interp(np.max(self.Angles_later), self.Angle, self.Angle_Speed)))
     else:
       self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED']
 
