@@ -4,7 +4,7 @@ from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
-from selfdrive.car.chrysler.carstate import CarState, get_can_parser
+from selfdrive.car.chrysler.carstate import CarState, get_can_parser, get_camera_parser
 from selfdrive.car.chrysler.values import ECU, check_ecu_msgs, CAR
 
 try:
@@ -29,6 +29,7 @@ class CarInterface(object):
     self.CS = CarState(CP)
 
     self.cp = get_can_parser(CP)
+    self.cp_cam = get_camera_parser(CP)
 
     # sending if read only is False
     if sendcan is not None:
@@ -79,7 +80,7 @@ class CarInterface(object):
     ret.steerActuatorDelay = 0.1
     ret.steerRateCost = 0.7
 
-    if candidate == CAR.JEEP_CHEROKEE:
+    if candidate in (CAR.JEEP_CHEROKEE, CAR.JEEP_CHEROKEE_2019):
       ret.wheelbase = 2.91  # in meters
       ret.steerRatio = 12.7
       ret.steerActuatorDelay = 0.2  # in seconds
@@ -91,7 +92,10 @@ class CarInterface(object):
 
     ret.minSteerSpeed = 3.8  # m/s
     ret.minEnableSpeed = -1.   # enable is done by stock ACC, so ignore this
-
+    if candidate in (CAR.PACIFICA_2019_HYBRID, CAR.JEEP_CHEROKEE_2019):
+      ret.minSteerSpeed = 17.5  # m/s 17 on the way up, 13 on the way down once engaged.
+      # TODO allow 2019 cars to steer down to 13 m/s if already engaged.
+      
     centerToRear = ret.wheelbase - ret.centerToFront
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
@@ -139,8 +143,8 @@ class CarInterface(object):
     canMonoTimes = []
 
     self.cp.update(int(sec_since_boot() * 1e9), False)
-
-    self.CS.update(self.cp)
+    self.cp_cam.update(int(sec_since_boot() * 1e9), False)
+    self.CS.update(self.cp, self.cp_cam)
 
     # create message
     ret = car.CarState.new_message()
@@ -183,6 +187,13 @@ class CarInterface(object):
     # ignore standstill in hybrid rav4, since pcm allows to restart without
     # receiving any special command
     ret.cruiseState.standstill = False
+    
+    ret.readdistancelines = 1
+    ret.genericToggle = False
+    ret.laneDepartureToggle = False
+    ret.distanceToggle = 1
+    ret.accSlowToggle = False
+    ret.blindspot = False
 
     # TODO: button presses
     buttonEvents = []
@@ -208,7 +219,8 @@ class CarInterface(object):
     self.low_speed_alert = (ret.vEgo < self.CP.minSteerSpeed)
 
     ret.genericToggle = self.CS.generic_toggle
-
+    
+    ret.gasbuttonstatus = self.CS.cstm_btns.get_button_status("gas")
     # events
     events = []
     if not self.CS.can_valid:
