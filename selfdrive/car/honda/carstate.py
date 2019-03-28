@@ -198,11 +198,11 @@ class CarState(object):
                                       cp.vl["DOORS_STATUS"]['DOOR_OPEN_RL'], cp.vl["DOORS_STATUS"]['DOOR_OPEN_RR']])
     self.seatbelt = not cp.vl["SEATBELT_STATUS"]['SEATBELT_DRIVER_LAMP'] and cp.vl["SEATBELT_STATUS"]['SEATBELT_DRIVER_LATCHED']
 
-    # 2 = temporary; 3 = TBD; 4 = temporary, hit a bump; 5 = (permanent); 6 = temporary; 7 = (permanent)
+    # 2 = temporary; 3 = TBD; 4 = significant steering wheel torque; 5 = (permanent); 6 = temporary; 7 = (permanent)
     # TODO: Use values from DBC to parse this field
     self.steer_error = cp.vl["STEER_STATUS"]['STEER_STATUS'] not in [0, 2, 3, 4, 6]
-    self.steer_not_allowed = cp.vl["STEER_STATUS"]['STEER_STATUS'] != 0
-    self.steer_warning = cp.vl["STEER_STATUS"]['STEER_STATUS'] not in [0, 3]   # 3 is low speed lockout, not worth a warning
+    self.steer_not_allowed = cp.vl["STEER_STATUS"]['STEER_STATUS']  not in [0, 4]  # 4 can be caused by bump OR steering nudge from driver
+    self.steer_warning = cp.vl["STEER_STATUS"]['STEER_STATUS'] not in [0, 3, 4]   # 3 is low speed lockout, not worth a warning
     if self.CP.radarOffCan:
       self.brake_error = 0
     else:
