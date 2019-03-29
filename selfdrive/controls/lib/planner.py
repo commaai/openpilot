@@ -156,6 +156,12 @@ class LongitudinalMpc(object):
     self.last_cost = 0
     self.velocity_list = []
 
+    try:
+      with open("/data/openpilot/gas-interceptor", "r") as f:
+        self.gas_interceptor = bool(f.read())
+    except:
+      self.gas_interceptor = False
+
   def calculate_tr(self, v_ego, car_state):
     """
     Returns a follow time gap in seconds based on car state values
@@ -166,11 +172,10 @@ class LongitudinalMpc(object):
     """
 
     read_distance_lines = car_state.readdistancelines
-
-    if v_ego < 2.0:
+    if v_ego < 2.0 and read_distance_lines != 2 and self.gas_interceptor:  # if under 2m/s, not dynamic follow, and user has comma pedal
       return 1.8 # under 7km/hr use a TR of 1.8 seconds
 
-    if (read_distance_lines == 2 or read_distance_lines == 3) and (car_state.leftBlinker or car_state.rightBlinker): # if car is changing lanes and not already .9s
+    if car_state.leftBlinker or car_state.rightBlinker: # if car is changing lanes and not already .9s
       if self.last_cost != 1.0:
         self.libmpc.init(MPC_COST_LONG.TTC, 1.0, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
         self.last_cost = 1.0
