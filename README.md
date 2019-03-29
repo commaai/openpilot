@@ -15,20 +15,18 @@ This is a fork of comma's openpilot, and contains tweaks for Hondas and GM vehic
 I will attempt to detail the changes in each of the branches here:
 
 
-<b>kegman (0.5.9)</b> - this is the default branch which does not include Gernby's resonant feed forward steering (i.e. it's comma's default steering)
+<b>kegman</b> - this is the default branch which does not include Gernby's resonant feed forward steering (i.e. it's comma's default steering)
 
-<b>kegman-plusGernbySteering (0.5.9)</b> - this branch has everything in the kegman branch PLUS Gernby's latest resonant mpc interp steering.  NEW! Now includes a primitive tuning script for your cell phone (or laptop) for live tuning (see feature section below for details)
+<b>kegman-plusGernbySteering</b> - this branch has everything in the kegman branch PLUS Gernby's latest resonant mpc interp steering.  NEW! Now includes a primitive tuning script for your cell phone (or laptop) for live tuning (see feature section below for details)
 
-<b>kegman-plusGernbySteering-0.5.8</b> - Older version of Gernby's steering branch.  Will not be updated.
-
-<b>kegman-plusNewGernbySteering</b> - Newer version of Gernby's steering branch which is much easier to live tune using tuning script /data/openpilot/tune.sh
-
-<b>kegman-plusPilotAwesomeness (0.5.8 only)</b> - <u>Older version of Gernbys steering branch.  Will not be updated.
+<b>kegman-plusPilotAwesomeness=0.5.8</b> - <u>Older version of Gernbys steering branch.  Will not be updated.
   
-<b>kegman-plusClarity (0.5.9)</b> - branch specifically for the Honda Clarity (does not contain Gernby steering)
+<b>kegman-plusClarity</b> - branch specifically for the Honda Clarity (does not contain Gernby steering)
 
 
 List of changes and tweaks (latest changes at the top):
+- <b>Add @pjlao307's Dashcam Recording</b>:  Sometimes you just want to record a wicked OP run on a twisty highway to show your friends.  Sometimes you want to record a big flashing red error and complain about it and show your friends.  This does a screen video capture of the Eon screen and stores the files in /sdcard/videos on your Eon when the REC button is pressed.  Thanks to @pjlao307 and @theantihero for submitting the PR.
+
 - <b>Stop logging when space hits 18% free space</b>:  Thanks to @emmertex for this easy fix to stop the Eon from filling up while driving when free space is low.
 
 - <b>Added primitive tuning script</b>: To invoke live tuning:  (a) turn on tethering on your Eon,  (b) install JuiceSSH or similar and connect your cellphone to the wifi of the Eon using 192.168.43.1 and import the Comma private key,  (c) in JuiceSSH in the SSH session on the Eon issue cd /data/openpilot command, then ./tune.sh.  The text UI will be shown.  (d) turn "tuneGernby" to a "1"  (e) start driving and change the values to tune your steering.  It is best to have a cell phone mount in your car.  Note:  It takes 3 seconds for any changes to take effect.  
