@@ -63,6 +63,9 @@ def get_can_parser(CP):
   if CP.carFingerprint == CAR.PRIUS:
     signals += [("STATE", "AUTOPARK_STATUS", 0)]
 
+  if CP.carFingerprint == CAR.CAMRYH:
+    signals += [("STEER_ANGLE", "STEER_TORQUE_SENSOR", 0)]
+
   # add gas interceptor reading if we are using it
   if CP.enableGasInterceptor:
       signals.append(("INTERCEPTOR_GAS", "GAS_SENSOR", 0))
@@ -142,6 +145,8 @@ class CarState(object):
     self.standstill = not v_wheel > 0.001
 
     self.angle_steers = cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']
+    if self.CP.carFingerprint in (CAR.CAMRYH):
+      self.angle_steers = cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE']
     self.angle_steers_rate = cp.vl["STEER_ANGLE_SENSOR"]['STEER_RATE']
     can_gear = int(cp.vl["GEAR_PACKET"]['GEAR'])
     self.gear_shifter = parse_gear_shifter(can_gear, self.shifter_values)
