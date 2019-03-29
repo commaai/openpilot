@@ -4,10 +4,8 @@ import fcntl
 import hashlib
 from cffi import FFI
 
-TMPDIR = "/tmp/ccache"
 
-
-def ffi_wrap(name, c_code, c_header, tmpdir=TMPDIR, cflags="", libraries=None):
+def ffi_wrap(name, c_code, c_header, tmpdir="/tmp/ccache", cflags="", libraries=None):
   if libraries is None:
     libraries = []
 
