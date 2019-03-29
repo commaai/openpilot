@@ -31,7 +31,7 @@ else ifeq ($(UNAME_M),aarch64)
 	CXXFLAGS += -lgnustl_shared
 endif
 
-OPENDBC_PATH := $(shell python -c 'import opendbc; print opendbc.DBC_PATH')
+OPENDBC_PATH := $(shell python -c 'import opendbc; print(opendbc.DBC_PATH)')
 
 DBC_SOURCES := $(wildcard $(OPENDBC_PATH)/*.dbc)
 DBC_CCS := $(patsubst $(OPENDBC_PATH)/%.dbc,dbc_out/%.cc,$(DBC_SOURCES))

@@ -104,4 +104,4 @@ if __name__ == "__main__":
   while 1:
     ret = RI.update()
     print(chr(27) + "[2J")  # clear screen
-    print ret
+    print(ret)

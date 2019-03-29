@@ -220,7 +220,7 @@ def boardd_proxy_loop(rate=200, address="192.168.2.251"):
     # recv @ 100hz
     can_msgs = can_recv()
     #for m in can_msgs:
-    #  print "R:",hex(m[0]), str(m[2]).encode("hex")
+    #  print("R: {0} {1}".format(hex(m[0]), str(m[2]).encode("hex")))
 
     # publish to logger
     # TODO: refactor for speed
@@ -233,7 +233,7 @@ def boardd_proxy_loop(rate=200, address="192.168.2.251"):
     if tsc is not None:
       cl = can_capnp_to_can_list(tsc.can)
       #for m in cl:
-      #  print "S:",hex(m[0]), str(m[2]).encode("hex")
+      #  print("S: {0} {1}".format(hex(m[0]), str(m[2]).encode("hex")))
       can_send_many(cl)
 
     rk.keep_time()

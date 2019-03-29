@@ -75,7 +75,7 @@ if __name__ == "__main__":
 
     car_pts = map(pt_to_car, control_pts)
 
-    print car_pts
+    print(car_pts)
 
     car_poly = np.polyfit([x[0] for x in car_pts], [x[1] for x in car_pts], 3)
     md.model.path.points = np.polyval(car_poly, np.arange(0, 50)).tolist()
@@ -90,9 +90,9 @@ if __name__ == "__main__":
     cary += plant.speed * plant.ts * math.sin(heading)
 
     # positive steering angle = steering right
-    print plant.angle_steer
+    print(plant.angle_steer)
     heading += plant.angle_steer * plant.ts
-    print heading
+    print(heading)
 
     # draw my car
     display.blit(pygame.transform.rotate(car, 90-math.degrees(heading)), (carx*METER, cary*METER))

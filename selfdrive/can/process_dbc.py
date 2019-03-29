@@ -8,7 +8,7 @@ from collections import Counter
 from common.dbc import dbc
 
 if len(sys.argv) != 3:
-  print "usage: %s dbc_path struct_path" % (sys.argv[0],)
+  print("usage: %s dbc_path struct_path" % (sys.argv[0],))
   sys.exit(0)
 
 dbc_fn = sys.argv[1]
