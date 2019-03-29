@@ -161,7 +161,7 @@ class CarController(object):
 
     self.steer_angle_enabled, self.ipas_reset_counter = \
       ipas_state_transition(self.steer_angle_enabled, enabled, CS.ipas_active, self.ipas_reset_counter)
-    #print self.steer_angle_enabled, self.ipas_reset_counter, CS.ipas_active
+    #print("{0} {1} {2}".format(self.steer_angle_enabled, self.ipas_reset_counter, CS.ipas_active))
 
     # steer angle
     if self.steer_angle_enabled and CS.ipas_active:
@@ -198,7 +198,7 @@ class CarController(object):
     can_sends = []
 
     #*** control msgs ***
-    #print "steer", apply_steer, min_lim, max_lim, CS.steer_torque_motor
+    #print("steer {0} {1} {2} {3}".format(apply_steer, min_lim, max_lim, CS.steer_torque_motor)
 
     # toyota can trace shows this message at 42Hz, with counter adding alternatively 1 and 2;
     # sending it at 100Hz seem to allow a higher rate limit, as the rate limit seems imposed

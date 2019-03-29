@@ -51,7 +51,8 @@ class dbc(object):
         dat = bo_regexp.match(l)
 
         if dat is None:
-          print "bad BO", l
+          print("bad BO {0}".format(l))
+
         name = dat.group(2)
         size = int(dat.group(3))
         ids = int(dat.group(1), 0) # could be hex
@@ -67,8 +68,9 @@ class dbc(object):
         if dat is None:
           dat = sgm_regexp.match(l)
           go = 1
+
         if dat is None:
-          print "bad SG", l
+          print("bad SG {0}".format(l))
 
         sgname = dat.group(1)
         start_bit = int(dat.group(go+2))
@@ -90,7 +92,8 @@ class dbc(object):
         dat = val_regexp.match(l)
 
         if dat is None:
-          print "bad VAL", l
+          print("bad VAL {0}".format(l))
+
         ids = int(dat.group(1), 0) # could be hex
         sgname = dat.group(2)
         defvals = dat.group(3)
@@ -208,7 +211,7 @@ class dbc(object):
 
     name = msg[0][0]
     if debug:
-      print name
+      print(name)
 
     st = x[2].ljust(8, '\x00')
     le, be = None, None
@@ -252,7 +255,7 @@ class dbc(object):
       tmp = tmp * factor + offset
 
       # if debug:
-      #   print "%40s  %2d %2d  %7.2f %s" % (s[0], s[1], s[2], tmp, s[-1])
+      #   print("%40s  %2d %2d  %7.2f %s" % (s[0], s[1], s[2], tmp, s[-1]))
 
       if arr is None:
         out[s[0]] = tmp

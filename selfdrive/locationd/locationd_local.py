@@ -154,7 +154,7 @@ class ParamsLearner(object):
       # instant_ao = aF*m*psi*sR*u/(cR0*l*x) - aR*m*psi*sR*u/(cF0*l*x) - l*psi*sR/u + sa
       s4 = "Instant AO: % .2f Avg. AO % .2f" % (math.degrees(self.ao), math.degrees(self.slow_ao))
       s5 = "Stiffnes: % .3f x" % self.x
-      print s4, s5
+      print("{0} {1}".format(s4, s5))
 
 
     self.ao = clip(self.ao, -MAX_ANGLE_OFFSET, MAX_ANGLE_OFFSET)
