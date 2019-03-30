@@ -483,6 +483,15 @@ def controlsd_thread(gctx=None, rate=100):
 
   rk = Ratekeeper(rate, print_delay_threshold=2. / 1000)
   controls_params = params.get("ControlsParams")
+
+  if "angle_model_bias" in controls_params and "angle_offset" not in controls_params:
+    params.put("ControlsParams", json.dumps({'angle_offset': controls_params["angle_model_bias"]}))
+    params.delete("angle_model_bias")
+    try:
+      controls_params["angle_offset"] = controls_params["angle_model_bias"]
+    except:
+      pass
+
   # Read angle offset from previous drive
   if controls_params is not None:
     controls_params = json.loads(controls_params)
