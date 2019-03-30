@@ -334,9 +334,9 @@ class CarState(object):
     self.econ_on = cp.vl["GEAR_PACKET"]['ECON_ON']
     self.sport_on = cp.vl["GEAR_PACKET"]['SPORT_ON']
     if self.econ_on == 0  and self.sport_on == 0:
-      if gasMode == 1:
+      if self.gasMode == 1:
         self.sport_on = 1
-      elif gasMode == 2:
+      elif self.gasMode == 2:
         self.econ_on = 1
     self.gear_shifter = parse_gear_shifter(can_gear, self.shifter_values)
     self.main_on = cp.vl["PCM_CRUISE_2"]['MAIN_ON']
