@@ -331,8 +331,14 @@ class CarState(object):
     self.angle_steers = cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']
     self.angle_steers_rate = cp.vl["STEER_ANGLE_SENSOR"]['STEER_RATE']
     can_gear = int(cp.vl["GEAR_PACKET"]['GEAR'])
-    self.econ_on = cp.vl["GEAR_PACKET"]['ECON_ON']
-    self.sport_on = cp.vl["GEAR_PACKET"]['SPORT_ON']
+    try:
+      self.econ_on = cp.vl["GEAR_PACKET"]['ECON_ON']
+    except:
+      self.econ_on = 0
+    try:
+      self.sport_on = cp.vl["GEAR_PACKET"]['SPORT_ON']
+    except:
+      self.sport_on = 0
     if self.econ_on == 0  and self.sport_on == 0:
       if self.gasMode == 1:
         self.sport_on = 1
