@@ -482,7 +482,21 @@ def controlsd_thread(gctx=None, rate=100):
   path_plan.init('pathPlan')
 
   rk = Ratekeeper(rate, print_delay_threshold=2. / 1000)
+
+  try:
+    with open("/data/params/d/ControlsParams", "r+") as f:
+      controls_params = json.loads(f.read())
+      if "angle_model_bias" in controls_params and "angle_offset" not in controls_params:
+        controls_params["angle_offset"] = controls_params["angle_model_bias"]
+        del controls_params["angle_model_bias"]
+      f.seek(0)
+      f.write(json.dumps(controls_params))
+      f.truncate()
+  except:
+    pass
+
   controls_params = params.get("ControlsParams")
+
   # Read angle offset from previous drive
   if controls_params is not None:
     controls_params = json.loads(controls_params)
