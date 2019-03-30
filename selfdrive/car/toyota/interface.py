@@ -387,7 +387,10 @@ class CarInterface(object):
     ret.accSlowToggle = self.CS.acc_slow_on
     ret.readdistancelines = self.CS.read_distance_lines
     ret.gasbuttonstatus = self.CS.cstm_btns.get_button_status("gas")
-    
+    if self.CS.sport_on == 1:
+      ret.gasbuttonstatus = 1
+    if self.CS.econ_on == 1:
+      ret.gasbuttonstatus = 2
     # events
     events = []
     if not self.CS.can_valid:
