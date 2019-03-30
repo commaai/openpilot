@@ -496,7 +496,6 @@ def controlsd_thread(gctx=None, rate=100):
     pass
 
   controls_params = params.get("ControlsParams")
-
   # Read angle offset from previous drive
   if controls_params is not None:
     controls_params = json.loads(controls_params)
