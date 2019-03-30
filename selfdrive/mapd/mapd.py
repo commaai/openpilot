@@ -103,10 +103,10 @@ def query_thread():
         if dist < 1000: #updated when we are 1km from the edge of the downloaded circle
           continue
 
-        if dist > 4000:
+        if dist > 3000:
           cache_valid = False
 
-      q = build_way_query(last_gps.latitude, last_gps.longitude, radius=4000)
+      q = build_way_query(last_gps.latitude, last_gps.longitude, radius=3000)
       try:
         new_result = api.query(q)
 
