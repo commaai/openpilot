@@ -57,6 +57,8 @@ def get_can_parser(CP):
   signals = [
     # sig_name, sig_address, default
     ("GEAR", "GEAR_PACKET", 0),
+    ("SPORT_ON", "GEAR_PACKET", 0),
+    ("ECON_ON", "GEAR_PACKET", 0),
     ("BRAKE_PRESSED", "BRAKE_MODULE", 0),
     ("GAS_PEDAL", "GAS_PEDAL", 0),
     ("WHEEL_SPEED_FL", "WHEEL_SPEEDS", 0),
@@ -141,7 +143,10 @@ class CarState(object):
     self.Angle_counter = 0
     self.Angle = [0, 5, 10, 15,20,25,30,35,60,100,180,270,500]
     self.Angle_Speed = [255,160,100,80,70,60,55,50,40,33,27,17,12]
-    #labels for ALCA modes
+    #labels for gas mode
+    self.gasMode = 0
+    self.gasLabels = ["normal","sport","eco"]
+    #labelslabels for ALCA modes
     self.alcaLabels = ["MadMax","Normal","Wifey"]
     self.alcaMode = int(self.kegman.conf['lastALCAMode'])     # default to last ALCAmode on startup
     #if (CP.carFingerprint == CAR.MODELS):
@@ -201,6 +206,9 @@ class CarState(object):
     self.approachradius = 100
     self.includeradius = 22
     self.blind_spot_on = bool(0)
+    self.econ_on = 0
+    self.sport_on = 0
+    
     self.distance_toggle_prev = 2
     self.read_distance_lines_prev = 3
     self.lane_departure_toggle_on_prev = True
@@ -237,7 +245,7 @@ class CarState(object):
     btns.append(UIButton("slow", "SLO", 1, "", 2))
     btns.append(UIButton("lka", "LKA", 1, "", 3))
     btns.append(UIButton("tr", "TR", 0, "", 4))
-    btns.append(UIButton("gas", "GAS", 0, "", 5))
+    btns.append(UIButton("gas", "GAS", 1, self.gasLabels[self.gasMode], 5))
     return btns
 
   #BB update ui buttons
@@ -253,6 +261,12 @@ class CarState(object):
             self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last ALCAMode setting to file
             self.kegman.write_config(self.kegman.conf)
           self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
+      elif (id == 5) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="gas":
+          if self.cstm_btns.btns[id].btn_label2 == self.gasLabels[self.gasMode]:
+            self.gasMode = (self.gasMode + 1 ) % 3
+          else:
+            self.gasMode = 0
+          self.cstm_btns.btns[id].btn_label2 = self.gasLabels[self.gasMode]
           self.cstm_btns.hasChanges = True
       else:
         self.cstm_btns.btns[id].btn_status = btn_status * self.cstm_btns.btns[id].btn_status
@@ -317,6 +331,13 @@ class CarState(object):
     self.angle_steers = cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']
     self.angle_steers_rate = cp.vl["STEER_ANGLE_SENSOR"]['STEER_RATE']
     can_gear = int(cp.vl["GEAR_PACKET"]['GEAR'])
+    self.econ_on = cp.vl["GEAR_PACKET"]['ECON_ON']
+    self.sport_on = cp.vl["GEAR_PACKET"]['SPORT_ON']
+    if self.econ_on == 0  and self.sport_on == 0:
+      if self.gasMode == 1:
+        self.sport_on = 1
+      elif self.gasMode == 2:
+        self.econ_on = 1
     self.gear_shifter = parse_gear_shifter(can_gear, self.shifter_values)
     self.main_on = cp.vl["PCM_CRUISE_2"]['MAIN_ON']
     self.left_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 1
