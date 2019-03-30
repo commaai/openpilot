@@ -29,6 +29,9 @@ class kegman_conf():
       if "lastALCAMode" not in self.config: # extra braking distance in m
         self.config.update({"lastALCAMode":"1"})
         self.element_updated = True
+      if "brakefactor" not in self.config: # brake at 20% higher speeds than what I like
+        self.config.update({"brakefactor":"1.2"}) 
+        self.element_updated = True
 
       # force update
       if self.config['carVoltageMinEonShutdown'] == "11800":
@@ -42,7 +45,7 @@ class kegman_conf():
         self.write_config(self.config)
 
     else:
-      self.config = {"cameraOffset":"0.06", "lastTrMode":"1", "battChargeMin":"85", "battChargeMax":"90", "wheelTouchSeconds":"1800", "battPercOff":"25", "carVoltageMinEonShutdown":"11200", "brakeStoppingTarget":"0.25", "angle_steers_offset":"0" , "brake_distance_extra":"1" , "lastALCAMode":"1"}
+      self.config = {"cameraOffset":"0.06", "lastTrMode":"1", "battChargeMin":"85", "battChargeMax":"90", "wheelTouchSeconds":"1800", "battPercOff":"25", "carVoltageMinEonShutdown":"11200", "brakeStoppingTarget":"0.25", "angle_steers_offset":"0" , "brake_distance_extra":"1" , "lastALCAMode":"1" , "brakefactor":"1.2"}
       self.write_config(self.config)
     return self.config
 
