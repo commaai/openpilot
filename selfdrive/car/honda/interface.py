@@ -19,7 +19,8 @@ except ImportError:
 
 # msgs sent for steering controller by nidec camera module on can 0.
 # those messages are mutually exclusive on CRV and non-CRV cars
-CAMERA_MSGS = [0xe4, 0x194]
+NIDEC_CAMERA_MSGS = [0xe4, 0x194]
+BOSCH_RADAR_MSGS = [0xE4, 0x1DF, 0x1EF, 0x30C, 0x33D, 0x39F]
 
 A_ACC_MAX = max(_A_CRUISE_MAX_V_FOLLOWING)
 
@@ -150,11 +151,11 @@ class CarInterface(object):
       ret.safetyModel = car.CarParams.SafetyModels.hondaBosch
       ret.enableCamera = True
       ret.radarOffCan = True
-      ret.openpilotLongitudinalControl = True # not ret.radarOffCan
+      ret.openpilotLongitudinalControl = not any(x for x in BOSCH_RADAR_MSGS if x in fingerprint)
       ret.enableCruise = not ret.openpilotLongitudinalControl
     else:
       ret.safetyModel = car.CarParams.SafetyModels.honda
-      ret.enableCamera = not any(x for x in CAMERA_MSGS if x in fingerprint)
+      ret.enableCamera = not any(x for x in NIDEC_CAMERA_MSGS if x in fingerprint)
       ret.enableGasInterceptor = 0x201 in fingerprint
       ret.openpilotLongitudinalControl = ret.enableCamera
       ret.enableCruise = not ret.enableGasInterceptor
