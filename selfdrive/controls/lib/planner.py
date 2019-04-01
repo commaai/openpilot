@@ -39,7 +39,8 @@ _A_CRUISE_MAX_V_FOLLOWING = [1.6, 1.6, 1.2, .7, .3]
 _A_CRUISE_MAX_BP = [0.,  5., 10., 20., 40.]
 
 # Lookup table for turns
-_A_TOTAL_MAX_V = [3.0, 3.5, 4.0]
+_brake_factor = float(kegman.conf['brakefactor'])
+_A_TOTAL_MAX_V = [2.0 * _brake_factor, 2.7 * _brake_factor, 3.5 * _brake_factor]
 _A_TOTAL_MAX_BP = [0., 25., 40.]
 
 _FCW_A_ACT_V = [-3., -2.]
@@ -465,11 +466,16 @@ class Planner(object):
       accel_limits = map(float, calc_cruise_accel_limits(v_ego, following))
       jerk_limits = [min(-0.1, accel_limits[0]), max(0.1, accel_limits[1])]  # TODO: make a separate lookup for jerk tuning
       
-      if self.lastlat_Control and v_ego > 11:      
-        angle_later = self.lastlat_Control.anglelater
+      if not CS.carState.leftBlinker and not CS.carState.rightBlinker:
+        steering_angle = CS.carState.steeringAngle
+        if self.lastlat_Control and v_ego > 11:      
+          angle_later = self.lastlat_Control.anglelater
+        else:
+          angle_later = 0
       else:
         angle_later = 0
-      accel_limits = limit_accel_in_turns(v_ego, CS.carState.steeringAngle, accel_limits, self.CP, angle_later * self.CP.steerRatio)
+        steering_angle = 0
+      accel_limits = limit_accel_in_turns(v_ego, steering_angle, accel_limits, self.CP, angle_later * self.CP.steerRatio)
 
       if force_slow_decel:
         # if required so, force a smooth deceleration
