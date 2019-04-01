@@ -1,3 +1,5 @@
+const int touch_timeout = 25;
+
 typedef struct UICstmButton {
     char btn_name[6];
     char btn_label[6];
