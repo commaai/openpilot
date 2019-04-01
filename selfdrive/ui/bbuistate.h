@@ -1,3 +1,5 @@
+const int touch_timeout = 25;
+
 typedef struct UICstmButton {
     char btn_name[6];
     char btn_label[6];
@@ -5,6 +7,10 @@ typedef struct UICstmButton {
 } UICstmButton;
 
 typedef struct BBUIState {
+    int touch_last_x;
+    int touch_last_y;
+    bool touch_last;
+    int touch_timeout;
     int touch_last_width;
     bool shouldDrawFrame;
     UICstmButton btns[6];
