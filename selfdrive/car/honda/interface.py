@@ -17,10 +17,9 @@ try:
 except ImportError:
   CarController = None
 
-BOSCH_CAMERA_MSGS = [0x35e]
 # msgs sent for steering controller by nidec camera module on can 0.
 # those messages are mutually exclusive on CRV and non-CRV cars
-NIDEC_CAMERA_MSGS = [0xe4, 0x194]
+CAMERA_MSGS = [0xe4, 0x194]
 
 A_ACC_MAX = max(_A_CRUISE_MAX_V_FOLLOWING)
 
@@ -150,12 +149,12 @@ class CarInterface(object):
     if candidate in HONDA_BOSCH:
       ret.safetyModel = car.CarParams.SafetyModels.hondaBosch
       ret.enableCamera = True
-      ret.radarOffCan = any(x for x in BOSCH_CAMERA_MSGS if x in fingerprint)
-      ret.openpilotLongitudinalControl = not ret.radarOffCan
-      ret.enableCruise = ret.radarOffCan
+      ret.radarOffCan = True
+      ret.openpilotLongitudinalControl = True # not ret.radarOffCan
+      ret.enableCruise = not ret.openpilotLongitudinalControl
     else:
       ret.safetyModel = car.CarParams.SafetyModels.honda
-      ret.enableCamera = not any(x for x in NIDEC_CAMERA_MSGS if x in fingerprint)
+      ret.enableCamera = not any(x for x in CAMERA_MSGS if x in fingerprint)
       ret.enableGasInterceptor = 0x201 in fingerprint
       ret.openpilotLongitudinalControl = ret.enableCamera
       ret.enableCruise = not ret.enableGasInterceptor
@@ -512,7 +511,7 @@ class CarInterface(object):
       events.append(create_event('wrongCarMode', [ET.NO_ENTRY, ET.USER_DISABLE]))
     if ret.gearShifter == 'reverse':
       events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
-    if self.CS.brake_hold and not self.CS.CP.radarOffCan:
+    if self.CS.brake_hold and not self.CS.CP.openpilotLongitudinalControl:
       events.append(create_event('brakeHold', [ET.NO_ENTRY, ET.USER_DISABLE]))
     if self.CS.park_brake:
       events.append(create_event('parkBrake', [ET.NO_ENTRY, ET.USER_DISABLE]))

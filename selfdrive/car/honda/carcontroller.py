@@ -143,7 +143,7 @@ class CarController(object):
       hud_car = 0
 
     # For lateral control-only, send chimes as a beep since we don't send 0x1fa
-    if CS.CP.radarOffCan:
+    if not CS.CP.openpilotLongitudinalControl:
       snd_beep = snd_beep if snd_beep != 0 else snd_chime
 
     #print chime, alert_id, hud_alert
@@ -181,12 +181,12 @@ class CarController(object):
     # Send steering command.
     idx = frame % 4
     can_sends.append(hondacan.create_steering_control(self.packer, apply_steer,
-      lkas_active, CS.CP.carFingerprint, CS.CP.radarOffCan, idx))
+      lkas_active, CS.CP.carFingerprint, CS.CP.openpilotLongitudinalControl, idx))
 
     # Send dashboard UI commands.
     if (frame % 10) == 0:
       idx = (frame/10) % 4
-      can_sends.extend(hondacan.create_ui_commands(self.packer, pcm_speed, hud, CS.CP.carFingerprint, CS.CP.radarOffCan, CS.CP.openpilotLongitudinalControl, idx))
+      can_sends.extend(hondacan.create_ui_commands(self.packer, pcm_speed, hud, CS.CP.carFingerprint, CS.CP.openpilotLongitudinalControl, idx))
 
     if not CS.CP.openpilotLongitudinalControl:
       # If using stock ACC, spam cancel command to kill gas when OP disengages.

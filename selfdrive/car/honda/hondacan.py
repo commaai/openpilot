@@ -96,17 +96,17 @@ def create_acc_commands(packer, enabled, accel, idx):
 
   return commands
 
-def create_steering_control(packer, apply_steer, lkas_active, car_fingerprint, radar_off_can, idx):
+def create_steering_control(packer, apply_steer, lkas_active, car_fingerprint, openpilot_longitudinal_control, idx):
   values = {
     "STEER_TORQUE": apply_steer if lkas_active else 0,
     "STEER_TORQUE_REQUEST": lkas_active,
   }
   # Set bus 2 for accord and new crv.
-  bus = 2 if car_fingerprint in HONDA_BOSCH and radar_off_can else 0
+  bus = 2 if car_fingerprint in HONDA_BOSCH and not openpilot_longitudinal_control else 0
   return packer.make_can_msg("STEERING_CONTROL", bus, values, idx)
 
 
-def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, radar_off_can, openpilot_longitudinal_control, idx):
+def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, openpilot_longitudinal_control, idx):
   commands = []
 
   if car_fingerprint in HONDA_BOSCH:
@@ -142,7 +142,7 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, radar_off_can, o
     'BEEP': hud.beep,
   }
   # Bosch sends commands to bus 2.
-  bus = 2 if car_fingerprint in HONDA_BOSCH and radar_off_can else 0
+  bus = 2 if car_fingerprint in HONDA_BOSCH and not openpilot_longitudinal_control else 0
   commands.append(packer.make_can_msg('LKAS_HUD', bus, lkas_hud_values, idx))
 
   if car_fingerprint in (CAR.CIVIC, CAR.ODYSSEY):
