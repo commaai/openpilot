@@ -101,9 +101,10 @@ class LongitudinalMpc(object):
 class Planner(object):
   def __init__(self, CP, fcw_enabled):
 
-
-    
-
+    context = zmq.Context()
+    self.CP = CP
+    self.poller = zmq.Poller()
+ 
     self.plan = messaging.pub_sock(context, service_list['plan'].port)
     self.live_longitudinal_mpc = messaging.pub_sock(context, service_list['liveLongitudinalMpc'].port)
 
