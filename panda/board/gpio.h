@@ -454,6 +454,7 @@ void early() {
   #ifdef PANDA
     // enable the ESP, disable ESP boot mode
     // unless we are on a giant panda, then there's no ESP
+    // dont disable on grey panda
     if (is_giant_panda) {
       set_esp_mode(ESP_DISABLED);
     } else {

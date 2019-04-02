@@ -1,6 +1,5 @@
 import chryslercan
 from values import CAR
-from carcontroller import CarController
 from selfdrive.can.packer import CANPacker
 
 from cereal import car
