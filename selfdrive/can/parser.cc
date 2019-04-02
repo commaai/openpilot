@@ -51,6 +51,30 @@ unsigned int toyota_checksum(unsigned int address, uint64_t d, int l) {
   return s & 0xFF;
 }
 
+unsigned int pedal_checksum(unsigned int address, uint64_t d, int l) {
+  uint8_t crc = 0xFF;
+  uint8_t poly = 0xD5; // standard crc8
+
+  d >>= ((8-l)*8); // remove padding
+  d >>= 8; // remove checksum
+
+  uint8_t *dat = (uint8_t *)&d;
+
+  int i, j;
+  for (i = 0; i < l - 1; i++) {
+    crc ^= dat[i];
+    for (j = 0; j < 8; j++) {
+      if ((crc & 0x80) != 0) {
+        crc = (uint8_t)((crc << 1) ^ poly);
+      }
+      else {
+        crc <<= 1;
+      }
+    }
+  }
+  return crc;
+}
+
 namespace {
 
 uint64_t read_u64_be(const uint8_t* v) {
@@ -113,14 +137,21 @@ struct MessageState {
           return false;
         }
       } else if (sig.type == SignalType::HONDA_COUNTER) {
-        if (!honda_update_counter(tmp)) {
+        if (!update_counter_generic(tmp, sig.b2)) {
           return false;
         }
       } else if (sig.type == SignalType::TOYOTA_CHECKSUM) {
-        // INFO("CHECKSUM %d %d %018llX - %lld vs %d\n", address, size, dat, tmp, toyota_checksum(address, dat, size));
-
         if (toyota_checksum(address, dat, size) != tmp) {
           INFO("%X CHECKSUM FAIL\n", address);
+          return false;
+        }
+      } else if (sig.type == SignalType::PEDAL_CHECKSUM) {
+        if (pedal_checksum(address, dat, size) != tmp) {
+          INFO("%X PEDAL CHECKSUM FAIL\n", address);
+          return false;
+        }
+      } else if (sig.type == SignalType::PEDAL_COUNTER) {
+        if (!update_counter_generic(tmp, sig.b2)) {
           return false;
         }
       }
@@ -134,10 +165,10 @@ struct MessageState {
   }
 
 
-  bool honda_update_counter(int64_t v) {
+  bool update_counter_generic(int64_t v, int cnt_size) {
     uint8_t old_counter = counter;
     counter = v;
-    if (((old_counter+1) & 3) != v) {
+    if (((old_counter+1) & ((1 << cnt_size) -1)) != v) {
       counter_fail += 1;
       if (counter_fail > 1) {
         INFO("%X COUNTER FAIL %d -- %d vs %d\n", address, counter_fail, old_counter, (int)v);

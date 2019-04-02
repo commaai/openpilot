@@ -62,7 +62,7 @@ def get_can_parser(CP):
 
   if CP.carFingerprint == CAR.PRIUS:
     signals += [("STATE", "AUTOPARK_STATUS", 0)]
-  
+
   # add gas interceptor reading if we are using it
   if CP.enableGasInterceptor:
       signals.append(("INTERCEPTOR_GAS", "GAS_SENSOR", 0))
@@ -129,17 +129,17 @@ class CarState(object):
     self.v_wheel_fr = cp.vl["WHEEL_SPEEDS"]['WHEEL_SPEED_FR'] * CV.KPH_TO_MS
     self.v_wheel_rl = cp.vl["WHEEL_SPEEDS"]['WHEEL_SPEED_RL'] * CV.KPH_TO_MS
     self.v_wheel_rr = cp.vl["WHEEL_SPEEDS"]['WHEEL_SPEED_RR'] * CV.KPH_TO_MS
-    self.v_wheel = float(np.mean([self.v_wheel_fl, self.v_wheel_fr, self.v_wheel_rl, self.v_wheel_rr]))
+    v_wheel = float(np.mean([self.v_wheel_fl, self.v_wheel_fr, self.v_wheel_rl, self.v_wheel_rr]))
 
     # Kalman filter
-    if abs(self.v_wheel - self.v_ego) > 2.0:  # Prevent large accelerations when car starts at non zero speed
-      self.v_ego_x = np.matrix([[self.v_wheel], [0.0]])
+    if abs(v_wheel - self.v_ego) > 2.0:  # Prevent large accelerations when car starts at non zero speed
+      self.v_ego_kf.x = np.matrix([[v_wheel], [0.0]])
 
-    self.v_ego_raw = self.v_wheel
-    v_ego_x = self.v_ego_kf.update(self.v_wheel)
+    self.v_ego_raw = v_wheel
+    v_ego_x = self.v_ego_kf.update(v_wheel)
     self.v_ego = float(v_ego_x[0])
     self.a_ego = float(v_ego_x[1])
-    self.standstill = not self.v_wheel > 0.001
+    self.standstill = not v_wheel > 0.001
 
     self.angle_steers = cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']
     self.angle_steers_rate = cp.vl["STEER_ANGLE_SENSOR"]['STEER_RATE']
