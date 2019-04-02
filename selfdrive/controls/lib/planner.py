@@ -104,7 +104,8 @@ class Planner(object):
     context = zmq.Context()
     self.CP = CP
     self.poller = zmq.Poller()
- 
+    self.lat_Control = messaging.sub_sock(context, service_list['latControl'].port, conflate=True, poller=self.poller)
+    
     self.plan = messaging.pub_sock(context, service_list['plan'].port)
     self.live_longitudinal_mpc = messaging.pub_sock(context, service_list['liveLongitudinalMpc'].port)
 
@@ -124,7 +125,7 @@ class Planner(object):
     self.fcw_checker = FCWChecker()
     self.fcw_enabled = fcw_enabled
 
-    
+    self.lastlat_Control = None
 
     self.params = Params()
 
