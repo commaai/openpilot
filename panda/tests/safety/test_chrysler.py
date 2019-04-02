@@ -176,10 +176,7 @@ class TestChryslerSafety(unittest.TestCase):
     self.assertEqual(0, self.safety.get_chrysler_torque_meas_min())
 
   def _replay_drive(self, csv_reader):
-<<<<<<< HEAD
     error_count = 0  # errors in a row, 1 or 2 is fine for timing.
-=======
->>>>>>> ff4c1557d8358f158f4358788ff18ef93d2470ef
     for row in csv_reader:
       if len(row) != 4:  # sometimes truncated at end of the file
         continue
@@ -193,15 +190,11 @@ class TestChryslerSafety(unittest.TestCase):
       to_send[0].RDHR = swap_bytes(data_str[8:])
       to_send[0].RDLR = swap_bytes(data_str[:8])
       if (bus == 128):
-<<<<<<< HEAD
         if not self.safety.chrysler_tx_hook(to_send):
           error_count += 1
         else:
           error_count = 0
         self.assertTrue(error_count < 2, msg=row)
-=======
-        self.assertTrue(self.safety.chrysler_tx_hook(to_send), msg=row)
->>>>>>> ff4c1557d8358f158f4358788ff18ef93d2470ef
       else:
         self.safety.chrysler_rx_hook(to_send)
 
