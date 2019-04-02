@@ -9,7 +9,7 @@ https://youtu.be/WKwSq8TPdpo
 Highlight Features
 =======================
 
-<<<<<<< HEAD
+
 * **Automatic Lane Change Assist (ALC)**: Check your surroundings, signal in the direction you would like to change lanes, and let openpilot do the rest. You can choose between three ALC profiles, Normal, Wifey, and Mad Max. Each increasing in steering torque.
 * **Stock Lane Keeping Assist (LKA)**: Arne has worked on recreating the lake keeping assist system present in your car for openpilot. It works with cruise control not engaged, attempting to steer to keep you inside your lane when it detects you are departing it.
 * **[Dynamic Following Distance Profile](https://github.com/ShaneSmiskol/openpilot/blob/dynamic-follow/README.md)**: Three following distance (TR) profiles are available to select; 0.9 seconds, 2.7 seconds, and a custom tuned dynamic follow profile. The first two behave as your stock cruise control system does. Dynamic follow aims to provide a more natural feeling drive, adjusting your distance from the lead car based on your speed, your relative velocity with the lead car, and your acceleration (or deceleration). If the system detects the lead car decelerating, your car should start to brake sooner than a hard-coded TR value. Same with accelerating
@@ -17,7 +17,7 @@ Highlight Features
 * **Acceleration Profiles (GAS)**: You can select from two acceleration profiles with the GAS button. If your car accelerates too slowly for your liking, this will solve that.
 * **Select Vision Model (on 0.5.8, `dynamic-follow` branch only)**: You can select whether you would like to use the wiggly model or the normal vision model for path planning. Wiggly has more torque and can better guess the road curvature without lane lines, but it occasionally crashes or mispredicts the path.
 * **EON and openpilot Stats**: With the on-screen UI, you can view stats about your EON such as its temperature, your grey panda's GPS accuracy, the lead car's relative velocity, its distance, and more.
-=======
+
 * [Community](#community)
 * [Hardware](#hardware)
 * [Supported Cars](#supported-cars)
@@ -229,4 +229,4 @@ NO WARRANTY EXPRESSED OR IMPLIED.**
 ---
 
 <img src="https://d1qb2nb5cznatu.cloudfront.net/startups/i/1061157-bc7e9bf3b246ece7322e6ffe653f6af8-medium_jpg.jpg?buster=1458363130" width="75"></img> <img src="https://cdn-images-1.medium.com/max/1600/1*C87EjxGeMPrkTuVRVWVg4w.png" width="225"></img>
->>>>>>> ff4c1557d8358f158f4358788ff18ef93d2470ef
+
