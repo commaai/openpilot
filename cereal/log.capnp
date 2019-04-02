@@ -583,10 +583,10 @@ struct Plan {
   # maps
   vCurvature @21 :Float32;
   decelForTurn @22 :Bool;
-  mapValid @25 :Bool;
-  radarValid @28 :Bool;
+  mapValid @27 :Bool;
+  radarValid @30 :Bool;
 
-  processingDelay @29 :Float32;
+  processingDelay @31 :Float32;
 
 
 
