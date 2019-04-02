@@ -583,14 +583,11 @@ struct Plan {
   # maps
   vCurvature @21 :Float32;
   decelForTurn @22 :Bool;
-<<<<<<< HEAD
-  mapValid @27 :Bool;
-=======
   mapValid @25 :Bool;
   radarValid @28 :Bool;
 
   processingDelay @29 :Float32;
->>>>>>> ff4c1557d8358f158f4358788ff18ef93d2470ef
+
 
 
   struct GpsTrajectory {
