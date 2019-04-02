@@ -1,12 +1,9 @@
 """Install exception handler for process crash."""
 import os
 import sys
-<<<<<<< HEAD
 import json
 from subprocess import check_output
-=======
 import threading
->>>>>>> ff4c1557d8358f158f4358788ff18ef93d2470ef
 from selfdrive.version import version, dirty
 
 from selfdrive.swaglog import cloudlog
