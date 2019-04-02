@@ -311,13 +311,8 @@ class CarState(object):
     self.v_wheel_fr = cp.vl["WHEEL_SPEEDS"]['WHEEL_SPEED_FR'] * CV.KPH_TO_MS
     self.v_wheel_rl = cp.vl["WHEEL_SPEEDS"]['WHEEL_SPEED_RL'] * CV.KPH_TO_MS
     self.v_wheel_rr = cp.vl["WHEEL_SPEEDS"]['WHEEL_SPEED_RR'] * CV.KPH_TO_MS
-<<<<<<< HEAD
-    self.v_wheel = float(np.mean([self.v_wheel_fl, self.v_wheel_fr, self.v_wheel_rl, self.v_wheel_rr]))
-    
-=======
     v_wheel = float(np.mean([self.v_wheel_fl, self.v_wheel_fr, self.v_wheel_rl, self.v_wheel_rr]))
 
->>>>>>> ff4c1557d8358f158f4358788ff18ef93d2470ef
     # Kalman filter
     if abs(v_wheel - self.v_ego) > 2.0:  # Prevent large accelerations when car starts at non zero speed
       self.v_ego_kf.x = np.matrix([[v_wheel], [0.0]])
@@ -330,12 +325,7 @@ class CarState(object):
     else:
       angle_later = 0
     self.a_ego = float(v_ego_x[1])
-<<<<<<< HEAD
-    #self.standstill = not self.v_wheel > 0.001
-    self.standstill = False
-=======
     self.standstill = not v_wheel > 0.001
->>>>>>> ff4c1557d8358f158f4358788ff18ef93d2470ef
 
     self.angle_steers = cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']
     self.angle_steers_rate = cp.vl["STEER_ANGLE_SENSOR"]['STEER_RATE']
