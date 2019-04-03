@@ -153,12 +153,6 @@ class LongitudinalMpc(object):
     
     v_ego = CS.carState.vEgo
 
-    # Setup current mpc state
-    self.cur_state[0].x_ego = 0.0
-    for socket, event in self.poller.poll(0):
-      if socket is self.lat_Control:
-        self.lastlat_Control = messaging.recv_one(socket).latControl
-        
     if lead is not None and lead.status:
       x_lead = lead.dRel
       v_lead = max(0.0, lead.vLead)
