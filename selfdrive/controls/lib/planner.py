@@ -150,10 +150,6 @@ class Planner(object):
       if socket is self.lat_Control:
         self.lastlat_Control = messaging.recv_one(socket).latControl
 
-    self.last_md_ts = md.logMonoTime
-
-    self.radar_errors = list(live20.live20.radarErrors)
-
     self.lead_1 = live20.live20.leadOne
     self.lead_2 = live20.live20.leadTwo
     
