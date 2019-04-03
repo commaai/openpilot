@@ -7,6 +7,7 @@ from selfdrive.controls.lib.radar_helpers import _LEAD_ACCEL_TAU
 from selfdrive.controls.lib.longitudinal_mpc import libmpc_py
 from selfdrive.controls.lib.drive_helpers import MPC_COST_LONG
 from scipy import interpolate
+import time
 
 class LongitudinalMpc(object):
   def __init__(self, mpc_id, live_longitudinal_mpc):
@@ -69,7 +70,10 @@ class LongitudinalMpc(object):
       generated_cost = self.generate_cost(generatedTR)
 
       if abs(generated_cost - self.last_cost) > .15:
+        start=time.time()
         self.libmpc.init(MPC_COST_LONG.TTC, generated_cost, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
+        with open("/data/init_timer", "a") as f:
+          f.write(str(time.time()-start)+"\n")
         self.last_cost = generated_cost
       return generatedTR
 
