@@ -13,6 +13,8 @@ from common.realtime import sec_since_boot
 from common.numpy_fast import clip
 from common.filter_simple import FirstOrderFilter
 from selfdrive.kegman_conf import kegman_conf
+import subprocess
+import signal
 
 kegman = kegman_conf()
 ThermalStatus = log.ThermalData.ThermalStatus
@@ -181,7 +183,7 @@ def thermald_thread():
   thermal_status = ThermalStatus.green
   health_sock.RCVTIMEO = 1500
   current_filter = FirstOrderFilter(0., CURRENT_TAU, 1.)
-
+  services_killed = False
   # Make sure charging is enabled
   charging_disabled = False
   os.system('echo "1" > /sys/class/power_supply/battery/charging_enabled')
@@ -297,11 +299,27 @@ def thermald_thread():
 
       # shutdown if the battery gets lower than 3%, it's discharging, we aren't running for
       # more than a minute but we were running
-      if msg.thermal.batteryPercent < BATT_PERC_OFF and msg.thermal.batteryStatus == "Discharging" and \
-         started_seen and (sec_since_boot() - off_ts) > 60:
-        os.system('LD_LIBRARY_PATH="" svc power shutdown')
+      if msg.thermal.batteryPercent < BATT_PERC_OFF and msg.thermal.batteryCurrent > 0 and \
+         sec_since_boot() > 180:
+         #started_seen and (sec_since_boot() - off_ts) > 60:
+        if msg.thermal.usbOnline:
+          # if there is power through the USB then shutting down just results in an immediate restart so kill services instead (E.g. Nidec)
+          kill_list = ["updated", "gpsd", "logcatd", "pandad", "ui", "uploader", "tombstoned", "logmessaged", "athena", "ai.comma", "boardd"]
+          # Kill processes to save battery cannot shutdown if plugged in because it will just restart after shutdown
+          for process_name in kill_list:
+            proc = subprocess.Popen(["pgrep", process_name], stdout=subprocess.PIPE)
+            for pid in proc.stdout:
+              os.kill(int(pid), signal.SIGTERM)
+        else:
+          # if not just shut it down completely (E.g. Bosch or disconnected)
+          os.system('LD_LIBRARY_PATH="" svc power shutdown')      
 
-    charging_disabled = check_car_battery_voltage(should_start, health, charging_disabled, msg)
+        services_killed = True
+
+    if services_killed:
+      charging_disabled = True
+    else:
+      charging_disabled = check_car_battery_voltage(should_start, health, charging_disabled, msg)
 
     # need to force batteryStatus because after NEOS update for 0.5.7 this doesn't work properly
     if msg.thermal.batteryCurrent > 0:
