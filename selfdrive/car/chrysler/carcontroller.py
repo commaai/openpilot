@@ -2,7 +2,7 @@ from cereal import car
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car import apply_toyota_steer_torque_limits
 from selfdrive.car.chrysler.chryslercan import create_lkas_hud, create_lkas_command, \
-                                               create_wheel_buttons, create_lkas_heartbit, \
+                                               create_wheel_buttons, \
                                                create_chimes
 from selfdrive.car.chrysler.values import ECU, CAR
 from selfdrive.can.packer import CANPacker
@@ -82,12 +82,8 @@ class CarController(object):
       new_msg = create_wheel_buttons(self.ccframe)
       can_sends.append(new_msg)
 
+    # LKAS_HEARTBIT is forwarded by Panda so no need to send it here.
     # frame is 100Hz (0.01s period)
-    if (self.ccframe % 10 == 0):  # 0.1s period
-      if CS.lkas_status_ok != -1:
-        new_msg = create_lkas_heartbit(self.packer, CS.lkas_status_ok)
-        can_sends.append(new_msg)
-
     if (self.ccframe % 25 == 0):  # 0.25s period
       if (CS.lkas_car_model != -1):
         new_msg = create_lkas_hud(
