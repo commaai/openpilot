@@ -3,7 +3,8 @@
 Pedal Users: Also note that you need to flash your Pedal to go to v0.5.10.  If you want to go back to 0.5.9 or 0.5.8 you need to flash your pedal back to 0.5.9.  Instructions are here:  https://medium.com/@jfrux/comma-pedal-updating-the-firmware-over-can-fa438a3cf910.  Also. After you flash your Pedal..  All hell will break loose on your dash.  Traction control error, Power Steering Error, Trailer Error, OMFG the sky is falling error etc.  DON'T PANIC.  Just drive around a bit and it will disappear after about 2-3 restarts of the car.  Don't rush it I believe it's time dependent as well.  Just drive as normal.  They'll go away.
 </b>
 
-
+<b>IMPORTANT:<b> I have added the stopping of services for Nidec vehicles, which always have power from the panda.  See feature list below for details.  
+  
 
 This is a fork of comma's openpilot, and contains tweaks for Hondas and GM vehicles 
 
@@ -25,6 +26,12 @@ I will attempt to detail the changes in each of the branches here:
 
 
 List of changes and tweaks (latest changes at the top):
+- <b>Kill services if plugged in and Eon batt < kegman.json --> battPercOff</b>  Shutting down of the Eon never worked on Nidec vehicles because the Panda always supplies power.  When Eon senses power it just starts up again.  So I have mitigated the power drain by about 40% when it is discharging in the car.  Reminder that the Eon continues to charge cycling between battChargeMax and battChargeMin in the /data/kegman.json file.  If the car battery falls below carVoltageMinEonShutdown in the /data/kegman.json file WHILE CHARGING THE EON then charging is disabled.  As charging is disabled, the Eon battery will continue to drain until it reaches battPercOff (again in /data/kegman.json) at which point it will shut down services to conserve power.  This will not prevent the Eon from discharging completely but will cut the drainage by about 40%, buying you some more time before it goes dead.  If the Eon is in this "Power Saving" mode you will need to reboot the Eon by pressing on the power button and touching somewhere near the center of the screen (note that the screen will note work).  Also note that if you unplug the Eon and the battery is below battPercOff it will shutdown.  If you reboot the Eon while unplugged, it will give you 3 minutes until it shuts down again unless it is plugged in during this time.  If you unplugged the Eon and forgot to turn it off, it will shutdown when the battery falls below battPercOff.  Hopefully this mitigates the "dead Eon" syndrome that occurs when people have trouble powering their device back up after the battery is completely drained.
+  
+For Bosch vehicles, the Eon will just simply shutdown as usual when battery falls below battPercOff.  Killing of services only occurs for Nidecs.
+
+
+
 - <b>Add @pjlao307's Dashcam Recording</b>:  Sometimes you just want to record a wicked OP run on a twisty highway to show your friends.  Sometimes you want to record a big flashing red error and complain about it and show your friends.  This does a screen video capture of the Eon screen and stores the files in /sdcard/videos on your Eon when the REC button is pressed.  Thanks to @pjlao307 and @theantihero for submitting the PR.
 
 - <b>Stop logging when space hits 18% free space</b>:  Thanks to @emmertex for this easy fix to stop the Eon from filling up while driving when free space is low.
