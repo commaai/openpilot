@@ -43,8 +43,6 @@ _brake_factor = float(kegman.conf['brakefactor'])
 _A_TOTAL_MAX_V = [2.0 * _brake_factor, 2.7 * _brake_factor, 3.5 * _brake_factor]
 _A_TOTAL_MAX_BP = [0., 25., 40.]
 
-relative_velocity = 0.0 #lead car velocity
-
 def calc_cruise_accel_limits(v_ego, following):
   a_cruise_min = interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V)
 
@@ -71,10 +69,6 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP, angle_later):
   a_target[0] = min(a_target[0], a_target[1])
   #print a_target[1]
   return a_target
-
-
-
-
 
 
 class Planner(object):
@@ -134,7 +128,6 @@ class Planner(object):
     self.v_acc_future = min([self.mpc1.v_mpc_future, self.mpc2.v_mpc_future, v_cruise_setpoint])
 
   def update(self, CS, CP, VM, PP, live20, live100, md, live_map_data):
-    global relative_velocity
     
     """Gets called when new live20 is available"""
     cur_time = live20.logMonoTime / 1e9
@@ -152,11 +145,7 @@ class Planner(object):
 
     self.lead_1 = live20.live20.leadOne
     self.lead_2 = live20.live20.leadTwo
-    
-    try:
-      relative_velocity = self.lead_1.vRel
-    except: #if no lead car
-      relative_velocity = 0.0
+
 
     lead_1 = live20.live20.leadOne
     lead_2 = live20.live20.leadTwo
@@ -235,8 +224,13 @@ class Planner(object):
     self.mpc1.set_cur_state(self.v_acc_start, self.a_acc_start)
     self.mpc2.set_cur_state(self.v_acc_start, self.a_acc_start)
 
-    self.mpc1.update(CS, lead_1, v_cruise_setpoint)
-    self.mpc2.update(CS, lead_2, v_cruise_setpoint)
+    try:
+      relative_velocity = self.lead_1.vRel
+    except: #if no lead car
+      relative_velocity = 0.0
+
+    self.mpc1.update(CS, lead_1, v_cruise_setpoint, relative_velocity)
+    self.mpc2.update(CS, lead_2, v_cruise_setpoint, relative_velocity)
 
     self.choose_solution(v_cruise_setpoint, enabled)
 
