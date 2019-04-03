@@ -29,8 +29,12 @@ class CANParser(object):
     for i in range(len(signals)):
       s = signals[i]
       if not isinstance(s[1], numbers.Number):
-        s = (s[0], self.msg_name_to_addres[s[1]], s[2])
-        signals[i] = s
+        try:
+          s = (s[0], self.msg_name_to_addres[s[1]], s[2])
+          signals[i] = s
+        except:
+          pass
+
 
     for i in range(len(checks)):
       c = checks[i]
