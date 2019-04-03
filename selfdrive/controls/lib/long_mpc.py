@@ -152,7 +152,10 @@ class LongitudinalMpc(object):
     global relative_velocity
     
     v_ego = CS.carState.vEgo
-
+    
+    # Setup current mpc state
+    self.cur_state[0].x_ego = 0.0
+    
     if lead is not None and lead.status:
       x_lead = lead.dRel
       v_lead = max(0.0, lead.vLead)
