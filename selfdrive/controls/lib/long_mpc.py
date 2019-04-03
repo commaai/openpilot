@@ -25,6 +25,7 @@ class LongitudinalMpc(object):
     self.new_lead = False
     self.lastTR = 2
     self.last_cost = 0
+    self.last_cost_time = time.time()
     self.velocity_list = []
     
     self.last_cloudlog_t = 0.0
@@ -69,12 +70,10 @@ class LongitudinalMpc(object):
       generatedTR = self.generateTR(v_ego, relative_velocity)
       generated_cost = self.generate_cost(generatedTR)
 
-      if abs(generated_cost - self.last_cost) > .15:
-        start=time.time()
+      if abs(generated_cost - self.last_cost) > .15 and (time.time() - self.last_cost_time) > 0.5:
         self.libmpc.init(MPC_COST_LONG.TTC, generated_cost, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
-        with open("/data/init_timer", "a") as f:
-          f.write(str(time.time()-start)+"\n")
         self.last_cost = generated_cost
+        self.last_cost_time = time.time()
       return generatedTR
 
     if read_distance_lines == 3:
