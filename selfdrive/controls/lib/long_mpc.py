@@ -34,7 +34,7 @@ class LongitudinalMpc(object):
     except:
       self.gas_interceptor = False
     
-  def calculate_tr(self, v_ego, car_state):
+  def calculate_tr(self, v_ego, car_state, relative_velocity):
     """
     Returns a follow time gap in seconds based on car state values
 
@@ -65,7 +65,7 @@ class LongitudinalMpc(object):
         self.velocity_list.pop(0)
       self.velocity_list.append(v_ego)
       
-      generatedTR = self.generateTR(v_ego)
+      generatedTR = self.generateTR(v_ego, relative_velocity)
       generated_cost = self.generate_cost(generatedTR)
 
       if abs(generated_cost - self.last_cost) > .15:
@@ -121,8 +121,7 @@ class LongitudinalMpc(object):
     else:
       return a
 
-  def generateTR(self, velocity):  # in m/s
-    global relative_velocity
+  def generateTR(self, velocity, relative_velocity):  # in m/s
     x = [0.0, 1.86267, 3.72533, 5.588, 7.45067, 9.31333, 11.55978, 13.645, 22.352, 31.2928, 33.528, 35.7632, 40.2336]  # velocity, mph: [0, 20, 50, 70, 80, 90]
     y = [1.03, 1.05363, 1.07879, 1.11493, 1.16969, 1.25071, 1.36325, 1.43, 1.6, 1.7, 1.75618, 1.85, 2.0]  # distances
 
@@ -148,9 +147,7 @@ class LongitudinalMpc(object):
 
     return round(float(np.interp(distance, x, y)), 2) # used to cause stuttering, but now we're doing a percentage change check before changing
   
-  def update(self, CS, lead, v_cruise_setpoint):
-    global relative_velocity
-    
+  def update(self, CS, lead, v_cruise_setpoint, relative_velocity):
     v_ego = CS.carState.vEgo
     
     # Setup current mpc state
@@ -185,7 +182,7 @@ class LongitudinalMpc(object):
 
     # Calculate mpc
     t = sec_since_boot()
-    TR = self.calculate_tr(v_ego, CS.carState)
+    TR = self.calculate_tr(v_ego, CS.carState, relative_velocity)
     n_its = self.libmpc.run_mpc(self.cur_state, self.mpc_solution, self.a_lead_tau, a_lead, TR)
     duration = int((sec_since_boot() - t) * 1e9)
     self.send_mpc_solution(n_its, duration)
