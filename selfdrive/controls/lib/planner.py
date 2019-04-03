@@ -73,29 +73,8 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP, angle_later):
   return a_target
 
 
-class LongitudinalMpc(object):
-  def __init__(self, mpc_id, live_longitudinal_mpc):
-    self.live_longitudinal_mpc = live_longitudinal_mpc
-    self.mpc_id = mpc_id
 
-    self.setup_mpc()
-    self.v_mpc = 0.0
-    self.v_mpc_future = 0.0
-    self.a_mpc = 0.0
-    self.v_cruise = 0.0
-    self.prev_lead_status = False
-    self.prev_lead_x = 0.0
-    self.new_lead = False
-    self.lastTR = 2
-    self.last_cloudlog_t = 0.0
-    self.last_cost = 0
-    self.velocity_list = []
 
-    try:
-      with open("/data/openpilot/gas-interceptor", "r") as f:
-        self.gas_interceptor = bool(f.read())
-    except:
-      self.gas_interceptor = False
 
 
 class Planner(object):
@@ -170,10 +149,6 @@ class Planner(object):
     for socket, event in self.poller.poll(0):
       if socket is self.lat_Control:
         self.lastlat_Control = messaging.recv_one(socket).latControl
-
-    self.last_md_ts = md.logMonoTime
-
-    self.radar_errors = list(live20.live20.radarErrors)
 
     self.lead_1 = live20.live20.leadOne
     self.lead_2 = live20.live20.leadTwo

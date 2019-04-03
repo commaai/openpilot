@@ -28,6 +28,12 @@ class LongitudinalMpc(object):
     
     self.last_cloudlog_t = 0.0
     
+    try:
+      with open("/data/openpilot/gas-interceptor", "r") as f:
+        self.gas_interceptor = bool(f.read())
+    except:
+      self.gas_interceptor = False
+    
   def calculate_tr(self, v_ego, car_state):
     """
     Returns a follow time gap in seconds based on car state values
@@ -146,13 +152,10 @@ class LongitudinalMpc(object):
     global relative_velocity
     
     v_ego = CS.carState.vEgo
-
+    
     # Setup current mpc state
     self.cur_state[0].x_ego = 0.0
-    for socket, event in self.poller.poll(0):
-      if socket is self.lat_Control:
-        self.lastlat_Control = messaging.recv_one(socket).latControl
-        
+    
     if lead is not None and lead.status:
       x_lead = lead.dRel
       v_lead = max(0.0, lead.vLead)
