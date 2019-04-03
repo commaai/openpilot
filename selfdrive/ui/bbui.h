@@ -766,6 +766,10 @@ void ui_draw_vision_grid( UIState *s) {
 
 void bb_ui_draw_logo( UIState *s) {
   if ((s->status != STATUS_DISENGAGED) && (s->status != STATUS_STOPPED)) { //(s->status != STATUS_DISENGAGED) {//
+    s->b.img_logo_times = 600;
+    return;
+  }
+  if (s->b.img_logo_times == 0) {
     return;
   }
   int rduration = 8000;
@@ -795,6 +799,7 @@ void bb_ui_draw_logo( UIState *s) {
   nvgRect(s->vg, viz_event_x, viz_event_y, (int)viz_event_w, viz_event_h);
   nvgFillPaint(s->vg, imgPaint);
   nvgFill(s->vg);
+  s->b.img_logo_times = s->b.img_logo_times - 1;
 }
 
 
@@ -901,6 +906,7 @@ void bb_ui_init(UIState *s) {
     s->b.img_logo = nvgCreateImage(s->vg, "../assets/img_spinner_comma.png", 1);
     s->b.img_logo2 = nvgCreateImage(s->vg, "../assets/img_spinner_comma2.png", 1);
     s->b.img_car = nvgCreateImage(s->vg, "../assets/img_car_tesla.png", 1);
+    s->b.img_logo_times = 600;
 }
 
 void bb_ui_play_sound( UIState *s, int sound) {

@@ -36,6 +36,7 @@ typedef struct BBUIState {
     char custom_message[120];
     int img_logo;
     int img_logo2;
+    int img_logo_times;
     int img_car;
     int tri_state_switch;
     long tri_state_switch_last_read;
