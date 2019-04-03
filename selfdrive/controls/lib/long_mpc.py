@@ -28,6 +28,12 @@ class LongitudinalMpc(object):
     
     self.last_cloudlog_t = 0.0
     
+    try:
+      with open("/data/openpilot/gas-interceptor", "r") as f:
+        self.gas_interceptor = bool(f.read())
+    except:
+      self.gas_interceptor = False
+    
   def calculate_tr(self, v_ego, car_state):
     """
     Returns a follow time gap in seconds based on car state values
