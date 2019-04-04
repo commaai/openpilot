@@ -79,7 +79,7 @@ def get_camera_parser(CP):
 
 class CarState(object):
   def __init__(self, CP):
-    self.alcaLabels = ["MadMax","Normal","Wifey"]
+    self.alcaLabels = ["MadMax","Normal","Wifey","off"]
     self.alcaMode = 2     # default to wifey on startup
     self.prev_distance_button = 0
     self.distance_button = 0
@@ -169,7 +169,7 @@ class CarState(object):
     if self.cstm_btns.btns[id].btn_status > 0:
       if (id == 1) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="alca":
           if self.cstm_btns.btns[id].btn_label2 == self.alcaLabels[self.alcaMode]:
-            self.alcaMode = (self.alcaMode + 1 ) % 3
+            self.alcaMode = (self.alcaMode + 1 ) % 4
           else:
             self.alcaMode = 0
           self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
@@ -178,7 +178,7 @@ class CarState(object):
         self.cstm_btns.btns[id].btn_status = btn_status * self.cstm_btns.btns[id].btn_status
     else:
         self.cstm_btns.btns[id].btn_status = btn_status
-
+    
   def update(self, cp, cp_cam):
     # copy can_valid
     self.can_valid = cp.can_valid
@@ -240,3 +240,5 @@ class CarState(object):
     self.lkas_counter = cp_cam.vl["LKAS_COMMAND"]['COUNTER']
     self.lkas_car_model = cp_cam.vl["LKAS_HUD"]['CAR_MODEL']
     self.lkas_status_ok = cp_cam.vl["LKAS_HEARTBIT"]['LKAS_STATUS_OK']
+    if self.alcaMode == 3:
+      self.cstm_btns.set_button_status("alca", 0)
