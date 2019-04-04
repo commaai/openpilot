@@ -21,7 +21,7 @@ else:
   from raven import Client
   from raven.transport.http import HTTPTransport
 
-  error_tags = {'dirty': dirty, 'branch': '0510'}
+  error_tags = {'dirty': dirty, 'branch': 'release2'}
 
   try:
     with open("/data/data/ai.comma.plus.offroad/files/persistStore/persist-auth", "r") as f:
