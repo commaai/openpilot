@@ -36,7 +36,12 @@ class kegman_conf():
     return self.config
 
   def write_config(self, config):
-    with open('/data/kegman.json', 'w') as f:
-      json.dump(self.config, f, indent=2, sort_keys=True)
-      os.chmod("/data/kegman.json", 0o764)
-
+    try:
+      with open('/data/kegman.json', 'w') as f:
+        json.dump(self.config, f, indent=2, sort_keys=True)
+        os.chmod("/data/kegman.json", 0o764)
+    except IOError:
+      os.mkdir('/data')
+      with open('/data/kegman.json', 'w') as f:
+        json.dump(self.config, f, indent=2, sort_keys=True)
+        os.chmod("/data/kegman.json", 0o764)
