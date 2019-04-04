@@ -4,8 +4,12 @@ import numbers
 
 from selfdrive.can.libdbc_py import libdbc, ffi
 
+
 class CANParser(object):
-  def __init__(self, dbc_name, signals, checks=[], bus=0, sendcan=False, tcp_addr="127.0.0.1"):
+  def __init__(self, dbc_name, signals, checks=None, bus=0, sendcan=False, tcp_addr="127.0.0.1"):
+    if checks is None:
+      checks = []
+
     self.can_valid = True
     self.vl = defaultdict(dict)
     self.ts = defaultdict(dict)

@@ -106,6 +106,16 @@ maneuvers = [
     cruise_button_presses = [(CB.DECEL_SET, 1.2), (0, 1.3)]
   ),
   Maneuver(
+    'steady state following a car at 20m/s, then lead decel to 0mph at 5m/s^2',
+    duration=40.,
+    initial_speed = 20.,
+    lead_relevancy=True,
+    initial_distance_lead=35.,
+    speed_lead_values = [20., 20., 0.],
+    speed_lead_breakpoints = [0., 15., 19.],
+    cruise_button_presses = [(CB.DECEL_SET, 1.2), (0, 1.3)]
+  ),
+  Maneuver(
     'starting at 0mph, approaching a stopped car 100m away',
     duration=30.,
     initial_speed = 0.,
@@ -251,7 +261,8 @@ maneuvers = [
   )
 ]
 
-#maneuvers = [maneuvers[-1]]
+# maneuvers = [maneuvers[-11]]
+# maneuvers = [maneuvers[6]]
 
 def setup_output():
   output_dir = os.path.join(os.getcwd(), 'out/longitudinal')
@@ -295,16 +306,9 @@ class LongitudinalControl(unittest.TestCase):
     manager.prepare_managed_process('controlsd')
     manager.prepare_managed_process('plannerd')
 
-    manager.start_managed_process('radard')
-    manager.start_managed_process('controlsd')
-    manager.start_managed_process('plannerd')
-
   @classmethod
   def tearDownClass(cls):
-    manager.kill_managed_process('radard')
-    manager.kill_managed_process('controlsd')
-    manager.kill_managed_process('plannerd')
-    time.sleep(5)
+    pass
 
   # hack
   def test_longitudinal_setup(self):
@@ -314,8 +318,17 @@ WORKERS = 8
 def run_maneuver_worker(k):
   output_dir = os.path.join(os.getcwd(), 'out/longitudinal')
   for i, man in enumerate(maneuvers[k::WORKERS]):
+    manager.start_managed_process('radard')
+    manager.start_managed_process('controlsd')
+    manager.start_managed_process('plannerd')
+
     score, plot = man.evaluate()
     plot.write_plot(output_dir, "maneuver" + str(WORKERS * i + k+1).zfill(2))
+
+    manager.kill_managed_process('radard')
+    manager.kill_managed_process('controlsd')
+    manager.kill_managed_process('plannerd')
+    time.sleep(5)
 
 for k in xrange(WORKERS):
   setattr(LongitudinalControl,
