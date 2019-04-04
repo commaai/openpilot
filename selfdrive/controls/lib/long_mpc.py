@@ -127,7 +127,7 @@ class LongitudinalMpc(object):
       self.street_speed = 0
 
     # ensure that the bar interval isn't evaluated too quickly or braking may occur while changing
-    if CS.carState.readdistancelines != self.lastTR and self.mpc_frame % 100:
+    if CS.carState.readdistancelines != self.lastTR and self.mpc_frame % 200 == 0:
       self.currentTR = CS.carState.readdistancelines
       self.mpc_frame = 0
       
