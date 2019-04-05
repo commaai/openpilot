@@ -22,6 +22,7 @@ a.out
 *.vcd
 config.json
 clcache
+gas-interceptor
 
 board/obj/
 selfdrive/boardd/boardd
