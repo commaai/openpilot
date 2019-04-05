@@ -227,7 +227,7 @@ class Planner(object):
     try:
       relative_velocity = self.lead_1.vRel
     except: #if no lead car
-      relative_velocity = 0.0
+      relative_velocity = None
 
     self.mpc1.update(CS, lead_1, v_cruise_setpoint, relative_velocity)
     self.mpc2.update(CS, lead_2, v_cruise_setpoint, relative_velocity)
