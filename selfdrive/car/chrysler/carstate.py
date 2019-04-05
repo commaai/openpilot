@@ -174,6 +174,9 @@ class CarState(object):
             self.alcaMode = 0
           self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
           self.cstm_btns.hasChanges = True
+          if self.alcaMode == 3:
+            self.cstm_btns.set_button_status("alca", 0)
+
       else:
         self.cstm_btns.btns[id].btn_status = btn_status * self.cstm_btns.btns[id].btn_status
     else:
@@ -240,5 +243,4 @@ class CarState(object):
     self.lkas_counter = cp_cam.vl["LKAS_COMMAND"]['COUNTER']
     self.lkas_car_model = cp_cam.vl["LKAS_HUD"]['CAR_MODEL']
     self.lkas_status_ok = cp_cam.vl["LKAS_HEARTBIT"]['LKAS_STATUS_OK']
-    if self.alcaMode == 3:
-      self.cstm_btns.set_button_status("alca", 0)
+    
