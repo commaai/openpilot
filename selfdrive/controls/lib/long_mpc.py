@@ -152,7 +152,7 @@ class LongitudinalMpc(object):
       a_short = a_short / (len(velocity_list) / 100.0)  # divide difference in velocity by how long in seconds the velocity list has been tracking velocity
       a_long = a_long / (len(velocity_list) / 100.0)
 
-      if sum([a_short, a_long]) >= 0:  # return value farthest from 0
+      if sum([a_short, a_long]) >= 0:  # return value farthest from 0, should detect lead car braking faster
         a = max([a_short, a_long])
       else:
         a = min([a_short, a_long])
@@ -171,15 +171,15 @@ class LongitudinalMpc(object):
 
     if relative_velocity is not None:
       x = [-11.176, -7.84276, -4.67716, -2.12623, 0, 1.34112, 2.68224]  # relative velocity values
-      y = [(TR + .45), (TR + .34), (TR + .26), (TR + .089), TR, (TR - .18), (TR - .3)]  # modification values, less modification with less difference in velocity
+      y = [(TR + .45), (TR + .377), (TR + .27), (TR + .1071), TR, (TR - .18), (TR - .3)]  # modification values
       TR = np.interp(relative_velocity, x, y)  # interpolate as to not modify too much
 
     x = [-4.4704, -2.2352, -0.89408, 0, 1.34112]  # self acceleration values, mph: [-10, -5, -2, 0, 3]
     y = [(TR + .158), (TR + .062), (TR + .009), TR, (TR - .13)]  # modification values
     TR = np.interp(self.get_acceleration(self.dynamic_follow_dict["self_vels"]), x, y)  # factor in self acceleration
 
-    x = [-4.4704, -1.77, -.31446, 0, .446, 1.34112]  # lead acceleration values, mph: [-10, -5, -2, 0, 3]
-    y = [(TR + .237), (TR + .12), (TR + .027), TR, (TR - .105), (TR - .195)]  # modification values
+    x = [-4.4704, -2.2, -.958, -.31446, 0, 0.5588, 1.34112]  # lead acceleration values
+    y = [(TR + .237), (TR + .154), (TR + .0832), (TR + .033), TR, (TR - .115), (TR - .195)]  # modification values
     TR = np.interp(self.get_acceleration(self.dynamic_follow_dict["lead_vels"]), x, y)  # factor in lead car's acceleration; should perform better
 
     TR = TR * self.get_traffic_level(self.dynamic_follow_dict["traffic_vels"])  # modify TR based on last minute of traffic data
