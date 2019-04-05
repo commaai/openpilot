@@ -36,12 +36,12 @@ class LongitudinalMpc(object):
       self.gas_interceptor = False
 
   def save_car_data(self, self_vel, relative_velocity):
-    if len(self.dynamic_follow_dict["self_vels"]) > 150:  # 100hz, so 150 items is 1.5 seconds
+    if len(self.dynamic_follow_dict["self_vels"]) > 200:  # 100hz, so 200 items is 2 seconds
       del self.dynamic_follow_dict["self_vels"][0]
     self.dynamic_follow_dict["self_vels"].append(self_vel)
 
     if relative_velocity is not None:
-      if len(self.dynamic_follow_dict["lead_vels"]) > 150:  # 100hz, so 12000 items is 1.5 seconds
+      if len(self.dynamic_follow_dict["lead_vels"]) > 200:
         del self.dynamic_follow_dict["lead_vels"][0]
       self.dynamic_follow_dict["lead_vels"].append(self_vel + relative_velocity)
 
@@ -136,10 +136,8 @@ class LongitudinalMpc(object):
       return 1.0  # if less than 30 seconds of traffic data do nothing to TR
     lead_vel_diffs = []
     for idx, vel in enumerate(lead_vels):
-      try:
+      if idx != 0:
         lead_vel_diffs.append(abs(vel - lead_vels[idx - 1]))
-      except:
-        pass
     x = [0, len(lead_vels)]
     y = [1.15, .9]  # min and max values to modify TR by, need to tune
     traffic = np.interp(sum(lead_vel_diffs), x, y)
@@ -147,8 +145,20 @@ class LongitudinalMpc(object):
     return traffic
 
   def get_acceleration(self, velocity_list):  # calculate car's own acceleration to generate more accurate following distances
-    a = (velocity_list[-1] - velocity_list[0])  # first half of acceleration formula
-    a = a / (len(velocity_list) / 100.0)  # divide difference in velocity by how long in seconds the velocity list has been tracking velocity (2 sec)
+    if len(velocity_list) >= 200:
+      a_short = (velocity_list[-1] - velocity_list[-100])  # first half of acceleration formula
+      a_long = (velocity_list[-1] - velocity_list[0])
+
+      a_short = a_short / (len(velocity_list) / 100.0)  # divide difference in velocity by how long in seconds the velocity list has been tracking velocity
+      a_long = a_long / (len(velocity_list) / 100.0)
+
+      if sum([a_short, a_long]) >= 0:  # return value farthest from 0
+        a = max([a_short, a_long])
+      else:
+        a = min([a_short, a_long])
+    else:  # if list isn't long enough (should rarely occur)
+      a = (velocity_list[-1] - velocity_list[0])
+      a = a / (len(velocity_list) / 100.0)
     if abs(a) < 0.11176:  # if abs(acceleration) is less than 0.25 mph/s, return 0
       return 0.0
     else:
