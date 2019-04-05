@@ -5,7 +5,7 @@ const int CHRYSLER_MAX_RATE_UP = 3;
 const int CHRYSLER_MAX_RATE_DOWN = 3;
 const int CHRYSLER_MAX_TORQUE_ERROR = 80;    // max torque cmd in excess of torque motor
 
-int chrysler_camera_detected = 0;
+int chrysler_camera_detected = 0;             // is giraffe switch 2 high?
 int chrysler_rt_torque_last = 0;
 int chrysler_desired_torque_last = 0;
 int chrysler_cruise_engaged_last = 0;
@@ -125,12 +125,29 @@ static int chrysler_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   return true;
 }
 
+static void chrysler_init(int16_t param) {
+  chrysler_camera_detected = 0;
+}
+
+static int chrysler_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
+  int32_t addr = to_fwd->RIR >> 21;
+  // forward CAN 0 -> 2 so stock LKAS camera sees messages
+  if (bus_num == 0 && !chrysler_camera_detected) {
+    return 2;
+  }
+  // forward LKAS_HEARTBIT message from stock camera
+  if (bus_num == 2 && !chrysler_camera_detected && addr == 0x2d9) {
+    return 0;
+  }
+  return -1;  // do not forward
+}
+
 
 const safety_hooks chrysler_hooks = {
-  .init = nooutput_init,
+  .init = chrysler_init,
   .rx = chrysler_rx_hook,
   .tx = chrysler_tx_hook,
   .tx_lin = nooutput_tx_lin_hook,
   .ignition = default_ign_hook,
-  .fwd = nooutput_fwd_hook,
+  .fwd = chrysler_fwd_hook,
 };
