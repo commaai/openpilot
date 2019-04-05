@@ -135,8 +135,8 @@ static int chrysler_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
   if (bus_num == 0 && !chrysler_camera_detected) {
     return 2;
   }
-  // forward LKAS_HEARTBIT message from stock camera
-  if (bus_num == 2 && !chrysler_camera_detected && addr == 0x2d9) {
+  // forward all messages from camera except LKAS_COMMAND and LKAS_HUD
+  if (bus_num == 2 && !chrysler_camera_detected && addr != 658 && addr != 678) {
     return 0;
   }
   return -1;  // do not forward
