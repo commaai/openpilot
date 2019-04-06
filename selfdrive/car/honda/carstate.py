@@ -156,8 +156,8 @@ class CarState(object):
     self.alcaLabels = ["MadMax","Normal","Wifey","off"]
     self.trLabels = ["0.9","dyn","2.7"]
     self.alcaMode = int(self.kegman.conf['lastALCAMode'])     # default to last ALCA Mode on startup
-    if self.alcaMode > 2:
-      self.alcaMode = 2
+    if self.alcaMode > 3:
+      self.alcaMode = 3
       self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last distance bar setting to file
       self.kegman.write_config(self.kegman.conf) 
     self.trMode = int(self.kegman.conf['lastTrMode'])     # default to last distance interval on startup
