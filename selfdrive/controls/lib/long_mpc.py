@@ -154,7 +154,7 @@ class LongitudinalMpc(object):
       a_short = a_short / (len(velocity_list) / 100.0)  # divide difference in velocity by how long in seconds the velocity list has been tracking velocity
       a_long = a_long / (len(velocity_list) / 100.0)
 
-      if sum([a_short, a_long]) >= 0:  # return value farthest from 0, should detect lead car braking faster
+      if sum([a_short, a_long]) >= 0:  # return value furthest from 0, should detect lead car braking faster
         a = max([a_short, a_long])
       else:
         a = min([a_short, a_long])
