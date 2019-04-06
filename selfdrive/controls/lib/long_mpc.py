@@ -194,7 +194,10 @@ class LongitudinalMpc(object):
   def generate_cost(self):
     x = [.9, 1.8, 2.7]
     y = [1.0, .1, .05]
-    TR = self.relative_distance / float(self.relative_velocity)  # switched to cost generation using actual distance from lead car; should be safer
+    try:
+      TR = self.relative_distance / float(self.relative_velocity)  # switched to cost generation using actual distance from lead car; should be safer
+    except ZeroDivisionError:
+      TR = 1.8
     return round(float(np.interp(TR, x, y)), 3)
 
   def update(self, CS, lead, v_cruise_setpoint):
