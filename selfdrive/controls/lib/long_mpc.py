@@ -170,8 +170,8 @@ class LongitudinalMpc(object):
     TR = interpolate.interp1d(x, y, fill_value='extrapolate')(velocity)[()]  # extrapolate above 90 mph
 
     if relative_velocity is not None:
-      x = [-11.176, -7.84276, -4.67716, -2.12623, 0, 1.34112, 2.68224]  # relative velocity values
-      y = [(TR + .45), (TR + .377), (TR + .27), (TR + .1071), TR, (TR - .18), (TR - .3)]  # modification values
+      x = [-11.176, -7.84276, -5.45, -3.69, -2.12623, 0, 1.34112, 2.68224]  # relative velocity values
+      y = [(TR + 0.484), (TR + 0.422), (TR + .336), (TR + .263), (TR + .1071), TR, (TR - .18), (TR - .3)]  # modification values
       TR = np.interp(relative_velocity, x, y)  # interpolate as to not modify too much
 
     x = [-4.4704, -2.2352, -0.89408, 0, 1.34112]  # self acceleration values, mph: [-10, -5, -2, 0, 3]
