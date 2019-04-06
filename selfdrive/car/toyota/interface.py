@@ -151,7 +151,7 @@ class CarInterface(object):
         ret.longitudinalKpV = [1.2, 0.8, 0.5]
         ret.longitudinalKiV = [0.18, 0.12]
       else:
-        ret.gasMaxV = [0.2, 0.5, 0.7]
+        ret.gasMaxV = [0.1, 0.114, 0.144, 0.19, 0.246, 0.309, 0.373, 0.439, 0.51, 0.595]
         ret.longitudinalKpV = [3.6, 1.1, 1.0]
         ret.longitudinalKiV = [0.5, 0.24]
 
