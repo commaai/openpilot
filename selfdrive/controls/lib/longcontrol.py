@@ -77,7 +77,7 @@ class LongControl(object):
     """Update longitudinal control. This updates the state machine and runs a PID loop"""
     # Actuation limits
     with open("/data/gas_max", "w") as f:
-      f.write(str(CP.gasMaxBP+","+str(CP.gasMaxV)))
+      f.write(str(CP.gasMaxBP)+","+str(CP.gasMaxV))
     gas_max = interp(v_ego, CP.gasMaxBP, CP.gasMaxV)
     brake_max = interp(v_ego, CP.brakeMaxBP, CP.brakeMaxV)
 
