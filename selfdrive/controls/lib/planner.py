@@ -224,13 +224,9 @@ class Planner(object):
     self.mpc1.set_cur_state(self.v_acc_start, self.a_acc_start)
     self.mpc2.set_cur_state(self.v_acc_start, self.a_acc_start)
 
-    try:
-      relative_velocity = self.lead_1.vRel
-    except: #if no lead car
-      relative_velocity = None
 
-    self.mpc1.update(CS, lead_1, v_cruise_setpoint, relative_velocity)
-    self.mpc2.update(CS, lead_2, v_cruise_setpoint, relative_velocity)
+    self.mpc1.update(CS, lead_1, v_cruise_setpoint)
+    self.mpc2.update(CS, lead_2, v_cruise_setpoint)
 
     self.choose_solution(v_cruise_setpoint, enabled)
 

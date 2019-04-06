@@ -28,6 +28,8 @@ class LongitudinalMpc(object):
     self.last_cost = 0
     self.dynamic_follow_dict = {"self_vels": [], "lead_vels": [], "traffic_vels": []}
     self.mpc_frame = 0  # idea thanks to kegman
+    self.relative_velocity = None
+    self.relative_distance = None
 
     try:
       with open("/data/openpilot/gas-interceptor", "r") as f:
@@ -35,27 +37,27 @@ class LongitudinalMpc(object):
     except:
       self.gas_interceptor = False
 
-  def save_car_data(self, self_vel, relative_velocity):
+  def save_car_data(self, self_vel):
     if len(self.dynamic_follow_dict["self_vels"]) > 200:  # 100hz, so 200 items is 2 seconds
       del self.dynamic_follow_dict["self_vels"][0]
     self.dynamic_follow_dict["self_vels"].append(self_vel)
 
-    if relative_velocity is not None:
+    if self.relative_velocity is not None:
       if len(self.dynamic_follow_dict["lead_vels"]) > 200:
         del self.dynamic_follow_dict["lead_vels"][0]
-      self.dynamic_follow_dict["lead_vels"].append(self_vel + relative_velocity)
+      self.dynamic_follow_dict["lead_vels"].append(self_vel + self.relative_velocity)
 
       if self.mpc_frame > 50:  # add to traffic list every half second so we're not working with a huge list
         if len(self.dynamic_follow_dict["traffic_vels"]) > 240:  # 240 half seconds is 2 minutes of traffic logging
           del self.dynamic_follow_dict["traffic_vels"][0]
-        self.dynamic_follow_dict["traffic_vels"].append(self_vel + relative_velocity)
+        self.dynamic_follow_dict["traffic_vels"].append(self_vel + self.relative_velocity)
         self.mpc_frame = 0  # reset every half second
       self.mpc_frame += 1  # increment every frame
 
     else:  # if no car, reset lead car list; ignore for traffic
       self.dynamic_follow_dict["lead_vels"] = []
 
-  def calculate_tr(self, v_ego, car_state, relative_velocity):
+  def calculate_tr(self, v_ego, car_state):
     """
     Returns a follow time gap in seconds based on car state values
 
@@ -82,8 +84,8 @@ class LongitudinalMpc(object):
       return 0.9  # 10m at 40km/hr
 
     if read_distance_lines == 2:
-      self.save_car_data(v_ego, relative_velocity)
-      generatedTR = self.generateTR(v_ego, relative_velocity)
+      self.save_car_data(v_ego)
+      generatedTR = self.generateTR(v_ego)
       generated_cost = self.generate_cost(generatedTR)
 
       if abs(generated_cost - self.last_cost) > .15:
@@ -139,7 +141,7 @@ class LongitudinalMpc(object):
       if idx != 0:
         lead_vel_diffs.append(abs(vel - lead_vels[idx - 1]))
     x = [0, len(lead_vels)]
-    y = [1.15, .9]  # min and max values to modify TR by, need to tune
+    y = [1.2, .9]  # min and max values to modify TR by, need to tune
     traffic = np.interp(sum(lead_vel_diffs), x, y)
 
     return traffic
@@ -164,15 +166,15 @@ class LongitudinalMpc(object):
     else:
       return a
 
-  def generateTR(self, velocity, relative_velocity):  # in m/s
+  def generateTR(self, velocity):  # in m/s
     x = [0.0, 1.86267, 3.72533, 5.588, 7.45067, 9.31333, 11.55978, 13.645, 22.352, 31.2928, 33.528, 35.7632, 40.2336]  # velocity
     y = [1.03, 1.05363, 1.07879, 1.11493, 1.16969, 1.25071, 1.36325, 1.43, 1.6, 1.7, 1.75618, 1.85, 2.0]  # distances
     TR = interpolate.interp1d(x, y, fill_value='extrapolate')(velocity)[()]  # extrapolate above 90 mph
 
-    if relative_velocity is not None:
+    if self.relative_velocity is not None:
       x = [-11.176, -7.84276, -5.45, -3.69, -2.12623, 0, 1.34112, 2.68224]  # relative velocity values
       y = [(TR + 0.484), (TR + 0.422), (TR + .336), (TR + .263), (TR + .1071), TR, (TR - .18), (TR - .3)]  # modification values
-      TR = np.interp(relative_velocity, x, y)  # interpolate as to not modify too much
+      TR = np.interp(self.relative_velocity, x, y)  # interpolate as to not modify too much
 
     x = [-4.4704, -2.2352, -0.89408, 0, 1.34112]  # self acceleration values, mph: [-10, -5, -2, 0, 3]
     y = [(TR + .158), (TR + .062), (TR + .009), TR, (TR - .13)]  # modification values
@@ -195,8 +197,15 @@ class LongitudinalMpc(object):
 
     return round(float(np.interp(distance, x, y)), 3)  # used to cause stuttering, but now we're doing a percentage change check before changing
 
-  def update(self, CS, lead, v_cruise_setpoint, relative_velocity):
+  def update(self, CS, lead, v_cruise_setpoint):
     v_ego = CS.carState.vEgo
+
+    try:
+      self.relative_velocity = lead.vRel
+      self.relative_distance = lead.dRel
+    except: #if no lead car
+      self.relative_velocity = None
+      self.relative_distance = None
 
     # Setup current mpc state
     self.cur_state[0].x_ego = 0.0
@@ -230,7 +239,7 @@ class LongitudinalMpc(object):
 
     # Calculate mpc
     t = sec_since_boot()
-    TR = self.calculate_tr(v_ego, CS.carState, relative_velocity)
+    TR = self.calculate_tr(v_ego, CS.carState)
     n_its = self.libmpc.run_mpc(self.cur_state, self.mpc_solution, self.a_lead_tau, a_lead, TR)
     duration = int((sec_since_boot() - t) * 1e9)
     self.send_mpc_solution(n_its, duration)
