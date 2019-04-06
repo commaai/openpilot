@@ -14,7 +14,7 @@ try:
 except ImportError:
   CarController = None
 
-A_ACC_MAX = min(_A_CRUISE_MAX_V_FOLLOWING)
+FOLLOW_AGGRESSION = 0.15 # (Acceleration/Decel aggression) Lower is more aggressive
 
 class CanBus(object):
   def __init__(self):
@@ -86,7 +86,7 @@ class CarInterface(object):
     # accelOverride is more or less the max throttle allowed to pcm: usually set to a constant
     # unless aTargetMax is very high and then we scale with it; this help in quicker restart
 
-    return float(max(max_accel, a_target / A_ACC_MAX)) * min(speedLimiter, accelLimiter)
+    return float(max(max_accel, a_target / FOLLOW_AGGRESSION)) * min(speedLimiter, accelLimiter)
 
   @staticmethod
   def get_params(candidate, fingerprint):
