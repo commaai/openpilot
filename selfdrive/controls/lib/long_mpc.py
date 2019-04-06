@@ -86,7 +86,7 @@ class LongitudinalMpc(object):
     if read_distance_lines == 2:
       self.save_car_data(v_ego)
       generatedTR = self.generateTR(v_ego)
-      generated_cost = self.generate_cost()
+      generated_cost = self.generate_cost(generatedTR, v_ego)
 
       if abs(generated_cost - self.last_cost) > .15:
         self.libmpc.init(MPC_COST_LONG.TTC, generated_cost, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
@@ -191,13 +191,13 @@ class LongitudinalMpc(object):
     else:
       return round(TR, 3)
 
-  def generate_cost(self):
+  def generate_cost(self, TR, v_ego):
     x = [.9, 1.8, 2.7]
     y = [1.0, .1, .05]
-    try:
-      TR = self.relative_distance / float(self.relative_velocity)  # switched to cost generation using actual distance from lead car; should be safer
-    except ZeroDivisionError:
-      TR = 1.8
+    if v_ego != 0:
+      real_TR = self.relative_distance / float(v_ego)  # switched to cost generation using actual distance from lead car; should be safer
+      if abs(real_TR - TR) >= .25:  # use real TR if diff is greater than x safety threshold
+        TR = real_TR
     return round(float(np.interp(TR, x, y)), 3)
 
   def update(self, CS, lead, v_cruise_setpoint):
