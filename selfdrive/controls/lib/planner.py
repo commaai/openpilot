@@ -223,15 +223,6 @@ class Planner(object):
     self.mpc1.set_cur_state(self.v_acc_start, self.a_acc_start)
     self.mpc2.set_cur_state(self.v_acc_start, self.a_acc_start)
 
-    try:
-      vLead = lead_1.vLead
-    except:
-      vLead = None
-    try:
-      dRel = lead_1.dRel
-    except:
-      dRel = None
-
     self.mpc1.update(CS, lead_1, v_cruise_setpoint)
     self.mpc2.update(CS, lead_2, v_cruise_setpoint)
 
@@ -270,7 +261,18 @@ class Planner(object):
     plan_send.plan.mdMonoTime = md.logMonoTime
     plan_send.plan.l20MonoTime = live20.logMonoTime
 
+    try:
+      v_lead = lead_1.vLead
+    except:
+      v_lead = None
+    try:
+      d_rel = lead_1.dRel
+    except:
+      d_rel = None
+
     # longitudal plan
+    plan_send.plan.vLead = v_lead
+    plan_send.plan.dRel = d_rel
     plan_send.plan.vCruise = self.v_cruise
     plan_send.plan.aCruise = self.a_cruise
     plan_send.plan.vStart = self.v_acc_start
