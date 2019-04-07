@@ -87,7 +87,7 @@ class LongControl(object):
 
     x = [-0.89408, 0, 0.89408, 2.2352]
     y = [(accel - .05), accel, (accel + .045), (accel + .075)]
-    accel = interp(accel, x, y)
+    accel = interp(v_rel, x, y)
     return accel
 
   def update(self, active, v_ego, brake_pressed, standstill, cruise_standstill, v_cruise, v_target, v_target_future, a_target, CP):
