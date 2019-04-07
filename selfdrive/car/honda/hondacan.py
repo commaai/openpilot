@@ -59,22 +59,14 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, idx):
   if car_fingerprint in HONDA_BOSCH:
     bus = 2
   else:
-
-    x03 = 0x03
-    x03_2 = 0x03
-
-    if car_fingerprint == CAR.ODYSSEY_CHN:
-      x03 = 0x01
-      x03_2 = 0x02
-
     acc_hud_values = {
       'PCM_SPEED': pcm_speed * CV.MS_TO_KPH,
       'PCM_GAS': hud.pcm_accel,
       'CRUISE_SPEED': hud.v_cruise,
       'ENABLE_MINI_CAR': hud.mini_car,
       'HUD_LEAD': hud.car,
-      'SET_ME_X03': x03,
-      'SET_ME_X03_2': x03_2,
+      'SET_ME_X03': 0x01 if car_fingerprint == CAR.ODYSSEY_CHN else 0x03,
+      'SET_ME_X03_2': 0x02 if car_fingerprint == CAR.ODYSSEY_CHN else 0x03,
       'SET_ME_X01': 0x01,
     }
     commands.append(packer.make_can_msg("ACC_HUD", 0, acc_hud_values, idx))
