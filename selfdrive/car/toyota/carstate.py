@@ -266,6 +266,9 @@ class CarState(object):
             self.gasMode = (self.gasMode + 1 ) % 3
           else:
             self.gasMode = 0
+          with open("/data/accel_profile", "w") as f:
+            f.write(str(self.gasMode))
+
           self.cstm_btns.btns[id].btn_label2 = self.gasLabels[self.gasMode]
           self.cstm_btns.hasChanges = True
       else:

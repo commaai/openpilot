@@ -1,5 +1,4 @@
-import numpy as np
-
+from common.numpy_fast import interp
 import selfdrive.messaging as messaging
 from selfdrive.swaglog import cloudlog
 from common.realtime import sec_since_boot
@@ -142,7 +141,7 @@ class LongitudinalMpc(object):
         lead_vel_diffs.append(abs(vel - lead_vels[idx - 1]))
     x = [0, len(lead_vels)]
     y = [1.2, .9]  # min and max values to modify TR by, need to tune
-    traffic = np.interp(sum(lead_vel_diffs), x, y)
+    traffic = interp(sum(lead_vel_diffs), x, y)
 
     return traffic
 
@@ -174,15 +173,15 @@ class LongitudinalMpc(object):
     if self.relative_velocity is not None:
       x = [-11.176, -7.84276, -5.45, -3.69, -2.12623, 0, 1.34112, 2.68224]  # relative velocity values
       y = [(TR + 0.484), (TR + 0.422), (TR + .336), (TR + .263), (TR + .1071), TR, (TR - .18), (TR - .3)]  # modification values
-      TR = np.interp(self.relative_velocity, x, y)  # interpolate as to not modify too much
+      TR = interp(self.relative_velocity, x, y)  # interpolate as to not modify too much
 
     x = [-4.4704, -2.2352, -0.89408, 0, 1.34112]  # self acceleration values, mph: [-10, -5, -2, 0, 3]
     y = [(TR + .158), (TR + .062), (TR + .009), TR, (TR - .13)]  # modification values
-    TR = np.interp(self.get_acceleration(self.dynamic_follow_dict["self_vels"]), x, y)  # factor in self acceleration
+    TR = interp(self.get_acceleration(self.dynamic_follow_dict["self_vels"]), x, y)  # factor in self acceleration
 
     x = [-4.4704, -2.2, -.958, -.31446, 0, 0.5588, 1.34112]  # lead acceleration values
     y = [(TR + 0.3555), (TR + 0.23), (TR + 0.1456), (TR + .066), TR, (TR - .115), (TR - .195)]  # modification values
-    TR = np.interp(self.get_acceleration(self.dynamic_follow_dict["lead_vels"]), x, y)  # factor in lead car's acceleration; should perform better
+    TR = interp(self.get_acceleration(self.dynamic_follow_dict["lead_vels"]), x, y)  # factor in lead car's acceleration; should perform better
 
     TR = TR * self.get_traffic_level(self.dynamic_follow_dict["traffic_vels"])  # modify TR based on last minute of traffic data
 
@@ -198,7 +197,7 @@ class LongitudinalMpc(object):
       real_TR = self.relative_distance / float(v_ego)  # switched to cost generation using actual distance from lead car; should be safer
       if abs(real_TR - TR) >= .25:  # use real TR if diff is greater than x safety threshold
         TR = real_TR
-    return round(float(np.interp(TR, x, y)), 3)
+    return round(float(interp(TR, x, y)), 3)
 
   def update(self, CS, lead, v_cruise_setpoint):
     v_ego = CS.carState.vEgo
