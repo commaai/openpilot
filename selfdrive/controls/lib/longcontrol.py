@@ -80,21 +80,19 @@ class LongControl(object):
     self.pid.reset()
     self.v_pid = v_pid
 
-  def dynamic_gas(self, v_ego):
-    gasMaxBP = [0.0, 1.1176, 2.2352, 4.4704, 6.7056, 9.3878, 18.7757, 29.0576, 35.7632]
-    gasMaxV = [0.125, .14, 0.15, 0.19, .25, .3375, .425, .55, .7]
+  def dynamic_gas(self, v_ego, v_rel, d_rel):
+    x = [0.0, 1.1176, 2.2352, 4.4704, 6.7056, 9.3878, 18.7757, 29.0576, 35.7632]  # velocity
+    y = [0.125, .14, 0.15, 0.19, .25, .3375, .425, .55, .7]  # accel values
+    accel = interp(v_ego, x, y)
 
-    gas_max = interp(v_ego, gasMaxBP, gasMaxV)
-    return gas_max
+    x = [-0.89408, 0, 0.89408, 2.2352]
+    y = [(accel - .05), accel, (accel + .045), (accel + .075)]
+    accel = interp(accel, x, y)
+    return accel
 
   def update(self, active, v_ego, brake_pressed, standstill, cruise_standstill, v_cruise, v_target, v_target_future, a_target, CP):
     """Update longitudinal control. This updates the state machine and runs a PID loop"""
     # Actuation limits
-    '''with open("/data/gas_max", "a") as f:
-      f.write(str(CP.gasMaxV) + "," + str(CP.gasMaxBP)+"\n")'''
-    '''with open("/data/from_long", "a") as f:
-      f.write(str(vLead)+"\n")'''
-
     l20 = None
 
     for socket, event in self.poller.poll(0):
@@ -105,12 +103,12 @@ class LongControl(object):
       self.lead_1 = l20.live20.leadOne
       vRel = self.lead_1.vRel
       dRel = self.lead_1.dRel
-      with open("/data/from_long", "a") as f:
-        f.write(str(vRel) + "," + str(dRel)+"\n")
-
+    else:
+      vRel = None
+      dRel = None
 
     #gas_max = interp(v_ego, CP.gasMaxBP, CP.gasMaxV)
-    gas_max = self.dynamic_gas(v_ego)
+    gas_max = self.dynamic_gas(v_ego, vRel, dRel)
     brake_max = interp(v_ego, CP.brakeMaxBP, CP.brakeMaxV)
 
     # Update state machine
