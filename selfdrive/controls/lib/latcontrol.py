@@ -17,7 +17,12 @@ class LatControl(object):
                             k_f=CP.steerKf, pos_limit=1.0)
     self.last_cloudlog_t = 0.0
     self.angle_steers_des = 0.
-
+    
+    # TODO: add the feedforward parameters to LiveParameters
+    self.angle_ff_gain = 2.0
+    self.rate_ff_gain = 0.2
+    self.angle_ff_bp = [[0.5, 5.0],[0.0, 1.0]]
+    
   def reset(self):
     self.pid.reset()
 
@@ -37,9 +42,12 @@ class LatControl(object):
       self.pid.neg_limit = -steers_max
       steer_feedforward = self.angle_steers_des   # feedforward desired angle
       if CP.steerControlType == car.CarParams.SteerControlType.torque:
-        # TODO: feedforward something based on path_plan.rateSteers
-        steer_feedforward -= path_plan.angleOffset   # subtract the offset, since it does not contribute to resistive torque
-        steer_feedforward *= v_ego**2  # proportional to realigning tire momentum (~ lateral accel)
+        angle_feedforward = steer_feedforward - path_plan.angleOffset
+        angle_ff_ratio = interp(abs(angle_feedforward), self.angle_ff_bp[0], self.angle_ff_bp[1])
+        angle_feedforward *= angle_ff_ratio * self.angle_ff_gain
+        rate_feedforward = (1.0 - angle_ff_ratio) * self.rate_ff_gain * path_plan.rateSteers
+        steer_feedforward = v_ego**2 * (rate_feedforward + angle_feedforward)
+        
       deadzone = 0.0
       output_steer = self.pid.update(self.angle_steers_des, angle_steers, check_saturation=(v_ego > 10), override=steer_override,
                                      feedforward=steer_feedforward, speed=v_ego, deadzone=deadzone)
