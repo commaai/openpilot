@@ -125,7 +125,9 @@ class LongControl(object):
           y = [accel, (accel + .075), accel]
           accel = interp(v_ego, x, y)
 
-    return accel
+    min_return = 0.1
+    max_return = 1.0
+    return max(min(accel, max_return), min_return)  # ensure we return a value between .1 and 1
 
   def update(self, active, v_ego, brake_pressed, standstill, cruise_standstill, v_cruise, v_target, v_target_future,
              a_target, CP, gasinterceptor, gasbuttonstatus):
