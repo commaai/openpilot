@@ -99,7 +99,7 @@ class LongControl(object):
     for socket, event in self.poller.poll(0):
       if socket is self.Live20Data:
         msg = messaging.recv_one(socket).Live20Data
-    
+
     with open("/data/from_long", "a") as f:
       f.write(str(msg.vRel)+"\n")
 
