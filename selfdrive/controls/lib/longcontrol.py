@@ -102,16 +102,18 @@ class LongControl(object):
       elif gasbuttonstatus == 2:
         y = [0.2, 0.2, 0.2]
 
-    if x == []:
+    if not dynamic:
       x = [0., 9., 35.]  # default BP values
 
     accel = interp(v_ego, x, y)
 
     if dynamic:  # dynamic gas profile specific operations
       if v_rel is not None:  # if lead
-        if v_ego <= 8.9408:  # if under 20 mph
-          x = [0, 2.2352, 6.7056, 8.9408]
-          y = [accel, (accel + .075), (accel + .055), accel]
+        if v_ego <= 8.9:  # if under 20 mph
+          x = [0.0, 0.779, 1.404, 1.981, 2.573, 3.209, 3.892, 4.604, 5.321, 6.015, 6.67, 7.293, 7.927, 8.661, 8.9]
+          y = [accel, (accel + 0.01), (accel + 0.022), (accel + 0.034), (accel + 0.044), (accel + 0.051),
+               (accel + 0.054), (accel + 0.053), (accel + 0.05), (accel + 0.043), (accel + 0.034), (accel + 0.024),
+               (accel + 0.013), (accel + 0.003), accel]  # nice bezier curve
           accel = interp(v_ego, x, y)
 
           x = [0, 1.34112, 2.2352]
@@ -122,9 +124,11 @@ class LongControl(object):
           y = [(accel - .05), accel, (accel + .025), (accel + .045)]
           accel = interp(v_rel, x, y)
       else:
-        if v_ego <= 8.9408:  # if under 20 mph with no lead, give a little boost ;)
-          x = [0, 2.2352, 6.7056, 8.9408]
-          y = [accel, (accel + .075), (accel + .055), accel]
+        if v_ego <= 8.9:  # if under 20 mph with no lead, give a little boost ;)
+          x = [0.0, 0.779, 1.404, 1.981, 2.573, 3.209, 3.892, 4.604, 5.321, 6.015, 6.67, 7.293, 7.927, 8.661, 8.9]
+          y = [accel, (accel + 0.01), (accel + 0.022), (accel + 0.034), (accel + 0.044), (accel + 0.051),
+               (accel + 0.054), (accel + 0.053), (accel + 0.05), (accel + 0.043), (accel + 0.034), (accel + 0.024),
+               (accel + 0.013), (accel + 0.003), accel]
           accel = interp(v_ego, x, y)
 
     min_return = 0.1
