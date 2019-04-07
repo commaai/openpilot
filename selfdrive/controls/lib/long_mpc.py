@@ -180,8 +180,8 @@ class LongitudinalMpc(object):
     y = [(TR + .158), (TR + .062), (TR + .009), TR, (TR - .13)]  # modification values
     TR = interp(self.get_acceleration(self.dynamic_follow_dict["self_vels"]), x, y)  # factor in self acceleration
 
-    x = [-4.4704, -2.2, -.958, -.31446, 0, 0.5588, 1.34112]  # lead acceleration values
-    y = [(TR + 0.3555), (TR + 0.23), (TR + 0.1456), (TR + .066), TR, (TR - .115), (TR - .195)]  # modification values
+    x = [-4.4704, -2.2, -.958, -0.44704, -.31446, 0, 0.5588, 1.34112]  # lead acceleration values
+    y = [(TR + 0.53325), (TR + 0.426), (TR + 0.2912), (TR + .18), (TR + 0.11), TR, (TR - .115), (TR - .195)]  # modification values
     TR = interp(self.get_acceleration(self.dynamic_follow_dict["lead_vels"]), x, y)  # factor in lead car's acceleration; should perform better
 
     TR = TR * self.get_traffic_level(self.dynamic_follow_dict["traffic_vels"])  # modify TR based on last minute of traffic data
