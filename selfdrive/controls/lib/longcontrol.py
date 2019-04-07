@@ -21,9 +21,6 @@ _MAX_SPEED_ERROR_V = [1.5, .8]  # max positive v_pid error VS actual speed; this
 
 RATE = 100.0
 
-vLead = None
-dRel = None
-
 
 def long_control_state_trans(active, long_control_state, v_ego, v_target, v_pid,
                              output_gb, brake_pressed, cruise_standstill):
@@ -59,6 +56,8 @@ def long_control_state_trans(active, long_control_state, v_ego, v_target, v_pid,
 
   return long_control_state
 
+vLead = None
+dRel = None
 
 class GetGasData():
   def __init__(self):
@@ -69,8 +68,6 @@ class GetGasData():
     global dRel
     vLead = lead_velocity
     dRel = lead_distance
-    with open("/data/from_long", "a") as f:
-      f.write(str(lead_velocity) + "," + str(lead_distance)+"\n")
 
 
 class LongControl(object):
@@ -99,11 +96,10 @@ class LongControl(object):
   def update(self, active, v_ego, brake_pressed, standstill, cruise_standstill, v_cruise, v_target, v_target_future, a_target, CP):
     """Update longitudinal control. This updates the state machine and runs a PID loop"""
     # Actuation limits
-    global vLead
-    global dRel
     '''with open("/data/gas_max", "a") as f:
       f.write(str(CP.gasMaxV) + "," + str(CP.gasMaxBP)+"\n")'''
-
+    with open("/data/from_long", "a") as f:
+      f.write(str(vLead) + "," + str(dRel)+"\n")
 
     #gas_max = interp(v_ego, CP.gasMaxBP, CP.gasMaxV)
     gas_max = self.dynamic_gas(v_ego)
