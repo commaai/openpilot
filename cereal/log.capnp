@@ -557,8 +557,6 @@ struct Plan {
   vCruise @16 :Float32;
   aCruise @17 :Float32;
   vTarget @3 :Float32;
-  vLead @99 :Float32;
-  dRel @98 :Float32;
   vTargetFuture @14 :Float32;
   vMax @20 :Float32;
   aTargetMinDEPRECATED @4 :Float32;

@@ -11,11 +11,10 @@ from selfdrive.config import Conversions as CV
 from selfdrive.services import service_list
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from selfdrive.controls.lib.speed_smoother import speed_smoother
-from selfdrive.controls.lib.longcontrol import LongCtrlState, MIN_CAN_SPEED
+from selfdrive.controls.lib.longcontrol import LongCtrlState, MIN_CAN_SPEED, GetGasData
 from selfdrive.controls.lib.fcw import FCWChecker
 from selfdrive.controls.lib.long_mpc import LongitudinalMpc
 
-from scipy import interpolate
 from selfdrive.kegman_conf import kegman_conf
 
 kegman = kegman_conf()
@@ -101,6 +100,7 @@ class Planner(object):
     self.lastlat_Control = None
 
     self.params = Params()
+    GGD = GetGasData()
 
   def choose_solution(self, v_cruise_setpoint, enabled):
     if enabled:
@@ -224,6 +224,17 @@ class Planner(object):
     self.mpc1.set_cur_state(self.v_acc_start, self.a_acc_start)
     self.mpc2.set_cur_state(self.v_acc_start, self.a_acc_start)
 
+    try:
+      vLead = lead_1.vLead
+    except:
+      vLead = None
+    try:
+      dRel = lead_1.dRel
+    except:
+      dRel = None
+
+    self.GGD.update(vLead, dRel)
+
 
     self.mpc1.update(CS, lead_1, v_cruise_setpoint)
     self.mpc2.update(CS, lead_2, v_cruise_setpoint)
@@ -264,8 +275,6 @@ class Planner(object):
     plan_send.plan.l20MonoTime = live20.logMonoTime
 
     # longitudal plan
-    plan_send.plan.vLead = lead_1.vLead
-    plan_send.plan.dRel = lead_1.dRel
     plan_send.plan.vCruise = self.v_cruise
     plan_send.plan.aCruise = self.a_cruise
     plan_send.plan.vStart = self.v_acc_start
