@@ -1,7 +1,10 @@
+import zmq
 from cereal import log
 from common.numpy_fast import clip, interp
 from selfdrive.controls.lib.pid import PIController
 from selfdrive.kegman_conf import kegman_conf
+import selfdrive.messaging as messaging
+from selfdrive.services import service_list
 
 kegman = kegman_conf()
 LongCtrlState = log.Live100Data.LongControlState
@@ -68,6 +71,10 @@ class LongControl(object):
     self.v_pid = 0.0
     self.last_output_gb = 0.0
 
+    context = zmq.Context()
+    self.poller = zmq.Poller()
+    self.Live20Data = messaging.sub_sock(context, service_list['Live20Data'].port, conflate=True, poller=self.poller)
+
   def reset(self, v_pid):
     """Reset PID controller and change setpoint"""
     self.pid.reset()
@@ -87,6 +94,15 @@ class LongControl(object):
       f.write(str(CP.gasMaxV) + "," + str(CP.gasMaxBP)+"\n")'''
     '''with open("/data/from_long", "a") as f:
       f.write(str(vLead)+"\n")'''
+
+    msg = None
+    for socket, event in self.poller.poll(0):
+      if socket is self.Live20Data:
+        msg = messaging.recv_one(socket).Live20Data
+    
+    with open("/data/from_long", "a") as f:
+      f.write(str(msg.vRel)+"\n")
+
 
     #gas_max = interp(v_ego, CP.gasMaxBP, CP.gasMaxV)
     gas_max = self.dynamic_gas(v_ego)

@@ -261,7 +261,7 @@ class Planner(object):
     plan_send.plan.mdMonoTime = md.logMonoTime
     plan_send.plan.l20MonoTime = live20.logMonoTime
 
-    
+
     # longitudal plan
     plan_send.plan.vCruise = self.v_cruise
     plan_send.plan.aCruise = self.a_cruise
