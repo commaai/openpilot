@@ -100,7 +100,6 @@ class Planner(object):
     self.lastlat_Control = None
 
     self.params = Params()
-    self.GGD = GetGasData()
 
   def choose_solution(self, v_cruise_setpoint, enabled):
     if enabled:
@@ -232,9 +231,6 @@ class Planner(object):
       dRel = lead_1.dRel
     except:
       dRel = None
-
-    self.GGD.update(vLead, dRel)
-
 
     self.mpc1.update(CS, lead_1, v_cruise_setpoint)
     self.mpc2.update(CS, lead_2, v_cruise_setpoint)
