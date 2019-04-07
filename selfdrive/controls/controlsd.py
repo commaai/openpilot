@@ -257,8 +257,9 @@ def state_control(plan, path_plan, CS, CP, state, events, v_cruise_kph, v_cruise
       CP.gasMaxV = [0.25, 0.9, 0.9]
     elif CS.gasbuttonstatus == 2:
       CP.gasMaxV = [0.2, 0.2, 0.2]'''
-    CP.gasMaxV = [.05, 0.1, 0.1, 0.1, 0.2]
-    CP.gasMaxBP = [0.0, 0.89408, 2.2352, 4.4704, 8.9408]
+
+    CP.gasMaxV = [0.105, 0.114, 0.144, 0.19, 0.246, 0.309, 0.373, 0.439, 0.51, 0.595]
+    CP.gasMaxBP = [0.0, 1.343, 2.698, 4.116, 5.715, 7.697, 10.342, 14.006, 19.087, 25.996]
   else:
     if CS.gasbuttonstatus == 0:
       CP.gasMaxV = [0.5, 0.7, 0.9]
