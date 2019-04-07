@@ -141,7 +141,7 @@ class LongitudinalMpc(object):
       if idx != 0:
         lead_vel_diffs.append(abs(vel - lead_vels[idx - 1]))
     x = [0, len(lead_vels)]
-    y = [1.2, .9]  # min and max values to modify TR by, need to tune
+    y = [1.1, .9]  # min and max values to modify TR by, need to tune
     traffic = interp(sum(lead_vel_diffs), x, y)
 
     return traffic
@@ -172,17 +172,17 @@ class LongitudinalMpc(object):
     TR = interpolate.interp1d(x, y, fill_value='extrapolate')(velocity)[()]  # extrapolate above 90 mph
 
     if self.relative_velocity is not None:
-      x = [-11.176, -7.84276, -5.45, -3.69, -2.12623, 0, 1.34112, 2.68224]  # relative velocity values
-      y = [(TR + 0.484), (TR + 0.422), (TR + .336), (TR + .263), (TR + .1071), TR, (TR - .18), (TR - .3)]  # modification values
+      x = [-11.176, -7.84276, -5.45, -3.69, -2.77, -2.12623, 0, 1.34112, 2.68224]  # relative velocity values
+      y = [(TR + 0.484), (TR + 0.422), (TR + .336), (TR + .27), (TR + .205), (TR + .1071), TR, (TR - .18), (TR - .3)]  # modification values
       TR = interp(self.relative_velocity, x, y)  # interpolate as to not modify too much
 
-    x = [-4.4704, -2.2352, -0.89408, 0, 1.34112]  # self acceleration values, mph: [-10, -5, -2, 0, 3]
-    y = [(TR + .158), (TR + .062), (TR + .009), TR, (TR - .13)]  # modification values
-    TR = interp(self.get_acceleration(self.dynamic_follow_dict["self_vels"]), x, y)  # factor in self acceleration
+      x = [-4.4704, -2.2352, -0.89408, 0, 1.34112]  # self acceleration values, mph: [-10, -5, -2, 0, 3]
+      y = [(TR + .158), (TR + .062), (TR + .009), TR, (TR - .13)]  # modification values
+      TR = interp(self.get_acceleration(self.dynamic_follow_dict["self_vels"]), x, y)  # factor in self acceleration
 
-    x = [-4.4704, -2.2, -.958, -0.44704, -.31446, 0, 0.5588, 1.34112]  # lead acceleration values
-    y = [(TR + 0.53325), (TR + 0.426), (TR + 0.2912), (TR + .18), (TR + 0.11), TR, (TR - .115), (TR - .195)]  # modification values
-    TR = interp(self.get_acceleration(self.dynamic_follow_dict["lead_vels"]), x, y)  # factor in lead car's acceleration; should perform better
+      x = [-4.4704, -2.2, -.958, -0.44704, -.31446, 0, 0.5588, 1.34112]  # lead acceleration values
+      y = [(TR + 0.53325), (TR + 0.426), (TR + 0.2912), (TR + .18), (TR + 0.11), TR, (TR - .115), (TR - .195)]  # modification values
+      TR = interp(self.get_acceleration(self.dynamic_follow_dict["lead_vels"]), x, y)  # factor in lead car's acceleration; should perform better
 
     TR = TR * self.get_traffic_level(self.dynamic_follow_dict["traffic_vels"])  # modify TR based on last minute of traffic data
 
