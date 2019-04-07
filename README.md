@@ -18,6 +18,8 @@ Highlight Features
 * **Select Vision Model (on 0.5.8, `dynamic-follow` branch only)**: You can select whether you would like to use the wiggly model or the normal vision model for path planning. Wiggly has more torque and can better guess the road curvature without lane lines, but it occasionally crashes or mispredicts the path.
 * **EON and openpilot Stats**: With the on-screen UI, you can view stats about your EON such as its temperature, your grey panda's GPS accuracy, the lead car's relative velocity, its distance, and more.
 
+---
+
 * [Community](#community)
 * [Hardware](#hardware)
 * [Supported Cars](#supported-cars)
