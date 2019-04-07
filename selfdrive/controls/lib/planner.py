@@ -11,7 +11,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.services import service_list
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from selfdrive.controls.lib.speed_smoother import speed_smoother
-from selfdrive.controls.lib.longcontrol import LongCtrlState, MIN_CAN_SPEED, GetGasData
+from selfdrive.controls.lib.longcontrol import LongCtrlState, MIN_CAN_SPEED
 from selfdrive.controls.lib.fcw import FCWChecker
 from selfdrive.controls.lib.long_mpc import LongitudinalMpc
 
