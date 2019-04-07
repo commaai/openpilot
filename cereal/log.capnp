@@ -553,8 +553,6 @@ struct Plan {
   laneWidthDEPRECATED @11 :Float32;
 
   # longitudinal
-  vLead @99 :Float32;
-  dRel @98 :Float32;
   longitudinalValidDEPRECATED @2 :Bool;
   vCruise @16 :Float32;
   aCruise @17 :Float32;
