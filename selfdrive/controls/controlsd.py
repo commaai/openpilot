@@ -202,7 +202,7 @@ def state_transition(CS, CP, state, events, soft_disable_timer, v_cruise_kph, AM
 
 
 def state_control(plan, path_plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, AM, rk,
-                  driver_status, LaC, LoC, VM, angle_model_bias, passive, is_metric, cal_perc, vLead):
+                  driver_status, LaC, LoC, VM, angle_model_bias, passive, is_metric, cal_perc):
   """Given the state, this function returns an actuators packet"""
 
   actuators = car.CarControl.Actuators.new_message()
@@ -278,7 +278,7 @@ def state_control(plan, path_plan, CS, CP, state, events, v_cruise_kph, v_cruise
 
   # Gas/Brake PID loop
   actuators.gas, actuators.brake = LoC.update(active, CS.vEgo, CS.brakePressed, CS.standstill, CS.cruiseState.standstill,
-                                              v_cruise_kph, v_acc_sol, plan.vTargetFuture, a_acc_sol, CP, vLead)
+                                              v_cruise_kph, v_acc_sol, plan.vTargetFuture, a_acc_sol, CP)
   # Steering PID loop and lateral MPC
   actuators.steer, actuators.steerAngle = LaC.update(active, CS.vEgo, CS.steeringAngle, 
                                                      CS.steeringPressed, CP, VM, path_plan)
@@ -545,7 +545,7 @@ def controlsd_thread(gctx=None, rate=100):
     actuators, v_cruise_kph, driver_status, angle_model_bias, v_acc, a_acc = \
       state_control(plan.plan, path_plan.pathPlan, CS, CP, state, events, v_cruise_kph,
                     v_cruise_kph_last, AM, rk, driver_status,
-                    LaC, LoC, VM, angle_model_bias, passive, is_metric, cal_perc, live100.vTargetLead)
+                    LaC, LoC, VM, angle_model_bias, passive, is_metric, cal_perc)
 
     prof.checkpoint("State Control")
 
