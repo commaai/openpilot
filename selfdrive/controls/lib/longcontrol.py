@@ -73,7 +73,7 @@ class LongControl(object):
 
     context = zmq.Context()
     self.poller = zmq.Poller()
-    self.Live20Data = messaging.sub_sock(context, service_list['Live20Data'].port, conflate=True, poller=self.poller)
+    self.live20 = messaging.sub_sock(context, service_list['live20'].port, conflate=True, poller=self.poller)
 
   def reset(self, v_pid):
     """Reset PID controller and change setpoint"""
@@ -95,13 +95,18 @@ class LongControl(object):
     '''with open("/data/from_long", "a") as f:
       f.write(str(vLead)+"\n")'''
 
-    msg = None
-    for socket, event in self.poller.poll(0):
-      if socket is self.Live20Data:
-        msg = messaging.recv_one(socket).Live20Data
+    l20 = None
 
-    with open("/data/from_long", "a") as f:
-      f.write(str(msg.vRel)+"\n")
+    for socket, event in self.poller.poll(0):
+      if socket is self.live20:
+        l20 = messaging.recv_one(socket)
+
+    if l20 is not None:
+      self.lead_1 = l20.live20.leadOne
+      vRel = self.lead_1.vRel
+      dRel = self.lead_1.dRel
+      with open("/data/from_long", "a") as f:
+        f.write(str(vRel) + "," + str(dRel)+"\n")
 
 
     #gas_max = interp(v_ego, CP.gasMaxBP, CP.gasMaxV)
