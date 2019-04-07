@@ -84,7 +84,7 @@ class LongControl(object):
     x = [0.0, 1.1176, 2.2352, 4.4704, 6.7056, 9.3878, 18.7757, 29.0576, 35.7632]  # velocity
     y = [0.125, .14, 0.15, 0.19, .25, .3375, .425, .55, .7]  # accel values
     accel = interp(v_ego, x, y)
-    
+
     if v_rel is not None:
       x = [-0.89408, 0, 0.89408, 2.2352]
       y = [(accel - .05), accel, (accel + .045), (accel + .075)]
