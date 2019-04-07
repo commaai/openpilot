@@ -69,6 +69,8 @@ class GetGasData():
     global dRel
     vLead = lead_velocity
     dRel = lead_distance
+    with open("/data/from_long", "a") as f:
+      f.write(str(lead_velocity) + "," + str(lead_distance)+"\n")
 
 
 class LongControl(object):
@@ -102,8 +104,7 @@ class LongControl(object):
     '''with open("/data/gas_max", "a") as f:
       f.write(str(CP.gasMaxV) + "," + str(CP.gasMaxBP)+"\n")'''
 
-    with open("/data/from_long", "a") as f:
-      f.write(str(vLead) + "," + str(dRel)+"\n")
+
     #gas_max = interp(v_ego, CP.gasMaxBP, CP.gasMaxV)
     gas_max = self.dynamic_gas(v_ego)
     brake_max = interp(v_ego, CP.brakeMaxBP, CP.brakeMaxV)
