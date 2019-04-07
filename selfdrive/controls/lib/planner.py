@@ -264,6 +264,8 @@ class Planner(object):
     plan_send.plan.l20MonoTime = live20.logMonoTime
 
     # longitudal plan
+    plan_send.plan.vLead = lead_1.vLead
+    plan_send.plan.dRel = lead_1.dRel
     plan_send.plan.vCruise = self.v_cruise
     plan_send.plan.aCruise = self.a_cruise
     plan_send.plan.vStart = self.v_acc_start

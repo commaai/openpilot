@@ -73,12 +73,22 @@ class LongControl(object):
     self.pid.reset()
     self.v_pid = v_pid
 
-  def update(self, active, v_ego, brake_pressed, standstill, cruise_standstill, v_cruise, v_target, v_target_future, a_target, CP):
+  def dynamic_gas(self, v_ego):
+    gasMaxBP = [0.0, 1.1176, 2.2352, 4.4704, 6.7056, 9.3878, 18.7757, 29.0576, 35.7632]
+    gasMaxV = [0.125, .14, 0.15, 0.19, .25, .3375, .425, .55, .7]
+
+    gas_max = interp(v_ego, gasMaxBP, gasMaxV)
+    return gas_max
+
+  def update(self, active, v_ego, brake_pressed, standstill, cruise_standstill, v_cruise, v_target, v_target_future, a_target, CP, vLead, dRel):
     """Update longitudinal control. This updates the state machine and runs a PID loop"""
     # Actuation limits
     '''with open("/data/gas_max", "a") as f:
       f.write(str(CP.gasMaxV) + "," + str(CP.gasMaxBP)+"\n")'''
-    gas_max = interp(v_ego, CP.gasMaxBP, CP.gasMaxV)
+    with open("/data/from_long", "a") as f:
+          f.write(str(vLead - v_ego) + "," + str(dRel)+"\n")
+    #gas_max = interp(v_ego, CP.gasMaxBP, CP.gasMaxV)
+    gas_max = self.dynamic_gas(v_ego)
     brake_max = interp(v_ego, CP.brakeMaxBP, CP.brakeMaxV)
 
     # Update state machine

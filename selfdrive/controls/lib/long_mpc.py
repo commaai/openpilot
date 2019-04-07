@@ -85,7 +85,7 @@ class LongitudinalMpc(object):
 
     if read_distance_lines == 2:
       self.save_car_data(v_ego)
-      generatedTR = self.generateTR(v_ego)
+      generatedTR = self.dynamic_follow(v_ego)
       generated_cost = self.generate_cost(generatedTR, v_ego)
 
       if abs(generated_cost - self.last_cost) > .15:
@@ -166,7 +166,7 @@ class LongitudinalMpc(object):
     else:
       return a
 
-  def generateTR(self, velocity):  # in m/s
+  def dynamic_follow(self, velocity):  # in m/s
     x = [0.0, 1.86267, 3.72533, 5.588, 7.45067, 9.31333, 11.55978, 13.645, 22.352, 31.2928, 33.528, 35.7632, 40.2336]  # velocity
     y = [1.03, 1.05363, 1.07879, 1.11493, 1.16969, 1.25071, 1.36325, 1.43, 1.6, 1.7, 1.75618, 1.85, 2.0]  # distances
     TR = interpolate.interp1d(x, y, fill_value='extrapolate')(velocity)[()]  # extrapolate above 90 mph
