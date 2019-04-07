@@ -233,7 +233,7 @@ class Planner(object):
     except:
       dRel = None
 
-    self.GGD.update(vLead, dRel)
+    self.GGD.update(1, 2)
 
 
     self.mpc1.update(CS, lead_1, v_cruise_setpoint)
