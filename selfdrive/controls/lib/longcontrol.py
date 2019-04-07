@@ -82,10 +82,12 @@ class LongControl(object):
 
   def dynamic_gas(self, v_ego, v_rel, d_rel, gasinterceptor, gasbuttonstatus):
     x = []
+    dynamic = False
     if gasinterceptor:
       if gasbuttonstatus == 0:
         x = [0.0, 1.1176, 2.2352, 4.4704, 6.7056, 9.3878, 18.7757, 29.0576, 35.7632]  # velocity/gasMaxBP
         y = [0.125, .14, 0.15, 0.19, .25, .3375, .425, .55, .7]  # accel values/gasMaxV
+        dynamic = True
       elif gasbuttonstatus == 1:
         y = [0.25, 0.9, 0.9]
       elif gasbuttonstatus == 2:
@@ -103,16 +105,25 @@ class LongControl(object):
 
     accel = interp(v_ego, x, y)
 
-    if gasinterceptor:
-      if gasbuttonstatus == 0:  # smooth profile specific operations
-        if v_rel is not None:
-          x = [-0.89408, 0, 0.89408, 2.2352]
-          y = [(accel - .05), accel, (accel + .045), (accel + .075)]
+    if dynamic:  # dynamic gas profile specific operations
+      if v_rel is not None:  # if lead
+        if v_ego <= 6.7056:  # if under 15 mph
+          x = [0, 2.2352, 6.7056]
+          y = [accel, (accel + .055), accel]
+          accel = interp(v_ego, x, y)
+
+          x = [0, 0.89408, 1.78816]
+          y = [accel, (accel + .015), (accel + .025)]
           accel = interp(v_rel, x, y)
         else:
-          x = [0, 2.2352, 6.7056]
-          y = [accel, (accel + .045), accel]
+          x = [-0.89408, 0, 0.89408, 3.12928]
+          y = [(accel - .05), accel, (accel + .025), (accel + .045)]
           accel = interp(v_rel, x, y)
+      else:
+        if v_ego <= 6.7056:  # if under 15 mph with no lead, give a little boost ;)
+          x = [0, 2.2352, 6.7056]
+          y = [accel, (accel + .075), accel]
+          accel = interp(v_ego, x, y)
 
     return accel
 
