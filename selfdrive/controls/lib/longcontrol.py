@@ -101,11 +101,9 @@ class LongControl(object):
     global dRel
     '''with open("/data/gas_max", "a") as f:
       f.write(str(CP.gasMaxV) + "," + str(CP.gasMaxBP)+"\n")'''
-    try:
-      with open("/data/from_long", "a") as f:
+    if vLead is not None:
+      with open("/data/from_long", "w") as f:
           f.write(str(vLead - v_ego) + "," + str(dRel)+"\n")
-    except:
-      pass
     #gas_max = interp(v_ego, CP.gasMaxBP, CP.gasMaxV)
     gas_max = self.dynamic_gas(v_ego)
     brake_max = interp(v_ego, CP.brakeMaxBP, CP.brakeMaxV)
