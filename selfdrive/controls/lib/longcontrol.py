@@ -87,8 +87,8 @@ class LongControl(object):
       if gasbuttonstatus == 0:
         #x = [0.0, 1.1176, 2.2352, 4.4704, 6.7056, 9.3878, 18.7757, 29.0576, 35.7632]  # velocity/gasMaxBP
         #y = [0.125, .14, 0.15, 0.19, .25, .3375, .425, .55, .7]  # accel values/gasMaxV
-        x = [0.0, 1.1176, 2.2352, 4.4704, 6.7056, 9.3878, 18.7757, 29.0576, 35.7632]  # velocity/gasMaxBP
-        y = [0.125 + .005, .14 + .005, 0.15 + .005, 0.19 + .005, .2475 + .005, .3375 + .005, .425, .55, .7]  # accel values/gasMaxV
+        x = [0.0, 0.447, 1.118, 2.235, 4.47, 6.706, 9.388, 12.964, 15.423, 18.119, 20.117, 24.466, 29.058, 32.71, 35.763]  # velocity/gasMaxBP
+        y = [0.13, 0.14, 0.165, 0.205, 0.265, 0.31, 0.343, 0.38, 0.396, 0.409, 0.425, 0.478, 0.55, 0.621, 0.7]  # accel values/gasMaxV
         dynamic = True
       elif gasbuttonstatus == 1:
         y = [0.25, 0.9, 0.9]
@@ -109,31 +109,25 @@ class LongControl(object):
 
     if dynamic:  # dynamic gas profile specific operations
       if v_rel is not None:  # if lead
-        if v_ego <= 8.9:  # if under 20 mph
-          x = [0.0, 0.779, 1.404, 1.981, 2.573, 3.209, 3.892, 4.604, 5.321, 6.015, 6.67, 7.293, 7.927, 8.661, 8.9]
-          y = [accel, (accel + 0.01), (accel + 0.022), (accel + 0.034), (accel + 0.044), (accel + 0.051),
-               (accel + 0.054), (accel + 0.053), (accel + 0.05), (accel + 0.043), (accel + 0.034), (accel + 0.024),
-               (accel + 0.013), (accel + 0.003), accel]  # nice bezier curve
-          accel = interp(v_ego, x, y)
-
-          x = [0, 1.34112, 2.2352]
-          y = [accel, (accel + .0225), (accel + .035)]
+        if (v_ego + v_rel) < 2.2352:  # if lead is under 5 mph
+          x = [0, 0.44704, 1.1176]
+          y = [(accel - .035), (accel + .01), (accel + .0225)]
           accel = interp(v_rel, x, y)
-        else:  # above 20 mph
-          x = [-0.89408, 0, 0.89408, 3.12928]
-          y = [(accel - .05), accel, (accel + .025), (accel + .045)]
+        else:
+          x = [-0.89408, 0, 0.89408, 4.4704]
+          y = [(accel - .05), accel, (accel + .02), (accel + .035)]
           accel = interp(v_rel, x, y)
       else:
-        if v_ego <= 8.9:  # if under 20 mph with no lead, give a little boost ;)
-          x = [0.0, 0.779, 1.404, 1.981, 2.573, 3.209, 3.892, 4.604, 5.321, 6.015, 6.67, 7.293, 7.927, 8.661, 8.9]
+        if v_ego <= 8.9:  # if under 20 mph with no lead, give a little boost
+          x = [0.0, 0.779, 1.404, 1.981, 2.573, 3.209, 3.892, 4.604, 5.321, 6.015, 6.67, 7.293, 7.927, 8.661, 8.9]  # smooth bezier curve ;)
           y = [accel, (accel + 0.01), (accel + 0.022), (accel + 0.034), (accel + 0.044), (accel + 0.051),
                (accel + 0.054), (accel + 0.053), (accel + 0.05), (accel + 0.043), (accel + 0.034), (accel + 0.024),
                (accel + 0.013), (accel + 0.003), accel]
           accel = interp(v_ego, x, y)
 
-    min_return = 0.1
+    min_return = 0.05
     max_return = 1.0
-    return max(min(accel, max_return), min_return)  # ensure we return a value between .1 and 1
+    return round(max(min(accel, max_return), min_return), 4)  # ensure we return a value between range
 
   def update(self, active, v_ego, brake_pressed, standstill, cruise_standstill, v_cruise, v_target, v_target_future,
              a_target, CP, gasinterceptor, gasbuttonstatus):
