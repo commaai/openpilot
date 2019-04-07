@@ -85,11 +85,13 @@ class LongControl(object):
     dynamic = False
     if gasinterceptor:
       if gasbuttonstatus == 0:
+        dynamic = True
         #x = [0.0, 1.1176, 2.2352, 4.4704, 6.7056, 9.3878, 18.7757, 29.0576, 35.7632]  # velocity/gasMaxBP
         #y = [0.125, .14, 0.15, 0.19, .25, .3375, .425, .55, .7]  # accel values/gasMaxV
-        x = [0.0, 0.447, 1.118, 2.235, 4.47, 6.706, 9.388, 12.964, 15.423, 18.119, 20.117, 24.466, 29.058, 32.71, 35.763]  # velocity/gasMaxBP
-        y = [0.13, 0.14, 0.165, 0.205, 0.265, 0.31, 0.343, 0.38, 0.396, 0.409, 0.425, 0.478, 0.55, 0.621, 0.7]  # accel values/gasMaxV
-        dynamic = True
+        #x = [0.0, 0.447, 1.118, 2.235, 4.47, 6.706, 9.388, 12.964, 15.423, 18.119, 20.117, 24.466, 29.058, 32.71, 35.763]  # velocities/gasMaxBP
+        #y = [0.13, 0.14, 0.165, 0.205, 0.265, 0.31, 0.343, 0.38, 0.396, 0.409, 0.425, 0.478, 0.55, 0.621, 0.7]  # accel values/gasMaxV
+        x = [0.0, 1.1176, 1.9223, 2.5481, 3.0621, 4.0234, 5.1921, 6.1131, 7.1526, 9.388, 12.964, 15.423, 18.119, 20.117, 24.4661, 29.058, 32.7101, 35.7631]
+        y = [0.115, 0.1275, 0.1437, 0.157, 0.1715, 0.2, 0.24, 0.2782, 0.306, 0.343, 0.38, 0.396, 0.409, 0.425, 0.478, 0.55, 0.621, 0.7]
       elif gasbuttonstatus == 1:
         y = [0.25, 0.9, 0.9]
       elif gasbuttonstatus == 2:
@@ -109,16 +111,16 @@ class LongControl(object):
 
     if dynamic:  # dynamic gas profile specific operations
       if v_rel is not None:  # if lead
-        if (v_ego + v_rel) < 2.2352:  # if lead is under 5 mph
-          x = [0, 0.44704, 1.1176]
-          y = [(accel - .035), (accel + .01), (accel + .0225)]
+        if (v_ego + v_rel) < 3.12928:  # if lead v is under 5 mph
+          x = [0, 0.44704, 2.68224]
+          y = [(accel - .035), (accel + .005), (accel + .02)]
           accel = interp(v_rel, x, y)
         else:
           x = [-0.89408, 0, 0.89408, 4.4704]
-          y = [(accel - .05), accel, (accel + .02), (accel + .035)]
+          y = [(accel - .05), accel, (accel + .005), (accel + .02)]
           accel = interp(v_rel, x, y)
       else:
-        if v_ego <= 8.9:  # if under 20 mph with no lead, give a little boost
+        if v_ego <= 8.9:  # if under 20 mph with no lead, give a little boost (need to tune)
           x = [0.0, 0.779, 1.404, 1.981, 2.573, 3.209, 3.892, 4.604, 5.321, 6.015, 6.67, 7.293, 7.927, 8.661, 8.9]  # smooth bezier curve ;)
           y = [accel, (accel + 0.01), (accel + 0.022), (accel + 0.034), (accel + 0.044), (accel + 0.051),
                (accel + 0.054), (accel + 0.053), (accel + 0.05), (accel + 0.043), (accel + 0.034), (accel + 0.024),
@@ -141,8 +143,12 @@ class LongControl(object):
 
     if l20 is not None:
       self.lead_1 = l20.live20.leadOne
-      vRel = self.lead_1.vRel
-      dRel = self.lead_1.dRel
+      try:
+        vRel = self.lead_1.vRel
+        dRel = self.lead_1.dRel
+      except:
+        vRel = None
+        dRel = None
     else:
       vRel = None
       dRel = None
