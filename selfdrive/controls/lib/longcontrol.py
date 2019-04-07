@@ -85,8 +85,10 @@ class LongControl(object):
     dynamic = False
     if gasinterceptor:
       if gasbuttonstatus == 0:
+        #x = [0.0, 1.1176, 2.2352, 4.4704, 6.7056, 9.3878, 18.7757, 29.0576, 35.7632]  # velocity/gasMaxBP
+        #y = [0.125, .14, 0.15, 0.19, .25, .3375, .425, .55, .7]  # accel values/gasMaxV
         x = [0.0, 1.1176, 2.2352, 4.4704, 6.7056, 9.3878, 18.7757, 29.0576, 35.7632]  # velocity/gasMaxBP
-        y = [0.125, .14, 0.15, 0.19, .25, .3375, .425, .55, .7]  # accel values/gasMaxV
+        y = [0.125 + .005, .14 + .005, 0.15 + .005, 0.19 + .005, .2475 + .005, .3375 + .005, .425, .55, .7]  # accel values/gasMaxV
         dynamic = True
       elif gasbuttonstatus == 1:
         y = [0.25, 0.9, 0.9]
