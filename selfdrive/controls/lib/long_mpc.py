@@ -1,4 +1,5 @@
 from common.numpy_fast import interp
+import numpy as np
 import selfdrive.messaging as messaging
 from selfdrive.swaglog import cloudlog
 from common.realtime import sec_since_boot
