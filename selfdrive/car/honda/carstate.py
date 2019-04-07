@@ -153,11 +153,11 @@ class CarState(object):
     self.Angle_Speed = [255,160,100,80,70,60,55,50,40,30,20,10,5]
     self.blind_spot_on = bool(0)
     #labels for ALCA modes
-    self.alcaLabels = ["MadMax","Normal","Wifey"]
+    self.alcaLabels = ["MadMax","Normal","Wifey","off"]
     self.trLabels = ["0.9","dyn","2.7"]
     self.alcaMode = int(self.kegman.conf['lastALCAMode'])     # default to last ALCA Mode on startup
-    if self.alcaMode > 2:
-      self.alcaMode = 2
+    if self.alcaMode > 3:
+      self.alcaMode = 3
       self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last distance bar setting to file
       self.kegman.write_config(self.kegman.conf) 
     self.trMode = int(self.kegman.conf['lastTrMode'])     # default to last distance interval on startup
@@ -260,7 +260,7 @@ class CarState(object):
     if self.cstm_btns.btns[id].btn_status > 0:
       if (id == 0) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="alca":
           if self.cstm_btns.btns[id].btn_label2 == self.alcaLabels[self.alcaMode]:
-            self.alcaMode = (self.alcaMode + 1 ) % 3
+            self.alcaMode = (self.alcaMode + 1 ) % 4
             self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last distance bar setting to file
             self.kegman.write_config(self.kegman.conf) 
           else:
@@ -269,6 +269,8 @@ class CarState(object):
             self.kegman.write_config(self.kegman.conf) 
           self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
           self.cstm_btns.hasChanges = True
+          if self.alcaMode == 3:
+            self.cstm_btns.set_button_status("alca", 0)
           
       elif (id == 4) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="tr":
           if self.cstm_btns.btns[id].btn_label2 == self.trLabels[self.trMode]:
@@ -286,6 +288,12 @@ class CarState(object):
         self.cstm_btns.btns[id].btn_status = btn_status * self.cstm_btns.btns[id].btn_status
     else:
         self.cstm_btns.btns[id].btn_status = btn_status
+        if (id == 0) and self.cstm_btns.btns[id].btn_name=="alca":
+          self.alcaMode = (self.alcaMode + 1 ) % 4
+          self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last ALCAMode setting to file
+          self.kegman.write_config(self.kegman.conf)
+          self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
+          self.cstm_btns.hasChanges = True
 
   def update(self, cp, cp_cam):
 
