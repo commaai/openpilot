@@ -387,16 +387,12 @@ class CarInterface(object):
     ret.accSlowToggle = self.CS.acc_slow_on
     ret.readdistancelines = self.CS.read_distance_lines
     ret.gasbuttonstatus = self.CS.cstm_btns.get_button_status("gas")
-    debug_list = []
-    debug_list.append(ret.gasbuttonstatus)
+    ret.gasbuttonstatus = self.CS.gasMode
     if self.CS.sport_on == 1:
       ret.gasbuttonstatus = 1
     if self.CS.econ_on == 1:
       ret.gasbuttonstatus = 2
     # events
-    debug_list.append(ret.gasbuttonstatus)
-    with open("/data/accel_profile", "w") as f:
-      f.write(str(debug_list))
     events = []
     if not self.CS.can_valid:
       self.can_invalid_count += 1
