@@ -261,18 +261,8 @@ class Planner(object):
     plan_send.plan.mdMonoTime = md.logMonoTime
     plan_send.plan.l20MonoTime = live20.logMonoTime
 
-    try:
-      v_lead = lead_1.vLead
-    except:
-      v_lead = None
-    try:
-      d_rel = lead_1.dRel
-    except:
-      d_rel = None
-
+    
     # longitudal plan
-    plan_send.plan.vLead = v_lead
-    plan_send.plan.dRel = d_rel
     plan_send.plan.vCruise = self.v_cruise
     plan_send.plan.aCruise = self.a_cruise
     plan_send.plan.vStart = self.v_acc_start
