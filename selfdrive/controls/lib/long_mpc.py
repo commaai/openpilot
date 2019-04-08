@@ -47,8 +47,8 @@ class LongitudinalMpc(object):
         del self.dynamic_follow_dict["lead_vels"][0]
       self.dynamic_follow_dict["lead_vels"].append(self_vel + self.relative_velocity)
 
-      if self.mpc_frame > 50:  # add to traffic list every half second so we're not working with a huge list
-        if len(self.dynamic_follow_dict["traffic_vels"]) > 240:  # 240 half seconds is 2 minutes of traffic logging
+      if self.mpc_frame >= 50:  # add to traffic list every half second so we're not working with a huge list
+        if len(self.dynamic_follow_dict["traffic_vels"]) > 360:  # 360 half seconds is 3 minutes of traffic logging
           del self.dynamic_follow_dict["traffic_vels"][0]
         self.dynamic_follow_dict["traffic_vels"].append(self_vel + self.relative_velocity)
         self.mpc_frame = 0  # reset every half second
@@ -134,14 +134,14 @@ class LongitudinalMpc(object):
     self.cur_state[0].a_ego = a
 
   def get_traffic_level(self, lead_vels):  # generate a value to modify TR by based on fluctuations in lead speed
-    if len(lead_vels) < 60:
-      return 1.0  # if less than 30 seconds of traffic data do nothing to TR
+    if len(lead_vels) < 30:
+      return 1.0  # if less than 15 seconds of traffic data do nothing to TR
     lead_vel_diffs = []
     for idx, vel in enumerate(lead_vels):
       if idx != 0:
         lead_vel_diffs.append(abs(vel - lead_vels[idx - 1]))
     x = [0, len(lead_vels)]
-    y = [1.1, .9]  # min and max values to modify TR by, need to tune
+    y = [1.25, .95]  # min and max values to modify TR by, need to tune
     traffic = interp(sum(lead_vel_diffs), x, y)
 
     return traffic
@@ -184,7 +184,7 @@ class LongitudinalMpc(object):
       y = [(TR + 0.53325), (TR + 0.426), (TR + 0.2912), (TR + .18), (TR + 0.11), TR, (TR - .115), (TR - .195)]  # modification values
       TR = interp(self.get_acceleration(self.dynamic_follow_dict["lead_vels"]), x, y)  # factor in lead car's acceleration; should perform better
 
-    TR = TR * self.get_traffic_level(self.dynamic_follow_dict["traffic_vels"])  # modify TR based on last minute of traffic data
+      TR = TR * self.get_traffic_level(self.dynamic_follow_dict["traffic_vels"])  # modify TR based on last minute of traffic data
 
     if TR < 0.65:
       return 0.65
@@ -194,10 +194,10 @@ class LongitudinalMpc(object):
   def generate_cost(self, TR, v_ego):
     x = [.9, 1.8, 2.7]
     y = [1.0, .1, .05]
-    if v_ego != 0:
+    '''if v_ego != 0:
       real_TR = self.relative_distance / float(v_ego)  # switched to cost generation using actual distance from lead car; should be safer
       if abs(real_TR - TR) >= .25:  # use real TR if diff is greater than x safety threshold
-        TR = real_TR
+        TR = real_TR'''
     return round(float(interp(TR, x, y)), 3)
 
   def update(self, CS, lead, v_cruise_setpoint):
