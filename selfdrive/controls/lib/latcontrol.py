@@ -19,8 +19,8 @@ class LatControl(object):
     self.angle_steers_des = 0.
     
     # TODO: add the feedforward parameters to LiveParameters
-    self.angle_ff_gain = 2.0
-    self.rate_ff_gain = 0.2
+    self.angle_ff_gain = 1.0
+    self.rate_ff_gain = 0.02
     self.angle_ff_bp = [[0.5, 5.0],[0.0, 1.0]]
     
   def reset(self):
