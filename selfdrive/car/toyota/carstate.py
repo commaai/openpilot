@@ -486,5 +486,5 @@ class CarState(object):
     self.splsgn3 = cp.vl["RSA2"]['SPLSGN3']
     self.tsgn4 = cp.vl["RSA2"]['TSGN4']
     self.splsgn4 = cp.vl["RSA2"]['SPLSGN4']
-    self.noovertake = self.tsgn1 == 65 or self.tsgn2 == 65 or self.tsgn3 = 65 or self.tsgn4 = 65
+    self.noovertake = self.tsgn1 == 65 or self.tsgn2 == 65 or self.tsgn3 == 65 or self.tsgn4 == 65 or self.tsgn1 == 66 or self.tsgn2 == 66 or self.tsgn3 == 66 or self.tsgn4 == 66
     
