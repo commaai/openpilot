@@ -102,7 +102,7 @@ def get_can_parser(CP):
     ("SPDVAL2", "RSA1", 0),
     ("SPLSGN2", "RSA1", 0),
     ("TSGN3", "RSA2", 0),
-    ("SPLSGN2", "RSA2", 0),
+    ("SPLSGN3", "RSA2", 0),
     ("TSGN4", "RSA2", 0),
     ("SPLSGN4", "RSA2", 0),
   ]
@@ -477,8 +477,14 @@ class CarState(object):
     else:
       self.generic_toggle = bool(cp.vl["LIGHT_STALK"]['AUTO_HIGH_BEAM'])
     self.tsgn1 = cp.vl["RSA1"]['TSGN1']
+    self.spdval1 = cp.vl["RSA1"]['SPDVAL1']
+    self.splsgn1 = cp.vl["RSA1"]['SPLSGN1']
     self.tsgn2 = cp.vl["RSA1"]['TSGN2']
+    self.spdval2 = cp.vl["RSA1"]['SPDVAL2']
+    self.splsgn2 = cp.vl["RSA1"]['SPLSGN2']
     self.tsgn3 = cp.vl["RSA2"]['TSGN3']
+    self.splsgn3 = cp.vl["RSA2"]['SPLSGN3']
     self.tsgn4 = cp.vl["RSA2"]['TSGN4']
+    self.splsgn4 = cp.vl["RSA2"]['SPLSGN4']
     self.noovertake = self.tsgn1 == 65 or self.tsgn2 == 65 or self.tsgn3 = 65 or self.tsgn4 = 65
     
