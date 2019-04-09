@@ -28,6 +28,7 @@ RUN pip install -r /tmp/requirements_openpilot.txt
 
 ENV PYTHONPATH /tmp/openpilot:$PYTHONPATH
 
+COPY ./.pylintrc /tmp/openpilot/.pylintrc
 COPY ./common /tmp/openpilot/common
 COPY ./cereal /tmp/openpilot/cereal
 COPY ./opendbc /tmp/openpilot/opendbc
