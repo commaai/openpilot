@@ -12,7 +12,7 @@ from selfdrive.controls.lib.drive_helpers import MPC_COST_LONG
 ONE_BAR_DISTANCE = 0.9  # in seconds
 TWO_BAR_DISTANCE = 1.3  # in seconds
 THREE_BAR_DISTANCE = 1.8  # in seconds
-FOUR_BAR_DISTANCE = 2.5   # in seconds
+FOUR_BAR_DISTANCE = 2.1   # in seconds
 
 TR = TWO_BAR_DISTANCE  # default interval
 
