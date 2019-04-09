@@ -462,7 +462,7 @@ def main():
   # support additional internal only extensions
   try:
     import selfdrive.manager_extensions
-    selfdrive.manager_extensions.register(register_managed_process)
+    selfdrive.manager_extensions.register(register_managed_process) # pylint: disable=no-member
   except ImportError:
     pass
 

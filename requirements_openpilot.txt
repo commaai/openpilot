@@ -23,6 +23,7 @@ enum34==1.1.6
 evdev==0.6.1
 fastcluster==1.1.20
 filterpy==1.2.4
+hexdump
 ipaddress==1.0.16
 json-rpc==1.12.1
 libusb1==1.5.0
@@ -39,6 +40,7 @@ pycapnp==0.6.3
 pycparser==2.18
 pycrypto==2.6.1
 pyflakes==1.6.0
+pygame==1.9.3
 pylint==1.8.3
 pyopencl==2016.1
 pyparsing==2.1.10

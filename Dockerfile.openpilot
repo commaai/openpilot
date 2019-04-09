@@ -35,6 +35,7 @@ COPY ./opendbc /tmp/openpilot/opendbc
 COPY ./selfdrive /tmp/openpilot/selfdrive
 COPY ./phonelibs /tmp/openpilot/phonelibs
 COPY ./pyextra /tmp/openpilot/pyextra
+COPY ./panda /tmp/openpilot/panda
 
 RUN mkdir -p /tmp/openpilot/selfdrive/test/out
 RUN make -C /tmp/openpilot/selfdrive/controls/lib/longitudinal_mpc clean
