@@ -108,7 +108,7 @@ class LongControl(object):
     accel = interp(v_ego, x, y)
     if dynamic:  # dynamic gas profile specific operations
       if v_rel is not None:  # if lead
-        if (v_ego + v_rel) < 6.7056:  # if lead v is under 15 mph
+        if (v_ego) < 6.7056:  # if under 15 mph
           x = [0.0, 0.2235, 0.447, 0.8941, 1.3411, 1.7882, 2.2352, 2.6822]
           y = [-.0225, -.017, -.0075, 0, .003, .007, .0125, .02]
           accel = accel + interp(v_rel, x, y)
