@@ -152,35 +152,35 @@ class CarState(object):
     #if (CP.carFingerprint == CAR.MODELS):
     # ALCA PARAMS
     # max REAL delta angle for correction vs actuator
-    self.CL_MAX_ANGLE_DELTA_BP = [10., 15., 32., 44.]#[10., 44.]
-    self.CL_MAX_ANGLE_DELTA = [2.0, 1.75, 0.96, 0.4]
+    self.CL_MAX_ANGLE_DELTA_BP = [10., 15., 32., 50.]#[10., 44.]
+    self.CL_MAX_ANGLE_DELTA = [2.0, 1.75, 1.25, 0.5]
      # adjustment factor for merging steer angle to actuator; should be over 4; the higher the smoother
-    self.CL_ADJUST_FACTOR_BP = [10., 44.]
+    self.CL_ADJUST_FACTOR_BP = [10., 50.]
     self.CL_ADJUST_FACTOR = [16. , 8.]
      # reenrey angle when to let go
-    self.CL_REENTRY_ANGLE_BP = [10., 44.]
+    self.CL_REENTRY_ANGLE_BP = [10., 50.]
     self.CL_REENTRY_ANGLE = [5. , 5.]
      # a jump in angle above the CL_LANE_DETECT_FACTOR means we crossed the line
     self.CL_LANE_DETECT_BP = [10., 44.]
     self.CL_LANE_DETECT_FACTOR = [1.3, 1.3]
-    self.CL_LANE_PASS_BP = [10., 20., 44.]
+    self.CL_LANE_PASS_BP = [10., 20., 50.]
     self.CL_LANE_PASS_TIME = [40.,10., 3.] 
      # change lane delta angles and other params
-    self.CL_MAXD_BP = [10., 32., 44.]
+    self.CL_MAXD_BP = [10., 32., 50.]
     self.CL_MAXD_A = [.358, 0.084, 0.042] #delta angle based on speed; needs fine tune, based on Tesla steer ratio of 16.75
     self.CL_MIN_V = 8.9 # do not turn if speed less than x m/2; 20 mph = 8.9 m/s
      # do not turn if actuator wants more than x deg for going straight; this should be interp based on speed
-    self.CL_MAX_A_BP = [10., 44.]
+    self.CL_MAX_A_BP = [10., 50.]
     self.CL_MAX_A = [10., 10.] 
      # define limits for angle change every 0.1 s
     # we need to force correction above 10 deg but less than 20
     # anything more means we are going to steep or not enough in a turn
     self.CL_MAX_ACTUATOR_DELTA = 2.
     self.CL_MIN_ACTUATOR_DELTA = 0. 
-    self.CL_CORRECTION_FACTOR = [1.3,1.2,1.2]
-    self.CL_CORRECTION_FACTOR_BP = [10., 32., 44.]
+    self.CL_CORRECTION_FACTOR = [1.3,1.1,1.05]
+    self.CL_CORRECTION_FACTOR_BP = [10., 32., 50.]
      #duration after we cross the line until we release is a factor of speed
-    self.CL_TIMEA_BP = [10., 32., 44.]
+    self.CL_TIMEA_BP = [10., 32., 50.]
     self.CL_TIMEA_T = [0.7 ,0.30, 0.20]
     #duration to wait (in seconds) with blinkers on before starting to turn
     self.CL_WAIT_BEFORE_START = 1
