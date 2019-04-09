@@ -113,7 +113,7 @@ class LongControl(object):
         if (v_ego) < 6.7056:  # if under 15 mph
           x = [0.0, 0.2235, 0.447, 0.8941, 1.3411, 1.7882, 2.2352, 2.6822]
           y = [-.0225, -.017, -.0075, 0, .003, .007, .0125, .02]
-          accel = accel + interp(v_rel, x, y)
+          #accel = accel + interp(v_rel, x, y)
         else:
           x = [-0.89408, 0, 0.89408, 4.4704]
           y = [-.05, 0, .005, .02]
