@@ -357,10 +357,13 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
     "upSteer": float(LaC.pid.p),
     "uiSteer": float(LaC.pid.i),
     "ufSteer": float(LaC.pid.f),
+    "angleFFRatio": float(LaC.angle_ff_ratio),
     "vTargetLead": float(v_acc),
     "aTarget": float(a_acc),
     "jerkFactor": float(plan.jerkFactor),
     "angleModelBias": float(angle_model_bias),
+    "angleFFGain": float(LaC.angle_ff_gain),
+    "rateFFGain": float(LaC.rate_ff_gain),
     "gpsPlannerActive": plan.gpsPlannerActive,
     "vCurvature": plan.vCurvature,
     "decelForTurn": plan.decelForTurn,
@@ -385,8 +388,8 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
   carcontrol.send(cc_send.to_bytes())
 
   if (rk.frame % 36000) == 0:    # update angle offset every 6 minutes
-    params.put("ControlsParams", json.dumps({'angle_model_bias': angle_model_bias}))
-
+    params.put("ControlsParams", json.dumps({'angle_model_bias': angle_model_bias,
+              'angle_ff_gain': LaC.angle_ff_gain, 'rate_ff_gain': LaC.rate_ff_gain}))
   return CC
 
 
@@ -488,6 +491,8 @@ def controlsd_thread(gctx=None, rate=100):
     try:
       controls_params = json.loads(controls_params)
       angle_model_bias = controls_params['angle_model_bias']
+      LaC.angle_ff_gain = controls_params['angle_ff_gain']
+      LaC.rate_ff_gain = controls_params['rate_ff_gain']
     except (ValueError, KeyError):
       pass
 
