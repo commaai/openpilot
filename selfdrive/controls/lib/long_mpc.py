@@ -134,8 +134,8 @@ class LongitudinalMpc(object):
     self.cur_state[0].a_ego = a
 
   def get_traffic_level(self, lead_vels):  # generate a value to modify TR by based on fluctuations in lead speed
-    if len(lead_vels) < 30:
-      return 1.0  # if less than 15 seconds of traffic data do nothing to TR
+    if len(lead_vels) < 40:
+      return 1.0  # if less than 20 seconds of traffic data do nothing to TR
     lead_vel_diffs = []
     for idx, vel in enumerate(lead_vels):
       if idx != 0:
@@ -171,8 +171,8 @@ class LongitudinalMpc(object):
     TR = interpolate.interp1d(x, y, fill_value='extrapolate')(velocity)[()]  # extrapolate above 90 mph
 
     if self.relative_velocity is not None:
-      x = [-11.176, -7.8428, -5.45, -3.69, -2.77, -2.1234, -0.8941, 0.0, 1.3411, 2.6822]  # relative velocity values
-      y = [0.465, 0.41, 0.336, 0.29, 0.23, 0.14, 0.0375, 0, -0.18, -0.3]  # modification values
+      x = [-11.2235, -9.4102, -7.1051, -5.7221, -4.3391, -3.5093, -2.7716, -2.2491, -2.0033, -1.6959, -1.0198, 0.0, 0.1788, 0.7935, 1.8692, 2.6683]  # relative velocity values
+      y = [0.423, 0.4037, 0.3566, 0.3266, 0.2859, 0.2623, 0.23, 0.1787, 0.1251, 0.078, 0.036, 0, -0.0613, -0.1384, -0.2413, -0.2991]  # modification values
       TR = TR + interp(self.relative_velocity, x, y)  # interpolate as to not modify too much
 
       x = [-4.4704, -2.2352, -0.8941, 0.0, 1.3411]   # self acceleration values
@@ -180,7 +180,7 @@ class LongitudinalMpc(object):
       TR = TR + interp(self.get_acceleration(self.dynamic_follow_dict["self_vels"], True), x, y)  # factor in self acceleration
 
       x = [-4.4704, -2.2, -0.958, -0.447, -0.2235, 0.0, 0.5588, 1.3411]  # lead acceleration values
-      y = [0.5333, 0.46, 0.33, 0.2, 0.075, 0, -0.115, -0.195]  # modification values
+      y = [0.3555, 0.2788, 0.165, 0.1, 0.0375, 0, -0.115, -0.195]  # modification values
       TR = TR + interp(self.get_acceleration(self.dynamic_follow_dict["lead_vels"], False), x, y)  # factor in lead car's acceleration; should perform better
 
       TR = TR * self.get_traffic_level(self.dynamic_follow_dict["traffic_vels"])  # modify TR based on last minute of traffic data
