@@ -43,7 +43,7 @@ class LongitudinalMpc(object):
     self.dynamic_follow_dict["self_vels"].append(self_vel)
 
     if self.relative_velocity is not None:
-      if len(self.dynamic_follow_dict["lead_vels"]) >= 400:
+      if len(self.dynamic_follow_dict["lead_vels"]) >= 300:
         del self.dynamic_follow_dict["lead_vels"][0]
       self.dynamic_follow_dict["lead_vels"].append(self_vel + self.relative_velocity)
 
@@ -162,7 +162,7 @@ class LongitudinalMpc(object):
           a = min([a_short, a_long])
       else:
         a = (velocity_list[-1] - velocity_list[0]) / (len(velocity_list) / 100.0)
-    
+
     return a
 
   def dynamic_follow(self, velocity):  # in m/s
