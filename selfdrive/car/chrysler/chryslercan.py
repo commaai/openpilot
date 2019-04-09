@@ -1,5 +1,4 @@
 from cereal import car
-from selfdrive.car.chrysler.values import CAR
 
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
