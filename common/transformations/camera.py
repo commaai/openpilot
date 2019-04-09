@@ -1,6 +1,6 @@
 import numpy as np
 import common.transformations.orientation as orient
-import cv2 # pylint: disable=import-error
+import cv2
 
 FULL_FRAME_SIZE = (1164, 874)
 W, H = FULL_FRAME_SIZE[0], FULL_FRAME_SIZE[1]
