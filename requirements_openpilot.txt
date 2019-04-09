@@ -39,6 +39,7 @@ pycapnp==0.6.3
 pycparser==2.18
 pycrypto==2.6.1
 pyflakes==1.6.0
+pylint==1.8.3
 pyopencl==2016.1
 pyparsing==2.1.10
 #pypcap==1.1.5 needs extra dependencies and is not used
