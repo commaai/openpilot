@@ -86,12 +86,10 @@ class LongControl(object):
     if gasinterceptor:
       if gasbuttonstatus == 0:
         dynamic = True
-        #x = [0.0, 1.1176, 2.2352, 4.4704, 6.7056, 9.3878, 18.7757, 29.0576, 35.7632]  # velocity/gasMaxBP
-        #y = [0.125, .14, 0.15, 0.19, .25, .3375, .425, .55, .7]  # accel values/gasMaxV
-        #x = [0.0, 0.447, 1.118, 2.235, 4.47, 6.706, 9.388, 12.964, 15.423, 18.119, 20.117, 24.466, 29.058, 32.71, 35.763]  # velocities/gasMaxBP
-        #y = [0.13, 0.14, 0.165, 0.205, 0.265, 0.31, 0.343, 0.38, 0.396, 0.409, 0.425, 0.478, 0.55, 0.621, 0.7]  # accel values/gasMaxV
-        x = [0.0, 1.1176, 1.9223, 2.5481, 3.0621, 4.0234, 5.1921, 6.1131, 7.1526, 9.388, 12.964, 15.423, 18.119, 20.117, 24.4661, 29.058, 32.7101, 35.7631]
-        y = [0.115, 0.1275, 0.1437, 0.157, 0.1715, 0.2, 0.24, 0.2782, 0.306, 0.343, 0.38, 0.396, 0.409, 0.425, 0.478, 0.55, 0.621, 0.7]
+        #x = [0.0, 0.5588, 1.1176, 1.9223, 2.5481, 3.3975, 4.0234, 5.1921, 6.0797, 7.1526, 9.388, 12.964, 15.423, 18.119, 20.117, 24.4661, 29.058, 32.7101, 35.7632]  # velocity/gasMaxBP
+        #y = [0.12, 0.1275, 0.135, 0.149, 0.1635, 0.185, 0.206, 0.257, 0.2858, 0.31, 0.343, 0.38, 0.396, 0.409, 0.425, 0.478, 0.55, 0.621, 0.7]  # accel values/gasMaxV
+        x = [0.0, 0.5588, 1.1176, 1.9223, 2.5481, 3.3975, 4.0234, 5.1921, 6.0797, 7.1526, 9.388, 12.964, 15.423, 18.119, 20.117, 24.4661, 29.058, 32.7101, 35.7632]
+        y = [0.12, 0.1275, 0.135, 0.149, 0.1635, 0.1845, 0.203, 0.243, 0.282, 0.31, 0.343, 0.38, 0.396, 0.409, 0.425, 0.478, 0.55, 0.621, 0.7]
       elif gasbuttonstatus == 1:
         y = [0.25, 0.9, 0.9]
       elif gasbuttonstatus == 2:
@@ -108,26 +106,19 @@ class LongControl(object):
       x = [0., 9., 35.]  # default BP values
 
     accel = interp(v_ego, x, y)
-    disabled = False
-    if dynamic and disabled:  # dynamic gas profile specific operations
+    if dynamic:  # dynamic gas profile specific operations
       if v_rel is not None:  # if lead
-        if (v_ego + v_rel) < 3.12928:  # if lead v is under 5 mph
-          x = [0, 0.44704, 2.68224]
-          y = [(accel - .035), (accel + .005), (accel + .02)]
-          accel = interp(v_rel, x, y)
+        if (v_ego + v_rel) < 6.7056:  # if lead v is under 15 mph
+          x = [0.0, 0.2235, 0.447, 0.8941, 1.3411, 1.7882, 2.2352, 2.6822]
+          y = [-.0225, -.017, -.0075, 0, .003, .007, .0125, .02]
+          accel = accel + interp(v_rel, x, y)
         else:
           x = [-0.89408, 0, 0.89408, 4.4704]
-          y = [(accel - .05), accel, (accel + .005), (accel + .02)]
-          accel = interp(v_rel, x, y)
-      else:
-        if v_ego <= 8.9:  # if under 20 mph with no lead, give a little boost (need to tune)
-          x = [0.0, 0.779, 1.404, 1.981, 2.573, 3.209, 3.892, 4.604, 5.321, 6.015, 6.67, 7.293, 7.927, 8.661, 8.9]  # smooth bezier curve ;)
-          y = [accel, (accel + 0.01), (accel + 0.022), (accel + 0.034), (accel + 0.044), (accel + 0.051),
-               (accel + 0.054), (accel + 0.053), (accel + 0.05), (accel + 0.043), (accel + 0.034), (accel + 0.024),
-               (accel + 0.013), (accel + 0.003), accel]
-          accel = interp(v_ego, x, y)
+          y = [-.05, 0, .005, .02]
+          accel = accel + interp(v_rel, x, y)
 
-    min_return = 0.05
+
+    min_return = 0.025
     max_return = 1.0
     return round(max(min(accel, max_return), min_return), 4)  # ensure we return a value between range
 
