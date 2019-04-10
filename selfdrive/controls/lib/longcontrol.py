@@ -81,7 +81,6 @@ class LongControl(object):
     self.v_pid = v_pid
 
   def dynamic_gas(self, v_ego, v_rel, d_rel, gasinterceptor, gasbuttonstatus):
-    x = []
     dynamic = False
     if gasinterceptor:
       if gasbuttonstatus == 0:
