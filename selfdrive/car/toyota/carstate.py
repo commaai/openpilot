@@ -145,7 +145,7 @@ class CarState(object):
     self.Angle_Speed = [255,160,100,80,70,60,55,50,40,33,27,17,12]
     #labels for gas mode
     self.gasMode = 0
-    self.gasLabels = ["dynamic","sport","eco"]
+    self.gasLabels = ["normal","sport","eco"]
     #labelslabels for ALCA modes
     self.alcaLabels = ["MadMax","Normal","Wifey","off"]
     self.alcaMode = int(self.kegman.conf['lastALCAMode'])     # default to last ALCAmode on startup
