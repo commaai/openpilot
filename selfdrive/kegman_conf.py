@@ -46,12 +46,18 @@ class kegman_conf():
       if int(self.config['wheelTouchSeconds']) < 200:
         self.config.update({"wheelTouchSeconds":"1800"})
         self.element_updated = True
+      if int(self.config['battChargeMin']) == 85:
+        self.config.update({"battChargeMin":"90"})
+        self.element_updated = True
+      if int(self.config['battChargeMax']) == 90:
+        self.config.update({"battChargeMax":"95"})
+        self.element_updated = True
       
       if self.element_updated:      
         self.write_config(self.config)
 
     else:
-      self.config = {"cameraOffset":"0.06", "lastTrMode":"1", "battChargeMin":"85", "battChargeMax":"90", "wheelTouchSeconds":"1800", "battPercOff":"25", "carVoltageMinEonShutdown":"11200", "brakeStoppingTarget":"0.25", "angle_steers_offset":"0" , "brake_distance_extra":"1" , "lastALCAMode":"1" , "brakefactor":"1.2", "lastGasMode":"0" , "lastSloMode":"1"}
+      self.config = {"cameraOffset":"0.06", "lastTrMode":"1", "battChargeMin":"90", "battChargeMax":"95", "wheelTouchSeconds":"1800", "battPercOff":"25", "carVoltageMinEonShutdown":"11200", "brakeStoppingTarget":"0.25", "angle_steers_offset":"0" , "brake_distance_extra":"1" , "lastALCAMode":"1" , "brakefactor":"1.2", "lastGasMode":"0" , "lastSloMode":"1"}
       self.write_config(self.config)
     return self.config
 
