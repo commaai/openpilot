@@ -32,6 +32,12 @@ class kegman_conf():
       if "brakefactor" not in self.config: # brake at 20% higher speeds than what I like
         self.config.update({"brakefactor":"1.2"}) 
         self.element_updated = True
+      if "lastGasMode" not in self.config: # brake at 20% higher speeds than what I like
+        self.config.update({"lastGasMode":"0"}) 
+        self.element_updated = True
+      if "lastSloMode" not in self.config: # brake at 20% higher speeds than what I like
+        self.config.update({"lastSloMode":"1"}) 
+        self.element_updated = True
 
       # force update
       if self.config['carVoltageMinEonShutdown'] == "11800":
