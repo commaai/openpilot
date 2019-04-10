@@ -8,6 +8,7 @@ from selfdrive.controls.lib.longitudinal_mpc import libmpc_py
 from selfdrive.controls.lib.drive_helpers import MPC_COST_LONG
 from scipy import interpolate
 import math
+import json
 
 
 class LongitudinalMpc(object):
@@ -30,6 +31,7 @@ class LongitudinalMpc(object):
     self.mpc_frame = 0  # idea thanks to kegman
     self.relative_velocity = None
     self.relative_distance = None
+    self.dict_builder = {}
 
     try:
       with open("/data/openpilot/gas-interceptor", "r") as f:
@@ -135,6 +137,7 @@ class LongitudinalMpc(object):
 
   def get_traffic_level(self, lead_vels):  # generate a value to modify TR by based on fluctuations in lead speed
     if len(lead_vels) < 40:
+      self.dict_builder["traffic_modifier"] = None
       return 1.0  # if less than 20 seconds of traffic data do nothing to TR
     lead_vel_diffs = []
     for idx, vel in enumerate(lead_vels):
@@ -143,7 +146,7 @@ class LongitudinalMpc(object):
     x = [0, len(lead_vels)]
     y = [1.25, .9]  # min and max values to modify TR by, need to tune
     traffic = interp(sum(lead_vel_diffs), x, y)
-
+    self.dict_builder["traffic_modifier"] = traffic
     return traffic
 
   def get_acceleration(self, velocity_list, is_self):  # calculate acceleration to generate more accurate following distances
@@ -178,12 +181,16 @@ class LongitudinalMpc(object):
       x = [-4.4704, -2.2352, -0.8941, 0.0, 1.3411]   # self acceleration values
       y = [0.158, 0.058, 0.016, 0, -0.13]  # modification values
       TR = TR + interp(self.get_acceleration(self.dynamic_follow_dict["self_vels"], True), x, y)  # factor in self acceleration
+      self.dict_builder["self_accel"] = self.get_acceleration(self.dynamic_follow_dict["self_vels"], True)
 
       x = [-4.4704, -2.2, -0.958, -0.447, -0.2235, 0.0, 0.5588, 1.3411]  # lead acceleration values
       y = [0.3555, 0.2788, 0.165, 0.1, 0.0375, 0, -0.115, -0.195]  # modification values
       TR = TR + interp(self.get_acceleration(self.dynamic_follow_dict["lead_vels"], False), x, y)  # factor in lead car's acceleration; should perform better
+      self.dict_builder["lead_accel"] = self.get_acceleration(self.dynamic_follow_dict["lead_vels"], False)
 
       TR = TR * self.get_traffic_level(self.dynamic_follow_dict["traffic_vels"])  # modify TR based on last minute of traffic data
+
+    self.dict_builder["TR"] = TR
 
     if TR < 0.65:
       return 0.65
@@ -197,7 +204,10 @@ class LongitudinalMpc(object):
       real_TR = self.relative_distance / float(v_ego)  # switched to cost generation using actual distance from lead car; should be safer
       if abs(real_TR - TR) >= .25:  # use real TR if diff is greater than x safety threshold
         TR = real_TR
-    return round(float(interp(TR, x, y)), 3)
+
+    cost = round(float(interp(TR, x, y)), 3)
+    self.dict_builder["generated_cost"] = cost
+    return cost
 
   def update(self, CS, lead, v_cruise_setpoint):
     v_ego = CS.carState.vEgo
@@ -242,6 +252,9 @@ class LongitudinalMpc(object):
     # Calculate mpc
     t = sec_since_boot()
     TR = self.calculate_tr(v_ego, CS.carState)
+    with open("/data/op-tools-data/dynamic-follow.json", "w") as d_f:
+      d_f.write(json.dumps(self.dict_builder))
+    self.dict_builder = {}
     n_its = self.libmpc.run_mpc(self.cur_state, self.mpc_solution, self.a_lead_tau, a_lead, TR)
     duration = int((sec_since_boot() - t) * 1e9)
     self.send_mpc_solution(n_its, duration)
