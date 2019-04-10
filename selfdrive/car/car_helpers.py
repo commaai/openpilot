@@ -83,13 +83,13 @@ def fingerprint(logcan, timeout):
     time.sleep(0.01)
   try:
     with open("/data/params/d/ControlsParams", "r") as f:
-      print f.read()
+      cloudlog.warning(f.read())
     f.close()
   except:
     pass
   try:
     with open("/data/params/d/LiveParameters", "r") as f:
-      print f.read()
+      cloudlog.warning(f.read())
     f.close()
   except:
     pass
