@@ -24,7 +24,7 @@ else:
     with open("/data/params/d/GitBranch", "r") as f:
       branch = f.read()
     f.close()
-  execpt:
+  except:
     branch = "release2"
       
   error_tags = {'dirty': dirty, 'branch': branch}
