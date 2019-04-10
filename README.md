@@ -77,6 +77,7 @@ Supported Cars
 | Honda                | Civic Hatchback 2017-19  | Honda Sensing        | Yes     | Stock          | 0mph             | 12mph          | Bosch             |
 | Honda                | CR-V 2015-16             | Touring              | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          | Nidec             |
 | Honda                | CR-V 2017-18             | Honda Sensing        | Yes     | Stock          | 0mph             | 12mph          | Bosch             |
+| Honda                | CR-V Hybrid 2019         | All                  | Yes     | Stock          | 0mph             | 12mph          | Bosch             |
 | Honda                | Odyssey 2017-19          | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 0mph           | Inverted Nidec    |
 | Honda                | Pilot 2016-18            | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          | Nidec             |
 | Honda                | Pilot 2019               | All                  | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          | Inverted Nidec    |
