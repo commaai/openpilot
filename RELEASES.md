@@ -9,6 +9,7 @@ Version 0.5.10 (2019-03-19)
  * Refactor comma pedal FW and use CRC-8 checksum algorithm for safety. Reflashing pedal is required. 
    Please see `#hw-pedal` on [discord](discord.comma.ai) for assistance updating comma pedal. 
  * Additional speed limit rules for Germany thanks to arne182
+ * Allow negative speed limit offsets
 
 Version 0.5.9 (2019-02-10)
 ========================
