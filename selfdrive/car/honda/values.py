@@ -65,6 +65,7 @@ class CAR:
   ACURA_ILX = "ACURA ILX 2016 ACURAWATCH PLUS"
   CRV = "HONDA CR-V 2016 TOURING"
   CRV_5G = "HONDA CR-V 2017 EX"
+  CRV_HYBRID = "HONDA CR-V 2019 HYBRID"
   ODYSSEY = "HONDA ODYSSEY 2018 EX-L"
   ODYSSEY_CHN = "HONDA ODYSSEY 2019 EXCLUSIVE CHN"
   ACURA_RDX = "ACURA RDX 2018 ACURAWATCH PLUS"
@@ -101,6 +102,9 @@ FINGERPRINTS = {
   }],
   CAR.CRV_5G: [{
     57: 3, 148: 8, 199: 4, 228: 5, 231: 5, 232: 7, 304: 8, 330: 8, 340: 8, 344: 8, 380: 8, 399: 7, 401: 8, 420: 8, 423: 2, 427: 3, 428: 8, 432: 7, 441: 5, 446: 3, 450: 8, 464: 8, 467: 2, 469: 3, 470: 2, 474: 8, 476: 7, 477: 8, 479: 8, 490: 8, 493: 5, 495: 8, 507: 1, 545: 6, 597: 8, 661: 4, 662: 4, 773: 7, 777: 8, 780: 8, 795: 8, 800: 8, 804: 8, 806: 8, 808: 8, 814: 4, 815: 8, 817: 4, 825: 4, 829: 5, 862: 8, 881: 8, 882: 4, 884: 8, 888: 8, 891: 8, 927: 8, 918: 7, 929: 8, 983: 8, 985: 3, 1024: 5, 1027: 5, 1029: 8, 1036: 8, 1039: 8, 1064: 7, 1108: 8, 1092: 1, 1115: 4, 1125: 8, 1127: 2, 1296: 8, 1302: 8, 1322: 5, 1361: 5, 1365: 5, 1424: 5, 1600: 5, 1601: 8, 1618: 5, 1633: 8, 1670: 5
+  }],
+  CAR.CRV_HYBRID: [{
+    57: 3, 148: 8, 228: 5, 304: 8, 330: 8, 344: 8, 380: 8, 387: 8, 388: 8, 399: 7, 419: 8, 420: 8, 427: 3, 432: 7, 441: 5, 450: 8, 464: 8, 477: 8, 479: 8, 490: 8, 495: 8, 525: 8, 531: 8, 545: 6, 662: 4, 773: 7, 777: 8, 780: 8, 804: 8, 806: 8, 808: 8, 814: 4, 829: 5, 833: 6, 862: 8, 884: 8, 891: 8, 927: 8, 929: 8, 1302: 8, 1361: 5, 1365: 5, 1600: 5, 1601: 8
   }],
   # 2018 Odyssey w/ Added Comma Pedal Support (512L & 513L)
   CAR.ODYSSEY: [{
@@ -144,6 +148,7 @@ DBC = {
   CAR.CIVIC_BOSCH: dbc_dict('honda_civic_hatchback_ex_2017_can_generated', None),
   CAR.CRV: dbc_dict('honda_crv_touring_2016_can_generated', 'acura_ilx_2016_nidec'),
   CAR.CRV_5G: dbc_dict('honda_crv_ex_2017_can_generated', None),
+  CAR.CRV_HYBRID: dbc_dict('honda_crv_hybrid_2019_can_generated', None),
   CAR.ODYSSEY: dbc_dict('honda_odyssey_exl_2018_generated', 'acura_ilx_2016_nidec'),
   CAR.ODYSSEY_CHN: dbc_dict('honda_odyssey_extreme_edition_2018_china_can', 'acura_ilx_2016_nidec'),
   CAR.PILOT: dbc_dict('honda_pilot_touring_2017_can_generated', 'acura_ilx_2016_nidec'),
@@ -161,6 +166,7 @@ STEER_THRESHOLD = {
   CAR.CIVIC_BOSCH: 1200,
   CAR.CRV: 1200,
   CAR.CRV_5G: 1200,
+  CAR.CRV_HYBRID: 1200,
   CAR.ODYSSEY: 1200,
   CAR.ODYSSEY_CHN: 1200,
   CAR.PILOT: 1200,
@@ -178,6 +184,7 @@ SPEED_FACTOR = {
   CAR.CIVIC_BOSCH: 1.,
   CAR.CRV: 1.025,
   CAR.CRV_5G: 1.025,
+  CAR.CRV_HYBRID: 1.025,
   CAR.ODYSSEY: 1.,
   CAR.ODYSSEY_CHN: 1.,
   CAR.PILOT: 1.,
@@ -186,4 +193,4 @@ SPEED_FACTOR = {
 }
 
 # TODO: get these from dbc file
-HONDA_BOSCH = [CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CRV_5G]
+HONDA_BOSCH = [CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CRV_5G, CAR.CRV_HYBRID]
