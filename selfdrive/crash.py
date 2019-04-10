@@ -20,12 +20,19 @@ if os.getenv("NOLOG") or os.getenv("NOCRASH"):
 else:
   from raven import Client
   from raven.transport.http import HTTPTransport
-
-  error_tags = {'dirty': dirty, 'branch': 'release2'}
+  try:
+    with open("/data/params/d/GitBranch", "r") as f:
+      branch = f.read()
+    f.close()
+  execpt:
+    branch = "release2"
+      
+  error_tags = {'dirty': dirty, 'branch': branch}
 
   try:
     with open("/data/data/ai.comma.plus.offroad/files/persistStore/persist-auth", "r") as f:
       auth = json.loads(f.read())
+    f.close()
     auth = json.loads(auth['commaUser'])
     error_tags['username'] = auth['username'].decode('utf-8', 'ignore')
     error_tags['email'] = auth['email']
