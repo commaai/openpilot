@@ -260,6 +260,20 @@ class CarInterface(object):
       ret.longitudinalKiBP = [0., 35.]
       ret.longitudinalKiV = [0.18, 0.12]
 
+    elif candidate == CAR.CRV_HYBRID:
+      stop_and_go = True
+      ret.safetyParam = 1 # Accord and CRV 5G use an alternate user brake msg
+      ret.mass = 1667. + std_cargo # mean of 4 models in kg
+      ret.wheelbase = 2.66
+      ret.centerToFront = ret.wheelbase * 0.41
+      ret.steerRatio = 16.0   # 12.3 is spec end-to-end
+      tire_stiffness_factor = 0.677
+      ret.steerKpV, ret.steerKiV = [[0.6], [0.18]]
+      ret.longitudinalKpBP = [0., 5., 35.]
+      ret.longitudinalKpV = [1.2, 0.8, 0.5]
+      ret.longitudinalKiBP = [0., 35.]
+      ret.longitudinalKiV = [0.18, 0.12]
+
     elif candidate == CAR.ACURA_RDX:
       stop_and_go = False
       ret.mass = 3935 * CV.LB_TO_KG + std_cargo
@@ -280,6 +294,19 @@ class CarInterface(object):
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 14.35        # as spec
       tire_stiffness_factor = 0.82
+      ret.steerKpV, ret.steerKiV = [[0.45], [0.135]]
+      ret.longitudinalKpBP = [0., 5., 35.]
+      ret.longitudinalKpV = [1.2, 0.8, 0.5]
+      ret.longitudinalKiBP = [0., 35.]
+      ret.longitudinalKiV = [0.18, 0.12]
+
+    elif candidate == CAR.ODYSSEY_CHN:
+      stop_and_go = False
+      ret.mass = 1849.2 + std_cargo # mean of 4 models in kg
+      ret.wheelbase = 2.90 # spec
+      ret.centerToFront = ret.wheelbase * 0.41 # from CAR.ODYSSEY
+      ret.steerRatio = 14.35 # from CAR.ODYSSEY
+      tire_stiffness_factor = 0.82 # from CAR.ODYSSEY
       ret.steerKpV, ret.steerKiV = [[0.45], [0.135]]
       ret.longitudinalKpBP = [0., 5., 35.]
       ret.longitudinalKpV = [1.2, 0.8, 0.5]
