@@ -81,9 +81,10 @@ def fingerprint(logcan, timeout):
       return None, finger
 
     time.sleep(0.01)
-
-  cloudlog.warning("fingerprinted %s", candidate_cars[0])
+    
   crash.capture_warning("fingerprinted %s" % candidate_cars[0])
+  cloudlog.warning("fingerprinted %s", candidate_cars[0])
+  
   return (candidate_cars[0], finger)
 
 
