@@ -4,6 +4,7 @@ from common.kalman.simple_kalman import KF1D
 from selfdrive.car.modules.UIBT_module import UIButtons,UIButton
 from selfdrive.car.modules.UIEV_module import UIEvents
 import numpy as np
+from selfdrive.kegman_conf import kegman_conf
 
 
 def parse_gear_shifter(can_gear):
@@ -79,8 +80,9 @@ def get_camera_parser(CP):
 
 class CarState(object):
   def __init__(self, CP):
+    self.kegman = kegman_conf()
     self.alcaLabels = ["MadMax","Normal","Wifey","off"]
-    self.alcaMode = 2     # default to wifey on startup
+    self.alcaMode = int(self.kegman.conf['lastALCAMode'])
     self.prev_distance_button = 0
     self.distance_button = 0
     self.prev_lka_button = 0
@@ -170,8 +172,12 @@ class CarState(object):
       if (id == 1) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="alca":
           if self.cstm_btns.btns[id].btn_label2 == self.alcaLabels[self.alcaMode]:
             self.alcaMode = (self.alcaMode + 1 ) % 4
+            self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last distance bar setting to file
+            self.kegman.write_config(self.kegman.conf) 
           else:
             self.alcaMode = 0
+            self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last distance bar setting to file
+            self.kegman.write_config(self.kegman.conf) 
           self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
           self.cstm_btns.hasChanges = True
           if self.alcaMode == 3:
@@ -183,6 +189,8 @@ class CarState(object):
         self.cstm_btns.btns[id].btn_status = btn_status
         if (id == 1) and self.cstm_btns.btns[id].btn_name=="alca":
           self.alcaMode = (self.alcaMode + 1 ) % 4
+          self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last distance bar setting to file
+          self.kegman.write_config(self.kegman.conf) 
           self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
           self.cstm_btns.hasChanges = True
     

@@ -26,6 +26,7 @@ else:
   try:
     with open("/data/data/ai.comma.plus.offroad/files/persistStore/persist-auth", "r") as f:
       auth = json.loads(f.read())
+    f.close()
     auth = json.loads(auth['commaUser'])
     error_tags['username'] = auth['username'].decode('utf-8', 'ignore')
     error_tags['email'] = auth['email']
