@@ -71,7 +71,7 @@ class LatControl(object):
         rate_feedforward = (1.0 - self.angle_ff_ratio) * self.rate_ff_gain * path_plan.rateSteers
         steer_feedforward = v_ego**2 * (rate_feedforward + angle_feedforward)
 
-        if not steer_override and v_ego > 10.0:
+        if v_ego > 10.0:
           if abs(angle_steers) > (self.angle_ff_bp[0][1] / 2.0):
             self.adjust_angle_gain()
           else:
