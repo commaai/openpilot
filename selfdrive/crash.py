@@ -32,11 +32,14 @@ else:
   except:
     pass
 
-  try:
-    with open("/data/params/d/GitBranch", "r") as f:
-      error_tags['branch'] = str(f.read())
-  except:
-    pass
+  logging_data = {"branch": "/data/params/d/GitBranch", "commit": "/data/params/d/GitCommit", "remote": "/data/params/d/GitRemote"}
+
+  for key in logging_data:
+    try:
+      with open(logging_data[key], "r") as f:
+        error_tags[key] = str(f.read())
+    except:
+      pass
 
   dsns = ['https://137e8e621f114f858f4c392c52e18c6d:8aba82f49af040c8aac45e95a8484970@sentry.io/1404547',
           'https://c58740a8bcc54e3c86dec0cbc8a4ac82:37f4566213e9478080043b693e098942@sentry.io/1405746']
