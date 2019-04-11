@@ -252,8 +252,8 @@ class LongitudinalMpc(object):
     # Calculate mpc
     t = sec_since_boot()
     TR = self.calculate_tr(v_ego, CS.carState)
-    '''with open("/data/op-tools-data/dynamic-follow.json", "w") as d_f:
-      d_f.write(json.dumps(self.dict_builder))'''
+    with open("/datafd/op-tools-data-756/dynamic-follow.json", "w") as d_f:
+      d_f.write(json.dumps(self.dict_builder))
     self.dict_builder = {}
     n_its = self.libmpc.run_mpc(self.cur_state, self.mpc_solution, self.a_lead_tau, a_lead, TR)
     duration = int((sec_since_boot() - t) * 1e9)
