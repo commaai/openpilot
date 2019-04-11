@@ -4,7 +4,8 @@ from common.realtime import sec_since_boot
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from selfdrive.controls.lib.vehicle_model import VehicleModel
-from selfdrive.car.gm.values import DBC, CAR, STOCK_CONTROL_MSGS, AUDIO_HUD, SUPERCRUISE_CARS
+from selfdrive.car.gm.values import DBC, CAR, STOCK_CONTROL_MSGS, AUDIO_HUD, \
+                                    SUPERCRUISE_CARS, AccState
 from selfdrive.car.gm.carstate import CarState, CruiseButtons, get_powertrain_can_parser
 
 try:
@@ -231,7 +232,7 @@ class CarInterface(object):
 
     # cruise state
     ret.cruiseState.available = bool(self.CS.main_on)
-    cruiseEnabled = self.CS.pcm_acc_status != 0
+    cruiseEnabled = self.CS.pcm_acc_status != AccState.OFF
     ret.cruiseState.enabled = cruiseEnabled
     ret.cruiseState.standstill = self.CS.pcm_acc_status == 4
 
@@ -323,6 +324,8 @@ class CarInterface(object):
         events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
       if ret.cruiseState.standstill:
         events.append(create_event('resumeRequired', [ET.WARNING]))
+      if self.CS.pcm_acc_status == AccState.FAULTED:
+        events.append(create_event('controlsFailed', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
 
       # handle button presses
       for b in ret.buttonEvents:
