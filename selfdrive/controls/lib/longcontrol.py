@@ -84,10 +84,11 @@ class LongControl(object):
     dynamic = False
     if gasinterceptor:
       if gasbuttonstatus == 0:
-        #dynamic = True
-        #x = [0, 2.2863, 4.5373, 7.3644, 9.0393, 35.0]
-        #y = [0.2, 0.2199, 0.2631, 0.3572, 0.5, 0.7]
-        y = [0.2, 0.5, 0.7]
+        dynamic = True
+        x = [0.0, 1.4082, 2.80311, 4.22661, 5.38271, 6.16561, 7.24781, 8.28308, 10.24465, 12.96402, 15.42303, 18.11903, 20.11703, 24.46614, 29.05805, 32.71015, 35.76326]
+        y = [0.2, 0.20443, 0.21592, 0.23334, 0.25734, 0.27916, 0.3229, 0.34784, 0.36765, 0.38, 0.396, 0.409, 0.425, 0.478, 0.55, 0.621, 0.7]
+        #x = [0.0, 0.6422, 1.36595, 2.25989, 3.22941, 4.06505, 5.64084, 7.00847, 9.2202, 12.96404, 15.42305, 18.11906, 20.11706, 24.46618, 29.0581, 32.7102, 35.76332]  # future
+        #y = [0.2, 0.20443, 0.21592, 0.23334, 0.25734, 0.27916, 0.3229, 0.34784, 0.36765, 0.38, 0.396, 0.409, 0.425, 0.478, 0.55, 0.621, 0.7]
       elif gasbuttonstatus == 1:
         y = [0.25, 0.9, 0.9]
       elif gasbuttonstatus == 2:
@@ -104,16 +105,15 @@ class LongControl(object):
       x = [0., 9., 35.]  # default BP values
 
     accel = interp(v_ego, x, y)
-    if dynamic:  # dynamic gas profile specific operations
-      if v_rel is not None:  # if lead
-        if (v_ego) < 6.7056:  # if under 15 mph
-          x = [0.0, 0.3072, 0.5173, 0.9337, 1.7882]
-          y = [-0.1, -0.0799, -0.0463, -0.0171, 0]
-          accel = accel + interp(v_rel, x, y)
-        else:
-          x = [-0.89408, 0, 0.89408, 4.4704]
-          y = [-.05, 0, .005, .02]
-          accel = accel + interp(v_rel, x, y)
+    if dynamic and v_rel is not None:  # dynamic gas profile specific operations, and if lead
+      if (v_ego) < 6.7056:  # if under 15 mph
+        x = [0.0, 0.3072, 0.5173, 0.9337, 1.7882]
+        y = [-0.125, -0.0799, -0.0463, -0.0171, 0]
+        accel = accel + interp(v_rel, x, y)
+      else:
+        x = [-0.89408, 0, 0.89408, 4.4704]
+        y = [-.05, 0, .005, .02]
+        accel = accel + interp(v_rel, x, y)
 
 
     min_return = 0.05
