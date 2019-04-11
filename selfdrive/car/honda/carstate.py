@@ -110,7 +110,9 @@ def get_can_signals(CP):
       checks += [("CRUISE_PARAMS", 50)]
 
   if CP.carFingerprint in (CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.INSIGHT, CAR.CRV_HYBRID):
-    signals += [("DRIVERS_DOOR_OPEN", "SCM_FEEDBACK", 1)]
+    signals += [("DRIVERS_DOOR_OPEN", "SCM_FEEDBACK", 1),
+                ("LEAD_DISTANCE", "RADAR_HUD", 0)]
+    checks += [("RADAR_HUD", 50)]
   elif CP.carFingerprint == CAR.ODYSSEY_CHN:
     signals += [("DRIVERS_DOOR_OPEN", "SCM_BUTTONS", 1)]
   else:
@@ -180,6 +182,8 @@ class CarState(object):
     self.user_gas, self.user_gas_pressed = 0., 0
     self.brake_switch_prev = 0
     self.brake_switch_ts = 0
+    self.lead_distance = 255
+    self.hud_lead = 0
 
     self.cruise_buttons = 0
     self.cruise_setting = 0
@@ -214,15 +218,21 @@ class CarState(object):
     # update prevs, update must run once per loop
     self.prev_cruise_buttons = self.cruise_buttons
     self.prev_blinker_on = self.blinker_on
+    self.prev_lead_distance = self.lead_distance
 
     self.prev_left_blinker_on = self.left_blinker_on
     self.prev_right_blinker_on = self.right_blinker_on
 
     # ******************* parse out can *******************
 
-    if self.CP.carFingerprint in (CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.INSIGHT, CAR.CRV_HYBRID): # TODO: find wheels moving bit in dbc
+    if self.CP.carFingerprint in (CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH, CAR.INSIGHT, CAR.CRV_HYBRID): # TODO: find wheels moving bit in dbc
       self.standstill = cp.vl["ENGINE_DATA"]['XMISSION_SPEED'] < 0.1
       self.door_all_closed = not cp.vl["SCM_FEEDBACK"]['DRIVERS_DOOR_OPEN']
+      self.lead_distance = cp.vl["RADAR_HUD"]['LEAD_DISTANCE']
+    elif self.CP.carFingerprint in (CAR.CIVIC_BOSCH):
+      self.standstill = cp.vl["ENGINE_DATA"]['XMISSION_SPEED'] < 0.1
+      self.door_all_closed = not cp.vl["SCM_FEEDBACK"]['DRIVERS_DOOR_OPEN']
+      self.hud_lead = cp.vl["ACC_HUD"]['HUD_LEAD']
     elif self.CP.carFingerprint == CAR.ODYSSEY_CHN:
       self.standstill = cp.vl["ENGINE_DATA"]['XMISSION_SPEED'] < 0.1
       self.door_all_closed = not cp.vl["SCM_BUTTONS"]['DRIVERS_DOOR_OPEN']
