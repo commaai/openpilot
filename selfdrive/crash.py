@@ -49,8 +49,9 @@ else:
 
 
   def capture_exception(*args, **kwargs):
-    [client.captureException(*args, **kwargs) for client in clients]
-    cloudlog.error("crash", exc_info=kwargs.get('exc_info', 1))
+    for client in clients:
+      client.captureException(*args, **kwargs)
+      cloudlog.error("crash", exc_info=kwargs.get('exc_info', 1))
 
   def capture_warning(warning_string):
     [client.captureMessage(warning_string, level='warning') for client in clients]

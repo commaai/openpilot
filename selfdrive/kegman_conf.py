@@ -29,16 +29,16 @@ class kegman_conf():
       if "brake_distance_extra" not in self.config: # extra braking distance in m
         self.config.update({"brake_distance_extra":"1"})
         self.element_updated = True
-      if "lastALCAMode" not in self.config: # extra braking distance in m
+      if "lastALCAMode" not in self.config:
         self.config.update({"lastALCAMode":"1"})
         self.element_updated = True
       if "brakefactor" not in self.config: # brake at 20% higher speeds than what I like
         self.config.update({"brakefactor":"1.2"}) 
         self.element_updated = True
-      if "lastGasMode" not in self.config: # brake at 20% higher speeds than what I like
+      if "lastGasMode" not in self.config:
         self.config.update({"lastGasMode":"0"}) 
         self.element_updated = True
-      if "lastSloMode" not in self.config: # brake at 20% higher speeds than what I like
+      if "lastSloMode" not in self.config:
         self.config.update({"lastSloMode":"1"}) 
         self.element_updated = True
 
