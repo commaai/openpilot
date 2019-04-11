@@ -147,7 +147,7 @@ class CarState(object):
     self.gasMode = int(self.kegman.conf['lastGasMode'])
     self.sloMode = int(self.kegman.conf['lastSloMode'])
     self.sloLabels = ["offset","normal"]
-    self.gasLabels = ["normal","sport","eco"]
+    self.gasLabels = ["smooth","sport","eco"]
     #labelslabels for ALCA modes
     self.alcaLabels = ["MadMax","Normal","Wifey","off"]
     self.alcaMode = int(self.kegman.conf['lastALCAMode'])     # default to last ALCAmode on startup
