@@ -55,11 +55,13 @@ class LatControl(object):
         KiV = [interp(25.0, CP.steerKiBP, self.steerKiV)]
         self.pid._k_i = ([0.], KiV)
         self.pid._k_p = ([0.], KpV)
+        self.standard_ff_ratio = 0.0
         print(self.angle_ff_gain, self.rate_ff_gain, self.total_desired_projection, self.desired_smoothing, self.gernbySteer)
       else:
         print(self.angle_ff_gain, self.angle_ff_ratio, self.total_desired_projection, self.desired_smoothing, self.gernbySteer)
         self.gernbySteer = False
-        self.angle_ff_ratio = 1.0
+        self.standard_ff_ratio = 1.0
+        self.angle_ff_ratio = 0.0
       self.mpc_frame = 0
 
   def reset(self):
@@ -125,7 +127,7 @@ class LatControl(object):
         output_steer = self.pid.update(self.dampened_desired_angle, angle_steers, check_saturation=(v_ego > 10),
                                       override=steer_override, feedforward=steer_feedforward, speed=v_ego, deadzone=deadzone)
 
-        if self.gernbySteer and not steer_override and v_ego > 10.0:
+        if self.gernbySteer and v_ego > 10.0:
           if abs(angle_steers) > (self.angle_ff_bp[0][1] / 2.0):
             self.adjust_angle_gain()
           else:
