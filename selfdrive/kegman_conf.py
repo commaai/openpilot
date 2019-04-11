@@ -38,6 +38,9 @@ class kegman_conf():
       if "lastSloMode" not in self.config: # brake at 20% higher speeds than what I like
         self.config.update({"lastSloMode":"1"}) 
         self.element_updated = True
+      if "leadDistance" not in self.config: # leadDistance only works for Accord and Insight, have not tested other honda vehicles
+        self.config.update({"leadDistance":"5.0"})
+        self.element_updated = True
 
       # force update
       if self.config['carVoltageMinEonShutdown'] == "11800":
@@ -57,7 +60,7 @@ class kegman_conf():
         self.write_config(self.config)
 
     else:
-      self.config = {"cameraOffset":"0.06", "lastTrMode":"1", "battChargeMin":"90", "battChargeMax":"95", "wheelTouchSeconds":"1800", "battPercOff":"25", "carVoltageMinEonShutdown":"11200", "brakeStoppingTarget":"0.25", "angle_steers_offset":"0" , "brake_distance_extra":"1" , "lastALCAMode":"1" , "brakefactor":"1.2", "lastGasMode":"0" , "lastSloMode":"1"}
+      self.config = {"cameraOffset":"0.06", "lastTrMode":"1", "battChargeMin":"90", "battChargeMax":"95", "wheelTouchSeconds":"1800", "battPercOff":"25", "carVoltageMinEonShutdown":"11200", "brakeStoppingTarget":"0.25", "angle_steers_offset":"0" , "brake_distance_extra":"1" , "lastALCAMode":"1" , "brakefactor":"1.2", "lastGasMode":"0" , "lastSloMode":"1", "leadDistance":"5.0"}
       self.write_config(self.config)
     return self.config
 
