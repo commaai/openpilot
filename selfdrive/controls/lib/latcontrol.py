@@ -26,6 +26,7 @@ class LatControl(object):
     self.last_cloudlog_t = 0.0
     self.angle_steers_des = 0.
     self.angle_ff_ratio = 0.0
+    self.standard_ff_ratio = 0.0
     self.angle_ff_gain = 1.0
     self.rate_ff_gain = 0.01
     self.average_angle_steers = 0.
