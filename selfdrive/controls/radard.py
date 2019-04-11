@@ -132,6 +132,7 @@ def radard_thread(gctx=None):
     if l100 is not None:
       active = l100.live100.active
       v_ego = l100.live100.vEgo
+      v_curv = l100.live100.curvature
       steer_angle = l100.live100.angleSteers
       steer_override = l100.live100.steerOverride
 
@@ -147,7 +148,7 @@ def radard_thread(gctx=None):
       last_md_ts = md.logMonoTime
 
     # *** get path prediction from the model ***
-    MP.update(v_ego, md)
+    MP.update(v_ego, md, v_curv)
 
     # run kalman filter only if prob is high enough
     if MP.lead_prob > 0.7:

@@ -96,6 +96,8 @@ class CarInterface(object):
     ret.carFingerprint = candidate
 
     ret.enableCruise = False
+    ret.steerMPCReactTime = 0.025     # increase total MPC projected time by 25 ms
+    ret.steerMPCDampTime = 0.25       # dampen desired angle over 250ms (5 mpc cycles)
 
     # Presence of a camera on the object bus is ok.
     # Have to go passive if ASCM is online (ACC-enabled cars),

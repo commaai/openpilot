@@ -65,6 +65,9 @@ pthread_t safety_setter_thread_handle = -1;
 pthread_t pigeon_thread_handle = -1;
 bool pigeon_needs_init;
 
+int big_recv;
+uint32_t big_data[RECV_SIZE*2];
+
 void pigeon_init();
 void *pigeon_thread(void *crap);
 
@@ -216,11 +219,14 @@ void handle_usb_issue(int err, const char func[]) {
   // TODO: check other errors, is simply retrying okay?
 }
 
-void can_recv(void *s) {
+bool can_recv(void *s, bool force_send) {
   int err;
   uint32_t data[RECV_SIZE/4];
-  int recv;
-  uint32_t f1, f2;
+  int recv, big_index;
+  uint32_t f1, f2, address;
+  bool frame_sent;
+  uint64_t cur_time;
+  frame_sent = false;
 
   // do recv
   pthread_mutex_lock(&usb_lock);
@@ -236,38 +242,52 @@ void can_recv(void *s) {
 
   pthread_mutex_unlock(&usb_lock);
 
-  // return if length is 0
-  if (recv <= 0) {
-    return;
+  // return if both buffers are empty
+  if ((big_recv <= 0) && (recv <= 0)) {
+    return true;
   }
 
-  // create message
-  capnp::MallocMessageBuilder msg;
-  cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-  event.setLogMonoTime(nanos_since_boot());
-
-  auto canData = event.initCan(recv/0x10);
-
-  // populate message
+  big_index = big_recv/0x10;
   for (int i = 0; i<(recv/0x10); i++) {
-    if (data[i*4] & 4) {
-      // extended
-      canData[i].setAddress(data[i*4] >> 3);
-      //printf("got extended: %x\n", data[i*4] >> 3);
-    } else {
-      // normal
-      canData[i].setAddress(data[i*4] >> 21);
+    big_data[(big_index + i)*4] = data[i*4];
+    big_data[(big_index + i)*4+1] = data[i*4+1];
+    big_data[(big_index + i)*4+2] = data[i*4+2];
+    big_data[(big_index + i)*4+3] = data[i*4+3];
+    big_recv += 0x10;
+  }
+  if (force_send) {
+    frame_sent = true;
+
+    capnp::MallocMessageBuilder msg;
+    cereal::Event::Builder event = msg.initRoot<cereal::Event>();
+    event.setLogMonoTime(nanos_since_boot());
+
+    auto can_data = event.initCan(big_recv/0x10);
+
+    // populate message
+    for (int i = 0; i<(big_recv/0x10); i++) {
+      if (big_data[i*4] & 4) {
+        // extended
+        can_data[i].setAddress(big_data[i*4] >> 3);
+        //printf("got extended: %x\n", big_data[i*4] >> 3);
+      } else {
+        // normal
+        can_data[i].setAddress(big_data[i*4] >> 21);
+      }
+      can_data[i].setBusTime(big_data[i*4+1] >> 16);
+      int len = big_data[i*4+1]&0xF;
+      can_data[i].setDat(kj::arrayPtr((uint8_t*)&big_data[i*4+2], len));
+      can_data[i].setSrc((big_data[i*4+1] >> 4) & 0xff);
     }
-    canData[i].setBusTime(data[i*4+1] >> 16);
-    int len = data[i*4+1]&0xF;
-    canData[i].setDat(kj::arrayPtr((uint8_t*)&data[i*4+2], len));
-    canData[i].setSrc((data[i*4+1] >> 4) & 0xff);
+
+    // send to can
+    auto words = capnp::messageToFlatArray(msg);
+    auto bytes = words.asBytes();
+    zmq_send(s, bytes.begin(), bytes.size(), 0);
+    big_recv = 0;
   }
 
-  // send to can
-  auto words = capnp::messageToFlatArray(msg);
-  auto bytes = words.asBytes();
-  zmq_send(s, bytes.begin(), bytes.size(), 0);
+  return frame_sent;
 }
 
 void can_health(void *s) {
@@ -456,11 +476,53 @@ void *can_recv_thread(void *crap) {
   void *publisher = zmq_socket(context, ZMQ_PUB);
   zmq_bind(publisher, "tcp://*:8006");
 
-  // run at ~200hz
+  bool frame_sent, skip_once, force_send;
+  uint64_t wake_time, cur_time, last_long_sleep;
+  int recv_state = 0;
+  force_send = true;
+  last_long_sleep = 1e-3 * nanos_since_boot();
+  wake_time = last_long_sleep;
+
   while (!do_exit) {
-    can_recv(publisher);
-    // 5ms
-    usleep(5*1000);
+
+    frame_sent = can_recv(publisher, force_send);
+
+    // drain the Panda twice at 4.5ms intervals, then once at 1.0ms interval (twice max if sync_id is set)
+    if (recv_state++ < 2) {
+      last_long_sleep = 1e-3 * nanos_since_boot();
+      wake_time += 4500;
+      force_send = false;
+      if (last_long_sleep < wake_time) {
+        usleep(wake_time - last_long_sleep);
+      }
+      else {
+        if ((last_long_sleep - wake_time) > 5e5) {
+          // probably a new drive
+          wake_time = last_long_sleep;
+        }
+        else {
+          if (recv_state < 2) {
+            wake_time += 4500;
+            recv_state++;
+            if (last_long_sleep < wake_time) {
+              usleep(wake_time - last_long_sleep);
+            }
+            else {
+              printf("    lagging!\n");
+            }
+          }
+        }
+      }
+    }
+    else {
+      force_send = true;
+      recv_state = 0;
+      wake_time += 1000;
+      cur_time = 1e-3 * nanos_since_boot();
+      if (wake_time > cur_time) {
+        usleep(wake_time - cur_time);
+      }
+    }
   }
   return NULL;
 }

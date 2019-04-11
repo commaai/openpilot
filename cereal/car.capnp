@@ -351,8 +351,9 @@ struct CarParams {
   longitudinalKpV @37 :List(Float32);
   longitudinalKiBP @38 :List(Float32);
   longitudinalKiV @39 :List(Float32);
-
   steerLimitAlert @29 :Bool;
+  steerMPCReactTime @51 :Float32;
+  steerMPCDampTime @52 :Float32;
 
   vEgoStopping @30 :Float32; # Speed at which the car goes into stopping state
   directAccelControl @31 :Bool; # Does the car have direct accel control or just gas/brake

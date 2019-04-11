@@ -13,8 +13,9 @@ function launch {
       git clean -xdf &&
       exec "${BASH_SOURCE[0]}"
     fi
+  # apply update
   fi
-
+  
   # no cpu rationing for now
   echo 0-3 > /dev/cpuset/background/cpus
   echo 0-3 > /dev/cpuset/system-background/cpus
@@ -26,8 +27,8 @@ function launch {
 
   # start manager
   cd selfdrive
-  ./manager.py
-  #./manager.py > log.txt
+  #./manager.py
+  ./manager.py > log.txt
 
   # if broken, keep on screen error
   while true; do sleep 1; done

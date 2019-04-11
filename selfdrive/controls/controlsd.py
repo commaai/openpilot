@@ -39,13 +39,19 @@ def isEnabled(state):
   return (isActive(state) or state == State.preEnabled)
 
 
-def data_sample(CI, CC, plan_sock, path_plan_sock, thermal, calibration, health, driver_monitor,
+def data_sample(CI, CC, CS, plan_sock, path_plan_sock, thermal, calibration, health, driver_monitor,
                 poller, cal_status, cal_perc, overtemp, free_space, low_battery,
-                driver_status, state, mismatch_counter, params, plan, path_plan):
+                driver_status, state, mismatch_counter, rk, params, plan, path_plan):
   """Receive data from sockets and create events for battery, temperature and disk space"""
 
+  rk.monitor_time()
   # Update carstate from CAN and create events
-  CS = CI.update(CC)
+  if rk.remaining > 10. / 1000 or rk.frame < 1000:
+    CS = CI.update(CC)
+  else:
+    CS = CS
+    print("CAN lagging!", rk.remaining, rk.frame)
+
   events = list(CS.events)
   enabled = isEnabled(state)
 
@@ -257,8 +263,7 @@ def state_control(plan, path_plan, CS, CP, state, events, v_cruise_kph, v_cruise
   actuators.gas, actuators.brake = LoC.update(active, CS.vEgo, CS.brakePressed, CS.standstill, CS.cruiseState.standstill,
                                               v_cruise_kph, v_acc_sol, plan.vTargetFuture, a_acc_sol, CP)
   # Steering PID loop and lateral MPC
-  actuators.steer, actuators.steerAngle = LaC.update(active, CS.vEgo, CS.steeringAngle,
-                                                     CS.steeringPressed, CP, VM, path_plan)
+  actuators.steer, actuators.steerAngle = LaC.update(active, CS.vEgo, CS.steeringAngle, CS.steeringPressed, CP, VM, path_plan)
 
   # Send a "steering required alert" if saturation count has reached the limit
   if LaC.sat_flag and CP.steerLimitAlert and CS.lkMode and not CS.leftBlinker and not CS.rightBlinker:
@@ -336,7 +341,7 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
     "vEgo": CS.vEgo,
     "vEgoRaw": CS.vEgoRaw,
     "angleSteers": CS.steeringAngle,
-    "curvature": VM.calc_curvature(CS.steeringAngle * CV.DEG_TO_RAD, CS.vEgo),
+    "curvature": VM.calc_curvature((LaC.average_angle_steers - path_plan.pathPlan.angleOffset) * CV.DEG_TO_RAD, CS.vEgo),
     "steerOverride": CS.steeringPressed,
     "state": state,
     "engageable": not bool(get_events(events, [ET.NO_ENTRY])),
@@ -346,14 +351,19 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
     "upAccelCmd": float(LoC.pid.p),
     "uiAccelCmd": float(LoC.pid.i),
     "ufAccelCmd": float(LoC.pid.f),
-    "angleSteersDes": float(LaC.angle_steers_des),
+    "angleSteersDes": float(path_plan.pathPlan.angleSteers),
+    "dampAngleSteersDes": float(LaC.dampened_desired_angle),
+    "angleSteersNoise": LaC.angle_steers_noise,
     "upSteer": float(LaC.pid.p),
     "uiSteer": float(LaC.pid.i),
     "ufSteer": float(LaC.pid.f),
+    "angleFFRatio": float(LaC.angle_ff_ratio),
     "vTargetLead": float(v_acc),
     "aTarget": float(a_acc),
     "jerkFactor": float(plan.jerkFactor),
     "angleModelBias": float(angle_model_bias),
+    "angleFFGain": float(LaC.angle_ff_gain),
+    "rateFFGain": float(LaC.rate_ff_gain),
     "gpsPlannerActive": plan.gpsPlannerActive,
     "vCurvature": plan.vCurvature,
     "decelForTurn": plan.decelForTurn,
@@ -378,8 +388,8 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
   carcontrol.send(cc_send.to_bytes())
 
   if (rk.frame % 36000) == 0:    # update angle offset every 6 minutes
-    params.put("ControlsParams", json.dumps({'angle_model_bias': angle_model_bias}))
-
+    params.put("ControlsParams", json.dumps({'angle_model_bias': angle_model_bias,
+              'angle_ff_gain': LaC.angle_ff_gain, 'rate_ff_gain': LaC.rate_ff_gain}))
   return CC
 
 
@@ -459,7 +469,7 @@ def controlsd_thread(gctx=None, rate=100):
   path_plan = messaging.new_message()
   path_plan.init('pathPlan')
 
-  rk = Ratekeeper(rate, print_delay_threshold=2. / 1000)
+  rk = Ratekeeper(rate, print_delay_threshold=12. / 1000)
   controls_params = params.get("ControlsParams")
 
   # Read angle offset from previous drive
@@ -468,20 +478,23 @@ def controlsd_thread(gctx=None, rate=100):
     try:
       controls_params = json.loads(controls_params)
       angle_model_bias = controls_params['angle_model_bias']
+      LaC.angle_ff_gain = controls_params['angle_ff_gain']
+      LaC.rate_ff_gain = controls_params['rate_ff_gain']
     except (ValueError, KeyError):
       pass
 
   prof = Profiler(False)  # off by default
+  CS = None
 
   while True:
     start_time = int(sec_since_boot() * 1e9)
     prof.checkpoint("Ratekeeper", ignore=True)
 
     # Sample data and compute car events
-    CS, events, cal_status, cal_perc, overtemp, free_space, low_battery, mismatch_counter, plan, path_plan  =\
-      data_sample(CI, CC, plan_sock, path_plan_sock, thermal, cal, health, driver_monitor,
+    CS, events, cal_status, cal_perc, overtemp, free_space, low_battery, mismatch_counter, plan, path_plan =\
+      data_sample(CI, CC, CS, plan_sock, path_plan_sock, thermal, cal, health, driver_monitor,
                   poller, cal_status, cal_perc, overtemp, free_space, low_battery, driver_status,
-                  state, mismatch_counter, params, plan, path_plan)
+                  state, mismatch_counter, rk, params, plan, path_plan)
     prof.checkpoint("Sample")
 
     path_plan_age = (start_time - path_plan.logMonoTime) / 1e9
@@ -515,7 +528,6 @@ def controlsd_thread(gctx=None, rate=100):
                    live100, AM, driver_status, LaC, LoC, angle_model_bias, passive, start_time, params, v_acc, a_acc)
     prof.checkpoint("Sent")
 
-    rk.keep_time()  # Run at 100Hz
     prof.display()
 
 

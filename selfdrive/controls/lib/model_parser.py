@@ -1,4 +1,5 @@
-from common.numpy_fast import interp
+import math
+from common.numpy_fast import interp, clip
 from selfdrive.controls.lib.latcontrol_helpers import model_polyfit, calc_desired_path, compute_path_pinv
 from selfdrive.kegman_conf import kegman_conf
 
@@ -10,7 +11,6 @@ class ModelParser(object):
   def __init__(self):
     self.d_poly = [0., 0., 0., 0.]
     self.c_poly = [0., 0., 0., 0.]
-    self.c_prob = 0.
     self.last_model = 0.
     self.lead_dist, self.lead_prob, self.lead_var = 0, 0, 1
     self._path_pinv = compute_path_pinv()
@@ -20,8 +20,17 @@ class ModelParser(object):
     self.lane_width = 2.85
     self.l_prob = 0.
     self.r_prob = 0.
+    self.lane_prob= 0.
 
-  def update(self, v_ego, md):
+  def fix_polys(self, winner_points, path_points):
+    step_size = winner_points[1] - winner_points[0]
+    path_points[0] = clip(path_points[0], winner_points[0] - self.lane_width / 2.0, winner_points[0] + self.lane_width / 2.0)
+    for i in range(1,50):
+      winner_points[i] = winner_points[i-1] + step_size
+      path_points[i] = path_points[i-1] + step_size
+    return model_polyfit(winner_points, self._path_pinv), model_polyfit(path_points, self._path_pinv)
+
+  def update(self, v_ego, md, v_curv=0.0):
     if md is not None:
       p_poly = model_polyfit(md.model.path.points, self._path_pinv)  # predicted path
       l_poly = model_polyfit(md.model.leftLane.points, self._path_pinv)  # left line
@@ -45,9 +54,31 @@ class ModelParser(object):
                         (1 - self.lane_width_certainty) * speed_lane_width
 
       lane_width_diff = abs(self.lane_width - current_lane_width)
-      lane_r_prob = interp(lane_width_diff, [0.3, 1.0], [1.0, 0.0])
+      lane_prob = interp(lane_width_diff, [0.3, interp(v_ego, [20.0, 25.0], [1.0, 0.4])], [1.0, 0.0])
 
-      r_prob *= lane_r_prob
+      r_prob *= lane_prob
+      
+      '''if (abs(v_curv) < 0.0005 and l_prob > 0.5 and r_prob > 0.5 and v_ego > 22.0) or self.lane_prob == 0.0:
+        steer_compensation = 1.2 * v_curv * v_ego
+        total_left_divergence = (md.model.leftLane.points[5] - md.model.leftLane.points[0]) * r_prob + steer_compensation
+        total_right_divergence = -((md.model.rightLane.points[5] - md.model.rightLane.points[0]) * l_prob + steer_compensation)
+
+        if (total_left_divergence > abs(total_right_divergence) \
+          and (self.lane_prob > 0 or self.r_prob > 0)) or (self.lane_prob == 0 and self.l_prob == 0):
+          l_prob *= lane_prob
+          if lane_prob == 0.0:
+            p_prob = 0.5
+            #r_prob *= 1.5
+            r_poly, p_poly = self.fix_polys(map(float, md.model.rightLane.points), map(float, md.model.path.points))
+        elif (total_right_divergence > abs(total_left_divergence)) \
+          or (self.lane_prob == 0 and self.r_prob == 0):
+          r_prob *= lane_prob
+          if lane_prob == 0.0:
+            p_prob = 0.5
+            #l_prob *= 1.5
+            l_poly, p_poly = self.fix_polys(map(float, md.model.leftLane.points), map(float, md.model.path.points))
+        self.lane_prob = lane_prob
+      '''
 
       self.lead_dist = md.model.lead.dist
       self.lead_prob = md.model.lead.prob
