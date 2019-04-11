@@ -17,7 +17,7 @@ def print_letters(text):
                 pass
             temp += ' '*(5-len(temp))
             temp = temp.replace(' ',' ')
-            temp = temp.replace('#','\xE2\x96\x88')
+            temp = temp.replace('#','@')
             output[i] += temp
     return '\n'.join(output)
 import sys, termios, tty, os, time
@@ -47,18 +47,9 @@ while True:
   print ""
   print print_letters(kegman.conf[param[j]])
   print ""
-  print "reactMPC is an adjustment to the time projection of the MPC"
-  print "angle used in the dampening calculation.  Increasing this value"
-  print "would cause the vehicle to turn sooner."
-  print ""
-  print ""
-  print "dampMPC is the amount of time that the samples"
-  print "will be projected and averaged to smooth the values"
-  print ""
-  print ""
-  print ("Press 1, 3, 5, 7 to incr 0.1, 0.05, 0.01, 0.001")
-  print ("press a, d, g, j to decr 0.1, 0.05, 0.01, 0.001")
-  print ("press 0 / L to make the value 0 / 1")
+  print ("1, 3, 5, 7 to incr 0.1, 0.05, 0.01, 0.001")
+  print ("a, d, g, j to decr 0.1, 0.05, 0.01, 0.001")
+  print ("0 / L to make the value 0 / 1")
   print ("press SPACE / m for next /prev parameter")
   print ("press z to quit")
 
