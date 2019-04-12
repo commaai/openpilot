@@ -183,8 +183,8 @@ class LongitudinalMpc(object):
       TR = TR + interp(self.get_acceleration(self.dynamic_follow_dict["self_vels"], True), x, y)  # factor in self acceleration
       self.dict_builder["self_accel"] = self.get_acceleration(self.dynamic_follow_dict["self_vels"], True)
 
-      x = [-4.4704, -2.2, -0.958, -0.447, -0.2235, 0.0, 0.5588, 1.3411]  # lead acceleration values
-      y = [0.3555, 0.2788, 0.165, 0.1, 0.0375, 0, -0.115, -0.195]  # modification values
+      x = [-4.49033, -1.87397, -0.66245, -0.26291, 0.0, 0.5588, 1.34112]  # lead acceleration values
+      y = [0.37909, 0.30045, 0.20378, 0.04158, 0, -0.115, -0.195]  # modification values
       TR = TR + interp(self.get_acceleration(self.dynamic_follow_dict["lead_vels"], False), x, y)  # factor in lead car's acceleration; should perform better
       self.dict_builder["lead_accel"] = self.get_acceleration(self.dynamic_follow_dict["lead_vels"], False)
 
