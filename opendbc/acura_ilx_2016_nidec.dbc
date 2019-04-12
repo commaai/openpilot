@@ -182,4 +182,4 @@ BO_TX_BU_ 769 : NEO,ADAS;
 
 
 CM_ SG_ 1024 RADAR_STATE "need to find out more diagnostic values";
-VAL_ 1024 RADAR_STATE 121 "ok" 110 "faulted";
+VAL_ 1024 RADAR_STATE 121 "ok" 110 "faulted" 105 "wrong_config";

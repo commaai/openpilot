@@ -11,6 +11,7 @@ from common.realtime import Ratekeeper
 from selfdrive.config import Conversions as CV
 import selfdrive.messaging as messaging
 from selfdrive.services import service_list
+from selfdrive.car import crc8_pedal
 from selfdrive.car.honda.hondacan import fix
 from selfdrive.car.honda.values import CAR
 from selfdrive.car.honda.carstate import get_can_signals
@@ -242,7 +243,7 @@ class Plant(object):
            'INTERCEPTOR_GAS',
            ])
     vls = vls_tuple(
-           self.speed_sensor(speed), 
+           self.speed_sensor(speed),
            self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed),
            self.angle_steer, self.angle_steer_rate, 0, #Steer torque sensor
            0, 0,  # Blinkers
@@ -284,11 +285,18 @@ class Plant(object):
       if "COUNTER" in honda.get_signals(msg):
         msg_struct["COUNTER"] = self.rk.frame % 4
 
+      if "COUNTER_PEDAL" in honda.get_signals(msg):
+        msg_struct["COUNTER_PEDAL"] = self.rk.frame % 0xf
+
       msg = honda.lookup_msg_id(msg)
       msg_data = honda.encode(msg, msg_struct)
 
       if "CHECKSUM" in honda.get_signals(msg):
         msg_data = fix(msg_data, msg)
+
+      if "CHECKSUM_PEDAL" in honda.get_signals(msg):
+        msg_struct["CHECKSUM_PEDAL"] = crc8_pedal([ord(i) for i in msg_data][:-1])
+        msg_data = honda.encode(msg, msg_struct)
 
       can_msgs.append([msg, 0, msg_data, 0])
 
@@ -302,6 +310,14 @@ class Plant(object):
                   "0f00000"
       can_msgs.append([0x400, 0, radar_state_msg, 1])
       can_msgs.append([0x445, 0, radar_msg.decode("hex"), 1])
+
+    # add camera msg so controlsd thinks it's alive
+    msg_struct["COUNTER"] = self.rk.frame % 4
+    msg = honda.lookup_msg_id(0xe4)
+    msg_data = honda.encode(msg, msg_struct)
+    msg_data = fix(msg_data, 0xe4)
+    can_msgs.append([0xe4, 0, msg_data, 2])
+
     Plant.logcan.send(can_list_to_can_capnp(can_msgs).to_bytes())
 
     # ******** publish a fake model going straight and fake calibration ********

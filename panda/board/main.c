@@ -15,6 +15,7 @@
 #include "drivers/uart.h"
 #include "drivers/adc.h"
 #include "drivers/usb.h"
+#include "drivers/gmlan_alt.h"
 #include "drivers/can.h"
 #include "drivers/spi.h"
 #include "drivers/timer.h"
@@ -538,6 +539,9 @@ int main() {
   } else {
     // enable ESP uart
     uart_init(USART1, 115200);
+    #ifdef EON
+      set_esp_mode(ESP_DISABLED);
+    #endif
   }
   // enable LIN
   uart_init(UART5, 10400);
@@ -558,6 +562,7 @@ int main() {
   usb_init();
 
   // default to silent mode to prevent issues with Ford
+  // hardcode a specific safety mode if you want to force the panda to be in a specific mode
   safety_set_mode(SAFETY_NOOUTPUT, 0);
   can_silent = ALL_CAN_SILENT;
   can_init_all();
@@ -614,6 +619,7 @@ int main() {
           }
           break;
         case USB_POWER_CDP:
+#ifndef EON
           // been CLICKS clicks since we switched to CDP
           if ((cnt-marker) >= CLICKS) {
             // measure current draw, if positive and no enumeration, switch to DCP
@@ -627,6 +633,7 @@ int main() {
           if (current >= CURRENT_THRESHOLD) {
             marker = cnt;
           }
+#endif
           break;
         case USB_POWER_DCP:
           // been at least CLICKS clicks since we switched to DCP

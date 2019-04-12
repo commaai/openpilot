@@ -39,6 +39,7 @@ def _get_interface_names():
 interfaces = load_interfaces(_get_interface_names())
 
 
+# BOUNTY: every added fingerprint in selfdrive/car/*/values.py is a $100 coupon code on shop.comma.ai
 # **** for use live only ****
 def fingerprint(logcan, timeout):
   if os.getenv("SIMULATOR2") is not None:
@@ -97,6 +98,7 @@ def get_car(logcan, sendcan=None, passive=True):
       return None, None
 
   interface_cls = interfaces[candidate]
+
   if interface_cls is None:
     cloudlog.warning("car matched %s, but interface wasn't available or failed to import" % candidate)
     return None, None

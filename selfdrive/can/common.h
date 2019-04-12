@@ -10,6 +10,7 @@
 
 unsigned int honda_checksum(unsigned int address, uint64_t d, int l);
 unsigned int toyota_checksum(unsigned int address, uint64_t d, int l);
+unsigned int pedal_checksum(unsigned int address, uint64_t d, int l);
 
 struct SignalPackValue {
   const char* name;
@@ -41,6 +42,8 @@ enum SignalType {
   HONDA_CHECKSUM,
   HONDA_COUNTER,
   TOYOTA_CHECKSUM,
+  PEDAL_CHECKSUM,
+  PEDAL_COUNTER,
 };
 
 struct Signal {
@@ -60,10 +63,19 @@ struct Msg {
   const Signal *sigs;
 };
 
+struct Val {
+  const char* name;
+  uint32_t address;
+  const char* def_val;
+  const Signal *sigs;
+};
+
 struct DBC {
   const char* name;
   size_t num_msgs;
   const Msg *msgs;
+  const Val *vals;
+  size_t num_vals;
 };
 
 const DBC* dbc_lookup(const std::string& dbc_name);

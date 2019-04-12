@@ -1,10 +1,9 @@
 import re
 import os
 import struct
-import bitstring
 import sys
 import numbers
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 
 def int_or_float(s):
   # return number, trying to maintain int format
@@ -17,6 +16,7 @@ DBCSignal = namedtuple(
   "DBCSignal", ["name", "start_bit", "size", "is_little_endian", "is_signed",
                 "factor", "offset", "tmin", "tmax", "units"])
 
+
 class dbc(object):
   def __init__(self, fn):
     self.name, _ = os.path.splitext(os.path.basename(fn))
@@ -28,6 +28,7 @@ class dbc(object):
     bo_regexp = re.compile(r"^BO\_ (\w+) (\w+) *: (\w+) (\w+)")
     sg_regexp = re.compile(r"^SG\_ (\w+) : (\d+)\|(\d+)@(\d+)([\+|\-]) \(([0-9.+\-eE]+),([0-9.+\-eE]+)\) \[([0-9.+\-eE]+)\|([0-9.+\-eE]+)\] \"(.*)\" (.*)")
     sgm_regexp = re.compile(r"^SG\_ (\w+) (\w+) *: (\d+)\|(\d+)@(\d+)([\+|\-]) \(([0-9.+\-eE]+),([0-9.+\-eE]+)\) \[([0-9.+\-eE]+)\|([0-9.+\-eE]+)\] \"(.*)\" (.*)")
+    val_regexp = re.compile(r"VAL\_ (\w+) (\w+) (\s*[-+]?[0-9]+\s+\".+?\"[^;]*)")
 
     # A dictionary which maps message ids to tuples ((name, size), signals).
     #   name is the ASCII name of the message.
@@ -35,6 +36,9 @@ class dbc(object):
     #   signals is a list signals contained in the message.
     # signals is a list of DBCSignal in order of increasing start_bit.
     self.msgs = {}
+
+    # A dictionary which maps message ids to a list of tuples (signal name, definition value pairs)
+    self.def_vals = defaultdict(list)
 
     # lookup to bit reverse each byte
     self.bits_index = [(i & ~0b111) + ((-i-1) & 0b111) for i in xrange(64)]
@@ -81,6 +85,30 @@ class dbc(object):
           DBCSignal(sgname, start_bit, signal_size, is_little_endian,
                     is_signed, factor, offset, tmin, tmax, units))
 
+      if l.startswith("VAL_ "):
+        # new signal value/definition
+        dat = val_regexp.match(l)
+
+        if dat is None:
+          print "bad VAL", l
+        ids = int(dat.group(1), 0) # could be hex
+        sgname = dat.group(2)
+        defvals = dat.group(3)
+
+        defvals = defvals.replace("?","\?") #escape sequence in C++
+        defvals = defvals.split('"')[:-1]
+
+        defs = defvals[1::2]
+        #cleanup, convert to UPPER_CASE_WITH_UNDERSCORES
+        for i,d in enumerate(defs):
+          d = defs[i].strip().upper()
+          defs[i] = d.replace(" ","_")
+
+        defvals[1::2] = defs
+        defvals = '"'+"".join(str(i) for i in defvals)+'"'
+
+        self.def_vals[ids].append((sgname, defvals))
+
     for msg in self.msgs.viewvalues():
       msg[1].sort(key=lambda x: x.start_bit)
 
@@ -94,6 +122,16 @@ class dbc(object):
       msg_id = self.msg_name_to_address[msg_id]
     return msg_id
 
+  def reverse_bytes(self, x):
+    return ((x & 0xff00000000000000) >> 56) | \
+           ((x & 0x00ff000000000000) >> 40) | \
+           ((x & 0x0000ff0000000000) >> 24) | \
+           ((x & 0x000000ff00000000) >> 8) | \
+           ((x & 0x00000000ff000000) << 8) | \
+           ((x & 0x0000000000ff0000) << 24) | \
+           ((x & 0x000000000000ff00) << 40) | \
+           ((x & 0x00000000000000ff) << 56)
+
   def encode(self, msg_id, dd):
     """Encode a CAN message using the dbc.
 
@@ -103,35 +141,40 @@ class dbc(object):
     """
     msg_id = self.lookup_msg_id(msg_id)
 
-    # TODO: Stop using bitstring, which is super slow.
     msg_def = self.msgs[msg_id]
     size = msg_def[0][1]
 
-    bsf = bitstring.Bits(hex="00"*size)
+    result = 0
     for s in msg_def[1]:
       ival = dd.get(s.name)
       if ival is not None:
+
+        b2 = s.size
+        if s.is_little_endian:
+          b1 = s.start_bit
+        else:
+          b1 = (s.start_bit // 8) * 8 + (-s.start_bit - 1) % 8
+        bo = 64 - (b1 + s.size)
+
         ival = (ival / s.factor) - s.offset
         ival = int(round(ival))
 
-        # should pack this
+        if s.is_signed and ival < 0:
+          ival = (1 << b2) + ival
+
+        shift = b1 if s.is_little_endian else bo
+        mask = ((1 << b2) - 1) << shift
+        dat = (ival & ((1 << b2) - 1)) << shift
+
         if s.is_little_endian:
-          ss = s.start_bit
-        else:
-          ss = self.bits_index[s.start_bit]
+          mask = self.reverse_bytes(mask)
+          dat = self.reverse_bytes(dat)
 
+        result &= ~mask
+        result |= dat
 
-        if s.is_signed:
-          tbs = bitstring.Bits(int=ival, length=s.size)
-        else:
-          tbs = bitstring.Bits(uint=ival, length=s.size)
-
-        lpad = bitstring.Bits(bin="0b"+"0"*ss)
-        rpad = bitstring.Bits(bin="0b"+"0"*(8*size-(ss+s.size)))
-        tbs = lpad+tbs+rpad
-
-        bsf |= tbs
-    return bsf.tobytes()
+    result = struct.pack('>Q', result)
+    return result[:size]
 
   def decode(self, x, arr=None, debug=False):
     """Decode a CAN message using the dbc.
@@ -167,54 +210,77 @@ class dbc(object):
     if debug:
       print name
 
-    blen = 8*len(x[2])
-
-    st = x[2].rjust(8, '\x00')
+    st = x[2].ljust(8, '\x00')
     le, be = None, None
 
     for s in msg[1]:
       if arr is not None and s[0] not in arr:
         continue
 
-      # big or little endian?
-      #   see http://vi-firmware.openxcplatform.com/en/master/config/bit-numbering.html
-      if s[3] is False:
-        ss = self.bits_index[s[1]]
-        if be is None:
-          be = struct.unpack(">Q", st)[0]
-        x2_int = be
-        data_bit_pos = (blen - (ss + s[2]))
+      start_bit = s[1]
+      signal_size = s[2]
+      little_endian = s[3]
+      signed = s[4]
+      factor = s[5]
+      offset = s[6]
+
+      b2 = signal_size
+      if little_endian:
+        b1 = start_bit
       else:
+        b1 = (start_bit // 8) * 8 + (-start_bit - 1) % 8
+      bo = 64 - (b1 + signal_size)
+
+      if little_endian:
         if le is None:
           le = struct.unpack("<Q", st)[0]
-        x2_int = le
-        ss = s[1]
-        data_bit_pos = ss
+        shift_amount = b1
+        tmp = le
+      else:
+        if be is None:
+          be = struct.unpack(">Q", st)[0]
+        shift_amount = bo
+        tmp = be
 
-      if data_bit_pos < 0:
+      if shift_amount < 0:
         continue
-      ival = (x2_int >> data_bit_pos) & ((1 << (s[2])) - 1)
 
-      if s[4] and (ival & (1<<(s[2]-1))): # signed
-        ival -= (1<<s[2])
+      tmp = (tmp >> shift_amount) & ((1 << b2) - 1)
+      if signed and (tmp >> (b2 - 1)):
+        tmp -= (1 << b2)
 
-      # control the offset
-      ival = (ival * s[5]) + s[6]
-      #if debug:
-      #  print "%40s  %2d %2d  %7.2f %s" % (s[0], s[1], s[2], ival, s[-1])
+      tmp = tmp * factor + offset
+
+      # if debug:
+      #   print "%40s  %2d %2d  %7.2f %s" % (s[0], s[1], s[2], tmp, s[-1])
 
       if arr is None:
-        out[s[0]] = ival
+        out[s[0]] = tmp
       else:
-        out[arr.index(s[0])] = ival
+        out[arr.index(s[0])] = tmp
     return name, out
 
   def get_signals(self, msg):
     msg = self.lookup_msg_id(msg)
     return [sgs.name for sgs in self.msgs[msg][1]]
 
+
 if __name__ == "__main__":
    from opendbc import DBC_PATH
+   import numpy as np
 
-   dbc_test = dbc(os.path.join(DBC_PATH, sys.argv[1]))
-   print dbc_test.get_signals(0xe4)
+   dbc_test = dbc(os.path.join(DBC_PATH, 'toyota_prius_2017_pt_generated.dbc'))
+   msg = ('STEER_ANGLE_SENSOR', {'STEER_ANGLE': -6.0, 'STEER_RATE': 4, 'STEER_FRACTION': -0.2})
+   encoded = dbc_test.encode(*msg)
+   decoded = dbc_test.decode((0x25, 0, encoded))
+   assert decoded == msg
+
+   dbc_test = dbc(os.path.join(DBC_PATH, 'hyundai_santa_fe_2019_ccan.dbc'))
+   decoded = dbc_test.decode((0x2b0, 0, "\xfa\xfe\x00\x07\x12"))
+   assert np.isclose(decoded[1]['SAS_Angle'], -26.2)
+
+   msg = ('SAS11', {'SAS_Stat': 7.0, 'MsgCount': 0.0, 'SAS_Angle': -26.200000000000003, 'SAS_Speed': 0.0, 'CheckSum': 0.0})
+   encoded = dbc_test.encode(*msg)
+   decoded = dbc_test.decode((0x2b0, 0, encoded))
+
+   assert decoded == msg

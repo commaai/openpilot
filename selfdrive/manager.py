@@ -10,21 +10,7 @@ from common.basedir import BASEDIR
 sys.path.append(os.path.join(BASEDIR, "pyextra"))
 os.environ['BASEDIR'] = BASEDIR
 
-if __name__ == "__main__":
-  if os.path.isfile("/init.qcom.rc") \
-      and (not os.path.isfile("/VERSION") or int(open("/VERSION").read()) < 6):
-
-    # update continue.sh before updating NEOS
-    if os.path.isfile(os.path.join(BASEDIR, "scripts", "continue.sh")):
-      from shutil import copyfile
-      copyfile(os.path.join(BASEDIR, "scripts", "continue.sh"), "/data/data/com.termux/files/continue.sh")
-
-    # run the updater
-    print("Starting NEOS updater")
-    subprocess.check_call(["git", "clean", "-xdf"], cwd=BASEDIR)
-    os.system(os.path.join(BASEDIR, "installer", "updater", "updater"))
-    raise Exception("NEOS outdated")
-
+def unblock_stdout():
   # get a non-blocking stdout
   child_pid, child_pty = os.forkpty()
   if child_pid != 0: # parent
@@ -53,6 +39,26 @@ if __name__ == "__main__":
         pass
 
     os._exit(os.wait()[1])
+
+if __name__ == "__main__":
+  neos_update_required = os.path.isfile("/init.qcom.rc") \
+    and (not os.path.isfile("/VERSION") or int(open("/VERSION").read()) < 8)
+  if neos_update_required:
+    # update continue.sh before updating NEOS
+    if os.path.isfile(os.path.join(BASEDIR, "scripts", "continue.sh")):
+      from shutil import copyfile
+      copyfile(os.path.join(BASEDIR, "scripts", "continue.sh"), "/data/data/com.termux/files/continue.sh")
+
+    # run the updater
+    print("Starting NEOS updater")
+    subprocess.check_call(["git", "clean", "-xdf"], cwd=BASEDIR)
+    os.system(os.path.join(BASEDIR, "installer", "updater", "updater"))
+    raise Exception("NEOS outdated")
+  elif os.path.isdir("/data/neoupdate"):
+    from shutil import rmtree
+    rmtree("/data/neoupdate")
+
+  unblock_stdout()
 
 import glob
 import shutil
@@ -83,8 +89,10 @@ managed_processes = {
   "thermald": "selfdrive.thermald",
   "uploader": "selfdrive.loggerd.uploader",
   "controlsd": "selfdrive.controls.controlsd",
+  "plannerd": "selfdrive.controls.plannerd",
   "radard": "selfdrive.controls.radard",
   "ubloxd": "selfdrive.locationd.ubloxd",
+  "mapd": "selfdrive.mapd.mapd",
   "loggerd": ("selfdrive/loggerd", ["./loggerd"]),
   "logmessaged": "selfdrive.logmessaged",
   "tombstoned": "selfdrive.tombstoned",
@@ -92,11 +100,14 @@ managed_processes = {
   "proclogd": ("selfdrive/proclogd", ["./proclogd"]),
   "boardd": ("selfdrive/boardd", ["./boardd"]),   # not used directly
   "pandad": "selfdrive.pandad",
-  "ui": ("selfdrive/ui", ["./ui"]),
+  "ui": ("selfdrive/ui", ["./start.sh"]),
+  "calibrationd": "selfdrive.locationd.calibrationd",
+  "locationd": "selfdrive.locationd.locationd_local",
   "visiond": ("selfdrive/visiond", ["./visiond"]),
   "sensord": ("selfdrive/sensord", ["./sensord"]),
   "gpsd": ("selfdrive/sensord", ["./gpsd"]),
   "updated": "selfdrive.updated",
+  "athena": "selfdrive.athena.athenad",
 }
 android_packages = ("ai.comma.plus.offroad", "ai.comma.plus.frame")
 
@@ -118,18 +129,22 @@ persistent_processes = [
   'uploader',
   'ui',
   'gpsd',
-  'ubloxd',
   'updated',
+  'athena'
 ]
 
 car_started_processes = [
   'controlsd',
+  'plannerd',
   'loggerd',
   'sensord',
   'radard',
+  'calibrationd',
+  'locationd',
   'visiond',
   'proclogd',
-  'orbd',
+  'ubloxd',
+  'mapd',
 ]
 
 def register_managed_process(name, desc, car_started=False):
@@ -298,6 +313,9 @@ def manager_thread():
   cloudlog.info("manager start")
   cloudlog.info({"environ": os.environ})
 
+  # save boot log
+  subprocess.call(["./loggerd", "--bootlog"], cwd=os.path.join(BASEDIR, "selfdrive/loggerd"))
+
   for p in persistent_processes:
     start_managed_process(p)
 
@@ -438,9 +456,8 @@ def main():
     del managed_processes['proclogd']
   if os.getenv("NOCONTROL") is not None:
     del managed_processes['controlsd']
+    del managed_processes['plannerd']
     del managed_processes['radard']
-  if os.getenv("DEFAULTD") is not None:
-    managed_processes["controlsd"] = "selfdrive.controls.defaultd"
 
   # support additional internal only extensions
   try:
@@ -464,9 +481,15 @@ def main():
   if params.get("IsUploadVideoOverCellularEnabled") is None:
     params.put("IsUploadVideoOverCellularEnabled", "1")
   if params.get("IsDriverMonitoringEnabled") is None:
-    params.put("IsDriverMonitoringEnabled", "0")
+    params.put("IsDriverMonitoringEnabled", "1")
   if params.get("IsGeofenceEnabled") is None:
     params.put("IsGeofenceEnabled", "-1")
+  if params.get("SpeedLimitOffset") is None:
+    params.put("SpeedLimitOffset", "0")
+  if params.get("LongitudinalControl") is None:
+    params.put("LongitudinalControl", "0")
+  if params.get("LimitSetSpeed") is None:
+    params.put("LimitSetSpeed", "0")
 
   # is this chffrplus?
   if os.getenv("PASSIVE") is not None:
@@ -512,4 +535,3 @@ if __name__ == "__main__":
   main()
   # manual exit because we are forked
   sys.exit(0)
-

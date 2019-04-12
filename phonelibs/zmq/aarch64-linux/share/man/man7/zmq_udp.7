@@ -1,0 +1,139 @@
+'\" t
+.\"     Title: zmq_udp
+.\"    Author: [see the "AUTHORS" section]
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 02/18/2017
+.\"    Manual: 0MQ Manual
+.\"    Source: 0MQ 4.2.2
+.\"  Language: English
+.\"
+.TH "ZMQ_UDP" "7" "02/18/2017" "0MQ 4\&.2\&.2" "0MQ Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+zmq_udp \- 0MQ UDP multicast and unicast transport
+.SH "SYNOPSIS"
+.sp
+UDP is unreliable protocol transport of data over IP networks\&. UDP support both unicast and multicast communication\&.
+.SH "DESCRIPTION"
+.sp
+UDP transport can only be used with the \fIZMQ_RADIO\fR and \fIZMQ_DISH\fR socket types\&.
+.SH "ADDRESSING"
+.sp
+A 0MQ endpoint is a string consisting of a \fItransport\fR:// followed by an \fIaddress\fR\&. The \fItransport\fR specifies the underlying protocol to use\&. The \fIaddress\fR specifies the transport\-specific address to connect to\&.
+.sp
+For the UDP transport, the transport is udp\&. The meaning of the \fIaddress\fR part is defined below\&.
+.sp
+Binding a socket
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+With \*(Aqudp\*(Aq we can only bind the \*(AqZMQ_DISH\*(Aq socket type\&.
+When binding a socket using _zmq_bind()_ with the \*(Aqudp\*(Aq
+transport the \*(Aqendpoint\*(Aq shall be interpreted as an \*(Aqinterface\*(Aq followed by a
+colon and the UDP port number to use\&.
+
+An \*(Aqinterface\*(Aq may be specified by either of the following:
+
+* The wild\-card `*`, meaning all available interfaces\&.
+* The primary IPv4 address assigned to the interface, in its numeric
+  representation\&.
+* Multicast address in its numeric representation the socket should join\&.
+
+The UDP port number may be specified a numeric value, usually above 1024 on POSIX systems\&.
+
+Connecting a socket
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+With \fIudp\fR we can only connect the \fIZMQ_RADIO\fR socket type\&. When connecting a socket to a peer address using \fIzmq_connect()\fR with the \fIudp\fR transport, the \fIendpoint\fR shall be interpreted as a \fIpeer address\fR followed by a colon and the UDP port number to use\&.
+.sp
+A \fIpeer address\fR may be specified by either of the following:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The IPv4 or IPv6 address of the peer, in its numeric representation\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Multicast address in its numeric representation\&.
+.RE
+.SH "EXAMPLES"
+.PP
+\fBBinding a socket\fR. 
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+//  Unicast \- UDP port 5555 on all available interfaces
+rc = zmq_bind(dish, "udp://*:5555");
+assert (rc == 0);
+//  Unicast \- UDP port 5555 on the local loop\-back interface
+rc = zmq_bind(dish, "udp://127\&.0\&.0\&.1:5555");
+assert (rc == 0);
+//  Multicast \- UDP port 5555 on a Multicast address
+rc = zmq_bind(dish, "udp://239\&.0\&.0\&.1:5555");
+assert (rc == 0);
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+\fBConnecting a socket\fR. 
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+//  Connecting using an Unicast IP address
+rc = zmq_connect(radio, "udp://192\&.168\&.1\&.1:5555");
+assert (rc == 0);
+//  Connecting using a Multicast address"
+rc = zmq_connect(socket, "udp://239\&.0\&.0\&.1:5555);
+assert (rc == 0);
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "SEE ALSO"
+.sp
+\fBzmq_connect\fR(3) \fBzmq_setsockopt\fR(3) \fBzmq_tcp\fR(7) \fBzmq_ipc\fR(7) \fBzmq_inproc\fR(7) \fBzmq_vmci\fR(7) \fBzmq\fR(7)
+.SH "AUTHORS"
+.sp
+This page was written by the 0MQ community\&. To make a change please read the 0MQ Contribution Policy at \m[blue]\fBhttp://www\&.zeromq\&.org/docs:contributing\fR\m[]\&.

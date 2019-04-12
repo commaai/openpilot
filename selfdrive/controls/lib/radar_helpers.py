@@ -6,6 +6,7 @@ import numpy as np
 from common.numpy_fast import clip, interp
 from common.kalman.simple_kalman import KF1D
 
+_LEAD_ACCEL_TAU = 1.5
 NO_FUSION_SCORE = 100 # bad default fusion score
 
 # radar tracks
@@ -31,6 +32,8 @@ _VLEAD_C = [[1.0, 0.0]]
 #_VLEAD_R = 1e3
 #_VLEAD_K = np.matrix([[ 0.05705578], [ 0.03073241]])
 _VLEAD_K = [[ 0.1988689 ], [ 0.28555364]]
+
+RDR_TO_LDR = 2.7
 
 
 class Track(object):
@@ -60,6 +63,7 @@ class Track(object):
 
     if not self.initted:
       self.initted = True
+      self.aLeadTau = _LEAD_ACCEL_TAU
       self.cnt = 1
       self.vision_cnt = 0
       self.vision = False
@@ -92,6 +96,12 @@ class Track(object):
 
     self.vision_score = NO_FUSION_SCORE
 
+    # Learn if constant acceleration
+    if abs(self.aLeadK) < 0.5:
+      self.aLeadTau = _LEAD_ACCEL_TAU
+    else:
+      self.aLeadTau *= 0.9
+
   def update_vision_score(self, dist_to_vision, rel_speed_diff):
     # rel speed is very hard to estimate from vision
     if dist_to_vision < 4.0 and rel_speed_diff < 10.:
@@ -110,8 +120,8 @@ class Track(object):
     # Weigh y higher since radar is inaccurate in this dimension
     return [self.dRel, self.yRel*2, self.vRel]
 
-# ******************* Cluster *******************
 
+# ******************* Cluster *******************
 if platform.machine() == 'aarch64':
   for x in sys.path:
     pp = os.path.join(x, "phonelibs/hierarchy/lib")
@@ -122,6 +132,7 @@ if platform.machine() == 'aarch64':
 else:
   from scipy.cluster import _hierarchy
 
+
 def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
   # supersimplified function to get fast clustering. Got it from scipy
   Z = np.asarray(Z, order='c')
@@ -130,10 +141,10 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
   _hierarchy.cluster_dist(Z, T, float(t), int(n))
   return T
 
-RDR_TO_LDR = 2.7
 
 def mean(l):
-  return sum(l)/len(l)
+  return sum(l) / len(l)
+
 
 class Cluster(object):
   def __init__(self):
@@ -181,6 +192,10 @@ class Cluster(object):
     return mean([t.aLeadK for t in self.tracks])
 
   @property
+  def aLeadTau(self):
+    return mean([t.aLeadTau for t in self.tracks])
+
+  @property
   def vision(self):
     return any([t.vision for t in self.tracks])
 
@@ -213,6 +228,7 @@ class Cluster(object):
       "aLeadK": float(self.aLeadK),
       "status": True,
       "fcw": self.is_potential_fcw(),
+      "aLeadTau": float(self.aLeadTau)
     }
 
   def __str__(self):

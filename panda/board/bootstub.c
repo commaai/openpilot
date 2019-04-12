@@ -51,6 +51,9 @@ void fail() {
 // know where to sig check
 extern void *_app_start[];
 
+// FIXME: sometimes your panda will fail flashing and will quickly blink a single Green LED
+// BOUNTY: $200 coupon on shop.comma.ai or $100 check.
+
 int main() {
   __disable_irq();
   clock_init();

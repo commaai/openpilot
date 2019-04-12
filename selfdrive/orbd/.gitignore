@@ -1,0 +1,8 @@
+orbd
+orbd_cpu
+test/turbocv_profile
+test/turbocv_test
+dspout/*
+dumb_test
+bilinear_lut.h
+orb_lut.h

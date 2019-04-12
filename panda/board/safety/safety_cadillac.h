@@ -125,7 +125,7 @@ const safety_hooks cadillac_hooks = {
   .init = cadillac_init,
   .rx = cadillac_rx_hook,
   .tx = cadillac_tx_hook,
-  .tx_lin = alloutput_tx_lin_hook,
+  .tx_lin = nooutput_tx_lin_hook,
   .ignition = cadillac_ign_hook,
   .fwd = alloutput_fwd_hook,
 };

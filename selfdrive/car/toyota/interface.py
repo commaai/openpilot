@@ -4,7 +4,7 @@ from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
-from selfdrive.car.toyota.carstate import CarState, get_can_parser
+from selfdrive.car.toyota.carstate import CarState, get_can_parser, get_cam_can_parser
 from selfdrive.car.toyota.values import ECU, check_ecu_msgs, CAR
 from selfdrive.swaglog import cloudlog
 
@@ -23,12 +23,16 @@ class CarInterface(object):
     self.gas_pressed_prev = False
     self.brake_pressed_prev = False
     self.can_invalid_count = 0
+    self.cam_can_valid_count = 0
     self.cruise_enabled_prev = False
 
     # *** init the major players ***
     self.CS = CarState(CP)
 
     self.cp = get_can_parser(CP)
+    self.cp_cam = get_cam_can_parser(CP)
+
+    self.forwarding_camera = False
 
     # sending if read only is False
     if sendcan is not None:
@@ -57,7 +61,7 @@ class CarInterface(object):
     ret.safetyModel = car.CarParams.SafetyModels.toyota
 
     # pedal
-    ret.enableCruise = True
+    ret.enableCruise = not ret.enableGasInterceptor
 
     # FIXME: hardcoding honda civic 2016 touring params so they can be used to
     # scale unknown params for other cars
@@ -73,10 +77,11 @@ class CarInterface(object):
     ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
 
     if candidate == CAR.PRIUS:
+      stop_and_go = True
       ret.safetyParam = 66  # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.70
-      ret.steerRatio = 15.59   # unknown end-to-end spec
-      tire_stiffness_factor = 0.7933
+      ret.steerRatio = 15.00   # unknown end-to-end spec
+      tire_stiffness_factor = 0.6371   # hand-tune
       ret.mass = 3045 * CV.LB_TO_KG + std_cargo
       ret.steerKpV, ret.steerKiV = [[0.4], [0.01]]
       ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
@@ -84,6 +89,7 @@ class CarInterface(object):
       ret.steerActuatorDelay = 0.25
 
     elif candidate in [CAR.RAV4, CAR.RAV4H]:
+      stop_and_go = True if (candidate in CAR.RAV4H) else False
       ret.safetyParam = 73  # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.65
       ret.steerRatio = 16.30   # 14.5 is spec end-to-end
@@ -93,6 +99,7 @@ class CarInterface(object):
       ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
 
     elif candidate == CAR.COROLLA:
+      stop_and_go = False
       ret.safetyParam = 100 # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.70
       ret.steerRatio = 17.8
@@ -102,6 +109,7 @@ class CarInterface(object):
       ret.steerKf = 0.00003   # full torque for 20 deg at 80mph means 0.00007818594
 
     elif candidate == CAR.LEXUS_RXH:
+      stop_and_go = True
       ret.safetyParam = 100 # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.79
       ret.steerRatio = 16.  # 14.8 is spec end-to-end
@@ -110,18 +118,48 @@ class CarInterface(object):
       ret.steerKpV, ret.steerKiV = [[0.6], [0.1]]
       ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
 
+    elif candidate in [CAR.CHR, CAR.CHRH]:
+      stop_and_go = True
+      ret.safetyParam = 100
+      ret.wheelbase = 2.63906
+      ret.steerRatio = 13.6
+      tire_stiffness_factor = 0.7933
+      ret.mass = 3300. * CV.LB_TO_KG + std_cargo
+      ret.steerKpV, ret.steerKiV = [[0.723], [0.0428]]
+      ret.steerKf = 0.00006
+
+    elif candidate in [CAR.CAMRY, CAR.CAMRYH]:
+      stop_and_go = True
+      ret.safetyParam = 100
+      ret.wheelbase = 2.82448
+      ret.steerRatio = 13.7
+      tire_stiffness_factor = 0.7933
+      ret.mass = 3400 * CV.LB_TO_KG + std_cargo #mean between normal and hybrid
+      ret.steerKpV, ret.steerKiV = [[0.6], [0.1]]
+      ret.steerKf = 0.00006
+
+    elif candidate in [CAR.HIGHLANDER, CAR.HIGHLANDERH]:
+      stop_and_go = True
+      ret.safetyParam = 100
+      ret.wheelbase = 2.78
+      ret.steerRatio = 16.0
+      tire_stiffness_factor = 0.444 # not optimized yet
+      ret.mass = 4607 * CV.LB_TO_KG + std_cargo #mean between normal and hybrid limited
+      ret.steerKpV, ret.steerKiV = [[0.6], [0.05]]
+      ret.steerKf = 0.00006
+
     ret.steerRateCost = 1.
     ret.centerToFront = ret.wheelbase * 0.44
 
     ret.longPidDeadzoneBP = [0., 9.]
     ret.longPidDeadzoneV = [0., .15]
 
+    #detect the Pedal address
+    ret.enableGasInterceptor = 0x201 in fingerprint
+
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter.
-    if candidate in [CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH]: # rav4 hybrid can do stop and go
-      ret.minEnableSpeed = -1.
-    elif candidate in [CAR.RAV4, CAR.COROLLA]: # TODO: hack ICE to do stop and go
-      ret.minEnableSpeed = 19. * CV.MPH_TO_MS
+    ret.minEnableSpeed = -1. if (stop_and_go or ret.enableGasInterceptor) else 19. * CV.MPH_TO_MS
 
     centerToRear = ret.wheelbase - ret.centerToFront
     # TODO: get actual value, for now starting with reasonable value for
@@ -145,26 +183,34 @@ class CarInterface(object):
     # steer, gas, brake limitations VS speed
     ret.steerMaxBP = [16. * CV.KPH_TO_MS, 45. * CV.KPH_TO_MS]  # breakpoints at 1 and 40 kph
     ret.steerMaxV = [1., 1.]  # 2/3rd torque allowed above 45 kph
-    ret.gasMaxBP = [0.]
-    ret.gasMaxV = [0.5]
     ret.brakeMaxBP = [5., 20.]
     ret.brakeMaxV = [1., 0.8]
 
-    ret.enableCamera = not check_ecu_msgs(fingerprint, candidate, ECU.CAM)
-    ret.enableDsu = not check_ecu_msgs(fingerprint, candidate, ECU.DSU)
-    ret.enableApgs = False #not check_ecu_msgs(fingerprint, candidate, ECU.APGS)
+    ret.enableCamera = not check_ecu_msgs(fingerprint, ECU.CAM)
+    ret.enableDsu = not check_ecu_msgs(fingerprint, ECU.DSU)
+    ret.enableApgs = False #not check_ecu_msgs(fingerprint, ECU.APGS)
+    ret.openpilotLongitudinalControl = ret.enableCamera and ret.enableDsu
     cloudlog.warn("ECU Camera Simulated: %r", ret.enableCamera)
     cloudlog.warn("ECU DSU Simulated: %r", ret.enableDsu)
     cloudlog.warn("ECU APGS Simulated: %r", ret.enableApgs)
+    cloudlog.warn("ECU Gas Interceptor: %r", ret.enableGasInterceptor)
 
     ret.steerLimitAlert = False
+    ret.longitudinalKpBP = [0., 5., 35.]
+    ret.longitudinalKiBP = [0., 35.]
     ret.stoppingControl = False
     ret.startAccel = 0.0
 
-    ret.longitudinalKpBP = [0., 5., 35.]
-    ret.longitudinalKpV = [3.6, 2.4, 1.5]
-    ret.longitudinalKiBP = [0., 35.]
-    ret.longitudinalKiV = [0.54, 0.36]
+    if ret.enableGasInterceptor:
+      ret.gasMaxBP = [0., 9., 35]
+      ret.gasMaxV = [0.2, 0.5, 0.7]
+      ret.longitudinalKpV = [1.2, 0.8, 0.5]
+      ret.longitudinalKiV = [0.18, 0.12]
+    else:
+      ret.gasMaxBP = [0.]
+      ret.gasMaxV = [0.5]
+      ret.longitudinalKpV = [3.6, 2.4, 1.5]
+      ret.longitudinalKiV = [0.54, 0.36]
 
     return ret
 
@@ -175,7 +221,11 @@ class CarInterface(object):
 
     self.cp.update(int(sec_since_boot() * 1e9), False)
 
-    self.CS.update(self.cp)
+    # run the cam can update for 10s as we just need to know if the camera is alive
+    if self.frame < 1000:
+      self.cp_cam.update(int(sec_since_boot() * 1e9), False)
+
+    self.CS.update(self.cp, self.cp_cam)
 
     # create message
     ret = car.CarState.new_message()
@@ -196,7 +246,11 @@ class CarInterface(object):
 
     # gas pedal
     ret.gas = self.CS.car_gas
-    ret.gasPressed = self.CS.pedal_gas > 0
+    if self.CP.enableGasInterceptor:
+    # use interceptor values to disengage on pedal press
+      ret.gasPressed = self.CS.pedal_gas > 15
+    else:
+      ret.gasPressed = self.CS.pedal_gas > 0
 
     # brake pedal
     ret.brake = self.CS.user_brake
@@ -211,20 +265,20 @@ class CarInterface(object):
     ret.steeringPressed = self.CS.steer_override
 
     # cruise state
-    ret.cruiseState.enabled = self.CS.pcm_acc_status != 0
+    ret.cruiseState.enabled = self.CS.pcm_acc_active
     ret.cruiseState.speed = self.CS.v_cruise_pcm * CV.KPH_TO_MS
     ret.cruiseState.available = bool(self.CS.main_on)
     ret.cruiseState.speedOffset = 0.
-    if self.CP.carFingerprint == CAR.RAV4H:
-      # ignore standstill in hybrid rav4, since pcm allows to restart without
+
+    if self.CP.carFingerprint in [CAR.RAV4H, CAR.HIGHLANDERH, CAR.HIGHLANDER] or self.CP.enableGasInterceptor:
+      # ignore standstill in hybrid vehicles, since pcm allows to restart without
       # receiving any special command
+      # also if interceptor is detected
       ret.cruiseState.standstill = False
     else:
       ret.cruiseState.standstill = self.CS.pcm_acc_status == 7
 
-    # TODO: button presses
     buttonEvents = []
-
     if self.CS.left_blinker_on != self.CS.prev_left_blinker_on:
       be = car.CarState.ButtonEvent.new_message()
       be.type = 'leftBlinker'
@@ -254,6 +308,12 @@ class CarInterface(object):
         events.append(create_event('commIssue', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     else:
       self.can_invalid_count = 0
+
+    if self.CS.cam_can_valid:
+      self.cam_can_valid_count += 1
+      if self.cam_can_valid_count >= 5:
+        self.forwarding_camera = True
+
     if not ret.gearShifter == 'drive' and self.CP.enableDsu:
       events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if ret.doorOpen:
@@ -308,7 +368,8 @@ class CarInterface(object):
 
     self.CC.update(self.sendcan, c.enabled, self.CS, self.frame,
                    c.actuators, c.cruiseControl.cancel, c.hudControl.visualAlert,
-                   c.hudControl.audibleAlert)
+                   c.hudControl.audibleAlert, self.forwarding_camera,
+                   c.hudControl.leftLaneVisible, c.hudControl.rightLaneVisible, c.hudControl.leadVisible)
 
     self.frame += 1
     return False
