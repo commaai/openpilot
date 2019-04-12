@@ -6,7 +6,6 @@ from selfdrive.kegman_conf import kegman_conf
 from cereal import car
 
 _DT = 0.01    # 100Hz
-_NOISE_THRESHOLD = 1.2
 
 def get_steer_max(CP, v_ego):
   return interp(v_ego, CP.steerMaxBP, CP.steerMaxV)
@@ -30,12 +29,6 @@ class LatControl(object):
     self.angle_ff_gain = 1.0
     self.rate_ff_gain = 0.01
     self.average_angle_steers = 0.
-    self.angle_steers_noise = _NOISE_THRESHOLD
-    self.angle_steers_des_noise = _NOISE_THRESHOLD
-    self.angle_error_noise =_NOISE_THRESHOLD
-    self.prev_angle_steers = 0.0
-    self.prev_angle_steers_des = 0.0
-    self.prev_error = 0.0
     self.angle_ff_bp = [[0.5, 5.0],[0.0, 1.0]]
 
     KpV = [interp(25.0, CP.steerKpBP, CP.steerKpV)]
@@ -54,6 +47,7 @@ class LatControl(object):
         self.steerKiV = np.array([float(kegman.conf['Ki'])])
         self.total_desired_projection = max(0.0, float(kegman.conf['dampMPC']) + float(kegman.conf['reactMPC']))
         self.desired_smoothing = max(1.0, float(kegman.conf['dampMPC']) / _DT)
+        self.rate_ff_gain = float(kegman.conf['rateFF'])
         self.gernbySteer = (self.total_desired_projection > 0 or self.desired_smoothing > 1)
 
         # Eliminate break-points, since they aren't needed (and would cause problems for resonance)
@@ -62,9 +56,8 @@ class LatControl(object):
         self.pid._k_i = ([0.], KiV)
         self.pid._k_p = ([0.], KpV)
         self.standard_ff_ratio = 0.0
-        print("angle gain: %1.1f  steering noise: %1.2f  error noise: %1.2f  desired noise: %1.2f  rate gain: %1.7f" % (self.angle_ff_gain, self.angle_steers_noise, self.angle_error_noise, self.angle_steers_des_noise, self.rate_ff_gain))
+        print(self.rate_ff_gain, self.angle_ff_gain)
       else:
-        print(self.angle_ff_gain, self.angle_ff_ratio, self.total_desired_projection, self.desired_smoothing, self.gernbySteer)
         self.gernbySteer = False
         self.standard_ff_ratio = 1.0
         self.angle_ff_ratio = 0.0
@@ -74,29 +67,11 @@ class LatControl(object):
     self.pid.reset()
 
   def adjust_angle_gain(self):
-    if self.pid.i > self.previous_integral:
-      if self.pid.f > 0 and self.pid.i > 0:
-        self.angle_ff_gain *= 1.0001
-      else:
-        self.angle_ff_gain *= 0.9999
-    elif self.pid.i < self.previous_integral:
-      if self.pid.f < 0 and self.pid.i < 0:
-        self.angle_ff_gain *= 1.0001
-      else:
-        self.angle_ff_gain *= 0.9999
-    self.previous_integral = self.pid.i
-
-  def adjust_rate_gain(self, angle_steers, angle_steers_des):
-    self.angle_steers_noise += 0.0001 * ((angle_steers - self.prev_angle_steers)**2 - self.angle_steers_noise)
-    self.angle_steers_des_noise += 0.0001 * ((angle_steers_des - self.prev_angle_steers_des)**2 - self.angle_steers_des_noise)
-    self.angle_error_noise += 0.0001 * ((angle_steers_des - angle_steers)**2 - self.angle_error_noise)
-    self.prev_angle_steers = angle_steers
-    self.prev_angle_steers_des = angle_steers_des
-    if max(self.angle_steers_noise, self.angle_steers_des_noise, self.angle_error_noise) > _NOISE_THRESHOLD:
-      self.rate_ff_gain *= 0.9999
+    if (self.pid.f > 0) == (self.pid.i > 0) and abs(self.pid.i) >= abs(self.previous_integral):
+      self.angle_ff_gain *= 1.00001
     else:
-      self.rate_ff_gain *= 1.0001
-    if self.rate_ff_gain > 0.02: self.rate_ff_gain = 0.02
+      self.angle_ff_gain *= 0.9999
+    self.previous_integral = self.pid.i
 
   def update(self, active, v_ego, angle_steers, steer_override, CP, VM, path_plan):
 
@@ -143,10 +118,9 @@ class LatControl(object):
             self.adjust_angle_gain()
           else:
             self.previous_integral = self.pid.i
-            self.adjust_rate_gain(angle_steers, path_plan.angleSteers)
 
     self.sat_flag = self.pid.saturated
-    self.average_angle_steers += 0.01 * (angle_steers - self.average_angle_steers)
+    self.average_angle_steers += 0.1 * (angle_steers - self.average_angle_steers)
 
     if CP.steerControlType == car.CarParams.SteerControlType.torque:
       return float(output_steer), float(path_plan.angleSteers)
