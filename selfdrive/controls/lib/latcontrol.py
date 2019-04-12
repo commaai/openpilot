@@ -31,6 +31,11 @@ class LatControl(object):
     self.rate_ff_gain = 0.01
     self.average_angle_steers = 0.
     self.angle_steers_noise = _NOISE_THRESHOLD
+    self.angle_steers_des_noise = _NOISE_THRESHOLD
+    self.angle_error_noise =_NOISE_THRESHOLD
+    self.prev_angle_steers = 0.0
+    self.prev_angle_steers_des = 0.0
+    self.prev_error = 0.0
     self.angle_ff_bp = [[0.5, 5.0],[0.0, 1.0]]
 
     KpV = [interp(25.0, CP.steerKpBP, CP.steerKpV)]
@@ -57,7 +62,7 @@ class LatControl(object):
         self.pid._k_i = ([0.], KiV)
         self.pid._k_p = ([0.], KpV)
         self.standard_ff_ratio = 0.0
-        print(self.angle_ff_gain, self.rate_ff_gain, self.total_desired_projection, self.desired_smoothing, self.gernbySteer)
+        print("angle gain: %1.1f  steering noise: %1.2f  error noise: %1.2f  desired noise: %1.2f  rate gain: %1.7f" % (self.angle_ff_gain, self.angle_steers_noise, self.angle_error_noise, self.angle_steers_des_noise, self.rate_ff_gain))
       else:
         print(self.angle_ff_gain, self.angle_ff_ratio, self.total_desired_projection, self.desired_smoothing, self.gernbySteer)
         self.gernbySteer = False
@@ -81,12 +86,17 @@ class LatControl(object):
         self.angle_ff_gain *= 0.9999
     self.previous_integral = self.pid.i
 
-  def adjust_rate_gain(self, angle_steers):
-    self.angle_steers_noise += 0.0001 * ((angle_steers - self.average_angle_steers)**2 - self.angle_steers_noise)
-    if self.angle_steers_noise > _NOISE_THRESHOLD:
+  def adjust_rate_gain(self, angle_steers, angle_steers_des):
+    self.angle_steers_noise += 0.0001 * ((angle_steers - self.prev_angle_steers)**2 - self.angle_steers_noise)
+    self.angle_steers_des_noise += 0.0001 * ((angle_steers_des - self.prev_angle_steers_des)**2 - self.angle_steers_des_noise)
+    self.angle_error_noise += 0.0001 * ((angle_steers_des - angle_steers)**2 - self.angle_error_noise)
+    self.prev_angle_steers = angle_steers
+    self.prev_angle_steers_des = angle_steers_des
+    if max(self.angle_steers_noise, self.angle_steers_des_noise, self.angle_error_noise) > _NOISE_THRESHOLD:
       self.rate_ff_gain *= 0.9999
     else:
       self.rate_ff_gain *= 1.0001
+    if self.rate_ff_gain > 0.02: self.rate_ff_gain = 0.02
 
   def update(self, active, v_ego, angle_steers, steer_override, CP, VM, path_plan):
 
@@ -128,12 +138,12 @@ class LatControl(object):
         output_steer = self.pid.update(self.dampened_desired_angle, angle_steers, check_saturation=(v_ego > 10),
                                       override=steer_override, feedforward=steer_feedforward, speed=v_ego, deadzone=deadzone)
 
-        if self.gernbySteer and v_ego > 10.0:
+        if self.gernbySteer and not steer_override and v_ego > 10.0:
           if abs(angle_steers) > (self.angle_ff_bp[0][1] / 2.0):
             self.adjust_angle_gain()
           else:
             self.previous_integral = self.pid.i
-            self.adjust_rate_gain(angle_steers)
+            self.adjust_rate_gain(angle_steers, path_plan.angleSteers)
 
     self.sat_flag = self.pid.saturated
     self.average_angle_steers += 0.01 * (angle_steers - self.average_angle_steers)

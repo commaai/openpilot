@@ -392,7 +392,7 @@ struct Live100Data {
   uiSteer @9 :Float32;
   ufSteer @34 :Float32;
   angleFFRatio @52 :Float32;
-  standardFFRatio @58 :Float32;
+  standardFFRatio @60 :Float32;
   rateFFGain @53 :Float32;
   angleFFGain @54 :Float32;
   aTargetMinDEPRECATED @10 :Float32;
@@ -404,6 +404,8 @@ struct Live100Data {
   dampAngleSteersDes @55 :Float32;
   dampRateSteersDes @56 :Float32;
   angleSteersNoise @57 :Float32;
+  angleSteersDesNoise @58 :Float32;
+  angleErrorNoise @59 :Float32;
   curvature @37 :Float32;       # path curvature from vehicle model
   hudLeadDEPRECATED @14 :Int32;
   cumLagMs @15 :Float32;

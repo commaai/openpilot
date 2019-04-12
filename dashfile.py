@@ -44,7 +44,7 @@ def main(rate=100):
     print("opened")
     dash_writer = csv.writer(dash_file, delimiter=',', quotechar='', quoting=csv.QUOTE_NONE)
     print("initialized")
-    dash_writer.writerow(['ff_rate','ff_angle', 'angleGain','rateGain','actualNoise','angle_steers_des','angle_steers','dampened_angle_steers_des','v_ego','steer_override','p','i','f','time'])
+    dash_writer.writerow(['ff_rate','ff_angle', 'angleGain','rateGain','actualNoise', 'desiredNoise', 'errorNoise','angle_steers_des','angle_steers','dampened_angle_steers_des','v_ego','steer_override','p','i','f','time'])
     print("first row")
 
     while 1:
@@ -73,6 +73,8 @@ def main(rate=100):
                                     str(round(l100.live100.angleFFGain, 2)),
                                     str(round(l100.live100.rateFFGain, 5)),
                                     str(round(l100.live100.angleSteersNoise, 2)),
+                                    str(round(l100.live100.angleSteersDesNoise, 2)),
+                                    str(round(l100.live100.angleErrorNoise, 2)),
                                     str(round(l100.live100.angleSteersDes, 2)),
                                     str(round(l100.live100.angleSteers, 2)),
                                     str(round(l100.live100.dampAngleSteersDes, 2)),

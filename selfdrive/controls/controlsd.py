@@ -354,6 +354,8 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
     "angleSteersDes": float(path_plan.pathPlan.angleSteers),
     "dampAngleSteersDes": float(LaC.dampened_desired_angle),
     "angleSteersNoise": LaC.angle_steers_noise,
+    "angleSteersDesNoise": LaC.angle_steers_des_noise,
+    "angleErrorNoise": LaC.angle_error_noise,
     "upSteer": float(LaC.pid.p),
     "uiSteer": float(LaC.pid.i),
     "ufSteer": float(LaC.pid.f),
