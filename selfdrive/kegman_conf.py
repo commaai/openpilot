@@ -74,10 +74,10 @@ class kegman_conf():
     try:
       with lock:
         with open('/data/kegman.json', 'w') as f:
-          json.dump(self.config, f, indent=2, sort_keys=True)
+          json.dump(config, f, indent=2, sort_keys=True)
           os.chmod("/data/kegman.json", 0o764)
     except IOError:
       os.mkdir('/data')
       with open('/data/kegman.json', 'w') as f:
-        json.dump(self.config, f, indent=2, sort_keys=True)
+        json.dump(config, f, indent=2, sort_keys=True)
         os.chmod("/data/kegman.json", 0o764)
