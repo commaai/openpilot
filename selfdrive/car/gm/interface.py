@@ -190,6 +190,7 @@ class CarInterface(object):
     ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
     ret.steerRateCost = 1.0
     ret.steerControlType = car.CarParams.SteerControlType.torque
+    ret.rateFFGain = 0.01
 
     return ret
 

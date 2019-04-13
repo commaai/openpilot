@@ -61,6 +61,7 @@ class CarInterface(object):
     ret.tireStiffnessFront = 1e6    # very stiff to neglect slip
     ret.tireStiffnessRear = 1e6     # very stiff to neglect slip
     ret.steerRatioRear = 0.
+    ret.rateFFGain = 0.01
 
     ret.steerMaxBP = [0.]
     ret.steerMaxV = [0.]  # 2/3rd torque allowed above 45 kph

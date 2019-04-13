@@ -382,7 +382,7 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
 
   if (rk.frame % 36000) == 0:    # update angle offset every 6 minutes
     params.put("ControlsParams", json.dumps({'angle_model_bias': angle_model_bias,
-              'angle_ff_gain': LaC.angle_ff_gain, 'rate_ff_gain': LaC.rate_ff_gain}))
+              'angle_ff_gain': LaC.angle_ff_gain}))
   return CC
 
 
@@ -472,7 +472,6 @@ def controlsd_thread(gctx=None, rate=100):
       controls_params = json.loads(controls_params)
       angle_model_bias = controls_params['angle_model_bias']
       LaC.angle_ff_gain = controls_params['angle_ff_gain']
-      LaC.rate_ff_gain = controls_params['rate_ff_gain']
     except (ValueError, KeyError):
       pass
 
