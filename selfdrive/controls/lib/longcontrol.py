@@ -105,13 +105,14 @@ class LongControl(object):
       x = [0., 9., 35.]  # default BP values
 
     accel = interp(v_ego, x, y)
+    accel = .2
 
     if dynamic and v_rel is not None:  # dynamic gas profile specific operations, and if lead
-      with open("/data/long_control_test.txt", "a") as f:
-        f.write(str(v_rel)+"\n")
       if (v_ego) < 8.94086:  # if under 20 mph
-        x = [0.0, 0.61945, 1.15771, 1.61479, 1.99067, 2.28537, 2.49888, 2.6312, 2.68224]
-        y = [-0.195, -0.19195, -0.18279, -0.16752, -0.14615, -0.11868, -0.08509, -0.0454, 0]
+        #x = [0.0, 0.61945, 1.15771, 1.61479, 1.99067, 2.28537, 2.49888, 2.6312, 2.68224]
+        #y = [-0.195, -0.19195, -0.18279, -0.16752, -0.14615, -0.11868, -0.08509, -0.0454, 0]
+        x = [0.0]
+        y = [-.199]
         accel += interp(v_rel, x, y)
       else:
         x = [-0.89408, 0, 0.89408, 4.4704]
@@ -140,9 +141,6 @@ class LongControl(object):
     else:
       vRel = None
       dRel = None
-
-    with open("/data/vRel.txt", "a") as f:
-      f.write(str(vRel) + "\n")
 
     #gas_max = interp(v_ego, CP.gasMaxBP, CP.gasMaxV)
     gas_max = self.dynamic_gas(v_ego, vRel, dRel, gasinterceptor, gasbuttonstatus)
