@@ -1,5 +1,7 @@
 import json
 import os
+import threading
+lock = threading.Lock()
 
 class kegman_conf():
   def __init__(self):
@@ -70,9 +72,10 @@ class kegman_conf():
 
   def write_config(self, config):
     try:
-      with open('/data/kegman.json', 'w') as f:
-        json.dump(self.config, f, indent=2, sort_keys=True)
-        os.chmod("/data/kegman.json", 0o764)
+      with lock:
+        with open('/data/kegman.json', 'w') as f:
+          json.dump(self.config, f, indent=2, sort_keys=True)
+          os.chmod("/data/kegman.json", 0o764)
     except IOError:
       os.mkdir('/data')
       with open('/data/kegman.json', 'w') as f:
