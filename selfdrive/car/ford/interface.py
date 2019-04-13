@@ -79,6 +79,7 @@ class CarInterface(object):
     ret.steerRateCost = 1.0
     ret.steerMPCReactTime = 0.025     # increase total MPC projected time by 25 ms
     ret.steerMPCDampTime = 0.25       # dampen desired angle over 250ms (5 mpc cycles)
+    ret.rateFFGain = 0.01
 
     f = 1.2
     tireStiffnessFront_civic *= f

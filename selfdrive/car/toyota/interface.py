@@ -74,6 +74,7 @@ class CarInterface(object):
     tireStiffnessRear_civic = 202500
     ret.steerMPCReactTime = 0.025     # increase total MPC projected time by 25 ms
     ret.steerMPCDampTime = 0.25       # dampen desired angle over 250ms (5 mpc cycles)
+    ret.rateFFGain = 0.01
 
     ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
     ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
