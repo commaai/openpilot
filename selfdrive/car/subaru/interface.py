@@ -51,7 +51,7 @@ class CarInterface(object):
     ret.steerLimitAlert = True
     ret.enableCamera = True
     ret.steerMPCReactTime = 0.025     # increase total MPC projected time by 25 ms
-    ret.steerMPCDampTime = 0.25       # dampen desired angle over 250ms (5 mpc cycles)
+    ret.steerMPCDampTime = 0.15       # dampen desired angle over 250ms (5 mpc cycles)
     ret.rateFFGain = 0.01
 
     std_cargo = 136
