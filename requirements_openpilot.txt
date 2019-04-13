@@ -23,6 +23,7 @@ enum34==1.1.6
 evdev==0.6.1
 fastcluster==1.1.20
 filterpy==1.2.4
+hexdump
 ipaddress==1.0.16
 json-rpc==1.12.1
 libusb1==1.5.0
@@ -30,6 +31,7 @@ lmdb==0.92
 mpmath==1.0.0
 nose==1.3.7
 numpy==1.11.1
+opencv-python==3.4.0.12
 pause==0.1.2
 py==1.4.31
 pyOpenSSL==16.0.0
@@ -39,6 +41,7 @@ pycapnp==0.6.3
 pycparser==2.18
 pycrypto==2.6.1
 pyflakes==1.6.0
+pylint==1.8.3
 pyopencl==2016.1
 pyparsing==2.1.10
 #pypcap==1.1.5 needs extra dependencies and is not used
