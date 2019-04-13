@@ -105,18 +105,19 @@ class LongControl(object):
       x = [0., 9., 35.]  # default BP values
 
     accel = interp(v_ego, x, y)
+
     if dynamic and v_rel is not None:  # dynamic gas profile specific operations, and if lead
-      if (v_ego) < 6.7056:  # if under 15 mph
-        x = [0.0, 0.3072, 0.5173, 0.9337, 1.7882]
-        y = [-0.125, -0.0799, -0.0463, -0.0171, 0]
-        accel = accel + interp(v_rel, x, y)
+      if (v_ego) < 8.94086:  # if under 20 mph
+        x = [0.0, 1.34112, 2.68224]
+        y = [-0.185, -0.165, 0]
+        accel += interp(v_rel, x, y)
       else:
         x = [-0.89408, 0, 0.89408, 4.4704]
         y = [-.05, 0, .005, .02]
-        accel = accel + interp(v_rel, x, y)
+        accel += interp(v_rel, x, y)
 
 
-    min_return = 0.05
+    min_return = 0.01
     max_return = 1.0
     return round(max(min(accel, max_return), min_return), 4)  # ensure we return a value between range
 
