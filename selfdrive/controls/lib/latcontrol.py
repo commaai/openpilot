@@ -4,7 +4,6 @@ from cereal import car
 
 _DT = 0.01    # 100Hz
 _DT_MPC = 0.05  # 20Hz
-_NOISE_THRESHOLD = 1.2
 
 
 def get_steer_max(CP, v_ego):
@@ -21,32 +20,17 @@ class LatControl(object):
     self.angle_ff_ratio = 0.0
     self.angle_ff_gain = 1.0
     self.rate_ff_gain = 0.01
-    self.average_angle_steers = 0.
-    self.angle_steers_noise = _NOISE_THRESHOLD
     self.angle_ff_bp = [[0.5, 5.0],[0.0, 1.0]]
     
   def reset(self):
     self.pid.reset()
     
   def adjust_angle_gain(self):
-    if self.pid.i > self.previous_integral:
-      if self.pid.f > 0 and self.pid.i > 0:
-        self.angle_ff_gain *= 1.0001
-      else:
-        self.angle_ff_gain *= 0.9999
-    elif self.pid.i < self.previous_integral:
-      if self.pid.f < 0 and self.pid.i < 0:
-        self.angle_ff_gain *= 1.0001
-      else:
-        self.angle_ff_gain *= 0.9999
-    self.previous_integral = self.pid.i
-
-  def adjust_rate_gain(self, angle_steers):
-    self.angle_steers_noise += 0.0001 * ((angle_steers - self.average_angle_steers)**2 - self.angle_steers_noise)
-    if self.angle_steers_noise > _NOISE_THRESHOLD:
-      self.rate_ff_gain *= 0.9999
+    if (self.pid.f > 0) == (self.pid.i > 0) and abs(self.pid.i) >= abs(self.previous_integral):
+      self.angle_ff_gain *= 1.00001
     else:
-      self.rate_ff_gain *= 1.0001
+      self.angle_ff_gain *= 0.9999
+    self.previous_integral = self.pid.i
 
   def update(self, active, v_ego, angle_steers, steer_override, CP, VM, path_plan):
     if v_ego < 0.3 or not active:
@@ -76,14 +60,12 @@ class LatControl(object):
             self.adjust_angle_gain()
           else:
             self.previous_integral = self.pid.i
-            self.adjust_rate_gain(angle_steers)
         
       deadzone = 0.0
       output_steer = self.pid.update(self.angle_steers_des, angle_steers, check_saturation=(v_ego > 10), override=steer_override,
                                      feedforward=steer_feedforward, speed=v_ego, deadzone=deadzone)
     
     self.sat_flag = self.pid.saturated
-    self.average_angle_steers += 0.01 * (angle_steers - self.average_angle_steers)
     return output_steer, float(self.angle_steers_des)    
     
     # ALCA works better with the non-interpolated angle

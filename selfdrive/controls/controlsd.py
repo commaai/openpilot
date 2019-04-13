@@ -491,8 +491,8 @@ def controlsd_thread(gctx=None, rate=100):
     try:
       controls_params = json.loads(controls_params)
       angle_model_bias = controls_params['angle_model_bias']
-      LaC.angle_ff_gain = controls_params['angle_ff_gain']
-      LaC.rate_ff_gain = controls_params['rate_ff_gain']
+      LaC.angle_ff_gain = max(1.0, controls_params['angle_ff_gain'])
+      LaC.rate_ff_gain = min(0.01, controls_params['rate_ff_gain'])
     except (ValueError, KeyError):
       pass
 
