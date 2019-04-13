@@ -492,6 +492,8 @@ class CarState(object):
       self.generic_toggle = bool(cp.vl["LIGHT_STALK"]['AUTO_HIGH_BEAM'])
     self.tsgn1 = cp_cam.vl["RSA1"]['TSGN1']
     self.spdval1 = cp_cam.vl["RSA1"]['SPDVAL1']
+    if self.spdval1 > 0:
+      print self.spdval1
     self.splsgn1 = cp_cam.vl["RSA1"]['SPLSGN1']
     self.tsgn2 = cp_cam.vl["RSA1"]['TSGN2']
     self.spdval2 = cp_cam.vl["RSA1"]['SPDVAL2']
