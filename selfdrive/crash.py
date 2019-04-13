@@ -21,40 +21,49 @@ else:
   from raven import Client
   from raven.transport.http import HTTPTransport
 
-  error_tags = {'dirty': dirty, 'branch': 'release2'}
+  error_tags = {'dirty': dirty, 'branch': 'unknown'}
 
   try:
     with open("/data/data/ai.comma.plus.offroad/files/persistStore/persist-auth", "r") as f:
       auth = json.loads(f.read())
+    f.close()
     auth = json.loads(auth['commaUser'])
-    error_tags['username'] = auth['username']
+    error_tags['username'] = auth['username'].decode('utf-8', 'ignore')
     error_tags['email'] = auth['email']
   except:
     pass
 
-  client = Client('https://137e8e621f114f858f4c392c52e18c6d:8aba82f49af040c8aac45e95a8484970@sentry.io/1404547',
-                  install_sys_hook=False, transport=HTTPTransport, release=version, tags=error_tags)
+  logging_data = {"branch": "/data/params/d/GitBranch", "commit": "/data/params/d/GitCommit", "remote": "/data/params/d/GitRemote"}
 
-  try:
-    client.user_context(error_tags['username'])
-  except:
-    pass
+  for key in logging_data:
+    try:
+      with open(logging_data[key], "r") as f:
+        error_tags[key] = str(f.read())
+    except:
+      pass
+
+  dsns = ['https://137e8e621f114f858f4c392c52e18c6d:8aba82f49af040c8aac45e95a8484970@sentry.io/1404547',
+          'https://c58740a8bcc54e3c86dec0cbc8a4ac82:37f4566213e9478080043b693e098942@sentry.io/1405746']
+
+  clients = [Client(dsn, install_sys_hook=False, transport=HTTPTransport, release=version, tags=error_tags) for dsn in dsns]
+
 
   def capture_exception(*args, **kwargs):
-    client.captureException(*args, **kwargs)
-    cloudlog.error("crash", exc_info=kwargs.get('exc_info', 1))
+    for client in clients:
+      client.captureException(*args, **kwargs)
+      cloudlog.error("crash", exc_info=kwargs.get('exc_info', 1))
 
   def capture_warning(warning_string):
-    client.captureMessage(warning_string, level='warning')
+    [client.captureMessage(warning_string, level='warning') for client in clients]
   
   def capture_info(info_string):
-    client.captureMessage(info_string, level='info')
+    [client.captureMessage(info_string, level='info') for client in clients]
 
   def bind_user(**kwargs):
-    client.user_context(kwargs)
+    [client.user_context(kwargs) for client in clients]
 
   def bind_extra(**kwargs):
-    client.extra_context(kwargs)
+    [client.extra_context(kwargs) for client in clients]
 
   def install():
     # installs a sys.excepthook

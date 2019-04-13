@@ -249,21 +249,6 @@ def state_control(plan, path_plan, CS, CP, state, events, v_cruise_kph, v_cruise
   except AttributeError:
     gasinterceptor = False
 
-  if gasinterceptor:
-    if CS.gasbuttonstatus == 0:
-      CP.gasMaxV = [0.2, 0.5, 0.7]
-    elif CS.gasbuttonstatus == 1:
-      CP.gasMaxV = [0.25, 0.9, 0.9]
-    elif CS.gasbuttonstatus == 2:
-      CP.gasMaxV = [0.2, 0.2, 0.2]    
-  else:
-    if CS.gasbuttonstatus == 0:
-      CP.gasMaxV = [0.5, 0.7, 0.9]
-    elif CS.gasbuttonstatus == 1:
-      CP.gasMaxV = [0.7, 0.9, 0.9]
-    elif CS.gasbuttonstatus == 2:
-      CP.gasMaxV = [0.2, 0.2, 0.2]
-
   cur_time = sec_since_boot()  # TODO: This won't work in replay
   mpc_time = plan.l20MonoTime / 1e9
   _DT = 0.01 # 100Hz
@@ -274,7 +259,7 @@ def state_control(plan, path_plan, CS, CP, state, events, v_cruise_kph, v_cruise
 
   # Gas/Brake PID loop
   actuators.gas, actuators.brake = LoC.update(active, CS.vEgo, CS.brakePressed, CS.standstill, CS.cruiseState.standstill,
-                                              v_cruise_kph, v_acc_sol, plan.vTargetFuture, a_acc_sol, CP)
+                                              v_cruise_kph, v_acc_sol, plan.vTargetFuture, a_acc_sol, CP, gasinterceptor, CS.gasbuttonstatus)
   # Steering PID loop and lateral MPC
   actuators.steer, actuators.steerAngle = LaC.update(active, CS.vEgo, CS.steeringAngle, 
                                                      CS.steeringPressed, CP, VM, path_plan)

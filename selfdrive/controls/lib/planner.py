@@ -15,7 +15,6 @@ from selfdrive.controls.lib.longcontrol import LongCtrlState, MIN_CAN_SPEED
 from selfdrive.controls.lib.fcw import FCWChecker
 from selfdrive.controls.lib.long_mpc import LongitudinalMpc
 
-from scipy import interpolate
 from selfdrive.kegman_conf import kegman_conf
 
 kegman = kegman_conf()
@@ -34,7 +33,7 @@ _A_CRUISE_MIN_BP = [   0., 5.,  10., 20.,  40.]
 
 # need fast accel at very low speed for stop and go
 # make sure these accelerations are smaller than mpc limits
-_A_CRUISE_MAX_V = [1.1, 1.1, .8, .5, .3]
+_A_CRUISE_MAX_V = [3.5, 3.0, 1.5, .5, .3]
 _A_CRUISE_MAX_V_FOLLOWING = [1.6, 1.6, 1.2, .7, .3]
 _A_CRUISE_MAX_BP = [0.,  5., 10., 20., 40.]
 
@@ -224,13 +223,8 @@ class Planner(object):
     self.mpc1.set_cur_state(self.v_acc_start, self.a_acc_start)
     self.mpc2.set_cur_state(self.v_acc_start, self.a_acc_start)
 
-    try:
-      relative_velocity = self.lead_1.vRel
-    except: #if no lead car
-      relative_velocity = 0.0
-
-    self.mpc1.update(CS, lead_1, v_cruise_setpoint, relative_velocity)
-    self.mpc2.update(CS, lead_2, v_cruise_setpoint, relative_velocity)
+    self.mpc1.update(CS, lead_1, v_cruise_setpoint)
+    self.mpc2.update(CS, lead_2, v_cruise_setpoint)
 
     self.choose_solution(v_cruise_setpoint, enabled)
 
@@ -266,6 +260,7 @@ class Planner(object):
     plan_send.plan.events = events
     plan_send.plan.mdMonoTime = md.logMonoTime
     plan_send.plan.l20MonoTime = live20.logMonoTime
+
 
     # longitudal plan
     plan_send.plan.vCruise = self.v_cruise

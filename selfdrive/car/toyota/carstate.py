@@ -154,8 +154,10 @@ class CarState(object):
     self.Angle = [0, 5, 10, 15,20,25,30,35,60,100,180,270,500]
     self.Angle_Speed = [255,160,100,80,70,60,55,50,40,33,27,17,12]
     #labels for gas mode
-    self.gasMode = 0
-    self.gasLabels = ["normal","sport","eco"]
+    self.gasMode = int(self.kegman.conf['lastGasMode'])
+    self.sloMode = int(self.kegman.conf['lastSloMode'])
+    self.sloLabels = ["offset","normal"]
+    self.gasLabels = ["smooth","sport","eco"]
     #labelslabels for ALCA modes
     self.alcaLabels = ["MadMax","Normal","Wifey","off"]
     self.alcaMode = int(self.kegman.conf['lastALCAMode'])     # default to last ALCAmode on startup
@@ -252,7 +254,7 @@ class CarState(object):
     btns = []
     btns.append(UIButton("sound", "SND", 0, "", 0))
     btns.append(UIButton("alca", "ALC", 1, self.alcaLabels[self.alcaMode], 1))
-    btns.append(UIButton("slow", "SLO", 1, "", 2))
+    btns.append(UIButton("slow", "SLO", 1, self.sloLabels[self.sloMode], 2))
     btns.append(UIButton("lka", "LKA", 1, "", 3))
     btns.append(UIButton("tr", "TR", 0, "", 4))
     btns.append(UIButton("gas", "GAS", 1, self.gasLabels[self.gasMode], 5))
@@ -273,12 +275,17 @@ class CarState(object):
           self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
           self.cstm_btns.hasChanges = True
           if self.alcaMode == 3:
-            self.cstm_btns.set_button_status("alca", 0)
+            self.cstm_btns.set_button_status("alca", 0) 
       elif (id == 5) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="gas":
           if self.cstm_btns.btns[id].btn_label2 == self.gasLabels[self.gasMode]:
             self.gasMode = (self.gasMode + 1 ) % 3
+            self.kegman.conf['lastGasMode'] = str(self.gasMode)   # write last GasMode setting to file
+            self.kegman.write_config(self.kegman.conf)
           else:
             self.gasMode = 0
+            self.kegman.conf['lastGasMode'] = str(self.gasMode)   # write last GasMode setting to file
+            self.kegman.write_config(self.kegman.conf)
+
           self.cstm_btns.btns[id].btn_label2 = self.gasLabels[self.gasMode]
           self.cstm_btns.hasChanges = True
       else:
@@ -435,8 +442,14 @@ class CarState(object):
     else:
       if self.cstm_btns.get_button_status("slow") == 0:
         self.acc_slow_on = False
+        self.sloMode = 0
+        self.kegman.conf['lastSloMode'] = str(self.sloMode)   # write last SloMode setting to file
+        self.kegman.write_config(self.kegman.conf)
       else:
         self.acc_slow_on = True
+        self.sloMode = 1
+        self.kegman.conf['lastSloMode'] = str(self.sloMode)   # write last SloMode setting to file
+        self.kegman.write_config(self.kegman.conf)
 
     # we could use the override bit from dbc, but it's triggered at too high torque values
     self.steer_override = abs(self.steer_torque_driver) > STEER_THRESHOLD
