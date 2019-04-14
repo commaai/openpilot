@@ -108,12 +108,12 @@ class LongControl(object):
 
     if dynamic and v_rel is not None:  # dynamic gas profile specific operations, and if lead
       if (v_ego) < 8.94086:  # if under 20 mph
-        x = [0.0, 1.34112, 2.68224]
-        y = [-0.185, -0.165, 0]
+        x = [0.0, 0.61945, 1.15771, 1.61479, 1.99067, 2.28537, 2.49888, 2.6312, 2.68224]
+        y = [-accel, -(accel / 1.04), -(accel / 1.095), -(accel / 1.195), -(accel / 1.36), -(accel / 1.69), -(accel / 2.35), -(accel / 4.4), 0]  # array that matches current chosen accel value
         accel += interp(v_rel, x, y)
       else:
         x = [-0.89408, 0, 0.89408, 4.4704]
-        y = [-.05, 0, .005, .02]
+        y = [-.15, -.05, .005, .05]
         accel += interp(v_rel, x, y)
 
 
@@ -133,12 +133,8 @@ class LongControl(object):
 
     if l20 is not None:
       self.lead_1 = l20.live20.leadOne
-      try:
-        vRel = self.lead_1.vRel
-        dRel = self.lead_1.dRel
-      except:
-        vRel = None
-        dRel = None
+      vRel = self.lead_1.vRel
+      dRel = self.lead_1.dRel
     else:
       vRel = None
       dRel = None

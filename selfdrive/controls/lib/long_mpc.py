@@ -144,7 +144,7 @@ class LongitudinalMpc(object):
       if idx != 0:
         lead_vel_diffs.append(abs(vel - lead_vels[idx - 1]))
     x = [0, len(lead_vels)]
-    y = [1.3, .95]  # min and max values to modify TR by
+    y = [1.35, 1.0]  # min and max values to modify TR by
     traffic = interp(sum(lead_vel_diffs), x, y)
     #self.dict_builder["traffic_modifier"] = traffic
     return traffic
@@ -189,7 +189,7 @@ class LongitudinalMpc(object):
       #self.dict_builder["lead_accel"] = self.get_acceleration(self.dynamic_follow_dict["lead_vels"], False)
 
       x = [0, 2.2352]
-      y = [.35, 1.0]  # multiply sum of all TR modifications
+      y = [.25, 1.0]  # multiply sum of all TR modifications
       TR += (float(TR_mod) * interp(velocity, x, y))  # reduce TR modification under 5 mph for stop and go
 
       TR = float(TR) * self.get_traffic_level(self.dynamic_follow_dict["traffic_vels"])  # modify TR based on last minute of traffic data
