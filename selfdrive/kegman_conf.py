@@ -17,11 +17,6 @@ class kegman_conf():
         try:
           self.config = json.load(f)
         except:
-          try:
-            with open("/data/kegman.json", "r") as f:
-              cloudlog.warning(str(f.read()))
-          except:
-            pass
           self.config = default_config
       if "battPercOff" not in self.config:
         self.config.update({"battPercOff":"25"})
