@@ -108,8 +108,8 @@ class LongControl(object):
 
     if dynamic and v_rel is not None:  # dynamic gas profile specific operations, and if lead
       if (v_ego) < 8.94086:  # if under 20 mph
-        x = [0.0, 0.61945, 1.15771, 1.61479, 1.99067, 2.28537, 2.49888, 2.6312, 2.68224]
-        y = [-accel, -(accel / 1.04), -(accel / 1.095), -(accel / 1.195), -(accel / 1.36), -(accel / 1.69), -(accel / 2.35), -(accel / 4.4), 0]  # array that matches current chosen accel value
+        x = [1.61479, 1.99067, 2.28537, 2.49888, 2.6312, 2.68224]
+        y = [-accel, -(accel / 1.06), -(accel / 1.2), -(accel / 1.8), -(accel / 4.4), 0]  # array that matches current chosen accel value
         accel += interp(v_rel, x, y)
       else:
         x = [-0.89408, 0, 0.89408, 4.4704]
@@ -117,9 +117,9 @@ class LongControl(object):
         accel += interp(v_rel, x, y)
 
 
-    min_return = 0.01
+    min_return = 0.0
     max_return = 1.0
-    return round(max(min(accel, max_return), min_return), 4)  # ensure we return a value between range
+    return round(max(min(accel, max_return), min_return), 5)  # ensure we return a value between range
 
   def update(self, active, v_ego, brake_pressed, standstill, cruise_standstill, v_cruise, v_target, v_target_future,
              a_target, CP, gasinterceptor, gasbuttonstatus):
