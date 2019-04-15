@@ -63,7 +63,7 @@ class LongitudinalMpc(object):
     """
 
     read_distance_lines = car_state.readdistancelines
-    if v_ego < 2.0:  # if under 2m/s
+    if v_ego < 2.0 and read_distance_lines != 2:  # if under 2m/s
       return 1.8  # under 7km/hr use a TR of 1.8 seconds
 
     if car_state.leftBlinker or car_state.rightBlinker:  # if car is changing lanes and not already .9s
@@ -163,9 +163,18 @@ class LongitudinalMpc(object):
     return a
 
   def dynamic_follow(self, velocity):  # in m/s
-    x = [0.0, 1.86267, 3.72533, 5.588, 7.45067, 9.31333, 11.55978, 13.645, 22.352, 31.2928, 33.528, 35.7632, 40.2336]  # velocity
-    y = [1.03, 1.05363, 1.07879, 1.11493, 1.16969, 1.25071, 1.36325, 1.43, 1.6, 1.7, 1.75618, 1.85, 2.0]  # distances
-    TR = interpolate.interp1d(x, y, fill_value='extrapolate')(velocity)[()]  # extrapolate above 90 mph
+    x_vel = [0.0, 1.86267, 3.72533, 5.588, 7.45067, 9.31333, 11.55978, 13.645, 22.352, 31.2928, 33.528, 35.7632, 40.2336]  # velocity
+    y_mod = [1.03, 1.05363, 1.07879, 1.11493, 1.16969, 1.25071, 1.36325, 1.43, 1.6, 1.7, 1.75618, 1.85, 2.0]  # distances
+
+    combined_accel = (self.get_acceleration(self.dynamic_follow_dict["self_vels"], True) + self.get_acceleration(self.dynamic_follow_dict["lead_vels"], False)) / 2.0  # average of self and lead
+    stop_and_go_magic_number = 3.72533  # need to tune, 8.33 mph
+
+    if combined_accel >= 0 and velocity < stop_and_go_magic_number:  # if accelerating and under 8.33 mph, for stop and go smoothness
+      x = [0, stop_and_go_magic_number]
+      y = [1.8, interp(x[1], x_vel, y_mod)]
+      TR = interp(velocity, x, y)
+    else:
+      TR = interpolate.interp1d(x_vel, y_mod, fill_value='extrapolate')(velocity)[()]  # extrapolate above 90 mph
 
     if self.relative_velocity is not None:
       x = [-11.62304, -7.84277, -5.45001, -4.37005, -2.98368, -2.49073, -1.96698, -1.13517, 0.0, 0.12799, 0.77499, 1.85325, 2.68511]  # relative velocity values
