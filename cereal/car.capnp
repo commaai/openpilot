@@ -247,6 +247,8 @@ struct CarControl {
     audibleAlert @5: AudibleAlert;
     rightLaneVisible @6: Bool;
     leftLaneVisible @7: Bool;
+    rightLaneDepart @8: Bool;
+    leftLaneDepart @9: Bool;
 
     enum VisualAlert {
       # these are the choices from the Honda
