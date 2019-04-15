@@ -20,7 +20,10 @@ def calc_states_after_delay(states, v_ego, steer_angle, curvature_factor, steer_
 class PathPlanner(object):
   def __init__(self, CP):
     self.MP = ModelParser()
-
+    
+    self.l_poly = [0., 0., 0., 0.]
+    self.r_poly = [0., 0., 0., 0.]
+    
     self.last_cloudlog_t = 0
 
     context = zmq.Context()
