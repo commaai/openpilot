@@ -70,7 +70,7 @@ class LongitudinalMpc(object):
 
     read_distance_lines = car_state.readdistancelines
     if v_ego < 2.0 != 2 and self.gas_interceptor:  # if under 2m/s and user has pedal
-      return 1.6  # under 7km/hr use a TR of 1.8 seconds
+      return 1.8  # under 7km/hr use a TR of 1.8 seconds
 
     if car_state.leftBlinker or car_state.rightBlinker:  # if car is changing lanes and not already .9s
       if self.last_cost != 1.0:
