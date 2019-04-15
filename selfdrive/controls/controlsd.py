@@ -307,8 +307,8 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
     CC.hudControl.leadVisible = plan.hasLead
     CC.hudControl.rightLaneVisible = bool(path_plan.pathPlan.rProb > 0.5)
     CC.hudControl.leftLaneVisible = bool(path_plan.pathPlan.lProb > 0.5)
-    CC.hudControl.rightLaneDepart = bool(path_plan.pathPlan.r_poly[3] > -1.11 and not CS.rightBlinker) and CS.v_ego > 12.5 # Speed needs to be above 12.5m/s for LDA and only if blinker if off
-    CC.hudControl.leftLaneDepart = bool(path_plan.pathPlan.l_poly[3] < 1.05 and not CS.leftBlinker) and CS.v_ego > 12.5 # CAMERA_OFFSET 6cm making it to detect if line is within 15cm of the wheel
+    CC.hudControl.rightLaneDepart = bool(path_plan.pathPlan.r_poly[3] > -1.11 and not CS.rightBlinker) and CS.vEgo > 12.5 # Speed needs to be above 12.5m/s for LDA and only if blinker if off
+    CC.hudControl.leftLaneDepart = bool(path_plan.pathPlan.l_poly[3] < 1.05 and not CS.leftBlinker) and CS.vEgo > 12.5 # CAMERA_OFFSET 6cm making it to detect if line is within 15cm of the wheel
     CC.hudControl.visualAlert = AM.visual_alert
     CC.hudControl.audibleAlert = AM.audible_alert
 
