@@ -307,6 +307,8 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
     CC.hudControl.leadVisible = plan.hasLead
     CC.hudControl.rightLaneVisible = bool(path_plan.pathPlan.rProb > 0.5)
     CC.hudControl.leftLaneVisible = bool(path_plan.pathPlan.lProb > 0.5)
+    CC.hudControl.rightLaneDepart = bool(path_plan.pathPlan.r_poly[3] > -1.1 and not CS.rightBlinker)
+    CC.hudControl.leftLaneDepart = bool(path_plan.pathPlan.l_poly[3] < 1.05 and not CS.leftBlinker)
     CC.hudControl.visualAlert = AM.visual_alert
     CC.hudControl.audibleAlert = AM.audible_alert
 
