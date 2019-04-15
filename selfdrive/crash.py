@@ -28,8 +28,14 @@ else:
       auth = json.loads(f.read())
     f.close()
     auth = json.loads(auth['commaUser'])
-    error_tags['username'] = auth['username'].decode('utf-8', 'ignore')
-    error_tags['email'] = auth['email']
+    try:
+      error_tags['username'] = auth['username'].decode('utf-8', 'ignore')
+    except:
+      pass
+    try:
+      error_tags['email'] = auth['email']
+    except:
+      pass
   except:
     pass
 

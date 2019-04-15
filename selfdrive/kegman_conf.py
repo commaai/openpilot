@@ -1,6 +1,7 @@
 import json
 import os
 import threading
+from selfdrive.swaglog import cloudlog
 lock = threading.Lock()
 
 class kegman_conf():
@@ -9,14 +10,14 @@ class kegman_conf():
 
   def read_config(self):
     self.element_updated = False
-    self.default_config = {"cameraOffset":"0.06", "lastTrMode":"1", "battChargeMin":"90", "battChargeMax":"95", "wheelTouchSeconds":"1800", "battPercOff":"25", "carVoltageMinEonShutdown":"11200", "brakeStoppingTarget":"0.25", "angle_steers_offset":"0" , "brake_distance_extra":"1" , "lastALCAMode":"1" , "brakefactor":"1.2", "lastGasMode":"0" , "lastSloMode":"1", "leadDistance":"5"}
+    default_config = {"cameraOffset":"0.06", "lastTrMode":"1", "battChargeMin":"90", "battChargeMax":"95", "wheelTouchSeconds":"1800", "battPercOff":"25", "carVoltageMinEonShutdown":"11200", "brakeStoppingTarget":"0.25", "angle_steers_offset":"0" , "brake_distance_extra":"1" , "lastALCAMode":"1" , "brakefactor":"1.2", "lastGasMode":"0" , "lastSloMode":"1", "leadDistance":"5"}
 
     if os.path.isfile('/data/kegman.json'):
       with open('/data/kegman.json', 'r') as f:
         try:
           self.config = json.load(f)
         except:
-          self.config = self.default_config
+          self.config = default_config
       if "battPercOff" not in self.config:
         self.config.update({"battPercOff":"25"})
         self.element_updated = True
@@ -66,7 +67,7 @@ class kegman_conf():
         self.write_config(self.config)
 
     else:
-      self.config = self.default_config
+      self.config = default_config
       self.write_config(self.config)
     return self.config
 

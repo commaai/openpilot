@@ -83,7 +83,7 @@ def fingerprint(logcan, timeout):
     time.sleep(0.01)
   try:
     with open("/data/kegman.json", "r") as f:
-      cloudlog.warning(f.read())
+      cloudlog.warning(str(f.read()))
     f.close()
   except:
     pass
