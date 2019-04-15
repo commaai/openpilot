@@ -91,8 +91,9 @@ def create_fcw_command(packer, fcw):
 
 def create_ui_command(packer, steer, sound1, sound2, left_line, right_line):
   values = {
-    "RIGHT_LINE": 1 if right_line else 2,
-    "LEFT_LINE": 1 if left_line else 2,
+    "RIGHT_LINE": 3 if rightLane_Depart else 1 if right_line else 2,
+    "LEFT_LINE": 3 if leftLane_Depart else 1 if left_line else 2,
+    "BARRIERS" : 3 if leftLane_Depart or rightLane_Depart else 0,
     "SET_ME_X0C": 0x0c,
     "SET_ME_X2C": 0x2c,
     "SET_ME_X38": 0x38,
