@@ -64,7 +64,7 @@ class LongitudinalMpc(object):
     """
 
     read_distance_lines = car_state.readdistancelines
-    if v_ego < 2.0 and read_distance_lines != 2:  # if under 2m/s
+    if v_ego < 2.0 and read_distance_lines != 2:  # if under 2m/s and not dynamic follow
       return 1.8  # under 7km/hr use a TR of 1.8 seconds
 
     if car_state.leftBlinker or car_state.rightBlinker:  # if car is changing lanes and not already .9s
