@@ -32,6 +32,7 @@ selfdrive/proclogd/proclogd
 selfdrive/ui/ui
 selfdrive/test/tests/plant/out
 selfdrive/visiond/visiond
+selfdrive/visiond/visiond-normal
 /src/
 
 one

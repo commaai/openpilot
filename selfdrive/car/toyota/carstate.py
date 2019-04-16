@@ -95,16 +95,6 @@ def get_can_parser(CP):
     ("LANE_WARNING", "JOEL_ID", 1),
     ("ACC_SLOW", "JOEL_ID", 0),
     ("DISTANCE_LINES", "PCM_CRUISE_SM", 0),
-    ("TSGN1", "RSA1", 0),
-    ("SPDVAL1", "RSA1", 0),
-    ("SPLSGN1", "RSA1", 0),
-    ("TSGN2", "RSA1", 0),
-    ("SPDVAL2", "RSA1", 0),
-    ("SPLSGN2", "RSA1", 0),
-    ("TSGN3", "RSA2", 0),
-    ("SPLSGN3", "RSA2", 0),
-    ("TSGN4", "RSA2", 0),
-    ("SPLSGN4", "RSA2", 0),
   ]
 
   checks = [
@@ -136,7 +126,18 @@ def get_can_parser(CP):
 
 def get_cam_can_parser(CP):
 
-  signals = []
+  signals = [
+    ("TSGN1", "RSA1", 0),
+    ("SPDVAL1", "RSA1", 0),
+    ("SPLSGN1", "RSA1", 0),
+    ("TSGN2", "RSA1", 0),
+    ("SPDVAL2", "RSA1", 0),
+    ("SPLSGN2", "RSA1", 0),
+    ("TSGN3", "RSA2", 0),
+    ("SPLSGN3", "RSA2", 0),
+    ("TSGN4", "RSA2", 0),
+    ("SPLSGN4", "RSA2", 0),
+  ]
 
   # use steering message to check if panda is connected to frc
   checks = [("STEERING_LKA", 42)]
@@ -469,14 +470,14 @@ class CarState(object):
     #print "distane"
     #print self.distance
     if self.distance < self.approachradius + self.includeradius:
-      print "speed"
-      print self.prev_distance - self.distance
+      #print "speed"
+      #print self.prev_distance - self.distance
       #if speed is 5% higher than the speedlimit
       if self.prev_distance - self.distance > self.speedlimit*0.00263889:
        if self.v_cruise_pcm > self.speedlimit:
          self.v_cruise_pcm = self.speedlimit
     if self.distance < self.includeradius:
-      print "inside"
+      #print "inside"
       if self.v_cruise_pcm > self.speedlimit:
         self.v_cruise_pcm =  self.speedlimit
     
@@ -489,15 +490,17 @@ class CarState(object):
       self.generic_toggle = cp.vl["AUTOPARK_STATUS"]['STATE'] != 0
     else:
       self.generic_toggle = bool(cp.vl["LIGHT_STALK"]['AUTO_HIGH_BEAM'])
-    self.tsgn1 = cp.vl["RSA1"]['TSGN1']
-    self.spdval1 = cp.vl["RSA1"]['SPDVAL1']
-    self.splsgn1 = cp.vl["RSA1"]['SPLSGN1']
-    self.tsgn2 = cp.vl["RSA1"]['TSGN2']
-    self.spdval2 = cp.vl["RSA1"]['SPDVAL2']
-    self.splsgn2 = cp.vl["RSA1"]['SPLSGN2']
-    self.tsgn3 = cp.vl["RSA2"]['TSGN3']
-    self.splsgn3 = cp.vl["RSA2"]['SPLSGN3']
-    self.tsgn4 = cp.vl["RSA2"]['TSGN4']
-    self.splsgn4 = cp.vl["RSA2"]['SPLSGN4']
+    self.tsgn1 = cp_cam.vl["RSA1"]['TSGN1']
+    self.spdval1 = cp_cam.vl["RSA1"]['SPDVAL1']
+    #if self.spdval1 > 0:
+    #  print self.spdval1
+    self.splsgn1 = cp_cam.vl["RSA1"]['SPLSGN1']
+    self.tsgn2 = cp_cam.vl["RSA1"]['TSGN2']
+    self.spdval2 = cp_cam.vl["RSA1"]['SPDVAL2']
+    self.splsgn2 = cp_cam.vl["RSA1"]['SPLSGN2']
+    self.tsgn3 = cp_cam.vl["RSA2"]['TSGN3']
+    self.splsgn3 = cp_cam.vl["RSA2"]['SPLSGN3']
+    self.tsgn4 = cp_cam.vl["RSA2"]['TSGN4']
+    self.splsgn4 = cp_cam.vl["RSA2"]['SPLSGN4']
     self.noovertake = self.tsgn1 == 65 or self.tsgn2 == 65 or self.tsgn3 == 65 or self.tsgn4 == 65 or self.tsgn1 == 66 or self.tsgn2 == 66 or self.tsgn3 == 66 or self.tsgn4 == 66
     
