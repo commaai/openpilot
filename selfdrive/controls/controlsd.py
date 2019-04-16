@@ -115,15 +115,14 @@ def data_sample(CI, CC, plan_sock, path_plan_sock, thermal, calibration, health,
     driver_status.get_pose(dm.driverMonitoring, params)
 
   with open("/data/times/0.txt", "a") as f:
-    f.write(str(time.time() - old_time)+"\n")
+    f.write(str(time.time() - old_time) + "\n")
 
   return CS, events, cal_status, cal_perc, overtemp, free_space, low_battery, mismatch_counter, plan, path_plan
 
 
 def state_transition(CS, CP, state, events, soft_disable_timer, v_cruise_kph, AM):
-  old_time = time.time()
-
   """Compute conditional state transitions and execute actions on state transitions"""
+  old_time = time.time()
   enabled = isEnabled(state)
 
   v_cruise_kph_last = v_cruise_kph
@@ -207,7 +206,7 @@ def state_transition(CS, CP, state, events, soft_disable_timer, v_cruise_kph, AM
       state = State.enabled
 
   with open("/data/times/1.txt", "a") as f:
-    f.write(str(time.time() - old_time)+"\n")
+    f.write(str(time.time() - old_time) + "\n")
 
   return state, soft_disable_timer, v_cruise_kph, v_cruise_kph_last
 
@@ -215,7 +214,6 @@ def state_transition(CS, CP, state, events, soft_disable_timer, v_cruise_kph, AM
 def state_control(plan, path_plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, AM, rk,
                   driver_status, LaC, LoC, VM, angle_model_bias, passive, is_metric, cal_perc):
   """Given the state, this function returns an actuators packet"""
-
   old_time = time.time()
 
   actuators = car.CarControl.Actuators.new_message()
@@ -257,10 +255,6 @@ def state_control(plan, path_plan, CS, CP, state, events, v_cruise_kph, v_cruise
     angle_model_bias = learn_angle_model_bias(active, CS.vEgo, angle_model_bias,
                                       path_plan.cPoly, path_plan.cProb, CS.steeringAngle,
                                       CS.steeringPressed)
-  try:
-    gasinterceptor = CP.enableGasInterceptor
-  except AttributeError:
-    gasinterceptor = False
 
   cur_time = sec_since_boot()  # TODO: This won't work in replay
   mpc_time = plan.l20MonoTime / 1e9
@@ -272,12 +266,11 @@ def state_control(plan, path_plan, CS, CP, state, events, v_cruise_kph, v_cruise
 
   # Gas/Brake PID loop
   actuators.gas, actuators.brake = LoC.update(active, CS.vEgo, CS.brakePressed, CS.standstill, CS.cruiseState.standstill,
-                                              v_cruise_kph, v_acc_sol, plan.vTargetFuture, a_acc_sol, CP, gasinterceptor, CS.gasbuttonstatus)
+                                              v_cruise_kph, v_acc_sol, plan.vTargetFuture, a_acc_sol, CP)
   # Steering PID loop and lateral MPC
-  actuators.steer, actuators.steerAngle = LaC.update(active, CS.vEgo, CS.steeringAngle, 
+  actuators.steer, actuators.steerAngle = LaC.update(active, CS.vEgo, CS.steeringAngle,
                                                      CS.steeringPressed, CP, VM, path_plan)
- #BB added for ALCA support
-  #CS.pid = LaC.pid
+
   # Send a "steering required alert" if saturation count has reached the limit
   if LaC.sat_flag and CP.steerLimitAlert:
     AM.add("steerSaturated", enabled)
@@ -296,7 +289,7 @@ def state_control(plan, path_plan, CS, CP, state, events, v_cruise_kph, v_cruise
   AM.process_alerts(sec_since_boot())
 
   with open("/data/times/2.txt", "a") as f:
-    f.write(str(time.time() - old_time)+"\n")
+    f.write(str(time.time() - old_time) + "\n")
 
   return actuators, v_cruise_kph, driver_status, angle_model_bias, v_acc_sol, a_acc_sol
 
@@ -304,10 +297,9 @@ def state_control(plan, path_plan, CS, CP, state, events, v_cruise_kph, v_cruise
 def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, carstate,
               carcontrol, live100, AM, driver_status,
               LaC, LoC, angle_model_bias, passive, start_time, params, v_acc, a_acc):
-  """Send actuators and hud commands to the car, send live100 and MPC logging"""
-
   old_time = time.time()
 
+  """Send actuators and hud commands to the car, send live100 and MPC logging"""
   plan_ts = plan.logMonoTime
   plan = plan.plan
 
@@ -329,8 +321,6 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
     CC.hudControl.speedVisible = isEnabled(state)
     CC.hudControl.lanesVisible = isEnabled(state)
     CC.hudControl.leadVisible = plan.hasLead
-    CC.hudControl.rightLaneDepart = plan.hasrightLaneDepart
-    CC.hudControl.leftLaneDepart = plan.hasleftLaneDepart
     CC.hudControl.rightLaneVisible = bool(path_plan.pathPlan.rProb > 0.5)
     CC.hudControl.leftLaneVisible = bool(path_plan.pathPlan.lProb > 0.5)
     CC.hudControl.visualAlert = AM.visual_alert
@@ -376,13 +366,10 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
     "upSteer": float(LaC.pid.p),
     "uiSteer": float(LaC.pid.i),
     "ufSteer": float(LaC.pid.f),
-    "angleFFRatio": float(LaC.angle_ff_ratio),
     "vTargetLead": float(v_acc),
     "aTarget": float(a_acc),
     "jerkFactor": float(plan.jerkFactor),
     "angleModelBias": float(angle_model_bias),
-    "angleFFGain": float(LaC.angle_ff_gain),
-    "rateFFGain": float(LaC.rate_ff_gain),
     "gpsPlannerActive": plan.gpsPlannerActive,
     "vCurvature": plan.vCurvature,
     "decelForTurn": plan.decelForTurn,
@@ -407,18 +394,16 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
   carcontrol.send(cc_send.to_bytes())
 
   if (rk.frame % 36000) == 0:    # update angle offset every 6 minutes
-    params.put("ControlsParams", json.dumps({'angle_model_bias': angle_model_bias,
-              'angle_ff_gain': LaC.angle_ff_gain, 'rate_ff_gain': LaC.rate_ff_gain}))
+    params.put("ControlsParams", json.dumps({'angle_model_bias': angle_model_bias}))
 
   with open("/data/times/3.txt", "a") as f:
-    f.write(str(time.time() - old_time)+"\n")
+    f.write(str(time.time() - old_time) + "\n")
 
   return CC
 
 
 def controlsd_thread(gctx=None, rate=100):
   old_time = time.time()
-
   gc.disable()
 
   # start the loop
@@ -495,19 +480,6 @@ def controlsd_thread(gctx=None, rate=100):
   path_plan.init('pathPlan')
 
   rk = Ratekeeper(rate, print_delay_threshold=2. / 1000)
-
-  '''try:
-    with open("/data/params/d/ControlsParams", "r+") as f:
-      controls_params = json.load(f)
-      if "angle_model_bias" in controls_params and "angle_offset" not in controls_params:
-        controls_params["angle_offset"] = float(controls_params["angle_model_bias"])
-        del controls_params["angle_model_bias"]
-        f.seek(0)
-        f.write(json.dumps(controls_params))
-        f.truncate()
-  except:
-    pass'''
-
   controls_params = params.get("ControlsParams")
 
   # Read angle offset from previous drive
@@ -516,19 +488,17 @@ def controlsd_thread(gctx=None, rate=100):
     try:
       controls_params = json.loads(controls_params)
       angle_model_bias = controls_params['angle_model_bias']
-      LaC.angle_ff_gain = max(1.0, controls_params['angle_ff_gain'])
-      LaC.rate_ff_gain = min(0.01, controls_params['rate_ff_gain'])
     except (ValueError, KeyError):
       pass
 
   prof = Profiler(False)  # off by default
 
   with open("/data/times/4.txt", "a") as f:
-    f.write(str(time.time() - old_time)+"\n")
+    f.write(str(time.time() - old_time) + "\n")
 
   while True:
-    start_time = int(sec_since_boot() * 1e9)
     old_time = time.time()
+    start_time = int(sec_since_boot() * 1e9)
     prof.checkpoint("Ratekeeper", ignore=True)
 
     # Sample data and compute car events
@@ -573,7 +543,6 @@ def controlsd_thread(gctx=None, rate=100):
     prof.display()
     with open("/data/times/5.txt", "a") as f:
       f.write(str(time.time() - old_time) + "\n")
-
 
 
 def main(gctx=None):
