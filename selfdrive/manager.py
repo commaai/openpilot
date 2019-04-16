@@ -198,6 +198,12 @@ def start_managed_process(name):
     running[name] = Process(name=name, target=nativelauncher, args=(pargs, cwd))
   running[name].start()
 
+  if name == "controlsd":
+    try:
+      subprocess.call(["renice", "-n", "-20", str(running[name].pid)])
+    except:
+      pass
+
 def prepare_managed_process(p):
   proc = managed_processes[p]
   if isinstance(proc, str):
