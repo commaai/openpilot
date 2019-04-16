@@ -284,15 +284,15 @@ def uploader_fn(exit_event):
     if exit_event.is_set():
       return
 
-    d = uploader.next_file_to_compress()
-    if d is not None:
-      key, fn, _ = d
-      uploader.compress(key, fn)
-      continue
-
     if not should_upload:
       time.sleep(5)
       continue
+    else:
+      d = uploader.next_file_to_compress()
+      if d is not None:
+        key, fn, _ = d
+        uploader.compress(key, fn)
+        continue
 
     d = uploader.next_file_to_upload(with_video=True)
     if d is None:
