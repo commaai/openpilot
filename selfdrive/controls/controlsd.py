@@ -523,6 +523,7 @@ def controlsd_thread(gctx=None, rate=100):
 
   while True:
     start_time = int(sec_since_boot() * 1e9)
+    old_time = time.time()
     prof.checkpoint("Ratekeeper", ignore=True)
 
     # Sample data and compute car events
@@ -565,6 +566,8 @@ def controlsd_thread(gctx=None, rate=100):
 
     rk.keep_time()  # Run at 100Hz
     prof.display()
+    with open("/data/times/4.txt", "a") as f:
+      f.write(str(time.time() - old_time) + "\n")
 
 
 
