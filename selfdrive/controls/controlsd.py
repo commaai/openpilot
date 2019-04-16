@@ -45,6 +45,8 @@ def data_sample(CI, CC, plan_sock, path_plan_sock, thermal, calibration, health,
                 driver_status, state, mismatch_counter, params, plan, path_plan):
   """Receive data from sockets and create events for battery, temperature and disk space"""
 
+  old_time = time.time()
+
   # Update carstate from CAN and create events
   CS = CI.update(CC)
   events = list(CS.events)
@@ -111,6 +113,9 @@ def data_sample(CI, CC, plan_sock, path_plan_sock, thermal, calibration, health,
   # Driver monitoring
   if dm is not None:
     driver_status.get_pose(dm.driverMonitoring, params)
+
+  with open("/data/times/0.txt", "a") as f:
+    f.write(str(time.time() - old_time)+"\n")
 
   return CS, events, cal_status, cal_perc, overtemp, free_space, low_battery, mismatch_counter, plan, path_plan
 
@@ -201,7 +206,7 @@ def state_transition(CS, CP, state, events, soft_disable_timer, v_cruise_kph, AM
     elif not get_events(events, [ET.PRE_ENABLE]):
       state = State.enabled
 
-  with open("/data/times/0.txt", "a") as f:
+  with open("/data/times/1.txt", "a") as f:
     f.write(str(time.time() - old_time)+"\n")
 
   return state, soft_disable_timer, v_cruise_kph, v_cruise_kph_last
@@ -290,7 +295,7 @@ def state_control(plan, path_plan, CS, CP, state, events, v_cruise_kph, v_cruise
 
   AM.process_alerts(sec_since_boot())
 
-  with open("/data/times/1.txt", "a") as f:
+  with open("/data/times/2.txt", "a") as f:
     f.write(str(time.time() - old_time)+"\n")
 
   return actuators, v_cruise_kph, driver_status, angle_model_bias, v_acc_sol, a_acc_sol
@@ -405,7 +410,7 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
     params.put("ControlsParams", json.dumps({'angle_model_bias': angle_model_bias,
               'angle_ff_gain': LaC.angle_ff_gain, 'rate_ff_gain': LaC.rate_ff_gain}))
 
-  with open("/data/times/2.txt", "a") as f:
+  with open("/data/times/3.txt", "a") as f:
     f.write(str(time.time() - old_time)+"\n")
 
   return CC
@@ -518,7 +523,7 @@ def controlsd_thread(gctx=None, rate=100):
 
   prof = Profiler(False)  # off by default
 
-  with open("/data/times/3.txt", "a") as f:
+  with open("/data/times/4.txt", "a") as f:
     f.write(str(time.time() - old_time)+"\n")
 
   while True:
@@ -566,7 +571,7 @@ def controlsd_thread(gctx=None, rate=100):
 
     rk.keep_time()  # Run at 100Hz
     prof.display()
-    with open("/data/times/4.txt", "a") as f:
+    with open("/data/times/5.txt", "a") as f:
       f.write(str(time.time() - old_time) + "\n")
 
 
