@@ -203,8 +203,11 @@ def start_managed_process(name):
       pid = subprocess.check_output(["pgrep", "selfdrive.controls.controlsd"]).strip("\n")
       subprocess.call(["renice", "-n", "-20", pid])
     except:  # should never occur, controlsd not running
-      with open("/data/nice_error.txt", "w") as f:
-        f.write("True")
+      try:
+        with open("/data/nice_error.txt", "w") as f:
+          f.write("True")
+      except:
+        pass
 
 def prepare_managed_process(p):
   proc = managed_processes[p]
