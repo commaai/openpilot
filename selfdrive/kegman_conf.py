@@ -1,5 +1,5 @@
 import json
-import os
+import os, stat
 import threading
 lock = threading.Lock()
 
@@ -9,14 +9,11 @@ class kegman_conf():
 
   def read_config(self):
     self.element_updated = False
-    default_config = {"cameraOffset":"0.06", "lastTrMode":"1", "battChargeMin":"90", "battChargeMax":"95", "wheelTouchSeconds":"1800", "battPercOff":"25", "carVoltageMinEonShutdown":"11200", "brakeStoppingTarget":"0.25", "angle_steers_offset":"0" , "brake_distance_extra":"1" , "lastALCAMode":"1" , "brakefactor":"1.2", "lastGasMode":"0" , "lastSloMode":"1", "leadDistance":"5"}
+    self.default_config = {"cameraOffset":"0.06", "lastTrMode":"1", "battChargeMin":"90", "battChargeMax":"95", "wheelTouchSeconds":"1800", "battPercOff":"25", "carVoltageMinEonShutdown":"11200", "brakeStoppingTarget":"0.25", "angle_steers_offset":"0" , "brake_distance_extra":"1" , "lastALCAMode":"1" , "brakefactor":"1.2", "lastGasMode":"0" , "lastSloMode":"1", "leadDistance":"5"}
 
     if os.path.isfile('/data/kegman.json'):
       with open('/data/kegman.json', 'r') as f:
-        try:
-          self.config = json.load(f)
-        except:
-          self.config = default_config
+        self.config = json.loads(str(f))
       if "battPercOff" not in self.config:
         self.config.update({"battPercOff":"25"})
         self.element_updated = True
@@ -66,7 +63,7 @@ class kegman_conf():
         self.write_config(self.config)
 
     else:
-      self.config = default_config
+      self.config = self.default_config
       self.write_config(self.config)
     return self.config
 
@@ -74,8 +71,7 @@ class kegman_conf():
     try:
       with lock:
         with open('/data/kegman.json', 'w') as f:
-          json.dump(config, f, indent=2, sort_keys=True)
-          os.chmod("/data/kegman.json", 0o764)
+          f.write(str(config))
     except IOError:
       os.mkdir('/data')
       with open('/data/kegman.json', 'w') as f:
