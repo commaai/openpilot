@@ -1,7 +1,6 @@
 import json
 import os
 import threading
-from selfdrive.swaglog import cloudlog
 lock = threading.Lock()
 
 class kegman_conf():
