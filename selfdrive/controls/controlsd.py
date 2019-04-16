@@ -43,6 +43,7 @@ def data_sample(CI, CC, plan_sock, path_plan_sock, thermal, calibration, health,
                 poller, cal_status, cal_perc, overtemp, free_space, low_battery,
                 driver_status, state, mismatch_counter, params, plan, path_plan):
   """Receive data from sockets and create events for battery, temperature and disk space"""
+
   # Update carstate from CAN and create events
   CS = CI.update(CC)
   events = list(CS.events)
@@ -203,6 +204,7 @@ def state_transition(CS, CP, state, events, soft_disable_timer, v_cruise_kph, AM
 def state_control(plan, path_plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, AM, rk,
                   driver_status, LaC, LoC, VM, angle_model_bias, passive, is_metric, cal_perc):
   """Given the state, this function returns an actuators packet"""
+
   actuators = car.CarControl.Actuators.new_message()
 
   enabled = isEnabled(state)
@@ -388,7 +390,6 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
   if (rk.frame % 36000) == 0:    # update angle offset every 6 minutes
     params.put("ControlsParams", json.dumps({'angle_model_bias': angle_model_bias,
               'angle_ff_gain': LaC.angle_ff_gain, 'rate_ff_gain': LaC.rate_ff_gain}))
-
   return CC
 
 
@@ -469,18 +470,6 @@ def controlsd_thread(gctx=None, rate=100):
   path_plan.init('pathPlan')
 
   rk = Ratekeeper(rate, print_delay_threshold=2. / 1000)
-
-  '''try:
-    with open("/data/params/d/ControlsParams", "r+") as f:
-      controls_params = json.load(f)
-      if "angle_model_bias" in controls_params and "angle_offset" not in controls_params:
-        controls_params["angle_offset"] = float(controls_params["angle_model_bias"])
-        del controls_params["angle_model_bias"]
-        f.seek(0)
-        f.write(json.dumps(controls_params))
-        f.truncate()
-  except:
-    pass'''
 
   controls_params = params.get("ControlsParams")
 
