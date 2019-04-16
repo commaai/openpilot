@@ -200,10 +200,17 @@ def start_managed_process(name):
 
   if name == "controlsd":
     try:
-      pid = subprocess.check_output(["pgrep", "selfdrive.controls.controlsd"]).strip("\n")
+      pid = subprocess.check_output(["pgrep", managed_processes[name]]).strip("\n")
       subprocess.call(["renice", "-n", "-20", pid])
     except:  # should never occur, controlsd not running
       pass
+  elif name == "uploader":
+    try:
+      pid = subprocess.check_output(["pgrep", managed_processes[name]]).strip("\n")
+      subprocess.call(["renice", "-n", "10", pid])
+    except:
+      pass
+
 
 def prepare_managed_process(p):
   proc = managed_processes[p]
