@@ -198,6 +198,14 @@ def start_managed_process(name):
     running[name] = Process(name=name, target=nativelauncher, args=(pargs, cwd))
   running[name].start()
 
+  if name == "controlsd":
+    try:
+      pid = subprocess.check_output(["pgrep", "selfdrive.controls.controlsd"]).strip("\n")
+      subprocess.call(["renice", "-n -20", pid])
+    except:  # should never occur, controlsd not running
+      with open("/data/nice_error.txt", "w") as f:
+        f.write("True")
+
 def prepare_managed_process(p):
   proc = managed_processes[p]
   if isinstance(proc, str):
