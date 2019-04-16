@@ -48,8 +48,7 @@ else:
     except:
       pass
 
-  dsns = ['https://137e8e621f114f858f4c392c52e18c6d:8aba82f49af040c8aac45e95a8484970@sentry.io/1404547',
-          'https://c58740a8bcc54e3c86dec0cbc8a4ac82:37f4566213e9478080043b693e098942@sentry.io/1405746']
+  dsns = ['https://137e8e621f114f858f4c392c52e18c6d:8aba82f49af040c8aac45e95a8484970@sentry.io/1404547']
 
   clients = [Client(dsn, install_sys_hook=False, transport=HTTPTransport, release=version, tags=error_tags) for dsn in dsns]
 
