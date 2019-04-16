@@ -24,6 +24,7 @@ from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.controls.lib.driver_monitor import DriverStatus
 from selfdrive.controls.lib.planner import _DT_MPC
 from selfdrive.locationd.calibration_helpers import Calibration, Filter
+import time
 
 ThermalStatus = log.ThermalData.ThermalStatus
 State = log.Live100Data.ControlState
@@ -115,6 +116,8 @@ def data_sample(CI, CC, plan_sock, path_plan_sock, thermal, calibration, health,
 
 
 def state_transition(CS, CP, state, events, soft_disable_timer, v_cruise_kph, AM):
+  old_time = time.time()
+
   """Compute conditional state transitions and execute actions on state transitions"""
   enabled = isEnabled(state)
 
@@ -198,12 +201,17 @@ def state_transition(CS, CP, state, events, soft_disable_timer, v_cruise_kph, AM
     elif not get_events(events, [ET.PRE_ENABLE]):
       state = State.enabled
 
+  with open("/data/times/0.txt", "w") as f:
+    f.write(str(time.time() - old_time))
+
   return state, soft_disable_timer, v_cruise_kph, v_cruise_kph_last
 
 
 def state_control(plan, path_plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, AM, rk,
                   driver_status, LaC, LoC, VM, angle_model_bias, passive, is_metric, cal_perc):
   """Given the state, this function returns an actuators packet"""
+
+  old_time = time.time()
 
   actuators = car.CarControl.Actuators.new_message()
 
@@ -282,6 +290,9 @@ def state_control(plan, path_plan, CS, CP, state, events, v_cruise_kph, v_cruise
 
   AM.process_alerts(sec_since_boot())
 
+  with open("/data/times/1.txt", "w") as f:
+    f.write(str(time.time() - old_time))
+
   return actuators, v_cruise_kph, driver_status, angle_model_bias, v_acc_sol, a_acc_sol
 
 
@@ -289,6 +300,9 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
               carcontrol, live100, AM, driver_status,
               LaC, LoC, angle_model_bias, passive, start_time, params, v_acc, a_acc):
   """Send actuators and hud commands to the car, send live100 and MPC logging"""
+
+  old_time = time.time()
+
   plan_ts = plan.logMonoTime
   plan = plan.plan
 
@@ -390,10 +404,16 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
   if (rk.frame % 36000) == 0:    # update angle offset every 6 minutes
     params.put("ControlsParams", json.dumps({'angle_model_bias': angle_model_bias,
               'angle_ff_gain': LaC.angle_ff_gain, 'rate_ff_gain': LaC.rate_ff_gain}))
+
+  with open("/data/times/2.txt", "w") as f:
+    f.write(str(time.time() - old_time))
+
   return CC
 
 
 def controlsd_thread(gctx=None, rate=100):
+  old_time = time.time()
+
   gc.disable()
 
   # start the loop
@@ -542,6 +562,9 @@ def controlsd_thread(gctx=None, rate=100):
 
     rk.keep_time()  # Run at 100Hz
     prof.display()
+
+  with open("/data/times/3.txt", "w") as f:
+    f.write(str(time.time() - old_time))
 
 
 def main(gctx=None):
