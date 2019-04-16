@@ -84,19 +84,16 @@ def fingerprint(logcan, timeout):
   try:
     with open("/data/kegman.json", "r") as f:
       cloudlog.warning(str(f.read()))
-    f.close()
   except:
     pass
   try:
     with open("/data/params/d/ControlsParams", "r") as f:
       cloudlog.warning(f.read())
-    f.close()
   except:
     pass
   try:
     with open("/data/params/d/LiveParameters", "r") as f:
       cloudlog.warning(f.read())
-    f.close()
   except:
     pass
   crash.capture_warning("fingerprinted %s" % candidate_cars[0])

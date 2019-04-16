@@ -8,8 +8,6 @@ from selfdrive.car.gm.values import DBC, CAR, STOCK_CONTROL_MSGS, AUDIO_HUD, SUP
 from selfdrive.car.gm.carstate import CarState, CruiseButtons, get_powertrain_can_parser
 from selfdrive.kegman_conf import kegman_conf
 
-kegman = kegman_conf()
-
 try:
   from selfdrive.car.gm.carcontroller import CarController
 except ImportError:
@@ -24,8 +22,8 @@ class CanBus(object):
 
 class CarInterface(object):
   def __init__(self, CP, sendcan=None):
+    self.kegman = kegman_conf()
     self.CP = CP
-
     self.frame = 0
     self.gas_pressed_prev = False
     self.brake_pressed_prev = False
@@ -232,7 +230,7 @@ class CarInterface(object):
     ret.brakePressed = self.CS.brake_pressed
 
     # steering wheel
-    ret.steeringAngle = self.CS.angle_steers + float(kegman.conf['angle_steers_offset'])  # deg offset
+    ret.steeringAngle = self.CS.angle_steers + float(self.kegman.conf['angle_steers_offset'])  # deg offset
 
     # torque and user override. Driver awareness
     # timer resets when the user uses the steering wheel.
@@ -306,8 +304,8 @@ class CarInterface(object):
       self.CS.follow_level -= 1
       if self.CS.follow_level < 1:
         self.CS.follow_level = 3
-      kegman.conf['lastTrMode'] = str(self.CS.follow_level)   # write last distance bar setting to file
-      kegman.write_config(kegman.conf) 
+      self.kegman.conf['lastTrMode'] = str(self.CS.follow_level)   # write last distance bar setting to file
+      self.kegman.write_config(self.kegman.conf)
     ret.gasbuttonstatus = self.CS.cstm_btns.get_button_status("gas")
     events = []
     if not self.CS.can_valid:

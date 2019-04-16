@@ -173,7 +173,7 @@ class CarState(object):
           if self.cstm_btns.btns[id].btn_label2 == self.alcaLabels[self.alcaMode]:
             self.alcaMode = (self.alcaMode + 1 ) % 4
             self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last distance bar setting to file
-            self.kegman.write_config(self.kegman.conf) 
+            self.kegman.write_config(self.kegman.conf)
           else:
             self.alcaMode = 0
             self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last distance bar setting to file
