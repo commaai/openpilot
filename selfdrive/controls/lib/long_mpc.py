@@ -31,6 +31,7 @@ class LongitudinalMpc(object):
     self.mpc_frame = 0  # idea thanks to kegman
     self.relative_velocity = None
     self.relative_distance = None
+    self.stop_and_go = False
     #self.dict_builder = {}
 
   def save_car_data(self, self_vel):
@@ -166,11 +167,15 @@ class LongitudinalMpc(object):
     x_vel = [0.0, 1.86267, 3.72533, 5.588, 7.45067, 9.31333, 11.55978, 13.645, 22.352, 31.2928, 33.528, 35.7632, 40.2336]  # velocity
     y_mod = [1.03, 1.05363, 1.07879, 1.11493, 1.16969, 1.25071, 1.36325, 1.43, 1.6, 1.7, 1.75618, 1.85, 2.0]  # distances
 
-    #combined_accel = (self.get_acceleration(self.dynamic_follow_dict["self_vels"], True) + self.get_acceleration(self.dynamic_follow_dict["lead_vels"], False)) / 2.0  # average of self and lead
-    stop_and_go_magic_number = 2.235  # need to tune, 5 mph
+    stop_and_go_magic_number = 4.4704  # 10 mph
 
-    if self.get_acceleration(self.dynamic_follow_dict["lead_vels"], False) >= 0 and velocity < stop_and_go_magic_number:  # if accelerating and under 8.33 mph, for stop and go smoothness
-      x = [0, stop_and_go_magic_number]
+    if velocity <= 0.0044704:  # .01 mph
+      self.stop_and_go = True
+    elif velocity >= stop_and_go_magic_number:
+      self.stop_and_go = False
+
+    if self.stop_and_go:  # this allows a smooth deceleration to a stop, while being able to have smooth stop and go
+      x = [stop_and_go_magic_number / 2.0, stop_and_go_magic_number]  # from 5 to 10 mph, ramp 1.8 sng distance to regular dynamic follow value
       y = [1.8, interp(x[1], x_vel, y_mod)]
       TR = interp(velocity, x, y)
     else:
