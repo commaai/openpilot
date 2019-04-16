@@ -470,14 +470,14 @@ class CarState(object):
     #print "distane"
     #print self.distance
     if self.distance < self.approachradius + self.includeradius:
-      print "speed"
-      print self.prev_distance - self.distance
+      #print "speed"
+      #print self.prev_distance - self.distance
       #if speed is 5% higher than the speedlimit
       if self.prev_distance - self.distance > self.speedlimit*0.00263889:
        if self.v_cruise_pcm > self.speedlimit:
          self.v_cruise_pcm = self.speedlimit
     if self.distance < self.includeradius:
-      print "inside"
+      #print "inside"
       if self.v_cruise_pcm > self.speedlimit:
         self.v_cruise_pcm =  self.speedlimit
     
@@ -492,8 +492,8 @@ class CarState(object):
       self.generic_toggle = bool(cp.vl["LIGHT_STALK"]['AUTO_HIGH_BEAM'])
     self.tsgn1 = cp_cam.vl["RSA1"]['TSGN1']
     self.spdval1 = cp_cam.vl["RSA1"]['SPDVAL1']
-    if self.spdval1 > 0:
-      print self.spdval1
+    #if self.spdval1 > 0:
+    #  print self.spdval1
     self.splsgn1 = cp_cam.vl["RSA1"]['SPLSGN1']
     self.tsgn2 = cp_cam.vl["RSA1"]['TSGN2']
     self.spdval2 = cp_cam.vl["RSA1"]['SPDVAL2']
