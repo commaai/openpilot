@@ -17,6 +17,7 @@ class kegman_conf():
       with open('/data/kegman.json', 'r') as f:
         try:
           self.config = json.load(f)
+          self.last_conf = copy.deepcopy(self.config)
         except:
           self.config = self.default_config
       if "battPercOff" not in self.config:
