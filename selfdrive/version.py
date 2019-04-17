@@ -15,7 +15,7 @@ try:
       branch = 'origin/' + branch
       dirty = subprocess.call(["git", "diff-index", "--quiet", branch, "--"]) != 0
       if dirty:
-        dirty_files = subprocess.check_output(["git", "diff-index", "--name-only", branch, "--"])
+        dirty_files = subprocess.check_output(["git", "diff-index", branch, "--"])
         commit = subprocess.check_output(["git", "rev-parse", "--verify", "HEAD"]).rstrip()
         origin_commit = subprocess.check_output(["git", "rev-parse", "--verify", branch]).rstrip()
         cloudlog.event("dirty comma branch", vesion=version, dirty=dirty, origin=origin, branch=branch, dirty_files=dirty_files, commit=commit, origin_commit=origin_commit)
