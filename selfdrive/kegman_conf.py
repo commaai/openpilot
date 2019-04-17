@@ -17,9 +17,9 @@ class kegman_conf():
       with open('/data/kegman.json', 'r') as f:
         try:
           self.config = json.load(f)
-          self.last_conf = copy.deepcopy(self.config)
         except:
           self.config = self.default_config
+      self.last_conf = copy.deepcopy(self.config)
       if "battPercOff" not in self.config:
         self.config.update({"battPercOff":"25"})
         self.element_updated = True
