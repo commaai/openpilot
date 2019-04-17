@@ -148,6 +148,7 @@ def get_cam_can_parser(CP):
 class CarState(object):
   def __init__(self, CP):
     self.kegman = kegman_conf()
+    self.acc_slow_on_change = False
     self.brakefactor = float(self.kegman.conf['brakefactor'])
     self.trfix = False
     self.Angles = np.zeros(250)
@@ -278,6 +279,8 @@ class CarState(object):
           self.cstm_btns.hasChanges = True
           if self.alcaMode == 3:
             self.cstm_btns.set_button_status("alca", 0) 
+      elif (id == 2) and self.cstm_btns.btns[id].btn_name=="slow":
+        self.acc_slow_on_change = True
       elif (id == 5) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="gas":
           if self.cstm_btns.btns[id].btn_label2 == self.gasLabels[self.gasMode]:
             self.gasMode = (self.gasMode + 1 ) % 3
@@ -300,6 +303,8 @@ class CarState(object):
           self.kegman.write_config(self.kegman.conf)
           self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
           self.cstm_btns.hasChanges = True
+        elif (id == 2) and self.cstm_btns.btns[id].btn_name=="slow":
+          self.acc_slow_on_change = True
 
   def update(self, cp, cp_cam):
     # copy can_valid
@@ -445,13 +450,15 @@ class CarState(object):
       if self.cstm_btns.get_button_status("slow") == 0:
         self.acc_slow_on = False
         self.sloMode = 0
-        self.kegman.conf['lastSloMode'] = str(self.sloMode)   # write last SloMode setting to file
-        self.kegman.write_config(self.kegman.conf)
+        if self.acc_slow_on_change:
+          self.kegman.conf['lastSloMode'] = str(self.sloMode)   # write last SloMode setting to file
+          self.kegman.write_config(self.kegman.conf)
       else:
         self.acc_slow_on = True
         self.sloMode = 1
-        self.kegman.conf['lastSloMode'] = str(self.sloMode)   # write last SloMode setting to file
-        self.kegman.write_config(self.kegman.conf)
+        if self.acc_slow_on_change:
+          self.kegman.conf['lastSloMode'] = str(self.sloMode)   # write last SloMode setting to file
+          self.kegman.write_config(self.kegman.conf)
 
     # we could use the override bit from dbc, but it's triggered at too high torque values
     self.steer_override = abs(self.steer_torque_driver) > STEER_THRESHOLD
