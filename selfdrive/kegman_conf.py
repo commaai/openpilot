@@ -75,7 +75,7 @@ class kegman_conf():
   def write_config(self, config):
     try:
       # Only write if data has changed
-      if (self.config != config):
+      if (self.last_conf != config):
         #print "Config changed, writing file"
         self.last_conf = copy.deepcopy(config) # cache the current config
         with lock:
