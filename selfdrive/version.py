@@ -13,6 +13,7 @@ try:
     else:
       branch = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"]).rstrip()
       branch = 'origin/' + branch
+      subprocess.check_call(["git", "update-index", "--refresh"])  #This is needed otherwise touched files might show up as modified
       dirty = subprocess.call(["git", "diff-index", "--quiet", branch, "--"]) != 0
       if dirty:
         dirty_files = subprocess.check_output(["git", "diff-index", branch, "--"])
