@@ -1,4 +1,5 @@
 import json
+import copy
 import os, stat
 import threading
 lock = threading.Lock()
@@ -6,6 +7,7 @@ lock = threading.Lock()
 class kegman_conf():
   def __init__(self):
     self.conf = self.read_config()
+    self.last_conf = copy.deepcopy(self.conf)
 
   def read_config(self):
     self.element_updated = False
@@ -72,10 +74,14 @@ class kegman_conf():
 
   def write_config(self, config):
     try:
-      with lock:
-        with open('/data/kegman.json', 'w') as f:
-          json.dump(config, f, indent=2, sort_keys=True)
-          os.chmod("/data/kegman.json", 0o764)
+      # Only write if data has changed
+      if (self.config != config):
+        #print "Config changed, writing file"
+        self.last_conf = copy.deepcopy(config) # cache the current config
+        with lock:
+          with open('/data/kegman.json', 'w') as f:
+            json.dump(config, f, indent=2, sort_keys=True)
+            os.chmod("/data/kegman.json", 0o764)
     except IOError:
       os.mkdir('/data')
       with open('/data/kegman.json', 'w') as f:
