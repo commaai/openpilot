@@ -453,12 +453,14 @@ class CarState(object):
         if self.acc_slow_on_change:
           self.kegman.conf['lastSloMode'] = str(self.sloMode)   # write last SloMode setting to file
           self.kegman.write_config(self.kegman.conf)
+          self.acc_slow_on_change = False
       else:
         self.acc_slow_on = True
         self.sloMode = 1
         if self.acc_slow_on_change:
           self.kegman.conf['lastSloMode'] = str(self.sloMode)   # write last SloMode setting to file
           self.kegman.write_config(self.kegman.conf)
+          self.acc_slow_on_change = False
 
     # we could use the override bit from dbc, but it's triggered at too high torque values
     self.steer_override = abs(self.steer_torque_driver) > STEER_THRESHOLD
