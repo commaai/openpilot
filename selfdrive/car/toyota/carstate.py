@@ -270,11 +270,9 @@ class CarState(object):
           if self.cstm_btns.btns[id].btn_label2 == self.alcaLabels[self.alcaMode]:
             self.alcaMode = (self.alcaMode + 1 ) % 4
             self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last ALCAMode setting to file
-            self.kegman.write_config(self.kegman.conf)
           else:
             self.alcaMode = 0
             self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last ALCAMode setting to file
-            self.kegman.write_config(self.kegman.conf)
           self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
           self.cstm_btns.hasChanges = True
           if self.alcaMode == 3:
@@ -285,11 +283,9 @@ class CarState(object):
           if self.cstm_btns.btns[id].btn_label2 == self.gasLabels[self.gasMode]:
             self.gasMode = (self.gasMode + 1 ) % 3
             self.kegman.conf['lastGasMode'] = str(self.gasMode)   # write last GasMode setting to file
-            self.kegman.write_config(self.kegman.conf)
           else:
             self.gasMode = 0
             self.kegman.conf['lastGasMode'] = str(self.gasMode)   # write last GasMode setting to file
-            self.kegman.write_config(self.kegman.conf)
 
           self.cstm_btns.btns[id].btn_label2 = self.gasLabels[self.gasMode]
           self.cstm_btns.hasChanges = True
@@ -300,7 +296,6 @@ class CarState(object):
         if (id == 1) and self.cstm_btns.btns[id].btn_name=="alca":
           self.alcaMode = (self.alcaMode + 1 ) % 4
           self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last ALCAMode setting to file
-          self.kegman.write_config(self.kegman.conf)
           self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
           self.cstm_btns.hasChanges = True
         elif (id == 2) and self.cstm_btns.btns[id].btn_name=="slow":
@@ -452,14 +447,12 @@ class CarState(object):
         self.sloMode = 0
         if self.acc_slow_on_change:
           self.kegman.conf['lastSloMode'] = str(self.sloMode)   # write last SloMode setting to file
-          self.kegman.write_config(self.kegman.conf)
           self.acc_slow_on_change = False
       else:
         self.acc_slow_on = True
         self.sloMode = 1
         if self.acc_slow_on_change:
           self.kegman.conf['lastSloMode'] = str(self.sloMode)   # write last SloMode setting to file
-          self.kegman.write_config(self.kegman.conf)
           self.acc_slow_on_change = False
 
     # we could use the override bit from dbc, but it's triggered at too high torque values
