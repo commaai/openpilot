@@ -277,7 +277,7 @@ class CarState(object):
           self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
           self.cstm_btns.hasChanges = True
           if self.alcaMode == 3:
-            self.cstm_btns.set_button_status("alca", 0) 
+            self.cstm_btns.set_button_status("alca", 0)
       elif (id == 2) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="slow":
         if self.cstm_btns.btns[id].btn_label2 == self.sloLabels[self.sloMode]:
           self.sloMode = (self.sloMode + 1 ) % 2
