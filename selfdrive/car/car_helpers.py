@@ -96,10 +96,7 @@ def fingerprint(logcan, timeout):
       cloudlog.warning(f.read())
   except:
     pass
-  try:
-    crash.capture_warning("fingerprinted %s" % candidate_cars[0])
-  except:  # fixes occasional travis errors
-    pass
+  crash.capture_warning("fingerprinted %s" % candidate_cars[0])
   cloudlog.warning("fingerprinted %s", candidate_cars[0])
   
   return (candidate_cars[0], finger)
