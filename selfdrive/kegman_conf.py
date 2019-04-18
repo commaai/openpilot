@@ -4,13 +4,16 @@ import os
 import threading
 import time
 from selfdrive.swaglog import cloudlog
+lock = threading.Lock()
 
 class kegman_conf():
   def __init__(self, from_source, read_only=False):  # start thread by default
     self.conf = self.read_config()
+    self.change_from_file = False
     # when you import kegman_conf and only use it to read data, you can specify read_only in your import as to not start the write_thread
     if not read_only:
       threading.Thread(target=self.write_thread).start()
+      threading.Thread(target=self.read_thread).start()
     try:
       with open("/data/testinit", "a") as f:
         f.write("init: " + from_source + "\n")
@@ -67,10 +70,25 @@ class kegman_conf():
   def write_thread(self):
     last_conf = copy.deepcopy(self.conf)
     while True:
-      time.sleep(15)  # every 15 seconds check for conf change
+      time.sleep(30)  # every 15 seconds check for conf change
       if self.conf != last_conf:
-        self.write_config()
-        last_conf = copy.deepcopy(self.conf)  # cache the current config
+        if not self.change_from_file:
+          with lock:
+            self.write_config()
+          last_conf = copy.deepcopy(self.conf)  # cache the current config
+        else:
+          self.change_from_file = False
+          last_conf = copy.deepcopy(self.conf)
+
+  def read_thread(self):
+    while True:
+      time.sleep(15)
+      with lock:
+        with open('/data/kegman.json', 'r') as f:
+          conf_tmp = json.load(f)
+      if conf_tmp != self.conf:
+        self.conf = conf_tmp
+        self.change_from_file = True
 
   def write_config(self):  # never to be called outside kegman_conf
     try:
