@@ -203,6 +203,7 @@ class CarState(object):
     
     context = zmq.Context()
     self.poller = zmq.Poller()
+    self.kegmanConf_sock = messaging.pub_sock(context, service_list['kegmanConf'].port)
     self.lastlat_Control = None
     #gps_ext_sock = messaging.sub_sock(context, service_list['gpsLocationExternal'].port, poller)
     self.gps_location = messaging.sub_sock(context, service_list['gpsLocationExternal'].port, conflate=True, poller=self.poller)
@@ -263,13 +264,23 @@ class CarState(object):
     btns.append(UIButton("gas", "GAS", 1, self.gasLabels[self.gasMode], 5))
     return btns
 
+  def get_kegman(self):
+    dat = messaging.new_message()
+    dat.init('kegmanConf')
+    return dat.kegmanConf
+
+  def send_kegman(self, dat, data):
+    dat.kegmanConf.variable = data
+    self.kegmanConf_sock.send(dat.to_bytes())
+
   #BB update ui buttons
   def update_ui_buttons(self,id,btn_status):
     if self.cstm_btns.btns[id].btn_status > 0:
       if (id == 1) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="alca":
           if self.cstm_btns.btns[id].btn_label2 == self.alcaLabels[self.alcaMode]:
             self.alcaMode = (self.alcaMode + 1 ) % 4
-            self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last ALCAMode setting to file
+            #self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last ALCAMode setting to file
+            self.send_kegman(self.get_kegman().lastALCAMode, self.alcaMode)
           else:
             self.alcaMode = 0
             self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last ALCAMode setting to file

@@ -1644,6 +1644,24 @@ struct LatControl {
   anglelater @0 :Float32;
 }
 
+struct KegmanConf {
+  angle_steers_offset @0 :Float32;
+  battChargeMax @1 :Int32;
+  battChargeMin @2 :Int32;
+  battPercOff @3 :Int32;
+  brakeStoppingTarget @4 :Float32;
+  brake_distance_extra @5 :Float32;
+  brakefactor @6 :Float32;
+  cameraOffset @7 :Float32;
+  carVoltageMinEonShutdown @8 :Int32;
+  lastALCAMode @9 :Int32;
+  lastGasMode @10 :Int32;
+  lastSloMode @11 :Int32;
+  lastTrMode @12 :Int32;
+  leadDistance @13 :Int32;
+  wheelTouchSeconds @14 :Float32;
+}
+
 struct CameraOdometry {
   trans @0 :List(Float32); # m/s in device frame
   rot @1 :List(Float32); # rad/s in device frame
@@ -1729,5 +1747,6 @@ struct Event {
     cameraOdometry @64 :CameraOdometry;
     pathPlan @65 :PathPlan;
     kalmanOdometry @66 :KalmanOdometry;
+    kegmanConf @67 :KegmanConf;
   }
 }
