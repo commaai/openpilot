@@ -2,7 +2,7 @@ import json
 import copy
 import os, stat
 import threading
-lock = threading.Lock()
+import time
 
 class kegman_conf():
   def __init__(self):
