@@ -79,10 +79,9 @@ class kegman_conf():
       if (self.last_conf != config):
         #print "Config changed, writing file"
         self.last_conf = copy.deepcopy(config) # cache the current config
-        with lock:
-          with open('/data/kegman.json', 'w') as f:
-            json.dump(config, f, indent=2, sort_keys=True)
-            os.chmod("/data/kegman.json", 0o764)
+        with open('/data/kegman.json', 'w') as f:
+          json.dump(config, f, indent=2, sort_keys=True)
+          os.chmod("/data/kegman.json", 0o764)
     except IOError:
       os.mkdir('/data')
       with open('/data/kegman.json', 'w') as f:
