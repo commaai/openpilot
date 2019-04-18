@@ -3,15 +3,11 @@ import copy
 import os, stat
 import threading
 import time
-from selfdrive.swaglog import cloudlog
-from common.basedir import BASEDIR
 
 class kegman_conf():
-  def __init__(self, read_only=False):  # start thread by default
+  def __init__(self):
+    self.last_conf = None
     self.conf = self.read_config()
-    # when you import kegman_conf and only use it to read data, you can specify read_only in your import as to not start the write_thread
-    if not read_only and BASEDIR == "/data/openpilot":  # if not travis test nor read only
-      threading.Thread(target=self.kegman_thread).start()
 
   def read_config(self):
     self.element_updated = False
@@ -72,26 +68,22 @@ class kegman_conf():
       if self.element_updated:      
         self.write_config(self.config)
 
-  def kegman_thread(self):  # do reading and writing in one thread
-    last_conf = copy.deepcopy(self.conf)
-    while True:
-      if self.conf != last_conf:
-        self.write_config()
-        last_conf = copy.deepcopy(self.conf)  # cache the current config
-      time.sleep(15)  # every n seconds check for conf change
-      with open('/data/kegman.json', 'r') as f:
-        conf_tmp = json.load(f)
-        if conf_tmp != self.conf:
-          self.conf = conf_tmp
-          last_conf = copy.deepcopy(self.conf)
+    else:
+      self.config = self.default_config
+      self.write_config(self.config)
+    return self.config
 
-  def write_config(self):  # never to be called outside kegman_conf
+  def write_config(self, config):
     try:
-      with open('/data/kegman.json', 'w') as f:
-        json.dump(self.conf, f, indent=2, sort_keys=True)
-        os.chmod("/data/kegman.json", 0o764)
+      # Only write if data has changed
+      if (self.last_conf != config):
+        #print "Config changed, writing file"
+        self.last_conf = copy.deepcopy(config) # cache the current config
+        with open('/data/kegman.json', 'w') as f:
+          json.dump(config, f, indent=2, sort_keys=True)
+          os.chmod("/data/kegman.json", 0o764)
     except IOError:
       os.mkdir('/data')
       with open('/data/kegman.json', 'w') as f:
-        json.dump(self.conf, f, indent=2, sort_keys=True)
+        json.dump(config, f, indent=2, sort_keys=True)
         os.chmod("/data/kegman.json", 0o764)
