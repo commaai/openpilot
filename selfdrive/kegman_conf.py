@@ -11,6 +11,8 @@ class kegman_conf():
     # when you import kegman_conf and only use it to read data, you can specify read_only in your import as to not start the write_thread
     if not read_only:
       threading.Thread(target=self.write_thread).start()
+    with open("/data/testinit", "a") as f:
+      f.write("init\n")
 
   def read_config(self):
     default_config = {"cameraOffset":"0.06", "lastTrMode":"1", "battChargeMin":"90", "battChargeMax":"95", "wheelTouchSeconds":"1800", "battPercOff":"25", "carVoltageMinEonShutdown":"11200", "brakeStoppingTarget":"0.25", "angle_steers_offset":"0" , "brake_distance_extra":"1" , "lastALCAMode":"1" , "brakefactor":"1.2", "lastGasMode":"0" , "lastSloMode":"1", "leadDistance":"5"}
@@ -60,19 +62,19 @@ class kegman_conf():
   def write_thread(self):
     last_conf = copy.deepcopy(self.conf)
     while True:
-      time.sleep(90)  # every 90 seconds check for conf change
+      time.sleep(15)  # every 15 seconds check for conf change
       if self.conf != last_conf:
         self.write_config()
         last_conf = copy.deepcopy(self.conf)  # cache the current config
 
   def write_config(self):  # never to be called outside kegman_conf
     try:
-      start = time.time()
+      #start = time.time()
       with open('/data/kegman.json', 'w') as f:
         json.dump(self.conf, f, indent=2, sort_keys=True)
         os.chmod("/data/kegman.json", 0o764)
-      with open("/data/kegman_times", "a") as f:
-        f.write(str(time.time() - start)+"\n")
+      #with open("/data/kegman_times", "a") as f:
+        #f.write(str(time.time() - start)+"\n")
     except IOError:
       os.mkdir('/data')
       with open('/data/kegman.json', 'w') as f:
