@@ -60,16 +60,25 @@ class kegman_conf():
 
   def kegman_thread(self):  # do reading and writing in one thread
     last_conf = copy.deepcopy(self.conf)
+    change_from_file = False
+    write_to_file = False
     while True:
-      if self.conf != last_conf:
+      if self.conf != last_conf and not change_from_file:
         self.write_config()
         last_conf = copy.deepcopy(self.conf)  # cache the current config
+        write_to_file = True
+      else:
+        change_from_file = False
+        last_conf = copy.deepcopy(self.conf)
       time.sleep(15)  # every n seconds check for conf change
       with open('/data/kegman.json', 'r') as f:
         conf_tmp = json.load(f)
-        if conf_tmp != self.conf:
+        if conf_tmp != self.conf and not write_to_file:
+          change_from_file = True
           self.conf = conf_tmp
           last_conf = copy.deepcopy(self.conf)
+        else:
+          write_to_file = False
 
   def write_config(self):  # never to be called outside kegman_conf
     try:
