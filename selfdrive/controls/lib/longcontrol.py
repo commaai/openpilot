@@ -6,7 +6,7 @@ from selfdrive.kegman_conf import kegman_conf
 import selfdrive.messaging as messaging
 from selfdrive.services import service_list
 
-kegman = kegman_conf("longcontrol.py", read_only=True)
+kegman = kegman_conf()
 LongCtrlState = log.Live100Data.LongControlState
 
 STOPPING_EGO_SPEED = 0.5
