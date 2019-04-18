@@ -65,7 +65,7 @@ class kegman_conf():
         self.write_config()
         last_conf = copy.deepcopy(self.conf)  # cache the current config
 
-  def write_config(self):
+  def write_config(self):  # never to be called outside kegman_conf
     try:
       with open('/data/kegman.json', 'w') as f:
         json.dump(self.conf, f, indent=2, sort_keys=True)
