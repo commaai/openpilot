@@ -87,11 +87,11 @@ class kegman_conf():
         try:
           with open('/data/kegman.json', 'r') as f:
             conf_tmp = json.load(f)
+            if conf_tmp != self.conf:
+              self.conf = conf_tmp
+              self.change_from_file = True
         except:
           pass
-      if conf_tmp != self.conf:
-        self.conf = conf_tmp
-        self.change_from_file = True
 
   def write_config(self):  # never to be called outside kegman_conf
     try:
