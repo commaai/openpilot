@@ -6,10 +6,15 @@ import time
 from selfdrive.swaglog import cloudlog
 from common.basedir import BASEDIR
 
+conf = {}
+
 class kegman_conf():
+  global conf
   conf = {"lastGasMode": "0"}
   def __init__(self, read_only=False):  # start thread by default
-    self.conf = self.read_config()
+    #self.conf = self.read_config()
+    global conf
+    conf = {"lastGasMode": "0"}
     # when you import kegman_conf and only use it to read data, you can specify read_only in your import as to not start the write_thread
     if not read_only and BASEDIR == "/data/openpilot":  # if not travis test nor read only
       threading.Thread(target=self.kegman_thread).start()
