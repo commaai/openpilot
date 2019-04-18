@@ -11,15 +11,16 @@ class kegman_conf():
   def __init__(self, from_source, read_only=False):  # start thread by default
     self.conf = self.read_config()
     self.change_from_file = False
+    try:
+      with open("/data/thread_test.txt", "a") as f:
+        f.write(str(BASEDIR))
+    except:
+      print(BASEDIR)
     # when you import kegman_conf and only use it to read data, you can specify read_only in your import as to not start the write_thread
     if not read_only and BASEDIR == "/data/openpilot":
       threading.Thread(target=self.write_thread).start()
       threading.Thread(target=self.read_thread).start()
-    try:
-      with open("/data/thread_test.txt", "w") as f:
-        f.write(str(BASEDIR))
-    except:
-      pass
+
     try:
       with open("/data/testinit", "a") as f:
         f.write("init: " + from_source + "\n")
