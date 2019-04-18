@@ -5,6 +5,7 @@ import threading
 import time
 from selfdrive.swaglog import cloudlog
 lock = threading.Lock()
+from common.basedir import BASEDIR
 
 class kegman_conf():
   def __init__(self, from_source, read_only=False):  # start thread by default
@@ -25,8 +26,8 @@ class kegman_conf():
   def read_config(self):
     default_config = {"cameraOffset":"0.06", "lastTrMode":"1", "battChargeMin":"90", "battChargeMax":"95", "wheelTouchSeconds":"1800", "battPercOff":"25", "carVoltageMinEonShutdown":"11200", "brakeStoppingTarget":"0.25", "angle_steers_offset":"0" , "brake_distance_extra":"1" , "lastALCAMode":"1" , "brakefactor":"1.2", "lastGasMode":"0" , "lastSloMode":"1", "leadDistance":"5"}
 
-    if os.path.isfile('/data/kegman.json'):
-      with open('/data/kegman.json', 'r') as f:
+    if os.path.isfile(BASEDIR[:5] + '/kegman.json'):
+      with open(BASEDIR[:5] + '/kegman.json', 'r') as f:
         try:
           config = json.load(f)
         except:
@@ -70,7 +71,7 @@ class kegman_conf():
   def write_thread(self):
     last_conf = copy.deepcopy(self.conf)
     while True:
-      time.sleep(30)  # every 15 seconds check for conf change
+      time.sleep(30)  # every n seconds check for conf change
       if self.conf != last_conf:
         if not self.change_from_file:
           with lock:
@@ -84,7 +85,7 @@ class kegman_conf():
     while True:
       time.sleep(15)
       with lock:
-        with open('/data/kegman.json', 'r') as f:
+        with open(BASEDIR[:5] + '/kegman.json', 'r') as f:
           conf_tmp = json.load(f)
       if conf_tmp != self.conf:
         self.conf = conf_tmp
@@ -93,13 +94,13 @@ class kegman_conf():
   def write_config(self):  # never to be called outside kegman_conf
     try:
       #start = time.time()
-      with open('/data/kegman.json', 'w') as f:
+      with open(BASEDIR[:5] + '/kegman.json', 'w') as f:
         json.dump(self.conf, f, indent=2, sort_keys=True)
-        os.chmod("/data/kegman.json", 0o764)
+        os.chmod(BASEDIR[:5] + "kegman.json", 0o764)
       #with open("/data/kegman_times", "a") as f:
         #f.write(str(time.time() - start)+"\n")
     except IOError:
       os.mkdir('/data')
-      with open('/data/kegman.json', 'w') as f:
+      with open(BASEDIR[:5] + '/kegman.json', 'w') as f:
         json.dump(self.conf, f, indent=2, sort_keys=True)
-        os.chmod("/data/kegman.json", 0o764)
+        os.chmod(BASEDIR[:5] + "kegman.json", 0o764)
