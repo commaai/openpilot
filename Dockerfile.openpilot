@@ -23,18 +23,18 @@ RUN apt-get update && apt-get install -y \
 
 RUN pip install numpy==1.11.2 scipy==0.18.1 matplotlib==2.1.2
 
-COPY requirements_openpilot.txt /tmp/
-RUN pip install -r /tmp/requirements_openpilot.txt
+COPY requirements_openpilot.txt /data/
+RUN pip install -r /data/requirements_openpilot.txt
 
-ENV PYTHONPATH /tmp/openpilot:$PYTHONPATH
+ENV PYTHONPATH /data/openpilot:$PYTHONPATH
 
-COPY ./common /tmp/openpilot/common
-COPY ./cereal /tmp/openpilot/cereal
-COPY ./opendbc /tmp/openpilot/opendbc
-COPY ./selfdrive /tmp/openpilot/selfdrive
-COPY ./phonelibs /tmp/openpilot/phonelibs
-COPY ./pyextra /tmp/openpilot/pyextra
+COPY ./common /data/openpilot/common
+COPY ./cereal /data/openpilot/cereal
+COPY ./opendbc /data/openpilot/opendbc
+COPY ./selfdrive /data/openpilot/selfdrive
+COPY ./phonelibs /data/openpilot/phonelibs
+COPY ./pyextra /data/openpilot/pyextra
 
-RUN mkdir -p /tmp/openpilot/selfdrive/test/out
-RUN make -C /tmp/openpilot/selfdrive/controls/lib/longitudinal_mpc clean
-RUN make -C /tmp/openpilot/selfdrive/controls/lib/lateral_mpc clean
+RUN mkdir -p /data/openpilot/selfdrive/test/out
+RUN make -C /data/openpilot/selfdrive/controls/lib/longitudinal_mpc clean
+RUN make -C /data/openpilot/selfdrive/controls/lib/lateral_mpc clean
