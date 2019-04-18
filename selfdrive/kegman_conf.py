@@ -6,13 +6,13 @@ import time
 from selfdrive.swaglog import cloudlog
 
 class kegman_conf():
-  def __init__(self, read_only=False):  # start thread by default
+  def __init__(self, from_source, read_only=False):  # start thread by default
     self.conf = self.read_config()
     # when you import kegman_conf and only use it to read data, you can specify read_only in your import as to not start the write_thread
     if not read_only:
       threading.Thread(target=self.write_thread).start()
     with open("/data/testinit", "a") as f:
-      f.write("init\n")
+      f.write("init: " + from_source + "\n")
 
   def read_config(self):
     default_config = {"cameraOffset":"0.06", "lastTrMode":"1", "battChargeMin":"90", "battChargeMax":"95", "wheelTouchSeconds":"1800", "battPercOff":"25", "carVoltageMinEonShutdown":"11200", "brakeStoppingTarget":"0.25", "angle_steers_offset":"0" , "brake_distance_extra":"1" , "lastALCAMode":"1" , "brakefactor":"1.2", "lastGasMode":"0" , "lastSloMode":"1", "leadDistance":"5"}

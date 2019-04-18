@@ -80,7 +80,7 @@ def get_camera_parser(CP):
 
 class CarState(object):
   def __init__(self, CP):
-    self.kegman = kegman_conf()
+    self.kegman = kegman_conf("chrysler/carstate.py")
     self.alcaLabels = ["MadMax","Normal","Wifey","off"]
     self.alcaMode = int(self.kegman.conf['lastALCAMode'])
     self.prev_distance_button = 0

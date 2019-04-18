@@ -147,7 +147,7 @@ def get_cam_can_parser(CP):
 
 class CarState(object):
   def __init__(self, CP):
-    self.kegman = kegman_conf()
+    self.kegman = kegman_conf("toyota/carstate.py")
     self.acc_slow_on_change = False
     self.brakefactor = float(self.kegman.conf['brakefactor'])
     self.trfix = False

@@ -59,7 +59,7 @@ def get_powertrain_can_parser(CP, canbus):
 
 class CarState(object):
   def __init__(self, CP, canbus):
-    self.kegman = kegman_conf()
+    self.kegman = kegman_conf("gm/carstate.py")
     self.CP = CP
     # initialize can parser
     self.alcaLabels = ["MadMax","Normal","Wifey","off"]
