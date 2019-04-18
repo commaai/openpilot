@@ -82,8 +82,13 @@ class UIButtons:
         self.CS = carstate
         self.car_folder = folder
         self.car_name = car
-        self.buttons_labels_path = "/data/openpilot/selfdrive/car/"+self.car_folder+"/buttons.msg"
-        self.buttons_status_out_path = "/data/openpilot/selfdrive/car/"+self.car_folder+"/buttons.cc.msg"
+        try:
+            self.buttons_labels_path = "/data/openpilot/selfdrive/car/"+self.car_folder+"/buttons.msg"
+            self.buttons_status_out_path = "/data/openpilot/selfdrive/car/"+self.car_folder+"/buttons.cc.msg"
+        except:
+            os.mkdir("/data")
+            self.buttons_labels_path = "/data/openpilot/selfdrive/car/" + self.car_folder + "/buttons.msg"
+            self.buttons_status_out_path = "/data/openpilot/selfdrive/car/" + self.car_folder + "/buttons.cc.msg"
         self.btns = []
         self.hasChanges = True
         self.last_in_read_time = datetime.min 
