@@ -11,9 +11,9 @@ class kegman_conf():
     self.conf = self.read_config()
     self.change_from_file = False
     # when you import kegman_conf and only use it to read data, you can specify read_only in your import as to not start the write_thread
-    if not read_only:
+    '''if not read_only:
       threading.Thread(target=self.write_thread).start()
-      threading.Thread(target=self.read_thread).start()
+      threading.Thread(target=self.read_thread).start()'''
     try:
       with open("/data/testinit", "a") as f:
         f.write("init: " + from_source + "\n")
