@@ -3,6 +3,7 @@ import struct
 from ctypes import create_string_buffer
 import os
 from datetime import datetime
+from common.basedir import BASEDIR
 
 
 buttons_file_rw = "wb"
@@ -82,13 +83,8 @@ class UIButtons:
         self.CS = carstate
         self.car_folder = folder
         self.car_name = car
-        try:
-            self.buttons_labels_path = "/data/openpilot/selfdrive/car/"+self.car_folder+"/buttons.msg"
-            self.buttons_status_out_path = "/data/openpilot/selfdrive/car/"+self.car_folder+"/buttons.cc.msg"
-        except:
-            os.mkdir("/data")
-            self.buttons_labels_path = "/data/openpilot/selfdrive/car/" + self.car_folder + "/buttons.msg"
-            self.buttons_status_out_path = "/data/openpilot/selfdrive/car/" + self.car_folder + "/buttons.cc.msg"
+        self.buttons_labels_path = BASEDIR + "/selfdrive/car/"+self.car_folder+"/buttons.msg"
+        self.buttons_status_out_path = BASEDIR + "/selfdrive/car/"+self.car_folder+"/buttons.cc.msg"
         self.btns = []
         self.hasChanges = True
         self.last_in_read_time = datetime.min 
