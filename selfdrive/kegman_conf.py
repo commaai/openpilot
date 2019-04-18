@@ -7,6 +7,7 @@ from selfdrive.swaglog import cloudlog
 from common.basedir import BASEDIR
 
 class kegman_conf():
+  conf = {"lastGasMode": "0"}
   def __init__(self, read_only=False):  # start thread by default
     self.conf = self.read_config()
     # when you import kegman_conf and only use it to read data, you can specify read_only in your import as to not start the write_thread
