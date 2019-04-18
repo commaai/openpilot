@@ -10,7 +10,7 @@ from selfdrive.swaglog import cloudlog
 
 from selfdrive.kegman_conf import kegman_conf
 
-kegman = kegman_conf("toyota/interface.py")
+kegman = kegman_conf()
 
 steeringAngleoffset = float(kegman.conf['angle_steers_offset'])  # deg offset
    
@@ -147,7 +147,7 @@ class CarInterface(object):
       ret.steerRatio = 15.8
       tire_stiffness_factor = 0.444
       ret.mass = 2860 * CV.LB_TO_KG + std_cargo  # mean between normal and hybrid
-      ret.steerKpV, ret.steerKiV = [[0.2], [0.125]]
+      ret.steerKpV, ret.steerKiV = [[0.2], [0.05]]
       ret.steerKf = 0.00003909297   # full torque for 20 deg at 80mph means 0.00007818594
       if ret.enableGasInterceptor:
         ret.gasMaxV = [0.2, 0.5, 0.7]
