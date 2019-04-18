@@ -9,8 +9,6 @@ from common.basedir import BASEDIR
 conf = {}
 
 class kegman_conf():
-  global conf
-  conf = {"lastGasMode": "0"}
   def __init__(self, read_only=False):  # start thread by default
     #self.conf = self.read_config()
     global conf
@@ -65,24 +63,25 @@ class kegman_conf():
     return config
 
   def kegman_thread(self):  # do reading and writing in one thread
-    last_conf = copy.deepcopy(kegman_conf.conf)
+    global conf
+    last_conf = copy.deepcopy(conf)
     change_from_file = False
     write_to_file = False
     while True:
-      if kegman_conf.conf != last_conf and not change_from_file:
-        self.write_config(kegman_conf.conf)
-        last_conf = copy.deepcopy(kegman_conf.conf)  # cache the current config
+      if conf != last_conf and not change_from_file:
+        self.write_config(conf)
+        last_conf = copy.deepcopy(conf)  # cache the current config
         write_to_file = True
       else:
         change_from_file = False
-        last_conf = copy.deepcopy(kegman_conf.conf)
+        last_conf = copy.deepcopy(conf)
       time.sleep(15)  # every n seconds check for conf change
       with open('/data/kegman.json', 'r') as f:
         conf_tmp = json.load(f)
-        if conf_tmp != kegman_conf.conf and not write_to_file:
+        if conf_tmp != conf and not write_to_file:
           change_from_file = True
-          kegman_conf.conf = conf_tmp
-          last_conf = copy.deepcopy(kegman_conf.conf)
+          conf = conf_tmp
+          last_conf = copy.deepcopy(conf)
         else:
           write_to_file = False
 
