@@ -6,8 +6,8 @@ import time
 
 class kegman_conf():
   def __init__(self):
+    self.last_conf = None
     self.conf = self.read_config()
-    self.last_conf = copy.deepcopy(self.conf)
 
   def read_config(self):
     self.element_updated = False
