@@ -287,7 +287,7 @@ class CarState(object):
           self.sloMode = 0
           self.kegman.conf['lastSloMode'] = str(self.sloMode)   # write last SloMode setting to file
           self.kegman.write_config(self.kegman.conf)
-        self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.sloMode]
+        self.cstm_btns.btns[id].btn_label2 = self.sloLabels[self.sloMode]
         self.cstm_btns.hasChanges = True
         if self.sloMode == 0:
           self.cstm_btns.set_button_status("slow", 0)  # this might not be needed
