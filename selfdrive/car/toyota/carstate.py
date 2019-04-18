@@ -178,19 +178,19 @@ class CarState(object):
     self.CL_LANE_DETECT_BP = [10., 50.]
     self.CL_LANE_DETECT_FACTOR = [1.3, 1.3]
     self.CL_LANE_PASS_BP = [10., 20., 50.]
-    self.CL_LANE_PASS_TIME = [40.,10., 3.] 
+    self.CL_LANE_PASS_TIME = [40.,10., 3.]
      # change lane delta angles and other params
     self.CL_MAXD_BP = [10., 32., 50.]
     self.CL_MAXD_A = [.358, 0.084, 0.042] #delta angle based on speed; needs fine tune, based on Tesla steer ratio of 16.75
     self.CL_MIN_V = 8.9 # do not turn if speed less than x m/2; 20 mph = 8.9 m/s
      # do not turn if actuator wants more than x deg for going straight; this should be interp based on speed
     self.CL_MAX_A_BP = [10., 50.]
-    self.CL_MAX_A = [10., 10.] 
+    self.CL_MAX_A = [10., 10.]
      # define limits for angle change every 0.1 s
     # we need to force correction above 10 deg but less than 20
     # anything more means we are going to steep or not enough in a turn
     self.CL_MAX_ACTUATOR_DELTA = 2.
-    self.CL_MIN_ACTUATOR_DELTA = 0. 
+    self.CL_MIN_ACTUATOR_DELTA = 0.
     self.CL_CORRECTION_FACTOR = [1.3,1.1,1.05]
     self.CL_CORRECTION_FACTOR_BP = [10., 32., 50.]
      #duration after we cross the line until we release is a factor of speed
@@ -199,7 +199,7 @@ class CarState(object):
     #duration to wait (in seconds) with blinkers on before starting to turn
     self.CL_WAIT_BEFORE_START = 1
     #END OF ALCA PARAMS
-    
+
     context = zmq.Context()
     self.poller = zmq.Poller()
     self.lastlat_Control = None
@@ -222,7 +222,7 @@ class CarState(object):
     self.blind_spot_on = bool(0)
     self.econ_on = 0
     self.sport_on = 0
-    
+
     self.distance_toggle_prev = 2
     self.read_distance_lines_prev = 3
     self.lane_departure_toggle_on_prev = True
@@ -240,7 +240,7 @@ class CarState(object):
     self.custom_alert_counter = 100 #set to 100 for 1 second display; carcontroller will take down to zero
     # initialize can parser
     self.car_fingerprint = CP.carFingerprint
-    
+
     # vEgo kalman filter
     dt = 0.01
     # Q = np.matrix([[10.0, 0.0], [0.0, 100.0]])
@@ -330,7 +330,7 @@ class CarState(object):
         msg = messaging.recv_one(socket)
       elif socket is self.lat_Control:
         self.lastlat_Control = messaging.recv_one(socket).latControl
-    
+
     if msg is not None:
       gps_pkt = msg.gpsLocationExternal
       self.inaccuracy = gps_pkt.accuracy
@@ -406,7 +406,7 @@ class CarState(object):
       self.blind_spot_on = bool(1)
     else:
       self.blind_spot_on = bool(0)
-    
+
     # we could use the override bit from dbc, but it's triggered at too high torque values
     self.steer_override = abs(cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_DRIVER']) > 100
 
@@ -429,7 +429,7 @@ class CarState(object):
         self.lane_departure_toggle_on = False
       else:
         self.lane_departure_toggle_on = True
-      
+
     self.distance_toggle = cp.vl["JOEL_ID"]['ACC_DISTANCE']
     if cp.vl["PCM_CRUISE_SM"]['DISTANCE_LINES'] == 2:
       self.trfix = True
