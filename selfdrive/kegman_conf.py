@@ -96,11 +96,11 @@ class kegman_conf():
       #start = time.time()
       with open(BASEDIR[:5] + '/kegman.json', 'w') as f:
         json.dump(self.conf, f, indent=2, sort_keys=True)
-        os.chmod(BASEDIR[:5] + "kegman.json", 0o764)
+        os.chmod(BASEDIR[:5] + "/kegman.json", 0o764)
       #with open("/data/kegman_times", "a") as f:
         #f.write(str(time.time() - start)+"\n")
     except IOError:
       os.mkdir('/data')
       with open(BASEDIR[:5] + '/kegman.json', 'w') as f:
         json.dump(self.conf, f, indent=2, sort_keys=True)
-        os.chmod(BASEDIR[:5] + "kegman.json", 0o764)
+        os.chmod(BASEDIR[:5] + "/kegman.json", 0o764)
