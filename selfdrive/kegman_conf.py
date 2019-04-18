@@ -5,7 +5,6 @@ import threading
 import time
 from selfdrive.swaglog import cloudlog
 from common.basedir import BASEDIR
-lock = threading.Lock()
 
 class kegman_conf():
   def __init__(self, read_only=False):  # start thread by default
