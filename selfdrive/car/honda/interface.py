@@ -13,7 +13,7 @@ from selfdrive.car.honda.values import CruiseButtons, CAR, HONDA_BOSCH, AUDIO_HU
 from selfdrive.controls.lib.planner import _A_CRUISE_MAX_V_FOLLOWING
 from selfdrive.kegman_conf import kegman_conf
 
-kegman = kegman_conf()
+kegman = kegman_conf("honda/interface.py", read_only=True)
 
 angleSteersoffset = float(kegman.conf['angle_steers_offset'])  # deg offset
 

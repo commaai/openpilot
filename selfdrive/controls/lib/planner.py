@@ -17,7 +17,7 @@ from selfdrive.controls.lib.long_mpc import LongitudinalMpc
 
 from selfdrive.kegman_conf import kegman_conf
 
-kegman = kegman_conf()
+kegman = kegman_conf("planner.py")
 
 NO_CURVATURE_SPEED = 200. * CV.MPH_TO_MS
 

@@ -4,7 +4,7 @@ from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from common.filter_simple import FirstOrderFilter
 from selfdrive.kegman_conf import kegman_conf
 
-kegman = kegman_conf()
+kegman = kegman_conf("driver_monitor.py", read_only=True)
 
 _DT = 0.01                  # update runs at 100Hz
 _DTM = 0.1                  # DM runs at 10Hz

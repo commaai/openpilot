@@ -22,7 +22,7 @@ class CanBus(object):
 
 class CarInterface(object):
   def __init__(self, CP, sendcan=None):
-    self.kegman = kegman_conf()
+    self.kegman = kegman_conf("gm/interface.py")
     self.angleSteersoffset = float(self.kegman.conf['angle_steers_offset'])  # deg offset
     self.CP = CP
     self.frame = 0
@@ -306,7 +306,6 @@ class CarInterface(object):
       if self.CS.follow_level < 1:
         self.CS.follow_level = 3
       self.kegman.conf['lastTrMode'] = str(self.CS.follow_level)   # write last distance bar setting to file
-      self.kegman.write_config(self.kegman.conf)
     ret.gasbuttonstatus = self.CS.cstm_btns.get_button_status("gas")
     events = []
     if not self.CS.can_valid:
