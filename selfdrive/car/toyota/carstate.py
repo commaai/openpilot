@@ -294,7 +294,7 @@ class CarState(object):
         else:
           self.sloMode = 0
           self.kegman.conf['lastSloMode'] = str(self.sloMode)
-        self.cstm_btns.btns[id].btn_label2 = self.sloMode[self.sloMode]
+        self.cstm_btns.btns[id].btn_label2 = self.sloLabels[self.sloMode]
         self.cstm_btns.hasChanges = True
       else:
         self.cstm_btns.btns[id].btn_status = btn_status * self.cstm_btns.btns[id].btn_status
