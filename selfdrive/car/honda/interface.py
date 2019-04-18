@@ -15,6 +15,9 @@ from selfdrive.kegman_conf import kegman_conf
 
 kegman = kegman_conf()
 
+angleSteersoffset = float(kegman.conf['angle_steers_offset'])  # deg offset
+
+
 try:
   from selfdrive.car.honda.carcontroller import CarController
 except ImportError:
@@ -427,7 +430,7 @@ class CarInterface(object):
                            c.actuators.brake > brakelights_threshold)
 
     # steering wheel
-    ret.steeringAngle = self.CS.angle_steers + float(kegman.conf['angle_steers_offset'])  # deg offset
+    ret.steeringAngle = self.CS.angle_steers + angleSteersoffset
     ret.steeringRate = self.CS.angle_steers_rate
 
     # gear shifter lever

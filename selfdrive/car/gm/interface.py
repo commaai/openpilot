@@ -23,6 +23,7 @@ class CanBus(object):
 class CarInterface(object):
   def __init__(self, CP, sendcan=None):
     self.kegman = kegman_conf()
+    self.angleSteersoffset = float(self.kegman.conf['angle_steers_offset'])  # deg offset
     self.CP = CP
     self.frame = 0
     self.gas_pressed_prev = False
@@ -230,7 +231,7 @@ class CarInterface(object):
     ret.brakePressed = self.CS.brake_pressed
 
     # steering wheel
-    ret.steeringAngle = self.CS.angle_steers + float(self.kegman.conf['angle_steers_offset'])  # deg offset
+    ret.steeringAngle = self.CS.angle_steers + self.angleSteersoffset
 
     # torque and user override. Driver awareness
     # timer resets when the user uses the steering wheel.
