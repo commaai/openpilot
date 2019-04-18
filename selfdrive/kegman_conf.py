@@ -3,20 +3,14 @@ import copy
 import os
 import threading
 import time
-import selfdrive.messaging as messaging
-import zmq
-from selfdrive.services import service_list
 from selfdrive.swaglog import cloudlog
 
 class kegman_conf():
   def __init__(self, read_only=False):  # start thread by default
     self.conf = self.read_config()
-    context = zmq.Context()
-    self.poller = zmq.Poller()
-    self.kegman_Conf = messaging.sub_sock(context, service_list['kegmanConf'].port, conflate=True, poller=self.poller)
     # when you import kegman_conf and only use it to read data, you can specify read_only in your import as to not start the write_thread
     if not read_only:
-      threading.Thread(target=self.zmq_thread()).start()
+      threading.Thread(target=self.write_thread).start()
 
   def read_config(self):
     default_config = {"cameraOffset":"0.06", "lastTrMode":"1", "battChargeMin":"90", "battChargeMax":"95", "wheelTouchSeconds":"1800", "battPercOff":"25", "carVoltageMinEonShutdown":"11200", "brakeStoppingTarget":"0.25", "angle_steers_offset":"0" , "brake_distance_extra":"1" , "lastALCAMode":"1" , "brakefactor":"1.2", "lastGasMode":"0" , "lastSloMode":"1", "leadDistance":"5"}
@@ -63,50 +57,10 @@ class kegman_conf():
       config = default_config
     return config
 
-  def zmq_thread(self):
-    while True:
-      time.sleep(5)
-      kegmanConf = None
-      for socket, event in self.poller.poll(0):
-        if socket is self.kegman_Conf:
-          kegmanConf = messaging.recv_one(socket).kegmanConf
-      if kegmanConf:
-        if kegmanConf.angle_steers_offset:
-          self.conf["angle_steers_offset"] = float(kegmanConf.angle_steers_offset)
-        if kegmanConf.battChargeMax:
-          self.conf["battChargeMax"] = float(kegmanConf.battChargeMax)
-        if kegmanConf.battChargeMin:
-          self.conf["battChargeMin"] = float(kegmanConf.battChargeMin)
-        if kegmanConf.battPercOffbattPercOff:
-          self.conf["battPercOff"] = float(kegmanConf.battPercOff)
-        if kegmanConf.brakeStoppingTarget:
-          self.conf["brakeStoppingTarget"] = float(kegmanConf.brakeStoppingTarget)
-        if kegmanConf.brake_distance_extra:
-          self.conf["brake_distance_extra"] = float(kegmanConf.brake_distance_extra)
-        if kegmanConf.brakefactor:
-          self.conf["brakefactorbrakefactor"] = float(kegmanConf.brakefactor)
-        if kegmanConf.cameraOffset:
-          self.conf["cameraOffsetcameraOffset"] = float(kegmanConf.cameraOffset)
-        if kegmanConf.carVoltageMinEonShutdown:
-          self.conf["carVoltageMinEonShutdown"] = float(kegmanConf.carVoltageMinEonShutdown)
-        if kegmanConf.lastALCAMode:
-          self.conf["lastALCAMode"] = float(kegmanConf.lastALCAMode)
-        if kegmanConf.lastGasMode:
-          self.conf["lastGasMode"] = float(kegmanConf.lastGasMode)
-        if kegmanConf.lastSloModelastSloMode:
-          self.conf["lastSloMode"] = float(kegmanConf.lastSloModelastSloMode)
-        if kegmanConf.lastTrMode:
-          self.conf["lastTrMode"] = float(kegmanConf.lastTrMode)
-        if kegmanConf.leadDistance:
-          self.conf["leadDistance"] = float(kegmanConf.leadDistance)
-        if kegmanConf.wheelTouchSeconds:
-          self.conf["wheelTouchSeconds"] = float(kegmanConf.wheelTouchSeconds)
-        self.write_config()
-
   def write_thread(self):
     last_conf = copy.deepcopy(self.conf)
     while True:
-      time.sleep(5)  # every 5 seconds check for conf change
+      time.sleep(90)  # every 90 seconds check for conf change
       if self.conf != last_conf:
         self.write_config()
         last_conf = copy.deepcopy(self.conf)  # cache the current config
