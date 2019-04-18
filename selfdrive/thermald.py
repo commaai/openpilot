@@ -16,7 +16,7 @@ from selfdrive.kegman_conf import kegman_conf
 import subprocess
 import signal
 
-kegman = kegman_conf("thermald.py", read_only=True)
+kegman = kegman_conf(read_only=True)
 ThermalStatus = log.ThermalData.ThermalStatus
 CURRENT_TAU = 2.   # 2s time constant
 

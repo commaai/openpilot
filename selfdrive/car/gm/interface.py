@@ -22,7 +22,7 @@ class CanBus(object):
 
 class CarInterface(object):
   def __init__(self, CP, sendcan=None):
-    self.kegman = kegman_conf("gm/interface.py")
+    self.kegman = kegman_conf()
     self.angleSteersoffset = float(self.kegman.conf['angle_steers_offset'])  # deg offset
     self.CP = CP
     self.frame = 0

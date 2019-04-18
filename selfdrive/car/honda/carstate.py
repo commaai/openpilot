@@ -150,7 +150,7 @@ def get_cam_can_parser(CP):
 
 class CarState(object):
   def __init__(self, CP):
-    self.kegman = kegman_conf("honda/carstate.py")
+    self.kegman = kegman_conf()
     self.Angle = [0, 5, 10, 15,20,25,30,35,60,100,180,270,500]
     self.Angle_Speed = [255,160,100,80,70,60,55,50,40,30,20,10,5]
     self.blind_spot_on = bool(0)

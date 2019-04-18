@@ -10,7 +10,7 @@ from selfdrive.swaglog import cloudlog
 
 from selfdrive.kegman_conf import kegman_conf
 
-kegman = kegman_conf("toyota/interface.py")
+kegman = kegman_conf()
 
 steeringAngleoffset = float(kegman.conf['angle_steers_offset'])  # deg offset
    

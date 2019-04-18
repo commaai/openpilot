@@ -8,26 +8,11 @@ from common.basedir import BASEDIR
 lock = threading.Lock()
 
 class kegman_conf():
-  def __init__(self, from_source, read_only=False):  # start thread by default
+  def __init__(self, read_only=False):  # start thread by default
     self.conf = self.read_config()
-    self.change_from_file = False
-    try:
-      with open("/data/thread_test.txt", "a") as f:
-        f.write(str(BASEDIR))
-    except:
-      print(BASEDIR)
     # when you import kegman_conf and only use it to read data, you can specify read_only in your import as to not start the write_thread
-    if not read_only and BASEDIR == "/data/openpilot":
-      threading.Thread(target=self.write_thread).start()
-      threading.Thread(target=self.read_thread).start()
-
-    try:
-      with open("/data/testinit", "a") as f:
-        f.write("init: " + from_source + "\n")
-    except:
-      os.mkdir("/data")
-      with open("/data/testinit", "a") as f:
-        f.write("init: " + from_source + "\n")
+    if not read_only and BASEDIR == "/data/openpilot":  # if not travis test nor read only
+      threading.Thread(target=self.kegman_thread).start()
 
   def read_config(self):
     default_config = {"cameraOffset":"0.06", "lastTrMode":"1", "battChargeMin":"90", "battChargeMax":"95", "wheelTouchSeconds":"1800", "battPercOff":"25", "carVoltageMinEonShutdown":"11200", "brakeStoppingTarget":"0.25", "angle_steers_offset":"0" , "brake_distance_extra":"1" , "lastALCAMode":"1" , "brakefactor":"1.2", "lastGasMode":"0" , "lastSloMode":"1", "leadDistance":"5"}
@@ -74,40 +59,24 @@ class kegman_conf():
       config = default_config
     return config
 
-  def write_thread(self):
+  def kegman_thread(self):  # do reading and writing in one thread
     last_conf = copy.deepcopy(self.conf)
     while True:
-      time.sleep(30)  # every n seconds check for conf change
       if self.conf != last_conf:
-        if not self.change_from_file:
-          with lock:
-            self.write_config()
-          last_conf = copy.deepcopy(self.conf)  # cache the current config
-        else:
-          self.change_from_file = False
+        self.write_config()
+        last_conf = copy.deepcopy(self.conf)  # cache the current config
+      time.sleep(15)  # every n seconds check for conf change
+      with open('/data/kegman.json', 'r') as f:
+        conf_tmp = json.load(f)
+        if conf_tmp != self.conf:
+          self.conf = conf_tmp
           last_conf = copy.deepcopy(self.conf)
-
-  def read_thread(self):
-    while True:
-      time.sleep(15)
-      with lock:
-        try:
-          with open('/data/kegman.json', 'r') as f:
-            conf_tmp = json.load(f)
-            if conf_tmp != self.conf:
-              self.conf = conf_tmp
-              self.change_from_file = True
-        except:
-          pass
 
   def write_config(self):  # never to be called outside kegman_conf
     try:
-      #start = time.time()
       with open('/data/kegman.json', 'w') as f:
         json.dump(self.conf, f, indent=2, sort_keys=True)
         os.chmod("/data/kegman.json", 0o764)
-      #with open("/data/kegman_times", "a") as f:
-        #f.write(str(time.time() - start)+"\n")
     except IOError:
       os.mkdir('/data')
       with open('/data/kegman.json', 'w') as f:
