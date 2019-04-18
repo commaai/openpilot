@@ -157,6 +157,8 @@ class CarState(object):
     self.Angle = [0, 5, 10, 15,20,25,30,35,60,100,180,270,500]
     self.Angle_Speed = [255,160,100,80,70,60,55,50,40,33,27,17,12]
     #labels for gas mode
+    with open("/data/testfile", "a") as f:
+      f.write("init\n")
     self.gasMode = int(self.kegman.conf['lastGasMode'])
     self.sloMode = int(self.kegman.conf['lastSloMode'])
     self.sloLabels = ["offset","normal"]
