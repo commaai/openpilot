@@ -288,7 +288,6 @@ class CarState(object):
           self.cstm_btns.btns[id].btn_label2 = self.gasLabels[self.gasMode]
           self.cstm_btns.hasChanges = True
       elif (id == 2) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="slow":
-        self.acc_slow_on_change = True
         if self.cstm_btns.btns[id].btn_label2 == self.sloLabels[self.sloMode]:
           self.sloMode = (self.sloMode + 1) % 2
           self.kegman.conf['lastSloMode'] = str(self.sloMode)
@@ -297,8 +296,6 @@ class CarState(object):
           self.kegman.conf['lastSloMode'] = str(self.sloMode)
         self.cstm_btns.btns[id].btn_label2 = self.sloMode[self.sloMode]
         self.cstm_btns.hasChanges = True
-        if self.sloMode == 2:
-          self.cstm_btns.set_button_status("slow", 0)
       else:
         self.cstm_btns.btns[id].btn_status = btn_status * self.cstm_btns.btns[id].btn_status
     else:
