@@ -1,4 +1,5 @@
 import json
+import copy
 import os, stat
 import threading
 import time
@@ -6,6 +7,7 @@ import time
 class kegman_conf():
   def __init__(self):
     self.conf = self.read_config()
+    self.last_conf = copy.deepcopy(self.conf)
 
   def read_config(self):
     self.element_updated = False
@@ -17,6 +19,7 @@ class kegman_conf():
           self.config = json.load(f)
         except:
           self.config = self.default_config
+      self.last_conf = copy.deepcopy(self.config)
       if "battPercOff" not in self.config:
         self.config.update({"battPercOff":"25"})
         self.element_updated = True
@@ -72,12 +75,14 @@ class kegman_conf():
 
   def write_config(self, config):
     try:
-      start = time.time()
-      with open('/data/kegman.json', 'w') as f:
-        json.dump(config, f, indent=2, sort_keys=True)
-        os.chmod("/data/kegman.json", 0o764)
-      with open('/data/kegman_times', 'a') as f:
-        f.write(str(time.time() - start) + "\n")
+      # Only write if data has changed
+      if (self.last_conf != config):
+        #print "Config changed, writing file"
+        self.last_conf = copy.deepcopy(config) # cache the current config
+        with lock:
+          with open('/data/kegman.json', 'w') as f:
+            json.dump(config, f, indent=2, sort_keys=True)
+            os.chmod("/data/kegman.json", 0o764)
     except IOError:
       os.mkdir('/data')
       with open('/data/kegman.json', 'w') as f:
