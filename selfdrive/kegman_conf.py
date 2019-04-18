@@ -16,6 +16,11 @@ class kegman_conf():
       threading.Thread(target=self.write_thread).start()
       threading.Thread(target=self.read_thread).start()
     try:
+      with open("/data/thread_test.txt", "w") as f:
+        f.write(str(BASEDIR))
+    except:
+      pass
+    try:
       with open("/data/testinit", "a") as f:
         f.write("init: " + from_source + "\n")
     except:
