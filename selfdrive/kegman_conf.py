@@ -56,15 +56,17 @@ def read_config():
 
 def kegman_thread():  # read and write thread; now merges changes from file and variable
   global conf
+  global thread_counter
   global variables_written
   global thread_started
   last_conf = copy.deepcopy(conf)
   try:
     while True:
-      time.sleep(30)  # every n seconds check for conf change
+      time.sleep(thread_interval)  # every n seconds check for conf change
       with open(kegman_file, "r") as f:
         conf_tmp = json.load(f)
       if conf != last_conf or conf != conf_tmp:  # if either variable or file has changed
+        thread_counter = 0
         if conf_tmp != conf:  # if change in file
           changed_keys = []
           for i in conf_tmp:
@@ -80,6 +82,11 @@ def kegman_thread():  # read and write thread; now merges changes from file and 
           write_config(conf)
         last_conf = copy.deepcopy(conf)
       variables_written = []
+      thread_counter += 1
+      if thread_counter > (thread_timeout * 60.0) / thread_interval:  # if no activity in 15 minutes
+        print("Thread timed out!")
+        thread_started = False
+        return
   except:
     print("Error in kegman thread!")
     cloudlog.exception("error in kegman thread")
@@ -98,8 +105,10 @@ def write_config(conf):  # never to be called outside kegman_conf
 
 def save(data):  # allows for writing multiple key/value pairs
   global conf
+  global thread_counter
   global thread_started
   global variables_written
+  thread_counter = 0
   if not thread_started and BASEDIR == "/data/openpilot":
     threading.Thread(target=kegman_thread).start()  # automatically start write thread if file needs it
     thread_started = True
@@ -109,6 +118,8 @@ def save(data):  # allows for writing multiple key/value pairs
   conf.update(data)
 
 def get(key_s):  # can get multiple keys from a list
+  global thread_counter
+  thread_counter = 0
   if type(key_s) == list:
     return [conf[i] if i in conf else None for i in key_s]
   if key_s in conf:
@@ -116,6 +127,9 @@ def get(key_s):  # can get multiple keys from a list
   else:
     return None
 
+thread_counter = 0  # don't change
+thread_timeout = 15.0  # minutes to wait before stopping thread. reading or writing will reset the counter
+thread_interval = 30.0  # seconds to sleep between checks
 thread_started = False
 kegman_file = "/data/kegman.json"
 variables_written = []
