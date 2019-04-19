@@ -62,6 +62,7 @@ def kegman_thread():  # read and write thread; now merges changes from file and 
   last_conf = copy.deepcopy(conf)
   try:
     while True:
+      thread_counter += 1
       time.sleep(thread_interval)  # every n seconds check for conf change
       with open(kegman_file, "r") as f:
         conf_tmp = json.load(f)
@@ -82,8 +83,7 @@ def kegman_thread():  # read and write thread; now merges changes from file and 
           write_config(conf)
         last_conf = copy.deepcopy(conf)
       variables_written = []
-      thread_counter += 1
-      if thread_counter > (thread_timeout * 60.0) / thread_interval:  # if no activity in 15 minutes
+      if thread_counter > ((thread_timeout * 60.0) / thread_interval):  # if no activity in 15 minutes
         print("Thread timed out!")
         thread_started = False
         return
