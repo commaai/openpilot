@@ -57,27 +57,33 @@ def read_config():
 def kegman_thread():  # read and write thread; now merges changes from file and variable
   global conf
   global variables_written
+  global thread_started
   last_conf = copy.deepcopy(conf)
-  while True:
-    time.sleep(30)  # every n seconds check for conf change
-    with open(kegman_file, "r") as f:
-      conf_tmp = json.load(f)
-    if conf != last_conf or conf != conf_tmp:  # if either variable or file has changed
-      if conf_tmp != conf:  # if change in file
-        changed_keys = []
-        for i in conf_tmp:
-          try:
-            if conf_tmp[i] != conf[i]:
+  try:
+    while True:
+      time.sleep(30)  # every n seconds check for conf change
+      with open(kegman_file, "r") as f:
+        conf_tmp = json.load(f)
+      if conf != last_conf or conf != conf_tmp:  # if either variable or file has changed
+        if conf_tmp != conf:  # if change in file
+          changed_keys = []
+          for i in conf_tmp:
+            try:
+              if conf_tmp[i] != conf[i]:
+                changed_keys.append(i)
+            except:  # if new param from file not existing in variable
               changed_keys.append(i)
-          except:  # if new param from file not existing in variable
-            changed_keys.append(i)
-        for i in changed_keys:
-          if i not in variables_written:
-            conf.update({i: conf_tmp[i]})
-      if conf != conf_tmp:
-        write_config(conf)
-      last_conf = copy.deepcopy(conf)
-    variables_written = []
+          for i in changed_keys:
+            if i not in variables_written:
+              conf.update({i: conf_tmp[i]})
+        if conf != conf_tmp:
+          write_config(conf)
+        last_conf = copy.deepcopy(conf)
+      variables_written = []
+  except:
+    print("Error in kegman thread!")
+    cloudlog.exception("error in kegman thread")
+    thread_started = False
 
 def write_config(conf):  # never to be called outside kegman_conf
   try:
