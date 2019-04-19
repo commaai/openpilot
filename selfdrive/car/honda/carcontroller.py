@@ -8,9 +8,7 @@ from selfdrive.car.honda import hondacan
 from selfdrive.car.honda.values import AH, CruiseButtons, CAR
 from selfdrive.can.packer import CANPacker
 from selfdrive.car.modules.ALCA_module import ALCAController
-from selfdrive.kegman_conf import kegman_conf
-
-kegman = kegman_conf(read_only=True)
+import selfdrive.kegman_conf as kegman
 
 def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
   # hyst params

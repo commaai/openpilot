@@ -6,7 +6,7 @@ from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.gm.values import DBC, CAR, STOCK_CONTROL_MSGS, AUDIO_HUD, SUPERCRUISE_CARS
 from selfdrive.car.gm.carstate import CarState, CruiseButtons, get_powertrain_can_parser
-from selfdrive.kegman_conf import kegman_conf
+import selfdrive.kegman_conf as kegman
 
 try:
   from selfdrive.car.gm.carcontroller import CarController
@@ -22,8 +22,7 @@ class CanBus(object):
 
 class CarInterface(object):
   def __init__(self, CP, sendcan=None):
-    self.kegman = kegman_conf()
-    self.angleSteersoffset = float(self.kegman.conf['angle_steers_offset'])  # deg offset
+    self.angleSteersoffset = float(kegman.conf['angle_steers_offset'])  # deg offset
     self.CP = CP
     self.frame = 0
     self.gas_pressed_prev = False
@@ -305,7 +304,7 @@ class CarInterface(object):
       self.CS.follow_level -= 1
       if self.CS.follow_level < 1:
         self.CS.follow_level = 3
-      self.kegman.conf['lastTrMode'] = str(self.CS.follow_level)   # write last distance bar setting to file
+      kegman.save({'lastTrMode': str(self.CS.follow_level)})  # write last distance bar setting to file
     ret.gasbuttonstatus = self.CS.cstm_btns.get_button_status("gas")
     events = []
     if not self.CS.can_valid:
