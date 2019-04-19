@@ -54,7 +54,6 @@ def read_config():
     config = default_config
   return config
 
-
 def kegman_thread():  # read and write thread; now merges changes from file and variable
   global conf
   global variables_written
@@ -80,7 +79,6 @@ def kegman_thread():  # read and write thread; now merges changes from file and 
       last_conf = copy.deepcopy(conf)
     variables_written = []
 
-
 def write_config(conf):  # never to be called outside kegman_conf
   try:
     with open(kegman_file, "w") as f:
@@ -91,7 +89,6 @@ def write_config(conf):  # never to be called outside kegman_conf
     with open(kegman_file, "w") as f:
       json.dump(conf, f, indent=2, sort_keys=True)
       os.chmod(kegman_file, 0o764)
-
 
 def save(data):  # allows for writing multiple key/value pairs
   global conf
@@ -104,7 +101,6 @@ def save(data):  # allows for writing multiple key/value pairs
   for key in data:
     variables_written.append(key)
   conf.update(data)
-
 
 def get(key_s):  # can get multiple keys from a list
   if type(key_s) == list:
