@@ -150,6 +150,7 @@ def get_cam_can_parser(CP):
 
 class CarState(object):
   def __init__(self, CP):
+    self.lkMode = True
     self.Angle = [0, 5, 10, 15,20,25,30,35,60,100,180,270,500]
     self.Angle_Speed = [255,160,100,80,70,60,55,50,40,30,20,10,5]
     self.blind_spot_on = bool(0)
@@ -444,7 +445,24 @@ class CarState(object):
       if self.read_distance_lines == 3:
         self.UE.custom_alert_message(2,"Following distance set to 2.7s",200,3)
       self.read_distance_lines_prev = self.read_distance_lines
+      
+    # when user presses LKAS button on steering wheel
+    if self.cruise_setting == 1:
+      if cp.vl["SCM_BUTTONS"]["CRUISE_SETTING"] == 0:
+        if self.lkMode:
+          self.lkMode = False
+        else:
+          self.lkMode = True
+    if self.cstm_btns.get_button_status("lka") == 0:
+      self.lane_departure_toggle_on = False
+    else:
+      self.lane_departure_toggle_on = True
 
+    if self.alcaMode == 3 and (self.left_blinker_on or self.right_blinker_on):
+      self.lane_departure_toggle_on = False
+    else:
+      self.lane_departure_toggle_on = True
+      
     # Gets rid of Pedal Grinding noise when brake is pressed at slow speeds for some models
     # TODO: this should be ok for all cars. Verify it.
     if self.CP.carFingerprint in (CAR.PILOT, CAR.PILOT_2019, CAR.RIDGELINE):
