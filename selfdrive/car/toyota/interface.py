@@ -76,19 +76,19 @@ class CarInterface(object):
     tireStiffnessRear_civic = 202500
 
     ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
-    ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
+    ret.steerActuatorDelay = 0.001  # Default delay, Prius has larger delay
 
     if candidate == CAR.PRIUS:
       stop_and_go = True
       ret.safetyParam = 66  # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.70
-      ret.steerRatio = 15.00   # unknown end-to-end spec
+      ret.steerRatio = 16.26   # 0.5.10 auto tune
       tire_stiffness_factor = 0.6371   # hand-tune by icmma
       ret.mass = 3045 * CV.LB_TO_KG + std_cargo
-      ret.steerKpV, ret.steerKiV = [[0.4], [0.01]]
-      ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
+      ret.steerKpV, ret.steerKiV = [[0.3], [0.01]]
+      ret.steerKf = 0.0001   # full torque for 10 deg at 80mph means 0.00007818594
       # TODO: Prius seem to have very laggy actuators. Understand if it is lag or hysteresis
-      ret.steerActuatorDelay = 0.25
+      ret.steerActuatorDelay = 0.20
       #ret.steerKiBP, ret.steerKpBP = [[0.,27.,47.], [0.,27.,47.]]
       if ret.enableGasInterceptor:
         ret.gasMaxV = [0.2, 0.5, 0.7]
@@ -102,12 +102,12 @@ class CarInterface(object):
     elif candidate in [CAR.RAV4]:
       ret.safetyParam = 73  # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.66 # 2.65 default
-      ret.steerRatio = 14 # Rav4 2018 16.3 default
+      ret.steerRatio = 17.28 # Rav4 0.5.10 tuning value
       ret.mass = 4100./2.205 + std_cargo  # mean between normal and hybrid
-      ret.steerKpV, ret.steerKiV = [[0.45], [0.045]] #0.6 0.05 default
+      ret.steerKpV, ret.steerKiV = [[0.3], [0.03]] #0.6 0.05 default
       ret.wheelbase = 2.65
       tire_stiffness_factor = 0.5533
-      ret.steerKf = 0.00006 # full torque for 10 deg at 80mph means 0.00007818594
+      ret.steerKf = 0.00001 # full torque for 10 deg at 80mph means 0.00007818594
       if ret.enableGasInterceptor:
         stop_and_go = True
         ret.gasMaxV = [0.2, 0.5, 0.7]
@@ -122,12 +122,12 @@ class CarInterface(object):
       stop_and_go = True
       ret.safetyParam = 73  # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.65 # 2.65 default
-      ret.steerRatio = 15.50 # Rav4 2018 16.3 default
+      ret.steerRatio = 16.53 # 0.5.10 tuning
       ret.mass = 4100./2.205 + std_cargo  # mean between normal and hybrid
-      ret.steerKpV, ret.steerKiV = [[0.495], [0.045]] #0.6 0.05 default
+      ret.steerKpV, ret.steerKiV = [[0.3], [0.03]] #0.6 0.05 default
       ret.wheelbase = 2.65
       tire_stiffness_factor = 0.5533
-      ret.steerKf = 0.000078 # full torque for 10 deg at 80mph means 0.00007818594
+      ret.steerKf = 0.0001 # full torque for 10 deg at 80mph means 0.00007818594
       if ret.enableGasInterceptor:
         ret.gasMaxV = [0.2, 0.5, 0.7]
         ret.longitudinalKpV = [1.2, 0.8, 0.5]
@@ -141,7 +141,7 @@ class CarInterface(object):
       stop_and_go = False
       ret.safetyParam = 100 # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.70
-      ret.steerRatio = 15.8
+      ret.steerRatio = 16.59 # 0.5.10
       tire_stiffness_factor = 0.444
       ret.mass = 2860 * CV.LB_TO_KG + std_cargo  # mean between normal and hybrid
       ret.steerKpV, ret.steerKiV = [[0.2], [0.125]]
@@ -177,11 +177,11 @@ class CarInterface(object):
       stop_and_go = True
       ret.safetyParam = 100
       ret.wheelbase = 2.63906
-      ret.steerRatio = 13.6
+      ret.steerRatio = 15.6
       tire_stiffness_factor = 0.7933
       ret.mass = 3300. * CV.LB_TO_KG + std_cargo
-      ret.steerKpV, ret.steerKiV = [[0.723], [0.0428]]
-      ret.steerKf = 0.00007818594
+      ret.steerKpV, ret.steerKiV = [[0.3], [0.03]]
+      ret.steerKf = 0.0001
       if ret.enableGasInterceptor:
         ret.gasMaxV = [0.2, 0.5, 0.7]
         ret.longitudinalKpV = [1.2, 0.8, 0.5]
@@ -195,11 +195,11 @@ class CarInterface(object):
       stop_and_go = True
       ret.safetyParam = 100
       ret.wheelbase = 2.82448
-      ret.steerRatio = 13.7
+      ret.steerRatio = 17.7 # 0.5.10
       tire_stiffness_factor = 0.7933
       ret.mass = 3400 * CV.LB_TO_KG + std_cargo #mean between normal and hybrid
-      ret.steerKpV, ret.steerKiV = [[0.6], [0.1]]
-      ret.steerKf = 0.00006
+      ret.steerKpV, ret.steerKiV = [[0.3], [0.03]]
+      ret.steerKf = 0.0001
       if ret.enableGasInterceptor:
         ret.gasMaxV = [0.2, 0.5, 0.7]
         ret.longitudinalKpV = [1.2, 0.8, 0.5]
@@ -213,7 +213,7 @@ class CarInterface(object):
       stop_and_go = True
       ret.safetyParam = 100
       ret.wheelbase = 2.78
-      ret.steerRatio = 16.0
+      ret.steerRatio = 17.36 # 0.5.10
       tire_stiffness_factor = 0.444 # not optimized yet
       ret.mass = 4607 * CV.LB_TO_KG + std_cargo #mean between normal and hybrid limited
       ret.steerKpV, ret.steerKiV = [[0.18], [0.0075]]
