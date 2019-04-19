@@ -7,10 +7,7 @@ from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.toyota.carstate import CarState, get_can_parser, get_cam_can_parser
 from selfdrive.car.toyota.values import ECU, check_ecu_msgs, CAR
 from selfdrive.swaglog import cloudlog
-
-from selfdrive.kegman_conf import kegman_conf
-
-kegman = kegman_conf()
+import selfdrive.kegman_conf as kegman
 
 steeringAngleoffset = float(kegman.conf['angle_steers_offset'])  # deg offset
    

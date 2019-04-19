@@ -12,11 +12,10 @@ from common.params import Params
 from common.realtime import sec_since_boot
 from common.numpy_fast import clip
 from common.filter_simple import FirstOrderFilter
-from selfdrive.kegman_conf import kegman_conf
+import selfdrive.kegman_conf as kegman
 import subprocess
 import signal
 
-kegman = kegman_conf(read_only=True)
 ThermalStatus = log.ThermalData.ThermalStatus
 CURRENT_TAU = 2.   # 2s time constant
 
@@ -116,7 +115,7 @@ def check_car_battery_voltage(should_start, health, charging_disabled, msg):
   #   - 12V battery voltage is too low, and;
   #   - onroad isn't started
   print health
-  
+
   if charging_disabled and (health is None or health.health.voltage > (int(kegman.conf['carVoltageMinEonShutdown'])+400)) and msg.thermal.batteryPercent < int(kegman.conf['battChargeMin']):
     charging_disabled = False
     os.system('echo "1" > /sys/class/power_supply/battery/charging_enabled')

@@ -2,11 +2,10 @@ import zmq
 from cereal import log
 from common.numpy_fast import clip, interp
 from selfdrive.controls.lib.pid import PIController
-from selfdrive.kegman_conf import kegman_conf
+import selfdrive.kegman_conf as kegman
 import selfdrive.messaging as messaging
 from selfdrive.services import service_list
 
-kegman = kegman_conf(read_only=True)
 LongCtrlState = log.Live100Data.LongControlState
 
 STOPPING_EGO_SPEED = 0.5

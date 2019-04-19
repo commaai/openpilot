@@ -9,7 +9,7 @@ from selfdrive.can.parser import CANParser, CANDefine
 from selfdrive.config import Conversions as CV
 from selfdrive.car.toyota.values import CAR, DBC, STEER_THRESHOLD
 from common.kalman.simple_kalman import KF1D
-from selfdrive.kegman_conf import kegman_conf
+import selfdrive.kegman_conf as kegman
 from selfdrive.car.modules.UIBT_module import UIButtons,UIButton
 from selfdrive.car.modules.UIEV_module import UIEvents
 import os
@@ -147,8 +147,7 @@ def get_cam_can_parser(CP):
 
 class CarState(object):
   def __init__(self, CP):
-    self.kegman = kegman_conf()
-    self.brakefactor = float(self.kegman.conf['brakefactor'])
+    self.brakefactor = float(kegman.conf['brakefactor'])
     self.trfix = False
     self.Angles = np.zeros(250)
     self.Angles_later = np.zeros(250)
@@ -156,13 +155,13 @@ class CarState(object):
     self.Angle = [0, 5, 10, 15,20,25,30,35,60,100,180,270,500]
     self.Angle_Speed = [255,160,100,80,70,60,55,50,40,33,27,17,12]
     #labels for gas mode
-    self.gasMode = int(self.kegman.conf['lastGasMode'])
-    self.sloMode = int(self.kegman.conf['lastSloMode'])
+    self.gasMode = int(kegman.conf['lastGasMode'])
+    self.sloMode = int(kegman.conf['lastSloMode'])
     self.sloLabels = ["offset","normal"]
     self.gasLabels = ["dynamic","sport","eco"]
     #labelslabels for ALCA modes
     self.alcaLabels = ["MadMax","Normal","Wifey","off"]
-    self.alcaMode = int(self.kegman.conf['lastALCAMode'])     # default to last ALCAmode on startup
+    self.alcaMode = int(kegman.conf['lastALCAMode'])     # default to last ALCAmode on startup
     #if (CP.carFingerprint == CAR.MODELS):
     # ALCA PARAMS
     # max REAL delta angle for correction vs actuator
@@ -268,12 +267,10 @@ class CarState(object):
       if (id == 1) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="alca":
           if self.cstm_btns.btns[id].btn_label2 == self.alcaLabels[self.alcaMode]:
             self.alcaMode = (self.alcaMode + 1 ) % 4
-            self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last ALCAMode setting to file
-            self.kegman.write_config(self.kegman.conf)
+            kegman.save({'lastALCAMode': str(self.alcaMode)})  # write last ALCAMode setting to file
           else:
             self.alcaMode = 0
-            self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last ALCAMode setting to file
-            self.kegman.write_config(self.kegman.conf)
+            kegman.save({'lastALCAMode': str(self.alcaMode)})  # write last ALCAMode setting to file
           self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
           self.cstm_btns.hasChanges = True
           if self.alcaMode == 3:
@@ -281,12 +278,10 @@ class CarState(object):
       elif (id == 2) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="slow":
         if self.cstm_btns.btns[id].btn_label2 == self.sloLabels[self.sloMode]:
           self.sloMode = (self.sloMode + 1 ) % 2
-          self.kegman.conf['lastSloMode'] = str(self.sloMode)   # write last SloMode setting to file
-          self.kegman.write_config(self.kegman.conf)
+          kegman.save({'lastSloMode': str(self.sloMode)})  # write last SloMode setting to file
         else:
           self.sloMode = 0
-          self.kegman.conf['lastSloMode'] = str(self.sloMode)   # write last SloMode setting to file
-          self.kegman.write_config(self.kegman.conf)
+          kegman.save({'lastSloMode': str(self.sloMode)})  # write last SloMode setting to file
         self.cstm_btns.btns[id].btn_label2 = self.sloLabels[self.sloMode]
         self.cstm_btns.hasChanges = True
         if self.sloMode == 0:
@@ -294,12 +289,10 @@ class CarState(object):
       elif (id == 5) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="gas":
           if self.cstm_btns.btns[id].btn_label2 == self.gasLabels[self.gasMode]:
             self.gasMode = (self.gasMode + 1 ) % 3
-            self.kegman.conf['lastGasMode'] = str(self.gasMode)   # write last GasMode setting to file
-            self.kegman.write_config(self.kegman.conf)
+            kegman.save({'lastGasMode': str(self.gasMode)})  # write last GasMode setting to file
           else:
             self.gasMode = 0
-            self.kegman.conf['lastGasMode'] = str(self.gasMode)   # write last GasMode setting to file
-            self.kegman.write_config(self.kegman.conf)
+            kegman.save({'lastGasMode': str(self.gasMode)})  # write last GasMode setting to file
 
           self.cstm_btns.btns[id].btn_label2 = self.gasLabels[self.gasMode]
           self.cstm_btns.hasChanges = True
@@ -309,14 +302,12 @@ class CarState(object):
         self.cstm_btns.btns[id].btn_status = btn_status
         if (id == 1) and self.cstm_btns.btns[id].btn_name=="alca":
           self.alcaMode = (self.alcaMode + 1 ) % 4
-          self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last ALCAMode setting to file
-          self.kegman.write_config(self.kegman.conf)
+          kegman.save({'lastALCAMode': str(self.alcaMode)})  # write last ALCAMode setting to file
           self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
           self.cstm_btns.hasChanges = True
         elif (id == 2) and self.cstm_btns.btns[id].btn_name=="slow":
           self.sloMode = (self.sloMode + 1 ) % 2
-          self.kegman.conf['lastSloMode'] = str(self.sloMode)   # write last SloMode setting to file
-          self.kegman.write_config(self.kegman.conf)
+          kegman.save({'lastSloMode': str(self.sloMode)})  # write last SloMode setting to file
           self.cstm_btns.btns[id].btn_label2 = self.sloLabels[self.sloMode]
           self.cstm_btns.hasChanges = True
 
