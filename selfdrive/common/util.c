@@ -2,9 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <unistd.h>
 
 #ifdef __linux__
 #include <sys/prctl.h>
+#include <sys/syscall.h>
+#include <sched.h>
 #endif
 
 void* read_file(const char* path, size_t* out_len) {
@@ -39,3 +42,17 @@ void set_thread_name(const char* name) {
   prctl(PR_SET_NAME, (unsigned long)name, 0, 0, 0);
 #endif
 }
+
+int set_realtime_priority(int level) {
+#ifdef __linux__
+
+  long tid = syscall(SYS_gettid);
+
+  // should match python using chrt
+  struct sched_param sa;
+  memset(&sa, 0, sizeof(sa));
+  sa.sched_priority = level;
+  return sched_setscheduler(tid, SCHED_FIFO, &sa);
+#endif
+}
+

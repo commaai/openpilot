@@ -11,7 +11,7 @@ typedef struct TouchState {
 } TouchState;
 
 void touch_init(TouchState *s);
-int touch_poll(TouchState *s, int *out_x, int *out_y);
+int touch_poll(TouchState *s, int *out_x, int *out_y, int timeout);
 
 #ifdef __cplusplus
 }

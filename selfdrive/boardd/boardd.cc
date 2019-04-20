@@ -38,8 +38,15 @@
 #define SAFETY_GM 3
 #define SAFETY_HONDA_BOSCH 4
 #define SAFETY_FORD 5
+#define SAFETY_CADILLAC 6
+#define SAFETY_HYUNDAI 7
+#define SAFETY_TESLA 8
+#define SAFETY_CHRYSLER 9
+#define SAFETY_SUBARU 10
+#define SAFETY_TOYOTA_IPAS 0x1335
 #define SAFETY_TOYOTA_NOLIMITS 0x1336
 #define SAFETY_ALLOUTPUT 0x1337
+#define SAFETY_ELM327 0xE327
 
 namespace {
 
@@ -52,7 +59,7 @@ pthread_mutex_t usb_lock;
 bool spoofing_started = false;
 bool fake_send = false;
 bool loopback_can = false;
-bool has_pigeon = false;
+bool is_grey_panda = false;
 
 pthread_t safety_setter_thread_handle = -1;
 pthread_t pigeon_thread_handle = -1;
@@ -108,6 +115,18 @@ void *safety_setter_thread(void *s) {
     break;
   case (int)cereal::CarParams::SafetyModels::FORD:
     safety_setting = SAFETY_FORD;
+    break;
+  case (int)cereal::CarParams::SafetyModels::CADILLAC:
+    safety_setting = SAFETY_CADILLAC;
+    break;
+  case (int)cereal::CarParams::SafetyModels::HYUNDAI:
+    safety_setting = SAFETY_HYUNDAI;
+    break;
+  case (int)cereal::CarParams::SafetyModels::CHRYSLER:
+    safety_setting = SAFETY_CHRYSLER;
+    break;
+  case (int)cereal::CarParams::SafetyModels::SUBARU:
+    safety_setting = SAFETY_SUBARU;
     break;
   default:
     LOGE("unknown safety model: %d", safety_model);
@@ -169,6 +188,7 @@ bool usb_connect() {
 
   if (is_pigeon[0]) {
     LOGW("grey panda detected");
+    is_grey_panda = true;
     pigeon_needs_init = true;
     if (pigeon_thread_handle == -1) {
       err = pthread_create(&pigeon_thread_handle, NULL, pigeon_thread, NULL);
@@ -291,6 +311,7 @@ void can_health(void *s) {
   healthData.setControlsAllowed(health.controls_allowed);
   healthData.setGasInterceptorDetected(health.gas_interceptor_detected);
   healthData.setStartedSignalDetected(health.started_signal_detected);
+  healthData.setIsGreyPanda(is_grey_panda);
 
   // send to health
   auto words = capnp::messageToFlatArray(msg);
@@ -314,6 +335,11 @@ void can_send(void *s) {
 
   capnp::FlatArrayMessageReader cmsg(amsg);
   cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
+  if (nanos_since_boot() - event.getLogMonoTime() > 1e9) {
+    //Older than 1 second. Dont send.
+    zmq_msg_close(&msg);
+    return;
+  }
   int msg_count = event.getCan().size();
 
   uint32_t *send = (uint32_t*)malloc(msg_count*0x10);
@@ -406,6 +432,14 @@ void *can_send_thread(void *crap) {
   void *subscriber = zmq_socket(context, ZMQ_SUB);
   zmq_setsockopt(subscriber, ZMQ_SUBSCRIBE, "", 0);
   zmq_connect(subscriber, "tcp://127.0.0.1:8017");
+
+  // drain sendcan to delete any stale messages from previous runs
+  zmq_msg_t msg;
+  zmq_msg_init(&msg);
+  int err = 0;
+  while(err >= 0) {
+    err = zmq_msg_recv(&msg, subscriber, ZMQ_DONTWAIT);
+  }
 
   // run as fast as messages come in
   while (!do_exit) {
@@ -578,7 +612,7 @@ void *pigeon_thread(void *crap) {
       //printf("got %d\n", len);
       alen += len;
     }
-    if (alen > 0) { 
+    if (alen > 0) {
       if (dat[0] == (char)0x00){
         LOGW("received invalid ublox message, resetting pigeon");
         pigeon_init();

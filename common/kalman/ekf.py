@@ -1,4 +1,5 @@
 # pylint: skip-file
+from __future__ import print_function
 import abc
 import numpy as np
 # The EKF class contains the framework for an Extended Kalman Filter, but must be subclassed to use.
@@ -92,8 +93,8 @@ class EKF:
     innovation = reading.data - reading.obs_model * self.state
 
     if self.DEBUG:
-      print "reading:\n",reading.data
-      print "innovation:\n",innovation
+      print("reading:\n",reading.data)
+      print("innovation:\n",innovation)
 
     # S = H*P*H' + R
     innovation_covar = reading.obs_model * self.covar * reading.obs_model.T + reading.covar
@@ -103,12 +104,12 @@ class EKF:
       innovation_covar)
 
     if self.DEBUG:
-      print "gain:\n", kalman_gain
-      print "innovation_covar:\n", innovation_covar
-      print "innovation: ", innovation
-      print "test: ", self.covar * reading.obs_model.T * (
+      print("gain:\n", kalman_gain)
+      print("innovation_covar:\n", innovation_covar)
+      print("innovation: ", innovation)
+      print("test: ", self.covar * reading.obs_model.T * (
         reading.obs_model * self.covar * reading.obs_model.T + reading.covar *
-        0).I
+        0).I)
 
     # x = x + K*y
     self.state += kalman_gain*innovation
@@ -124,9 +125,9 @@ class EKF:
     self.covar = aux_mtrx * self.covar * aux_mtrx.T + kalman_gain * reading.covar * kalman_gain.T
 
     if self.DEBUG:
-      print "After update"
-      print "state\n", self.state
-      print "covar:\n",self.covar
+      print("After update")
+      print("state\n", self.state)
+      print("covar:\n",self.covar)
 
   def update_scalar(self, reading):
     # like update but knowing that measurement is a scalar

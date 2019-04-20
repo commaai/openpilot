@@ -11,6 +11,7 @@ extern "C" {
 #define ORBD_DESCRIPTOR_LENGTH 32
 #define ORBD_HEIGHT 874
 #define ORBD_WIDTH 1164
+#define ORBD_FOCAL 910
 
 // matches OrbFeatures from log.capnp
 struct orb_features {

@@ -78,7 +78,7 @@ class SwagLogger(logging.Logger):
     self.log_local = local()
     self.log_local.ctx = {}
 
-  def findCaller(self):
+  def findCaller(self, stack_info=None):
     """
       Find the stack frame of the caller so that we can note the source
       file name, line number and function name.
@@ -132,6 +132,9 @@ class SwagLogger(logging.Logger):
     if args:
       evt['args'] = args
     evt.update(kwargs)
+    ctx = self.get_ctx()
+    if ctx:
+      evt['ctx'] = self.get_ctx()
     if 'error' in kwargs:
       self.error(evt)
     else:

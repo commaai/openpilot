@@ -1,38 +1,17 @@
-import os
-from common.fingerprints import TOYOTA as CAR
-from selfdrive.can.parser import CANParser
-from selfdrive.config import Conversions as CV
-from common.kalman.simple_kalman import KF1D
 import numpy as np
+from common.kalman.simple_kalman import KF1D
+from selfdrive.can.parser import CANParser, CANDefine
+from selfdrive.config import Conversions as CV
+from selfdrive.car.toyota.values import CAR, DBC, STEER_THRESHOLD
 
+def parse_gear_shifter(gear, vals):
 
-def parse_gear_shifter(can_gear, car_fingerprint):
-  # TODO: Use values from DBC to parse this field
-  if car_fingerprint == CAR.PRIUS:
-    if can_gear == 0x0:
-      return "park"
-    elif can_gear == 0x1:
-      return "reverse"
-    elif can_gear == 0x2:
-      return "neutral"
-    elif can_gear == 0x3:
-      return "drive"
-    elif can_gear == 0x4:
-      return "brake"
-  elif car_fingerprint in [CAR.RAV4, CAR.RAV4H, 
-                           CAR.LEXUS_RXH, CAR.COROLLA]:
-    if can_gear == 0x20:
-      return "park"
-    elif can_gear == 0x10:
-      return "reverse"
-    elif can_gear == 0x8:
-      return "neutral"
-    elif can_gear == 0x0:
-      return "drive"
-    elif can_gear == 0x1:
-      return "sport"
-
-  return "unknown"
+  val_to_capnp = {'P': 'park', 'R': 'reverse', 'N': 'neutral',
+                  'D': 'drive', 'B': 'brake'}
+  try:
+    return val_to_capnp[vals[gear]]
+  except KeyError:
+    return "unknown"
 
 
 def get_can_parser(CP):
@@ -56,6 +35,7 @@ def get_can_parser(CP):
     ("STEER_FRACTION", "STEER_ANGLE_SENSOR", 0),
     ("STEER_RATE", "STEER_ANGLE_SENSOR", 0),
     ("GAS_RELEASED", "PCM_CRUISE", 0),
+    ("CRUISE_ACTIVE", "PCM_CRUISE", 0),
     ("CRUISE_STATE", "PCM_CRUISE", 0),
     ("MAIN_ON", "PCM_CRUISE_2", 0),
     ("SET_SPEED", "PCM_CRUISE_2", 0),
@@ -80,26 +60,33 @@ def get_can_parser(CP):
     ("EPS_STATUS", 25),
   ]
 
-  # this function generates lists for signal, messages and initial values
   if CP.carFingerprint == CAR.PRIUS:
-    dbc_f = 'toyota_prius_2017_pt_generated.dbc'
     signals += [("STATE", "AUTOPARK_STATUS", 0)]
-  elif CP.carFingerprint == CAR.RAV4H:
-    dbc_f = 'toyota_rav4_hybrid_2017_pt_generated.dbc'
-  elif CP.carFingerprint == CAR.RAV4:
-    dbc_f = 'toyota_rav4_2017_pt_generated.dbc'
-  elif CP.carFingerprint == CAR.COROLLA:
-    dbc_f = 'toyota_corolla_2017_pt_generated.dbc'
-  elif CP.carFingerprint == CAR.LEXUS_RXH:
-    dbc_f = 'lexus_rx_hybrid_2017_pt_generated.dbc'
 
-  return CANParser(os.path.splitext(dbc_f)[0], signals, checks, 0)
+  # add gas interceptor reading if we are using it
+  if CP.enableGasInterceptor:
+      signals.append(("INTERCEPTOR_GAS", "GAS_SENSOR", 0))
+      checks.append(("GAS_SENSOR", 50))
+
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
+
+
+def get_cam_can_parser(CP):
+
+  signals = []
+
+  # use steering message to check if panda is connected to frc
+  checks = [("STEERING_LKA", 42)]
+
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
 
 
 class CarState(object):
   def __init__(self, CP):
 
     self.CP = CP
+    self.can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
+    self.shifter_values = self.can_define.dv["GEAR_PACKET"]['GEAR']
     self.left_blinker_on = 0
     self.right_blinker_on = 0
 
@@ -116,9 +103,10 @@ class CarState(object):
                          K=np.matrix([[0.12287673], [0.29666309]]))
     self.v_ego = 0.0
 
-  def update(self, cp):
+  def update(self, cp, cp_cam):
     # copy can_valid
     self.can_valid = cp.can_valid
+    self.cam_can_valid = cp_cam.can_valid
 
     # update prevs, update must run once per loop
     self.prev_left_blinker_on = self.left_blinker_on
@@ -128,9 +116,11 @@ class CarState(object):
                                     cp.vl["SEATS_DOORS"]['DOOR_OPEN_RL'], cp.vl["SEATS_DOORS"]['DOOR_OPEN_RR']])
     self.seatbelt = not cp.vl["SEATS_DOORS"]['SEATBELT_DRIVER_UNLATCHED']
 
-    can_gear = cp.vl["GEAR_PACKET"]['GEAR']
     self.brake_pressed = cp.vl["BRAKE_MODULE"]['BRAKE_PRESSED']
-    self.pedal_gas = cp.vl["GAS_PEDAL"]['GAS_PEDAL']
+    if self.CP.enableGasInterceptor:
+      self.pedal_gas = cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS']
+    else:
+      self.pedal_gas = cp.vl["GAS_PEDAL"]['GAS_PEDAL']
     self.car_gas = self.pedal_gas
     self.esp_disabled = cp.vl["ESP_CONTROL"]['TC_DISABLED']
 
@@ -139,27 +129,26 @@ class CarState(object):
     self.v_wheel_fr = cp.vl["WHEEL_SPEEDS"]['WHEEL_SPEED_FR'] * CV.KPH_TO_MS
     self.v_wheel_rl = cp.vl["WHEEL_SPEEDS"]['WHEEL_SPEED_RL'] * CV.KPH_TO_MS
     self.v_wheel_rr = cp.vl["WHEEL_SPEEDS"]['WHEEL_SPEED_RR'] * CV.KPH_TO_MS
-    self.v_wheel = (self.v_wheel_fl + self.v_wheel_fr + self.v_wheel_rl + self.v_wheel_rr) / 4.
+    v_wheel = float(np.mean([self.v_wheel_fl, self.v_wheel_fr, self.v_wheel_rl, self.v_wheel_rr]))
 
     # Kalman filter
-    if abs(self.v_wheel - self.v_ego) > 2.0:  # Prevent large accelerations when car starts at non zero speed
-      self.v_ego_x = np.matrix([[self.v_wheel], [0.0]])
+    if abs(v_wheel - self.v_ego) > 2.0:  # Prevent large accelerations when car starts at non zero speed
+      self.v_ego_kf.x = np.matrix([[v_wheel], [0.0]])
 
-    self.v_ego_raw = self.v_wheel
-    v_ego_x = self.v_ego_kf.update(self.v_wheel)
+    self.v_ego_raw = v_wheel
+    v_ego_x = self.v_ego_kf.update(v_wheel)
     self.v_ego = float(v_ego_x[0])
     self.a_ego = float(v_ego_x[1])
-    self.standstill = not self.v_wheel > 0.001
+    self.standstill = not v_wheel > 0.001
 
     self.angle_steers = cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']
     self.angle_steers_rate = cp.vl["STEER_ANGLE_SENSOR"]['STEER_RATE']
-    self.gear_shifter = parse_gear_shifter(can_gear, self.car_fingerprint)
+    can_gear = int(cp.vl["GEAR_PACKET"]['GEAR'])
+    self.gear_shifter = parse_gear_shifter(can_gear, self.shifter_values)
     self.main_on = cp.vl["PCM_CRUISE_2"]['MAIN_ON']
     self.left_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 1
     self.right_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 2
 
-    # we could use the override bit from dbc, but it's triggered at too high torque values
-    self.steer_override = abs(cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_DRIVER']) > 100
     # 2 is standby, 10 is active. TODO: check that everything else is really a faulty state
     self.steer_state = cp.vl["EPS_STATUS"]['LKA_STATE']
     self.steer_error = cp.vl["EPS_STATUS"]['LKA_STATE'] not in [1, 5]
@@ -167,10 +156,13 @@ class CarState(object):
     self.brake_error = 0
     self.steer_torque_driver = cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_DRIVER']
     self.steer_torque_motor = cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_EPS']
+    # we could use the override bit from dbc, but it's triggered at too high torque values
+    self.steer_override = abs(self.steer_torque_driver) > STEER_THRESHOLD
 
     self.user_brake = 0
     self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED']
     self.pcm_acc_status = cp.vl["PCM_CRUISE"]['CRUISE_STATE']
+    self.pcm_acc_active = bool(cp.vl["PCM_CRUISE"]['CRUISE_ACTIVE'])
     self.gas_pressed = not cp.vl["PCM_CRUISE"]['GAS_RELEASED']
     self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]['LOW_SPEED_LOCKOUT'] == 2
     self.brake_lights = bool(cp.vl["ESP_CONTROL"]['BRAKE_LIGHTS_ACC'] or self.brake_pressed)

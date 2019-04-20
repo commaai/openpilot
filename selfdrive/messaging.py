@@ -18,7 +18,7 @@ def sub_sock(context, port, poller=None, addr="127.0.0.1", conflate=False):
   if conflate:
     sock.setsockopt(zmq.CONFLATE, 1)
   sock.connect("tcp://%s:%d" % (addr, port))
-  sock.setsockopt(zmq.SUBSCRIBE, "")
+  sock.setsockopt(zmq.SUBSCRIBE, b"")
   if poller is not None:
     poller.register(sock, zmq.POLLIN)
   return sock

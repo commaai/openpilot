@@ -1,12 +1,10 @@
 #!/usr/bin/env python
 import os
-
-from selfdrive.can.parser import CANParser
-
-from cereal import car
-from common.realtime import sec_since_boot
-
 import zmq
+import time
+from cereal import car
+from selfdrive.can.parser import CANParser
+from common.realtime import sec_since_boot
 from selfdrive.services import service_list
 import selfdrive.messaging as messaging
 
@@ -25,11 +23,13 @@ def _create_nidec_can_parser():
 
 
 class RadarInterface(object):
-  def __init__(self):
+  def __init__(self, CP):
     # radar
     self.pts = {}
     self.track_id = 0
     self.radar_fault = False
+    self.radar_wrong_config = False
+    self.radar_off_can = CP.radarOffCan
 
     self.delay = 0.1  # Delay of radar
 
@@ -43,6 +43,14 @@ class RadarInterface(object):
     canMonoTimes = []
 
     updated_messages = set()
+    ret = car.RadarState.new_message()
+
+    # in Bosch radar and we are only steering for now, so sleep 0.05s to keep
+    # radard at 20Hz and return no points
+    if self.radar_off_can:
+      time.sleep(0.05)
+      return ret
+
     while 1:
       tm = int(sec_since_boot() * 1e9)
       updated_messages.update(self.rcp.update(tm, True))
@@ -54,6 +62,7 @@ class RadarInterface(object):
       if ii == 0x400:
         # check for radar faults
         self.radar_fault = cpt['RADAR_STATE'] != 0x79
+        self.radar_wrong_config = cpt['RADAR_STATE'] == 0x69
       elif cpt['LONG_DIST'] < 255:
         if ii not in self.pts or cpt['NEW_TRACK']:
           self.pts[ii] = car.RadarState.RadarPoint.new_message()
@@ -69,21 +78,26 @@ class RadarInterface(object):
         if ii in self.pts:
           del self.pts[ii]
 
-    ret = car.RadarState.new_message()
     errors = []
     if not self.rcp.can_valid:
       errors.append("commIssue")
     if self.radar_fault:
       errors.append("fault")
+    if self.radar_wrong_config:
+      errors.append("wrongConfig")
     ret.errors = errors
     ret.canMonoTimes = canMonoTimes
 
     ret.points = self.pts.values()
+
     return ret
 
 
 if __name__ == "__main__":
-  RI = RadarInterface()
+  class CarParams:
+    radarOffCan = False
+
+  RI = RadarInterface(CarParams)
   while 1:
     ret = RI.update()
     print(chr(27) + "[2J")

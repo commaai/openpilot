@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import os
 import struct
-
+from collections import namedtuple
 import zmq
 import numpy as np
 
@@ -11,12 +11,13 @@ from common.realtime import Ratekeeper
 from selfdrive.config import Conversions as CV
 import selfdrive.messaging as messaging
 from selfdrive.services import service_list
+from selfdrive.car import crc8_pedal
 from selfdrive.car.honda.hondacan import fix
-from common.fingerprints import HONDA as CAR
+from selfdrive.car.honda.values import CAR
 from selfdrive.car.honda.carstate import get_can_signals
 from selfdrive.boardd.boardd import can_capnp_to_can_list, can_list_to_can_capnp
 
-from selfdrive.car.honda.old_can_parser import CANParser
+from selfdrive.can.plant_can_parser import CANParser
 from selfdrive.car.honda.interface import CarInterface
 
 from common.dbc import dbc
@@ -145,7 +146,7 @@ class Plant(object):
     return float(self.rk.frame) / self.rate
 
   def step(self, v_lead=0.0, cruise_buttons=None, grade=0.0, publish_model = True):
-    gen_dbc, gen_signals, gen_checks = get_can_signals(CP)
+    gen_signals, gen_checks = get_can_signals(CP)
     sgs = [s[0] for s in gen_signals]
     msgs = [s[1] for s in gen_signals]
     cks_msgs = set(check[0] for check in gen_checks)
@@ -210,18 +211,47 @@ class Plant(object):
       print "%6.2f m  %6.2f m/s  %6.2f m/s2   %.2f ang   gas: %.2f  brake: %.2f  steer: %5.2f     lead_rel: %6.2f m  %6.2f m/s" % (distance, speed, acceleration, self.angle_steer, gas, brake, steer_torque, d_rel, v_rel)
 
     # ******** publish the car ********
-    # TODO: the order is this list should not matter, but currently everytime we change carstate we break this test. Fix it!
-    vls = [self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed),
-           self.angle_steer, self.angle_steer_rate, 0,
-           0, 0, 0, 0,  # Doors
+    vls_tuple = namedtuple('vls', [
+           'XMISSION_SPEED',
+           'WHEEL_SPEED_FL', 'WHEEL_SPEED_FR', 'WHEEL_SPEED_RL', 'WHEEL_SPEED_RR',
+           'STEER_ANGLE', 'STEER_ANGLE_RATE', 'STEER_TORQUE_SENSOR',
+           'LEFT_BLINKER', 'RIGHT_BLINKER',
+           'GEAR',
+           'WHEELS_MOVING',
+           'BRAKE_ERROR_1', 'BRAKE_ERROR_2',
+           'SEATBELT_DRIVER_LAMP', 'SEATBELT_DRIVER_LATCHED',
+           'BRAKE_PRESSED', 'BRAKE_SWITCH',
+           'CRUISE_BUTTONS',
+           'ESP_DISABLED',
+           'HUD_LEAD',
+           'USER_BRAKE',
+           'STEER_STATUS',
+           'GEAR_SHIFTER',
+           'PEDAL_GAS',
+           'CRUISE_SETTING',
+           'ACC_STATUS',
+
+           'CRUISE_SPEED_PCM',
+           'CRUISE_SPEED_OFFSET',
+
+           'DOOR_OPEN_FL', 'DOOR_OPEN_FR', 'DOOR_OPEN_RL', 'DOOR_OPEN_RR',
+
+           'CAR_GAS',
+           'MAIN_ON',
+           'EPB_STATE',
+           'BRAKE_HOLD_ACTIVE',
+           'INTERCEPTOR_GAS',
+           ])
+    vls = vls_tuple(
+           self.speed_sensor(speed),
+           self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed),
+           self.angle_steer, self.angle_steer_rate, 0, #Steer torque sensor
            0, 0,  # Blinkers
-           0,  # Cruise speed offset
            self.gear_choice,
            speed != 0,
            self.brake_error, self.brake_error,
-           self.v_cruise,
            not self.seatbelt, self.seatbelt,  # Seatbelt
-           self.brake_pressed, 0.,
+           self.brake_pressed, 0., #Brake pressed, Brake switch
            cruise_buttons,
            self.esp_disabled,
            0,  # HUD lead
@@ -231,13 +261,18 @@ class Plant(object):
            self.pedal_gas,
            self.cruise_setting,
            self.acc_status,
+
+           self.v_cruise,
+           0,  # Cruise speed offset
+
+           0, 0, 0, 0,  # Doors
+
            self.user_gas,
            self.main_on,
            0,  # EPB State
            0,  # Brake hold
-           0,  # Interceptor feedback
-           # 0,
-    ]
+           0   # Interceptor feedback
+           )
 
     # TODO: publish each message at proper frequency
     can_msgs = []
@@ -245,16 +280,23 @@ class Plant(object):
       msg_struct = {}
       indxs = [i for i, x in enumerate(msgs) if msg == msgs[i]]
       for i in indxs:
-        msg_struct[sgs[i]] = vls[i]
+        msg_struct[sgs[i]] = getattr(vls, sgs[i])
 
       if "COUNTER" in honda.get_signals(msg):
         msg_struct["COUNTER"] = self.rk.frame % 4
+
+      if "COUNTER_PEDAL" in honda.get_signals(msg):
+        msg_struct["COUNTER_PEDAL"] = self.rk.frame % 0xf
 
       msg = honda.lookup_msg_id(msg)
       msg_data = honda.encode(msg, msg_struct)
 
       if "CHECKSUM" in honda.get_signals(msg):
         msg_data = fix(msg_data, msg)
+
+      if "CHECKSUM_PEDAL" in honda.get_signals(msg):
+        msg_struct["CHECKSUM_PEDAL"] = crc8_pedal([ord(i) for i in msg_data][:-1])
+        msg_data = honda.encode(msg, msg_struct)
 
       can_msgs.append([msg, 0, msg_data, 0])
 
@@ -268,6 +310,14 @@ class Plant(object):
                   "0f00000"
       can_msgs.append([0x400, 0, radar_state_msg, 1])
       can_msgs.append([0x445, 0, radar_msg.decode("hex"), 1])
+
+    # add camera msg so controlsd thinks it's alive
+    msg_struct["COUNTER"] = self.rk.frame % 4
+    msg = honda.lookup_msg_id(0xe4)
+    msg_data = honda.encode(msg, msg_struct)
+    msg_data = fix(msg_data, 0xe4)
+    can_msgs.append([0xe4, 0, msg_data, 2])
+
     Plant.logcan.send(can_list_to_can_capnp(can_msgs).to_bytes())
 
     # ******** publish a fake model going straight and fake calibration ********

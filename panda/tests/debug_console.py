@@ -21,6 +21,9 @@ if __name__ == "__main__":
 
   pandas = list(map(lambda x: Panda(x, claim=claim), serials))
 
+  if not len(pandas):
+    sys.exit("no pandas found")
+
   if os.getenv("BAUD") is not None:
     for panda in pandas:
       panda.set_uart_baud(port_number, int(os.getenv("BAUD")))

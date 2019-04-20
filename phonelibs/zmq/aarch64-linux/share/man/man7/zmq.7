@@ -1,0 +1,275 @@
+'\" t
+.\"     Title: zmq
+.\"    Author: [see the "AUTHORS" section]
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 02/18/2017
+.\"    Manual: 0MQ Manual
+.\"    Source: 0MQ 4.2.2
+.\"  Language: English
+.\"
+.TH "ZMQ" "7" "02/18/2017" "0MQ 4\&.2\&.2" "0MQ Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+zmq \- 0MQ lightweight messaging kernel
+.SH "SYNOPSIS"
+.sp
+\fB#include <zmq\&.h>\fR
+.sp
+\fBcc\fR [\fIflags\fR] \fIfiles\fR \fB\-lzmq\fR [\fIlibraries\fR]
+.SH "DESCRIPTION"
+.sp
+The 0MQ lightweight messaging kernel is a library which extends the standard socket interfaces with features traditionally provided by specialised \fImessaging middleware\fR products\&. 0MQ sockets provide an abstraction of asynchronous \fImessage queues\fR, multiple \fImessaging patterns\fR, message filtering (\fIsubscriptions\fR), seamless access to multiple \fItransport protocols\fR and more\&.
+.sp
+This documentation presents an overview of 0MQ concepts, describes how 0MQ abstracts standard sockets and provides a reference manual for the functions provided by the 0MQ library\&.
+.SS "Context"
+.sp
+The 0MQ \fIcontext\fR keeps the list of sockets and manages the async I/O thread and internal queries\&.
+.sp
+Before using any 0MQ library functions you must create a 0MQ \fIcontext\fR\&. When you exit your application you must destroy the \fIcontext\fR\&. These functions let you work with \fIcontexts\fR:
+.PP
+Create a new 0MQ context
+.RS 4
+\fBzmq_ctx_new\fR(3)
+.RE
+.PP
+Work with context properties
+.RS 4
+\fBzmq_ctx_set\fR(3)\fBzmq_ctx_get\fR(3)
+.RE
+.PP
+Destroy a 0MQ context
+.RS 4
+\fBzmq_ctx_shutdown\fR(3)\fBzmq_ctx_term\fR(3)
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBThread safety\fR
+.RS 4
+.sp
+A 0MQ \fIcontext\fR is thread safe and may be shared among as many application threads as necessary, without any additional locking required on the part of the caller\&.
+.sp
+Individual 0MQ \fIsockets\fR are \fInot\fR thread safe except in the case where full memory barriers are issued when migrating a socket from one thread to another\&. In practice this means applications can create a socket in one thread with \fIzmq_socket()\fR and then pass it to a \fInewly created\fR thread as part of thread initialisation, for example via a structure passed as an argument to \fIpthread_create()\fR\&.
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBMultiple contexts\fR
+.RS 4
+.sp
+Multiple \fIcontexts\fR may coexist within a single application\&. Thus, an application can use 0MQ directly and at the same time make use of any number of additional libraries or components which themselves make use of 0MQ as long as the above guidelines regarding thread safety are adhered to\&.
+.RE
+.SS "Messages"
+.sp
+A 0MQ message is a discrete unit of data passed between applications or components of the same application\&. 0MQ messages have no internal structure and from the point of view of 0MQ itself they are considered to be opaque binary data\&.
+.sp
+The following functions are provided to work with messages:
+.PP
+Initialise a message
+.RS 4
+\fBzmq_msg_init\fR(3)\fBzmq_msg_init_size\fR(3)\fBzmq_msg_init_data\fR(3)
+.RE
+.PP
+Sending and receiving a message
+.RS 4
+\fBzmq_msg_send\fR(3)\fBzmq_msg_recv\fR(3)
+.RE
+.PP
+Release a message
+.RS 4
+\fBzmq_msg_close\fR(3)
+.RE
+.PP
+Access message content
+.RS 4
+\fBzmq_msg_data\fR(3)\fBzmq_msg_size\fR(3)\fBzmq_msg_more\fR(3)
+.RE
+.PP
+Work with message properties
+.RS 4
+\fBzmq_msg_gets\fR(3)\fBzmq_msg_get\fR(3)\fBzmq_msg_set\fR(3)
+.RE
+.PP
+Message manipulation
+.RS 4
+\fBzmq_msg_copy\fR(3)\fBzmq_msg_move\fR(3)
+.RE
+.SS "Sockets"
+.sp
+0MQ sockets present an abstraction of a asynchronous \fImessage queue\fR, with the exact queueing semantics depending on the socket type in use\&. See \fBzmq_socket\fR(3) for the socket types provided\&.
+.sp
+The following functions are provided to work with sockets:
+.PP
+Creating a socket
+.RS 4
+\fBzmq_socket\fR(3)
+.RE
+.PP
+Closing a socket
+.RS 4
+\fBzmq_close\fR(3)
+.RE
+.PP
+Manipulating socket options
+.RS 4
+\fBzmq_getsockopt\fR(3)\fBzmq_setsockopt\fR(3)
+.RE
+.PP
+Establishing a message flow
+.RS 4
+\fBzmq_bind\fR(3)\fBzmq_connect\fR(3)
+.RE
+.PP
+Sending and receiving messages
+.RS 4
+\fBzmq_msg_send\fR(3)\fBzmq_msg_recv\fR(3)\fBzmq_send\fR(3)\fBzmq_recv\fR(3)\fBzmq_send_const\fR(3)
+.RE
+.PP
+Monitoring socket events
+.RS 4
+\fBzmq_socket_monitor\fR(3)
+.RE
+.PP
+\fBInput/output multiplexing\fR. 0MQ provides a mechanism for applications to multiplex input/output events over a set containing both 0MQ sockets and standard sockets\&. This mechanism mirrors the standard
+\fIpoll()\fR
+system call, and is described in detail in
+\fBzmq_poll\fR(3)\&.
+.SS "Transports"
+.sp
+A 0MQ socket can use multiple different underlying transport mechanisms\&. Each transport mechanism is suited to a particular purpose and has its own advantages and drawbacks\&.
+.sp
+The following transport mechanisms are provided:
+.PP
+Unicast transport using TCP
+.RS 4
+\fBzmq_tcp\fR(7)
+.RE
+.PP
+Reliable multicast transport using PGM
+.RS 4
+\fBzmq_pgm\fR(7)
+.RE
+.PP
+Local inter\-process communication transport
+.RS 4
+\fBzmq_ipc\fR(7)
+.RE
+.PP
+Local in\-process (inter\-thread) communication transport
+.RS 4
+\fBzmq_inproc\fR(7)
+.RE
+.PP
+Virtual Machine Communications Interface (VMC) transport
+.RS 4
+\fBzmq_vmci\fR(7)
+.RE
+.PP
+Unreliable unicast and multicast using UDP
+.RS 4
+\fBzmq_udp\fR(7)
+.RE
+.SS "Proxies"
+.sp
+0MQ provides \fIproxies\fR to create fanout and fan\-in topologies\&. A proxy connects a \fIfrontend\fR socket to a \fIbackend\fR socket and switches all messages between the two sockets, opaquely\&. A proxy may optionally capture all traffic to a third socket\&. To start a proxy in an application thread, use \fBzmq_proxy\fR(3)\&.
+.SS "Security"
+.sp
+A 0MQ socket can select a security mechanism\&. Both peers must use the same security mechanism\&.
+.sp
+The following security mechanisms are provided for IPC and TCP connections:
+.PP
+Null security
+.RS 4
+\fBzmq_null\fR(7)
+.RE
+.PP
+Plain\-text authentication using username and password
+.RS 4
+\fBzmq_plain\fR(7)
+.RE
+.PP
+Elliptic curve authentication and encryption
+.RS 4
+\fBzmq_curve\fR(7)
+.RE
+.PP
+Generate a CURVE keypair in armored text format
+.RS 4
+\fBzmq_curve_keypair\fR(3)
+.RE
+.sp
+Derive a CURVE public key from a secret key: \fBzmq_curve_public\fR(3)
+.PP
+Converting keys to/from armoured text strings
+.RS 4
+\fBzmq_z85_decode\fR(3)\fBzmq_z85_encode\fR(3)
+.RE
+.SH "ERROR HANDLING"
+.sp
+The 0MQ library functions handle errors using the standard conventions found on POSIX systems\&. Generally, this means that upon failure a 0MQ library function shall return either a NULL value (if returning a pointer) or a negative value (if returning an integer), and the actual error code shall be stored in the \fIerrno\fR variable\&.
+.sp
+On non\-POSIX systems some users may experience issues with retrieving the correct value of the \fIerrno\fR variable\&. The \fIzmq_errno()\fR function is provided to assist in these cases; for details refer to \fBzmq_errno\fR(3)\&.
+.sp
+The \fIzmq_strerror()\fR function is provided to translate 0MQ\-specific error codes into error message strings; for details refer to \fBzmq_strerror\fR(3)\&.
+.SH "UTILITY"
+.sp
+The following utility functions are provided:
+.PP
+Working with atomic counters
+.RS 4
+\fBzmq_atomic_counter_new\fR(3)\fBzmq_atomic_counter_set\fR(3)\fBzmq_atomic_counter_inc\fR(3)\fBzmq_atomic_counter_dec\fR(3)\fBzmq_atomic_counter_value\fR(3)\fBzmq_atomic_counter_destroy\fR(3)
+.RE
+.SH "MISCELLANEOUS"
+.sp
+The following miscellaneous functions are provided:
+.PP
+Report 0MQ library version
+.RS 4
+\fBzmq_version\fR(3)
+.RE
+.SH "LANGUAGE BINDINGS"
+.sp
+The 0MQ library provides interfaces suitable for calling from programs in any language; this documentation documents those interfaces as they would be used by C programmers\&. The intent is that programmers using 0MQ from other languages shall refer to this documentation alongside any documentation provided by the vendor of their language binding\&.
+.sp
+Language bindings (C++, Python, PHP, Ruby, Java and more) are provided by members of the 0MQ community and pointers can be found on the 0MQ website\&.
+.SH "AUTHORS"
+.sp
+This page was written by the 0MQ community\&. To make a change please read the 0MQ Contribution Policy at \m[blue]\fBhttp://www\&.zeromq\&.org/docs:contributing\fR\m[]\&.
+.SH "RESOURCES"
+.sp
+Main web site: \m[blue]\fBhttp://www\&.zeromq\&.org/\fR\m[]
+.sp
+Report bugs to the 0MQ development mailing list: <\m[blue]\fBzeromq\-dev@lists\&.zeromq\&.org\fR\m[]\&\s-2\u[1]\d\s+2>
+.SH "COPYING"
+.sp
+Free use of this software is granted under the terms of the GNU Lesser General Public License (LGPL)\&. For details see the files COPYING and COPYING\&.LESSER included with the 0MQ distribution\&.
+.SH "NOTES"
+.IP " 1." 4
+zeromq-dev@lists.zeromq.org
+.RS 4
+\%mailto:zeromq-dev@lists.zeromq.org
+.RE

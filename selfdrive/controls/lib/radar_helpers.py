@@ -6,6 +6,7 @@ import numpy as np
 from common.numpy_fast import clip, interp
 from common.kalman.simple_kalman import KF1D
 
+_LEAD_ACCEL_TAU = 1.5
 NO_FUSION_SCORE = 100 # bad default fusion score
 
 # radar tracks
@@ -25,12 +26,14 @@ v_oncoming_thr   = -3.9 # needs to be a bit lower in abs value than v_stationary
 v_ego_stationary = 4.   # no stationary object flag below this speed
 
 # Lead Kalman Filter params
-_VLEAD_A = np.matrix([[1.0, ts], [0.0, 1.0]])
-_VLEAD_C = np.matrix([1.0, 0.0])
+_VLEAD_A = [[1.0, ts], [0.0, 1.0]]
+_VLEAD_C = [[1.0, 0.0]]
 #_VLEAD_Q = np.matrix([[10., 0.0], [0.0, 100.]])
 #_VLEAD_R = 1e3
 #_VLEAD_K = np.matrix([[ 0.05705578], [ 0.03073241]])
-_VLEAD_K = np.matrix([[ 0.1988689 ], [ 0.28555364]])
+_VLEAD_K = [[ 0.1988689 ], [ 0.28555364]]
+
+RDR_TO_LDR = 2.7
 
 
 class Track(object):
@@ -60,12 +63,13 @@ class Track(object):
 
     if not self.initted:
       self.initted = True
+      self.aLeadTau = _LEAD_ACCEL_TAU
       self.cnt = 1
       self.vision_cnt = 0
       self.vision = False
       self.aRel = 0.      # nidec gives no information about this
       self.vLat = 0.
-      self.kf = KF1D(np.matrix([[self.vLead], [0.0]]), _VLEAD_A, _VLEAD_C, _VLEAD_K)
+      self.kf = KF1D([[self.vLead], [0.0]], _VLEAD_A, _VLEAD_C, _VLEAD_K)
     else:
       # estimate acceleration
       # TODO: use Kalman filter
@@ -82,8 +86,8 @@ class Track(object):
 
       self.cnt += 1
 
-    self.vLeadK = float(self.kf.x[SPEED])
-    self.aLeadK = float(self.kf.x[ACCEL])
+    self.vLeadK = float(self.kf.x[SPEED][0])
+    self.aLeadK = float(self.kf.x[ACCEL][0])
 
     if self.stationary:
       # stationary objects can become non stationary, but not the other way around
@@ -91,6 +95,12 @@ class Track(object):
     self.oncoming = self.vLead < v_oncoming_thr
 
     self.vision_score = NO_FUSION_SCORE
+
+    # Learn if constant acceleration
+    if abs(self.aLeadK) < 0.5:
+      self.aLeadTau = _LEAD_ACCEL_TAU
+    else:
+      self.aLeadTau *= 0.9
 
   def update_vision_score(self, dist_to_vision, rel_speed_diff):
     # rel speed is very hard to estimate from vision
@@ -110,8 +120,8 @@ class Track(object):
     # Weigh y higher since radar is inaccurate in this dimension
     return [self.dRel, self.yRel*2, self.vRel]
 
-# ******************* Cluster *******************
 
+# ******************* Cluster *******************
 if platform.machine() == 'aarch64':
   for x in sys.path:
     pp = os.path.join(x, "phonelibs/hierarchy/lib")
@@ -122,6 +132,7 @@ if platform.machine() == 'aarch64':
 else:
   from scipy.cluster import _hierarchy
 
+
 def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
   # supersimplified function to get fast clustering. Got it from scipy
   Z = np.asarray(Z, order='c')
@@ -130,10 +141,10 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
   _hierarchy.cluster_dist(Z, T, float(t), int(n))
   return T
 
-RDR_TO_LDR = 2.7
 
 def mean(l):
-  return sum(l)/len(l)
+  return sum(l) / len(l)
+
 
 class Cluster(object):
   def __init__(self):
@@ -181,6 +192,10 @@ class Cluster(object):
     return mean([t.aLeadK for t in self.tracks])
 
   @property
+  def aLeadTau(self):
+    return mean([t.aLeadTau for t in self.tracks])
+
+  @property
   def vision(self):
     return any([t.vision for t in self.tracks])
 
@@ -200,18 +215,21 @@ class Cluster(object):
   def oncoming(self):
     return all([t.oncoming for t in self.tracks])
 
-  def toLive20(self, lead):
-    lead.dRel = float(self.dRel) - RDR_TO_LDR
-    lead.yRel = float(self.yRel)
-    lead.vRel = float(self.vRel)
-    lead.aRel = float(self.aRel)
-    lead.vLead = float(self.vLead)
-    lead.dPath = float(self.dPath)
-    lead.vLat = float(self.vLat)
-    lead.vLeadK = float(self.vLeadK)
-    lead.aLeadK = float(self.aLeadK)
-    lead.status = True
-    lead.fcw = self.is_potential_fcw()
+  def toLive20(self):
+    return {
+      "dRel": float(self.dRel) - RDR_TO_LDR,
+      "yRel": float(self.yRel),
+      "vRel": float(self.vRel),
+      "aRel": float(self.aRel),
+      "vLead": float(self.vLead),
+      "dPath": float(self.dPath),
+      "vLat": float(self.vLat),
+      "vLeadK": float(self.vLeadK),
+      "aLeadK": float(self.aLeadK),
+      "status": True,
+      "fcw": self.is_potential_fcw(),
+      "aLeadTau": float(self.aLeadTau)
+    }
 
   def __str__(self):
     ret = "x: %4.1f  y: %4.1f  v: %4.1f  a: %4.1f  d: %4.2f" % (self.dRel, self.yRel, self.vRel, self.aLeadK, self.dPath)

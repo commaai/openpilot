@@ -158,7 +158,7 @@ void can_set_speed(uint8_t can_number) {
     // initialization mode
     CAN->MCR = CAN_MCR_TTCM | CAN_MCR_INRQ;
     while((CAN->MSR & CAN_MSR_INAK) != CAN_MSR_INAK);
-    
+
     // set time quanta from defines
     CAN->BTR = (CAN_BTR_TS1_0 * (CAN_SEQ1-1)) |
               (CAN_BTR_TS2_0 * (CAN_SEQ2-1)) |
@@ -415,6 +415,9 @@ void can_rx(uint8_t can_number) {
     to_push.RDLR = CAN->sFIFOMailBox[0].RDLR;
     to_push.RDHR = CAN->sFIFOMailBox[0].RDHR;
 
+    // modify RDTR for our API
+    to_push.RDTR = (to_push.RDTR & 0xFFFF000F) | (bus_number << 4);
+
     // forwarding (panda only)
     #ifdef PANDA
       int bus_fwd_num = can_forwarding[bus_number] != -1 ? can_forwarding[bus_number] : safety_fwd_hook(bus_number, &to_push);
@@ -428,8 +431,6 @@ void can_rx(uint8_t can_number) {
       }
     #endif
 
-    // modify RDTR for our API
-    to_push.RDTR = (to_push.RDTR & 0xFFFF000F) | (bus_number << 4);
     safety_rx_hook(&to_push);
 
     #ifdef PANDA
@@ -466,8 +467,15 @@ void can_send(CAN_FIFOMailBox_TypeDef *to_push, uint8_t bus_number) {
       // add CAN packet to send queue
       // bus number isn't passed through
       to_push->RDTR &= 0xF;
-      can_push(can_queues[bus_number], to_push);
-      process_can(CAN_NUM_FROM_BUS_NUM(bus_number));
+      if (bus_number == 3 && can_num_lookup[3] == 0xFF) {
+        #ifdef PANDA
+        // TODO: why uint8 bro? only int8?
+        bitbang_gmlan(to_push);
+        #endif
+      } else {
+        can_push(can_queues[bus_number], to_push);
+        process_can(CAN_NUM_FROM_BUS_NUM(bus_number));
+      }
     }
   }
 }

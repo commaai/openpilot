@@ -19,8 +19,9 @@ msgs = {}
 while True:
   lc = messaging.recv_sock(logcan, True)
   for c in lc.can:
-    # read also msgs sent by EON on CAN bus 0x80
-    if c.src%0x80 == 0:
+    # read also msgs sent by EON on CAN bus 0x80 and filter out the
+    # addr with more than 11 bits
+    if c.src%0x80 == 0 and c.address < 0x800:
       msgs[c.address] = len(c.dat)
 
   fingerprint = ', '.join("%d: %d" % v for v in sorted(msgs.items()))

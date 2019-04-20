@@ -1,0 +1,200 @@
+'\" t
+.\"     Title: zmq_bind
+.\"    Author: [see the "AUTHORS" section]
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 02/18/2017
+.\"    Manual: 0MQ Manual
+.\"    Source: 0MQ 4.2.2
+.\"  Language: English
+.\"
+.TH "ZMQ_BIND" "3" "02/18/2017" "0MQ 4\&.2\&.2" "0MQ Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+zmq_bind \- accept incoming connections on a socket
+.SH "SYNOPSIS"
+.sp
+\fBint zmq_bind (void \fR\fB\fI*socket\fR\fR\fB, const char \fR\fB\fI*endpoint\fR\fR\fB);\fR
+.SH "DESCRIPTION"
+.sp
+The \fIzmq_bind()\fR function binds the \fIsocket\fR to a local \fIendpoint\fR and then accepts incoming connections on that endpoint\&.
+.sp
+The \fIendpoint\fR is a string consisting of a \fItransport\fR:// followed by an \fIaddress\fR\&. The \fItransport\fR specifies the underlying protocol to use\&. The \fIaddress\fR specifies the transport\-specific address to bind to\&.
+.sp
+0MQ provides the the following transports:
+.PP
+\fItcp\fR
+.RS 4
+unicast transport using TCP, see
+\fBzmq_tcp\fR(7)
+.RE
+.PP
+\fIipc\fR
+.RS 4
+local inter\-process communication transport, see
+\fBzmq_ipc\fR(7)
+.RE
+.PP
+\fIinproc\fR
+.RS 4
+local in\-process (inter\-thread) communication transport, see
+\fBzmq_inproc\fR(7)
+.RE
+.PP
+\fIpgm\fR, \fIepgm\fR
+.RS 4
+reliable multicast transport using PGM, see
+\fBzmq_pgm\fR(7)
+.RE
+.PP
+\fIvmci\fR
+.RS 4
+virtual machine communications interface (VMCI), see
+\fBzmq_vmci\fR(7)
+.RE
+.sp
+Every 0MQ socket type except \fIZMQ_PAIR\fR supports one\-to\-many and many\-to\-one semantics\&. The precise semantics depend on the socket type and are defined in \fBzmq_socket\fR(3)\&.
+.sp
+The \fIipc\fR, \fItcp\fR and \fIvmci\fR transports accept wildcard addresses: see \fBzmq_ipc\fR(7), \fBzmq_tcp\fR(7) and \fBzmq_vmci\fR(7) for details\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+the address syntax may be different for \fIzmq_bind()\fR and \fIzmq_connect()\fR especially for the \fItcp\fR, \fIpgm\fR and \fIepgm\fR transports\&.
+.sp .5v
+.RE
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+following a \fIzmq_bind()\fR, the socket enters a \fImute\fR state unless or until at least one incoming or outgoing connection is made, at which point the socket enters a \fIready\fR state\&. In the mute state, the socket blocks or drops messages according to the socket type, as defined in \fBzmq_socket\fR(3)\&. By contrast, following a libzmq:zmq_connect[3], the socket enters the \fIready\fR state\&.
+.sp .5v
+.RE
+.SH "RETURN VALUE"
+.sp
+The \fIzmq_bind()\fR function returns zero if successful\&. Otherwise it returns \-1 and sets \fIerrno\fR to one of the values defined below\&.
+.SH "ERRORS"
+.PP
+\fBEINVAL\fR
+.RS 4
+The endpoint supplied is invalid\&.
+.RE
+.PP
+\fBEPROTONOSUPPORT\fR
+.RS 4
+The requested
+\fItransport\fR
+protocol is not supported\&.
+.RE
+.PP
+\fBENOCOMPATPROTO\fR
+.RS 4
+The requested
+\fItransport\fR
+protocol is not compatible with the socket type\&.
+.RE
+.PP
+\fBEADDRINUSE\fR
+.RS 4
+The requested
+\fIaddress\fR
+is already in use\&.
+.RE
+.PP
+\fBEADDRNOTAVAIL\fR
+.RS 4
+The requested
+\fIaddress\fR
+was not local\&.
+.RE
+.PP
+\fBENODEV\fR
+.RS 4
+The requested
+\fIaddress\fR
+specifies a nonexistent interface\&.
+.RE
+.PP
+\fBETERM\fR
+.RS 4
+The 0MQ
+\fIcontext\fR
+associated with the specified
+\fIsocket\fR
+was terminated\&.
+.RE
+.PP
+\fBENOTSOCK\fR
+.RS 4
+The provided
+\fIsocket\fR
+was invalid\&.
+.RE
+.PP
+\fBEMTHREAD\fR
+.RS 4
+No I/O thread is available to accomplish the task\&.
+.RE
+.SH "EXAMPLE"
+.PP
+\fBBinding a publisher socket to an in-process and a TCP transport\fR. 
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+/* Create a ZMQ_PUB socket */
+void *socket = zmq_socket (context, ZMQ_PUB);
+assert (socket);
+/* Bind it to a in\-process transport with the address \*(Aqmy_publisher\*(Aq */
+int rc = zmq_bind (socket, "inproc://my_publisher");
+assert (rc == 0);
+/* Bind it to a TCP transport on port 5555 of the \*(Aqeth0\*(Aq interface */
+rc = zmq_bind (socket, "tcp://eth0:5555");
+assert (rc == 0);
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "SEE ALSO"
+.sp
+\fBzmq_connect\fR(3) \fBzmq_socket\fR(3) \fBzmq\fR(7)
+.SH "AUTHORS"
+.sp
+This page was written by the 0MQ community\&. To make a change please read the 0MQ Contribution Policy at \m[blue]\fBhttp://www\&.zeromq\&.org/docs:contributing\fR\m[]\&.

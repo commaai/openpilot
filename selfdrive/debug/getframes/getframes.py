@@ -14,9 +14,10 @@ ffi = FFI()
 ffi.cdef("""
 
 typedef enum VisionStreamType {
-  VISION_STREAM_UI_BACK,
-  VISION_STREAM_UI_FRONT,
+  VISION_STREAM_RGB_BACK,
+  VISION_STREAM_RGB_FRONT,
   VISION_STREAM_YUV,
+  VISION_STREAM_YUV_FRONT,
   VISION_STREAM_MAX,
 } VisionStreamType;
 
@@ -47,12 +48,15 @@ typedef struct VIPCBuf {
 } VIPCBuf;
 
 typedef struct VIPCBufExtra {
-  uint32_t frame_id; // only for yuv
+  // only for yuv
+  uint32_t frame_id;
+  uint64_t timestamp_eof;
 } VIPCBufExtra;
 
 typedef struct VisionStream {
   int ipc_fd;
   int last_idx;
+  int last_type;
   int num_bufs;
   VisionStreamBufs bufs_info;
   VIPCBuf *bufs;
@@ -68,10 +72,16 @@ void visionstream_destroy(VisionStream *s);
 clib = ffi.dlopen(os.path.join(gf_dir, "libvisionipc.so"))
 
 
-def getframes():
+def getframes(front=False):
   s = ffi.new("VisionStream*")
   buf_info = ffi.new("VisionStreamBufs*")
-  err = clib.visionstream_init(s, clib.VISION_STREAM_UI_BACK, True, buf_info)
+
+  if front:
+   stream_type = clib.VISION_STREAM_RGB_FRONT
+  else:
+   stream_type = clib.VISION_STREAM_RGB_BACK
+
+  err = clib.visionstream_init(s, stream_type, True, buf_info)
   assert err == 0
 
   w = buf_info.width

@@ -54,7 +54,7 @@ all: orbd
 
 include ../common/cereal.mk
 
-DEP_OBJS = ../common/visionipc.o ../common/swaglog.o $(PHONELIBS)/json/src/json.o
+DEP_OBJS = ../common/visionipc.o ../common/ipc.o ../common/swaglog.o $(PHONELIBS)/json/src/json.o
 
 orbd: orbd_dsp.o $(DEP_OBJS) calculator_stub.o freethedsp.o
 	@echo "[ LINK ] $@"

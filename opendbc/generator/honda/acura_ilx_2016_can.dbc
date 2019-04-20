@@ -39,12 +39,6 @@ BO_ 419 GEARBOX: 8 PCM
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
 
-BO_ 420 VSA_STATUS: 8 VSA
- SG_ USER_BRAKE : 7|16@0+ (0.015625,-1.609375) [0|1000] "" EON
- SG_ ESP_DISABLED : 28|1@0+ (1,0) [0|1] "" EON
- SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
- SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
-
 BO_ 422 SCM_BUTTONS: 8 SCM
  SG_ CRUISE_BUTTONS : 7|3@0+ (1,0) [0|7] "" EON
  SG_ LIGHTS_SETTING : 1|2@0+ (1,0) [0|3] "" EON
@@ -64,7 +58,7 @@ CM_ SG_ 780 CRUISE_SPEED "255 = no speed";
 CM_ SG_ 804 CRUISE_SPEED_PCM "255 = no speed";
 CM_ SG_ 829 BEEP "beeps are pleasant, chimes are for warnngs etc...";
 
-VAL_ 399 STEER_STATUS 5 "fault" 4 "no_torque_alert_2" 2 "no_torque_alert_1" 0 "normal" ;
+VAL_ 399 STEER_STATUS 6 "tmp_fault" 5 "fault_1" 4 "no_torque_alert_2" 3 "low_speed_lockout" 2 "no_torque_alert_1" 0 "normal" ;
 VAL_ 419 GEAR_SHIFTER 10 "S" 4 "D" 3 "N" 2 "R" 1 "P" ;
 VAL_ 422 CRUISE_BUTTONS 7 "tbd" 6 "tbd" 5 "tbd" 4 "accel_res" 3 "decel_set" 2 "cancel" 1 "main" 0 "none" ;
 VAL_ 422 LIGHTS_SETTING 3 "high_beam" 2 "low_beam" 1 "position" 0 "no_lights" ;

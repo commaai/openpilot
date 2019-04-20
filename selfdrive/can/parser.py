@@ -4,8 +4,12 @@ import numbers
 
 from selfdrive.can.libdbc_py import libdbc, ffi
 
+
 class CANParser(object):
-  def __init__(self, dbc_name, signals, checks=[], bus=0, sendcan=False, tcp_addr="127.0.0.1"):
+  def __init__(self, dbc_name, signals, checks=None, bus=0, sendcan=False, tcp_addr="127.0.0.1"):
+    if checks is None:
+      checks = []
+
     self.can_valid = True
     self.vl = defaultdict(dict)
     self.ts = defaultdict(dict)
@@ -25,7 +29,7 @@ class CANParser(object):
       self.msg_name_to_addres[name] = address
       self.address_to_msg_name[address] = name
 
-    # Convert message names into adresses
+    # Convert message names into addresses
     for i in range(len(signals)):
       s = signals[i]
       if not isinstance(s[1], numbers.Number):
@@ -92,6 +96,44 @@ class CANParser(object):
   def update(self, sec, wait):
     libdbc.can_update(self.can, sec, wait)
     return self.update_vl(sec)
+
+class CANDefine(object):
+  def __init__(self, dbc_name):
+    self.dv = defaultdict(dict)
+    self.dbc_name = dbc_name
+    self.dbc = libdbc.dbc_lookup(dbc_name)
+
+    num_vals = self.dbc[0].num_vals
+
+    self.address_to_msg_name = {}
+    num_msgs = self.dbc[0].num_msgs
+    for i in range(num_msgs):
+      msg = self.dbc[0].msgs[i]
+      name = ffi.string(msg.name)
+      address = msg.address
+      self.address_to_msg_name[address] = name
+
+    for i in range(num_vals):
+      val = self.dbc[0].vals[i]
+
+      sgname = ffi.string(val.name)
+      address = val.address
+      def_val = ffi.string(val.def_val)
+
+      #separate definition/value pairs
+      def_val = def_val.split()
+      values = [int(v) for v in def_val[::2]]
+      defs = def_val[1::2]
+
+      if address not in self.dv:
+        self.dv[address] = {}
+        msgname = self.address_to_msg_name[address]
+        self.dv[msgname] = {}
+
+      # two ways to lookup: address or msg name
+      self.dv[address][sgname] = {v: d for v, d in zip(values, defs)} #build dict
+      self.dv[msgname][sgname] = self.dv[address][sgname]
+
 
 if __name__ == "__main__":
   from common.realtime import sec_since_boot
@@ -203,6 +245,6 @@ if __name__ == "__main__":
   while True:
     cp.update(int(sec_since_boot()*1e9), True)
     # print cp.vl
-    print cp.ts
-    print cp.can_valid
+    print(cp.ts)
+    print(cp.can_valid)
     time.sleep(0.01)

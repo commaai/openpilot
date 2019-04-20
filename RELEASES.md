@@ -1,3 +1,129 @@
+Version 0.5.10 (2019-03-19)
+========================
+ * Self-tuning vehicle parameters: steering offset, tires stiffness and steering ratio
+ * Improve longitudinal control at low speed when lead vehicle harshly decelerates
+ * Fix panda bug going unexpectedly in DCP mode when EON is connected
+ * Reduce white panda power consumption by 500mW when EON is disconnected by turning off WIFI
+ * New Driver Monitoring Model
+ * Support QR codes for login using comma connect
+ * Refactor comma pedal FW and use CRC-8 checksum algorithm for safety. Reflashing pedal is required. 
+   Please see `#hw-pedal` on [discord](discord.comma.ai) for assistance updating comma pedal. 
+ * Additional speed limit rules for Germany thanks to arne182
+ * Allow negative speed limit offsets
+
+Version 0.5.9 (2019-02-10)
+========================
+ * Improve calibration using a dedicated neural network
+ * Abstract planner in its own process to remove lags in controls process
+ * Improve speed limits with country/region defaults by road type
+ * Reduce mapd data usage with gzip thanks to eFiniLan
+ * Zip log files in the background to reduce disk usage
+ * Kia Optima support thanks to emmertex!
+ * Buick Regal 2018 support thanks to HOYS!
+ * Comma pedal support for Toyota thanks to wocsor! Note: tuning needed and not maintained by comma
+ * Chrysler Pacifica and Jeep Grand Cherokee support thanks to adhintz!
+
+Version 0.5.8 (2019-01-17)
+========================
+ * Open sourced visiond
+ * Auto-slowdown for upcoming turns
+ * Chrysler/Jeep/Fiat support thanks to adhintz!
+ * Honda Civic 2019 support thanks to csouers!
+ * Improve use of car display in Toyota thanks to arne182!
+ * No data upload when connected to Android or iOS hotspots and "Enable Upload Over Cellular" setting is off
+ * EON stops charging when 12V battery drops below 11.8V
+
+Version 0.5.7 (2018-12-06)
+========================
+ * Speed limit from OpenStreetMap added to UI
+ * Highlight speed limit when speed exceeds road speed limit plus a delta
+ * Option to limit openpilot max speed to road speed limit plus a delta
+ * Cadillac ATS support thanks to vntarasov!
+ * GMC Acadia support thanks to CryptoKylan!
+ * Decrease GPU power consumption
+ * NEOSv8 autoupdate
+
+Version 0.5.6 (2018-11-16)
+========================
+ * Refresh settings layout and add feature descriptions
+ * In Honda, keep stock camera on for logging and extra stock features; new openpilot giraffe setting is 0111!
+ * In Toyota, option to keep stock camera on for logging and extra stock features (e.g. AHB); 120Ohm resistor required on giraffe.
+ * Improve camera calibration stability
+ * More tuning to Honda positive accelerations
+ * Reduce brake pump use on Hondas
+ * Chevrolet Malibu support thanks to tylergets!
+ * Holden Astra support thanks to AlexHill!
+
+Version 0.5.5 (2018-10-20)
+========================
+ * Increase allowed Honda positive accelerations
+ * Fix sporadic unexpected braking when passing semi-trucks in Toyota
+ * Fix gear reading bug in Hyundai Elantra thanks to emmertex!
+
+Version 0.5.4 (2018-09-25)
+========================
+ * New Driving Model
+ * New Driver Monitoring Model
+ * Improve longitudinal mpc in mid-low speed braking
+ * Honda Accord hybrid support thanks to energee!
+ * Ship mpc binaries and sensibly reduce build time
+ * Calibration more stable
+ * More Hyundai and Kia cars supported thanks to emmertex!
+ * Various GM Volt improvements thanks to vntarasov!
+
+Version 0.5.3 (2018-09-03)
+========================
+ * Hyundai Santa Fe support!
+ * Honda Pilot 2019 support thanks to energee!
+ * Toyota Highlander support thanks to daehahn!
+ * Improve steering tuning for Honda Odyssey
+
+Version 0.5.2 (2018-08-16)
+========================
+ * New calibration: more accurate, a lot faster, open source!
+ * Enable orbd
+ * Add little endian support to CAN packer
+ * Fix fingerprint for Honda Accord 1.5T
+ * Improve driver monitoring model
+
+Version 0.5.1 (2018-08-01)
+========================
+ * Fix radar error on Civic sedan 2018
+ * Improve thermal management logic
+ * Alpha Toyota C-HR and Camry support!
+ * Auto-switch Driver Monitoring to 3 min counter when inaccurate
+
+Version 0.5 (2018-07-11)
+========================
+ * Driver Monitoring (beta) option in settings!
+ * Make visiond, loggerd and UI use less resources
+ * 60 FPS UI
+ * Better car parameters for most cars
+ * New sidebar with stats
+ * Remove Waze and Spotify to free up system resources
+ * Remove rear view mirror option
+ * Calibration 3x faster
+
+Version 0.4.7.2 (2018-06-25)
+==========================
+ * Fix loggerd lag issue
+ * No longer prompt for updates
+ * Mitigate right lane hugging for properly mounted EON (procedure on wiki)
+
+Version 0.4.7.1 (2018-06-18)
+==========================
+ * Fix Acura ILX steer faults
+ * Fix bug in mock car
+
+Version 0.4.7 (2018-06-15)
+==========================
+ * New model!
+ * GM Volt (and CT6 lateral) support!
+ * Honda Bosch lateral support!
+ * Improve actuator modeling to reduce lateral wobble
+ * Minor refactor of car abstraction layer
+ * Hack around orbd startup issue
+
 Version 0.4.6 (2018-05-18)
 ==========================
  * NEOSv6 required! Will autoupdate

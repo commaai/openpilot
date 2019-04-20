@@ -70,21 +70,24 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, int hardwired) {
 
 #endif
 
-// ***************************** honda can checksum *****************************
+// ***************************** pedal can checksum *****************************
 
-int can_cksum(uint8_t *dat, int len, int addr, int idx) {
-  int i;
-  int s = 0;
-  for (i = 0; i < len; i++) {
-    s += (dat[i] >> 4); 
-    s += dat[i] & 0xF;
+uint8_t pedal_checksum(uint8_t *dat, int len) {
+  uint8_t crc = 0xFF;
+  uint8_t poly = 0xD5; // standard crc8
+  int i, j;
+  for (i = len - 1; i >= 0; i--) {
+    crc ^= dat[i];
+    for (j = 0; j < 8; j++) {
+      if ((crc & 0x80) != 0) {
+        crc = (uint8_t)((crc << 1) ^ poly);
+      }
+      else {
+        crc <<= 1;
+      }
+    }
   }
-  s += (addr>>0)&0xF;
-  s += (addr>>4)&0xF;
-  s += (addr>>8)&0xF;
-  s += idx;
-  s = 8-s;
-  return s&0xF;
+  return crc;
 }
 
 // ***************************** can port *****************************
@@ -92,6 +95,8 @@ int can_cksum(uint8_t *dat, int len, int addr, int idx) {
 // addresses to be used on CAN
 #define CAN_GAS_INPUT  0x200
 #define CAN_GAS_OUTPUT 0x201
+#define CAN_GAS_SIZE 6
+#define COUNTER_CYCLE 0xF
 
 void CAN1_TX_IRQHandler() {
   // clear interrupt
@@ -134,14 +139,19 @@ void CAN1_RX0_IRQHandler() {
       }
 
       // normal packet
-      uint8_t *dat = (uint8_t *)&CAN->sFIFOMailBox[0].RDLR;
-      uint8_t *dat2 = (uint8_t *)&CAN->sFIFOMailBox[0].RDHR;
+      uint8_t dat[8];
+      uint8_t *rdlr = (uint8_t *)&CAN->sFIFOMailBox[0].RDLR;
+      uint8_t *rdhr = (uint8_t *)&CAN->sFIFOMailBox[0].RDHR;
+      for (int i=0; i<4; i++) {
+        dat[i] = rdlr[i];
+        dat[i+4] = rdhr[i];
+      }
       uint16_t value_0 = (dat[0] << 8) | dat[1];
       uint16_t value_1 = (dat[2] << 8) | dat[3];
-      uint8_t enable = (dat2[0] >> 7) & 1;
-      uint8_t index = (dat2[1] >> 4) & 3;
-      if (can_cksum(dat, 5, CAN_GAS_INPUT, index) == (dat2[1] & 0xF)) {
-        if (((current_index+1)&3) == index) {
+      uint8_t enable = (dat[4] >> 7) & 1;
+      uint8_t index = dat[4] & COUNTER_CYCLE;
+      if (pedal_checksum(dat, CAN_GAS_SIZE - 1) == dat[5]) {
+        if (((current_index + 1) & COUNTER_CYCLE) == index) {
           #ifdef DEBUG
             puts("setting gas ");
             puth(value);
@@ -196,18 +206,18 @@ void TIM3_IRQHandler() {
   // check timer for sending the user pedal and clearing the CAN
   if ((CAN->TSR & CAN_TSR_TME0) == CAN_TSR_TME0) {
     uint8_t dat[8];
-    dat[0] = (pdl0>>8)&0xFF;
-    dat[1] = (pdl0>>0)&0xFF;
-    dat[2] = (pdl1>>8)&0xFF;
-    dat[3] = (pdl1>>0)&0xFF;
-    dat[4] = state;
-    dat[5] = can_cksum(dat, 5, CAN_GAS_OUTPUT, pkt_idx) | (pkt_idx<<4);
+    dat[0] = (pdl0>>8) & 0xFF;
+    dat[1] = (pdl0>>0) & 0xFF;
+    dat[2] = (pdl1>>8) & 0xFF;
+    dat[3] = (pdl1>>0) & 0xFF;
+    dat[4] = (state & 0xF) << 4 | pkt_idx;
+    dat[5] = pedal_checksum(dat, CAN_GAS_SIZE - 1);
     CAN->sTxMailBox[0].TDLR = dat[0] | (dat[1]<<8) | (dat[2]<<16) | (dat[3]<<24);
     CAN->sTxMailBox[0].TDHR = dat[4] | (dat[5]<<8);
     CAN->sTxMailBox[0].TDTR = 6;  // len of packet is 5
     CAN->sTxMailBox[0].TIR = (CAN_GAS_OUTPUT << 21) | 1;
     ++pkt_idx;
-    pkt_idx &= 3;
+    pkt_idx &= COUNTER_CYCLE;
   } else {
     // old can packet hasn't sent!
     state = FAULT_SEND;

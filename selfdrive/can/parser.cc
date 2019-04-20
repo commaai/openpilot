@@ -51,6 +51,30 @@ unsigned int toyota_checksum(unsigned int address, uint64_t d, int l) {
   return s & 0xFF;
 }
 
+unsigned int pedal_checksum(unsigned int address, uint64_t d, int l) {
+  uint8_t crc = 0xFF;
+  uint8_t poly = 0xD5; // standard crc8
+
+  d >>= ((8-l)*8); // remove padding
+  d >>= 8; // remove checksum
+
+  uint8_t *dat = (uint8_t *)&d;
+
+  int i, j;
+  for (i = 0; i < l - 1; i++) {
+    crc ^= dat[i];
+    for (j = 0; j < 8; j++) {
+      if ((crc & 0x80) != 0) {
+        crc = (uint8_t)((crc << 1) ^ poly);
+      }
+      else {
+        crc <<= 1;
+      }
+    }
+  }
+  return crc;
+}
+
 namespace {
 
 uint64_t read_u64_be(const uint8_t* v) {
@@ -62,6 +86,17 @@ uint64_t read_u64_be(const uint8_t* v) {
           | ((uint64_t)v[5] << 16)
           | ((uint64_t)v[6] << 8)
           | (uint64_t)v[7]);
+}
+
+uint64_t read_u64_le(const uint8_t* v) {
+  return ((uint64_t)v[0]
+          | ((uint64_t)v[1] << 8)
+          | ((uint64_t)v[2] << 16)
+          | ((uint64_t)v[3] << 24)
+          | ((uint64_t)v[4] << 32)
+          | ((uint64_t)v[5] << 40)
+          | ((uint64_t)v[6] << 48)
+          | ((uint64_t)v[7] << 56));
 }
 
 
@@ -82,8 +117,14 @@ struct MessageState {
   bool parse(uint64_t sec, uint16_t ts_, uint64_t dat) {
     for (int i=0; i < parse_sigs.size(); i++) {
       auto& sig = parse_sigs[i];
+      int64_t tmp;
 
-      int64_t tmp = (dat >> sig.bo) & ((1ULL << sig.b2)-1);
+      if (sig.is_little_endian){
+        tmp = (dat >> sig.b1) & ((1ULL << sig.b2)-1);
+      } else {
+        tmp = (dat >> sig.bo) & ((1ULL << sig.b2)-1);
+      }
+
       if (sig.is_signed) {
         tmp -= (tmp >> (sig.b2-1)) ? (1ULL << sig.b2) : 0; //signed
       }
@@ -96,14 +137,21 @@ struct MessageState {
           return false;
         }
       } else if (sig.type == SignalType::HONDA_COUNTER) {
-        if (!honda_update_counter(tmp)) {
+        if (!update_counter_generic(tmp, sig.b2)) {
           return false;
         }
       } else if (sig.type == SignalType::TOYOTA_CHECKSUM) {
-        // INFO("CHECKSUM %d %d %018llX - %lld vs %d\n", address, size, dat, tmp, toyota_checksum(address, dat, size));
-
         if (toyota_checksum(address, dat, size) != tmp) {
           INFO("%X CHECKSUM FAIL\n", address);
+          return false;
+        }
+      } else if (sig.type == SignalType::PEDAL_CHECKSUM) {
+        if (pedal_checksum(address, dat, size) != tmp) {
+          INFO("%X PEDAL CHECKSUM FAIL\n", address);
+          return false;
+        }
+      } else if (sig.type == SignalType::PEDAL_COUNTER) {
+        if (!update_counter_generic(tmp, sig.b2)) {
           return false;
         }
       }
@@ -117,10 +165,10 @@ struct MessageState {
   }
 
 
-  bool honda_update_counter(int64_t v) {
+  bool update_counter_generic(int64_t v, int cnt_size) {
     uint8_t old_counter = counter;
     counter = v;
-    if (((old_counter+1) & 3) != v) {
+    if (((old_counter+1) & ((1 << cnt_size) -1)) != v) {
       counter_fail += 1;
       if (counter_fail > 1) {
         INFO("%X COUNTER FAIL %d -- %d vs %d\n", address, counter_fail, old_counter, (int)v);
@@ -159,6 +207,14 @@ class CANParser {
     const char *tcp_addr_char = tcp_addr_str.c_str();
 
     zmq_connect(subscriber, tcp_addr_char);
+
+    // drain sendcan to delete any stale messages from previous runs
+    zmq_msg_t msgDrain;
+    zmq_msg_init(&msgDrain);
+    int err = 0;
+    while(err >= 0) {
+      err = zmq_msg_recv(&msgDrain, subscriber, ZMQ_DONTWAIT);
+    }
 
     dbc = dbc_lookup(dbc_name);
     assert(dbc);
@@ -220,6 +276,7 @@ class CANParser {
 
   void UpdateCans(uint64_t sec, const capnp::List<cereal::CanData>::Reader& cans) {
       int msg_count = cans.size();
+      uint64_t p;
 
       DEBUG("got %d messages\n", msg_count);
 
@@ -240,7 +297,14 @@ class CANParser {
         uint8_t dat[8] = {0};
         memcpy(dat, cmsg.getDat().begin(), cmsg.getDat().size());
 
-        uint64_t p = read_u64_be(dat);
+        // Assumes all signals in the message are of the same type (little or big endian)
+        // TODO: allow signals within the same message to have different endianess
+        auto& sig = message_states[cmsg.getAddress()].parse_sigs[0];
+        if (sig.is_little_endian) {
+            p = read_u64_le(dat);
+        } else {
+            p = read_u64_be(dat);
+        }
 
         DEBUG("  proc %X: %llx\n", cmsg.getAddress(), p);
 

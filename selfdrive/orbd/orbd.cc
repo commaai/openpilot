@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <assert.h>
+#include <sys/resource.h>
 
 #include "common/visionipc.h"
 #include "common/swaglog.h"
@@ -32,10 +33,14 @@ static void set_do_exit(int sig) {
 
 int main(int argc, char *argv[]) {
   int err;
+  setpriority(PRIO_PROCESS, 0, -13);
   printf("starting orbd\n");
 
 #ifdef DSP
+  uint32_t test_leet = 0;
   char my_path[PATH_MAX+1];
+  memset(my_path, 0, sizeof(my_path));
+
   ssize_t len = readlink("/proc/self/exe", my_path, sizeof(my_path));
   assert(len > 5);
   my_path[len-5] = '\0';
@@ -45,7 +50,6 @@ int main(int argc, char *argv[]) {
   snprintf(adsp_path, PATH_MAX, "ADSP_LIBRARY_PATH=%s/dsp/gen", my_path);
   assert(putenv(adsp_path) == 0);
 
-  uint32_t test_leet = 0; 
   assert(calculator_init(&test_leet) == 0);
   assert(test_leet == 0x1337);
   LOGW("orbd init complete");
@@ -68,6 +72,10 @@ int main(int argc, char *argv[]) {
 
   struct orb_features *features = (struct orb_features *)malloc(sizeof(struct orb_features));
   int last_frame_id = 0;
+  uint64_t frame_count = 0;
+
+  // every other frame
+  const int RATE = 2;
 
   VisionStream stream;
   while (!do_exit) {
@@ -88,6 +96,12 @@ int main(int argc, char *argv[]) {
         break;
       }
 
+      // every other frame
+      frame_count++;
+      if ((frame_count%RATE) != 0) {
+        continue;
+      }
+
       uint64_t start = nanos_since_boot();
 #ifdef DSP
       int ret = calculator_extract_and_match((uint8_t *)buf->addr, ORBD_HEIGHT*ORBD_WIDTH, (uint8_t *)features, sizeof(struct orb_features));
@@ -98,7 +112,7 @@ int main(int argc, char *argv[]) {
       LOGD("total(%d): %6.2f ms to get %4d features on %d", ret, (end-start)/1000000.0, features->n_corners, extra.frame_id);
       assert(ret == 0);
 
-      if (last_frame_id+1 != extra.frame_id) {
+      if (last_frame_id+RATE != extra.frame_id) {
         LOGW("dropped frame!");
       }
 
@@ -135,8 +149,8 @@ int main(int argc, char *argv[]) {
 
         // copy out normalized keypoints
         for (int i = 0; i < features->n_corners; i++) {
-          xs.set(i, features->xy[i][0] * 1.0f / ORBD_WIDTH - 0.5f);
-          ys.set(i, features->xy[i][1] * 1.0f / ORBD_HEIGHT - 0.5f);
+          xs.set(i, (features->xy[i][0] * 1.0f - ORBD_WIDTH / 2) / ORBD_FOCAL);
+          ys.set(i, (features->xy[i][1] * 1.0f - ORBD_HEIGHT / 2) / ORBD_FOCAL);
           octaves.set(i, features->octave[i]);
           matches.set(i, features->matches[i]);
           match_count += features->matches[i] != -1;

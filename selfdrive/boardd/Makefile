@@ -13,8 +13,8 @@ WARN_FLAGS = -Werror=implicit-function-declaration \
              -Werror=return-type \
              -Werror=format-extra-args
 
-CFLAGS = -std=gnu11 -g -fPIC -I../../ -O2 $(WARN_FLAGS)
-CXXFLAGS = -std=c++11 -g -fPIC -I../../ -O2 $(WARN_FLAGS)
+CFLAGS = -std=gnu11 -g -fPIC -I../ -I../../ -O2 $(WARN_FLAGS)
+CXXFLAGS = -std=c++11 -g -fPIC -I../ -I../../ -O2 $(WARN_FLAGS)
 
 ZMQ_FLAGS = -I$(PHONELIBS)/zmq/aarch64/include
 ZMQ_LIBS = -L$(PHONELIBS)/zmq/aarch64/lib \

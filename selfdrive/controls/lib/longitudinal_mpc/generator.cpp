@@ -18,9 +18,7 @@ int main( )
   DifferentialEquation f;
 
   DifferentialState x_ego, v_ego, a_ego;
-  DifferentialState x_l, v_l, a_l;
-
-  OnlineData lambda;
+  OnlineData x_l, v_l;
 
   Control j_ego;
 
@@ -32,13 +30,9 @@ int main( )
   f << dot(v_ego) == a_ego;
   f << dot(a_ego) == j_ego;
 
-  f << dot(x_l) == v_l;
-  f << dot(v_l) == a_l;
-  f << dot(a_l) == -lambda * a_l;
-
   // Running cost
   Function h;
-  h << exp(0.3 * NORM_RW_ERROR(v_ego, v_l, d_l)) - exp(0.3 * NORM_RW_ERROR(v_ego, v_l, desired));
+  h << exp(0.3 * NORM_RW_ERROR(v_ego, v_l, d_l));
   h << (d_l - desired) / (0.05 * v_ego + 0.5);
   h << a_ego * (0.1 * v_ego + 1.0);
   h << j_ego * (0.1 * v_ego + 1.0);
@@ -48,7 +42,7 @@ int main( )
 
   // Terminal cost
   Function hN;
-  hN << exp(0.3 * NORM_RW_ERROR(v_ego, v_l, d_l)) - exp(0.3 * NORM_RW_ERROR(v_ego, v_l, desired));
+  hN << exp(0.3 * NORM_RW_ERROR(v_ego, v_l, d_l));
   hN << (d_l - desired) / (0.05 * v_ego + 0.5);
   hN << a_ego * (0.1 * v_ego + 1.0);
 
@@ -76,7 +70,7 @@ int main( )
   ocp.minimizeLSQEndTerm(QN, hN);
 
   ocp.subjectTo( 0.0 <= v_ego);
-  ocp.setNOD(1);
+  ocp.setNOD(2);
 
   OCPexport mpc(ocp);
   mpc.set( HESSIAN_APPROXIMATION, GAUSS_NEWTON );
@@ -94,7 +88,7 @@ int main( )
   mpc.set( GENERATE_MATLAB_INTERFACE, NO );
   mpc.set( GENERATE_SIMULINK_INTERFACE, NO );
 
-  if (mpc.exportCode( "mpc_export" ) != SUCCESSFUL_RETURN)
+  if (mpc.exportCode( "lib_mpc_export" ) != SUCCESSFUL_RETURN)
     exit( EXIT_FAILURE );
 
   mpc.printDimensionsQP( );
