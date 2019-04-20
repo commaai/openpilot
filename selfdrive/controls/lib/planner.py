@@ -175,7 +175,15 @@ class Planner(object):
     # Calculate speed for normal cruise control
     if enabled:
       accel_limits = map(float, calc_cruise_accel_limits(v_ego, following))
-      jerk_limits = [min(-0.1, accel_limits[0]), max(0.1, accel_limits[1])]  # TODO: make a separate lookup for jerk tuning
+      if CS.carState.gasbuttonstatus == 0:
+        accellimitmaxdynamic = -0.0018*v_ego+0.2
+        jerk_limits = [min(-0.2, accel_limits[0]), max(accellimitmaxdynamic, accel_limits[1])]  # dynamic
+      elif CS.carState.gasbuttonstatus == 1:
+        accellimitmaxsport = -0.002*v_ego+0.4
+        jerk_limits = [min(-0.4, accel_limits[0]), max(accellimitmaxsport, accel_limits[1])]  # sport
+      elif CS.carState.gasbuttonstatus == 2:
+        accellimitmaxeco = -0.0015*v_ego+0.1
+        jerk_limits = [min(-0.1, accel_limits[0]), max(accellimitmaxeco, accel_limits[1])]  # eco
       
       if not CS.carState.leftBlinker and not CS.carState.rightBlinker:
         steering_angle = CS.carState.steeringAngle
