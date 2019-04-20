@@ -135,7 +135,7 @@ class PathPlanner(object):
     
     dat2 = messaging.new_message()
     dat2.init('latControl')
-    dat2.latControl.anglelater = math.degrees(list(self.mpc_solution[0].delta)[-1]) - angle_offset_bias
+    dat2.latControl.anglelater = math.degrees(list(self.mpc_solution[0].delta)[-1])
     self.latControl_sock.send(dat2.to_bytes())
     
     self.l_poly = l_poly
