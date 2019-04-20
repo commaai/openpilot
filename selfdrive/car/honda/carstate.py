@@ -151,6 +151,8 @@ def get_cam_can_parser(CP):
 class CarState(object):
   def __init__(self, CP):
     self.lkMode = True
+    self.gasMode = int(kegman.conf['lastGasMode'])
+    self.gasLabels = ["dynamic","sport","eco"]
     self.Angle = [0, 5, 10, 15,20,25,30,35,60,100,180,270,500]
     self.Angle_Speed = [255,160,100,80,70,60,55,50,40,30,20,10,5]
     self.blind_spot_on = bool(0)
@@ -254,7 +256,7 @@ class CarState(object):
     btns.append(UIButton("","",0,"",2))
     btns.append(UIButton("sound","SND",0,"",3))
     btns.append(UIButton("tr","TR",0,self.trLabels[self.trMode],4))
-    btns.append(UIButton("gas","Gas",1,"",5))
+    btns.append(UIButton("gas","Gas",1,self.gasLabels[self.gasMode],5))
     return btns
 
   #BB update ui buttons
@@ -281,7 +283,15 @@ class CarState(object):
             kegman.save({'lastTrMode': str(self.trMode)})  # write last distance bar setting to file
           self.cstm_btns.btns[id].btn_label2 = self.trLabels[self.trMode]
           self.cstm_btns.hasChanges = True
-
+      elif (id == 5) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="gas":
+          if self.cstm_btns.btns[id].btn_label2 == self.gasLabels[self.gasMode]:
+            self.gasMode = (self.gasMode + 1 ) % 3
+            kegman.save({'lastGasMode': str(self.gasMode)})  # write last GasMode setting to file
+          else:
+            self.gasMode = 0
+            kegman.save({'lastGasMode': str(self.gasMode)})  # write last GasMode setting to file
+          self.cstm_btns.btns[id].btn_label2 = self.gasLabels[self.gasMode]
+          self.cstm_btns.hasChanges = True
       else:
         self.cstm_btns.btns[id].btn_status = btn_status * self.cstm_btns.btns[id].btn_status
     else:
