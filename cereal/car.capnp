@@ -125,6 +125,8 @@ struct CarState {
   readdistancelines @31 :Float32;
   gasbuttonstatus @32 :Float32;
   lkMode @33 :Bool;
+  sporton @34 :Bool;
+  ecoon @35 :Bool;
 
   # lock info
   doorOpen @24 :Bool;
