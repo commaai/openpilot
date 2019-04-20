@@ -113,15 +113,18 @@ def save(data):  # allows for writing multiple key/value pairs
     variables_written.append(key)
   conf.update(data)
 
-def get(key_s):  # can get multiple keys from a list
+def get(key_s=""):  # can get multiple keys from a list
   global thread_counter
-  thread_counter = 0
-  if type(key_s) == list:
-    return [conf[i] if i in conf else None for i in key_s]
-  if key_s in conf:
-    return conf[key_s]
+  if key_s == "":  # get all
+    return conf
   else:
-    return None
+    thread_counter = 0
+    if type(key_s) == list:
+      return [conf[i] if i in conf else None for i in key_s]
+    if key_s in conf:
+      return conf[key_s]
+    else:
+      return None
 
 thread_counter = 0  # don't change
 thread_timeout = 5.0  # minutes to wait before stopping thread. reading or writing will reset the counter
