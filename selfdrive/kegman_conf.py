@@ -56,15 +56,18 @@ def read_config():
 
 def kegman_thread():  # read and write thread; now merges changes from file and variable
   global conf
+  global thread_counter
   global variables_written
   global thread_started
   last_conf = copy.deepcopy(conf)
   try:
     while True:
-      time.sleep(30)  # every n seconds check for conf change
+      thread_counter += 1
+      time.sleep(thread_interval)  # every n seconds check for conf change
       with open(kegman_file, "r") as f:
         conf_tmp = json.load(f)
       if conf != last_conf or conf != conf_tmp:  # if either variable or file has changed
+        thread_counter = 0
         if conf_tmp != conf:  # if change in file
           changed_keys = []
           for i in conf_tmp:
@@ -80,26 +83,28 @@ def kegman_thread():  # read and write thread; now merges changes from file and 
           write_config(conf)
         last_conf = copy.deepcopy(conf)
       variables_written = []
+      if thread_counter > ((thread_timeout * 60.0) / thread_interval):  # if no activity in 15 minutes
+        print("Thread timed out!")
+        thread_started = False
+        return
   except:
     print("Error in kegman thread!")
     cloudlog.exception("error in kegman thread")
     thread_started = False
 
 def write_config(conf):  # never to be called outside kegman_conf
-  try:
-    with open(kegman_file, "w") as f:
-      json.dump(conf, f, indent=2, sort_keys=True)
-      os.chmod(kegman_file, 0o764)
-  except IOError:
-    os.mkdir("/data")
+  if BASEDIR == "/data/openpilot":
     with open(kegman_file, "w") as f:
       json.dump(conf, f, indent=2, sort_keys=True)
       os.chmod(kegman_file, 0o764)
 
+
 def save(data):  # allows for writing multiple key/value pairs
   global conf
+  global thread_counter
   global thread_started
   global variables_written
+  thread_counter = 0
   if not thread_started and BASEDIR == "/data/openpilot":
     threading.Thread(target=kegman_thread).start()  # automatically start write thread if file needs it
     thread_started = True
@@ -108,14 +113,22 @@ def save(data):  # allows for writing multiple key/value pairs
     variables_written.append(key)
   conf.update(data)
 
-def get(key_s):  # can get multiple keys from a list
-  if type(key_s) == list:
-    return [conf[i] if i in conf else None for i in key_s]
-  if key_s in conf:
-    return conf[key_s]
+def get(key_s=""):  # can get multiple keys from a list
+  global thread_counter
+  if key_s == "":  # get all
+    return conf
   else:
-    return None
+    thread_counter = 0
+    if type(key_s) == list:
+      return [conf[i] if i in conf else None for i in key_s]
+    if key_s in conf:
+      return conf[key_s]
+    else:
+      return None
 
+thread_counter = 0  # don't change
+thread_timeout = 5.0  # minutes to wait before stopping thread. reading or writing will reset the counter
+thread_interval = 30.0  # seconds to sleep between checks
 thread_started = False
 kegman_file = "/data/kegman.json"
 variables_written = []
