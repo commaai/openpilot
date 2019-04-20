@@ -93,15 +93,11 @@ def kegman_thread():  # read and write thread; now merges changes from file and 
     thread_started = False
 
 def write_config(conf):  # never to be called outside kegman_conf
-  try:
+  if BASEDIR == "/data/openpilot":
     with open(kegman_file, "w") as f:
       json.dump(conf, f, indent=2, sort_keys=True)
       os.chmod(kegman_file, 0o764)
-  except IOError:
-    os.mkdir("/data")
-    with open(kegman_file, "w") as f:
-      json.dump(conf, f, indent=2, sort_keys=True)
-      os.chmod(kegman_file, 0o764)
+
 
 def save(data):  # allows for writing multiple key/value pairs
   global conf
@@ -128,7 +124,7 @@ def get(key_s):  # can get multiple keys from a list
     return None
 
 thread_counter = 0  # don't change
-thread_timeout = 15.0  # minutes to wait before stopping thread. reading or writing will reset the counter
+thread_timeout = 5.0  # minutes to wait before stopping thread. reading or writing will reset the counter
 thread_interval = 30.0  # seconds to sleep between checks
 thread_started = False
 kegman_file = "/data/kegman.json"
