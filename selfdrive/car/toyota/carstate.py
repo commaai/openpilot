@@ -420,7 +420,10 @@ class CarState(object):
         self.lane_departure_toggle_on = False
       else:
         self.lane_departure_toggle_on = True
-
+    if self.alcaMode == 3 and (self.left_blinker_on or self.right_blinker_on):
+      self.lane_departure_toggle_on = False
+    else:
+      self.lane_departure_toggle_on = True
     self.distance_toggle = cp.vl["JOEL_ID"]['ACC_DISTANCE']
     if cp.vl["PCM_CRUISE_SM"]['DISTANCE_LINES'] == 2:
       self.trfix = True
