@@ -267,10 +267,10 @@ class CarState(object):
       if (id == 1) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="alca":
           if self.cstm_btns.btns[id].btn_label2 == self.alcaLabels[self.alcaMode]:
             self.alcaMode = (self.alcaMode + 1 ) % 4
-            kegman.save({'lastALCAMode': str(self.alcaMode)})  # write last ALCAMode setting to file
+            kegman.save({'lastALCAMode': int(self.alcaMode)})  # write last ALCAMode setting to file
           else:
             self.alcaMode = 0
-            kegman.save({'lastALCAMode': str(self.alcaMode)})  # write last ALCAMode setting to file
+            kegman.save({'lastALCAMode': int(self.alcaMode)})  # write last ALCAMode setting to file
           self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
           self.cstm_btns.hasChanges = True
           if self.alcaMode == 3:
@@ -278,10 +278,10 @@ class CarState(object):
       elif (id == 2) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="slow":
         if self.cstm_btns.btns[id].btn_label2 == self.sloLabels[self.sloMode]:
           self.sloMode = (self.sloMode + 1 ) % 2
-          kegman.save({'lastSloMode': str(self.sloMode)})  # write last SloMode setting to file
+          kegman.save({'lastSloMode': int(self.sloMode)})  # write last SloMode setting to file
         else:
           self.sloMode = 0
-          kegman.save({'lastSloMode': str(self.sloMode)})  # write last SloMode setting to file
+          kegman.save({'lastSloMode': int(self.sloMode)})  # write last SloMode setting to file
         self.cstm_btns.btns[id].btn_label2 = self.sloLabels[self.sloMode]
         self.cstm_btns.hasChanges = True
         if self.sloMode == 0:
@@ -289,10 +289,10 @@ class CarState(object):
       elif (id == 5) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="gas":
           if self.cstm_btns.btns[id].btn_label2 == self.gasLabels[self.gasMode]:
             self.gasMode = (self.gasMode + 1 ) % 3
-            kegman.save({'lastGasMode': str(self.gasMode)})  # write last GasMode setting to file
+            kegman.save({'lastGasMode': int(self.gasMode)})  # write last GasMode setting to file
           else:
             self.gasMode = 0
-            kegman.save({'lastGasMode': str(self.gasMode)})  # write last GasMode setting to file
+            kegman.save({'lastGasMode': int(self.gasMode)})  # write last GasMode setting to file
 
           self.cstm_btns.btns[id].btn_label2 = self.gasLabels[self.gasMode]
           self.cstm_btns.hasChanges = True
@@ -302,12 +302,12 @@ class CarState(object):
         self.cstm_btns.btns[id].btn_status = btn_status
         if (id == 1) and self.cstm_btns.btns[id].btn_name=="alca":
           self.alcaMode = (self.alcaMode + 1 ) % 4
-          kegman.save({'lastALCAMode': str(self.alcaMode)})  # write last ALCAMode setting to file
+          kegman.save({'lastALCAMode': int(self.alcaMode)})  # write last ALCAMode setting to file
           self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
           self.cstm_btns.hasChanges = True
         elif (id == 2) and self.cstm_btns.btns[id].btn_name=="slow":
           self.sloMode = (self.sloMode + 1 ) % 2
-          kegman.save({'lastSloMode': str(self.sloMode)})  # write last SloMode setting to file
+          kegman.save({'lastSloMode': int(self.sloMode)})  # write last SloMode setting to file
           self.cstm_btns.btns[id].btn_label2 = self.sloLabels[self.sloMode]
           self.cstm_btns.hasChanges = True
 

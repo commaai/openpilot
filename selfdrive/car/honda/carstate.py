@@ -162,11 +162,11 @@ class CarState(object):
     self.alcaMode = int(kegman.conf['lastALCAMode'])     # default to last ALCA Mode on startup
     if self.alcaMode > 3:
       self.alcaMode = 3
-      kegman.save({'lastALCAMode': str(self.alcaMode)})  # write last distance bar setting to file
+      kegman.save({'lastALCAMode': int(self.alcaMode)})  # write last distance bar setting to file
     self.trMode = int(kegman.conf['lastTrMode'])     # default to last distance interval on startup
     if self.trMode > 2:
       self.trMode = 2
-      kegman.save({'lastTrMode': str(self.trMode)})  # write last distance bar setting to file
+      kegman.save({'lastTrMode': int(self.trMode)})  # write last distance bar setting to file
     #if (CP.carFingerprint == CAR.MODELS):
     # ALCA PARAMS
     # max REAL delta angle for correction vs actuator
@@ -265,10 +265,10 @@ class CarState(object):
       if (id == 0) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="alca":
           if self.cstm_btns.btns[id].btn_label2 == self.alcaLabels[self.alcaMode]:
             self.alcaMode = (self.alcaMode + 1 ) % 4
-            kegman.save({'lastALCAMode': str(self.alcaMode)})  # write last distance bar setting to file
+            kegman.save({'lastALCAMode': int(self.alcaMode)})  # write last distance bar setting to file
           else:
             self.alcaMode = 0
-            kegman.save({'lastALCAMode': str(self.alcaMode)})  # write last distance bar setting to file
+            kegman.save({'lastALCAMode': int(self.alcaMode)})  # write last distance bar setting to file
           self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
           self.cstm_btns.hasChanges = True
           if self.alcaMode == 3:
@@ -277,19 +277,19 @@ class CarState(object):
       elif (id == 4) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="tr":
           if self.cstm_btns.btns[id].btn_label2 == self.trLabels[self.trMode]:
             self.trMode = (self.trMode + 1 ) % 3
-            kegman.save({'lastTrMode': str(self.trMode)})  # write last distance bar setting to file
+            kegman.save({'lastTrMode': int(self.trMode)})  # write last distance bar setting to file
           else:
             self.trMode = 0
-            kegman.save({'lastTrMode': str(self.trMode)})  # write last distance bar setting to file
+            kegman.save({'lastTrMode': int(self.trMode)})  # write last distance bar setting to file
           self.cstm_btns.btns[id].btn_label2 = self.trLabels[self.trMode]
           self.cstm_btns.hasChanges = True
       elif (id == 5) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="gas":
           if self.cstm_btns.btns[id].btn_label2 == self.gasLabels[self.gasMode]:
             self.gasMode = (self.gasMode + 1 ) % 3
-            kegman.save({'lastGasMode': str(self.gasMode)})  # write last GasMode setting to file
+            kegman.save({'lastGasMode': int(self.gasMode)})  # write last GasMode setting to file
           else:
             self.gasMode = 0
-            kegman.save({'lastGasMode': str(self.gasMode)})  # write last GasMode setting to file
+            kegman.save({'lastGasMode': int(self.gasMode)})  # write last GasMode setting to file
           self.cstm_btns.btns[id].btn_label2 = self.gasLabels[self.gasMode]
           self.cstm_btns.hasChanges = True
       else:
@@ -298,7 +298,7 @@ class CarState(object):
         self.cstm_btns.btns[id].btn_status = btn_status
         if (id == 0) and self.cstm_btns.btns[id].btn_name=="alca":
           self.alcaMode = (self.alcaMode + 1 ) % 4
-          kegman.save({'lastALCAMode': str(self.alcaMode)})  # write last distance bar setting to file
+          kegman.save({'lastALCAMode': int(self.alcaMode)})  # write last distance bar setting to file
           self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
           self.cstm_btns.hasChanges = True
 
@@ -442,7 +442,7 @@ class CarState(object):
     if self.cruise_setting == 3:
       if cp.vl["SCM_BUTTONS"]["CRUISE_SETTING"] == 0:
         self.trMode = (self.trMode + 1 ) % 3
-        kegman.save({'lastTrMode': str(self.trMode)})  # write last distance bar setting to file
+        kegman.save({'lastTrMode': int(self.trMode)})  # write last distance bar setting to file
         self.cstm_btns.btns[4].btn_label2 = self.trLabels[self.trMode]
     self.prev_cruise_setting = self.cruise_setting
     self.cruise_setting = cp.vl["SCM_BUTTONS"]['CRUISE_SETTING']
