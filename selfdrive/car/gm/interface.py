@@ -304,7 +304,7 @@ class CarInterface(object):
       self.CS.follow_level -= 1
       if self.CS.follow_level < 1:
         self.CS.follow_level = 3
-      kegman.save({'lastTrMode': str(self.CS.follow_level)})  # write last distance bar setting to file
+      kegman.save({'lastTrMode': int(self.CS.follow_level)})  # write last distance bar setting to file
     ret.gasbuttonstatus = self.CS.cstm_btns.get_button_status("gas")
     events = []
     if not self.CS.can_valid:
