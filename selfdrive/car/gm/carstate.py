@@ -61,6 +61,8 @@ class CarState(object):
   def __init__(self, CP, canbus):
     self.CP = CP
     # initialize can parser
+    self.gasMode = int(kegman.conf['lastGasMode'])
+    self.gasLabels = ["dynamic","sport","eco"]
     self.alcaLabels = ["MadMax","Normal","Wifey","off"]
     self.alcaMode = int(kegman.conf['lastALCAMode'])     # default to last ALCAmode on startup
     self.car_fingerprint = CP.carFingerprint
@@ -141,7 +143,7 @@ class CarState(object):
     btns.append(UIButton("alca", "ALC", 0, self.alcaLabels[self.alcaMode], 1))
     btns.append(UIButton("stop","",1,"SNG",2))
     btns.append(UIButton("","",0,"",3))
-    btns.append(UIButton("gas","GAS",1,"",4))
+    btns.append(UIButton("gas","GAS",1,self.gasLabels[self.gasMode],4))
     btns.append(UIButton("lka","LKA",1,"",5))
     return btns
   #BB update ui buttons
@@ -158,6 +160,15 @@ class CarState(object):
           self.cstm_btns.hasChanges = True
           if self.alcaMode == 3:
             self.cstm_btns.set_button_status("alca", 0)
+      elif (id == 4) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="gas":
+          if self.cstm_btns.btns[id].btn_label2 == self.gasLabels[self.gasMode]:
+            self.gasMode = (self.gasMode + 1 ) % 3
+            kegman.save({'lastGasMode': str(self.gasMode)})  # write last GasMode setting to file
+          else:
+            self.gasMode = 0
+            kegman.save({'lastGasMode': str(self.gasMode)})  # write last GasMode setting to file
+          self.cstm_btns.btns[id].btn_label2 = self.gasLabels[self.gasMode]
+          self.cstm_btns.hasChanges = True
       else:
         self.cstm_btns.btns[id].btn_status = btn_status * self.cstm_btns.btns[id].btn_status
     else:

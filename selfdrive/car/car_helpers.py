@@ -116,6 +116,8 @@ def get_car(logcan, sendcan=None, passive=True):
       candidate = "mock"
     else:
       return None, None
+  else:
+    cloudlog.warning("car does match fingerprint: %r", fingerprints)
 
   interface_cls = interfaces[candidate]
 
