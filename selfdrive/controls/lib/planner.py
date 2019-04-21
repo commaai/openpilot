@@ -42,15 +42,15 @@ _brake_factor = float(kegman.get("brakefactor"))
 _A_TOTAL_MAX_V = [2.0 * _brake_factor, 2.7 * _brake_factor, 3.5 * _brake_factor]
 _A_TOTAL_MAX_BP = [0., 25., 55.]
 
-def calc_cruise_accel_limits(v_ego, following):
+def calc_cruise_accel_limits(v_ego, following, gasbuttonstatus):
   a_cruise_min = interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V)
 
   if following:
     a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V_FOLLOWING)
   else:
-    if CS.carState.gasbuttonstatus == 1:
+    if gasbuttonstatus == 1:
       a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V_SPORT)
-    elif CS.carState.gasbuttonstatus == 2:
+    elif gasbuttonstatus == 2:
       a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V_ECO)
     else:
       a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V)
@@ -136,6 +136,7 @@ class Planner(object):
     """Gets called when new live20 is available"""
     cur_time = live20.logMonoTime / 1e9
     v_ego = CS.carState.vEgo
+    gasbuttonstatus = CS.carState.gasbuttonstatus
 
     long_control_state = live100.live100.longControlState
     v_cruise_kph = live100.live100.vCruise
@@ -181,14 +182,14 @@ class Planner(object):
 
     # Calculate speed for normal cruise control
     if enabled:
-      accel_limits = map(float, calc_cruise_accel_limits(v_ego, following))
-      if CS.carState.gasbuttonstatus == 0:
+      accel_limits = map(float, calc_cruise_accel_limits(v_ego, following, gasbuttonstatus))
+      if gasbuttonstatus == 0:
         accellimitmaxdynamic = -0.0018*v_ego+0.2
         jerk_limits = [min(-0.2, accel_limits[0]), max(accellimitmaxdynamic, accel_limits[1])]  # dynamic
-      elif CS.carState.gasbuttonstatus == 1:
+      elif gasbuttonstatus == 1:
         accellimitmaxsport = -0.002*v_ego+0.4
         jerk_limits = [min(-0.4, accel_limits[0]), max(accellimitmaxsport, accel_limits[1])]  # sport
-      elif CS.carState.gasbuttonstatus == 2:
+      elif gasbuttonstatus == 2:
         accellimitmaxeco = -0.0015*v_ego+0.1
         jerk_limits = [min(-0.1, accel_limits[0]), max(accellimitmaxeco, accel_limits[1])]  # eco
       
