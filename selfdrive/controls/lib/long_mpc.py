@@ -197,7 +197,7 @@ class LongitudinalMpc(object):
       #self.dict_builder["lead_accel"] = self.get_acceleration(self.dynamic_follow_dict["lead_vels"], False)
 
       x = [0, 2.2352, 22.352, 33.528]  # 0, 5, 50, 75 mph
-      y = [.25, 1.0, 1.0, .95, .90]  # multiply sum of all TR modifications by this
+      y = [.25, 1.0, 1.0, .90, .85]  # multiply sum of all TR modifications by this
       TR += (float(TR_mod) * interp(velocity, x, y))  # lower TR modification for stop and go, and at higher speeds
 
       TR = float(TR) * self.get_traffic_level(self.dynamic_follow_dict["traffic_vels"])  # modify TR based on last minute of traffic data
