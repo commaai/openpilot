@@ -184,10 +184,10 @@ class CarState(object):
       elif (id == 4) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="gas":
           if self.cstm_btns.btns[id].btn_label2 == self.gasLabels[self.gasMode]:
             self.gasMode = (self.gasMode + 1 ) % 3
-            kegman.save({'lastGasMode': str(self.gasMode)})  # write last GasMode setting to file
+            kegman.save({'lastGasMode': int(self.gasMode)})  # write last GasMode setting to file
           else:
             self.gasMode = 0
-            kegman.save({'lastGasMode': str(self.gasMode)})  # write last GasMode setting to file
+            kegman.save({'lastGasMode': int(self.gasMode)})  # write last GasMode setting to file
           self.cstm_btns.btns[id].btn_label2 = self.gasLabels[self.gasMode]
           self.cstm_btns.hasChanges = True
       else:
