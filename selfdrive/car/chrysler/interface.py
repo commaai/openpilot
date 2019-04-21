@@ -220,7 +220,7 @@ class CarInterface(object):
 
     ret.genericToggle = self.CS.generic_toggle
     
-    ret.gasbuttonstatus = self.CS.cstm_btns.get_button_status("gas")
+    ret.gasbuttonstatus = self.CS.gasMode
     # events
     events = []
     if not self.CS.can_valid:

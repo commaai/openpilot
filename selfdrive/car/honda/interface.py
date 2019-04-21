@@ -499,7 +499,7 @@ class CarInterface(object):
       # TODO: more buttons?
       buttonEvents.append(be)
     ret.buttonEvents = buttonEvents
-    ret.gasbuttonstatus = self.CS.cstm_btns.get_button_status("gas")
+    ret.gasbuttonstatus = self.CS.gasMode
     # events
     # TODO: event names aren't checked at compile time.
     # Maybe there is a way to use capnp enums directly

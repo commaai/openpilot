@@ -96,7 +96,7 @@ class LongControl(object):
       if gasbuttonstatus == 0:
         y = [0.5, 0.7, 0.9]
       elif gasbuttonstatus == 1:
-        y = [0.7, 0.9, 0.9]
+        y = [0.9, 0.95, 0.99]
       elif gasbuttonstatus == 2:
         y = [0.2, 0.2, 0.2]
 
