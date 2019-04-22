@@ -18,6 +18,7 @@ from cereal import car
 from common.params import Params
 from common.realtime import set_realtime_priority, Ratekeeper
 from common.kalman.ekf import EKF, SimpleSensor
+from selfdrive.car.honda.readconfig import read_config_file,CarSettings
 
 DEBUG = False
 
@@ -53,10 +54,11 @@ def radard_thread(gctx=None):
   # wait for stats about the car to come in from controls
   cloudlog.info("radard is waiting for CarParams")
   CP = car.CarParams.from_bytes(Params().get("CarParams", block=True))
-  mocked = CP.carName == "mock"
+  use_tesla_radar = CarSettings().get_value("useTeslaRadar")
+  mocked = (CP.carName == "mock") or ((CP.carName == "tesla") and not use_tesla_radar)
   VM = VehicleModel(CP)
   cloudlog.info("radard got CarParams")
-
+  
   # import the radar from the fingerprint
   cloudlog.info("radard is importing %s", CP.carName)
   RadarInterface = importlib.import_module('selfdrive.car.%s.radar_interface' % CP.carName).RadarInterface
@@ -84,7 +86,7 @@ def radard_thread(gctx=None):
   # *** publish live20 and liveTracks
   live20 = messaging.pub_sock(context, service_list['live20'].port)
   liveTracks = messaging.pub_sock(context, service_list['liveTracks'].port)
-
+  icCarLR = None
   path_x = np.arange(0.0, 140.0, 0.1)    # 140 meters is max
 
   # Time-alignment
@@ -114,7 +116,7 @@ def radard_thread(gctx=None):
 
     ar_pts = {}
     for pt in rr.points:
-      ar_pts[pt.trackId] = [pt.dRel + RDR_TO_LDR, pt.yRel, pt.vRel, pt.measured]
+      ar_pts[pt.trackId] = [pt.dRel + RDR_TO_LDR, pt.yRel, pt.vRel, pt.measured, pt.aRel, 0., 1, 1., pt.trackId+2]
 
     # receive the live100s
     l100 = None
@@ -145,6 +147,7 @@ def radard_thread(gctx=None):
 
     if md is not None:
       last_md_ts = md.logMonoTime
+    
 
     # *** get path prediction from the model ***
     MP.update(v_ego, md)
@@ -163,7 +166,7 @@ def radard_thread(gctx=None):
         ekfv.state[SPEEDV] = 0.
 
       ar_pts[VISION_POINT] = (float(ekfv.state[XV]), np.polyval(MP.d_poly, float(ekfv.state[XV])),
-                              float(ekfv.state[SPEEDV]), False)
+                              float(ekfv.state[SPEEDV]), False, 0.,0.,0,0.,1)
     else:
       ekfv.state[XV] = MP.lead_dist
       ekfv.covar = (np.diag([MP.lead_var, ekfv.var_init]))
@@ -172,7 +175,6 @@ def radard_thread(gctx=None):
       if VISION_POINT in ar_pts:
         del ar_pts[VISION_POINT]
 
-    # *** compute the likely path_y ***
     if (active and not steer_override) or mocked:
       # use path from model (always when mocking as steering is too noisy)
       path_y = np.polyval(MP.d_poly, path_x)
@@ -180,7 +182,10 @@ def radard_thread(gctx=None):
       # use path from steer, set angle_offset to 0 it does not only report the physical offset
       path_y = calc_lookahead_offset(v_ego, steer_angle, path_x, VM, angle_offset=live_parameters.liveParameters.angleOffsetAverage)[0]
 
-    # *** remove missing points from meta data ***
+    #BB always using the path from mode
+    path_y = np.polyval(MP.d_poly, path_x)
+
+    # *** remove missing points from meta data *** 
     for ids in tracks.keys():
       if ids not in ar_pts:
         tracks.pop(ids, None)
@@ -203,7 +208,7 @@ def radard_thread(gctx=None):
       # create the track if it doesn't exist or it's a new track
       if ids not in tracks:
         tracks[ids] = Track()
-      tracks[ids].update(rpt[0], rpt[1], rpt[2], d_path, v_ego_t_aligned, rpt[3], steer_override)
+      tracks[ids].update(rpt[0], rpt[1], rpt[2], rpt[3], rpt[4],rpt[5],rpt[6],rpt[7],rpt[8],d_path, v_ego_t_aligned, steer_override)
 
     # allow the vision model to remove the stationary flag if distance and rel speed roughly match
     if VISION_POINT in ar_pts:

@@ -6,6 +6,7 @@
 //      accel rising edge
 //      brake rising edge
 //      brake > 0mph
+#include "safety_teslaradar.h"
 
 // these are set in the Honda safety hooks...this is the wrong place
 const int gas_interceptor_threshold = 328;
@@ -19,6 +20,15 @@ bool bosch_hardware = false;
 bool honda_alt_brake_msg = false;
 
 static void honda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
+
+  //do the tesla radar call
+  teslaradar_rx_hook(to_push);
+
+  //speed for radar
+  if ((to_push->RIR>>21) == 0x309) {
+    // first 2 bytes
+    actual_speed_kph = (int)((((to_push->RDLR & 0xFF) << 8) + ((to_push->RDLR >>8) & 0xFF))*0.01);
+  }
 
   // sample speed
   if ((to_push->RIR>>21) == 0x158) {
@@ -87,6 +97,48 @@ static void honda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
 static int honda_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 
+  //check if this is a teslaradar vin message
+  //capture message for radarVIN and settings
+  if ((to_send->RIR >> 21) == 0x560) {
+    int id = (to_send->RDLR & 0xFF);
+    int radarVin_b1 = ((to_send->RDLR >> 8) & 0xFF);
+    int radarVin_b2 = ((to_send->RDLR >> 16) & 0xFF);
+    int radarVin_b3 = ((to_send->RDLR >> 24) & 0xFF);
+    int radarVin_b4 = (to_send->RDHR & 0xFF);
+    int radarVin_b5 = ((to_send->RDHR >> 8) & 0xFF);
+    int radarVin_b6 = ((to_send->RDHR >> 16) & 0xFF);
+    int radarVin_b7 = ((to_send->RDHR >> 24) & 0xFF);
+    if (id == 0) {
+      tesla_radar_should_send = radarVin_b2;
+      tesla_radar_trigger_message_id = (radarVin_b3 << 8) + radarVin_b4;
+      tesla_radar_can = radarVin_b1;
+      radar_VIN[0] = radarVin_b5;
+      radar_VIN[1] = radarVin_b6;
+      radar_VIN[2] = radarVin_b7;
+      tesla_radar_vin_complete = tesla_radar_vin_complete | 1;
+    }
+    if (id == 1) {
+      radar_VIN[3] = radarVin_b1;
+      radar_VIN[4] = radarVin_b2;
+      radar_VIN[5] = radarVin_b3;
+      radar_VIN[6] = radarVin_b4;
+      radar_VIN[7] = radarVin_b5;
+      radar_VIN[8] = radarVin_b6;
+      radar_VIN[9] = radarVin_b7;
+      tesla_radar_vin_complete = tesla_radar_vin_complete | 2;
+    }
+    if (id == 2) {
+      radar_VIN[10] = radarVin_b1;
+      radar_VIN[11] = radarVin_b2;
+      radar_VIN[12] = radarVin_b3;
+      radar_VIN[13] = radarVin_b4;
+      radar_VIN[14] = radarVin_b5;
+      radar_VIN[15] = radarVin_b6;
+      radar_VIN[16] = radarVin_b7;
+      tesla_radar_vin_complete = tesla_radar_vin_complete | 4;
+    }
+    return false;
+  }
   // disallow actuator commands if gas or brake (with vehicle moving) are pressed
   // and the the latching controls_allowed flag is True
   int pedal_pressed = gas_prev || (gas_interceptor_prev > gas_interceptor_threshold) ||
@@ -162,6 +214,9 @@ static int honda_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
 }
 
 static int honda_bosch_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
+  if(bus_num ==2) {
+    return -1;
+  }
   if (bus_num == 1 || bus_num == 2) {
     int addr = to_fwd->RIR>>21;
     return addr != 0xE4 && addr != 0x33D ? (uint8_t)(~bus_num & 0x3) : -1;

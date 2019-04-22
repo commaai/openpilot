@@ -98,3 +98,15 @@ def spam_buttons_command(packer, button_val, idx):
     'CRUISE_SETTING': 0,
   }
   return packer.make_can_msg("SCM_BUTTONS", 0, values, idx)
+
+def create_radar_VIN_msg(id,radarVIN,radarCAN,radarTriggerMessage,useRadar):
+  msg_id = 0x560
+  msg_len = 8
+  msg = create_string_buffer(msg_len)
+  if id == 0:
+    struct.pack_into('BBBBBBBB', msg, 0, id,radarCAN,useRadar,((radarTriggerMessage >> 8) & 0xFF),(radarTriggerMessage & 0xFF),ord(radarVIN[0]),ord(radarVIN[1]),ord(radarVIN[2]))
+  if id == 1:
+    struct.pack_into('BBBBBBBB', msg, 0, id,ord(radarVIN[3]),ord(radarVIN[4]),ord(radarVIN[5]),ord(radarVIN[6]),ord(radarVIN[7]),ord(radarVIN[8]),ord(radarVIN[9]))
+  if id == 2:
+    struct.pack_into('BBBBBBBB', msg, 0, id,ord(radarVIN[10]),ord(radarVIN[11]),ord(radarVIN[12]),ord(radarVIN[13]),ord(radarVIN[14]),ord(radarVIN[15]),ord(radarVIN[16]))
+  return [msg_id, 0, msg.raw, 0]

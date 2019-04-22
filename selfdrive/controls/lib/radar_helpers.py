@@ -42,7 +42,7 @@ class Track(object):
     self.stationary = True
     self.initted = False
 
-  def update(self, d_rel, y_rel, v_rel, d_path, v_ego_t_aligned, measured, steer_override):
+  def update(self, d_rel, y_rel, v_rel,measured, a_rel, vy_rel, oClass, length, track_id,d_path, v_ego_t_aligned, steer_override):
     if self.initted:
       # pylint: disable=access-member-before-definition
       self.dPathPrev = self.dPath
@@ -53,7 +53,12 @@ class Track(object):
     self.dRel = d_rel   # LONG_DIST
     self.yRel = y_rel   # -LAT_DIST
     self.vRel = v_rel   # REL_SPEED
+    self.aRel = a_rel   # rel acceleration
+    self.vLat = vy_rel  # rel lateral speed
+    self.oClass = oClass # object class
+    self.length = length #length
     self.measured = measured   # measured or estimate
+    self.track_id = track_id
 
     # compute distance to path
     self.dPath = d_path
@@ -67,8 +72,9 @@ class Track(object):
       self.cnt = 1
       self.vision_cnt = 0
       self.vision = False
-      self.aRel = 0.      # nidec gives no information about this
-      self.vLat = 0.
+      #self.aRel = 0.      # nidec gives no information about this
+      #self.vLat = 0.
+      self.track_id = track_id
       self.kf = KF1D([[self.vLead], [0.0]], _VLEAD_A, _VLEAD_C, _VLEAD_K)
     else:
       # estimate acceleration
@@ -119,6 +125,10 @@ class Track(object):
   def get_key_for_cluster(self):
     # Weigh y higher since radar is inaccurate in this dimension
     return [self.dRel, self.yRel*2, self.vRel]
+
+  def get_key_for_cluster_dy(self, dy):
+    # Weigh y higher since radar is inaccurate in this dimension
+    return [self.dRel, (self.yRel-dy)*2, self.vRel]
 
 
 # ******************* Cluster *******************
@@ -215,6 +225,18 @@ class Cluster(object):
   def oncoming(self):
     return all([t.oncoming for t in self.tracks])
 
+  @property
+  def oClass(self):
+    return all([t.oClass for t in self.tracks])
+
+  @property
+  def length(self):
+    return max([t.length for t in self.tracks])
+  
+  @property
+  def track_id(self):
+    return mean([t.track_id for t in self.tracks])
+
   def toLive20(self):
     return {
       "dRel": float(self.dRel) - RDR_TO_LDR,
@@ -228,7 +250,7 @@ class Cluster(object):
       "aLeadK": float(self.aLeadK),
       "status": True,
       "fcw": self.is_potential_fcw(),
-      "aLeadTau": float(self.aLeadTau)
+      "aLeadTau": float(self.aLeadTau),
     }
 
   def __str__(self):
@@ -267,6 +289,33 @@ class Cluster(object):
     d_path = clip(d_path + lat_corr, min(0., d_path), max(0.,d_path))
 
     return abs(d_path) < 1.5 and not self.stationary and not self.oncoming
+
+  def is_potential_lead_dy(self, v_ego,dy):
+    # predict cut-ins by extrapolating lateral speed by a lookahead time
+    # lookahead time depends on cut-in distance. more attentive for close cut-ins
+    # also, above 50 meters the predicted path isn't very reliable
+
+    # the distance at which v_lat matters is higher at higher speed
+    lookahead_dist = 40. + v_ego/1.2   #40m at 0mph, ~70m at 80mph
+
+    t_lookahead_v  = [1., 0.]
+    t_lookahead_bp = [10., lookahead_dist]
+
+    # average dist
+    d_path = self.dPath - dy
+
+    # lat_corr used to be gated on enabled, now always running
+    t_lookahead = interp(self.dRel, t_lookahead_bp, t_lookahead_v)
+
+    # correct d_path for lookahead time, considering only cut-ins and no more than 1m impact.
+    lat_corr = clip(t_lookahead * self.vLat, -1., 1.) if self.measured else 0.
+
+    # consider only cut-ins
+    d_path = clip(d_path + lat_corr, min(0., d_path), max(0.,d_path))
+
+    return abs(d_path) < abs(dy/2.)  and not self.stationary #and not self.oncoming
+
+  
 
   def is_potential_lead2(self, lead_clusters):
     if len(lead_clusters) > 0:
