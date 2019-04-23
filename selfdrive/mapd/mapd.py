@@ -134,6 +134,7 @@ def mapsd_thread():
   gps_sock = messaging.sub_sock(context, service_list['gpsLocation'].port, conflate=True)
   gps_external_sock = messaging.sub_sock(context, service_list['gpsLocationExternal'].port, conflate=True)
   map_data_sock = messaging.pub_sock(context, service_list['liveMapData'].port)
+  traffic_data_sock = messaging.sub_sock(context, service_list['liveTrafficData'].port, conflate=True)
 
   cur_way = None
   curvature_valid = False
@@ -145,7 +146,18 @@ def mapsd_thread():
   while True:
     gps = messaging.recv_one(gps_sock)
     gps_ext = messaging.recv_one_or_none(gps_external_sock)
-
+    traffic = messaging.recv_one_or_none(traffic_data_sock)
+    if traffic is not None:
+      if traffic.liveTrafficData.speedLimitValid:
+        speedLimittraffic = traffic.liveTrafficData.speedLimit
+        speedLimittrafficvalid = True
+      else:
+        speedLimittrafficvalid = False
+      if traffic.liveTrafficData.speedAdvisoryValid:
+        speedLimittrafficAdvisory = traffic.liveTrafficData.speedAdvisory
+        speedLimittrafficAdvisoryvalid = True
+      else:
+        
     if gps_ext is not None:
       gps = gps_ext.gpsLocationExternal
     else:
@@ -242,9 +254,13 @@ def mapsd_thread():
 
       # Seed limit
       max_speed = cur_way.max_speed()
-      if max_speed is not None:
+      if speedLimittrafficvalid:
         dat.liveMapData.speedLimitValid = True
-        dat.liveMapData.speedLimit = max_speed
+        dat.liveMapData.speedLimit = speedLimittraffic
+      else:
+        if max_speed is not None:
+          dat.liveMapData.speedLimitValid = True
+          dat.liveMapData.speedLimit = max_speed
 
         # TODO: use the function below to anticipate upcoming speed limits
         #max_speed_ahead, max_speed_ahead_dist = cur_way.max_speed_ahead(max_speed, lat, lon, heading, MAPS_LOOKAHEAD_DISTANCE)
@@ -255,10 +271,14 @@ def mapsd_thread():
 
 
       advisory_max_speed = cur_way.advisory_max_speed()
-      if advisory_max_speed is not None:
+      if speedLimittrafficAdvisoryvalid:
         dat.liveMapData.speedAdvisoryValid = True
-        dat.liveMapData.speedAdvisory = advisory_max_speed
-
+        dat.liveMapData.speedAdvisory = speedLimittrafficAdvisory
+      else:
+        if advisory_max_speed is not None:
+          dat.liveMapData.speedAdvisoryValid = True
+          dat.liveMapData.speedAdvisory = advisory_max_speed
+      
       # Curvature
       dat.liveMapData.curvatureValid = curvature_valid
       dat.liveMapData.curvature = float(upcoming_curvature)
