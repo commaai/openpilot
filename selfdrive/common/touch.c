@@ -90,3 +90,31 @@ int touch_poll(TouchState *s, int* out_x, int* out_y, int timeout) {
   return up;
 }
 
+int touch_read(TouchState *s, int* out_x, int* out_y) {
+  assert(out_x && out_y);
+  struct input_event event;
+  int err = read(s->fd, &event, sizeof(event));
+  if (err < sizeof(event)) {
+    return -1;
+  }
+  bool up = false;
+  switch (event.type) { 
+  case EV_ABS:
+    if (event.code == ABS_MT_POSITION_X) {
+      s->last_x = event.value;
+    } else if (event.code == ABS_MT_POSITION_Y) {
+      s->last_y = event.value;
+    }
+    up = true;
+    break;
+  default:
+    break;
+  }
+  if (up) {
+    // adjust for flippening
+    *out_x = s->last_y;
+    *out_y = 1080 - s->last_x;
+  }
+  return up;
+}
+

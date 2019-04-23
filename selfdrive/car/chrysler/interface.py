@@ -122,7 +122,7 @@ class CarInterface(object):
     ret.brakeMaxV = [1., 0.8]
 
     ret.enableCamera = not check_ecu_msgs(fingerprint, ECU.CAM)
-    print "ECU Camera Simulated: ", ret.enableCamera
+    print("ECU Camera Simulated: {0}".format(ret.enableCamera))
     ret.openpilotLongitudinalControl = False
 
     ret.steerLimitAlert = True

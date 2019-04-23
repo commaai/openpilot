@@ -1,7 +1,6 @@
 import os
 import re
 import time
-import uuid
 import datetime
 
 from raven import Client
@@ -38,32 +37,68 @@ def report_tombstone(fn, client):
 
   if parsed:
     parsedict = parsed.groupdict()
-    message = parsedict.get('thread') or ''
-    message += parsedict.get('signal') or  ''
-    message += parsedict.get('abort') or ''
   else:
     parsedict = {}
-    message = fn+"\n"+dat[:1024]
 
-  client.send(
-    event_id=uuid.uuid4().hex,
-    timestamp=datetime.datetime.utcfromtimestamp(mtime),
-    logger='tombstoned',
-    platform='other',
+  thread_line = parsedict.get('thread', '')
+  thread_parsed = re.match(r'pid: (?P<pid>\d+), tid: (?P<tid>\d+), name: (?P<name>.*) >>> (?P<cmd>.*) <<<', thread_line)
+  if thread_parsed:
+    thread_parseddict = thread_parsed.groupdict()
+  else:
+    thread_parseddict = {}
+  pid = thread_parseddict.get('pid', '')
+  tid = thread_parseddict.get('tid', '')
+  name = thread_parseddict.get('name', 'unknown')
+  cmd = thread_parseddict.get('cmd', 'unknown')
+
+  signal_line = parsedict.get('signal', '')
+  signal_parsed = re.match(r'signal (?P<signal>.*?), code (?P<code>.*?), fault addr (?P<fault_addr>.*)\n', signal_line)
+  if signal_parsed:
+    signal_parseddict = signal_parsed.groupdict()
+  else:
+    signal_parseddict = {}
+  signal = signal_parseddict.get('signal', 'unknown')
+  code = signal_parseddict.get('code', 'unknown')
+  fault_addr = signal_parseddict.get('fault_addr', '')
+
+  abort_line = parsedict.get('abort', '')
+
+  if parsed:
+    message = 'Process {} ({}) got signal {} code {}'.format(name, cmd, signal, code)
+    if abort_line:
+      message += '\n'+abort_line
+  else:
+    message = fn+'\n'+dat[:1024]
+
+
+  client.captureMessage(
+    message=message,
+    date=datetime.datetime.utcfromtimestamp(mtime),
+    data={
+      'logger':'tombstoned',
+      'platform':'other',
+    },
     sdk={'name': 'tombstoned', 'version': '0'},
     extra={
+      'fault_addr': fault_addr,
+      'abort_msg': abort_line,
+      'pid': pid,
+      'tid': tid,
+      'name':'{} ({})'.format(name, cmd),
       'tombstone_fn': fn,
       'header': parsedict.get('header'),
       'registers': parsedict.get('registers'),
       'backtrace': parsedict.get('backtrace'),
       'logtail': logtail,
-      'version': version,
-      'dirty': not bool(os.environ.get('CLEAN')),
     },
-    user={'id': os.environ.get('DONGLE_ID')},
-    message=message,
+    tags={
+      'name':'{} ({})'.format(name, cmd),
+      'signal':signal,
+      'code':code,
+      'fault_addr':fault_addr,
+    },
   )
-  cloudlog.error({"tombstone": message})
+  cloudlog.error({'tombstone': message})
 
 
 def main(gctx):
@@ -72,6 +107,7 @@ def main(gctx):
   client = Client('https://d3b175702f62402c91ade04d1c547e68:b20d68c813c74f63a7cdf9c4039d8f56@sentry.io/157615',
                   install_sys_hook=False, transport=HTTPTransport, release=version, tags={'dirty': dirty})
 
+  client.user_context({'id': os.environ.get('DONGLE_ID')})
   while True:
     now_tombstones = set(get_tombstones())
 
