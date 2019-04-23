@@ -1642,6 +1642,8 @@ struct LiveMapData {
 struct LiveTrafficData {
   speedLimitValid @0 :Bool;
   speedLimit @1 :Float32;
+  speedAdvisoryValid @2 :Bool;
+  speedAdvisory @3 :Float32;
 }  
 struct LatControl {
   anglelater @0 :Float32;
