@@ -8,6 +8,9 @@ int default_ign_hook() {
 
 static void nooutput_init(int16_t param) {
   controls_allowed = 0;
+  #ifdef PANDA
+    lline_relay_release();
+  #endif
 }
 
 static int nooutput_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
@@ -22,6 +25,10 @@ static int nooutput_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
   return -1;
 }
 
+static int nooutput_relay_hook(int to_set) {
+  return false;
+}
+
 const safety_hooks nooutput_hooks = {
   .init = nooutput_init,
   .rx = default_rx_hook,
@@ -29,12 +36,16 @@ const safety_hooks nooutput_hooks = {
   .tx_lin = nooutput_tx_lin_hook,
   .ignition = default_ign_hook,
   .fwd = nooutput_fwd_hook,
+  .relay = nooutput_relay_hook,
 };
 
 // *** all output safety mode ***
 
 static void alloutput_init(int16_t param) {
   controls_allowed = 1;
+  #ifdef PANDA
+    lline_relay_release();
+  #endif
 }
 
 static int alloutput_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
@@ -49,6 +60,10 @@ static int alloutput_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
   return -1;
 }
 
+static int alloutput_relay_hook(int to_set) {
+  return true;
+}
+
 const safety_hooks alloutput_hooks = {
   .init = alloutput_init,
   .rx = default_rx_hook,
@@ -56,4 +71,5 @@ const safety_hooks alloutput_hooks = {
   .tx_lin = alloutput_tx_lin_hook,
   .ignition = default_ign_hook,
   .fwd = alloutput_fwd_hook,
+  .relay = alloutput_relay_hook,
 };
