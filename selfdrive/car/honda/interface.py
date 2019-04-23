@@ -367,7 +367,7 @@ class CarInterface(object):
     ret.steerMaxBP = [0.]  # m/s
     ret.steerMaxV = [1.]   # max steer allowed
 
-    ret.gasMaxBP = [11.0]  # m/s
+    ret.gasMaxBP = [0.]  # m/s
     # TODO: what is the correct way to handle this?
     ret.gasMaxV = [1.] #if ret.enableGasInterceptor else [0.] # max gas allowed
     ret.brakeMaxBP = [5., 20.]  # m/s
