@@ -96,10 +96,7 @@ def fingerprint(logcan, timeout):
       cloudlog.warning(f.read())
   except:
     pass
-  try:
-    crash.capture_warning("fingerprinted %s" % candidate_cars[0])
-  except:  # fixes occasional travis errors
-    pass
+  
   cloudlog.warning("fingerprinted %s", candidate_cars[0])
   
   return (candidate_cars[0], finger)
@@ -118,7 +115,11 @@ def get_car(logcan, sendcan=None, passive=True):
       return None, None
   else:
     cloudlog.warning("car does match fingerprint: %r", fingerprints)
-
+    try:
+      crash.capture_warning("fingerprinted %s" % candidate)
+    except:  # fixes occasional travis errors
+      pass
+    
   interface_cls = interfaces[candidate]
 
   if interface_cls is None:
