@@ -170,7 +170,7 @@ class CarState(object):
     ### Do NOT modify here, modify in /data/honda_openpilot.cfg and reboot
     self.useTeslaRadar = False
     self.radarVIN = "                 "
-    self.radarOffset = 0
+    self.radarOffset = 0.
     #read config file
     read_config_file(self)
     ### END OF MAIN CONFIG OPTIONS ###
