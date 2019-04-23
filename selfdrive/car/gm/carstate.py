@@ -64,6 +64,7 @@ class CarState(object):
     self.gasMode = int(kegman.conf['lastGasMode'])
     self.gasLabels = ["dynamic","sport","eco"]
     self.alcaLabels = ["MadMax","Normal","Wifey","off"]
+    steerRatio = CP.steerRatio
     self.alcaMode = int(kegman.conf['lastALCAMode'])     # default to last ALCAmode on startup
     self.car_fingerprint = CP.carFingerprint
     self.cruise_buttons = CruiseButtons.UNPRESS
@@ -95,8 +96,8 @@ class CarState(object):
     self.CL_LANE_PASS_BP = [10., 20., 44.]
     self.CL_LANE_PASS_TIME = [40.,10., 4.] 
     # change lane delta angles and other params
-    self.CL_MAXD_BP = [10., 32., 44.]
-    self.CL_MAXD_A = [.358, 0.084, 0.040] #delta angle based on speed; needs fine tune, based on Tesla steer ratio of 16.75
+    self.CL_MAXD_BP = [10., 32., 55.]
+    self.CL_MAXD_A = [.358 * 15.7 / steerRatio, 0.084 * 15.7 / steerRatio, 0.040 * 15.7 / steerRatio] #delta angle based on speed; needs fine tune, based on Tesla steer ratio of 16.75
     self.CL_MIN_V = 8.9 # do not turn if speed less than x m/2; 20 mph = 8.9 m/s
     # do not turn if actuator wants more than x deg for going straight; this should be interp based on speed
     self.CL_MAX_A_BP = [10., 44.]

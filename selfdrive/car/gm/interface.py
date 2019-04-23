@@ -80,7 +80,7 @@ class CarInterface(object):
       ret.mass = 1607 + std_cargo
       ret.safetyModel = car.CarParams.SafetyModels.gm
       ret.wheelbase = 2.69
-      ret.steerRatio = 15.7
+      ret.steerRatio = 16.17 #0.5.10
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.4 # wild guess
 
@@ -102,7 +102,7 @@ class CarInterface(object):
       ret.centerToFront = ret.wheelbase * 0.4
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
       ret.safetyModel = car.CarParams.SafetyModels.gm
-      ret.steerRatio = 15.7
+      ret.steerRatio = 15.75 #0.5.10
       ret.steerRatioRear = 0.
 
     elif candidate == CAR.ACADIA:
