@@ -53,16 +53,16 @@ for idx1, f1 in enumerate(fingerprints_flat):
   for idx2, f2 in enumerate(fingerprints_flat):
     if idx1 < idx2 and not check_fingerprint_consistency(f1, f2):
       valid = False
-      print "Those two fingerprints are inconsistent", car_names[idx1], car_names[idx2]
-      print ""
-      print ', '.join("%d: %d" % v for v in sorted(f1.items()))
-      print ""
-      print ', '.join("%d: %d" % v for v in sorted(f2.items()))
-      print ""
+      print("Those two fingerprints are inconsistent {0} {1}".format(car_names[idx1], car_names[idx2]))
+      print("")
+      print(', '.join("%d: %d" % v for v in sorted(f1.items())))
+      print("")
+      print(', '.join("%d: %d" % v for v in sorted(f2.items())))
+      print("")
 
-print "Found ", len(fingerprints_flat), " individual fingerprints"
+print("Found {0} individual fingerprints".format(len(fingerprints_flat)))
 if not valid or len(fingerprints_flat) == 0:
-  print "TEST FAILED"
+  print("TEST FAILED")
   sys.exit(1)
 else:
-  print "TEST SUCESSFUL"
+  print("TEST SUCESSFUL")

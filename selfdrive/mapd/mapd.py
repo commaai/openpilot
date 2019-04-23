@@ -121,7 +121,7 @@ def query_thread():
         query_lock.release()
 
       except Exception as e:
-        print e
+        print(e)
         query_lock.acquire()
         last_query_result = None
         query_lock.release()

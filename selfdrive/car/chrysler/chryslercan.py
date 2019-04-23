@@ -44,12 +44,6 @@ def calc_checksum(data):
 def make_can_msg(addr, dat):
   return [addr, 0, dat, 0]
 
-def create_lkas_heartbit(packer, lkas_status_ok):
-  # LKAS_HEARTBIT 0x2d9 (729) Lane-keeping heartbeat.
-  values = {
-    "LKAS_STATUS_OK": lkas_status_ok
-  }
-  return packer.make_can_msg("LKAS_HEARTBIT", 0, values)
 
 def create_lkas_hud(packer, gear, lkas_active, hud_alert, hud_count, lkas_car_model):
   # LKAS_HUD 0x2a6 (678) Controls what lane-keeping icon is displayed.

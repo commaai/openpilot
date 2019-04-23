@@ -68,7 +68,7 @@ class CANParser(object):
     value_count = libdbc.can_query(self.can, 0, self.p_can_valid, 0, ffi.NULL)
     self.can_values = ffi.new("SignalValue[%d]" % value_count)
     self.update_vl(0)
-    # print "==="
+    # print("===")
 
   def update_vl(self, sec):
 
@@ -77,12 +77,12 @@ class CANParser(object):
 
     self.can_valid = self.p_can_valid[0]
 
-    # print can_values_len
+    # print(can_values_len)
     ret = set()
     for i in xrange(can_values_len):
       cv = self.can_values[i]
       address = cv.address
-      # print hex(cv.address), ffi.string(cv.name)
+      # print("{0} {1}".format(hex(cv.address), ffi.string(cv.name)))
       name = ffi.string(cv.name)
       self.vl[address][name] = cv.value
       self.ts[address][name] = cv.ts
@@ -240,11 +240,11 @@ if __name__ == "__main__":
 
   cp = CANParser("toyota_rav4_2017_pt_generated", signals, checks, 0)
 
-  # print cp.vl
+  # print(cp.vl)
 
   while True:
     cp.update(int(sec_since_boot()*1e9), True)
-    # print cp.vl
+    # print(cp.vl)
     print(cp.ts)
     print(cp.can_valid)
     time.sleep(0.01)
