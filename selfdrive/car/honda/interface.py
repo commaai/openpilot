@@ -150,9 +150,9 @@ class CarInterface(object):
     if candidate in HONDA_BOSCH:
       ret.safetyModel = car.CarParams.SafetyModels.hondaBosch
       ret.enableCamera = True
-      ret.radarOffCan = True
-      ret.openpilotLongitudinalControl = not any(x for x in BOSCH_RADAR_MSGS if x in fingerprint)
-      ret.enableCruise = not ret.openpilotLongitudinalControl
+      ret.radarOffCan = any(x for x in BOSCH_RADAR_MSGS if x in fingerprint)
+      ret.openpilotLongitudinalControl = not ret.radarOffCan
+      ret.enableCruise = ret.radarOffCan
     else:
       ret.safetyModel = car.CarParams.SafetyModels.honda
       ret.enableCamera = not any(x for x in NIDEC_CAMERA_MSGS if x in fingerprint)
@@ -187,7 +187,25 @@ class CarInterface(object):
 
     ret.steerKf = 0.00006 # conservative feed-forward
 
-    if candidate in [CAR.CIVIC, CAR.CIVIC_BOSCH]:
+    if candidate in [CAR.CIVIC]:
+      stop_and_go = True
+      ret.mass = mass_civic
+      ret.wheelbase = wheelbase_civic
+      ret.centerToFront = centerToFront_civic
+      ret.steerRatio = 14.63  # 10.93 is end-to-end spec
+      tire_stiffness_factor = 1.
+      # Civic at comma has modified steering FW, so different tuning for the Neo in that car
+      is_fw_modified = os.getenv("DONGLE_ID") in ['99c94dc769b5d96e']
+      ret.steerKpV, ret.steerKiV = [[0.4], [0.12]] if is_fw_modified else [[0.8], [0.24]]
+      if is_fw_modified:
+        tire_stiffness_factor = 0.9
+        ret.steerKf = 0.00004
+      ret.longitudinalKpBP = [0., 5., 35.]
+      ret.longitudinalKpV = [3.6, 2.4, 1.5]
+      ret.longitudinalKiBP = [0., 35.]
+      ret.longitudinalKiV = [0.54, 0.36]
+
+    elif candidate in [CAR.CIVIC_BOSCH]:
       stop_and_go = True
       ret.mass = mass_civic
       ret.wheelbase = wheelbase_civic
@@ -254,10 +272,12 @@ class CarInterface(object):
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 16.0   # 12.3 is spec end-to-end
       tire_stiffness_factor = 0.677
+      ret.steerKpV, ret.steerKiV = [[0.6], [0.18]]
       is_fw_modified = os.getenv("DONGLE_ID") in ['91c9befc4a0603cd']
       ret.steerKpV, ret.steerKiV = [[0.075], [0.0225]] if is_fw_modified else [[0.6], [0.18]]
       if is_fw_modified:
-        ret.steerKf = 0.00001
+        ret.steerKpV, ret.steerKiV = [[0.075], [0.0225]] #[[0.15], [0.045]]
+        ret.steerKf = 0.0000075 #0.000015
       ret.longitudinalKpBP = [0., 5., 35.]
       ret.longitudinalKpV = [1.2, 0.8, 0.5]
       ret.longitudinalKiBP = [0., 35.]
@@ -512,7 +532,7 @@ class CarInterface(object):
       events.append(create_event('wrongCarMode', [ET.NO_ENTRY, ET.USER_DISABLE]))
     if ret.gearShifter == 'reverse':
       events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
-    if self.CS.brake_hold and self.CS.CP.openpilotLongitudinalControl:
+    if self.CS.brake_hold and not self.CS.CP.radarOffCan:
       events.append(create_event('brakeHold', [ET.NO_ENTRY, ET.USER_DISABLE]))
     if self.CS.park_brake:
       events.append(create_event('parkBrake', [ET.NO_ENTRY, ET.USER_DISABLE]))

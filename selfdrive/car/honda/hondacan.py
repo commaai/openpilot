@@ -20,6 +20,13 @@ def fix(msg, addr):
   return msg2
 
 
+def make_can_msg(addr, dat, idx, alt):
+  if idx is not None:
+    dat += chr(idx << 4)
+    dat = fix(dat, addr)
+  return [addr, 0, dat, alt]
+
+
 def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, chime, fcw, idx):
   # TODO: do we loose pressure if we keep pump off for long?
   brakelights = apply_brake > 0
@@ -53,7 +60,7 @@ def create_gas_command(packer, gas_amount, idx):
 
   return packer.make_can_msg("GAS_COMMAND", 0, values, idx)
 
-def create_acc_commands(packer, enabled, accel, idx):
+def create_acc_commands(packer, enabled, accel, fingerprint, idx):
   commands = []
 
   # 0 = off
@@ -66,7 +73,7 @@ def create_acc_commands(packer, enabled, accel, idx):
   # 0 to +2000? = range
   # 720 = no gas
   # (scale from a max of 800 to 2000)
-  gas_command = int(accel * 2.5) if enabled and accel > 0 else 720
+  gas_command = int(accel) if enabled and accel > 0 else 720
   # 1 = brake
   # 0 = no brake
   braking_flag = 1 if enabled and accel < 0 else 0
@@ -97,24 +104,24 @@ def create_acc_commands(packer, enabled, accel, idx):
 
   return commands
 
-def create_steering_control(packer, apply_steer, lkas_active, car_fingerprint, openpilot_longitudinal_control, idx):
+def create_steering_control(packer, apply_steer, lkas_active, car_fingerprint, radar_off_can, idx):
   values = {
     "STEER_TORQUE": apply_steer if lkas_active else 0,
     "STEER_TORQUE_REQUEST": lkas_active,
   }
   # Set bus 2 for accord and new crv.
-  bus = 2 if car_fingerprint in HONDA_BOSCH and not openpilot_longitudinal_control else 0
+  bus = 2 if car_fingerprint in HONDA_BOSCH and radar_off_can else 0
   return packer.make_can_msg("STEERING_CONTROL", bus, values, idx)
 
 
-def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, openpilot_longitudinal_control, idx):
+def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, radar_off_can, openpilot_longitudinal_control, idx):
   commands = []
 
   if car_fingerprint in HONDA_BOSCH:
     acc_hud_values = {
       'CRUISE_SPEED': hud.v_cruise,
       'ENABLE_MINI_CAR': hud.mini_car,
-      'SET_TO_1': 0x01,
+      #'SET_TO_1': 0x01,
       'HUD_LEAD': hud.car,
       'HUD_DISTANCE': 0x02,
       'ACC_ON': hud.car != 0,
@@ -143,7 +150,7 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, openpilot_longit
     'BEEP': hud.beep,
   }
   # Bosch sends commands to bus 2.
-  bus = 2 if car_fingerprint in HONDA_BOSCH and not openpilot_longitudinal_control else 0
+  bus = 2 if car_fingerprint in HONDA_BOSCH and radar_off_can else 0
   commands.append(packer.make_can_msg('LKAS_HUD', bus, lkas_hud_values, idx))
 
   if car_fingerprint in (CAR.CIVIC, CAR.ODYSSEY):
@@ -156,13 +163,30 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, openpilot_longit
     }
   elif car_fingerprint in HONDA_BOSCH:
     radar_hud_values = {
-      'SET_TO_1' : 0x01,
+      #'SET_TO_1' : 0x01,
     }
 
   if openpilot_longitudinal_control:
     commands.append(packer.make_can_msg('RADAR_HUD', 0, radar_hud_values, idx))
+
   return commands
 
+from common.numpy_fast import clip
+def create_radar_commands(v_ego, idx):
+  commands = []
+  v_ego_kph = clip(int(round(v_ego * CV.MS_TO_KPH)), 0, 255)
+  speed = struct.pack('!B', v_ego_kph)
+
+  msg_0x300 = ("\xf9" + speed + "\x8a\xd0" +
+              ("\x20" if idx == 0 or idx == 3 else "\x00") +
+              "\x00\x00")
+  commands.append(make_can_msg(0x300, msg_0x300, idx, 1))
+
+  # car_fingerprint == CAR.PILOT:
+  msg_0x301 = "\x00\x00\x56\x02\x58\x00\x00"
+  commands.append(make_can_msg(0x301, msg_0x301, idx, 1))
+
+  return commands
 
 def spam_buttons_command(packer, button_val, idx):
   values = {
