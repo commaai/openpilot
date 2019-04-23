@@ -84,6 +84,7 @@ class CarState(object):
     self.gasLabels = ["dynamic","sport","eco"]
     self.alcaLabels = ["MadMax","Normal","Wifey","off"]
     self.alcaMode = int(kegman.conf['lastALCAMode'])
+    steerRatio = CP.steerRatio
     self.prev_distance_button = 0
     self.distance_button = 0
     self.prev_lka_button = 0
@@ -93,8 +94,8 @@ class CarState(object):
     # ALCA PARAMS
     self.blind_spot_on = bool(0)
     # max REAL delta angle for correction vs actuator
-    self.CL_MAX_ANGLE_DELTA_BP = [10., 32., 44.]
-    self.CL_MAX_ANGLE_DELTA = [0.77, 0.86, 0.535]
+    self.CL_MAX_ANGLE_DELTA_BP = [10., 32., 55.]
+    self.CL_MAX_ANGLE_DELTA = [0.77 * 16.2 / steerRatio, 0.86 * 16.2 / steerRatio, 0.535 * 16.2 / steerRatio]
     # adjustment factor for merging steer angle to actuator; should be over 4; the higher the smoother
     self.CL_ADJUST_FACTOR_BP = [10., 44.]
     self.CL_ADJUST_FACTOR = [16. , 8.]
