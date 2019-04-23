@@ -34,7 +34,7 @@ def read_config_file(CS):
 
     #radar_offset -> CS.radarOffset
     try:
-      CS.radarOffset = configr.getint('OP_CONFIG','radar_offset')
+      CS.radarOffset = configr.getfloat('OP_CONFIG','radar_offset')
     except:
       CS.radarOffset = 0.
       file_changed = True
