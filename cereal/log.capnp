@@ -1639,7 +1639,10 @@ struct LiveMapData {
   distToTurn @10 :Float32;
   mapValid @11 :Bool;
 }
-
+struct LiveTrafficData {
+  speedLimitValid @0 :Bool;
+  speedLimit @1 :Float32;
+}  
 struct LatControl {
   anglelater @0 :Float32;
 }
@@ -1729,5 +1732,6 @@ struct Event {
     cameraOdometry @64 :CameraOdometry;
     pathPlan @65 :PathPlan;
     kalmanOdometry @66 :KalmanOdometry;
+    liveTrafficData @67 :LiveTrafficData;
   }
 }
