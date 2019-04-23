@@ -206,6 +206,7 @@ class CarState(object):
     #gps_ext_sock = messaging.sub_sock(context, service_list['gpsLocationExternal'].port, poller)
     self.gps_location = messaging.sub_sock(context, service_list['gpsLocationExternal'].port, conflate=True, poller=self.poller)
     self.lat_Control = messaging.sub_sock(context, service_list['latControl'].port, conflate=True, poller=self.poller)
+    self.traffic_data_sock = messaging.pub_sock(context, service_list['liveTrafficData'].port)
     self.CP = CP
     self.can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
     self.shifter_values = self.can_define.dv["GEAR_PACKET"]['GEAR']
@@ -502,15 +503,28 @@ class CarState(object):
       self.generic_toggle = bool(cp.vl["LIGHT_STALK"]['AUTO_HIGH_BEAM'])
     self.tsgn1 = cp_cam.vl["RSA1"]['TSGN1']
     self.spdval1 = cp_cam.vl["RSA1"]['SPDVAL1']
-    #if self.spdval1 > 0:
-    #  print self.spdval1
+    
     self.splsgn1 = cp_cam.vl["RSA1"]['SPLSGN1']
     self.tsgn2 = cp_cam.vl["RSA1"]['TSGN2']
     self.spdval2 = cp_cam.vl["RSA1"]['SPDVAL2']
+    
     self.splsgn2 = cp_cam.vl["RSA1"]['SPLSGN2']
     self.tsgn3 = cp_cam.vl["RSA2"]['TSGN3']
     self.splsgn3 = cp_cam.vl["RSA2"]['SPLSGN3']
     self.tsgn4 = cp_cam.vl["RSA2"]['TSGN4']
     self.splsgn4 = cp_cam.vl["RSA2"]['SPLSGN4']
     self.noovertake = self.tsgn1 == 65 or self.tsgn2 == 65 or self.tsgn3 == 65 or self.tsgn4 == 65 or self.tsgn1 == 66 or self.tsgn2 == 66 or self.tsgn3 == 66 or self.tsgn4 == 66
-    
+    if self.spdval1 > 0 or self.spdval2 > 0:
+      dat = messaging.new_message()
+      dat.init('liveTrafficData')
+      if self.spdval1 > 0:
+        dat.liveTrafficData.speedLimitValid = True
+        dat.liveTrafficData.speedLimit = self.spdval1
+      else:
+        dat.liveTrafficData.speedLimitValid = False
+      if self.spdval2 > 0:
+        dat.liveTrafficData.speedAdvisoryValid = True
+        dat.liveTrafficData.speedAdvisory = self.spdval2
+      else:
+        dat.liveTrafficData.speedAdvisoryValid = False
+      self.traffic_data_sock.send(dat.to_bytes())
