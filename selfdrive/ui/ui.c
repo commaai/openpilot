@@ -268,7 +268,7 @@ typedef struct UIState {
   float light_sensor;
 } UIState;
 
-//#include "dashcam.h"
+#include "dashcam.h"
 #include "bbui.h"
 
 static int last_brightness = -1;
@@ -1028,14 +1028,14 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   //viz_maxspeed_x += viz_maxspeed_w - (viz_maxspeed_xo *2);
 
   // Draw Background
-  nvgBeginPath(s->vg);
+  /*nvgBeginPath(s->vg);
   nvgRoundedRect(s->vg, viz_maxspeed_x, viz_maxspeed_y, viz_maxspeed_w, viz_maxspeed_h, 30);
   if (is_set_over_limit) {
     nvgFillColor(s->vg, nvgRGBA(218, 111, 37, 180));
   } else {
     nvgFillColor(s->vg, nvgRGBA(0, 0, 0, 100));
   }
-  nvgFill(s->vg);
+  nvgFill(s->vg);*/
 
   // Draw Border
   nvgBeginPath(s->vg);
