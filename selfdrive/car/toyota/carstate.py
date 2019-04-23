@@ -517,7 +517,7 @@ class CarState(object):
     spdval1 = cp_cam.vl["RSA1"]['SPDVAL1']
     if spdval1 is not self.spdval1:
       self.spdval1 = spdval1
-      if self.spdval1 = 0:
+      if self.spdval1 == 0:
         self.lastspeedlimitvalid = True
       else:
         self.lastspeedlimitvalid = False
