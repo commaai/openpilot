@@ -5,12 +5,12 @@ from selfdrive.controls.lib.drive_helpers import rate_limit
 from common.numpy_fast import clip
 from selfdrive.car import create_gas_command
 from selfdrive.car.honda import hondacan
-from selfdrive.car.honda.values import AH, CruiseButtons, CAR
+from selfdrive.car.honda.values import AH, CruiseButtons, CAR, HONDA_BOSCH
 from selfdrive.can.packer import CANPacker
 
 # Accel limits
 ACCEL_HYST_GAP = 0.02 # don't change accel command for small oscilalitons within this value
-ACCEL_MAX = 1600.
+ACCEL_MAX = 800.
 ACCEL_MIN = -1599.
 ACCEL_SCALE = max(ACCEL_MAX, -ACCEL_MIN)
 
@@ -97,6 +97,7 @@ HUDData = namedtuple("HUDData",
 
 class CarController(object):
   def __init__(self, dbc_name, enable_camera=True):
+    self.accel_steady = 0.
     self.braking = False
     self.brake_steady = 0.
     self.brake_last = 0.
@@ -142,7 +143,7 @@ class CarController(object):
       hud_car = 0
 
     # For lateral control-only, send chimes as a beep since we don't send 0x1fa
-    if CS.CP.radarOffCan:
+    if not CS.CP.openpilotLongitudinalControl:
       snd_beep = snd_beep if snd_beep != 0 else snd_chime
 
     #print chime, alert_id, hud_alert
@@ -159,8 +160,6 @@ class CarController(object):
       STEER_MAX = 0xF00
     elif CS.CP.carFingerprint in (CAR.CRV, CAR.ACURA_RDX):
       STEER_MAX = 0x3e8  # CR-V only uses 12-bits and requires a lower value (max value from energee)
-    elif CS.CP.carFingerprint in (CAR.ODYSSEY_CHN):
-      STEER_MAX = 0x7FFF
     else:
       STEER_MAX = 0x1000
 
@@ -188,12 +187,12 @@ class CarController(object):
     # Send steering command.
     idx = frame % 4
     can_sends.append(hondacan.create_steering_control(self.packer, apply_steer,
-      lkas_active, CS.CP.carFingerprint, CS.CP.radarOffCan, idx))
+      lkas_active, CS.CP.carFingerprint, CS.CP.openpilotLongitudinalControl, idx))
 
     # Send dashboard UI commands.
     if (frame % 10) == 0:
       idx = (frame/10) % 4
-      can_sends.extend(hondacan.create_ui_commands(self.packer, pcm_speed, hud, CS.CP.carFingerprint, CS.CP.radarOffCan, CS.CP.openpilotLongitudinalControl, idx))
+      can_sends.extend(hondacan.create_ui_commands(self.packer, pcm_speed, hud, CS.CP.carFingerprint, CS.CP.openpilotLongitudinalControl, idx))
 
     if not CS.CP.openpilotLongitudinalControl:
       # If using stock ACC, spam cancel command to kill gas when OP disengages.
@@ -208,21 +207,16 @@ class CarController(object):
         idx = frame / 2
 
         if CS.CP.carFingerprint in HONDA_BOSCH:
-          can_sends.extend(hondacan.create_acc_commands(self.packer, enabled, apply_accel, CS.CP.carFingerprint, idx))
+          can_sends.extend(hondacan.create_acc_commands(self.packer, enabled, apply_accel, idx))
         else:
           pump_on, self.last_pump_ts = brake_pump_hysteresys(apply_brake, self.apply_brake_last, self.last_pump_ts)
           can_sends.append(hondacan.create_brake_command(self.packer, apply_brake, pump_on,
             pcm_override, pcm_cancel_cmd, hud.chime, hud.fcw, idx))
           self.apply_brake_last = apply_brake
+
         if CS.CP.enableGasInterceptor:
           # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
           # This prevents unexpected pedal range rescaling
           can_sends.append(create_gas_command(self.packer, apply_gas, idx))
-
-      # TODO: this only applies to people adding a nidec radar to vehicles that didn't come with one
-      # so this cannot be upstreamed and needs to be refactored out better somehow
-      # if (frame % 5) == 0:
-      #   idx = (frame / 5) % 4
-      #   can_sends.extend(hondacan.create_radar_commands(CS.v_ego, idx))
 
     sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
