@@ -193,7 +193,7 @@ class CarController(object):
     # Send dashboard UI commands.
     if (frame % 10) == 0:
       idx = (frame/10) % 4
-      can_sends.extend(hondacan.create_ui_commands(self.packer, pcm_speed, hud, CS.CP.carFingerprint, CS.CP.radarOffCan && (not CS.useTeslaRadar), CS.CP.openpilotLongitudinalControl, idx))
+      can_sends.extend(hondacan.create_ui_commands(self.packer, pcm_speed, hud, CS.CP.carFingerprint, CS.CP.radarOffCan and (not CS.useTeslaRadar), CS.CP.openpilotLongitudinalControl, idx))
 
     if not CS.CP.openpilotLongitudinalControl:
       # If using stock ACC, spam cancel command to kill gas when OP disengages.
