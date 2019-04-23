@@ -215,6 +215,12 @@ class LongitudinalMpc(object):
 
   def update(self, CS, lead, v_cruise_setpoint):
     v_ego = CS.carState.vEgo
+    try:
+      self.relative_velocity = lead.vRel
+      self.relative_distance = lead.dRel
+    except:  # if no lead car
+      self.relative_velocity = None
+      self.relative_distance = None
 
     # Setup current mpc state
     self.cur_state[0].x_ego = 0.0
@@ -223,8 +229,6 @@ class LongitudinalMpc(object):
       x_lead = max(0, lead.dRel - 1)
       v_lead = max(0.0, lead.vLead)
       a_lead = lead.aLeadK
-      self.relative_velocity = lead.vRel
-      self.relative_distance = lead.dRel
 
       if (v_lead < 0.1 or -a_lead / 2.0 > v_lead):
         v_lead = 0.0
@@ -241,8 +245,6 @@ class LongitudinalMpc(object):
       self.cur_state[0].x_l = x_lead
       self.cur_state[0].v_l = v_lead
     else:
-      self.relative_velocity = None
-      self.relative_distance = None
       self.prev_lead_status = False
       # Fake a fast lead car, so mpc keeps running
       self.cur_state[0].x_l = 50.0
