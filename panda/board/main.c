@@ -20,6 +20,8 @@
 #include "drivers/spi.h"
 #include "drivers/timer.h"
 
+#include "power_saving.h"
+
 
 // ***************************** fan *****************************
 
@@ -141,6 +143,7 @@ void usb_cb_ep2_out(uint8_t *usbdata, int len, int hardwired) {
   uart_ring *ur = get_ring_by_number(usbdata[0]);
   if (!ur) return;
   if ((usbdata[0] < 2) || safety_tx_lin_hook(usbdata[0]-2, usbdata+1, len-1)) {
+    if (ur == &esp_ring) power_save_reset_timer();
     for (int i = 1; i < len; i++) while (!putc(ur, usbdata[i]));
   }
 }
@@ -160,6 +163,14 @@ void usb_cb_ep3_out(uint8_t *usbdata, int len, int hardwired) {
 
     uint8_t bus_number = (to_push.RDTR >> 4) & CAN_BUS_NUM_MASK;
     can_send(&to_push, bus_number);
+
+    #ifdef PANDA
+      // Enable relay on can message if allowed.
+      // Temporary until OP has support for relay
+      if (safety_relay_hook()) {
+        set_lline_output(1);
+      }
+    #endif
   }
 }
 
@@ -441,6 +452,16 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, int hardwired) {
         }
         break;
       }
+    // **** 0xf3: set l-line relay
+    case 0xf3:
+      {
+        #ifdef PANDA
+          if (safety_relay_hook()) {
+            set_lline_output(setup->b.wValue.w == 1);
+          }
+        #endif
+        break;
+      }
     default:
       puts("NO HANDLER ");
       puth(setup->b.bRequest);
@@ -572,6 +593,9 @@ int main() {
 #ifdef PANDA
   spi_init();
 #endif
+#ifdef DEBUG
+  puts("DEBUG ENABLED\n");
+#endif
 
   // set PWM
   fan_init();
@@ -580,6 +604,8 @@ int main() {
   puts("**** INTERRUPTS ON ****\n");
 
   __enable_irq();
+
+  power_save_init();
 
   // if the error interrupt is enabled to quickly when the CAN bus is active
   // something bad happens and you can't connect to the device over USB
