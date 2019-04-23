@@ -165,8 +165,8 @@ class CarState(object):
     #if (CP.carFingerprint == CAR.MODELS):
     # ALCA PARAMS
     # max REAL delta angle for correction vs actuator
-    self.CL_MAX_ANGLE_DELTA_BP = [10., 15., 32., 50.]#[10., 44.]
-    self.CL_MAX_ANGLE_DELTA = [2.0, 1.75, 1.25, 0.5]
+    self.CL_MAX_ANGLE_DELTA_BP = [10., 15., 32., 55.]#[10., 44.]
+    self.CL_MAX_ANGLE_DELTA = [1.76, 1.54, 1.10, 0.44]
      # adjustment factor for merging steer angle to actuator; should be over 4; the higher the smoother
     self.CL_ADJUST_FACTOR_BP = [10., 50.]
     self.CL_ADJUST_FACTOR = [16. , 8.]
