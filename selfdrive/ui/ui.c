@@ -1125,7 +1125,7 @@ static void ui_draw_vision_speedlimit(UIState *s) {
   int viz_speedlim_bdr = is_speedlim_valid ? 30 : 15;
 
   // Draw Background
-  nvgBeginPath(s->vg);
+  /*nvgBeginPath(s->vg);
   nvgRoundedRect(s->vg, viz_speedlim_x, viz_speedlim_y, viz_speedlim_w, viz_speedlim_h, viz_speedlim_bdr);
   if (is_speedlim_valid && s->is_ego_over_limit) {
     nvgFillColor(s->vg, nvgRGBA(218, 111, 37, 180));
@@ -1134,7 +1134,7 @@ static void ui_draw_vision_speedlimit(UIState *s) {
   } else {
     nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 100));
   }
-  nvgFill(s->vg);
+  nvgFill(s->vg);*/
 
   // Draw Border
   if (is_speedlim_valid) {
