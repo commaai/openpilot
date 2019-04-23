@@ -2,9 +2,7 @@ import numpy as np
 from common.realtime import sec_since_boot
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from common.filter_simple import FirstOrderFilter
-from selfdrive.kegman_conf import kegman_conf
-
-kegman = kegman_conf()
+import selfdrive.kegman_conf as kegman
 
 _DT = 0.01                  # update runs at 100Hz
 _DTM = 0.1                  # DM runs at 10Hz

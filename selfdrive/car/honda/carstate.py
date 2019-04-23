@@ -3,7 +3,7 @@ from common.kalman.simple_kalman import KF1D
 from selfdrive.can.parser import CANParser, CANDefine
 from selfdrive.config import Conversions as CV
 from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, SPEED_FACTOR, HONDA_BOSCH
-from selfdrive.kegman_conf import kegman_conf
+import selfdrive.kegman_conf as kegman
 from selfdrive.car.modules.UIBT_module import UIButtons,UIButton
 from selfdrive.car.modules.UIEV_module import UIEvents
 import numpy as np
@@ -150,28 +150,29 @@ def get_cam_can_parser(CP):
 
 class CarState(object):
   def __init__(self, CP):
-    self.kegman = kegman_conf()
+    self.lkMode = True
+    self.gasMode = int(kegman.conf['lastGasMode'])
+    self.gasLabels = ["dynamic","sport","eco"]
     self.Angle = [0, 5, 10, 15,20,25,30,35,60,100,180,270,500]
     self.Angle_Speed = [255,160,100,80,70,60,55,50,40,30,20,10,5]
     self.blind_spot_on = bool(0)
     #labels for ALCA modes
     self.alcaLabels = ["MadMax","Normal","Wifey","off"]
+    steerRatio = CP.steerRatio
     self.trLabels = ["0.9","dyn","2.7"]
-    self.alcaMode = int(self.kegman.conf['lastALCAMode'])     # default to last ALCA Mode on startup
+    self.alcaMode = int(kegman.conf['lastALCAMode'])     # default to last ALCA Mode on startup
     if self.alcaMode > 3:
       self.alcaMode = 3
-      self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last distance bar setting to file
-      self.kegman.write_config(self.kegman.conf) 
-    self.trMode = int(self.kegman.conf['lastTrMode'])     # default to last distance interval on startup
+      kegman.save({'lastALCAMode': int(self.alcaMode)})  # write last distance bar setting to file
+    self.trMode = int(kegman.conf['lastTrMode'])     # default to last distance interval on startup
     if self.trMode > 2:
       self.trMode = 2
-      self.kegman.conf['lastTrMode'] = str(self.trMode)   # write last distance bar setting to file
-      self.kegman.write_config(self.kegman.conf)
+      kegman.save({'lastTrMode': int(self.trMode)})  # write last distance bar setting to file
     #if (CP.carFingerprint == CAR.MODELS):
     # ALCA PARAMS
     # max REAL delta angle for correction vs actuator
-    self.CL_MAX_ANGLE_DELTA_BP = [10., 32., 44.]
-    self.CL_MAX_ANGLE_DELTA = [2.0, 1., 0.5]
+    self.CL_MAX_ANGLE_DELTA_BP = [10., 32., 55.]
+    self.CL_MAX_ANGLE_DELTA = [2.0 * 15.4 / steerRatio, 1. * 15.4 / steerRatio, 0.5 * 15.4 / steerRatio]
     # adjustment factor for merging steer angle to actuator; should be over 4; the higher the smoother
     self.CL_ADJUST_FACTOR_BP = [10., 44.]
     self.CL_ADJUST_FACTOR = [16. , 8.]
@@ -256,7 +257,7 @@ class CarState(object):
     btns.append(UIButton("","",0,"",2))
     btns.append(UIButton("sound","SND",0,"",3))
     btns.append(UIButton("tr","TR",0,self.trLabels[self.trMode],4))
-    btns.append(UIButton("gas","Gas",1,"",5))
+    btns.append(UIButton("gas","Gas",1,self.gasLabels[self.gasMode],5))
     return btns
 
   #BB update ui buttons
@@ -265,12 +266,10 @@ class CarState(object):
       if (id == 0) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="alca":
           if self.cstm_btns.btns[id].btn_label2 == self.alcaLabels[self.alcaMode]:
             self.alcaMode = (self.alcaMode + 1 ) % 4
-            self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last distance bar setting to file
-            self.kegman.write_config(self.kegman.conf) 
+            kegman.save({'lastALCAMode': int(self.alcaMode)})  # write last distance bar setting to file
           else:
             self.alcaMode = 0
-            self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last distance bar setting to file
-            self.kegman.write_config(self.kegman.conf) 
+            kegman.save({'lastALCAMode': int(self.alcaMode)})  # write last distance bar setting to file
           self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
           self.cstm_btns.hasChanges = True
           if self.alcaMode == 3:
@@ -279,23 +278,28 @@ class CarState(object):
       elif (id == 4) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="tr":
           if self.cstm_btns.btns[id].btn_label2 == self.trLabels[self.trMode]:
             self.trMode = (self.trMode + 1 ) % 3
-            self.kegman.conf['lastTrMode'] = str(self.trMode)   # write last distance bar setting to file
-            self.kegman.write_config(self.kegman.conf)
+            kegman.save({'lastTrMode': int(self.trMode)})  # write last distance bar setting to file
           else:
             self.trMode = 0
-            self.kegman.conf['lastTrMode'] = str(self.trMode)   # write last distance bar setting to file
-            self.kegman.write_config(self.kegman.conf)
+            kegman.save({'lastTrMode': int(self.trMode)})  # write last distance bar setting to file
           self.cstm_btns.btns[id].btn_label2 = self.trLabels[self.trMode]
           self.cstm_btns.hasChanges = True
-
+      elif (id == 5) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="gas":
+          if self.cstm_btns.btns[id].btn_label2 == self.gasLabels[self.gasMode]:
+            self.gasMode = (self.gasMode + 1 ) % 3
+            kegman.save({'lastGasMode': int(self.gasMode)})  # write last GasMode setting to file
+          else:
+            self.gasMode = 0
+            kegman.save({'lastGasMode': int(self.gasMode)})  # write last GasMode setting to file
+          self.cstm_btns.btns[id].btn_label2 = self.gasLabels[self.gasMode]
+          self.cstm_btns.hasChanges = True
       else:
         self.cstm_btns.btns[id].btn_status = btn_status * self.cstm_btns.btns[id].btn_status
     else:
         self.cstm_btns.btns[id].btn_status = btn_status
         if (id == 0) and self.cstm_btns.btns[id].btn_name=="alca":
           self.alcaMode = (self.alcaMode + 1 ) % 4
-          self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last ALCAMode setting to file
-          self.kegman.write_config(self.kegman.conf)
+          kegman.save({'lastALCAMode': int(self.alcaMode)})  # write last distance bar setting to file
           self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
           self.cstm_btns.hasChanges = True
 
@@ -439,8 +443,7 @@ class CarState(object):
     if self.cruise_setting == 3:
       if cp.vl["SCM_BUTTONS"]["CRUISE_SETTING"] == 0:
         self.trMode = (self.trMode + 1 ) % 3
-        self.kegman.conf['lastTrMode'] = str(self.trMode)   # write last distance bar setting to file
-        self.kegman.write_config(self.kegman.conf) 
+        kegman.save({'lastTrMode': int(self.trMode)})  # write last distance bar setting to file
         self.cstm_btns.btns[4].btn_label2 = self.trLabels[self.trMode]
     self.prev_cruise_setting = self.cruise_setting
     self.cruise_setting = cp.vl["SCM_BUTTONS"]['CRUISE_SETTING']
@@ -453,7 +456,24 @@ class CarState(object):
       if self.read_distance_lines == 3:
         self.UE.custom_alert_message(2,"Following distance set to 2.7s",200,3)
       self.read_distance_lines_prev = self.read_distance_lines
+      
+    # when user presses LKAS button on steering wheel
+    if self.cruise_setting == 1:
+      if cp.vl["SCM_BUTTONS"]["CRUISE_SETTING"] == 0:
+        if self.lkMode:
+          self.lkMode = False
+        else:
+          self.lkMode = True
+    if self.cstm_btns.get_button_status("lka") == 0:
+      self.lane_departure_toggle_on = False
+    else:
+      self.lane_departure_toggle_on = True
 
+    if self.alcaMode == 3 and (self.left_blinker_on or self.right_blinker_on):
+      self.lane_departure_toggle_on = False
+    else:
+      self.lane_departure_toggle_on = True
+      
     # Gets rid of Pedal Grinding noise when brake is pressed at slow speeds for some models
     # TODO: this should be ok for all cars. Verify it.
     if self.CP.carFingerprint in (CAR.PILOT, CAR.PILOT_2019, CAR.RIDGELINE):

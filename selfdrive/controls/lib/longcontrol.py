@@ -2,11 +2,10 @@ import zmq
 from cereal import log
 from common.numpy_fast import clip, interp
 from selfdrive.controls.lib.pid import PIController
-from selfdrive.kegman_conf import kegman_conf
+import selfdrive.kegman_conf as kegman
 import selfdrive.messaging as messaging
 from selfdrive.services import service_list
 
-kegman = kegman_conf()
 LongCtrlState = log.Live100Data.LongControlState
 
 STOPPING_EGO_SPEED = 0.5
@@ -87,17 +86,17 @@ class LongControl(object):
         dynamic = True
         x = [0.0, 1.4082, 2.80311, 4.22661, 5.38271, 6.16561, 7.24781, 8.28308, 10.24465, 12.96402, 15.42303, 18.11903, 20.11703, 24.46614, 29.05805, 32.71015, 35.76326]
         y = [0.2, 0.20443, 0.21592, 0.23334, 0.25734, 0.27916, 0.3229, 0.34784, 0.36765, 0.38, 0.396, 0.409, 0.425, 0.478, 0.55, 0.621, 0.7]
-        #x = [0.0, 0.6422, 1.36595, 2.25989, 3.22941, 4.06505, 5.64084, 7.00847, 9.2202, 12.96404, 15.42305, 18.11906, 20.11706, 24.46618, 29.0581, 32.7102, 35.76332]  # future
-        #y = [0.2, 0.20443, 0.21592, 0.23334, 0.25734, 0.27916, 0.3229, 0.34784, 0.36765, 0.38, 0.396, 0.409, 0.425, 0.478, 0.55, 0.621, 0.7]
       elif gasbuttonstatus == 1:
         y = [0.25, 0.9, 0.9]
       elif gasbuttonstatus == 2:
         y = [0.2, 0.2, 0.2]
     else:
       if gasbuttonstatus == 0:
-        y = [0.5, 0.7, 0.9]
+        dynamic = True
+        x = [0.0, 1.4082, 2.80311, 4.22661, 5.38271, 6.16561, 7.24781, 8.28308, 10.24465, 12.96402, 15.42303, 18.11903, 20.11703, 24.46614, 29.05805, 32.71015, 35.76326]
+        y = [0.5, 0.47, 0.43, 0.35, 0.3, 0.3, 0.3229, 0.34784, 0.36765, 0.38, 0.396, 0.409, 0.425, 0.478, 0.55, 0.621, 0.7]
       elif gasbuttonstatus == 1:
-        y = [0.7, 0.9, 0.9]
+        y = [0.9, 0.95, 0.99]
       elif gasbuttonstatus == 2:
         y = [0.2, 0.2, 0.2]
 
@@ -107,9 +106,9 @@ class LongControl(object):
     accel = interp(v_ego, x, y)
 
     if dynamic and v_rel is not None:  # dynamic gas profile specific operations, and if lead
-      if (v_ego) < 8.94086:  # if under 20 mph
-        x = [0.0, 0.61945, 1.15771, 1.61479, 1.99067, 2.28537, 2.49888, 2.6312, 2.68224]
-        y = [-accel, -(accel / 1.04), -(accel / 1.095), -(accel / 1.195), -(accel / 1.36), -(accel / 1.69), -(accel / 2.35), -(accel / 4.4), 0]  # array that matches current chosen accel value
+      if (v_ego) < 6.7056:  # if under 15 mph
+        x = [1.61479, 1.99067, 2.28537, 2.49888, 2.6312, 2.68224]
+        y = [-accel, -(accel / 1.06), -(accel / 1.2), -(accel / 1.8), -(accel / 4.4), 0]  # array that matches current chosen accel value
         accel += interp(v_rel, x, y)
       else:
         x = [-0.89408, 0, 0.89408, 4.4704]
@@ -117,9 +116,9 @@ class LongControl(object):
         accel += interp(v_rel, x, y)
 
 
-    min_return = 0.01
+    min_return = 0.0
     max_return = 1.0
-    return round(max(min(accel, max_return), min_return), 4)  # ensure we return a value between range
+    return round(max(min(accel, max_return), min_return), 5)  # ensure we return a value between range
 
   def update(self, active, v_ego, brake_pressed, standstill, cruise_standstill, v_cruise, v_target, v_target_future,
              a_target, CP, gasinterceptor, gasbuttonstatus):

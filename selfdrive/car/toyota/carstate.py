@@ -9,7 +9,7 @@ from selfdrive.can.parser import CANParser, CANDefine
 from selfdrive.config import Conversions as CV
 from selfdrive.car.toyota.values import CAR, DBC, STEER_THRESHOLD
 from common.kalman.simple_kalman import KF1D
-from selfdrive.kegman_conf import kegman_conf
+import selfdrive.kegman_conf as kegman
 from selfdrive.car.modules.UIBT_module import UIButtons,UIButton
 from selfdrive.car.modules.UIEV_module import UIEvents
 import os
@@ -147,26 +147,27 @@ def get_cam_can_parser(CP):
 
 class CarState(object):
   def __init__(self, CP):
-    self.kegman = kegman_conf()
+    self.brakefactor = float(kegman.conf['brakefactor'])
     self.trfix = False
+    steerRatio = CP.steerRatio
     self.Angles = np.zeros(250)
     self.Angles_later = np.zeros(250)
     self.Angle_counter = 0
     self.Angle = [0, 5, 10, 15,20,25,30,35,60,100,180,270,500]
     self.Angle_Speed = [255,160,100,80,70,60,55,50,40,33,27,17,12]
     #labels for gas mode
-    self.gasMode = int(self.kegman.conf['lastGasMode'])
-    self.sloMode = int(self.kegman.conf['lastSloMode'])
+    self.gasMode = int(kegman.conf['lastGasMode'])
+    self.sloMode = int(kegman.conf['lastSloMode'])
     self.sloLabels = ["offset","normal"]
     self.gasLabels = ["dynamic","sport","eco"]
     #labelslabels for ALCA modes
     self.alcaLabels = ["MadMax","Normal","Wifey","off"]
-    self.alcaMode = int(self.kegman.conf['lastALCAMode'])     # default to last ALCAmode on startup
+    self.alcaMode = int(kegman.conf['lastALCAMode'])     # default to last ALCAmode on startup
     #if (CP.carFingerprint == CAR.MODELS):
     # ALCA PARAMS
     # max REAL delta angle for correction vs actuator
-    self.CL_MAX_ANGLE_DELTA_BP = [10., 15., 32., 50.]#[10., 44.]
-    self.CL_MAX_ANGLE_DELTA = [2.0, 1.75, 1.25, 0.5]
+    self.CL_MAX_ANGLE_DELTA_BP = [10., 15., 32., 55.]#[10., 44.]
+    self.CL_MAX_ANGLE_DELTA = [2.0 * 15.5 / steerRatio, 1.75 * 15.5 / steerRatio, 1.25 * 15.5 / steerRatio, 0.5 * 15.5 / steerRatio]
      # adjustment factor for merging steer angle to actuator; should be over 4; the higher the smoother
     self.CL_ADJUST_FACTOR_BP = [10., 50.]
     self.CL_ADJUST_FACTOR = [16. , 8.]
@@ -177,19 +178,19 @@ class CarState(object):
     self.CL_LANE_DETECT_BP = [10., 50.]
     self.CL_LANE_DETECT_FACTOR = [1.3, 1.3]
     self.CL_LANE_PASS_BP = [10., 20., 50.]
-    self.CL_LANE_PASS_TIME = [40.,10., 3.] 
+    self.CL_LANE_PASS_TIME = [40.,10., 3.]
      # change lane delta angles and other params
     self.CL_MAXD_BP = [10., 32., 50.]
     self.CL_MAXD_A = [.358, 0.084, 0.042] #delta angle based on speed; needs fine tune, based on Tesla steer ratio of 16.75
     self.CL_MIN_V = 8.9 # do not turn if speed less than x m/2; 20 mph = 8.9 m/s
      # do not turn if actuator wants more than x deg for going straight; this should be interp based on speed
     self.CL_MAX_A_BP = [10., 50.]
-    self.CL_MAX_A = [10., 10.] 
+    self.CL_MAX_A = [10., 10.]
      # define limits for angle change every 0.1 s
     # we need to force correction above 10 deg but less than 20
     # anything more means we are going to steep or not enough in a turn
     self.CL_MAX_ACTUATOR_DELTA = 2.
-    self.CL_MIN_ACTUATOR_DELTA = 0. 
+    self.CL_MIN_ACTUATOR_DELTA = 0.
     self.CL_CORRECTION_FACTOR = [1.3,1.1,1.05]
     self.CL_CORRECTION_FACTOR_BP = [10., 32., 50.]
      #duration after we cross the line until we release is a factor of speed
@@ -198,7 +199,7 @@ class CarState(object):
     #duration to wait (in seconds) with blinkers on before starting to turn
     self.CL_WAIT_BEFORE_START = 1
     #END OF ALCA PARAMS
-    
+
     context = zmq.Context()
     self.poller = zmq.Poller()
     self.lastlat_Control = None
@@ -221,7 +222,7 @@ class CarState(object):
     self.blind_spot_on = bool(0)
     self.econ_on = 0
     self.sport_on = 0
-    
+
     self.distance_toggle_prev = 2
     self.read_distance_lines_prev = 3
     self.lane_departure_toggle_on_prev = True
@@ -239,7 +240,7 @@ class CarState(object):
     self.custom_alert_counter = 100 #set to 100 for 1 second display; carcontroller will take down to zero
     # initialize can parser
     self.car_fingerprint = CP.carFingerprint
-    
+
     # vEgo kalman filter
     dt = 0.01
     # Q = np.matrix([[10.0, 0.0], [0.0, 100.0]])
@@ -255,7 +256,7 @@ class CarState(object):
     btns = []
     btns.append(UIButton("sound", "SND", 0, "", 0))
     btns.append(UIButton("alca", "ALC", 1, self.alcaLabels[self.alcaMode], 1))
-    btns.append(UIButton("slow", "SLO", 1, self.sloLabels[self.sloMode], 2))
+    btns.append(UIButton("slow", "SLO", self.sloMode, self.sloLabels[self.sloMode], 2))
     btns.append(UIButton("lka", "LKA", 1, "", 3))
     btns.append(UIButton("tr", "TR", 0, "", 4))
     btns.append(UIButton("gas", "GAS", 1, self.gasLabels[self.gasMode], 5))
@@ -267,25 +268,32 @@ class CarState(object):
       if (id == 1) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="alca":
           if self.cstm_btns.btns[id].btn_label2 == self.alcaLabels[self.alcaMode]:
             self.alcaMode = (self.alcaMode + 1 ) % 4
-            self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last ALCAMode setting to file
-            self.kegman.write_config(self.kegman.conf)
+            kegman.save({'lastALCAMode': int(self.alcaMode)})  # write last ALCAMode setting to file
           else:
             self.alcaMode = 0
-            self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last ALCAMode setting to file
-            self.kegman.write_config(self.kegman.conf)
+            kegman.save({'lastALCAMode': int(self.alcaMode)})  # write last ALCAMode setting to file
           self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
           self.cstm_btns.hasChanges = True
           if self.alcaMode == 3:
-            self.cstm_btns.set_button_status("alca", 0) 
+            self.cstm_btns.set_button_status("alca", 0)
+      elif (id == 2) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="slow":
+        if self.cstm_btns.btns[id].btn_label2 == self.sloLabels[self.sloMode]:
+          self.sloMode = (self.sloMode + 1 ) % 2
+          kegman.save({'lastSloMode': int(self.sloMode)})  # write last SloMode setting to file
+        else:
+          self.sloMode = 0
+          kegman.save({'lastSloMode': int(self.sloMode)})  # write last SloMode setting to file
+        self.cstm_btns.btns[id].btn_label2 = self.sloLabels[self.sloMode]
+        self.cstm_btns.hasChanges = True
+        if self.sloMode == 0:
+          self.cstm_btns.set_button_status("slow", 0)  # this might not be needed
       elif (id == 5) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="gas":
           if self.cstm_btns.btns[id].btn_label2 == self.gasLabels[self.gasMode]:
             self.gasMode = (self.gasMode + 1 ) % 3
-            self.kegman.conf['lastGasMode'] = str(self.gasMode)   # write last GasMode setting to file
-            self.kegman.write_config(self.kegman.conf)
+            kegman.save({'lastGasMode': int(self.gasMode)})  # write last GasMode setting to file
           else:
             self.gasMode = 0
-            self.kegman.conf['lastGasMode'] = str(self.gasMode)   # write last GasMode setting to file
-            self.kegman.write_config(self.kegman.conf)
+            kegman.save({'lastGasMode': int(self.gasMode)})  # write last GasMode setting to file
 
           self.cstm_btns.btns[id].btn_label2 = self.gasLabels[self.gasMode]
           self.cstm_btns.hasChanges = True
@@ -295,9 +303,13 @@ class CarState(object):
         self.cstm_btns.btns[id].btn_status = btn_status
         if (id == 1) and self.cstm_btns.btns[id].btn_name=="alca":
           self.alcaMode = (self.alcaMode + 1 ) % 4
-          self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last ALCAMode setting to file
-          self.kegman.write_config(self.kegman.conf)
+          kegman.save({'lastALCAMode': int(self.alcaMode)})  # write last ALCAMode setting to file
           self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
+          self.cstm_btns.hasChanges = True
+        elif (id == 2) and self.cstm_btns.btns[id].btn_name=="slow":
+          self.sloMode = (self.sloMode + 1 ) % 2
+          kegman.save({'lastSloMode': int(self.sloMode)})  # write last SloMode setting to file
+          self.cstm_btns.btns[id].btn_label2 = self.sloLabels[self.sloMode]
           self.cstm_btns.hasChanges = True
 
   def update(self, cp, cp_cam):
@@ -310,7 +322,7 @@ class CarState(object):
         msg = messaging.recv_one(socket)
       elif socket is self.lat_Control:
         self.lastlat_Control = messaging.recv_one(socket).latControl
-    
+
     if msg is not None:
       gps_pkt = msg.gpsLocationExternal
       self.inaccuracy = gps_pkt.accuracy
@@ -386,7 +398,7 @@ class CarState(object):
       self.blind_spot_on = bool(1)
     else:
       self.blind_spot_on = bool(0)
-    
+
     # we could use the override bit from dbc, but it's triggered at too high torque values
     self.steer_override = abs(cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_DRIVER']) > 100
 
@@ -409,7 +421,10 @@ class CarState(object):
         self.lane_departure_toggle_on = False
       else:
         self.lane_departure_toggle_on = True
-      
+    if self.alcaMode == 3 and (self.left_blinker_on or self.right_blinker_on):
+      self.lane_departure_toggle_on = False
+    else:
+      self.lane_departure_toggle_on = True
     self.distance_toggle = cp.vl["JOEL_ID"]['ACC_DISTANCE']
     if cp.vl["PCM_CRUISE_SM"]['DISTANCE_LINES'] == 2:
       self.trfix = True
@@ -443,14 +458,9 @@ class CarState(object):
     else:
       if self.cstm_btns.get_button_status("slow") == 0:
         self.acc_slow_on = False
-        self.sloMode = 0
-        self.kegman.conf['lastSloMode'] = str(self.sloMode)   # write last SloMode setting to file
-        self.kegman.write_config(self.kegman.conf)
       else:
         self.acc_slow_on = True
-        self.sloMode = 1
-        self.kegman.conf['lastSloMode'] = str(self.sloMode)   # write last SloMode setting to file
-        self.kegman.write_config(self.kegman.conf)
+
 
     # we could use the override bit from dbc, but it's triggered at too high torque values
     self.steer_override = abs(self.steer_torque_driver) > STEER_THRESHOLD
@@ -462,8 +472,8 @@ class CarState(object):
       self.Angles_later[self.Angle_counter] = abs(angle_later)
       self.Angle_counter = (self.Angle_counter + 1 ) % 250
       if not self.left_blinker_on and not self.right_blinker_on:
-        self.v_cruise_pcm = int(min(self.v_cruise_pcm, float(self.kegman.conf['brakefactor']) * interp(np.max(self.Angles), self.Angle, self.Angle_Speed)))
-        self.v_cruise_pcm = int(min(self.v_cruise_pcm, float(self.kegman.conf['brakefactor']) * interp(np.max(self.Angles_later), self.Angle, self.Angle_Speed)))
+        self.v_cruise_pcm = int(min(self.v_cruise_pcm, self.brakefactor * interp(np.max(self.Angles), self.Angle, self.Angle_Speed)))
+        self.v_cruise_pcm = int(min(self.v_cruise_pcm, self.brakefactor * interp(np.max(self.Angles_later), self.Angle, self.Angle_Speed)))
     else:
       self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED']
 

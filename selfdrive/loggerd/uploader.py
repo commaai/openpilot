@@ -290,7 +290,7 @@ def uploader_fn(exit_event):
 
     if exit_event.is_set():
       return
-
+    
     d = uploader.next_file_to_compress()
     if d is not None:
       key, fn, _ = d

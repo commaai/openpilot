@@ -6,9 +6,7 @@ from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.gm.values import DBC, CAR, STOCK_CONTROL_MSGS, AUDIO_HUD, SUPERCRUISE_CARS
 from selfdrive.car.gm.carstate import CarState, CruiseButtons, get_powertrain_can_parser
-from selfdrive.kegman_conf import kegman_conf
-
-kegman = kegman_conf()
+import selfdrive.kegman_conf as kegman
 
 try:
   from selfdrive.car.gm.carcontroller import CarController
@@ -24,8 +22,8 @@ class CanBus(object):
 
 class CarInterface(object):
   def __init__(self, CP, sendcan=None):
+    self.angleSteersoffset = float(kegman.conf['angle_steers_offset'])  # deg offset
     self.CP = CP
-
     self.frame = 0
     self.gas_pressed_prev = False
     self.brake_pressed_prev = False
@@ -82,7 +80,7 @@ class CarInterface(object):
       ret.mass = 1607 + std_cargo
       ret.safetyModel = car.CarParams.SafetyModels.gm
       ret.wheelbase = 2.69
-      ret.steerRatio = 15.7
+      ret.steerRatio = 16.17 #0.5.10
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.4 # wild guess
 
@@ -104,7 +102,7 @@ class CarInterface(object):
       ret.centerToFront = ret.wheelbase * 0.4
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
       ret.safetyModel = car.CarParams.SafetyModels.gm
-      ret.steerRatio = 15.7
+      ret.steerRatio = 15.75 #0.5.10
       ret.steerRatioRear = 0.
 
     elif candidate == CAR.ACADIA:
@@ -232,7 +230,7 @@ class CarInterface(object):
     ret.brakePressed = self.CS.brake_pressed
 
     # steering wheel
-    ret.steeringAngle = self.CS.angle_steers + float(kegman.conf['angle_steers_offset'])  # deg offset
+    ret.steeringAngle = self.CS.angle_steers + self.angleSteersoffset
 
     # torque and user override. Driver awareness
     # timer resets when the user uses the steering wheel.
@@ -306,9 +304,8 @@ class CarInterface(object):
       self.CS.follow_level -= 1
       if self.CS.follow_level < 1:
         self.CS.follow_level = 3
-      kegman.conf['lastTrMode'] = str(self.CS.follow_level)   # write last distance bar setting to file
-      kegman.write_config(kegman.conf) 
-    ret.gasbuttonstatus = self.CS.cstm_btns.get_button_status("gas")
+      kegman.save({'lastTrMode': int(self.CS.follow_level)})  # write last distance bar setting to file
+    ret.gasbuttonstatus = self.CS.gasMode
     events = []
     if not self.CS.can_valid:
       self.can_invalid_count += 1

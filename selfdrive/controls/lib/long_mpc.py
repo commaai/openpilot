@@ -31,13 +31,7 @@ class LongitudinalMpc(object):
     self.mpc_frame = 0  # idea thanks to kegman
     self.relative_velocity = None
     self.relative_distance = None
-    #self.dict_builder = {}
-
-    try:
-      with open("/data/openpilot/gas-interceptor", "r") as f:
-        self.gas_interceptor = bool(f.read())
-    except:
-      self.gas_interceptor = False
+    self.stop_and_go = False
 
   def save_car_data(self, self_vel):
     if len(self.dynamic_follow_dict["self_vels"]) >= 200:  # 100hz, so 200 items is 2 seconds
@@ -69,7 +63,7 @@ class LongitudinalMpc(object):
     """
 
     read_distance_lines = car_state.readdistancelines
-    if v_ego < 2.0 and read_distance_lines != 2 and self.gas_interceptor:  # if under 2m/s, not dynamic follow, and user has comma pedal
+    if v_ego < 2.0 and read_distance_lines != 2:  # if under 2m/s and not dynamic follow
       return 1.8  # under 7km/hr use a TR of 1.8 seconds
 
     if car_state.leftBlinker or car_state.rightBlinker:  # if car is changing lanes and not already .9s
@@ -137,7 +131,6 @@ class LongitudinalMpc(object):
 
   def get_traffic_level(self, lead_vels):  # generate a value to modify TR by based on fluctuations in lead speed
     if len(lead_vels) < 40:
-      #self.dict_builder["traffic_modifier"] = None
       return 1.0  # if less than 20 seconds of traffic data do nothing to TR
     lead_vel_diffs = []
     for idx, vel in enumerate(lead_vels):
@@ -146,7 +139,6 @@ class LongitudinalMpc(object):
     x = [0, len(lead_vels)]
     y = [1.35, 1.0]  # min and max values to modify TR by
     traffic = interp(sum(lead_vel_diffs), x, y)
-    #self.dict_builder["traffic_modifier"] = traffic
     return traffic
 
   def get_acceleration(self, velocity_list, is_self):  # calculate acceleration to generate more accurate following distances
@@ -169,32 +161,41 @@ class LongitudinalMpc(object):
     return a
 
   def dynamic_follow(self, velocity):  # in m/s
-    x = [0.0, 1.86267, 3.72533, 5.588, 7.45067, 9.31333, 11.55978, 13.645, 22.352, 31.2928, 33.528, 35.7632, 40.2336]  # velocity
-    y = [1.03, 1.05363, 1.07879, 1.11493, 1.16969, 1.25071, 1.36325, 1.43, 1.6, 1.7, 1.75618, 1.85, 2.0]  # distances
-    TR = interpolate.interp1d(x, y, fill_value='extrapolate')(velocity)[()]  # extrapolate above 90 mph
+    x_vel = [0.0, 1.86267, 3.72533, 5.588, 7.45067, 9.31333, 11.55978, 13.645, 22.352, 31.2928, 33.528, 35.7632, 40.2336]  # velocity
+    y_mod = [1.03, 1.05363, 1.07879, 1.11493, 1.16969, 1.25071, 1.36325, 1.43, 1.6, 1.7, 1.75618, 1.85, 2.0]  # distances
+
+    stop_and_go_magic_number = 8.9408  # 20 mph
+
+    if velocity <= 0.044704:  # .1 mph
+      self.stop_and_go = True
+    elif velocity >= stop_and_go_magic_number:
+      self.stop_and_go = False
+
+    if self.stop_and_go:  # this allows a smooth deceleration to a stop, while being able to have smooth stop and go
+      x = [stop_and_go_magic_number / 2.0, stop_and_go_magic_number]  # from 10 to 20 mph, ramp 1.8 sng distance to regular dynamic follow value
+      y = [1.8, interp(x[1], x_vel, y_mod)]
+      TR = interp(velocity, x, y)
+    else:
+      TR = interpolate.interp1d(x_vel, y_mod, fill_value='extrapolate')(velocity)[()]  # extrapolate above 90 mph
 
     if self.relative_velocity is not None:
-      x = [-11.62304, -7.84277, -5.45001, -4.37005, -2.98368, -2.49073, -1.96698, -1.13517, 0.0, 0.12799, 0.77499, 1.85325, 2.68511]  # relative velocity values
-      y = [0.5, 0.422, 0.336, 0.28, 0.1961, 0.1402, 0.0757, 0.0327, 0, -0.0554, -0.1371, -0.2402, -0.3004]  # modification values
-      TR_mod = interp(self.relative_velocity, x, y)  # interpolate as to not modify too much
+      x = [-15.6464, -11.62306, -7.84278, -5.45002, -4.37006, -3.21869, -1.72406, -0.91097, -0.49174, 0.0, 0.26822, 0.77499, 1.85325, 2.68511]  # relative velocity values
+      y = [0.56, 0.5, 0.422, 0.336, 0.28, 0.21, 0.16, 0.112, 0.06502, 0, -0.0554, -0.1371, -0.2402, -0.3004]  # modification values
+      TR_mod = interp(self.relative_velocity, x, y)  # factor in lead relative velocity
 
       x = [-4.4704, -2.2352, -0.8941, 0.0, 1.3411]   # self acceleration values
       y = [0.158, 0.058, 0.016, 0, -0.13]  # modification values
       TR_mod += interp(self.get_acceleration(self.dynamic_follow_dict["self_vels"], True), x, y)  # factor in self acceleration
-      #self.dict_builder["self_accel"] = self.get_acceleration(self.dynamic_follow_dict["self_vels"], True)
 
       x = [-4.49033, -1.87397, -0.66245, -0.26291, 0.0, 0.5588, 1.34112]  # lead acceleration values
       y = [0.37909, 0.30045, 0.20378, 0.04158, 0, -0.115, -0.195]  # modification values
       TR_mod += interp(self.get_acceleration(self.dynamic_follow_dict["lead_vels"], False), x, y)  # factor in lead car's acceleration; should perform better
-      #self.dict_builder["lead_accel"] = self.get_acceleration(self.dynamic_follow_dict["lead_vels"], False)
 
-      x = [0, 2.2352]
-      y = [.25, 1.0]  # multiply sum of all TR modifications
-      TR += (float(TR_mod) * interp(velocity, x, y))  # reduce TR modification under 5 mph for stop and go
+      x = [0, 2.2352, 22.352, 33.528]  # 0, 5, 50, 75 mph
+      y = [.25, 1.0, 1.0, .90, .85]  # multiply sum of all TR modifications by this
+      TR += (float(TR_mod) * interp(velocity, x, y))  # lower TR modification for stop and go, and at higher speeds
 
       TR = float(TR) * self.get_traffic_level(self.dynamic_follow_dict["traffic_vels"])  # modify TR based on last minute of traffic data
-
-    #self.dict_builder["TR"] = TR
 
     if TR < 0.65:
       return 0.65
@@ -204,22 +205,20 @@ class LongitudinalMpc(object):
   def generate_cost(self, TR, v_ego):
     x = [.9, 1.8, 2.7]
     y = [1.0, .1, .05]
-    if v_ego != 0:
+    if v_ego != 0 and v_ego is not None:
       real_TR = self.relative_distance / float(v_ego)  # switched to cost generation using actual distance from lead car; should be safer
       if abs(real_TR - TR) >= .25:  # use real TR if diff is greater than x safety threshold
         TR = real_TR
 
     cost = round(float(interp(TR, x, y)), 3)
-    #self.dict_builder["generated_cost"] = cost
     return cost
 
   def update(self, CS, lead, v_cruise_setpoint):
     v_ego = CS.carState.vEgo
-
     try:
       self.relative_velocity = lead.vRel
       self.relative_distance = lead.dRel
-    except: #if no lead car
+    except:  # if no lead car
       self.relative_velocity = None
       self.relative_distance = None
 
@@ -256,9 +255,6 @@ class LongitudinalMpc(object):
     # Calculate mpc
     t = sec_since_boot()
     TR = self.calculate_tr(v_ego, CS.carState)
-    '''with open("/data/op-tools-data/dynamic-follow.json", "w") as d_f:
-      d_f.write(json.dumps(self.dict_builder))'''
-    #self.dict_builder = {}
     n_its = self.libmpc.run_mpc(self.cur_state, self.mpc_solution, self.a_lead_tau, a_lead, TR)
     duration = int((sec_since_boot() - t) * 1e9)
     self.send_mpc_solution(n_its, duration)

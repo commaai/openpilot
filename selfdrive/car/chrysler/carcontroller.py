@@ -85,7 +85,7 @@ class CarController(object):
     if not lkas_active:
       apply_steer = 0
       
-    if CS.cstm_btns.get_button_status("lka") == 0:
+    if not CS.lane_departure_toggle_on:
         apply_steer = 0
     self.apply_steer_last = apply_steer
     

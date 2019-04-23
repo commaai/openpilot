@@ -109,6 +109,11 @@ managed_processes = {
   "updated": "selfdrive.updated",
   "athena": "selfdrive.athena.athenad",
 }
+# define process name with niceness factor
+mean_processes = {
+  "controlsd": -20,
+  "boardd": -20,
+}
 android_packages = ("ai.comma.plus.offroad", "ai.comma.plus.frame")
 
 running = {}
@@ -197,6 +202,13 @@ def start_managed_process(name):
     cloudlog.info("starting process %s" % name)
     running[name] = Process(name=name, target=nativelauncher, args=(pargs, cwd))
   running[name].start()
+
+  if name in mean_processes:
+    try:
+      subprocess.call(["renice", "-n", str(mean_processes[name]), str(running[name].pid)])
+    except:
+      cloudlog.warning("failed to renice process %s" % name)
+
 
 def prepare_managed_process(p):
   proc = managed_processes[p]
