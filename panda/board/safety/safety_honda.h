@@ -33,7 +33,7 @@ static void honda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   // sample speed
   if ((to_push->RIR>>21) == 0x158) {
     // first 2 bytes
-    ego_speed = to_push->RDLR & 0xFFFF;
+    ego_speed = (int)((((to_push->RDLR & 0xFF) << 8) + ((to_push->RDLR >>8) & 0xFF))*0.01);
   }
 
   // state machine to enter and exit controls
