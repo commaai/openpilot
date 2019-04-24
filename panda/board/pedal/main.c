@@ -191,7 +191,7 @@ void CAN1_SCE_IRQHandler() {
 int pdl0 = 0, pdl1 = 0;
 int pkt_idx = 0;
 
-int led_value = 0;
+unsigned int led_value = 0;
 
 void TIM3_IRQHandler() {
   #ifdef DEBUG
@@ -226,9 +226,8 @@ void TIM3_IRQHandler() {
     #endif
   }
 
-  // blink the LED
-  set_led(LED_GREEN, led_value);
-  led_value = !led_value;
+  // blink the LED, slowly to avoid confusion with fast blinking in bootstub when flashing or error
+  set_led(LED_GREEN, (led_value++ >> 5) & 1);
 
   TIM3->SR = 0;
 
