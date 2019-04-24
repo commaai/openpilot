@@ -10,7 +10,7 @@ from selfdrive.can.packer import CANPacker
 
 # Accel limits
 ACCEL_HYST_GAP = 0.02 # don't change accel command for small oscilalitons within this value
-ACCEL_MAX = 1600.
+ACCEL_MAX = 800.
 ACCEL_MIN = -1599.
 ACCEL_SCALE = max(ACCEL_MAX, -ACCEL_MIN)
 
