@@ -323,13 +323,14 @@ class CarState(object):
     self.cam_can_valid = cp_cam.can_valid
     msg = None
     lastspeedlimit = None
+    lastlive_MapData = None
     for socket, event in self.poller.poll(0):
       if socket is self.gps_location:
         msg = messaging.recv_one(socket)
       elif socket is self.lat_Control:
         self.lastlat_Control = messaging.recv_one(socket).latControl
       elif socket is self.live_MapData:
-        lastlive_MapData =  messaging.recv_one_or_none(socket).latControl
+        lastlive_MapData =  messaging.recv_one_or_none(socket).liveMapData
     if lastlive_MapData is not None:
       lastspeedlimit = lastlive_MapData.liveMapData.speedLimit
       if lastspeedlimit is not self.lastspeedlimit:
