@@ -322,6 +322,7 @@ class CarState(object):
     self.can_valid = cp.can_valid
     self.cam_can_valid = cp_cam.can_valid
     msg = None
+    lastspeedlimit = None
     for socket, event in self.poller.poll(0):
       if socket is self.gps_location:
         msg = messaging.recv_one(socket)
