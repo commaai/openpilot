@@ -213,7 +213,7 @@ def start_managed_process(name):
 
   if name in mean_processes:
     try:
-      subprocess.call(["sudo renice", "-n", str(mean_processes[name]), str(running[name].pid)])
+      subprocess.call(["renice", "-n", str(mean_processes[name]), str(running[name].pid)])
     except:
       cloudlog.warning("failed to renice process %s" % name)
 
