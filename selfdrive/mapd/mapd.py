@@ -143,6 +143,7 @@ def mapsd_thread():
   upcoming_curvature = 0.
   dist_to_turn = 0.
   road_points = None
+  speedLimittraffic = 0
   speedLimittraffic_prev = 0
   max_speed_prev = 0
   speedLimittrafficvalid = False
