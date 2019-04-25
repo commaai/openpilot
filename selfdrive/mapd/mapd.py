@@ -151,7 +151,7 @@ def mapsd_thread():
     for socket, event in poller.poll(0):
       if socket is gps_external_sock:
         gps_ext = messaging.recv_one(socket)
-      elif socket is traffic_data_sock
+      elif socket is traffic_data_sock:
         traffic = messaging.recv_one(socket)
     if traffic is not None:
       if traffic.liveTrafficData.speedLimitValid:
