@@ -21,24 +21,33 @@ else:
   from raven import Client
   from raven.transport.http import HTTPTransport
 
-  error_tags = {'dirty': dirty, 'branch': 'release2'}
+  error_tags = {'dirty': dirty, 'branch': 'unknown'}
 
   try:
     with open("/data/data/ai.comma.plus.offroad/files/persistStore/persist-auth", "r") as f:
       auth = json.loads(f.read())
     auth = json.loads(auth['commaUser'])
-    error_tags['username'] = auth['username']
-    error_tags['email'] = auth['email']
+    try:
+      error_tags['username'] = auth['username'].decode('utf-8', 'ignore')
+    except:
+      pass
+    try:
+      error_tags['email'] = auth['email']
+    except:
+      pass
   except:
     pass
 
-  client = Client('https://137e8e621f114f858f4c392c52e18c6d:8aba82f49af040c8aac45e95a8484970@sentry.io/1404547',
-                  install_sys_hook=False, transport=HTTPTransport, release=version, tags=error_tags)
+  logging_data = {"branch": "/data/params/d/GitBranch", "commit": "/data/params/d/GitCommit", "remote": "/data/params/d/GitRemote"}
 
-  try:
-    client.user_context(error_tags['username'])
-  except:
-    pass
+  for key in logging_data:
+    try:
+      with open(logging_data[key], "r") as f:
+        error_tags[key] = str(f.read())
+    except:
+      error_tags[key] = "unknown"
+
+  client = Client('https://137e8e621f114f858f4c392c52e18c6d:8aba82f49af040c8aac45e95a8484970@sentry.io/1404547', install_sys_hook=False, transport=HTTPTransport, release=version, tags=error_tags)
 
   def capture_exception(*args, **kwargs):
     client.captureException(*args, **kwargs)

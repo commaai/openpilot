@@ -81,9 +81,24 @@ def fingerprint(logcan, timeout):
       return None, finger
 
     time.sleep(0.01)
-
+  try:
+    with open("/data/kegman.json", "r") as f:
+      cloudlog.warning(str(f.read()))
+  except:
+    pass
+  try:
+    with open("/data/params/d/ControlsParams", "r") as f:
+      cloudlog.warning(f.read())
+  except:
+    pass
+  try:
+    with open("/data/params/d/LiveParameters", "r") as f:
+      cloudlog.warning(f.read())
+  except:
+    pass
+  
   cloudlog.warning("fingerprinted %s", candidate_cars[0])
-  crash.capture_warning("fingerprinted %s" % candidate_cars[0])
+  
   return (candidate_cars[0], finger)
 
 
@@ -98,7 +113,13 @@ def get_car(logcan, sendcan=None, passive=True):
       candidate = "mock"
     else:
       return None, None
-
+  else:
+    cloudlog.warning("car does match fingerprint: %r", fingerprints)
+    try:
+      crash.capture_warning("fingerprinted %s" % candidate)
+    except:  # fixes occasional travis errors
+      pass
+    
   interface_cls = interfaces[candidate]
 
   if interface_cls is None:

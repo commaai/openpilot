@@ -1,9 +1,11 @@
+import zmq
 from cereal import log
 from common.numpy_fast import clip, interp
 from selfdrive.controls.lib.pid import PIController
-from selfdrive.kegman_conf import kegman_conf
+import selfdrive.kegman_conf as kegman
+import selfdrive.messaging as messaging
+from selfdrive.services import service_list
 
-kegman = kegman_conf()
 LongCtrlState = log.Live100Data.LongControlState
 
 STOPPING_EGO_SPEED = 0.5
@@ -68,15 +70,76 @@ class LongControl(object):
     self.v_pid = 0.0
     self.last_output_gb = 0.0
 
+    context = zmq.Context()
+    self.poller = zmq.Poller()
+    self.live20 = messaging.sub_sock(context, service_list['live20'].port, conflate=True, poller=self.poller)
+
   def reset(self, v_pid):
     """Reset PID controller and change setpoint"""
     self.pid.reset()
     self.v_pid = v_pid
 
-  def update(self, active, v_ego, brake_pressed, standstill, cruise_standstill, v_cruise, v_target, v_target_future, a_target, CP):
+  def dynamic_gas(self, v_ego, v_rel, d_rel, gasinterceptor, gasbuttonstatus):
+    dynamic = False
+    if gasinterceptor:
+      if gasbuttonstatus == 0:
+        dynamic = True
+        x = [0.0, 1.4082, 2.80311, 4.22661, 5.38271, 6.16561, 7.24781, 8.28308, 10.24465, 12.96402, 15.42303, 18.11903, 20.11703, 24.46614, 29.05805, 32.71015, 35.76326]
+        y = [0.2, 0.20443, 0.21592, 0.23334, 0.25734, 0.27916, 0.3229, 0.34784, 0.36765, 0.38, 0.396, 0.409, 0.425, 0.478, 0.55, 0.621, 0.7]
+      elif gasbuttonstatus == 1:
+        y = [0.25, 0.9, 0.9]
+      elif gasbuttonstatus == 2:
+        y = [0.2, 0.2, 0.2]
+    else:
+      if gasbuttonstatus == 0:
+        dynamic = True
+        x = [0.0, 1.4082, 2.80311, 4.22661, 5.38271, 6.16561, 7.24781, 8.28308, 10.24465, 12.96402, 15.42303, 18.11903, 20.11703, 24.46614, 29.05805, 32.71015, 35.76326]
+        y = [0.5, 0.47, 0.43, 0.35, 0.3, 0.3, 0.3229, 0.34784, 0.36765, 0.38, 0.396, 0.409, 0.425, 0.478, 0.55, 0.621, 0.7]
+      elif gasbuttonstatus == 1:
+        y = [0.9, 0.95, 0.99]
+      elif gasbuttonstatus == 2:
+        y = [0.35, 0.2, 0.2]
+
+    if not dynamic:
+      x = [0., 9., 35.]  # default BP values
+
+    accel = interp(v_ego, x, y)
+
+    if dynamic and v_rel is not None:  # dynamic gas profile specific operations, and if lead
+      if (v_ego) < 6.7056:  # if under 15 mph
+        x = [1.61479, 1.99067, 2.28537, 2.49888, 2.6312, 2.68224]
+        y = [-accel, -(accel / 1.06), -(accel / 1.2), -(accel / 1.8), -(accel / 4.4), 0]  # array that matches current chosen accel value
+        accel += interp(v_rel, x, y)
+      else:
+        x = [-0.89408, 0, 0.89408, 4.4704]
+        y = [-.15, -.05, .005, .05]
+        accel += interp(v_rel, x, y)
+
+
+    min_return = 0.0
+    max_return = 1.0
+    return round(max(min(accel, max_return), min_return), 5)  # ensure we return a value between range
+
+  def update(self, active, v_ego, brake_pressed, standstill, cruise_standstill, v_cruise, v_target, v_target_future,
+             a_target, CP, gasinterceptor, gasbuttonstatus):
     """Update longitudinal control. This updates the state machine and runs a PID loop"""
     # Actuation limits
-    gas_max = interp(v_ego, CP.gasMaxBP, CP.gasMaxV)
+    l20 = None
+
+    for socket, event in self.poller.poll(0):
+      if socket is self.live20:
+        l20 = messaging.recv_one(socket)
+
+    if l20 is not None:
+      self.lead_1 = l20.live20.leadOne
+      vRel = self.lead_1.vRel
+      dRel = self.lead_1.dRel
+    else:
+      vRel = None
+      dRel = None
+
+    #gas_max = interp(v_ego, CP.gasMaxBP, CP.gasMaxV)
+    gas_max = self.dynamic_gas(v_ego, vRel, dRel, gasinterceptor, gasbuttonstatus)
     brake_max = interp(v_ego, CP.brakeMaxBP, CP.brakeMaxV)
 
     # Update state machine

@@ -11,7 +11,7 @@ from selfdrive.car.modules.UIEV_module import UIEvents
 from selfdrive.car.gm.values import DBC, CAR, parse_gear_shifter, \
                                     CruiseButtons, is_eps_status_ok, \
                                     STEER_THRESHOLD, SUPERCRUISE_CARS
-from selfdrive.kegman_conf import kegman_conf
+import selfdrive.kegman_conf as kegman
 
 def get_powertrain_can_parser(CP, canbus):
   # this function generates lists for signal, messages and initial values
@@ -59,11 +59,13 @@ def get_powertrain_can_parser(CP, canbus):
 
 class CarState(object):
   def __init__(self, CP, canbus):
-    self.kegman = kegman_conf()
     self.CP = CP
     # initialize can parser
+    self.gasMode = int(kegman.conf['lastGasMode'])
+    self.gasLabels = ["dynamic","sport","eco"]
     self.alcaLabels = ["MadMax","Normal","Wifey","off"]
-    self.alcaMode = int(self.kegman.conf['lastALCAMode'])     # default to last ALCAmode on startup
+    steerRatio = CP.steerRatio
+    self.alcaMode = int(kegman.conf['lastALCAMode'])     # default to last ALCAmode on startup
     self.car_fingerprint = CP.carFingerprint
     self.cruise_buttons = CruiseButtons.UNPRESS
     self.prev_distance_button = 0
@@ -72,7 +74,7 @@ class CarState(object):
     self.prev_left_blinker_on = False
     self.right_blinker_on = False
     self.prev_right_blinker_on = False
-    self.follow_level = int(self.kegman.conf['lastTrMode'])
+    self.follow_level = int(kegman.conf['lastTrMode'])
     self.prev_lka_button = 0
     self.lka_button = 0
     self.lkMode = True
@@ -94,8 +96,8 @@ class CarState(object):
     self.CL_LANE_PASS_BP = [10., 20., 44.]
     self.CL_LANE_PASS_TIME = [40.,10., 4.] 
     # change lane delta angles and other params
-    self.CL_MAXD_BP = [10., 32., 44.]
-    self.CL_MAXD_A = [.358, 0.084, 0.040] #delta angle based on speed; needs fine tune, based on Tesla steer ratio of 16.75
+    self.CL_MAXD_BP = [10., 32., 55.]
+    self.CL_MAXD_A = [.358 * 15.7 / steerRatio, 0.084 * 15.7 / steerRatio, 0.040 * 15.7 / steerRatio] #delta angle based on speed; needs fine tune, based on Tesla steer ratio of 16.75
     self.CL_MIN_V = 8.9 # do not turn if speed less than x m/2; 20 mph = 8.9 m/s
     # do not turn if actuator wants more than x deg for going straight; this should be interp based on speed
     self.CL_MAX_A_BP = [10., 44.]
@@ -142,7 +144,7 @@ class CarState(object):
     btns.append(UIButton("alca", "ALC", 0, self.alcaLabels[self.alcaMode], 1))
     btns.append(UIButton("stop","",1,"SNG",2))
     btns.append(UIButton("","",0,"",3))
-    btns.append(UIButton("gas","GAS",1,"",4))
+    btns.append(UIButton("gas","GAS",1,self.gasLabels[self.gasMode],4))
     btns.append(UIButton("lka","LKA",1,"",5))
     return btns
   #BB update ui buttons
@@ -151,24 +153,30 @@ class CarState(object):
       if (id == 1) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="alca":
           if self.cstm_btns.btns[id].btn_label2 == self.alcaLabels[self.alcaMode]:
             self.alcaMode = (self.alcaMode + 1 ) % 4
-            self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last distance bar setting to file
-            self.kegman.write_config(self.kegman.conf)
+            kegman.save({'lastALCAMode': int(self.alcaMode)})  # write last distance bar setting to file
           else:
             self.alcaMode = 0
-            self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last distance bar setting to file
-            self.kegman.write_config(self.kegman.conf)
+            kegman.save({'lastALCAMode': int(self.alcaMode)})  # write last distance bar setting to file
           self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
           self.cstm_btns.hasChanges = True
           if self.alcaMode == 3:
             self.cstm_btns.set_button_status("alca", 0)
+      elif (id == 4) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="gas":
+          if self.cstm_btns.btns[id].btn_label2 == self.gasLabels[self.gasMode]:
+            self.gasMode = (self.gasMode + 1 ) % 3
+            kegman.save({'lastGasMode': int(self.gasMode)})  # write last GasMode setting to file
+          else:
+            self.gasMode = 0
+            kegman.save({'lastGasMode': int(self.gasMode)})  # write last GasMode setting to file
+          self.cstm_btns.btns[id].btn_label2 = self.gasLabels[self.gasMode]
+          self.cstm_btns.hasChanges = True
       else:
         self.cstm_btns.btns[id].btn_status = btn_status * self.cstm_btns.btns[id].btn_status
     else:
         self.cstm_btns.btns[id].btn_status = btn_status
         if (id == 1) and self.cstm_btns.btns[id].btn_name=="alca":
           self.alcaMode = (self.alcaMode + 1 ) % 4
-          self.kegman.conf['lastALCAMode'] = str(self.alcaMode)   # write last ALCAMode setting to file
-          self.kegman.write_config(self.kegman.conf)
+          kegman.save({'lastALCAMode': int(self.alcaMode)})  # write last distance bar setting to file
           self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
           self.cstm_btns.hasChanges = True
 
@@ -230,6 +238,16 @@ class CarState(object):
     self.prev_right_blinker_on = self.right_blinker_on
     self.left_blinker_on = pt_cp.vl["BCMTurnSignals"]['TurnSignals'] == 1
     self.right_blinker_on = pt_cp.vl["BCMTurnSignals"]['TurnSignals'] == 2
+    
+    if self.cstm_btns.get_button_status("lka") == 0:
+      self.lane_departure_toggle_on = False
+    else:
+      self.lane_departure_toggle_on = True
+
+    if self.alcaMode == 3 and (self.left_blinker_on or self.right_blinker_on):
+      self.lane_departure_toggle_on = False
+    else:
+      self.lane_departure_toggle_on = True
 
     if self.car_fingerprint in SUPERCRUISE_CARS:
       self.park_brake = False

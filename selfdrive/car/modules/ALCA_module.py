@@ -156,6 +156,10 @@ class ALCAController(object):
                             k_f=CS.CP.steerKf, pos_limit=1.0)
 
   def update_angle(self,enabled,CS,frame,actuators):
+    try:
+      noovertake = CS.noovertake
+    except:
+      noovertake = False
     alca_m1 = 1.
     alca_m2 = 1.
     alca_m3 = 1.
@@ -279,6 +283,13 @@ class ALCAController(object):
       if (CS.steer_override or (CS.v_ego < cl_min_v) or (not (CS.right_blinker_on or CS.left_blinker_on))):
         CS.UE.custom_alert_message(4,"Auto Lane Change Canceled! (u)",200,3)
         # if any steer override cancel process or if speed less than min speed
+        self.laneChange_counter = 0
+        self.laneChange_enabled = 1
+        self.laneChange_direction = 0
+        CS.cstm_btns.set_button_status("alca",1)
+      if noovertake:
+        CS.UE.custom_alert_message(4,"Auto Lane Change Canceled! (sgn)",200,3)
+        # if any no overtake sign
         self.laneChange_counter = 0
         self.laneChange_enabled = 1
         self.laneChange_direction = 0

@@ -249,21 +249,6 @@ def state_control(plan, path_plan, CS, CP, state, events, v_cruise_kph, v_cruise
   except AttributeError:
     gasinterceptor = False
 
-  if gasinterceptor:
-    if CS.gasbuttonstatus == 0:
-      CP.gasMaxV = [0.2, 0.5, 0.7]
-    elif CS.gasbuttonstatus == 1:
-      CP.gasMaxV = [0.25, 0.9, 0.9]
-    elif CS.gasbuttonstatus == 2:
-      CP.gasMaxV = [0.2, 0.2, 0.2]    
-  else:
-    if CS.gasbuttonstatus == 0:
-      CP.gasMaxV = [0.5, 0.7, 0.9]
-    elif CS.gasbuttonstatus == 1:
-      CP.gasMaxV = [0.7, 0.9, 0.9]
-    elif CS.gasbuttonstatus == 2:
-      CP.gasMaxV = [0.2, 0.2, 0.2]
-
   cur_time = sec_since_boot()  # TODO: This won't work in replay
   mpc_time = plan.l20MonoTime / 1e9
   _DT = 0.01 # 100Hz
@@ -274,7 +259,7 @@ def state_control(plan, path_plan, CS, CP, state, events, v_cruise_kph, v_cruise
 
   # Gas/Brake PID loop
   actuators.gas, actuators.brake = LoC.update(active, CS.vEgo, CS.brakePressed, CS.standstill, CS.cruiseState.standstill,
-                                              v_cruise_kph, v_acc_sol, plan.vTargetFuture, a_acc_sol, CP)
+                                              v_cruise_kph, v_acc_sol, plan.vTargetFuture, a_acc_sol, CP, gasinterceptor, CS.gasbuttonstatus)
   # Steering PID loop and lateral MPC
   actuators.steer, actuators.steerAngle = LaC.update(active, CS.vEgo, CS.steeringAngle, 
                                                      CS.steeringPressed, CP, VM, path_plan)
@@ -372,10 +357,13 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
     "upSteer": float(LaC.pid.p),
     "uiSteer": float(LaC.pid.i),
     "ufSteer": float(LaC.pid.f),
+    "angleFFRatio": float(LaC.angle_ff_ratio),
     "vTargetLead": float(v_acc),
     "aTarget": float(a_acc),
     "jerkFactor": float(plan.jerkFactor),
     "angleModelBias": float(angle_model_bias),
+    "angleFFGain": float(LaC.angle_ff_gain),
+    "rateFFGain": float(LaC.rate_ff_gain),
     "gpsPlannerActive": plan.gpsPlannerActive,
     "vCurvature": plan.vCurvature,
     "decelForTurn": plan.decelForTurn,
@@ -400,8 +388,8 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
   carcontrol.send(cc_send.to_bytes())
 
   if (rk.frame % 36000) == 0:    # update angle offset every 6 minutes
-    params.put("ControlsParams", json.dumps({'angle_model_bias': angle_model_bias}))
-
+    params.put("ControlsParams", json.dumps({'angle_model_bias': angle_model_bias,
+              'angle_ff_gain': LaC.angle_ff_gain, 'rate_ff_gain': LaC.rate_ff_gain}))
   return CC
 
 
@@ -483,18 +471,6 @@ def controlsd_thread(gctx=None, rate=100):
 
   rk = Ratekeeper(rate, print_delay_threshold=2. / 1000)
 
-  try:
-    with open("/data/params/d/ControlsParams", "r+") as f:
-      controls_params = json.loads(f.read())
-      if "angle_model_bias" in controls_params and "angle_offset" not in controls_params:
-        controls_params["angle_offset"] = controls_params["angle_model_bias"]
-        del controls_params["angle_model_bias"]
-      f.seek(0)
-      f.write(json.dumps(controls_params))
-      f.truncate()
-  except:
-    pass
-
   controls_params = params.get("ControlsParams")
 
   # Read angle offset from previous drive
@@ -503,6 +479,8 @@ def controlsd_thread(gctx=None, rate=100):
     try:
       controls_params = json.loads(controls_params)
       angle_model_bias = controls_params['angle_model_bias']
+      LaC.angle_ff_gain = max(1.0, controls_params['angle_ff_gain'])
+      LaC.rate_ff_gain = min(0.01, controls_params['rate_ff_gain'])
     except (ValueError, KeyError):
       pass
 

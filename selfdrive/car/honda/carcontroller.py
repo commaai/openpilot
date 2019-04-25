@@ -8,6 +8,7 @@ from selfdrive.car.honda import hondacan
 from selfdrive.car.honda.values import AH, CruiseButtons, CAR
 from selfdrive.can.packer import CANPacker
 from selfdrive.car.modules.ALCA_module import ALCAController
+import selfdrive.kegman_conf as kegman
 
 def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
   # hyst params
@@ -85,6 +86,7 @@ class CarController(object):
     self.enable_camera = enable_camera
     self.packer = CANPacker(dbc_name)
     self.new_radar_config = False
+    self.prev_lead_distance = 0.0
     self.ALCA = ALCAController(self,True,False)  # Enabled  True and SteerByAngle only False
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
@@ -167,10 +169,10 @@ class CarController(object):
     apply_gas = clip(actuators.gas, 0., 1.)
     apply_brake = int(clip(self.brake_last * BRAKE_MAX, 0, BRAKE_MAX - 1))
     apply_steer = int(clip(-alca_steer * STEER_MAX, -STEER_MAX, STEER_MAX))
-    if CS.cstm_btns.get_button_status("lka") == 0:
+    if not CS.lane_departure_toggle_on:
       apply_steer = 0
     # any other cp.vl[0x18F]['STEER_STATUS'] is common and can happen during user override. sending 0 torque to avoid EPS sending error 5
-    lkas_active = enabled and not CS.steer_not_allowed
+    lkas_active = enabled and not CS.steer_not_allowed and CS.lkMode
 
     # Send CAN commands.
     can_sends = []
@@ -190,7 +192,16 @@ class CarController(object):
       if pcm_cancel_cmd:
         can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.CANCEL, idx))
       elif CS.stopped:
-        can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx))
+        if CS.CP.carFingerprint in (CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH):
+          if CS.lead_distance > (self.prev_lead_distance + float(kegman.conf['leadDistance'])):
+            can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx))
+        elif CS.CP.carFingerprint in (CAR.CIVIC_BOSCH):
+          if CS.hud_lead == 1:
+            can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx))
+        else:
+          can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx))
+      else:
+        self.prev_lead_distance = CS.lead_distance
 
     else:
       # Send gas and brake commands.
