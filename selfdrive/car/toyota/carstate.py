@@ -330,7 +330,7 @@ class CarState(object):
       elif socket is self.lat_Control:
         self.lastlat_Control = messaging.recv_one(socket).latControl
       elif socket is self.live_MapData:
-        lastlive_MapData =  messaging.recv_one_or_none(socket).liveMapData
+        lastlive_MapData =  messaging.recv_one(socket).liveMapData
     if lastlive_MapData is not None:
       lastspeedlimit = lastlive_MapData.speedLimit
       if lastspeedlimit is not self.lastspeedlimit:
