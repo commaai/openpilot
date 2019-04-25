@@ -90,7 +90,7 @@ def kegman_thread():  # read and write thread; now merges changes from file and 
         return
   except:
     print("Error in kegman thread!")
-    cloudlog.exception("error in kegman thread")
+    cloudlog.warning("error in kegman thread")
     thread_started = False
 
 def write_config(conf):  # never to be called outside kegman_conf
