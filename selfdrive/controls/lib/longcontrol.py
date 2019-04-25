@@ -98,7 +98,7 @@ class LongControl(object):
       elif gasbuttonstatus == 1:
         y = [0.9, 0.95, 0.99]
       elif gasbuttonstatus == 2:
-        y = [0.2, 0.2, 0.2]
+        y = [0.35, 0.2, 0.2]
 
     if not dynamic:
       x = [0., 9., 35.]  # default BP values

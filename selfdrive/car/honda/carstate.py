@@ -445,8 +445,7 @@ class CarState(object):
         self.trMode = (self.trMode + 1 ) % 3
         kegman.save({'lastTrMode': int(self.trMode)})  # write last distance bar setting to file
         self.cstm_btns.btns[4].btn_label2 = self.trLabels[self.trMode]
-    self.prev_cruise_setting = self.cruise_setting
-    self.cruise_setting = cp.vl["SCM_BUTTONS"]['CRUISE_SETTING']
+    
     self.read_distance_lines = self.trMode + 1
     if self.read_distance_lines <> self.read_distance_lines_prev:
       if self.read_distance_lines == 1:
@@ -464,6 +463,10 @@ class CarState(object):
           self.lkMode = False
         else:
           self.lkMode = True
+          
+    self.prev_cruise_setting = self.cruise_setting
+    self.cruise_setting = cp.vl["SCM_BUTTONS"]['CRUISE_SETTING']
+    
     if self.cstm_btns.get_button_status("lka") == 0:
       self.lane_departure_toggle_on = False
     else:
