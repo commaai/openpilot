@@ -208,8 +208,7 @@ class CarState(object):
     self.lat_Control = messaging.sub_sock(context, service_list['latControl'].port, conflate=True, poller=self.poller)
     self.live_MapData = messaging.sub_sock(context, service_list['liveMapData'].port, conflate=True, poller=self.poller)
     self.traffic_data_sock = messaging.pub_sock(context, service_list['liveTrafficData'].port)
-    self.lastspeedlimit = 0
-    self.lastspeedlimitvalid = False
+    
     self.spdval1 = 0
     self.CP = CP
     self.can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
@@ -332,10 +331,11 @@ class CarState(object):
       elif socket is self.live_MapData:
         lastlive_MapData =  messaging.recv_one(socket).liveMapData
     if lastlive_MapData is not None:
-      lastspeedlimit = lastlive_MapData.speedLimit
-      if lastspeedlimit is not self.lastspeedlimit:
-        self.lastspeedlimit = lastspeedlimit
+      if lastlive_MapData.speedLimitValid:
+        self.lastspeedlimit = lastlive_MapData.speedLimit
         self.lastspeedlimitvalid = True
+      else:
+        self.lastspeedlimitvalid = False
 
       
     if msg is not None:
@@ -516,13 +516,7 @@ class CarState(object):
     else:
       self.generic_toggle = bool(cp.vl["LIGHT_STALK"]['AUTO_HIGH_BEAM'])
     self.tsgn1 = cp_cam.vl["RSA1"]['TSGN1']
-    spdval1 = cp_cam.vl["RSA1"]['SPDVAL1']
-    if spdval1 is not self.spdval1:
-      self.spdval1 = spdval1
-      if self.spdval1 == 0:
-        self.lastspeedlimitvalid = True
-      else:
-        self.lastspeedlimitvalid = False
+    self.spdval1 = cp_cam.vl["RSA1"]['SPDVAL1']
     
     self.splsgn1 = cp_cam.vl["RSA1"]['SPLSGN1']
     self.tsgn2 = cp_cam.vl["RSA1"]['TSGN2']
@@ -538,10 +532,7 @@ class CarState(object):
       dat = messaging.new_message()
       dat.init('liveTrafficData')
       if self.spdval1 > 0:
-        if self.lastspeedlimitvalid:
-          dat.liveTrafficData.speedLimitValid = False
-        else:
-          dat.liveTrafficData.speedLimitValid = True
+        dat.liveTrafficData.speedLimitValid = True
         dat.liveTrafficData.speedLimit = self.spdval1
       else:
         dat.liveTrafficData.speedLimitValid = False
