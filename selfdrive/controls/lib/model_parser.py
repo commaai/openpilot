@@ -1,12 +1,17 @@
 from common.numpy_fast import interp
 from selfdrive.controls.lib.latcontrol_helpers import model_polyfit, calc_desired_path, compute_path_pinv
 import selfdrive.kegman_conf as kegman
+import numpy as np
 
 CAMERA_OFFSET = float(kegman.conf['cameraOffset'])  # m from center car to camera
 
 
 class ModelParser(object):
   def __init__(self):
+    self.lane_width_array = np.zeros(250)
+    self.l_poly_three = np.zeros(250)
+    self.r_poly_three = np.zeros(250)
+    self.lane_width_array_counter = 0
     self.d_poly = [0., 0., 0., 0.]
     self.c_poly = [0., 0., 0., 0.]
     self.r_poly = [0., 0., 0., 0.]
@@ -40,6 +45,10 @@ class ModelParser(object):
       lr_prob = l_prob * r_prob
       self.lane_width_certainty += 0.05 * (lr_prob - self.lane_width_certainty)
       current_lane_width = abs(l_poly[3] - r_poly[3])
+      self.lane_width_array[self.lane_width_array_counter] = current_lane_width
+      self.l_poly_three[self.lane_width_array_counter] = abs(l_poly[3])
+      self.r_poly_three[self.lane_width_array_counter] = abs(r_poly[3])
+      self.lane_width_array_counter = (self.lane_width_array_counter + 1 ) % 250
       self.lane_width_estimate += 0.005 * (current_lane_width - self.lane_width_estimate)
       speed_lane_width = interp(v_ego, [0., 14., 20.], [2.5, 3., 3.5]) # German Standards
       self.lane_width = self.lane_width_certainty * self.lane_width_estimate + \
@@ -54,7 +63,11 @@ class ModelParser(object):
       elif abs(self.l_poly[3] - self.c_poly[3]) - abs(self.r_poly[3] - self.c_poly[3]) > 0.3 and \
          abs(self.l_poly[3] - l_poly[3]) > abs(self.r_poly[3] - r_poly[3]):
         l_prob *= lane_prob      
-
+      if abs(np.mean(self.lane_width_array) - current_lane_width ) / current_lane_width > 0.3:
+        if abs(np.mean(self.l_poly_three) - abs(l_poly[3])) > abs(np.mean(self.r_poly_three) -abs(r_poly[3])):
+          l_prob = 0
+        else:
+          r_prob = 0
 
       self.lead_dist = md.model.lead.dist
       self.lead_prob = md.model.lead.prob
