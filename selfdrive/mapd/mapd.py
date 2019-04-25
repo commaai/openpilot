@@ -131,10 +131,11 @@ def mapsd_thread():
   global last_gps
 
   context = zmq.Context()
+  poller = zmq.Poller()
   gps_sock = messaging.sub_sock(context, service_list['gpsLocation'].port, conflate=True)
-  gps_external_sock = messaging.sub_sock(context, service_list['gpsLocationExternal'].port, conflate=True)
+  gps_external_sock = messaging.sub_sock(context, service_list['gpsLocationExternal'].port, conflate=True, poller=poller)
   map_data_sock = messaging.pub_sock(context, service_list['liveMapData'].port)
-  traffic_data_sock = messaging.sub_sock(context, service_list['liveTrafficData'].port, conflate=True)
+  traffic_data_sock = messaging.sub_sock(context, service_list['liveTrafficData'].port, conflate=True, poller=poller)
 
   cur_way = None
   curvature_valid = False
@@ -145,8 +146,13 @@ def mapsd_thread():
 
   while True:
     gps = messaging.recv_one(gps_sock)
-    gps_ext = messaging.recv_one_or_none(gps_external_sock)
-    traffic = messaging.recv_one_or_none(traffic_data_sock)
+    gps_ext = None
+    traffic = None
+    for socket, event in poller.poll(0):
+      if socket is gps_external_sock:
+        gps_ext = messaging.recv_one(socket)
+      elif socket is traffic_data_sock
+        traffic = messaging.recv_one(socket)
     if traffic is not None:
       if traffic.liveTrafficData.speedLimitValid:
         speedLimittraffic = traffic.liveTrafficData.speedLimit
