@@ -262,8 +262,9 @@ def mapsd_thread():
 
       # Seed limit
       max_speed = cur_way.max_speed()
-      if max_speed is not None and max_speed is not max_speed_prev:
-        speedLimittrafficvalid = False
+      if max_speed is not None:
+        if max_speed is not max_speed_prev:
+          speedLimittrafficvalid = False
       if speedLimittraffic_prev is not speedLimittraffic:
         speedLimittrafficvalid = True
       
