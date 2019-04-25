@@ -50,7 +50,7 @@ class ModelParser(object):
       self.l_poly_three[self.lane_width_array_counter] = abs(l_poly[3])
       self.r_poly_three[self.lane_width_array_counter] = abs(r_poly[3])
       self.lane_width_array_counter = (self.lane_width_array_counter + 1 ) % 250
-      if self.lane_width_array_counter == 0 and self.fullarray = False:
+      if self.lane_width_array_counter == 0 and self.fullarray == False:
         self.fullarray = True
       self.lane_width_estimate += 0.005 * (current_lane_width - self.lane_width_estimate)
       speed_lane_width = interp(v_ego, [0., 14., 20.], [2.5, 3., 3.5]) # German Standards
