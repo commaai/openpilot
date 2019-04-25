@@ -51,6 +51,7 @@ def read_config():
     if int(config["battChargeMax"]) == 90:
       config.update({"battChargeMax": 95})
   else:
+    write_config(default_config)
     config = default_config
   return config
 
