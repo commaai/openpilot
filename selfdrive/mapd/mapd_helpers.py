@@ -59,12 +59,19 @@ def parse_speed_tags(tags):
   if 'maxspeed:conditional' in tags:
     try:
       max_speed_cond, cond = tags['maxspeed:conditional'].split(' @ ')
-      cond = cond[1:-1]
 
       start, end = cond.split('-')
       now = datetime.now()  # TODO: Get time and timezone from gps fix so this will work correctly on replays
-      start = datetime.strptime(start, "%H:%M").replace(year=now.year, month=now.month, day=now.day)
-      end = datetime.strptime(end, "%H:%M").replace(year=now.year, month=now.month, day=now.day)
+      if ':' in start:
+        # hh:mm-hh:mm
+        start = datetime.strptime(start, "%H:%M").replace(year=now.year, month=now.month, day=now.day)
+        end = datetime.strptime(end, "%H:%M").replace(year=now.year, month=now.month, day=now.day)
+      else:
+        # month-month
+        start = datetime.strptime(start, "%b").replace(year=now.year, day=now.day)
+        end = datetime.strptime(end, "%b").replace(year=now.year, day=now.day)
+        if (start > end):
+          end = end.replace(now.year+1)
 
       if start <= now <= end:
         max_speed = max_speed_cond
