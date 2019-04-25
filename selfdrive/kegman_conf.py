@@ -7,11 +7,11 @@ from selfdrive.swaglog import cloudlog
 from common.basedir import BASEDIR
 
 def read_config():
-  default_config = {"cameraOffset": "0.06", "lastTrMode": "1", "battChargeMin": "90", "battChargeMax": "95",
-                    "wheelTouchSeconds": "1800", "battPercOff": "25", "carVoltageMinEonShutdown": "11200",
-                    "brakeStoppingTarget": "0.25", "angle_steers_offset": "0", "brake_distance_extra": "1",
-                    "lastALCAMode": "1", "brakefactor": "1.2", "lastGasMode": "0", "lastSloMode": "1",
-                    "leadDistance": "5"}
+  default_config = {"cameraOffset": 0.06, "lastTrMode": 1, "battChargeMin": 90, "battChargeMax": 95,
+                    "wheelTouchSeconds": 1800, "battPercOff": 25, "carVoltageMinEonShutdown": 11200,
+                    "brakeStoppingTarget": 0.25, "angle_steers_offset": 0, "brake_distance_extra": 1,
+                    "lastALCAMode": 1, "brakefactor": 1.2, "lastGasMode": 0, "lastSloMode": 1,
+                    "leadDistance": 5}
 
   if os.path.isfile(kegman_file):
     with open(kegman_file, "r") as f:
