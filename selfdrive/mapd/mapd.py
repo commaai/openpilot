@@ -17,7 +17,7 @@ except ImportError as e:
   os.execv(sys.executable, args)
 
 DEFAULT_SPEEDS_BY_REGION_JSON_FILE = BASEDIR + "/selfdrive/mapd/default_speeds_by_region.json"
-import default_speeds_generator
+from selfdrive.mapd import default_speeds_generator
 default_speeds_generator.main(DEFAULT_SPEEDS_BY_REGION_JSON_FILE)
 
 import os
@@ -33,7 +33,7 @@ from common.params import Params
 from common.transformations.coordinates import geodetic2ecef
 from selfdrive.services import service_list
 import selfdrive.messaging as messaging
-from mapd_helpers import MAPS_LOOKAHEAD_DISTANCE, Way, circle_through_points
+from selfdrive.mapd.mapd_helpers import MAPS_LOOKAHEAD_DISTANCE, Way, circle_through_points
 import selfdrive.crash as crash
 from selfdrive.version import version, dirty
 
