@@ -18,7 +18,7 @@ def main(gctx=None):
     # download application update
     try:
       r = subprocess.check_output(NICE_LOW_PRIORITY + ["git", "fetch"], stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError, e:
+    except subprocess.CalledProcessError as e:
       cloudlog.event("git fetch failed",
         cmd=e.cmd,
         output=e.output,
