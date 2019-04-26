@@ -63,25 +63,25 @@ def with_processes(processes):
 @phone_only
 @with_processes(['loggerd', 'logmessaged', 'tombstoned', 'proclogd', 'logcatd'])
 def test_logging():
-  print "LOGGING IS SET UP"
+  print("LOGGING IS SET UP")
   time.sleep(1.0)
 
 @phone_only
 @with_processes(['visiond'])
 def test_visiond():
-  print "VISIOND IS SET UP"
+  print("VISIOND IS SET UP")
   time.sleep(5.0)
 
 @phone_only
 @with_processes(['sensord'])
 def test_sensord():
-  print "SENSORS ARE SET UP"
+  print("SENSORS ARE SET UP")
   time.sleep(1.0)
 
 @phone_only
 @with_processes(['ui'])
 def test_ui():
-  print "RUNNING UI"
+  print("RUNNING UI")
   time.sleep(1.0)
 
 # will have one thing to upload if loggerd ran
@@ -89,5 +89,5 @@ def test_ui():
 @phone_only
 @with_processes(['uploader'])
 def test_uploader():
-  print "UPLOADER"
+  print("UPLOADER")
   time.sleep(10.0)

@@ -8,7 +8,7 @@ class Maneuver(object):
     # Was tempted to make a builder class
     self.distance_lead = kwargs.get("initial_distance_lead", 200.0)
     self.speed = kwargs.get("initial_speed", 0.0)
-    self.lead_relevancy = kwargs.get("lead_relevancy", 0) 
+    self.lead_relevancy = kwargs.get("lead_relevancy", 0)
 
     self.grade_values = kwargs.get("grade_values", [0.0, 0.0])
     self.grade_breakpoints = kwargs.get("grade_breakpoints", [0.0, duration])
@@ -37,8 +37,8 @@ class Maneuver(object):
       while buttons_sorted and plant.current_time() >= buttons_sorted[0][1]:
         current_button = buttons_sorted[0][0]
         buttons_sorted = buttons_sorted[1:]
-        print "current button changed to", current_button
-    
+        print("current button changed to {0}".format(current_button))
+
       grade = np.interp(plant.current_time(), self.grade_breakpoints, self.grade_values)
       speed_lead = np.interp(plant.current_time(), self.speed_lead_breakpoints, self.speed_lead_values)
 
@@ -46,11 +46,11 @@ class Maneuver(object):
       if live100:
         last_live100 = live100[-1]
 
-      d_rel = distance_lead - distance if self.lead_relevancy else 200. 
-      v_rel = speed_lead - speed if self.lead_relevancy else 0. 
+      d_rel = distance_lead - distance if self.lead_relevancy else 200.
+      v_rel = speed_lead - speed if self.lead_relevancy else 0.
 
       if last_live100:
-        # print last_live100
+        # print(last_live100)
         #develop plots
         plot.add_data(
           time=plant.current_time(),
@@ -64,8 +64,8 @@ class Maneuver(object):
           jerk_factor=last_live100.jerkFactor,
           a_target=last_live100.aTarget,
           fcw=fcw)
-    
-    print "maneuver end"
+
+    print("maneuver end")
 
     return (None, plot)
 

@@ -141,7 +141,7 @@ class CarController(object):
     #if not CS.lkMode or CS.left_blinker_on or CS.right_blinker_on:
     #  snd_chime = 0
 
-    #print chime, alert_id, hud_alert
+    #print("{0} {1} {2}".format(chime, alert_id, hud_alert))
     fcw_display, steer_required, acc_alert = process_hud_alert(hud_alert)
 
     hud = HUDData(int(pcm_accel), int(round(hud_v_cruise)), 1, hud_car,

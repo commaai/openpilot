@@ -6,7 +6,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.ford.carstate import CarState, get_can_parser
-from selfdrive.car.ford.fordcan import MAX_ANGLE
+from selfdrive.car.ford.values import MAX_ANGLE
 
 try:
   from selfdrive.car.ford.carcontroller import CarController

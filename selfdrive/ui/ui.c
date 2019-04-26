@@ -253,7 +253,11 @@ typedef struct UIState {
 
   GLuint frame_program;
   GLuint frame_texs[UI_BUF_COUNT];
+  EGLImageKHR khr[UI_BUF_COUNT];
+  void *priv_hnds[UI_BUF_COUNT];
   GLuint frame_front_texs[UI_BUF_COUNT];
+  EGLImageKHR khr_front[UI_BUF_COUNT];
+  void *priv_hnds_front[UI_BUF_COUNT];
 
   GLint frame_pos_loc, frame_texcoord_loc;
   GLint frame_texture_loc, frame_transform_loc;
@@ -2052,7 +2056,7 @@ static void ui_update(UIState *s) {
         .bpp = 3,
         .size = s->rgb_buf_len,
       };
-      s->frame_texs[i] = visionimg_to_gl(&img);
+      s->frame_texs[i] = visionimg_to_gl(&img, &s->khr[i], &s->priv_hnds[i]);
 
       glBindTexture(GL_TEXTURE_2D, s->frame_texs[i]);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -2076,7 +2080,7 @@ static void ui_update(UIState *s) {
         .bpp = 3,
         .size = s->rgb_front_buf_len,
       };
-      s->frame_front_texs[i] = visionimg_to_gl(&img);
+      s->frame_front_texs[i] = visionimg_to_gl(&img, &s->khr_front[i], &s->priv_hnds_front[i]);
 
       glBindTexture(GL_TEXTURE_2D, s->frame_front_texs[i]);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);

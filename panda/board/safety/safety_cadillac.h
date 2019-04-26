@@ -115,6 +115,9 @@ static int cadillac_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 static void cadillac_init(int16_t param) {
   controls_allowed = 0;
   cadillac_ign = 0;
+  #ifdef PANDA
+    lline_relay_release();
+  #endif
 }
 
 static int cadillac_ign_hook() {
@@ -128,4 +131,5 @@ const safety_hooks cadillac_hooks = {
   .tx_lin = nooutput_tx_lin_hook,
   .ignition = cadillac_ign_hook,
   .fwd = alloutput_fwd_hook,
+  .relay = nooutput_relay_hook,
 };

@@ -246,3 +246,12 @@ void reset_gmlan_switch_timeout(void){
 
 void gmlan_switch_init(int timeout_enable){
 }
+
+void lline_relay_init (void) {
+}
+
+void lline_relay_release (void) {
+}
+
+void set_lline_output(int to_set) {
+}

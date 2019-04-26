@@ -18,7 +18,7 @@ import signal
 
 kegman = kegman_conf()
 ThermalStatus = log.ThermalData.ThermalStatus
-CURRENT_TAU = 2.   # 2s time constant
+CURRENT_TAU = 15.   # 15s time constant
 
 def read_tz(x):
   with open("/sys/devices/virtual/thermal/thermal_zone%d/temp" % x) as f:
@@ -50,7 +50,7 @@ def setup_eon_fan():
     bus.write_byte_data(0x21, 0x02, 0x2)   # needed?
     bus.write_byte_data(0x21, 0x04, 0x4)   # manual override source
   except IOError:
-    print "LEON detected"
+    print("LEON detected")
     #os.system("echo 1 > /sys/devices/soc/6a00000.ssusb/power_supply/usb/usb_otg")
     LEON = True
   bus.close()
@@ -179,7 +179,7 @@ def thermald_thread():
   off_ts = None
   started_ts = None
   ignition_seen = False
-  started_seen = False
+  #started_seen = False
   passive_starter = LocationStarter()
   thermal_status = ThermalStatus.green
   health_sock.RCVTIMEO = 1500
@@ -289,7 +289,7 @@ def thermald_thread():
       if started_ts is None:
         params.car_start()
         started_ts = sec_since_boot()
-        started_seen = True
+        #started_seen = True
     else:
       started_ts = None
       if off_ts is None:
@@ -326,13 +326,13 @@ def thermald_thread():
       msg.thermal.batteryStatus = "Charging"
       
     msg.thermal.chargingDisabled = charging_disabled
-    msg.thermal.chargingError = current_filter.x > 1.0   # if current is > 1A out, then charger might be off
+    msg.thermal.chargingError = current_filter.x > 0.   # if current is positive, then battery is being discharged
     msg.thermal.started = started_ts is not None
     msg.thermal.startedTs = int(1e9*(started_ts or 0))
 
     msg.thermal.thermalStatus = thermal_status
     thermal_sock.send(msg.to_bytes())
-    print msg
+    print(msg)
 
     # report to server once per minute
     if (count%60) == 0:
