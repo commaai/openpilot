@@ -31,6 +31,8 @@ NS_ :
     BU_BO_REL_
     SG_MUL_VAL_
 
+BS_:
+
 BU_: XXX
 
 BO_ 130 EPAS_INFO: 8 XXX
@@ -128,9 +130,10 @@ BO_ 984 Lane_Keep_Assist_Ui: 8 XXX
  SG_ Hands_Warning : 49|1@0+ (1,0) [0|1] "" XXX
  SG_ Set_Me_X30 : 63|8@0+ (1,0) [0|255] "" XXX
 
+CM_ SG_ 970 Lkas_Action "only vals 4, 5, 8, 9 seem to work. 4 and 5 are a bit smoother" ;
+
 VAL_ 357 Cruise_State 4 "active" 3 "standby" 0 "off" ;
 VAL_ 970 Lkas_Action 15 "off" 9 "abrupt" 8 "abrupt2" 5 "smooth" 4 "smooth2" ;
 VAL_ 970 Lkas_Alert 15 "no_alert" 3 "high_intensity" 2 "mid_intensity" 1 "low_intensity" ;
 VAL_ 972 LaActAvail_D_Actl 3 "available" 2 "tbd" 1 "not_available" 0 "fault" ;
 VAL_ 984 Lines_Hud 15 "none" 11 "grey_yellow" 8 "green_red" 7 "yellow_grey" 6 "grey_grey" 4 "red_green" 3 "green_green" ;
-CM_ SG_ 970 Lkas_Action "only vals 4, 5, 8, 9 seem to work. 4 and 5 are a bit smoother" ;

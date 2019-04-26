@@ -27,8 +27,9 @@ void visionimg_compute_aligned_width_and_height(int width, int height, int *alig
 VisionImg visionimg_alloc_rgb24(int width, int height, VisionBuf *out_buf);
 
 #ifdef QCOM
-EGLClientBuffer visionimg_to_egl(const VisionImg *img);
-GLuint visionimg_to_gl(const VisionImg *img);
+EGLClientBuffer visionimg_to_egl(const VisionImg *img, void **pph);
+GLuint visionimg_to_gl(const VisionImg *img, EGLImageKHR *pkhr, void **pph);
+void visionimg_destroy_gl(EGLImageKHR khr, void *ph);
 #endif
 
 #ifdef __cplusplus

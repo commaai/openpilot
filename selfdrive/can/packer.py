@@ -63,5 +63,5 @@ if __name__ == "__main__":
   #s = cp.pack_bytes(0xe4, {
   #  "STEER_TORQUE": -2,
   #})
-  print [hex(ord(v)) for v in s[1]]
+  print([hex(ord(v)) for v in s[1]])
   print(s[1].encode("hex"))

@@ -39,6 +39,7 @@ class Calibrator(object):
     self.vps = []
     self.cal_status = Calibration.UNCALIBRATED
     self.write_counter = 0
+    self.just_calibrated = False
     self.params = Params()
     calibration_params = self.params.get("CalibrationParams")
     if calibration_params:
@@ -52,10 +53,16 @@ class Calibrator(object):
 
 
   def update_status(self):
+    start_status = self.cal_status
     if len(self.vps) < INPUTS_NEEDED:
       self.cal_status = Calibration.UNCALIBRATED
     else:
       self.cal_status = Calibration.CALIBRATED if is_calibration_valid(self.vp) else Calibration.INVALID
+    end_status = self.cal_status
+
+    self.just_calibrated = False
+    if start_status == Calibration.UNCALIBRATED and end_status == Calibration.CALIBRATED:
+      self.just_calibrated = True
 
   def handle_cam_odom(self, log):
     trans, rot = log.cameraOdometry.trans, log.cameraOdometry.rot
@@ -67,7 +74,7 @@ class Calibrator(object):
       self.vp = np.mean(self.vps, axis=0)
       self.update_status()
       self.write_counter += 1
-      if self.param_put and self.write_counter % WRITE_CYCLES == 0:
+      if self.param_put and (self.write_counter % WRITE_CYCLES == 0 or self.just_calibrated):
         cal_params = {"vanishing_point": list(self.vp),
                       "valid_points": len(self.vps)}
         self.params.put("CalibrationParams", json.dumps(cal_params))

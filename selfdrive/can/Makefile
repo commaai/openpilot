@@ -16,6 +16,7 @@ WARN_FLAGS = -Werror=implicit-function-declaration \
 
 CFLAGS = -std=gnu11 -g -fPIC -O2 $(WARN_FLAGS)
 CXXFLAGS = -std=c++11 -g -fPIC -O2 $(WARN_FLAGS)
+LDFLAGS =
 
 ifeq ($(UNAME_S),Darwin)
 	ZMQ_LIBS = -L/usr/local/lib -lzmq
@@ -28,18 +29,24 @@ else ifeq ($(UNAME_M),x86_64)
 else ifeq ($(UNAME_M),aarch64)
 	ZMQ_FLAGS = -I$(PHONELIBS)/zmq/aarch64/include
 	ZMQ_LIBS = -L$(PHONELIBS)/zmq/aarch64/lib -l:libzmq.a
-	CXXFLAGS += -lgnustl_shared
+	LDFLAGS += -lgnustl_shared
 endif
+
+OBJDIR = obj
 
 OPENDBC_PATH := $(shell python -c 'import opendbc; print opendbc.DBC_PATH')
 
 DBC_SOURCES := $(wildcard $(OPENDBC_PATH)/*.dbc)
+DBC_OBJS := $(patsubst $(OPENDBC_PATH)/%.dbc,$(OBJDIR)/%.o,$(DBC_SOURCES))
 DBC_CCS := $(patsubst $(OPENDBC_PATH)/%.dbc,dbc_out/%.cc,$(DBC_SOURCES))
+.SECONDARY: $(DBC_CCS)
+
+LIBDBC_OBJS := $(OBJDIR)/dbc.o $(OBJDIR)/parser.o $(OBJDIR)/packer.o
 
 CWD := $(shell pwd)
 
 .PHONY: all
-all: libdbc.so
+all: $(OBJDIR) libdbc.so
 
 include ../common/cereal.mk
 
@@ -49,22 +56,45 @@ libdbc.so:: ../../cereal/gen/cpp/log.capnp.h
 ../../cereal/gen/cpp/log.capnp.h:
 	cd ../../cereal && make
 
-libdbc.so:: dbc.cc parser.cc packer.cc $(DBC_CCS)
+libdbc.so:: $(LIBDBC_OBJS) $(DBC_OBJS)
+	@echo "[ LINK ] $@"
 	$(CXX) -fPIC -shared -o '$@' $^ \
-	  -I. \
-	  -I../.. \
-    $(CXXFLAGS) \
-    $(ZMQ_FLAGS) \
-    $(ZMQ_LIBS) \
-    $(CEREAL_CXXFLAGS) \
-    $(CEREAL_LIBS)
+		-I. -I../.. \
+		$(CXXFLAGS) \
+		$(LDFLAGS) \
+		$(ZMQ_FLAGS) \
+		$(ZMQ_LIBS) \
+		$(CEREAL_CXXFLAGS) \
+		$(CEREAL_LIBS)
 
-dbc_out/%.cc: $(OPENDBC_PATH)/%.dbc process_dbc.py dbc_template.cc
-	PYTHONPATH=$(PYTHONPATH):$(CWD)/../../pyextra ./process_dbc.py '$<' '$@'
+$(OBJDIR)/%.o: %.cc
+	@echo "[ CXX ] $@"
+	$(CXX) -fPIC -c -o '$@' $^ \
+		-I. -I../.. \
+		$(CXXFLAGS) \
+		$(ZMQ_FLAGS) \
+		$(CEREAL_CXXFLAGS) \
 
-.PHONY: clean
+$(OBJDIR)/%.o: dbc_out/%.cc
+	@echo "[ CXX ] $@"
+	$(CXX) -fPIC -c -o '$@' $^ \
+		-I. -I../.. \
+		$(CXXFLAGS) \
+		$(ZMQ_FLAGS) \
+		$(CEREAL_CXXFLAGS) \
+
+dbc_out/%.cc: process_dbc.py dbc_template.cc $(OPENDBC_PATH)/%.dbc
+	@echo "[ DBC GEN ] $@"
+	@echo "Missing prereq $?"
+	PYTHONPATH=$(PYTHONPATH):$(CWD)/../../pyextra ./process_dbc.py $(OPENDBC_PATH) dbc_out
+
+$(OBJDIR):
+	mkdir -p $@
+
+.PHONY: clean $(OBJDIR)
 clean:
 	rm -rf libdbc.so*
 	rm -f dbc_out/*.cc
 	rm -f dbcs.txt
 	rm -f dbcs.csv
+	rm -rf $(OBJDIR)/*

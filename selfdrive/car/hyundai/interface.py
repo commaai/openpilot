@@ -68,13 +68,13 @@ class CarInterface(object):
     rotationalInertia_civic = 2500
     tireStiffnessFront_civic = 192150
     tireStiffnessRear_civic = 202500
+    tire_stiffness_factor = 1.
 
     ret.steerActuatorDelay = 0.1  # Default delay
-    tire_stiffness_factor = 1.
+    ret.steerRateCost = 0.5
 
     if candidate == CAR.SANTA_FE:
       ret.steerKf = 0.00005
-      ret.steerRateCost = 0.5
       ret.mass = 3982 * CV.LB_TO_KG + std_cargo
       ret.wheelbase = 2.766
 

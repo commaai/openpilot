@@ -307,6 +307,8 @@ BO_ 840 GTW_status: 8 GTW
  SG_ GTW_statusChecksum : 63|8@0+ (1,0) [0|255] ""  NEO
  SG_ GTW_statusCounter : 51|4@0+ (1,0) [0|15] ""  NEO
 
+CM_ "CHFFR_METRIC 1160 DAS_steeringAngleRequest STEER_ANGLE 0.1098666 180; CHFFR_METRIC 264 DI_motorRPM ENGINE_RPM 1 0";
+
 VAL_ 3 StW_Angl 16383 "SNA" ;
 VAL_ 3 StW_AnglSens_Id 2 "MUST" 0 "PSBL" 1 "SELF" ;
 VAL_ 3 StW_AnglSens_Stat 2 "ERR" 3 "ERR_INI" 1 "INI" 0 "OK" ;
@@ -417,5 +419,3 @@ VAL_ 904 MCU_clusterReadyForDrive 0 "NO_SNA" 1 "YES" ;
 VAL_ 1160 DAS_steeringAngleRequest 16384 "ZERO_ANGLE" ;
 VAL_ 1160 DAS_steeringControlType 1 "ANGLE_CONTROL" 3 "DISABLED" 0 "NONE" 2 "RESERVED" ;
 VAL_ 1160 DAS_steeringHapticRequest 1 "ACTIVE" 0 "IDLE" ;
-
-CM_ "CHFFR_METRIC 1160 DAS_steeringAngleRequest STEER_ANGLE 0.1098666 180; CHFFR_METRIC 264 DI_motorRPM ENGINE_RPM 1 0";

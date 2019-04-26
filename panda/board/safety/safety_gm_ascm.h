@@ -48,5 +48,6 @@ const safety_hooks gm_ascm_hooks = {
   .tx_lin = nooutput_tx_lin_hook,
   .ignition = default_ign_hook,
   .fwd = gm_ascm_fwd_hook,
+  .relay = nooutput_relay_hook,
 };
 
