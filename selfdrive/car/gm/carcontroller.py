@@ -4,7 +4,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.gm import gmcan
-from selfdrive.car.gm.values import CAR, DBC, AccState, SUPERCRUISE_CARS
+from selfdrive.car.gm.values import DBC, AccState, SUPERCRUISE_CARS
 from selfdrive.can.packer import CANPacker
 
 
