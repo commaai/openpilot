@@ -111,8 +111,16 @@ managed_processes = {
 }
 # define process name with niceness factor
 mean_processes = {
-  "controlsd": -20,
-  "boardd": -20,
+  "controlsd": -15,
+  "boardd": -14,
+  "visiond": -13,
+  "plannerd": -12,
+  "loggerd": -11,
+  "radard": -10,
+  "pandad": -9,
+  "locationd": -8,
+  "mapd": -7,
+  "sensord": -6,
 }
 android_packages = ("ai.comma.plus.offroad", "ai.comma.plus.frame")
 
