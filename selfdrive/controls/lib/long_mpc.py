@@ -134,7 +134,7 @@ class LongitudinalMpc(object):
       else:
         TR = ONE_BAR_DISTANCE 
       if CS.carState.readdistancelines != self.lastTR:
-        self.libmpc.init(MPC_COST_LONG.TTC, 1.0, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
+        self.libmpc.init(MPC_COST_LONG.TTC, MPC_COST_LONG.DISTANCE, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
         self.lastTR = CS.carState.readdistancelines  
 
     elif CS.carState.readdistancelines == 2:
