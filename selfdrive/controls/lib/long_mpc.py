@@ -166,7 +166,7 @@ class LongitudinalMpc(object):
 
     stop_and_go_magic_number = 8.9408  # 20 mph
 
-    if velocity <= 0.044704:  # .1 mph
+    if velocity <= 0.44704:  # 1 mph
       self.stop_and_go = True
     elif velocity >= stop_and_go_magic_number:
       self.stop_and_go = False
