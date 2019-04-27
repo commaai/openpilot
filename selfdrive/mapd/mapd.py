@@ -269,17 +269,7 @@ def mapsd_thread():
       if speedLimittraffic_prev is not speedLimittraffic:
         speedLimittrafficvalid = True
       
-      if speedLimittrafficvalid:
-        if speedLimittraffic is not 0: # Should not occur but check anyway
-          dat.liveMapData.speedLimitValid = True
-          dat.liveMapData.speedLimit = speedLimittraffic / 3.6
-          speedLimittraffic_prev = speedLimittraffic
-      else:
-        if max_speed is not None:
-          dat.liveMapData.speedLimitValid = True
-          dat.liveMapData.speedLimit = max_speed
-          max_speed_prev = max_speed
-
+      
 
         # TODO: use the function below to anticipate upcoming speed limits
         #max_speed_ahead, max_speed_ahead_dist = cur_way.max_speed_ahead(max_speed, lat, lon, heading, MAPS_LOOKAHEAD_DISTANCE)
@@ -308,6 +298,18 @@ def mapsd_thread():
         dat.liveMapData.roadCurvatureX = map(float, dists)
         dat.liveMapData.roadCurvature = map(float, curvature)
 
+  if speedLimittrafficvalid:
+      if speedLimittraffic is not 0: # Should not occur but check anyway
+        dat.liveMapData.speedLimitValid = True
+        dat.liveMapData.speedLimit = speedLimittraffic / 3.6
+        speedLimittraffic_prev = speedLimittraffic
+        #map_valid = True
+    else:
+      if max_speed is not None:
+        dat.liveMapData.speedLimitValid = True
+        dat.liveMapData.speedLimit = max_speed
+        max_speed_prev = max_speed
+    
     dat.liveMapData.mapValid = map_valid
 
     map_data_sock.send(dat.to_bytes())
