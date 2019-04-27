@@ -91,9 +91,9 @@ class Calibrator(object):
     cal_send.init('liveCalibration')
     cal_send.liveCalibration.calStatus = self.cal_status
     cal_send.liveCalibration.calPerc = min(len(self.vps) * 100 // INPUTS_NEEDED, 100)
-    cal_send.liveCalibration.warpMatrix2 = map(float, warp_matrix.flatten())
-    cal_send.liveCalibration.warpMatrixBig = map(float, warp_matrix_big.flatten())
-    cal_send.liveCalibration.extrinsicMatrix = map(float, extrinsic_matrix.flatten())
+    cal_send.liveCalibration.warpMatrix2 = [float(x) for x in warp_matrix.flatten()]
+    cal_send.liveCalibration.warpMatrixBig = [float(x) for x in warp_matrix_big.flatten()]
+    cal_send.liveCalibration.extrinsicMatrix = [float(x) for x in extrinsic_matrix.flatten()]
 
     livecalibration.send(cal_send.to_bytes())
 

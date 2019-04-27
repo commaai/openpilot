@@ -73,7 +73,7 @@ if __name__ == "__main__":
       x.prob = 0.0
       x.std = 1.0
 
-    car_pts = map(pt_to_car, control_pts)
+    car_pts = [pt_to_car(pt) for pt in control_pts]
 
     print(car_pts)
 
