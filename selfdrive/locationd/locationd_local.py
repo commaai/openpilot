@@ -73,10 +73,10 @@ class Localizer(object):
     self.update_kalman(current_time, ObservationKind.CAMERA_ODO_TRANSLATION, np.concatenate([log.cameraOdometry.trans,
                                                                                              log.cameraOdometry.transStd]))
 
-  def handle_car_state(self, log, current_time):
+  def handle_live100(self, log, current_time):
     self.speed_counter += 1
     if self.speed_counter % 5 == 0:
-      self.update_kalman(current_time, ObservationKind.ODOMETRIC_SPEED, np.array([log.carState.vEgo]))
+      self.update_kalman(current_time, ObservationKind.ODOMETRIC_SPEED, np.array([log.live100.vEgo]))
 
   def handle_sensors(self, log, current_time):
     for sensor_reading in log.sensorEvents:
@@ -93,8 +93,8 @@ class Localizer(object):
       return
     if typ == "sensorEvents":
       self.handle_sensors(log, current_time)
-    elif typ == "carState":
-      self.handle_car_state(log, current_time)
+    elif typ == "live100":
+      self.handle_live100(log, current_time)
     elif typ == "cameraOdometry":
       self.handle_cam_odo(log, current_time)
 
@@ -113,7 +113,7 @@ class ParamsLearner(object):
     self.MAX_SR_TH = MAX_SR_TH * self.VM.sR
 
     self.alpha1 = 0.01 * learning_rate
-    self.alpha2 = 0.00025 * learning_rate
+    self.alpha2 = 0.0005 * learning_rate
     self.alpha3 = 0.1 * learning_rate
     self.alpha4 = 1.0 * learning_rate
 
@@ -154,7 +154,7 @@ class ParamsLearner(object):
       # instant_ao = aF*m*psi*sR*u/(cR0*l*x) - aR*m*psi*sR*u/(cF0*l*x) - l*psi*sR/u + sa
       s4 = "Instant AO: % .2f Avg. AO % .2f" % (math.degrees(self.ao), math.degrees(self.slow_ao))
       s5 = "Stiffnes: % .3f x" % self.x
-      print s4, s5
+      print("{0} {1}".format(s4, s5))
 
 
     self.ao = clip(self.ao, -MAX_ANGLE_OFFSET, MAX_ANGLE_OFFSET)
@@ -173,7 +173,7 @@ def locationd_thread(gctx, addr, disabled_logs):
   ctx = zmq.Context()
   poller = zmq.Poller()
 
-  car_state_socket = messaging.sub_sock(ctx, service_list['carState'].port, poller, addr=addr, conflate=True)
+  live100_socket = messaging.sub_sock(ctx, service_list['live100'].port, poller, addr=addr, conflate=True)
   sensor_events_socket = messaging.sub_sock(ctx, service_list['sensorEvents'].port, poller, addr=addr, conflate=True)
   camera_odometry_socket = messaging.sub_sock(ctx, service_list['cameraOdometry'].port, poller, addr=addr, conflate=True)
 
@@ -219,19 +219,19 @@ def locationd_thread(gctx, addr, disabled_logs):
       log = messaging.recv_one(socket)
       localizer.handle_log(log)
 
-      if socket is car_state_socket:
+      if socket is live100_socket:
         if not localizer.kf.t:
           continue
 
         if i % LEARNING_RATE == 0:
-          # carState is not updating the Kalman Filter, so update KF manually
+          # live100 is not updating the Kalman Filter, so update KF manually
           localizer.kf.predict(1e-9 * log.logMonoTime)
 
           predicted_state = localizer.kf.x
           yaw_rate = -float(predicted_state[5])
 
-          steering_angle = math.radians(log.carState.steeringAngle)
-          params_valid = learner.update(yaw_rate, log.carState.vEgo, steering_angle)
+          steering_angle = math.radians(log.live100.angleSteers)
+          params_valid = learner.update(yaw_rate, log.live100.vEgo, steering_angle)
 
           params = messaging.new_message()
           params.init('liveParameters')
@@ -246,6 +246,7 @@ def locationd_thread(gctx, addr, disabled_logs):
           params = learner.get_values()
           params['carFingerprint'] = CP.carFingerprint
           params_reader.put("LiveParameters", json.dumps(params))
+          params_reader.put("ControlsParams", json.dumps({'angle_model_bias': log.live100.angleModelBias}))
 
         i += 1
       elif socket is camera_odometry_socket:
@@ -263,7 +264,7 @@ def main(gctx=None, addr="127.0.0.1"):
   disabled_logs = os.getenv("DISABLED_LOGS", "").split(",")
 
   # No speed for now
-  disabled_logs.append('carState')
+  disabled_logs.append('live100')
   if IN_CAR:
     addr = "192.168.5.11"
 

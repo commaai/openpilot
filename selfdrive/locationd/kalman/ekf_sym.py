@@ -340,7 +340,7 @@ class EKF_sym(object):
     # rewind
     if t < self.filter_time:
       if len(self.rewind_t) == 0 or t < self.rewind_t[0] or t < self.rewind_t[-1] -1.0:
-        print "observation too old at %.3f with filter at %.3f, ignoring" % (t, self.filter_time)
+        print("observation too old at %.3f with filter at %.3f, ignoring" % (t, self.filter_time))
         return None
       rewound = self.rewind(t)
     else:
@@ -457,7 +457,7 @@ class EKF_sym(object):
 
       # TODO If nullspace isn't the dimension we want
       if A.shape[1] + He.shape[1] != A.shape[0]:
-        print 'Warning: null space projection failed, measurement ignored'
+        print('Warning: null space projection failed, measurement ignored')
         return x, P, np.zeros(A.shape[0] - He.shape[1])
 
     # if using eskf

@@ -133,6 +133,19 @@ Chrysler/Jeep/Fiat (Lateral only)
     units above the actual EPS generated motor torque to ensure limited differences between
     commanded and actual torques.
 
+Subaru (Lateral only)
+------
+
+  - While the system is engaged, steer commands are subject to the same limits used by
+    the stock system.
+
+  - Steering torque is controlled through the 0x122 CAN message and it's limited by the panda firmware and by
+    openpilot to a value between -255 and 255. In addition, the vehicle EPS unit will fault for
+    commands outside the values of -2047 and 2047. A steering torque rate limit is enforced by the panda firmware and by
+    openpilot, so that the commanded steering torque must rise from 0 to max value no faster than
+    0.41s. Commanded steering torque is gradually limited by the panda firmware and by openpilot if the driver's
+    torque exceeds 60 units in the opposite dicrection to ensure limited applied torque against the
+    driver's will.
 
 **Extra note**: comma.ai strongly discourages the use of openpilot forks with safety code either missing or
   not fully meeting the above requirements.

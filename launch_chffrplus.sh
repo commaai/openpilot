@@ -19,6 +19,8 @@ function launch {
   echo 0-3 > /dev/cpuset/foreground/cpus
   echo 0-3 > /dev/cpuset/android/cpus
 
+  # handle pythonpath
+  ln -s /data/openpilot /data/pythonpath
   export PYTHONPATH="$PWD"
 
   # start manager

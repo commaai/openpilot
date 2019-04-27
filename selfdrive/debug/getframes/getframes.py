@@ -98,4 +98,4 @@ def getframes(front=False):
 
 if __name__ == "__main__":
   for buf in getframes():
-    print buf.shape, buf[101, 101]
+    print("{0} {1}".format(buf.shape, buf[101, 101]))
