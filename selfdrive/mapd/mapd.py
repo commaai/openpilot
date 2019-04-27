@@ -145,6 +145,7 @@ def mapsd_thread():
   road_points = None
   speedLimittraffic = 0
   speedLimittraffic_prev = 0
+  max_speed = None
   max_speed_prev = 0
   speedLimittrafficvalid = False
   
