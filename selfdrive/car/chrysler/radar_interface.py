@@ -45,9 +45,9 @@ def _create_radard_can_parser():
 
 def _address_to_track(address):
   if address in RADAR_MSGS_C:
-    return (address - RADAR_MSGS_C[0]) / 2
+    return (address - RADAR_MSGS_C[0]) // 2
   if address in RADAR_MSGS_D:
-    return (address - RADAR_MSGS_D[0]) / 2
+    return (address - RADAR_MSGS_D[0]) // 2
   raise ValueError("radar received unexpected address %d" % address)
 
 class RadarInterface(object):

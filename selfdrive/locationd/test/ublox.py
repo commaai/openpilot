@@ -256,7 +256,7 @@ class UBloxDescriptor:
         break
 
     if self.count_field == '_remaining':
-      count = len(buf) / struct.calcsize(self.format2)
+      count = len(buf) // struct.calcsize(self.format2)
 
     if count == 0:
       msg._unpacked = True
