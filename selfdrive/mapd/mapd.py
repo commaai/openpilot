@@ -160,6 +160,9 @@ def mapsd_thread():
     if traffic is not None:
       if traffic.liveTrafficData.speedLimitValid:
         speedLimittraffic = traffic.liveTrafficData.speedLimit
+        if speedLimittraffic_prev is not speedLimittraffic:
+        speedLimittrafficvalid = True
+        speedLimittraffic_prev = speedLimittraffic
       if traffic.liveTrafficData.speedAdvisoryValid:
         speedLimittrafficAdvisory = traffic.liveTrafficData.speedAdvisory
         speedLimittrafficAdvisoryvalid = True
@@ -266,8 +269,7 @@ def mapsd_thread():
       if max_speed is not None:
         if max_speed is not max_speed_prev:
           speedLimittrafficvalid = False
-      if speedLimittraffic_prev is not speedLimittraffic:
-        speedLimittrafficvalid = True
+          max_speed_prev = max_speed
       
       
 
@@ -302,13 +304,12 @@ def mapsd_thread():
       if speedLimittraffic is not 0: # Should not occur but check anyway
         dat.liveMapData.speedLimitValid = True
         dat.liveMapData.speedLimit = speedLimittraffic / 3.6
-        speedLimittraffic_prev = speedLimittraffic
         #map_valid = True
     else:
       if max_speed is not None:
         dat.liveMapData.speedLimitValid = True
         dat.liveMapData.speedLimit = max_speed
-        max_speed_prev = max_speed
+        
     
     dat.liveMapData.mapValid = map_valid
 
