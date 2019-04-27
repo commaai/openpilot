@@ -225,7 +225,7 @@ class CarInterface(object):
     if self.frame < 1000:
       self.cp_cam.update(int(sec_since_boot() * 1e9), False)
 
-    self.CS.update(self.cp, self.cp_cam)
+    self.CS.update(self.cp, self.cp_cam, self.frame)
 
     # create message
     ret = car.CarState.new_message()
