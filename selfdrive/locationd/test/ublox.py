@@ -184,7 +184,7 @@ class UBloxAttrDict(dict):
       raise AttributeError(name)
 
   def __setattr__(self, name, value):
-    if self.__dict__.has_key(name):
+    if name in self.__dict__:
       # allow set on normal attributes
       dict.__setattr__(self, name, value)
     else:
