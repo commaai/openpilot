@@ -108,7 +108,7 @@ class CarState(object):
     self.old_steer_prev = 0
     self.offset_prev = 0
 
-  def update(self, cp, cp_cam):
+  def update(self, cp, cp_cam, frame):
     # copy can_valid
     self.can_valid = cp.can_valid
     self.cam_can_valid = cp_cam.can_valid
