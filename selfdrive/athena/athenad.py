@@ -6,7 +6,7 @@ import time
 import threading
 import traceback
 import zmq
-import Queue
+import six.moves.queue
 from jsonrpc import JSONRPCResponseManager, dispatcher
 from websocket import create_connection, WebSocketTimeoutException
 
@@ -21,8 +21,8 @@ ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = os.getenv('HANDLER_THREADS', 4)
 
 dispatcher["echo"] = lambda s: s
-payload_queue = Queue.Queue()
-response_queue = Queue.Queue()
+payload_queue = six.moves.queue.Queue()
+response_queue = six.moves.queue.Queue()
 
 def handle_long_poll(ws):
   end_event = threading.Event()
@@ -52,7 +52,7 @@ def jsonrpc_handler(end_event):
       data = payload_queue.get(timeout=1)
       response = JSONRPCResponseManager.handle(data, dispatcher)
       response_queue.put_nowait(response)
-    except Queue.Empty:
+    except six.moves.queue.Empty:
       pass
     except Exception as e:
       cloudlog.exception("athena jsonrpc handler failed")
@@ -87,7 +87,7 @@ def ws_send(ws, end_event):
     try:
       response = response_queue.get(timeout=1)
       ws.send(response.json)
-    except Queue.Empty:
+    except six.moves.queue.Empty:
       pass
     except Exception:
       traceback.print_exc()
