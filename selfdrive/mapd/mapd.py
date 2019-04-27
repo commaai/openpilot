@@ -161,8 +161,8 @@ def mapsd_thread():
       if traffic.liveTrafficData.speedLimitValid:
         speedLimittraffic = traffic.liveTrafficData.speedLimit
         if speedLimittraffic_prev is not speedLimittraffic:
-        speedLimittrafficvalid = True
-        speedLimittraffic_prev = speedLimittraffic
+          speedLimittrafficvalid = True
+          speedLimittraffic_prev = speedLimittraffic
       if traffic.liveTrafficData.speedAdvisoryValid:
         speedLimittrafficAdvisory = traffic.liveTrafficData.speedAdvisory
         speedLimittrafficAdvisoryvalid = True
@@ -300,7 +300,7 @@ def mapsd_thread():
         dat.liveMapData.roadCurvatureX = map(float, dists)
         dat.liveMapData.roadCurvature = map(float, curvature)
 
-  if speedLimittrafficvalid:
+    if speedLimittrafficvalid:
       if speedLimittraffic is not 0: # Should not occur but check anyway
         dat.liveMapData.speedLimitValid = True
         dat.liveMapData.speedLimit = speedLimittraffic / 3.6
