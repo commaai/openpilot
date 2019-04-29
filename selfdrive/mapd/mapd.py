@@ -302,10 +302,12 @@ def mapsd_thread():
         dat.liveMapData.roadCurvature = map(float, curvature)
 
     if speedLimittrafficvalid:
-      if speedLimittraffic is not 0: # Should not occur but check anyway
+      if speedLimittraffic is not 0:
         dat.liveMapData.speedLimitValid = True
         dat.liveMapData.speedLimit = speedLimittraffic / 3.6
         map_valid = False
+      else:
+        speedLimittrafficvalid = False
     else:
       if max_speed is not None:
         dat.liveMapData.speedLimitValid = True
