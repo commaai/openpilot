@@ -305,7 +305,7 @@ def mapsd_thread():
       if speedLimittraffic is not 0: # Should not occur but check anyway
         dat.liveMapData.speedLimitValid = True
         dat.liveMapData.speedLimit = speedLimittraffic / 3.6
-        #map_valid = True
+        map_valid = False
     else:
       if max_speed is not None:
         dat.liveMapData.speedLimitValid = True
