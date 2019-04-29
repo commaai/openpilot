@@ -7,11 +7,17 @@ from cereal import car
 from common.realtime import sec_since_boot
 from selfdrive.services import service_list
 import selfdrive.messaging as messaging
-from selfdrive.car.toyota.values import NO_DSU_CAR
+from selfdrive.car.toyota.values import NO_DSU_CAR, DBC, TSSP2_CAR
 
 
-RADAR_A_MSGS = list(range(0x210, 0x220))
-RADAR_B_MSGS = list(range(0x220, 0x230))
+
+
+  if car_fingerprint in TSSP2_CAR:
+    RADAR_A_MSGS = list(range(0x180, 0x190))
+    RADAR_B_MSGS = list(range(0x190, 0x1a0))
+  else:
+    RADAR_A_MSGS = list(range(0x210, 0x220))
+    RADAR_B_MSGS = list(range(0x220, 0x230))
 
 def _create_radard_can_parser():
   dbc_f = 'toyota_prius_2017_adas.dbc'
@@ -33,12 +39,19 @@ class RadarInterface(object):
   def __init__(self, CP):
     # radar
     self.pts = {}
-    self.valid_cnt = {key: 0 for key in RADAR_A_MSGS}
     self.track_id = 0
 
     self.delay = 0.0  # Delay of radar
+    if CP.carFingerprint in TSSP2_CAR:
+      self.RADAR_A_MSGS = list(range(0x180, 0x190))
+      self.RADAR_B_MSGS = list(range(0x190, 0x1a0))
+    else:
+      self.RADAR_A_MSGS = list(range(0x210, 0x220))
+      self.RADAR_B_MSGS = list(range(0x220, 0x230))
 
-    self.rcp = _create_radard_can_parser()
+    self.valid_cnt = {key: 0 for key in self.RADAR_A_MSGS}
+
+    self.rcp = _create_radard_can_parser(CP.carFingerprint)
     self.no_dsu_car = CP.carFingerprint in NO_DSU_CAR
 
     context = zmq.Context()
@@ -57,7 +70,7 @@ class RadarInterface(object):
     while 1:
       tm = int(sec_since_boot() * 1e9)
       updated_messages.update(self.rcp.update(tm, True))
-      if RADAR_B_MSGS[-1] in updated_messages:
+      if self.RADAR_B_MSGS[-1] in updated_messages:
         break
 
     errors = []
@@ -67,7 +80,7 @@ class RadarInterface(object):
     ret.canMonoTimes = canMonoTimes
 
     for ii in updated_messages:
-      if ii in RADAR_A_MSGS:
+      if ii in self.RADAR_A_MSGS:
         cpt = self.rcp.vl[ii]
 
         if cpt['LONG_DIST'] >=255 or cpt['NEW_TRACK']:
