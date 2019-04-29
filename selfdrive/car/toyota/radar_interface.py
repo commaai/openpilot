@@ -9,9 +9,9 @@ from selfdrive.services import service_list
 import selfdrive.messaging as messaging
 from selfdrive.car.toyota.values import NO_DSU_CAR, DBC, TSSP2_CAR
 
-
-
-
+def _create_radard_can_parser(car_fingerprint):
+  dbc_f = DBC[car_fingerprint]['radar']
+  
   if car_fingerprint in TSSP2_CAR:
     RADAR_A_MSGS = list(range(0x180, 0x190))
     RADAR_B_MSGS = list(range(0x190, 0x1a0))
@@ -19,8 +19,6 @@ from selfdrive.car.toyota.values import NO_DSU_CAR, DBC, TSSP2_CAR
     RADAR_A_MSGS = list(range(0x210, 0x220))
     RADAR_B_MSGS = list(range(0x220, 0x230))
 
-def _create_radard_can_parser():
-  dbc_f = 'toyota_prius_2017_adas.dbc'
 
   msg_a_n = len(RADAR_A_MSGS)
   msg_b_n = len(RADAR_B_MSGS)
