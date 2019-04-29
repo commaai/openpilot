@@ -536,7 +536,12 @@ class CarState(object):
       dat.init('liveTrafficData')
       if self.spdval1 > 0:
         dat.liveTrafficData.speedLimitValid = True
-        dat.liveTrafficData.speedLimit = self.spdval1
+        if self.tsgn1 == 36:
+          dat.liveTrafficData.speedLimit = self.spdval1 * 1.60934
+        elif self.tsgn1 == 1:
+          dat.liveTrafficData.speedLimit = self.spdval1
+        else:
+          dat.liveTrafficData.speedLimit = 0
       else:
         dat.liveTrafficData.speedLimitValid = False
       if self.spdval2 > 0:
