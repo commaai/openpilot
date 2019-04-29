@@ -134,8 +134,8 @@ class CarInterface(object):
         ret.longitudinalKiV = [0.18, 0.12]
       else:
         ret.gasMaxV = [0.2, 0.5, 0.7]
-        ret.longitudinalKpV = [3.6, 1.1, 1.0]
-        ret.longitudinalKiV = [0.5, 0.24]
+        ret.longitudinalKpV = [2.0, 1.0, 0.8]
+        ret.longitudinalKiV = [0.25, 0.14]
 
     elif candidate == CAR.COROLLA:
       stop_and_go = False
@@ -277,13 +277,13 @@ class CarInterface(object):
     cloudlog.warn("ECU Gas Interceptor: %r", ret.enableGasInterceptor)
 
     ret.steerLimitAlert = False
-    ret.longitudinalKpBP = [0., 5., 35.]
-    ret.longitudinalKiBP = [0., 35.]
+    ret.longitudinalKpBP = [0., 5., 55.]
+    ret.longitudinalKiBP = [0., 55.]
     ret.stoppingControl = False
     ret.startAccel = 0.0
 
-    ret.longitudinalKpBP = [0., 5., 35.]
-    ret.longitudinalKiBP = [0., 35.]
+    ret.longitudinalKpBP = [0., 5., 55.]
+    ret.longitudinalKiBP = [0., 55.]
     
   # returns a car.CarState
     return ret

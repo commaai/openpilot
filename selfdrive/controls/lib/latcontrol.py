@@ -27,9 +27,10 @@ class LatControl(object):
     
   def adjust_angle_gain(self):
     if (self.pid.f > 0) == (self.pid.i > 0) and abs(self.pid.i) >= abs(self.previous_integral):
-      self.angle_ff_gain *= 1.00001
+      self.angle_ff_gain *= 1.0001
     else:
       self.angle_ff_gain *= 0.9999
+    self.angle_ff_gain = max(1.0, self.angle_ff_gain)
     self.previous_integral = self.pid.i
 
   def update(self, active, v_ego, angle_steers, steer_override, CP, VM, path_plan):
