@@ -313,15 +313,15 @@ def mapsd_thread():
         dat.liveMapData.speedLimitValid = True
         dat.liveMapData.speedLimit = max_speed
         
-    print "speedLimittraffic_prev"
-    print speedLimittraffic_prev
-    print "speedLimittraffic"
-    print speedLimittraffic
-    print "max_speed_prev"
-    print max_speed_prev
-    print "max_speed"
-    print max_speed
-    print "speedLimittrafficvalid"
+    #print "speedLimittraffic_prev"
+    #print speedLimittraffic_prev
+    #print "speedLimittraffic"
+    #print speedLimittraffic
+    #print "max_speed_prev"
+    #print max_speed_prev
+    #print "max_speed"
+    #print max_speed
+    #print "speedLimittrafficvalid"
     if speedLimittrafficvalid:
       print "True"
     else:
