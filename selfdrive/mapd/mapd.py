@@ -161,7 +161,7 @@ def mapsd_thread():
     if traffic is not None:
       if traffic.liveTrafficData.speedLimitValid:
         speedLimittraffic = traffic.liveTrafficData.speedLimit
-        if speedLimittraffic_prev is not speedLimittraffic:
+        if abs(speedLimittraffic_prev - speedLimittraffic) > 0.1:
           speedLimittrafficvalid = True
           speedLimittraffic_prev = speedLimittraffic
       if traffic.liveTrafficData.speedAdvisoryValid:
@@ -268,7 +268,7 @@ def mapsd_thread():
       # Seed limit
       max_speed = cur_way.max_speed()
       if max_speed is not None:
-        if max_speed is not max_speed_prev:
+        if abs(max_speed - max_speed_prev) > 0.1:
           speedLimittrafficvalid = False
           max_speed_prev = max_speed
       
