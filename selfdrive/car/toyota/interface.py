@@ -134,17 +134,17 @@ class CarInterface(object):
         ret.longitudinalKiV = [0.18, 0.12]
       else:
         ret.gasMaxV = [0.2, 0.5, 0.7]
-        ret.longitudinalKpV = [2.0, 1.0, 0.8]
-        ret.longitudinalKiV = [0.25, 0.14]
+        ret.longitudinalKpV = [1.8, 0.8, 0.6]
+        ret.longitudinalKiV = [0.20, 0.10]
     elif candidate == CAR.RAV4_2019:
       stop_and_go = True
       ret.safetyParam = 100
       ret.wheelbase = 2.68986
-      ret.steerRatio = 14.3
+      ret.steerRatio = 17.0
       tire_stiffness_factor = 0.7933
       ret.mass = 3370. * CV.LB_TO_KG + std_cargo
-      ret.steerKpV, ret.steerKiV = [[0.3], [0.1]]
-      ret.steerKf = 0.00007818594
+      ret.steerKpV, ret.steerKiV = [[0.3], [0.05]]
+      ret.steerKf = 0.0001
       ret.longitudinalKpV = [2.0, 1.0, 0.8]
       ret.longitudinalKiV = [0.25, 0.14]
       ret.gasMaxV = [0.2, 0.5, 0.7]
