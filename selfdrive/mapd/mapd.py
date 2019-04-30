@@ -80,7 +80,7 @@ def query_thread():
         cur_ecef = geodetic2ecef((last_gps.latitude, last_gps.longitude, last_gps.altitude))
         prev_ecef = geodetic2ecef((last_query_pos.latitude, last_query_pos.longitude, last_query_pos.altitude))
         dist = np.linalg.norm(cur_ecef - prev_ecef)
-        if dist < 1000: #updated when we are 1km from the edge of the downloaded circle
+        if dist < 3000: #updated when we are 1km from the edge of the downloaded circle
           continue
 
         if dist > 4000:
