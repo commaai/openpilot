@@ -1,7 +1,6 @@
 from selfdrive.controls.lib.pid import PIController
 from common.numpy_fast import interp
 from cereal import car
-from selfdrive.kegman_conf import kegman_conf
 
 _DT = 0.01    # 100Hz
 _DT_MPC = 0.05  # 20Hz
@@ -18,34 +17,11 @@ class LatControl(object):
                             k_f=CP.steerKf, pos_limit=1.0)
     self.last_cloudlog_t = 0.0
     self.angle_steers_des = 0.
-    self.mpc_frame = 0
 
   def reset(self):
     self.pid.reset()
 
-  def live_tune(self, CP):
-    self.mpc_frame += 1
-    if self.mpc_frame % 300 == 0:
-      # live tuning through /data/openpilot/tune.py overrides interface.py settings
-      kegman = kegman_conf()
-      if kegman.conf['tuneGernby'] == "1":
-        self.steerKpV = [float(kegman.conf['Kp'])]
-        self.steerKiV = [float(kegman.conf['Ki'])]
-        #self.steerKpV = float(kegman.conf['Kp'])
-        #self.steerKiV = float(kegman.conf['Ki'])  
-        #self.steerKpV = [0.5]
-        #self.steerKiV = [0.22]
-        print "self.steerKpV = ", self.steerKpV
-        print "self.steerKiV = ", self.steerKiV
-        self.pid = PIController((CP.steerKpBP, self.steerKpV),
-                                (CP.steerKiBP, self.steerKiV),
-                                k_f=CP.steerKf, pos_limit=1.0)
-      self.mpc_frame = 0
-
   def update(self, active, v_ego, angle_steers, steer_override, CP, VM, path_plan):
-    
-    self.live_tune(CP)  
-    
     if v_ego < 0.3 or not active:
       output_steer = 0.0
       self.pid.reset()
