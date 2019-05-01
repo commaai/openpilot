@@ -34,8 +34,8 @@ _A_CRUISE_MIN_BP = [   0., 5.,  10., 20.,  55.]
 _A_CRUISE_MAX_V = [3.5, 3.0, 1.5, .5, .3]
 _A_CRUISE_MAX_V_ECO = [1.0, 1.5, 1.0, 0.3, 0.1]
 _A_CRUISE_MAX_V_SPORT = [3.5, 3.5, 3.5, 3.5, 3.5]
-_A_CRUISE_MAX_V_FOLLOWING = [1.3, 1.6, 1.2, .7, .3]
-_A_CRUISE_MAX_BP = [0.,  5., 10., 20., 55.]
+_A_CRUISE_MAX_V_FOLLOWING = [1.2, 1.5, 1.1, .65, .25]
+_A_CRUISE_MAX_BP = [0., 5., 10., 20., 55.]
 
 # Lookup table for turns
 _brake_factor = float(kegman.get("brakefactor"))
