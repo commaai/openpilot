@@ -80,7 +80,7 @@ def query_thread():
         cur_ecef = geodetic2ecef((last_gps.latitude, last_gps.longitude, last_gps.altitude))
         prev_ecef = geodetic2ecef((last_query_pos.latitude, last_query_pos.longitude, last_query_pos.altitude))
         dist = np.linalg.norm(cur_ecef - prev_ecef)
-        if dist < 1000: #updated when we are 1km from the edge of the downloaded circle
+        if dist < 3000: #updated when we are 1km from the edge of the downloaded circle
           continue
 
         if dist > 4000:
@@ -161,7 +161,7 @@ def mapsd_thread():
     if traffic is not None:
       if traffic.liveTrafficData.speedLimitValid:
         speedLimittraffic = traffic.liveTrafficData.speedLimit
-        if speedLimittraffic_prev is not speedLimittraffic:
+        if abs(speedLimittraffic_prev - speedLimittraffic) > 0.1:
           speedLimittrafficvalid = True
           speedLimittraffic_prev = speedLimittraffic
       if traffic.liveTrafficData.speedAdvisoryValid:
@@ -268,7 +268,7 @@ def mapsd_thread():
       # Seed limit
       max_speed = cur_way.max_speed()
       if max_speed is not None:
-        if max_speed is not max_speed_prev:
+        if abs(max_speed - max_speed_prev) > 0.1:
           speedLimittrafficvalid = False
           max_speed_prev = max_speed
       
@@ -302,16 +302,30 @@ def mapsd_thread():
         dat.liveMapData.roadCurvature = map(float, curvature)
 
     if speedLimittrafficvalid:
-      if speedLimittraffic is not 0: # Should not occur but check anyway
+      if speedLimittraffic is not 0:
         dat.liveMapData.speedLimitValid = True
         dat.liveMapData.speedLimit = speedLimittraffic / 3.6
-        #map_valid = True
+        map_valid = False
+      else:
+        speedLimittrafficvalid = False
     else:
       if max_speed is not None:
         dat.liveMapData.speedLimitValid = True
         dat.liveMapData.speedLimit = max_speed
         
-    
+    #print "speedLimittraffic_prev"
+    #print speedLimittraffic_prev
+    #print "speedLimittraffic"
+    #print speedLimittraffic
+    #print "max_speed_prev"
+    #print max_speed_prev
+    #print "max_speed"
+    #print max_speed
+    #print "speedLimittrafficvalid"
+    if speedLimittrafficvalid:
+      print "True"
+    else:
+      print "False"
     dat.liveMapData.mapValid = map_valid
 
     map_data_sock.send(dat.to_bytes())
