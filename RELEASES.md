@@ -1,10 +1,47 @@
+Version 0.5.11 (2019-04-17)
+========================
+ * Add support for Subaru
+ * Reduce panda power consumption by 60% when car is off
+ * Fix controlsd lag every 6 minutes. This would sometimes cause disengagements
+ * Fix bug in controls with new angle-offset learner in MPC
+ * Reduce cpu consumption of ubloxd by rewriting it in C++
+ * Improve driver monitoring model and face detection
+ * Improve performance of visiond and ui
+ * Honda Passport 2019 support
+ * Lexus RX Hybrid 2019 support thanks to schomems!
+
+Version 0.5.10 (2019-03-19)
+========================
+ * Self-tuning vehicle parameters: steering offset, tire stiffness and steering ratio
+ * Improve longitudinal control at low speed when lead vehicle harshly decelerates
+ * Fix panda bug going unexpectedly in DCP mode when EON is connected
+ * Reduce white panda power consumption by 500mW when EON is disconnected by turning off WIFI
+ * New Driver Monitoring Model
+ * Support QR codes for login using comma connect
+ * Refactor comma pedal FW and use CRC-8 checksum algorithm for safety. Reflashing pedal is required.
+   Please see `#hw-pedal` on [discord](discord.comma.ai) for assistance updating comma pedal.
+ * Additional speed limit rules for Germany thanks to arne182
+ * Allow negative speed limit offsets
+
+Version 0.5.9 (2019-02-10)
+========================
+ * Improve calibration using a dedicated neural network
+ * Abstract planner in its own process to remove lags in controls process
+ * Improve speed limits with country/region defaults by road type
+ * Reduce mapd data usage with gzip thanks to eFiniLan
+ * Zip log files in the background to reduce disk usage
+ * Kia Optima support thanks to emmertex!
+ * Buick Regal 2018 support thanks to HOYS!
+ * Comma pedal support for Toyota thanks to wocsor! Note: tuning needed and not maintained by comma
+ * Chrysler Pacifica and Jeep Grand Cherokee support thanks to adhintz!
+
 Version 0.5.8 (2019-01-17)
 ========================
  * Open sourced visiond
  * Auto-slowdown for upcoming turns
  * Chrysler/Jeep/Fiat support thanks to adhintz!
  * Honda Civic 2019 support thanks to csouers!
- * Improved use of car display in Toyota thanks to arne182!
+ * Improve use of car display in Toyota thanks to arne182!
  * No data upload when connected to Android or iOS hotspots and "Enable Upload Over Cellular" setting is off
  * EON stops charging when 12V battery drops below 11.8V
 

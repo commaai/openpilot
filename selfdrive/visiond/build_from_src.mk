@@ -58,7 +58,8 @@ endif
   OPENCV_FLAGS =
   OPENCV_LIBS = -lopencv_video \
                 -lopencv_imgproc \
-                -lopencv_core
+                -lopencv_core \
+                -lopencv_highgui
   OTHER_LIBS = -lz -lm -lpthread
 
   PLATFORM_OBJS = camera_fake.o \
@@ -97,7 +98,7 @@ else
   OPENGL_LIBS = -lGLESv3 -lEGL
 
   SNPE_FLAGS = -I$(PHONELIBS)/snpe/include/
-  SNPE_LIBS = -L$(PHONELIBS)/snpe/lib -lSNPE -lsymphony-cpu -lsymphonypower
+  SNPE_LIBS = -lSNPE -lsymphony-cpu -lsymphonypower
 
   OTHER_LIBS = -lz -lcutils -lm -llog -lui -ladreno_utils
 
@@ -127,6 +128,7 @@ OBJS += $(PLATFORM_OBJS) \
         ../common/buffering.o \
         transform.o \
         loadyuv.o \
+        rgb_to_yuv.o \
         commonmodel.o \
         snpemodel.o \
         monitoring.o \
@@ -137,7 +139,7 @@ OBJS += $(PLATFORM_OBJS) \
         $(CEREAL_OBJS)
 
 #MODEL_DATA = ../../models/driving_bigmodel.dlc ../../models/monitoring_model.dlc
-MODEL_DATA = ../../models/driving_model.dlc ../../models/monitoring_model.dlc
+MODEL_DATA = ../../models/driving_model.dlc ../../models/monitoring_model.dlc ../../models/posenet.dlc
 MODEL_OBJS = $(MODEL_DATA:.dlc=.o)
 OBJS += $(MODEL_OBJS)
 
@@ -169,6 +171,16 @@ LDFLAGS += -s
 endif
 
 DEPS := $(OBJS:.o=.d)
+
+rgb_to_yuv_test:  rgb_to_yuv_test.o clutil.o rgb_to_yuv.o ../common/util.o
+	@echo "[ LINK ] $@"
+	$(CXX) -fPIC -o '$@' $^ \
+        $(LIBYUV_LIBS) \
+        $(LDFLAGS) \
+        -L/usr/lib \
+        -L/system/vendor/lib64 \
+        $(OPENCL_LIBS) \
+
 
 $(OUTPUT): $(OBJS)
 	@echo "[ LINK ] $@"
@@ -222,6 +234,6 @@ $(MODEL_OBJS): %.o: %.dlc
 
 .PHONY: clean
 clean:
-	rm -f visiond $(OBJS) $(DEPS)
+	rm -f visiond rgb_to_yuv_test rgb_to_yuv_test.o $(OBJS) $(DEPS)
 
 -include $(DEPS)

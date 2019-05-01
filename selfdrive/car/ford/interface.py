@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 from common.realtime import sec_since_boot
-from cereal import car, log
+from cereal import car
 from selfdrive.swaglog import cloudlog
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.ford.carstate import CarState, get_can_parser
-from selfdrive.car.ford.fordcan import MAX_ANGLE
+from selfdrive.car.ford.values import MAX_ANGLE
 
 try:
   from selfdrive.car.ford.carcontroller import CarController
@@ -210,7 +210,7 @@ class CarInterface(object):
 
   # pass in a car.CarControl
   # to be called @ 100hz
-  def apply(self, c, perception_state=log.Live20Data.new_message()):
+  def apply(self, c):
 
     self.CC.update(self.sendcan, c.enabled, self.CS, self.frame, c.actuators,
                    c.hudControl.visualAlert, c.cruiseControl.cancel)

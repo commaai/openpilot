@@ -46,8 +46,11 @@
 
 #include "model.h"
 #include "monitoring.h"
+#include "rgb_to_yuv.h"
 
 #include "cereal/gen/cpp/log.capnp.h"
+
+#define M_PI 3.14159265358979323846
 
 #define UI_BUF_COUNT 4
 
@@ -120,6 +123,7 @@ struct VisionState {
   FrameMetadata yuv_metas[YUV_COUNT];
   size_t yuv_buf_size;
   int yuv_width, yuv_height;
+  RGBToYUVState rgb_to_yuv_state;
 
   // for front camera recording
   Pool yuv_front_pool;
@@ -129,6 +133,7 @@ struct VisionState {
   FrameMetadata yuv_front_metas[YUV_COUNT];
   size_t yuv_front_buf_size;
   int yuv_front_width, yuv_front_height;
+  RGBToYUVState front_rgb_to_yuv_state;
 
   size_t rgb_buf_size;
   int rgb_width, rgb_height, rgb_stride;
@@ -165,6 +170,9 @@ struct VisionState {
   zsock_t *terminate_pub;
   zsock_t *recorder_sock;
   void* recorder_sock_raw;
+
+  zsock_t *posenet_sock;
+  void* posenet_sock_raw;
 
   pthread_mutex_t clients_lock;
   VisionClientState clients[MAX_CLIENTS];
@@ -393,6 +401,10 @@ void init_buffers(VisionState *s) {
   assert(err == 0);
   s->krnl_debayer_front = clCreateKernel(s->prg_debayer_front, "debayer10", &err);
   assert(err == 0);
+
+  rgb_to_yuv_init(&s->rgb_to_yuv_state, s->context, s->device_id, s->yuv_width, s->yuv_height, s->rgb_stride);
+  rgb_to_yuv_init(&s->front_rgb_to_yuv_state, s->context, s->device_id, s->yuv_front_width, s->yuv_front_height, s->rgb_front_stride);
+
 }
 
 void free_buffers(VisionState *s) {
@@ -826,7 +838,6 @@ void* frontview_thread(void *arg) {
     if (cnt % 3 == 0)
 #endif
     {
-
       // for driver autoexposure, use bottom right corner
       const int y_start = s->rgb_front_height / 3;
       const int y_end = s->rgb_front_height;
@@ -864,15 +875,9 @@ void* frontview_thread(void *arg) {
     int yuv_idx = pool_select(&s->yuv_front_pool);
     s->yuv_front_metas[yuv_idx] = frame_data;
 
-    uint8_t *bgr_ptr = (uint8_t*)s->rgb_front_bufs[ui_idx].addr;
-    libyuv::RGB24ToI420(bgr_ptr, s->rgb_front_stride,
-                        s->yuv_front_bufs[yuv_idx].y, s->yuv_front_width,
-                        s->yuv_front_bufs[yuv_idx].u, s->yuv_front_width/2,
-                        s->yuv_front_bufs[yuv_idx].v, s->yuv_front_width/2,
-                        s->rgb_front_width, s->rgb_front_height);
-
+    rgb_to_yuv_queue(&s->front_rgb_to_yuv_state, q, s->rgb_front_bufs_cl[ui_idx], s->yuv_front_cl[yuv_idx]);
+    visionbuf_sync(&s->yuv_front_ion[yuv_idx], VISIONBUF_SYNC_FROM_DEVICE);
     s->yuv_front_metas[yuv_idx] = frame_data;
-    visionbuf_sync(&s->yuv_front_ion[yuv_idx], VISIONBUF_SYNC_TO_DEVICE);
 
     // no reference required cause we don't use this in visiond
     //pool_acquire(&s->yuv_front_pool, yuv_idx);
@@ -893,6 +898,15 @@ void* frontview_thread(void *arg) {
 
   return NULL;
 }
+
+#define POSENET
+
+#ifdef POSENET
+#include "snpemodel.h"
+extern const uint8_t posenet_model_data[] asm("_binary_posenet_dlc_start");
+extern const uint8_t posenet_model_end[] asm("_binary_posenet_dlc_end");
+const size_t posenet_model_size = posenet_model_end - posenet_model_data;
+#endif
 
 void* processing_thread(void *arg) {
   int err;
@@ -924,6 +938,14 @@ void* processing_thread(void *arg) {
   FILE *dump_rgb_file = fopen("/sdcard/dump.rgb", "wb");
 #endif
 
+#ifdef POSENET
+  int posenet_counter = 0;
+  float pose_output[12];
+  float *posenet_input = (float*)malloc(2*200*532*sizeof(float));
+  SNPEModel *posenet = new SNPEModel(posenet_model_data, posenet_model_size,
+    pose_output, sizeof(pose_output)/sizeof(float));
+#endif
+
   // init the net
   LOG("processing start!");
 
@@ -947,11 +969,6 @@ void* processing_thread(void *arg) {
 
     int ui_idx = tbuffer_select(&s->ui_tb);
     int rgb_idx = ui_idx;
-    // printf("idx %d\n", rgb_idx);
-
-    /*FILE *f = fopen("/tmp/test_dump", "wb");
-    fwrite(s->camera_bufs[buf_idx].addr, 1, s->camera_bufs[buf_idx].len, f);
-    fclose(f);*/
 
     cl_event debayer_event;
     if (s->cameras.rear.ci.bayer) {
@@ -1003,17 +1020,10 @@ void* processing_thread(void *arg) {
     uint8_t* yuv_ptr_u = s->yuv_bufs[yuv_idx].u;
     uint8_t* yuv_ptr_v = s->yuv_bufs[yuv_idx].v;
     cl_mem yuv_cl = s->yuv_cl[yuv_idx];
-
-    libyuv::RGB24ToI420(bgr_ptr, s->rgb_stride,
-                        yuv_ptr_y, s->yuv_width,
-                        yuv_ptr_u, s->yuv_width/2,
-                        yuv_ptr_v, s->yuv_width/2,
-                        s->rgb_width, s->rgb_height);
+    rgb_to_yuv_queue(&s->rgb_to_yuv_state, q, s->rgb_bufs_cl[rgb_idx], yuv_cl);
+    visionbuf_sync(&s->yuv_ion[yuv_idx], VISIONBUF_SYNC_FROM_DEVICE);
 
     double yt2 = millis_since_boot();
-
-    visionbuf_sync(&s->yuv_ion[yuv_idx], VISIONBUF_SYNC_TO_DEVICE);
-
     // keep another reference around till were done processing
     pool_acquire(&s->yuv_pool, yuv_idx);
 
@@ -1067,6 +1077,89 @@ void* processing_thread(void *arg) {
       auto bytes = words.asBytes();
       zmq_send(s->recorder_sock_raw, bytes.begin(), bytes.size(), ZMQ_DONTWAIT);
     }
+
+
+#ifdef POSENET
+    double pt1 = 0, pt2 = 0, pt3 = 0;
+    pt1 = millis_since_boot();
+
+    // move second frame to first frame
+    memmove(&posenet_input[0], &posenet_input[1], sizeof(float)*(200*532*2 - 1));
+
+    // fill posenet input
+    float a;
+    // posenet uses a half resolution cropped frame
+    // with upper left corner: [50, 237] and
+    // bottom right corner: [1114, 637]
+    // So the resulting crop is 532 X 200
+    for (int y=237; y<637; y+=2) {
+      int yy = (y-237)/2;
+      for (int x = 50; x < 1114; x+=2) {
+        int xx = (x-50)/2;
+        a = 0;
+        a += yuv_ptr_y[s->yuv_width*(y+0) + (x+1)];
+        a += yuv_ptr_y[s->yuv_width*(y+1) + (x+1)];
+        a += yuv_ptr_y[s->yuv_width*(y+0) + (x+0)];
+        a += yuv_ptr_y[s->yuv_width*(y+1) + (x+0)];
+        // The posenet takes a normalized image input
+        // like the driving model so [0,255] is remapped
+        // to [-1,1]
+        posenet_input[(yy*532+xx)*2 + 1] = (a/512.0 - 1.0);
+      }
+    }
+    //FILE *fp;
+    //fp = fopen( "testing" , "r" );
+    //fread(posenet_input , sizeof(float) , 200*532*2 , fp);
+    //fclose(fp);
+    //sleep(5);
+
+    pt2 = millis_since_boot();
+
+    posenet_counter++;
+
+    if (posenet_counter % 5 == 0){
+      // run posenet
+      //printf("avg %f\n", pose_output[0]);
+      posenet->execute(posenet_input);
+
+
+      // fix stddevs
+      for (int i = 6; i < 12; i++) {
+        pose_output[i] = log1p(exp(pose_output[i])) + 1e-6;
+      }
+      // to radians
+      for (int i = 3; i < 6; i++) {
+        pose_output[i] = M_PI * pose_output[i] / 180.0;
+      }
+      // to radians
+      for (int i = 9; i < 12; i++) {
+        pose_output[i] = M_PI * pose_output[i] / 180.0;
+      }
+
+      // send posenet event
+      {
+        capnp::MallocMessageBuilder msg;
+        cereal::Event::Builder event = msg.initRoot<cereal::Event>();
+        event.setLogMonoTime(nanos_since_boot());
+
+        auto posenetd = event.initCameraOdometry();
+        kj::ArrayPtr<const float> trans_vs(&pose_output[0], 3);
+        posenetd.setTrans(trans_vs);
+        kj::ArrayPtr<const float> rot_vs(&pose_output[3], 3);
+        posenetd.setRot(rot_vs);
+        kj::ArrayPtr<const float> trans_std_vs(&pose_output[6], 3);
+        posenetd.setTransStd(trans_std_vs);
+        kj::ArrayPtr<const float> rot_std_vs(&pose_output[9], 3);
+        posenetd.setRotStd(rot_std_vs);
+
+        auto words = capnp::messageToFlatArray(msg);
+        auto bytes = words.asBytes();
+        zmq_send(s->posenet_sock_raw, bytes.begin(), bytes.size(), ZMQ_DONTWAIT);
+      }
+      pt3 = millis_since_boot();
+      LOGD("pre: %.2fms | posenet: %.2fms", (pt2-pt1), (pt3-pt1));
+    }
+#endif
 
 
     tbuffer_dispatch(&s->ui_tb, ui_idx);
@@ -1318,6 +1411,10 @@ int main(int argc, char **argv) {
   s->monitoring_sock = zsock_new_pub("@tcp://*:8063");
   assert(s->monitoring_sock);
   s->monitoring_sock_raw = zsock_resolve(s->monitoring_sock);
+
+  s->posenet_sock = zsock_new_pub("@tcp://*:8066");
+  assert(s->posenet_sock);
+  s->posenet_sock_raw = zsock_resolve(s->posenet_sock);
 
   cameras_open(&s->cameras, &s->camera_bufs[0], &s->focus_bufs[0], &s->stats_bufs[0], &s->front_camera_bufs[0]);
 

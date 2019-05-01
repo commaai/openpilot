@@ -79,6 +79,15 @@ static int toyota_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
     // no IPAS in non IPAS mode
     if (((to_send->RIR>>21) == 0x266) || ((to_send->RIR>>21) == 0x167)) return false;
 
+    // GAS PEDAL: safety check
+    if ((to_send->RIR>>21) == 0x200) {
+      if (controls_allowed && toyota_actuation_limits) {
+        // all messages are fine here
+      } else {
+        if ((to_send->RDLR & 0xFFFF0000) != to_send->RDLR) return 0;
+      }
+    }
+
     // ACCEL: safety check on byte 1-2
     if ((to_send->RIR>>21) == 0x343) {
       int desired_accel = ((to_send->RDLR & 0xFF) << 8) | ((to_send->RDLR >> 8) & 0xFF);
@@ -151,6 +160,9 @@ static void toyota_init(int16_t param) {
   toyota_giraffe_switch_1 = 0;
   toyota_camera_forwarded = 0;
   toyota_dbc_eps_torque_factor = param;
+  #ifdef PANDA
+    lline_relay_release();
+  #endif
 }
 
 static int toyota_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
@@ -172,6 +184,7 @@ const safety_hooks toyota_hooks = {
   .tx_lin = nooutput_tx_lin_hook,
   .ignition = default_ign_hook,
   .fwd = toyota_fwd_hook,
+  .relay = nooutput_relay_hook,
 };
 
 static void toyota_nolimits_init(int16_t param) {
@@ -180,6 +193,9 @@ static void toyota_nolimits_init(int16_t param) {
   toyota_giraffe_switch_1 = 0;
   toyota_camera_forwarded = 0;
   toyota_dbc_eps_torque_factor = param;
+  #ifdef PANDA
+    lline_relay_release();
+  #endif
 }
 
 const safety_hooks toyota_nolimits_hooks = {
@@ -189,4 +205,5 @@ const safety_hooks toyota_nolimits_hooks = {
   .tx_lin = nooutput_tx_lin_hook,
   .ignition = default_ign_hook,
   .fwd = toyota_fwd_hook,
+  .relay = nooutput_relay_hook,
 };

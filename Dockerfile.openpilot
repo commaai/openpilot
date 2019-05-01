@@ -28,12 +28,14 @@ RUN pip install -r /tmp/requirements_openpilot.txt
 
 ENV PYTHONPATH /tmp/openpilot:$PYTHONPATH
 
+COPY ./.pylintrc /tmp/openpilot/.pylintrc
 COPY ./common /tmp/openpilot/common
 COPY ./cereal /tmp/openpilot/cereal
 COPY ./opendbc /tmp/openpilot/opendbc
 COPY ./selfdrive /tmp/openpilot/selfdrive
 COPY ./phonelibs /tmp/openpilot/phonelibs
 COPY ./pyextra /tmp/openpilot/pyextra
+COPY ./panda /tmp/openpilot/panda
 
 RUN mkdir -p /tmp/openpilot/selfdrive/test/out
 RUN make -C /tmp/openpilot/selfdrive/controls/lib/longitudinal_mpc clean

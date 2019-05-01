@@ -41,7 +41,7 @@ MonitoringResult monitoring_eval_frame(MonitoringState* s, cl_command_queue q,
 
   MonitoringResult ret = {0};
   memcpy(ret.vs, s->output, sizeof(ret.vs));
-  ret.std = sqrtf(2.f) / s->output[6];
+  ret.std = sqrtf(2.f) / s->output[OUTPUT_SIZE - 1];
 
   return ret;
 }

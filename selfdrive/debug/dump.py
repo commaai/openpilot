@@ -26,6 +26,7 @@ if __name__ == "__main__":
   parser.add_argument('--proxy', action='store_true', help='republish on localhost')
   parser.add_argument('--map', action='store_true')
   parser.add_argument('--addr', default='127.0.0.1')
+  parser.add_argument('--values', help='values to monitor (instead of entire event)')
   parser.add_argument("socket", type=str, nargs='*', help="socket name")
   args = parser.parse_args()
 
@@ -38,7 +39,7 @@ if __name__ == "__main__":
       port = int(m)
     else:
       print("service not found")
-      exit(-1)
+      sys.exit(-1)
     sock = messaging.sub_sock(context, port, poller, addr=args.addr)
     if args.proxy:
       republish_socks[sock] = messaging.pub_sock(context, port)
@@ -51,7 +52,11 @@ if __name__ == "__main__":
     server_thread = Thread(target=run_server, args=(socketio,))
     server_thread.daemon = True
     server_thread.start()
-    print 'server running'
+    print('server running')
+
+  values = None
+  if args.values:
+    values = [s.strip().split(".") for s in args.values.split(",")]
 
   while 1:
     polld = poller.poll(timeout=1000)
@@ -63,7 +68,7 @@ if __name__ == "__main__":
       if sock in republish_socks:
         republish_socks[sock].send(msg)
       if args.map and evt.which() == 'liveLocation':
-        print 'send loc'
+        print('send loc')
         socketio.emit('location', {
           'lat': evt.liveLocation.lat,
           'lon': evt.liveLocation.lon,
@@ -78,6 +83,15 @@ if __name__ == "__main__":
         elif args.json:
           print(json.loads(msg))
         elif args.dump_json:
-          print json.dumps(evt.to_dict())
+          print(json.dumps(evt.to_dict()))
+        elif values:
+          print("logMonotime = {}".format(evt.logMonoTime))
+          for value in values:
+            if hasattr(evt, value[0]):
+              item = evt
+              for key in value:
+                item = getattr(item, key)
+              print("{} = {}".format(".".join(value), item))
+          print("")
         else:
-          print evt
+          print(evt)

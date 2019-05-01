@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
 # Add phonelibs openblas to LD_LIBRARY_PATH if import fails
+from common.basedir import BASEDIR
 try:
   from scipy import spatial
 except ImportError as e:
   import os
   import sys
-  from common.basedir import BASEDIR
+
 
   openblas_path = os.path.join(BASEDIR, "phonelibs/openblas/")
   os.environ['LD_LIBRARY_PATH'] += ':' + openblas_path
@@ -14,6 +15,10 @@ except ImportError as e:
   args = [sys.executable]
   args.extend(sys.argv)
   os.execv(sys.executable, args)
+
+DEFAULT_SPEEDS_BY_REGION_JSON_FILE = BASEDIR + "/selfdrive/mapd/default_speeds_by_region.json"
+import default_speeds_generator
+default_speeds_generator.main(DEFAULT_SPEEDS_BY_REGION_JSON_FILE)
 
 import os
 import sys
@@ -35,7 +40,8 @@ from selfdrive.version import version, dirty
 
 OVERPASS_API_URL = "https://overpass.kumi.systems/api/interpreter"
 OVERPASS_HEADERS = {
-    'User-Agent': 'NEOS (comma.ai)'
+    'User-Agent': 'NEOS (comma.ai)',
+    'Accept-Encoding': 'gzip'
 }
 
 last_gps = None
@@ -44,39 +50,17 @@ last_query_result = None
 last_query_pos = None
 cache_valid = False
 
-
-def setup_thread_excepthook():
-  """
-  Workaround for `sys.excepthook` thread bug from:
-  http://bugs.python.org/issue1230540
-  Call once from the main thread before creating any threads.
-  Source: https://stackoverflow.com/a/31622038
-  """
-  init_original = threading.Thread.__init__
-
-  def init(self, *args, **kwargs):
-    init_original(self, *args, **kwargs)
-    run_original = self.run
-
-    def run_with_except_hook(*args2, **kwargs2):
-      try:
-        run_original(*args2, **kwargs2)
-      except Exception:
-        sys.excepthook(*sys.exc_info())
-
-    self.run = run_with_except_hook
-
-  threading.Thread.__init__ = init
-
-
 def build_way_query(lat, lon, radius=50):
   """Builds a query to find all highways within a given radius around a point"""
   pos = "  (around:%f,%f,%f)" % (radius, lat, lon)
+  lat_lon = "(%f,%f)" % (lat, lon)
   q = """(
   way
   """ + pos + """
   [highway][highway!~"^(footway|path|bridleway|steps|cycleway|construction|bus_guideway|escape)$"];
-  >;);out;
+  >;);out;""" + """is_in""" + lat_lon + """;area._[admin_level~"[24]"];
+  convert area ::id = id(), admin_level = t['admin_level'],
+  name = t['name'], "ISO3166-1:alpha2" = t['ISO3166-1:alpha2'];out;
   """
   return q
 
@@ -96,7 +80,7 @@ def query_thread():
         cur_ecef = geodetic2ecef((last_gps.latitude, last_gps.longitude, last_gps.altitude))
         prev_ecef = geodetic2ecef((last_query_pos.latitude, last_query_pos.longitude, last_query_pos.altitude))
         dist = np.linalg.norm(cur_ecef - prev_ecef)
-        if dist < 1000:
+        if dist < 1000: #updated when we are 1km from the edge of the downloaded circle
           continue
 
         if dist > 3000:
@@ -110,6 +94,7 @@ def query_thread():
         nodes = []
         real_nodes = []
         node_to_way = defaultdict(list)
+        location_info = {}
 
         for n in new_result.nodes:
           nodes.append((float(n.lat), float(n.lon), 0))
@@ -119,18 +104,24 @@ def query_thread():
           for n in way.nodes:
             node_to_way[n.id].append(way)
 
+        for area in new_result.areas:
+          if area.tags.get('admin_level', '') == "2":
+            location_info['country'] = area.tags.get('ISO3166-1:alpha2', '')
+          if area.tags.get('admin_level', '') == "4":
+            location_info['region'] = area.tags.get('name', '')
+
         nodes = np.asarray(nodes)
         nodes = geodetic2ecef(nodes)
         tree = spatial.cKDTree(nodes)
 
         query_lock.acquire()
-        last_query_result = new_result, tree, real_nodes, node_to_way
+        last_query_result = new_result, tree, real_nodes, node_to_way, location_info
         last_query_pos = last_gps
         cache_valid = True
         query_lock.release()
 
       except Exception as e:
-        print e
+        print(e)
         query_lock.acquire()
         last_query_result = None
         query_lock.release()
@@ -181,7 +172,7 @@ def mapsd_thread():
       query_lock.acquire()
       cur_way = Way.closest(last_query_result, lat, lon, heading, cur_way)
       if cur_way is not None:
-        pnts, curvature_valid = cur_way.get_lookahead(last_query_result, lat, lon, heading, MAPS_LOOKAHEAD_DISTANCE)
+        pnts, curvature_valid = cur_way.get_lookahead(lat, lon, heading, MAPS_LOOKAHEAD_DISTANCE)
 
         xs = pnts[:, 0]
         ys = pnts[:, 1]
@@ -250,10 +241,23 @@ def mapsd_thread():
       dat.liveMapData.wayId = cur_way.id
 
       # Seed limit
-      max_speed = cur_way.max_speed
+      max_speed = cur_way.max_speed()
       if max_speed is not None:
         dat.liveMapData.speedLimitValid = True
         dat.liveMapData.speedLimit = max_speed
+
+        # TODO: use the function below to anticipate upcoming speed limits
+        #max_speed_ahead, max_speed_ahead_dist = cur_way.max_speed_ahead(max_speed, lat, lon, heading, MAPS_LOOKAHEAD_DISTANCE)
+        #if max_speed_ahead is not None and max_speed_ahead_dist is not None:
+        #  dat.liveMapData.speedLimitAheadValid = True
+        #  dat.liveMapData.speedLimitAhead = float(max_speed_ahead)
+        #  dat.liveMapData.speedLimitAheadDistance = float(max_speed_ahead_dist)
+
+
+      advisory_max_speed = cur_way.advisory_max_speed()
+      if advisory_max_speed is not None:
+        dat.liveMapData.speedAdvisoryValid = True
+        dat.liveMapData.speedAdvisory = advisory_max_speed
 
       # Curvature
       dat.liveMapData.curvatureValid = curvature_valid
@@ -277,7 +281,6 @@ def main(gctx=None):
   crash.bind_extra(version=version, dirty=dirty, is_eon=True)
   crash.install()
 
-  setup_thread_excepthook()
   main_thread = threading.Thread(target=mapsd_thread)
   main_thread.daemon = True
   main_thread.start()
