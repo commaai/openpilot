@@ -106,7 +106,7 @@ ALERTS = [
       "TAKE CONTROL SOON",
       "Steering Temporarily Unavailable",
       AlertStatus.userPrompt, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, .2, .2, .2),
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, .4, 2., 3.),
 
   Alert(
       "preDriverDistracted",
