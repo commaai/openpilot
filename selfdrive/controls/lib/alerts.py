@@ -102,7 +102,7 @@ ALERTS = [
       Priority.LOW, VisualAlert.none, AudibleAlert.none, .2, .2, .2),
 
   Alert(
-      "steerTempUnavailablePedal",
+      "steerTempUnavailableNoCancel",
       "TAKE CONTROL SOON",
       "Steering Temporarily Unavailable",
       AlertStatus.userPrompt, AlertSize.mid,

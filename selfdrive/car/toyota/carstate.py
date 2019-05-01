@@ -421,10 +421,9 @@ class CarState(object):
     self.steer_state = cp.vl["EPS_STATUS"]['LKA_STATE']
     if self.CP.enableGasInterceptor:
       self.steer_error = cp.vl["EPS_STATUS"]['LKA_STATE'] not in [1, 3, 5, 9, 17, 25]
-      self.steer_unavailable = cp.vl["EPS_STATUS"]['LKA_STATE'] == 3
     else:
       self.steer_error = cp.vl["EPS_STATUS"]['LKA_STATE'] not in [1, 5, 9, 17, 25]
-      self.steer_unavailable = False
+    self.steer_unavailable = cp.vl["EPS_STATUS"]['LKA_STATE'] in [3, 17]  # don't disengage, just warning
     self.ipas_active = cp.vl['EPS_STATUS']['IPAS_STATE'] == 3
     self.brake_error = 0
     self.steer_torque_driver = cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_DRIVER']

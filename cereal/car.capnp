@@ -73,7 +73,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     lowBattery @48;
     invalidGiraffeHonda @49;
     vehicleModelInvalid @50;
-    steerTempUnavailablePedal @51;
+    steerTempUnavailableNoCancel @51;
   }
 }
 

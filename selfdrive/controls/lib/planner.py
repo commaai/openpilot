@@ -29,7 +29,6 @@ TR=1.8 # CS.readdistancelines
 _A_CRUISE_MIN_V  = [-0.7, -0.6125, -0.525, -0.4375, -0.285]
 _A_CRUISE_MIN_BP = [0.0, 5.0, 10.0, 20.0, 55.0]
 
-
 # need fast accel at very low speed for stop and go
 # make sure these accelerations are smaller than mpc limits
 _A_CRUISE_MAX_V = [3.5, 3.0, 1.5, .5, .3]
