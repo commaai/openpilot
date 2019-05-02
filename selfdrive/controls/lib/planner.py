@@ -26,7 +26,7 @@ TR=1.8 # CS.readdistancelines
 
 # lookup tables VS speed to determine min and max accels in cruise
 # make sure these accelerations are smaller than mpc limits
-_A_CRUISE_MIN_V  = [-0.595, -0.52063, -0.44625, -0.37188, -0.27075]
+_A_CRUISE_MIN_V  = [-0.7, -0.6125, -0.525, -0.4375, -0.285]
 _A_CRUISE_MIN_BP = [0.0, 5.0, 10.0, 20.0, 55.0]
 
 # need fast accel at very low speed for stop and go
@@ -54,7 +54,7 @@ def calc_cruise_accel_limits(v_ego, following, gasbuttonstatus):
       a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V_ECO)
     else:
       a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V)
-  return np.vstack([a_cruise_min, a_cruise_max])
+  return [float(a_cruise_min), float(a_cruise_max)]
 
 
 def limit_accel_in_turns(v_ego, angle_steers, a_target, CP, angle_later):
@@ -182,16 +182,16 @@ class Planner(object):
 
     # Calculate speed for normal cruise control
     if enabled:
-      accel_limits = map(float, calc_cruise_accel_limits(v_ego, following, gasbuttonstatus))
+      accel_limits = calc_cruise_accel_limits(v_ego, following, gasbuttonstatus)
       if gasbuttonstatus == 0:
         accellimitmaxdynamic = -0.0018*v_ego+0.2
-        jerk_limits = [min(-0.115, accel_limits[0]), max(accellimitmaxdynamic, accel_limits[1])]  # dynamic
+        jerk_limits = [min(-0.125, accel_limits[0] * 0.8), max(accellimitmaxdynamic, accel_limits[1])]  # dynamic
       elif gasbuttonstatus == 1:
         accellimitmaxsport = -0.002*v_ego+0.4
         jerk_limits = [min(-0.25, accel_limits[0]), max(accellimitmaxsport, accel_limits[1])]  # sport
       elif gasbuttonstatus == 2:
         accellimitmaxeco = -0.0015*v_ego+0.1
-        jerk_limits = [min(-0.1, accel_limits[0]), max(accellimitmaxeco, accel_limits[1])]  # eco
+        jerk_limits = [min(-0.125, accel_limits[0] * 0.8), max(accellimitmaxeco, accel_limits[1])]  # eco
       
       if not CS.carState.leftBlinker and not CS.carState.rightBlinker:
         steering_angle = CS.carState.steeringAngle
