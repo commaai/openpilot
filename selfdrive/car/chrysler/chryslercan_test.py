@@ -1,4 +1,4 @@
-import chryslercan
+from selfdrive.car.chrysler import chryslercan
 from selfdrive.can.packer import CANPacker
 
 from cereal import car

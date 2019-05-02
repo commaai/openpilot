@@ -2,8 +2,8 @@ import numpy as np
 import sympy as sp
 import os
 
-from kalman_helpers import ObservationKind
-from ekf_sym import gen_code
+from selfdrive.locationd.kalman.kalman_helpers import ObservationKind
+from selfdrive.locationd.kalman.ekf_sym import gen_code
 
 
 def gen_model(name, dim_state):

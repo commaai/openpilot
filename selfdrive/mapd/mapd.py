@@ -17,7 +17,7 @@ except ImportError as e:
   os.execv(sys.executable, args)
 
 DEFAULT_SPEEDS_BY_REGION_JSON_FILE = BASEDIR + "/selfdrive/mapd/default_speeds_by_region.json"
-import default_speeds_generator
+from selfdrive.mapd import default_speeds_generator
 default_speeds_generator.main(DEFAULT_SPEEDS_BY_REGION_JSON_FILE)
 
 import os
@@ -33,7 +33,7 @@ from common.params import Params
 from common.transformations.coordinates import geodetic2ecef
 from selfdrive.services import service_list
 import selfdrive.messaging as messaging
-from mapd_helpers import MAPS_LOOKAHEAD_DISTANCE, Way, circle_through_points
+from selfdrive.mapd.mapd_helpers import MAPS_LOOKAHEAD_DISTANCE, Way, circle_through_points
 import selfdrive.crash as crash
 from selfdrive.version import version, dirty
 
@@ -176,7 +176,7 @@ def mapsd_thread():
 
         xs = pnts[:, 0]
         ys = pnts[:, 1]
-        road_points = map(float, xs), map(float, ys)
+        road_points = [float(x) for x in xs], [float(y) for y in ys]
 
         if speed < 10:
           curvature_valid = False
@@ -266,8 +266,8 @@ def mapsd_thread():
       if road_points is not None:
         dat.liveMapData.roadX, dat.liveMapData.roadY = road_points
       if curvature is not None:
-        dat.liveMapData.roadCurvatureX = map(float, dists)
-        dat.liveMapData.roadCurvature = map(float, curvature)
+        dat.liveMapData.roadCurvatureX = [float(x) for x in dists]
+        dat.liveMapData.roadCurvature = [float(x) for x in curvature]
 
     dat.liveMapData.mapValid = map_valid
 

@@ -91,7 +91,7 @@ def geocode_maxspeed(tags, location_info):
       rule_valid = all(
         tag_name in tags
         and tags[tag_name] == value
-        for tag_name, value in rule['tags'].iteritems()
+        for tag_name, value in rule['tags'].items()
       )
       if rule_valid:
         max_speed = rule['speed']
@@ -102,7 +102,7 @@ def geocode_maxspeed(tags, location_info):
       rule_valid = all(
         tag_name in tags
         and tags[tag_name] == value
-        for tag_name, value in rule['tags'].iteritems()
+        for tag_name, value in rule['tags'].items()
       )
       if rule_valid:
         max_speed = rule['speed']

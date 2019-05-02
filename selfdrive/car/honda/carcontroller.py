@@ -133,7 +133,7 @@ class CarController(object):
     # **** process the car messages ****
 
     # *** compute control surfaces ***
-    BRAKE_MAX = 1024/4
+    BRAKE_MAX = 1024//4
     if CS.CP.carFingerprint in (CAR.ACURA_ILX):
       STEER_MAX = 0xF00
     elif CS.CP.carFingerprint in (CAR.CRV, CAR.ACURA_RDX):
@@ -160,7 +160,7 @@ class CarController(object):
 
     # Send dashboard UI commands.
     if (frame % 10) == 0:
-      idx = (frame/10) % 4
+      idx = (frame//10) % 4
       can_sends.extend(hondacan.create_ui_commands(self.packer, pcm_speed, hud, CS.CP.carFingerprint, idx))
 
     if CS.CP.radarOffCan:
@@ -173,7 +173,7 @@ class CarController(object):
     else:
       # Send gas and brake commands.
       if (frame % 2) == 0:
-        idx = frame / 2
+        idx = frame // 2
         pump_on, self.last_pump_ts = brake_pump_hysteresys(apply_brake, self.apply_brake_last, self.last_pump_ts)
         can_sends.append(hondacan.create_brake_command(self.packer, apply_brake, pump_on,
           pcm_override, pcm_cancel_cmd, hud.chime, hud.fcw, idx))

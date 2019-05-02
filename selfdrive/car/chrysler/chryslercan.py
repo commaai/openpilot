@@ -12,8 +12,8 @@ def calc_checksum(data):
   end_index = len(data)
   index = 0
   checksum = 0xFF
-  temp_chk = 0;
-  bit_sum = 0;
+  temp_chk = 0
+  bit_sum = 0
   if(end_index <= index):
     return False
   for index in range(0, end_index):
@@ -22,7 +22,7 @@ def calc_checksum(data):
     iterate = 8
     while(iterate > 0):
       iterate -= 1
-      bit_sum = curr & shift;
+      bit_sum = curr & shift
       temp_chk = checksum & 0x80
       if (bit_sum != 0):
         bit_sum = 0x1C

@@ -12,12 +12,12 @@ import selfdrive.messaging as messaging
 def _create_nidec_can_parser():
   dbc_f = 'acura_ilx_2016_nidec.dbc'
   radar_messages = [0x400] + range(0x430, 0x43A) + range(0x440, 0x446)
-  signals = zip(['RADAR_STATE'] +
+  signals = list(zip(['RADAR_STATE'] +
                 ['LONG_DIST'] * 16 + ['NEW_TRACK'] * 16 + ['LAT_DIST'] * 16 +
                 ['REL_SPEED'] * 16,
                 [0x400] + radar_messages[1:] * 4,
-                [0] + [255] * 16 + [1] * 16 + [0] * 16 + [0] * 16)
-  checks = zip([0x445], [20])
+                [0] + [255] * 16 + [1] * 16 + [0] * 16 + [0] * 16))
+  checks = list(zip([0x445], [20]))
 
   return CANParser(os.path.splitext(dbc_f)[0], signals, checks, 1)
 
