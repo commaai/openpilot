@@ -165,7 +165,6 @@ class CarInterface(object):
     be.type = 'accelCruise'
     buttonEvents.append(be)
 
-
     events = []
     if not self.CS.can_valid:
       self.can_invalid_count += 1
@@ -174,7 +173,7 @@ class CarInterface(object):
     else:
       self.can_invalid_count = 0
 
-    if ret.seatbeltUnlatched:
+    if ret.seatbeltUnlatched and (self.CS.acc_active and not self.acc_active_prev):
       events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
 
     if self.CS.acc_active and not self.acc_active_prev:
@@ -195,7 +194,6 @@ class CarInterface(object):
 
     # update previous brake/gas pressed
     self.acc_active_prev = self.CS.acc_active
-
 
     # cast to reader so it can't be modified
     return ret.as_reader()
