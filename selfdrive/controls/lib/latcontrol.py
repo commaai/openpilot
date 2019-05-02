@@ -13,7 +13,7 @@ def get_steer_max(CP, v_ego):
 
 class LatControl(object):
   def __init__(self, CP):
-    kegman = kegman_conf(CP)
+    kegman_conf(CP)
     self.pid = PIController((CP.steerKpBP, CP.steerKpV),
                             (CP.steerKiBP, CP.steerKiV),
                             k_f=CP.steerKf, pos_limit=1.0)
