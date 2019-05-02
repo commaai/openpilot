@@ -98,7 +98,7 @@ class dbc(object):
         sgname = dat.group(2)
         defvals = dat.group(3)
 
-        defvals = defvals.replace("?","\?") #escape sequence in C++
+        defvals = defvals.replace("?",r"\?") #escape sequence in C++
         defvals = defvals.split('"')[:-1]
 
         defs = defvals[1::2]
@@ -112,7 +112,7 @@ class dbc(object):
 
         self.def_vals[ids].append((sgname, defvals))
 
-    for msg in self.msgs.viewvalues():
+    for msg in self.msgs.values():
       msg[1].sort(key=lambda x: x.start_bit)
 
     self.msg_name_to_address = {}

@@ -205,7 +205,7 @@ class Country(Region):
   def jsonify(self):
     ret_dict = {}
     ret_dict[self.name] = {}
-    for r_name, region in self.regions.iteritems():
+    for r_name, region in self.regions.items():
       ret_dict[self.name].update(region.jsonify())
     ret_dict[self.name]['Default'] = self.rules
     return ret_dict

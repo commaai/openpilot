@@ -15,13 +15,13 @@ eon_intrinsics = np.array([
 
 
 leon_dcam_intrinsics = np.array([
-  [650,   0,   816/2],
-  [  0,  650,  612/2],
+  [650,   0,   816//2],
+  [  0,  650,  612//2],
   [  0,    0,     1]])
 
 eon_dcam_intrinsics = np.array([
-  [860,   0,   1152/2],
-  [  0,  860,  864/2],
+  [860,   0,   1152//2],
+  [  0,  860,  864//2],
   [  0,    0,     1]])
 
 # aka 'K_inv' aka view_frame_from_camera_frame

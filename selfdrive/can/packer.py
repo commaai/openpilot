@@ -20,7 +20,7 @@ class CANPacker(object):
 
   def pack(self, addr, values, counter):
     values_thing = []
-    for name, value in values.iteritems():
+    for name, value in values.items():
       if name not in self.sig_names:
         self.sig_names[name] = ffi.new("char[]", name)
 

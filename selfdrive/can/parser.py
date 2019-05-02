@@ -58,7 +58,7 @@ class CANParser(object):
       {
         'address': msg_address,
         'check_frequency': freq,
-      } for msg_address, freq in message_options.iteritems()])
+      } for msg_address, freq in message_options.items()])
 
     self.can = libdbc.can_init(bus, dbc_name, len(message_options_c), message_options_c,
                                len(signal_options_c), signal_options_c, sendcan, tcp_addr)

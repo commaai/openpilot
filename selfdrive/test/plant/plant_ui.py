@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import pygame # pylint: disable=import-error
-from plant import Plant
+from selfdrive.test.plant.plant import Plant
 from selfdrive.car.honda.values import CruiseButtons
 import numpy as np
 import selfdrive.messaging as messaging
@@ -41,7 +41,7 @@ if __name__ == "__main__":
   plant = Plant(100, distance_lead = 40.0)
 
   control_offset = 2.0
-  control_pts = zip(np.arange(0, 100.0, 10.0), [50.0 + control_offset]*10)
+  control_pts = list(zip(np.arange(0, 100.0, 10.0), [50.0 + control_offset]*10))
 
   def pt_to_car(pt):
     x,y = pt
@@ -73,7 +73,7 @@ if __name__ == "__main__":
       x.prob = 0.0
       x.std = 1.0
 
-    car_pts = map(pt_to_car, control_pts)
+    car_pts = [pt_to_car(pt) for pt in control_pts]
 
     print(car_pts)
 
