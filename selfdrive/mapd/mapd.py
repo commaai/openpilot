@@ -322,10 +322,10 @@ def mapsd_thread():
     #print "max_speed"
     #print max_speed
     #print "speedLimittrafficvalid"
-    if speedLimittrafficvalid:
-      print "True"
-    else:
-      print "False"
+    #if speedLimittrafficvalid:
+    #  print "True"
+    #else:
+    #  print "False"
     dat.liveMapData.mapValid = map_valid
 
     map_data_sock.send(dat.to_bytes())
