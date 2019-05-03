@@ -8,7 +8,7 @@ from selfdrive.controls.lib.longitudinal_mpc import libmpc_py
 from selfdrive.controls.lib.drive_helpers import MPC_COST_LONG
 from scipy import interpolate
 import math
-import json
+import time
 
 
 class LongitudinalMpc(object):
@@ -32,18 +32,19 @@ class LongitudinalMpc(object):
     self.relative_velocity = None
     self.relative_distance = None
     self.stop_and_go = False
+    self.rates = []
 
   def save_car_data(self, self_vel):
-    if len(self.dynamic_follow_dict["self_vels"]) >= 200:  # 100hz, so 200 items is 2 seconds
+    while len(self.dynamic_follow_dict["self_vels"]) >= self.calc_rate(2):  # 2 seconds
       del self.dynamic_follow_dict["self_vels"][0]
     self.dynamic_follow_dict["self_vels"].append(self_vel)
 
     if self.relative_velocity is not None:
-      if len(self.dynamic_follow_dict["lead_vels"]) >= 300:
+      while len(self.dynamic_follow_dict["lead_vels"]) >= self.calc_rate(3): # 3 seconds
         del self.dynamic_follow_dict["lead_vels"][0]
       self.dynamic_follow_dict["lead_vels"].append(self_vel + self.relative_velocity)
 
-      if self.mpc_frame >= 50:  # add to traffic list every half second so we're not working with a huge list
+      if self.mpc_frame >= self.calc_rate(0.5):  # add to traffic list every half second so we're not working with a huge list
         if len(self.dynamic_follow_dict["traffic_vels"]) >= 360:  # 360 half seconds is 3 minutes of traffic logging
           del self.dynamic_follow_dict["traffic_vels"][0]
         self.dynamic_follow_dict["traffic_vels"].append(self_vel + self.relative_velocity)
@@ -52,6 +53,15 @@ class LongitudinalMpc(object):
 
     else:  # if no car, reset lead car list; ignore for traffic
       self.dynamic_follow_dict["lead_vels"] = []
+
+  def calc_rate(self, seconds=1.0):  # return current rate of long_mpc in fps/hertz
+    if len(self.rates) >= 10:  # last ten times should return accurate/stable rate
+      del self.rates[0]
+    self.rates.append(time.time())
+    if len(self.rates) < 2:
+      return 100.0 * seconds
+    else:
+      return round((1 / ((self.rates[-1] - self.rates[0]) / len(self.rates))) * seconds)  # return in hertz
 
   def calculate_tr(self, v_ego, car_state):
     """
@@ -143,11 +153,11 @@ class LongitudinalMpc(object):
 
   def get_acceleration(self, velocity_list, is_self):  # calculate acceleration to generate more accurate following distances
     if is_self:
-      a = (velocity_list[-1] - velocity_list[0]) / (len(velocity_list) / 100.0)
+      a = (velocity_list[-1] - velocity_list[0]) / (len(velocity_list) / self.calc_rate(1))
     else:
-      if len(velocity_list) >= 300:
-        a_short = (velocity_list[-1] - velocity_list[-150]) / 1.5  # calculate lead accel last 1.5 s
-        a_long = (velocity_list[-1] - velocity_list[-300]) / 3.0  # divide difference in velocity by how long in sec we're tracking velocity
+      if len(velocity_list) >= self.calc_rate(3):
+        a_short = (velocity_list[-1] - velocity_list[-self.calc_rate(1.5)]) / 1.5  # calculate lead accel last 1.5 s
+        a_long = (velocity_list[-1] - velocity_list[-self.calc_rate(3)]) / 3.0  # divide difference in velocity by how long in sec we're tracking velocity
 
         if abs(sum([a_short, a_long])) < 0.22352:  # if abs(sum) is less than .5 mph/s, average the two
           a = (a_short + a_long) / 2.0
@@ -156,7 +166,7 @@ class LongitudinalMpc(object):
         else:
           a = min([a_short, a_long])
       else:
-        a = (velocity_list[-1] - velocity_list[0]) / (len(velocity_list) / 100.0)
+        a = (velocity_list[-1] - velocity_list[0]) / (len(velocity_list) / self.calc_rate(1))
 
     return a
 
