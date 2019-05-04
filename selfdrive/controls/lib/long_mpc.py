@@ -154,6 +154,8 @@ class LongitudinalMpc(object):
 
   def get_acceleration(self, velocity_list, is_self):  # calculate acceleration to generate more accurate following distances
     if is_self:
+      with open("/data/calc_rate", "a") as f:
+        f.write(str(self.calc_rate(1))+"\n")
       try:
         a = (velocity_list[-1] - velocity_list[0]) / (len(velocity_list) / self.calc_rate(1))
       except:
