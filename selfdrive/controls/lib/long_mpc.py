@@ -158,10 +158,7 @@ class LongitudinalMpc(object):
   def get_acceleration(self, velocity_list, is_self):  # calculate acceleration to generate more accurate following distances
     a = 0.0
     if is_self:
-      with open("/data/calc_rate", "a") as f:
-        f.write(str(self.calc_rate(1))+"\n")
-      with open("/data/calc_rate_vel_list", "a") as f:
-        f.write(str(velocity_list)+"\n")
+
       if sum(velocity_list) != 0:
         a = (velocity_list[-1] - velocity_list[0]) / (len(velocity_list) / self.calc_rate(1))
     else:
@@ -179,6 +176,10 @@ class LongitudinalMpc(object):
         a = (velocity_list[-1] - velocity_list[-self.calc_rate(1.5)]) / 1.5  # calculate lead accel last 1.5 s
       else:
         if sum(velocity_list) != 0:
+          with open("/data/calc_rate", "a") as f:
+            f.write(str(self.calc_rate(1))+"\n")
+          with open("/data/calc_rate_vel_list", "a") as f:
+            f.write(str(velocity_list)+"\n")
           a = (velocity_list[-1] - velocity_list[0]) / (len(velocity_list) / self.calc_rate(1))
 
     return a
