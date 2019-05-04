@@ -57,13 +57,10 @@ class LongitudinalMpc(object):
 
   def calc_rate(self, seconds=1.0):  # return current rate of long_mpc in fps/hertz
     current_time = time.time()
-    if self.last_rate is None:
+    if self.last_rate is None or (current_time - self.last_rate) == 0:
       rate = int(round(30.0 * seconds))
     else:
-      try:
-        rate = (1.0 / (current_time - self.last_rate)) * seconds
-      except:
-        rate = int(round(30.0 * seconds))
+      rate = (1.0 / (current_time - self.last_rate)) * seconds
 
     min_return = 20
     max_return = seconds * 100
