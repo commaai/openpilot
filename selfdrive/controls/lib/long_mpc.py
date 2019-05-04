@@ -40,7 +40,7 @@ class LongitudinalMpc(object):
     self.dynamic_follow_dict["self_vels"].append(self_vel)
 
     if self.relative_velocity is not None:
-      while len(self.dynamic_follow_dict["lead_vels"]) >= self.calc_rate(3): # 3 seconds
+      while len(self.dynamic_follow_dict["lead_vels"]) >= self.calc_rate(3):  # 3 seconds
         del self.dynamic_follow_dict["lead_vels"][0]
       self.dynamic_follow_dict["lead_vels"].append(self_vel + self.relative_velocity)
 
@@ -154,7 +154,10 @@ class LongitudinalMpc(object):
 
   def get_acceleration(self, velocity_list, is_self):  # calculate acceleration to generate more accurate following distances
     if is_self:
-      a = (velocity_list[-1] - velocity_list[0]) / (len(velocity_list) / self.calc_rate(1))
+      try:
+        a = (velocity_list[-1] - velocity_list[0]) / (len(velocity_list) / self.calc_rate(1))
+      except:
+        a = 0.0
     else:
       if len(velocity_list) >= self.calc_rate(3):
         a_short = (velocity_list[-1] - velocity_list[-self.calc_rate(1.5)]) / 1.5  # calculate lead accel last 1.5 s
