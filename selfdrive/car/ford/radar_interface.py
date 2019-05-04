@@ -14,10 +14,10 @@ RADAR_MSGS = range(0x500, 0x540)
 def _create_radard_can_parser():
   dbc_f = 'ford_fusion_2018_adas.dbc'
   msg_n = len(RADAR_MSGS)
-  signals = zip(['X_Rel'] * msg_n + ['Angle'] * msg_n + ['V_Rel'] * msg_n,
-                RADAR_MSGS * 3,
-                [0] * msg_n + [0] * msg_n + [0] * msg_n)
-  checks = zip(RADAR_MSGS, [20]*msg_n)
+  signals = list(zip(['X_Rel'] * msg_n + ['Angle'] * msg_n + ['V_Rel'] * msg_n,
+                     RADAR_MSGS * 3,
+                     [0] * msg_n + [0] * msg_n + [0] * msg_n))
+  checks = list(zip(RADAR_MSGS, [20]*msg_n))
 
   return CANParser(os.path.splitext(dbc_f)[0], signals, checks, 1)
 
@@ -90,4 +90,4 @@ if __name__ == "__main__":
   while 1:
     ret = RI.update()
     print(chr(27) + "[2J")
-    print ret
+    print(ret)

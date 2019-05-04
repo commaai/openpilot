@@ -46,6 +46,7 @@
 
 #include "model.h"
 #include "monitoring.h"
+#include "rgb_to_yuv.h"
 
 #include "cereal/gen/cpp/log.capnp.h"
 
@@ -122,6 +123,7 @@ struct VisionState {
   FrameMetadata yuv_metas[YUV_COUNT];
   size_t yuv_buf_size;
   int yuv_width, yuv_height;
+  RGBToYUVState rgb_to_yuv_state;
 
   // for front camera recording
   Pool yuv_front_pool;
@@ -131,6 +133,7 @@ struct VisionState {
   FrameMetadata yuv_front_metas[YUV_COUNT];
   size_t yuv_front_buf_size;
   int yuv_front_width, yuv_front_height;
+  RGBToYUVState front_rgb_to_yuv_state;
 
   size_t rgb_buf_size;
   int rgb_width, rgb_height, rgb_stride;
@@ -398,6 +401,10 @@ void init_buffers(VisionState *s) {
   assert(err == 0);
   s->krnl_debayer_front = clCreateKernel(s->prg_debayer_front, "debayer10", &err);
   assert(err == 0);
+
+  rgb_to_yuv_init(&s->rgb_to_yuv_state, s->context, s->device_id, s->yuv_width, s->yuv_height, s->rgb_stride);
+  rgb_to_yuv_init(&s->front_rgb_to_yuv_state, s->context, s->device_id, s->yuv_front_width, s->yuv_front_height, s->rgb_front_stride);
+
 }
 
 void free_buffers(VisionState *s) {
@@ -831,7 +838,6 @@ void* frontview_thread(void *arg) {
     if (cnt % 3 == 0)
 #endif
     {
-
       // for driver autoexposure, use bottom right corner
       const int y_start = s->rgb_front_height / 3;
       const int y_end = s->rgb_front_height;
@@ -869,15 +875,9 @@ void* frontview_thread(void *arg) {
     int yuv_idx = pool_select(&s->yuv_front_pool);
     s->yuv_front_metas[yuv_idx] = frame_data;
 
-    uint8_t *bgr_ptr = (uint8_t*)s->rgb_front_bufs[ui_idx].addr;
-    libyuv::RGB24ToI420(bgr_ptr, s->rgb_front_stride,
-                        s->yuv_front_bufs[yuv_idx].y, s->yuv_front_width,
-                        s->yuv_front_bufs[yuv_idx].u, s->yuv_front_width/2,
-                        s->yuv_front_bufs[yuv_idx].v, s->yuv_front_width/2,
-                        s->rgb_front_width, s->rgb_front_height);
-
+    rgb_to_yuv_queue(&s->front_rgb_to_yuv_state, q, s->rgb_front_bufs_cl[ui_idx], s->yuv_front_cl[yuv_idx]);
+    visionbuf_sync(&s->yuv_front_ion[yuv_idx], VISIONBUF_SYNC_FROM_DEVICE);
     s->yuv_front_metas[yuv_idx] = frame_data;
-    visionbuf_sync(&s->yuv_front_ion[yuv_idx], VISIONBUF_SYNC_TO_DEVICE);
 
     // no reference required cause we don't use this in visiond
     //pool_acquire(&s->yuv_front_pool, yuv_idx);
@@ -1020,17 +1020,10 @@ void* processing_thread(void *arg) {
     uint8_t* yuv_ptr_u = s->yuv_bufs[yuv_idx].u;
     uint8_t* yuv_ptr_v = s->yuv_bufs[yuv_idx].v;
     cl_mem yuv_cl = s->yuv_cl[yuv_idx];
-
-    libyuv::RGB24ToI420(bgr_ptr, s->rgb_stride,
-                        yuv_ptr_y, s->yuv_width,
-                        yuv_ptr_u, s->yuv_width/2,
-                        yuv_ptr_v, s->yuv_width/2,
-                        s->rgb_width, s->rgb_height);
+    rgb_to_yuv_queue(&s->rgb_to_yuv_state, q, s->rgb_bufs_cl[rgb_idx], yuv_cl);
+    visionbuf_sync(&s->yuv_ion[yuv_idx], VISIONBUF_SYNC_FROM_DEVICE);
 
     double yt2 = millis_since_boot();
-
-    visionbuf_sync(&s->yuv_ion[yuv_idx], VISIONBUF_SYNC_TO_DEVICE);
-
     // keep another reference around till were done processing
     pool_acquire(&s->yuv_pool, yuv_idx);
 
@@ -1129,7 +1122,7 @@ void* processing_thread(void *arg) {
       //printf("avg %f\n", pose_output[0]);
       posenet->execute(posenet_input);
 
-        
+
       // fix stddevs
       for (int i = 6; i < 12; i++) {
         pose_output[i] = log1p(exp(pose_output[i])) + 1e-6;

@@ -1,3 +1,4 @@
+import copy
 import numpy as np
 from common.kalman.simple_kalman import KF1D
 from selfdrive.config import Conversions as CV
@@ -32,11 +33,48 @@ def get_powertrain_can_parser(CP):
     ("Dashlights", 10),
     ("CruiseControl", 20),
     ("Wheel_Speeds", 50),
-    ("Steering_Torque", 100),
+    ("Steering_Torque", 50),
     ("BodyInfo", 10),
   ]
 
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
+
+def get_camera_can_parser(CP):
+  signals = [
+    ("Cruise_Set_Speed", "ES_DashStatus", 0),
+
+    ("Counter", "ES_Distance", 0),
+    ("Signal1", "ES_Distance", 0),
+    ("Signal2", "ES_Distance", 0),
+    ("Main", "ES_Distance", 0),
+    ("Signal3", "ES_Distance", 0),
+
+    ("Checksum", "ES_LKAS_State", 0),
+    ("Counter", "ES_LKAS_State", 0),
+    ("Keep_Hands_On_Wheel", "ES_LKAS_State", 0),
+    ("Empty_Box", "ES_LKAS_State", 0),
+    ("Signal1", "ES_LKAS_State", 0),
+    ("LKAS_ACTIVE", "ES_LKAS_State", 0),
+    ("Signal2", "ES_LKAS_State", 0),
+    ("Backward_Speed_Limit_Menu", "ES_LKAS_State", 0),
+    ("LKAS_ENABLE_3", "ES_LKAS_State", 0),
+    ("Signal3", "ES_LKAS_State", 0),
+    ("LKAS_ENABLE_2", "ES_LKAS_State", 0),
+    ("Signal4", "ES_LKAS_State", 0),
+    ("FCW_Cont_Beep", "ES_LKAS_State", 0),
+    ("FCW_Repeated_Beep", "ES_LKAS_State", 0),
+    ("Throttle_Management_Activated", "ES_LKAS_State", 0),
+    ("Traffic_light_Ahead", "ES_LKAS_State", 0),
+    ("Right_Depart", "ES_LKAS_State", 0),
+    ("Signal5", "ES_LKAS_State", 0),
+
+  ]
+
+  checks = [
+    ("ES_DashStatus", 10),
+  ]
+
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
 
 class CarState(object):
   def __init__(self, CP):
@@ -60,9 +98,11 @@ class CarState(object):
                          K=np.matrix([[0.12287673], [0.29666309]]))
     self.v_ego = 0.
 
-  def update(self, cp):
+  def update(self, cp, cp_cam):
 
-    self.can_valid = True
+    self.can_valid = cp.can_valid
+    self.cam_can_valid = cp_cam.can_valid
+
     self.pedal_gas = cp.vl["Throttle"]['Throttle_Pedal']
     self.brake_pressure = cp.vl["Brake_Pedal"]['Brake_Pedal']
     self.user_gas_pressed = self.pedal_gas > 0
@@ -73,6 +113,8 @@ class CarState(object):
     self.v_wheel_fr = cp.vl["Wheel_Speeds"]['FR'] * CV.KPH_TO_MS
     self.v_wheel_rl = cp.vl["Wheel_Speeds"]['RL'] * CV.KPH_TO_MS
     self.v_wheel_rr = cp.vl["Wheel_Speeds"]['RR'] * CV.KPH_TO_MS
+
+    self.v_cruise_pcm = cp_cam.vl["ES_DashStatus"]["Cruise_Set_Speed"] * CV.MPH_TO_KPH
 
     v_wheel = (self.v_wheel_fl + self.v_wheel_fr + self.v_wheel_rl + self.v_wheel_rr) / 4.
     # Kalman filter, even though Hyundai raw wheel speed is heaviliy filtered by default
@@ -101,4 +143,5 @@ class CarState(object):
       cp.vl["BodyInfo"]['DOOR_OPEN_FR'],
       cp.vl["BodyInfo"]['DOOR_OPEN_FL']])
 
-
+    self.es_distance_msg = copy.copy(cp_cam.vl["ES_Distance"])
+    self.es_lkas_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])

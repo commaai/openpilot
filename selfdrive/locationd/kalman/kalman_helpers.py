@@ -66,7 +66,7 @@ SAT_OBS = [ObservationKind.PSEUDORANGE_GPS,
 
 
 def run_car_ekf_offline(kf, observations_by_kind):
-  from laika.raw_gnss import GNSSMeasurement
+  from laika.raw_gnss import GNSSMeasurement  # pylint: disable=import-error
   observations = []
   # create list of observations with element format: [kind, time, data]
   for kind in observations_by_kind:
@@ -131,7 +131,7 @@ def run_observations_through_filter(kf, observations, filter_time=None):
 
 def save_residuals_plot(obs, save_path, data_name):
   import matplotlib.pyplot as plt
-  import mpld3
+  import mpld3 # pylint: disable=import-error
   fig = plt.figure(figsize=(10,20))
   fig.suptitle('Residuals of ' + data_name, fontsize=24)
   n = len(obs.keys())

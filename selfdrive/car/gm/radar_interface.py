@@ -25,7 +25,7 @@ def create_radard_can_parser(canbus, car_fingerprint):
   if car_fingerprint in (CAR.VOLT, CAR.MALIBU, CAR.HOLDEN_ASTRA, CAR.ACADIA, CAR.CADILLAC_ATS):
     # C1A-ARS3-A by Continental
     radar_targets = range(SLOT_1_MSG, SLOT_1_MSG + NUM_SLOTS)
-    signals = zip(['FLRRNumValidTargets',
+    signals = list(zip(['FLRRNumValidTargets',
                    'FLRRSnsrBlckd', 'FLRRYawRtPlsblityFlt',
                    'FLRRHWFltPrsntInt', 'FLRRAntTngFltPrsnt',
                    'FLRRAlgnFltPrsnt', 'FLRRSnstvFltPrsntInt'] +
@@ -36,7 +36,7 @@ def create_radard_can_parser(canbus, car_fingerprint):
                   [0] * 7 +
                   [0.0] * NUM_SLOTS + [0.0] * NUM_SLOTS +
                   [0.0] * NUM_SLOTS + [0.0] * NUM_SLOTS +
-                  [0.0] * NUM_SLOTS + [0] * NUM_SLOTS)
+                  [0.0] * NUM_SLOTS + [0] * NUM_SLOTS))
 
     checks = []
 
@@ -124,4 +124,4 @@ if __name__ == "__main__":
   while 1:
     ret = RI.update()
     print(chr(27) + "[2J")
-    print ret
+    print(ret)

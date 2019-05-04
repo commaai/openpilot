@@ -127,16 +127,13 @@ def boardd_mock_loop():
 
   while 1:
     tsc = messaging.drain_sock(logcan, wait_for_one=True)
-    snds = map(lambda x: can_capnp_to_can_list(x.can), tsc)
-    snd = []
-    for s in snds:
-      snd += s
-    snd = filter(lambda x: x[-1] <= 1, snd)
-    can_send_many(snd)
+    snds = [can_capnp_to_can_list(x.can) for x in tsc]
+    snds = [x for x in snds if x[-1] <= 1]
+    can_send_many(snds)
 
     # recv @ 100hz
     can_msgs = can_recv()
-    print("sent %d got %d" % (len(snd), len(can_msgs)))
+    print("sent %d got %d" % (len(snds), len(can_msgs)))
     m = can_list_to_can_capnp(can_msgs)
     sendcan.send(m.to_bytes())
 
@@ -220,7 +217,7 @@ def boardd_proxy_loop(rate=200, address="192.168.2.251"):
     # recv @ 100hz
     can_msgs = can_recv()
     #for m in can_msgs:
-    #  print "R:",hex(m[0]), str(m[2]).encode("hex")
+    #  print("R: {0} {1}".format(hex(m[0]), str(m[2]).encode("hex")))
 
     # publish to logger
     # TODO: refactor for speed
@@ -233,7 +230,7 @@ def boardd_proxy_loop(rate=200, address="192.168.2.251"):
     if tsc is not None:
       cl = can_capnp_to_can_list(tsc.can)
       #for m in cl:
-      #  print "S:",hex(m[0]), str(m[2]).encode("hex")
+      #  print("S: {0} {1}".format(hex(m[0]), str(m[2]).encode("hex")))
       can_send_many(cl)
 
     rk.keep_time()

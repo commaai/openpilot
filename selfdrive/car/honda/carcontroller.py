@@ -124,7 +124,7 @@ class CarController(object):
     if CS.CP.radarOffCan:
       snd_beep = snd_beep if snd_beep != 0 else snd_chime
 
-    #print chime, alert_id, hud_alert
+    #print("{0} {1} {2}".format(chime, alert_id, hud_alert))
     fcw_display, steer_required, acc_alert = process_hud_alert(hud_alert)
 
     hud = HUDData(int(pcm_accel), int(round(hud_v_cruise)), 1, hud_car,
@@ -133,11 +133,13 @@ class CarController(object):
     # **** process the car messages ****
 
     # *** compute control surfaces ***
-    BRAKE_MAX = 1024/4
+    BRAKE_MAX = 1024//4
     if CS.CP.carFingerprint in (CAR.ACURA_ILX):
       STEER_MAX = 0xF00
     elif CS.CP.carFingerprint in (CAR.CRV, CAR.ACURA_RDX):
       STEER_MAX = 0x3e8  # CR-V only uses 12-bits and requires a lower value (max value from energee)
+    elif CS.CP.carFingerprint in (CAR.ODYSSEY_CHN):
+      STEER_MAX = 0x7FFF
     else:
       STEER_MAX = 0x1000
 
@@ -158,7 +160,7 @@ class CarController(object):
 
     # Send dashboard UI commands.
     if (frame % 10) == 0:
-      idx = (frame/10) % 4
+      idx = (frame//10) % 4
       can_sends.extend(hondacan.create_ui_commands(self.packer, pcm_speed, hud, CS.CP.carFingerprint, idx))
 
     if CS.CP.radarOffCan:
@@ -171,7 +173,7 @@ class CarController(object):
     else:
       # Send gas and brake commands.
       if (frame % 2) == 0:
-        idx = frame / 2
+        idx = frame // 2
         pump_on, self.last_pump_ts = brake_pump_hysteresys(apply_brake, self.apply_brake_last, self.last_pump_ts)
         can_sends.append(hondacan.create_brake_command(self.packer, apply_brake, pump_on,
           pcm_override, pcm_cancel_cmd, hud.chime, hud.fcw, idx))

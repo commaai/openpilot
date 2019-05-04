@@ -19,12 +19,13 @@ def _create_radard_can_parser():
   msg_a_n = len(RADAR_A_MSGS)
   msg_b_n = len(RADAR_B_MSGS)
 
-  signals = zip(['LONG_DIST'] * msg_a_n + ['NEW_TRACK'] * msg_a_n + ['LAT_DIST'] * msg_a_n +
-                ['REL_SPEED'] * msg_a_n + ['VALID'] * msg_a_n + ['SCORE'] * msg_b_n,
-                RADAR_A_MSGS * 5 + RADAR_B_MSGS,
-                [255] * msg_a_n + [1] * msg_a_n + [0] * msg_a_n + [0] * msg_a_n + [0] * msg_a_n + [0] * msg_b_n)
+  signals = list(zip(
+    ['LONG_DIST'] * msg_a_n + ['NEW_TRACK'] * msg_a_n + ['LAT_DIST'] * msg_a_n +
+        ['REL_SPEED'] * msg_a_n + ['VALID'] * msg_a_n + ['SCORE'] * msg_b_n,
+    RADAR_A_MSGS * 5 + RADAR_B_MSGS,
+    [255] * msg_a_n + [1] * msg_a_n + [0] * msg_a_n + [0] * msg_a_n + [0] * msg_a_n + [0] * msg_b_n))
 
-  checks = zip(RADAR_A_MSGS + RADAR_B_MSGS, [20]*(msg_a_n + msg_b_n))
+  checks = list(zip(RADAR_A_MSGS + RADAR_B_MSGS, [20]*(msg_a_n + msg_b_n)))
 
   return CANParser(os.path.splitext(dbc_f)[0], signals, checks, 1)
 
