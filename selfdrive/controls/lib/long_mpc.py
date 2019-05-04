@@ -57,10 +57,13 @@ class LongitudinalMpc(object):
 
   def calc_rate(self, seconds=1.0):  # return current rate of long_mpc in fps/hertz
     current_time = time.time()
-    if not self.last_rate:
-      rate = int(round(30 * seconds))
+    if self.last_rate is None:
+      rate = int(round(30.0 * seconds))
     else:
-      rate = (1.0 / (current_time - self.last_rate)) * seconds
+      try:
+        rate = (1.0 / (current_time - self.last_rate)) * seconds
+      except:
+        rate = int(round(30.0 * seconds))
 
     min_return = 20
     max_return = seconds * 100
@@ -178,8 +181,6 @@ class LongitudinalMpc(object):
         a = (velocity_list[-1] - velocity_list[-self.calc_rate(1.5)]) / 1.5  # calculate lead accel last 1.5 s
       else:
         if sum(velocity_list) != 0:
-          with open("/data/calc_rate", "a") as f:
-            f.write(str(self.calc_rate(1))+"\n")
           a = (velocity_list[-1] - velocity_list[0]) / (len(velocity_list) / float(self.calc_rate(1)))
 
     return a
