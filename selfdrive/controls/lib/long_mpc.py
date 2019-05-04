@@ -59,9 +59,10 @@ class LongitudinalMpc(object):
       del self.rates[0]
     self.rates.append(time.time())
     if len(self.rates) < 2:
-      return 100.0 * seconds
+      return int(round(30 * seconds))
     else:
-      return int(round((1 / ((self.rates[-1] - self.rates[0]) / len(self.rates))) * seconds))  # return in hertz
+      rate = int(round((1 / ((self.rates[-1] - self.rates[0]) / len(self.rates))) * seconds))
+      return rate if rate != 0 else 30  # return in hertz
 
   def calculate_tr(self, v_ego, car_state):
     """
