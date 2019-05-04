@@ -32,7 +32,8 @@ class LongitudinalMpc(object):
     self.relative_velocity = None
     self.relative_distance = None
     self.stop_and_go = False
-    self.rates = []
+    self.last_rate = None
+    self.new_frame = True
 
   def save_car_data(self, self_vel):
     while len(self.dynamic_follow_dict["self_vels"]) >= self.calc_rate(2):  # 2 seconds
@@ -55,16 +56,17 @@ class LongitudinalMpc(object):
       self.dynamic_follow_dict["lead_vels"] = []
 
   def calc_rate(self, seconds=1.0):  # return current rate of long_mpc in fps/hertz
-    if len(self.rates) >= 10:  # last ten times should return accurate/stable rate
-      del self.rates[0]
-    self.rates.append(time.time())
-    if len(self.rates) < 2:
-      rate=int(round(30 * seconds))
+    current_time = time.time()
+    if not self.last_rate:
+      rate = int(round(30 * seconds))
     else:
-      rate = (1 / (self.rates[-1] - self.rates[0])) * seconds
+      rate = (1.0 / (current_time - self.last_rate)) * seconds
 
     min_return = 20
     max_return = seconds * 100
+    if self.new_frame:
+      self.last_rate = current_time
+      self.new_frame = False
     return int(round(max(min(rate, max_return), min_return)))  # ensure we return a value between range, in hertz
 
   def calculate_tr(self, v_ego, car_state):
@@ -94,6 +96,7 @@ class LongitudinalMpc(object):
       return 0.9  # 10m at 40km/hr
 
     if read_distance_lines == 2:
+      self.new_frame = True  # for rate calculation so it doesn't update time multiple times a frame
       self.save_car_data(v_ego)
       generatedTR = self.dynamic_follow(v_ego)
       generated_cost = self.generate_cost(generatedTR, v_ego)
