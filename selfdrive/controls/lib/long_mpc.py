@@ -59,10 +59,13 @@ class LongitudinalMpc(object):
       del self.rates[0]
     self.rates.append(time.time())
     if len(self.rates) < 2:
-      return int(round(30 * seconds))
+      rate=int(round(30 * seconds))
     else:
       rate = int(round((1 / ((self.rates[-1] - self.rates[0]) / len(self.rates))) * seconds))
-      return rate if rate != 0 else 30  # return in hertz
+
+    min_return = 20
+    max_return = seconds * 100
+    return int(round(max(min(rate, max_return), min_return)))  # ensure we return a value between range, in hertz
 
   def calculate_tr(self, v_ego, car_state):
     """
@@ -158,10 +161,7 @@ class LongitudinalMpc(object):
         f.write(str(self.calc_rate(1))+"\n")
       with open("/data/calc_rate_vel_list", "a") as f:
         f.write(str(velocity_list)+"\n")
-      try:
-        a = (velocity_list[-1] - velocity_list[0]) / (len(velocity_list) / self.calc_rate(1))
-      except:
-        a = 0.0
+      a = (velocity_list[-1] - velocity_list[0]) / (len(velocity_list) / self.calc_rate(1))
     else:
       if len(velocity_list) >= self.calc_rate(3):
         a_short = (velocity_list[-1] - velocity_list[-self.calc_rate(1.5)]) / 1.5  # calculate lead accel last 1.5 s
