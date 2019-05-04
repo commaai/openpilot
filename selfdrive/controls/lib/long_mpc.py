@@ -156,14 +156,16 @@ class LongitudinalMpc(object):
     return traffic
 
   def get_acceleration(self, velocity_list, is_self):  # calculate acceleration to generate more accurate following distances
+    a = 0.0
     if is_self:
       with open("/data/calc_rate", "a") as f:
         f.write(str(self.calc_rate(1))+"\n")
       with open("/data/calc_rate_vel_list", "a") as f:
         f.write(str(velocity_list)+"\n")
-      a = (velocity_list[-1] - velocity_list[0]) / (len(velocity_list) / self.calc_rate(1))
+      if sum(velocity_list) != 0:
+        a = (velocity_list[-1] - velocity_list[0]) / (len(velocity_list) / self.calc_rate(1))
     else:
-      if len(velocity_list) >= self.calc_rate(3):
+      if len(velocity_list) >= self.calc_rate(3) and sum(velocity_list) != 0:
         a_short = (velocity_list[-1] - velocity_list[-self.calc_rate(1.5)]) / 1.5  # calculate lead accel last 1.5 s
         a_long = (velocity_list[-1] - velocity_list[-self.calc_rate(3)]) / 3.0  # divide difference in velocity by how long in sec we're tracking velocity
 
@@ -173,8 +175,11 @@ class LongitudinalMpc(object):
           a = max([a_short, a_long])
         else:
           a = min([a_short, a_long])
+      elif len(velocity_list) >= self.calc_rate(1.5) and sum(velocity_list) != 0:
+        a = (velocity_list[-1] - velocity_list[-self.calc_rate(1.5)]) / 1.5  # calculate lead accel last 1.5 s
       else:
-        a = (velocity_list[-1] - velocity_list[0]) / (len(velocity_list) / self.calc_rate(1))
+        if sum(velocity_list) != 0:
+          a = (velocity_list[-1] - velocity_list[0]) / (len(velocity_list) / self.calc_rate(1))
 
     return a
 
