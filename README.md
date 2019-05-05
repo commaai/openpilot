@@ -99,8 +99,8 @@ Supported Cars
 | Toyota               | Highlander 2017-18       | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           | Toyota            |
 | Toyota               | Highlander Hybrid 2018   | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           | Toyota            |
 | Toyota               | Prius 2016               | TSS-P                | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           | Toyota            |
-| Toyota               | Prius 2017-18            | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           | Toyota            |
-| Toyota               | Prius Prime 2017-18      | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           | Toyota            |
+| Toyota               | Prius 2017-19            | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           | Toyota            |
+| Toyota               | Prius Prime 2017-19      | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           | Toyota            |
 | Toyota               | Rav4 2016                | TSS-P                | Yes     | Yes<sup>2</sup>| 20mph<sup>1</sup>| 0mph           | Toyota            |
 | Toyota               | Rav4 2017-18             | All                  | Yes     | Yes<sup>2</sup>| 20mph<sup>1</sup>| 0mph           | Toyota            |
 | Toyota               | Rav4 Hybrid 2017-18      | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           | Toyota            |
