@@ -1,1 +1,1 @@
-#define COMMA_VERSION "0.5.10.6-arne182"
+#define COMMA_VERSION "0.5.10.7-arne182"
