@@ -65,8 +65,6 @@ class LongitudinalMpc(object):
     min_return = 20
     max_return = seconds * 100
     if self.new_frame:
-      with open("/data/calc_rate", "a") as f:
-        f.write(str(rate)+"\n")
       self.last_rate = current_time
       self.new_frame = False
     return int(round(max(min(rate, max_return), min_return)))  # ensure we return a value between range, in hertz
