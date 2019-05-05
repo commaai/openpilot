@@ -242,12 +242,10 @@ class CarState(object):
     if self.cstm_btns.get_button_status("lka") == 0:
       self.lane_departure_toggle_on = False
     else:
-      self.lane_departure_toggle_on = True
-
-    if self.alcaMode == 3 and (self.left_blinker_on or self.right_blinker_on):
-      self.lane_departure_toggle_on = False
-    else:
-      self.lane_departure_toggle_on = True
+      if self.alcaMode == 3 and (self.left_blinker_on or self.right_blinker_on):
+        self.lane_departure_toggle_on = False
+      else:
+        self.lane_departure_toggle_on = True
 
     if self.car_fingerprint in SUPERCRUISE_CARS:
       self.park_brake = False
