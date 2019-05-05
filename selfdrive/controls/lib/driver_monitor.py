@@ -51,7 +51,7 @@ class _DriverPose():
     self.pitch_offset = 0.
 
 
-def _monitor_hysteresys(variance_level, monitor_valid_prev):
+def _monitor_hysteresis(variance_level, monitor_valid_prev):
   var_thr = 0.63 if monitor_valid_prev else 0.37
   return variance_level < var_thr
 
@@ -124,7 +124,7 @@ class DriverStatus():
       self.monitor_param_on = params.get("IsDriverMonitoringEnabled") == "1"
       self.ts_last_check = ts
 
-    self.monitor_valid = _monitor_hysteresys(self.variance_filter.x, monitor_valid_prev)
+    self.monitor_valid = _monitor_hysteresis(self.variance_filter.x, monitor_valid_prev)
     self.monitor_on = self.monitor_valid and self.monitor_param_on
     if monitor_param_on_prev != self.monitor_param_on:
       self._reset_filters()
