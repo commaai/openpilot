@@ -439,11 +439,10 @@ class CarState(object):
       if self.cstm_btns.get_button_status("lka") == 0:
         self.lane_departure_toggle_on = False
       else:
-        self.lane_departure_toggle_on = True
-    if self.alcaMode == 3 and (self.left_blinker_on or self.right_blinker_on):
-      self.lane_departure_toggle_on = False
-    else:
-      self.lane_departure_toggle_on = True
+        if self.alcaMode == 3 and (self.left_blinker_on or self.right_blinker_on):
+          self.lane_departure_toggle_on = False
+        else:
+          self.lane_departure_toggle_on = True
     self.distance_toggle = cp.vl["JOEL_ID"]['ACC_DISTANCE']
     if cp.vl["PCM_CRUISE_SM"]['DISTANCE_LINES'] == 2:
       self.trfix = True
@@ -465,8 +464,6 @@ class CarState(object):
       if self.read_distance_lines == 3:
         self.UE.custom_alert_message(2,"Following distance set to 2.7s",200,3)
       self.read_distance_lines_prev = self.read_distance_lines
-    if cp.vl["EPS_STATUS"]['LKA_STATE'] == 17:
-      self.cstm_btns.set_button_status("lka", 0)
     if bool(cp.vl["JOEL_ID"]['ACC_SLOW']) <> self.acc_slow_on_prev:
       self.acc_slow_on = bool(cp.vl["JOEL_ID"]['ACC_SLOW'])
       if self.acc_slow_on:
