@@ -134,7 +134,7 @@ class CarInterface(object):
         ret.longitudinalKiV = [0.18, 0.12]
       else:
         ret.gasMaxV = [0.2, 0.5, 0.7]
-        ret.longitudinalKpV = [1.8, 0.8, 0.6]
+        ret.longitudinalKpV = [1.0, 0.5, 0.3]
         ret.longitudinalKiV = [0.20, 0.10]
     elif candidate == CAR.RAV4_2019:
       stop_and_go = True
