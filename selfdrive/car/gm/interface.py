@@ -218,7 +218,7 @@ class CarInterface(object):
     ret.gasPressed = self.CS.user_gas_pressed
 
     # brake pedal
-    ret.brake = self.CS.user_brake // 0xd0
+    ret.brake = self.CS.user_brake / 0xd0
     ret.brakePressed = self.CS.brake_pressed
 
     # steering wheel

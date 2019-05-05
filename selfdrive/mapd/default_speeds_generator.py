@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import json
+import six
 
 DEFAULT_OUTPUT_FILENAME = "default_speeds_by_region.json"
 
@@ -145,7 +146,7 @@ def main(filename = DEFAULT_OUTPUT_FILENAME):
   DE.add_rule({"zone:maxspeed": "DE:rural"}, "100")
   DE.add_rule({"zone:maxspeed": "DE:motorway"}, "none")
   DE.add_rule({"bicycle_road": "yes"}, "30")
-  
+
 
   """ --- DO NOT MODIFY CODE BELOW THIS LINE --- """
   """ --- ADD YOUR COUNTRY OR STATE ABOVE --- """
@@ -205,7 +206,7 @@ class Country(Region):
   def jsonify(self):
     ret_dict = {}
     ret_dict[self.name] = {}
-    for r_name, region in self.regions.items():
+    for r_name, region in six.iteritems(self.regions):
       ret_dict[self.name].update(region.jsonify())
     ret_dict[self.name]['Default'] = self.rules
     return ret_dict
