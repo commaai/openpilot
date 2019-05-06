@@ -192,6 +192,10 @@ class Way:
         closest_way = way
         best_score = score
 
+    # Normal score is < 5
+    if best_score > 50:
+      return None
+
     return closest_way
 
   def __str__(self):
