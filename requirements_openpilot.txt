@@ -1,6 +1,6 @@
 # This are the packages installed on the EON
--e git+https://github.com/commaai/le_python.git@5eef8f5be5929d33973e1b10e686fa0cdcd6792f#egg=Logentries
--e git+https://github.com/commaai/python-overpy.git@f86529af402d4642e1faeb146671c40284007323#egg=overpy
+-e git+https://github.com/commaai/le_python.git#egg=Logentries
+-e git+https://github.com/commaai/python-overpy.git#egg=overpy
 Cython==0.27.3
 Flask==1.0.2
 #PyGObject==3.28.2 This is installed on the EON, but requires a ton of dependencies to install
