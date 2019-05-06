@@ -167,7 +167,7 @@ class CarState(object):
     # ALCA PARAMS
     # max REAL delta angle for correction vs actuator
     self.CL_MAX_ANGLE_DELTA_BP = [10., 15., 32., 55.]#[10., 44.]
-    self.CL_MAX_ANGLE_DELTA = [2.0 * 15.5 / steerRatio, 1.75 * 15.5 / steerRatio, 1.25 * 15.5 / steerRatio, 0.5 * 15.5 / steerRatio]
+    self.CL_MAX_ANGLE_DELTA = [2.0 * 15.5 / steerRatio, 1.6 * 15.5 / steerRatio, 1.1 * 15.5 / steerRatio, 0.5 * 15.5 / steerRatio]
      # adjustment factor for merging steer angle to actuator; should be over 4; the higher the smoother
     self.CL_ADJUST_FACTOR_BP = [10., 50.]
     self.CL_ADJUST_FACTOR = [16. , 8.]
@@ -423,6 +423,7 @@ class CarState(object):
       self.steer_error = cp.vl["EPS_STATUS"]['LKA_STATE'] not in [1, 3, 5, 9, 17, 25]
     else:
       self.steer_error = cp.vl["EPS_STATUS"]['LKA_STATE'] not in [1, 5, 9, 17, 25]
+    self.steer_unavailable = cp.vl["EPS_STATUS"]['LKA_STATE'] in [3, 17]  # don't disengage, just warning
     self.ipas_active = cp.vl['EPS_STATUS']['IPAS_STATE'] == 3
     self.brake_error = 0
     self.steer_torque_driver = cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_DRIVER']
@@ -438,11 +439,10 @@ class CarState(object):
       if self.cstm_btns.get_button_status("lka") == 0:
         self.lane_departure_toggle_on = False
       else:
-        self.lane_departure_toggle_on = True
-    if self.alcaMode == 3 and (self.left_blinker_on or self.right_blinker_on):
-      self.lane_departure_toggle_on = False
-    else:
-      self.lane_departure_toggle_on = True
+        if self.alcaMode == 3 and (self.left_blinker_on or self.right_blinker_on):
+          self.lane_departure_toggle_on = False
+        else:
+          self.lane_departure_toggle_on = True
     self.distance_toggle = cp.vl["JOEL_ID"]['ACC_DISTANCE']
     if cp.vl["PCM_CRUISE_SM"]['DISTANCE_LINES'] == 2:
       self.trfix = True
@@ -464,8 +464,6 @@ class CarState(object):
       if self.read_distance_lines == 3:
         self.UE.custom_alert_message(2,"Following distance set to 2.7s",200,3)
       self.read_distance_lines_prev = self.read_distance_lines
-    if cp.vl["EPS_STATUS"]['LKA_STATE'] == 17:
-      self.cstm_btns.set_button_status("lka", 0)
     if bool(cp.vl["JOEL_ID"]['ACC_SLOW']) <> self.acc_slow_on_prev:
       self.acc_slow_on = bool(cp.vl["JOEL_ID"]['ACC_SLOW'])
       if self.acc_slow_on:
@@ -486,12 +484,16 @@ class CarState(object):
     self.user_brake = 0
     if self.acc_slow_on:
       self.v_cruise_pcm = max(7, cp.vl["PCM_CRUISE_2"]['SET_SPEED'] - 34.0)
-      self.Angles[self.Angle_counter] = abs(self.angle_steers)
-      self.Angles_later[self.Angle_counter] = abs(angle_later)
-      self.Angle_counter = (self.Angle_counter + 1 ) % 250
+      
       if not self.left_blinker_on and not self.right_blinker_on:
+        self.Angles[self.Angle_counter] = abs(self.angle_steers)
+        self.Angles_later[self.Angle_counter] = abs(angle_later)
         self.v_cruise_pcm = int(min(self.v_cruise_pcm, self.brakefactor * interp(np.max(self.Angles), self.Angle, self.Angle_Speed)))
         self.v_cruise_pcm = int(min(self.v_cruise_pcm, self.brakefactor * interp(np.max(self.Angles_later), self.Angle, self.Angle_Speed)))
+      else:
+        self.Angles[self.Angle_counter] = 0
+        self.Angles_later[self.Angle_counter] = 0
+      self.Angle_counter = (self.Angle_counter + 1 ) % 250
     else:
       self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED']
 
@@ -536,7 +538,12 @@ class CarState(object):
       dat.init('liveTrafficData')
       if self.spdval1 > 0:
         dat.liveTrafficData.speedLimitValid = True
-        dat.liveTrafficData.speedLimit = self.spdval1
+        if self.tsgn1 == 36:
+          dat.liveTrafficData.speedLimit = self.spdval1 * 1.60934
+        elif self.tsgn1 == 1:
+          dat.liveTrafficData.speedLimit = self.spdval1
+        else:
+          dat.liveTrafficData.speedLimit = 0
       else:
         dat.liveTrafficData.speedLimitValid = False
       if self.spdval2 > 0:

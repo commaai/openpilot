@@ -60,7 +60,7 @@ def kegman_thread():  # read and write thread; now merges changes from file and 
   global thread_counter
   global variables_written
   global thread_started
-  last_conf = copy.deepcopy(conf)
+  global last_conf
   try:
     while True:
       thread_counter += 1
@@ -134,3 +134,4 @@ thread_started = False
 kegman_file = "/data/kegman.json"
 variables_written = []
 conf = read_config()
+last_conf = copy.deepcopy(conf)

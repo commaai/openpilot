@@ -134,18 +134,29 @@ class CarInterface(object):
         ret.longitudinalKiV = [0.18, 0.12]
       else:
         ret.gasMaxV = [0.2, 0.5, 0.7]
-        ret.longitudinalKpV = [3.6, 1.1, 1.0]
-        ret.longitudinalKiV = [0.5, 0.24]
-
+        ret.longitudinalKpV = [1.0, 0.5, 0.3]
+        ret.longitudinalKiV = [0.20, 0.10]
+    elif candidate == CAR.RAV4_2019:
+      stop_and_go = True
+      ret.safetyParam = 100
+      ret.wheelbase = 2.68986
+      ret.steerRatio = 17.0
+      tire_stiffness_factor = 0.7933
+      ret.mass = 3370. * CV.LB_TO_KG + std_cargo
+      ret.steerKpV, ret.steerKiV = [[0.3], [0.05]]
+      ret.steerKf = 0.0001
+      ret.longitudinalKpV = [2.0, 1.0, 0.8]
+      ret.longitudinalKiV = [0.25, 0.14]
+      ret.gasMaxV = [0.2, 0.5, 0.7]
     elif candidate == CAR.COROLLA:
       stop_and_go = False
       ret.safetyParam = 100 # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.70
-      ret.steerRatio = 14.8 # 0.5.10
-      tire_stiffness_factor = 0.9443628344466842
+      ret.steerRatio = 17.84 # 0.5.10
+      tire_stiffness_factor = 1.01794
       ret.mass = 2860 * CV.LB_TO_KG + std_cargo  # mean between normal and hybrid
-      ret.steerKpV, ret.steerKiV = [[0.2], [0.125]]
-      ret.steerKf = 0.000038   # full torque for 20 deg at 80mph means 0.00007818594
+      ret.steerKpV, ret.steerKiV = [[0.2], [0.05]]
+      ret.steerKf = 0.00003909297   # full torque for 20 deg at 80mph means 0.00007818594
       if ret.enableGasInterceptor:
         ret.gasMaxV = [0.2, 0.5, 0.7]
         ret.longitudinalKpV = [1.2, 0.8, 0.5]
@@ -277,13 +288,13 @@ class CarInterface(object):
     cloudlog.warn("ECU Gas Interceptor: %r", ret.enableGasInterceptor)
 
     ret.steerLimitAlert = False
-    ret.longitudinalKpBP = [0., 5., 35.]
-    ret.longitudinalKiBP = [0., 35.]
+    ret.longitudinalKpBP = [0., 5., 55.]
+    ret.longitudinalKiBP = [0., 55.]
     ret.stoppingControl = False
     ret.startAccel = 0.0
 
-    ret.longitudinalKpBP = [0., 5., 35.]
-    ret.longitudinalKiBP = [0., 35.]
+    ret.longitudinalKpBP = [0., 5., 55.]
+    ret.longitudinalKiBP = [0., 55.]
     
   # returns a car.CarState
     return ret
@@ -341,7 +352,7 @@ class CarInterface(object):
     ret.cruiseState.available = bool(self.CS.main_on)
     ret.cruiseState.speedOffset = 0.
 
-    if self.CP.carFingerprint in [CAR.RAV4H, CAR.HIGHLANDERH, CAR.HIGHLANDER] or self.CP.enableGasInterceptor:
+    if self.CP.carFingerprint in [CAR.RAV4H, CAR.HIGHLANDERH, CAR.HIGHLANDER, CAR.RAV4_2019] or self.CP.enableGasInterceptor:
       # ignore standstill in hybrid vehicles, since pcm allows to restart without
       # receiving any special command
       # also if interceptor is detected
@@ -397,11 +408,16 @@ class CarInterface(object):
       if self.cam_can_valid_count >= 5:
         self.forwarding_camera = True
 
+    if ret.cruiseState.enabled and not self.cruise_enabled_prev:
+      disengage_event = True
+    else:
+      disengage_event = False
+
     if not ret.gearShifter == 'drive' and self.CP.enableDsu:
       events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if ret.doorOpen:
+    if ret.doorOpen and disengage_event:
       events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if ret.seatbeltUnlatched:
+    if ret.seatbeltUnlatched and disengage_event:
       events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if self.CS.esp_disabled and self.CP.enableDsu:
       events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
@@ -413,6 +429,8 @@ class CarInterface(object):
       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
     if self.CS.low_speed_lockout and self.CP.enableDsu:
       events.append(create_event('lowSpeedLockout', [ET.NO_ENTRY, ET.PERMANENT]))
+    if self.CS.steer_unavailable:
+      events.append(create_event('steerTempUnavailableNoCancel', [ET.WARNING]))
     if ret.vEgo < self.CP.minEnableSpeed and self.CP.enableDsu:
       events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
       if c.actuators.gas > 0.1:

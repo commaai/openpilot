@@ -80,7 +80,7 @@ def query_thread():
         cur_ecef = geodetic2ecef((last_gps.latitude, last_gps.longitude, last_gps.altitude))
         prev_ecef = geodetic2ecef((last_query_pos.latitude, last_query_pos.longitude, last_query_pos.altitude))
         dist = np.linalg.norm(cur_ecef - prev_ecef)
-        if dist < 1000: #updated when we are 1km from the edge of the downloaded circle
+        if dist < 3000: #updated when we are 1km from the edge of the downloaded circle
           continue
 
         if dist > 4000:
@@ -145,6 +145,7 @@ def mapsd_thread():
   road_points = None
   speedLimittraffic = 0
   speedLimittraffic_prev = 0
+  max_speed = None
   max_speed_prev = 0
   speedLimittrafficvalid = False
   
@@ -160,6 +161,9 @@ def mapsd_thread():
     if traffic is not None:
       if traffic.liveTrafficData.speedLimitValid:
         speedLimittraffic = traffic.liveTrafficData.speedLimit
+        if abs(speedLimittraffic_prev - speedLimittraffic) > 0.1:
+          speedLimittrafficvalid = True
+          speedLimittraffic_prev = speedLimittraffic
       if traffic.liveTrafficData.speedAdvisoryValid:
         speedLimittrafficAdvisory = traffic.liveTrafficData.speedAdvisory
         speedLimittrafficAdvisoryvalid = True
@@ -264,22 +268,11 @@ def mapsd_thread():
       # Seed limit
       max_speed = cur_way.max_speed()
       if max_speed is not None:
-        if max_speed is not max_speed_prev:
+        if abs(max_speed - max_speed_prev) > 0.1:
           speedLimittrafficvalid = False
-      if speedLimittraffic_prev is not speedLimittraffic:
-        speedLimittrafficvalid = True
-      
-      if speedLimittrafficvalid:
-        if speedLimittraffic is not 0: # Should not occur but check anyway
-          dat.liveMapData.speedLimitValid = True
-          dat.liveMapData.speedLimit = speedLimittraffic / 3.6
-          speedLimittraffic_prev = speedLimittraffic
-      else:
-        if max_speed is not None:
-          dat.liveMapData.speedLimitValid = True
-          dat.liveMapData.speedLimit = max_speed
           max_speed_prev = max_speed
-
+      
+      
 
         # TODO: use the function below to anticipate upcoming speed limits
         #max_speed_ahead, max_speed_ahead_dist = cur_way.max_speed_ahead(max_speed, lat, lon, heading, MAPS_LOOKAHEAD_DISTANCE)
@@ -308,6 +301,31 @@ def mapsd_thread():
         dat.liveMapData.roadCurvatureX = map(float, dists)
         dat.liveMapData.roadCurvature = map(float, curvature)
 
+    if speedLimittrafficvalid:
+      if speedLimittraffic > 0.1:
+        dat.liveMapData.speedLimitValid = True
+        dat.liveMapData.speedLimit = speedLimittraffic / 3.6
+        map_valid = False
+      else:
+        speedLimittrafficvalid = False
+    else:
+      if max_speed is not None:
+        dat.liveMapData.speedLimitValid = True
+        dat.liveMapData.speedLimit = max_speed
+        
+    #print "speedLimittraffic_prev"
+    #print speedLimittraffic_prev
+    #print "speedLimittraffic"
+    #print speedLimittraffic
+    #print "max_speed_prev"
+    #print max_speed_prev
+    #print "max_speed"
+    #print max_speed
+    #print "speedLimittrafficvalid"
+    #if speedLimittrafficvalid:
+    #  print "True"
+    #else:
+    #  print "False"
     dat.liveMapData.mapValid = map_valid
 
     map_data_sock.send(dat.to_bytes())
