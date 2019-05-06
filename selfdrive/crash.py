@@ -28,9 +28,9 @@ else:
       auth = json.loads(f.read())
     auth = json.loads(auth['commaUser'])
     try:
-      error_tags['username'] = auth['username'].decode('utf-8', 'ignore')
+      error_tags['username'] = ''.join(char for char in auth['username'].decode('utf-8', 'ignore') if char.isalnum())
     except:
-      pass
+      error_tags['username'] = "char_error"
     try:
       error_tags['email'] = auth['email']
     except:
