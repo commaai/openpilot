@@ -4,7 +4,7 @@ services:
   - docker
 
 install:
-  - docker build -t tmppilot -f Dockerfile.openpilot .
+  - travis_retry docker build --network=host -t tmppilot -f Dockerfile.openpilot .
 
 script:
   - docker run
