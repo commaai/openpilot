@@ -171,10 +171,10 @@ class CarInterface(object):
       ret.safetyParam = 100 # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.79
       ret.steerRatio = 18.6  # 0.5.10
-      tire_stiffness_factor = 0.444  # not optimized yet
+      tire_stiffness_factor = 0.517  # 0.5.10
       ret.mass = 4481 * CV.LB_TO_KG + std_cargo  # mean between min and max
-      ret.steerKpV, ret.steerKiV = [[0.3], [0.03]]
-      ret.steerKf = 0.00008   # full torque for 10 deg at 80mph means 0.00007818594
+      ret.steerKpV, ret.steerKiV = [[0.2], [0.02]]
+      ret.steerKf = 0.00007   # full torque for 10 deg at 80mph means 0.00007818594
       if ret.enableGasInterceptor:
         ret.gasMaxV = [0.2, 0.5, 0.7]
         ret.longitudinalKpV = [1.2, 0.8, 0.5]
