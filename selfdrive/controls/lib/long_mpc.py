@@ -12,7 +12,7 @@ from selfdrive.controls.lib.drive_helpers import MPC_COST_LONG
 ONE_BAR_DISTANCE = 0.9  # in seconds
 TWO_BAR_DISTANCE = 1.3  # in seconds
 THREE_BAR_DISTANCE = 1.8  # in seconds
-FOUR_BAR_DISTANCE = 2.1   # in seconds
+FOUR_BAR_DISTANCE = 2.5   # in seconds
 
 TR = TWO_BAR_DISTANCE  # default interval
 
@@ -21,14 +21,14 @@ CITY_SPEED = 19.44  # braking profile changes when below this speed based on fol
 STOPPING_DISTANCE = 2  # increase distance from lead car when stopped
 
 # Braking profile changes (makes the car brake harder because it wants to be farther from the lead car - increase to brake harder)
-ONE_BAR_PROFILE = [ONE_BAR_DISTANCE, 2.1]
-ONE_BAR_PROFILE_BP = [0.25, 4.0]
+ONE_BAR_PROFILE = [ONE_BAR_DISTANCE, 2.5]
+ONE_BAR_PROFILE_BP = [0.0, 3.0]
 
-TWO_BAR_PROFILE = [TWO_BAR_DISTANCE, 2.1]
-TWO_BAR_PROFILE_BP = [0.35, 4.0]
+TWO_BAR_PROFILE = [TWO_BAR_DISTANCE, 2.5]
+TWO_BAR_PROFILE_BP = [0.0, 3.5]
 
-THREE_BAR_PROFILE = [THREE_BAR_DISTANCE, 2.1]
-THREE_BAR_PROFILE_BP = [0.45, 4.0]
+THREE_BAR_PROFILE = [THREE_BAR_DISTANCE, 2.5]
+THREE_BAR_PROFILE_BP = [0.0, 4.0]
 
 class LongitudinalMpc(object):
   def __init__(self, mpc_id, live_longitudinal_mpc):
