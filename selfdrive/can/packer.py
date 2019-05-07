@@ -1,3 +1,4 @@
+import six
 import struct
 from selfdrive.can.libdbc_py import libdbc, ffi
 
@@ -20,7 +21,7 @@ class CANPacker(object):
 
   def pack(self, addr, values, counter):
     values_thing = []
-    for name, value in values.iteritems():
+    for name, value in six.iteritems(values):
       if name not in self.sig_names:
         self.sig_names[name] = ffi.new("char[]", name)
 
@@ -63,5 +64,5 @@ if __name__ == "__main__":
   #s = cp.pack_bytes(0xe4, {
   #  "STEER_TORQUE": -2,
   #})
-  print [hex(ord(v)) for v in s[1]]
+  print([hex(ord(v)) for v in s[1]])
   print(s[1].encode("hex"))

@@ -33,7 +33,7 @@ NS_ :
 
 BS_:
 
-BU_: XXX 0
+BU_: XXX
 
 
 BO_ 2 Steering: 8 XXX
@@ -211,24 +211,24 @@ BO_ 358 ES_Status: 8 XXX
  SG_ NEW_SIGNAL_5_Blank : 33|1@1+ (1,0) [0|3] "" XXX
  SG_ NEW_SIGNAL_4_Blank : 34|1@1+ (1,0) [0|7] "" XXX
  SG_ NEW_SIGNAL_1 : 35|1@0+ (1,0) [0|31] "" XXX
- SG_ 3SecondDisengage : 13|2@0+ (1,0) [0|3] "" XXX
+ SG_ Sig3SecondDisengage : 13|2@0+ (1,0) [0|3] "" XXX
  SG_ Not_Ready_Startup : 0|3@1+ (1,0) [0|7] "" XXX
  SG_ Steep_Hill_Disengage : 44|1@0+ (1,0) [0|3] "" XXX
  SG_ Disengage_Alert : 15|2@0+ (1,0) [0|3] "" XXX
 
 BO_ 359 ES_LDW: 8 XXX
- SG_ 2Right_Depart : 50|1@1+ (1,0) [0|7] "" XXX
- SG_ 2All_Depart : 28|1@0+ (1,0) [0|3] "" XXX
- SG_ 3All_Depart : 52|1@0+ (1,0) [0|3] "" XXX
+ SG_ Sig2Right_Depart : 50|1@1+ (1,0) [0|7] "" XXX
+ SG_ Sig2All_Depart : 28|1@0+ (1,0) [0|3] "" XXX
+ SG_ Sig3All_Depart : 52|1@0+ (1,0) [0|3] "" XXX
  SG_ Left_Depart_Front : 51|1@0+ (1,0) [0|3] "" XXX
  SG_ All_depart_2015 : 0|1@1+ (1,0) [0|255] "" XXX
  SG_ LKAS_Inactive_2017 : 36|1@1+ (1,0) [0|3] "" XXX
  SG_ LKAS_Steer_Active_2017 : 37|1@0+ (1,0) [0|3] "" XXX
  SG_ Right_Line_2017 : 24|1@1+ (1,0) [0|7] "" XXX
  SG_ Left_Line_2017 : 25|1@1+ (1,0) [0|3] "" XXX
- SG_ 1All_Depart : 31|1@0+ (1,0) [0|15] "" XXX
- SG_ 1Right_Depart_Front : 49|1@1+ (1,0) [0|3] "" XXX
- SG_ 1Right_Depart : 48|1@1+ (1,0) [0|3] "" XXX
+ SG_ Sig1All_Depart : 31|1@0+ (1,0) [0|15] "" XXX
+ SG_ Sig1Right_Depart_Front : 49|1@1+ (1,0) [0|3] "" XXX
+ SG_ Sig1Right_Depart : 48|1@1+ (1,0) [0|3] "" XXX
 
 BO_ 392 Counter_0: 8 XXX
  SG_ Counter : 16|4@1+ (1,0) [0|15] "" XXX
@@ -350,15 +350,15 @@ CM_ SG_ 353 Brake_On "long activatedish";
 CM_ SG_ 354 RPM "20hz version of Transmission_Engine under Transmission";
 CM_ SG_ 358 Cruise_Activated "is 1 when cruise is able to go";
 CM_ SG_ 358 Car_Follow "front car detected";
-CM_ SG_ 358 3SecondDisengage "seatbelt disengage";
+CM_ SG_ 358 Sig3SecondDisengage "seatbelt disengage";
 CM_ SG_ 358 Disengage_Alert "seatbelt and steep hill disengage";
-CM_ SG_ 359 2All_Depart "Left and right depart";
+CM_ SG_ 359 Sig2All_Depart "Left and right depart";
 CM_ SG_ 359 Left_Depart_Front "warning after acceleration into car in front and left depart";
 CM_ SG_ 359 All_depart_2015 "always 1 on 2017";
 CM_ SG_ 359 LKAS_Inactive_2017 "1 when not steering, 0 when lkas steering";
-CM_ SG_ 359 1All_Depart "Left and right depart";
-CM_ SG_ 359 1Right_Depart_Front "object in front, right depart, hill steep and seatbelt disengage alert ";
-CM_ SG_ 359 1Right_Depart "right depart, hill steep and seatbelt disengage";
+CM_ SG_ 359 Sig1All_Depart "Left and right depart";
+CM_ SG_ 359 Sig1Right_Depart_Front "object in front, right depart, hill steep and seatbelt disengage alert ";
+CM_ SG_ 359 Sig1Right_Depart "right depart, hill steep and seatbelt disengage";
 CM_ SG_ 642 Counter "Affected by signals";
 CM_ SG_ 642 RIGHT_BLINKER "0 off, 2 right, 1 left";
 CM_ SG_ 880 Steering_Voltage_Flat "receives later than 371";

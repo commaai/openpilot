@@ -29,7 +29,7 @@ def can_printer(bus=0, max_msg=None, addr="127.0.0.1"):
       for k,v in sorted(zip(msgs.keys(), map(lambda x: x[-1].encode("hex"), msgs.values()))):
         if max_msg is None or k < max_msg:
           dd += "%s(%6d) %s\n" % ("%04X(%4d)" % (k,k),len(msgs[k]), v)
-      print dd
+      print(dd)
       lp = sec_since_boot()
 
 if __name__ == "__main__":
