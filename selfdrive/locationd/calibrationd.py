@@ -23,7 +23,7 @@ VP_INIT = np.array([W/2., H/2.])
 
 # These validity corners were chosen by looking at 1000
 # and taking most extreme cases with some margin.
-VP_VALIDITY_CORNERS = np.array([[W/2 - 150, 280], [W/2 + 150, 540]])
+VP_VALIDITY_CORNERS = np.array([[W//2 - 150, 280], [W//2 + 150, 540]])
 DEBUG = os.getenv("DEBUG") is not None
 
 
@@ -39,6 +39,7 @@ class Calibrator(object):
     self.vps = []
     self.cal_status = Calibration.UNCALIBRATED
     self.write_counter = 0
+    self.just_calibrated = False
     self.params = Params()
     calibration_params = self.params.get("CalibrationParams")
     if calibration_params:
@@ -52,10 +53,16 @@ class Calibrator(object):
 
 
   def update_status(self):
+    start_status = self.cal_status
     if len(self.vps) < INPUTS_NEEDED:
       self.cal_status = Calibration.UNCALIBRATED
     else:
       self.cal_status = Calibration.CALIBRATED if is_calibration_valid(self.vp) else Calibration.INVALID
+    end_status = self.cal_status
+
+    self.just_calibrated = False
+    if start_status == Calibration.UNCALIBRATED and end_status == Calibration.CALIBRATED:
+      self.just_calibrated = True
 
   def handle_cam_odom(self, log):
     trans, rot = log.cameraOdometry.trans, log.cameraOdometry.rot
@@ -67,7 +74,7 @@ class Calibrator(object):
       self.vp = np.mean(self.vps, axis=0)
       self.update_status()
       self.write_counter += 1
-      if self.param_put and self.write_counter % WRITE_CYCLES == 0:
+      if self.param_put and (self.write_counter % WRITE_CYCLES == 0 or self.just_calibrated):
         cal_params = {"vanishing_point": list(self.vp),
                       "valid_points": len(self.vps)}
         self.params.put("CalibrationParams", json.dumps(cal_params))
@@ -83,10 +90,10 @@ class Calibrator(object):
     cal_send = messaging.new_message()
     cal_send.init('liveCalibration')
     cal_send.liveCalibration.calStatus = self.cal_status
-    cal_send.liveCalibration.calPerc = min(len(self.vps) * 100 / INPUTS_NEEDED, 100)
-    cal_send.liveCalibration.warpMatrix2 = map(float, warp_matrix.flatten())
-    cal_send.liveCalibration.warpMatrixBig = map(float, warp_matrix_big.flatten())
-    cal_send.liveCalibration.extrinsicMatrix = map(float, extrinsic_matrix.flatten())
+    cal_send.liveCalibration.calPerc = min(len(self.vps) * 100 // INPUTS_NEEDED, 100)
+    cal_send.liveCalibration.warpMatrix2 = [float(x) for x in warp_matrix.flatten()]
+    cal_send.liveCalibration.warpMatrixBig = [float(x) for x in warp_matrix_big.flatten()]
+    cal_send.liveCalibration.extrinsicMatrix = [float(x) for x in extrinsic_matrix.flatten()]
 
     livecalibration.send(cal_send.to_bytes())
 

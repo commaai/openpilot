@@ -169,6 +169,7 @@ BO_ 452 POWERTRAIN: 8 XXX
 
 
 
+CM_ "CHFFR_METRIC 37 STEER_ANGLE STEER_ANGLE 0.36 180";
 CM_ SG_ 36 ACCEL_Y "unit is tbd";
 CM_ SG_ 36 STEERING_TORQUE "does not seem the steer torque, tbd";
 CM_ SG_ 36 YAW_RATE "verify";
@@ -200,4 +201,3 @@ VAL_ 1042 RIGHT_LINE 3 "orange" 2 "double" 1 "solid" 0 "none" ;
 VAL_ 1042 LEFT_LINE 3 "orange" 2 "double" 1 "solid" 0 "none" ;
 VAL_ 1042 LDA_ALERT 3 "hold with continuous beep" 2 "LDA unavailable" 1 "hold" 0 "none" ;
 VAL_ 1553 UNITS 1 "km" 2 "miles" ;
-CM_ "CHFFR_METRIC 37 STEER_ANGLE STEER_ANGLE 0.36 180";

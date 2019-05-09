@@ -48,7 +48,7 @@ BO_ 64 Throttle: 8 XXX
  SG_ NEW_SIGNAL_3 : 56|4@1+ (1,0) [0|255] "" XXX
  SG_ Engine_RPM : 16|12@1+ (1,0) [0|255] "" XXX
  SG_ Throttle_Cruise : 40|8@1+ (1,0) [0|255] "" XXX
- SG_ Throttle_Combo : 55|8@1+ (0.392157,0) [0|255] "" XXX
+ SG_ Throttle_Combo : 55|8@1+ (1,0) [0|255] "" XXX
  SG_ Throttle_Pedal : 32|8@1+ (1,0) [0|255] "" XXX
 
 
@@ -70,12 +70,14 @@ BO_ 72 NEW_MSG_2: 8 XXX
 
 BO_ 316 NEW_MSG_3: 8 XXX
 
-BO_ 326 NEW_MSG_4: 8 XXX
+BO_ 326 Cruise_Buttons: 8 XXX
  SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
  SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
- SG_ NEW_SIGNAL_1 : 16|12@1+ (1,0) [0|255] "" XXX
- SG_ NEW_SIGNAL_2 : 32|8@1+ (1,0) [0|255] "" XXX
- SG_ NEW_SIGNAL_3 : 40|2@1+ (1,0) [0|255] "" XXX
+ SG_ Signal1 : 12|30@1+ (1,0) [0|1073741823] "" XXX
+ SG_ Main : 42|1@1+ (1,0) [0|1] "" XXX
+ SG_ set : 43|1@1+ (1,0) [0|1] "" XXX
+ SG_ Resume : 44|1@1+ (1,0) [0|1] "" XXX
+ SG_ Signal2 : 45|19@1+ (1,0) [0|524287] "" XXX
 
 BO_ 315 G_Sensor: 8 XXX
  SG_ longitudinal : 63|8@0- (1,0) [0|255] "" XXX
@@ -140,19 +142,10 @@ BO_ 544 ES_Brake: 8 XXX
 BO_ 545 ES_Distance: 8 XXX
  SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
  SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
- SG_ Close_Distance : 40|8@1+ (1,0) [0|255] "" XXX
- SG_ Distance_Swap : 37|1@1+ (1,0) [0|3] "" XXX
- SG_ NEW_SIGNAL_5 : 39|1@1+ (1,0) [0|31] "" XXX
- SG_ NEW_SIGNAL_9 : 38|1@1+ (1,0) [0|3] "" XXX
- SG_ NEW_SIGNAL_4 : 34|1@1+ (1,0) [0|3] "" XXX
- SG_ Brake_Pedal : 33|1@1+ (1,0) [0|255] "" XXX
- SG_ NEW_SIGNAL_10 : 35|1@1+ (1,0) [0|3] "" XXX
- SG_ Throttle : 16|12@1+ (1,0) [0|65535] "" XXX
- SG_ NEW_SIGNAL_1 : 31|4@0+ (1,0) [0|15] "" XXX
- SG_ SET_1 : 12|1@0+ (1,0) [0|3] "" XXX
- SG_ ACC_ENABLE_BTN : 56|1@0+ (1,0) [0|1] "" XXX
- SG_ Car_Follow : 32|1@1+ (1,0) [0|3] "" XXX
- SG_ Brake : 36|1@0+ (1,0) [0|3] "" XXX
+ SG_ Signal1 : 12|20@1+ (1,0) [0|15] "" XXX
+ SG_ Signal2 : 32|24@1+ (1,0) [0|15] "" XXX
+ SG_ Main : 56|1@1+ (1,0) [0|1] "" XXX
+ SG_ Signal3 : 57|7@1+ (1,0) [0|1] "" XXX
 
 BO_ 546 ES_Status: 8 XXX
  SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
@@ -225,19 +218,20 @@ BO_ 802 ES_LKAS_State: 8 XXX
  SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ Keep_Hands_On_Wheel : 12|1@1+ (1,0) [0|1] "" XXX
  SG_ Empty_Box : 13|1@1+ (1,0) [0|1] "" XXX
+ SG_ Signal1 : 14|3@1+ (1,0) [0|7] "" XXX
  SG_ LKAS_ACTIVE : 17|1@1+ (1,0) [0|3] "" XXX
+ SG_ Signal2 : 18|5@1+ (1,0) [0|7] "" XXX
  SG_ Backward_Speed_Limit_Menu : 23|1@1+ (1,0) [0|1] "" XXX
  SG_ LKAS_ENABLE_3 : 24|1@1+ (1,0) [0|1] "" XXX
+ SG_ Signal3 : 25|1@1+ (1,0) [0|1] "" XXX
  SG_ LKAS_ENABLE_2 : 26|1@1+ (1,0) [0|1] "" XXX
- SG_ NEW_SIGNAL_7 : 28|1@1+ (1,0) [0|3] "" XXX
- SG_ NEW_SIGNAL_2 : 30|1@1+ (1,0) [0|3] "" XXX
+ SG_ Signal4 : 27|5@1+ (1,0) [0|1] "" XXX
  SG_ FCW_Cont_Beep : 32|1@1+ (1,0) [0|1] "" XXX
  SG_ FCW_Repeated_Beep : 33|1@1+ (1,0) [0|1] "" XXX
  SG_ Throttle_Management_Activated : 34|1@1+ (1,0) [0|1] "" XXX
  SG_ Traffic_light_Ahead : 35|1@1+ (1,0) [0|1] "" XXX
  SG_ Right_Depart : 36|1@1+ (1,0) [0|3] "" XXX
- SG_ NEW_SIGNAL_4 : 44|1@1+ (1,0) [0|3] "" XXX
- SG_ NEW_SIGNAL_5 : 56|2@1+ (1,0) [0|3] "" XXX
+ SG_ Signal5 : 37|27@1+ (1,0) [0|1] "" XXX
 
 BO_ 805 ES_NEW_MSG_22: 8 XXX
  SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX

@@ -52,7 +52,7 @@ if __name__ == "__main__":
     server_thread = Thread(target=run_server, args=(socketio,))
     server_thread.daemon = True
     server_thread.start()
-    print 'server running'
+    print('server running')
 
   values = None
   if args.values:
@@ -68,7 +68,7 @@ if __name__ == "__main__":
       if sock in republish_socks:
         republish_socks[sock].send(msg)
       if args.map and evt.which() == 'liveLocation':
-        print 'send loc'
+        print('send loc')
         socketio.emit('location', {
           'lat': evt.liveLocation.lat,
           'lon': evt.liveLocation.lon,
@@ -83,15 +83,15 @@ if __name__ == "__main__":
         elif args.json:
           print(json.loads(msg))
         elif args.dump_json:
-          print json.dumps(evt.to_dict())
+          print(json.dumps(evt.to_dict()))
         elif values:
-          print "logMonotime = {}".format(evt.logMonoTime)
+          print("logMonotime = {}".format(evt.logMonoTime))
           for value in values:
             if hasattr(evt, value[0]):
               item = evt
               for key in value:
                 item = getattr(item, key)
-              print "{} = {}".format(".".join(value), item)
-          print ""
+              print("{} = {}".format(".".join(value), item))
+          print("")
         else:
-          print evt
+          print(evt)

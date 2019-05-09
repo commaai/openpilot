@@ -1,9 +1,9 @@
 import numpy as np
 
 from common.transformations.camera import eon_focal_length, \
-	vp_from_ke, \
-	get_view_frame_from_road_frame, \
-	FULL_FRAME_SIZE
+        vp_from_ke, \
+        get_view_frame_from_road_frame, \
+        FULL_FRAME_SIZE
 
 # segnet
 
@@ -32,7 +32,7 @@ model_intrinsics = np.array(
 
 
 # MED model
-MEDMODEL_INPUT_SIZE = (640, 240)
+MEDMODEL_INPUT_SIZE = (512, 256)
 MEDMODEL_YUV_SIZE = (MEDMODEL_INPUT_SIZE[0], MEDMODEL_INPUT_SIZE[1] * 3 // 2)
 MEDMODEL_CY = 47.6
 

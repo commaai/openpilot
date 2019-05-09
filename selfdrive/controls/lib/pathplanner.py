@@ -20,7 +20,10 @@ def calc_states_after_delay(states, v_ego, steer_angle, curvature_factor, steer_
 class PathPlanner(object):
   def __init__(self, CP):
     self.MP = ModelParser()
-
+    
+    self.l_poly = [0., 0., 0., 0.]
+    self.r_poly = [0., 0., 0., 0.]
+    
     self.last_cloudlog_t = 0
 
     context = zmq.Context()
@@ -51,7 +54,8 @@ class PathPlanner(object):
     angle_steers = CS.carState.steeringAngle
     active = live100.live100.active
 
-    angle_offset_bias = live100.live100.angleModelBias + live_parameters.liveParameters.angleOffsetAverage
+    angle_offset_average = live_parameters.liveParameters.angleOffsetAverage
+    angle_offset_bias = live100.live100.angleModelBias + angle_offset_average
 
     self.MP.update(v_ego, md)
 
@@ -65,7 +69,7 @@ class PathPlanner(object):
     p_poly = libmpc_py.ffi.new("double[4]", list(self.MP.p_poly))
 
     # account for actuation delay
-    self.cur_state = calc_states_after_delay(self.cur_state, v_ego, angle_steers, curvature_factor, VM.sR, CP.steerActuatorDelay)
+    self.cur_state = calc_states_after_delay(self.cur_state, v_ego, angle_steers - angle_offset_average, curvature_factor, VM.sR, CP.steerActuatorDelay)
 
     v_ego_mpc = max(v_ego, 5.0)  # avoid mpc roughness due to low speed
     self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
@@ -83,7 +87,6 @@ class PathPlanner(object):
     self.cur_state[0].delta = delta_desired
 
     self.angle_steers_des_mpc = float(math.degrees(delta_desired * VM.sR) + angle_offset_bias)
-
 
     #  Check for infeasable MPC solution
     mpc_nans = np.any(np.isnan(list(self.mpc_solution[0].delta)))
@@ -106,16 +109,16 @@ class PathPlanner(object):
     plan_send = messaging.new_message()
     plan_send.init('pathPlan')
     plan_send.pathPlan.laneWidth = float(self.MP.lane_width)
-    plan_send.pathPlan.dPoly = map(float, self.MP.d_poly)
-    plan_send.pathPlan.cPoly = map(float, self.MP.c_poly)
+    plan_send.pathPlan.dPoly = [float(x) for x in self.MP.d_poly]
+    plan_send.pathPlan.cPoly = [float(x) for x in self.MP.c_poly]
     plan_send.pathPlan.cProb = float(self.MP.c_prob)
-    plan_send.pathPlan.lPoly = map(float, l_poly)
+    plan_send.pathPlan.lPoly = [float(x) for x in l_poly]
     plan_send.pathPlan.lProb = float(self.MP.l_prob)
-    plan_send.pathPlan.rPoly = map(float, r_poly)
+    plan_send.pathPlan.rPoly = [float(x) for x in r_poly]
     plan_send.pathPlan.rProb = float(self.MP.r_prob)
     plan_send.pathPlan.angleSteers = float(self.angle_steers_des_mpc)
     plan_send.pathPlan.rateSteers = float(rate_desired)
-    plan_send.pathPlan.angleOffset = float(live_parameters.liveParameters.angleOffsetAverage)
+    plan_send.pathPlan.angleOffset = float(angle_offset_average)
     plan_send.pathPlan.valid = bool(plan_valid)
     plan_send.pathPlan.paramsValid = bool(live_parameters.liveParameters.valid)
 

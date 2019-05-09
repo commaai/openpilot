@@ -11,6 +11,7 @@ import selfdrive.messaging as messaging
 from selfdrive.config import Conversions as CV
 from selfdrive.services import service_list
 from selfdrive.car.car_helpers import get_car
+from selfdrive.controls.lib.model_parser import CAMERA_OFFSET
 from selfdrive.controls.lib.drive_helpers import learn_angle_model_bias, \
                                                  get_events, \
                                                  create_event, \
@@ -72,7 +73,7 @@ def data_sample(CI, CC, plan_sock, path_plan_sock, thermal, calibration, health,
   if td is not None:
     overtemp = td.thermal.thermalStatus >= ThermalStatus.red
     free_space = td.thermal.freeSpace < 0.07  # under 7% of space free no enable allowed
-    low_battery = td.thermal.batteryPercent < 1  # at zero percent battery, OP should not be allowed
+    low_battery = td.thermal.batteryPercent < 1 and td.thermal.chargingError  # at zero percent battery, while discharging, OP should not be allowed
 
   # Create events for battery, temperature and disk space
   if low_battery:
@@ -282,7 +283,7 @@ def state_control(plan, path_plan, CS, CP, state, events, v_cruise_kph, v_cruise
 
 def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, carstate,
               carcontrol, live100, AM, driver_status,
-              LaC, LoC, angle_model_bias, passive, start_time, params, v_acc, a_acc):
+              LaC, LoC, angle_model_bias, passive, start_time, v_acc, a_acc):
   """Send actuators and hud commands to the car, send live100 and MPC logging"""
   plan_ts = plan.logMonoTime
   plan = plan.plan
@@ -305,8 +306,21 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
     CC.hudControl.speedVisible = isEnabled(state)
     CC.hudControl.lanesVisible = isEnabled(state)
     CC.hudControl.leadVisible = plan.hasLead
-    CC.hudControl.rightLaneVisible = bool(path_plan.pathPlan.rProb > 0.5)
-    CC.hudControl.leftLaneVisible = bool(path_plan.pathPlan.lProb > 0.5)
+
+    right_lane_visible = path_plan.pathPlan.rProb > 0.5
+    left_lane_visible = path_plan.pathPlan.lProb > 0.5
+
+    CC.hudControl.rightLaneVisible = bool(right_lane_visible)
+    CC.hudControl.leftLaneVisible = bool(left_lane_visible)
+
+    blinker = CS.leftBlinker or CS.rightBlinker
+    ldw_allowed = CS.vEgo > 12.5 and not blinker
+
+    if len(list(path_plan.pathPlan.rPoly)) == 4:
+      CC.hudControl.rightLaneDepart = bool(ldw_allowed and path_plan.pathPlan.rPoly[3] > -(1 + CAMERA_OFFSET) and right_lane_visible)
+    if len(list(path_plan.pathPlan.lPoly)) == 4:
+      CC.hudControl.leftLaneDepart = bool(ldw_allowed and path_plan.pathPlan.lPoly[3] < (1 - CAMERA_OFFSET) and left_lane_visible)
+
     CC.hudControl.visualAlert = AM.visual_alert
     CC.hudControl.audibleAlert = AM.audible_alert
 
@@ -327,7 +341,7 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
     "alertType": AM.alert_type,
     "alertSound": "",  # no EON sounds yet
     "awarenessStatus": max(driver_status.awareness, 0.0) if isEnabled(state) else 0.0,
-    "driverMonitoringOn": bool(driver_status.monitor_on),
+    "driverMonitoringOn": bool(driver_status.monitor_on and driver_status.face_detected),
     "canMonoTimes": list(CS.canMonoTimes),
     "planMonoTime": plan_ts,
     "pathPlanMonoTime": path_plan.logMonoTime,
@@ -376,9 +390,6 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
   cc_send.init('carControl')
   cc_send.carControl = CC
   carcontrol.send(cc_send.to_bytes())
-
-  if (rk.frame % 36000) == 0:    # update angle offset every 6 minutes
-    params.put("ControlsParams", json.dumps({'angle_model_bias': angle_model_bias}))
 
   return CC
 
@@ -512,7 +523,7 @@ def controlsd_thread(gctx=None, rate=100):
 
     # Publish data
     CC = data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, carstate, carcontrol,
-                   live100, AM, driver_status, LaC, LoC, angle_model_bias, passive, start_time, params, v_acc, a_acc)
+                   live100, AM, driver_status, LaC, LoC, angle_model_bias, passive, start_time, v_acc, a_acc)
     prof.checkpoint("Sent")
 
     rk.keep_time()  # Run at 100Hz
