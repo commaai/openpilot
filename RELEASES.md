@@ -9,6 +9,8 @@ Version 0.5.11 (2019-04-17)
  * Improve performance of visiond and ui
  * Honda Passport 2019 support
  * Lexus RX Hybrid 2019 support thanks to schomems!
+ * Improve road selection heuristic in mapd
+ * Add Lane Departure Warning to dashboard for Toyota thanks to arne182
 
 Version 0.5.10 (2019-03-19)
 ========================
