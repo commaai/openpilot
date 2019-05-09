@@ -41,7 +41,7 @@ button_delay = 0.2
 kegman = kegman_conf()
 #kegman.conf['tuneGernby'] = "1"
 #kegman.write_config(kegman.conf)
-param = ["tuneGernby", "Kp", "Ki"]
+param = ["tuneGernby", "liveParams", "Kp", "Ki"]
 
 j = 0
 while True:
@@ -129,6 +129,9 @@ while True:
 
   if float(kegman.conf['Kp']) > 3:
     kegman.conf['Kp'] = "3"
+    
+  if kegman.conf['liveParams'] != "1" and kegman.conf['liveParams'] != "0":
+    kegman.conf['liveParams'] = "1"
 
 
   if write_json:
