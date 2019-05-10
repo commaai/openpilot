@@ -26,7 +26,7 @@ I will attempt to detail the changes in each of the branches here:
 
 <b>kegman-plusAccordHybrid</b> - branch broken out for Accord Hybrid due to Insight fingerprint conflict
 
-<b)kegman-plusGernbySteering-plusAccordHybrid</b> - same as plusAccordHybrid branch but with Gernby Steering added
+<b>kegman-plusGernbySteering-plusAccordHybrid</b> - same as plusAccordHybrid branch but with Gernby Steering added
 
 
 List of changes and tweaks (latest changes at the top):
