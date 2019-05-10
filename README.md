@@ -30,7 +30,7 @@ I will attempt to detail the changes in each of the branches here:
 
 
 List of changes and tweaks (latest changes at the top):
-- <b>Toggle Comma's live tuning<b>:  Comma live tunes things like alignment, steerRatio etc.  But sometimes it doesn't converge to the right value and throws lane centering off during turns.  This allows you to use /data/openpilot/.tune.sh to toggle the auto-tune to off when the car feels right so that it doesn't tune the car any further than necessary.
+- <b>Toggle Comma's live tuning</b>:  Comma live tunes things like alignment, steerRatio etc.  But sometimes it doesn't converge to the right value and throws lane centering off during turns.  This allows you to use /data/openpilot/.tune.sh to toggle the auto-tune to off when the car feels right so that it doesn't tune the car any further than necessary.
   
 - <b>Live tuner for Kp and Ki</b>:  Tune your Kp and Ki values live using your cell phone by SSHing into the Eon and executing cd /data/openpilot && ./tune.sh
 
