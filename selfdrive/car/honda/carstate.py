@@ -173,7 +173,7 @@ class CarState(object):
   def __init__(self, CP):
     self.kegman = kegman_conf()
     self.trMode = int(self.kegman.conf['lastTrMode'])     # default to last distance interval on startup
-    self.trMode = 1
+    #self.trMode = 1
     self.lkMode = True
     self.read_distance_lines_prev = 4
     self.CP = CP
