@@ -217,5 +217,6 @@ class CarInterface(object):
 
   def apply(self, c):
     self.CC.update(self.sendcan, c.enabled, self.CS, self.frame, c.actuators,
-                   c.cruiseControl.cancel, c.hudControl.visualAlert)
+                   c.cruiseControl.cancel, c.hudControl.visualAlert,
+                   c.hudControl.leftLaneVisible, c.hudControl.rightLaneVisible)
     self.frame += 1

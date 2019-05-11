@@ -225,7 +225,11 @@ BO_ 802 ES_LKAS_State: 8 XXX
  SG_ LKAS_ENABLE_3 : 24|1@1+ (1,0) [0|1] "" XXX
  SG_ Signal3 : 25|1@1+ (1,0) [0|1] "" XXX
  SG_ LKAS_ENABLE_2 : 26|1@1+ (1,0) [0|1] "" XXX
- SG_ Signal4 : 27|5@1+ (1,0) [0|1] "" XXX
+ SG_ Signal4 : 27|1@1+ (1,0) [0|1] "" XXX
+ SG_ LKAS_Left_Line_Visible : 28|1@1+ (1,0) [0|1] "" XXX
+ SG_ Signal6 : 29|1@1+ (1,0) [0|1] "" XXX
+ SG_ LKAS_Right_Line_Visible : 30|1@1+ (1,0) [0|1] "" XXX
+ SG_ Signal7 : 31|1@1+ (1,0) [0|1] "" XXX
  SG_ FCW_Cont_Beep : 32|1@1+ (1,0) [0|1] "" XXX
  SG_ FCW_Repeated_Beep : 33|1@1+ (1,0) [0|1] "" XXX
  SG_ Throttle_Management_Activated : 34|1@1+ (1,0) [0|1] "" XXX
