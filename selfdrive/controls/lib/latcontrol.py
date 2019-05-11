@@ -1,6 +1,7 @@
 from selfdrive.controls.lib.pid import PIController
 from common.numpy_fast import interp
 from cereal import car
+from selfdrive.kegman_conf import kegman_conf
 
 _DT = 0.01    # 100Hz
 _DT_MPC = 0.05  # 20Hz
@@ -12,16 +13,40 @@ def get_steer_max(CP, v_ego):
 
 class LatControl(object):
   def __init__(self, CP):
+    kegman_conf(CP)
     self.pid = PIController((CP.steerKpBP, CP.steerKpV),
                             (CP.steerKiBP, CP.steerKiV),
                             k_f=CP.steerKf, pos_limit=1.0)
     self.last_cloudlog_t = 0.0
     self.angle_steers_des = 0.
+    self.mpc_frame = 0
 
   def reset(self):
     self.pid.reset()
 
+  def live_tune(self, CP):
+    self.mpc_frame += 1
+    if self.mpc_frame % 300 == 0:
+      # live tuning through /data/openpilot/tune.py overrides interface.py settings
+      kegman = kegman_conf()
+      if kegman.conf['tuneGernby'] == "1":
+        self.steerKpV = [float(kegman.conf['Kp'])]
+        self.steerKiV = [float(kegman.conf['Ki'])]
+        #self.steerKpV = float(kegman.conf['Kp'])
+        #self.steerKiV = float(kegman.conf['Ki'])  
+        #self.steerKpV = [0.5]
+        #self.steerKiV = [0.22]
+        print "self.steerKpV = ", self.steerKpV
+        print "self.steerKiV = ", self.steerKiV
+        self.pid = PIController((CP.steerKpBP, self.steerKpV),
+                                (CP.steerKiBP, self.steerKiV),
+                                k_f=CP.steerKf, pos_limit=1.0)
+      self.mpc_frame = 0
+
   def update(self, active, v_ego, angle_steers, steer_override, CP, VM, path_plan):
+    
+    self.live_tune(CP)  
+    
     if v_ego < 0.3 or not active:
       output_steer = 0.0
       self.pid.reset()
@@ -30,8 +55,7 @@ class LatControl(object):
       # constant for 0.05s.
       #dt = min(cur_time - self.angle_steers_des_time, _DT_MPC + _DT) + _DT  # no greater than dt mpc + dt, to prevent too high extraps
       #self.angle_steers_des = self.angle_steers_des_prev + (dt / _DT_MPC) * (self.angle_steers_des_mpc - self.angle_steers_des_prev)
-      self.angle_steers_des = path_plan.angleSteers  # get from MPC/PathPlanner
-
+      self.angle_steers_des = path_plan.angleSteers
       steers_max = get_steer_max(CP, v_ego)
       self.pid.pos_limit = steers_max
       self.pid.neg_limit = -steers_max

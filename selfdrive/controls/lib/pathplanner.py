@@ -11,6 +11,7 @@ from selfdrive.controls.lib.model_parser import ModelParser
 import selfdrive.messaging as messaging
 
 
+
 def calc_states_after_delay(states, v_ego, steer_angle, curvature_factor, steer_ratio, delay):
   states[0].x = v_ego * delay
   states[0].psi = v_ego * curvature_factor * math.radians(steer_angle) / steer_ratio * delay

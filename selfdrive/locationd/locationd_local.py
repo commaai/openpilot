@@ -17,6 +17,7 @@ from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.services import service_list
 from selfdrive.locationd.kalman.loc_local_kf import LocLocalKalman
 from selfdrive.locationd.kalman.kalman_helpers import ObservationKind
+from selfdrive.kegman_conf import kegman_conf
 
 DEBUG = False
 kf = LocLocalKalman()  # Make sure that model is generated on import time
@@ -245,7 +246,9 @@ def locationd_thread(gctx, addr, disabled_logs):
         if i % 6000 == 0:   # once a minute
           params = learner.get_values()
           params['carFingerprint'] = CP.carFingerprint
-          params_reader.put("LiveParameters", json.dumps(params))
+          kegman = kegman_conf()
+          if kegman.conf['liveParams'] == "1":
+            params_reader.put("LiveParameters", json.dumps(params))
           params_reader.put("ControlsParams", json.dumps({'angle_model_bias': log.live100.angleModelBias}))
 
         i += 1

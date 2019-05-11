@@ -31,6 +31,7 @@ selfdrive/proclogd/proclogd
 selfdrive/ui/ui
 selfdrive/test/tests/plant/out
 selfdrive/visiond/visiond
+selfdrive/locationd/kalman/loc_local.cpp
 /src/
 
 one
