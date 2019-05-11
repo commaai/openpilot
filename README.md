@@ -93,7 +93,7 @@ Supported Cars
 | Kia                  | Stinger 2018             | SCC + LKAS           | Yes     | Stock          | 0mph             | 0mph           | Custom<sup>6</sup>|
 | Lexus                | RX Hybrid 2016-19        | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           | Toyota            |
 | Subaru               | Impreza 2019             | EyeSight             | Yes     | Stock          | 0mph             | 0mph           | Subaru            |
-| Toyota               | Avalon 2016              | TSS-P                  | Yes     | ?<sup>8</sup>          | 28mph | 0mph           | Toyota            |
+| Toyota               | Avalon 2016              | TSS-P                  | Yes     | Unknown<sup>8</sup>          | 28mph | 0mph           | Toyota            |
 | Toyota               | Camry 2018<sup>4</sup>   | All                  | Yes     | Stock          | 0mph<sup>5</sup> | 0mph           | Toyota            |
 | Toyota               | C-HR 2017-18<sup>4</sup> | All                  | Yes     | Stock          | 0mph             | 0mph           | Toyota            |
 | Toyota               | Corolla 2017-18          | All                  | Yes     | Yes<sup>2</sup>| 20mph<sup>1</sup>| 0mph           | Toyota            |
