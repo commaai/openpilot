@@ -26,6 +26,7 @@ def get_powertrain_can_parser(CP):
     ("DOOR_OPEN_FL", "BodyInfo", 1),
     ("DOOR_OPEN_RR", "BodyInfo", 1),
     ("DOOR_OPEN_RL", "BodyInfo", 1),
+    ("Units", "Dash_State", 5),
   ]
 
   checks = [
@@ -89,6 +90,7 @@ class CarState(object):
     self.steer_torque_driver = 0
     self.steer_not_allowed = False
     self.main_on = False
+    self.is_metric = False
 
     # vEgo kalman filter
     dt = 0.01
@@ -114,7 +116,13 @@ class CarState(object):
     self.v_wheel_rl = cp.vl["Wheel_Speeds"]['RL'] * CV.KPH_TO_MS
     self.v_wheel_rr = cp.vl["Wheel_Speeds"]['RR'] * CV.KPH_TO_MS
 
-    self.v_cruise_pcm = cp_cam.vl["ES_DashStatus"]["Cruise_Set_Speed"] * CV.MPH_TO_KPH
+    # 5 = imperial, 27 = metric
+    self.is_metric = cp.vl["Dash_State"]['Units'] == 27
+
+    if self.is_metric:
+      self.v_cruise_pcm = cp_cam.vl["ES_DashStatus"]['Cruise_Set_Speed']
+    else:
+      self.v_cruise_pcm = cp_cam.vl["ES_DashStatus"]['Cruise_Set_Speed'] * CV.MPH_TO_KPH
 
     v_wheel = (self.v_wheel_fl + self.v_wheel_fr + self.v_wheel_rl + self.v_wheel_rr) / 4.
     # Kalman filter, even though Hyundai raw wheel speed is heaviliy filtered by default

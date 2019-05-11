@@ -321,10 +321,11 @@ BO_ 1658 NEW_MSG_39: 8 XXX
  SG_ NEW_SIGNAL_3 : 33|1@1+ (1,0) [0|3] "" XXX
  SG_ NEW_SIGNAL_4 : 31|1@0+ (1,0) [0|3] "" XXX
 
-BO_ 1677 NEW_MSG_40: 8 XXX
+BO_ 1677 Dash_State: 8 XXX
  SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
  SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ NEW_SIGNAL_3 : 16|4@1+ (1,0) [0|15] "" XXX
+ SG_ Units : 27|5@1+ (1,0) [5|27] "" XXX
 
 BO_ 1743 NEW_MSG_41: 8 XXX
  SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
