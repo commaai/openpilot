@@ -155,7 +155,7 @@ class CarInterface(object):
       ret.steerRatio = 13.7
       tire_stiffness_factor = 0.7989
       ret.mass = 3505 * CV.LB_TO_KG + std_cargo  # mean between normal and hybrid
-      ret.steerKpV, ret.steerKiV = [[0.6], [0.1]]
+      ret.steerKpV, ret.steerKiV = [[0.6], [0.4]]
       ret.steerKf = 0.00006   # full torque for 20 deg at 80mph means 0.00007818594
 
     ret.steerRateCost = 1.
