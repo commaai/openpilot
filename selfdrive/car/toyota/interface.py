@@ -158,6 +158,16 @@ class CarInterface(object):
       ret.steerKpV, ret.steerKiV = [[0.3], [0.1]]
       ret.steerKf = 0.00007818594
 
+    elif candidate == CAR.COROLLA_HATCH:
+      stop_and_go = True
+      ret.safetyParam = 100
+      ret.wheelbase = 2.63906
+      ret.steerRatio = 13.9
+      tire_stiffness_factor = 0.444
+      ret.mass = 3060. * CV.LB_TO_KG + std_cargo
+      ret.steerKpV, ret.steerKiV = [[0.3], [0.05]]
+      ret.steerKf = 0.00007818594
+
     ret.steerRateCost = 1.
     ret.centerToFront = ret.wheelbase * 0.44
 
@@ -280,7 +290,7 @@ class CarInterface(object):
     ret.cruiseState.available = bool(self.CS.main_on)
     ret.cruiseState.speedOffset = 0.
 
-    if self.CP.carFingerprint in [CAR.RAV4H, CAR.HIGHLANDERH, CAR.HIGHLANDER, CAR.RAV4_2019] or self.CP.enableGasInterceptor:
+    if self.CP.carFingerprint in [CAR.RAV4H, CAR.HIGHLANDERH, CAR.HIGHLANDER, CAR.RAV4_2019, CAR.COROLLA_HATCH] or self.CP.enableGasInterceptor:
       # ignore standstill in hybrid vehicles, since pcm allows to restart without
       # receiving any special command
       # also if interceptor is detected
@@ -379,7 +389,7 @@ class CarInterface(object):
     self.CC.update(self.sendcan, c.enabled, self.CS, self.frame,
                    c.actuators, c.cruiseControl.cancel, c.hudControl.visualAlert,
                    c.hudControl.audibleAlert, self.forwarding_camera,
-                   c.hudControl.leftLaneVisible, c.hudControl.rightLaneVisible, c.hudControl.leadVisible, 
+                   c.hudControl.leftLaneVisible, c.hudControl.rightLaneVisible, c.hudControl.leadVisible,
                    c.hudControl.leftLaneDepart, c.hudControl.rightLaneDepart)
 
     self.frame += 1
