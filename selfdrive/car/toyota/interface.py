@@ -155,7 +155,7 @@ class CarInterface(object):
       ret.steerRatio = 14.8 #Found at https://pressroom.toyota.com/releases/2016+avalon+product+specs.download
       tire_stiffness_factor = 0.7983
       ret.mass = 3505 * CV.LB_TO_KG + std_cargo  # mean between normal and hybrid
-      ret.steerKpV, ret.steerKiV = [[0.25], [0.03]]
+      ret.steerKpV, ret.steerKiV = [[0.1], [0.03]]
       ret.steerKf = 0.00006   # full torque for 20 deg at 80mph means 0.00007818594
 
     ret.steerRateCost = 1.
