@@ -12,9 +12,9 @@ def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
   # hyst params
   brake_hyst_on = 0.02     # to activate brakes exceed this value
   brake_hyst_off = 0.005                     # to deactivate brakes below this value
-  brake_hyst_gap = 0.01                      # don't change brake command for small ocilalitons within this value
+  brake_hyst_gap = 0.01                      # don't change brake command for small oscillations within this value
 
-  #*** histeresis logic to avoid brake blinking. go above 0.1 to trigger
+  #*** hysteresis logic to avoid brake blinking. go above 0.1 to trigger
   if (brake < brake_hyst_on and not braking) or brake < brake_hyst_off:
     brake = 0.
   braking = brake > 0.
@@ -34,7 +34,7 @@ def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
   return brake, braking, brake_steady
 
 
-def brake_pump_hysteresys(apply_brake, apply_brake_last, last_pump_ts):
+def brake_pump_hysteresis(apply_brake, apply_brake_last, last_pump_ts):
   ts = sec_since_boot()
   pump_on = False
 
@@ -174,7 +174,7 @@ class CarController(object):
       # Send gas and brake commands.
       if (frame % 2) == 0:
         idx = frame // 2
-        pump_on, self.last_pump_ts = brake_pump_hysteresys(apply_brake, self.apply_brake_last, self.last_pump_ts)
+        pump_on, self.last_pump_ts = brake_pump_hysteresis(apply_brake, self.apply_brake_last, self.last_pump_ts)
         can_sends.append(hondacan.create_brake_command(self.packer, apply_brake, pump_on,
           pcm_override, pcm_cancel_cmd, hud.chime, hud.fcw, idx))
         self.apply_brake_last = apply_brake

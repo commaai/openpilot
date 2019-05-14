@@ -21,6 +21,7 @@ RUN apt-get update && apt-get install -y \
     ocl-icd-opencl-dev \
     opencl-headers
 
+RUN pip install --upgrade pip==18.0
 RUN pip install numpy==1.11.2 scipy==0.18.1 matplotlib==2.1.2
 
 COPY requirements_openpilot.txt /tmp/
