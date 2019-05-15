@@ -617,6 +617,8 @@ struct PathPlan {
   paramsValid @10 :Bool;
   modelValid @12 :Bool;
   angleOffset @11 :Float32;
+  mpcAngles @14 :List(Float32);
+  mpcTimes @15 :List(Float32);
 }
 
 struct LiveLocationData {
