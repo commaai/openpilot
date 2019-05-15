@@ -92,8 +92,8 @@ class PathPlanner(object):
 
     if not mpc_nans:
       self.mpc_angles = [self.angle_steers_des_prev,
-                        float(math.degrees(self.mpc_solution[0].delta[1] * CP.steerRatio) + angle_offset_bias),
-                        float(math.degrees(self.mpc_solution[0].delta[2] * CP.steerRatio) + angle_offset_bias)]
+                        float(math.degrees(self.mpc_solution[0].delta[1] * VM.sR) + angle_offset_bias),
+                        float(math.degrees(self.mpc_solution[0].delta[2] * VM.sR) + angle_offset_bias)]
 
       self.mpc_times = [cur_time,
                         cur_time + _DT_HALF_MPC,
