@@ -11,6 +11,7 @@ import selfdrive.messaging as messaging
 from selfdrive.config import Conversions as CV
 from selfdrive.services import service_list
 from selfdrive.car.car_helpers import get_car
+from selfdrive.controls.lib.model_parser import CAMERA_OFFSET
 from selfdrive.controls.lib.drive_helpers import learn_angle_model_bias, \
                                                  get_events, \
                                                  create_event, \
@@ -305,12 +306,21 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
     CC.hudControl.speedVisible = isEnabled(state)
     CC.hudControl.lanesVisible = isEnabled(state)
     CC.hudControl.leadVisible = plan.hasLead
-    CC.hudControl.rightLaneVisible = bool(path_plan.pathPlan.rProb > 0.5)
-    CC.hudControl.leftLaneVisible = bool(path_plan.pathPlan.lProb > 0.5)
+
+    right_lane_visible = path_plan.pathPlan.rProb > 0.5
+    left_lane_visible = path_plan.pathPlan.lProb > 0.5
+
+    CC.hudControl.rightLaneVisible = bool(right_lane_visible)
+    CC.hudControl.leftLaneVisible = bool(left_lane_visible)
+
+    blinker = CS.leftBlinker or CS.rightBlinker
+    ldw_allowed = CS.vEgo > 12.5 and not blinker
+
     if len(list(path_plan.pathPlan.rPoly)) == 4:
-      CC.hudControl.rightLaneDepart = bool(path_plan.pathPlan.rPoly[3] > -1.11 and not CS.rightBlinker and CS.vEgo > 12.5 and path_plan.pathPlan.rProb > 0.5) # Speed needs to be above 12.5m/s for LDA and only if blinker if off
+      CC.hudControl.rightLaneDepart = bool(ldw_allowed and path_plan.pathPlan.rPoly[3] > -(1 + CAMERA_OFFSET) and right_lane_visible)
     if len(list(path_plan.pathPlan.lPoly)) == 4:
-      CC.hudControl.leftLaneDepart = bool(path_plan.pathPlan.lPoly[3] < 1.05 and not CS.leftBlinker and CS.vEgo > 12.5 and path_plan.pathPlan.lProb > 0.5) # CAMERA_OFFSET 6cm making it to detect if line is within 15cm of the wheel
+      CC.hudControl.leftLaneDepart = bool(ldw_allowed and path_plan.pathPlan.lPoly[3] < (1 - CAMERA_OFFSET) and left_lane_visible)
+
     CC.hudControl.visualAlert = AM.visual_alert
     CC.hudControl.audibleAlert = AM.audible_alert
 
