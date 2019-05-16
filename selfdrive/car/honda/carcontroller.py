@@ -184,4 +184,4 @@ class CarController(object):
           # This prevents unexpected pedal range rescaling
           can_sends.append(create_gas_command(self.packer, apply_gas, idx))
 
-    sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
+    sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan'))

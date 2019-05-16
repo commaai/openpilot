@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import json
-import six
 
 DEFAULT_OUTPUT_FILENAME = "default_speeds_by_region.json"
 
@@ -146,6 +145,31 @@ def main(filename = DEFAULT_OUTPUT_FILENAME):
   DE.add_rule({"zone:maxspeed": "DE:rural"}, "100")
   DE.add_rule({"zone:maxspeed": "DE:motorway"}, "none")
   DE.add_rule({"bicycle_road": "yes"}, "30")
+  
+
+  """
+  --------------------------------------------------
+      EE - Estonia
+  --------------------------------------------------
+  """
+  EE = Country("EE")
+  countries.append(EE)
+
+  """ Default rules """
+  EE.add_rule({"highway": "motorway"}, "90")
+  EE.add_rule({"highway": "trunk"}, "90")
+  EE.add_rule({"highway": "primary"}, "90")
+  EE.add_rule({"highway": "secondary"}, "50")
+  EE.add_rule({"highway": "tertiary"}, "50")
+  EE.add_rule({"highway": "unclassified"}, "90")
+  EE.add_rule({"highway": "residential"}, "40")
+  EE.add_rule({"highway": "service"}, "40")
+  EE.add_rule({"highway": "motorway_link"}, "90")
+  EE.add_rule({"highway": "trunk_link"}, "70")
+  EE.add_rule({"highway": "primary_link"}, "70")
+  EE.add_rule({"highway": "secondary_link"}, "50")
+  EE.add_rule({"highway": "tertiary_link"}, "50")
+  EE.add_rule({"highway": "living_street"}, "20")
 
 
   """ --- DO NOT MODIFY CODE BELOW THIS LINE --- """
@@ -206,7 +230,7 @@ class Country(Region):
   def jsonify(self):
     ret_dict = {}
     ret_dict[self.name] = {}
-    for r_name, region in six.iteritems(self.regions):
+    for r_name, region in self.regions.items():
       ret_dict[self.name].update(region.jsonify())
     ret_dict[self.name]['Default'] = self.rules
     return ret_dict

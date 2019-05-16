@@ -195,4 +195,4 @@ class CarController(object):
       # issued for the same chime type and duration
       self.chime = chime
 
-    sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
+    sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan'))

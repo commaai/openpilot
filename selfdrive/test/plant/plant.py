@@ -318,7 +318,7 @@ class Plant(object):
     msg_data = fix(msg_data, 0xe4)
     can_msgs.append([0xe4, 0, msg_data, 2])
 
-    Plant.logcan.send(can_list_to_can_capnp(can_msgs).to_bytes())
+    Plant.logcan.send(can_list_to_can_capnp(can_msgs))
 
     # ******** publish a fake model going straight and fake calibration ********
     # note that this is worst case for MPC, since model will delay long mpc by one time step

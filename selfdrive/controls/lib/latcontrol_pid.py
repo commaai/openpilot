@@ -1,29 +1,27 @@
 from selfdrive.controls.lib.pid import PIController
-from common.numpy_fast import interp
+from selfdrive.controls.lib.drive_helpers import get_steer_max
 from cereal import car
-
-_DT = 0.01    # 100Hz
-_DT_MPC = 0.05  # 20Hz
+from cereal import log
 
 
-def get_steer_max(CP, v_ego):
-  return interp(v_ego, CP.steerMaxBP, CP.steerMaxV)
-
-
-class LatControl(object):
+class LatControlPID(object):
   def __init__(self, CP):
-    self.pid = PIController((CP.steerKpBP, CP.steerKpV),
-                            (CP.steerKiBP, CP.steerKiV),
-                            k_f=CP.steerKf, pos_limit=1.0)
-    self.last_cloudlog_t = 0.0
+    self.pid = PIController((CP.lateralTuning.pid.kpBP, CP.lateralTuning.pid.kpV),
+                            (CP.lateralTuning.pid.kiBP, CP.lateralTuning.pid.kiV),
+                            k_f=CP.lateralTuning.pid.kf, pos_limit=1.0)
     self.angle_steers_des = 0.
 
   def reset(self):
     self.pid.reset()
 
-  def update(self, active, v_ego, angle_steers, steer_override, CP, VM, path_plan):
+  def update(self, active, v_ego, angle_steers, angle_steers_rate, steer_override, CP, VM, path_plan):
+    pid_log = log.Live100Data.LateralPIDState.new_message()
+    pid_log.steerAngle = float(angle_steers)
+    pid_log.steerRate = float(angle_steers_rate)
+
     if v_ego < 0.3 or not active:
       output_steer = 0.0
+      pid_log.active = False
       self.pid.reset()
     else:
       # TODO: ideally we should interp, but for tuning reasons we keep the mpc solution
@@ -43,6 +41,12 @@ class LatControl(object):
       deadzone = 0.0
       output_steer = self.pid.update(self.angle_steers_des, angle_steers, check_saturation=(v_ego > 10), override=steer_override,
                                      feedforward=steer_feedforward, speed=v_ego, deadzone=deadzone)
+      pid_log.active = True
+      pid_log.p = self.pid.p
+      pid_log.i = self.pid.i
+      pid_log.f = self.pid.f
+      pid_log.output = output_steer
+      pid_log.saturated = bool(self.pid.saturated)
 
     self.sat_flag = self.pid.saturated
-    return output_steer, float(self.angle_steers_des)
+    return output_steer, float(self.angle_steers_des), pid_log

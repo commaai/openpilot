@@ -129,4 +129,8 @@ extern "C" {
     return cp->pack(address, std::vector<SignalPackValue>(vals, vals+num_vals), counter);
   }
 
+  uint64_t canpack_pack_vector(void* inst, uint32_t address, const std::vector<SignalPackValue> &signals, int counter) {
+    CANPacker *cp = (CANPacker*)inst;
+    return cp->pack(address, signals, counter);
+  }
 }

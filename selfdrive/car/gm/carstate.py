@@ -63,10 +63,10 @@ class CarState(object):
 
     # vEgo kalman filter
     dt = 0.01
-    self.v_ego_kf = KF1D(x0=np.matrix([[0.], [0.]]),
-                         A=np.matrix([[1., dt], [0., 1.]]),
-                         C=np.matrix([1., 0.]),
-                         K=np.matrix([[0.12287673], [0.29666309]]))
+    self.v_ego_kf = KF1D(x0=[[0.], [0.]],
+                         A=[[1., dt], [0., 1.]],
+                         C=[1., 0.],
+                         K=[[0.12287673], [0.29666309]])
     self.v_ego = 0.
 
   def update(self, pt_cp):

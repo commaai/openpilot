@@ -66,9 +66,9 @@ class CarInterface(object):
       ret.steerRatio = 15
       tire_stiffness_factor = 1.0
       ret.steerActuatorDelay = 0.4   # end-to-end angle controller
-      ret.steerKf = 0.00005
-      ret.steerKiBP, ret.steerKpBP = [[0., 20.], [0., 20.]]
-      ret.steerKpV, ret.steerKiV = [[0.2, 0.3], [0.02, 0.03]]
+      ret.lateralTuning.pid.kf = 0.00005
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 20.], [0., 20.]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2, 0.3], [0.02, 0.03]]
       ret.steerMaxBP = [0.] # m/s
       ret.steerMaxV = [1.]
 
@@ -81,12 +81,12 @@ class CarInterface(object):
     ret.gasMaxV = [0.]
     ret.brakeMaxBP = [0.]
     ret.brakeMaxV = [0.]
-    ret.longPidDeadzoneBP = [0.]
-    ret.longPidDeadzoneV = [0.]
-    ret.longitudinalKpBP = [0.]
-    ret.longitudinalKpV = [0.]
-    ret.longitudinalKiBP = [0.]
-    ret.longitudinalKiV = [0.]
+    ret.longitudinalTuning.deadzoneBP = [0.]
+    ret.longitudinalTuning.deadzoneV = [0.]
+    ret.longitudinalTuning.kpBP = [0.]
+    ret.longitudinalTuning.kpV = [0.]
+    ret.longitudinalTuning.kiBP = [0.]
+    ret.longitudinalTuning.kiV = [0.]
 
     # end from gm
 
