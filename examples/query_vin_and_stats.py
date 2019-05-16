@@ -3,7 +3,7 @@ import time
 import struct
 from panda import Panda
 from hexdump import hexdump
-from isotp import isotp_send, isotp_recv
+from panda.isotp import isotp_send, isotp_recv
 
 # 0x7e0 = Toyota
 # 0x18DB33F1 for Honda?
