@@ -1,8 +1,7 @@
 import numpy as np
 
 from common.transformations.camera import eon_focal_length, \
-        vp_from_ke, \
-        get_view_frame_from_road_frame, \
+        vp_from_ke, get_view_frame_from_road_frame, \
         FULL_FRAME_SIZE
 
 # segnet
@@ -115,6 +114,16 @@ def get_camera_frame_from_model_frame(camera_frame_from_road_frame, height=model
     camera_from_model_camera = np.eye(3)
 
   return np.dot(camera_from_model_camera, model_camera_from_model_frame)
+
+
+def get_camera_frame_from_medmodel_frame(camera_frame_from_road_frame):
+  camera_frame_from_ground = camera_frame_from_road_frame[:, (0, 1, 3)]
+  medmodel_frame_from_ground = medmodel_frame_from_road_frame[:, (0, 1, 3)]
+
+  ground_from_medmodel_frame = np.linalg.inv(medmodel_frame_from_ground)
+  camera_frame_from_medmodel_frame = np.dot(camera_frame_from_ground, ground_from_medmodel_frame)
+
+  return camera_frame_from_medmodel_frame
 
 
 def get_camera_frame_from_bigmodel_frame(camera_frame_from_road_frame):

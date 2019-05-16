@@ -30,6 +30,12 @@ class CM:
   LOW_CHIME = 0x86
   HIGH_CHIME = 0x87
 
+class AccState:
+  OFF        = 0
+  ACTIVE     = 1
+  FAULTED    = 3
+  STANDSTILL = 4
+
 AUDIO_HUD = {
   AudibleAlert.none: (0, 0),
   AudibleAlert.chimeEngage: (CM.HIGH_CHIME, 1),

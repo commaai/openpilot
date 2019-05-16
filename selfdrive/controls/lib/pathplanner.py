@@ -49,7 +49,7 @@ class PathPlanner(object):
     self.angle_steers_des_prev = 0.0
     self.angle_steers_des_time = 0.0
 
-  def update(self, CP, VM, CS, md, live100, live_parameters):
+  def update(self, rcv_times, CP, VM, CS, md, live100, live_parameters):
     v_ego = CS.carState.vEgo
     angle_steers = CS.carState.steeringAngle
     active = live100.live100.active
@@ -104,6 +104,8 @@ class PathPlanner(object):
     else:
       self.invalid_counter = 0
 
+    cur_time = sec_since_boot()
+    model_dead = cur_time - rcv_times['model'] > 0.5
     plan_valid = self.invalid_counter < 2
 
     plan_send = messaging.new_message()
@@ -121,6 +123,7 @@ class PathPlanner(object):
     plan_send.pathPlan.angleOffset = float(angle_offset_average)
     plan_send.pathPlan.valid = bool(plan_valid)
     plan_send.pathPlan.paramsValid = bool(live_parameters.liveParameters.valid)
+    plan_send.pathPlan.modelValid = bool(not model_dead)
 
     self.plan.send(plan_send.to_bytes())
 

@@ -71,6 +71,6 @@ class CarController(object):
       can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.RES_ACCEL))
 
     ### Send messages to canbus
-    sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
+    sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan'))
 
     self.cnt += 1

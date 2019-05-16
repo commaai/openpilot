@@ -27,7 +27,7 @@ v_ego_stationary = 4.   # no stationary object flag below this speed
 
 # Lead Kalman Filter params
 _VLEAD_A = [[1.0, ts], [0.0, 1.0]]
-_VLEAD_C = [[1.0, 0.0]]
+_VLEAD_C = [1.0, 0.0]
 #_VLEAD_Q = np.matrix([[10., 0.0], [0.0, 100.]])
 #_VLEAD_R = 1e3
 #_VLEAD_K = np.matrix([[ 0.05705578], [ 0.03073241]])

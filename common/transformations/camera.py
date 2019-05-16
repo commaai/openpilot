@@ -200,3 +200,14 @@ def transform_img(base_img,
     augmented_rgb[:cyy] = cv2.warpPerspective(base_img, M, (output_size[0], cyy), borderMode=cv2.BORDER_REPLICATE)
 
   return augmented_rgb
+
+def yuv_crop(frame, output_size, center=None):
+  # output_size in camera coordinates so u,v
+  # center in array coordinates so row, column
+  rgb = cv2.cvtColor(frame, cv2.COLOR_YUV2RGB_I420)
+  if not center:
+    center = (rgb.shape[0]/2, rgb.shape[1]/2)
+  rgb_crop = rgb[center[0] - output_size[1]/2: center[0] + output_size[1]/2,
+                 center[1] - output_size[0]/2: center[1] + output_size[0]/2]
+  return cv2.cvtColor(rgb_crop, cv2.COLOR_RGB2YUV_I420)
+
