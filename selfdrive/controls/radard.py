@@ -226,7 +226,7 @@ def radard_thread(gctx=None):
       if VISION_POINT in ar_pts:
         print("vision", ar_pts[VISION_POINT])
 
-    idens = tracks.keys()
+    idens = list(tracks.keys())
     track_pts = np.array([tracks[iden].get_key_for_cluster() for iden in idens])
 
     # If we have multiple points, cluster them

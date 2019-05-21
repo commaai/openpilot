@@ -5,8 +5,8 @@ import sys
 import argparse
 import tempfile
 
-from ubloxd_py_test import parser_test
-from ubloxd_regression_test import compare_results
+from selfdrive.locationd.test.ubloxd_py_test import parser_test
+from selfdrive.locationd.test.ubloxd_regression_test import compare_results
 
 
 def mkdirs_exists_ok(path):

@@ -225,7 +225,11 @@ BO_ 802 ES_LKAS_State: 8 XXX
  SG_ LKAS_ENABLE_3 : 24|1@1+ (1,0) [0|1] "" XXX
  SG_ Signal3 : 25|1@1+ (1,0) [0|1] "" XXX
  SG_ LKAS_ENABLE_2 : 26|1@1+ (1,0) [0|1] "" XXX
- SG_ Signal4 : 27|5@1+ (1,0) [0|1] "" XXX
+ SG_ Signal4 : 27|1@1+ (1,0) [0|1] "" XXX
+ SG_ LKAS_Left_Line_Visible : 28|1@1+ (1,0) [0|1] "" XXX
+ SG_ Signal6 : 29|1@1+ (1,0) [0|1] "" XXX
+ SG_ LKAS_Right_Line_Visible : 30|1@1+ (1,0) [0|1] "" XXX
+ SG_ Signal7 : 31|1@1+ (1,0) [0|1] "" XXX
  SG_ FCW_Cont_Beep : 32|1@1+ (1,0) [0|1] "" XXX
  SG_ FCW_Repeated_Beep : 33|1@1+ (1,0) [0|1] "" XXX
  SG_ Throttle_Management_Activated : 34|1@1+ (1,0) [0|1] "" XXX
@@ -321,10 +325,11 @@ BO_ 1658 NEW_MSG_39: 8 XXX
  SG_ NEW_SIGNAL_3 : 33|1@1+ (1,0) [0|3] "" XXX
  SG_ NEW_SIGNAL_4 : 31|1@0+ (1,0) [0|3] "" XXX
 
-BO_ 1677 NEW_MSG_40: 8 XXX
+BO_ 1677 Dash_State: 8 XXX
  SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
  SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ NEW_SIGNAL_3 : 16|4@1+ (1,0) [0|15] "" XXX
+ SG_ Units : 29|3@1+ (1,0) [0|7] "" XXX
 
 BO_ 1743 NEW_MSG_41: 8 XXX
  SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
@@ -355,3 +360,4 @@ CM_ SG_ 940 FOG_LIGHTS2 "yellow fog light in the dash";
 CM_ SG_ 940 Highbeam "01 = low beam, 11 = high beam";
 CM_ SG_ 805 NEW_SIGNAL_3 "always 3";
 CM_ SG_ 805 NEW_SIGNAL_4 "always 1";
+CM_ SG_ 1677 Units "1 = imperial, 6 = metric";

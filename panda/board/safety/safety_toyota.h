@@ -172,7 +172,9 @@ static int toyota_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
   if ((bus_num == 0 || bus_num == 2) && toyota_camera_forwarded && !toyota_giraffe_switch_1) {
     int addr = to_fwd->RIR>>21;
     bool is_lkas_msg = (addr == 0x2E4 || addr == 0x412) && bus_num == 2;
-    return is_lkas_msg? -1 : (uint8_t)(~bus_num & 0x2);
+    // in TSSP 2.0 the camera does ACC as well, so filter 0x343
+    bool is_acc_msg = (addr == 0x343 && bus_num  == 2);
+    return (is_lkas_msg || is_acc_msg)? -1 : (uint8_t)(~bus_num & 0x2);
   }
   return -1;
 }
