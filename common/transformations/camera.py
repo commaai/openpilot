@@ -138,8 +138,8 @@ def rotate_img(img, eulers, crop=None, intrinsics=eon_intrinsics):
   warped_quadrangle = np.column_stack((warped_quadrangle_full[:,0]/warped_quadrangle_full[:,2],
                                        warped_quadrangle_full[:,1]/warped_quadrangle_full[:,2])).astype(np.float32)
   if crop:
-    W_border = (size[1] - crop[0])/2
-    H_border = (size[0] - crop[1])/2
+    W_border = (size[1] - crop[0])//2
+    H_border = (size[0] - crop[1])//2
     outside_crop = (((warped_quadrangle[:,0] < W_border) |
                      (warped_quadrangle[:,0] >= size[1] - W_border)) &
                     ((warped_quadrangle[:,1] < H_border) |
