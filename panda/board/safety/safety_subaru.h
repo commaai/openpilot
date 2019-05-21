@@ -123,6 +123,10 @@ static int subaru_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
     if (addr == 545) {
       return -1;
     }
+    // ES LKAS
+    if (addr == 802) {
+      return -1;
+    }
 
     return 0; // Main CAN
   }

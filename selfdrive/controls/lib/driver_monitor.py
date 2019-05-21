@@ -16,6 +16,7 @@ _PITCH_WEIGHT = 1.5  # pitch matters a lot more
 _METRIC_THRESHOLD = 0.4
 _PITCH_POS_ALLOWANCE = 0.08   # rad, to not be too sensitive on positive pitch
 _PITCH_NATURAL_OFFSET = 0.1   # people don't seem to look straight when they drive relaxed, rather a bit up
+_YAW_NATURAL_OFFSET = 0.08   # people don't seem to look straight when they drive relaxed, rather a bit to the right (center of car)
 _STD_THRESHOLD = 0.1          # above this standard deviation consider the measurement invalid
 _DISTRACTED_FILTER_TS = 0.25  # 0.6Hz
 _VARIANCE_FILTER_TS = 20.     # 0.008Hz
@@ -89,7 +90,7 @@ class DriverStatus():
   def _is_driver_distracted(self, pose):
     # to be tuned and to learn the driver's normal pose
     pitch_error = pose.pitch - _PITCH_NATURAL_OFFSET
-    yaw_error = pose.yaw
+    yaw_error = pose.yaw - _YAW_NATURAL_OFFSET
     # add positive pitch allowance
     if pitch_error > 0.:
       pitch_error = max(pitch_error - _PITCH_POS_ALLOWANCE, 0.)

@@ -56,8 +56,6 @@ class CarInterface(object):
     ret.wheelbase = 2.70
     ret.centerToFront = ret.wheelbase * 0.5
     ret.steerRatio = 13. # reasonable
-    ret.longPidDeadzoneBP = [0.]
-    ret.longPidDeadzoneV = [0.]
     ret.tireStiffnessFront = 1e6    # very stiff to neglect slip
     ret.tireStiffnessRear = 1e6     # very stiff to neglect slip
     ret.steerRatioRear = 0.
@@ -69,10 +67,12 @@ class CarInterface(object):
     ret.brakeMaxBP = [0.]
     ret.brakeMaxV = [0.]
 
-    ret.longitudinalKpBP = [0.]
-    ret.longitudinalKpV = [0.]
-    ret.longitudinalKiBP = [0.]
-    ret.longitudinalKiV = [0.]
+    ret.longitudinalTuning.kpBP = [0.]
+    ret.longitudinalTuning.kpV = [0.]
+    ret.longitudinalTuning.kiBP = [0.]
+    ret.longitudinalTuning.kiV = [0.]
+    ret.longitudinalTuning.deadzoneBP = [0.]
+    ret.longitudinalTuning.deadzoneV = [0.]
     ret.steerActuatorDelay = 0.
 
     return ret

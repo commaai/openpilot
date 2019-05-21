@@ -1,3 +1,17 @@
+Version 0.5.12 (2019-05-16)
+==========================
+ * Improve lateral control for the Prius and Prius Prime
+ * Compress logs before writing to disk
+ * Remove old driving data when storage reaches 90% full
+ * Fix small offset in following distance
+ * Various small CPU optimizations
+ * Improve offroad power consumption: require NEOS Update
+ * Add default speed limits for Estonia thanks to martinl!
+ * Subaru Crosstrek support thanks to martinl!
+ * Toyota Avalon support thanks to njbrown09!
+ * Toyota Rav4 with TSS 2.0 support thansk to wocsor!
+ * Toyota Corolla with TSS 2.0 support thansk to wocsor!
+
 Version 0.5.11 (2019-04-17)
 ========================
  * Add support for Subaru

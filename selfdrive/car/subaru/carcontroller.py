@@ -73,4 +73,4 @@ class CarController(object):
       can_sends.append(subarucan.create_es_lkas(self.packer, CS.es_lkas_msg, visual_alert))
       self.es_lkas_cnt = CS.es_lkas_msg["Counter"]
 
-    sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
+    sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan'))

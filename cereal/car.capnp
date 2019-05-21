@@ -73,6 +73,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     lowBattery @48;
     invalidGiraffeHonda @49;
     vehicleModelInvalid @50;
+    controlsFailed @51;
   }
 }
 
@@ -281,31 +282,83 @@ struct CarControl {
 
 struct CarParams {
   carName @0 :Text;
-  radarNameDEPRECATED @1 :Text;
-  carFingerprint @2 :Text;
+  carFingerprint @1 :Text;
 
-  enableSteerDEPRECATED @3 :Bool;
-  enableGasInterceptor @4 :Bool;
-  enableBrakeDEPRECATED @5 :Bool;
-  enableCruise @6 :Bool;
-  enableCamera @26 :Bool;
-  enableDsu @27 :Bool; # driving support unit
-  enableApgs @28 :Bool; # advanced parking guidance system
+  enableGasInterceptor @2 :Bool;
+  enableCruise @3 :Bool;
+  enableCamera @4 :Bool;
+  enableDsu @5 :Bool; # driving support unit
+  enableApgs @6 :Bool; # advanced parking guidance system
 
-  minEnableSpeed @17 :Float32;
-  minSteerSpeed @49 :Float32;
-  safetyModel @18 :Int16;
-  safetyParam @41 :Int16;
+  minEnableSpeed @7 :Float32;
+  minSteerSpeed @8 :Float32;
+  safetyModel @9 :Int16;
+  safetyParam @10 :Int16;
 
-  steerMaxBP @19 :List(Float32);
-  steerMaxV @20 :List(Float32);
-  gasMaxBP @21 :List(Float32);
-  gasMaxV @22 :List(Float32);
-  brakeMaxBP @23 :List(Float32);
-  brakeMaxV @24 :List(Float32);
+  steerMaxBP @11 :List(Float32);
+  steerMaxV @12 :List(Float32);
+  gasMaxBP @13 :List(Float32);
+  gasMaxV @14 :List(Float32);
+  brakeMaxBP @15 :List(Float32);
+  brakeMaxV @16 :List(Float32);
 
-  longPidDeadzoneBP @32 :List(Float32);
-  longPidDeadzoneV @33 :List(Float32);
+
+  # things about the car in the manual
+  mass @17 :Float32;             # [kg] running weight
+  wheelbase @18 :Float32;        # [m] distance from rear to front axle
+  centerToFront @19 :Float32;   # [m] GC distance to front axle
+  steerRatio @20 :Float32;       # [] ratio between front wheels and steering wheel angles
+  steerRatioRear @21 :Float32;  # [] rear steering ratio wrt front steering (usually 0)
+
+  # things we can derive
+  rotationalInertia @22 :Float32;    # [kg*m2] body rotational inertia
+  tireStiffnessFront @23 :Float32;   # [N/rad] front tire coeff of stiff
+  tireStiffnessRear @24 :Float32;    # [N/rad] rear tire coeff of stiff
+
+  longitudinalTuning @25 :LongitudinalPIDTuning;
+  lateralTuning :union {
+    pid @26 :LateralPIDTuning;
+    indi @27 :LateralINDITuning;
+  }
+
+  steerLimitAlert @28 :Bool;
+
+  vEgoStopping @29 :Float32; # Speed at which the car goes into stopping state
+  directAccelControl @30 :Bool; # Does the car have direct accel control or just gas/brake
+  stoppingControl @31 :Bool; # Does the car allows full control even at lows speeds when stopping
+  startAccel @32 :Float32; # Required acceleraton to overcome creep braking
+  steerRateCost @33 :Float32; # Lateral MPC cost on steering rate
+  steerControlType @34 :SteerControlType;
+  radarOffCan @35 :Bool; # True when radar objects aren't visible on CAN
+
+  steerActuatorDelay @36 :Float32; # Steering wheel actuator delay in seconds
+  openpilotLongitudinalControl @37 :Bool; # is openpilot doing the longitudinal control?
+
+  struct LateralPIDTuning {
+    kpBP @0 :List(Float32);
+    kpV @1 :List(Float32);
+    kiBP @2 :List(Float32);
+    kiV @3 :List(Float32);
+    kf @4 :Float32;
+  }
+
+  struct LongitudinalPIDTuning {
+    kpBP @0 :List(Float32);
+    kpV @1 :List(Float32);
+    kiBP @2 :List(Float32);
+    kiV @3 :List(Float32);
+    deadzoneBP @4 :List(Float32);
+    deadzoneV @5 :List(Float32);
+  }
+
+
+  struct LateralINDITuning {
+    outerLoopGain @0 :Float32;
+    innerLoopGain @1 :Float32;
+    timeConstant @2 :Float32;
+    actuatorEffectiveness @3 :Float32;
+  }
+
 
   enum SafetyModels {
     # does NOT match board setting
@@ -322,46 +375,6 @@ struct CarParams {
     tesla @10;
     subaru @11;
   }
-
-  # things about the car in the manual
-  mass @7 :Float32;             # [kg] running weight
-  wheelbase @8 :Float32;        # [m] distance from rear to front axle
-  centerToFront @9 :Float32;   # [m] GC distance to front axle
-  steerRatio @10 :Float32;       # [] ratio between front wheels and steering wheel angles
-  steerRatioRear @11 :Float32;  # [] rear steering ratio wrt front steering (usually 0)
-
-  # things we can derive
-  rotationalInertia @12 :Float32;    # [kg*m2] body rotational inertia
-  tireStiffnessFront @13 :Float32;   # [N/rad] front tire coeff of stiff
-  tireStiffnessRear @14 :Float32;    # [N/rad] rear tire coeff of stiff
-
-  # Kp and Ki for the lateral control
-  steerKpBP @42 :List(Float32);
-  steerKpV @43 :List(Float32);
-  steerKiBP @44 :List(Float32);
-  steerKiV @45 :List(Float32);
-  steerKpDEPRECATED @15 :Float32;
-  steerKiDEPRECATED @16 :Float32;
-  steerKf @25 :Float32;
-
-  # Kp and Ki for the longitudinal control
-  longitudinalKpBP @36 :List(Float32);
-  longitudinalKpV @37 :List(Float32);
-  longitudinalKiBP @38 :List(Float32);
-  longitudinalKiV @39 :List(Float32);
-
-  steerLimitAlert @29 :Bool;
-
-  vEgoStopping @30 :Float32; # Speed at which the car goes into stopping state
-  directAccelControl @31 :Bool; # Does the car have direct accel control or just gas/brake
-  stoppingControl @34 :Bool; # Does the car allows full control even at lows speeds when stopping
-  startAccel @35 :Float32; # Required acceleraton to overcome creep braking
-  steerRateCost @40 :Float32; # Lateral MPC cost on steering rate
-  steerControlType @46 :SteerControlType;
-  radarOffCan @47 :Bool; # True when radar objects aren't visible on CAN
-
-  steerActuatorDelay @48 :Float32; # Steering wheel actuator delay in seconds
-  openpilotLongitudinalControl @50 :Bool; # is openpilot doing the longitudinal control?
 
   enum SteerControlType {
     torque @0;

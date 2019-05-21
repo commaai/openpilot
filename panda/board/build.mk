@@ -24,6 +24,11 @@ endif
 
 DFU_UTIL = "dfu-util"
 
+DEPDIR = generated_dependencies
+$(shell mkdir -p -m 777 $(DEPDIR) >/dev/null)
+DEPFLAGS = -MT $@ -MMD -MP -MF $(DEPDIR)/$*.Td
+POSTCOMPILE = @mv -f $(DEPDIR)/$*.Td $(DEPDIR)/$*.d && touch $@
+
 # this no longer pushes the bootstub
 flash: obj/$(PROJ_NAME).bin
 	PYTHONPATH=../ python -c "from python import Panda; Panda().flash('obj/$(PROJ_NAME).bin')"
@@ -45,8 +50,9 @@ include ../common/version.mk
 obj/cert.h: ../crypto/getcertheader.py
 	../crypto/getcertheader.py ../certs/debug.pub ../certs/release.pub > $@
 
-obj/%.$(PROJ_NAME).o: %.c obj/cert.h obj/gitversion.h config.h drivers/*.h gpio.h libc.h provision.h safety.h safety/*.h spi_flasher.h
-	$(CC) $(CFLAGS) -o $@ -c $<
+obj/%.$(PROJ_NAME).o: %.c obj/gitversion.h obj/cert.h $(DEPDIR)/%.d
+	$(CC) $(DEPFLAGS) $(CFLAGS) -o $@ -c $<
+	$(POSTCOMPILE)
 
 obj/%.$(PROJ_NAME).o: ../crypto/%.c
 	$(CC) $(CFLAGS) -o $@ -c $<
@@ -59,12 +65,18 @@ obj/$(PROJ_NAME).bin: obj/$(STARTUP_FILE).o obj/main.$(PROJ_NAME).o
 	$(CC) -Wl,--section-start,.isr_vector=0x8004000 $(CFLAGS) -o obj/$(PROJ_NAME).elf $^
 	$(OBJCOPY) -v -O binary obj/$(PROJ_NAME).elf obj/code.bin
 	SETLEN=1 ../crypto/sign.py obj/code.bin $@ $(CERT)
-	@BINSIZE=$$(du -b "obj/$(PROJ_NAME).bin" | cut -f 1) ; if [ $$BINSIZE -ge 32768 ]; then echo "ERROR obj/$(PROJ_NAME).bin is too big!"; exit 1; fi;
-
+	@BINSIZE=$$(du -b "obj/$(PROJ_NAME).bin" | cut -f 1) ; \
+	if [ $$BINSIZE -ge 32768 ]; then echo "ERROR obj/$(PROJ_NAME).bin is too big!"; exit 1; fi;
 
 obj/bootstub.$(PROJ_NAME).bin: obj/$(STARTUP_FILE).o obj/bootstub.$(PROJ_NAME).o obj/sha.$(PROJ_NAME).o obj/rsa.$(PROJ_NAME).o
 	$(CC) $(CFLAGS) -o obj/bootstub.$(PROJ_NAME).elf $^
 	$(OBJCOPY) -v -O binary obj/bootstub.$(PROJ_NAME).elf $@
 
+$(DEPDIR)/%.d: ;
+.PRECIOUS: $(DEPDIR)/%.d
+
+include $(wildcard $(patsubst %,$(DEPDIR)/%.d,$(basename $(wildcard *.c))))
+
 clean:
-	@rm -f obj/*
+	@$(RM) obj/*
+	@rm -rf $(DEPDIR)
