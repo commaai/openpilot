@@ -23,9 +23,8 @@ ifeq ($(UNAME_S),Darwin)
 else ifeq ($(OPTEST),1)
 	ZMQ_LIBS = -lzmq
 else ifeq ($(UNAME_M),x86_64)
-	EXTERNAL := ../../external
-	ZMQ_FLAGS = -I$(EXTERNAL)/zmq/include
-	ZMQ_LIBS = -L$(EXTERNAL)/zmq/lib -l:libzmq.a
+	ZMQ_FLAGS = -I$(PHONELIBS)/zmq/x64/include
+	ZMQ_LIBS = -L$(PHONELIBS)/zmq/x64/lib -l:libzmq.a
 else ifeq ($(UNAME_M),aarch64)
 	ZMQ_FLAGS = -I$(PHONELIBS)/zmq/aarch64/include
 	ZMQ_LIBS = -L$(PHONELIBS)/zmq/aarch64/lib -l:libzmq.a
@@ -66,6 +65,11 @@ libdbc.so:: $(LIBDBC_OBJS) $(DBC_OBJS)
 		$(ZMQ_LIBS) \
 		$(CEREAL_CXXFLAGS) \
 		$(CEREAL_LIBS)
+
+packer_impl.so: packer_impl.pyx packer_setup.py
+	python packer_setup.py build_ext --inplace
+	rm -rf build
+	rm -f packer_impl.cpp
 
 $(OBJDIR)/%.o: %.cc
 	@echo "[ CXX ] $@"

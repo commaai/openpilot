@@ -6,9 +6,11 @@ import time
 import threading
 import traceback
 import zmq
+import requests
 import six.moves.queue
 from jsonrpc import JSONRPCResponseManager, dispatcher
 from websocket import create_connection, WebSocketTimeoutException
+from selfdrive.loggerd.config import ROOT
 
 import selfdrive.crash as crash
 import selfdrive.messaging as messaging
@@ -70,6 +72,19 @@ def getMessage(service=None, timeout=1000):
   socket.setsockopt(zmq.RCVTIMEO, timeout)
   ret = messaging.recv_one(socket)
   return ret.to_dict()
+
+@dispatcher.add_method
+def listDataDirectory():
+  files = [os.path.relpath(os.path.join(dp, f), ROOT) for dp, dn, fn in os.walk(ROOT) for f in fn]
+  return files
+
+@dispatcher.add_method
+def uploadFileToUrl(fn, url, headers):
+  if len(fn) == 0 or fn[0] == '/' or '..' in fn:
+    return 500
+  with open(os.path.join(ROOT, fn), "rb") as f:
+    ret = requests.put(url, data=f, headers=headers, timeout=10)
+  return ret.status_code
 
 def ws_recv(ws, end_event):
   while not end_event.is_set():
