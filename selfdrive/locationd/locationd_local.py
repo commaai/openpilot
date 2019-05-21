@@ -104,9 +104,9 @@ class ParamsLearner(object):
     self.VM = VM
 
     self.ao = math.radians(angle_offset)
-    self.slow_ao = math.radians(angle_offset)
-    self.x = stiffness_factor
-    self.sR = VM.sR if steer_ratio is None else steer_ratio
+    self.slow_angleOffsetAverage = math.radians(angle_offset)
+    self.stiffnessFactor = stiffness_factor
+    self.steerRatio = VM.sR if steer_ratio is None else steer_ratio
     self.MIN_SR = MIN_SR * self.VM.sR
     self.MAX_SR = MAX_SR * self.VM.sR
     self.MIN_SR_TH = MIN_SR_TH * self.VM.sR
@@ -119,12 +119,12 @@ class ParamsLearner(object):
 
   def get_values(self):
     return {
-      'angleOffsetAverage': math.degrees(self.slow_ao),
-      'stiffnessFactor': self.x,
-      'steerRatio': self.sR,
+      'angleOffsetAverage': math.degrees(self.slow_angleOffsetAverage),
+      'stiffnessFactor': self.stiffnessFactor,
+      'steerRatio': self.steerRatio,
     }
 
-  def update(self, psi, u, sa):
+  def update(self, yaw_rate, v_Ego, steering_angle):
     cF0 = self.VM.cF
     cR0 = self.VM.cR
     aR = self.VM.aR
@@ -132,39 +132,39 @@ class ParamsLearner(object):
     l = self.VM.l
     m = self.VM.m
 
-    x = self.x
+    x = self.stiffnessFactor
     ao = self.ao
-    sR = self.sR
+    sR = self.steerRatio
 
     # Gradient descent:  learn angle offset, tire stiffness and steer ratio.
-    if u > 10.0 and abs(math.degrees(sa)) < 15.:
-      self.ao -= self.alpha1 * 2.0*cF0*cR0*l*u*x*(1.0*cF0*cR0*l*u*x*(ao - sa) + psi*sR*(cF0*cR0*l**2*x - m*u**2*(aF*cF0 - aR*cR0)))/(sR**2*(cF0*cR0*l**2*x - m*u**2*(aF*cF0 - aR*cR0))**2)
+    if v_Ego > 10.0 and abs(math.degrees(steering_angle)) < 15.:
+      self.ao -= self.alpha1 * 2.0*cF0*cR0*l*v_Ego*x*(1.0*cF0*cR0*l*v_Ego*x*(ao - steering_angle) + yaw_rate*sR*(cF0*cR0*l**2*x - m*v_Ego**2*(aF*cF0 - aR*cR0)))/(sR**2*(cF0*cR0*l**2*x - m*v_Ego**2*(aF*cF0 - aR*cR0))**2)
 
-      ao = self.slow_ao
-      self.slow_ao -= self.alpha2 * 2.0*cF0*cR0*l*u*x*(1.0*cF0*cR0*l*u*x*(ao - sa) + psi*sR*(cF0*cR0*l**2*x - m*u**2*(aF*cF0 - aR*cR0)))/(sR**2*(cF0*cR0*l**2*x - m*u**2*(aF*cF0 - aR*cR0))**2)
+      ao = self.slow_angleOffsetAverage
+      self.slow_angleOffsetAverage -= self.alpha2 * 2.0*cF0*cR0*l*v_Ego*x*(1.0*cF0*cR0*l*v_Ego*x*(ao - steering_angle) + yaw_rate*sR*(cF0*cR0*l**2*x - m*v_Ego**2*(aF*cF0 - aR*cR0)))/(sR**2*(cF0*cR0*l**2*x - m*v_Ego**2*(aF*cF0 - aR*cR0))**2)
 
-      self.x -= self.alpha3 * -2.0*cF0*cR0*l*m*u**3*(ao - sa)*(aF*cF0 - aR*cR0)*(1.0*cF0*cR0*l*u*x*(ao - sa) + psi*sR*(cF0*cR0*l**2*x - m*u**2*(aF*cF0 - aR*cR0)))/(sR**2*(cF0*cR0*l**2*x - m*u**2*(aF*cF0 - aR*cR0))**3)
+      self.stiffnessFactor -= self.alpha3 * -2.0*cF0*cR0*l*m*v_Ego**3*(ao - steering_angle)*(aF*cF0 - aR*cR0)*(1.0*cF0*cR0*l*v_Ego*x*(ao - steering_angle) + yaw_rate*sR*(cF0*cR0*l**2*x - m*v_Ego**2*(aF*cF0 - aR*cR0)))/(sR**2*(cF0*cR0*l**2*x - m*v_Ego**2*(aF*cF0 - aR*cR0))**3)
 
-      self.sR -= self.alpha4 * -2.0*cF0*cR0*l*u*x*(ao - sa)*(1.0*cF0*cR0*l*u*x*(ao - sa) + psi*sR*(cF0*cR0*l**2*x - m*u**2*(aF*cF0 - aR*cR0)))/(sR**3*(cF0*cR0*l**2*x - m*u**2*(aF*cF0 - aR*cR0))**2)
+      self.steerRatio -= self.alpha4 * -2.0*cF0*cR0*l*v_Ego*x*(ao - steering_angle)*(1.0*cF0*cR0*l*v_Ego*x*(ao - steering_angle) + yaw_rate*sR*(cF0*cR0*l**2*x - m*v_Ego**2*(aF*cF0 - aR*cR0)))/(sR**3*(cF0*cR0*l**2*x - m*v_Ego**2*(aF*cF0 - aR*cR0))**2)
 
     if DEBUG:
-      # s1 = "Measured yaw rate % .6f" % psi
+      # s1 = "Measured yaw rate % .6f" % yaw_rate
       # ao = 0.
-      # s2 = "Uncompensated yaw % .6f" % (1.0*u*(-ao + sa)/(l*sR*(1 - m*u**2*(aF*cF0*x - aR*cR0*x)/(cF0*cR0*l**2*x**2))))
-      # instant_ao = aF*m*psi*sR*u/(cR0*l*x) - aR*m*psi*sR*u/(cF0*l*x) - l*psi*sR/u + sa
-      s4 = "Instant AO: % .2f Avg. AO % .2f" % (math.degrees(self.ao), math.degrees(self.slow_ao))
-      s5 = "Stiffnes: % .3f x" % self.x
+      # s2 = "Uncompensated yaw % .6f" % (1.0*v_Ego*(-ao + steering_angle)/(l*sR*(1 - m*v_Ego**2*(aF*cF0*x - aR*cR0*x)/(cF0*cR0*l**2*x**2))))
+      # instant_ao = aF*m*yaw_rate*sR*v_Ego/(cR0*l*x) - aR*m*yaw_rate*sR*v_Ego/(cF0*l*x) - l*yaw_rate*sR/v_Ego + steering_angle
+      s4 = "Instant AO: % .2f Avg. AO % .2f" % (math.degrees(self.ao), math.degrees(self.slow_angleOffsetAverage))
+      s5 = "Stiffnes: % .3f x" % self.stiffnessFactor
       print("{0} {1}".format(s4, s5))
 
 
     self.ao = clip(self.ao, -MAX_ANGLE_OFFSET, MAX_ANGLE_OFFSET)
-    self.slow_ao = clip(self.slow_ao, -MAX_ANGLE_OFFSET, MAX_ANGLE_OFFSET)
-    self.x = clip(self.x, MIN_STIFFNESS, MAX_STIFFNESS)
-    self.sR = clip(self.sR, self.MIN_SR, self.MAX_SR)
+    self.slow_angleOffsetAverage = clip(self.slow_angleOffsetAverage, -MAX_ANGLE_OFFSET, MAX_ANGLE_OFFSET)
+    self.stiffnessFactor = clip(self.stiffnessFactor, MIN_STIFFNESS, MAX_STIFFNESS)
+    self.steerRatio = clip(self.steerRatio, self.MIN_SR, self.MAX_SR)
 
     # don't check stiffness for validity, as it can change quickly if sR is off
-    valid = abs(self.slow_ao) < MAX_ANGLE_OFFSET_TH and \
-      self.sR > self.MIN_SR_TH and self.sR < self.MAX_SR_TH
+    valid = abs(self.slow_angleOffsetAverage) < MAX_ANGLE_OFFSET_TH and \
+      self.steerRatio > self.MIN_SR_TH and self.steerRatio < self.MAX_SR_TH
 
     return valid
 
