@@ -8,6 +8,7 @@ from selfdrive.car.toyota.toyotacan import (
   create_fcw_command, create_ui_command
 )
 from common.realtime import sec_since_boot
+from six.moves import range
 
 
 class TestPackerMethods(unittest.TestCase):
@@ -17,7 +18,7 @@ class TestPackerMethods(unittest.TestCase):
 
   def test_correctness(self):
     # Test all commands, randomize the params.
-    for _ in xrange(1000):
+    for _ in range(1000):
       # Toyota
       steer = random.randint(-1, 1)
       enabled = (random.randint(0, 2) % 2 == 0)
@@ -68,14 +69,14 @@ class TestPackerMethods(unittest.TestCase):
     left_lane_depart = (random.randint(0, 2) % 2 == 0)
     right_lane_depart = (random.randint(0, 2) % 2 == 0)
 
-    for _ in xrange(recursions):
+    for _ in range(recursions):
       create_ui_command(self.cp_old, steer, sound1, sound2, left_line, right_line, left_lane_depart, right_lane_depart)
     n2 = sec_since_boot()
     elapsed_old = n2 - n1
 
     # print('Old API, elapsed time: {} secs'.format(elapsed_old))
     n1 = sec_since_boot()
-    for _ in xrange(recursions):
+    for _ in range(recursions):
       create_ui_command(self.cp, steer, sound1, sound2, left_line, right_line, left_lane_depart, right_lane_depart)
     n2 = sec_since_boot()
     elapsed_new = n2 - n1

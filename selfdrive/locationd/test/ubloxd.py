@@ -265,7 +265,7 @@ def main(gctx=None):
   global gpsLocationExternal, ubloxGnss
   nav_frame_buffer = {}
   nav_frame_buffer[0] = {}
-  for i in xrange(1,33):
+  for i in range(1,33):
     nav_frame_buffer[0][i] = {}
 
 

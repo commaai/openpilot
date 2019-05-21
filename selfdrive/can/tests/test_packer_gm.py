@@ -5,6 +5,7 @@ from selfdrive.can.tests.packer_old import CANPacker as CANPackerOld
 from selfdrive.can.packer import CANPacker
 import selfdrive.car.gm.gmcan as gmcan
 from selfdrive.car.gm.interface import CanBus as GMCanBus
+from six.moves import range
 
 
 class TestPackerMethods(unittest.TestCase):
@@ -17,7 +18,7 @@ class TestPackerMethods(unittest.TestCase):
 
   def test_correctness(self):
     # Test all cars' commands, randomize the params.
-    for _ in xrange(1000):
+    for _ in range(1000):
       bus = random.randint(0, 65536)
       apply_steer = (random.randint(0, 2) % 2 == 0)
       idx = random.randint(0, 65536)

@@ -7,7 +7,7 @@ from common.realtime import sec_since_boot
 
 def _create_nidec_can_parser():
   dbc_f = 'acura_ilx_2016_nidec.dbc'
-  radar_messages = [0x400] + range(0x430, 0x43A) + range(0x440, 0x446)
+  radar_messages = [0x400] + list(range(0x430, 0x43A)) + list(range(0x440, 0x446))
   signals = list(zip(['RADAR_STATE'] +
                 ['LONG_DIST'] * 16 + ['NEW_TRACK'] * 16 + ['LAT_DIST'] * 16 +
                 ['REL_SPEED'] * 16,

@@ -5,6 +5,7 @@ from selfdrive.can.tests.packer_old import CANPacker as CANPackerOld
 from selfdrive.can.packer import CANPacker
 import selfdrive.car.subaru.subarucan as subarucan
 from selfdrive.car.subaru.values import CAR as subaru_car
+from six.moves import range
 
 
 class TestPackerMethods(unittest.TestCase):
@@ -14,7 +15,7 @@ class TestPackerMethods(unittest.TestCase):
 
   def test_correctness(self):
     # Test all cars' commands, randomize the params.
-    for _ in xrange(1000):
+    for _ in range(1000):
       apply_steer = (random.randint(0, 2) % 2 == 0)
       frame = random.randint(1, 65536)
       steer_step = random.randint(1, 65536)

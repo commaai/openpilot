@@ -214,7 +214,7 @@ def radard_thread(gctx=None):
       cluster_idxs = cluster_points_centroid(track_pts, 2.5)
       clusters = [None] * (max(cluster_idxs) + 1)
 
-      for idx in xrange(len(track_pts)):
+      for idx in range(len(track_pts)):
         cluster_i = cluster_idxs[idx]
         if clusters[cluster_i] is None:
           clusters[cluster_i] = Cluster()

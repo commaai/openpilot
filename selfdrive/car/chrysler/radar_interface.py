@@ -4,8 +4,8 @@ from selfdrive.can.parser import CANParser
 from cereal import car
 from common.realtime import sec_since_boot
 
-RADAR_MSGS_C = range(0x2c2, 0x2d4+2, 2)  # c_ messages 706,...,724
-RADAR_MSGS_D = range(0x2a2, 0x2b4+2, 2)  # d_ messages
+RADAR_MSGS_C = list(range(0x2c2, 0x2d4+2, 2))  # c_ messages 706,...,724
+RADAR_MSGS_D = list(range(0x2a2, 0x2b4+2, 2))  # d_ messages
 LAST_MSG = max(RADAR_MSGS_C + RADAR_MSGS_D)
 NUMBER_MSGS = len(RADAR_MSGS_C) + len(RADAR_MSGS_D)
 

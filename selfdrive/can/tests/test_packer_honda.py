@@ -6,6 +6,7 @@ from selfdrive.can.packer import CANPacker
 import selfdrive.car.honda.hondacan as hondacan
 from selfdrive.car.honda.values import HONDA_BOSCH
 from selfdrive.car.honda.carcontroller import HUDData
+from six.moves import range
 
 
 class TestPackerMethods(unittest.TestCase):
@@ -15,7 +16,7 @@ class TestPackerMethods(unittest.TestCase):
 
   def test_correctness(self):
     # Test all commands, randomize the params.
-    for _ in xrange(1000):
+    for _ in range(1000):
       apply_brake = (random.randint(0, 2) % 2 == 0)
       pump_on = (random.randint(0, 2) % 2 == 0)
       pcm_override = (random.randint(0, 2) % 2 == 0)

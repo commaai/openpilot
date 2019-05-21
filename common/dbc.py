@@ -41,7 +41,7 @@ class dbc(object):
     self.def_vals = defaultdict(list)
 
     # lookup to bit reverse each byte
-    self.bits_index = [(i & ~0b111) + ((-i-1) & 0b111) for i in xrange(64)]
+    self.bits_index = [(i & ~0b111) + ((-i-1) & 0b111) for i in range(64)]
 
     for l in self.txt:
       l = l.strip()

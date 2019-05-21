@@ -330,7 +330,7 @@ def run_maneuver_worker(k):
     manager.kill_managed_process('plannerd')
     time.sleep(5)
 
-for k in xrange(WORKERS):
+for k in range(WORKERS):
   setattr(LongitudinalControl,
     "test_longitudinal_maneuvers_%d" % (k+1),
     lambda self, k=k: run_maneuver_worker(k))

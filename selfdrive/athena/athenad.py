@@ -34,7 +34,7 @@ def handle_long_poll(ws):
     threading.Thread(target=ws_send, args=(ws, end_event))
   ] + [
     threading.Thread(target=jsonrpc_handler, args=(end_event,))
-    for x in xrange(HANDLER_THREADS)
+    for x in range(HANDLER_THREADS)
   ]
 
   map(lambda thread: thread.start(), threads)

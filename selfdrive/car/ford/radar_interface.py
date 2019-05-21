@@ -5,7 +5,7 @@ from selfdrive.can.parser import CANParser
 from cereal import car
 from common.realtime import sec_since_boot
 
-RADAR_MSGS = range(0x500, 0x540)
+RADAR_MSGS = list(range(0x500, 0x540))
 
 def _create_radar_can_parser():
   dbc_f = 'ford_fusion_2018_adas.dbc'
