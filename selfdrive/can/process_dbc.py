@@ -1,4 +1,5 @@
 #!/usr/bin/env python2
+from __future__ import print_function
 import os
 import glob
 import sys
@@ -10,7 +11,7 @@ from common.dbc import dbc
 
 def main():
   if len(sys.argv) != 3:
-    print "usage: %s dbc_directory output_directory" % (sys.argv[0],)
+    print("usage: %s dbc_directory output_directory" % (sys.argv[0],))
     sys.exit(0)
 
   dbc_dir = sys.argv[1]

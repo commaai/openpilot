@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 import os
 import copy
 import json
@@ -108,7 +109,7 @@ def calibrationd_thread(gctx=None, addr="127.0.0.1"):
 
     new_vp = calibrator.handle_cam_odom(co)
     if DEBUG and new_vp is not None:
-      print 'got new vp', new_vp
+      print('got new vp', new_vp)
 
     calibrator.send_data(livecalibration)
 

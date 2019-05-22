@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 import os
 from selfdrive.locationd.test import ublox
 from common import realtime
@@ -46,7 +47,7 @@ def main(gctx=None):
               raw.logMonoTime = int(realtime.sec_since_boot() * 1e9)
             ubloxGnss.send(raw.to_bytes())
         else:
-          print "INVALID MESSAGE"
+          print("INVALID MESSAGE")
 
 
 if __name__ == "__main__":

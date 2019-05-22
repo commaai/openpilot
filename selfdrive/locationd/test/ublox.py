@@ -10,6 +10,7 @@ ublox version 7, it has been adapted to work
 for ublox version 8, not all functions may work.
 '''
 
+from __future__ import print_function
 import struct
 import time, os
 
@@ -713,7 +714,7 @@ class UBlox:
       self.dev = PandaSerial(self.panda, 1, self.baudrate)
 
       self.baudrate = 460800
-      print "upping baud:",self.baudrate
+      print("upping baud:",self.baudrate)
       self.send_nmea("$PUBX,41,1,0007,0003,%u,0" % self.baudrate)
       time.sleep(0.1)
 

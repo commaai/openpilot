@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 import os
 import serial
 from selfdrive.locationd.test import ublox
@@ -210,7 +211,7 @@ def gen_raw(msg):
     cnos = {}
     for meas in measurements_parsed:
       cnos[meas['svId']] = meas['cno']
-    print 'Carrier to noise ratio for each sat: \n', cnos, '\n'
+    print('Carrier to noise ratio for each sat: \n', cnos, '\n')
   receiverStatus_bools = int_to_bool_list(msg_meta_data['recStat'])
   receiverStatus = {'leapSecValid': receiverStatus_bools[0],
                     'clkReset': receiverStatus_bools[2]}
@@ -254,7 +255,7 @@ def handle_msg(dev, msg, nav_frame_buffer):
         ubloxGnss.send(nav.to_bytes())
 
     else:
-      print "UNKNNOWN MESSAGE:", msg.name()
+      print("UNKNNOWN MESSAGE:", msg.name())
   except ublox.UBloxError as e:
     print(e)
 

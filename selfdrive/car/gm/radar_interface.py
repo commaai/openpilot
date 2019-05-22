@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 import math
 import time
 import numpy as np
@@ -49,7 +50,7 @@ class RadarInterface(object):
     self.delay = 0.0  # Delay of radar
 
     canbus = CanBus()
-    print "Using %d as obstacle CAN bus ID" % canbus.obstacle
+    print("Using %d as obstacle CAN bus ID" % canbus.obstacle)
     self.rcp = create_radar_can_parser(canbus, CP.carFingerprint)
 
   def update(self):
