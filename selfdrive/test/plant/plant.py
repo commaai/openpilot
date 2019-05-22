@@ -11,6 +11,7 @@ from common.realtime import Ratekeeper
 from selfdrive.config import Conversions as CV
 import selfdrive.messaging as messaging
 from selfdrive.services import service_list
+from selfdrive.car import crc8_pedal
 from selfdrive.car.honda.hondacan import fix
 from selfdrive.car.honda.values import CAR
 from selfdrive.car.honda.carstate import get_can_signals
@@ -206,8 +207,8 @@ class Plant(object):
     lateral_pos_rel = 0.
 
     # print at 5hz
-    if (self.rk.frame%(self.rate/5)) == 0:
-      print "%6.2f m  %6.2f m/s  %6.2f m/s2   %.2f ang   gas: %.2f  brake: %.2f  steer: %5.2f     lead_rel: %6.2f m  %6.2f m/s" % (distance, speed, acceleration, self.angle_steer, gas, brake, steer_torque, d_rel, v_rel)
+    if (self.rk.frame % (self.rate//5)) == 0:
+      print("%6.2f m  %6.2f m/s  %6.2f m/s2   %.2f ang   gas: %.2f  brake: %.2f  steer: %5.2f     lead_rel: %6.2f m  %6.2f m/s" % (distance, speed, acceleration, self.angle_steer, gas, brake, steer_torque, d_rel, v_rel))
 
     # ******** publish the car ********
     vls_tuple = namedtuple('vls', [
@@ -284,11 +285,18 @@ class Plant(object):
       if "COUNTER" in honda.get_signals(msg):
         msg_struct["COUNTER"] = self.rk.frame % 4
 
+      if "COUNTER_PEDAL" in honda.get_signals(msg):
+        msg_struct["COUNTER_PEDAL"] = self.rk.frame % 0xf
+
       msg = honda.lookup_msg_id(msg)
       msg_data = honda.encode(msg, msg_struct)
 
       if "CHECKSUM" in honda.get_signals(msg):
         msg_data = fix(msg_data, msg)
+
+      if "CHECKSUM_PEDAL" in honda.get_signals(msg):
+        msg_struct["CHECKSUM_PEDAL"] = crc8_pedal([ord(i) for i in msg_data][:-1])
+        msg_data = honda.encode(msg, msg_struct)
 
       can_msgs.append([msg, 0, msg_data, 0])
 
@@ -310,7 +318,7 @@ class Plant(object):
     msg_data = fix(msg_data, 0xe4)
     can_msgs.append([0xe4, 0, msg_data, 2])
 
-    Plant.logcan.send(can_list_to_can_capnp(can_msgs).to_bytes())
+    Plant.logcan.send(can_list_to_can_capnp(can_msgs))
 
     # ******** publish a fake model going straight and fake calibration ********
     # note that this is worst case for MPC, since model will delay long mpc by one time step

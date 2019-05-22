@@ -2,17 +2,15 @@ FROM ubuntu:16.04
 ENV PYTHONUNBUFFERED 1
 
 RUN apt-get update && apt-get install -y \
+    autoconf \
     build-essential \
     clang \
-    vim \
-    screen \
     wget \
     bzip2 \
     git \
     libglib2.0-0 \
+    libtool \
     python-pip \
-    capnproto \
-    libcapnp-dev \
     libzmq5-dev \
     libffi-dev \
     libusb-1.0-0 \
@@ -21,6 +19,10 @@ RUN apt-get update && apt-get install -y \
     ocl-icd-opencl-dev \
     opencl-headers
 
+COPY phonelibs/install_capnp.sh /tmp/install_capnp.sh
+RUN /tmp/install_capnp.sh
+
+RUN pip install --upgrade pip==18.0
 RUN pip install numpy==1.11.2 scipy==0.18.1 matplotlib==2.1.2
 
 COPY requirements_openpilot.txt /tmp/
@@ -28,12 +30,14 @@ RUN pip install -r /tmp/requirements_openpilot.txt
 
 ENV PYTHONPATH /tmp/openpilot:$PYTHONPATH
 
+COPY ./.pylintrc /tmp/openpilot/.pylintrc
 COPY ./common /tmp/openpilot/common
 COPY ./cereal /tmp/openpilot/cereal
 COPY ./opendbc /tmp/openpilot/opendbc
 COPY ./selfdrive /tmp/openpilot/selfdrive
 COPY ./phonelibs /tmp/openpilot/phonelibs
 COPY ./pyextra /tmp/openpilot/pyextra
+COPY ./panda /tmp/openpilot/panda
 
 RUN mkdir -p /tmp/openpilot/selfdrive/test/out
 RUN make -C /tmp/openpilot/selfdrive/controls/lib/longitudinal_mpc clean

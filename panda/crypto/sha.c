@@ -127,10 +127,36 @@ const uint8_t* SHA_final(SHA_CTX* ctx) {
     while ((ctx->count & 63) != 56) {
         SHA_update(ctx, (uint8_t*)"\0", 1);
     }
-    for (i = 0; i < 8; ++i) {
-        uint8_t tmp = (uint8_t) (cnt >> ((7 - i) * 8));
-        SHA_update(ctx, &tmp, 1);
-    }
+
+    /* Hack - right shift operator with non const argument requires
+     *        libgcc.a which is missing in EON
+     *        thus expanding for loop from 
+
+              for (i = 0; i < 8; ++i) {
+                  uint8_t tmp = (uint8_t) (cnt >> ((7 - i) * 8));
+                  SHA_update(ctx, &tmp, 1);
+              }
+
+              to
+     */
+
+    uint8_t tmp = 0;
+    tmp = (uint8_t) (cnt >> ((7 - 0) * 8));
+    SHA_update(ctx, &tmp, 1);
+    tmp = (uint8_t) (cnt >> ((7 - 1) * 8));
+    SHA_update(ctx, &tmp, 1);
+    tmp = (uint8_t) (cnt >> ((7 - 2) * 8));
+    SHA_update(ctx, &tmp, 1);
+    tmp = (uint8_t) (cnt >> ((7 - 3) * 8));
+    SHA_update(ctx, &tmp, 1);
+    tmp = (uint8_t) (cnt >> ((7 - 4) * 8));
+    SHA_update(ctx, &tmp, 1);
+    tmp = (uint8_t) (cnt >> ((7 - 5) * 8));
+    SHA_update(ctx, &tmp, 1);
+    tmp = (uint8_t) (cnt >> ((7 - 6) * 8));
+    SHA_update(ctx, &tmp, 1);
+    tmp = (uint8_t) (cnt >> ((7 - 7) * 8));
+    SHA_update(ctx, &tmp, 1);
 
     for (i = 0; i < 5; i++) {
         uint32_t tmp = ctx->state[i];

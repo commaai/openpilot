@@ -119,6 +119,13 @@ class TestToyotaSafety(unittest.TestCase):
     to_send[0].RDLR = (a & 0xFF) << 8 | (a >> 8)
     return to_send
 
+  def _gas_msg(self, gas):
+    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
+    to_send[0].RIR = 0x200 << 21
+    to_send[0].RDLR = gas
+
+    return to_send
+
   def test_default_controls_not_allowed(self):
     self.assertFalse(self.safety.get_controls_allowed())
 
@@ -408,6 +415,13 @@ class TestToyotaSafety(unittest.TestCase):
 
     # reset no angle control at the end of the test
     self.safety.reset_angle_control()
+
+  def test_gas_safety_check(self):
+    self.safety.set_controls_allowed(0)
+    self.assertTrue(self.safety.honda_tx_hook(self._gas_msg(0x0000)))
+    self.assertFalse(self.safety.honda_tx_hook(self._gas_msg(0x1000)))
+    self.safety.set_controls_allowed(1)
+    self.assertTrue(self.safety.honda_tx_hook(self._gas_msg(0x1000)))
 
 
 if __name__ == "__main__":

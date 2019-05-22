@@ -42,7 +42,7 @@ def unblock_stdout():
 
 if __name__ == "__main__":
   neos_update_required = os.path.isfile("/init.qcom.rc") \
-    and (not os.path.isfile("/VERSION") or int(open("/VERSION").read()) < 8)
+    and (not os.path.isfile("/VERSION") or int(open("/VERSION").read()) < 9)
   if neos_update_required:
     # update continue.sh before updating NEOS
     if os.path.isfile(os.path.join(BASEDIR, "scripts", "continue.sh")):
@@ -88,9 +88,11 @@ from selfdrive.loggerd.config import ROOT
 managed_processes = {
   "thermald": "selfdrive.thermald",
   "uploader": "selfdrive.loggerd.uploader",
+  "deleter": "selfdrive.loggerd.deleter",
   "controlsd": "selfdrive.controls.controlsd",
+  "plannerd": "selfdrive.controls.plannerd",
   "radard": "selfdrive.controls.radard",
-  "ubloxd": "selfdrive.locationd.ubloxd",
+  "ubloxd": ("selfdrive/locationd", ["./ubloxd"]),
   "mapd": "selfdrive.mapd.mapd",
   "loggerd": ("selfdrive/loggerd", ["./loggerd"]),
   "logmessaged": "selfdrive.logmessaged",
@@ -101,11 +103,12 @@ managed_processes = {
   "pandad": "selfdrive.pandad",
   "ui": ("selfdrive/ui", ["./start.sh"]),
   "calibrationd": "selfdrive.locationd.calibrationd",
+  "locationd": "selfdrive.locationd.locationd_local",
   "visiond": ("selfdrive/visiond", ["./visiond"]),
   "sensord": ("selfdrive/sensord", ["./sensord"]),
   "gpsd": ("selfdrive/sensord", ["./gpsd"]),
-  "orbd": ("selfdrive/orbd", ["./orbd_wrapper.sh"]),
   "updated": "selfdrive.updated",
+  "athena": "selfdrive.athena.athenad",
 }
 android_packages = ("ai.comma.plus.offroad", "ai.comma.plus.frame")
 
@@ -125,21 +128,24 @@ persistent_processes = [
   'logcatd',
   'tombstoned',
   'uploader',
+  'deleter',
   'ui',
   'gpsd',
   'updated',
+  'athena'
 ]
 
 car_started_processes = [
   'controlsd',
+  'plannerd',
   'loggerd',
   'sensord',
   'radard',
   'calibrationd',
+  'locationd',
   'visiond',
   'proclogd',
   'ubloxd',
-  'orbd',
   'mapd',
 ]
 
@@ -387,7 +393,7 @@ def update_apks():
 
   cloudlog.info("installed apks %s" % (str(installed), ))
 
-  for app in installed.iterkeys():
+  for app in installed.keys():
 
     apk_path = os.path.join(BASEDIR, "apk/"+app+".apk")
     if not os.path.exists(apk_path):
@@ -452,12 +458,13 @@ def main():
     del managed_processes['proclogd']
   if os.getenv("NOCONTROL") is not None:
     del managed_processes['controlsd']
+    del managed_processes['plannerd']
     del managed_processes['radard']
 
   # support additional internal only extensions
   try:
     import selfdrive.manager_extensions
-    selfdrive.manager_extensions.register(register_managed_process)
+    selfdrive.manager_extensions.register(register_managed_process) # pylint: disable=no-member
   except ImportError:
     pass
 

@@ -1,10 +1,8 @@
 from cereal import car
-from selfdrive.car.chrysler.values import CAR
 
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert
-
 
 def calc_checksum(data):
   """This function does not want the checksum byte in the input data.
@@ -14,8 +12,8 @@ def calc_checksum(data):
   end_index = len(data)
   index = 0
   checksum = 0xFF
-  temp_chk = 0;
-  bit_sum = 0;
+  temp_chk = 0
+  bit_sum = 0
   if(end_index <= index):
     return False
   for index in range(0, end_index):
@@ -24,7 +22,7 @@ def calc_checksum(data):
     iterate = 8
     while(iterate > 0):
       iterate -= 1
-      bit_sum = curr & shift;
+      bit_sum = curr & shift
       temp_chk = checksum & 0x80
       if (bit_sum != 0):
         bit_sum = 0x1C
@@ -46,52 +44,45 @@ def calc_checksum(data):
 def make_can_msg(addr, dat):
   return [addr, 0, dat, 0]
 
-def create_lkas_heartbit(car_fingerprint):
-  # LKAS_HEARTBIT (729) Lane-keeping heartbeat.
-  msg = '0000000820'.decode('hex')  # 2017
-  return make_can_msg(0x2d9, msg)
 
-def create_lkas_hud(gear, lkas_active, hud_alert, car_fingerprint):
-  # LKAS_HUD (678) Controls what lane-keeping icon is displayed.
+def create_lkas_hud(packer, gear, lkas_active, hud_alert, hud_count, lkas_car_model):
+  # LKAS_HUD 0x2a6 (678) Controls what lane-keeping icon is displayed.
 
   if hud_alert == VisualAlert.steerRequired:
-    msg = msg = '0000000300000000'.decode('hex')
+    msg = '0000000300000000'.decode('hex')
     return make_can_msg(0x2a6, msg)
 
-  # TODO: use can packer
-  msg = '0000000000000000'.decode('hex')  # park or neutral
-  if car_fingerprint == CAR.PACIFICA_2018:
-    msg = '0064000000000000'.decode('hex')  # Have not verified 2018 park with a real car.
-  elif car_fingerprint == CAR.JEEP_CHEROKEE:
-    msg = '00a4000000000000'.decode('hex')  # Have not verified 2018 park with a real car.
-  elif car_fingerprint == CAR.PACIFICA_2018_HYBRID:
-    msg = '01a8010000000000'.decode('hex')
-  if (gear == 'drive' or gear == 'reverse'):
+  color = 1  # default values are for park or neutral in 2017 are 0 0, but trying 1 1 for 2019
+  lines = 1
+  alerts = 0
+
+  if hud_count < (1 *4):  # first 3 seconds, 4Hz
+    alerts = 1
+  # CAR.PACIFICA_2018_HYBRID and CAR.PACIFICA_2019_HYBRID
+  # had color = 1 and lines = 1 but trying 2017 hybrid style for now.
+  if gear in ('drive', 'reverse', 'low'):
     if lkas_active:
-      msg = '0200060000000000'.decode('hex') # control active, display green.
-      if car_fingerprint == CAR.PACIFICA_2018:
-        msg = '0264060000000000'.decode('hex')
-      elif car_fingerprint == CAR.JEEP_CHEROKEE:
-        msg = '02a4060000000000'.decode('hex')
-      elif car_fingerprint == CAR.PACIFICA_2018_HYBRID:
-        msg = '02a8060000000000'.decode('hex')
+      color = 2  # control active, display green.
+      lines = 6
     else:
-      msg = '0100010000000000'.decode('hex') # control off, display white.
-      if car_fingerprint == CAR.PACIFICA_2018:
-        msg = '0164010000000000'.decode('hex')
-      elif car_fingerprint == CAR.JEEP_CHEROKEE:
-        msg = '01a4010000000000'.decode('hex')
-      elif car_fingerprint == CAR.PACIFICA_2018_HYBRID:
-        msg = '01a8010000000000'.decode('hex')
+      color = 1  # control off, display white.
+      lines = 1
 
-  return make_can_msg(0x2a6, msg)
+  values = {
+    "LKAS_ICON_COLOR": color,  # byte 0, last 2 bits
+    "CAR_MODEL": lkas_car_model,  # byte 1
+    "LKAS_LANE_LINES": lines,  # byte 2, last 4 bits
+    "LKAS_ALERTS": alerts,  # byte 3, last 4 bits
+    }
+
+  return packer.make_can_msg("LKAS_HUD", 0, values)  # 0x2a6
 
 
-def create_lkas_command(packer, apply_steer, frame):
-  # LKAS_COMMAND (658) Lane-keeping signal to turn the wheel.
+def create_lkas_command(packer, apply_steer, moving_fast, frame):
+  # LKAS_COMMAND 0x292 (658) Lane-keeping signal to turn the wheel.
   values = {
     "LKAS_STEERING_TORQUE": apply_steer,
-    "LKAS_HIGH_TORQUE": 1,
+    "LKAS_HIGH_TORQUE": int(moving_fast),
     "COUNTER": frame % 0x10,
   }
 

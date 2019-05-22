@@ -89,10 +89,11 @@ def create_fcw_command(packer, fcw):
   return packer.make_can_msg("ACC_HUD", 0, values)
 
 
-def create_ui_command(packer, steer, sound1, sound2, left_line, right_line):
+def create_ui_command(packer, steer, sound1, sound2, left_line, right_line, left_lane_depart, right_lane_depart):
   values = {
-    "RIGHT_LINE": 1 if right_line else 2,
-    "LEFT_LINE": 1 if left_line else 2,
+    "RIGHT_LINE": 3 if right_lane_depart else 1 if right_line else 2,
+    "LEFT_LINE": 3 if left_lane_depart else 1 if left_line else 2,
+    "BARRIERS" : 3 if left_lane_depart or right_lane_depart else 0,
     "SET_ME_X0C": 0x0c,
     "SET_ME_X2C": 0x2c,
     "SET_ME_X38": 0x38,

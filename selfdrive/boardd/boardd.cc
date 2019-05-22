@@ -42,6 +42,7 @@
 #define SAFETY_HYUNDAI 7
 #define SAFETY_TESLA 8
 #define SAFETY_CHRYSLER 9
+#define SAFETY_SUBARU 10
 #define SAFETY_TOYOTA_IPAS 0x1335
 #define SAFETY_TOYOTA_NOLIMITS 0x1336
 #define SAFETY_ALLOUTPUT 0x1337
@@ -84,6 +85,7 @@ void *safety_setter_thread(void *s) {
   // format for board, make copy due to alignment issues, will be freed on out of scope
   auto amsg = kj::heapArray<capnp::word>((value_sz / sizeof(capnp::word)) + 1);
   memcpy(amsg.begin(), value, value_sz);
+  free(value);
 
   capnp::FlatArrayMessageReader cmsg(amsg);
   cereal::CarParams::Reader car_params = cmsg.getRoot<cereal::CarParams>();
@@ -123,6 +125,9 @@ void *safety_setter_thread(void *s) {
     break;
   case (int)cereal::CarParams::SafetyModels::CHRYSLER:
     safety_setting = SAFETY_CHRYSLER;
+    break;
+  case (int)cereal::CarParams::SafetyModels::SUBARU:
+    safety_setting = SAFETY_SUBARU;
     break;
   default:
     LOGE("unknown safety model: %d", safety_model);
@@ -331,6 +336,11 @@ void can_send(void *s) {
 
   capnp::FlatArrayMessageReader cmsg(amsg);
   cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
+  if (nanos_since_boot() - event.getLogMonoTime() > 1e9) {
+    //Older than 1 second. Dont send.
+    zmq_msg_close(&msg);
+    return;
+  }
   int msg_count = event.getCan().size();
 
   uint32_t *send = (uint32_t*)malloc(msg_count*0x10);

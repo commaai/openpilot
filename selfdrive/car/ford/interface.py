@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 from common.realtime import sec_since_boot
-from cereal import car, log
+from cereal import car
 from selfdrive.swaglog import cloudlog
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.ford.carstate import CarState, get_can_parser
-from selfdrive.car.ford.fordcan import MAX_ANGLE
+from selfdrive.car.ford.values import MAX_ANGLE
 
 try:
   from selfdrive.car.ford.carcontroller import CarController
@@ -69,12 +69,12 @@ class CarInterface(object):
     tireStiffnessFront_civic = 85400
     tireStiffnessRear_civic = 90000
 
-    ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
     ret.wheelbase = 2.85
     ret.steerRatio = 14.8
     ret.mass = 3045. * CV.LB_TO_KG + std_cargo
-    ret.steerKpV, ret.steerKiV = [[0.01], [0.005]]     # TODO: tune this
-    ret.steerKf = 1. / MAX_ANGLE   # MAX Steer angle to normalize FF
+    ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+    ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.01], [0.005]]     # TODO: tune this
+    ret.lateralTuning.pid.kf = 1. / MAX_ANGLE   # MAX Steer angle to normalize FF
     ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
     ret.steerRateCost = 1.0
 
@@ -84,8 +84,6 @@ class CarInterface(object):
 
     ret.centerToFront = ret.wheelbase * 0.44
 
-    ret.longPidDeadzoneBP = [0., 9.]
-    ret.longPidDeadzoneV = [0., .15]
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter.
@@ -126,10 +124,12 @@ class CarInterface(object):
     ret.stoppingControl = False
     ret.startAccel = 0.0
 
-    ret.longitudinalKpBP = [0., 5., 35.]
-    ret.longitudinalKpV = [3.6, 2.4, 1.5]
-    ret.longitudinalKiBP = [0., 35.]
-    ret.longitudinalKiV = [0.54, 0.36]
+    ret.longitudinalTuning.deadzoneBP = [0., 9.]
+    ret.longitudinalTuning.deadzoneV = [0., .15]
+    ret.longitudinalTuning.kpBP = [0., 5., 35.]
+    ret.longitudinalTuning.kpV = [3.6, 2.4, 1.5]
+    ret.longitudinalTuning.kiBP = [0., 35.]
+    ret.longitudinalTuning.kiV = [0.54, 0.36]
 
     return ret
 
@@ -210,7 +210,7 @@ class CarInterface(object):
 
   # pass in a car.CarControl
   # to be called @ 100hz
-  def apply(self, c, perception_state=log.Live20Data.new_message()):
+  def apply(self, c):
 
     self.CC.update(self.sendcan, c.enabled, self.CS, self.frame, c.actuators,
                    c.hudControl.visualAlert, c.cruiseControl.cancel)

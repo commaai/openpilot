@@ -228,6 +228,9 @@ static int gm_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 static void gm_init(int16_t param) {
   controls_allowed = 0;
   gm_ignition_started = 0;
+  #ifdef PANDA
+    lline_relay_release();
+  #endif
 }
 
 static int gm_ign_hook() {
@@ -241,5 +244,5 @@ const safety_hooks gm_hooks = {
   .tx_lin = nooutput_tx_lin_hook,
   .ignition = gm_ign_hook,
   .fwd = nooutput_fwd_hook,
+  .relay = nooutput_relay_hook,
 };
-

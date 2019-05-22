@@ -1,9 +1,8 @@
 import numpy as np
 
 from common.transformations.camera import eon_focal_length, \
-	vp_from_ke, \
-	get_view_frame_from_road_frame, \
-	FULL_FRAME_SIZE
+        vp_from_ke, get_view_frame_from_road_frame, \
+        FULL_FRAME_SIZE
 
 # segnet
 
@@ -31,6 +30,18 @@ model_intrinsics = np.array(
    [   0. ,                            0. ,   1.]])
 
 
+# MED model
+MEDMODEL_INPUT_SIZE = (512, 256)
+MEDMODEL_YUV_SIZE = (MEDMODEL_INPUT_SIZE[0], MEDMODEL_INPUT_SIZE[1] * 3 // 2)
+MEDMODEL_CY = 47.6
+
+medmodel_zoom = 1.
+medmodel_intrinsics = np.array(
+  [[ eon_focal_length / medmodel_zoom,    0. ,  0.5 * MEDMODEL_INPUT_SIZE[0]],
+   [   0. ,  eon_focal_length / medmodel_zoom,  MEDMODEL_CY],
+   [   0. ,                            0. ,   1.]])
+
+
 # BIG model
 
 BIGMODEL_INPUT_SIZE = (864, 288)
@@ -55,6 +66,9 @@ model_frame_from_road_frame = np.dot(model_intrinsics,
   get_view_frame_from_road_frame(0, 0, 0, model_height))
 
 bigmodel_frame_from_road_frame = np.dot(bigmodel_intrinsics,
+  get_view_frame_from_road_frame(0, 0, 0, model_height))
+
+medmodel_frame_from_road_frame = np.dot(medmodel_intrinsics,
   get_view_frame_from_road_frame(0, 0, 0, model_height))
 
 model_frame_from_bigmodel_frame = np.dot(model_intrinsics, np.linalg.inv(bigmodel_intrinsics))
@@ -102,6 +116,16 @@ def get_camera_frame_from_model_frame(camera_frame_from_road_frame, height=model
   return np.dot(camera_from_model_camera, model_camera_from_model_frame)
 
 
+def get_camera_frame_from_medmodel_frame(camera_frame_from_road_frame):
+  camera_frame_from_ground = camera_frame_from_road_frame[:, (0, 1, 3)]
+  medmodel_frame_from_ground = medmodel_frame_from_road_frame[:, (0, 1, 3)]
+
+  ground_from_medmodel_frame = np.linalg.inv(medmodel_frame_from_ground)
+  camera_frame_from_medmodel_frame = np.dot(camera_frame_from_ground, ground_from_medmodel_frame)
+
+  return camera_frame_from_medmodel_frame
+
+
 def get_camera_frame_from_bigmodel_frame(camera_frame_from_road_frame):
   camera_frame_from_ground = camera_frame_from_road_frame[:, (0, 1, 3)]
   bigmodel_frame_from_ground = bigmodel_frame_from_road_frame[:, (0, 1, 3)]
@@ -110,3 +134,17 @@ def get_camera_frame_from_bigmodel_frame(camera_frame_from_road_frame):
   camera_frame_from_bigmodel_frame = np.dot(camera_frame_from_ground, ground_from_bigmodel_frame)
 
   return camera_frame_from_bigmodel_frame
+
+
+def get_model_frame(snu_full, camera_frame_from_model_frame, size):
+  idxs = camera_frame_from_model_frame.dot(np.column_stack([np.tile(np.arange(size[0]), size[1]),
+                                                            np.tile(np.arange(size[1]), (size[0],1)).T.flatten(),
+                                                            np.ones(size[0] * size[1])]).T).T.astype(int)
+  calib_flat = snu_full[idxs[:,1], idxs[:,0]]
+  if len(snu_full.shape) == 3:
+    calib = calib_flat.reshape((size[1], size[0], 3))
+  elif len(snu_full.shape) == 2:
+    calib = calib_flat.reshape((size[1], size[0]))
+  else:
+    raise ValueError("shape of input img is weird")
+  return calib

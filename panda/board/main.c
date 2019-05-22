@@ -20,6 +20,8 @@
 #include "drivers/spi.h"
 #include "drivers/timer.h"
 
+#include "power_saving.h"
+
 
 // ***************************** fan *****************************
 
@@ -141,6 +143,7 @@ void usb_cb_ep2_out(uint8_t *usbdata, int len, int hardwired) {
   uart_ring *ur = get_ring_by_number(usbdata[0]);
   if (!ur) return;
   if ((usbdata[0] < 2) || safety_tx_lin_hook(usbdata[0]-2, usbdata+1, len-1)) {
+    if (ur == &esp_ring) power_save_reset_timer();
     for (int i = 1; i < len; i++) while (!putc(ur, usbdata[i]));
   }
 }
@@ -160,6 +163,14 @@ void usb_cb_ep3_out(uint8_t *usbdata, int len, int hardwired) {
 
     uint8_t bus_number = (to_push.RDTR >> 4) & CAN_BUS_NUM_MASK;
     can_send(&to_push, bus_number);
+
+    #ifdef PANDA
+      // Enable relay on can message if allowed.
+      // Temporary until OP has support for relay
+      if (safety_relay_hook()) {
+        set_lline_output(1);
+      }
+    #endif
   }
 }
 
@@ -441,6 +452,16 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, int hardwired) {
         }
         break;
       }
+    // **** 0xf3: set l-line relay
+    case 0xf3:
+      {
+        #ifdef PANDA
+          if (safety_relay_hook()) {
+            set_lline_output(setup->b.wValue.w == 1);
+          }
+        #endif
+        break;
+      }
     default:
       puts("NO HANDLER ");
       puth(setup->b.bRequest);
@@ -539,6 +560,9 @@ int main() {
   } else {
     // enable ESP uart
     uart_init(USART1, 115200);
+    #ifdef EON
+      set_esp_mode(ESP_DISABLED);
+    #endif
   }
   // enable LIN
   uart_init(UART5, 10400);
@@ -559,6 +583,7 @@ int main() {
   usb_init();
 
   // default to silent mode to prevent issues with Ford
+  // hardcode a specific safety mode if you want to force the panda to be in a specific mode
   safety_set_mode(SAFETY_NOOUTPUT, 0);
   can_silent = ALL_CAN_SILENT;
   can_init_all();
@@ -568,6 +593,9 @@ int main() {
 #ifdef PANDA
   spi_init();
 #endif
+#ifdef DEBUG
+  puts("DEBUG ENABLED\n");
+#endif
 
   // set PWM
   fan_init();
@@ -576,6 +604,8 @@ int main() {
   puts("**** INTERRUPTS ON ****\n");
 
   __enable_irq();
+
+  power_save_init();
 
   // if the error interrupt is enabled to quickly when the CAN bus is active
   // something bad happens and you can't connect to the device over USB
@@ -589,8 +619,6 @@ int main() {
     uint64_t marker = 0;
     #define CURRENT_THRESHOLD 0xF00
     #define CLICKS 8
-    // Enough clicks to ensure that enumeration happened. Should be longer than bootup time of the device connected to EON
-    #define CLICKS_BOOTUP 30
   #endif
 
   for (cnt=0;;cnt++) {
@@ -599,7 +627,7 @@ int main() {
     //puth(usart1_dma); puts(" "); puth(DMA2_Stream5->M0AR); puts(" "); puth(DMA2_Stream5->NDTR); puts("\n");
 
     #ifdef PANDA
-      int current = adc_get(ADCCHAN_CURRENT);
+      uint32_t current = adc_get(ADCCHAN_CURRENT);
 
       switch (usb_power_mode) {
         case USB_POWER_CLIENT:
@@ -617,8 +645,9 @@ int main() {
           }
           break;
         case USB_POWER_CDP:
-          // been CLICKS_BOOTUP clicks since we switched to CDP
-          if ((cnt-marker) >= CLICKS_BOOTUP ) {
+#ifndef EON
+          // been CLICKS clicks since we switched to CDP
+          if ((cnt-marker) >= CLICKS) {
             // measure current draw, if positive and no enumeration, switch to DCP
             if (!is_enumerated && current < CURRENT_THRESHOLD) {
               puts("USBP: no enumeration with current draw, switching to DCP mode\n");
@@ -630,6 +659,7 @@ int main() {
           if (current >= CURRENT_THRESHOLD) {
             marker = cnt;
           }
+#endif
           break;
         case USB_POWER_DCP:
           // been at least CLICKS clicks since we switched to DCP
