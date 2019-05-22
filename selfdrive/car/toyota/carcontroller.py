@@ -24,7 +24,7 @@ class SteerLimitParams:
   STEER_MAX = 1500
   STEER_DELTA_UP = 10       # 1.5s time to peak torque
   STEER_DELTA_DOWN = 25     # always lower than 45 otherwise the Rav4 faults (Prius seems ok with 50)
-  STEER_ERROR_MAX = 350     # max delta between torque cmd and torque motor
+  STEER_ERROR_MAX = 349     # max delta between torque cmd and torque motor
 
 # Steer angle limits (tested at the Crows Landing track and considered ok)
 ANGLE_MAX_BP = [0., 5.]
@@ -147,8 +147,6 @@ class CarController(object):
     # steer torque
     apply_steer = int(round(actuators.steer * SteerLimitParams.STEER_MAX))
 
-    apply_steer = apply_toyota_steer_torque_limits(apply_steer, self.last_steer, CS.steer_torque_motor, SteerLimitParams)
-
     # only cut torque when steer state is a known fault
     if CS.steer_state in [9, 25]:
       self.last_fault_frame = frame
@@ -159,6 +157,10 @@ class CarController(object):
       apply_steer_req = 0
     else:
       apply_steer_req = 1
+    
+    apply_steer = apply_toyota_steer_torque_limits(apply_steer, self.last_steer, CS.steer_torque_motor, SteerLimitParams)
+    if apply_steer == 0 and self.last_steer == 0:
+      apply_steer_req = 0
 
     self.steer_angle_enabled, self.ipas_reset_counter = \
       ipas_state_transition(self.steer_angle_enabled, enabled, CS.ipas_active, self.ipas_reset_counter)
