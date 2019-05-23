@@ -89,7 +89,7 @@ class CarInterface(object):
       ret.lateralTuning.init('indi')
       ret.lateralTuning.indi.innerLoopGain = 4.0
       ret.lateralTuning.indi.outerLoopGain = 3.0
-      ret.lateralTuning.indi.timeConstant = 1.0
+      ret.lateralTuning.indi.timeConstant = 2.0
       ret.lateralTuning.indi.actuatorEffectiveness = 1.0
 
       ret.steerActuatorDelay = 0.5

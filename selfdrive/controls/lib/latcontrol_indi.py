@@ -64,6 +64,13 @@ class LatControlINDI(object):
       self.angle_steers_des = path_plan.angleSteers
       self.rate_steers_des = path_plan.rateSteers
 
+      if abs(angle_steers) < 3:
+          self.G = CP.lateralTuning.indi.actuatorEffectiveness
+          self.RC = CP.lateralTuning.indi.timeConstant
+      else:
+          self.G = (CP.lateralTuning.indi.actuatorEffectiveness * 2)
+          self.RC = (CP.lateralTuning.indi.timeConstant * 2)
+
       steers_des = math.radians(self.angle_steers_des)
       rate_des = math.radians(self.rate_steers_des)
 
