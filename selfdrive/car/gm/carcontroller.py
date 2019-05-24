@@ -1,3 +1,4 @@
+from cereal import car
 from common.numpy_fast import interp
 from common.realtime import sec_since_boot
 from selfdrive.config import Conversions as CV
@@ -7,6 +8,7 @@ from selfdrive.car.gm import gmcan
 from selfdrive.car.gm.values import DBC, SUPERCRUISE_CARS
 from selfdrive.can.packer import CANPacker
 
+VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 class CarControllerParams():
   def __init__(self, car_fingerprint):
@@ -59,6 +61,12 @@ def actuator_hystereses(final_pedal, pedal_steady):
 
   return final_pedal, pedal_steady
 
+def process_hud_alert(hud_alert):
+  # initialize to no alert
+  steer = 0
+  if hud_alert == VisualAlert.steerRequired:
+    steer = 1
+  return steer
 
 class CarController(object):
   def __init__(self, canbus, car_fingerprint, allow_controls):
@@ -80,7 +88,7 @@ class CarController(object):
     self.packer_ch = CANPacker(DBC[car_fingerprint]['chassis'])
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
-             hud_v_cruise, hud_show_lanes, hud_show_car, chime, chime_cnt):
+             hud_v_cruise, hud_show_lanes, hud_show_car, chime, chime_cnt, hud_alert):
     """ Controls thread """
 
     # Sanity check.
@@ -92,6 +100,9 @@ class CarController(object):
     # Send CAN commands.
     can_sends = []
     canbus = self.canbus
+    
+    alert_out = process_hud_alert(hud_alert)
+    steer = alert_out
 
     ### STEER ###
 
@@ -175,7 +186,7 @@ class CarController(object):
       lka_icon_status = (lka_active, lka_critical)
       if frame % P.CAMERA_KEEPALIVE_STEP == 0 \
           or lka_icon_status != self.lka_icon_status_last:
-        can_sends.append(gmcan.create_lka_icon_command(canbus.sw_gmlan, lka_active, lka_critical))
+        can_sends.append(gmcan.create_lka_icon_command(canbus.sw_gmlan, lka_active, lka_critical, steer))
         self.lka_icon_status_last = lka_icon_status
 
     # Send chimes
