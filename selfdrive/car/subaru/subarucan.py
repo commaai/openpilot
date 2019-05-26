@@ -49,15 +49,8 @@ def create_es_lkas(packer, es_lkas_msg, visual_alert, left_line, right_line):
   if visual_alert == VisualAlert.steerRequired:
     values["Keep_Hands_On_Wheel"] = 1
 
-  if left_line:
-    values["LKAS_Left_Line_Visible"] = 1
-  else:
-    values["LKAS_Left_Line_Visible"] = 0
-
-  if right_line:
-    values["LKAS_Right_Line_Visible"] = 1
-  else:
-    values["LKAS_Right_Line_Visible"] = 0
+  values["LKAS_Left_Line_Visible"] = int(left_line)
+  values["LKAS_Right_Line_Visible"] = int(right_line)
 
   values["Checksum"] = subaru_checksum(packer, values, 802)
 
