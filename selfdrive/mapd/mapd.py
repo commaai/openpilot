@@ -240,7 +240,7 @@ def mapsd_thread():
     if cur_way is not None:
       dat.liveMapData.wayId = cur_way.id
 
-      # Seed limit
+      # Speed limit
       max_speed = cur_way.max_speed()
       if max_speed is not None:
         dat.liveMapData.speedLimitValid = True
