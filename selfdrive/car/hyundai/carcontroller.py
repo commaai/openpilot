@@ -10,7 +10,7 @@ from selfdrive.can.packer import CANPacker
 # Steer torque limits
 
 class SteerLimitParams:
-  STEER_MAX = 250   # 409 is the max
+  STEER_MAX = 255   # 409 is the max, 255 is stock
   STEER_DELTA_UP = 3
   STEER_DELTA_DOWN = 7
   STEER_DRIVER_ALLOWANCE = 50
@@ -71,6 +71,6 @@ class CarController(object):
       can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.RES_ACCEL))
 
     ### Send messages to canbus
-    sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
+    sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan'))
 
     self.cnt += 1

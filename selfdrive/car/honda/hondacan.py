@@ -41,18 +41,6 @@ def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_
   return packer.make_can_msg("BRAKE_COMMAND", 0, values, idx)
 
 
-def create_gas_command(packer, gas_amount, idx):
-  enable = gas_amount > 0.001
-
-  values = {"ENABLE": enable}
-
-  if enable:
-    values["GAS_COMMAND"] = gas_amount * 255.
-    values["GAS_COMMAND2"] = gas_amount * 255.
-
-  return packer.make_can_msg("GAS_COMMAND", 0, values, idx)
-
-
 def create_steering_control(packer, apply_steer, lkas_active, car_fingerprint, idx):
   values = {
     "STEER_TORQUE": apply_steer if lkas_active else 0,
@@ -77,8 +65,8 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, idx):
       'CRUISE_SPEED': hud.v_cruise,
       'ENABLE_MINI_CAR': hud.mini_car,
       'HUD_LEAD': hud.car,
-      'SET_ME_X03': 0x03,
-      'SET_ME_X03_2': 0x03,
+      'SET_ME_X03': 0x01 if car_fingerprint == CAR.ODYSSEY_CHN else 0x03,
+      'SET_ME_X03_2': 0x02 if car_fingerprint == CAR.ODYSSEY_CHN else 0x03,
       'SET_ME_X01': 0x01,
     }
     commands.append(packer.make_can_msg("ACC_HUD", 0, acc_hud_values, idx))

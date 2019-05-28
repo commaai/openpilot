@@ -14,7 +14,7 @@ from common.numpy_fast import clip
 from common.filter_simple import FirstOrderFilter
 
 ThermalStatus = log.ThermalData.ThermalStatus
-CURRENT_TAU = 2.   # 2s time constant
+CURRENT_TAU = 15.   # 15s time constant
 
 def read_tz(x):
   with open("/sys/devices/virtual/thermal/thermal_zone%d/temp" % x) as f:
@@ -46,7 +46,7 @@ def setup_eon_fan():
     bus.write_byte_data(0x21, 0x02, 0x2)   # needed?
     bus.write_byte_data(0x21, 0x04, 0x4)   # manual override source
   except IOError:
-    print "LEON detected"
+    print("LEON detected")
     #os.system("echo 1 > /sys/devices/soc/6a00000.ssusb/power_supply/usb/usb_otg")
     LEON = True
   bus.close()
@@ -111,10 +111,10 @@ def check_car_battery_voltage(should_start, health, charging_disabled):
   #   - there are health packets from panda, and;
   #   - 12V battery voltage is too low, and;
   #   - onroad isn't started
-  if charging_disabled and (health is None or health.health.voltage > 11500):
+  if charging_disabled and (health is None or health.health.voltage > 11800):
     charging_disabled = False
     os.system('echo "1" > /sys/class/power_supply/battery/charging_enabled')
-  elif not charging_disabled and health is not None and health.health.voltage < 11000 and not should_start:
+  elif not charging_disabled and health is not None and health.health.voltage < 11500 and not should_start:
     charging_disabled = True
     os.system('echo "0" > /sys/class/power_supply/battery/charging_enabled')
 
@@ -201,7 +201,7 @@ def thermald_thread():
       msg.thermal.batteryCurrent = int(f.read())
     with open("/sys/class/power_supply/battery/voltage_now") as f:
       msg.thermal.batteryVoltage = int(f.read())
-    with open("/sys/class/power_supply/usb/online") as f:
+    with open("/sys/class/power_supply/usb/present") as f:
       msg.thermal.usbOnline = bool(int(f.read()))
 
     current_filter.update(msg.thermal.batteryCurrent / 1e6)
@@ -279,10 +279,12 @@ def thermald_thread():
         params.car_start()
         started_ts = sec_since_boot()
         started_seen = True
+        os.system('echo performance > /sys/class/devfreq/soc:qcom,cpubw/governor')
     else:
       started_ts = None
       if off_ts is None:
         off_ts = sec_since_boot()
+        os.system('echo powersave > /sys/class/devfreq/soc:qcom,cpubw/governor')
 
       # shutdown if the battery gets lower than 3%, it's discharging, we aren't running for
       # more than a minute but we were running
@@ -290,16 +292,16 @@ def thermald_thread():
          started_seen and (sec_since_boot() - off_ts) > 60:
         os.system('LD_LIBRARY_PATH="" svc power shutdown')
 
-    charging_disabled = check_car_battery_voltage(should_start, health, charging_disabled)
+    #charging_disabled = check_car_battery_voltage(should_start, health, charging_disabled)
 
     msg.thermal.chargingDisabled = charging_disabled
-    msg.thermal.chargingError = current_filter.x > 1.0   # if current is > 1A out, then charger might be off
+    msg.thermal.chargingError = current_filter.x > 0.   # if current is positive, then battery is being discharged
     msg.thermal.started = started_ts is not None
     msg.thermal.startedTs = int(1e9*(started_ts or 0))
 
     msg.thermal.thermalStatus = thermal_status
     thermal_sock.send(msg.to_bytes())
-    print msg
+    print(msg)
 
     # report to server once per minute
     if (count%60) == 0:

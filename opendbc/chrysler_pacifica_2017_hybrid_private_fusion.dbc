@@ -44,15 +44,15 @@ BO_ 544 a_1: 8 XXX
  SG_ status2 : 39|6@0+ (1,0) [0|15] "" XXX
  SG_ sig2 : 33|10@0+ (1,0) [0|255] "" XXX
  SG_ zeros : 55|4@0+ (1,0) [0|15] "" XXX
- SG_ COUNTER : 48|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 51|4@0+ (1,0) [0|15] "" XXX
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
 
 BO_ 576 b_1: 8 XXX
- SG_ sig0 : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ sig0 : 7|8@0+ (1,0) [0|255] "" XXX
  SG_ sig1 : 15|16@0+ (1,0) [0|65535] "" XXX
  SG_ sig2 : 31|16@0+ (1,0) [0|255] "" XXX
  SG_ zeros : 47|12@0+ (1,0) [0|255] "" XXX
- SG_ COUNTER : 48|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 51|4@0+ (1,0) [0|15] "" XXX
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
 
 BO_ 608 a_2: 8 XXX
@@ -63,15 +63,15 @@ BO_ 608 a_2: 8 XXX
  SG_ status2 : 39|6@0+ (1,0) [0|15] "" XXX
  SG_ sig2 : 33|10@0+ (1,0) [0|255] "" XXX
  SG_ zeros : 55|4@0+ (1,0) [0|15] "" XXX
- SG_ COUNTER : 48|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 51|4@0+ (1,0) [0|15] "" XXX
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
 
 BO_ 640 b_2: 8 XXX
- SG_ sig0 : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ sig0 : 7|8@0+ (1,0) [0|255] "" XXX
  SG_ sig1 : 15|16@0+ (1,0) [0|65535] "" XXX
  SG_ sig2 : 31|16@0+ (1,0) [0|255] "" XXX
  SG_ zeros : 47|12@0+ (1,0) [0|255] "" XXX
- SG_ COUNTER : 48|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 51|4@0+ (1,0) [0|15] "" XXX
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
 
 BO_ 644 a_3: 8 XXX
@@ -82,15 +82,15 @@ BO_ 644 a_3: 8 XXX
  SG_ status2 : 39|6@0+ (1,0) [0|15] "" XXX
  SG_ sig2 : 33|10@0+ (1,0) [0|255] "" XXX
  SG_ zeros : 55|4@0+ (1,0) [0|15] "" XXX
- SG_ COUNTER : 48|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 51|4@0+ (1,0) [0|15] "" XXX
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
 
 BO_ 648 b_3: 8 XXX
- SG_ sig0 : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ sig0 : 7|8@0+ (1,0) [0|255] "" XXX
  SG_ sig1 : 15|16@0+ (1,0) [0|65535] "" XXX
  SG_ sig2 : 31|16@0+ (1,0) [0|255] "" XXX
  SG_ zeros : 47|12@0+ (1,0) [0|255] "" XXX
- SG_ COUNTER : 48|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 51|4@0+ (1,0) [0|15] "" XXX
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
 
 BO_ 652 a_4: 8 XXX
@@ -101,19 +101,19 @@ BO_ 652 a_4: 8 XXX
  SG_ status2 : 39|6@0+ (1,0) [0|15] "" XXX
  SG_ sig2 : 33|10@0+ (1,0) [0|255] "" XXX
  SG_ zeros : 55|4@0+ (1,0) [0|15] "" XXX
- SG_ COUNTER : 48|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 51|4@0+ (1,0) [0|15] "" XXX
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
 
 BO_ 656 b_4: 8 XXX
- SG_ sig0 : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ sig0 : 7|8@0+ (1,0) [0|255] "" XXX
  SG_ sig1 : 15|16@0+ (1,0) [0|65535] "" XXX
  SG_ sig2 : 31|16@0+ (1,0) [0|255] "" XXX
  SG_ zeros : 47|12@0+ (1,0) [0|255] "" XXX
- SG_ COUNTER : 48|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 51|4@0+ (1,0) [0|15] "" XXX
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
 
 BO_ 512 unknown_200: 8 XXX
- SG_ COUNTER : 48|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 51|4@0+ (1,0) [0|15] "" XXX
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
  SG_ increasing : 31|16@0+ (1,0) [0|255] "" XXX
  SG_ zeros_0 : 3|12@0+ (1,0) [0|63] "" XXX

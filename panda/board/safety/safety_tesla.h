@@ -230,6 +230,9 @@ static void tesla_init(int16_t param)
   controls_allowed = 0;
   tesla_ignition_started = 0;
   gmlan_switch_init(1); //init the gmlan switch with 1s timeout enabled
+  #ifdef PANDA
+    lline_relay_release();
+  #endif
 }
 
 static int tesla_ign_hook()
@@ -258,7 +261,7 @@ static int tesla_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd)
     // remove EPB_epasControl
     if (addr == 0x214)
     {
-      return false;
+      return -1;
     }
 
     return 2; // Custom EPAS bus
@@ -269,12 +272,12 @@ static int tesla_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd)
     // remove GTW_epasControl in forwards
     if (addr == 0x101)
     {
-      return false;
+      return -1;
     }
 
     return 0; // Chassis CAN
   }
-  return false;
+  return -1;
 }
 
 const safety_hooks tesla_hooks = {
@@ -284,4 +287,5 @@ const safety_hooks tesla_hooks = {
     .tx_lin = tesla_tx_lin_hook,
     .ignition = tesla_ign_hook,
     .fwd = tesla_fwd_hook,
+    .relay = nooutput_relay_hook,
 };

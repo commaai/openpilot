@@ -102,26 +102,17 @@ class VehicleModel(object):
     self.l = CP.wheelbase
     self.aF = CP.centerToFront
     self.aR = CP.wheelbase - CP.centerToFront
-    self.cF = CP.tireStiffnessFront
-    self.cR = CP.tireStiffnessRear
-    self.sR = CP.steerRatio
     self.chi = CP.steerRatioRear
 
-  def update_rt_params(self, CP):
-    # Update parameters used in real-time tuning if called from real-time tuning logic in controlsd
-    # TODO:  Determine if really necessary
-    #self.m = CP.mass
-    #self.j = CP.rotationalInertia
-    #self.l = CP.wheelbase
-    #self.aF = CP.centerToFront
-    #self.aR = CP.wheelbase - CP.centerToFront
-    self.cF = CP.tireStiffnessFront
-    self.cR = CP.tireStiffnessRear
-    self.sR = CP.steerRatio
-    #self.chi = CP.steerRatioRear
+    self.cF_orig = CP.tireStiffnessFront
+    self.cR_orig = CP.tireStiffnessRear
+    self.update_params(1.0, CP.steerRatio)
 
-  def update_state(self, state):
-    self.state = state
+  def update_params(self, stiffness_factor, steer_ratio):
+    """Update the vehicle model with a new stiffness factor and steer ratio"""
+    self.cF = stiffness_factor * self.cF_orig
+    self.cR = stiffness_factor * self.cR_orig
+    self.sR = steer_ratio
 
   def steady_state_sol(self, sa, u):
     """Returns the steady state solution.

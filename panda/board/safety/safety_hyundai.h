@@ -1,4 +1,4 @@
-const int HYUNDAI_MAX_STEER = 250;
+const int HYUNDAI_MAX_STEER = 255;             // like stock
 const int HYUNDAI_MAX_RT_DELTA = 112;          // max delta torque allowed for real time checks
 const int32_t HYUNDAI_RT_INTERVAL = 250000;    // 250ms between real time checks
 const int HYUNDAI_MAX_RATE_UP = 3;
@@ -152,6 +152,9 @@ static int hyundai_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
 static void hyundai_init(int16_t param) {
   controls_allowed = 0;
   hyundai_giraffe_switch_2 = 0;
+  #ifdef PANDA
+    lline_relay_release();
+  #endif
 }
 
 const safety_hooks hyundai_hooks = {
@@ -161,4 +164,5 @@ const safety_hooks hyundai_hooks = {
   .tx_lin = nooutput_tx_lin_hook,
   .ignition = default_ign_hook,
   .fwd = hyundai_fwd_hook,
+  .relay = nooutput_relay_hook,
 };

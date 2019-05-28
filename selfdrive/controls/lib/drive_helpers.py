@@ -1,6 +1,8 @@
 from cereal import car
-from common.numpy_fast import clip
+from common.numpy_fast import clip, interp
 from selfdrive.config import Conversions as CV
+
+DT = 0.01  # Controlsd runs at 100Hz
 
 # kph
 V_CRUISE_MAX = 144
@@ -55,7 +57,11 @@ def rate_limit(new_value, last_value, dw_step, up_step):
   return clip(new_value, last_value + dw_step, last_value + up_step)
 
 
-def learn_angle_offset(lateral_control, v_ego, angle_offset, c_poly, c_prob, angle_steers, steer_override):
+def get_steer_max(CP, v_ego):
+  return interp(v_ego, CP.steerMaxBP, CP.steerMaxV)
+
+
+def learn_angle_model_bias(lateral_control, v_ego, angle_model_bias, c_poly, c_prob, angle_steers, steer_override):
   # simple integral controller that learns how much steering offset to put to have the car going straight
   # while being in the middle of the lane
   min_offset = -5.  # deg
@@ -69,10 +75,10 @@ def learn_angle_offset(lateral_control, v_ego, angle_offset, c_poly, c_prob, ang
 
   # only learn if lateral control is active and if driver is not overriding:
   if lateral_control and not steer_override:
-    angle_offset += c_poly[3] * alpha_v
-    angle_offset = clip(angle_offset, min_offset, max_offset)
+    angle_model_bias += c_poly[3] * alpha_v
+    angle_model_bias = clip(angle_model_bias, min_offset, max_offset)
 
-  return angle_offset
+  return angle_model_bias
 
 
 def update_v_cruise(v_cruise_kph, buttonEvents, enabled):

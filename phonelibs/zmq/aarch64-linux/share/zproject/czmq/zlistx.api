@@ -1,0 +1,220 @@
+<class name = "zlistx" state = "stable">
+    <!--
+    Copyright (c) the Contributors as noted in the AUTHORS file.
+    This file is part of CZMQ, the high-level C binding for 0MQ:
+    http://czmq.zeromq.org.
+
+    This Source Code Form is subject to the terms of the Mozilla Public
+    License, v. 2.0. If a copy of the MPL was not distributed with this
+    file, You can obtain one at http://mozilla.org/MPL/2.0/.
+    -->
+    extended generic list container
+
+    <callback_type name = "destructor_fn">
+        Destroy an item
+        <argument name = "item" type = "anything" by_reference = "1" />
+    </callback_type>
+
+    <callback_type name = "duplicator_fn">
+        Duplicate an item
+        <argument name = "item" type = "anything" mutable = "0" />
+        <return type = "anything" />
+    </callback_type>
+
+    <callback_type name = "comparator_fn">
+        Compare two items, for sorting
+        <argument name = "item1" type = "anything" mutable = "0" />
+        <argument name = "item2" type = "anything" mutable = "0" />
+        <return type = "integer" />
+    </callback_type>
+
+    <constructor>
+        Create a new, empty list.
+    </constructor>
+
+    <destructor>
+        Destroy a list. If an item destructor was specified, all items in the
+        list are automatically destroyed as well.
+    </destructor>
+
+    <method name = "add_start">
+        Add an item to the head of the list. Calls the item duplicator, if any,
+        on the item. Resets cursor to list head. Returns an item handle on
+        success, NULL if memory was exhausted.
+        <argument name = "item" type = "anything" mutable = "1" />
+        <return type = "anything" mutable = "1" />
+    </method>
+
+    <method name = "add_end">
+        Add an item to the tail of the list. Calls the item duplicator, if any,
+        on the item. Resets cursor to list head. Returns an item handle on
+        success, NULL if memory was exhausted.
+        <argument name = "item" type = "anything" mutable = "1" />
+        <return type = "anything" mutable = "1" />
+    </method>
+
+    <method name = "size">
+        Return the number of items in the list
+        <return type = "size" />
+    </method>
+
+    <method name = "head">
+        Return first item in the list, or null, leaves the cursor
+        <return type = "anything" mutable = "1" />
+    </method>
+
+    <method name = "tail">
+        Return last item in the list, or null, leaves the cursor
+        <return type = "anything" mutable = "1" />
+    </method>
+
+    <method name = "first">
+        Return the item at the head of list. If the list is empty, returns NULL.
+        Leaves cursor pointing at the head item, or NULL if the list is empty.
+        <return type = "anything" mutable = "1" />
+    </method>
+
+    <method name = "next">
+        Return the next item. At the end of the list (or in an empty list),
+        returns NULL. Use repeated zlistx_next () calls to work through the list
+        from zlistx_first (). First time, acts as zlistx_first().
+        <return type = "anything" mutable = "1" />
+    </method>
+
+    <method name = "prev">
+        Return the previous item. At the start of the list (or in an empty list),
+        returns NULL. Use repeated zlistx_prev () calls to work through the list
+        backwards from zlistx_last (). First time, acts as zlistx_last().
+        <return type = "anything" mutable = "1" />
+    </method>
+
+    <method name = "last">
+        Return the item at the tail of list. If the list is empty, returns NULL.
+        Leaves cursor pointing at the tail item, or NULL if the list is empty.
+        <return type = "anything" mutable = "1" />
+    </method>
+
+    <method name = "item">
+        Returns the value of the item at the cursor, or NULL if the cursor is
+        not pointing to an item.
+        <return type = "anything" mutable = "1" />
+    </method>
+
+    <method name = "cursor">
+        Returns the handle of the item at the cursor, or NULL if the cursor is
+        not pointing to an item.
+        <return type = "anything" mutable = "1" />
+    </method>
+
+    <method name = "handle_item" singleton = "1">
+        Returns the item associated with the given list handle, or NULL if passed
+        in handle is NULL. Asserts that the passed in handle points to a list element.
+        <argument name = "handle" type = "anything" mutable = "1" />
+        <return type = "anything" mutable = "1" />
+    </method>
+
+    <method name = "find">
+        Find an item in the list, searching from the start. Uses the item
+        comparator, if any, else compares item values directly. Returns the
+        item handle found, or NULL. Sets the cursor to the found item, if any.
+        <argument name = "item" type = "anything" mutable = "1" />
+        <return type = "anything" mutable = "1" />
+    </method>
+
+    <method name = "detach">
+        Detach an item from the list, using its handle. The item is not modified,
+        and the caller is responsible for destroying it if necessary. If handle is
+        null, detaches the first item on the list. Returns item that was detached,
+        or null if none was. If cursor was at item, moves cursor to previous item,
+        so you can detach items while iterating forwards through a list.
+        <argument name = "handle" type = "anything" mutable = "1" />
+        <return type = "anything" mutable = "1" />
+    </method>
+
+    <method name = "detach_cur">
+        Detach item at the cursor, if any, from the list. The item is not modified,
+        and the caller is responsible for destroying it as necessary. Returns item
+        that was detached, or null if none was. Moves cursor to previous item, so
+        you can detach items while iterating forwards through a list.
+        <return type = "anything" mutable = "1" />
+    </method>
+
+    <method name = "delete">
+        Delete an item, using its handle. Calls the item destructor is any is
+        set. If handle is null, deletes the first item on the list. Returns 0
+        if an item was deleted, -1 if not. If cursor was at item, moves cursor
+        to previous item, so you can delete items while iterating forwards
+        through a list.
+        <argument name = "handle" type = "anything" mutable = "1" />
+        <return type = "integer" />
+    </method>
+
+    <method name = "move_start">
+        Move an item to the start of the list, via its handle.
+        <argument name = "handle" type = "anything" mutable = "1" />
+    </method>
+
+    <method name = "move_end">
+        Move an item to the end of the list, via its handle.
+        <argument name = "handle" type = "anything" mutable = "1" />
+    </method>
+
+    <method name = "purge">
+        Remove all items from the list, and destroy them if the item destructor
+        is set.
+    </method>
+
+    <method name = "sort">
+        Sort the list. If an item comparator was set, calls that to compare
+        items, otherwise compares on item value. The sort is not stable, so may
+        reorder equal items.
+    </method>
+
+    <method name = "insert">
+        Create a new node and insert it into a sorted list. Calls the item
+        duplicator, if any, on the item. If low_value is true, starts searching
+        from the start of the list, otherwise searches from the end. Use the item
+        comparator, if any, to find where to place the new node. Returns a handle
+        to the new node, or NULL if memory was exhausted. Resets the cursor to the
+        list head.
+        <argument name = "item" type = "anything" mutable = "1" />
+        <argument name = "low_value" type = "boolean" />
+        <return type = "anything" mutable = "1" />
+    </method>
+
+    <method name = "reorder">
+        Move an item, specified by handle, into position in a sorted list. Uses
+        the item comparator, if any, to determine the new location. If low_value
+        is true, starts searching from the start of the list, otherwise searches
+        from the end.
+        <argument name = "handle" type = "anything" mutable = "1" />
+        <argument name = "low_value" type = "boolean" />
+    </method>
+
+    <method name = "dup">
+        Make a copy of the list; items are duplicated if you set a duplicator
+        for the list, otherwise not. Copying a null reference returns a null
+        reference.
+        <return type = "zlistx" fresh = "0" />
+    </method>
+
+    <method name = "set destructor">
+        Set a user-defined deallocator for list items; by default items are not
+        freed when the list is destroyed.
+        <argument name = "destructor" type = "zlistx_destructor_fn" callback = "1" />
+    </method>
+
+    <method name = "set duplicator">
+        Set a user-defined duplicator for list items; by default items are not
+        copied when the list is duplicated.
+        <argument name = "duplicator" type = "zlistx_duplicator_fn" callback = "1" />
+    </method>
+
+    <method name = "set comparator">
+        Set a user-defined comparator for zlistx_find and zlistx_sort; the method
+        must return -1, 0, or 1 depending on whether item1 is less than, equal to,
+        or greater than, item2.
+        <argument name = "comparator" type = "zlistx_comparator_fn" callback = "1" />
+    </method>
+
+</class>

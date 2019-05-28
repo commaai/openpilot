@@ -10,15 +10,15 @@ NICE_LOW_PRIORITY = ["nice", "-n", "19"]
 def main(gctx=None):
   while True:
     # try network
-    r = subprocess.call(["ping", "-W", "4", "-c", "1", "8.8.8.8"])
-    if r:
+    ping_failed = subprocess.call(["ping", "-W", "4", "-c", "1", "8.8.8.8"])
+    if ping_failed:
       time.sleep(60)
       continue
 
     # download application update
     try:
       r = subprocess.check_output(NICE_LOW_PRIORITY + ["git", "fetch"], stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError, e:
+    except subprocess.CalledProcessError as e:
       cloudlog.event("git fetch failed",
         cmd=e.cmd,
         output=e.output,

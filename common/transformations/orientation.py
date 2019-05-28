@@ -221,6 +221,8 @@ def ned_euler_from_ecef(ned_ecef_init, ecef_poses):
   ecef_poses = array(ecef_poses)
   output_shape = ecef_poses.shape
   ned_ecef_init = np.atleast_2d(ned_ecef_init)
+  if ned_ecef_init.shape[0] == 1:
+    ned_ecef_init = np.tile(ned_ecef_init[0], (output_shape[0], 1))
   ecef_poses = np.atleast_2d(ecef_poses)
 
   ned_poses = np.zeros(ecef_poses.shape)

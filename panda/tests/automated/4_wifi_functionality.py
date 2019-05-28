@@ -1,17 +1,22 @@
 from __future__ import print_function
 import time
 from panda import Panda
-from helpers import time_many_sends, connect_wifi
+from helpers import time_many_sends, connect_wifi, test_white, panda_color_to_serial
 from nose.tools import timed, assert_equal, assert_less, assert_greater
 
-def test_get_serial_wifi():
-  connect_wifi()
+@test_white
+@panda_color_to_serial
+def test_get_serial_wifi(serial=None):
+  connect_wifi(serial)
 
   p = Panda("WIFI")
   print(p.get_serial())
 
-def test_throughput():
-  p = Panda()
+@test_white
+@panda_color_to_serial
+def test_throughput(serial=None):
+  connect_wifi(serial)
+  p = Panda(serial)
 
   # enable output mode
   p.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
@@ -24,7 +29,7 @@ def test_throughput():
   for speed in [100,250,500,750,1000]:
     # set bus 0 speed to speed
     p.set_can_speed_kbps(0, speed)
-    time.sleep(0.05)
+    time.sleep(0.1)
 
     comp_kbps = time_many_sends(p, 0)
 
@@ -35,8 +40,11 @@ def test_throughput():
 
     print("WIFI loopback 100 messages at speed %d, comp speed is %.2f, percent %.2f" % (speed, comp_kbps, saturation_pct))
 
-def test_recv_only():
-  p = Panda()
+@test_white
+@panda_color_to_serial
+def test_recv_only(serial=None):
+  connect_wifi(serial)
+  p = Panda(serial)
   p.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
   p.set_can_loopback(True)
   pwifi = Panda("WIFI")
@@ -49,4 +57,3 @@ def test_recv_only():
     saturation_pct = (comp_kbps/speed) * 100.0
 
     print("HT WIFI loopback %d messages at speed %d, comp speed is %.2f, percent %.2f" % (msg_count, speed, comp_kbps, saturation_pct))
-

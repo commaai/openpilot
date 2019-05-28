@@ -61,4 +61,4 @@ def eliminate_incompatible_cars(msg, candidate_cars):
 
 def all_known_cars():
   """Returns a list of all known car strings."""
-  return _FINGERPRINTS.keys()
+  return list(_FINGERPRINTS.keys())
