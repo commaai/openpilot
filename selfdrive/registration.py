@@ -22,9 +22,7 @@ def get_git_branch():
   return subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"]).strip()
 
 def get_git_remote():
-  local_branch = subprocess.check_output(["git", "name-rev", "--name-only", "HEAD"]).strip()
-  tracking_remote = subprocess.check_output(["git", "config", "branch."+local_branch+".remote"]).strip()
-  return subprocess.check_output(["git", "config", "remote."+tracking_remote+".url"]).strip()
+  return subprocess.check_output(["git", "config", "--get", "remote.origin.url"]).strip()
 
 def register():
   params = Params()
