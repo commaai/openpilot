@@ -16,6 +16,7 @@ _PITCH_WEIGHT = 1.5  # pitch matters a lot more
 _METRIC_THRESHOLD = 0.4
 _PITCH_POS_ALLOWANCE = 0.08   # rad, to not be too sensitive on positive pitch
 _PITCH_NATURAL_OFFSET = 0.1   # people don't seem to look straight when they drive relaxed, rather a bit up
+_YAW_NATURAL_OFFSET = 0.08   # people don't seem to look straight when they drive relaxed, rather a bit to the right (center of car)
 _STD_THRESHOLD = 0.1          # above this standard deviation consider the measurement invalid
 _DISTRACTED_FILTER_TS = 0.25  # 0.6Hz
 _VARIANCE_FILTER_TS = 20.     # 0.008Hz
@@ -51,7 +52,7 @@ class _DriverPose():
     self.pitch_offset = 0.
 
 
-def _monitor_hysteresys(variance_level, monitor_valid_prev):
+def _monitor_hysteresis(variance_level, monitor_valid_prev):
   var_thr = 0.63 if monitor_valid_prev else 0.37
   return variance_level < var_thr
 
@@ -89,7 +90,7 @@ class DriverStatus():
   def _is_driver_distracted(self, pose):
     # to be tuned and to learn the driver's normal pose
     pitch_error = pose.pitch - _PITCH_NATURAL_OFFSET
-    yaw_error = pose.yaw
+    yaw_error = pose.yaw - _YAW_NATURAL_OFFSET
     # add positive pitch allowance
     if pitch_error > 0.:
       pitch_error = max(pitch_error - _PITCH_POS_ALLOWANCE, 0.)
@@ -124,7 +125,7 @@ class DriverStatus():
       self.monitor_param_on = params.get("IsDriverMonitoringEnabled") == "1"
       self.ts_last_check = ts
 
-    self.monitor_valid = _monitor_hysteresys(self.variance_filter.x, monitor_valid_prev)
+    self.monitor_valid = _monitor_hysteresis(self.variance_filter.x, monitor_valid_prev)
     self.monitor_on = self.monitor_valid and self.monitor_param_on
     if monitor_param_on_prev != self.monitor_param_on:
       self._reset_filters()

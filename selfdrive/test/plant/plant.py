@@ -207,7 +207,7 @@ class Plant(object):
     lateral_pos_rel = 0.
 
     # print at 5hz
-    if (self.rk.frame%(self.rate/5)) == 0:
+    if (self.rk.frame % (self.rate//5)) == 0:
       print("%6.2f m  %6.2f m/s  %6.2f m/s2   %.2f ang   gas: %.2f  brake: %.2f  steer: %5.2f     lead_rel: %6.2f m  %6.2f m/s" % (distance, speed, acceleration, self.angle_steer, gas, brake, steer_torque, d_rel, v_rel))
 
     # ******** publish the car ********
@@ -318,7 +318,7 @@ class Plant(object):
     msg_data = fix(msg_data, 0xe4)
     can_msgs.append([0xe4, 0, msg_data, 2])
 
-    Plant.logcan.send(can_list_to_can_capnp(can_msgs).to_bytes())
+    Plant.logcan.send(can_list_to_can_capnp(can_msgs))
 
     # ******** publish a fake model going straight and fake calibration ********
     # note that this is worst case for MPC, since model will delay long mpc by one time step

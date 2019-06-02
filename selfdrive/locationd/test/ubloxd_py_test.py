@@ -1,8 +1,8 @@
 import sys
 import os
 
-from ublox import UBloxMessage
-from ubloxd import gen_solution, gen_raw, gen_nav_data
+from selfdrive.locationd.test.ublox import UBloxMessage
+from selfdrive.locationd.test.ubloxd import gen_solution, gen_raw, gen_nav_data
 from common import realtime
 
 

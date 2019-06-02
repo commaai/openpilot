@@ -6,8 +6,8 @@ pipeline {
                 script: "git --no-pager show -s --format='%an' ${GIT_COMMIT}"
              ).trim()}"""
 
-    DOCKER_IMAGE_TAG = "panda:build-${env.BUILD_ID}"
-    DOCKER_NAME = "panda-test-${env.BUILD_ID}"
+    DOCKER_IMAGE_TAG = "panda:build-${env.GIT_COMMIT}"
+    DOCKER_NAME = "panda-test-${env.GIT_COMMIT}"
   }
   stages {
     stage('Build Docker Image') {

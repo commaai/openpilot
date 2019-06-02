@@ -25,29 +25,29 @@ def _create_radard_can_parser():
 
   # The factor and offset are applied by the dbc parsing library, so the
   # default values should be after the factor/offset are applied.
-  signals = zip(['LONG_DIST'] * msg_n +
+  signals = list(zip(['LONG_DIST'] * msg_n +
                 ['LAT_DIST'] * msg_n +
                 ['REL_SPEED'] * msg_n,
                 RADAR_MSGS_C * 2 +  # LONG_DIST, LAT_DIST
                 RADAR_MSGS_D,    # REL_SPEED
                 [0] * msg_n +  # LONG_DIST
                 [-1000] * msg_n +    # LAT_DIST
-                [-146.278] * msg_n)  # REL_SPEED set to 0, factor/offset to this
+                [-146.278] * msg_n))  # REL_SPEED set to 0, factor/offset to this
   # TODO what are the checks actually used for?
   # honda only checks the last message,
   # toyota checks all the messages. Which do we want?
-  checks = zip(RADAR_MSGS_C +
+  checks = list(zip(RADAR_MSGS_C +
                RADAR_MSGS_D,
                [20]*msg_n +  # 20Hz (0.05s)
-               [20]*msg_n)  # 20Hz (0.05s)
+               [20]*msg_n))  # 20Hz (0.05s)
 
   return CANParser(os.path.splitext(dbc_f)[0], signals, checks, 1)
 
 def _address_to_track(address):
   if address in RADAR_MSGS_C:
-    return (address - RADAR_MSGS_C[0]) / 2
+    return (address - RADAR_MSGS_C[0]) // 2
   if address in RADAR_MSGS_D:
-    return (address - RADAR_MSGS_D[0]) / 2
+    return (address - RADAR_MSGS_D[0]) // 2
   raise ValueError("radar received unexpected address %d" % address)
 
 class RadarInterface(object):

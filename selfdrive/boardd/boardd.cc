@@ -85,6 +85,7 @@ void *safety_setter_thread(void *s) {
   // format for board, make copy due to alignment issues, will be freed on out of scope
   auto amsg = kj::heapArray<capnp::word>((value_sz / sizeof(capnp::word)) + 1);
   memcpy(amsg.begin(), value, value_sz);
+  free(value);
 
   capnp::FlatArrayMessageReader cmsg(amsg);
   cereal::CarParams::Reader car_params = cmsg.getRoot<cereal::CarParams>();

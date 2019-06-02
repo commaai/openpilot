@@ -1,5 +1,5 @@
-from maneuverplots import ManeuverPlot
-from plant import Plant
+from selfdrive.test.plant.maneuverplots import ManeuverPlot
+from selfdrive.test.plant.plant import Plant
 import numpy as np
 
 
