@@ -9,8 +9,8 @@ Version 0.5.12 (2019-05-16)
  * Add default speed limits for Estonia thanks to martinl!
  * Subaru Crosstrek support thanks to martinl!
  * Toyota Avalon support thanks to njbrown09!
- * Toyota Rav4 with TSS 2.0 support thansk to wocsor!
- * Toyota Corolla with TSS 2.0 support thansk to wocsor!
+ * Toyota Rav4 with TSS 2.0 support thanks to wocsor!
+ * Toyota Corolla with TSS 2.0 support thanks to wocsor!
 
 Version 0.5.11 (2019-04-17)
 ========================
