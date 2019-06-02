@@ -2,7 +2,7 @@ import numpy as np
 from common.kalman.simple_kalman import KF1D
 from selfdrive.can.parser import CANParser, CANDefine
 from selfdrive.config import Conversions as CV
-from selfdrive.car.toyota.values import CAR, DBC, STEER_THRESHOLD
+from selfdrive.car.toyota.values import CAR, DBC, STEER_THRESHOLD, NO_DSU_CAR
 
 def parse_gear_shifter(gear, vals):
 
@@ -63,6 +63,9 @@ def get_can_parser(CP):
   if CP.carFingerprint == CAR.PRIUS:
     signals += [("STATE", "AUTOPARK_STATUS", 0)]
 
+  if CP.carFingerprint in NO_DSU_CAR:
+    signals += [("STEER_ANGLE", "STEER_TORQUE_SENSOR", 0)]
+
   # add gas interceptor reading if we are using it
   if CP.enableGasInterceptor:
       signals.append(("INTERCEPTOR_GAS", "GAS_SENSOR", 0))
@@ -103,7 +106,10 @@ class CarState(object):
                          K=[[0.12287673], [0.29666309]])
     self.v_ego = 0.0
 
-  def update(self, cp, cp_cam):
+    self.old_steer_prev = 0
+    self.offset_prev = 0
+
+  def update(self, cp, cp_cam, frame):
     # copy can_valid
     self.can_valid = cp.can_valid
     self.cam_can_valid = cp_cam.can_valid
@@ -143,6 +149,23 @@ class CarState(object):
 
     self.angle_steers = cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']
     self.angle_steers_rate = cp.vl["STEER_ANGLE_SENSOR"]['STEER_RATE']
+
+    # steer angle from torque sensor message and learns offset
+    if self.car_fingerprint in NO_DSU_CAR:
+
+      self.old_steer = self.angle_steers
+      self.new_steer = cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE']
+
+      # learn offset in first two seconds of car start at standstill and old angle sensor has not moved
+      if (frame < 200) and (self.old_steer == self.old_steer_prev) and v_wheel == 0:
+        self.offset = self.new_steer - self.old_steer
+      else:
+        self.offset = self.offset_prev
+
+      self.angle_steers = self.new_steer - self.offset
+      self.old_steer_prev = self.old_steer
+      self.offset_prev = self.offset
+
     can_gear = int(cp.vl["GEAR_PACKET"]['GEAR'])
     self.gear_shifter = parse_gear_shifter(can_gear, self.shifter_values)
     self.main_on = cp.vl["PCM_CRUISE_2"]['MAIN_ON']

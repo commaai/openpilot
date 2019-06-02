@@ -139,11 +139,11 @@ class CarInterface(object):
       stop_and_go = True
       ret.safetyParam = 100
       ret.wheelbase = 2.82448
-      ret.steerRatio = 13.7
-      tire_stiffness_factor = 0.7933
+      ret.steerRatio = 16.5 # stock 13.7
+      tire_stiffness_factor = 0.8
       ret.mass = 3400 * CV.LB_TO_KG + std_cargo #mean between normal and hybrid
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
-      ret.lateralTuning.pid.kf = 0.00006
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.05]]
+      ret.lateralTuning.pid.kf = 0.00007
 
     elif candidate in [CAR.HIGHLANDER, CAR.HIGHLANDERH]:
       stop_and_go = True
@@ -262,7 +262,7 @@ class CarInterface(object):
     if self.frame < 1000:
       self.cp_cam.update(int(sec_since_boot() * 1e9), False)
 
-    self.CS.update(self.cp, self.cp_cam)
+    self.CS.update(self.cp, self.cp_cam, self.frame)
 
     # create message
     ret = car.CarState.new_message()
