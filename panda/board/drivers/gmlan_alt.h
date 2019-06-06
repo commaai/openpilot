@@ -114,8 +114,6 @@ int get_bit_message(char *out, CAN_FIFOMailBox_TypeDef *to_bang) {
   return len;
 }
 
-#ifdef PANDA
-
 void setup_timer4() {
   // setup
   TIM4->PSC = 48-1;          // tick on 1 us
@@ -273,4 +271,3 @@ void bitbang_gmlan(CAN_FIFOMailBox_TypeDef *to_bang) {
   setup_timer4();
 }
 
-#endif

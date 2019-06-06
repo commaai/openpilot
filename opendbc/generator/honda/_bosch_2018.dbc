@@ -196,7 +196,8 @@ BO_ 780 ACC_HUD: 8 ADAS
  SG_ ACC_PROBLEM : 37|1@0+ (1,0) [0|1] "" BDY
  SG_ ACC_ON : 52|1@0+ (1,0) [0|1] "" XXX
  SG_ BOH_6 : 51|4@0+ (1,0) [0|15] "" XXX
- SG_ SET_TO_X3 : 55|2@0+ (1,0) [0|3] "" XXX
+ SG_ IMPERIAL_UNIT : 55|1@0+ (1,0) [0|1] "" XXX
+ SG_ SET_TO_X1 : 56|1@0+ (1,0) [0|1] "" XXX
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
 

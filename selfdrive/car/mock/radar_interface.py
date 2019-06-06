@@ -11,7 +11,7 @@ class RadarInterface(object):
 
   def update(self):
 
-    ret = car.RadarState.new_message()
+    ret = car.RadarData.new_message()
     time.sleep(0.05)  # radard runs on RI updates
     return ret
 

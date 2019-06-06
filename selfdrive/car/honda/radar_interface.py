@@ -43,7 +43,7 @@ class RadarInterface(object):
     canMonoTimes = []
 
     updated_messages = set()
-    ret = car.RadarState.new_message()
+    ret = car.RadarData.new_message()
 
     # in Bosch radar and we are only steering for now, so sleep 0.05s to keep
     # radard at 20Hz and return no points
@@ -53,7 +53,8 @@ class RadarInterface(object):
 
     while 1:
       tm = int(sec_since_boot() * 1e9)
-      updated_messages.update(self.rcp.update(tm, True))
+      _, vls = self.rcp.update(tm, True)
+      updated_messages.update(vls)
       if 0x445 in updated_messages:
         break
 
@@ -65,7 +66,7 @@ class RadarInterface(object):
         self.radar_wrong_config = cpt['RADAR_STATE'] == 0x69
       elif cpt['LONG_DIST'] < 255:
         if ii not in self.pts or cpt['NEW_TRACK']:
-          self.pts[ii] = car.RadarState.RadarPoint.new_message()
+          self.pts[ii] = car.RadarData.RadarPoint.new_message()
           self.pts[ii].trackId = self.track_id
           self.track_id += 1
         self.pts[ii].dRel = cpt['LONG_DIST']  # from front of car

@@ -68,7 +68,7 @@ def get_can_parser(CP):
       signals.append(("INTERCEPTOR_GAS", "GAS_SENSOR", 0))
       checks.append(("GAS_SENSOR", 50))
 
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0, timeout=100)
 
 
 def get_cam_can_parser(CP):
@@ -78,7 +78,7 @@ def get_cam_can_parser(CP):
   # use steering message to check if panda is connected to frc
   checks = [("STEERING_LKA", 42)]
 
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2, timeout=100)
 
 
 class CarState(object):
