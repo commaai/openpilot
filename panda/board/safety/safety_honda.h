@@ -7,15 +7,11 @@
 //      brake rising edge
 //      brake > 0mph
 
-// these are set in the Honda safety hooks...this is the wrong place
-const int gas_interceptor_threshold = 328;
-int gas_interceptor_detected = 0;
-int brake_prev = 0;
-int gas_prev = 0;
-int gas_interceptor_prev = 0;
-int ego_speed = 0;
-// TODO: auto-detect bosch hardware based on CAN messages?
-bool bosch_hardware = false;
+const int HONDA_GAS_INTERCEPTOR_THRESHOLD = 328;  // ratio between offset and gain from dbc file
+int honda_brake_prev = 0;
+int honda_gas_prev = 0;
+int honda_ego_speed = 0;
+bool honda_bosch_hardware = false;
 bool honda_alt_brake_msg = false;
 
 static void honda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
@@ -23,7 +19,7 @@ static void honda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   // sample speed
   if ((to_push->RIR>>21) == 0x158) {
     // first 2 bytes
-    ego_speed = to_push->RDLR & 0xFFFF;
+    honda_ego_speed = to_push->RDLR & 0xFFFF;
   }
 
   // state machine to enter and exit controls
@@ -49,10 +45,10 @@ static void honda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   // speed > 0
   if (IS_USER_BRAKE_MSG(to_push)) {
     int brake = USER_BRAKE_VALUE(to_push);
-    if (brake && (!(brake_prev) || ego_speed)) {
+    if (brake && (!(honda_brake_prev) || honda_ego_speed)) {
       controls_allowed = 0;
     }
-    brake_prev = brake;
+    honda_brake_prev = brake;
   }
 
   // exit controls on rising edge of gas press if interceptor (0x201 w/ len = 6)
@@ -60,8 +56,9 @@ static void honda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   if ((to_push->RIR>>21) == 0x201 && (to_push->RDTR & 0xf) == 6) {
     gas_interceptor_detected = 1;
     int gas_interceptor = ((to_push->RDLR & 0xFF) << 8) | ((to_push->RDLR & 0xFF00) >> 8);
-    if ((gas_interceptor > gas_interceptor_threshold) &&
-        (gas_interceptor_prev <= gas_interceptor_threshold)) {
+    if ((gas_interceptor > HONDA_GAS_INTERCEPTOR_THRESHOLD) &&
+        (gas_interceptor_prev <= HONDA_GAS_INTERCEPTOR_THRESHOLD) &&
+        long_controls_allowed) {
       controls_allowed = 0;
     }
     gas_interceptor_prev = gas_interceptor;
@@ -71,10 +68,10 @@ static void honda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   if (!gas_interceptor_detected) {
     if ((to_push->RIR>>21) == 0x17C) {
       int gas = to_push->RDLR & 0xFF;
-      if (gas && !(gas_prev)) {
+      if (gas && !(honda_gas_prev) && long_controls_allowed) {
         controls_allowed = 0;
       }
-      gas_prev = gas;
+      honda_gas_prev = gas;
     }
   }
 }
@@ -89,13 +86,13 @@ static int honda_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 
   // disallow actuator commands if gas or brake (with vehicle moving) are pressed
   // and the the latching controls_allowed flag is True
-  int pedal_pressed = gas_prev || (gas_interceptor_prev > gas_interceptor_threshold) ||
-                      (brake_prev && ego_speed);
+  int pedal_pressed = honda_gas_prev || (gas_interceptor_prev > HONDA_GAS_INTERCEPTOR_THRESHOLD) ||
+                      (honda_brake_prev && honda_ego_speed);
   int current_controls_allowed = controls_allowed && !(pedal_pressed);
 
   // BRAKE: safety check
   if ((to_send->RIR>>21) == 0x1FA) {
-    if (current_controls_allowed) {
+    if (current_controls_allowed && long_controls_allowed) {
       if ((to_send->RDLR & 0xFFFFFF3F) != to_send->RDLR) return 0;
     } else {
       if ((to_send->RDLR & 0xFFFF0000) != to_send->RDLR) return 0;
@@ -113,7 +110,7 @@ static int honda_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 
   // GAS: safety check
   if ((to_send->RIR>>21) == 0x200) {
-    if (current_controls_allowed) {
+    if (current_controls_allowed && long_controls_allowed) {
       // all messages are fine here
     } else {
       if ((to_send->RDLR & 0xFFFF0000) != to_send->RDLR) return 0;
@@ -123,7 +120,7 @@ static int honda_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   // FORCE CANCEL: safety check only relevant when spamming the cancel button in Bosch HW
   // ensuring that only the cancel button press is sent (VAL 2) when controls are off.
   // This avoids unintended engagements while still allowing resume spam
-  if (((to_send->RIR>>21) == 0x296) && bosch_hardware &&
+  if (((to_send->RIR>>21) == 0x296) && honda_bosch_hardware &&
       !current_controls_allowed && ((to_send->RDTR >> 4) & 0xFF) == 0) {
     if (((to_send->RDLR >> 5) & 0x7) != 2) return 0;
   }
@@ -134,21 +131,15 @@ static int honda_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 
 static void honda_init(int16_t param) {
   controls_allowed = 0;
-  bosch_hardware = false;
+  honda_bosch_hardware = false;
   honda_alt_brake_msg = false;
-  #ifdef PANDA
-    lline_relay_release();
-  #endif
 }
 
 static void honda_bosch_init(int16_t param) {
   controls_allowed = 0;
-  bosch_hardware = true;
+  honda_bosch_hardware = true;
   // Checking for alternate brake override from safety parameter
   honda_alt_brake_msg = param == 1 ? true : false;
-  #ifdef PANDA
-    lline_relay_release();
-  #endif
 }
 
 static int honda_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
@@ -159,11 +150,15 @@ static int honda_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
   int addr = to_fwd->RIR>>21;
   if (bus_num == 0) {
     return 2;
-  } else if (bus_num == 2 && addr != 0xE4 && addr != 0x194 && addr != 0x1FA &&
-             addr != 0x30C && addr != 0x33D && addr != 0x39F) {
+  } else if (bus_num == 2) {
+    // block stock lkas messages and stock acc messages (if OP is doing ACC)
+    int is_lkas_msg = (addr == 0xE4 || addr == 0x194 || addr == 0x33D);
+    int is_acc_msg = (addr == 0x1FA || addr == 0x30C || addr == 0x39F);
+    if (is_lkas_msg || (is_acc_msg && long_controls_allowed)) {
+      return -1;
+    }
     return 0;
   }
-
   return -1;
 }
 
@@ -182,7 +177,6 @@ const safety_hooks honda_hooks = {
   .tx_lin = nooutput_tx_lin_hook,
   .ignition = default_ign_hook,
   .fwd = honda_fwd_hook,
-  .relay = nooutput_relay_hook,
 };
 
 const safety_hooks honda_bosch_hooks = {
@@ -192,5 +186,4 @@ const safety_hooks honda_bosch_hooks = {
   .tx_lin = nooutput_tx_lin_hook,
   .ignition = default_ign_hook,
   .fwd = honda_bosch_fwd_hook,
-  .relay = nooutput_relay_hook,
 };
