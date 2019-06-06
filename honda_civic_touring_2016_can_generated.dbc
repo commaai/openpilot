@@ -164,14 +164,15 @@ BO_ 780 ACC_HUD: 8 ADAS
  SG_ FCM_PROBLEM : 34|1@0+ (1,0) [0|1] "" BDY
  SG_ RADAR_OBSTRUCTED : 33|1@0+ (1,0) [0|1] "" BDY
  SG_ ENABLE_MINI_CAR : 32|1@0+ (1,0) [0|1] "" BDY
- SG_ SET_ME_X03 : 47|2@0+ (1,0) [0|3] "" BDY
+ SG_ HUD_DISTANCE : 47|2@0+ (1,0) [0|3] "" BDY
  SG_ HUD_LEAD : 45|2@0+ (1,0) [0|3] "" BDY
  SG_ BOH_3 : 43|1@0+ (1,0) [0|3] "" BDY
  SG_ BOH_4 : 42|1@0+ (1,0) [0|3] "" BDY
  SG_ BOH_5 : 41|1@0+ (1,0) [0|3] "" BDY
  SG_ CRUISE_CONTROL_LABEL : 40|1@0+ (1,0) [0|3] "" BDY
  SG_ HUD_DISTANCE_3 : 52|1@0+ (1,0) [0|1] "" BDY
- SG_ SET_ME_X03_2 : 55|2@0+ (1,0) [0|3] "" BDY
+ SG_ IMPERIAL_UNIT : 54|1@0+ (1,0) [0|1] "" BDY
+ SG_ SET_ME_X01_2 : 55|1@0+ (1,0) [0|1] "" BDY
  SG_ SET_ME_X01 : 48|1@0+ (1,0) [0|1] "" BDY
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" BDY
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" BDY
@@ -288,8 +289,8 @@ BO_ 450 EPB_STATUS: 8 EPB
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
 
-BO_ 493 HUD_SETTING: 8 XXX
- SG_ SPEED_UNIT : 5|1@0+ (1,0) [0|1] "" EON
+BO_ 493 HUD_SETTING: 5 XXX
+ SG_ IMPERIAL_UNIT : 5|1@0+ (1,0) [0|1] "" EON
 
 BO_ 487 BRAKE_PRESSURE: 4 VSA
  SG_ BRAKE_PRESSURE1 : 7|10@0+ (0.015625,-103) [0|1000] "" EON
@@ -366,7 +367,6 @@ VAL_ 399 STEER_STATUS 6 "tmp_fault" 5 "fault_1" 4 "no_torque_alert_2" 3 "low_spe
 VAL_ 401 GEAR_SHIFTER 32 "L" 16 "S" 8 "D" 4 "N" 2 "R" 1 "P" ;
 VAL_ 401 GEAR 7 "L" 10 "S" 4 "D" 3 "N" 2 "R" 1 "P" ;
 VAL_ 450 EPB_STATE 3 "engaged" 2 "disengaging" 1 "engaging" 0 "disengaged" ;
-VAL_ 493 SPEED_UNIT 1 "mph" 0 "kph" ;
 VAL_ 545 ECON_ON_2 0 "off" 3 "on" ;
 VAL_ 662 CRUISE_BUTTONS 7 "tbd" 6 "tbd" 5 "tbd" 4 "accel_res" 3 "decel_set" 2 "cancel" 1 "main" 0 "none" ;
 VAL_ 662 CRUISE_SETTING 3 "distance_adj" 2 "tbd" 1 "lkas_button" 0 "none" ;
