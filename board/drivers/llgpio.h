@@ -1,3 +1,12 @@
+#define MODE_INPUT 0
+#define MODE_OUTPUT 1
+#define MODE_ALTERNATE 2
+#define MODE_ANALOG 3
+
+#define PULL_NONE 0
+#define PULL_UP 1
+#define PULL_DOWN 2
+
 void set_gpio_mode(GPIO_TypeDef *GPIO, int pin, int mode) {
   uint32_t tmp = GPIO->MODER;
   tmp &= ~(3 << (pin*2));

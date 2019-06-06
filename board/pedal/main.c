@@ -1,29 +1,26 @@
-//#define DEBUG
-//#define CAN_LOOPBACK_MODE
-//#define USE_INTERNAL_OSC
-
 #include "../config.h"
 
-#include "drivers/drivers.h"
+#include "drivers/llcan.h"
 #include "drivers/llgpio.h"
-#include "gpio.h"
-
-#define CUSTOM_CAN_INTERRUPTS
-
-#include "libc.h"
-#include "safety.h"
+#include "drivers/clock.h"
 #include "drivers/adc.h"
-#include "drivers/uart.h"
 #include "drivers/dac.h"
-#include "drivers/can.h"
 #include "drivers/timer.h"
+
+#include "gpio.h"
+#include "libc.h"
 
 #define CAN CAN1
 
 //#define PEDAL_USB
 
 #ifdef PEDAL_USB
+  #include "drivers/uart.h"
   #include "drivers/usb.h"
+#else
+  // no serial either
+  int puts(const char *a) { return 0; }
+  void puth(unsigned int i) {}
 #endif
 
 #define ENTER_BOOTLOADER_MAGIC 0xdeadbeef
@@ -35,14 +32,14 @@ void __initialize_hardware_early() {
 
 // ********************* serial debugging *********************
 
+#ifdef PEDAL_USB
+
 void debug_ring_callback(uart_ring *ring) {
   char rcv;
   while (getc(ring, &rcv)) {
     putc(ring, rcv);
   }
 }
-
-#ifdef PEDAL_USB
 
 int usb_cb_ep1_in(uint8_t *usbdata, int len, int hardwired) { return 0; }
 void usb_cb_ep2_out(uint8_t *usbdata, int len, int hardwired) {}
@@ -185,7 +182,7 @@ void CAN1_RX0_IRQHandler() {
 
 void CAN1_SCE_IRQHandler() {
   state = FAULT_SCE;
-  can_sce(CAN);
+  llcan_clear_send(CAN);
 }
 
 int pdl0 = 0, pdl1 = 0;
@@ -256,8 +253,7 @@ void pedal() {
     dac_set(1, pdl1);
   }
 
-  // feed the watchdog
-  IWDG->KR = 0xAAAA;
+  watchdog_feed();
 }
 
 int main() {
@@ -278,23 +274,17 @@ int main() {
   adc_init();
 
   // init can
-  can_silent = ALL_CAN_LIVE;
-  can_init(0);
+  llcan_set_speed(CAN1, 5000, false, false);
+  llcan_init(CAN1);
 
   // 48mhz / 65536 ~= 732
   timer_init(TIM3, 15);
   NVIC_EnableIRQ(TIM3_IRQn);
 
-  // setup watchdog
-  IWDG->KR = 0x5555;
-  IWDG->PR = 0;          // divider /4
-  // 0 = 0.125 ms, let's have a 50ms watchdog
-  IWDG->RLR = 400 - 1;
-  IWDG->KR = 0xCCCC;
+  watchdog_init();
 
   puts("**** INTERRUPTS ON ****\n");
   __enable_irq();
-
 
   // main pedal loop
   while (1) {
