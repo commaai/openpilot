@@ -12,7 +12,8 @@ from common.params import Params
 import selfdrive.messaging as messaging
 from selfdrive.config import Conversions as CV
 from selfdrive.services import service_list
-from selfdrive.car.car_helpers import get_car
+from selfdrive.boardd.boardd import can_list_to_can_capnp
+from selfdrive.car.car_helpers import get_car, get_startup_alert
 from selfdrive.controls.lib.model_parser import CAMERA_OFFSET
 from selfdrive.controls.lib.drive_helpers import learn_angle_model_bias, \
                                                  get_events, \
@@ -30,7 +31,7 @@ from selfdrive.controls.lib.planner import _DT_MPC
 from selfdrive.locationd.calibration_helpers import Calibration, Filter
 
 ThermalStatus = log.ThermalData.ThermalStatus
-State = log.Live100Data.ControlState
+State = log.ControlsState.OpenpilotState
 
 
 def isActive(state):
@@ -209,7 +210,7 @@ def state_transition(CS, CP, state, events, soft_disable_timer, v_cruise_kph, AM
 
 
 def state_control(rcv_times, plan, path_plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, AM, rk,
-                  driver_status, LaC, LoC, VM, angle_model_bias, passive, is_metric, cal_perc):
+                  driver_status, LaC, LoC, VM, angle_model_bias, read_only, is_metric, cal_perc):
   """Given the state, this function returns an actuators packet"""
 
   actuators = car.CarControl.Actuators.new_message()
@@ -288,15 +289,15 @@ def state_control(rcv_times, plan, path_plan, CS, CP, state, events, v_cruise_kp
 
 
 def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, carstate,
-              carcontrol, live100, AM, driver_status,
-              LaC, LoC, angle_model_bias, passive, start_time, v_acc, a_acc, lac_log):
-  """Send actuators and hud commands to the car, send live100 and MPC logging"""
+              carcontrol, controlsstate, sendcan, AM, driver_status,
+              LaC, LoC, angle_model_bias, read_only, start_time, v_acc, a_acc, lac_log):
+  """Send actuators and hud commands to the car, send controlsstate and MPC logging"""
   plan_ts = plan.logMonoTime
   plan = plan.plan
 
   CC = car.CarControl.new_message()
 
-  if not passive:
+  if not read_only:
     CC.enabled = isEnabled(state)
     CC.actuators = actuators
 
@@ -331,14 +332,15 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
     CC.hudControl.audibleAlert = AM.audible_alert
 
     # send car controls over can
-    CI.apply(CC)
+    can_sends = CI.apply(CC)
+    sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan'))
 
   force_decel = driver_status.awareness < 0.
 
-  # live100
+  # controlsState
   dat = messaging.new_message()
-  dat.init('live100')
-  dat.live100 = {
+  dat.init('controlsState')
+  dat.controlsState = {
     "alertText1": AM.alert_text_1,
     "alertText2": AM.alert_text_2,
     "alertSize": AM.alert_size,
@@ -381,10 +383,10 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
   }
 
   if CP.lateralTuning.which() == 'pid':
-    dat.live100.lateralControlState.pidState = lac_log
+    dat.controlsState.lateralControlState.pidState = lac_log
   else:
-    dat.live100.lateralControlState.indiState = lac_log
-  live100.send(dat.to_bytes())
+    dat.controlsState.lateralControlState.indiState = lac_log
+  controlsstate.send(dat.to_bytes())
 
   # carState
   cs_send = messaging.new_message()
@@ -402,7 +404,7 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
   return CC
 
 
-def controlsd_thread(gctx=None, rate=100):
+def controlsd_thread(gctx=None):
   gc.disable()
 
   # start the loop
@@ -412,18 +414,14 @@ def controlsd_thread(gctx=None, rate=100):
   params = Params()
 
   # Pub Sockets
-  live100 = messaging.pub_sock(context, service_list['live100'].port)
+  controlsstate = messaging.pub_sock(context, service_list['controlsState'].port)
   carstate = messaging.pub_sock(context, service_list['carState'].port)
   carcontrol = messaging.pub_sock(context, service_list['carControl'].port)
 
   is_metric = params.get("IsMetric") == "1"
   passive = params.get("Passive") != "0"
 
-  # No sendcan if passive
-  if not passive:
-    sendcan = messaging.pub_sock(context, service_list['sendcan'].port)
-  else:
-    sendcan = None
+  sendcan = messaging.pub_sock(context, service_list['sendcan'].port)
 
   # Sub sockets
   poller = zmq.Poller()
@@ -436,18 +434,18 @@ def controlsd_thread(gctx=None, rate=100):
   logcan = messaging.sub_sock(context, service_list['can'].port)
 
   CC = car.CarControl.new_message()
-  CI, CP = get_car(logcan, sendcan, 1.0 if passive else None)
+  CI, CP = get_car(logcan, sendcan)
+  AM = AlertManager()
 
-  if CI is None:
-    raise Exception("unsupported car")
+  car_recognized = CP.carName != 'mock'
+  # If stock camera is disconnected, we loaded car controls and it's not chffrplus
+  controller_available = CP.enableCamera and CI.CC is not None and not passive
+  read_only = not car_recognized or not controller_available
+  if read_only:
+    CP.safetyModel = car.CarParams.SafetyModels.elm327   # diagnostic only
 
-  # if stock camera is connected, then force passive behavior
-  if not CP.enableCamera:
-    passive = True
-    sendcan = None
-
-  if passive:
-    CP.safetyModel = car.CarParams.SafetyModels.noOutput
+  startup_alert = get_startup_alert(car_recognized, controller_available)
+  AM.add(startup_alert, False)
 
   LoC = LongControl(CP, CI.compute_gb)
   VM = VehicleModel(CP)
@@ -457,11 +455,7 @@ def controlsd_thread(gctx=None, rate=100):
   else:
     LaC = LatControlINDI(CP)
 
-  AM = AlertManager()
   driver_status = DriverStatus()
-
-  if not passive:
-    AM.add("startup", False)
 
   # Write CarParams for radard and boardd safety mode
   params.put("CarParams", CP.to_bytes())
@@ -484,8 +478,10 @@ def controlsd_thread(gctx=None, rate=100):
   plan.init('plan')
   path_plan = messaging.new_message()
   path_plan.init('pathPlan')
+  path_plan.pathPlan.sensorValid = True
 
-  rk = Ratekeeper(rate, print_delay_threshold=2. / 1000)
+  # controlsd is driven by can recv, expected at 100Hz
+  rk = Ratekeeper(100, print_delay_threshold=None)
   controls_params = params.get("ControlsParams")
 
   # Read angle offset from previous drive
@@ -516,6 +512,8 @@ def controlsd_thread(gctx=None, rate=100):
 
     if not path_plan.pathPlan.valid or plan_age > 0.5 or path_plan_age > 0.5:
       events.append(create_event('plannerError', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+    if not path_plan.pathPlan.sensorValid:
+      events.append(create_event('sensorDataInvalid', [ET.NO_ENTRY, ET.PERMANENT]))
     if not path_plan.pathPlan.paramsValid:
       events.append(create_event('vehicleModelInvalid', [ET.WARNING]))
     if not path_plan.pathPlan.modelValid:
@@ -529,7 +527,7 @@ def controlsd_thread(gctx=None, rate=100):
     if CS.brakePressed and plan.plan.vTargetFuture >= STARTING_TARGET_SPEED and not CP.radarOffCan and CS.vEgo < 0.3:
       events.append(create_event('noTarget', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
 
-    if not passive:
+    if not read_only:
       # update control state
       state, soft_disable_timer, v_cruise_kph, v_cruise_kph_last = \
         state_transition(CS, CP, state, events, soft_disable_timer, v_cruise_kph, AM)
@@ -539,21 +537,21 @@ def controlsd_thread(gctx=None, rate=100):
     actuators, v_cruise_kph, driver_status, angle_model_bias, v_acc, a_acc, lac_log = \
       state_control(rcv_times, plan.plan, path_plan.pathPlan, CS, CP, state, events, v_cruise_kph,
                     v_cruise_kph_last, AM, rk, driver_status,
-                    LaC, LoC, VM, angle_model_bias, passive, is_metric, cal_perc)
+                    LaC, LoC, VM, angle_model_bias, read_only, is_metric, cal_perc)
 
     prof.checkpoint("State Control")
 
     # Publish data
     CC = data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, carstate, carcontrol,
-                   live100, AM, driver_status, LaC, LoC, angle_model_bias, passive, start_time, v_acc, a_acc, lac_log)
+                   controlsstate, sendcan, AM, driver_status, LaC, LoC, angle_model_bias, read_only, start_time, v_acc, a_acc, lac_log)
     prof.checkpoint("Sent")
 
-    rk.keep_time()  # Run at 100Hz
+    rk.monitor_time()
     prof.display()
 
 
 def main(gctx=None):
-  controlsd_thread(gctx, 100)
+  controlsd_thread(gctx)
 
 
 if __name__ == "__main__":

@@ -781,7 +781,7 @@ void* monitoring_thread(void *arg) {
 
       double t2 = millis_since_boot();
 
-      LOGD("monitoring process: %.2fms, from last %.2fms", t2-t1, t1-last);
+      //LOGD("monitoring process: %.2fms, from last %.2fms", t2-t1, t1-last);
       last = t1;
     }
 
@@ -893,7 +893,7 @@ void* frontview_thread(void *arg) {
 
     double t2 = millis_since_boot();
 
-    LOGD("front process: %.2fms", t2-t1);
+    //LOGD("front process: %.2fms", t2-t1);
   }
 
   return NULL;
@@ -1157,7 +1157,7 @@ void* processing_thread(void *arg) {
         zmq_send(s->posenet_sock_raw, bytes.begin(), bytes.size(), ZMQ_DONTWAIT);
       }
       pt3 = millis_since_boot();
-      LOGD("pre: %.2fms | posenet: %.2fms", (pt2-pt1), (pt3-pt1));
+      //LOGD("pre: %.2fms | posenet: %.2fms", (pt2-pt1), (pt3-pt1));
     }
 #endif
 
@@ -1206,8 +1206,8 @@ void* processing_thread(void *arg) {
 
     double t5 = millis_since_boot();
 
-    LOGD("queued: %.2fms, yuv: %.2f, model: %.2fms | processing: %.3fms",
-            (t2-t1), (yt2-yt1), (mt2-mt1), (t5-t1));
+    /*LOGD("queued: %.2fms, yuv: %.2f, model: %.2fms | processing: %.3fms",
+            (t2-t1), (yt2-yt1), (mt2-mt1), (t5-t1));*/
   }
 
 #ifdef DUMP_RGB

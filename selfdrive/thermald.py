@@ -7,7 +7,7 @@ from selfdrive.version import training_version
 from selfdrive.swaglog import cloudlog
 import selfdrive.messaging as messaging
 from selfdrive.services import service_list
-from selfdrive.loggerd.config import ROOT
+from selfdrive.loggerd.config import get_available_percent
 from common.params import Params
 from common.realtime import sec_since_boot
 from common.numpy_fast import clip
@@ -121,37 +121,6 @@ def check_car_battery_voltage(should_start, health, charging_disabled):
   return charging_disabled
 
 
-class LocationStarter(object):
-  def __init__(self):
-    self.last_good_loc = 0
-  def update(self, started_ts, location):
-    rt = sec_since_boot()
-
-    if location is None or location.accuracy > 50 or location.speed < 2:
-      # bad location, stop if we havent gotten a location in a while
-      # dont stop if we're been going for less than a minute
-      if started_ts:
-        if rt-self.last_good_loc > 60. and rt-started_ts > 60:
-          cloudlog.event("location_stop",
-            ts=rt,
-            started_ts=started_ts,
-            last_good_loc=self.last_good_loc,
-            location=location.to_dict() if location else None)
-          return False
-        else:
-          return True
-      else:
-        return False
-
-    self.last_good_loc = rt
-
-    if started_ts:
-      return True
-    else:
-      cloudlog.event("location_start", location=location.to_dict() if location else None)
-      return location.speed*3.6 > 10
-
-
 def thermald_thread():
   setup_eon_fan()
 
@@ -170,10 +139,10 @@ def thermald_thread():
   started_ts = None
   ignition_seen = False
   started_seen = False
-  passive_starter = LocationStarter()
   thermal_status = ThermalStatus.green
   health_sock.RCVTIMEO = 1500
   current_filter = FirstOrderFilter(0., CURRENT_TAU, 1.)
+  health_prev = None
 
   # Make sure charging is enabled
   charging_disabled = False
@@ -187,9 +156,13 @@ def thermald_thread():
     location = location.gpsLocation if location else None
     msg = read_thermal()
 
+    # clear car params when panda gets disconnected
+    if health is None and health_prev is not None:
+      params.panda_disconnect()
+    health_prev = health
+
     # loggerd is gated based on free space
-    statvfs = os.statvfs(ROOT)
-    avail = (statvfs.f_bavail * 1.0)/statvfs.f_blocks
+    avail = get_available_percent() / 100.0
 
     # thermal message now also includes free space
     msg.thermal.freeSpace = avail
@@ -253,16 +226,8 @@ def thermald_thread():
     # have we seen a panda?
     passive = (params.get("Passive") == "1")
 
-    # start on gps movement if we haven't seen ignition and are in passive mode
-    should_start = should_start or (not (ignition_seen and health) # seen ignition and panda is connected
-                                    and passive
-                                    and passive_starter.update(started_ts, location))
-
     # with 2% left, we killall, otherwise the phone will take a long time to boot
     should_start = should_start and msg.thermal.freeSpace > 0.02
-
-    # require usb power in passive mode
-    should_start = should_start and (not passive or msg.thermal.usbOnline)
 
     # confirm we have completed training and aren't uninstalling
     should_start = should_start and accepted_terms and (passive or completed_training) and (not do_uninstall)
@@ -276,7 +241,6 @@ def thermald_thread():
     if should_start:
       off_ts = None
       if started_ts is None:
-        params.car_start()
         started_ts = sec_since_boot()
         started_seen = True
         os.system('echo performance > /sys/class/devfreq/soc:qcom,cpubw/governor')
@@ -295,7 +259,7 @@ def thermald_thread():
     #charging_disabled = check_car_battery_voltage(should_start, health, charging_disabled)
 
     msg.thermal.chargingDisabled = charging_disabled
-    msg.thermal.chargingError = current_filter.x > 0.   # if current is positive, then battery is being discharged
+    msg.thermal.chargingError = current_filter.x > 0. and msg.thermal.batteryPercent < 90  # if current is positive, then battery is being discharged
     msg.thermal.started = started_ts is not None
     msg.thermal.startedTs = int(1e9*(started_ts or 0))
 
@@ -319,4 +283,3 @@ def main(gctx=None):
 
 if __name__ == "__main__":
   main()
-

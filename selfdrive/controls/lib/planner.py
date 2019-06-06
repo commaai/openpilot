@@ -114,18 +114,18 @@ class Planner(object):
 
     self.v_acc_future = min([self.mpc1.v_mpc_future, self.mpc2.v_mpc_future, v_cruise_setpoint])
 
-  def update(self, rcv_times, CS, CP, VM, PP, live20, live100, md, live_map_data):
-    """Gets called when new live20 is available"""
+  def update(self, rcv_times, CS, CP, VM, PP, radar_state, controls_state, md, live_map_data):
+    """Gets called when new radarState is available"""
     cur_time = sec_since_boot()
     v_ego = CS.carState.vEgo
 
-    long_control_state = live100.live100.longControlState
-    v_cruise_kph = live100.live100.vCruise
-    force_slow_decel = live100.live100.forceDecel
+    long_control_state = controls_state.controlsState.longControlState
+    v_cruise_kph = controls_state.controlsState.vCruise
+    force_slow_decel = controls_state.controlsState.forceDecel
     v_cruise_setpoint = v_cruise_kph * CV.KPH_TO_MS
 
-    lead_1 = live20.live20.leadOne
-    lead_2 = live20.live20.leadTwo
+    lead_1 = radar_state.radarState.leadOne
+    lead_2 = radar_state.radarState.leadTwo
 
     enabled = (long_control_state == LongCtrlState.pid) or (long_control_state == LongCtrlState.stopping)
     following = lead_1.status and lead_1.dRel < 45.0 and lead_1.vLeadK > v_ego and lead_1.aLeadK > 0.0
@@ -209,18 +209,18 @@ class Planner(object):
     if fcw:
       cloudlog.info("FCW triggered %s", self.fcw_checker.counters)
 
-    radar_dead = cur_time - rcv_times['live20'] > 0.5
+    radar_dead = cur_time - rcv_times['radarState'] > 0.5
 
-    radar_errors = list(live20.live20.radarErrors)
-    radar_fault = car.RadarState.Error.fault in radar_errors
-    radar_comm_issue = car.RadarState.Error.commIssue in radar_errors
+    radar_errors = list(radar_state.radarState.radarErrors)
+    radar_fault = car.RadarData.Error.fault in radar_errors
+    radar_comm_issue = car.RadarData.Error.commIssue in radar_errors
 
     # **** send the plan ****
     plan_send = messaging.new_message()
     plan_send.init('plan')
 
     plan_send.plan.mdMonoTime = md.logMonoTime
-    plan_send.plan.l20MonoTime = live20.logMonoTime
+    plan_send.plan.radarStateMonoTime = radar_state.logMonoTime
 
     # longitudal plan
     plan_send.plan.vCruise = self.v_cruise
@@ -241,7 +241,7 @@ class Planner(object):
     plan_send.plan.radarValid = bool(radar_valid)
     plan_send.plan.radarCommIssue = bool(radar_comm_issue)
 
-    plan_send.plan.processingDelay = (plan_send.logMonoTime / 1e9) - rcv_times['live20']
+    plan_send.plan.processingDelay = (plan_send.logMonoTime / 1e9) - rcv_times['radarState']
 
     # Send out fcw
     fcw = fcw and (self.fcw_enabled or long_control_state != LongCtrlState.off)

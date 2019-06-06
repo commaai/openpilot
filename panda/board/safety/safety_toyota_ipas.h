@@ -152,5 +152,4 @@ const safety_hooks toyota_ipas_hooks = {
   .tx_lin = nooutput_tx_lin_hook,
   .ignition = default_ign_hook,
   .fwd = toyota_fwd_hook,
-  .relay = nooutput_relay_hook,
 };

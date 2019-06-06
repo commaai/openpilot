@@ -3,14 +3,13 @@ import os
 import shutil
 import threading
 from selfdrive.swaglog import cloudlog
-from selfdrive.loggerd.config import ROOT
+from selfdrive.loggerd.config import ROOT, get_available_percent
 from selfdrive.loggerd.uploader import listdir_by_creation_date
 
 
 def deleter_thread(exit_event):
   while not exit_event.is_set():
-    statvfs = os.statvfs(ROOT)
-    available_percent = 100.0 * statvfs.f_bavail / statvfs.f_blocks
+    available_percent = get_available_percent()
 
     if available_percent < 10.0:
       # remove the earliest directory we can

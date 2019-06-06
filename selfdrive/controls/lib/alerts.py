@@ -9,8 +9,8 @@ class Priority:
   HIGH = 4
   HIGHEST = 5
 
-AlertSize = log.Live100Data.AlertSize
-AlertStatus = log.Live100Data.AlertStatus
+AlertSize = log.ControlsState.AlertSize
+AlertStatus = log.ControlsState.AlertStatus
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
@@ -172,6 +172,20 @@ ALERTS = [
       Priority.LOW_LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., 15.),
 
   Alert(
+      "startupNoControl",
+      "Dashcam mode",
+      "Always keep hands on wheel and eyes on road",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOW_LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., 15.),
+
+  Alert(
+      "startupNoCar",
+      "Dashcam mode with unsupported car",
+      "Always keep hands on wheel and eyes on road",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOW_LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., 15.),
+
+  Alert(
       "ethicalDilemma",
       "TAKE CONTROL IMMEDIATELY",
       "Ethical Dilemma Detected",
@@ -274,6 +288,13 @@ ALERTS = [
       "lowBatteryNoEntry",
       "openpilot Unavailable",
       "Low Battery",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
+
+  Alert(
+      "sensorDataInvalidNoEntry",
+      "openpilot Unavailable",
+      "No Data from EON Sensors",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
 
@@ -622,6 +643,13 @@ ALERTS = [
       "invalidGiraffeHondaPermanent",
       "Invalid Giraffe Configuration",
       "Set 0111 for openpilot. 1011 for stock",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOW_LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
+
+  Alert(
+      "sensorDataInvalidPermanent",
+      "No Data from EON Sensors",
+      "Reboot your EON",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOW_LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
 
