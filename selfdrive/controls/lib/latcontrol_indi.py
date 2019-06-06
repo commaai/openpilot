@@ -51,7 +51,7 @@ class LatControlINDI(object):
     y = np.matrix([[math.radians(angle_steers)], [math.radians(angle_steers_rate)]])
     self.x = np.dot(self.A_K, self.x) + np.dot(self.K, y)
 
-    indi_log = log.Live100Data.LateralINDIState.new_message()
+    indi_log = log.ControlsState.LateralINDIState.new_message()
     indi_log.steerAngle = math.degrees(self.x[0])
     indi_log.steerRate = math.degrees(self.x[1])
     indi_log.steerAccel = math.degrees(self.x[2])

@@ -305,12 +305,12 @@ struct LiveUI {
   awarenessStatus @3 :Float32;
 }
 
-struct Live20Data {
+struct RadarState @0x9a185389d6fdd05f {
   canMonoTimes @10 :List(UInt64);
   mdMonoTime @6 :UInt64;
   ftMonoTimeDEPRECATED @7 :UInt64;
-  l100MonoTime @11 :UInt64;
-  radarErrors @12 :List(Car.RadarState.Error);
+  controlsStateMonoTime @11 :UInt64;
+  radarErrors @12 :List(Car.RadarData.Error);
 
   # all deprecated
   warpMatrixDEPRECATED @0 :List(Float32);
@@ -368,15 +368,15 @@ struct LiveTracks {
   oncoming @9 :Bool;
 }
 
-struct Live100Data {
+struct ControlsState @0x97ff69c53601abf1 {
   canMonoTimeDEPRECATED @16 :UInt64;
   canMonoTimes @21 :List(UInt64);
-  l20MonoTimeDEPRECATED @17 :UInt64;
+  radarStateMonoTimeDEPRECATED @17 :UInt64;
   mdMonoTimeDEPRECATED @18 :UInt64;
   planMonoTime @28 :UInt64;
   pathPlanMonoTime @50 :UInt64;
 
-  state @31 :ControlState;
+  state @31 :OpenpilotState;
   vEgo @0 :Float32;
   vEgoRaw @32 :Float32;
   aEgoDEPRECATED @1 :Float32;
@@ -433,7 +433,7 @@ struct Live100Data {
     pidState @53 :LateralPIDState;
   }
 
-  enum ControlState {
+  enum OpenpilotState @0xdbe58b96d2d1ac61 {
     disabled @0;
     preEnabled @1;
     enabled @2;
@@ -507,6 +507,7 @@ struct ModelData {
     points @0 :List(Float32);
     prob @1 :Float32;
     std @2 :Float32;
+    stds @3 :List(Float32);
   }
 
   struct LeadData {
@@ -574,7 +575,7 @@ struct LogRotate {
 
 struct Plan {
   mdMonoTime @9 :UInt64;
-  l20MonoTime @10 :UInt64;
+  radarStateMonoTime @10 :UInt64;
   eventsDEPRECATED @13 :List(Car.CarEvent);
 
   # lateral, 3rd order polynomial
@@ -648,6 +649,7 @@ struct PathPlan {
   paramsValid @10 :Bool;
   modelValid @12 :Bool;
   angleOffset @11 :Float32;
+  sensorValid @14 :Bool;
 }
 
 struct LiveLocationData {
@@ -1643,6 +1645,7 @@ struct LiveParametersData {
   angleOffsetAverage @3 :Float32;
   stiffnessFactor @4 :Float32;
   steerRatio @5 :Float32;
+  sensorValid @6 :Bool;
 }
 
 struct LiveMapData {
@@ -1690,13 +1693,13 @@ struct Event {
     sensorEventDEPRECATED @4 :SensorEventData;
     can @5 :List(CanData);
     thermal @6 :ThermalData;
-    live100 @7 :Live100Data;
+    controlsState @7 :ControlsState;
     liveEventDEPRECATED @8 :List(LiveEventData);
     model @9 :ModelData;
     features @10 :CalibrationFeatures;
     sensorEvents @11 :List(SensorEventData);
     health @12 :HealthData;
-    live20 @13 :Live20Data;
+    radarState @13 :RadarState;
     liveUIDEPRECATED @14 :LiveUI;
     encodeIdx @15 :EncodeIndex;
     liveTracks @16 :List(LiveTracks);

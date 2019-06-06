@@ -4,6 +4,7 @@
 Cython==0.27.3
 Flask==1.0.2
 #PyGObject==3.28.2 This is installed on the EON, but requires a ton of dependencies to install
+PyJWT==1.4.1
 PyYAML==3.12
 appdirs==1.4.0
 atomicwrites==1.1.5

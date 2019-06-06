@@ -7,14 +7,9 @@ from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.subaru.values import CAR
 from selfdrive.car.subaru.carstate import CarState, get_powertrain_can_parser, get_camera_can_parser
 
-try:
-  from selfdrive.car.subaru.carcontroller import CarController
-except ImportError:
-  CarController = None
-
 
 class CarInterface(object):
-  def __init__(self, CP, sendcan=None):
+  def __init__(self, CP, CarController):
     self.CP = CP
 
     self.frame = 0
@@ -30,9 +25,8 @@ class CarInterface(object):
 
     self.gas_pressed_prev = False
 
-    # sending if read only is False
-    if sendcan is not None:
-      self.sendcan = sendcan
+    self.CC = None
+    if CarController is not None:
       self.CC = CarController(CP.carFingerprint)
 
   @staticmethod
@@ -44,11 +38,12 @@ class CarInterface(object):
     return 1.0
 
   @staticmethod
-  def get_params(candidate, fingerprint):
+  def get_params(candidate, fingerprint, vin=""):
     ret = car.CarParams.new_message()
 
     ret.carName = "subaru"
     ret.carFingerprint = candidate
+    ret.carVin = vin
     ret.safetyModel = car.CarParams.SafetyModels.subaru
 
     ret.enableCruise = True
@@ -119,9 +114,10 @@ class CarInterface(object):
 
   # returns a car.CarState
   def update(self, c):
+    can_rcv_error = not self.pt_cp.update(int(sec_since_boot() * 1e9), True)
+    cam_rcv_error = not self.cam_cp.update(int(sec_since_boot() * 1e9), False)
+    can_rcv_error = can_rcv_error or cam_rcv_error
 
-    self.pt_cp.update(int(sec_since_boot() * 1e9), False)
-    self.cam_cp.update(int(sec_since_boot() * 1e9), False)
     self.CS.update(self.pt_cp, self.cam_cp)
 
     # create message
@@ -183,10 +179,11 @@ class CarInterface(object):
     events = []
     if not self.CS.can_valid:
       self.can_invalid_count += 1
-      if self.can_invalid_count >= 5:
-        events.append(create_event('commIssue', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     else:
       self.can_invalid_count = 0
+
+    if can_rcv_error or self.can_invalid_count >= 5:
+      events.append(create_event('commIssue', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
 
     if ret.seatbeltUnlatched:
       events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
@@ -216,7 +213,8 @@ class CarInterface(object):
     return ret.as_reader()
 
   def apply(self, c):
-    self.CC.update(self.sendcan, c.enabled, self.CS, self.frame, c.actuators,
-                   c.cruiseControl.cancel, c.hudControl.visualAlert,
-                   c.hudControl.leftLaneVisible, c.hudControl.rightLaneVisible)
+    can_sends = self.CC.update(c.enabled, self.CS, self.frame, c.actuators,
+                               c.cruiseControl.cancel, c.hudControl.visualAlert,
+                               c.hudControl.leftLaneVisible, c.hudControl.rightLaneVisible)
     self.frame += 1
+    return can_sends

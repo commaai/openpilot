@@ -14,7 +14,7 @@ gpsNMEA: [8004, true]
 thermal: [8005, true]
 # List(CanData), list of can messages
 can: [8006, true]
-live100: [8007, true]
+controlsState: [8007, true]
 
 # random events we want to log
 
@@ -22,7 +22,7 @@ live100: [8007, true]
 model: [8009, true]
 features: [8010, true]
 health: [8011, true]
-live20: [8012, true]
+radarState: [8012, true]
 #liveUI: [8014, true]
 encodeIdx: [8015, true]
 liveTracks: [8016, true]
@@ -97,23 +97,23 @@ testJoystick: [8056, false]
 #   publishes:  sensorEvents, gpsNMEA
 
 # visiond -- talks to the cameras, runs the model, saves the videos
-#   subscribes: liveCalibration, sensorEvents, live100
+#   subscribes: liveCalibration, sensorEvents, controlsState
 #   publishes:  frame, encodeIdx, model, liveCalibration
 
 # **** stateful data transformers ****
 
 # plannerd -- decides where to drive the car
-#   subscribes: carState, model, live20
+#   subscribes: carState, model, radarState
 #   publishes:  plan
 
 # controlsd -- actually drives the car
 #   subscribes: can, thermal, plan
-#   publishes:  carState, carControl, sendcan, live100
+#   publishes:  carState, carControl, sendcan, controlsState
 
-# radard -- processes the radar data
+# radard -- processes the radar and vision data
 #   blocks:     CarParams
-#   subscribes: can, live100, model
-#   publishes:  live20, liveTracks
+#   subscribes: can, controlsState, model
+#   publishes:  radarState, liveTracks
 
 # **** LOGGING SERVICE ****
 
@@ -123,7 +123,7 @@ testJoystick: [8056, false]
 # **** NON VITAL SERVICES ****
 
 # ui
-#   subscribes: live100, live20, liveCalibration, model, (raw frames)
+#   subscribes: controlsState, radarState, liveCalibration, model, (raw frames)
 
 # uploader
 #   communicates through file system with loggerd

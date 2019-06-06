@@ -292,10 +292,6 @@ void cameras_init(DualCameraState *s) {
   } else if (strcmp(product_name, "OnePlus3") == 0 && strcmp(project_name, "15811") == 0) {
     // only OP3T support
     s->device = DEVICE_OP3T;
-  } else if (strcmp(product_name, "LePro3") == 0) {
-    LOGD("LePro 3 detected");
-    s->device = DEVICE_LP3;
-    assert(false);
   } else {
     assert(false);
   }
@@ -423,7 +419,7 @@ static void set_exposure(CameraState *s, float exposure_frac, float gain_frac) {
     s->cur_gain_frac = gain_frac;
   }
 
-  LOGD("set exposure: %f %f - %d", exposure_frac, gain_frac, err);
+  //LOGD("set exposure: %f %f - %d", exposure_frac, gain_frac, err);
 }
 
 static void do_autoexposure(CameraState *s, float grey_frac) {
@@ -431,7 +427,7 @@ static void do_autoexposure(CameraState *s, float grey_frac) {
 
   float new_exposure = s->cur_exposure_frac;
   new_exposure *= pow(1.05, (target_grey - grey_frac) / 0.05 );
-  LOGD("diff %f: %f to %f", target_grey - grey_frac, s->cur_exposure_frac, new_exposure);
+  //LOGD("diff %f: %f to %f", target_grey - grey_frac, s->cur_exposure_frac, new_exposure);
 
   float new_gain = s->cur_gain_frac;
   if (new_exposure < 0.10) {
@@ -1708,12 +1704,12 @@ void actuator_move(CameraState *s, uint16_t target) {
     .ringing_params = &actuator_ringing_params,
   };
   err = ioctl(s->actuator_fd, VIDIOC_MSM_ACTUATOR_CFG, &actuator_cfg_data);
-  LOGD("actuator move focus: %d", err);
+  //LOGD("actuator move focus: %d", err);
 
   s->cur_step_pos = dest_step_pos;
   s->cur_lens_pos = actuator_cfg_data.cfg.move.curr_lens_pos;
 
-  LOGD("step %d   target: %d  lens pos: %d", dest_step_pos, target, s->cur_lens_pos);
+  //LOGD("step %d   target: %d  lens pos: %d", dest_step_pos, target, s->cur_lens_pos);
 }
 
 static void parse_autofocus(CameraState *s, uint8_t *d) {
@@ -1778,12 +1774,12 @@ static void do_autofocus(CameraState *s) {
 
   int target = clamp(s->lens_true_pos - sag, dac_down, dac_up);
 
-  char debug[4096];
+  /*char debug[4096];
   char *pdebug = debug;
   pdebug += sprintf(pdebug, "focus ");
   for (int i = 0; i < NUM_FOCUS; i++) pdebug += sprintf(pdebug, "%2x(%4d) ", s->confidence[i], s->focus[i]);
   pdebug += sprintf(pdebug, "  err: %7.2f  offset: %6.2f sag: %6.2f lens_true_pos: %6.2f  cur_lens_pos: %4d->%4d", err * focus_kp, offset, sag, s->lens_true_pos, s->cur_lens_pos, target);
-  LOGD(debug);
+  LOGD(debug);*/
 
   actuator_move(s, target);
 }
@@ -2109,7 +2105,7 @@ static void* ops_thread(void* arg) {
       if (zmq_msg_size(&msg) == sizeof(cmsg)) {
         memcpy(&cmsg, zmq_msg_data(&msg), zmq_msg_size(&msg));
 
-        LOGD("cameraops %d", cmsg.type);
+        //LOGD("cameraops %d", cmsg.type);
 
         if (cmsg.type == CAMERA_MSG_AUTOEXPOSE) {
           if (cmsg.camera_num == 0) {

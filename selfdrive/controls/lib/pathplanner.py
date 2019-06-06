@@ -20,10 +20,10 @@ def calc_states_after_delay(states, v_ego, steer_angle, curvature_factor, steer_
 class PathPlanner(object):
   def __init__(self, CP):
     self.MP = ModelParser()
-    
+
     self.l_poly = [0., 0., 0., 0.]
     self.r_poly = [0., 0., 0., 0.]
-    
+
     self.last_cloudlog_t = 0
 
     context = zmq.Context()
@@ -49,13 +49,13 @@ class PathPlanner(object):
     self.angle_steers_des_prev = 0.0
     self.angle_steers_des_time = 0.0
 
-  def update(self, rcv_times, CP, VM, CS, md, live100, live_parameters):
+  def update(self, rcv_times, CP, VM, CS, md, controls_state, live_parameters):
     v_ego = CS.carState.vEgo
     angle_steers = CS.carState.steeringAngle
-    active = live100.live100.active
+    active = controls_state.controlsState.active
 
     angle_offset_average = live_parameters.liveParameters.angleOffsetAverage
-    angle_offset_bias = live100.live100.angleModelBias + angle_offset_average
+    angle_offset_bias = controls_state.controlsState.angleModelBias + angle_offset_average
 
     self.MP.update(v_ego, md)
 
@@ -123,6 +123,7 @@ class PathPlanner(object):
     plan_send.pathPlan.angleOffset = float(angle_offset_average)
     plan_send.pathPlan.valid = bool(plan_valid)
     plan_send.pathPlan.paramsValid = bool(live_parameters.liveParameters.valid)
+    plan_send.pathPlan.sensorValid = bool(live_parameters.liveParameters.sensorValid)
     plan_send.pathPlan.modelValid = bool(not model_dead)
 
     self.plan.send(plan_send.to_bytes())
