@@ -14,8 +14,6 @@ pipeline {
       steps {
         timeout(time: 60, unit: 'MINUTES') {
           script {
-            sh 'git clone --no-checkout --depth 1 git@github.com:commaai/xx.git || true'
-            sh 'cd xx && git fetch origin && git checkout origin/master -- pandaextra && cd ..' // Needed for certs for panda flashing
             sh 'git archive -v -o panda.tar.gz --format=tar.gz HEAD'
             dockerImage = docker.build("${env.DOCKER_IMAGE_TAG}")
           }

@@ -1,5 +1,35 @@
 // IRQs: OTG_FS
 
+typedef union {
+  uint16_t w;
+  struct BW {
+    uint8_t msb;
+    uint8_t lsb;
+  }
+  bw;
+}
+uint16_t_uint8_t;
+
+typedef union _USB_Setup {
+  uint32_t d8[2];
+  struct _SetupPkt_Struc
+  {
+    uint8_t           bmRequestType;
+    uint8_t           bRequest;
+    uint16_t_uint8_t  wValue;
+    uint16_t_uint8_t  wIndex;
+    uint16_t_uint8_t  wLength;
+  } b;
+}
+USB_Setup_TypeDef;
+
+void usb_init();
+int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, int hardwired);
+int usb_cb_ep1_in(uint8_t *usbdata, int len, int hardwired);
+void usb_cb_ep2_out(uint8_t *usbdata, int len, int hardwired);
+void usb_cb_ep3_out(uint8_t *usbdata, int len, int hardwired);
+void usb_cb_enumeration_complete();
+
 // **** supporting defines ****
 
 typedef struct
@@ -186,17 +216,10 @@ uint16_t string_manufacturer_desc[] = {
   'c', 'o', 'm', 'm', 'a', '.', 'a', 'i'
 };
 
-#ifdef PANDA
 uint16_t string_product_desc[] = {
   STRING_DESCRIPTOR_HEADER(5),
   'p', 'a', 'n', 'd', 'a'
 };
-#else
-uint16_t string_product_desc[] = {
-  STRING_DESCRIPTOR_HEADER(5),
-  'N', 'E', 'O', 'v', '1'
-};
-#endif
 
 // default serial number when we're not a panda
 uint16_t string_serial_desc[] = {
@@ -210,7 +233,6 @@ uint16_t string_configuration_desc[] = {
   '0', '1' // "01"
 };
 
-#ifdef PANDA
 // WCID (auto install WinUSB driver)
 // https://github.com/pbatard/libwdi/wiki/WCID-Devices
 // https://docs.microsoft.com/en-us/windows-hardware/drivers/usbcon/winusb-installation#automatic-installation-of--winusb-without-an-inf-file
@@ -359,8 +381,6 @@ uint8_t winusb_20_desc[WINUSB_PLATFORM_DESCRIPTOR_LENGTH] = {
     '-', 0x00, '2', 0x00, 'a', 0x00, 'e', 0x00, '5', 0x00, '7', 0x00, 'a', 0x00, '5', 0x00, // 64
     '1', 0x00, 'a', 0x00, 'd', 0x00, 'e', 0x00, '9', 0x00, '}', 0x00, 0x00, 0x00 // 78 bytes
 };
-
-#endif
 
 // current packet
 USB_Setup_TypeDef setup;
@@ -550,7 +570,7 @@ void usb_setup() {
               USB_WritePacket((uint8_t*)string_product_desc, min(sizeof(string_product_desc), setup.b.wLength.w), 0);
               break;
             case STRING_OFFSET_ISERIAL:
-              #ifdef PANDA
+              #ifdef UID_BASE
                 resp[0] = 0x02 + 12*4;
                 resp[1] = 0x03;
 
@@ -568,14 +588,12 @@ void usb_setup() {
                 USB_WritePacket((const uint8_t *)string_serial_desc, min(sizeof(string_serial_desc), setup.b.wLength.w), 0);
               #endif
               break;
-            #ifdef PANDA
             case STRING_OFFSET_ICONFIGURATION:
               USB_WritePacket((uint8_t*)string_configuration_desc, min(sizeof(string_configuration_desc), setup.b.wLength.w), 0);
               break;
             case 238:
               USB_WritePacket((uint8_t*)string_238_desc, min(sizeof(string_238_desc), setup.b.wLength.w), 0);
               break;
-            #endif
             default:
               // nothing
               USB_WritePacket(0, 0, 0);
@@ -583,12 +601,10 @@ void usb_setup() {
           }
           USBx_OUTEP(0)->DOEPCTL |= USB_OTG_DOEPCTL_CNAK;
           break;
-        #ifdef PANDA
         case USB_DESC_TYPE_BINARY_OBJECT_STORE:
           USB_WritePacket(binary_object_store_desc, min(sizeof(binary_object_store_desc), setup.b.wLength.w), 0);
           USBx_OUTEP(0)->DOEPCTL |= USB_OTG_DOEPCTL_CNAK;
           break;
-        #endif
         default:
           // nothing here?
           USB_WritePacket(0, 0, 0);
@@ -609,7 +625,6 @@ void usb_setup() {
       USB_WritePacket(0, 0, 0);
       USBx_OUTEP(0)->DOEPCTL |= USB_OTG_DOEPCTL_CNAK;
       break;
-    #ifdef PANDA
     case WEBUSB_VENDOR_CODE:
       switch (setup.b.wIndex.w) {
         case WEBUSB_REQ_GET_URL:
@@ -641,7 +656,6 @@ void usb_setup() {
           USB_WritePacket_EP0(0, 0);
       }
       break;
-    #endif
     default:
       resp_len = usb_cb_control_msg(&setup, resp, 1);
       USB_WritePacket(resp, min(resp_len, setup.b.wLength.w), 0);

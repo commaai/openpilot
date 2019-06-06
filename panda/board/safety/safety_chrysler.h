@@ -127,9 +127,6 @@ static int chrysler_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 
 static void chrysler_init(int16_t param) {
   chrysler_camera_detected = 0;
-  #ifdef PANDA
-    lline_relay_release();
-  #endif
 }
 
 static int chrysler_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
@@ -153,5 +150,4 @@ const safety_hooks chrysler_hooks = {
   .tx_lin = nooutput_tx_lin_hook,
   .ignition = default_ign_hook,
   .fwd = chrysler_fwd_hook,
-  .relay = nooutput_relay_hook,
 };
