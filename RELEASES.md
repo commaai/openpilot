@@ -1,3 +1,13 @@
+Version 0.5.13 (2019-05-31)
+==========================
+ * Reduce panda power consumption by 70%, down to 80mW, when car is off (not for GM)
+ * Reduce EON power consumption by 40%, down to 1100mW, when car is off
+ * Reduce CPU utilization by 20% and improve stability
+ * Temporarily remove mapd functionalities to improve stability
+ * Add openpilot record-only mode for unsupported cars
+ * Synchronize controlsd to boardd to reduce latency
+ * Remove panda support for Subaru giraffe
+
 Version 0.5.12 (2019-05-16)
 ==========================
  * Improve lateral control for the Prius and Prius Prime

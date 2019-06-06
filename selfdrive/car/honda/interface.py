@@ -12,11 +12,6 @@ from selfdrive.car.honda.carstate import CarState, get_can_parser, get_cam_can_p
 from selfdrive.car.honda.values import CruiseButtons, CAR, HONDA_BOSCH, AUDIO_HUD, VISUAL_HUD
 from selfdrive.controls.lib.planner import _A_CRUISE_MAX_V_FOLLOWING
 
-try:
-  from selfdrive.car.honda.carcontroller import CarController
-except ImportError:
-  CarController = None
-
 
 # msgs sent for steering controller by camera module on can 0.
 # those messages are mutually exclusive on CRV and non-CRV cars
@@ -80,7 +75,7 @@ def get_compute_gb_acura():
 
 
 class CarInterface(object):
-  def __init__(self, CP, sendcan=None):
+  def __init__(self, CP, CarController):
     self.CP = CP
 
     self.frame = 0
@@ -98,10 +93,9 @@ class CarInterface(object):
     self.CS = CarState(CP)
     self.VM = VehicleModel(CP)
 
-    # sending if read only is False
-    if sendcan is not None:
-      self.sendcan = sendcan
-      self.CC = CarController(self.cp.dbc_name, CP.enableCamera)
+    self.CC = None
+    if CarController is not None:
+      self.CC = CarController(self.cp.dbc_name)
 
     if self.CS.CP.carFingerprint == CAR.ACURA_ILX:
       self.compute_gb = get_compute_gb_acura()
@@ -141,11 +135,12 @@ class CarInterface(object):
     return float(max(max_accel, a_target / A_ACC_MAX)) * min(speedLimiter, accelLimiter)
 
   @staticmethod
-  def get_params(candidate, fingerprint):
+  def get_params(candidate, fingerprint, vin=""):
 
     ret = car.CarParams.new_message()
     ret.carName = "honda"
     ret.carFingerprint = candidate
+    ret.carVin = vin
 
     if candidate in HONDA_BOSCH:
       ret.safetyModel = car.CarParams.SafetyModels.hondaBosch
@@ -391,9 +386,9 @@ class CarInterface(object):
   def update(self, c):
     # ******************* do can recv *******************
     canMonoTimes = []
-
-    self.cp.update(int(sec_since_boot() * 1e9), False)
-    self.cp_cam.update(int(sec_since_boot() * 1e9), False)
+    can_valid, _ = self.cp.update(int(sec_since_boot() * 1e9), True)
+    cam_valid, _ = self.cp_cam.update(int(sec_since_boot() * 1e9), False)
+    can_rcv_error = not can_valid or not cam_valid
 
     self.CS.update(self.cp, self.cp_cam)
 
@@ -503,10 +498,11 @@ class CarInterface(object):
     events = []
     if not self.CS.can_valid:
       self.can_invalid_count += 1
-      if self.can_invalid_count >= 5:
-        events.append(create_event('commIssue', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     else:
       self.can_invalid_count = 0
+
+    if can_rcv_error or self.can_invalid_count >= 5:
+      events.append(create_event('commIssue', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
 
     if not self.CS.cam_can_valid and self.CP.enableCamera:
       self.cam_can_invalid_count += 1
@@ -612,17 +608,18 @@ class CarInterface(object):
 
     pcm_accel = int(clip(c.cruiseControl.accelOverride, 0, 1) * 0xc6)
 
-    self.CC.update(self.sendcan, c.enabled, self.CS, self.frame,
-                   c.actuators,
-                   c.cruiseControl.speedOverride,
-                   c.cruiseControl.override,
-                   c.cruiseControl.cancel,
-                   pcm_accel,
-                   hud_v_cruise,
-                   c.hudControl.lanesVisible,
-                   hud_show_car=c.hudControl.leadVisible,
-                   hud_alert=hud_alert,
-                   snd_beep=snd_beep,
-                   snd_chime=snd_chime)
+    can_sends = self.CC.update(c.enabled, self.CS, self.frame,
+                               c.actuators,
+                               c.cruiseControl.speedOverride,
+                               c.cruiseControl.override,
+                               c.cruiseControl.cancel,
+                               pcm_accel,
+                               hud_v_cruise,
+                               c.hudControl.lanesVisible,
+                               hud_show_car=c.hudControl.leadVisible,
+                               hud_alert=hud_alert,
+                               snd_beep=snd_beep,
+                               snd_chime=snd_chime)
 
     self.frame += 1
+    return can_sends

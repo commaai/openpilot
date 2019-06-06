@@ -7,14 +7,9 @@ from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.chrysler.carstate import CarState, get_can_parser, get_camera_parser
 from selfdrive.car.chrysler.values import ECU, check_ecu_msgs, CAR
 
-try:
-  from selfdrive.car.chrysler.carcontroller import CarController
-except ImportError:
-  CarController = None
-
 
 class CarInterface(object):
-  def __init__(self, CP, sendcan=None):
+  def __init__(self, CP, CarController):
     self.CP = CP
     self.VM = VehicleModel(CP)
 
@@ -30,9 +25,8 @@ class CarInterface(object):
     self.cp = get_can_parser(CP)
     self.cp_cam = get_camera_parser(CP)
 
-    # sending if read only is False
-    if sendcan is not None:
-      self.sendcan = sendcan
+    self.CC = None
+    if CarController is not None:
       self.CC = CarController(self.cp.dbc_name, CP.carFingerprint, CP.enableCamera)
 
   @staticmethod
@@ -44,7 +38,7 @@ class CarInterface(object):
     return 1.0
 
   @staticmethod
-  def get_params(candidate, fingerprint):
+  def get_params(candidate, fingerprint, vin=""):
 
     # kg of standard extra cargo to count for drive, gas, etc...
     std_cargo = 136
@@ -53,6 +47,7 @@ class CarInterface(object):
 
     ret.carName = "chrysler"
     ret.carFingerprint = candidate
+    ret.carVin = vin
 
     ret.safetyModel = car.CarParams.SafetyModels.chrysler
 
@@ -140,8 +135,10 @@ class CarInterface(object):
   def update(self, c):
     # ******************* do can recv *******************
     canMonoTimes = []
-    self.cp.update(int(sec_since_boot() * 1e9), False)
-    self.cp_cam.update(int(sec_since_boot() * 1e9), False)
+    can_valid, _ = self.cp.update(int(sec_since_boot() * 1e9), True)
+    cam_valid, _ = self.cp_cam.update(int(sec_since_boot() * 1e9), False)
+    can_rcv_error = not can_valid or not cam_valid
+
     self.CS.update(self.cp, self.cp_cam)
 
     # create message
@@ -217,10 +214,12 @@ class CarInterface(object):
     events = []
     if not self.CS.can_valid:
       self.can_invalid_count += 1
-      if self.can_invalid_count >= 5:
-        events.append(create_event('commIssue', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     else:
       self.can_invalid_count = 0
+
+    if can_rcv_error or self.can_invalid_count >= 5:
+      events.append(create_event('commIssue', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
+
     if not (ret.gearShifter in ('drive', 'low')):
       events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if ret.doorOpen:
@@ -263,11 +262,11 @@ class CarInterface(object):
   def apply(self, c):
 
     if (self.CS.frame == -1):
-      return False # if we haven't seen a frame 220, then do not update.
+      return [] # if we haven't seen a frame 220, then do not update.
 
     self.frame = self.CS.frame
-    self.CC.update(self.sendcan, c.enabled, self.CS, self.frame,
-                   c.actuators, c.cruiseControl.cancel, c.hudControl.visualAlert,
-                   c.hudControl.audibleAlert)
+    can_sends = self.CC.update(c.enabled, self.CS, self.frame,
+                               c.actuators, c.cruiseControl.cancel, c.hudControl.visualAlert,
+                               c.hudControl.audibleAlert)
 
-    return False
+    return can_sends

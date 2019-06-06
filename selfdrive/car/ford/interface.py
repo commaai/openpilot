@@ -8,14 +8,9 @@ from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.ford.carstate import CarState, get_can_parser
 from selfdrive.car.ford.values import MAX_ANGLE
 
-try:
-  from selfdrive.car.ford.carcontroller import CarController
-except ImportError:
-  CarController = None
-
 
 class CarInterface(object):
-  def __init__(self, CP, sendcan=None):
+  def __init__(self, CP, CarController):
     self.CP = CP
     self.VM = VehicleModel(CP)
 
@@ -30,9 +25,8 @@ class CarInterface(object):
 
     self.cp = get_can_parser(CP)
 
-    # sending if read only is False
-    if sendcan is not None:
-      self.sendcan = sendcan
+    self.CC = None
+    if CarController is not None:
       self.CC = CarController(self.cp.dbc_name, CP.enableCamera, self.VM)
 
   @staticmethod
@@ -44,7 +38,7 @@ class CarInterface(object):
     return 1.0
 
   @staticmethod
-  def get_params(candidate, fingerprint):
+  def get_params(candidate, fingerprint, vin=""):
 
     # kg of standard extra cargo to count for drive, gas, etc...
     std_cargo = 136
@@ -53,6 +47,7 @@ class CarInterface(object):
 
     ret.carName = "ford"
     ret.carFingerprint = candidate
+    ret.carVin = vin
 
     ret.safetyModel = car.CarParams.SafetyModels.ford
 
@@ -138,7 +133,8 @@ class CarInterface(object):
     # ******************* do can recv *******************
     canMonoTimes = []
 
-    self.cp.update(int(sec_since_boot() * 1e9), False)
+    can_valid, _ = self.cp.update(int(sec_since_boot() * 1e9), True)
+    can_rcv_error = not can_valid
 
     self.CS.update(self.cp)
 
@@ -174,10 +170,11 @@ class CarInterface(object):
     events = []
     if not self.CS.can_valid:
       self.can_invalid_count += 1
-      if self.can_invalid_count >= 5:
-        events.append(create_event('commIssue', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     else:
       self.can_invalid_count = 0
+
+    if can_rcv_error or self.can_invalid_count >= 5:
+      events.append(create_event('commIssue', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
 
     if self.CS.steer_error:
       events.append(create_event('steerUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
@@ -212,8 +209,8 @@ class CarInterface(object):
   # to be called @ 100hz
   def apply(self, c):
 
-    self.CC.update(self.sendcan, c.enabled, self.CS, self.frame, c.actuators,
-                   c.hudControl.visualAlert, c.cruiseControl.cancel)
+    can_sends = self.CC.update(c.enabled, self.CS, self.frame, c.actuators,
+                               c.hudControl.visualAlert, c.cruiseControl.cancel)
 
     self.frame += 1
-    return False
+    return can_sends
