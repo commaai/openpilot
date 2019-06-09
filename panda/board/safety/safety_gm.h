@@ -8,7 +8,7 @@
 //      brake rising edge
 //      brake > 0mph
 
-const int GM_MAX_STEER = 255;
+const int GM_MAX_STEER = 300;
 const int GM_MAX_RT_DELTA = 128;          // max delta torque allowed for real time checks
 const int32_t GM_RT_INTERVAL = 250000;    // 250ms between real time checks
 const int GM_MAX_RATE_UP = 7;
@@ -22,7 +22,7 @@ const int GM_MAX_BRAKE = 350;
 int gm_brake_prev = 0;
 int gm_gas_prev = 0;
 int gm_speed = 0;
-// silence everything if stock ECUs are still online
+// silence everything if stock car control ECUs are still online
 int gm_ascm_detected = 0;
 int gm_ignition_started = 0;
 int gm_rt_torque_last = 0;
@@ -63,8 +63,11 @@ static void gm_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     gm_speed = to_push->RDLR & 0xFFFF;
   }
 
-  // check if stock ASCM ECU is still online
-  if (bus_number == 0 && addr == 715) {
+  // Check if ASCM or LKA camera are online
+  // on powertrain bus.
+  // 384 = ASCMLKASteeringCmd
+  // 715 = ASCMGasRegenCmd
+  if (bus_number == 0 && (addr == 384 || addr == 715)) {
     gm_ascm_detected = 1;
     controls_allowed = 0;
   }
@@ -98,7 +101,7 @@ static void gm_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   // exit controls on rising edge of gas press
   if (addr == 417) {
     int gas = to_push->RDHR & 0xFF0000;
-    if (gas && !gm_gas_prev) {
+    if (gas && !gm_gas_prev && long_controls_allowed) {
       controls_allowed = 0;
     }
     gm_gas_prev = gas;
@@ -145,7 +148,7 @@ static int gm_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
     int rdlr = to_send->RDLR;
     int brake = ((rdlr & 0xF) << 8) + ((rdlr & 0xFF00) >> 8);
     brake = (0x1000 - brake) & 0xFFF;
-    if (current_controls_allowed) {
+    if (current_controls_allowed && long_controls_allowed) {
       if (brake > GM_MAX_BRAKE) return 0;
     } else {
       if (brake != 0) return 0;
@@ -209,7 +212,7 @@ static int gm_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
     int rdlr = to_send->RDLR;
     int gas_regen = ((rdlr & 0x7F0000) >> 11) + ((rdlr & 0xF8000000) >> 27);
     int apply = rdlr & 1;
-    if (current_controls_allowed) {
+    if (current_controls_allowed && long_controls_allowed) {
       if (gas_regen > GM_MAX_GAS) return 0;
     } else {
       // Disabled message is !engaed with gas
@@ -222,11 +225,6 @@ static int gm_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   return true;
 }
 
-static int gm_tx_lin_hook(int lin_num, uint8_t *data, int len) {
-  // LIN is not used in Volt
-  return false;
-}
-
 static void gm_init(int16_t param) {
   controls_allowed = 0;
   gm_ignition_started = 0;
@@ -236,16 +234,11 @@ static int gm_ign_hook() {
   return gm_ignition_started;
 }
 
-static int gm_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
-  return -1;
-}
-
 const safety_hooks gm_hooks = {
   .init = gm_init,
   .rx = gm_rx_hook,
   .tx = gm_tx_hook,
-  .tx_lin = gm_tx_lin_hook,
+  .tx_lin = nooutput_tx_lin_hook,
   .ignition = gm_ign_hook,
-  .fwd = gm_fwd_hook,
+  .fwd = nooutput_fwd_hook,
 };
-

@@ -44,19 +44,14 @@ BO_ 401 GEARBOX: 8 PCM
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
 
-BO_ 420 VSA_STATUS: 8 VSA
- SG_ USER_BRAKE : 7|16@0+ (0.015625,-1.609375) [0|1000] "" EON
- SG_ ESP_DISABLED : 28|1@0+ (1,0) [0|1] "" EON
- SG_ BRAKE_HOLD_ACTIVE : 46|1@0+ (1,0) [0|1] "" EON
- SG_ BRAKE_HOLD_ENABLED : 45|1@0+ (1,0) [0|1] "" EON
- SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
- SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
-
 BO_ 450 EPB_STATUS: 8 EPB
  SG_ EPB_ACTIVE : 3|1@0+ (1,0) [0|1] "" EON
  SG_ EPB_STATE : 29|2@0+ (1,0) [0|3] "" EON
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
+
+BO_ 493 HUD_SETTING: 5 XXX
+ SG_ IMPERIAL_UNIT : 5|1@0+ (1,0) [0|1] "" EON
 
 BO_ 487 BRAKE_PRESSURE: 4 VSA
  SG_ BRAKE_PRESSURE1 : 7|10@0+ (0.015625,-103) [0|1000] "" EON
@@ -126,10 +121,10 @@ BO_ 1302 ODOMETER: 8 XXX
 
 CM_ SG_ 401 GEAR "10 = reverse, 11 = transition";
 CM_ SG_ 420 BRAKE_HOLD_RELATED "On when Brake Hold engaged";
-CM_ SG_ 450 EPB_STATE "3 "engaged" 2 "disengaging" 1 "engaging" 0 "disengaged"";
+CM_ SG_ 450 EPB_STATE "3 \"engaged\" 2 \"disengaging\" 1 \"engaging\" 0 \"disengaged\"";
 CM_ SG_ 806 REVERSE_LIGHT "Might be reverse gear selected and not the lights";
 
-VAL_ 399 STEER_STATUS 5 "fault" 4 "no_torque_alert_2" 2 "no_torque_alert_1" 0 "normal" ;
+VAL_ 399 STEER_STATUS 6 "tmp_fault" 5 "fault_1" 4 "no_torque_alert_2" 3 "low_speed_lockout" 2 "no_torque_alert_1" 0 "normal" ;
 VAL_ 401 GEAR_SHIFTER 32 "L" 16 "S" 8 "D" 4 "N" 2 "R" 1 "P" ;
 VAL_ 401 GEAR 7 "L" 10 "S" 4 "D" 3 "N" 2 "R" 1 "P" ;
 VAL_ 450 EPB_STATE 3 "engaged" 2 "disengaging" 1 "engaging" 0 "disengaged" ;

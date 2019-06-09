@@ -1,11 +1,9 @@
-import os
-import sys
-import platform
 import numpy as np
 
 from common.numpy_fast import clip, interp
 from common.kalman.simple_kalman import KF1D
 
+_LEAD_ACCEL_TAU = 1.5
 NO_FUSION_SCORE = 100 # bad default fusion score
 
 # radar tracks
@@ -26,11 +24,13 @@ v_ego_stationary = 4.   # no stationary object flag below this speed
 
 # Lead Kalman Filter params
 _VLEAD_A = [[1.0, ts], [0.0, 1.0]]
-_VLEAD_C = [[1.0, 0.0]]
+_VLEAD_C = [1.0, 0.0]
 #_VLEAD_Q = np.matrix([[10., 0.0], [0.0, 100.]])
 #_VLEAD_R = 1e3
 #_VLEAD_K = np.matrix([[ 0.05705578], [ 0.03073241]])
 _VLEAD_K = [[ 0.1988689 ], [ 0.28555364]]
+
+RDR_TO_LDR = 2.7
 
 
 class Track(object):
@@ -60,6 +60,7 @@ class Track(object):
 
     if not self.initted:
       self.initted = True
+      self.aLeadTau = _LEAD_ACCEL_TAU
       self.cnt = 1
       self.vision_cnt = 0
       self.vision = False
@@ -92,6 +93,12 @@ class Track(object):
 
     self.vision_score = NO_FUSION_SCORE
 
+    # Learn if constant acceleration
+    if abs(self.aLeadK) < 0.5:
+      self.aLeadTau = _LEAD_ACCEL_TAU
+    else:
+      self.aLeadTau *= 0.9
+
   def update_vision_score(self, dist_to_vision, rel_speed_diff):
     # rel speed is very hard to estimate from vision
     if dist_to_vision < 4.0 and rel_speed_diff < 10.:
@@ -110,30 +117,10 @@ class Track(object):
     # Weigh y higher since radar is inaccurate in this dimension
     return [self.dRel, self.yRel*2, self.vRel]
 
-# ******************* Cluster *******************
-
-if platform.machine() == 'aarch64':
-  for x in sys.path:
-    pp = os.path.join(x, "phonelibs/hierarchy/lib")
-    if os.path.isfile(os.path.join(pp, "_hierarchy.so")):
-      sys.path.append(pp)
-      break
-  import _hierarchy  #pylint: disable=import-error
-else:
-  from scipy.cluster import _hierarchy
-
-def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
-  # supersimplified function to get fast clustering. Got it from scipy
-  Z = np.asarray(Z, order='c')
-  n = Z.shape[0] + 1
-  T = np.zeros((n,), dtype='i')
-  _hierarchy.cluster_dist(Z, T, float(t), int(n))
-  return T
-
-RDR_TO_LDR = 2.7
 
 def mean(l):
-  return sum(l)/len(l)
+  return sum(l) / len(l)
+
 
 class Cluster(object):
   def __init__(self):
@@ -181,6 +168,10 @@ class Cluster(object):
     return mean([t.aLeadK for t in self.tracks])
 
   @property
+  def aLeadTau(self):
+    return mean([t.aLeadTau for t in self.tracks])
+
+  @property
   def vision(self):
     return any([t.vision for t in self.tracks])
 
@@ -200,7 +191,7 @@ class Cluster(object):
   def oncoming(self):
     return all([t.oncoming for t in self.tracks])
 
-  def toLive20(self):
+  def toRadarState(self):
     return {
       "dRel": float(self.dRel) - RDR_TO_LDR,
       "yRel": float(self.yRel),
@@ -213,6 +204,7 @@ class Cluster(object):
       "aLeadK": float(self.aLeadK),
       "status": True,
       "fcw": self.is_potential_fcw(),
+      "aLeadTau": float(self.aLeadTau)
     }
 
   def __str__(self):

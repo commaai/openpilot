@@ -1,0 +1,182 @@
+'\" t
+.\"     Title: zmq_poll
+.\"    Author: [see the "AUTHORS" section]
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 02/18/2017
+.\"    Manual: 0MQ Manual
+.\"    Source: 0MQ 4.2.2
+.\"  Language: English
+.\"
+.TH "ZMQ_POLL" "3" "02/18/2017" "0MQ 4\&.2\&.2" "0MQ Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+zmq_poll \- input/output multiplexing
+.SH "SYNOPSIS"
+.sp
+\fBint zmq_poll (zmq_pollitem_t \fR\fB\fI*items\fR\fR\fB, int \fR\fB\fInitems\fR\fR\fB, long \fR\fB\fItimeout\fR\fR\fB);\fR
+.SH "DESCRIPTION"
+.sp
+The \fIzmq_poll()\fR function provides a mechanism for applications to multiplex input/output events in a level\-triggered fashion over a set of sockets\&. Each member of the array pointed to by the \fIitems\fR argument is a \fBzmq_pollitem_t\fR structure\&. The \fInitems\fR argument specifies the number of items in the \fIitems\fR array\&. The \fBzmq_pollitem_t\fR structure is defined as follows:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+typedef struct
+{
+    void \fI*socket\fR;
+    int \fIfd\fR;
+    short \fIevents\fR;
+    short \fIrevents\fR;
+} zmq_pollitem_t;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+For each \fBzmq_pollitem_t\fR item, \fIzmq_poll()\fR shall examine either the 0MQ socket referenced by \fIsocket\fR \fBor\fR the standard socket specified by the file descriptor \fIfd\fR, for the event(s) specified in \fIevents\fR\&. If both \fIsocket\fR and \fIfd\fR are set in a single \fBzmq_pollitem_t\fR, the 0MQ socket referenced by \fIsocket\fR shall take precedence and the value of \fIfd\fR shall be ignored\&.
+.sp
+For each \fBzmq_pollitem_t\fR item, \fIzmq_poll()\fR shall first clear the \fIrevents\fR member, and then indicate any requested events that have occurred by setting the bit corresponding to the event condition in the \fIrevents\fR member\&.
+.sp
+If none of the requested events have occurred on any \fBzmq_pollitem_t\fR item, \fIzmq_poll()\fR shall wait \fItimeout\fR milliseconds for an event to occur on any of the requested items\&. If the value of \fItimeout\fR is 0, \fIzmq_poll()\fR shall return immediately\&. If the value of \fItimeout\fR is \-1, \fIzmq_poll()\fR shall block indefinitely until a requested event has occurred on at least one \fBzmq_pollitem_t\fR\&.
+.sp
+The \fIevents\fR and \fIrevents\fR members of \fBzmq_pollitem_t\fR are bit masks constructed by OR\(cqing a combination of the following event flags:
+.PP
+\fBZMQ_POLLIN\fR
+.RS 4
+For 0MQ sockets, at least one message may be received from the
+\fIsocket\fR
+without blocking\&. For standard sockets this is equivalent to the
+\fIPOLLIN\fR
+flag of the
+\fIpoll()\fR
+system call and generally means that at least one byte of data may be read from
+\fIfd\fR
+without blocking\&.
+.RE
+.PP
+\fBZMQ_POLLOUT\fR
+.RS 4
+For 0MQ sockets, at least one message may be sent to the
+\fIsocket\fR
+without blocking\&. For standard sockets this is equivalent to the
+\fIPOLLOUT\fR
+flag of the
+\fIpoll()\fR
+system call and generally means that at least one byte of data may be written to
+\fIfd\fR
+without blocking\&.
+.RE
+.PP
+\fBZMQ_POLLERR\fR
+.RS 4
+For standard sockets, this flag is passed through
+\fIzmq_poll()\fR
+to the underlying
+\fIpoll()\fR
+system call and generally means that some sort of error condition is present on the socket specified by
+\fIfd\fR\&. For 0MQ sockets this flag has no effect if set in
+\fIevents\fR, and shall never be returned in
+\fIrevents\fR
+by
+\fIzmq_poll()\fR\&.
+.RE
+.PP
+\fBZMQ_POLLPRI\fR
+.RS 4
+For 0MQ sockets this flags is of no use\&. For standard sockets this means there is urgent data to read\&. Refer to the POLLPRI flag for more informations\&. For file descriptor, refer to your use case: as an example, GPIO interrupts are signaled through a POLLPRI event\&. This flag has no effect on Windows\&.
+.RE
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+The \fIzmq_poll()\fR function may be implemented or emulated using operating system interfaces other than \fIpoll()\fR, and as such may be subject to the limits of those interfaces in ways not defined in this documentation\&.
+.sp .5v
+.RE
+.SH "RETURN VALUE"
+.sp
+Upon successful completion, the \fIzmq_poll()\fR function shall return the number of \fBzmq_pollitem_t\fR structures with events signaled in \fIrevents\fR or 0 if no events have been signaled\&. Upon failure, \fIzmq_poll()\fR shall return \-1 and set \fIerrno\fR to one of the values defined below\&.
+.SH "ERRORS"
+.PP
+\fBETERM\fR
+.RS 4
+At least one of the members of the
+\fIitems\fR
+array refers to a
+\fIsocket\fR
+whose associated 0MQ
+\fIcontext\fR
+was terminated\&.
+.RE
+.PP
+\fBEFAULT\fR
+.RS 4
+The provided
+\fIitems\fR
+was not valid (NULL)\&.
+.RE
+.PP
+\fBEINTR\fR
+.RS 4
+The operation was interrupted by delivery of a signal before any events were available\&.
+.RE
+.SH "EXAMPLE"
+.PP
+\fBPolling indefinitely for input events on both a 0MQ socket and a standard socket.\fR. 
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+zmq_pollitem_t items [2];
+/* First item refers to 0MQ socket \*(Aqsocket\*(Aq */
+items[0]\&.socket = socket;
+items[0]\&.events = ZMQ_POLLIN;
+/* Second item refers to standard socket \*(Aqfd\*(Aq */
+items[1]\&.socket = NULL;
+items[1]\&.fd = fd;
+items[1]\&.events = ZMQ_POLLIN;
+/* Poll for events indefinitely */
+int rc = zmq_poll (items, 2, \-1);
+assert (rc >= 0);
+/* Returned events will be stored in items[]\&.revents */
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "SEE ALSO"
+.sp
+\fBzmq_socket\fR(3) \fBzmq_send\fR(3) \fBzmq_recv\fR(3) \fBzmq\fR(7)
+.sp
+Your operating system documentation for the \fIpoll()\fR system call\&.
+.SH "AUTHORS"
+.sp
+This page was written by the 0MQ community\&. To make a change please read the 0MQ Contribution Policy at \m[blue]\fBhttp://www\&.zeromq\&.org/docs:contributing\fR\m[]\&.

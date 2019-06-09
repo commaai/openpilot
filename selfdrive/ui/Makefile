@@ -10,8 +10,8 @@ WARN_FLAGS = -Werror=implicit-function-declaration \
              -Werror=return-type \
              -Werror=format-extra-args
 
-CFLAGS = -std=gnu11 -g -fPIC -O2 $(WARN_FLAGS)
-CXXFLAGS = -std=c++11 -g -fPIC -O2 $(WARN_FLAGS)
+CFLAGS = -std=gnu11 -fPIC -O2 $(WARN_FLAGS)
+CXXFLAGS = -std=c++11 -fPIC -O2 $(WARN_FLAGS)
 
 ZMQ_FLAGS = -I$(PHONELIBS)/zmq/aarch64/include
 ZMQ_LIBS = -L$(PHONELIBS)/zmq/aarch64/lib \
@@ -30,14 +30,18 @@ OPENCL_LIBS = -lgsl -lCB -lOpenCL
 
 OPENGL_LIBS = -lGLESv3
 
+OPENSL_LIBS = -lOpenSLES
+
 FRAMEBUFFER_LIBS = -lutils -lgui -lEGL
 
 CFLAGS += -DQCOM
 CXXFLAGS += -DQCOM
 
-OBJS = ui.o \
+OBJS = slplay.o \
+       ui.o \
        ../common/glutil.o \
        ../common/visionipc.o \
+       ../common/ipc.o \
        ../common/visionimg.o \
        ../common/visionbuf_ion.o \
        ../common/framebuffer.o \
@@ -63,7 +67,16 @@ ui: $(OBJS)
         -lhardware -lui \
         $(OPENGL_LIBS) \
         $(OPENCL_LIBS) \
+        ${OPENSL_LIBS} \
+        -Wl,-rpath=/system/lib64,-rpath=/system/comma/usr/lib \
         -lcutils -lm -llog -lui -ladreno_utils
+
+slplay.o: slplay.c
+	@echo "[ CC ] $@"
+	$(CC) $(CFLAGS) -fPIC \
+	-I../ \
+	$(OPENSL_LIBS) \
+	-c -o '$@' $^
 
 %.o: %.cc
 	@echo "[ CXX ] $@"

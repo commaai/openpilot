@@ -5,6 +5,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.services import service_list
 from selfdrive.swaglog import cloudlog
 import selfdrive.messaging as messaging
+from common.realtime import Ratekeeper
 
 # mocked car interface to work with chffrplus
 TS = 0.01  # 100Hz
@@ -14,9 +15,10 @@ LPG = 2 * 3.1415 * YAW_FR * TS / (1 + 2 * 3.1415 * YAW_FR * TS)
 
 
 class CarInterface(object):
-  def __init__(self, CP, sendcan=None):
+  def __init__(self, CP, CarController):
 
     self.CP = CP
+    self.CC = CarController
 
     cloudlog.debug("Using Mock Car Interface")
     context = zmq.Context()
@@ -30,6 +32,8 @@ class CarInterface(object):
     self.yaw_rate = 0.
     self.yaw_rate_meas = 0.
 
+    self.rk = Ratekeeper(100, print_delay_threshold=2. / 1000)
+
   @staticmethod
   def compute_gb(accel, speed):
     return accel
@@ -39,7 +43,7 @@ class CarInterface(object):
     return 1.0
 
   @staticmethod
-  def get_params(candidate, fingerprint):
+  def get_params(candidate, fingerprint, vin=""):
 
     ret = car.CarParams.new_message()
 
@@ -47,6 +51,7 @@ class CarInterface(object):
     ret.carFingerprint = candidate
 
     ret.safetyModel = car.CarParams.SafetyModels.noOutput
+    ret.openpilotLongitudinalControl = False
 
     # FIXME: hardcoding honda civic 2016 touring params so they can be used to
     # scale unknown params for other cars
@@ -55,8 +60,6 @@ class CarInterface(object):
     ret.wheelbase = 2.70
     ret.centerToFront = ret.wheelbase * 0.5
     ret.steerRatio = 13. # reasonable
-    ret.longPidDeadzoneBP = [0.]
-    ret.longPidDeadzoneV = [0.]
     ret.tireStiffnessFront = 1e6    # very stiff to neglect slip
     ret.tireStiffnessRear = 1e6     # very stiff to neglect slip
     ret.steerRatioRear = 0.
@@ -68,16 +71,19 @@ class CarInterface(object):
     ret.brakeMaxBP = [0.]
     ret.brakeMaxV = [0.]
 
-    ret.longitudinalKpBP = [0.]
-    ret.longitudinalKpV = [0.]
-    ret.longitudinalKiBP = [0.]
-    ret.longitudinalKiV = [0.]
+    ret.longitudinalTuning.kpBP = [0.]
+    ret.longitudinalTuning.kpV = [0.]
+    ret.longitudinalTuning.kiBP = [0.]
+    ret.longitudinalTuning.kiV = [0.]
+    ret.longitudinalTuning.deadzoneBP = [0.]
+    ret.longitudinalTuning.deadzoneV = [0.]
     ret.steerActuatorDelay = 0.
 
     return ret
 
   # returns a car.CarState
   def update(self, c):
+    self.rk.keep_time()
 
     # get basic data from phone and gps since CAN isn't connected
     sensors = messaging.recv_sock(self.sensor)
@@ -119,4 +125,4 @@ class CarInterface(object):
 
   def apply(self, c):
     # in mock no carcontrols
-    return False
+    return []

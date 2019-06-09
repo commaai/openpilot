@@ -1,5 +1,4 @@
 #include <cassert>
-
 #include <string>
 #include <vector>
 #include <utility>
@@ -13,9 +12,26 @@
 
 namespace {
 
+  // this is the same as read_u64_le, but uses uint64_t as in/out
+  uint64_t ReverseBytes(uint64_t x) {
+    return ((x & 0xff00000000000000ull) >> 56) |
+           ((x & 0x00ff000000000000ull) >> 40) |
+           ((x & 0x0000ff0000000000ull) >> 24) |
+           ((x & 0x000000ff00000000ull) >> 8) |
+           ((x & 0x00000000ff000000ull) << 8) |
+           ((x & 0x0000000000ff0000ull) << 24) |
+           ((x & 0x000000000000ff00ull) << 40) |
+           ((x & 0x00000000000000ffull) << 56);
+  }
+
   uint64_t set_value(uint64_t ret, Signal sig, int64_t ival){
-    uint64_t mask = ((1ULL << sig.b2)-1) << sig.bo;
-    uint64_t dat = (ival & ((1ULL << sig.b2)-1)) << sig.bo;
+    int shift = sig.is_little_endian? sig.b1 : sig.bo;
+    uint64_t mask = ((1ULL << sig.b2)-1) << shift;
+    uint64_t dat = (ival & ((1ULL << sig.b2)-1)) << shift;
+    if (sig.is_little_endian) {
+      dat = ReverseBytes(dat);
+      mask = ReverseBytes(mask);
+    }
     ret &= ~mask;
     ret |= dat;
     return ret;
@@ -84,7 +100,7 @@ namespace {
           unsigned int chksm = toyota_checksum(address, ret, message_lookup[address].size);
           ret = set_value(ret, sig, chksm);
         } else {
-          WARN("CHECKSUM signal type not valid\n");
+          //WARN("CHECKSUM signal type not valid\n");
         }
       }
 
@@ -113,4 +129,8 @@ extern "C" {
     return cp->pack(address, std::vector<SignalPackValue>(vals, vals+num_vals), counter);
   }
 
+  uint64_t canpack_pack_vector(void* inst, uint32_t address, const std::vector<SignalPackValue> &signals, int counter) {
+    CANPacker *cp = (CANPacker*)inst;
+    return cp->pack(address, signals, counter);
+  }
 }

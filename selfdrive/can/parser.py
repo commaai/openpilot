@@ -4,8 +4,12 @@ import numbers
 
 from selfdrive.can.libdbc_py import libdbc, ffi
 
+
 class CANParser(object):
-  def __init__(self, dbc_name, signals, checks=[], bus=0, sendcan=False, tcp_addr="127.0.0.1"):
+  def __init__(self, dbc_name, signals, checks=None, bus=0, sendcan=False, tcp_addr="127.0.0.1", timeout=-1):
+    if checks is None:
+      checks = []
+
     self.can_valid = True
     self.vl = defaultdict(dict)
     self.ts = defaultdict(dict)
@@ -54,17 +58,17 @@ class CANParser(object):
       {
         'address': msg_address,
         'check_frequency': freq,
-      } for msg_address, freq in message_options.iteritems()])
+      } for msg_address, freq in message_options.items()])
 
     self.can = libdbc.can_init(bus, dbc_name, len(message_options_c), message_options_c,
-                               len(signal_options_c), signal_options_c, sendcan, tcp_addr)
+                               len(signal_options_c), signal_options_c, sendcan, tcp_addr, timeout)
 
     self.p_can_valid = ffi.new("bool*")
 
     value_count = libdbc.can_query(self.can, 0, self.p_can_valid, 0, ffi.NULL)
     self.can_values = ffi.new("SignalValue[%d]" % value_count)
     self.update_vl(0)
-    # print "==="
+    # print("===")
 
   def update_vl(self, sec):
 
@@ -73,12 +77,12 @@ class CANParser(object):
 
     self.can_valid = self.p_can_valid[0]
 
-    # print can_values_len
+    # print(can_values_len)
     ret = set()
     for i in xrange(can_values_len):
       cv = self.can_values[i]
       address = cv.address
-      # print hex(cv.address), ffi.string(cv.name)
+      # print("{0} {1}".format(hex(cv.address), ffi.string(cv.name)))
       name = ffi.string(cv.name)
       self.vl[address][name] = cv.value
       self.ts[address][name] = cv.ts
@@ -90,8 +94,48 @@ class CANParser(object):
     return ret
 
   def update(self, sec, wait):
-    libdbc.can_update(self.can, sec, wait)
-    return self.update_vl(sec)
+    """Returns if the update was successfull (e.g. no rcv timeout happened)"""
+    r = libdbc.can_update(self.can, sec, wait)
+    return bool(r >= 0), self.update_vl(sec)
+
+
+class CANDefine(object):
+  def __init__(self, dbc_name):
+    self.dv = defaultdict(dict)
+    self.dbc_name = dbc_name
+    self.dbc = libdbc.dbc_lookup(dbc_name)
+
+    num_vals = self.dbc[0].num_vals
+
+    self.address_to_msg_name = {}
+    num_msgs = self.dbc[0].num_msgs
+    for i in range(num_msgs):
+      msg = self.dbc[0].msgs[i]
+      name = ffi.string(msg.name)
+      address = msg.address
+      self.address_to_msg_name[address] = name
+
+    for i in range(num_vals):
+      val = self.dbc[0].vals[i]
+
+      sgname = ffi.string(val.name)
+      address = val.address
+      def_val = ffi.string(val.def_val)
+
+      #separate definition/value pairs
+      def_val = def_val.split()
+      values = [int(v) for v in def_val[::2]]
+      defs = def_val[1::2]
+
+      if address not in self.dv:
+        self.dv[address] = {}
+        msgname = self.address_to_msg_name[address]
+        self.dv[msgname] = {}
+
+      # two ways to lookup: address or msg name
+      self.dv[address][sgname] = {v: d for v, d in zip(values, defs)} #build dict
+      self.dv[msgname][sgname] = self.dv[address][sgname]
+
 
 if __name__ == "__main__":
   from common.realtime import sec_since_boot
@@ -198,11 +242,11 @@ if __name__ == "__main__":
 
   cp = CANParser("toyota_rav4_2017_pt_generated", signals, checks, 0)
 
-  # print cp.vl
+  # print(cp.vl)
 
   while True:
     cp.update(int(sec_since_boot()*1e9), True)
-    # print cp.vl
+    # print(cp.vl)
     print(cp.ts)
     print(cp.can_valid)
     time.sleep(0.01)

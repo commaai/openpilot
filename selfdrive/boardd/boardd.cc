@@ -21,6 +21,7 @@
 #include "cereal/gen/cpp/log.capnp.h"
 #include "cereal/gen/cpp/car.capnp.h"
 
+#include "common/messaging.h"
 #include "common/params.h"
 #include "common/swaglog.h"
 #include "common/timing.h"
@@ -34,13 +35,18 @@
 #define SAFETY_NOOUTPUT  0
 #define SAFETY_HONDA 1
 #define SAFETY_TOYOTA 2
-#define SAFETY_ELM327 0xE327
 #define SAFETY_GM 3
 #define SAFETY_HONDA_BOSCH 4
 #define SAFETY_FORD 5
 #define SAFETY_CADILLAC 6
+#define SAFETY_HYUNDAI 7
+#define SAFETY_TESLA 8
+#define SAFETY_CHRYSLER 9
+#define SAFETY_SUBARU 10
+#define SAFETY_TOYOTA_IPAS 0x1335
 #define SAFETY_TOYOTA_NOLIMITS 0x1336
 #define SAFETY_ALLOUTPUT 0x1337
+#define SAFETY_ELM327 0xE327     // diagnostic only
 
 namespace {
 
@@ -79,6 +85,7 @@ void *safety_setter_thread(void *s) {
   // format for board, make copy due to alignment issues, will be freed on out of scope
   auto amsg = kj::heapArray<capnp::word>((value_sz / sizeof(capnp::word)) + 1);
   memcpy(amsg.begin(), value, value_sz);
+  free(value);
 
   capnp::FlatArrayMessageReader cmsg(amsg);
   cereal::CarParams::Reader car_params = cmsg.getRoot<cereal::CarParams>();
@@ -113,6 +120,15 @@ void *safety_setter_thread(void *s) {
   case (int)cereal::CarParams::SafetyModels::CADILLAC:
     safety_setting = SAFETY_CADILLAC;
     break;
+  case (int)cereal::CarParams::SafetyModels::HYUNDAI:
+    safety_setting = SAFETY_HYUNDAI;
+    break;
+  case (int)cereal::CarParams::SafetyModels::CHRYSLER:
+    safety_setting = SAFETY_CHRYSLER;
+    break;
+  case (int)cereal::CarParams::SafetyModels::SUBARU:
+    safety_setting = SAFETY_SUBARU;
+    break;
   default:
     LOGE("unknown safety model: %d", safety_model);
   }
@@ -121,6 +137,9 @@ void *safety_setter_thread(void *s) {
 
   // set in the mutex to avoid race
   safety_setter_thread_handle = -1;
+
+  // set if long_control is allowed by openpilot. Hardcoded to True for now
+  libusb_control_transfer(dev_handle, 0x40, 0xdf, 1, 0, NULL, 0, TIMEOUT);
 
   libusb_control_transfer(dev_handle, 0x40, 0xdc, safety_setting, safety_param, NULL, 0, TIMEOUT);
 
@@ -157,12 +176,8 @@ bool usb_connect() {
     LOGW("not enabling charging on x86_64");
   #endif
 
-  // no output is the default
-  if (getenv("RECVMOCK")) {
-    libusb_control_transfer(dev_handle, 0x40, 0xdc, SAFETY_ELM327, 0, NULL, 0, TIMEOUT);
-  } else {
-    libusb_control_transfer(dev_handle, 0x40, 0xdc, SAFETY_NOOUTPUT, 0, NULL, 0, TIMEOUT);
-  }
+  // diagnostic only is the default, needed for VIN query
+  libusb_control_transfer(dev_handle, 0x40, 0xdc, SAFETY_ELM327, 0, NULL, 0, TIMEOUT);
 
   if (safety_setter_thread_handle == -1) {
     err = pthread_create(&safety_setter_thread_handle, NULL, safety_setter_thread, NULL);
@@ -207,6 +222,8 @@ void can_recv(void *s) {
   int recv;
   uint32_t f1, f2;
 
+  uint64_t start_time = nanos_since_boot();
+
   // do recv
   pthread_mutex_lock(&usb_lock);
 
@@ -229,12 +246,13 @@ void can_recv(void *s) {
   // create message
   capnp::MallocMessageBuilder msg;
   cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-  event.setLogMonoTime(nanos_since_boot());
+  event.setLogMonoTime(start_time);
+  size_t num_msg = recv / 0x10;
 
-  auto canData = event.initCan(recv/0x10);
+  auto canData = event.initCan(num_msg);
 
   // populate message
-  for (int i = 0; i<(recv/0x10); i++) {
+  for (int i = 0; i < num_msg; i++) {
     if (data[i*4] & 4) {
       // extended
       canData[i].setAddress(data[i*4] >> 3);
@@ -320,6 +338,11 @@ void can_send(void *s) {
 
   capnp::FlatArrayMessageReader cmsg(amsg);
   cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
+  if (nanos_since_boot() - event.getLogMonoTime() > 1e9) {
+    //Older than 1 second. Dont send.
+    zmq_msg_close(&msg);
+    return;
+  }
   int msg_count = event.getCan().size();
 
   uint32_t *send = (uint32_t*)malloc(msg_count*0x10);
@@ -359,59 +382,22 @@ void can_send(void *s) {
   free(send);
 }
 
-
 // **** threads ****
-
-void *thermal_thread(void *crap) {
-  int err;
-  LOGD("start thermal thread");
-
-  // thermal = 8005
-  void *context = zmq_ctx_new();
-  void *subscriber = zmq_socket(context, ZMQ_SUB);
-  zmq_setsockopt(subscriber, ZMQ_SUBSCRIBE, "", 0);
-  zmq_connect(subscriber, "tcp://127.0.0.1:8005");
-
-  // run as fast as messages come in
-  while (!do_exit) {
-    // recv from thermal
-    zmq_msg_t msg;
-    zmq_msg_init(&msg);
-    err = zmq_msg_recv(&msg, subscriber, 0);
-    assert(err >= 0);
-
-    // format for board, make copy due to alignment issues, will be freed on out of scope
-    // copied from send thread...
-    auto amsg = kj::heapArray<capnp::word>((zmq_msg_size(&msg) / sizeof(capnp::word)) + 1);
-    memcpy(amsg.begin(), zmq_msg_data(&msg), zmq_msg_size(&msg));
-
-    capnp::FlatArrayMessageReader cmsg(amsg);
-    cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-
-    uint16_t target_fan_speed = event.getThermal().getFanSpeed();
-    //LOGW("setting fan speed %d", target_fan_speed);
-
-    pthread_mutex_lock(&usb_lock);
-    libusb_control_transfer(dev_handle, 0xc0, 0xd3, target_fan_speed, 0, NULL, 0, TIMEOUT);
-    pthread_mutex_unlock(&usb_lock);
-
-    zmq_msg_close(&msg);
-  }
-
-  // turn the fan off when we exit
-  libusb_control_transfer(dev_handle, 0xc0, 0xd3, 0, 0, NULL, 0, TIMEOUT);
-
-  return NULL;
-}
 
 void *can_send_thread(void *crap) {
   LOGD("start send thread");
 
   // sendcan = 8017
   void *context = zmq_ctx_new();
-  void *subscriber = zmq_socket(context, ZMQ_SUB);
-  zmq_setsockopt(subscriber, ZMQ_SUBSCRIBE, "", 0);
-  zmq_connect(subscriber, "tcp://127.0.0.1:8017");
+  void *subscriber = sub_sock(context, "tcp://127.0.0.1:8017");
+
+  // drain sendcan to delete any stale messages from previous runs
+  zmq_msg_t msg;
+  zmq_msg_init(&msg);
+  int err = 0;
+  while(err >= 0) {
+    err = zmq_msg_recv(&msg, subscriber, ZMQ_DONTWAIT);
+  }
 
   // run as fast as messages come in
   while (!do_exit) {
@@ -428,11 +414,24 @@ void *can_recv_thread(void *crap) {
   void *publisher = zmq_socket(context, ZMQ_PUB);
   zmq_bind(publisher, "tcp://*:8006");
 
-  // run at ~200hz
+  // run at 100hz
+  const uint64_t dt = 10000000ULL;
+  uint64_t next_frame_time = nanos_since_boot() + dt;
+
   while (!do_exit) {
     can_recv(publisher);
-    // 5ms
-    usleep(5*1000);
+
+    uint64_t cur_time = nanos_since_boot();
+    int64_t remaining = next_frame_time - cur_time;
+    if (remaining > 0){
+      useconds_t sleep = remaining / 1000;
+      usleep(sleep);
+    } else {
+      LOGW("missed cycle");
+      next_frame_time = cur_time;
+    }
+
+    next_frame_time += dt;
   }
   return NULL;
 }
@@ -584,7 +583,7 @@ void *pigeon_thread(void *crap) {
       //printf("got %d\n", len);
       alen += len;
     }
-    if (alen > 0) { 
+    if (alen > 0) {
       if (dat[0] == (char)0x00){
         LOGW("received invalid ublox message, resetting pigeon");
         pigeon_init();
@@ -657,15 +656,7 @@ int main() {
                        can_recv_thread, NULL);
   assert(err == 0);
 
-  pthread_t thermal_thread_handle;
-  err = pthread_create(&thermal_thread_handle, NULL,
-                       thermal_thread, NULL);
-  assert(err == 0);
-
   // join threads
-
-  err = pthread_join(thermal_thread_handle, NULL);
-  assert(err == 0);
 
   err = pthread_join(can_recv_thread_handle, NULL);
   assert(err == 0);

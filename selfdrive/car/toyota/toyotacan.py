@@ -52,11 +52,11 @@ def create_ipas_steer_command(packer, steer, enabled, apgs_enabled):
     return packer.make_can_msg("STEERING_IPAS_COMMA", 0, values)
 
 
-def create_steer_command(packer, steer, raw_cnt):
+def create_steer_command(packer, steer, steer_req, raw_cnt):
   """Creates a CAN message for the Toyota Steer Command."""
 
   values = {
-    "STEER_REQUEST": abs(steer) > 0.001,
+    "STEER_REQUEST": steer_req,
     "STEER_TORQUE_CMD": steer,
     "COUNTER": raw_cnt,
     "SET_ME_1": 1,
@@ -64,11 +64,14 @@ def create_steer_command(packer, steer, raw_cnt):
   return packer.make_can_msg("STEERING_LKA", 0, values)
 
 
-def create_accel_command(packer, accel, pcm_cancel, standstill_req):
-  # TODO: find the exact canceling bit
+def create_accel_command(packer, accel, pcm_cancel, standstill_req, lead):
+  # TODO: find the exact canceling bit that does not create a chime
   values = {
     "ACCEL_CMD": accel,
-    "SET_ME_X63": 0x63,
+    "SET_ME_X01": 1,
+    "DISTANCE": 0,
+    "MINI_CAR": lead,
+    "SET_ME_X3": 3,
     "SET_ME_1": 1,
     "RELEASE_STANDSTILL": not standstill_req,
     "CANCEL_REQ": pcm_cancel,
@@ -86,10 +89,11 @@ def create_fcw_command(packer, fcw):
   return packer.make_can_msg("ACC_HUD", 0, values)
 
 
-def create_ui_command(packer, steer, sound1, sound2):
+def create_ui_command(packer, steer, sound1, sound2, left_line, right_line, left_lane_depart, right_lane_depart):
   values = {
-    "RIGHT_LINE": 1,
-    "LEFT_LINE": 1,
+    "RIGHT_LINE": 3 if right_lane_depart else 1 if right_line else 2,
+    "LEFT_LINE": 3 if left_lane_depart else 1 if left_line else 2,
+    "BARRIERS" : 3 if left_lane_depart or right_lane_depart else 0,
     "SET_ME_X0C": 0x0c,
     "SET_ME_X2C": 0x2c,
     "SET_ME_X38": 0x38,

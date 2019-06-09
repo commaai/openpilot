@@ -51,6 +51,30 @@ unsigned int toyota_checksum(unsigned int address, uint64_t d, int l) {
   return s & 0xFF;
 }
 
+unsigned int pedal_checksum(unsigned int address, uint64_t d, int l) {
+  uint8_t crc = 0xFF;
+  uint8_t poly = 0xD5; // standard crc8
+
+  d >>= ((8-l)*8); // remove padding
+  d >>= 8; // remove checksum
+
+  uint8_t *dat = (uint8_t *)&d;
+
+  int i, j;
+  for (i = 0; i < l - 1; i++) {
+    crc ^= dat[i];
+    for (j = 0; j < 8; j++) {
+      if ((crc & 0x80) != 0) {
+        crc = (uint8_t)((crc << 1) ^ poly);
+      }
+      else {
+        crc <<= 1;
+      }
+    }
+  }
+  return crc;
+}
+
 namespace {
 
 uint64_t read_u64_be(const uint8_t* v) {
@@ -113,14 +137,21 @@ struct MessageState {
           return false;
         }
       } else if (sig.type == SignalType::HONDA_COUNTER) {
-        if (!honda_update_counter(tmp)) {
+        if (!update_counter_generic(tmp, sig.b2)) {
           return false;
         }
       } else if (sig.type == SignalType::TOYOTA_CHECKSUM) {
-        // INFO("CHECKSUM %d %d %018llX - %lld vs %d\n", address, size, dat, tmp, toyota_checksum(address, dat, size));
-
         if (toyota_checksum(address, dat, size) != tmp) {
           INFO("%X CHECKSUM FAIL\n", address);
+          return false;
+        }
+      } else if (sig.type == SignalType::PEDAL_CHECKSUM) {
+        if (pedal_checksum(address, dat, size) != tmp) {
+          INFO("%X PEDAL CHECKSUM FAIL\n", address);
+          return false;
+        }
+      } else if (sig.type == SignalType::PEDAL_COUNTER) {
+        if (!update_counter_generic(tmp, sig.b2)) {
           return false;
         }
       }
@@ -134,10 +165,10 @@ struct MessageState {
   }
 
 
-  bool honda_update_counter(int64_t v) {
+  bool update_counter_generic(int64_t v, int cnt_size) {
     uint8_t old_counter = counter;
     counter = v;
-    if (((old_counter+1) & 3) != v) {
+    if (((old_counter+1) & ((1 << cnt_size) -1)) != v) {
       counter_fail += 1;
       if (counter_fail > 1) {
         INFO("%X COUNTER FAIL %d -- %d vs %d\n", address, counter_fail, old_counter, (int)v);
@@ -159,12 +190,13 @@ class CANParser {
   CANParser(int abus, const std::string& dbc_name,
             const std::vector<MessageParseOptions> &options,
             const std::vector<SignalParseOptions> &sigoptions,
-            bool sendcan, const std::string& tcp_addr)
+            bool sendcan, const std::string& tcp_addr, int timeout=-1)
     : bus(abus) {
     // connect to can on 8006
     context = zmq_ctx_new();
     subscriber = zmq_socket(context, ZMQ_SUB);
     zmq_setsockopt(subscriber, ZMQ_SUBSCRIBE, "", 0);
+    zmq_setsockopt(subscriber, ZMQ_RCVTIMEO, &timeout, sizeof(int));
 
     std::string tcp_addr_str;
 
@@ -176,6 +208,14 @@ class CANParser {
     const char *tcp_addr_char = tcp_addr_str.c_str();
 
     zmq_connect(subscriber, tcp_addr_char);
+
+    // drain sendcan to delete any stale messages from previous runs
+    zmq_msg_t msgDrain;
+    zmq_msg_init(&msgDrain);
+    int err = 0;
+    while(err >= 0) {
+      err = zmq_msg_recv(&msgDrain, subscriber, ZMQ_DONTWAIT);
+    }
 
     dbc = dbc_lookup(dbc_name);
     assert(dbc);
@@ -259,6 +299,7 @@ class CANParser {
         memcpy(dat, cmsg.getDat().begin(), cmsg.getDat().size());
 
         // Assumes all signals in the message are of the same type (little or big endian)
+        // TODO: allow signals within the same message to have different endianess
         auto& sig = message_states[cmsg.getAddress()].parse_sigs[0];
         if (sig.is_little_endian) {
             p = read_u64_le(dat);
@@ -285,8 +326,9 @@ class CANParser {
     }
   }
 
-  void update(uint64_t sec, bool wait) {
+  int update(uint64_t sec, bool wait) {
     int err;
+    int result = 0;
 
     // recv from can
     zmq_msg_t msg;
@@ -298,6 +340,11 @@ class CANParser {
       if (first) {
         err = zmq_msg_recv(&msg, subscriber, 0);
         first = false;
+
+        // When we timeout on the first message, return error
+        if (err < 0){
+          result = -1;
+        }
       } else {
         err = zmq_msg_recv(&msg, subscriber, ZMQ_DONTWAIT);
       }
@@ -312,13 +359,12 @@ class CANParser {
       cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
 
       auto cans = event.getCan();
-
       UpdateCans(sec, cans);
     }
 
     UpdateValid(sec);
-
     zmq_msg_close(&msg);
+    return result;
   }
 
   std::vector<SignalValue> query(uint64_t sec) {
@@ -361,18 +407,18 @@ extern "C" {
 void* can_init(int bus, const char* dbc_name,
                size_t num_message_options, const MessageParseOptions* message_options,
                size_t num_signal_options, const SignalParseOptions* signal_options,
-               bool sendcan, const char* tcp_addr) {
+               bool sendcan, const char* tcp_addr, int timeout) {
   CANParser* ret = new CANParser(bus, std::string(dbc_name),
                                  (message_options ? std::vector<MessageParseOptions>(message_options, message_options+num_message_options)
                                   : std::vector<MessageParseOptions>{}),
                                  (signal_options ? std::vector<SignalParseOptions>(signal_options, signal_options+num_signal_options)
-                                  : std::vector<SignalParseOptions>{}), sendcan, std::string(tcp_addr));
+                                  : std::vector<SignalParseOptions>{}), sendcan, std::string(tcp_addr), timeout);
   return (void*)ret;
 }
 
-void can_update(void* can, uint64_t sec, bool wait) {
+int can_update(void* can, uint64_t sec, bool wait) {
   CANParser* cp = (CANParser*)can;
-  cp->update(sec, wait);
+  return cp->update(sec, wait);
 }
 
 size_t can_query(void* can, uint64_t sec, bool *out_can_valid, size_t out_values_size, SignalValue* out_values) {

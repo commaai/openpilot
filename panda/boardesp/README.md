@@ -2,13 +2,13 @@
 Dependencies
 -----
 
-**Mac**
+**Debian / Ubuntu**
 
 ```
 ./get_sdk.sh
 ```
 
-**Debian / Ubuntu**
+**Mac**
 
 ```
 ./get_sdk_mac.sh
