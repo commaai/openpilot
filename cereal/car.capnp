@@ -74,6 +74,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     invalidGiraffeHonda @49;
     vehicleModelInvalid @50;
     controlsFailed @51;
+    sensorDataInvalid @52;
   }
 }
 
@@ -175,7 +176,7 @@ struct CarState {
 
 # ******* radar state @ 20hz *******
 
-struct RadarState {
+struct RadarData @0x888ad6581cf0aacb {
   errors @0 :List(Error);
   points @1 :List(RadarPoint);
 
@@ -333,6 +334,7 @@ struct CarParams {
 
   steerActuatorDelay @36 :Float32; # Steering wheel actuator delay in seconds
   openpilotLongitudinalControl @37 :Bool; # is openpilot doing the longitudinal control?
+  carVin @38 :Text; # VIN number queried during fingerprinting
 
   struct LateralPIDTuning {
     kpBP @0 :List(Float32);

@@ -23,12 +23,6 @@ Programming
 make
 ```
 
-**NEO**
-
-```
-make -f Makefile.legacy
-```
-
 Troubleshooting
 ----
 

@@ -29,7 +29,7 @@ def test_connect_wifi(serial=None):
 @panda_color_to_serial
 def test_flash_wifi(serial=None):
   connect_wifi(serial)
-  assert Panda.flash_ota_wifi(release=True), "OTA Wifi Flash Failed"
+  assert Panda.flash_ota_wifi(release=False), "OTA Wifi Flash Failed"
   connect_wifi(serial)
 
 @test_white

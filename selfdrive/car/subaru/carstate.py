@@ -37,7 +37,8 @@ def get_powertrain_can_parser(CP):
     ("BodyInfo", 10),
   ]
 
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0, timeout=100)
+
 
 def get_camera_can_parser(CP):
   signals = [
@@ -78,7 +79,8 @@ def get_camera_can_parser(CP):
     ("ES_DashStatus", 10),
   ]
 
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2, timeout=100)
+
 
 class CarState(object):
   def __init__(self, CP):
