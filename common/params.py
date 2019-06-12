@@ -82,6 +82,8 @@ keys = {
   "TermsVersion": [TxType.PERSISTENT],
   "TrainingVersion": [TxType.PERSISTENT],
   "Version": [TxType.PERSISTENT],
+  "PandaFirmware": [TxType.PERSISTENT],
+  "PandaDongleId": [TxType.PERSISTENT],
 }
 
 

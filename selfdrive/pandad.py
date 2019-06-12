@@ -65,9 +65,21 @@ def update_panda():
     cloudlog.info("Version mismatch after flashing, exiting")
     raise AssertionError
 
-
 def main(gctx=None):
   update_panda()
+
+  try:
+    p = Panda()
+    panda_fw_version = p.get_version()
+    panda_dongle_id = p.get_serial()[0]
+    p.close()
+
+    params = Params()
+    params.put("PandaFirmware", panda_fw_version)
+    params.put("PandaDongleId", panda_dongle_id)
+
+  except AssertionError:
+    print("Panda not connected") 
 
   os.chdir("boardd")
   os.execvp("./boardd", ["./boardd"])
