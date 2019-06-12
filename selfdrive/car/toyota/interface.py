@@ -180,6 +180,16 @@ class CarInterface(object):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.05]]
       ret.lateralTuning.pid.kf = 0.00007818594
 
+    elif candidate == CAR.SIENNA:
+      stop_and_go = True
+      ret.safetyParam = 100
+      ret.wheelbase = 3.03
+      ret.steerRatio = 16.0
+      tire_stiffness_factor = 0.444
+      ret.mass = 4590. * CV.LB_TO_KG + std_cargo
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.18], [0.0075]] #from the other Sienna port by hyperactive32
+      ret.lateralTuning.pid.kf = 0.00003
+
     ret.steerRateCost = 1.
     ret.centerToFront = ret.wheelbase * 0.44
 
