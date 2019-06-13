@@ -5,6 +5,7 @@ import time
 
 from selfdrive.swaglog import cloudlog
 from panda import Panda, PandaDFU, BASEDIR
+from common.params import Params
 
 
 def update_panda():
