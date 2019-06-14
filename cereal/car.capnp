@@ -338,7 +338,6 @@ struct CarParams {
   pathDeadzoneBP @39 :List(Float32);
   pathDeadzoneV @40 :List(Float32);
 
-
   struct LateralPIDTuning {
     kpBP @0 :List(Float32);
     kpV @1 :List(Float32);
