@@ -363,7 +363,7 @@ struct CarParams {
     timeConstant @2 :Float32;
     actuatorEffectiveness @3 :Float32;
   }
-  
+
 
   enum SafetyModels {
     # does NOT match board setting

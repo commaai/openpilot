@@ -67,7 +67,6 @@ class CarInterface(object):
     rotationalInertia_civic = 2500
     tireStiffnessFront_civic = 192150
     tireStiffnessRear_civic = 202500
-
     ret.pathDeadzoneBP = [0.]
     ret.pathDeadzoneV = [0.]
 
