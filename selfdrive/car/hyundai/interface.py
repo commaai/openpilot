@@ -67,6 +67,8 @@ class CarInterface(object):
 
     ret.steerActuatorDelay = 0.1  # Default delay
     ret.steerRateCost = 0.5
+    ret.pathDeadzoneBP = [0.]
+    ret.pathDeadzoneV = [0.]
 
     if candidate == CAR.SANTA_FE:
       ret.lateralTuning.pid.kf = 0.00005

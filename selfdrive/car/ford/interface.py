@@ -72,6 +72,8 @@ class CarInterface(object):
     ret.lateralTuning.pid.kf = 1. / MAX_ANGLE   # MAX Steer angle to normalize FF
     ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
     ret.steerRateCost = 1.0
+    ret.pathDeadzoneBP = [0.]
+    ret.pathDeadzoneV = [0.]
 
     f = 1.2
     tireStiffnessFront_civic *= f

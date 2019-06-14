@@ -53,6 +53,8 @@ class CarInterface(object):
 
     std_cargo = 136
     ret.steerRateCost = 0.7
+    ret.pathDeadzoneBP = [0.]
+    ret.pathDeadzoneV = [0.]
 
     if candidate in [CAR.IMPREZA]:
       ret.mass = 1568 + std_cargo

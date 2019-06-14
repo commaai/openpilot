@@ -182,7 +182,7 @@ class CarInterface(object):
     ret.lateralTuning.pid.kf = 0.00006 # conservative feed-forward
 
     ret.pathDeadzoneBP = [0.]
-    ret.pathDeadzoneV = [1.0]
+    ret.pathDeadzoneV = [0.]
 
     if candidate in [CAR.CIVIC, CAR.CIVIC_BOSCH]:
       stop_and_go = True
@@ -216,6 +216,7 @@ class CarInterface(object):
       ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
       ret.longitudinalTuning.kiBP = [0., 35.]
       ret.longitudinalTuning.kiV = [0.18, 0.12]
+      ret.pathDeadzoneV = [0.0]
 
     elif candidate == CAR.ACURA_ILX:
       stop_and_go = False

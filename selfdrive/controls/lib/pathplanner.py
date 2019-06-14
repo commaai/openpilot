@@ -20,7 +20,7 @@ def calc_states_after_delay(states, v_ego, steer_angle, curvature_factor, steer_
     steer_angle += deadzone
   states[0].x = v_ego * delay
   states[0].psi = v_ego * curvature_factor * math.radians(steer_angle) / steer_ratio * delay
-  return states, steer_angle
+  return states
 
 
 class PathPlanner(object):
@@ -29,9 +29,6 @@ class PathPlanner(object):
 
     self.l_poly = [0., 0., 0., 0.]
     self.r_poly = [0., 0., 0., 0.]
-    self.angle_error = 0.0
-    self.deadzone = 0.0
-    self.frame = 0
 
     self.last_cloudlog_t = 0
 
@@ -72,20 +69,16 @@ class PathPlanner(object):
     self.angle_steers_des_prev = self.angle_steers_des_mpc
     VM.update_params(live_parameters.liveParameters.stiffnessFactor, live_parameters.liveParameters.steerRatio)
     curvature_factor = VM.curvature_factor(v_ego)
-    self.angle_error = self.angle_steers_des_prev - angle_steers
-    if self.frame % 400 >= 200:
-      self.deadzone = np.interp(v_ego, CP.pathDeadzoneBP, CP.pathDeadzoneV)
-    else:
-      self.deadzone = 0.0
-    self.frame += 1
+    angle_error = self.angle_steers_des_prev - angle_steers
+    deadzone = np.interp(v_ego, CP.pathDeadzoneBP, CP.pathDeadzoneV)
 
     l_poly = libmpc_py.ffi.new("double[4]", list(self.MP.l_poly))
     r_poly = libmpc_py.ffi.new("double[4]", list(self.MP.r_poly))
     p_poly = libmpc_py.ffi.new("double[4]", list(self.MP.p_poly))
 
     # account for actuation delay
-    self.cur_state, self.angle_error = calc_states_after_delay(self.cur_state, v_ego, angle_steers - angle_offset_average, curvature_factor, VM.sR,
-                                                CP.steerActuatorDelay, self.deadzone, self.angle_steers_des_mpc)
+    self.cur_state = calc_states_after_delay(self.cur_state, v_ego, angle_steers - angle_offset_average, curvature_factor, VM.sR,
+                                                CP.steerActuatorDelay, deadzone, self.angle_steers_des_mpc)
 
     v_ego_mpc = max(v_ego, 5.0)  # avoid mpc roughness due to low speed
     self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
@@ -141,8 +134,8 @@ class PathPlanner(object):
     plan_send.pathPlan.paramsValid = bool(live_parameters.liveParameters.valid)
     plan_send.pathPlan.sensorValid = bool(live_parameters.liveParameters.sensorValid)
     plan_send.pathPlan.modelValid = bool(not model_dead)
-    plan_send.pathPlan.angleError = float(self.angle_error)
-    plan_send.pathPlan.deadzone = float(self.deadzone)
+    plan_send.pathPlan.angleError = float(angle_error)
+    plan_send.pathPlan.deadzone = float(deadzone)
 
     self.plan.send(plan_send.to_bytes())
 
