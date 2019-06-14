@@ -335,6 +335,9 @@ struct CarParams {
   steerActuatorDelay @36 :Float32; # Steering wheel actuator delay in seconds
   openpilotLongitudinalControl @37 :Bool; # is openpilot doing the longitudinal control?
   carVin @38 :Text; # VIN number queried during fingerprinting
+  pathDeadzoneBP @39 :List(Float32);
+  pathDeadzoneV @40 :List(Float32);
+
 
   struct LateralPIDTuning {
     kpBP @0 :List(Float32);
@@ -353,14 +356,12 @@ struct CarParams {
     deadzoneV @5 :List(Float32);
   }
 
-
   struct LateralINDITuning {
     outerLoopGain @0 :Float32;
     innerLoopGain @1 :Float32;
     timeConstant @2 :Float32;
     actuatorEffectiveness @3 :Float32;
   }
-
 
   enum SafetyModels {
     # does NOT match board setting

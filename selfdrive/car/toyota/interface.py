@@ -68,6 +68,9 @@ class CarInterface(object):
     tireStiffnessFront_civic = 192150
     tireStiffnessRear_civic = 202500
 
+    ret.pathDeadzoneBP = [0.]
+    ret.pathDeadzoneV = [2.0]
+
     ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
     if candidate != CAR.PRIUS:
       ret.lateralTuning.init('pid')

@@ -181,6 +181,9 @@ class CarInterface(object):
     ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
     ret.lateralTuning.pid.kf = 0.00006 # conservative feed-forward
 
+    ret.pathDeadzoneBP = [0.]
+    ret.pathDeadzoneV = [1.0]
+
     if candidate in [CAR.CIVIC, CAR.CIVIC_BOSCH]:
       stop_and_go = True
       ret.mass = mass_civic
