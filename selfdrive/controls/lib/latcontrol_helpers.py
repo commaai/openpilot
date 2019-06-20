@@ -52,8 +52,8 @@ def calc_desired_steer_angle(v_ego, y_des, d_lookahead, VM, angle_offset):
 
 def compute_path_pinv(l=50):
   deg = 3
-  x = np.arange(l*1.0)
-  X = np.vstack(tuple(x**n for n in range(deg, -1, -1))).T
+  x = np.arange(l, dtype='float')
+  X = x.reshape(-1,1)**range(deg, -1, -1)
   pinv = np.linalg.pinv(X)
   return pinv
 
