@@ -146,7 +146,11 @@ class CarController(object):
 
     # steer torque
     apply_steer = int(round(actuators.steer * SteerLimitParams.STEER_MAX))
-
+    
+    # if steering angle is higher than 100° do not steer
+    if abs(CS.angle_steers) > 100:
+      apply_steer = 0
+      
     # only cut torque when steer state is a known fault
     if CS.steer_state in [9, 25]:
       self.last_fault_frame = frame
