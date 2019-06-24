@@ -53,16 +53,12 @@ static void toyota_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   if ((to_push->RIR>>21) == 0x1D2) {
     // 5th bit is CRUISE_ACTIVE
     int cruise_engaged = to_push->RDLR & 0x20;
-    // 4th bit is GAS_RELEASED
-    int gas = !(to_push->RDLR & 0x10);
-    if (!cruise_engaged ||
-        (gas && !toyota_gas_prev && !gas_interceptor_detected && long_controls_allowed)) {
+    if (!cruise_engaged) {
       controls_allowed = 0;
     } else if (cruise_engaged && !toyota_cruise_engaged_last) {
       controls_allowed = 1;
     }
     toyota_cruise_engaged_last = cruise_engaged;
-    toyota_gas_prev = gas;
   }
 
   // exit controls on rising edge of gas press if interceptor (0x201)
@@ -75,6 +71,15 @@ static void toyota_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       controls_allowed = 0;
     }
     gas_interceptor_prev = gas_interceptor;
+  }
+
+  // exit controls on rising edge of gas press
+  if ((to_push->RIR>>21) == 0x2C1) {
+    int gas = (to_push->RDHR >> 16) & 0xFF;
+    if ((gas > 0) && (toyota_gas_prev == 0) && !gas_interceptor_detected && long_controls_allowed) {
+      controls_allowed = 0;
+    }
+    toyota_gas_prev = gas;
   }
 
   int bus = (to_push->RDTR >> 4) & 0xF;
