@@ -7,6 +7,7 @@ from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.ford.carstate import CarState, get_can_parser
 from selfdrive.car.ford.values import MAX_ANGLE
+from selfdrive.car import STD_CARGO_KG
 
 
 class CarInterface(object):
@@ -39,9 +40,6 @@ class CarInterface(object):
 
   @staticmethod
   def get_params(candidate, fingerprint, vin=""):
-
-    # kg of standard extra cargo to count for drive, gas, etc...
-    STD_CARGO_KG = 136.
 
     ret = car.CarParams.new_message()
 

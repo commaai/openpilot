@@ -6,6 +6,7 @@ from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.chrysler.carstate import CarState, get_can_parser, get_camera_parser
 from selfdrive.car.chrysler.values import ECU, check_ecu_msgs, CAR
+from selfdrive.car import STD_CARGO_KG
 
 
 class CarInterface(object):
@@ -39,9 +40,6 @@ class CarInterface(object):
 
   @staticmethod
   def get_params(candidate, fingerprint, vin=""):
-
-    # kg of standard extra cargo to count for drive, gas, etc...
-    STD_CARGO_KG = 136.
 
     ret = car.CarParams.new_message()
 

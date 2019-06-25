@@ -10,6 +10,7 @@ from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET,
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.honda.carstate import CarState, get_can_parser, get_cam_can_parser
 from selfdrive.car.honda.values import CruiseButtons, CAR, HONDA_BOSCH, AUDIO_HUD, VISUAL_HUD
+from selfdrive.car import STD_CARGO_KG
 from selfdrive.controls.lib.planner import _A_CRUISE_MAX_V_FOLLOWING
 
 
@@ -157,9 +158,6 @@ class CarInterface(object):
     cloudlog.warn("ECU Gas Interceptor: %r", ret.enableGasInterceptor)
 
     ret.enableCruise = not ret.enableGasInterceptor
-
-    # kg of standard extra cargo to count for drive, gas, etc...
-    STD_CARGO_KG = 136.
 
     # FIXME: hardcoding honda civic 2016 touring params so they can be used to
     # scale unknown params for other cars

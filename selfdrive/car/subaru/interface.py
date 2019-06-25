@@ -6,6 +6,7 @@ from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.subaru.values import CAR
 from selfdrive.car.subaru.carstate import CarState, get_powertrain_can_parser, get_camera_can_parser
+from selfdrive.car import STD_CARGO_KG
 
 
 class CarInterface(object):
@@ -51,7 +52,6 @@ class CarInterface(object):
 
     ret.enableCamera = True
 
-    STD_CARGO_KG = 136.
     ret.steerRateCost = 0.7
 
     if candidate in [CAR.IMPREZA]:
