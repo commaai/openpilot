@@ -309,9 +309,9 @@ class CarInterface(object):
 
     elif candidate in (CAR.PILOT, CAR.PILOT_2019):
       stop_and_go = False
-      ret.mass = 4303 * CV.LB_TO_KG + std_cargo
-      ret.wheelbase = 2.81
-      ret.centerToFront = ret.wheelbase * 0.41
+      ret.mass = 4204 * CV.LB_TO_KG + std_cargo # average weight
+      ret.wheelbase = 2.82
+      ret.centerToFront = ret.wheelbase * 0.428 # average weight distribution
       ret.steerRatio = 16.0         # as spec
       tire_stiffness_factor = 0.444 # not optimized yet
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.38], [0.11]]
