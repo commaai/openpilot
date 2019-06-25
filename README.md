@@ -108,6 +108,7 @@ Supported Cars
 | Toyota               | Rav4 2017-18             | All                  | Yes     | Yes<sup>2</sup>| 20mph<sup>1</sup>| 0mph           | Toyota            |
 | Toyota               | Rav4 2019                | All                  | Yes     | Yes            | 0mph             | 0mph           | Toyota            |
 | Toyota               | Rav4 Hybrid 2017-18      | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           | Toyota            |
+| Toyota               | Sienna 2018              | All                  | Yes     | Yes<sup>2</sup>| 0mph               | 0mph           | Toyota            |
 
 <sup>1</sup>[Comma Pedal](https://community.comma.ai/wiki/index.php/Comma_Pedal) is used to provide stop-and-go capability to some of the openpilot-supported cars that don't currently support stop-and-go. Here is how to [build a Comma Pedal](https://medium.com/@jfrux/comma-pedal-building-with-macrofab-6328bea791e8). ***NOTE: The Comma Pedal is not officially supported by [comma.ai](https://comma.ai).*** <br />
 <sup>2</sup>When disconnecting the Driver Support Unit (DSU), otherwise longitudinal control is stock ACC. For DSU locations, see [Toyota Wiki page](https://community.comma.ai/wiki/index.php/Toyota). <br />
