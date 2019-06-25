@@ -41,7 +41,7 @@ class CarInterface(object):
   def get_params(candidate, fingerprint, vin=""):
 
     # kg of standard extra cargo to count for drive, gas, etc...
-    std_cargo = 136
+    STD_CARGO_KG = 136.
 
     ret = car.CarParams.new_message()
 
@@ -56,7 +56,7 @@ class CarInterface(object):
 
     # FIXME: hardcoding honda civic 2016 touring params so they can be used to
     # scale unknown params for other cars
-    mass_civic = 2923./2.205 + std_cargo
+    mass_civic = 2923. * CV.LB_TO_KG + STD_CARGO_KG
     wheelbase_civic = 2.70
     centerToFront_civic = wheelbase_civic * 0.4
     centerToRear_civic = wheelbase_civic - centerToFront_civic
@@ -67,7 +67,7 @@ class CarInterface(object):
     # Speed conversion:              20, 45 mph
     ret.wheelbase = 3.089  # in meters for Pacifica Hybrid 2017
     ret.steerRatio = 16.2 # Pacifica Hybrid 2017
-    ret.mass = 2858 + std_cargo  # kg curb weight Pacifica Hybrid 2017
+    ret.mass = 2858. + STD_CARGO_KG  # kg curb weight Pacifica Hybrid 2017
     ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[9., 20.], [9., 20.]]
     ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.15,0.30], [0.03,0.05]]
     ret.lateralTuning.pid.kf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594

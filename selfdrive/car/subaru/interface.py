@@ -51,11 +51,11 @@ class CarInterface(object):
 
     ret.enableCamera = True
 
-    std_cargo = 136
+    STD_CARGO_KG = 136.
     ret.steerRateCost = 0.7
 
     if candidate in [CAR.IMPREZA]:
-      ret.mass = 1568 + std_cargo
+      ret.mass = 1568. + STD_CARGO_KG
       ret.wheelbase = 2.67
       ret.centerToFront = ret.wheelbase * 0.5
       ret.steerRatio = 15
@@ -87,7 +87,7 @@ class CarInterface(object):
 
     # hardcoding honda civic 2016 touring params so they can be used to
     # scale unknown params for other cars
-    mass_civic = 2923./2.205 + std_cargo
+    mass_civic = 2923. * CV.LB_TO_KG + STD_CARGO_KG
     wheelbase_civic = 2.70
     centerToFront_civic = wheelbase_civic * 0.4
     centerToRear_civic = wheelbase_civic - centerToFront_civic

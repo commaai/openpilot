@@ -43,7 +43,7 @@ class CarInterface(object):
   def get_params(candidate, fingerprint, vin=""):
 
     # kg of standard extra cargo to count for drive, gas, etc...
-    std_cargo = 136
+    STD_CARGO_KG = 136.
 
     ret = car.CarParams.new_message()
 
@@ -56,7 +56,7 @@ class CarInterface(object):
 
     # FIXME: hardcoding honda civic 2016 touring params so they can be used to
     # scale unknown params for other cars
-    mass_civic = 2923 * CV.LB_TO_KG + std_cargo
+    mass_civic = 2923. * CV.LB_TO_KG + STD_CARGO_KG
     wheelbase_civic = 2.70
     centerToFront_civic = wheelbase_civic * 0.4
     centerToRear_civic = wheelbase_civic - centerToFront_civic
@@ -70,7 +70,7 @@ class CarInterface(object):
 
     if candidate == CAR.SANTA_FE:
       ret.lateralTuning.pid.kf = 0.00005
-      ret.mass = 3982 * CV.LB_TO_KG + std_cargo
+      ret.mass = 3982. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.766
 
       # Values from optimizer
@@ -82,7 +82,7 @@ class CarInterface(object):
       ret.minSteerSpeed = 0.
     elif candidate == CAR.KIA_SORENTO:
       ret.lateralTuning.pid.kf = 0.00005
-      ret.mass = 1985 + std_cargo
+      ret.mass = 1985. + STD_CARGO_KG
       ret.wheelbase = 2.78
       ret.steerRatio = 14.4 * 1.1   # 10% higher at the center seems reasonable
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
@@ -90,7 +90,7 @@ class CarInterface(object):
       ret.minSteerSpeed = 0.
     elif candidate == CAR.ELANTRA:
       ret.lateralTuning.pid.kf = 0.00006
-      ret.mass = 1275 + std_cargo
+      ret.mass = 1275. + STD_CARGO_KG
       ret.wheelbase = 2.7
       ret.steerRatio = 13.73   #Spec
       tire_stiffness_factor = 0.385
@@ -99,7 +99,7 @@ class CarInterface(object):
       ret.minSteerSpeed = 32 * CV.MPH_TO_MS
     elif candidate == CAR.GENESIS:
       ret.lateralTuning.pid.kf = 0.00005
-      ret.mass = 2060 + std_cargo
+      ret.mass = 2060. + STD_CARGO_KG
       ret.wheelbase = 3.01
       ret.steerRatio = 16.5
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
@@ -107,7 +107,7 @@ class CarInterface(object):
       ret.minSteerSpeed = 35 * CV.MPH_TO_MS
     elif candidate == CAR.KIA_OPTIMA:
       ret.lateralTuning.pid.kf = 0.00005
-      ret.mass = 3558 * CV.LB_TO_KG
+      ret.mass = 3558. * CV.LB_TO_KG
       ret.wheelbase = 2.80
       ret.steerRatio = 13.75
       tire_stiffness_factor = 0.5
@@ -115,7 +115,7 @@ class CarInterface(object):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
     elif candidate == CAR.KIA_STINGER:
       ret.lateralTuning.pid.kf = 0.00005
-      ret.mass = 1825 + std_cargo
+      ret.mass = 1825. + STD_CARGO_KG
       ret.wheelbase = 2.78
       ret.steerRatio = 14.4 * 1.15   # 15% higher at the center seems reasonable
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]

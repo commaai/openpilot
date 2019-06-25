@@ -41,7 +41,7 @@ class CarInterface(object):
   def get_params(candidate, fingerprint, vin=""):
 
     # kg of standard extra cargo to count for drive, gas, etc...
-    std_cargo = 136
+    STD_CARGO_KG = 136.
 
     ret = car.CarParams.new_message()
 
@@ -56,7 +56,7 @@ class CarInterface(object):
 
     # FIXME: hardcoding honda civic 2016 touring params so they can be used to
     # scale unknown params for other cars
-    mass_civic = 2923. * CV.LB_TO_KG + std_cargo
+    mass_civic = 2923. * CV.LB_TO_KG + STD_CARGO_KG
     wheelbase_civic = 2.70
     centerToFront_civic = wheelbase_civic * 0.4
     centerToRear_civic = wheelbase_civic - centerToFront_civic
@@ -66,7 +66,7 @@ class CarInterface(object):
 
     ret.wheelbase = 2.85
     ret.steerRatio = 14.8
-    ret.mass = 3045. * CV.LB_TO_KG + std_cargo
+    ret.mass = 3045. * CV.LB_TO_KG + STD_CARGO_KG
     ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
     ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.01], [0.005]]     # TODO: tune this
     ret.lateralTuning.pid.kf = 1. / MAX_ANGLE   # MAX Steer angle to normalize FF

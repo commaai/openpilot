@@ -159,11 +159,11 @@ class CarInterface(object):
     ret.enableCruise = not ret.enableGasInterceptor
 
     # kg of standard extra cargo to count for drive, gas, etc...
-    std_cargo = 136
+    STD_CARGO_KG = 136.
 
     # FIXME: hardcoding honda civic 2016 touring params so they can be used to
     # scale unknown params for other cars
-    mass_civic = 2923 * CV.LB_TO_KG + std_cargo
+    mass_civic = 2923. * CV.LB_TO_KG + STD_CARGO_KG
     wheelbase_civic = 2.70
     centerToFront_civic = wheelbase_civic * 0.4
     centerToRear_civic = wheelbase_civic - centerToFront_civic
@@ -203,7 +203,7 @@ class CarInterface(object):
       stop_and_go = True
       if not candidate == CAR.ACCORDH: # Hybrid uses same brake msg as hatch
         ret.safetyParam = 1 # Accord and CRV 5G use an alternate user brake msg
-      ret.mass = 3279. * CV.LB_TO_KG + std_cargo
+      ret.mass = 3279. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.83
       ret.centerToFront = ret.wheelbase * 0.39
       ret.steerRatio = 15.96  # 11.82 is spec end-to-end
@@ -216,7 +216,7 @@ class CarInterface(object):
 
     elif candidate == CAR.ACURA_ILX:
       stop_and_go = False
-      ret.mass = 3095 * CV.LB_TO_KG + std_cargo
+      ret.mass = 3095. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.67
       ret.centerToFront = ret.wheelbase * 0.37
       ret.steerRatio = 18.61  # 15.3 is spec end-to-end
@@ -229,7 +229,7 @@ class CarInterface(object):
 
     elif candidate == CAR.CRV:
       stop_and_go = False
-      ret.mass = 3572 * CV.LB_TO_KG + std_cargo
+      ret.mass = 3572. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.62
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 15.3         # as spec
@@ -243,7 +243,7 @@ class CarInterface(object):
     elif candidate == CAR.CRV_5G:
       stop_and_go = True
       ret.safetyParam = 1 # Accord and CRV 5G use an alternate user brake msg
-      ret.mass = 3410. * CV.LB_TO_KG + std_cargo
+      ret.mass = 3410. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.66
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 16.0   # 12.3 is spec end-to-end
@@ -257,7 +257,7 @@ class CarInterface(object):
     elif candidate == CAR.CRV_HYBRID:
       stop_and_go = True
       ret.safetyParam = 1 # Accord and CRV 5G use an alternate user brake msg
-      ret.mass = 1667. + std_cargo # mean of 4 models in kg
+      ret.mass = 1667. + STD_CARGO_KG # mean of 4 models in kg
       ret.wheelbase = 2.66
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 16.0   # 12.3 is spec end-to-end
@@ -270,7 +270,7 @@ class CarInterface(object):
 
     elif candidate == CAR.ACURA_RDX:
       stop_and_go = False
-      ret.mass = 3935 * CV.LB_TO_KG + std_cargo
+      ret.mass = 3935. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.68
       ret.centerToFront = ret.wheelbase * 0.38
       ret.steerRatio = 15.0         # as spec
@@ -283,7 +283,7 @@ class CarInterface(object):
 
     elif candidate == CAR.ODYSSEY:
       stop_and_go = False
-      ret.mass = 4471 * CV.LB_TO_KG + std_cargo
+      ret.mass = 4471. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 3.00
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 14.35        # as spec
@@ -296,7 +296,7 @@ class CarInterface(object):
 
     elif candidate == CAR.ODYSSEY_CHN:
       stop_and_go = False
-      ret.mass = 1849.2 + std_cargo # mean of 4 models in kg
+      ret.mass = 1849.2 + STD_CARGO_KG # mean of 4 models in kg
       ret.wheelbase = 2.90 # spec
       ret.centerToFront = ret.wheelbase * 0.41 # from CAR.ODYSSEY
       ret.steerRatio = 14.35 # from CAR.ODYSSEY
@@ -309,7 +309,7 @@ class CarInterface(object):
 
     elif candidate in (CAR.PILOT, CAR.PILOT_2019):
       stop_and_go = False
-      ret.mass = 4204 * CV.LB_TO_KG + std_cargo # average weight
+      ret.mass = 4204. * CV.LB_TO_KG + STD_CARGO_KG # average weight
       ret.wheelbase = 2.82
       ret.centerToFront = ret.wheelbase * 0.428 # average weight distribution
       ret.steerRatio = 16.0         # as spec
@@ -322,7 +322,7 @@ class CarInterface(object):
 
     elif candidate == CAR.RIDGELINE:
       stop_and_go = False
-      ret.mass = 4515 * CV.LB_TO_KG + std_cargo
+      ret.mass = 4515. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 3.18
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 15.59        # as spec
