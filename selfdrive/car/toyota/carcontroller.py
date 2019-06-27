@@ -1,6 +1,5 @@
 from cereal import car
 from common.numpy_fast import clip, interp
-from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car import apply_toyota_steer_torque_limits
 from selfdrive.car import create_gas_command
 from selfdrive.car.toyota.toyotacan import make_can_msg, create_video_target,\
@@ -124,7 +123,7 @@ class CarController(object):
 
     self.packer = CANPacker(dbc_name)
 
-  def update(self, sendcan, enabled, CS, frame, actuators,
+  def update(self, enabled, CS, frame, actuators,
              pcm_cancel_cmd, hud_alert, audible_alert, forwarding_camera,
              left_line, right_line, lead, left_lane_depart, right_lane_depart):
 
@@ -270,5 +269,4 @@ class CarController(object):
 
         can_sends.append(make_can_msg(addr, vl, bus, False))
 
-
-    sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan'))
+    return can_sends

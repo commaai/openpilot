@@ -4,14 +4,15 @@ import numpy as np
 import numpy.matlib
 import importlib
 from collections import defaultdict, deque
-from fastcluster import linkage_vector
 
 import selfdrive.messaging as messaging
 from selfdrive.services import service_list
 from selfdrive.controls.lib.latcontrol_helpers import calc_lookahead_offset
 from selfdrive.controls.lib.model_parser import ModelParser
-from selfdrive.controls.lib.radar_helpers import Track, Cluster, fcluster, \
+from selfdrive.controls.lib.radar_helpers import Track, Cluster, \
                                                  RDR_TO_LDR, NO_FUSION_SCORE
+
+from selfdrive.controls.lib.cluster.fastcluster_py import cluster_points_centroid
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.swaglog import cloudlog
 from cereal import car
@@ -45,8 +46,6 @@ class EKFV1D(EKF):
 
 
 ## fuses camera and radar data for best lead detection
-# FIXME: radard has a memory leak of about 50MB/hr
-# BOUNTY: $100 coupon on shop.comma.ai
 def radard_thread(gctx=None):
   set_realtime_priority(2)
 
@@ -65,7 +64,7 @@ def radard_thread(gctx=None):
   # *** subscribe to features and model from visiond
   poller = zmq.Poller()
   model = messaging.sub_sock(context, service_list['model'].port, conflate=True, poller=poller)
-  live100 = messaging.sub_sock(context, service_list['live100'].port, conflate=True, poller=poller)
+  controls_state_sock = messaging.sub_sock(context, service_list['controlsState'].port, conflate=True, poller=poller)
   live_parameters_sock = messaging.sub_sock(context, service_list['liveParameters'].port, conflate=True, poller=poller)
 
   # Default parameters
@@ -79,10 +78,10 @@ def radard_thread(gctx=None):
   RI = RadarInterface(CP)
 
   last_md_ts = 0
-  last_l100_ts = 0
+  last_controls_state_ts = 0
 
-  # *** publish live20 and liveTracks
-  live20 = messaging.pub_sock(context, service_list['live20'].port)
+  # *** publish radarState and liveTracks
+  radarState = messaging.pub_sock(context, service_list['radarState'].port)
   liveTracks = messaging.pub_sock(context, service_list['liveTracks'].port)
 
   path_x = np.arange(0.0, 140.0, 0.1)    # 140 meters is max
@@ -108,7 +107,7 @@ def radard_thread(gctx=None):
   v_ego_hist_v = deque(maxlen=v_len)
   v_ego_t_aligned = 0.
 
-  rk = Ratekeeper(rate, print_delay_threshold=np.inf)
+  rk = Ratekeeper(rate, print_delay_threshold=None)
   while 1:
     rr = RI.update()
 
@@ -116,29 +115,29 @@ def radard_thread(gctx=None):
     for pt in rr.points:
       ar_pts[pt.trackId] = [pt.dRel + RDR_TO_LDR, pt.yRel, pt.vRel, pt.measured]
 
-    # receive the live100s
-    l100 = None
+    # receive the controlsStates
+    controls_state = None
     md = None
 
     for socket, event in poller.poll(0):
-      if socket is live100:
-        l100 = messaging.recv_one(socket)
+      if socket is controls_state_sock:
+        controls_state = messaging.recv_one(socket)
       elif socket is model:
         md = messaging.recv_one(socket)
       elif socket is live_parameters_sock:
         live_parameters = messaging.recv_one(socket)
         VM.update_params(live_parameters.liveParameters.stiffnessFactor, live_parameters.liveParameters.steerRatio)
 
-    if l100 is not None:
-      active = l100.live100.active
-      v_ego = l100.live100.vEgo
-      steer_angle = l100.live100.angleSteers
-      steer_override = l100.live100.steerOverride
+    if controls_state is not None:
+      active = controls_state.controlsState.active
+      v_ego = controls_state.controlsState.vEgo
+      steer_angle = controls_state.controlsState.angleSteers
+      steer_override = controls_state.controlsState.steerOverride
 
       v_ego_hist_v.append(v_ego)
       v_ego_hist_t.append(float(rk.frame)/rate)
 
-      last_l100_ts = l100.logMonoTime
+      last_controls_state_ts = controls_state.logMonoTime
 
     if v_ego is None:
       continue
@@ -231,16 +230,15 @@ def radard_thread(gctx=None):
 
     # If we have multiple points, cluster them
     if len(track_pts) > 1:
-      link = linkage_vector(track_pts, method='centroid')
-      cluster_idxs = fcluster(link, 2.5, criterion='distance')
-      clusters = [None]*max(cluster_idxs)
+      cluster_idxs = cluster_points_centroid(track_pts, 2.5)
+      clusters = [None] * (max(cluster_idxs) + 1)
 
       for idx in xrange(len(track_pts)):
-        cluster_i = cluster_idxs[idx]-1
-
-        if clusters[cluster_i] == None:
+        cluster_i = cluster_idxs[idx]
+        if clusters[cluster_i] is None:
           clusters[cluster_i] = Cluster()
         clusters[cluster_i].add(tracks[idens[idx]])
+
     elif len(track_pts) == 1:
       # TODO: why do we need this?
       clusters = [Cluster()]
@@ -263,24 +261,24 @@ def radard_thread(gctx=None):
     lead2_clusters.sort(key=lambda x: x.dRel)
     lead2_len = len(lead2_clusters)
 
-    # *** publish live20 ***
+    # *** publish radarState ***
     dat = messaging.new_message()
-    dat.init('live20')
-    dat.live20.mdMonoTime = last_md_ts
-    dat.live20.canMonoTimes = list(rr.canMonoTimes)
-    dat.live20.radarErrors = list(rr.errors)
-    dat.live20.l100MonoTime = last_l100_ts
+    dat.init('radarState')
+    dat.radarState.mdMonoTime = last_md_ts
+    dat.radarState.canMonoTimes = list(rr.canMonoTimes)
+    dat.radarState.radarErrors = list(rr.errors)
+    dat.radarState.controlsStateMonoTime = last_controls_state_ts
     if lead_len > 0:
-      dat.live20.leadOne = lead_clusters[0].toLive20()
+      dat.radarState.leadOne = lead_clusters[0].toRadarState()
       if lead2_len > 0:
-        dat.live20.leadTwo = lead2_clusters[0].toLive20()
+        dat.radarState.leadTwo = lead2_clusters[0].toRadarState()
       else:
-        dat.live20.leadTwo.status = False
+        dat.radarState.leadTwo.status = False
     else:
-      dat.live20.leadOne.status = False
+      dat.radarState.leadOne.status = False
 
-    dat.live20.cumLagMs = -rk.remaining*1000.
-    live20.send(dat.to_bytes())
+    dat.radarState.cumLagMs = -rk.remaining*1000.
+    radarState.send(dat.to_bytes())
 
     # *** publish tracks for UI debugging (keep last) ***
     dat = messaging.new_message()

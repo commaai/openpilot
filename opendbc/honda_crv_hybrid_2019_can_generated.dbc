@@ -200,7 +200,8 @@ BO_ 780 ACC_HUD: 8 ADAS
  SG_ ACC_PROBLEM : 37|1@0+ (1,0) [0|1] "" BDY
  SG_ ACC_ON : 52|1@0+ (1,0) [0|1] "" XXX
  SG_ BOH_6 : 51|4@0+ (1,0) [0|15] "" XXX
- SG_ SET_TO_X3 : 55|2@0+ (1,0) [0|3] "" XXX
+ SG_ IMPERIAL_UNIT : 55|1@0+ (1,0) [0|1] "" XXX
+ SG_ SET_TO_X1 : 56|1@0+ (1,0) [0|1] "" XXX
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
 
@@ -265,6 +266,7 @@ BO_ 891 STALK_STATUS_2: 8 XXX
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
 
 VAL_ 399 STEER_STATUS 6 "tmp_fault" 5 "fault_1" 4 "no_torque_alert_2" 3 "low_speed_lockout" 2 "no_torque_alert_1" 0 "normal" ;
+
 CM_ "honda_crv_hybrid_2019_can.dbc starts here"
 
 

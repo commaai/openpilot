@@ -19,7 +19,7 @@ NUM_SLOTS = 20
 # messages that are present in DBC
 LAST_RADAR_MSG = RADAR_HEADER_MSG + NUM_SLOTS
 
-def create_radard_can_parser(canbus, car_fingerprint):
+def create_radar_can_parser(canbus, car_fingerprint):
 
   dbc_f = DBC[car_fingerprint]['radar']
   if car_fingerprint in (CAR.VOLT, CAR.MALIBU, CAR.HOLDEN_ASTRA, CAR.ACADIA, CAR.CADILLAC_ATS):
@@ -53,14 +53,14 @@ class RadarInterface(object):
 
     canbus = CanBus()
     print "Using %d as obstacle CAN bus ID" % canbus.obstacle
-    self.rcp = create_radard_can_parser(canbus, CP.carFingerprint)
+    self.rcp = create_radar_can_parser(canbus, CP.carFingerprint)
 
     context = zmq.Context()
     self.logcan = messaging.sub_sock(context, service_list['can'].port)
 
   def update(self):
     updated_messages = set()
-    ret = car.RadarState.new_message()
+    ret = car.RadarData.new_message()
     while 1:
 
       if self.rcp is None:
@@ -68,7 +68,8 @@ class RadarInterface(object):
         return ret
 
       tm = int(sec_since_boot() * 1e9)
-      updated_messages.update(self.rcp.update(tm, True))
+      _, vls = self.rcp.update(tm, True)
+      updated_messages.update(vls)
       if LAST_RADAR_MSG in updated_messages:
         break
 
@@ -101,7 +102,7 @@ class RadarInterface(object):
         targetId = cpt['TrkObjectID']
         currentTargets.add(targetId)
         if targetId not in self.pts:
-          self.pts[targetId] = car.RadarState.RadarPoint.new_message()
+          self.pts[targetId] = car.RadarData.RadarPoint.new_message()
           self.pts[targetId].trackId = targetId
         distance = cpt['TrkRange']
         self.pts[targetId].dRel = distance # from front of car

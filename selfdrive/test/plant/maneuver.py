@@ -28,7 +28,7 @@ class Maneuver(object):
       distance_lead = self.distance_lead
     )
 
-    last_live100 = None
+    last_controls_state = None
     plot = ManeuverPlot(self.title)
 
     buttons_sorted = sorted(self.cruise_button_presses, key=lambda a: a[1])
@@ -42,27 +42,27 @@ class Maneuver(object):
       grade = np.interp(plant.current_time(), self.grade_breakpoints, self.grade_values)
       speed_lead = np.interp(plant.current_time(), self.speed_lead_breakpoints, self.speed_lead_values)
 
-      distance, speed, acceleration, distance_lead, brake, gas, steer_torque, fcw, live100= plant.step(speed_lead, current_button, grade)
-      if live100:
-        last_live100 = live100[-1]
+      distance, speed, acceleration, distance_lead, brake, gas, steer_torque, fcw, controls_state= plant.step(speed_lead, current_button, grade)
+      if controls_state:
+        last_controls_state = controls_state[-1]
 
       d_rel = distance_lead - distance if self.lead_relevancy else 200.
       v_rel = speed_lead - speed if self.lead_relevancy else 0.
 
-      if last_live100:
-        # print(last_live100)
+      if last_controls_state:
+        # print(last_controls_state)
         #develop plots
         plot.add_data(
           time=plant.current_time(),
           gas=gas, brake=brake, steer_torque=steer_torque,
           distance=distance, speed=speed, acceleration=acceleration,
-          up_accel_cmd=last_live100.upAccelCmd, ui_accel_cmd=last_live100.uiAccelCmd,
-          uf_accel_cmd=last_live100.ufAccelCmd,
+          up_accel_cmd=last_controls_state.upAccelCmd, ui_accel_cmd=last_controls_state.uiAccelCmd,
+          uf_accel_cmd=last_controls_state.ufAccelCmd,
           d_rel=d_rel, v_rel=v_rel, v_lead=speed_lead,
-          v_target_lead=last_live100.vTargetLead, pid_speed=last_live100.vPid,
-          cruise_speed=last_live100.vCruise,
-          jerk_factor=last_live100.jerkFactor,
-          a_target=last_live100.aTarget,
+          v_target_lead=last_controls_state.vTargetLead, pid_speed=last_controls_state.vPid,
+          cruise_speed=last_controls_state.vCruise,
+          jerk_factor=last_controls_state.jerkFactor,
+          a_target=last_controls_state.aTarget,
           fcw=fcw)
 
     print("maneuver end")

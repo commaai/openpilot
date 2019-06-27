@@ -43,11 +43,14 @@ def create_es_distance(packer, es_distance_msg, pcm_cancel_cmd):
 
   return packer.make_can_msg("ES_Distance", 0, values)
 
-def create_es_lkas(packer, es_lkas_msg, visual_alert):
+def create_es_lkas(packer, es_lkas_msg, visual_alert, left_line, right_line):
 
   values = copy.copy(es_lkas_msg)
   if visual_alert == VisualAlert.steerRequired:
     values["Keep_Hands_On_Wheel"] = 1
+
+  values["LKAS_Left_Line_Visible"] = int(left_line)
+  values["LKAS_Right_Line_Visible"] = int(right_line)
 
   values["Checksum"] = subaru_checksum(packer, values, 802)
 

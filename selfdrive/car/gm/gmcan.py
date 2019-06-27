@@ -134,8 +134,13 @@ def create_chime_command(bus, chime_type, duration, repeat_cnt):
   dat = [chime_type, duration, repeat_cnt, 0xff, 0]
   return [0x10400060, 0, "".join(map(chr, dat)), bus]
 
-def create_lka_icon_command(bus, active, critical):
-  if active:
+def create_lka_icon_command(bus, active, critical, steer):
+  if active and steer == 1:
+    if critical:
+      dat = "\x50\xc0\x14"
+    else:
+      dat = "\x50\x40\x18"
+  elif active:
     if critical:
       dat = "\x40\xc0\x14"
     else:

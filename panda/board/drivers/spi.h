@@ -1,5 +1,10 @@
 // IRQs: DMA2_Stream2, DMA2_Stream3, EXTI4
 
+void spi_init();
+int spi_cb_rx(uint8_t *data, int len, uint8_t *data_out);
+
+// end API
+
 #define SPI_BUF_SIZE 256
 uint8_t spi_buf[SPI_BUF_SIZE];
 int spi_buf_count = 0;
@@ -23,8 +28,8 @@ void spi_init() {
 
   // setup interrupt on falling edge of SPI enable (on PA4)
   SYSCFG->EXTICR[2] = SYSCFG_EXTICR2_EXTI4_PA;
-  EXTI->IMR = (1 << 4);
-  EXTI->FTSR = (1 << 4);
+  EXTI->IMR |= (1 << 4);
+  EXTI->FTSR |= (1 << 4);
   NVIC_EnableIRQ(EXTI4_IRQn);
 }
 
@@ -108,7 +113,7 @@ void DMA2_Stream3_IRQHandler(void) {
 }
 
 void EXTI4_IRQHandler(void) {
-  volatile int pr = EXTI->PR;
+  volatile int pr = EXTI->PR & (1 << 4);
   #ifdef DEBUG_SPI
     puts("exti4\n");
   #endif
