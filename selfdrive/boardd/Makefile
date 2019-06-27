@@ -64,7 +64,7 @@ boardd: $(OBJS)
 
 boardd.o: boardd.cc
 	@echo "[ CXX ] $@"
-	$(CXX) $(CXXFLAGS) \
+	$(CXX) $(CXXFLAGS) -MMD \
            -I$(PHONELIBS)/android_system_core/include \
            $(CEREAL_CFLAGS) \
            $(CEREAL_CXXFLAGS) \
@@ -80,7 +80,7 @@ boardd_api_impl.so: libcan_list_to_can_capnp.a boardd_api_impl.pyx boardd_setup.
 	rm -f boardd_api_impl.cpp
 
 libcan_list_to_can_capnp.a: can_list_to_can_capnp.o $(CEREAL_OBJS)
-	ar rcs '$@' $^
+	ar rcsD '$@' $^
 
 %.o: %.c
 	@echo "[ CC ] $@"

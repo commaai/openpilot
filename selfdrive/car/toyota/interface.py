@@ -8,14 +8,9 @@ from selfdrive.car.toyota.carstate import CarState, get_can_parser, get_cam_can_
 from selfdrive.car.toyota.values import ECU, check_ecu_msgs, CAR, NO_STOP_TIMER_CAR
 from selfdrive.swaglog import cloudlog
 
-try:
-  from selfdrive.car.toyota.carcontroller import CarController
-except ImportError:
-  CarController = None
-
 
 class CarInterface(object):
-  def __init__(self, CP, sendcan=None):
+  def __init__(self, CP, CarController):
     self.CP = CP
     self.VM = VehicleModel(CP)
 
@@ -34,9 +29,8 @@ class CarInterface(object):
 
     self.forwarding_camera = False
 
-    # sending if read only is False
-    if sendcan is not None:
-      self.sendcan = sendcan
+    self.CC = None
+    if CarController is not None:
       self.CC = CarController(self.cp.dbc_name, CP.carFingerprint, CP.enableCamera, CP.enableDsu, CP.enableApgs)
 
   @staticmethod
@@ -48,7 +42,7 @@ class CarInterface(object):
     return 1.0
 
   @staticmethod
-  def get_params(candidate, fingerprint):
+  def get_params(candidate, fingerprint, vin=""):
 
     # kg of standard extra cargo to count for drive, gas, etc...
     std_cargo = 136
@@ -57,6 +51,7 @@ class CarInterface(object):
 
     ret.carName = "toyota"
     ret.carFingerprint = candidate
+    ret.carVin = vin
 
     ret.safetyModel = car.CarParams.SafetyModels.toyota
 
@@ -256,7 +251,8 @@ class CarInterface(object):
     # ******************* do can recv *******************
     canMonoTimes = []
 
-    self.cp.update(int(sec_since_boot() * 1e9), False)
+    can_valid, _ = self.cp.update(int(sec_since_boot() * 1e9), True)
+    can_rcv_error = not can_valid
 
     # run the cam can update for 10s as we just need to know if the camera is alive
     if self.frame < 1000:
@@ -341,10 +337,11 @@ class CarInterface(object):
     events = []
     if not self.CS.can_valid:
       self.can_invalid_count += 1
-      if self.can_invalid_count >= 5:
-        events.append(create_event('commIssue', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     else:
       self.can_invalid_count = 0
+
+    if can_rcv_error or self.can_invalid_count >= 5:
+      events.append(create_event('commIssue', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
 
     if self.CS.cam_can_valid:
       self.cam_can_valid_count += 1
@@ -403,11 +400,11 @@ class CarInterface(object):
   # to be called @ 100hz
   def apply(self, c):
 
-    self.CC.update(self.sendcan, c.enabled, self.CS, self.frame,
-                   c.actuators, c.cruiseControl.cancel, c.hudControl.visualAlert,
-                   c.hudControl.audibleAlert, self.forwarding_camera,
-                   c.hudControl.leftLaneVisible, c.hudControl.rightLaneVisible, c.hudControl.leadVisible,
-                   c.hudControl.leftLaneDepart, c.hudControl.rightLaneDepart)
+    can_sends = self.CC.update(c.enabled, self.CS, self.frame,
+                               c.actuators, c.cruiseControl.cancel, c.hudControl.visualAlert,
+                               c.hudControl.audibleAlert, self.forwarding_camera,
+                               c.hudControl.leftLaneVisible, c.hudControl.rightLaneVisible, c.hudControl.leadVisible,
+                               c.hudControl.leftLaneDepart, c.hudControl.rightLaneDepart)
 
     self.frame += 1
-    return False
+    return can_sends

@@ -11,7 +11,7 @@ import selfdrive.messaging as messaging
 
 RADAR_MSGS = range(0x500, 0x540)
 
-def _create_radard_can_parser():
+def _create_radar_can_parser():
   dbc_f = 'ford_fusion_2018_adas.dbc'
   msg_n = len(RADAR_MSGS)
   signals = list(zip(['X_Rel'] * msg_n + ['Angle'] * msg_n + ['V_Rel'] * msg_n,
@@ -31,7 +31,7 @@ class RadarInterface(object):
     self.delay = 0.0  # Delay of radar
 
     # Nidec
-    self.rcp = _create_radard_can_parser()
+    self.rcp = _create_radar_can_parser()
 
     context = zmq.Context()
     self.logcan = messaging.sub_sock(context, service_list['can'].port)
@@ -42,12 +42,14 @@ class RadarInterface(object):
     updated_messages = set()
     while 1:
       tm = int(sec_since_boot() * 1e9)
-      updated_messages.update(self.rcp.update(tm, True))
+      _, vls = self.rcp.update(tm, True)
+      updated_messages.update(vls)
+
       # TODO: do not hardcode last msg
       if 0x53f in updated_messages:
         break
 
-    ret = car.RadarState.new_message()
+    ret = car.RadarData.new_message()
     errors = []
     if not self.rcp.can_valid:
       errors.append("commIssue")
@@ -69,7 +71,7 @@ class RadarInterface(object):
       # radar point only valid if there have been enough valid measurements
       if self.validCnt[ii] > 0:
         if ii not in self.pts:
-          self.pts[ii] = car.RadarState.RadarPoint.new_message()
+          self.pts[ii] = car.RadarData.RadarPoint.new_message()
           self.pts[ii].trackId = self.track_id
           self.track_id += 1
         self.pts[ii].dRel = cpt['X_Rel']  # from front of car
