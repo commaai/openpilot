@@ -1,13 +1,9 @@
 #!/usr/bin/env python
 import os
-import zmq
 import time
 from cereal import car
 from selfdrive.can.parser import CANParser
 from common.realtime import sec_since_boot
-from selfdrive.services import service_list
-import selfdrive.messaging as messaging
-
 
 def _create_nidec_can_parser():
   dbc_f = 'acura_ilx_2016_nidec.dbc'
@@ -35,9 +31,6 @@ class RadarInterface(object):
 
     # Nidec
     self.rcp = _create_nidec_can_parser()
-
-    context = zmq.Context()
-    self.logcan = messaging.sub_sock(context, service_list['can'].port)
 
   def update(self):
     canMonoTimes = []
@@ -81,7 +74,7 @@ class RadarInterface(object):
 
     errors = []
     if not self.rcp.can_valid:
-      errors.append("commIssue")
+      errors.append("canError")
     if self.radar_fault:
       errors.append("fault")
     if self.radar_wrong_config:

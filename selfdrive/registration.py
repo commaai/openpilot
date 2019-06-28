@@ -2,7 +2,6 @@ import os
 import json
 import subprocess
 import struct
-import jwt
 
 from datetime import datetime, timedelta
 from selfdrive.swaglog import cloudlog
@@ -66,7 +65,8 @@ def register():
   if not os.path.isfile("/persist/comma/id_rsa.pub"):
     cloudlog.warning("generating your personal RSA key")
     mkdirs_exists_ok("/persist/comma")
-    assert os.system("echo -e 'y\n' | ssh-keygen -t rsa -b 2048 -f /persist/comma/id_rsa.tmp -N ''") == 0
+    assert os.system("openssl genrsa -out /persist/comma/id_rsa.tmp 2048") == 0
+    assert os.system("openssl rsa -in /persist/comma/id_rsa.tmp -pubout -out /persist/comma/id_rsa.tmp.pub") == 0
     os.rename("/persist/comma/id_rsa.tmp", "/persist/comma/id_rsa")
     os.rename("/persist/comma/id_rsa.tmp.pub", "/persist/comma/id_rsa.pub")
 
@@ -76,6 +76,9 @@ def register():
   # create registration token
   # in the future, this key will make JWTs directly
   private_key = open("/persist/comma/id_rsa").read()
+
+  # late import
+  import jwt
   register_token = jwt.encode({'register':True, 'exp': datetime.utcnow() + timedelta(hours=1)}, private_key, algorithm='RS256')
 
   try:

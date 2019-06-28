@@ -26,8 +26,9 @@ def deleter_thread(exit_event):
           break
         except OSError:
           cloudlog.exception("issue deleting %s" % delete_path)
-
-    exit_event.wait(30)
+      exit_event.wait(.1)
+    else:
+      exit_event.wait(30)
 
 
 def main(gctx=None):

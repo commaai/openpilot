@@ -4,7 +4,7 @@ from common.basedir import BASEDIR
 def get_fingerprint_list():
   # read all the folders in selfdrive/car and return a dict where:
   # - keys are all the car models for which we have a fingerprint
-  # - values are lists dicts of messages that constitute the unique 
+  # - values are lists dicts of messages that constitute the unique
   #   CAN fingerprint of each car model and all its variants
   fingerprints = {}
   for car_folder in [x[0] for x in os.walk(BASEDIR + '/selfdrive/car')]:
