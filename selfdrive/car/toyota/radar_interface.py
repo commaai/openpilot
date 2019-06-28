@@ -1,18 +1,15 @@
 #!/usr/bin/env python
 import os
-import zmq
 import time
 from selfdrive.can.parser import CANParser
 from cereal import car
 from common.realtime import sec_since_boot
-from selfdrive.services import service_list
-import selfdrive.messaging as messaging
-from selfdrive.car.toyota.values import NO_DSU_CAR, DBC, TSSP2_CAR
+from selfdrive.car.toyota.values import NO_DSU_CAR, DBC, TSS2_CAR
 
 def _create_radar_can_parser(car_fingerprint):
   dbc_f = DBC[car_fingerprint]['radar']
 
-  if car_fingerprint in TSSP2_CAR:
+  if car_fingerprint in TSS2_CAR:
     RADAR_A_MSGS = list(range(0x180, 0x190))
     RADAR_B_MSGS = list(range(0x190, 0x1a0))
   else:
@@ -39,7 +36,7 @@ class RadarInterface(object):
 
     self.delay = 0.0  # Delay of radar
 
-    if CP.carFingerprint in TSSP2_CAR:
+    if CP.carFingerprint in TSS2_CAR:
       self.RADAR_A_MSGS = list(range(0x180, 0x190))
       self.RADAR_B_MSGS = list(range(0x190, 0x1a0))
     else:
@@ -49,17 +46,15 @@ class RadarInterface(object):
     self.valid_cnt = {key: 0 for key in self.RADAR_A_MSGS}
 
     self.rcp = _create_radar_can_parser(CP.carFingerprint)
-    self.no_dsu_car = CP.carFingerprint in NO_DSU_CAR
-
-    context = zmq.Context()
-    self.logcan = messaging.sub_sock(context, service_list['can'].port)
+    # No radar dbc for cars without DSU which are not TSS 2.0
+    # TODO: make a adas dbc file for dsu-less models
+    self.no_radar = CP.carFingerprint in NO_DSU_CAR and CP.carFingerprint not in TSS2_CAR
 
   def update(self):
 
     ret = car.RadarData.new_message()
 
-    if self.no_dsu_car:
-      # TODO: make a adas dbc file for dsu-less models
+    if self.no_radar:
       time.sleep(0.05)
       return ret
 
@@ -74,7 +69,7 @@ class RadarInterface(object):
 
     errors = []
     if not self.rcp.can_valid:
-      errors.append("commIssue")
+      errors.append("canError")
     ret.errors = errors
     ret.canMonoTimes = canMonoTimes
 

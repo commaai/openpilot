@@ -106,9 +106,6 @@ class CarState(object):
 
   def update(self, cp, cp_cam):
 
-    self.can_valid = cp.can_valid
-    self.cam_can_valid = cp_cam.can_valid
-
     self.pedal_gas = cp.vl["Throttle"]['Throttle_Pedal']
     self.brake_pressure = cp.vl["Brake_Pedal"]['Brake_Pedal']
     self.user_gas_pressed = self.pedal_gas > 0

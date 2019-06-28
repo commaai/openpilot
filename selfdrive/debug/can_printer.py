@@ -3,14 +3,12 @@ import os
 import sys
 from collections import defaultdict
 from common.realtime import sec_since_boot
-import zmq
 import selfdrive.messaging as messaging
 from selfdrive.services import service_list
 
 
 def can_printer(bus=0, max_msg=None, addr="127.0.0.1"):
-  context = zmq.Context()
-  logcan = messaging.sub_sock(context, service_list['can'].port, addr=addr)
+  logcan = messaging.sub_sock(service_list['can'].port, addr=addr)
 
   start = sec_since_boot()
   lp = sec_since_boot()

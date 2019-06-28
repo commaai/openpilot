@@ -7,6 +7,7 @@ from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.gm.values import DBC, CAR, STOCK_CONTROL_MSGS, AUDIO_HUD, \
                                     SUPERCRUISE_CARS, AccState
 from selfdrive.car.gm.carstate import CarState, CruiseButtons, get_powertrain_can_parser
+from selfdrive.car import STD_CARGO_KG
 
 
 class CanBus(object):
@@ -23,7 +24,6 @@ class CarInterface(object):
     self.frame = 0
     self.gas_pressed_prev = False
     self.brake_pressed_prev = False
-    self.can_invalid_count = 0
     self.acc_active_prev = 0
 
     # *** init the major players ***
@@ -61,14 +61,11 @@ class CarInterface(object):
     ret.enableCamera = not any(x for x in STOCK_CONTROL_MSGS[candidate] if x in fingerprint)
     ret.openpilotLongitudinalControl = ret.enableCamera
 
-    std_cargo = 136
-
     if candidate == CAR.VOLT:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
-      # kg of standard extra cargo to count for driver, gas, etc...
-      ret.mass = 1607. + std_cargo
-      ret.safetyModel = car.CarParams.SafetyModels.gm
+      ret.mass = 1607. + STD_CARGO_KG
+      ret.safetyModel = car.CarParams.SafetyModel.gm
       ret.wheelbase = 2.69
       ret.steerRatio = 15.7
       ret.steerRatioRear = 0.
@@ -77,28 +74,27 @@ class CarInterface(object):
     elif candidate == CAR.MALIBU:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
-      ret.mass = 1496. + std_cargo
-      ret.safetyModel = car.CarParams.SafetyModels.gm
+      ret.mass = 1496. + STD_CARGO_KG
+      ret.safetyModel = car.CarParams.SafetyModel.gm
       ret.wheelbase = 2.83
       ret.steerRatio = 15.8
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.4 # wild guess
 
     elif candidate == CAR.HOLDEN_ASTRA:
-      # kg of standard extra cargo to count for driver, gas, etc...
-      ret.mass = 1363. + std_cargo
+      ret.mass = 1363. + STD_CARGO_KG
       ret.wheelbase = 2.662
       # Remaining parameters copied from Volt for now
       ret.centerToFront = ret.wheelbase * 0.4
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
-      ret.safetyModel = car.CarParams.SafetyModels.gm
+      ret.safetyModel = car.CarParams.SafetyModel.gm
       ret.steerRatio = 15.7
       ret.steerRatioRear = 0.
 
     elif candidate == CAR.ACADIA:
       ret.minEnableSpeed = -1. # engage speed is decided by pcm
-      ret.mass = 4353. * CV.LB_TO_KG + std_cargo
-      ret.safetyModel = car.CarParams.SafetyModels.gm
+      ret.mass = 4353. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.safetyModel = car.CarParams.SafetyModel.gm
       ret.wheelbase = 2.86
       ret.steerRatio = 14.4  #end to end is 13.46
       ret.steerRatioRear = 0.
@@ -106,8 +102,8 @@ class CarInterface(object):
 
     elif candidate == CAR.BUICK_REGAL:
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
-      ret.mass = 3779. * CV.LB_TO_KG + std_cargo # (3849+3708)/2
-      ret.safetyModel = car.CarParams.SafetyModels.gm
+      ret.mass = 3779. * CV.LB_TO_KG + STD_CARGO_KG # (3849+3708)/2
+      ret.safetyModel = car.CarParams.SafetyModel.gm
       ret.wheelbase = 2.83 #111.4 inches in meters
       ret.steerRatio = 14.4 # guess for tourx
       ret.steerRatioRear = 0.
@@ -115,8 +111,8 @@ class CarInterface(object):
 
     elif candidate == CAR.CADILLAC_ATS:
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
-      ret.mass = 1601. + std_cargo
-      ret.safetyModel = car.CarParams.SafetyModels.gm
+      ret.mass = 1601. + STD_CARGO_KG
+      ret.safetyModel = car.CarParams.SafetyModel.gm
       ret.wheelbase = 2.78
       ret.steerRatio = 15.3
       ret.steerRatioRear = 0.
@@ -125,9 +121,8 @@ class CarInterface(object):
     elif candidate == CAR.CADILLAC_CT6:
       # engage speed is decided by pcm
       ret.minEnableSpeed = -1.
-      # kg of standard extra cargo to count for driver, gas, etc...
-      ret.mass = 4016. * CV.LB_TO_KG + std_cargo
-      ret.safetyModel = car.CarParams.SafetyModels.cadillac
+      ret.mass = 4016. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.safetyModel = car.CarParams.SafetyModel.cadillac
       ret.wheelbase = 3.11
       ret.steerRatio = 14.6   # it's 16.3 without rear active steering
       ret.steerRatioRear = 0. # TODO: there is RAS on this car!
@@ -136,7 +131,7 @@ class CarInterface(object):
 
     # hardcoding honda civic 2016 touring params so they can be used to
     # scale unknown params for other cars
-    mass_civic = 2923. * CV.LB_TO_KG + std_cargo
+    mass_civic = 2923. * CV.LB_TO_KG + STD_CARGO_KG
     wheelbase_civic = 2.70
     centerToFront_civic = wheelbase_civic * 0.4
     centerToRear_civic = wheelbase_civic - centerToFront_civic
@@ -191,12 +186,14 @@ class CarInterface(object):
 
   # returns a car.CarState
   def update(self, c):
-    can_valid, _ = self.pt_cp.update(int(sec_since_boot() * 1e9), True)
-    can_rcv_error = not can_valid
+    can_rcv_valid, _ = self.pt_cp.update(int(sec_since_boot() * 1e9), True)
+
     self.CS.update(self.pt_cp)
 
     # create message
     ret = car.CarState.new_message()
+
+    ret.canValid = can_rcv_valid and self.pt_cp.can_valid
 
     # speeds
     ret.vEgo = self.CS.v_ego
@@ -275,14 +272,6 @@ class CarInterface(object):
     ret.buttonEvents = buttonEvents
 
     events = []
-    if not self.CS.can_valid:
-      self.can_invalid_count += 1
-    else:
-      self.can_invalid_count = 0
-
-    if can_rcv_error or self.can_invalid_count >= 5:
-      events.append(create_event('commIssue', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
-
     if self.CS.steer_error:
       events.append(create_event('steerUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
     if self.CS.steer_not_allowed:

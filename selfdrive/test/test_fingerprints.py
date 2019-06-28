@@ -21,9 +21,9 @@ def _get_fingerprints():
 def check_fingerprint_consistency(f1, f2):
   # return false if it finds a fingerprint fully included in another
 
-  # max message worth checking is 1900, as above that they usually come too infrequently and not
+  # max message worth checking is 1800, as above that they usually come too infrequently and not
   # usable for fingerprinting
-  max_msg = 1900
+  max_msg = 1800
 
   is_f1_in_f2 = True
   for k in f1:
