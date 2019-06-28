@@ -1,7 +1,0 @@
-libusb1 == 1.6.6
-hexdump
-pycrypto
-tqdm
-nose
-parameterized
-requests
