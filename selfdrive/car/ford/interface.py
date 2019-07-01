@@ -59,11 +59,6 @@ class CarInterface(object):
     ret.lateralTuning.pid.kf = 1. / MAX_ANGLE   # MAX Steer angle to normalize FF
     ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
     ret.steerRateCost = 1.0
-
-    f = 1.2
-    CivicParams.tireStiffnessFront *= f
-    CivicParams.tireStiffnessRear *= f
-
     ret.centerToFront = ret.wheelbase * 0.44
     tire_stiffness_factor = 0.444  # not optimized
 
