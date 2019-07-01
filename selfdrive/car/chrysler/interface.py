@@ -6,6 +6,7 @@ from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.chrysler.carstate import CarState, get_can_parser, get_camera_parser
 from selfdrive.car.chrysler.values import ECU, check_ecu_msgs, CAR
+from selfdrive.car import STD_CARGO_KG
 
 
 class CarInterface(object):
@@ -14,7 +15,6 @@ class CarInterface(object):
     self.VM = VehicleModel(CP)
 
     self.frame = 0
-    self.can_invalid_count = 0
     self.gas_pressed_prev = False
     self.brake_pressed_prev = False
     self.cruise_enabled_prev = False
@@ -40,23 +40,20 @@ class CarInterface(object):
   @staticmethod
   def get_params(candidate, fingerprint, vin=""):
 
-    # kg of standard extra cargo to count for drive, gas, etc...
-    std_cargo = 136
-
     ret = car.CarParams.new_message()
 
     ret.carName = "chrysler"
     ret.carFingerprint = candidate
     ret.carVin = vin
 
-    ret.safetyModel = car.CarParams.SafetyModels.chrysler
+    ret.safetyModel = car.CarParams.SafetyModel.chrysler
 
     # pedal
     ret.enableCruise = True
 
     # FIXME: hardcoding honda civic 2016 touring params so they can be used to
     # scale unknown params for other cars
-    mass_civic = 2923./2.205 + std_cargo
+    mass_civic = 2923. * CV.LB_TO_KG + STD_CARGO_KG
     wheelbase_civic = 2.70
     centerToFront_civic = wheelbase_civic * 0.4
     centerToRear_civic = wheelbase_civic - centerToFront_civic
@@ -67,7 +64,7 @@ class CarInterface(object):
     # Speed conversion:              20, 45 mph
     ret.wheelbase = 3.089  # in meters for Pacifica Hybrid 2017
     ret.steerRatio = 16.2 # Pacifica Hybrid 2017
-    ret.mass = 2858 + std_cargo  # kg curb weight Pacifica Hybrid 2017
+    ret.mass = 2858. + STD_CARGO_KG  # kg curb weight Pacifica Hybrid 2017
     ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[9., 20.], [9., 20.]]
     ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.15,0.30], [0.03,0.05]]
     ret.lateralTuning.pid.kf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
@@ -135,14 +132,15 @@ class CarInterface(object):
   def update(self, c):
     # ******************* do can recv *******************
     canMonoTimes = []
-    can_valid, _ = self.cp.update(int(sec_since_boot() * 1e9), True)
-    cam_valid, _ = self.cp_cam.update(int(sec_since_boot() * 1e9), False)
-    can_rcv_error = not can_valid or not cam_valid
+    can_rcv_valid, _ = self.cp.update(int(sec_since_boot() * 1e9), True)
+    cam_rcv_valid, _ = self.cp_cam.update(int(sec_since_boot() * 1e9), False)
 
     self.CS.update(self.cp, self.cp_cam)
 
     # create message
     ret = car.CarState.new_message()
+
+    ret.canValid = can_rcv_valid and cam_rcv_valid and self.cp.can_valid and self.cp_cam.can_valid
 
     # speeds
     ret.vEgo = self.CS.v_ego
@@ -212,14 +210,6 @@ class CarInterface(object):
 
     # events
     events = []
-    if not self.CS.can_valid:
-      self.can_invalid_count += 1
-    else:
-      self.can_invalid_count = 0
-
-    if can_rcv_error or self.can_invalid_count >= 5:
-      events.append(create_event('commIssue', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
-
     if not (ret.gearShifter in ('drive', 'low')):
       events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if ret.doorOpen:

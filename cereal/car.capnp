@@ -22,7 +22,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
 
   enum EventName @0xbaa8c5d505f727de {
     # TODO: copy from error list
-    commIssue @0;
+    canError @0;
     steerUnavailable @1;
     brakeUnavailable @2;
     gasUnavailable @3;
@@ -37,7 +37,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     buttonEnable @12;
     pedalPressed @13;
     cruiseDisabled @14;
-    radarCommIssue @15;
+    radarCanError @15;
     dataNeeded @16;
     speedTooLow @17;
     outOfSpace @18;
@@ -49,7 +49,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     pcmDisable @24;
     noTarget @25;
     radarFault @26;
-    modelCommIssue @27;
+    modelCommIssueDEPRECATED @27;
     brakeHold @28;
     parkBrake @29;
     manualRestart @30;
@@ -75,6 +75,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     vehicleModelInvalid @50;
     controlsFailed @51;
     sensorDataInvalid @52;
+    commIssue @53;
   }
 }
 
@@ -123,6 +124,7 @@ struct CarState {
   # lock info
   doorOpen @24 :Bool;
   seatbeltUnlatched @25 :Bool;
+  canValid @26 :Bool;
 
   # which packets this state came from
   canMonoTimes @12: List(UInt64);
@@ -184,7 +186,7 @@ struct RadarData @0x888ad6581cf0aacb {
   canMonoTimes @2 :List(UInt64);
 
   enum Error {
-    commIssue @0;
+    canError @0;
     fault @1;
     wrongConfig @2;
   }
@@ -293,7 +295,7 @@ struct CarParams {
 
   minEnableSpeed @7 :Float32;
   minSteerSpeed @8 :Float32;
-  safetyModel @9 :Int16;
+  safetyModel @9 :SafetyModel;
   safetyParam @10 :Int16;
 
   steerMaxBP @11 :List(Float32);
@@ -362,7 +364,7 @@ struct CarParams {
   }
 
 
-  enum SafetyModels {
+  enum SafetyModel {
     # does NOT match board setting
     noOutput @0;
     honda @1;

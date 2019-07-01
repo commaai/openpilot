@@ -355,28 +355,28 @@ ALERTS = [
       AlertStatus.critical, AlertSize.full,
       Priority.MID, VisualAlert.steerRequired, AudibleAlert.chimeWarning2, .1, 2., 2.),
 
-  # Cancellation alerts causing immediate disabling
   Alert(
-      "radarCommIssue",
+      "commIssue",
+      "TAKE CONTROL IMMEDIATELY",
+      "Communication Issue between Processes",
+      AlertStatus.critical, AlertSize.full,
+      Priority.MID, VisualAlert.steerRequired, AudibleAlert.chimeWarning2, .1, 2., 2.),
+
+  Alert(
+      "radarCanError",
       "TAKE CONTROL IMMEDIATELY",
       "Radar Error: Restart the Car",
       AlertStatus.critical, AlertSize.full,
-      Priority.HIGHEST, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, 1., 3., 4.),
+      Priority.MID, VisualAlert.steerRequired, AudibleAlert.chimeWarning2, .1, 2., 2.),
 
   Alert(
       "radarFault",
       "TAKE CONTROL IMMEDIATELY",
       "Radar Error: Restart the Car",
       AlertStatus.critical, AlertSize.full,
-      Priority.HIGHEST, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, 1., 3., 4.),
+      Priority.MID, VisualAlert.steerRequired, AudibleAlert.chimeWarning2, .1, 2., 2.),
 
-  Alert(
-      "modelCommIssue",
-      "TAKE CONTROL IMMEDIATELY",
-      "Model Error: Check Internet Connection",
-      AlertStatus.critical, AlertSize.full,
-      Priority.HIGHEST, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, 1., 3., 4.),
-
+  # Cancellation alerts causing immediate disabling
   Alert(
       "controlsFailed",
       "TAKE CONTROL IMMEDIATELY",
@@ -392,7 +392,7 @@ ALERTS = [
       Priority.HIGHEST, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, 1., 3., 4.),
 
   Alert(
-      "commIssue",
+      "canError",
       "TAKE CONTROL IMMEDIATELY",
       "CAN Error: Check Connections",
       AlertStatus.critical, AlertSize.full,
@@ -520,7 +520,7 @@ ALERTS = [
       Priority.MID, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
 
   Alert(
-      "radarCommIssueNoEntry",
+      "radarCanErrorNoEntry",
       "openpilot Unavailable",
       "Radar Error: Restart the Car",
       AlertStatus.normal, AlertSize.mid,
@@ -534,13 +534,6 @@ ALERTS = [
       Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
 
   Alert(
-      "modelCommIssueNoEntry",
-      "openpilot Unavailable",
-      "Model Error: Check Internet Connection",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
-
-  Alert(
       "controlsFailedNoEntry",
       "openpilot Unavailable",
       "Controls Failed",
@@ -548,7 +541,7 @@ ALERTS = [
       Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
 
   Alert(
-      "commIssueNoEntry",
+      "canErrorNoEntry",
       "openpilot Unavailable",
       "CAN Error: Check Connections",
       AlertStatus.normal, AlertSize.mid,
@@ -607,6 +600,13 @@ ALERTS = [
       "invalidGiraffeHondaNoEntry",
       "openpilot Unavailable",
       "Set 0111 for openpilot. 1011 for stock",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOW, VisualAlert.none, AudibleAlert.chimeDisengage, .4, 2., 3.),
+
+  Alert(
+      "commIssueNoEntry",
+      "openpilot unavailable",
+      "Communication Issue between Processes",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOW, VisualAlert.none, AudibleAlert.chimeDisengage, .4, 2., 3.),
 

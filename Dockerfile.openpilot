@@ -4,31 +4,44 @@ ENV PYTHONUNBUFFERED 1
 RUN apt-get update && apt-get install -y \
     autoconf \
     build-essential \
-    clang \
-    wget \
     bzip2 \
+    clang \
     git \
-    libglib2.0-0 \
-    libtool \
-    python-pip \
-    libzmq5-dev \
+    libarchive-dev \
+    libavcodec-dev \
+    libavdevice-dev \
+    libavfilter-dev \
+    libavresample-dev \
+    libavutil-dev \
     libffi-dev \
-    libusb-1.0-0 \
+    libglib2.0-0 \
     libssl-dev \
+    libswscale-dev \
+    libtool \
+    libusb-1.0-0 \
+    libzmq5-dev \
     ocl-icd-libopencl1 \
     ocl-icd-opencl-dev \
-    opencl-headers
+    opencl-headers \
+    pkg-config \
+    python-pip \
+    wget
 
 COPY phonelibs/install_capnp.sh /tmp/install_capnp.sh
 RUN /tmp/install_capnp.sh
 
 RUN pip install --upgrade pip==18.0
-RUN pip install numpy==1.11.2 scipy==0.18.1 matplotlib==2.1.2
+RUN pip install pipenv==2018.11.26
 
-COPY requirements_openpilot.txt /tmp/
-RUN pip install -r /tmp/requirements_openpilot.txt
+COPY Pipfile /tmp/
+COPY Pipfile.lock /tmp/
+RUN cd /tmp && pipenv install --deploy --system
 
 ENV PYTHONPATH /tmp/openpilot:$PYTHONPATH
+
+RUN git clone --branch v0.6  https://github.com/commaai/openpilot-tools.git /tmp/openpilot/tools
+RUN pip install -r /tmp/openpilot/tools/requirements.txt
+RUN pip install fastcluster==1.1.20 scipy==0.19.1
 
 COPY ./.pylintrc /tmp/openpilot/.pylintrc
 COPY ./common /tmp/openpilot/common

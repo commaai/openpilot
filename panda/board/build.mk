@@ -2,12 +2,15 @@ CFLAGS += -I inc -I ../ -nostdlib -fno-builtin -std=gnu11 -Os
 
 CFLAGS += -Tstm32_flash.ld
 
+DFU_UTIL = "dfu-util"
+
 # Compile fast charge (DCP) only not on EON
 ifeq (,$(wildcard /EON))
   BUILDER = DEV
 else
   CFLAGS += "-DEON"
   BUILDER = EON
+  DFU_UTIL = "tools/dfu-util-aarch64"
 endif
 
 CC = arm-none-eabi-gcc
@@ -22,7 +25,6 @@ else
   CFLAGS += "-DALLOW_DEBUG"
 endif
 
-DFU_UTIL = "dfu-util"
 
 DEPDIR = generated_dependencies
 $(shell mkdir -p -m 777 $(DEPDIR) >/dev/null)

@@ -3,10 +3,6 @@ import os
 from selfdrive.can.parser import CANParser
 from cereal import car
 from common.realtime import sec_since_boot
-import zmq
-from selfdrive.services import service_list
-import selfdrive.messaging as messaging
-
 
 RADAR_MSGS_C = range(0x2c2, 0x2d4+2, 2)  # c_ messages 706,...,724
 RADAR_MSGS_D = range(0x2a2, 0x2b4+2, 2)  # d_ messages
@@ -55,8 +51,6 @@ class RadarInterface(object):
     self.pts = {}
     self.delay = 0.0  # Delay of radar  #TUNE
     self.rcp = _create_radar_can_parser()
-    context = zmq.Context()
-    self.logcan = messaging.sub_sock(context, service_list['can'].port)
 
   def update(self):
     canMonoTimes = []
@@ -73,7 +67,7 @@ class RadarInterface(object):
     ret = car.RadarData.new_message()
     errors = []
     if not self.rcp.can_valid:
-      errors.append("commIssue")
+      errors.append("canError")
     ret.errors = errors
     ret.canMonoTimes = canMonoTimes
 

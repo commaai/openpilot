@@ -30,76 +30,63 @@ typedef struct
   uint32_t CNT;
 } TIM_TypeDef;
 
-void set_controls_allowed(int c);
-int get_controls_allowed(void);
-void set_long_controls_allowed(int c);
-int get_long_controls_allowed(void);
-void set_gas_interceptor_detected(int c);
-int get_gas_interceptor_detetcted(void);
+void set_controls_allowed(bool c);
+bool get_controls_allowed(void);
+void set_long_controls_allowed(bool c);
+bool get_long_controls_allowed(void);
+void set_gas_interceptor_detected(bool c);
+bool get_gas_interceptor_detetcted(void);
 int get_gas_interceptor_prev(void);
-void set_timer(int t);
+void set_timer(uint32_t t);
 void reset_angle_control(void);
 
+void safety_rx_hook(CAN_FIFOMailBox_TypeDef *to_send);
+int safety_tx_hook(CAN_FIFOMailBox_TypeDef *to_push);
+int safety_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd);
+int safety_set_mode(uint16_t  mode, int16_t param);
+
 void init_tests_toyota(void);
-void toyota_rx_hook(CAN_FIFOMailBox_TypeDef *to_push);
-int toyota_tx_hook(CAN_FIFOMailBox_TypeDef *to_send);
-void toyota_init(int16_t param);
 int get_toyota_torque_meas_min(void);
 int get_toyota_torque_meas_max(void);
 int get_toyota_gas_prev(void);
 void set_toyota_torque_meas(int min, int max);
 void set_toyota_desired_torque_last(int t);
+void set_toyota_camera_forwarded(int t);
 void set_toyota_rt_torque_last(int t);
 
 void init_tests_honda(void);
 int get_honda_ego_speed(void);
-void honda_init(int16_t param);
-void honda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push);
-int honda_tx_hook(CAN_FIFOMailBox_TypeDef *to_send);
 int get_honda_brake_prev(void);
 int get_honda_gas_prev(void);
 void set_honda_alt_brake_msg(bool);
 void set_honda_bosch_hardware(bool);
 
 void init_tests_cadillac(void);
-void cadillac_init(int16_t param);
-void cadillac_rx_hook(CAN_FIFOMailBox_TypeDef *to_push);
-int cadillac_tx_hook(CAN_FIFOMailBox_TypeDef *to_send);
 void set_cadillac_desired_torque_last(int t);
 void set_cadillac_rt_torque_last(int t);
 void set_cadillac_torque_driver(int min, int max);
 
 void init_tests_gm(void);
-void gm_init(int16_t param);
-void gm_rx_hook(CAN_FIFOMailBox_TypeDef *to_push);
-int gm_tx_hook(CAN_FIFOMailBox_TypeDef *to_send);
 void set_gm_desired_torque_last(int t);
 void set_gm_rt_torque_last(int t);
 void set_gm_torque_driver(int min, int max);
 
 void init_tests_hyundai(void);
-void nooutput_init(int16_t param);
-void hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push);
-int hyundai_tx_hook(CAN_FIFOMailBox_TypeDef *to_send);
 void set_hyundai_desired_torque_last(int t);
 void set_hyundai_rt_torque_last(int t);
 void set_hyundai_torque_driver(int min, int max);
-
-void toyota_ipas_rx_hook(CAN_FIFOMailBox_TypeDef *to_push);
-int toyota_ipas_tx_hook(CAN_FIFOMailBox_TypeDef *to_send);
+void set_hyundai_giraffe_switch_2(int t);
+void set_hyundai_camera_bus(int t);
 
 void init_tests_chrysler(void);
-void chrysler_rx_hook(CAN_FIFOMailBox_TypeDef *to_push);
-int chrysler_tx_hook(CAN_FIFOMailBox_TypeDef *to_send);
 void set_chrysler_desired_torque_last(int t);
 void set_chrysler_rt_torque_last(int t);
+void set_chrysler_camera_detected(int t);
 int get_chrysler_torque_meas_min(void);
 int get_chrysler_torque_meas_max(void);
 void set_chrysler_torque_meas(int min, int max);
 
 void init_tests_subaru(void);
-void subaru_rx_hook(CAN_FIFOMailBox_TypeDef *to_push);
-int subaru_tx_hook(CAN_FIFOMailBox_TypeDef *to_send);
 void set_subaru_desired_torque_last(int t);
 void set_subaru_rt_torque_last(int t);
 void set_subaru_torque_driver(int min, int max);

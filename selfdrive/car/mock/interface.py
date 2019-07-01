@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import zmq
 from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.services import service_list
@@ -21,11 +20,10 @@ class CarInterface(object):
     self.CC = CarController
 
     cloudlog.debug("Using Mock Car Interface")
-    context = zmq.Context()
 
     # TODO: subscribe to phone sensor
-    self.sensor = messaging.sub_sock(context, service_list['sensorEvents'].port)
-    self.gps = messaging.sub_sock(context, service_list['gpsLocation'].port)
+    self.sensor = messaging.sub_sock(service_list['sensorEvents'].port)
+    self.gps = messaging.sub_sock(service_list['gpsLocation'].port)
 
     self.speed = 0.
     self.prev_speed = 0.
@@ -50,7 +48,7 @@ class CarInterface(object):
     ret.carName = "mock"
     ret.carFingerprint = candidate
 
-    ret.safetyModel = car.CarParams.SafetyModels.noOutput
+    ret.safetyModel = car.CarParams.SafetyModel.noOutput
     ret.openpilotLongitudinalControl = False
 
     # FIXME: hardcoding honda civic 2016 touring params so they can be used to

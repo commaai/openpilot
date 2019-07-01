@@ -6,6 +6,7 @@ from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.toyota.carstate import CarState, get_can_parser, get_cam_can_parser
 from selfdrive.car.toyota.values import ECU, check_ecu_msgs, CAR, NO_STOP_TIMER_CAR
+from selfdrive.car import STD_CARGO_KG
 from selfdrive.swaglog import cloudlog
 
 
@@ -17,8 +18,6 @@ class CarInterface(object):
     self.frame = 0
     self.gas_pressed_prev = False
     self.brake_pressed_prev = False
-    self.can_invalid_count = 0
-    self.cam_can_valid_count = 0
     self.cruise_enabled_prev = False
 
     # *** init the major players ***
@@ -44,23 +43,20 @@ class CarInterface(object):
   @staticmethod
   def get_params(candidate, fingerprint, vin=""):
 
-    # kg of standard extra cargo to count for drive, gas, etc...
-    std_cargo = 136
-
     ret = car.CarParams.new_message()
 
     ret.carName = "toyota"
     ret.carFingerprint = candidate
     ret.carVin = vin
 
-    ret.safetyModel = car.CarParams.SafetyModels.toyota
+    ret.safetyModel = car.CarParams.SafetyModel.toyota
 
     # pedal
     ret.enableCruise = not ret.enableGasInterceptor
 
     # FIXME: hardcoding honda civic 2016 touring params so they can be used to
     # scale unknown params for other cars
-    mass_civic = 2923 * CV.LB_TO_KG + std_cargo
+    mass_civic = 2923. * CV.LB_TO_KG + STD_CARGO_KG
     wheelbase_civic = 2.70
     centerToFront_civic = wheelbase_civic * 0.4
     centerToRear_civic = wheelbase_civic - centerToFront_civic
@@ -79,7 +75,7 @@ class CarInterface(object):
       ret.wheelbase = 2.70
       ret.steerRatio = 15.00   # unknown end-to-end spec
       tire_stiffness_factor = 0.6371   # hand-tune
-      ret.mass = 3045 * CV.LB_TO_KG + std_cargo
+      ret.mass = 3045. * CV.LB_TO_KG + STD_CARGO_KG
 
       ret.lateralTuning.init('indi')
       ret.lateralTuning.indi.innerLoopGain = 4.0
@@ -88,96 +84,105 @@ class CarInterface(object):
       ret.lateralTuning.indi.actuatorEffectiveness = 1.0
 
       ret.steerActuatorDelay = 0.5
-      ret.steerRateCost = 0.5
 
     elif candidate in [CAR.RAV4, CAR.RAV4H]:
       stop_and_go = True if (candidate in CAR.RAV4H) else False
-      ret.safetyParam = 73  # see conversion factor for STEER_TORQUE_EPS in dbc file
+      ret.safetyParam = 73
       ret.wheelbase = 2.65
       ret.steerRatio = 16.30   # 14.5 is spec end-to-end
       tire_stiffness_factor = 0.5533
-      ret.mass = 3650 * CV.LB_TO_KG + std_cargo  # mean between normal and hybrid
+      ret.mass = 3650. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.05]]
       ret.lateralTuning.pid.kf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
 
     elif candidate == CAR.COROLLA:
       stop_and_go = False
-      ret.safetyParam = 100 # see conversion factor for STEER_TORQUE_EPS in dbc file
+      ret.safetyParam = 100
       ret.wheelbase = 2.70
       ret.steerRatio = 17.8
       tire_stiffness_factor = 0.444
-      ret.mass = 2860 * CV.LB_TO_KG + std_cargo  # mean between normal and hybrid
+      ret.mass = 2860. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.05]]
       ret.lateralTuning.pid.kf = 0.00003   # full torque for 20 deg at 80mph means 0.00007818594
 
     elif candidate == CAR.LEXUS_RXH:
       stop_and_go = True
-      ret.safetyParam = 100 # see conversion factor for STEER_TORQUE_EPS in dbc file
+      ret.safetyParam = 73
       ret.wheelbase = 2.79
       ret.steerRatio = 16.  # 14.8 is spec end-to-end
       tire_stiffness_factor = 0.444  # not optimized yet
-      ret.mass = 4481 * CV.LB_TO_KG + std_cargo  # mean between min and max
+      ret.mass = 4481. * CV.LB_TO_KG + STD_CARGO_KG  # mean between min and max
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
       ret.lateralTuning.pid.kf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
 
     elif candidate in [CAR.CHR, CAR.CHRH]:
       stop_and_go = True
-      ret.safetyParam = 100
+      ret.safetyParam = 73
       ret.wheelbase = 2.63906
       ret.steerRatio = 13.6
       tire_stiffness_factor = 0.7933
-      ret.mass = 3300. * CV.LB_TO_KG + std_cargo
+      ret.mass = 3300. * CV.LB_TO_KG + STD_CARGO_KG
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.723], [0.0428]]
       ret.lateralTuning.pid.kf = 0.00006
 
     elif candidate in [CAR.CAMRY, CAR.CAMRYH]:
       stop_and_go = True
-      ret.safetyParam = 100
+      ret.safetyParam = 73
       ret.wheelbase = 2.82448
       ret.steerRatio = 13.7
       tire_stiffness_factor = 0.7933
-      ret.mass = 3400 * CV.LB_TO_KG + std_cargo #mean between normal and hybrid
+      ret.mass = 3400. * CV.LB_TO_KG + STD_CARGO_KG #mean between normal and hybrid
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
       ret.lateralTuning.pid.kf = 0.00006
 
     elif candidate in [CAR.HIGHLANDER, CAR.HIGHLANDERH]:
       stop_and_go = True
-      ret.safetyParam = 100
+      ret.safetyParam = 73
       ret.wheelbase = 2.78
       ret.steerRatio = 16.0
       tire_stiffness_factor = 0.444 # not optimized yet
-      ret.mass = 4607 * CV.LB_TO_KG + std_cargo #mean between normal and hybrid limited
+      ret.mass = 4607. * CV.LB_TO_KG + STD_CARGO_KG #mean between normal and hybrid limited
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.05]]
       ret.lateralTuning.pid.kf = 0.00006
 
     elif candidate == CAR.AVALON:
       stop_and_go = False
-      ret.safetyParam = 73 # see conversion factor for STEER_TORQUE_EPS in dbc file
+      ret.safetyParam = 73
       ret.wheelbase = 2.82
       ret.steerRatio = 14.8 #Found at https://pressroom.toyota.com/releases/2016+avalon+product+specs.download
       tire_stiffness_factor = 0.7983
-      ret.mass = 3505 * CV.LB_TO_KG + std_cargo  # mean between normal and hybrid
+      ret.mass = 3505. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.17], [0.03]]
       ret.lateralTuning.pid.kf = 0.00006
 
-    elif candidate == CAR.RAV4_2019:
+    elif candidate == CAR.RAV4_TSS2:
       stop_and_go = True
-      ret.safetyParam = 100
+      ret.safetyParam = 73
       ret.wheelbase = 2.68986
       ret.steerRatio = 14.3
       tire_stiffness_factor = 0.7933
-      ret.mass = 3370. * CV.LB_TO_KG + std_cargo
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.05]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
+      ret.mass = 3370. * CV.LB_TO_KG + STD_CARGO_KG
       ret.lateralTuning.pid.kf = 0.00007818594
 
-    elif candidate == CAR.COROLLA_HATCH:
+    elif candidate == CAR.COROLLA_TSS2:
       stop_and_go = True
-      ret.safetyParam = 100
+      ret.safetyParam = 73
       ret.wheelbase = 2.63906
       ret.steerRatio = 13.9
       tire_stiffness_factor = 0.444
-      ret.mass = 3060. * CV.LB_TO_KG + std_cargo
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.05]]
+      ret.mass = 3060. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
+      ret.lateralTuning.pid.kf = 0.00007818594
+
+    elif candidate == CAR.LEXUS_ESH_TSS2:
+      stop_and_go = True
+      ret.safetyParam = 73
+      ret.wheelbase = 2.8702
+      ret.steerRatio = 16.0 #not optimized
+      tire_stiffness_factor = 0.444
+      ret.mass = 3704. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
       ret.lateralTuning.pid.kf = 0.00007818594
 
     ret.steerRateCost = 1.
@@ -251,17 +256,18 @@ class CarInterface(object):
     # ******************* do can recv *******************
     canMonoTimes = []
 
-    can_valid, _ = self.cp.update(int(sec_since_boot() * 1e9), True)
-    can_rcv_error = not can_valid
+    can_rcv_valid, _ = self.cp.update(int(sec_since_boot() * 1e9), True)
 
     # run the cam can update for 10s as we just need to know if the camera is alive
     if self.frame < 1000:
       self.cp_cam.update(int(sec_since_boot() * 1e9), False)
 
-    self.CS.update(self.cp, self.cp_cam)
+    self.CS.update(self.cp)
 
     # create message
     ret = car.CarState.new_message()
+
+    ret.canValid = can_rcv_valid and self.cp.can_valid
 
     # speeds
     ret.vEgo = self.CS.v_ego
@@ -335,18 +341,8 @@ class CarInterface(object):
 
     # events
     events = []
-    if not self.CS.can_valid:
-      self.can_invalid_count += 1
-    else:
-      self.can_invalid_count = 0
-
-    if can_rcv_error or self.can_invalid_count >= 5:
-      events.append(create_event('commIssue', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
-
-    if self.CS.cam_can_valid:
-      self.cam_can_valid_count += 1
-      if self.cam_can_valid_count >= 5:
-        self.forwarding_camera = True
+    if self.cp_cam.can_valid:
+      self.forwarding_camera = True
 
     if not ret.gearShifter == 'drive' and self.CP.enableDsu:
       events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))

@@ -65,10 +65,9 @@ def jsonrpc_handler(end_event):
 # TODO: add service to, for example, start visiond and take a picture
 @dispatcher.add_method
 def getMessage(service=None, timeout=1000):
-  context = zmq.Context()
   if service is None or service not in service_list:
     raise Exception("invalid service")
-  socket = messaging.sub_sock(context, service_list[service].port)
+  socket = messaging.sub_sock(service_list[service].port)
   socket.setsockopt(zmq.RCVTIMEO, timeout)
   ret = messaging.recv_one(socket)
   return ret.to_dict()

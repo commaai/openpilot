@@ -1,5 +1,4 @@
 #from common.numpy_fast import clip
-from common.realtime import sec_since_boot
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.subaru import subarucan
 from selfdrive.car.subaru.values import CAR, DBC
@@ -21,7 +20,6 @@ class CarControllerParams():
 
 class CarController(object):
   def __init__(self, car_fingerprint):
-    self.start_time = sec_since_boot()
     self.lkas_active = False
     self.steer_idx = 0
     self.apply_steer_last = 0

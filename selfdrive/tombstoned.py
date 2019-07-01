@@ -101,7 +101,7 @@ def report_tombstone(fn, client):
   cloudlog.error({'tombstone': message})
 
 
-def main(gctx):
+def main(gctx=None):
   initial_tombstones = set(get_tombstones())
 
   client = Client('https://d3b175702f62402c91ade04d1c547e68:b20d68c813c74f63a7cdf9c4039d8f56@sentry.io/157615',
@@ -119,4 +119,4 @@ def main(gctx):
     time.sleep(5)
 
 if __name__ == "__main__":
-  main(None)
+  main()
