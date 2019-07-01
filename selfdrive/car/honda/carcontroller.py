@@ -1,11 +1,12 @@
 from collections import namedtuple
-from common.realtime import sec_since_boot
+from common.realtime import DT_CTRL
 from selfdrive.controls.lib.drive_helpers import rate_limit
 from common.numpy_fast import clip
 from selfdrive.car import create_gas_command
 from selfdrive.car.honda import hondacan
 from selfdrive.car.honda.values import AH, CruiseButtons, CAR
 from selfdrive.can.packer import CANPacker
+
 
 def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
   # hyst params
@@ -33,15 +34,14 @@ def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
   return brake, braking, brake_steady
 
 
-def brake_pump_hysteresis(apply_brake, apply_brake_last, last_pump_ts):
-  ts = sec_since_boot()
+def brake_pump_hysteresis(apply_brake, apply_brake_last, last_pump_ts, ts):
   pump_on = False
 
   # reset pump timer if:
   # - there is an increment in brake request
   # - we are applying steady state brakes and we haven't been running the pump
   #   for more than 20s (to prevent pressure bleeding)
-  if apply_brake > apply_brake_last or (ts - last_pump_ts > 20 and apply_brake > 0):
+  if apply_brake > apply_brake_last or (ts - last_pump_ts > 20. and apply_brake > 0):
     last_pump_ts = ts
 
   # once the pump is on, run it for at least 0.2s
@@ -79,7 +79,7 @@ class CarController(object):
     self.brake_steady = 0.
     self.brake_last = 0.
     self.apply_brake_last = 0
-    self.last_pump_ts = 0
+    self.last_pump_ts = 0.
     self.packer = CANPacker(dbc_name)
     self.new_radar_config = False
 
@@ -167,7 +167,8 @@ class CarController(object):
       # Send gas and brake commands.
       if (frame % 2) == 0:
         idx = frame // 2
-        pump_on, self.last_pump_ts = brake_pump_hysteresis(apply_brake, self.apply_brake_last, self.last_pump_ts)
+        ts = frame * DT_CTRL
+        pump_on, self.last_pump_ts = brake_pump_hysteresis(apply_brake, self.apply_brake_last, self.last_pump_ts, ts)
         can_sends.append(hondacan.create_brake_command(self.packer, apply_brake, pump_on,
           pcm_override, pcm_cancel_cmd, hud.chime, hud.fcw, idx))
         self.apply_brake_last = apply_brake

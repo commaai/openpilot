@@ -1,6 +1,6 @@
 // IRQs: DMA2_Stream2, DMA2_Stream3, EXTI4
 
-void spi_init();
+void spi_init(void);
 int spi_cb_rx(uint8_t *data, int len, uint8_t *data_out);
 
 // end API
@@ -10,7 +10,7 @@ uint8_t spi_buf[SPI_BUF_SIZE];
 int spi_buf_count = 0;
 int spi_total_count = 0;
 
-void spi_init() {
+void spi_init(void) {
   //puts("SPI init\n");
   SPI1->CR1 = SPI_CR1_SPE;
 
@@ -118,7 +118,7 @@ void EXTI4_IRQHandler(void) {
     puts("exti4\n");
   #endif
   // SPI CS falling
-  if (pr & (1 << 4)) {
+  if ((pr & (1 << 4)) != 0) {
     spi_total_count = 0;
     spi_rx_dma(spi_buf, 0x14);
   }

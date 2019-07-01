@@ -1,7 +1,9 @@
 # functions common among cars
 from common.numpy_fast import clip
 
-
+# kg of standard extra cargo to count for drive, gas, etc...
+STD_CARGO_KG = 136.
+    
 def dbc_dict(pt_dbc, radar_dbc, chassis_dbc=None):
   return {'pt': pt_dbc, 'radar': radar_dbc, 'chassis': chassis_dbc}
 

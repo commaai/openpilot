@@ -8,7 +8,6 @@ import struct
 import sys
 from cereal import log
 from common import realtime
-import zmq
 import selfdrive.messaging as messaging
 from selfdrive.services import service_list
 from selfdrive.locationd.test.ephemeris import EphemerisData, GET_FIELD_U
@@ -270,9 +269,8 @@ def main(gctx=None):
     nav_frame_buffer[0][i] = {}
 
 
-  context = zmq.Context()
-  gpsLocationExternal = messaging.pub_sock(context, service_list['gpsLocationExternal'].port)
-  ubloxGnss = messaging.pub_sock(context, service_list['ubloxGnss'].port)
+  gpsLocationExternal = messaging.pub_sock(service_list['gpsLocationExternal'].port)
+  ubloxGnss = messaging.pub_sock(service_list['ubloxGnss'].port)
 
   dev = init_reader()
   while True:

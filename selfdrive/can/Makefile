@@ -18,6 +18,11 @@ CFLAGS = -std=gnu11 -g -fPIC -O2 $(WARN_FLAGS)
 CXXFLAGS = -std=c++11 -g -fPIC -O2 $(WARN_FLAGS)
 LDFLAGS =
 
+ifeq ($(ARCH),aarch64)
+CFLAGS += -mcpu=cortex-a57
+CXXFLAGS += -mcpu=cortex-a57
+endif
+
 ifeq ($(UNAME_S),Darwin)
 	ZMQ_LIBS = -L/usr/local/lib -lzmq
 else ifeq ($(OPTEST),1)
@@ -26,14 +31,12 @@ else ifeq ($(UNAME_M),x86_64)
 	ZMQ_FLAGS = -I$(PHONELIBS)/zmq/x64/include
 	ZMQ_LIBS = -L$(PHONELIBS)/zmq/x64/lib -l:libzmq.a
 else ifeq ($(UNAME_M),aarch64)
-	ZMQ_FLAGS = -I$(PHONELIBS)/zmq/aarch64/include
-	ZMQ_LIBS = -L$(PHONELIBS)/zmq/aarch64/lib -l:libzmq.a
-	LDFLAGS += -lgnustl_shared
+	ZMQ_LIBS = -l:libzmq.a -lgnustl_shared
 endif
 
 OBJDIR = obj
 
-OPENDBC_PATH := $(shell python -c 'import opendbc; print opendbc.DBC_PATH')
+OPENDBC_PATH := $(shell python2 -c 'import opendbc; print opendbc.DBC_PATH')
 
 DBC_SOURCES := $(wildcard $(OPENDBC_PATH)/*.dbc)
 DBC_OBJS := $(patsubst $(OPENDBC_PATH)/%.dbc,$(OBJDIR)/%.o,$(DBC_SOURCES))
@@ -45,7 +48,7 @@ LIBDBC_OBJS := $(OBJDIR)/dbc.o $(OBJDIR)/parser.o $(OBJDIR)/packer.o
 CWD := $(shell pwd)
 
 .PHONY: all
-all: $(OBJDIR) libdbc.so
+all: $(OBJDIR) libdbc.so parser_pyx.so
 
 include ../common/cereal.mk
 
@@ -67,9 +70,14 @@ libdbc.so:: $(LIBDBC_OBJS) $(DBC_OBJS)
 		$(CEREAL_LIBS)
 
 packer_impl.so: packer_impl.pyx packer_setup.py
-	python packer_setup.py build_ext --inplace
+	python2 packer_setup.py build_ext --inplace
 	rm -rf build
 	rm -f packer_impl.cpp
+
+parser_pyx.so: parser_pyx_setup.py parser_pyx.pyx parser_pyx.pxd
+	python $< build_ext --inplace
+	rm -rf build
+	rm -f parser_pyx.cpp
 
 $(OBJDIR)/%.o: %.cc
 	@echo "[ CXX ] $@"
@@ -90,7 +98,7 @@ $(OBJDIR)/%.o: dbc_out/%.cc
 dbc_out/%.cc: process_dbc.py dbc_template.cc $(OPENDBC_PATH)/%.dbc
 	@echo "[ DBC GEN ] $@"
 	@echo "Missing prereq $?"
-	PYTHONPATH=$(PYTHONPATH):$(CWD)/../../pyextra ./process_dbc.py $(OPENDBC_PATH) dbc_out
+	./process_dbc.py $(OPENDBC_PATH) dbc_out
 
 $(OBJDIR):
 	mkdir -p $@

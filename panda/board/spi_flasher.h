@@ -6,7 +6,7 @@ int unlocked = 0;
 void debug_ring_callback(uart_ring *ring) {}
 #endif
 
-int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, int hardwired) {
+int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, bool hardwired) {
   int resp_len = 0;
 
   // flasher machine
@@ -80,7 +80,7 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, int hardwired) {
       break;
     // **** 0xd6: get version
     case 0xd6:
-      COMPILE_TIME_ASSERT(sizeof(gitversion) <= MAX_RESP_LEN)
+      COMPILE_TIME_ASSERT(sizeof(gitversion) <= MAX_RESP_LEN);
       memcpy(resp, gitversion, sizeof(gitversion));
       resp_len = sizeof(gitversion);
       break;
@@ -92,8 +92,8 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, int hardwired) {
   return resp_len;
 }
 
-int usb_cb_ep1_in(uint8_t *usbdata, int len, int hardwired) { return 0; }
-void usb_cb_ep3_out(uint8_t *usbdata, int len, int hardwired) { }
+int usb_cb_ep1_in(uint8_t *usbdata, int len, bool hardwired) { return 0; }
+void usb_cb_ep3_out(uint8_t *usbdata, int len, bool hardwired) { }
 
 int is_enumerated = 0;
 void usb_cb_enumeration_complete() {
@@ -101,7 +101,7 @@ void usb_cb_enumeration_complete() {
   is_enumerated = 1;
 }
 
-void usb_cb_ep2_out(uint8_t *usbdata, int len, int hardwired) {
+void usb_cb_ep2_out(uint8_t *usbdata, int len, bool hardwired) {
   set_led(LED_RED, 0);
   for (int i = 0; i < len/4; i++) {
     // program byte 1

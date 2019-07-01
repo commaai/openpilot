@@ -15,10 +15,11 @@ typedef struct {
 
 extern "C" {
 
-void can_list_to_can_capnp_cpp(const std::vector<can_frame> &can_list, std::string &out, bool sendCan) {
+void can_list_to_can_capnp_cpp(const std::vector<can_frame> &can_list, std::string &out, bool sendCan, bool valid) {
   capnp::MallocMessageBuilder msg;
   cereal::Event::Builder event = msg.initRoot<cereal::Event>();
   event.setLogMonoTime(nanos_since_boot());
+  event.setValid(valid);
 
   auto canData = sendCan ? event.initSendcan(can_list.size()) : event.initCan(can_list.size());
   int j = 0;

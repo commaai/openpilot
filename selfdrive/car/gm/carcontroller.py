@@ -1,6 +1,6 @@
 from cereal import car
+from common.realtime import DT_CTRL
 from common.numpy_fast import interp
-from common.realtime import sec_since_boot
 from selfdrive.config import Conversions as CV
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.gm import gmcan
@@ -8,6 +8,7 @@ from selfdrive.car.gm.values import DBC, SUPERCRUISE_CARS
 from selfdrive.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
+
 
 class CarControllerParams():
   def __init__(self, car_fingerprint):
@@ -47,7 +48,7 @@ class CarControllerParams():
 
 def actuator_hystereses(final_pedal, pedal_steady):
   # hyst params... TODO: move these to VehicleParams
-  pedal_hyst_gap = 0.01    # don't change pedal command for small oscilalitons within this value
+  pedal_hyst_gap = 0.01    # don't change pedal command for small oscillations within this value
 
   # for small pedal oscillations within pedal_hyst_gap, don't change the pedal command
   if final_pedal == 0.:
@@ -70,7 +71,7 @@ def process_hud_alert(hud_alert):
 class CarController(object):
   def __init__(self, canbus, car_fingerprint):
     self.pedal_steady = 0.
-    self.start_time = sec_since_boot()
+    self.start_time = 0.
     self.chime = 0
     self.steer_idx = 0
     self.apply_steer_last = 0
@@ -154,7 +155,7 @@ class CarController(object):
       # Radar needs to know current speed and yaw rate (50hz),
       # and that ADAS is alive (10hz)
       time_and_headlights_step = 10
-      tt = sec_since_boot()
+      tt = frame * DT_CTRL
 
       if frame % time_and_headlights_step == 0:
         idx = (frame // time_and_headlights_step) % 4

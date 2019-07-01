@@ -2,8 +2,6 @@ from cereal import car
 from common.numpy_fast import clip, interp
 from selfdrive.config import Conversions as CV
 
-DT = 0.01  # Controlsd runs at 100Hz
-
 # kph
 V_CRUISE_MAX = 144
 V_CRUISE_MIN = 8

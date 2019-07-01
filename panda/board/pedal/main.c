@@ -19,7 +19,7 @@
   #include "drivers/usb.h"
 #else
   // no serial either
-  int puts(const char *a) { return 0; }
+  void puts(const char *a) {}
   void puth(unsigned int i) {}
 #endif
 
@@ -41,12 +41,12 @@ void debug_ring_callback(uart_ring *ring) {
   }
 }
 
-int usb_cb_ep1_in(uint8_t *usbdata, int len, int hardwired) { return 0; }
-void usb_cb_ep2_out(uint8_t *usbdata, int len, int hardwired) {}
-void usb_cb_ep3_out(uint8_t *usbdata, int len, int hardwired) {}
+int usb_cb_ep1_in(uint8_t *usbdata, int len, bool hardwired) { return 0; }
+void usb_cb_ep2_out(uint8_t *usbdata, int len, bool hardwired) {}
+void usb_cb_ep3_out(uint8_t *usbdata, int len, bool hardwired) {}
 void usb_cb_enumeration_complete() {}
 
-int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, int hardwired) {
+int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, bool hardwired) {
   int resp_len = 0;
   uart_ring *ur = NULL;
   switch (setup->b.bRequest) {
@@ -56,7 +56,7 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, int hardwired) {
       if (!ur) break;
       if (ur == &esp_ring) uart_dma_drain();
       // read
-      while ((resp_len < min(setup->b.wLength.w, MAX_RESP_LEN)) &&
+      while ((resp_len < MIN(setup->b.wLength.w, MAX_RESP_LEN)) &&
                          getc(ur, (char*)&resp[resp_len])) {
         ++resp_len;
       }
@@ -246,8 +246,8 @@ void pedal() {
 
   // write the pedal to the DAC
   if (state == NO_FAULT) {
-    dac_set(0, max(gas_set_0, pdl0));
-    dac_set(1, max(gas_set_1, pdl1));
+    dac_set(0, MAX(gas_set_0, pdl0));
+    dac_set(1, MAX(gas_set_1, pdl1));
   } else {
     dac_set(0, pdl0);
     dac_set(1, pdl1);

@@ -1,8 +1,0 @@
-../backports/__init__.py
-../backports/__init__.pyc
-../backports/ssl_match_hostname/__init__.py
-../backports/ssl_match_hostname/__init__.pyc
-PKG-INFO
-SOURCES.txt
-dependency_links.txt
-top_level.txt

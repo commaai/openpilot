@@ -9,7 +9,7 @@
 
 #define MAX_BITS_CAN_PACKET (200)
 
-int gmlan_alt_mode = DISABLED; 
+int gmlan_alt_mode = DISABLED;
 
 // returns out_len
 int do_bitstuff(char *out, char *in, int in_len) {
@@ -18,7 +18,8 @@ int do_bitstuff(char *out, char *in, int in_len) {
   int j = 0;
   for (int i = 0; i < in_len; i++) {
     char bit = in[i];
-    out[j++] = bit;
+    out[j] = bit;
+    j++;
 
     // do the stuffing
     if (bit == last_bit) {
@@ -26,7 +27,8 @@ int do_bitstuff(char *out, char *in, int in_len) {
       if (bit_cnt == 5) {
         // 5 in a row the same, do stuff
         last_bit = !bit;
-        out[j++] = last_bit;
+        out[j] = last_bit;
+        j++;
         bit_cnt = 1;
       }
     } else {
@@ -42,27 +44,30 @@ int append_crc(char *in, int in_len) {
   int crc = 0;
   for (int i = 0; i < in_len; i++) {
     crc <<= 1;
-    if (in[i] ^ ((crc>>15)&1)) {
+    if ((in[i] ^ ((crc >> 15) & 1)) != 0) {
       crc = crc ^ 0x4599;
     }
     crc &= 0x7fff;
   }
   for (int i = 14; i >= 0; i--) {
-    in[in_len++] = (crc>>i)&1;
+    in[in_len] = (crc>>i)&1;
+    in_len++;
   }
   return in_len;
 }
 
 int append_bits(char *in, int in_len, char *app, int app_len) {
   for (int i = 0; i < app_len; i++) {
-    in[in_len++] = app[i];
+    in[in_len] = app[i];
+    in_len++;
   }
   return in_len;
 }
 
 int append_int(char *in, int in_len, int val, int val_len) {
   for (int i = val_len-1; i >= 0; i--) {
-    in[in_len++] = (val&(1<<i)) != 0;
+    in[in_len] = (val&(1<<i)) != 0;
+    in_len++;
   }
   return in_len;
 }
@@ -82,8 +87,8 @@ int get_bit_message(char *out, CAN_FIFOMailBox_TypeDef *to_bang) {
   // test packet
   int dlc_len = to_bang->RDTR & 0xF;
   len = append_int(pkt, len, 0, 1);    // Start-of-frame
-  
-  if (to_bang->RIR & 4) {
+
+  if ((to_bang->RIR & 4) != 0) {
     // extended identifier
     len = append_int(pkt, len, to_bang->RIR >> 21, 11);  // Identifier
     len = append_int(pkt, len, 3, 2);    // SRR+IDE
@@ -114,7 +119,7 @@ int get_bit_message(char *out, CAN_FIFOMailBox_TypeDef *to_bang) {
   return len;
 }
 
-void setup_timer4() {
+void setup_timer4(void) {
   // setup
   TIM4->PSC = 48-1;          // tick on 1 us
   TIM4->CR1 = TIM_CR1_CEN;   // enable
@@ -131,7 +136,7 @@ void setup_timer4() {
 int gmlan_timeout_counter = GMLAN_TICKS_PER_TIMEOUT_TICKLE; //GMLAN transceiver times out every 17ms held high; tickle every 15ms
 int can_timeout_counter = GMLAN_TICKS_PER_SECOND; //1 second
 
-int inverted_bit_to_send = GMLAN_HIGH; 
+int inverted_bit_to_send = GMLAN_HIGH;
 int gmlan_switch_below_timeout = -1;
 int gmlan_switch_timeout_enable = 0;
 
@@ -140,9 +145,9 @@ void gmlan_switch_init(int timeout_enable) {
   gmlan_alt_mode = GPIO_SWITCH;
   gmlan_switch_below_timeout = 1;
   set_gpio_mode(GPIOB, 13, MODE_OUTPUT);
-  
+
   setup_timer4();
-  
+
   inverted_bit_to_send = GMLAN_LOW; //We got initialized, set the output low
 }
 
@@ -162,7 +167,7 @@ void reset_gmlan_switch_timeout(void) {
 }
 
 void set_bitbanged_gmlan(int val) {
-  if (val) {
+  if (val != 0) {
     GPIOB->ODR |= (1 << 13);
   } else {
     GPIOB->ODR &= ~(1 << 13);
@@ -180,7 +185,7 @@ int gmlan_fail_count = 0;
 
 void TIM4_IRQHandler(void) {
   if (gmlan_alt_mode == BITBANG) {
-    if (TIM4->SR & TIM_SR_UIF && gmlan_sendmax != -1) {
+    if ((TIM4->SR & TIM_SR_UIF) && (gmlan_sendmax != -1)) {
       int read = get_gpio_input(GPIOB, 12);
       if (gmlan_silent_count < REQUIRED_SILENT_TIME) {
         if (read == 0) {
@@ -189,16 +194,16 @@ void TIM4_IRQHandler(void) {
           gmlan_silent_count++;
         }
       } else if (gmlan_silent_count == REQUIRED_SILENT_TIME) {
-        int retry = 0;
+        bool retry = 0;
         // in send loop
-        if (gmlan_sending > 0 &&  // not first bit
-           (read == 0 && pkt_stuffed[gmlan_sending-1] == 1) &&  // bus wrongly dominant
-           gmlan_sending != (gmlan_sendmax-11)) {    //not ack bit
+        if ((gmlan_sending > 0) &&  // not first bit
+           ((read == 0) && (pkt_stuffed[gmlan_sending-1] == 1)) &&  // bus wrongly dominant
+           (gmlan_sending != (gmlan_sendmax - 11))) {    //not ack bit
           puts("GMLAN ERR: bus driven at ");
           puth(gmlan_sending);
           puts("\n");
           retry = 1;
-        } else if (read == 1 && gmlan_sending == (gmlan_sendmax-11)) {    // recessive during ACK
+        } else if ((read == 1) && (gmlan_sending == (gmlan_sendmax - 11))) {    // recessive during ACK
           puts("GMLAN ERR: didn't recv ACK\n");
           retry = 1;
         }
@@ -216,7 +221,7 @@ void TIM4_IRQHandler(void) {
           gmlan_sending++;
         }
       }
-      if (gmlan_sending == gmlan_sendmax || gmlan_fail_count == MAX_FAIL_COUNT) {
+      if ((gmlan_sending == gmlan_sendmax) || (gmlan_fail_count == MAX_FAIL_COUNT)) {
         set_bitbanged_gmlan(1); // recessive
         set_gpio_mode(GPIOB, 13, MODE_INPUT);
         TIM4->DIER = 0;  // no update interrupt
@@ -228,8 +233,8 @@ void TIM4_IRQHandler(void) {
   } //bit bang mode
 
   else if (gmlan_alt_mode == GPIO_SWITCH) {
-    if (TIM4->SR & TIM_SR_UIF && gmlan_switch_below_timeout != -1) {
-      if (can_timeout_counter == 0 && gmlan_switch_timeout_enable) {
+    if ((TIM4->SR & TIM_SR_UIF) && (gmlan_switch_below_timeout != -1)) {
+      if ((can_timeout_counter == 0) && gmlan_switch_timeout_enable) {
         //it has been more than 1 second since timeout was reset; disable timer and restore the GMLAN output
         set_gpio_output(GPIOB, 13, GMLAN_LOW);
         gmlan_switch_below_timeout = -1;
@@ -256,18 +261,19 @@ void TIM4_IRQHandler(void) {
 void bitbang_gmlan(CAN_FIFOMailBox_TypeDef *to_bang) {
   gmlan_alt_mode = BITBANG;
   // TODO: make failure less silent
-  if (gmlan_sendmax != -1) return;
+  if (gmlan_sendmax == -1) {
 
-  int len = get_bit_message(pkt_stuffed, to_bang);
-  gmlan_fail_count = 0;
-  gmlan_silent_count = 0;
-  gmlan_sending = 0;
-  gmlan_sendmax = len;
+    int len = get_bit_message(pkt_stuffed, to_bang);
+    gmlan_fail_count = 0;
+    gmlan_silent_count = 0;
+    gmlan_sending = 0;
+    gmlan_sendmax = len;
 
-  // setup for bitbang loop
-  set_bitbanged_gmlan(1); // recessive
-  set_gpio_mode(GPIOB, 13, MODE_OUTPUT);
+    // setup for bitbang loop
+    set_bitbanged_gmlan(1); // recessive
+    set_gpio_mode(GPIOB, 13, MODE_OUTPUT);
 
-  setup_timer4();
+    setup_timer4();
+  }
 }
 
