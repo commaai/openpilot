@@ -41,6 +41,7 @@ ENV PYTHONPATH /tmp/openpilot:$PYTHONPATH
 
 RUN git clone --branch v0.6  https://github.com/commaai/openpilot-tools.git /tmp/openpilot/tools
 RUN pip install -r /tmp/openpilot/tools/requirements.txt
+RUN pip install fastcluster==1.1.20 scipy==0.19.1
 
 COPY ./.pylintrc /tmp/openpilot/.pylintrc
 COPY ./common /tmp/openpilot/common
