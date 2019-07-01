@@ -6,6 +6,7 @@ from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.subaru.values import CAR
 from selfdrive.car.subaru.carstate import CarState, get_powertrain_can_parser, get_camera_can_parser
+from selfdrive.car import STD_CARGO_KG
 
 
 class CarInterface(object):
@@ -13,7 +14,6 @@ class CarInterface(object):
     self.CP = CP
 
     self.frame = 0
-    self.can_invalid_count = 0
     self.acc_active_prev = 0
     self.gas_pressed_prev = False
 
@@ -44,18 +44,17 @@ class CarInterface(object):
     ret.carName = "subaru"
     ret.carFingerprint = candidate
     ret.carVin = vin
-    ret.safetyModel = car.CarParams.SafetyModels.subaru
+    ret.safetyModel = car.CarParams.SafetyModel.subaru
 
     ret.enableCruise = True
     ret.steerLimitAlert = True
 
     ret.enableCamera = True
 
-    std_cargo = 136
     ret.steerRateCost = 0.7
 
     if candidate in [CAR.IMPREZA]:
-      ret.mass = 1568 + std_cargo
+      ret.mass = 1568. + STD_CARGO_KG
       ret.wheelbase = 2.67
       ret.centerToFront = ret.wheelbase * 0.5
       ret.steerRatio = 15
@@ -87,7 +86,7 @@ class CarInterface(object):
 
     # hardcoding honda civic 2016 touring params so they can be used to
     # scale unknown params for other cars
-    mass_civic = 2923./2.205 + std_cargo
+    mass_civic = 2923. * CV.LB_TO_KG + STD_CARGO_KG
     wheelbase_civic = 2.70
     centerToFront_civic = wheelbase_civic * 0.4
     centerToRear_civic = wheelbase_civic - centerToFront_civic
@@ -114,14 +113,15 @@ class CarInterface(object):
 
   # returns a car.CarState
   def update(self, c):
-    can_rcv_error = not self.pt_cp.update(int(sec_since_boot() * 1e9), True)
-    cam_rcv_error = not self.cam_cp.update(int(sec_since_boot() * 1e9), False)
-    can_rcv_error = can_rcv_error or cam_rcv_error
+    can_rcv_valid, _ = self.pt_cp.update(int(sec_since_boot() * 1e9), True)
+    cam_rcv_valid, _ = self.cam_cp.update(int(sec_since_boot() * 1e9), False)
 
     self.CS.update(self.pt_cp, self.cam_cp)
 
     # create message
     ret = car.CarState.new_message()
+
+    ret.canValid = can_rcv_valid and cam_rcv_valid and self.pt_cp.can_valid and self.cam_cp.can_valid
 
     # speeds
     ret.vEgo = self.CS.v_ego
@@ -177,14 +177,6 @@ class CarInterface(object):
 
 
     events = []
-    if not self.CS.can_valid:
-      self.can_invalid_count += 1
-    else:
-      self.can_invalid_count = 0
-
-    if can_rcv_error or self.can_invalid_count >= 5:
-      events.append(create_event('commIssue', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
-
     if ret.seatbeltUnlatched:
       events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
 

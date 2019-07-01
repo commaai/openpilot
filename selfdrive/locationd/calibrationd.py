@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import os
-import zmq
 import copy
 import json
 import numpy as np
@@ -9,7 +8,7 @@ from selfdrive.locationd.calibration_helpers import Calibration
 from selfdrive.swaglog import cloudlog
 from selfdrive.services import service_list
 from common.params import Params
-from common.transformations.model import model_height, get_camera_frame_from_model_frame, get_camera_frame_from_bigmodel_frame
+from common.transformations.model import model_height, get_camera_frame_from_model_frame, get_camera_frame_from_medmodel_frame
 from common.transformations.camera import view_frame_from_device_frame, get_view_frame_from_road_frame, \
                                           eon_intrinsics, get_calib_from_vp, H, W
 
@@ -85,7 +84,7 @@ class Calibrator(object):
     extrinsic_matrix = get_view_frame_from_road_frame(0, calib[1], calib[2], model_height)
     ke = eon_intrinsics.dot(extrinsic_matrix)
     warp_matrix = get_camera_frame_from_model_frame(ke)
-    warp_matrix_big = get_camera_frame_from_bigmodel_frame(ke)
+    warp_matrix_big = get_camera_frame_from_medmodel_frame(ke)
 
     cal_send = messaging.new_message()
     cal_send.init('liveCalibration')
@@ -99,10 +98,8 @@ class Calibrator(object):
 
 
 def calibrationd_thread(gctx=None, addr="127.0.0.1"):
-  context = zmq.Context()
-
-  cameraodometry = messaging.sub_sock(context, service_list['cameraOdometry'].port, addr=addr, conflate=True)
-  livecalibration = messaging.pub_sock(context, service_list['liveCalibration'].port)
+  cameraodometry = messaging.sub_sock(service_list['cameraOdometry'].port, addr=addr, conflate=True)
+  livecalibration = messaging.pub_sock(service_list['liveCalibration'].port)
   calibrator = Calibrator(param_put=True)
 
   # buffer with all the messages that still need to be input into the kalman

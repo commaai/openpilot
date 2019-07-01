@@ -31,12 +31,13 @@ bool llcan_set_speed(CAN_TypeDef *CAN, uint32_t speed, bool loopback, bool silen
 
   #define CAN_TIMEOUT 1000000
   int tmp = 0;
-  while((CAN->MSR & CAN_MSR_INAK) == CAN_MSR_INAK && tmp < CAN_TIMEOUT) tmp++;
+  bool ret = false;
+  while(((CAN->MSR & CAN_MSR_INAK) == CAN_MSR_INAK) && (tmp < CAN_TIMEOUT)) tmp++;
   if (tmp < CAN_TIMEOUT) {
-    return true;
+    ret = true;
   }
 
-  return false;
+  return ret;
 }
 
 void llcan_init(CAN_TypeDef *CAN) {
@@ -48,7 +49,7 @@ void llcan_init(CAN_TypeDef *CAN) {
   CAN->sFilterRegister[0].FR2 = 0;
   CAN->sFilterRegister[14].FR1 = 0;
   CAN->sFilterRegister[14].FR2 = 0;
-  CAN->FA1R |= 1 | (1 << 14);
+  CAN->FA1R |= 1 | (1U << 14);
 
   CAN->FMR &= ~(CAN_FMR_FINIT);
 

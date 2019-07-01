@@ -8,7 +8,6 @@
 
 import os
 import struct
-import zmq
 import time
 
 import selfdrive.messaging as messaging
@@ -113,12 +112,11 @@ def can_init():
   cloudlog.info("can init done")
 
 def boardd_mock_loop():
-  context = zmq.Context()
   can_init()
   handle.controlWrite(0x40, 0xdc, SAFETY_ALLOUTPUT, 0, b'')
 
-  logcan = messaging.sub_sock(context, service_list['can'].port)
-  sendcan = messaging.pub_sock(context, service_list['sendcan'].port)
+  logcan = messaging.sub_sock(service_list['can'].port)
+  sendcan = messaging.pub_sock(service_list['sendcan'].port)
 
   while 1:
     tsc = messaging.drain_sock(logcan, wait_for_one=True)
@@ -126,12 +124,19 @@ def boardd_mock_loop():
     snd = []
     for s in snds:
       snd += s
-    snd = filter(lambda x: x[-1] <= 1, snd)
+    snd = filter(lambda x: x[-1] <= 2, snd)
+    snd_0 = len(filter(lambda x: x[-1] == 0, snd))
+    snd_1 = len(filter(lambda x: x[-1] == 1, snd))
+    snd_2 = len(filter(lambda x: x[-1] == 2, snd))
     can_send_many(snd)
 
     # recv @ 100hz
     can_msgs = can_recv()
-    print("sent %d got %d" % (len(snd), len(can_msgs)))
+    got_0 = len(filter(lambda x: x[-1] == 0+0x80, can_msgs))
+    got_1 = len(filter(lambda x: x[-1] == 1+0x80, can_msgs))
+    got_2 = len(filter(lambda x: x[-1] == 2+0x80, can_msgs))
+    print("sent %3d (%3d/%3d/%3d) got %3d (%3d/%3d/%3d)" %
+      (len(snd), snd_0, snd_1, snd_2, len(can_msgs), got_0, got_1, got_2))
     m = can_list_to_can_capnp(can_msgs, msgtype='sendcan')
     sendcan.send(m.to_bytes())
 
@@ -151,16 +156,15 @@ def boardd_test_loop():
 # *** main loop ***
 def boardd_loop(rate=200):
   rk = Ratekeeper(rate)
-  context = zmq.Context()
 
   can_init()
 
   # *** publishes can and health
-  logcan = messaging.pub_sock(context, service_list['can'].port)
-  health_sock = messaging.pub_sock(context, service_list['health'].port)
+  logcan = messaging.pub_sock(service_list['can'].port)
+  health_sock = messaging.pub_sock(service_list['health'].port)
 
   # *** subscribes to can send
-  sendcan = messaging.sub_sock(context, service_list['sendcan'].port)
+  sendcan = messaging.sub_sock(service_list['sendcan'].port)
 
   # drain sendcan to delete any stale messages from previous runs
   messaging.drain_sock(sendcan)
@@ -199,14 +203,13 @@ def boardd_loop(rate=200):
 # *** main loop ***
 def boardd_proxy_loop(rate=200, address="192.168.2.251"):
   rk = Ratekeeper(rate)
-  context = zmq.Context()
 
   can_init()
 
   # *** subscribes can
-  logcan = messaging.sub_sock(context, service_list['can'].port, addr=address)
+  logcan = messaging.sub_sock(service_list['can'].port, addr=address)
   # *** publishes to can send
-  sendcan = messaging.pub_sock(context, service_list['sendcan'].port)
+  sendcan = messaging.pub_sock(service_list['sendcan'].port)
 
   # drain sendcan to delete any stale messages from previous runs
   messaging.drain_sock(sendcan)

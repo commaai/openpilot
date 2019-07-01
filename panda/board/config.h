@@ -22,17 +22,17 @@
 
 #include <stdbool.h>
 #define NULL ((void*)0)
-#define COMPILE_TIME_ASSERT(pred) switch(0){case 0:case pred:;}
+#define COMPILE_TIME_ASSERT(pred) ((void)sizeof(char[1 - (2 * (!(pred)))]))
 
-#define min(a,b) \
+#define MIN(a,b) \
  ({ __typeof__ (a) _a = (a); \
      __typeof__ (b) _b = (b); \
-   _a < _b ? _a : _b; })
+   (_a < _b) ? _a : _b; })
 
-#define max(a,b) \
+#define MAX(a,b) \
  ({ __typeof__ (a) _a = (a); \
      __typeof__ (b) _b = (b); \
-   _a > _b ? _a : _b; })
+   (_a > _b) ? _a : _b; })
 
 #define MAX_RESP_LEN 0x40
 
