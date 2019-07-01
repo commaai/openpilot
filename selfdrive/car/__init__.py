@@ -1,8 +1,38 @@
 # functions common among cars
 from common.numpy_fast import clip
-
+from selfdrive.config import Conversions as CV
 # kg of standard extra cargo to count for drive, gas, etc...
 STD_CARGO_KG = 136.
+
+# FIXME: hardcoding honda civic 2016 touring params so they can be used to
+# scale unknown params for other cars
+class CivicParams:
+  mass = 2923. * CV.LB_TO_KG + STD_CARGO_KG
+  wheelbase = 2.70
+  centerToFront = wheelbase * 0.4
+  centerToRear = wheelbase - centerToFront
+  rotationalInertia = 2500
+  tireStiffnessFront = 192150
+  tireStiffnessRear = 202500
+
+# TODO: get actual value, for now starting with reasonable value for
+# civic and scaling by mass and wheelbase
+def scaleRotInertia(mass, wheelbase):
+  return CivicParams.rotationalInertia * mass * wheelbase ** 2 / (CivicParams.mass * CivicParams.wheelbase ** 2)
+
+# TODO: start from empirically derived lateral slip stiffness for the civic and scale by
+# mass and CG position, so all cars will have approximately similar dyn behaviors
+def scaleTireStiffness(mass, wheelbase, center_to_front, tire_stiffness_factor):
+  center_to_rear = wheelbase - center_to_front
+  tire_stiffness_front = (CivicParams.tireStiffnessFront * tire_stiffness_factor) * \
+                        mass / CivicParams.mass * \
+                        (center_to_rear / wheelbase) / (CivicParams.centerToRear / CivicParams.wheelbase)
+
+  tire_stiffness_rear = (CivicParams.tireStiffnessRear * tire_stiffness_factor) * \
+                       mass / CivicParams.mass * \
+                       (center_to_front / wheelbase) / (CivicParams.centerToFront / CivicParams.wheelbase)
+
+  return tire_stiffness_front, tire_stiffness_rear
     
 def dbc_dict(pt_dbc, radar_dbc, chassis_dbc=None):
   return {'pt': pt_dbc, 'radar': radar_dbc, 'chassis': chassis_dbc}

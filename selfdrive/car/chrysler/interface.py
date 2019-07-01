@@ -6,7 +6,7 @@ from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.chrysler.carstate import CarState, get_can_parser, get_camera_parser
 from selfdrive.car.chrysler.values import ECU, check_ecu_msgs, CAR
-from selfdrive.car import STD_CARGO_KG
+from selfdrive.car import STD_CARGO_KG, CivicParams, scaleRotInertia, scaleTireStiffness
 
 
 class CarInterface(object):
@@ -51,16 +51,6 @@ class CarInterface(object):
     # pedal
     ret.enableCruise = True
 
-    # FIXME: hardcoding honda civic 2016 touring params so they can be used to
-    # scale unknown params for other cars
-    mass_civic = 2923. * CV.LB_TO_KG + STD_CARGO_KG
-    wheelbase_civic = 2.70
-    centerToFront_civic = wheelbase_civic * 0.4
-    centerToRear_civic = wheelbase_civic - centerToFront_civic
-    rotationalInertia_civic = 2500
-    tireStiffnessFront_civic = 85400 * 2.0
-    tireStiffnessRear_civic = 90000 * 2.0
-
     # Speed conversion:              20, 45 mph
     ret.wheelbase = 3.089  # in meters for Pacifica Hybrid 2017
     ret.steerRatio = 16.2 # Pacifica Hybrid 2017
@@ -70,11 +60,13 @@ class CarInterface(object):
     ret.lateralTuning.pid.kf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
     ret.steerActuatorDelay = 0.1
     ret.steerRateCost = 0.7
+    tire_stiffness_factor = 0.444 # not optimized yet
 
     if candidate in (CAR.JEEP_CHEROKEE, CAR.JEEP_CHEROKEE_2019):
       ret.wheelbase = 2.91  # in meters
       ret.steerRatio = 12.7
       ret.steerActuatorDelay = 0.2  # in seconds
+      tire_stiffness_factor = 0.444  # not optimized yet
 
     ret.centerToFront = ret.wheelbase * 0.44
 
@@ -85,20 +77,15 @@ class CarInterface(object):
       ret.minSteerSpeed = 17.5  # m/s 17 on the way up, 13 on the way down once engaged.
       # TODO allow 2019 cars to steer down to 13 m/s if already engaged.
 
-    centerToRear = ret.wheelbase - ret.centerToFront
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
-    ret.rotationalInertia = rotationalInertia_civic * \
-                            ret.mass * ret.wheelbase**2 / (mass_civic * wheelbase_civic**2)
+    ret.rotationalInertia = scaleRotInertia(mass=ret.mass, wheelbase=ret.wheelbase)
 
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
-    ret.tireStiffnessFront = tireStiffnessFront_civic * \
-                             ret.mass / mass_civic * \
-                             (centerToRear / ret.wheelbase) / (centerToRear_civic / wheelbase_civic)
-    ret.tireStiffnessRear = tireStiffnessRear_civic * \
-                            ret.mass / mass_civic * \
-                            (ret.centerToFront / ret.wheelbase) / (centerToFront_civic / wheelbase_civic)
+    ret.tireStiffnessFront, ret.tireStiffnessRear = scaleTireStiffness(mass=ret.mass, wheelbase=ret.wheelbase,
+                                                                       center_to_front=ret.centerToFront,
+                                                                       tire_stiffness_factor=tire_stiffness_factor)
 
     # no rear steering, at least on the listed cars above
     ret.steerRatioRear = 0.

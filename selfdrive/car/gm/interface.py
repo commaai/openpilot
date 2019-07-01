@@ -7,7 +7,7 @@ from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.gm.values import DBC, CAR, STOCK_CONTROL_MSGS, AUDIO_HUD, \
                                     SUPERCRUISE_CARS, AccState
 from selfdrive.car.gm.carstate import CarState, CruiseButtons, get_powertrain_can_parser
-from selfdrive.car import STD_CARGO_KG
+from selfdrive.car import STD_CARGO_KG, CivicParams, scaleRotInertia, scaleTireStiffness
 
 
 class CanBus(object):
@@ -70,6 +70,7 @@ class CarInterface(object):
       ret.steerRatio = 15.7
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.4 # wild guess
+      tire_stiffness_factor = 0.444 # not optimized yet
 
     elif candidate == CAR.MALIBU:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
@@ -80,6 +81,7 @@ class CarInterface(object):
       ret.steerRatio = 15.8
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.4 # wild guess
+      tire_stiffness_factor = 0.444  # not optimized yet
 
     elif candidate == CAR.HOLDEN_ASTRA:
       ret.mass = 1363. + STD_CARGO_KG
@@ -90,6 +92,7 @@ class CarInterface(object):
       ret.safetyModel = car.CarParams.SafetyModel.gm
       ret.steerRatio = 15.7
       ret.steerRatioRear = 0.
+      tire_stiffness_factor = 0.444  # not optimized yet
 
     elif candidate == CAR.ACADIA:
       ret.minEnableSpeed = -1. # engage speed is decided by pcm
@@ -99,6 +102,7 @@ class CarInterface(object):
       ret.steerRatio = 14.4  #end to end is 13.46
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.4
+      tire_stiffness_factor = 0.444  # not optimized yet
 
     elif candidate == CAR.BUICK_REGAL:
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
@@ -108,6 +112,7 @@ class CarInterface(object):
       ret.steerRatio = 14.4 # guess for tourx
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.4 # guess for tourx
+      tire_stiffness_factor = 0.444  # not optimized yet
 
     elif candidate == CAR.CADILLAC_ATS:
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
@@ -117,6 +122,7 @@ class CarInterface(object):
       ret.steerRatio = 15.3
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.49
+      tire_stiffness_factor = 0.444  # not optimized yet
 
     elif candidate == CAR.CADILLAC_CT6:
       # engage speed is decided by pcm
@@ -127,32 +133,18 @@ class CarInterface(object):
       ret.steerRatio = 14.6   # it's 16.3 without rear active steering
       ret.steerRatioRear = 0. # TODO: there is RAS on this car!
       ret.centerToFront = ret.wheelbase * 0.465
+      tire_stiffness_factor = 0.444  # not optimized yet
 
 
-    # hardcoding honda civic 2016 touring params so they can be used to
-    # scale unknown params for other cars
-    mass_civic = 2923. * CV.LB_TO_KG + STD_CARGO_KG
-    wheelbase_civic = 2.70
-    centerToFront_civic = wheelbase_civic * 0.4
-    centerToRear_civic = wheelbase_civic - centerToFront_civic
-    rotationalInertia_civic = 2500
-    tireStiffnessFront_civic = 85400
-    tireStiffnessRear_civic = 90000
-
-    centerToRear = ret.wheelbase - ret.centerToFront
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
-    ret.rotationalInertia = rotationalInertia_civic * \
-                            ret.mass * ret.wheelbase**2 / (mass_civic * wheelbase_civic**2)
+    ret.rotationalInertia = scaleRotInertia(mass=ret.mass, wheelbase=ret.wheelbase)
 
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
-    ret.tireStiffnessFront = tireStiffnessFront_civic * \
-                             ret.mass / mass_civic * \
-                             (centerToRear / ret.wheelbase) / (centerToRear_civic / wheelbase_civic)
-    ret.tireStiffnessRear = tireStiffnessRear_civic * \
-                            ret.mass / mass_civic * \
-                            (ret.centerToFront / ret.wheelbase) / (centerToFront_civic / wheelbase_civic)
+    ret.tireStiffnessFront, ret.tireStiffnessRear = scaleTireStiffness(mass=ret.mass, wheelbase=ret.wheelbase,
+                                                                       center_to_front=ret.centerToFront,
+                                                                       tire_stiffness_factor=tire_stiffness_factor)
 
     # same tuning for Volt and CT6 for now
     ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]

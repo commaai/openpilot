@@ -6,7 +6,7 @@ from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.subaru.values import CAR
 from selfdrive.car.subaru.carstate import CarState, get_powertrain_can_parser, get_camera_can_parser
-from selfdrive.car import STD_CARGO_KG
+from selfdrive.car import STD_CARGO_KG, CivicParams, scaleRotInertia, scaleTireStiffness
 
 
 class CarInterface(object):
@@ -84,30 +84,15 @@ class CarInterface(object):
 
     # end from gm
 
-    # hardcoding honda civic 2016 touring params so they can be used to
-    # scale unknown params for other cars
-    mass_civic = 2923. * CV.LB_TO_KG + STD_CARGO_KG
-    wheelbase_civic = 2.70
-    centerToFront_civic = wheelbase_civic * 0.4
-    centerToRear_civic = wheelbase_civic - centerToFront_civic
-    rotationalInertia_civic = 2500
-    tireStiffnessFront_civic = 192150
-    tireStiffnessRear_civic = 202500
-    centerToRear = ret.wheelbase - ret.centerToFront
-
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
-    ret.rotationalInertia = rotationalInertia_civic * \
-                            ret.mass * ret.wheelbase**2 / (mass_civic * wheelbase_civic**2)
+    ret.rotationalInertia = scaleRotInertia(mass=ret.mass, wheelbase=ret.wheelbase)
 
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
-    ret.tireStiffnessFront = (tireStiffnessFront_civic * tire_stiffness_factor) * \
-                             ret.mass / mass_civic * \
-                             (centerToRear / ret.wheelbase) / (centerToRear_civic / wheelbase_civic)
-    ret.tireStiffnessRear = (tireStiffnessRear_civic * tire_stiffness_factor) * \
-                            ret.mass / mass_civic * \
-                            (ret.centerToFront / ret.wheelbase) / (centerToFront_civic / wheelbase_civic)
+    ret.tireStiffnessFront, ret.tireStiffnessRear = scaleTireStiffness(mass=ret.mass, wheelbase=ret.wheelbase,
+                                                                       center_to_front=ret.centerToFront,
+                                                                       tire_stiffness_factor=tire_stiffness_factor)
 
     return ret
 
