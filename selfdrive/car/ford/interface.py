@@ -62,7 +62,7 @@ class CarInterface(object):
 
     f = 1.2
     CivicParams.tireStiffnessFront *= f
-    CivicParams.tireStiffnessRear_civic *= f
+    CivicParams.tireStiffnessRear *= f
 
     ret.centerToFront = ret.wheelbase * 0.44
     tire_stiffness_factor = 0.444  # not optimized
