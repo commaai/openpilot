@@ -63,6 +63,7 @@ CHECKSUM = {
 FEATURES = {
   "use_cluster_gears": [CAR.ELANTRA],                   # Use Cluster for Gear Selection, rather than Transmission
   "use_tcu_gears": [CAR.KIA_OPTIMA],                    # Use TCU Message for Gear Selection
+  "icon_basic": [CAR.GENESIS],                          # Anything but 2 for LKAS_Icon causes MDPS Fault
 }
 
 DBC = {
