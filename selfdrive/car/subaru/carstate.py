@@ -10,7 +10,6 @@ def get_powertrain_can_parser(CP):
     # sig_name, sig_address, default
     ("Steer_Torque_Sensor", "Steering_Torque", 0),
     ("Steering_Angle", "Steering_Torque", 0),
-    ("Steer_Torque_Output", "Steering_Torque", 0),
     ("Cruise_On", "CruiseControl", 0),
     ("Cruise_Activated", "CruiseControl", 0),
     ("Brake_Pedal", "Brake_Pedal", 0),
@@ -150,7 +149,6 @@ class CarState(object):
     self.right_blinker_on = cp.vl["Dashlights"]['RIGHT_BLINKER'] == 1
     self.seatbelt_unlatched = cp.vl["Dashlights"]['SEATBELT_FL'] == 1
     self.steer_torque_driver = cp.vl["Steering_Torque"]['Steer_Torque_Sensor']
-    self.steer_torque_motor = cp.vl["Steering_Torque"]['Steer_Torque_Output']
     self.acc_active = cp.vl["CruiseControl"]['Cruise_Activated']
     self.main_on = cp.vl["CruiseControl"]['Cruise_On']
     self.steer_override = abs(self.steer_torque_driver) > STEER_THRESHOLD[self.car_fingerprint]
@@ -162,6 +160,7 @@ class CarState(object):
 
     if self.car_fingerprint == CAR.IMPREZA:
       self.v_cruise_pcm = cp_cam.vl["ES_DashStatus"]["Cruise_Set_Speed"] * CV.MPH_TO_KPH
+      self.steer_not_allowed = 0
       self.es_distance_msg = copy.copy(cp_cam.vl["ES_Distance"])
       self.es_lkas_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
       # 1 = imperial, 6 = metric
