@@ -61,7 +61,6 @@ class CarInterface(object):
 
       # Values from optimizer
       ret.steerRatio = 16.55  # 13.8 is spec end-to-end
-      tire_stiffness_factor = 0.82
 
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[9., 22.], [9., 22.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2, 0.35], [0.05, 0.09]]
@@ -71,7 +70,6 @@ class CarInterface(object):
       ret.mass = 1985. + STD_CARGO_KG
       ret.wheelbase = 2.78
       ret.steerRatio = 14.4 * 1.1   # 10% higher at the center seems reasonable
-      tire_stiffness_factor = 0.444  # not optimized yet
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
       ret.minSteerSpeed = 0.
@@ -80,7 +78,6 @@ class CarInterface(object):
       ret.mass = 1275. + STD_CARGO_KG
       ret.wheelbase = 2.7
       ret.steerRatio = 13.73   #Spec
-      tire_stiffness_factor = 0.385
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
       ret.minSteerSpeed = 32 * CV.MPH_TO_MS
@@ -89,7 +86,6 @@ class CarInterface(object):
       ret.mass = 2060. + STD_CARGO_KG
       ret.wheelbase = 3.01
       ret.steerRatio = 16.5
-      tire_stiffness_factor = 0.444  # not optimized yet
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.16], [0.01]]
       ret.minSteerSpeed = 35 * CV.MPH_TO_MS
@@ -98,7 +94,6 @@ class CarInterface(object):
       ret.mass = 3558. * CV.LB_TO_KG
       ret.wheelbase = 2.80
       ret.steerRatio = 13.75
-      tire_stiffness_factor = 0.5
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
     elif candidate == CAR.KIA_STINGER:
@@ -106,7 +101,6 @@ class CarInterface(object):
       ret.mass = 1825. + STD_CARGO_KG
       ret.wheelbase = 2.78
       ret.steerRatio = 14.4 * 1.15   # 15% higher at the center seems reasonable
-      tire_stiffness_factor = 0.444  # not optimized yet
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
       ret.minSteerSpeed = 0.
@@ -123,13 +117,11 @@ class CarInterface(object):
 
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
-    ret.rotationalInertia = scale_rot_inertia(mass=ret.mass, wheelbase=ret.wheelbase)
+    ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
 
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
-    ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(mass=ret.mass, wheelbase=ret.wheelbase,
-                                                                         center_to_front=ret.centerToFront,
-                                                                         tire_stiffness_factor=tire_stiffness_factor)
+    ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront)
 
 
     # no rear steering, at least on the listed cars above

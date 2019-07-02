@@ -60,6 +60,7 @@ class CarInterface(object):
     # or camera is on powertrain bus (LKA cars without ACC).
     ret.enableCamera = not any(x for x in STOCK_CONTROL_MSGS[candidate] if x in fingerprint)
     ret.openpilotLongitudinalControl = ret.enableCamera
+    tire_stiffness_factor = 0.444  # not optimized yet
 
     if candidate == CAR.VOLT:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
@@ -70,7 +71,6 @@ class CarInterface(object):
       ret.steerRatio = 15.7
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.4 # wild guess
-      tire_stiffness_factor = 0.444 # not optimized yet
 
     elif candidate == CAR.MALIBU:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
@@ -81,7 +81,6 @@ class CarInterface(object):
       ret.steerRatio = 15.8
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.4 # wild guess
-      tire_stiffness_factor = 0.444  # not optimized yet
 
     elif candidate == CAR.HOLDEN_ASTRA:
       ret.mass = 1363. + STD_CARGO_KG
@@ -92,7 +91,6 @@ class CarInterface(object):
       ret.safetyModel = car.CarParams.SafetyModel.gm
       ret.steerRatio = 15.7
       ret.steerRatioRear = 0.
-      tire_stiffness_factor = 0.444  # not optimized yet
 
     elif candidate == CAR.ACADIA:
       ret.minEnableSpeed = -1. # engage speed is decided by pcm
@@ -102,7 +100,6 @@ class CarInterface(object):
       ret.steerRatio = 14.4  #end to end is 13.46
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.4
-      tire_stiffness_factor = 0.444  # not optimized yet
 
     elif candidate == CAR.BUICK_REGAL:
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
@@ -112,7 +109,6 @@ class CarInterface(object):
       ret.steerRatio = 14.4 # guess for tourx
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.4 # guess for tourx
-      tire_stiffness_factor = 0.444  # not optimized yet
 
     elif candidate == CAR.CADILLAC_ATS:
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
@@ -122,7 +118,6 @@ class CarInterface(object):
       ret.steerRatio = 15.3
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.49
-      tire_stiffness_factor = 0.444  # not optimized yet
 
     elif candidate == CAR.CADILLAC_CT6:
       # engage speed is decided by pcm
@@ -133,17 +128,15 @@ class CarInterface(object):
       ret.steerRatio = 14.6   # it's 16.3 without rear active steering
       ret.steerRatioRear = 0. # TODO: there is RAS on this car!
       ret.centerToFront = ret.wheelbase * 0.465
-      tire_stiffness_factor = 0.444  # not optimized yet
 
 
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
-    ret.rotationalInertia = scale_rot_inertia(mass=ret.mass, wheelbase=ret.wheelbase)
+    ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
 
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
-    ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(mass=ret.mass, wheelbase=ret.wheelbase,
-                                                                         center_to_front=ret.centerToFront,
+    ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
                                                                          tire_stiffness_factor=tire_stiffness_factor)
 
     # same tuning for Volt and CT6 for now

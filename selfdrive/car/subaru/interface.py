@@ -58,7 +58,6 @@ class CarInterface(object):
       ret.wheelbase = 2.67
       ret.centerToFront = ret.wheelbase * 0.5
       ret.steerRatio = 15
-      tire_stiffness_factor = 1.0
       ret.steerActuatorDelay = 0.4   # end-to-end angle controller
       ret.lateralTuning.pid.kf = 0.00005
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 20.], [0., 20.]]
@@ -86,13 +85,11 @@ class CarInterface(object):
 
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
-    ret.rotationalInertia = scale_rot_inertia(mass=ret.mass, wheelbase=ret.wheelbase)
+    ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
 
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
-    ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(mass=ret.mass, wheelbase=ret.wheelbase,
-                                                                         center_to_front=ret.centerToFront,
-                                                                         tire_stiffness_factor=tire_stiffness_factor)
+    ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront)
 
     return ret
 

@@ -187,12 +187,11 @@ class CarInterface(object):
 
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
-    ret.rotationalInertia = scale_rot_inertia(mass=ret.mass, wheelbase=ret.wheelbase)
+    ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
 
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
-    ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(mass=ret.mass, wheelbase=ret.wheelbase,
-                                                                         center_to_front=ret.centerToFront,
+    ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
                                                                          tire_stiffness_factor=tire_stiffness_factor)
 
     # no rear steering, at least on the listed cars above
