@@ -65,6 +65,7 @@ keys = {
   "IsGeofenceEnabled": [TxType.PERSISTENT],
   "IsMetric": [TxType.PERSISTENT],
   "IsUpdateAvailable": [TxType.PERSISTENT],
+  "IsUploadRawEnabled": [TxType.PERSISTENT],
   "IsUploadVideoOverCellularEnabled": [TxType.PERSISTENT],
   "LimitSetSpeed": [TxType.PERSISTENT],
   "LiveParameters": [TxType.PERSISTENT],

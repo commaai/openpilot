@@ -15,7 +15,7 @@
 #include <pthread.h>
 
 #include <zmq.h>
-#include <libusb.h>
+#include <libusb-1.0/libusb.h>
 
 #include <capnp/serialize.h>
 #include "cereal/gen/cpp/log.capnp.h"
@@ -96,37 +96,37 @@ void *safety_setter_thread(void *s) {
 
   int safety_setting = 0;
   switch (safety_model) {
-  case (int)cereal::CarParams::SafetyModels::NO_OUTPUT:
+  case cereal::CarParams::SafetyModel::NO_OUTPUT:
     safety_setting = SAFETY_NOOUTPUT;
     break;
-  case (int)cereal::CarParams::SafetyModels::HONDA:
+  case cereal::CarParams::SafetyModel::HONDA:
     safety_setting = SAFETY_HONDA;
     break;
-  case (int)cereal::CarParams::SafetyModels::TOYOTA:
+  case cereal::CarParams::SafetyModel::TOYOTA:
     safety_setting = SAFETY_TOYOTA;
     break;
-  case (int)cereal::CarParams::SafetyModels::ELM327:
+  case cereal::CarParams::SafetyModel::ELM327:
     safety_setting = SAFETY_ELM327;
     break;
-  case (int)cereal::CarParams::SafetyModels::GM:
+  case cereal::CarParams::SafetyModel::GM:
     safety_setting = SAFETY_GM;
     break;
-  case (int)cereal::CarParams::SafetyModels::HONDA_BOSCH:
+  case cereal::CarParams::SafetyModel::HONDA_BOSCH:
     safety_setting = SAFETY_HONDA_BOSCH;
     break;
-  case (int)cereal::CarParams::SafetyModels::FORD:
+  case cereal::CarParams::SafetyModel::FORD:
     safety_setting = SAFETY_FORD;
     break;
-  case (int)cereal::CarParams::SafetyModels::CADILLAC:
+  case cereal::CarParams::SafetyModel::CADILLAC:
     safety_setting = SAFETY_CADILLAC;
     break;
-  case (int)cereal::CarParams::SafetyModels::HYUNDAI:
+  case cereal::CarParams::SafetyModel::HYUNDAI:
     safety_setting = SAFETY_HYUNDAI;
     break;
-  case (int)cereal::CarParams::SafetyModels::CHRYSLER:
+  case cereal::CarParams::SafetyModel::CHRYSLER:
     safety_setting = SAFETY_CHRYSLER;
     break;
-  case (int)cereal::CarParams::SafetyModels::SUBARU:
+  case cereal::CarParams::SafetyModel::SUBARU:
     safety_setting = SAFETY_SUBARU;
     break;
   default:

@@ -1,7 +1,11 @@
 CC = clang
 CXX = clang++
 
-CPPFLAGS = -Wall -g -fPIC -std=c++11 -O2
+CXXFLAGS = -Wall -g -fPIC -std=c++11 -O2
+
+ifeq ($(ARCH),aarch64)
+CXXFLAGS += -mcpu=cortex-a57
+endif
 
 OBJS = fastcluster.o test.o
 DEPS := $(OBJS:.o=.d)
@@ -19,7 +23,7 @@ libfastcluster.so: fastcluster.o
 	$(CXX) -g -shared -o $@ $+
 
 %.o: %.cpp
-	$(CXX) $(CPPFLAGS) -MMD -c $*.cpp
+	$(CXX) $(CXXFLAGS) -MMD -c $*.cpp
 
 clean:
 	rm -f $(OBJS) $(DEPS) libfastcluster.so test

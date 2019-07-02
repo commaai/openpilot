@@ -14,8 +14,8 @@
 #include "obj/gitversion.h"
 #include "obj/cert.h"
 
-#define max(a,b) ((a) > (b) ? (a) : (b))
-#define min(a,b) ((a) < (b) ? (a) : (b))
+#define MAX(a,b) ((a) > (b) ? (a) : (b))
+#define MIN(a,b) ((a) < (b) ? (a) : (b))
 #define espconn_send_string(conn, x) espconn_send(conn, x, strlen(x))
 
 #define MAX_RESP 0x800
@@ -116,7 +116,7 @@ void ICACHE_FLASH_ATTR st_flash() {
     // real content length will always be 0x10 aligned
     os_printf("st_flash: flashing\n");
     for (int i = 0; i < real_content_length; i += 0x10) {
-      int rl = min(0x10, real_content_length-i);
+      int rl = MIN(0x10, real_content_length-i);
       usb_cmd(2, rl, 0, 0, 0, &st_firmware[i]);
       system_soft_wdt_feed();
     }
@@ -288,7 +288,7 @@ static void ICACHE_FLASH_ATTR web_rx_cb(void *arg, char *data, uint16_t len) {
     }
   } else if (state == RECEIVING_ST_FIRMWARE) {
     os_printf("receiving st firmware: %d/%d\n", len, content_length);
-    memcpy(st_firmware_ptr, data, min(content_length, len));
+    memcpy(st_firmware_ptr, data, MIN(content_length, len));
     st_firmware_ptr += len;
     content_length -= len;
 
@@ -333,7 +333,7 @@ static void ICACHE_FLASH_ATTR web_rx_cb(void *arg, char *data, uint16_t len) {
         SHA_init(&ctx);
         for (ll = start_address; ll < esp_address-RSANUMBYTES; ll += 0x80) {
           spi_flash_read(ll, dat, 0x80);
-          SHA_update(&ctx, dat, min((esp_address-RSANUMBYTES)-ll, 0x80));
+          SHA_update(&ctx, dat, MIN((esp_address-RSANUMBYTES)-ll, 0x80));
         }
         memcpy(digest, SHA_final(&ctx), SHA_DIGEST_SIZE);
 

@@ -2,7 +2,6 @@
 import os
 import struct
 from collections import namedtuple
-import zmq
 import numpy as np
 
 from opendbc import DBC_PATH
@@ -93,13 +92,16 @@ class Plant(object):
     self.rate = rate
 
     if not Plant.messaging_initialized:
-      context = zmq.Context()
-      Plant.logcan = messaging.pub_sock(context, service_list['can'].port)
-      Plant.sendcan = messaging.sub_sock(context, service_list['sendcan'].port)
-      Plant.model = messaging.pub_sock(context, service_list['model'].port)
-      Plant.cal = messaging.pub_sock(context, service_list['liveCalibration'].port)
-      Plant.controls_state = messaging.sub_sock(context, service_list['controlsState'].port)
-      Plant.plan = messaging.sub_sock(context, service_list['plan'].port)
+      Plant.logcan = messaging.pub_sock(service_list['can'].port)
+      Plant.sendcan = messaging.sub_sock(service_list['sendcan'].port)
+      Plant.model = messaging.pub_sock(service_list['model'].port)
+      Plant.live_params = messaging.pub_sock(service_list['liveParameters'].port)
+      Plant.health = messaging.pub_sock(service_list['health'].port)
+      Plant.thermal = messaging.pub_sock(service_list['thermal'].port)
+      Plant.driverMonitoring = messaging.pub_sock(service_list['driverMonitoring'].port)
+      Plant.cal = messaging.pub_sock(service_list['liveCalibration'].port)
+      Plant.controls_state = messaging.sub_sock(service_list['controlsState'].port)
+      Plant.plan = messaging.sub_sock(service_list['plan'].port)
       Plant.messaging_initialized = True
 
     self.angle_steer = 0.
@@ -135,6 +137,7 @@ class Plant(object):
   def close(self):
     Plant.logcan.close()
     Plant.model.close()
+    Plant.live_params.close()
 
   def speed_sensor(self, speed):
     if speed<0.3:
@@ -321,6 +324,31 @@ class Plant(object):
     can_msgs.append([0xe4, 0, msg_data, 2])
 
     Plant.logcan.send(can_list_to_can_capnp(can_msgs))
+
+    # Fake sockets that controlsd subscribes to
+    live_parameters = messaging.new_message()
+    live_parameters.init('liveParameters')
+    live_parameters.liveParameters.valid = True
+    live_parameters.liveParameters.sensorValid = True
+    live_parameters.liveParameters.steerRatio = CP.steerRatio
+    live_parameters.liveParameters.stiffnessFactor = 1.0
+    Plant.live_params.send(live_parameters.to_bytes())
+
+    driver_monitoring = messaging.new_message()
+    driver_monitoring.init('driverMonitoring')
+    driver_monitoring.driverMonitoring.descriptor = [0.] * 7
+    Plant.driverMonitoring.send(driver_monitoring.to_bytes())
+
+    health = messaging.new_message()
+    health.init('health')
+    health.health.controlsAllowed = True
+    Plant.health.send(health.to_bytes())
+
+    thermal = messaging.new_message()
+    thermal.init('thermal')
+    thermal.thermal.freeSpace = 1.
+    thermal.thermal.batteryPercent = 100
+    Plant.thermal.send(thermal.to_bytes())
 
     # ******** publish a fake model going straight and fake calibration ********
     # note that this is worst case for MPC, since model will delay long mpc by one time step

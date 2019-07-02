@@ -1,4 +1,4 @@
-void clock_init() {
+void clock_init(void) {
   // enable external oscillator
   RCC->CR |= RCC_CR_HSEON;
   while ((RCC->CR & RCC_CR_HSERDY) == 0);
@@ -25,7 +25,7 @@ void clock_init() {
   // *** running on PLL ***
 }
 
-void watchdog_init() {
+void watchdog_init(void) {
   // setup watchdog
   IWDG->KR = 0x5555;
   IWDG->PR = 0;          // divider /4
@@ -34,7 +34,7 @@ void watchdog_init() {
   IWDG->KR = 0xCCCC;
 }
 
-void watchdog_feed() {
+void watchdog_feed(void) {
   IWDG->KR = 0xAAAA;
 }
 

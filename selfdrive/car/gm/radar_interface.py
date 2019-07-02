@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import zmq
 import math
 import time
 import numpy as np
@@ -8,8 +7,6 @@ from selfdrive.can.parser import CANParser
 from selfdrive.car.gm.interface import CanBus
 from selfdrive.car.gm.values import DBC, CAR
 from common.realtime import sec_since_boot
-from selfdrive.services import service_list
-import selfdrive.messaging as messaging
 
 RADAR_HEADER_MSG = 1120
 SLOT_1_MSG = RADAR_HEADER_MSG + 1
@@ -55,9 +52,6 @@ class RadarInterface(object):
     print "Using %d as obstacle CAN bus ID" % canbus.obstacle
     self.rcp = create_radar_can_parser(canbus, CP.carFingerprint)
 
-    context = zmq.Context()
-    self.logcan = messaging.sub_sock(context, service_list['can'].port)
-
   def update(self):
     updated_messages = set()
     ret = car.RadarData.new_message()
@@ -79,7 +73,7 @@ class RadarInterface(object):
       header['FLRRAntTngFltPrsnt'] or header['FLRRAlgnFltPrsnt']
     errors = []
     if not self.rcp.can_valid:
-      errors.append("commIssue")
+      errors.append("canError")
     if fault:
       errors.append("fault")
     ret.errors = errors

@@ -1,56 +1,5 @@
-// sample struct that keeps 3 samples in memory
-struct sample_t {
-  int values[6];
-  int min;
-  int max;
-} sample_t_default = {{0}, 0, 0};
-
-// safety code requires floats
-struct lookup_t {
-  float x[3];
-  float y[3];
-};
-
-void safety_rx_hook(CAN_FIFOMailBox_TypeDef *to_push);
-int safety_tx_hook(CAN_FIFOMailBox_TypeDef *to_send);
-int safety_tx_lin_hook(int lin_num, uint8_t *data, int len);
-int safety_ignition_hook();
-uint32_t get_ts_elapsed(uint32_t ts, uint32_t ts_last);
-int to_signed(int d, int bits);
-void update_sample(struct sample_t *sample, int sample_new);
-int max_limit_check(int val, const int MAX, const int MIN);
-int dist_to_meas_check(int val, int val_last, struct sample_t *val_meas,
-  const int MAX_RATE_UP, const int MAX_RATE_DOWN, const int MAX_ERROR);
-int driver_limit_check(int val, int val_last, struct sample_t *val_driver,
-  const int MAX, const int MAX_RATE_UP, const int MAX_RATE_DOWN,
-  const int MAX_ALLOWANCE, const int DRIVER_FACTOR);
-int rt_rate_limit_check(int val, int val_last, const int MAX_RT_DELTA);
-float interpolate(struct lookup_t xy, float x);
-
-typedef void (*safety_hook_init)(int16_t param);
-typedef void (*rx_hook)(CAN_FIFOMailBox_TypeDef *to_push);
-typedef int (*tx_hook)(CAN_FIFOMailBox_TypeDef *to_send);
-typedef int (*tx_lin_hook)(int lin_num, uint8_t *data, int len);
-typedef int (*ign_hook)();
-typedef int (*fwd_hook)(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd);
-
-typedef struct {
-  safety_hook_init init;
-  ign_hook ignition;
-  rx_hook rx;
-  tx_hook tx;
-  tx_lin_hook tx_lin;
-  fwd_hook fwd;
-} safety_hooks;
-
-// This can be set by the safety hooks.
-int controls_allowed = 0;
-int gas_interceptor_detected = 0;
-int gas_interceptor_prev = 0;
-
-// This is set by USB command 0xdf
-int long_controls_allowed = 1;
-
+// include first, needed by safety policies
+#include "safety_declarations.h"
 // Include the actual safety policies.
 #include "safety/safety_defaults.h"
 #include "safety/safety_honda.h"
@@ -129,83 +78,94 @@ const safety_hook_config safety_hook_registry[] = {
   {SAFETY_ELM327, &elm327_hooks},
 };
 
-#define HOOK_CONFIG_COUNT (sizeof(safety_hook_registry)/sizeof(safety_hook_config))
-
 int safety_set_mode(uint16_t mode, int16_t param) {
-  for (int i = 0; i < HOOK_CONFIG_COUNT; i++) {
+  int set_status = -1;   // not set
+  int hook_config_count = sizeof(safety_hook_registry) / sizeof(safety_hook_config);
+  for (int i = 0; i < hook_config_count; i++) {
     if (safety_hook_registry[i].id == mode) {
       current_hooks = safety_hook_registry[i].hooks;
-      if (current_hooks->init) current_hooks->init(param);
-      return 0;
+      set_status = 0;    // set
+      break;
     }
   }
-  return -1;
+  if ((set_status == 0) && (current_hooks->init != NULL)) {
+    current_hooks->init(param);
+  }
+  return set_status;
 }
 
 // compute the time elapsed (in microseconds) from 2 counter samples
+// case where ts < ts_last is ok: overflow is properly re-casted into uint32_t
 uint32_t get_ts_elapsed(uint32_t ts, uint32_t ts_last) {
-  return ts > ts_last ? ts - ts_last : (0xFFFFFFFF - ts_last) + 1 + ts;
+  return ts - ts_last;
 }
 
 // convert a trimmed integer to signed 32 bit int
 int to_signed(int d, int bits) {
-  if (d >= (1 << (bits - 1))) {
-    d -= (1 << bits);
+  int d_signed = d;
+  if (d >= (1 << MAX((bits - 1), 0))) {
+    d_signed = d - (1 << MAX(bits, 0));
   }
-  return d;
+  return d_signed;
 }
 
 // given a new sample, update the smaple_t struct
 void update_sample(struct sample_t *sample, int sample_new) {
-  for (int i = sizeof(sample->values)/sizeof(sample->values[0]) - 1; i > 0; i--) {
+  int sample_size = sizeof(sample->values) / sizeof(sample->values[0]);
+  for (int i = sample_size - 1; i > 0; i--) {
     sample->values[i] = sample->values[i-1];
   }
   sample->values[0] = sample_new;
 
   // get the minimum and maximum measured samples
-  sample->min = sample->max = sample->values[0];
-  for (int i = 1; i < sizeof(sample->values)/sizeof(sample->values[0]); i++) {
-    if (sample->values[i] < sample->min) sample->min = sample->values[i];
-    if (sample->values[i] > sample->max) sample->max = sample->values[i];
+  sample->min = sample->values[0];
+  sample->max = sample->values[0];
+  for (int i = 1; i < sample_size; i++) {
+    if (sample->values[i] < sample->min) {
+      sample->min = sample->values[i];
+    }
+    if (sample->values[i] > sample->max) {
+      sample->max = sample->values[i];
+    }
   }
 }
 
-int max_limit_check(int val, const int MAX, const int MIN) {
-  return (val > MAX) || (val < MIN);
+bool max_limit_check(int val, const int MAX_VAL, const int MIN_VAL) {
+  return (val > MAX_VAL) || (val < MIN_VAL);
 }
 
 // check that commanded value isn't too far from measured
-int dist_to_meas_check(int val, int val_last, struct sample_t *val_meas,
+bool dist_to_meas_check(int val, int val_last, struct sample_t *val_meas,
   const int MAX_RATE_UP, const int MAX_RATE_DOWN, const int MAX_ERROR) {
 
   // *** val rate limit check ***
-  int highest_allowed_val = max(val_last, 0) + MAX_RATE_UP;
-  int lowest_allowed_val = min(val_last, 0) - MAX_RATE_UP;
+  int highest_allowed_rl = MAX(val_last, 0) + MAX_RATE_UP;
+  int lowest_allowed_rl = MIN(val_last, 0) - MAX_RATE_UP;
 
   // if we've exceeded the meas val, we must start moving toward 0
-  highest_allowed_val = min(highest_allowed_val, max(val_last - MAX_RATE_DOWN, max(val_meas->max, 0) + MAX_ERROR));
-  lowest_allowed_val = max(lowest_allowed_val, min(val_last + MAX_RATE_DOWN, min(val_meas->min, 0) - MAX_ERROR));
+  int highest_allowed = MIN(highest_allowed_rl, MAX(val_last - MAX_RATE_DOWN, MAX(val_meas->max, 0) + MAX_ERROR));
+  int lowest_allowed = MAX(lowest_allowed_rl, MIN(val_last + MAX_RATE_DOWN, MIN(val_meas->min, 0) - MAX_ERROR));
 
   // check for violation
-  return (val < lowest_allowed_val) || (val > highest_allowed_val);
+  return (val < lowest_allowed) || (val > highest_allowed);
 }
 
 // check that commanded value isn't fighting against driver
-int driver_limit_check(int val, int val_last, struct sample_t *val_driver,
-  const int MAX, const int MAX_RATE_UP, const int MAX_RATE_DOWN,
+bool driver_limit_check(int val, int val_last, struct sample_t *val_driver,
+  const int MAX_VAL, const int MAX_RATE_UP, const int MAX_RATE_DOWN,
   const int MAX_ALLOWANCE, const int DRIVER_FACTOR) {
 
-  int highest_allowed = max(val_last, 0) + MAX_RATE_UP;
-  int lowest_allowed = min(val_last, 0) - MAX_RATE_UP;
+  int highest_allowed_rl = MAX(val_last, 0) + MAX_RATE_UP;
+  int lowest_allowed_rl = MIN(val_last, 0) - MAX_RATE_UP;
 
-  int driver_max_limit = MAX + (MAX_ALLOWANCE + val_driver->max) * DRIVER_FACTOR;
-  int driver_min_limit = -MAX + (-MAX_ALLOWANCE + val_driver->min) * DRIVER_FACTOR;
+  int driver_max_limit = MAX_VAL + (MAX_ALLOWANCE + val_driver->max) * DRIVER_FACTOR;
+  int driver_min_limit = -MAX_VAL + (-MAX_ALLOWANCE + val_driver->min) * DRIVER_FACTOR;
 
   // if we've exceeded the applied torque, we must start moving toward 0
-  highest_allowed = min(highest_allowed, max(val_last - MAX_RATE_DOWN,
-                                             max(driver_max_limit, 0)));
-  lowest_allowed = max(lowest_allowed, min(val_last + MAX_RATE_DOWN,
-                                           min(driver_min_limit, 0)));
+  int highest_allowed = MIN(highest_allowed_rl, MAX(val_last - MAX_RATE_DOWN,
+                                             MAX(driver_max_limit, 0)));
+  int lowest_allowed = MAX(lowest_allowed_rl, MIN(val_last + MAX_RATE_DOWN,
+                                           MIN(driver_min_limit, 0)));
 
   // check for violation
   return (val < lowest_allowed) || (val > highest_allowed);
@@ -213,11 +173,11 @@ int driver_limit_check(int val, int val_last, struct sample_t *val_driver,
 
 
 // real time check, mainly used for steer torque rate limiter
-int rt_rate_limit_check(int val, int val_last, const int MAX_RT_DELTA) {
+bool rt_rate_limit_check(int val, int val_last, const int MAX_RT_DELTA) {
 
   // *** torque real time rate limit check ***
-  int highest_val = max(val_last, 0) + MAX_RT_DELTA;
-  int lowest_val = min(val_last, 0) - MAX_RT_DELTA;
+  int highest_val = MAX(val_last, 0) + MAX_RT_DELTA;
+  int lowest_val = MIN(val_last, 0) - MAX_RT_DELTA;
 
   // check for violation
   return (val < lowest_val) || (val > highest_val);
@@ -226,25 +186,30 @@ int rt_rate_limit_check(int val, int val_last, const int MAX_RT_DELTA) {
 
 // interp function that holds extreme values
 float interpolate(struct lookup_t xy, float x) {
+
   int size = sizeof(xy.x) / sizeof(xy.x[0]);
+  float ret = xy.y[size - 1];  // default output is last point
+
   // x is lower than the first point in the x array. Return the first point
   if (x <= xy.x[0]) {
-    return xy.y[0];
+    ret = xy.y[0];
 
   } else {
     // find the index such that (xy.x[i] <= x < xy.x[i+1]) and linearly interp
-    for (int i=0; i < size-1; i++) {
+    for (int i=0; i < (size - 1); i++) {
       if (x < xy.x[i+1]) {
         float x0 = xy.x[i];
         float y0 = xy.y[i];
         float dx = xy.x[i+1] - x0;
         float dy = xy.y[i+1] - y0;
         // dx should not be zero as xy.x is supposed ot be monotonic
-        if (dx <= 0.) dx = 0.0001;
-        return dy * (x - x0) / dx + y0;
+        if (dx <= 0.) {
+          dx = 0.0001;
+        }
+        ret = (dy * (x - x0) / dx) + y0;
+        break;
       }
     }
-    // if no such point is found, then x > xy.x[size-1]. Return last point
-    return xy.y[size - 1];
   }
+  return ret;
 }

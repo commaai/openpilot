@@ -6,6 +6,7 @@
 #include <assert.h>
 
 #include <GLES3/gl3.h>
+#include <EGL/egl.h>
 #include <EGL/eglext.h>
 
 #include "nanovg.h"

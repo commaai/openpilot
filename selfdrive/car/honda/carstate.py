@@ -1,6 +1,7 @@
 from common.numpy_fast import interp
 from common.kalman.simple_kalman import KF1D
-from selfdrive.can.parser import CANParser, CANDefine
+from selfdrive.can.can_define import CANDefine
+from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, SPEED_FACTOR, HONDA_BOSCH
 
@@ -198,10 +199,6 @@ class CarState(object):
     self.v_ego = 0.0
 
   def update(self, cp, cp_cam):
-
-    # copy can_valid on buses 0 and 2
-    self.can_valid = cp.can_valid
-    self.cam_can_valid = cp_cam.can_valid
 
     # car params
     v_weight_v = [0., 1.]  # don't trust smooth speed at low values to avoid premature zero snapping

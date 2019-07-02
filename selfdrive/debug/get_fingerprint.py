@@ -11,12 +11,10 @@
 # - since some messages are published at low frequency, keep this script running for at least 30s,
 #   until all messages are received at least once
 
-import zmq
 import selfdrive.messaging as messaging
 from selfdrive.services import service_list
 
-context = zmq.Context()
-logcan = messaging.sub_sock(context, service_list['can'].port)
+logcan = messaging.sub_sock(service_list['can'].port)
 msgs = {}
 while True:
   lc = messaging.recv_sock(logcan, True)
