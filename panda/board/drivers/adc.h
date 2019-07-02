@@ -8,7 +8,7 @@
 #define ADCCHAN_VOLTAGE 12
 #define ADCCHAN_CURRENT 13
 
-void adc_init() {
+void adc_init(void) {
   // global setup
   ADC->CCR = ADC_CCR_TSVREFE | ADC_CCR_VBATE;
   //ADC1->CR2 = ADC_CR2_ADON | ADC_CR2_EOCS | ADC_CR2_DDS;

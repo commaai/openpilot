@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import zmq
 import math
 import time
 import numpy as np
@@ -8,8 +7,6 @@ from selfdrive.can.parser import CANParser
 from selfdrive.car.gm.interface import CanBus
 from selfdrive.car.gm.values import DBC, CAR
 from common.realtime import sec_since_boot
-from selfdrive.services import service_list
-import selfdrive.messaging as messaging
 
 RADAR_HEADER_MSG = 1120
 SLOT_1_MSG = RADAR_HEADER_MSG + 1
@@ -19,13 +16,13 @@ NUM_SLOTS = 20
 # messages that are present in DBC
 LAST_RADAR_MSG = RADAR_HEADER_MSG + NUM_SLOTS
 
-def create_radard_can_parser(canbus, car_fingerprint):
+def create_radar_can_parser(canbus, car_fingerprint):
 
   dbc_f = DBC[car_fingerprint]['radar']
   if car_fingerprint in (CAR.VOLT, CAR.MALIBU, CAR.HOLDEN_ASTRA, CAR.ACADIA, CAR.CADILLAC_ATS):
     # C1A-ARS3-A by Continental
     radar_targets = range(SLOT_1_MSG, SLOT_1_MSG + NUM_SLOTS)
-    signals = zip(['FLRRNumValidTargets',
+    signals = list(zip(['FLRRNumValidTargets',
                    'FLRRSnsrBlckd', 'FLRRYawRtPlsblityFlt',
                    'FLRRHWFltPrsntInt', 'FLRRAntTngFltPrsnt',
                    'FLRRAlgnFltPrsnt', 'FLRRSnstvFltPrsntInt'] +
@@ -36,7 +33,7 @@ def create_radard_can_parser(canbus, car_fingerprint):
                   [0] * 7 +
                   [0.0] * NUM_SLOTS + [0.0] * NUM_SLOTS +
                   [0.0] * NUM_SLOTS + [0.0] * NUM_SLOTS +
-                  [0.0] * NUM_SLOTS + [0] * NUM_SLOTS)
+                  [0.0] * NUM_SLOTS + [0] * NUM_SLOTS))
 
     checks = []
 
@@ -53,14 +50,11 @@ class RadarInterface(object):
 
     canbus = CanBus()
     print "Using %d as obstacle CAN bus ID" % canbus.obstacle
-    self.rcp = create_radard_can_parser(canbus, CP.carFingerprint)
-
-    context = zmq.Context()
-    self.logcan = messaging.sub_sock(context, service_list['can'].port)
+    self.rcp = create_radar_can_parser(canbus, CP.carFingerprint)
 
   def update(self):
     updated_messages = set()
-    ret = car.RadarState.new_message()
+    ret = car.RadarData.new_message()
     while 1:
 
       if self.rcp is None:
@@ -68,7 +62,8 @@ class RadarInterface(object):
         return ret
 
       tm = int(sec_since_boot() * 1e9)
-      updated_messages.update(self.rcp.update(tm, True))
+      _, vls = self.rcp.update(tm, True)
+      updated_messages.update(vls)
       if LAST_RADAR_MSG in updated_messages:
         break
 
@@ -78,7 +73,7 @@ class RadarInterface(object):
       header['FLRRAntTngFltPrsnt'] or header['FLRRAlgnFltPrsnt']
     errors = []
     if not self.rcp.can_valid:
-      errors.append("commIssue")
+      errors.append("canError")
     if fault:
       errors.append("fault")
     ret.errors = errors
@@ -101,7 +96,7 @@ class RadarInterface(object):
         targetId = cpt['TrkObjectID']
         currentTargets.add(targetId)
         if targetId not in self.pts:
-          self.pts[targetId] = car.RadarState.RadarPoint.new_message()
+          self.pts[targetId] = car.RadarData.RadarPoint.new_message()
           self.pts[targetId].trackId = targetId
         distance = cpt['TrkRange']
         self.pts[targetId].dRel = distance # from front of car
@@ -124,4 +119,4 @@ if __name__ == "__main__":
   while 1:
     ret = RI.update()
     print(chr(27) + "[2J")
-    print ret
+    print(ret)

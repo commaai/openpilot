@@ -1,25 +1,20 @@
 #!/usr/bin/env python
 from common.realtime import sec_since_boot
-from cereal import car, log
+from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
-from selfdrive.car.chrysler.carstate import CarState, get_can_parser
+from selfdrive.car.chrysler.carstate import CarState, get_can_parser, get_camera_parser
 from selfdrive.car.chrysler.values import ECU, check_ecu_msgs, CAR
-
-try:
-  from selfdrive.car.chrysler.carcontroller import CarController
-except ImportError:
-  CarController = None
+from selfdrive.car import STD_CARGO_KG
 
 
 class CarInterface(object):
-  def __init__(self, CP, sendcan=None):
+  def __init__(self, CP, CarController):
     self.CP = CP
     self.VM = VehicleModel(CP)
 
     self.frame = 0
-    self.can_invalid_count = 0
     self.gas_pressed_prev = False
     self.brake_pressed_prev = False
     self.cruise_enabled_prev = False
@@ -27,12 +22,11 @@ class CarInterface(object):
 
     # *** init the major players ***
     self.CS = CarState(CP)
-
     self.cp = get_can_parser(CP)
+    self.cp_cam = get_camera_parser(CP)
 
-    # sending if read only is False
-    if sendcan is not None:
-      self.sendcan = sendcan
+    self.CC = None
+    if CarController is not None:
       self.CC = CarController(self.cp.dbc_name, CP.carFingerprint, CP.enableCamera)
 
   @staticmethod
@@ -44,24 +38,22 @@ class CarInterface(object):
     return 1.0
 
   @staticmethod
-  def get_params(candidate, fingerprint):
-
-    # kg of standard extra cargo to count for drive, gas, etc...
-    std_cargo = 136
+  def get_params(candidate, fingerprint, vin=""):
 
     ret = car.CarParams.new_message()
 
     ret.carName = "chrysler"
     ret.carFingerprint = candidate
+    ret.carVin = vin
 
-    ret.safetyModel = car.CarParams.SafetyModels.chrysler
+    ret.safetyModel = car.CarParams.SafetyModel.chrysler
 
     # pedal
     ret.enableCruise = True
 
     # FIXME: hardcoding honda civic 2016 touring params so they can be used to
     # scale unknown params for other cars
-    mass_civic = 2923./2.205 + std_cargo
+    mass_civic = 2923. * CV.LB_TO_KG + STD_CARGO_KG
     wheelbase_civic = 2.70
     centerToFront_civic = wheelbase_civic * 0.4
     centerToRear_civic = wheelbase_civic - centerToFront_civic
@@ -70,27 +62,28 @@ class CarInterface(object):
     tireStiffnessRear_civic = 90000 * 2.0
 
     # Speed conversion:              20, 45 mph
-    ret.steerKpBP, ret.steerKiBP = [[9., 20.], [9., 20.]]
     ret.wheelbase = 3.089  # in meters for Pacifica Hybrid 2017
     ret.steerRatio = 16.2 # Pacifica Hybrid 2017
-    ret.mass = 2858 + std_cargo  # kg curb weight Pacifica Hybrid 2017
-    ret.steerKpV, ret.steerKiV =   [[0.15,0.30], [0.03,0.05]]
-    ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
+    ret.mass = 2858. + STD_CARGO_KG  # kg curb weight Pacifica Hybrid 2017
+    ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[9., 20.], [9., 20.]]
+    ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.15,0.30], [0.03,0.05]]
+    ret.lateralTuning.pid.kf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
     ret.steerActuatorDelay = 0.1
     ret.steerRateCost = 0.7
 
-    if candidate == CAR.JEEP_CHEROKEE:
+    if candidate in (CAR.JEEP_CHEROKEE, CAR.JEEP_CHEROKEE_2019):
       ret.wheelbase = 2.91  # in meters
       ret.steerRatio = 12.7
       ret.steerActuatorDelay = 0.2  # in seconds
 
     ret.centerToFront = ret.wheelbase * 0.44
 
-    ret.longPidDeadzoneBP = [0., 9.]
-    ret.longPidDeadzoneV = [0., .15]
 
     ret.minSteerSpeed = 3.8  # m/s
     ret.minEnableSpeed = -1.   # enable is done by stock ACC, so ignore this
+    if candidate in (CAR.PACIFICA_2019_HYBRID, CAR.JEEP_CHEROKEE_2019):
+      ret.minSteerSpeed = 17.5  # m/s 17 on the way up, 13 on the way down once engaged.
+      # TODO allow 2019 cars to steer down to 13 m/s if already engaged.
 
     centerToRear = ret.wheelbase - ret.centerToFront
     # TODO: get actual value, for now starting with reasonable value for
@@ -119,17 +112,19 @@ class CarInterface(object):
     ret.brakeMaxV = [1., 0.8]
 
     ret.enableCamera = not check_ecu_msgs(fingerprint, ECU.CAM)
-    print "ECU Camera Simulated: ", ret.enableCamera
+    print("ECU Camera Simulated: {0}".format(ret.enableCamera))
     ret.openpilotLongitudinalControl = False
 
     ret.steerLimitAlert = True
     ret.stoppingControl = False
     ret.startAccel = 0.0
 
-    ret.longitudinalKpBP = [0., 5., 35.]
-    ret.longitudinalKpV = [3.6, 2.4, 1.5]
-    ret.longitudinalKiBP = [0., 35.]
-    ret.longitudinalKiV = [0.54, 0.36]
+    ret.longitudinalTuning.deadzoneBP = [0., 9.]
+    ret.longitudinalTuning.deadzoneV = [0., .15]
+    ret.longitudinalTuning.kpBP = [0., 5., 35.]
+    ret.longitudinalTuning.kpV = [3.6, 2.4, 1.5]
+    ret.longitudinalTuning.kiBP = [0., 35.]
+    ret.longitudinalTuning.kiV = [0.54, 0.36]
 
     return ret
 
@@ -137,13 +132,15 @@ class CarInterface(object):
   def update(self, c):
     # ******************* do can recv *******************
     canMonoTimes = []
+    can_rcv_valid, _ = self.cp.update(int(sec_since_boot() * 1e9), True)
+    cam_rcv_valid, _ = self.cp_cam.update(int(sec_since_boot() * 1e9), False)
 
-    self.cp.update(int(sec_since_boot() * 1e9), False)
-
-    self.CS.update(self.cp)
+    self.CS.update(self.cp, self.cp_cam)
 
     # create message
     ret = car.CarState.new_message()
+
+    ret.canValid = can_rcv_valid and cam_rcv_valid and self.cp.can_valid and self.cp_cam.can_valid
 
     # speeds
     ret.vEgo = self.CS.v_ego
@@ -208,16 +205,12 @@ class CarInterface(object):
     self.low_speed_alert = (ret.vEgo < self.CP.minSteerSpeed)
 
     ret.genericToggle = self.CS.generic_toggle
+    #ret.lkasCounter = self.CS.lkas_counter
+    #ret.lkasCarModel = self.CS.lkas_car_model
 
     # events
     events = []
-    if not self.CS.can_valid:
-      self.can_invalid_count += 1
-      if self.can_invalid_count >= 5:
-        events.append(create_event('commIssue', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
-    else:
-      self.can_invalid_count = 0
-    if not ret.gearShifter == 'drive':
+    if not (ret.gearShifter in ('drive', 'low')):
       events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if ret.doorOpen:
       events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
@@ -256,14 +249,14 @@ class CarInterface(object):
 
   # pass in a car.CarControl
   # to be called @ 100hz
-  def apply(self, c, perception_state=log.Live20Data.new_message()):
+  def apply(self, c):
 
     if (self.CS.frame == -1):
-      return False # if we haven't seen a frame 220, then do not update.
+      return [] # if we haven't seen a frame 220, then do not update.
 
     self.frame = self.CS.frame
-    self.CC.update(self.sendcan, c.enabled, self.CS, self.frame,
-                   c.actuators, c.cruiseControl.cancel, c.hudControl.visualAlert,
-                   c.hudControl.audibleAlert)
+    can_sends = self.CC.update(c.enabled, self.CS, self.frame,
+                               c.actuators, c.cruiseControl.cancel, c.hudControl.visualAlert,
+                               c.hudControl.audibleAlert)
 
-    return False
+    return can_sends

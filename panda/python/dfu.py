@@ -18,7 +18,7 @@ class PandaDFU(object):
     for device in context.getDeviceList(skip_on_error=True):
       if device.getVendorID() == 0x0483 and device.getProductID() == 0xdf11:
         try:
-          this_dfu_serial = device._getASCIIStringDescriptor(3)
+          this_dfu_serial = device.open().getASCIIStringDescriptor(3)
         except Exception:
           continue
         if this_dfu_serial == dfu_serial or dfu_serial is None:
@@ -35,7 +35,7 @@ class PandaDFU(object):
       for device in context.getDeviceList(skip_on_error=True):
         if device.getVendorID() == 0x0483 and device.getProductID() == 0xdf11:
           try:
-            dfu_serials.append(device._getASCIIStringDescriptor(3))
+            dfu_serials.append(device.open().getASCIIStringDescriptor(3))
           except Exception:
             pass
     except Exception:
@@ -73,7 +73,7 @@ class PandaDFU(object):
   def program(self, address, dat, block_size=None):
     if block_size == None:
       block_size = len(dat)
-      
+
     # Set Address Pointer
     self._handle.controlWrite(0x21, DFU_DNLOAD, 0, 0, "\x21" + struct.pack("I", address))
     self.status()
@@ -119,4 +119,3 @@ class PandaDFU(object):
       stat = str(self._handle.controlRead(0x21, DFU_GETSTATUS, 0, 0, 6))
     except Exception:
       pass
-

@@ -1,5 +1,11 @@
 #!/usr/bin/bash
 
+export OMP_NUM_THREADS=1
+export MKL_NUM_THREADS=1
+export NUMEXPR_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
+export VECLIB_MAXIMUM_THREADS=1
+
 if [ -z "$PASSIVE" ]; then
   export PASSIVE="1"
 fi
@@ -19,6 +25,8 @@ function launch {
   echo 0-3 > /dev/cpuset/foreground/cpus
   echo 0-3 > /dev/cpuset/android/cpus
 
+  # handle pythonpath
+  ln -s /data/openpilot /data/pythonpath
   export PYTHONPATH="$PWD"
 
   # start manager

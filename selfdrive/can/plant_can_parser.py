@@ -78,7 +78,7 @@ class CANParser(object):
           msg_vl = fix(ck_portion, msg)
           # compare recalculated vs received checksum
           if msg_vl != cdat:
-            print "CHECKSUM FAIL: " + hex(msg)
+            print("CHECKSUM FAIL: {0}".format(hex(msg)))
             self.ck[msg] = False
             self.ok[msg] = False
         # counter check
@@ -87,13 +87,13 @@ class CANParser(object):
           cn = out["COUNTER"]
         # check counter validity if it's a relevant message
         if cn != ((self.cn[msg] + 1) % 4) and msg in self.msgs_ck and "COUNTER" in out.keys():
-          #print hex(msg), "FAILED COUNTER!"
+          #print("FAILED COUNTER: {0}".format(hex(msg)()
           self.cn_vl[msg] += 1   # counter check failed
         else:
           self.cn_vl[msg] -= 1   # counter check passed
         # message status is invalid if we received too many wrong counter values
         if self.cn_vl[msg] >= cn_vl_max:
-          print "COUNTER WRONG: " + hex(msg)
+          print("COUNTER WRONG: {0}".format(hex(msg)))
           self.ok[msg] = False
 
         # update msg time stamps and counter value
@@ -118,7 +118,7 @@ class CANParser(object):
     self.can_valid = True
 
     if False in self.ok.values():
-      #print "CAN INVALID!"
+      #print("CAN INVALID!")
       self.can_valid = False
 
     return msgs_upd

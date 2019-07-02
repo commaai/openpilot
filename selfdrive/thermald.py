@@ -1,20 +1,19 @@
 #!/usr/bin/env python2.7
 import os
-import zmq
 from smbus2 import SMBus
 from cereal import log
 from selfdrive.version import training_version
 from selfdrive.swaglog import cloudlog
 import selfdrive.messaging as messaging
 from selfdrive.services import service_list
-from selfdrive.loggerd.config import ROOT
+from selfdrive.loggerd.config import get_available_percent
 from common.params import Params
 from common.realtime import sec_since_boot
 from common.numpy_fast import clip
 from common.filter_simple import FirstOrderFilter
 
 ThermalStatus = log.ThermalData.ThermalStatus
-CURRENT_TAU = 2.   # 2s time constant
+CURRENT_TAU = 15.   # 15s time constant
 
 def read_tz(x):
   with open("/sys/devices/virtual/thermal/thermal_zone%d/temp" % x) as f:
@@ -46,7 +45,7 @@ def setup_eon_fan():
     bus.write_byte_data(0x21, 0x02, 0x2)   # needed?
     bus.write_byte_data(0x21, 0x04, 0x4)   # manual override source
   except IOError:
-    print "LEON detected"
+    print("LEON detected")
     #os.system("echo 1 > /sys/devices/soc/6a00000.ssusb/power_supply/usb/usb_otg")
     LEON = True
   bus.close()
@@ -121,37 +120,6 @@ def check_car_battery_voltage(should_start, health, charging_disabled):
   return charging_disabled
 
 
-class LocationStarter(object):
-  def __init__(self):
-    self.last_good_loc = 0
-  def update(self, started_ts, location):
-    rt = sec_since_boot()
-
-    if location is None or location.accuracy > 50 or location.speed < 2:
-      # bad location, stop if we havent gotten a location in a while
-      # dont stop if we're been going for less than a minute
-      if started_ts:
-        if rt-self.last_good_loc > 60. and rt-started_ts > 60:
-          cloudlog.event("location_stop",
-            ts=rt,
-            started_ts=started_ts,
-            last_good_loc=self.last_good_loc,
-            location=location.to_dict() if location else None)
-          return False
-        else:
-          return True
-      else:
-        return False
-
-    self.last_good_loc = rt
-
-    if started_ts:
-      return True
-    else:
-      cloudlog.event("location_start", location=location.to_dict() if location else None)
-      return location.speed*3.6 > 10
-
-
 def thermald_thread():
   setup_eon_fan()
 
@@ -159,10 +127,9 @@ def thermald_thread():
   BATT_PERC_OFF = 10 if LEON else 3
 
   # now loop
-  context = zmq.Context()
-  thermal_sock = messaging.pub_sock(context, service_list['thermal'].port)
-  health_sock = messaging.sub_sock(context, service_list['health'].port)
-  location_sock = messaging.sub_sock(context, service_list['gpsLocation'].port)
+  thermal_sock = messaging.pub_sock(service_list['thermal'].port)
+  health_sock = messaging.sub_sock(service_list['health'].port)
+  location_sock = messaging.sub_sock(service_list['gpsLocation'].port)
   fan_speed = 0
   count = 0
 
@@ -170,10 +137,10 @@ def thermald_thread():
   started_ts = None
   ignition_seen = False
   started_seen = False
-  passive_starter = LocationStarter()
   thermal_status = ThermalStatus.green
   health_sock.RCVTIMEO = 1500
   current_filter = FirstOrderFilter(0., CURRENT_TAU, 1.)
+  health_prev = None
 
   # Make sure charging is enabled
   charging_disabled = False
@@ -187,9 +154,13 @@ def thermald_thread():
     location = location.gpsLocation if location else None
     msg = read_thermal()
 
+    # clear car params when panda gets disconnected
+    if health is None and health_prev is not None:
+      params.panda_disconnect()
+    health_prev = health
+
     # loggerd is gated based on free space
-    statvfs = os.statvfs(ROOT)
-    avail = (statvfs.f_bavail * 1.0)/statvfs.f_blocks
+    avail = get_available_percent() / 100.0
 
     # thermal message now also includes free space
     msg.thermal.freeSpace = avail
@@ -253,16 +224,8 @@ def thermald_thread():
     # have we seen a panda?
     passive = (params.get("Passive") == "1")
 
-    # start on gps movement if we haven't seen ignition and are in passive mode
-    should_start = should_start or (not (ignition_seen and health) # seen ignition and panda is connected
-                                    and passive
-                                    and passive_starter.update(started_ts, location))
-
     # with 2% left, we killall, otherwise the phone will take a long time to boot
     should_start = should_start and msg.thermal.freeSpace > 0.02
-
-    # require usb power in passive mode
-    should_start = should_start and (not passive or msg.thermal.usbOnline)
 
     # confirm we have completed training and aren't uninstalling
     should_start = should_start and accepted_terms and (passive or completed_training) and (not do_uninstall)
@@ -276,13 +239,14 @@ def thermald_thread():
     if should_start:
       off_ts = None
       if started_ts is None:
-        params.car_start()
         started_ts = sec_since_boot()
         started_seen = True
+        os.system('echo performance > /sys/class/devfreq/soc:qcom,cpubw/governor')
     else:
       started_ts = None
       if off_ts is None:
         off_ts = sec_since_boot()
+        os.system('echo powersave > /sys/class/devfreq/soc:qcom,cpubw/governor')
 
       # shutdown if the battery gets lower than 3%, it's discharging, we aren't running for
       # more than a minute but we were running
@@ -290,16 +254,16 @@ def thermald_thread():
          started_seen and (sec_since_boot() - off_ts) > 60:
         os.system('LD_LIBRARY_PATH="" svc power shutdown')
 
-    charging_disabled = check_car_battery_voltage(should_start, health, charging_disabled)
+    #charging_disabled = check_car_battery_voltage(should_start, health, charging_disabled)
 
     msg.thermal.chargingDisabled = charging_disabled
-    msg.thermal.chargingError = current_filter.x > 1.0   # if current is > 1A out, then charger might be off
+    msg.thermal.chargingError = current_filter.x > 0. and msg.thermal.batteryPercent < 90  # if current is positive, then battery is being discharged
     msg.thermal.started = started_ts is not None
     msg.thermal.startedTs = int(1e9*(started_ts or 0))
 
     msg.thermal.thermalStatus = thermal_status
     thermal_sock.send(msg.to_bytes())
-    print msg
+    print(msg)
 
     # report to server once per minute
     if (count%60) == 0:
@@ -317,4 +281,3 @@ def main(gctx=None):
 
 if __name__ == "__main__":
   main()
-

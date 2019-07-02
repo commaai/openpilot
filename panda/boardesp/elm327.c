@@ -10,8 +10,8 @@
 
 //#define ELM_DEBUG
 
-#define min(a,b) ((a) < (b) ? (a) : (b))
-#define max(a,b) ((a) > (b) ? (a) : (b))
+#define MIN(a,b) ((a) < (b) ? (a) : (b))
+#define MAX(a,b) ((a) > (b) ? (a) : (b))
 int ICACHE_FLASH_ATTR spi_comm(char *dat, int len, uint32_t *recvData, int recvDataLen);
 
 #define ELM_PORT 35000
@@ -855,7 +855,7 @@ static void ICACHE_FLASH_ATTR elm_process_obd_cmd_LINFast(const elm_protocol_t* 
 
     panda_kline_wakeup_pulse();
   } else {
-    bytelen = min(bytelen, 7);
+    bytelen = MIN(bytelen, 7);
     for(int i = 0; i < bytelen; i++){
       msg.dat[i] = elm_decode_hex_byte(&cmd[i*2]);
       msg.dat[bytelen] += msg.dat[i];
@@ -1059,7 +1059,7 @@ static void ICACHE_FLASH_ATTR elm_process_obd_cmd_ISO15765(const elm_protocol_t*
     return;
   }
 
-  msg.len = min(msg.len, 7);
+  msg.len = MIN(msg.len, 7);
 
   for(int i = 0; i < msg.len; i++)
     msg.dat[i] = elm_decode_hex_byte(&cmd[i*2]);
@@ -1398,7 +1398,7 @@ static void ICACHE_FLASH_ATTR elm_process_at_cmd(char *cmd, uint16_t len) {
     }
 
     tmp = elm_decode_hex_byte(&cmd[2]);
-    elm_mode_keepalive_period = tmp ? max(tmp, 0x20) * 20 : 0;
+    elm_mode_keepalive_period = tmp ? MAX(tmp, 0x20) * 20 : 0;
 
     if(lin_bus_initialized){
       os_timer_disarm(&elm_proto_aux_timeout);

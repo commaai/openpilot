@@ -1,3 +1,4 @@
+venv/
 .DS_Store
 .tags
 .ipynb_checkpoints
@@ -26,9 +27,14 @@ clcache
 board/obj/
 selfdrive/boardd/boardd
 selfdrive/logcatd/logcatd
+selfdrive/mapd/default_speeds_by_region.json
 selfdrive/proclogd/proclogd
 selfdrive/ui/ui
 selfdrive/test/tests/plant/out
+selfdrive/visiond/visiond
 /src/
 
 one
+openpilot
+xx
+

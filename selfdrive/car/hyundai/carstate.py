@@ -2,7 +2,6 @@ from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from common.kalman.simple_kalman import KF1D
-import numpy as np
 
 
 def get_can_parser(CP):
@@ -50,6 +49,7 @@ def get_can_parser(CP):
     ("CF_Clu_InhibitR", "CLU15", 0),
 
     ("CF_Lvr_Gear","LVR12",0),
+    ("CUR_GR", "TCU12",0),
 
     ("ACCEnable", "TCS13", 0),
     ("ACC_REQ", "TCS13", 0),
@@ -93,7 +93,8 @@ def get_can_parser(CP):
     ("SAS11", 100)
   ]
 
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0, timeout=100)
+
 
 def get_camera_parser(CP):
 
@@ -118,7 +119,8 @@ def get_camera_parser(CP):
 
   checks = []
 
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2, timeout=100)
+
 
 class CarState(object):
   def __init__(self, CP):
@@ -132,10 +134,10 @@ class CarState(object):
     dt = 0.01
     # Q = np.matrix([[10.0, 0.0], [0.0, 100.0]])
     # R = 1e3
-    self.v_ego_kf = KF1D(x0=np.matrix([[0.0], [0.0]]),
-                         A=np.matrix([[1.0, dt], [0.0, 1.0]]),
-                         C=np.matrix([1.0, 0.0]),
-                         K=np.matrix([[0.12287673], [0.29666309]]))
+    self.v_ego_kf = KF1D(x0=[[0.0], [0.0]],
+                         A=[[1.0, dt], [0.0, 1.0]],
+                         C=[1.0, 0.0],
+                         K=[[0.12287673], [0.29666309]])
     self.v_ego = 0.0
     self.left_blinker_on = 0
     self.left_blinker_flash = 0
@@ -143,9 +145,6 @@ class CarState(object):
     self.right_blinker_flash = 0
 
   def update(self, cp, cp_cam):
-    # copy can_valid
-    self.can_valid = cp.can_valid
-
     # update prevs, update must run once per Loop
     self.prev_left_blinker_on = self.left_blinker_on
     self.prev_right_blinker_on = self.right_blinker_on
@@ -166,22 +165,22 @@ class CarState(object):
     self.v_wheel_fr = cp.vl["WHL_SPD11"]['WHL_SPD_FR'] * CV.KPH_TO_MS
     self.v_wheel_rl = cp.vl["WHL_SPD11"]['WHL_SPD_RL'] * CV.KPH_TO_MS
     self.v_wheel_rr = cp.vl["WHL_SPD11"]['WHL_SPD_RR'] * CV.KPH_TO_MS
-    self.v_wheel = (self.v_wheel_fl + self.v_wheel_fr + self.v_wheel_rl + self.v_wheel_rr) / 4.
+    v_wheel = (self.v_wheel_fl + self.v_wheel_fr + self.v_wheel_rl + self.v_wheel_rr) / 4.
 
-    self.low_speed_lockout = self.v_wheel < 1.0
+    self.low_speed_lockout = v_wheel < 1.0
 
     # Kalman filter, even though Hyundai raw wheel speed is heaviliy filtered by default
-    if abs(self.v_wheel - self.v_ego) > 2.0:  # Prevent large accelerations when car starts at non zero speed
-      self.v_ego_x = np.matrix([[self.v_wheel], [0.0]])
+    if abs(v_wheel - self.v_ego) > 2.0:  # Prevent large accelerations when car starts at non zero speed
+      self.v_ego_kf.x = [[v_wheel], [0.0]]
 
-    self.v_ego_raw = self.v_wheel
-    v_ego_x = self.v_ego_kf.update(self.v_wheel)
+    self.v_ego_raw = v_wheel
+    v_ego_x = self.v_ego_kf.update(v_wheel)
     self.v_ego = float(v_ego_x[0])
     self.a_ego = float(v_ego_x[1])
     is_set_speed_in_mph = int(cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"])
     speed_conv = CV.MPH_TO_MS if is_set_speed_in_mph else CV.KPH_TO_MS
     self.cruise_set_speed = cp.vl["SCC11"]['VSetDis'] * speed_conv
-    self.standstill = not self.v_wheel > 0.1
+    self.standstill = not v_wheel > 0.1
 
     self.angle_steers = cp.vl["SAS11"]['SAS_Angle']
     self.angle_steers_rate = cp.vl["SAS11"]['SAS_Speed']
@@ -233,6 +232,17 @@ class CarState(object):
       self.gear_shifter_cluster = "reverse"
     else:
       self.gear_shifter_cluster = "unknown"
+
+    # Gear Selecton via TCU12
+    gear2 = cp.vl["TCU12"]["CUR_GR"]
+    if gear2 == 0:
+      self.gear_tcu = "park"
+    elif gear2 == 14:
+      self.gear_tcu = "reverse"
+    elif gear2 > 0 and gear2 < 9:    # unaware of anything over 8 currently
+      self.gear_tcu = "drive"
+    else:
+      self.gear_tcu = "unknown"
 
     # save the entire LKAS11 and CLU11
     self.lkas11 = cp_cam.vl["LKAS11"]

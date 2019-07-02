@@ -1,21 +1,22 @@
 #!/usr/bin/env python
-import zmq
 import numpy as np
 import numpy.matlib
 import importlib
-from collections import defaultdict
-from fastcluster import linkage_vector
+from collections import defaultdict, deque
+
 import selfdrive.messaging as messaging
 from selfdrive.services import service_list
 from selfdrive.controls.lib.latcontrol_helpers import calc_lookahead_offset
-from selfdrive.controls.lib.pathplanner import PathPlanner
-from selfdrive.controls.lib.radar_helpers import Track, Cluster, fcluster, \
+from selfdrive.controls.lib.model_parser import ModelParser
+from selfdrive.controls.lib.radar_helpers import Track, Cluster, \
                                                  RDR_TO_LDR, NO_FUSION_SCORE
+
+from selfdrive.controls.lib.cluster.fastcluster_py import cluster_points_centroid
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.swaglog import cloudlog
 from cereal import car
 from common.params import Params
-from common.realtime import set_realtime_priority, Ratekeeper
+from common.realtime import set_realtime_priority, Ratekeeper, DT_MDL
 from common.kalman.ekf import EKF, SimpleSensor
 
 DEBUG = False
@@ -44,8 +45,6 @@ class EKFV1D(EKF):
 
 
 ## fuses camera and radar data for best lead detection
-# FIXME: radard has a memory leak of about 50MB/hr
-# BOUNTY: $100 coupon on shop.comma.ai
 def radard_thread(gctx=None):
   set_realtime_priority(2)
 
@@ -59,29 +58,31 @@ def radard_thread(gctx=None):
   # import the radar from the fingerprint
   cloudlog.info("radard is importing %s", CP.carName)
   RadarInterface = importlib.import_module('selfdrive.car.%s.radar_interface' % CP.carName).RadarInterface
-  context = zmq.Context()
 
-  # *** subscribe to features and model from visiond
-  poller = zmq.Poller()
-  model = messaging.sub_sock(context, service_list['model'].port, conflate=True, poller=poller)
-  live100 = messaging.sub_sock(context, service_list['live100'].port, conflate=True, poller=poller)
+  sm = messaging.SubMaster(['model', 'controlsState', 'liveParameters'])
 
-  PP = PathPlanner()
+  # Default parameters
+  live_parameters = messaging.new_message()
+  live_parameters.init('liveParameters')
+  live_parameters.liveParameters.valid = True
+  live_parameters.liveParameters.steerRatio = CP.steerRatio
+  live_parameters.liveParameters.stiffnessFactor = 1.0
+
+  MP = ModelParser()
   RI = RadarInterface(CP)
 
   last_md_ts = 0
-  last_l100_ts = 0
+  last_controls_state_ts = 0
 
-  # *** publish live20 and liveTracks
-  live20 = messaging.pub_sock(context, service_list['live20'].port)
-  liveTracks = messaging.pub_sock(context, service_list['liveTracks'].port)
+  # *** publish radarState and liveTracks
+  radarState = messaging.pub_sock(service_list['radarState'].port)
+  liveTracks = messaging.pub_sock(service_list['liveTracks'].port)
 
   path_x = np.arange(0.0, 140.0, 0.1)    # 140 meters is max
 
   # Time-alignment
-  rate = 20.   # model and radar are both at 20Hz
-  tsv = 1./rate
-  v_len = 20         # how many speed data points to remember for t alignment with rdr data
+  rate = 1. / DT_MDL  # model and radar are both at 20Hz
+  v_len = 20   # how many speed data points to remember for t alignment with rdr data
 
   active = 0
   steer_angle = 0.
@@ -94,11 +95,12 @@ def radard_thread(gctx=None):
   speedSensorV = SimpleSensor(XV, 1, 2)
 
   # v_ego
-  v_ego = None
-  v_ego_array = np.zeros([2, v_len])
+  v_ego = 0.
+  v_ego_hist_t = deque([0], maxlen=v_len)
+  v_ego_hist_v = deque([0], maxlen=v_len)
   v_ego_t_aligned = 0.
 
-  rk = Ratekeeper(rate, print_delay_threshold=np.inf)
+  rk = Ratekeeper(rate, print_delay_threshold=None)
   while 1:
     rr = RI.update()
 
@@ -106,54 +108,45 @@ def radard_thread(gctx=None):
     for pt in rr.points:
       ar_pts[pt.trackId] = [pt.dRel + RDR_TO_LDR, pt.yRel, pt.vRel, pt.measured]
 
-    # receive the live100s
-    l100 = None
-    md = None
+    sm.update(0)
 
-    for socket, event in poller.poll(0):
-      if socket is live100:
-        l100 = messaging.recv_one(socket)
-      elif socket is model:
-        md = messaging.recv_one(socket)
+    if sm.updated['liveParameters']:
+        VM.update_params(sm['liveParameters'].stiffnessFactor, sm['liveParameters'].steerRatio)
 
-    if l100 is not None:
-      active = l100.live100.active
-      v_ego = l100.live100.vEgo
-      steer_angle = l100.live100.angleSteers
-      steer_override = l100.live100.steerOverride
+    if sm.updated['controlsState']:
+      active = sm['controlsState'].active
+      v_ego = sm['controlsState'].vEgo
+      steer_angle = sm['controlsState'].angleSteers
+      steer_override = sm['controlsState'].steerOverride
 
-      v_ego_array = np.append(v_ego_array, [[v_ego], [float(rk.frame)/rate]], 1)
-      v_ego_array = v_ego_array[:, 1:]
+      v_ego_hist_v.append(v_ego)
+      v_ego_hist_t.append(float(rk.frame)/rate)
 
-      last_l100_ts = l100.logMonoTime
+      last_controls_state_ts = sm.logMonoTime['controlsState']
 
-    if v_ego is None:
-      continue
+    if sm.updated['model']:
+      last_md_ts = sm.logMonoTime['model']
+      MP.update(v_ego, sm['model'])
 
-    if md is not None:
-      last_md_ts = md.logMonoTime
-
-    # *** get path prediction from the model ***
-    PP.update(v_ego, md)
 
     # run kalman filter only if prob is high enough
-    if PP.lead_prob > 0.7:
-      reading = speedSensorV.read(PP.lead_dist, covar=np.matrix(PP.lead_var))
+    if MP.lead_prob > 0.7:
+      reading = speedSensorV.read(MP.lead_dist, covar=np.matrix(MP.lead_var))
       ekfv.update_scalar(reading)
-      ekfv.predict(tsv)
+      ekfv.predict(DT_MDL)
 
       # When changing lanes the distance to the lead car can suddenly change,
       # which makes the Kalman filter output large relative acceleration
-      if mocked and abs(PP.lead_dist - ekfv.state[XV]) > 2.0:
-        ekfv.state[XV] = PP.lead_dist
-        ekfv.covar = (np.diag([PP.lead_var, ekfv.var_init]))
+      if mocked and abs(MP.lead_dist - ekfv.state[XV]) > 2.0:
+        ekfv.state[XV] = MP.lead_dist
+        ekfv.covar = (np.diag([MP.lead_var, ekfv.var_init]))
         ekfv.state[SPEEDV] = 0.
 
-      ar_pts[VISION_POINT] = (float(ekfv.state[XV]), np.polyval(PP.d_poly, float(ekfv.state[XV])),
+      ar_pts[VISION_POINT] = (float(ekfv.state[XV]), np.polyval(MP.d_poly, float(ekfv.state[XV])),
                               float(ekfv.state[SPEEDV]), False)
     else:
-      ekfv.state[XV] = PP.lead_dist
-      ekfv.covar = (np.diag([PP.lead_var, ekfv.var_init]))
+      ekfv.state[XV] = MP.lead_dist
+      ekfv.covar = (np.diag([MP.lead_var, ekfv.var_init]))
       ekfv.state[SPEEDV] = 0.
 
       if VISION_POINT in ar_pts:
@@ -162,10 +155,10 @@ def radard_thread(gctx=None):
     # *** compute the likely path_y ***
     if (active and not steer_override) or mocked:
       # use path from model (always when mocking as steering is too noisy)
-      path_y = np.polyval(PP.d_poly, path_x)
+      path_y = np.polyval(MP.d_poly, path_x)
     else:
       # use path from steer, set angle_offset to 0 it does not only report the physical offset
-      path_y = calc_lookahead_offset(v_ego, steer_angle, path_x, VM, angle_offset=0)[0]
+      path_y = calc_lookahead_offset(v_ego, steer_angle, path_x, VM, angle_offset=live_parameters.liveParameters.angleOffsetAverage)[0]
 
     # *** remove missing points from meta data ***
     for ids in tracks.keys():
@@ -181,7 +174,8 @@ def radard_thread(gctx=None):
 
       # align v_ego by a fixed time to align it with the radar measurement
       cur_time = float(rk.frame)/rate
-      v_ego_t_aligned = np.interp(cur_time - RI.delay, v_ego_array[1], v_ego_array[0])
+      v_ego_t_aligned = np.interp(cur_time - RI.delay, v_ego_hist_t, v_ego_hist_v)
+
       d_path = np.sqrt(np.amin((path_x - rpt[0]) ** 2 + (path_y - rpt[1]) ** 2))
       # add sign
       d_path *= np.sign(rpt[1] - np.interp(rpt[0], path_x, path_y))
@@ -212,21 +206,20 @@ def radard_thread(gctx=None):
       if VISION_POINT in ar_pts:
         print("vision", ar_pts[VISION_POINT])
 
-    idens = tracks.keys()
+    idens = list(tracks.keys())
     track_pts = np.array([tracks[iden].get_key_for_cluster() for iden in idens])
 
     # If we have multiple points, cluster them
     if len(track_pts) > 1:
-      link = linkage_vector(track_pts, method='centroid')
-      cluster_idxs = fcluster(link, 2.5, criterion='distance')
-      clusters = [None]*max(cluster_idxs)
+      cluster_idxs = cluster_points_centroid(track_pts, 2.5)
+      clusters = [None] * (max(cluster_idxs) + 1)
 
       for idx in xrange(len(track_pts)):
-        cluster_i = cluster_idxs[idx]-1
-
-        if clusters[cluster_i] == None:
+        cluster_i = cluster_idxs[idx]
+        if clusters[cluster_i] is None:
           clusters[cluster_i] = Cluster()
         clusters[cluster_i].add(tracks[idens[idx]])
+
     elif len(track_pts) == 1:
       # TODO: why do we need this?
       clusters = [Cluster()]
@@ -249,24 +242,25 @@ def radard_thread(gctx=None):
     lead2_clusters.sort(key=lambda x: x.dRel)
     lead2_len = len(lead2_clusters)
 
-    # *** publish live20 ***
+    # *** publish radarState ***
     dat = messaging.new_message()
-    dat.init('live20')
-    dat.live20.mdMonoTime = last_md_ts
-    dat.live20.canMonoTimes = list(rr.canMonoTimes)
-    dat.live20.radarErrors = list(rr.errors)
-    dat.live20.l100MonoTime = last_l100_ts
+    dat.init('radarState')
+    dat.valid = sm.all_alive_and_valid(service_list=['controlsState'])
+    dat.radarState.mdMonoTime = last_md_ts
+    dat.radarState.canMonoTimes = list(rr.canMonoTimes)
+    dat.radarState.radarErrors = list(rr.errors)
+    dat.radarState.controlsStateMonoTime = last_controls_state_ts
     if lead_len > 0:
-      dat.live20.leadOne = lead_clusters[0].toLive20()
+      dat.radarState.leadOne = lead_clusters[0].toRadarState()
       if lead2_len > 0:
-        dat.live20.leadTwo = lead2_clusters[0].toLive20()
+        dat.radarState.leadTwo = lead2_clusters[0].toRadarState()
       else:
-        dat.live20.leadTwo.status = False
+        dat.radarState.leadTwo.status = False
     else:
-      dat.live20.leadOne.status = False
+      dat.radarState.leadOne.status = False
 
-    dat.live20.cumLagMs = -rk.remaining*1000.
-    live20.send(dat.to_bytes())
+    dat.radarState.cumLagMs = -rk.remaining*1000.
+    radarState.send(dat.to_bytes())
 
     # *** publish tracks for UI debugging (keep last) ***
     dat = messaging.new_message()
