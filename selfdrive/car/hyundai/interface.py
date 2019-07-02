@@ -64,6 +64,7 @@ class CarInterface(object):
 
     ret.steerActuatorDelay = 0.1  # Default delay
     ret.steerRateCost = 0.5
+    ret.minEnableSpeed = -1.   # enable is done by stock ACC, so ignore this
 
     if candidate == CAR.SANTA_FE:
       ret.lateralTuning.pid.kf = 0.00005
@@ -101,7 +102,7 @@ class CarInterface(object):
       ret.steerRatio = 16.5
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.16], [0.01]]
-      ret.minSteerSpeed = 35 * CV.MPH_TO_MS
+      ret.minEnableSpeed = 35 * CV.MPH_TO_MS
     elif candidate == CAR.KIA_OPTIMA:
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 3558. * CV.LB_TO_KG
@@ -119,7 +120,6 @@ class CarInterface(object):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
       ret.minSteerSpeed = 0.
 
-    ret.minEnableSpeed = -1.   # enable is done by stock ACC, so ignore this
     ret.longitudinalTuning.kpBP = [0.]
     ret.longitudinalTuning.kpV = [0.]
     ret.longitudinalTuning.kiBP = [0.]
@@ -267,6 +267,8 @@ class CarInterface(object):
       events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     if self.CS.steer_error:
       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
+    if ret.vEgo < self.CP.minEnableSpeed:
+      events.append(create_event('speedTooLow', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
 
     # enable request in prius is simple, as we activate when Toyota is active (rising edge)
     if ret.cruiseState.enabled and not self.cruise_enabled_prev:
