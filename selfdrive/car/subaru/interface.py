@@ -51,7 +51,10 @@ class CarInterface(object):
 
     ret.enableCamera = True
 
-    ret.steerRateCost = 0.7
+    ret.steerRateCost = 0.5
+    ret.lateralTuning.pid.dampTime = 0.1
+    ret.lateralTuning.pid.reactMPC = 0.0
+    ret.lateralTuning.pid.rateFFGain = 0.4
 
     if candidate in [CAR.IMPREZA]:
       ret.mass = 1568. + STD_CARGO_KG

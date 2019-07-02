@@ -60,6 +60,9 @@ class CarInterface(object):
     # or camera is on powertrain bus (LKA cars without ACC).
     ret.enableCamera = not any(x for x in STOCK_CONTROL_MSGS[candidate] if x in fingerprint)
     ret.openpilotLongitudinalControl = ret.enableCamera
+    ret.lateralTuning.pid.dampTime = 0.1
+    ret.lateralTuning.pid.reactMPC = 0.0
+    ret.lateralTuning.pid.rateFFGain = 0.4
 
     if candidate == CAR.VOLT:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
@@ -179,7 +182,7 @@ class CarInterface(object):
     ret.startAccel = 0.8
 
     ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
-    ret.steerRateCost = 1.0
+    ret.steerRateCost = 0.6
     ret.steerControlType = car.CarParams.SteerControlType.torque
 
     return ret

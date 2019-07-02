@@ -38,7 +38,7 @@ int main( )
   auto lr_prob = l_prob + r_prob - l_prob * r_prob;
 
   auto poly_l = l_poly_r0*(xx*xx*xx) + l_poly_r1*(xx*xx) + l_poly_r2*xx + l_poly_r3;
-  auto poly_r = r_poly_r0*(xx*xx*xx) + r_poly_r1*(xx*xx) + r_poly_r2*xx + r_poly_r3;
+  auto poly_r = r_poly_r0*(xx*xx*xx) + r_poly_r1*(xx*xx) + r_poly_r2*xx + r_poly_r3; 
   auto poly_p = p_poly_r0*(xx*xx*xx) + p_poly_r1*(xx*xx) + p_poly_r2*xx + p_poly_r3;
 
   auto angle_l = atan(3*l_poly_r0*xx*xx + 2*l_poly_r1*xx + l_poly_r2);

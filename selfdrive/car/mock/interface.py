@@ -76,6 +76,9 @@ class CarInterface(object):
     ret.longitudinalTuning.deadzoneBP = [0.]
     ret.longitudinalTuning.deadzoneV = [0.]
     ret.steerActuatorDelay = 0.
+    ret.lateralTuning.pid.dampTime = 0.1
+    ret.lateralTuning.pid.reactMPC = 0.0
+    ret.lateralTuning.pid.rateFFGain = 0.4
 
     return ret
 

@@ -26,7 +26,7 @@ typedef struct {
   double y[N+1];
   double psi[N+1];
   double delta[N+1];
-  double rate[N];
+  double rate[N+1];
   double cost;
 } log_t;
 
@@ -51,17 +51,16 @@ void init(double pathCost, double laneCost, double headingCost, double steerRate
     if (i > 4){
       f = STEP_MULTIPLIER;
     }
-    // Setup diagonal entries
-    acadoVariables.W[NY*NY*i + (NY+1)*0] = pathCost * f;
-    acadoVariables.W[NY*NY*i + (NY+1)*1] = laneCost * f;
-    acadoVariables.W[NY*NY*i + (NY+1)*2] = laneCost * f;
-    acadoVariables.W[NY*NY*i + (NY+1)*3] = headingCost * f;
-    acadoVariables.W[NY*NY*i + (NY+1)*4] = steerRateCost * f;
+    acadoVariables.W[25 * i + 0] = pathCost * f;
+    acadoVariables.W[25 * i + 6] = laneCost * f;
+    acadoVariables.W[25 * i + 12] = laneCost * f;
+    acadoVariables.W[25 * i + 18] = headingCost * f;
+    acadoVariables.W[25 * i + 24] = steerRateCost * f;
   }
-  acadoVariables.WN[(NYN+1)*0] = pathCost * STEP_MULTIPLIER;
-  acadoVariables.WN[(NYN+1)*1] = laneCost * STEP_MULTIPLIER;
-  acadoVariables.WN[(NYN+1)*2] = laneCost * STEP_MULTIPLIER;
-  acadoVariables.WN[(NYN+1)*3] = headingCost * STEP_MULTIPLIER;
+  acadoVariables.WN[0] = pathCost * STEP_MULTIPLIER;
+  acadoVariables.WN[5] = laneCost * STEP_MULTIPLIER;
+  acadoVariables.WN[10] = laneCost * STEP_MULTIPLIER;
+  acadoVariables.WN[15] = headingCost * STEP_MULTIPLIER;
 }
 
 int run_mpc(state_t * x0, log_t * solution,
@@ -114,9 +113,7 @@ int run_mpc(state_t * x0, log_t * solution,
     solution->y[i] = acadoVariables.x[i*NX+1];
     solution->psi[i] = acadoVariables.x[i*NX+2];
     solution->delta[i] = acadoVariables.x[i*NX+3];
-    if (i < N){
-      solution->rate[i] = acadoVariables.u[i];
-    }
+    solution->rate[i] = acadoVariables.u[i];
   }
   solution->cost = acado_getObjective();
 
