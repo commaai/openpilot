@@ -85,7 +85,7 @@ class PathPlanner(object):
       delta_desired = math.radians(angle_steers - angle_offset_bias) / VM.sR
       rate_desired = 0.0
 
-    self.angle_steers_des_mpc = float(math.degrees(delta_desired * VM.sR) + angle_offset_bias)
+    self.angle_steers_des_mpc = float(math.degrees(delta_desired * VM.sR) + angle_offset_average)
 
     #  Check for infeasable MPC solution
     mpc_nans = np.any(np.isnan(list(self.mpc_solution[0].delta)))
