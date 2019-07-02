@@ -7,30 +7,28 @@ STD_CARGO_KG = 136.
 # FIXME: hardcoding honda civic 2016 touring params so they can be used to
 # scale unknown params for other cars
 class CivicParams:
-  mass = 2923. * CV.LB_TO_KG + STD_CARGO_KG
-  wheelbase = 2.70
-  centerToFront = wheelbase * 0.4
-  centerToRear = wheelbase - centerToFront
-  rotationalInertia = 2500
-  tireStiffnessFront = 192150
-  tireStiffnessRear = 202500
+  MASS = 2923. * CV.LB_TO_KG + STD_CARGO_KG
+  WHEELBASE = 2.70
+  CENTER_TO_FRONT = WHEELBASE * 0.4
+  CENTER_TO_REAR = WHEELBASE - CENTER_TO_FRONT
+  ROTATIONAL_INERTIA = 2500
+  TIRE_STIFFNESS_FRONT = 192150
+  TIRE_STIFFNESS_REAR = 202500
 
 # TODO: get actual value, for now starting with reasonable value for
 # civic and scaling by mass and wheelbase
-def scaleRotInertia(mass, wheelbase):
-  return CivicParams.rotationalInertia * mass * wheelbase ** 2 / (CivicParams.mass * CivicParams.wheelbase ** 2)
+def scale_rot_inertia(mass, wheelbase):
+  return CivicParams.ROTATIONAL_INERTIA * mass * wheelbase ** 2 / (CivicParams.MASS * CivicParams.WHEELBASE ** 2)
 
 # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
 # mass and CG position, so all cars will have approximately similar dyn behaviors
-def scaleTireStiffness(mass, wheelbase, center_to_front, tire_stiffness_factor):
+def scale_tire_stiffness(mass, wheelbase, center_to_front, tire_stiffness_factor):
   center_to_rear = wheelbase - center_to_front
-  tire_stiffness_front = (CivicParams.tireStiffnessFront * tire_stiffness_factor) * \
-                        mass / CivicParams.mass * \
-                        (center_to_rear / wheelbase) / (CivicParams.centerToRear / CivicParams.wheelbase)
+  tire_stiffness_front = (CivicParams.TIRE_STIFFNESS_FRONT * tire_stiffness_factor) * mass / CivicParams.MASS * \
+                         (center_to_rear / wheelbase) / (CivicParams.CENTER_TO_REAR / CivicParams.WHEELBASE)
 
-  tire_stiffness_rear = (CivicParams.tireStiffnessRear * tire_stiffness_factor) * \
-                       mass / CivicParams.mass * \
-                       (center_to_front / wheelbase) / (CivicParams.centerToFront / CivicParams.wheelbase)
+  tire_stiffness_rear = (CivicParams.TIRE_STIFFNESS_REAR * tire_stiffness_factor) * mass / CivicParams.MASS * \
+                        (center_to_front / wheelbase) / (CivicParams.CENTER_TO_FRONT / CivicParams.WHEELBASE)
 
   return tire_stiffness_front, tire_stiffness_rear
     

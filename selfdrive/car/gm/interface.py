@@ -7,7 +7,7 @@ from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.gm.values import DBC, CAR, STOCK_CONTROL_MSGS, AUDIO_HUD, \
                                     SUPERCRUISE_CARS, AccState
 from selfdrive.car.gm.carstate import CarState, CruiseButtons, get_powertrain_can_parser
-from selfdrive.car import STD_CARGO_KG, CivicParams, scaleRotInertia, scaleTireStiffness
+from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness
 
 
 class CanBus(object):
@@ -138,13 +138,13 @@ class CarInterface(object):
 
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
-    ret.rotationalInertia = scaleRotInertia(mass=ret.mass, wheelbase=ret.wheelbase)
+    ret.rotationalInertia = scale_rot_inertia(mass=ret.mass, wheelbase=ret.wheelbase)
 
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
-    ret.tireStiffnessFront, ret.tireStiffnessRear = scaleTireStiffness(mass=ret.mass, wheelbase=ret.wheelbase,
-                                                                       center_to_front=ret.centerToFront,
-                                                                       tire_stiffness_factor=tire_stiffness_factor)
+    ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(mass=ret.mass, wheelbase=ret.wheelbase,
+                                                                         center_to_front=ret.centerToFront,
+                                                                         tire_stiffness_factor=tire_stiffness_factor)
 
     # same tuning for Volt and CT6 for now
     ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]

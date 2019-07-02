@@ -10,7 +10,7 @@ from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET,
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.honda.carstate import CarState, get_can_parser, get_cam_can_parser
 from selfdrive.car.honda.values import CruiseButtons, CAR, HONDA_BOSCH, AUDIO_HUD, VISUAL_HUD, CAMERA_MSGS
-from selfdrive.car import STD_CARGO_KG, CivicParams, scaleRotInertia, scaleTireStiffness
+from selfdrive.car import STD_CARGO_KG, CivicParams, scale_rot_inertia, scale_tire_stiffness
 from selfdrive.controls.lib.planner import _A_CRUISE_MAX_V_FOLLOWING
 
 A_ACC_MAX = max(_A_CRUISE_MAX_V_FOLLOWING)
@@ -164,9 +164,9 @@ class CarInterface(object):
 
     if candidate in [CAR.CIVIC, CAR.CIVIC_BOSCH]:
       stop_and_go = True
-      ret.mass = CivicParams.mass
-      ret.wheelbase = CivicParams.wheelbase
-      ret.centerToFront = CivicParams.centerToFront
+      ret.mass = CivicParams.MASS
+      ret.wheelbase = CivicParams.WHEELBASE
+      ret.centerToFront = CivicParams.CENTER_TO_FRONT
       ret.steerRatio = 14.63  # 10.93 is end-to-end spec
       tire_stiffness_factor = 1.
       # Civic at comma has modified steering FW, so different tuning for the Neo in that car
@@ -326,13 +326,13 @@ class CarInterface(object):
 
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
-    ret.rotationalInertia = scaleRotInertia(mass=ret.mass, wheelbase=ret.wheelbase)
+    ret.rotationalInertia = scale_rot_inertia(mass=ret.mass, wheelbase=ret.wheelbase)
 
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
-    ret.tireStiffnessFront, ret.tireStiffnessRear = scaleTireStiffness(mass=ret.mass, wheelbase=ret.wheelbase,
-                                                                       center_to_front=ret.centerToFront,
-                                                                       tire_stiffness_factor=tire_stiffness_factor)
+    ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(mass=ret.mass, wheelbase=ret.wheelbase,
+                                                                         center_to_front=ret.centerToFront,
+                                                                         tire_stiffness_factor=tire_stiffness_factor)
 
     # no rear steering, at least on the listed cars above
     ret.steerRatioRear = 0.
