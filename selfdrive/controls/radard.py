@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import gc
 import numpy as np
 import numpy.matlib
 import importlib
@@ -21,6 +22,7 @@ DIMSV = 2
 XV, SPEEDV = 0, 1
 VISION_POINT = -1
 
+<<<<<<< HEAD
 # Time-alignment
 rate = 1. / DT_MDL  # model and radar are both at 20Hz
 v_len = 20   # how many speed data points to remember for t alignment with rdr data
@@ -97,6 +99,95 @@ class RadarD(object):
 
   def update(self, frame, delay, sm, rr, has_radar):
     self.current_time = 1e-9*max([sm.logMonoTime[key] for key in sm.logMonoTime.keys()])
+=======
+
+class EKFV1D(EKF):
+  def __init__(self):
+    super(EKFV1D, self).__init__(False)
+    self.identity = numpy.matlib.identity(DIMSV)
+    self.state = np.matlib.zeros((DIMSV, 1))
+    self.var_init = 1e2   # ~ model variance when probability is 70%, so good starting point
+    self.covar = self.identity * self.var_init
+
+    self.process_noise = np.matlib.diag([0.5, 1])
+
+  def calc_transfer_fun(self, dt):
+    tf = np.matlib.identity(DIMSV)
+    tf[XV, SPEEDV] = dt
+    tfj = tf
+    return tf, tfj
+
+
+## fuses camera and radar data for best lead detection
+def radard_thread(gctx=None):
+  gc.disable()
+  set_realtime_priority(2)
+
+  # wait for stats about the car to come in from controls
+  cloudlog.info("radard is waiting for CarParams")
+  CP = car.CarParams.from_bytes(Params().get("CarParams", block=True))
+  mocked = CP.carName == "mock" or CP.carName == "honda"
+  VM = VehicleModel(CP)
+  cloudlog.info("radard got CarParams")
+
+  # import the radar from the fingerprint
+  cloudlog.info("radard is importing %s", CP.carName)
+  RadarInterface = importlib.import_module('selfdrive.car.%s.radar_interface' % CP.carName).RadarInterface
+
+  sm = messaging.SubMaster(['model', 'controlsState', 'liveParameters'])
+
+  # Default parameters
+  live_parameters = messaging.new_message()
+  live_parameters.init('liveParameters')
+  live_parameters.liveParameters.valid = True
+  live_parameters.liveParameters.steerRatio = CP.steerRatio
+  live_parameters.liveParameters.stiffnessFactor = 1.0
+
+  MP = ModelParser()
+  RI = RadarInterface(CP)
+
+  last_md_ts = 0
+  last_controls_state_ts = 0
+
+  # *** publish radarState and liveTracks
+  radarState = messaging.pub_sock(service_list['radarState'].port)
+  liveTracks = messaging.pub_sock(service_list['liveTracks'].port)
+
+  path_x = np.arange(0.0, 140.0, 0.1)    # 140 meters is max
+
+  # Time-alignment
+  rate = 1. / DT_MDL  # model and radar are both at 20Hz
+  v_len = 20   # how many speed data points to remember for t alignment with rdr data
+
+  active = 0
+  steer_angle = 0.
+  steer_override = False
+
+  tracks = defaultdict(dict)
+
+  # Kalman filter stuff:
+  ekfv = EKFV1D()
+  speedSensorV = SimpleSensor(XV, 1, 2)
+
+  # v_ego
+  v_ego = 0.
+  v_ego_hist_t = deque([0], maxlen=v_len)
+  v_ego_hist_v = deque([0], maxlen=v_len)
+  v_ego_t_aligned = 0.
+
+  rk = Ratekeeper(rate, print_delay_threshold=None)
+  while 1:
+    rr = RI.update()
+
+    ar_pts = {}
+    for pt in rr.points:
+      ar_pts[pt.trackId] = [pt.dRel + RDR_TO_LDR, pt.yRel, pt.vRel, pt.measured]
+
+    sm.update(0)
+
+    if sm.updated['liveParameters']:
+        VM.update_params(sm['liveParameters'].stiffnessFactor, sm['liveParameters'].steerRatio)
+>>>>>>> bfda223c... Mock Radar #2
 
     if sm.updated['controlsState']:
       self.active = sm['controlsState'].active
