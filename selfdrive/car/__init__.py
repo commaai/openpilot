@@ -1,13 +1,14 @@
 # functions common among cars
 from common.numpy_fast import clip
-from selfdrive.config import Conversions as CV
+
 # kg of standard extra cargo to count for drive, gas, etc...
 STD_CARGO_KG = 136.
+LB_TO_KG = 0.453592
 
 # FIXME: hardcoding honda civic 2016 touring params so they can be used to
 # scale unknown params for other cars
 class CivicParams:
-  MASS = 2923. * CV.LB_TO_KG + STD_CARGO_KG
+  MASS = 2923. * LB_TO_KG + STD_CARGO_KG
   WHEELBASE = 2.70
   CENTER_TO_FRONT = WHEELBASE * 0.4
   CENTER_TO_REAR = WHEELBASE - CENTER_TO_FRONT
