@@ -63,15 +63,15 @@ class CarInterface(object):
     rotationalInertia_civic = 2500
     tireStiffnessFront_civic = 192150
     tireStiffnessRear_civic = 202500
-    ret.lateralTuning.pid.dampTime = 0.1
-    ret.lateralTuning.pid.reactMPC = 0.0
-    ret.lateralTuning.pid.rateFFGain = 0.4
     ret.steerRateCost = 0.7
 
     ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
     if candidate != CAR.PRIUS:
       ret.lateralTuning.init('pid')
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+      ret.lateralTuning.pid.dampTime = 0.1
+      ret.lateralTuning.pid.reactMPC = -0.05
+      ret.lateralTuning.pid.rateFFGain = 0.4
 
     if candidate == CAR.PRIUS:
       stop_and_go = True
@@ -86,8 +86,10 @@ class CarInterface(object):
       ret.lateralTuning.indi.outerLoopGain = 3.0
       ret.lateralTuning.indi.timeConstant = 1.0
       ret.lateralTuning.indi.actuatorEffectiveness = 1.0
+      ret.lateralTuning.indi.reactMPC = 0.1
 
       ret.steerActuatorDelay = 0.5
+      ret.steerRateCost = 0.5
 
     elif candidate in [CAR.RAV4, CAR.RAV4H]:
       stop_and_go = True if (candidate in CAR.RAV4H) else False
