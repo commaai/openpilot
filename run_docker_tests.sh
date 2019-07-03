@@ -1,5 +1,6 @@
 #!/bin/bash
-set -e
+set -eE
+trap 'echo Warning: test failed, so quitting without running later tests.' ERR
 
 docker build -t tmppilot -f Dockerfile.openpilot .
 
