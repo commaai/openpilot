@@ -23,14 +23,14 @@ class LatControlPID(object):
     self.angle_ff_ratio = 0.0
     self.gernbySteer = True
     self.standard_ff_ratio = 0.0
-    self.angle_ff_gain = 1.0
+    self.angle_ff_gain = 1.0 
     self.rate_ff_gain = CP.lateralTuning.pid.rateFFGain
     self.angle_ff_bp = [[0.5, 5.0],[0.0, 1.0]]
     self.calculate_rate = True
     self.prev_angle_steers = 0.0
     self.rough_steers_rate = 0.0
-    self.steer_counter = 0
-    self.steer_counter_prev = 0
+    self.steer_counter = 1
+    self.steer_counter_prev = 1
     self.params = Params()
     print(self.rate_ff_gain)
     try:
