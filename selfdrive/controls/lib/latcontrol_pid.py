@@ -26,6 +26,9 @@ class LatControlPID(object):
     self.angle_ff_gain = 1.0
     self.rate_ff_gain = CP.lateralTuning.pid.rateFFGain
     self.angle_ff_bp = [[0.5, 5.0],[0.0, 1.0]]
+    self.calculate_rate = True
+    self.prev_angle_steers = 0.0
+    self.steer_counter = 0
     self.params = Params()
     print(self.rate_ff_gain)
     try:
@@ -60,6 +63,20 @@ class LatControlPID(object):
     self.previous_integral = self.pid.i
 
   def update(self, active, v_ego, angle_steers, angle_steers_rate, steer_override, CP, VM, path_plan):
+
+    if angle_steers_rate == 0.0 and self.calculate_rate:
+      if angle_steers != self.prev_angle_steers:
+        self.steer_counter_prev = self.steer_counter
+        self.rough_steers_rate = (self.rough_steers_rate + 100.0 * (angle_steers - self.prev_angle_steers) / self.steer_counter_prev) / 2.0
+        self.steer_counter = 0.0
+      elif self.steer_counter >= self.steer_counter_prev:
+        self.rough_steers_rate = (self.steer_counter * self.rough_steers_rate) / (self.steer_counter + 1.0)
+      self.steer_counter += 1.0
+      angle_steers_rate = self.rough_steers_rate
+    else:
+      # If non-zero angle_rate is provided, stop calculating angle rate
+      self.calculate_rate = False
+
     pid_log = log.ControlsState.LateralPIDState.new_message()
     pid_log.steerAngle = float(angle_steers)
     pid_log.steerRate = float(angle_steers_rate)
@@ -105,5 +122,6 @@ class LatControlPID(object):
       pid_log.saturated = bool(self.pid.saturated)
       pid_log.angleFFRatio = self.angle_ff_ratio
 
+    self.prev_angle_steers = angle_steers
     self.sat_flag = self.pid.saturated
     return output_steer, float(self.angle_steers_des), pid_log

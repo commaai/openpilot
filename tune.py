@@ -45,7 +45,7 @@ kegman = kegman_conf()
 #kegman.conf['tuneGernby'] = "1"
 #kegman.write_config(kegman.conf)
 if kegman.conf["type"] == "pid":
-  param = ["Kp", "Ki", "Kf", "dampTime", "reactMPC"]
+  param = ["Kp", "Ki", "Kf", "dampTime", "reactMPC", "rateFFGain"]
 else:
   param = ["timeConst", "actEffect", "innerGain", "outerGain", "reactMPC"]
 print(param)
@@ -175,7 +175,7 @@ while True:
 
   elif (char == "l"):
     kegman.conf[param[j]] = "1"
-    write_json = True 
+    write_json = True
 
   elif (char == " "):
     if j < len(param) - 1:
