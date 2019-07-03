@@ -30,6 +30,7 @@ class LatControlPID(object):
     self.prev_angle_steers = 0.0
     self.rough_steers_rate = 0.0
     self.steer_counter = 0
+    self.steer_counter_prev = 0
     self.params = Params()
     print(self.rate_ff_gain)
     try:
