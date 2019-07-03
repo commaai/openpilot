@@ -7,7 +7,6 @@ import selfdrive.boardd.boardd as boardd
 from common.realtime import sec_since_boot
 from cereal import log
 import unittest
-from six.moves import range
 
 
 def generate_random_can_data_list():

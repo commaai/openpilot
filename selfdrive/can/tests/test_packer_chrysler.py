@@ -4,7 +4,6 @@ import random
 from selfdrive.can.tests.packer_old import CANPacker as CANPackerOld
 from selfdrive.can.packer import CANPacker
 import selfdrive.car.chrysler.chryslercan as chryslercan
-from six.moves import range
 
 
 class TestPackerMethods(unittest.TestCase):

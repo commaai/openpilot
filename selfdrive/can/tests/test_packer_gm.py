@@ -5,7 +5,6 @@ from selfdrive.can.tests.packer_old import CANPacker as CANPackerOld
 from selfdrive.can.packer import CANPacker
 import selfdrive.car.gm.gmcan as gmcan
 from selfdrive.car.gm.interface import CanBus as GMCanBus
-from six.moves import range
 
 
 class TestPackerMethods(unittest.TestCase):

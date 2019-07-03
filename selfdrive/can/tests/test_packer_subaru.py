@@ -5,7 +5,6 @@ from selfdrive.can.tests.packer_old import CANPacker as CANPackerOld
 from selfdrive.can.packer import CANPacker
 import selfdrive.car.subaru.subarucan as subarucan
 from selfdrive.car.subaru.values import CAR as subaru_car
-from six.moves import range
 
 
 class TestPackerMethods(unittest.TestCase):

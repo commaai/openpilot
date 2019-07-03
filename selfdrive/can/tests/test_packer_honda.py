@@ -6,7 +6,6 @@ from selfdrive.can.packer import CANPacker
 import selfdrive.car.honda.hondacan as hondacan
 from selfdrive.car.honda.values import HONDA_BOSCH
 from selfdrive.car.honda.carcontroller import HUDData
-from six.moves import range
 
 
 class TestPackerMethods(unittest.TestCase):

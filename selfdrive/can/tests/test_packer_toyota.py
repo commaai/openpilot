@@ -8,7 +8,6 @@ from selfdrive.car.toyota.toyotacan import (
   create_fcw_command, create_ui_command
 )
 from common.realtime import sec_since_boot
-from six.moves import range
 
 
 class TestPackerMethods(unittest.TestCase):

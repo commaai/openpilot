@@ -5,7 +5,6 @@ from selfdrive.can.tests.packer_old import CANPacker as CANPackerOld
 from selfdrive.can.packer import CANPacker
 import selfdrive.car.hyundai.hyundaican as hyundaican
 from selfdrive.car.hyundai.values import CHECKSUM as hyundai_checksum
-from six.moves import range
 
 
 class TestPackerMethods(unittest.TestCase):
