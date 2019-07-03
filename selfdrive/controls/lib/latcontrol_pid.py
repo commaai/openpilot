@@ -11,7 +11,7 @@ import json
 
 class LatControlPID(object):
   def __init__(self, CP):
-    kegman = kegman_conf(CP)
+    kegman_conf(CP)
     self.frame = 0
     self.pid = PIController((CP.lateralTuning.pid.kpBP, CP.lateralTuning.pid.kpV),
                             (CP.lateralTuning.pid.kiBP, CP.lateralTuning.pid.kiV),

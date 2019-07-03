@@ -364,6 +364,7 @@ struct CarParams {
     innerLoopGain @1 :Float32;
     timeConstant @2 :Float32;
     actuatorEffectiveness @3 :Float32;
+    reactMPC @4 :Float32;
   }
 
 

@@ -7,7 +7,12 @@ class kegman_conf():
       self.type = CP.lateralTuning.which()
     self.conf = self.read_config(CP)
     if CP is not None:
-      self.init_config(CP)
+      try:
+        self.init_config(CP)
+      except:
+        self.conf = self.read_config(CP, True)
+        self.init_config(CP)
+
 
   def init_config(self, CP):
     write_conf = False
@@ -53,10 +58,10 @@ class kegman_conf():
     if write_conf:
       self.write_config(self.config)
 
-  def read_config(self, CP=None):
+  def read_config(self, CP=None, Reset=False):
     self.element_updated = False
 
-    if os.path.isfile('/data/kegman.json'):
+    if not Reset and os.path.isfile('/data/kegman.json'):
       with open('/data/kegman.json', 'r') as f:
         self.config = json.load(f)
         self.write_config(self.config)
