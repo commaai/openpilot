@@ -10,6 +10,7 @@ class LatControlPID(object):
                             (CP.lateralTuning.pid.kiBP, CP.lateralTuning.pid.kiV),
                             k_f=CP.lateralTuning.pid.kf, pos_limit=1.0)
     self.angle_steers_des = 0.
+    self.prev_angle_steers =0.
 
   def reset(self):
     self.pid.reset()
@@ -18,6 +19,8 @@ class LatControlPID(object):
     pid_log = log.ControlsState.LateralPIDState.new_message()
     pid_log.steerAngle = float(angle_steers)
     pid_log.steerRate = float(angle_steers_rate)
+    driver_opposing = steer_override and (angle_steers - self.prev_angle_steers) * self.pid.i < 0
+    self.prev_angle_steers = angle_steers
 
     if v_ego < 0.3 or not active:
       output_steer = 0.0
@@ -35,7 +38,7 @@ class LatControlPID(object):
         steer_feedforward -= path_plan.angleOffset   # subtract the offset, since it does not contribute to resistive torque
         steer_feedforward *= v_ego**2  # proportional to realigning tire momentum (~ lateral accel)
       deadzone = 0.0
-      output_steer = self.pid.update(self.angle_steers_des, angle_steers, check_saturation=(v_ego > 10), override=steer_override,
+      output_steer = self.pid.update(self.angle_steers_des, angle_steers, check_saturation=(v_ego > 10), override=driver_opposing,
                                      feedforward=steer_feedforward, speed=v_ego, deadzone=deadzone)
       pid_log.active = True
       pid_log.p = self.pid.p
