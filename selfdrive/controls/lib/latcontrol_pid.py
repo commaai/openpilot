@@ -23,7 +23,7 @@ class LatControlPID(object):
     self.angle_ff_ratio = 0.0
     self.gernbySteer = True
     self.standard_ff_ratio = 0.0
-    self.angle_ff_gain = 1.0 
+    self.angle_ff_gain = 1.0
     self.rate_ff_gain = CP.lateralTuning.pid.rateFFGain
     self.angle_ff_bp = [[0.5, 5.0],[0.0, 1.0]]
     self.calculate_rate = True
@@ -113,8 +113,10 @@ class LatControlPID(object):
         else:
           self.previous_integral = self.pid.i
 
+      driver_opposition = steer_override and (angle_steers - self.prev_angle_steers) * self.pid.i < 0
+
       deadzone = 0.0
-      output_steer = self.pid.update(self.damp_angle_steers_des, self.damp_angle_steers, check_saturation=(v_ego > 10), override=steer_override,
+      output_steer = self.pid.update(self.damp_angle_steers_des, self.damp_angle_steers, check_saturation=(v_ego > 10), override=driver_opposition,
                                      feedforward=steer_feedforward, speed=v_ego, deadzone=deadzone)
       pid_log.active = True
       pid_log.p = float(self.pid.p)
