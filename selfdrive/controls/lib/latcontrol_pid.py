@@ -10,7 +10,7 @@ class LatControlPID(object):
                             (CP.lateralTuning.pid.kiBP, CP.lateralTuning.pid.kiV),
                             k_f=CP.lateralTuning.pid.kf, pos_limit=1.0)
     self.angle_steers_des = 0.
-    self.prev_angle_steers =0.
+    self.prev_angle_steers = 0.
 
   def reset(self):
     self.pid.reset()
