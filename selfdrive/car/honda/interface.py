@@ -161,6 +161,7 @@ class CarInterface(object):
     rotationalInertia_civic = 2500
     tireStiffnessFront_civic = 192150
     tireStiffnessRear_civic = 202500
+    ret.steerLimitAlert = True
 
     # Optimized car params: tire_stiffness_factor and steerRatio are a result of a vehicle
     # model optimization process. Certain Hondas have an extra steering sensor at the bottom
@@ -213,6 +214,7 @@ class CarInterface(object):
       ret.lateralTuning.pid.dampTime = 0.1
       ret.lateralTuning.pid.reactMPC = 0.0
       ret.lateralTuning.pid.rateFFGain = 0.4
+      ret.steerLimitAlert = False
 
     elif candidate == CAR.ACURA_ILX:
       stop_and_go = False
@@ -401,7 +403,6 @@ class CarInterface(object):
     ret.longitudinalTuning.deadzoneV = [0.]
 
     ret.stoppingControl = True
-    ret.steerLimitAlert = True
     ret.startAccel = 0.5
 
     ret.steerActuatorDelay = 0.1

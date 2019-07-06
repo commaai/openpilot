@@ -82,11 +82,11 @@ class CarInterface(object):
       ret.mass = 3045. * CV.LB_TO_KG + STD_CARGO_KG
 
       ret.lateralTuning.init('indi')
-      ret.lateralTuning.indi.innerLoopGain = 4.0
-      ret.lateralTuning.indi.outerLoopGain = 3.0
-      ret.lateralTuning.indi.timeConstant = 1.0
-      ret.lateralTuning.indi.actuatorEffectiveness = 1.0
-      ret.lateralTuning.indi.reactMPC = 0.1
+      ret.lateralTuning.indi.innerLoopGain = 7.0
+      ret.lateralTuning.indi.outerLoopGain = 3.5
+      ret.lateralTuning.indi.timeConstant = 0.35
+      ret.lateralTuning.indi.actuatorEffectiveness = 4.0
+      ret.lateralTuning.indi.reactMPC = 0.25
 
       ret.steerActuatorDelay = 0.5
       ret.steerRateCost = 0.5

@@ -23,7 +23,10 @@ a.out
 *.vcd
 config.json
 clcache
+kegman.json
 
+selfdrive/sensord/gpsd
+selfdrive/sensord/sensord
 board/obj/
 selfdrive/boardd/boardd
 selfdrive/logcatd/logcatd
