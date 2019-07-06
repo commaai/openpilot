@@ -52,8 +52,8 @@ def dashboard_thread(rate=100):
   poller.register(controlsState, zmq.POLLIN)
 
   try:
-    if os.path.isfile('/data/kegman.json'):
-      with open('/data/kegman.json', 'r') as f:
+    if os.path.isfile('/data/openpilot/kegman.json'):
+      with open('/data/openpilot/kegman.json', 'r') as f:
         config = json.load(f)
         user_id = config['userID']
         tunePush.send_json(config)
@@ -102,9 +102,9 @@ def dashboard_thread(rate=100):
       if socket is tuneSub:
         config = json.loads(tuneSub.recv_multipart()[1])
         #print(config)
-        with open('/data/kegman.json', 'w') as f:
+        with open('/data/openpilot/kegman.json', 'w') as f:
           json.dump(config, f, indent=2, sort_keys=True)
-          os.chmod("/data/kegman.json", 0o764)
+          os.chmod("/data/openpilot/kegman.json", 0o764)
 
       if socket is liveStreamData:
         livestream = liveStreamData.recv_string() + str(receiveTime) + "|"
@@ -226,8 +226,8 @@ def dashboard_thread(rate=100):
     if frame_count >= 100:
       if kegman_valid:
         try:
-          if os.path.isfile('/data/kegman.json'):
-            with open('/data/kegman.json', 'r') as f:
+          if os.path.isfile('/data/openpilot/kegman.json'):
+            with open('/data/openpilot/kegman.json', 'r') as f:
               config = json.load(f)
               if lateral_type == "pid":
                 steerKpV = config['Kp']
