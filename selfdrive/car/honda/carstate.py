@@ -49,6 +49,7 @@ def get_can_signals(CP):
       ("ESP_DISABLED", "VSA_STATUS", 1),
       ("USER_BRAKE", "VSA_STATUS", 0),
       ("BRAKE_HOLD_ACTIVE", "VSA_STATUS", 0),
+      ("HUD_LEAD", "ACC_HUD", 0),
       ("STEER_STATUS", "STEER_STATUS", 5),
       ("GEAR_SHIFTER", "GEARBOX", 0),
       ("PEDAL_GAS", "POWERTRAIN_DATA", 0),
@@ -334,6 +335,7 @@ class CarState(object):
 
     self.user_brake = cp.vl["VSA_STATUS"]['USER_BRAKE']
     self.pcm_acc_status = cp.vl["POWERTRAIN_DATA"]['ACC_STATUS']
+    self.hud_lead = cp.vl["ACC_HUD"]['HUD_LEAD']
 
     # Gets rid of Pedal Grinding noise when brake is pressed at slow speeds for some models
     if self.CP.carFingerprint in (CAR.PILOT, CAR.PILOT_2019, CAR.RIDGELINE):
