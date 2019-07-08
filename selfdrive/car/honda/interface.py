@@ -10,7 +10,7 @@ from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET,
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.honda.carstate import CarState, get_can_parser, get_cam_can_parser
 from selfdrive.car.honda.values import CruiseButtons, CAR, HONDA_BOSCH, AUDIO_HUD, VISUAL_HUD, CAMERA_MSGS
-from selfdrive.car import STD_CARGO_KG
+from selfdrive.car import STD_CARGO_KG, CivicParams, scale_rot_inertia, scale_tire_stiffness
 from selfdrive.controls.lib.planner import _A_CRUISE_MAX_V_FOLLOWING
 
 A_ACC_MAX = max(_A_CRUISE_MAX_V_FOLLOWING)
@@ -152,16 +152,6 @@ class CarInterface(object):
 
     ret.enableCruise = not ret.enableGasInterceptor
 
-    # FIXME: hardcoding honda civic 2016 touring params so they can be used to
-    # scale unknown params for other cars
-    mass_civic = 2923. * CV.LB_TO_KG + STD_CARGO_KG
-    wheelbase_civic = 2.70
-    centerToFront_civic = wheelbase_civic * 0.4
-    centerToRear_civic = wheelbase_civic - centerToFront_civic
-    rotationalInertia_civic = 2500
-    tireStiffnessFront_civic = 192150
-    tireStiffnessRear_civic = 202500
-
     # Optimized car params: tire_stiffness_factor and steerRatio are a result of a vehicle
     # model optimization process. Certain Hondas have an extra steering sensor at the bottom
     # of the steering rack, which improves controls quality as it removes the steering column
@@ -174,9 +164,9 @@ class CarInterface(object):
 
     if candidate in [CAR.CIVIC, CAR.CIVIC_BOSCH]:
       stop_and_go = True
-      ret.mass = mass_civic
-      ret.wheelbase = wheelbase_civic
-      ret.centerToFront = centerToFront_civic
+      ret.mass = CivicParams.MASS
+      ret.wheelbase = CivicParams.WHEELBASE
+      ret.centerToFront = CivicParams.CENTER_TO_FRONT
       ret.steerRatio = 14.63  # 10.93 is end-to-end spec
       tire_stiffness_factor = 1.
       # Civic at comma has modified steering FW, so different tuning for the Neo in that car
@@ -334,20 +324,14 @@ class CarInterface(object):
     # conflict with PCM acc
     ret.minEnableSpeed = -1. if (stop_and_go or ret.enableGasInterceptor) else 25.5 * CV.MPH_TO_MS
 
-    centerToRear = ret.wheelbase - ret.centerToFront
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
-    ret.rotationalInertia = rotationalInertia_civic * \
-                            ret.mass * ret.wheelbase**2 / (mass_civic * wheelbase_civic**2)
+    ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
 
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
-    ret.tireStiffnessFront = (tireStiffnessFront_civic * tire_stiffness_factor) * \
-                             ret.mass / mass_civic * \
-                             (centerToRear / ret.wheelbase) / (centerToRear_civic / wheelbase_civic)
-    ret.tireStiffnessRear = (tireStiffnessRear_civic * tire_stiffness_factor) * \
-                            ret.mass / mass_civic * \
-                            (ret.centerToFront / ret.wheelbase) / (centerToFront_civic / wheelbase_civic)
+    ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
+                                                                         tire_stiffness_factor=tire_stiffness_factor)
 
     # no rear steering, at least on the listed cars above
     ret.steerRatioRear = 0.
