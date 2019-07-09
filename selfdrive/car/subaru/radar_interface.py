@@ -11,7 +11,7 @@ class RadarInterface(object):
 
   def update(self):
 
-    ret = car.RadarState.new_message()
+    ret = car.RadarData.new_message()
     time.sleep(0.05)  # radard runs on RI updates
 
     return ret
@@ -21,4 +21,4 @@ if __name__ == "__main__":
   while 1:
     ret = RI.update()
     print(chr(27) + "[2J")
-    print ret
+    print(ret)

@@ -59,7 +59,7 @@ def compute_path_pinv(l=50):
 
 
 def model_polyfit(points, path_pinv):
-  return np.dot(path_pinv, map(float, points))
+  return np.dot(path_pinv, [float(x) for x in points])
 
 
 def calc_desired_path(l_poly,

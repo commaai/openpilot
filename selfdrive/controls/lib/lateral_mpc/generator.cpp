@@ -46,20 +46,22 @@ int main( )
   auto angle_p = atan(3*p_poly_r0*xx*xx + 2*p_poly_r1*xx + p_poly_r2);
 
   // given the lane width estimate, this is where we estimate the path given lane lines
-  auto l_phantom = poly_l - lane_width/2.0;
-  auto r_phantom = poly_r + lane_width/2.0;
+  auto path_from_left_lane = poly_l - lane_width/2.0;
+  auto path_from_right_lane = poly_r + lane_width/2.0;
 
-  // best path estimate path is a linear combination of poly_p and the path estimate
-  // given the lane lines
-  auto path = lr_prob       * (l_prob * l_phantom + r_prob * r_phantom) / (l_prob + r_prob + 0.0001)
-              + (1-lr_prob) * poly_p;
+  // if the lanes are visible, drive in the center, otherwise follow the path
+  auto path = lr_prob * (l_prob * path_from_left_lane + r_prob * path_from_right_lane) / (l_prob + r_prob + 0.0001)
+    + (1-lr_prob) * poly_p;
 
-  auto angle = lr_prob      * (l_prob * angle_l + r_prob * angle_r) / (l_prob + r_prob + 0.0001)
-               + (1-lr_prob) * angle_p;
+  auto angle = lr_prob * (l_prob * angle_l + r_prob * angle_r) / (l_prob + r_prob + 0.0001)
+    + (1-lr_prob) * angle_p;
 
-  // instead of using actual lane lines, use their estimated distance from path given lane_width
-  auto c_left_lane = exp(-(path + lane_width/2.0 - yy));
-  auto c_right_lane = exp(path - lane_width/2.0 - yy);
+  // When the lane is not visible, use an estimate of its position
+  auto weighted_left_lane = l_prob * poly_l + (1 - l_prob) * (path + lane_width/2.0);
+  auto weighted_right_lane = r_prob * poly_r + (1 - r_prob) * (path - lane_width/2.0);
+
+  auto c_left_lane = exp(-(weighted_left_lane - yy));
+  auto c_right_lane = exp(weighted_right_lane - yy);
 
   // Running cost
   Function h;

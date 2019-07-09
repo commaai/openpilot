@@ -7,20 +7,15 @@ from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.ford.carstate import CarState, get_can_parser
 from selfdrive.car.ford.values import MAX_ANGLE
-
-try:
-  from selfdrive.car.ford.carcontroller import CarController
-except ImportError:
-  CarController = None
+from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness
 
 
 class CarInterface(object):
-  def __init__(self, CP, sendcan=None):
+  def __init__(self, CP, CarController):
     self.CP = CP
     self.VM = VehicleModel(CP)
 
     self.frame = 0
-    self.can_invalid_count = 0
     self.gas_pressed_prev = False
     self.brake_pressed_prev = False
     self.cruise_enabled_prev = False
@@ -30,9 +25,8 @@ class CarInterface(object):
 
     self.cp = get_can_parser(CP)
 
-    # sending if read only is False
-    if sendcan is not None:
-      self.sendcan = sendcan
+    self.CC = None
+    if CarController is not None:
       self.CC = CarController(self.cp.dbc_name, CP.enableCamera, self.VM)
 
   @staticmethod
@@ -44,67 +38,42 @@ class CarInterface(object):
     return 1.0
 
   @staticmethod
-  def get_params(candidate, fingerprint):
-
-    # kg of standard extra cargo to count for drive, gas, etc...
-    std_cargo = 136
+  def get_params(candidate, fingerprint, vin=""):
 
     ret = car.CarParams.new_message()
 
     ret.carName = "ford"
     ret.carFingerprint = candidate
+    ret.carVin = vin
 
-    ret.safetyModel = car.CarParams.SafetyModels.ford
+    ret.safetyModel = car.CarParams.SafetyModel.ford
 
     # pedal
     ret.enableCruise = True
 
-    # FIXME: hardcoding honda civic 2016 touring params so they can be used to
-    # scale unknown params for other cars
-    mass_civic = 2923. * CV.LB_TO_KG + std_cargo
-    wheelbase_civic = 2.70
-    centerToFront_civic = wheelbase_civic * 0.4
-    centerToRear_civic = wheelbase_civic - centerToFront_civic
-    rotationalInertia_civic = 2500
-    tireStiffnessFront_civic = 85400
-    tireStiffnessRear_civic = 90000
-
-    ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
     ret.wheelbase = 2.85
     ret.steerRatio = 14.8
-    ret.mass = 3045. * CV.LB_TO_KG + std_cargo
-    ret.steerKpV, ret.steerKiV = [[0.01], [0.005]]     # TODO: tune this
-    ret.steerKf = 1. / MAX_ANGLE   # MAX Steer angle to normalize FF
+    ret.mass = 3045. * CV.LB_TO_KG + STD_CARGO_KG
+    ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+    ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.01], [0.005]]     # TODO: tune this
+    ret.lateralTuning.pid.kf = 1. / MAX_ANGLE   # MAX Steer angle to normalize FF
     ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
     ret.steerRateCost = 1.0
-
-    f = 1.2
-    tireStiffnessFront_civic *= f
-    tireStiffnessRear_civic *= f
-
     ret.centerToFront = ret.wheelbase * 0.44
-
-    ret.longPidDeadzoneBP = [0., 9.]
-    ret.longPidDeadzoneV = [0., .15]
+    tire_stiffness_factor = 0.5328
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter.
     ret.minEnableSpeed = -1.
 
-    centerToRear = ret.wheelbase - ret.centerToFront
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
-    ret.rotationalInertia = rotationalInertia_civic * \
-                            ret.mass * ret.wheelbase**2 / (mass_civic * wheelbase_civic**2)
+    ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
 
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
-    ret.tireStiffnessFront = tireStiffnessFront_civic * \
-                             ret.mass / mass_civic * \
-                             (centerToRear / ret.wheelbase) / (centerToRear_civic / wheelbase_civic)
-    ret.tireStiffnessRear = tireStiffnessRear_civic * \
-                            ret.mass / mass_civic * \
-                            (ret.centerToFront / ret.wheelbase) / (centerToFront_civic / wheelbase_civic)
+    ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
+                                                                         tire_stiffness_factor=tire_stiffness_factor)
 
     # no rear steering, at least on the listed cars above
     ret.steerRatioRear = 0.
@@ -126,10 +95,12 @@ class CarInterface(object):
     ret.stoppingControl = False
     ret.startAccel = 0.0
 
-    ret.longitudinalKpBP = [0., 5., 35.]
-    ret.longitudinalKpV = [3.6, 2.4, 1.5]
-    ret.longitudinalKiBP = [0., 35.]
-    ret.longitudinalKiV = [0.54, 0.36]
+    ret.longitudinalTuning.deadzoneBP = [0., 9.]
+    ret.longitudinalTuning.deadzoneV = [0., .15]
+    ret.longitudinalTuning.kpBP = [0., 5., 35.]
+    ret.longitudinalTuning.kpV = [3.6, 2.4, 1.5]
+    ret.longitudinalTuning.kiBP = [0., 35.]
+    ret.longitudinalTuning.kiV = [0.54, 0.36]
 
     return ret
 
@@ -138,12 +109,14 @@ class CarInterface(object):
     # ******************* do can recv *******************
     canMonoTimes = []
 
-    self.cp.update(int(sec_since_boot() * 1e9), False)
+    can_rcv_valid, _ = self.cp.update(int(sec_since_boot() * 1e9), True)
 
     self.CS.update(self.cp)
 
     # create message
     ret = car.CarState.new_message()
+
+    ret.canValid = can_rcv_valid and self.cp.can_valid
 
     # speeds
     ret.vEgo = self.CS.v_ego
@@ -172,12 +145,6 @@ class CarInterface(object):
 
     # events
     events = []
-    if not self.CS.can_valid:
-      self.can_invalid_count += 1
-      if self.can_invalid_count >= 5:
-        events.append(create_event('commIssue', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
-    else:
-      self.can_invalid_count = 0
 
     if self.CS.steer_error:
       events.append(create_event('steerUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
@@ -212,8 +179,8 @@ class CarInterface(object):
   # to be called @ 100hz
   def apply(self, c):
 
-    self.CC.update(self.sendcan, c.enabled, self.CS, self.frame, c.actuators,
-                   c.hudControl.visualAlert, c.cruiseControl.cancel)
+    can_sends = self.CC.update(c.enabled, self.CS, self.frame, c.actuators,
+                               c.hudControl.visualAlert, c.cruiseControl.cancel)
 
     self.frame += 1
-    return False
+    return can_sends

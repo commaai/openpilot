@@ -2,7 +2,6 @@ from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from common.kalman.simple_kalman import KF1D
-import numpy as np
 
 
 def get_can_parser(CP):
@@ -94,7 +93,8 @@ def get_can_parser(CP):
     ("SAS11", 100)
   ]
 
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0, timeout=100)
+
 
 def get_camera_parser(CP):
 
@@ -119,7 +119,8 @@ def get_camera_parser(CP):
 
   checks = []
 
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2, timeout=100)
+
 
 class CarState(object):
   def __init__(self, CP):
@@ -133,10 +134,10 @@ class CarState(object):
     dt = 0.01
     # Q = np.matrix([[10.0, 0.0], [0.0, 100.0]])
     # R = 1e3
-    self.v_ego_kf = KF1D(x0=np.matrix([[0.0], [0.0]]),
-                         A=np.matrix([[1.0, dt], [0.0, 1.0]]),
-                         C=np.matrix([1.0, 0.0]),
-                         K=np.matrix([[0.12287673], [0.29666309]]))
+    self.v_ego_kf = KF1D(x0=[[0.0], [0.0]],
+                         A=[[1.0, dt], [0.0, 1.0]],
+                         C=[1.0, 0.0],
+                         K=[[0.12287673], [0.29666309]])
     self.v_ego = 0.0
     self.left_blinker_on = 0
     self.left_blinker_flash = 0
@@ -144,9 +145,6 @@ class CarState(object):
     self.right_blinker_flash = 0
 
   def update(self, cp, cp_cam):
-    # copy can_valid
-    self.can_valid = cp.can_valid
-
     # update prevs, update must run once per Loop
     self.prev_left_blinker_on = self.left_blinker_on
     self.prev_right_blinker_on = self.right_blinker_on
@@ -173,7 +171,7 @@ class CarState(object):
 
     # Kalman filter, even though Hyundai raw wheel speed is heaviliy filtered by default
     if abs(v_wheel - self.v_ego) > 2.0:  # Prevent large accelerations when car starts at non zero speed
-      self.v_ego_kf.x = np.matrix([[v_wheel], [0.0]])
+      self.v_ego_kf.x = [[v_wheel], [0.0]]
 
     self.v_ego_raw = v_wheel
     v_ego_x = self.v_ego_kf.update(v_wheel)

@@ -9,8 +9,8 @@ class Priority:
   HIGH = 4
   HIGHEST = 5
 
-AlertSize = log.Live100Data.AlertSize
-AlertStatus = log.Live100Data.AlertStatus
+AlertSize = log.ControlsState.AlertSize
+AlertStatus = log.ControlsState.AlertStatus
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
@@ -172,6 +172,20 @@ ALERTS = [
       Priority.LOW_LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., 15.),
 
   Alert(
+      "startupNoControl",
+      "Dashcam mode",
+      "Always keep hands on wheel and eyes on road",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOW_LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., 15.),
+
+  Alert(
+      "startupNoCar",
+      "Dashcam mode with unsupported car",
+      "Always keep hands on wheel and eyes on road",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOW_LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., 15.),
+
+  Alert(
       "ethicalDilemma",
       "TAKE CONTROL IMMEDIATELY",
       "Ethical Dilemma Detected",
@@ -277,6 +291,13 @@ ALERTS = [
       AlertStatus.normal, AlertSize.mid,
       Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
 
+  Alert(
+      "sensorDataInvalidNoEntry",
+      "openpilot Unavailable",
+      "No Data from EON Sensors",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
+
   # Cancellation alerts causing soft disabling
   Alert(
       "overheat",
@@ -334,28 +355,28 @@ ALERTS = [
       AlertStatus.critical, AlertSize.full,
       Priority.MID, VisualAlert.steerRequired, AudibleAlert.chimeWarning2, .1, 2., 2.),
 
-  # Cancellation alerts causing immediate disabling
   Alert(
-      "radarCommIssue",
+      "commIssue",
+      "TAKE CONTROL IMMEDIATELY",
+      "Communication Issue between Processes",
+      AlertStatus.critical, AlertSize.full,
+      Priority.MID, VisualAlert.steerRequired, AudibleAlert.chimeWarning2, .1, 2., 2.),
+
+  Alert(
+      "radarCanError",
       "TAKE CONTROL IMMEDIATELY",
       "Radar Error: Restart the Car",
       AlertStatus.critical, AlertSize.full,
-      Priority.HIGHEST, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, 1., 3., 4.),
+      Priority.MID, VisualAlert.steerRequired, AudibleAlert.chimeWarning2, .1, 2., 2.),
 
   Alert(
       "radarFault",
       "TAKE CONTROL IMMEDIATELY",
       "Radar Error: Restart the Car",
       AlertStatus.critical, AlertSize.full,
-      Priority.HIGHEST, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, 1., 3., 4.),
+      Priority.MID, VisualAlert.steerRequired, AudibleAlert.chimeWarning2, .1, 2., 2.),
 
-  Alert(
-      "modelCommIssue",
-      "TAKE CONTROL IMMEDIATELY",
-      "Model Error: Check Internet Connection",
-      AlertStatus.critical, AlertSize.full,
-      Priority.HIGHEST, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, 1., 3., 4.),
-
+  # Cancellation alerts causing immediate disabling
   Alert(
       "controlsFailed",
       "TAKE CONTROL IMMEDIATELY",
@@ -371,7 +392,7 @@ ALERTS = [
       Priority.HIGHEST, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, 1., 3., 4.),
 
   Alert(
-      "commIssue",
+      "canError",
       "TAKE CONTROL IMMEDIATELY",
       "CAN Error: Check Connections",
       AlertStatus.critical, AlertSize.full,
@@ -499,7 +520,7 @@ ALERTS = [
       Priority.MID, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
 
   Alert(
-      "radarCommIssueNoEntry",
+      "radarCanErrorNoEntry",
       "openpilot Unavailable",
       "Radar Error: Restart the Car",
       AlertStatus.normal, AlertSize.mid,
@@ -513,13 +534,6 @@ ALERTS = [
       Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
 
   Alert(
-      "modelCommIssueNoEntry",
-      "openpilot Unavailable",
-      "Model Error: Check Internet Connection",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
-
-  Alert(
       "controlsFailedNoEntry",
       "openpilot Unavailable",
       "Controls Failed",
@@ -527,7 +541,7 @@ ALERTS = [
       Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
 
   Alert(
-      "commIssueNoEntry",
+      "canErrorNoEntry",
       "openpilot Unavailable",
       "CAN Error: Check Connections",
       AlertStatus.normal, AlertSize.mid,
@@ -589,6 +603,13 @@ ALERTS = [
       AlertStatus.normal, AlertSize.mid,
       Priority.LOW, VisualAlert.none, AudibleAlert.chimeDisengage, .4, 2., 3.),
 
+  Alert(
+      "commIssueNoEntry",
+      "openpilot unavailable",
+      "Communication Issue between Processes",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOW, VisualAlert.none, AudibleAlert.chimeDisengage, .4, 2., 3.),
+
   # permanent alerts
   Alert(
       "steerUnavailablePermanent",
@@ -622,6 +643,13 @@ ALERTS = [
       "invalidGiraffeHondaPermanent",
       "Invalid Giraffe Configuration",
       "Set 0111 for openpilot. 1011 for stock",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOW_LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
+
+  Alert(
+      "sensorDataInvalidPermanent",
+      "No Data from EON Sensors",
+      "Reboot your EON",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOW_LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
 

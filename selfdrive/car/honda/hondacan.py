@@ -51,7 +51,7 @@ def create_steering_control(packer, apply_steer, lkas_active, car_fingerprint, i
   return packer.make_can_msg("STEERING_CONTROL", bus, values, idx)
 
 
-def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, idx):
+def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, is_metric, idx):
   commands = []
   bus = 0
 
@@ -65,9 +65,10 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, idx):
       'CRUISE_SPEED': hud.v_cruise,
       'ENABLE_MINI_CAR': hud.mini_car,
       'HUD_LEAD': hud.car,
-      'SET_ME_X03': 0x01 if car_fingerprint == CAR.ODYSSEY_CHN else 0x03,
-      'SET_ME_X03_2': 0x02 if car_fingerprint == CAR.ODYSSEY_CHN else 0x03,
-      'SET_ME_X01': 0x01,
+      'HUD_DISTANCE': 3,    # max distance setting on display
+      'IMPERIAL_UNIT': int(not is_metric),
+      'SET_ME_X01_2': 1,
+      'SET_ME_X01': 1,
     }
     commands.append(packer.make_can_msg("ACC_HUD", 0, acc_hud_values, idx))
 

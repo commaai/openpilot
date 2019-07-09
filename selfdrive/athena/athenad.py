@@ -6,9 +6,11 @@ import time
 import threading
 import traceback
 import zmq
-import Queue
+import requests
+import six.moves.queue
 from jsonrpc import JSONRPCResponseManager, dispatcher
 from websocket import create_connection, WebSocketTimeoutException
+from selfdrive.loggerd.config import ROOT
 
 import selfdrive.crash as crash
 import selfdrive.messaging as messaging
@@ -21,8 +23,8 @@ ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = os.getenv('HANDLER_THREADS', 4)
 
 dispatcher["echo"] = lambda s: s
-payload_queue = Queue.Queue()
-response_queue = Queue.Queue()
+payload_queue = six.moves.queue.Queue()
+response_queue = six.moves.queue.Queue()
 
 def handle_long_poll(ws):
   end_event = threading.Event()
@@ -52,7 +54,7 @@ def jsonrpc_handler(end_event):
       data = payload_queue.get(timeout=1)
       response = JSONRPCResponseManager.handle(data, dispatcher)
       response_queue.put_nowait(response)
-    except Queue.Empty:
+    except six.moves.queue.Empty:
       pass
     except Exception as e:
       cloudlog.exception("athena jsonrpc handler failed")
@@ -63,13 +65,25 @@ def jsonrpc_handler(end_event):
 # TODO: add service to, for example, start visiond and take a picture
 @dispatcher.add_method
 def getMessage(service=None, timeout=1000):
-  context = zmq.Context()
   if service is None or service not in service_list:
     raise Exception("invalid service")
-  socket = messaging.sub_sock(context, service_list[service].port)
+  socket = messaging.sub_sock(service_list[service].port)
   socket.setsockopt(zmq.RCVTIMEO, timeout)
   ret = messaging.recv_one(socket)
   return ret.to_dict()
+
+@dispatcher.add_method
+def listDataDirectory():
+  files = [os.path.relpath(os.path.join(dp, f), ROOT) for dp, dn, fn in os.walk(ROOT) for f in fn]
+  return files
+
+@dispatcher.add_method
+def uploadFileToUrl(fn, url, headers):
+  if len(fn) == 0 or fn[0] == '/' or '..' in fn:
+    return 500
+  with open(os.path.join(ROOT, fn), "rb") as f:
+    ret = requests.put(url, data=f, headers=headers, timeout=10)
+  return ret.status_code
 
 def ws_recv(ws, end_event):
   while not end_event.is_set():
@@ -87,7 +101,7 @@ def ws_send(ws, end_event):
     try:
       response = response_queue.get(timeout=1)
       ws.send(response.json)
-    except Queue.Empty:
+    except six.moves.queue.Empty:
       pass
     except Exception:
       traceback.print_exc()

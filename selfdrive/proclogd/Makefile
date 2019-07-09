@@ -1,3 +1,5 @@
+ARCH := $(shell uname -m)
+
 CC = clang
 CXX = clang++
 
@@ -13,10 +15,15 @@ WARN_FLAGS = -Werror=implicit-function-declaration \
 CFLAGS = -std=gnu11 -g -fPIC -O2 $(WARN_FLAGS)
 CXXFLAGS = -std=c++11 -g -fPIC -O2 $(WARN_FLAGS)
 
-ZMQ_FLAGS = -I$(PHONELIBS)/zmq/aarch64/include
-ZMQ_LIBS = -L$(PHONELIBS)/zmq/aarch64/lib \
-           -l:libczmq.a -l:libzmq.a \
-           -lgnustl_shared
+ZMQ_LIBS = -l:libczmq.a -l:libzmq.a
+
+ifeq ($(ARCH),aarch64)
+CFLAGS += -mcpu=cortex-a57
+CXXFLAGS += -mcpu=cortex-a57
+ZMQ_LIBS += -lgnustl_shared
+endif
+
+#ZMQ_FLAGS = -I$(PHONELIBS)/zmq/aarch64/include
 
 .PHONY: all
 all: proclogd

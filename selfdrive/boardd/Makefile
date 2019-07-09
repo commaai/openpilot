@@ -16,14 +16,11 @@ WARN_FLAGS = -Werror=implicit-function-declaration \
 CFLAGS = -std=gnu11 -g -fPIC -I../ -I../../ -O2 $(WARN_FLAGS)
 CXXFLAGS = -std=c++11 -g -fPIC -I../ -I../../ -O2 $(WARN_FLAGS)
 
-ZMQ_FLAGS = -I$(PHONELIBS)/zmq/aarch64/include
-ZMQ_LIBS = -L$(PHONELIBS)/zmq/aarch64/lib \
-           -l:libczmq.a -l:libzmq.a \
-           -lgnustl_shared
+ZMQ_LIBS = -l:libczmq.a -l:libzmq.a -lgnustl_shared
 
 JSON_FLAGS = -I$(PHONELIBS)/json/src
 
-EXTRA_LIBS = -lusb
+EXTRA_LIBS = -lusb-1.0
 
 # ifeq ($(OS),GNU/Linux)
 # # for Drive PX2
@@ -31,8 +28,14 @@ EXTRA_LIBS = -lusb
 # CEREAL_LIBS = -lcapnp -lkj -lcapnp_c
 # EXTRA_LIBS = -lusb-1.0 -lpthread
 # endif
+ifeq ($(ARCH),aarch64)
+CFLAGS += -mcpu=cortex-a57
+CXXFLAGS += -mcpu=cortex-a57
+endif
+
 
 ifeq ($(ARCH),x86_64)
+ZMQ_FLAGS = -I$(PHONELIBS)/zmq/aarch64/include
 ZMQ_LIBS = -L$(BASEDIR)/external/zmq/lib/ \
            -l:libczmq.a -l:libzmq.a
 EXTRA_LIBS = -lusb-1.0 -lpthread
@@ -46,6 +49,7 @@ all: boardd
 include ../common/cereal.mk
 
 OBJS = boardd.o \
+       can_list_to_can_capnp.o \
        ../common/swaglog.o \
        ../common/params.o \
        ../common/util.o \
@@ -63,7 +67,7 @@ boardd: $(OBJS)
 
 boardd.o: boardd.cc
 	@echo "[ CXX ] $@"
-	$(CXX) $(CXXFLAGS) \
+	$(CXX) $(CXXFLAGS) -MMD \
            -I$(PHONELIBS)/android_system_core/include \
            $(CEREAL_CFLAGS) \
            $(CEREAL_CXXFLAGS) \
@@ -71,6 +75,15 @@ boardd.o: boardd.cc
            -I../ \
            -I../../ \
            -c -o '$@' '$<'
+
+
+boardd_api_impl.so: libcan_list_to_can_capnp.a boardd_api_impl.pyx boardd_setup.py
+	python2 boardd_setup.py build_ext --inplace
+	rm -rf build
+	rm -f boardd_api_impl.cpp
+
+libcan_list_to_can_capnp.a: can_list_to_can_capnp.o $(CEREAL_OBJS)
+	ar rcsD '$@' $^
 
 %.o: %.c
 	@echo "[ CC ] $@"
@@ -81,8 +94,16 @@ boardd.o: boardd.cc
           $(JSON_FLAGS) \
           -c -o '$@' '$<'
 
+%.o: %.cc
+	@echo "[ CC ] $@"
+	$(CXX) $(CXXFLAGS) -MMD \
+          -Iinclude -I.. -I../.. \
+          $(CEREAL_CXXFLAGS) \
+          $(ZMQ_FLAGS) \
+          -c -o '$@' '$<'
+
 .PHONY: clean
 clean:
-	rm -f boardd $(OBJS) $(DEPS)
+	rm -f boardd libcan_list_to_can_capnp.a boardd_api_impl.so $(OBJS) $(DEPS)
 
 -include $(DEPS)

@@ -1216,7 +1216,7 @@ def main():
     operation_func = globals()[args.operation]
     operation_args,_,_,_ = inspect.getargspec(operation_func)
     if operation_args[0] == 'esp':  # operation function takes an ESPROM connection object
-        initial_baud = min(ESPROM.ESP_ROM_BAUD, args.baud)  # don't sync faster than the default baud rate
+        initial_baud = MIN(ESPROM.ESP_ROM_BAUD, args.baud)  # don't sync faster than the default baud rate
         esp = ESPROM(args.port, initial_baud)
         esp.connect()
         operation_func(esp, args)

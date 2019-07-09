@@ -38,25 +38,25 @@ uri_player* slplay_create_player_for_uri(const char* uri, char **error) {
 
   result = (*engineInterface)->CreateAudioPlayer(engineInterface, &player.player, &audioSrc, &audioSnk, 0, NULL, NULL);
   if (result != SL_RESULT_SUCCESS) {
-    *error = strdup("Failed to create audio player");
+    *error = "Failed to create audio player";
     return NULL;
   }
 
   result = (*(player.player))->Realize(player.player, SL_BOOLEAN_FALSE);
   if (result != SL_RESULT_SUCCESS) {
-    *error = strdup("Failed to realize audio player");
+    *error = "Failed to realize audio player";
     return NULL;
   }
 
   result = (*(player.player))->GetInterface(player.player, SL_IID_PLAY, &(player.playInterface));
   if (result != SL_RESULT_SUCCESS) {
-    *error = strdup("Failed to get player interface");
+    *error = "Failed to get player interface";
     return NULL;
   }
 
   result = (*(player.playInterface))->SetPlayState(player.playInterface, SL_PLAYSTATE_PAUSED);
   if (result != SL_RESULT_SUCCESS) {
-    *error = strdup("Failed to initialize playstate to SL_PLAYSTATE_PAUSED");
+    *error = "Failed to initialize playstate to SL_PLAYSTATE_PAUSED";
     return NULL;
   }
 
@@ -74,29 +74,29 @@ void slplay_setup(char **error) {
   SLEngineOption engineOptions[] = {{SL_ENGINEOPTION_THREADSAFE, SL_BOOLEAN_TRUE}};
   result = slCreateEngine(&engine, 1, engineOptions, 0, NULL, NULL);
   if (result != SL_RESULT_SUCCESS) {
-    *error = strdup("Failed to create OpenSL engine");
+    *error = "Failed to create OpenSL engine";
   }
 
   result = (*engine)->Realize(engine, SL_BOOLEAN_FALSE);
   if (result != SL_RESULT_SUCCESS) {
-    *error = strdup("Failed to realize OpenSL engine");
+    *error = "Failed to realize OpenSL engine";
   }
 
   result = (*engine)->GetInterface(engine, SL_IID_ENGINE, &engineInterface);
   if (result != SL_RESULT_SUCCESS) {
-    *error = strdup("Failed to realize OpenSL engine");
+    *error = "Failed to realize OpenSL engine";
   }
 
   const SLInterfaceID ids[1] = {SL_IID_VOLUME};
   const SLboolean req[1] = {SL_BOOLEAN_FALSE};
   result = (*engineInterface)->CreateOutputMix(engineInterface, &outputMix, 1, ids, req);
   if (result != SL_RESULT_SUCCESS) {
-    *error = strdup("Failed to create output mix");
+    *error = "Failed to create output mix";
   }
 
   result = (*outputMix)->Realize(outputMix, SL_BOOLEAN_FALSE);
   if (result != SL_RESULT_SUCCESS) {
-    *error = strdup("Failed to realize output mix");
+    *error = "Failed to realize output mix";
   }
 }
 
@@ -120,7 +120,7 @@ void slplay_stop (uri_player* player, char **error) {
 
   result = (*playInterface)->SetPlayState(playInterface, SL_PLAYSTATE_PAUSED);
   if (result != SL_RESULT_SUCCESS) {
-    *error = strdup("Failed to set SL_PLAYSTATE_STOPPED");
+    *error = "Failed to set SL_PLAYSTATE_STOPPED";
     return;
   }
 }
@@ -164,7 +164,7 @@ void slplay_play (const char *uri, bool loop, char **error) {
 
     result = (*playInterface)->SetCallbackEventsMask(playInterface, SL_PLAYEVENT_HEADATEND);
     if (result != SL_RESULT_SUCCESS) {
-      *error = strdup("Failed to set callback event mask");
+      *error = "Failed to set callback event mask";
       return;
     }
   }
@@ -172,13 +172,13 @@ void slplay_play (const char *uri, bool loop, char **error) {
   // Reset the audio player
   result = (*playInterface)->ClearMarkerPosition(playInterface);
   if (result != SL_RESULT_SUCCESS) {
-    *error = strdup("Failed to clear marker position");
+    *error = "Failed to clear marker position";
     return;
   }
   result = (*playInterface)->SetPlayState(playInterface, SL_PLAYSTATE_PAUSED);
   result = (*playInterface)->SetPlayState(playInterface, SL_PLAYSTATE_STOPPED);
   result = (*playInterface)->SetPlayState(playInterface, SL_PLAYSTATE_PLAYING);
   if (result != SL_RESULT_SUCCESS) {
-    *error = strdup("Failed to set SL_PLAYSTATE_PLAYING");
+    *error = "Failed to set SL_PLAYSTATE_PLAYING";
   }
 }

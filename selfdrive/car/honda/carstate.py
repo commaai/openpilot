@@ -1,6 +1,7 @@
 from common.numpy_fast import interp
 from common.kalman.simple_kalman import KF1D
-from selfdrive.can.parser import CANParser, CANDefine
+from selfdrive.can.can_define import CANDefine
+from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, SPEED_FACTOR, HONDA_BOSCH
 
@@ -46,7 +47,6 @@ def get_can_signals(CP):
       ("BRAKE_SWITCH", "POWERTRAIN_DATA", 0),
       ("CRUISE_BUTTONS", "SCM_BUTTONS", 0),
       ("ESP_DISABLED", "VSA_STATUS", 1),
-      ("HUD_LEAD", "ACC_HUD", 0),
       ("USER_BRAKE", "VSA_STATUS", 0),
       ("BRAKE_HOLD_ACTIVE", "VSA_STATUS", 0),
       ("STEER_STATUS", "STEER_STATUS", 5),
@@ -124,6 +124,7 @@ def get_can_signals(CP):
   if CP.carFingerprint == CAR.CIVIC:
     signals += [("CAR_GAS", "GAS_PEDAL_2", 0),
                 ("MAIN_ON", "SCM_FEEDBACK", 0),
+                ("IMPERIAL_UNIT", "HUD_SETTING", 0),
                 ("EPB_STATE", "EPB_STATUS", 0)]
   elif CP.carFingerprint == CAR.ACURA_ILX:
     signals += [("CAR_GAS", "GAS_PEDAL_2", 0),
@@ -152,7 +153,8 @@ def get_can_signals(CP):
 
 def get_can_parser(CP):
   signals, checks = get_can_signals(CP)
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0, timeout=100)
+
 
 def get_cam_can_parser(CP):
   signals = []
@@ -164,7 +166,7 @@ def get_cam_can_parser(CP):
 
   cam_bus = 1 if CP.carFingerprint in HONDA_BOSCH else 2
 
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, cam_bus)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, cam_bus, timeout=100)
 
 class CarState(object):
   def __init__(self, CP):
@@ -192,15 +194,11 @@ class CarState(object):
     # R = 1e3
     self.v_ego_kf = KF1D(x0=[[0.0], [0.0]],
                          A=[[1.0, dt], [0.0, 1.0]],
-                         C=[[1.0, 0.0]],
+                         C=[1.0, 0.0],
                          K=[[0.12287673], [0.29666309]])
     self.v_ego = 0.0
 
   def update(self, cp, cp_cam):
-
-    # copy can_valid on buses 0 and 2
-    self.can_valid = cp.can_valid
-    self.cam_can_valid = cp_cam.can_valid
 
     # car params
     v_weight_v = [0., 1.]  # don't trust smooth speed at low values to avoid premature zero snapping
@@ -332,13 +330,14 @@ class CarState(object):
 
     self.user_brake = cp.vl["VSA_STATUS"]['USER_BRAKE']
     self.pcm_acc_status = cp.vl["POWERTRAIN_DATA"]['ACC_STATUS']
-    self.hud_lead = cp.vl["ACC_HUD"]['HUD_LEAD']
 
     # Gets rid of Pedal Grinding noise when brake is pressed at slow speeds for some models
-    # TODO: this should be ok for all cars. Verify it.
     if self.CP.carFingerprint in (CAR.PILOT, CAR.PILOT_2019, CAR.RIDGELINE):
       if self.user_brake > 0.05:
         self.brake_pressed = 1
+
+    # TODO: discover the CAN msg that has the imperial unit bit for all other cars
+    self.is_metric = not cp.vl["HUD_SETTING"]['IMPERIAL_UNIT'] if self.CP.carFingerprint in (CAR.CIVIC) else False
 
 # carstate standalone tester
 if __name__ == '__main__':

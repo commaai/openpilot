@@ -6,10 +6,11 @@ from common.params import Params
 from common.numpy_fast import interp
 
 import selfdrive.messaging as messaging
+from cereal import car
+from common.realtime import sec_since_boot, DT_PLAN
 from selfdrive.swaglog import cloudlog
 from selfdrive.config import Conversions as CV
 from selfdrive.services import service_list
-from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from selfdrive.controls.lib.speed_smoother import speed_smoother
 from selfdrive.controls.lib.longcontrol import LongCtrlState, MIN_CAN_SPEED
 from selfdrive.controls.lib.fcw import FCWChecker
@@ -17,7 +18,7 @@ from selfdrive.controls.lib.long_mpc import LongitudinalMpc
 
 NO_CURVATURE_SPEED = 200. * CV.MPH_TO_MS
 
-_DT_MPC = 0.2  # 5Hz
+LON_MPC_STEP = 0.2  # first step is 0.2s
 MAX_SPEED_ERROR = 2.0
 AWARENESS_DECEL = -0.2     # car smoothly decel at .2m/s^2 when user is distracted
 
@@ -63,12 +64,11 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
 
 class Planner(object):
   def __init__(self, CP, fcw_enabled):
-    context = zmq.Context()
     self.CP = CP
     self.poller = zmq.Poller()
 
-    self.plan = messaging.pub_sock(context, service_list['plan'].port)
-    self.live_longitudinal_mpc = messaging.pub_sock(context, service_list['liveLongitudinalMpc'].port)
+    self.plan = messaging.pub_sock(service_list['plan'].port)
+    self.live_longitudinal_mpc = messaging.pub_sock(service_list['liveLongitudinalMpc'].port)
 
     self.mpc1 = LongitudinalMpc(1, self.live_longitudinal_mpc)
     self.mpc2 = LongitudinalMpc(2, self.live_longitudinal_mpc)
@@ -113,29 +113,31 @@ class Planner(object):
 
     self.v_acc_future = min([self.mpc1.v_mpc_future, self.mpc2.v_mpc_future, v_cruise_setpoint])
 
-  def update(self, CS, CP, VM, PP, live20, live100, md, live_map_data):
-    """Gets called when new live20 is available"""
-    cur_time = live20.logMonoTime / 1e9
-    v_ego = CS.carState.vEgo
+  def update(self, sm, CP, VM, PP, live_map_data):
+    """Gets called when new radarState is available"""
+    cur_time = sec_since_boot()
+    v_ego = sm['carState'].vEgo
 
-    long_control_state = live100.live100.longControlState
-    v_cruise_kph = live100.live100.vCruise
-    force_slow_decel = live100.live100.forceDecel
+    long_control_state = sm['controlsState'].longControlState
+    v_cruise_kph = sm['controlsState'].vCruise
+    force_slow_decel = sm['controlsState'].forceDecel
     v_cruise_setpoint = v_cruise_kph * CV.KPH_TO_MS
 
-    lead_1 = live20.live20.leadOne
-    lead_2 = live20.live20.leadTwo
+    lead_1 = sm['radarState'].leadOne
+    lead_2 = sm['radarState'].leadTwo
 
     enabled = (long_control_state == LongCtrlState.pid) or (long_control_state == LongCtrlState.stopping)
     following = lead_1.status and lead_1.dRel < 45.0 and lead_1.vLeadK > v_ego and lead_1.aLeadK > 0.0
 
     v_speedlimit = NO_CURVATURE_SPEED
     v_curvature = NO_CURVATURE_SPEED
-    map_valid = live_map_data.liveMapData.mapValid
+
+    #map_age = cur_time - rcv_times['liveMapData']
+    map_valid = False  # live_map_data.liveMapData.mapValid and map_age < 10.0
 
     # Speed limit and curvature
     set_speed_limit_active = self.params.get("LimitSetSpeed") == "1" and self.params.get("SpeedLimitOffset") is not None
-    if set_speed_limit_active:
+    if set_speed_limit_active and map_valid:
       if live_map_data.liveMapData.speedLimitValid:
         speed_limit = live_map_data.liveMapData.speedLimit
         offset = float(self.params.get("SpeedLimitOffset"))
@@ -152,9 +154,9 @@ class Planner(object):
 
     # Calculate speed for normal cruise control
     if enabled:
-      accel_limits = map(float, calc_cruise_accel_limits(v_ego, following))
+      accel_limits = [float(x) for x in calc_cruise_accel_limits(v_ego, following)]
       jerk_limits = [min(-0.1, accel_limits[0]), max(0.1, accel_limits[1])]  # TODO: make a separate lookup for jerk tuning
-      accel_limits = limit_accel_in_turns(v_ego, CS.carState.steeringAngle, accel_limits, self.CP)
+      accel_limits = limit_accel_in_turns(v_ego, sm['carState'].steeringAngle, accel_limits, self.CP)
 
       if force_slow_decel:
         # if required so, force a smooth deceleration
@@ -171,12 +173,12 @@ class Planner(object):
                                                     v_cruise_setpoint,
                                                     accel_limits[1], accel_limits[0],
                                                     jerk_limits[1], jerk_limits[0],
-                                                    _DT_MPC)
+                                                    LON_MPC_STEP)
       # cruise speed can't be negative even is user is distracted
       self.v_cruise = max(self.v_cruise, 0.)
     else:
       starting = long_control_state == LongCtrlState.starting
-      a_ego = min(CS.carState.aEgo, 0.0)
+      a_ego = min(sm['carState'].aEgo, 0.0)
       reset_speed = MIN_CAN_SPEED if starting else v_ego
       reset_accel = self.CP.startAccel if starting else a_ego
       self.v_acc = reset_speed
@@ -189,8 +191,8 @@ class Planner(object):
     self.mpc1.set_cur_state(self.v_acc_start, self.a_acc_start)
     self.mpc2.set_cur_state(self.v_acc_start, self.a_acc_start)
 
-    self.mpc1.update(CS, lead_1, v_cruise_setpoint)
-    self.mpc2.update(CS, lead_2, v_cruise_setpoint)
+    self.mpc1.update(sm['carState'], lead_1, v_cruise_setpoint)
+    self.mpc2.update(sm['carState'], lead_2, v_cruise_setpoint)
 
     self.choose_solution(v_cruise_setpoint, enabled)
 
@@ -198,34 +200,28 @@ class Planner(object):
     if self.mpc1.new_lead:
       self.fcw_checker.reset_lead(cur_time)
 
-    blinkers = CS.carState.leftBlinker or CS.carState.rightBlinker
-    fcw = self.fcw_checker.update(self.mpc1.mpc_solution, cur_time, v_ego, CS.carState.aEgo,
+    blinkers = sm['carState'].leftBlinker or sm['carState'].rightBlinker
+    fcw = self.fcw_checker.update(self.mpc1.mpc_solution, cur_time, v_ego, sm['carState'].aEgo,
                                   lead_1.dRel, lead_1.vLead, lead_1.aLeadK,
                                   lead_1.yRel, lead_1.vLat,
-                                  lead_1.fcw, blinkers) and not CS.carState.brakePressed
+                                  lead_1.fcw, blinkers) and not sm['carState'].brakePressed
     if fcw:
       cloudlog.info("FCW triggered %s", self.fcw_checker.counters)
 
-    model_dead = cur_time - (md.logMonoTime / 1e9) > 0.5
+    radar_dead = not sm.alive['radarState']
+
+    radar_errors = list(sm['radarState'].radarErrors)
+    radar_fault = car.RadarData.Error.fault in radar_errors
+    radar_can_error = car.RadarData.Error.canError in radar_errors
 
     # **** send the plan ****
     plan_send = messaging.new_message()
     plan_send.init('plan')
 
-    # TODO: Move all these events to controlsd. This has nothing to do with planning
-    events = []
-    if model_dead:
-      events.append(create_event('modelCommIssue', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+    plan_send.valid = sm.all_alive_and_valid(service_list=['carState', 'controlsState', 'radarState'])
 
-    radar_errors = list(live20.live20.radarErrors)
-    if 'commIssue' in radar_errors:
-      events.append(create_event('radarCommIssue', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if 'fault' in radar_errors:
-      events.append(create_event('radarFault', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-
-    plan_send.plan.events = events
-    plan_send.plan.mdMonoTime = md.logMonoTime
-    plan_send.plan.l20MonoTime = live20.logMonoTime
+    plan_send.plan.mdMonoTime = sm.logMonoTime['model']
+    plan_send.plan.radarStateMonoTime = sm.logMonoTime['radarState']
 
     # longitudal plan
     plan_send.plan.vCruise = self.v_cruise
@@ -242,6 +238,12 @@ class Planner(object):
     plan_send.plan.decelForTurn = decel_for_turn
     plan_send.plan.mapValid = map_valid
 
+    radar_valid = not (radar_dead or radar_fault)
+    plan_send.plan.radarValid = bool(radar_valid)
+    plan_send.plan.radarCanError = bool(radar_can_error)
+
+    plan_send.plan.processingDelay = (plan_send.logMonoTime / 1e9) - sm.rcv_time['radarState']
+
     # Send out fcw
     fcw = fcw and (self.fcw_enabled or long_control_state != LongCtrlState.off)
     plan_send.plan.fcw = fcw
@@ -249,8 +251,7 @@ class Planner(object):
     self.plan.send(plan_send.to_bytes())
 
     # Interpolate 0.05 seconds and save as starting point for next iteration
-    dt = 0.05  # s
-    a_acc_sol = self.a_acc_start + (dt / _DT_MPC) * (self.a_acc - self.a_acc_start)
-    v_acc_sol = self.v_acc_start + dt * (a_acc_sol + self.a_acc_start) / 2.0
+    a_acc_sol = self.a_acc_start + (DT_PLAN / LON_MPC_STEP) * (self.a_acc - self.a_acc_start)
+    v_acc_sol = self.v_acc_start + DT_PLAN * (a_acc_sol + self.a_acc_start) / 2.0
     self.v_acc_start = v_acc_sol
     self.a_acc_start = a_acc_sol

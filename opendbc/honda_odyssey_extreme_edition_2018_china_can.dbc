@@ -150,14 +150,15 @@ BO_ 780 ACC_HUD: 8 ADAS
  SG_ FCM_PROBLEM : 34|1@0+ (1,0) [0|1] "" BDY
  SG_ RADAR_OBSTRUCTED : 33|1@0+ (1,0) [0|1] "" BDY
  SG_ ENABLE_MINI_CAR : 32|1@0+ (1,0) [0|1] "" BDY
- SG_ SET_ME_X03 : 47|2@0+ (1,0) [0|3] "" BDY
+ SG_ HUD_DISTANCE : 47|2@0+ (1,0) [0|3] "" BDY
  SG_ HUD_LEAD : 45|2@0+ (1,0) [0|3] "" BDY
  SG_ BOH_3 : 43|1@0+ (1,0) [0|3] "" BDY
  SG_ BOH_4 : 42|1@0+ (1,0) [0|3] "" BDY
  SG_ BOH_5 : 41|1@0+ (1,0) [0|3] "" BDY
  SG_ CRUISE_CONTROL_LABEL : 40|1@0+ (1,0) [0|3] "" BDY
  SG_ HUD_DISTANCE_3 : 52|1@0+ (1,0) [0|1] "" BDY
- SG_ SET_ME_X03_2 : 55|2@0+ (1,0) [0|3] "" BDY
+ SG_ IMPERIAL_UNIT : 54|1@0+ (1,0) [0|1] "" BDY
+ SG_ SET_ME_X01_2 : 55|1@0+ (1,0) [0|1] "" BDY
  SG_ SET_ME_X01 : 48|1@0+ (1,0) [0|1] "" BDY
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" BDY
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" BDY
@@ -276,6 +277,7 @@ BO_ 1302 ODOMETER: 8 XXX
 
 
 
+CM_ "CHFFR_METRIC 342 STEER_ANGLE STEER_ANGLE 0.36 180; CHFFR_METRIC 380 ENGINE_RPM ENGINE_RPM 1 0; CHFFR_METRIC 804 ENGINE_TEMPERATURE ENGINE_TEMPERATURE 1 0";
 CM_ SG_ 490 LONG_ACCEL "wheel speed derivative, noisy and zero snapping";
 CM_ SG_ 773 PASS_AIRBAG_OFF "Might just be indicator light";
 CM_ SG_ 773 PASS_AIRBAG_ON "Might just be indicator light";
@@ -295,4 +297,3 @@ VAL_ 401 GEAR 7 "L" 10 "S" 4 "D" 3 "N" 2 "R" 1 "P" ;
 VAL_ 422 CRUISE_BUTTONS 7 "tbd" 6 "tbd" 5 "tbd" 4 "accel_res" 3 "decel_set" 2 "cancel" 1 "main" 0 "none" ;
 VAL_ 422 LIGHTS_SETTING 3 "high_beam" 2 "low_beam" 1 "position" 0 "no_lights" ;
 VAL_ 422 CRUISE_SETTING 3 "distance_adj" 2 "tbd" 1 "lkas_button" 0 "none" ;
-CM_ "CHFFR_METRIC 342 STEER_ANGLE STEER_ANGLE 0.36 180; CHFFR_METRIC 380 ENGINE_RPM ENGINE_RPM 1 0; CHFFR_METRIC 804 ENGINE_TEMPERATURE ENGINE_TEMPERATURE 1 0";

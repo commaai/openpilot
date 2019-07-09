@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import os
-import zmq
 import copy
 import json
 import numpy as np
@@ -9,7 +8,7 @@ from selfdrive.locationd.calibration_helpers import Calibration
 from selfdrive.swaglog import cloudlog
 from selfdrive.services import service_list
 from common.params import Params
-from common.transformations.model import model_height, get_camera_frame_from_model_frame, get_camera_frame_from_bigmodel_frame
+from common.transformations.model import model_height, get_camera_frame_from_model_frame, get_camera_frame_from_medmodel_frame
 from common.transformations.camera import view_frame_from_device_frame, get_view_frame_from_road_frame, \
                                           eon_intrinsics, get_calib_from_vp, H, W
 
@@ -23,7 +22,7 @@ VP_INIT = np.array([W/2., H/2.])
 
 # These validity corners were chosen by looking at 1000
 # and taking most extreme cases with some margin.
-VP_VALIDITY_CORNERS = np.array([[W/2 - 150, 280], [W/2 + 150, 540]])
+VP_VALIDITY_CORNERS = np.array([[W//2 - 150, 280], [W//2 + 150, 540]])
 DEBUG = os.getenv("DEBUG") is not None
 
 
@@ -39,6 +38,7 @@ class Calibrator(object):
     self.vps = []
     self.cal_status = Calibration.UNCALIBRATED
     self.write_counter = 0
+    self.just_calibrated = False
     self.params = Params()
     calibration_params = self.params.get("CalibrationParams")
     if calibration_params:
@@ -52,10 +52,16 @@ class Calibrator(object):
 
 
   def update_status(self):
+    start_status = self.cal_status
     if len(self.vps) < INPUTS_NEEDED:
       self.cal_status = Calibration.UNCALIBRATED
     else:
       self.cal_status = Calibration.CALIBRATED if is_calibration_valid(self.vp) else Calibration.INVALID
+    end_status = self.cal_status
+
+    self.just_calibrated = False
+    if start_status == Calibration.UNCALIBRATED and end_status == Calibration.CALIBRATED:
+      self.just_calibrated = True
 
   def handle_cam_odom(self, log):
     trans, rot = log.cameraOdometry.trans, log.cameraOdometry.rot
@@ -67,7 +73,7 @@ class Calibrator(object):
       self.vp = np.mean(self.vps, axis=0)
       self.update_status()
       self.write_counter += 1
-      if self.param_put and self.write_counter % WRITE_CYCLES == 0:
+      if self.param_put and (self.write_counter % WRITE_CYCLES == 0 or self.just_calibrated):
         cal_params = {"vanishing_point": list(self.vp),
                       "valid_points": len(self.vps)}
         self.params.put("CalibrationParams", json.dumps(cal_params))
@@ -78,24 +84,22 @@ class Calibrator(object):
     extrinsic_matrix = get_view_frame_from_road_frame(0, calib[1], calib[2], model_height)
     ke = eon_intrinsics.dot(extrinsic_matrix)
     warp_matrix = get_camera_frame_from_model_frame(ke)
-    warp_matrix_big = get_camera_frame_from_bigmodel_frame(ke)
+    warp_matrix_big = get_camera_frame_from_medmodel_frame(ke)
 
     cal_send = messaging.new_message()
     cal_send.init('liveCalibration')
     cal_send.liveCalibration.calStatus = self.cal_status
-    cal_send.liveCalibration.calPerc = min(len(self.vps) * 100 / INPUTS_NEEDED, 100)
-    cal_send.liveCalibration.warpMatrix2 = map(float, warp_matrix.flatten())
-    cal_send.liveCalibration.warpMatrixBig = map(float, warp_matrix_big.flatten())
-    cal_send.liveCalibration.extrinsicMatrix = map(float, extrinsic_matrix.flatten())
+    cal_send.liveCalibration.calPerc = min(len(self.vps) * 100 // INPUTS_NEEDED, 100)
+    cal_send.liveCalibration.warpMatrix2 = [float(x) for x in warp_matrix.flatten()]
+    cal_send.liveCalibration.warpMatrixBig = [float(x) for x in warp_matrix_big.flatten()]
+    cal_send.liveCalibration.extrinsicMatrix = [float(x) for x in extrinsic_matrix.flatten()]
 
     livecalibration.send(cal_send.to_bytes())
 
 
 def calibrationd_thread(gctx=None, addr="127.0.0.1"):
-  context = zmq.Context()
-
-  cameraodometry = messaging.sub_sock(context, service_list['cameraOdometry'].port, addr=addr, conflate=True)
-  livecalibration = messaging.pub_sock(context, service_list['liveCalibration'].port)
+  cameraodometry = messaging.sub_sock(service_list['cameraOdometry'].port, addr=addr, conflate=True)
+  livecalibration = messaging.pub_sock(service_list['liveCalibration'].port)
   calibrator = Calibrator(param_put=True)
 
   # buffer with all the messages that still need to be input into the kalman
