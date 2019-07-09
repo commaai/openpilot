@@ -139,30 +139,29 @@ class Uploader(object):
       total_size += os.stat(fn).st_size
     return dict(name_counts), total_size
 
-  def next_file_to_compress(self):
+  def next_file_to_upload(self, with_raw):
+    # try to upload qlog files first
     for name, key, fn in self.gen_upload_files():
-      if name.endswith("log"):
-        return (key, fn, 0)
-    return None
-
-  def next_file_to_upload(self, with_video):
-    # try to upload log files first
-    for name, key, fn in self.gen_upload_files():
-      if name  == "rlog.bz2":
+      if name  == "qlog.bz2":
         return (key, fn, 0)
 
-    if with_video:
-      # then upload compressed rear and front camera files
+    if with_raw:
+      # then upload log files
+      for name, key, fn in self.gen_upload_files():
+        if name  == "rlog.bz2":
+          return (key, fn, 1)
+
+      # then upload rear and front camera files
       for name, key, fn in self.gen_upload_files():
         if name == "fcamera.hevc":
-          return (key, fn, 1)
-        elif name == "dcamera.hevc":
           return (key, fn, 2)
+        elif name == "dcamera.hevc":
+          return (key, fn, 3)
 
       # then upload other files
       for name, key, fn in self.gen_upload_files():
         if not name.endswith('.lock') and not name.endswith(".tmp"):
-          return (key, fn, 3)
+          return (key, fn, 4)
 
     return None
 
@@ -199,21 +198,6 @@ class Uploader(object):
 
     return self.last_resp
 
-  def compress(self, key, fn):
-    # write out the bz2 compress
-    if fn.endswith("log"):
-      ext = ".bz2"
-      cloudlog.info("compressing %r to %r", fn, fn+ext)
-      if os.system("nice -n 19 bzip2 -c %s > %s.tmp && mv %s.tmp %s%s && rm %s" % (fn, fn, fn, fn, ext, fn)) != 0:
-        cloudlog.exception("upload: bzip2 compression failed")
-        return False
-
-      # assuming file is named properly
-      key += ext
-      fn += ext
-
-    return (key, fn)
-
   def upload(self, key, fn):
     try:
       sz = os.path.getsize(fn)
@@ -234,7 +218,13 @@ class Uploader(object):
       stat = self.normal_upload(key, fn)
       if stat is not None and stat.status_code in (200, 201):
         cloudlog.event("upload_success", key=key, fn=fn, sz=sz)
-        os.unlink(fn) # delete the file
+
+        # delete the file
+        try:
+          os.unlink(fn)
+        except OSError:
+          cloudlog.exception("delete_failed", stat=stat, exc=self.last_exc, key=key, fn=fn, sz=sz)
+
         success = True
       else:
         cloudlog.event("upload_failed", stat=stat, exc=self.last_exc, key=key, fn=fn, sz=sz)
@@ -260,6 +250,7 @@ def uploader_fn(exit_event):
 
   backoff = 0.1
   while True:
+    allow_raw_upload = (params.get("IsUploadRawEnabled") != "0")
     allow_cellular = (params.get("IsUploadVideoOverCellularEnabled") != "0")
     on_hotspot = is_on_hotspot()
     on_wifi = is_on_wifi()
@@ -268,17 +259,7 @@ def uploader_fn(exit_event):
     if exit_event.is_set():
       return
 
-    d = uploader.next_file_to_compress()
-    if d is not None:
-      key, fn, _ = d
-      uploader.compress(key, fn)
-      continue
-
-    if not should_upload:
-      time.sleep(5)
-      continue
-
-    d = uploader.next_file_to_upload(with_video=True)
+    d = uploader.next_file_to_upload(with_raw=allow_raw_upload and should_upload)
     if d is None:
       time.sleep(5)
       continue

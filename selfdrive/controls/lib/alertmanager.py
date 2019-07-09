@@ -1,7 +1,7 @@
 from cereal import log
+from common.realtime import DT_CTRL
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.alerts import ALERTS
-from common.realtime import sec_since_boot
 import copy
 
 
@@ -18,12 +18,12 @@ class AlertManager(object):
   def alertPresent(self):
     return len(self.activealerts) > 0
 
-  def add(self, alert_type, enabled=True, extra_text_1='', extra_text_2=''):
+  def add(self, frame, alert_type, enabled=True, extra_text_1='', extra_text_2=''):
     alert_type = str(alert_type)
     added_alert = copy.copy(self.alerts[alert_type])
     added_alert.alert_text_1 += extra_text_1
     added_alert.alert_text_2 += extra_text_2
-    added_alert.start_time = sec_since_boot()
+    added_alert.start_time = frame * DT_CTRL
 
     # if new alert is higher priority, log it
     if not self.alertPresent() or added_alert.alert_priority > self.activealerts[0].alert_priority:
@@ -34,7 +34,8 @@ class AlertManager(object):
     # sort by priority first and then by start_time
     self.activealerts.sort(key=lambda k: (k.alert_priority, k.start_time), reverse=True)
 
-  def process_alerts(self, cur_time):
+  def process_alerts(self, frame):
+    cur_time = frame * DT_CTRL
 
     # first get rid of all the expired alerts
     self.activealerts = [a for a in self.activealerts if a.start_time +

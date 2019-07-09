@@ -1,6 +1,8 @@
 CC = clang
 CXX = clang++
 
+ARCH := $(shell uname -m)
+
 PHONELIBS = ../../phonelibs
 BASEDIR = ../..
 
@@ -12,11 +14,14 @@ WARN_FLAGS = -Werror=implicit-function-declaration \
 
 CFLAGS = -std=gnu11 -g -fPIC -O2 $(WARN_FLAGS)
 CXXFLAGS = -std=c++11 -g -fPIC -O2 $(WARN_FLAGS)
+ZMQ_LIBS = -l:libczmq.a -l:libzmq.a
 
-ZMQ_FLAGS = -I$(PHONELIBS)/zmq/aarch64/include
-ZMQ_LIBS = -L$(PHONELIBS)/zmq/aarch64/lib \
-           -l:libczmq.a -l:libzmq.a \
-           -lgnustl_shared
+ifeq ($(ARCH),aarch64)
+CFLAGS += -mcpu=cortex-a57
+CXXFLAGS += -mcpu=cortex-a57
+ZMQ_LIBS += -lgnustl_shared
+endif
+
 
 .PHONY: all
 all: logcatd

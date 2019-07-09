@@ -150,14 +150,15 @@ BO_ 780 ACC_HUD: 8 ADAS
  SG_ FCM_PROBLEM : 34|1@0+ (1,0) [0|1] "" BDY
  SG_ RADAR_OBSTRUCTED : 33|1@0+ (1,0) [0|1] "" BDY
  SG_ ENABLE_MINI_CAR : 32|1@0+ (1,0) [0|1] "" BDY
- SG_ SET_ME_X03 : 47|2@0+ (1,0) [0|3] "" BDY
+ SG_ HUD_DISTANCE : 47|2@0+ (1,0) [0|3] "" BDY
  SG_ HUD_LEAD : 45|2@0+ (1,0) [0|3] "" BDY
  SG_ BOH_3 : 43|1@0+ (1,0) [0|3] "" BDY
  SG_ BOH_4 : 42|1@0+ (1,0) [0|3] "" BDY
  SG_ BOH_5 : 41|1@0+ (1,0) [0|3] "" BDY
  SG_ CRUISE_CONTROL_LABEL : 40|1@0+ (1,0) [0|3] "" BDY
  SG_ HUD_DISTANCE_3 : 52|1@0+ (1,0) [0|1] "" BDY
- SG_ SET_ME_X03_2 : 55|2@0+ (1,0) [0|3] "" BDY
+ SG_ IMPERIAL_UNIT : 54|1@0+ (1,0) [0|1] "" BDY
+ SG_ SET_ME_X01_2 : 55|1@0+ (1,0) [0|1] "" BDY
  SG_ SET_ME_X01 : 48|1@0+ (1,0) [0|1] "" BDY
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" BDY
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" BDY

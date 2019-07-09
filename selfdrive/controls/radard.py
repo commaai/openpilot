@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import zmq
 import numpy as np
 import numpy.matlib
 import importlib
@@ -17,7 +16,7 @@ from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.swaglog import cloudlog
 from cereal import car
 from common.params import Params
-from common.realtime import set_realtime_priority, Ratekeeper
+from common.realtime import set_realtime_priority, Ratekeeper, DT_MDL
 from common.kalman.ekf import EKF, SimpleSensor
 
 DEBUG = False
@@ -59,13 +58,8 @@ def radard_thread(gctx=None):
   # import the radar from the fingerprint
   cloudlog.info("radard is importing %s", CP.carName)
   RadarInterface = importlib.import_module('selfdrive.car.%s.radar_interface' % CP.carName).RadarInterface
-  context = zmq.Context()
 
-  # *** subscribe to features and model from visiond
-  poller = zmq.Poller()
-  model = messaging.sub_sock(context, service_list['model'].port, conflate=True, poller=poller)
-  controls_state_sock = messaging.sub_sock(context, service_list['controlsState'].port, conflate=True, poller=poller)
-  live_parameters_sock = messaging.sub_sock(context, service_list['liveParameters'].port, conflate=True, poller=poller)
+  sm = messaging.SubMaster(['model', 'controlsState', 'liveParameters'])
 
   # Default parameters
   live_parameters = messaging.new_message()
@@ -81,15 +75,14 @@ def radard_thread(gctx=None):
   last_controls_state_ts = 0
 
   # *** publish radarState and liveTracks
-  radarState = messaging.pub_sock(context, service_list['radarState'].port)
-  liveTracks = messaging.pub_sock(context, service_list['liveTracks'].port)
+  radarState = messaging.pub_sock(service_list['radarState'].port)
+  liveTracks = messaging.pub_sock(service_list['liveTracks'].port)
 
   path_x = np.arange(0.0, 140.0, 0.1)    # 140 meters is max
 
   # Time-alignment
-  rate = 20.   # model and radar are both at 20Hz
-  tsv = 1./rate
-  v_len = 20         # how many speed data points to remember for t alignment with rdr data
+  rate = 1. / DT_MDL  # model and radar are both at 20Hz
+  v_len = 20   # how many speed data points to remember for t alignment with rdr data
 
   active = 0
   steer_angle = 0.
@@ -102,9 +95,9 @@ def radard_thread(gctx=None):
   speedSensorV = SimpleSensor(XV, 1, 2)
 
   # v_ego
-  v_ego = None
-  v_ego_hist_t = deque(maxlen=v_len)
-  v_ego_hist_v = deque(maxlen=v_len)
+  v_ego = 0.
+  v_ego_hist_t = deque([0], maxlen=v_len)
+  v_ego_hist_v = deque([0], maxlen=v_len)
   v_ego_t_aligned = 0.
 
   rk = Ratekeeper(rate, print_delay_threshold=None)
@@ -115,44 +108,32 @@ def radard_thread(gctx=None):
     for pt in rr.points:
       ar_pts[pt.trackId] = [pt.dRel + RDR_TO_LDR, pt.yRel, pt.vRel, pt.measured]
 
-    # receive the controlsStates
-    controls_state = None
-    md = None
+    sm.update(0)
 
-    for socket, event in poller.poll(0):
-      if socket is controls_state_sock:
-        controls_state = messaging.recv_one(socket)
-      elif socket is model:
-        md = messaging.recv_one(socket)
-      elif socket is live_parameters_sock:
-        live_parameters = messaging.recv_one(socket)
-        VM.update_params(live_parameters.liveParameters.stiffnessFactor, live_parameters.liveParameters.steerRatio)
+    if sm.updated['liveParameters']:
+        VM.update_params(sm['liveParameters'].stiffnessFactor, sm['liveParameters'].steerRatio)
 
-    if controls_state is not None:
-      active = controls_state.controlsState.active
-      v_ego = controls_state.controlsState.vEgo
-      steer_angle = controls_state.controlsState.angleSteers
-      steer_override = controls_state.controlsState.steerOverride
+    if sm.updated['controlsState']:
+      active = sm['controlsState'].active
+      v_ego = sm['controlsState'].vEgo
+      steer_angle = sm['controlsState'].angleSteers
+      steer_override = sm['controlsState'].steerOverride
 
       v_ego_hist_v.append(v_ego)
       v_ego_hist_t.append(float(rk.frame)/rate)
 
-      last_controls_state_ts = controls_state.logMonoTime
+      last_controls_state_ts = sm.logMonoTime['controlsState']
 
-    if v_ego is None:
-      continue
+    if sm.updated['model']:
+      last_md_ts = sm.logMonoTime['model']
+      MP.update(v_ego, sm['model'])
 
-    if md is not None:
-      last_md_ts = md.logMonoTime
-
-    # *** get path prediction from the model ***
-    MP.update(v_ego, md)
 
     # run kalman filter only if prob is high enough
     if MP.lead_prob > 0.7:
       reading = speedSensorV.read(MP.lead_dist, covar=np.matrix(MP.lead_var))
       ekfv.update_scalar(reading)
-      ekfv.predict(tsv)
+      ekfv.predict(DT_MDL)
 
       # When changing lanes the distance to the lead car can suddenly change,
       # which makes the Kalman filter output large relative acceleration
@@ -264,6 +245,7 @@ def radard_thread(gctx=None):
     # *** publish radarState ***
     dat = messaging.new_message()
     dat.init('radarState')
+    dat.valid = sm.all_alive_and_valid(service_list=['controlsState'])
     dat.radarState.mdMonoTime = last_md_ts
     dat.radarState.canMonoTimes = list(rr.canMonoTimes)
     dat.radarState.radarErrors = list(rr.errors)

@@ -10,7 +10,7 @@ const int TOYOTA_MAX_TORQUE_ERROR = 350;  // max torque cmd in excess of torque 
 // real time torque limit to prevent controls spamming
 // the real time limit is 1500/sec
 const int TOYOTA_MAX_RT_DELTA = 375;      // max delta torque allowed for real time checks
-const int TOYOTA_RT_INTERVAL = 250000;    // 250ms between real time checks
+const uint32_t TOYOTA_RT_INTERVAL = 250000;    // 250ms between real time checks
 
 // longitudinal limits
 const int TOYOTA_MAX_ACCEL = 1500;        // 1.5 m/s2
@@ -33,8 +33,12 @@ struct sample_t toyota_torque_meas;       // last 3 motor torques produced by th
 
 
 static void toyota_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
+
+  int bus = GET_BUS(to_push);
+  int addr = GET_ADDR(to_push);
+
   // get eps motor torque (0.66 factor in dbc)
-  if ((to_push->RIR>>21) == 0x260) {
+  if (addr == 0x260) {
     int torque_meas_new = (((to_push->RDHR) & 0xFF00) | ((to_push->RDHR >> 16) & 0xFF));
     torque_meas_new = to_signed(torque_meas_new, 16);
 
@@ -50,19 +54,20 @@ static void toyota_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   }
 
   // enter controls on rising edge of ACC, exit controls on ACC off
-  if ((to_push->RIR>>21) == 0x1D2) {
+  if (addr == 0x1D2) {
     // 5th bit is CRUISE_ACTIVE
     int cruise_engaged = to_push->RDLR & 0x20;
     if (!cruise_engaged) {
       controls_allowed = 0;
-    } else if (cruise_engaged && !toyota_cruise_engaged_last) {
+    }
+    if (cruise_engaged && !toyota_cruise_engaged_last) {
       controls_allowed = 1;
     }
     toyota_cruise_engaged_last = cruise_engaged;
   }
 
-  // exit controls on rising edge of gas press if interceptor (0x201)
-  if ((to_push->RIR>>21) == 0x201) {
+  // exit controls on rising edge of interceptor gas press
+  if (addr == 0x201) {
     gas_interceptor_detected = 1;
     int gas_interceptor = ((to_push->RDLR & 0xFF) << 8) | ((to_push->RDLR & 0xFF00) >> 8);
     if ((gas_interceptor > TOYOTA_GAS_INTERCEPTOR_THRESHOLD) &&
@@ -74,7 +79,7 @@ static void toyota_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   }
 
   // exit controls on rising edge of gas press
-  if ((to_push->RIR>>21) == 0x2C1) {
+  if (addr == 0x2C1) {
     int gas = (to_push->RDHR >> 16) & 0xFF;
     if ((gas > 0) && (toyota_gas_prev == 0) && !gas_interceptor_detected && long_controls_allowed) {
       controls_allowed = 0;
@@ -82,52 +87,60 @@ static void toyota_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     toyota_gas_prev = gas;
   }
 
-  int bus = (to_push->RDTR >> 4) & 0xF;
   // msgs are only on bus 2 if panda is connected to frc
   if (bus == 2) {
     toyota_camera_forwarded = 1;
   }
 
   // 0x2E4 is lkas cmd. If it is on bus 0, then giraffe switch 1 is high
-  if ((to_push->RIR>>21) == 0x2E4 && (bus == 0)) {
+  if ((addr == 0x2E4) && (bus == 0)) {
     toyota_giraffe_switch_1 = 1;
   }
 }
 
 static int toyota_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 
+  int tx = 1;
+  int addr = GET_ADDR(to_send);
+  int bus = GET_BUS(to_send);
+
   // Check if msg is sent on BUS 0
-  if (((to_send->RDTR >> 4) & 0xF) == 0) {
+  if (bus == 0) {
 
     // no IPAS in non IPAS mode
-    if (((to_send->RIR>>21) == 0x266) || ((to_send->RIR>>21) == 0x167)) return false;
+    if ((addr == 0x266) || (addr == 0x167)) {
+      tx = 0;
+    }
 
     // GAS PEDAL: safety check
-    if ((to_send->RIR>>21) == 0x200) {
-      if (controls_allowed && long_controls_allowed) {
-        // all messages are fine here
-      } else {
-        if ((to_send->RDLR & 0xFFFF0000) != to_send->RDLR) return 0;
+    if (addr == 0x200) {
+      if (!controls_allowed || !long_controls_allowed) {
+        if ((to_send->RDLR & 0xFFFF0000) != to_send->RDLR) {
+          tx = 0;
+        }
       }
     }
 
     // ACCEL: safety check on byte 1-2
-    if ((to_send->RIR>>21) == 0x343) {
+    if (addr == 0x343) {
       int desired_accel = ((to_send->RDLR & 0xFF) << 8) | ((to_send->RDLR >> 8) & 0xFF);
       desired_accel = to_signed(desired_accel, 16);
-      if (controls_allowed && long_controls_allowed) {
-        int violation = max_limit_check(desired_accel, TOYOTA_MAX_ACCEL, TOYOTA_MIN_ACCEL);
-        if (violation) return 0;
-      } else if (desired_accel != 0) {
-        return 0;
+      if (!controls_allowed || !long_controls_allowed) {
+        if (desired_accel != 0) {
+          tx = 0;
+        }
+      }
+      bool violation = max_limit_check(desired_accel, TOYOTA_MAX_ACCEL, TOYOTA_MIN_ACCEL);
+      if (violation) {
+        tx = 0;
       }
     }
 
     // STEER: safety check on bytes 2-3
-    if ((to_send->RIR>>21) == 0x2E4) {
+    if (addr == 0x2E4) {
       int desired_torque = (to_send->RDLR & 0xFF00) | ((to_send->RDLR >> 16) & 0xFF);
       desired_torque = to_signed(desired_torque, 16);
-      int violation = 0;
+      bool violation = 0;
 
       uint32_t ts = TIM2->CNT;
 
@@ -167,13 +180,13 @@ static int toyota_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
       }
 
       if (violation) {
-        return false;
+        tx = 0;
       }
     }
   }
 
   // 1 allows the message through
-  return true;
+  return tx;
 }
 
 static void toyota_init(int16_t param) {
@@ -185,22 +198,25 @@ static void toyota_init(int16_t param) {
 
 static int toyota_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
 
+  int bus_fwd = -1;
   if (toyota_camera_forwarded && !toyota_giraffe_switch_1) {
-    int addr = to_fwd->RIR>>21;
     if (bus_num == 0) {
-      return 2;
-    } else if (bus_num == 2) {
+      bus_fwd = 2;
+    }
+    if (bus_num == 2) {
+      int addr = GET_ADDR(to_fwd);
       // block stock lkas messages and stock acc messages (if OP is doing ACC)
-      int is_lkas_msg = (addr == 0x2E4 || addr == 0x412);
-      // in TSSP 2.0 the camera does ACC as well, so filter 0x343
+      // in TSS2, 0.191 is LTA which we need to block to avoid controls collision
+      int is_lkas_msg = ((addr == 0x2E4) || (addr == 0x412) || (addr == 0x191));
+      // in TSS2 the camera does ACC as well, so filter 0x343
       int is_acc_msg = (addr == 0x343);
-      if (is_lkas_msg || (is_acc_msg && long_controls_allowed)) {
-        return -1;
+      int block_msg = is_lkas_msg || (is_acc_msg && long_controls_allowed);
+      if (!block_msg) {
+        bus_fwd = 0;
       }
-      return 0;
     }
   }
-  return -1;
+  return bus_fwd;
 }
 
 const safety_hooks toyota_hooks = {

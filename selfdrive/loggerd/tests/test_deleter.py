@@ -44,7 +44,7 @@ class TestDeleter(UploaderTestCase):
 
     with Timeout(5, "Timeout waiting for file to be deleted"):
       while os.path.exists(f_path):
-        time.sleep(0.5)
+        time.sleep(0.01)
     self.join_thread()
 
     self.assertFalse(os.path.exists(f_path), "File not deleted")
@@ -60,7 +60,7 @@ class TestDeleter(UploaderTestCase):
 
     with Timeout(5, "Timeout waiting for file to be deleted"):
       while os.path.exists(f_path_1) and os.path.exists(f_path_2):
-        time.sleep(0.5)
+        time.sleep(0.01)
 
     self.join_thread()
 
@@ -79,7 +79,7 @@ class TestDeleter(UploaderTestCase):
     try:
       with Timeout(2, "Timeout waiting for file to be deleted"):
         while os.path.exists(f_path):
-          time.sleep(0.5)
+          time.sleep(0.01)
     except TimeoutException:
       pass
     finally:
@@ -95,7 +95,7 @@ class TestDeleter(UploaderTestCase):
     try:
       with Timeout(2, "Timeout waiting for file to be deleted"):
         while os.path.exists(f_path):
-          time.sleep(0.5)
+          time.sleep(0.01)
     except TimeoutException:
       pass
     finally:

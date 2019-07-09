@@ -32,30 +32,32 @@ struct sample_t subaru_torque_driver;
 TIM_TypeDef timer;
 TIM_TypeDef *TIM2 = &timer;
 
-#define min(a,b)                                \
+#define MIN(a,b)                                \
   ({ __typeof__ (a) _a = (a);                   \
     __typeof__ (b) _b = (b);                    \
     _a < _b ? _a : _b; })
 
-#define max(a,b)                                \
+#define MAX(a,b)                                \
   ({ __typeof__ (a) _a = (a);                   \
     __typeof__ (b) _b = (b);                    \
     _a > _b ? _a : _b; })
 
+#define UNUSED(x) (void)(x)
 
 #define PANDA
+#define NULL ((void*)0)
 #define static
 #include "safety.h"
 
-void set_controls_allowed(int c){
+void set_controls_allowed(bool c){
   controls_allowed = c;
 }
 
-void set_long_controls_allowed(int c){
+void set_long_controls_allowed(bool c){
   long_controls_allowed = c;
 }
 
-void set_gas_interceptor_detected(int c){
+void set_gas_interceptor_detected(bool c){
   gas_interceptor_detected = c;
 }
 
@@ -63,15 +65,15 @@ void reset_angle_control(void){
   angle_control = 0;
 }
 
-int get_controls_allowed(void){
+bool get_controls_allowed(void){
   return controls_allowed;
 }
 
-int get_long_controls_allowed(void){
+bool get_long_controls_allowed(void){
   return long_controls_allowed;
 }
 
-int get_gas_interceptor_detected(void){
+bool get_gas_interceptor_detected(void){
   return gas_interceptor_detected;
 }
 
@@ -79,8 +81,12 @@ int get_gas_interceptor_prev(void){
   return gas_interceptor_prev;
 }
 
-void set_timer(int t){
+void set_timer(uint32_t t){
   timer.CNT = t;
+}
+
+void set_toyota_camera_forwarded(int t){
+  toyota_camera_forwarded = t;
 }
 
 void set_toyota_torque_meas(int min, int max){
@@ -101,6 +107,18 @@ void set_gm_torque_driver(int min, int max){
 void set_hyundai_torque_driver(int min, int max){
   hyundai_torque_driver.min = min;
   hyundai_torque_driver.max = max;
+}
+
+void set_hyundai_camera_bus(int t){
+  hyundai_camera_bus = t;
+}
+
+void set_hyundai_giraffe_switch_2(int t){
+  hyundai_giraffe_switch_2 = t;
+}
+
+void set_chrysler_camera_detected(int t){
+  chrysler_camera_detected = t;
 }
 
 void set_chrysler_torque_meas(int min, int max){

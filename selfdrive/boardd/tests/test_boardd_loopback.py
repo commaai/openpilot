@@ -3,7 +3,6 @@
 
 import os
 import random
-import zmq
 import time
 
 from selfdrive.boardd.boardd import can_list_to_can_capnp
@@ -16,10 +15,8 @@ def get_test_string():
 BUS = 0
 
 def main():
-  context = zmq.Context()
-
-  rcv = sub_sock(context, service_list['can'].port) # port 8006
-  snd = pub_sock(context, service_list['sendcan'].port) # port 8017
+  rcv = sub_sock(service_list['can'].port) # port 8006
+  snd = pub_sock(service_list['sendcan'].port) # port 8017
   time.sleep(0.3) # wait to bind before send/recv
 
   for i in range(10):

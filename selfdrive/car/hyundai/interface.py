@@ -6,6 +6,7 @@ from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.hyundai.carstate import CarState, get_can_parser, get_camera_parser
 from selfdrive.car.hyundai.values import CAMERA_MSGS, CAR, get_hud_alerts, FEATURES
+from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness
 
 
 class CarInterface(object):
@@ -18,7 +19,6 @@ class CarInterface(object):
 
     self.gas_pressed_prev = False
     self.brake_pressed_prev = False
-    self.can_invalid_count = 0
     self.cruise_enabled_prev = False
     self.low_speed_alert = False
 
@@ -42,35 +42,22 @@ class CarInterface(object):
   @staticmethod
   def get_params(candidate, fingerprint, vin=""):
 
-    # kg of standard extra cargo to count for drive, gas, etc...
-    std_cargo = 136
-
     ret = car.CarParams.new_message()
 
     ret.carName = "hyundai"
     ret.carFingerprint = candidate
     ret.carVin = vin
     ret.radarOffCan = True
-    ret.safetyModel = car.CarParams.SafetyModels.hyundai
+    ret.safetyModel = car.CarParams.SafetyModel.hyundai
     ret.enableCruise = True  # stock acc
-
-    # FIXME: hardcoding honda civic 2016 touring params so they can be used to
-    # scale unknown params for other cars
-    mass_civic = 2923 * CV.LB_TO_KG + std_cargo
-    wheelbase_civic = 2.70
-    centerToFront_civic = wheelbase_civic * 0.4
-    centerToRear_civic = wheelbase_civic - centerToFront_civic
-    rotationalInertia_civic = 2500
-    tireStiffnessFront_civic = 192150
-    tireStiffnessRear_civic = 202500
-    tire_stiffness_factor = 1.
 
     ret.steerActuatorDelay = 0.1  # Default delay
     ret.steerRateCost = 0.5
+    tire_stiffness_factor = 1.
 
     if candidate == CAR.SANTA_FE:
       ret.lateralTuning.pid.kf = 0.00005
-      ret.mass = 3982 * CV.LB_TO_KG + std_cargo
+      ret.mass = 3982. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.766
 
       # Values from optimizer
@@ -82,7 +69,7 @@ class CarInterface(object):
       ret.minSteerSpeed = 0.
     elif candidate == CAR.KIA_SORENTO:
       ret.lateralTuning.pid.kf = 0.00005
-      ret.mass = 1985 + std_cargo
+      ret.mass = 1985. + STD_CARGO_KG
       ret.wheelbase = 2.78
       ret.steerRatio = 14.4 * 1.1   # 10% higher at the center seems reasonable
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
@@ -90,7 +77,7 @@ class CarInterface(object):
       ret.minSteerSpeed = 0.
     elif candidate == CAR.ELANTRA:
       ret.lateralTuning.pid.kf = 0.00006
-      ret.mass = 1275 + std_cargo
+      ret.mass = 1275. + STD_CARGO_KG
       ret.wheelbase = 2.7
       ret.steerRatio = 13.73   #Spec
       tire_stiffness_factor = 0.385
@@ -99,7 +86,7 @@ class CarInterface(object):
       ret.minSteerSpeed = 32 * CV.MPH_TO_MS
     elif candidate == CAR.GENESIS:
       ret.lateralTuning.pid.kf = 0.00005
-      ret.mass = 2060 + std_cargo
+      ret.mass = 2060. + STD_CARGO_KG
       ret.wheelbase = 3.01
       ret.steerRatio = 16.5
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
@@ -107,7 +94,7 @@ class CarInterface(object):
       ret.minSteerSpeed = 35 * CV.MPH_TO_MS
     elif candidate == CAR.KIA_OPTIMA:
       ret.lateralTuning.pid.kf = 0.00005
-      ret.mass = 3558 * CV.LB_TO_KG
+      ret.mass = 3558. * CV.LB_TO_KG
       ret.wheelbase = 2.80
       ret.steerRatio = 13.75
       tire_stiffness_factor = 0.5
@@ -115,7 +102,7 @@ class CarInterface(object):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
     elif candidate == CAR.KIA_STINGER:
       ret.lateralTuning.pid.kf = 0.00005
-      ret.mass = 1825 + std_cargo
+      ret.mass = 1825. + STD_CARGO_KG
       ret.wheelbase = 2.78
       ret.steerRatio = 14.4 * 1.15   # 15% higher at the center seems reasonable
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
@@ -132,21 +119,14 @@ class CarInterface(object):
 
     ret.centerToFront = ret.wheelbase * 0.4
 
-    centerToRear = ret.wheelbase - ret.centerToFront
-
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
-    ret.rotationalInertia = rotationalInertia_civic * \
-                            ret.mass * ret.wheelbase**2 / (mass_civic * wheelbase_civic**2)
+    ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
 
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
-    ret.tireStiffnessFront = (tireStiffnessFront_civic * tire_stiffness_factor) * \
-                             ret.mass / mass_civic * \
-                             (centerToRear / ret.wheelbase) / (centerToRear_civic / wheelbase_civic)
-    ret.tireStiffnessRear = (tireStiffnessRear_civic * tire_stiffness_factor) * \
-                            ret.mass / mass_civic * \
-                            (ret.centerToFront / ret.wheelbase) / (centerToFront_civic / wheelbase_civic)
+    ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
+                                                                         tire_stiffness_factor=tire_stiffness_factor)
 
 
     # no rear steering, at least on the listed cars above
@@ -174,13 +154,15 @@ class CarInterface(object):
   def update(self, c):
     # ******************* do can recv *******************
     canMonoTimes = []
-    can_rcv_error = not self.cp.update(int(sec_since_boot() * 1e9), True)
-    cam_rcv_error = not self.cp_cam.update(int(sec_since_boot() * 1e9), False)
-    can_rcv_error = can_rcv_error or cam_rcv_error
+    can_rcv_valid, _ = self.cp.update(int(sec_since_boot() * 1e9), True)
+    cam_rcv_valid, _ = self.cp_cam.update(int(sec_since_boot() * 1e9), False)
 
     self.CS.update(self.cp, self.cp_cam)
     # create message
     ret = car.CarState.new_message()
+
+    ret.canValid = can_rcv_valid and cam_rcv_valid and self.cp.can_valid  # TODO: check cp_cam validity
+
     # speeds
     ret.vEgo = self.CS.v_ego
     ret.vEgoRaw = self.CS.v_ego_raw
@@ -247,23 +229,13 @@ class CarInterface(object):
     ret.doorOpen = not self.CS.door_all_closed
     ret.seatbeltUnlatched = not self.CS.seatbelt
 
-
     # low speed steer alert hysteresis logic (only for cars with steer cut off above 10 m/s)
     if ret.vEgo < (self.CP.minSteerSpeed + 2.) and self.CP.minSteerSpeed > 10.:
       self.low_speed_alert = True
     if ret.vEgo > (self.CP.minSteerSpeed + 4.):
       self.low_speed_alert = False
 
-    # events
     events = []
-    if not self.CS.can_valid:
-      self.can_invalid_count += 1
-    else:
-      self.can_invalid_count = 0
-
-    if can_rcv_error or self.can_invalid_count >= 5:
-      events.append(create_event('commIssue', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
-
     if not ret.gearShifter == 'drive':
       events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if ret.doorOpen:

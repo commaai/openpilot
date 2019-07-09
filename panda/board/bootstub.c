@@ -13,7 +13,7 @@
 #endif
 
 // default since there's no serial
-int puts(const char *a) { return 0; }
+void puts(const char *a) {}
 void puth(unsigned int i) {}
 
 #include "libc.h"

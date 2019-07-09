@@ -14,8 +14,8 @@ void set_gpio_mode(GPIO_TypeDef *GPIO, int pin, int mode) {
   GPIO->MODER = tmp;
 }
 
-void set_gpio_output(GPIO_TypeDef *GPIO, int pin, int val) {
-  if (val) {
+void set_gpio_output(GPIO_TypeDef *GPIO, int pin, bool enabled) {
+  if (enabled) {
     GPIO->ODR |= (1 << pin);
   } else {
     GPIO->ODR &= ~(1 << pin);
@@ -39,6 +39,6 @@ void set_gpio_pullup(GPIO_TypeDef *GPIO, int pin, int mode) {
 }
 
 int get_gpio_input(GPIO_TypeDef *GPIO, int pin) {
-  return (GPIO->IDR & (1 << pin)) == (1 << pin);
+  return (GPIO->IDR & (1U << pin)) == (1U << pin);
 }
 
