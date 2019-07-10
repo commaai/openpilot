@@ -176,6 +176,13 @@ void *safety_setter_thread(void *s) {
 bool usb_connect() {
   int err;
   unsigned char hw_query[1] = {0};
+  unsigned char is_pigeon[1] = {0};
+  unsigned char fw_ver_buf[64];
+  unsigned char serial_buf[16];
+  const char *fw_ver;
+  const char *serial;
+  int fw_ver_sz = 0;
+  int serial_sz = 0;
 
   dev_handle = libusb_open_device_with_vid_pid(ctx, 0xbbaa, 0xddcc);
   if (dev_handle == NULL) { goto fail; }
@@ -194,7 +201,7 @@ bool usb_connect() {
   err = libusb_control_transfer(dev_handle, 0xc0, 0xd6, 0, 0, fw_ver_buf, 64, TIMEOUT);
   if (err > 0) {
     fw_ver = (const char *)fw_ver_buf;
-    fw_ver_sz = strlen(fw_ver) - 1;
+    fw_ver_sz = err;
     write_db_value(NULL, "PandaFirmware", fw_ver, fw_ver_sz);
     printf("panda fw: %.*s\n", fw_ver_sz, fw_ver);
   }
@@ -205,6 +212,7 @@ bool usb_connect() {
 
   if (err > 0) {
     serial = (const char *)serial_buf;
+    serial_sz = err;
     write_db_value(NULL, "PandaDongleId", serial, serial_sz);
     printf("panda serial: %.*s\n", serial_sz, serial);
   }
