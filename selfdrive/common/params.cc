@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <sys/file.h>
+#include <sys/stat.h>
 
 #include <map>
 #include <string>
@@ -78,8 +79,8 @@ int write_db_value(const char* params_path, const char* key, const char* value,
     goto cleanup;
   }
 
-  // change permissions to 0666
-  result = fchmod(tmp_fd, 0666);
+  // change permissions to 0644
+  result = fchmod(tmp_fd, 0644);
   if (result < 0) {
     goto cleanup;
   }
