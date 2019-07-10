@@ -69,8 +69,8 @@ def get_can_parser(CP):
 
   # add gas interceptor reading if we are using it
   if CP.enableGasInterceptor:
-      signals.append(("INTERCEPTOR_GAS", "GAS_SENSOR", 0))
-      checks.append(("GAS_SENSOR", 50))
+    signals.append(("INTERCEPTOR_GAS", "GAS_SENSOR", 0))
+    checks.append(("GAS_SENSOR", 50))
 
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0, timeout=100)
 
