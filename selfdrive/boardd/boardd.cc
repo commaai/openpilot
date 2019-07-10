@@ -190,6 +190,26 @@ bool usb_connect() {
     libusb_control_transfer(dev_handle, 0xc0, 0xe5, 1, 0, NULL, 0, TIMEOUT);
   }
 
+  // get panda fw
+  err = libusb_control_transfer(dev_handle, 0xc0, 0xd6, 0, 0, fw_ver_buf, 64, TIMEOUT);
+  if (err > 0) {
+    fw_ver = (const char *)fw_ver_buf;
+    fw_ver_sz = strlen(fw_ver) - 1;
+    write_db_value(NULL, "PandaFirmware", fw_ver, fw_ver_sz);
+    printf("panda fw: %.*s\n", fw_ver_sz, fw_ver);
+  }
+  else { goto fail; }
+
+  // get panda serial
+  err = libusb_control_transfer(dev_handle, 0xc0, 0xd0, 0, 0, serial_buf, 16, TIMEOUT);
+
+  if (err > 0) {
+    serial = (const char *)serial_buf;
+    write_db_value(NULL, "PandaDongleId", serial, serial_sz);
+    printf("panda serial: %.*s\n", serial_sz, serial);
+  }
+  else { goto fail; }
+
   // power off ESP
   libusb_control_transfer(dev_handle, 0xc0, 0xd9, 0, 0, NULL, 0, TIMEOUT);
 
