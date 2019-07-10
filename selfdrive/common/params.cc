@@ -78,6 +78,12 @@ int write_db_value(const char* params_path, const char* key, const char* value,
     goto cleanup;
   }
 
+  // change permissions to 0666
+  result = fchmod(tmp_fd, 0666);
+  if (result < 0) {
+    goto cleanup;
+  }
+
   // Move temp into place.
   result = rename(tmp_path, path);
 
