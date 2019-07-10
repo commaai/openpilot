@@ -86,7 +86,7 @@ class CarInterface(object):
       ret.lateralTuning.indi.outerLoopGain = 3.5
       ret.lateralTuning.indi.timeConstant = 0.35
       ret.lateralTuning.indi.actuatorEffectiveness = 4.0
-      ret.lateralTuning.indi.reactMPC = 0.25
+      ret.lateralTuning.indi.reactMPC = 0.15
 
       ret.steerActuatorDelay = 0.5
       ret.steerRateCost = 0.5
