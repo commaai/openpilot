@@ -78,7 +78,7 @@ static void honda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   if (!gas_interceptor_detected) {
     if (addr == 0x17C) {
       int gas = to_push->RDLR & 0xFF;
-      if (gas && !(honda_gas_prev) && long_controls_allowed) {
+      if (gas && !(honda_gas_prev) && long_controls_allowed && !(honda_bosch_hardware)) {
         controls_allowed = 0;
       }
       honda_gas_prev = gas;
@@ -100,7 +100,7 @@ static int honda_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 
   // disallow actuator commands if gas or brake (with vehicle moving) are pressed
   // and the the latching controls_allowed flag is True
-  int pedal_pressed = honda_gas_prev || (gas_interceptor_prev > HONDA_GAS_INTERCEPTOR_THRESHOLD) ||
+  int pedal_pressed = (!honda_bosch_hardware && honda_gas_prev) || (gas_interceptor_prev > HONDA_GAS_INTERCEPTOR_THRESHOLD) ||
                       (honda_brake_prev && honda_ego_speed);
   bool current_controls_allowed = controls_allowed && !(pedal_pressed);
 
@@ -128,7 +128,7 @@ static int honda_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   // GAS: safety check
   if (addr == 0x200) {
     if (!current_controls_allowed || !long_controls_allowed) {
-      if ((to_send->RDLR & 0xFFFF0000) != to_send->RDLR) {
+      if (!honda_bosch_hardware && (to_send->RDLR & 0xFFFF0000) != to_send->RDLR) {
         tx = 0;
       }
     }
@@ -150,7 +150,7 @@ static int honda_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 
 static void honda_init(int16_t param) {
   UNUSED(param);
-  controls_allowed = 0;
+  controls_allowed = 0; 
   honda_bosch_hardware = false;
   honda_alt_brake_msg = false;
 }
@@ -175,7 +175,7 @@ static int honda_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
   if (bus_num == 2) {
     // block stock lkas messages and stock acc messages (if OP is doing ACC)
     int addr = GET_ADDR(to_fwd);
-    int is_lkas_msg = (addr == 0xE4) || (addr == 0x194) || (addr == 0x33D);
+    int is_lkas_msg = (addr == 0xE4) || (addr == 0x194) || (addr == 0x33D) || (addr == 0xE5);
     int is_acc_msg = (addr == 0x1FA) || (addr == 0x30C) || (addr == 0x39F);
     int block_fwd = is_lkas_msg || (is_acc_msg && long_controls_allowed);
     if (!block_fwd) {

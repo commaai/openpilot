@@ -241,10 +241,10 @@ def state_control(frame, rcv_frame, plan, path_plan, CS, CP, state, events, v_cr
                                               v_cruise_kph, v_acc_sol, plan.vTargetFuture, a_acc_sol, CP)
   # Steering PID loop and lateral MPC
   actuators.steer, actuators.steerAngle, lac_log = LaC.update(active, CS.vEgo, CS.steeringAngle, CS.steeringRate,
-                                                              CS.steeringPressed, CP, VM, path_plan)
+                                          CS.steeringPressed, CS.leftBlinker or CS.rightBlinker, CP, VM, path_plan)
 
   # Send a "steering required alert" if saturation count has reached the limit
-  if LaC.sat_flag and CP.steerLimitAlert:
+  if LaC.sat_flag and CP.steerLimitAlert: 
     AM.add(frame, "steerSaturated", enabled)
 
   # Parse permanent warnings to display constantly

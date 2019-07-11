@@ -8,7 +8,7 @@ from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, SPEED_FACTOR, 
 def parse_gear_shifter(gear, vals):
 
   val_to_capnp = {'P': 'park', 'R': 'reverse', 'N': 'neutral',
-                  'D': 'drive', 'S': 'sport', 'L': 'low'}
+                  'D': 'drive', 'D': 'drive', 'D': 'drive'}  # 'S': 'sport', 'L': 'low'}
   try:
     return val_to_capnp[vals[gear]]
   except KeyError:
@@ -21,7 +21,7 @@ def calc_cruise_offset(offset, speed):
   # - speed = 0m/s, out = -0.3
   # - speed = 34m/s, offset = 20, out = -0.25
   # - speed = 34m/s, offset = -2.5, out = -1.8
-  _K0 = -0.3
+  _K0 = -0.3 
   _K1 = -0.01879
   _K2 = 0.01013
   return min(_K0 + _K1 * speed + _K2 * speed * offset, 0.)
@@ -276,9 +276,16 @@ class CarState(object):
     self.cruise_setting = cp.vl["SCM_BUTTONS"]['CRUISE_SETTING']
     self.cruise_buttons = cp.vl["SCM_BUTTONS"]['CRUISE_BUTTONS']
 
-    self.blinker_on = cp.vl["SCM_FEEDBACK"]['LEFT_BLINKER'] or cp.vl["SCM_FEEDBACK"]['RIGHT_BLINKER']
-    self.left_blinker_on = cp.vl["SCM_FEEDBACK"]['LEFT_BLINKER']
-    self.right_blinker_on = cp.vl["SCM_FEEDBACK"]['RIGHT_BLINKER']
+    if cp.vl["SCM_FEEDBACK"]['LEFT_BLINKER'] or cp.vl["SCM_FEEDBACK"]['RIGHT_BLINKER']:
+      self.blinker_on = 150
+      self.left_blinker_on = cp.vl["SCM_FEEDBACK"]['LEFT_BLINKER']
+      self.right_blinker_on = cp.vl["SCM_FEEDBACK"]['RIGHT_BLINKER']
+    elif self.blinker_on == 0:
+      self.left_blinker_on = cp.vl["SCM_FEEDBACK"]['LEFT_BLINKER']
+      self.right_blinker_on = cp.vl["SCM_FEEDBACK"]['RIGHT_BLINKER']
+    else:
+      self.blinker_on -= 1
+
     self.brake_hold = cp.vl["VSA_STATUS"]['BRAKE_HOLD_ACTIVE']
 
     if self.CP.carFingerprint in (CAR.CIVIC, CAR.ODYSSEY, CAR.CRV_5G, CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CRV_HYBRID):

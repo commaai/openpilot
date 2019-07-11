@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  ParamsLearner learner(car_params, ao, x, sR, 0.2);
+  ParamsLearner learner(car_params, ao, x, sR, 1.0);
 
   // Main loop
   int save_counter = 0;
@@ -282,7 +282,7 @@ int main(int argc, char *argv[]) {
   zmq_close(camera_odometry_sock);
   zmq_close(live_parameters_sock_raw);
   return 0;
-}
+} 
 
 
 extern "C" {

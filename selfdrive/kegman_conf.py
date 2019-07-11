@@ -61,8 +61,8 @@ class kegman_conf():
   def read_config(self, CP=None, Reset=False):
     self.element_updated = False
 
-    if not Reset and os.path.isfile('../kegman.json'):
-      with open('../kegman.json', 'r') as f:
+    if not Reset and os.path.isfile('kegman.json'):
+      with open('kegman.json', 'r') as f:
         self.config = json.load(f)
         self.write_config(self.config)
 
@@ -115,6 +115,6 @@ class kegman_conf():
     return self.config
 
   def write_config(self, config):
-    with open('../kegman.json', 'w') as f:
+    with open('kegman.json', 'w') as f:
       json.dump(self.config, f, indent=2, sort_keys=True)
-      os.chmod("../kegman.json", 0o764)
+      os.chmod("kegman.json", 0o764)
