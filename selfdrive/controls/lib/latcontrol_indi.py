@@ -7,7 +7,6 @@ from selfdrive.car import apply_toyota_steer_torque_limits
 from selfdrive.controls.lib.drive_helpers import get_steer_max
 from common.numpy_fast import clip
 from cereal import log
-from common.realtime import sec_since_boot
 from selfdrive.kegman_conf import kegman_conf
 
 class LatControlINDI(object):
@@ -78,7 +77,7 @@ class LatControlINDI(object):
     self.live_tune(CP)
 
     y = np.matrix([[math.radians(angle_steers)], [math.radians(angle_steers_rate)]])
-    self.x = np.dot(self.A_K, self.x) + np.dot(self.K, y) 
+    self.x = np.dot(self.A_K, self.x) + np.dot(self.K, y)
 
     self.damp_angle_steers = math.degrees(self.x[0])
     indi_log = log.ControlsState.LateralINDIState.new_message()
