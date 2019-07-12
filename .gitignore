@@ -32,6 +32,9 @@ selfdrive/proclogd/proclogd
 selfdrive/ui/ui
 selfdrive/test/tests/plant/out
 selfdrive/visiond/visiond
+selfdrive/loggerd/loggerd
+selfdrive/sensord/gpsd
+selfdrive/sensord/sensord
 /src/
 
 one
