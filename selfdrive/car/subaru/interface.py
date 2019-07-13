@@ -68,18 +68,16 @@ class CarInterface(object):
       ret.steerMaxV = [1.]
 
     if candidate in [CAR.OUTBACK]:
-      ret.mass = 1568 + std_cargo
+      ret.mass = 1568 + STD_CARGO_KG
       ret.wheelbase = 2.67
       ret.centerToFront = ret.wheelbase * 0.5
-      ret.steerRatio = 20            # learned, 14 stock
-      tire_stiffness_factor = 1
-      ret.steerActuatorDelay = 0.3
+      ret.steerRatio = 20           # learned, 14 stock
+      tire_stiffness_factor = 1.0
+      ret.steerActuatorDelay = 0.2
       ret.steerRateCost = 0.4
-      ret.lateralTuning.init('indi')
-      ret.lateralTuning.indi.innerLoopGain = 4.0
-      ret.lateralTuning.indi.outerLoopGain = 3.0
-      ret.lateralTuning.indi.timeConstant = 1.0
-      ret.lateralTuning.indi.actuatorEffectiveness = 1.3
+      ret.lateralTuning.pid.kf = 0.00005
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 10., 20.], [0., 10., 20.]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.01, 0.05, 0.18], [0.003, 0.018, 0.025]]
       ret.steerMaxBP = [0.] # m/s
       ret.steerMaxV = [1.]
 
