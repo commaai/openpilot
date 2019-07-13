@@ -100,6 +100,9 @@ class CarInterface(object):
       ret.mass = 3650. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.4], [0.05]]
       ret.lateralTuning.pid.kf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
+      ret.lateralTuning.pid.dampTime = 0.1
+      ret.lateralTuning.pid.reactMPC = -0.05
+      ret.lateralTuning.pid.rateFFGain = 0.4
 
     elif candidate == CAR.COROLLA:
       stop_and_go = False
@@ -110,6 +113,9 @@ class CarInterface(object):
       ret.mass = 2860. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.05]]
       ret.lateralTuning.pid.kf = 0.00003   # full torque for 20 deg at 80mph means 0.00007818594
+      ret.lateralTuning.pid.dampTime = 0.02
+      ret.lateralTuning.pid.reactMPC = 0.0
+      ret.lateralTuning.pid.rateFFGain = 0.4
 
     elif candidate == CAR.LEXUS_RXH:
       stop_and_go = True
@@ -140,6 +146,9 @@ class CarInterface(object):
       ret.mass = 3400. * CV.LB_TO_KG + STD_CARGO_KG #mean between normal and hybrid
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
       ret.lateralTuning.pid.kf = 0.00006
+      ret.lateralTuning.pid.dampTime = 0.02
+      ret.lateralTuning.pid.reactMPC = 0.0
+      ret.lateralTuning.pid.rateFFGain = 0.4
 
     elif candidate in [CAR.HIGHLANDER, CAR.HIGHLANDERH]:
       stop_and_go = True

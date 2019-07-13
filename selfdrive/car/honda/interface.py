@@ -96,7 +96,7 @@ class CarInterface(object):
     else:
       self.compute_gb = compute_gb_honda
 
-    if self.CS.CP.carFingerprint in HONDA_BOSCH:
+    if self.CS.CP.carFingerprint in (CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH):
       self.bosch_honda = True
     else:
       self.bosch_honda = False

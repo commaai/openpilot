@@ -29,6 +29,7 @@ def dashboard_thread(rate=100):
   canData = None #messaging.sub_sock(context, 8602, addr=ipaddress, conflate=False, poller=poller)
   #pathPlan = messaging.sub_sock(context, service_list['pathPlan'].port, addr=ipaddress, conflate=False, poller=poller)
   pathPlan = None #messaging.sub_sock(context, service_list['plan'].port, addr=ipaddress, conflate=False, poller=poller)
+  liveParameters = messaging.sub_sock(service_list['liveParameters'].port)
 
   #gpsNMEA = messaging.sub_sock(context, service_list['gpsNMEA'].port, addr=ipaddress, conflate=True)
 
@@ -50,10 +51,11 @@ def dashboard_thread(rate=100):
   tuneSub.connect(server_address + ":8596")
   poller.register(tuneSub, zmq.POLLIN)
   poller.register(controlsState, zmq.POLLIN)
+  if liveParameters != None: poller.register(liveParameters, zmq.POLLIN)
 
   try:
-    if os.path.isfile('/data/openpilot/selfdrive/kegman.json'):
-      with open('/data/openpilot/selfdrive/kegman.json', 'r') as f:
+    if os.path.isfile('/data/kegman.json'):
+      with open('/data/kegman.json', 'r') as f:
         config = json.load(f)
         user_id = config['userID']
         tunePush.send_json(config)
@@ -78,6 +80,9 @@ def dashboard_thread(rate=100):
   pathDataFormatString = "%d|"
   polyDataString = "%.10f,%0.8f,%0.6f,%0.4f,"
   pathDataString = ""
+  liveParamsFormatString = "liveParameters,user=" + user_id + " yaw_rate=%s,gyro_bias=%s,angle_offset=%s,angle_offset_avg=%s,tire_stiffness=%s,steer_ratio=%s %s\n"
+  liveParamsString = "%0.2f,%0.2f,%0.2f,%0.2f,%0.2f,%0.2f,%d|"
+  liveParamsDataString = ""
   influxDataString = ""
   kegmanDataString = ""
   liveStreamDataString = ""
@@ -102,13 +107,22 @@ def dashboard_thread(rate=100):
       if socket is tuneSub:
         config = json.loads(tuneSub.recv_multipart()[1])
         #print(config)
-        with open('/data/openpilot/selfdrive/kegman.json', 'w') as f:
+        with open('/data/kegman.json', 'w') as f:
           json.dump(config, f, indent=2, sort_keys=True)
-          os.chmod("/data/openpilot/selfdrive/kegman.json", 0o764)
+          os.chmod("/data/kegman.json", 0o764)
 
       if socket is liveStreamData:
         livestream = liveStreamData.recv_string() + str(receiveTime) + "|"
         if vEgo > 0 and active: liveStreamDataString += livestream
+
+      if socket is liveParameters:
+        _liveParams = messaging.drain_sock(socket)
+        for _lp in _liveParams:
+          #print("                Live params!")
+          lp = _lp.liveParameters
+          if vEgo > 0 and active:
+            liveParamsDataString += (liveParamsString % (lp.yawRate, lp.gyroBias, lp.angleOffset, lp.angleOffsetAverage, lp.stiffnessFactor, lp.steerRatio, receiveTime))
+            #print(liveParamsDataString)
 
       if socket is canData:
         canString = canData.recv_string()
@@ -226,8 +240,8 @@ def dashboard_thread(rate=100):
     if frame_count >= 100:
       if kegman_valid:
         try:
-          if os.path.isfile('/data/openpilot/selfdrive/kegman.json'):
-            with open('/data/openpilot/selfdrive/kegman.json', 'r') as f:
+          if os.path.isfile('/data/kegman.json'):
+            with open('/data/kegman.json', 'r') as f:
               config = json.load(f)
               if lateral_type == "pid":
                 steerKpV = config['Kp']
@@ -260,6 +274,7 @@ def dashboard_thread(rate=100):
       insertString += influxFormatString + "~" + influxDataString + "!"
       insertString += pathFormatString + "~" + pathDataString + "!"
       insertString += mapFormatString + "~" + mapDataString + "!"
+      insertString += liveParamsFormatString + "~" + liveParamsDataString + "!"
       #insertString += canInsertString
       #print(canInsertString)
       steerPush.send_string(insertString)
@@ -268,6 +283,7 @@ def dashboard_thread(rate=100):
       influxDataString = ""
       kegmanDataString = ""
       mapDataString = ""
+      liveParamsDataString = ""
       pathDataString = ""
       insertString = ""
       canInsertString = ""
