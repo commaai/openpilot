@@ -191,7 +191,7 @@ class CarInterface(object):
       ret.wheelbase = 3.03
       ret.steerRatio = 16.0
       tire_stiffness_factor = 0.444
-      ret.mass = 4590. * CV.LB_TO_KG + std_cargo
+      ret.mass = 4590. * CV.LB_TO_KG + STD_CARGO_KG
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.18], [0.0075]] #from the other Sienna port by hyperactive32
       ret.lateralTuning.pid.kf = 0.00003
 
