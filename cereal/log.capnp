@@ -486,6 +486,7 @@ struct ControlsState @0x97ff69c53601abf1 {
     steerAngle @1 :Float32;
     steerRate @2 :Float32;
     angleError @3 :Float32;
+    p2 @11 :Float32;
     p @4 :Float32;
     i @5 :Float32;
     f @6 :Float32;

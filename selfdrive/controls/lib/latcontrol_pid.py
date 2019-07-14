@@ -6,6 +6,7 @@ from cereal import log
 from common.realtime import sec_since_boot
 from common.params import Params
 import json
+import numpy as np
 
 class LatControlPID(object):
   def __init__(self, CP):
@@ -15,6 +16,15 @@ class LatControlPID(object):
                             (CP.lateralTuning.pid.kiBP, CP.lateralTuning.pid.kiV),
                             k_f=CP.lateralTuning.pid.kf, pos_limit=1.0)
     self.angle_steers_des = 0.
+    self.total_poly_projection = max(0.0, CP.lateralTuning.pid.polyReactTime + CP.lateralTuning.pid.polyDampTime)
+    self.poly_smoothing = max(1.0, CP.lateralTuning.pid.polyDampTime * 100.)
+    self.poly_scale = CP.lateralTuning.pid.polyScale
+    self.poly_factor = CP.lateralTuning.pid.polyFactor
+    self.poly_scale = CP.lateralTuning.pid.polyScale
+    self.path_error = 0.0
+    self.cur_poly_scale = 0.0
+    self.d_poly = [0., 0., 0., 0.]
+    self.c_poly = [0., 0., 0., 0.]
     self.damp_angle_steers = 0.
     self.damp_time = 0.1
     self.react_mpc = 0.15
@@ -54,7 +64,24 @@ class LatControlPID(object):
       self.pid.k_f = (float(kegman.conf['Kf']))
       self.damp_time = (float(kegman.conf['dampTime']))
       self.react_mpc = (float(kegman.conf['reactMPC']))
+      self.total_poly_projection = max(0.0, float(kegman.conf['polyReact']) + float(kegman.conf['polyDamp']))
+      self.poly_smoothing = max(1.0, float(kegman.conf['polyDamp']) * 100.)
+      self.poly_factor = float(kegman.conf['polyFactor'])
 
+  def get_projected_path_error(self, v_ego, path_plan):
+    self.d_poly[3] += path_plan.cProb * ((path_plan.dPoly[3] - self.d_poly[3])) / self.poly_smoothing
+    self.d_poly[2] += path_plan.cProb * ((path_plan.dPoly[2] - self.d_poly[2])) / (self.poly_smoothing * 2)
+    self.d_poly[1] += path_plan.cProb * ((path_plan.dPoly[1] - self.d_poly[1])) / (self.poly_smoothing * 4)
+    self.d_poly[0] += path_plan.cProb * ((path_plan.dPoly[0] - self.d_poly[0])) / (self.poly_smoothing * 6)
+    self.c_poly[3] += path_plan.cProb * ((path_plan.cPoly[3] - self.c_poly[3])) / self.poly_smoothing
+    self.c_poly[2] += path_plan.cProb * ((path_plan.cPoly[2] - self.c_poly[2])) / (self.poly_smoothing * 2)
+    self.c_poly[1] += path_plan.cProb * ((path_plan.cPoly[1] - self.c_poly[1])) / (self.poly_smoothing * 4)
+    self.c_poly[0] += path_plan.cProb * ((path_plan.cPoly[0] - self.c_poly[0])) / (self.poly_smoothing * 6)
+    x = v_ego * self.total_poly_projection
+    self.d_pts = np.polyval(self.d_poly, np.arange(0, x))
+    self.c_pts = np.polyval(self.c_poly, np.arange(0, x))
+    #print(np.sum(self.c_pts) - np.sum(self.d_pts))
+    return np.sum(self.c_pts) - np.sum(self.d_pts)
 
   def reset(self):
     self.pid.reset()
@@ -135,6 +162,16 @@ class LatControlPID(object):
       rate_feedforward = (1.0 - self.angle_ff_ratio) * self.rate_ff_gain * self.damp_rate_steers_des
       steer_feedforward = v_ego**2 * (rate_feedforward + angle_feedforward)
 
+      if len(self.poly_scale) > 0:
+        if abs(self.damp_angle_steers_des) > abs(self.damp_angle_steers):
+          self.cur_poly_scale += 0.05 * (interp(abs(self.damp_rate_steers_des), self.poly_scale[0], self.poly_scale[1]) - self.cur_poly_scale)
+        else:
+          self.cur_poly_scale += 0.05 * (interp(abs(self.damp_rate_steers_des), self.poly_scale[0], self.poly_scale[2]) - self.cur_poly_scale)
+      else:
+        self.cur_poly_scale = 1.0
+
+      self.path_error = v_ego * float(self.get_projected_path_error(v_ego, path_plan)) * self.poly_factor * self.cur_poly_scale
+
       if self.gernbySteer and not steer_override and v_ego > 10.0:
         if abs(angle_steers) > (self.angle_ff_bp[0][1] / 2.0):
           self.adjust_angle_gain()
@@ -145,7 +182,7 @@ class LatControlPID(object):
 
       deadzone = 0.0
       output_steer = self.pid.update(self.damp_angle_steers_des, self.damp_angle_steers, check_saturation=(v_ego > 10), override=driver_opposing_i,
-                                     feedforward=steer_feedforward, speed=v_ego, deadzone=deadzone)
+                                     add_error=float(self.path_error), feedforward=steer_feedforward, speed=v_ego, deadzone=deadzone)
 
       driver_opposing_op = steer_override and (angle_steers - self.prev_angle_steers) * output_steer < 0
       self.update_lane_state(angle_steers, driver_opposing_op, blinkers_on, path_plan)
@@ -155,6 +192,7 @@ class LatControlPID(object):
       pid_log.p = float(self.pid.p)
       pid_log.i = float(self.pid.i)
       pid_log.f = float(self.pid.f)
+      pid_log.p2 = float(self.pid.p2)
       pid_log.output = float(output_steer)
       pid_log.saturated = bool(self.pid.saturated)
       pid_log.angleFFRatio = self.angle_ff_ratio
