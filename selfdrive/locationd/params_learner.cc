@@ -36,7 +36,7 @@ ParamsLearner::ParamsLearner(cereal::CarParams::Reader car_params,
   min_sr_th = MIN_SR_TH * car_params.getSteerRatio();
   max_sr_th = MAX_SR_TH * car_params.getSteerRatio();
   alpha1 = 0.01 * learning_rate;
-  alpha2 = 0.0001 * learning_rate;
+  alpha2 = 0.0005 * learning_rate;
   alpha3 = 0.1 * learning_rate;
   alpha4 = 1.0 * learning_rate;
 }
