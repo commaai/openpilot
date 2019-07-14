@@ -35,6 +35,7 @@ selfdrive/test/tests/plant/out
 selfdrive/visiond/visiond
 selfdrive/sensord/gpsd
 selfdrive/sensord/sensord
+selfdrive/loggerd/loggerd
 /src/
 
 one
