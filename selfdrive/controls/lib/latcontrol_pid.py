@@ -170,7 +170,10 @@ class LatControlPID(object):
       else:
         self.cur_poly_scale = 1.0
 
-      self.path_error = v_ego * float(self.get_projected_path_error(v_ego, path_plan)) * self.poly_factor * self.cur_poly_scale
+      if not steer_override:
+        self.path_error = v_ego * float(self.get_projected_path_error(v_ego, path_plan)) * self.poly_factor * self.cur_poly_scale
+      else:
+        self.path_error = 0.0
 
       if self.gernbySteer and not steer_override and v_ego > 10.0:
         if abs(angle_steers) > (self.angle_ff_bp[0][1] / 2.0):
