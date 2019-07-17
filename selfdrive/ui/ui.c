@@ -35,6 +35,7 @@
 
 #include "cereal/gen/c/log.capnp.h"
 #include "slplay.h"
+#include "devicestate.c"
 
 #define STATUS_STOPPED 0
 #define STATUS_DISENGAGED 1
@@ -69,7 +70,7 @@ const int header_h = 420;
 const int footer_h = 280;
 const int footer_y = vwp_h-bdr_s-footer_h;
 
-const int UI_FREQ = 30;   // Hz
+const int UI_FREQ = 40;   // Hz
 
 const int MODEL_PATH_MAX_VERTICES_CNT = 98;
 const int MODEL_LANE_PATH_CNT = 3;
@@ -287,7 +288,12 @@ typedef struct UIState {
   model_path_vertices_data model_path_vertices[MODEL_LANE_PATH_CNT * 2];
 
   track_vertices_data track_vertices[2];
+
+  int touchTimeout;
+  bool ignoreLayout;
 } UIState;
+
+#include "dashcam.h"
 
 static int last_brightness = -1;
 static void set_brightness(UIState *s, int brightness) {
@@ -304,7 +310,7 @@ static void set_brightness(UIState *s, int brightness) {
 static void set_awake(UIState *s, bool awake) {
   if (awake) {
     // 30 second timeout at 30 fps
-    s->awake_timeout = 30*30;
+    s->awake_timeout = 30*UI_FREQ;
   }
   if (s->awake != awake) {
     s->awake = awake;
@@ -473,6 +479,7 @@ void ui_sound_init(char **error) {
 
 static void ui_init(UIState *s) {
   memset(s, 0, sizeof(UIState));
+  s->ignoreLayout = true;
 
   pthread_mutex_init(&s->lock, NULL);
   pthread_cond_init(&s->bg_cond, NULL);
@@ -904,19 +911,19 @@ const UIScene *scene = &s->scene;
     // Draw colored MPC track
     if (scene->steerOverride) {
       track_bg = nvgLinearGradient(s->vg, vwp_w, vwp_h, vwp_w, vwp_h*.4,
-        nvgRGBA(0, 191, 255, 255), nvgRGBA(0, 95, 128, 150));
+        nvgRGBA(0, 191, 255, 255), nvgRGBA(0, 95, 128, 50));
     } else {
       int torque_scale = (int)fabs(510*(float)s->scene.output_scale);
       int red_lvl = min(255, torque_scale);
       int green_lvl = min(255, 510-torque_scale);
       track_bg = nvgLinearGradient(s->vg, vwp_w, vwp_h, vwp_w, vwp_h*.4,
         nvgRGBA(          red_lvl,            green_lvl,  0, 255),
-        nvgRGBA((int)(0.5*red_lvl), (int)(0.5*green_lvl), 0, 150));
+        nvgRGBA((int)(0.5*red_lvl), (int)(0.5*green_lvl), 0, 50));
     }
   } else {
     // Draw white vision track
     track_bg = nvgLinearGradient(s->vg, vwp_w, vwp_h, vwp_w, vwp_h*.4,
-      nvgRGBA(255, 255, 255, 255), nvgRGBA(255, 255, 255, 0));
+      nvgRGBA(255, 255, 255, 255), nvgRGBA(255, 255, 255, 50));
   }
 
   nvgFillPaint(s->vg, track_bg);
@@ -2223,6 +2230,7 @@ int main(int argc, char* argv[]) {
   UIState uistate;
   UIState *s = &uistate;
   ui_init(s);
+  ds_init();
 
   pthread_t connect_thread_handle;
   err = pthread_create(&connect_thread_handle, NULL,
@@ -2299,21 +2307,49 @@ int main(int argc, char* argv[]) {
     } else {
       // Car started, fetch a new rgb image from ipc and peek for zmq events.
       ui_update(s);
-      if(!s->vision_connected) {
-        // Visiond process is just stopped, force a redraw to make screen blank again.
-        ui_draw(s);
-        glFinish();
-        should_swap = true;
+      ds_update(s->awake && (!s->vision_connected || s->plus_state != 0), s->awake);
+    }
+    if (s->awake) {
+      ds_update(s->awake, s->awake);
+    }
+
+   // wake up on button press while not driving
+    if(ds.statePwr && (!s->vision_connected || s->plus_state != 0))
+      set_awake(s, !s->awake);
+    if(ds.stateVol && (!s->vision_connected || s->plus_state != 0) && !s->awake)
+      set_awake(s, true);
+
+    // awake on any touch
+    int touch_x = -1, touch_y = -1;
+    int touched = touch_poll(&touch, &touch_x, &touch_y, s->awake ? 0 : 100);
+    if (touched == 1) {
+      // touch event will still happen :(
+      set_awake(s, true);
+
+      if(touch_x>=vwp_w-100 && touch_y>=vwp_h-100 && s->touchTimeout==0) {
+        s->touchTimeout = 100;
+      } else if(touch_x>=vwp_w-100 && touch_y<=100 && s->touchTimeout==0) {
+        s->touchTimeout = 100;
       }
+    }
+    if(s->touchTimeout>0)
+      s->touchTimeout--;
+
+    if(!s->vision_connected) {
+      // Visiond process is just stopped, force a redraw to make screen blank again.
+      ui_draw(s);
+      glFinish();
+      should_swap = true;
     }
     // manage wakefulness
     if (s->awake_timeout > 0) {
       s->awake_timeout--;
-    } else {
+    } else if(!ds.logOn) {
       set_awake(s, false);
     }
     // Don't waste resources on drawing in case screen is off or car is not started.
     if (s->awake && s->vision_connected) {
+      dashcam(s, touch_x, touch_y);
       ui_draw(s);
       glFinish();
       should_swap = true;
