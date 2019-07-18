@@ -3,6 +3,7 @@ import zmq
 import time
 import os
 import json
+import sys
 import selfdrive.messaging as messaging
 from selfdrive.services import service_list
 from common.params import Params
@@ -18,7 +19,6 @@ def dashboard_thread(rate=100):
 
   context = zmq.Context()
   poller = zmq.Poller()
-  ipaddress = "127.0.0.1"
   vEgo = 0.0
   controlsState = messaging.sub_sock(service_list['controlsState'].port)
   #controlsState = messaging.sub_sock(context, service_list['controlsState'].port, addr=ipaddress, conflate=False, poller=poller)
@@ -30,17 +30,25 @@ def dashboard_thread(rate=100):
   #pathPlan = messaging.sub_sock(context, service_list['pathPlan'].port, addr=ipaddress, conflate=False, poller=poller)
   pathPlan = None #messaging.sub_sock(context, service_list['plan'].port, addr=ipaddress, conflate=False, poller=poller)
   liveParameters = messaging.sub_sock(service_list['liveParameters'].port)
-
+  gpsLocation = messaging.sub_sock(service_list['gpsLocation'].port)
   #gpsNMEA = messaging.sub_sock(context, service_list['gpsNMEA'].port, addr=ipaddress, conflate=True)
 
   #_controlsState = None
 
   frame_count = 0
 
-  #server_address = "tcp://kevo.live"
-  server_address = "tcp://gernstation.synology.me"
-  #server_address = "tcp://192.168.137.1"
-  #server_address = "tcp://192.168.1.3"
+  if len(sys.argv) < 2 or sys.argv[1] == 0:
+    server_address = "tcp://gernstation.synology.me"
+  elif int(sys.argv[1]) == 1:
+    server_address = "tcp://192.168.137.1"
+  elif int(sys.argv[1]) == 2:
+    server_address = "tcp://192.168.1.3"
+  elif int(sys.argv[1]) == 3:
+    server_address = "tcp://192.168.43.221"
+  elif int(sys.argv[1]) == 4:
+    server_address = "tcp://kevo.live"
+
+  print("using %s" % (server_address))
 
   context = zmq.Context()
   steerPush = context.socket(zmq.PUSH)
@@ -74,6 +82,7 @@ def dashboard_thread(rate=100):
   tuneSub.setsockopt(zmq.SUBSCRIBE, str(user_id))
   #influxFormatString = user_id + ",sources=capnp angle_accel=%s,damp_angle_rate=%s,angle_rate=%s,damp_angle=%s,apply_steer=%s,noise_feedback=%s,ff_standard=%s,ff_rate=%s,ff_angle=%s,angle_steers_des=%s,angle_steers=%s,dampened_angle_steers_des=%s,steer_override=%s,v_ego=%s,p2=%s,p=%s,i=%s,f=%s %s\n"
   mapFormatString = "location,user=" + user_id + " latitude=%s,longitude=%s,altitude=%s,speed=%s,bearing=%s,accuracy=%s,speedLimitValid=%s,speedLimit=%s,curvatureValid=%s,curvature=%s,wayId=%s,distToTurn=%s,mapValid=%s,speedAdvisoryValid=%s,speedAdvisory=%s,speedAdvisoryValid=%s,speedAdvisory=%s,speedLimitAheadValid=%s,speedLimitAhead=%s,speedLimitAheadDistance=%s %s\n"
+  gpsFormatString = "location,user=" + user_id + " latitude=%s,longitude=%s,altitude=%s,speed=%s,bearing=%s %s\n"
   canFormatString="CANData,user=" + user_id + ",src=%s,pid=%s d1=%si,d2=%si "
   liveStreamFormatString = "curvature,user=" + user_id + " l_curv=%s,p_curv=%s,r_curv=%s,map_curv=%s,map_rcurv=%s,map_rcurvx=%s,v_curv=%s,l_diverge=%s,r_diverge=%s %s\n"
   pathFormatString = "pathPlan,user=" + user_id + " d0=%s,d1=%s,d2=%s,d3=%s %s\n"
@@ -86,6 +95,7 @@ def dashboard_thread(rate=100):
   influxDataString = ""
   kegmanDataString = ""
   liveStreamDataString = ""
+  gpsDataString = ""
   mapDataString = ""
   insertString = ""
   canInsertString = ""
@@ -105,11 +115,13 @@ def dashboard_thread(rate=100):
           #print(_osmData)
 
       if socket is tuneSub:
-        config = json.loads(tuneSub.recv_multipart()[1])
-        #print(config)
-        with open('/data/kegman.json', 'w') as f:
-          json.dump(config, f, indent=2, sort_keys=True)
-          os.chmod("/data/kegman.json", 0o764)
+        config = json.loads(tuneSub.recv_multipart()[1]) 
+        print(config)
+        if len(json.dumps(config)) > 40:
+          print(config)
+          with open('/data/kegman.json', 'w') as f:
+            json.dump(config, f, indent=2, sort_keys=True)
+            os.chmod("/data/kegman.json", 0o764)
 
       if socket is liveStreamData:
         livestream = liveStreamData.recv_string() + str(receiveTime) + "|"
@@ -123,6 +135,19 @@ def dashboard_thread(rate=100):
           if vEgo > 0 and active:
             liveParamsDataString += (liveParamsString % (lp.yawRate, lp.gyroBias, lp.angleOffset, lp.angleOffsetAverage, lp.stiffnessFactor, lp.steerRatio, receiveTime))
             #print(liveParamsDataString)
+
+      if socket is gpsLocation:
+        _gps = messaging.drain_sock(socket)
+        for _g in _gps:
+          receiveTime = int((monoTimeOffset + lmap.logMonoTime) * .0000002) * 5
+          if (abs(receiveTime - int(time.time() * 1000)) > 10000):
+            monoTimeOffset = (time.time() * 1000000000) - lmap.logMonoTime
+            receiveTime = int((monoTimeOffset + lmap.logMonoTime) * 0.0000002) * 5
+          lg = _g.gpsLocation
+          print(g)
+          gpsDataString += ("%f,%f,%f,%f,%f,%f,%d|" %
+                (lg.latitude ,lg.longitude ,lg.altitude ,lg.speed ,lg.bearing, receiveTime))
+          frame_count += 1
 
       if socket is canData:
         canString = canData.recv_string()

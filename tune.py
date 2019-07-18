@@ -43,7 +43,7 @@ button_delay = 0.2
 kegman = kegman_conf()
 #kegman.conf['tuneGernby'] = "1"
 #kegman.write_config(kegman.conf)
-param = ["tuneGernby", "liveParams", "Kp", "Ki", "reactMPC", "dampTime", "polyFactor", "polyReact", "polyDamp"]
+param = ["Kp", "Ki", "reactMPC", "dampTime", "polyFactor", "polyReact", "polyDamp"]
 
 j = 0
 while True:
@@ -116,9 +116,6 @@ while True:
     break
 
 
-  if float(kegman.conf['tuneGernby']) != 1 and float(kegman.conf['tuneGernby']) != 0:
-    kegman.conf['tuneGernby'] = "1"
-
   if float(kegman.conf['Ki']) < 0 and float(kegman.conf['Ki']) != -1:
     kegman.conf['Ki'] = "0"
 
@@ -130,9 +127,6 @@ while True:
 
   if float(kegman.conf['Kp']) > 3:
     kegman.conf['Kp'] = "3"
-
-  if kegman.conf['liveParams'] != "1" and kegman.conf['liveParams'] != "0":
-    kegman.conf['liveParams'] = "1"
 
 
   if write_json:

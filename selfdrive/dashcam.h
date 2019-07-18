@@ -3,6 +3,7 @@
 #define CAPTURE_STATE_NONE 0
 #define CAPTURE_STATE_CAPTURING 1
 #define CAPTURE_STATE_NOT_CAPTURING 2
+#define CAPTURE_STATE_PAUSED 3
 #define RECORD_INTERVAL 180 // Time in seconds to rotate recordings; Max for screenrecord is 3 minutes
 #define RECORD_FILES 40 // Number of files to create before looping over
 
@@ -25,19 +26,6 @@ bool lock_current_video = false; // If true save the current video before rotati
 bool locked_files[RECORD_FILES]; // Track which files are locked
 int lock_image; // Stores reference to the PNG
 int files_created = 0;
-
-void stop_capture() {
-  if (captureState == CAPTURE_STATE_CAPTURING) {
-    //printf("Stop capturing screen\n");
-    system("killall -SIGINT screenrecord");
-    captureState = CAPTURE_STATE_NOT_CAPTURING;
-    captureNum++;
-
-    if (captureNum > RECORD_FILES-1) {
-      captureNum = 0;
-    }
-  }
-}
 
 int get_time() {
   // Get current time (in seconds)
@@ -88,6 +76,26 @@ void save_file(char *videos_dir, char *filename) {
   snprintf(cmd,sizeof(cmd), "mv %s/%s %s/saved_%s", videos_dir, filename, videos_dir, filename);
   printf("save: %s\n",cmd);
   system(cmd);
+}
+
+void stop_capture() {
+  char videos_dir[50] = "/sdcard/videos";
+
+  if (captureState == CAPTURE_STATE_CAPTURING) {
+    system("killall -SIGINT screenrecord");
+    captureState = CAPTURE_STATE_NOT_CAPTURING;
+    elapsed_time = get_time() - start_time;
+    if (elapsed_time < 3) {
+      remove_file(videos_dir, filenames[captureNum]);
+    } else {
+      //printf("Stop capturing screen\n");
+      captureNum++;
+
+      if (captureNum > RECORD_FILES-1) {
+        captureNum = 0;
+      }
+    }
+  }
 }
 
 void start_capture() {
@@ -217,18 +225,18 @@ void draw_lock_button(UIState *s) {
   }
 
   nvgBeginPath(s->vg);
-    NVGpaint imgPaint = nvgImagePattern(s->vg, btn_x-125, btn_y-45, 150, 150, 0, lock_image, alpha);
-    nvgRoundedRect(s->vg, btn_x-125, btn_y-45, 150, 150, 100);
-    nvgFillPaint(s->vg, imgPaint);
-    nvgFill(s->vg);
+  NVGpaint imgPaint = nvgImagePattern(s->vg, btn_x-125, btn_y-45, 150, 150, 0, lock_image, alpha);
+  nvgRoundedRect(s->vg, btn_x-125, btn_y-45, 150, 150, 100);
+  nvgFillPaint(s->vg, imgPaint);
+  nvgFill(s->vg);
 
 
-    lock_button = (dashcam_element){
-      .pos_x = 1500,
-      .pos_y = 920,
-      .width = 150,
-      .height = 150
-    };
+  lock_button = (dashcam_element){
+    .pos_x = 1500,
+    .pos_y = 920,
+    .width = 150,
+    .height = 150
+  };
 }
 
 static void screen_draw_button(UIState *s, int touch_x, int touch_y) {
@@ -306,5 +314,11 @@ void dashcam( UIState *s, int touch_x, int touch_y ) {
   if (!s->vision_connected) {
     // Assume car is not in drive so stop recording
     stop_capture();
+  }
+  if (s->scene.v_ego > 3.1 && captureState == CAPTURE_STATE_PAUSED) {
+    start_capture();
+  } else if (s->scene.v_ego < 2.9 && captureState == CAPTURE_STATE_CAPTURING) {
+    stop_capture();
+    captureState = CAPTURE_STATE_PAUSED;
   }
 }
