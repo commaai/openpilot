@@ -34,6 +34,7 @@ class LatControlPID(object):
     self.angle_ff_gain = 1.0
     self.rate_ff_gain = CP.lateralTuning.pid.rateFFGain
     self.angle_ff_bp = [[0.5, 5.0],[0.0, 1.0]]
+    self.steer_p_scale = CP.lateralTuning.pid.steerPscale
     self.calculate_rate = True
     self.prev_angle_steers = 0.0
     self.rough_steers_rate = 0.0
@@ -150,8 +151,8 @@ class LatControlPID(object):
       self.pid.reset()
     else:
       self.angle_steers_des = path_plan.angleSteers
-      self.damp_angle_steers_des += (interp(sec_since_boot() + 0.25 + self.react_mpc, path_plan.mpcTimes, path_plan.mpcAngles) - self.damp_angle_steers_des) / 25.0
-      self.damp_rate_steers_des += (interp(sec_since_boot() + 0.25 + self.react_mpc, path_plan.mpcTimes, path_plan.mpcRates) - self.damp_rate_steers_des) / 25.0
+      self.damp_angle_steers_des += (interp(sec_since_boot() + 0.17 + self.react_mpc, path_plan.mpcTimes, path_plan.mpcAngles) - self.damp_angle_steers_des) / 17.0
+      self.damp_rate_steers_des += (interp(sec_since_boot() + 0.17 + self.react_mpc, path_plan.mpcTimes, path_plan.mpcRates) - self.damp_rate_steers_des) / 17.0
       self.damp_angle_steers += (angle_steers + self.damp_time * angle_steers_rate - self.damp_angle_steers) / max(1.0, self.damp_time * 100.)
       steers_max = get_steer_max(CP, v_ego)
       self.pid.pos_limit = steers_max
@@ -170,6 +171,14 @@ class LatControlPID(object):
       else:
         self.cur_poly_scale = 1.0
 
+      if len(self.steer_p_scale) > 0:
+        if abs(self.damp_angle_steers_des) > abs(self.damp_angle_steers_des):
+          p_scale = interp(abs(angle_feedforward), self.steer_p_scale[0], self.steer_p_scale[1])
+        else:
+          p_scale = interp(abs(angle_feedforward), self.steer_p_scale[0], self.steer_p_scale[2])
+      else:
+        p_scale = 1.0
+
       if not steer_override:
         self.path_error = v_ego * float(self.get_projected_path_error(v_ego, path_plan)) * self.poly_factor * self.cur_poly_scale
       else:
@@ -185,7 +194,7 @@ class LatControlPID(object):
 
       deadzone = 0.0
       output_steer = self.pid.update(self.damp_angle_steers_des, self.damp_angle_steers, check_saturation=(v_ego > 10), override=driver_opposing_i,
-                                     add_error=float(self.path_error), feedforward=steer_feedforward, speed=v_ego, deadzone=deadzone)
+                                     add_error=float(self.path_error), feedforward=steer_feedforward, speed=v_ego, deadzone=deadzone, p_scale=p_scale)
 
       driver_opposing_op = steer_override and (angle_steers - self.prev_angle_steers) * output_steer < 0
       self.update_lane_state(angle_steers, driver_opposing_op, blinkers_on, path_plan)

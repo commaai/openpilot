@@ -223,6 +223,7 @@ class CarInterface(object):
       ret.lateralTuning.pid.dampTime = 0.1
       ret.lateralTuning.pid.reactMPC = 0.0
       ret.lateralTuning.pid.rateFFGain = 0.4
+      #ret.lateralTuning.pid.steerPscale = [[1.0, 2.0, 10.0], [1.0, 0.5, 0.25], [1.0, 0.75, 0.5]]  # [abs angles, scale UP, scale DOWN]
       ret.steerLimitAlert = False
 
     elif candidate == CAR.ACURA_ILX:
