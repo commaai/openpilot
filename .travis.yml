@@ -3,21 +3,5 @@ sudo: required
 services:
   - docker
 
-install:
-  - docker build -t tmppilot -f Dockerfile.openpilot .
-
 script:
-  - docker run
-      tmppilot /bin/sh -c 'cd /tmp/openpilot/selfdrive/test/ && ./test_fingerprints.py'
-  - docker run
-      tmppilot /bin/sh -c 'cd /tmp/openpilot/ && pyflakes $(find . -iname "*.py" | grep -vi "^\./pyextra.*" | grep -vi "^\./panda" | grep -vi "^\./tools")'
-  - docker run
-      tmppilot /bin/sh -c 'cd /tmp/openpilot/ && pylint $(find . -iname "*.py" | grep -vi "^\./pyextra.*" | grep -vi "^\./panda" | grep -vi "^\./tools"); exit $(($? & 3))'
-  - docker run tmppilot /bin/sh -c 'cd /tmp/openpilot/ && make -C cereal && python -m unittest discover common'
-  - docker run tmppilot /bin/sh -c 'cd /tmp/openpilot/ && make -C cereal && python -m unittest discover selfdrive/can'
-  - docker run tmppilot /bin/sh -c 'cd /tmp/openpilot/ && make -C cereal && python -m unittest discover selfdrive/boardd'
-  - docker run tmppilot /bin/sh -c 'cd /tmp/openpilot/ && make -C cereal && python -m unittest discover selfdrive/controls'
-  - docker run tmppilot /bin/sh -c 'cd /tmp/openpilot/ && python -m unittest discover selfdrive/loggerd'
-  - docker run
-      -v "$(pwd)"/selfdrive/test/tests/plant/out:/tmp/openpilot/selfdrive/test/tests/plant/out
-      tmppilot /bin/sh -c 'cd /tmp/openpilot/selfdrive/test/tests/plant && OPTEST=1 ./test_longitudinal.py'
+  - ./run_docker_tests.sh

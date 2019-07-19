@@ -38,7 +38,7 @@ OBJDIR = obj
 
 OPENDBC_PATH := $(shell python2 -c 'import opendbc; print opendbc.DBC_PATH')
 
-DBC_SOURCES := $(wildcard $(OPENDBC_PATH)/*.dbc)
+DBC_SOURCES := $(sort $(wildcard $(OPENDBC_PATH)/*.dbc))
 DBC_OBJS := $(patsubst $(OPENDBC_PATH)/%.dbc,$(OBJDIR)/%.o,$(DBC_SOURCES))
 DBC_CCS := $(patsubst $(OPENDBC_PATH)/%.dbc,dbc_out/%.cc,$(DBC_SOURCES))
 .SECONDARY: $(DBC_CCS)
