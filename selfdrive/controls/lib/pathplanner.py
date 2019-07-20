@@ -90,15 +90,15 @@ class PathPlanner(object):
       for i in range(1,20):
         if i < 6:
           self.mpc_times[i] = self.mpc_times[i-1] + 0.05
-          self.mpc_rates[i-1] = (float(math.degrees(self.mpc_solution[0].rate[i-1] * VM.sR)) * self.MP.c_prob \
-                                + self.mpc_rates[i] * self.mpc_probs[i]) / (self.MP.c_prob + self.mpc_probs[i] + 0.0001)
+          self.mpc_rates[i-1] = (float(math.degrees(self.mpc_solution[0].rate[i-1] * VM.sR)) * 2.0 * self.MP.c_prob \
+                                + self.mpc_rates[i] * self.mpc_probs[i]) / (2.0 * self.MP.c_prob + self.mpc_probs[i] + 0.0001)
           self.mpc_probs[i-1] = (self.MP.c_prob**2 + self.mpc_probs[i]**2) / (self.MP.c_prob + self.mpc_probs[i] + 0.0001)
         elif i <= oversample_limit:
           self.mpc_times[i] = self.mpc_times[i-1] + 0.15
-          self.mpc_rates[i-1] = (float(math.degrees(self.mpc_solution[0].rate[i-1] * VM.sR)) * self.MP.c_prob \
+          self.mpc_rates[i-1] = (float(math.degrees(self.mpc_solution[0].rate[i-1] * VM.sR)) * 2.0 * self.MP.c_prob \
                       + 0.33 * self.mpc_rates[i] * self.mpc_probs[i] \
                       + 0.66 * self.mpc_rates[i-1] * self.mpc_probs[i-1]) \
-                      / (self.MP.c_prob + 0.66 * self.mpc_probs[i-1] + 0.33 * self.mpc_probs[i] + 0.0001)
+                      / (2.0 * self.MP.c_prob + 0.66 * self.mpc_probs[i-1] + 0.33 * self.mpc_probs[i] + 0.0001)
           self.mpc_probs[i-1] = (self.MP.c_prob**2 + 0.33 * self.mpc_probs[i]**2 + 0.66 * self.mpc_probs[i-1]**2) \
                       / (self.MP.c_prob + 0.66 * self.mpc_probs[i-1] + 0.33 * self.mpc_probs[i] + 0.0001)
         else:
