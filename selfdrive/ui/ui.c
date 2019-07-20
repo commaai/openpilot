@@ -159,6 +159,7 @@ typedef struct UIScene {
 
   float awareness_status;
   float output_scale;
+  bool recording;
   bool steerOverride;
 
   uint64_t started_ts;
@@ -912,13 +913,16 @@ const UIScene *scene = &s->scene;
     if (scene->steerOverride) {
       track_bg = nvgLinearGradient(s->vg, vwp_w, vwp_h, vwp_w, vwp_h*.4,
         nvgRGBA(0, 191, 255, 235), nvgRGBA(0, 95, 128, 30));
-    } else {
+    } else if (s->scene.recording) {
       int torque_scale = (int)fabs(510*(float)s->scene.output_scale);
       int red_lvl = min(255, torque_scale);
       int green_lvl = min(255, 510-torque_scale);
       track_bg = nvgLinearGradient(s->vg, vwp_w, vwp_h, vwp_w, vwp_h*.4,
         nvgRGBA(          red_lvl,            green_lvl,  0, 235),
         nvgRGBA((int)(0.5*red_lvl), (int)(0.5*green_lvl), 0, 30));
+    } else {
+      track_bg = nvgLinearGradient(s->vg, vwp_w, vwp_h, vwp_w, vwp_h*.4,
+        nvgRGBA(0, 200, 30, 235), nvgRGBA(0, 100, 30, 30));
     }
   } else {
     // Draw white vision track

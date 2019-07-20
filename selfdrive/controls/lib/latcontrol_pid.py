@@ -27,7 +27,8 @@ class LatControlPID(object):
     self.c_poly = [0., 0., 0., 0.]
     self.damp_angle_steers = 0.
     self.damp_time = 0.1
-    self.react_mpc = 0.15
+    self.react_mpc = 0.0
+    self.damp_mpc = 0.25
     self.angle_ff_ratio = 0.0
     self.gernbySteer = True
     self.standard_ff_ratio = 0.0
@@ -65,6 +66,7 @@ class LatControlPID(object):
       self.pid.k_f = (float(kegman.conf['Kf']))
       self.damp_time = (float(kegman.conf['dampTime']))
       self.react_mpc = (float(kegman.conf['reactMPC']))
+      self.damp_mpc = (float(kegman.conf['dampMPC']))
       self.total_poly_projection = max(0.0, float(kegman.conf['polyReact']) + float(kegman.conf['polyDamp']))
       self.poly_smoothing = max(1.0, float(kegman.conf['polyDamp']) * 100.)
       self.poly_factor = float(kegman.conf['polyFactor'])
@@ -151,8 +153,8 @@ class LatControlPID(object):
       self.pid.reset()
     else:
       self.angle_steers_des = path_plan.angleSteers
-      self.damp_angle_steers_des += (interp(sec_since_boot() + 0.25 + self.react_mpc, path_plan.mpcTimes, path_plan.mpcAngles) - self.damp_angle_steers_des) / 25.0
-      self.damp_rate_steers_des += (interp(sec_since_boot() + 0.25 + self.react_mpc, path_plan.mpcTimes, path_plan.mpcRates) - self.damp_rate_steers_des) / 25.0
+      self.damp_angle_steers_des += (interp(sec_since_boot() + self.damp_mpc + self.react_mpc, path_plan.mpcTimes, path_plan.mpcAngles) - self.damp_angle_steers_des) / max(1.0, self.damp_mpc * 100.)
+      self.damp_rate_steers_des += (interp(sec_since_boot() + self.damp_mpc + self.react_mpc, path_plan.mpcTimes, path_plan.mpcRates) - self.damp_rate_steers_des) / max(1.0, self.damp_mpc * 100.)
       self.damp_angle_steers += (angle_steers + self.damp_time * angle_steers_rate - self.damp_angle_steers) / max(1.0, self.damp_time * 100.)
       steers_max = get_steer_max(CP, v_ego)
       self.pid.pos_limit = steers_max

@@ -346,12 +346,13 @@ struct CarParams {
     kf @4 :Float32;
     dampTime @5 :Float32;
     reactMPC @6 :Float32;
-    rateFFGain@7 :Float32;
-    polyFactor @8 :Float32;
-    polyDampTime @9 :Float32;
-    polyReactTime @10 :Float32;
-    polyScale @11 :List(List(Float32));
-    steerPscale @12 :List(List(Float32));
+    dampMPC @7 :Float32;
+    rateFFGain@8 :Float32;
+    polyFactor @9 :Float32;
+    polyDampTime @10 :Float32;
+    polyReactTime @11 :Float32;
+    polyScale @12 :List(List(Float32));
+    steerPscale @13 :List(List(Float32));
   }
 
   struct LongitudinalPIDTuning {

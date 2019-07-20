@@ -36,6 +36,9 @@ class kegman_conf():
       if self.conf['reactMPC'] == "-1":
         self.conf['reactMPC'] = str(round(CP.lateralTuning.pid.reactMPC,3))
         write_conf = True
+      if self.conf['dampMPC'] == "-1":
+        self.conf['dampMPC'] = str(round(CP.lateralTuning.pid.dampMPC,3))
+        write_conf = True
       if self.conf['rateFFGain'] == "-1":
         self.conf['rateFFGain'] = str(round(CP.lateralTuning.pid.rateFFGain,3))
         write_conf = True
@@ -86,6 +89,9 @@ class kegman_conf():
         if "reactMPC" not in self.config:
           self.config.update({"reactMPC":"-1"})
           self.element_updated = True
+        if "dampMPC" not in self.config:
+          self.config.update({"dampMPC":"-1"})
+          self.element_updated = True
         if "type" not in self.config:
           self.config.update({"type":"pid"})
           self.element_updated = True
@@ -115,7 +121,7 @@ class kegman_conf():
 
     else:
       if self.type == "pid" or CP.lateralTuning.which() == "pid":
-        self.config = {"type":"pid","Kp":"-1", "Ki":"-1", "Kf":"-1", "dampTime":"-1", "reactMPC":"-1", "rateFFGain":"-1", "polyReact":"-1", "polyDamp":"-1", "polyReact":"-1"}
+        self.config = {"type":"pid","Kp":"-1", "Ki":"-1", "Kf":"-1", "dampTime":"-1", "reactMPC":"-1", "dampMPC":"-1", "rateFFGain":"-1", "polyReact":"-1", "polyDamp":"-1", "polyReact":"-1"}
       else:
         self.config = {"type":"indi","timeConst":"-1", "actEffect":"-1", "outerGain":"-1", "innerGain":"-1", "reactMPC":"-1"}
 

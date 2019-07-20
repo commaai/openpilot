@@ -47,26 +47,32 @@ def dashboard_thread(rate=100):
     server_address = "tcp://192.168.43.221"
   elif int(sys.argv[1]) == 4:
     server_address = "tcp://kevo.live"
+  else:
+    server_address = None
 
   print("using %s" % (server_address))
 
   context = zmq.Context()
-  steerPush = context.socket(zmq.PUSH)
-  steerPush.connect(server_address + ":8593")
-  tunePush = context.socket(zmq.PUSH)
-  tunePush.connect(server_address + ":8595")
-  tuneSub = context.socket(zmq.SUB)
-  tuneSub.connect(server_address + ":8596")
-  poller.register(tuneSub, zmq.POLLIN)
-  poller.register(controlsState, zmq.POLLIN)
+  if server_address != None:
+    steerPush = context.socket(zmq.PUSH)
+    steerPush.connect(server_address + ":8593")
+    tunePush = context.socket(zmq.PUSH)
+    tunePush.connect(server_address + ":8595")
+    tuneSub = context.socket(zmq.SUB)
+    tuneSub.connect(server_address + ":8596")
+    poller.register(tuneSub, zmq.POLLIN)
+
+  if controlsState != None: poller.register(controlsState, zmq.POLLIN)
   if liveParameters != None: poller.register(liveParameters, zmq.POLLIN)
+  if gpsLocation != None: poller.register(gpsLocation, zmq.POLLIN)
 
   try:
     if os.path.isfile('/data/kegman.json'):
       with open('/data/kegman.json', 'r') as f:
         config = json.load(f)
         user_id = config['userID']
-        tunePush.send_json(config)
+        if server_address != None:
+          tunePush.send_json(config)
         tunePush = None
     else:
         params = Params()
@@ -75,11 +81,12 @@ def dashboard_thread(rate=100):
     params = Params()
     user_id = params.get("DongleId")
     config['userID'] = user_id
-    tunePush.send_json(config)
+    if server_address != None:
+      tunePush.send_json(config)
     tunePush = None
 
   lateral_type = ""
-  tuneSub.setsockopt(zmq.SUBSCRIBE, str(user_id))
+  if server_address != None: tuneSub.setsockopt(zmq.SUBSCRIBE, str(user_id))
   #influxFormatString = user_id + ",sources=capnp angle_accel=%s,damp_angle_rate=%s,angle_rate=%s,damp_angle=%s,apply_steer=%s,noise_feedback=%s,ff_standard=%s,ff_rate=%s,ff_angle=%s,angle_steers_des=%s,angle_steers=%s,dampened_angle_steers_des=%s,steer_override=%s,v_ego=%s,p2=%s,p=%s,i=%s,f=%s %s\n"
   mapFormatString = "location,user=" + user_id + " latitude=%s,longitude=%s,altitude=%s,speed=%s,bearing=%s,accuracy=%s,speedLimitValid=%s,speedLimit=%s,curvatureValid=%s,curvature=%s,wayId=%s,distToTurn=%s,mapValid=%s,speedAdvisoryValid=%s,speedAdvisory=%s,speedAdvisoryValid=%s,speedAdvisory=%s,speedLimitAheadValid=%s,speedLimitAhead=%s,speedLimitAheadDistance=%s %s\n"
   gpsFormatString = "location,user=" + user_id + " latitude=%s,longitude=%s,altitude=%s,speed=%s,bearing=%s %s\n"
@@ -115,7 +122,7 @@ def dashboard_thread(rate=100):
           #print(_osmData)
 
       if socket is tuneSub:
-        config = json.loads(tuneSub.recv_multipart()[1]) 
+        config = json.loads(tuneSub.recv_multipart()[1])
         print(config)
         if len(json.dumps(config)) > 40:
           print(config)
@@ -139,15 +146,15 @@ def dashboard_thread(rate=100):
       if socket is gpsLocation:
         _gps = messaging.drain_sock(socket)
         for _g in _gps:
-          receiveTime = int((monoTimeOffset + lmap.logMonoTime) * .0000002) * 5
+          receiveTime = int((monoTimeOffset + _g.logMonoTime) * .0000002) * 5
           if (abs(receiveTime - int(time.time() * 1000)) > 10000):
-            monoTimeOffset = (time.time() * 1000000000) - lmap.logMonoTime
-            receiveTime = int((monoTimeOffset + lmap.logMonoTime) * 0.0000002) * 5
+            monoTimeOffset = (time.time() * 1000000000) - _g.logMonoTime
+            receiveTime = int((monoTimeOffset + _g.logMonoTime) * 0.0000002) * 5
           lg = _g.gpsLocation
-          print(g)
-          gpsDataString += ("%f,%f,%f,%f,%f,%f,%d|" %
+          #print(lg)
+          gpsDataString += ("%f,%f,%f,%f,%f,%d|" %
                 (lg.latitude ,lg.longitude ,lg.altitude ,lg.speed ,lg.bearing, receiveTime))
-          frame_count += 1
+          frame_count += 100
 
       if socket is canData:
         canString = canData.recv_string()
@@ -191,7 +198,7 @@ def dashboard_thread(rate=100):
             if l100.controlsState.lateralControlState.which == "pidState":
               lateral_type = "pid"
               influxFormatString = user_id + ",sources=capnp ff_angle=%s,damp_angle_steers_des=%s,angle_steers_des=%s,angle_steers=%s,steer_override=%s,v_ego=%s,p2=%s,p=%s,i=%s,f=%s,output=%s %s\n"
-              kegmanFormatString = user_id + ",sources=kegman KpV=%s,KiV=%s,Kf=%s,reactMPC=%s,rate_ff_gain=%s,dampTime=%s,polyFactor=%s,reactPoly=%s,dampPoly=%s %s\n"
+              kegmanFormatString = user_id + ",sources=kegman KpV=%s,KiV=%s,Kf=%s,dampMPC=%s,reactMPC=%s,rate_ff_gain=%s,dampTime=%s,polyFactor=%s,reactPoly=%s,dampPoly=%s %s\n"
             else:
               lateral_type = "indi"
               influxFormatString = user_id + ",sources=capnp angle_steers_des=%s,damp_angle_steers_des=%s,angle_steers=%s,steer_override=%s,v_ego=%s,output=%s,indi_angle=%s,indi_rate=%s,indi_rate_des=%s,indi_accel=%s,indi_accel_des=%s,accel_error=%s,delayed_output=%s,indi_delta=%s %s\n"
@@ -273,13 +280,14 @@ def dashboard_thread(rate=100):
                 steerKiV = config['Ki']
                 steerKf = config['Kf']
                 reactMPC = config['reactMPC']
+                dampMPC = config['dampMPC']
                 rateFF = config['rateFFGain']
                 dampTime = config['dampTime']
                 polyFactor = config['polyFactor']
                 polyReact = config['polyReact']
                 polyDamp = config['polyDamp']
-                kegmanDataString += ("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s|" % \
-                      (steerKpV, steerKiV, steerKf, reactMPC, rateFF, dampTime, polyFactor, polyReact, polyDamp, receiveTime))
+                kegmanDataString += ("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s|" % \
+                      (steerKpV, steerKiV, steerKf, dampMPC, reactMPC, rateFF, dampTime, polyFactor, polyReact, polyDamp, receiveTime))
               else:
                 timeConst = config['timeConst']
                 actEffect = config['actEffect']
@@ -303,12 +311,19 @@ def dashboard_thread(rate=100):
       insertString += pathFormatString + "~" + pathDataString + "!"
       insertString += mapFormatString + "~" + mapDataString + "!"
       insertString += liveParamsFormatString + "~" + liveParamsDataString + "!"
+      insertString += gpsFormatString + "~" + gpsDataString + "!"
       #insertString += canInsertString
       #print(canInsertString)
-      steerPush.send_string(insertString)
-      print(len(insertString))
+      if server_address != None:
+        steerPush.send_string(insertString)
+        print(len(insertString))
+      elif f_out != None:
+        f_out.write(insertString + "\r\n")
+      else:
+        f_out = open("/sdcard/videos/gernby-" + receiveTime + ".txt","w+")
       frame_count = 0
       influxDataString = ""
+      gpsDataString = ""
       kegmanDataString = ""
       mapDataString = ""
       liveParamsDataString = ""
