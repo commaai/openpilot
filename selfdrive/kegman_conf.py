@@ -46,6 +46,7 @@ class kegman_conf():
         self.conf['polyReact'] = str(round(CP.lateralTuning.pid.polyReactTime,3))
         self.conf['polyDamp'] = str(round(CP.lateralTuning.pid.polyDampTime,3))
         self.conf['polyFactor'] = str(round(CP.lateralTuning.pid.polyFactor,3))
+        write_conf = True
     else:
       self.type = "indi"
       if self.conf['type'] == "-1":
