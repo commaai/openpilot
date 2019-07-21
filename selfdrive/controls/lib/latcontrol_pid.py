@@ -153,8 +153,9 @@ class LatControlPID(object):
       self.pid.reset()
     else:
       self.angle_steers_des = path_plan.angleSteers
-      self.damp_angle_steers_des += (interp(sec_since_boot() + self.damp_mpc + self.react_mpc, path_plan.mpcTimes, path_plan.mpcAngles) - self.damp_angle_steers_des) / max(1.0, self.damp_mpc * 100.)
-      self.damp_rate_steers_des += (interp(sec_since_boot() + self.damp_mpc + self.react_mpc, path_plan.mpcTimes, path_plan.mpcRates) - self.damp_rate_steers_des) / max(1.0, self.damp_mpc * 100.)
+      damp_mpc = interp(path_plan.rateSteers, [2.0, 15.0], [1.0, 0.5]) * self.damp_mpc
+      self.damp_angle_steers_des += (interp(sec_since_boot() + self.damp_mpc + self.react_mpc, path_plan.mpcTimes, path_plan.mpcAngles) - self.damp_angle_steers_des) / max(1.0, damp_mpc * 100.)
+      self.damp_rate_steers_des += (interp(sec_since_boot() + self.damp_mpc + self.react_mpc, path_plan.mpcTimes, path_plan.mpcRates) - self.damp_rate_steers_des) / max(1.0, damp_mpc * 100.)
       self.damp_angle_steers += (angle_steers + self.damp_time * angle_steers_rate - self.damp_angle_steers) / max(1.0, self.damp_time * 100.)
       steers_max = get_steer_max(CP, v_ego)
       self.pid.pos_limit = steers_max

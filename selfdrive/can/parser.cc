@@ -329,15 +329,14 @@ class CANParser {
   int update(uint64_t sec, bool wait) {
     int err;
     int result = 0;
-
     // recv from can
     zmq_msg_t msg;
     zmq_msg_init(&msg);
 
     // multiple recv is fine
-    bool first = wait;
+    bool first = true;
     while (first || drain) {
-      if (first) {
+      if (first and wait) {
         err = zmq_msg_recv(&msg, subscriber, 0);
         first = false;
 
@@ -346,8 +345,6 @@ class CANParser {
           result = -1;
         }
       } else {
-        // Drain the queue at startup
-        usleep(500);
         err = zmq_msg_recv(&msg, subscriber, ZMQ_DONTWAIT);
       }
       if (err < 0) {

@@ -535,7 +535,7 @@ class CarInterface(object):
     # events
     events = []
     # wait 1.0s before throwing the alert to avoid it popping when you turn off the car
-    if self.cp_cam.can_invalid_cnt >= 100 and self.CS.CP.carFingerprint not in HONDA_BOSCH and self.CP.enableCamera:
+    if self.cp_cam.can_invalid_cnt >= 100 and self.CP.enableCamera and self.CS.CP.carFingerprint not in HONDA_BOSCH:
       events.append(create_event('invalidGiraffeHonda', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
     if self.CS.steer_error:
       events.append(create_event('steerUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
