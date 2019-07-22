@@ -28,7 +28,7 @@ def dashboard_thread(rate=100):
   osmData = None #messaging.sub_sock(context, 8601, addr=ipaddress, conflate=False, poller=poller)
   canData = None #messaging.sub_sock(context, 8602, addr=ipaddress, conflate=False, poller=poller)
   #pathPlan = messaging.sub_sock(context, service_list['pathPlan'].port, addr=ipaddress, conflate=False, poller=poller)
-  pathPlan = None #messaging.sub_sock(context, service_list['plan'].port, addr=ipaddress, conflate=False, poller=poller)
+  pathPlan = messaging.sub_sock(service_list['pathPlan'].port)
   liveParameters = messaging.sub_sock(service_list['liveParameters'].port)
   gpsLocation = messaging.sub_sock(service_list['gpsLocation'].port)
   #gpsNMEA = messaging.sub_sock(context, service_list['gpsNMEA'].port, addr=ipaddress, conflate=True)
@@ -65,6 +65,7 @@ def dashboard_thread(rate=100):
   if controlsState != None: poller.register(controlsState, zmq.POLLIN)
   if liveParameters != None: poller.register(liveParameters, zmq.POLLIN)
   if gpsLocation != None: poller.register(gpsLocation, zmq.POLLIN)
+  if pathPlan != None: poller.register(pathPlan, zmq.POLLIN)
 
   try:
     if os.path.isfile('/data/kegman.json'):
@@ -92,8 +93,8 @@ def dashboard_thread(rate=100):
   gpsFormatString = "location,user=" + user_id + " latitude=%s,longitude=%s,altitude=%s,speed=%s,bearing=%s %s\n"
   canFormatString="CANData,user=" + user_id + ",src=%s,pid=%s d1=%si,d2=%si "
   liveStreamFormatString = "curvature,user=" + user_id + " l_curv=%s,p_curv=%s,r_curv=%s,map_curv=%s,map_rcurv=%s,map_rcurvx=%s,v_curv=%s,l_diverge=%s,r_diverge=%s %s\n"
-  pathFormatString = "pathPlan,user=" + user_id + " d0=%s,d1=%s,d2=%s,d3=%s %s\n"
-  pathDataFormatString = "%d|"
+  pathFormatString = "pathPlan,user=" + user_id + " l0=%s,l1=%s,l2=%s,l3=%s,r0=%s,r1=%s,r2=%s,r3=%s,c0=%s,c1=%s,c2=%s,c3=%s,d0=%s,d1=%s,d2=%s,d3=%s,l_prob=%s,r_prob=%s,c_prob=%s,lane_width=%s %s\n"
+  pathDataFormatString = "%0.2f,%0.2f,%0.2f,%0.2f,%d|"
   polyDataString = "%.10f,%0.8f,%0.6f,%0.4f,"
   pathDataString = ""
   liveParamsFormatString = "liveParameters,user=" + user_id + " yaw_rate=%s,gyro_bias=%s,angle_offset=%s,angle_offset_avg=%s,tire_stiffness=%s,steer_ratio=%s %s\n"
@@ -180,15 +181,15 @@ def dashboard_thread(rate=100):
       if socket is pathPlan:
         _pathPlan = messaging.drain_sock(socket)
         for _pp in _pathPlan:
-          pp = _pp.plan
+          pp = _pp.pathPlan
           if vEgo > 0 and active and (carState == None or boolStockRcvd):
             boolStockRcvd = False
-            #pathDataString += polyDataString % tuple(map(float, pp.lPoly))
-            #pathDataString += polyDataString % tuple(map(float, pp.rPoly))
-            #pathDataString += polyDataString % tuple(map(float, pp.cPoly))
+            pathDataString += polyDataString % tuple(map(float, pp.lPoly))
+            pathDataString += polyDataString % tuple(map(float, pp.rPoly))
+            pathDataString += polyDataString % tuple(map(float, pp.cPoly))
             pathDataString += polyDataString % tuple(map(float, pp.dPoly))
             #pathDataString += polyDataString % tuple(map(float, pp.pPoly))
-            pathDataString +=  (pathDataFormatString % (int((monoTimeOffset + _pp.logMonoTime) * .0000002) * 5))
+            pathDataString +=  (pathDataFormatString % (pp.lProb, pp.rProb, pp.cProb, pp.laneWidth, int((monoTimeOffset + _pp.logMonoTime) * .0000002) * 5))
 
       if socket is controlsState:
         _controlsState = messaging.drain_sock(socket)
