@@ -17,4 +17,4 @@ COPY . /openpilot/panda
 WORKDIR /openpilot/panda/tests/safety_replay
 RUN git clone https://github.com/commaai/openpilot-tools.git tools || true
 WORKDIR tools
-RUN git checkout b6461274d684915f39dc45efc5292ea890698da9
+RUN git checkout feb724a14f0f5223c700c94317efaf46923fd48a
