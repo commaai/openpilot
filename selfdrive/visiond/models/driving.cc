@@ -135,7 +135,14 @@ void poly_fit(float *in_pts, float *in_stds, float *out) {
   Eigen::Matrix<float, MODEL_PATH_DISTANCE, POLYFIT_DEGREE> lhs = vander.array().colwise() / std.array();
   Eigen::Matrix<float, MODEL_PATH_DISTANCE, 1> rhs = pts.array() / std.array();
 
+  // Improve numerical stability
+  Eigen::Matrix<float, POLYFIT_DEGREE, 1> scale = 1. / (lhs.array()*lhs.array()).sqrt().colwise().sum();
+  lhs = lhs * scale.asDiagonal();
+
   // Solve inplace
   Eigen::ColPivHouseholderQR<Eigen::Ref<Eigen::MatrixXf> > qr(lhs);
   p = qr.solve(rhs);
+
+  // Apply scale to output
+  p = p.transpose() * scale.asDiagonal();
 }

@@ -47,8 +47,9 @@ def run_route(route):
 
   CP = CarInterface.get_params(CAR.CIVIC, {})
   signals, checks = get_can_signals(CP)
-  parser_old = CANParserOld(DBC[CP.carFingerprint]['pt'], signals, checks, 0, timeout=-1)
-  parser_new = CANParserNew(DBC[CP.carFingerprint]['pt'], signals, checks, 0, timeout=-1)
+  parser_old = CANParserOld(DBC[CP.carFingerprint]['pt'], signals, checks, 0, timeout=-1, tcp_addr="127.0.0.1")
+  parser_new = CANParserNew(DBC[CP.carFingerprint]['pt'], signals, checks, 0, timeout=-1, tcp_addr="127.0.0.1")
+  parser_string = CANParserNew(DBC[CP.carFingerprint]['pt'], signals, checks, 0, timeout=-1)
 
   if dict_keys_differ(parser_old.vl, parser_new.vl):
     return False
@@ -61,17 +62,27 @@ def run_route(route):
   for msg in lr:
     if msg.which() == 'can':
       t += DT
-      can.send(msg.as_builder().to_bytes())
+      msg_bytes = msg.as_builder().to_bytes()
+      can.send(msg_bytes)
 
       _, updated_old = parser_old.update(t, True)
       _, updated_new = parser_new.update(t, True)
+      updated_string = parser_string.update_string(t, msg_bytes)
 
       if updated_old != updated_new:
         route_ok = False
         print(t, "Diff in seen")
 
+      if updated_new != updated_string:
+        route_ok = False
+        print(t, "Diff in seen string")
+
       if dicts_vals_differ(parser_old.vl, parser_new.vl):
         print(t, "Diff in dict")
+        route_ok = False
+
+      if dicts_vals_differ(parser_new.vl, parser_string.vl):
+        print(t, "Diff in dict string")
         route_ok = False
 
   return route_ok

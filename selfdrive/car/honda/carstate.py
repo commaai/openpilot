@@ -146,6 +146,7 @@ def get_can_signals(CP):
   # add gas interceptor reading if we are using it
   if CP.enableGasInterceptor:
     signals.append(("INTERCEPTOR_GAS", "GAS_SENSOR", 0))
+    signals.append(("INTERCEPTOR_GAS2", "GAS_SENSOR", 0))
     checks.append(("GAS_SENSOR", 50))
 
   return signals, checks
@@ -153,7 +154,7 @@ def get_can_signals(CP):
 
 def get_can_parser(CP):
   signals, checks = get_can_signals(CP)
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0, timeout=100)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
 
 def get_cam_can_parser(CP):
@@ -166,7 +167,7 @@ def get_cam_can_parser(CP):
 
   cam_bus = 1 if CP.carFingerprint in HONDA_BOSCH else 2
 
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, cam_bus, timeout=100)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, cam_bus)
 
 class CarState(object):
   def __init__(self, CP):
@@ -261,7 +262,7 @@ class CarState(object):
     # this is a hack for the interceptor. This is now only used in the simulation
     # TODO: Replace tests by toyota so this can go away
     if self.CP.enableGasInterceptor:
-      self.user_gas = cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS']
+      self.user_gas = (cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS'] + cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS2']) / 2.
       self.user_gas_pressed = self.user_gas > 0 # this works because interceptor read < 0 when pedal position is 0. Once calibrated, this will change
 
     self.gear = 0 if self.CP.carFingerprint == CAR.CIVIC else cp.vl["GEARBOX"]['GEAR']

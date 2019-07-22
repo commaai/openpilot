@@ -67,6 +67,7 @@ ctypedef void* (*can_init_with_vectors_func)(int bus, const char* dbc_name,
                 const char* tcp_addr,
                 int timeout)
 ctypedef int (*can_update_func)(void* can, uint64_t sec, bool wait);
+ctypedef void (*can_update_string_func)(void* can, uint64_t sec, const char* dat, int len);
 ctypedef size_t (*can_query_func)(void* can, uint64_t sec, bool *out_can_valid, size_t out_values_size, SignalValue* out_values);
 ctypedef void (*can_query_vector_func)(void* can, uint64_t sec, bool *out_can_valid,  vector[SignalValue] &values)
 
@@ -77,6 +78,7 @@ cdef class CANParser:
     dbc_lookup_func dbc_lookup
     can_init_with_vectors_func can_init_with_vectors
     can_update_func can_update
+    can_update_string_func can_update_string
     can_query_vector_func can_query_vector
     map[string, uint32_t] msg_name_to_address
     map[uint32_t, string] address_to_msg_name

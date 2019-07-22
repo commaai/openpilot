@@ -22,7 +22,7 @@ from selfdrive.controls.lib.latcontrol_pid import LatControlPID
 from selfdrive.controls.lib.latcontrol_indi import LatControlINDI
 from selfdrive.controls.lib.alertmanager import AlertManager
 from selfdrive.controls.lib.vehicle_model import VehicleModel
-from selfdrive.controls.lib.driver_monitor import DriverStatus
+from selfdrive.controls.lib.driver_monitor import DriverStatus, MAX_TERMINAL_ALERTS
 from selfdrive.controls.lib.planner import LON_MPC_STEP
 from selfdrive.locationd.calibration_helpers import Calibration, Filter
 
@@ -49,16 +49,22 @@ def events_to_bytes(events):
   return ret
 
 
-def data_sample(CI, CC, sm, cal_status, cal_perc, overtemp, free_space, low_battery,
+def data_sample(CI, CC, sm, can_sock, cal_status, cal_perc, overtemp, free_space, low_battery,
                 driver_status, state, mismatch_counter, params):
   """Receive data from sockets and create events for battery, temperature and disk space"""
 
   # Update carstate from CAN and create events
-  CS = CI.update(CC)
+  can_strs = messaging.drain_sock_raw(can_sock, wait_for_one=True)
+  CS = CI.update(CC, can_strs)
+
+  sm.update(0)
+
   events = list(CS.events)
   enabled = isEnabled(state)
 
-  sm.update(0)
+  # Check for CAN timeout
+  if not can_strs:
+    events.append(create_event('canError', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
 
   if sm.updated['thermal']:
     overtemp = sm['thermal'].thermalStatus >= ThermalStatus.red
@@ -72,6 +78,7 @@ def data_sample(CI, CC, sm, cal_status, cal_perc, overtemp, free_space, low_batt
     events.append(create_event('overheat', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
   if free_space:
     events.append(create_event('outOfSpace', [ET.NO_ENTRY]))
+
 
   # Handle calibration
   if sm.updated['liveCalibration']:
@@ -101,6 +108,9 @@ def data_sample(CI, CC, sm, cal_status, cal_perc, overtemp, free_space, low_batt
   # Driver monitoring
   if sm.updated['driverMonitoring']:
     driver_status.get_pose(sm['driverMonitoring'], params)
+
+  if driver_status.terminal_alert_cnt >= MAX_TERMINAL_ALERTS:
+    events.append(create_event("tooDistracted", [ET.NO_ENTRY]))
 
   return CS, events, cal_status, cal_perc, overtemp, free_space, low_battery, mismatch_counter
 
@@ -402,6 +412,7 @@ def controlsd_thread(gctx=None):
 
   params = Params()
 
+
   # Pub Sockets
   sendcan = messaging.pub_sock(service_list['sendcan'].port)
   controlsstate = messaging.pub_sock(service_list['controlsState'].port)
@@ -414,10 +425,15 @@ def controlsd_thread(gctx=None):
   passive = params.get("Passive") != "0"
 
   sm = messaging.SubMaster(['thermal', 'health', 'liveCalibration', 'driverMonitoring', 'plan', 'pathPlan'])
+
   logcan = messaging.sub_sock(service_list['can'].port)
+  CI, CP = get_car(logcan, sendcan)
+  logcan.close()
+
+  # TODO: Use the logcan socket from above, but that will currenly break the tests
+  can_sock = messaging.sub_sock(service_list['can'].port, timeout=100)
 
   CC = car.CarControl.new_message()
-  CI, CP = get_car(logcan, sendcan)
   AM = AlertManager()
 
   car_recognized = CP.carName != 'mock'
@@ -469,7 +485,7 @@ def controlsd_thread(gctx=None):
 
     # Sample data and compute car events
     CS, events, cal_status, cal_perc, overtemp, free_space, low_battery, mismatch_counter =\
-      data_sample(CI, CC, sm, cal_status, cal_perc, overtemp, free_space, low_battery,
+      data_sample(CI, CC, sm, can_sock, cal_status, cal_perc, overtemp, free_space, low_battery,
                   driver_status, state, mismatch_counter, params)
     prof.checkpoint("Sample")
 

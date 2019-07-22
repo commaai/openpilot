@@ -283,8 +283,9 @@ void can_health(void *s) {
     uint8_t started;
     uint8_t controls_allowed;
     uint8_t gas_interceptor_detected;
-    uint8_t started_signal_detected;
-    uint8_t started_alt;
+    uint32_t can_send_errs;
+    uint32_t can_fwd_errs;
+    uint32_t gmlan_send_errs;
   } health;
 
   // recv from board
@@ -313,8 +314,10 @@ void can_health(void *s) {
   }
   healthData.setControlsAllowed(health.controls_allowed);
   healthData.setGasInterceptorDetected(health.gas_interceptor_detected);
-  healthData.setStartedSignalDetected(health.started_signal_detected);
   healthData.setIsGreyPanda(is_grey_panda);
+  healthData.setCanSendErrs(health.can_send_errs);
+  healthData.setCanFwdErrs(health.can_fwd_errs);
+  healthData.setGmlanSendErrs(health.gmlan_send_errs);
 
   // send to health
   auto words = capnp::messageToFlatArray(msg);

@@ -170,15 +170,15 @@ class CarInterface(object):
     return ret
 
   # returns a car.CarState
-  def update(self, c):
-    can_rcv_valid, _ = self.pt_cp.update(int(sec_since_boot() * 1e9), True)
+  def update(self, c, can_strings):
+    self.pt_cp.update_strings(int(sec_since_boot() * 1e9), can_strings)
 
     self.CS.update(self.pt_cp)
 
     # create message
     ret = car.CarState.new_message()
 
-    ret.canValid = can_rcv_valid and self.pt_cp.can_valid
+    ret.canValid = self.pt_cp.can_valid
 
     # speeds
     ret.vEgo = self.CS.v_ego

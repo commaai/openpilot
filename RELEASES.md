@@ -1,3 +1,10 @@
+Version 0.6.1 (2019-07-21)
+========================
+ * Remote SSH with comma prime and [ssh.comma.ai](https://ssh.comma.ai)
+ * Panda code Misra-c2012 compliance, tested against cppcheck coverage
+ * Lockout openpilot after 3 terminal alerts for driver distracted or unresponsive
+ * Toyota Sienna support thanks to wocsor!
+
 Version 0.6 (2019-07-01)
 ========================
  * New model, with double the pixels and ten times the temporal context!

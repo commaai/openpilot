@@ -244,6 +244,7 @@ class Plant(object):
            'EPB_STATE',
            'BRAKE_HOLD_ACTIVE',
            'INTERCEPTOR_GAS',
+           'INTERCEPTOR_GAS2',
            'IMPERIAL_UNIT',
            ])
     vls = vls_tuple(
@@ -276,6 +277,7 @@ class Plant(object):
            0,  # EPB State
            0,  # Brake hold
            0,  # Interceptor feedback
+           0,  # Interceptor 2 feedback
            False
            )
 

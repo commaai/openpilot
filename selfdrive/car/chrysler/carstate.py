@@ -60,7 +60,7 @@ def get_can_parser(CP):
     ("ACC_2", 50),
   ]
 
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0, timeout=100)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
 def get_camera_parser(CP):
   signals = [
@@ -72,7 +72,7 @@ def get_camera_parser(CP):
   ]
   checks = []
 
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2, timeout=100)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
 
 
 class CarState(object):
