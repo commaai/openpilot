@@ -151,17 +151,16 @@ class CarInterface(object):
     return ret
 
   # returns a car.CarState
-  def update(self, c):
+  def update(self, c, can_strings):
     # ******************* do can recv *******************
-    canMonoTimes = []
-    can_rcv_valid, _ = self.cp.update(int(sec_since_boot() * 1e9), True)
-    cam_rcv_valid, _ = self.cp_cam.update(int(sec_since_boot() * 1e9), False)
+    self.cp.update_strings(int(sec_since_boot() * 1e9), can_strings)
+    self.cp_cam.update_strings(int(sec_since_boot() * 1e9), can_strings)
 
     self.CS.update(self.cp, self.cp_cam)
     # create message
     ret = car.CarState.new_message()
 
-    ret.canValid = can_rcv_valid and cam_rcv_valid and self.cp.can_valid  # TODO: check cp_cam validity
+    ret.canValid = self.cp.can_valid  # TODO: check cp_cam validity
 
     # speeds
     ret.vEgo = self.CS.v_ego
@@ -269,7 +268,6 @@ class CarInterface(object):
       events.append(create_event('belowSteerSpeed', [ET.WARNING]))
 
     ret.events = events
-    ret.canMonoTimes = canMonoTimes
 
     self.gas_pressed_prev = ret.gasPressed
     self.brake_pressed_prev = ret.brakePressed

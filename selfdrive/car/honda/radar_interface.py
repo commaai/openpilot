@@ -31,25 +31,30 @@ class RadarInterface(object):
 
     # Nidec
     self.rcp = _create_nidec_can_parser()
+    self.trigger_msg = 0x445
+    self.updated_messages = set()
 
-  def update(self):
-    canMonoTimes = []
-
-    updated_messages = set()
-    ret = car.RadarData.new_message()
-
+  def update(self, can_strings):
     # in Bosch radar and we are only steering for now, so sleep 0.05s to keep
     # radard at 20Hz and return no points
     if self.radar_off_can:
       time.sleep(0.05)
-      return ret
+      return car.RadarData.new_message()
 
-    while 1:
-      tm = int(sec_since_boot() * 1e9)
-      _, vls = self.rcp.update(tm, True)
-      updated_messages.update(vls)
-      if 0x445 in updated_messages:
-        break
+    tm = int(sec_since_boot() * 1e9)
+    vls = self.rcp.update_strings(tm, can_strings)
+    self.updated_messages.update(vls)
+
+    if self.trigger_msg not in self.updated_messages:
+      return None
+
+    rr = self._update(self.updated_messages)
+    self.updated_messages.clear()
+    return rr
+
+
+  def _update(self, updated_messages):
+    ret = car.RadarData.new_message()
 
     for ii in updated_messages:
       cpt = self.rcp.vl[ii]
@@ -80,19 +85,7 @@ class RadarInterface(object):
     if self.radar_wrong_config:
       errors.append("wrongConfig")
     ret.errors = errors
-    ret.canMonoTimes = canMonoTimes
 
     ret.points = self.pts.values()
 
     return ret
-
-
-if __name__ == "__main__":
-  class CarParams:
-    radarOffCan = False
-
-  RI = RadarInterface(CarParams)
-  while 1:
-    ret = RI.update()
-    print(chr(27) + "[2J")
-    print(ret)

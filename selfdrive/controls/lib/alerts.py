@@ -298,6 +298,13 @@ ALERTS = [
       AlertStatus.normal, AlertSize.mid,
       Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
 
+  Alert(
+      "tooDistractedNoEntry",
+      "openpilot Unavailable",
+      "Distraction Level Too High",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
+
   # Cancellation alerts causing soft disabling
   Alert(
       "overheat",

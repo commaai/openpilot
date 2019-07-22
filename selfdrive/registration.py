@@ -5,7 +5,7 @@ import struct
 
 from datetime import datetime, timedelta
 from selfdrive.swaglog import cloudlog
-from selfdrive.version import version, training_version, get_git_commit, get_git_branch, get_git_remote
+from selfdrive.version import version, terms_version, training_version, get_git_commit, get_git_branch, get_git_remote
 from common.api import api_get
 from common.params import Params
 from common.file_helpers import mkdirs_exists_ok
@@ -53,6 +53,7 @@ def get_subscriber_info():
 def register():
   params = Params()
   params.put("Version", version)
+  params.put("TermsVersion", terms_version)
   params.put("TrainingVersion", training_version)
   params.put("GitCommit", get_git_commit())
   params.put("GitBranch", get_git_branch())

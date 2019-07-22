@@ -28,10 +28,8 @@ _DEBUG_ADDRESS = {1880: 8}   # reserved for debug purposes
 
 def is_valid_for_fingerprint(msg, car_fingerprint):
   adr = msg.address
-  bus = msg.src
   # ignore addresses that are more than 11 bits
-  return (adr in car_fingerprint and car_fingerprint[adr] == len(msg.dat)) or \
-         bus != 0 or adr >= 0x800
+  return (adr in car_fingerprint and car_fingerprint[adr] == len(msg.dat)) or adr >= 0x800
 
 
 def eliminate_incompatible_cars(msg, candidate_cars):

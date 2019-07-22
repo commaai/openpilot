@@ -50,12 +50,14 @@ class UnknownKeyName(Exception):
 
 keys = {
   "AccessToken": [TxType.PERSISTENT],
+  "AthenadPid": [TxType.PERSISTENT],
   "CalibrationParams": [TxType.PERSISTENT],
   "CarParams": [TxType.CLEAR_ON_MANAGER_START, TxType.CLEAR_ON_PANDA_DISCONNECT],
   "CompletedTrainingVersion": [TxType.PERSISTENT],
   "ControlsParams": [TxType.PERSISTENT],
   "DoUninstall": [TxType.CLEAR_ON_MANAGER_START],
   "DongleId": [TxType.PERSISTENT],
+  "GithubSshKeys": [TxType.PERSISTENT],
   "GitBranch": [TxType.PERSISTENT],
   "GitCommit": [TxType.PERSISTENT],
   "GitRemote": [TxType.PERSISTENT],
@@ -75,6 +77,7 @@ keys = {
   "ShouldDoUpdate": [TxType.CLEAR_ON_MANAGER_START],
   "SpeedLimitOffset": [TxType.PERSISTENT],
   "SubscriberInfo": [TxType.PERSISTENT],
+  "TermsVersion": [TxType.PERSISTENT],
   "TrainingVersion": [TxType.PERSISTENT],
   "Version": [TxType.PERSISTENT],
 }

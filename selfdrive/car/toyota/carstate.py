@@ -1,7 +1,7 @@
 import numpy as np
 from common.kalman.simple_kalman import KF1D
-from selfdrive.can.parser import CANParser
 from selfdrive.can.can_define import CANDefine
+from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from selfdrive.car.toyota.values import CAR, DBC, STEER_THRESHOLD, TSS2_CAR
 
@@ -70,9 +70,10 @@ def get_can_parser(CP):
   # add gas interceptor reading if we are using it
   if CP.enableGasInterceptor:
     signals.append(("INTERCEPTOR_GAS", "GAS_SENSOR", 0))
+    signals.append(("INTERCEPTOR_GAS2", "GAS_SENSOR", 0))
     checks.append(("GAS_SENSOR", 50))
 
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0, timeout=100)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
 
 def get_cam_can_parser(CP):
@@ -82,7 +83,7 @@ def get_cam_can_parser(CP):
   # use steering message to check if panda is connected to frc
   checks = [("STEERING_LKA", 42)]
 
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2, timeout=100)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
 
 
 class CarState(object):
@@ -118,7 +119,7 @@ class CarState(object):
 
     self.brake_pressed = cp.vl["BRAKE_MODULE"]['BRAKE_PRESSED']
     if self.CP.enableGasInterceptor:
-      self.pedal_gas = cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS']
+      self.pedal_gas = (cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS'] + cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS2']) / 2.
     else:
       self.pedal_gas = cp.vl["GAS_PEDAL"]['GAS_PEDAL']
     self.car_gas = self.pedal_gas
