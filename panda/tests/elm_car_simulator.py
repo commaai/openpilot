@@ -152,7 +152,7 @@ class ELMCarSimulator():
             if len(outmsg) <= 5:
                 self._lin_send(0x10, obd_header + outmsg)
             else:
-                first_msg_len = MIN(4, len(outmsg)%4) or 4
+                first_msg_len = min(4, len(outmsg)%4) or 4
                 self._lin_send(0x10, obd_header + b'\x01' +
                                b'\x00'*(4-first_msg_len) +
                                outmsg[:first_msg_len])
@@ -229,7 +229,7 @@ class ELMCarSimulator():
                 outaddr = 0x7E8 if address == 0x7DF or address == 0x7E0 else 0x18DAF110
                 msgnum = 1
                 while(self.__can_multipart_data):
-                    datalen = MIN(7, len(self.__can_multipart_data))
+                    datalen = min(7, len(self.__can_multipart_data))
                     msgpiece = struct.pack("B", 0x20 | msgnum) + self.__can_multipart_data[:datalen]
                     self._can_send(outaddr, msgpiece)
                     self.__can_multipart_data = self.__can_multipart_data[7:]
@@ -246,7 +246,7 @@ class ELMCarSimulator():
                     self._can_send(outaddr,
                                    struct.pack("BBB", len(outmsg)+2, 0x40|data[1], pid) + outmsg)
                 else:
-                    first_msg_len = MIN(3, len(outmsg)%7)
+                    first_msg_len = min(3, len(outmsg)%7)
                     payload_len = len(outmsg)+3
                     msgpiece = struct.pack("BBBBB", 0x10 | ((payload_len>>8)&0xF),
                                            payload_len&0xFF,

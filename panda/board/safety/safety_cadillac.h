@@ -10,13 +10,13 @@ const int CADILLAC_MAX_RATE_DOWN = 5;
 const int CADILLAC_DRIVER_TORQUE_ALLOWANCE = 50;
 const int CADILLAC_DRIVER_TORQUE_FACTOR = 4;
 
-int cadillac_ign = 0;
+bool cadillac_ign = 0;
 int cadillac_cruise_engaged_last = 0;
 int cadillac_rt_torque_last = 0;
 const int cadillac_torque_msgs_n = 4;
 int cadillac_desired_torque_last[CADILLAC_TORQUE_MSG_N] = {0};
 uint32_t cadillac_ts_last = 0;
-int cadillac_supercruise_on = 0;
+bool cadillac_supercruise_on = 0;
 struct sample_t cadillac_torque_driver;         // last few driver torques measured
 
 int cadillac_get_torque_idx(int addr, int array_size) {
@@ -28,7 +28,8 @@ static void cadillac_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   int addr = GET_ADDR(to_push);
 
   if (addr == 356) {
-    int torque_driver_new = ((to_push->RDLR & 0x7) << 8) | ((to_push->RDLR >> 8) & 0xFF);
+    int torque_driver_new = ((GET_BYTE(to_push, 0) & 0x7U) << 8) | (GET_BYTE(to_push, 1));
+
     torque_driver_new = to_signed(torque_driver_new, 11);
     // update array of samples
     update_sample(&cadillac_torque_driver, torque_driver_new);
@@ -36,12 +37,12 @@ static void cadillac_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
   // this message isn't all zeros when ignition is on
   if ((addr == 0x160) && (bus == 0)) {
-    cadillac_ign = to_push->RDLR > 0;
+    cadillac_ign = GET_BYTES_04(to_push) != 0;
   }
 
   // enter controls on rising edge of ACC, exit controls on ACC off
   if ((addr == 0x370) && (bus == 0)) {
-    int cruise_engaged = to_push->RDLR & 0x800000;  // bit 23
+    int cruise_engaged = GET_BYTE(to_push, 2) & 0x80;  // bit 23
     if (cruise_engaged && !cadillac_cruise_engaged_last) {
       controls_allowed = 1;
     }
@@ -53,7 +54,7 @@ static void cadillac_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
   // know supercruise mode and block openpilot msgs if on
   if ((addr == 0x152) || (addr == 0x154)) {
-    cadillac_supercruise_on = (to_push->RDHR>>4) & 0x1;
+    cadillac_supercruise_on = (GET_BYTE(to_push, 4) & 0x10) != 0;
   }
 }
 
@@ -63,7 +64,7 @@ static int cadillac_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 
   // steer cmd checks
   if ((addr == 0x151) || (addr == 0x152) || (addr == 0x153) || (addr == 0x154)) {
-    int desired_torque = ((to_send->RDLR & 0x3f) << 8) + ((to_send->RDLR & 0xff00) >> 8);
+    int desired_torque = ((GET_BYTE(to_send, 0) & 0x3f) << 8) | GET_BYTE(to_send, 1);
     int violation = 0;
     uint32_t ts = TIM2->CNT;
     int idx = cadillac_get_torque_idx(addr, CADILLAC_TORQUE_MSG_N);
