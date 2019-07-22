@@ -1,0 +1,37 @@
+CM_ "IMPORT _toyota_2017.dbc"
+CM_ "IMPORT _comma.dbc"
+
+BO_ 550 BRAKE_MODULE: 8 XXX
+ SG_ BRAKE_PRESSURE : 0|9@0+ (1,0) [0|511] "" XXX
+ SG_ BRAKE_POSITION : 16|9@0+ (1,0) [0|511] "" XXX
+ SG_ BRAKE_PRESSED : 37|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 608 STEER_TORQUE_SENSOR: 8 XXX
+ SG_ STEER_TORQUE_EPS : 47|16@0- (0.73,0) [-20000|20000] "" XXX
+ SG_ STEER_TORQUE_DRIVER : 15|16@0- (1,0) [-32768|32767] "" XXX
+ SG_ STEER_OVERRIDE : 0|1@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 610 EPS_STATUS: 5 EPS
+ SG_ IPAS_STATE : 3|4@0+ (1,0) [0|15] "" XXX
+ SG_ LKA_STATE : 31|7@0+ (1,0) [0|127] "" XXX
+ SG_ TYPE : 24|1@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 39|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 956 GEAR_PACKET: 8 XXX
+ SG_ SPORT_ON : 2|1@0+ (1,0) [0|1] "" XXX
+ SG_ GEAR : 13|6@0+ (1,0) [0|63] "" XXX
+ SG_ ECON_ON : 40|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 705 GAS_PEDAL: 8 XXX
+ SG_ GAS_PEDAL : 55|8@0+ (1,0) [0|255] "" XXX
+
+
+CM_ SG_ 550 BRAKE_PRESSURE "seems prop to pedal force";
+CM_ SG_ 550 BRAKE_POSITION "seems proportional to pedal displacement, unclear the max value of 0x1c8";
+CM_ SG_ 610 TYPE "seems 1 on Corolla, 0 on all others";
+VAL_ 610 IPAS_STATE 5 "override" 3 "enabled" 1 "disabled" ;
+VAL_ 610 LKA_STATE 25 "temporary_fault" 9 "temporary_fault2" 5 "active" 1 "standby" ;
+VAL_ 956 SPORT_ON 0 "off" 1 "on" ;
+VAL_ 956 GEAR 0 "D" 1 "S" 8 "N" 16 "R" 32 "P" ;
+VAL_ 956 ECON_ON 0 "off" 1 "on" ;
