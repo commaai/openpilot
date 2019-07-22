@@ -13,7 +13,7 @@ static int gm_ascm_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
     // block 0x315 and 0x2cb, which are the brake and accel commands from ASCM1
     //if ((addr == 0x152) || (addr == 0x154) || (addr == 0x315) || (addr == 0x2cb)) {
     if ((addr == 0x152) || (addr == 0x154)) {
-      int supercruise_on = (to_fwd->RDHR >> 4) & 0x1;  // bit 36
+      bool supercruise_on = (GET_BYTE(to_fwd, 4) & 0x10) != 0;  // bit 36
       if (!supercruise_on) {
         bus_fwd = -1;
       }
