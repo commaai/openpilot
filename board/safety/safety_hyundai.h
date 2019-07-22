@@ -20,7 +20,7 @@ static void hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   int addr = GET_ADDR(to_push);
 
   if (addr == 897) {
-    int torque_driver_new = ((to_push->RDLR >> 11) & 0xfff) - 2048;
+    int torque_driver_new = ((GET_BYTES_04(to_push) >> 11) & 0xfff) - 2048;
     // update array of samples
     update_sample(&hyundai_torque_driver, torque_driver_new);
   }
@@ -39,7 +39,7 @@ static void hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   // enter controls on rising edge of ACC, exit controls on ACC off
   if (addr == 1057) {
     // 2 bits: 13-14
-    int cruise_engaged = (to_push->RDLR >> 13) & 0x3;
+    int cruise_engaged = (GET_BYTES_04(to_push) >> 13) & 0x3;
     if (cruise_engaged && !hyundai_cruise_engaged_last) {
       controls_allowed = 1;
     }
@@ -67,7 +67,7 @@ static int hyundai_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 
   // LKA STEER: safety check
   if (addr == 832) {
-    int desired_torque = ((to_send->RDLR >> 16) & 0x7ff) - 1024;
+    int desired_torque = ((GET_BYTES_04(to_send) >> 16) & 0x7ff) - 1024;
     uint32_t ts = TIM2->CNT;
     bool violation = 0;
 
@@ -117,7 +117,7 @@ static int hyundai_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   // This avoids unintended engagements while still allowing resume spam
   // TODO: fix bug preventing the button msg to be fwd'd on bus 2
   //if ((addr == 1265) && !controls_allowed && (bus == 0) {
-  //  if ((to_send->RDLR & 0x7) != 4) {
+  //  if ((GET_BYTES_04(to_send) & 0x7) != 4) {
   //    tx = 0;
   //  }
   //}

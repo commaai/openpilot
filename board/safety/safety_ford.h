@@ -9,7 +9,7 @@
 
 int ford_brake_prev = 0;
 int ford_gas_prev = 0;
-int ford_is_moving = 0;
+bool ford_moving = false;
 
 static void ford_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
@@ -17,14 +17,16 @@ static void ford_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
   if (addr == 0x217) {
     // wheel speeds are 14 bits every 16
-    ford_is_moving = 0xFCFF & (to_push->RDLR | (to_push->RDLR >> 16) |
-                               to_push->RDHR | (to_push->RDHR >> 16));
+    ford_moving = false;
+    for (int i = 0; i < 8; i += 2) {
+      ford_moving |= GET_BYTE(to_push, i) | (GET_BYTE(to_push, (int)(i + 1)) & 0xFCU);
+    }
   }
 
   // state machine to enter and exit controls
   if (addr == 0x83) {
-    bool cancel = (to_push->RDLR >> 8) & 0x1;
-    bool set_or_resume = (to_push->RDLR >> 28) & 0x3;
+    bool cancel = GET_BYTE(to_push, 1) & 0x1;
+    bool set_or_resume = GET_BYTE(to_push, 3) & 0x30;
     if (cancel) {
       controls_allowed = 0;
     }
@@ -36,8 +38,8 @@ static void ford_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   // exit controls on rising edge of brake press or on brake press when
   // speed > 0
   if (addr == 0x165) {
-    int brake = to_push->RDLR & 0x20;
-    if (brake && (!(ford_brake_prev) || ford_is_moving)) {
+    int brake = GET_BYTE(to_push, 0) & 0x20;
+    if (brake && (!(ford_brake_prev) || ford_moving)) {
       controls_allowed = 0;
     }
     ford_brake_prev = brake;
@@ -45,7 +47,7 @@ static void ford_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
   // exit controls on rising edge of gas press
   if (addr == 0x204) {
-    int gas = to_push->RDLR & 0xFF03;
+    int gas = (GET_BYTE(to_push, 0) & 0x03) | GET_BYTE(to_push, 1);
     if (gas && !(ford_gas_prev)) {
       controls_allowed = 0;
     }
@@ -64,7 +66,7 @@ static int ford_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   int tx = 1;
   // disallow actuator commands if gas or brake (with vehicle moving) are pressed
   // and the the latching controls_allowed flag is True
-  int pedal_pressed = ford_gas_prev || (ford_brake_prev && ford_is_moving);
+  int pedal_pressed = ford_gas_prev || (ford_brake_prev && ford_moving);
   bool current_controls_allowed = controls_allowed && !(pedal_pressed);
   int addr = GET_ADDR(to_send);
 
@@ -72,7 +74,7 @@ static int ford_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   if (addr == 0x3CA) {
     if (!current_controls_allowed) {
       // bits 7-4 need to be 0xF to disallow lkas commands
-      if (((to_send->RDLR >> 4) & 0xF) != 0xF) {
+      if ((GET_BYTE(to_send, 0) & 0xF0) != 0xF0) {
         tx = 0;
       }
     }
@@ -81,7 +83,7 @@ static int ford_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   // FORCE CANCEL: safety check only relevant when spamming the cancel button
   // ensuring that set and resume aren't sent
   if (addr == 0x83) {
-    if (((to_send->RDLR >> 28) & 0x3) != 0) {
+    if ((GET_BYTE(to_send, 3) & 0x30) != 0) {
       tx = 0;
     }
   }
