@@ -3,7 +3,7 @@ from common.kalman.simple_kalman import KF1D
 from selfdrive.can.can_define import CANDefine
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
-from selfdrive.car.toyota.values import CAR, DBC, STEER_THRESHOLD, NO_DSU_CAR
+from selfdrive.car.toyota.values import CAR, DBC, STEER_THRESHOLD, NO_DSU_CAR, TSS2_CAR
 
 def parse_gear_shifter(gear, vals):
 
@@ -150,10 +150,10 @@ class CarState(object):
     if self.CP.carFingerprint in NO_DSU_CAR: # Vehicle that needs offsetting
       self.angle_steers_wheel = cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']
       self.angle_steers = cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE'] - self.offset
-            if self.isoffset == 0:
-                self.offset = self.angle_steers - self.angle_steers_wheel
-                self.isoffset = 1
-    elif CP.carFingerprint in TSS2_CAR:
+      if self.isoffset == 0:
+        self.offset = self.angle_steers - self.angle_steers_wheel
+        self.isoffset = 1
+    elif self.CP.carFingerprint in TSS2_CAR:
       self.angle_steers = cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE']
     else:
       self.angle_steers = cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']
