@@ -61,6 +61,9 @@ def get_can_parser(CP):
 
   if CP.carFingerprint in NO_DSU_CAR:
     signals += [("STEER_ANGLE", "STEER_TORQUE_SENSOR", 0)]
+    signals += [("STEER_ANGLE", "STEER_ANGLE_SENSOR", 0)] # Used for offsetting
+  elif CP.carFingerprint in TSS2_CAR:
+    signals += [("STEER_ANGLE", "STEER_TORQUE_SENSOR", 0)]
   else:
     signals += [("STEER_ANGLE", "STEER_ANGLE_SENSOR", 0)]
 
@@ -94,6 +97,8 @@ class CarState(object):
     self.shifter_values = self.can_define.dv["GEAR_PACKET"]['GEAR']
     self.left_blinker_on = 0
     self.right_blinker_on = 0
+    self.offset = 0
+    self.isoffset = 0
 
     # initialize can parser
     self.car_fingerprint = CP.carFingerprint
@@ -142,7 +147,13 @@ class CarState(object):
     self.a_ego = float(v_ego_x[1])
     self.standstill = not v_wheel > 0.001
 
-    if self.CP.carFingerprint in NO_DSU_CAR:
+    if self.CP.carFingerprint in NO_DSU_CAR: # Vehicle that needs offsetting
+      self.angle_steers_wheel = cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']
+      self.angle_steers = cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE'] - self.offset
+            if self.isoffset == 0:
+                self.offset = self.angle_steers - self.angle_steers_wheel
+                self.isoffset = 1
+    elif CP.carFingerprint in TSS2_CAR:
       self.angle_steers = cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE']
     else:
       self.angle_steers = cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']
