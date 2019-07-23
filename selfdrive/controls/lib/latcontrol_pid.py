@@ -72,19 +72,18 @@ class LatControlPID(object):
       self.poly_factor = float(kegman.conf['polyFactor'])
 
   def get_projected_path_error(self, v_ego, path_plan):
-    self.d_poly[3] += path_plan.cProb * ((path_plan.dPoly[3] - self.d_poly[3])) / self.poly_smoothing
-    self.d_poly[2] += path_plan.cProb * ((path_plan.dPoly[2] - self.d_poly[2])) / (self.poly_smoothing * 2)
-    self.d_poly[1] += path_plan.cProb * ((path_plan.dPoly[1] - self.d_poly[1])) / (self.poly_smoothing * 4)
-    self.d_poly[0] = 0  #+= path_plan.cProb * ((path_plan.dPoly[0] - self.d_poly[0])) / (self.poly_smoothing * 6)
-    self.c_poly[3] += path_plan.cProb * ((path_plan.cPoly[3] - self.c_poly[3])) / self.poly_smoothing
-    self.c_poly[2] += path_plan.cProb * ((path_plan.cPoly[2] - self.c_poly[2])) / (self.poly_smoothing * 2)
-    self.c_poly[1] += path_plan.cProb * ((path_plan.cPoly[1] - self.c_poly[1])) / (self.poly_smoothing * 4)
-    self.c_poly[0] = 0  #+= path_plan.cProb * ((path_plan.cPoly[0] - self.c_poly[0])) / (self.poly_smoothing * 6)
+    self.d_poly[3] += (path_plan.dPoly[3] - self.d_poly[3]) / self.poly_smoothing
+    self.d_poly[2] += (path_plan.dPoly[2] - self.d_poly[2]) / (self.poly_smoothing * 2)
+    self.d_poly[1] += (path_plan.dPoly[1] - self.d_poly[1]) / (self.poly_smoothing * 4)
+    self.d_poly[0] += (path_plan.dPoly[0] - self.d_poly[0]) / (self.poly_smoothing * 6)
+    self.c_poly[3] += 0
+    self.c_poly[2] += (path_plan.cPoly[2] - self.c_poly[2]) / (self.poly_smoothing * 2)
+    self.c_poly[1] += (path_plan.cPoly[1] - self.c_poly[1]) / (self.poly_smoothing * 4)
+    self.c_poly[0] += (path_plan.cPoly[0] - self.c_poly[0]) / (self.poly_smoothing * 6)
     x = v_ego * self.total_poly_projection
     self.d_pts = np.polyval(self.d_poly, np.arange(0, x))
     self.c_pts = np.polyval(self.c_poly, np.arange(0, x))
-    #print(np.sum(self.c_pts) - np.sum(self.d_pts))
-    return np.sum(self.c_pts) - np.sum(self.d_pts)
+    return np.sum(self.d_pts) - np.sum(self.c_pts)
 
   def reset(self):
     self.pid.reset()
@@ -113,7 +112,7 @@ class LatControlPID(object):
         self.lane_change_adjustment = 0.0
       else:
         self.lane_change_adjustment = interp(self.lane_changing, [0.0, 1.0, 2.0, 2.25, 2.5, 2.75], [1.0, 0.0, 0.0, 0.1, .2, 1.0])
-      print("%0.2f lane_changing  %0.2f adjustment  %0.2f c_poly   %0.2f avg_poly" % (self.lane_changing, self.lane_change_adjustment, path_plan.cPoly[3], path_plan.lPoly[3] + path_plan.rPoly[3]))
+      #print("%0.2f lane_changing  %0.2f adjustment  %0.2f c_poly   %0.2f avg_poly" % (self.lane_changing, self.lane_change_adjustment, path_plan.cPoly[3], path_plan.lPoly[3] + path_plan.rPoly[3]))
     elif driver_opposing_lane and (blinkers_on or abs(path_plan.cPoly[3]) > 0.5 or min(abs(self.starting_angle - angle_steers), abs(self.angle_steers_des - angle_steers)) > 1.5):
       self.lane_changing = 0.01
     else:
@@ -153,9 +152,8 @@ class LatControlPID(object):
       self.pid.reset()
     else:
       self.angle_steers_des = path_plan.angleSteers
-      damp_mpc = interp(path_plan.rateSteers, [2.0, 15.0], [1.0, 0.5]) * self.damp_mpc
-      self.damp_angle_steers_des += (interp(sec_since_boot() + self.damp_mpc + self.react_mpc, path_plan.mpcTimes, path_plan.mpcAngles) - self.damp_angle_steers_des) / max(1.0, damp_mpc * 100.)
-      self.damp_rate_steers_des += (interp(sec_since_boot() + self.damp_mpc + self.react_mpc, path_plan.mpcTimes, path_plan.mpcRates) - self.damp_rate_steers_des) / max(1.0, damp_mpc * 100.)
+      self.damp_angle_steers_des += (interp(sec_since_boot() + self.damp_mpc + self.react_mpc, path_plan.mpcTimes, path_plan.mpcAngles) - self.damp_angle_steers_des) / max(1.0, self.damp_mpc * 100.)
+      self.damp_rate_steers_des += (interp(sec_since_boot() + self.damp_mpc + self.react_mpc, path_plan.mpcTimes, path_plan.mpcRates) - self.damp_rate_steers_des) / max(1.0, self.damp_mpc * 100.)
       self.damp_angle_steers += (angle_steers + self.damp_time * angle_steers_rate - self.damp_angle_steers) / max(1.0, self.damp_time * 100.)
       steers_max = get_steer_max(CP, v_ego)
       self.pid.pos_limit = steers_max
