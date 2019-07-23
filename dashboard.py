@@ -28,7 +28,7 @@ def dashboard_thread(rate=100):
   osmData = None #messaging.sub_sock(context, 8601, addr=ipaddress, conflate=False, poller=poller)
   canData = None #messaging.sub_sock(context, 8602, addr=ipaddress, conflate=False, poller=poller)
   #pathPlan = messaging.sub_sock(context, service_list['pathPlan'].port, addr=ipaddress, conflate=False, poller=poller)
-  pathPlan = None #messaging.sub_sock(service_list['pathPlan'].port)
+  pathPlan = messaging.sub_sock(service_list['pathPlan'].port)
   liveParameters = messaging.sub_sock(service_list['liveParameters'].port)
   gpsLocation = messaging.sub_sock(service_list['gpsLocation'].port)
   #gpsNMEA = messaging.sub_sock(context, service_list['gpsNMEA'].port, addr=ipaddress, conflate=True)
