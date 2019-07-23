@@ -57,6 +57,7 @@ class CarInterface(object):
     ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
 
     if candidate != CAR.PRIUS:
+      ret.steerRateCost = 0.7
       ret.lateralTuning.init('pid')
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.dampTime = 0.1
