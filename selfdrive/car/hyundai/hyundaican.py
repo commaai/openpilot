@@ -30,6 +30,9 @@ def create_lkas11(packer, car_fingerprint, apply_steer, steer_req, cnt, enabled,
     "CF_Lkas_LdwsOpt_USM": lkas11["CF_Lkas_LdwsOpt_USM"] if keep_stock else 3,
   }
 
+  if car_fingerprint in FEATURES["icon_basic"]:
+    values["CF_Lkas_Icon"] = 2
+
   dat = packer.make_can_msg("LKAS11", 0, values)[2]
 
   if car_fingerprint in CHECKSUM["crc8"]:
@@ -46,9 +49,6 @@ def create_lkas11(packer, car_fingerprint, apply_steer, steer_req, cnt, enabled,
     checksum = (sum(dat[:6]) + dat[7]) % 256
 
   values["CF_Lkas_Chksum"] = checksum
-
-  if car_fingerprint in FEATURES["icon_basic"]:
-    values["CF_Lkas_Icon"] = 2
 
   return packer.make_can_msg("LKAS11", 0, values)
 
