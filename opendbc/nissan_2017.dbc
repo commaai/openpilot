@@ -1,0 +1,184 @@
+VERSION ""
+
+
+NS_ :
+    NS_DESC_
+    CM_
+    BA_DEF_
+    BA_
+    VAL_
+    CAT_DEF_
+    CAT_
+    FILTER
+    BA_DEF_DEF_
+    EV_DATA_
+    ENVVAR_DATA_
+    SGTYPE_
+    SGTYPE_VAL_
+    BA_DEF_SGTYPE_
+    BA_SGTYPE_
+    SIG_TYPE_REF_
+    VAL_TABLE_
+    SIG_GROUP_
+    SIG_VALTYPE_
+    SIGTYPE_VALTYPE_
+    BO_TX_BU_
+    BA_DEF_REL_
+    BA_REL_
+    BA_DEF_DEF_REL_
+    BU_SG_REL_
+    BU_EV_REL_
+    BU_BO_REL_
+    SG_MUL_VAL_
+
+BS_:
+
+BU_: XXX
+
+
+BO_ 644 Speed_1: 8 XXX
+ SG_ Speed_FR : 7|16@0+ (0.0118,0) [0|65535] "" XXX
+ SG_ Speed_FL : 23|16@0+ (0.0118,0) [0|65535] "" XXX
+ SG_ Speed_Vehicle : 39|16@0+ (0.0245,0) [0|65535] "" XXX
+
+BO_ 645 WheelspeedRear: 8 XXX
+ SG_ RR : 7|16@0+ (0.00555,0) [0|65535] "KPH" XXX
+ SG_ RL : 23|16@0+ (0.00555,0) [0|65535] "KPH" XXX
+
+BO_ 768 STEER_TORQUE: 8 XXX
+ SG_ STEERING_TOURQUE : 0|7@1+ (1,0) [0|127] "" XXX
+
+BO_ 459 Maybe_RegenBraking: 8 XXX
+
+BO_ 372 Maybe_Gear_Selector: 8 XXX
+ SG_ Counter : 32|4@1+ (1,0) [0|15] "" XXX
+
+BO_ 374 Maybe_Motor_RPM_or_Speed: 8 XXX
+ SG_ Counter : 48|4@1+ (1,0) [0|15] "" XXX
+
+BO_ 460 Maybe_Brake_Related: 8 XXX
+
+BO_ 2 SteeringWheel: 8 XXX
+ SG_ Steering_RateChange : 23|8@0+ (1,0) [0|255] "" XXX
+ SG_ Always_07 : 31|8@0+ (1,0) [0|255] "" XXX
+ SG_ Steering_Angle : 0|16@1- (-0.1,0) [0|65535] "" XXX
+
+BO_ 384 Maybe_PowerInfo: 8 XXX
+ SG_ Unknown_Timer_PowerInfo : 48|4@1+ (1,0) [0|15] "" XXX
+ SG_ EnginePower : 27|12@0- (1,0) [0|1] "" XXX
+ SG_ RequestedAccel : 23|12@0- (1,0) [0|4294967295] "" XXX
+
+BO_ 1107 Lights: 8 XXX
+ SG_ RIGHT_BLINKER : 12|1@0+ (1,0) [0|1] "" XXX
+ SG_ LEFT_BLINKER : 11|1@0+ (1,0) [0|1] "" XXX
+ SG_ _HEADLIGHTS : 5|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 666 WheelspeedFront: 8 XXX
+ SG_ _FL_WHEELSPEED : 39|16@0+ (0.01014,0) [0|65535] "" XXX
+ SG_ FR : 7|16@0+ (0.00555,0) [0|65535] "KPH" XXX
+ SG_ FL : 23|16@0+ (0.00555,0) [0|65535] "KPH" XXX
+
+BO_ 398 NEW_MSG_2: 8 XXX
+
+BO_ 389 NEW_MSG_3: 8 XXX
+ SG_ NEW_SIGNAL_1 : 15|8@0+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_2 : 22|6@0+ (1,0) [0|3] "" XXX
+ SG_ NEW_SIGNAL_4 : 47|8@0+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_5 : 55|4@0+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_6 : 63|8@0+ (1,0) [0|127] "" XXX
+ SG_ COUNTER : 48|4@1+ (1,0) [0|15] "" XXX
+ SG_ NEW_SIGNAL_3 : 30|8@0- (1,0) [0|255] "" XXX
+
+BO_ 397 NEW_MSG_4: 8 XXX
+ SG_ NEW_SIGNAL_1 : 7|16@0+ (1,0) [0|3] "" XXX
+ SG_ NEW_SIGNAL_2 : 23|16@0+ (1,0) [0|32767] "" XXX
+ SG_ NEW_SIGNAL_3 : 39|16@0+ (1,0) [0|65535] "" XXX
+ SG_ NEW_SIGNAL_4 : 55|16@0+ (1,0) [0|31] "" XXX
+
+BO_ 658 NEW_MSG_5: 8 XXX
+ SG_ NEW_SIGNAL_1 : 7|16@0+ (1,0) [0|255] "" XXX
+
+BO_ 855 NEW_MSG_6: 8 XXX
+ SG_ NEW_SIGNAL_1 : 7|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 773 NEW_MSG_7: 8 XXX
+ SG_ NEW_SIGNAL_1 : 39|8@0+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_2 : 47|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 851 SPEED_RELATED: 8 XXX
+ SG_ SPEED_RELATED : 7|16@0+ (0.01014,0) [0|65535] "" XXX
+
+BO_ 386 Accelerator: 8 XXX
+ SG_ Accelerator : 38|7@0+ (1,0) [0|127] "" XXX
+
+BO_ 347 ACCELSOMETHING: 8 XXX
+ SG_ PowerMaybe : 9|10@0+ (1,0) [0|1023] "" XXX
+ SG_ ACCELERATOR2 : 6|11@0+ (1,-800) [0|65535] "" XXX
+
+BO_ 346 ANOTHER_ACCEL: 8 XXX
+ SG_ ANOTHERACCEL : 23|10@0+ (1,0) [0|1023] "" XXX
+ SG_ Reverse_ACCEL : 25|10@0+ (1,0) [0|1023] "" XXX
+
+BO_ 348 FULLRANGEACCEL: 8 XXX
+ SG_ AccelFullRange : 47|10@0+ (1,0) [0|1023] "" XXX
+ SG_ Accel : 26|11@0+ (1,0) [0|2047] "" XXX
+ SG_ NEW_SIGNAL_1 : 7|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 566 ANOTHERFULLRANGEACCEL: 8 XXX
+ SG_ ANOTHERFULLRANGEACCEL : 43|8@0+ (1,0) [0|1023] "" XXX
+ SG_ RPMORTORQUE : 31|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 523 Yetyetanotheraccel: 8 XXX
+ SG_ ANOTHERREVERSEACCEL : 37|10@0+ (1,0) [0|1023] "" XXX
+ SG_ yetyetanotheraccel : 31|10@0+ (1,0) [0|255] "" XXX
+
+BO_ 779 ANOTHERRRFULLRANGEACCEL: 8 XXX
+ SG_ ANOTHERRRFULLRANGEACCEL : 47|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 1108 Doors: 8 XXX
+ SG_ DOOR_CLOSED_RR : 40|1@0+ (1,0) [0|1] "" XXX
+ SG_ DOOR_OPEN_RR : 41|1@0+ (1,0) [0|1] "" XXX
+ SG_ DOOR_CLOSED_RL : 42|1@0+ (1,0) [0|1] "" XXX
+ SG_ DOOR_OPEN_RL : 43|1@0+ (1,0) [0|1] "" XXX
+ SG_ DOOR_CLOSED_FL : 44|1@0+ (1,0) [0|1] "" XXX
+ SG_ DOOR_OPEN_FL : 45|1@0+ (1,0) [0|1] "" XXX
+ SG_ DOOR_CLOSED_FR : 46|1@0+ (1,0) [0|3] "" XXX
+ SG_ DOOR_OPEN_FR : 47|1@0+ (1,0) [0|3] "" XXX
+ SG_ BOOT_OPEN : 55|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 403 LKAS_OLD: 8 XXX
+ SG_ Checksum : 63|8@0+ (1,0) [0|255] "" XXX
+ SG_ Angle_2 : 32|13@0+ (1,-4000) [0|63] "" XXX
+ SG_ Counter : 48|4@1+ (1,0) [0|15] "" XXX
+ SG_ Angle_1 : 10|13@0+ (0.12,-480) [0|65535] "" XXX
+ SG_ Steering_Torque : 7|13@0+ (-1,4000) [0|65535] "" XXX
+ SG_ Torque_Command : 29|13@0+ (1,-4000) [0|255] "" XXX
+
+BO_ 412 NEW_MSG_9: 8 XXX
+ SG_ NEW_SIGNAL_1 : 7|16@0+ (1,0) [0|65535] "" XXX
+ SG_ NEW_SIGNAL_3 : 23|16@0+ (1,0) [0|65535] "" XXX
+ SG_ NEW_SIGNAL_2 : 39|8@0+ (1,0) [0|3] "" XXX
+ SG_ NEW_SIGNAL_4 : 47|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 361 LKAS: 8 XXX
+ SG_ NEW_SIGNAL_4 : 39|8@0+ (1,0) [0|255] "" XXX
+ SG_ SET_X80 : 47|8@0+ (1,0) [0|255] "" XXX
+ SG_ LKA_Active : 52|1@0+ (1,0) [0|15] "" XXX
+ SG_ CRC : 63|8@0+ (1,0) [0|255] "" XXX
+ SG_ SET_0x80_2 : 31|8@0+ (1,0) [0|255] "" XXX
+ SG_ Counter : 51|4@0+ (1,0) [0|15] "" XXX
+ SG_ Des_Angle : 7|18@0+ (-0.01,1310) [0|255] "" XXX
+
+BO_ 438 ProPilot: 8 XXX
+ SG_ NEW_SIGNAL_2 : 11|4@0+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_4 : 27|4@0+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_8 : 63|8@0+ (1,0) [0|7] "" XXX
+ SG_ Counter : 55|4@0+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_6 : 47|8@0+ (1,0) [0|255] "" XXX
+ SG_ SET_3 : 32|2@1+ (1,0) [0|15] "" XXX
+ SG_ NEW_SIGNAL_1 : 7|12@0- (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_3 : 23|12@0- (-1,0) [0|255] "" XXX
+ SG_ CRUISE_ON : 36|1@0+ (1,0) [0|255] "" XXX
+ SG_ CRUISE_ACTIVATED : 38|1@0+ (1,0) [0|3] "" XXX
+ SG_ STEER_STATUS : 51|1@1+ (1,0) [0|3] "" XXX
+ 

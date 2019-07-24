@@ -101,11 +101,11 @@ def report_tombstone(fn, client):
   cloudlog.error({'tombstone': message})
 
 
-def main(gctx):
+def main(gctx=None):
   initial_tombstones = set(get_tombstones())
 
   client = Client('https://d3b175702f62402c91ade04d1c547e68:b20d68c813c74f63a7cdf9c4039d8f56@sentry.io/157615',
-                  install_sys_hook=False, transport=HTTPTransport, release=version, tags={'dirty': dirty})
+                  install_sys_hook=False, transport=HTTPTransport, release=version, tags={'dirty': dirty}, string_max_length=10000)
 
   client.user_context({'id': os.environ.get('DONGLE_ID')})
   while True:
@@ -119,4 +119,4 @@ def main(gctx):
     time.sleep(5)
 
 if __name__ == "__main__":
-  main(None)
+  main()

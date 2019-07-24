@@ -10,8 +10,8 @@ First record a few minutes of background CAN messages with all the doors closed 
 ./can_logger.py
 mv output.csv background.csv
 ```
-Then run can_logger.py for a few seconds while performing the action you're interested, such as opening and then closing the 
-front-left door and save it as door-fl-1.csv 
+Then run can_logger.py for a few seconds while performing the action you're interested, such as opening and then closing the
+front-left door and save it as door-fl-1.csv
 Repeat the process and save it as door-f1-2.csv to have an easy way to confirm any suspicions.
 
 Now we'll use can_unique.py to look for unique bits:

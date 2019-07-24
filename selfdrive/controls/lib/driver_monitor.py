@@ -1,10 +1,8 @@
 import numpy as np
-from common.realtime import sec_since_boot
+from common.realtime import sec_since_boot, DT_CTRL, DT_DMON
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from common.filter_simple import FirstOrderFilter
 
-_DT = 0.01                  # update runs at 100Hz
-_DTM = 0.1                   # DM runs at 10Hz
 _AWARENESS_TIME = 180        # 3 minutes limit without user touching steering wheels make the car enter a terminal status
 _AWARENESS_PRE_TIME = 20.    # a first alert is issued 20s before expiration
 _AWARENESS_PROMPT_TIME = 5.  # a second alert is issued 5s before start decelerating the car
@@ -16,10 +14,12 @@ _PITCH_WEIGHT = 1.5  # pitch matters a lot more
 _METRIC_THRESHOLD = 0.4
 _PITCH_POS_ALLOWANCE = 0.08   # rad, to not be too sensitive on positive pitch
 _PITCH_NATURAL_OFFSET = 0.1   # people don't seem to look straight when they drive relaxed, rather a bit up
+_YAW_NATURAL_OFFSET = 0.08    # people don't seem to look straight when they drive relaxed, rather a bit to the right (center of car)
 _STD_THRESHOLD = 0.1          # above this standard deviation consider the measurement invalid
 _DISTRACTED_FILTER_TS = 0.25  # 0.6Hz
 _VARIANCE_FILTER_TS = 20.     # 0.008Hz
 
+MAX_TERMINAL_ALERTS = 3      # not allowed to engage after 3 terminal alerts
 RESIZED_FOCAL = 320.0
 H, W, FULL_W = 320, 160, 426
 
@@ -51,7 +51,7 @@ class _DriverPose():
     self.pitch_offset = 0.
 
 
-def _monitor_hysteresys(variance_level, monitor_valid_prev):
+def _monitor_hysteresis(variance_level, monitor_valid_prev):
   var_thr = 0.63 if monitor_valid_prev else 0.37
   return variance_level < var_thr
 
@@ -64,11 +64,12 @@ class DriverStatus():
     self.monitor_valid = True   # variance needs to be low
     self.awareness = 1.
     self.driver_distracted = False
-    self.driver_distraction_filter = FirstOrderFilter(0., _DISTRACTED_FILTER_TS, _DTM)
+    self.driver_distraction_filter = FirstOrderFilter(0., _DISTRACTED_FILTER_TS, DT_DMON)
     self.variance_high = False
-    self.variance_filter = FirstOrderFilter(0., _VARIANCE_FILTER_TS, _DTM)
+    self.variance_filter = FirstOrderFilter(0., _VARIANCE_FILTER_TS, DT_DMON)
     self.ts_last_check = 0.
     self.face_detected = False
+    self.terminal_alert_cnt = 0
     self._set_timers()
 
   def _reset_filters(self):
@@ -80,16 +81,16 @@ class DriverStatus():
     if self.monitor_on:
       self.threshold_pre = _DISTRACTED_PRE_TIME / _DISTRACTED_TIME
       self.threshold_prompt = _DISTRACTED_PROMPT_TIME / _DISTRACTED_TIME
-      self.step_change = _DT / _DISTRACTED_TIME
+      self.step_change = DT_CTRL / _DISTRACTED_TIME
     else:
       self.threshold_pre = _AWARENESS_PRE_TIME / _AWARENESS_TIME
       self.threshold_prompt = _AWARENESS_PROMPT_TIME / _AWARENESS_TIME
-      self.step_change = _DT / _AWARENESS_TIME
+      self.step_change = DT_CTRL / _AWARENESS_TIME
 
   def _is_driver_distracted(self, pose):
     # to be tuned and to learn the driver's normal pose
     pitch_error = pose.pitch - _PITCH_NATURAL_OFFSET
-    yaw_error = pose.yaw
+    yaw_error = pose.yaw - _YAW_NATURAL_OFFSET
     # add positive pitch allowance
     if pitch_error > 0.:
       pitch_error = max(pitch_error - _PITCH_POS_ALLOWANCE, 0.)
@@ -124,7 +125,7 @@ class DriverStatus():
       self.monitor_param_on = params.get("IsDriverMonitoringEnabled") == "1"
       self.ts_last_check = ts
 
-    self.monitor_valid = _monitor_hysteresys(self.variance_filter.x, monitor_valid_prev)
+    self.monitor_valid = _monitor_hysteresis(self.variance_filter.x, monitor_valid_prev)
     self.monitor_on = self.monitor_valid and self.monitor_param_on
     if monitor_param_on_prev != self.monitor_param_on:
       self._reset_filters()
@@ -134,6 +135,7 @@ class DriverStatus():
   def update(self, events, driver_engaged, ctrl_active, standstill):
 
     driver_engaged |= (self.driver_distraction_filter.x < 0.37 and self.monitor_on)
+    awareness_prev = self.awareness
 
     if (driver_engaged and self.awareness > 0.) or not ctrl_active:
       # always reset if driver is in control (unless we are in red alert state) or op isn't active
@@ -145,15 +147,18 @@ class DriverStatus():
       self.awareness = max(self.awareness - self.step_change, -0.1)
 
     alert = None
-    if self.awareness <= 0.:
+    if self.awareness < 0.:
       # terminal red alert: disengagement required
       alert = 'driverDistracted' if self.monitor_on else 'driverUnresponsive'
+      if awareness_prev >= 0.:
+        self.terminal_alert_cnt += 1
     elif self.awareness <= self.threshold_prompt:
       # prompt orange alert
       alert = 'promptDriverDistracted' if self.monitor_on else 'promptDriverUnresponsive'
     elif self.awareness <= self.threshold_pre:
       # pre green alert
       alert = 'preDriverDistracted' if self.monitor_on else 'preDriverUnresponsive'
+
     if alert is not None:
       events.append(create_event(alert, [ET.WARNING]))
 

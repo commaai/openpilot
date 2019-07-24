@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 import sys
 import argparse
 import zmq
@@ -14,7 +14,6 @@ def run_server(socketio):
   socketio.run(app, host='0.0.0.0', port=4000)
 
 if __name__ == "__main__":
-  context = zmq.Context()
   poller = zmq.Poller()
 
   parser = argparse.ArgumentParser(description='Sniff a communcation socket')
@@ -40,9 +39,9 @@ if __name__ == "__main__":
     else:
       print("service not found")
       sys.exit(-1)
-    sock = messaging.sub_sock(context, port, poller, addr=args.addr)
+    sock = messaging.sub_sock(port, poller, addr=args.addr)
     if args.proxy:
-      republish_socks[sock] = messaging.pub_sock(context, port)
+      republish_socks[sock] = messaging.pub_sock(port)
 
   if args.map:
     from flask.ext.socketio import SocketIO  #pylint: disable=no-name-in-module, import-error

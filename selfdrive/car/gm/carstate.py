@@ -49,6 +49,7 @@ def get_powertrain_can_parser(CP, canbus):
 
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, [], canbus.powertrain)
 
+
 class CarState(object):
   def __init__(self, CP, canbus):
     self.CP = CP
@@ -63,15 +64,13 @@ class CarState(object):
 
     # vEgo kalman filter
     dt = 0.01
-    self.v_ego_kf = KF1D(x0=np.matrix([[0.], [0.]]),
-                         A=np.matrix([[1., dt], [0., 1.]]),
-                         C=np.matrix([1., 0.]),
-                         K=np.matrix([[0.12287673], [0.29666309]]))
+    self.v_ego_kf = KF1D(x0=[[0.], [0.]],
+                         A=[[1., dt], [0., 1.]],
+                         C=[1., 0.],
+                         K=[[0.12287673], [0.29666309]])
     self.v_ego = 0.
 
   def update(self, pt_cp):
-
-    self.can_valid = pt_cp.can_valid
     self.prev_cruise_buttons = self.cruise_buttons
     self.cruise_buttons = pt_cp.vl["ASCMSteeringButton"]['ACCButtons']
 
@@ -117,7 +116,6 @@ class CarState(object):
     self.steer_error = False
 
     self.brake_error = False
-    self.can_valid = True
 
     self.prev_left_blinker_on = self.left_blinker_on
     self.prev_right_blinker_on = self.right_blinker_on

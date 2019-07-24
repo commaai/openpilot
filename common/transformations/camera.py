@@ -1,6 +1,5 @@
 import numpy as np
 import common.transformations.orientation as orient
-import cv2
 import math
 
 FULL_FRAME_SIZE = (1164, 874)
@@ -15,13 +14,13 @@ eon_intrinsics = np.array([
 
 
 leon_dcam_intrinsics = np.array([
-  [650,   0,   816/2],
-  [  0,  650,  612/2],
+  [650,   0,   816//2],
+  [  0,  650,  612//2],
   [  0,    0,     1]])
 
 eon_dcam_intrinsics = np.array([
-  [860,   0,   1152/2],
-  [  0,  860,  864/2],
+  [860,   0,   1152//2],
+  [  0,  860,  864//2],
   [  0,    0,     1]])
 
 # aka 'K_inv' aka view_frame_from_camera_frame
@@ -126,6 +125,8 @@ def img_from_device(pt_device):
 
 #TODO please use generic img transform below
 def rotate_img(img, eulers, crop=None, intrinsics=eon_intrinsics):
+  import cv2
+
   size = img.shape[:2]
   rot = orient.rot_from_euler(eulers)
   quadrangle = np.array([[0, 0],
@@ -162,6 +163,8 @@ def transform_img(base_img,
                  output_size=None,
                  pretransform=None,
                  top_hacks=True):
+  import cv2
+
   size = base_img.shape[:2]
   if not output_size:
     output_size = size[::-1]
@@ -200,3 +203,14 @@ def transform_img(base_img,
     augmented_rgb[:cyy] = cv2.warpPerspective(base_img, M, (output_size[0], cyy), borderMode=cv2.BORDER_REPLICATE)
 
   return augmented_rgb
+
+def yuv_crop(frame, output_size, center=None):
+  # output_size in camera coordinates so u,v
+  # center in array coordinates so row, column
+  import cv2
+  rgb = cv2.cvtColor(frame, cv2.COLOR_YUV2RGB_I420)
+  if not center:
+    center = (rgb.shape[0]/2, rgb.shape[1]/2)
+  rgb_crop = rgb[center[0] - output_size[1]/2: center[0] + output_size[1]/2,
+                 center[1] - output_size[0]/2: center[1] + output_size[0]/2]
+  return cv2.cvtColor(rgb_crop, cv2.COLOR_RGB2YUV_I420)
