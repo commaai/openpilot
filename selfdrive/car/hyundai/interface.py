@@ -283,7 +283,7 @@ class CarInterface(object):
       events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
 
     if self.low_speed_alert:
-      events.append(create_event('belowSteerSpeed', [ET.WARNING, ET.PRE_ENABLE]))
+      events.append(create_event('belowSteerSpeed', [ET.WARNING]))
 
     ret.events = events
     ret.canMonoTimes = canMonoTimes
@@ -298,7 +298,9 @@ class CarInterface(object):
 
     hud_alert = get_hud_alerts(c.hudControl.visualAlert, c.hudControl.audibleAlert)
 
-    can_sends = self.CC.update(c.enabled, self.CS, c.actuators,
+    enable = 0 if self.low_speed_alert else c.enabled
+
+    can_sends = self.CC.update(enabled, self.CS, c.actuators,
                                c.cruiseControl.cancel, hud_alert)
 
     return can_sends
