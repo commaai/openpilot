@@ -25,7 +25,9 @@ class ModelParser(object):
     if len(md.leftLane.poly):
       l_poly = np.array(md.leftLane.poly)
       r_poly = np.array(md.rightLane.poly)
-      p_poly = np.array(md.path.poly)
+      #p_poly = np.array(md.path.poly)
+      p_poly = np.array(self.d_poly)
+      p_poly[3] = 0.0
     else:
       l_poly = model_polyfit(md.leftLane.points, self._path_pinv)  # left line
       r_poly = model_polyfit(md.rightLane.points, self._path_pinv)  # right line
@@ -46,7 +48,7 @@ class ModelParser(object):
     self.lane_width_certainty += 0.05 * decay_rate * (lr_prob - self.lane_width_certainty)
     current_lane_width = abs(l_poly[3] - r_poly[3])
     self.lane_width_estimate += 0.005 * decay_rate * (current_lane_width - self.lane_width_estimate)
-    speed_lane_width = interp(v_ego, [0., 31.], [3.0, 3.6])
+    speed_lane_width = interp(v_ego, [0., 31.], [3.0, 3.8])
     self.lane_width = self.lane_width_certainty * self.lane_width_estimate + (1.0 - self.lane_width_certainty) * speed_lane_width
 
     self.lead_dist = md.lead.dist
@@ -55,7 +57,7 @@ class ModelParser(object):
 
     # compute target path
     self.d_poly, self.c_poly, self.c_prob = calc_desired_path(
-      l_poly, r_poly, np.array(self.d_poly), l_prob, r_prob, p_prob, v_ego, self.lane_width)
+      l_poly, r_poly, p_poly l_prob, r_prob, p_prob, v_ego, self.lane_width)
 
     self.r_poly = r_poly
     self.r_prob = r_prob
