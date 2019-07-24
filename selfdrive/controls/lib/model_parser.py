@@ -42,6 +42,7 @@ class ModelParser(object):
     # Find current lanewidth
     lr_prob = l_prob * r_prob
     decay_rate = interp(lr_prob, [0., 0.5], [0.1, 0.3])
+    decay_rate *= v_ego / 31.0
     self.lane_width_certainty += 0.05 * decay_rate * (lr_prob - self.lane_width_certainty)
     current_lane_width = abs(l_poly[3] - r_poly[3])
     self.lane_width_estimate += 0.005 * decay_rate * (current_lane_width - self.lane_width_estimate)
