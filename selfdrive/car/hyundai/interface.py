@@ -300,7 +300,7 @@ class CarInterface(object):
 
     enable = 0 if self.low_speed_alert else c.enabled
 
-    can_sends = self.CC.update(enabled, self.CS, c.actuators,
+    can_sends = self.CC.update(enable, self.CS, c.actuators,
                                c.cruiseControl.cancel, hud_alert)
 
     return can_sends
