@@ -47,8 +47,8 @@ class ModelParser(object):
     current_lane_width = abs(l_poly[3] - r_poly[3])
     self.lane_width_estimate += 0.005 * decay_rate * (current_lane_width - self.lane_width_estimate)
     speed_lane_width = interp(v_ego, [0., 31.], [2.8, 3.5])
-    self.lane_width = (self.lane_width_certainty * self.lane_width_estimate + \
-                       0.2 * speed_lane_width) / (0.2 + self.lane_width_certainty)
+    self.lane_width = self.lane_width_certainty * self.lane_width_estimate + \
+                      (1 - self.lane_width_certainty) * speed_lane_width
     self.lead_dist = md.lead.dist
     self.lead_prob = md.lead.prob
     self.lead_var = md.lead.std**2
