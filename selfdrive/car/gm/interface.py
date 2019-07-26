@@ -60,13 +60,16 @@ class CarInterface(object):
     # or camera is on powertrain bus (LKA cars without ACC).
     ret.enableCamera = not any(x for x in STOCK_CONTROL_MSGS[candidate] if x in fingerprint)
     ret.openpilotLongitudinalControl = ret.enableCamera
-    ret.lateralTuning.pid.dampTime = 0.02
-    ret.lateralTuning.pid.reactMPC = -0.05
-    ret.lateralTuning.pid.dampMPC = 0.25
+    ret.lateralTuning.pid.dampTime = 0.1
+    ret.lateralTuning.pid.reactMPC = 0.05
+    ret.lateralTuning.pid.dampMPC = 0.2
     ret.lateralTuning.pid.rateFFGain = 0.4
-    ret.lateralTuning.pid.polyFactor = 0.001
-    ret.lateralTuning.pid.polyDampTime = 0.2
+    ret.lateralTuning.pid.polyFactor = 0.01
+    ret.lateralTuning.pid.polyDampTime = 0.25
     ret.lateralTuning.pid.polyReactTime = 1.0
+    ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+    ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.15], [0.01]]
+    ret.lateralTuning.pid.kf = 0.000035   # full torque for 20 deg at 80mph means 0.00007818594
     tire_stiffness_factor = 0.444  # not optimized yet
 
     if candidate == CAR.VOLT:
@@ -145,11 +148,6 @@ class CarInterface(object):
     # mass and CG position, so all cars will have approximately similar dyn behaviors
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
                                                                          tire_stiffness_factor=tire_stiffness_factor)
-
-    # same tuning for Volt and CT6 for now
-    ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
-    ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.00]]
-    ret.lateralTuning.pid.kf = 0.00004   # full torque for 20 deg at 80mph means 0.00007818594
 
     ret.steerMaxBP = [0.]  # m/s
     ret.steerMaxV = [1.]
