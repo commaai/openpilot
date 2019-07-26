@@ -170,7 +170,7 @@ class CarInterface(object):
     ret.lateralTuning.pid.reactMPC = -0.05
     ret.lateralTuning.pid.dampMPC = 0.25
     ret.lateralTuning.pid.rateFFGain = 0.4
-    ret.lateralTuning.pid.polyFactor = 0.003
+    ret.lateralTuning.pid.polyFactor = 0.001
     ret.lateralTuning.pid.polyDampTime = 0.2
     ret.lateralTuning.pid.polyReactTime = 1.0
 
@@ -186,12 +186,12 @@ class CarInterface(object):
       if is_fw_modified:
         ret.lateralTuning.pid.kf = 0.00004
 
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.4], [0.12]] if is_fw_modified else [[0.8], [0.24]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.4], [0.12]] if is_fw_modified else [[0.8], [0.12]]
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
       ret.longitudinalTuning.kpV = [3.6, 2.4, 1.5]
       ret.longitudinalTuning.kiBP = [0., 35.]
       ret.longitudinalTuning.kiV = [0.54, 0.36]
-      ret.lateralTuning.pid.dampTime = 0.02
+      ret.lateralTuning.pid.dampTime = 0.1
       ret.lateralTuning.pid.reactMPC = -0.05
       ret.lateralTuning.pid.rateFFGain = 0.4
 
@@ -227,7 +227,7 @@ class CarInterface(object):
       ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
       ret.longitudinalTuning.kiBP = [0., 35.]
       ret.longitudinalTuning.kiV = [0.18, 0.12]
-      ret.lateralTuning.pid.dampTime = 0.02
+      ret.lateralTuning.pid.dampTime = 0.1
       ret.lateralTuning.pid.reactMPC = -0.05
       ret.lateralTuning.pid.rateFFGain = 0.4
 
