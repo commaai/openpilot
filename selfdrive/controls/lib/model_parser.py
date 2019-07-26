@@ -50,14 +50,13 @@ class ModelParser(object):
     speed_lane_width = interp(v_ego, [0., 31.], [3.0, 3.8])
     self.lane_width = self.lane_width_certainty * self.lane_width_estimate + (1.0 - self.lane_width_certainty) * speed_lane_width
 
-    '''half_lane_width = self.lane_width / 2.0
+    half_lane_width = self.lane_width / 2.0
     if l_poly[3] > -r_poly[3]:
       if -r_poly[3] < half_lane_width:
         p_poly[3] = r_prob * (r_poly[3] + half_lane_width)
     else:
       if l_poly[3] < half_lane_width:
         p_poly[3] = l_prob * (l_poly[3] - half_lane_width)
-    '''
 
     self.lead_dist = md.lead.dist
     self.lead_prob = md.lead.prob
