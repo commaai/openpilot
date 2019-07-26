@@ -13,14 +13,14 @@ void set_power_save_state(int state) {
       if (is_grey_panda) {
         char UBLOX_SLEEP_MSG[] = "\xb5\x62\x06\x04\x04\x00\x01\x00\x08\x00\x17\x78";
         uart_ring *ur = get_ring_by_number(1);
-        for (unsigned int i = 0; i < sizeof(UBLOX_SLEEP_MSG) - 1; i++) while (!putc(ur, UBLOX_SLEEP_MSG[i]));
+        for (unsigned int i = 0; i < sizeof(UBLOX_SLEEP_MSG) - 1U; i++) while (!putc(ur, UBLOX_SLEEP_MSG[i]));
       }
     } else {
       puts("disable power savings\n");
       if (is_grey_panda) {
         char UBLOX_WAKE_MSG[] = "\xb5\x62\x06\x04\x04\x00\x01\x00\x09\x00\x18\x7a";
         uart_ring *ur = get_ring_by_number(1);
-        for (unsigned int i = 0; i < sizeof(UBLOX_WAKE_MSG) - 1; i++) while (!putc(ur, UBLOX_WAKE_MSG[i]));
+        for (unsigned int i = 0; i < sizeof(UBLOX_WAKE_MSG) - 1U; i++) while (!putc(ur, UBLOX_WAKE_MSG[i]));
       }
       enable = true;
     }

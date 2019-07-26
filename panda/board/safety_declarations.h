@@ -1,7 +1,3 @@
-#define GET_BUS(msg) (((msg)->RDTR >> 4) & 0xFF)
-#define GET_LEN(msg) ((msg)->RDTR & 0xf)
-#define GET_ADDR(msg) ((((msg)->RIR & 4) != 0) ? ((msg)->RIR >> 3) : ((msg)->RIR >> 21))
-
 // sample struct that keeps 3 samples in memory
 struct sample_t {
   int values[6];
@@ -54,3 +50,6 @@ int gas_interceptor_prev = 0;
 
 // This is set by USB command 0xdf
 bool long_controls_allowed = 1;
+
+// avg between 2 tracks
+#define GET_INTERCEPTOR(msg) (((GET_BYTE((msg), 0) << 8) + GET_BYTE((msg), 1) + ((GET_BYTE((msg), 2) << 8) + GET_BYTE((msg), 3)) / 2 ) / 2)

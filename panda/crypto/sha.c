@@ -130,7 +130,7 @@ const uint8_t* SHA_final(SHA_CTX* ctx) {
 
     /* Hack - right shift operator with non const argument requires
      *        libgcc.a which is missing in EON
-     *        thus expanding for loop from 
+     *        thus expanding for loop from
 
               for (i = 0; i < 8; ++i) {
                   uint8_t tmp = (uint8_t) (cnt >> ((7 - i) * 8));

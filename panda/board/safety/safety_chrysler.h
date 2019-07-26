@@ -18,8 +18,7 @@ static void chrysler_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
   // Measured eps torque
   if (addr == 544) {
-    uint32_t rdhr = to_push->RDHR;
-    int torque_meas_new = ((rdhr & 0x7U) << 8) + ((rdhr & 0xFF00U) >> 8) - 1024U;
+    int torque_meas_new = ((GET_BYTE(to_push, 4) & 0x7U) << 8) + GET_BYTE(to_push, 5) - 1024U;
 
     // update array of samples
     update_sample(&chrysler_torque_meas, torque_meas_new);
@@ -27,7 +26,7 @@ static void chrysler_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
   // enter controls on rising edge of ACC, exit controls on ACC off
   if (addr == 0x1F4) {
-    int cruise_engaged = ((to_push->RDLR & 0x380000) >> 19) == 7;
+    int cruise_engaged = ((GET_BYTE(to_push, 2) & 0x38) >> 3) == 7;
     if (cruise_engaged && !chrysler_cruise_engaged_last) {
       controls_allowed = 1;
     }
@@ -57,8 +56,7 @@ static int chrysler_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 
   // LKA STEER
   if (addr == 0x292) {
-    uint32_t rdlr = to_send->RDLR;
-    int desired_torque = ((rdlr & 0x7U) << 8) + ((rdlr & 0xFF00U) >> 8) - 1024U;
+    int desired_torque = ((GET_BYTE(to_send, 0) & 0x7U) << 8) + GET_BYTE(to_send, 1) - 1024U;
     uint32_t ts = TIM2->CNT;
     bool violation = 0;
 

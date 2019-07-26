@@ -13,8 +13,13 @@
 #endif
 
 // default since there's no serial
-void puts(const char *a) {}
-void puth(unsigned int i) {}
+void puts(const char *a) {
+  UNUSED(a);
+}
+
+void puth(unsigned int i) {
+  UNUSED(i);
+}
 
 #include "libc.h"
 #include "provision.h"
@@ -34,11 +39,11 @@ void puth(unsigned int i) {}
 
 #include "spi_flasher.h"
 
-void __initialize_hardware_early() {
+void __initialize_hardware_early(void) {
   early();
 }
 
-void fail() {
+void fail(void) {
   soft_flasher_start();
 }
 
@@ -48,7 +53,7 @@ extern void *_app_start[];
 // FIXME: sometimes your panda will fail flashing and will quickly blink a single Green LED
 // BOUNTY: $200 coupon on shop.comma.ai or $100 check.
 
-int main() {
+int main(void) {
   __disable_irq();
   clock_init();
   detect();
@@ -88,7 +93,7 @@ fail:
   return 0;
 good:
   // jump to flash
-  ((void(*)()) _app_start[1])();
+  ((void(*)(void)) _app_start[1])();
   return 0;
 }
 

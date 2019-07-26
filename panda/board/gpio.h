@@ -99,9 +99,9 @@ void periph_init(void) {
 
 // ********************* setters *********************
 
-void set_can_enable(CAN_TypeDef *CAN, bool enabled) {
+void set_can_enable(CAN_TypeDef *CAN_obj, bool enabled) {
   // enable CAN busses
-  if (CAN == CAN1) {
+  if (CAN_obj == CAN1) {
     #ifdef PANDA
       // CAN1_EN
       set_gpio_output(GPIOC, 1, !enabled);
@@ -114,7 +114,7 @@ void set_can_enable(CAN_TypeDef *CAN, bool enabled) {
         set_gpio_output(GPIOB, 3, enabled);
       #endif
     #endif
-  } else if (CAN == CAN2) {
+  } else if (CAN_obj == CAN2) {
     #ifdef PANDA
       // CAN2_EN
       set_gpio_output(GPIOC, 13, !enabled);
@@ -123,10 +123,12 @@ void set_can_enable(CAN_TypeDef *CAN, bool enabled) {
       set_gpio_output(GPIOB, 4, enabled);
     #endif
   #ifdef CAN3
-  } else if (CAN == CAN3) {
+  } else if (CAN_obj == CAN3) {
     // CAN3_EN
     set_gpio_output(GPIOA, 0, !enabled);
   #endif
+  } else {
+    puts("Invalid CAN: enabling failed\n");
   }
 }
 
@@ -171,6 +173,8 @@ void set_can_mode(int can, bool use_gmlan) {
       set_gpio_alternate(GPIOB, 3, GPIO_AF11_CAN3);
       set_gpio_alternate(GPIOB, 4, GPIO_AF11_CAN3);
 #endif
+    } else {
+      puts("Invalid CAN: mode setting failed\n");
     }
   } else {
     if (can == 1) {
@@ -190,6 +194,8 @@ void set_can_mode(int can, bool use_gmlan) {
       set_gpio_alternate(GPIOA, 8, GPIO_AF11_CAN3);
       set_gpio_alternate(GPIOA, 15, GPIO_AF11_CAN3);
 #endif
+    } else {
+      puts("Invalid CAN: mode setting failed\n");
     }
   }
 }
@@ -404,9 +410,13 @@ void early(void) {
   // if wrong chip, reboot
   volatile unsigned int id = DBGMCU->IDCODE;
   #ifdef STM32F4
-    if ((id&0xFFF) != 0x463) enter_bootloader_mode = ENTER_BOOTLOADER_MAGIC;
+    if ((id & 0xFFFU) != 0x463U) {
+      enter_bootloader_mode = ENTER_BOOTLOADER_MAGIC;
+    }
   #else
-    if ((id&0xFFF) != 0x411) enter_bootloader_mode = ENTER_BOOTLOADER_MAGIC;
+    if ((id & 0xFFFU) != 0x411U) {
+      enter_bootloader_mode = ENTER_BOOTLOADER_MAGIC;
+    }
   #endif
 
   // setup interrupt table

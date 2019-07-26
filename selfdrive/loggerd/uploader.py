@@ -168,7 +168,7 @@ class Uploader(object):
 
   def do_upload(self, key, fn):
     try:
-      url_resp = api_get("v1.2/"+self.dongle_id+"/upload_url/", timeout=2, path=key, access_token=self.access_token)
+      url_resp = api_get("v1.2/"+self.dongle_id+"/upload_url/", timeout=10, path=key, access_token=self.access_token)
       url_resp_json = json.loads(url_resp.text)
       url = url_resp_json['url']
       headers = url_resp_json['headers']
@@ -223,7 +223,7 @@ class Uploader(object):
         try:
           os.unlink(fn)
         except OSError:
-          cloudlog.exception("delete_failed", stat=stat, exc=self.last_exc, key=key, fn=fn, sz=sz)
+          cloudlog.event("delete_failed", stat=stat, exc=self.last_exc, key=key, fn=fn, sz=sz)
 
         success = True
       else:

@@ -80,7 +80,7 @@ class CarInterface(object):
     return ret
 
   # returns a car.CarState
-  def update(self, c):
+  def update(self, c, can_strings):
     self.rk.keep_time()
 
     # get basic data from phone and gps since CAN isn't connected

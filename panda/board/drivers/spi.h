@@ -28,8 +28,8 @@ void spi_init(void) {
 
   // setup interrupt on falling edge of SPI enable (on PA4)
   SYSCFG->EXTICR[2] = SYSCFG_EXTICR2_EXTI4_PA;
-  EXTI->IMR |= (1 << 4);
-  EXTI->FTSR |= (1 << 4);
+  EXTI->IMR |= (1U << 4);
+  EXTI->FTSR |= (1U << 4);
   NVIC_EnableIRQ(EXTI4_IRQn);
 }
 
@@ -85,7 +85,7 @@ uint8_t spi_tx_buf[0x44];
 // SPI RX
 void DMA2_Stream2_IRQHandler(void) {
   int *resp_len = (int*)spi_tx_buf;
-  memset(spi_tx_buf, 0xaa, 0x44);
+  (void)memset(spi_tx_buf, 0xaa, 0x44);
   *resp_len = spi_cb_rx(spi_buf, 0x14, spi_tx_buf+4);
   #ifdef DEBUG_SPI
     puts("SPI write: ");
@@ -113,12 +113,12 @@ void DMA2_Stream3_IRQHandler(void) {
 }
 
 void EXTI4_IRQHandler(void) {
-  volatile int pr = EXTI->PR & (1 << 4);
+  volatile unsigned int pr = EXTI->PR & (1U << 4);
   #ifdef DEBUG_SPI
     puts("exti4\n");
   #endif
   // SPI CS falling
-  if ((pr & (1 << 4)) != 0) {
+  if ((pr & (1U << 4)) != 0U) {
     spi_total_count = 0;
     spi_rx_dma(spi_buf, 0x14);
   }

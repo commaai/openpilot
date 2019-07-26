@@ -1,0 +1,8 @@
+# Advisory: union types can be used
+misra.19.2
+# FIXME: add it back when fixed in cppcheck. Macro identifiers are unique but it false triggers on defines in #ifdef..#else conditions
+misra.5.4
+# Advisory: casting from void pointer to type pointer is ok. Done by STM libraries as well
+misra.11.4
+# Advisory: casting from void pointer to type pointer is ok. Done by STM libraries as well
+misra.11.5
