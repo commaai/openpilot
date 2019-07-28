@@ -35,17 +35,19 @@ static void toyota_ipas_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   // check standard toyota stuff as well
   toyota_rx_hook(to_push);
 
-  if ((to_push->RIR>>21) == 0x260) {
+  int addr = GET_ADDR(to_push);
+
+  if (addr == 0x260) {
     // get driver steering torque
-    int16_t torque_driver_new = (((to_push->RDLR) & 0xFF00) | ((to_push->RDLR >> 16) & 0xFF));
+    int16_t torque_driver_new = (GET_BYTE(to_push, 1) << 8) | GET_BYTE(to_push, 2);
 
     // update array of samples
     update_sample(&torque_driver, torque_driver_new);
   }
 
   // get steer angle
-  if ((to_push->RIR>>21) == 0x25) {
-    int angle_meas_new = ((to_push->RDLR & 0xf) << 8) + ((to_push->RDLR & 0xff00) >> 8);
+  if (addr == 0x25) {
+    int angle_meas_new = ((GET_BYTE(to_push, 0) & 0xF) << 8) | GET_BYTE(to_push, 1);
     uint32_t ts = TIM2->CNT;
 
     angle_meas_new = to_signed(angle_meas_new, 12);
@@ -55,10 +57,10 @@ static void toyota_ipas_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
     // *** angle real time check
     // add 1 to not false trigger the violation and multiply by 20 since the check is done every 250ms and steer angle is updated at 80Hz
-    int rt_delta_angle_up = ((int)(RT_ANGLE_FUDGE * (interpolate(LOOKUP_ANGLE_RATE_UP, speed) * 20. * CAN_TO_DEG + 1.)));
-    int rt_delta_angle_down = ((int)(RT_ANGLE_FUDGE * (interpolate(LOOKUP_ANGLE_RATE_DOWN, speed) * 20. * CAN_TO_DEG + 1.)));
-    int highest_rt_angle = rt_angle_last + (rt_angle_last > 0? rt_delta_angle_up:rt_delta_angle_down);
-    int lowest_rt_angle = rt_angle_last - (rt_angle_last > 0? rt_delta_angle_down:rt_delta_angle_up);
+    int rt_delta_angle_up = ((int)(RT_ANGLE_FUDGE * ((interpolate(LOOKUP_ANGLE_RATE_UP, speed) * 20. * CAN_TO_DEG) + 1.)));
+    int rt_delta_angle_down = ((int)(RT_ANGLE_FUDGE * ((interpolate(LOOKUP_ANGLE_RATE_DOWN, speed) * 20. * CAN_TO_DEG) + 1.)));
+    int highest_rt_angle = rt_angle_last + ((rt_angle_last > 0) ? rt_delta_angle_up : rt_delta_angle_down);
+    int lowest_rt_angle = rt_angle_last - ((rt_angle_last > 0) ? rt_delta_angle_down : rt_delta_angle_up);
 
     // every RT_INTERVAL or when controls are turned on, set the new limits
     uint32_t ts_elapsed = get_ts_elapsed(ts, ts_angle_last);
@@ -78,13 +80,13 @@ static void toyota_ipas_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   }
 
   // get speed
-  if ((to_push->RIR>>21) == 0xb4) {
-    speed = ((float) (((to_push->RDHR) & 0xFF00) | ((to_push->RDHR >> 16) & 0xFF))) * 0.01 / 3.6;
+  if (addr == 0xb4) {
+    speed = ((float)((GET_BYTE(to_push, 5) << 8) | GET_BYTE(to_push, 6))) * 0.01 / 3.6;
   }
 
   // get ipas state
-  if ((to_push->RIR>>21) == 0x262) {
-    ipas_state = (to_push->RDLR & 0xf);
+  if (addr == 0x262) {
+    ipas_state = GET_BYTE(to_push, 0) & 0xf;
   }
 
   // exit controls on high steering override
@@ -97,25 +99,34 @@ static void toyota_ipas_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
 static int toyota_ipas_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 
+  int tx = 1;
+  int bypass_standard_tx_hook = 0;
+  int bus = GET_BUS(to_send);
+  int addr = GET_ADDR(to_send);
+
   // Check if msg is sent on BUS 0
-  if (((to_send->RDTR >> 4) & 0xF) == 0) {
+  if (bus == 0) {
 
     // STEER ANGLE
-    if (((to_send->RIR>>21) == 0x266) || ((to_send->RIR>>21) == 0x167)) {
+    if ((addr == 0x266) || (addr == 0x167)) {
 
       angle_control = 1;   // we are in angle control mode
-      int desired_angle = ((to_send->RDLR & 0xf) << 8) + ((to_send->RDLR & 0xff00) >> 8);
-      int ipas_state_cmd = ((to_send->RDLR & 0xff) >> 4);
-      int16_t violation = 0;
+      int desired_angle = ((GET_BYTE(to_send, 0) & 0xF) << 8) | GET_BYTE(to_send, 1);
+      int ipas_state_cmd = GET_BYTE(to_send, 0) >> 4;
+      bool violation = 0;
 
       desired_angle = to_signed(desired_angle, 12);
 
       if (controls_allowed) {
         // add 1 to not false trigger the violation
-        int delta_angle_up = (int) (interpolate(LOOKUP_ANGLE_RATE_UP, speed) * CAN_TO_DEG + 1.);
-        int delta_angle_down = (int) (interpolate(LOOKUP_ANGLE_RATE_DOWN, speed) * CAN_TO_DEG + 1.);
-        int highest_desired_angle = desired_angle_last + (desired_angle_last > 0? delta_angle_up:delta_angle_down);
-        int lowest_desired_angle = desired_angle_last - (desired_angle_last > 0? delta_angle_down:delta_angle_up);
+        float delta_angle_float;
+        delta_angle_float = (interpolate(LOOKUP_ANGLE_RATE_UP, speed) * CAN_TO_DEG) + 1.;
+        int delta_angle_up = (int) (delta_angle_float);
+        delta_angle_float = (interpolate(LOOKUP_ANGLE_RATE_DOWN, speed) * CAN_TO_DEG) + 1.;
+        int delta_angle_down = (int) (delta_angle_float);
+
+        int highest_desired_angle = desired_angle_last + ((desired_angle_last > 0) ? delta_angle_up : delta_angle_down);
+        int lowest_desired_angle = desired_angle_last - ((desired_angle_last > 0) ? delta_angle_down : delta_angle_up);
         if ((desired_angle > highest_desired_angle) ||
             (desired_angle < lowest_desired_angle)){
           violation = 1;
@@ -134,15 +145,18 @@ static int toyota_ipas_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
       desired_angle_last = desired_angle;
 
       if (violation) {
-        return false;
+        tx = 0;
       }
-
-      return true;
+      bypass_standard_tx_hook = 1;
     }
   }
 
-  // check standard toyota stuff as well
-  return toyota_tx_hook(to_send);
+  // check standard toyota stuff as well if addr isn't IPAS related
+  if (!bypass_standard_tx_hook) {
+    tx &= toyota_tx_hook(to_send);
+  }
+
+  return tx;
 }
 
 const safety_hooks toyota_ipas_hooks = {
@@ -152,5 +166,4 @@ const safety_hooks toyota_ipas_hooks = {
   .tx_lin = nooutput_tx_lin_hook,
   .ignition = default_ign_hook,
   .fwd = toyota_fwd_hook,
-  .relay = nooutput_relay_hook,
 };

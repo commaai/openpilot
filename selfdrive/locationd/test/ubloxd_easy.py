@@ -11,14 +11,12 @@ from selfdrive.services import service_list
 unlogger = os.getenv("UNLOGGER") is not None   # debug prints
 
 def main(gctx=None):
-  context = zmq.Context()
   poller = zmq.Poller()
 
-  context = zmq.Context()
-  gpsLocationExternal = messaging.pub_sock(context, service_list['gpsLocationExternal'].port)
-  ubloxGnss = messaging.pub_sock(context, service_list['ubloxGnss'].port)
+  gpsLocationExternal = messaging.pub_sock(service_list['gpsLocationExternal'].port)
+  ubloxGnss = messaging.pub_sock(service_list['ubloxGnss'].port)
 
-  # ubloxRaw = messaging.sub_sock(context, service_list['ubloxRaw'].port, poller)
+  # ubloxRaw = messaging.sub_sock(service_list['ubloxRaw'].port, poller)
 
   # buffer with all the messages that still need to be input into the kalman
   while 1:

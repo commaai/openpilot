@@ -150,6 +150,12 @@ struct FrameData {
   }
 }
 
+struct Thumbnail {
+  frameId @0 :UInt32;
+  timestampEof @1 :UInt64;
+  thumbnail @2 :Data;
+}
+
 struct GPSNMEAData {
   timestamp @0 :Int64;
   localWallTime @1 :UInt64;
@@ -294,8 +300,20 @@ struct HealthData {
   started @2 :Bool;
   controlsAllowed @3 :Bool;
   gasInterceptorDetected @4 :Bool;
-  startedSignalDetected @5 :Bool;
+  startedSignalDetectedDeprecated @5 :Bool;
   isGreyPanda @6 :Bool;
+  canSendErrs @7 :UInt32;
+  canFwdErrs @8 :UInt32;
+  gmlanSendErrs @9 :UInt32;
+  hwType @10: HwType;
+
+  enum HwType {
+    unknown @0;
+    whitePanda @1;
+    greyPanda @2;
+    blackPanda @3;
+    pedal @4;
+  }
 }
 
 struct LiveUI {
@@ -305,12 +323,12 @@ struct LiveUI {
   awarenessStatus @3 :Float32;
 }
 
-struct Live20Data {
+struct RadarState @0x9a185389d6fdd05f {
   canMonoTimes @10 :List(UInt64);
   mdMonoTime @6 :UInt64;
   ftMonoTimeDEPRECATED @7 :UInt64;
-  l100MonoTime @11 :UInt64;
-  radarErrors @12 :List(Car.RadarState.Error);
+  controlsStateMonoTime @11 :UInt64;
+  radarErrors @12 :List(Car.RadarData.Error);
 
   # all deprecated
   warpMatrixDEPRECATED @0 :List(Float32);
@@ -337,6 +355,8 @@ struct Live20Data {
     fcw @10 :Bool;
     status @11 :Bool;
     aLeadTau @12 :Float32;
+    modelProb @13 :Float32;
+    radar @14 :Bool;
   }
 }
 
@@ -368,15 +388,15 @@ struct LiveTracks {
   oncoming @9 :Bool;
 }
 
-struct Live100Data {
+struct ControlsState @0x97ff69c53601abf1 {
   canMonoTimeDEPRECATED @16 :UInt64;
   canMonoTimes @21 :List(UInt64);
-  l20MonoTimeDEPRECATED @17 :UInt64;
+  radarStateMonoTimeDEPRECATED @17 :UInt64;
   mdMonoTimeDEPRECATED @18 :UInt64;
   planMonoTime @28 :UInt64;
   pathPlanMonoTime @50 :UInt64;
 
-  state @31 :ControlState;
+  state @31 :OpenpilotState;
   vEgo @0 :Float32;
   vEgoRaw @32 :Float32;
   aEgoDEPRECATED @1 :Float32;
@@ -433,7 +453,7 @@ struct Live100Data {
     pidState @53 :LateralPIDState;
   }
 
-  enum ControlState {
+  enum OpenpilotState @0xdbe58b96d2d1ac61 {
     disabled @0;
     preEnabled @1;
     enabled @2;
@@ -502,17 +522,27 @@ struct ModelData {
   freePath @6 :List(Float32);
 
   settings @5 :ModelSettings;
+  leadFuture @7 :LeadData;
+  speed @8 :List(Float32);
 
   struct PathData {
     points @0 :List(Float32);
     prob @1 :Float32;
     std @2 :Float32;
+    stds @3 :List(Float32);
+    poly @4 :List(Float32);
   }
 
   struct LeadData {
     dist @0 :Float32;
     prob @1 :Float32;
     std @2 :Float32;
+    relVel @3 :Float32;
+    relVelStd @4 :Float32;
+    relY @5 :Float32;
+    relYStd @6 :Float32;
+    relA @7 :Float32;
+    relAStd @8 :Float32;
   }
 
   struct ModelSettings {
@@ -574,7 +604,9 @@ struct LogRotate {
 
 struct Plan {
   mdMonoTime @9 :UInt64;
-  l20MonoTime @10 :UInt64;
+  radarStateMonoTime @10 :UInt64;
+  commIssue @31 :Bool;
+
   eventsDEPRECATED @13 :List(Car.CarEvent);
 
   # lateral, 3rd order polynomial
@@ -613,7 +645,7 @@ struct Plan {
   decelForTurn @22 :Bool;
   mapValid @25 :Bool;
   radarValid @28 :Bool;
-  radarCommIssue @30 :Bool;
+  radarCanError @30 :Bool;
 
   processingDelay @29 :Float32;
 
@@ -644,10 +676,13 @@ struct PathPlan {
 
   angleSteers @8 :Float32; # deg
   rateSteers @13 :Float32; # deg/s
-  valid @9 :Bool;
+  mpcSolutionValid @9 :Bool;
   paramsValid @10 :Bool;
-  modelValid @12 :Bool;
+  modelValidDEPRECATED @12 :Bool;
   angleOffset @11 :Float32;
+  sensorValid @14 :Bool;
+  commIssue @15 :Bool;
+  posenetValid @16 :Bool;
 }
 
 struct LiveLocationData {
@@ -1643,6 +1678,10 @@ struct LiveParametersData {
   angleOffsetAverage @3 :Float32;
   stiffnessFactor @4 :Float32;
   steerRatio @5 :Float32;
+  sensorValid @6 :Bool;
+  yawRate @7 :Float32;
+  posenetSpeed @8 :Float32;
+  posenetValid @9 :Bool;
 }
 
 struct LiveMapData {
@@ -1682,6 +1721,7 @@ struct KalmanOdometry {
 struct Event {
   # in nanoseconds?
   logMonoTime @0 :UInt64;
+  valid @67 :Bool = true;
 
   union {
     initData @1 :InitData;
@@ -1690,13 +1730,13 @@ struct Event {
     sensorEventDEPRECATED @4 :SensorEventData;
     can @5 :List(CanData);
     thermal @6 :ThermalData;
-    live100 @7 :Live100Data;
+    controlsState @7 :ControlsState;
     liveEventDEPRECATED @8 :List(LiveEventData);
     model @9 :ModelData;
     features @10 :CalibrationFeatures;
     sensorEvents @11 :List(SensorEventData);
     health @12 :HealthData;
-    live20 @13 :Live20Data;
+    radarState @13 :RadarState;
     liveUIDEPRECATED @14 :LiveUI;
     encodeIdx @15 :EncodeIndex;
     liveTracks @16 :List(LiveTracks);
@@ -1749,5 +1789,8 @@ struct Event {
     cameraOdometry @63 :CameraOdometry;
     pathPlan @64 :PathPlan;
     kalmanOdometry @65 :KalmanOdometry;
+    thumbnail @66: Thumbnail;
+    carEvents @68: List(Car.CarEvent);
+    carParams @69: Car.CarParams;
   }
 }

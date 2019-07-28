@@ -26,12 +26,12 @@ typedef struct {
   double x_ego[N+1];
   double v_ego[N+1];
   double a_ego[N+1];
-  double j_ego[N+1];
-	double x_l[N+1];
-	double v_l[N+1];
-	double a_l[N+1];
-	double t[N+1];
-	double cost;
+  double j_ego[N];
+  double x_l[N+1];
+  double v_l[N+1];
+  double a_l[N+1];
+  double t[N+1];
+  double cost;
 } log_t;
 
 void init(double ttcCost, double distanceCost, double accelerationCost, double jerkCost){
@@ -56,14 +56,15 @@ void init(double ttcCost, double distanceCost, double accelerationCost, double j
     if (i > 4){
       f = STEP_MULTIPLIER;
     }
-    acadoVariables.W[16 * i + 0] = ttcCost * f; // exponential cost for time-to-collision (ttc)
-    acadoVariables.W[16 * i + 5] = distanceCost * f; // desired distance
-    acadoVariables.W[16 * i + 10] = accelerationCost * f; // acceleration
-    acadoVariables.W[16 * i + 15] = jerkCost * f; // jerk
+    // Setup diagonal entries
+    acadoVariables.W[NY*NY*i + (NY+1)*0] = ttcCost * f; // exponential cost for time-to-collision (ttc)
+    acadoVariables.W[NY*NY*i + (NY+1)*1] = distanceCost * f; // desired distance
+    acadoVariables.W[NY*NY*i + (NY+1)*2] = accelerationCost * f; // acceleration
+    acadoVariables.W[NY*NY*i + (NY+1)*3] = jerkCost * f; // jerk
   }
-  acadoVariables.WN[0] = ttcCost * STEP_MULTIPLIER; // exponential cost for danger zone
-  acadoVariables.WN[4] = distanceCost * STEP_MULTIPLIER; // desired distance
-  acadoVariables.WN[8] = accelerationCost * STEP_MULTIPLIER; // acceleration
+  acadoVariables.WN[(NYN+1)*0] = ttcCost * STEP_MULTIPLIER; // exponential cost for danger zone
+  acadoVariables.WN[(NYN+1)*1] = distanceCost * STEP_MULTIPLIER; // desired distance
+  acadoVariables.WN[(NYN+1)*2] = accelerationCost * STEP_MULTIPLIER; // acceleration
 
 }
 
@@ -154,12 +155,15 @@ int run_mpc(state_t * x0, log_t * solution, double l, double a_l_0){
   acado_preparationStep();
   acado_feedbackStep();
 
-	for (i = 0; i <= N; i++){
+  for (i = 0; i <= N; i++){
     solution->x_ego[i] = acadoVariables.x[i*NX];
-		solution->v_ego[i] = acadoVariables.x[i*NX+1];
+    solution->v_ego[i] = acadoVariables.x[i*NX+1];
     solution->a_ego[i] = acadoVariables.x[i*NX+2];
-    solution->j_ego[i] = acadoVariables.u[i];
-	}
+
+    if (i < N){
+      solution->j_ego[i] = acadoVariables.u[i];
+    }
+  }
   solution->cost = acado_getObjective();
 
   // Dont shift states here. Current solution is closer to next timestep than if

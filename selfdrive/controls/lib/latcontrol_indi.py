@@ -1,19 +1,20 @@
 import math
 import numpy as np
 
+from cereal import log
+from common.realtime import DT_CTRL
+from common.numpy_fast import clip
 from selfdrive.car.toyota.carcontroller import SteerLimitParams
 from selfdrive.car import apply_toyota_steer_torque_limits
-from selfdrive.controls.lib.drive_helpers import get_steer_max, DT
-from common.numpy_fast import clip
-from cereal import log
+from selfdrive.controls.lib.drive_helpers import get_steer_max
 
 
 class LatControlINDI(object):
   def __init__(self, CP):
     self.angle_steers_des = 0.
 
-    A = np.matrix([[1.0, DT, 0.0],
-                   [0.0, 1.0, DT],
+    A = np.matrix([[1.0, DT_CTRL, 0.0],
+                   [0.0, 1.0, DT_CTRL],
                    [0.0, 0.0, 1.0]])
     C = np.matrix([[1.0, 0.0, 0.0],
                    [0.0, 1.0, 0.0]])
@@ -37,7 +38,7 @@ class LatControlINDI(object):
     self.G = CP.lateralTuning.indi.actuatorEffectiveness
     self.outer_loop_gain = CP.lateralTuning.indi.outerLoopGain
     self.inner_loop_gain = CP.lateralTuning.indi.innerLoopGain
-    self.alpha = 1. - DT / (self.RC + DT)
+    self.alpha = 1. - DT_CTRL / (self.RC + DT_CTRL)
 
     self.reset()
 
@@ -51,7 +52,7 @@ class LatControlINDI(object):
     y = np.matrix([[math.radians(angle_steers)], [math.radians(angle_steers_rate)]])
     self.x = np.dot(self.A_K, self.x) + np.dot(self.K, y)
 
-    indi_log = log.Live100Data.LateralINDIState.new_message()
+    indi_log = log.ControlsState.LateralINDIState.new_message()
     indi_log.steerAngle = math.degrees(self.x[0])
     indi_log.steerRate = math.degrees(self.x[1])
     indi_log.steerAccel = math.degrees(self.x[2])

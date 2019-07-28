@@ -39,6 +39,7 @@ def get_powertrain_can_parser(CP):
 
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
+
 def get_camera_can_parser(CP):
   signals = [
     ("Cruise_Set_Speed", "ES_DashStatus", 0),
@@ -80,6 +81,7 @@ def get_camera_can_parser(CP):
 
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
 
+
 class CarState(object):
   def __init__(self, CP):
     # initialize can parser
@@ -103,9 +105,6 @@ class CarState(object):
     self.v_ego = 0.
 
   def update(self, cp, cp_cam):
-
-    self.can_valid = cp.can_valid
-    self.cam_can_valid = cp_cam.can_valid
 
     self.pedal_gas = cp.vl["Throttle"]['Throttle_Pedal']
     self.brake_pressure = cp.vl["Brake_Pedal"]['Brake_Pedal']

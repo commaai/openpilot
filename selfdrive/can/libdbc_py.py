@@ -78,9 +78,9 @@ typedef struct {
 void* can_init(int bus, const char* dbc_name,
               size_t num_message_options, const MessageParseOptions* message_options,
               size_t num_signal_options, const SignalParseOptions* signal_options, bool sendcan,
-              const char* tcp_addr);
+              const char* tcp_addr, int timeout);
 
-void can_update(void* can, uint64_t sec, bool wait);
+int can_update(void* can, uint64_t sec, bool wait);
 
 size_t can_query(void* can, uint64_t sec, bool *out_can_valid, size_t out_values_size, SignalValue* out_values);
 

@@ -1,8 +1,9 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cassert>
+#include <android/log.h>
 
-#include <log/log.h>
+//#include <log/log.h>
 #include <log/logger.h>
 #include <log/logprint.h>
 
@@ -24,8 +25,8 @@ int main() {
   assert(system_logger);
   struct logger *crash_logger = android_logger_open(logger_list, LOG_ID_CRASH);
   assert(crash_logger);
-  struct logger *kernel_logger = android_logger_open(logger_list, LOG_ID_KERNEL);
-  assert(kernel_logger);
+//  struct logger *kernel_logger = android_logger_open(logger_list, LOG_ID_KERNEL);
+//  assert(kernel_logger);
 
   void *context = zmq_ctx_new();
   void *publisher = zmq_socket(context, ZMQ_PUB);

@@ -21,7 +21,7 @@ public:
 		}
 
 		this->next_part = (this->next_part + 1) % 0x10;
-		unsigned int payload_len = min(expected_size - msg.size(), max_packet_size);
+		unsigned int payload_len = MIN(expected_size - msg.size(), max_packet_size);
 		if (piece.size() < payload_len) {
 			//A frame was received that could have held more data.
 			//No examples of this protocol show that happening, so

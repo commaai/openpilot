@@ -41,8 +41,9 @@ class TestPackerMethods(unittest.TestCase):
               random.randint(0, 65536), random.randint(0, 65536), random.randint(0, 65536))
       car_fingerprint = HONDA_BOSCH[0]
       idx = random.randint(0, 65536)
-      m_old = hondacan.create_ui_commands(self.honda_cp_old, pcm_speed, hud, car_fingerprint, idx)
-      m = hondacan.create_ui_commands(self.honda_cp, pcm_speed, hud, car_fingerprint, idx)
+      is_metric = (random.randint(0, 2) % 2 == 0)
+      m_old = hondacan.create_ui_commands(self.honda_cp_old, pcm_speed, hud, car_fingerprint, is_metric, idx)
+      m = hondacan.create_ui_commands(self.honda_cp, pcm_speed, hud, car_fingerprint, is_metric, idx)
       self.assertEqual(m_old, m)
 
       button_val = random.randint(0, 65536)

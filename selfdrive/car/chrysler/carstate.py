@@ -97,8 +97,6 @@ class CarState(object):
 
 
   def update(self, cp, cp_cam):
-    # copy can_valid
-    self.can_valid = cp.can_valid
 
     # update prevs, update must run once per loop
     self.prev_left_blinker_on = self.left_blinker_on

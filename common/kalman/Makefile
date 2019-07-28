@@ -1,7 +1,7 @@
 all: simple_kalman_impl.so
 
 simple_kalman_impl.so: simple_kalman_impl.pyx simple_kalman_impl.pxd simple_kalman_setup.py
-	python simple_kalman_setup.py build_ext --inplace
+	python2 simple_kalman_setup.py build_ext --inplace
 	rm -rf build
 	rm simple_kalman_impl.c
 
