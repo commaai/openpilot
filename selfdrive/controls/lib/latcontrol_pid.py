@@ -23,8 +23,9 @@ class LatControlPID(object):
     self.poly_scale = CP.lateralTuning.pid.polyScale
     self.path_error = 0.0
     self.cur_poly_scale = 0.0
-    self.d_poly = [0., 0., 0., 0.]
+    self.c_poly = [0., 0., 0., 0.]
     self.s_poly = [0., 0., 0., 0.]
+    self.c_prob = 0.
     self.damp_angle_steers = 0.
     self.damp_time = 0.1
     self.react_mpc = 0.0
@@ -72,15 +73,16 @@ class LatControlPID(object):
       self.poly_factor = float(kegman.conf['polyFactor'])
 
   def get_projected_path_error(self, v_ego, path_plan, VM):
-    self.d_poly[3] += (path_plan.dPoly[3] - self.d_poly[3]) / self.poly_smoothing
-    self.d_poly[2] += (path_plan.dPoly[2] - self.d_poly[2]) / (self.poly_smoothing) # * 2)
-    self.d_poly[1] += (path_plan.dPoly[1] - self.d_poly[1]) / (self.poly_smoothing) # * 4)
-    self.d_poly[0] += 0.
+    self.c_poly[3] += (path_plan.pPoly[3] - self.c_poly[3]) / self.poly_smoothing
+    self.c_poly[2] += (path_plan.pPoly[2] - self.c_poly[2]) / (self.poly_smoothing) # * 2)
+    self.c_poly[1] += (path_plan.pPoly[1] - self.c_poly[1]) / (self.poly_smoothing) # * 4)
+    self.c_poly[0] += (path_plan.pPoly[0] - self.c_poly[0]) / (self.poly_smoothing) # * 4)
+    self.c_prob += (path_plan.cProb - self.c_prob) / (self.poly_smoothing)
     self.s_poly[1] = float(np.tan(VM.calc_curvature(np.radians(self.damp_angle_steers - path_plan.angleOffset), v_ego)))
     x = v_ego * self.total_poly_projection
-    self.d_pts = np.polyval(self.d_poly, np.arange(0, x))
+    self.c_pts = np.polyval(self.c_poly, np.arange(0, x))
     self.s_pts = np.polyval(self.s_poly, np.arange(0, x))
-    return np.sum(self.d_pts) - np.sum(self.s_pts)
+    return self.c_prob * (np.sum(self.c_pts) - np.sum(self.s_pts))
 
   def reset(self):
     self.pid.reset()

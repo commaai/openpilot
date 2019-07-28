@@ -128,6 +128,7 @@ class PathPlanner(object):
     plan_send.valid = sm.all_alive_and_valid(service_list=['carState', 'controlsState', 'liveParameters', 'model'])
     plan_send.pathPlan.laneWidth = float(self.MP.lane_width)
     plan_send.pathPlan.pPoly = [float(x) for x in self.MP.p_poly]
+    plan_send.pathPlan.pProb = float(self.MP.p_prob)
     plan_send.pathPlan.dPoly = [float(x) for x in self.MP.d_poly]
     plan_send.pathPlan.cPoly = [float(x) for x in self.MP.c_poly]
     plan_send.pathPlan.cProb = float(self.MP.c_prob)
