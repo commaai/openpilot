@@ -32,6 +32,7 @@ struct sample_t subaru_torque_driver;
 TIM_TypeDef timer;
 TIM_TypeDef *TIM2 = &timer;
 
+// from config.h
 #define MIN(a,b)                                \
   ({ __typeof__ (a) _a = (a);                   \
     __typeof__ (b) _b = (b);                    \
@@ -41,6 +42,14 @@ TIM_TypeDef *TIM2 = &timer;
   ({ __typeof__ (a) _a = (a);                   \
     __typeof__ (b) _b = (b);                    \
     _a > _b ? _a : _b; })
+
+// from llcan.h
+#define GET_BUS(msg) (((msg)->RDTR >> 4) & 0xFF)
+#define GET_LEN(msg) ((msg)->RDTR & 0xf)
+#define GET_ADDR(msg) ((((msg)->RIR & 4) != 0) ? ((msg)->RIR >> 3) : ((msg)->RIR >> 21))
+#define GET_BYTE(msg, b) (((int)(b) > 3) ? (((msg)->RDHR >> (8U * ((unsigned int)(b) % 4U))) & 0XFFU) : (((msg)->RDLR >> (8U * (unsigned int)(b))) & 0xFFU))
+#define GET_BYTES_04(msg) ((msg)->RDLR)
+#define GET_BYTES_48(msg) ((msg)->RDHR)
 
 #define UNUSED(x) (void)(x)
 
@@ -199,8 +208,8 @@ void set_subaru_desired_torque_last(int t){
   subaru_desired_torque_last = t;
 }
 
-int get_honda_ego_speed(void){
-  return honda_ego_speed;
+bool get_honda_moving(void){
+  return honda_moving;
 }
 
 int get_honda_brake_prev(void){
@@ -274,7 +283,7 @@ void init_tests_subaru(void){
 }
 
 void init_tests_honda(void){
-  honda_ego_speed = 0;
+  honda_moving = false;
   honda_brake_prev = 0;
   honda_gas_prev = 0;
 }

@@ -8,7 +8,7 @@ import numbers
 cdef int CAN_INVALID_CNT = 5
 
 cdef class CANParser:
-  def __init__(self, dbc_name, signals, checks=None, bus=0, sendcan=False, tcp_addr="127.0.0.1", timeout=-1):
+  def __init__(self, dbc_name, signals, checks=None, bus=0, sendcan=False, tcp_addr="", timeout=-1):
     self.test_mode_enabled = False
     can_dir = os.path.dirname(os.path.abspath(__file__))
     libdbc_fn = os.path.join(can_dir, "libdbc.so")
@@ -17,6 +17,7 @@ cdef class CANParser:
     self.can_init_with_vectors = <can_init_with_vectors_func>dlsym(libdbc, 'can_init_with_vectors')
     self.dbc_lookup = <dbc_lookup_func>dlsym(libdbc, 'dbc_lookup')
     self.can_update = <can_update_func>dlsym(libdbc, 'can_update')
+    self.can_update_string = <can_update_string_func>dlsym(libdbc, 'can_update_string')
     self.can_query_vector = <can_query_vector_func>dlsym(libdbc, 'can_query_vector')
     if checks is None:
       checks = []
@@ -98,6 +99,19 @@ cdef class CANParser:
       updated_val.insert(cv.address)
 
     return updated_val
+
+  def update_string(self, uint64_t sec, dat):
+    self.can_update_string(self.can, sec, dat, len(dat))
+    return self.update_vl(sec)
+
+  def update_strings(self, uint64_t sec, strings):
+    updated_vals = set()
+
+    for s in strings:
+      updated_val = self.update_string(sec, s)
+      updated_vals.update(updated_val)
+
+    return updated_vals
 
   def update(self, uint64_t sec, bool wait):
     r = (self.can_update(self.can, sec, wait) >= 0)

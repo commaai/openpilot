@@ -19,7 +19,7 @@ void adc_init(void) {
   ADC1->SMPR1 = ADC_SMPR1_SMP12 | ADC_SMPR1_SMP13;
 }
 
-uint32_t adc_get(int channel) {
+uint32_t adc_get(unsigned int channel) {
   // includes length
   //ADC1->SQR1 = 0;
 

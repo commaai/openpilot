@@ -39,7 +39,7 @@ static void toyota_ipas_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
   if (addr == 0x260) {
     // get driver steering torque
-    int16_t torque_driver_new = (((to_push->RDLR) & 0xFF00) | ((to_push->RDLR >> 16) & 0xFF));
+    int16_t torque_driver_new = (GET_BYTE(to_push, 1) << 8) | GET_BYTE(to_push, 2);
 
     // update array of samples
     update_sample(&torque_driver, torque_driver_new);
@@ -47,7 +47,7 @@ static void toyota_ipas_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
   // get steer angle
   if (addr == 0x25) {
-    int angle_meas_new = ((to_push->RDLR & 0xf) << 8) + ((to_push->RDLR & 0xff00) >> 8);
+    int angle_meas_new = ((GET_BYTE(to_push, 0) & 0xF) << 8) | GET_BYTE(to_push, 1);
     uint32_t ts = TIM2->CNT;
 
     angle_meas_new = to_signed(angle_meas_new, 12);
@@ -81,12 +81,12 @@ static void toyota_ipas_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
   // get speed
   if (addr == 0xb4) {
-    speed = ((float) (((to_push->RDHR) & 0xFF00) | ((to_push->RDHR >> 16) & 0xFF))) * 0.01 / 3.6;
+    speed = ((float)((GET_BYTE(to_push, 5) << 8) | GET_BYTE(to_push, 6))) * 0.01 / 3.6;
   }
 
   // get ipas state
   if (addr == 0x262) {
-    ipas_state = (to_push->RDLR & 0xf);
+    ipas_state = GET_BYTE(to_push, 0) & 0xf;
   }
 
   // exit controls on high steering override
@@ -111,8 +111,8 @@ static int toyota_ipas_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
     if ((addr == 0x266) || (addr == 0x167)) {
 
       angle_control = 1;   // we are in angle control mode
-      int desired_angle = ((to_send->RDLR & 0xf) << 8) + ((to_send->RDLR & 0xff00) >> 8);
-      int ipas_state_cmd = ((to_send->RDLR & 0xff) >> 4);
+      int desired_angle = ((GET_BYTE(to_send, 0) & 0xF) << 8) | GET_BYTE(to_send, 1);
+      int ipas_state_cmd = GET_BYTE(to_send, 0) >> 4;
       bool violation = 0;
 
       desired_angle = to_signed(desired_angle, 12);

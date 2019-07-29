@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import zmq
 import math
 import numpy as np
 from common.params import Params
@@ -65,7 +64,6 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
 class Planner(object):
   def __init__(self, CP, fcw_enabled):
     self.CP = CP
-    self.poller = zmq.Poller()
 
     self.plan = messaging.pub_sock(service_list['plan'].port)
     self.live_longitudinal_mpc = messaging.pub_sock(service_list['liveLongitudinalMpc'].port)
@@ -201,7 +199,9 @@ class Planner(object):
       self.fcw_checker.reset_lead(cur_time)
 
     blinkers = sm['carState'].leftBlinker or sm['carState'].rightBlinker
-    fcw = self.fcw_checker.update(self.mpc1.mpc_solution, cur_time, v_ego, sm['carState'].aEgo,
+    fcw = self.fcw_checker.update(self.mpc1.mpc_solution, cur_time,
+                                  sm['controlsState'].active,
+                                  v_ego, sm['carState'].aEgo,
                                   lead_1.dRel, lead_1.vLead, lead_1.aLeadK,
                                   lead_1.yRel, lead_1.vLat,
                                   lead_1.fcw, blinkers) and not sm['carState'].brakePressed

@@ -300,8 +300,20 @@ struct HealthData {
   started @2 :Bool;
   controlsAllowed @3 :Bool;
   gasInterceptorDetected @4 :Bool;
-  startedSignalDetected @5 :Bool;
+  startedSignalDetectedDeprecated @5 :Bool;
   isGreyPanda @6 :Bool;
+  canSendErrs @7 :UInt32;
+  canFwdErrs @8 :UInt32;
+  gmlanSendErrs @9 :UInt32;
+  hwType @10: HwType;
+
+  enum HwType {
+    unknown @0;
+    whitePanda @1;
+    greyPanda @2;
+    blackPanda @3;
+    pedal @4;
+  }
 }
 
 struct LiveUI {
@@ -343,6 +355,8 @@ struct RadarState @0x9a185389d6fdd05f {
     fcw @10 :Bool;
     status @11 :Bool;
     aLeadTau @12 :Float32;
+    modelProb @13 :Float32;
+    radar @14 :Bool;
   }
 }
 
@@ -513,6 +527,8 @@ struct ModelData {
   freePath @6 :List(Float32);
 
   settings @5 :ModelSettings;
+  leadFuture @7 :LeadData;
+  speed @8 :List(Float32);
 
   struct PathData {
     points @0 :List(Float32);
@@ -528,6 +544,10 @@ struct ModelData {
     std @2 :Float32;
     relVel @3 :Float32;
     relVelStd @4 :Float32;
+    relY @5 :Float32;
+    relYStd @6 :Float32;
+    relA @7 :Float32;
+    relAStd @8 :Float32;
   }
 
   struct ModelSettings {
@@ -658,8 +678,8 @@ struct PathPlan {
   lProb @5 :Float32;
   rPoly @6 :List(Float32);
   rProb @7 :Float32;
-  pPoly @19 :List(Float32);
-  pProb @20 :Float32;
+  pPoly @20 :List(Float32);
+  pProb @21 :Float32;
 
   angleSteers @8 :Float32; # deg
   rateSteers @13 :Float32; # deg/s
@@ -667,11 +687,12 @@ struct PathPlan {
   paramsValid @10 :Bool;
   modelValidDEPRECATED @12 :Bool;
   angleOffset @11 :Float32;
-  mpcAngles @16 :List(Float32);
-  mpcRates @17 :List(Float32);
-  mpcTimes @18 :List(Float32);
+  mpcAngles @17 :List(Float32);
+  mpcRates @18 :List(Float32);
+  mpcTimes @19 :List(Float32);
   sensorValid @14 :Bool;
   commIssue @15 :Bool;
+  posenetValid @16 :Bool;
 }
 
 struct LiveLocationData {
@@ -1669,6 +1690,8 @@ struct LiveParametersData {
   steerRatio @5 :Float32;
   sensorValid @6 :Bool;
   yawRate @7 :Float32;
+  posenetSpeed @8 :Float32;
+  posenetValid @9 :Bool;
 }
 
 struct LiveMapData {

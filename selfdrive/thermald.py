@@ -2,7 +2,7 @@
 import os
 from smbus2 import SMBus
 from cereal import log
-from selfdrive.version import training_version
+from selfdrive.version import terms_version, training_version
 from selfdrive.swaglog import cloudlog
 import selfdrive.messaging as messaging
 from selfdrive.services import service_list
@@ -216,7 +216,7 @@ def thermald_thread():
       ignition = True
 
     do_uninstall = params.get("DoUninstall") == "1"
-    accepted_terms = params.get("HasAcceptedTerms") == "1"
+    accepted_terms = params.get("HasAcceptedTerms") == terms_version
     completed_training = params.get("CompletedTrainingVersion") == training_version
 
     should_start = ignition

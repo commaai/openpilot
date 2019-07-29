@@ -39,7 +39,7 @@ static void toyota_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
   // get eps motor torque (0.66 factor in dbc)
   if (addr == 0x260) {
-    int torque_meas_new = (((to_push->RDHR) & 0xFF00) | ((to_push->RDHR >> 16) & 0xFF));
+    int torque_meas_new = (GET_BYTE(to_push, 5) << 8) | GET_BYTE(to_push, 6);
     torque_meas_new = to_signed(torque_meas_new, 16);
 
     // scale by dbc_factor
@@ -56,7 +56,7 @@ static void toyota_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   // enter controls on rising edge of ACC, exit controls on ACC off
   if (addr == 0x1D2) {
     // 5th bit is CRUISE_ACTIVE
-    int cruise_engaged = to_push->RDLR & 0x20;
+    int cruise_engaged = GET_BYTE(to_push, 0) & 0x20;
     if (!cruise_engaged) {
       controls_allowed = 0;
     }
@@ -69,7 +69,7 @@ static void toyota_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   // exit controls on rising edge of interceptor gas press
   if (addr == 0x201) {
     gas_interceptor_detected = 1;
-    int gas_interceptor = ((to_push->RDLR & 0xFF) << 8) | ((to_push->RDLR & 0xFF00) >> 8);
+    int gas_interceptor = GET_INTERCEPTOR(to_push);
     if ((gas_interceptor > TOYOTA_GAS_INTERCEPTOR_THRESHOLD) &&
         (gas_interceptor_prev <= TOYOTA_GAS_INTERCEPTOR_THRESHOLD) &&
         long_controls_allowed) {
@@ -80,7 +80,7 @@ static void toyota_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
   // exit controls on rising edge of gas press
   if (addr == 0x2C1) {
-    int gas = (to_push->RDHR >> 16) & 0xFF;
+    int gas = GET_BYTE(to_push, 6) & 0xFF;
     if ((gas > 0) && (toyota_gas_prev == 0) && !gas_interceptor_detected && long_controls_allowed) {
       controls_allowed = 0;
     }
@@ -115,7 +115,7 @@ static int toyota_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
     // GAS PEDAL: safety check
     if (addr == 0x200) {
       if (!controls_allowed || !long_controls_allowed) {
-        if ((to_send->RDLR & 0xFFFF0000) != to_send->RDLR) {
+        if (GET_BYTE(to_send, 0) || GET_BYTE(to_send, 1)) {
           tx = 0;
         }
       }
@@ -123,7 +123,7 @@ static int toyota_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 
     // ACCEL: safety check on byte 1-2
     if (addr == 0x343) {
-      int desired_accel = ((to_send->RDLR & 0xFF) << 8) | ((to_send->RDLR >> 8) & 0xFF);
+      int desired_accel = (GET_BYTE(to_send, 0) << 8) | GET_BYTE(to_send, 1);
       desired_accel = to_signed(desired_accel, 16);
       if (!controls_allowed || !long_controls_allowed) {
         if (desired_accel != 0) {
@@ -138,7 +138,7 @@ static int toyota_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 
     // STEER: safety check on bytes 2-3
     if (addr == 0x2E4) {
-      int desired_torque = (to_send->RDLR & 0xFF00) | ((to_send->RDLR >> 16) & 0xFF);
+      int desired_torque = (GET_BYTE(to_send, 1) << 8) | GET_BYTE(to_send, 2);
       desired_torque = to_signed(desired_torque, 16);
       bool violation = 0;
 

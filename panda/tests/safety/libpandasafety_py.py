@@ -55,7 +55,7 @@ void set_toyota_camera_forwarded(int t);
 void set_toyota_rt_torque_last(int t);
 
 void init_tests_honda(void);
-int get_honda_ego_speed(void);
+bool get_honda_moving(void);
 int get_honda_brake_prev(void);
 int get_honda_gas_prev(void);
 void set_honda_alt_brake_msg(bool);
