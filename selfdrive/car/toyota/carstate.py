@@ -98,7 +98,7 @@ class CarState(object):
     self.left_blinker_on = 0
     self.right_blinker_on = 0
     self.offset = 0.
-    self.isoffset = 0
+    self.is_offset_set = False
 
     # initialize can parser
     self.car_fingerprint = CP.carFingerprint
@@ -147,11 +147,11 @@ class CarState(object):
     self.a_ego = float(v_ego_x[1])
     self.standstill = not v_wheel > 0.001
 
-    if self.CP.carFingerprint in NO_DSU_CAR: # Vehicle that needs offsetting
+    if self.CP.carFingerprint in NO_DSU_CAR and self.CP.carFingerprint not in TSS2_CAR: # Vehicle that needs offsetting
       self.angle_steers = cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE'] - self.offset
-      if self.isoffset == 0:
+      if not self.isoffset:
         self.offset = self.angle_steers - cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']
-        self.isoffset = 1
+        self.isoffset = True
     elif self.CP.carFingerprint in TSS2_CAR:
       self.angle_steers = cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE']
     else:
