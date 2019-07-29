@@ -23,9 +23,9 @@ class LatControlPID(object):
     self.poly_scale = CP.lateralTuning.pid.polyScale
     self.path_error = 0.0
     self.cur_poly_scale = 0.0
-    self.c_poly = [0., 0., 0., 0.]
+    self.p_poly = [0., 0., 0., 0.]
     self.s_poly = [0., 0., 0., 0.]
-    self.c_prob = 0.
+    self.p_prob = 0.
     self.damp_angle_steers = 0.
     self.damp_time = 0.1
     self.react_mpc = 0.0
@@ -73,16 +73,16 @@ class LatControlPID(object):
       self.poly_factor = float(kegman.conf['polyFactor'])
 
   def get_projected_path_error(self, v_ego, path_plan, VM):
-    self.c_poly[3] += (path_plan.pPoly[3] - self.c_poly[3]) / self.poly_smoothing
-    self.c_poly[2] += (path_plan.pPoly[2] - self.c_poly[2]) / (self.poly_smoothing) # * 2)
-    self.c_poly[1] += (path_plan.pPoly[1] - self.c_poly[1]) / (self.poly_smoothing) # * 4)
-    self.c_poly[0] += (path_plan.pPoly[0] - self.c_poly[0]) / (self.poly_smoothing) # * 4)
-    self.c_prob += (path_plan.cProb - self.c_prob) / (self.poly_smoothing)
+    self.p_poly[3] += (path_plan.pPoly[3] - self.p_poly[3]) / self.poly_smoothing
+    self.p_poly[2] += (path_plan.pPoly[2] - self.p_poly[2]) / (self.poly_smoothing) # * 2)
+    self.p_poly[1] += (path_plan.pPoly[1] - self.p_poly[1]) / (self.poly_smoothing) # * 4)
+    self.p_poly[0] += (path_plan.pPoly[0] - self.p_poly[0]) / (self.poly_smoothing) # * 4)
+    self.p_prob += (path_plan.pProb - self. p_prob) / (self.poly_smoothing)
     self.s_poly[1] = float(np.tan(VM.calc_curvature(np.radians(self.damp_angle_steers - path_plan.angleOffset), v_ego)))
     x = v_ego * self.total_poly_projection
-    self.c_pts = np.polyval(self.c_poly, np.arange(0, x))
+    self.p_pts = np.polyval(self.p_poly, np.arange(0, x))
     self.s_pts = np.polyval(self.s_poly, np.arange(0, x))
-    return self.c_prob * (np.sum(self.c_pts) - np.sum(self.s_pts))
+    return self.p_prob * (np.sum(self.p_pts) - np.sum(self.s_pts))
 
   def reset(self):
     self.pid.reset()
@@ -110,7 +110,7 @@ class LatControlPID(object):
         self.lane_change_adjustment = 0.0
       else:
         self.lane_change_adjustment = interp(self.lane_changing, [0.0, 1.0, 2.0, 2.25, 2.5, 2.75], [1.0, 0.0, 0.0, 0.1, .2, 1.0])
-      #print("%0.2f lane_changing  %0.2f adjustment  %0.2f c_poly   %0.2f avg_poly" % (self.lane_changing, self.lane_change_adjustment, path_plan.cPoly[3], path_plan.lPoly[3] + path_plan.rPoly[3]))
+      #print("%0.2f lane_changing  %0.2f adjustment  %0.2f p_poly   %0.2f avg_poly" % (self.lane_changing, self.lane_change_adjustment, path_plan.cPoly[3], path_plan.lPoly[3] + path_plan.rPoly[3]))
     elif driver_opposing_lane and (blinkers_on or abs(path_plan.cPoly[3]) > 0.5 or min(abs(self.starting_angle - angle_steers), abs(self.angle_steers_des - angle_steers)) > 1.5):
       self.lane_changing = 0.01
     else:
