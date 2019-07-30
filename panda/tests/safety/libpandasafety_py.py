@@ -37,6 +37,7 @@ bool get_long_controls_allowed(void);
 void set_gas_interceptor_detected(bool c);
 bool get_gas_interceptor_detetcted(void);
 int get_gas_interceptor_prev(void);
+int get_hw_type(void);
 void set_timer(uint32_t t);
 void reset_angle_control(void);
 
@@ -60,6 +61,7 @@ int get_honda_brake_prev(void);
 int get_honda_gas_prev(void);
 void set_honda_alt_brake_msg(bool);
 void set_honda_bosch_hardware(bool);
+int get_honda_bosch_hardware(void);
 
 void init_tests_cadillac(void);
 void set_cadillac_desired_torque_last(int t);
