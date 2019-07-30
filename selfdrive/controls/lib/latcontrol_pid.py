@@ -47,6 +47,7 @@ class LatControlPID(object):
     self.half_lane_width = 0.0
     self.steer_counter_prev = 1
     self.params = Params()
+    self.prev_override = False
 
     try:
       lateral_params = self.params.get("LateralParams")
@@ -72,14 +73,14 @@ class LatControlPID(object):
       self.poly_smoothing = max(1.0, float(kegman.conf['polyDamp']) * 100.)
       self.poly_factor = float(kegman.conf['polyFactor'])
 
-  def get_projected_path_error(self, v_ego, path_plan, VM):
+  def get_projected_path_error(self, v_ego, angle_feedforward, path_plan, VM):
     self.p_poly[3] += (path_plan.pPoly[3] - self.p_poly[3]) / self.poly_smoothing
     self.p_poly[2] += (path_plan.pPoly[2] - self.p_poly[2]) / (self.poly_smoothing) # * 2)
     self.p_poly[1] += (path_plan.pPoly[1] - self.p_poly[1]) / (self.poly_smoothing) # * 4)
     self.p_poly[0] += (path_plan.pPoly[0] - self.p_poly[0]) / (self.poly_smoothing) # * 4)
     self.p_prob += (path_plan.pProb - self. p_prob) / (self.poly_smoothing)
     self.s_poly[1] = float(np.tan(VM.calc_curvature(np.radians(self.damp_angle_steers - path_plan.angleOffset), v_ego)))
-    x = v_ego * self.total_poly_projection
+    x = v_ego * self.total_poly_projection * interp(abs(angle_feedforward), [0., 5.], [0.25, 1.0])
     self.p_pts = np.polyval(self.p_poly, np.arange(0, x))
     self.s_pts = np.polyval(self.s_poly, np.arange(0, x))
     return self.p_prob * (np.sum(self.p_pts) - np.sum(self.s_pts))
@@ -179,7 +180,7 @@ class LatControlPID(object):
         p_scale = 1.0
 
       if not steer_override:
-        self.path_error = v_ego * float(self.get_projected_path_error(v_ego, path_plan, VM)) * self.poly_factor * self.cur_poly_scale
+        self.path_error = v_ego * float(self.get_projected_path_error(v_ego, angle_feedforward, path_plan, VM)) * self.poly_factor * self.cur_poly_scale
 
       if self.gernbySteer and not steer_override and v_ego > 10.0:
         if abs(angle_steers) > (self.angle_ff_bp[0][1] / 2.0):
@@ -187,7 +188,11 @@ class LatControlPID(object):
         else:
           self.previous_integral = self.pid.i
 
-      driver_opposing_i = steer_override and (angle_steers - self.prev_angle_steers) * self.pid.i < 0
+      if self.prev_override and not steer_override and self.pid.saturated:
+        self.damp_angle_steers_des = angle_steers
+        self.damp_rate_steers_des = 0.0
+
+      driver_opposing_i = steer_override and self.pid.i * self.pid.p > 0 and not self.pid.saturated
 
       deadzone = 0.0
       output_steer = self.pid.update(self.damp_angle_steers_des, self.damp_angle_steers, check_saturation=(v_ego > 10), override=driver_opposing_i,
@@ -207,5 +212,6 @@ class LatControlPID(object):
       pid_log.angleFFRatio = self.angle_ff_ratio
 
     self.prev_angle_steers = angle_steers
+    self.prev_override = steer_override
     self.sat_flag = self.pid.saturated
     return output_steer, float(self.angle_steers_des), pid_log
