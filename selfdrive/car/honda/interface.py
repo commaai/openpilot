@@ -186,7 +186,7 @@ class CarInterface(object):
       if is_fw_modified:
         ret.lateralTuning.pid.kf = 0.00004
 
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.4], [0.12]] if is_fw_modified else [[0.8], [0.12]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.4], [0.12]] if is_fw_modified else [[0.8], [0.18]]
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
       ret.longitudinalTuning.kpV = [3.6, 2.4, 1.5]
       ret.longitudinalTuning.kiBP = [0., 35.]

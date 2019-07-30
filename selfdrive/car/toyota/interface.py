@@ -59,13 +59,13 @@ class CarInterface(object):
       ret.steerRateCost = 0.7
       ret.lateralTuning.init('pid')
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
-      ret.lateralTuning.pid.dampTime = 0.1
-      ret.lateralTuning.pid.reactMPC = -0.05
+      ret.lateralTuning.pid.dampTime = 0.05
+      ret.lateralTuning.pid.reactMPC = 0.0
       ret.lateralTuning.pid.dampMPC = 0.25
       ret.lateralTuning.pid.rateFFGain = 0.4
       ret.lateralTuning.pid.polyFactor = 0.001
-      ret.lateralTuning.pid.polyDampTime = 0.35
-      ret.lateralTuning.pid.polyReactTime = 1.0
+      ret.lateralTuning.pid.polyDampTime = 0.25
+      ret.lateralTuning.pid.polyReactTime = 0.05
       ret.lateralTuning.pid.steerPscale = [[1.0, 2.0, 10.0], [1.0, 0.5, 0.25], [1.0, 0.75, 0.5]]  # [abs angles, scale UP, scale DOWN]
 
     if candidate == CAR.PRIUS:
@@ -93,12 +93,12 @@ class CarInterface(object):
       ret.steerRatio = 16.30   # 14.5 is spec end-to-end
       tire_stiffness_factor = 0.5533
       ret.mass = 3650. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.03]]
-      ret.lateralTuning.pid.kf = 0.00005   # full torque for 10 deg at 80mph means 0.00007818594
-      ret.lateralTuning.pid.dampTime = 0.1
-      ret.lateralTuning.pid.reactMPC = -0.05
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.4], [0.03]]
+      ret.lateralTuning.pid.kf = 0.00007   # full torque for 10 deg at 80mph means 0.00007818594
+      ret.lateralTuning.pid.dampTime = 0.05
+      ret.lateralTuning.pid.reactMPC = 0.0
       ret.lateralTuning.pid.rateFFGain = 0.4
-      ret.lateralTuning.pid.dampTime = 0.5
+      ret.lateralTuning.pid.dampTime = 0.05
 
     elif candidate == CAR.COROLLA:
       stop_and_go = False
