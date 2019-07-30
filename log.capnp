@@ -301,7 +301,7 @@ struct HealthData {
   controlsAllowed @3 :Bool;
   gasInterceptorDetected @4 :Bool;
   startedSignalDetectedDeprecated @5 :Bool;
-  isGreyPanda @6 :Bool;
+  hasGps @6 :Bool;
   canSendErrs @7 :UInt32;
   canFwdErrs @8 :UInt32;
   gmlanSendErrs @9 :UInt32;
@@ -373,6 +373,8 @@ struct LiveCalibrationData {
   # view_frame_from_road_frame
   # ui's is inversed needs new
   extrinsicMatrix @4 :List(Float32);
+  # the direction of travel vector in device frame
+  rpyCalib @7 :List(Float32);
 }
 
 struct LiveTracks {
@@ -448,9 +450,12 @@ struct ControlsState @0x97ff69c53601abf1 {
   vCurvature @46 :Float32;
   decelForTurn @47 :Bool;
 
+  decelForModel @54 :Bool;
+
   lateralControlState :union {
     indiState @52 :LateralINDIState;
     pidState @53 :LateralPIDState;
+    lqrState @55 :LateralLQRState;
   }
 
   enum OpenpilotState @0xdbe58b96d2d1ac61 {
@@ -503,6 +508,13 @@ struct ControlsState @0x97ff69c53601abf1 {
     f @6 :Float32;
     output @7 :Float32;
     saturated @8 :Bool;
+   }
+
+  struct LateralLQRState {
+    active @0 :Bool;
+    steerAngle @1 :Float32;
+    i @2 :Float32;
+    output @3 :Float32;
    }
 
 }
@@ -660,6 +672,7 @@ struct Plan {
     mpc1 @1;
     mpc2 @2;
     mpc3 @3;
+    model @4;
   }
 }
 
@@ -1661,8 +1674,13 @@ struct OrbKeyFrame {
 
 struct DriverMonitoring {
   frameId @0 :UInt32;
-  descriptor @1 :List(Float32);
-  std @2 :Float32;
+  descriptorDEPRECATED @1 :List(Float32);
+  stdDEPRECATED @2 :Float32;
+  faceOrientation @3 :List(Float32);
+  facePosition @4 :List(Float32);
+  faceProb @5 :Float32;
+  leftEyeProb @6 :Float32;
+  rightEyeProb @7 :Float32;
 }
 
 struct Boot {
