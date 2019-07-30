@@ -33,7 +33,6 @@ bool can_pop(can_ring *q, CAN_FIFOMailBox_TypeDef *elem);
 // end API
 
 #define ALL_CAN_SILENT 0xFF
-#define ALL_CAN_BUT_MAIN_SILENT 0xFE
 #define ALL_CAN_LIVE 0
 
 int can_live = 0, pending_can_live = 0, can_loopback = 0, can_silent = ALL_CAN_SILENT;
@@ -149,7 +148,6 @@ void can_set_speed(uint8_t can_number) {
 void can_init(uint8_t can_number) {
   if (can_number != 0xffU) {
     CAN_TypeDef *CAN = CANIF_FROM_CAN_NUM(can_number);
-    set_can_enable(CAN, 1);
     can_set_speed(can_number);
 
     llcan_init(CAN);
@@ -165,45 +163,86 @@ void can_init_all(void) {
   }
 }
 
-void can_set_gmlan(uint8_t bus) {
+void can_flip_buses(uint8_t bus1, uint8_t bus2){
+  bus_lookup[bus1] = bus2;
+  bus_lookup[bus2] = bus1;
+  can_num_lookup[bus1] = bus2;
+  can_num_lookup[bus2] = bus1;
+}
 
-  // first, disable GMLAN on prev bus
-  uint8_t prev_bus = can_num_lookup[3];
-  if (bus != prev_bus) {
-    switch (prev_bus) {
+// TODO: Cleanup with new abstraction
+void can_set_gmlan(uint8_t bus) {
+  if(hw_type != HW_TYPE_BLACK_PANDA){
+    // first, disable GMLAN on prev bus
+    uint8_t prev_bus = can_num_lookup[3];
+    if (bus != prev_bus) {
+      switch (prev_bus) {
+        case 1:
+        case 2:
+          puts("Disable GMLAN on CAN");
+          puth(prev_bus + 1U);
+          puts("\n");
+          current_board->set_can_mode(CAN_MODE_NORMAL);
+          bus_lookup[prev_bus] = prev_bus;
+          can_num_lookup[prev_bus] = prev_bus;
+          can_num_lookup[3] = -1;
+          can_init(prev_bus);
+          break;
+        default:
+          // GMLAN was not set on either BUS 1 or 2
+          break;
+      }
+    }
+
+    // now enable GMLAN on the new bus
+    switch (bus) {
       case 1:
       case 2:
-        puts("Disable GMLAN on CAN");
-        puth(prev_bus + 1U);
+        puts("Enable GMLAN on CAN");
+        puth(bus + 1U);
         puts("\n");
-        set_can_mode(prev_bus, 0);
-        bus_lookup[prev_bus] = prev_bus;
-        can_num_lookup[prev_bus] = prev_bus;
-        can_num_lookup[3] = -1;
-        can_init(prev_bus);
+        current_board->set_can_mode((bus == 1U) ? CAN_MODE_GMLAN_CAN2 : CAN_MODE_GMLAN_CAN3);
+        bus_lookup[bus] = 3;
+        can_num_lookup[bus] = -1;
+        can_num_lookup[3] = bus;
+        can_init(bus);
+        break;
+      case 0xFF:  //-1 unsigned
         break;
       default:
-        // GMLAN was not set on either BUS 1 or 2
+        puts("GMLAN can only be set on CAN2 or CAN3\n");
         break;
     }
+  } else {
+    puts("GMLAN not available on black panda\n");
   }
+}
 
-  // now enable GMLAN on the new bus
-  switch (bus) {
-    case 1:
-    case 2:
-      puts("Enable GMLAN on CAN");
-      puth(bus + 1U);
-      puts("\n");
-      set_can_mode(bus, 1);
-      bus_lookup[bus] = 3;
-      can_num_lookup[bus] = -1;
-      can_num_lookup[3] = bus;
-      can_init(bus);
-      break;
-    default:
-      puts("GMLAN can only be set on CAN2 or CAN3");
-      break;
+// TODO: remove
+void can_set_obd(uint8_t harness_orientation, bool obd){
+  if(obd){
+    puts("setting CAN2 to be OBD\n");
+  } else {
+    puts("setting CAN2 to be normal\n");
+  }
+  if(hw_type == HW_TYPE_BLACK_PANDA){
+    if(obd != (bool)(harness_orientation == HARNESS_STATUS_NORMAL)){
+        // B5,B6: disable normal mode
+        set_gpio_mode(GPIOB, 5, MODE_INPUT);
+        set_gpio_mode(GPIOB, 6, MODE_INPUT);
+        // B12,B13: CAN2 mode
+        set_gpio_alternate(GPIOB, 12, GPIO_AF9_CAN2);
+        set_gpio_alternate(GPIOB, 13, GPIO_AF9_CAN2);
+    } else {
+        // B5,B6: CAN2 mode
+        set_gpio_alternate(GPIOB, 5, GPIO_AF9_CAN2);
+        set_gpio_alternate(GPIOB, 6, GPIO_AF9_CAN2);
+        // B12,B13: disable normal mode
+        set_gpio_mode(GPIOB, 12, MODE_INPUT);
+        set_gpio_mode(GPIOB, 13, MODE_INPUT);
+    }
+  } else {
+    puts("OBD CAN not available on non-black panda\n");
   }
 }
 
@@ -326,7 +365,7 @@ void can_rx(uint8_t can_number) {
 
     safety_rx_hook(&to_push);
 
-    set_led(LED_BLUE, 1);
+    current_board->set_led(LED_BLUE, true);
     can_send_errs += !can_push(&can_rx_q, &to_push);
 
     // next

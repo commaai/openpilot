@@ -23,16 +23,20 @@ class TestHondaSafety(unittest.TestCase):
   def test_fwd_hook(self):
     buss = range(0x0, 0x3)
     msgs = range(0x1, 0x800)
+    is_panda_black = self.safety.get_hw_type() == 3  # black panda
+    bus_rdr_cam = 2 if is_panda_black else 1
+    bus_rdr_car = 0 if is_panda_black else 2
+    bus_pt = 1 if is_panda_black else 0
 
     blocked_msgs = [0xE4, 0x33D]
     for b in buss:
       for m in msgs:
-        if b == 0:
+        if b == bus_pt:
           fwd_bus = -1
-        elif b == 1:
-          fwd_bus = -1 if m in blocked_msgs else 2
-        elif b == 2:
-          fwd_bus = 1
+        elif b == bus_rdr_cam:
+          fwd_bus = -1 if m in blocked_msgs else bus_rdr_car
+        elif b == bus_rdr_car:
+          fwd_bus = bus_rdr_cam
 
         # assume len 8
         self.assertEqual(fwd_bus, self.safety.safety_fwd_hook(b, self._send_msg(b, m, 8)))
