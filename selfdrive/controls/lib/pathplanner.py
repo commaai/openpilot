@@ -126,6 +126,7 @@ class PathPlanner(object):
     plan_send.pathPlan.mpcSolutionValid = bool(plan_solution_valid)
     plan_send.pathPlan.paramsValid = bool(sm['liveParameters'].valid)
     plan_send.pathPlan.sensorValid = bool(sm['liveParameters'].sensorValid)
+    plan_send.pathPlan.posenetValid = bool(sm['liveParameters'].posenetValid)
 
     self.plan.send(plan_send.to_bytes())
 

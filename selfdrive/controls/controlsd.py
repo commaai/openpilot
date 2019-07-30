@@ -48,6 +48,10 @@ def events_to_bytes(events):
     ret.append(e.to_bytes())
   return ret
 
+def wait_for_can(logcan):
+  print("Waiting for CAN messages...")
+  while len(messaging.recv_one(logcan).can) == 0:
+    pass
 
 def data_sample(CI, CC, sm, can_sock, cal_status, cal_perc, overtemp, free_space, low_battery,
                 driver_status, state, mismatch_counter, params):
@@ -358,7 +362,7 @@ def data_send(sm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, ca
     "angleModelBias": 0.,
     "gpsPlannerActive": sm['plan'].gpsPlannerActive,
     "vCurvature": sm['plan'].vCurvature,
-    "decelForTurn": sm['plan'].decelForTurn,
+    "decelForModel": sm['plan'].longitudinalPlanSource == log.Plan.LongitudinalPlanSource.model,
     "cumLagMs": -rk.remaining * 1000.,
     "startMonoTime": int(start_time * 1e9),
     "mapValid": sm['plan'].mapValid,
@@ -412,7 +416,6 @@ def controlsd_thread(gctx=None):
 
   params = Params()
 
-
   # Pub Sockets
   sendcan = messaging.pub_sock(service_list['sendcan'].port)
   controlsstate = messaging.pub_sock(service_list['controlsState'].port)
@@ -427,14 +430,17 @@ def controlsd_thread(gctx=None):
   sm = messaging.SubMaster(['thermal', 'health', 'liveCalibration', 'driverMonitoring', 'plan', 'pathPlan'])
 
   logcan = messaging.sub_sock(service_list['can'].port)
-  CI, CP = get_car(logcan, sendcan)
+
+  # wait for health and CAN packets
+  hw_type = messaging.recv_one(sm.sock['health']).health.hwType
+  is_panda_black = hw_type == log.HealthData.HwType.blackPanda
+  wait_for_can(logcan)
+
+  CI, CP = get_car(logcan, sendcan, is_panda_black)
   logcan.close()
 
   # TODO: Use the logcan socket from above, but that will currenly break the tests
   can_sock = messaging.sub_sock(service_list['can'].port, timeout=100)
-
-  CC = car.CarControl.new_message()
-  AM = AlertManager()
 
   car_recognized = CP.carName != 'mock'
   # If stock camera is disconnected, we loaded car controls and it's not chffrplus
@@ -442,6 +448,13 @@ def controlsd_thread(gctx=None):
   read_only = not car_recognized or not controller_available
   if read_only:
     CP.safetyModel = car.CarParams.SafetyModel.elm327   # diagnostic only
+
+  # Write CarParams for radard and boardd safety mode
+  params.put("CarParams", CP.to_bytes())
+  params.put("LongitudinalControl", "1" if CP.openpilotLongitudinalControl else "0")
+
+  CC = car.CarControl.new_message()
+  AM = AlertManager()
 
   startup_alert = get_startup_alert(car_recognized, controller_available)
   AM.add(sm.frame, startup_alert, False)
@@ -456,10 +469,6 @@ def controlsd_thread(gctx=None):
 
   driver_status = DriverStatus()
 
-  # Write CarParams for radard and boardd safety mode
-  params.put("CarParams", CP.to_bytes())
-  params.put("LongitudinalControl", "1" if CP.openpilotLongitudinalControl else "0")
-
   state = State.disabled
   soft_disable_timer = 0
   v_cruise_kph = 255
@@ -473,6 +482,7 @@ def controlsd_thread(gctx=None):
   events_prev = []
 
   sm['pathPlan'].sensorValid = True
+  sm['pathPlan'].posenetValid = True
 
   # controlsd is driven by can recv, expected at 100Hz
   rk = Ratekeeper(100, print_delay_threshold=None)
@@ -498,6 +508,8 @@ def controlsd_thread(gctx=None):
       events.append(create_event('sensorDataInvalid', [ET.NO_ENTRY, ET.PERMANENT]))
     if not sm['pathPlan'].paramsValid:
       events.append(create_event('vehicleModelInvalid', [ET.WARNING]))
+    if not sm['pathPlan'].posenetValid:
+      events.append(create_event('posenetInvalid', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if not sm['plan'].radarValid:
       events.append(create_event('radarFault', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if sm['plan'].radarCanError:

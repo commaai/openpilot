@@ -25,10 +25,12 @@ public:
   Eigen::Vector2d x;
   double steering_angle = 0;
   double car_speed = 0;
+  double posenet_speed = 0;
   double prev_update_time = -1;
   double controls_state_time = -1;
   double sensor_data_time = -1;
 
   Localizer();
-  cereal::Event::Which handle_log(const unsigned char* msg_dat, size_t msg_size);
+  void handle_log(cereal::Event::Reader event);
+
 };

@@ -97,16 +97,53 @@ static cereal_ModelData_PathData_ptr path_to_cereal(struct capn_segment *cs, con
   for (int i=0; i<POLYFIT_DEGREE; i++) {
     capn_set32(poly_ptr, i, capn_from_f32(data.poly[i]));
   }
+  if (getenv("DEBUG_MODEL")){
+    capn_list32 points_ptr = capn_new_list32(cs, MODEL_PATH_DISTANCE);
+    capn_list32 stds_ptr = capn_new_list32(cs, MODEL_PATH_DISTANCE);
+    for (int i=0; i<MODEL_PATH_DISTANCE; i++) {
+      capn_set32(points_ptr, i, capn_from_f32(data.points[i]));
+      capn_set32(stds_ptr, i, capn_from_f32(data.stds[i]));
+    }
+    struct cereal_ModelData_PathData d = {
+      .points = points_ptr,
+      .stds = stds_ptr,
+      .prob = data.prob,
+      .std = data.std,
+      .poly = poly_ptr,
+    };
+    cereal_ModelData_PathData_ptr ret = cereal_new_ModelData_PathData(cs);
+    cereal_write_ModelData_PathData(&d, ret);
+    return ret;
+  } else {
+    struct cereal_ModelData_PathData d = {
+      .prob = data.prob,
+      .std = data.std,
+      .poly = poly_ptr,
+    };
+    cereal_ModelData_PathData_ptr ret = cereal_new_ModelData_PathData(cs);
+    cereal_write_ModelData_PathData(&d, ret);
+    return ret;
+  }
+}
 
-  cereal_ModelData_PathData_ptr ret = cereal_new_ModelData_PathData(cs);
-  struct cereal_ModelData_PathData d = {
+
+static cereal_ModelData_LeadData_ptr lead_to_cereal(struct capn_segment *cs, const LeadData data) {
+  cereal_ModelData_LeadData_ptr leadp = cereal_new_ModelData_LeadData(cs);
+  struct cereal_ModelData_LeadData leadd = (struct cereal_ModelData_LeadData){
+    .dist = data.dist,
     .prob = data.prob,
     .std = data.std,
-    .poly = poly_ptr,
+    .relY = data.rel_y,
+    .relYStd = data.rel_y_std,
+    .relVel = data.rel_v,
+    .relVelStd = data.rel_v_std,
+    .relA = data.rel_a,
+    .relAStd = data.rel_a_std,
   };
-  cereal_write_ModelData_PathData(&d, ret);
-  return ret;
+  cereal_write_ModelData_LeadData(&leadd, leadp);
+  return leadp;
 }
+
 
 void model_publish(void* sock, uint32_t frame_id,
                    const mat3 transform, const ModelData data) {
@@ -114,22 +151,16 @@ void model_publish(void* sock, uint32_t frame_id,
   capn_init_malloc(&rc);
   struct capn_segment *cs = capn_root(&rc).seg;
 
-  cereal_ModelData_LeadData_ptr leadp = cereal_new_ModelData_LeadData(cs);
-  struct cereal_ModelData_LeadData leadd = (struct cereal_ModelData_LeadData){
-    .dist = data.lead.dist,
-    .prob = data.lead.prob,
-    .std = data.lead.std,
-    .relVel = data.lead.rel_v,
-    .relVelStd = data.lead.rel_v_std,
-  };
-  cereal_write_ModelData_LeadData(&leadd, leadp);
-
 
   capn_list32 input_transform_ptr = capn_new_list32(cs, 3*3);
   for (int i = 0; i < 3 * 3; i++) {
     capn_set32(input_transform_ptr, i, capn_from_f32(transform.v[i]));
   }
 
+  capn_list32 speed_perc_ptr = capn_new_list32(cs, SPEED_PERCENTILES);
+  for (int i=0; i<SPEED_PERCENTILES; i++) {
+    capn_set32(speed_perc_ptr, i, capn_from_f32(data.speed[i]));
+  }
   cereal_ModelData_ModelSettings_ptr settingsp = cereal_new_ModelData_ModelSettings(cs);
   struct cereal_ModelData_ModelSettings settingsd = {
     .inputTransform = input_transform_ptr,
@@ -142,8 +173,10 @@ void model_publish(void* sock, uint32_t frame_id,
     .path = path_to_cereal(cs, data.path),
     .leftLane = path_to_cereal(cs, data.left_lane),
     .rightLane = path_to_cereal(cs, data.right_lane),
-    .lead = leadp,
+    .lead = lead_to_cereal(cs, data.lead),
+    .leadFuture = lead_to_cereal(cs, data.lead_future),
     .settings = settingsp,
+    .speed = speed_perc_ptr,
   };
   cereal_write_ModelData(&modeld, modelp);
 
