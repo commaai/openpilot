@@ -1,3 +1,4 @@
+from collections import defaultdict
 from selfdrive.test.plant.maneuverplots import ManeuverPlot
 from selfdrive.test.plant.plant import Plant
 import numpy as np
@@ -16,6 +17,7 @@ class Maneuver(object):
     self.speed_lead_breakpoints = kwargs.get("speed_lead_breakpoints", [0.0, duration])
 
     self.cruise_button_presses = kwargs.get("cruise_button_presses", [])
+    self.checks = kwargs.get("checks", [])
 
     self.duration = duration
     self.title = title
@@ -28,6 +30,7 @@ class Maneuver(object):
       distance_lead = self.distance_lead
     )
 
+    logs = defaultdict(list)
     last_controls_state = None
     plot = ManeuverPlot(self.title)
 
@@ -42,20 +45,24 @@ class Maneuver(object):
       grade = np.interp(plant.current_time(), self.grade_breakpoints, self.grade_values)
       speed_lead = np.interp(plant.current_time(), self.speed_lead_breakpoints, self.speed_lead_values)
 
-      distance, speed, acceleration, distance_lead, brake, gas, steer_torque, fcw, controls_state= plant.step(speed_lead, current_button, grade)
-      if controls_state:
-        last_controls_state = controls_state[-1]
+      # distance, speed, acceleration, distance_lead, brake, gas, steer_torque, fcw, controls_state= plant.step(speed_lead, current_button, grade)
+      log = plant.step(speed_lead, current_button, grade)
 
-      d_rel = distance_lead - distance if self.lead_relevancy else 200.
-      v_rel = speed_lead - speed if self.lead_relevancy else 0.
+      if log['controls_state_msgs']:
+        last_controls_state = log['controls_state_msgs'][-1]
+
+      d_rel = log['distance_lead'] - log['distance'] if self.lead_relevancy else 200.
+      v_rel = speed_lead - log['speed'] if self.lead_relevancy else 0.
+      log['d_rel'] = d_rel
+      log['v_rel'] = v_rel
 
       if last_controls_state:
         # print(last_controls_state)
         #develop plots
         plot.add_data(
           time=plant.current_time(),
-          gas=gas, brake=brake, steer_torque=steer_torque,
-          distance=distance, speed=speed, acceleration=acceleration,
+          gas=log['gas'], brake=log['brake'], steer_torque=log['steer_torque'],
+          distance=log['distance'], speed=log['speed'], acceleration=log['acceleration'],
           up_accel_cmd=last_controls_state.upAccelCmd, ui_accel_cmd=last_controls_state.uiAccelCmd,
           uf_accel_cmd=last_controls_state.ufAccelCmd,
           d_rel=d_rel, v_rel=v_rel, v_lead=speed_lead,
@@ -63,10 +70,17 @@ class Maneuver(object):
           cruise_speed=last_controls_state.vCruise,
           jerk_factor=last_controls_state.jerkFactor,
           a_target=last_controls_state.aTarget,
-          fcw=fcw)
+          fcw=log['fcw'])
 
-    print("maneuver end")
+        for k, v in log.items():
+          logs[k].append(v)
 
-    return (None, plot)
+    valid = True
+    for check in self.checks:
+      c = check(logs)
+      if not c:
+        print check.__name__ + " not valid!"
+      valid = valid and c
 
-
+    print("maneuver end", valid)
+    return (plot, valid)

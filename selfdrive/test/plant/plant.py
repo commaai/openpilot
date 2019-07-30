@@ -332,13 +332,15 @@ class Plant(object):
     live_parameters.init('liveParameters')
     live_parameters.liveParameters.valid = True
     live_parameters.liveParameters.sensorValid = True
+    live_parameters.liveParameters.posenetValid = True
     live_parameters.liveParameters.steerRatio = CP.steerRatio
     live_parameters.liveParameters.stiffnessFactor = 1.0
     Plant.live_params.send(live_parameters.to_bytes())
 
     driver_monitoring = messaging.new_message()
     driver_monitoring.init('driverMonitoring')
-    driver_monitoring.driverMonitoring.descriptor = [0.] * 7
+    driver_monitoring.driverMonitoring.faceOrientation = [0.] * 3
+    driver_monitoring.driverMonitoring.facePosition = [0.] * 2
     Plant.driverMonitoring.send(driver_monitoring.to_bytes())
 
     health = messaging.new_message()
@@ -364,9 +366,26 @@ class Plant(object):
         x.points = [0.0]*50
         x.prob = 1.0
         x.std = 1.0
+
+      if self.lead_relevancy:
+        d_rel = np.maximum(0., distance_lead - distance)
+        v_rel = v_lead - speed
+        prob = 1.0
+      else:
+        d_rel = 200.
+        v_rel = 0.
+        prob = 0.0
+
       md.model.lead.dist = float(d_rel)
-      md.model.lead.prob = 1.
-      md.model.lead.std = 0.1
+      md.model.lead.prob = prob
+      md.model.lead.relY = 0.0
+      md.model.lead.relYStd = 1.
+      md.model.lead.relVel = float(v_rel)
+      md.model.lead.relVelStd = 1.
+      md.model.lead.relA = 0.0
+      md.model.lead.relAStd = 10.
+      md.model.lead.std = 1.0
+
       cal.liveCalibration.calStatus = 1
       cal.liveCalibration.calPerc = 100
       # fake values?
@@ -383,7 +402,17 @@ class Plant(object):
     self.distance_lead_prev = distance_lead
 
     self.rk.keep_time()
-    return (distance, speed, acceleration, distance_lead, brake, gas, steer_torque, fcw, controls_state_msgs)
+    return {
+      "distance": distance,
+      "speed": speed,
+      "acceleration": acceleration,
+      "distance_lead": distance_lead,
+      "brake": brake,
+      "gas": gas,
+      "steer_torque": steer_torque,
+      "fcw": fcw,
+      "controls_state_msgs": controls_state_msgs,
+    }
 
 # simple engage in standalone mode
 def plant_thread(rate=100):

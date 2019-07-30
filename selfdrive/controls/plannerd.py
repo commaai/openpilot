@@ -37,8 +37,6 @@ def plannerd_thread():
   sm['liveParameters'].sensorValid = True
   sm['liveParameters'].steerRatio = CP.steerRatio
   sm['liveParameters'].stiffnessFactor = 1.0
-  live_map_data = messaging.new_message()
-  live_map_data.init('liveMapData')
 
   while True:
     sm.update()
@@ -46,9 +44,7 @@ def plannerd_thread():
     if sm.updated['model']:
       PP.update(sm, CP, VM)
     if sm.updated['radarState']:
-      PL.update(sm, CP, VM, PP, live_map_data.liveMapData)
-    # elif socket is live_map_data_sock:
-    #   live_map_data = msg
+      PL.update(sm, CP, VM, PP)
 
 
 def main(gctx=None):
