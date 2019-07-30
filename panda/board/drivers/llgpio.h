@@ -7,6 +7,9 @@
 #define PULL_UP 1
 #define PULL_DOWN 2
 
+#define OUTPUT_TYPE_PUSH_PULL 0U
+#define OUTPUT_TYPE_OPEN_DRAIN 1U
+
 void set_gpio_mode(GPIO_TypeDef *GPIO, unsigned int pin, unsigned int mode) {
   uint32_t tmp = GPIO->MODER;
   tmp &= ~(3U << (pin * 2U));
@@ -21,6 +24,14 @@ void set_gpio_output(GPIO_TypeDef *GPIO, unsigned int pin, bool enabled) {
     GPIO->ODR &= ~(1U << pin);
   }
   set_gpio_mode(GPIO, pin, MODE_OUTPUT);
+}
+
+void set_gpio_output_type(GPIO_TypeDef *GPIO, unsigned int pin, unsigned int output_type){
+  if(output_type == OUTPUT_TYPE_OPEN_DRAIN) {
+    GPIO->OTYPER |= (1U << pin);
+  } else {
+    GPIO->OTYPER &= ~(1U << pin);
+  }
 }
 
 void set_gpio_alternate(GPIO_TypeDef *GPIO, unsigned int pin, unsigned int mode) {
