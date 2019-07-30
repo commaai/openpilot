@@ -494,14 +494,26 @@ def manager_update():
   update_ssh()
   update_apks()
 
-def manager_prepare():
+def manager_prepare(spinner_text):
   # build cereal first
   subprocess.check_call(["make", "-j4"], cwd=os.path.join(BASEDIR, "cereal"))
 
   # build all processes
   os.chdir(os.path.dirname(os.path.abspath(__file__)))
-  for p in managed_processes:
+
+  process_cnt = len(managed_processes)
+  loader_proc = []
+
+  for n,p in enumerate(managed_processes):
+    if os.getenv("PREPAREONLY") is None:
+      loader_proc.append(subprocess.Popen(["./spinner", 
+        "loading {0}: {1}/{2} {3}".format(spinner_text, n+1, process_cnt, p)],
+        cwd=os.path.join(BASEDIR, "selfdrive", "ui", "spinner"),
+        close_fds=True))
     prepare_managed_process(p)
+
+  # end subprocesses here to stop screen flickering 
+  loader_proc = [loader_proc[pc].terminate() for pc in range(process_cnt) if loader_proc]
 
 def uninstall():
   cloudlog.warning("uninstalling")
@@ -576,16 +588,17 @@ def main():
 
   # put something on screen while we set things up
   if os.getenv("PREPAREONLY") is not None:
+    spinner_text = None
     spinner_proc = None
   else:
     spinner_text = "chffrplus" if params.get("Passive")=="1" else "openpilot"
-    spinner_proc = subprocess.Popen(["./spinner", "loading %s"%spinner_text],
+    spinner_proc = subprocess.Popen(["./spinner", "initializing {0}".format(spinner_text)],
       cwd=os.path.join(BASEDIR, "selfdrive", "ui", "spinner"),
       close_fds=True)
   try:
     manager_update()
     manager_init()
-    manager_prepare()
+    manager_prepare(spinner_text)
   finally:
     if spinner_proc:
       spinner_proc.terminate()
