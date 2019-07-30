@@ -97,8 +97,6 @@ class CarState(object):
     self.shifter_values = self.can_define.dv["GEAR_PACKET"]['GEAR']
     self.left_blinker_on = 0
     self.right_blinker_on = 0
-    self.offset = 0.
-    self.is_offset_set = False
 
     # initialize can parser
     self.car_fingerprint = CP.carFingerprint
