@@ -3,6 +3,7 @@ import math
 import numpy as np
 from common.params import Params
 from common.numpy_fast import interp
+from common.kalman.simple_kalman import KF1D
 
 import selfdrive.messaging as messaging
 from cereal import car
@@ -15,7 +16,7 @@ from selfdrive.controls.lib.longcontrol import LongCtrlState, MIN_CAN_SPEED
 from selfdrive.controls.lib.fcw import FCWChecker
 from selfdrive.controls.lib.long_mpc import LongitudinalMpc
 
-NO_CURVATURE_SPEED = 200. * CV.MPH_TO_MS
+MAX_SPEED = 255.0
 
 LON_MPC_STEP = 0.2  # first step is 0.2s
 MAX_SPEED_ERROR = 2.0
@@ -35,6 +36,16 @@ _A_CRUISE_MAX_BP = [0.,  5., 10., 20., 40.]
 # Lookup table for turns
 _A_TOTAL_MAX_V = [1.5, 1.9, 3.2]
 _A_TOTAL_MAX_BP = [0., 20., 40.]
+
+
+# Model speed kalman stuff
+_MODEL_V_A = [[1.0, DT_PLAN], [0.0, 1.0]]
+_MODEL_V_C = [1.0, 0]
+# calculated with observation std of 2m/s and accel proc noise of 2m/s**2
+_MODEL_V_K = [[0.07068858], [0.04826294]]
+
+# 75th percentile
+SPEED_PERCENTILE_IDX = 7
 
 
 def calc_cruise_accel_limits(v_ego, following):
@@ -57,8 +68,7 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   a_y = v_ego**2 * angle_steers * CV.DEG_TO_RAD / (CP.steerRatio * CP.wheelbase)
   a_x_allowed = math.sqrt(max(a_total_max**2 - a_y**2, 0.))
 
-  a_target[1] = min(a_target[1], a_x_allowed)
-  return a_target
+  return [a_target[0], min(a_target[1], a_x_allowed)]
 
 
 class Planner(object):
@@ -79,16 +89,21 @@ class Planner(object):
     self.a_acc = 0.0
     self.v_cruise = 0.0
     self.a_cruise = 0.0
+    self.v_model = 0.0
+    self.a_model = 0.0
 
     self.longitudinalPlanSource = 'cruise'
     self.fcw_checker = FCWChecker()
     self.fcw_enabled = fcw_enabled
 
+    self.model_v_kf = KF1D([[0.0],[0.0]], _MODEL_V_A, _MODEL_V_C, _MODEL_V_K)
+    self.model_v_kf_ready = False
+
     self.params = Params()
 
   def choose_solution(self, v_cruise_setpoint, enabled):
     if enabled:
-      solutions = {'cruise': self.v_cruise}
+      solutions = {'cruise': self.v_cruise, 'model': self.v_model}
       if self.mpc1.prev_lead_status:
         solutions['mpc1'] = self.mpc1.v_mpc
       if self.mpc2.prev_lead_status:
@@ -108,10 +123,13 @@ class Planner(object):
       elif slowest == 'cruise':
         self.v_acc = self.v_cruise
         self.a_acc = self.a_cruise
+      elif slowest == 'model':
+        self.v_acc = self.v_model
+        self.a_acc = self.a_model
 
     self.v_acc_future = min([self.mpc1.v_mpc_future, self.mpc2.v_mpc_future, v_cruise_setpoint])
 
-  def update(self, sm, CP, VM, PP, live_map_data):
+  def update(self, sm, CP, VM, PP):
     """Gets called when new radarState is available"""
     cur_time = sec_since_boot()
     v_ego = sm['carState'].vEgo
@@ -127,51 +145,43 @@ class Planner(object):
     enabled = (long_control_state == LongCtrlState.pid) or (long_control_state == LongCtrlState.stopping)
     following = lead_1.status and lead_1.dRel < 45.0 and lead_1.vLeadK > v_ego and lead_1.aLeadK > 0.0
 
-    v_speedlimit = NO_CURVATURE_SPEED
-    v_curvature = NO_CURVATURE_SPEED
+    if not self.model_v_kf_ready:
+      self.model_v_kf.x = [[v_ego],[0.0]]
+      self.model_v_kf_ready = True
 
-    #map_age = cur_time - rcv_times['liveMapData']
-    map_valid = False  # live_map_data.liveMapData.mapValid and map_age < 10.0
+    if len(sm['model'].speed):
+      self.model_v_kf.update(sm['model'].speed[SPEED_PERCENTILE_IDX])
 
-    # Speed limit and curvature
-    set_speed_limit_active = self.params.get("LimitSetSpeed") == "1" and self.params.get("SpeedLimitOffset") is not None
-    if set_speed_limit_active and map_valid:
-      if live_map_data.liveMapData.speedLimitValid:
-        speed_limit = live_map_data.liveMapData.speedLimit
-        offset = float(self.params.get("SpeedLimitOffset"))
-        v_speedlimit = speed_limit + offset
-
-      if live_map_data.liveMapData.curvatureValid:
-        curvature = abs(live_map_data.liveMapData.curvature)
-        a_y_max = 2.975 - v_ego * 0.0375  # ~1.85 @ 75mph, ~2.6 @ 25mph
-        v_curvature = math.sqrt(a_y_max / max(1e-4, curvature))
-        v_curvature = min(NO_CURVATURE_SPEED, v_curvature)
-
-    decel_for_turn = bool(v_curvature < min([v_cruise_setpoint, v_speedlimit, v_ego + 1.]))
-    v_cruise_setpoint = min([v_cruise_setpoint, v_curvature, v_speedlimit])
+    if self.params.get("LimitSetSpeedNeural") == "1":
+      model_speed = self.model_v_kf.x[0][0]
+    else:
+      model_speed = MAX_SPEED
 
     # Calculate speed for normal cruise control
     if enabled:
       accel_limits = [float(x) for x in calc_cruise_accel_limits(v_ego, following)]
       jerk_limits = [min(-0.1, accel_limits[0]), max(0.1, accel_limits[1])]  # TODO: make a separate lookup for jerk tuning
-      accel_limits = limit_accel_in_turns(v_ego, sm['carState'].steeringAngle, accel_limits, self.CP)
+      accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngle, accel_limits, self.CP)
 
       if force_slow_decel:
         # if required so, force a smooth deceleration
-        accel_limits[1] = min(accel_limits[1], AWARENESS_DECEL)
-        accel_limits[0] = min(accel_limits[0], accel_limits[1])
-
-      # Change accel limits based on time remaining to turn
-      if decel_for_turn:
-        time_to_turn = max(1.0, live_map_data.liveMapData.distToTurn / max(self.v_cruise, 1.))
-        required_decel = min(0, (v_curvature - self.v_cruise) / time_to_turn)
-        accel_limits[0] = max(accel_limits[0], required_decel)
+        accel_limits_turns[1] = min(accel_limits_turns[1], AWARENESS_DECEL)
+        accel_limits_turns[0] = min(accel_limits_turns[0], accel_limits_turns[1])
 
       self.v_cruise, self.a_cruise = speed_smoother(self.v_acc_start, self.a_acc_start,
                                                     v_cruise_setpoint,
-                                                    accel_limits[1], accel_limits[0],
+                                                    accel_limits_turns[1], accel_limits_turns[0],
                                                     jerk_limits[1], jerk_limits[0],
                                                     LON_MPC_STEP)
+
+      # accel and jerk up limits are higher here to make model not limiting accel
+      # mainly done to prevent flickering of slowdown icon
+      self.v_model, self.a_model = speed_smoother(self.v_acc_start, self.a_acc_start,
+                                                    model_speed,
+                                                    2*accel_limits[1], 3*accel_limits[0],
+                                                    2*jerk_limits[1], jerk_limits[0],
+                                                    LON_MPC_STEP)
+
       # cruise speed can't be negative even is user is distracted
       self.v_cruise = max(self.v_cruise, 0.)
     else:
@@ -233,10 +243,6 @@ class Planner(object):
     plan_send.plan.vTargetFuture = self.v_acc_future
     plan_send.plan.hasLead = self.mpc1.prev_lead_status
     plan_send.plan.longitudinalPlanSource = self.longitudinalPlanSource
-
-    plan_send.plan.vCurvature = v_curvature
-    plan_send.plan.decelForTurn = decel_for_turn
-    plan_send.plan.mapValid = map_valid
 
     radar_valid = not (radar_dead or radar_fault)
     plan_send.plan.radarValid = bool(radar_valid)

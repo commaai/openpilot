@@ -12,20 +12,29 @@
   #include "stm32f2xx_hal_gpio_ex.h"
 #endif
 
-// default since there's no serial
-void puts(const char *a) {
-  UNUSED(a);
-}
+// ******************** Prototypes ********************
+void puts(const char *a){ UNUSED(a); }
+void puth(unsigned int i){ UNUSED(i); }
+void puth2(unsigned int i){ UNUSED(i); }
+typedef struct board board;
+typedef struct harness_configuration harness_configuration;
+// No CAN support on bootloader
+void can_flip_buses(uint8_t bus1, uint8_t bus2){UNUSED(bus1); UNUSED(bus2);}
+void can_set_obd(int harness_orientation, bool obd){UNUSED(harness_orientation); UNUSED(obd);}
 
-void puth(unsigned int i) {
-  UNUSED(i);
-}
+// ********************* Globals **********************
+int hw_type = 0;
+const board *current_board;
 
+// ********************* Includes *********************
 #include "libc.h"
 #include "provision.h"
 
 #include "drivers/clock.h"
 #include "drivers/llgpio.h"
+
+#include "board.h"
+
 #include "gpio.h"
 
 #include "drivers/spi.h"
@@ -56,11 +65,10 @@ extern void *_app_start[];
 int main(void) {
   __disable_irq();
   clock_init();
-  detect();
+  detect_configuration();
+  detect_board_type();
 
-  if (revision == PANDA_REV_C) {
-    set_usb_power_mode(USB_POWER_CLIENT);
-  }
+  current_board->set_usb_power_mode(USB_POWER_CLIENT);
 
   if (enter_bootloader_mode == ENTER_SOFTLOADER_MAGIC) {
     enter_bootloader_mode = 0;

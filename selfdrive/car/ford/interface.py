@@ -38,13 +38,14 @@ class CarInterface(object):
     return 1.0
 
   @staticmethod
-  def get_params(candidate, fingerprint, vin=""):
+  def get_params(candidate, fingerprint, vin="", is_panda_black=False):
 
     ret = car.CarParams.new_message()
 
     ret.carName = "ford"
     ret.carFingerprint = candidate
     ret.carVin = vin
+    ret.isPandaBlack = is_panda_black
 
     ret.safetyModel = car.CarParams.SafetyModel.ford
 
@@ -87,7 +88,7 @@ class CarInterface(object):
     ret.brakeMaxBP = [5., 20.]
     ret.brakeMaxV = [1., 0.8]
 
-    ret.enableCamera = not any(x for x in [970, 973, 984] if x in fingerprint)
+    ret.enableCamera = not any(x for x in [970, 973, 984] if x in fingerprint) or is_panda_black
     ret.openpilotLongitudinalControl = False
     cloudlog.warn("ECU Camera Simulated: %r", ret.enableCamera)
 

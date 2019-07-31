@@ -19,6 +19,7 @@ def get_can_parser(CP):
 
   signals = [
     # sig_name, sig_address, default
+    ("STEER_ANGLE", "STEER_ANGLE_SENSOR", 0),
     ("GEAR", "GEAR_PACKET", 0),
     ("BRAKE_PRESSED", "BRAKE_MODULE", 0),
     ("GAS_PEDAL", "GAS_PEDAL", 0),
@@ -59,13 +60,8 @@ def get_can_parser(CP):
     ("EPS_STATUS", 25),
   ]
 
-  if CP.carFingerprint in TSS2_CAR:
+  if CP.carFingerprint in NO_DSU_CAR:
     signals += [("STEER_ANGLE", "STEER_TORQUE_SENSOR", 0)]
-    signals += [("STEER_ANGLE", "STEER_ANGLE_SENSOR", 0)] # Used for offsetting
-  elif CP.carFingerprint in TSS2_CAR:
-    signals += [("STEER_ANGLE", "STEER_TORQUE_SENSOR", 0)]
-  else:
-    signals += [("STEER_ANGLE", "STEER_ANGLE_SENSOR", 0)]
 
   if CP.carFingerprint == CAR.PRIUS:
     signals += [("STATE", "AUTOPARK_STATUS", 0)]

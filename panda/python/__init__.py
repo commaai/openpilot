@@ -16,7 +16,7 @@ from update import ensure_st_up_to_date
 from serial import PandaSerial
 from isotp import isotp_send, isotp_recv
 
-__version__ = '0.0.8'
+__version__ = '0.0.9'
 
 BASEDIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
 
@@ -232,10 +232,10 @@ class Panda(object):
     print("flash: unlocking")
     handle.controlWrite(Panda.REQUEST_IN, 0xb1, 0, 0, b'')
 
-    # erase sectors 1 and 2
+    # erase sectors 1 through 3
     print("flash: erasing")
-    handle.controlWrite(Panda.REQUEST_IN, 0xb2, 1, 0, b'')
-    handle.controlWrite(Panda.REQUEST_IN, 0xb2, 2, 0, b'')
+    for i in range(1, 4):
+      handle.controlWrite(Panda.REQUEST_IN, 0xb2, i, 0, b'')
 
     # flash over EP2
     STEP = 0x10
@@ -334,13 +334,19 @@ class Panda(object):
   # ******************* health *******************
 
   def health(self):
-    dat = self._handle.controlRead(Panda.REQUEST_IN, 0xd2, 0, 0, 13)
-    a = struct.unpack("IIBBBBB", dat)
-    return {"voltage": a[0], "current": a[1],
-            "started": a[2], "controls_allowed": a[3],
-            "gas_interceptor_detected": a[4],
-            "started_signal_detected": a[5],
-            "started_alt": a[6]}
+    dat = self._handle.controlRead(Panda.REQUEST_IN, 0xd2, 0, 0, 24)
+    a = struct.unpack("IIIIIBBBB", dat)
+    return {
+      "voltage": a[0],
+      "current": a[1],
+      "can_send_errs": a[2],
+      "can_fwd_errs": a[3],
+      "gmlan_send_errs": a[4],
+      "started": a[5],
+      "controls_allowed": a[6],
+      "gas_interceptor_detected": a[7],
+      "car_harness_status": a[8]
+    }
 
   # ******************* control *******************
 
@@ -354,9 +360,14 @@ class Panda(object):
   def get_version(self):
     return self._handle.controlRead(Panda.REQUEST_IN, 0xd6, 0, 0, 0x40)
 
+  def get_type(self):
+    return self._handle.controlRead(Panda.REQUEST_IN, 0xc1, 0, 0, 0x40)
+
   def is_grey(self):
-    ret = self._handle.controlRead(Panda.REQUEST_IN, 0xc1, 0, 0, 0x40)
-    return ret == "\x01"
+    return self.get_type() == "\x02"
+
+  def is_black(self):
+    return self.get_type() == "\x03"
 
   def get_serial(self):
     dat = self._handle.controlRead(Panda.REQUEST_IN, 0xd0, 0, 0, 0x20)
@@ -387,10 +398,15 @@ class Panda(object):
     self._handle.controlWrite(Panda.REQUEST_OUT, 0xdd, from_bus, to_bus, b'')
 
   def set_gmlan(self, bus=2):
+    # TODO: check panda type
     if bus is None:
       self._handle.controlWrite(Panda.REQUEST_OUT, 0xdb, 0, 0, b'')
     elif bus in [Panda.GMLAN_CAN2, Panda.GMLAN_CAN3]:
       self._handle.controlWrite(Panda.REQUEST_OUT, 0xdb, 1, bus, b'')
+
+  def set_obd(self, obd):
+    # TODO: check panda type
+    self._handle.controlWrite(Panda.REQUEST_OUT, 0xdb, int(obd), 0, b'')
 
   def set_can_loopback(self, enable):
     # set can loopback mode for all buses
@@ -559,3 +575,6 @@ class Panda(object):
     msg = self.kline_ll_recv(2, bus=bus)
     msg += self.kline_ll_recv(ord(msg[1])-2, bus=bus)
     return msg
+
+  def send_heartbeat(self):
+    self._handle.controlWrite(Panda.REQUEST_OUT, 0xf3, 0, 0, b'')

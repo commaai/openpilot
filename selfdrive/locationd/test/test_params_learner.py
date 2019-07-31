@@ -21,12 +21,12 @@ class TestParamsLearner(unittest.TestCase):
     # Setup vehicle model with wrong parameters
     VM_sim = VehicleModel(self.CP)
     x_target = 0.75
-    sr_target = 14
+    sr_target = self.CP.steerRatio - 0.5
     ao_target = -1.0
     VM_sim.update_params(x_target, sr_target)
 
     # Run simulation
-    times = np.arange(0, 10*3600, 0.01)
+    times = np.arange(0, 15*3600, 0.01)
     angle_offset = np.radians(ao_target)
     steering_angles = np.radians(10 * np.sin(2 * np.pi * times / 100.)) + angle_offset
     speeds = 10 * np.sin(2 * np.pi * times / 1000.) + 25
