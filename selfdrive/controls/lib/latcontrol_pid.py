@@ -172,7 +172,7 @@ class LatControlPID(object):
         self.cur_poly_scale = 1.0
 
       if len(self.steer_p_scale) > 0:
-        if abs(self.damp_angle_steers_des) > abs(self.damp_angle_steers_des):
+        if abs(self.damp_angle_steers_des) > abs(self.damp_angle_steers):
           p_scale = interp(abs(angle_feedforward), self.steer_p_scale[0], self.steer_p_scale[1])
         else:
           p_scale = interp(abs(angle_feedforward), self.steer_p_scale[0], self.steer_p_scale[2])
