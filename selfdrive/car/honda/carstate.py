@@ -300,7 +300,6 @@ class CarState(object):
 
     if self.CP.carFingerprint in (CAR.CIVIC, CAR.ODYSSEY, CAR.CRV_5G, CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CRV_HYBRID):
       self.park_brake = cp.vl["EPB_STATUS"]['EPB_STATE'] != 0
-      if self.cruise_mode: print("   cruise mode!")
       self.main_on = cp.vl["SCM_FEEDBACK"]['MAIN_ON']
     elif self.CP.carFingerprint == CAR.ODYSSEY_CHN:
       self.park_brake = cp.vl["EPB_STATUS"]['EPB_STATE'] != 0

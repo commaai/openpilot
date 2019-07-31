@@ -456,7 +456,7 @@ class CarInterface(object):
     # cruise state
     ret.cruiseState.enabled = self.CS.pcm_acc_status != 0
     ret.cruiseState.speed = self.CS.v_cruise_pcm * CV.KPH_TO_MS
-    ret.cruiseState.available = bool(self.CS.main_on and not self.CS.cruise_mode)
+    ret.cruiseState.available = bool(self.CS.main_on) and not bool(self.CS.cruise_mode)
     ret.cruiseState.speedOffset = self.CS.cruise_speed_offset
     ret.cruiseState.standstill = False
 

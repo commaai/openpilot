@@ -107,7 +107,7 @@ class kegman_conf():
 
       else:
         if "timeConst" not in self.config:
-          self.config.update({"type":"indi", "timeConst":"-1", "actEffect":"-1", "outerGain":"-1", "innerGain":"-1", "reactMPC":"-1", "polyReact":"-1", "polyDamp":"-1", "polyReact":"-1"})
+          self.config.update({"type":"indi", "timeConst":"-1", "actEffect":"-1", "outerGain":"-1", "innerGain":"-1", "reactMPC":"-1"})
           self.element_updated = True
         if "type" not in self.config:
           self.config.update({"type":"indi"})
@@ -122,7 +122,7 @@ class kegman_conf():
 
     else:
       if self.type == "pid" or CP.lateralTuning.which() == "pid":
-        self.config = {"type":"pid","Kp":"-1", "Ki":"-1", "Kf":"-1", "dampTime":"-1", "reactMPC":"-1", "dampMPC":"-1", "rateFFGain":"-1", "polyReact":"-1", "polyDamp":"-1", "polyReact":"-1"}
+        self.config = {"type":"pid","Kp":"-1", "Ki":"-1", "Kf":"-1", "dampTime":"-1", "reactMPC":"-1", "dampMPC":"-1", "rateFFGain":"-1", "polyReact":"-1", "polyDamp":"-1"}
       else:
         self.config = {"type":"indi","timeConst":"-1", "actEffect":"-1", "outerGain":"-1", "innerGain":"-1", "reactMPC":"-1"}
 
