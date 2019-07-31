@@ -441,7 +441,7 @@ def controlsd_thread(gctx=None):
   logcan.close()
 
   # TODO: Use the logcan socket from above, but that will currenly break the tests
-  can_timeout = 0 if os.environ.get('NO_CAN_TIMEOUT', False) else 100
+  can_timeout = None if os.environ.get('NO_CAN_TIMEOUT', False) else 100
   can_sock = messaging.sub_sock(service_list['can'].port, timeout=can_timeout)
 
   car_recognized = CP.carName != 'mock'
