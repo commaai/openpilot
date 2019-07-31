@@ -38,7 +38,7 @@ class PathPlanner(object):
   def setup_mpc(self, steer_rate_cost):
     self.libmpc = libmpc_py.libmpc
     #self.libmpc.init(MPC_COST_LAT.PATH, MPC_COST_LAT.LANE, MPC_COST_LAT.HEADING, steer_rate_cost)
-    self.libmpc.init(MPC_COST_LAT.PATH * 0.1, MPC_COST_LAT.LANE * 2.0, MPC_COST_LAT.HEADING, steer_rate_cost)
+    self.libmpc.init(MPC_COST_LAT.PATH * 0.1, MPC_COST_LAT.LANE, MPC_COST_LAT.HEADING, steer_rate_cost)
 
     self.mpc_solution = libmpc_py.ffi.new("log_t *")
     self.cur_state = libmpc_py.ffi.new("state_t *")
@@ -87,7 +87,7 @@ class PathPlanner(object):
     if not mpc_nans:
       self.mpc_angles[0] = angle_steers
       self.mpc_times[0] = sm.logMonoTime['model'] * 1e-9
-      oversample_limit = 19 if v_ego == 0 else min(19, int(100.0 / v_ego))
+      oversample_limit = 19 if v_ego == 0 else min(19, int(200.0 / v_ego))
       for i in range(1,20):
         if i < 6:
           self.mpc_times[i] = self.mpc_times[i-1] + 0.05

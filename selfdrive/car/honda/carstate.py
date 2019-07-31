@@ -94,6 +94,7 @@ def get_can_signals(CP):
       checks += [("BRAKE_MODULE", 50)]
     signals += [("CAR_GAS", "GAS_PEDAL_2", 0),
                 ("MAIN_ON", "SCM_FEEDBACK", 0),
+                ("CRUISE_CONTROL_LABEL", "ACC_HUD", 0),
                 ("EPB_STATE", "EPB_STATUS", 0),
                 ("CRUISE_SPEED", "ACC_HUD", 0)]
     checks += [("GAS_PEDAL_2", 100)]
@@ -194,6 +195,7 @@ class CarState(object):
 
     self.left_blinker_on = 0
     self.right_blinker_on = 0
+    self.cruise_mode = 0
 
     self.stopped = 0
 
@@ -298,6 +300,8 @@ class CarState(object):
 
     if self.CP.carFingerprint in (CAR.CIVIC, CAR.ODYSSEY, CAR.CRV_5G, CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CRV_HYBRID):
       self.park_brake = cp.vl["EPB_STATUS"]['EPB_STATE'] != 0
+      self.cruise_mode = cp.vl["ACC_HUD"]['CRUISE_CONTROL_LABEL']
+      if self.cruise_mode: print("   cruise mode!")
       self.main_on = cp.vl["SCM_FEEDBACK"]['MAIN_ON']
     elif self.CP.carFingerprint == CAR.ODYSSEY_CHN:
       self.park_brake = cp.vl["EPB_STATUS"]['EPB_STATE'] != 0
