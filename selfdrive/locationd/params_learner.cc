@@ -67,7 +67,8 @@ bool ParamsLearner::update(double psi, double u, double sa) {
 #endif
 
   slow_ao = clip(slow_ao, -MAX_ANGLE_OFFSET, MAX_ANGLE_OFFSET);
-  ao = clip(ao, slow_ao - MAX_FAST_ANGLE_OFFSET_DIFF, slow_ao + MAX_FAST_ANGLE_OFFSET_DIFF);
+  ao = clip(ao, , -MAX_ANGLE_OFFSET, MAX_ANGLE_OFFSET);
+  //ao = clip(ao, slow_ao - MAX_FAST_ANGLE_OFFSET_DIFF, slow_ao + MAX_FAST_ANGLE_OFFSET_DIFF);
   x = clip(x, MIN_STIFFNESS, MAX_STIFFNESS);
   sR = clip(sR, min_sr, max_sr);
 
