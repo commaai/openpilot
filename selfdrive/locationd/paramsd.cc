@@ -150,7 +150,7 @@ int main(int argc, char *argv[]) {
             live_params.setYawRate(localizer.x[0]);
             live_params.setGyroBias(localizer.x[1]);
             live_params.setSensorValid(sensor_data_age < 5.0);
-            live_params.setAngleOffset(angle_offset_average_degrees);
+            live_params.setAngleOffset(angle_offset_degrees);
             live_params.setAngleOffsetAverage(angle_offset_average_degrees);
             live_params.setStiffnessFactor(learner.x);
             live_params.setSteerRatio(learner.sR);
