@@ -49,6 +49,7 @@ def get_can_signals(CP):
       ("ESP_DISABLED", "VSA_STATUS", 1),
       ("USER_BRAKE", "VSA_STATUS", 0),
       ("BRAKE_HOLD_ACTIVE", "VSA_STATUS", 0),
+      ("HUD_LEAD", "ACC_HUD", 0),
       ("STEER_STATUS", "STEER_STATUS", 5),
       ("GEAR_SHIFTER", "GEARBOX", 0),
       ("PEDAL_GAS", "POWERTRAIN_DATA", 0),
@@ -109,8 +110,13 @@ def get_can_signals(CP):
     else:
       checks += [("CRUISE_PARAMS", 50)]
 
-  if CP.carFingerprint in (CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CRV_HYBRID):
+  if CP.carFingerprint in (CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH):
+    signals += [("DRIVERS_DOOR_OPEN", "SCM_FEEDBACK", 1),
+                    ("LEAD_DISTANCE", "RADAR_HUD", 0)]
+    checks += [("RADAR_HUD", 50)]
+  elif CP.carFingerprint in (CAR.CIVIC_BOSCH, CAR.CRV_HYBRID):
     signals += [("DRIVERS_DOOR_OPEN", "SCM_FEEDBACK", 1)]
+    checks += [("RADAR_HUD", 50)]
   elif CP.carFingerprint == CAR.ODYSSEY_CHN:
     signals += [("DRIVERS_DOOR_OPEN", "SCM_BUTTONS", 1)]
   else:
@@ -146,7 +152,6 @@ def get_can_signals(CP):
   # add gas interceptor reading if we are using it
   if CP.enableGasInterceptor:
     signals.append(("INTERCEPTOR_GAS", "GAS_SENSOR", 0))
-    signals.append(("INTERCEPTOR_GAS2", "GAS_SENSOR", 0))
     checks.append(("GAS_SENSOR", 50))
 
   return signals, checks
@@ -154,8 +159,7 @@ def get_can_signals(CP):
 
 def get_can_parser(CP):
   signals, checks = get_can_signals(CP)
-  bus_pt = 1 if CP.isPandaBlack and CP.carFingerprint in HONDA_BOSCH else 0
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, bus_pt)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0, timeout=100)
 
 
 def get_cam_can_parser(CP):
@@ -166,8 +170,9 @@ def get_cam_can_parser(CP):
   if CP.carFingerprint in [CAR.CRV, CAR.ACURA_RDX, CAR.ODYSSEY_CHN]:
     checks = [(0x194, 100)]
 
-  bus_cam = 1 if CP.carFingerprint in HONDA_BOSCH  and not CP.isPandaBlack else 2
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, bus_cam)
+  cam_bus = 1 if CP.carFingerprint in HONDA_BOSCH else 2
+
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, cam_bus, timeout=100)
 
 class CarState(object):
   def __init__(self, CP):
@@ -178,6 +183,8 @@ class CarState(object):
     self.user_gas, self.user_gas_pressed = 0., 0
     self.brake_switch_prev = 0
     self.brake_switch_ts = 0
+    self.lead_distance = 255
+    self.hud_lead = 0
 
     self.cruise_buttons = 0
     self.cruise_setting = 0
@@ -215,7 +222,11 @@ class CarState(object):
 
     # ******************* parse out can *******************
 
-    if self.CP.carFingerprint in (CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CRV_HYBRID): # TODO: find wheels moving bit in dbc
+    if self.CP.carFingerprint in (CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH): # TODO: find wheels moving bit in dbc
+      self.standstill = cp.vl["ENGINE_DATA"]['XMISSION_SPEED'] < 0.1
+      self.door_all_closed = not cp.vl["SCM_FEEDBACK"]['DRIVERS_DOOR_OPEN']
+      self.lead_distance = cp.vl["RADAR_HUD"]['LEAD_DISTANCE']
+    elif self.CP.carFingerprint in (CAR.CIVIC_BOSCH, CAR.CRV_HYBRID):
       self.standstill = cp.vl["ENGINE_DATA"]['XMISSION_SPEED'] < 0.1
       self.door_all_closed = not cp.vl["SCM_FEEDBACK"]['DRIVERS_DOOR_OPEN']
     elif self.CP.carFingerprint == CAR.ODYSSEY_CHN:
@@ -262,7 +273,7 @@ class CarState(object):
     # this is a hack for the interceptor. This is now only used in the simulation
     # TODO: Replace tests by toyota so this can go away
     if self.CP.enableGasInterceptor:
-      self.user_gas = (cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS'] + cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS2']) / 2.
+      self.user_gas = cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS']
       self.user_gas_pressed = self.user_gas > 0 # this works because interceptor read < 0 when pedal position is 0. Once calibrated, this will change
 
     self.gear = 0 if self.CP.carFingerprint == CAR.CIVIC else cp.vl["GEARBOX"]['GEAR']
@@ -312,6 +323,8 @@ class CarState(object):
                           cp.ts["POWERTRAIN_DATA"]['BRAKE_SWITCH'] != self.brake_switch_ts)
         self.brake_switch_prev = self.brake_switch
         self.brake_switch_ts = cp.ts["POWERTRAIN_DATA"]['BRAKE_SWITCH']
+        if self.CP.carFingerprint in (CAR.CIVIC_BOSCH):
+          self.hud_lead = cp.vl["ACC_HUD"]['HUD_LEAD']
       else:
         self.brake_pressed = cp.vl["BRAKE_MODULE"]['BRAKE_PRESSED']
       # On set, cruise set speed pulses between 254~255 and the set speed prev is set to avoid this.
@@ -331,6 +344,7 @@ class CarState(object):
 
     self.user_brake = cp.vl["VSA_STATUS"]['USER_BRAKE']
     self.pcm_acc_status = cp.vl["POWERTRAIN_DATA"]['ACC_STATUS']
+    self.hud_lead = cp.vl["ACC_HUD"]['HUD_LEAD']
 
     # Gets rid of Pedal Grinding noise when brake is pressed at slow speeds for some models
     if self.CP.carFingerprint in (CAR.PILOT, CAR.PILOT_2019, CAR.RIDGELINE):
