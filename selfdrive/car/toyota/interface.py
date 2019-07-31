@@ -56,36 +56,32 @@ class CarInterface(object):
 
     ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
 
-    if candidate != CAR.PRIUS:
-      ret.steerRateCost = 0.7
-      ret.lateralTuning.init('pid')
-      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
-      ret.lateralTuning.pid.dampTime = 0.05
-      ret.lateralTuning.pid.reactMPC = 0.0
-      ret.lateralTuning.pid.dampMPC = 0.25
-      ret.lateralTuning.pid.rateFFGain = 0.4
-      ret.lateralTuning.pid.polyFactor = 0.001
-      ret.lateralTuning.pid.polyDampTime = 0.25
-      ret.lateralTuning.pid.polyReactTime = 0.05
-      ret.lateralTuning.pid.steerPscale = [[1.0, 2.0, 10.0], [1.0, 0.5, 0.25], [1.0, 0.75, 0.5]]  # [abs angles, scale UP, scale DOWN]
+    ret.steerRateCost = 0.7
+    ret.lateralTuning.init('pid')
+    ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+    ret.lateralTuning.pid.dampTime = 0.05
+    ret.lateralTuning.pid.reactMPC = 0.0
+    ret.lateralTuning.pid.dampMPC = 0.25
+    ret.lateralTuning.pid.rateFFGain = 0.4
+    ret.lateralTuning.pid.polyFactor = 0.001
+    ret.lateralTuning.pid.polyDampTime = 0.25
+    ret.lateralTuning.pid.polyReactTime = 0.05
+    ret.lateralTuning.pid.steerPscale = [[1.0, 2.0, 10.0], [1.0, 0.5, 0.25], [1.0, 0.75, 0.5]]  # [abs angles, scale UP, scale DOWN]
 
     if candidate == CAR.PRIUS:
       stop_and_go = True
-      ret.safetyParam = 66  # see conversion factor for STEER_TORQUE_EPS in dbc file
+      ret.safetyParam = 55  # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.70
-      ret.steerRatio = 15.74   # unknown end-to-end spec
-      tire_stiffness_factor = 0.6371   # hand-tune
-      ret.mass = 3045. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.steerRatio = 14.0   # unknown end-to-end spec
+      tire_stiffness_factor = 0.725   # hand-tune
+      ret.mass = 3375. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.4], [0.03]]
+      ret.lateralTuning.pid.kf = 0.00007   # full torque for 10 deg at 80mph means 0.00007818594
+      ret.lateralTuning.pid.dampTime = 0.05
+      ret.lateralTuning.pid.reactMPC = 0.0
+      ret.lateralTuning.pid.rateFFGain = 0.4
+      ret.lateralTuning.pid.dampTime = 0.05
 
-      ret.lateralTuning.init('indi')
-      ret.lateralTuning.indi.innerLoopGain = 7.0
-      ret.lateralTuning.indi.outerLoopGain = 3.5
-      ret.lateralTuning.indi.timeConstant = 0.35
-      ret.lateralTuning.indi.actuatorEffectiveness = 4.0
-      ret.lateralTuning.indi.reactMPC = 0.15
-
-      ret.steerActuatorDelay = 0.5
-      ret.steerRateCost = 0.5
 
     elif candidate in [CAR.RAV4, CAR.RAV4H]:
       stop_and_go = True if (candidate in CAR.RAV4H) else False
