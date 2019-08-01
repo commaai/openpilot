@@ -42,13 +42,13 @@ class ModelParser(object):
 
     # Find current lanewidth
     lr_prob = l_prob * r_prob
-    decay_rate = interp(lr_prob, [0., 1.0], [0.2, 1.0])
-    decay_rate *= v_ego / 31.0
-    self.lane_width_certainty += 0.05 * decay_rate * (lr_prob - self.lane_width_certainty)
+    self.lane_width_certainty += 0.05 * (lr_prob - self.lane_width_certainty)
     current_lane_width = abs(l_poly[3] - r_poly[3])
-    self.lane_width_estimate += 0.005 * decay_rate * (current_lane_width - self.lane_width_estimate)
+    self.lane_width_estimate += 0.005 * (current_lane_width - self.lane_width_estimate)
     speed_lane_width = interp(v_ego, [0., 31.], [2.8, 3.5])
-    self.lane_width = self.lane_width_certainty * self.lane_width_estimate + (1.0 - self.lane_width_certainty) * speed_lane_width
+    self.lane_width = np.clip(self.lane_width_certainty * self.lane_width_estimate + \
+                      (1 - self.lane_width_certainty) * speed_lane_width,  \
+                      self.lane_width - 0.025, self.lane_width + 0.025)
 
     half_lane_width = self.lane_width / 2.0
     l_center = l_prob * (l_poly[3] - half_lane_width)
