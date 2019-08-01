@@ -4,6 +4,8 @@ from selfdrive.controls.lib.latcontrol_helpers import model_polyfit, calc_desire
 
 CAMERA_OFFSET = 0.06  # m from center car to camera
 
+def mean(numbers):
+    return float(sum(numbers)) / max(len(numbers), 1)
 
 class ModelParser(object):
   def __init__(self):
@@ -14,9 +16,9 @@ class ModelParser(object):
     self.lead_dist, self.lead_prob, self.lead_var = 0, 0, 1
     self._path_pinv = compute_path_pinv()
 
-    self.lane_width_estimate = 3.7
-    self.lane_width_certainty = 1.0
-    self.lane_width = 3.7
+    self.lane_width = 3.0
+    self.readings = []
+    self.frame = 0
     self.l_prob = 0.
     self.r_prob = 0.
     self.x_points = np.arange(50)
@@ -40,13 +42,17 @@ class ModelParser(object):
     r_prob = md.rightLane.prob  # right line prob
 
     # Find current lanewidth
-    lr_prob = l_prob * r_prob
-    self.lane_width_certainty += 0.05 * (lr_prob - self.lane_width_certainty)
-    current_lane_width = abs(l_poly[3] - r_poly[3])
-    self.lane_width_estimate += 0.005 * (current_lane_width - self.lane_width_estimate)
-    speed_lane_width = interp(v_ego, [0., 31.], [2.8, 3.5])
-    self.lane_width = self.lane_width_certainty * self.lane_width_estimate + \
-                      (1 - self.lane_width_certainty) * speed_lane_width
+    if l_prob > 0.49 and r_prob > 0.49:
+        self.frame += 1
+        if self.frame % 20 == 0:
+            self.frame = 0
+            current_lane_width = sorted((2.8, abs(l_poly[3] - r_poly[3]), 3.6))[1]
+            max_samples = 30
+            self.readings.append(current_lane_width)
+            avg = mean(self.readings)
+            self.lane_width = avg
+            if len(self.readings) == max_samples:
+                self.readings.pop(0)
 
     self.lead_dist = md.lead.dist
     self.lead_prob = md.lead.prob
