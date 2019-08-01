@@ -140,8 +140,8 @@ int main(int argc, char *argv[]) {
           double angle_offset_degrees = RADIANS_TO_DEGREES * learner.ao;
           double angle_offset_average_degrees = RADIANS_TO_DEGREES * learner.slow_ao;
 
-          // Send parameters at 10 Hz
-          if (save_counter % 10 == 0){
+          // Send parameters at 20 Hz
+          if (save_counter % 5 == 0){
             capnp::MallocMessageBuilder msg;
             cereal::Event::Builder event = msg.initRoot<cereal::Event>();
             event.setLogMonoTime(nanos_since_boot());

@@ -700,6 +700,7 @@ struct PathPlan {
   paramsValid @10 :Bool;
   modelValidDEPRECATED @12 :Bool;
   angleOffset @11 :Float32;
+  angleBias @22 :Float32;
   mpcAngles @17 :List(Float32);
   mpcRates @18 :List(Float32);
   mpcTimes @19 :List(Float32);
