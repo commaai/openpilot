@@ -185,6 +185,16 @@ class CarInterface(object):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.05]]
       ret.lateralTuning.pid.kf = 0.00007818594
 
+    elif candidate == CAR.LEXUS_CTH:
+      stop_and_go = True
+      ret.safetyParam = 100  # see conversion factor for STEER_TORQUE_EPS in dbc file
+      ret.wheelbase = 2.60
+      ret.steerRatio = 18.6  # 0.5.10
+      tire_stiffness_factor = 0.517  # 0.5.10
+      ret.mass = 3108 * CV.LB_TO_KG + STD_CARGO_KG  # mean between min and max
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.05]]
+      ret.lateralTuning.pid.kf = 0.00007  # full torque for 10 deg at 80mph means 0.00007818594
+
     ret.steerRateCost = 1.
     ret.centerToFront = ret.wheelbase * 0.44
 
