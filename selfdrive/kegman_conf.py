@@ -74,6 +74,26 @@ class kegman_conf():
         self.config = json.load(f)
         self.write_config(self.config)
 
+      if "battPercOff" not in self.config:
+        self.config.update({"battPercOff":"25"})
+        self.config.update({"carVoltageMinEonShutdown":"11800"})
+        self.config.update({"brakeStoppingTarget":"0.25"})
+        self.element_updated = True
+
+      if "tuneGernby" not in self.config:
+        self.config.update({"tuneGernby":"1"})
+        self.config.update({"Kp":"-1"})
+        self.config.update({"Ki":"-1"})
+      	self.element_updated = True
+
+      if "liveParams" not in self.config:
+        self.config.update({"liveParams":"1"})
+        self.element_updated = True
+
+      if "leadDistance" not in self.config:
+        self.config.update({"leadDistance":"5"})
+        self.element_updated = True
+
       if ("type" not in self.config or self.config['type'] == "-1") and CP != None:
           self.config.update({"type":CP.lateralTuning.which()})
           print(CP.lateralTuning.which())
