@@ -522,13 +522,6 @@ struct ControlsState @0x97ff69c53601abf1 {
     output @3 :Float32;
    }
 
-  struct LateralLQRState {
-    active @0 :Bool;
-    steerAngle @1 :Float32;
-    i @2 :Float32;
-    output @3 :Float32;
-   }
-
 }
 
 struct LiveEventData {
