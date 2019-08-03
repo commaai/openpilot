@@ -149,19 +149,19 @@ class CarController(object):
     # Send steering command.
     idx = frame % 4
     can_sends.append(hondacan.create_steering_control(self.packer, apply_steer,
-      lkas_active, CS.CP.carFingerprint, idx))
+      lkas_active, CS.CP.carFingerprint, idx, CS.CP.isPandaBlack))
 
     # Send dashboard UI commands.
     if (frame % 10) == 0:
       idx = (frame//10) % 4
-      can_sends.extend(hondacan.create_ui_commands(self.packer, pcm_speed, hud, CS.CP.carFingerprint, CS.is_metric, idx))
+      can_sends.extend(hondacan.create_ui_commands(self.packer, pcm_speed, hud, CS.CP.carFingerprint, CS.is_metric, idx, CS.CP.isPandaBlack))
 
     if CS.CP.radarOffCan:
       # If using stock ACC, spam cancel command to kill gas when OP disengages.
       if pcm_cancel_cmd:
-        can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.CANCEL, idx))
+        can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.CANCEL, idx, CS.CP.carFingerprint, CS.CP.isPandaBlack))
       elif CS.stopped:
-        can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx))
+        can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx, CS.CP.carFingerprint, CS.CP.isPandaBlack))
 
     else:
       # Send gas and brake commands.
@@ -170,7 +170,7 @@ class CarController(object):
         ts = frame * DT_CTRL
         pump_on, self.last_pump_ts = brake_pump_hysteresis(apply_brake, self.apply_brake_last, self.last_pump_ts, ts)
         can_sends.append(hondacan.create_brake_command(self.packer, apply_brake, pump_on,
-          pcm_override, pcm_cancel_cmd, hud.chime, hud.fcw, idx))
+          pcm_override, pcm_cancel_cmd, hud.chime, hud.fcw, idx, CS.CP.carFingerprint, CS.CP.isPandaBlack))
         self.apply_brake_last = apply_brake
 
         if CS.CP.enableGasInterceptor:

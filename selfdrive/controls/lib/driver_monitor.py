@@ -10,6 +10,7 @@ _DISTRACTED_TIME = 7.
 _DISTRACTED_PRE_TIME = 4.
 _DISTRACTED_PROMPT_TIME = 2.
 # model output refers to center of cropped image, so need to apply the x displacement offset
+_FACE_THRESHOLD = 0.4
 _PITCH_WEIGHT = 1.5  # pitch matters a lot more
 _METRIC_THRESHOLD = 0.4
 _PITCH_POS_ALLOWANCE = 0.08   # rad, to not be too sensitive on positive pitch
@@ -23,16 +24,15 @@ MAX_TERMINAL_ALERTS = 3      # not allowed to engage after 3 terminal alerts
 RESIZED_FOCAL = 320.0
 H, W, FULL_W = 320, 160, 426
 
-
-def head_orientation_from_descriptor(desc):
+def head_orientation_from_descriptor(angles_desc, pos_desc):
   # the output of these angles are in device frame
   # so from driver's perspective, pitch is up and yaw is right
   # TODO this should be calibrated
-  pitch_prnet = desc[0]
-  yaw_prnet = desc[1]
-  roll_prnet = desc[2]
+  pitch_prnet = angles_desc[0]
+  yaw_prnet = angles_desc[1]
+  roll_prnet = angles_desc[2]
 
-  face_pixel_position = ((desc[3] + .5)*W - W + FULL_W, (desc[4]+.5)*H)
+  face_pixel_position = ((pos_desc[0] + .5)*W - W + FULL_W, (pos_desc[1]+.5)*H)
   yaw_focal_angle = np.arctan2(face_pixel_position[0] - FULL_W/2, RESIZED_FOCAL)
   pitch_focal_angle = np.arctan2(face_pixel_position[1] - H/2, RESIZED_FOCAL)
 
@@ -96,24 +96,22 @@ class DriverStatus():
       pitch_error = max(pitch_error - _PITCH_POS_ALLOWANCE, 0.)
     pitch_error *= _PITCH_WEIGHT
     metric = np.sqrt(yaw_error**2 + pitch_error**2)
-    #print "%02.4f" % np.degrees(pose.pitch), "%02.4f" % np.degrees(pitch_error), "%03.4f" % np.degrees(pose.pitch_offset), metric
+    # TODO: do something with the eye states and combine them with head pose
     return 1 if metric > _METRIC_THRESHOLD else 0
 
 
   def get_pose(self, driver_monitoring, params):
+    if len(driver_monitoring.faceOrientation) == 0 or len(driver_monitoring.facePosition) == 0:
+      return
 
-    self.pose.roll, self.pose.pitch, self.pose.yaw = head_orientation_from_descriptor(driver_monitoring.descriptor)
-
-    # TODO: DM data should not be in a list if they are not homogeneous
-    if len(driver_monitoring.descriptor) > 6:
-      self.face_detected = driver_monitoring.descriptor[6] > 0.
-    else:
-      self.face_detected = True
+    self.pose.roll, self.pose.pitch, self.pose.yaw = head_orientation_from_descriptor(driver_monitoring.faceOrientation, driver_monitoring.facePosition)
+    self.face_detected = driver_monitoring.faceProb > _FACE_THRESHOLD
 
     self.driver_distracted = self._is_driver_distracted(self.pose)
     # first order filters
     self.driver_distraction_filter.update(self.driver_distracted)
-    self.variance_high = driver_monitoring.std > _STD_THRESHOLD
+    self.variance_high = False #driver_monitoring.std > _STD_THRESHOLD
+
     self.variance_filter.update(self.variance_high)
 
     monitor_param_on_prev = self.monitor_param_on

@@ -32,13 +32,6 @@ jobs:
       - store_artifacts:
           name: Store misra test output
           path: /tmp/misra/misra_output.txt
-      - store_artifacts:
-          name: Store cppcheck safety test output
-          path: /tmp/misra/cppcheck_safety_output.txt
-      - store_artifacts:
-          name: Store misra safety test output
-          path: /tmp/misra/misra_safety_output.txt
-
 
   build:
     machine:
