@@ -93,8 +93,8 @@ def dashboard_thread(rate=100):
   gpsFormatString = "location,user=" + user_id + " latitude=%s,longitude=%s,altitude=%s,speed=%s,bearing=%s %s\n"
   canFormatString="CANData,user=" + user_id + ",src=%s,pid=%s d1=%si,d2=%si "
   liveStreamFormatString = "curvature,user=" + user_id + " l_curv=%s,p_curv=%s,r_curv=%s,map_curv=%s,map_rcurv=%s,map_rcurvx=%s,v_curv=%s,l_diverge=%s,r_diverge=%s %s\n"
-  pathFormatString = "pathPlan,user=" + user_id + " l0=%s,l1=%s,l2=%s,l3=%s,r0=%s,r1=%s,r2=%s,r3=%s,c0=%s,c1=%s,c2=%s,c3=%s,d0=%s,d1=%s,d2=%s,d3=%s,p0=%s,p1=%s,p2=%s,p3=%s,l_prob=%s,r_prob=%s,c_prob=%s,p_prob=%s,lane_width=%s %s\n"
-  pathDataFormatString = "%0.2f,%0.2f,%0.2f,%0.2f,%0.2f,%d|"
+  pathFormatString = "pathPlan,user=" + user_id + " l0=%s,l1=%s,l2=%s,l3=%s,r0=%s,r1=%s,r2=%s,r3=%s,c0=%s,c1=%s,c2=%s,c3=%s,d0=%s,d1=%s,d2=%s,d3=%s,p0=%s,p1=%s,p2=%s,p3=%s,l_prob=%s,r_prob=%s,c_prob=%s,p_prob=%s,des_angle_rate=%s,lane_width=%s %s\n"
+  pathDataFormatString = "%0.2f,%0.2f,%0.2f,%0.2f,%0.2f,%0.2f,%d|"
   polyDataString = "%.10f,%0.8f,%0.6f,%0.4f,"
   pathDataString = ""
   liveParamsFormatString = "liveParameters,user=" + user_id + " yaw_rate=%s,gyro_bias=%s,angle_offset=%s,angle_offset_avg=%s,tire_stiffness=%s,steer_ratio=%s %s\n"
@@ -189,16 +189,17 @@ def dashboard_thread(rate=100):
             pathDataString += polyDataString % tuple(map(float, pp.cPoly))
             pathDataString += polyDataString % tuple(map(float, pp.dPoly))
             pathDataString += polyDataString % tuple(map(float, pp.pPoly))
-            pathDataString +=  (pathDataFormatString % (pp.lProb, pp.rProb, pp.cProb, pp.pProb, pp.laneWidth, int((monoTimeOffset + _pp.logMonoTime) * .0000002) * 5))
+            pathDataString +=  (pathDataFormatString % (pp.lProb, pp.rProb, pp.cProb, pp.pProb, pp.rateSteers, pp.laneWidth, int((monoTimeOffset + _pp.logMonoTime) * .0000002) * 5))
 
       if socket is controlsState:
         _controlsState = messaging.drain_sock(socket)
         #print("controlsState")
         for l100 in _controlsState:
           if lateral_type == "":
+            print(lateral_type)
             if l100.controlsState.lateralControlState.which == "pidState":
               lateral_type = "pid"
-              influxFormatString = user_id + ",sources=capnp ff_angle=%s,damp_angle_steers_des=%s,angle_steers_des=%s,angle_steers=%s,steer_override=%s,v_ego=%s,p2=%s,p=%s,i=%s,f=%s,output=%s %s\n"
+              influxFormatString = user_id + ",sources=capnp ff_angle=%s,damp_angle_steers_des=%s,angle_steers_des=%s,angle_steers=%s,damp_angle_steers=%s,damp_angle_bias=%s,steer_override=%s,v_ego=%s,p2=%s,p=%s,i=%s,f=%s,output=%s %s\n"
               kegmanFormatString = user_id + ",sources=kegman KpV=%s,KiV=%s,Kf=%s,dampMPC=%s,reactMPC=%s,rate_ff_gain=%s,dampTime=%s,polyFactor=%s,reactPoly=%s,dampPoly=%s %s\n"
             else:
               lateral_type = "indi"
@@ -218,8 +219,8 @@ def dashboard_thread(rate=100):
             #print(dat)
 
             if lateral_type == "pid":
-              influxDataString += ("%0.3f,%0.3f,%0.3f,%0.2f,%d,%0.1f,%0.4f,%0.4f,%0.4f,%0.4f,%0.4f,%d|" %
-                  (dat.lateralControlState.pidState.angleFFRatio, dat.dampAngleSteersDes, dat.angleSteersDes, dat.angleSteers,  dat.steerOverride, vEgo,
+              influxDataString += ("%0.3f,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f,%d,%0.1f,%0.4f,%0.4f,%0.4f,%0.4f,%0.4f,%d|" %
+                  (dat.lateralControlState.pidState.angleFFRatio, dat.dampAngleSteersDes, dat.angleSteersDes, dat.angleSteers, dat.dampAngleSteers, dat.lateralControlState.pidState.angleBias, dat.steerOverride, vEgo,
                   dat.lateralControlState.pidState.p2, dat.lateralControlState.pidState.p, dat.lateralControlState.pidState.i, dat.lateralControlState.pidState.f,dat.lateralControlState.pidState.output, receiveTime))
             else:
               s = dat.lateralControlState.indiState

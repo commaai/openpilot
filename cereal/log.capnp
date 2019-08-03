@@ -513,6 +513,7 @@ struct ControlsState @0x97ff69c53601abf1 {
     saturated @8 :Bool;
     angleFFRatio @9 :Float32;
     angleFFGain @10 :Float32;
+    angleBias@12 :Float32;
    }
 
   struct LateralLQRState {
