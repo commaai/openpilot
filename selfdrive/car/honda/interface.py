@@ -347,7 +347,7 @@ class CarInterface(object):
       stop_and_go = False
       ret.mass = 4204. * CV.LB_TO_KG + STD_CARGO_KG # average weight
       ret.wheelbase = 2.82
-      ret.steerRatio = 16.0
+      ret.steerRatio = 17.25
       ret.centerToFront = ret.wheelbase * 0.428 # average weight distribution
       tire_stiffness_factor = 0.444 # not optimized yet
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.38], [0.11]]
@@ -547,8 +547,6 @@ class CarInterface(object):
 
     if not self.CS.lkMode:
       events.append(create_event('manualSteeringRequired', [ET.WARNING]))
-    elif self.CS.lkMode and (self.CS.left_blinker_on or self.CS.right_blinker_on):
-      events.append(create_event('manualSteeringRequiredBlinkersOn', [ET.WARNING]))
     elif self.CS.steer_error:
       events.append(create_event('steerUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
     elif self.CS.steer_warning:

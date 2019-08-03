@@ -299,13 +299,6 @@ ALERTS = [
       Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
 
   Alert(
-      "manualSteeringRequiredBlinkersOn",
-      "",
-      "",
-      AlertStatus.normal, AlertSize.small,
-      Priority.LOW_LOWEST, VisualAlert.none, AudibleAlert.none, .4, 2., 3.),
-
-  Alert(
       "manualSteeringRequired",
       "openpilot Unavailable",
       "LKAS Disabled",
