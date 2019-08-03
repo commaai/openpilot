@@ -98,7 +98,7 @@ def dashboard_thread(rate=100):
   polyDataString = "%.10f,%0.8f,%0.6f,%0.4f,"
   pathDataString = ""
   liveParamsFormatString = "liveParameters,user=" + user_id + " yaw_rate=%s,gyro_bias=%s,angle_offset=%s,angle_offset_avg=%s,tire_stiffness=%s,steer_ratio=%s %s\n"
-  liveParamsString = "%0.3f,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f,%d|"
+  liveParamsString = "%0.2f,%0.2f,%0.2f,%0.2f,%0.2f,%0.2f,%d|"
   liveParamsDataString = ""
   influxDataString = ""
   kegmanDataString = ""
@@ -198,7 +198,7 @@ def dashboard_thread(rate=100):
           if lateral_type == "":
             if l100.controlsState.lateralControlState.which == "pidState":
               lateral_type = "pid"
-              influxFormatString = user_id + ",sources=capnp ff_angle=%s,damp_angle_steers_des=%s,angle_steers_des=%s,angle_steers=%s,angle_bias=%s,steer_override=%s,v_ego=%s,p2=%s,p=%s,i=%s,f=%s,output=%s %s\n"
+              influxFormatString = user_id + ",sources=capnp ff_angle=%s,damp_angle_steers_des=%s,angle_steers_des=%s,angle_steers=%s,damp_angle_steers=%s,angle_bias=%s,steer_override=%s,v_ego=%s,p2=%s,p=%s,i=%s,f=%s,output=%s %s\n"
               kegmanFormatString = user_id + ",sources=kegman KpV=%s,KiV=%s,Kf=%s,dampMPC=%s,reactMPC=%s,rate_ff_gain=%s,dampTime=%s,polyFactor=%s,reactPoly=%s,dampPoly=%s %s\n"
             else:
               lateral_type = "indi"
@@ -218,8 +218,8 @@ def dashboard_thread(rate=100):
             #print(dat)
 
             if lateral_type == "pid":
-              influxDataString += ("%0.3f,%0.3f,%0.3f,%0.2f,%0.4f,%d,%0.1f,%0.4f,%0.4f,%0.4f,%0.4f,%0.4f,%d|" %
-                  (dat.lateralControlState.pidState.angleFFRatio, dat.dampAngleSteersDes, dat.angleSteersDes, dat.angleSteers, dat.lateralControlState.pidState.angleBias, dat.steerOverride, vEgo,
+              influxDataString += ("%0.3f,%0.3f,%0.3f,%0.2f,%0.3f,%0.4f,%d,%0.1f,%0.4f,%0.4f,%0.4f,%0.4f,%0.4f,%d|" %
+                  (dat.lateralControlState.pidState.angleFFRatio, dat.dampAngleSteersDes, dat.angleSteersDes, dat.angleSteers, dat.dampAngleSteers, dat.lateralControlState.pidState.angleBias, dat.steerOverride, vEgo,
                   dat.lateralControlState.pidState.p2, dat.lateralControlState.pidState.p, dat.lateralControlState.pidState.i, dat.lateralControlState.pidState.f,dat.lateralControlState.pidState.output, receiveTime))
             else:
               s = dat.lateralControlState.indiState
