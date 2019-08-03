@@ -88,7 +88,7 @@ class CarState(object):
                          K=[[0.12287673], [0.29666309]])
     self.v_ego = 0.
 
-  def update(self, pt_cp, ch_cp):
+  def update(self, pt_cp):
 
     self.can_valid = pt_cp.can_valid
     self.prev_cruise_buttons = self.cruise_buttons
@@ -175,7 +175,7 @@ class CarState(object):
     self.gear_shifter_valid = self.gear_shifter == car.CarState.GearShifter.drive
 
     # Update Friction Brakes from Chassis Canbus
-    self.frictionBrakesActive = bool(ch_cp.vl["EBCMFrictionBrakeStatus"]["FrictionBrakePressure"] != 0)
+    # self.frictionBrakesActive = bool(ch_cp.vl["EBCMFrictionBrakeStatus"]["FrictionBrakePressure"] != 0)
 
   def get_follow_level(self):
     return self.follow_level
