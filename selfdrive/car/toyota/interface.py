@@ -64,8 +64,8 @@ class CarInterface(object):
     ret.lateralTuning.pid.dampMPC = 0.25
     ret.lateralTuning.pid.rateFFGain = 0.4
     ret.lateralTuning.pid.polyFactor = 0.0015
-    ret.lateralTuning.pid.polyDampTime = 0.25
-    ret.lateralTuning.pid.polyReactTime = 0.05
+    ret.lateralTuning.pid.polyDampTime = 0.15
+    ret.lateralTuning.pid.polyReactTime = 0.5
     ret.lateralTuning.pid.steerPscale = [[1.0, 2.0, 10.0], [1.0, 0.5, 0.25], [1.0, 0.75, 0.5]]  # [abs angles, scale UP, scale DOWN]
 
     if candidate == CAR.PRIUS:
@@ -79,9 +79,9 @@ class CarInterface(object):
       ret.lateralTuning.pid.kf = 0.00007   # full torque for 10 deg at 80mph means 0.00007818594
       ret.lateralTuning.pid.dampTime = 0.1
       ret.lateralTuning.pid.polyReactTime = 0.6
-      ret.lateralTuning.pid.polyFactor = 0.006
+      ret.lateralTuning.pid.polyFactor = 0.002
       ret.lateralTuning.pid.polyDampTime = 0.15
-      ret.lateralTuning.pid.reactMPC = 0.025
+      ret.lateralTuning.pid.reactMPC = 0.0
       ret.lateralTuning.pid.dampMPC = 0.1
       ret.lateralTuning.pid.rateFFGain = 0.4
 
@@ -96,7 +96,7 @@ class CarInterface(object):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.35], [0.03]]
       ret.lateralTuning.pid.kf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
       ret.lateralTuning.pid.dampTime = 0.1
-      ret.lateralTuning.pid.reactMPC = 0.025
+      ret.lateralTuning.pid.reactMPC = -0.05
       ret.lateralTuning.pid.rateFFGain = 0.4
 
     elif candidate == CAR.COROLLA:
@@ -109,7 +109,7 @@ class CarInterface(object):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.05]]
       ret.lateralTuning.pid.kf = 0.00003   # full torque for 20 deg at 80mph means 0.00007818594
       ret.lateralTuning.pid.dampTime = 0.02
-      ret.lateralTuning.pid.reactMPC = 0.025
+      ret.lateralTuning.pid.reactMPC = 0.0
       ret.lateralTuning.pid.rateFFGain = 0.4
 
     elif candidate == CAR.LEXUS_RXH:
@@ -142,7 +142,7 @@ class CarInterface(object):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
       ret.lateralTuning.pid.kf = 0.00006
       ret.lateralTuning.pid.dampTime = 0.02
-      ret.lateralTuning.pid.reactMPC = 0.025
+      ret.lateralTuning.pid.reactMPC = 0.0
       ret.lateralTuning.pid.rateFFGain = 0.4
 
     elif candidate in [CAR.HIGHLANDER, CAR.HIGHLANDERH]:

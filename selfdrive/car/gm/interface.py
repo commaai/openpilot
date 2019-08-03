@@ -103,8 +103,8 @@ class CarInterface(object):
     ret.lateralTuning.pid.reactMPC = 0.0
     ret.lateralTuning.pid.dampMPC = 0.25
     ret.lateralTuning.pid.rateFFGain = 0.4
-    ret.lateralTuning.pid.polyFactor = 0.001
-    ret.lateralTuning.pid.polyDampTime = 0.2
+    ret.lateralTuning.pid.polyFactor = 0.01
+    ret.lateralTuning.pid.polyDampTime = 0.05
     ret.lateralTuning.pid.polyReactTime = 0.5
     ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
     ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.15], [0.01]]
