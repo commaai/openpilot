@@ -8,8 +8,8 @@
 #define MAX_FAST_ANGLE_OFFSET_CHANGE  (0.002 * DEGREES_TO_RADIANS)
 #define MIN_STIFFNESS  0.5
 #define MAX_STIFFNESS  2.0
-#define MIN_SR  1.0
-#define MAX_SR  1.0
+#define MIN_SR  0.5
+#define MAX_SR  2.0
 #define MIN_SR_TH  0.55
 #define MAX_SR_TH  1.9
 

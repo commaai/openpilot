@@ -11,6 +11,7 @@ from selfdrive.controls.lib.model_parser import ModelParser
 import selfdrive.messaging as messaging
 
 LOG_MPC = os.environ.get('LOG_MPC', False)
+MAX_STEER_ACCEL = 10.5
 
 def calc_states_after_delay(states, v_ego, steer_angle, curvature_factor, steer_ratio, delay):
   states[0].x = v_ego * delay
@@ -90,7 +91,7 @@ class PathPlanner(object):
       self.mpc_times[0] = sm.logMonoTime['model'] * 1e-9
       for i in range(1,6):
         self.mpc_times[i] = self.mpc_times[i-1] + 0.05
-        self.mpc_rates[i-1] = float(math.degrees(self.mpc_solution[0].rate[i-1] * VM.sR))
+        self.mpc_rates[i-1] = np.clip(float(math.degrees(self.mpc_solution[0].rate[i-1] * VM.sR)), self.mpc_rates[i-1] - MAX_STEER_ACCEL, self.mpc_rates[i-1] + MAX_STEER_ACCEL)
         self.mpc_angles[i] = (0.05 * self.mpc_rates[i-1] + self.mpc_angles[i-1])
       self.mpc_angles[6] = (0.15 * self.mpc_rates[5] + self.mpc_angles[5])
       self.mpc_times[6] = self.mpc_times[5] + 0.15
