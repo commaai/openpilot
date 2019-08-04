@@ -61,6 +61,7 @@ class PathPlanner(object):
     angle_steers = sm['controlsState'].dampAngleSteers
     cur_time = sec_since_boot()
     angle_offset_average = sm['liveParameters'].angleOffsetAverage
+    angle_offset_bias = sm['controlsState'].lateralControlState.pidState.angleBias + angle_offset_average
 
     self.MP.update(v_ego, sm['model'])
 
@@ -73,7 +74,7 @@ class PathPlanner(object):
     self.p_poly = list(self.MP.p_poly)
 
     # account for actuation delay
-    self.cur_state = calc_states_after_delay(self.cur_state, v_ego, angle_steers - sm['liveParameters'].angleOffset, curvature_factor, VM.sR, CP.steerActuatorDelay)
+    self.cur_state = calc_states_after_delay(self.cur_state, v_ego, angle_steers - angle_offset_bias, curvature_factor, VM.sR, CP.steerActuatorDelay)
     self.angle_steers_des_prev = np.interp(cur_time, self.mpc_times, self.mpc_angles)
 
     v_ego_mpc = max(v_ego, 5.0)  # avoid mpc roughness due to low speed
