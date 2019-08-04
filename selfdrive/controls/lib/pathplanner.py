@@ -16,7 +16,6 @@ LOG_MPC = os.environ.get('LOG_MPC', False)
 def calc_states_after_delay(states, v_ego, steer_angle, curvature_factor, steer_ratio, delay):
   states[0].x = v_ego * delay
   states[0].psi = v_ego * curvature_factor * math.radians(steer_angle) / steer_ratio * delay
-  states[0].delta = math.radians(steer_angle) / steer_ratio
   return states
 
 
@@ -63,6 +62,10 @@ class PathPlanner(object):
     angle_offset_average = sm['liveParameters'].angleOffsetAverage
     angle_offset_bias = sm['controlsState'].angleModelBias + angle_offset_average
 
+    # prevent over-inflation of desired angle
+    if abs(self.angle_steers_des_mpc - self.angle_steers_des_prev) > abs(angle_steers - self.angle_steers_des_prev):
+      self.cur_state[0].delta = math.radians(angle_steers - angle_offset_bias) / VM.sR
+
     self.MP.update(v_ego, sm['model'])
 
     # Run MPC
@@ -88,6 +91,8 @@ class PathPlanner(object):
     else:
       delta_desired = math.radians(angle_steers - angle_offset_bias) / VM.sR
       rate_desired = 0.0
+
+    self.cur_state[0].delta = delta_desired
 
     self.angle_steers_des_mpc = float(math.degrees(delta_desired * VM.sR) + angle_offset_bias)
 
