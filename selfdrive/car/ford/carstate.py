@@ -29,7 +29,7 @@ def get_can_parser(CP):
   checks = [
   ]
 
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0, timeout=100)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
 
 class CarState(object):
@@ -53,9 +53,6 @@ class CarState(object):
     self.v_ego = 0.0
 
   def update(self, cp):
-    # copy can_valid
-    self.can_valid = cp.can_valid
-
     # update prevs, update must run once per loop
     self.prev_left_blinker_on = self.left_blinker_on
     self.prev_right_blinker_on = self.right_blinker_on

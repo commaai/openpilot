@@ -8,7 +8,7 @@
 #define ADCCHAN_VOLTAGE 12
 #define ADCCHAN_CURRENT 13
 
-void adc_init() {
+void adc_init(void) {
   // global setup
   ADC->CCR = ADC_CCR_TSVREFE | ADC_CCR_VBATE;
   //ADC1->CR2 = ADC_CR2_ADON | ADC_CR2_EOCS | ADC_CR2_DDS;
@@ -19,7 +19,7 @@ void adc_init() {
   ADC1->SMPR1 = ADC_SMPR1_SMP12 | ADC_SMPR1_SMP13;
 }
 
-uint32_t adc_get(int channel) {
+uint32_t adc_get(unsigned int channel) {
   // includes length
   //ADC1->SQR1 = 0;
 

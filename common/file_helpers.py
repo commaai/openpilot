@@ -28,7 +28,7 @@ def get_tmpdir_on_same_filesystem(path):
   normpath = os.path.normpath(path)
   parts = normpath.split("/")
   if len(parts) > 1:
-    if parts[1].startswith("raid"):
+    if parts[1].startswith("raid") or parts[1].startswith("datasets"):
       if len(parts) > 2 and parts[2] == "runner":
         return "/{}/runner/tmp".format(parts[1])
       elif len(parts) > 2 and parts[2] == "aws":
@@ -101,3 +101,18 @@ def atomic_write_in_dir(path, **kwargs):
   writer = AtomicWriter(path, **kwargs)
   return writer._open(_get_fileobject_func(writer, os.path.dirname(path)))
 
+def atomic_write_in_dir_neos(path, contents, mode=None):
+  """
+  Atomically writes contents to path using a temporary file in the same directory
+  as path. Useful on NEOS, where `os.link` (required by atomic_write_in_dir) is missing.
+  """
+
+  f = tempfile.NamedTemporaryFile(delete=False, prefix=".tmp", dir=os.path.dirname(path))
+  f.write(contents)
+  f.flush()
+  if mode is not None:
+    os.fchmod(f.fileno(), mode)
+  os.fsync(f.fileno())
+  f.close()
+
+  os.rename(f.name, path)

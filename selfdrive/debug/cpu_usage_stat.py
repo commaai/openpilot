@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 import psutil
 import time
 import os
@@ -30,7 +30,7 @@ SLEEP_INTERVAL = 0.2
 
 monitored_proc_names = [
   'ubloxd', 'thermald', 'uploader', 'deleter', 'controlsd', 'plannerd', 'radard', 'mapd', 'loggerd' , 'logmessaged', 'tombstoned',
-  'logcatd', 'proclogd', 'boardd', 'pandad', './ui', 'calibrationd', 'locationd', 'visiond', 'sensord', 'updated', 'gpsd', 'athena']
+  'logcatd', 'proclogd', 'boardd', 'pandad', './ui', 'calibrationd', 'params_learner', 'visiond', 'sensord', 'updated', 'gpsd', 'athena']
 cpu_time_names = ['user', 'system', 'children_user', 'children_system']
 
 timer = getattr(time, 'monotonic', time.time)
