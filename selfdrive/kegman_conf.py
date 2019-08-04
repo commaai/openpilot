@@ -141,10 +141,13 @@ class kegman_conf():
         self.write_config(self.config)
 
     else:
-      if (CP is not None and CP.lateralTuning.which() == "pid") or self.type == "pid":
-        self.config = {"type":"pid","Kp":"-1", "Ki":"-1", "Kf":"-1", "dampTime":"-1", "reactMPC":"-1", "dampMPC":"-1", "rateFFGain":"-1", "polyReact":"-1", "polyDamp":"-1", "lastTrMode" :"-1", "brakeStoppingTarget": "-1", "wheelTouchSeconds":"-1"}
-      else:
-        self.config = {"type":"indi","timeConst":"-1", "actEffect":"-1", "outerGain":"-1", "innerGain":"-1", "reactMPC":"-1"}
+      try:
+        if (CP is not None and CP.lateralTuning.which() == "pid") or self.type == "pid":
+          self.config = {"type":"pid","Kp":"-1", "Ki":"-1", "Kf":"-1", "dampTime":"-1", "reactMPC":"-1", "dampMPC":"-1", "rateFFGain":"-1", "polyReact":"-1", "polyDamp":"-1", "lastTrMode" :"-1", "brakeStoppingTarget": "-1", "wheelTouchSeconds":"-1"}
+        else:
+          self.config = {"type":"indi","timeConst":"-1", "actEffect":"-1", "outerGain":"-1", "innerGain":"-1", "reactMPC":"-1"}
+      except:
+        self.config = {"type":"pid","Kp":"-1", "Ki":"-1", "Kf":"-1", "dampTime":"-1", "reactMPC":"-1", "dampMPC":"-1", "rateFFGain":"-1", "polyReact":"-1", "polyDamp":"-1", "lastTrMode" :"-1",  "brakeStoppingTarget": "-1", "wheelTouchSeconds":"-1"}
 
       self.write_config(self.config)
     return self.config
