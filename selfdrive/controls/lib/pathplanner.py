@@ -63,10 +63,6 @@ class PathPlanner(object):
     angle_offset_average = sm['liveParameters'].angleOffsetAverage
     angle_offset_bias = sm['controlsState'].angleModelBias + angle_offset_average
 
-    # prevent over-inflation of desired angle
-    if abs(self.angle_steers_des_mpc - self.angle_steers_des_prev) > abs(angle_steers - self.angle_steers_des_prev):
-      self.cur_state[0].delta = math.radians(angle_steers - angle_offset_bias) / VM.sR
-
     self.MP.update(v_ego, sm['model'])
 
     # Run MPC
