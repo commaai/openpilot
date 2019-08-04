@@ -16,7 +16,6 @@ MAX_STEER_ACCEL = 10.5
 def calc_states_after_delay(states, v_ego, steer_angle, curvature_factor, steer_ratio, delay):
   states[0].x = v_ego * delay
   states[0].psi = v_ego * curvature_factor * math.radians(steer_angle) / steer_ratio * delay
-  states[0].delta = math.radians(steer_angle) / steer_ratio
   return states
 
 
@@ -60,22 +59,28 @@ class PathPlanner(object):
   def update(self, sm, CP, VM):
     v_ego = sm['carState'].vEgo
     angle_steers = sm['controlsState'].dampAngleSteers
+    angle_steers_des = sm['controlsState'].dampAngleSteersDes
     cur_time = sec_since_boot()
     angle_offset_average = sm['liveParameters'].angleOffsetAverage
 
     self.MP.update(v_ego, sm['model'])
 
     # Run MPC
-    self.angle_steers_des_prev = self.angle_steers_des_mpc
     VM.update_params(sm['liveParameters'].stiffnessFactor, sm['liveParameters'].steerRatio)
     curvature_factor = VM.curvature_factor(v_ego)
     self.l_poly = list(self.MP.l_poly)
     self.r_poly = list(self.MP.r_poly)
     self.p_poly = list(self.MP.p_poly)
 
+    if abs(self.angle_steers_des_prev - angle_steers_des) > abs(self.angle_steers_des_prev - angle_steers):
+      self.angle_steers_des_prev = angle_steers
+    else:
+      self.angle_steers_des_prev = angle_steers_des
+
+    self.cur_state[0].delta = math.radians(self.angle_steers_des_prev - angle_offset_average) / VM.sR
+
     # account for actuation delay
     self.cur_state = calc_states_after_delay(self.cur_state, v_ego, angle_steers - angle_offset_average, curvature_factor, VM.sR, CP.steerActuatorDelay)
-    self.angle_steers_des_prev = np.interp(cur_time, self.mpc_times, self.mpc_angles)
 
     v_ego_mpc = max(v_ego, 5.0)  # avoid mpc roughness due to low speed
     self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
@@ -86,7 +91,7 @@ class PathPlanner(object):
     mpc_nans = np.any(np.isnan(list(self.mpc_solution[0].delta)))
 
     if not mpc_nans:
-      self.mpc_angles[0] = angle_steers
+      self.mpc_angles[0] = self.angle_steers_des_prev
       self.mpc_times[0] = sm.logMonoTime['model'] * 1e-9
       for i in range(1,6):
         self.mpc_times[i] = self.mpc_times[i-1] + 0.05
