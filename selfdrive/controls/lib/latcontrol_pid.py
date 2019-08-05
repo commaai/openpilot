@@ -83,7 +83,7 @@ class LatControlPID(object):
     self.p_poly[1] += curv_factor * (path_plan.pPoly[1] - self.p_poly[1]) / (self.poly_smoothing * 3.0)
     self.p_poly[0] += curv_factor * (path_plan.pPoly[0] - self.p_poly[0]) / (self.poly_smoothing * 4.5)
     self.p_prob += (path_plan.pProb - self. p_prob) / (self.poly_smoothing)
-    self.s_poly[1] = float(np.tan(VM.calc_curvature(np.radians(self.damp_angle_steers - path_plan.angleOffset - self.angle_bias), float(v_ego))))
+    self.s_poly[1] = float(np.tan(VM.calc_curvature(np.radians(self.damp_angle_steers - path_plan.angleOffset), float(v_ego))))
     x = float(v_ego) * self.total_poly_projection * interp(abs(angle_feedforward), [0., 5.], [0.25, 1.0])
     self.p_pts = np.polyval(self.p_poly, np.arange(0, x))
     self.s_pts = np.polyval(self.s_poly, np.arange(0, x))
@@ -142,7 +142,7 @@ class LatControlPID(object):
     pid_log.steerAngle = float(angle_steers)
     pid_log.steerRate = float(angle_steers_rate)
 
-    self.angle_bias += (live_params.angleOffset - live_params.angleOffsetAverage - self.angle_bias) / interp(abs(angle_steers_rate) + abs(path_plan.rateSteers), [1.5, 5.0], [10.0, 200.0])
+    self.angle_bias = live_params.angleOffset - live_params.angleOffsetAverage
     self.live_tune(CP)
 
     if v_ego < 0.3 or not active:
@@ -159,7 +159,7 @@ class LatControlPID(object):
       if not self.driver_assist_hold:
         self.damp_angle_steers_des += (interp(sec_since_boot() + self.damp_mpc + self.react_mpc, path_plan.mpcTimes, path_plan.mpcAngles) - self.damp_angle_steers_des) / max(1.0, self.damp_mpc * 100.)
         self.damp_rate_steers_des += (interp(sec_since_boot() + self.damp_mpc + self.react_mpc, path_plan.mpcTimes, path_plan.mpcRates) - self.damp_rate_steers_des) / max(1.0, self.damp_mpc * 100.)
-        self.damp_angle_steers += (angle_steers + self.damp_time * angle_steers_rate - self.damp_angle_steers) / max(1.0, self.damp_time * 100.)
+        self.damp_angle_steers += (angle_steers - self.angle_bias + self.damp_time * angle_steers_rate - self.damp_angle_steers) / max(1.0, self.damp_time * 100.)
       else:
         self.damp_angle_steers = angle_steers
         self.damp_angle_steers_des = self.damp_angle_steers + self.driver_assist_offset
@@ -215,7 +215,7 @@ class LatControlPID(object):
       driver_opposing_i = steer_override and self.pid.i * self.pid.p > 0 and not self.pid.saturated and not self.driver_assist_hold
 
       deadzone = 0.0
-      output_steer = self.pid.update(self.damp_angle_steers_des + self.angle_bias, self.damp_angle_steers, check_saturation=(v_ego > 10), override=driver_opposing_i,
+      output_steer = self.pid.update(self.damp_angle_steers_des, self.damp_angle_steers, check_saturation=(v_ego > 10), override=driver_opposing_i,
                                      add_error=float(self.path_error), feedforward=steer_feedforward, speed=v_ego, deadzone=deadzone, p_scale=p_scale)
 
       driver_opposing_op = steer_override and (angle_steers - self.prev_angle_steers) * output_steer < 0

@@ -56,7 +56,7 @@ bool ParamsLearner::update(double psi, double u, double sa) {
     double new_sR = sR - alpha4 * (-2.0*cF0*cR0*l*u*x*(slow_ao - sa)*(1.0*cF0*cR0*l*u*x*(slow_ao - sa) + psi*sR*(cF0*cR0*pow(l, 2)*x - m*pow(u, 2)*(aF*cF0 - aR*cR0)))/(pow(sR, 3)*pow(cF0*cR0*pow(l, 2)*x - m*pow(u, 2)*(aF*cF0 - aR*cR0), 2)));
 
     slow_ao = new_slow_ao;
-    ao = clip(new_ao, ao - MAX_FAST_ANGLE_OFFSET_CHANGE, ao + MAX_FAST_ANGLE_OFFSET_CHANGE);
+    ao = new_ao;
     x = new_x;
     sR = new_sR;
   }
