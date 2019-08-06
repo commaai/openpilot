@@ -5,6 +5,7 @@
 #define CAPTURE_STATE_CAPTURING 1
 #define CAPTURE_STATE_NOT_CAPTURING 2
 #define CAPTURE_STATE_PAUSED 3
+#define CLICK_TIME 0.2
 #define RECORD_INTERVAL 180 // Time in seconds to rotate recordings; Max for screenrecord is 3 minutes
 #define RECORD_FILES 40 // Number of files to create before looping over
 
@@ -21,6 +22,8 @@ int captureState = CAPTURE_STATE_NOT_CAPTURING;
 int captureNum = 0;
 int start_time = 0;
 int elapsed_time = 0; // Time of current recording
+int click_elapsed_time = 0;
+int click_time = 0;
 char filenames[RECORD_FILES][50]; // Track the filenames so they can be deleted when rotating
 
 bool lock_current_video = false; // If true save the current video before rotating
@@ -318,8 +321,14 @@ void screen_toggle_lock() {
 void dashcam( UIState *s, int touch_x, int touch_y ) {
   screen_draw_button(s, touch_x, touch_y);
   if (screen_button_clicked(touch_x,touch_y)) {
-    screen_toggle_record_state();
+    click_elapsed_time = get_time() - click_time;
+
+    if (click_elapsed_time > 0) {
+      click_time = get_time() + 1;
+      screen_toggle_record_state();
+    }
   }
+
   if (screen_lock_button_clicked(touch_x,touch_y,lock_button)) {
     screen_toggle_lock();
   }
