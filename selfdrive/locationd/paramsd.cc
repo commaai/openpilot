@@ -140,27 +140,24 @@ int main(int argc, char *argv[]) {
           double angle_offset_degrees = RADIANS_TO_DEGREES * learner.ao;
           double angle_offset_average_degrees = RADIANS_TO_DEGREES * learner.slow_ao;
 
-          // Send parameters at 10 Hz
-          if (save_counter % 10 == 0){
-            capnp::MallocMessageBuilder msg;
-            cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-            event.setLogMonoTime(nanos_since_boot());
-            auto live_params = event.initLiveParameters();
-            live_params.setValid(valid);
-            live_params.setYawRate(localizer.x[0]);
-            live_params.setGyroBias(localizer.x[1]);
-            live_params.setSensorValid(sensor_data_age < 5.0);
-            live_params.setAngleOffset(angle_offset_degrees);
-            live_params.setAngleOffsetAverage(angle_offset_average_degrees);
-            live_params.setStiffnessFactor(learner.x);
-            live_params.setSteerRatio(learner.sR);
-            live_params.setPosenetSpeed(localizer.posenet_speed);
-            live_params.setPosenetValid(posenet_invalid_count < 5);
+          capnp::MallocMessageBuilder msg;
+          cereal::Event::Builder event = msg.initRoot<cereal::Event>();
+          event.setLogMonoTime(nanos_since_boot());
+          auto live_params = event.initLiveParameters();
+          live_params.setValid(valid);
+          live_params.setYawRate(localizer.x[0]);
+          live_params.setGyroBias(localizer.x[1]);
+          live_params.setSensorValid(sensor_data_age < 5.0);
+          live_params.setAngleOffset(angle_offset_degrees);
+          live_params.setAngleOffsetAverage(angle_offset_average_degrees);
+          live_params.setStiffnessFactor(learner.x);
+          live_params.setSteerRatio(learner.sR);
+          live_params.setPosenetSpeed(localizer.posenet_speed);
+          live_params.setPosenetValid(posenet_invalid_count < 5);
 
-            auto words = capnp::messageToFlatArray(msg);
-            auto bytes = words.asBytes();
-            zmq_send(live_parameters_sock_raw, bytes.begin(), bytes.size(), ZMQ_DONTWAIT);
-          }
+          auto words = capnp::messageToFlatArray(msg);
+          auto bytes = words.asBytes();
+          zmq_send(live_parameters_sock_raw, bytes.begin(), bytes.size(), ZMQ_DONTWAIT);
 
           // Save parameters every minute
           if (save_counter % 6000 == 0) {

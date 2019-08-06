@@ -14,7 +14,7 @@ class LatControlPID(object):
   def reset(self):
     self.pid.reset()
 
-  def update(self, active, v_ego, angle_steers, angle_steers_rate, steer_override, CP, VM, path_plan):
+  def update(self, active, v_ego, angle_steers, angle_steers_rate, steer_override, CP, VM, path_plan, live_params):
     pid_log = log.ControlsState.LateralPIDState.new_message()
     pid_log.steerAngle = float(angle_steers)
     pid_log.steerRate = float(angle_steers_rate)
@@ -24,7 +24,8 @@ class LatControlPID(object):
       pid_log.active = False
       self.pid.reset()
     else:
-      self.angle_steers_des = path_plan.angleSteers  # get from MPC/PathPlanner
+      angle_bias = live_params.angleOffset - live_params.angleOffsetAverage
+      self.angle_steers_des = path_plan.angleSteers + angle_bias  # get from MPC/PathPlanner
 
       steers_max = get_steer_max(CP, v_ego)
       self.pid.pos_limit = steers_max

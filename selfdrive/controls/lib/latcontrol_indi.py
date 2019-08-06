@@ -47,7 +47,7 @@ class LatControlINDI(object):
     self.output_steer = 0.
     self.counter = 0
 
-  def update(self, active, v_ego, angle_steers, angle_steers_rate, steer_override, CP, VM, path_plan):
+  def update(self, active, v_ego, angle_steers, angle_steers_rate, steer_override, CP, VM, path_plan, live_params):
     # Update Kalman filter
     y = np.matrix([[math.radians(angle_steers)], [math.radians(angle_steers_rate)]])
     self.x = np.dot(self.A_K, self.x) + np.dot(self.K, y)
@@ -62,7 +62,8 @@ class LatControlINDI(object):
       self.output_steer = 0.0
       self.delayed_output = 0.0
     else:
-      self.angle_steers_des = path_plan.angleSteers
+      angle_bias = live_params.angleOffset - live_params.angleOffsetAverage
+      self.angle_steers_des = path_plan.angleSteers + angle_bias  # get from MPC/PathPlanner
       self.rate_steers_des = path_plan.rateSteers
 
       steers_des = math.radians(self.angle_steers_des)
