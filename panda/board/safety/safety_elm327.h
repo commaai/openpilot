@@ -1,14 +1,8 @@
 static int elm327_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 
   int tx = 1;
-  int bus = GET_BUS(to_send);
   int addr = GET_ADDR(to_send);
   int len = GET_LEN(to_send);
-
-  //All ELM traffic must appear on CAN0
-  if (bus != 0) {
-    tx = 0;
-  }
 
   //All ISO 15765-4 messages must be 8 bytes long
   if (len != 8) {

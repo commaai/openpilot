@@ -133,6 +133,9 @@ unkillable_processes = ['visiond']
 # processes to end with SIGINT instead of SIGTERM
 interrupt_processes = []
 
+# processes to end with SIGKILL instead of SIGTERM
+kill_processes = ['sensord']
+
 persistent_processes = [
   'thermald',
   'logmessaged',
@@ -261,6 +264,8 @@ def kill_managed_process(name):
   if running[name].exitcode is None:
     if name in interrupt_processes:
       os.kill(running[name].pid, signal.SIGINT)
+    elif name in kill_processes:
+      os.kill(running[name].pid, signal.SIGKILL)
     else:
       running[name].terminate()
 
@@ -368,7 +373,6 @@ def manager_thread():
   logger_dead = False
 
   while 1:
-    # get health of board, log this in "thermal"
     msg = messaging.recv_sock(thermal_sock, wait=True)
 
     # uploader is gated based on the phone temperature
@@ -566,6 +570,8 @@ def main():
     params.put("LongitudinalControl", "0")
   if params.get("LimitSetSpeed") is None:
     params.put("LimitSetSpeed", "0")
+  if params.get("LimitSetSpeedNeural") is None:
+    params.put("LimitSetSpeedNeural", "0")
 
   # is this chffrplus?
   if os.getenv("PASSIVE") is not None:

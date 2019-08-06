@@ -1,3 +1,15 @@
+Version 0.6.2 (2019-07-29)
+========================
+ * New driving model!
+ * Improve lane tracking with double lines
+ * Strongly improve stationary vehicle detection
+ * Strongly reduce cases of braking due to false leads
+ * Better lead tracking around turns
+ * Improve cut-in prediction by using neural network
+ * Improve lateral control on Toyota Camry and C-HR thanks to zorrobyte!
+ * Fix unintended openpilot disengagements on Jeep thanks to adhintz!
+ * Fix delayed transition to offroad when car is turned off
+
 Version 0.6.1 (2019-07-21)
 ========================
  * Remote SSH with comma prime and [ssh.comma.ai](https://ssh.comma.ai)
