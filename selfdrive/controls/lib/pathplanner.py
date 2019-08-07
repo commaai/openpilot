@@ -54,6 +54,7 @@ class PathPlanner(object):
     self.angle_steers_des_mpc = 0.0
     self.angle_steers_des_prev = 0.0
     self.angle_steers_des_time = 0.0
+    self.rate_des_prev = 0.0
 
   def update(self, sm, CP, VM):
     v_ego = sm['carState'].vEgo
@@ -73,7 +74,8 @@ class PathPlanner(object):
     self.p_poly = list(self.MP.p_poly)
 
     # prevent over-inflation of desired angle
-    delta_limit = math.radians(0.5 + abs(angle_steers - angle_offset)) / VM.sR
+    actual_delta = math.radians(angle_steers - angle_offset) / VM.sR
+    delta_limit = abs(actual_delta) + abs(3.0 * self.mpc_solution[0].rate[0])
     self.cur_state[0].delta = np.clip(self.cur_state[0].delta, -delta_limit, delta_limit)
 
     # account for actuation delay
@@ -88,6 +90,12 @@ class PathPlanner(object):
     mpc_nans = np.any(np.isnan(list(self.mpc_solution[0].delta)))
 
     if not mpc_nans:
+      if (self.rate_des_prev < 0) != (self.mpc_solution[0].rate[0] < 0):
+        delta_adjust = self.cur_state[0].delta - actual_delta
+        self.cur_state[0].delta = actual_delta
+        self.mpc_solution[0].delta[0] -= delta_adjust
+        print("  %0.7f  " % (self.cur_state[0].delta - self.mpc_solution[0].delta[0]))
+
       self.mpc_angles[0] = float(math.degrees(self.cur_state[0].delta * VM.sR) + angle_offset_average)
       self.mpc_times[0] = sm.logMonoTime['model'] * 1e-9
       for i in range(1,6):
@@ -99,12 +107,13 @@ class PathPlanner(object):
       rate_desired = math.degrees(self.mpc_solution[0].rate[0] * VM.sR)
       self.angle_steers_des_mpc = float(math.degrees(self.mpc_solution[0].delta[1] * VM.sR) + angle_offset_average)
     else:
-      self.libmpc.init(MPC_COST_LAT.PATH, MPC_COST_LAT.LANE, MPC_COST_LAT.HEADING, CP.steerRateCost)
-
+      self.libmpc.init(MPC_COST_LAT.PATH * 0.1, MPC_COST_LAT.LANE, MPC_COST_LAT.HEADING, CP.steerRateCost)
+      rate_desired = 0.0
       if cur_time > self.last_cloudlog_t + 5.0:
         self.last_cloudlog_t = cur_time
         cloudlog.warning("Lateral mpc - nan: True")
 
+    self.rate_des_prev = rate_desired
     if self.mpc_solution[0].cost > 20000. or mpc_nans:   # TODO: find a better way to detect when MPC did not converge
       self.solution_invalid_cnt += 1
     else:

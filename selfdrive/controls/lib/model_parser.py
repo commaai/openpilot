@@ -10,6 +10,8 @@ class ModelParser(object):
   def __init__(self):
     self.d_poly = [0., 0., 0., 0.]
     self.c_poly = [0., 0., 0., 0.]
+    self.l_poly = np.array([0., 0., 0., 0.])
+    self.r_poly = np.array([0., 0., 0., 0.])
     self.p_poly = np.array([0., 0., 0., 0.])
     self.c_prob = 0.
     self.p_prob = 0.
@@ -41,6 +43,13 @@ class ModelParser(object):
 
     l_prob = md.leftLane.prob  # left line prob
     r_prob = md.rightLane.prob  # right line prob
+
+    if self.l_prob > l_prob:
+      l_poly = (l_poly * l_prob + min(1.0 - l_prob, self.l_prob) * self.l_poly) / (l_prob + min(1.0 - l_prob, self.l_prob) + 0.0001)
+      l_prob = (l_prob**2 + min(1.0 - l_prob, 0.9 * self.l_prob) * self.l_prob) / (l_prob + min(1 - l_prob, 0.9 * self.l_prob) + 0.0001)
+    if self.r_prob > r_prob:
+      r_poly = (r_poly * (r_prob) + min(1.0 - r_prob, self.r_prob) * self.r_poly) / (r_prob + min(1.0 - r_prob, self.r_prob) + 0.0001)
+      r_prob = (r_prob**2 + min(1.0 - r_prob, 0.9 * self.r_prob) * self.r_prob) / (r_prob + min(1.0 - r_prob, 0.9 * self.r_prob) + 0.0001)
 
     # Find current lanewidth
     lr_prob = l_prob * r_prob
