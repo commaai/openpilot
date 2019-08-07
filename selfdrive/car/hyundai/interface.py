@@ -53,7 +53,6 @@ class CarInterface(object):
     ret.enableCruise = True  # stock acc
 
     ret.steerActuatorDelay = 0.1  # Default delay
-    ret.steerRateCost = 0.3
     ret.lateralTuning.pid.dampTime = 0.0
     ret.lateralTuning.pid.reactMPC = 0.025
     ret.lateralTuning.pid.dampMPC = 0.1
