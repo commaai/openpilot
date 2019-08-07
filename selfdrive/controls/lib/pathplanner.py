@@ -94,7 +94,6 @@ class PathPlanner(object):
         delta_adjust = self.cur_state[0].delta - actual_delta
         self.cur_state[0].delta = actual_delta
         self.mpc_solution[0].delta[0] -= delta_adjust
-        print("  %0.7f  " % (self.cur_state[0].delta - self.mpc_solution[0].delta[0]))
 
       self.mpc_angles[0] = float(math.degrees(self.cur_state[0].delta * VM.sR) + angle_offset_average)
       self.mpc_times[0] = sm.logMonoTime['model'] * 1e-9

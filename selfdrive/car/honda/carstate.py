@@ -298,7 +298,7 @@ class CarState(object):
     if not (steer_counter == (self.prev_steering_counter + 1) % 4):
       if steer_counter == self.prev_steering_counter:
         self.steer_data_reused += 1
-        print("data reused: %d  skipped %d  good %d   %d vs %d" % (self.steer_data_reused, self.steer_data_skipped, self.steer_good_count, steer_counter, (self.prev_steering_counter + 1) % 4))
+        #print("data reused: %d  skipped %d  good %d   %d vs %d" % (self.steer_data_reused, self.steer_data_skipped, self.steer_good_count, steer_counter, (self.prev_steering_counter + 1) % 4))
       else:
         self.steer_data_skipped += 1
     else:
