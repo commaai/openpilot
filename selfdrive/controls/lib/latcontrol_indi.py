@@ -62,7 +62,7 @@ class LatControlINDI(object):
       self.output_steer = 0.0
       self.delayed_output = 0.0
     else:
-      self.angle_steers_des = path_plan.angleSteers + angle_bias  # get from MPC/PathPlanner
+      self.angle_steers_des = path_plan.angleSteers
       self.rate_steers_des = path_plan.rateSteers
       if not steer_override:
         self.angle_steers_des += live_params.angleOffset - live_params.angleOffsetAverage
