@@ -144,7 +144,7 @@ class CarController(object):
     if apply_accel < 0:
       apply_accel = -clip((-apply_accel) ** 2 * ACCEL_SCALE, ACCEL_MIN, ACCEL_MAX)
     else:
-      apply_accel = clip(apply_accel ** 2 * ACCEL_SCALE, ACCEL_MIN, ACCEL_MAX)
+      apply_accel = clip(apply_accel * ACCEL_SCALE, ACCEL_MIN, ACCEL_MAX)
 
     # steer torque
     apply_steer = int(round(actuators.steer * SteerLimitParams.STEER_MAX))
