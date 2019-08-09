@@ -136,7 +136,7 @@ class CarController(object):
     if CS.CP.enableGasInterceptor:
       # send only negative accel if interceptor is detected. otherwise, send the regular value
       # +0.06 offset to reduce ABS pump usage when OP is engaged
-      apply_accel = 0.06 - actuators.brake
+      apply_accel = 0.06 + actuators.brake
     else:
       apply_accel = actuators.gas - actuators.brake
 
