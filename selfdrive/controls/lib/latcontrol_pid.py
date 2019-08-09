@@ -1,7 +1,7 @@
 from selfdrive.controls.lib.pid import PIController
 from selfdrive.controls.lib.drive_helpers import get_steer_max
 from selfdrive.kegman_conf import kegman_conf
-from common.numpy_fast import interp
+from common.numpy_fast import interp, clip
 from cereal import log
 from common.realtime import sec_since_boot
 from common.params import Params
@@ -50,7 +50,6 @@ class LatControlPID(object):
     self.prev_override = False
     self.driver_assist_offset = 0.0
     self.driver_assist_hold = False
-    self.angle_bias = 0.0
 
     try:
       lateral_params = self.params.get("LateralParams")
@@ -83,8 +82,8 @@ class LatControlPID(object):
     self.p_poly[1] += curv_factor * (path_plan.pPoly[1] - self.p_poly[1]) / (self.poly_smoothing * 3.0)
     self.p_poly[0] += curv_factor * (path_plan.pPoly[0] - self.p_poly[0]) / (self.poly_smoothing * 4.5)
     self.p_prob += (path_plan.pProb - self. p_prob) / (self.poly_smoothing)
-    self.s_poly[1] = float(np.tan(VM.calc_curvature(np.radians(self.damp_angle_steers - path_plan.angleOffset), float(v_ego))))
-    x = float(v_ego) * self.total_poly_projection * interp(abs(angle_feedforward), [0., 5.], [0.25, 1.0])
+    self.s_poly[1] = float(np.tan(VM.calc_curvature(np.radians(angle_feedforward), float(v_ego))))
+    x = int(float(v_ego) * self.total_poly_projection * interp(abs(angle_feedforward), [0., 5.], [0.25, 1.0]))
     self.p_pts = np.polyval(self.p_poly, np.arange(0, x))
     self.s_pts = np.polyval(self.s_poly, np.arange(0, x))
     return self.p_prob * (np.sum(self.p_pts) - np.sum(self.s_pts))
@@ -142,7 +141,9 @@ class LatControlPID(object):
     pid_log.steerAngle = float(angle_steers)
     pid_log.steerRate = float(angle_steers_rate)
 
-    self.angle_bias = live_params.angleOffset - live_params.angleOffsetAverage
+    angle_offset_average = live_params.angleOffsetAverage
+    angle_offset = clip(live_params.angleOffset, angle_offset_average - 0.2, angle_offset_average + 0.2)
+    angle_bias = angle_offset - angle_offset_average
     self.live_tune(CP)
 
     if v_ego < 0.3 or not active:
@@ -159,7 +160,7 @@ class LatControlPID(object):
       if not self.driver_assist_hold:
         self.damp_angle_steers_des += (interp(sec_since_boot() + self.damp_mpc + self.react_mpc, path_plan.mpcTimes, path_plan.mpcAngles) - self.damp_angle_steers_des) / max(1.0, self.damp_mpc * 100.)
         self.damp_rate_steers_des += (interp(sec_since_boot() + self.damp_mpc + self.react_mpc, path_plan.mpcTimes, path_plan.mpcRates) - self.damp_rate_steers_des) / max(1.0, self.damp_mpc * 100.)
-        self.damp_angle_steers += (angle_steers - self.angle_bias + self.damp_time * angle_steers_rate - self.damp_angle_steers) / max(1.0, self.damp_time * 100.)
+        self.damp_angle_steers += (angle_steers - angle_bias + self.damp_time * angle_steers_rate - self.damp_angle_steers) / max(1.0, self.damp_time * 100.)
       else:
         self.damp_angle_steers = angle_steers
         self.damp_angle_steers_des = self.damp_angle_steers + self.driver_assist_offset
@@ -170,7 +171,7 @@ class LatControlPID(object):
       steers_max = get_steer_max(CP, v_ego)
       self.pid.pos_limit = steers_max
       self.pid.neg_limit = -steers_max
-      angle_feedforward = float(self.damp_angle_steers_des - path_plan.angleOffset)
+      angle_feedforward = float(self.damp_angle_steers_des + angle_bias)
       self.angle_ff_ratio = interp(abs(angle_feedforward), self.angle_ff_bp[0], self.angle_ff_bp[1])
       rate_feedforward = (1.0 - self.angle_ff_ratio) * self.rate_ff_gain * self.damp_rate_steers_des
       steer_feedforward = float(v_ego)**2 * (rate_feedforward + angle_feedforward * self.angle_ff_ratio * self.angle_ff_gain)
@@ -200,10 +201,8 @@ class LatControlPID(object):
       self.path_error = float(v_ego) * float(self.get_projected_path_error(v_ego, angle_feedforward, path_plan, VM)) * self.poly_factor * self.cur_poly_scale * self.angle_ff_gain
 
       if self.driver_assist_hold and not steer_override and abs(angle_steers) > abs(self.damp_angle_steers_des):
-        #self.angle_bias = 0.0
         driver_opposing_i = False
       elif (steer_override and self.pid.saturated) or self.driver_assist_hold or self.lane_changing > 0.0 or blinkers_on:
-        #self.angle_bias = 0.0
         self.path_error = 0.0
 
       if self.gernbySteer and not steer_override and v_ego > 10.0:
@@ -230,7 +229,7 @@ class LatControlPID(object):
       pid_log.output = float(output_steer)
       pid_log.saturated = bool(self.pid.saturated)
       pid_log.angleFFRatio = self.angle_ff_ratio
-      pid_log.angleBias = self.angle_bias
+      pid_log.angleBias = angle_bias
 
     self.prev_angle_steers = angle_steers
     self.prev_override = steer_override

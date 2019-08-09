@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
         std::string log = "Parameter starting with: " + str;
         LOGW(log.c_str());
 
-        //sR = json["steerRatio"].number_value();
+        sR = json["steerRatio"].number_value();
         x = json["stiffnessFactor"].number_value();
         ao = json["angleOffsetAverage"].number_value();
       }

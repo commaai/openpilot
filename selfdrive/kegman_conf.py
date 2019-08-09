@@ -143,16 +143,28 @@ class kegman_conf():
     else:
       try:
         if (CP is not None and CP.lateralTuning.which() == "pid") or self.type == "pid":
-          self.config = {"type":"pid","Kp":"-1", "Ki":"-1", "Kf":"-1", "dampTime":"-1", "reactMPC":"-1", "dampMPC":"-1", "rateFFGain":"-1", "polyReact":"-1", "polyDamp":"-1", "lastTrMode" :"-1", "brakeStoppingTarget": "-1", "wheelTouchSeconds":"-1"}
+          self.config = {"type":"pid","Kp":"-1", "Ki":"-1", "Kf":"-1", "dampTime":"-1", "reactMPC":"-1", "dampMPC":"-1", "rateFFGain":"-1", "polyReact":"-1", \
+                    "polyDamp":"-1", "cameraOffset":"0.06", "lastTrMode":"1", "battChargeMin":"60", "battChargeMax":"70", "wheelTouchSeconds":"180", \
+                    "battPercOff":"25", "carVoltageMinEonShutdown":"11800", "brakeStoppingTarget":"0.25", "leadDistance":"5"}
         else:
-          self.config = {"type":"indi","timeConst":"-1", "actEffect":"-1", "outerGain":"-1", "innerGain":"-1", "reactMPC":"-1"}
+          self.config = {"type":"indi","timeConst":"-1", "actEffect":"-1", "outerGain":"-1", "innerGain":"-1", "reactMPC":"-1", "cameraOffset":"0.06", \
+                    "lastTrMode":"1", "battChargeMin":"60", "battChargeMax":"70", "wheelTouchSeconds":"180", \
+                    "battPercOff":"25", "carVoltageMinEonShutdown":"11800", "brakeStoppingTarget":"0.25", "leadDistance":"5"}
       except:
-        self.config = {"type":"pid","Kp":"-1", "Ki":"-1", "Kf":"-1", "dampTime":"-1", "reactMPC":"-1", "dampMPC":"-1", "rateFFGain":"-1", "polyReact":"-1", "polyDamp":"-1", "lastTrMode" :"-1",  "brakeStoppingTarget": "-1", "wheelTouchSeconds":"-1"}
+        self.config = {"type":"pid","Kp":"-1", "Ki":"-1", "Kf":"-1", "dampTime":"-1", "reactMPC":"-1", "dampMPC":"-1", "rateFFGain":"-1", "polyReact":"-1", \
+                    "polyDamp":"-1", "cameraOffset":"0.06", "lastTrMode":"1", "battChargeMin":"60", "battChargeMax":"70", "wheelTouchSeconds":"180", \
+                    "battPercOff":"25", "carVoltageMinEonShutdown":"11800", "brakeStoppingTarget":"0.25", "leadDistance":"5"}
 
       self.write_config(self.config)
     return self.config
 
   def write_config(self, config):
-    with open('/data/kegman.json', 'w') as f:
-      json.dump(self.config, f, indent=2, sort_keys=True)
-      os.chmod("/data/kegman.json", 0o764)
+    try:
+      with open('/data/kegman.json', 'w') as f:
+        json.dump(self.config, f, indent=2, sort_keys=True)
+        os.chmod("/data/kegman.json", 0o764)
+    except IOError:
+      os.mkdir('/data')
+      with open('/data/kegman.json', 'w') as f:
+        json.dump(self.config, f, indent=2, sort_keys=True)
+        os.chmod("/data/kegman.json", 0o764)
