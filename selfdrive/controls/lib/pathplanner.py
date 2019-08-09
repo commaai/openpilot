@@ -61,7 +61,7 @@ class PathPlanner(object):
     angle_steers = sm['carState'].steeringAngle
     cur_time = sec_since_boot()
     angle_offset_average = sm['liveParameters'].angleOffsetAverage
-    angle_offset = sm['liveParameters'].angleOffset
+    angle_offset = np.clip(sm['liveParameters'].angleOffset, angle_offset_average - 0.2, angle_offset_average + 0.2)
 
     self.MP.update(v_ego, sm['model'])
 
