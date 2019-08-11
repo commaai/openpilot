@@ -12,6 +12,7 @@ from selfdrive.controls.lib.drive_helpers import get_steer_max
 class LatControlINDI(object):
   def __init__(self, CP):
     self.angle_steers_des = 0.
+    self.angle_bias = 0.
 
     A = np.matrix([[1.0, DT_CTRL, 0.0],
                    [0.0, 1.0, DT_CTRL],
@@ -56,6 +57,7 @@ class LatControlINDI(object):
     indi_log.steerAngle = math.degrees(self.x[0])
     indi_log.steerRate = math.degrees(self.x[1])
     indi_log.steerAccel = math.degrees(self.x[2])
+    self.angle_bias = float(clip(live_params.angleOffset - live_params.angleOffsetAverage, self.angle_bias - 0.002, self.angle_bias + 0.002))
 
     if v_ego < 0.3 or not active:
       indi_log.active = False
@@ -65,7 +67,7 @@ class LatControlINDI(object):
       self.angle_steers_des = path_plan.angleSteers
       self.rate_steers_des = path_plan.rateSteers
       if not steer_override:
-        self.angle_steers_des += live_params.angleOffset - live_params.angleOffsetAverage
+        self.angle_steers_des += self.angle_bias
 
       steers_des = math.radians(self.angle_steers_des)
       rate_des = math.radians(self.rate_steers_des)
