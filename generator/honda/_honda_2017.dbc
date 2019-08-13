@@ -85,21 +85,24 @@ BO_ 490 VEHICLE_DYNAMICS: 8 VSA
 
 BO_ 506 BRAKE_COMMAND: 8 ADAS
  SG_ COMPUTER_BRAKE : 7|10@0+ (1,0) [0|1] "" EBCM
- SG_ ZEROS_BOH : 13|5@0+ (1,0) [0|1] "" EBCM
+ SG_ SET_ME_X00 : 13|5@0+ (1,0) [0|1] "" EBCM
  SG_ BRAKE_PUMP_REQUEST : 8|1@0+ (1,0) [0|1] "" EBCM
- SG_ CRUISE_BOH2 : 23|3@0+ (1,0) [0|1] "" EBCM
+ SG_ SET_ME_X00_2 : 23|3@0+ (1,0) [0|1] "" EBCM
  SG_ CRUISE_OVERRIDE : 20|1@0+ (1,0) [0|1] "" EBCM
- SG_ CRUISE_BOH3 : 19|1@0+ (1,0) [0|1] "" EBCM
+ SG_ SET_ME_X00_3 : 19|1@0+ (1,0) [0|1] "" EBCM
  SG_ CRUISE_FAULT_CMD : 18|1@0+ (1,0) [0|1] "" EBCM
  SG_ CRUISE_CANCEL_CMD : 17|1@0+ (1,0) [0|1] "" EBCM
  SG_ COMPUTER_BRAKE_REQUEST : 16|1@0+ (1,0) [0|1] "" EBCM
- SG_ SET_ME_0X80 : 31|8@0+ (1,0) [0|1] "" EBCM
+ SG_ SET_ME_1 : 31|1@0+ (1,0) [0|1] "" EBCM
+ SG_ AEB_REQ_1 : 29|1@0+ (1,0) [0|1] "" XXX
+ SG_ AEB_REQ_2 : 26|3@0+ (1,0) [0|7] "" XXX
  SG_ BRAKE_LIGHTS : 39|1@0+ (1,0) [0|1] "" EBCM
  SG_ CRUISE_STATES : 38|7@0+ (1,0) [0|1] "" EBCM
  SG_ CHIME : 47|3@0+ (1,0) [0|7] "" EBCM
- SG_ ZEROS_BOH6 : 44|1@0+ (1,0) [0|1] "" EBCM
+ SG_ SET_ME_X00_4 : 44|1@0+ (1,0) [0|1] "" EBCM
  SG_ FCW : 43|2@0+ (1,0) [0|3] "" EBCM
- SG_ ZEROS_BOH4 : 55|8@0+ (1,0) [0|0] "" EBCM
+ SG_ AEB : 41|2@0+ (1,0) [0|3] "" XXX
+ SG_ SET_ME_X00_5 : 55|8@0+ (1,0) [0|0] "" EBCM
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EBCM
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" EBCM
 
