@@ -143,15 +143,24 @@ class RadarD(object):
           clusters[cluster_i] = Cluster()
         clusters[cluster_i].add(self.tracks[idens[idx]])
     elif len(track_pts) == 1:
+      # FIXME: cluster_point_centroid hangs forever if len(track_pts) == 1
+      cluster_idxs = [0]
       clusters = [Cluster()]
       clusters[0].add(self.tracks[idens[0]])
     else:
       clusters = []
 
+    # if a new point, reset accel to the rest of the cluster
+    for idx in xrange(len(track_pts)):
+      if self.tracks[idens[idx]].cnt <= 1:
+        aLeadK = clusters[cluster_idxs[idx]].aLeadK
+        aLeadTau = clusters[cluster_idxs[idx]].aLeadTau
+        self.tracks[idens[idx]].reset_a_lead(aLeadK, aLeadTau)
+
     # *** publish radarState ***
     dat = messaging.new_message()
     dat.init('radarState')
-    dat.valid = sm.all_alive_and_valid(service_list=['controlsState'])
+    dat.valid = sm.all_alive_and_valid(service_list=['controlsState', 'model'])
     dat.radarState.mdMonoTime = self.last_md_ts
     dat.radarState.canMonoTimes = list(rr.canMonoTimes)
     dat.radarState.radarErrors = list(rr.errors)

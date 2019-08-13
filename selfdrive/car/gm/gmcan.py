@@ -130,10 +130,6 @@ def create_adas_accelerometer_speed_status(bus, speed_ms, idx):
 def create_adas_headlights_status(bus):
   return [0x310, 0, "\x42\x04", bus]
 
-def create_chime_command(bus, chime_type, duration, repeat_cnt):
-  dat = [chime_type, duration, repeat_cnt, 0xff, 0]
-  return [0x10400060, 0, "".join(map(chr, dat)), bus]
-
 def create_lka_icon_command(bus, active, critical, steer):
   if active and steer == 1:
     if critical:

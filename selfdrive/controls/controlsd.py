@@ -12,7 +12,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.services import service_list
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car.car_helpers import get_car, get_startup_alert
-from selfdrive.controls.lib.model_parser import CAMERA_OFFSET
+from selfdrive.controls.lib.lane_planner import CAMERA_OFFSET
 from selfdrive.controls.lib.drive_helpers import get_events, \
                                                  create_event, \
                                                  EventTypes as ET, \
@@ -21,6 +21,7 @@ from selfdrive.controls.lib.drive_helpers import get_events, \
 from selfdrive.controls.lib.longcontrol import LongControl, STARTING_TARGET_SPEED
 from selfdrive.controls.lib.latcontrol_pid import LatControlPID
 from selfdrive.controls.lib.latcontrol_indi import LatControlINDI
+from selfdrive.controls.lib.latcontrol_lqr import LatControlLQR
 from selfdrive.controls.lib.alertmanager import AlertManager
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.controls.lib.driver_monitor import DriverStatus, MAX_TERMINAL_ALERTS
@@ -90,11 +91,16 @@ def data_sample(CI, CC, sm, can_sock, cal_status, cal_perc, overtemp, free_space
     cal_status = sm['liveCalibration'].calStatus
     cal_perc = sm['liveCalibration'].calPerc
 
+  cal_rpy = [0,0,0]
   if cal_status != Calibration.CALIBRATED:
     if cal_status == Calibration.UNCALIBRATED:
       events.append(create_event('calibrationIncomplete', [ET.NO_ENTRY, ET.SOFT_DISABLE, ET.PERMANENT]))
     else:
       events.append(create_event('calibrationInvalid', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+  else:
+    rpy = sm['liveCalibration'].rpyCalib
+    if len(rpy) == 3:
+      cal_rpy = rpy
 
   # When the panda and controlsd do not agree on controls_allowed
   # we want to disengage openpilot. However the status from the panda goes through
@@ -112,7 +118,7 @@ def data_sample(CI, CC, sm, can_sock, cal_status, cal_perc, overtemp, free_space
 
   # Driver monitoring
   if sm.updated['driverMonitoring']:
-    driver_status.get_pose(sm['driverMonitoring'], params)
+    driver_status.get_pose(sm['driverMonitoring'], params, cal_rpy)
 
   if driver_status.terminal_alert_cnt >= MAX_TERMINAL_ALERTS:
     events.append(create_event("tooDistracted", [ET.NO_ENTRY]))
@@ -255,8 +261,7 @@ def state_control(frame, rcv_frame, plan, path_plan, CS, CP, state, events, v_cr
   actuators.gas, actuators.brake = LoC.update(active, CS.vEgo, CS.brakePressed, CS.standstill, CS.cruiseState.standstill,
                                               v_cruise_kph, v_acc_sol, plan.vTargetFuture, a_acc_sol, CP)
   # Steering PID loop and lateral MPC
-  actuators.steer, actuators.steerAngle, lac_log = LaC.update(active, CS.vEgo, CS.steeringAngle, CS.steeringRate,
-                                                              CS.steeringPressed, CP, VM, path_plan)
+  actuators.steer, actuators.steerAngle, lac_log = LaC.update(active, CS.vEgo, CS.steeringAngle, CS.steeringRate, CS.steeringTorqueEps, CS.steeringPressed, CP, VM, path_plan)
 
   # Send a "steering required alert" if saturation count has reached the limit
   if LaC.sat_flag and CP.steerLimitAlert:
@@ -310,12 +315,11 @@ def data_send(sm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, ca
   ldw_allowed = CS.vEgo > 12.5 and not blinker
 
   if len(list(sm['pathPlan'].rPoly)) == 4:
-    CC.hudControl.rightLaneDepart = bool(ldw_allowed and sm['pathPlan'].rPoly[3] > -(1 + CAMERA_OFFSET) and right_lane_visible)
+    CC.hudControl.rightLaneDepart = bool(ldw_allowed and sm['pathPlan'].rPoly[3] > -(1.08 + CAMERA_OFFSET) and right_lane_visible)
   if len(list(sm['pathPlan'].lPoly)) == 4:
-    CC.hudControl.leftLaneDepart = bool(ldw_allowed and sm['pathPlan'].lPoly[3] < (1 - CAMERA_OFFSET) and left_lane_visible)
+    CC.hudControl.leftLaneDepart = bool(ldw_allowed and sm['pathPlan'].lPoly[3] < (1.08 - CAMERA_OFFSET) and left_lane_visible)
 
   CC.hudControl.visualAlert = AM.visual_alert
-  CC.hudControl.audibleAlert = AM.audible_alert
 
   if not read_only:
     # send car controls over can
@@ -335,7 +339,7 @@ def data_send(sm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, ca
     "alertStatus": AM.alert_status,
     "alertBlinkingRate": AM.alert_rate,
     "alertType": AM.alert_type,
-    "alertSound": "",  # no EON sounds yet
+    "alertSound": AM.audible_alert,
     "awarenessStatus": max(driver_status.awareness, 0.0) if isEnabled(state) else 0.0,
     "driverMonitoringOn": bool(driver_status.monitor_on and driver_status.face_detected),
     "canMonoTimes": list(CS.canMonoTimes),
@@ -372,7 +376,9 @@ def data_send(sm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, ca
 
   if CP.lateralTuning.which() == 'pid':
     dat.controlsState.lateralControlState.pidState = lac_log
-  else:
+  elif CP.lateralTuning.which() == 'lqr':
+    dat.controlsState.lateralControlState.lqrState = lac_log
+  elif CP.lateralTuning.which() == 'indi':
     dat.controlsState.lateralControlState.indiState = lac_log
   controlsstate.send(dat.to_bytes())
 
@@ -466,8 +472,10 @@ def controlsd_thread(gctx=None):
 
   if CP.lateralTuning.which() == 'pid':
     LaC = LatControlPID(CP)
-  else:
+  elif CP.lateralTuning.which() == 'indi':
     LaC = LatControlINDI(CP)
+  elif CP.lateralTuning.which() == 'lqr':
+    LaC = LatControlLQR(CP)
 
   driver_status = DriverStatus()
 
@@ -485,6 +493,9 @@ def controlsd_thread(gctx=None):
 
   sm['pathPlan'].sensorValid = True
   sm['pathPlan'].posenetValid = True
+
+  # detect sound card presence
+  sounds_available = not os.path.isfile('/EON') or (os.path.isdir('/proc/asound/card0') and open('/proc/asound/card0/state').read().strip() == 'ONLINE')
 
   # controlsd is driven by can recv, expected at 100Hz
   rk = Ratekeeper(100, print_delay_threshold=None)
@@ -518,6 +529,8 @@ def controlsd_thread(gctx=None):
       events.append(create_event('radarCanError', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if not CS.canValid:
       events.append(create_event('canError', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
+    if not sounds_available:
+      events.append(create_event('soundsUnavailable', [ET.NO_ENTRY, ET.PERMANENT]))
 
     # Only allow engagement with brake pressed when stopped behind another stopped car
     if CS.brakePressed and sm['plan'].vTargetFuture >= STARTING_TARGET_SPEED and not CP.radarOffCan and CS.vEgo < 0.3:

@@ -2,7 +2,6 @@
 #define MODEL_H
 
 // gate this here
-#define MEDMODEL
 #define TEMPORAL
 
 #include "common/mat.h"

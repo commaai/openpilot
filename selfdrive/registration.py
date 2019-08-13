@@ -71,6 +71,10 @@ def register():
     os.rename("/persist/comma/id_rsa.tmp", "/persist/comma/id_rsa")
     os.rename("/persist/comma/id_rsa.tmp.pub", "/persist/comma/id_rsa.pub")
 
+  # make key readable by app users (ai.comma.plus.offroad)
+  os.chmod('/persist/comma/', 0o755)
+  os.chmod('/persist/comma/id_rsa', 0o744)
+
   dongle_id, access_token = params.get("DongleId"), params.get("AccessToken")
   public_key = open("/persist/comma/id_rsa.pub").read()
 

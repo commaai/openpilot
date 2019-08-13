@@ -39,9 +39,9 @@ RUN cd /tmp && pipenv install --deploy --system
 
 ENV PYTHONPATH /tmp/openpilot:$PYTHONPATH
 
-RUN git clone --branch v0.6  https://github.com/commaai/openpilot-tools.git /tmp/openpilot/tools
+RUN git clone --branch v0.6.2 https://github.com/commaai/openpilot-tools.git /tmp/openpilot/tools
 RUN pip install -r /tmp/openpilot/tools/requirements.txt
-RUN pip install fastcluster==1.1.20 scipy==0.19.1
+RUN pip install fastcluster==1.1.20 scipy==0.19.1 dictdiffer==0.8.0 azure-batch==4.1.3 azure-common==1.1.16 azure-nspkg==3.0.0 azure-storage-blob==1.3.1 azure-storage-common==1.3.0 azure-storage-nspkg==3.0.0
 
 COPY ./.pylintrc /tmp/openpilot/.pylintrc
 COPY ./common /tmp/openpilot/common
