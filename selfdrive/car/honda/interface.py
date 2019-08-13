@@ -275,7 +275,7 @@ class CarInterface(object):
 
     elif candidate == CAR.FIT:
       stop_and_go = False
-      ret.mass = 2644. * CV.LB_TO_KG + std_cargo
+      ret.mass = 2644. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.53
       ret.centerToFront = ret.wheelbase * 0.39
       ret.steerRatio = 13.06
