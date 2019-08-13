@@ -47,7 +47,7 @@ class ModelParser(object):
         if self.frame % 20 == 0:
             self.frame = 0
             current_lane_width = sorted((2.8, abs(l_poly[3] - r_poly[3]), 3.6))[1]
-            max_samples = 30
+            max_samples = 60
             self.readings.append(current_lane_width)
             avg = mean(self.readings)
             self.lane_width = avg
