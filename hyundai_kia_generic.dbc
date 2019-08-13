@@ -961,7 +961,7 @@ BO_ 64 DATC14: 8 DATC
  SG_ DATC_ADSDisp : 28|2@1+ (1.0,0.0) [0.0|3.0] ""  CLU
 
 BO_ 832 LKAS11: 8 LDWS_LKAS
- SG_ CF_Lkas_Icon : 0|2@1+ (1.0,0.0) [0.0|3.0] ""  CLU,IBOX,PSB
+ SG_ CF_Lkas_Bca_R : 0|2@1+ (1.0,0.0) [0.0|3.0] ""  CLU,IBOX,PSB
  SG_ CF_Lkas_LdwsSysState : 2|4@1+ (1.0,0.0) [0.0|15.0] ""  CLU,IBOX,PSB
  SG_ CF_Lkas_SysWarning : 6|4@1+ (1.0,0.0) [0.0|15.0] ""  BCM,CLU
  SG_ CF_Lkas_LdwsLHWarning : 10|2@1+ (1.0,0.0) [0.0|3.0] ""  BCM,CLU,PSB
