@@ -2,9 +2,11 @@
 uint32_t *prog_ptr = NULL;
 int unlocked = 0;
 
+#ifdef uart_ring
 void debug_ring_callback(uart_ring *ring) {}
+#endif
 
-int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, int hardwired) {
+int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, bool hardwired) {
   int resp_len = 0;
 
   // flasher machine
@@ -29,7 +31,7 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, int hardwired) {
         FLASH->KEYR = 0xCDEF89AB;
         resp[1] = 0xff;
       }
-      set_led(LED_GREEN, 1);
+      current_board->set_led(LED_GREEN, 1);
       unlocked = 1;
       prog_ptr = (uint32_t *)0x8004000;
       break;
@@ -46,7 +48,7 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, int hardwired) {
       break;
     // **** 0xd0: fetch serial number
     case 0xd0:
-      #ifdef PANDA
+      #ifdef STM32F4
         // addresses are OTP
         if (setup->b.wValue.w == 1) {
           memcpy(resp, (void *)0x1fff79c0, 0x10);
@@ -78,7 +80,7 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, int hardwired) {
       break;
     // **** 0xd6: get version
     case 0xd6:
-      COMPILE_TIME_ASSERT(sizeof(gitversion) <= MAX_RESP_LEN)
+      COMPILE_TIME_ASSERT(sizeof(gitversion) <= MAX_RESP_LEN);
       memcpy(resp, gitversion, sizeof(gitversion));
       resp_len = sizeof(gitversion);
       break;
@@ -90,17 +92,27 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, int hardwired) {
   return resp_len;
 }
 
-int usb_cb_ep1_in(uint8_t *usbdata, int len, int hardwired) { return 0; }
-void usb_cb_ep3_out(uint8_t *usbdata, int len, int hardwired) { }
+int usb_cb_ep1_in(void *usbdata, int len, bool hardwired) {
+  UNUSED(usbdata);
+  UNUSED(len);
+  UNUSED(hardwired);
+  return 0;
+}
+void usb_cb_ep3_out(void *usbdata, int len, bool hardwired) {
+  UNUSED(usbdata);
+  UNUSED(len);
+  UNUSED(hardwired);
+}
 
 int is_enumerated = 0;
-void usb_cb_enumeration_complete() {
+void usb_cb_enumeration_complete(void) {
   puts("USB enumeration complete\n");
   is_enumerated = 1;
 }
 
-void usb_cb_ep2_out(uint8_t *usbdata, int len, int hardwired) {
-  set_led(LED_RED, 0);
+void usb_cb_ep2_out(void *usbdata, int len, bool hardwired) {
+  UNUSED(hardwired);
+  current_board->set_led(LED_RED, 0);
   for (int i = 0; i < len/4; i++) {
     // program byte 1
     FLASH->CR = FLASH_CR_PSIZE_1 | FLASH_CR_PG;
@@ -111,11 +123,12 @@ void usb_cb_ep2_out(uint8_t *usbdata, int len, int hardwired) {
     //*(uint64_t*)(&spi_tx_buf[0x30+(i*4)]) = *prog_ptr;
     prog_ptr++;
   }
-  set_led(LED_RED, 1);
+  current_board->set_led(LED_RED, 1);
 }
 
 
 int spi_cb_rx(uint8_t *data, int len, uint8_t *data_out) {
+  UNUSED(len);
   int resp_len = 0;
   switch (data[0]) {
     case 0:
@@ -132,12 +145,13 @@ int spi_cb_rx(uint8_t *data, int len, uint8_t *data_out) {
 
 #ifdef PEDAL
 
+#include "drivers/llcan.h"
 #define CAN CAN1
 
 #define CAN_BL_INPUT 0x1
 #define CAN_BL_OUTPUT 0x2
 
-void CAN1_TX_IRQHandler() {
+void CAN1_TX_IRQHandler(void) {
   // clear interrupt
   CAN->TSR |= CAN_TSR_RQCP0;
 }
@@ -164,12 +178,13 @@ void bl_can_send(uint8_t *odat) {
   CAN->sTxMailBox[0].TIR = (CAN_BL_OUTPUT << 21) | 1;
 }
 
-void CAN1_RX0_IRQHandler() {
+void CAN1_RX0_IRQHandler(void) {
   while (CAN->RF0R & CAN_RF0R_FMP0) {
     if ((CAN->sFIFOMailBox[0].RIR>>21) == CAN_BL_INPUT) {
       uint8_t dat[8];
-      ((uint32_t*)dat)[0] = CAN->sFIFOMailBox[0].RDLR;
-      ((uint32_t*)dat)[1] = CAN->sFIFOMailBox[0].RDHR;
+      for (int i = 0; i < 8; i++) {
+        dat[0] = GET_BYTE(&CAN->sFIFOMailBox[0], i);
+      }
       uint8_t odat[8];
       uint8_t type = dat[0] & 0xF0;
       if (type == 0x30) {
@@ -238,13 +253,13 @@ void CAN1_RX0_IRQHandler() {
   }
 }
 
-void CAN1_SCE_IRQHandler() {
-  can_sce(CAN);
+void CAN1_SCE_IRQHandler(void) {
+  llcan_clear_send(CAN);
 }
 
 #endif
 
-void soft_flasher_start() {
+void soft_flasher_start(void) {
   puts("\n\n\n************************ FLASHER START ************************\n");
 
   enter_bootloader_mode = 0;
@@ -261,11 +276,11 @@ void soft_flasher_start() {
   // B8,B9: CAN 1
   set_gpio_alternate(GPIOB, 8, GPIO_AF9_CAN1);
   set_gpio_alternate(GPIOB, 9, GPIO_AF9_CAN1);
-  set_can_enable(CAN1, 1);
+  current_board->enable_can_transciever(1, true);
 
   // init can
-  can_silent = ALL_CAN_LIVE;
-  can_init(0);
+  llcan_set_speed(CAN1, 5000, false, false);
+  llcan_init(CAN1);
 #endif
 
   // A4,A5,A6,A7: setup SPI
@@ -290,7 +305,7 @@ void soft_flasher_start() {
   usb_init();
 
   // green LED on for flashing
-  set_led(LED_GREEN, 1);
+  current_board->set_led(LED_GREEN, 1);
 
   __enable_irq();
 
@@ -301,13 +316,13 @@ void soft_flasher_start() {
       // if you are connected through a hub to the phone
       // you need power to be able to see the device
       puts("USBP: didn't enumerate, switching to CDP mode\n");
-      set_usb_power_mode(USB_POWER_CDP);
-      set_led(LED_BLUE, 1);
+      current_board->set_usb_power_mode(USB_POWER_CDP);
+      current_board->set_led(LED_BLUE, 1);
     }
     // blink the green LED fast
-    set_led(LED_GREEN, 0);
+    current_board->set_led(LED_GREEN, 0);
     delay(500000);
-    set_led(LED_GREEN, 1);
+    current_board->set_led(LED_GREEN, 1);
     delay(500000);
   }
 }

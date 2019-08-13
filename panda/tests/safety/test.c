@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 typedef struct
 {
@@ -32,35 +33,84 @@ struct sample_t subaru_torque_driver;
 TIM_TypeDef timer;
 TIM_TypeDef *TIM2 = &timer;
 
-#define min(a,b)                                \
+// from config.h
+#define MIN(a,b)                                \
   ({ __typeof__ (a) _a = (a);                   \
     __typeof__ (b) _b = (b);                    \
     _a < _b ? _a : _b; })
 
-#define max(a,b)                                \
+#define MAX(a,b)                                \
   ({ __typeof__ (a) _a = (a);                   \
     __typeof__ (b) _b = (b);                    \
     _a > _b ? _a : _b; })
 
+// from llcan.h
+#define GET_BUS(msg) (((msg)->RDTR >> 4) & 0xFF)
+#define GET_LEN(msg) ((msg)->RDTR & 0xf)
+#define GET_ADDR(msg) ((((msg)->RIR & 4) != 0) ? ((msg)->RIR >> 3) : ((msg)->RIR >> 21))
+#define GET_BYTE(msg, b) (((int)(b) > 3) ? (((msg)->RDHR >> (8U * ((unsigned int)(b) % 4U))) & 0XFFU) : (((msg)->RDLR >> (8U * (unsigned int)(b))) & 0xFFU))
+#define GET_BYTES_04(msg) ((msg)->RDLR)
+#define GET_BYTES_48(msg) ((msg)->RDHR)
+
+// from board_declarations.h
+#define HW_TYPE_UNKNOWN 0U
+#define HW_TYPE_WHITE_PANDA 1U
+#define HW_TYPE_GREY_PANDA 2U
+#define HW_TYPE_BLACK_PANDA 3U
+#define HW_TYPE_PEDAL 4U
+
+// from main_declarations.h
+uint8_t hw_type = 0U;
+
+#define UNUSED(x) (void)(x)
 
 #define PANDA
+#define NULL ((void*)0)
 #define static
 #include "safety.h"
 
-void set_controls_allowed(int c){
+void set_controls_allowed(bool c){
   controls_allowed = c;
+}
+
+void set_long_controls_allowed(bool c){
+  long_controls_allowed = c;
+}
+
+void set_gas_interceptor_detected(bool c){
+  gas_interceptor_detected = c;
 }
 
 void reset_angle_control(void){
   angle_control = 0;
 }
 
-int get_controls_allowed(void){
+bool get_controls_allowed(void){
   return controls_allowed;
 }
 
-void set_timer(int t){
+bool get_long_controls_allowed(void){
+  return long_controls_allowed;
+}
+
+bool get_gas_interceptor_detected(void){
+  return gas_interceptor_detected;
+}
+
+int get_gas_interceptor_prev(void){
+  return gas_interceptor_prev;
+}
+
+int get_hw_type(void){
+  return hw_type;
+}
+
+void set_timer(uint32_t t){
   timer.CNT = t;
+}
+
+void set_toyota_camera_forwarded(int t){
+  toyota_camera_forwarded = t;
 }
 
 void set_toyota_torque_meas(int min, int max){
@@ -83,6 +133,18 @@ void set_hyundai_torque_driver(int min, int max){
   hyundai_torque_driver.max = max;
 }
 
+void set_hyundai_camera_bus(int t){
+  hyundai_camera_bus = t;
+}
+
+void set_hyundai_giraffe_switch_2(int t){
+  hyundai_giraffe_switch_2 = t;
+}
+
+void set_chrysler_camera_detected(int t){
+  chrysler_camera_detected = t;
+}
+
 void set_chrysler_torque_meas(int min, int max){
   chrysler_torque_meas.min = min;
   chrysler_torque_meas.max = max;
@@ -99,6 +161,10 @@ int get_chrysler_torque_meas_min(void){
 
 int get_chrysler_torque_meas_max(void){
   return chrysler_torque_meas.max;
+}
+
+int get_toyota_gas_prev(void){
+  return toyota_gas_prev;
 }
 
 int get_toyota_torque_meas_min(void){
@@ -157,27 +223,37 @@ void set_subaru_desired_torque_last(int t){
   subaru_desired_torque_last = t;
 }
 
-int get_ego_speed(void){
-  return ego_speed;
+bool get_honda_moving(void){
+  return honda_moving;
 }
 
-int get_brake_prev(void){
-  return brake_prev;
+int get_honda_brake_prev(void){
+  return honda_brake_prev;
 }
 
-int get_gas_prev(void){
-  return gas_prev;
+int get_honda_gas_prev(void){
+  return honda_gas_prev;
 }
 
 void set_honda_alt_brake_msg(bool c){
   honda_alt_brake_msg = c;
 }
 
-void set_bosch_hardware(bool c){
-  bosch_hardware = c;
+void set_honda_bosch_hardware(bool c){
+  honda_bosch_hardware = c;
+}
+
+int get_honda_bosch_hardware(void) {
+  return honda_bosch_hardware;
+}
+
+void init_tests(void){
+  // get HW_TYPE from env variable set in test.sh
+  hw_type = atoi(getenv("HW_TYPE"));
 }
 
 void init_tests_toyota(void){
+  init_tests();
   toyota_torque_meas.min = 0;
   toyota_torque_meas.max = 0;
   toyota_desired_torque_last = 0;
@@ -187,6 +263,7 @@ void init_tests_toyota(void){
 }
 
 void init_tests_cadillac(void){
+  init_tests();
   cadillac_torque_driver.min = 0;
   cadillac_torque_driver.max = 0;
   for (int i = 0; i < 4; i++) cadillac_desired_torque_last[i] = 0;
@@ -196,6 +273,7 @@ void init_tests_cadillac(void){
 }
 
 void init_tests_gm(void){
+  init_tests();
   gm_torque_driver.min = 0;
   gm_torque_driver.max = 0;
   gm_desired_torque_last = 0;
@@ -205,6 +283,7 @@ void init_tests_gm(void){
 }
 
 void init_tests_hyundai(void){
+  init_tests();
   hyundai_torque_driver.min = 0;
   hyundai_torque_driver.max = 0;
   hyundai_desired_torque_last = 0;
@@ -214,6 +293,7 @@ void init_tests_hyundai(void){
 }
 
 void init_tests_chrysler(void){
+  init_tests();
   chrysler_torque_meas.min = 0;
   chrysler_torque_meas.max = 0;
   chrysler_desired_torque_last = 0;
@@ -223,6 +303,7 @@ void init_tests_chrysler(void){
 }
 
 void init_tests_subaru(void){
+  init_tests();
   subaru_torque_driver.min = 0;
   subaru_torque_driver.max = 0;
   subaru_desired_torque_last = 0;
@@ -232,10 +313,10 @@ void init_tests_subaru(void){
 }
 
 void init_tests_honda(void){
-  ego_speed = 0;
-  gas_interceptor_detected = 0;
-  brake_prev = 0;
-  gas_prev = 0;
+  init_tests();
+  honda_moving = false;
+  honda_brake_prev = 0;
+  honda_gas_prev = 0;
 }
 
 void set_gmlan_digital_output(int to_set){
@@ -247,11 +328,3 @@ void reset_gmlan_switch_timeout(void){
 void gmlan_switch_init(int timeout_enable){
 }
 
-void lline_relay_init (void) {
-}
-
-void lline_relay_release (void) {
-}
-
-void set_lline_output(int to_set) {
-}

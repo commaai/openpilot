@@ -1,2 +1,0 @@
-class OutOfRangeError(ValueError):
-    pass

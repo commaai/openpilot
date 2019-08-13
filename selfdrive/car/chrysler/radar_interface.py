@@ -3,17 +3,13 @@ import os
 from selfdrive.can.parser import CANParser
 from cereal import car
 from common.realtime import sec_since_boot
-import zmq
-from selfdrive.services import service_list
-import selfdrive.messaging as messaging
-
 
 RADAR_MSGS_C = range(0x2c2, 0x2d4+2, 2)  # c_ messages 706,...,724
 RADAR_MSGS_D = range(0x2a2, 0x2b4+2, 2)  # d_ messages
 LAST_MSG = max(RADAR_MSGS_C + RADAR_MSGS_D)
 NUMBER_MSGS = len(RADAR_MSGS_C) + len(RADAR_MSGS_D)
 
-def _create_radard_can_parser():
+def _create_radar_can_parser():
   dbc_f = 'chrysler_pacifica_2017_hybrid_private_fusion.dbc'
   msg_n = len(RADAR_MSGS_C)
   # list of [(signal name, message name or number, initial values), (...)]
@@ -54,34 +50,30 @@ class RadarInterface(object):
   def __init__(self, CP):
     self.pts = {}
     self.delay = 0.0  # Delay of radar  #TUNE
-    self.rcp = _create_radard_can_parser()
-    context = zmq.Context()
-    self.logcan = messaging.sub_sock(context, service_list['can'].port)
+    self.rcp = _create_radar_can_parser()
+    self.updated_messages = set()
+    self.trigger_msg = LAST_MSG
 
-  def update(self):
-    canMonoTimes = []
+  def update(self, can_strings):
+    tm = int(sec_since_boot() * 1e9)
+    vls = self.rcp.update_strings(tm, can_strings)
+    self.updated_messages.update(vls)
 
-    updated_messages = set()  # set of message IDs (sig_addresses) we've seen
+    if self.trigger_msg not in self.updated_messages:
+      return None
 
-    while 1:
-      tm = int(sec_since_boot() * 1e9)
-      updated_messages.update(self.rcp.update(tm, True))
-      if LAST_MSG in updated_messages:
-        break
-
-    ret = car.RadarState.new_message()
+    ret = car.RadarData.new_message()
     errors = []
     if not self.rcp.can_valid:
-      errors.append("commIssue")
+      errors.append("canError")
     ret.errors = errors
-    ret.canMonoTimes = canMonoTimes
 
-    for ii in updated_messages:  # ii should be the message ID as a number
+    for ii in self.updated_messages:  # ii should be the message ID as a number
       cpt = self.rcp.vl[ii]
       trackId = _address_to_track(ii)
 
       if trackId not in self.pts:
-        self.pts[trackId] = car.RadarState.RadarPoint.new_message()
+        self.pts[trackId] = car.RadarData.RadarPoint.new_message()
         self.pts[trackId].trackId = trackId
         self.pts[trackId].aRel = float('nan')
         self.pts[trackId].yvRel = float('nan')
@@ -97,11 +89,6 @@ class RadarInterface(object):
 
     # We want a list, not a dictionary. Filter out LONG_DIST==0 because that means it's not valid.
     ret.points = [x for x in self.pts.values() if x.dRel != 0]
-    return ret
 
-if __name__ == "__main__":
-  RI = RadarInterface(None)
-  while 1:
-    ret = RI.update()
-    print(chr(27) + "[2J")  # clear screen
-    print(ret)
+    self.updated_messages.clear()
+    return ret

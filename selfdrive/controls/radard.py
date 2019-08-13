@@ -1,23 +1,18 @@
 #!/usr/bin/env python
-import zmq
 import numpy as np
 import numpy.matlib
 import importlib
 from collections import defaultdict, deque
-from fastcluster import linkage_vector
 
 import selfdrive.messaging as messaging
 from selfdrive.services import service_list
-from selfdrive.controls.lib.latcontrol_helpers import calc_lookahead_offset
-from selfdrive.controls.lib.model_parser import ModelParser
-from selfdrive.controls.lib.radar_helpers import Track, Cluster, fcluster, \
-                                                 RDR_TO_LDR, NO_FUSION_SCORE
-from selfdrive.controls.lib.vehicle_model import VehicleModel
+from selfdrive.controls.lib.radar_helpers import Track, Cluster
+from selfdrive.config import RADAR_TO_CENTER
+from selfdrive.controls.lib.cluster.fastcluster_py import cluster_points_centroid
 from selfdrive.swaglog import cloudlog
 from cereal import car
 from common.params import Params
-from common.realtime import set_realtime_priority, Ratekeeper
-from common.kalman.ekf import EKF, SimpleSensor
+from common.realtime import set_realtime_priority, Ratekeeper, DT_MDL
 
 DEBUG = False
 
@@ -26,27 +21,158 @@ DIMSV = 2
 XV, SPEEDV = 0, 1
 VISION_POINT = -1
 
-
-class EKFV1D(EKF):
-  def __init__(self):
-    super(EKFV1D, self).__init__(False)
-    self.identity = numpy.matlib.identity(DIMSV)
-    self.state = np.matlib.zeros((DIMSV, 1))
-    self.var_init = 1e2   # ~ model variance when probability is 70%, so good starting point
-    self.covar = self.identity * self.var_init
-
-    self.process_noise = np.matlib.diag([0.5, 1])
-
-  def calc_transfer_fun(self, dt):
-    tf = np.matlib.identity(DIMSV)
-    tf[XV, SPEEDV] = dt
-    tfj = tf
-    return tf, tfj
+# Time-alignment
+rate = 1. / DT_MDL  # model and radar are both at 20Hz
+v_len = 20   # how many speed data points to remember for t alignment with rdr data
 
 
-## fuses camera and radar data for best lead detection
-# FIXME: radard has a memory leak of about 50MB/hr
-# BOUNTY: $100 coupon on shop.comma.ai
+def laplacian_cdf(x, mu, b):
+  b = np.max([b, 1e-4])
+  return np.exp(-abs(x-mu)/b)
+
+
+def match_vision_to_cluster(v_ego, lead, clusters):
+  # match vision point to best statistical cluster match
+  probs = []
+  offset_vision_dist = lead.dist - RADAR_TO_CENTER
+  for c in clusters:
+    prob_d = laplacian_cdf(c.dRel, offset_vision_dist, lead.std)
+    prob_y = laplacian_cdf(c.yRel, lead.relY, lead.relYStd)
+    prob_v = laplacian_cdf(c.vRel, lead.relVel, lead.relVelStd)
+    # This is isn't exactly right, but good heuristic
+    combined_prob = prob_d * prob_y * prob_v
+    probs.append(combined_prob)
+  idx = np.argmax(probs)
+  # if no 'sane' match is found return -1
+  # stationary radar points can be false positives
+  dist_sane = abs(clusters[idx].dRel - offset_vision_dist) < max([(offset_vision_dist)*.25, 5.0])
+  vel_sane = (abs(clusters[idx].vRel - lead.relVel) < 10) or (v_ego + clusters[idx].vRel > 2)
+  if dist_sane and vel_sane:
+    return idx
+  else:
+    return None
+
+
+def get_lead(v_ego, ready, clusters, lead_msg, low_speed_override=True):
+  # Determine leads, this is where the essential logic happens
+  if len(clusters) > 0 and ready and lead_msg.prob > .5:
+    lead_idx = match_vision_to_cluster(v_ego, lead_msg, clusters)
+  else:
+    lead_idx = None
+
+  lead_dict = {'status': False}
+  if lead_idx is not None:
+    lead_dict = clusters[lead_idx].get_RadarState(lead_msg.prob)
+  elif (lead_idx is None) and ready and (lead_msg.prob > .5):
+    lead_dict = Cluster().get_RadarState_from_vision(lead_msg, v_ego)
+
+  if low_speed_override:
+    low_speed_clusters = [c for c in clusters if c.potential_low_speed_lead(v_ego)]
+    if len(low_speed_clusters) > 0:
+      lead_idx = np.argmin([c.dRel for c in low_speed_clusters])
+      if (not lead_dict['status']) or (low_speed_clusters[lead_idx].dRel < lead_dict['dRel']):
+        lead_dict = low_speed_clusters[lead_idx].get_RadarState()
+
+  return lead_dict
+
+
+class RadarD(object):
+  def __init__(self, mocked):
+    self.current_time = 0
+    self.mocked = mocked
+
+    self.tracks = defaultdict(dict)
+
+    self.last_md_ts = 0
+    self.last_controls_state_ts = 0
+
+    self.active = 0
+
+    # v_ego
+    self.v_ego = 0.
+    self.v_ego_hist_t = deque([0], maxlen=v_len)
+    self.v_ego_hist_v = deque([0], maxlen=v_len)
+    self.v_ego_t_aligned = 0.
+    self.ready = False
+
+  def update(self, frame, delay, sm, rr, has_radar):
+    self.current_time = 1e-9*max([sm.logMonoTime[key] for key in sm.logMonoTime.keys()])
+
+    if sm.updated['controlsState']:
+      self.active = sm['controlsState'].active
+      self.v_ego = sm['controlsState'].vEgo
+      self.v_ego_hist_v.append(self.v_ego)
+      self.v_ego_hist_t.append(float(frame)/rate)
+    if sm.updated['model']:
+      self.ready = True
+
+    ar_pts = {}
+    for pt in rr.points:
+      ar_pts[pt.trackId] = [pt.dRel, pt.yRel, pt.vRel, pt.measured]
+
+    # *** remove missing points from meta data ***
+    for ids in self.tracks.keys():
+      if ids not in ar_pts:
+        self.tracks.pop(ids, None)
+
+    # *** compute the tracks ***
+    for ids in ar_pts:
+      rpt = ar_pts[ids]
+
+      # align v_ego by a fixed time to align it with the radar measurement
+      cur_time = float(frame)/rate
+      self.v_ego_t_aligned = np.interp(cur_time - delay, self.v_ego_hist_t, self.v_ego_hist_v)
+
+      # create the track if it doesn't exist or it's a new track
+      if ids not in self.tracks:
+        self.tracks[ids] = Track()
+      self.tracks[ids].update(rpt[0], rpt[1], rpt[2], self.v_ego_t_aligned, rpt[3])
+
+    idens = list(self.tracks.keys())
+    track_pts = np.array([self.tracks[iden].get_key_for_cluster() for iden in idens])
+
+
+    # If we have multiple points, cluster them
+    if len(track_pts) > 1:
+      cluster_idxs = cluster_points_centroid(track_pts, 2.5)
+      clusters = [None] * (max(cluster_idxs) + 1)
+
+      for idx in xrange(len(track_pts)):
+        cluster_i = cluster_idxs[idx]
+        if clusters[cluster_i] is None:
+          clusters[cluster_i] = Cluster()
+        clusters[cluster_i].add(self.tracks[idens[idx]])
+    elif len(track_pts) == 1:
+      # FIXME: cluster_point_centroid hangs forever if len(track_pts) == 1
+      cluster_idxs = [0]
+      clusters = [Cluster()]
+      clusters[0].add(self.tracks[idens[0]])
+    else:
+      clusters = []
+
+    # if a new point, reset accel to the rest of the cluster
+    for idx in xrange(len(track_pts)):
+      if self.tracks[idens[idx]].cnt <= 1:
+        aLeadK = clusters[cluster_idxs[idx]].aLeadK
+        aLeadTau = clusters[cluster_idxs[idx]].aLeadTau
+        self.tracks[idens[idx]].reset_a_lead(aLeadK, aLeadTau)
+
+    # *** publish radarState ***
+    dat = messaging.new_message()
+    dat.init('radarState')
+    dat.valid = sm.all_alive_and_valid(service_list=['controlsState', 'model'])
+    dat.radarState.mdMonoTime = self.last_md_ts
+    dat.radarState.canMonoTimes = list(rr.canMonoTimes)
+    dat.radarState.radarErrors = list(rr.errors)
+    dat.radarState.controlsStateMonoTime = self.last_controls_state_ts
+
+    if has_radar:
+      dat.radarState.leadOne = get_lead(self.v_ego, self.ready, clusters, sm['model'].lead, low_speed_override=True)
+      dat.radarState.leadTwo = get_lead(self.v_ego, self.ready, clusters, sm['model'].leadFuture, low_speed_override=False)
+    return dat
+
+
+# fuses camera and radar data for best lead detection
 def radard_thread(gctx=None):
   set_realtime_priority(2)
 
@@ -54,262 +180,60 @@ def radard_thread(gctx=None):
   cloudlog.info("radard is waiting for CarParams")
   CP = car.CarParams.from_bytes(Params().get("CarParams", block=True))
   mocked = CP.carName == "mock"
-  VM = VehicleModel(CP)
   cloudlog.info("radard got CarParams")
 
   # import the radar from the fingerprint
   cloudlog.info("radard is importing %s", CP.carName)
   RadarInterface = importlib.import_module('selfdrive.car.%s.radar_interface' % CP.carName).RadarInterface
-  context = zmq.Context()
 
-  # *** subscribe to features and model from visiond
-  poller = zmq.Poller()
-  model = messaging.sub_sock(context, service_list['model'].port, conflate=True, poller=poller)
-  live100 = messaging.sub_sock(context, service_list['live100'].port, conflate=True, poller=poller)
-  live_parameters_sock = messaging.sub_sock(context, service_list['liveParameters'].port, conflate=True, poller=poller)
+  can_sock = messaging.sub_sock(service_list['can'].port)
+  sm = messaging.SubMaster(['model', 'controlsState', 'liveParameters'])
 
-  # Default parameters
-  live_parameters = messaging.new_message()
-  live_parameters.init('liveParameters')
-  live_parameters.liveParameters.valid = True
-  live_parameters.liveParameters.steerRatio = CP.steerRatio
-  live_parameters.liveParameters.stiffnessFactor = 1.0
-
-  MP = ModelParser()
   RI = RadarInterface(CP)
 
-  last_md_ts = 0
-  last_l100_ts = 0
+  # *** publish radarState and liveTracks
+  radarState = messaging.pub_sock(service_list['radarState'].port)
+  liveTracks = messaging.pub_sock(service_list['liveTracks'].port)
 
-  # *** publish live20 and liveTracks
-  live20 = messaging.pub_sock(context, service_list['live20'].port)
-  liveTracks = messaging.pub_sock(context, service_list['liveTracks'].port)
+  rk = Ratekeeper(rate, print_delay_threshold=None)
+  RD = RadarD(mocked)
 
-  path_x = np.arange(0.0, 140.0, 0.1)    # 140 meters is max
+  has_radar = not CP.radarOffCan
 
-  # Time-alignment
-  rate = 20.   # model and radar are both at 20Hz
-  tsv = 1./rate
-  v_len = 20         # how many speed data points to remember for t alignment with rdr data
-
-  active = 0
-  steer_angle = 0.
-  steer_override = False
-
-  tracks = defaultdict(dict)
-
-  # Kalman filter stuff:
-  ekfv = EKFV1D()
-  speedSensorV = SimpleSensor(XV, 1, 2)
-
-  # v_ego
-  v_ego = None
-  v_ego_hist_t = deque(maxlen=v_len)
-  v_ego_hist_v = deque(maxlen=v_len)
-  v_ego_t_aligned = 0.
-
-  rk = Ratekeeper(rate, print_delay_threshold=np.inf)
   while 1:
-    rr = RI.update()
+    can_strings = messaging.drain_sock_raw(can_sock, wait_for_one=True)
+    rr = RI.update(can_strings)
 
-    ar_pts = {}
-    for pt in rr.points:
-      ar_pts[pt.trackId] = [pt.dRel + RDR_TO_LDR, pt.yRel, pt.vRel, pt.measured]
-
-    # receive the live100s
-    l100 = None
-    md = None
-
-    for socket, event in poller.poll(0):
-      if socket is live100:
-        l100 = messaging.recv_one(socket)
-      elif socket is model:
-        md = messaging.recv_one(socket)
-      elif socket is live_parameters_sock:
-        live_parameters = messaging.recv_one(socket)
-        VM.update_params(live_parameters.liveParameters.stiffnessFactor, live_parameters.liveParameters.steerRatio)
-
-    if l100 is not None:
-      active = l100.live100.active
-      v_ego = l100.live100.vEgo
-      steer_angle = l100.live100.angleSteers
-      steer_override = l100.live100.steerOverride
-
-      v_ego_hist_v.append(v_ego)
-      v_ego_hist_t.append(float(rk.frame)/rate)
-
-      last_l100_ts = l100.logMonoTime
-
-    if v_ego is None:
+    if rr is None:
       continue
 
-    if md is not None:
-      last_md_ts = md.logMonoTime
+    sm.update(0)
 
-    # *** get path prediction from the model ***
-    MP.update(v_ego, md)
+    dat = RD.update(rk.frame, RI.delay, sm, rr, has_radar)
+    dat.radarState.cumLagMs = -rk.remaining*1000.
 
-    # run kalman filter only if prob is high enough
-    if MP.lead_prob > 0.7:
-      reading = speedSensorV.read(MP.lead_dist, covar=np.matrix(MP.lead_var))
-      ekfv.update_scalar(reading)
-      ekfv.predict(tsv)
-
-      # When changing lanes the distance to the lead car can suddenly change,
-      # which makes the Kalman filter output large relative acceleration
-      if mocked and abs(MP.lead_dist - ekfv.state[XV]) > 2.0:
-        ekfv.state[XV] = MP.lead_dist
-        ekfv.covar = (np.diag([MP.lead_var, ekfv.var_init]))
-        ekfv.state[SPEEDV] = 0.
-
-      ar_pts[VISION_POINT] = (float(ekfv.state[XV]), np.polyval(MP.d_poly, float(ekfv.state[XV])),
-                              float(ekfv.state[SPEEDV]), False)
-    else:
-      ekfv.state[XV] = MP.lead_dist
-      ekfv.covar = (np.diag([MP.lead_var, ekfv.var_init]))
-      ekfv.state[SPEEDV] = 0.
-
-      if VISION_POINT in ar_pts:
-        del ar_pts[VISION_POINT]
-
-    # *** compute the likely path_y ***
-    if (active and not steer_override) or mocked:
-      # use path from model (always when mocking as steering is too noisy)
-      path_y = np.polyval(MP.d_poly, path_x)
-    else:
-      # use path from steer, set angle_offset to 0 it does not only report the physical offset
-      path_y = calc_lookahead_offset(v_ego, steer_angle, path_x, VM, angle_offset=live_parameters.liveParameters.angleOffsetAverage)[0]
-
-    # *** remove missing points from meta data ***
-    for ids in tracks.keys():
-      if ids not in ar_pts:
-        tracks.pop(ids, None)
-
-    # *** compute the tracks ***
-    for ids in ar_pts:
-      # ignore standalone vision point, unless we are mocking the radar
-      if ids == VISION_POINT and not mocked:
-        continue
-      rpt = ar_pts[ids]
-
-      # align v_ego by a fixed time to align it with the radar measurement
-      cur_time = float(rk.frame)/rate
-      v_ego_t_aligned = np.interp(cur_time - RI.delay, v_ego_hist_t, v_ego_hist_v)
-
-      d_path = np.sqrt(np.amin((path_x - rpt[0]) ** 2 + (path_y - rpt[1]) ** 2))
-      # add sign
-      d_path *= np.sign(rpt[1] - np.interp(rpt[0], path_x, path_y))
-
-      # create the track if it doesn't exist or it's a new track
-      if ids not in tracks:
-        tracks[ids] = Track()
-      tracks[ids].update(rpt[0], rpt[1], rpt[2], d_path, v_ego_t_aligned, rpt[3], steer_override)
-
-    # allow the vision model to remove the stationary flag if distance and rel speed roughly match
-    if VISION_POINT in ar_pts:
-      fused_id = None
-      best_score = NO_FUSION_SCORE
-      for ids in tracks:
-        dist_to_vision = np.sqrt((0.5*(ar_pts[VISION_POINT][0] - tracks[ids].dRel)) ** 2 + (2*(ar_pts[VISION_POINT][1] - tracks[ids].yRel)) ** 2)
-        rel_speed_diff = abs(ar_pts[VISION_POINT][2] - tracks[ids].vRel)
-        tracks[ids].update_vision_score(dist_to_vision, rel_speed_diff)
-        if best_score > tracks[ids].vision_score:
-          fused_id = ids
-          best_score = tracks[ids].vision_score
-
-      if fused_id is not None:
-        tracks[fused_id].vision_cnt += 1
-        tracks[fused_id].update_vision_fusion()
-
-    if DEBUG:
-      print("NEW CYCLE")
-      if VISION_POINT in ar_pts:
-        print("vision", ar_pts[VISION_POINT])
-
-    idens = list(tracks.keys())
-    track_pts = np.array([tracks[iden].get_key_for_cluster() for iden in idens])
-
-    # If we have multiple points, cluster them
-    if len(track_pts) > 1:
-      link = linkage_vector(track_pts, method='centroid')
-      cluster_idxs = fcluster(link, 2.5, criterion='distance')
-      clusters = [None]*max(cluster_idxs)
-
-      for idx in xrange(len(track_pts)):
-        cluster_i = cluster_idxs[idx]-1
-
-        if clusters[cluster_i] == None:
-          clusters[cluster_i] = Cluster()
-        clusters[cluster_i].add(tracks[idens[idx]])
-    elif len(track_pts) == 1:
-      # TODO: why do we need this?
-      clusters = [Cluster()]
-      clusters[0].add(tracks[idens[0]])
-    else:
-      clusters = []
-
-    if DEBUG:
-      for i in clusters:
-        print(i)
-    # *** extract the lead car ***
-    lead_clusters = [c for c in clusters
-                     if c.is_potential_lead(v_ego)]
-    lead_clusters.sort(key=lambda x: x.dRel)
-    lead_len = len(lead_clusters)
-
-    # *** extract the second lead from the whole set of leads ***
-    lead2_clusters = [c for c in lead_clusters
-                      if c.is_potential_lead2(lead_clusters)]
-    lead2_clusters.sort(key=lambda x: x.dRel)
-    lead2_len = len(lead2_clusters)
-
-    # *** publish live20 ***
-    dat = messaging.new_message()
-    dat.init('live20')
-    dat.live20.mdMonoTime = last_md_ts
-    dat.live20.canMonoTimes = list(rr.canMonoTimes)
-    dat.live20.radarErrors = list(rr.errors)
-    dat.live20.l100MonoTime = last_l100_ts
-    if lead_len > 0:
-      dat.live20.leadOne = lead_clusters[0].toLive20()
-      if lead2_len > 0:
-        dat.live20.leadTwo = lead2_clusters[0].toLive20()
-      else:
-        dat.live20.leadTwo.status = False
-    else:
-      dat.live20.leadOne.status = False
-
-    dat.live20.cumLagMs = -rk.remaining*1000.
-    live20.send(dat.to_bytes())
+    radarState.send(dat.to_bytes())
 
     # *** publish tracks for UI debugging (keep last) ***
+    tracks = RD.tracks
     dat = messaging.new_message()
     dat.init('liveTracks', len(tracks))
 
     for cnt, ids in enumerate(tracks.keys()):
-      if DEBUG:
-        print("id: %4.0f x:  %4.1f  y: %4.1f  vr: %4.1f d: %4.1f  va: %4.1f  vl: %4.1f  vlk: %4.1f alk: %4.1f  s: %1.0f  v: %1.0f" % \
-          (ids, tracks[ids].dRel, tracks[ids].yRel, tracks[ids].vRel,
-           tracks[ids].dPath, tracks[ids].vLat,
-           tracks[ids].vLead, tracks[ids].vLeadK,
-           tracks[ids].aLeadK,
-           tracks[ids].stationary,
-           tracks[ids].measured))
       dat.liveTracks[cnt] = {
         "trackId": ids,
         "dRel": float(tracks[ids].dRel),
         "yRel": float(tracks[ids].yRel),
         "vRel": float(tracks[ids].vRel),
-        "aRel": float(tracks[ids].aRel),
-        "stationary": bool(tracks[ids].stationary),
-        "oncoming": bool(tracks[ids].oncoming),
       }
     liveTracks.send(dat.to_bytes())
 
     rk.monitor_time()
 
+
 def main(gctx=None):
   radard_thread(gctx)
+
 
 if __name__ == "__main__":
   main()

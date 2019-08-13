@@ -13,6 +13,9 @@ def test_send_recv(serial_sender=None, serial_reciever=None):
   p_send.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
   p_send.set_can_loopback(False)
 
+  # send heartbeat
+  p_send.send_heartbeat()
+
   p_recv.set_can_loopback(False)
 
   assert not p_send.legacy
@@ -27,6 +30,9 @@ def test_send_recv(serial_sender=None, serial_reciever=None):
 
   for bus in busses:
     for speed in [100, 250, 500, 750, 1000]:
+      # send heartbeat
+      p_send.send_heartbeat()
+
       p_send.set_can_speed_kbps(bus, speed)
       p_recv.set_can_speed_kbps(bus, speed)
       time.sleep(0.05)
@@ -45,6 +51,10 @@ def test_latency(serial_sender=None, serial_reciever=None):
   p_send = Panda(serial_sender)
   p_recv = Panda(serial_reciever)
 
+  # send heartbeat
+  p_send.send_heartbeat()
+  p_recv.send_heartbeat()
+
   p_send.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
   p_send.set_can_loopback(False)
 
@@ -62,10 +72,18 @@ def test_latency(serial_sender=None, serial_reciever=None):
   p_recv.can_recv()
   p_send.can_recv()
 
+  # send heartbeat
+  p_send.send_heartbeat()  
+  p_recv.send_heartbeat()
+
   busses = [0,1,2]
 
   for bus in busses:
     for speed in [100, 250, 500, 750, 1000]:
+      # send heartbeat
+      p_send.send_heartbeat() 
+      p_recv.send_heartbeat()
+
       p_send.set_can_speed_kbps(bus, speed)
       p_recv.set_can_speed_kbps(bus, speed)
       time.sleep(0.1)

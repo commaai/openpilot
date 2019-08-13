@@ -29,8 +29,15 @@ class TestHyundaiSafety(unittest.TestCase):
   @classmethod
   def setUp(cls):
     cls.safety = libpandasafety_py.libpandasafety
-    cls.safety.nooutput_init(0)
+    cls.safety.safety_set_mode(7, 0)
     cls.safety.init_tests_hyundai()
+
+  def _send_msg(self, bus, addr, length):
+    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
+    to_send[0].RIR = addr << 21
+    to_send[0].RDTR = length
+    to_send[0].RDTR = bus << 4
+    return to_send
 
   def _button_msg(self, buttons):
     to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
@@ -63,9 +70,9 @@ class TestHyundaiSafety(unittest.TestCase):
         self.safety.set_controls_allowed(enabled)
         self._set_prev_torque(t)
         if abs(t) > MAX_STEER or (not enabled and abs(t) > 0):
-          self.assertFalse(self.safety.hyundai_tx_hook(self._torque_msg(t)))
+          self.assertFalse(self.safety.safety_tx_hook(self._torque_msg(t)))
         else:
-          self.assertTrue(self.safety.hyundai_tx_hook(self._torque_msg(t)))
+          self.assertTrue(self.safety.safety_tx_hook(self._torque_msg(t)))
 
   def test_manually_enable_controls_allowed(self):
     self.safety.set_controls_allowed(1)
@@ -78,7 +85,7 @@ class TestHyundaiSafety(unittest.TestCase):
     to_push[0].RIR = 1057 << 21
     to_push[0].RDLR = 1 << 13
 
-    self.safety.hyundai_rx_hook(to_push)
+    self.safety.safety_rx_hook(to_push)
     self.assertTrue(self.safety.get_controls_allowed())
 
   def test_disable_control_allowed_from_cruise(self):
@@ -87,7 +94,7 @@ class TestHyundaiSafety(unittest.TestCase):
     to_push[0].RDLR = 0
 
     self.safety.set_controls_allowed(1)
-    self.safety.hyundai_rx_hook(to_push)
+    self.safety.safety_rx_hook(to_push)
     self.assertFalse(self.safety.get_controls_allowed())
 
   def test_non_realtime_limit_up(self):
@@ -95,15 +102,15 @@ class TestHyundaiSafety(unittest.TestCase):
     self.safety.set_controls_allowed(True)
 
     self._set_prev_torque(0)
-    self.assertTrue(self.safety.hyundai_tx_hook(self._torque_msg(MAX_RATE_UP)))
+    self.assertTrue(self.safety.safety_tx_hook(self._torque_msg(MAX_RATE_UP)))
     self._set_prev_torque(0)
-    self.assertTrue(self.safety.hyundai_tx_hook(self._torque_msg(-MAX_RATE_UP)))
+    self.assertTrue(self.safety.safety_tx_hook(self._torque_msg(-MAX_RATE_UP)))
 
     self._set_prev_torque(0)
-    self.assertFalse(self.safety.hyundai_tx_hook(self._torque_msg(MAX_RATE_UP + 1)))
+    self.assertFalse(self.safety.safety_tx_hook(self._torque_msg(MAX_RATE_UP + 1)))
     self.safety.set_controls_allowed(True)
     self._set_prev_torque(0)
-    self.assertFalse(self.safety.hyundai_tx_hook(self._torque_msg(-MAX_RATE_UP - 1)))
+    self.assertFalse(self.safety.safety_tx_hook(self._torque_msg(-MAX_RATE_UP - 1)))
 
   def test_non_realtime_limit_down(self):
     self.safety.set_hyundai_torque_driver(0, 0)
@@ -117,10 +124,10 @@ class TestHyundaiSafety(unittest.TestCase):
         t *= -sign
         self.safety.set_hyundai_torque_driver(t, t)
         self._set_prev_torque(MAX_STEER * sign)
-        self.assertTrue(self.safety.hyundai_tx_hook(self._torque_msg(MAX_STEER * sign)))
+        self.assertTrue(self.safety.safety_tx_hook(self._torque_msg(MAX_STEER * sign)))
 
       self.safety.set_hyundai_torque_driver(DRIVER_TORQUE_ALLOWANCE + 1, DRIVER_TORQUE_ALLOWANCE + 1)
-      self.assertFalse(self.safety.hyundai_tx_hook(self._torque_msg(-MAX_STEER)))
+      self.assertFalse(self.safety.safety_tx_hook(self._torque_msg(-MAX_STEER)))
 
     # spot check some individual cases
     for sign in [-1, 1]:
@@ -129,20 +136,20 @@ class TestHyundaiSafety(unittest.TestCase):
       delta = 1 * sign
       self._set_prev_torque(torque_desired)
       self.safety.set_hyundai_torque_driver(-driver_torque, -driver_torque)
-      self.assertTrue(self.safety.hyundai_tx_hook(self._torque_msg(torque_desired)))
+      self.assertTrue(self.safety.safety_tx_hook(self._torque_msg(torque_desired)))
       self._set_prev_torque(torque_desired + delta)
       self.safety.set_hyundai_torque_driver(-driver_torque, -driver_torque)
-      self.assertFalse(self.safety.hyundai_tx_hook(self._torque_msg(torque_desired + delta)))
+      self.assertFalse(self.safety.safety_tx_hook(self._torque_msg(torque_desired + delta)))
 
       self._set_prev_torque(MAX_STEER * sign)
       self.safety.set_hyundai_torque_driver(-MAX_STEER * sign, -MAX_STEER * sign)
-      self.assertTrue(self.safety.hyundai_tx_hook(self._torque_msg((MAX_STEER - MAX_RATE_DOWN) * sign)))
+      self.assertTrue(self.safety.safety_tx_hook(self._torque_msg((MAX_STEER - MAX_RATE_DOWN) * sign)))
       self._set_prev_torque(MAX_STEER * sign)
       self.safety.set_hyundai_torque_driver(-MAX_STEER * sign, -MAX_STEER * sign)
-      self.assertTrue(self.safety.hyundai_tx_hook(self._torque_msg(0)))
+      self.assertTrue(self.safety.safety_tx_hook(self._torque_msg(0)))
       self._set_prev_torque(MAX_STEER * sign)
       self.safety.set_hyundai_torque_driver(-MAX_STEER * sign, -MAX_STEER * sign)
-      self.assertFalse(self.safety.hyundai_tx_hook(self._torque_msg((MAX_STEER - MAX_RATE_DOWN + 1) * sign)))
+      self.assertFalse(self.safety.safety_tx_hook(self._torque_msg((MAX_STEER - MAX_RATE_DOWN + 1) * sign)))
 
 
   def test_realtime_limits(self):
@@ -154,18 +161,18 @@ class TestHyundaiSafety(unittest.TestCase):
       self.safety.set_hyundai_torque_driver(0, 0)
       for t in np.arange(0, MAX_RT_DELTA, 1):
         t *= sign
-        self.assertTrue(self.safety.hyundai_tx_hook(self._torque_msg(t)))
-      self.assertFalse(self.safety.hyundai_tx_hook(self._torque_msg(sign * (MAX_RT_DELTA + 1))))
+        self.assertTrue(self.safety.safety_tx_hook(self._torque_msg(t)))
+      self.assertFalse(self.safety.safety_tx_hook(self._torque_msg(sign * (MAX_RT_DELTA + 1))))
 
       self._set_prev_torque(0)
       for t in np.arange(0, MAX_RT_DELTA, 1):
         t *= sign
-        self.assertTrue(self.safety.hyundai_tx_hook(self._torque_msg(t)))
+        self.assertTrue(self.safety.safety_tx_hook(self._torque_msg(t)))
 
       # Increase timer to update rt_torque_last
       self.safety.set_timer(RT_INTERVAL + 1)
-      self.assertTrue(self.safety.hyundai_tx_hook(self._torque_msg(sign * (MAX_RT_DELTA - 1))))
-      self.assertTrue(self.safety.hyundai_tx_hook(self._torque_msg(sign * (MAX_RT_DELTA + 1))))
+      self.assertTrue(self.safety.safety_tx_hook(self._torque_msg(sign * (MAX_RT_DELTA - 1))))
+      self.assertTrue(self.safety.safety_tx_hook(self._torque_msg(sign * (MAX_RT_DELTA + 1))))
 
 
   #def test_spam_cancel_safety_check(self):
@@ -174,12 +181,37 @@ class TestHyundaiSafety(unittest.TestCase):
   #  CANCEL_BTN = 4
   #  BUTTON_MSG = 1265
   #  self.safety.set_controls_allowed(0)
-  #  self.assertTrue(self.safety.hyundai_tx_hook(self._button_msg(CANCEL_BTN)))
-  #  self.assertFalse(self.safety.hyundai_tx_hook(self._button_msg(RESUME_BTN)))
-  #  self.assertFalse(self.safety.hyundai_tx_hook(self._button_msg(SET_BTN)))
+  #  self.assertTrue(self.safety.safety_tx_hook(self._button_msg(CANCEL_BTN)))
+  #  self.assertFalse(self.safety.safety_tx_hook(self._button_msg(RESUME_BTN)))
+  #  self.assertFalse(self.safety.safety_tx_hook(self._button_msg(SET_BTN)))
   #  # do not block resume if we are engaged already
   #  self.safety.set_controls_allowed(1)
-  #  self.assertTrue(self.safety.hyundai_tx_hook(self._button_msg(RESUME_BTN)))
+  #  self.assertTrue(self.safety.safety_tx_hook(self._button_msg(RESUME_BTN)))
+
+  def test_fwd_hook(self):
+
+    buss = range(0x0, 0x3)
+    msgs = range(0x1, 0x800)
+    hyundai_giraffe_switch_2 = [0, 1]
+
+    self.safety.set_hyundai_camera_bus(2)
+    for hgs in hyundai_giraffe_switch_2:
+      self.safety.set_hyundai_giraffe_switch_2(hgs)
+      blocked_msgs = [832]
+      for b in buss:
+        for m in msgs:
+          if hgs:
+            if b == 0:
+              fwd_bus = 2
+            elif b == 1:
+              fwd_bus = -1
+            elif b == 2:
+              fwd_bus = -1 if m in blocked_msgs else 0
+          else:
+            fwd_bus = -1
+
+          # assume len 8
+          self.assertEqual(fwd_bus, self.safety.safety_fwd_hook(b, self._send_msg(b, m, 8)))
 
 
 if __name__ == "__main__":

@@ -93,7 +93,7 @@ DWORD PandaJ2534Device::can_process_thread() {
 		if (count == 0) {
 			continue;
 		}
-		
+
 		for (int i = 0; i < count; i++) {
 			auto msg_in = msg_recv[i];
 			J2534Frame msg_out(msg_in);
@@ -170,7 +170,7 @@ DWORD PandaJ2534Device::msg_tx_thread() {
 				} else { //Ran out of things that need to be sent now. Sleep!
 					auto time_diff = std::chrono::duration_cast<std::chrono::milliseconds>
 						(this->task_queue.front()->expire - std::chrono::steady_clock::now());
-					sleepDuration = max(1, time_diff.count());
+					sleepDuration = MAX(1, time_diff.count());
 					goto break_flow_ctrl_loop;
 				}
 			}

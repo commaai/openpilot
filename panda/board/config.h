@@ -12,29 +12,29 @@
   #include "stm32f2xx.h"
 #endif
 
-#define USB_VID 0xbbaa
+#define USB_VID 0xbbaaU
 
 #ifdef BOOTSTUB
-#define USB_PID 0xddee
+#define USB_PID 0xddeeU
 #else
-#define USB_PID 0xddcc
+#define USB_PID 0xddccU
 #endif
 
 #include <stdbool.h>
 #define NULL ((void*)0)
-#define COMPILE_TIME_ASSERT(pred) switch(0){case 0:case pred:;}
+#define COMPILE_TIME_ASSERT(pred) ((void)sizeof(char[1 - (2 * (!(pred)))]))
 
-#define min(a,b) \
+#define MIN(a,b) \
  ({ __typeof__ (a) _a = (a); \
      __typeof__ (b) _b = (b); \
-   _a < _b ? _a : _b; })
+   (_a < _b) ? _a : _b; })
 
-#define max(a,b) \
+#define MAX(a,b) \
  ({ __typeof__ (a) _a = (a); \
      __typeof__ (b) _b = (b); \
-   _a > _b ? _a : _b; })
+   (_a > _b) ? _a : _b; })
 
-#define MAX_RESP_LEN 0x40
+#define MAX_RESP_LEN 0x40U
 
 #endif
 
