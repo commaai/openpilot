@@ -223,7 +223,7 @@ class CANParser {
     }
 
     dbc = dbc_lookup(dbc_name);
-    assert(dbc); 
+    assert(dbc);
     for (const auto& op : options) {
       MessageState state = {
         .address = op.address,
@@ -348,15 +348,14 @@ class CANParser {
   int update(uint64_t sec, bool wait) {
     int err;
     int result = 0;
-
     // recv from can
     zmq_msg_t msg;
     zmq_msg_init(&msg);
 
     // multiple recv is fine
-    bool first = wait;
-    while (subscriber != NULL) {
-      if (first) {
+    bool first = true;
+    while (first || drain) {
+      if (first and wait) {
         err = zmq_msg_recv(&msg, subscriber, 0);
         first = false;
 
@@ -367,7 +366,10 @@ class CANParser {
       } else {
         err = zmq_msg_recv(&msg, subscriber, ZMQ_DONTWAIT);
       }
-      if (err < 0) break;
+      if (err < 0) {
+        drain = false;
+        break;
+      }
 
       // format for board, make copy due to alignment issues, will be freed on out of scope
       auto amsg = kj::heapArray<capnp::word>((zmq_msg_size(&msg) / sizeof(capnp::word)) + 1);
@@ -411,6 +413,8 @@ class CANParser {
 
  private:
   const int bus;
+  bool drain = true;
+
   // zmq vars
   void *context = NULL;
   void *subscriber = NULL;

@@ -29,10 +29,9 @@ def _get_libmpc(mpc_id):
     double x_ego[21];
     double v_ego[21];
     double a_ego[21];
-    double j_ego[20];
+    double j_ego[21];
     double x_l[21];
     double v_l[21];
-    double a_l[21];
     double t[21];
     double cost;
     } log_t;
@@ -40,7 +39,7 @@ def _get_libmpc(mpc_id):
     void init(double ttcCost, double distanceCost, double accelerationCost, double jerkCost);
     void init_with_simulation(double v_ego, double x_l, double v_l, double a_l, double l);
     int run_mpc(state_t * x0, log_t * solution,
-                double l, double a_l_0);
+                double l, double a_l_0, double TR);
     """)
 
     return (ffi, ffi.dlopen(libmpc_fn))

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import os
 import gc
 import capnp
 from cereal import car, log
@@ -48,6 +49,10 @@ def events_to_bytes(events):
     ret.append(e.to_bytes())
   return ret
 
+def wait_for_can(logcan):
+  print("Waiting for CAN messages...")
+  while len(messaging.recv_one(logcan).can) == 0:
+    pass
 
 def data_sample(CI, CC, sm, can_sock, cal_status, cal_perc, overtemp, free_space, low_battery,
                 driver_status, state, mismatch_counter, params):
@@ -202,7 +207,7 @@ def state_transition(frame, CS, CP, state, events, soft_disable_timer, v_cruise_
   return state, soft_disable_timer, v_cruise_kph, v_cruise_kph_last
 
 
-def state_control(frame, rcv_frame, plan, path_plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last,
+def state_control(frame, rcv_frame, plan, path_plan, live_params, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last,
                   AM, rk, driver_status, LaC, LoC, VM, read_only, is_metric, cal_perc):
   """Given the state, this function returns an actuators packet"""
 
@@ -251,7 +256,7 @@ def state_control(frame, rcv_frame, plan, path_plan, CS, CP, state, events, v_cr
                                               v_cruise_kph, v_acc_sol, plan.vTargetFuture, a_acc_sol, CP)
   # Steering PID loop and lateral MPC
   actuators.steer, actuators.steerAngle, lac_log = LaC.update(active, CS.vEgo, CS.steeringAngle, CS.steeringRate,
-                                                              CS.steeringPressed, CP, VM, path_plan)
+                                          CS.steeringPressed, CS.leftBlinker or CS.rightBlinker, CP, VM, path_plan, live_params)
 
   # Send a "steering required alert" if saturation count has reached the limit
   if LaC.sat_flag and CP.steerLimitAlert:
@@ -341,7 +346,8 @@ def data_send(sm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, ca
     "vEgo": CS.vEgo,
     "vEgoRaw": CS.vEgoRaw,
     "angleSteers": CS.steeringAngle,
-    "curvature": VM.calc_curvature(CS.steeringAngle * CV.DEG_TO_RAD, CS.vEgo),
+    "dampAngleSteers": float(LaC.damp_angle_steers),
+    "curvature": VM.calc_curvature((CS.steeringAngle - sm['pathPlan'].angleOffset) * CV.DEG_TO_RAD, CS.vEgo),
     "steerOverride": CS.steeringPressed,
     "state": state,
     "engageable": not bool(get_events(events, [ET.NO_ENTRY])),
@@ -352,13 +358,14 @@ def data_send(sm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, ca
     "uiAccelCmd": float(LoC.pid.i),
     "ufAccelCmd": float(LoC.pid.f),
     "angleSteersDes": float(LaC.angle_steers_des),
+    "dampAngleSteersDes": float(LaC.damp_angle_steers_des),
     "vTargetLead": float(v_acc),
     "aTarget": float(a_acc),
     "jerkFactor": float(sm['plan'].jerkFactor),
     "angleModelBias": 0.,
     "gpsPlannerActive": sm['plan'].gpsPlannerActive,
     "vCurvature": sm['plan'].vCurvature,
-    "decelForTurn": sm['plan'].decelForTurn,
+    "decelForModel": sm['plan'].longitudinalPlanSource == log.Plan.LongitudinalPlanSource.model,
     "cumLagMs": -rk.remaining * 1000.,
     "startMonoTime": int(start_time * 1e9),
     "mapValid": sm['plan'].mapValid,
@@ -412,7 +419,6 @@ def controlsd_thread(gctx=None):
 
   params = Params()
 
-
   # Pub Sockets
   sendcan = messaging.pub_sock(service_list['sendcan'].port)
   controlsstate = messaging.pub_sock(service_list['controlsState'].port)
@@ -424,17 +430,21 @@ def controlsd_thread(gctx=None):
   is_metric = params.get("IsMetric") == "1"
   passive = params.get("Passive") != "0"
 
-  sm = messaging.SubMaster(['thermal', 'health', 'liveCalibration', 'driverMonitoring', 'plan', 'pathPlan'])
+  sm = messaging.SubMaster(['thermal', 'health', 'liveCalibration', 'driverMonitoring', 'plan', 'pathPlan', 'liveParameters'])
 
   logcan = messaging.sub_sock(service_list['can'].port)
-  CI, CP = get_car(logcan, sendcan)
+
+  # wait for health and CAN packets
+  hw_type = messaging.recv_one(sm.sock['health']).health.hwType
+  is_panda_black = hw_type == log.HealthData.HwType.blackPanda
+  wait_for_can(logcan)
+
+  CI, CP = get_car(logcan, sendcan, is_panda_black)
   logcan.close()
 
   # TODO: Use the logcan socket from above, but that will currenly break the tests
-  can_sock = messaging.sub_sock(service_list['can'].port, timeout=100)
-
-  CC = car.CarControl.new_message()
-  AM = AlertManager()
+  can_timeout = None if os.environ.get('NO_CAN_TIMEOUT', False) else 100
+  can_sock = messaging.sub_sock(service_list['can'].port, timeout=can_timeout)
 
   car_recognized = CP.carName != 'mock'
   # If stock camera is disconnected, we loaded car controls and it's not chffrplus
@@ -442,6 +452,13 @@ def controlsd_thread(gctx=None):
   read_only = not car_recognized or not controller_available
   if read_only:
     CP.safetyModel = car.CarParams.SafetyModel.elm327   # diagnostic only
+
+  # Write CarParams for radard and boardd safety mode
+  params.put("CarParams", CP.to_bytes())
+  params.put("LongitudinalControl", "1" if CP.openpilotLongitudinalControl else "0")
+
+  CC = car.CarControl.new_message()
+  AM = AlertManager()
 
   startup_alert = get_startup_alert(car_recognized, controller_available)
   AM.add(sm.frame, startup_alert, False)
@@ -456,10 +473,6 @@ def controlsd_thread(gctx=None):
 
   driver_status = DriverStatus()
 
-  # Write CarParams for radard and boardd safety mode
-  params.put("CarParams", CP.to_bytes())
-  params.put("LongitudinalControl", "1" if CP.openpilotLongitudinalControl else "0")
-
   state = State.disabled
   soft_disable_timer = 0
   v_cruise_kph = 255
@@ -473,6 +486,7 @@ def controlsd_thread(gctx=None):
   events_prev = []
 
   sm['pathPlan'].sensorValid = True
+  sm['pathPlan'].posenetValid = True
 
   # controlsd is driven by can recv, expected at 100Hz
   rk = Ratekeeper(100, print_delay_threshold=None)
@@ -498,6 +512,8 @@ def controlsd_thread(gctx=None):
       events.append(create_event('sensorDataInvalid', [ET.NO_ENTRY, ET.PERMANENT]))
     if not sm['pathPlan'].paramsValid:
       events.append(create_event('vehicleModelInvalid', [ET.WARNING]))
+    if not sm['pathPlan'].posenetValid:
+      events.append(create_event('posenetInvalid', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if not sm['plan'].radarValid:
       events.append(create_event('radarFault', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if sm['plan'].radarCanError:
@@ -517,7 +533,7 @@ def controlsd_thread(gctx=None):
 
     # Compute actuators (runs PID loops and lateral MPC)
     actuators, v_cruise_kph, driver_status, v_acc, a_acc, lac_log = \
-      state_control(sm.frame, sm.rcv_frame, sm['plan'], sm['pathPlan'], CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, AM, rk,
+      state_control(sm.frame, sm.rcv_frame, sm['plan'], sm['pathPlan'], sm['liveParameters'], CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, AM, rk,
                     driver_status, LaC, LoC, VM, read_only, is_metric, cal_perc)
 
     prof.checkpoint("State Control")

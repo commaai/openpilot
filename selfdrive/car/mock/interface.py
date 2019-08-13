@@ -4,7 +4,6 @@ from selfdrive.config import Conversions as CV
 from selfdrive.services import service_list
 from selfdrive.swaglog import cloudlog
 import selfdrive.messaging as messaging
-from common.realtime import Ratekeeper
 
 # mocked car interface to work with chffrplus
 TS = 0.01  # 100Hz
@@ -30,8 +29,6 @@ class CarInterface(object):
     self.yaw_rate = 0.
     self.yaw_rate_meas = 0.
 
-    self.rk = Ratekeeper(100, print_delay_threshold=2. / 1000)
-
   @staticmethod
   def compute_gb(accel, speed):
     return accel
@@ -41,7 +38,7 @@ class CarInterface(object):
     return 1.0
 
   @staticmethod
-  def get_params(candidate, fingerprint, vin=""):
+  def get_params(candidate, fingerprint, vin="", is_panda_black=False):
 
     ret = car.CarParams.new_message()
 
@@ -76,13 +73,18 @@ class CarInterface(object):
     ret.longitudinalTuning.deadzoneBP = [0.]
     ret.longitudinalTuning.deadzoneV = [0.]
     ret.steerActuatorDelay = 0.
+    ret.lateralTuning.pid.dampTime = 0.02
+    ret.lateralTuning.pid.reactMPC = -0.05
+    ret.lateralTuning.pid.rateFFGain = 0.4
+    ret.lateralTuning.pid.polyFactor = 0.0015
+    ret.lateralTuning.pid.polyDampTime = 0.2
+    ret.lateralTuning.pid.polyReactTime = 2.0
+    ret.lateralTuning.pid.polyScale = [[0.0, 0.5, 1.0, 2.0, 5.0], [1.0, 0.5, 0.25, 0.1, 0.0], [1.0, 1.0, 1.0, 1.0, 1.0]]  # [abs rate, scale UP, scale DOWN]
 
     return ret
 
   # returns a car.CarState
   def update(self, c, can_strings):
-    self.rk.keep_time()
-
     # get basic data from phone and gps since CAN isn't connected
     sensors = messaging.recv_sock(self.sensor)
     if sensors is not None:

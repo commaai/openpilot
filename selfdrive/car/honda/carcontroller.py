@@ -6,6 +6,11 @@ from selfdrive.car import create_gas_command
 from selfdrive.car.honda import hondacan
 from selfdrive.car.honda.values import AH, CruiseButtons, CAR
 from selfdrive.can.packer import CANPacker
+from selfdrive.kegman_conf import kegman_conf
+
+kegman = kegman_conf()
+
+
 
 
 def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
@@ -70,7 +75,7 @@ def process_hud_alert(hud_alert):
 
 HUDData = namedtuple("HUDData",
                      ["pcm_accel", "v_cruise", "mini_car", "car", "X4",
-                      "lanes", "beep", "chime", "fcw", "acc_alert", "steer_required"])
+                      "lanes", "beep", "chime", "fcw", "acc_alert", "steer_required", "dist_lines", "dashed_lanes"])
 
 
 class CarController(object):
@@ -82,6 +87,22 @@ class CarController(object):
     self.last_pump_ts = 0.
     self.packer = CANPacker(dbc_name)
     self.new_radar_config = False
+    self.prev_lead_distance = 0.0
+    self.stopped_lead_distance = 0.0
+    self.lead_distance_counter = 1
+    self.lead_distance_counter_prev = 1
+    self.rough_lead_speed = 0.0
+
+  def rough_speed(self, lead_distance):
+    if self.prev_lead_distance != lead_distance:
+      self.lead_distance_counter_prev = self.lead_distance_counter
+      self.rough_lead_speed += 0.3334 * ((lead_distance - self.prev_lead_distance) / self.lead_distance_counter_prev - self.rough_lead_speed)
+      self.lead_distance_counter = 0.0
+    elif self.lead_distance_counter >= self.lead_distance_counter_prev:
+      self.rough_lead_speed = (self.lead_distance_counter * self.rough_lead_speed) / (self.lead_distance_counter + 1.0)
+    self.lead_distance_counter += 1.0
+    self.prev_lead_distance = lead_distance
+    return self.rough_lead_speed
 
   def update(self, enabled, CS, frame, actuators, \
              pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel, \
@@ -100,7 +121,7 @@ class CarController(object):
     self.brake_last = rate_limit(brake, self.brake_last, -2., 1./100)
 
     # vehicle hud display, wait for one update from 10Hz 0x304 msg
-    if hud_show_lanes:
+    if hud_show_lanes and CS.lkMode and not CS.left_blinker_on and not CS.right_blinker_on:
       hud_lanes = 1
     else:
       hud_lanes = 0
@@ -117,11 +138,15 @@ class CarController(object):
     if CS.CP.radarOffCan:
       snd_beep = snd_beep if snd_beep != 0 else snd_chime
 
+    # Do not send audible alert when steering is disabled or blinkers on
+    #if not CS.lkMode or CS.left_blinker_on or CS.right_blinker_on:
+    #  snd_chime = 0
+
     #print("{0} {1} {2}".format(chime, alert_id, hud_alert))
     fcw_display, steer_required, acc_alert = process_hud_alert(hud_alert)
 
     hud = HUDData(int(pcm_accel), int(round(hud_v_cruise)), 1, hud_car,
-                  0xc1, hud_lanes, int(snd_beep), snd_chime, fcw_display, acc_alert, steer_required)
+                  0xc1, hud_lanes, int(snd_beep), snd_chime, fcw_display, acc_alert, steer_required, CS.read_distance_lines, CS.lkMode)
 
     # **** process the car messages ****
 
@@ -141,7 +166,7 @@ class CarController(object):
     apply_brake = int(clip(self.brake_last * BRAKE_MAX, 0, BRAKE_MAX - 1))
     apply_steer = int(clip(-actuators.steer * STEER_MAX, -STEER_MAX, STEER_MAX))
 
-    lkas_active = enabled and not CS.steer_not_allowed
+    lkas_active = enabled and not CS.steer_not_allowed and CS.lkMode and not CS.left_blinker_on and not CS.right_blinker_on  # add LKAS button to toggle steering
 
     # Send CAN commands.
     can_sends = []
@@ -149,19 +174,33 @@ class CarController(object):
     # Send steering command.
     idx = frame % 4
     can_sends.append(hondacan.create_steering_control(self.packer, apply_steer,
-      lkas_active, CS.CP.carFingerprint, idx))
+      lkas_active, CS.CP.carFingerprint, idx, CS.CP.isPandaBlack))
 
     # Send dashboard UI commands.
     if (frame % 10) == 0:
       idx = (frame//10) % 4
-      can_sends.extend(hondacan.create_ui_commands(self.packer, pcm_speed, hud, CS.CP.carFingerprint, CS.is_metric, idx))
+      can_sends.extend(hondacan.create_ui_commands(self.packer, pcm_speed, hud, CS.CP.carFingerprint, CS.is_metric, idx, CS.CP.isPandaBlack))
 
     if CS.CP.radarOffCan:
       # If using stock ACC, spam cancel command to kill gas when OP disengages.
       if pcm_cancel_cmd:
-        can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.CANCEL, idx))
+        can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.CANCEL, idx, CS.CP.carFingerprint, CS.CP.isPandaBlack))
       elif CS.stopped:
-        can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx))
+        if CS.CP.carFingerprint in (CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH):
+          rough_lead_speed = self.rough_speed(CS.lead_distance)
+          if CS.lead_distance > (self.stopped_lead_distance + 15.0) or rough_lead_speed > 0.1:
+            self.stopped_lead_distance = 0.0
+            can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx, CS.CP.carFingerprint, CS.CP.isPandaBlack))
+            print("spamming")
+          print(self.stopped_lead_distance, CS.lead_distance, rough_lead_speed)
+        elif CS.CP.carFingerprint in (CAR.CIVIC_BOSCH, CAR.CRV_HYBRID):
+          if CS.hud_lead == 1:
+            can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx, CS.CP.carFingerprint, CS.CP.isPandaBlack))
+        else:
+          can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx, CS.CP.carFingerprint, CS.CP.isPandaBlack))
+      else:
+        self.stopped_lead_distance = CS.lead_distance
+        self.prev_lead_distance = CS.lead_distance
 
     else:
       # Send gas and brake commands.
@@ -170,7 +209,7 @@ class CarController(object):
         ts = frame * DT_CTRL
         pump_on, self.last_pump_ts = brake_pump_hysteresis(apply_brake, self.apply_brake_last, self.last_pump_ts, ts)
         can_sends.append(hondacan.create_brake_command(self.packer, apply_brake, pump_on,
-          pcm_override, pcm_cancel_cmd, hud.chime, hud.fcw, idx))
+          pcm_override, pcm_cancel_cmd, hud.chime, hud.fcw, idx, CS.CP.carFingerprint, CS.CP.isPandaBlack))
         self.apply_brake_last = apply_brake
 
         if CS.CP.enableGasInterceptor:

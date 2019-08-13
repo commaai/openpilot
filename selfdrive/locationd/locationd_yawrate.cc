@@ -5,6 +5,8 @@
 #include <capnp/serialize-packed.h>
 #include <eigen3/Eigen/Dense>
 
+#include "cereal/gen/cpp/log.capnp.h"
+
 #include "locationd_yawrate.h"
 
 
@@ -42,6 +44,9 @@ void Localizer::handle_camera_odometry(cereal::CameraOdometry::Reader camera_odo
   double R = 250.0 * pow(camera_odometry.getRotStd()[2], 2);
   double meas = camera_odometry.getRot()[2];
   update_state(C_posenet, R, current_time, meas);
+
+  auto trans = camera_odometry.getTrans();
+  posenet_speed = sqrt(trans[0]*trans[0] + trans[1]*trans[1] + trans[2]*trans[2]);
 }
 
 void Localizer::handle_controls_state(cereal::ControlsState::Reader controls_state, double current_time) {
@@ -65,10 +70,7 @@ Localizer::Localizer() {
   R_gyro = pow(0.05, 2.0);
 }
 
-cereal::Event::Which Localizer::handle_log(const unsigned char* msg_dat, size_t msg_size) {
-  const kj::ArrayPtr<const capnp::word> view((const capnp::word*)msg_dat, msg_size);
-  capnp::FlatArrayMessageReader msg(view);
-  cereal::Event::Reader event = msg.getRoot<cereal::Event>();
+void Localizer::handle_log(cereal::Event::Reader event) {
   double current_time = event.getLogMonoTime() / 1.0e9;
 
   if (prev_update_time < 0) {
@@ -89,8 +91,6 @@ cereal::Event::Which Localizer::handle_log(const unsigned char* msg_dat, size_t 
   default:
     break;
   }
-
-  return type;
 }
 
 
@@ -101,8 +101,12 @@ extern "C" {
   }
 
   void localizer_handle_log(void * localizer, const unsigned char * data, size_t len) {
+    const kj::ArrayPtr<const capnp::word> view((const capnp::word*)data, len);
+    capnp::FlatArrayMessageReader msg(view);
+    cereal::Event::Reader event = msg.getRoot<cereal::Event>();
+
     Localizer * loc = (Localizer*) localizer;
-    loc->handle_log(data, len);
+    loc->handle_log(event);
   }
 
   double localizer_get_yaw(void * localizer) {

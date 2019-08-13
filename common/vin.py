@@ -1,61 +1,8 @@
 #!/usr/bin/env python
-import time
-from common.realtime import sec_since_boot
 import selfdrive.messaging as messaging
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 
-def get_vin(logcan, sendcan):
-
-  # works on standard 11-bit addresses for diagnostic. Tested on Toyota and Subaru;
-  # Honda uses the extended 29-bit addresses, and unfortunately only works from OBDII
-  query_msg = [[0x7df, 0, '\x02\x09\x02'.ljust(8, "\x00"), 0],
-               [0x7e0, 0, '\x30'.ljust(8, "\x00"), 0]]
-
-  cnts = [1, 2]  # Number of messages to wait for at each iteration
-  vin_valid = True
-
-  dat = []
-  for i in range(len(query_msg)):
-    cnt = 0
-    sendcan.send(can_list_to_can_capnp([query_msg[i]], msgtype='sendcan'))
-    got_response = False
-    t_start = sec_since_boot()
-    while sec_since_boot() - t_start < 0.05 and not got_response:
-      for a in messaging.drain_sock(logcan):
-        for can in a.can:
-          if can.src == 0 and can.address == 0x7e8:
-            vin_valid = vin_valid and is_vin_response_valid(can.dat, i, cnt)
-            dat += can.dat[2:] if i == 0 else can.dat[1:]
-            cnt += 1
-            if cnt == cnts[i]:
-              got_response = True
-      time.sleep(0.01)
-
-  return "".join(dat[3:]) if vin_valid else ""
-
-"""
-if 'vin' not in gctx:
-  print "getting vin"
-  gctx['vin'] = query_vin()[3:]
-  print "got VIN %s" % (gctx['vin'],)
-  cloudlog.info("got VIN %s" % (gctx['vin'],))
-
-# *** determine platform based on VIN ****
-if vin.startswith("19UDE2F36G"):
-  print "ACURA ILX 2016"
-  self.civic = False
-else:
-  # TODO: add Honda check explicitly
-  print "HONDA CIVIC 2016"
-  self.civic = True
-
-# *** special case VIN of Acura test platform
-if vin == "19UDE2F36GA001322":
-  print "comma.ai test platform detected"
-  # it has a gas interceptor and a torque mod
-  self.torque_mod = True
-"""
-
+VIN_UNKNOWN = "0" * 17
 
 # sanity checks on response messages from vin query
 def is_vin_response_valid(can_dat, step, cnt):
@@ -84,12 +31,71 @@ def is_vin_response_valid(can_dat, step, cnt):
   return True
 
 
-if __name__ == "__main__":
-  import zmq
-  from selfdrive.services import service_list
-  context = zmq.Context()
-  logcan = messaging.sub_sock(context, service_list['can'].port)
-  sendcan = messaging.pub_sock(context, service_list['sendcan'].port)
-  time.sleep(1.)   # give time to sendcan socket to start
+class VinQuery():
+  def __init__(self, bus):
+    self.bus = bus
+    # works on standard 11-bit addresses for diagnostic. Tested on Toyota and Subaru;
+    # Honda uses the extended 29-bit addresses, and unfortunately only works from OBDII
+    self.query_ext_msgs = [[0x18DB33F1, 0, '\x02\x09\x02'.ljust(8, "\x00"), bus],
+                           [0x18DA10f1, 0, '\x30'.ljust(8, "\x00"), bus]]
+    self.query_nor_msgs = [[0x7df, 0, '\x02\x09\x02'.ljust(8, "\x00"), bus],
+                           [0x7e0, 0, '\x30'.ljust(8, "\x00"), bus]]
 
-  print get_vin(logcan, sendcan)
+    self.cnts = [1, 2]  # number of messages to wait for at each iteration
+    self.step = 0
+    self.cnt = 0
+    self.responded = False
+    self.never_responded = True
+    self.dat = []
+    self.vin = VIN_UNKNOWN
+
+  def check_response(self, msg):
+    # have we got a VIN query response?
+    if msg.src == self.bus and msg.address in [0x18daf110, 0x7e8]:
+      self.never_responded = False
+      # basic sanity checks on ISO-TP response
+      if is_vin_response_valid(msg.dat, self.step, self.cnt):
+        self.dat += msg.dat[2:] if self.step == 0 else msg.dat[1:]
+        self.cnt += 1
+        if self.cnt == self.cnts[self.step]:
+          self.responded = True
+          self.step += 1
+
+  def send_query(self, sendcan):
+    # keep sending VIN qury if ECU isn't responsing.
+    # sendcan is probably not ready due to the zmq slow joiner syndrome
+    if self.never_responded or (self.responded and self.step < len(self.cnts)):
+      sendcan.send(can_list_to_can_capnp([self.query_ext_msgs[self.step]], msgtype='sendcan'))
+      sendcan.send(can_list_to_can_capnp([self.query_nor_msgs[self.step]], msgtype='sendcan'))
+      self.responded = False
+      self.cnt = 0
+
+  def get_vin(self):
+    # only report vin if procedure is finished
+    if self.step == len(self.cnts) and self.cnt == self.cnts[-1]:
+      self.vin = "".join(self.dat[3:])
+    return self.vin
+
+
+def get_vin(logcan, sendcan, bus, query_time=1.):
+  vin_query = VinQuery(bus)
+  frame = 0
+
+  # 1s max of VIN query time
+  while frame < query_time * 100:
+    a = messaging.recv_one(logcan)
+
+    for can in a.can:
+      vin_query.check_response(can)
+
+    vin_query.send_query(sendcan)
+    frame += 1
+
+  return vin_query.get_vin()
+
+
+if __name__ == "__main__":
+  from selfdrive.services import service_list
+  logcan = messaging.sub_sock(service_list['can'].port)
+  sendcan = messaging.pub_sock(service_list['sendcan'].port)
+  print get_vin(logcan, sendcan, 0)

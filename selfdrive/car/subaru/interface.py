@@ -38,12 +38,13 @@ class CarInterface(object):
     return 1.0
 
   @staticmethod
-  def get_params(candidate, fingerprint, vin=""):
+  def get_params(candidate, fingerprint, vin="", is_panda_black=False):
     ret = car.CarParams.new_message()
 
     ret.carName = "subaru"
     ret.carFingerprint = candidate
     ret.carVin = vin
+    ret.isPandaBlack = is_panda_black
     ret.safetyModel = car.CarParams.SafetyModel.subaru
 
     ret.enableCruise = True
@@ -52,6 +53,13 @@ class CarInterface(object):
     ret.enableCamera = True
 
     ret.steerRateCost = 0.7
+    ret.lateralTuning.pid.dampTime = 0.0
+    ret.lateralTuning.pid.reactMPC = 0.025
+    ret.lateralTuning.pid.dampMPC = 0.1
+    ret.lateralTuning.pid.rateFFGain = 0.4
+    ret.lateralTuning.pid.polyFactor = 0.001
+    ret.lateralTuning.pid.polyDampTime = 0.15
+    ret.lateralTuning.pid.polyReactTime = 0.5
 
     if candidate in [CAR.IMPREZA]:
       ret.mass = 1568. + STD_CARGO_KG

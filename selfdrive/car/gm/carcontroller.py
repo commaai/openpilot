@@ -4,7 +4,7 @@ from common.numpy_fast import interp
 from selfdrive.config import Conversions as CV
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.gm import gmcan
-from selfdrive.car.gm.values import DBC, SUPERCRUISE_CARS
+from selfdrive.car.gm.values import DBC, AccState, SUPERCRUISE_CARS
 from selfdrive.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -37,11 +37,11 @@ class CarControllerParams():
 
     # pedal lookups, only for Volt
     MAX_GAS = 3072              # Only a safety limit
-    ZERO_GAS = 2048
+    self.ZERO_GAS = 2048
     MAX_BRAKE = 350             # Should be around 3.5m/s^2, including regen
     self.MAX_ACC_REGEN = 1404  # ACC Regen braking is slightly less powerful than max regen paddle
     self.GAS_LOOKUP_BP = [-0.25, 0., 0.5]
-    self.GAS_LOOKUP_V = [self.MAX_ACC_REGEN, ZERO_GAS, MAX_GAS]
+    self.GAS_LOOKUP_V = [self.MAX_ACC_REGEN, self.ZERO_GAS, MAX_GAS]
     self.BRAKE_LOOKUP_BP = [-1., -0.25]
     self.BRAKE_LOOKUP_V = [MAX_BRAKE, 0]
 
@@ -77,6 +77,7 @@ class CarController(object):
     self.apply_steer_last = 0
     self.car_fingerprint = car_fingerprint
     self.lka_icon_status_last = (False, False)
+    self.fcw_count = 0
 
     # Setup detection helper. Routes commands to
     # an appropriate CAN bus number.
@@ -90,10 +91,12 @@ class CarController(object):
              hud_v_cruise, hud_show_lanes, hud_show_car, chime, chime_cnt, hud_alert):
 
     P = self.params
-
     # Send CAN commands.
     can_sends = []
     canbus = self.canbus
+    
+    alert_out = process_hud_alert(hud_alert)
+    steer = alert_out
 
     alert_out = process_hud_alert(hud_alert)
     steer = alert_out
@@ -101,7 +104,7 @@ class CarController(object):
     ### STEER ###
 
     if (frame % P.STEER_STEP) == 0:
-      lkas_enabled = enabled and not CS.steer_not_allowed and CS.v_ego > P.MIN_STEER_SPEED
+      lkas_enabled = enabled and not CS.steer_not_allowed and CS.lkMode and CS.v_ego > P.MIN_STEER_SPEED and not CS.left_blinker_on and not CS.right_blinker_on
       if lkas_enabled:
         apply_steer = actuators.steer * P.STEER_MAX
         apply_steer = apply_std_steer_torque_limits(apply_steer, self.apply_steer_last, CS.steer_torque_driver, P)
@@ -141,16 +144,28 @@ class CarController(object):
       if (frame % 4) == 0:
         idx = (frame // 4) % 4
 
-        at_full_stop = enabled and CS.standstill
-        near_stop = enabled and (CS.v_ego < P.NEAR_STOP_BRAKE_PHASE)
+        car_stopping = apply_gas < P.ZERO_GAS
+        standstill = CS.pcm_acc_status == AccState.STANDSTILL
+        at_full_stop = enabled and standstill and car_stopping
+        near_stop = enabled and (CS.v_ego < P.NEAR_STOP_BRAKE_PHASE) and car_stopping
         can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, canbus.chassis, apply_brake, idx, near_stop, at_full_stop))
 
-        at_full_stop = enabled and CS.standstill
-        can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, canbus.powertrain, apply_gas, idx, enabled, at_full_stop))
+        # Auto-resume from full stop by resetting ACC control
+        acc_enabled = enabled
+        if standstill and not car_stopping:
+          acc_enabled = False
+
+        can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, canbus.powertrain, apply_gas, idx, acc_enabled, at_full_stop))
 
       # Send dashboard UI commands (ACC status), 25hz
+      follow_level = CS.get_follow_level()
       if (frame % 4) == 0:
-        can_sends.append(gmcan.create_acc_dashboard_command(self.packer_pt, canbus.powertrain, enabled, hud_v_cruise * CV.MS_TO_KPH, hud_show_car))
+        send_fcw = 0
+        if self.fcw_count > 0:
+          self.fcw_count -= 1
+          send_fcw = 0x3
+        can_sends.append(gmcan.create_acc_dashboard_command(self.packer_pt, canbus.powertrain, enabled, 
+                                                           hud_v_cruise * CV.MS_TO_KPH, hud_show_car, follow_level, send_fcw))
 
       # Radar needs to know current speed and yaw rate (50hz),
       # and that ADAS is alive (10hz)
@@ -185,13 +200,14 @@ class CarController(object):
 
     # Send chimes
     if self.chime != chime:
-      duration = 0x3c
+      duration = 0x1e
 
       # There is no 'repeat forever' chime command
       # TODO: Manage periodic re-issuing of chime command
       # and chime cancellation
       if chime_cnt == -1:
         chime_cnt = 10
+        self.fcw_count = 100 # Continuous chime = critical alert so trigger FCWAlert
 
       if chime != 0:
         can_sends.append(gmcan.create_chime_command(canbus.sw_gmlan, chime, duration, chime_cnt))

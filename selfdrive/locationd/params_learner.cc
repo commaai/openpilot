@@ -55,8 +55,8 @@ bool ParamsLearner::update(double psi, double u, double sa) {
     double new_x = x - alpha3 * (-2.0*cF0*cR0*l*m*pow(u, 3)*(slow_ao - sa)*(aF*cF0 - aR*cR0)*(1.0*cF0*cR0*l*u*x*(slow_ao - sa) + psi*sR*(cF0*cR0*pow(l, 2)*x - m*pow(u, 2)*(aF*cF0 - aR*cR0)))/(pow(sR, 2)*pow(cF0*cR0*pow(l, 2)*x - m*pow(u, 2)*(aF*cF0 - aR*cR0), 3)));
     double new_sR = sR - alpha4 * (-2.0*cF0*cR0*l*u*x*(slow_ao - sa)*(1.0*cF0*cR0*l*u*x*(slow_ao - sa) + psi*sR*(cF0*cR0*pow(l, 2)*x - m*pow(u, 2)*(aF*cF0 - aR*cR0)))/(pow(sR, 3)*pow(cF0*cR0*pow(l, 2)*x - m*pow(u, 2)*(aF*cF0 - aR*cR0), 2)));
 
-    ao = new_ao;
     slow_ao = new_slow_ao;
+    ao = new_ao;
     x = new_x;
     sR = new_sR;
   }
@@ -66,8 +66,8 @@ bool ParamsLearner::update(double psi, double u, double sa) {
   std::cout << "\tStiffness: " << x << "\t sR: " << sR << std::endl;
 #endif
 
-  ao = clip(ao, -MAX_ANGLE_OFFSET, MAX_ANGLE_OFFSET);
   slow_ao = clip(slow_ao, -MAX_ANGLE_OFFSET, MAX_ANGLE_OFFSET);
+  ao = clip(ao, -MAX_ANGLE_OFFSET, MAX_ANGLE_OFFSET);
   x = clip(x, MIN_STIFFNESS, MAX_STIFFNESS);
   sR = clip(sR, min_sr, max_sr);
 

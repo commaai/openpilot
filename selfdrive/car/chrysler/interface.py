@@ -38,13 +38,14 @@ class CarInterface(object):
     return 1.0
 
   @staticmethod
-  def get_params(candidate, fingerprint, vin=""):
+  def get_params(candidate, fingerprint, vin="", is_panda_black=False):
 
     ret = car.CarParams.new_message()
 
     ret.carName = "chrysler"
     ret.carFingerprint = candidate
     ret.carVin = vin
+    ret.isPandaBlack = is_panda_black
 
     ret.safetyModel = car.CarParams.SafetyModel.chrysler
 
@@ -60,6 +61,13 @@ class CarInterface(object):
     ret.lateralTuning.pid.kf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
     ret.steerActuatorDelay = 0.1
     ret.steerRateCost = 0.7
+    ret.lateralTuning.pid.dampTime = 0.0
+    ret.lateralTuning.pid.reactMPC = 0.025
+    ret.lateralTuning.pid.dampMPC = 0.1
+    ret.lateralTuning.pid.rateFFGain = 0.4
+    ret.lateralTuning.pid.polyFactor = 0.001
+    ret.lateralTuning.pid.polyDampTime = 0.15
+    ret.lateralTuning.pid.polyReactTime = 0.5
 
     if candidate in (CAR.JEEP_CHEROKEE, CAR.JEEP_CHEROKEE_2019):
       ret.wheelbase = 2.91  # in meters
@@ -94,7 +102,7 @@ class CarInterface(object):
     ret.brakeMaxBP = [5., 20.]
     ret.brakeMaxV = [1., 0.8]
 
-    ret.enableCamera = not check_ecu_msgs(fingerprint, ECU.CAM)
+    ret.enableCamera = not check_ecu_msgs(fingerprint, ECU.CAM) or is_panda_black
     print("ECU Camera Simulated: {0}".format(ret.enableCamera))
     ret.openpilotLongitudinalControl = False
 

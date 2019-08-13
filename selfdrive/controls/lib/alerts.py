@@ -299,6 +299,13 @@ ALERTS = [
       Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
 
   Alert(
+      "manualSteeringRequired",
+      "openpilot Unavailable",
+      "LKAS Disabled",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimeError, .4, 2., 3.),
+
+  Alert(
       "tooDistractedNoEntry",
       "openpilot Unavailable",
       "Distraction Level Too High",
@@ -380,6 +387,13 @@ ALERTS = [
       "radarFault",
       "TAKE CONTROL IMMEDIATELY",
       "Radar Error: Restart the Car",
+      AlertStatus.critical, AlertSize.full,
+      Priority.MID, VisualAlert.steerRequired, AudibleAlert.chimeWarning2, .1, 2., 2.),
+
+  Alert(
+      "posenetInvalid",
+      "TAKE CONTROL IMMEDIATELY",
+      "Vision Failure: Check Camera View",
       AlertStatus.critical, AlertSize.full,
       Priority.MID, VisualAlert.steerRequired, AudibleAlert.chimeWarning2, .1, 2., 2.),
 
@@ -537,6 +551,13 @@ ALERTS = [
       "radarFaultNoEntry",
       "openpilot Unavailable",
       "Radar Error: Restart the Car",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
+
+  Alert(
+      "posenetInvalidNoEntry",
+      "openpilot Unavailable",
+      "Vision Failure: Check Camera View",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
 

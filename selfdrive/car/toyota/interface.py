@@ -40,13 +40,14 @@ class CarInterface(object):
     return 1.0
 
   @staticmethod
-  def get_params(candidate, fingerprint, vin=""):
+  def get_params(candidate, fingerprint, vin="", is_panda_black=False):
 
     ret = car.CarParams.new_message()
 
     ret.carName = "toyota"
     ret.carFingerprint = candidate
     ret.carVin = vin
+    ret.isPandaBlack = is_panda_black
 
     ret.safetyModel = car.CarParams.SafetyModel.toyota
 
@@ -54,45 +55,62 @@ class CarInterface(object):
     ret.enableCruise = not ret.enableGasInterceptor
 
     ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
-    if candidate != CAR.PRIUS:
-      ret.lateralTuning.init('pid')
-      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+
+    ret.steerRateCost = 1.0
+    ret.lateralTuning.init('pid')
+    ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+    ret.lateralTuning.pid.dampTime = 0.0
+    ret.lateralTuning.pid.reactMPC = 0.025
+    ret.lateralTuning.pid.dampMPC = 0.1
+    ret.lateralTuning.pid.rateFFGain = 0.4
+    ret.lateralTuning.pid.polyFactor = 0.0015
+    ret.lateralTuning.pid.polyDampTime = 0.15
+    ret.lateralTuning.pid.polyReactTime = 0.5
+    #ret.lateralTuning.pid.steerPscale = [[1.0, 2.0, 10.0], [1.0, 0.5, 0.25], [1.0, 0.75, 0.5]]  # [abs angles, scale UP, scale DOWN]
 
     if candidate == CAR.PRIUS:
       stop_and_go = True
       ret.safetyParam = 66  # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.70
-      ret.steerRatio = 15.00   # unknown end-to-end spec
-      tire_stiffness_factor = 0.6371   # hand-tune
-      ret.mass = 3045. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.steerRatio = 14.0   # unknown end-to-end spec
+      tire_stiffness_factor = 0.725   # hand-tune
+      ret.mass = 3375. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.5], [0.03]]
+      ret.lateralTuning.pid.kf = 0.00007   # full torque for 10 deg at 80mph means 0.00007818594
+      ret.lateralTuning.pid.dampTime = 0.0
+      ret.lateralTuning.pid.polyReactTime = 0.6
+      ret.lateralTuning.pid.polyFactor = 0.002
+      ret.lateralTuning.pid.polyDampTime = 0.15
+      ret.lateralTuning.pid.reactMPC = 0.025
+      ret.lateralTuning.pid.dampMPC = 0.1
+      ret.lateralTuning.pid.rateFFGain = 0.4
 
-      ret.lateralTuning.init('indi')
-      ret.lateralTuning.indi.innerLoopGain = 4.0
-      ret.lateralTuning.indi.outerLoopGain = 3.0
-      ret.lateralTuning.indi.timeConstant = 1.0
-      ret.lateralTuning.indi.actuatorEffectiveness = 1.0
-
-      ret.steerActuatorDelay = 0.5
 
     elif candidate in [CAR.RAV4, CAR.RAV4H]:
       stop_and_go = True if (candidate in CAR.RAV4H) else False
       ret.safetyParam = 73
       ret.wheelbase = 2.65
-      ret.steerRatio = 16.30   # 14.5 is spec end-to-end
+      ret.steerRatio = 16.88   # 14.5 is spec end-to-end
       tire_stiffness_factor = 0.5533
       ret.mass = 3650. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.05]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.35], [0.03]]
       ret.lateralTuning.pid.kf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
+      ret.lateralTuning.pid.dampTime = 0.0
+      ret.lateralTuning.pid.reactMPC = 0.025
+      ret.lateralTuning.pid.rateFFGain = 0.4
 
     elif candidate == CAR.COROLLA:
       stop_and_go = False
       ret.safetyParam = 100
       ret.wheelbase = 2.70
-      ret.steerRatio = 17.8
+      ret.steerRatio = 18.27
       tire_stiffness_factor = 0.444  # not optimized yet
       ret.mass = 2860. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.05]]
       ret.lateralTuning.pid.kf = 0.00003   # full torque for 20 deg at 80mph means 0.00007818594
+      ret.lateralTuning.pid.dampTime = 0.0
+      ret.lateralTuning.pid.reactMPC = 0.025
+      ret.lateralTuning.pid.rateFFGain = 0.4
 
     elif candidate == CAR.LEXUS_RXH:
       stop_and_go = True
@@ -123,6 +141,9 @@ class CarInterface(object):
       ret.mass = 3400. * CV.LB_TO_KG + STD_CARGO_KG #mean between normal and hybrid
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
       ret.lateralTuning.pid.kf = 0.00006
+      ret.lateralTuning.pid.dampTime = 0.0
+      ret.lateralTuning.pid.reactMPC = 0.025
+      ret.lateralTuning.pid.rateFFGain = 0.4
 
     elif candidate in [CAR.HIGHLANDER, CAR.HIGHLANDERH]:
       stop_and_go = True
@@ -184,7 +205,6 @@ class CarInterface(object):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.05]]
       ret.lateralTuning.pid.kf = 0.00007818594
 
-    ret.steerRateCost = 1.
     ret.centerToFront = ret.wheelbase * 0.44
 
     #detect the Pedal address
@@ -213,7 +233,7 @@ class CarInterface(object):
     ret.brakeMaxBP = [0.]
     ret.brakeMaxV = [1.]
 
-    ret.enableCamera = not check_ecu_msgs(fingerprint, ECU.CAM)
+    ret.enableCamera = not check_ecu_msgs(fingerprint, ECU.CAM) or is_panda_black
     ret.enableDsu = not check_ecu_msgs(fingerprint, ECU.DSU)
     ret.enableApgs = False #not check_ecu_msgs(fingerprint, ECU.APGS)
     ret.openpilotLongitudinalControl = ret.enableCamera and ret.enableDsu

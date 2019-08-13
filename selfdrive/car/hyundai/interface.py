@@ -40,18 +40,26 @@ class CarInterface(object):
     return 1.0
 
   @staticmethod
-  def get_params(candidate, fingerprint, vin=""):
+  def get_params(candidate, fingerprint, vin="", is_panda_black=False):
 
     ret = car.CarParams.new_message()
 
     ret.carName = "hyundai"
     ret.carFingerprint = candidate
     ret.carVin = vin
+    ret.isPandaBlack = is_panda_black
     ret.radarOffCan = True
     ret.safetyModel = car.CarParams.SafetyModel.hyundai
     ret.enableCruise = True  # stock acc
 
     ret.steerActuatorDelay = 0.1  # Default delay
+    ret.lateralTuning.pid.dampTime = 0.0
+    ret.lateralTuning.pid.reactMPC = 0.025
+    ret.lateralTuning.pid.dampMPC = 0.1
+    ret.lateralTuning.pid.rateFFGain = 0.4
+    ret.lateralTuning.pid.polyFactor = 0.001
+    ret.lateralTuning.pid.polyDampTime = 0.15
+    ret.lateralTuning.pid.polyReactTime = 0.5
     ret.steerRateCost = 0.5
     tire_stiffness_factor = 1.
 
@@ -141,7 +149,7 @@ class CarInterface(object):
     ret.brakeMaxBP = [0.]
     ret.brakeMaxV = [1.]
 
-    ret.enableCamera = not any(x for x in CAMERA_MSGS if x in fingerprint)
+    ret.enableCamera = not any(x for x in CAMERA_MSGS if x in fingerprint) or is_panda_black
     ret.openpilotLongitudinalControl = False
 
     ret.steerLimitAlert = False

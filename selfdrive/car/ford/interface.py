@@ -38,13 +38,14 @@ class CarInterface(object):
     return 1.0
 
   @staticmethod
-  def get_params(candidate, fingerprint, vin=""):
+  def get_params(candidate, fingerprint, vin="", is_panda_black=False):
 
     ret = car.CarParams.new_message()
 
     ret.carName = "ford"
     ret.carFingerprint = candidate
     ret.carVin = vin
+    ret.isPandaBlack = is_panda_black
 
     ret.safetyModel = car.CarParams.SafetyModel.ford
 
@@ -87,7 +88,7 @@ class CarInterface(object):
     ret.brakeMaxBP = [5., 20.]
     ret.brakeMaxV = [1., 0.8]
 
-    ret.enableCamera = not any(x for x in [970, 973, 984] if x in fingerprint)
+    ret.enableCamera = not any(x for x in [970, 973, 984] if x in fingerprint) or is_panda_black
     ret.openpilotLongitudinalControl = False
     cloudlog.warn("ECU Camera Simulated: %r", ret.enableCamera)
 
@@ -101,6 +102,14 @@ class CarInterface(object):
     ret.longitudinalTuning.kpV = [3.6, 2.4, 1.5]
     ret.longitudinalTuning.kiBP = [0., 35.]
     ret.longitudinalTuning.kiV = [0.54, 0.36]
+    ret.lateralTuning.pid.dampTime = 0.02
+    ret.lateralTuning.pid.reactMPC = 0.025
+    ret.lateralTuning.pid.dampMPC = 0.1
+    ret.lateralTuning.pid.rateFFGain = 0.4
+    ret.lateralTuning.pid.polyFactor = 0.0015
+    ret.lateralTuning.pid.polyDampTime = 0.2
+    ret.lateralTuning.pid.polyReactTime = 0.5
+    ret.lateralTuning.pid.polyScale = [[0.0, 0.5, 1.0, 2.0, 5.0], [1.0, 0.5, 0.25, 0.1, 0.0], [1.0, 1.0, 1.0, 1.0, 1.0]]  # [abs rate, scale UP, scale DOWN]
 
     return ret
 

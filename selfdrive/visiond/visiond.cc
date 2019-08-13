@@ -716,6 +716,8 @@ void* monitoring_thread(void *arg) {
       MonitoringResult res = monitoring_eval_frame(&s->monitoring, q,
         s->yuv_front_cl[buf_idx], s->yuv_front_width, s->yuv_front_height);
 
+      double t2 = millis_since_boot();
+
       // send driver monitoring packet
       {
         capnp::MallocMessageBuilder msg;
@@ -725,17 +727,28 @@ void* monitoring_thread(void *arg) {
         auto framed = event.initDriverMonitoring();
         framed.setFrameId(frame_data.frame_id);
 
-        kj::ArrayPtr<const float> descriptor_vs(&res.vs[0], ARRAYSIZE(res.vs));
-        framed.setDescriptor(descriptor_vs);
+        // junk 0s from legacy model
+        //kj::ArrayPtr<const float> descriptor_DEPRECATED(&res.descriptor_DEPRECATED[0], ARRAYSIZE(res.descriptor_DEPRECATED));
+        //framed.setDescriptor(descriptor_DEPRECATED);
+        //framed.setStd(res.std_DEPRECATED);
+        // why not use this junk space for reporting inference time instead
+        // framed.setStdDEPRECATED(static_cast<float>(t2-t1));
 
-        framed.setStd(res.std);
+        kj::ArrayPtr<const float> face_orientation(&res.face_orientation[0], ARRAYSIZE(res.face_orientation));
+        kj::ArrayPtr<const float> face_position(&res.face_position[0], ARRAYSIZE(res.face_position));
+        framed.setFaceOrientation(face_orientation);
+        framed.setFacePosition(face_position);
+        framed.setFaceProb(res.face_prob);
+        framed.setLeftEyeProb(res.left_eye_prob);
+        framed.setRightEyeProb(res.right_eye_prob);
+
 
         auto words = capnp::messageToFlatArray(msg);
         auto bytes = words.asBytes();
         zmq_send(s->monitoring_sock_raw, bytes.begin(), bytes.size(), ZMQ_DONTWAIT);
       }
 
-      double t2 = millis_since_boot();
+      t2 = millis_since_boot();
 
       //LOGD("monitoring process: %.2fms, from last %.2fms", t2-t1, t1-last);
       last = t1;

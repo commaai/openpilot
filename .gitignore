@@ -23,6 +23,7 @@ a.out
 *.vcd
 config.json
 clcache
+kegman.json
 
 board/obj/
 selfdrive/boardd/boardd
@@ -40,4 +41,3 @@ selfdrive/sensord/sensord
 one
 openpilot
 xx
-

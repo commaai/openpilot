@@ -1,17 +1,19 @@
 import math
 import numpy as np
-
-from cereal import log
+from common.numpy_fast import interp
 from common.realtime import DT_CTRL
-from common.numpy_fast import clip
 from selfdrive.car.toyota.carcontroller import SteerLimitParams
 from selfdrive.car import apply_toyota_steer_torque_limits
 from selfdrive.controls.lib.drive_helpers import get_steer_max
-
+from common.numpy_fast import clip
+from cereal import log
+from selfdrive.kegman_conf import kegman_conf
 
 class LatControlINDI(object):
   def __init__(self, CP):
     self.angle_steers_des = 0.
+    kegman_conf(CP)
+    self.frame = 0
 
     A = np.matrix([[1.0, DT_CTRL, 0.0],
                    [0.0, 1.0, DT_CTRL],
@@ -39,19 +41,45 @@ class LatControlINDI(object):
     self.outer_loop_gain = CP.lateralTuning.indi.outerLoopGain
     self.inner_loop_gain = CP.lateralTuning.indi.innerLoopGain
     self.alpha = 1. - DT_CTRL / (self.RC + DT_CTRL)
+    self.reactMPC = CP.lateralTuning.indi.reactMPC
+    self.damp_angle_steers_des = 0.0
+    self.damp_rate_steers_des = 0.0
 
     self.reset()
+
+  def live_tune(self, CP):
+    self.frame += 1
+    if self.frame % 300 == 0:
+      # live tuning through /data/openpilot/tune.py overrides interface.py settings
+      kegman = kegman_conf()
+      rc = float(kegman.conf['timeConst'])
+      g = float(kegman.conf['actEffect'])
+      og = float(kegman.conf['outerGain'])
+      ig = float(kegman.conf['innerGain'])
+      self.reactMPC = float(kegman.conf['reactMPC'])
+
+      if rc != self.RC or g != self.G or og != self.outer_loop_gain or ig != self.inner_loop_gain:
+        self.RC = rc
+        self.G = g
+        self.outer_loop_gain = og
+        self.inner_loop_gain = ig
+        self.alpha = 1. - DT_CTRL / (self.RC + DT_CTRL)
+        self.reset
 
   def reset(self):
     self.delayed_output = 0.
     self.output_steer = 0.
     self.counter = 0
 
-  def update(self, active, v_ego, angle_steers, angle_steers_rate, steer_override, CP, VM, path_plan):
+  def update(self, active, v_ego, angle_steers, angle_steers_rate, steer_override, blinkers_on, CP, VM, path_plan):
     # Update Kalman filter
+
+    self.live_tune(CP)
+
     y = np.matrix([[math.radians(angle_steers)], [math.radians(angle_steers_rate)]])
     self.x = np.dot(self.A_K, self.x) + np.dot(self.K, y)
 
+    self.damp_angle_steers = math.degrees(self.x[0])
     indi_log = log.ControlsState.LateralINDIState.new_message()
     indi_log.steerAngle = math.degrees(self.x[0])
     indi_log.steerRate = math.degrees(self.x[1])
@@ -62,11 +90,13 @@ class LatControlINDI(object):
       self.output_steer = 0.0
       self.delayed_output = 0.0
     else:
+      self.damp_angle_steers_des = interp(path_plan.mpcTimes[0] + self.reactMPC, path_plan.mpcTimes, path_plan.mpcAngles)
+      self.damp_rate_steers_des = interp(path_plan.mpcTimes[0] + self.reactMPC, path_plan.mpcTimes, path_plan.mpcRates)
       self.angle_steers_des = path_plan.angleSteers
       self.rate_steers_des = path_plan.rateSteers
 
-      steers_des = math.radians(self.angle_steers_des)
-      rate_des = math.radians(self.rate_steers_des)
+      steers_des = math.radians(self.damp_angle_steers_des)
+      rate_des = math.radians(self.damp_rate_steers_des)
 
       # Expected actuator value
       self.delayed_output = self.delayed_output * self.alpha + self.output_steer * (1. - self.alpha)
