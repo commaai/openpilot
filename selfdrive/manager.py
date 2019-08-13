@@ -47,7 +47,7 @@ if __name__ == "__main__":
   if is_neos:
     version = int(open("/VERSION").read()) if os.path.isfile("/VERSION") else 0
     revision = int(open("/REVISION").read()) if version >= 10 else 0 # Revision only present in NEOS 10 and up
-    neos_update_required = version < 10 or (version == 10 and revision != 3)
+    neos_update_required = version < 10 or (version == 10 and revision != 4)
 
   if neos_update_required:
     # update continue.sh before updating NEOS
@@ -517,6 +517,9 @@ def uninstall():
 def main():
   # the flippening!
   os.system('LD_LIBRARY_PATH="" content insert --uri content://settings/system --bind name:s:user_rotation --bind value:i:1')
+
+  # disable bluetooth
+  os.system('service call bluetooth_manager 8')
 
   if os.getenv("NOLOG") is not None:
     del managed_processes['loggerd']

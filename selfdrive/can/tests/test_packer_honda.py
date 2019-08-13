@@ -23,11 +23,10 @@ class TestPackerMethods(unittest.TestCase):
       pump_on = (random.randint(0, 2) % 2 == 0)
       pcm_override = (random.randint(0, 2) % 2 == 0)
       pcm_cancel_cmd = (random.randint(0, 2) % 2 == 0)
-      chime = random.randint(0, 65536)
       fcw = random.randint(0, 65536)
       idx = random.randint(0, 65536)
-      m_old = hondacan.create_brake_command(self.honda_cp_old, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, chime, fcw, idx, car_fingerprint, is_panda_black)
-      m = hondacan.create_brake_command(self.honda_cp, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, chime, fcw, idx, car_fingerprint, is_panda_black)
+      m_old = hondacan.create_brake_command(self.honda_cp_old, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, fcw, idx, car_fingerprint, is_panda_black)
+      m = hondacan.create_brake_command(self.honda_cp, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, fcw, idx, car_fingerprint, is_panda_black)
       self.assertEqual(m_old, m)
 
       apply_steer = (random.randint(0, 2) % 2 == 0)
@@ -39,8 +38,7 @@ class TestPackerMethods(unittest.TestCase):
 
       pcm_speed = random.randint(0, 65536)
       hud = HUDData(random.randint(0, 65536), random.randint(0, 65536), 1, random.randint(0, 65536),
-              0xc1, random.randint(0, 65536), random.randint(0, 65536), random.randint(0, 65536),
-              random.randint(0, 65536), random.randint(0, 65536), random.randint(0, 65536))
+              0xc1, random.randint(0, 65536), random.randint(0, 65536), random.randint(0, 65536), random.randint(0, 65536))
       idx = random.randint(0, 65536)
       is_metric = (random.randint(0, 2) % 2 == 0)
       m_old = hondacan.create_ui_commands(self.honda_cp_old, pcm_speed, hud, car_fingerprint, is_metric, idx, is_panda_black)

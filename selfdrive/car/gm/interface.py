@@ -4,7 +4,7 @@ from common.realtime import sec_since_boot
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from selfdrive.controls.lib.vehicle_model import VehicleModel
-from selfdrive.car.gm.values import DBC, CAR, STOCK_CONTROL_MSGS, AUDIO_HUD, \
+from selfdrive.car.gm.values import DBC, CAR, STOCK_CONTROL_MSGS, \
                                     SUPERCRUISE_CARS, AccState
 from selfdrive.car.gm.carstate import CarState, CruiseButtons, get_powertrain_can_parser
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness
@@ -325,8 +325,6 @@ class CarInterface(object):
     if hud_v_cruise > 70:
       hud_v_cruise = 0
 
-    chime, chime_count = AUDIO_HUD[c.hudControl.audibleAlert.raw]
-
     # For Openpilot, "enabled" includes pre-enable.
     # In GM, PCM faults out if ACC command overlaps user gas.
     enabled = c.enabled and not self.CS.user_gas_pressed
@@ -334,8 +332,7 @@ class CarInterface(object):
     can_sends = self.CC.update(enabled, self.CS, self.frame, \
                                c.actuators,
                                hud_v_cruise, c.hudControl.lanesVisible, \
-                               c.hudControl.leadVisible, \
-                               chime, chime_count, c.hudControl.visualAlert)
+                               c.hudControl.leadVisible, c.hudControl.visualAlert)
 
     self.frame += 1
     return can_sends

@@ -12,9 +12,11 @@
 
 void Localizer::update_state(const Eigen::Matrix<double, 1, 2> &C, const double R, double current_time, double meas) {
   double dt = current_time - prev_update_time;
-  prev_update_time = current_time;
-  if (dt < 1.0e-9) {
-    return;
+
+  if (dt < 0) {
+    dt = 0;
+  } else {
+    prev_update_time = current_time;
   }
 
   // x = A * x;
@@ -73,6 +75,7 @@ Localizer::Localizer() {
 void Localizer::handle_log(cereal::Event::Reader event) {
   double current_time = event.getLogMonoTime() / 1.0e9;
 
+  // Initialize update_time on first update
   if (prev_update_time < 0) {
     prev_update_time = current_time;
   }
@@ -117,6 +120,16 @@ extern "C" {
     Localizer * loc = (Localizer*) localizer;
     return loc->x[1];
   }
+
+  void localizer_set_yaw(void * localizer, double yaw) {
+    Localizer * loc = (Localizer*) localizer;
+    loc->x[0] = yaw;
+  }
+  void localizer_set_bias(void * localizer, double bias) {
+    Localizer * loc = (Localizer*) localizer;
+    loc->x[1] = bias;
+  }
+
   double localizer_get_t(void * localizer) {
     Localizer * loc = (Localizer*) localizer;
     return loc->prev_update_time;

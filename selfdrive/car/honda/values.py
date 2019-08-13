@@ -1,7 +1,6 @@
 from cereal import car
 from selfdrive.car import dbc_dict
 
-AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 # Car button codes
@@ -10,31 +9,6 @@ class CruiseButtons:
   DECEL_SET   = 3
   CANCEL      = 2
   MAIN        = 1
-
-#car chimes: enumeration from dbc file. Chimes are for alerts and warnings
-class CM:
-  MUTE = 0
-  SINGLE = 3
-  DOUBLE = 4
-  REPEATED = 1
-  CONTINUOUS = 2
-
-#car beeps: enumeration from dbc file. Beeps are for engage and disengage
-class BP:
-  MUTE = 0
-  SINGLE = 3
-  TRIPLE = 2
-  REPEATED = 1
-
-AUDIO_HUD = {
-  AudibleAlert.none: (BP.MUTE, CM.MUTE),
-  AudibleAlert.chimeEngage: (BP.SINGLE, CM.MUTE),
-  AudibleAlert.chimeDisengage: (BP.SINGLE, CM.MUTE),
-  AudibleAlert.chimeError: (BP.MUTE, CM.DOUBLE),
-  AudibleAlert.chimePrompt: (BP.MUTE, CM.SINGLE),
-  AudibleAlert.chimeWarning1: (BP.MUTE, CM.DOUBLE),
-  AudibleAlert.chimeWarning2: (BP.MUTE, CM.REPEATED),
-  AudibleAlert.chimeWarningRepeat: (BP.MUTE, CM.REPEATED)}
 
 class AH:
   #[alert_idx, value]

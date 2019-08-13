@@ -238,7 +238,6 @@ class CarInterface(object):
 
     self.frame = self.CS.frame
     can_sends = self.CC.update(c.enabled, self.CS, self.frame,
-                               c.actuators, c.cruiseControl.cancel, c.hudControl.visualAlert,
-                               c.hudControl.audibleAlert)
+                               c.actuators, c.cruiseControl.cancel, c.hudControl.visualAlert)
 
     return can_sends

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import os
 import struct
+import time
 from collections import namedtuple
 import numpy as np
 
@@ -133,6 +134,11 @@ class Plant(object):
     self.ts = 1./rate
 
     self.cp = get_car_can_parser()
+    self.response_seen = False
+
+    time.sleep(1)
+    messaging.drain_sock(Plant.sendcan)
+    messaging.drain_sock(Plant.controls_state)
 
   def close(self):
     Plant.logcan.close()
@@ -158,13 +164,18 @@ class Plant(object):
 
     # ******** get messages sent to the car ********
     can_msgs = []
-    for a in messaging.drain_sock(Plant.sendcan):
+    for a in messaging.drain_sock(Plant.sendcan, wait_for_one=self.response_seen):
       can_msgs.extend(can_capnp_to_can_list(a.sendcan, [0,2]))
+
+    # After the first response the car is done fingerprinting, so we can run in lockstep with controlsd
+    if can_msgs:
+      self.response_seen = True
+
     self.cp.update_can(can_msgs)
 
     # ******** get controlsState messages for plotting ***
     controls_state_msgs = []
-    for a in messaging.drain_sock(Plant.controls_state):
+    for a in messaging.drain_sock(Plant.controls_state, wait_for_one=self.response_seen):
       controls_state_msgs.append(a.controlsState)
 
     fcw = None
@@ -217,7 +228,7 @@ class Plant(object):
     vls_tuple = namedtuple('vls', [
            'XMISSION_SPEED',
            'WHEEL_SPEED_FL', 'WHEEL_SPEED_FR', 'WHEEL_SPEED_RL', 'WHEEL_SPEED_RR',
-           'STEER_ANGLE', 'STEER_ANGLE_RATE', 'STEER_TORQUE_SENSOR',
+           'STEER_ANGLE', 'STEER_ANGLE_RATE', 'STEER_TORQUE_SENSOR', 'STEER_TORQUE_MOTOR',
            'LEFT_BLINKER', 'RIGHT_BLINKER',
            'GEAR',
            'WHEELS_MOVING',
@@ -250,7 +261,7 @@ class Plant(object):
     vls = vls_tuple(
            self.speed_sensor(speed),
            self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed),
-           self.angle_steer, self.angle_steer_rate, 0, #Steer torque sensor
+           self.angle_steer, self.angle_steer_rate, 0, 0,#Steer torque sensor
            0, 0,  # Blinkers
            self.gear_choice,
            speed != 0,
@@ -325,7 +336,6 @@ class Plant(object):
     msg_data = fix(msg_data, 0xe4)
     can_msgs.append([0xe4, 0, msg_data, 2])
 
-    Plant.logcan.send(can_list_to_can_capnp(can_msgs))
 
     # Fake sockets that controlsd subscribes to
     live_parameters = messaging.new_message()
@@ -388,9 +398,12 @@ class Plant(object):
 
       cal.liveCalibration.calStatus = 1
       cal.liveCalibration.calPerc = 100
+      cal.liveCalibration.rpyCalib = [0.] * 3
       # fake values?
       Plant.model.send(md.to_bytes())
       Plant.cal.send(cal.to_bytes())
+
+    Plant.logcan.send(can_list_to_can_capnp(can_msgs))
 
     # ******** update prevs ********
     self.speed = speed
@@ -401,7 +414,11 @@ class Plant(object):
     self.distance_prev = distance
     self.distance_lead_prev = distance_lead
 
-    self.rk.keep_time()
+    if self.response_seen:
+      self.rk.monitor_time()
+    else:
+      self.rk.keep_time()
+
     return {
       "distance": distance,
       "speed": speed,
