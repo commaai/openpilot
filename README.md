@@ -55,7 +55,7 @@ At the moment openpilot supports the [EON Dashcam DevKit](https://comma.ai/shop/
 
 Install openpilot on a neo device by entering ``https://openpilot.comma.ai`` during NEOS setup.
 
-Supported Cars
+Supported Cars (NOTE: Supported cars matrix is based off of US market cars.)
 ------
 
 | Make                 | Model                    | Supported Package    | Lateral | Longitudinal   | No Accel Below   | No Steer Below | Giraffe           |
