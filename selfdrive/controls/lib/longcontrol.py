@@ -104,8 +104,8 @@ class LongControl(object):
       deadzone = interp(v_ego_pid, CP.longitudinalTuning.deadzoneBP, CP.longitudinalTuning.deadzoneV)
       if force_decel and not self.lastdecel:
         self.lastdecel = True
-        self.pid._k_p = ([0], [0])
-        self.pid._k_i = ([0], [0])
+        self.pid._k_p = ([0.], [0.])
+        self.pid._k_i = ([0.], [0.])
         self.pid.i = 0.0
       if self.lastdecel and not force_decel:
         self.lastdecel = False
