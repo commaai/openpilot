@@ -107,6 +107,8 @@ const mat3 intrinsic_matrix = (mat3){{
   0.,   0.,   1.
 }};
 
+typedef enum cereal_CarControl_HUDControl_AudibleAlert AudibleAlert;
+
 typedef struct UIScene {
   int frontview;
   int fullview;
@@ -126,8 +128,7 @@ typedef struct UIScene {
   float v_cruise;
   uint64_t v_cruise_update_ts;
   float v_ego;
-  float v_curvature;
-  bool decel_for_turn;
+  bool decel_for_model;
 
   float speedlimit;
   bool speedlimit_valid;
@@ -162,8 +163,6 @@ typedef struct UIScene {
 
   // Used to show gps planner status
   bool gps_planner_active;
-
-  bool is_playing_alert;
 } UIScene;
 
 typedef struct {
@@ -254,6 +253,7 @@ typedef struct UIState {
   int awake_timeout;
 
   int volume_timeout;
+  int alert_sound_timeout;
   int speed_lim_off_timeout;
   int is_metric_timeout;
   int longitudinal_control_timeout;
@@ -266,7 +266,7 @@ typedef struct UIState {
   float speed_lim_off;
   bool is_ego_over_limit;
   char alert_type[64];
-  char alert_sound[64];
+  AudibleAlert alert_sound;
   int alert_size;
   float alert_blinking_alpha;
   bool alert_blinked;
@@ -432,25 +432,25 @@ static const mat4 full_to_wide_frame_transform = {{
 }};
 
 typedef struct {
-  const char* name;
+  AudibleAlert alert;
   const char* uri;
   bool loop;
 } sound_file;
 
 sound_file sound_table[] = {
-  { "chimeDisengage", "../assets/sounds/disengaged.wav", false },
-  { "chimeEngage", "../assets/sounds/engaged.wav", false },
-  { "chimeWarning1", "../assets/sounds/warning_1.wav", false },
-  { "chimeWarning2", "../assets/sounds/warning_2.wav", false },
-  { "chimeWarningRepeat", "../assets/sounds/warning_2.wav", true },
-  { "chimeError", "../assets/sounds/error.wav", false },
-  { "chimePrompt", "../assets/sounds/error.wav", false },
-  { NULL, NULL, false },
+  { cereal_CarControl_HUDControl_AudibleAlert_chimeDisengage, "../assets/sounds/disengaged.wav", false },
+  { cereal_CarControl_HUDControl_AudibleAlert_chimeEngage, "../assets/sounds/engaged.wav", false },
+  { cereal_CarControl_HUDControl_AudibleAlert_chimeWarning1, "../assets/sounds/warning_1.wav", false },
+  { cereal_CarControl_HUDControl_AudibleAlert_chimeWarning2, "../assets/sounds/warning_2.wav", false },
+  { cereal_CarControl_HUDControl_AudibleAlert_chimeWarningRepeat, "../assets/sounds/warning_2.wav", true },
+  { cereal_CarControl_HUDControl_AudibleAlert_chimeError, "../assets/sounds/error.wav", false },
+  { cereal_CarControl_HUDControl_AudibleAlert_chimePrompt, "../assets/sounds/error.wav", false },
+  { cereal_CarControl_HUDControl_AudibleAlert_none, NULL, false },
 };
 
-sound_file* get_sound_file_by_name(const char* name) {
-  for (sound_file *s = sound_table; s->name != NULL; s++) {
-    if (strcmp(s->name, name) == 0) {
+sound_file* get_sound_file(AudibleAlert alert) {
+  for (sound_file *s = sound_table; s->alert != cereal_CarControl_HUDControl_AudibleAlert_none; s++) {
+    if (s->alert == alert) {
       return s;
     }
   }
@@ -463,7 +463,7 @@ void ui_sound_init(char **error) {
   slplay_setup(error);
   if (*error) return;
 
-  for (sound_file *s = sound_table; s->name != NULL; s++) {
+  for (sound_file *s = sound_table; s->alert != cereal_CarControl_HUDControl_AudibleAlert_none; s++) {
     slplay_create_player_for_uri(s->uri, error);
     if (*error) return;
   }
@@ -503,13 +503,13 @@ static void ui_init(UIState *s) {
   s->vg = nvgCreateGLES3(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
   assert(s->vg);
 
-  s->font_courbd = nvgCreateFont(s->vg, "courbd", "../assets/courbd.ttf");
+  s->font_courbd = nvgCreateFont(s->vg, "courbd", "../assets/fonts/courbd.ttf");
   assert(s->font_courbd >= 0);
-  s->font_sans_regular = nvgCreateFont(s->vg, "sans-regular", "../assets/OpenSans-Regular.ttf");
+  s->font_sans_regular = nvgCreateFont(s->vg, "sans-regular", "../assets/fonts/opensans_regular.ttf");
   assert(s->font_sans_regular >= 0);
-  s->font_sans_semibold = nvgCreateFont(s->vg, "sans-semibold", "../assets/OpenSans-SemiBold.ttf");
+  s->font_sans_semibold = nvgCreateFont(s->vg, "sans-semibold", "../assets/fonts/opensans_semibold.ttf");
   assert(s->font_sans_semibold >= 0);
-  s->font_sans_bold = nvgCreateFont(s->vg, "sans-bold", "../assets/OpenSans-Bold.ttf");
+  s->font_sans_bold = nvgCreateFont(s->vg, "sans-bold", "../assets/fonts/opensans_bold.ttf");
   assert(s->font_sans_bold >= 0);
 
   assert(s->img_wheel >= 0);
@@ -1153,17 +1153,6 @@ static void ui_draw_vision_maxspeed(UIState *s) {
     nvgText(s->vg, viz_maxspeed_x+(viz_maxspeed_xo/2)+(viz_maxspeed_w/2), 242, "N/A", NULL);
   }
 
-#ifdef DEBUG_TURN
-  if (s->scene.decel_for_turn && s->scene.engaged){
-    int v_curvature = s->scene.v_curvature * 2.2369363 + 0.5;
-    snprintf(maxspeed_str, sizeof(maxspeed_str), "%d", v_curvature);
-    nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 255));
-    nvgFontSize(s->vg, 25*2.5);
-    nvgText(s->vg, 200 + viz_maxspeed_x+(viz_maxspeed_xo/2)+(viz_maxspeed_w/2), 148, "TURN", NULL);
-    nvgFontSize(s->vg, 50*2.5);
-    nvgText(s->vg, 200 + viz_maxspeed_x+(viz_maxspeed_xo/2)+(viz_maxspeed_w/2), 242, maxspeed_str, NULL);
-  }
-#endif
 }
 
 static void ui_draw_vision_speedlimit(UIState *s) {
@@ -1230,8 +1219,8 @@ static void ui_draw_vision_speedlimit(UIState *s) {
   if (is_speedlim_valid && s->is_ego_over_limit) {
     nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 255));
   }
-  nvgText(s->vg, viz_speedlim_x+viz_speedlim_w/2 + (is_speedlim_valid ? 6 : 0), viz_speedlim_y + (is_speedlim_valid ? 50 : 45), "SPEED", NULL);
-  nvgText(s->vg, viz_speedlim_x+viz_speedlim_w/2 + (is_speedlim_valid ? 6 : 0), viz_speedlim_y + (is_speedlim_valid ? 90 : 85), "LIMIT", NULL);
+  nvgText(s->vg, viz_speedlim_x+viz_speedlim_w/2 + (is_speedlim_valid ? 6 : 0), viz_speedlim_y + (is_speedlim_valid ? 50 : 45), "SMART", NULL);
+  nvgText(s->vg, viz_speedlim_x+viz_speedlim_w/2 + (is_speedlim_valid ? 6 : 0), viz_speedlim_y + (is_speedlim_valid ? 90 : 85), "SPEED", NULL);
 
   // Draw Speed Text
   nvgFontFace(s->vg, "sans-bold");
@@ -1294,7 +1283,7 @@ static void ui_draw_vision_event(UIState *s) {
   const int viz_event_x = ((ui_viz_rx + ui_viz_rw) - (viz_event_w + (bdr_s*2)));
   const int viz_event_y = (box_y + (bdr_s*1.5));
   const int viz_event_h = (header_h - (bdr_s*1.5));
-  if (s->scene.decel_for_turn && s->scene.engaged && s->limit_set_speed) {
+  if (s->scene.decel_for_model && s->scene.engaged) {
     // draw winding road sign
     const int img_turn_size = 160*1.5;
     const int img_turn_x = viz_event_x-(img_turn_size/4);
@@ -1426,7 +1415,7 @@ static void ui_draw_vision_footer(UIState *s) {
   ui_draw_vision_face(s);
 
 #ifdef SHOW_SPEEDLIMIT
-  ui_draw_vision_map(s);
+  // ui_draw_vision_map(s);
 #endif
 }
 
@@ -1643,29 +1632,30 @@ void handle_message(UIState *s, void *which) {
 
     s->scene.frontview = datad.rearViewCam;
 
-    s->scene.v_curvature = datad.vCurvature;
-    s->scene.decel_for_turn = datad.decelForTurn;
+    s->scene.decel_for_model = datad.decelForModel;
 
-    if (datad.alertSound.str && datad.alertSound.str[0] != '\0' && strcmp(s->alert_type, datad.alertType.str) != 0) {
+    s->alert_sound_timeout = 1 * UI_FREQ;
+
+    if (datad.alertSound != cereal_CarControl_HUDControl_AudibleAlert_none && datad.alertSound != s->alert_sound) {
       char* error = NULL;
-      if (s->alert_sound[0] != '\0') {
-        sound_file* active_sound = get_sound_file_by_name(s->alert_sound);
+      if (s->alert_sound != cereal_CarControl_HUDControl_AudibleAlert_none) {
+        sound_file* active_sound = get_sound_file(s->alert_sound);
         slplay_stop_uri(active_sound->uri, &error);
         if (error) {
           LOGW("error stopping active sound %s", error);
         }
       }
 
-      sound_file* sound = get_sound_file_by_name(datad.alertSound.str);
+      sound_file* sound = get_sound_file(datad.alertSound);
       slplay_play(sound->uri, sound->loop, &error);
       if(error) {
         LOGW("error playing sound: %s", error);
       }
 
-      snprintf(s->alert_sound, sizeof(s->alert_sound), "%s", datad.alertSound.str);
+      s->alert_sound = datad.alertSound;
       snprintf(s->alert_type, sizeof(s->alert_type), "%s", datad.alertType.str);
-    } else if ((!datad.alertSound.str || datad.alertSound.str[0] == '\0') && s->alert_sound[0] != '\0') {
-      sound_file* sound = get_sound_file_by_name(s->alert_sound);
+    } else if ((!datad.alertSound || datad.alertSound == cereal_CarControl_HUDControl_AudibleAlert_none) && s->alert_sound != cereal_CarControl_HUDControl_AudibleAlert_none) {
+      sound_file* sound = get_sound_file(s->alert_sound);
 
       char* error = NULL;
 
@@ -1674,7 +1664,7 @@ void handle_message(UIState *s, void *which) {
         LOGW("error stopping sound: %s", error);
       }
       s->alert_type[0] = '\0';
-      s->alert_sound[0] = '\0';
+      s->alert_sound = cereal_CarControl_HUDControl_AudibleAlert_none;
     }
 
     if (datad.alertText1.str) {
@@ -1811,8 +1801,6 @@ void handle_message(UIState *s, void *which) {
   } else if (eventd.which == cereal_Event_liveMapData) {
     struct cereal_LiveMapData datad;
     cereal_read_LiveMapData(&datad, eventd.liveMapData);
-    s->scene.speedlimit = datad.speedLimit;
-    s->scene.speedlimit_valid = datad.speedLimitValid;
     s->scene.map_valid = datad.mapValid;
   }
   capn_free(&ctx);
@@ -2243,7 +2231,10 @@ int main(int argc, char* argv[]) {
 
   float smooth_brightness = BRIGHTNESS_B;
 
-  set_volume(s, 13);
+  const int MIN_VOLUME = LEON ? 12 : 8;
+  const int MAX_VOLUME = LEON ? 15 : 13;
+
+  set_volume(s, MIN_VOLUME);
 #ifdef DEBUG_FPS
   vipc_t1 = millis_since_boot();
   double t1 = millis_since_boot();
@@ -2317,8 +2308,22 @@ int main(int argc, char* argv[]) {
     if (s->volume_timeout > 0) {
       s->volume_timeout--;
     } else {
-      int volume = min(13, 11 + s->scene.v_ego / 15);  // up one notch every 15 m/s, starting at 11
+      int volume = min(MAX_VOLUME, MIN_VOLUME + s->scene.v_ego / 5);  // up one notch every 5 m/s
       set_volume(s, volume);
+    }
+
+    // stop playing alert sounds if no controlsState msg for 1 second
+    if (s->alert_sound_timeout > 0) {
+      s->alert_sound_timeout--;
+    } else if (s->alert_sound != cereal_CarControl_HUDControl_AudibleAlert_none){
+      sound_file* sound = get_sound_file(s->alert_sound);
+      char* error = NULL;
+
+      slplay_stop_uri(sound->uri, &error);
+      if(error) {
+        LOGW("error stopping sound: %s", error);
+      }
+      s->alert_sound = cereal_CarControl_HUDControl_AudibleAlert_none;
     }
 
     read_param_bool_timeout(&s->is_metric, "IsMetric", &s->is_metric_timeout);

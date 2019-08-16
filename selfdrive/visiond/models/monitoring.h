@@ -8,11 +8,20 @@
 extern "C" {
 #endif
 
-#define OUTPUT_SIZE 8
+#define OUTPUT_SIZE_DEPRECATED 8
+#define OUTPUT_SIZE 33
 
 typedef struct MonitoringResult {
-  float vs[OUTPUT_SIZE - 1];
-  float std;
+  float descriptor_DEPRECATED[OUTPUT_SIZE_DEPRECATED - 1];
+  float std_DEPRECATED;
+
+  float face_orientation[3];
+  float face_position[2];
+  float face_prob;
+  float left_eye_prob;
+  float right_eye_prob;
+  float left_blink_prob;
+  float right_blink_prob;
 } MonitoringResult;
 
 typedef struct MonitoringState {

@@ -27,7 +27,7 @@ def get_can_parser(CP):
     ("DOOR_OPEN_RL", "DOORS", 0),
     ("DOOR_OPEN_RR", "DOORS", 0),
     ("BRAKE_PRESSED_2", "BRAKE_2", 0),
-    ("ACCEL_PEDAL", "ACCEL_PEDAL_MSG", 0),
+    ("ACCEL_134", "ACCEL_GAS_134", 0),
     ("SPEED_LEFT", "SPEED_1", 0),
     ("SPEED_RIGHT", "SPEED_1", 0),
     ("WHEEL_SPEED_FL", "WHEEL_SPEEDS", 0),
@@ -60,7 +60,7 @@ def get_can_parser(CP):
     ("ACC_2", 50),
   ]
 
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0, timeout=100)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
 def get_camera_parser(CP):
   signals = [
@@ -72,7 +72,7 @@ def get_camera_parser(CP):
   ]
   checks = []
 
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2, timeout=100)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
 
 
 class CarState(object):
@@ -112,7 +112,7 @@ class CarState(object):
     self.seatbelt = (cp.vl["SEATBELT_STATUS"]['SEATBELT_DRIVER_UNLATCHED'] == 0)
 
     self.brake_pressed = cp.vl["BRAKE_2"]['BRAKE_PRESSED_2'] == 5 # human-only
-    self.pedal_gas = cp.vl["ACCEL_PEDAL_MSG"]['ACCEL_PEDAL']
+    self.pedal_gas = cp.vl["ACCEL_GAS_134"]['ACCEL_134']
     self.car_gas = self.pedal_gas
     self.esp_disabled = (cp.vl["TRACTION_BUTTON"]['TRACTION_OFF'] == 1)
 

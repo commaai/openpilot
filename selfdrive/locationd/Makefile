@@ -40,11 +40,11 @@ EXTRA_LIBS += -llog -luuid
 endif
 
 .PHONY: all
-all: ubloxd params_learner
+all: ubloxd paramsd
 
 include ../common/cereal.mk
 
-LOC_OBJS = locationd_yawrate.o params_learner.o \
+LOC_OBJS = locationd_yawrate.o params_learner.o paramsd.o \
            ../common/swaglog.o \
            ../common/params.o \
            ../common/util.o \
@@ -71,7 +71,7 @@ liblocationd.so: $(LOC_OBJS)
             $(ZMQ_SHARED_LIBS) \
             $(EXTRA_LIBS)
 
-params_learner: $(LOC_OBJS)
+paramsd: $(LOC_OBJS)
 	@echo "[ LINK ] $@"
 	$(CXX) -fPIC -o '$@' $^ \
             $(CEREAL_LIBS) \
@@ -115,7 +115,7 @@ ubloxd_test: ubloxd_test.o $(OBJS)
 
 .PHONY: clean
 clean:
-	rm -f ubloxd params_learner liblocationd.so ubloxd.d ubloxd.o ubloxd_test ubloxd_test.o ubloxd_test.d $(OBJS) $(LOC_OBJS) $(DEPS)
+	rm -f ubloxd paramsd liblocationd.so ubloxd.d ubloxd.o ubloxd_test ubloxd_test.o ubloxd_test.d $(OBJS) $(LOC_OBJS) $(DEPS)
 
 -include $(DEPS)
 -include $(LOC_DEPS)

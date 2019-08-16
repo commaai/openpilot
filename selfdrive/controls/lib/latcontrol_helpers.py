@@ -60,30 +60,3 @@ def compute_path_pinv(l=50):
 
 def model_polyfit(points, path_pinv):
   return np.dot(path_pinv, [float(x) for x in points])
-
-
-def calc_desired_path(l_poly,
-                      r_poly,
-                      p_poly,
-                      l_prob,
-                      r_prob,
-                      p_prob,
-                      speed,
-                      lane_width=None):
-  # this function computes the poly for the center of the lane, averaging left and right polys
-  if lane_width is None:
-    lane_width = interp(speed, _LANE_WIDTH_BP, _LANE_WIDTH_V)
-
-  # lanes in US are ~3.6m wide
-  half_lane_poly = np.array([0., 0., 0., lane_width / 2.])
-  if l_prob + r_prob > 0.01:
-    c_poly = ((l_poly - half_lane_poly) * l_prob +
-              (r_poly + half_lane_poly) * r_prob) / (l_prob + r_prob)
-    c_prob = l_prob + r_prob - l_prob * r_prob
-  else:
-    c_poly = np.zeros(4)
-    c_prob = 0.
-
-  p_weight = 1.  # predicted path weight relatively to the center of the lane
-  d_poly = list((c_poly * c_prob + p_poly * p_prob * p_weight) / (c_prob + p_prob * p_weight))
-  return d_poly, c_poly, c_prob

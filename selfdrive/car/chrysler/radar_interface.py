@@ -51,27 +51,24 @@ class RadarInterface(object):
     self.pts = {}
     self.delay = 0.0  # Delay of radar  #TUNE
     self.rcp = _create_radar_can_parser()
+    self.updated_messages = set()
+    self.trigger_msg = LAST_MSG
 
-  def update(self):
-    canMonoTimes = []
+  def update(self, can_strings):
+    tm = int(sec_since_boot() * 1e9)
+    vls = self.rcp.update_strings(tm, can_strings)
+    self.updated_messages.update(vls)
 
-    updated_messages = set()  # set of message IDs (sig_addresses) we've seen
-
-    while 1:
-      tm = int(sec_since_boot() * 1e9)
-      _, vls = self.rcp.update(tm, True)
-      updated_messages.update(vls)
-      if LAST_MSG in updated_messages:
-        break
+    if self.trigger_msg not in self.updated_messages:
+      return None
 
     ret = car.RadarData.new_message()
     errors = []
     if not self.rcp.can_valid:
       errors.append("canError")
     ret.errors = errors
-    ret.canMonoTimes = canMonoTimes
 
-    for ii in updated_messages:  # ii should be the message ID as a number
+    for ii in self.updated_messages:  # ii should be the message ID as a number
       cpt = self.rcp.vl[ii]
       trackId = _address_to_track(ii)
 
@@ -92,11 +89,6 @@ class RadarInterface(object):
 
     # We want a list, not a dictionary. Filter out LONG_DIST==0 because that means it's not valid.
     ret.points = [x for x in self.pts.values() if x.dRel != 0]
-    return ret
 
-if __name__ == "__main__":
-  RI = RadarInterface(None)
-  while 1:
-    ret = RI.update()
-    print(chr(27) + "[2J")  # clear screen
-    print(ret)
+    self.updated_messages.clear()
+    return ret

@@ -1,9 +1,9 @@
 import unittest
-import copy
 import numpy as np
 from selfdrive.car.honda.interface import CarInterface
 from selfdrive.controls.lib.lateral_mpc import libmpc_py
 from selfdrive.controls.lib.vehicle_model import VehicleModel
+from selfdrive.controls.lib.lane_planner import calc_d_poly
 
 
 def run_mpc(v_ref=30., x_init=0., y_init=0., psi_init=0., delta_init=0.,
@@ -16,12 +16,16 @@ def run_mpc(v_ref=30., x_init=0., y_init=0., psi_init=0., delta_init=0.,
 
   mpc_solution = libmpc_py.ffi.new("log_t *")
 
-  p_l = copy.copy(poly_l)
+  p_l = poly_l.copy()
   p_l[3] += poly_shift
-  p_r = copy.copy(poly_r)
+
+  p_r = poly_r.copy()
   p_r[3] += poly_shift
-  p_p = copy.copy(poly_p)
+
+  p_p = poly_p.copy()
   p_p[3] += poly_shift
+
+  d_poly = calc_d_poly(p_l, p_r, p_p, l_prob, r_prob, lane_width)
 
   CP = CarInterface.get_params("HONDA CIVIC 2016 TOURING", {})
   VM = VehicleModel(CP)
@@ -31,7 +35,7 @@ def run_mpc(v_ref=30., x_init=0., y_init=0., psi_init=0., delta_init=0.,
 
   l_poly = libmpc_py.ffi.new("double[4]", map(float, p_l))
   r_poly = libmpc_py.ffi.new("double[4]", map(float, p_r))
-  p_poly = libmpc_py.ffi.new("double[4]", map(float, p_p))
+  d_poly = libmpc_py.ffi.new("double[4]", map(float, d_poly))
 
   cur_state = libmpc_py.ffi.new("state_t *")
   cur_state[0].x = x_init
@@ -41,7 +45,7 @@ def run_mpc(v_ref=30., x_init=0., y_init=0., psi_init=0., delta_init=0.,
 
   # converge in no more than 20 iterations
   for _ in range(20):
-    libmpc.run_mpc(cur_state, mpc_solution, l_poly, r_poly, p_poly, l_prob, r_prob, p_prob,
+    libmpc.run_mpc(cur_state, mpc_solution, l_poly, r_poly, d_poly, l_prob, r_prob,
                    curvature_factor, v_ref, lane_width)
 
   return mpc_solution
@@ -119,3 +123,7 @@ class TestLateralMpc(unittest.TestCase):
     sol = run_mpc(y_init=y_init)
     for y in list(sol[0].y):
       self.assertGreaterEqual(y_init, abs(y))
+
+
+if __name__ == "__main__":
+  unittest.main()

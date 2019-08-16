@@ -5,6 +5,8 @@ import libpandasafety_py
 
 MAX_BRAKE = 255
 
+INTERCEPTOR_THRESHOLD = 328
+
 class TestHondaSafety(unittest.TestCase):
   @classmethod
   def setUp(cls):
@@ -31,6 +33,10 @@ class TestHondaSafety(unittest.TestCase):
     to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
     to_send[0].RIR = msg << 21
     to_send[0].RDLR = buttons << 5
+    is_panda_black = self.safety.get_hw_type() == 3 # black_panda
+    honda_bosch_hardware = self.safety.get_honda_bosch_hardware()
+    bus = 1 if is_panda_black and honda_bosch_hardware else 0
+    to_send[0].RDTR = bus << 4
 
     return to_send
 
@@ -66,7 +72,9 @@ class TestHondaSafety(unittest.TestCase):
     to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
     to_send[0].RIR = addr << 21
     to_send[0].RDTR = 6
-    to_send[0].RDLR = ((gas & 0xff) << 8) | ((gas & 0xff00) >> 8)
+    gas2 = gas * 2
+    to_send[0].RDLR = ((gas & 0xff) << 8) | ((gas & 0xff00) >> 8) | \
+                      ((gas2 & 0xff) << 24) | ((gas2 & 0xff00) << 8)
 
     return to_send
 
@@ -99,9 +107,9 @@ class TestHondaSafety(unittest.TestCase):
     self.assertFalse(self.safety.get_controls_allowed())
 
   def test_sample_speed(self):
-    self.assertEqual(0, self.safety.get_honda_ego_speed())
+    self.assertEqual(0, self.safety.get_honda_moving())
     self.safety.safety_rx_hook(self._speed_msg(100))
-    self.assertEqual(100, self.safety.get_honda_ego_speed())
+    self.assertEqual(1, self.safety.get_honda_moving())
 
   def test_prev_brake(self):
     self.assertFalse(self.safety.get_honda_brake_prev())
@@ -176,16 +184,15 @@ class TestHondaSafety(unittest.TestCase):
 
   def test_disengage_on_gas_interceptor(self):
     for long_controls_allowed in [0, 1]:
-      self.safety.set_long_controls_allowed(long_controls_allowed)
-      self.safety.safety_rx_hook(self._send_interceptor_msg(0, 0x201))
-      self.safety.set_controls_allowed(1)
-      self.safety.safety_rx_hook(self._send_interceptor_msg(0x1000, 0x201))
-      if long_controls_allowed:
-        self.assertFalse(self.safety.get_controls_allowed())
-      else:
-        self.assertTrue(self.safety.get_controls_allowed())
-      self.safety.safety_rx_hook(self._send_interceptor_msg(0, 0x201))
-      self.safety.set_gas_interceptor_detected(False)
+      for g in range(0, 0x1000):
+        self.safety.set_long_controls_allowed(long_controls_allowed)
+        self.safety.safety_rx_hook(self._send_interceptor_msg(0, 0x201))
+        self.safety.set_controls_allowed(True)
+        self.safety.safety_rx_hook(self._send_interceptor_msg(g, 0x201))
+        remain_enabled = (not long_controls_allowed or g <= INTERCEPTOR_THRESHOLD)
+        self.assertEqual(remain_enabled, self.safety.get_controls_allowed())
+        self.safety.safety_rx_hook(self._send_interceptor_msg(0, 0x201))
+        self.safety.set_gas_interceptor_detected(False)
     self.safety.set_long_controls_allowed(True)
 
   def test_allow_engage_with_gas_interceptor_pressed(self):

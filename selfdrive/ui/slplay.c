@@ -111,7 +111,7 @@ void slplay_destroy() {
   (*engine)->Destroy(engine);
 }
 
-void slplay_stop (uri_player* player, char **error) {
+void slplay_stop(uri_player* player, char **error) {
   SLPlayItf playInterface = player->playInterface;
   SLresult result;
 

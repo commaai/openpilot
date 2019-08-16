@@ -11,14 +11,14 @@ sensorEvents: [8003, true, 100., 100]
 # GPS data, also global timestamp
 gpsNMEA: [8004, true, 9.]  # 9 msgs each sec
 # CPU+MEM+GPU+BAT temps
-thermal: [8005, true, 1., 1]
+thermal: [8005, true, 2., 1]
 # List(CanData), list of can messages
 can: [8006, true, 100.]
 controlsState: [8007, true, 100., 100]
 #liveEvent: [8008, true, 0.]
 model: [8009, true, 20.]
 features: [8010, true, 0.]
-health: [8011, true, 1., 1]
+health: [8011, true, 2., 1]
 radarState: [8012, true, 20.]
 #liveUI: [8014, true, 0.]
 encodeIdx: [8015, true, 20.]

@@ -26,6 +26,12 @@
 #include <capnp/serialize.h>
 #include <jpeglib.h>
 
+#ifdef QCOM
+#include <eigen3/Eigen/Dense>
+#else
+#include <Eigen/Dense>
+#endif
+
 #include "common/version.h"
 #include "common/util.h"
 #include "common/timing.h"
@@ -45,6 +51,7 @@
 #include "cameras/camera_frame_stream.h"
 #endif
 
+
 // 3 models
 #include "models/driving.h"
 #include "models/monitoring.h"
@@ -58,7 +65,7 @@
 
 #define UI_BUF_COUNT 4
 
-//#define DUMP_RGB
+// #define DUMP_RGB
 
 //#define DEBUG_DRIVER_MONITOR
 
@@ -716,6 +723,8 @@ void* monitoring_thread(void *arg) {
       MonitoringResult res = monitoring_eval_frame(&s->monitoring, q,
         s->yuv_front_cl[buf_idx], s->yuv_front_width, s->yuv_front_height);
 
+      double t2 = millis_since_boot();
+
       // send driver monitoring packet
       {
         capnp::MallocMessageBuilder msg;
@@ -725,17 +734,30 @@ void* monitoring_thread(void *arg) {
         auto framed = event.initDriverMonitoring();
         framed.setFrameId(frame_data.frame_id);
 
-        kj::ArrayPtr<const float> descriptor_vs(&res.vs[0], ARRAYSIZE(res.vs));
-        framed.setDescriptor(descriptor_vs);
+        // junk 0s from legacy model
+        //kj::ArrayPtr<const float> descriptor_DEPRECATED(&res.descriptor_DEPRECATED[0], ARRAYSIZE(res.descriptor_DEPRECATED));
+        //framed.setDescriptor(descriptor_DEPRECATED);
+        //framed.setStd(res.std_DEPRECATED);
+        // why not use this junk space for reporting inference time instead
+        // framed.setStdDEPRECATED(static_cast<float>(t2-t1));
 
-        framed.setStd(res.std);
+        kj::ArrayPtr<const float> face_orientation(&res.face_orientation[0], ARRAYSIZE(res.face_orientation));
+        kj::ArrayPtr<const float> face_position(&res.face_position[0], ARRAYSIZE(res.face_position));
+        framed.setFaceOrientation(face_orientation);
+        framed.setFacePosition(face_position);
+        framed.setFaceProb(res.face_prob);
+        framed.setLeftEyeProb(res.left_eye_prob);
+        framed.setRightEyeProb(res.right_eye_prob);
+        framed.setLeftBlinkProb(res.left_blink_prob);
+        framed.setRightBlinkProb(res.right_blink_prob);
+
 
         auto words = capnp::messageToFlatArray(msg);
         auto bytes = words.asBytes();
         zmq_send(s->monitoring_sock_raw, bytes.begin(), bytes.size(), ZMQ_DONTWAIT);
       }
 
-      double t2 = millis_since_boot();
+      t2 = millis_since_boot();
 
       //LOGD("monitoring process: %.2fms, from last %.2fms", t2-t1, t1-last);
       last = t1;
@@ -882,6 +904,8 @@ void* processing_thread(void *arg) {
 #endif
 
 #ifdef DUMP_RGB
+  s->rgb_width = s->frame_width;
+  s->rgb_height = s->frame_height;
   FILE *dump_rgb_file = fopen("/sdcard/dump.rgb", "wb");
 #endif
 
@@ -946,6 +970,8 @@ void* processing_thread(void *arg) {
 #ifdef DUMP_RGB
     if (cnt % 20 == 0) {
       fwrite(bgr_ptr, s->rgb_buf_size, 1, dump_rgb_file);
+      LOG("%d x %d", s->rgb_width, s->rgb_height);
+      assert(1==2);
     }
 #endif
 
@@ -1189,6 +1215,24 @@ void* live_thread(void *arg) {
   zpoller_t *poller = zpoller_new(liveCalibration_sock, terminate, NULL);
   assert(poller);
 
+  /*
+     import numpy as np
+     from common.transformations.model import medmodel_frame_from_road_frame
+     medmodel_frame_from_ground = medmodel_frame_from_road_frame[:, (0, 1, 3)]
+     ground_from_medmodel_frame = np.linalg.inv(medmodel_frame_from_ground)
+  */
+  Eigen::Matrix<float, 3, 3> ground_from_medmodel_frame;
+  ground_from_medmodel_frame <<
+    0.00000000e+00, 0.00000000e+00, 1.00000000e+00,
+    -1.09890110e-03, 0.00000000e+00, 2.81318681e-01,
+    -1.84808520e-20, 9.00738606e-04,-4.28751576e-02;
+
+  Eigen::Matrix<float, 3, 3> eon_intrinsics;
+  eon_intrinsics <<
+    910.0, 0.0, 582.0,
+    0.0, 910.0, 437.0,
+    0.0,   0.0,   1.0;
+
   while (!do_exit) {
     zsock_t *which = (zsock_t*)zpoller_wait(poller, -1);
     if (which == terminate || which == NULL) {
@@ -1213,15 +1257,25 @@ void* live_thread(void *arg) {
 
     if (event.isLiveCalibration()) {
       pthread_mutex_lock(&s->transform_lock);
-#ifdef MEDMODEL
-      auto wm2 = event.getLiveCalibration().getWarpMatrixBig();
-#else
-      auto wm2 = event.getLiveCalibration().getWarpMatrix2();
-#endif
-      assert(wm2.size() == 3*3);
-      for (int i=0; i<3*3; i++) {
-        s->cur_transform.v[i] = wm2[i];
+
+      auto extrinsic_matrix = event.getLiveCalibration().getExtrinsicMatrix();
+      Eigen::Matrix<float, 3, 4> extrinsic_matrix_eigen;
+      for (int i = 0; i < 4*3; i++){
+        extrinsic_matrix_eigen(i / 4, i % 4) = extrinsic_matrix[i];
       }
+
+      auto camera_frame_from_road_frame = eon_intrinsics * extrinsic_matrix_eigen;
+      Eigen::Matrix<float, 3, 3> camera_frame_from_ground;
+      camera_frame_from_ground.col(0) = camera_frame_from_road_frame.col(0);
+      camera_frame_from_ground.col(1) = camera_frame_from_road_frame.col(1);
+      camera_frame_from_ground.col(2) = camera_frame_from_road_frame.col(3);
+
+      auto warp_matrix = camera_frame_from_ground * ground_from_medmodel_frame;
+
+      for (int i=0; i<3*3; i++) {
+        s->cur_transform.v[i] = warp_matrix(i / 3, i % 3);
+      }
+
       s->run_model = true;
       pthread_mutex_unlock(&s->transform_lock);
     }

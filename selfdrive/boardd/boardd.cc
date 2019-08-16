@@ -59,7 +59,8 @@ pthread_mutex_t usb_lock;
 bool spoofing_started = false;
 bool fake_send = false;
 bool loopback_can = false;
-bool is_grey_panda = false;
+cereal::HealthData::HwType hw_type = cereal::HealthData::HwType::UNKNOWN;
+bool is_pigeon = false;
 
 pthread_t safety_setter_thread_handle = -1;
 pthread_t pigeon_thread_handle = -1;
@@ -69,6 +70,29 @@ void pigeon_init();
 void *pigeon_thread(void *crap);
 
 void *safety_setter_thread(void *s) {
+  char *value_vin;
+  size_t value_vin_sz = 0;
+
+  // switch to no_output when CarVin param is read
+  while (1) {
+    if (do_exit) return NULL;
+    const int result = read_db_value(NULL, "CarVin", &value_vin, &value_vin_sz);
+    if (value_vin_sz > 0) {
+      // sanity check VIN format
+      assert(value_vin_sz == 17);
+      break;
+    }
+    usleep(100*1000);
+  }
+  LOGW("got CarVin %s", value_vin);
+
+  pthread_mutex_lock(&usb_lock);
+
+  // VIN qury done, stop listening to OBDII
+  libusb_control_transfer(dev_handle, 0x40, 0xdc, SAFETY_NOOUTPUT, 0, NULL, 0, TIMEOUT);
+
+  pthread_mutex_unlock(&usb_lock);
+
   char *value;
   size_t value_sz = 0;
 
@@ -151,7 +175,7 @@ void *safety_setter_thread(void *s) {
 // must be called before threads or with mutex
 bool usb_connect() {
   int err;
-  unsigned char is_pigeon[1] = {0};
+  unsigned char hw_query[1] = {0};
 
   dev_handle = libusb_open_device_with_vid_pid(ctx, 0xbbaa, 0xddcc);
   if (dev_handle == NULL) { goto fail; }
@@ -184,11 +208,12 @@ bool usb_connect() {
     assert(err == 0);
   }
 
-  libusb_control_transfer(dev_handle, 0xc0, 0xc1, 0, 0, is_pigeon, 1, TIMEOUT);
+  libusb_control_transfer(dev_handle, 0xc0, 0xc1, 0, 0, hw_query, 1, TIMEOUT);
 
-  if (is_pigeon[0]) {
-    LOGW("grey panda detected");
-    is_grey_panda = true;
+  hw_type = (cereal::HealthData::HwType)(hw_query[0]);
+  is_pigeon = (hw_type == cereal::HealthData::HwType::GREY_PANDA) || (hw_type == cereal::HealthData::HwType::BLACK_PANDA);
+  if (is_pigeon) {
+    LOGW("panda with gps detected");
     pigeon_needs_init = true;
     if (pigeon_thread_handle == -1) {
       err = pthread_create(&pigeon_thread_handle, NULL, pigeon_thread, NULL);
@@ -280,11 +305,13 @@ void can_health(void *s) {
   struct __attribute__((packed)) health {
     uint32_t voltage;
     uint32_t current;
+    uint32_t can_send_errs;
+    uint32_t can_fwd_errs;
+    uint32_t gmlan_send_errs;
     uint8_t started;
     uint8_t controls_allowed;
     uint8_t gas_interceptor_detected;
-    uint8_t started_signal_detected;
-    uint8_t started_alt;
+    uint8_t car_harness_status_pkt;
   } health;
 
   // recv from board
@@ -292,7 +319,9 @@ void can_health(void *s) {
 
   do {
     cnt = libusb_control_transfer(dev_handle, 0xc0, 0xd2, 0, 0, (unsigned char*)&health, sizeof(health), TIMEOUT);
-    if (cnt != sizeof(health)) { handle_usb_issue(cnt, __func__); }
+    if (cnt != sizeof(health)) {
+      handle_usb_issue(cnt, __func__);
+    }
   } while(cnt != sizeof(health));
 
   pthread_mutex_unlock(&usb_lock);
@@ -313,13 +342,23 @@ void can_health(void *s) {
   }
   healthData.setControlsAllowed(health.controls_allowed);
   healthData.setGasInterceptorDetected(health.gas_interceptor_detected);
-  healthData.setStartedSignalDetected(health.started_signal_detected);
-  healthData.setIsGreyPanda(is_grey_panda);
+  healthData.setHasGps(is_pigeon);
+  healthData.setCanSendErrs(health.can_send_errs);
+  healthData.setCanFwdErrs(health.can_fwd_errs);
+  healthData.setGmlanSendErrs(health.gmlan_send_errs);
+  healthData.setHwType(hw_type);
 
   // send to health
   auto words = capnp::messageToFlatArray(msg);
   auto bytes = words.asBytes();
   zmq_send(s, bytes.begin(), bytes.size(), 0);
+
+  pthread_mutex_lock(&usb_lock);
+
+  // send heartbeat back to panda
+  libusb_control_transfer(dev_handle, 0x40, 0xf3, 1, 0, NULL, 0, TIMEOUT);
+
+  pthread_mutex_unlock(&usb_lock);
 }
 
 
@@ -444,10 +483,10 @@ void *can_health_thread(void *crap) {
   void *publisher = zmq_socket(context, ZMQ_PUB);
   zmq_bind(publisher, "tcp://*:8011");
 
-  // run at 1hz
+  // run at 2hz
   while (!do_exit) {
     can_health(publisher);
-    usleep(1000*1000);
+    usleep(500*1000);
   }
   return NULL;
 }
@@ -499,7 +538,7 @@ void pigeon_set_baud(int baud) {
 
 void pigeon_init() {
   usleep(1000*1000);
-  LOGW("grey panda start");
+  LOGW("panda GPS start");
 
   // power off pigeon
   pigeon_set_power(0);
@@ -540,7 +579,7 @@ void pigeon_init() {
   pigeon_send("\xB5\x62\x06\x01\x03\x00\x02\x15\x01\x22\x70");
   pigeon_send("\xB5\x62\x06\x01\x03\x00\x02\x13\x01\x20\x6C");
 
-  LOGW("grey panda is ready to fly");
+  LOGW("panda GPS on");
 }
 
 static void pigeon_publish_raw(void *publisher, unsigned char *dat, int alen) {

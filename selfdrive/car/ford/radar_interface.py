@@ -28,28 +28,25 @@ class RadarInterface(object):
 
     # Nidec
     self.rcp = _create_radar_can_parser()
+    self.trigger_msg = 0x53f
+    self.updated_messages = set()
 
-  def update(self):
-    canMonoTimes = []
+  def update(self, can_strings):
+    tm = int(sec_since_boot() * 1e9)
+    vls = self.rcp.update_strings(tm, can_strings)
+    self.updated_messages.update(vls)
 
-    updated_messages = set()
-    while 1:
-      tm = int(sec_since_boot() * 1e9)
-      _, vls = self.rcp.update(tm, True)
-      updated_messages.update(vls)
+    if self.trigger_msg not in self.updated_messages:
+      return None
 
-      # TODO: do not hardcode last msg
-      if 0x53f in updated_messages:
-        break
 
     ret = car.RadarData.new_message()
     errors = []
     if not self.rcp.can_valid:
       errors.append("canError")
     ret.errors = errors
-    ret.canMonoTimes = canMonoTimes
 
-    for ii in updated_messages:
+    for ii in self.updated_messages:
       cpt = self.rcp.vl[ii]
 
       if cpt['X_Rel'] > 0.00001:
@@ -78,11 +75,5 @@ class RadarInterface(object):
           del self.pts[ii]
 
     ret.points = self.pts.values()
+    self.updated_messages.clear()
     return ret
-
-if __name__ == "__main__":
-  RI = RadarInterface(None)
-  while 1:
-    ret = RI.update()
-    print(chr(27) + "[2J")
-    print(ret)
