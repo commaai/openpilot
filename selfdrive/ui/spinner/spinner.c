@@ -16,13 +16,14 @@
 
 #include "common/framebuffer.h"
 
-int main(int argc, char** argv) {
+int main() {
   int err;
-
-  const char* spintext = NULL;
-  if (argc >= 2) {
-    spintext = argv[1];
-  }
+  fd_set readfds;
+  FD_ZERO(&readfds);
+  struct timeval timeout;
+  timeout.tv_sec = 0;
+  timeout.tv_usec = 0;
+  char spintext[50];
 
   // spinner
   int fb_w, fb_h;
@@ -49,6 +50,10 @@ int main(int argc, char** argv) {
   assert(spinner_comma_img >= 0);
 
   for (int cnt = 0; ; cnt++) {
+    FD_SET(STDIN_FILENO, &readfds);
+    if (select(1, &readfds, NULL, NULL, &timeout)) {
+      scanf("%s", spintext);
+    }
     glClearColor(0.1, 0.1, 0.1, 1.0);
     glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     glEnable(GL_BLEND);
