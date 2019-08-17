@@ -507,7 +507,7 @@ def manager_prepare():
   
   params = Params()
   process_cnt = len(managed_processes)
-  loader_proc = subprocess.Popen(["./spinner"],
+  loader_proc = subprocess.Popen(["./spinner"], stdin = subprocess.PIPE,
         cwd=os.path.join(BASEDIR, "selfdrive", "ui", "spinner"),
         close_fds=True)
   spinner_text = "chffrplus" if params.get("Passive")=="1" else "openpilot"
@@ -605,7 +605,7 @@ def main():
   else:
     spinner_text = "chffrplus" if params.get("Passive")=="1" else "openpilot"
     init_text = "initializing {0}".format(spinner_text)
-    spinner_proc = subprocess.Popen(["./spinner"],
+    spinner_proc = subprocess.Popen(["./spinner"], stdin = subprocess.PIPE,
       cwd=os.path.join(BASEDIR, "selfdrive", "ui", "spinner"),
       close_fds=True)
     spinner_proc.write(init_text + "\n")
