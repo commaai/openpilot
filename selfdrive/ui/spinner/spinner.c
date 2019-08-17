@@ -16,13 +16,14 @@
 
 #include "common/framebuffer.h"
 
-int main(int argc, char** argv) {
+int main() {
   int err;
-
-  const char* spintext = NULL;
-  if (argc >= 2) {
-    spintext = argv[1];
-  }
+  fd_set readfds;
+  FD_ZERO(&readfds);
+  struct timeval timeout;
+  timeout.tv_sec = 0;
+  timeout.tv_usec = 0;
+  char spintext[50];
 
   // spinner
   int fb_w, fb_h;
@@ -35,7 +36,7 @@ int main(int argc, char** argv) {
   NVGcontext *vg = nvgCreateGLES3(NVG_ANTIALIAS | NVG_STENCIL_STROKES);
   assert(vg);
 
-  int font = nvgCreateFont(vg, "Bold", "../../assets/OpenSans-SemiBold.ttf");
+  int font = nvgCreateFont(vg, "Bold", "../../assets/fonts/opensans_semibold.ttf");
   assert(font >= 0);
 
   int spinner_img = nvgCreateImage(vg, "../../assets/img_spinner_track.png", 0);
@@ -49,6 +50,11 @@ int main(int argc, char** argv) {
   assert(spinner_comma_img >= 0);
 
   for (int cnt = 0; ; cnt++) {
+    FD_SET(STDIN_FILENO, &readfds);
+    if (select(1, &readfds, NULL, NULL, &timeout)) {
+      fgets(spintext, sizeof spintext, stdin);
+      spintext[strcspn(spintext, "\n")] = 0;
+    }
     glClearColor(0.1, 0.1, 0.1, 1.0);
     glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     glEnable(GL_BLEND);
@@ -85,11 +91,9 @@ int main(int argc, char** argv) {
     nvgFill(vg);
 
     // message
-    if (spintext) {
-      nvgTextAlign(vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
-      nvgFontSize(vg, 96.0f);
-      nvgText(vg, fb_w/2, (fb_h*2/3)+24, spintext, NULL);
-    }
+    nvgTextAlign(vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
+    nvgFontSize(vg, 96.0f);
+    nvgText(vg, fb_w/2, (fb_h*2/3)+24, spintext, NULL);
 
     nvgEndFrame(vg);
     eglSwapBuffers(display, surface);
