@@ -27,7 +27,7 @@ def get_lkas_cmd_bus(car_fingerprint, is_panda_black):
   return 2 if car_fingerprint in HONDA_BOSCH and not is_panda_black else 0
 
 
-def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, chime, fcw, idx, car_fingerprint, is_panda_black):
+def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, fcw, idx, car_fingerprint, is_panda_black):
   # TODO: do we loose pressure if we keep pump off for long?
   brakelights = apply_brake > 0
   brake_rq = apply_brake > 0
@@ -40,11 +40,14 @@ def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_
     "CRUISE_FAULT_CMD": pcm_fault_cmd,
     "CRUISE_CANCEL_CMD": pcm_cancel_cmd,
     "COMPUTER_BRAKE_REQUEST": brake_rq,
-    "SET_ME_0X80": 0x80,
+    "SET_ME_1": 1,
     "BRAKE_LIGHTS": brakelights,
-    "CHIME": chime,
+    "CHIME": 0,
     # TODO: Why are there two bits for fcw? According to dbc file the first bit should also work
     "FCW": fcw << 1,
+    "AEB_REQ_1": 0,
+    "AEB_REQ_2": 0,
+    "AEB": 0,
   }
   bus = get_pt_bus(car_fingerprint, is_panda_black)
   return packer.make_can_msg("BRAKE_COMMAND", bus, values, idx)
@@ -83,7 +86,7 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, is_metric, idx, 
     'SET_ME_X48': 0x48,
     'STEERING_REQUIRED': hud.steer_required,
     'SOLID_LANES': hud.lanes,
-    'BEEP': hud.beep,
+    'BEEP': 0,
   }
   commands.append(packer.make_can_msg('LKAS_HUD', bus_lkas, lkas_hud_values, idx))
 

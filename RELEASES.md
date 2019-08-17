@@ -1,3 +1,14 @@
+Version 0.6.3 (2019-08-12)
+========================
+ * Alert sounds from EON: requires NEOS update
+ * Improve driver monitoring: eye tracking and improved awareness logic
+ * Improve path prediction with new driving model
+ * Improve lane positioning with wide lanes and exits
+ * Improve lateral control on RAV4
+ * Slow down for turns using model
+ * Open sourced regression test to verify outputs against reference logs
+ * Open sourced regression test to sanity check all car models
+
 Version 0.6.2 (2019-07-29)
 ========================
  * New driving model!

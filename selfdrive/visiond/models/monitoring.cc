@@ -42,6 +42,8 @@ MonitoringResult monitoring_eval_frame(MonitoringState* s, cl_command_queue q,
   memcpy(&ret.face_prob, &s->output[12], sizeof ret.face_prob);
   memcpy(&ret.left_eye_prob, &s->output[21], sizeof ret.left_eye_prob);
   memcpy(&ret.right_eye_prob, &s->output[30], sizeof ret.right_eye_prob);
+  memcpy(&ret.left_blink_prob, &s->output[31], sizeof ret.right_eye_prob);
+  memcpy(&ret.right_blink_prob, &s->output[32], sizeof ret.right_eye_prob);
   return ret;
 }
 

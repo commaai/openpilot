@@ -3,7 +3,6 @@ import math
 import numpy as np
 from common.params import Params
 from common.numpy_fast import interp
-from common.kalman.simple_kalman import KF1D
 
 import selfdrive.messaging as messaging
 from cereal import car
@@ -95,9 +94,7 @@ class Planner(object):
     self.longitudinalPlanSource = 'cruise'
     self.fcw_checker = FCWChecker()
     self.fcw_enabled = fcw_enabled
-
-    self.model_v_kf = KF1D([[0.0],[0.0]], _MODEL_V_A, _MODEL_V_C, _MODEL_V_K)
-    self.model_v_kf_ready = False
+    self.path_x = np.arange(192)
 
     self.params = Params()
 
@@ -112,7 +109,6 @@ class Planner(object):
       slowest = min(solutions, key=solutions.get)
 
       self.longitudinalPlanSource = slowest
-
       # Choose lowest of MPC and cruise
       if slowest == 'mpc1':
         self.v_acc = self.mpc1.v_mpc
@@ -145,15 +141,21 @@ class Planner(object):
     enabled = (long_control_state == LongCtrlState.pid) or (long_control_state == LongCtrlState.stopping)
     following = lead_1.status and lead_1.dRel < 45.0 and lead_1.vLeadK > v_ego and lead_1.aLeadK > 0.0
 
-    if not self.model_v_kf_ready:
-      self.model_v_kf.x = [[v_ego],[0.0]]
-      self.model_v_kf_ready = True
+    if len(sm['model'].path.poly):
+      path = list(sm['model'].path.poly)
 
-    if len(sm['model'].speed):
-      self.model_v_kf.update(sm['model'].speed[SPEED_PERCENTILE_IDX])
+      # Curvature of polynomial https://en.wikipedia.org/wiki/Curvature#Curvature_of_the_graph_of_a_function
+      # y = a x^3 + b x^2 + c x + d, y' = 3 a x^2 + 2 b x + c, y'' = 6 a x + 2 b
+      # k = y'' / (1 + y'^2)^1.5
+      y_p = 3 * path[0] * self.path_x**2 + 2 * path[1] * self.path_x + path[2]
+      y_pp = 6 * path[0] * self.path_x + 2 * path[1]
+      curv = y_pp / (1. + y_p**2)**1.5
 
-    if self.params.get("LimitSetSpeedNeural") == "1":
-      model_speed = self.model_v_kf.x[0][0]
+      a_y_max = 2.975 - v_ego * 0.0375  # ~1.85 @ 75mph, ~2.6 @ 25mph
+      v_curvature = np.sqrt(a_y_max / np.clip(np.abs(curv), 1e-4, None))
+      model_speed = np.min(v_curvature)
+      # print(model_speed * CV.MS_TO_MPH, model_speed)
+      model_speed = max(20.0 * CV.MPH_TO_MS, model_speed) # Don't slow down below 20mph
     else:
       model_speed = MAX_SPEED
 
@@ -174,11 +176,9 @@ class Planner(object):
                                                     jerk_limits[1], jerk_limits[0],
                                                     LON_MPC_STEP)
 
-      # accel and jerk up limits are higher here to make model not limiting accel
-      # mainly done to prevent flickering of slowdown icon
       self.v_model, self.a_model = speed_smoother(self.v_acc_start, self.a_acc_start,
                                                     model_speed,
-                                                    2*accel_limits[1], 3*accel_limits[0],
+                                                    2*accel_limits[1], accel_limits[0],
                                                     2*jerk_limits[1], jerk_limits[0],
                                                     LON_MPC_STEP)
 
@@ -234,13 +234,13 @@ class Planner(object):
     plan_send.plan.radarStateMonoTime = sm.logMonoTime['radarState']
 
     # longitudal plan
-    plan_send.plan.vCruise = self.v_cruise
-    plan_send.plan.aCruise = self.a_cruise
-    plan_send.plan.vStart = self.v_acc_start
-    plan_send.plan.aStart = self.a_acc_start
-    plan_send.plan.vTarget = self.v_acc
-    plan_send.plan.aTarget = self.a_acc
-    plan_send.plan.vTargetFuture = self.v_acc_future
+    plan_send.plan.vCruise = float(self.v_cruise)
+    plan_send.plan.aCruise = float(self.a_cruise)
+    plan_send.plan.vStart = float(self.v_acc_start)
+    plan_send.plan.aStart = float(self.a_acc_start)
+    plan_send.plan.vTarget = float(self.v_acc)
+    plan_send.plan.aTarget = float(self.a_acc)
+    plan_send.plan.vTargetFuture = float(self.v_acc_future)
     plan_send.plan.hasLead = self.mpc1.prev_lead_status
     plan_send.plan.longitudinalPlanSource = self.longitudinalPlanSource
 

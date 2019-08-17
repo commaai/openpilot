@@ -9,7 +9,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET, get_events
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.honda.carstate import CarState, get_can_parser, get_cam_can_parser
-from selfdrive.car.honda.values import CruiseButtons, CAR, HONDA_BOSCH, AUDIO_HUD, VISUAL_HUD, CAMERA_MSGS
+from selfdrive.car.honda.values import CruiseButtons, CAR, HONDA_BOSCH, VISUAL_HUD, CAMERA_MSGS
 from selfdrive.car import STD_CARGO_KG, CivicParams, scale_rot_inertia, scale_tire_stiffness
 from selfdrive.controls.lib.planner import _A_CRUISE_MAX_V_FOLLOWING
 
@@ -171,7 +171,7 @@ class CarInterface(object):
       ret.steerRatio = 15.38  # 10.93 is end-to-end spec
       tire_stiffness_factor = 1.
       # Civic at comma has modified steering FW, so different tuning for the Neo in that car
-      is_fw_modified = os.getenv("DONGLE_ID") in ['99c94dc769b5d96e']
+      is_fw_modified = os.getenv("DONGLE_ID") in ['5b7c365c50084530']
       if is_fw_modified:
         ret.lateralTuning.pid.kf = 0.00004
 
@@ -405,12 +405,13 @@ class CarInterface(object):
     ret.gearShifter = self.CS.gear_shifter
 
     ret.steeringTorque = self.CS.steer_torque_driver
+    ret.steeringTorqueEps = self.CS.steer_torque_motor
     ret.steeringPressed = self.CS.steer_override
 
     # cruise state
     ret.cruiseState.enabled = self.CS.pcm_acc_status != 0
     ret.cruiseState.speed = self.CS.v_cruise_pcm * CV.KPH_TO_MS
-    ret.cruiseState.available = bool(self.CS.main_on)
+    ret.cruiseState.available = bool(self.CS.main_on) and not bool(self.CS.cruise_mode)
     ret.cruiseState.speedOffset = self.CS.cruise_speed_offset
     ret.cruiseState.standstill = False
 
@@ -487,7 +488,7 @@ class CarInterface(object):
       events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if self.CS.esp_disabled:
       events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if not self.CS.main_on:
+    if not self.CS.main_on or self.CS.cruise_mode:
       events.append(create_event('wrongCarMode', [ET.NO_ENTRY, ET.USER_DISABLE]))
     if ret.gearShifter == 'reverse':
       events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
@@ -564,7 +565,6 @@ class CarInterface(object):
       hud_v_cruise = 255
 
     hud_alert = VISUAL_HUD[c.hudControl.visualAlert.raw]
-    snd_beep, snd_chime = AUDIO_HUD[c.hudControl.audibleAlert.raw]
 
     pcm_accel = int(clip(c.cruiseControl.accelOverride, 0, 1) * 0xc6)
 
@@ -577,9 +577,7 @@ class CarInterface(object):
                                hud_v_cruise,
                                c.hudControl.lanesVisible,
                                hud_show_car=c.hudControl.leadVisible,
-                               hud_alert=hud_alert,
-                               snd_beep=snd_beep,
-                               snd_chime=snd_chime)
+                               hud_alert=hud_alert)
 
     self.frame += 1
     return can_sends

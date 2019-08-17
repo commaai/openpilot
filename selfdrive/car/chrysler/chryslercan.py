@@ -2,7 +2,6 @@ from cereal import car
 
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
-AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 
 def calc_checksum(data):
   """This function does not want the checksum byte in the input data.
@@ -92,15 +91,6 @@ def create_lkas_command(packer, apply_steer, moving_fast, frame):
 
   values["CHECKSUM"] = checksum
   return packer.make_can_msg("LKAS_COMMAND", 0, values)
-
-
-def create_chimes(audible_alert):
-  # '0050' nothing, chime '4f55'
-  if audible_alert == AudibleAlert.none:
-    msg = '0050'.decode('hex')
-  else:
-    msg = '4f55'.decode('hex')
-  return make_can_msg(0x339, msg)
 
 
 def create_wheel_buttons(frame):

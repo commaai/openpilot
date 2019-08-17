@@ -21,6 +21,7 @@ from selfdrive.loggerd.config import ROOT
 
 import selfdrive.crash as crash
 import selfdrive.messaging as messaging
+from common.api import Api
 from common.params import Params
 from selfdrive.services import service_list
 from selfdrive.swaglog import cloudlog
@@ -225,19 +226,21 @@ def backoff(retries):
 def main(gctx=None):
   params = Params()
   dongle_id = params.get("DongleId")
-  access_token = params.get("AccessToken")
-  ws_uri = ATHENA_HOST + "/ws/" + dongle_id
+  ws_uri = ATHENA_HOST + "/ws/v2/" + dongle_id
 
   crash.bind_user(id=dongle_id)
   crash.bind_extra(version=version, dirty=dirty, is_eon=True)
   crash.install()
+
+  private_key = open("/persist/comma/id_rsa").read()
+  api = Api(dongle_id, private_key)
 
   conn_retries = 0
   while 1:
     try:
       print("connecting to %s" % ws_uri)
       ws = create_connection(ws_uri,
-                             cookie="jwt=" + access_token,
+                             cookie="jwt=" + api.get_token(),
                              enable_multithread=True)
       ws.settimeout(1)
       conn_retries = 0
