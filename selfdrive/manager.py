@@ -504,19 +504,22 @@ def manager_prepare():
 
   # build all processes
   os.chdir(os.path.dirname(os.path.abspath(__file__)))
-
+  
+  params = Params()
   process_cnt = len(managed_processes)
   loader_proc = []
-  params = Params()
   spinner_text = "chffrplus" if params.get("Passive")=="1" else "openpilot"
+  
   for n,p in enumerate(managed_processes):
     if os.getenv("PREPAREONLY") is None:
-      loader_proc.append(subprocess.Popen(["./spinner", 
+      loader_proc.append(subprocess.Popen(["./spinner",
         "loading {0}: {1}/{2} {3}".format(spinner_text, n+1, process_cnt, p)],
         cwd=os.path.join(BASEDIR, "selfdrive", "ui", "spinner"),
         close_fds=True))
+      #loader_proc.stdin.write(loadtext + "\n")
     prepare_managed_process(p)
-
+    
+  #loader_proc.stdin.close()
   # end subprocesses here to stop screen flickering 
   [loader_proc[pc].terminate() for pc in range(process_cnt) if loader_proc]
 
