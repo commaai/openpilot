@@ -53,6 +53,7 @@ int main() {
     FD_SET(STDIN_FILENO, &readfds);
     if (select(1, &readfds, NULL, NULL, &timeout)) {
       fgets(spintext, sizeof spintext, stdin);
+      spintext[strcspn(spintext, "\n")] = 0;
     }
     glClearColor(0.1, 0.1, 0.1, 1.0);
     glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
