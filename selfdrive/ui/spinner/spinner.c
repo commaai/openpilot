@@ -52,7 +52,7 @@ int main() {
   for (int cnt = 0; ; cnt++) {
     FD_SET(STDIN_FILENO, &readfds);
     if (select(1, &readfds, NULL, NULL, &timeout)) {
-      scanf("%s", spintext);
+      scanf("%[^\n]", spintext);
     }
     glClearColor(0.1, 0.1, 0.1, 1.0);
     glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);

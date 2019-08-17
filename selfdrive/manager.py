@@ -608,7 +608,7 @@ def main():
     spinner_proc = subprocess.Popen(["./spinner"], stdin = subprocess.PIPE,
       cwd=os.path.join(BASEDIR, "selfdrive", "ui", "spinner"),
       close_fds=True)
-    spinner_proc.write(init_text + "\n")
+    spinner_proc.stdin.write(init_text + "\n")
   try:
     manager_update()
     manager_init()
