@@ -507,7 +507,7 @@ def manager_prepare():
   
   params = Params()
   process_cnt = len(managed_processes)
-  loader_proc = subprocess.Popen(["./spinner"], stdin = subprocess.PIPE,
+  loader_proc = subprocess.Popen(["./spinner"], stdin=subprocess.PIPE,
         cwd=os.path.join(BASEDIR, "selfdrive", "ui", "spinner"),
         close_fds=True)
   spinner_text = "chffrplus" if params.get("Passive")=="1" else "openpilot"
@@ -520,8 +520,6 @@ def manager_prepare():
     
   loader_proc.stdin.close()
   loader_proc.terminate()
-  # end subprocesses here to stop screen flickering 
-  #[loader_proc[pc].terminate() for pc in range(process_cnt) if loader_proc]
 
 def uninstall():
   cloudlog.warning("uninstalling")
@@ -605,10 +603,11 @@ def main():
   else:
     spinner_text = "chffrplus" if params.get("Passive")=="1" else "openpilot"
     init_text = "initializing {0}".format(spinner_text)
-    spinner_proc = subprocess.Popen(["./spinner"], stdin = subprocess.PIPE,
+    spinner_proc = subprocess.Popen(["./spinner"], stdin=subprocess.PIPE,
       cwd=os.path.join(BASEDIR, "selfdrive", "ui", "spinner"),
       close_fds=True)
     spinner_proc.stdin.write(init_text + "\n")
+    spinner_proc.stdin.close()
   try:
     manager_update()
     manager_init()
