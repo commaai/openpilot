@@ -56,7 +56,7 @@ class CarInterface(object):
 
     ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
 
-    if candidate not in [CAR.PRIUS, CAR.RAV4, CAR.RAV4H]: # These cars use LQR/INDI
+    if candidate not in [CAR.PRIUS, CAR.RAV4, CAR.RAV4H, CAR.COROLLAH_TSS2]: # These cars use LQR/INDI
       ret.lateralTuning.init('pid')
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
 
