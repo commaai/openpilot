@@ -116,6 +116,7 @@ class CarInterface(object):
       ret.mass = 2860. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.05]]
       ret.lateralTuning.pid.kf = 0.00003   # full torque for 20 deg at 80mph means 0.00007818594
+      ret.lateralTuning.pid.deadzone = 0.0 # Unknown, check Cabana for steering angle factor
 
     elif candidate == CAR.LEXUS_RXH:
       stop_and_go = True
@@ -126,6 +127,7 @@ class CarInterface(object):
       ret.mass = 4481. * CV.LB_TO_KG + STD_CARGO_KG  # mean between min and max
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
       ret.lateralTuning.pid.kf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
+      ret.lateralTuning.pid.deadzone = 0.0 # Unknown, check Cabana for steering angle factor
 
     elif candidate in [CAR.CHR, CAR.CHRH]:
       stop_and_go = True
@@ -136,6 +138,7 @@ class CarInterface(object):
       ret.mass = 3300. * CV.LB_TO_KG + STD_CARGO_KG
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.723], [0.0428]]
       ret.lateralTuning.pid.kf = 0.00006
+      ret.lateralTuning.pid.deadzone = 0.056 # Torque angle sensor factor
 
     elif candidate in [CAR.CAMRY, CAR.CAMRYH]:
       stop_and_go = True
@@ -146,6 +149,7 @@ class CarInterface(object):
       ret.mass = 3400. * CV.LB_TO_KG + STD_CARGO_KG #mean between normal and hybrid
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
       ret.lateralTuning.pid.kf = 0.00006
+      ret.lateralTuning.pid.deadzone = 0.056 # Torque angle sensor factor
 
     elif candidate in [CAR.HIGHLANDER, CAR.HIGHLANDERH]:
       stop_and_go = True
@@ -156,6 +160,7 @@ class CarInterface(object):
       ret.mass = 4607. * CV.LB_TO_KG + STD_CARGO_KG #mean between normal and hybrid limited
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.18], [0.015]]  # community tuning
       ret.lateralTuning.pid.kf = 0.00012  # community tuning
+      ret.lateralTuning.pid.deadzone = 0.0 # Unknown, check Cabana for steering angle factor
 
     elif candidate == CAR.AVALON:
       stop_and_go = False
@@ -166,6 +171,7 @@ class CarInterface(object):
       ret.mass = 3505. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.17], [0.03]]
       ret.lateralTuning.pid.kf = 0.00006
+      ret.lateralTuning.pid.deadzone = 0.0 # Unknown, check Cabana for steering angle factor
 
     elif candidate == CAR.RAV4_TSS2:
       stop_and_go = True
@@ -176,6 +182,7 @@ class CarInterface(object):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
       ret.mass = 3370. * CV.LB_TO_KG + STD_CARGO_KG
       ret.lateralTuning.pid.kf = 0.00007818594
+      ret.lateralTuning.pid.deadzone = 0.056 # Torque angle sensor factor
 
     elif candidate == CAR.COROLLA_TSS2:
       stop_and_go = True
@@ -186,6 +193,7 @@ class CarInterface(object):
       ret.mass = 3060. * CV.LB_TO_KG + STD_CARGO_KG
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
       ret.lateralTuning.pid.kf = 0.00007818594
+      ret.lateralTuning.pid.deadzone = 0.056 # Torque angle sensor factor
 
     elif candidate == CAR.LEXUS_ESH_TSS2:
       stop_and_go = True
@@ -196,6 +204,7 @@ class CarInterface(object):
       ret.mass = 3704. * CV.LB_TO_KG + STD_CARGO_KG
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
       ret.lateralTuning.pid.kf = 0.00007818594
+      ret.lateralTuning.pid.deadzone = 0.056 # Torque angle sensor factor
 
     elif candidate == CAR.SIENNA:
       stop_and_go = True
@@ -206,6 +215,7 @@ class CarInterface(object):
       ret.mass = 4590. * CV.LB_TO_KG + STD_CARGO_KG
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.05]]
       ret.lateralTuning.pid.kf = 0.00007818594
+      ret.lateralTuning.pid.deadzone = 0.0 # Unknown, check Cabana for steering angle factor
 
     ret.steerRateCost = 1.
     ret.centerToFront = ret.wheelbase * 0.44

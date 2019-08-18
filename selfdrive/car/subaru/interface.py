@@ -65,6 +65,7 @@ class CarInterface(object):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2, 0.3], [0.02, 0.03]]
       ret.steerMaxBP = [0.] # m/s
       ret.steerMaxV = [1.]
+      ret.lateralTuning.pid.deadzone = 0.0 # Unknown, check Cabana for steering angle factor
 
     ret.steerControlType = car.CarParams.SteerControlType.torque
     ret.steerRatioRear = 0.

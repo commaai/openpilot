@@ -62,6 +62,7 @@ class CarInterface(object):
     ret.steerRateCost = 1.0
     ret.centerToFront = ret.wheelbase * 0.44
     tire_stiffness_factor = 0.5328
+    ret.lateralTuning.pid.deadzone = 0.0 # Unknown, check Cabana for steering angle factor
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter.
