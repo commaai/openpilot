@@ -73,7 +73,7 @@ class LongControl(object):
     self.pid.reset()
     self.v_pid = v_pid
 
-  def update(self, active, v_ego, brake_pressed, standstill, cruise_standstill, v_cruise, v_target, v_target_future, a_target, CP, force_decel):
+  def update(self, active, v_ego, brake_pressed, standstill, cruise_standstill, v_cruise, v_target, v_target_future, a_target, CP, force_decel, longitudinalPlanSource):
     """Update longitudinal control. This updates the state machine and runs a PID loop"""
     # Actuation limits
     gas_max = interp(v_ego, CP.gasMaxBP, CP.gasMaxV)
@@ -102,13 +102,18 @@ class LongControl(object):
       # Freeze the integrator so we don't accelerate to compensate, and don't allow positive acceleration
       prevent_overshoot = not CP.stoppingControl and v_ego < 1.5 and v_target_future < 0.7
       deadzone = interp(v_ego_pid, CP.longitudinalTuning.deadzoneBP, CP.longitudinalTuning.deadzoneV)
-      if force_decel and not self.lastdecel:
-        self.lastdecel = True
-        self.pid._k_p = ([0.], [0.])
-        self.pid._k_i = ([0.], [0.])
-        self.pid.i = 0.0
-      if self.lastdecel and not force_decel:
-        self.lastdecel = False
+      if longitudinalPlanSource == 'cruise':
+        if force_decel and not self.lastdecel:
+          self.lastdecel = True
+          self.pid._k_p = ([0.], [0.])
+          self.pid._k_i = ([0.], [0.])
+          self.pid.i = 0.0
+        if self.lastdecel and not force_decel:
+          self.lastdecel = False
+          self.pid._k_p = (CP.longitudinalTuning.kpBP, CP.longitudinalTuning.kpV)
+          self.pid._k_i = (CP.longitudinalTuning.kiBP, CP.longitudinalTuning.kiV)
+      else:
+        self.lastdecelForTurn = False
         self.pid._k_p = (CP.longitudinalTuning.kpBP, CP.longitudinalTuning.kpV)
         self.pid._k_i = (CP.longitudinalTuning.kiBP, CP.longitudinalTuning.kiV)
         
