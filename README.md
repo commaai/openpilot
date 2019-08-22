@@ -142,7 +142,6 @@ Community Maintained Cars are not confirmed by comma.ai to meet our [safety mode
 In Progress Cars
 ------
 - All TSS-P Toyota with Steering Assist and LSS-P Lexus with Steering Assist or Lane Keep Assist.
-  - Only remaining Toyota cars with no port yet are the Avalon and the Sienna.
 - All Hyundai with SmartSense.
 - All Kia with SCC and LKAS.
 - All Chrysler, Jeep, Fiat with Adaptive Cruise Control and LaneSense.
