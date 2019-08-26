@@ -32,26 +32,6 @@ jobs:
       - store_artifacts:
           name: Store misra test output
           path: /tmp/misra/misra_output.txt
-      - store_artifacts:
-          name: Store cppcheck safety test output
-          path: /tmp/misra/cppcheck_safety_output.txt
-      - store_artifacts:
-          name: Store misra safety test output
-          path: /tmp/misra/misra_safety_output.txt
-
-
-  strict-compiler:
-    machine:
-      docker_layer_caching: true
-    steps:
-      - checkout
-      - run:
-          name: Build image
-          command: "docker build -t panda_strict_compiler -f tests/build_strict/Dockerfile ."
-      - run:
-          name: Build Panda with strict compiler rules
-          command: |
-            docker run panda_strict_compiler /bin/bash -c "cd /panda/tests/build_strict; ./test_build_strict.sh"
 
   build:
     machine:
@@ -99,12 +79,25 @@ jobs:
           command: |
             docker run panda_safety_replay /bin/bash -c "cd /openpilot/panda/tests/safety_replay; PYTHONPATH=/openpilot ./test_safety_replay.py"
 
+  language_check:
+    machine:
+      docker_layer_caching: true
+    steps:
+      - checkout
+      - run:
+          name: Build image
+          command: "docker build -t language_check -f tests/language/Dockerfile ."
+      - run:
+          name: Check code for bad language
+          command: |
+            docker run language_check /bin/bash -c "cd /panda/tests/language; ./test_language.py"
+
 workflows:
   version: 2
   main:
     jobs:
       - safety
       - misra-c2012
-      - strict-compiler
       - build
       - safety_replay
+      - language_check

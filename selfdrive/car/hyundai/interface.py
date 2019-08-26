@@ -40,13 +40,14 @@ class CarInterface(object):
     return 1.0
 
   @staticmethod
-  def get_params(candidate, fingerprint, vin=""):
+  def get_params(candidate, fingerprint, vin="", is_panda_black=False):
 
     ret = car.CarParams.new_message()
 
     ret.carName = "hyundai"
     ret.carFingerprint = candidate
     ret.carVin = vin
+    ret.isPandaBlack = is_panda_black
     ret.radarOffCan = True
     ret.safetyModel = car.CarParams.SafetyModel.hyundai
     ret.enableCruise = True  # stock acc
@@ -141,7 +142,7 @@ class CarInterface(object):
     ret.brakeMaxBP = [0.]
     ret.brakeMaxV = [1.]
 
-    ret.enableCamera = not any(x for x in CAMERA_MSGS if x in fingerprint)
+    ret.enableCamera = not any(x for x in CAMERA_MSGS if x in fingerprint) or is_panda_black
     ret.openpilotLongitudinalControl = False
 
     ret.steerLimitAlert = False
@@ -151,17 +152,16 @@ class CarInterface(object):
     return ret
 
   # returns a car.CarState
-  def update(self, c):
+  def update(self, c, can_strings):
     # ******************* do can recv *******************
-    canMonoTimes = []
-    can_rcv_valid, _ = self.cp.update(int(sec_since_boot() * 1e9), True)
-    cam_rcv_valid, _ = self.cp_cam.update(int(sec_since_boot() * 1e9), False)
+    self.cp.update_strings(int(sec_since_boot() * 1e9), can_strings)
+    self.cp_cam.update_strings(int(sec_since_boot() * 1e9), can_strings)
 
     self.CS.update(self.cp, self.cp_cam)
     # create message
     ret = car.CarState.new_message()
 
-    ret.canValid = can_rcv_valid and cam_rcv_valid and self.cp.can_valid  # TODO: check cp_cam validity
+    ret.canValid = self.cp.can_valid  # TODO: check cp_cam validity
 
     # speeds
     ret.vEgo = self.CS.v_ego
@@ -269,7 +269,6 @@ class CarInterface(object):
       events.append(create_event('belowSteerSpeed', [ET.WARNING]))
 
     ret.events = events
-    ret.canMonoTimes = canMonoTimes
 
     self.gas_pressed_prev = ret.gasPressed
     self.brake_pressed_prev = ret.brakePressed
@@ -279,7 +278,7 @@ class CarInterface(object):
 
   def apply(self, c):
 
-    hud_alert = get_hud_alerts(c.hudControl.visualAlert, c.hudControl.audibleAlert)
+    hud_alert = get_hud_alerts(c.hudControl.visualAlert)
 
     can_sends = self.CC.update(c.enabled, self.CS, c.actuators,
                                c.cruiseControl.cancel, hud_alert)

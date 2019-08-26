@@ -46,11 +46,10 @@ else
   LIBYUV_FLAGS = -I$(PHONELIBS)/libyuv/include
   LIBYUV_LIBS = $(PHONELIBS)/libyuv/x64/lib/libyuv.a
 
-  ZMQ_FLAGS = -I$(PHONELIBS)/zmq/aarch64/include
-  ZMQ_LIBS = -l:libczmq.a -l:libzmq.a -lsodium
+  ZMQ_FLAGS = -I$(PHONELIBS)/zmq/x64/include
+  ZMQ_LIBS = -L$(PHONELIBS)/zmq/x64/lib/ -l:libczmq.a -l:libzmq.a
 
   OPENCL_LIBS = -lOpenCL
-  UUID_LIBS = -luuid
 
   TF_FLAGS = -I$(EXTERNAL)/tensorflow/include
   TF_LIBS = -L$(EXTERNAL)/tensorflow/lib -ltensorflow \

@@ -44,21 +44,21 @@ typedef struct {
   const safety_hooks *hooks;
 } safety_hook_config;
 
-#define SAFETY_NOOUTPUT 0
-#define SAFETY_HONDA 1
-#define SAFETY_TOYOTA 2
-#define SAFETY_GM 3
-#define SAFETY_HONDA_BOSCH 4
-#define SAFETY_FORD 5
-#define SAFETY_CADILLAC 6
-#define SAFETY_HYUNDAI 7
-#define SAFETY_TESLA 8
-#define SAFETY_CHRYSLER 9
-#define SAFETY_SUBARU 10
-#define SAFETY_GM_ASCM 0x1334
-#define SAFETY_TOYOTA_IPAS 0x1335
-#define SAFETY_ALLOUTPUT 0x1337
-#define SAFETY_ELM327 0xE327
+#define SAFETY_NOOUTPUT 0U
+#define SAFETY_HONDA 1U
+#define SAFETY_TOYOTA 2U
+#define SAFETY_GM 3U
+#define SAFETY_HONDA_BOSCH 4U
+#define SAFETY_FORD 5U
+#define SAFETY_CADILLAC 6U
+#define SAFETY_HYUNDAI 7U
+#define SAFETY_TESLA 8U
+#define SAFETY_CHRYSLER 9U
+#define SAFETY_SUBARU 10U
+#define SAFETY_GM_ASCM 0x1334U
+#define SAFETY_TOYOTA_IPAS 0x1335U
+#define SAFETY_ALLOUTPUT 0x1337U
+#define SAFETY_ELM327 0xE327U
 
 const safety_hook_config safety_hook_registry[] = {
   {SAFETY_NOOUTPUT, &nooutput_hooks},

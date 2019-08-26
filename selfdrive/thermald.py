@@ -2,13 +2,13 @@
 import os
 from smbus2 import SMBus
 from cereal import log
-from selfdrive.version import training_version
+from selfdrive.version import terms_version, training_version
 from selfdrive.swaglog import cloudlog
 import selfdrive.messaging as messaging
 from selfdrive.services import service_list
 from selfdrive.loggerd.config import get_available_percent
 from common.params import Params
-from common.realtime import sec_since_boot
+from common.realtime import sec_since_boot, DT_TRML
 from common.numpy_fast import clip
 from common.filter_simple import FirstOrderFilter
 
@@ -138,8 +138,8 @@ def thermald_thread():
   ignition_seen = False
   started_seen = False
   thermal_status = ThermalStatus.green
-  health_sock.RCVTIMEO = 1500
-  current_filter = FirstOrderFilter(0., CURRENT_TAU, 1.)
+  health_sock.RCVTIMEO = int(1000 * 2 * DT_TRML)  # 2x the expected health frequency
+  current_filter = FirstOrderFilter(0., CURRENT_TAU, DT_TRML)
   health_prev = None
 
   # Make sure charging is enabled
@@ -189,13 +189,13 @@ def thermald_thread():
     if max_cpu_temp > 107. or bat_temp >= 63.:
       # onroad not allowed
       thermal_status = ThermalStatus.danger
-    elif max_comp_temp > 95. or bat_temp > 60.:
+    elif max_comp_temp > 92.5 or bat_temp > 60.: # CPU throttling starts around ~90C
       # hysteresis between onroad not allowed and engage not allowed
       thermal_status = clip(thermal_status, ThermalStatus.red, ThermalStatus.danger)
-    elif max_cpu_temp > 90.0:
+    elif max_cpu_temp > 87.5:
       # hysteresis between engage not allowed and uploader not allowed
       thermal_status = clip(thermal_status, ThermalStatus.yellow, ThermalStatus.red)
-    elif max_cpu_temp > 85.0:
+    elif max_cpu_temp > 80.0:
       # uploader not allowed
       thermal_status = ThermalStatus.yellow
     elif max_cpu_temp > 75.0:
@@ -216,7 +216,7 @@ def thermald_thread():
       ignition = True
 
     do_uninstall = params.get("DoUninstall") == "1"
-    accepted_terms = params.get("HasAcceptedTerms") == "1"
+    accepted_terms = params.get("HasAcceptedTerms") == terms_version
     completed_training = params.get("CompletedTrainingVersion") == training_version
 
     should_start = ignition
@@ -266,7 +266,7 @@ def thermald_thread():
     print(msg)
 
     # report to server once per minute
-    if (count%60) == 0:
+    if (count % int(60. / DT_TRML)) == 0:
       cloudlog.event("STATUS_PACKET",
         count=count,
         health=(health.to_dict() if health else None),

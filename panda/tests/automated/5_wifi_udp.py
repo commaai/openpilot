@@ -34,7 +34,7 @@ def test_udp_doesnt_drop(serial=None):
         sys.stdout.flush()
       else:
         print("UDP WIFI loopback %d messages at speed %d, comp speed is %.2f, percent %.2f" % (msg_count, speed, comp_kbps, saturation_pct))
-        assert_greater(saturation_pct, 15) #sometimes the wifi can be slow...
+        assert_greater(saturation_pct, 20) #sometimes the wifi can be slow...
         assert_less(saturation_pct, 100)
         saturation_pcts.append(saturation_pct)
     if len(saturation_pcts) > 0:

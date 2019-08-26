@@ -29,7 +29,7 @@ def recv(panda, cnt, addr, nbus):
 def isotp_recv_subaddr(panda, addr, bus, sendaddr, subaddr):
   msg = recv(panda, 1, addr, bus)[0]
 
-  # TODO: handle other subaddr also communicating 
+  # TODO: handle other subaddr also communicating
   assert ord(msg[0]) == subaddr
 
   if ord(msg[1])&0xf0 == 0x10:

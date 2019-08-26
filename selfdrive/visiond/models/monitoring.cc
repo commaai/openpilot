@@ -37,9 +37,13 @@ MonitoringResult monitoring_eval_frame(MonitoringState* s, cl_command_queue q,
   s->m->execute(net_input_buf);
 
   MonitoringResult ret = {0};
-  memcpy(ret.vs, s->output, sizeof(ret.vs));
-  ret.std = sqrtf(2.f) / s->output[OUTPUT_SIZE - 1];
-
+  memcpy(&ret.face_orientation, &s->output[0], sizeof ret.face_orientation);
+  memcpy(&ret.face_position, &s->output[3], sizeof ret.face_position);
+  memcpy(&ret.face_prob, &s->output[12], sizeof ret.face_prob);
+  memcpy(&ret.left_eye_prob, &s->output[21], sizeof ret.left_eye_prob);
+  memcpy(&ret.right_eye_prob, &s->output[30], sizeof ret.right_eye_prob);
+  memcpy(&ret.left_blink_prob, &s->output[31], sizeof ret.right_eye_prob);
+  memcpy(&ret.right_blink_prob, &s->output[32], sizeof ret.right_eye_prob);
   return ret;
 }
 

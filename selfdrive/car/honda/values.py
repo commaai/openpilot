@@ -1,7 +1,6 @@
 from cereal import car
 from selfdrive.car import dbc_dict
 
-AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 # Car button codes
@@ -10,31 +9,6 @@ class CruiseButtons:
   DECEL_SET   = 3
   CANCEL      = 2
   MAIN        = 1
-
-#car chimes: enumeration from dbc file. Chimes are for alerts and warnings
-class CM:
-  MUTE = 0
-  SINGLE = 3
-  DOUBLE = 4
-  REPEATED = 1
-  CONTINUOUS = 2
-
-#car beeps: enumeration from dbc file. Beeps are for engage and disengage
-class BP:
-  MUTE = 0
-  SINGLE = 3
-  TRIPLE = 2
-  REPEATED = 1
-
-AUDIO_HUD = {
-  AudibleAlert.none: (BP.MUTE, CM.MUTE),
-  AudibleAlert.chimeEngage: (BP.SINGLE, CM.MUTE),
-  AudibleAlert.chimeDisengage: (BP.SINGLE, CM.MUTE),
-  AudibleAlert.chimeError: (BP.MUTE, CM.DOUBLE),
-  AudibleAlert.chimePrompt: (BP.MUTE, CM.SINGLE),
-  AudibleAlert.chimeWarning1: (BP.MUTE, CM.DOUBLE),
-  AudibleAlert.chimeWarning2: (BP.MUTE, CM.REPEATED),
-  AudibleAlert.chimeWarningRepeat: (BP.MUTE, CM.REPEATED)}
 
 class AH:
   #[alert_idx, value]
@@ -72,6 +46,9 @@ class CAR:
   PILOT = "HONDA PILOT 2017 TOURING"
   PILOT_2019 = "HONDA PILOT 2019 ELITE"
   RIDGELINE = "HONDA RIDGELINE 2017 BLACK EDITION"
+
+# diag message that in some Nidec cars only appear with 1s freq if VIN query is performed
+DIAG_MSGS = {1600: 5, 1601: 8}
 
 FINGERPRINTS = {
   CAR.ACCORD: [{
@@ -138,6 +115,12 @@ FINGERPRINTS = {
     57: 3, 145: 8, 229: 4, 308: 5, 316: 8, 339: 7, 342: 6, 344: 8, 380: 8, 392: 6, 399: 7, 419: 8, 420: 8, 422:8, 425: 8, 426: 8, 427: 3, 432: 7, 464: 8, 476: 4, 490: 8, 545: 5, 546: 3, 597: 8, 660: 8, 773: 7, 777: 8, 795: 8, 800: 8, 804: 8, 808: 8, 819: 7, 821: 5, 871: 8, 882: 2, 884: 7, 892: 8, 923: 2, 929: 8, 963: 8, 965: 8, 966: 8, 967: 8, 983: 8, 985: 3, 1027: 5, 1029: 8, 1036: 8, 1039: 8, 1064: 7, 1088: 8, 1089: 8, 1092: 1, 1108: 8, 1125: 8, 1296: 8, 1365: 5, 424: 5, 1613: 5, 1616: 5, 1618: 5, 1623: 5, 1668: 5
   }]
 }
+
+# add DIAG_MSGS to fingerprints
+for c in FINGERPRINTS:
+  for f, _ in enumerate(FINGERPRINTS[c]):
+    for d in DIAG_MSGS:
+      FINGERPRINTS[c][f][d] = DIAG_MSGS[d]
 
 DBC = {
   CAR.ACCORD: dbc_dict('honda_accord_s2t_2018_can_generated', None),

@@ -16,16 +16,33 @@ def pub_sock(port, addr="*"):
   sock.bind("tcp://%s:%d" % (addr, port))
   return sock
 
-def sub_sock(port, poller=None, addr="127.0.0.1", conflate=False):
+def sub_sock(port, poller=None, addr="127.0.0.1", conflate=False, timeout=None):
   context = zmq.Context.instance()
   sock = context.socket(zmq.SUB)
   if conflate:
     sock.setsockopt(zmq.CONFLATE, 1)
   sock.connect("tcp://%s:%d" % (addr, port))
   sock.setsockopt(zmq.SUBSCRIBE, b"")
+
+  if timeout is not None:
+    sock.RCVTIMEO = timeout
+
   if poller is not None:
     poller.register(sock, zmq.POLLIN)
   return sock
+
+def drain_sock_raw(sock, wait_for_one=False):
+  ret = []
+  while 1:
+    try:
+      if wait_for_one and len(ret) == 0:
+        dat = sock.recv()
+      else:
+        dat = sock.recv(zmq.NOBLOCK)
+      ret.append(dat)
+    except zmq.error.Again:
+      break
+  return ret
 
 def drain_sock(sock, wait_for_one=False):
   ret = []
@@ -82,24 +99,29 @@ class SubMaster():
     self.valid = {}
     for s in services:
       # TODO: get address automatically from service_list
-      self.sock[s] = sub_sock(service_list[s].port, poller=self.poller, addr=addr, conflate=True)
+      if addr is not None:
+        self.sock[s] = sub_sock(service_list[s].port, poller=self.poller, addr=addr, conflate=True)
       self.freq[s] = service_list[s].frequency
       data = new_message()
       data.init(s)
       self.data[s] = getattr(data, s)
-      self.logMonoTime[s] = data.logMonoTime
+      self.logMonoTime[s] = 0
       self.valid[s] = data.valid
 
   def __getitem__(self, s):
     return self.data[s]
 
   def update(self, timeout=-1):
+    msgs = []
+    for sock, _ in self.poller.poll(timeout):
+      msgs.append(recv_one(sock))
+    self.update_msgs(sec_since_boot(), msgs)
+
+  def update_msgs(self, cur_time, msgs):
     # TODO: add optional input that specify the service to wait for
     self.frame += 1
     self.updated = dict.fromkeys(self.updated, False)
-    cur_time = sec_since_boot()
-    for sock, _ in self.poller.poll(timeout):
-      msg = recv_one(sock)
+    for msg in msgs:
       s = msg.which()
       self.updated[s] = True
       self.rcv_time[s] = cur_time

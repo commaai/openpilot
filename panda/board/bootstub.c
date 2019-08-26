@@ -12,15 +12,29 @@
   #include "stm32f2xx_hal_gpio_ex.h"
 #endif
 
-// default since there's no serial
-void puts(const char *a) {}
-void puth(unsigned int i) {}
+// ******************** Prototypes ********************
+void puts(const char *a){ UNUSED(a); }
+void puth(unsigned int i){ UNUSED(i); }
+void puth2(unsigned int i){ UNUSED(i); }
+typedef struct board board;
+typedef struct harness_configuration harness_configuration;
+// No CAN support on bootloader
+void can_flip_buses(uint8_t bus1, uint8_t bus2){UNUSED(bus1); UNUSED(bus2);}
+void can_set_obd(int harness_orientation, bool obd){UNUSED(harness_orientation); UNUSED(obd);}
 
+// ********************* Globals **********************
+int hw_type = 0;
+const board *current_board;
+
+// ********************* Includes *********************
 #include "libc.h"
 #include "provision.h"
 
 #include "drivers/clock.h"
 #include "drivers/llgpio.h"
+
+#include "board.h"
+
 #include "gpio.h"
 
 #include "drivers/spi.h"
@@ -34,11 +48,11 @@ void puth(unsigned int i) {}
 
 #include "spi_flasher.h"
 
-void __initialize_hardware_early() {
+void __initialize_hardware_early(void) {
   early();
 }
 
-void fail() {
+void fail(void) {
   soft_flasher_start();
 }
 
@@ -48,14 +62,13 @@ extern void *_app_start[];
 // FIXME: sometimes your panda will fail flashing and will quickly blink a single Green LED
 // BOUNTY: $200 coupon on shop.comma.ai or $100 check.
 
-int main() {
+int main(void) {
   __disable_irq();
   clock_init();
-  detect();
+  detect_configuration();
+  detect_board_type();
 
-  if (revision == PANDA_REV_C) {
-    set_usb_power_mode(USB_POWER_CLIENT);
-  }
+  current_board->set_usb_power_mode(USB_POWER_CLIENT);
 
   if (enter_bootloader_mode == ENTER_SOFTLOADER_MAGIC) {
     enter_bootloader_mode = 0;
@@ -88,7 +101,7 @@ fail:
   return 0;
 good:
   // jump to flash
-  ((void(*)()) _app_start[1])();
+  ((void(*)(void)) _app_start[1])();
   return 0;
 }
 
