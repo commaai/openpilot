@@ -250,6 +250,19 @@ class CarInterface(object):
       ret.longitudinalTuning.kiBP = [0., 35.]
       ret.longitudinalTuning.kiV = [0.18, 0.12]
 
+    elif candidate == CAR.FIT:
+      stop_and_go = False
+      ret.mass = 2644. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.wheelbase = 2.53
+      ret.centerToFront = ret.wheelbase * 0.39
+      ret.steerRatio = 13.06
+      tire_stiffness_factor = 0.75 # not optimized yet
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.06]]
+      ret.longitudinalTuning.kpBP = [0., 5., 35.]
+      ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
+      ret.longitudinalTuning.kiBP = [0., 35.]
+      ret.longitudinalTuning.kiV = [0.18, 0.12]
+
     elif candidate == CAR.ACURA_RDX:
       stop_and_go = False
       ret.mass = 3935. * CV.LB_TO_KG + STD_CARGO_KG
