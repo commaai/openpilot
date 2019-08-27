@@ -40,6 +40,7 @@ class CAR:
   CRV = "HONDA CR-V 2016 TOURING"
   CRV_5G = "HONDA CR-V 2017 EX"
   CRV_HYBRID = "HONDA CR-V 2019 HYBRID"
+  FIT = "HONDA FIT 2018 EX"
   ODYSSEY = "HONDA ODYSSEY 2018 EX-L"
   ODYSSEY_CHN = "HONDA ODYSSEY 2019 EXCLUSIVE CHN"
   ACURA_RDX = "ACURA RDX 2018 ACURAWATCH PLUS"
@@ -82,6 +83,9 @@ FINGERPRINTS = {
   }],
   CAR.CRV_HYBRID: [{
     57: 3, 148: 8, 228: 5, 304: 8, 330: 8, 344: 8, 380: 8, 387: 8, 388: 8, 399: 7, 408: 6, 415: 6, 419: 8, 420: 8, 427: 3, 428: 8, 432: 7, 441: 5, 450: 8, 464: 8, 477: 8, 479: 8, 490: 8, 495: 8, 525: 8, 531: 8, 545: 6, 662: 4, 773: 7, 777: 8, 780: 8, 804: 8, 806: 8, 808: 8, 814: 4, 829: 5, 833: 6, 862: 8, 884: 8, 891: 8, 927: 8, 929: 8, 930: 8, 931: 8, 1302: 8, 1361: 5, 1365: 5, 1600: 5, 1601: 8, 1626: 5, 1627: 5
+  }],
+  CAR.FIT: [{
+    57: 3, 145: 8, 228: 5, 304: 8, 342: 6, 344: 8, 380: 8, 399: 7, 401: 8, 420: 8, 422: 8, 427: 3, 428: 8, 432: 7, 464: 8, 487: 4, 490: 8, 506: 8, 597: 8, 660: 8, 661: 4, 773: 7, 777: 8, 780: 8, 800: 8, 804: 8, 808: 8, 829: 5, 862: 8, 884: 7, 892: 8, 929: 8, 985: 3, 1024: 5, 1027: 5, 1029: 8, 1036: 8, 1039: 8, 1108: 8, 1322: 5, 1361: 5, 1365: 5, 1424: 5, 1600: 5, 1601: 8
   }],
   # 2018 Odyssey w/ Added Comma Pedal Support (512L & 513L)
   CAR.ODYSSEY: [{
@@ -133,6 +137,7 @@ DBC = {
   CAR.CRV: dbc_dict('honda_crv_touring_2016_can_generated', 'acura_ilx_2016_nidec'),
   CAR.CRV_5G: dbc_dict('honda_crv_ex_2017_can_generated', None),
   CAR.CRV_HYBRID: dbc_dict('honda_crv_hybrid_2019_can_generated', None),
+  CAR.FIT: dbc_dict('honda_fit_ex_2018_can_generated', 'acura_ilx_2016_nidec'),
   CAR.ODYSSEY: dbc_dict('honda_odyssey_exl_2018_generated', 'acura_ilx_2016_nidec'),
   CAR.ODYSSEY_CHN: dbc_dict('honda_odyssey_extreme_edition_2018_china_can', 'acura_ilx_2016_nidec'),
   CAR.PILOT: dbc_dict('honda_pilot_touring_2017_can_generated', 'acura_ilx_2016_nidec'),
@@ -151,6 +156,7 @@ STEER_THRESHOLD = {
   CAR.CRV: 1200,
   CAR.CRV_5G: 1200,
   CAR.CRV_HYBRID: 1200,
+  CAR.FIT: 1200,
   CAR.ODYSSEY: 1200,
   CAR.ODYSSEY_CHN: 1200,
   CAR.PILOT: 1200,
@@ -169,6 +175,7 @@ SPEED_FACTOR = {
   CAR.CRV: 1.025,
   CAR.CRV_5G: 1.025,
   CAR.CRV_HYBRID: 1.025,
+  CAR.FIT: 1.,
   CAR.ODYSSEY: 1.,
   CAR.ODYSSEY_CHN: 1.,
   CAR.PILOT: 1.,

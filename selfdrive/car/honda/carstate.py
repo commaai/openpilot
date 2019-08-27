@@ -133,6 +133,10 @@ def get_can_signals(CP):
                 ("MAIN_ON", "SCM_BUTTONS", 0)]
   elif CP.carFingerprint in (CAR.CRV, CAR.ACURA_RDX, CAR.PILOT_2019, CAR.RIDGELINE):
     signals += [("MAIN_ON", "SCM_BUTTONS", 0)]
+  elif CP.carFingerprint == CAR.FIT:
+    signals += [("CAR_GAS", "GAS_PEDAL_2", 0),
+                ("MAIN_ON", "SCM_BUTTONS", 0),
+                ("BRAKE_HOLD_ACTIVE", "VSA_STATUS", 0)]
   elif CP.carFingerprint == CAR.ODYSSEY:
     signals += [("MAIN_ON", "SCM_FEEDBACK", 0),
                 ("EPB_STATE", "EPB_STATUS", 0)]
