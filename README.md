@@ -131,10 +131,8 @@ Community Maintained Cars
 
 | Make                 | Model                    | Supported Package    | Lateral | Longitudinal   | No Accel Below   | No Steer Below | Giraffe           |
 | ---------------------| -------------------------| ---------------------| --------| ---------------| -----------------| ---------------|-------------------|
-| Honda                | Fit 2018                 | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          | Inverted Nidec    |
 | Tesla                | Model S 2012-13          | All                  | Yes     | Not yet        | Not applicable   | 0mph           | Custom<sup>8</sup>|
 
-[[Honda Fit Pull Request]](https://github.com/commaai/openpilot/pull/266). <br />
 [[Tesla Model S Pull Request]](https://github.com/commaai/openpilot/pull/246) <br />
 <sup>8</sup>Community built Giraffe, find more information here [Community Tesla Giraffe](https://github.com/jeankalud/neo/tree/tesla_giraffe/giraffe/tesla) <br />
 
