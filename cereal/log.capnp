@@ -442,7 +442,7 @@ struct ControlsState @0x97ff69c53601abf1 {
   alertSoundDEPRECATED @45 :Text;
   alertSound @56 :Car.CarControl.HUDControl.AudibleAlert;
   awarenessStatus @26 :Float32;
-  angleModelBias @27 :Float32;
+  angleModelBiasDEPRECATED @27 :Float32;
   gpsPlannerActive @40 :Bool;
   engageable @41 :Bool;  # can OP be engaged?
   driverMonitoringOn @43 :Bool;
