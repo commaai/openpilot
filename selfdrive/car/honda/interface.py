@@ -180,6 +180,8 @@ class CarInterface(object):
       ret.longitudinalTuning.kpV = [3.6, 2.4, 1.5]
       ret.longitudinalTuning.kiBP = [0., 35.]
       ret.longitudinalTuning.kiV = [0.54, 0.36]
+      # TODO: The different civic models have different minSteerSpeed so we need a way to detect which model is connected
+      ret.minSteerSpeed = 0
 
     elif candidate in (CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH):
       stop_and_go = True
@@ -195,6 +197,8 @@ class CarInterface(object):
       ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
       ret.longitudinalTuning.kiBP = [0., 35.]
       ret.longitudinalTuning.kiV = [0.18, 0.12]
+      ret.minSteerSpeed = 1.3  # m/s
+
 
     elif candidate == CAR.ACURA_ILX:
       stop_and_go = False
@@ -208,6 +212,7 @@ class CarInterface(object):
       ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
       ret.longitudinalTuning.kiBP = [0., 35.]
       ret.longitudinalTuning.kiV = [0.18, 0.12]
+      ret.minSteerSpeed = 11.2  # m/s
 
     elif candidate == CAR.CRV:
       stop_and_go = False
@@ -221,6 +226,7 @@ class CarInterface(object):
       ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
       ret.longitudinalTuning.kiBP = [0., 35.]
       ret.longitudinalTuning.kiV = [0.18, 0.12]
+      ret.minSteerSpeed = 5.4  # m/s
 
     elif candidate == CAR.CRV_5G:
       stop_and_go = True
@@ -235,6 +241,7 @@ class CarInterface(object):
       ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
       ret.longitudinalTuning.kiBP = [0., 35.]
       ret.longitudinalTuning.kiV = [0.18, 0.12]
+      ret.minSteerSpeed = 5.4  # m/s
 
     elif candidate == CAR.CRV_HYBRID:
       stop_and_go = True
@@ -249,6 +256,7 @@ class CarInterface(object):
       ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
       ret.longitudinalTuning.kiBP = [0., 35.]
       ret.longitudinalTuning.kiV = [0.18, 0.12]
+      ret.minSteerSpeed = 5.4  # m/s
 
     elif candidate == CAR.FIT:
       stop_and_go = False
@@ -262,6 +270,7 @@ class CarInterface(object):
       ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
       ret.longitudinalTuning.kiBP = [0., 35.]
       ret.longitudinalTuning.kiV = [0.18, 0.12]
+      ret.minSteerSpeed = 5.4  # m/s
 
     elif candidate == CAR.ACURA_RDX:
       stop_and_go = False
@@ -275,6 +284,7 @@ class CarInterface(object):
       ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
       ret.longitudinalTuning.kiBP = [0., 35.]
       ret.longitudinalTuning.kiV = [0.18, 0.12]
+      ret.minSteerSpeed = 5.4  # m/s
 
     elif candidate == CAR.ODYSSEY:
       stop_and_go = False
@@ -288,6 +298,7 @@ class CarInterface(object):
       ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
       ret.longitudinalTuning.kiBP = [0., 35.]
       ret.longitudinalTuning.kiV = [0.18, 0.12]
+      ret.minSteerSpeed = 0
 
     elif candidate == CAR.ODYSSEY_CHN:
       stop_and_go = False
@@ -301,6 +312,7 @@ class CarInterface(object):
       ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
       ret.longitudinalTuning.kiBP = [0., 35.]
       ret.longitudinalTuning.kiV = [0.18, 0.12]
+      ret.minSteerSpeed = 0
 
     elif candidate in (CAR.PILOT, CAR.PILOT_2019):
       stop_and_go = False
@@ -314,6 +326,7 @@ class CarInterface(object):
       ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
       ret.longitudinalTuning.kiBP = [0., 35.]
       ret.longitudinalTuning.kiV = [0.18, 0.12]
+      ret.minSteerSpeed = 5.4  # m/s
 
     elif candidate == CAR.RIDGELINE:
       stop_and_go = False
@@ -327,6 +340,7 @@ class CarInterface(object):
       ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
       ret.longitudinalTuning.kiBP = [0., 35.]
       ret.longitudinalTuning.kiV = [0.18, 0.12]
+      ret.minSteerSpeed = 5.4  # m/s
 
     else:
       raise ValueError("unsupported car %s" % candidate)
@@ -482,6 +496,8 @@ class CarInterface(object):
       buttonEvents.append(be)
     ret.buttonEvents = buttonEvents
 
+    self.low_speed_alert = (ret.vEgo < self.CP.minSteerSpeed)
+
     # events
     events = []
     # wait 1.0s before throwing the alert to avoid it popping when you turn off the car
@@ -559,6 +575,9 @@ class CarInterface(object):
         self.last_enable_sent = cur_time
     elif enable_pressed:
       events.append(create_event('buttonEnable', [ET.ENABLE]))
+
+    if self.low_speed_alert:
+      events.append(create_event('belowSteerSpeed', [ET.WARNING]))
 
     ret.events = events
 
