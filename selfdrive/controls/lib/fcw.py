@@ -43,8 +43,10 @@ class FCWChecker(object):
       ttc = np.minimum(2 * x_lead / (np.sqrt(delta) + v_rel), max_ttc)
     return ttc
 
-  def update(self, mpc_solution, cur_time, v_ego, a_ego, x_lead, v_lead, a_lead, y_lead, vlat_lead, fcw_lead, blinkers):
+  def update(self, mpc_solution, cur_time, active, v_ego, a_ego, x_lead, v_lead, a_lead, y_lead, vlat_lead, fcw_lead, blinkers):
     mpc_solution_a = list(mpc_solution[0].a_ego)
+    a_target = mpc_solution_a[1]
+
     self.last_min_a = min(mpc_solution_a)
     self.v_lead_max = max(self.v_lead_max, v_lead)
 
@@ -62,8 +64,11 @@ class FCWChecker(object):
       a_thr = interp(v_lead, _FCW_A_ACT_BP, _FCW_A_ACT_V)
       a_delta = min(mpc_solution_a[:15]) - min(0.0, a_ego)
 
-      fcw_allowed = all(c >= 10 for c in self.counters.values())
-      if (self.last_min_a < -3.0 or a_delta < a_thr) and fcw_allowed and self.last_fcw_time + 5.0 < cur_time:
+      future_fcw_allowed = all(c >= 10 for c in self.counters.values())
+      future_fcw = (self.last_min_a < -3.0 or a_delta < a_thr) and future_fcw_allowed
+      current_fcw = a_target < -3.0 and active
+
+      if (future_fcw or current_fcw) and (self.last_fcw_time + 5.0 < cur_time):
         self.last_fcw_time = cur_time
         self.last_fcw_a = self.last_min_a
         return True

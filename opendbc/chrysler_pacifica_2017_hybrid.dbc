@@ -262,7 +262,7 @@ BO_ 300 NEW_MSG_12C: 8 XXX
 
 BO_ 308 ACCEL_GAS_134: 8 XXX
  SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
- SG_ ACCEL_134 : 43|4@0+ (1,0) [0|15] "" XXX
+ SG_ ACCEL_134 : 46|7@0+ (1,0) [0|127] "" XXX
 
 BO_ 532 ENERGY_RELATED_214: 8 XXX
  SG_ NOISY_SLOWLY_DECREASING : 16|9@0+ (1,0) [0|255] "" XXX
@@ -413,6 +413,7 @@ CM_ SG_ 825 BEEP_339 "sent every 0.5s. 0050 is no beep. To beep send 4355 or 415
 CM_ SG_ 270 ELECTRIC_MOTOR "0x7fff indicates electric motor not in use";
 CM_ SG_ 291 ENERGY_GAIN_LOSS "unsure what this actually is";
 CM_ SG_ 291 ENERGY_SMOOTHER_CURVE "unusre what it is, but smoother";
+CM_ SG_ 308 ACCEL_134 "only set when human presses accel pedal";
 CM_ SG_ 532 NOISY_SLOWLY_DECREASING "perhaps battery but do not know";
 CM_ SG_ 816 TRACTION_OFF "set when traction off button is enabled";
 CM_ SG_ 816 TOGGLE_PARKSENSE "sending 3000071ec0ff9000 enables or disables parksense";

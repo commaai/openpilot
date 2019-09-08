@@ -1,32 +1,34 @@
-void default_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {}
+void default_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
+  UNUSED(to_push);
+}
 
-int default_ign_hook() {
+int default_ign_hook(void) {
   return -1; // use GPIO to determine ignition
 }
 
 // *** no output safety mode ***
 
 static void nooutput_init(int16_t param) {
+  UNUSED(param);
   controls_allowed = 0;
-  #ifdef PANDA
-    lline_relay_release();
-  #endif
 }
 
 static int nooutput_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
+  UNUSED(to_send);
   return false;
 }
 
 static int nooutput_tx_lin_hook(int lin_num, uint8_t *data, int len) {
+  UNUSED(lin_num);
+  UNUSED(data);
+  UNUSED(len);
   return false;
 }
 
-static int nooutput_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
+static int default_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
+  UNUSED(bus_num);
+  UNUSED(to_fwd);
   return -1;
-}
-
-static int nooutput_relay_hook(int to_set) {
-  return false;
 }
 
 const safety_hooks nooutput_hooks = {
@@ -35,32 +37,25 @@ const safety_hooks nooutput_hooks = {
   .tx = nooutput_tx_hook,
   .tx_lin = nooutput_tx_lin_hook,
   .ignition = default_ign_hook,
-  .fwd = nooutput_fwd_hook,
-  .relay = nooutput_relay_hook,
+  .fwd = default_fwd_hook,
 };
 
 // *** all output safety mode ***
 
 static void alloutput_init(int16_t param) {
+  UNUSED(param);
   controls_allowed = 1;
-  #ifdef PANDA
-    lline_relay_release();
-  #endif
 }
 
 static int alloutput_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
+  UNUSED(to_send);
   return true;
 }
 
 static int alloutput_tx_lin_hook(int lin_num, uint8_t *data, int len) {
-  return true;
-}
-
-static int alloutput_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
-  return -1;
-}
-
-static int alloutput_relay_hook(int to_set) {
+  UNUSED(lin_num);
+  UNUSED(data);
+  UNUSED(len);
   return true;
 }
 
@@ -70,6 +65,5 @@ const safety_hooks alloutput_hooks = {
   .tx = alloutput_tx_hook,
   .tx_lin = alloutput_tx_lin_hook,
   .ignition = default_ign_hook,
-  .fwd = alloutput_fwd_hook,
-  .relay = alloutput_relay_hook,
+  .fwd = default_fwd_hook,
 };

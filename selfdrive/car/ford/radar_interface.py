@@ -4,10 +4,6 @@ import numpy as np
 from selfdrive.can.parser import CANParser
 from cereal import car
 from common.realtime import sec_since_boot
-import zmq
-from selfdrive.services import service_list
-import selfdrive.messaging as messaging
-
 
 RADAR_MSGS = range(0x500, 0x540)
 
@@ -32,31 +28,25 @@ class RadarInterface(object):
 
     # Nidec
     self.rcp = _create_radar_can_parser()
+    self.trigger_msg = 0x53f
+    self.updated_messages = set()
 
-    context = zmq.Context()
-    self.logcan = messaging.sub_sock(context, service_list['can'].port)
+  def update(self, can_strings):
+    tm = int(sec_since_boot() * 1e9)
+    vls = self.rcp.update_strings(tm, can_strings)
+    self.updated_messages.update(vls)
 
-  def update(self):
-    canMonoTimes = []
+    if self.trigger_msg not in self.updated_messages:
+      return None
 
-    updated_messages = set()
-    while 1:
-      tm = int(sec_since_boot() * 1e9)
-      _, vls = self.rcp.update(tm, True)
-      updated_messages.update(vls)
-
-      # TODO: do not hardcode last msg
-      if 0x53f in updated_messages:
-        break
 
     ret = car.RadarData.new_message()
     errors = []
     if not self.rcp.can_valid:
-      errors.append("commIssue")
+      errors.append("canError")
     ret.errors = errors
-    ret.canMonoTimes = canMonoTimes
 
-    for ii in updated_messages:
+    for ii in self.updated_messages:
       cpt = self.rcp.vl[ii]
 
       if cpt['X_Rel'] > 0.00001:
@@ -85,11 +75,5 @@ class RadarInterface(object):
           del self.pts[ii]
 
     ret.points = self.pts.values()
+    self.updated_messages.clear()
     return ret
-
-if __name__ == "__main__":
-  RI = RadarInterface(None)
-  while 1:
-    ret = RI.update()
-    print(chr(27) + "[2J")
-    print(ret)
