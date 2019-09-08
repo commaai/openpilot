@@ -148,9 +148,6 @@ static void hyundai_init(int16_t param) {
   UNUSED(param);
   controls_allowed = 0;
   hyundai_giraffe_switch_2 = 0;
-  #ifdef PANDA
-    lline_relay_release();
-  #endif
 }
 
 const safety_hooks hyundai_hooks = {
@@ -160,5 +157,4 @@ const safety_hooks hyundai_hooks = {
   .tx_lin = nooutput_tx_lin_hook,
   .ignition = default_ign_hook,
   .fwd = hyundai_fwd_hook,
-  .relay = nooutput_relay_hook,
 };
