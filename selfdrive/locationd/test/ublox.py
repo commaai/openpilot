@@ -719,14 +719,12 @@ class UBlox:
 
       self.dev = PandaSerial(self.panda, 1, self.baudrate)
     elif grey:
-      import zmq
       from selfdrive.services import service_list
       import selfdrive.messaging as messaging
 
       class BoarddSerial(object):
         def __init__(self):
-          context = zmq.Context()
-          self.ubloxRaw = messaging.sub_sock(context, service_list['ubloxRaw'].port)
+          self.ubloxRaw = messaging.sub_sock(service_list['ubloxRaw'].port)
           self.buf = ""
 
         def read(self, n):

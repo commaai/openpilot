@@ -4,8 +4,8 @@
   * @author  MCD Application Team
   * @version V2.1.2
   * @date    29-June-2016
-  * @brief   CMSIS STM32F205xx Device Peripheral Access Layer Header File. 
-  *          This file contains :  
+  * @brief   CMSIS STM32F205xx Device Peripheral Access Layer Header File.
+  *          This file contains :
   *           - Data structures and the address mapping for all peripherals
   *           - Peripherals registers declarations and bits definition
   *           - Macros to access peripheral’s registers hardware
@@ -47,21 +47,21 @@
 /** @addtogroup stm32f205xx
   * @{
   */
-    
+
 #ifndef __STM32F205xx_H
 #define __STM32F205xx_H
 
 #ifdef __cplusplus
  extern "C" {
 #endif /* __cplusplus */
-  
+
 
 /** @addtogroup Configuration_section_for_CMSIS
   * @{
   */
 
 /**
-  * @brief Configuration of the Cortex-M3 Processor and Core Peripherals 
+  * @brief Configuration of the Cortex-M3 Processor and Core Peripherals
   */
 #define __CM3_REV                 0x0200U  /*!< Core revision r0p1                            */
 #define __MPU_PRESENT             1U       /*!< STM32F2XX provides an MPU                     */
@@ -71,14 +71,14 @@
 /**
   * @}
   */
-   
+
 /** @addtogroup Peripheral_interrupt_number_definition
   * @{
   */
 
 /**
- * @brief STM32F2XX Interrupt Number Definition, according to the selected device 
- *        in @ref Library_configuration_section 
+ * @brief STM32F2XX Interrupt Number Definition, according to the selected device
+ *        in @ref Library_configuration_section
  */
 typedef enum
 {
@@ -126,7 +126,7 @@ typedef enum
   I2C1_EV_IRQn                = 31,     /*!< I2C1 Event Interrupt                                              */
   I2C1_ER_IRQn                = 32,     /*!< I2C1 Error Interrupt                                              */
   I2C2_EV_IRQn                = 33,     /*!< I2C2 Event Interrupt                                              */
-  I2C2_ER_IRQn                = 34,     /*!< I2C2 Error Interrupt                                              */  
+  I2C2_ER_IRQn                = 34,     /*!< I2C2 Error Interrupt                                              */
   SPI1_IRQn                   = 35,     /*!< SPI1 global Interrupt                                             */
   SPI2_IRQn                   = 36,     /*!< SPI2 global Interrupt                                             */
   USART1_IRQn                 = 37,     /*!< USART1 global Interrupt                                           */
@@ -134,7 +134,7 @@ typedef enum
   USART3_IRQn                 = 39,     /*!< USART3 global Interrupt                                           */
   EXTI15_10_IRQn              = 40,     /*!< External Line[15:10] Interrupts                                   */
   RTC_Alarm_IRQn              = 41,     /*!< RTC Alarm (A and B) through EXTI Line Interrupt                   */
-  OTG_FS_WKUP_IRQn            = 42,     /*!< USB OTG FS Wakeup through EXTI line interrupt                     */    
+  OTG_FS_WKUP_IRQn            = 42,     /*!< USB OTG FS Wakeup through EXTI line interrupt                     */
   TIM8_BRK_TIM12_IRQn         = 43,     /*!< TIM8 Break Interrupt and TIM12 global interrupt                   */
   TIM8_UP_TIM13_IRQn          = 44,     /*!< TIM8 Update Interrupt and TIM13 global interrupt                  */
   TIM8_TRG_COM_TIM14_IRQn     = 45,     /*!< TIM8 Trigger and Commutation Interrupt and TIM14 global interrupt */
@@ -181,16 +181,16 @@ typedef enum
 
 /** @addtogroup Peripheral_registers_structures
   * @{
-  */   
+  */
 
-/** 
-  * @brief Analog to Digital Converter  
+/**
+  * @brief Analog to Digital Converter
   */
 
 typedef struct
 {
   __IO uint32_t SR;     /*!< ADC status register,                         Address offset: 0x00 */
-  __IO uint32_t CR1;    /*!< ADC control register 1,                      Address offset: 0x04 */      
+  __IO uint32_t CR1;    /*!< ADC control register 1,                      Address offset: 0x04 */
   __IO uint32_t CR2;    /*!< ADC control register 2,                      Address offset: 0x08 */
   __IO uint32_t SMPR1;  /*!< ADC sample time register 1,                  Address offset: 0x0C */
   __IO uint32_t SMPR2;  /*!< ADC sample time register 2,                  Address offset: 0x10 */
@@ -220,8 +220,8 @@ typedef struct
 } ADC_Common_TypeDef;
 
 
-/** 
-  * @brief Controller Area Network TxMailBox 
+/**
+  * @brief Controller Area Network TxMailBox
   */
 
 typedef struct
@@ -232,10 +232,10 @@ typedef struct
   __IO uint32_t TDHR; /*!< CAN mailbox data high register */
 } CAN_TxMailBox_TypeDef;
 
-/** 
-  * @brief Controller Area Network FIFOMailBox 
+/**
+  * @brief Controller Area Network FIFOMailBox
   */
-  
+
 typedef struct
 {
   __IO uint32_t RIR;  /*!< CAN receive FIFO mailbox identifier register */
@@ -244,20 +244,20 @@ typedef struct
   __IO uint32_t RDHR; /*!< CAN receive FIFO mailbox data high register */
 } CAN_FIFOMailBox_TypeDef;
 
-/** 
-  * @brief Controller Area Network FilterRegister 
+/**
+  * @brief Controller Area Network FilterRegister
   */
-  
+
 typedef struct
 {
   __IO uint32_t FR1; /*!< CAN Filter bank register 1 */
   __IO uint32_t FR2; /*!< CAN Filter bank register 1 */
 } CAN_FilterRegister_TypeDef;
 
-/** 
-  * @brief Controller Area Network 
+/**
+  * @brief Controller Area Network
   */
-  
+
 typedef struct
 {
   __IO uint32_t              MCR;                 /*!< CAN master control register,         Address offset: 0x00          */
@@ -280,12 +280,12 @@ typedef struct
   __IO uint32_t              FFA1R;               /*!< CAN filter FIFO assignment register, Address offset: 0x214         */
   uint32_t                   RESERVED4;           /*!< Reserved, 0x218                                                    */
   __IO uint32_t              FA1R;                /*!< CAN filter activation register,      Address offset: 0x21C         */
-  uint32_t                   RESERVED5[8];        /*!< Reserved, 0x220-0x23F                                              */ 
+  uint32_t                   RESERVED5[8];        /*!< Reserved, 0x220-0x23F                                              */
   CAN_FilterRegister_TypeDef sFilterRegister[28]; /*!< CAN Filter Register,                 Address offset: 0x240-0x31C   */
 } CAN_TypeDef;
 
-/** 
-  * @brief CRC calculation unit 
+/**
+  * @brief CRC calculation unit
   */
 
 typedef struct
@@ -297,7 +297,7 @@ typedef struct
   __IO uint32_t CR;         /*!< CRC Control register,          Address offset: 0x08 */
 } CRC_TypeDef;
 
-/** 
+/**
   * @brief Digital to Analog Converter
   */
 
@@ -319,7 +319,7 @@ typedef struct
   __IO uint32_t SR;       /*!< DAC status register,                                     Address offset: 0x34 */
 } DAC_TypeDef;
 
-/** 
+/**
   * @brief Debug MCU
   */
 
@@ -332,7 +332,7 @@ typedef struct
 }DBGMCU_TypeDef;
 
 
-/** 
+/**
   * @brief DMA Controller
   */
 
@@ -355,7 +355,7 @@ typedef struct
 } DMA_TypeDef;
 
 
-/** 
+/**
   * @brief External Interrupt/Event Controller
   */
 
@@ -369,7 +369,7 @@ typedef struct
   __IO uint32_t PR;     /*!< EXTI Pending register,                   Address offset: 0x14 */
 } EXTI_TypeDef;
 
-/** 
+/**
   * @brief FLASH Registers
   */
 
@@ -384,28 +384,28 @@ typedef struct
 } FLASH_TypeDef;
 
 
-/** 
+/**
   * @brief Flexible Static Memory Controller
   */
 
 typedef struct
 {
-  __IO uint32_t BTCR[8];    /*!< NOR/PSRAM chip-select control register(BCR) and chip-select timing register(BTR), Address offset: 0x00-1C */   
-} FSMC_Bank1_TypeDef; 
+  __IO uint32_t BTCR[8];    /*!< NOR/PSRAM chip-select control register(BCR) and chip-select timing register(BTR), Address offset: 0x00-1C */
+} FSMC_Bank1_TypeDef;
 
-/** 
+/**
   * @brief Flexible Static Memory Controller Bank1E
   */
-  
+
 typedef struct
 {
   __IO uint32_t BWTR[7];    /*!< NOR/PSRAM write timing registers, Address offset: 0x104-0x11C */
 } FSMC_Bank1E_TypeDef;
 
-/** 
+/**
   * @brief Flexible Static Memory Controller Bank2
   */
-  
+
 typedef struct
 {
   __IO uint32_t PCR2;       /*!< NAND Flash control register 2,                       Address offset: 0x60 */
@@ -424,10 +424,10 @@ typedef struct
   __IO uint32_t ECCR3;      /*!< NAND Flash ECC result registers 3,                   Address offset: 0x94 */
 } FSMC_Bank2_3_TypeDef;
 
-/** 
+/**
   * @brief Flexible Static Memory Controller Bank4
   */
-  
+
 typedef struct
 {
   __IO uint32_t PCR4;       /*!< PC Card  control register 4,                       Address offset: 0xA0 */
@@ -435,10 +435,10 @@ typedef struct
   __IO uint32_t PMEM4;      /*!< PC Card  Common memory space timing register 4,    Address offset: 0xA8 */
   __IO uint32_t PATT4;      /*!< PC Card  Attribute memory space timing register 4, Address offset: 0xAC */
   __IO uint32_t PIO4;       /*!< PC Card  I/O space timing register 4,              Address offset: 0xB0 */
-} FSMC_Bank4_TypeDef; 
+} FSMC_Bank4_TypeDef;
 
 
-/** 
+/**
   * @brief General Purpose I/O
   */
 
@@ -455,20 +455,20 @@ typedef struct
   __IO uint32_t AFR[2];   /*!< GPIO alternate function registers,     Address offset: 0x20-0x24 */
 } GPIO_TypeDef;
 
-/** 
+/**
   * @brief System configuration controller
   */
-  
+
 typedef struct
 {
   __IO uint32_t MEMRMP;       /*!< SYSCFG memory remap register,                      Address offset: 0x00      */
   __IO uint32_t PMC;          /*!< SYSCFG peripheral mode configuration register,     Address offset: 0x04      */
   __IO uint32_t EXTICR[4];    /*!< SYSCFG external interrupt configuration registers, Address offset: 0x08-0x14 */
-  uint32_t      RESERVED[2];  /*!< Reserved, 0x18-0x1C                                                          */ 
+  uint32_t      RESERVED[2];  /*!< Reserved, 0x18-0x1C                                                          */
   __IO uint32_t CMPCR;        /*!< SYSCFG Compensation cell control register,         Address offset: 0x20      */
 } SYSCFG_TypeDef;
 
-/** 
+/**
   * @brief Inter-integrated Circuit Interface
   */
 
@@ -485,7 +485,7 @@ typedef struct
   __IO uint32_t TRISE;      /*!< I2C TRISE register,         Address offset: 0x20 */
 } I2C_TypeDef;
 
-/** 
+/**
   * @brief Independent WATCHDOG
   */
 
@@ -497,7 +497,7 @@ typedef struct
   __IO uint32_t SR;   /*!< IWDG Status register,    Address offset: 0x0C */
 } IWDG_TypeDef;
 
-/** 
+/**
   * @brief Power Control
   */
 
@@ -507,7 +507,7 @@ typedef struct
   __IO uint32_t CSR;  /*!< PWR power control/status register, Address offset: 0x04 */
 } PWR_TypeDef;
 
-/** 
+/**
   * @brief Reset and Clock Control
   */
 
@@ -546,7 +546,7 @@ typedef struct
 
 } RCC_TypeDef;
 
-/** 
+/**
   * @brief Real-Time Clock
   */
 
@@ -595,7 +595,7 @@ typedef struct
 } RTC_TypeDef;
 
 
-/** 
+/**
   * @brief SD host Interface
   */
 
@@ -623,7 +623,7 @@ typedef struct
   __IO uint32_t FIFO;           /*!< SDIO data FIFO register,        Address offset: 0x80 */
 } SDIO_TypeDef;
 
-/** 
+/**
   * @brief Serial Peripheral Interface
   */
 
@@ -640,7 +640,7 @@ typedef struct
   __IO uint32_t I2SPR;      /*!< SPI_I2S prescaler register,                         Address offset: 0x20 */
 } SPI_TypeDef;
 
-/** 
+/**
   * @brief TIM
   */
 
@@ -669,10 +669,10 @@ typedef struct
   __IO uint32_t OR;          /*!< TIM option register,                 Address offset: 0x50 */
 } TIM_TypeDef;
 
-/** 
+/**
   * @brief Universal Synchronous Asynchronous Receiver Transmitter
   */
- 
+
 typedef struct
 {
   __IO uint32_t SR;         /*!< USART Status register,                   Address offset: 0x00 */
@@ -684,7 +684,7 @@ typedef struct
   __IO uint32_t GTPR;       /*!< USART Guard time and prescaler register, Address offset: 0x18 */
 } USART_TypeDef;
 
-/** 
+/**
   * @brief Window WATCHDOG
   */
 
@@ -696,11 +696,11 @@ typedef struct
 } WWDG_TypeDef;
 
 
-/** 
+/**
   * @brief RNG
   */
-  
-typedef struct 
+
+typedef struct
 {
   __IO uint32_t CR;  /*!< RNG control register, Address offset: 0x00 */
   __IO uint32_t SR;  /*!< RNG status register,  Address offset: 0x04 */
@@ -708,8 +708,8 @@ typedef struct
 } RNG_TypeDef;
 
 
- 
-/** 
+
+/**
   * @brief __USB_OTG_Core_register
   */
 typedef struct
@@ -737,10 +737,10 @@ USB_OTG_GlobalTypeDef;
 
 
 
-/** 
+/**
   * @brief __device_Registers
   */
-typedef struct 
+typedef struct
 {
   __IO uint32_t DCFG;         /*!< dev Configuration Register   Address offset : 0x800 */
   __IO uint32_t DCTL;         /*!< dev Control Register         Address offset : 0x804 */
@@ -757,19 +757,19 @@ typedef struct
   __IO uint32_t DTHRCTL;      /*!< dev thr                      Address offset : 0x830 */
   __IO uint32_t DIEPEMPMSK;   /*!< dev empty msk                Address offset : 0x834 */
   __IO uint32_t DEACHINT;     /*!< dedicated EP interrupt       Address offset : 0x838 */
-  __IO uint32_t DEACHMSK;     /*!< dedicated EP msk             Address offset : 0x83C */  
+  __IO uint32_t DEACHMSK;     /*!< dedicated EP msk             Address offset : 0x83C */
   uint32_t Reserved40;        /*!< dedicated EP mask            Address offset : 0x840 */
   __IO uint32_t DINEP1MSK;    /*!< dedicated EP mask            Address offset : 0x844 */
   uint32_t  Reserved44[15];   /*!< Reserved                     Address offset : 0x844-0x87C */
-  __IO uint32_t DOUTEP1MSK;   /*!< dedicated EP msk             Address offset : 0x884 */   
+  __IO uint32_t DOUTEP1MSK;   /*!< dedicated EP msk             Address offset : 0x884 */
 }
 USB_OTG_DeviceTypeDef;
 
 
-/** 
+/**
   * @brief __IN_Endpoint-Specific_Register
   */
-typedef struct 
+typedef struct
 {
   __IO uint32_t DIEPCTL;        /* dev IN Endpoint Control Reg 900h + (ep_num * 20h) + 00h     */
   uint32_t Reserved04;          /* Reserved                       900h + (ep_num * 20h) + 04h  */
@@ -783,10 +783,10 @@ typedef struct
 USB_OTG_INEndpointTypeDef;
 
 
-/** 
+/**
   * @brief __OUT_Endpoint-Specific_Registers
   */
-typedef struct 
+typedef struct
 {
   __IO uint32_t DOEPCTL;       /* dev OUT Endpoint Control Reg  B00h + (ep_num * 20h) + 00h*/
   uint32_t Reserved04;         /* Reserved                      B00h + (ep_num * 20h) + 04h*/
@@ -799,10 +799,10 @@ typedef struct
 USB_OTG_OUTEndpointTypeDef;
 
 
-/** 
+/**
   * @brief __Host_Mode_Register_Structures
   */
-typedef struct 
+typedef struct
 {
   __IO uint32_t HCFG;             /* Host Configuration Register    400h*/
   __IO uint32_t HFIR;             /* Host Frame Interval Register   404h*/
@@ -815,7 +815,7 @@ typedef struct
 USB_OTG_HostTypeDef;
 
 
-/** 
+/**
   * @brief __Host_Channel_Specific_Registers
   */
 typedef struct
@@ -830,8 +830,8 @@ typedef struct
 }
 USB_OTG_HostChannelTypeDef;
 
-    
-/** 
+
+/**
   * @brief Peripheral_memory_map
   */
 #define FLASH_BASE            0x08000000U /*!< FLASH(up to 1 MB) base address in the alias region                         */
@@ -965,10 +965,10 @@ USB_OTG_HostChannelTypeDef;
 /**
   * @}
   */
-  
+
 /** @addtogroup Peripheral_declaration
   * @{
-  */  
+  */
 #define TIM2                ((TIM_TypeDef *) TIM2_BASE)
 #define TIM3                ((TIM_TypeDef *) TIM3_BASE)
 #define TIM4                ((TIM_TypeDef *) TIM4_BASE)
@@ -1003,7 +1003,7 @@ USB_OTG_HostChannelTypeDef;
 #define ADC2                ((ADC_TypeDef *) ADC2_BASE)
 #define ADC3                ((ADC_TypeDef *) ADC3_BASE)
 #define SDIO                ((SDIO_TypeDef *) SDIO_BASE)
-#define SPI1                ((SPI_TypeDef *) SPI1_BASE) 
+#define SPI1                ((SPI_TypeDef *) SPI1_BASE)
 #define SYSCFG              ((SYSCFG_TypeDef *) SYSCFG_BASE)
 #define EXTI                ((EXTI_TypeDef *) EXTI_BASE)
 #define TIM9                ((TIM_TypeDef *) TIM9_BASE)
@@ -1038,7 +1038,7 @@ USB_OTG_HostChannelTypeDef;
 #define DMA2_Stream4        ((DMA_Stream_TypeDef *) DMA2_Stream4_BASE)
 #define DMA2_Stream5        ((DMA_Stream_TypeDef *) DMA2_Stream5_BASE)
 #define DMA2_Stream6        ((DMA_Stream_TypeDef *) DMA2_Stream6_BASE)
-#define DMA2_Stream7        ((DMA_Stream_TypeDef *) DMA2_Stream7_BASE)  
+#define DMA2_Stream7        ((DMA_Stream_TypeDef *) DMA2_Stream7_BASE)
 #define RNG                 ((RNG_TypeDef *) RNG_BASE)
 #define FSMC_Bank1          ((FSMC_Bank1_TypeDef *) FSMC_Bank1_R_BASE)
 #define FSMC_Bank1E         ((FSMC_Bank1E_TypeDef *) FSMC_Bank1E_R_BASE)
@@ -1057,11 +1057,11 @@ USB_OTG_HostChannelTypeDef;
 /** @addtogroup Exported_constants
   * @{
   */
-  
+
   /** @addtogroup Peripheral_Registers_Bits_Definition
   * @{
   */
-    
+
 /******************************************************************************/
 /*                         Peripheral Registers_Bits_Definition               */
 /******************************************************************************/
@@ -1104,7 +1104,7 @@ USB_OTG_HostChannelTypeDef;
 #define  ADC_CR1_RES_0                       0x01000000U        /*!<Bit 0 */
 #define  ADC_CR1_RES_1                       0x02000000U        /*!<Bit 1 */
 #define  ADC_CR1_OVRIE                       0x04000000U         /*!<overrun interrupt enable */
-  
+
 /*******************  Bit definition for ADC_CR2 register  ********************/
 #define  ADC_CR2_ADON                        0x00000001U        /*!<A/D Converter ON / OFF */
 #define  ADC_CR2_CONT                        0x00000002U        /*!<Continuous Conversion */
@@ -1337,7 +1337,7 @@ USB_OTG_HostChannelTypeDef;
 #define  ADC_SQR3_SQ6_4                      0x20000000U        /*!<Bit 4 */
 
 /*******************  Bit definition for ADC_JSQR register  *******************/
-#define  ADC_JSQR_JSQ1                       0x0000001FU        /*!<JSQ1[4:0] bits (1st conversion in injected sequence) */  
+#define  ADC_JSQR_JSQ1                       0x0000001FU        /*!<JSQ1[4:0] bits (1st conversion in injected sequence) */
 #define  ADC_JSQR_JSQ1_0                     0x00000001U        /*!<Bit 0 */
 #define  ADC_JSQR_JSQ1_1                     0x00000002U        /*!<Bit 1 */
 #define  ADC_JSQR_JSQ1_2                     0x00000004U        /*!<Bit 2 */
@@ -1407,22 +1407,22 @@ USB_OTG_HostChannelTypeDef;
 #define  ADC_CSR_DOVR3                        ADC_CSR_OVR3
 
 /*******************  Bit definition for ADC_CCR register  ********************/
-#define  ADC_CCR_MULTI                       0x0000001FU        /*!<MULTI[4:0] bits (Multi-ADC mode selection) */  
+#define  ADC_CCR_MULTI                       0x0000001FU        /*!<MULTI[4:0] bits (Multi-ADC mode selection) */
 #define  ADC_CCR_MULTI_0                     0x00000001U        /*!<Bit 0 */
 #define  ADC_CCR_MULTI_1                     0x00000002U        /*!<Bit 1 */
 #define  ADC_CCR_MULTI_2                     0x00000004U        /*!<Bit 2 */
 #define  ADC_CCR_MULTI_3                     0x00000008U        /*!<Bit 3 */
 #define  ADC_CCR_MULTI_4                     0x00000010U        /*!<Bit 4 */
-#define  ADC_CCR_DELAY                       0x00000F00U        /*!<DELAY[3:0] bits (Delay between 2 sampling phases) */  
+#define  ADC_CCR_DELAY                       0x00000F00U        /*!<DELAY[3:0] bits (Delay between 2 sampling phases) */
 #define  ADC_CCR_DELAY_0                     0x00000100U        /*!<Bit 0 */
 #define  ADC_CCR_DELAY_1                     0x00000200U        /*!<Bit 1 */
 #define  ADC_CCR_DELAY_2                     0x00000400U        /*!<Bit 2 */
 #define  ADC_CCR_DELAY_3                     0x00000800U        /*!<Bit 3 */
 #define  ADC_CCR_DDS                         0x00002000U        /*!<DMA disable selection (Multi-ADC mode) */
-#define  ADC_CCR_DMA                         0x0000C000U        /*!<DMA[1:0] bits (Direct Memory Access mode for multimode) */  
+#define  ADC_CCR_DMA                         0x0000C000U        /*!<DMA[1:0] bits (Direct Memory Access mode for multimode) */
 #define  ADC_CCR_DMA_0                       0x00004000U        /*!<Bit 0 */
 #define  ADC_CCR_DMA_1                       0x00008000U        /*!<Bit 1 */
-#define  ADC_CCR_ADCPRE                      0x00030000U        /*!<ADCPRE[1:0] bits (ADC prescaler) */  
+#define  ADC_CCR_ADCPRE                      0x00030000U        /*!<ADCPRE[1:0] bits (ADC prescaler) */
 #define  ADC_CCR_ADCPRE_0                    0x00010000U        /*!<Bit 0 */
 #define  ADC_CCR_ADCPRE_1                    0x00020000U        /*!<Bit 1 */
 #define  ADC_CCR_VBATE                       0x00400000U        /*!<VBAT Enable */
@@ -1603,7 +1603,7 @@ USB_OTG_HostChannelTypeDef;
 #define  CAN_TI2R_EXID                       0x001FFFF8U        /*!<Extended identifier */
 #define  CAN_TI2R_STID                       0xFFE00000U        /*!<Standard Identifier or Extended Identifier */
 
-/*******************  Bit definition for CAN_TDT2R register  ******************/  
+/*******************  Bit definition for CAN_TDT2R register  ******************/
 #define  CAN_TDT2R_DLC                       0x0000000FU        /*!<Data Length Code */
 #define  CAN_TDT2R_TGT                       0x00000100U        /*!<Transmit Global Time */
 #define  CAN_TDT2R_TIME                      0xFFFF0000U        /*!<Message Time Stamp */
@@ -2925,7 +2925,7 @@ USB_OTG_HostChannelTypeDef;
 #define DMA_SxNDT_14                         0x00004000U
 #define DMA_SxNDT_15                         0x00008000U
 
-/********************  Bits definition for DMA_SxFCR register  ****************/ 
+/********************  Bits definition for DMA_SxFCR register  ****************/
 #define DMA_SxFCR_FEIE                       0x00000080U
 #define DMA_SxFCR_FS                         0x00000038U
 #define DMA_SxFCR_FS_0                       0x00000008U
@@ -2936,7 +2936,7 @@ USB_OTG_HostChannelTypeDef;
 #define DMA_SxFCR_FTH_0                      0x00000001U
 #define DMA_SxFCR_FTH_1                      0x00000002U
 
-/********************  Bits definition for DMA_LISR register  *****************/ 
+/********************  Bits definition for DMA_LISR register  *****************/
 #define DMA_LISR_TCIF3                       0x08000000U
 #define DMA_LISR_HTIF3                       0x04000000U
 #define DMA_LISR_TEIF3                       0x02000000U
@@ -2958,7 +2958,7 @@ USB_OTG_HostChannelTypeDef;
 #define DMA_LISR_DMEIF0                      0x00000004U
 #define DMA_LISR_FEIF0                       0x00000001U
 
-/********************  Bits definition for DMA_HISR register  *****************/ 
+/********************  Bits definition for DMA_HISR register  *****************/
 #define DMA_HISR_TCIF7                       0x08000000U
 #define DMA_HISR_HTIF7                       0x04000000U
 #define DMA_HISR_TEIF7                       0x02000000U
@@ -2980,7 +2980,7 @@ USB_OTG_HostChannelTypeDef;
 #define DMA_HISR_DMEIF4                      0x00000004U
 #define DMA_HISR_FEIF4                       0x00000001U
 
-/********************  Bits definition for DMA_LIFCR register  ****************/ 
+/********************  Bits definition for DMA_LIFCR register  ****************/
 #define DMA_LIFCR_CTCIF3                     0x08000000U
 #define DMA_LIFCR_CHTIF3                     0x04000000U
 #define DMA_LIFCR_CTEIF3                     0x02000000U
@@ -3002,7 +3002,7 @@ USB_OTG_HostChannelTypeDef;
 #define DMA_LIFCR_CDMEIF0                    0x00000004U
 #define DMA_LIFCR_CFEIF0                     0x00000001U
 
-/********************  Bits definition for DMA_HIFCR  register  ****************/ 
+/********************  Bits definition for DMA_HIFCR  register  ****************/
 #define DMA_HIFCR_CTCIF7                     0x08000000U
 #define DMA_HIFCR_CHTIF7                     0x04000000U
 #define DMA_HIFCR_CTEIF7                     0x02000000U
@@ -5921,80 +5921,80 @@ USB_OTG_HostChannelTypeDef;
 /******************  Bit definition for SPI_I2SPR register  *******************/
 #define  SPI_I2SPR_I2SDIV                    0x000000FFU            /*!<I2S Linear prescaler         */
 #define  SPI_I2SPR_ODD                       0x00000100U            /*!<Odd factor for the prescaler */
-#define  SPI_I2SPR_MCKOE                     0x00000200U            /*!<Master Clock Output Enable   */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
-/******************************************************************************/                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
-/*                                                                            */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
-/*                                 SYSCFG                                     */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
-/*                                                                            */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
-/******************************************************************************/                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
-/******************  Bit definition for SYSCFG_MEMRMP register  ***************/                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
-#define SYSCFG_MEMRMP_MEM_MODE          0x00000003U /*!<SYSCFG_Memory Remap Config */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
-#define SYSCFG_MEMRMP_MEM_MODE_0        0x00000001U                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
-#define SYSCFG_MEMRMP_MEM_MODE_1        0x00000002U                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
-/*****************  Bit definition for SYSCFG_EXTICR1 register  ***************/                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
-#define SYSCFG_EXTICR1_EXTI0            0x0000000FU /*!<EXTI 0 configuration */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
-#define SYSCFG_EXTICR1_EXTI1            0x000000F0U /*!<EXTI 1 configuration */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
-#define SYSCFG_EXTICR1_EXTI2            0x00000F00U /*!<EXTI 2 configuration */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
-#define SYSCFG_EXTICR1_EXTI3            0x0000F000U /*!<EXTI 3 configuration */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
-/**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
-  * @brief   EXTI0 configuration                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
-  */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
-#define SYSCFG_EXTICR1_EXTI0_PA         0x00000000U /*!<PA[0] pin */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-#define SYSCFG_EXTICR1_EXTI0_PB         0x00000001U /*!<PB[0] pin */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-#define SYSCFG_EXTICR1_EXTI0_PC         0x00000002U /*!<PC[0] pin */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-#define SYSCFG_EXTICR1_EXTI0_PD         0x00000003U /*!<PD[0] pin */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-#define SYSCFG_EXTICR1_EXTI0_PE         0x00000004U /*!<PE[0] pin */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-#define SYSCFG_EXTICR1_EXTI0_PF         0x00000005U /*!<PF[0] pin */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-#define SYSCFG_EXTICR1_EXTI0_PG         0x00000006U /*!<PG[0] pin */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-#define SYSCFG_EXTICR1_EXTI0_PH         0x00000007U /*!<PH[0] pin */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-#define SYSCFG_EXTICR1_EXTI0_PI         0x00000008U /*!<PI[0] pin */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-/**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
-  * @brief   EXTI1 configuration                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
-  */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
-#define SYSCFG_EXTICR1_EXTI1_PA         0x00000000U /*!<PA[1] pin */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-#define SYSCFG_EXTICR1_EXTI1_PB         0x00000010U /*!<PB[1] pin */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-#define SYSCFG_EXTICR1_EXTI1_PC         0x00000020U /*!<PC[1] pin */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-#define SYSCFG_EXTICR1_EXTI1_PD         0x00000030U /*!<PD[1] pin */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-#define SYSCFG_EXTICR1_EXTI1_PE         0x00000040U /*!<PE[1] pin */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-#define SYSCFG_EXTICR1_EXTI1_PF         0x00000050) /*!<PF[1] pin */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-#define SYSCFG_EXTICR1_EXTI1_PG         0x00000060U /*!<PG[1] pin */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-#define SYSCFG_EXTICR1_EXTI1_PH         0x00000070U /*!<PH[1] pin */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-#define SYSCFG_EXTICR1_EXTI1_PI         0x00000080U /*!<PI[1] pin */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-/**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
-  * @brief   EXTI2 configuration                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
-  */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
-#define SYSCFG_EXTICR1_EXTI2_PA         0x00000000U /*!<PA[2] pin */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-#define SYSCFG_EXTICR1_EXTI2_PB         0x00000100U /*!<PB[2] pin */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-#define SYSCFG_EXTICR1_EXTI2_PC         0x00000200U /*!<PC[2] pin */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-#define SYSCFG_EXTICR1_EXTI2_PD         0x00000300U /*!<PD[2] pin */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-#define SYSCFG_EXTICR1_EXTI2_PE         0x00000400U /*!<PE[2] pin */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-#define SYSCFG_EXTICR1_EXTI2_PF         0x00000500) /*!<PF[2] pin */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-#define SYSCFG_EXTICR1_EXTI2_PG         0x00000600) /*!<PG[2] pin */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-#define SYSCFG_EXTICR1_EXTI2_PH         0x00000700U /*!<PH[2] pin */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-#define SYSCFG_EXTICR1_EXTI2_PI         0x00000800U /*!<PI[2] pin */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-/**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
-  * @brief   EXTI3 configuration                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
-  */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
-#define SYSCFG_EXTICR1_EXTI3_PA         0x00000000U /*!<PA[3] pin */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-#define SYSCFG_EXTICR1_EXTI3_PB         0x00001000U /*!<PB[3] pin */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-#define SYSCFG_EXTICR1_EXTI3_PC         0x00002000U /*!<PC[3] pin */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-#define SYSCFG_EXTICR1_EXTI3_PD         0x00003000U /*!<PD[3] pin */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-#define SYSCFG_EXTICR1_EXTI3_PE         0x00004000U /*!<PE[3] pin */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-#define SYSCFG_EXTICR1_EXTI3_PF         0x00005000) /*!<PF[3] pin */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-#define SYSCFG_EXTICR1_EXTI3_PG         0x00006000U /*!<PG[3] pin */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-#define SYSCFG_EXTICR1_EXTI3_PH         0x00007000U /*!<PH[3] pin */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-#define SYSCFG_EXTICR1_EXTI3_PI         0x00008000U /*!<PI[3] pin */                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+#define  SPI_I2SPR_MCKOE                     0x00000200U            /*!<Master Clock Output Enable   */
+
+/******************************************************************************/
+/*                                                                            */
+/*                                 SYSCFG                                     */
+/*                                                                            */
+/******************************************************************************/
+/******************  Bit definition for SYSCFG_MEMRMP register  ***************/
+#define SYSCFG_MEMRMP_MEM_MODE          0x00000003U /*!<SYSCFG_Memory Remap Config */
+#define SYSCFG_MEMRMP_MEM_MODE_0        0x00000001U
+#define SYSCFG_MEMRMP_MEM_MODE_1        0x00000002U
+
+/*****************  Bit definition for SYSCFG_EXTICR1 register  ***************/
+#define SYSCFG_EXTICR1_EXTI0            0x0000000FU /*!<EXTI 0 configuration */
+#define SYSCFG_EXTICR1_EXTI1            0x000000F0U /*!<EXTI 1 configuration */
+#define SYSCFG_EXTICR1_EXTI2            0x00000F00U /*!<EXTI 2 configuration */
+#define SYSCFG_EXTICR1_EXTI3            0x0000F000U /*!<EXTI 3 configuration */
+/**
+  * @brief   EXTI0 configuration
+  */
+#define SYSCFG_EXTICR1_EXTI0_PA         0x00000000U /*!<PA[0] pin */
+#define SYSCFG_EXTICR1_EXTI0_PB         0x00000001U /*!<PB[0] pin */
+#define SYSCFG_EXTICR1_EXTI0_PC         0x00000002U /*!<PC[0] pin */
+#define SYSCFG_EXTICR1_EXTI0_PD         0x00000003U /*!<PD[0] pin */
+#define SYSCFG_EXTICR1_EXTI0_PE         0x00000004U /*!<PE[0] pin */
+#define SYSCFG_EXTICR1_EXTI0_PF         0x00000005U /*!<PF[0] pin */
+#define SYSCFG_EXTICR1_EXTI0_PG         0x00000006U /*!<PG[0] pin */
+#define SYSCFG_EXTICR1_EXTI0_PH         0x00000007U /*!<PH[0] pin */
+#define SYSCFG_EXTICR1_EXTI0_PI         0x00000008U /*!<PI[0] pin */
+/**
+  * @brief   EXTI1 configuration
+  */
+#define SYSCFG_EXTICR1_EXTI1_PA         0x00000000U /*!<PA[1] pin */
+#define SYSCFG_EXTICR1_EXTI1_PB         0x00000010U /*!<PB[1] pin */
+#define SYSCFG_EXTICR1_EXTI1_PC         0x00000020U /*!<PC[1] pin */
+#define SYSCFG_EXTICR1_EXTI1_PD         0x00000030U /*!<PD[1] pin */
+#define SYSCFG_EXTICR1_EXTI1_PE         0x00000040U /*!<PE[1] pin */
+#define SYSCFG_EXTICR1_EXTI1_PF         0x00000050) /*!<PF[1] pin */
+#define SYSCFG_EXTICR1_EXTI1_PG         0x00000060U /*!<PG[1] pin */
+#define SYSCFG_EXTICR1_EXTI1_PH         0x00000070U /*!<PH[1] pin */
+#define SYSCFG_EXTICR1_EXTI1_PI         0x00000080U /*!<PI[1] pin */
+/**
+  * @brief   EXTI2 configuration
+  */
+#define SYSCFG_EXTICR1_EXTI2_PA         0x00000000U /*!<PA[2] pin */
+#define SYSCFG_EXTICR1_EXTI2_PB         0x00000100U /*!<PB[2] pin */
+#define SYSCFG_EXTICR1_EXTI2_PC         0x00000200U /*!<PC[2] pin */
+#define SYSCFG_EXTICR1_EXTI2_PD         0x00000300U /*!<PD[2] pin */
+#define SYSCFG_EXTICR1_EXTI2_PE         0x00000400U /*!<PE[2] pin */
+#define SYSCFG_EXTICR1_EXTI2_PF         0x00000500) /*!<PF[2] pin */
+#define SYSCFG_EXTICR1_EXTI2_PG         0x00000600) /*!<PG[2] pin */
+#define SYSCFG_EXTICR1_EXTI2_PH         0x00000700U /*!<PH[2] pin */
+#define SYSCFG_EXTICR1_EXTI2_PI         0x00000800U /*!<PI[2] pin */
+/**
+  * @brief   EXTI3 configuration
+  */
+#define SYSCFG_EXTICR1_EXTI3_PA         0x00000000U /*!<PA[3] pin */
+#define SYSCFG_EXTICR1_EXTI3_PB         0x00001000U /*!<PB[3] pin */
+#define SYSCFG_EXTICR1_EXTI3_PC         0x00002000U /*!<PC[3] pin */
+#define SYSCFG_EXTICR1_EXTI3_PD         0x00003000U /*!<PD[3] pin */
+#define SYSCFG_EXTICR1_EXTI3_PE         0x00004000U /*!<PE[3] pin */
+#define SYSCFG_EXTICR1_EXTI3_PF         0x00005000) /*!<PF[3] pin */
+#define SYSCFG_EXTICR1_EXTI3_PG         0x00006000U /*!<PG[3] pin */
+#define SYSCFG_EXTICR1_EXTI3_PH         0x00007000U /*!<PH[3] pin */
+#define SYSCFG_EXTICR1_EXTI3_PI         0x00008000U /*!<PI[3] pin */
+
 /*****************  Bit definition for SYSCFG_EXTICR2 register  ***************/
 #define SYSCFG_EXTICR2_EXTI4            0x0000000FU /*!<EXTI 4 configuration */
 #define SYSCFG_EXTICR2_EXTI5            0x000000F0U /*!<EXTI 5 configuration */
 #define SYSCFG_EXTICR2_EXTI6            0x00000F00U /*!<EXTI 6 configuration */
 #define SYSCFG_EXTICR2_EXTI7            0x0000F000U /*!<EXTI 7 configuration */
-/** 
-  * @brief   EXTI4 configuration  
-  */ 
+/**
+  * @brief   EXTI4 configuration
+  */
 #define SYSCFG_EXTICR2_EXTI4_PA         0x00000000U /*!<PA[4] pin */
 #define SYSCFG_EXTICR2_EXTI4_PB         0x00000001U /*!<PB[4] pin */
 #define SYSCFG_EXTICR2_EXTI4_PC         0x00000002U /*!<PC[4] pin */
@@ -6004,9 +6004,9 @@ USB_OTG_HostChannelTypeDef;
 #define SYSCFG_EXTICR2_EXTI4_PG         0x00000006U /*!<PG[4] pin */
 #define SYSCFG_EXTICR2_EXTI4_PH         0x00000007U /*!<PH[4] pin */
 #define SYSCFG_EXTICR2_EXTI4_PI         0x00000008U /*!<PI[4] pin */
-/** 
-  * @brief   EXTI5 configuration  
-  */ 
+/**
+  * @brief   EXTI5 configuration
+  */
 #define SYSCFG_EXTICR2_EXTI5_PA         0x00000000U /*!<PA[5] pin */
 #define SYSCFG_EXTICR2_EXTI5_PB         0x00000010U /*!<PB[5] pin */
 #define SYSCFG_EXTICR2_EXTI5_PC         0x00000020U /*!<PC[5] pin */
@@ -6016,9 +6016,9 @@ USB_OTG_HostChannelTypeDef;
 #define SYSCFG_EXTICR2_EXTI5_PG         0x00000060U /*!<PG[5] pin */
 #define SYSCFG_EXTICR2_EXTI5_PH         0x00000070U /*!<PH[5] pin */
 #define SYSCFG_EXTICR2_EXTI5_PI         0x00000080U /*!<PI[5] pin */
-/** 
-  * @brief   EXTI6 configuration  
-  */ 
+/**
+  * @brief   EXTI6 configuration
+  */
 #define SYSCFG_EXTICR2_EXTI6_PA         0x00000000U /*!<PA[6] pin */
 #define SYSCFG_EXTICR2_EXTI6_PB         0x00000100U /*!<PB[6] pin */
 #define SYSCFG_EXTICR2_EXTI6_PC         0x00000200U /*!<PC[6] pin */
@@ -6028,9 +6028,9 @@ USB_OTG_HostChannelTypeDef;
 #define SYSCFG_EXTICR2_EXTI6_PG         0x00000600) /*!<PG[6] pin */
 #define SYSCFG_EXTICR2_EXTI6_PH         0x00000700U /*!<PH[6] pin */
 #define SYSCFG_EXTICR2_EXTI6_PI         0x00000800U /*!<PI[6] pin */
-/** 
-  * @brief   EXTI7 configuration  
-  */ 
+/**
+  * @brief   EXTI7 configuration
+  */
 #define SYSCFG_EXTICR2_EXTI7_PA         0x00000000U /*!<PA[7] pin */
 #define SYSCFG_EXTICR2_EXTI7_PB         0x00001000U /*!<PB[7] pin */
 #define SYSCFG_EXTICR2_EXTI7_PC         0x00002000U /*!<PC[7] pin */
@@ -6046,10 +6046,10 @@ USB_OTG_HostChannelTypeDef;
 #define SYSCFG_EXTICR3_EXTI9            0x000000F0U /*!<EXTI 9 configuration */
 #define SYSCFG_EXTICR3_EXTI10           0x00000F00U /*!<EXTI 10 configuration */
 #define SYSCFG_EXTICR3_EXTI11           0x0000F000U /*!<EXTI 11 configuration */
-           
-/** 
-  * @brief   EXTI8 configuration  
-  */ 
+
+/**
+  * @brief   EXTI8 configuration
+  */
 #define SYSCFG_EXTICR3_EXTI8_PA         0x00000000U /*!<PA[8] pin */
 #define SYSCFG_EXTICR3_EXTI8_PB         0x00000001U /*!<PB[8] pin */
 #define SYSCFG_EXTICR3_EXTI8_PC         0x00000002U /*!<PC[8] pin */
@@ -6059,9 +6059,9 @@ USB_OTG_HostChannelTypeDef;
 #define SYSCFG_EXTICR3_EXTI8_PG         0x00000006U /*!<PG[8] pin */
 #define SYSCFG_EXTICR3_EXTI8_PH         0x00000007U /*!<PH[8] pin */
 #define SYSCFG_EXTICR3_EXTI8_PI         0x00000008U /*!<PI[8] pin */
-/** 
-  * @brief   EXTI9 configuration  
-  */ 
+/**
+  * @brief   EXTI9 configuration
+  */
 #define SYSCFG_EXTICR3_EXTI9_PA         0x00000000U /*!<PA[9] pin */
 #define SYSCFG_EXTICR3_EXTI9_PB         0x00000010U /*!<PB[9] pin */
 #define SYSCFG_EXTICR3_EXTI9_PC         0x00000020U /*!<PC[9] pin */
@@ -6071,9 +6071,9 @@ USB_OTG_HostChannelTypeDef;
 #define SYSCFG_EXTICR3_EXTI9_PG         0x00000060U /*!<PG[9] pin */
 #define SYSCFG_EXTICR3_EXTI9_PH         0x00000070U /*!<PH[9] pin */
 #define SYSCFG_EXTICR3_EXTI9_PI         0x00000080U /*!<PI[9] pin */
-/** 
-  * @brief   EXTI10 configuration  
-  */ 
+/**
+  * @brief   EXTI10 configuration
+  */
 #define SYSCFG_EXTICR3_EXTI10_PA        0x00000000U /*!<PA[10] pin */
 #define SYSCFG_EXTICR3_EXTI10_PB        0x00000100U /*!<PB[10] pin */
 #define SYSCFG_EXTICR3_EXTI10_PC        0x00000200U /*!<PC[10] pin */
@@ -6083,9 +6083,9 @@ USB_OTG_HostChannelTypeDef;
 #define SYSCFG_EXTICR3_EXTI10_PG        0x00000600) /*!<PG[10] pin */
 #define SYSCFG_EXTICR3_EXTI10_PH        0x00000700U /*!<PH[10] pin */
 #define SYSCFG_EXTICR3_EXTI10_PI        0x00000800U /*!<PI[10] pin */
-/** 
-  * @brief   EXTI11 configuration  
-  */ 
+/**
+  * @brief   EXTI11 configuration
+  */
 #define SYSCFG_EXTICR3_EXTI11_PA        0x00000000U /*!<PA[11] pin */
 #define SYSCFG_EXTICR3_EXTI11_PB        0x00001000U /*!<PB[11] pin */
 #define SYSCFG_EXTICR3_EXTI11_PC        0x00002000U /*!<PC[11] pin */
@@ -6101,9 +6101,9 @@ USB_OTG_HostChannelTypeDef;
 #define SYSCFG_EXTICR4_EXTI13           0x000000F0U /*!<EXTI 13 configuration */
 #define SYSCFG_EXTICR4_EXTI14           0x00000F00U /*!<EXTI 14 configuration */
 #define SYSCFG_EXTICR4_EXTI15           0x0000F000U /*!<EXTI 15 configuration */
-/** 
-  * @brief   EXTI12 configuration  
-  */ 
+/**
+  * @brief   EXTI12 configuration
+  */
 #define SYSCFG_EXTICR4_EXTI12_PA        0x00000000U /*!<PA[12] pin */
 #define SYSCFG_EXTICR4_EXTI12_PB        0x00000001U /*!<PB[12] pin */
 #define SYSCFG_EXTICR4_EXTI12_PC        0x00000002U /*!<PC[12] pin */
@@ -6112,9 +6112,9 @@ USB_OTG_HostChannelTypeDef;
 #define SYSCFG_EXTICR4_EXTI12_PF        0x00000005U /*!<PF[12] pin */
 #define SYSCFG_EXTICR4_EXTI12_PG        0x00000006U /*!<PG[12] pin */
 #define SYSCFG_EXTICR3_EXTI12_PH        0x00000007U /*!<PH[12] pin */
-/** 
-  * @brief   EXTI13 configuration  
-  */ 
+/**
+  * @brief   EXTI13 configuration
+  */
 #define SYSCFG_EXTICR4_EXTI13_PA        0x00000000U /*!<PA[13] pin */
 #define SYSCFG_EXTICR4_EXTI13_PB        0x00000010U /*!<PB[13] pin */
 #define SYSCFG_EXTICR4_EXTI13_PC        0x00000020U /*!<PC[13] pin */
@@ -6123,9 +6123,9 @@ USB_OTG_HostChannelTypeDef;
 #define SYSCFG_EXTICR4_EXTI13_PF        0x00000050) /*!<PF[13] pin */
 #define SYSCFG_EXTICR4_EXTI13_PG        0x00000060U /*!<PG[13] pin */
 #define SYSCFG_EXTICR3_EXTI13_PH        0x00000070U /*!<PH[13] pin */
-/** 
-  * @brief   EXTI14 configuration  
-  */ 
+/**
+  * @brief   EXTI14 configuration
+  */
 #define SYSCFG_EXTICR4_EXTI14_PA        0x00000000U /*!<PA[14] pin */
 #define SYSCFG_EXTICR4_EXTI14_PB        0x00000100U /*!<PB[14] pin */
 #define SYSCFG_EXTICR4_EXTI14_PC        0x00000200U /*!<PC[14] pin */
@@ -6134,9 +6134,9 @@ USB_OTG_HostChannelTypeDef;
 #define SYSCFG_EXTICR4_EXTI14_PF        0x00000500) /*!<PF[14] pin */
 #define SYSCFG_EXTICR4_EXTI14_PG        0x00000600) /*!<PG[14] pin */
 #define SYSCFG_EXTICR3_EXTI14_PH        0x00000700U /*!<PH[14] pin */
-/** 
-  * @brief   EXTI15 configuration  
-  */ 
+/**
+  * @brief   EXTI15 configuration
+  */
 #define SYSCFG_EXTICR4_EXTI15_PA        0x00000000U /*!<PA[15] pin */
 #define SYSCFG_EXTICR4_EXTI15_PB        0x00001000U /*!<PB[15] pin */
 #define SYSCFG_EXTICR4_EXTI15_PC        0x00002000U /*!<PC[15] pin */
@@ -6146,7 +6146,7 @@ USB_OTG_HostChannelTypeDef;
 #define SYSCFG_EXTICR4_EXTI15_PG        0x00006000U /*!<PG[15] pin */
 #define SYSCFG_EXTICR3_EXTI15_PH        0x00007000U /*!<PH[15] pin */
 
-/******************  Bit definition for SYSCFG_CMPCR register  ****************/  
+/******************  Bit definition for SYSCFG_CMPCR register  ****************/
 #define SYSCFG_CMPCR_CMP_PD             0x00000001U /*!<Compensation cell ready flag */
 #define SYSCFG_CMPCR_READY              0x00000100U /*!<Compensation cell power-down */
 
@@ -7294,7 +7294,7 @@ USB_OTG_HostChannelTypeDef;
 
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
@@ -7303,7 +7303,7 @@ USB_OTG_HostChannelTypeDef;
 /** @addtogroup Exported_macros
   * @{
   */
- 
+
 /******************************* ADC Instances ********************************/
 #define IS_ADC_ALL_INSTANCE(INSTANCE) (((INSTANCE) == ADC1) || \
                                        ((INSTANCE) == ADC2) || \
@@ -7312,7 +7312,7 @@ USB_OTG_HostChannelTypeDef;
 /******************************* CAN Instances ********************************/
 #define IS_CAN_ALL_INSTANCE(INSTANCE) (((INSTANCE) == CAN1) || \
                                        ((INSTANCE) == CAN2))
- 
+
 /******************************* CRC Instances ********************************/
 #define IS_CRC_ALL_INSTANCE(INSTANCE) ((INSTANCE) == CRC)
 
@@ -7463,7 +7463,7 @@ USB_OTG_HostChannelTypeDef;
                                           ((INSTANCE) == TIM3) || \
                                           ((INSTANCE) == TIM4) || \
                                           ((INSTANCE) == TIM5) || \
-                                          ((INSTANCE) == TIM8)) 
+                                          ((INSTANCE) == TIM8))
 
 /******************** TIM Instances : DMA burst feature ***********************/
 #define IS_TIM_DMABURST_INSTANCE(INSTANCE)  (((INSTANCE) == TIM1) || \
@@ -7614,7 +7614,7 @@ USB_OTG_HostChannelTypeDef;
                                     ((INSTANCE) == USART3) || \
                                     ((INSTANCE) == UART4)  || \
                                     ((INSTANCE) == UART5)  || \
-                                    ((INSTANCE) == USART6))     
+                                    ((INSTANCE) == USART6))
 
 /*********************** PCD Instances ****************************************/
 #define IS_PCD_ALL_INSTANCE(INSTANCE) (((INSTANCE) == USB_OTG_FS) || \
@@ -7646,7 +7646,7 @@ USB_OTG_HostChannelTypeDef;
 
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}

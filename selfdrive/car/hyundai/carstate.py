@@ -96,6 +96,7 @@ def get_can_parser(CP):
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0, timeout=100)
 
 
+
 def get_camera_parser(CP):
 
   signals = [
@@ -122,6 +123,7 @@ def get_camera_parser(CP):
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2, timeout=100)
 
 
+
 class CarState(object):
   def __init__(self, CP):
 
@@ -145,9 +147,6 @@ class CarState(object):
     self.right_blinker_flash = 0
 
   def update(self, cp, cp_cam):
-    # copy can_valid
-    self.can_valid = cp.can_valid
-
     # update prevs, update must run once per Loop
     self.prev_left_blinker_on = self.left_blinker_on
     self.prev_right_blinker_on = self.right_blinker_on

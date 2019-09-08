@@ -64,6 +64,22 @@ def create_steer_command(packer, steer, steer_req, raw_cnt):
   return packer.make_can_msg("STEERING_LKA", 0, values)
 
 
+def create_lta_steer_command(packer, steer, steer_req, raw_cnt, angle):
+  """Creates a CAN message for the Toyota LTA Steer Command."""
+
+  values = {
+    "COUNTER": raw_cnt,
+    "SETME_X3": 3,
+    "PERCENTAGE" : 100,
+    "SETME_X64": 0x64,
+    "ANGLE": angle,
+    "STEER_ANGLE_CMD": steer,
+    "STEER_REQUEST": steer_req,
+    "BIT": 0,
+  }
+  return packer.make_can_msg("STEERING_LTA", 0, values)
+
+
 def create_accel_command(packer, accel, pcm_cancel, standstill_req, lead):
   # TODO: find the exact canceling bit that does not create a chime
   values = {
@@ -78,18 +94,6 @@ def create_accel_command(packer, accel, pcm_cancel, standstill_req, lead):
   }
   return packer.make_can_msg("ACC_CONTROL", 0, values)
 
-def create_gas_command(packer, gas_amount):
-  """Creates a CAN message for the Pedal DBC GAS_COMMAND."""
-  enable = gas_amount > 0.001
-
-  values = {"ENABLE": enable}
-
-  if enable:
-    values["GAS_COMMAND"] = gas_amount * 255.
-    values["GAS_COMMAND2"] = gas_amount * 255.
-
-  return packer.make_can_msg("GAS_COMMAND", 0, values)
-
 
 def create_fcw_command(packer, fcw):
   values = {
@@ -101,7 +105,7 @@ def create_fcw_command(packer, fcw):
   return packer.make_can_msg("ACC_HUD", 0, values)
 
 
-def create_ui_command(packer, steer, sound1, sound2, left_line, right_line, left_lane_depart, right_lane_depart):
+def create_ui_command(packer, steer, left_line, right_line, left_lane_depart, right_lane_depart):
   values = {
     "RIGHT_LINE": 3 if right_lane_depart else 1 if right_line else 2,
     "LEFT_LINE": 3 if left_lane_depart else 1 if left_line else 2,
@@ -112,8 +116,8 @@ def create_ui_command(packer, steer, sound1, sound2, left_line, right_line, left
     "SET_ME_X02": 0x02,
     "SET_ME_X01": 1,
     "SET_ME_X01_2": 1,
-    "REPEATED_BEEPS": sound1,
-    "TWO_BEEPS": sound2,
+    "REPEATED_BEEPS": 0,
+    "TWO_BEEPS": 0,
     "LDA_ALERT": steer,
   }
   return packer.make_can_msg("LKAS_HUD", 0, values)
