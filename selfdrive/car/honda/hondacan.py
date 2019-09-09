@@ -47,7 +47,7 @@ def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_
     "FCW": fcw << 1,
     "AEB_REQ_1": 0,
     "AEB_REQ_2": 0,
-    "AEB": 0,
+    "AEB_STATUS": 0,
   }
   bus = get_pt_bus(car_fingerprint, is_panda_black)
   return packer.make_can_msg("BRAKE_COMMAND", bus, values, idx)

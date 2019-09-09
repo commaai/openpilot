@@ -117,11 +117,19 @@ size_t download_file_write(void *ptr, size_t size, size_t nmeb, void *up) {
   return fwrite(ptr, size, nmeb, (FILE*)up);
 }
 
-bool check_battery() {
+int battery_capacity() {
   std::string bat_cap_s = util::read_file("/sys/class/power_supply/battery/capacity");
-  int bat_cap = atoi(bat_cap_s.c_str());
+  return atoi(bat_cap_s.c_str());
+}
+
+int battery_current() {
   std::string current_now_s = util::read_file("/sys/class/power_supply/battery/current_now");
-  int current_now = atoi(current_now_s.c_str());
+  return atoi(current_now_s.c_str());
+}
+
+bool check_battery() {
+  int bat_cap = battery_capacity();
+  int current_now = battery_current();
   return bat_cap > 35 || (current_now < 0 && bat_cap > 10);
 }
 
@@ -163,6 +171,7 @@ struct Updater {
   // i hate state machines give me coroutines already
   enum UpdateState {
     CONFIRMATION,
+    LOW_BATTERY,
     RUNNING,
     ERROR,
   };
@@ -172,6 +181,12 @@ struct Updater {
   float progress_frac;
 
   std::string error_text;
+
+  std::string low_battery_text;
+  std::string low_battery_title;
+  std::string low_battery_context;
+  std::string battery_cap_text;
+  int min_battery_cap = 35;
 
   // button
   int b_x, b_w, b_y, b_h;
@@ -296,6 +311,16 @@ struct Updater {
     state = ERROR;
   }
 
+  void set_battery_low() {
+    std::lock_guard<std::mutex> guard(lock);
+    state = LOW_BATTERY;
+  }
+
+  void set_running() {
+    std::lock_guard<std::mutex> guard(lock);
+    state = RUNNING;
+  }
+
   std::string stage_download(std::string url, std::string hash, std::string name) {
     std::string out_fn = UPDATE_DIR "/" + util::base_name(url);
 
@@ -323,8 +348,14 @@ struct Updater {
     assert(curl);
 
     if (!check_battery()) {
-      set_error("Please plug power in to your EON and wait for charge");
-      return;
+      set_battery_low();
+      int battery_cap = battery_capacity();
+      while(battery_cap < min_battery_cap) {
+        battery_cap = battery_capacity();
+        battery_cap_text = std::to_string(battery_cap);
+        usleep(1000000);
+      }
+      set_running();
     }
 
     if (!check_space()) {
@@ -400,8 +431,14 @@ struct Updater {
     }
 
     if (!check_battery()) {
-      set_error("must have at least 35% battery to update");
-      return;
+      set_battery_low();
+      int battery_cap = battery_capacity();
+      while(battery_cap < min_battery_cap) {
+        battery_cap = battery_capacity();
+        battery_cap_text = std::to_string(battery_cap);
+        usleep(1000000);
+      }
+      set_running();
     }
 
     if (!recovery_fn.empty()) {
@@ -526,6 +563,27 @@ struct Updater {
     }
   }
 
+  void draw_battery_screen() {
+    low_battery_title = "Low Battery";
+    low_battery_text = "Please connect EON to your charger. Update will continue once EON battery reaches 35%.";
+    low_battery_context = "Current battery charge: " + battery_cap_text + "%";
+
+    nvgFillColor(vg, nvgRGBA(255,255,255,255));
+    nvgTextAlign(vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
+
+    nvgFontFace(vg, "opensans_bold");
+    nvgFontSize(vg, 120.0f);
+    nvgTextBox(vg, 110, 220, fb_w-240, low_battery_title.c_str(), NULL);
+
+    nvgFontFace(vg, "opensans_regular");
+    nvgFontSize(vg, 86.0f);
+    nvgTextBox(vg, 130, 380, fb_w-260, low_battery_text.c_str(), NULL);
+
+    nvgFontFace(vg, "opensans_bold");
+    nvgFontSize(vg, 86.0f);
+    nvgTextBox(vg, 130, 700, fb_w-260, low_battery_context.c_str(), NULL);
+  }
+
   void draw_progress_screen() {
     // draw progress message
     nvgFontSize(vg, 64.0f);
@@ -584,11 +642,14 @@ struct Updater {
                       "Continue",
                       "Connect to WiFi");
       break;
+    case LOW_BATTERY:
+      draw_battery_screen();
+      break;
     case RUNNING:
       draw_progress_screen();
       break;
     case ERROR:
-      draw_ack_screen("There was an error.", ("ERROR: " + error_text + "\n\nYou will need to retry").c_str(), NULL, "exit");
+      draw_ack_screen("There was an error", (error_text).c_str(), NULL, "Reboot");
       break;
     }
 
@@ -648,6 +709,7 @@ struct Updater {
       glDisable(GL_BLEND);
 
       eglSwapBuffers(display, surface);
+
       assert(glGetError() == GL_NO_ERROR);
 
       // no simple way to do 30fps vsync with surfaceflinger...

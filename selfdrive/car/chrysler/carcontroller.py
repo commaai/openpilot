@@ -31,7 +31,7 @@ class CarController(object):
     self.packer = CANPacker(dbc_name)
 
 
-  def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd, hud_alert):
+  def update(self, enabled, CS, actuators, pcm_cancel_cmd, hud_alert):
     # this seems needed to avoid steering faults and to force the sync with the EPS counter
     frame = CS.lkas_counter
     if self.prev_frame == frame:

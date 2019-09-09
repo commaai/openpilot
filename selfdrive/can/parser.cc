@@ -330,7 +330,7 @@ class CANParser {
     }
   }
 
-  void update_string(uint64_t sec, std::string data) {
+  void update_string(std::string data) {
     // format for board, make copy due to alignment issues, will be freed on out of scope
     auto amsg = kj::heapArray<capnp::word>((data.length() / sizeof(capnp::word)) + 1);
     memcpy(amsg.begin(), data.data(), data.length());
@@ -339,10 +339,12 @@ class CANParser {
     capnp::FlatArrayMessageReader cmsg(amsg);
     cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
 
-    auto cans = event.getCan();
-    UpdateCans(sec, cans);
+    last_sec = event.getLogMonoTime();
 
-    UpdateValid(sec);
+    auto cans = event.getCan();
+    UpdateCans(last_sec, cans);
+
+    UpdateValid(last_sec);
   }
 
   int update(uint64_t sec, bool wait) {
@@ -381,17 +383,18 @@ class CANParser {
       UpdateCans(sec, cans);
     }
 
+    last_sec = sec;
     UpdateValid(sec);
     zmq_msg_close(&msg);
     return result;
   }
 
-  std::vector<SignalValue> query(uint64_t sec) {
+  std::vector<SignalValue> query_latest() {
     std::vector<SignalValue> ret;
 
     for (const auto& kv : message_states) {
       const auto& state = kv.second;
-      if (sec != 0 && state.seen != sec) continue;
+      if (last_sec != 0 && state.seen != last_sec) continue;
 
       for (int i=0; i<state.parse_sigs.size(); i++) {
         const Signal &sig = state.parse_sigs[i];
@@ -408,6 +411,7 @@ class CANParser {
   }
 
   bool can_valid = false;
+  uint64_t last_sec = 0;
 
  private:
   const int bus;
@@ -451,31 +455,31 @@ int can_update(void* can, uint64_t sec, bool wait) {
   return cp->update(sec, wait);
 }
 
-void can_update_string(void *can, uint64_t sec, const char* dat, int len) {
+void can_update_string(void *can, const char* dat, int len) {
   CANParser* cp = (CANParser*)can;
-  cp->update_string(sec, std::string(dat, len));
+  cp->update_string(std::string(dat, len));
 }
 
-size_t can_query(void* can, uint64_t sec, bool *out_can_valid, size_t out_values_size, SignalValue* out_values) {
+size_t can_query_latest(void* can, bool *out_can_valid, size_t out_values_size, SignalValue* out_values) {
   CANParser* cp = (CANParser*)can;
 
   if (out_can_valid) {
     *out_can_valid = cp->can_valid;
   }
 
-  const std::vector<SignalValue> values = cp->query(sec);
+  const std::vector<SignalValue> values = cp->query_latest();
   if (out_values) {
     std::copy(values.begin(), values.begin()+std::min(out_values_size, values.size()), out_values);
   }
   return values.size();
 };
 
-void can_query_vector(void* can, uint64_t sec, bool *out_can_valid, std::vector<SignalValue> &values) {
+void can_query_latest_vector(void* can, bool *out_can_valid, std::vector<SignalValue> &values) {
   CANParser* cp = (CANParser*)can;
   if (out_can_valid) {
     *out_can_valid = cp->can_valid;
   }
-  values = cp->query(sec);
+  values = cp->query_latest();
 };
 
 }

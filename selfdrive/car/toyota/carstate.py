@@ -1,14 +1,17 @@
 import numpy as np
+from cereal import car
 from common.kalman.simple_kalman import KF1D
 from selfdrive.can.can_define import CANDefine
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from selfdrive.car.toyota.values import CAR, DBC, STEER_THRESHOLD, TSS2_CAR, NO_DSU_CAR
 
+GearShifter = car.CarState.GearShifter
+
 def parse_gear_shifter(gear, vals):
 
-  val_to_capnp = {'P': 'park', 'R': 'reverse', 'N': 'neutral',
-                  'D': 'drive', 'B': 'brake'}
+  val_to_capnp = {'P': GearShifter.park, 'R': GearShifter.reverse, 'N': GearShifter.neutral,
+                  'D': GearShifter.drive, 'B': GearShifter.brake}
   try:
     return val_to_capnp[vals[gear]]
   except KeyError:
@@ -37,9 +40,6 @@ def get_can_parser(CP):
     ("STEER_RATE", "STEER_ANGLE_SENSOR", 0),
     ("CRUISE_ACTIVE", "PCM_CRUISE", 0),
     ("CRUISE_STATE", "PCM_CRUISE", 0),
-    ("MAIN_ON", "PCM_CRUISE_2", 0),
-    ("SET_SPEED", "PCM_CRUISE_2", 0),
-    ("LOW_SPEED_LOCKOUT", "PCM_CRUISE_2", 0),
     ("STEER_TORQUE_DRIVER", "STEER_TORQUE_SENSOR", 0),
     ("STEER_TORQUE_EPS", "STEER_TORQUE_SENSOR", 0),
     ("TURN_SIGNALS", "STEERING_LEVERS", 3),   # 3 is no blinkers
@@ -55,10 +55,19 @@ def get_can_parser(CP):
     ("WHEEL_SPEEDS", 80),
     ("STEER_ANGLE_SENSOR", 80),
     ("PCM_CRUISE", 33),
-    ("PCM_CRUISE_2", 33),
     ("STEER_TORQUE_SENSOR", 50),
     ("EPS_STATUS", 25),
   ]
+
+  if CP.carFingerprint == CAR.LEXUS_IS:
+    signals.append(("MAIN_ON", "DSU_CRUISE", 0))
+    signals.append(("SET_SPEED", "DSU_CRUISE", 0))
+    checks.append(("DSU_CRUISE", 5))
+  else:
+    signals.append(("MAIN_ON", "PCM_CRUISE_2", 0))
+    signals.append(("SET_SPEED", "PCM_CRUISE_2", 0))
+    signals.append(("LOW_SPEED_LOCKOUT", "PCM_CRUISE_2", 0))
+    checks.append(("PCM_CRUISE_2", 33))
 
   if CP.carFingerprint in NO_DSU_CAR:
     signals += [("STEER_ANGLE", "STEER_TORQUE_SENSOR", 0)]
@@ -158,7 +167,10 @@ class CarState(object):
     self.angle_steers_rate = cp.vl["STEER_ANGLE_SENSOR"]['STEER_RATE']
     can_gear = int(cp.vl["GEAR_PACKET"]['GEAR'])
     self.gear_shifter = parse_gear_shifter(can_gear, self.shifter_values)
-    self.main_on = cp.vl["PCM_CRUISE_2"]['MAIN_ON']
+    if self.CP.carFingerprint == CAR.LEXUS_IS:
+      self.main_on = cp.vl["DSU_CRUISE"]['MAIN_ON']
+    else:
+      self.main_on = cp.vl["PCM_CRUISE_2"]['MAIN_ON']
     self.left_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 1
     self.right_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 2
 
@@ -173,10 +185,14 @@ class CarState(object):
     self.steer_override = abs(self.steer_torque_driver) > STEER_THRESHOLD
 
     self.user_brake = 0
-    self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED']
+    if self.CP.carFingerprint == CAR.LEXUS_IS:
+      self.v_cruise_pcm = cp.vl["DSU_CRUISE"]['SET_SPEED']
+      self.low_speed_lockout = False
+    else:
+      self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED']
+      self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]['LOW_SPEED_LOCKOUT'] == 2
     self.pcm_acc_status = cp.vl["PCM_CRUISE"]['CRUISE_STATE']
     self.pcm_acc_active = bool(cp.vl["PCM_CRUISE"]['CRUISE_ACTIVE'])
-    self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]['LOW_SPEED_LOCKOUT'] == 2
     self.brake_lights = bool(cp.vl["ESP_CONTROL"]['BRAKE_LIGHTS_ACC'] or self.brake_pressed)
     if self.CP.carFingerprint == CAR.PRIUS:
       self.generic_toggle = cp.vl["AUTOPARK_STATUS"]['STATE'] != 0

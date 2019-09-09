@@ -47,7 +47,7 @@ if __name__ == "__main__":
   if is_neos:
     version = int(open("/VERSION").read()) if os.path.isfile("/VERSION") else 0
     revision = int(open("/REVISION").read()) if version >= 10 else 0 # Revision only present in NEOS 10 and up
-    neos_update_required = version < 10 or (version == 10 and revision != 4)
+    neos_update_required = version < 10 or (version == 10 and revision < 4)
 
   if neos_update_required:
     # update continue.sh before updating NEOS
@@ -365,6 +365,7 @@ def manager_thread():
 
   # start frame
   pm_apply_packages('enable')
+  system("LD_LIBRARY_PATH= appops set ai.comma.plus.offroad SU allow")
   system("am start -n ai.comma.plus.frame/.MainActivity")
 
   if os.getenv("NOBOARD") is None:
@@ -498,6 +499,11 @@ def manager_update():
   update_ssh()
   update_apks()
 
+  uninstall = [app for app in get_installed_apks().keys() if app in ("com.spotify.music", "com.waze")]
+  for app in uninstall:
+    cloudlog.info("uninstalling %s" % app)
+    os.system("pm uninstall % s" % app)
+
 def manager_prepare():
   # build cereal first
   subprocess.check_call(["make", "-j4"], cwd=os.path.join(BASEDIR, "cereal"))
@@ -555,16 +561,12 @@ def main():
     params.put("IsMetric", "0")
   if params.get("RecordFront") is None:
     params.put("RecordFront", "0")
-  if params.get("IsFcwEnabled") is None:
-    params.put("IsFcwEnabled", "1")
   if params.get("HasAcceptedTerms") is None:
     params.put("HasAcceptedTerms", "0")
   if params.get("IsUploadRawEnabled") is None:
     params.put("IsUploadRawEnabled", "1")
   if params.get("IsUploadVideoOverCellularEnabled") is None:
     params.put("IsUploadVideoOverCellularEnabled", "1")
-  if params.get("IsDriverMonitoringEnabled") is None:
-    params.put("IsDriverMonitoringEnabled", "1")
   if params.get("IsGeofenceEnabled") is None:
     params.put("IsGeofenceEnabled", "-1")
   if params.get("SpeedLimitOffset") is None:

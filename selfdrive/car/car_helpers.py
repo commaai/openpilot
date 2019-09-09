@@ -1,4 +1,5 @@
 import os
+import zmq
 from cereal import car
 from common.params import Params
 from common.vin import get_vin, VIN_UNKNOWN
@@ -6,6 +7,16 @@ from common.basedir import BASEDIR
 from common.fingerprints import eliminate_incompatible_cars, all_known_cars
 from selfdrive.swaglog import cloudlog
 import selfdrive.messaging as messaging
+
+
+def get_one_can(logcan):
+  while True:
+    try:
+      can = messaging.recv_one(logcan)
+      if len(can.can) > 0:
+        return can
+    except zmq.error.Again:
+      continue
 
 
 def get_startup_alert(car_recognized, controller_available):
@@ -86,7 +97,7 @@ def fingerprint(logcan, sendcan, is_panda_black):
   done = False
 
   while not done:
-    a = messaging.recv_one(logcan)
+    a = get_one_can(logcan)
 
     for can in a.can:
       # need to independently try to fingerprint both bus 0 and 1 to work

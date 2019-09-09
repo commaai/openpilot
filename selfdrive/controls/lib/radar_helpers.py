@@ -26,6 +26,7 @@ class Track(object):
   def __init__(self):
     self.ekf = None
     self.cnt = 0
+    self.aLeadTau = _LEAD_ACCEL_TAU
 
   def update(self, d_rel, y_rel, v_rel, v_ego_t_aligned, measured):
     # relative values, copy
@@ -123,7 +124,7 @@ class Cluster(object):
 
   @property
   def measured(self):
-    return any([t.measured for t in self.tracks])
+    return any(t.measured for t in self.tracks)
 
   def get_RadarState(self, model_prob=0.0):
     return {

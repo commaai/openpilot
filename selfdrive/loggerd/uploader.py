@@ -93,9 +93,9 @@ def is_on_hotspot():
     return False
 
 class Uploader(object):
-  def __init__(self, dongle_id, private_key, root):
+  def __init__(self, dongle_id, root):
     self.dongle_id = dongle_id
-    self.api = Api(dongle_id, private_key)
+    self.api = Api(dongle_id)
     self.root = root
 
     self.upload_thread = None
@@ -146,14 +146,11 @@ class Uploader(object):
         return (key, fn, 0)
 
     if with_raw:
-      # then upload log files
+      # then upload the full log files, rear and front camera files
       for name, key, fn in self.gen_upload_files():
         if name  == "rlog.bz2":
           return (key, fn, 1)
-
-      # then upload rear and front camera files
-      for name, key, fn in self.gen_upload_files():
-        if name == "fcamera.hevc":
+        elif name == "fcamera.hevc":
           return (key, fn, 2)
         elif name == "dcamera.hevc":
           return (key, fn, 3)
@@ -241,13 +238,12 @@ def uploader_fn(exit_event):
 
   params = Params()
   dongle_id = params.get("DongleId")
-  private_key = open("/persist/comma/id_rsa").read()
 
-  if dongle_id is None or private_key is None:
-    cloudlog.info("uploader missing dongle_id or private_key")
-    raise Exception("uploader can't start without dongle id and private key")
+  if dongle_id is None:
+    cloudlog.info("uploader missing dongle_id")
+    raise Exception("uploader can't start without dongle id")
 
-  uploader = Uploader(dongle_id, private_key, ROOT)
+  uploader = Uploader(dongle_id, ROOT)
 
   backoff = 0.1
   while True:

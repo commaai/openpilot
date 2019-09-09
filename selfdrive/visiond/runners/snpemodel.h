@@ -20,6 +20,7 @@ public:
     if (model_data) free(model_data);
   }
   void addRecurrent(float *state, int state_size);
+  void addDesire(float *state, int state_size);
   void execute(float *net_input_buf);
 private:
   uint8_t *model_data = NULL;
@@ -36,8 +37,10 @@ private:
   std::unique_ptr<zdl::DlSystem::IUserBuffer> outputBuffer;
   float *output;
 
-  // recurrent
+  // recurrent and desire
+  std::unique_ptr<zdl::DlSystem::IUserBuffer> addExtra(float *state, int state_size, int idx);
   std::unique_ptr<zdl::DlSystem::IUserBuffer> recurrentBuffer;
+  std::unique_ptr<zdl::DlSystem::IUserBuffer> desireBuffer;
 };
 
 #endif

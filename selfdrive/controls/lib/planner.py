@@ -9,7 +9,6 @@ from cereal import car
 from common.realtime import sec_since_boot, DT_PLAN
 from selfdrive.swaglog import cloudlog
 from selfdrive.config import Conversions as CV
-from selfdrive.services import service_list
 from selfdrive.controls.lib.speed_smoother import speed_smoother
 from selfdrive.controls.lib.longcontrol import LongCtrlState, MIN_CAN_SPEED
 from selfdrive.controls.lib.fcw import FCWChecker
@@ -71,14 +70,11 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
 
 
 class Planner(object):
-  def __init__(self, CP, fcw_enabled):
+  def __init__(self, CP):
     self.CP = CP
 
-    self.plan = messaging.pub_sock(service_list['plan'].port)
-    self.live_longitudinal_mpc = messaging.pub_sock(service_list['liveLongitudinalMpc'].port)
-
-    self.mpc1 = LongitudinalMpc(1, self.live_longitudinal_mpc)
-    self.mpc2 = LongitudinalMpc(2, self.live_longitudinal_mpc)
+    self.mpc1 = LongitudinalMpc(1)
+    self.mpc2 = LongitudinalMpc(2)
 
     self.v_acc_start = 0.0
     self.a_acc_start = 0.0
@@ -93,7 +89,6 @@ class Planner(object):
 
     self.longitudinalPlanSource = 'cruise'
     self.fcw_checker = FCWChecker()
-    self.fcw_enabled = fcw_enabled
     self.path_x = np.arange(192)
 
     self.params = Params()
@@ -125,7 +120,7 @@ class Planner(object):
 
     self.v_acc_future = min([self.mpc1.v_mpc_future, self.mpc2.v_mpc_future, v_cruise_setpoint])
 
-  def update(self, sm, CP, VM, PP):
+  def update(self, sm, pm, CP, VM, PP):
     """Gets called when new radarState is available"""
     cur_time = sec_since_boot()
     v_ego = sm['carState'].vEgo
@@ -199,8 +194,8 @@ class Planner(object):
     self.mpc1.set_cur_state(self.v_acc_start, self.a_acc_start)
     self.mpc2.set_cur_state(self.v_acc_start, self.a_acc_start)
 
-    self.mpc1.update(sm['carState'], lead_1, v_cruise_setpoint)
-    self.mpc2.update(sm['carState'], lead_2, v_cruise_setpoint)
+    self.mpc1.update(pm, sm['carState'], lead_1, v_cruise_setpoint)
+    self.mpc2.update(pm, sm['carState'], lead_2, v_cruise_setpoint)
 
     self.choose_solution(v_cruise_setpoint, enabled)
 
@@ -251,10 +246,9 @@ class Planner(object):
     plan_send.plan.processingDelay = (plan_send.logMonoTime / 1e9) - sm.rcv_time['radarState']
 
     # Send out fcw
-    fcw = fcw and (self.fcw_enabled or long_control_state != LongCtrlState.off)
     plan_send.plan.fcw = fcw
 
-    self.plan.send(plan_send.to_bytes())
+    pm.send('plan', plan_send)
 
     # Interpolate 0.05 seconds and save as starting point for next iteration
     a_acc_sol = self.a_acc_start + (DT_PLAN / LON_MPC_STEP) * (self.a_acc - self.a_acc_start)
