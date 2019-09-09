@@ -57,8 +57,9 @@ void set_toyota_rt_torque_last(int t);
 
 void init_tests_honda(void);
 bool get_honda_moving(void);
-int get_honda_brake_prev(void);
+bool get_honda_brake_pressed_prev(void);
 int get_honda_gas_prev(void);
+void set_honda_fwd_brake(bool);
 void set_honda_alt_brake_msg(bool);
 void set_honda_bosch_hardware(bool);
 int get_honda_bosch_hardware(void);
