@@ -56,6 +56,7 @@ BO_ 380 POWERTRAIN_DATA: 8 PCM
 
 BO_ 420 VSA_STATUS: 8 VSA
  SG_ USER_BRAKE : 7|16@0+ (0.015625,-1.609375) [0|1000] "" EON
+ SG_ COMPUTER_BRAKING : 23|1@0+ (1,0) [0|1] "" EON
  SG_ ESP_DISABLED : 28|1@0+ (1,0) [0|1] "" EON
  SG_ BRAKE_HOLD_RELATED : 52|1@0+ (1,0) [0|1] "" XXX
  SG_ BRAKE_HOLD_ACTIVE : 46|1@0+ (1,0) [0|1] "" EON
@@ -101,7 +102,7 @@ BO_ 506 BRAKE_COMMAND: 8 ADAS
  SG_ CHIME : 47|3@0+ (1,0) [0|7] "" EBCM
  SG_ SET_ME_X00_4 : 44|1@0+ (1,0) [0|1] "" EBCM
  SG_ FCW : 43|2@0+ (1,0) [0|3] "" EBCM
- SG_ AEB : 41|2@0+ (1,0) [0|3] "" XXX
+ SG_ AEB_STATUS : 41|2@0+ (1,0) [0|3] "" XXX
  SG_ SET_ME_X00_5 : 55|8@0+ (1,0) [0|0] "" EBCM
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EBCM
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" EBCM
@@ -204,6 +205,7 @@ BO_ 1029 DOORS_STATUS: 8 BDY
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
 
 CM_ SG_ 490 LONG_ACCEL "wheel speed derivative, noisy and zero snapping";
+CM_ SG_ 506 AEB_REQ_1 "set for duration of suspected AEB event";
 CM_ SG_ 773 PASS_AIRBAG_ON "Might just be indicator light";
 CM_ SG_ 773 PASS_AIRBAG_OFF "Might just be indicator light";
 CM_ SG_ 780 CRUISE_SPEED "255 = no speed";
@@ -213,6 +215,7 @@ CM_ SG_ 829 BEEP "beeps are pleasant, chimes are for warnngs etc...";
 
 VAL_ 506 FCW 3 "fcw" 2 "fcw" 1 "fcw" 0 "no_fcw" ;
 VAL_ 506 CHIME 4 "double_chime" 3 "single_chime" 2 "continuous_chime" 1 "repeating_chime" 0 "no_chime" ;
+VAL_ 506 AEB_STATUS 3 "aeb_prepare" 2 "aeb_ready" 1 "aeb_braking" 0 "no_aeb" ;
 VAL_ 780 CRUISE_SPEED 255 "no_speed" 252 "stopped" ;
 VAL_ 780 HUD_LEAD 3 "acc_off" 2 "solid_car" 1 "dashed_car" 0 "no_car" ;
 VAL_ 829 BEEP 3 "single_beep" 2 "triple_beep" 1 "repeated_beep" 0 "no_beep" ;

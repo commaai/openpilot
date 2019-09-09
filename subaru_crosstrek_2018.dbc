@@ -146,8 +146,10 @@ BO_ 545 ES_Distance: 8 XXX
  SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ Signal1 : 12|20@1+ (1,0) [0|15] "" XXX
  SG_ Signal2 : 32|24@1+ (1,0) [0|15] "" XXX
- SG_ Main : 56|1@1+ (1,0) [0|1] "" XXX
- SG_ Signal3 : 57|7@1+ (1,0) [0|1] "" XXX
+ SG_ ACC_Cancel : 56|1@1+ (1,0) [0|1] "" XXX
+ SG_ ACC_Set : 57|1@1+ (1,0) [0|1] "" XXX
+ SG_ ACC_Resume : 58|1@1+ (1,0) [0|1] "" XXX
+ SG_ Signal3 : 59|5@1+ (1,0) [0|1] "" XXX
 
 BO_ 546 ES_Status: 8 XXX
  SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
@@ -205,7 +207,6 @@ BO_ 940 BodyInfo: 8 XXX
 BO_ 801 ES_DashStatus: 8 XXX
  SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
  SG_ Counter : 8|4@1+ (1,0) [0|7] "" XXX
- SG_ NEW_SIGNAL_9 : 60|4@1+ (1,0) [0|15] "" XXX
  SG_ NEW_SIGNAL_10 : 49|2@1+ (1,0) [0|3] "" XXX
  SG_ Brake_Pedal : 51|1@1+ (1,0) [0|3] "" XXX
  SG_ Cruise_Set_Speed : 40|8@1+ (1,0) [0|255] "" XXX
@@ -214,6 +215,7 @@ BO_ 801 ES_DashStatus: 8 XXX
  SG_ Far_Distance : 56|4@1+ (1,0) [0|15] "" XXX
  SG_ Car_Follow : 52|1@1+ (1,0) [0|3] "" XXX
  SG_ ACC_Distance : 28|3@1+ (1,0) [0|3] "" XXX
+ SG_ ACC_Hold : 60|4@1+ (1,0) [0|15] "" XXX
 
 BO_ 802 ES_LKAS_State: 8 XXX
  SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
@@ -235,9 +237,9 @@ BO_ 802 ES_LKAS_State: 8 XXX
  SG_ FCW_Cont_Beep : 32|1@1+ (1,0) [0|1] "" XXX
  SG_ FCW_Repeated_Beep : 33|1@1+ (1,0) [0|1] "" XXX
  SG_ Throttle_Management_Activated : 34|1@1+ (1,0) [0|1] "" XXX
- SG_ Traffic_light_Ahead : 35|1@1+ (1,0) [0|1] "" XXX
  SG_ Right_Depart : 36|1@1+ (1,0) [0|3] "" XXX
  SG_ Signal5 : 37|27@1+ (1,0) [0|1] "" XXX
+ SG_ Vehicle_In_Front_Has_Moved : 35|1@1+ (1,0) [0|1] "" XXX
 
 BO_ 805 ES_NEW_MSG_22: 8 XXX
  SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
@@ -360,7 +362,8 @@ BO_ 1787 NEW_MSG_45: 8 XXX
 
 CM_ SG_ 940 FOG_LIGHTS2 "yellow fog light in the dash";
 CM_ SG_ 940 Highbeam "01 = low beam, 11 = high beam";
-CM_ SG_ 802 Traffic_light_Ahead "Crosstrek 2018 = car in front has moved";
+CM_ SG_ 801 ACC_Hold "0 = No Hold, 3 = Hold";
+CM_ SG_ 802 Vehicle_In_Front_Has_Moved "Crosstrek 2018 = car in front has moved";
 CM_ SG_ 805 NEW_SIGNAL_3 "always 3";
 CM_ SG_ 805 NEW_SIGNAL_4 "always 1";
 CM_ SG_ 1677 Units "1 = imperial, 6 = metric";
