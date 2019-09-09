@@ -13,3 +13,12 @@ Currently the following processes are tested:
 * plannerd
 * calibrationd
 
+## Forks
+
+openpilot forks can use this test with their own reference logs
+
+To generate new logs:
+
+`./update-refs.py --no-upload`
+
+Then, check in the new logs using git-lfs. Make sure to also include the updated `ref_commit` file.

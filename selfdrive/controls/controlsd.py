@@ -6,12 +6,12 @@ from cereal import car, log
 from common.numpy_fast import clip
 from common.realtime import sec_since_boot, set_realtime_priority, Ratekeeper, DT_CTRL
 from common.profiler import Profiler
-from common.params import Params
+from common.params import Params, put_nonblocking
 import selfdrive.messaging as messaging
 from selfdrive.config import Conversions as CV
 from selfdrive.services import service_list
 from selfdrive.boardd.boardd import can_list_to_can_capnp
-from selfdrive.car.car_helpers import get_car, get_startup_alert
+from selfdrive.car.car_helpers import get_car, get_startup_alert, get_one_can
 from selfdrive.controls.lib.lane_planner import CAMERA_OFFSET
 from selfdrive.controls.lib.drive_helpers import get_events, \
                                                  create_event, \
@@ -26,6 +26,7 @@ from selfdrive.controls.lib.alertmanager import AlertManager
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.controls.lib.driver_monitor import DriverStatus, MAX_TERMINAL_ALERTS
 from selfdrive.controls.lib.planner import LON_MPC_STEP
+from selfdrive.controls.lib.gps_helpers import is_rhd_region
 from selfdrive.locationd.calibration_helpers import Calibration, Filter
 
 ThermalStatus = log.ThermalData.ThermalStatus
@@ -50,10 +51,6 @@ def events_to_bytes(events):
     ret.append(e.to_bytes())
   return ret
 
-def wait_for_can(logcan):
-  print("Waiting for CAN messages...")
-  while len(messaging.recv_one(logcan).can) == 0:
-    pass
 
 def data_sample(CI, CC, sm, can_sock, cal_status, cal_perc, overtemp, free_space, low_battery,
                 driver_status, state, mismatch_counter, params):
@@ -85,6 +82,12 @@ def data_sample(CI, CC, sm, can_sock, cal_status, cal_perc, overtemp, free_space
   if free_space:
     events.append(create_event('outOfSpace', [ET.NO_ENTRY]))
 
+  # GPS coords RHD parsing, once every restart
+  if sm.updated['gpsLocation'] and not driver_status.is_rhd_region_checked:
+    is_rhd = is_rhd_region(sm['gpsLocation'].latitude, sm['gpsLocation'].longitude)
+    driver_status.is_rhd_region = is_rhd
+    driver_status.is_rhd_region_checked = True
+    put_nonblocking("IsRHD", str(int(is_rhd)))
 
   # Handle calibration
   if sm.updated['liveCalibration']:
@@ -118,7 +121,7 @@ def data_sample(CI, CC, sm, can_sock, cal_status, cal_perc, overtemp, free_space
 
   # Driver monitoring
   if sm.updated['driverMonitoring']:
-    driver_status.get_pose(sm['driverMonitoring'], params, cal_rpy)
+    driver_status.get_pose(sm['driverMonitoring'], cal_rpy, CS.vEgo, enabled)
 
   if driver_status.terminal_alert_cnt >= MAX_TERMINAL_ALERTS:
     events.append(create_event("tooDistracted", [ET.NO_ENTRY]))
@@ -283,9 +286,8 @@ def state_control(frame, rcv_frame, plan, path_plan, CS, CP, state, events, v_cr
   return actuators, v_cruise_kph, driver_status, v_acc_sol, a_acc_sol, lac_log
 
 
-def data_send(sm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, carstate,
-              carcontrol, carevents, carparams, controlsstate, sendcan, AM, driver_status,
-              LaC, LoC, read_only, start_time, v_acc, a_acc, lac_log, events_prev):
+def data_send(sm, pm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, AM,
+              driver_status, LaC, LoC, read_only, start_time, v_acc, a_acc, lac_log, events_prev):
   """Send actuators and hud commands to the car, send controlsstate and MPC logging"""
 
   CC = car.CarControl.new_message()
@@ -324,7 +326,7 @@ def data_send(sm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, ca
   if not read_only:
     # send car controls over can
     can_sends = CI.apply(CC)
-    sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
+    pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
 
   force_decel = driver_status.awareness < 0.
 
@@ -341,7 +343,7 @@ def data_send(sm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, ca
     "alertType": AM.alert_type,
     "alertSound": AM.audible_alert,
     "awarenessStatus": max(driver_status.awareness, 0.0) if isEnabled(state) else 0.0,
-    "driverMonitoringOn": bool(driver_status.monitor_on and driver_status.face_detected),
+    "driverMonitoringOn": bool(driver_status.face_detected),
     "canMonoTimes": list(CS.canMonoTimes),
     "planMonoTime": sm.logMonoTime['plan'],
     "pathPlanMonoTime": sm.logMonoTime['pathPlan'],
@@ -364,7 +366,6 @@ def data_send(sm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, ca
     "vTargetLead": float(v_acc),
     "aTarget": float(a_acc),
     "jerkFactor": float(sm['plan'].jerkFactor),
-    "angleModelBias": 0.,
     "gpsPlannerActive": sm['plan'].gpsPlannerActive,
     "vCurvature": sm['plan'].vCurvature,
     "decelForModel": sm['plan'].longitudinalPlanSource == log.Plan.LongitudinalPlanSource.model,
@@ -380,7 +381,7 @@ def data_send(sm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, ca
     dat.controlsState.lateralControlState.lqrState = lac_log
   elif CP.lateralTuning.which() == 'indi':
     dat.controlsState.lateralControlState.indiState = lac_log
-  controlsstate.send(dat.to_bytes())
+  pm.send('controlsState', dat)
 
   # carState
   cs_send = messaging.new_message()
@@ -388,7 +389,7 @@ def data_send(sm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, ca
   cs_send.valid = CS.canValid
   cs_send.carState = CS
   cs_send.carState.events = events
-  carstate.send(cs_send.to_bytes())
+  pm.send('carState', cs_send)
 
   # carEvents - logged every second or on change
   events_bytes = events_to_bytes(events)
@@ -396,26 +397,26 @@ def data_send(sm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, ca
     ce_send = messaging.new_message()
     ce_send.init('carEvents', len(events))
     ce_send.carEvents = events
-    carevents.send(ce_send.to_bytes())
+    pm.send('carEvents', ce_send)
 
   # carParams - logged every 50 seconds (> 1 per segment)
   if (sm.frame % int(50. / DT_CTRL) == 0):
     cp_send = messaging.new_message()
     cp_send.init('carParams')
     cp_send.carParams = CP
-    carparams.send(cp_send.to_bytes())
+    pm.send('carParams', cp_send)
 
   # carControl
   cc_send = messaging.new_message()
   cc_send.init('carControl')
   cc_send.valid = CS.canValid
   cc_send.carControl = CC
-  carcontrol.send(cc_send.to_bytes())
+  pm.send('carControl', cc_send)
 
   return CC, events_bytes
 
 
-def controlsd_thread(gctx=None):
+def controlsd_thread(sm=None, pm=None, can_sock=None):
   gc.disable()
 
   # start the loop
@@ -423,39 +424,35 @@ def controlsd_thread(gctx=None):
 
   params = Params()
 
-  # Pub Sockets
-  sendcan = messaging.pub_sock(service_list['sendcan'].port)
-  controlsstate = messaging.pub_sock(service_list['controlsState'].port)
-  carstate = messaging.pub_sock(service_list['carState'].port)
-  carcontrol = messaging.pub_sock(service_list['carControl'].port)
-  carevents = messaging.pub_sock(service_list['carEvents'].port)
-  carparams = messaging.pub_sock(service_list['carParams'].port)
-
   is_metric = params.get("IsMetric") == "1"
   passive = params.get("Passive") != "0"
 
-  sm = messaging.SubMaster(['thermal', 'health', 'liveCalibration', 'driverMonitoring', 'plan', 'pathPlan'])
+  # Pub/Sub Sockets
+  if pm is None:
+    pm = messaging.PubMaster(['sendcan', 'controlsState', 'carState', 'carControl', 'carEvents', 'carParams'])
 
-  logcan = messaging.sub_sock(service_list['can'].port)
+  if sm is None:
+    sm = messaging.SubMaster(['thermal', 'health', 'liveCalibration', 'driverMonitoring', 'plan', 'pathPlan', \
+                              'gpsLocation'], ignore_alive=['gpsLocation'])
+
+  if can_sock is None:
+    can_timeout = None if os.environ.get('NO_CAN_TIMEOUT', False) else 100
+    can_sock = messaging.sub_sock(service_list['can'].port, timeout=can_timeout)
 
   # wait for health and CAN packets
   hw_type = messaging.recv_one(sm.sock['health']).health.hwType
   is_panda_black = hw_type == log.HealthData.HwType.blackPanda
-  wait_for_can(logcan)
+  print("Waiting for CAN messages...")
+  get_one_can(can_sock)
 
-  CI, CP = get_car(logcan, sendcan, is_panda_black)
-  logcan.close()
-
-  # TODO: Use the logcan socket from above, but that will currenly break the tests
-  can_timeout = None if os.environ.get('NO_CAN_TIMEOUT', False) else 100
-  can_sock = messaging.sub_sock(service_list['can'].port, timeout=can_timeout)
+  CI, CP = get_car(can_sock, pm.sock['sendcan'], is_panda_black)
 
   car_recognized = CP.carName != 'mock'
   # If stock camera is disconnected, we loaded car controls and it's not chffrplus
   controller_available = CP.enableCamera and CI.CC is not None and not passive
-  read_only = not car_recognized or not controller_available
+  read_only = not car_recognized or not controller_available or CP.dashcamOnly
   if read_only:
-    CP.safetyModel = car.CarParams.SafetyModel.elm327   # diagnostic only
+    CP.safetyModel = CP.safetyModelPassive
 
   # Write CarParams for radard and boardd safety mode
   params.put("CarParams", CP.to_bytes())
@@ -478,6 +475,9 @@ def controlsd_thread(gctx=None):
     LaC = LatControlLQR(CP)
 
   driver_status = DriverStatus()
+  is_rhd = params.get("IsRHD")
+  if is_rhd is not None:
+    driver_status.is_rhd = bool(int(is_rhd))
 
   state = State.disabled
   soft_disable_timer = 0
@@ -550,16 +550,16 @@ def controlsd_thread(gctx=None):
     prof.checkpoint("State Control")
 
     # Publish data
-    CC, events_prev = data_send(sm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, carstate, carcontrol, carevents, carparams,
-                   controlsstate, sendcan, AM, driver_status, LaC, LoC, read_only, start_time, v_acc, a_acc, lac_log, events_prev)
+    CC, events_prev = data_send(sm, pm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, AM, driver_status, LaC,
+                                LoC, read_only, start_time, v_acc, a_acc, lac_log, events_prev)
     prof.checkpoint("Sent")
 
     rk.monitor_time()
     prof.display()
 
 
-def main(gctx=None):
-  controlsd_thread(gctx)
+def main(sm=None, pm=None, logcan=None):
+  controlsd_thread(sm, pm, logcan)
 
 
 if __name__ == "__main__":

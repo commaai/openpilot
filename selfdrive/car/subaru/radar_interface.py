@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-from cereal import car
+import os
 import time
-
+from cereal import car
 
 class RadarInterface(object):
   def __init__(self, CP):
@@ -10,8 +10,9 @@ class RadarInterface(object):
     self.delay = 0.1
 
   def update(self, can_strings):
-
     ret = car.RadarData.new_message()
-    time.sleep(0.05)  # radard runs on RI updates
+    
+    if 'NO_RADAR_SLEEP' not in os.environ:
+      time.sleep(0.05)  # radard runs on RI updates
 
     return ret

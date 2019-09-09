@@ -6,7 +6,6 @@ import numpy as np
 import selfdrive.messaging as messaging
 from selfdrive.locationd.calibration_helpers import Calibration
 from selfdrive.swaglog import cloudlog
-from selfdrive.services import service_list
 from common.params import Params
 from common.transformations.model import model_height
 from common.transformations.camera import view_frame_from_device_frame, get_view_frame_from_road_frame, \
@@ -64,7 +63,7 @@ class Calibrator(object):
       self.just_calibrated = True
 
   def handle_cam_odom(self, log):
-    trans, rot = log.cameraOdometry.trans, log.cameraOdometry.rot
+    trans, rot = log.trans, log.rot
     if np.linalg.norm(trans) > MIN_SPEED_FILTER and abs(rot[2]) < MAX_YAW_RATE_FILTER:
       new_vp = eon_intrinsics.dot(view_frame_from_device_frame.dot(trans))
       new_vp = new_vp[:2]/new_vp[2]
@@ -81,7 +80,7 @@ class Calibrator(object):
     else:
       return None
 
-  def send_data(self, livecalibration):
+  def send_data(self, pm):
     calib = get_calib_from_vp(self.vp)
     extrinsic_matrix = get_view_frame_from_road_frame(0, calib[1], calib[2], model_height)
 
@@ -92,27 +91,31 @@ class Calibrator(object):
     cal_send.liveCalibration.extrinsicMatrix = [float(x) for x in extrinsic_matrix.flatten()]
     cal_send.liveCalibration.rpyCalib = [float(x) for x in calib]
 
-    livecalibration.send(cal_send.to_bytes())
+    pm.send('liveCalibration', cal_send)
 
 
-def calibrationd_thread(gctx=None, addr="127.0.0.1"):
-  cameraodometry = messaging.sub_sock(service_list['cameraOdometry'].port, addr=addr, conflate=True)
-  livecalibration = messaging.pub_sock(service_list['liveCalibration'].port)
+def calibrationd_thread(sm=None, pm=None):
+  if sm is None:
+    sm = messaging.SubMaster(['cameraOdometry'])
+
+  if pm is None:
+    pm = messaging.PubMaster(['liveCalibration'])
+
   calibrator = Calibrator(param_put=True)
 
   # buffer with all the messages that still need to be input into the kalman
   while 1:
-    co = messaging.recv_one(cameraodometry)
+    sm.update()
 
-    new_vp = calibrator.handle_cam_odom(co)
+    new_vp = calibrator.handle_cam_odom(sm['cameraOdometry'])
     if DEBUG and new_vp is not None:
       print 'got new vp', new_vp
 
-    calibrator.send_data(livecalibration)
+    calibrator.send_data(pm)
 
 
-def main(gctx=None, addr="127.0.0.1"):
-  calibrationd_thread(gctx, addr)
+def main(sm=None, pm=None):
+  calibrationd_thread(sm, pm)
 
 
 if __name__ == "__main__":

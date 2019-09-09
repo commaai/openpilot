@@ -58,16 +58,15 @@ def run_route(route):
 
   route_ok = True
 
-  t = 0
   for msg in lr:
     if msg.which() == 'can':
-      t += DT
+      t = msg.logMonoTime
       msg_bytes = msg.as_builder().to_bytes()
       can.send(msg_bytes)
 
       _, updated_old = parser_old.update(t, True)
       _, updated_new = parser_new.update(t, True)
-      updated_string = parser_string.update_string(t, msg_bytes)
+      updated_string = parser_string.update_string(msg_bytes)
 
       if updated_old != updated_new:
         route_ok = False

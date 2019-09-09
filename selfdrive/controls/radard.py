@@ -173,7 +173,7 @@ class RadarD(object):
 
 
 # fuses camera and radar data for best lead detection
-def radard_thread(gctx=None):
+def radard_thread(sm=None, pm=None, can_sock=None):
   set_realtime_priority(2)
 
   # wait for stats about the car to come in from controls
@@ -186,14 +186,17 @@ def radard_thread(gctx=None):
   cloudlog.info("radard is importing %s", CP.carName)
   RadarInterface = importlib.import_module('selfdrive.car.%s.radar_interface' % CP.carName).RadarInterface
 
-  can_sock = messaging.sub_sock(service_list['can'].port)
-  sm = messaging.SubMaster(['model', 'controlsState', 'liveParameters'])
+  if can_sock is None:
+    can_sock = messaging.sub_sock(service_list['can'].port)
 
-  RI = RadarInterface(CP)
+  if sm is None:
+    sm = messaging.SubMaster(['model', 'controlsState', 'liveParameters'])
 
   # *** publish radarState and liveTracks
-  radarState = messaging.pub_sock(service_list['radarState'].port)
-  liveTracks = messaging.pub_sock(service_list['liveTracks'].port)
+  if pm is None:
+    pm = messaging.PubMaster(['radarState', 'liveTracks'])
+
+  RI = RadarInterface(CP)
 
   rk = Ratekeeper(rate, print_delay_threshold=None)
   RD = RadarD(mocked)
@@ -212,7 +215,7 @@ def radard_thread(gctx=None):
     dat = RD.update(rk.frame, RI.delay, sm, rr, has_radar)
     dat.radarState.cumLagMs = -rk.remaining*1000.
 
-    radarState.send(dat.to_bytes())
+    pm.send('radarState', dat)
 
     # *** publish tracks for UI debugging (keep last) ***
     tracks = RD.tracks
@@ -226,13 +229,13 @@ def radard_thread(gctx=None):
         "yRel": float(tracks[ids].yRel),
         "vRel": float(tracks[ids].vRel),
       }
-    liveTracks.send(dat.to_bytes())
+    pm.send('liveTracks', dat)
 
     rk.monitor_time()
 
 
-def main(gctx=None):
-  radard_thread(gctx)
+def main(sm=None, pm=None, can_sock=None):
+  radard_thread(sm, pm, can_sock)
 
 
 if __name__ == "__main__":

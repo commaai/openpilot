@@ -1,6 +1,5 @@
 #!/usr/bin/env python2.7
 import json
-import jwt
 import os
 import random
 import re
@@ -13,7 +12,6 @@ import traceback
 import zmq
 import requests
 import six.moves.queue
-from datetime import datetime, timedelta
 from functools import partial
 from jsonrpc import JSONRPCResponseManager, dispatcher
 from websocket import create_connection, WebSocketTimeoutException, ABNF
@@ -104,9 +102,7 @@ def startLocalProxy(global_end_event, remote_ws_uri, local_port):
 
     params = Params()
     dongle_id = params.get("DongleId")
-    private_key = open("/persist/comma/id_rsa").read()
-    identity_token = jwt.encode({'identity':dongle_id, 'exp': datetime.utcnow() + timedelta(hours=1)}, private_key, algorithm='RS256')
-
+    identity_token = Api(dongle_id).get_token()
     ws = create_connection(remote_ws_uri,
                            cookie="jwt=" + identity_token,
                            enable_multithread=True)
@@ -232,8 +228,7 @@ def main(gctx=None):
   crash.bind_extra(version=version, dirty=dirty, is_eon=True)
   crash.install()
 
-  private_key = open("/persist/comma/id_rsa").read()
-  api = Api(dongle_id, private_key)
+  api = Api(dongle_id)
 
   conn_retries = 0
   while 1:

@@ -27,6 +27,7 @@ import sys
 import shutil
 import fcntl
 import tempfile
+import threading
 from enum import Enum
 
 
@@ -63,10 +64,9 @@ keys = {
   "GitCommit": [TxType.PERSISTENT],
   "GitRemote": [TxType.PERSISTENT],
   "HasAcceptedTerms": [TxType.PERSISTENT],
-  "IsDriverMonitoringEnabled": [TxType.PERSISTENT],
-  "IsFcwEnabled": [TxType.PERSISTENT],
   "IsGeofenceEnabled": [TxType.PERSISTENT],
   "IsMetric": [TxType.PERSISTENT],
+  "IsRHD": [TxType.PERSISTENT],
   "IsUpdateAvailable": [TxType.PERSISTENT],
   "IsUploadRawEnabled": [TxType.PERSISTENT],
   "IsUploadVideoOverCellularEnabled": [TxType.PERSISTENT],
@@ -345,6 +345,17 @@ class Params(object):
       raise UnknownKeyName(key)
 
     write_db(self.db, key, dat)
+
+
+def put_nonblocking(key, val):
+  def f(key, val):
+    params = Params()
+    params.put(key, val)
+
+  t = threading.Thread(target=f, args=(key, val))
+  t.start()
+  return t
+
 
 if __name__ == "__main__":
   params = Params()

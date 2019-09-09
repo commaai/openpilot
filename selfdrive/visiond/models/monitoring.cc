@@ -1,6 +1,7 @@
 #include <string.h>
 #include "monitoring.h"
 #include "common/mat.h"
+#include "common/timing.h"
 
 #define MODEL_WIDTH 320
 #define MODEL_HEIGHT 160
@@ -47,9 +48,32 @@ MonitoringResult monitoring_eval_frame(MonitoringState* s, cl_command_queue q,
   return ret;
 }
 
+void monitoring_publish(void* sock, uint32_t frame_id, const MonitoringResult res) {
+        // make msg
+        capnp::MallocMessageBuilder msg;
+        cereal::Event::Builder event = msg.initRoot<cereal::Event>();
+        event.setLogMonoTime(nanos_since_boot());
+
+        auto framed = event.initDriverMonitoring();
+        framed.setFrameId(frame_id);
+
+        kj::ArrayPtr<const float> face_orientation(&res.face_orientation[0], ARRAYSIZE(res.face_orientation));
+        kj::ArrayPtr<const float> face_position(&res.face_position[0], ARRAYSIZE(res.face_position));
+        framed.setFaceOrientation(face_orientation);
+        framed.setFacePosition(face_position);
+        framed.setFaceProb(res.face_prob);
+        framed.setLeftEyeProb(res.left_eye_prob);
+        framed.setRightEyeProb(res.right_eye_prob);
+        framed.setLeftBlinkProb(res.left_blink_prob);
+        framed.setRightBlinkProb(res.right_blink_prob);
+
+        // send message
+        auto words = capnp::messageToFlatArray(msg);
+        auto bytes = words.asBytes();
+        zmq_send(sock, bytes.begin(), bytes.size(), ZMQ_DONTWAIT);
+      }
 
 void monitoring_free(MonitoringState* s) {
   model_input_free(&s->in);
   delete s->m;
 }
-

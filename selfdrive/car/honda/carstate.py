@@ -1,3 +1,4 @@
+from cereal import car
 from common.numpy_fast import interp
 from common.kalman.simple_kalman import KF1D
 from selfdrive.can.can_define import CANDefine
@@ -5,10 +6,12 @@ from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, SPEED_FACTOR, HONDA_BOSCH
 
+GearShifter = car.CarState.GearShifter
+
 def parse_gear_shifter(gear, vals):
 
-  val_to_capnp = {'P': 'park', 'R': 'reverse', 'N': 'neutral',
-                  'D': 'drive', 'S': 'sport', 'L': 'low'}
+  val_to_capnp = {'P': GearShifter.park, 'R': GearShifter.reverse, 'N': GearShifter.neutral,
+                  'D': GearShifter.drive, 'S': GearShifter.sport, 'L': GearShifter.low}
   try:
     return val_to_capnp[vals[gear]]
   except KeyError:

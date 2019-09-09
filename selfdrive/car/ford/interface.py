@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from common.realtime import sec_since_boot
 from cereal import car
 from selfdrive.swaglog import cloudlog
 from selfdrive.config import Conversions as CV
@@ -48,6 +47,7 @@ class CarInterface(object):
     ret.isPandaBlack = is_panda_black
 
     ret.safetyModel = car.CarParams.SafetyModel.ford
+    ret.dashcamOnly = True
 
     # pedal
     ret.enableCruise = True
@@ -108,7 +108,7 @@ class CarInterface(object):
   # returns a car.CarState
   def update(self, c, can_strings):
     # ******************* do can recv *******************
-    self.cp.update_strings(int(sec_since_boot() * 1e9), can_strings)
+    self.cp.update_strings(can_strings)
 
     self.CS.update(self.cp)
 

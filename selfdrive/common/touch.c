@@ -69,14 +69,15 @@ int touch_poll(TouchState *s, int* out_x, int* out_y, int timeout) {
       return -1;
     }
 
-    switch (event.type) { 
+    switch (event.type) {
     case EV_ABS:
       if (event.code == ABS_MT_POSITION_X) {
         s->last_x = event.value;
       } else if (event.code == ABS_MT_POSITION_Y) {
         s->last_y = event.value;
+      } else if (event.code == ABS_MT_TRACKING_ID && event.value != -1) {
+        up = true;
       }
-      up = true;
       break;
     default:
       break;
@@ -98,7 +99,7 @@ int touch_read(TouchState *s, int* out_x, int* out_y) {
     return -1;
   }
   bool up = false;
-  switch (event.type) { 
+  switch (event.type) {
   case EV_ABS:
     if (event.code == ABS_MT_POSITION_X) {
       s->last_x = event.value;
@@ -117,4 +118,3 @@ int touch_read(TouchState *s, int* out_x, int* out_y) {
   }
   return up;
 }
-

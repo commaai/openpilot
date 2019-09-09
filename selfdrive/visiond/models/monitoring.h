@@ -1,8 +1,13 @@
 #ifndef MONITORING_H
 #define MONITORING_H
 
+#include "common/util.h"
 #include "commonmodel.h"
 #include "runners/run.h"
+
+#include "cereal/gen/cpp/log.capnp.h"
+#include <czmq.h>
+#include <capnp/serialize.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,6 +37,7 @@ typedef struct MonitoringState {
 
 void monitoring_init(MonitoringState* s, cl_device_id device_id, cl_context context);
 MonitoringResult monitoring_eval_frame(MonitoringState* s, cl_command_queue q, cl_mem yuv_cl, int width, int height);
+void monitoring_publish(void* sock, uint32_t frame_id, const MonitoringResult res);
 void monitoring_free(MonitoringState* s);
 
 #ifdef __cplusplus
