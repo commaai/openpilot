@@ -48,8 +48,12 @@ void detect_configuration(void) {
   has_external_debug_serial = detect_with_pull(GPIOA, 3, PULL_DOWN);
 
   #ifdef PANDA
-    // check if the ESP is trying to put me in boot mode
-    is_entering_bootmode = !detect_with_pull(GPIOB, 0, PULL_UP);
+    if(hw_type == HW_TYPE_WHITE_PANDA) {
+      // check if the ESP is trying to put me in boot mode
+      is_entering_bootmode = !detect_with_pull(GPIOB, 0, PULL_UP);
+    } else {
+      is_entering_bootmode = 0;
+    }
   #else
     is_entering_bootmode = 0;
   #endif

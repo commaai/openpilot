@@ -78,9 +78,11 @@ void started_interrupt_handler(uint8_t interrupt_line) {
     // jenky debounce
     delay(100000);
 
-    // set power savings mode here
-    int power_save_state = current_board->check_ignition() ? POWER_SAVE_STATUS_DISABLED : POWER_SAVE_STATUS_ENABLED;
-    set_power_save_state(power_save_state);
+    // set power savings mode here if on EON build
+    #ifdef EON
+      int power_save_state = current_board->check_ignition() ? POWER_SAVE_STATUS_DISABLED : POWER_SAVE_STATUS_ENABLED;
+      set_power_save_state(power_save_state);
+    #endif
   }
   EXTI->PR = (1U << interrupt_line);
 }
@@ -100,14 +102,6 @@ void EXTI3_IRQHandler(void) {
   started_interrupt_handler(3);
 }
 
-void started_interrupt_init(void) {
-  SYSCFG->EXTICR[1] = SYSCFG_EXTICR1_EXTI1_PA;
-  EXTI->IMR |= (1U << 1);
-  EXTI->RTSR |= (1U << 1);
-  EXTI->FTSR |= (1U << 1);
-  NVIC_EnableIRQ(EXTI1_IRQn);
-}
-
 // ****************************** safety mode ******************************
 
 // this is the only way to leave silent mode
@@ -116,30 +110,29 @@ void set_safety_mode(uint16_t mode, int16_t param) {
   if (err == -1) {
     puts("Error: safety set mode failed\n");
   } else {
-    if (mode == SAFETY_NOOUTPUT) {
-      can_silent = ALL_CAN_SILENT;
-    } else {
-      can_silent = ALL_CAN_LIVE;
-    }
-
     switch (mode) {
         case SAFETY_NOOUTPUT:
           set_intercept_relay(false);
           if(hw_type == HW_TYPE_BLACK_PANDA){
             current_board->set_can_mode(CAN_MODE_NORMAL);
           }
+          can_silent = ALL_CAN_SILENT;
           break;
         case SAFETY_ELM327:
           set_intercept_relay(false);
+          heartbeat_counter = 0U;
           if(hw_type == HW_TYPE_BLACK_PANDA){
             current_board->set_can_mode(CAN_MODE_OBD_CAN2);
           }
+          can_silent = ALL_CAN_LIVE;
           break;
         default:
           set_intercept_relay(true);
+          heartbeat_counter = 0U;
           if(hw_type == HW_TYPE_BLACK_PANDA){
             current_board->set_can_mode(CAN_MODE_NORMAL);
           }
+          can_silent = ALL_CAN_LIVE;
           break;
       }          
     if (safety_ignition_hook() != -1) {
@@ -289,11 +282,14 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, bool hardwired) 
       // so it's blocked over wifi
       switch (setup->b.wValue.w) {
         case 0:
-          if (hardwired) {
-            puts("-> entering bootloader\n");
-            enter_bootloader_mode = ENTER_BOOTLOADER_MAGIC;
-            NVIC_SystemReset();
-          }
+          // only allow bootloader entry on debug builds
+          #ifdef ALLOW_DEBUG
+            if (hardwired) {
+              puts("-> entering bootloader\n");
+              enter_bootloader_mode = ENTER_BOOTLOADER_MAGIC;
+              NVIC_SystemReset();
+            }
+          #endif
           break;
         case 1:
           puts("-> entering softloader\n");
@@ -464,7 +460,10 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, bool hardwired) 
       break;
     // **** 0xe6: set USB power
     case 0xe6:
-      if (setup->b.wValue.w == 1U) {
+      if (setup->b.wValue.w == 0U) {
+        puts("user setting NONE mode\n");
+        current_board->set_usb_power_mode(USB_POWER_NONE);
+      } else if (setup->b.wValue.w == 1U) {
         puts("user setting CDP mode\n");
         current_board->set_usb_power_mode(USB_POWER_CDP);
       } else if (setup->b.wValue.w == 2U) {
@@ -610,11 +609,10 @@ void TIM3_IRQHandler(void) {
       pending_can_live = 0;
     }
     #ifdef DEBUG
-      //TODO: re-enable
-      //puts("** blink ");
-      //puth(can_rx_q.r_ptr); puts(" "); puth(can_rx_q.w_ptr); puts("  ");
-      //puth(can_tx1_q.r_ptr); puts(" "); puth(can_tx1_q.w_ptr); puts("  ");
-      //puth(can_tx2_q.r_ptr); puts(" "); puth(can_tx2_q.w_ptr); puts("\n");
+      puts("** blink ");
+      puth(can_rx_q.r_ptr); puts(" "); puth(can_rx_q.w_ptr); puts("  ");
+      puth(can_tx1_q.r_ptr); puts(" "); puth(can_tx1_q.w_ptr); puts("  ");
+      puth(can_tx2_q.r_ptr); puts(" "); puth(can_tx2_q.w_ptr); puts("\n");
     #endif
 
     // set green LED to be controls allowed
@@ -645,7 +643,7 @@ void TIM3_IRQHandler(void) {
 
 int main(void) {
   // shouldn't have interrupts here, but just in case
-  __disable_irq();
+  disable_interrupts();
 
   // init early devices
   clock_init();
@@ -730,11 +728,6 @@ int main(void) {
   /*if (current_board->check_ignition()) {
     set_power_save_state(POWER_SAVE_STATUS_ENABLED);
   }*/
-
-  if (hw_type != HW_TYPE_BLACK_PANDA) {
-    // interrupt on started line
-    started_interrupt_init();
-  }
 #endif
 
   // 48mhz / 65536 ~= 732 / 732 = 1
