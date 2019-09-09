@@ -231,7 +231,7 @@ BO_ 1409 VIN_PART_2: 8 CGW
 BO_ 1410 VIN_PART_3: 8 CGW
  SG_ VIN_17 : 7|8@0+ (1,0) [0|0] "" XXX
 
-BO_ 1553 UI_SEETING: 8 XXX
+BO_ 1553 UI_SETTING: 8 XXX
  SG_ UNITS : 26|2@0+ (1,0) [0|3] "" XXX
 
 BO_ 1556 STEERING_LEVERS: 8 XXX
@@ -376,6 +376,9 @@ BO_ 1009 PCM_CRUISE_ALT: 8 XXX
  SG_ MAIN_ON : 13|1@0+ (1,0) [0|3] "" XXX
  SG_ CRUISE_STATE : 10|1@0+ (1,0) [0|1] "" XXX
  SG_ SET_SPEED : 23|8@0+ (1,0) [0|255] "mph" XXX
+
+BO_ 1599 LIGHT_STALK_ISH: 8 SCM
+ SG_ AUTO_HIGH_BEAM : 19|1@0+ (1,0) [0|1] "" XXX
 
 CM_ SG_ 550 BRAKE_PRESSURE "seems prop to pedal force";
 CM_ SG_ 550 BRAKE_POSITION "seems proportional to pedal displacement, unclear the max value of 0x1c8";
