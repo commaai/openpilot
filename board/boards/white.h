@@ -285,6 +285,13 @@ void white_init(void) {
 
   // Set normal CAN mode
   white_set_can_mode(CAN_MODE_NORMAL);
+
+  // Setup ignition interrupts
+  SYSCFG->EXTICR[1] = SYSCFG_EXTICR1_EXTI1_PA;
+  EXTI->IMR |= (1U << 1);
+  EXTI->RTSR |= (1U << 1);
+  EXTI->FTSR |= (1U << 1);
+  NVIC_EnableIRQ(EXTI1_IRQn);
 }
 
 const harness_configuration white_harness_config = {

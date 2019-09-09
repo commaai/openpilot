@@ -23,8 +23,9 @@ void black_enable_can_transciever(uint8_t transciever, bool enabled) {
 }
 
 void black_enable_can_transcievers(bool enabled) {
-  for(uint8_t i=1; i<=4U; i++)
+  for(uint8_t i=1U; i<=4U; i++){
     black_enable_can_transciever(i, enabled);
+  }
 }
 
 void black_set_led(uint8_t color, bool enabled) {
@@ -43,26 +44,41 @@ void black_set_led(uint8_t color, bool enabled) {
   }
 }
 
-void black_set_usb_power_mode(uint8_t mode){
+void black_set_gps_load_switch(bool enabled) {
+  set_gpio_output(GPIOC, 12, enabled);
+}
+
+void black_set_usb_load_switch(bool enabled) {
+  set_gpio_output(GPIOB, 1, !enabled);
+}
+
+void black_set_usb_power_mode(uint8_t mode) {
   usb_power_mode = mode;
-  puts("Trying to set USB power mode on black panda. This is not supported.\n");
+  if (mode == USB_POWER_NONE) {
+    black_set_usb_load_switch(false);
+  } else {
+    black_set_usb_load_switch(true);
+  }
 }
 
 void black_set_esp_gps_mode(uint8_t mode) {
   switch (mode) {
     case ESP_GPS_DISABLED:
-      // ESP OFF
+      // GPS OFF
       set_gpio_output(GPIOC, 14, 0);
       set_gpio_output(GPIOC, 5, 0);
+      black_set_gps_load_switch(false);
       break;
     case ESP_GPS_ENABLED:
-      // ESP ON
+      // GPS ON
       set_gpio_output(GPIOC, 14, 1);
       set_gpio_output(GPIOC, 5, 1);
+      black_set_gps_load_switch(true);
       break;
     case ESP_GPS_BOOTMODE:
       set_gpio_output(GPIOC, 14, 1);
       set_gpio_output(GPIOC, 5, 0);
+      black_set_gps_load_switch(true);
       break;
     default:
       puts("Invalid ESP/GPS mode\n");
@@ -132,9 +148,11 @@ void black_init(void) {
   // C8: FAN aka TIM3_CH3
   set_gpio_alternate(GPIOC, 8, GPIO_AF2_TIM3);
 
-  // C12: GPS load switch. Turn on permanently for now
-  set_gpio_output(GPIOC, 12, true);
-  //set_gpio_output(GPIOC, 12, false); //TODO: stupid inverted switch on prototype
+  // Turn on GPS load switch.
+  black_set_gps_load_switch(true);
+
+  // Turn on USB load switch.
+  black_set_usb_load_switch(true);
 
   // Initialize harness
   harness_init();

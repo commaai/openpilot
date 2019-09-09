@@ -183,7 +183,7 @@ void CAN1_RX0_IRQHandler(void) {
     if ((CAN->sFIFOMailBox[0].RIR>>21) == CAN_BL_INPUT) {
       uint8_t dat[8];
       for (int i = 0; i < 8; i++) {
-        dat[0] = GET_BYTE(&CAN->sFIFOMailBox[0], i);
+        dat[i] = GET_BYTE(&CAN->sFIFOMailBox[0], i);
       }
       uint8_t odat[8];
       uint8_t type = dat[0] & 0xF0;
@@ -307,7 +307,7 @@ void soft_flasher_start(void) {
   // green LED on for flashing
   current_board->set_led(LED_GREEN, 1);
 
-  __enable_irq();
+  enable_interrupts();
 
   uint64_t cnt = 0;
 

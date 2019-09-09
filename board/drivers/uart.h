@@ -74,7 +74,7 @@ uart_ring *get_ring_by_number(int a) {
 // ***************************** serial port *****************************
 
 void uart_ring_process(uart_ring *q) {
-  enter_critical_section();
+  ENTER_CRITICAL();
   // TODO: check if external serial is connected
   int sr = q->uart->SR;
 
@@ -108,7 +108,7 @@ void uart_ring_process(uart_ring *q) {
     // set dropped packet flag?
   }
 
-  exit_critical_section();
+  EXIT_CRITICAL();
 }
 
 // interrupt boilerplate
@@ -121,13 +121,13 @@ void UART5_IRQHandler(void) { uart_ring_process(&lin1_ring); }
 bool getc(uart_ring *q, char *elem) {
   bool ret = false;
 
-  enter_critical_section();
+  ENTER_CRITICAL();
   if (q->w_ptr_rx != q->r_ptr_rx) {
     if (elem != NULL) *elem = q->elems_rx[q->r_ptr_rx];
     q->r_ptr_rx = (q->r_ptr_rx + 1U) % FIFO_SIZE;
     ret = true;
   }
-  exit_critical_section();
+  EXIT_CRITICAL();
 
   return ret;
 }
@@ -136,14 +136,14 @@ bool injectc(uart_ring *q, char elem) {
   int ret = false;
   uint16_t next_w_ptr;
 
-  enter_critical_section();
+  ENTER_CRITICAL();
   next_w_ptr = (q->w_ptr_rx + 1U) % FIFO_SIZE;
   if (next_w_ptr != q->r_ptr_rx) {
     q->elems_rx[q->w_ptr_rx] = elem;
     q->w_ptr_rx = next_w_ptr;
     ret = true;
   }
-  exit_critical_section();
+  EXIT_CRITICAL();
 
   return ret;
 }
@@ -152,14 +152,14 @@ bool putc(uart_ring *q, char elem) {
   bool ret = false;
   uint16_t next_w_ptr;
 
-  enter_critical_section();
+  ENTER_CRITICAL();
   next_w_ptr = (q->w_ptr_tx + 1U) % FIFO_SIZE;
   if (next_w_ptr != q->r_ptr_tx) {
     q->elems_tx[q->w_ptr_tx] = elem;
     q->w_ptr_tx = next_w_ptr;
     ret = true;
   }
-  exit_critical_section();
+  EXIT_CRITICAL();
 
   uart_ring_process(q);
 
@@ -185,12 +185,12 @@ void uart_send_break(uart_ring *u) {
 }
 
 void clear_uart_buff(uart_ring *q) {
-  enter_critical_section();
+  ENTER_CRITICAL();
   q->w_ptr_tx = 0;
   q->r_ptr_tx = 0;
   q->w_ptr_rx = 0;
   q->r_ptr_rx = 0;
-  exit_critical_section();
+  EXIT_CRITICAL();
 }
 
 // ***************************** start UART code *****************************
@@ -215,7 +215,7 @@ char usart1_dma[USART1_DMA_LEN];
 void uart_dma_drain(void) {
   uart_ring *q = &esp_ring;
 
-  enter_critical_section();
+  ENTER_CRITICAL();
 
   if ((DMA2->HISR & DMA_HISR_TCIF5) || (DMA2->HISR & DMA_HISR_HTIF5) || (DMA2_Stream5->NDTR != USART1_DMA_LEN)) {
     // disable DMA
@@ -245,7 +245,7 @@ void uart_dma_drain(void) {
     q->uart->CR3 |= USART_CR3_DMAR;
   }
 
-  exit_critical_section();
+  EXIT_CRITICAL();
 }
 
 void DMA2_Stream5_IRQHandler(void) {
