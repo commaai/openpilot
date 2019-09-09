@@ -79,6 +79,9 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     tooDistracted @54;
     posenetInvalid @55;
     soundsUnavailable @56;
+    preLaneChangeLeft @57;
+    preLaneChangeRight @58;
+    laneChange @59;
   }
 }
 
@@ -300,6 +303,7 @@ struct CarParams {
   minEnableSpeed @7 :Float32;
   minSteerSpeed @8 :Float32;
   safetyModel @9 :SafetyModel;
+  safetyModelPassive @42 :SafetyModel = noOutput;
   safetyParam @10 :Int16;
 
   steerMaxBP @11 :List(Float32);
@@ -343,6 +347,7 @@ struct CarParams {
   openpilotLongitudinalControl @37 :Bool; # is openpilot doing the longitudinal control?
   carVin @38 :Text; # VIN number queried during fingerprinting
   isPandaBlack @39: Bool;
+  dashcamOnly @41: Bool;
 
   struct LateralPIDTuning {
     kpBP @0 :List(Float32);
@@ -398,6 +403,7 @@ struct CarParams {
     chrysler @9;
     tesla @10;
     subaru @11;
+    gmPassive @12;
   }
 
   enum SteerControlType {
