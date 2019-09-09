@@ -28,6 +28,13 @@ void set_power_save_state(int state) {
     // Switch CAN transcievers
     current_board->enable_can_transcievers(enable);
 
+    // Switch EPS/GPS
+    if (enable) {
+      current_board->set_esp_gps_mode(ESP_GPS_ENABLED);
+    } else {
+      current_board->set_esp_gps_mode(ESP_GPS_DISABLED);
+    }
+    
     if(hw_type != HW_TYPE_BLACK_PANDA){
       // turn on GMLAN
       set_gpio_output(GPIOB, 14, enable);
