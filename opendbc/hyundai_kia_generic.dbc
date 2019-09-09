@@ -1421,3 +1421,26 @@ BO_ 512 EMS20: 6 EMS
  SG_ FCO : 0|16@1+ (0.128,0.0) [0.0|8388.48] "ul"  CLU,CUBIS,FPCM,IBOX
  SG_ CF_Ems_PumpTPres : 16|8@1+ (3.137254902,0.0) [0.0|800.0] "kPa"  FPCM,IBOX
  SG_ Split_Stat : 32|1@1+ (1.0,0.0) [0.0|1.0] ""  FPCM
+
+BO_ 909 FCA11: 8 FCA
+ SG_ CF_VSM_Prefill : 0|1@1+ (1,0) [0|1] ""  ESC
+ SG_ CF_VSM_HBACmd : 1|2@1+ (1,0) [0|3] ""  ESC
+ SG_ CF_VSM_Warn : 3|2@1+ (1,0) [0|3] ""  ACU,CLU,ESC
+ SG_ CF_VSM_BeltCmd : 5|3@1+ (1,0) [0|7] ""  ESC
+ SG_ CR_VSM_DecCmd : 8|8@1+ (0.01,0) [0|2.55] "g"  ESC
+ SG_ FCA_Status : 18|2@1+ (1,0) [0|3] ""  ACU,CLU,ESC
+ SG_ FCA_CmdAct : 20|1@1+ (1,0) [0|1] ""  ESC
+ SG_ FCA_StopReq : 21|1@1+ (1,0) [0|1] ""  CLU,ESC
+ SG_ FCA_DrvSetStatus : 22|3@1+ (1,0) [0|7] ""  CLU,ESC
+ SG_ CF_VSM_DecCmdAct : 31|1@1+ (1,0) [0|1] ""  ESC
+ SG_ FCA_Failinfo : 32|3@1+ (1,0) [0|7] ""  ACU,CLU,ESC
+ SG_ CR_FCA_Alive : 56|4@1+ (1,0) [0|15] ""  ESC
+ SG_ CR_FCA_ChkSum : 60|4@1+ (1,0) [0|15] ""  ESC
+
+BO_ 905 SCC14: 8 SCC
+ SG_ ComfortBandUpper : 0|6@1+ (0.02,0) [0|1.26] "m/s^2"  ESC
+ SG_ ComfortBandLower : 6|6@1+ (0.02,0) [0|1.26] "m/s^2"  ESC
+ SG_ JerkUpperLimit : 12|7@1+ (0.1,0) [0|12.7] "m/s^3"  ESC
+ SG_ JerkLowerLimit : 19|7@1+ (0.1,0) [0|12.7] "m/s^3"  ESC
+ SG_ SCCMode : 32|3@1+ (1,0) [0|7] ""  ESC
+

@@ -30,6 +30,9 @@ BO_ 1009 PCM_CRUISE_ALT: 8 XXX
  SG_ CRUISE_STATE : 10|1@0+ (1,0) [0|1] "" XXX
  SG_ SET_SPEED : 23|8@0+ (1,0) [0|255] "mph" XXX
 
+BO_ 1599 LIGHT_STALK_ISH: 8 SCM
+ SG_ AUTO_HIGH_BEAM : 19|1@0+ (1,0) [0|1] "" XXX
+
 CM_ SG_ 550 BRAKE_PRESSURE "seems prop to pedal force";
 CM_ SG_ 550 BRAKE_POSITION "seems proportional to pedal displacement, unclear the max value of 0x1c8";
 CM_ SG_ 610 TYPE "seems 1 on Corolla, 0 on all others";
