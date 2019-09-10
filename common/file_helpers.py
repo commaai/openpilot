@@ -24,21 +24,12 @@ def rm_tree_or_link(path):
     shutil.rmtree(path)
 
 def get_tmpdir_on_same_filesystem(path):
-  # TODO(mgraczyk): HACK, we should actually check for which filesystem.
   normpath = os.path.normpath(path)
   parts = normpath.split("/")
-  if len(parts) > 1:
-    if parts[1].startswith("raid"):
-      if len(parts) > 2 and parts[2] == "runner":
-        return "/{}/runner/tmp".format(parts[1])
-      elif len(parts) > 2 and parts[2] == "aws":
-        return "/{}/aws/tmp".format(parts[1])
-      else:
-        return "/{}/tmp".format(parts[1])
-    elif parts[1] == "aws":
-      return "/aws/tmp"
-    elif parts[1] == "scratch":
-      return "/scratch/tmp"
+  if len(parts) > 1 and parts[1] == "scratch":
+    return "/scratch/tmp"
+  elif len(parts) > 2 and parts[2] == "runner":
+    return "/{}/runner/tmp".format(parts[1])
   return "/tmp"
 
 class AutoMoveTempdir(object):
@@ -101,3 +92,18 @@ def atomic_write_in_dir(path, **kwargs):
   writer = AtomicWriter(path, **kwargs)
   return writer._open(_get_fileobject_func(writer, os.path.dirname(path)))
 
+def atomic_write_in_dir_neos(path, contents, mode=None):
+  """
+  Atomically writes contents to path using a temporary file in the same directory
+  as path. Useful on NEOS, where `os.link` (required by atomic_write_in_dir) is missing.
+  """
+
+  f = tempfile.NamedTemporaryFile(delete=False, prefix=".tmp", dir=os.path.dirname(path))
+  f.write(contents)
+  f.flush()
+  if mode is not None:
+    os.fchmod(f.fileno(), mode)
+  os.fsync(f.fileno())
+  f.close()
+
+  os.rename(f.name, path)

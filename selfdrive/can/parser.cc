@@ -194,32 +194,36 @@ class CANParser {
     : bus(abus) {
     // connect to can on 8006
     context = zmq_ctx_new();
-    subscriber = zmq_socket(context, ZMQ_SUB);
-    zmq_setsockopt(subscriber, ZMQ_SUBSCRIBE, "", 0);
-    zmq_setsockopt(subscriber, ZMQ_RCVTIMEO, &timeout, sizeof(int));
 
-    std::string tcp_addr_str;
+    if (tcp_addr.length() > 0) {
+      subscriber = zmq_socket(context, ZMQ_SUB);
+      zmq_setsockopt(subscriber, ZMQ_SUBSCRIBE, "", 0);
+      zmq_setsockopt(subscriber, ZMQ_RCVTIMEO, &timeout, sizeof(int));
 
-    if (sendcan) {
-      tcp_addr_str = "tcp://" + tcp_addr + ":8017";
+      std::string tcp_addr_str;
+
+      if (sendcan) {
+        tcp_addr_str = "tcp://" + tcp_addr + ":8017";
+      } else {
+        tcp_addr_str = "tcp://" + tcp_addr + ":8006";
+      }
+      const char *tcp_addr_char = tcp_addr_str.c_str();
+
+      zmq_connect(subscriber, tcp_addr_char);
+
+      // drain sendcan to delete any stale messages from previous runs
+      zmq_msg_t msgDrain;
+      zmq_msg_init(&msgDrain);
+      int err = 0;
+      while(err >= 0) {
+        err = zmq_msg_recv(&msgDrain, subscriber, ZMQ_DONTWAIT);
+      }
     } else {
-      tcp_addr_str = "tcp://" + tcp_addr + ":8006";
-    }
-    const char *tcp_addr_char = tcp_addr_str.c_str();
-
-    zmq_connect(subscriber, tcp_addr_char);
-
-    // drain sendcan to delete any stale messages from previous runs
-    zmq_msg_t msgDrain;
-    zmq_msg_init(&msgDrain);
-    int err = 0;
-    while(err >= 0) {
-      err = zmq_msg_recv(&msgDrain, subscriber, ZMQ_DONTWAIT);
+      subscriber = NULL;
     }
 
     dbc = dbc_lookup(dbc_name);
-    assert(dbc);
-
+    assert(dbc); 
     for (const auto& op : options) {
       MessageState state = {
         .address = op.address,
@@ -326,6 +330,23 @@ class CANParser {
     }
   }
 
+  void update_string(std::string data) {
+    // format for board, make copy due to alignment issues, will be freed on out of scope
+    auto amsg = kj::heapArray<capnp::word>((data.length() / sizeof(capnp::word)) + 1);
+    memcpy(amsg.begin(), data.data(), data.length());
+
+    // extract the messages
+    capnp::FlatArrayMessageReader cmsg(amsg);
+    cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
+
+    last_sec = event.getLogMonoTime();
+
+    auto cans = event.getCan();
+    UpdateCans(last_sec, cans);
+
+    UpdateValid(last_sec);
+  }
+
   int update(uint64_t sec, bool wait) {
     int err;
     int result = 0;
@@ -336,7 +357,7 @@ class CANParser {
 
     // multiple recv is fine
     bool first = wait;
-    while (1) {
+    while (subscriber != NULL) {
       if (first) {
         err = zmq_msg_recv(&msg, subscriber, 0);
         first = false;
@@ -362,17 +383,18 @@ class CANParser {
       UpdateCans(sec, cans);
     }
 
+    last_sec = sec;
     UpdateValid(sec);
     zmq_msg_close(&msg);
     return result;
   }
 
-  std::vector<SignalValue> query(uint64_t sec) {
+  std::vector<SignalValue> query_latest() {
     std::vector<SignalValue> ret;
 
     for (const auto& kv : message_states) {
       const auto& state = kv.second;
-      if (sec != 0 && state.seen != sec) continue;
+      if (last_sec != 0 && state.seen != last_sec) continue;
 
       for (int i=0; i<state.parse_sigs.size(); i++) {
         const Signal &sig = state.parse_sigs[i];
@@ -389,6 +411,7 @@ class CANParser {
   }
 
   bool can_valid = false;
+  uint64_t last_sec = 0;
 
  private:
   const int bus;
@@ -416,23 +439,47 @@ void* can_init(int bus, const char* dbc_name,
   return (void*)ret;
 }
 
+void* can_init_with_vectors(int bus, const char* dbc_name,
+               std::vector<MessageParseOptions> message_options,
+               std::vector<SignalParseOptions> signal_options,
+               bool sendcan, const char* tcp_addr, int timeout) {
+  CANParser* ret = new CANParser(bus, std::string(dbc_name),
+                                 message_options,
+                                 signal_options,
+                                 sendcan, std::string(tcp_addr), timeout);
+  return (void*)ret;
+}
+
 int can_update(void* can, uint64_t sec, bool wait) {
   CANParser* cp = (CANParser*)can;
   return cp->update(sec, wait);
 }
 
-size_t can_query(void* can, uint64_t sec, bool *out_can_valid, size_t out_values_size, SignalValue* out_values) {
+void can_update_string(void *can, const char* dat, int len) {
+  CANParser* cp = (CANParser*)can;
+  cp->update_string(std::string(dat, len));
+}
+
+size_t can_query_latest(void* can, bool *out_can_valid, size_t out_values_size, SignalValue* out_values) {
   CANParser* cp = (CANParser*)can;
 
   if (out_can_valid) {
     *out_can_valid = cp->can_valid;
   }
 
-  const std::vector<SignalValue> values = cp->query(sec);
+  const std::vector<SignalValue> values = cp->query_latest();
   if (out_values) {
     std::copy(values.begin(), values.begin()+std::min(out_values_size, values.size()), out_values);
   }
   return values.size();
+};
+
+void can_query_latest_vector(void* can, bool *out_can_valid, std::vector<SignalValue> &values) {
+  CANParser* cp = (CANParser*)can;
+  if (out_can_valid) {
+    *out_can_valid = cp->can_valid;
+  }
+  values = cp->query_latest();
 };
 
 }

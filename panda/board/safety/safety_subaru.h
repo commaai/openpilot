@@ -2,7 +2,7 @@ const int SUBARU_MAX_STEER = 2047; // 1s
 // real time torque limit to prevent controls spamming
 // the real time limit is 1500/sec
 const int SUBARU_MAX_RT_DELTA = 940;          // max delta torque allowed for real time checks
-const int32_t SUBARU_RT_INTERVAL = 250000;    // 250ms between real time checks
+const uint32_t SUBARU_RT_INTERVAL = 250000;    // 250ms between real time checks
 const int SUBARU_MAX_RATE_UP = 50;
 const int SUBARU_MAX_RATE_DOWN = 70;
 const int SUBARU_DRIVER_TORQUE_ALLOWANCE = 60;
@@ -15,24 +15,25 @@ uint32_t subaru_ts_last = 0;
 struct sample_t subaru_torque_driver;         // last few driver torques measured
 
 static void subaru_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
-  int bus_number = (to_push->RDTR >> 4) & 0xFF;
-  uint32_t addr = to_push->RIR >> 21;
+  int bus = GET_BUS(to_push);
+  int addr = GET_ADDR(to_push);
 
-  if ((addr == 0x119 || addr == 0x371) && (bus_number == 0)){
+  if (((addr == 0x119) || (addr == 0x371)) && (bus == 0)){
     int bit_shift = (addr == 0x119) ? 16 : 29;
-    int torque_driver_new = ((to_push->RDLR >> bit_shift) & 0x7FF);
+    int torque_driver_new = ((GET_BYTES_04(to_push) >> bit_shift) & 0x7FF);
     torque_driver_new = to_signed(torque_driver_new, 11);
     // update array of samples
     update_sample(&subaru_torque_driver, torque_driver_new);
   }
 
   // enter controls on rising edge of ACC, exit controls on ACC off
-  if ((addr == 0x240 || addr == 0x144) && (bus_number == 0)) {
+  if (((addr == 0x240) || (addr == 0x144)) && (bus == 0)) {
     int bit_shift = (addr == 0x240) ? 9 : 17;
-    int cruise_engaged = (to_push->RDHR >> bit_shift) & 1;
+    int cruise_engaged = ((GET_BYTES_48(to_push) >> bit_shift) & 1);
     if (cruise_engaged && !subaru_cruise_engaged_last) {
       controls_allowed = 1;
-    } else if (!cruise_engaged) {
+    }
+    if (!cruise_engaged) {
       controls_allowed = 0;
     }
     subaru_cruise_engaged_last = cruise_engaged;
@@ -40,13 +41,14 @@ static void subaru_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 }
 
 static int subaru_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
-  uint32_t addr = to_send->RIR >> 21;
+  int tx = 1;
+  int addr = GET_ADDR(to_send);
 
   // steer cmd checks
-  if (addr == 0x122 || addr == 0x164) {
+  if ((addr == 0x122) || (addr == 0x164)) {
     int bit_shift = (addr == 0x122) ? 16 : 8;
-    int desired_torque = ((to_send->RDLR >> bit_shift) & 0x1FFF);
-    int violation = 0;
+    int desired_torque = ((GET_BYTES_04(to_send) >> bit_shift) & 0x1FFF);
+    bool violation = 0;
     uint32_t ts = TIM2->CNT;
     desired_torque = to_signed(desired_torque, 13);
 
@@ -88,11 +90,11 @@ static int subaru_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
     }
 
     if (violation) {
-      return false;
+      tx = 0;
     }
 
   }
-  return true;
+  return tx;
 }
 
 static int subaru_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
@@ -100,12 +102,13 @@ static int subaru_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
   int bus_fwd = -1;
   if (bus_num == 0) {
     bus_fwd = 2;  // Camera CAN
-  } else if (bus_num == 2) {
+  }
+  if (bus_num == 2) {
+    // 290 is LKAS for Global Platform
     // 356 is LKAS for outback 2015
-    // 356 is LKAS for Global Platform
     // 545 is ES_Distance
     // 802 is ES_LKAS
-    int32_t addr = to_fwd->RIR >> 21;
+    int addr = GET_ADDR(to_fwd);
     int block_msg = (addr == 290) || (addr == 356) || (addr == 545) || (addr == 802);
     if (!block_msg) {
       bus_fwd = 0;  // Main CAN

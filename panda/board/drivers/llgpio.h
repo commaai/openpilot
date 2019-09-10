@@ -7,38 +7,59 @@
 #define PULL_UP 1
 #define PULL_DOWN 2
 
-void set_gpio_mode(GPIO_TypeDef *GPIO, int pin, int mode) {
+#define OUTPUT_TYPE_PUSH_PULL 0U
+#define OUTPUT_TYPE_OPEN_DRAIN 1U
+
+void set_gpio_mode(GPIO_TypeDef *GPIO, unsigned int pin, unsigned int mode) {
+  ENTER_CRITICAL();
   uint32_t tmp = GPIO->MODER;
-  tmp &= ~(3 << (pin*2));
-  tmp |= (mode << (pin*2));
+  tmp &= ~(3U << (pin * 2U));
+  tmp |= (mode << (pin * 2U));
   GPIO->MODER = tmp;
+  EXIT_CRITICAL();
 }
 
-void set_gpio_output(GPIO_TypeDef *GPIO, int pin, int val) {
-  if (val) {
-    GPIO->ODR |= (1 << pin);
+void set_gpio_output(GPIO_TypeDef *GPIO, unsigned int pin, bool enabled) {
+  ENTER_CRITICAL();
+  if (enabled) {
+    GPIO->ODR |= (1U << pin);
   } else {
-    GPIO->ODR &= ~(1 << pin);
+    GPIO->ODR &= ~(1U << pin);
   }
   set_gpio_mode(GPIO, pin, MODE_OUTPUT);
+  EXIT_CRITICAL();
 }
 
-void set_gpio_alternate(GPIO_TypeDef *GPIO, int pin, int mode) {
-  uint32_t tmp = GPIO->AFR[pin>>3];
-  tmp &= ~(0xF << ((pin&7)*4));
-  tmp |= mode << ((pin&7)*4);
-  GPIO->AFR[pin>>3] = tmp;
+void set_gpio_output_type(GPIO_TypeDef *GPIO, unsigned int pin, unsigned int output_type){
+  ENTER_CRITICAL();
+  if(output_type == OUTPUT_TYPE_OPEN_DRAIN) {
+    GPIO->OTYPER |= (1U << pin);
+  } else {
+    GPIO->OTYPER &= ~(1U << pin);
+  }
+  EXIT_CRITICAL();
+}
+
+void set_gpio_alternate(GPIO_TypeDef *GPIO, unsigned int pin, unsigned int mode) {
+  ENTER_CRITICAL();
+  uint32_t tmp = GPIO->AFR[pin >> 3U];
+  tmp &= ~(0xFU << ((pin & 7U) * 4U));
+  tmp |= mode << ((pin & 7U) * 4U);
+  GPIO->AFR[pin >> 3] = tmp;
   set_gpio_mode(GPIO, pin, MODE_ALTERNATE);
+  EXIT_CRITICAL();
 }
 
-void set_gpio_pullup(GPIO_TypeDef *GPIO, int pin, int mode) {
+void set_gpio_pullup(GPIO_TypeDef *GPIO, unsigned int pin, unsigned int mode) {
+  ENTER_CRITICAL();
   uint32_t tmp = GPIO->PUPDR;
-  tmp &= ~(3 << (pin*2));
-  tmp |= (mode << (pin*2));
+  tmp &= ~(3U << (pin * 2U));
+  tmp |= (mode << (pin * 2U));
   GPIO->PUPDR = tmp;
+  EXIT_CRITICAL();
 }
 
-int get_gpio_input(GPIO_TypeDef *GPIO, int pin) {
-  return (GPIO->IDR & (1 << pin)) == (1 << pin);
+int get_gpio_input(GPIO_TypeDef *GPIO, unsigned int pin) {
+  return (GPIO->IDR & (1U << pin)) == (1U << pin);
 }
 

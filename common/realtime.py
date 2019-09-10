@@ -15,6 +15,14 @@ assert monotonic_time
 assert sec_since_boot
 
 
+# time step for each process
+DT_CTRL = 0.01  # controlsd
+DT_PLAN = 0.05  # mpc
+DT_MDL = 0.05  # model
+DT_DMON = 0.1  # driver monitoring
+DT_TRML = 0.5  # thermald and manager
+
+
 ffi = FFI()
 ffi.cdef("long syscall(long number, ...);")
 libc = ffi.dlopen(None)

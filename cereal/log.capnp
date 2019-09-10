@@ -150,6 +150,12 @@ struct FrameData {
   }
 }
 
+struct Thumbnail {
+  frameId @0 :UInt32;
+  timestampEof @1 :UInt64;
+  thumbnail @2 :Data;
+}
+
 struct GPSNMEAData {
   timestamp @0 :Int64;
   localWallTime @1 :UInt64;
@@ -294,8 +300,20 @@ struct HealthData {
   started @2 :Bool;
   controlsAllowed @3 :Bool;
   gasInterceptorDetected @4 :Bool;
-  startedSignalDetected @5 :Bool;
-  isGreyPanda @6 :Bool;
+  startedSignalDetectedDeprecated @5 :Bool;
+  hasGps @6 :Bool;
+  canSendErrs @7 :UInt32;
+  canFwdErrs @8 :UInt32;
+  gmlanSendErrs @9 :UInt32;
+  hwType @10: HwType;
+
+  enum HwType {
+    unknown @0;
+    whitePanda @1;
+    greyPanda @2;
+    blackPanda @3;
+    pedal @4;
+  }
 }
 
 struct LiveUI {
@@ -337,6 +355,8 @@ struct RadarState @0x9a185389d6fdd05f {
     fcw @10 :Bool;
     status @11 :Bool;
     aLeadTau @12 :Float32;
+    modelProb @13 :Float32;
+    radar @14 :Bool;
   }
 }
 
@@ -353,6 +373,8 @@ struct LiveCalibrationData {
   # view_frame_from_road_frame
   # ui's is inversed needs new
   extrinsicMatrix @4 :List(Float32);
+  # the direction of travel vector in device frame
+  rpyCalib @7 :List(Float32);
 }
 
 struct LiveTracks {
@@ -417,9 +439,10 @@ struct ControlsState @0x97ff69c53601abf1 {
   alertSize @39 :AlertSize;
   alertBlinkingRate @42 :Float32;
   alertType @44 :Text;
-  alertSound @45 :Text;
+  alertSoundDEPRECATED @45 :Text;
+  alertSound @56 :Car.CarControl.HUDControl.AudibleAlert;
   awarenessStatus @26 :Float32;
-  angleModelBias @27 :Float32;
+  angleModelBiasDEPRECATED @27 :Float32;
   gpsPlannerActive @40 :Bool;
   engageable @41 :Bool;  # can OP be engaged?
   driverMonitoringOn @43 :Bool;
@@ -428,9 +451,12 @@ struct ControlsState @0x97ff69c53601abf1 {
   vCurvature @46 :Float32;
   decelForTurn @47 :Bool;
 
+  decelForModel @54 :Bool;
+
   lateralControlState :union {
     indiState @52 :LateralINDIState;
     pidState @53 :LateralPIDState;
+    lqrState @55 :LateralLQRState;
   }
 
   enum OpenpilotState @0xdbe58b96d2d1ac61 {
@@ -485,6 +511,15 @@ struct ControlsState @0x97ff69c53601abf1 {
     saturated @8 :Bool;
    }
 
+  struct LateralLQRState {
+    active @0 :Bool;
+    steerAngle @1 :Float32;
+    i @2 :Float32;
+    output @3 :Float32;
+    lqrOutput @4 :Float32;
+   }
+
+
 }
 
 struct LiveEventData {
@@ -494,6 +529,7 @@ struct LiveEventData {
 
 struct ModelData {
   frameId @0 :UInt32;
+  timestampEof @9 :UInt64;
 
   path @1 :PathData;
   leftLane @2 :PathData;
@@ -502,18 +538,27 @@ struct ModelData {
   freePath @6 :List(Float32);
 
   settings @5 :ModelSettings;
+  leadFuture @7 :LeadData;
+  speed @8 :List(Float32);
 
   struct PathData {
     points @0 :List(Float32);
     prob @1 :Float32;
     std @2 :Float32;
     stds @3 :List(Float32);
+    poly @4 :List(Float32);
   }
 
   struct LeadData {
     dist @0 :Float32;
     prob @1 :Float32;
     std @2 :Float32;
+    relVel @3 :Float32;
+    relVelStd @4 :Float32;
+    relY @5 :Float32;
+    relYStd @6 :Float32;
+    relA @7 :Float32;
+    relAStd @8 :Float32;
   }
 
   struct ModelSettings {
@@ -576,6 +621,8 @@ struct LogRotate {
 struct Plan {
   mdMonoTime @9 :UInt64;
   radarStateMonoTime @10 :UInt64;
+  commIssue @31 :Bool;
+
   eventsDEPRECATED @13 :List(Car.CarEvent);
 
   # lateral, 3rd order polynomial
@@ -614,7 +661,7 @@ struct Plan {
   decelForTurn @22 :Bool;
   mapValid @25 :Bool;
   radarValid @28 :Bool;
-  radarCommIssue @30 :Bool;
+  radarCanError @30 :Bool;
 
   processingDelay @29 :Float32;
 
@@ -629,6 +676,7 @@ struct Plan {
     mpc1 @1;
     mpc2 @2;
     mpc3 @3;
+    model @4;
   }
 }
 
@@ -645,11 +693,39 @@ struct PathPlan {
 
   angleSteers @8 :Float32; # deg
   rateSteers @13 :Float32; # deg/s
-  valid @9 :Bool;
+  mpcSolutionValid @9 :Bool;
   paramsValid @10 :Bool;
-  modelValid @12 :Bool;
+  modelValidDEPRECATED @12 :Bool;
   angleOffset @11 :Float32;
   sensorValid @14 :Bool;
+  commIssue @15 :Bool;
+  posenetValid @16 :Bool;
+  desire @17 :Desire;
+  laneChangeState @18 :LaneChangeState;
+  laneChangeDirection @19 :LaneChangeDirection;
+
+  enum Desire {
+    none @0;
+    turnLeft @1;
+    turnRight @2;
+    laneChangeLeft @3;
+    laneChangeRight @4;
+    keepLeft @5;
+    keepRight @6;
+  }
+
+  enum LaneChangeState {
+    off @0;
+    preLaneChange @1;
+    laneChangeStarting @2;
+    laneChangeFinishing @3;
+  }
+
+  enum LaneChangeDirection {
+    none @0;
+    left @1;
+    right @2;
+  }
 }
 
 struct LiveLocationData {
@@ -1628,8 +1704,15 @@ struct OrbKeyFrame {
 
 struct DriverMonitoring {
   frameId @0 :UInt32;
-  descriptor @1 :List(Float32);
-  std @2 :Float32;
+  descriptorDEPRECATED @1 :List(Float32);
+  stdDEPRECATED @2 :Float32;
+  faceOrientation @3 :List(Float32);
+  facePosition @4 :List(Float32);
+  faceProb @5 :Float32;
+  leftEyeProb @6 :Float32;
+  rightEyeProb @7 :Float32;
+  leftBlinkProb @8 :Float32;
+  rightBlinkProb @9 :Float32;
 }
 
 struct Boot {
@@ -1646,6 +1729,9 @@ struct LiveParametersData {
   stiffnessFactor @4 :Float32;
   steerRatio @5 :Float32;
   sensorValid @6 :Bool;
+  yawRate @7 :Float32;
+  posenetSpeed @8 :Float32;
+  posenetValid @9 :Bool;
 }
 
 struct LiveMapData {
@@ -1669,6 +1755,8 @@ struct LiveMapData {
 }
 
 struct CameraOdometry {
+  frameId @4 :UInt32;
+  timestampEof @5 :UInt64;
   trans @0 :List(Float32); # m/s in device frame
   rot @1 :List(Float32); # rad/s in device frame
   transStd @2 :List(Float32); # std m/s in device frame
@@ -1685,6 +1773,7 @@ struct KalmanOdometry {
 struct Event {
   # in nanoseconds?
   logMonoTime @0 :UInt64;
+  valid @67 :Bool = true;
 
   union {
     initData @1 :InitData;
@@ -1752,5 +1841,8 @@ struct Event {
     cameraOdometry @63 :CameraOdometry;
     pathPlan @64 :PathPlan;
     kalmanOdometry @65 :KalmanOdometry;
+    thumbnail @66: Thumbnail;
+    carEvents @68: List(Car.CarEvent);
+    carParams @69: Car.CarParams;
   }
 }

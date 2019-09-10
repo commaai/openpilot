@@ -4,16 +4,11 @@ import sys
 import time
 from panda import Panda
 from nose.tools import assert_equal, assert_less, assert_greater
-from helpers import time_many_sends, connect_wo_esp, test_white_and_grey, panda_color_to_serial
+from helpers import SPEED_NORMAL, SPEED_GMLAN, time_many_sends, test_white_and_grey, panda_type_to_serial, test_all_pandas, panda_connect_and_init
 
-SPEED_NORMAL = 500
-SPEED_GMLAN = 33.3
-
-@test_white_and_grey
-@panda_color_to_serial
-def test_can_loopback(serial=None):
-  p = connect_wo_esp(serial)
-
+@test_all_pandas
+@panda_connect_and_init
+def test_can_loopback(p):
   # enable output mode
   p.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
 
@@ -44,11 +39,9 @@ def test_can_loopback(serial=None):
     assert 0x1aa == sr[0][0] == lb[0][0]
     assert "message" == sr[0][2] == lb[0][2]
 
-@test_white_and_grey
-@panda_color_to_serial
-def test_safety_nooutput(serial=None):
-  p = connect_wo_esp(serial)
-
+@test_all_pandas
+@panda_connect_and_init
+def test_safety_nooutput(p):
   # enable output mode
   p.set_safety_mode(Panda.SAFETY_NOOUTPUT)
 
@@ -63,11 +56,9 @@ def test_safety_nooutput(serial=None):
   r = p.can_recv()
   assert len(r) == 0
 
-@test_white_and_grey
-@panda_color_to_serial
-def test_reliability(serial=None):
-  p = connect_wo_esp(serial)
-
+@test_all_pandas
+@panda_connect_and_init
+def test_reliability(p):
   LOOP_COUNT = 100
   MSG_COUNT = 100
 
@@ -103,11 +94,9 @@ def test_reliability(serial=None):
     sys.stdout.write("P")
     sys.stdout.flush()
 
-@test_white_and_grey
-@panda_color_to_serial
-def test_throughput(serial=None):
-  p = connect_wo_esp(serial)
-
+@test_all_pandas
+@panda_connect_and_init
+def test_throughput(p):
   # enable output mode
   p.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
 
@@ -129,10 +118,9 @@ def test_throughput(serial=None):
     print("loopback 100 messages at speed %d, comp speed is %.2f, percent %.2f" % (speed, comp_kbps, saturation_pct))
 
 @test_white_and_grey
-@panda_color_to_serial
-def test_gmlan(serial=None):
-  p = connect_wo_esp(serial)
-
+@panda_type_to_serial
+@panda_connect_and_init
+def test_gmlan(p):
   if p.legacy:
     return
 
@@ -161,10 +149,9 @@ def test_gmlan(serial=None):
     print("%d: %.2f kbps vs %.2f kbps" % (bus, comp_kbps_gmlan, comp_kbps_normal))
 
 @test_white_and_grey
-@panda_color_to_serial
-def test_gmlan_bad_toggle(serial=None):
-  p = connect_wo_esp(serial)
-
+@panda_type_to_serial
+@panda_connect_and_init
+def test_gmlan_bad_toggle(p):
   if p.legacy:
     return
 
@@ -190,10 +177,9 @@ def test_gmlan_bad_toggle(serial=None):
 
 
 # this will fail if you have hardware serial connected
-@test_white_and_grey
-@panda_color_to_serial
-def test_serial_debug(serial=None):
-  p = connect_wo_esp(serial)
+@test_all_pandas
+@panda_connect_and_init
+def test_serial_debug(p):
   junk = p.serial_read(Panda.SERIAL_DEBUG)
   p.call_control_api(0xc0)
   assert(p.serial_read(Panda.SERIAL_DEBUG).startswith("can "))

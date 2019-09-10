@@ -24,6 +24,13 @@
 #include <libyuv.h>
 #include <czmq.h>
 #include <capnp/serialize.h>
+#include <jpeglib.h>
+
+#ifdef QCOM
+#include <eigen3/Eigen/Dense>
+#else
+#include <Eigen/Dense>
+#endif
 
 #include "common/version.h"
 #include "common/util.h"
@@ -39,14 +46,18 @@
 #include "bufs.h"
 
 #ifdef QCOM
-#include "camera_qcom.h"
+#include "cameras/camera_qcom.h"
 #else
-#include "camera_fake.h"
+#include "cameras/camera_frame_stream.h"
 #endif
 
-#include "model.h"
-#include "monitoring.h"
-#include "rgb_to_yuv.h"
+
+// 3 models
+#include "models/driving.h"
+#include "models/monitoring.h"
+#include "models/posenet.h"
+
+#include "transforms/rgb_to_yuv.h"
 
 #include "cereal/gen/cpp/log.capnp.h"
 
@@ -54,7 +65,7 @@
 
 #define UI_BUF_COUNT 4
 
-//#define DUMP_RGB
+// #define DUMP_RGB
 
 //#define DEBUG_DRIVER_MONITOR
 
@@ -144,6 +155,8 @@ struct VisionState {
   int rgb_front_width, rgb_front_height, rgb_front_stride;
   VisionBuf rgb_front_bufs[UI_BUF_COUNT];
   cl_mem rgb_front_bufs_cl[UI_BUF_COUNT];
+  int front_meteringbox_xmin, front_meteringbox_xmax;
+  int front_meteringbox_ymin, front_meteringbox_ymax;
 
   ModelState model;
   ModelData model_bufs[UI_BUF_COUNT];
@@ -151,6 +164,8 @@ struct VisionState {
   MonitoringState monitoring;
   zsock_t *monitoring_sock;
   void* monitoring_sock_raw;
+
+  PosenetState posenet;
 
   // Protected by transform_lock.
   bool run_model;
@@ -173,6 +188,9 @@ struct VisionState {
 
   zsock_t *posenet_sock;
   void* posenet_sock_raw;
+
+  zsock_t *thumbnail_sock;
+  void* thumbnail_sock_raw;
 
   pthread_mutex_t clients_lock;
   VisionClientState clients[MAX_CLIENTS];
@@ -218,7 +236,7 @@ cl_program build_debayer_program(VisionState *s,
           frame_width, frame_height, frame_stride,
           rgb_width, rgb_height, rgb_stride,
           bayer_flip, hdr);
-  return CLU_LOAD_FROM_FILE(s->context, s->device_id, "debayer.cl", args);
+  return CLU_LOAD_FROM_FILE(s->context, s->device_id, "cameras/debayer.cl", args);
 }
 
 void cl_init(VisionState *s) {
@@ -246,45 +264,6 @@ void cl_free(VisionState *s) {
   err = clReleaseContext(s->context);
   assert(err == 0);
 }
-
-//////////
-
-#if 0
-// from libadreno_utils.so
-extern "C" void compute_aligned_width_and_height(int width,
-                                      int height,
-                                      int bpp,
-                                      int tile_mode,
-                                      int raster_mode,
-                                      int padding_threshold,
-                                      int *aligned_w,
-                                      int *aligned_h);
-
-// TODO: move to visionbuf
-void alloc_rgb888_bufs_cl(cl_device_id device_id, cl_context ctx,
-                          int width, int height, int count,
-                          int *out_stride, size_t *out_size,
-                          VisionBuf *out_bufs, cl_mem *out_cl) {
-
-  int aligned_w = 0, aligned_h = 0;
-#ifdef QCOM
-  compute_aligned_width_and_height(ALIGN(width, 32), ALIGN(height, 32), 3, 0, 0, 512, &aligned_w, &aligned_h);
-#else
-  aligned_w = width; aligned_h = height;
-#endif
-
-  int stride = aligned_w * 3;
-  size_t size = aligned_w * aligned_h * 3;
-
-  for (int i=0; i<count; i++) {
-    out_bufs[i] = visionbuf_allocate_cl(size, device_id, ctx,
-                                        &out_cl[i]);
-  }
-
-  *out_stride = stride;
-  *out_size = size;
-}
-#endif
 
 void init_buffers(VisionState *s) {
   int err;
@@ -324,7 +303,7 @@ void init_buffers(VisionState *s) {
   }
   tbuffer_init(&s->ui_tb, UI_BUF_COUNT, "rgb");
 
-  assert(s->cameras.front.ci.bayer);
+  //assert(s->cameras.front.ci.bayer);
   s->rgb_front_width = s->cameras.front.ci.frame_width/2;
   s->rgb_front_height = s->cameras.front.ci.frame_height/2;
 
@@ -375,36 +354,27 @@ void init_buffers(VisionState *s) {
     s->yuv_transform = s->cameras.rear.transform;
   }
 
-  // build all the camera debayer programs
-  for (int i=0; i<ARRAYSIZE(cameras_supported); i++) {
-     int aligned_w, aligned_h;
-     visionimg_compute_aligned_width_and_height(cameras_supported[i].frame_width/2, cameras_supported[i].frame_height/2, &aligned_w, &aligned_h);
-
-     build_debayer_program(s, cameras_supported[i].frame_width, cameras_supported[i].frame_height,
-                           cameras_supported[i].frame_stride,
-                           cameras_supported[i].frame_width/2, cameras_supported[i].frame_height/2,
-                           aligned_w*3,
-                           cameras_supported[i].bayer_flip, cameras_supported[i].hdr);
+  if (s->cameras.rear.ci.bayer) {
+    s->prg_debayer_rear = build_debayer_program(s, s->cameras.rear.ci.frame_width, s->cameras.rear.ci.frame_height,
+                                                   s->cameras.rear.ci.frame_stride,
+                                                 s->rgb_width, s->rgb_height, s->rgb_stride,
+                                                 s->cameras.rear.ci.bayer_flip, s->cameras.rear.ci.hdr);
+    s->krnl_debayer_rear = clCreateKernel(s->prg_debayer_rear, "debayer10", &err);
+    assert(err == 0);
   }
 
-  s->prg_debayer_rear = build_debayer_program(s, s->cameras.rear.ci.frame_width, s->cameras.rear.ci.frame_height,
-                                                 s->cameras.rear.ci.frame_stride,
-                                               s->rgb_width, s->rgb_height, s->rgb_stride,
-                                               s->cameras.rear.ci.bayer_flip, s->cameras.rear.ci.hdr);
+  if (s->cameras.front.ci.bayer) {
+    s->prg_debayer_front = build_debayer_program(s, s->cameras.front.ci.frame_width, s->cameras.front.ci.frame_height,
+                                                    s->cameras.front.ci.frame_stride,
+                                                 s->rgb_front_width, s->rgb_front_height, s->rgb_front_stride,
+                                                 s->cameras.front.ci.bayer_flip, s->cameras.front.ci.hdr);
 
-  s->prg_debayer_front = build_debayer_program(s, s->cameras.front.ci.frame_width, s->cameras.front.ci.frame_height,
-                                                  s->cameras.front.ci.frame_stride,
-                                               s->rgb_front_width, s->rgb_front_height, s->rgb_front_stride,
-                                               s->cameras.front.ci.bayer_flip, s->cameras.front.ci.hdr);
-
-  s->krnl_debayer_rear = clCreateKernel(s->prg_debayer_rear, "debayer10", &err);
-  assert(err == 0);
-  s->krnl_debayer_front = clCreateKernel(s->prg_debayer_front, "debayer10", &err);
-  assert(err == 0);
+    s->krnl_debayer_front = clCreateKernel(s->prg_debayer_front, "debayer10", &err);
+    assert(err == 0);
+  }
 
   rgb_to_yuv_init(&s->rgb_to_yuv_state, s->context, s->device_id, s->yuv_width, s->yuv_height, s->rgb_stride);
   rgb_to_yuv_init(&s->front_rgb_to_yuv_state, s->context, s->device_id, s->yuv_front_width, s->yuv_front_height, s->rgb_front_stride);
-
 }
 
 void free_buffers(VisionState *s) {
@@ -755,32 +725,29 @@ void* monitoring_thread(void *arg) {
       MonitoringResult res = monitoring_eval_frame(&s->monitoring, q,
         s->yuv_front_cl[buf_idx], s->yuv_front_width, s->yuv_front_height);
 
-      // for (int i=0; i<6; i++) {
-      //   printf("%f ", res.vs[i]);
-      // }
-      // printf("\n");
-
-      // send driver monitoring packet
-      {
-        capnp::MallocMessageBuilder msg;
-        cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-        event.setLogMonoTime(nanos_since_boot());
-
-        auto framed = event.initDriverMonitoring();
-        framed.setFrameId(frame_data.frame_id);
-
-        kj::ArrayPtr<const float> descriptor_vs(&res.vs[0], ARRAYSIZE(res.vs));
-        framed.setDescriptor(descriptor_vs);
-
-        framed.setStd(res.std);
-
-        auto words = capnp::messageToFlatArray(msg);
-        auto bytes = words.asBytes();
-        zmq_send(s->monitoring_sock_raw, bytes.begin(), bytes.size(), ZMQ_DONTWAIT);
-      }
-
       double t2 = millis_since_boot();
 
+      // set front camera metering target
+      if (res.face_prob > 0.4)
+      {
+        int x_offset = s->rgb_front_width - 0.5 * s->rgb_front_height;
+        s->front_meteringbox_xmin = x_offset + (res.face_position[0] + 0.5) * (0.5 * s->rgb_front_height) - 72;
+        s->front_meteringbox_xmax = x_offset + (res.face_position[0] + 0.5) * (0.5 * s->rgb_front_height) + 72;
+        s->front_meteringbox_ymin = (res.face_position[1] + 0.5) * (s->rgb_front_height) - 72;
+        s->front_meteringbox_ymax = (res.face_position[1] + 0.5) * (s->rgb_front_height) + 72;
+      }
+      else // use default setting if no face
+      {
+        s->front_meteringbox_ymin = s->rgb_front_height * 0;
+        s->front_meteringbox_ymax = s->rgb_front_height * 2 / 3;
+        s->front_meteringbox_xmin = s->rgb_front_width * 3 / 5;
+        s->front_meteringbox_xmax = s->rgb_front_width;
+      }
+
+      // send dm packet
+      monitoring_publish(s->monitoring_sock_raw, frame_data.frame_id, res);
+
+      //t2 = millis_since_boot();
       //LOGD("monitoring process: %.2fms, from last %.2fms", t2-t1, t1-last);
       last = t1;
     }
@@ -838,11 +805,26 @@ void* frontview_thread(void *arg) {
     if (cnt % 3 == 0)
 #endif
     {
-      // for driver autoexposure, use bottom right corner
-      const int y_start = s->rgb_front_height / 3;
-      const int y_end = s->rgb_front_height;
-      const int x_start = s->rgb_front_width * 2 / 3;
-      const int x_end = s->rgb_front_width;
+      // use driver face crop for AE
+      int x_start;
+      int x_end;
+      int y_start;
+      int y_end;
+
+      if (s->front_meteringbox_xmax > 0)
+      {
+        x_start = s->front_meteringbox_xmin<0 ? 0:s->front_meteringbox_xmin;
+        x_end = s->front_meteringbox_xmax>=s->rgb_front_width ? s->rgb_front_width-1:s->front_meteringbox_xmax;
+        y_start = s->front_meteringbox_ymin<0 ? 0:s->front_meteringbox_ymin;
+        y_end = s->front_meteringbox_ymax>=s->rgb_front_height ? s->rgb_front_height-1:s->front_meteringbox_ymax;
+      }
+      else
+      {
+        y_start = s->rgb_front_height * 0;
+        y_end = s->rgb_front_height * 2 / 3;
+        x_start = s->rgb_front_width * 3 / 5;
+        x_end = s->rgb_front_width;
+      }
 
       uint32_t lum_binning[256] = {0,};
       for (int y = y_start; y < y_end; ++y) {
@@ -899,15 +881,6 @@ void* frontview_thread(void *arg) {
   return NULL;
 }
 
-#define POSENET
-
-#ifdef POSENET
-#include "snpemodel.h"
-extern const uint8_t posenet_model_data[] asm("_binary_posenet_dlc_start");
-extern const uint8_t posenet_model_end[] asm("_binary_posenet_dlc_end");
-const size_t posenet_model_size = posenet_model_end - posenet_model_data;
-#endif
-
 void* processing_thread(void *arg) {
   int err;
   VisionState *s = (VisionState*)arg;
@@ -935,15 +908,9 @@ void* processing_thread(void *arg) {
 #endif
 
 #ifdef DUMP_RGB
+  s->rgb_width = s->frame_width;
+  s->rgb_height = s->frame_height;
   FILE *dump_rgb_file = fopen("/sdcard/dump.rgb", "wb");
-#endif
-
-#ifdef POSENET
-  int posenet_counter = 0;
-  float pose_output[12];
-  float *posenet_input = (float*)malloc(2*200*532*sizeof(float));
-  SNPEModel *posenet = new SNPEModel(posenet_model_data, posenet_model_size,
-    pose_output, sizeof(pose_output)/sizeof(float));
 #endif
 
   // init the net
@@ -1007,6 +974,8 @@ void* processing_thread(void *arg) {
 #ifdef DUMP_RGB
     if (cnt % 20 == 0) {
       fwrite(bgr_ptr, s->rgb_buf_size, 1, dump_rgb_file);
+      LOG("%d x %d", s->rgb_width, s->rgb_height);
+      assert(1==2);
     }
 #endif
 
@@ -1042,11 +1011,12 @@ void* processing_thread(void *arg) {
       mt1 = millis_since_boot();
       s->model_bufs[ui_idx] =
           model_eval_frame(&s->model, q, yuv_cl, s->yuv_width, s->yuv_height,
-                           model_transform, img_sock_raw);
+                           model_transform, img_sock_raw, NULL);
       mt2 = millis_since_boot();
 
-      model_publish(model_sock_raw, frame_id, model_transform, s->model_bufs[ui_idx]);
+      model_publish(model_sock_raw, frame_id, s->model_bufs[ui_idx], frame_data.timestamp_eof);
     }
+
 
     // send frame event
     {
@@ -1066,6 +1036,7 @@ void* processing_thread(void *arg) {
       framed.setLensErr(frame_data.lens_err);
       framed.setLensTruePos(frame_data.lens_true_pos);
 
+
 #ifndef QCOM
       framed.setImage(kj::arrayPtr((const uint8_t*)s->yuv_ion[yuv_idx].addr, s->yuv_buf_size));
 #endif
@@ -1073,68 +1044,23 @@ void* processing_thread(void *arg) {
       kj::ArrayPtr<const float> transform_vs(&s->yuv_transform.v[0], 9);
       framed.setTransform(transform_vs);
 
-      auto words = capnp::messageToFlatArray(msg);
-      auto bytes = words.asBytes();
-      zmq_send(s->recorder_sock_raw, bytes.begin(), bytes.size(), ZMQ_DONTWAIT);
+      if (s->recorder_sock_raw != NULL) {
+        auto words = capnp::messageToFlatArray(msg);
+        auto bytes = words.asBytes();
+        zmq_send(s->recorder_sock_raw, bytes.begin(), bytes.size(), ZMQ_DONTWAIT);
+      }
     }
 
-
-#ifdef POSENET
+    // push the frame to the posenet
+    // TODO: This doesn't always have to run
     double pt1 = 0, pt2 = 0, pt3 = 0;
     pt1 = millis_since_boot();
-
-    // move second frame to first frame
-    memmove(&posenet_input[0], &posenet_input[1], sizeof(float)*(200*532*2 - 1));
-
-    // fill posenet input
-    float a;
-    // posenet uses a half resolution cropped frame
-    // with upper left corner: [50, 237] and
-    // bottom right corner: [1114, 637]
-    // So the resulting crop is 532 X 200
-    for (int y=237; y<637; y+=2) {
-      int yy = (y-237)/2;
-      for (int x = 50; x < 1114; x+=2) {
-        int xx = (x-50)/2;
-        a = 0;
-        a += yuv_ptr_y[s->yuv_width*(y+0) + (x+1)];
-        a += yuv_ptr_y[s->yuv_width*(y+1) + (x+1)];
-        a += yuv_ptr_y[s->yuv_width*(y+0) + (x+0)];
-        a += yuv_ptr_y[s->yuv_width*(y+1) + (x+0)];
-        // The posenet takes a normalized image input
-        // like the driving model so [0,255] is remapped
-        // to [-1,1]
-        posenet_input[(yy*532+xx)*2 + 1] = (a/512.0 - 1.0);
-      }
-    }
-    //FILE *fp;
-    //fp = fopen( "testing" , "r" );
-    //fread(posenet_input , sizeof(float) , 200*532*2 , fp);
-    //fclose(fp);
-    //sleep(5);
-
+    posenet_push(&s->posenet, yuv_ptr_y, s->yuv_width);
     pt2 = millis_since_boot();
 
-    posenet_counter++;
-
-    if (posenet_counter % 5 == 0){
-      // run posenet
-      //printf("avg %f\n", pose_output[0]);
-      posenet->execute(posenet_input);
-
-
-      // fix stddevs
-      for (int i = 6; i < 12; i++) {
-        pose_output[i] = log1p(exp(pose_output[i])) + 1e-6;
-      }
-      // to radians
-      for (int i = 3; i < 6; i++) {
-        pose_output[i] = M_PI * pose_output[i] / 180.0;
-      }
-      // to radians
-      for (int i = 9; i < 12; i++) {
-        pose_output[i] = M_PI * pose_output[i] / 180.0;
-      }
+    // posenet runs every 5
+    if (cnt % 5 == 0) {
+      posenet_eval(&s->posenet);
 
       // send posenet event
       {
@@ -1143,24 +1069,85 @@ void* processing_thread(void *arg) {
         event.setLogMonoTime(nanos_since_boot());
 
         auto posenetd = event.initCameraOdometry();
-        kj::ArrayPtr<const float> trans_vs(&pose_output[0], 3);
+        kj::ArrayPtr<const float> trans_vs(&s->posenet.output[0], 3);
         posenetd.setTrans(trans_vs);
-        kj::ArrayPtr<const float> rot_vs(&pose_output[3], 3);
+        kj::ArrayPtr<const float> rot_vs(&s->posenet.output[3], 3);
         posenetd.setRot(rot_vs);
-        kj::ArrayPtr<const float> trans_std_vs(&pose_output[6], 3);
+        kj::ArrayPtr<const float> trans_std_vs(&s->posenet.output[6], 3);
         posenetd.setTransStd(trans_std_vs);
-        kj::ArrayPtr<const float> rot_std_vs(&pose_output[9], 3);
+        kj::ArrayPtr<const float> rot_std_vs(&s->posenet.output[9], 3);
         posenetd.setRotStd(rot_std_vs);
+        posenetd.setTimestampEof(frame_data.timestamp_eof);
+        posenetd.setFrameId(frame_id);
 
         auto words = capnp::messageToFlatArray(msg);
         auto bytes = words.asBytes();
         zmq_send(s->posenet_sock_raw, bytes.begin(), bytes.size(), ZMQ_DONTWAIT);
       }
       pt3 = millis_since_boot();
-      //LOGD("pre: %.2fms | posenet: %.2fms", (pt2-pt1), (pt3-pt1));
+      LOGD("pre: %.2fms | posenet: %.2fms", (pt2-pt1), (pt3-pt1));
     }
-#endif
 
+    // one thumbnail per 5 seconds (instead of %5 == 0 posenet)
+    if (cnt % 100 == 3) {
+      uint8_t* thumbnail_buffer = NULL;
+      uint64_t thumbnail_len = 0;
+
+      unsigned char *row = (unsigned char *)malloc(s->rgb_width/2*3);
+      mt1 = millis_since_boot();
+
+      struct jpeg_compress_struct cinfo;
+      struct jpeg_error_mgr jerr;
+
+      cinfo.err = jpeg_std_error(&jerr);
+      jpeg_create_compress(&cinfo);
+      jpeg_mem_dest(&cinfo, &thumbnail_buffer, &thumbnail_len);
+
+      cinfo.image_width = s->rgb_width / 2;
+      cinfo.image_height = s->rgb_height / 2;
+      cinfo.input_components = 3;
+      cinfo.in_color_space = JCS_RGB;
+
+      jpeg_set_defaults(&cinfo);
+      jpeg_set_quality(&cinfo, 50, true);
+      jpeg_start_compress(&cinfo, true);
+
+      JSAMPROW row_pointer[1];
+      for (int i = 0; i < s->rgb_height; i+=2) {
+        for (int j = 0; j < s->rgb_width*3; j+=6) {
+          for (int k = 0; k < 3; k++) {
+            uint16_t dat = 0;
+            dat += bgr_ptr[s->rgb_stride*i + j + k];
+            dat += bgr_ptr[s->rgb_stride*i + j+3 + k];
+            dat += bgr_ptr[s->rgb_stride*(i+1) + j + k];
+            dat += bgr_ptr[s->rgb_stride*(i+1) + j+3 + k];
+            row[(j/2) + (2-k)] = dat/4;
+          }
+        }
+        row_pointer[0] = row;
+        jpeg_write_scanlines(&cinfo, row_pointer, 1);
+      }
+      free(row);
+      jpeg_finish_compress(&cinfo);
+
+      mt2 = millis_since_boot();
+      //printf("jpeg produced %lu bytes in %f\n", thumbnail_len, mt2-mt1);
+
+      capnp::MallocMessageBuilder msg;
+      cereal::Event::Builder event = msg.initRoot<cereal::Event>();
+      event.setLogMonoTime(nanos_since_boot());
+
+      auto thumbnaild = event.initThumbnail();
+      thumbnaild.setFrameId(frame_data.frame_id);
+      thumbnaild.setTimestampEof(frame_data.timestamp_eof);
+      thumbnaild.setThumbnail(kj::arrayPtr((const uint8_t*)thumbnail_buffer, thumbnail_len));
+
+      auto words = capnp::messageToFlatArray(msg);
+      auto bytes = words.asBytes();
+      zmq_send(s->thumbnail_sock_raw, bytes.begin(), bytes.size(), ZMQ_DONTWAIT);
+
+      free(thumbnail_buffer);
+    }
 
     tbuffer_dispatch(&s->ui_tb, ui_idx);
 
@@ -1206,8 +1193,8 @@ void* processing_thread(void *arg) {
 
     double t5 = millis_since_boot();
 
-    /*LOGD("queued: %.2fms, yuv: %.2f, model: %.2fms | processing: %.3fms",
-            (t2-t1), (yt2-yt1), (mt2-mt1), (t5-t1));*/
+    LOGD("queued: %.2fms, yuv: %.2f, model: %.2fms | processing: %.3fms",
+            (t2-t1), (yt2-yt1), (mt2-mt1), (t5-t1));
   }
 
 #ifdef DUMP_RGB
@@ -1234,6 +1221,24 @@ void* live_thread(void *arg) {
   zpoller_t *poller = zpoller_new(liveCalibration_sock, terminate, NULL);
   assert(poller);
 
+  /*
+     import numpy as np
+     from common.transformations.model import medmodel_frame_from_road_frame
+     medmodel_frame_from_ground = medmodel_frame_from_road_frame[:, (0, 1, 3)]
+     ground_from_medmodel_frame = np.linalg.inv(medmodel_frame_from_ground)
+  */
+  Eigen::Matrix<float, 3, 3> ground_from_medmodel_frame;
+  ground_from_medmodel_frame <<
+    0.00000000e+00, 0.00000000e+00, 1.00000000e+00,
+    -1.09890110e-03, 0.00000000e+00, 2.81318681e-01,
+    -1.84808520e-20, 9.00738606e-04,-4.28751576e-02;
+
+  Eigen::Matrix<float, 3, 3> eon_intrinsics;
+  eon_intrinsics <<
+    910.0, 0.0, 582.0,
+    0.0, 910.0, 437.0,
+    0.0,   0.0,   1.0;
+
   while (!do_exit) {
     zsock_t *which = (zsock_t*)zpoller_wait(poller, -1);
     if (which == terminate || which == NULL) {
@@ -1258,15 +1263,25 @@ void* live_thread(void *arg) {
 
     if (event.isLiveCalibration()) {
       pthread_mutex_lock(&s->transform_lock);
-#ifdef BIGMODEL
-      auto wm2 = event.getLiveCalibration().getWarpMatrixBig();
-#else
-      auto wm2 = event.getLiveCalibration().getWarpMatrix2();
-#endif
-      assert(wm2.size() == 3*3);
-      for (int i=0; i<3*3; i++) {
-        s->cur_transform.v[i] = wm2[i];
+
+      auto extrinsic_matrix = event.getLiveCalibration().getExtrinsicMatrix();
+      Eigen::Matrix<float, 3, 4> extrinsic_matrix_eigen;
+      for (int i = 0; i < 4*3; i++){
+        extrinsic_matrix_eigen(i / 4, i % 4) = extrinsic_matrix[i];
       }
+
+      auto camera_frame_from_road_frame = eon_intrinsics * extrinsic_matrix_eigen;
+      Eigen::Matrix<float, 3, 3> camera_frame_from_ground;
+      camera_frame_from_ground.col(0) = camera_frame_from_road_frame.col(0);
+      camera_frame_from_ground.col(1) = camera_frame_from_road_frame.col(1);
+      camera_frame_from_ground.col(2) = camera_frame_from_road_frame.col(3);
+
+      auto warp_matrix = camera_frame_from_ground * ground_from_medmodel_frame;
+
+      for (int i=0; i<3*3; i++) {
+        s->cur_transform.v[i] = warp_matrix(i / 3, i % 3);
+      }
+
       s->run_model = true;
       pthread_mutex_unlock(&s->transform_lock);
     }
@@ -1304,11 +1319,12 @@ void party(VisionState *s, bool nomodel) {
                        processing_thread, s);
   assert(err == 0);
 
-
+#ifdef QCOM
   pthread_t frontview_thread_handle;
   err = pthread_create(&frontview_thread_handle, NULL,
                        frontview_thread, s);
   assert(err == 0);
+#endif
 
   pthread_t monitoring_thread_handle;
   err = pthread_create(&monitoring_thread_handle, NULL, monitoring_thread, s);
@@ -1332,9 +1348,11 @@ void party(VisionState *s, bool nomodel) {
 
   zsock_signal(s->terminate_pub, 0);
 
+#ifdef QCOM
   LOG("joining frontview_thread");
   err = pthread_join(frontview_thread_handle, NULL);
   assert(err == 0);
+#endif
 
 #ifndef __APPLE__
   LOG("joining visionserver_thread");
@@ -1354,9 +1372,6 @@ void party(VisionState *s, bool nomodel) {
 }
 
 }
-
-// TODO: make a version of visiond that runs on pc using streamed video from EON.
-// BOUNTY: free EON+panda+giraffe
 
 int main(int argc, char **argv) {
   int err;
@@ -1388,6 +1403,7 @@ int main(int argc, char **argv) {
 
   model_init(&s->model, s->device_id, s->context, true);
   monitoring_init(&s->monitoring, s->device_id, s->context);
+  posenet_init(&s->posenet);
 
   // s->zctx = zctx_shadow_zmq_ctx(zsys_init());
 
@@ -1404,9 +1420,11 @@ int main(int argc, char **argv) {
 
   init_buffers(s);
 
-  s->recorder_sock = zsock_new_pub("@tcp://*:8002");
-  assert(s->recorder_sock);
-  s->recorder_sock_raw = zsock_resolve(s->recorder_sock);
+  #ifdef QCOM
+    s->recorder_sock = zsock_new_pub("@tcp://*:8002");
+    assert(s->recorder_sock);
+    s->recorder_sock_raw = zsock_resolve(s->recorder_sock);
+  #endif
 
   s->monitoring_sock = zsock_new_pub("@tcp://*:8063");
   assert(s->monitoring_sock);
@@ -1415,6 +1433,10 @@ int main(int argc, char **argv) {
   s->posenet_sock = zsock_new_pub("@tcp://*:8066");
   assert(s->posenet_sock);
   s->posenet_sock_raw = zsock_resolve(s->posenet_sock);
+
+  s->thumbnail_sock = zsock_new_pub("@tcp://*:8069");
+  assert(s->thumbnail_sock);
+  s->thumbnail_sock_raw = zsock_resolve(s->thumbnail_sock);
 
   cameras_open(&s->cameras, &s->camera_bufs[0], &s->focus_bufs[0], &s->stats_bufs[0], &s->front_camera_bufs[0]);
 
@@ -1425,6 +1447,8 @@ int main(int argc, char **argv) {
 
   zsock_destroy(&s->recorder_sock);
   zsock_destroy(&s->monitoring_sock);
+  zsock_destroy(&s->posenet_sock);
+  zsock_destroy(&s->thumbnail_sock);
   // zctx_destroy(&s->zctx);
 
   model_free(&s->model);

@@ -1,20 +1,22 @@
+from cereal import car
 from selfdrive.can.parser import CANParser
 from selfdrive.car.chrysler.values import DBC, STEER_THRESHOLD
 from common.kalman.simple_kalman import KF1D
 
+GearShifter = car.CarState.GearShifter
 
 def parse_gear_shifter(can_gear):
   if can_gear == 0x1:
-    return "park"
+    return GearShifter.park
   elif can_gear == 0x2:
-    return "reverse"
+    return GearShifter.reverse
   elif can_gear == 0x3:
-    return "neutral"
+    return GearShifter.neutral
   elif can_gear == 0x4:
-    return "drive"
+    return GearShifter.drive
   elif can_gear == 0x5:
-    return "low"
-  return "unknown"
+    return GearShifter.low
+  return GearShifter.unknown
 
 
 def get_can_parser(CP):
@@ -27,7 +29,7 @@ def get_can_parser(CP):
     ("DOOR_OPEN_RL", "DOORS", 0),
     ("DOOR_OPEN_RR", "DOORS", 0),
     ("BRAKE_PRESSED_2", "BRAKE_2", 0),
-    ("ACCEL_PEDAL", "ACCEL_PEDAL_MSG", 0),
+    ("ACCEL_134", "ACCEL_GAS_134", 0),
     ("SPEED_LEFT", "SPEED_1", 0),
     ("SPEED_RIGHT", "SPEED_1", 0),
     ("WHEEL_SPEED_FL", "WHEEL_SPEEDS", 0),
@@ -60,7 +62,7 @@ def get_can_parser(CP):
     ("ACC_2", 50),
   ]
 
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0, timeout=100)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
 def get_camera_parser(CP):
   signals = [
@@ -72,7 +74,7 @@ def get_camera_parser(CP):
   ]
   checks = []
 
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2, timeout=100)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
 
 
 class CarState(object):
@@ -97,8 +99,6 @@ class CarState(object):
 
 
   def update(self, cp, cp_cam):
-    # copy can_valid
-    self.can_valid = cp.can_valid
 
     # update prevs, update must run once per loop
     self.prev_left_blinker_on = self.left_blinker_on
@@ -114,7 +114,7 @@ class CarState(object):
     self.seatbelt = (cp.vl["SEATBELT_STATUS"]['SEATBELT_DRIVER_UNLATCHED'] == 0)
 
     self.brake_pressed = cp.vl["BRAKE_2"]['BRAKE_PRESSED_2'] == 5 # human-only
-    self.pedal_gas = cp.vl["ACCEL_PEDAL_MSG"]['ACCEL_PEDAL']
+    self.pedal_gas = cp.vl["ACCEL_GAS_134"]['ACCEL_134']
     self.car_gas = self.pedal_gas
     self.esp_disabled = (cp.vl["TRACTION_BUTTON"]['TRACTION_OFF'] == 1)
 

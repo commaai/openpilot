@@ -1,8 +1,6 @@
 from cereal import car
 from selfdrive.car import dbc_dict
 
-AudibleAlert = car.CarControl.HUDControl.AudibleAlert
-
 class CAR:
   HOLDEN_ASTRA = "HOLDEN ASTRA RS-V BK 2017"
   VOLT = "CHEVROLET VOLT PREMIER 2017"
@@ -21,30 +19,11 @@ class CruiseButtons:
   MAIN        = 5
   CANCEL      = 6
 
-# Car chimes, beeps, blinker sounds etc
-class CM:
-  TOCK = 0x81
-  TICK = 0x82
-  LOW_BEEP = 0x84
-  HIGH_BEEP = 0x85
-  LOW_CHIME = 0x86
-  HIGH_CHIME = 0x87
-
 class AccState:
   OFF        = 0
   ACTIVE     = 1
   FAULTED    = 3
   STANDSTILL = 4
-
-AUDIO_HUD = {
-  AudibleAlert.none: (0, 0),
-  AudibleAlert.chimeEngage: (CM.HIGH_CHIME, 1),
-  AudibleAlert.chimeDisengage: (CM.HIGH_CHIME, 1),
-  AudibleAlert.chimeError: (CM.LOW_CHIME, 2),
-  AudibleAlert.chimePrompt: (CM.LOW_CHIME, 1),
-  AudibleAlert.chimeWarning1: (CM.LOW_CHIME, 2),
-  AudibleAlert.chimeWarning2: (CM.LOW_CHIME, -1),
-  AudibleAlert.chimeWarningRepeat: (CM.LOW_CHIME, -1)}
 
 def is_eps_status_ok(eps_status, car_fingerprint):
   valid_eps_status = []
