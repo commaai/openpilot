@@ -82,6 +82,7 @@ class DriverStatus():
     self.blink = DriverBlink()
     self.awareness = 1.
     self.awareness_active = 1.
+    self.awareness_passive = 1.
     self.driver_distracted = False
     self.driver_distraction_filter = FirstOrderFilter(0., _DISTRACTED_FILTER_TS, DT_DMON)
     self.face_detected = False
@@ -108,6 +109,7 @@ class DriverStatus():
     if active_monitoring:
       # when falling back from passive mode to active mode, reset awareness to avoid false alert
       if not self.active_monitoring_mode:
+        self.awareness_passive = self.awareness
         self.awareness = self.awareness_active
 
       self.threshold_pre = _DISTRACTED_PRE_TIME_TILL_TERMINAL / _DISTRACTED_TIME
@@ -117,6 +119,7 @@ class DriverStatus():
     else:
       if self.active_monitoring_mode:
         self.awareness_active = self.awareness
+        self.awareness = self.awareness_passive
 
       self.threshold_pre = _AWARENESS_PRE_TIME_TILL_TERMINAL / _AWARENESS_TIME
       self.threshold_prompt = _AWARENESS_PROMPT_TIME_TILL_TERMINAL / _AWARENESS_TIME
@@ -174,6 +177,7 @@ class DriverStatus():
       # reset only when on disengagement if red reached
       self.awareness = 1.
       self.awareness_active = 1.
+      self.awareness_passive = 1.
       return events
 
     driver_attentive = self.driver_distraction_filter.x < 0.37
@@ -182,6 +186,8 @@ class DriverStatus():
     if (driver_attentive and self.face_detected and self.awareness > 0):
       # only restore awareness when paying attention and alert is not red
       self.awareness = min(self.awareness + ((_RECOVERY_FACTOR_MAX-_RECOVERY_FACTOR_MIN)*(1.-self.awareness)+_RECOVERY_FACTOR_MIN)*self.step_change, 1.)
+      if self.awareness == 1.:
+        self.awareness_passive = min(self.awareness_passive + self.step_change, 1.)
       # don't display alert banner when awareness is recovering and has cleared orange
       if self.awareness > self.threshold_prompt:
         return events

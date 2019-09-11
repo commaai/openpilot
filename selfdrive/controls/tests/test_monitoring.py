@@ -138,20 +138,27 @@ class TestMonitoring(unittest.TestCase):
     self.assertEqual(events_output[int((_DISTRACTED_SECONDS_TO_RED+2*_invisible_time+1.5)/DT_DMON)][0].name, 'driverDistracted')
     self.assertTrue(len(events_output[int((_DISTRACTED_SECONDS_TO_RED+2*_invisible_time+3.5)/DT_DMON)])==0)
 
-  # 5. op engaged, invisible driver, down to orange, driver appears; then down to orange again, driver touches wheel
-  #  - both actions should clear the alert
+  # 5. op engaged, invisible driver, down to orange, driver touches wheel; then down to orange again, driver appears
+  #  - both actions should clear the alert, but momentary appearence should not
   def test_sometimes_transparent_commuter(self):
-    _visible_time = 2 # seconds
-    ds_vector = always_no_face[:]*2
-    interaction_vector = always_false[:]*2
-    ds_vector[int(_INVISIBLE_SECONDS_TO_ORANGE/DT_DMON):int((_INVISIBLE_SECONDS_TO_ORANGE+_visible_time)/DT_DMON)] = [msg_ATTENTIVE] * int(_visible_time/DT_DMON)
-    interaction_vector[int((2*_INVISIBLE_SECONDS_TO_ORANGE+_visible_time)/DT_DMON):int((2*_INVISIBLE_SECONDS_TO_ORANGE+_visible_time+1)/DT_DMON)] = [True] * int(1/DT_DMON)
-    events_output = run_DState_seq(ds_vector, interaction_vector, 2*always_true, 2*always_false)
-    self.assertTrue(len(events_output[int(_INVISIBLE_SECONDS_TO_ORANGE*0.5/DT_DMON)])==0)
-    self.assertEqual(events_output[int((_INVISIBLE_SECONDS_TO_ORANGE-0.1)/DT_DMON)][0].name, 'promptDriverUnresponsive')
-    self.assertTrue(len(events_output[int((_INVISIBLE_SECONDS_TO_ORANGE*1.5+_visible_time)/DT_DMON)])==0)
-    self.assertEqual(events_output[int((_INVISIBLE_SECONDS_TO_ORANGE*2+_visible_time-0.5)/DT_DMON)][0].name, 'promptDriverUnresponsive')
-    self.assertTrue(len(events_output[int((_INVISIBLE_SECONDS_TO_ORANGE*2+_visible_time+0.1)/DT_DMON)])==0)
+      _visible_time = np.random.choice([1,10]) # seconds
+      # print _visible_time
+      ds_vector = always_no_face[:]*2
+      interaction_vector = always_false[:]*2
+      ds_vector[int((2*_INVISIBLE_SECONDS_TO_ORANGE+1)/DT_DMON):int((2*_INVISIBLE_SECONDS_TO_ORANGE+1+_visible_time)/DT_DMON)] = [msg_ATTENTIVE] * int(_visible_time/DT_DMON)
+      interaction_vector[int((_INVISIBLE_SECONDS_TO_ORANGE)/DT_DMON):int((_INVISIBLE_SECONDS_TO_ORANGE+1)/DT_DMON)] = [True] * int(1/DT_DMON)
+      events_output = run_DState_seq(ds_vector, interaction_vector, 2*always_true, 2*always_false)
+      self.assertTrue(len(events_output[int(_INVISIBLE_SECONDS_TO_ORANGE*0.5/DT_DMON)])==0)
+      self.assertEqual(events_output[int((_INVISIBLE_SECONDS_TO_ORANGE-0.1)/DT_DMON)][0].name, 'promptDriverUnresponsive')
+      self.assertTrue(len(events_output[int((_INVISIBLE_SECONDS_TO_ORANGE+0.1)/DT_DMON)])==0)
+      if _visible_time == 1:
+        self.assertEqual(events_output[int((_INVISIBLE_SECONDS_TO_ORANGE*2+1-0.1)/DT_DMON)][0].name, 'promptDriverUnresponsive')
+        self.assertEqual(events_output[int((_INVISIBLE_SECONDS_TO_ORANGE*2+1+0.1+_visible_time)/DT_DMON)][0].name, 'preDriverUnresponsive')
+      elif _visible_time == 10:
+        self.assertEqual(events_output[int((_INVISIBLE_SECONDS_TO_ORANGE*2+1-0.1)/DT_DMON)][0].name, 'promptDriverUnresponsive')
+        self.assertTrue(len(events_output[int((_INVISIBLE_SECONDS_TO_ORANGE*2+1+0.1+_visible_time)/DT_DMON)])==0)
+      else:
+        pass
 
   # 6. op engaged, invisible driver, down to red, driver appears and then touches wheel, then disengages/reengages
   #  - only disengage will clear the alert
