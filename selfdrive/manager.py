@@ -93,6 +93,7 @@ from selfdrive.version import version, dirty
 import selfdrive.crash as crash
 
 from selfdrive.loggerd.config import ROOT
+from selfdrive.ui.spinner.spinner_manager import Spinner
 
 # comment out anything you don't want to run
 managed_processes = {
@@ -305,32 +306,38 @@ def cleanup_all_processes(signal, frame):
 # ****************** run loop ******************
 
 def manager_init(should_register=True):
-  if should_register:
-    reg_res = register()
-    if reg_res:
-      dongle_id, dongle_secret = reg_res
+  params = Params()
+  spinner_text = "chffrplus" if params.get("Passive")=="1" else "openpilot"
+  init_text = "initializing {0}".format(spinner_text)
+  with Spinner() as spinner:
+    spinner.update(init_text)
+    if should_register:
+      reg_res = register()
+      if reg_res:
+        dongle_id, dongle_secret = reg_res
+      else:
+        raise Exception("server registration failed")
     else:
-      raise Exception("server registration failed")
-  else:
-    dongle_id = "c"*16
+      dongle_id = "c"*16
 
-  # set dongle id
-  cloudlog.info("dongle id is " + dongle_id)
-  os.environ['DONGLE_ID'] = dongle_id
+    # set dongle id
+    cloudlog.info("dongle id is " + dongle_id)
+    os.environ['DONGLE_ID'] = dongle_id
 
-  cloudlog.info("dirty is %d" % dirty)
-  if not dirty:
-    os.environ['CLEAN'] = '1'
+    cloudlog.info("dirty is %d" % dirty)
+    if not dirty:
+      os.environ['CLEAN'] = '1'
 
-  cloudlog.bind_global(dongle_id=dongle_id, version=version, dirty=dirty, is_eon=True)
-  crash.bind_user(id=dongle_id)
-  crash.bind_extra(version=version, dirty=dirty, is_eon=True)
+    cloudlog.bind_global(dongle_id=dongle_id, version=version, dirty=dirty, is_eon=True)
+    crash.bind_user(id=dongle_id)
+    crash.bind_extra(version=version, dirty=dirty, is_eon=True)
 
-  os.umask(0)
-  try:
-    os.mkdir(ROOT, 0o777)
-  except OSError:
-    pass
+    os.umask(0)
+    try:
+      os.mkdir(ROOT, 0o777)
+    except OSError:
+      pass
+
 
 def system(cmd):
   try:
@@ -495,31 +502,31 @@ def update_ssh():
       raise RuntimeError
 
 def manager_update():
-  update_ssh()
-  update_apks()
+  params = Params()
+
+  update_text = "updating {0}".format(spinner_text)
+  with Spinner() as spinner:
+    spinner.update(update_text)
+    update_ssh()
+    update_apks()
 
 def manager_prepare():
-  # build cereal first
-  subprocess.check_call(["make", "-j4"], cwd=os.path.join(BASEDIR, "cereal"))
-
-  # build all processes
-  os.chdir(os.path.dirname(os.path.abspath(__file__)))
-  
   params = Params()
-  process_cnt = len(managed_processes)
-  loader_proc = subprocess.Popen(["./spinner"], stdin=subprocess.PIPE,
-        cwd=os.path.join(BASEDIR, "selfdrive", "ui", "spinner"),
-        close_fds=True)
   spinner_text = "chffrplus" if params.get("Passive")=="1" else "openpilot"
+  loader_text = "loading {0}".format(spinner_text)
+  with Spinner() as spinner:
+    spinner.update(loader_text)
+    # build cereal first
+    subprocess.check_call(["make", "-j4"], cwd=os.path.join(BASEDIR, "cereal"))
+
+    # build all processes
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
   
-  for n,p in enumerate(managed_processes):
-    if os.getenv("PREPAREONLY") is None:
+    process_cnt = len(managed_processes)
+    for n,p in enumerate(managed_processes):
       loader_text = "loading {0}: {1}/{2} {3}".format(spinner_text, n+1, process_cnt, p)
-      loader_proc.stdin.write(loader_text + "\n")
-    prepare_managed_process(p)
-    
-  loader_proc.stdin.close()
-  loader_proc.terminate()
+      spinner.update(loader_text)
+      prepare_managed_process(p)
 
 def uninstall():
   cloudlog.warning("uninstalling")
@@ -597,24 +604,11 @@ def main():
   if params.get("Passive") is None:
     raise Exception("Passive must be set to continue")
 
-  # put something on screen while we set things up
-  if os.getenv("PREPAREONLY") is not None:
-    spinner_proc = None
-  else:
-    spinner_text = "chffrplus" if params.get("Passive")=="1" else "openpilot"
-    init_text = "initializing {0}".format(spinner_text)
-    spinner_proc = subprocess.Popen(["./spinner"], stdin=subprocess.PIPE,
-      cwd=os.path.join(BASEDIR, "selfdrive", "ui", "spinner"),
-      close_fds=True)
-    spinner_proc.stdin.write(init_text + "\n")
-    spinner_proc.stdin.close()
-  try:
-    manager_update()
-    manager_init()
-    manager_prepare()
-  finally:
-    if spinner_proc:
-      spinner_proc.terminate()
+  spinner_text = "chffrplus" if params.get("Passive")=="1" else "openpilot"
+
+  manager_update()
+  manager_init()
+  manager_prepare()
 
   if os.getenv("PREPAREONLY") is not None:
     return
