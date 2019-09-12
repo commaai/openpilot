@@ -503,7 +503,7 @@ def update_ssh():
 
 def manager_update():
   params = Params()
-
+  spinner_text = "chffrplus" if params.get("Passive")=="1" else "openpilot"
   update_text = "updating {0}".format(spinner_text)
   with Spinner() as spinner:
     spinner.update(update_text)
@@ -603,8 +603,6 @@ def main():
 
   if params.get("Passive") is None:
     raise Exception("Passive must be set to continue")
-
-  spinner_text = "chffrplus" if params.get("Passive")=="1" else "openpilot"
 
   manager_update()
   manager_init()
