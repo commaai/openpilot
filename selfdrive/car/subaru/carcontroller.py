@@ -11,15 +11,9 @@ class CarControllerParams():
     self.STEER_STEP = 2                # how often we update the steer cmd
     self.STEER_DELTA_UP = 50           # torque increase per refresh, 0.8s to max
     self.STEER_DELTA_DOWN = 70         # torque decrease per refresh
-    if car_fingerprint == CAR.IMPREZA:
-      self.STEER_DRIVER_ALLOWANCE = 60   # allowed driver torque before start limiting
-      self.STEER_DRIVER_MULTIPLIER = 10   # weight driver torque heavily
-      self.STEER_DRIVER_FACTOR = 1     # from dbc
-    if car_fingerprint in (CAR.OUTBACK, CAR.LEGACY):
-      self.STEER_DRIVER_ALLOWANCE = 300   # allowed driver torque before start limiting
-      self.STEER_DRIVER_MULTIPLIER = 1   # weight driver torque heavily
-      self.STEER_DRIVER_FACTOR = 1     # from dbc
-      self.STEER_DELTA_DOWN = 60         # torque decrease per refresh
+    self.STEER_DRIVER_FACTOR = 1       # from dbc
+    self.STEER_DRIVER_ALLOWANCE = 60   # allowed driver torque before start limiting
+    self.STEER_DRIVER_MULTIPLIER = 10  # weight driver torque heavily
 
 
 class CarController(object):
@@ -55,16 +49,13 @@ class CarController(object):
       # limits due to driver torque
       apply_steer = apply_std_steer_torque_limits(apply_steer, self.apply_steer_last, CS.steer_torque_driver, P)
 
-      if not enabled:
-        apply_steer = 0.
-
       if self.car_fingerprint in (CAR.OUTBACK, CAR.LEGACY):
 
         # add noise to prevent lkas fault from constant torque value for over 1s
         if enabled and apply_steer == self.apply_steer_last:
           self.counter =+ 1
           if self.counter == 50:
-            apply_steer = round(int(apply_steer * 0.99))
+            apply_steer = int(round(apply_steer * 0.99))
         else:
           self.counter = 0
 
