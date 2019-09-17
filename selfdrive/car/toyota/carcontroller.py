@@ -8,6 +8,7 @@ from selfdrive.car.toyota.toyotacan import make_can_msg, create_video_target,\
                                            create_fcw_command
 from selfdrive.car.toyota.values import ECU, STATIC_MSGS, TSS2_CAR
 from selfdrive.can.packer import CANPacker
+from common.realtime import sec_since_boot
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert
@@ -123,6 +124,13 @@ class CarController(object):
 
     self.packer = CANPacker(dbc_name)
 
+    # Double-tap ACC (turn it on and off and on) to disable auto-steer
+    #  I.E. NOT setting cruise speed, rather the step before that (CS.main_on)
+    self.acc_hist = {}
+    self.acc_active_prev = False
+    self.disable_steer = False
+
+
   def update(self, enabled, CS, frame, actuators,
              pcm_cancel_cmd, hud_alert, audible_alert, forwarding_camera,
              left_line, right_line, lead, left_lane_depart, right_lane_depart):
@@ -152,8 +160,43 @@ class CarController(object):
     if CS.steer_state in [9, 25]:
       self.last_fault_frame = frame
 
-    # Cut steering for 2s after fault
-    if not enabled or (frame - self.last_fault_frame < 200):
+    # Compare ACC on/off state to the last state. If there's a change, add to the dict
+    if self.acc_active_prev != CS.main_on:
+      self.acc_hist[round(sec_since_boot(), 2)] = CS.main_on
+
+    # Check if ACC has been active two times in the past 2.5 seconds and disable steering as long as ACC remains "on".
+    # Below example dict should trigger  apply_steer = 0, if sec_since_boot() is 125.83
+    #   {123.34: True, 123.61: False, 124.25: True}
+
+    acc_activates = 0
+    for (key, value) in self.acc_hist.items():
+      # Delete any key older than 2.5 sec
+      # Should only need to clear old values once per controlsd run
+      if sec_since_boot() - key > 2.5:
+        del self.acc_hist[key]
+        value = False           # Since key is invalid for this loop
+      # Counting acc activations in the same for-loop since we delete old values first
+      if value == True:
+        acc_activates += 1
+
+    # When to check if the disable-steering feature should be set to enabled?
+    # -"if ACC is off, set disable_steers based on what's in the history"
+    # -Do not check when ACC is left on, even if cruise is currently inactive
+    if CS.main_on  and not  self.disable_steer:
+      self.disable_steer = acc_activates > 1
+      # To do: send msg to EON "Cruise only" or "STEERING DISABLED MANUALLY" or "HOLD THE STEERING WHEEL"
+      #hud_alert = 
+      #audible_alert = 
+      #alert = 'steeringDisabled'
+      #sound2 = 1
+
+    # When to shut off the disable-steering feature?
+    # -When ACC is off and ACC-ON has not been double-tapped within 2.5 seconds
+    if not CS.main_on  and  acc_activates < 2:
+      self.disable_steer = False
+
+    # Cut steering for 2s after fault or, if purposefully disabled
+    if not enabled or (frame - self.last_fault_frame < 200) or self.disable_steer:
       apply_steer = 0
       apply_steer_req = 0
     else:
@@ -184,12 +227,13 @@ class CarController(object):
       pcm_cancel_cmd = 1
 
     # on entering standstill, send standstill request
-    if CS.standstill and not self.last_standstill:
-      self.standstill_req = True
+    #if CS.standstill and not self.last_standstill:
+    #  self.standstill_req = True
     if CS.pcm_acc_status != 8:
       # pcm entered standstill or it's disabled
       self.standstill_req = False
 
+    self.acc_active_prev = CS.main_on
     self.last_steer = apply_steer
     self.last_angle = apply_angle
     self.last_accel = apply_accel
