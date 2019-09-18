@@ -1,22 +1,22 @@
 from __future__ import print_function
 import time
 from panda import Panda
-from helpers import time_many_sends, connect_wifi, test_white, panda_color_to_serial
+from helpers import time_many_sends, connect_wifi, test_white, panda_type_to_serial
 from nose.tools import timed, assert_equal, assert_less, assert_greater
 
 @test_white
-@panda_color_to_serial
-def test_get_serial_wifi(serial=None):
-  connect_wifi(serial)
+@panda_type_to_serial
+def test_get_serial_wifi(serials=None):
+  connect_wifi(serials[0])
 
   p = Panda("WIFI")
   print(p.get_serial())
 
 @test_white
-@panda_color_to_serial
-def test_throughput(serial=None):
-  connect_wifi(serial)
-  p = Panda(serial)
+@panda_type_to_serial
+def test_throughput(serials=None):
+  connect_wifi(serials[0])
+  p = Panda(serials[0])
 
   # enable output mode
   p.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
@@ -41,11 +41,12 @@ def test_throughput(serial=None):
     print("WIFI loopback 100 messages at speed %d, comp speed is %.2f, percent %.2f" % (speed, comp_kbps, saturation_pct))
 
 @test_white
-@panda_color_to_serial
-def test_recv_only(serial=None):
-  connect_wifi(serial)
-  p = Panda(serial)
+@panda_type_to_serial
+def test_recv_only(serials=None):
+  connect_wifi(serials[0])
+  p = Panda(serials[0])
   p.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
+
   p.set_can_loopback(True)
   pwifi = Panda("WIFI")
 

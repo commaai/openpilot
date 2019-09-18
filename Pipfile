@@ -96,6 +96,11 @@ fastcluster = "==1.1.25"
 backports-abc = "*"
 pygame = "*"
 simplejson = "*"
+python-logstash-async = "*"
+pandas = "*"
+seaborn = "*"
+tensorflow-estimator = "==1.10.12"
+pyproj = "*"
 
 [packages]
 overpy = {git = "https://github.com/commaai/python-overpy.git",ref = "f86529af402d4642e1faeb146671c40284007323"}

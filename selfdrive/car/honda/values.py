@@ -1,7 +1,6 @@
 from cereal import car
 from selfdrive.car import dbc_dict
 
-AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 # Car button codes
@@ -10,31 +9,6 @@ class CruiseButtons:
   DECEL_SET   = 3
   CANCEL      = 2
   MAIN        = 1
-
-#car chimes: enumeration from dbc file. Chimes are for alerts and warnings
-class CM:
-  MUTE = 0
-  SINGLE = 3
-  DOUBLE = 4
-  REPEATED = 1
-  CONTINUOUS = 2
-
-#car beeps: enumeration from dbc file. Beeps are for engage and disengage
-class BP:
-  MUTE = 0
-  SINGLE = 3
-  TRIPLE = 2
-  REPEATED = 1
-
-AUDIO_HUD = {
-  AudibleAlert.none: (BP.MUTE, CM.MUTE),
-  AudibleAlert.chimeEngage: (BP.SINGLE, CM.MUTE),
-  AudibleAlert.chimeDisengage: (BP.SINGLE, CM.MUTE),
-  AudibleAlert.chimeError: (BP.MUTE, CM.DOUBLE),
-  AudibleAlert.chimePrompt: (BP.MUTE, CM.SINGLE),
-  AudibleAlert.chimeWarning1: (BP.MUTE, CM.DOUBLE),
-  AudibleAlert.chimeWarning2: (BP.MUTE, CM.REPEATED),
-  AudibleAlert.chimeWarningRepeat: (BP.MUTE, CM.REPEATED)}
 
 class AH:
   #[alert_idx, value]
@@ -66,12 +40,16 @@ class CAR:
   CRV = "HONDA CR-V 2016 TOURING"
   CRV_5G = "HONDA CR-V 2017 EX"
   CRV_HYBRID = "HONDA CR-V 2019 HYBRID"
+  FIT = "HONDA FIT 2018 EX"
   ODYSSEY = "HONDA ODYSSEY 2018 EX-L"
   ODYSSEY_CHN = "HONDA ODYSSEY 2019 EXCLUSIVE CHN"
   ACURA_RDX = "ACURA RDX 2018 ACURAWATCH PLUS"
   PILOT = "HONDA PILOT 2017 TOURING"
   PILOT_2019 = "HONDA PILOT 2019 ELITE"
   RIDGELINE = "HONDA RIDGELINE 2017 BLACK EDITION"
+
+# diag message that in some Nidec cars only appear with 1s freq if VIN query is performed
+DIAG_MSGS = {1600: 5, 1601: 8}
 
 FINGERPRINTS = {
   CAR.ACCORD: [{
@@ -106,6 +84,9 @@ FINGERPRINTS = {
   CAR.CRV_HYBRID: [{
     57: 3, 148: 8, 228: 5, 304: 8, 330: 8, 344: 8, 380: 8, 387: 8, 388: 8, 399: 7, 408: 6, 415: 6, 419: 8, 420: 8, 427: 3, 428: 8, 432: 7, 441: 5, 450: 8, 464: 8, 477: 8, 479: 8, 490: 8, 495: 8, 525: 8, 531: 8, 545: 6, 662: 4, 773: 7, 777: 8, 780: 8, 804: 8, 806: 8, 808: 8, 814: 4, 829: 5, 833: 6, 862: 8, 884: 8, 891: 8, 927: 8, 929: 8, 930: 8, 931: 8, 1302: 8, 1361: 5, 1365: 5, 1600: 5, 1601: 8, 1626: 5, 1627: 5
   }],
+  CAR.FIT: [{
+    57: 3, 145: 8, 228: 5, 304: 8, 342: 6, 344: 8, 380: 8, 399: 7, 401: 8, 420: 8, 422: 8, 427: 3, 428: 8, 432: 7, 464: 8, 487: 4, 490: 8, 506: 8, 597: 8, 660: 8, 661: 4, 773: 7, 777: 8, 780: 8, 800: 8, 804: 8, 808: 8, 829: 5, 862: 8, 884: 7, 892: 8, 929: 8, 985: 3, 1024: 5, 1027: 5, 1029: 8, 1036: 8, 1039: 8, 1108: 8, 1322: 5, 1361: 5, 1365: 5, 1424: 5, 1600: 5, 1601: 8
+  }],
   # 2018 Odyssey w/ Added Comma Pedal Support (512L & 513L)
   CAR.ODYSSEY: [{
     57: 3, 148: 8, 228: 5, 229: 4, 316: 8, 342: 6, 344: 8, 380: 8, 399: 7, 411: 5, 419: 8, 420: 8, 427: 3, 432: 7, 450: 8, 463: 8, 464: 8, 476: 4, 490: 8, 506: 8, 512: 6, 513: 6, 542: 7, 545: 6, 597: 8, 662: 4, 773: 7, 777: 8, 780: 8, 795: 8, 800: 8, 804: 8, 806: 8, 808: 8, 817: 4, 819: 7, 821: 5, 825: 4, 829: 5, 837: 5, 856: 7, 862: 8, 871: 8, 881: 8, 882: 4, 884: 8, 891: 8, 892: 8, 905: 8, 923: 2, 927: 8, 929: 8, 963: 8, 965: 8, 966: 8, 967: 8, 983: 8, 985: 3, 1029: 8, 1036: 8, 1052: 8, 1064: 7, 1088: 8, 1089: 8, 1092: 1, 1108: 8, 1110: 8, 1125: 8, 1296: 8, 1302: 8, 1600: 5, 1601: 8, 1612: 5, 1613: 5, 1614: 5, 1615: 8, 1616: 5, 1619: 5, 1623: 5, 1668: 5
@@ -115,7 +96,7 @@ FINGERPRINTS = {
     57: 3, 148: 8, 228: 5, 229: 4, 304: 8, 342: 6, 344: 8, 380: 8, 399: 7, 411: 5, 419: 8, 420: 8, 427: 3, 432: 7, 440: 8, 450: 8, 463: 8, 464: 8, 476: 4, 490: 8, 506: 8, 507: 1, 542: 7, 545: 6, 597: 8, 662: 4, 773: 7, 777: 8, 780: 8, 795: 8, 800: 8, 804: 8, 806: 8, 808: 8, 817: 4, 819: 7, 821: 5, 825: 4, 829: 5, 837: 5, 856: 7, 862: 8, 871: 8, 881: 8, 882: 4, 884: 8, 891: 8, 892: 8, 905: 8, 923: 2, 927: 8, 929: 8, 963: 8, 965: 8, 966: 8, 967: 8, 983: 8, 985: 3, 1029: 8, 1036: 8, 1052: 8, 1064: 7, 1088: 8, 1089: 8, 1092: 1, 1108: 8, 1110: 8, 1125: 8, 1296: 8, 1302: 8, 1600: 5, 1601: 8, 1612: 5, 1613: 5, 1614: 5, 1616: 5, 1619: 5, 1623: 5, 1668: 5
   }],
   CAR.ODYSSEY_CHN: [{
-    57: 3, 145: 8, 316: 8, 342: 6, 344: 8, 380: 8, 398: 3, 399: 7, 401: 8, 404: 4, 411: 5, 420: 8, 422: 8, 423: 2, 426: 8, 432: 7, 450: 8, 464: 8, 490: 8, 506: 8, 507: 1, 597: 8, 610: 8, 611: 8, 612: 8, 617: 8, 660: 8, 661: 4, 773: 7, 780: 8, 804: 8, 808: 8, 829: 5, 862: 8, 884: 7, 892: 8, 923: 2, 929: 8, 1030: 5, 1137: 8, 1302: 8, 1348: 5, 1361: 5, 1365: 5, 1600: 5, 1601: 8, 1639: 8
+    57: 3, 145: 8, 316: 8, 342: 6, 344: 8, 380: 8, 398: 3, 399: 7, 401: 8, 404: 4, 411: 5, 420: 8, 422: 8, 423: 2, 426: 8, 432: 7, 450: 8, 464: 8, 490: 8, 506: 8, 507: 1, 512: 6, 513: 6, 597: 8, 610: 8, 611: 8, 612: 8, 617: 8, 660: 8, 661: 4, 773: 7, 780: 8, 804: 8, 808: 8, 829: 5, 862: 8, 884: 7, 892: 8, 923: 2, 929: 8, 1030: 5, 1137: 8, 1302: 8, 1348: 5, 1361: 5, 1365: 5, 1600: 5, 1601: 8, 1639: 8
   }],
   # 2017 Pilot Touring AND 2016 Pilot EX-L w/ Added Comma Pedal Support (512L & 513L)
   CAR.PILOT: [{
@@ -139,6 +120,12 @@ FINGERPRINTS = {
   }]
 }
 
+# add DIAG_MSGS to fingerprints
+for c in FINGERPRINTS:
+  for f, _ in enumerate(FINGERPRINTS[c]):
+    for d in DIAG_MSGS:
+      FINGERPRINTS[c][f][d] = DIAG_MSGS[d]
+
 DBC = {
   CAR.ACCORD: dbc_dict('honda_accord_s2t_2018_can_generated', None),
   CAR.ACCORD_15: dbc_dict('honda_accord_lx15t_2018_can_generated', None),
@@ -150,8 +137,9 @@ DBC = {
   CAR.CRV: dbc_dict('honda_crv_touring_2016_can_generated', 'acura_ilx_2016_nidec'),
   CAR.CRV_5G: dbc_dict('honda_crv_ex_2017_can_generated', None),
   CAR.CRV_HYBRID: dbc_dict('honda_crv_hybrid_2019_can_generated', None),
+  CAR.FIT: dbc_dict('honda_fit_ex_2018_can_generated', 'acura_ilx_2016_nidec'),
   CAR.ODYSSEY: dbc_dict('honda_odyssey_exl_2018_generated', 'acura_ilx_2016_nidec'),
-  CAR.ODYSSEY_CHN: dbc_dict('honda_odyssey_extreme_edition_2018_china_can', 'acura_ilx_2016_nidec'),
+  CAR.ODYSSEY_CHN: dbc_dict('honda_odyssey_extreme_edition_2018_china_can_generated', 'acura_ilx_2016_nidec'),
   CAR.PILOT: dbc_dict('honda_pilot_touring_2017_can_generated', 'acura_ilx_2016_nidec'),
   CAR.PILOT_2019: dbc_dict('honda_pilot_touring_2017_can_generated', 'acura_ilx_2016_nidec'),
   CAR.RIDGELINE: dbc_dict('honda_ridgeline_black_edition_2017_can_generated', 'acura_ilx_2016_nidec'),
@@ -168,6 +156,7 @@ STEER_THRESHOLD = {
   CAR.CRV: 1200,
   CAR.CRV_5G: 1200,
   CAR.CRV_HYBRID: 1200,
+  CAR.FIT: 1200,
   CAR.ODYSSEY: 1200,
   CAR.ODYSSEY_CHN: 1200,
   CAR.PILOT: 1200,
@@ -186,6 +175,7 @@ SPEED_FACTOR = {
   CAR.CRV: 1.025,
   CAR.CRV_5G: 1.025,
   CAR.CRV_HYBRID: 1.025,
+  CAR.FIT: 1.,
   CAR.ODYSSEY: 1.,
   CAR.ODYSSEY_CHN: 1.,
   CAR.PILOT: 1.,

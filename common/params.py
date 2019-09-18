@@ -27,6 +27,7 @@ import sys
 import shutil
 import fcntl
 import tempfile
+import threading
 from enum import Enum
 
 
@@ -50,24 +51,27 @@ class UnknownKeyName(Exception):
 
 keys = {
   "AccessToken": [TxType.PERSISTENT],
+  "AthenadPid": [TxType.PERSISTENT],
   "CalibrationParams": [TxType.PERSISTENT],
   "CarParams": [TxType.CLEAR_ON_MANAGER_START, TxType.CLEAR_ON_PANDA_DISCONNECT],
+  "CarVin": [TxType.CLEAR_ON_MANAGER_START, TxType.CLEAR_ON_PANDA_DISCONNECT],
   "CompletedTrainingVersion": [TxType.PERSISTENT],
   "ControlsParams": [TxType.PERSISTENT],
   "DoUninstall": [TxType.CLEAR_ON_MANAGER_START],
   "DongleId": [TxType.PERSISTENT],
+  "GithubSshKeys": [TxType.PERSISTENT],
   "GitBranch": [TxType.PERSISTENT],
   "GitCommit": [TxType.PERSISTENT],
   "GitRemote": [TxType.PERSISTENT],
   "HasAcceptedTerms": [TxType.PERSISTENT],
-  "IsDriverMonitoringEnabled": [TxType.PERSISTENT],
-  "IsFcwEnabled": [TxType.PERSISTENT],
   "IsGeofenceEnabled": [TxType.PERSISTENT],
   "IsMetric": [TxType.PERSISTENT],
+  "IsRHD": [TxType.PERSISTENT],
   "IsUpdateAvailable": [TxType.PERSISTENT],
   "IsUploadRawEnabled": [TxType.PERSISTENT],
   "IsUploadVideoOverCellularEnabled": [TxType.PERSISTENT],
   "LimitSetSpeed": [TxType.PERSISTENT],
+  "LimitSetSpeedNeural": [TxType.PERSISTENT],
   "LiveParameters": [TxType.PERSISTENT],
   "LongitudinalControl": [TxType.PERSISTENT],
   "Passive": [TxType.PERSISTENT],
@@ -75,6 +79,7 @@ keys = {
   "ShouldDoUpdate": [TxType.CLEAR_ON_MANAGER_START],
   "SpeedLimitOffset": [TxType.PERSISTENT],
   "SubscriberInfo": [TxType.PERSISTENT],
+  "TermsVersion": [TxType.PERSISTENT],
   "TrainingVersion": [TxType.PERSISTENT],
   "Version": [TxType.PERSISTENT],
 }
@@ -340,6 +345,17 @@ class Params(object):
       raise UnknownKeyName(key)
 
     write_db(self.db, key, dat)
+
+
+def put_nonblocking(key, val):
+  def f(key, val):
+    params = Params()
+    params.put(key, val)
+
+  t = threading.Thread(target=f, args=(key, val))
+  t.start()
+  return t
+
 
 if __name__ == "__main__":
   params = Params()

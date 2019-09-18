@@ -3,7 +3,7 @@ void clock_init(void) {
   RCC->CR |= RCC_CR_HSEON;
   while ((RCC->CR & RCC_CR_HSERDY) == 0);
 
-  // divide shit
+  // divide things
   RCC->CFGR = RCC_CFGR_HPRE_DIV1 | RCC_CFGR_PPRE2_DIV2 | RCC_CFGR_PPRE1_DIV4;
 
   // 16mhz crystal

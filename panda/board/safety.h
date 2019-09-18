@@ -13,6 +13,7 @@
 #include "safety/safety_hyundai.h"
 #include "safety/safety_chrysler.h"
 #include "safety/safety_subaru.h"
+#include "safety/safety_mazda.h"
 #include "safety/safety_elm327.h"
 
 const safety_hooks *current_hooks = &nooutput_hooks;
@@ -44,21 +45,23 @@ typedef struct {
   const safety_hooks *hooks;
 } safety_hook_config;
 
-#define SAFETY_NOOUTPUT 0
-#define SAFETY_HONDA 1
-#define SAFETY_TOYOTA 2
-#define SAFETY_GM 3
-#define SAFETY_HONDA_BOSCH 4
-#define SAFETY_FORD 5
-#define SAFETY_CADILLAC 6
-#define SAFETY_HYUNDAI 7
-#define SAFETY_TESLA 8
-#define SAFETY_CHRYSLER 9
-#define SAFETY_SUBARU 10
-#define SAFETY_GM_ASCM 0x1334
-#define SAFETY_TOYOTA_IPAS 0x1335
-#define SAFETY_ALLOUTPUT 0x1337
-#define SAFETY_ELM327 0xE327
+#define SAFETY_NOOUTPUT 0U
+#define SAFETY_HONDA 1U
+#define SAFETY_TOYOTA 2U
+#define SAFETY_GM 3U
+#define SAFETY_HONDA_BOSCH 4U
+#define SAFETY_FORD 5U
+#define SAFETY_CADILLAC 6U
+#define SAFETY_HYUNDAI 7U
+#define SAFETY_TESLA 8U
+#define SAFETY_CHRYSLER 9U
+#define SAFETY_SUBARU 10U
+#define SAFETY_GM_PASSIVE 11U
+#define SAFETY_MAZDA 12U
+#define SAFETY_GM_ASCM 0x1334U
+#define SAFETY_TOYOTA_IPAS 0x1335U
+#define SAFETY_ALLOUTPUT 0x1337U
+#define SAFETY_ELM327 0xE327U
 
 const safety_hook_config safety_hook_registry[] = {
   {SAFETY_NOOUTPUT, &nooutput_hooks},
@@ -71,7 +74,9 @@ const safety_hook_config safety_hook_registry[] = {
   {SAFETY_HYUNDAI, &hyundai_hooks},
   {SAFETY_CHRYSLER, &chrysler_hooks},
   {SAFETY_SUBARU, &subaru_hooks},
+  {SAFETY_MAZDA, &mazda_hooks},
   {SAFETY_TOYOTA_IPAS, &toyota_ipas_hooks},
+  {SAFETY_GM_PASSIVE, &gm_passive_hooks},
   {SAFETY_GM_ASCM, &gm_ascm_hooks},
   {SAFETY_TESLA, &tesla_hooks},
   {SAFETY_ALLOUTPUT, &alloutput_hooks},

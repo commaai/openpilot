@@ -93,7 +93,7 @@ DWORD PandaJ2534Device::can_process_thread() {
 		if (count == 0) {
 			continue;
 		}
-		
+
 		for (int i = 0; i < count; i++) {
 			auto msg_in = msg_recv[i];
 			J2534Frame msg_out(msg_in);

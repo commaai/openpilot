@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 from cereal import car
-from common.realtime import sec_since_boot
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from selfdrive.controls.lib.vehicle_model import VehicleModel
@@ -8,6 +7,7 @@ from selfdrive.car.subaru.values import CAR
 from selfdrive.car.subaru.carstate import CarState, get_powertrain_can_parser, get_camera_can_parser
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness
 
+ButtonType = car.CarState.ButtonEvent.Type
 
 class CarInterface(object):
   def __init__(self, CP, CarController):
@@ -38,12 +38,14 @@ class CarInterface(object):
     return 1.0
 
   @staticmethod
-  def get_params(candidate, fingerprint, vin=""):
+  def get_params(candidate, fingerprint, vin="", is_panda_black=False):
     ret = car.CarParams.new_message()
 
     ret.carName = "subaru"
+    ret.radarOffCan = True
     ret.carFingerprint = candidate
     ret.carVin = vin
+    ret.isPandaBlack = is_panda_black
     ret.safetyModel = car.CarParams.SafetyModel.subaru
 
     ret.enableCruise = True
@@ -94,16 +96,16 @@ class CarInterface(object):
     return ret
 
   # returns a car.CarState
-  def update(self, c):
-    can_rcv_valid, _ = self.pt_cp.update(int(sec_since_boot() * 1e9), True)
-    cam_rcv_valid, _ = self.cam_cp.update(int(sec_since_boot() * 1e9), False)
+  def update(self, c, can_strings):
+    self.pt_cp.update_strings(can_strings)
+    self.cam_cp.update_strings(can_strings)
 
     self.CS.update(self.pt_cp, self.cam_cp)
 
     # create message
     ret = car.CarState.new_message()
 
-    ret.canValid = can_rcv_valid and cam_rcv_valid and self.pt_cp.can_valid and self.cam_cp.can_valid
+    ret.canValid = self.pt_cp.can_valid and self.cam_cp.can_valid
 
     # speeds
     ret.vEgo = self.CS.v_ego
@@ -143,18 +145,18 @@ class CarInterface(object):
     # blinkers
     if self.CS.left_blinker_on != self.CS.prev_left_blinker_on:
       be = car.CarState.ButtonEvent.new_message()
-      be.type = 'leftBlinker'
+      be.type = ButtonType.leftBlinker
       be.pressed = self.CS.left_blinker_on
       buttonEvents.append(be)
 
     if self.CS.right_blinker_on != self.CS.prev_right_blinker_on:
       be = car.CarState.ButtonEvent.new_message()
-      be.type = 'rightBlinker'
+      be.type = ButtonType.rightBlinker
       be.pressed = self.CS.right_blinker_on
       buttonEvents.append(be)
 
     be = car.CarState.ButtonEvent.new_message()
-    be.type = 'accelCruise'
+    be.type = ButtonType.accelCruise
     buttonEvents.append(be)
 
 

@@ -3,7 +3,6 @@ import os
 import time
 from selfdrive.can.parser import CANParser
 from cereal import car
-from common.realtime import sec_since_boot
 from selfdrive.car.toyota.values import NO_DSU_CAR, DBC, TSS2_CAR
 
 def _create_radar_can_parser(car_fingerprint):
@@ -46,32 +45,35 @@ class RadarInterface(object):
     self.valid_cnt = {key: 0 for key in self.RADAR_A_MSGS}
 
     self.rcp = _create_radar_can_parser(CP.carFingerprint)
+    self.trigger_msg = self.RADAR_B_MSGS[-1]
+    self.updated_messages = set()
+
     # No radar dbc for cars without DSU which are not TSS 2.0
     # TODO: make a adas dbc file for dsu-less models
     self.no_radar = CP.carFingerprint in NO_DSU_CAR and CP.carFingerprint not in TSS2_CAR
 
-  def update(self):
-
-    ret = car.RadarData.new_message()
-
+  def update(self, can_strings):
     if self.no_radar:
       time.sleep(0.05)
-      return ret
+      return car.RadarData.new_message()
 
-    canMonoTimes = []
-    updated_messages = set()
-    while 1:
-      tm = int(sec_since_boot() * 1e9)
-      _, vls = self.rcp.update(tm, True)
-      updated_messages.update(vls)
-      if self.RADAR_B_MSGS[-1] in updated_messages:
-        break
+    vls = self.rcp.update_strings(can_strings)
+    self.updated_messages.update(vls)
 
+    if self.trigger_msg not in self.updated_messages:
+      return None
+
+    rr =  self._update(self.updated_messages)
+    self.updated_messages.clear()
+
+    return rr
+
+  def _update(self, updated_messages):
+    ret = car.RadarData.new_message()
     errors = []
     if not self.rcp.can_valid:
       errors.append("canError")
     ret.errors = errors
-    ret.canMonoTimes = canMonoTimes
 
     for ii in updated_messages:
       if ii in self.RADAR_A_MSGS:
@@ -105,10 +107,3 @@ class RadarInterface(object):
 
     ret.points = self.pts.values()
     return ret
-
-if __name__ == "__main__":
-  RI = RadarInterface(None)
-  while 1:
-    ret = RI.update()
-    print(chr(27) + "[2J")
-    print(ret)

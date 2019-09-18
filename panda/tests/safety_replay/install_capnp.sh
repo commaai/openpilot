@@ -8,13 +8,3 @@ cd capnproto-c++-0.6.1
 make -j4
 make install
 
-cd ..
-git clone https://github.com/commaai/c-capnproto.git
-cd c-capnproto
-git checkout 2e625acacf58a5f5c8828d8453d1f8dacc700a96
-git submodule update --init --recursive
-autoreconf -f -i -s
-CFLAGS="-fPIC" ./configure --prefix=/usr/local
-make -j4
-make install
-

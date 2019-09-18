@@ -5,6 +5,8 @@ import libpandasafety_py
 
 MAX_BRAKE = 255
 
+INTERCEPTOR_THRESHOLD = 328
+
 class TestHondaSafety(unittest.TestCase):
   @classmethod
   def setUp(cls):
@@ -31,6 +33,10 @@ class TestHondaSafety(unittest.TestCase):
     to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
     to_send[0].RIR = msg << 21
     to_send[0].RDLR = buttons << 5
+    is_panda_black = self.safety.get_hw_type() == 3 # black_panda
+    honda_bosch_hardware = self.safety.get_honda_bosch_hardware()
+    bus = 1 if is_panda_black and honda_bosch_hardware else 0
+    to_send[0].RDTR = bus << 4
 
     return to_send
 
@@ -58,7 +64,7 @@ class TestHondaSafety(unittest.TestCase):
   def _send_brake_msg(self, brake):
     to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
     to_send[0].RIR = 0x1FA << 21
-    to_send[0].RDLR = ((brake & 0x3) << 8) | ((brake & 0x3FF) >> 2)
+    to_send[0].RDLR = ((brake & 0x3) << 14) | ((brake & 0x3FF) >> 2)
 
     return to_send
 
@@ -66,7 +72,9 @@ class TestHondaSafety(unittest.TestCase):
     to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
     to_send[0].RIR = addr << 21
     to_send[0].RDTR = 6
-    to_send[0].RDLR = ((gas & 0xff) << 8) | ((gas & 0xff00) >> 8)
+    gas2 = gas * 2
+    to_send[0].RDLR = ((gas & 0xff) << 8) | ((gas & 0xff00) >> 8) | \
+                      ((gas2 & 0xff) << 24) | ((gas2 & 0xff00) << 8)
 
     return to_send
 
@@ -99,14 +107,14 @@ class TestHondaSafety(unittest.TestCase):
     self.assertFalse(self.safety.get_controls_allowed())
 
   def test_sample_speed(self):
-    self.assertEqual(0, self.safety.get_honda_ego_speed())
+    self.assertEqual(0, self.safety.get_honda_moving())
     self.safety.safety_rx_hook(self._speed_msg(100))
-    self.assertEqual(100, self.safety.get_honda_ego_speed())
+    self.assertEqual(1, self.safety.get_honda_moving())
 
   def test_prev_brake(self):
-    self.assertFalse(self.safety.get_honda_brake_prev())
+    self.assertFalse(self.safety.get_honda_brake_pressed_prev())
     self.safety.safety_rx_hook(self._brake_msg(True))
-    self.assertTrue(self.safety.get_honda_brake_prev())
+    self.assertTrue(self.safety.get_honda_brake_pressed_prev())
 
   def test_disengage_on_brake(self):
     self.safety.set_controls_allowed(1)
@@ -176,16 +184,15 @@ class TestHondaSafety(unittest.TestCase):
 
   def test_disengage_on_gas_interceptor(self):
     for long_controls_allowed in [0, 1]:
-      self.safety.set_long_controls_allowed(long_controls_allowed)
-      self.safety.safety_rx_hook(self._send_interceptor_msg(0, 0x201))
-      self.safety.set_controls_allowed(1)
-      self.safety.safety_rx_hook(self._send_interceptor_msg(0x1000, 0x201))
-      if long_controls_allowed:
-        self.assertFalse(self.safety.get_controls_allowed())
-      else:
-        self.assertTrue(self.safety.get_controls_allowed())
-      self.safety.safety_rx_hook(self._send_interceptor_msg(0, 0x201))
-      self.safety.set_gas_interceptor_detected(False)
+      for g in range(0, 0x1000):
+        self.safety.set_long_controls_allowed(long_controls_allowed)
+        self.safety.safety_rx_hook(self._send_interceptor_msg(0, 0x201))
+        self.safety.set_controls_allowed(True)
+        self.safety.safety_rx_hook(self._send_interceptor_msg(g, 0x201))
+        remain_enabled = (not long_controls_allowed or g <= INTERCEPTOR_THRESHOLD)
+        self.assertEqual(remain_enabled, self.safety.get_controls_allowed())
+        self.safety.safety_rx_hook(self._send_interceptor_msg(0, 0x201))
+        self.safety.set_gas_interceptor_detected(False)
     self.safety.set_long_controls_allowed(True)
 
   def test_allow_engage_with_gas_interceptor_pressed(self):
@@ -197,17 +204,22 @@ class TestHondaSafety(unittest.TestCase):
     self.safety.set_gas_interceptor_detected(False)
 
   def test_brake_safety_check(self):
-    for long_controls_allowed in [0, 1]:
-      self.safety.set_long_controls_allowed(long_controls_allowed)
-      for brake in np.arange(0, MAX_BRAKE + 10, 1):
-        for controls_allowed in [True, False]:
-          self.safety.set_controls_allowed(controls_allowed)
-          if controls_allowed and long_controls_allowed:
-            send = MAX_BRAKE >= brake >= 0
-          else:
-            send = brake == 0
-          self.assertEqual(send, self.safety.safety_tx_hook(self._send_brake_msg(brake)))
+    for fwd_brake in [False, True]:
+      self.safety.set_honda_fwd_brake(fwd_brake)
+      for long_controls_allowed in [0, 1]:
+        self.safety.set_long_controls_allowed(long_controls_allowed)
+        for brake in np.arange(0, MAX_BRAKE + 10, 1):
+          for controls_allowed in [True, False]:
+            self.safety.set_controls_allowed(controls_allowed)
+            if fwd_brake:
+              send = False  # block openpilot brake msg when fwd'ing stock msg
+            elif controls_allowed and long_controls_allowed:
+              send = MAX_BRAKE >= brake >= 0
+            else:
+              send = brake == 0
+            self.assertEqual(send, self.safety.safety_tx_hook(self._send_brake_msg(brake)))
     self.safety.set_long_controls_allowed(True)
+    self.safety.set_honda_fwd_brake(False)
 
   def test_gas_interceptor_safety_check(self):
     for long_controls_allowed in [0, 1]:
@@ -245,27 +257,33 @@ class TestHondaSafety(unittest.TestCase):
     buss = range(0x0, 0x3)
     msgs = range(0x1, 0x800)
     long_controls_allowed = [0, 1]
+    fwd_brake = [False, True]
 
     self.safety.set_honda_bosch_hardware(0)
 
-    for l in long_controls_allowed:
-      self.safety.set_long_controls_allowed(l)
-      blocked_msgs = [0xE4, 0x194, 0x33D]
-      if l:
-        blocked_msgs += [0x1FA ,0x30C, 0x39F]
-      for b in buss:
-        for m in msgs:
-          if b == 0:
-            fwd_bus = 2
-          elif b == 1:
-            fwd_bus = -1
-          elif b == 2:
-            fwd_bus = -1 if m in blocked_msgs else 0
+    for f in fwd_brake:
+      self.safety.set_honda_fwd_brake(f)
+      for l in long_controls_allowed:
+        self.safety.set_long_controls_allowed(l)
+        blocked_msgs = [0xE4, 0x194, 0x33D]
+        if l:
+          blocked_msgs += [0x30C, 0x39F]
+          if not f:
+            blocked_msgs += [0x1FA]
+        for b in buss:
+          for m in msgs:
+            if b == 0:
+              fwd_bus = 2
+            elif b == 1:
+              fwd_bus = -1
+            elif b == 2:
+              fwd_bus = -1 if m in blocked_msgs else 0
 
-          # assume len 8
-          self.assertEqual(fwd_bus, self.safety.safety_fwd_hook(b, self._send_msg(b, m, 8)))
+            # assume len 8
+            self.assertEqual(fwd_bus, self.safety.safety_fwd_hook(b, self._send_msg(b, m, 8)))
 
     self.safety.set_long_controls_allowed(True)
+    self.safety.set_honda_fwd_brake(False)
 
 
 

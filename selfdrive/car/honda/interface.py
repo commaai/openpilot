@@ -3,18 +3,20 @@ import os
 import numpy as np
 from cereal import car
 from common.numpy_fast import clip, interp
-from common.realtime import sec_since_boot, DT_CTRL
+from common.realtime import DT_CTRL
 from selfdrive.swaglog import cloudlog
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET, get_events
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.honda.carstate import CarState, get_can_parser, get_cam_can_parser
-from selfdrive.car.honda.values import CruiseButtons, CAR, HONDA_BOSCH, AUDIO_HUD, VISUAL_HUD, CAMERA_MSGS
+from selfdrive.car.honda.values import CruiseButtons, CAR, HONDA_BOSCH, VISUAL_HUD, CAMERA_MSGS
 from selfdrive.car import STD_CARGO_KG, CivicParams, scale_rot_inertia, scale_tire_stiffness
 from selfdrive.controls.lib.planner import _A_CRUISE_MAX_V_FOLLOWING
 
 A_ACC_MAX = max(_A_CRUISE_MAX_V_FOLLOWING)
 
+ButtonType = car.CarState.ButtonEvent.Type
+GearShifter = car.CarState.GearShifter
 
 def compute_gb_honda(accel, speed):
   creep_brake = 0.0
@@ -129,12 +131,13 @@ class CarInterface(object):
     return float(max(max_accel, a_target / A_ACC_MAX)) * min(speedLimiter, accelLimiter)
 
   @staticmethod
-  def get_params(candidate, fingerprint, vin=""):
+  def get_params(candidate, fingerprint, vin="", is_panda_black=False):
 
     ret = car.CarParams.new_message()
     ret.carName = "honda"
     ret.carFingerprint = candidate
     ret.carVin = vin
+    ret.isPandaBlack = is_panda_black
 
     if candidate in HONDA_BOSCH:
       ret.safetyModel = car.CarParams.SafetyModel.hondaBosch
@@ -143,7 +146,7 @@ class CarInterface(object):
       ret.openpilotLongitudinalControl = False
     else:
       ret.safetyModel = car.CarParams.SafetyModel.honda
-      ret.enableCamera = not any(x for x in CAMERA_MSGS if x in fingerprint)
+      ret.enableCamera = not any(x for x in CAMERA_MSGS if x in fingerprint) or is_panda_black
       ret.enableGasInterceptor = 0x201 in fingerprint
       ret.openpilotLongitudinalControl = ret.enableCamera
 
@@ -167,10 +170,10 @@ class CarInterface(object):
       ret.mass = CivicParams.MASS
       ret.wheelbase = CivicParams.WHEELBASE
       ret.centerToFront = CivicParams.CENTER_TO_FRONT
-      ret.steerRatio = 14.63  # 10.93 is end-to-end spec
+      ret.steerRatio = 15.38  # 10.93 is end-to-end spec
       tire_stiffness_factor = 1.
       # Civic at comma has modified steering FW, so different tuning for the Neo in that car
-      is_fw_modified = os.getenv("DONGLE_ID") in ['99c94dc769b5d96e']
+      is_fw_modified = os.getenv("DONGLE_ID") in ['5b7c365c50084530']
       if is_fw_modified:
         ret.lateralTuning.pid.kf = 0.00004
 
@@ -187,7 +190,7 @@ class CarInterface(object):
       ret.mass = 3279. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.83
       ret.centerToFront = ret.wheelbase * 0.39
-      ret.steerRatio = 15.96  # 11.82 is spec end-to-end
+      ret.steerRatio = 16.33  # 11.82 is spec end-to-end
       tire_stiffness_factor = 0.8467
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]]
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
@@ -213,7 +216,7 @@ class CarInterface(object):
       ret.mass = 3572. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.62
       ret.centerToFront = ret.wheelbase * 0.41
-      ret.steerRatio = 15.3         # as spec
+      ret.steerRatio = 16.89         # as spec
       tire_stiffness_factor = 0.444 # not optimized yet
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
@@ -244,6 +247,19 @@ class CarInterface(object):
       ret.steerRatio = 16.0   # 12.3 is spec end-to-end
       tire_stiffness_factor = 0.677
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]]
+      ret.longitudinalTuning.kpBP = [0., 5., 35.]
+      ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
+      ret.longitudinalTuning.kiBP = [0., 35.]
+      ret.longitudinalTuning.kiV = [0.18, 0.12]
+
+    elif candidate == CAR.FIT:
+      stop_and_go = False
+      ret.mass = 2644. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.wheelbase = 2.53
+      ret.centerToFront = ret.wheelbase * 0.39
+      ret.steerRatio = 13.06
+      tire_stiffness_factor = 0.75 # not optimized yet
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.06]]
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
       ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
       ret.longitudinalTuning.kiBP = [0., 35.]
@@ -293,7 +309,7 @@ class CarInterface(object):
       ret.mass = 4204. * CV.LB_TO_KG + STD_CARGO_KG # average weight
       ret.wheelbase = 2.82
       ret.centerToFront = ret.wheelbase * 0.428 # average weight distribution
-      ret.steerRatio = 16.0         # as spec
+      ret.steerRatio = 17.25         # as spec
       tire_stiffness_factor = 0.444 # not optimized yet
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.38], [0.11]]
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
@@ -358,18 +374,17 @@ class CarInterface(object):
     return ret
 
   # returns a car.CarState
-  def update(self, c):
+  def update(self, c, can_strings):
     # ******************* do can recv *******************
-    canMonoTimes = []
-    can_rcv_valid, _ = self.cp.update(int(sec_since_boot() * 1e9), True)
-    cam_rcv_valid, _ = self.cp_cam.update(int(sec_since_boot() * 1e9), False)
+    self.cp.update_strings(can_strings)
+    self.cp_cam.update_strings(can_strings)
 
     self.CS.update(self.cp, self.cp_cam)
 
     # create message
     ret = car.CarState.new_message()
 
-    ret.canValid = can_rcv_valid and cam_rcv_valid and self.cp.can_valid
+    ret.canValid = self.cp.can_valid
 
     # speeds
     ret.vEgo = self.CS.v_ego
@@ -405,12 +420,13 @@ class CarInterface(object):
     ret.gearShifter = self.CS.gear_shifter
 
     ret.steeringTorque = self.CS.steer_torque_driver
+    ret.steeringTorqueEps = self.CS.steer_torque_motor
     ret.steeringPressed = self.CS.steer_override
 
     # cruise state
     ret.cruiseState.enabled = self.CS.pcm_acc_status != 0
     ret.cruiseState.speed = self.CS.v_cruise_pcm * CV.KPH_TO_MS
-    ret.cruiseState.available = bool(self.CS.main_on)
+    ret.cruiseState.available = bool(self.CS.main_on) and not bool(self.CS.cruise_mode)
     ret.cruiseState.speedOffset = self.CS.cruise_speed_offset
     ret.cruiseState.standstill = False
 
@@ -424,19 +440,19 @@ class CarInterface(object):
 
     if self.CS.left_blinker_on != self.CS.prev_left_blinker_on:
       be = car.CarState.ButtonEvent.new_message()
-      be.type = 'leftBlinker'
+      be.type = ButtonType.leftBlinker
       be.pressed = self.CS.left_blinker_on != 0
       buttonEvents.append(be)
 
     if self.CS.right_blinker_on != self.CS.prev_right_blinker_on:
       be = car.CarState.ButtonEvent.new_message()
-      be.type = 'rightBlinker'
+      be.type = ButtonType.rightBlinker
       be.pressed = self.CS.right_blinker_on != 0
       buttonEvents.append(be)
 
     if self.CS.cruise_buttons != self.CS.prev_cruise_buttons:
       be = car.CarState.ButtonEvent.new_message()
-      be.type = 'unknown'
+      be.type = ButtonType.unknown
       if self.CS.cruise_buttons != 0:
         be.pressed = True
         but = self.CS.cruise_buttons
@@ -444,18 +460,18 @@ class CarInterface(object):
         be.pressed = False
         but = self.CS.prev_cruise_buttons
       if but == CruiseButtons.RES_ACCEL:
-        be.type = 'accelCruise'
+        be.type = ButtonType.accelCruise
       elif but == CruiseButtons.DECEL_SET:
-        be.type = 'decelCruise'
+        be.type = ButtonType.decelCruise
       elif but == CruiseButtons.CANCEL:
-        be.type = 'cancel'
+        be.type = ButtonType.cancel
       elif but == CruiseButtons.MAIN:
-        be.type = 'altButton3'
+        be.type = ButtonType.altButton3
       buttonEvents.append(be)
 
     if self.CS.cruise_setting != self.CS.prev_cruise_setting:
       be = car.CarState.ButtonEvent.new_message()
-      be.type = 'unknown'
+      be.type = ButtonType.unknown
       if self.CS.cruise_setting != 0:
         be.pressed = True
         but = self.CS.cruise_setting
@@ -463,7 +479,7 @@ class CarInterface(object):
         be.pressed = False
         but = self.CS.prev_cruise_setting
       if but == 1:
-        be.type = 'altButton1'
+        be.type = ButtonType.altButton1
       # TODO: more buttons?
       buttonEvents.append(be)
     ret.buttonEvents = buttonEvents
@@ -479,7 +495,7 @@ class CarInterface(object):
       events.append(create_event('steerTempUnavailable', [ET.WARNING]))
     if self.CS.brake_error:
       events.append(create_event('brakeUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
-    if not ret.gearShifter == 'drive':
+    if not ret.gearShifter == GearShifter.drive:
       events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if ret.doorOpen:
       events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
@@ -487,9 +503,9 @@ class CarInterface(object):
       events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if self.CS.esp_disabled:
       events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if not self.CS.main_on:
+    if not self.CS.main_on or self.CS.cruise_mode:
       events.append(create_event('wrongCarMode', [ET.NO_ENTRY, ET.USER_DISABLE]))
-    if ret.gearShifter == 'reverse':
+    if ret.gearShifter == GearShifter.reverse:
       events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     if self.CS.brake_hold and self.CS.CP.carFingerprint not in HONDA_BOSCH:
       events.append(create_event('brakeHold', [ET.NO_ENTRY, ET.USER_DISABLE]))
@@ -524,7 +540,7 @@ class CarInterface(object):
     for b in ret.buttonEvents:
 
       # do enable on both accel and decel buttons
-      if b.type in ["accelCruise", "decelCruise"] and not b.pressed:
+      if b.type in [ButtonType.accelCruise, ButtonType.decelCruise] and not b.pressed:
         self.last_enable_pressed = cur_time
         enable_pressed = True
 
@@ -547,7 +563,6 @@ class CarInterface(object):
       events.append(create_event('buttonEnable', [ET.ENABLE]))
 
     ret.events = events
-    ret.canMonoTimes = canMonoTimes
 
     # update previous brake/gas pressed
     self.gas_pressed_prev = ret.gasPressed
@@ -565,7 +580,6 @@ class CarInterface(object):
       hud_v_cruise = 255
 
     hud_alert = VISUAL_HUD[c.hudControl.visualAlert.raw]
-    snd_beep, snd_chime = AUDIO_HUD[c.hudControl.audibleAlert.raw]
 
     pcm_accel = int(clip(c.cruiseControl.accelOverride, 0, 1) * 0xc6)
 
@@ -578,9 +592,7 @@ class CarInterface(object):
                                hud_v_cruise,
                                c.hudControl.lanesVisible,
                                hud_show_car=c.hudControl.leadVisible,
-                               hud_alert=hud_alert,
-                               snd_beep=snd_beep,
-                               snd_chime=snd_chime)
+                               hud_alert=hud_alert)
 
     self.frame += 1
     return can_sends

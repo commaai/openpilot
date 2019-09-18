@@ -14,7 +14,7 @@ class LatControlPID(object):
   def reset(self):
     self.pid.reset()
 
-  def update(self, active, v_ego, angle_steers, angle_steers_rate, steer_override, CP, VM, path_plan):
+  def update(self, active, v_ego, angle_steers, angle_steers_rate, eps_torque, steer_override, CP, VM, path_plan):
     pid_log = log.ControlsState.LateralPIDState.new_message()
     pid_log.steerAngle = float(angle_steers)
     pid_log.steerRate = float(angle_steers_rate)

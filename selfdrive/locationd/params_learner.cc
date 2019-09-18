@@ -2,6 +2,8 @@
 #include <cmath>
 #include <iostream>
 
+#include <capnp/message.h>
+#include <capnp/serialize-packed.h>
 #include "cereal/gen/cpp/log.capnp.h"
 #include "cereal/gen/cpp/car.capnp.h"
 #include "params_learner.h"
@@ -14,14 +16,15 @@ T clip(const T& n, const T& lower, const T& upper) {
 }
 
 ParamsLearner::ParamsLearner(cereal::CarParams::Reader car_params,
-                double angle_offset,
-                double stiffness_factor,
-                double steer_ratio,
-                double learning_rate) :
-    ao(angle_offset * DEGREES_TO_RADIANS),
-    slow_ao(angle_offset * DEGREES_TO_RADIANS),
-    x(stiffness_factor),
-    sR(steer_ratio) {
+                             double angle_offset,
+                             double stiffness_factor,
+                             double steer_ratio,
+                             double learning_rate) :
+  ao(angle_offset * DEGREES_TO_RADIANS),
+  slow_ao(angle_offset * DEGREES_TO_RADIANS),
+  x(stiffness_factor),
+  sR(steer_ratio) {
+
   cF0 = car_params.getTireStiffnessFront();
   cR0 = car_params.getTireStiffnessRear();
 
@@ -42,7 +45,7 @@ ParamsLearner::ParamsLearner(cereal::CarParams::Reader car_params,
 }
 
 bool ParamsLearner::update(double psi, double u, double sa) {
-  if (u > 10.0 && fabs(sa) < (DEGREES_TO_RADIANS * 15.)) {
+  if (u > 10.0 && fabs(sa) < (DEGREES_TO_RADIANS * 90.)) {
     double ao_diff = 2.0*cF0*cR0*l*u*x*(1.0*cF0*cR0*l*u*x*(ao - sa) + psi*sR*(cF0*cR0*pow(l, 2)*x - m*pow(u, 2)*(aF*cF0 - aR*cR0)))/(pow(sR, 2)*pow(cF0*cR0*pow(l, 2)*x - m*pow(u, 2)*(aF*cF0 - aR*cR0), 2));
     double new_ao = ao - alpha1 * ao_diff;
 
@@ -72,4 +75,44 @@ bool ParamsLearner::update(double psi, double u, double sa) {
   valid = valid && sR > min_sr_th;
   valid = valid && sR < max_sr_th;
   return valid;
+}
+
+
+extern "C" {
+  void *params_learner_init(size_t len, char * params, double angle_offset, double stiffness_factor, double steer_ratio, double learning_rate) {
+
+    auto amsg = kj::heapArray<capnp::word>((len / sizeof(capnp::word)) + 1);
+    memcpy(amsg.begin(), params, len);
+
+    capnp::FlatArrayMessageReader cmsg(amsg);
+    cereal::CarParams::Reader car_params = cmsg.getRoot<cereal::CarParams>();
+
+    ParamsLearner * p = new ParamsLearner(car_params, angle_offset, stiffness_factor, steer_ratio, learning_rate);
+    return (void*)p;
+  }
+
+  bool params_learner_update(void * params_learner, double psi, double u, double sa) {
+    ParamsLearner * p = (ParamsLearner*) params_learner;
+    return p->update(psi, u, sa);
+  }
+
+  double params_learner_get_ao(void * params_learner){
+    ParamsLearner * p = (ParamsLearner*) params_learner;
+    return p->ao;
+  }
+
+  double params_learner_get_x(void * params_learner){
+    ParamsLearner * p = (ParamsLearner*) params_learner;
+    return p->x;
+  }
+
+  double params_learner_get_slow_ao(void * params_learner){
+    ParamsLearner * p = (ParamsLearner*) params_learner;
+    return p->slow_ao;
+  }
+
+  double params_learner_get_sR(void * params_learner){
+    ParamsLearner * p = (ParamsLearner*) params_learner;
+    return p->sR;
+  }
 }

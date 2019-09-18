@@ -5,7 +5,7 @@ import struct
 
 from datetime import datetime, timedelta
 from selfdrive.swaglog import cloudlog
-from selfdrive.version import version, training_version, get_git_commit, get_git_branch, get_git_remote
+from selfdrive.version import version, terms_version, training_version, get_git_commit, get_git_branch, get_git_remote
 from common.api import api_get
 from common.params import Params
 from common.file_helpers import mkdirs_exists_ok
@@ -53,6 +53,7 @@ def get_subscriber_info():
 def register():
   params = Params()
   params.put("Version", version)
+  params.put("TermsVersion", terms_version)
   params.put("TrainingVersion", training_version)
   params.put("GitCommit", get_git_commit())
   params.put("GitBranch", get_git_branch())
@@ -69,6 +70,10 @@ def register():
     assert os.system("openssl rsa -in /persist/comma/id_rsa.tmp -pubout -out /persist/comma/id_rsa.tmp.pub") == 0
     os.rename("/persist/comma/id_rsa.tmp", "/persist/comma/id_rsa")
     os.rename("/persist/comma/id_rsa.tmp.pub", "/persist/comma/id_rsa.pub")
+
+  # make key readable by app users (ai.comma.plus.offroad)
+  os.chmod('/persist/comma/', 0o755)
+  os.chmod('/persist/comma/id_rsa', 0o744)
 
   dongle_id, access_token = params.get("DongleId"), params.get("AccessToken")
   public_key = open("/persist/comma/id_rsa.pub").read()

@@ -8,7 +8,7 @@ import numbers
 cdef int CAN_INVALID_CNT = 5
 
 cdef class CANParser:
-  def __init__(self, dbc_name, signals, checks=None, bus=0, sendcan=False, tcp_addr="127.0.0.1", timeout=-1):
+  def __init__(self, dbc_name, signals, checks=None, bus=0, sendcan=False, tcp_addr="", timeout=-1):
     self.test_mode_enabled = False
     can_dir = os.path.dirname(os.path.abspath(__file__))
     libdbc_fn = os.path.join(can_dir, "libdbc.so")
@@ -17,7 +17,8 @@ cdef class CANParser:
     self.can_init_with_vectors = <can_init_with_vectors_func>dlsym(libdbc, 'can_init_with_vectors')
     self.dbc_lookup = <dbc_lookup_func>dlsym(libdbc, 'dbc_lookup')
     self.can_update = <can_update_func>dlsym(libdbc, 'can_update')
-    self.can_query_vector = <can_query_vector_func>dlsym(libdbc, 'can_query_vector')
+    self.can_update_string = <can_update_string_func>dlsym(libdbc, 'can_update_string')
+    self.can_query_latest_vector = <can_query_latest_vector_func>dlsym(libdbc, 'can_query_latest_vector')
     if checks is None:
       checks = []
 
@@ -71,14 +72,14 @@ cdef class CANParser:
       message_options_v.push_back(mpo)
 
     self.can = self.can_init_with_vectors(bus, dbc_name, message_options_v, signal_options_v, sendcan, tcp_addr, timeout)
-    self.update_vl(0)
+    self.update_vl()
 
-  cdef unordered_set[uint32_t] update_vl(self, uint64_t sec):
+  cdef unordered_set[uint32_t] update_vl(self):
     cdef string sig_name
     cdef unordered_set[uint32_t] updated_val
     cdef bool valid = False
 
-    self.can_query_vector(self.can, sec, &valid, self.can_values)
+    self.can_query_latest_vector(self.can, &valid, self.can_values)
 
     # Update invalid flag
     self.can_invalid_cnt += 1
@@ -99,7 +100,20 @@ cdef class CANParser:
 
     return updated_val
 
+  def update_string(self, dat):
+    self.can_update_string(self.can, dat, len(dat))
+    return self.update_vl()
+
+  def update_strings(self, strings):
+    updated_vals = set()
+
+    for s in strings:
+      updated_val = self.update_string(s)
+      updated_vals.update(updated_val)
+
+    return updated_vals
+
   def update(self, uint64_t sec, bool wait):
     r = (self.can_update(self.can, sec, wait) >= 0)
-    updated_val = self.update_vl(sec)
+    updated_val = self.update_vl()
     return r, updated_val

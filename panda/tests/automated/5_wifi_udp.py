@@ -1,16 +1,16 @@
 from __future__ import print_function
 import sys
 import time
-from helpers import time_many_sends, connect_wifi, test_white, panda_color_to_serial
+from helpers import time_many_sends, connect_wifi, test_white, panda_type_to_serial
 from panda import Panda, PandaWifiStreaming
 from nose.tools import timed, assert_equal, assert_less, assert_greater
 
 @test_white
-@panda_color_to_serial
-def test_udp_doesnt_drop(serial=None):
-  connect_wifi(serial)
+@panda_type_to_serial
+def test_udp_doesnt_drop(serials=None):
+  connect_wifi(serials[0])
 
-  p = Panda(serial)
+  p = Panda(serials[0])
   p.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
   p.set_can_loopback(True)
 
@@ -34,7 +34,7 @@ def test_udp_doesnt_drop(serial=None):
         sys.stdout.flush()
       else:
         print("UDP WIFI loopback %d messages at speed %d, comp speed is %.2f, percent %.2f" % (msg_count, speed, comp_kbps, saturation_pct))
-        assert_greater(saturation_pct, 15) #sometimes the wifi can be slow...
+        assert_greater(saturation_pct, 20) #sometimes the wifi can be slow...
         assert_less(saturation_pct, 100)
         saturation_pcts.append(saturation_pct)
     if len(saturation_pcts) > 0:

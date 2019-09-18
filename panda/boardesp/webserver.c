@@ -28,8 +28,7 @@ char pageheader[] = "HTTP/1.0 200 OK\nContent-Type: text/html\n\n"
 "</head>\n"
 "<body>\n"
 "<pre>This is your comma.ai panda\n\n"
-"It's open source. Find the code <a href=\"https://github.com/commaai/panda\">here</a>\n"
-"Designed to work with our dashcam, <a href=\"http://chffr.comma.ai\">chffr</a>\n";
+"It's open source. Find the code <a href=\"https://github.com/commaai/panda\">here</a>\n";
 
 char pagefooter[] = "</pre>\n"
 "</body>\n"
@@ -84,7 +83,7 @@ int ICACHE_FLASH_ATTR usb_cmd(int ep, int len, int request,
 
   return recv[0];
 }
- 
+
 
 void ICACHE_FLASH_ATTR st_flash() {
   if (st_firmware != NULL) {
@@ -212,14 +211,14 @@ static void ICACHE_FLASH_ATTR web_rx_cb(void *arg, char *data, uint16_t len) {
       } else {
         ets_strcat(resp, "\nin INSECURE mode...<a href=\"/secure\">secure it</a>");
       }
-      
+
       ets_strcat(resp,"\nSet USB Mode:"
         "<button onclick=\"var xhr = new XMLHttpRequest(); xhr.open('GET', 'set_property?usb_mode=0'); xhr.send()\" type='button'>Client</button>"
         "<button onclick=\"var xhr = new XMLHttpRequest(); xhr.open('GET', 'set_property?usb_mode=1'); xhr.send()\" type='button'>CDP</button>"
         "<button onclick=\"var xhr = new XMLHttpRequest(); xhr.open('GET', 'set_property?usb_mode=2'); xhr.send()\" type='button'>DCP</button>\n");
 
       ets_strcat(resp, pagefooter);
-      
+
       espconn_send_string(&web_conn, resp);
       espconn_disconnect(conn);
     } else if (memcmp(data, "GET /secure", 11) == 0 && !wifi_secure_mode) {
@@ -235,7 +234,7 @@ static void ICACHE_FLASH_ATTR web_rx_cb(void *arg, char *data, uint16_t len) {
           os_sprintf(resp, "%sUSB Mode set to %02x\n\n", OK_header, mode_value);
           espconn_send_string(&web_conn, resp);
           espconn_disconnect(conn);
-        }  
+        }
     } else if (memcmp(data, "PUT /stupdate ", 14) == 0 && wifi_secure_mode) {
       os_printf("init st firmware\n");
       char *cl = strstr(data, "Content-Length: ");
@@ -251,7 +250,7 @@ static void ICACHE_FLASH_ATTR web_rx_cb(void *arg, char *data, uint16_t len) {
         memset(st_firmware, 0, real_content_length);
         state = RECEIVING_ST_FIRMWARE;
       }
-      
+
     } else if (((memcmp(data, "PUT /espupdate1 ", 16) == 0) ||
                 (memcmp(data, "PUT /espupdate2 ", 16) == 0)) && wifi_secure_mode) {
       // 0x1000   = user1.bin

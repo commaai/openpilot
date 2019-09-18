@@ -76,6 +76,12 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     controlsFailed @51;
     sensorDataInvalid @52;
     commIssue @53;
+    tooDistracted @54;
+    posenetInvalid @55;
+    soundsUnavailable @56;
+    preLaneChangeLeft @57;
+    preLaneChangeRight @58;
+    laneChange @59;
   }
 }
 
@@ -107,6 +113,7 @@ struct CarState {
   steeringAngle @7 :Float32;   # deg
   steeringRate @15 :Float32;   # deg/s
   steeringTorque @8 :Float32;  # TODO: standardize units
+  steeringTorqueEps @27 :Float32;  # TODO: standardize units
   steeringPressed @9 :Bool;    # if the user is using the steering wheel
 
   # cruise state
@@ -296,6 +303,7 @@ struct CarParams {
   minEnableSpeed @7 :Float32;
   minSteerSpeed @8 :Float32;
   safetyModel @9 :SafetyModel;
+  safetyModelPassive @42 :SafetyModel = noOutput;
   safetyParam @10 :Int16;
 
   steerMaxBP @11 :List(Float32);
@@ -322,6 +330,7 @@ struct CarParams {
   lateralTuning :union {
     pid @26 :LateralPIDTuning;
     indi @27 :LateralINDITuning;
+    lqr @40 :LateralLQRTuning;
   }
 
   steerLimitAlert @28 :Bool;
@@ -337,6 +346,8 @@ struct CarParams {
   steerActuatorDelay @36 :Float32; # Steering wheel actuator delay in seconds
   openpilotLongitudinalControl @37 :Bool; # is openpilot doing the longitudinal control?
   carVin @38 :Text; # VIN number queried during fingerprinting
+  isPandaBlack @39: Bool;
+  dashcamOnly @41: Bool;
 
   struct LateralPIDTuning {
     kpBP @0 :List(Float32);
@@ -363,6 +374,20 @@ struct CarParams {
     actuatorEffectiveness @3 :Float32;
   }
 
+  struct LateralLQRTuning {
+    scale @0 :Float32;
+    ki @1 :Float32;
+    dcGain @2 :Float32;
+
+    # State space system
+    a @3 :List(Float32);
+    b @4 :List(Float32);
+    c @5 :List(Float32);
+
+    k @6 :List(Float32);  # LQR gain
+    l @7 :List(Float32);  # Kalman gain
+  }
+
 
   enum SafetyModel {
     # does NOT match board setting
@@ -378,6 +403,7 @@ struct CarParams {
     chrysler @9;
     tesla @10;
     subaru @11;
+    gmPassive @12;
   }
 
   enum SteerControlType {

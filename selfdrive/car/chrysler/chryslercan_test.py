@@ -3,7 +3,6 @@ from selfdrive.can.packer import CANPacker
 
 from cereal import car
 VisualAlert = car.CarControl.HUDControl.VisualAlert
-AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 
 import unittest
 

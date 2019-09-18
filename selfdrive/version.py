@@ -59,6 +59,7 @@ except subprocess.CalledProcessError:
   dirty = True
 
 training_version = "0.1.0"
+terms_version = "2"
 
 if __name__ == "__main__":
   print("Dirty: %s" % dirty)

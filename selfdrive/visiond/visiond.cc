@@ -26,6 +26,12 @@
 #include <capnp/serialize.h>
 #include <jpeglib.h>
 
+#ifdef QCOM
+#include <eigen3/Eigen/Dense>
+#else
+#include <Eigen/Dense>
+#endif
+
 #include "common/version.h"
 #include "common/util.h"
 #include "common/timing.h"
@@ -45,6 +51,7 @@
 #include "cameras/camera_frame_stream.h"
 #endif
 
+
 // 3 models
 #include "models/driving.h"
 #include "models/monitoring.h"
@@ -58,7 +65,7 @@
 
 #define UI_BUF_COUNT 4
 
-//#define DUMP_RGB
+// #define DUMP_RGB
 
 //#define DEBUG_DRIVER_MONITOR
 
@@ -148,6 +155,8 @@ struct VisionState {
   int rgb_front_width, rgb_front_height, rgb_front_stride;
   VisionBuf rgb_front_bufs[UI_BUF_COUNT];
   cl_mem rgb_front_bufs_cl[UI_BUF_COUNT];
+  int front_meteringbox_xmin, front_meteringbox_xmax;
+  int front_meteringbox_ymin, front_meteringbox_ymax;
 
   ModelState model;
   ModelData model_bufs[UI_BUF_COUNT];
@@ -716,27 +725,29 @@ void* monitoring_thread(void *arg) {
       MonitoringResult res = monitoring_eval_frame(&s->monitoring, q,
         s->yuv_front_cl[buf_idx], s->yuv_front_width, s->yuv_front_height);
 
-      // send driver monitoring packet
-      {
-        capnp::MallocMessageBuilder msg;
-        cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-        event.setLogMonoTime(nanos_since_boot());
-
-        auto framed = event.initDriverMonitoring();
-        framed.setFrameId(frame_data.frame_id);
-
-        kj::ArrayPtr<const float> descriptor_vs(&res.vs[0], ARRAYSIZE(res.vs));
-        framed.setDescriptor(descriptor_vs);
-
-        framed.setStd(res.std);
-
-        auto words = capnp::messageToFlatArray(msg);
-        auto bytes = words.asBytes();
-        zmq_send(s->monitoring_sock_raw, bytes.begin(), bytes.size(), ZMQ_DONTWAIT);
-      }
-
       double t2 = millis_since_boot();
 
+      // set front camera metering target
+      if (res.face_prob > 0.4)
+      {
+        int x_offset = s->rgb_front_width - 0.5 * s->rgb_front_height;
+        s->front_meteringbox_xmin = x_offset + (res.face_position[0] + 0.5) * (0.5 * s->rgb_front_height) - 72;
+        s->front_meteringbox_xmax = x_offset + (res.face_position[0] + 0.5) * (0.5 * s->rgb_front_height) + 72;
+        s->front_meteringbox_ymin = (res.face_position[1] + 0.5) * (s->rgb_front_height) - 72;
+        s->front_meteringbox_ymax = (res.face_position[1] + 0.5) * (s->rgb_front_height) + 72;
+      }
+      else // use default setting if no face
+      {
+        s->front_meteringbox_ymin = s->rgb_front_height * 0;
+        s->front_meteringbox_ymax = s->rgb_front_height * 2 / 3;
+        s->front_meteringbox_xmin = s->rgb_front_width * 3 / 5;
+        s->front_meteringbox_xmax = s->rgb_front_width;
+      }
+
+      // send dm packet
+      monitoring_publish(s->monitoring_sock_raw, frame_data.frame_id, res);
+
+      //t2 = millis_since_boot();
       //LOGD("monitoring process: %.2fms, from last %.2fms", t2-t1, t1-last);
       last = t1;
     }
@@ -794,11 +805,26 @@ void* frontview_thread(void *arg) {
     if (cnt % 3 == 0)
 #endif
     {
-      // for driver autoexposure, use bottom right corner
-      const int y_start = s->rgb_front_height / 3;
-      const int y_end = s->rgb_front_height;
-      const int x_start = s->rgb_front_width * 2 / 3;
-      const int x_end = s->rgb_front_width;
+      // use driver face crop for AE
+      int x_start;
+      int x_end;
+      int y_start;
+      int y_end;
+
+      if (s->front_meteringbox_xmax > 0)
+      {
+        x_start = s->front_meteringbox_xmin<0 ? 0:s->front_meteringbox_xmin;
+        x_end = s->front_meteringbox_xmax>=s->rgb_front_width ? s->rgb_front_width-1:s->front_meteringbox_xmax;
+        y_start = s->front_meteringbox_ymin<0 ? 0:s->front_meteringbox_ymin;
+        y_end = s->front_meteringbox_ymax>=s->rgb_front_height ? s->rgb_front_height-1:s->front_meteringbox_ymax;
+      }
+      else
+      {
+        y_start = s->rgb_front_height * 0;
+        y_end = s->rgb_front_height * 2 / 3;
+        x_start = s->rgb_front_width * 3 / 5;
+        x_end = s->rgb_front_width;
+      }
 
       uint32_t lum_binning[256] = {0,};
       for (int y = y_start; y < y_end; ++y) {
@@ -882,6 +908,8 @@ void* processing_thread(void *arg) {
 #endif
 
 #ifdef DUMP_RGB
+  s->rgb_width = s->frame_width;
+  s->rgb_height = s->frame_height;
   FILE *dump_rgb_file = fopen("/sdcard/dump.rgb", "wb");
 #endif
 
@@ -946,6 +974,8 @@ void* processing_thread(void *arg) {
 #ifdef DUMP_RGB
     if (cnt % 20 == 0) {
       fwrite(bgr_ptr, s->rgb_buf_size, 1, dump_rgb_file);
+      LOG("%d x %d", s->rgb_width, s->rgb_height);
+      assert(1==2);
     }
 #endif
 
@@ -981,10 +1011,10 @@ void* processing_thread(void *arg) {
       mt1 = millis_since_boot();
       s->model_bufs[ui_idx] =
           model_eval_frame(&s->model, q, yuv_cl, s->yuv_width, s->yuv_height,
-                           model_transform, img_sock_raw);
+                           model_transform, img_sock_raw, NULL);
       mt2 = millis_since_boot();
 
-      model_publish(model_sock_raw, frame_id, model_transform, s->model_bufs[ui_idx]);
+      model_publish(model_sock_raw, frame_id, s->model_bufs[ui_idx], frame_data.timestamp_eof);
     }
 
 
@@ -1047,6 +1077,8 @@ void* processing_thread(void *arg) {
         posenetd.setTransStd(trans_std_vs);
         kj::ArrayPtr<const float> rot_std_vs(&s->posenet.output[9], 3);
         posenetd.setRotStd(rot_std_vs);
+        posenetd.setTimestampEof(frame_data.timestamp_eof);
+        posenetd.setFrameId(frame_id);
 
         auto words = capnp::messageToFlatArray(msg);
         auto bytes = words.asBytes();
@@ -1189,6 +1221,24 @@ void* live_thread(void *arg) {
   zpoller_t *poller = zpoller_new(liveCalibration_sock, terminate, NULL);
   assert(poller);
 
+  /*
+     import numpy as np
+     from common.transformations.model import medmodel_frame_from_road_frame
+     medmodel_frame_from_ground = medmodel_frame_from_road_frame[:, (0, 1, 3)]
+     ground_from_medmodel_frame = np.linalg.inv(medmodel_frame_from_ground)
+  */
+  Eigen::Matrix<float, 3, 3> ground_from_medmodel_frame;
+  ground_from_medmodel_frame <<
+    0.00000000e+00, 0.00000000e+00, 1.00000000e+00,
+    -1.09890110e-03, 0.00000000e+00, 2.81318681e-01,
+    -1.84808520e-20, 9.00738606e-04,-4.28751576e-02;
+
+  Eigen::Matrix<float, 3, 3> eon_intrinsics;
+  eon_intrinsics <<
+    910.0, 0.0, 582.0,
+    0.0, 910.0, 437.0,
+    0.0,   0.0,   1.0;
+
   while (!do_exit) {
     zsock_t *which = (zsock_t*)zpoller_wait(poller, -1);
     if (which == terminate || which == NULL) {
@@ -1213,15 +1263,25 @@ void* live_thread(void *arg) {
 
     if (event.isLiveCalibration()) {
       pthread_mutex_lock(&s->transform_lock);
-#ifdef MEDMODEL
-      auto wm2 = event.getLiveCalibration().getWarpMatrixBig();
-#else
-      auto wm2 = event.getLiveCalibration().getWarpMatrix2();
-#endif
-      assert(wm2.size() == 3*3);
-      for (int i=0; i<3*3; i++) {
-        s->cur_transform.v[i] = wm2[i];
+
+      auto extrinsic_matrix = event.getLiveCalibration().getExtrinsicMatrix();
+      Eigen::Matrix<float, 3, 4> extrinsic_matrix_eigen;
+      for (int i = 0; i < 4*3; i++){
+        extrinsic_matrix_eigen(i / 4, i % 4) = extrinsic_matrix[i];
       }
+
+      auto camera_frame_from_road_frame = eon_intrinsics * extrinsic_matrix_eigen;
+      Eigen::Matrix<float, 3, 3> camera_frame_from_ground;
+      camera_frame_from_ground.col(0) = camera_frame_from_road_frame.col(0);
+      camera_frame_from_ground.col(1) = camera_frame_from_road_frame.col(1);
+      camera_frame_from_ground.col(2) = camera_frame_from_road_frame.col(3);
+
+      auto warp_matrix = camera_frame_from_ground * ground_from_medmodel_frame;
+
+      for (int i=0; i<3*3; i++) {
+        s->cur_transform.v[i] = warp_matrix(i / 3, i % 3);
+      }
+
       s->run_model = true;
       pthread_mutex_unlock(&s->transform_lock);
     }

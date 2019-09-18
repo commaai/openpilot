@@ -71,12 +71,12 @@ class CANParser(object):
 
     self.p_can_valid = ffi.new("bool*")
 
-    value_count = libdbc.can_query(self.can, 0, self.p_can_valid, 0, ffi.NULL)
+    value_count = libdbc.can_query_latest(self.can, self.p_can_valid, 0, ffi.NULL)
     self.can_values = ffi.new("SignalValue[%d]" % value_count)
     self.update_vl(0)
 
   def update_vl(self, sec):
-    can_values_len = libdbc.can_query(self.can, sec, self.p_can_valid, len(self.can_values), self.can_values)
+    can_values_len = libdbc.can_query_latest(self.can, self.p_can_valid, len(self.can_values), self.can_values)
     assert can_values_len <= len(self.can_values)
 
     self.can_invalid_cnt += 1
