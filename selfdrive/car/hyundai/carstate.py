@@ -61,13 +61,21 @@ def get_can_parser(CP):
     ("CF_Lvr_GearInf", "LVR11", 0),        #Transmission Gear (0 = N or P, 1-8 = Fwd, 14 = Rev)
 
     ("CR_Mdps_DrvTq", "MDPS11", 0),
-
+    ("CR_Mdps_StrAng", "MDPS11", 0),
+    ("CF_Mdps_Stat", "MDPS11", 0),
     ("CR_Mdps_StrColTq", "MDPS12", 0),
+    ("CF_Mdps_Def", "MDPS12", 0),
     ("CF_Mdps_ToiActive", "MDPS12", 0),
     ("CF_Mdps_ToiUnavail", "MDPS12", 0),
+    ("CF_Mdps_MsgCount2", "MDPS12", 0),
+    ("CF_Mdps_Chksum2", "MDPS12", 0),
+    ("CF_Mdps_ToiFlt", "MDPS12", 0),
+    ("CF_Mdps_SErr", "MDPS12", 0),
+    ("CR_Mdps_StrTq", "MDPS12", 0),
     ("CF_Mdps_FailStat", "MDPS12", 0),
     ("CR_Mdps_OutTq", "MDPS12", 0),
 
+    ("MainMode_ACC", "SCC11", 0),
     ("VSetDis", "SCC11", 0),
     ("SCCInfoDisplay", "SCC11", 0),
     ("ACCMode", "SCC12", 1),
@@ -78,18 +86,11 @@ def get_can_parser(CP):
 
   checks = [
     # address, frequency
-    ("MDPS12", 50),
-    ("MDPS11", 100),
     ("TCS15", 10),
-    ("TCS13", 50),
     ("CLU11", 50),
     ("ESP12", 100),
-    ("EMS12", 100),
     ("CGW1", 10),
-    ("CGW4", 5),
     ("WHL_SPD11", 50),
-    ("SCC11", 50),
-    ("SCC12", 50),
     ("SAS11", 100)
   ]
 

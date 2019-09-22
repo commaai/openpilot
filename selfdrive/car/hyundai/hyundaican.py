@@ -1,5 +1,5 @@
 import crcmod
-from selfdrive.car.hyundai.values import CHECKSUM
+from selfdrive.car.hyundai.values import CAR, CHECKSUM
 
 hyundai_checksum = crcmod.mkCrcFun(0x11D, initCrc=0xFD, rev=False, xorOut=0xdf)
 
@@ -29,6 +29,12 @@ def create_lkas11(packer, car_fingerprint, apply_steer, steer_req, cnt, enabled,
     "CF_Lkas_FcwOpt_USM": 2 if enabled else 1,
     "CF_Lkas_LdwsOpt_USM": lkas11["CF_Lkas_LdwsOpt_USM"] if keep_stock else 3,
   }
+
+  if car_fingerprint == CAR.GENESIS:
+    values["CF_Lkas_Bca_R"] = 2
+
+
+
 
   dat = packer.make_can_msg("LKAS11", 0, values)[2]
 
