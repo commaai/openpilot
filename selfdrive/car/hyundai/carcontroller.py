@@ -60,10 +60,13 @@ class CarController(object):
                                    enabled, CS.lkas11, hud_alert, keep_stock=(not self.camera_disconnected)))
 
     if pcm_cancel_cmd:
-      can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.CANCEL))
-    elif CS.stopped and (self.cnt - self.last_resume_cnt) > 5:
-      self.last_resume_cnt = self.cnt
-      can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.RES_ACCEL))
+      can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.CANCEL, self.clu11_cnt))
+    elif CS.stopped and CS.lead_distance > 7.85 and (self.cnt - self.last_resume_cnt) > 5:
+      can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.RES_ACCEL, self.clu11_cnt))
+      if (self.cnt - self.last_resume_cnt) % 5 == 0:
+        self.last_resume_cnt = self.cnt
+      
+
 
     self.cnt += 1
 

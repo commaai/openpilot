@@ -88,6 +88,7 @@ CHECKSUM = {
 FEATURES = {
   "use_cluster_gears": [CAR.ELANTRA, CAR.KONA],         # Use Cluster for Gear Selection, rather than Transmission
   "use_tcu_gears": [CAR.KIA_OPTIMA],                    # Use TCU Message for Gear Selection
+  "non_scc": [CAR.KIA_OPTIMA],                          # Car without SCC
 }
 
 DBC = {

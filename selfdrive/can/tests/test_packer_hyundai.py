@@ -61,8 +61,8 @@ class TestPackerMethods(unittest.TestCase):
         "CF_Clu_AliveCnt1": random.randint(0,65536),
       }
       button = random.randint(0, 65536)
-      m_old = hyundaican.create_clu11(self.hyundai_cp_old, clu11, button)
-      m = hyundaican.create_clu11(self.hyundai_cp, clu11, button)
+      m_old = hyundaican.create_clu11(self.hyundai_cp_old, clu11, button, cnt)
+      m = hyundaican.create_clu11(self.hyundai_cp, clu11, button, cnt)
       self.assertEqual(m_old, m)
 
 

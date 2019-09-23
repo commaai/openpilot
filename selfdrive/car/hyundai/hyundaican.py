@@ -67,7 +67,7 @@ def create_1191():
 def create_1156():
   return make_can_msg(1156, "\x08\x20\xfe\x3f\x00\xe0\xfd\x3f", 0)
 
-def create_clu11(packer, clu11, button):
+def create_clu11(packer, clu11, button, cnt):
   values = {
     "CF_Clu_CruiseSwState": button,
     "CF_Clu_CruiseSwMain": clu11["CF_Clu_CruiseSwMain"],
@@ -80,7 +80,7 @@ def create_clu11(packer, clu11, button):
     "CF_Clu_RheostatLevel": clu11["CF_Clu_RheostatLevel"],
     "CF_Clu_CluInfo": clu11["CF_Clu_CluInfo"],
     "CF_Clu_AmpInfo": clu11["CF_Clu_AmpInfo"],
-    "CF_Clu_AliveCnt1": 0,
+    "CF_Clu_AliveCnt1": cnt,
   }
 
   return packer.make_can_msg("CLU11", 0, values)
