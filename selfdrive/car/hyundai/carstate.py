@@ -163,7 +163,7 @@ class CarState(object):
     self.esp_disabled = cp.vl["TCS15"]['ESC_Off_Step']
     self.park_brake = cp.vl["CGW1"]['CF_Gway_ParkBrakeSw']
 
-    self.has_scc = True if (cp.vl["SCC11"]['TauGapSet'] > 0)
+    self.has_scc = True if (cp.vl["SCC11"]['TauGapSet'] > 0) else False
     self.main_on = (cp.vl["SCC11"]["MainMode_ACC"] != 0) if has_scc else \
                                             cp.vl['EMS16']['CRUISE_LAMP_M']
     self.acc_active = (cp.vl["SCC12"]['ACCMode'] != 0) if has_scc else \
