@@ -27,6 +27,7 @@ def get_can_parser(CP):
     ("BRAKE_ACT", "EMS12", 0),
     ("PV_AV_CAN", "EMS12", 0),
     ("TPS", "EMS12", 0),
+    ("CRUISE_LAMP_M", "EMS16", 0),
 
     ("CYL_PRES", "ESP12", 0),
 
@@ -48,7 +49,6 @@ def get_can_parser(CP):
     ("CF_Clu_InhibitN", "CLU15", 0),
     ("CF_Clu_InhibitR", "CLU15", 0),
 
-    ("CF_Lvr_Gear","LVR12",0),
     ("CUR_GR", "TCU12",0),
 
     ("ACCEnable", "TCS13", 0),
@@ -59,6 +59,9 @@ def get_can_parser(CP):
     ("ESC_Off_Step", "TCS15", 0),
 
     ("CF_Lvr_GearInf", "LVR11", 0),        #Transmission Gear (0 = N or P, 1-8 = Fwd, 14 = Rev)
+
+    ("CF_Lvr_Gear","LVR12",0),
+    ("CF_Lvr_CruiseSet", "LVR12", 0),
 
     ("CR_Mdps_DrvTq", "MDPS11", 0),
     ("CR_Mdps_StrAng", "MDPS11", 0),
@@ -78,6 +81,8 @@ def get_can_parser(CP):
     ("MainMode_ACC", "SCC11", 0),
     ("VSetDis", "SCC11", 0),
     ("SCCInfoDisplay", "SCC11", 0),
+    ("TauGapSet", "SCC11", 0),
+    ("ACC_ObjDist", "SCC11", 0),
     ("ACCMode", "SCC12", 1),
 
     ("SAS_Angle", "SAS11", 0),
@@ -144,6 +149,7 @@ class CarState(object):
     self.left_blinker_flash = 0
     self.right_blinker_on = 0
     self.right_blinker_flash = 0
+    self.has_scc = False
 
   def update(self, cp, cp_cam):
     # update prevs, update must run once per Loop
@@ -155,10 +161,13 @@ class CarState(object):
 
     self.brake_pressed = cp.vl["TCS13"]['DriverBraking']
     self.esp_disabled = cp.vl["TCS15"]['ESC_Off_Step']
-
     self.park_brake = cp.vl["CGW1"]['CF_Gway_ParkBrakeSw']
-    self.main_on = True
-    self.acc_active = cp.vl["SCC12"]['ACCMode'] != 0
+
+    self.has_scc = True if (cp.vl["SCC11"]['TauGapSet'] > 0)
+    self.main_on = (cp.vl["SCC11"]["MainMode_ACC"] != 0) if has_scc else \
+                                            cp.vl['EMS16']['CRUISE_LAMP_M']
+    self.acc_active = (cp.vl["SCC12"]['ACCMode'] != 0) if has_scc else \
+                                      (cp.vl["LVR12"]['CF_Lvr_CruiseSet'] != 0)
     self.pcm_acc_status = int(self.acc_active)
 
     # calc best v_ego estimate, by averaging two opposite corners
@@ -180,12 +189,16 @@ class CarState(object):
     self.a_ego = float(v_ego_x[1])
     is_set_speed_in_mph = int(cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"])
     speed_conv = CV.MPH_TO_MS if is_set_speed_in_mph else CV.KPH_TO_MS
-    self.cruise_set_speed = cp.vl["SCC11"]['VSetDis'] * speed_conv
+    self.cruise_set_speed = cp.vl["SCC11"]['VSetDis'] * speed_conv if self.has_scc else \
+                                         (cp.vl["LVR12"]["CF_Lvr_CruiseSet"] * speed_conv)
     self.standstill = not v_wheel > 0.1
 
     self.angle_steers = cp.vl["SAS11"]['SAS_Angle']
     self.angle_steers_rate = cp.vl["SAS11"]['SAS_Speed']
     self.yaw_rate = cp.vl["ESP12"]['YAW_RATE']
+    self.mdps11_strang = cp.vl["MDPS11"]["CR_Mdps_StrAng"]
+    self.mdps11_stat = cp.vl["MDPS11"]["CF_Mdps_Stat"]
+
     self.main_on = True
     self.left_blinker_on = cp.vl["CGW1"]['CF_Gway_TSigLHSw']
     self.left_blinker_flash = cp.vl["CGW1"]['CF_Gway_TurnSigLh']
@@ -197,7 +210,8 @@ class CarState(object):
     self.brake_error = 0
     self.steer_torque_driver = cp.vl["MDPS11"]['CR_Mdps_DrvTq']
     self.steer_torque_motor = cp.vl["MDPS12"]['CR_Mdps_OutTq']
-    self.stopped = cp.vl["SCC11"]['SCCInfoDisplay'] == 4.
+    self.stopped = cp.vl["SCC11"]['SCCInfoDisplay'] == 4. if self.has_scc else False
+    self.lead_distance = cp.vl["SCC11"]['ACC_ObjDist'] if self.has_scc else 0
 
     self.user_brake = 0
 
