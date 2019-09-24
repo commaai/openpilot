@@ -47,7 +47,7 @@ def create_lkas11(packer, car_fingerprint, apply_steer, steer_req, cnt, enabled,
     # Checksum of first 6 Bytes, as seen on 2018 Kia Sorento
     dat = [ord(i) for i in dat]
     checksum = sum(dat[:6]) % 256
-  elif car_fingerprint in CHECKSUM["7B"]:
+  else:
     # Checksum of first 6 Bytes and last Byte as seen on 2018 Kia Stinger
     dat = [ord(i) for i in dat]
     checksum = (sum(dat[:6]) + dat[7]) % 256
