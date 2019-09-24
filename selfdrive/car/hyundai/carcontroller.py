@@ -21,6 +21,7 @@ class CarController(object):
     self.apply_steer_last = 0
     self.car_fingerprint = car_fingerprint
     self.lkas11_cnt = 0
+    self.clu11_cnt = 0
     self.cnt = 0
     self.last_resume_cnt = 0
     self.last_lead_distance = 0
@@ -47,7 +48,6 @@ class CarController(object):
     can_sends = []
 
     self.lkas11_cnt = self.cnt % 0x10
-    self.clu11_cnt = self.cnt % 0x10
 
     if self.camera_disconnected:
       if (self.cnt % 10) == 0:
@@ -61,15 +61,19 @@ class CarController(object):
                                    enabled, CS.lkas11, hud_alert, keep_stock=(not self.camera_disconnected)))
 
     if pcm_cancel_cmd:
+      self.clu11_cnt = self.cnt % 0x10
       can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.CANCEL, self.clu11_cnt))
     if CS.stopped:
       if self.last_lead_distance == 0:
         self.last_lead_distance = CS.lead_distance
-        self.last_resume_cnt = self.cnt
-      elif CS.lead_distance > self.last_lead_distance and (self.cnt - self.last_resume_cnt) > 5:
+        self.clu11_cnt = 0
+      elif CS.lead_distance > self.last_lead_distance and \
+                      (self.cnt - self.last_resume_cnt) > 5:
         can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.RES_ACCEL, self.clu11_cnt))
-        if (self.cnt - self.last_resume_cnt) % 10 == 0:
+        self.clu11_cnt += 1
+        if self.clu11_cnt > 5:
           self.last_resume_cnt = self.cnt
+          self.clu11_cnt = 0
     elif self.last_lead_distance != 0:
       self.last_lead_distance = 0  
 
