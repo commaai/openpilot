@@ -47,6 +47,10 @@ def get_can_parser(CP):
     ("IPAS_STATE", "EPS_STATUS", 1),
     ("BRAKE_LIGHTS_ACC", "ESP_CONTROL", 0),
     ("AUTO_HIGH_BEAM", "LIGHT_STALK", 0),
+    ("BLINDSPOT","DEBUG", 0),
+    ("BLINDSPOTSIDE","DEBUG",65),
+    ("BLINDSPOTD1","DEBUG", 0),
+    ("BLINDSPOTD2","DEBUG", 0),
   ]
 
   checks = [
@@ -173,7 +177,12 @@ class CarState(object):
       self.main_on = cp.vl["PCM_CRUISE_2"]['MAIN_ON']
     self.left_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 1
     self.right_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 2
-
+    
+    if (cp.vl["DEBUG"]['BLINDSPOTD1'] > 10) or (cp.vl["DEBUG"]['BLINDSPOTD2'] > 10):
+      self.blind_spot_on = bool(1)
+    else:
+      self.blind_spot_on = bool(0)
+    
     # 2 is standby, 10 is active. TODO: check that everything else is really a faulty state
     self.steer_state = cp.vl["EPS_STATUS"]['LKA_STATE']
     self.steer_error = cp.vl["EPS_STATUS"]['LKA_STATE'] not in [1, 5]
