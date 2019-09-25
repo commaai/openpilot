@@ -48,6 +48,18 @@ static void hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     }
     hyundai_cruise_engaged_last = cruise_engaged;
   }
+  // cruise control for car without SCC
+  else if (addr == 871) {
+    // first byte
+    int cruise_engaged = (GET_BYTES_04(to_push) & 0xFF);
+    if (cruise_engaged && !hyundai_cruise_engaged_last) {
+      controls_allowed = 1;
+    }
+    if (!cruise_engaged) {
+      controls_allowed = 0;
+    }
+    hyundai_cruise_engaged_last = cruise_engaged;
+  }
 
   // 832 is lkas cmd. If it is on camera bus, then giraffe switch 2 is high
   if ((addr == 832) && (bus == hyundai_camera_bus) && (hyundai_camera_bus != 0)) {
