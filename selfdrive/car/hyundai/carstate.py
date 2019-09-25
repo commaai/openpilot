@@ -199,7 +199,6 @@ class CarState(object):
     self.mdps11_strang = cp.vl["MDPS11"]["CR_Mdps_StrAng"]
     self.mdps11_stat = cp.vl["MDPS11"]["CF_Mdps_Stat"]
 
-    self.main_on = True
     self.left_blinker_on = cp.vl["CGW1"]['CF_Gway_TSigLHSw']
     self.left_blinker_flash = cp.vl["CGW1"]['CF_Gway_TurnSigLh']
     self.right_blinker_on = cp.vl["CGW1"]['CF_Gway_TSigRHSw']
