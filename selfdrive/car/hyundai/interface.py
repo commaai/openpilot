@@ -14,14 +14,11 @@ class CarInterface(object):
   def __init__(self, CP, CarController):
     self.CP = CP
     self.VM = VehicleModel(CP)
-    self.idx = 0
-    self.lanes = 0
-    self.lkas_request = 0
+    self.frame = 0
 
     self.gas_pressed_prev = False
     self.brake_pressed_prev = False
     self.cruise_enabled_prev = False
-    self.low_speed_alert = False
 
     # *** init the major players ***
     self.CS = CarState(CP)
@@ -311,7 +308,9 @@ class CarInterface(object):
     # Fix for Genesis hard fault when steer request sent while the speed is low 
     enable = 0 if self.CS.v_ego < self.CP.minSteerSpeed and self.CP.carFingerprint == CAR.GENESIS else c.enabled
     
-    can_sends = self.CC.update(enable, self.CS, c.actuators,
-                               c.cruiseControl.cancel, hud_alert)
+    can_sends = self.CC.update(enable, self.CS, self.frame, c.actuators,
+                               c.cruiseControl.cancel, hud_alert, c.hudControl.leftLaneVisible,
+                               c.hudControl.rightLaneVisible, c.hudControl.leftLaneDepart, c.hudControl.rightLaneDepart)
 
+    self.frame += 1
     return can_sends
