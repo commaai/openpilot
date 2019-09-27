@@ -16,12 +16,12 @@ class SteerLimitParams:
   STEER_DRIVER_MULTIPLIER = 2
   STEER_DRIVER_FACTOR = 1
 
-def process_lane_visible(enabled, left_line, right_line):
+def process_lane_visible(enabled, left_line, right_line, hud_alert):
   # initialize to no line visible
   lane_visible = 1
 
-  if left_line and right_line:
-    if enabled:
+  if left_line and right_line or hud_alert:
+    if enabled or hud_alert:
       lane_visible = 3
     else:
       lane_visible = 4
@@ -61,7 +61,7 @@ class CarController(object):
 
     self.apply_steer_last = apply_steer
 
-    lane_visible = process_lane_visible(enabled, left_line, right_line)
+    lane_visible = process_lane_visible(enabled, left_line, right_line, hud_alert)
 
     can_sends = []
 
