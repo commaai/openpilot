@@ -78,6 +78,7 @@ class CarController(object):
         if self.clu11_cnt > 5:
           self.last_resume_cnt = self.cnt
           self.clu11_cnt = 0
+    # reset lead distnce after the car starts moving
     elif self.last_lead_distance != 0:
       self.last_lead_distance = 0  
 
