@@ -5,7 +5,7 @@ VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 def get_hud_alerts(visual_alert):
   if visual_alert == VisualAlert.steerRequired:
-    return 5
+    return 4
   else:
     return 0
 
