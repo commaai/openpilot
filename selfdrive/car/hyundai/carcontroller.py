@@ -21,11 +21,11 @@ def process_lane_visible(left_line, right_line):
   lane_visible = 1
 
   if left_line and right_line:
-    lane_visible = 7
+    lane_visible = 4
   elif left_line:
-    lane_visible = 8
+    lane_visible = 5
   elif right_line:
-    lane_visible = 9
+    lane_visible = 6
 
   return lane_visible
 
