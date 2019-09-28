@@ -39,11 +39,14 @@ class TestPackerMethods(unittest.TestCase):
         "CF_Lkas_LdwsOpt_USM": random.randint(0,65536)
       }
       hud_alert = random.randint(0, 65536)
+      lane_visible = random.randint(0, 65536)
+      left_lane_depart = (random.randint(0, 2) % 2 == 0)
+      right_lane_depart = (random.randint(0, 2) % 2 == 0)
       keep_stock = (random.randint(0, 2) % 2 == 0)
       m_old = hyundaican.create_lkas11(self.hyundai_cp_old, car_fingerprint, apply_steer, steer_req, cnt, enabled,
-                                       lkas11, hud_alert, keep_stock)
+                                       lkas11, hud_alert, lane_visible, left_lane_depart, right_lane_depart, keep_stock)
       m = hyundaican.create_lkas11(self.hyundai_cp, car_fingerprint, apply_steer, steer_req, cnt, enabled,
-                                  lkas11, hud_alert, keep_stock)
+                                  lkas11, hud_alert, lane_visible, left_lane_depart, right_lane_depart, keep_stock)
       self.assertEqual(m_old, m)
 
       clu11 = {
