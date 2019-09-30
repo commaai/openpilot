@@ -1444,3 +1444,6 @@ BO_ 905 SCC14: 8 SCC
  SG_ JerkLowerLimit : 19|7@1+ (0.1,0) [0|12.7] "m/s^3"  ESC
  SG_ SCCMode : 32|3@1+ (1,0) [0|7] ""  ESC
 
+BO_ 882 NEW11: 8 XXX
+ SG_ Gear_Signal : 16|3@1+ (1,0) [0|255] ""  CLU
+
