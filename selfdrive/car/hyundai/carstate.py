@@ -1,4 +1,4 @@
-from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD
+from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD, FEATURES
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from common.kalman.simple_kalman import KF1D
@@ -63,18 +63,12 @@ def get_can_parser(CP):
     ("CF_Lvr_Gear","LVR12",0),
     ("CF_Lvr_CruiseSet", "LVR12", 0),
 
+
     ("CR_Mdps_DrvTq", "MDPS11", 0),
-    ("CR_Mdps_StrAng", "MDPS11", 0),
-    ("CF_Mdps_Stat", "MDPS11", 0),
+
     ("CR_Mdps_StrColTq", "MDPS12", 0),
-    ("CF_Mdps_Def", "MDPS12", 0),
     ("CF_Mdps_ToiActive", "MDPS12", 0),
     ("CF_Mdps_ToiUnavail", "MDPS12", 0),
-    ("CF_Mdps_MsgCount2", "MDPS12", 0),
-    ("CF_Mdps_Chksum2", "MDPS12", 0),
-    ("CF_Mdps_ToiFlt", "MDPS12", 0),
-    ("CF_Mdps_SErr", "MDPS12", 0),
-    ("CR_Mdps_StrTq", "MDPS12", 0),
     ("CF_Mdps_FailStat", "MDPS12", 0),
     ("CR_Mdps_OutTq", "MDPS12", 0),
 
@@ -91,13 +85,23 @@ def get_can_parser(CP):
 
   checks = [
     # address, frequency
+    ("MDPS12", 50),
+    ("MDPS11", 100),
     ("TCS15", 10),
+    ("TCS13", 50),
     ("CLU11", 50),
     ("ESP12", 100),
+    ("EMS12", 100),
     ("CGW1", 10),
+    ("CGW4", 5),
     ("WHL_SPD11", 50),
     ("SAS11", 100)
   ]
+  if CP.carFingerprint not in FEATURES["non_scc"]:
+    checks += [
+      ("SCC11", 50),
+      ("SCC12", 50),
+    ]
 
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
@@ -149,7 +153,7 @@ class CarState(object):
     self.left_blinker_flash = 0
     self.right_blinker_on = 0
     self.right_blinker_flash = 0
-    self.has_scc = False
+    self.has_scc = self.car_fingerprint not in FEATURES["non_scc"]
 
   def update(self, cp, cp_cam):
     # update prevs, update must run once per Loop
@@ -163,7 +167,6 @@ class CarState(object):
     self.esp_disabled = cp.vl["TCS15"]['ESC_Off_Step']
     self.park_brake = cp.vl["CGW1"]['CF_Gway_ParkBrakeSw']
 
-    self.has_scc = True if (cp.vl["SCC11"]['TauGapSet'] > 0) else False
     self.main_on = (cp.vl["SCC11"]["MainMode_ACC"] != 0) if self.has_scc else \
                                             cp.vl['EMS16']['CRUISE_LAMP_M']
     self.acc_active = (cp.vl["SCC12"]['ACCMode'] != 0) if self.has_scc else \
@@ -196,9 +199,6 @@ class CarState(object):
     self.angle_steers = cp.vl["SAS11"]['SAS_Angle']
     self.angle_steers_rate = cp.vl["SAS11"]['SAS_Speed']
     self.yaw_rate = cp.vl["ESP12"]['YAW_RATE']
-    self.mdps11_strang = cp.vl["MDPS11"]["CR_Mdps_StrAng"]
-    self.mdps11_stat = cp.vl["MDPS11"]["CF_Mdps_Stat"]
-
     self.left_blinker_on = cp.vl["CGW1"]['CF_Gway_TSigLHSw']
     self.left_blinker_flash = cp.vl["CGW1"]['CF_Gway_TurnSigLh']
     self.right_blinker_on = cp.vl["CGW1"]['CF_Gway_TSigRHSw']
