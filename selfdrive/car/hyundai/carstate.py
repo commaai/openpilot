@@ -75,7 +75,6 @@ def get_can_parser(CP):
     ("MainMode_ACC", "SCC11", 0),
     ("VSetDis", "SCC11", 0),
     ("SCCInfoDisplay", "SCC11", 0),
-    ("TauGapSet", "SCC11", 0),
     ("ACC_ObjDist", "SCC11", 0),
     ("ACCMode", "SCC12", 1),
 
