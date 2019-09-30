@@ -80,6 +80,8 @@ def get_can_parser(CP):
 
     ("SAS_Angle", "SAS11", 0),
     ("SAS_Speed", "SAS11", 0),
+
+    ("Gear_Signal", "NEW11", 0),
   ]
 
   checks = [
@@ -256,6 +258,19 @@ class CarState(object):
       self.gear_tcu = "drive"
     else:
       self.gear_tcu = "unknown"
+
+    # Gear Selecton - This is only compatible with optima hybrid 2017
+    gear3 = cp.vl["NEW11"]["Gear_Signal"]
+    if gear3 == 5:
+      self.gear_shifter_new = "drive"
+    elif gear3 == 6:
+      self.gear_shifter_new = "neutral"
+    elif gear3 == 0:
+      self.gear_shifter_new = "park"
+    elif gear3 == 7:
+      self.gear_shifter_new = "reverse"
+    else:
+      self.gear_shifter_new = "unknown"
 
     # save the entire LKAS11 and CLU11
     self.lkas11 = cp_cam.vl["LKAS11"]
