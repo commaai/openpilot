@@ -157,6 +157,7 @@ def thermald_thread():
     # clear car params when panda gets disconnected
     if health is None and health_prev is not None:
       params.panda_disconnect()
+      ignition_seen = False
     health_prev = health
 
     # loggerd is gated based on free space
