@@ -95,7 +95,7 @@ class CarInterface(object):
       ret.steerRatio = 12.069
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.16], [0.01]]
-    elif candidate in [CAR.KIA_OPTIMA, CAR.KIA_OPTIMA_1]:
+    elif candidate in [CAR.KIA_OPTIMA, CAR.KIA_OPTIMA_H]:
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 3558. * CV.LB_TO_KG
       ret.wheelbase = 2.80
@@ -206,6 +206,8 @@ class CarInterface(object):
       ret.gearShifter = self.CS.gear_shifter_cluster
     elif self.CP.carFingerprint in FEATURES["use_tcu_gears"]:
       ret.gearShifter = self.CS.gear_tcu
+    elif self.CP.carFingerprint in FEATURES["use_new_gears"]:
+      ret.gearShifter = self.CS.gear_shifter_new 
     else:
       ret.gearShifter = self.CS.gear_shifter
 
