@@ -27,7 +27,6 @@ def get_can_parser(CP):
     ("BRAKE_ACT", "EMS12", 0),
     ("PV_AV_CAN", "EMS12", 0),
     ("TPS", "EMS12", 0),
-    ("CRUISE_LAMP_M", "EMS16", 0),
 
     ("CYL_PRES", "ESP12", 0),
 
@@ -44,13 +43,6 @@ def get_can_parser(CP):
     ("CF_Clu_AmpInfo", "CLU11", 0),
     ("CF_Clu_AliveCnt1", "CLU11", 0),
 
-    ("CF_Clu_InhibitD", "CLU15", 0),
-    ("CF_Clu_InhibitP", "CLU15", 0),
-    ("CF_Clu_InhibitN", "CLU15", 0),
-    ("CF_Clu_InhibitR", "CLU15", 0),
-
-    ("CUR_GR", "TCU12",0),
-
     ("ACCEnable", "TCS13", 0),
     ("ACC_REQ", "TCS13", 0),
     ("DriverBraking", "TCS13", 0),
@@ -60,10 +52,6 @@ def get_can_parser(CP):
 
     ("CF_Lvr_GearInf", "LVR11", 0),        #Transmission Gear (0 = N or P, 1-8 = Fwd, 14 = Rev)
 
-    ("CF_Lvr_Gear","LVR12",0),
-    ("CF_Lvr_CruiseSet", "LVR12", 0),
-
-
     ("CR_Mdps_DrvTq", "MDPS11", 0),
 
     ("CR_Mdps_StrColTq", "MDPS12", 0),
@@ -72,16 +60,9 @@ def get_can_parser(CP):
     ("CF_Mdps_FailStat", "MDPS12", 0),
     ("CR_Mdps_OutTq", "MDPS12", 0),
 
-    ("MainMode_ACC", "SCC11", 0),
-    ("VSetDis", "SCC11", 0),
-    ("SCCInfoDisplay", "SCC11", 0),
-    ("ACC_ObjDist", "SCC11", 0),
-    ("ACCMode", "SCC12", 1),
-
     ("SAS_Angle", "SAS11", 0),
     ("SAS_Speed", "SAS11", 0),
 
-    ("Gear_Signal", "NEW11", 0),
   ]
 
   checks = [
@@ -92,18 +73,47 @@ def get_can_parser(CP):
     ("TCS13", 50),
     ("CLU11", 50),
     ("ESP12", 100),
-    ("EMS12", 100),
     ("CGW1", 10),
     ("CGW4", 5),
     ("WHL_SPD11", 50),
     ("SAS11", 100)
   ]
   if CP.carFingerprint not in FEATURES["non_scc"]:
+    signals += [
+      ("MainMode_ACC", "SCC11", 0),
+      ("VSetDis", "SCC11", 0),
+      ("SCCInfoDisplay", "SCC11", 0),
+      ("ACC_ObjDist", "SCC11", 0),
+      ("ACCMode", "SCC12", 1),
+    ]
     checks += [
       ("SCC11", 50),
       ("SCC12", 50),
     ]
-
+  else:
+    signals += [
+      ("CRUISE_LAMP_M", "EMS16", 0),
+      ("CF_Lvr_CruiseSet", "LVR12", 0),
+    ]
+  if CP.carFingerprint in FEATURES["use_cluster_gears"]:
+    signals += [
+      ("CF_Clu_InhibitD", "CLU15", 0),
+      ("CF_Clu_InhibitP", "CLU15", 0),
+      ("CF_Clu_InhibitN", "CLU15", 0),
+      ("CF_Clu_InhibitR", "CLU15", 0),
+    ]
+  elif CP.carFingerprint in FEATURES["use_tcu_gears"]:
+    signals += [
+      ("CUR_GR", "TCU12",0),
+    ]
+  elif CP.carFingerprint in FEATURES["use_new_gears"]:
+    signals += [
+      ("Gear_Signal", "NEW11", 0),
+    ]
+  else:
+    signals += [
+      ("CF_Lvr_Gear","LVR12",0),
+    ]
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
 
@@ -154,7 +164,7 @@ class CarState(object):
     self.left_blinker_flash = 0
     self.right_blinker_on = 0
     self.right_blinker_flash = 0
-    self.has_scc = self.car_fingerprint not in FEATURES["non_scc"]
+    self.no_radar = self.CP.carFingerprint in FEATURES["non_scc"]
 
   def update(self, cp, cp_cam):
     # update prevs, update must run once per Loop
@@ -168,9 +178,9 @@ class CarState(object):
     self.esp_disabled = cp.vl["TCS15"]['ESC_Off_Step']
     self.park_brake = cp.vl["CGW1"]['CF_Gway_ParkBrakeSw']
 
-    self.main_on = (cp.vl["SCC11"]["MainMode_ACC"] != 0) if self.has_scc else \
+    self.main_on = (cp.vl["SCC11"]["MainMode_ACC"] != 0) if not self.no_radar else \
                                             cp.vl['EMS16']['CRUISE_LAMP_M']
-    self.acc_active = (cp.vl["SCC12"]['ACCMode'] != 0) if self.has_scc else \
+    self.acc_active = (cp.vl["SCC12"]['ACCMode'] != 0) if not self.no_radar else \
                                       (cp.vl["LVR12"]['CF_Lvr_CruiseSet'] != 0)
     self.pcm_acc_status = int(self.acc_active)
 
@@ -193,7 +203,7 @@ class CarState(object):
     self.a_ego = float(v_ego_x[1])
     is_set_speed_in_mph = int(cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"])
     speed_conv = CV.MPH_TO_MS if is_set_speed_in_mph else CV.KPH_TO_MS
-    self.cruise_set_speed = cp.vl["SCC11"]['VSetDis'] * speed_conv if self.has_scc else \
+    self.cruise_set_speed = cp.vl["SCC11"]['VSetDis'] * speed_conv if not self.no_radar else \
                                          (cp.vl["LVR12"]["CF_Lvr_CruiseSet"] * speed_conv)
     self.standstill = not v_wheel > 0.1
 
@@ -210,8 +220,8 @@ class CarState(object):
     self.brake_error = 0
     self.steer_torque_driver = cp.vl["MDPS11"]['CR_Mdps_DrvTq']
     self.steer_torque_motor = cp.vl["MDPS12"]['CR_Mdps_OutTq']
-    self.stopped = cp.vl["SCC11"]['SCCInfoDisplay'] == 4. if self.has_scc else False
-    self.lead_distance = cp.vl["SCC11"]['ACC_ObjDist'] if self.has_scc else 0
+    self.stopped = cp.vl["SCC11"]['SCCInfoDisplay'] == 4. if not self.no_radar else False
+    self.lead_distance = cp.vl["SCC11"]['ACC_ObjDist'] if not self.no_radar else 0
 
     self.user_brake = 0
 
