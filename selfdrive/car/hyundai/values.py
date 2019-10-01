@@ -1,14 +1,6 @@
 from cereal import car
 from selfdrive.car import dbc_dict
 
-VisualAlert = car.CarControl.HUDControl.VisualAlert
-
-def get_hud_alerts(visual_alert):
-  if visual_alert == VisualAlert.steerRequired:
-    return 4
-  else:
-    return 0
-
 class CAR:
   ELANTRA = "HYUNDAI ELANTRA LIMITED ULTIMATE 2017 & GT 2018 DCT"
   GENESIS = "HYUNDAI GENESIS 2018"
