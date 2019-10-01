@@ -47,6 +47,7 @@ class CarInterface(object):
     ret.carFingerprint = candidate
     ret.carVin = vin
     ret.isPandaBlack = is_panda_black
+    ret.radarOffCan = self.car_fingerprint in FEATURES["non_scc"]
     ret.safetyModel = car.CarParams.SafetyModel.hyundai
     ret.enableCruise = True  # stock acc
 
