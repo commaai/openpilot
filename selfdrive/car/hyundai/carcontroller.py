@@ -2,7 +2,7 @@ from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.hyundai.hyundaican import create_lkas11, create_lkas12, \
                                              create_1191, create_1156, \
                                              create_clu11
-from selfdrive.car.hyundai.values import Buttons
+from selfdrive.car.hyundai.values import CAR, Buttons
 from selfdrive.can.packer import CANPacker
 
 
@@ -16,10 +16,17 @@ class SteerLimitParams:
   STEER_DRIVER_MULTIPLIER = 2
   STEER_DRIVER_FACTOR = 1
 
+VisualAlert = car.CarControl.HUDControl.VisualAlert
+
+def process_hud_alert(visual_alert, car_fingerprint):
+  if visual_alert == VisualAlert.steerRequired:
+    return 4 if car_fingerprint in [CAR.CAR.GENESIS] else 5
+  else:
+    return 0
+
 def process_lane_visible(enabled, left_line, right_line, hud_alert):
   # initialize to no line visible
   lane_visible = 1
-
   if left_line and right_line or hud_alert:
     if enabled or hud_alert:
       lane_visible = 3
@@ -46,7 +53,7 @@ class CarController(object):
 
     self.packer = CANPacker(dbc_name)
 
-  def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd, hud_alert,
+  def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert,
               left_line, right_line, left_lane_depart, right_lane_depart):
 
     ### Steering Torque
@@ -61,6 +68,7 @@ class CarController(object):
 
     self.apply_steer_last = apply_steer
 
+    hud_alert = process_hud_alert(visual_alert, self.car_fingerprint)
     lane_visible = process_lane_visible(enabled, left_line, right_line, hud_alert)
 
     can_sends = []
