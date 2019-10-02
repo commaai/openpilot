@@ -31,9 +31,9 @@ int main(int argc, char *argv[]) {
   zmq_pollitem_t polls[num_polls] = {{0}};
   polls[0].socket = controls_state_sock;
   polls[0].events = ZMQ_POLLIN;
-  polls[1].socket = sensor_events_sock;
+  polls[1].socket = camera_odometry_sock;
   polls[1].events = ZMQ_POLLIN;
-  polls[2].socket = camera_odometry_sock;
+  polls[2].socket = sensor_events_sock;
   polls[2].events = ZMQ_POLLIN;
 
   // Read car params
@@ -122,8 +122,9 @@ int main(int argc, char *argv[]) {
         localizer.handle_log(event);
 
         auto which = event.which();
+        // Throw vision failure if posenet and odometric speed too different
         if (which == cereal::Event::CAMERA_ODOMETRY){
-          if (std::abs(localizer.posenet_speed - localizer.car_speed) > std::max(0.5 * localizer.car_speed, 5.0)) {
+          if (std::abs(localizer.posenet_speed - localizer.car_speed) > std::max(0.4 * localizer.car_speed, 5.0)) {
               posenet_invalid_count++;
             } else {
             posenet_invalid_count = 0;
@@ -136,33 +137,32 @@ int main(int argc, char *argv[]) {
 
           // TODO: Fix in replay
           double sensor_data_age = localizer.controls_state_time - localizer.sensor_data_time;
+          double camera_odometry_age = localizer.controls_state_time - localizer.camera_odometry_time;
 
           double angle_offset_degrees = RADIANS_TO_DEGREES * learner.ao;
           double angle_offset_average_degrees = RADIANS_TO_DEGREES * learner.slow_ao;
 
-          // Send parameters at 10 Hz
-          if (save_counter % 10 == 0){
-            capnp::MallocMessageBuilder msg;
-            cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-            event.setLogMonoTime(nanos_since_boot());
-            auto live_params = event.initLiveParameters();
-            live_params.setValid(valid);
-            live_params.setYawRate(localizer.x[0]);
-            live_params.setGyroBias(localizer.x[1]);
-            live_params.setSensorValid(sensor_data_age < 5.0);
-            live_params.setAngleOffset(angle_offset_degrees);
-            live_params.setAngleOffsetAverage(angle_offset_average_degrees);
-            live_params.setStiffnessFactor(learner.x);
-            live_params.setSteerRatio(learner.sR);
-            live_params.setPosenetSpeed(localizer.posenet_speed);
-            live_params.setPosenetValid(posenet_invalid_count < 5);
+          capnp::MallocMessageBuilder msg;
+          cereal::Event::Builder event = msg.initRoot<cereal::Event>();
+          event.setLogMonoTime(nanos_since_boot());
+          auto live_params = event.initLiveParameters();
+          live_params.setValid(valid);
+          live_params.setYawRate(localizer.x[0]);
+          live_params.setGyroBias(localizer.x[2]);
+          live_params.setSensorValid(sensor_data_age < 5.0);
+          live_params.setAngleOffset(angle_offset_degrees);
+          live_params.setAngleOffsetAverage(angle_offset_average_degrees);
+          live_params.setStiffnessFactor(learner.x);
+          live_params.setSteerRatio(learner.sR);
+          live_params.setPosenetSpeed(localizer.posenet_speed);
+          live_params.setPosenetValid((posenet_invalid_count < 4) && (camera_odometry_age < 5.0));
 
-            auto words = capnp::messageToFlatArray(msg);
-            auto bytes = words.asBytes();
-            zmq_send(live_parameters_sock_raw, bytes.begin(), bytes.size(), ZMQ_DONTWAIT);
-          }
+          auto words = capnp::messageToFlatArray(msg);
+          auto bytes = words.asBytes();
+          zmq_send(live_parameters_sock_raw, bytes.begin(), bytes.size(), ZMQ_DONTWAIT);
 
           // Save parameters every minute
+          // TODO: Save in seperate thread
           if (save_counter % 6000 == 0) {
             json11::Json json = json11::Json::object {
               {"carVin", vin},

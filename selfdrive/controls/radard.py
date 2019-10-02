@@ -143,15 +143,24 @@ class RadarD(object):
           clusters[cluster_i] = Cluster()
         clusters[cluster_i].add(self.tracks[idens[idx]])
     elif len(track_pts) == 1:
+      # FIXME: cluster_point_centroid hangs forever if len(track_pts) == 1
+      cluster_idxs = [0]
       clusters = [Cluster()]
       clusters[0].add(self.tracks[idens[0]])
     else:
       clusters = []
 
+    # if a new point, reset accel to the rest of the cluster
+    for idx in xrange(len(track_pts)):
+      if self.tracks[idens[idx]].cnt <= 1:
+        aLeadK = clusters[cluster_idxs[idx]].aLeadK
+        aLeadTau = clusters[cluster_idxs[idx]].aLeadTau
+        self.tracks[idens[idx]].reset_a_lead(aLeadK, aLeadTau)
+
     # *** publish radarState ***
     dat = messaging.new_message()
     dat.init('radarState')
-    dat.valid = sm.all_alive_and_valid(service_list=['controlsState'])
+    dat.valid = sm.all_alive_and_valid(service_list=['controlsState', 'model'])
     dat.radarState.mdMonoTime = self.last_md_ts
     dat.radarState.canMonoTimes = list(rr.canMonoTimes)
     dat.radarState.radarErrors = list(rr.errors)
@@ -164,7 +173,7 @@ class RadarD(object):
 
 
 # fuses camera and radar data for best lead detection
-def radard_thread(gctx=None):
+def radard_thread(sm=None, pm=None, can_sock=None):
   set_realtime_priority(2)
 
   # wait for stats about the car to come in from controls
@@ -177,14 +186,17 @@ def radard_thread(gctx=None):
   cloudlog.info("radard is importing %s", CP.carName)
   RadarInterface = importlib.import_module('selfdrive.car.%s.radar_interface' % CP.carName).RadarInterface
 
-  can_sock = messaging.sub_sock(service_list['can'].port)
-  sm = messaging.SubMaster(['model', 'controlsState', 'liveParameters'])
+  if can_sock is None:
+    can_sock = messaging.sub_sock(service_list['can'].port)
 
-  RI = RadarInterface(CP)
+  if sm is None:
+    sm = messaging.SubMaster(['model', 'controlsState', 'liveParameters'])
 
   # *** publish radarState and liveTracks
-  radarState = messaging.pub_sock(service_list['radarState'].port)
-  liveTracks = messaging.pub_sock(service_list['liveTracks'].port)
+  if pm is None:
+    pm = messaging.PubMaster(['radarState', 'liveTracks'])
+
+  RI = RadarInterface(CP)
 
   rk = Ratekeeper(rate, print_delay_threshold=None)
   RD = RadarD(mocked)
@@ -203,7 +215,7 @@ def radard_thread(gctx=None):
     dat = RD.update(rk.frame, RI.delay, sm, rr, has_radar)
     dat.radarState.cumLagMs = -rk.remaining*1000.
 
-    radarState.send(dat.to_bytes())
+    pm.send('radarState', dat)
 
     # *** publish tracks for UI debugging (keep last) ***
     tracks = RD.tracks
@@ -217,13 +229,13 @@ def radard_thread(gctx=None):
         "yRel": float(tracks[ids].yRel),
         "vRel": float(tracks[ids].vRel),
       }
-    liveTracks.send(dat.to_bytes())
+    pm.send('liveTracks', dat)
 
     rk.monitor_time()
 
 
-def main(gctx=None):
-  radard_thread(gctx)
+def main(sm=None, pm=None, can_sock=None):
+  radard_thread(sm, pm, can_sock)
 
 
 if __name__ == "__main__":

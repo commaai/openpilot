@@ -45,7 +45,7 @@ ParamsLearner::ParamsLearner(cereal::CarParams::Reader car_params,
 }
 
 bool ParamsLearner::update(double psi, double u, double sa) {
-  if (u > 10.0 && fabs(sa) < (DEGREES_TO_RADIANS * 15.)) {
+  if (u > 10.0 && fabs(sa) < (DEGREES_TO_RADIANS * 90.)) {
     double ao_diff = 2.0*cF0*cR0*l*u*x*(1.0*cF0*cR0*l*u*x*(ao - sa) + psi*sR*(cF0*cR0*pow(l, 2)*x - m*pow(u, 2)*(aF*cF0 - aR*cR0)))/(pow(sR, 2)*pow(cF0*cR0*pow(l, 2)*x - m*pow(u, 2)*(aF*cF0 - aR*cR0), 2));
     double new_ao = ao - alpha1 * ao_diff;
 

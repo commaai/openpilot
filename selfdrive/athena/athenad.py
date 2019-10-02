@@ -1,6 +1,5 @@
 #!/usr/bin/env python2.7
 import json
-import jwt
 import os
 import random
 import re
@@ -13,7 +12,6 @@ import traceback
 import zmq
 import requests
 import six.moves.queue
-from datetime import datetime, timedelta
 from functools import partial
 from jsonrpc import JSONRPCResponseManager, dispatcher
 from websocket import create_connection, WebSocketTimeoutException, ABNF
@@ -21,6 +19,7 @@ from selfdrive.loggerd.config import ROOT
 
 import selfdrive.crash as crash
 import selfdrive.messaging as messaging
+from common.api import Api
 from common.params import Params
 from selfdrive.services import service_list
 from selfdrive.swaglog import cloudlog
@@ -103,9 +102,7 @@ def startLocalProxy(global_end_event, remote_ws_uri, local_port):
 
     params = Params()
     dongle_id = params.get("DongleId")
-    private_key = open("/persist/comma/id_rsa").read()
-    identity_token = jwt.encode({'identity':dongle_id, 'exp': datetime.utcnow() + timedelta(hours=1)}, private_key, algorithm='RS256')
-
+    identity_token = Api(dongle_id).get_token()
     ws = create_connection(remote_ws_uri,
                            cookie="jwt=" + identity_token,
                            enable_multithread=True)
@@ -225,19 +222,20 @@ def backoff(retries):
 def main(gctx=None):
   params = Params()
   dongle_id = params.get("DongleId")
-  access_token = params.get("AccessToken")
-  ws_uri = ATHENA_HOST + "/ws/" + dongle_id
+  ws_uri = ATHENA_HOST + "/ws/v2/" + dongle_id
 
   crash.bind_user(id=dongle_id)
   crash.bind_extra(version=version, dirty=dirty, is_eon=True)
   crash.install()
+
+  api = Api(dongle_id)
 
   conn_retries = 0
   while 1:
     try:
       print("connecting to %s" % ws_uri)
       ws = create_connection(ws_uri,
-                             cookie="jwt=" + access_token,
+                             cookie="jwt=" + api.get_token(),
                              enable_multithread=True)
       ws.settimeout(1)
       conn_retries = 0

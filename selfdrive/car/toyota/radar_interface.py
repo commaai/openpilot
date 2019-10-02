@@ -3,7 +3,6 @@ import os
 import time
 from selfdrive.can.parser import CANParser
 from cereal import car
-from common.realtime import sec_since_boot
 from selfdrive.car.toyota.values import NO_DSU_CAR, DBC, TSS2_CAR
 
 def _create_radar_can_parser(car_fingerprint):
@@ -58,8 +57,7 @@ class RadarInterface(object):
       time.sleep(0.05)
       return car.RadarData.new_message()
 
-    tm = int(sec_since_boot() * 1e9)
-    vls = self.rcp.update_strings(tm, can_strings)
+    vls = self.rcp.update_strings(can_strings)
     self.updated_messages.update(vls)
 
     if self.trigger_msg not in self.updated_messages:

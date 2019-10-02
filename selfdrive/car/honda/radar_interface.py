@@ -3,7 +3,6 @@ import os
 import time
 from cereal import car
 from selfdrive.can.parser import CANParser
-from common.realtime import sec_since_boot
 
 def _create_nidec_can_parser():
   dbc_f = 'acura_ilx_2016_nidec.dbc'
@@ -38,11 +37,11 @@ class RadarInterface(object):
     # in Bosch radar and we are only steering for now, so sleep 0.05s to keep
     # radard at 20Hz and return no points
     if self.radar_off_can:
-      time.sleep(0.05)
+      if 'NO_RADAR_SLEEP' not in os.environ:
+        time.sleep(0.05)
       return car.RadarData.new_message()
 
-    tm = int(sec_since_boot() * 1e9)
-    vls = self.rcp.update_strings(tm, can_strings)
+    vls = self.rcp.update_strings(can_strings)
     self.updated_messages.update(vls)
 
     if self.trigger_msg not in self.updated_messages:

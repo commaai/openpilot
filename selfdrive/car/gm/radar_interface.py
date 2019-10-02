@@ -6,7 +6,6 @@ from cereal import car
 from selfdrive.can.parser import CANParser
 from selfdrive.car.gm.interface import CanBus
 from selfdrive.car.gm.values import DBC, CAR
-from common.realtime import sec_since_boot
 
 RADAR_HEADER_MSG = 1120
 SLOT_1_MSG = RADAR_HEADER_MSG + 1
@@ -60,8 +59,7 @@ class RadarInterface(object):
       time.sleep(0.05)   # nothing to do
       return car.RadarData.new_message()
 
-    tm = int(sec_since_boot() * 1e9)
-    vls = self.rcp.update_strings(tm, can_strings)
+    vls = self.rcp.update_strings(can_strings)
     self.updated_messages.update(vls)
 
     if self.trigger_msg not in self.updated_messages:

@@ -23,8 +23,8 @@ int main( )
   OnlineData v_ref; // m/s
   OnlineData l_poly_r0, l_poly_r1, l_poly_r2, l_poly_r3;
   OnlineData r_poly_r0, r_poly_r1, r_poly_r2, r_poly_r3;
-  OnlineData p_poly_r0, p_poly_r1, p_poly_r2, p_poly_r3;
-  OnlineData l_prob, r_prob, p_prob;
+  OnlineData d_poly_r0, d_poly_r1, d_poly_r2, d_poly_r3;
+  OnlineData l_prob, r_prob;
   OnlineData lane_width;
 
   Control t;
@@ -39,26 +39,13 @@ int main( )
 
   auto poly_l = l_poly_r0*(xx*xx*xx) + l_poly_r1*(xx*xx) + l_poly_r2*xx + l_poly_r3;
   auto poly_r = r_poly_r0*(xx*xx*xx) + r_poly_r1*(xx*xx) + r_poly_r2*xx + r_poly_r3;
-  auto poly_p = p_poly_r0*(xx*xx*xx) + p_poly_r1*(xx*xx) + p_poly_r2*xx + p_poly_r3;
+  auto poly_d = d_poly_r0*(xx*xx*xx) + d_poly_r1*(xx*xx) + d_poly_r2*xx + d_poly_r3;
 
-  auto angle_l = atan(3*l_poly_r0*xx*xx + 2*l_poly_r1*xx + l_poly_r2);
-  auto angle_r = atan(3*r_poly_r0*xx*xx + 2*r_poly_r1*xx + r_poly_r2);
-  auto angle_p = atan(3*p_poly_r0*xx*xx + 2*p_poly_r1*xx + p_poly_r2);
-
-  // given the lane width estimate, this is where we estimate the path given lane lines
-  auto path_from_left_lane = poly_l - lane_width/2.0;
-  auto path_from_right_lane = poly_r + lane_width/2.0;
-
-  // if the lanes are visible, drive in the center, otherwise follow the path
-  auto path = lr_prob * (l_prob * path_from_left_lane + r_prob * path_from_right_lane) / (l_prob + r_prob + 0.0001)
-    + (1-lr_prob) * poly_p;
-
-  auto angle = lr_prob * (l_prob * angle_l + r_prob * angle_r) / (l_prob + r_prob + 0.0001)
-    + (1-lr_prob) * angle_p;
+  auto angle_d = atan(3*d_poly_r0*xx*xx + 2*d_poly_r1*xx + d_poly_r2);
 
   // When the lane is not visible, use an estimate of its position
-  auto weighted_left_lane = l_prob * poly_l + (1 - l_prob) * (path + lane_width/2.0);
-  auto weighted_right_lane = r_prob * poly_r + (1 - r_prob) * (path - lane_width/2.0);
+  auto weighted_left_lane = l_prob * poly_l + (1 - l_prob) * (poly_d + lane_width/2.0);
+  auto weighted_right_lane = r_prob * poly_r + (1 - r_prob) * (poly_d - lane_width/2.0);
 
   auto c_left_lane = exp(-(weighted_left_lane - yy));
   auto c_right_lane = exp(weighted_right_lane - yy);
@@ -67,12 +54,12 @@ int main( )
   Function h;
 
   // Distance errors
-  h << path - yy;
+  h << poly_d - yy;
   h << lr_prob * c_left_lane;
   h << lr_prob * c_right_lane;
 
   // Heading error
-  h << (v_ref + 1.0 ) * (angle - psi);
+  h << (v_ref + 1.0 ) * (angle_d - psi);
 
   // Angular rate error
   h << (v_ref + 1.0 ) * t;
@@ -88,12 +75,12 @@ int main( )
   Function hN;
 
   // Distance errors
-  hN << path - yy;
+  hN << poly_d - yy;
   hN << l_prob * c_left_lane;
   hN << r_prob * c_right_lane;
 
   // Heading errors
-  hN << (2.0 * v_ref + 1.0 ) * (angle - psi);
+  hN << (2.0 * v_ref + 1.0 ) * (angle_d - psi);
 
   BMatrix QN(4,4); QN.setAll(true);
   // QN(0,0) = 1.0;
@@ -125,7 +112,7 @@ int main( )
   ocp.subjectTo( deg2rad(-90) <= psi <= deg2rad(90));
   // more than absolute max steer angle
   ocp.subjectTo( deg2rad(-50) <= delta <= deg2rad(50));
-  ocp.setNOD(18);
+  ocp.setNOD(17);
 
   OCPexport mpc(ocp);
   mpc.set( HESSIAN_APPROXIMATION, GAUSS_NEWTON );

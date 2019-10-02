@@ -332,7 +332,6 @@ class LongitudinalControl(unittest.TestCase):
     shutil.rmtree('/data/params', ignore_errors=True)
     params = Params()
     params.put("Passive", "1" if os.getenv("PASSIVE") else "0")
-    params.put("IsFcwEnabled", "1")
 
     manager.gctx = {}
     manager.prepare_managed_process('radard')

@@ -17,7 +17,7 @@ from selfdrive.swaglog import cloudlog
 from selfdrive.loggerd.config import ROOT
 
 from common.params import Params
-from common.api import api_get
+from common.api import Api
 
 fake_upload = os.getenv("FAKEUPLOAD") is not None
 
@@ -93,9 +93,9 @@ def is_on_hotspot():
     return False
 
 class Uploader(object):
-  def __init__(self, dongle_id, access_token, root):
+  def __init__(self, dongle_id, root):
     self.dongle_id = dongle_id
-    self.access_token = access_token
+    self.api = Api(dongle_id)
     self.root = root
 
     self.upload_thread = None
@@ -146,14 +146,11 @@ class Uploader(object):
         return (key, fn, 0)
 
     if with_raw:
-      # then upload log files
+      # then upload the full log files, rear and front camera files
       for name, key, fn in self.gen_upload_files():
         if name  == "rlog.bz2":
           return (key, fn, 1)
-
-      # then upload rear and front camera files
-      for name, key, fn in self.gen_upload_files():
-        if name == "fcamera.hevc":
+        elif name == "fcamera.hevc":
           return (key, fn, 2)
         elif name == "dcamera.hevc":
           return (key, fn, 3)
@@ -168,11 +165,11 @@ class Uploader(object):
 
   def do_upload(self, key, fn):
     try:
-      url_resp = api_get("v1.2/"+self.dongle_id+"/upload_url/", timeout=10, path=key, access_token=self.access_token)
+      url_resp = self.api.get("v1.3/"+self.dongle_id+"/upload_url/", timeout=10, path=key, access_token=self.api.get_token())
       url_resp_json = json.loads(url_resp.text)
       url = url_resp_json['url']
       headers = url_resp_json['headers']
-      cloudlog.info("upload_url v1.2 %s %s", url, str(headers))
+      cloudlog.info("upload_url v1.3 %s %s", url, str(headers))
 
       if fake_upload:
         cloudlog.info("*** WARNING, THIS IS A FAKE UPLOAD TO %s ***" % url)
@@ -240,13 +237,13 @@ def uploader_fn(exit_event):
   cloudlog.info("uploader_fn")
 
   params = Params()
-  dongle_id, access_token = params.get("DongleId"), params.get("AccessToken")
+  dongle_id = params.get("DongleId")
 
-  if dongle_id is None or access_token is None:
-    cloudlog.info("uploader MISSING DONGLE_ID or ACCESS_TOKEN")
-    raise Exception("uploader can't start without dongle id and access token")
+  if dongle_id is None:
+    cloudlog.info("uploader missing dongle_id")
+    raise Exception("uploader can't start without dongle id")
 
-  uploader = Uploader(dongle_id, access_token, ROOT)
+  uploader = Uploader(dongle_id, ROOT)
 
   backoff = 0.1
   while True:

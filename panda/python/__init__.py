@@ -135,6 +135,12 @@ class Panda(object):
   REQUEST_IN = usb1.ENDPOINT_IN | usb1.TYPE_VENDOR | usb1.RECIPIENT_DEVICE
   REQUEST_OUT = usb1.ENDPOINT_OUT | usb1.TYPE_VENDOR | usb1.RECIPIENT_DEVICE
 
+  HW_TYPE_UNKNOWN = '\x00'
+  HW_TYPE_WHITE_PANDA = '\x01'
+  HW_TYPE_GREY_PANDA = '\x02'
+  HW_TYPE_BLACK_PANDA = '\x03'
+  HW_TYPE_PEDAL = '\x04'
+
   def __init__(self, serial=None, claim=True):
     self._serial = serial
     self._handle = None
@@ -363,11 +369,14 @@ class Panda(object):
   def get_type(self):
     return self._handle.controlRead(Panda.REQUEST_IN, 0xc1, 0, 0, 0x40)
 
+  def is_white(self):
+    return self.get_type() == Panda.HW_TYPE_WHITE_PANDA
+
   def is_grey(self):
-    return self.get_type() == "\x02"
+    return self.get_type() == Panda.HW_TYPE_GREY_PANDA
 
   def is_black(self):
-    return self.get_type() == "\x03"
+    return self.get_type() == Panda.HW_TYPE_BLACK_PANDA
 
   def get_serial(self):
     dat = self._handle.controlRead(Panda.REQUEST_IN, 0xd0, 0, 0, 0x20)
@@ -470,6 +479,7 @@ class Panda(object):
         break
       except (usb1.USBErrorIO, usb1.USBErrorOverflow):
         print("CAN: BAD RECV, RETRYING")
+	time.sleep(0.1)
     return parse_can_buffer(dat)
 
   def can_clear(self, bus):

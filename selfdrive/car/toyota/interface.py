@@ -1,13 +1,15 @@
 #!/usr/bin/env python
-from common.realtime import sec_since_boot
 from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.toyota.carstate import CarState, get_can_parser, get_cam_can_parser
-from selfdrive.car.toyota.values import ECU, check_ecu_msgs, CAR, NO_STOP_TIMER_CAR
+from selfdrive.car.toyota.values import ECU, check_ecu_msgs, CAR, NO_STOP_TIMER_CAR, TSS2_CAR
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness
 from selfdrive.swaglog import cloudlog
+
+ButtonType = car.CarState.ButtonEvent.Type
+GearShifter = car.CarState.GearShifter
 
 class CarInterface(object):
   def __init__(self, CP, CarController):
@@ -55,7 +57,8 @@ class CarInterface(object):
     ret.enableCruise = not ret.enableGasInterceptor
 
     ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
-    if candidate != CAR.PRIUS:
+
+    if candidate not in [CAR.PRIUS, CAR.RAV4, CAR.RAV4H]: # These cars use LQR/INDI
       ret.lateralTuning.init('pid')
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
 
@@ -73,6 +76,18 @@ class CarInterface(object):
       ret.lateralTuning.indi.timeConstant = 1.0
       ret.lateralTuning.indi.actuatorEffectiveness = 1.0
 
+      # TODO: Determine if this is better than INDI
+      # ret.lateralTuning.init('lqr')
+      # ret.lateralTuning.lqr.scale = 1500.0
+      # ret.lateralTuning.lqr.ki = 0.01
+
+      # ret.lateralTuning.lqr.a = [0., 1., -0.22619643, 1.21822268]
+      # ret.lateralTuning.lqr.b = [-1.92006585e-04, 3.95603032e-05]
+      # ret.lateralTuning.lqr.c = [1., 0.]
+      # ret.lateralTuning.lqr.k = [-110.73572306, 451.22718255]
+      # ret.lateralTuning.lqr.l = [0.03233671, 0.03185757]
+      # ret.lateralTuning.lqr.dcGain = 0.002237852961363602
+
       ret.steerActuatorDelay = 0.5
 
     elif candidate in [CAR.RAV4, CAR.RAV4H]:
@@ -82,8 +97,17 @@ class CarInterface(object):
       ret.steerRatio = 16.88   # 14.5 is spec end-to-end
       tire_stiffness_factor = 0.5533
       ret.mass = 3650. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.05]]
-      ret.lateralTuning.pid.kf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
+      ret.lateralTuning.init('lqr')
+
+      ret.lateralTuning.lqr.scale = 1500.0
+      ret.lateralTuning.lqr.ki = 0.05
+
+      ret.lateralTuning.lqr.a = [0., 1., -0.22619643, 1.21822268]
+      ret.lateralTuning.lqr.b = [-1.92006585e-04, 3.95603032e-05]
+      ret.lateralTuning.lqr.c = [1., 0.]
+      ret.lateralTuning.lqr.k = [-110.73572306, 451.22718255]
+      ret.lateralTuning.lqr.l = [0.3233671, 0.3185757]
+      ret.lateralTuning.lqr.dcGain = 0.002237852961363602
 
     elif candidate == CAR.COROLLA:
       stop_and_go = False
@@ -185,6 +209,16 @@ class CarInterface(object):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.05]]
       ret.lateralTuning.pid.kf = 0.00007818594
 
+    elif candidate == CAR.LEXUS_IS:
+      stop_and_go = False
+      ret.safetyParam = 66
+      ret.wheelbase = 2.79908
+      ret.steerRatio = 13.3
+      tire_stiffness_factor = 0.444
+      ret.mass = 3736.8 * CV.LB_TO_KG + STD_CARGO_KG
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.05]]
+      ret.lateralTuning.pid.kf = 0.00006
+
     ret.steerRateCost = 1.
     ret.centerToFront = ret.wheelbase * 0.44
 
@@ -214,8 +248,8 @@ class CarInterface(object):
     ret.brakeMaxBP = [0.]
     ret.brakeMaxV = [1.]
 
-    ret.enableCamera = not check_ecu_msgs(fingerprint, ECU.CAM) or is_panda_black
-    ret.enableDsu = not check_ecu_msgs(fingerprint, ECU.DSU)
+    ret.enableCamera = not check_ecu_msgs(fingerprint, ECU.CAM, candidate) or is_panda_black
+    ret.enableDsu = not check_ecu_msgs(fingerprint, ECU.DSU, candidate) or (is_panda_black and candidate in TSS2_CAR)
     ret.enableApgs = False #not check_ecu_msgs(fingerprint, ECU.APGS)
     ret.openpilotLongitudinalControl = ret.enableCamera and ret.enableDsu
     cloudlog.warn("ECU Camera Simulated: %r", ret.enableCamera)
@@ -248,11 +282,11 @@ class CarInterface(object):
   # returns a car.CarState
   def update(self, c, can_strings):
     # ******************* do can recv *******************
-    self.cp.update_strings(int(sec_since_boot() * 1e9), can_strings)
+    self.cp.update_strings(can_strings)
 
     # run the cam can update for 10s as we just need to know if the camera is alive
     if self.frame < 1000:
-      self.cp_cam.update_strings(int(sec_since_boot() * 1e9), can_strings)
+      self.cp_cam.update_strings(can_strings)
 
     self.CS.update(self.cp)
 
@@ -293,6 +327,7 @@ class CarInterface(object):
     ret.steeringRate = self.CS.angle_steers_rate
 
     ret.steeringTorque = self.CS.steer_torque_driver
+    ret.steeringTorqueEps = self.CS.steer_torque_motor
     ret.steeringPressed = self.CS.steer_override
 
     # cruise state
@@ -312,13 +347,13 @@ class CarInterface(object):
     buttonEvents = []
     if self.CS.left_blinker_on != self.CS.prev_left_blinker_on:
       be = car.CarState.ButtonEvent.new_message()
-      be.type = 'leftBlinker'
+      be.type = ButtonType.leftBlinker
       be.pressed = self.CS.left_blinker_on != 0
       buttonEvents.append(be)
 
     if self.CS.right_blinker_on != self.CS.prev_right_blinker_on:
       be = car.CarState.ButtonEvent.new_message()
-      be.type = 'rightBlinker'
+      be.type = ButtonType.rightBlinker
       be.pressed = self.CS.right_blinker_on != 0
       buttonEvents.append(be)
 
@@ -336,7 +371,7 @@ class CarInterface(object):
     if self.cp_cam.can_valid:
       self.forwarding_camera = True
 
-    if not ret.gearShifter == 'drive' and self.CP.enableDsu:
+    if not ret.gearShifter == GearShifter.drive and self.CP.enableDsu:
       events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if ret.doorOpen:
       events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
@@ -346,7 +381,7 @@ class CarInterface(object):
       events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if not self.CS.main_on and self.CP.enableDsu:
       events.append(create_event('wrongCarMode', [ET.NO_ENTRY, ET.USER_DISABLE]))
-    if ret.gearShifter == 'reverse' and self.CP.enableDsu:
+    if ret.gearShifter == GearShifter.reverse and self.CP.enableDsu:
       events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     if self.CS.steer_error:
       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
@@ -389,8 +424,8 @@ class CarInterface(object):
 
     can_sends = self.CC.update(c.enabled, self.CS, self.frame,
                                c.actuators, c.cruiseControl.cancel, c.hudControl.visualAlert,
-                               c.hudControl.audibleAlert, self.forwarding_camera,
-                               c.hudControl.leftLaneVisible, c.hudControl.rightLaneVisible, c.hudControl.leadVisible,
+                               self.forwarding_camera, c.hudControl.leftLaneVisible,
+                               c.hudControl.rightLaneVisible, c.hudControl.leadVisible,
                                c.hudControl.leftLaneDepart, c.hudControl.rightLaneDepart)
 
     self.frame += 1

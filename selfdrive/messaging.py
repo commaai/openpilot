@@ -84,8 +84,8 @@ def recv_one_or_none(sock):
     return None
 
 
-class SubMaster():
-  def __init__(self, services, addr="127.0.0.1"):
+class SubMaster(object):
+  def __init__(self, services, ignore_alive=None, addr="127.0.0.1"):
     self.poller = zmq.Poller()
     self.frame = -1
     self.updated = {s : False for s in services}
@@ -97,6 +97,12 @@ class SubMaster():
     self.data = {}
     self.logMonoTime = {}
     self.valid = {}
+
+    if ignore_alive is not None:
+      self.ignore_alive = ignore_alive
+    else:
+      self.ignore_alive = []
+
     for s in services:
       # TODO: get address automatically from service_list
       if addr is not None:
@@ -141,7 +147,7 @@ class SubMaster():
   def all_alive(self, service_list=None):
     if service_list is None:  # check all
       service_list = self.alive.keys()
-    return all(self.alive[s] for s in service_list)
+    return all(self.alive[s] for s in service_list if s not in self.ignore_alive)
 
   def all_valid(self, service_list=None):
     if service_list is None:  # check all
@@ -152,3 +158,16 @@ class SubMaster():
     if service_list is None:  # check all
       service_list = self.alive.keys()
     return self.all_alive(service_list=service_list) and self.all_valid(service_list=service_list)
+
+
+class PubMaster():
+  def __init__(self, services):
+    self.sock = {}
+    for s in services:
+      self.sock[s] = pub_sock(service_list[s].port)
+
+  def send(self, s, dat):
+    # accept either bytes or capnp builder
+    if not isinstance(dat, str):
+      dat = dat.to_bytes()
+    self.sock[s].send(dat)

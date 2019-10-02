@@ -2,7 +2,6 @@
 import os
 from selfdrive.can.parser import CANParser
 from cereal import car
-from common.realtime import sec_since_boot
 
 RADAR_MSGS_C = range(0x2c2, 0x2d4+2, 2)  # c_ messages 706,...,724
 RADAR_MSGS_D = range(0x2a2, 0x2b4+2, 2)  # d_ messages
@@ -55,8 +54,7 @@ class RadarInterface(object):
     self.trigger_msg = LAST_MSG
 
   def update(self, can_strings):
-    tm = int(sec_since_boot() * 1e9)
-    vls = self.rcp.update_strings(tm, can_strings)
+    vls = self.rcp.update_strings(can_strings)
     self.updated_messages.update(vls)
 
     if self.trigger_msg not in self.updated_messages:
