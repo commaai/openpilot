@@ -67,8 +67,8 @@ Supported Cars
 | Chevrolet<sup>3</sup>| Volt 2017-18               | Adaptive Cruise      | Yes     | Yes            | 0mph             | 7mph           | Custom<sup>7</sup>|
 | Cadillac<sup>3</sup> | ATS 2018                   | Adaptive Cruise      | Yes     | Yes            | 0mph             | 7mph           | Custom<sup>7</sup>|
 | Chrysler             | Pacifica 2017-18           | Adaptive Cruise      | Yes     | Stock          | 0mph             | 9mph           | FCA               |
-| Chrysler             | Pacifica Hybrid 2017-18    | Adaptive Cruise      | Yes     | Stock          | 0mph             | 9mph           | FCA               |
 | Chrysler             | Pacifica 2019              | Adaptive Cruise      | Yes     | Stock          | 0mph             | 39mph          | FCA               |
+| Chrysler             | Pacifica Hybrid 2017-18    | Adaptive Cruise      | Yes     | Stock          | 0mph             | 9mph           | FCA               |
 | Chrysler             | Pacifica Hybrid 2019       | Adaptive Cruise      | Yes     | Stock          | 0mph             | 39mph          | FCA               |
 | GMC<sup>3</sup>      | Acadia Denali 2018         | Adaptive Cruise      | Yes     | Yes            | 0mph             | 7mph           | Custom<sup>7</sup>|
 | Holden<sup>3</sup>   | Astra 2017                 | Adaptive Cruise      | Yes     | Yes            | 0mph             | 7mph           | Custom<sup>7</sup>|
