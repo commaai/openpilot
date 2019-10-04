@@ -21,10 +21,10 @@ VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 def process_hud_alert(enabled, fingerprint, visual_alert, left_line,
                        right_line, left_lane_depart, right_lane_depart):
+
+  hud_alert = 0
   if visual_alert == VisualAlert.steerRequired:
-    hud_alert 5 if fingerprint in [CAR.SANTA_FE, CAR.SANTA_FE_1] else 4
-  else:
-    hud_alert 0
+    hud_alert = 5 if fingerprint in [CAR.SANTA_FE, CAR.SANTA_FE_1] else 4
 
   # initialize to no line visible
   lane_visible = 1
