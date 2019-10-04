@@ -87,7 +87,7 @@ Supported Cars
 | Honda                | Pilot 2019                 | All                  | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          | Inverted Nidec    |
 | Honda                | Ridgeline 2017-19          | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          | Nidec             |
 | Hyundai              | Elantra 2017-19            | SCC + LKAS           | Yes     | Stock          | 7Mph             | 34mph          | Custom<sup>6</sup>|
-| Hyundai              | Elantra GT/i30 2017-19     | All                  | Yes     | Stock          | 0mph             | 0mph           | Custom<sup>6</sup>|
+| Hyundai              | Elantra GT/i30 2017-19     | All                  | Yes     | Stock          | 0mph             | 30mph           | Custom<sup>6</sup>|
 | Hyundai              | Genesis 2015-16            | All                  | Yes     | Stock          | 0mph             | 34mph          | Custom<sup>6</sup>|
 | Hyundai              | Ioniq 2017                 | All                  | Yes     | Stock          | 0mph             | 34mph          | Custom<sup>6</sup>|
 | Hyundai              | Kona 2017-19               | LDWS                 | Yes     | Stock          | 22mph            | 0mph           | Custom<sup>6</sup>|
