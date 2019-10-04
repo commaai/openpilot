@@ -21,7 +21,7 @@ VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 def process_hud_alert(visual_alert, car_fingerprint):
   if visual_alert == VisualAlert.steerRequired:
-    return 4 if car_fingerprint in [CAR.CAR.GENESIS] else 5
+    return 5 if car_fingerprint in [CAR.SANTA_FE, CAR.SANTA_FE_1] else 4
   else:
     return 0
 
