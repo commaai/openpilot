@@ -39,9 +39,9 @@ class LanePlanner(object):
     self.p_poly = [0., 0., 0., 0.]
     self.d_poly = [0., 0., 0., 0.]
 
-    self.lane_width_estimate = 3.7
+    self.lane_width_estimate = 2.85
     self.lane_width_certainty = 1.0
-    self.lane_width = 3.7
+    self.lane_width = 2.85
 
     self.l_prob = 0.
     self.r_prob = 0.
