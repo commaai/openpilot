@@ -219,7 +219,7 @@ class CarInterface(object):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.05]]
       ret.lateralTuning.pid.kf = 0.00006
 
-     elif candidate == CAR.OLD_CAR:
+    elif candidate == CAR.OLD_CAR:
       stop_and_go = False
       ret.safetyParam = 100
       ret.wheelbase = 2.455
