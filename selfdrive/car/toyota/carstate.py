@@ -151,8 +151,9 @@ class CarState(object):
     self.v_ego = float(v_ego_x[0])
     self.a_ego = float(v_ego_x[1])
     self.standstill = not v_wheel > 0.001
-
-    if self.CP.carFingerprint in TSS2_CAR:
+    if self.CP.carFingerprint == CAR.OLD_CAR:
+      self.angle_steers = -(cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']/3)
+    elif self.CP.carFingerprint in TSS2_CAR:
       self.angle_steers = cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE']
     elif self.CP.carFingerprint in NO_DSU_CAR:
       # cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE'] is zeroed to where the steering angle is at start.
