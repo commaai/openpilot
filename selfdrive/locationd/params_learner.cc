@@ -74,7 +74,7 @@ bool ParamsLearner::update(double psi, double u, double sa) {
   bool valid = fabs(slow_ao) < MAX_ANGLE_OFFSET_TH;
   valid = valid && sR > min_sr_th;
   valid = valid && sR < max_sr_th;
-  return valid;
+  return true;
 }
 
 
