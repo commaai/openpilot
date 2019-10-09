@@ -52,6 +52,8 @@ typedef struct __attribute__((packed)) {
 #define PANDA_USB_CAN_WRITE_BUS_NUM 3
 #define PANDA_USB_LIN_WRITE_BUS_NUM 2
 
+#define SAFETY_ELM327 3U
+
 typedef struct _elm_tcp_conn {
   struct espconn *conn;
   struct _elm_tcp_conn *next;
@@ -1420,7 +1422,7 @@ static void ICACHE_FLASH_ATTR elm_process_at_cmd(char *cmd, uint16_t len) {
 
     elm_append_rsp_const("\r\r");
     elm_append_rsp_const(IDENT_MSG);
-    panda_set_safety_mode(0xE327);
+    panda_set_safety_mode(SAFETY_ELM327);
 
     elm_proto_reinit(elm_current_proto());
     return;

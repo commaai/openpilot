@@ -1,4 +1,4 @@
-from __future__ import print_function
+
 import os
 import sys
 import time
@@ -8,7 +8,7 @@ import pytest
 import struct
 
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
-import elm_car_simulator
+from . import elm_car_simulator
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", ".."))
 from panda import Panda
 
@@ -301,7 +301,7 @@ def test_elm_panda_safety_mode_KWPFast():
     p_car.kline_drain()
 
     p_elm = Panda("WIFI")
-    p_elm.set_safety_mode(0xE327);
+    p_elm.set_safety_mode(Panda.SAFETY_ELM327);
 
     def get_checksum(dat):
         result = 0
@@ -625,7 +625,7 @@ def test_elm_panda_safety_mode_ISO15765():
     p_car.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
 
     p_elm = Panda("WIFI")
-    p_elm.set_safety_mode(0xE327);
+    p_elm.set_safety_mode(Panda.SAFETY_ELM327);
 
     #sim = elm_car_simulator.ELMCarSimulator(serial, lin=False)
     #sim.start()
