@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Given an interesting CSV file of CAN messages and a list of background CAN
 # messages, print which bits in the interesting file have never appeared
@@ -28,15 +28,15 @@ class Message():
 
   def printBitDiff(self, other):
     """Prints bits that are set or cleared compared to other background."""
-    for i in xrange(len(self.ones)):
+    for i in range(len(self.ones)):
       new_ones = ((~other.ones[i]) & 0xff) & self.ones[i]
       if new_ones:
-        print 'id %s new one  at byte %d bitmask %d' % (
-            self.message_id, i, new_ones)
+        print('id %s new one  at byte %d bitmask %d' % (
+            self.message_id, i, new_ones))
       new_zeros = ((~other.zeros[i]) & 0xff) & self.zeros[i]
       if new_zeros:
-        print 'id %s new zero at byte %d bitmask %d' % (
-            self.message_id, i, new_zeros)
+        print('id %s new zero at byte %d bitmask %d' % (
+            self.message_id, i, new_zeros))
 
 
 class Info():
@@ -67,7 +67,7 @@ class Info():
         if data not in self.messages[message_id].data:
           message.data[data] = True
         bytes = bytearray.fromhex(data)
-        for i in xrange(len(bytes)):
+        for i in range(len(bytes)):
           message.ones[i] = message.ones[i] | int(bytes[i])
           # Inverts the data and masks it to a byte to get the zeros as ones.
           message.zeros[i] = message.zeros[i] | ( (~int(bytes[i])) & 0xff)
@@ -80,7 +80,7 @@ def PrintUnique(interesting_file, background_files):
   interesting.load(interesting_file)
   for message_id in sorted(interesting.messages):
     if message_id not in background.messages:
-      print 'New message_id: %s' % message_id
+      print('New message_id: %s' % message_id)
     else:
       interesting.messages[message_id].printBitDiff(
           background.messages[message_id])
@@ -88,6 +88,6 @@ def PrintUnique(interesting_file, background_files):
 
 if __name__ == "__main__":
   if len(sys.argv) < 3:
-    print 'Usage:\n%s interesting.csv background*.csv' % sys.argv[0]
+    print('Usage:\n%s interesting.csv background*.csv' % sys.argv[0])
     sys.exit(0)
   PrintUnique(sys.argv[1], sys.argv[2:])

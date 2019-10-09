@@ -36,3 +36,13 @@ uint32_t adc_get(unsigned int channel) {
   return ADC1->JDR1;
 }
 
+uint32_t adc_get_voltage(void) {
+  // REVC has a 10, 1 (1/11) voltage divider
+  // Here is the calculation for the scale (s)
+  // ADCV = VIN_S * (1/11) * (4095/3.3)
+  // RETVAL = ADCV * s = VIN_S*1000
+  // s = 1000/((4095/3.3)*(1/11)) = 8.8623046875
+
+  // Avoid needing floating point math, so output in mV
+  return (adc_get(ADCCHAN_VOLTAGE) * 8862U) / 1000U;
+}

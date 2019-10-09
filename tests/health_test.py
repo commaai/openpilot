@@ -1,7 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import time
 from panda import Panda
-	
+
 if __name__ == "__main__":
   panda_serials = Panda.list()
   pandas = []

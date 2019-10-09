@@ -1,7 +1,8 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 import unittest
 import numpy as np
 import libpandasafety_py
+from panda import Panda
 
 MAX_RATE_UP = 10
 MAX_RATE_DOWN = 25
@@ -33,7 +34,7 @@ class TestToyotaSafety(unittest.TestCase):
   @classmethod
   def setUp(cls):
     cls.safety = libpandasafety_py.libpandasafety
-    cls.safety.safety_set_mode(2, 100)
+    cls.safety.safety_set_mode(Panda.SAFETY_TOYOTA, 100)
     cls.safety.init_tests_toyota()
 
   def _send_msg(self, bus, addr, length):
@@ -281,8 +282,8 @@ class TestToyotaSafety(unittest.TestCase):
 
   def test_fwd_hook(self):
 
-    buss = range(0x0, 0x3)
-    msgs = range(0x1, 0x800)
+    buss = list(range(0x0, 0x3))
+    msgs = list(range(0x1, 0x800))
     long_controls_allowed = [0, 1]
     toyota_camera_forwarded = [0, 1]
 
