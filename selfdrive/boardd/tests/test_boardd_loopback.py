@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """Run boardd with the BOARDD_LOOPBACK envvar before running this test."""
 
 import os

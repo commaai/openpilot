@@ -13,7 +13,7 @@ class TestPackerMethods(unittest.TestCase):
 
   def test_correctness(self):
     # Test all commands, randomize the params.
-    for _ in xrange(1000):
+    for _ in range(1000):
       gear = ('drive', 'reverse', 'low')[random.randint(0, 3) % 3]
       lkas_active = (random.randint(0, 2) % 2 == 0)
       hud_alert = random.randint(0, 6)

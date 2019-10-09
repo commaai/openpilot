@@ -1,10 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import os
 import shutil
 import threading
 from selfdrive.swaglog import cloudlog
 from selfdrive.loggerd.config import ROOT, get_available_percent
-from selfdrive.loggerd.uploader import listdir_by_creation_date
+from selfdrive.loggerd.uploader import listdir_by_creation
 
 
 def deleter_thread(exit_event):
@@ -13,7 +13,7 @@ def deleter_thread(exit_event):
 
     if available_percent < 10.0:
       # remove the earliest directory we can
-      dirs = listdir_by_creation_date(ROOT)
+      dirs = listdir_by_creation(ROOT)
       for delete_dir in dirs:
         delete_path = os.path.join(ROOT, delete_dir)
 

@@ -1,4 +1,6 @@
 # distutils: language = c++
+# cython: c_string_encoding=ascii, language_level=3
+
 from libc.stdint cimport uint32_t, uint64_t
 from libcpp.vector cimport vector
 from libcpp.map cimport map
@@ -54,7 +56,7 @@ ctypedef uint64_t (*canpack_pack_vector_func)(void* inst, uint32_t address, cons
 ctypedef const DBC * (*dbc_lookup_func)(const char* dbc_name)
 
 
-cdef class CANPacker(object):
+cdef class CANPacker():
   cdef void *packer
   cdef const DBC *dbc
   cdef map[string, (int, int)] name_to_address_and_size
@@ -66,11 +68,14 @@ cdef class CANPacker(object):
   def __init__(self, dbc_name):
     can_dir = os.path.dirname(os.path.abspath(__file__))
     libdbc_fn = os.path.join(can_dir, "libdbc.so")
+    libdbc_fn = str(libdbc_fn).encode('utf8')
     subprocess.check_call(["make"], cwd=can_dir)
+
     cdef void *libdbc = dlopen(libdbc_fn, RTLD_LAZY)
     self.canpack_init = <canpack_init_func>dlsym(libdbc, 'canpack_init')
     self.canpack_pack_vector = <canpack_pack_vector_func>dlsym(libdbc, 'canpack_pack_vector')
     self.dbc_lookup = <dbc_lookup_func>dlsym(libdbc, 'dbc_lookup')
+
     self.packer = self.canpack_init(dbc_name)
     self.dbc = self.dbc_lookup(dbc_name)
     num_msgs = self.dbc[0].num_msgs
@@ -82,8 +87,14 @@ cdef class CANPacker(object):
   cdef uint64_t pack(self, addr, values, counter):
     cdef vector[SignalPackValue] values_thing
     cdef SignalPackValue spv
+
+    names = []
+
     for name, value in values.iteritems():
-      spv.name = name
+      n = name.encode('utf8')
+      names.append(n) # TODO: find better way to keep reference to temp string arround
+
+      spv.name = n
       spv.value = value
       values_thing.push_back(spv)
 
@@ -105,7 +116,7 @@ cdef class CANPacker(object):
       addr = name_or_addr
       size = self.address_to_size[name_or_addr]
     else:
-      addr, size = self.name_to_address_and_size[name_or_addr]
+      addr, size = self.name_to_address_and_size[name_or_addr.encode('utf8')]
     cdef uint64_t val = self.pack(addr, values, counter)
     val = self.ReverseBytes(val)
     return [addr, 0, (<char *>&val)[:size], bus]

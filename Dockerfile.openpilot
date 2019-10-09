@@ -6,43 +6,66 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     bzip2 \
     clang \
+    cmake \
+    curl \
+    ffmpeg \
     git \
     libarchive-dev \
-    libavcodec-dev \
-    libavdevice-dev \
-    libavfilter-dev \
-    libavresample-dev \
-    libavutil-dev \
+    libbz2-dev \
+    libcurl4-openssl-dev \
+    libeigen3-dev \
     libffi-dev \
+    libglew-dev \
     libglib2.0-0 \
+    liblzma-dev \
+    libmysqlclient-dev \
+    libomp-dev \
+    libopencv-dev \
     libssl-dev \
-    libswscale-dev \
     libtool \
     libusb-1.0-0 \
     libzmq5-dev \
+    locales \
     ocl-icd-libopencl1 \
     ocl-icd-opencl-dev \
     opencl-headers \
-    pkg-config \
+    python-dev \
     python-pip \
+    screen \
+    sudo \
+    vim \
     wget
 
-COPY phonelibs/install_capnp.sh /tmp/install_capnp.sh
-RUN /tmp/install_capnp.sh
 
-RUN pip install --upgrade pip==18.0
+RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US:en
+ENV LC_ALL en_US.UTF-8
+
+RUN curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
+
+ENV PATH="/root/.pyenv/bin:/root/.pyenv/shims:${PATH}"
+RUN pyenv install 3.7.3
+RUN pyenv global 3.7.3
+RUN pyenv rehash
+
 RUN pip install pipenv==2018.11.26
 
 COPY Pipfile /tmp/
 COPY Pipfile.lock /tmp/
-RUN cd /tmp && pipenv install --deploy --system
 
-ENV PYTHONPATH /tmp/openpilot:$PYTHONPATH
+RUN python --version
+RUN cd /tmp && pipenv install --system --deploy
 
-RUN git clone --branch v0.6.2 https://github.com/commaai/openpilot-tools.git /tmp/openpilot/tools
-RUN pip install -r /tmp/openpilot/tools/requirements.txt
-RUN pip install fastcluster==1.1.20 scipy==0.19.1 dictdiffer==0.8.0 azure-batch==4.1.3 azure-common==1.1.16 azure-nspkg==3.0.0 azure-storage-blob==1.3.1 azure-storage-common==1.3.0 azure-storage-nspkg==3.0.0
+# Install subset of dev dependencies needed for CI
+RUN pip install matplotlib==3.1.1 dictdiffer==0.8.0 fastcluster==1.1.25 aenum==2.2.1 scipy==1.3.1 lru-dict==1.1.6 tenacity==5.1.1 azure-common==1.1.23 azure-nspkg==3.0.2 azure-storage-blob==2.1.0 azure-storage-common==2.1.0 azure-storage-nspkg==3.1.0 pycurl==7.43.0.3
 
+COPY phonelibs/install_capnp.sh /tmp/install_capnp.sh
+RUN /tmp/install_capnp.sh
+
+RUN git clone --branch v0.6.5 https://github.com/commaai/openpilot-tools.git /tmp/openpilot/tools
+
+ENV PYTHONPATH /tmp/openpilot:${PYTHONPATH}
 COPY ./.pylintrc /tmp/openpilot/.pylintrc
 COPY ./common /tmp/openpilot/common
 COPY ./cereal /tmp/openpilot/cereal

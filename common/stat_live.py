@@ -11,7 +11,7 @@ class RunningStat():
       self.n = priors[2]
       self.M_last = self.M
       self.S_last = self.S
-      
+
     else:
       self.reset()
 

@@ -63,7 +63,7 @@ double randrange(double a, double b) {
 }
 
 
-volatile int do_exit = 0;
+volatile sig_atomic_t do_exit = 0;
 static void set_do_exit(int sig) {
   do_exit = 1;
 }
@@ -126,7 +126,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
 
     if (!encoder_inited) {
       LOGD("encoder init %dx%d", buf_info.width, buf_info.height);
-      encoder_init(&encoder, front ? "dcamera" : "fcamera", buf_info.width, buf_info.height, CAMERA_FPS, front ? 1000000 : 5000000);
+      encoder_init(&encoder, front ? "dcamera" : "fcamera", buf_info.width, buf_info.height, CAMERA_FPS, front ? 2500000 : 5000000);
       encoder_inited = true;
       if (is_streaming) {
         encoder.stream_sock_raw = zmq_socket(s.ctx, ZMQ_PUB);

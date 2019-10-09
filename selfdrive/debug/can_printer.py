@@ -1,9 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+import binascii
 import os
 import sys
 from collections import defaultdict
-from common.realtime import sec_since_boot
+
 import selfdrive.messaging as messaging
+from common.realtime import sec_since_boot
 from selfdrive.services import service_list
 
 
@@ -24,9 +26,9 @@ def can_printer(bus=0, max_msg=None, addr="127.0.0.1"):
     if sec_since_boot() - lp > 0.1:
       dd = chr(27) + "[2J"
       dd += "%5.2f\n" % (sec_since_boot() - start)
-      for k,v in sorted(zip(msgs.keys(), map(lambda x: x[-1].encode("hex"), msgs.values()))):
+      for k,v in sorted(zip(msgs.keys(), map(lambda x: binascii.hexlify(x[-1]), msgs.values()))):
         if max_msg is None or k < max_msg:
-          dd += "%s(%6d) %s\n" % ("%04X(%4d)" % (k,k),len(msgs[k]), v)
+          dd += "%s(%6d) %s\n" % ("%04X(%4d)" % (k,k),len(msgs[k]), v.decode('ascii'))
       print(dd)
       lp = sec_since_boot()
 
@@ -39,4 +41,3 @@ if __name__ == "__main__":
     can_printer(int(sys.argv[1]))
   else:
     can_printer()
-  
