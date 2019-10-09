@@ -41,6 +41,8 @@ typedef enum {
   TOYOTA_CHECKSUM,
   PEDAL_CHECKSUM,
   PEDAL_COUNTER,
+  VOLKSWAGEN_CRC,
+  VOLKSWAGEN_COUNTER,
 } SignalType;
 
 typedef struct {
