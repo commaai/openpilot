@@ -80,7 +80,7 @@ typedef void (*sighandler_t) (int);
 #endif
 
 extern "C" {
-volatile int do_exit = 0;
+volatile sig_atomic_t do_exit = 0;
 }
 
 namespace {
@@ -738,8 +738,8 @@ void* monitoring_thread(void *arg) {
       }
       else // use default setting if no face
       {
-        s->front_meteringbox_ymin = s->rgb_front_height * 0;
-        s->front_meteringbox_ymax = s->rgb_front_height * 2 / 3;
+        s->front_meteringbox_ymin = s->rgb_front_height * 1 / 3;
+        s->front_meteringbox_ymax = s->rgb_front_height * 1;
         s->front_meteringbox_xmin = s->rgb_front_width * 3 / 5;
         s->front_meteringbox_xmax = s->rgb_front_width;
       }
@@ -820,8 +820,8 @@ void* frontview_thread(void *arg) {
       }
       else
       {
-        y_start = s->rgb_front_height * 0;
-        y_end = s->rgb_front_height * 2 / 3;
+        y_start = s->rgb_front_height * 1 / 3;
+        y_end = s->rgb_front_height * 1;
         x_start = s->rgb_front_width * 3 / 5;
         x_end = s->rgb_front_width;
       }
@@ -1301,7 +1301,7 @@ void set_do_exit(int sig) {
   do_exit = 1;
 }
 
-void party(VisionState *s, bool nomodel) {
+void party(VisionState *s) {
   int err;
 
   s->terminate_pub = zsock_new_pub("@inproc://terminate");
@@ -1390,11 +1390,6 @@ int main(int argc, char **argv) {
     test_run = true;
   }
 
-  bool no_model = false;
-  if (argc > 1 && strcmp(argv[1], "--no-model") == 0) {
-    no_model = true;
-  }
-
   VisionState state = {0};
   VisionState *s = &state;
 
@@ -1443,7 +1438,7 @@ int main(int argc, char **argv) {
   if (test_run) {
     do_exit = true;
   }
-  party(s, no_model);
+  party(s);
 
   zsock_destroy(&s->recorder_sock);
   zsock_destroy(&s->monitoring_sock);

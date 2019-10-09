@@ -38,7 +38,7 @@
 #define SENSOR_PROXIMITY 6
 #define SENSOR_LIGHT 7
 
-volatile int do_exit = 0;
+volatile sig_atomic_t do_exit = 0;
 
 namespace {
 

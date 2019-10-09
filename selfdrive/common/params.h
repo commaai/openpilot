@@ -7,6 +7,8 @@
 extern "C" {
 #endif
 
+#define ERR_NO_VALUE -33
+
 int write_db_value(const char* params_path, const char* key, const char* value,
                    size_t value_size);
 
@@ -22,6 +24,10 @@ int write_db_value(const char* params_path, const char* key, const char* value,
 // Returns: Negative on failure, otherwise 0.
 int read_db_value(const char* params_path, const char* key, char** value,
                   size_t* value_sz);
+
+// Delete a value from the params database.
+// Inputs are the same as read_db_value, without value and value_sz.
+int delete_db_value(const char* params_path, const char* key);
 
 // Reads a value from the params database, blocking until successful.
 // Inputs are the same as read_db_value.
