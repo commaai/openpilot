@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import sys
 import struct
 from Crypto.PublicKey import RSA
@@ -26,7 +26,7 @@ def to_c_uint32(x):
   nums = []
   for i in range(0x20):
     nums.append(x%(2**32))
-    x /= (2**32)
+    x //= (2**32)
   return "{"+'U,'.join(map(str, nums))+"U}"
 
 for fn in sys.argv[1:]:
@@ -36,11 +36,11 @@ for fn in sys.argv[1:]:
 
   cname = fn.split("/")[-1].split(".")[0] + "_rsa_key"
 
-  print 'RSAPublicKey '+cname+' = {.len = 0x20,'
-  print '  .n0inv = %dU,' % n0inv
-  print '  .n = %s,' % to_c_uint32(rsa.n)
-  print '  .rr = %s,' % to_c_uint32(rr)
-  print '  .exponent = %d,' % rsa.e
-  print '};'
+  print('RSAPublicKey '+cname+' = {.len = 0x20,')
+  print('  .n0inv = %dU,' % n0inv)
+  print('  .n = %s,' % to_c_uint32(rsa.n))
+  print('  .rr = %s,' % to_c_uint32(rr))
+  print('  .exponent = %d,' % rsa.e)
+  print('};')
 
 

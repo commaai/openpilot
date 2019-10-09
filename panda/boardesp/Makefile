@@ -50,7 +50,7 @@ user1.bin: obj/proxy.o obj/elm327.o obj/webserver.o obj/sha.o obj/rsa.o
 	$(OBJCP) --only-section .data -O binary a.out eagle.app.v6.data.bin
 	$(OBJCP) --only-section .rodata -O binary a.out eagle.app.v6.rodata.bin
 	$(OBJCP) --only-section .irom0.text -O binary a.out eagle.app.v6.irom0text.bin
-	COMPILE=gcc python ./esp-open-sdk/ESP8266_NONOS_SDK_V1.5.4_16_05_20/tools/gen_appbin.py a.out 2 0 32 4 0
+	COMPILE=gcc python2 ./esp-open-sdk/ESP8266_NONOS_SDK_V1.5.4_16_05_20/tools/gen_appbin.py a.out 2 0 32 4 0
 	rm -f eagle.app.v6.*.bin
 	mv eagle.app.flash.bin $@
 	../crypto/sign.py $@ $@ $(CERT)
@@ -61,7 +61,7 @@ user2.bin: obj/proxy.o obj/elm327.o obj/webserver.o obj/sha.o obj/rsa.o
 	$(OBJCP) --only-section .data -O binary a.out eagle.app.v6.data.bin
 	$(OBJCP) --only-section .rodata -O binary a.out eagle.app.v6.rodata.bin
 	$(OBJCP) --only-section .irom0.text -O binary a.out eagle.app.v6.irom0text.bin
-	COMPILE=gcc python ./esp-open-sdk/ESP8266_NONOS_SDK_V1.5.4_16_05_20/tools/gen_appbin.py a.out 2 0 32 4 0
+	COMPILE=gcc python2 ./esp-open-sdk/ESP8266_NONOS_SDK_V1.5.4_16_05_20/tools/gen_appbin.py a.out 2 0 32 4 0
 	rm -f eagle.app.v6.*.bin
 	mv eagle.app.flash.bin $@
 	../crypto/sign.py $@ $@ $(CERT)

@@ -40,7 +40,7 @@ namespace panda {
 	typedef enum _PANDA_SAFETY_MODE : uint16_t {
 		SAFETY_NOOUTPUT = 0,
 		SAFETY_HONDA = 1,
-		SAFETY_ALLOUTPUT = 0x1337,
+		SAFETY_ALLOUTPUT = 17,
 	} PANDA_SAFETY_MODE;
 
 	typedef enum _PANDA_SERIAL_PORT : uint8_t {

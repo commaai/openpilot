@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import time
 from panda import Panda
 
@@ -12,6 +12,6 @@ while 1:
   if len(ret) > 0:
     add = ret[0][0]
     if last_add is not None and add != last_add+1:
-      print "MISS %d %d" % (last_add, add)
+      print("MISS %d %d" % (last_add, add))
     last_add = add
-    print ret
+    print(ret)
