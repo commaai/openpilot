@@ -82,6 +82,8 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     preLaneChangeLeft @57;
     preLaneChangeRight @58;
     laneChange @59;
+    invalidGiraffeToyota @60;
+    internetConnectivityNeeded @61;
   }
 }
 
@@ -133,6 +135,9 @@ struct CarState {
   seatbeltUnlatched @25 :Bool;
   canValid @26 :Bool;
 
+  # clutch (manual transmission only)
+  clutchPressed @28 :Bool;
+
   # which packets this state came from
   canMonoTimes @12: List(UInt64);
 
@@ -161,6 +166,8 @@ struct CarState {
     sport @5;
     low @6;
     brake @7;
+    eco @8;
+    manumatic @9;
   }
 
 
@@ -179,6 +186,9 @@ struct CarState {
       altButton1 @6;
       altButton2 @7;
       altButton3 @8;
+      setCruise @9;
+      resumeCruise @10;
+      gapAdjustCruise @11;
     }
   }
 }
@@ -271,6 +281,7 @@ struct CarControl {
       wrongGear @4;
       seatbeltUnbuckled @5;
       speedTooHigh @6;
+      ldw @7;
     }
 
     enum AudibleAlert {
@@ -348,6 +359,7 @@ struct CarParams {
   carVin @38 :Text; # VIN number queried during fingerprinting
   isPandaBlack @39: Bool;
   dashcamOnly @41: Bool;
+  transmissionType @43 :TransmissionType;
 
   struct LateralPIDTuning {
     kpBP @0 :List(Float32);
@@ -388,9 +400,7 @@ struct CarParams {
     l @7 :List(Float32);  # Kalman gain
   }
 
-
   enum SafetyModel {
-    # does NOT match board setting
     noOutput @0;
     honda @1;
     toyota @2;
@@ -404,10 +414,22 @@ struct CarParams {
     tesla @10;
     subaru @11;
     gmPassive @12;
+    mazda @13;
+    nissan @14;
+    volkswagen @15;
+    toyotaIpas @16;
+    allOutput @17;
+    gmAscm @18;
   }
 
   enum SteerControlType {
     torque @0;
     angle @1;
+  }
+
+  enum TransmissionType {
+    unknown @0;
+    automatic @1;
+    manual @2;
   }
 }
