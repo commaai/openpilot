@@ -249,26 +249,26 @@ class CarState(object):
     elif self.car_fingerprint in FEATURES["use_tcu_gears"]:
       gear = cp.vl["TCU12"]["CUR_GR"]
       if gear == 0:
-        self.gear_tcu = "park"
+        self.gear_shifter = "park"
       elif gear == 14:
-        self.gear_tcu = "reverse"
+        self.gear_shifter = "reverse"
       elif gear > 0 and gear < 9:    # unaware of anything over 8 currently
-        self.gear_tcu = "drive"
+        self.gear_shifter = "drive"
       else:
-        self.gear_tcu = "unknown"
+        self.gear_shifter = "unknown"
     # Gear Selecton - This is only compatible with optima hybrid 2017
     elif self.car_fingerprint in FEATURES["use_new_gears"]:
       gear = cp.vl["NEW11"]["Gear_Signal"]
       if gear == 5:
-        self.gear_shifter_new = "drive"
+        self.gear_shifter = "drive"
       elif gear == 6:
-        self.gear_shifter_new = "neutral"
+        self.gear_shifter = "neutral"
       elif gear == 0:
-        self.gear_shifter_new = "park"
+        self.gear_shifter = "park"
       elif gear == 7:
-        self.gear_shifter_new = "reverse"
+        self.gear_shifter = "reverse"
       else:
-        self.gear_shifter_new = "unknown"
+        self.gear_shifter = "unknown"
     # Gear Selecton - This is not compatible with all Kia/Hyundai's, But is the best way for those it is compatible with
     else:
       gear = cp.vl["LVR12"]["CF_Lvr_Gear"]
