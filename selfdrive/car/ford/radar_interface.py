@@ -1,32 +1,32 @@
-#!/usr/bin/env python
-import os
-import numpy as np
-from selfdrive.can.parser import CANParser
+#!/usr/bin/env python3
 from cereal import car
+from selfdrive.can.parser import CANParser
+from selfdrive.car.ford.values import DBC
+from selfdrive.config import Conversions as CV
+from selfdrive.car.interfaces import RadarInterfaceBase
 
-RADAR_MSGS = range(0x500, 0x540)
+RADAR_MSGS = list(range(0x500, 0x540))
 
-def _create_radar_can_parser():
-  dbc_f = 'ford_fusion_2018_adas.dbc'
+def _create_radar_can_parser(car_fingerprint):
+  dbc_f = DBC[car_fingerprint]['radar']
   msg_n = len(RADAR_MSGS)
   signals = list(zip(['X_Rel'] * msg_n + ['Angle'] * msg_n + ['V_Rel'] * msg_n,
                      RADAR_MSGS * 3,
                      [0] * msg_n + [0] * msg_n + [0] * msg_n))
   checks = list(zip(RADAR_MSGS, [20]*msg_n))
 
-  return CANParser(os.path.splitext(dbc_f)[0], signals, checks, 1)
+  return CANParser(dbc_f, signals, checks, 1)
 
-class RadarInterface(object):
+class RadarInterface(RadarInterfaceBase):
   def __init__(self, CP):
     # radar
     self.pts = {}
     self.validCnt = {key: 0 for key in RADAR_MSGS}
     self.track_id = 0
 
-    self.delay = 0.0  # Delay of radar
+    self.delay = 0  # Delay of radar
 
-    # Nidec
-    self.rcp = _create_radar_can_parser()
+    self.rcp = _create_radar_can_parser(CP.carFingerprint)
     self.trigger_msg = 0x53f
     self.updated_messages = set()
 
@@ -44,7 +44,7 @@ class RadarInterface(object):
       errors.append("canError")
     ret.errors = errors
 
-    for ii in self.updated_messages:
+    for ii in sorted(self.updated_messages):
       cpt = self.rcp.vl[ii]
 
       if cpt['X_Rel'] > 0.00001:
@@ -63,7 +63,7 @@ class RadarInterface(object):
           self.pts[ii].trackId = self.track_id
           self.track_id += 1
         self.pts[ii].dRel = cpt['X_Rel']  # from front of car
-        self.pts[ii].yRel = cpt['X_Rel'] * cpt['Angle'] * np.pi / 180.  # in car frame's y axis, left is positive
+        self.pts[ii].yRel = cpt['X_Rel'] * cpt['Angle'] * CV.DEG_TO_RAD  # in car frame's y axis, left is positive
         self.pts[ii].vRel = cpt['V_Rel']
         self.pts[ii].aRel = float('nan')
         self.pts[ii].yvRel = float('nan')
@@ -72,6 +72,6 @@ class RadarInterface(object):
         if ii in self.pts:
           del self.pts[ii]
 
-    ret.points = self.pts.values()
+    ret.points = list(self.pts.values())
     self.updated_messages.clear()
     return ret

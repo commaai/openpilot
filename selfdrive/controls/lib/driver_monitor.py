@@ -13,7 +13,7 @@ _DISTRACTED_PROMPT_TIME_TILL_TERMINAL = 6.
 
 _FACE_THRESHOLD = 0.4
 _EYE_THRESHOLD = 0.4
-_BLINK_THRESHOLD = 0.2 # 0.225
+_BLINK_THRESHOLD = 0.5 # 0.225
 _PITCH_WEIGHT = 1.35 # 1.5  # pitch matters a lot more
 _METRIC_THRESHOLD = 0.4
 _PITCH_POS_ALLOWANCE = 0.04 # 0.08  # rad, to not be too sensitive on positive pitch
@@ -29,13 +29,13 @@ _POSE_OFFSET_MAX_COUNT = 3600 # stop deweighting new data after 6 min, aka "shor
 _RECOVERY_FACTOR_MAX = 5. # relative to minus step change
 _RECOVERY_FACTOR_MIN = 1.25 # relative to minus step change
 
-MAX_TERMINAL_ALERTS = 3      # not allowed to engage after 3 terminal alerts
+MAX_TERMINAL_ALERTS = 3 # not allowed to engage after 3 terminal alerts
 
 # model output refers to center of cropped image, so need to apply the x displacement offset
 RESIZED_FOCAL = 320.0
 H, W, FULL_W = 320, 160, 426
 
-class DistractedType(object):
+class DistractedType():
   NOT_DISTRACTED = 0
   BAD_POSE = 1
   BAD_BLINK = 2
@@ -49,8 +49,8 @@ def head_orientation_from_descriptor(angles_desc, pos_desc, rpy_calib):
   roll_prnet = angles_desc[2]
 
   face_pixel_position = ((pos_desc[0] + .5)*W - W + FULL_W, (pos_desc[1]+.5)*H)
-  yaw_focal_angle = np.arctan2(face_pixel_position[0] - FULL_W/2, RESIZED_FOCAL)
-  pitch_focal_angle = np.arctan2(face_pixel_position[1] - H/2, RESIZED_FOCAL)
+  yaw_focal_angle = np.arctan2(face_pixel_position[0] - FULL_W//2, RESIZED_FOCAL)
+  pitch_focal_angle = np.arctan2(face_pixel_position[1] - H//2, RESIZED_FOCAL)
 
   roll = roll_prnet
   pitch = pitch_prnet + pitch_focal_angle
@@ -142,7 +142,7 @@ class DriverStatus():
 
     if pose_metric > _METRIC_THRESHOLD:
       return DistractedType.BAD_POSE
-    elif blink.left_blink>_BLINK_THRESHOLD and blink.right_blink>_BLINK_THRESHOLD:
+    elif (blink.left_blink + blink.right_blink)*0.5 > _BLINK_THRESHOLD:
       return DistractedType.BAD_BLINK
     else:
       return DistractedType.NOT_DISTRACTED

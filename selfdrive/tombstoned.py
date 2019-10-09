@@ -16,7 +16,7 @@ def get_tombstones():
 
 def report_tombstone(fn, client):
   mtime = os.path.getmtime(fn)
-  with open(fn, "r") as f:
+  with open(fn, encoding='ISO-8859-1') as f:
     dat = f.read()
 
   # see system/core/debuggerd/tombstone.cpp

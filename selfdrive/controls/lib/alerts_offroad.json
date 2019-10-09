@@ -1,0 +1,19 @@
+{
+  "Offroad_ChargeDisabled": {
+    "text": "EON charging disabled after car being off for more than 3 days. Turn ignition on to start charging again.",
+    "severity": 0
+  },
+  "Offroad_TemperatureTooHigh": {
+    "text": "EON temperature too high. System won't start.",
+    "severity": 1
+  },
+  "Offroad_ConnectivityNeededPrompt": {
+    "text": "Connect to internet to check for updates. openpilot won't engage in ",
+    "severity": 0,
+    "_comment": "Append the number of days at the end of the text"
+  },
+  "Offroad_ConnectivityNeeded": {
+    "text": "Connect to internet to check for updates. openpilot won't engage.",
+    "severity": 1
+  }
+}

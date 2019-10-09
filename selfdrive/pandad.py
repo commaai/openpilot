@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # simple boardd wrapper that updates the panda first
 import os
 import time
@@ -32,11 +32,15 @@ def update_panda():
       panda_dfu = PandaDFU(panda_dfu[0])
       panda_dfu.recover()
 
-    print "waiting for board..."
+    print("waiting for board...")
     time.sleep(1)
 
-  current_version = "bootstub" if panda.bootstub else str(panda.get_version())
-  cloudlog.info("Panda connected, version: %s, expected %s" % (current_version, repo_version))
+  try:
+    serial = panda.get_serial()[0].decode("utf-8")
+  except Exception:
+    serial = None
+  current_version = "bootstub" if panda.bootstub else panda.get_version()
+  cloudlog.warning("Panda %s connected, version: %s, expected %s" % (serial, current_version, repo_version))
 
   if panda.bootstub or not current_version.startswith(repo_version):
     cloudlog.info("Panda firmware out of date, update required")
@@ -60,7 +64,7 @@ def update_panda():
     cloudlog.info("Panda still not booting, exiting")
     raise AssertionError
 
-  version = str(panda.get_version())
+  version = panda.get_version()
   if not version.startswith(repo_version):
     cloudlog.info("Version mismatch after flashing, exiting")
     raise AssertionError

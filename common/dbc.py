@@ -17,10 +17,10 @@ DBCSignal = namedtuple(
                 "factor", "offset", "tmin", "tmax", "units"])
 
 
-class dbc(object):
+class dbc():
   def __init__(self, fn):
     self.name, _ = os.path.splitext(os.path.basename(fn))
-    with open(fn) as f:
+    with open(fn, encoding="ascii") as f:
       self.txt = f.readlines()
     self._warned_addresses = set()
 
@@ -41,7 +41,7 @@ class dbc(object):
     self.def_vals = defaultdict(list)
 
     # lookup to bit reverse each byte
-    self.bits_index = [(i & ~0b111) + ((-i-1) & 0b111) for i in xrange(64)]
+    self.bits_index = [(i & ~0b111) + ((-i-1) & 0b111) for i in range(64)]
 
     for l in self.txt:
       l = l.strip()
@@ -213,7 +213,7 @@ class dbc(object):
     if debug:
       print(name)
 
-    st = x[2].ljust(8, '\x00')
+    st = x[2].ljust(8, b'\x00')
     le, be = None, None
 
     for s in msg[1]:

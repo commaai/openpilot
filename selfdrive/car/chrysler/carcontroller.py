@@ -11,7 +11,7 @@ class SteerLimitParams:
   STEER_ERROR_MAX = 80
 
 
-class CarController(object):
+class CarController():
   def __init__(self, dbc_name, car_fingerprint, enable_camera):
     self.braking = False
     # redundant safety check with the board

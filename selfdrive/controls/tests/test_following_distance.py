@@ -15,7 +15,7 @@ def RW(v_ego, v_l):
   return (v_ego * TR - (v_l - v_ego) * TR + v_ego * v_ego / (2 * G) - v_l * v_l / (2 * G))
 
 
-class FakePubMaster(object):
+class FakePubMaster():
   def send(self, s, data):
     assert data
 
@@ -38,7 +38,7 @@ def run_following_distance_simulation(v_lead, t_end=200.0):
   first = True
   while t < t_end:
     # Run cruise control
-    accel_limits = [float(x) for x in calc_cruise_accel_limits(v_ego, False)]
+    accel_limits = [float(x) for x in calc_cruise_accel_limits(v_ego)]
     jerk_limits = [min(-0.1, accel_limits[0]), max(0.1, accel_limits[1])]
     v_cruise, a_cruise = speed_smoother(v_ego, a_ego, v_cruise_setpoint,
                                         accel_limits[1], accel_limits[0],

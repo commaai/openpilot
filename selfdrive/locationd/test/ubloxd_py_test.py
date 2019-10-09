@@ -17,7 +17,7 @@ def mkdirs_exists_ok(path):
 def parser_test(fn, prefix):
   nav_frame_buffer = {}
   nav_frame_buffer[0] = {}
-  for i in xrange(1, 33):
+  for i in range(1, 33):
     nav_frame_buffer[0][i] = {}
 
   if not os.path.exists(prefix):

@@ -78,7 +78,7 @@ boardd.o: boardd.cc
 
 
 boardd_api_impl.so: libcan_list_to_can_capnp.a boardd_api_impl.pyx boardd_setup.py
-	python2 boardd_setup.py build_ext --inplace
+	python3 boardd_setup.py build_ext --inplace
 	rm -rf build
 	rm -f boardd_api_impl.cpp
 

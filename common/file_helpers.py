@@ -32,7 +32,7 @@ def get_tmpdir_on_same_filesystem(path):
     return "/{}/runner/tmp".format(parts[1])
   return "/tmp"
 
-class AutoMoveTempdir(object):
+class AutoMoveTempdir():
   def __init__(self, target_path, temp_dir=None):
     self._target_path = target_path
     self._path = tempfile.mkdtemp(dir=temp_dir)
@@ -52,7 +52,7 @@ class AutoMoveTempdir(object):
     else:
       shutil.rmtree(self._path)
 
-class NamedTemporaryDir(object):
+class NamedTemporaryDir():
   def __init__(self, temp_dir=None):
     self._path = tempfile.mkdtemp(dir=temp_dir)
 

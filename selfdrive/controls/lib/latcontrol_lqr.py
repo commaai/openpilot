@@ -4,7 +4,7 @@ from common.numpy_fast import clip
 from cereal import log
 
 
-class LatControlLQR(object):
+class LatControlLQR():
   def __init__(self, CP, rate=100):
     self.sat_flag = False
     self.scale = CP.lateralTuning.lqr.scale
@@ -29,7 +29,7 @@ class LatControlLQR(object):
     self.i_lqr = 0.0
     self.output_steer = 0.0
 
-  def update(self, active, v_ego, angle_steers, angle_steers_rate, eps_torque, steer_override, CP, VM, path_plan):
+  def update(self, active, v_ego, angle_steers, angle_steers_rate, eps_torque, steer_override, CP, path_plan):
     lqr_log = log.ControlsState.LateralLQRState.new_message()
 
     steers_max = get_steer_max(CP, v_ego)

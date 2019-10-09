@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import numpy as np
 from numpy.linalg import solve
 
@@ -90,7 +90,7 @@ def calc_slip_factor(VM):
   return VM.m * (VM.cF * VM.aF - VM.cR * VM.aR) / (VM.l**2 * VM.cF * VM.cR)
 
 
-class VehicleModel(object):
+class VehicleModel():
   def __init__(self, CP):
     """
     Args:
@@ -140,7 +140,7 @@ class VehicleModel(object):
       u: Speed [m/s]
 
     Returns:
-      Curvature factor [rad/m]
+      Curvature factor [1/m]
     """
     return self.curvature_factor(u) * sa / self.sR
 
@@ -161,7 +161,7 @@ class VehicleModel(object):
     """Calculates the required steering wheel angle for a given curvature
 
     Args:
-      curv: Desired curvature [rad/s]
+      curv: Desired curvature [1/m]
       u: Speed [m/s]
 
     Returns:
@@ -169,6 +169,19 @@ class VehicleModel(object):
     """
 
     return curv * self.sR * 1.0 / self.curvature_factor(u)
+
+  def get_steer_from_yaw_rate(self, yaw_rate, u):
+    """Calculates the required steering wheel angle for a given yaw_rate
+
+    Args:
+      yaw_rate: Desired yaw rate [rad/s]
+      u: Speed [m/s]
+
+    Returns:
+      Steering wheel angle [rad]
+    """
+    curv = yaw_rate / u
+    return self.get_steer_from_curvature(curv, u)
 
   def yaw_rate(self, sa, u):
     """Calculate yaw rate
@@ -188,6 +201,6 @@ if __name__ == '__main__':
   from selfdrive.car.honda.interface import CarInterface
   from selfdrive.car.honda.values import CAR
 
-  CP = CarInterface.get_params(CAR.CIVIC, {})
+  CP = CarInterface.get_params(CAR.CIVIC)
   VM = VehicleModel(CP)
   print(VM.yaw_rate(math.radians(20), 10.))

@@ -1,11 +1,11 @@
 from collections import defaultdict
 from selfdrive.can.libdbc_py import libdbc, ffi
 
-class CANDefine(object):
+class CANDefine():
   def __init__(self, dbc_name):
     self.dv = defaultdict(dict)
     self.dbc_name = dbc_name
-    self.dbc = libdbc.dbc_lookup(dbc_name)
+    self.dbc = libdbc.dbc_lookup(dbc_name.encode('utf8'))
 
     num_vals = self.dbc[0].num_vals
 
@@ -13,16 +13,16 @@ class CANDefine(object):
     num_msgs = self.dbc[0].num_msgs
     for i in range(num_msgs):
       msg = self.dbc[0].msgs[i]
-      name = ffi.string(msg.name)
+      name = ffi.string(msg.name).decode('utf8')
       address = msg.address
       self.address_to_msg_name[address] = name
 
     for i in range(num_vals):
       val = self.dbc[0].vals[i]
 
-      sgname = ffi.string(val.name)
+      sgname = ffi.string(val.name).decode('utf8')
       address = val.address
-      def_val = ffi.string(val.def_val)
+      def_val = ffi.string(val.def_val).decode('utf8')
 
       #separate definition/value pairs
       def_val = def_val.split()
