@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import time
 import struct
 from panda import Panda
@@ -36,15 +36,15 @@ if __name__ == "__main__":
   isotp_send(panda, "\x09\x02", 0x7df)
   ret = isotp_recv(panda, 0x7e8)
   hexdump(ret)
-  print "VIN: %s" % ret[2:]
+  print("VIN: %s" % ret[2:])
 
   # 03 = get DTCS
   isotp_send(panda, "\x03", 0x7e0)
   dtcs = isotp_recv(panda, 0x7e8)
-  print "DTCs:", dtcs[2:].encode("hex")
+  print("DTCs:", dtcs[2:].encode("hex"))
 
   supported_pids = get_supported_pids()
-  print "Supported PIDs:",supported_pids
+  print("Supported PIDs:",supported_pids)
 
   while 1:
     speed = struct.unpack(">B", get_current_data_for_pid(13)[2:])[0]                  # kph
@@ -52,7 +52,7 @@ if __name__ == "__main__":
     throttle = struct.unpack(">B", get_current_data_for_pid(17)[2:])[0]/255.0 * 100   # percent
     temp = struct.unpack(">B", get_current_data_for_pid(5)[2:])[0] - 40               # degrees C
     load = struct.unpack(">B", get_current_data_for_pid(4)[2:])[0]/255.0 * 100        # percent
-    print "%d KPH, %d RPM, %.1f%% Throttle, %d deg C, %.1f%% load" % (speed, rpm, throttle, temp, load)
+    print("%d KPH, %d RPM, %.1f%% Throttle, %d deg C, %.1f%% load" % (speed, rpm, throttle, temp, load))
     time.sleep(0.2)
 
 

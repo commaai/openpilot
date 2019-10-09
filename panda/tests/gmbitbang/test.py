@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import time
 from panda import Panda
 
@@ -28,6 +28,6 @@ while 1:
   #p1.set_gmlan(bus=2)
   #p1.can_send(iden, dat, bus=3)
   time.sleep(0.01)
-  print p2.can_recv()
+  print(p2.can_recv())
   #exit(0)
 

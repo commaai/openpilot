@@ -1,10 +1,10 @@
-from __future__ import print_function
+
 import os
 import time
 import random
 from panda import Panda
 from nose.tools import assert_equal, assert_less, assert_greater
-from helpers import time_many_sends, test_two_panda, test_two_black_panda, panda_type_to_serial, clear_can_buffers, panda_connect_and_init
+from .helpers import time_many_sends, test_two_panda, test_two_black_panda, panda_type_to_serial, clear_can_buffers, panda_connect_and_init
 
 @test_two_panda
 @panda_type_to_serial
@@ -18,7 +18,7 @@ def test_send_recv(p_send, p_recv):
   assert not p_send.legacy
   assert not p_recv.legacy
 
-  p_send.can_send_many([(0x1ba, 0, "message", 0)]*2)
+  p_send.can_send_many([(0x1ba, 0, b"message", 0)]*2)
   time.sleep(0.05)
   p_recv.can_recv()
   p_send.can_recv()
@@ -55,7 +55,7 @@ def test_latency(p_send, p_recv):
   p_recv.set_can_speed_kbps(0, 100)
   time.sleep(0.05)
 
-  p_send.can_send_many([(0x1ba, 0, "testmsg", 0)]*10)
+  p_send.can_send_many([(0x1ba, 0, b"testmsg", 0)]*10)
   time.sleep(0.05)
   p_recv.can_recv()
   p_send.can_recv()
@@ -80,7 +80,7 @@ def test_latency(p_send, p_recv):
 
       for i in range(num_messages):
         st = time.time()
-        p_send.can_send(0x1ab, "message", bus)
+        p_send.can_send(0x1ab, b"message", bus)
         r = []
         while len(r) < 1 and (time.time() - st) < 5:
           r = p_recv.can_recv()
@@ -127,7 +127,7 @@ def test_black_loopback(panda0, panda1):
   panda1.set_can_loopback(False)
 
   # clear stuff
-  panda0.can_send_many([(0x1ba, 0, "testmsg", 0)]*10)
+  panda0.can_send_many([(0x1ba, 0, b"testmsg", 0)]*10)
   time.sleep(0.05)
   panda0.can_recv()
   panda1.can_recv()
@@ -155,7 +155,7 @@ def test_black_loopback(panda0, panda1):
   def _test_buses(send_panda, recv_panda, _test_array):
     for send_bus, send_obd, recv_obd, recv_buses in _test_array:
       print("\nSend bus:", send_bus, " Send OBD:", send_obd, " Recv OBD:", recv_obd)
-      
+
       # set OBD on pandas
       send_panda.set_gmlan(True if send_obd else None)
       recv_panda.set_gmlan(True if recv_obd else None)
@@ -180,7 +180,7 @@ def test_black_loopback(panda0, panda1):
         loop_buses.append(loop[3])
       if len(cans_loop) == 0:
         print("  No loop")
-      
+
       # test loop buses
       recv_buses.sort()
       loop_buses.sort()
