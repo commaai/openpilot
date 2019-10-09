@@ -1,9 +1,10 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 import csv
 import glob
 import unittest
 import numpy as np
 import libpandasafety_py
+from panda import Panda
 
 MAX_RATE_UP = 3
 MAX_RATE_DOWN = 3
@@ -35,7 +36,7 @@ class TestChryslerSafety(unittest.TestCase):
   @classmethod
   def setUp(cls):
     cls.safety = libpandasafety_py.libpandasafety
-    cls.safety.safety_set_mode(9, 0)
+    cls.safety.safety_set_mode(Panda.SAFETY_CHRYSLER, 0)
     cls.safety.init_tests_chrysler()
 
   def _send_msg(self, bus, addr, length):
@@ -181,8 +182,8 @@ class TestChryslerSafety(unittest.TestCase):
     self.assertEqual(0, self.safety.get_chrysler_torque_meas_min())
 
   def test_fwd_hook(self):
-    buss = range(0x0, 0x3)
-    msgs = range(0x1, 0x800)
+    buss = list(range(0x0, 0x3))
+    msgs = list(range(0x1, 0x800))
     chrysler_camera_detected = [0, 1]
 
     for ccd in chrysler_camera_detected:

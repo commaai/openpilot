@@ -1,7 +1,8 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 import unittest
 import numpy as np
 import libpandasafety_py
+from panda import Panda
 
 MAX_RATE_UP = 50
 MAX_RATE_DOWN = 70
@@ -29,7 +30,7 @@ class TestSubaruSafety(unittest.TestCase):
   @classmethod
   def setUp(cls):
     cls.safety = libpandasafety_py.libpandasafety
-    cls.safety.safety_set_mode(10, 0)
+    cls.safety.safety_set_mode(Panda.SAFETY_SUBARU, 0)
     cls.safety.init_tests_subaru()
 
   def _send_msg(self, bus, addr, length):
@@ -174,8 +175,8 @@ class TestSubaruSafety(unittest.TestCase):
 
 
   def test_fwd_hook(self):
-    buss = range(0x0, 0x3)
-    msgs = range(0x1, 0x800)
+    buss = list(range(0x0, 0x3))
+    msgs = list(range(0x1, 0x800))
     blocked_msgs = [290, 356, 545, 802]
     for b in buss:
       for m in msgs:

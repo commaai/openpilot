@@ -38,7 +38,7 @@ void black_set_led(uint8_t color, bool enabled) {
       break;
     case LED_BLUE:
       set_gpio_output(GPIOC, 6, !enabled);
-      break;  
+      break;
     default:
       break;
   }
@@ -53,11 +53,22 @@ void black_set_usb_load_switch(bool enabled) {
 }
 
 void black_set_usb_power_mode(uint8_t mode) {
-  usb_power_mode = mode;
-  if (mode == USB_POWER_NONE) {
-    black_set_usb_load_switch(false);
-  } else {
-    black_set_usb_load_switch(true);
+  bool valid = false;
+  switch (mode) {
+    case USB_POWER_CLIENT:
+      black_set_usb_load_switch(false);
+      valid = true;
+      break;
+    case USB_POWER_CDP:
+      black_set_usb_load_switch(true);
+      valid = true;
+      break;
+    default:
+      puts("Invalid USB power mode\n");
+      break;
+  }
+  if (valid) {
+    usb_power_mode = mode;
   }
 }
 
@@ -67,18 +78,15 @@ void black_set_esp_gps_mode(uint8_t mode) {
       // GPS OFF
       set_gpio_output(GPIOC, 14, 0);
       set_gpio_output(GPIOC, 5, 0);
-      black_set_gps_load_switch(false);
       break;
     case ESP_GPS_ENABLED:
       // GPS ON
       set_gpio_output(GPIOC, 14, 1);
       set_gpio_output(GPIOC, 5, 1);
-      black_set_gps_load_switch(true);
       break;
     case ESP_GPS_BOOTMODE:
       set_gpio_output(GPIOC, 14, 1);
       set_gpio_output(GPIOC, 5, 0);
-      black_set_gps_load_switch(true);
       break;
     default:
       puts("Invalid ESP/GPS mode\n");
@@ -106,7 +114,7 @@ void black_set_can_mode(uint8_t mode){
         // B12,B13: OBD mode
         set_gpio_alternate(GPIOB, 12, GPIO_AF9_CAN2);
         set_gpio_alternate(GPIOB, 13, GPIO_AF9_CAN2);
-      }      
+      }
       break;
     default:
       puts("Tried to set unsupported CAN mode: "); puth(mode); puts("\n");
@@ -153,6 +161,9 @@ void black_init(void) {
 
   // Turn on USB load switch.
   black_set_usb_load_switch(true);
+
+  // Set right power mode
+  black_set_usb_power_mode(USB_POWER_CDP);
 
   // Initialize harness
   harness_init();

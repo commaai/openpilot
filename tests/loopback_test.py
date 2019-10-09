@@ -1,5 +1,5 @@
-#!/usr/bin/env python
-from __future__ import print_function
+#!/usr/bin/env python3
+
 import os
 import sys
 import time
@@ -29,14 +29,14 @@ def run_test(sleep_duration):
   run_test_w_pandas(pandas, sleep_duration)
 
 def run_test_w_pandas(pandas, sleep_duration):
-  h = list(map(lambda x: Panda(x), pandas))
+  h = list([Panda(x) for x in pandas])
   print("H", h)
 
   for hh in h:
     hh.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
 
   # test both directions
-  for ho in permutations(range(len(h)), r=2):
+  for ho in permutations(list(range(len(h))), r=2):
     print("***************** TESTING", ho)
 
     panda0, panda1 = h[ho[0]], h[ho[1]]

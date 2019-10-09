@@ -37,6 +37,13 @@ And to send one on bus 0:
 ```
 Find user made scripts on the [wiki](https://community.comma.ai/wiki/index.php/Panda_scripts)
 
+Note that you may have to setup [udev rules](https://community.comma.ai/wiki/index.php/Panda#Linux_udev_rules) for Linux, such as
+```
+sudo -i
+echo 'SUBSYSTEMS=="usb", ATTR{idVendor}=="bbaa", ATTR{idProduct}=="ddcc", MODE:="0666"' > /etc/udev/rules.d/11-panda.rules
+exit
+```
+
 Usage (JavaScript)
 -------
 
@@ -80,9 +87,26 @@ To print out the serial console from the ESP8266, run PORT=1 tests/debug_console
 Safety Model
 ------
 
-When a panda powers up, by default it's in "SAFETY_NOOUTPUT" mode. While in no output mode, the buses are also forced to be silent. In order to send messages, you have to select a safety mode. Currently, setting safety modes is only supported over USB.
+When a panda powers up, by default it's in `SAFETY_NOOUTPUT` mode. While in no output mode, the buses are also forced to be silent. In order to send messages, you have to select a safety mode. Currently, setting safety modes is only supported over USB.
 
-Safety modes can also optionally support "controls_allowed", which allows or blocks a subset of messages based on a piece of state in the board.
+Safety modes optionally supports `controls_allowed`, which allows or blocks a subset of messages based on a customizable state in the board.
+
+Code Rigor
+------
+When compiled from an [EON Dev Kit](https://comma.ai/shop/products/eon-gold-dashcam-devkit), the panda FW is configured and optimized (at compile time) for its use in
+conjuction with [openpilot](https://github.com/commaai/openpilot). The panda FW, through its safety model, provides and enforces the
+[openpilot Safety](https://github.com/commaai/openpilot/blob/devel/SAFETY.md). Due to its critical function, it's important that the application code rigor within the `board` folder is held to high standards.
+
+These are the [CI regression tests](https://circleci.com/gh/commaai/panda) we have in place:
+* A generic static code analysis is performed by [Cppcheck](https://github.com/danmar/cppcheck/).
+* In addition, [Cppcheck](https://github.com/danmar/cppcheck/) has a specific addon to check for [MISRA C:2012](https://www.misra.org.uk/MISRAHome/MISRAC2012/tabid/196/Default.aspx) violations. See [current coverage](https://github.com/commaai/panda/blob/master/tests/misra/coverage_table).
+* Compiler options are relatively strict: the flags `-Wall -Wextra -Wstrict-prototypes -Werror` are enforced on board and pedal makefiles.
+* The [safety logic](https://github.com/commaai/panda/tree/master/board/safety) is tested and verified by [unit tests](https://github.com/commaai/panda/tree/master/tests/safety) for each supported car variant.
+* A recorded drive for each supported car variant is [replayed through the safety logic](https://github.com/commaai/panda/tree/master/tests/safety_replay)
+to ensure that the behavior remains unchanged.
+* An internal Hardware-in-the-loop test, which currently only runs on pull requests opened by comma.ai's organization members, verifies the following functionalities:
+    * compiling the code in various configuration and flashing it both through USB and WiFi.
+    * Receiving, sending and forwarding CAN messages on all buses, over USB and WiFi.
 
 Hardware
 ------
