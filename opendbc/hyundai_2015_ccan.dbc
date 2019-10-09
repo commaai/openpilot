@@ -893,11 +893,11 @@ BO_ 67 DATC13: 8 DATC
 
 BO_ 66 DATC12: 8 DATC
  SG_ CR_Datc_DrTempDispC : 0|8@1+ (0.5,14.0) [15.0|32.0] "deg"  CLU,IBOX
- SG_ CR_Datc_DrTempDispF : 8|8@1+ (1.0,56.0) [58.0|90.0] "¢µ"  CLU,IBOX
+ SG_ CR_Datc_DrTempDispF : 8|8@1+ (1.0,56.0) [58.0|90.0] ""  CLU,IBOX
  SG_ CR_Datc_PsTempDispC : 16|8@1+ (0.5,14.0) [15.0|32.0] "deg"  CLU,IBOX
- SG_ CR_Datc_PsTempDispF : 24|8@1+ (1.0,56.0) [58.0|90.0] "¢µ"  CLU,IBOX
+ SG_ CR_Datc_PsTempDispF : 24|8@1+ (1.0,56.0) [58.0|90.0] ""  CLU,IBOX
  SG_ CR_Datc_RearDrTempDispC : 40|8@1+ (0.5,14.0) [15.0|32.0] "deg"  CLU
- SG_ CR_Datc_RearDrTempDispF : 48|8@1+ (1.0,58.0) [58.0|90.0] "¢µ"  CLU
+ SG_ CR_Datc_RearDrTempDispF : 48|8@1+ (1.0,58.0) [58.0|90.0] ""  CLU
  SG_ CF_Datc_CO2_Warning : 56|8@1+ (1.0,0.0) [0.0|3.0] ""  CLU
 
 BO_ 1345 CGW1: 8 BCM
