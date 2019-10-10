@@ -17,7 +17,7 @@ class TestPackerMethods(unittest.TestCase):
 
   def test_correctness(self):
     # Test all cars' commands, randomize the params.
-    for _ in xrange(1000):
+    for _ in range(1000):
       bus = random.randint(0, 65536)
       apply_steer = (random.randint(0, 2) % 2 == 0)
       idx = random.randint(0, 65536)

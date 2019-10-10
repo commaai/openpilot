@@ -1,17 +1,18 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.toyota.carstate import CarState, get_can_parser, get_cam_can_parser
-from selfdrive.car.toyota.values import ECU, check_ecu_msgs, CAR, NO_STOP_TIMER_CAR, TSS2_CAR
-from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness
+from selfdrive.car.toyota.values import ECU, ECU_FINGERPRINT, CAR, NO_STOP_TIMER_CAR, TSS2_CAR, FINGERPRINTS
+from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, is_ecu_disconnected, gen_empty_fingerprint
 from selfdrive.swaglog import cloudlog
+from selfdrive.car.interfaces import CarInterfaceBase
 
 ButtonType = car.CarState.ButtonEvent.Type
 GearShifter = car.CarState.GearShifter
 
-class CarInterface(object):
+class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController):
     self.CP = CP
     self.VM = VehicleModel(CP)
@@ -38,18 +39,14 @@ class CarInterface(object):
     return float(accel) / 3.0
 
   @staticmethod
-  def calc_accel_override(a_ego, a_target, v_ego, v_target):
-    return 1.0
-
-  @staticmethod
-  def get_params(candidate, fingerprint, vin="", is_panda_black=False):
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), vin="", has_relay=False):
 
     ret = car.CarParams.new_message()
 
     ret.carName = "toyota"
     ret.carFingerprint = candidate
     ret.carVin = vin
-    ret.isPandaBlack = is_panda_black
+    ret.isPandaBlack = has_relay
 
     ret.safetyModel = car.CarParams.SafetyModel.toyota
 
@@ -219,15 +216,18 @@ class CarInterface(object):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.05]]
       ret.lateralTuning.pid.kf = 0.00006
 
+    elif candidate == CAR.LEXUS_CTH:
+      stop_and_go = True
+      ret.safetyParam = 100
+      ret.wheelbase = 2.60
+      ret.steerRatio = 18.6
+      tire_stiffness_factor = 0.517
+      ret.mass = 3108 * CV.LB_TO_KG + STD_CARGO_KG  # mean between min and max
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.05]]
+      ret.lateralTuning.pid.kf = 0.00007
+
     ret.steerRateCost = 1.
     ret.centerToFront = ret.wheelbase * 0.44
-
-    #detect the Pedal address
-    ret.enableGasInterceptor = 0x201 in fingerprint
-
-    # min speed to enable ACC. if car can do stop and go, then set enabling speed
-    # to a negative value, so it won't matter.
-    ret.minEnableSpeed = -1. if (stop_and_go or ret.enableGasInterceptor) else 19. * CV.MPH_TO_MS
 
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
@@ -248,14 +248,19 @@ class CarInterface(object):
     ret.brakeMaxBP = [0.]
     ret.brakeMaxV = [1.]
 
-    ret.enableCamera = not check_ecu_msgs(fingerprint, ECU.CAM, candidate) or is_panda_black
-    ret.enableDsu = not check_ecu_msgs(fingerprint, ECU.DSU, candidate) or (is_panda_black and candidate in TSS2_CAR)
-    ret.enableApgs = False #not check_ecu_msgs(fingerprint, ECU.APGS)
+    ret.enableCamera = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, ECU.CAM) or has_relay
+    ret.enableDsu = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, ECU.DSU) or (has_relay and candidate in TSS2_CAR)
+    ret.enableApgs = False  # is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, ECU.APGS)
+    ret.enableGasInterceptor = 0x201 in fingerprint[0]
     ret.openpilotLongitudinalControl = ret.enableCamera and ret.enableDsu
-    cloudlog.warn("ECU Camera Simulated: %r", ret.enableCamera)
-    cloudlog.warn("ECU DSU Simulated: %r", ret.enableDsu)
-    cloudlog.warn("ECU APGS Simulated: %r", ret.enableApgs)
-    cloudlog.warn("ECU Gas Interceptor: %r", ret.enableGasInterceptor)
+    cloudlog.warning("ECU Camera Simulated: %r", ret.enableCamera)
+    cloudlog.warning("ECU DSU Simulated: %r", ret.enableDsu)
+    cloudlog.warning("ECU APGS Simulated: %r", ret.enableApgs)
+    cloudlog.warning("ECU Gas Interceptor: %r", ret.enableGasInterceptor)
+
+    # min speed to enable ACC. if car can do stop and go, then set enabling speed
+    # to a negative value, so it won't matter.
+    ret.minEnableSpeed = -1. if (stop_and_go or ret.enableGasInterceptor) else 19. * CV.MPH_TO_MS
 
     ret.steerLimitAlert = False
 
@@ -283,10 +288,7 @@ class CarInterface(object):
   def update(self, c, can_strings):
     # ******************* do can recv *******************
     self.cp.update_strings(can_strings)
-
-    # run the cam can update for 10s as we just need to know if the camera is alive
-    if self.frame < 1000:
-      self.cp_cam.update_strings(can_strings)
+    self.cp_cam.update_strings(can_strings)
 
     self.CS.update(self.cp)
 
@@ -371,6 +373,8 @@ class CarInterface(object):
     if self.cp_cam.can_valid:
       self.forwarding_camera = True
 
+    if self.cp_cam.can_invalid_cnt >= 100 and self.CP.enableCamera:
+      events.append(create_event('invalidGiraffeToyota', [ET.PERMANENT]))
     if not ret.gearShifter == GearShifter.drive and self.CP.enableDsu:
       events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if ret.doorOpen:

@@ -54,13 +54,6 @@ typedef struct CameraState {
   uint32_t line_length_pclk;
   unsigned int max_gain;
 
-  // PLL to sync cameras in time
-  // assumes at least 1 FPS
-  bool using_pll;
-  int phase_actual;
-  int phase_request;
-  int64_t global_time_offset;
-
   int csid_fd;
   int csiphy_fd;
   int sensor_fd;

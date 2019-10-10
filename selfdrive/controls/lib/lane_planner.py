@@ -32,7 +32,7 @@ def calc_d_poly(l_poly, r_poly, p_poly, l_prob, r_prob, lane_width):
   return lr_prob * d_poly_lane + (1.0 - lr_prob) * p_poly
 
 
-class LanePlanner(object):
+class LanePlanner():
   def __init__(self):
     self.l_poly = [0., 0., 0., 0.]
     self.r_poly = [0., 0., 0., 0.]

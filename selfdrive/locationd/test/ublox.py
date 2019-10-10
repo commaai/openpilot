@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 '''
 UBlox binary protocol handling
 
@@ -9,6 +9,7 @@ WARNING: This code has originally intended for
 ublox version 7, it has been adapted to work
 for ublox version 8, not all functions may work.
 '''
+
 
 import struct
 import time, os
@@ -534,7 +535,7 @@ class UBloxMessage:
   '''UBlox message class - holds a UBX binary message'''
 
   def __init__(self):
-    self._buf = ""
+    self._buf = b""
     self._fields = {}
     self._recs = []
     self._unpacked = False
@@ -613,11 +614,11 @@ class UBloxMessage:
 
   def msg_class(self):
     '''return the message class'''
-    return ord(self._buf[2])
+    return self._buf[2]
 
   def msg_id(self):
     '''return the message id within the class'''
-    return ord(self._buf[3])
+    return self._buf[3]
 
   def msg_type(self):
     '''return the message type tuple (class, id)'''
@@ -630,9 +631,9 @@ class UBloxMessage:
 
   def valid_so_far(self):
     '''check if the message is valid so far'''
-    if len(self._buf) > 0 and ord(self._buf[0]) != PREAMBLE1:
+    if len(self._buf) > 0 and self._buf[0] != PREAMBLE1:
       return False
-    if len(self._buf) > 1 and ord(self._buf[1]) != PREAMBLE2:
+    if len(self._buf) > 1 and self._buf[1] != PREAMBLE2:
       self.debug(1, "bad pre2")
       return False
     if self.needed_bytes() == 0 and not self.valid():
@@ -661,7 +662,7 @@ class UBloxMessage:
     ck_a = 0
     ck_b = 0
     for i in data:
-      ck_a = (ck_a + ord(i)) & 0xFF
+      ck_a = (ck_a + i) & 0xFF
       ck_b = (ck_b + ck_a) & 0xFF
     return (ck_a, ck_b)
 
@@ -713,7 +714,7 @@ class UBlox:
       self.dev = PandaSerial(self.panda, 1, self.baudrate)
 
       self.baudrate = 460800
-      print "upping baud:",self.baudrate
+      print("upping baud:",self.baudrate)
       self.send_nmea("$PUBX,41,1,0007,0003,%u,0" % self.baudrate)
       time.sleep(0.1)
 
@@ -722,7 +723,7 @@ class UBlox:
       from selfdrive.services import service_list
       import selfdrive.messaging as messaging
 
-      class BoarddSerial(object):
+      class BoarddSerial():
         def __init__(self):
           self.ubloxRaw = messaging.sub_sock(service_list['ubloxRaw'].port)
           self.buf = ""

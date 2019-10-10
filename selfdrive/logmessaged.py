@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import zmq
 from logentries import LogentriesHandler
 from selfdrive.services import service_list
@@ -19,7 +19,8 @@ def main(gctx=None):
   pub_sock = messaging.pub_sock(service_list['logMessage'].port)
 
   while True:
-    dat = ''.join(sock.recv_multipart())
+    dat = b''.join(sock.recv_multipart())
+    dat = dat.decode('utf8')
 
     # print "RECV", repr(dat)
 

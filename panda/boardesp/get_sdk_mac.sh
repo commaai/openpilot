@@ -28,5 +28,5 @@ git checkout 03f5e898a059451ec5f3de30e7feff30455f7cec
 git submodule init
 git submodule update --recursive
 
-make STANDALONE=y
-
+cp ../python2_make.py .
+python2 python2_make.py 'make STANDALONE=y'

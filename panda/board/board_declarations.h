@@ -36,7 +36,7 @@ struct board {
 #define LED_GREEN 1U
 #define LED_BLUE 2U
 
-// USB power modes
+// USB power modes (from cereal.log.health)
 #define USB_POWER_NONE 0U
 #define USB_POWER_CLIENT 1U
 #define USB_POWER_CDP 2U

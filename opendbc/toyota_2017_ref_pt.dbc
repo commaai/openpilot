@@ -126,7 +126,7 @@ BO_ 896 ACN1S01: 8 CGW
  SG_ GNRTIH : 27|1@0+ (1,0) [0|0] "" Vector__XXX
  SG_ R_COL_TM : 26|1@0+ (1,0) [0|0] "" Vector__XXX
  SG_ R_HET_TM : 24|1@0+ (1,0) [0|0] "" Vector__XXX
- SG_ TAMOUT : 55|8@0- (0.625,0) [0|0] "Ž" Vector__XXX
+ SG_ TAMOUT : 55|8@0- (0.625,0) [0|0] "" Vector__XXX
 
 BO_ 897 ACN1S04: 8 CGW
  SG_ R_ACCALL : 7|1@0+ (1,0) [0|0] "" Vector__XXX
@@ -166,9 +166,9 @@ BO_ 897 ACN1S04: 8 CGW
 BO_ 944 ACN1S07: 6 CGW
  SG_ RDEF : 7|1@0+ (1,0) [0|0] "" Vector__XXX
  SG_ MHTR : 6|1@0+ (1,0) [0|0] "" Vector__XXX
- SG_ TR_TEMP : 15|8@0+ (0.25,-6.5) [0|0] "Ž" Vector__XXX
- SG_ ACN_AMB : 31|8@0+ (1,0) [0|0] "Ž" CSR,DS1,FCM
- SG_ AC_AMB05 : 44|1@0+ (1,0) [0|0] "Ž" Vector__XXX
+ SG_ TR_TEMP : 15|8@0+ (0.25,-6.5) [0|0] "" Vector__XXX
+ SG_ ACN_AMB : 31|8@0+ (1,0) [0|0] "" CSR,DS1,FCM
+ SG_ AC_AMB05 : 44|1@0+ (1,0) [0|0] "" Vector__XXX
  SG_ AC_MODE : 43|2@0+ (1,0) [0|0] "" Vector__XXX
 
 BO_ 1250 AFS1N01: 8 AFS
@@ -851,7 +851,7 @@ BO_ 956 ECT1S92: 8 CGW
  SG_ B_R : 12|1@0+ (1,0) [0|0] "" AFS,BSR,CSR,DS1,FCM,MAV
  SG_ B_N : 11|1@0+ (1,0) [0|0] "" AFS,CSR,MAV
  SG_ B_ISPTM : 10|3@0+ (1,0) [0|0] "" Vector__XXX
- SG_ BV_THOCL : 23|16@0+ (0.625,-50) [0|0] "Ž" Vector__XXX
+ SG_ BV_THOCL : 23|16@0+ (0.625,-50) [0|0] "" Vector__XXX
  SG_ B_GEAR : 39|4@0+ (1,0) [0|0] "" Vector__XXX
  SG_ B_SMDE : 32|1@0+ (1,0) [0|0] "" Vector__XXX
  SG_ B_D : 47|1@0+ (1,0) [0|0] "" AFS,CSR,DS1,MAV
@@ -988,7 +988,7 @@ BO_ 1017 ENG1F03: 8 CGW
 
 BO_ 452 ENG1F07: 8 CGW
  SG_ NE1 : 7|16@0- (0.78125,0) [0|0] "rpm" SCS
- SG_ THA1 : 23|8@0+ (2.5,-40) [0|0] "Ž" Vector__XXX
+ SG_ THA1 : 23|8@0+ (2.5,-40) [0|0] "" Vector__XXX
  SG_ THWX : 31|1@0+ (1,0) [0|0] "" Vector__XXX
  SG_ EGF : 30|1@0+ (1,0) [0|0] "" Vector__XXX
  SG_ T2ERXF : 29|1@0+ (1,0) [0|0] "" Vector__XXX
@@ -1026,7 +1026,7 @@ BO_ 705 ENG1S01: 8 CGW
 
 BO_ 961 ENG1S23: 3 CGW
  SG_ EKLSM : 7|8@0+ (0.625,0) [0|0] "%" Vector__XXX
- SG_ GATHW : 15|16@0- (0.625,0) [0|0] "Ž" Vector__XXX
+ SG_ GATHW : 15|16@0- (0.625,0) [0|0] "" Vector__XXX
 
 BO_ 979 ENG1S28: 2 CGW
  SG_ B_FC : 7|16@0+ (0.0005,0) [0|0] "ml" Vector__XXX
@@ -1067,7 +1067,7 @@ BO_ 955 ENG1S92: 8 CGW
  SG_ B_WSTP : 11|1@0+ (1,0) [0|0] "" Vector__XXX
  SG_ B_LOUT : 10|1@0+ (1,0) [0|0] "" Vector__XXX
  SG_ B_OILPL : 9|2@0+ (1,0) [0|0] "" Vector__XXX
- SG_ B_TMP : 23|8@0+ (0.5,0) [0|0] "Ž" Vector__XXX
+ SG_ B_TMP : 23|8@0+ (0.5,0) [0|0] "" Vector__XXX
  SG_ OGENETCS : 30|1@0+ (1,0) [0|0] "" Vector__XXX
  SG_ B_DPFW : 28|3@0+ (1,0) [0|0] "" Vector__XXX
  SG_ BOSLAMP : 37|3@0+ (1,0) [0|0] "" Vector__XXX
@@ -1082,8 +1082,8 @@ BO_ 921 ENG1S95: 8 CGW
  SG_ B_SPU2 : 4|1@0+ (1,0) [0|0] "" Vector__XXX
  SG_ ACASID1 : 3|4@0+ (1,0) [0|0] "" Vector__XXX
  SG_ ACASID2 : 15|8@0+ (1,0) [0|0] "" Vector__XXX
- SG_ B_LSP2 : 31|8@0+ (1,0) [0|0] "km/hEmph" Vector__XXX
- SG_ B_ASLSP2 : 39|8@0+ (1,0) [0|0] "km/hEmph" Vector__XXX
+ SG_ B_LSP2 : 31|8@0+ (1,0) [0|0] "km/h Emph" Vector__XXX
+ SG_ B_ASLSP2 : 39|8@0+ (1,0) [0|0] "km/h Emph" Vector__XXX
  SG_ CACCTRN : 47|1@0+ (1,0) [0|0] "" Vector__XXX
  SG_ CACCINF : 46|1@0+ (1,0) [0|0] "" Vector__XXX
  SG_ CACCFR2 : 45|1@0+ (1,0) [0|0] "" Vector__XXX
@@ -1096,7 +1096,7 @@ BO_ 921 ENG1S95: 8 CGW
 BO_ 238 ENG2F01: 4 CGW
  SG_ STOFOK : 7|1@0+ (1,0) [0|0] "" Vector__XXX
  SG_ GROWIND : 6|1@0+ (1,0) [0|0] "" Vector__XXX
- SG_ B_TMP3 : 15|8@0+ (0.5,0) [0|0] "Ž" Vector__XXX
+ SG_ B_TMP3 : 15|8@0+ (0.5,0) [0|0] "" Vector__XXX
  SG_ IMMINJST : 23|16@0+ (1,0) [0|0] "" Vector__XXX
 
 BO_ 466 ENG2F04: 8 CGW
@@ -1113,7 +1113,7 @@ BO_ 466 ENG2F04: 8 CGW
  SG_ PLOCKF : 8|1@0+ (1,0) [0|0] "" Vector__XXX
  SG_ ACCREQ : 23|16@0- (0.0009765625,0) [0|0] "m/s^2" DS1
  SG_ ACCAVL : 39|16@0- (2,0) [0|0] "N" Vector__XXX
- SG_ SPDSTAT : 55|4@0+ (1,0) [0|0] "|" DS1
+ SG_ SPDSTAT : 55|4@0+ (1,0) [0|0] "" DS1
  SG_ SSTOK : 51|1@0+ (1,0) [0|0] "" Vector__XXX
  SG_ CANREQ : 49|1@0+ (1,0) [0|0] "" Vector__XXX
  SG_ FCACT : 48|1@0+ (1,0) [0|0] "" Vector__XXX
@@ -1280,7 +1280,7 @@ BO_ 1076102682 MET1S05_24: 8 CGW
  SG_ MET05_IF : 15|8@0+ (1,0) [0|0] "" Vector__XXX
  SG_ TO_SP : 23|16@0+ (0.1,0) [0|0] "km/h,MPH" Vector__XXX
  SG_ UNIT_5 : 39|2@0+ (1,0) [0|0] "" Vector__XXX
- SG_ TO_FC : 47|16@0+ (0.1,0) [0|0] "MPGEkm/lEl/100kmEkm/gallon" Vector__XXX
+ SG_ TO_FC : 47|16@0+ (0.1,0) [0|0] "MPG Ekm/l El/100km Ekm/gallon" Vector__XXX
  SG_ UNIT_6 : 63|3@0+ (1,0) [0|0] "" Vector__XXX
 
 BO_ 1076299282 MET1S08_27: 8 CGW

@@ -1,8 +1,8 @@
-from __future__ import print_function
+
 import os
 import time
 from panda import Panda
-from helpers import connect_wifi, test_white, test_all_pandas, panda_type_to_serial, panda_connect_and_init
+from .helpers import connect_wifi, test_white, test_all_pandas, panda_type_to_serial, panda_connect_and_init
 import requests
 
 @test_all_pandas

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import math
 import numpy as np
 from common.params import Params
@@ -27,13 +27,12 @@ _A_CRUISE_MIN_BP = [   0., 5.,  10., 20.,  40.]
 
 # need fast accel at very low speed for stop and go
 # make sure these accelerations are smaller than mpc limits
-_A_CRUISE_MAX_V = [1.1, 1.1, .8, .5, .3]
-_A_CRUISE_MAX_V_FOLLOWING = [1.6, 1.6, 1.2, .7, .3]
-_A_CRUISE_MAX_BP = [0.,  5., 10., 20., 40.]
+_A_CRUISE_MAX_V = [1.6, 1.6, 0.65, .4]
+_A_CRUISE_MAX_BP = [0.,  6.4, 22.5, 40.]
 
 # Lookup table for turns
-_A_TOTAL_MAX_V = [1.5, 1.9, 3.2]
-_A_TOTAL_MAX_BP = [0., 20., 40.]
+_A_TOTAL_MAX_V = [1.7, 3.2]
+_A_TOTAL_MAX_BP = [20., 40.]
 
 
 # Model speed kalman stuff
@@ -46,13 +45,9 @@ _MODEL_V_K = [[0.07068858], [0.04826294]]
 SPEED_PERCENTILE_IDX = 7
 
 
-def calc_cruise_accel_limits(v_ego, following):
+def calc_cruise_accel_limits(v_ego):
   a_cruise_min = interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V)
-
-  if following:
-    a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V_FOLLOWING)
-  else:
-    a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V)
+  a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V)
   return np.vstack([a_cruise_min, a_cruise_max])
 
 
@@ -69,7 +64,7 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   return [a_target[0], min(a_target[1], a_x_allowed)]
 
 
-class Planner(object):
+class Planner():
   def __init__(self, CP):
     self.CP = CP
 
@@ -95,7 +90,7 @@ class Planner(object):
 
   def choose_solution(self, v_cruise_setpoint, enabled):
     if enabled:
-      solutions = {'cruise': self.v_cruise, 'model': self.v_model}
+      solutions = {'model': self.v_model, 'cruise': self.v_cruise}
       if self.mpc1.prev_lead_status:
         solutions['mpc1'] = self.mpc1.v_mpc
       if self.mpc2.prev_lead_status:
@@ -134,7 +129,6 @@ class Planner(object):
     lead_2 = sm['radarState'].leadTwo
 
     enabled = (long_control_state == LongCtrlState.pid) or (long_control_state == LongCtrlState.stopping)
-    following = lead_1.status and lead_1.dRel < 45.0 and lead_1.vLeadK > v_ego and lead_1.aLeadK > 0.0
 
     if len(sm['model'].path.poly):
       path = list(sm['model'].path.poly)
@@ -142,6 +136,7 @@ class Planner(object):
       # Curvature of polynomial https://en.wikipedia.org/wiki/Curvature#Curvature_of_the_graph_of_a_function
       # y = a x^3 + b x^2 + c x + d, y' = 3 a x^2 + 2 b x + c, y'' = 6 a x + 2 b
       # k = y'' / (1 + y'^2)^1.5
+      # TODO: compute max speed without using a list of points and without numpy
       y_p = 3 * path[0] * self.path_x**2 + 2 * path[1] * self.path_x + path[2]
       y_pp = 6 * path[0] * self.path_x + 2 * path[1]
       curv = y_pp / (1. + y_p**2)**1.5
@@ -149,14 +144,13 @@ class Planner(object):
       a_y_max = 2.975 - v_ego * 0.0375  # ~1.85 @ 75mph, ~2.6 @ 25mph
       v_curvature = np.sqrt(a_y_max / np.clip(np.abs(curv), 1e-4, None))
       model_speed = np.min(v_curvature)
-      # print(model_speed * CV.MS_TO_MPH, model_speed)
       model_speed = max(20.0 * CV.MPH_TO_MS, model_speed) # Don't slow down below 20mph
     else:
       model_speed = MAX_SPEED
 
     # Calculate speed for normal cruise control
     if enabled:
-      accel_limits = [float(x) for x in calc_cruise_accel_limits(v_ego, following)]
+      accel_limits = [float(x) for x in calc_cruise_accel_limits(v_ego)]
       jerk_limits = [min(-0.1, accel_limits[0]), max(0.1, accel_limits[1])]  # TODO: make a separate lookup for jerk tuning
       accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngle, accel_limits, self.CP)
 

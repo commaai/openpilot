@@ -331,7 +331,7 @@ static void set_volume(UIState *s, int volume) {
   int volume_changed = system(volume_change_cmd);
 }
 
-volatile int do_exit = 0;
+volatile sig_atomic_t do_exit = 0;
 static void set_do_exit(int sig) {
   do_exit = 1;
 }
@@ -443,7 +443,7 @@ sound_file sound_table[] = {
   { cereal_CarControl_HUDControl_AudibleAlert_chimeEngage, "../assets/sounds/engaged.wav", false },
   { cereal_CarControl_HUDControl_AudibleAlert_chimeWarning1, "../assets/sounds/warning_1.wav", false },
   { cereal_CarControl_HUDControl_AudibleAlert_chimeWarning2, "../assets/sounds/warning_2.wav", false },
-  { cereal_CarControl_HUDControl_AudibleAlert_chimeWarningRepeat, "../assets/sounds/warning_2.wav", true },
+  { cereal_CarControl_HUDControl_AudibleAlert_chimeWarningRepeat, "../assets/sounds/warning_repeat.wav", true },
   { cereal_CarControl_HUDControl_AudibleAlert_chimeError, "../assets/sounds/error.wav", false },
   { cereal_CarControl_HUDControl_AudibleAlert_chimePrompt, "../assets/sounds/error.wav", false },
   { cereal_CarControl_HUDControl_AudibleAlert_none, NULL, false },
@@ -2192,8 +2192,8 @@ int main(int argc, char* argv[]) {
 
   float smooth_brightness = BRIGHTNESS_B;
 
-  const int MIN_VOLUME = LEON ? 12 : 8;
-  const int MAX_VOLUME = LEON ? 15 : 13;
+  const int MIN_VOLUME = LEON ? 12 : 9;
+  const int MAX_VOLUME = LEON ? 15 : 12;
 
   set_volume(s, MIN_VOLUME);
 #ifdef DEBUG_FPS

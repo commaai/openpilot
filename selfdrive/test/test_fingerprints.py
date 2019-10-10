@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 import os
 import sys
 from common.basedir import BASEDIR

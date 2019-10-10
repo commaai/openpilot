@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import numpy as np
 import unittest
@@ -12,7 +12,7 @@ from selfdrive.locationd.liblocationd_py import liblocationd  # pylint: disable=
 class TestParamsLearner(unittest.TestCase):
   def setUp(self):
 
-    self.CP = CarInterface.get_params(CAR.CIVIC, {})
+    self.CP = CarInterface.get_params(CAR.CIVIC)
     bts = self.CP.to_bytes()
 
     self.params_learner = liblocationd.params_learner_init(len(bts), bts, 0.0, 1.0, self.CP.steerRatio, 1.0)
