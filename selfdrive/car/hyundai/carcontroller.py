@@ -48,7 +48,7 @@ def process_hud_alert(enabled, fingerprint, visual_alert, left_line,
 
   return hud_alert, lane_visible, left_lane_warning, right_lane_warning
 
-class CarController(object):
+class CarController():
   def __init__(self, dbc_name, car_fingerprint):
     self.apply_steer_last = 0
     self.car_fingerprint = car_fingerprint

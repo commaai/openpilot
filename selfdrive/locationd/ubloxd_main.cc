@@ -25,7 +25,7 @@
 
 #include "ublox_msg.h"
 
-volatile int do_exit = 0; // Flag for process exit on signal
+volatile sig_atomic_t do_exit = 0; // Flag for process exit on signal
 
 void set_do_exit(int sig) {
   do_exit = 1;

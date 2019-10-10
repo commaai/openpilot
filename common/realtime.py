@@ -19,6 +19,7 @@ assert sec_since_boot
 DT_CTRL = 0.01  # controlsd
 DT_PLAN = 0.05  # mpc
 DT_MDL = 0.05  # model
+DT_RDR = 0.05  # radar
 DT_DMON = 0.1  # driver monitoring
 DT_TRML = 0.5  # thermald and manager
 
@@ -43,7 +44,7 @@ def set_realtime_priority(level):
   return subprocess.call(['chrt', '-f', '-p', str(level), str(tid)])
 
 
-class Ratekeeper(object):
+class Ratekeeper():
   def __init__(self, rate, print_delay_threshold=0.):
     """Rate in Hz for ratekeeping. print_delay_threshold must be nonnegative."""
     self._interval = 1. / rate

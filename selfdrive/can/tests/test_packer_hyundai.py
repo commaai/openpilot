@@ -14,7 +14,7 @@ class TestPackerMethods(unittest.TestCase):
 
   def test_correctness(self):
     # Test all commands, randomize the params.
-    for _ in xrange(1000):
+    for _ in range(1000):
       # Hyundai
       car_fingerprint = hyundai_checksum["crc8"][0]
       apply_steer = (random.randint(0, 2) % 2 == 0)

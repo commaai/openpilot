@@ -65,7 +65,7 @@ def ecef2geodetic(ecef, radians=False):
   geodetic = np.column_stack((lat, lon, h))
   return geodetic.reshape(input_shape)
 
-class LocalCoord(object):
+class LocalCoord():
   """
    Allows conversions to local frames. In this case NED.
    That is: North East Down from the start position in

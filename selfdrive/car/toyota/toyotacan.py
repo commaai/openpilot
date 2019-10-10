@@ -10,7 +10,7 @@ def fix(msg, addr):
 
   checksum = idh + idl + len(msg) + 1
   for d_byte in msg:
-    checksum += ord(d_byte)
+    checksum += d_byte
 
   #return msg + chr(checksum & 0xFF)
   return msg + struct.pack("B", checksum & 0xFF)

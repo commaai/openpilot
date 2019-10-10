@@ -439,7 +439,7 @@ void USB_WritePacket_EP0(uint8_t *src, uint16_t len) {
   USB_WritePacket(src, wplen, 0);
 
   if (wplen < len) {
-    ep0_txdata = src + wplen;
+    ep0_txdata = &src[wplen];
     ep0_txlen = len - wplen;
     USBx_DEVICE->DIEPEMPMSK |= 1;
   } else {
@@ -985,7 +985,7 @@ void usb_irqhandler(void) {
       if ((ep0_txlen != 0U) && ((USBx_INEP(0)->DTXFSTS & USB_OTG_DTXFSTS_INEPTFSAV) >= 0x40U)) {
         uint16_t len = MIN(ep0_txlen, 0x40);
         USB_WritePacket(ep0_txdata, len, 0);
-        ep0_txdata += len;
+        ep0_txdata = &ep0_txdata[len];
         ep0_txlen -= len;
         if (ep0_txlen == 0U) {
           ep0_txdata = NULL;

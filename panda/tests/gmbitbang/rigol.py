@@ -1,10 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import numpy as np
 import visa
 import matplotlib.pyplot as plt
 
 resources = visa.ResourceManager()
-print resources.list_resources()
+print(resources.list_resources())
 
 scope = resources.open_resource('USB0::0x1AB1::0x04CE::DS1ZA184652242::INSTR', timeout=2000, chunk_size=1024000)
 print(scope.query('*IDN?').strip())
@@ -17,7 +17,7 @@ scope.write(":WAV:POIN:MODE RAW")
 scope.write(":WAV:DATA? CHAN1")[10:]
 rawdata = scope.read_raw()
 data = np.frombuffer(rawdata, 'B')
-print data.shape
+print(data.shape)
 
 s1 = data[0:650]
 s2 = data[650:]
@@ -31,5 +31,5 @@ plt.plot(s2)
 plt.show()
 #data = (data - 130.0 - voltoffset/voltscale*25) / 25 * voltscale
 
-print data
+print(data)
 

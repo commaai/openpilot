@@ -1,7 +1,7 @@
 VERSION ""
 
 
-NS_ : 
+NS_ :
 	NS_DESC_
 	CM_
 	BA_DEF_
@@ -187,10 +187,10 @@ BO_ 1298 PSG_2: 8 XXX
  SG_ RAM_Inhalt_1 : 0|16@1+ (1,0) [0|0] "" XXX
 
 BO_ 274 PSG_1: 8 XXX
- SG_ Pumpentemperatur__2_1_ : 48|16@1+ (0.0625,0) [0|4096] "°K" XXX
+ SG_ Pumpentemperatur__2_1_ : 48|16@1+ (0.0625,0) [0|4096] "K" XXX
  SG_ Pumpentemperatur__3_2_2_ : 44|12@1+ (1,0) [0|0] "" XXX
- SG_ Zylinderzaehler__3_2_2_ : 43|3@1+ (1,0) [1|8] "Zähler" XXX
- SG_ Ansteuerdauer__3_2_2_ : 32|11@1+ (0.0469,0) [0|96] "°NW" XXX
+ SG_ Zylinderzaehler__3_2_2_ : 43|3@1+ (1,0) [1|8] "Zaehler" XXX
+ SG_ Ansteuerdauer__3_2_2_ : 32|11@1+ (0.0469,0) [0|96] "NW" XXX
  SG_ Nockenwellendrehzahl__3_2_2_ : 20|12@1+ (4,0) [0|16380] "upm" XXX
  SG_ Pumpen_Statuswort__3_2_2_ : 0|20@1+ (1,0) [0|0] "" XXX
 
@@ -233,7 +233,7 @@ BO_ 1424 Niveau_1: 6 XXX
  SG_ ESP_Beeinflussung : 14|1@1+ (1,0) [0|0] "" XXX
  SG_ Warnlampe_Niveau_1 : 13|1@1+ (1,0) [0|0] "" XXX
  SG_ Frei_Niveau_1_1 : 12|1@1+ (1,0) [0|0] "" XXX
- SG_ Zaehler_Niveau_1 : 8|4@1+ (1,0) [0|15] "Zähler" XXX
+ SG_ Zaehler_Niveau_1 : 8|4@1+ (1,0) [0|15] "Zaehler" XXX
  SG_ Checksumme_Niveau_1 : 0|8@1+ (1,0) [0|0] "" XXX
 
 BO_ 1328 Navigation_1: 7 XXX
@@ -248,11 +248,11 @@ BO_ 1328 Navigation_1: 7 XXX
  SG_ Laenderkennung : 16|8@1+ (1,0) [0|0] "" XXX
  SG_ Vorzeichen_Gierrate______ : 15|1@1+ (1,0) [0|0] "" XXX
  SG_ Gierratenfehler : 14|1@1+ (1,0) [0|0] "" XXX
- SG_ Gierrate : 0|14@1+ (0.01,0) [0|100] "°/sek" XXX
+ SG_ Gierrate : 0|14@1+ (0.01,0) [0|100] "deg/sek" XXX
 
 BO_ 1792 MSG_3: 3 XXX
  SG_ MSG_Konfiguration : 16|8@1+ (1,0) [0|0] "" XXX
- SG_ Lage_des_OT_Impuls : 0|16@1+ (0.01172,-384) [-384|384] "°KW" XXX
+ SG_ Lage_des_OT_Impuls : 0|16@1+ (0.01172,-384) [-384|384] "KW" XXX
 
 BO_ 1280 MSG_2: 8 XXX
  SG_ RAM_Adresse_4 : 48|16@1+ (1,0) [0|0] "" XXX
@@ -262,8 +262,8 @@ BO_ 1280 MSG_2: 8 XXX
 
 BO_ 256 MSG_1: 8 XXX
  SG_ Kurbelwellendrehzahl__3_2_2_ : 56|8@1+ (1,0) [0|0] "" XXX
- SG_ Soll_Foerderbeginn_KW__3_2_2_ : 40|16@1+ (0.01172,-384) [-384|384] "°KW" XXX
- SG_ Soll_Foerderbeginn_NW__3_2_2_ : 28|12@1+ (0.01172,0) [0|768] "°NW" XXX
+ SG_ Soll_Foerderbeginn_KW__3_2_2_ : 40|16@1+ (0.01172,-384) [-384|384] "KW" XXX
+ SG_ Soll_Foerderbeginn_NW__3_2_2_ : 28|12@1+ (0.01172,0) [0|768] "degNW" XXX
  SG_ Soll_Voreinspritzung : 16|12@1+ (1,0) [0|0] "" XXX
  SG_ Soll_Einspritzmenge : 0|16@1+ (0.03125,0) [0|2047] "mg/H" XXX
 
@@ -273,7 +273,7 @@ BO_ 1796 Motor_NOX: 8 XXX
  SG_ Heizleistungsanforderung : 18|1@1+ (1,0) [0|0] "" XXX
  SG_ Offsetkorrektur_moeglich : 17|1@1+ (1,0) [0|0] "" XXX
  SG_ Betriebsbereich : 16|1@1+ (1,0) [0|0] "" XXX
- SG_ Abgastemperatur_NOX : 8|8@1+ (5,-40) [-40|1230] "°C" XXX
+ SG_ Abgastemperatur_NOX : 8|8@1+ (5,-40) [-40|1230] "C" XXX
  SG_ Abgasdruck_NOX : 0|8@1+ (5,600) [600|1870] "mbar" XXX
 
 BO_ 900 Motor_Momente: 8 XXX
@@ -361,7 +361,7 @@ BO_ 896 Motor_3: 8 XXX
  SG_ Vorzeichen_Rad_Wunschmoment : 36|1@1+ (1,0) [0|0] "" XXX
  SG_ Rad_Wunschmoment : 24|12@1+ (0.39,0) [0|1597] "MDI" XXX
  SG_ Fahrpedal_Rohsignal : 16|8@1+ (0.4,0) [0|101.6] "%" XXX
- SG_ Ansauglufttemperatur : 8|8@1+ (0.75,-48) [-48|142.5] "°" XXX
+ SG_ Ansauglufttemperatur : 8|8@1+ (0.75,-48) [-48|142.5] "" XXX
  SG_ Fehlerstatus_Ansauglufttemperat : 7|1@1+ (1,0) [0|0] "" XXX
  SG_ Motorsteuerger_t_gesperrt : 6|1@1+ (1,0) [0|0] "" XXX
  SG_ Drosselklappenwinkel_ungenau : 5|1@1+ (1,0) [0|0] "" XXX
@@ -384,7 +384,7 @@ BO_ 648 Motor_2: 8 XXX
  SG_ Fehlerstatus_Kuhlmitteltempera : 18|1@1+ (1,0) [0|0] "" XXX
  SG_ Bremstestschalter : 17|1@1+ (1,0) [0|0] "" XXX
  SG_ Bremslichtschalter : 16|1@1+ (1,0) [0|0] "" XXX
- SG_ Kuehlmitteltemperatur__Motor_2_ : 8|8@1+ (0.75,-48) [-48|142.5] "°" XXX
+ SG_ Kuehlmitteltemperatur__Motor_2_ : 8|8@1+ (0.75,-48) [-48|142.5] "" XXX
  SG_ Multiplex_Code_Motor_2 M : 6|2@1+ (1,0) [0|0] "" XXX
  SG_ Multiplex_Info_Motorcode__4_x_ m1 : 0|6@1+ (1,0) [0|0] "" XXX
  SG_ Multiplex_Info_Getriebecode m2 : 0|6@1+ (1,0) [0|0] "" XXX
@@ -409,7 +409,7 @@ BO_ 640 Motor_1: 8 XXX
 
 BO_ 262 Master_3: 8 XXX
  SG_ Frei_Master_3_1 : 56|8@1+ (1,0) [0|0] "" XXX
- SG_ Motortemperatur_linearisiert : 48|8@1+ (0.75,-48) [-48|143.25] "°" XXX
+ SG_ Motortemperatur_linearisiert : 48|8@1+ (0.75,-48) [-48|143.25] "" XXX
  SG_ Indiziertes_Sollmoment_f_r_Vmax : 32|16@1+ (0.0015259,0) [0|100] "%" XXX
  SG_ Relative_Momentenanforderung_de : 16|16@1+ (0.003052,0) [0|200] "%" XXX
  SG_ Delta_Motormoment_aus_Verlustmo : 0|16@1+ (0.003052,-100) [-100|100] "%" XXX
@@ -448,7 +448,7 @@ BO_ 1986 Lenkwinkel_Init: 4 XXX
 
 BO_ 192 Lenkwinkel_1__RB_: 2 XXX
  SG_ Vorzeichen__RB_ : 15|1@1+ (1,0) [0|0] "" XXX
- SG_ Lenkwinkel__RB_ : 5|10@1+ (2.5,-720) [-720|720] "°" XXX
+ SG_ Lenkwinkel__RB_ : 5|10@1+ (2.5,-720) [-720|720] "" XXX
  SG_ LWS_OK__RB_ : 4|1@1+ (1,0) [0|0] "" XXX
  SG_ LWS_Abgleich__RB_ : 3|1@1+ (1,0) [0|0] "" XXX
  SG_ Frei_Lenkwinkel_1_1__RB_ : 2|1@1+ (1,0) [0|0] "" XXX
@@ -457,7 +457,7 @@ BO_ 192 Lenkwinkel_1__RB_: 2 XXX
 
 BO_ 196 Lenkwinkel_1__ITT_: 2 XXX
  SG_ Vorzeichen__ITT_ : 15|1@1+ (1,0) [0|0] "" XXX
- SG_ Lenkwinkel__ITT_ : 5|10@1+ (1.5,-768) [-768|766.5] "°" XXX
+ SG_ Lenkwinkel__ITT_ : 5|10@1+ (1.5,-768) [-768|766.5] "" XXX
  SG_ LWS_OK : 4|1@1+ (1,0) [0|0] "" XXX
  SG_ LWS_Abgleich__ITT_ : 3|1@1+ (1,0) [0|0] "" XXX
  SG_ LWS_Initialisierung__ITT_ : 2|1@1+ (1,0) [0|0] "" XXX
@@ -558,10 +558,10 @@ BO_ 1056 Kombi_2: 8 XXX
  SG_ Klemme_58s__Kombi_2_ : 48|7@1+ (1,0) [0|100] "%" XXX
  SG_ Fehlerstatus_Kl__58_d : 47|1@1+ (1,0) [0|0] "" XXX
  SG_ Klemme_58d__Kombi_2_ : 40|7@1+ (1,0) [0|100] "%" XXX
- SG_ Kuehlmitteltemp__4_1__Kombi_2_ : 32|8@1+ (0.75,-48) [-48|142.5] "°C" XXX
- SG_ Oeltemperatur_4_1 : 24|8@1+ (1,-60) [-60|194] "°C" XXX
- SG_ Aussentemp__ungefiltert_4_1__Ko : 16|8@1+ (0.5,-50) [-50|77] "°C" XXX
- SG_ Aussentemperatur_gefiltert : 8|8@1+ (0.5,-50) [-50|77] "°C" XXX
+ SG_ Kuehlmitteltemp__4_1__Kombi_2_ : 32|8@1+ (0.75,-48) [-48|142.5] "C" XXX
+ SG_ Oeltemperatur_4_1 : 24|8@1+ (1,-60) [-60|194] "C" XXX
+ SG_ Aussentemp__ungefiltert_4_1__Ko : 16|8@1+ (0.5,-50) [-50|77] "C" XXX
+ SG_ Aussentemperatur_gefiltert : 8|8@1+ (0.5,-50) [-50|77] "C" XXX
  SG_ Fehlerspeichereintrag__Kombi_ : 7|1@1+ (1,0) [0|0] "" XXX
  SG_ Frei_Kombi_2_1 : 4|3@1+ (1,0) [0|0] "" XXX
  SG_ Anhaenger_erkannt : 3|1@1+ (1,0) [0|0] "" XXX
@@ -596,7 +596,7 @@ BO_ 800 Kombi_1: 8 XXX
  SG_ Fahrertuer_4_1 : 0|1@1+ (1,0) [0|0] "" XXX
 
 BO_ 1504 Klima_1: 8 XXX
- SG_ Aussentemp__ungef__Sto_f__4_1 : 56|8@1+ (0.5,-50) [-50|77] "°C" XXX
+ SG_ Aussentemp__ungef__Sto_f__4_1 : 56|8@1+ (0.5,-50) [-50|77] "C" XXX
  SG_ Fehlerspeichereintrag__Klima_ : 55|1@1+ (1,0) [0|0] "" XXX
  SG_ Frei_Klima_1_5 : 50|5@1+ (1,0) [0|0] "" XXX
  SG_ AC_Schalter : 49|1@1+ (1,0) [0|0] "" XXX
@@ -605,7 +605,7 @@ BO_ 1504 Klima_1: 8 XXX
  SG_ Geblaeselast_4_1 : 32|8@1+ (0.4,0) [0|101.6] "%" XXX
  SG_ Kompressorlast : 24|8@1+ (0.25,0) [0|63.5] "Nm" XXX
  SG_ Klimadrucksignal__Klima_1_ : 16|8@1+ (0.2,0) [0|50.8] "bar" XXX
- SG_ Aussentemp__ungef__4_1__Klima_1 : 8|8@1+ (0.5,-50) [-50|77] "°C" XXX
+ SG_ Aussentemp__ungef__4_1__Klima_1 : 8|8@1+ (0.5,-50) [-50|77] "C" XXX
  SG_ Kaeltemitteldruck_veraltet : 7|1@1+ (1,0) [0|0] "" XXX
  SG_ Kompressormoment_veraltet_4_1 : 6|1@1+ (1,0) [0|0] "" XXX
  SG_ Keine_Heizleistg_gewuenscht_4_1 : 5|1@1+ (1,0) [0|0] "" XXX
@@ -836,9 +836,9 @@ BO_ 1192 Bremse_5: 8 XXX
  SG_ Checksumme_Bremse_5 : 56|8@1+ (1,0) [0|0] "" XXX
  SG_ Zaehler_Bremse_5 : 52|4@1+ (1,0) [0|15] "" XXX
  SG_ Bremslicht_ECD : 51|1@1+ (1,0) [0|0] "" XXX
- SG_ Bremsentemperatur_vorn : 48|3@1+ (125,125) [125|1000] "°C" XXX
+ SG_ Bremsentemperatur_vorn : 48|3@1+ (125,125) [125|1000] "C" XXX
  SG_ Frei_Bremse_5_5 : 40|8@1+ (1,0) [0|0] "" XXX
- SG_ Offset_Gierrate : 32|8@1+ (0.05,-6.375) [-6.375|6.375] "°/s" XXX
+ SG_ Offset_Gierrate : 32|8@1+ (0.05,-6.375) [-6.375|6.375] "deg/s" XXX
  SG_ Vorzeichen_Bremsdruck : 31|1@1+ (1,0) [0|0] "" XXX
  SG_ Status_Bremsdruck_durch_ESP_Sys : 30|1@1+ (1,0) [0|0] "" XXX
  SG_ Bremsdruck_ungueltig : 29|1@1+ (1,0) [0|0] "" XXX

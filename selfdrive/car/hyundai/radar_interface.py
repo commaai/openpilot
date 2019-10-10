@@ -1,12 +1,12 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import os
 import time
 from cereal import car
 from selfdrive.can.parser import CANParser
+from selfdrive.car.interfaces import RadarInterfaceBase
 from selfdrive.car.hyundai.values import DBC, FEATURES
 
 def get_radar_can_parser(CP):
-
   signals = [
     # sig_name, sig_address, default
     ("ACC_ObjStatus", "SCC11", 0),
@@ -14,21 +14,18 @@ def get_radar_can_parser(CP):
     ("ACC_ObjDist", "SCC11", 0),
     ("ACC_ObjRelSpd", "SCC11", 0),
   ]
-
   checks = [
     # address, frequency
     ("SCC11", 50),
   ]
-
-
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
 
-class RadarInterface(object):
+class RadarInterface(RadarInterfaceBase):
   def __init__(self, CP):
     # radar
     self.pts = {}
-    self.delay = 0.1
+    self.delay = 0.0  # Delay of radar
     self.rcp = get_radar_can_parser(CP)
     self.updated_messages = set()
     self.trigger_msg = 0x420
@@ -75,5 +72,5 @@ class RadarInterface(object):
       self.pts[self.track_id].measured = True
 
 
-    ret.points = self.pts.values()
+    ret.points = list(self.pts.values())
     return ret

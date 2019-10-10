@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 import os
 import re
 
@@ -40,10 +40,10 @@ for dir_name, _, filenames in os.walk(cur_path):
     if dir_name == cur_path:
         continue
 
-    print dir_name
+    print(dir_name)
     for filename in filenames:
         if filename.startswith('_'):
             continue
 
-        print filename
+        print(filename)
         create_dbc(dir_name, filename)

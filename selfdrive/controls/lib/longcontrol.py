@@ -55,7 +55,7 @@ def long_control_state_trans(active, long_control_state, v_ego, v_target, v_pid,
   return long_control_state
 
 
-class LongControl(object):
+class LongControl():
   def __init__(self, CP, compute_gb):
     self.long_control_state = LongCtrlState.off  # initialized to off
     self.pid = PIController((CP.longitudinalTuning.kpBP, CP.longitudinalTuning.kpV),

@@ -32,6 +32,24 @@ function launch {
   echo 0-3 > /dev/cpuset/foreground/cpus
   echo 0-3 > /dev/cpuset/android/cpus
 
+  DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+
+  # Remove old NEOS update file
+  if [ -d /data/neoupdate ]; then
+    rm -rf /data/neoupdate
+  fi
+
+  # Check for NEOS update
+  if [ $(< /VERSION) != "12" ]; then
+    if [ -f "$DIR/scripts/continue.sh" ]; then
+      cp "$DIR/scripts/continue.sh" "/data/data/com.termux/files/continue.sh"
+    fi
+
+    git clean -xdf
+    "$DIR/installer/updater/updater" "file://$DIR/installer/updater/update.json"
+  fi
+
+
   # handle pythonpath
   ln -s /data/openpilot /data/pythonpath
   export PYTHONPATH="$PWD"

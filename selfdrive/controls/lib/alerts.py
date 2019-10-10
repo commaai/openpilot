@@ -14,7 +14,7 @@ AlertStatus = log.ControlsState.AlertStatus
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
-class Alert(object):
+class Alert():
   def __init__(self,
                alert_type,
                alert_text_1,
@@ -124,7 +124,7 @@ ALERTS = [
 
   Alert(
       "preDriverUnresponsive",
-      "TOUCH STEERING WHEEL: No Driver Monitoring",
+      "TOUCH STEERING WHEEL: No Face Detected",
       "",
       AlertStatus.normal, AlertSize.small,
       Priority.LOW, VisualAlert.steerRequired, AudibleAlert.none, .0, .1, .1, alert_rate=0.75),
@@ -218,7 +218,7 @@ ALERTS = [
       "TAKE CONTROL",
       "Steer Unavailable Below ",
       AlertStatus.userPrompt, AlertSize.mid,
-      Priority.MID, VisualAlert.steerRequired, AudibleAlert.chimeWarning1, 0., 0., .1),
+      Priority.MID, VisualAlert.steerRequired, AudibleAlert.none, 0., 0.4, .3),
 
   Alert(
       "debugAlert",
@@ -633,8 +633,15 @@ ALERTS = [
 
   Alert(
       "commIssueNoEntry",
-      "openpilot unavailable",
+      "openpilot Unavailable",
       "Communication Issue between Processes",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOW, VisualAlert.none, AudibleAlert.chimeDisengage, .4, 2., 3.),
+
+  Alert(
+      "internetConnectivityNeededNoEntry",
+      "openpilot Unavailable",
+      "Internet Connectivity Needed",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOW, VisualAlert.none, AudibleAlert.chimeDisengage, .4, 2., 3.),
 
@@ -671,6 +678,20 @@ ALERTS = [
       "invalidGiraffeHondaPermanent",
       "Invalid Giraffe Configuration",
       "Set 0111 for openpilot. 1011 for stock",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOW_LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
+
+  Alert(
+      "invalidGiraffeToyotaPermanent",
+      "Unsupported Giraffe Configuration",
+      "Visit comma.ai/tg",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOW_LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
+
+  Alert(
+      "internetConnectivityNeededPermanent",
+      "Internet Connectivity Needed",
+      "Check for Updates to Be Able to Engage",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOW_LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
 

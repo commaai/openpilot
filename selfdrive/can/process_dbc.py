@@ -1,4 +1,5 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
+from __future__ import print_function
 import os
 import glob
 import sys
@@ -10,7 +11,7 @@ from common.dbc import dbc
 
 def main():
   if len(sys.argv) != 3:
-    print "usage: %s dbc_directory output_directory" % (sys.argv[0],)
+    print("usage: %s dbc_directory output_directory" % (sys.argv[0],))
     sys.exit(0)
 
   dbc_dir = sys.argv[1]
@@ -38,7 +39,7 @@ def main():
     if dbc_mtime < out_mtime and template_mtime < out_mtime and this_file_mtime < out_mtime:
       continue #skip output is newer than template and dbc
 
-    msgs = [(address, msg_name, msg_size, sorted(msg_sigs, key=lambda s: s.name not in ("COUNTER", "CHECKSUM"))) # process counter and checksums first
+    msgs = [(address, msg_name, msg_size, sorted(msg_sigs, key=lambda s: s.name not in (b"COUNTER", b"CHECKSUM"))) # process counter and checksums first
             for address, ((msg_name, msg_size), msg_sigs) in sorted(can_dbc.msgs.items()) if msg_sigs]
 
     def_vals = {a: set(b) for a,b in can_dbc.def_vals.items()} #remove duplicates
@@ -55,22 +56,22 @@ def main():
 
     for address, msg_name, msg_size, sigs in msgs:
       for sig in sigs:
-        if checksum_type is not None and sig.name == "CHECKSUM":
+        if checksum_type is not None and sig.name == b"CHECKSUM":
           if sig.size != checksum_size:
             sys.exit("CHECKSUM is not %d bits longs %s" % (checksum_size, msg_name))
           if checksum_type == "honda" and sig.start_bit % 8 != 3:
             sys.exit("CHECKSUM starts at wrong bit %s" % msg_name)
           if checksum_type == "toyota" and sig.start_bit % 8 != 7:
             sys.exit("CHECKSUM starts at wrong bit %s" % msg_name)
-        if checksum_type == "honda" and sig.name == "COUNTER":
+        if checksum_type == "honda" and sig.name == b"COUNTER":
           if sig.size != 2:
             sys.exit("COUNTER is not 2 bits longs %s" % msg_name)
           if sig.start_bit % 8 != 5:
             sys.exit("COUNTER starts at wrong bit %s" % msg_name)
         if address in [0x200, 0x201]:
-          if sig.name == "COUNTER_PEDAL" and sig.size != 4:
+          if sig.name == b"COUNTER_PEDAL" and sig.size != 4:
             sys.exit("PEDAL COUNTER is not 4 bits longs %s" % msg_name)
-          if sig.name == "CHECKSUM_PEDAL" and sig.size != 8:
+          if sig.name == b"CHECKSUM_PEDAL" and sig.size != 8:
             sys.exit("PEDAL CHECKSUM is not 8 bits longs %s" % msg_name)
 
     # Fail on duplicate message names

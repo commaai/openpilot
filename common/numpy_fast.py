@@ -12,7 +12,10 @@ def interp(x, xp, fp):
       hi += 1
     low = hi - 1
     return fp[-1] if hi == N and xv > xp[low] else (
-      fp[0] if hi == 0 else 
+      fp[0] if hi == 0 else
       (xv - xp[low]) * (fp[hi] - fp[low]) / (xp[hi] - xp[low]) + fp[low])
   return [get_interp(v) for v in x] if hasattr(
     x, '__iter__') else get_interp(x)
+
+def mean(x):
+  return sum(x) / len(x)

@@ -43,7 +43,7 @@ def with_processes(processes):
 #@phone_only
 #@with_processes(['controlsd', 'radard'])
 #def test_controls():
-#  from selfdrive.test.plant.plant import Plant
+#  from selfdrive.test.longitudinal_maneuvers.plant import Plant
 #
 #  # start the fake car for 2 seconds
 #  plant = Plant(100)

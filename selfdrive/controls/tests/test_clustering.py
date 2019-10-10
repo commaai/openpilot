@@ -88,7 +88,7 @@ class TestClustering(unittest.TestCase):
     pts_ptr = ffi.cast("double *", pts.ctypes.data)
 
     n, m = pts.shape
-    out = np.zeros((n * (n - 1) / 2, ), dtype=np.float64)
+    out = np.zeros((n * (n - 1) // 2, ), dtype=np.float64)
     out_ptr = ffi.cast("double *", out.ctypes.data)
     hclust.hclust_pdist(n, m, pts_ptr, out_ptr)
 

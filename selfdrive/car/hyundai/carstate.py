@@ -1,8 +1,10 @@
+from cereal import car
 from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD, FEATURES
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from common.kalman.simple_kalman import KF1D
 
+GearShifter = car.CarState.GearShifter
 
 def get_can_parser(CP):
 
@@ -31,7 +33,7 @@ def get_can_parser(CP):
     ("CYL_PRES", "ESP12", 0),
 
     ("CF_Clu_CruiseSwState", "CLU11", 0),
-    ("CF_Clu_CruiseSwMain" , "CLU11", 0),
+    ("CF_Clu_CruiseSwMain", "CLU11", 0),
     ("CF_Clu_SldMainSW", "CLU11", 0),
     ("CF_Clu_ParityBit1", "CLU11", 0),
     ("CF_Clu_VanzDecimal" , "CLU11", 0),
@@ -143,7 +145,7 @@ def get_camera_parser(CP):
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
 
 
-class CarState(object):
+class CarState():
   def __init__(self, CP):
 
     self.CP = CP
@@ -236,53 +238,52 @@ class CarState(object):
     # Gear Selection via Cluster - For those Kia/Hyundai which are not fully discovered, we can use the Cluster Indicator for Gear Selection, as this seems to be standard over all cars, but is not the preferred method.
     if self.car_fingerprint in FEATURES["use_cluster_gears"]:
       if cp.vl["CLU15"]["CF_Clu_InhibitD"] == 1:
-        self.gear_shifter = "drive"
+        self.gear_shifter = GearShifter.drive
       elif cp.vl["CLU15"]["CF_Clu_InhibitN"] == 1:
-        self.gear_shifter = "neutral"
+        self.gear_shifter = GearShifter.neutral
       elif cp.vl["CLU15"]["CF_Clu_InhibitP"] == 1:
-        self.gear_shifter = "park"
+        self.gear_shifter = GearShifter.park
       elif cp.vl["CLU15"]["CF_Clu_InhibitR"] == 1:
-        self.gear_shifter = "reverse"
+        self.gear_shifter = GearShifter.reverse
       else:
-        self.gear_shifter = "unknown"
+        self.gear_shifter = GearShifter.unknown
     # Gear Selecton via TCU12
     elif self.car_fingerprint in FEATURES["use_tcu_gears"]:
       gear = cp.vl["TCU12"]["CUR_GR"]
       if gear == 0:
-        self.gear_shifter = "park"
+        self.gear_shifter = GearShifter.park
       elif gear == 14:
-        self.gear_shifter = "reverse"
+        self.gear_shifter = GearShifter.reverse
       elif gear > 0 and gear < 9:    # unaware of anything over 8 currently
-        self.gear_shifter = "drive"
+        self.gear_shifter = GearShifter.drive
       else:
-        self.gear_shifter = "unknown"
+        self.gear_shifter = GearShifter.unknown
     # Gear Selecton - This is only compatible with optima hybrid 2017
     elif self.car_fingerprint in FEATURES["use_new_gears"]:
       gear = cp.vl["NEW11"]["Gear_Signal"]
       if gear == 5:
-        self.gear_shifter = "drive"
+        self.gear_shifter = GearShifter.drive
       elif gear == 6:
-        self.gear_shifter = "neutral"
+        self.gear_shifter = GearShifter.neutral
       elif gear == 0:
-        self.gear_shifter = "park"
+        self.gear_shifter = GearShifter.park
       elif gear == 7:
-        self.gear_shifter = "reverse"
+        self.gear_shifter = GearShifter.reverse
       else:
-        self.gear_shifter = "unknown"
+        self.gear_shifter = GearShifter.unknown
     # Gear Selecton - This is not compatible with all Kia/Hyundai's, But is the best way for those it is compatible with
     else:
       gear = cp.vl["LVR12"]["CF_Lvr_Gear"]
       if gear == 5:
-        self.gear_shifter = "drive"
+        self.gear_shifter = GearShifter.drive
       elif gear == 6:
-        self.gear_shifter = "neutral"
+        self.gear_shifter = GearShifter.neutral
       elif gear == 0:
-        self.gear_shifter = "park"
+        self.gear_shifter = GearShifter.park
       elif gear == 7:
-        self.gear_shifter = "reverse"
+        self.gear_shifter = GearShifter.reverse
       else:
-        self.gear_shifter = "unknown"
-
+        self.gear_shifter = GearShifter.unknown
 
 
     # save the entire LKAS11 and CLU11
