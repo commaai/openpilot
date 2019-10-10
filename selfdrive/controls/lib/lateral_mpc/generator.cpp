@@ -109,11 +109,11 @@ int main( )
   ocp.minimizeLSQEndTerm(QN, hN);
 
   // car can't go backward to avoid "circles"
-  ocp.subjectTo( deg2rad(-90) <= psi <= deg2rad(90));
+  ocp.subjectTo( deg2rad(-50) <= psi <= deg2rad(50));
   // more than absolute max steer angle
-  ocp.subjectTo( deg2rad(-50) <= delta <= deg2rad(50));
-  // 5 degrees/sec steerrate constraint
-  ocp.subjectTo( deg2rad(-5) <= t <= deg2rad(5));
+  ocp.subjectTo( deg2rad(-30) <= delta <= deg2rad(30));
+  // 10 degrees/sec steerrate constraint
+  ocp.subjectTo( deg2rad(-10) <= t <= deg2rad(10));
   ocp.setNOD(17);
 
   OCPexport mpc(ocp);
@@ -139,4 +139,3 @@ int main( )
 
   return EXIT_SUCCESS;
 }
-
