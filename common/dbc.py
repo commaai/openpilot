@@ -147,22 +147,20 @@ class dbc():
       ival = dd.get(s.name)
       if ival is not None:
 
-        b2 = s.size
-        if s.is_little_endian:
-          b1 = s.start_bit
-        else:
-          b1 = (s.start_bit // 8) * 8 + (-s.start_bit - 1) % 8
-        bo = 64 - (b1 + s.size)
-
         ival = (ival / s.factor) - s.offset
         ival = int(round(ival))
 
         if s.is_signed and ival < 0:
-          ival = (1 << b2) + ival
+          ival = (1 << s.size) + ival
 
-        shift = b1 if s.is_little_endian else bo
-        mask = ((1 << b2) - 1) << shift
-        dat = (ival & ((1 << b2) - 1)) << shift
+        if s.is_little_endian:
+          shift = s.start_bit
+        else:
+          b1 = (s.start_bit // 8) * 8 + (-s.start_bit - 1) % 8
+          shift = 64 - (b1 + s.size)
+
+        mask = ((1 << s.size) - 1) << shift
+        dat = (ival & ((1 << s.size) - 1)) << shift
 
         if s.is_little_endian:
           mask = self.reverse_bytes(mask)
@@ -222,30 +220,24 @@ class dbc():
       factor = s[5]
       offset = s[6]
 
-      b2 = signal_size
-      if little_endian:
-        b1 = start_bit
-      else:
-        b1 = (start_bit // 8) * 8 + (-start_bit - 1) % 8
-      bo = 64 - (b1 + signal_size)
-
       if little_endian:
         if le is None:
           le = struct.unpack("<Q", st)[0]
-        shift_amount = b1
         tmp = le
+        shift_amount = start_bit
       else:
         if be is None:
           be = struct.unpack(">Q", st)[0]
-        shift_amount = bo
         tmp = be
+        b1 = (start_bit // 8) * 8 + (-start_bit - 1) % 8
+        shift_amount = 64 - (b1 + signal_size)
 
       if shift_amount < 0:
         continue
 
-      tmp = (tmp >> shift_amount) & ((1 << b2) - 1)
-      if signed and (tmp >> (b2 - 1)):
-        tmp -= (1 << b2)
+      tmp = (tmp >> shift_amount) & ((1 << signal_size) - 1)
+      if signed and (tmp >> (signal_size - 1)):
+        tmp -= (1 << signal_size)
 
       tmp = tmp * factor + offset
 
