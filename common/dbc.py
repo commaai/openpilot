@@ -152,22 +152,20 @@ class dbc():
       ival = dd.get(s.name)
       if ival is not None:
 
-        signal_size = s.size
-
         ival = (ival / s.factor) - s.offset
         ival = int(round(ival))
 
         if s.is_signed and ival < 0:
-          ival = (1 << signal_size) + ival
+          ival = (1 << s.size) + ival
 
         if s.is_little_endian:
           shift = s.start_bit
         else:
           b1 = (s.start_bit // 8) * 8 + (-s.start_bit - 1) % 8
-          shift = 64 - (b1 + signal_size)
+          shift = 64 - (b1 + s.size)
 
-        mask = ((1 << signal_size) - 1) << shift
-        dat = (ival & ((1 << signal_size) - 1)) << shift
+        mask = ((1 << s.size) - 1) << shift
+        dat = (ival & ((1 << s.size) - 1)) << shift
 
         if s.is_little_endian:
           mask = self.reverse_bytes(mask)
