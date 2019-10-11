@@ -16,7 +16,7 @@ class SteerLimitParams:
   STEER_DRIVER_MULTIPLIER = 2
   STEER_DRIVER_FACTOR = 1
 
-class CarController(object):
+class CarController():
   def __init__(self, dbc_name, car_fingerprint):
     self.apply_steer_last = 0
     self.car_fingerprint = car_fingerprint

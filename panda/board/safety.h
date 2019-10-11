@@ -13,8 +13,29 @@
 #include "safety/safety_hyundai.h"
 #include "safety/safety_chrysler.h"
 #include "safety/safety_subaru.h"
+#include "safety/safety_mazda.h"
 #include "safety/safety_elm327.h"
 
+// from cereal.car.CarParams.SafetyModel
+#define SAFETY_NOOUTPUT 0U
+#define SAFETY_HONDA 1U
+#define SAFETY_TOYOTA 2U
+#define SAFETY_ELM327 3U
+#define SAFETY_GM 4U
+#define SAFETY_HONDA_BOSCH 5U
+#define SAFETY_FORD 6U
+#define SAFETY_CADILLAC 7U
+#define SAFETY_HYUNDAI 8U
+#define SAFETY_CHRYSLER 9U
+#define SAFETY_TESLA 10U
+#define SAFETY_SUBARU 11U
+#define SAFETY_GM_PASSIVE 12U
+#define SAFETY_MAZDA 13U
+#define SAFETY_TOYOTA_IPAS 16U
+#define SAFETY_ALLOUTPUT 17U
+#define SAFETY_GM_ASCM 18U
+
+uint16_t current_safety_mode = SAFETY_NOOUTPUT;
 const safety_hooks *current_hooks = &nooutput_hooks;
 
 void safety_rx_hook(CAN_FIFOMailBox_TypeDef *to_push){
@@ -44,38 +65,24 @@ typedef struct {
   const safety_hooks *hooks;
 } safety_hook_config;
 
-#define SAFETY_NOOUTPUT 0U
-#define SAFETY_HONDA 1U
-#define SAFETY_TOYOTA 2U
-#define SAFETY_GM 3U
-#define SAFETY_HONDA_BOSCH 4U
-#define SAFETY_FORD 5U
-#define SAFETY_CADILLAC 6U
-#define SAFETY_HYUNDAI 7U
-#define SAFETY_TESLA 8U
-#define SAFETY_CHRYSLER 9U
-#define SAFETY_SUBARU 10U
-#define SAFETY_GM_ASCM 0x1334U
-#define SAFETY_TOYOTA_IPAS 0x1335U
-#define SAFETY_ALLOUTPUT 0x1337U
-#define SAFETY_ELM327 0xE327U
-
 const safety_hook_config safety_hook_registry[] = {
   {SAFETY_NOOUTPUT, &nooutput_hooks},
   {SAFETY_HONDA, &honda_hooks},
-  {SAFETY_HONDA_BOSCH, &honda_bosch_hooks},
   {SAFETY_TOYOTA, &toyota_hooks},
+  {SAFETY_ELM327, &elm327_hooks},
   {SAFETY_GM, &gm_hooks},
+  {SAFETY_HONDA_BOSCH, &honda_bosch_hooks},
   {SAFETY_FORD, &ford_hooks},
   {SAFETY_CADILLAC, &cadillac_hooks},
   {SAFETY_HYUNDAI, &hyundai_hooks},
   {SAFETY_CHRYSLER, &chrysler_hooks},
-  {SAFETY_SUBARU, &subaru_hooks},
-  {SAFETY_TOYOTA_IPAS, &toyota_ipas_hooks},
-  {SAFETY_GM_ASCM, &gm_ascm_hooks},
   {SAFETY_TESLA, &tesla_hooks},
+  {SAFETY_SUBARU, &subaru_hooks},
+  {SAFETY_GM_PASSIVE, &gm_passive_hooks},
+  {SAFETY_MAZDA, &mazda_hooks},
+  {SAFETY_TOYOTA_IPAS, &toyota_ipas_hooks},
   {SAFETY_ALLOUTPUT, &alloutput_hooks},
-  {SAFETY_ELM327, &elm327_hooks},
+  {SAFETY_GM_ASCM, &gm_ascm_hooks},
 };
 
 int safety_set_mode(uint16_t mode, int16_t param) {
@@ -84,6 +91,7 @@ int safety_set_mode(uint16_t mode, int16_t param) {
   for (int i = 0; i < hook_config_count; i++) {
     if (safety_hook_registry[i].id == mode) {
       current_hooks = safety_hook_registry[i].hooks;
+      current_safety_mode = safety_hook_registry[i].id;
       set_status = 0;    // set
       break;
     }

@@ -2,6 +2,7 @@
 #define PANDA_CONFIG_H
 
 //#define DEBUG
+//#define DEBUG_UART
 //#define DEBUG_USB
 //#define DEBUG_SPI
 
@@ -22,7 +23,7 @@
 
 #include <stdbool.h>
 #define NULL ((void*)0)
-#define COMPILE_TIME_ASSERT(pred) ((void)sizeof(char[1 - (2 * (!(pred)))]))
+#define COMPILE_TIME_ASSERT(pred) ((void)sizeof(char[1 - (2 * ((int)(!(pred))))]))
 
 #define MIN(a,b) \
  ({ __typeof__ (a) _a = (a); \

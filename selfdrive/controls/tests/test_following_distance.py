@@ -15,9 +15,9 @@ def RW(v_ego, v_l):
   return (v_ego * TR - (v_l - v_ego) * TR + v_ego * v_ego / (2 * G) - v_l * v_l / (2 * G))
 
 
-class FakeSocket(object):
-    def send(self, data):
-        assert data
+class FakePubMaster():
+  def send(self, s, data):
+    assert data
 
 
 def run_following_distance_simulation(v_lead, t_end=200.0):
@@ -32,12 +32,13 @@ def run_following_distance_simulation(v_lead, t_end=200.0):
 
   v_cruise_setpoint = v_lead + 10.
 
-  mpc = LongitudinalMpc(1, FakeSocket())
+  pm = FakePubMaster()
+  mpc = LongitudinalMpc(1)
 
   first = True
   while t < t_end:
     # Run cruise control
-    accel_limits = [float(x) for x in calc_cruise_accel_limits(v_ego, False)]
+    accel_limits = [float(x) for x in calc_cruise_accel_limits(v_ego)]
     jerk_limits = [min(-0.1, accel_limits[0]), max(0.1, accel_limits[1])]
     v_cruise, a_cruise = speed_smoother(v_ego, a_ego, v_cruise_setpoint,
                                         accel_limits[1], accel_limits[0],
@@ -61,8 +62,8 @@ def run_following_distance_simulation(v_lead, t_end=200.0):
     mpc.set_cur_state(v_ego, a_ego)
     if first:  # Make sure MPC is converged on first timestep
       for _ in range(20):
-        mpc.update(CS.carState, lead, v_cruise_setpoint)
-    mpc.update(CS.carState, lead, v_cruise_setpoint)
+        mpc.update(pm, CS.carState, lead, v_cruise_setpoint)
+    mpc.update(pm, CS.carState, lead, v_cruise_setpoint)
 
     # Choose slowest of two solutions
     if v_cruise < mpc.v_mpc:

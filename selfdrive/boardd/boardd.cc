@@ -32,25 +32,9 @@
 #define RECV_SIZE (0x1000)
 #define TIMEOUT 0
 
-#define SAFETY_NOOUTPUT  0
-#define SAFETY_HONDA 1
-#define SAFETY_TOYOTA 2
-#define SAFETY_GM 3
-#define SAFETY_HONDA_BOSCH 4
-#define SAFETY_FORD 5
-#define SAFETY_CADILLAC 6
-#define SAFETY_HYUNDAI 7
-#define SAFETY_TESLA 8
-#define SAFETY_CHRYSLER 9
-#define SAFETY_SUBARU 10
-#define SAFETY_TOYOTA_IPAS 0x1335
-#define SAFETY_TOYOTA_NOLIMITS 0x1336
-#define SAFETY_ALLOUTPUT 0x1337
-#define SAFETY_ELM327 0xE327     // diagnostic only
-
 namespace {
 
-volatile int do_exit = 0;
+volatile sig_atomic_t do_exit = 0;
 
 libusb_context *ctx = NULL;
 libusb_device_handle *dev_handle;
@@ -61,6 +45,10 @@ bool fake_send = false;
 bool loopback_can = false;
 cereal::HealthData::HwType hw_type = cereal::HealthData::HwType::UNKNOWN;
 bool is_pigeon = false;
+const uint32_t NO_IGNITION_CNT_MAX = 2 * 60 * 60 * 24 * 3;  // turn off charge after 3 days
+uint32_t no_ignition_cnt = 0;
+bool connected_once = false;
+uint8_t ignition_last = 0;
 
 pthread_t safety_setter_thread_handle = -1;
 pthread_t pigeon_thread_handle = -1;
@@ -88,8 +76,8 @@ void *safety_setter_thread(void *s) {
 
   pthread_mutex_lock(&usb_lock);
 
-  // VIN qury done, stop listening to OBDII
-  libusb_control_transfer(dev_handle, 0x40, 0xdc, SAFETY_NOOUTPUT, 0, NULL, 0, TIMEOUT);
+  // VIN query done, stop listening to OBDII
+  libusb_control_transfer(dev_handle, 0x40, 0xdc, (uint16_t)(cereal::CarParams::SafetyModel::NO_OUTPUT), 0, NULL, 0, TIMEOUT);
 
   pthread_mutex_unlock(&usb_lock);
 
@@ -118,45 +106,6 @@ void *safety_setter_thread(void *s) {
   auto safety_param = car_params.getSafetyParam();
   LOGW("setting safety model: %d with param %d", safety_model, safety_param);
 
-  int safety_setting = 0;
-  switch (safety_model) {
-  case cereal::CarParams::SafetyModel::NO_OUTPUT:
-    safety_setting = SAFETY_NOOUTPUT;
-    break;
-  case cereal::CarParams::SafetyModel::HONDA:
-    safety_setting = SAFETY_HONDA;
-    break;
-  case cereal::CarParams::SafetyModel::TOYOTA:
-    safety_setting = SAFETY_TOYOTA;
-    break;
-  case cereal::CarParams::SafetyModel::ELM327:
-    safety_setting = SAFETY_ELM327;
-    break;
-  case cereal::CarParams::SafetyModel::GM:
-    safety_setting = SAFETY_GM;
-    break;
-  case cereal::CarParams::SafetyModel::HONDA_BOSCH:
-    safety_setting = SAFETY_HONDA_BOSCH;
-    break;
-  case cereal::CarParams::SafetyModel::FORD:
-    safety_setting = SAFETY_FORD;
-    break;
-  case cereal::CarParams::SafetyModel::CADILLAC:
-    safety_setting = SAFETY_CADILLAC;
-    break;
-  case cereal::CarParams::SafetyModel::HYUNDAI:
-    safety_setting = SAFETY_HYUNDAI;
-    break;
-  case cereal::CarParams::SafetyModel::CHRYSLER:
-    safety_setting = SAFETY_CHRYSLER;
-    break;
-  case cereal::CarParams::SafetyModel::SUBARU:
-    safety_setting = SAFETY_SUBARU;
-    break;
-  default:
-    LOGE("unknown safety model: %d", safety_model);
-  }
-
   pthread_mutex_lock(&usb_lock);
 
   // set in the mutex to avoid race
@@ -165,7 +114,7 @@ void *safety_setter_thread(void *s) {
   // set if long_control is allowed by openpilot. Hardcoded to True for now
   libusb_control_transfer(dev_handle, 0x40, 0xdf, 1, 0, NULL, 0, TIMEOUT);
 
-  libusb_control_transfer(dev_handle, 0x40, 0xdc, safety_setting, safety_param, NULL, 0, TIMEOUT);
+  libusb_control_transfer(dev_handle, 0x40, 0xdc, (uint16_t)(cereal::CarParams::SafetyModel(safety_model)), safety_param, NULL, 0, TIMEOUT);
 
   pthread_mutex_unlock(&usb_lock);
 
@@ -176,6 +125,7 @@ void *safety_setter_thread(void *s) {
 bool usb_connect() {
   int err;
   unsigned char hw_query[1] = {0};
+  ignition_last = 0;
 
   dev_handle = libusb_open_device_with_vid_pid(ctx, 0xbbaa, 0xddcc);
   if (dev_handle == NULL) { goto fail; }
@@ -193,25 +143,20 @@ bool usb_connect() {
   // power off ESP
   libusb_control_transfer(dev_handle, 0xc0, 0xd9, 0, 0, NULL, 0, TIMEOUT);
 
-  // power on charging (may trigger a reconnection, should be okay)
-  #ifndef __x86_64__
-    libusb_control_transfer(dev_handle, 0xc0, 0xe6, 1, 0, NULL, 0, TIMEOUT);
-  #else
-    LOGW("not enabling charging on x86_64");
-  #endif
-
-  // diagnostic only is the default, needed for VIN query
-  libusb_control_transfer(dev_handle, 0x40, 0xdc, SAFETY_ELM327, 0, NULL, 0, TIMEOUT);
-
-  if (safety_setter_thread_handle == -1) {
-    err = pthread_create(&safety_setter_thread_handle, NULL, safety_setter_thread, NULL);
-    assert(err == 0);
+  // power on charging, only the first time. Panda can also change mode and it causes a brief disconneciton
+#ifndef __x86_64__
+  if (!connected_once) {
+    libusb_control_transfer(dev_handle, 0xc0, 0xe6, (uint16_t)(cereal::HealthData::UsbPowerMode::CDP), 0, NULL, 0, TIMEOUT);
   }
+#endif
+  connected_once = true;
 
   libusb_control_transfer(dev_handle, 0xc0, 0xc1, 0, 0, hw_query, 1, TIMEOUT);
 
   hw_type = (cereal::HealthData::HwType)(hw_query[0]);
-  is_pigeon = (hw_type == cereal::HealthData::HwType::GREY_PANDA) || (hw_type == cereal::HealthData::HwType::BLACK_PANDA);
+  is_pigeon = (hw_type == cereal::HealthData::HwType::GREY_PANDA) ||
+              (hw_type == cereal::HealthData::HwType::BLACK_PANDA) ||
+              (hw_type == cereal::HealthData::HwType::UNO);
   if (is_pigeon) {
     LOGW("panda with gps detected");
     pigeon_needs_init = true;
@@ -300,8 +245,9 @@ void can_recv(void *s) {
 
 void can_health(void *s) {
   int cnt;
+  int err;
 
-  // copied from board/main.c
+  // copied from panda/board/main.c
   struct __attribute__((packed)) health {
     uint32_t voltage;
     uint32_t current;
@@ -311,7 +257,8 @@ void can_health(void *s) {
     uint8_t started;
     uint8_t controls_allowed;
     uint8_t gas_interceptor_detected;
-    uint8_t car_harness_status_pkt;
+    uint8_t car_harness_status;
+    uint8_t usb_power_mode;
   } health;
 
   // recv from board
@@ -325,6 +272,42 @@ void can_health(void *s) {
   } while(cnt != sizeof(health));
 
   pthread_mutex_unlock(&usb_lock);
+
+  if (health.started == 0) {
+    no_ignition_cnt += 1;
+  } else {
+    no_ignition_cnt = 0;
+  }
+
+#ifndef __x86_64__
+  if ((no_ignition_cnt > NO_IGNITION_CNT_MAX) && (health.usb_power_mode == (uint8_t)(cereal::HealthData::UsbPowerMode::CDP))) {
+    printf("TURN OFF CHARGING!\n");
+    pthread_mutex_lock(&usb_lock);
+    libusb_control_transfer(dev_handle, 0xc0, 0xe6, (uint16_t)(cereal::HealthData::UsbPowerMode::CLIENT), 0, NULL, 0, TIMEOUT);
+    pthread_mutex_unlock(&usb_lock);
+  }
+#endif
+
+  // clear VIN, CarParams, and set new safety on car start
+  if ((health.started != 0) && (ignition_last == 0)) {
+
+    int result = delete_db_value(NULL, "CarVin");
+    assert((result == 0) || (result == ERR_NO_VALUE));
+    result = delete_db_value(NULL, "CarParams");
+    assert((result == 0) || (result == ERR_NO_VALUE));
+
+    // diagnostic only is the default, needed for VIN query
+    pthread_mutex_lock(&usb_lock);
+    libusb_control_transfer(dev_handle, 0x40, 0xdc, (uint16_t)(cereal::CarParams::SafetyModel::ELM327), 0, NULL, 0, TIMEOUT);
+    pthread_mutex_unlock(&usb_lock);
+
+    if (safety_setter_thread_handle == -1) {
+      err = pthread_create(&safety_setter_thread_handle, NULL, safety_setter_thread, NULL);
+      assert(err == 0);
+    }
+  }
+
+  ignition_last = health.started;
 
   // create message
   capnp::MallocMessageBuilder msg;
@@ -347,6 +330,7 @@ void can_health(void *s) {
   healthData.setCanFwdErrs(health.can_fwd_errs);
   healthData.setGmlanSendErrs(health.gmlan_send_errs);
   healthData.setHwType(hw_type);
+  healthData.setUsbPowerMode(cereal::HealthData::UsbPowerMode(health.usb_power_mode));
 
   // send to health
   auto words = capnp::messageToFlatArray(msg);
@@ -477,7 +461,6 @@ void *can_recv_thread(void *crap) {
 
 void *can_health_thread(void *crap) {
   LOGD("start health thread");
-
   // health = 8011
   void *context = zmq_ctx_new();
   void *publisher = zmq_socket(context, ZMQ_PUB);
@@ -624,7 +607,7 @@ void *pigeon_thread(void *crap) {
     }
     if (alen > 0) {
       if (dat[0] == (char)0x00){
-        LOGW("received invalid ublox message, resetting pigeon");
+        LOGW("received invalid ublox message, resetting panda GPS");
         pigeon_init();
       } else {
         pigeon_publish_raw(publisher, dat, alen);

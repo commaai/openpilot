@@ -4,6 +4,7 @@
 *.o
 *.so
 *.d
+*.dump
 a.out
 *~
 .#*
@@ -12,4 +13,5 @@ pandacan.egg-info/
 board/obj/
 examples/output.csv
 .DS_Store
+.vscode
 nosetests.xml

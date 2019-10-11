@@ -1,7 +1,7 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3.7
 import json
-import jwt
 import os
+import io
 import random
 import re
 import select
@@ -11,9 +11,9 @@ import time
 import threading
 import traceback
 import zmq
+import base64
 import requests
 import six.moves.queue
-from datetime import datetime, timedelta
 from functools import partial
 from jsonrpc import JSONRPCResponseManager, dispatcher
 from websocket import create_connection, WebSocketTimeoutException, ABNF
@@ -26,6 +26,7 @@ from common.params import Params
 from selfdrive.services import service_list
 from selfdrive.swaglog import cloudlog
 from selfdrive.version import version, dirty
+from functools import reduce
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = os.getenv('HANDLER_THREADS', 4)
@@ -43,10 +44,11 @@ def handle_long_poll(ws):
     threading.Thread(target=ws_send, args=(ws, end_event))
   ] + [
     threading.Thread(target=jsonrpc_handler, args=(end_event,))
-    for x in xrange(HANDLER_THREADS)
+    for x in range(HANDLER_THREADS)
   ]
 
-  map(lambda thread: thread.start(), threads)
+  for thread in threads:
+    thread.start()
   try:
     while not end_event.is_set():
       time.sleep(0.1)
@@ -103,10 +105,8 @@ def startLocalProxy(global_end_event, remote_ws_uri, local_port):
       raise Exception("Requested local port not whitelisted")
 
     params = Params()
-    dongle_id = params.get("DongleId")
-    private_key = open("/persist/comma/id_rsa").read()
-    identity_token = jwt.encode({'identity':dongle_id, 'exp': datetime.utcnow() + timedelta(hours=1)}, private_key, algorithm='RS256')
-
+    dongle_id = params.get("DongleId").decode('utf8')
+    identity_token = Api(dongle_id).get_token()
     ws = create_connection(remote_ws_uri,
                            cookie="jwt=" + identity_token,
                            enable_multithread=True)
@@ -121,8 +121,8 @@ def startLocalProxy(global_end_event, remote_ws_uri, local_port):
       threading.Thread(target=ws_proxy_recv, args=(ws, local_sock, ssock, proxy_end_event, global_end_event)),
       threading.Thread(target=ws_proxy_send, args=(ws, local_sock, csock, proxy_end_event))
     ]
-
-    map(lambda thread: thread.start(), threads)
+    for thread in threads:
+      thread.start()
 
     return {"success": 1}
   except Exception as e:
@@ -139,16 +139,15 @@ def getPublicKey():
 
 @dispatcher.add_method
 def getSshAuthorizedKeys():
-  with open('/system/comma/home/.ssh/authorized_keys', 'r') as f:
-    return f.read()
+  return Params().get("GithubSshKeys", encoding='utf8') or ''
 
 @dispatcher.add_method
 def getSimInfo():
-  sim_state = subprocess.check_output(['getprop', 'gsm.sim.state']).strip().split(',')
-  network_type = subprocess.check_output(['getprop', 'gsm.network.type']).strip().split(',')
-  mcc_mnc = subprocess.check_output(['getprop', 'gsm.sim.operator.numeric']).strip() or None
+  sim_state = subprocess.check_output(['getprop', 'gsm.sim.state'], encoding='utf8').strip().split(',')  # pylint: disable=unexpected-keyword-arg
+  network_type = subprocess.check_output(['getprop', 'gsm.network.type'], encoding='utf8').strip().split(',')  # pylint: disable=unexpected-keyword-arg
+  mcc_mnc = subprocess.check_output(['getprop', 'gsm.sim.operator.numeric'], encoding='utf8').strip() or None  # pylint: disable=unexpected-keyword-arg
 
-  sim_id_aidl_out = subprocess.check_output(['service', 'call', 'iphonesubinfo', '11'])
+  sim_id_aidl_out = subprocess.check_output(['service', 'call', 'iphonesubinfo', '11'], encoding='utf8')  # pylint: disable=unexpected-keyword-arg
   sim_id_aidl_lines = sim_id_aidl_out.split('\n')
   if len(sim_id_aidl_lines) > 3:
     sim_id_lines = sim_id_aidl_lines[1:4]
@@ -163,6 +162,20 @@ def getSimInfo():
     'network_type': network_type,
     'sim_state': sim_state
   }
+
+@dispatcher.add_method
+def takeSnapshot():
+  from selfdrive.visiond.snapshot.snapshot import snapshot, jpeg_write
+  ret = snapshot()
+  if ret is not None:
+    def b64jpeg(x):
+      f = io.BytesIO()
+      jpeg_write(f, x)
+      return base64.b64encode(f.getvalue()).decode("utf-8")
+    return {'jpegBack': b64jpeg(ret[0]),
+            'jpegFront': b64jpeg(ret[1])}
+  else:
+    raise Exception("not available while visiond is started")
 
 def ws_proxy_recv(ws, local_sock, ssock, end_event, global_end_event):
   while not (end_event.is_set() or global_end_event.is_set()):
@@ -225,15 +238,14 @@ def backoff(retries):
 
 def main(gctx=None):
   params = Params()
-  dongle_id = params.get("DongleId")
+  dongle_id = params.get("DongleId").decode('utf-8')
   ws_uri = ATHENA_HOST + "/ws/v2/" + dongle_id
 
   crash.bind_user(id=dongle_id)
   crash.bind_extra(version=version, dirty=dirty, is_eon=True)
   crash.install()
 
-  private_key = open("/persist/comma/id_rsa").read()
-  api = Api(dongle_id, private_key)
+  api = Api(dongle_id)
 
   conn_retries = 0
   while 1:

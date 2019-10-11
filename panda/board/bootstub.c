@@ -32,6 +32,7 @@ const board *current_board;
 
 #include "drivers/clock.h"
 #include "drivers/llgpio.h"
+#include "drivers/adc.h"
 
 #include "board.h"
 
@@ -63,12 +64,10 @@ extern void *_app_start[];
 // BOUNTY: $200 coupon on shop.comma.ai or $100 check.
 
 int main(void) {
-  __disable_irq();
+  disable_interrupts();
   clock_init();
   detect_configuration();
   detect_board_type();
-
-  current_board->set_usb_power_mode(USB_POWER_CLIENT);
 
   if (enter_bootloader_mode == ENTER_SOFTLOADER_MAGIC) {
     enter_bootloader_mode = 0;

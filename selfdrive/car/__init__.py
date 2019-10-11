@@ -4,6 +4,9 @@ from common.numpy_fast import clip
 # kg of standard extra cargo to count for drive, gas, etc...
 STD_CARGO_KG = 136.
 
+def gen_empty_fingerprint():
+  return {i: {} for i in range(0, 4)}
+
 # FIXME: hardcoding honda civic 2016 touring params so they can be used to
 # scale unknown params for other cars
 class CivicParams:
@@ -31,7 +34,7 @@ def scale_tire_stiffness(mass, wheelbase, center_to_front, tire_stiffness_factor
                         (center_to_front / wheelbase) / (CivicParams.CENTER_TO_FRONT / CivicParams.WHEELBASE)
 
   return tire_stiffness_front, tire_stiffness_rear
-    
+
 def dbc_dict(pt_dbc, radar_dbc, chassis_dbc=None):
   return {'pt': pt_dbc, 'radar': radar_dbc, 'chassis': chassis_dbc}
 
@@ -53,11 +56,10 @@ def apply_std_steer_torque_limits(apply_torque, apply_torque_last, driver_torque
     apply_torque = clip(apply_torque, apply_torque_last - LIMITS.STEER_DELTA_UP,
                                     min(apply_torque_last + LIMITS.STEER_DELTA_DOWN, LIMITS.STEER_DELTA_UP))
 
-  return int(round(apply_torque))
+  return int(round(float(apply_torque)))
 
 
 def apply_toyota_steer_torque_limits(apply_torque, apply_torque_last, motor_torque, LIMITS):
-
   # limits due to comparison of commanded torque VS motor reported torque
   max_lim = min(max(motor_torque + LIMITS.STEER_ERROR_MAX, LIMITS.STEER_ERROR_MAX), LIMITS.STEER_MAX)
   min_lim = max(min(motor_torque - LIMITS.STEER_ERROR_MAX, -LIMITS.STEER_ERROR_MAX), -LIMITS.STEER_MAX)
@@ -74,7 +76,7 @@ def apply_toyota_steer_torque_limits(apply_torque, apply_torque_last, motor_torq
                         apply_torque_last - LIMITS.STEER_DELTA_UP,
                         min(apply_torque_last + LIMITS.STEER_DELTA_DOWN, LIMITS.STEER_DELTA_UP))
 
-  return int(round(apply_torque))
+  return int(round(float(apply_torque)))
 
 
 def crc8_pedal(data):
@@ -106,8 +108,19 @@ def create_gas_command(packer, gas_amount, idx):
 
   dat = packer.make_can_msg("GAS_COMMAND", 0, values)[2]
 
-  dat = [ord(i) for i in dat]
   checksum = crc8_pedal(dat[:-1])
   values["CHECKSUM_PEDAL"] = checksum
 
   return packer.make_can_msg("GAS_COMMAND", 0, values)
+
+
+def is_ecu_disconnected(fingerprint, fingerprint_list, ecu_fingerprint, car, ecu):
+  # check if a stock ecu is disconnected by looking for specific CAN msgs in the fingerprint
+  # return True if the reference car fingerprint contains the ecu fingerprint msg and
+  # fingerprint does not contains messages normally sent by a given ecu
+  ecu_in_car = False
+  for car_finger in fingerprint_list[car]:
+    if any(msg in car_finger for msg in ecu_fingerprint[ecu]):
+      ecu_in_car = True
+
+  return ecu_in_car and not any(msg in fingerprint for msg in ecu_fingerprint[ecu])

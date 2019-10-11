@@ -24,7 +24,7 @@ struct board {
 };
 
 // ******************* Definitions ********************
-// These should match the enum in cereal/log.capnp
+// These should match the enums in cereal/log.capnp and __init__.py
 #define HW_TYPE_UNKNOWN 0U
 #define HW_TYPE_WHITE_PANDA 1U
 #define HW_TYPE_GREY_PANDA 2U
@@ -36,7 +36,7 @@ struct board {
 #define LED_GREEN 1U
 #define LED_BLUE 2U
 
-// USB power modes
+// USB power modes (from cereal.log.health)
 #define USB_POWER_NONE 0U
 #define USB_POWER_CLIENT 1U
 #define USB_POWER_CDP 2U

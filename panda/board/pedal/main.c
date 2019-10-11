@@ -55,18 +55,18 @@ void debug_ring_callback(uart_ring *ring) {
   }
 }
 
-int usb_cb_ep1_in(uint8_t *usbdata, int len, bool hardwired) {
+int usb_cb_ep1_in(void *usbdata, int len, bool hardwired) {
   UNUSED(usbdata);
   UNUSED(len);
   UNUSED(hardwired);
   return 0;
 }
-void usb_cb_ep2_out(uint8_t *usbdata, int len, bool hardwired) {
+void usb_cb_ep2_out(void *usbdata, int len, bool hardwired) {
   UNUSED(usbdata);
   UNUSED(len);
   UNUSED(hardwired);
 }
-void usb_cb_ep3_out(uint8_t *usbdata, int len, bool hardwired) {
+void usb_cb_ep3_out(void *usbdata, int len, bool hardwired) {
   UNUSED(usbdata);
   UNUSED(len);
   UNUSED(hardwired);
@@ -83,9 +83,6 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, bool hardwired) 
       ur = get_ring_by_number(setup->b.wValue.w);
       if (!ur) {
         break;
-      }
-      if (ur == &esp_ring) {
-        uart_dma_drain();
       }
       // read
       while ((resp_len < MIN(setup->b.wLength.w, MAX_RESP_LEN)) &&
@@ -299,13 +296,16 @@ void pedal(void) {
 }
 
 int main(void) {
-  __disable_irq();
+  disable_interrupts();
 
   // init devices
   clock_init();
   peripherals_init();
   detect_configuration();
   detect_board_type();
+
+  // init board
+  current_board->init();
 
 #ifdef PEDAL_USB
   // enable USB
@@ -331,7 +331,7 @@ int main(void) {
   watchdog_init();
 
   puts("**** INTERRUPTS ON ****\n");
-  __enable_irq();
+  enable_interrupts();
 
   // main pedal loop
   while (1) {

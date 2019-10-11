@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import math
 import numpy as np
 from common.params import Params
@@ -9,7 +9,6 @@ from cereal import car
 from common.realtime import sec_since_boot, DT_PLAN
 from selfdrive.swaglog import cloudlog
 from selfdrive.config import Conversions as CV
-from selfdrive.services import service_list
 from selfdrive.controls.lib.speed_smoother import speed_smoother
 from selfdrive.controls.lib.longcontrol import LongCtrlState, MIN_CAN_SPEED
 from selfdrive.controls.lib.fcw import FCWChecker
@@ -28,13 +27,12 @@ _A_CRUISE_MIN_BP = [   0., 5.,  10., 20.,  40.]
 
 # need fast accel at very low speed for stop and go
 # make sure these accelerations are smaller than mpc limits
-_A_CRUISE_MAX_V = [1.1, 1.1, .8, .5, .3]
-_A_CRUISE_MAX_V_FOLLOWING = [1.6, 1.6, 1.2, .7, .3]
-_A_CRUISE_MAX_BP = [0.,  5., 10., 20., 40.]
+_A_CRUISE_MAX_V = [1.6, 1.6, 0.65, .4]
+_A_CRUISE_MAX_BP = [0.,  6.4, 22.5, 40.]
 
 # Lookup table for turns
-_A_TOTAL_MAX_V = [1.5, 1.9, 3.2]
-_A_TOTAL_MAX_BP = [0., 20., 40.]
+_A_TOTAL_MAX_V = [1.7, 3.2]
+_A_TOTAL_MAX_BP = [20., 40.]
 
 
 # Model speed kalman stuff
@@ -47,13 +45,9 @@ _MODEL_V_K = [[0.07068858], [0.04826294]]
 SPEED_PERCENTILE_IDX = 7
 
 
-def calc_cruise_accel_limits(v_ego, following):
+def calc_cruise_accel_limits(v_ego):
   a_cruise_min = interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V)
-
-  if following:
-    a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V_FOLLOWING)
-  else:
-    a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V)
+  a_cruise_max = interp(v_ego, _A_CRUISE_MAX_BP, _A_CRUISE_MAX_V)
   return np.vstack([a_cruise_min, a_cruise_max])
 
 
@@ -70,15 +64,12 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   return [a_target[0], min(a_target[1], a_x_allowed)]
 
 
-class Planner(object):
-  def __init__(self, CP, fcw_enabled):
+class Planner():
+  def __init__(self, CP):
     self.CP = CP
 
-    self.plan = messaging.pub_sock(service_list['plan'].port)
-    self.live_longitudinal_mpc = messaging.pub_sock(service_list['liveLongitudinalMpc'].port)
-
-    self.mpc1 = LongitudinalMpc(1, self.live_longitudinal_mpc)
-    self.mpc2 = LongitudinalMpc(2, self.live_longitudinal_mpc)
+    self.mpc1 = LongitudinalMpc(1)
+    self.mpc2 = LongitudinalMpc(2)
 
     self.v_acc_start = 0.0
     self.a_acc_start = 0.0
@@ -93,14 +84,13 @@ class Planner(object):
 
     self.longitudinalPlanSource = 'cruise'
     self.fcw_checker = FCWChecker()
-    self.fcw_enabled = fcw_enabled
     self.path_x = np.arange(192)
 
     self.params = Params()
 
   def choose_solution(self, v_cruise_setpoint, enabled):
     if enabled:
-      solutions = {'cruise': self.v_cruise, 'model': self.v_model}
+      solutions = {'model': self.v_model, 'cruise': self.v_cruise}
       if self.mpc1.prev_lead_status:
         solutions['mpc1'] = self.mpc1.v_mpc
       if self.mpc2.prev_lead_status:
@@ -125,7 +115,7 @@ class Planner(object):
 
     self.v_acc_future = min([self.mpc1.v_mpc_future, self.mpc2.v_mpc_future, v_cruise_setpoint])
 
-  def update(self, sm, CP, VM, PP):
+  def update(self, sm, pm, CP, VM, PP):
     """Gets called when new radarState is available"""
     cur_time = sec_since_boot()
     v_ego = sm['carState'].vEgo
@@ -139,7 +129,6 @@ class Planner(object):
     lead_2 = sm['radarState'].leadTwo
 
     enabled = (long_control_state == LongCtrlState.pid) or (long_control_state == LongCtrlState.stopping)
-    following = lead_1.status and lead_1.dRel < 45.0 and lead_1.vLeadK > v_ego and lead_1.aLeadK > 0.0
 
     if len(sm['model'].path.poly):
       path = list(sm['model'].path.poly)
@@ -147,6 +136,7 @@ class Planner(object):
       # Curvature of polynomial https://en.wikipedia.org/wiki/Curvature#Curvature_of_the_graph_of_a_function
       # y = a x^3 + b x^2 + c x + d, y' = 3 a x^2 + 2 b x + c, y'' = 6 a x + 2 b
       # k = y'' / (1 + y'^2)^1.5
+      # TODO: compute max speed without using a list of points and without numpy
       y_p = 3 * path[0] * self.path_x**2 + 2 * path[1] * self.path_x + path[2]
       y_pp = 6 * path[0] * self.path_x + 2 * path[1]
       curv = y_pp / (1. + y_p**2)**1.5
@@ -154,14 +144,13 @@ class Planner(object):
       a_y_max = 2.975 - v_ego * 0.0375  # ~1.85 @ 75mph, ~2.6 @ 25mph
       v_curvature = np.sqrt(a_y_max / np.clip(np.abs(curv), 1e-4, None))
       model_speed = np.min(v_curvature)
-      # print(model_speed * CV.MS_TO_MPH, model_speed)
       model_speed = max(20.0 * CV.MPH_TO_MS, model_speed) # Don't slow down below 20mph
     else:
       model_speed = MAX_SPEED
 
     # Calculate speed for normal cruise control
     if enabled:
-      accel_limits = [float(x) for x in calc_cruise_accel_limits(v_ego, following)]
+      accel_limits = [float(x) for x in calc_cruise_accel_limits(v_ego)]
       jerk_limits = [min(-0.1, accel_limits[0]), max(0.1, accel_limits[1])]  # TODO: make a separate lookup for jerk tuning
       accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngle, accel_limits, self.CP)
 
@@ -199,8 +188,8 @@ class Planner(object):
     self.mpc1.set_cur_state(self.v_acc_start, self.a_acc_start)
     self.mpc2.set_cur_state(self.v_acc_start, self.a_acc_start)
 
-    self.mpc1.update(sm['carState'], lead_1, v_cruise_setpoint)
-    self.mpc2.update(sm['carState'], lead_2, v_cruise_setpoint)
+    self.mpc1.update(pm, sm['carState'], lead_1, v_cruise_setpoint)
+    self.mpc2.update(pm, sm['carState'], lead_2, v_cruise_setpoint)
 
     self.choose_solution(v_cruise_setpoint, enabled)
 
@@ -251,10 +240,9 @@ class Planner(object):
     plan_send.plan.processingDelay = (plan_send.logMonoTime / 1e9) - sm.rcv_time['radarState']
 
     # Send out fcw
-    fcw = fcw and (self.fcw_enabled or long_control_state != LongCtrlState.off)
     plan_send.plan.fcw = fcw
 
-    self.plan.send(plan_send.to_bytes())
+    pm.send('plan', plan_send)
 
     # Interpolate 0.05 seconds and save as starting point for next iteration
     a_acc_sol = self.a_acc_start + (DT_PLAN / LON_MPC_STEP) * (self.a_acc - self.a_acc_start)

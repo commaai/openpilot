@@ -80,7 +80,7 @@ typedef void (*sighandler_t) (int);
 #endif
 
 extern "C" {
-volatile int do_exit = 0;
+volatile sig_atomic_t do_exit = 0;
 }
 
 namespace {
@@ -155,6 +155,8 @@ struct VisionState {
   int rgb_front_width, rgb_front_height, rgb_front_stride;
   VisionBuf rgb_front_bufs[UI_BUF_COUNT];
   cl_mem rgb_front_bufs_cl[UI_BUF_COUNT];
+  int front_meteringbox_xmin, front_meteringbox_xmax;
+  int front_meteringbox_ymin, front_meteringbox_ymax;
 
   ModelState model;
   ModelData model_bufs[UI_BUF_COUNT];
@@ -725,40 +727,27 @@ void* monitoring_thread(void *arg) {
 
       double t2 = millis_since_boot();
 
-      // send driver monitoring packet
+      // set front camera metering target
+      if (res.face_prob > 0.4)
       {
-        capnp::MallocMessageBuilder msg;
-        cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-        event.setLogMonoTime(nanos_since_boot());
-
-        auto framed = event.initDriverMonitoring();
-        framed.setFrameId(frame_data.frame_id);
-
-        // junk 0s from legacy model
-        //kj::ArrayPtr<const float> descriptor_DEPRECATED(&res.descriptor_DEPRECATED[0], ARRAYSIZE(res.descriptor_DEPRECATED));
-        //framed.setDescriptor(descriptor_DEPRECATED);
-        //framed.setStd(res.std_DEPRECATED);
-        // why not use this junk space for reporting inference time instead
-        // framed.setStdDEPRECATED(static_cast<float>(t2-t1));
-
-        kj::ArrayPtr<const float> face_orientation(&res.face_orientation[0], ARRAYSIZE(res.face_orientation));
-        kj::ArrayPtr<const float> face_position(&res.face_position[0], ARRAYSIZE(res.face_position));
-        framed.setFaceOrientation(face_orientation);
-        framed.setFacePosition(face_position);
-        framed.setFaceProb(res.face_prob);
-        framed.setLeftEyeProb(res.left_eye_prob);
-        framed.setRightEyeProb(res.right_eye_prob);
-        framed.setLeftBlinkProb(res.left_blink_prob);
-        framed.setRightBlinkProb(res.right_blink_prob);
-
-
-        auto words = capnp::messageToFlatArray(msg);
-        auto bytes = words.asBytes();
-        zmq_send(s->monitoring_sock_raw, bytes.begin(), bytes.size(), ZMQ_DONTWAIT);
+        int x_offset = s->rgb_front_width - 0.5 * s->rgb_front_height;
+        s->front_meteringbox_xmin = x_offset + (res.face_position[0] + 0.5) * (0.5 * s->rgb_front_height) - 72;
+        s->front_meteringbox_xmax = x_offset + (res.face_position[0] + 0.5) * (0.5 * s->rgb_front_height) + 72;
+        s->front_meteringbox_ymin = (res.face_position[1] + 0.5) * (s->rgb_front_height) - 72;
+        s->front_meteringbox_ymax = (res.face_position[1] + 0.5) * (s->rgb_front_height) + 72;
+      }
+      else // use default setting if no face
+      {
+        s->front_meteringbox_ymin = s->rgb_front_height * 1 / 3;
+        s->front_meteringbox_ymax = s->rgb_front_height * 1;
+        s->front_meteringbox_xmin = s->rgb_front_width * 3 / 5;
+        s->front_meteringbox_xmax = s->rgb_front_width;
       }
 
-      t2 = millis_since_boot();
+      // send dm packet
+      monitoring_publish(s->monitoring_sock_raw, frame_data.frame_id, res);
 
+      //t2 = millis_since_boot();
       //LOGD("monitoring process: %.2fms, from last %.2fms", t2-t1, t1-last);
       last = t1;
     }
@@ -816,11 +805,26 @@ void* frontview_thread(void *arg) {
     if (cnt % 3 == 0)
 #endif
     {
-      // for driver autoexposure, use bottom right corner
-      const int y_start = s->rgb_front_height / 3;
-      const int y_end = s->rgb_front_height;
-      const int x_start = s->rgb_front_width * 2 / 3;
-      const int x_end = s->rgb_front_width;
+      // use driver face crop for AE
+      int x_start;
+      int x_end;
+      int y_start;
+      int y_end;
+
+      if (s->front_meteringbox_xmax > 0)
+      {
+        x_start = s->front_meteringbox_xmin<0 ? 0:s->front_meteringbox_xmin;
+        x_end = s->front_meteringbox_xmax>=s->rgb_front_width ? s->rgb_front_width-1:s->front_meteringbox_xmax;
+        y_start = s->front_meteringbox_ymin<0 ? 0:s->front_meteringbox_ymin;
+        y_end = s->front_meteringbox_ymax>=s->rgb_front_height ? s->rgb_front_height-1:s->front_meteringbox_ymax;
+      }
+      else
+      {
+        y_start = s->rgb_front_height * 1 / 3;
+        y_end = s->rgb_front_height * 1;
+        x_start = s->rgb_front_width * 3 / 5;
+        x_end = s->rgb_front_width;
+      }
 
       uint32_t lum_binning[256] = {0,};
       for (int y = y_start; y < y_end; ++y) {
@@ -1007,10 +1011,10 @@ void* processing_thread(void *arg) {
       mt1 = millis_since_boot();
       s->model_bufs[ui_idx] =
           model_eval_frame(&s->model, q, yuv_cl, s->yuv_width, s->yuv_height,
-                           model_transform, img_sock_raw);
+                           model_transform, img_sock_raw, NULL);
       mt2 = millis_since_boot();
 
-      model_publish(model_sock_raw, frame_id, model_transform, s->model_bufs[ui_idx]);
+      model_publish(model_sock_raw, frame_id, s->model_bufs[ui_idx], frame_data.timestamp_eof);
     }
 
 
@@ -1073,6 +1077,8 @@ void* processing_thread(void *arg) {
         posenetd.setTransStd(trans_std_vs);
         kj::ArrayPtr<const float> rot_std_vs(&s->posenet.output[9], 3);
         posenetd.setRotStd(rot_std_vs);
+        posenetd.setTimestampEof(frame_data.timestamp_eof);
+        posenetd.setFrameId(frame_id);
 
         auto words = capnp::messageToFlatArray(msg);
         auto bytes = words.asBytes();
@@ -1295,7 +1301,7 @@ void set_do_exit(int sig) {
   do_exit = 1;
 }
 
-void party(VisionState *s, bool nomodel) {
+void party(VisionState *s) {
   int err;
 
   s->terminate_pub = zsock_new_pub("@inproc://terminate");
@@ -1384,11 +1390,6 @@ int main(int argc, char **argv) {
     test_run = true;
   }
 
-  bool no_model = false;
-  if (argc > 1 && strcmp(argv[1], "--no-model") == 0) {
-    no_model = true;
-  }
-
   VisionState state = {0};
   VisionState *s = &state;
 
@@ -1437,7 +1438,7 @@ int main(int argc, char **argv) {
   if (test_run) {
     do_exit = true;
   }
-  party(s, no_model);
+  party(s);
 
   zsock_destroy(&s->recorder_sock);
   zsock_destroy(&s->monitoring_sock);

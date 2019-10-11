@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import subprocess
 import sys
@@ -18,11 +18,11 @@ if __name__ == "__main__":
       try:
         cmd = "cd ../../; grep -R -i -w " + suffix_cmd + " '" + line + "'"
         res = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT)
-        print res
+        print(res)
         found_bad_language = True
       except subprocess.CalledProcessError as e:
         pass
   if found_bad_language:
     sys.exit("Failed: found bad language")
   else:
-    print "Success"
+    print("Success")

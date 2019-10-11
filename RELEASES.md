@@ -1,3 +1,27 @@
+Version 0.6.5 (2019-10-07)
+========================
+ * NEOS update: upgrade to Python3 and new installer!
+ * comma Harness support!
+ * New driving model: lateral control has lower reliance on lanelines
+ * New driver monitoring model: more accurate face and eye detection
+ * Redesign offroad screen to display updates and alerts
+ * Increase maximum allowed acceleration
+ * Prevent car 12V battery drain by cutting off EON charge after 3 days of no drive
+ * Lexus CT Hybrid support thanks to thomaspich!
+ * Louder chime for critical alerts
+ * Add toggle to switch to dashcam mode
+ * Fix "invalid vehicle params" error on DSU-less Toyota
+
+Version 0.6.4 (2019-09-08)
+========================
+ * Forward stock AEB for Honda Nidec
+ * Improve lane centering on banked roads
+ * Always-on forward collision warning
+ * Always-on driver monitoring, except for right hand drive countries
+ * Driver monitoring learns the user's normal driving position
+ * Honda Fit support thanks to energee!
+ * Lexus IS support
+
 Version 0.6.3 (2019-08-12)
 ========================
  * Alert sounds from EON: requires NEOS update

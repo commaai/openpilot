@@ -5,7 +5,7 @@ from selfdrive.can.libdbc_py import libdbc, ffi
 
 CAN_INVALID_CNT = 5  # after so many consecutive CAN data with wrong checksum, counter or frequency, flag CAN invalidity
 
-class CANParser(object):
+class CANParser():
   def __init__(self, dbc_name, signals, checks=None, bus=0, sendcan=False, tcp_addr="127.0.0.1", timeout=-1):
     if checks is None:
       checks = []
@@ -16,7 +16,7 @@ class CANParser(object):
     self.ts = {}
 
     self.dbc_name = dbc_name
-    self.dbc = libdbc.dbc_lookup(dbc_name)
+    self.dbc = libdbc.dbc_lookup(dbc_name.encode('utf8'))
     self.msg_name_to_addres = {}
     self.address_to_msg_name = {}
 
@@ -24,7 +24,7 @@ class CANParser(object):
     for i in range(num_msgs):
       msg = self.dbc[0].msgs[i]
 
-      name = ffi.string(msg.name)
+      name = ffi.string(msg.name).decode('utf8')
       address = msg.address
 
       self.msg_name_to_addres[name] = address
@@ -48,7 +48,7 @@ class CANParser(object):
         c = (self.msg_name_to_addres[c[0]], c[1])
         checks[i] = c
 
-    sig_names = dict((name, ffi.new("char[]", name)) for name, _, _ in signals)
+    sig_names = dict((name, ffi.new("char[]", name.encode('utf8'))) for name, _, _ in signals)
 
     signal_options_c = ffi.new("SignalParseOptions[]", [
       {
@@ -66,17 +66,17 @@ class CANParser(object):
         'check_frequency': freq,
       } for msg_address, freq in message_options.items()])
 
-    self.can = libdbc.can_init(bus, dbc_name, len(message_options_c), message_options_c,
-                               len(signal_options_c), signal_options_c, sendcan, tcp_addr, timeout)
+    self.can = libdbc.can_init(bus, dbc_name.encode('utf8'), len(message_options_c), message_options_c,
+                               len(signal_options_c), signal_options_c, sendcan, tcp_addr.encode('utf8'), timeout)
 
     self.p_can_valid = ffi.new("bool*")
 
-    value_count = libdbc.can_query(self.can, 0, self.p_can_valid, 0, ffi.NULL)
+    value_count = libdbc.can_query_latest(self.can, self.p_can_valid, 0, ffi.NULL)
     self.can_values = ffi.new("SignalValue[%d]" % value_count)
     self.update_vl(0)
 
   def update_vl(self, sec):
-    can_values_len = libdbc.can_query(self.can, sec, self.p_can_valid, len(self.can_values), self.can_values)
+    can_values_len = libdbc.can_query_latest(self.can, self.p_can_valid, len(self.can_values), self.can_values)
     assert can_values_len <= len(self.can_values)
 
     self.can_invalid_cnt += 1
@@ -85,11 +85,11 @@ class CANParser(object):
     self.can_valid = self.can_invalid_cnt < CAN_INVALID_CNT
 
     ret = set()
-    for i in xrange(can_values_len):
+    for i in range(can_values_len):
       cv = self.can_values[i]
       address = cv.address
       # print("{0} {1}".format(hex(cv.address), ffi.string(cv.name)))
-      name = ffi.string(cv.name)
+      name = ffi.string(cv.name).decode('utf8')
       self.vl[address][name] = cv.value
       self.ts[address][name] = cv.ts
 

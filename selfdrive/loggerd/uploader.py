@@ -1,8 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import os
 import re
 import time
-import stat
 import json
 import random
 import ctypes
@@ -12,7 +11,6 @@ import traceback
 import threading
 import subprocess
 
-from collections import Counter
 from selfdrive.swaglog import cloudlog
 from selfdrive.loggerd.config import ROOT
 
@@ -43,20 +41,17 @@ def raise_on_thread(t, exctype):
     ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, 0)
     raise SystemError("PyThreadState_SetAsyncExc failed")
 
-def listdir_with_creation_date(d):
-  lst = os.listdir(d)
-  for fn in lst:
-    try:
-      st = os.stat(os.path.join(d, fn))
-      ctime = st[stat.ST_CTIME]
-      yield (ctime, fn)
-    except OSError:
-      cloudlog.exception("listdir_with_creation_date: stat failed?")
-      yield (None, fn)
+def get_directory_sort(d):
+  return list(map(lambda s: s.rjust(10, '0'), d.rsplit('--', 1)))
 
-def listdir_by_creation_date(d):
-  times_and_paths = list(listdir_with_creation_date(d))
-  return [path for _, path in sorted(times_and_paths)]
+def listdir_by_creation(d):
+  try:
+    paths = os.listdir(d)
+    paths = sorted(paths, key=get_directory_sort)
+    return paths
+  except OSError:
+    cloudlog.exception("listdir_by_creation failed")
+    return list()
 
 def clear_locks(root):
   for logname in os.listdir(root):
@@ -71,17 +66,20 @@ def clear_locks(root):
 def is_on_wifi():
   # ConnectivityManager.getActiveNetworkInfo()
   try:
-    result = subprocess.check_output(["service", "call", "connectivity", "2"]).strip().split("\n")
+    result = subprocess.check_output(["service", "call", "connectivity", "2"], encoding='utf8').strip().split("\n")  # pylint: disable=unexpected-keyword-arg
   except subprocess.CalledProcessError:
     return False
 
-  data = ''.join(''.join(w.decode("hex")[::-1] for w in l[14:49].split()) for l in result[1:])
+  # Concatenate all ascii parts
+  r = ""
+  for line in result[1:]:
+    r += line[51:67]
 
-  return "\x00".join("WIFI") in data
+  return "W.I.F.I" in r
 
 def is_on_hotspot():
   try:
-    result = subprocess.check_output(["ifconfig", "wlan0"])
+    result = subprocess.check_output(["ifconfig", "wlan0"], encoding='utf8')  # pylint: disable=unexpected-keyword-arg
     result = re.findall(r"inet addr:((\d+\.){3}\d+)", result)[0][0]
 
     is_android = result.startswith('192.168.43.')
@@ -92,16 +90,19 @@ def is_on_hotspot():
   except:
     return False
 
-class Uploader(object):
-  def __init__(self, dongle_id, private_key, root):
+class Uploader():
+  def __init__(self, dongle_id, root):
     self.dongle_id = dongle_id
-    self.api = Api(dongle_id, private_key)
+    self.api = Api(dongle_id)
     self.root = root
 
     self.upload_thread = None
 
     self.last_resp = None
     self.last_exc = None
+
+    self.immediate_priority = {"qlog.bz2": 0}
+    self.high_priority = {"rlog.bz2": 0, "fcamera.hevc": 1, "dcamera.hevc": 2}
 
   def clean_dirs(self):
     try:
@@ -113,10 +114,17 @@ class Uploader(object):
     except OSError:
       cloudlog.exception("clean_dirs failed")
 
+  def get_upload_sort(self, name):
+    if name in self.immediate_priority:
+      return self.immediate_priority[name]
+    if name in self.high_priority:
+      return self.high_priority[name] + 100
+    return 1000
+
   def gen_upload_files(self):
     if not os.path.isdir(self.root):
       return
-    for logname in listdir_by_creation_date(self.root):
+    for logname in listdir_by_creation(self.root):
       path = os.path.join(self.root, logname)
       try:
         names = os.listdir(path)
@@ -125,46 +133,31 @@ class Uploader(object):
       if any(name.endswith(".lock") for name in names):
         continue
 
-      for name in names:
+      for name in sorted(names, key=self.get_upload_sort):
         key = os.path.join(logname, name)
         fn = os.path.join(path, name)
 
         yield (name, key, fn)
 
-  def get_data_stats(self):
-    name_counts = Counter()
-    total_size = 0
-    for name, key, fn in self.gen_upload_files():
-      name_counts[name] += 1
-      total_size += os.stat(fn).st_size
-    return dict(name_counts), total_size
-
   def next_file_to_upload(self, with_raw):
+    upload_files = list(self.gen_upload_files())
     # try to upload qlog files first
-    for name, key, fn in self.gen_upload_files():
-      if name  == "qlog.bz2":
-        return (key, fn, 0)
+    for name, key, fn in upload_files:
+      if name in self.immediate_priority:
+        return (key, fn)
 
     if with_raw:
-      # then upload log files
-      for name, key, fn in self.gen_upload_files():
-        if name  == "rlog.bz2":
-          return (key, fn, 1)
-
-      # then upload rear and front camera files
-      for name, key, fn in self.gen_upload_files():
-        if name == "fcamera.hevc":
-          return (key, fn, 2)
-        elif name == "dcamera.hevc":
-          return (key, fn, 3)
+      # then upload the full log files, rear and front camera files
+      for name, key, fn in upload_files:
+        if name in self.high_priority:
+          return (key, fn)
 
       # then upload other files
-      for name, key, fn in self.gen_upload_files():
+      for name, key, fn in upload_files:
         if not name.endswith('.lock') and not name.endswith(".tmp"):
-          return (key, fn, 4)
+          return (key, fn)
 
     return None
-
 
   def do_upload(self, key, fn):
     try:
@@ -176,7 +169,7 @@ class Uploader(object):
 
       if fake_upload:
         cloudlog.info("*** WARNING, THIS IS A FAKE UPLOAD TO %s ***" % url)
-        class FakeResponse(object):
+        class FakeResponse():
           def __init__(self):
             self.status_code = 200
         self.last_resp = FakeResponse()
@@ -234,25 +227,22 @@ class Uploader(object):
 
     return success
 
-
-
 def uploader_fn(exit_event):
   cloudlog.info("uploader_fn")
 
   params = Params()
-  dongle_id = params.get("DongleId")
-  private_key = open("/persist/comma/id_rsa").read()
+  dongle_id = params.get("DongleId").decode('utf8')
 
-  if dongle_id is None or private_key is None:
-    cloudlog.info("uploader missing dongle_id or private_key")
-    raise Exception("uploader can't start without dongle id and private key")
+  if dongle_id is None:
+    cloudlog.info("uploader missing dongle_id")
+    raise Exception("uploader can't start without dongle id")
 
-  uploader = Uploader(dongle_id, private_key, ROOT)
+  uploader = Uploader(dongle_id, ROOT)
 
   backoff = 0.1
   while True:
-    allow_raw_upload = (params.get("IsUploadRawEnabled") != "0")
-    allow_cellular = (params.get("IsUploadVideoOverCellularEnabled") != "0")
+    allow_raw_upload = (params.get("IsUploadRawEnabled") != b"0")
+    allow_cellular = (params.get("IsUploadVideoOverCellularEnabled") != b"0")
     on_hotspot = is_on_hotspot()
     on_wifi = is_on_wifi()
     should_upload = allow_cellular or (on_wifi and not on_hotspot)
@@ -265,7 +255,7 @@ def uploader_fn(exit_event):
       time.sleep(5)
       continue
 
-    key, fn, _ = d
+    key, fn = d
 
     cloudlog.event("uploader_netcheck", allow_cellular=allow_cellular, is_on_hotspot=on_hotspot, is_on_wifi=on_wifi)
     cloudlog.info("to upload %r", d)

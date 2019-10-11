@@ -5,8 +5,8 @@ from selfdrive.car import create_gas_command
 from selfdrive.car.toyota.toyotacan import make_can_msg, create_video_target,\
                                            create_steer_command, create_ui_command, \
                                            create_ipas_steer_command, create_accel_command, \
-                                           create_fcw_command
-from selfdrive.car.toyota.values import ECU, STATIC_MSGS, TSS2_CAR
+                                           create_acc_cancel_command, create_fcw_command
+from selfdrive.car.toyota.values import CAR, ECU, STATIC_MSGS, TSS2_CAR
 from selfdrive.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -89,7 +89,7 @@ def ipas_state_transition(steer_angle_enabled, enabled, ipas_active, ipas_reset_
     return False, 0
 
 
-class CarController(object):
+class CarController():
   def __init__(self, dbc_name, car_fingerprint, enable_camera, enable_dsu, enable_apg):
     self.braking = False
     # redundant safety check with the board
@@ -209,7 +209,11 @@ class CarController(object):
     # accel cmd comes from DSU, but we can spam can to cancel the system even if we are using lat only control
     if (frame % 3 == 0 and ECU.DSU in self.fake_ecus) or (pcm_cancel_cmd and ECU.CAM in self.fake_ecus):
       lead = lead or CS.v_ego < 12.    # at low speed we always assume the lead is present do ACC can be engaged
-      if ECU.DSU in self.fake_ecus:
+
+      # Lexus IS uses a different cancellation message
+      if pcm_cancel_cmd and CS.CP.carFingerprint == CAR.LEXUS_IS:
+        can_sends.append(create_acc_cancel_command(self.packer))
+      elif ECU.DSU in self.fake_ecus:
         can_sends.append(create_accel_command(self.packer, apply_accel, pcm_cancel_cmd, self.standstill_req, lead))
       else:
         can_sends.append(create_accel_command(self.packer, 0, pcm_cancel_cmd, False, lead))
@@ -236,8 +240,12 @@ class CarController(object):
     else:
       send_ui = False
 
+    # disengage msg causes a bad fault sound so play a good sound instead
+    if pcm_cancel_cmd:
+      send_ui = True
+
     if (frame % 100 == 0 or send_ui) and ECU.CAM in self.fake_ecus:
-      can_sends.append(create_ui_command(self.packer, steer, left_line, right_line, left_lane_depart, right_lane_depart))
+      can_sends.append(create_ui_command(self.packer, steer, pcm_cancel_cmd, left_line, right_line, left_lane_depart, right_lane_depart))
 
     if frame % 100 == 0 and ECU.DSU in self.fake_ecus and self.car_fingerprint not in TSS2_CAR:
       can_sends.append(create_fcw_command(self.packer, fcw))
@@ -249,14 +257,14 @@ class CarController(object):
         # special cases
         if fr_step == 5 and ecu == ECU.CAM and bus == 1:
           cnt = (((frame // 5) % 7) + 1) << 5
-          vl = chr(cnt) + vl
+          vl = bytes([cnt]) + vl
         elif addr in (0x489, 0x48a) and bus == 0:
           # add counter for those 2 messages (last 4 bits)
           cnt = ((frame // 100) % 0xf) + 1
           if addr == 0x48a:
             # 0x48a has a 8 preceding the counter
             cnt += 1 << 7
-          vl += chr(cnt)
+          vl += bytes([cnt])
 
         can_sends.append(make_can_msg(addr, vl, bus, False))
 

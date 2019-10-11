@@ -1,18 +1,43 @@
 // IRQs: USART1, USART2, USART3, UART5
 
-#define FIFO_SIZE 0x400U
+// ***************************** Definitions *****************************
+#define FIFO_SIZE_INT 0x400U
+#define FIFO_SIZE_DMA 0x1000U
+
 typedef struct uart_ring {
   volatile uint16_t w_ptr_tx;
   volatile uint16_t r_ptr_tx;
-  uint8_t elems_tx[FIFO_SIZE];
+  uint8_t *elems_tx;
+  uint32_t tx_fifo_size;
   volatile uint16_t w_ptr_rx;
   volatile uint16_t r_ptr_rx;
-  uint8_t elems_rx[FIFO_SIZE];
+  uint8_t *elems_rx;
+  uint32_t rx_fifo_size;
   USART_TypeDef *uart;
   void (*callback)(struct uart_ring*);
+  bool dma_rx;
 } uart_ring;
 
-void uart_init(USART_TypeDef *u, int baud);
+#define UART_BUFFER(x, size_rx, size_tx, uart_ptr, callback_ptr, rx_dma) \
+  uint8_t elems_rx_##x[size_rx]; \
+  uint8_t elems_tx_##x[size_tx]; \
+  uart_ring uart_ring_##x = {  \
+    .w_ptr_tx = 0, \
+    .r_ptr_tx = 0, \
+    .elems_tx = ((uint8_t *)&elems_tx_##x), \
+    .tx_fifo_size = size_tx, \
+    .w_ptr_rx = 0, \
+    .r_ptr_rx = 0, \
+    .elems_rx = ((uint8_t *)&elems_rx_##x), \
+    .rx_fifo_size = size_rx, \
+    .uart = uart_ptr, \
+    .callback = callback_ptr, \
+    .dma_rx = rx_dma \
+  };
+
+
+// ***************************** Function prototypes *****************************
+void uart_init(uart_ring *q, int baud);
 
 bool getc(uart_ring *q, char *elem);
 bool putc(uart_ring *q, char elem);
@@ -21,48 +46,35 @@ void puts(const char *a);
 void puth(unsigned int i);
 void hexdump(const void *a, int l);
 
+void debug_ring_callback(uart_ring *ring);
 
-// ***************************** serial port queues *****************************
+// ******************************** UART buffers ********************************
 
-// esp = USART1
-uart_ring esp_ring = { .w_ptr_tx = 0, .r_ptr_tx = 0,
-                       .w_ptr_rx = 0, .r_ptr_rx = 0,
-                       .uart = USART1,
-                       .callback = NULL};
+// esp_gps = USART1
+UART_BUFFER(esp_gps, FIFO_SIZE_DMA, FIFO_SIZE_INT, USART1, NULL, true)
 
 // lin1, K-LINE = UART5
 // lin2, L-LINE = USART3
-uart_ring lin1_ring = { .w_ptr_tx = 0, .r_ptr_tx = 0,
-                        .w_ptr_rx = 0, .r_ptr_rx = 0,
-                        .uart = UART5,
-                        .callback = NULL};
-uart_ring lin2_ring = { .w_ptr_tx = 0, .r_ptr_tx = 0,
-                        .w_ptr_rx = 0, .r_ptr_rx = 0,
-                        .uart = USART3,
-                        .callback = NULL};
+UART_BUFFER(lin1, FIFO_SIZE_INT, FIFO_SIZE_INT, UART5, NULL, false)
+UART_BUFFER(lin2, FIFO_SIZE_INT, FIFO_SIZE_INT, USART3, NULL, false)
 
 // debug = USART2
-void debug_ring_callback(uart_ring *ring);
-uart_ring debug_ring = { .w_ptr_tx = 0, .r_ptr_tx = 0,
-                         .w_ptr_rx = 0, .r_ptr_rx = 0,
-                         .uart = USART2,
-                         .callback = debug_ring_callback};
-
+UART_BUFFER(debug, FIFO_SIZE_INT, FIFO_SIZE_INT, USART2, debug_ring_callback, false)
 
 uart_ring *get_ring_by_number(int a) {
   uart_ring *ring = NULL;
   switch(a) {
     case 0:
-      ring = &debug_ring;
+      ring = &uart_ring_debug;
       break;
     case 1:
-      ring = &esp_ring;
+      ring = &uart_ring_esp_gps;
       break;
     case 2:
-      ring = &lin1_ring;
+      ring = &uart_ring_lin1;
       break;
     case 3:
-      ring = &lin2_ring;
+      ring = &uart_ring_lin2;
       break;
     default:
       ring = NULL;
@@ -71,133 +83,183 @@ uart_ring *get_ring_by_number(int a) {
   return ring;
 }
 
-// ***************************** serial port *****************************
+// ***************************** Interrupt handlers *****************************
 
-void uart_ring_process(uart_ring *q) {
-  enter_critical_section();
-  // TODO: check if external serial is connected
-  int sr = q->uart->SR;
-
+void uart_tx_ring(uart_ring *q){
+  ENTER_CRITICAL();
+  // Send out next byte of TX buffer
   if (q->w_ptr_tx != q->r_ptr_tx) {
-    if ((sr & USART_SR_TXE) != 0) {
-      q->uart->DR = q->elems_tx[q->r_ptr_tx];
-      q->r_ptr_tx = (q->r_ptr_tx + 1U) % FIFO_SIZE;
+    // Only send if transmit register is empty (aka last byte has been sent)
+    if ((q->uart->SR & USART_SR_TXE) != 0) {
+      q->uart->DR = q->elems_tx[q->r_ptr_tx];   // This clears TXE
+      q->r_ptr_tx = (q->r_ptr_tx + 1U) % q->tx_fifo_size;
     }
-    // there could be more to send
-    q->uart->CR1 |= USART_CR1_TXEIE;
-  } else {
-    // nothing to send
-    q->uart->CR1 &= ~USART_CR1_TXEIE;
-  }
 
-  if ((sr & USART_SR_RXNE) || (sr & USART_SR_ORE)) {
-    uint8_t c = q->uart->DR;  // TODO: can drop packets
-    if (q != &esp_ring) {
-      uint16_t next_w_ptr = (q->w_ptr_rx + 1U) % FIFO_SIZE;
-      if (next_w_ptr != q->r_ptr_rx) {
-        q->elems_rx[q->w_ptr_rx] = c;
-        q->w_ptr_rx = next_w_ptr;
-        if (q->callback != NULL) {
-          q->callback(q);
-        }
+    // Enable TXE interrupt if there is still data to be sent
+    if(q->r_ptr_tx != q->w_ptr_tx){
+      q->uart->CR1 |= USART_CR1_TXEIE;
+    } else {
+      q->uart->CR1 &= ~USART_CR1_TXEIE;
+    }
+  }
+  EXIT_CRITICAL();
+}
+
+void uart_rx_ring(uart_ring *q){
+  // Do not read out directly if DMA enabled
+  if (q->dma_rx == false) {
+    ENTER_CRITICAL();
+
+    // Read out RX buffer
+    uint8_t c = q->uart->DR;  // This read after reading SR clears a bunch of interrupts
+
+    uint16_t next_w_ptr = (q->w_ptr_rx + 1U) % q->rx_fifo_size;
+    // Do not overwrite buffer data
+    if (next_w_ptr != q->r_ptr_rx) {
+      q->elems_rx[q->w_ptr_rx] = c;
+      q->w_ptr_rx = next_w_ptr;
+      if (q->callback != NULL) {
+        q->callback(q);
       }
     }
-  }
 
-  if ((sr & USART_SR_ORE) != 0) {
-    // set dropped packet flag?
-  }
-
-  exit_critical_section();
-}
-
-// interrupt boilerplate
-
-void USART1_IRQHandler(void) { uart_ring_process(&esp_ring); }
-void USART2_IRQHandler(void) { uart_ring_process(&debug_ring); }
-void USART3_IRQHandler(void) { uart_ring_process(&lin2_ring); }
-void UART5_IRQHandler(void) { uart_ring_process(&lin1_ring); }
-
-bool getc(uart_ring *q, char *elem) {
-  bool ret = false;
-
-  enter_critical_section();
-  if (q->w_ptr_rx != q->r_ptr_rx) {
-    if (elem != NULL) *elem = q->elems_rx[q->r_ptr_rx];
-    q->r_ptr_rx = (q->r_ptr_rx + 1U) % FIFO_SIZE;
-    ret = true;
-  }
-  exit_critical_section();
-
-  return ret;
-}
-
-bool injectc(uart_ring *q, char elem) {
-  int ret = false;
-  uint16_t next_w_ptr;
-
-  enter_critical_section();
-  next_w_ptr = (q->w_ptr_rx + 1U) % FIFO_SIZE;
-  if (next_w_ptr != q->r_ptr_rx) {
-    q->elems_rx[q->w_ptr_rx] = elem;
-    q->w_ptr_rx = next_w_ptr;
-    ret = true;
-  }
-  exit_critical_section();
-
-  return ret;
-}
-
-bool putc(uart_ring *q, char elem) {
-  bool ret = false;
-  uint16_t next_w_ptr;
-
-  enter_critical_section();
-  next_w_ptr = (q->w_ptr_tx + 1U) % FIFO_SIZE;
-  if (next_w_ptr != q->r_ptr_tx) {
-    q->elems_tx[q->w_ptr_tx] = elem;
-    q->w_ptr_tx = next_w_ptr;
-    ret = true;
-  }
-  exit_critical_section();
-
-  uart_ring_process(q);
-
-  return ret;
-}
-
-void uart_flush(uart_ring *q) {
-  while (q->w_ptr_tx != q->r_ptr_tx) {
-    __WFI();
+    EXIT_CRITICAL();
   }
 }
 
-void uart_flush_sync(uart_ring *q) {
-  // empty the TX buffer
-  while (q->w_ptr_tx != q->r_ptr_tx) {
-    uart_ring_process(q);
+// This function should be called on:
+// * Half-transfer DMA interrupt
+// * Full-transfer DMA interrupt
+// * UART IDLE detection
+uint32_t prev_w_index = 0;
+void dma_pointer_handler(uart_ring *q, uint32_t dma_ndtr) {
+  ENTER_CRITICAL();
+  uint32_t w_index = (q->rx_fifo_size - dma_ndtr);
+  
+  // Check for new data
+  if (w_index != prev_w_index){
+    // Check for overflow
+    if (
+      ((prev_w_index < q->r_ptr_rx) && (q->r_ptr_rx <= w_index)) ||                               // No rollover
+      ((w_index < prev_w_index) && ((q->r_ptr_rx <= w_index) || (prev_w_index < q->r_ptr_rx)))    // Rollover
+    ){   
+      // We lost data. Set the new read pointer to the oldest byte still available
+      q->r_ptr_rx = (w_index + 1U) % q->rx_fifo_size;
+    }
+
+    // Set write pointer
+    q->w_ptr_rx = w_index;
+  }
+
+  prev_w_index = w_index;
+  EXIT_CRITICAL();
+}
+
+// This read after reading SR clears all error interrupts. We don't want compiler warnings, nor optimizations
+#define UART_READ_DR(uart) volatile uint8_t t = (uart)->DR; UNUSED(t);
+
+void uart_interrupt_handler(uart_ring *q) {
+  ENTER_CRITICAL();
+
+  // Read UART status. This is also the first step necessary in clearing most interrupts
+  uint32_t status = q->uart->SR;
+
+  // If RXNE is set, perform a read. This clears RXNE, ORE, IDLE, NF and FE
+  if((status & USART_SR_RXNE) != 0U){
+    uart_rx_ring(q);
+  }
+
+  // Detect errors and clear them
+  uint32_t err = (status & USART_SR_ORE) | (status & USART_SR_NE) | (status & USART_SR_FE) | (status & USART_SR_PE);
+  if(err != 0U){
+    #ifdef DEBUG_UART
+      puts("Encountered UART error: "); puth(err); puts("\n");
+    #endif
+    UART_READ_DR(q->uart)
+  }
+  // Send if necessary
+  uart_tx_ring(q);
+
+  // Run DMA pointer handler if the line is idle
+  if(q->dma_rx && (status & USART_SR_IDLE)){
+    // Reset IDLE flag
+    UART_READ_DR(q->uart)
+
+    if(q == &uart_ring_esp_gps){
+      dma_pointer_handler(&uart_ring_esp_gps, DMA2_Stream5->NDTR);
+    } else {
+      #ifdef DEBUG_UART
+        puts("No IDLE dma_pointer_handler implemented for this UART.");
+      #endif
+    }
+  }
+
+  EXIT_CRITICAL();
+}
+
+void USART1_IRQHandler(void) { uart_interrupt_handler(&uart_ring_esp_gps); }
+void USART2_IRQHandler(void) { uart_interrupt_handler(&uart_ring_debug); }
+void USART3_IRQHandler(void) { uart_interrupt_handler(&uart_ring_lin2); }
+void UART5_IRQHandler(void) { uart_interrupt_handler(&uart_ring_lin1); }
+
+void DMA2_Stream5_IRQHandler(void) {
+  ENTER_CRITICAL();
+
+  // Handle errors
+  if((DMA2->HISR & DMA_HISR_TEIF5) || (DMA2->HISR & DMA_HISR_DMEIF5) || (DMA2->HISR & DMA_HISR_FEIF5)){
+    #ifdef DEBUG_UART
+      puts("Encountered UART DMA error. Clearing and restarting DMA...\n");
+    #endif
+
+    // Clear flags
+    DMA2->HIFCR = DMA_HIFCR_CTEIF5 | DMA_HIFCR_CDMEIF5 | DMA_HIFCR_CFEIF5;
+
+    // Re-enable the DMA if necessary
+    DMA2_Stream5->CR |= DMA_SxCR_EN;
+  }
+
+  // Re-calculate write pointer and reset flags
+  dma_pointer_handler(&uart_ring_esp_gps, DMA2_Stream5->NDTR);
+  DMA2->HIFCR = DMA_HIFCR_CTCIF5 | DMA_HIFCR_CHTIF5;
+
+  EXIT_CRITICAL();
+}
+
+// ***************************** Hardware setup *****************************
+
+void dma_rx_init(uart_ring *q) {
+  // Initialization is UART-dependent
+  if(q == &uart_ring_esp_gps){
+    // DMA2, stream 5, channel 4
+
+    // Disable FIFO mode (enable direct)
+    DMA2_Stream5->FCR &= ~DMA_SxFCR_DMDIS;
+
+    // Setup addresses
+    DMA2_Stream5->PAR = (uint32_t)&(USART1->DR);    // Source
+    DMA2_Stream5->M0AR = (uint32_t)q->elems_rx;     // Destination
+    DMA2_Stream5->NDTR = q->rx_fifo_size;           // Number of bytes to copy
+
+    // Circular, Increment memory, byte size, periph -> memory, enable
+    // Transfer complete, half transfer, transfer error and direct mode error interrupt enable
+    DMA2_Stream5->CR = DMA_SxCR_CHSEL_2 | DMA_SxCR_MINC | DMA_SxCR_CIRC | DMA_SxCR_HTIE | DMA_SxCR_TCIE | DMA_SxCR_TEIE | DMA_SxCR_DMEIE | DMA_SxCR_EN;
+    
+    // Enable DMA receiver in UART
+    q->uart->CR3 |= USART_CR3_DMAR;
+
+    // Enable UART IDLE interrupt
+    q->uart->CR1 |= USART_CR1_IDLEIE;
+
+    // Enable interrupt
+    NVIC_EnableIRQ(DMA2_Stream5_IRQn);
+  } else {
+    puts("Tried to initialize RX DMA for an unsupported UART\n");
   }
 }
 
-void uart_send_break(uart_ring *u) {
-  while ((u->uart->CR1 & USART_CR1_SBK) != 0);
-  u->uart->CR1 |= USART_CR1_SBK;
-}
-
-void clear_uart_buff(uart_ring *q) {
-  enter_critical_section();
-  q->w_ptr_tx = 0;
-  q->r_ptr_tx = 0;
-  q->w_ptr_rx = 0;
-  q->r_ptr_rx = 0;
-  exit_critical_section();
-}
-
-// ***************************** start UART code *****************************
-
-#define __DIV(_PCLK_, _BAUD_)                        (((_PCLK_) * 25U) / (4U * (_BAUD_)))
-#define __DIVMANT(_PCLK_, _BAUD_)                    (__DIV((_PCLK_), (_BAUD_)) / 100U)
-#define __DIVFRAQ(_PCLK_, _BAUD_)                    ((((__DIV((_PCLK_), (_BAUD_)) - (__DIVMANT((_PCLK_), (_BAUD_)) * 100U)) * 16U) + 50U) / 100U)
+#define __DIV(_PCLK_, _BAUD_)                    (((_PCLK_) * 25U) / (4U * (_BAUD_)))
+#define __DIVMANT(_PCLK_, _BAUD_)                (__DIV((_PCLK_), (_BAUD_)) / 100U)
+#define __DIVFRAQ(_PCLK_, _BAUD_)                ((((__DIV((_PCLK_), (_BAUD_)) - (__DIVMANT((_PCLK_), (_BAUD_)) * 100U)) * 16U) + 50U) / 100U)
 #define __USART_BRR(_PCLK_, _BAUD_)              ((__DIVMANT((_PCLK_), (_BAUD_)) << 4) | (__DIVFRAQ((_PCLK_), (_BAUD_)) & 0x0FU))
 
 void uart_set_baud(USART_TypeDef *u, unsigned int baud) {
@@ -209,103 +271,118 @@ void uart_set_baud(USART_TypeDef *u, unsigned int baud) {
   }
 }
 
-#define USART1_DMA_LEN 0x20
-char usart1_dma[USART1_DMA_LEN];
+void uart_init(uart_ring *q, int baud) {
+  // Set baud and enable peripheral with TX and RX mode
+  uart_set_baud(q->uart, baud);
+  q->uart->CR1 = USART_CR1_UE | USART_CR1_TE | USART_CR1_RE;
 
-void uart_dma_drain(void) {
-  uart_ring *q = &esp_ring;
-
-  enter_critical_section();
-
-  if ((DMA2->HISR & DMA_HISR_TCIF5) || (DMA2->HISR & DMA_HISR_HTIF5) || (DMA2_Stream5->NDTR != USART1_DMA_LEN)) {
-    // disable DMA
-    q->uart->CR3 &= ~USART_CR3_DMAR;
-    DMA2_Stream5->CR &= ~DMA_SxCR_EN;
-    while ((DMA2_Stream5->CR & DMA_SxCR_EN) != 0);
-
-    unsigned int i;
-    for (i = 0; i < (USART1_DMA_LEN - DMA2_Stream5->NDTR); i++) {
-      char c = usart1_dma[i];
-      uint16_t next_w_ptr = (q->w_ptr_rx + 1U) % FIFO_SIZE;
-      if (next_w_ptr != q->r_ptr_rx) {
-        q->elems_rx[q->w_ptr_rx] = c;
-        q->w_ptr_rx = next_w_ptr;
-      }
-    }
-
-    // reset DMA len
-    DMA2_Stream5->NDTR = USART1_DMA_LEN;
-
-    // clear interrupts
-    DMA2->HIFCR = DMA_HIFCR_CTCIF5 | DMA_HIFCR_CHTIF5;
-    //DMA2->HIFCR = DMA_HIFCR_CTEIF5 | DMA_HIFCR_CDMEIF5 | DMA_HIFCR_CFEIF5;
-
-    // enable DMA
-    DMA2_Stream5->CR |= DMA_SxCR_EN;
-    q->uart->CR3 |= USART_CR3_DMAR;
-  }
-
-  exit_critical_section();
-}
-
-void DMA2_Stream5_IRQHandler(void) {
-  //set_led(LED_BLUE, 1);
-  uart_dma_drain();
-  //set_led(LED_BLUE, 0);
-}
-
-void uart_init(USART_TypeDef *u, int baud) {
-  // enable uart and tx+rx mode
-  u->CR1 = USART_CR1_UE;
-  uart_set_baud(u, baud);
-
-  u->CR1 |= USART_CR1_TE | USART_CR1_RE;
-  //u->CR2 = USART_CR2_STOP_0 | USART_CR2_STOP_1;
-  //u->CR2 = USART_CR2_STOP_0;
-  // ** UART is ready to work **
-
-  // enable interrupts
-  if (u != USART1) {
-    u->CR1 |= USART_CR1_RXNEIE;
-  }
-
-  if (u == USART1) {
-    // DMA2, stream 2, channel 3
-    DMA2_Stream5->M0AR = (uint32_t)usart1_dma;
-    DMA2_Stream5->NDTR = USART1_DMA_LEN;
-    DMA2_Stream5->PAR = (uint32_t)&(USART1->DR);
-
-    // channel4, increment memory, periph -> memory, enable
-    DMA2_Stream5->CR = DMA_SxCR_CHSEL_2 | DMA_SxCR_MINC | DMA_SxCR_HTIE | DMA_SxCR_TCIE | DMA_SxCR_EN;
-
-    // this one uses DMA receiver
-    u->CR3 = USART_CR3_DMAR;
-
-    NVIC_EnableIRQ(DMA2_Stream5_IRQn);
+  // Enable UART interrupts
+  if(q->uart == USART1){
     NVIC_EnableIRQ(USART1_IRQn);
-  } else if (u == USART2) {
+  } else if (q->uart == USART2){
     NVIC_EnableIRQ(USART2_IRQn);
-  } else if (u == USART3) {
+  } else if (q->uart == USART3){
     NVIC_EnableIRQ(USART3_IRQn);
-  } else if (u == UART5) {
+  } else if (q->uart == UART5){
     NVIC_EnableIRQ(UART5_IRQn);
   } else {
-    // USART type undefined, skip
+    // UART not used. Skip enabling interrupts
+  }
+
+  // Initialise RX DMA if used
+  if(q->dma_rx){
+    dma_rx_init(q);
   }
 }
 
+// ************************* Low-level buffer functions *************************
+
+bool getc(uart_ring *q, char *elem) {
+  bool ret = false;
+
+  ENTER_CRITICAL();
+  if (q->w_ptr_rx != q->r_ptr_rx) {
+    if (elem != NULL) *elem = q->elems_rx[q->r_ptr_rx];
+    q->r_ptr_rx = (q->r_ptr_rx + 1U) % q->rx_fifo_size;
+    ret = true;
+  }
+  EXIT_CRITICAL();
+
+  return ret;
+}
+
+bool injectc(uart_ring *q, char elem) {
+  int ret = false;
+  uint16_t next_w_ptr;
+
+  ENTER_CRITICAL();
+  next_w_ptr = (q->w_ptr_rx + 1U) % q->tx_fifo_size;
+  if (next_w_ptr != q->r_ptr_rx) {
+    q->elems_rx[q->w_ptr_rx] = elem;
+    q->w_ptr_rx = next_w_ptr;
+    ret = true;
+  }
+  EXIT_CRITICAL();
+
+  return ret;
+}
+
+bool putc(uart_ring *q, char elem) {
+  bool ret = false;
+  uint16_t next_w_ptr;
+
+  ENTER_CRITICAL();
+  next_w_ptr = (q->w_ptr_tx + 1U) % q->tx_fifo_size;
+  if (next_w_ptr != q->r_ptr_tx) {
+    q->elems_tx[q->w_ptr_tx] = elem;
+    q->w_ptr_tx = next_w_ptr;
+    ret = true;
+  }
+  EXIT_CRITICAL();
+
+  uart_tx_ring(q);
+
+  return ret;
+}
+
+// Seems dangerous to use (might lock CPU if called with interrupts disabled f.e.)
+// TODO: Remove? Not used anyways
+void uart_flush(uart_ring *q) {
+  while (q->w_ptr_tx != q->r_ptr_tx) {
+    __WFI();
+  }
+}
+
+void uart_flush_sync(uart_ring *q) {
+  // empty the TX buffer
+  while (q->w_ptr_tx != q->r_ptr_tx) {
+    uart_tx_ring(q);
+  }
+}
+
+void uart_send_break(uart_ring *u) {
+  while ((u->uart->CR1 & USART_CR1_SBK) != 0);
+  u->uart->CR1 |= USART_CR1_SBK;
+}
+
+void clear_uart_buff(uart_ring *q) {
+  ENTER_CRITICAL();
+  q->w_ptr_tx = 0;
+  q->r_ptr_tx = 0;
+  q->w_ptr_rx = 0;
+  q->r_ptr_rx = 0;
+  EXIT_CRITICAL();
+}
+
+// ************************ High-level debug functions **********************
 void putch(const char a) {
   if (has_external_debug_serial) {
-    /*while ((debug_ring.uart->SR & USART_SR_TXE) == 0);
-    debug_ring.uart->DR = a;*/
-
     // assuming debugging is important if there's external serial connected
-    while (!putc(&debug_ring, a));
+    while (!putc(&uart_ring_debug, a));
 
-    //putc(&debug_ring, a);
   } else {
     // misra-c2012-17.7: serial debug function, ok to ignore output
-    (void)injectc(&debug_ring, a);
+    (void)injectc(&uart_ring_debug, a);
   }
 }
 
@@ -327,7 +404,7 @@ void putui(uint32_t i) {
     idx--;
     i_copy /= 10;
   } while (i_copy != 0U);
-  puts(str + idx + 1U);
+  puts(&str[idx + 1U]);
 }
 
 void puth(unsigned int i) {
@@ -345,10 +422,12 @@ void puth2(unsigned int i) {
 }
 
 void hexdump(const void *a, int l) {
-  for (int i=0; i < l; i++) {
-    if ((i != 0) && ((i & 0xf) == 0)) puts("\n");
-    puth2(((const unsigned char*)a)[i]);
-    puts(" ");
+  if (a != NULL) {
+    for (int i=0; i < l; i++) {
+      if ((i != 0) && ((i & 0xf) == 0)) puts("\n");
+      puth2(((const unsigned char*)a)[i]);
+      puts(" ");
+    }
   }
   puts("\n");
 }

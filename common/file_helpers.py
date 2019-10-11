@@ -24,24 +24,15 @@ def rm_tree_or_link(path):
     shutil.rmtree(path)
 
 def get_tmpdir_on_same_filesystem(path):
-  # TODO(mgraczyk): HACK, we should actually check for which filesystem.
   normpath = os.path.normpath(path)
   parts = normpath.split("/")
-  if len(parts) > 1:
-    if parts[1].startswith("raid") or parts[1].startswith("datasets"):
-      if len(parts) > 2 and parts[2] == "runner":
-        return "/{}/runner/tmp".format(parts[1])
-      elif len(parts) > 2 and parts[2] == "aws":
-        return "/{}/aws/tmp".format(parts[1])
-      else:
-        return "/{}/tmp".format(parts[1])
-    elif parts[1] == "aws":
-      return "/aws/tmp"
-    elif parts[1] == "scratch":
-      return "/scratch/tmp"
+  if len(parts) > 1 and parts[1] == "scratch":
+    return "/scratch/tmp"
+  elif len(parts) > 2 and parts[2] == "runner":
+    return "/{}/runner/tmp".format(parts[1])
   return "/tmp"
 
-class AutoMoveTempdir(object):
+class AutoMoveTempdir():
   def __init__(self, target_path, temp_dir=None):
     self._target_path = target_path
     self._path = tempfile.mkdtemp(dir=temp_dir)
@@ -61,7 +52,7 @@ class AutoMoveTempdir(object):
     else:
       shutil.rmtree(self._path)
 
-class NamedTemporaryDir(object):
+class NamedTemporaryDir():
   def __init__(self, temp_dir=None):
     self._path = tempfile.mkdtemp(dir=temp_dir)
 

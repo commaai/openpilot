@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 import os
 import unittest
@@ -45,7 +45,7 @@ def dicts_vals_differ(dict1, dict2):
 def run_route(route):
   can = messaging.pub_sock(service_list['can'].port)
 
-  CP = CarInterface.get_params(CAR.CIVIC, {})
+  CP = CarInterface.get_params(CAR.CIVIC)
   signals, checks = get_can_signals(CP)
   parser_old = CANParserOld(DBC[CP.carFingerprint]['pt'], signals, checks, 0, timeout=-1, tcp_addr="127.0.0.1")
   parser_new = CANParserNew(DBC[CP.carFingerprint]['pt'], signals, checks, 0, timeout=-1, tcp_addr="127.0.0.1")
@@ -58,16 +58,15 @@ def run_route(route):
 
   route_ok = True
 
-  t = 0
   for msg in lr:
     if msg.which() == 'can':
-      t += DT
+      t = msg.logMonoTime
       msg_bytes = msg.as_builder().to_bytes()
       can.send(msg_bytes)
 
       _, updated_old = parser_old.update(t, True)
       _, updated_new = parser_new.update(t, True)
-      updated_string = parser_string.update_string(t, msg_bytes)
+      updated_string = parser_string.update_string(msg_bytes)
 
       if updated_old != updated_new:
         route_ok = False
@@ -96,7 +95,7 @@ class TestCanParser(unittest.TestCase):
     for route in self.routes.values():
       route_filename = route + ".bz2"
       if not os.path.isfile(route_filename):
-        with open(route + ".bz2", "w") as f:
+        with open(route + ".bz2", "wb") as f:
           f.write(requests.get(BASE_URL + route_filename).content)
 
   def test_parser_civic(self):

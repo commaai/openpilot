@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """ROS has a parameter server, we have files.
 
 The parameter store is a persistent key value store, implemented as a directory with a writer lock.
@@ -27,6 +27,7 @@ import sys
 import shutil
 import fcntl
 import tempfile
+import threading
 from enum import Enum
 
 
@@ -58,30 +59,38 @@ keys = {
   "ControlsParams": [TxType.PERSISTENT],
   "DoUninstall": [TxType.CLEAR_ON_MANAGER_START],
   "DongleId": [TxType.PERSISTENT],
-  "GithubSshKeys": [TxType.PERSISTENT],
   "GitBranch": [TxType.PERSISTENT],
   "GitCommit": [TxType.PERSISTENT],
   "GitRemote": [TxType.PERSISTENT],
+  "GithubSshKeys": [TxType.PERSISTENT],
   "HasAcceptedTerms": [TxType.PERSISTENT],
-  "IsDriverMonitoringEnabled": [TxType.PERSISTENT],
-  "IsFcwEnabled": [TxType.PERSISTENT],
+  "HasCompletedSetup": [TxType.PERSISTENT],
   "IsGeofenceEnabled": [TxType.PERSISTENT],
   "IsMetric": [TxType.PERSISTENT],
+  "IsRHD": [TxType.PERSISTENT],
   "IsUpdateAvailable": [TxType.PERSISTENT],
   "IsUploadRawEnabled": [TxType.PERSISTENT],
   "IsUploadVideoOverCellularEnabled": [TxType.PERSISTENT],
+  "LastUpdateTime": [TxType.PERSISTENT],
   "LimitSetSpeed": [TxType.PERSISTENT],
   "LimitSetSpeedNeural": [TxType.PERSISTENT],
   "LiveParameters": [TxType.PERSISTENT],
   "LongitudinalControl": [TxType.PERSISTENT],
+  "OpenpilotEnabledToggle": [TxType.PERSISTENT],
   "Passive": [TxType.PERSISTENT],
   "RecordFront": [TxType.PERSISTENT],
+  "ReleaseNotes": [TxType.PERSISTENT],
   "ShouldDoUpdate": [TxType.CLEAR_ON_MANAGER_START],
   "SpeedLimitOffset": [TxType.PERSISTENT],
   "SubscriberInfo": [TxType.PERSISTENT],
   "TermsVersion": [TxType.PERSISTENT],
   "TrainingVersion": [TxType.PERSISTENT],
+  "UpdateAvailable": [TxType.CLEAR_ON_MANAGER_START],
   "Version": [TxType.PERSISTENT],
+  "Offroad_ChargeDisabled": [TxType.CLEAR_ON_MANAGER_START, TxType.CLEAR_ON_PANDA_DISCONNECT],
+  "Offroad_TemperatureTooHigh": [TxType.CLEAR_ON_MANAGER_START],
+  "Offroad_ConnectivityNeededPrompt": [TxType.CLEAR_ON_MANAGER_START],
+  "Offroad_ConnectivityNeeded": [TxType.CLEAR_ON_MANAGER_START],
 }
 
 
@@ -93,7 +102,7 @@ def fsync_dir(path):
     os.close(fd)
 
 
-class FileLock(object):
+class FileLock():
   def __init__(self, path, create):
     self._path = path
     self._create = create
@@ -109,7 +118,7 @@ class FileLock(object):
       self._fd = None
 
 
-class DBAccessor(object):
+class DBAccessor():
   def __init__(self, path):
     self._path = path
     self._vals = None
@@ -279,6 +288,9 @@ def read_db(params_path, key):
     return None
 
 def write_db(params_path, key, value):
+  if isinstance(value, str):
+    value = value.encode('utf8')
+
   prev_umask = os.umask(0)
   lock = FileLock(params_path+"/.lock", True)
   lock.acquire()
@@ -297,7 +309,7 @@ def write_db(params_path, key, value):
     os.umask(prev_umask)
     lock.release()
 
-class Params(object):
+class Params():
   def __init__(self, db='/data/params'):
     self.db = db
 
@@ -328,7 +340,7 @@ class Params(object):
     with self.transaction(write=True) as txn:
       txn.delete(key)
 
-  def get(self, key, block=False):
+  def get(self, key, block=False, encoding=None):
     if key not in keys:
       raise UnknownKeyName(key)
 
@@ -338,13 +350,36 @@ class Params(object):
         break
       # is polling really the best we can do?
       time.sleep(0.05)
+
+    if ret is not None and encoding is not None:
+      ret = ret.decode(encoding)
+
     return ret
 
   def put(self, key, dat):
+    """
+    Warning: This function blocks until the param is written to disk!
+    In very rare cases this can take over a second, and your code will hang.
+
+    Use the put_nonblocking helper function in time sensitive code, but
+    in general try to avoid writing params as much as possible.
+    """
+
     if key not in keys:
       raise UnknownKeyName(key)
 
     write_db(self.db, key, dat)
+
+
+def put_nonblocking(key, val):
+  def f(key, val):
+    params = Params()
+    params.put(key, val)
+
+  t = threading.Thread(target=f, args=(key, val))
+  t.start()
+  return t
+
 
 if __name__ == "__main__":
   params = Params()

@@ -37,6 +37,12 @@ NS_ :
 
 BU_: EBCM EON CAM RADAR PCM EPS VSA SCM BDY XXX EPB
 
+BO_ 148 KINEMATICS: 8 XXX
+ SG_ LAT_ACCEL : 7|10@0+ (-0.035,17.92) [-20|20] "m/s2" EON
+ SG_ LONG_ACCEL : 25|10@0+ (-0.035,17.92) [-20|20] "m/s2" EON
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
+
 BO_ 228 STEERING_CONTROL: 5 EON
  SG_ STEER_TORQUE_REQUEST : 23|1@0+ (1,0) [0|1] "" EPS
  SG_ SET_ME_X00 : 22|7@0+ (1,0) [0|127] "" EPS
@@ -118,14 +124,25 @@ BO_ 464 WHEEL_SPEEDS: 8 VSA
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
 
 BO_ 479 ACC_CONTROL: 8 EON
- SG_ SET_TO_1 : 20|5@0+ (1,0) [0|1] "" PCM
+ SG_ SET_TO_0 : 20|5@0+ (1,0) [0|1] "" XXX
  SG_ CONTROL_ON : 23|3@0+ (1,0) [0|5] "" XXX
- SG_ RELATED_TO_GAS : 7|7@0+ (1,0) [0|69] "" XXX
- SG_ GAS_COMMAND : 0|9@0+ (1,0) [0|1] "" PCM
- SG_ GAS_BRAKE : 31|14@0- (1,0) [0|1] "" XXX
- SG_ ZEROS_BOH : 33|18@0+ (1,0) [100|100] "" XXX
+ SG_ GAS_COMMAND : 7|16@0- (1,0) [0|0] "" XXX
+ SG_ ACCEL_COMMAND : 31|11@0- (0.01,0) [0|0] "m/s2" XXX
+ SG_ BRAKE_LIGHTS : 62|1@0+ (1,0) [0|1] "" XXX
+ SG_ BRAKE_REQUEST : 34|1@0+ (1,0) [0|1] "" XXX
+ SG_ STANDSTILL : 35|1@0+ (1,0) [0|1] "" XXX
+ SG_ STANDSTILL_RELEASE : 36|1@0+ (1,0) [0|1] "" XXX
+ SG_ AEB_STATUS : 33|1@0+ (1,0) [0|1] "" XXX
+ SG_ AEB_BRAKING : 47|1@0+ (1,0) [0|1] "" XXX
+ SG_ AEB_PREPARE : 43|1@0+ (1,0) [0|1] "" XXX
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
+
+BO_ 490 VEHICLE_DYNAMICS: 8 VSA
+ SG_ LAT_ACCEL : 7|16@0- (0.0015,0) [-20|20] "m/s2" EON
+ SG_ LONG_ACCEL : 23|16@0- (0.0015,0) [-20|20] "m/s2" EON
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
 
 BO_ 495 ACC_CONTROL_ON: 8 XXX
  SG_ SET_TO_75 : 31|8@0+ (1,0) [0|255] "" XXX
@@ -173,16 +190,16 @@ BO_ 773 SEATBELT_STATUS: 7 BDY
  SG_ CHECKSUM : 51|4@0+ (1,0) [0|3] "" EON
 
 BO_ 777 CAR_SPEED: 8 PCM
- SG_ ROUGH_CAR_SPEED : 23|8@0+ (1,0) [0|255] "" XXX
- SG_ CAR_SPEED : 7|16@0+ (1,0) [0|65535] "" XXX
- SG_ ROUGH_CAR_SPEED_3 : 39|16@0+ (1,0) [0|65535] "" XXX
- SG_ ROUGH_CAR_SPEED_2 : 31|8@0+ (1,0) [0|255] "" XXX
+ SG_ ROUGH_CAR_SPEED : 23|8@0+ (1,0) [0|255] "mph" XXX
+ SG_ CAR_SPEED : 7|16@0+ (0.01,0) [0|65535] "kph" XXX
+ SG_ ROUGH_CAR_SPEED_3 : 39|16@0+ (0.01,0) [0|65535] "kph" XXX
+ SG_ ROUGH_CAR_SPEED_2 : 31|8@0+ (1,0) [0|255] "mph" XXX
  SG_ LOCK_STATUS : 55|2@0+ (1,0) [0|255] "" XXX
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
 
 BO_ 780 ACC_HUD: 8 ADAS
- SG_ CRUISE_SPEED : 31|8@0+ (1,0) [0|255] "" BDY
+ SG_ CRUISE_SPEED : 31|8@0+ (1,0) [0|255] "kph" BDY
  SG_ DTC_MODE : 39|1@0+ (1,0) [0|1] "" BDY
  SG_ BOH : 38|1@0+ (1,0) [0|1] "" BDY
  SG_ FCM_PROBLEM : 34|1@0+ (1,0) [0|1] "" BDY
@@ -200,8 +217,8 @@ BO_ 780 ACC_HUD: 8 ADAS
  SG_ ACC_PROBLEM : 37|1@0+ (1,0) [0|1] "" BDY
  SG_ ACC_ON : 52|1@0+ (1,0) [0|1] "" XXX
  SG_ BOH_6 : 51|4@0+ (1,0) [0|15] "" XXX
- SG_ IMPERIAL_UNIT : 55|1@0+ (1,0) [0|1] "" XXX
- SG_ SET_TO_X1 : 56|1@0+ (1,0) [0|1] "" XXX
+ SG_ SET_TO_X1 : 55|1@0+ (1,0) [0|1] "" XXX
+ SG_ IMPERIAL_UNIT : 54|1@0+ (1,0) [0|1] "" XXX
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
 
@@ -264,6 +281,10 @@ BO_ 891 STALK_STATUS_2: 8 XXX
  SG_ PARK_LIGHTS : 36|1@0+ (1,0) [0|1] "" XXX
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
+
+CM_ SG_ 479 AEB_STATUS "set for the duration of AEB event";
+CM_ SG_ 479 AEB_BRAKING "set when braking is commanded during AEB event";
+CM_ SG_ 479 AEB_PREPARE "set 1s before AEB";
 
 VAL_ 399 STEER_STATUS 6 "tmp_fault" 5 "fault_1" 4 "no_torque_alert_2" 3 "low_speed_lockout" 2 "no_torque_alert_1" 0 "normal" ;
 

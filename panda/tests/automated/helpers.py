@@ -2,45 +2,44 @@ import os
 import sys
 import time
 import random
+import binascii
 import subprocess
 import requests
+import _thread
 from functools import wraps
 from panda import Panda
 from nose.tools import timed, assert_equal, assert_less, assert_greater
 from parameterized import parameterized, param
 
-test_white_and_grey = parameterized([param(panda_color="White"),
-                                     param(panda_color="Grey")])
-test_white = parameterized([param(panda_color="White")])
-test_grey = parameterized([param(panda_color="Grey")])
-test_two_panda = parameterized([param(panda_color=["Grey", "White"]),
-                                param(panda_color=["White", "Grey"])])
+SPEED_NORMAL = 500
+SPEED_GMLAN = 33.3
 
-_serials = {}
-def get_panda_serial(is_grey=None):
-  global _serials
-  if is_grey not in _serials:
-    for serial in Panda.list():
-      p = Panda(serial=serial)
-      if is_grey is None or p.is_grey() == is_grey:
-        _serials[is_grey] = serial
-        return serial
-    raise IOError("Panda not found. is_grey: {}".format(is_grey))
-  else:
-    return _serials[is_grey]
-
-def connect_wo_esp(serial=None):
-  # connect to the panda
-  p = Panda(serial=serial)
-
-  # power down the ESP
-  p.set_esp_power(False)
-
-  # clear old junk
-  while len(p.can_recv()) > 0:
-    pass
-
-  return p
+test_all_types = parameterized([
+    param(panda_type=Panda.HW_TYPE_WHITE_PANDA),
+    param(panda_type=Panda.HW_TYPE_GREY_PANDA),
+    param(panda_type=Panda.HW_TYPE_BLACK_PANDA)
+  ])
+test_all_pandas = parameterized(
+    Panda.list()
+  )
+test_white_and_grey = parameterized([
+    param(panda_type=Panda.HW_TYPE_WHITE_PANDA),
+    param(panda_type=Panda.HW_TYPE_GREY_PANDA)
+  ])
+test_white = parameterized([
+    param(panda_type=Panda.HW_TYPE_WHITE_PANDA)
+  ])
+test_grey = parameterized([
+    param(panda_type=Panda.HW_TYPE_GREY_PANDA)
+  ])
+test_two_panda = parameterized([
+    param(panda_type=[Panda.HW_TYPE_GREY_PANDA, Panda.HW_TYPE_WHITE_PANDA]),
+    param(panda_type=[Panda.HW_TYPE_WHITE_PANDA, Panda.HW_TYPE_GREY_PANDA]),
+    param(panda_type=[Panda.HW_TYPE_BLACK_PANDA, Panda.HW_TYPE_BLACK_PANDA])
+  ])
+test_two_black_panda = parameterized([
+    param(panda_type=[Panda.HW_TYPE_BLACK_PANDA, Panda.HW_TYPE_BLACK_PANDA])
+  ])
 
 def connect_wifi(serial=None):
   p = Panda(serial=serial)
@@ -51,7 +50,7 @@ def connect_wifi(serial=None):
 
 FNULL = open(os.devnull, 'w')
 def _connect_wifi(dongle_id, pw, insecure_okay=False):
-  ssid = str("panda-" + dongle_id)
+  ssid = "panda-" + dongle_id.decode("utf8")
 
   r = subprocess.call(["ping", "-W", "4", "-c", "1", "192.168.0.10"], stdout=FNULL, stderr=subprocess.STDOUT)
   if not r:
@@ -77,7 +76,8 @@ def _connect_wifi(dongle_id, pw, insecure_okay=False):
         print("WIFI: scanning %d" % cnt)
         os.system("iwlist %s scanning > /dev/null" % wlan_interface)
         os.system("nmcli device wifi rescan")
-        wifi_scan = filter(lambda x: ssid in x, subprocess.check_output(["nmcli","dev", "wifi", "list"]).split("\n"))
+        wifi_networks = [x.decode("utf8") for x in subprocess.check_output(["nmcli","dev", "wifi", "list"]).split(b"\n")]
+        wifi_scan = [x for x in wifi_networks if ssid in x]
         if len(wifi_scan) != 0:
           break
         time.sleep(0.1)
@@ -142,7 +142,7 @@ def time_many_sends(p, bus, precv=None, msg_count=100, msg_id=None, two_pandas=F
     raise ValueError("Cannot have two pandas that are the same panda")
 
   st = time.time()
-  p.can_send_many([(msg_id, 0, "\xaa"*8, bus)]*msg_count)
+  p.can_send_many([(msg_id, 0, b"\xaa"*8, bus)]*msg_count)
   r = []
   r_echo = []
   r_len_expected = msg_count if two_pandas else msg_count*2
@@ -155,11 +155,11 @@ def time_many_sends(p, bus, precv=None, msg_count=100, msg_id=None, two_pandas=F
     while len(r_echo) < r_echo_len_exected and (time.time() - st) < 10:
       r_echo.extend(p.can_recv())
 
-  sent_echo = filter(lambda x: x[3] == 0x80 | bus and x[0] == msg_id, r)
-  sent_echo.extend(filter(lambda x: x[3] == 0x80 | bus and x[0] == msg_id, r_echo))
-  resp = filter(lambda x: x[3] == bus and x[0] == msg_id, r)
+  sent_echo = [x for x in r if x[3] == 0x80 | bus and x[0] == msg_id]
+  sent_echo.extend([x for x in r_echo if x[3] == 0x80 | bus and x[0] == msg_id])
+  resp = [x for x in r if x[3] == bus and x[0] == msg_id]
 
-  leftovers = filter(lambda x: (x[3] != 0x80 | bus and x[3] != bus) or x[0] != msg_id, r)
+  leftovers = [x for x in r if (x[3] != 0x80 | bus and x[3] != bus) or x[0] != msg_id]
   assert_equal(len(leftovers), 0)
 
   assert_equal(len(resp), msg_count)
@@ -170,23 +170,93 @@ def time_many_sends(p, bus, precv=None, msg_count=100, msg_id=None, two_pandas=F
 
   return comp_kbps
 
-
-def panda_color_to_serial(fn):
+_panda_serials = None
+def panda_type_to_serial(fn):
   @wraps(fn)
-  def wrapper(panda_color=None, **kwargs):
-    pandas_is_grey = []
-    if panda_color is not None:
-      if not isinstance(panda_color, list):
-        panda_color = [panda_color]
-      panda_color = [s.lower() for s in panda_color]
-    for p in panda_color:
-      if p is None:
-        pandas_is_grey.append(None)
-      elif p in ["grey", "gray"]:
-        pandas_is_grey.append(True)
-      elif p in ["white"]:
-        pandas_is_grey.append(False)
-      else:
-        raise ValueError("Invalid Panda Color {}".format(p))
-    return fn(*[get_panda_serial(is_grey) for is_grey in pandas_is_grey], **kwargs)
+  def wrapper(panda_type=None, **kwargs):
+    # Change panda_types to a list
+    if panda_type is not None:
+      if not isinstance(panda_type, list):
+        panda_type = [panda_type]
+
+    # If not done already, get panda serials and their type
+    global _panda_serials
+    if _panda_serials == None:
+      _panda_serials = []
+      for serial in Panda.list():
+        p = Panda(serial=serial)
+        _panda_serials.append((serial, p.get_type()))
+        p.close()
+
+    # Find a panda with the correct types and add the corresponding serial
+    serials = []
+    for p_type in panda_type:
+      found = False
+      for serial, pt in _panda_serials:
+        # Never take the same panda twice
+        if (pt == p_type) and (serial not in serials):
+          serials.append(serial)
+          found = True
+          break
+      if not found:
+        raise IOError("No unused panda found for type: {}".format(p_type))
+    return fn(serials, **kwargs)
   return wrapper
+
+def heartbeat_thread(p):
+  while True:
+    try:
+      p.send_heartbeat()
+      time.sleep(1)
+    except:
+      break
+
+def panda_connect_and_init(fn):
+  @wraps(fn)
+  def wrapper(panda_serials=None, **kwargs):
+    # Change panda_serials to a list
+    if panda_serials is not None:
+      if not isinstance(panda_serials, list):
+        panda_serials = [panda_serials]
+
+    # Connect to pandas
+    pandas = []
+    for panda_serial in panda_serials:
+      pandas.append(Panda(serial=panda_serial))
+
+    # Initialize pandas
+    for panda in pandas:
+      panda.set_can_loopback(False)
+      panda.set_gmlan(None)
+      panda.set_esp_power(False)
+      for bus, speed in [(0, SPEED_NORMAL), (1, SPEED_NORMAL), (2, SPEED_NORMAL), (3, SPEED_GMLAN)]:
+        panda.set_can_speed_kbps(bus, speed)
+      clear_can_buffers(panda)
+      _thread.start_new_thread(heartbeat_thread, (panda,))
+
+    # Run test function
+    ret = fn(*pandas, **kwargs)
+
+    # Close all connections
+    for panda in pandas:
+      panda.close()
+
+    # Return test function result
+    return ret
+  return wrapper
+
+def clear_can_buffers(panda):
+  # clear tx buffers
+  for i in range(4):
+    panda.can_clear(i)
+
+  # clear rx buffers
+  panda.can_clear(0xFFFF)
+  r = [1]
+  st = time.time()
+  while len(r) > 0:
+    r = panda.can_recv()
+    time.sleep(0.05)
+    if (time.time() - st) > 10:
+      print("Unable to clear can buffers for panda ", panda.get_serial())
+      assert False

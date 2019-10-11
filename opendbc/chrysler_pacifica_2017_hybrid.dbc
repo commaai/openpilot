@@ -132,13 +132,12 @@ BO_ 705 AUTO_PARK_BUTTON: 8 XXX
 BO_ 719 AUTO_PARK_SIGNALS_1: 8 XXX
  SG_ AUTO_PARK_UNKNOWN_1 : 7|16@0+ (1,0) [0|31] "" XXX
 
-BO_ 671 AUTO_PARK_SIGNALS_2: 8 XXX
- SG_ AUTO_PARK_PARALLEL : 21|1@0+ (1,0) [0|1] "" XXX
- SG_ AUTO_PARK_PERPENDICULAR_1 : 22|1@0+ (1,0) [0|1] "" XXX
- SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
+BO_ 671 AUTO_PARK_REQUEST: 8 XXX
  SG_ AUTO_PARK_CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
- SG_ AUTO_PARK_MAYBE_TURNING : 3|12@0+ (1,0) [0|1023] "" XXX
- SG_ AUTO_PARK_TURNING_STATUS : 7|4@0+ (1,0) [0|15] "" XXX
+ SG_ AUTO_PARK_STATUS : 7|5@0+ (1,0) [0|15] "" XXX
+ SG_ AUTO_PARK_COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
+ SG_ AUTO_PARK_MODE : 22|2@0+ (1,0) [0|3] "" XXX
+ SG_ AUTO_PARK_CMD : 2|11@0+ (1,-1024) [0|1] "NM" XXX
 
 BO_ 784 AUTO_PARK_LESS_INTERESTING: 8 XXX
  SG_ INCREASING_UNKNOWN : 55|8@0+ (1,0) [0|7] "" XXX
@@ -393,10 +392,8 @@ CM_ SG_ 678 LKAS_LANE_LINES "0x01 transparent lines, 0x02 left white, 0x03 right
 CM_ SG_ 678 LKAS_ALERTS "(0x01, 0x02) lane sense off, (0x03, 0x04, 0x06) place hands on steering wheel, 0x07 lane departure detected + place hands on steering wheel, (0x08, 0x09) lane sense unavailable + clean front windshield, 0x0b lane sense and auto high beam unavailable + clean front windshield, 0x0c lane sense unavailable + service required, (0x00, 0x05, 0x0a, 0x0d, 0x0e, 0x0f) null";
 CM_ SG_ 705 AUTO_PARK_TOGGLE_1 "set briefly when turning on or off self-parking";
 CM_ SG_ 705 INCREASING_UNKNOWN "sometimes decreasing";
-CM_ SG_ 671 AUTO_PARK_PARALLEL "parallel parking mode";
-CM_ SG_ 671 AUTO_PARK_PERPENDICULAR_1 "perpendicular parking mode";
-CM_ SG_ 671 AUTO_PARK_MAYBE_TURNING "something with autopark turning the steering wheel maybe.";
-CM_ SG_ 671 AUTO_PARK_TURNING_STATUS "0 when not steering. when steering starts, 4 for two packets, and then 5 for the rest";
+CM_ SG_ 671 AUTO_PARK_CMD "Request Appears to be in NM";
+CM_ SG_ 671 AUTO_PARK_STATUS "1 = IDLE / NO REQUEST 9 = START REQUEST 10 = REQUEST MODE 11 = REQUEST MODE";
 CM_ SG_ 784 INCREASING_UNKNOWN "perhaps distance traveled";
 CM_ SG_ 826 AUTO_PARK_GEAR_1 "Reverse=0, Forward=f";
 CM_ SG_ 826 AUTO_PARK_GEAR_2 "Reverse=0, Forward=f";

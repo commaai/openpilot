@@ -10,7 +10,7 @@
 #include "locationd_yawrate.h"
 
 
-void Localizer::update_state(const Eigen::Matrix<double, 1, 2> &C, const double R, double current_time, double meas) {
+void Localizer::update_state(const Eigen::Matrix<double, 1, 4> &C, const double R, double current_time, double meas) {
   double dt = current_time - prev_update_time;
 
   if (dt < 0) {
@@ -19,36 +19,34 @@ void Localizer::update_state(const Eigen::Matrix<double, 1, 2> &C, const double 
     prev_update_time = current_time;
   }
 
-  // x = A * x;
-  // P = A * P * A.transpose() + dt * Q;
-  // Simplify because A is unity
-  P = P + dt * Q;
+  x = A * x;
+  P = A * P * A.transpose() + dt * Q;
 
   double y = meas - C * x;
   double S = R + C * P * C.transpose();
-  Eigen::Vector2d K = P * C.transpose() * (1.0 / S);
+  Eigen::Vector4d K = P * C.transpose() * (1.0 / S);
   x = x + K * y;
   P = (I - K * C) * P;
 }
 
 void Localizer::handle_sensor_events(capnp::List<cereal::SensorEventData>::Reader sensor_events, double current_time) {
   for (cereal::SensorEventData::Reader sensor_event : sensor_events){
-    if (sensor_event.getType() == 4) {
+    if (sensor_event.getSensor() == 5) {
       sensor_data_time = current_time;
-
-      double meas = -sensor_event.getGyro().getV()[0];
+      double meas = -sensor_event.getGyroUncalibrated().getV()[0];
       update_state(C_gyro, R_gyro, current_time, meas);
     }
   }
 }
 
 void Localizer::handle_camera_odometry(cereal::CameraOdometry::Reader camera_odometry, double current_time) {
-  double R = 250.0 * pow(camera_odometry.getRotStd()[2], 2);
+  double R = 100.0 * pow(camera_odometry.getRotStd()[2], 2);
   double meas = camera_odometry.getRot()[2];
   update_state(C_posenet, R, current_time, meas);
 
   auto trans = camera_odometry.getTrans();
   posenet_speed = sqrt(trans[0]*trans[0] + trans[1]*trans[1] + trans[2]*trans[2]);
+  camera_odometry_time = current_time;
 }
 
 void Localizer::handle_controls_state(cereal::ControlsState::Reader controls_state, double current_time) {
@@ -59,17 +57,34 @@ void Localizer::handle_controls_state(cereal::ControlsState::Reader controls_sta
 
 
 Localizer::Localizer() {
-  A << 1, 0, 0, 1;
-  I << 1, 0, 0, 1;
+  // States: [yaw rate, yaw rate diff, gyro bias, gyro bias diff]
+  A <<
+    1, 1, 0, 0,
+    0, 1, 0, 0,
+    0, 0, 1, 1,
+    0, 0, 0, 1;
+  I <<
+    1, 0, 0, 0,
+    0, 1, 0, 0,
+    0, 0, 1, 0,
+    0, 0, 0, 1;
 
-  Q << pow(0.1, 2.0), 0, 0, pow(0.005 / 100.0, 2.0);
-  P << pow(1.0, 2.0), 0, 0, pow(0.05, 2.0);
+  Q <<
+    0, 0, 0, 0,
+    0, pow(0.1, 2.0), 0, 0,
+    0, 0, 0, 0,
+    0, 0, pow(0.0005 / 100.0, 2.0), 0;
+  P <<
+    pow(100.0, 2.0), 0, 0, 0,
+    0, pow(100.0, 2.0), 0, 0,
+    0, 0, pow(100.0, 2.0), 0,
+    0, 0, 0, pow(100.0, 2.0);
 
-  C_posenet << 1, 0;
-  C_gyro << 1, 1;
-  x << 0, 0;
+  C_posenet << 1, 0, 0, 0;
+  C_gyro << 1, 0, 1, 0;
+  x << 0, 0, 0, 0;
 
-  R_gyro = pow(0.05, 2.0);
+  R_gyro = pow(0.25, 2.0);
 }
 
 void Localizer::handle_log(cereal::Event::Reader event) {
@@ -118,20 +133,31 @@ extern "C" {
   }
   double localizer_get_bias(void * localizer) {
     Localizer * loc = (Localizer*) localizer;
-    return loc->x[1];
+    return loc->x[2];
   }
 
-  void localizer_set_yaw(void * localizer, double yaw) {
+  double * localizer_get_state(void * localizer) {
     Localizer * loc = (Localizer*) localizer;
-    loc->x[0] = yaw;
+    return loc->x.data();
   }
-  void localizer_set_bias(void * localizer, double bias) {
+
+  void localizer_set_state(void * localizer, double * state) {
     Localizer * loc = (Localizer*) localizer;
-    loc->x[1] = bias;
+    memcpy(loc->x.data(), state, 4 * sizeof(double));
   }
 
   double localizer_get_t(void * localizer) {
     Localizer * loc = (Localizer*) localizer;
     return loc->prev_update_time;
+  }
+
+  double * localizer_get_P(void * localizer) {
+    Localizer * loc = (Localizer*) localizer;
+    return loc->P.data();
+  }
+
+  void localizer_set_P(void * localizer, double * P) {
+    Localizer * loc = (Localizer*) localizer;
+    memcpy(loc->P.data(), P, 16 * sizeof(double));
   }
 }

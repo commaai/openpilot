@@ -43,14 +43,16 @@ BO_ 2 Steering: 8 XXX
 
 BO_ 64 Throttle: 8 XXX
  SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
- SG_ Counter : 8|4@1+ (1,0) [0|255] "" XXX
  SG_ Off_Accel : 60|4@1+ (1,0) [0|7] "" XXX
  SG_ NEW_SIGNAL_3 : 56|4@1+ (1,0) [0|255] "" XXX
- SG_ Engine_RPM : 16|12@1+ (1,0) [0|255] "" XXX
  SG_ Throttle_Cruise : 40|8@1+ (1,0) [0|255] "" XXX
  SG_ Throttle_Combo : 55|8@1+ (1,0) [0|255] "" XXX
  SG_ Throttle_Pedal : 32|8@1+ (1,0) [0|255] "" XXX
-
+ SG_ NEW_SIGNAL_2 : 48|7@1+ (1,0) [0|1] "" XXX
+ SG_ Counter : 8|4@1+ (1,0) [0|255] "" XXX
+ SG_ Engine_RPM : 16|12@1+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_1 : 12|4@1+ (1,0) [0|1] "" XXX
+ SG_ NEW_SIGNAL_4 : 28|5@1+ (1,0) [0|1] "" XXX
 
 BO_ 65 NEW_MSG_1: 8 XXX
  SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
@@ -358,6 +360,7 @@ BO_ 1787 NEW_MSG_45: 8 XXX
 
 CM_ SG_ 940 FOG_LIGHTS2 "yellow fog light in the dash";
 CM_ SG_ 940 Highbeam "01 = low beam, 11 = high beam";
+CM_ SG_ 802 Traffic_light_Ahead "Crosstrek 2018 = car in front has moved";
 CM_ SG_ 805 NEW_SIGNAL_3 "always 3";
 CM_ SG_ 805 NEW_SIGNAL_4 "always 1";
 CM_ SG_ 1677 Units "1 = imperial, 6 = metric";

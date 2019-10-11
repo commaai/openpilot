@@ -44,7 +44,7 @@ typedef struct CameraMsg {
   float grey_frac;
 } CameraMsg;
 
-extern volatile int do_exit;
+extern volatile sig_atomic_t do_exit;
 
 CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   [CAMERA_ID_IMX298] = {
@@ -366,21 +366,6 @@ static void set_exposure(CameraState *s, float exposure_frac, float gain_frac) {
 
     // See page 79 of the datasheet, this is the max allowed (-1 for phase adjust)
     integ_lines = min(integ_lines, frame_length-11);
-  }
-
-  // done after exposure to not adjust it
-  if (s->using_pll) {
-    // can adjust frame length by up to +/- 1
-    const int PHASE_DEADZONE = 20000;   // 20 us
-    int phase_max = 1000000000 / s->fps;
-    int phase_diff = s->phase_actual - s->phase_request;
-    phase_diff = ((phase_diff + phase_max/2) % phase_max) - phase_max/2;
-
-    if (phase_diff < -PHASE_DEADZONE) {
-      frame_length += 1;
-    } else if (phase_diff > PHASE_DEADZONE) {
-      frame_length -= 1;
-    }
   }
 
   if (gain_frac >= 0) {
@@ -2019,41 +2004,6 @@ static bool acceleration_from_sensor_sock(void* sock, float* vs) {
   return ret;
 }
 
-static bool gps_time_from_timing_sock(void* sock, uint64_t *mono_time, double* vs) {
-  int err;
-
-  zmq_msg_t msg;
-  err = zmq_msg_init(&msg);
-  assert(err == 0);
-
-  err = zmq_msg_recv(&msg, sock, 0);
-  assert(err >= 0);
-
-  struct capn ctx;
-  capn_init_mem(&ctx, zmq_msg_data(&msg), zmq_msg_size(&msg), 0);
-
-  cereal_Event_ptr eventp;
-  eventp.p = capn_getp(capn_root(&ctx), 0, 1);
-  struct cereal_Event eventd;
-  cereal_read_Event(&eventd, eventp);
-
-  bool ret = false;
-
-  if (eventd.which == cereal_Event_liveLocationTiming) {
-    struct cereal_LiveLocationData lld;
-    cereal_read_LiveLocationData(&lld, eventd.liveLocationTiming);
-
-    *mono_time = lld.fixMonoTime;
-    *vs = lld.timeOfWeek;
-    ret = true;
-  }
-
-  capn_free(&ctx);
-  zmq_msg_close(&msg);
-
-  return ret;
-}
-
 static void ops_term() {
   zsock_t *ops_sock = zsock_new_push(">inproc://cameraops");
   assert(ops_sock);
@@ -2076,13 +2026,10 @@ static void* ops_thread(void* arg) {
   zsock_t *sensor_sock = zsock_new_sub(">tcp://127.0.0.1:8003", "");
   assert(sensor_sock);
 
-  zsock_t *livelocationtiming_sock = zsock_new_sub(">tcp://127.0.0.1:8049", "");
-  assert(livelocationtiming_sock);
-
   zsock_t *terminate = zsock_new_sub(">inproc://terminate", "");
   assert(terminate);
 
-  zpoller_t *poller = zpoller_new(cameraops, sensor_sock, livelocationtiming_sock, terminate, NULL);
+  zpoller_t *poller = zpoller_new(cameraops, sensor_sock, terminate, NULL);
   assert(poller);
 
   while (!do_exit) {
@@ -2129,15 +2076,6 @@ static void* ops_thread(void* arg) {
       if (got_accel && ts - s->rear.last_sag_ts > 10000000) { // 10 ms
         s->rear.last_sag_ts = ts;
         s->rear.last_sag_acc_z = -vs[2];
-      }
-    } else if (which == livelocationtiming_sock) {
-      uint64_t mono_time;
-      double gps_time;
-      if (gps_time_from_timing_sock(sockraw, &mono_time, &gps_time)) {
-        s->rear.global_time_offset = (uint64_t)(gps_time*1e9) - mono_time;
-        //LOGW("%f %lld  = %lld", gps_time, mono_time, s->rear.global_time_offset);
-        s->rear.phase_request = 10000000;
-        s->rear.using_pll = true;
       }
     }
   }
@@ -2228,12 +2166,6 @@ void cameras_run(DualCameraState *s) {
         // printf("ISP_EVENT_EOF delta %f\n", (t-last_t)/1e6);
         c->last_t = t;
 
-        if (c->using_pll) {
-          int mod = ((int)1000000000 / c->fps);
-          c->phase_actual = (((timestamp + c->global_time_offset) % mod) + mod) % mod;
-          LOGD("phase is %12d request is %12d with offset %lld", c->phase_actual, c->phase_request, c->global_time_offset);
-        }
-
         pthread_mutex_lock(&c->frame_info_lock);
         c->frame_metadata[c->frame_metadata_idx] = (FrameMetadata){
           .frame_id = isp_event_data->frame_id,
@@ -2270,4 +2202,3 @@ void cameras_close(DualCameraState *s) {
   camera_close(&s->rear);
   camera_close(&s->front);
 }
-

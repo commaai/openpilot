@@ -1,8 +1,18 @@
 from common.numpy_fast import interp
 import numpy as np
-from selfdrive.controls.lib.latcontrol_helpers import model_polyfit, compute_path_pinv
 
 CAMERA_OFFSET = 0.06  # m from center car to camera
+
+def compute_path_pinv(l=50):
+  deg = 3
+  x = np.arange(l*1.0)
+  X = np.vstack(tuple(x**n for n in range(deg, -1, -1))).T
+  pinv = np.linalg.pinv(X)
+  return pinv
+
+
+def model_polyfit(points, path_pinv):
+  return np.dot(path_pinv, [float(x) for x in points])
 
 
 def calc_d_poly(l_poly, r_poly, p_poly, l_prob, r_prob, lane_width):
@@ -16,13 +26,13 @@ def calc_d_poly(l_poly, r_poly, p_poly, l_prob, r_prob, lane_width):
   path_from_right_lane = r_poly.copy()
   path_from_right_lane[3] += lane_width / 2.0
 
-  lr_prob = l_prob + r_prob - l_prob * r_prob
+  lr_prob = l_prob * r_prob
 
   d_poly_lane = (l_prob * path_from_left_lane + r_prob * path_from_right_lane) / (l_prob + r_prob + 0.0001)
   return lr_prob * d_poly_lane + (1.0 - lr_prob) * p_poly
 
 
-class LanePlanner(object):
+class LanePlanner():
   def __init__(self):
     self.l_poly = [0., 0., 0., 0.]
     self.r_poly = [0., 0., 0., 0.]
@@ -35,7 +45,6 @@ class LanePlanner(object):
 
     self.l_prob = 0.
     self.r_prob = 0.
-    self.lr_prob = 0.
 
     self._path_pinv = compute_path_pinv()
     self.x_points = np.arange(50)
@@ -56,8 +65,6 @@ class LanePlanner(object):
     # only offset left and right lane lines; offsetting p_poly does not make sense
     self.l_poly[3] += CAMERA_OFFSET
     self.r_poly[3] += CAMERA_OFFSET
-
-    self.lr_prob = self.l_prob + self.r_prob - self.l_prob * self.r_prob
 
     # Find current lanewidth
     self.lane_width_certainty += 0.05 * (self.l_prob * self.r_prob - self.lane_width_certainty)

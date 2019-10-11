@@ -28,7 +28,7 @@
 
 #include "rawgps.h"
 
-volatile int do_exit = 0;
+volatile sig_atomic_t do_exit = 0;
 
 namespace {
 
@@ -219,7 +219,7 @@ void* clock_thread(void* args) {
     cereal::Event::Builder event = msg.initRoot<cereal::Event>();
     event.setLogMonoTime(boottime);
     auto clocks = event.initClocks();
-  
+
     clocks.setBootTimeNanos(boottime);
     clocks.setMonotonicNanos(monotonic);
     clocks.setMonotonicRawNanos(monotonic_raw);
@@ -248,7 +248,7 @@ int main() {
   signal(SIGTERM, (sighandler_t)set_do_exit);
 
   gps_init();
-  
+
   rawgps_init();
 
   err = pthread_create(&clock_thread_handle, NULL,

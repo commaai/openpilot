@@ -12,7 +12,6 @@
 extern "C" {
 #endif
 
-void softmax(const float* input, float* output, size_t len);
 float softplus(float input);
 float sigmoid(float input);
 
@@ -35,9 +34,6 @@ float *model_input_prepare(ModelInput* s, cl_command_queue q,
                            cl_mem yuv_cl, int width, int height,
                            mat3 transform);
 void model_input_free(ModelInput* s);
-
-void model_publish(void* sock, uint32_t frame_id,
-                   const mat3 transform, const ModelData data);
 
 #ifdef __cplusplus
 }

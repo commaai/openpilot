@@ -6,7 +6,6 @@ from selfdrive.car.honda.values import CAR, HONDA_BOSCH
 def can_cksum(mm):
   s = 0
   for c in mm:
-    c = ord(c)
     s += (c>>4)
     s += c & 0xF
   s = 8-s
@@ -15,19 +14,19 @@ def can_cksum(mm):
 
 
 def fix(msg, addr):
-  msg2 = msg[0:-1] + chr(ord(msg[-1]) | can_cksum(struct.pack("I", addr)+msg))
+  msg2 = msg[0:-1] + (msg[-1] | can_cksum(struct.pack("I", addr)+msg)).to_bytes(1, 'little')
   return msg2
 
 
-def get_pt_bus(car_fingerprint, is_panda_black):
-  return 1 if car_fingerprint in HONDA_BOSCH and is_panda_black else 0
+def get_pt_bus(car_fingerprint, has_relay):
+  return 1 if car_fingerprint in HONDA_BOSCH and has_relay else 0
 
 
-def get_lkas_cmd_bus(car_fingerprint, is_panda_black):
-  return 2 if car_fingerprint in HONDA_BOSCH and not is_panda_black else 0
+def get_lkas_cmd_bus(car_fingerprint, has_relay):
+  return 2 if car_fingerprint in HONDA_BOSCH and not has_relay else 0
 
 
-def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, fcw, idx, car_fingerprint, is_panda_black):
+def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, fcw, idx, car_fingerprint, has_relay):
   # TODO: do we loose pressure if we keep pump off for long?
   brakelights = apply_brake > 0
   brake_rq = apply_brake > 0
@@ -47,25 +46,25 @@ def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_
     "FCW": fcw << 1,
     "AEB_REQ_1": 0,
     "AEB_REQ_2": 0,
-    "AEB": 0,
+    "AEB_STATUS": 0,
   }
-  bus = get_pt_bus(car_fingerprint, is_panda_black)
+  bus = get_pt_bus(car_fingerprint, has_relay)
   return packer.make_can_msg("BRAKE_COMMAND", bus, values, idx)
 
 
-def create_steering_control(packer, apply_steer, lkas_active, car_fingerprint, idx, is_panda_black):
+def create_steering_control(packer, apply_steer, lkas_active, car_fingerprint, idx, has_relay):
   values = {
     "STEER_TORQUE": apply_steer if lkas_active else 0,
     "STEER_TORQUE_REQUEST": lkas_active,
   }
-  bus = get_lkas_cmd_bus(car_fingerprint, is_panda_black)
+  bus = get_lkas_cmd_bus(car_fingerprint, has_relay)
   return packer.make_can_msg("STEERING_CONTROL", bus, values, idx)
 
 
-def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, is_metric, idx, is_panda_black):
+def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, is_metric, idx, has_relay):
   commands = []
-  bus_pt = get_pt_bus(car_fingerprint, is_panda_black)
-  bus_lkas = get_lkas_cmd_bus(car_fingerprint, is_panda_black)
+  bus_pt = get_pt_bus(car_fingerprint, has_relay)
+  bus_lkas = get_lkas_cmd_bus(car_fingerprint, has_relay)
 
   if car_fingerprint not in HONDA_BOSCH:
     acc_hud_values = {
@@ -101,10 +100,10 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, is_metric, idx, 
   return commands
 
 
-def spam_buttons_command(packer, button_val, idx, car_fingerprint, is_panda_black):
+def spam_buttons_command(packer, button_val, idx, car_fingerprint, has_relay):
   values = {
     'CRUISE_BUTTONS': button_val,
     'CRUISE_SETTING': 0,
   }
-  bus = get_pt_bus(car_fingerprint, is_panda_black)
+  bus = get_pt_bus(car_fingerprint, has_relay)
   return packer.make_can_msg("SCM_BUTTONS", bus, values, idx)

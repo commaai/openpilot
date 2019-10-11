@@ -1,4 +1,6 @@
 # distutils: language = c++
+#cython: language_level=3
+
 from libc.stdint cimport uint32_t, uint64_t, uint16_t
 from libcpp.vector cimport vector
 from libcpp.map cimport map
@@ -67,9 +69,9 @@ ctypedef void* (*can_init_with_vectors_func)(int bus, const char* dbc_name,
                 const char* tcp_addr,
                 int timeout)
 ctypedef int (*can_update_func)(void* can, uint64_t sec, bool wait);
-ctypedef void (*can_update_string_func)(void* can, uint64_t sec, const char* dat, int len);
-ctypedef size_t (*can_query_func)(void* can, uint64_t sec, bool *out_can_valid, size_t out_values_size, SignalValue* out_values);
-ctypedef void (*can_query_vector_func)(void* can, uint64_t sec, bool *out_can_valid,  vector[SignalValue] &values)
+ctypedef void (*can_update_string_func)(void* can, const char* dat, int len);
+ctypedef size_t (*can_query_latest_func)(void* can, bool *out_can_valid, size_t out_values_size, SignalValue* out_values);
+ctypedef void (*can_query_latest_vector_func)(void* can, bool *out_can_valid,  vector[SignalValue] &values)
 
 cdef class CANParser:
   cdef:
@@ -79,7 +81,7 @@ cdef class CANParser:
     can_init_with_vectors_func can_init_with_vectors
     can_update_func can_update
     can_update_string_func can_update_string
-    can_query_vector_func can_query_vector
+    can_query_latest_vector_func can_query_latest_vector
     map[string, uint32_t] msg_name_to_address
     map[uint32_t, string] address_to_msg_name
     vector[SignalValue] can_values
@@ -91,4 +93,4 @@ cdef class CANParser:
     bool can_valid
     int can_invalid_cnt
 
-  cdef unordered_set[uint32_t] update_vl(self, uint64_t sec)
+  cdef unordered_set[uint32_t] update_vl(self)

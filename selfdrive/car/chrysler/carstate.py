@@ -1,20 +1,22 @@
+from cereal import car
 from selfdrive.can.parser import CANParser
 from selfdrive.car.chrysler.values import DBC, STEER_THRESHOLD
 from common.kalman.simple_kalman import KF1D
 
+GearShifter = car.CarState.GearShifter
 
 def parse_gear_shifter(can_gear):
   if can_gear == 0x1:
-    return "park"
+    return GearShifter.park
   elif can_gear == 0x2:
-    return "reverse"
+    return GearShifter.reverse
   elif can_gear == 0x3:
-    return "neutral"
+    return GearShifter.neutral
   elif can_gear == 0x4:
-    return "drive"
+    return GearShifter.drive
   elif can_gear == 0x5:
-    return "low"
-  return "unknown"
+    return GearShifter.low
+  return GearShifter.unknown
 
 
 def get_can_parser(CP):
@@ -75,7 +77,7 @@ def get_camera_parser(CP):
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
 
 
-class CarState(object):
+class CarState():
   def __init__(self, CP):
 
     self.CP = CP

@@ -125,7 +125,7 @@ def img_from_device(pt_device):
 
 #TODO please use generic img transform below
 def rotate_img(img, eulers, crop=None, intrinsics=eon_intrinsics):
-  import cv2
+  import cv2  # pylint: disable=no-name-in-module, import-error
 
   size = img.shape[:2]
   rot = orient.rot_from_euler(eulers)
@@ -138,8 +138,8 @@ def rotate_img(img, eulers, crop=None, intrinsics=eon_intrinsics):
   warped_quadrangle = np.column_stack((warped_quadrangle_full[:,0]/warped_quadrangle_full[:,2],
                                        warped_quadrangle_full[:,1]/warped_quadrangle_full[:,2])).astype(np.float32)
   if crop:
-    W_border = (size[1] - crop[0])/2
-    H_border = (size[0] - crop[1])/2
+    W_border = (size[1] - crop[0])//2
+    H_border = (size[0] - crop[1])//2
     outside_crop = (((warped_quadrangle[:,0] < W_border) |
                      (warped_quadrangle[:,0] >= size[1] - W_border)) &
                     ((warped_quadrangle[:,1] < H_border) |
@@ -154,16 +154,40 @@ def rotate_img(img, eulers, crop=None, intrinsics=eon_intrinsics):
                     W_border: size[1] - W_border]
 
 
+def get_camera_frame_from_calib_frame(camera_frame_from_road_frame):
+  camera_frame_from_ground = camera_frame_from_road_frame[:, (0, 1, 3)]
+  calib_frame_from_ground = np.dot(eon_intrinsics,
+                                     get_view_frame_from_road_frame(0, 0, 0, 1.22))[:, (0, 1, 3)]
+  ground_from_calib_frame = np.linalg.inv(calib_frame_from_ground)
+  camera_frame_from_calib_frame = np.dot(camera_frame_from_ground, ground_from_calib_frame)
+  return camera_frame_from_calib_frame
+
+
+def pretransform_from_calib(calib):
+  roll, pitch, yaw, height = calib
+  view_frame_from_road_frame = get_view_frame_from_road_frame(roll, pitch, yaw, height)
+  camera_frame_from_road_frame = np.dot(eon_intrinsics, view_frame_from_road_frame)
+  camera_frame_from_calib_frame = get_camera_frame_from_calib_frame(camera_frame_from_road_frame)
+  return np.linalg.inv(camera_frame_from_calib_frame)
+
+
 def transform_img(base_img,
                  augment_trans=np.array([0,0,0]),
                  augment_eulers=np.array([0,0,0]),
                  from_intr=eon_intrinsics,
                  to_intr=eon_intrinsics,
-                 calib_rot_view=None,
                  output_size=None,
                  pretransform=None,
-                 top_hacks=True):
-  import cv2
+                 top_hacks=False,
+                 yuv=False,
+                 alpha=1.0,
+                 beta=0,
+                 blur=0):
+  import cv2  # pylint: disable=no-name-in-module, import-error
+  cv2.setNumThreads(1)
+
+  if yuv:
+    base_img = cv2.cvtColor(base_img, cv2.COLOR_YUV2RGB_I420)
 
   size = base_img.shape[:2]
   if not output_size:
@@ -180,8 +204,6 @@ def transform_img(base_img,
                                         h*np.ones(4),
                                         h/quadrangle_norm[:,1]))
     rot = orient.rot_from_euler(augment_eulers)
-    if calib_rot_view is not None:
-      rot = calib_rot_view.dot(rot)
     to_extrinsics = np.hstack((rot.T, -augment_trans[:,None]))
     to_KE = to_intr.dot(to_extrinsics)
     warped_quadrangle_full = np.einsum('jk,ik->ij', to_KE, np.hstack((quadrangle_world, np.ones((4,1)))))
@@ -202,12 +224,24 @@ def transform_img(base_img,
       M = M.dot(pretransform)
     augmented_rgb[:cyy] = cv2.warpPerspective(base_img, M, (output_size[0], cyy), borderMode=cv2.BORDER_REPLICATE)
 
-  return augmented_rgb
+  # brightness and contrast augment
+  augmented_rgb = np.clip((float(alpha)*augmented_rgb + beta), 0, 255).astype(np.uint8)
+
+  # gaussian blur
+  if blur > 0:
+    augmented_rgb = cv2.GaussianBlur(augmented_rgb,(blur*2+1,blur*2+1),cv2.BORDER_DEFAULT)
+
+  if yuv:
+    augmented_img = cv2.cvtColor(augmented_rgb, cv2.COLOR_RGB2YUV_I420)
+  else:
+    augmented_img = augmented_rgb
+  return augmented_img
+
 
 def yuv_crop(frame, output_size, center=None):
   # output_size in camera coordinates so u,v
   # center in array coordinates so row, column
-  import cv2
+  import cv2   # pylint: disable=no-name-in-module, import-error
   rgb = cv2.cvtColor(frame, cv2.COLOR_YUV2RGB_I420)
   if not center:
     center = (rgb.shape[0]/2, rgb.shape[1]/2)

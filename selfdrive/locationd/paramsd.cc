@@ -1,17 +1,20 @@
+#include <future>
 #include <iostream>
+
 #include <czmq.h>
 #include <capnp/message.h>
 #include <capnp/serialize-packed.h>
 
-#include "locationd_yawrate.h"
+#include "json11.hpp"
 #include "cereal/gen/cpp/log.capnp.h"
 
 #include "common/swaglog.h"
 #include "common/messaging.h"
 #include "common/params.h"
 #include "common/timing.h"
+
+#include "locationd_yawrate.h"
 #include "params_learner.h"
-#include "json11.hpp"
 
 const int num_polls = 3;
 
@@ -137,31 +140,29 @@ int main(int argc, char *argv[]) {
 
           // TODO: Fix in replay
           double sensor_data_age = localizer.controls_state_time - localizer.sensor_data_time;
+          double camera_odometry_age = localizer.controls_state_time - localizer.camera_odometry_time;
 
           double angle_offset_degrees = RADIANS_TO_DEGREES * learner.ao;
           double angle_offset_average_degrees = RADIANS_TO_DEGREES * learner.slow_ao;
 
-          // Send parameters at 10 Hz
-          if (save_counter % 10 == 0){
-            capnp::MallocMessageBuilder msg;
-            cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-            event.setLogMonoTime(nanos_since_boot());
-            auto live_params = event.initLiveParameters();
-            live_params.setValid(valid);
-            live_params.setYawRate(localizer.x[0]);
-            live_params.setGyroBias(localizer.x[1]);
-            live_params.setSensorValid(sensor_data_age < 5.0);
-            live_params.setAngleOffset(angle_offset_degrees);
-            live_params.setAngleOffsetAverage(angle_offset_average_degrees);
-            live_params.setStiffnessFactor(learner.x);
-            live_params.setSteerRatio(learner.sR);
-            live_params.setPosenetSpeed(localizer.posenet_speed);
-            live_params.setPosenetValid(posenet_invalid_count < 4);
+          capnp::MallocMessageBuilder msg;
+          cereal::Event::Builder event = msg.initRoot<cereal::Event>();
+          event.setLogMonoTime(nanos_since_boot());
+          auto live_params = event.initLiveParameters();
+          live_params.setValid(valid);
+          live_params.setYawRate(localizer.x[0]);
+          live_params.setGyroBias(localizer.x[2]);
+          live_params.setSensorValid(sensor_data_age < 5.0);
+          live_params.setAngleOffset(angle_offset_degrees);
+          live_params.setAngleOffsetAverage(angle_offset_average_degrees);
+          live_params.setStiffnessFactor(learner.x);
+          live_params.setSteerRatio(learner.sR);
+          live_params.setPosenetSpeed(localizer.posenet_speed);
+          live_params.setPosenetValid((posenet_invalid_count < 4) && (camera_odometry_age < 5.0));
 
-            auto words = capnp::messageToFlatArray(msg);
-            auto bytes = words.asBytes();
-            zmq_send(live_parameters_sock_raw, bytes.begin(), bytes.size(), ZMQ_DONTWAIT);
-          }
+          auto words = capnp::messageToFlatArray(msg);
+          auto bytes = words.asBytes();
+          zmq_send(live_parameters_sock_raw, bytes.begin(), bytes.size(), ZMQ_DONTWAIT);
 
           // Save parameters every minute
           if (save_counter % 6000 == 0) {
@@ -174,7 +175,10 @@ int main(int argc, char *argv[]) {
             };
 
             std::string out = json.dump();
-            write_db_value(NULL, "LiveParameters", out.c_str(), out.length());
+            std::async(std::launch::async,
+                       [out]{
+                         write_db_value(NULL, "LiveParameters", out.c_str(), out.length());
+                       });
           }
         }
       }

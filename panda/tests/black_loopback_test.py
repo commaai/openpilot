@@ -1,10 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-# Loopback test between black panda (+ harness and power) and white/grey panda
+# Loopback test between two black pandas (+ harness and power)
 # Tests all buses, including OBD CAN, which is on the same bus as CAN0 in this test.
 # To be sure, the test should be run with both harness orientations
 
-from __future__ import print_function
+
 import os
 import sys
 import time
@@ -33,81 +33,67 @@ def run_test(sleep_duration):
   pandas[0] = Panda(pandas[0])
   pandas[1] = Panda(pandas[1])
 
-  # find out which one is black
-  type0 = pandas[0].get_type()
-  type1 = pandas[1].get_type()
-
-  black_panda = None
-  other_panda = None
-  
-  if type0 == "\x03" and type1 != "\x03":
-    black_panda = pandas[0]
-    other_panda = pandas[1]
-  elif type0 != "\x03" and type1 == "\x03":
-    black_panda = pandas[1]
-    other_panda = pandas[0]
-  else:
-    print("Connect white/grey and black panda to run this test!")
+  # find out the hardware types  
+  if not pandas[0].is_black() or not pandas[1].is_black():
+    print("Connect two black pandas to run this test!")
     assert False
 
-  # disable safety modes
-  black_panda.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
-  other_panda.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
+  for panda in pandas:
+    # disable safety modes
+    panda.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
 
-  # test health packet
-  print("black panda health", black_panda.health())
-  print("other panda health", other_panda.health())
+    # test health packet
+    print("panda health", panda.health())
 
-  # test black -> other
-  test_buses(black_panda, other_panda, True, [(0, False, [0]), (1, False, [1]), (2, False, [2]), (1, True, [0])], sleep_duration)
-  test_buses(black_panda, other_panda, False, [(0, False, [0]), (1, False, [1]), (2, False, [2]), (0, True, [0, 1])], sleep_duration)
+  # setup test array (send bus, sender obd, reciever obd, expected busses)
+  test_array = [
+    (0, False, False, [0]),
+    (1, False, False, [1]),
+    (2, False, False, [2]),
+    (0, False, True, [0, 1]),
+    (1, False, True, []),
+    (2, False, True, [2]),
+    (0, True, False, [0]),
+    (1, True, False, [0]),
+    (2, True, False, [2]),
+    (0, True, True, [0, 1]),
+    (1, True, True, [0, 1]),
+    (2, True, True, [2])
+  ]
+
+  # test both orientations
+  print("***************** TESTING (0 --> 1) *****************")
+  test_buses(pandas[0], pandas[1], test_array, sleep_duration)
+  print("***************** TESTING (1 --> 0) *****************")
+  test_buses(pandas[1], pandas[0], test_array, sleep_duration)
 	
 
-def test_buses(black_panda, other_panda, direction, test_array, sleep_duration):
-  if direction:
-    print("***************** TESTING (BLACK --> OTHER) *****************")
-  else:
-    print("***************** TESTING (OTHER --> BLACK) *****************")
-
-  for send_bus, obd, recv_buses in test_array:
-    black_panda.send_heartbeat()
-    other_panda.send_heartbeat()
-    print("\ntest can: ", send_bus, " OBD: ", obd)
+def test_buses(send_panda, recv_panda, test_array, sleep_duration):
+  for send_bus, send_obd, recv_obd, recv_buses in test_array:
+    send_panda.send_heartbeat()
+    recv_panda.send_heartbeat()
+    print("\nSend bus:", send_bus, " Send OBD:", send_obd, " Recv OBD:", recv_obd)
     
-    # set OBD on black panda
-    black_panda.set_gmlan(True if obd else None)
+    # set OBD on pandas
+    send_panda.set_gmlan(True if send_obd else None)
+    recv_panda.set_gmlan(True if recv_obd else None)
 
     # clear and flush
-    if direction:
-      black_panda.can_clear(send_bus)
-    else:
-      other_panda.can_clear(send_bus)
-
+    send_panda.can_clear(send_bus)
     for recv_bus in recv_buses:
-      if direction:
-        other_panda.can_clear(recv_bus)
-      else:
-	black_panda.can_clear(recv_bus)
-    
-    black_panda.can_recv()
-    other_panda.can_recv()
+      recv_panda.can_clear(recv_bus)
+    send_panda.can_recv()
+    recv_panda.can_recv()
 
     # send the characters
     at = random.randint(1, 2000)
     st = get_test_string()[0:8]
-    if direction:
-      black_panda.can_send(at, st, send_bus)
-    else:
-      other_panda.can_send(at, st, send_bus)
+    send_panda.can_send(at, st, send_bus)
     time.sleep(0.1)
 
     # check for receive
-    if direction:
-      cans_echo = black_panda.can_recv()
-      cans_loop = other_panda.can_recv()
-    else:
-      cans_echo = other_panda.can_recv()
-      cans_loop = black_panda.can_recv()
+    cans_echo = send_panda.can_recv()
+    cans_loop = recv_panda.can_recv()
 
     loop_buses = []
     for loop in cans_loop:

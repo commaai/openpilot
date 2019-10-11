@@ -1,5 +1,5 @@
 import os
-import numpy as np
+import math
 
 import selfdrive.messaging as messaging
 from selfdrive.swaglog import cloudlog
@@ -11,9 +11,8 @@ from selfdrive.controls.lib.drive_helpers import MPC_COST_LONG
 LOG_MPC = os.environ.get('LOG_MPC', False)
 
 
-class LongitudinalMpc(object):
-  def __init__(self, mpc_id, live_longitudinal_mpc):
-    self.live_longitudinal_mpc = live_longitudinal_mpc
+class LongitudinalMpc():
+  def __init__(self, mpc_id):
     self.mpc_id = mpc_id
 
     self.setup_mpc()
@@ -27,7 +26,7 @@ class LongitudinalMpc(object):
 
     self.last_cloudlog_t = 0.0
 
-  def send_mpc_solution(self, qp_iterations, calculation_time):
+  def send_mpc_solution(self, pm, qp_iterations, calculation_time):
     qp_iterations = max(0, qp_iterations)
     dat = messaging.new_message()
     dat.init('liveLongitudinalMpc')
@@ -41,7 +40,7 @@ class LongitudinalMpc(object):
     dat.liveLongitudinalMpc.qpIterations = qp_iterations
     dat.liveLongitudinalMpc.mpcId = self.mpc_id
     dat.liveLongitudinalMpc.calculationTime = calculation_time
-    self.live_longitudinal_mpc.send(dat.to_bytes())
+    pm.send('liveLongitudinalMpc', dat)
 
   def setup_mpc(self):
     ffi, self.libmpc = libmpc_py.get_libmpc(self.mpc_id)
@@ -58,7 +57,7 @@ class LongitudinalMpc(object):
     self.cur_state[0].v_ego = v
     self.cur_state[0].a_ego = a
 
-  def update(self, CS, lead, v_cruise_setpoint):
+  def update(self, pm, CS, lead, v_cruise_setpoint):
     v_ego = CS.vEgo
 
     # Setup current mpc state
@@ -97,7 +96,7 @@ class LongitudinalMpc(object):
     duration = int((sec_since_boot() - t) * 1e9)
 
     if LOG_MPC:
-      self.send_mpc_solution(n_its, duration)
+      self.send_mpc_solution(pm, n_its, duration)
 
     # Get solution. MPC timestep is 0.2 s, so interpolation to 0.05 s is needed
     self.v_mpc = self.mpc_solution[0].v_ego[1]
@@ -105,10 +104,9 @@ class LongitudinalMpc(object):
     self.v_mpc_future = self.mpc_solution[0].v_ego[10]
 
     # Reset if NaN or goes through lead car
-    dls = np.array(list(self.mpc_solution[0].x_l)) - np.array(list(self.mpc_solution[0].x_ego))
-    crashing = min(dls) < -50.0
-    nans = np.any(np.isnan(list(self.mpc_solution[0].v_ego)))
-    backwards = min(list(self.mpc_solution[0].v_ego)) < -0.01
+    crashing = any(lead - ego < -50 for (lead, ego) in zip(self.mpc_solution[0].x_l, self.mpc_solution[0].x_ego))
+    nans = any(math.isnan(x) for x in self.mpc_solution[0].v_ego)
+    backwards = min(self.mpc_solution[0].v_ego) < -0.01
 
     if ((backwards or crashing) and self.prev_lead_status) or nans:
       if t > self.last_cloudlog_t + 5.0:

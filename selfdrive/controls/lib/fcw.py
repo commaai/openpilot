@@ -7,7 +7,7 @@ _FCW_A_ACT_V = [-3., -2.]
 _FCW_A_ACT_BP = [0., 30.]
 
 
-class FCWChecker(object):
+class FCWChecker():
   def __init__(self):
     self.reset_lead(0.0)
 
@@ -45,7 +45,6 @@ class FCWChecker(object):
 
   def update(self, mpc_solution, cur_time, active, v_ego, a_ego, x_lead, v_lead, a_lead, y_lead, vlat_lead, fcw_lead, blinkers):
     mpc_solution_a = list(mpc_solution[0].a_ego)
-    a_target = mpc_solution_a[1]
 
     self.last_min_a = min(mpc_solution_a)
     self.v_lead_max = max(self.v_lead_max, v_lead)
@@ -66,9 +65,8 @@ class FCWChecker(object):
 
       future_fcw_allowed = all(c >= 10 for c in self.counters.values())
       future_fcw = (self.last_min_a < -3.0 or a_delta < a_thr) and future_fcw_allowed
-      current_fcw = a_target < -3.0 and active
 
-      if (future_fcw or current_fcw) and (self.last_fcw_time + 5.0 < cur_time):
+      if future_fcw and (self.last_fcw_time + 5.0 < cur_time):
         self.last_fcw_time = cur_time
         self.last_fcw_a = self.last_min_a
         return True

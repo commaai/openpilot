@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import gc
 
 from cereal import car
@@ -11,27 +11,26 @@ from selfdrive.controls.lib.pathplanner import PathPlanner
 import selfdrive.messaging as messaging
 
 
-def plannerd_thread():
+def plannerd_thread(sm=None, pm=None):
   gc.disable()
 
   # start the loop
   set_realtime_priority(2)
 
-  params = Params()
-
-  # Get FCW toggle from settings
-  fcw_enabled = params.get("IsFcwEnabled") == "1"
-
   cloudlog.info("plannerd is waiting for CarParams")
   CP = car.CarParams.from_bytes(Params().get("CarParams", block=True))
   cloudlog.info("plannerd got CarParams: %s", CP.carName)
 
-  PL = Planner(CP, fcw_enabled)
+  PL = Planner(CP)
   PP = PathPlanner(CP)
 
   VM = VehicleModel(CP)
 
-  sm = messaging.SubMaster(['carState', 'controlsState', 'radarState', 'model', 'liveParameters'])
+  if sm is None:
+    sm = messaging.SubMaster(['carState', 'controlsState', 'radarState', 'model', 'liveParameters'])
+
+  if pm is None:
+    pm = messaging.PubMaster(['plan', 'liveLongitudinalMpc', 'pathPlan', 'liveMpc'])
 
   sm['liveParameters'].valid = True
   sm['liveParameters'].sensorValid = True
@@ -42,13 +41,13 @@ def plannerd_thread():
     sm.update()
 
     if sm.updated['model']:
-      PP.update(sm, CP, VM)
+      PP.update(sm, pm, CP, VM)
     if sm.updated['radarState']:
-      PL.update(sm, CP, VM, PP)
+      PL.update(sm, pm, CP, VM, PP)
 
 
-def main(gctx=None):
-  plannerd_thread()
+def main(sm=None, pm=None):
+  plannerd_thread(sm, pm)
 
 
 if __name__ == "__main__":
