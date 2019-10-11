@@ -101,13 +101,8 @@ class dbc():
         defvals = defvals.replace("?",r"\?") #escape sequence in C++
         defvals = defvals.split('"')[:-1]
 
-        defs = defvals[1::2]
-        #cleanup, convert to UPPER_CASE_WITH_UNDERSCORES
-        for i,d in enumerate(defs):
-          d = defs[i].strip().upper()
-          defs[i] = d.replace(" ","_")
-
-        defvals[1::2] = defs
+        # convert strings to UPPER_CASE_WITH_UNDERSCORES
+        defvals[1::2] = [d.strip().upper().replace(" ","_") for d in defvals[1::2]]
         defvals = '"'+"".join(str(i) for i in defvals)+'"'
 
         self.def_vals[ids].append((sgname, defvals))
