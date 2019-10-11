@@ -59,7 +59,22 @@ def get_can_parser(CP):
     ("EPS_STATUS", 25),
   ]
 
-  if CP.carFingerprint == CAR.LEXUS_IS:
+  if CP.carFingerprint == CAR.LEXUS_ISH:
+    signals.append(("GAS_PEDAL", "GAS_PEDAL_ALT", 0))
+    signals.append(("AUTO_HIGH_BEAM", "LIGHT_STALK_ISH", 0))
+    checks.append(("BRAKE_MODULE", 50))
+    checks.append(("GAS_PEDAL_ALT", 50))
+  else:
+    signals.append(("AUTO_HIGH_BEAM", "LIGHT_STALK", 0))
+    signals.append(("GAS_PEDAL", "GAS_PEDAL_ALT", 0))
+    checks.append(("BRAKE_MODULE", 40))
+    checks.append(("GAS_PEDAL_ALT", 30))
+
+  if CP.carFingerprint == CAR.LEXUS_ISH:
+    signals.append(("MAIN_ON", "PCM_CRUISE_ALT", 0))
+    signals.append(("SET_SPEED", "PCM_CRUISE_ALT", 0))
+    checks.append(("PCM_CRUISE_ALT", 1))
+  elif CP.carFingerprint == CAR.LEXUS_IS:
     signals.append(("MAIN_ON", "DSU_CRUISE", 0))
     signals.append(("SET_SPEED", "DSU_CRUISE", 0))
     checks.append(("DSU_CRUISE", 5))
@@ -130,6 +145,8 @@ class CarState():
     self.brake_pressed = cp.vl["BRAKE_MODULE"]['BRAKE_PRESSED']
     if self.CP.enableGasInterceptor:
       self.pedal_gas = (cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS'] + cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS2']) / 2.
+    elif self.CP.carFingerprint == CAR.LEXUS_ISH:
+      self.pedal_gas = cp.vl["GAS_PEDAL_ALT"]['GAS_PEDAL']
     else:
       self.pedal_gas = cp.vl["GAS_PEDAL"]['GAS_PEDAL']
     self.car_gas = self.pedal_gas
@@ -188,13 +205,22 @@ class CarState():
     if self.CP.carFingerprint == CAR.LEXUS_IS:
       self.v_cruise_pcm = cp.vl["DSU_CRUISE"]['SET_SPEED']
       self.low_speed_lockout = False
+    elif self.CP.carFingerprint == CAR.LEXUS_ISH:
+      self.v_cruise_pcm = cp.vl["PCM_CRUISE_ALT"]['SET_SPEED']
+      self.low_speed_lockout = False
     else:
       self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED']
       self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]['LOW_SPEED_LOCKOUT'] == 2
-    self.pcm_acc_status = cp.vl["PCM_CRUISE"]['CRUISE_STATE']
+    if self.CP.carFingerprint == CAR.LEXUS_ISH:
+      # Lexus ISH does not have cruise status value (always 0), so we use cruise active value instead
+      self.pcm_acc_status = cp.vl["PCM_CRUISE"]['CRUISE_ACTIVE']
+    else:
+      self.pcm_acc_status = cp.vl["PCM_CRUISE"]['CRUISE_STATE']
     self.pcm_acc_active = bool(cp.vl["PCM_CRUISE"]['CRUISE_ACTIVE'])
     self.brake_lights = bool(cp.vl["ESP_CONTROL"]['BRAKE_LIGHTS_ACC'] or self.brake_pressed)
     if self.CP.carFingerprint == CAR.PRIUS:
       self.generic_toggle = cp.vl["AUTOPARK_STATUS"]['STATE'] != 0
+    elif self.CP.carFingerprint == CAR.LEXUS_ISH:
+      self.generic_toggle = bool(cp.vl["LIGHT_STALK_ISH"]['AUTO_HIGH_BEAM'])
     else:
       self.generic_toggle = bool(cp.vl["LIGHT_STALK"]['AUTO_HIGH_BEAM'])
