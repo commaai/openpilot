@@ -127,8 +127,8 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.05]]
       ret.lateralTuning.pid.kf = 0.00003   # full torque for 20 deg at 80mph means 0.00007818594
       if ret.enableGasInterceptor:
-        ret.longitudinalTuning.kpV = [1.0, 0.66, 0.42]
-        ret.longitudinalTuning.kiV = [0.135, 0.09]
+        ret.longitudinalTuning.kpV = [0.8, 0.561, 0.375]
+        ret.longitudinalTuning.kiV = [0.162, 0.108]
 
     elif candidate == CAR.LEXUS_RXH:
       stop_and_go = True
