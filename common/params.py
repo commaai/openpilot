@@ -80,6 +80,7 @@ keys = {
   "Passive": [TxType.PERSISTENT],
   "RecordFront": [TxType.PERSISTENT],
   "ReleaseNotes": [TxType.PERSISTENT],
+  "SafetyModelLock": [TxType.PERSISTENT],
   "ShouldDoUpdate": [TxType.CLEAR_ON_MANAGER_START],
   "SpeedLimitOffset": [TxType.PERSISTENT],
   "SubscriberInfo": [TxType.PERSISTENT],
