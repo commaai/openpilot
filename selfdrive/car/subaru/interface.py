@@ -48,6 +48,7 @@ class CarInterface(CarInterfaceBase):
     ret.enableCruise = True
     ret.steerLimitAlert = True
 
+    # always enable since Eyesight is not disconnected and LKAS can messages are always present in fingerprint
     ret.enableCamera = True
 
     ret.steerRateCost = 0.7
