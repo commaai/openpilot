@@ -48,7 +48,7 @@ class CarInterface(CarInterfaceBase):
     ret.enableCruise = True
     ret.steerLimitAlert = True
 
-    ret.enableCamera = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, ECU.CAM) or has_relay
+    ret.enableCamera = True
 
     ret.steerRateCost = 0.7
 
