@@ -129,7 +129,6 @@ def thermald_thread():
 
   off_ts = None
   started_ts = None
-  ignition_seen = False
   started_seen = False
   thermal_status = ThermalStatus.green
   thermal_status_prev = ThermalStatus.green
@@ -151,7 +150,6 @@ def thermald_thread():
     # clear car params when panda gets disconnected
     if health is None and health_prev is not None:
       params.panda_disconnect()
-      ignition_seen = False
     health_prev = health
 
     if health is not None:
@@ -233,11 +231,6 @@ def thermald_thread():
 
     # start constellation of processes when the car starts
     ignition = health is not None and health.health.started
-    ignition_seen = ignition_seen or ignition
-
-    # add voltage check for ignition
-    if not ignition_seen and health is not None and health.health.voltage > 13500:
-      ignition = True
 
     do_uninstall = params.get("DoUninstall") == b"1"
     accepted_terms = params.get("HasAcceptedTerms") == terms_version

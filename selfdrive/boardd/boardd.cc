@@ -49,6 +49,7 @@ const uint32_t NO_IGNITION_CNT_MAX = 2 * 60 * 60 * 24 * 3;  // turn off charge a
 uint32_t no_ignition_cnt = 0;
 bool connected_once = false;
 uint8_t ignition_last = 0;
+bool safety_model_locked = false;
 
 pthread_t safety_setter_thread_handle = -1;
 pthread_t pigeon_thread_handle = -1;
@@ -74,12 +75,12 @@ void *safety_setter_thread(void *s) {
   }
   LOGW("got CarVin %s", value_vin);
 
-  pthread_mutex_lock(&usb_lock);
-
   // VIN query done, stop listening to OBDII
-  libusb_control_transfer(dev_handle, 0x40, 0xdc, (uint16_t)(cereal::CarParams::SafetyModel::NO_OUTPUT), 0, NULL, 0, TIMEOUT);
-
-  pthread_mutex_unlock(&usb_lock);
+  if (!safety_model_locked) {
+    pthread_mutex_lock(&usb_lock);
+    libusb_control_transfer(dev_handle, 0x40, 0xdc, (uint16_t)(cereal::CarParams::SafetyModel::NO_OUTPUT), 0, NULL, 0, TIMEOUT);
+    pthread_mutex_unlock(&usb_lock);
+  }
 
   char *value;
   size_t value_sz = 0;
@@ -125,6 +126,11 @@ void *safety_setter_thread(void *s) {
 bool usb_connect() {
   int err;
   unsigned char hw_query[1] = {0};
+  char *value_safety_model;
+  size_t value_safety_model_sz = 0;
+  int safety_model;
+  const int result = read_db_value(NULL, "SafetyModelLock", &value_safety_model, &value_safety_model_sz);
+
   ignition_last = 0;
 
   dev_handle = libusb_open_device_with_vid_pid(ctx, 0xbbaa, 0xddcc);
@@ -138,6 +144,16 @@ bool usb_connect() {
 
   if (loopback_can) {
     libusb_control_transfer(dev_handle, 0xc0, 0xe5, 1, 0, NULL, 0, TIMEOUT);
+  }
+
+  // check if safety mode is forced (needed to support gm)
+  if (value_safety_model_sz > 0) {
+    sscanf(value_safety_model, "%d", &safety_model);
+    // sanity check that we are not setting all output
+    assert(safety_model != (int)(cereal::CarParams::SafetyModel::ALL_OUTPUT));
+    safety_model_locked = true;
+    LOGW("Setting Locked Safety Model %s", value_safety_model);
+    libusb_control_transfer(dev_handle, 0x40, 0xdc, (uint16_t)(cereal::CarParams::SafetyModel(safety_model)), 0, NULL, 0, TIMEOUT);
   }
 
   // power off ESP
@@ -297,10 +313,11 @@ void can_health(void *s) {
     assert((result == 0) || (result == ERR_NO_VALUE));
 
     // diagnostic only is the default, needed for VIN query
-    pthread_mutex_lock(&usb_lock);
-    libusb_control_transfer(dev_handle, 0x40, 0xdc, (uint16_t)(cereal::CarParams::SafetyModel::ELM327), 0, NULL, 0, TIMEOUT);
-    pthread_mutex_unlock(&usb_lock);
-
+    if (!safety_model_locked) {
+      pthread_mutex_lock(&usb_lock);
+      libusb_control_transfer(dev_handle, 0x40, 0xdc, (uint16_t)(cereal::CarParams::SafetyModel::ELM327), 0, NULL, 0, TIMEOUT);
+      pthread_mutex_unlock(&usb_lock);
+    }
     if (safety_setter_thread_handle == -1) {
       err = pthread_create(&safety_setter_thread_handle, NULL, safety_setter_thread, NULL);
       assert(err == 0);
