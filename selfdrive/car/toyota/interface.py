@@ -127,8 +127,6 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.05]]
       ret.lateralTuning.pid.kf = 0.00003   # full torque for 20 deg at 80mph means 0.00007818594
       if ret.enableGasInterceptor:
-        ret.gasMaxBP = [0., 9., 35]
-        ret.gasMaxV = [0.2, 0.5, 0.7]
         ret.longitudinalTuning.kpV = [1.0, 0.66, 0.42]
         ret.longitudinalTuning.kiV = [0.135, 0.09]
 
