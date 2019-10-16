@@ -1,18 +1,18 @@
 Choose one of the templates below:
 
 # Fingerprint
-This pull requests adds a fingerprint for <Make - Model - Year - Trim>.
+This pull request adds a fingerprint for <Make - Model - Year - Trim>.
 
 This is an explorer link to a drive with the stock system enabled: ...
 
 # Car support
-This pull requests adds support for <Make - Model - Year - Trim>.
+This pull request adds support for <Make - Model - Year - Trim>.
 
 This is an explorer link to a drive with the stock system enabled: ...
 This is an explorer link to a drive with openpilot system enabled: ...
 
 # Feature
-This pull requests adds feature X
+This pull request adds feature X
 
 ## Description
 Explain what the feature does
