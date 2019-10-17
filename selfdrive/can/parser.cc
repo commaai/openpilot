@@ -220,7 +220,7 @@ struct MessageState {
         tmp -= (tmp >> (sig.b2-1)) ? (1ULL << sig.b2) : 0; //signed
       }
 
-      DEBUG("parse %X %s -> %lld\n", address, sig.name, tmp);
+      DEBUG("parse 0x%X %s -> %lld\n", address, sig.name, tmp);
 
       if (sig.type == SignalType::HONDA_CHECKSUM) {
         if (honda_checksum(address, dat, size) != tmp) {
@@ -236,7 +236,7 @@ struct MessageState {
           INFO("0x%X CHECKSUM FAIL\n", address);
           return false;
         }
-      } else if (sig.type == SignalType::VOLKSWAGEN_CRC) {
+      } else if (sig.type == SignalType::VOLKSWAGEN_CHECKSUM) {
         if (volkswagen_crc(address, dat, size) != tmp) {
           INFO("0x%X CRC FAIL\n", address);
           return false;

@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 import os
 import glob
 import sys
@@ -10,7 +10,7 @@ from common.dbc import dbc
 
 def main():
   if len(sys.argv) != 3:
-    print "usage: %s dbc_directory output_directory" % (sys.argv[0],)
+    print("usage: %s dbc_directory output_directory" % (sys.argv[0],))
     sys.exit(0)
 
   dbc_dir = sys.argv[1]
@@ -38,7 +38,7 @@ def main():
     if dbc_mtime < out_mtime and template_mtime < out_mtime and this_file_mtime < out_mtime:
       continue #skip output is newer than template and dbc
 
-    msgs = [(address, msg_name, msg_size, sorted(msg_sigs, key=lambda s: s.name not in ("COUNTER", "CHECKSUM", "CRC"))) # process counter and checksums first
+    msgs = [(address, msg_name, msg_size, sorted(msg_sigs, key=lambda s: s.name not in ("COUNTER", "CHECKSUM"))) # process counter and checksums first
             for address, ((msg_name, msg_size), msg_sigs) in sorted(can_dbc.msgs.items()) if msg_sigs]
 
     def_vals = {a: set(b) for a,b in can_dbc.def_vals.items()} #remove duplicates
@@ -46,54 +46,68 @@ def main():
 
     if can_dbc.name.startswith("honda") or can_dbc.name.startswith("acura"):
       car_type = "honda"
+      car_is_little_endian = False
       checksum_size = 4
       counter_size = 2
     elif can_dbc.name.startswith("toyota") or can_dbc.name.startswith("lexus"):
       car_type = "toyota"
+      car_is_little_endian = False
       checksum_size = 8
       counter_size = None
     elif can_dbc.name.startswith("vw") or can_dbc.name.startswith("volkswagen") or can_dbc.name.startswith("audi") or can_dbc.name.startswith ("seat") or can_dbc.name.startswith("skoda"):
       car_type = "volkswagen"
+      car_is_little_endian = True
       checksum_size = 8
       counter_size = 4
     else:
       car_type = None
+      car_is_little_endian = None
       checksum_size = None
       counter_size = None
 
     for address, msg_name, msg_size, sigs in msgs:
+      dbc_msg_name = dbc_name + " " + msg_name
       for sig in sigs:
-        if car_type is not None:
-          if sig.name == "CHECKSUM":
-            if sig.size != checksum_size:
-              sys.exit("CHECKSUM is not %d bits long %s" % (checksum_size, msg_name))
-            if car_type == "honda" and sig.start_bit % 8 != 3:
-              sys.exit("CHECKSUM starts at wrong bit %s" % msg_name)
-            if car_type == "toyota" and sig.start_bit % 8 != 7:
-              sys.exit("CHECKSUM starts at wrong bit %s" % msg_name)
-          elif sig.name == "CRC":
-            if sig.size != checksum_size:
-              sys.exit("CRC is not %d bits long %s" % (checksum_size, msg_name))
-            if car_type == "volkswagen" and sig.start_bit % 8 != 0:
-              sys.exit("CRC starts at wrong bit %s" % msg_name)
-          elif sig.name == "COUNTER" and car_type in ["honda", "volkswagen"]:
-            if sig.size != counter_size:
-              sys.exit("COUNTER is not %d bits long %s" % (counter_size, msg_name))
-            if car_type == "honda" and sig.start_bit % 8 != 5:
-              sys.exit("COUNTER starts at wrong bit %s" % msg_name)
-            if car_type == "volkswagen" and sig.start_bit % 8 != 0:
-              sys.exit("COUNTER starts at wrong bit %s" % msg_name)
-        if address in [0x200, 0x201]:
+
+        if sig.name == "CHECKSUM" and checksum_size is not None:
+          if sig.size != checksum_size:
+            sys.exit("%s: CHECKSUM is not %d bits long" % (dbc_msg_name, checksum_size))
+          if car_is_little_endian:
+            if not sig.is_little_endian:
+              sys.exit("%s: CHECKSUM is not little endian" % dbc_msg_name)
+            if sig.start_bit % sig.size != 0:
+              sys.exit("%s: CHECKSUM start bit is misaligned" % dbc_msg_name)
+          else:
+            if sig.is_little_endian:
+              sys.exit("%s: CHECKSUM is not big endian" % dbc_msg_name)
+            if (sig.start_bit - sig.size + 1) % sig.size != 0:
+              sys.exit("%s: CHECKSUM start bit is misaligned" % dbc_msg_name)
+
+        elif sig.name == "COUNTER" and counter_size is not None:
+          if sig.size != counter_size:
+            sys.exit("%s: COUNTER is not %d bits long" % (dbc_msg_name, counter_size))
+          if car_is_little_endian:
+            if not sig.is_little_endian:
+              sys.exit("%s: COUNTER is not little endian" % dbc_msg_name)
+            if sig.start_bit % sig.size != 0:
+              sys.exit("%s: COUNTER starts at wrong bit" % dbc_msg_name)
+          else:
+            if sig.is_little_endian:
+              sys.exit("%s: COUNTER is not big endian" % dbc_msg_name)
+            if (sig.start_bit - sig.size + 1) % sig.size != 0:
+              sys.exit("%s: COUNTER start bit is misaligned" % dbc_msg_name)
+
+        elif address in [0x200, 0x201]:
           if sig.name == "COUNTER_PEDAL" and sig.size != 4:
-            sys.exit("PEDAL COUNTER is not 4 bits long %s" % msg_name)
+            sys.exit("%s: PEDAL COUNTER is not 4 bits long" % dbc_msg_name)
           if sig.name == "CHECKSUM_PEDAL" and sig.size != 8:
-            sys.exit("PEDAL CHECKSUM is not 8 bits long %s" % msg_name)
+            sys.exit("%s: PEDAL CHECKSUM is not 8 bits long" % dbc_msg_name)
 
     # Fail on duplicate message names
     c = Counter([msg_name for address, msg_name, msg_size, sigs in msgs])
     for name, count in c.items():
       if count > 1:
-        sys.exit("Duplicate message name in DBC file %s" % name)
+        sys.exit("%s: Duplicate message name in DBC file %s" % (dbc_name, name))
 
     parser_code = template.render(dbc=can_dbc, checksum_type=car_type, msgs=msgs, def_vals=def_vals, len=len)
 

@@ -101,22 +101,15 @@ namespace {
         else if (sig.type == SignalType::TOYOTA_CHECKSUM) {
           unsigned int chksm = toyota_checksum(address, ret, message_lookup[address].size);
           ret = set_value(ret, sig, chksm);
-        } else {
-          //WARN("CHECKSUM signal type not valid\n");
         }
-      }
-
-      auto sig_it_crc = signal_lookup.find(std::make_pair(address, "CRC"));
-      if (sig_it_crc != signal_lookup.end()) {
-        auto sig = sig_it_crc->second;
-        if (sig.type == SignalType::VOLKSWAGEN_CRC) {
+        else if (sig.type == SignalType::VOLKSWAGEN_CHECKSUM) {
           // FIXME: Hackish fix for an endianness issue. The message is in reverse byte order
           // until later in the pack process. Checksums can be run backwards, CRCs not so much.
           // The correct fix is unclear but this works for the moment.
           unsigned int chksm = volkswagen_crc(address, ReverseBytes(ret), message_lookup[address].size);
           ret = set_value(ret, sig, chksm);
         } else {
-          // WARN("CRC signal type not valid\n");
+          //WARN("CHECKSUM signal type not valid\n");
         }
       }
 
