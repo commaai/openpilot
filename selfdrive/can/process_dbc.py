@@ -44,60 +44,60 @@ def main():
     def_vals = {a: set(b) for a,b in can_dbc.def_vals.items()} #remove duplicates
     def_vals = [(address, sig) for address, sig in sorted(def_vals.items())]
 
-    if can_dbc.name.startswith("honda") or can_dbc.name.startswith("acura"):
-      car_type = "honda"
-      car_is_little_endian = False
+    if can_dbc.name.startswith("honda_") or can_dbc.name.startswith("acura_"):
+      checksum_type = "honda"
       checksum_size = 4
       counter_size = 2
-    elif can_dbc.name.startswith("toyota") or can_dbc.name.startswith("lexus"):
-      car_type = "toyota"
-      car_is_little_endian = False
+      checksum_start_bit = 3
+      counter_start_bit = 5
+      little_endian = False
+    elif can_dbc.name.startswith("toyota_") or can_dbc.name.startswith("lexus_"):
+      checksum_type = "toyota"
       checksum_size = 8
       counter_size = None
-    elif can_dbc.name.startswith("vw") or can_dbc.name.startswith("volkswagen") or can_dbc.name.startswith("audi") or can_dbc.name.startswith ("seat") or can_dbc.name.startswith("skoda"):
-      car_type = "volkswagen"
-      car_is_little_endian = True
+      checksum_start_bit = 7
+      counter_start_bit = None
+      little_endian = False
+    elif can_dbc.name.startswith("vw_") or can_dbc.name.startswith("volkswagen_") or \
+         can_dbc.name.startswith("audi_") or can_dbc.name.startswith ("seat_") or can_dbc.name.startswith("skoda_"):
+      checksum_type = "volkswagen"
       checksum_size = 8
       counter_size = 4
+      checksum_start_bit = 0
+      counter_start_bit = 0
+      little_endian = True
     else:
-      car_type = None
-      car_is_little_endian = None
+      checksum_type = None
       checksum_size = None
       counter_size = None
+      checksum_start_bit = None
+      counter_start_bit = None
+      little_endian = None
 
+    # sanity checks on expected COUNTER and CHECKSUM rules, as packer and parser auto-compute those signals
     for address, msg_name, msg_size, sigs in msgs:
       dbc_msg_name = dbc_name + " " + msg_name
       for sig in sigs:
-
-        if sig.name == "CHECKSUM" and checksum_size is not None:
-          if sig.size != checksum_size:
-            sys.exit("%s: CHECKSUM is not %d bits long" % (dbc_msg_name, checksum_size))
-          if car_is_little_endian:
-            if not sig.is_little_endian:
-              sys.exit("%s: CHECKSUM is not little endian" % dbc_msg_name)
-            if sig.start_bit % sig.size != 0:
-              sys.exit("%s: CHECKSUM start bit is misaligned" % dbc_msg_name)
-          else:
-            if sig.is_little_endian:
-              sys.exit("%s: CHECKSUM is not big endian" % dbc_msg_name)
-            if (sig.start_bit - sig.size + 1) % sig.size != 0:
-              sys.exit("%s: CHECKSUM start bit is misaligned" % dbc_msg_name)
-
-        elif sig.name == "COUNTER" and counter_size is not None:
-          if sig.size != counter_size:
-            sys.exit("%s: COUNTER is not %d bits long" % (dbc_msg_name, counter_size))
-          if car_is_little_endian:
-            if not sig.is_little_endian:
-              sys.exit("%s: COUNTER is not little endian" % dbc_msg_name)
-            if sig.start_bit % sig.size != 0:
+        if checksum_type is not None:
+          # checksum rules
+          if sig.name == "CHECKSUM":
+            if sig.size != checksum_size:
+              sys.exit("%s: CHECKSUM is not %d bits long" % (dbc_msg_name, checksum_size))
+            if sig.start_bit % 8 != checksum_start_bit:
+              sys.exit("%s: CHECKSUM starts at wrong bit" % dbc_msg_name)
+            if little_endian != sig.is_little_endian:
+              sys.exit("%s: CHECKSUM has wrong endianess" % dbc_msg_name)
+          # counter rules
+          if sig.name == "COUNTER":
+            if counter_size is not None and sig.size != counter_size:
+              sys.exit("%s: COUNTER is not %d bits long" % (dbc_msg_name, counter_size))
+            if counter_start_bit is not None and sig.start_bit % 8 != counter_start_bit:
+              print(counter_start_bit, sig.start_bit)
               sys.exit("%s: COUNTER starts at wrong bit" % dbc_msg_name)
-          else:
-            if sig.is_little_endian:
-              sys.exit("%s: COUNTER is not big endian" % dbc_msg_name)
-            if (sig.start_bit - sig.size + 1) % sig.size != 0:
-              sys.exit("%s: COUNTER start bit is misaligned" % dbc_msg_name)
-
-        elif address in [0x200, 0x201]:
+            if little_endian != sig.is_little_endian:
+              sys.exit("%s: COUNTER has wrong endianess" % dbc_msg_name)
+        # pedal rules
+        if address in [0x200, 0x201]:
           if sig.name == "COUNTER_PEDAL" and sig.size != 4:
             sys.exit("%s: PEDAL COUNTER is not 4 bits long" % dbc_msg_name)
           if sig.name == "CHECKSUM_PEDAL" and sig.size != 8:
@@ -109,8 +109,7 @@ def main():
       if count > 1:
         sys.exit("%s: Duplicate message name in DBC file %s" % (dbc_name, name))
 
-    parser_code = template.render(dbc=can_dbc, checksum_type=car_type, msgs=msgs, def_vals=def_vals, len=len)
-
+    parser_code = template.render(dbc=can_dbc, checksum_type=checksum_type, msgs=msgs, def_vals=def_vals, len=len)
 
     with open(out_fn, "w") as out_f:
       out_f.write(parser_code)
