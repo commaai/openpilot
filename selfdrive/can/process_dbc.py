@@ -44,22 +44,21 @@ def main():
     def_vals = {a: set(b) for a,b in can_dbc.def_vals.items()} #remove duplicates
     def_vals = [(address, sig) for address, sig in sorted(def_vals.items())]
 
-    if can_dbc.name.startswith("honda_") or can_dbc.name.startswith("acura_"):
+    if can_dbc.name.startswith(("honda_", "acura_")):
       checksum_type = "honda"
       checksum_size = 4
       counter_size = 2
       checksum_start_bit = 3
       counter_start_bit = 5
       little_endian = False
-    elif can_dbc.name.startswith("toyota_") or can_dbc.name.startswith("lexus_"):
+    elif can_dbc.name.startswith(("toyota_", "lexus_")):
       checksum_type = "toyota"
       checksum_size = 8
       counter_size = None
       checksum_start_bit = 7
       counter_start_bit = None
       little_endian = False
-    elif can_dbc.name.startswith("vw_") or can_dbc.name.startswith("volkswagen_") or \
-         can_dbc.name.startswith("audi_") or can_dbc.name.startswith ("seat_") or can_dbc.name.startswith("skoda_"):
+    elif can_dbc.name.startswith(("vw_", "volkswagen_", "audi_", "seat_", "skoda_")):
       checksum_type = "volkswagen"
       checksum_size = 8
       counter_size = 4
