@@ -51,6 +51,8 @@ namespace {
           signal_lookup[std::make_pair(msg->address, std::string(sig->name))] = *sig;
         }
       }
+
+      init_crc_lookup_tables();
     }
 
     uint64_t pack(uint32_t address, const std::vector<SignalPackValue> &signals, int counter) {
@@ -82,22 +84,29 @@ namespace {
         }
         auto sig = sig_it->second;
 
-        if (sig.type != SignalType::HONDA_COUNTER){
+        if ((sig.type != SignalType::HONDA_COUNTER) && (sig.type != SignalType::VOLKSWAGEN_COUNTER)) {
           WARN("COUNTER signal type not valid\n");
         }
 
         ret = set_value(ret, sig, counter);
       }
 
-      auto sig_it = signal_lookup.find(std::make_pair(address, "CHECKSUM"));
-      if (sig_it != signal_lookup.end()) {
-        auto sig = sig_it->second;
-        if (sig.type == SignalType::HONDA_CHECKSUM){
+      auto sig_it_checksum = signal_lookup.find(std::make_pair(address, "CHECKSUM"));
+      if (sig_it_checksum != signal_lookup.end()) {
+        auto sig = sig_it_checksum->second;
+        if (sig.type == SignalType::HONDA_CHECKSUM) {
           unsigned int chksm = honda_checksum(address, ret, message_lookup[address].size);
           ret = set_value(ret, sig, chksm);
         }
-        else if (sig.type == SignalType::TOYOTA_CHECKSUM){
+        else if (sig.type == SignalType::TOYOTA_CHECKSUM) {
           unsigned int chksm = toyota_checksum(address, ret, message_lookup[address].size);
+          ret = set_value(ret, sig, chksm);
+        }
+        else if (sig.type == SignalType::VOLKSWAGEN_CHECKSUM) {
+          // FIXME: Hackish fix for an endianness issue. The message is in reverse byte order
+          // until later in the pack process. Checksums can be run backwards, CRCs not so much.
+          // The correct fix is unclear but this works for the moment.
+          unsigned int chksm = volkswagen_crc(address, ReverseBytes(ret), message_lookup[address].size);
           ret = set_value(ret, sig, chksm);
         } else {
           //WARN("CHECKSUM signal type not valid\n");
