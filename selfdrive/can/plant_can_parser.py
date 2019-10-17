@@ -7,7 +7,7 @@ from selfdrive.car.honda.hondacan import fix
 from common.realtime import sec_since_boot
 from common.dbc import dbc
 
-class CANParser(object):
+class CANParser():
   def __init__(self, dbc_f, signals, checks=None):
     ### input:
     # dbc_f   : dbc file
@@ -73,7 +73,7 @@ class CANParser(object):
         self.ck[msg] = True
         if "CHECKSUM" in out.keys() and msg in self.msgs_ck:
           # remove checksum (half byte)
-          ck_portion = cdat[:-1] + chr(ord(cdat[-1]) & 0xF0)
+          ck_portion = cdat[:-1] + (cdat[-1] & 0xF0).to_bytes(1, 'little')
           # recalculate checksum
           msg_vl = fix(ck_portion, msg)
           # compare recalculated vs received checksum

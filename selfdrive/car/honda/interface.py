@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-import os
+#!/usr/bin/env python3
 import numpy as np
 from cereal import car
 from common.numpy_fast import clip, interp
@@ -9,11 +8,12 @@ from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET, get_events
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.honda.carstate import CarState, get_can_parser, get_cam_can_parser
-from selfdrive.car.honda.values import CruiseButtons, CAR, HONDA_BOSCH, VISUAL_HUD, CAMERA_MSGS
-from selfdrive.car import STD_CARGO_KG, CivicParams, scale_rot_inertia, scale_tire_stiffness
-from selfdrive.controls.lib.planner import _A_CRUISE_MAX_V_FOLLOWING
+from selfdrive.car.honda.values import CruiseButtons, CAR, HONDA_BOSCH, VISUAL_HUD, ECU, ECU_FINGERPRINT, FINGERPRINTS
+from selfdrive.car import STD_CARGO_KG, CivicParams, scale_rot_inertia, scale_tire_stiffness, is_ecu_disconnected, gen_empty_fingerprint
+from selfdrive.controls.lib.planner import _A_CRUISE_MAX_V
+from selfdrive.car.interfaces import CarInterfaceBase
 
-A_ACC_MAX = max(_A_CRUISE_MAX_V_FOLLOWING)
+A_ACC_MAX = max(_A_CRUISE_MAX_V)
 
 ButtonType = car.CarState.ButtonEvent.Type
 GearShifter = car.CarState.GearShifter
@@ -72,7 +72,7 @@ def get_compute_gb_acura():
   return _compute_gb_acura
 
 
-class CarInterface(object):
+class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController):
     self.CP = CP
 
@@ -131,27 +131,28 @@ class CarInterface(object):
     return float(max(max_accel, a_target / A_ACC_MAX)) * min(speedLimiter, accelLimiter)
 
   @staticmethod
-  def get_params(candidate, fingerprint, vin="", is_panda_black=False):
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), vin="", has_relay=False):
 
     ret = car.CarParams.new_message()
     ret.carName = "honda"
     ret.carFingerprint = candidate
     ret.carVin = vin
-    ret.isPandaBlack = is_panda_black
+    ret.isPandaBlack = has_relay
 
     if candidate in HONDA_BOSCH:
       ret.safetyModel = car.CarParams.SafetyModel.hondaBosch
-      ret.enableCamera = True
+      rdr_bus = 0 if has_relay else 2
+      ret.enableCamera = is_ecu_disconnected(fingerprint[rdr_bus], FINGERPRINTS, ECU_FINGERPRINT, candidate, ECU.CAM) or has_relay
       ret.radarOffCan = True
       ret.openpilotLongitudinalControl = False
     else:
       ret.safetyModel = car.CarParams.SafetyModel.honda
-      ret.enableCamera = not any(x for x in CAMERA_MSGS if x in fingerprint) or is_panda_black
-      ret.enableGasInterceptor = 0x201 in fingerprint
+      ret.enableCamera = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, ECU.CAM) or has_relay
+      ret.enableGasInterceptor = 0x201 in fingerprint[0]
       ret.openpilotLongitudinalControl = ret.enableCamera
 
-    cloudlog.warn("ECU Camera Simulated: %r", ret.enableCamera)
-    cloudlog.warn("ECU Gas Interceptor: %r", ret.enableGasInterceptor)
+    cloudlog.warning("ECU Camera Simulated: %r", ret.enableCamera)
+    cloudlog.warning("ECU Gas Interceptor: %r", ret.enableGasInterceptor)
 
     ret.enableCruise = not ret.enableGasInterceptor
 
@@ -172,12 +173,8 @@ class CarInterface(object):
       ret.centerToFront = CivicParams.CENTER_TO_FRONT
       ret.steerRatio = 15.38  # 10.93 is end-to-end spec
       tire_stiffness_factor = 1.
-      # Civic at comma has modified steering FW, so different tuning for the Neo in that car
-      is_fw_modified = os.getenv("DONGLE_ID") in ['5b7c365c50084530']
-      if is_fw_modified:
-        ret.lateralTuning.pid.kf = 0.00004
 
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.4], [0.12]] if is_fw_modified else [[0.8], [0.24]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
       ret.longitudinalTuning.kpV = [3.6, 2.4, 1.5]
       ret.longitudinalTuning.kiBP = [0., 35.]

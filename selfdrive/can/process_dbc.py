@@ -38,7 +38,7 @@ def main():
     if dbc_mtime < out_mtime and template_mtime < out_mtime and this_file_mtime < out_mtime:
       continue #skip output is newer than template and dbc
 
-    msgs = [(address, msg_name, msg_size, sorted(msg_sigs, key=lambda s: s.name not in ("COUNTER", "CHECKSUM"))) # process counter and checksums first
+    msgs = [(address, msg_name, msg_size, sorted(msg_sigs, key=lambda s: s.name not in (b"COUNTER", b"CHECKSUM"))) # process counter and checksums first
             for address, ((msg_name, msg_size), msg_sigs) in sorted(can_dbc.msgs.items()) if msg_sigs]
 
     def_vals = {a: set(b) for a,b in can_dbc.def_vals.items()} #remove duplicates

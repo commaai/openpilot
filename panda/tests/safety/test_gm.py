@@ -1,7 +1,8 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 import unittest
 import numpy as np
 import libpandasafety_py
+from panda import Panda
 
 MAX_RATE_UP = 7
 MAX_RATE_DOWN = 17
@@ -32,7 +33,7 @@ class TestGmSafety(unittest.TestCase):
   @classmethod
   def setUp(cls):
     cls.safety = libpandasafety_py.libpandasafety
-    cls.safety.safety_set_mode(3, 0)
+    cls.safety.safety_set_mode(Panda.SAFETY_GM, 0)
     cls.safety.init_tests_gm()
 
   def _send_msg(self, bus, addr, length):
@@ -282,8 +283,8 @@ class TestGmSafety(unittest.TestCase):
 
   def test_fwd_hook(self):
     # nothing allowed
-    buss = range(0x0, 0x3)
-    msgs = range(0x1, 0x800)
+    buss = list(range(0x0, 0x3))
+    msgs = list(range(0x1, 0x800))
 
     for b in buss:
       for m in msgs:

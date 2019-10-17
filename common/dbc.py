@@ -17,10 +17,10 @@ DBCSignal = namedtuple(
                 "factor", "offset", "tmin", "tmax", "units"])
 
 
-class dbc(object):
+class dbc():
   def __init__(self, fn):
     self.name, _ = os.path.splitext(os.path.basename(fn))
-    with open(fn) as f:
+    with open(fn, encoding="ascii") as f:
       self.txt = f.readlines()
     self._warned_addresses = set()
 
@@ -41,7 +41,7 @@ class dbc(object):
     self.def_vals = defaultdict(list)
 
     # lookup to bit reverse each byte
-    self.bits_index = [(i & ~0b111) + ((-i-1) & 0b111) for i in xrange(64)]
+    self.bits_index = [(i & ~0b111) + ((-i-1) & 0b111) for i in range(64)]
 
     for l in self.txt:
       l = l.strip()
@@ -101,13 +101,8 @@ class dbc(object):
         defvals = defvals.replace("?",r"\?") #escape sequence in C++
         defvals = defvals.split('"')[:-1]
 
-        defs = defvals[1::2]
-        #cleanup, convert to UPPER_CASE_WITH_UNDERSCORES
-        for i,d in enumerate(defs):
-          d = defs[i].strip().upper()
-          defs[i] = d.replace(" ","_")
-
-        defvals[1::2] = defs
+        # convert strings to UPPER_CASE_WITH_UNDERSCORES
+        defvals[1::2] = [d.strip().upper().replace(" ","_") for d in defvals[1::2]]
         defvals = '"'+"".join(str(i) for i in defvals)+'"'
 
         self.def_vals[ids].append((sgname, defvals))
@@ -152,22 +147,20 @@ class dbc(object):
       ival = dd.get(s.name)
       if ival is not None:
 
-        b2 = s.size
-        if s.is_little_endian:
-          b1 = s.start_bit
-        else:
-          b1 = (s.start_bit // 8) * 8 + (-s.start_bit - 1) % 8
-        bo = 64 - (b1 + s.size)
-
         ival = (ival / s.factor) - s.offset
         ival = int(round(ival))
 
         if s.is_signed and ival < 0:
-          ival = (1 << b2) + ival
+          ival = (1 << s.size) + ival
 
-        shift = b1 if s.is_little_endian else bo
-        mask = ((1 << b2) - 1) << shift
-        dat = (ival & ((1 << b2) - 1)) << shift
+        if s.is_little_endian:
+          shift = s.start_bit
+        else:
+          b1 = (s.start_bit // 8) * 8 + (-s.start_bit - 1) % 8
+          shift = 64 - (b1 + s.size)
+
+        mask = ((1 << s.size) - 1) << shift
+        dat = (ival & ((1 << s.size) - 1)) << shift
 
         if s.is_little_endian:
           mask = self.reverse_bytes(mask)
@@ -213,7 +206,7 @@ class dbc(object):
     if debug:
       print(name)
 
-    st = x[2].ljust(8, '\x00')
+    st = x[2].ljust(8, b'\x00')
     le, be = None, None
 
     for s in msg[1]:
@@ -227,30 +220,24 @@ class dbc(object):
       factor = s[5]
       offset = s[6]
 
-      b2 = signal_size
-      if little_endian:
-        b1 = start_bit
-      else:
-        b1 = (start_bit // 8) * 8 + (-start_bit - 1) % 8
-      bo = 64 - (b1 + signal_size)
-
       if little_endian:
         if le is None:
           le = struct.unpack("<Q", st)[0]
-        shift_amount = b1
         tmp = le
+        shift_amount = start_bit
       else:
         if be is None:
           be = struct.unpack(">Q", st)[0]
-        shift_amount = bo
         tmp = be
+        b1 = (start_bit // 8) * 8 + (-start_bit - 1) % 8
+        shift_amount = 64 - (b1 + signal_size)
 
       if shift_amount < 0:
         continue
 
-      tmp = (tmp >> shift_amount) & ((1 << b2) - 1)
-      if signed and (tmp >> (b2 - 1)):
-        tmp -= (1 << b2)
+      tmp = (tmp >> shift_amount) & ((1 << signal_size) - 1)
+      if signed and (tmp >> (signal_size - 1)):
+        tmp -= (1 << signal_size)
 
       tmp = tmp * factor + offset
 

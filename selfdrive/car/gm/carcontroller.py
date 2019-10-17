@@ -68,7 +68,7 @@ def process_hud_alert(hud_alert):
     steer = 1
   return steer
 
-class CarController(object):
+class CarController():
   def __init__(self, canbus, car_fingerprint):
     self.pedal_steady = 0.
     self.start_time = 0.

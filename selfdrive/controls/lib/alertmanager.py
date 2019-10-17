@@ -10,7 +10,7 @@ AlertStatus = log.ControlsState.AlertStatus
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 
-class AlertManager(object):
+class AlertManager():
 
   def __init__(self):
     self.activealerts = []

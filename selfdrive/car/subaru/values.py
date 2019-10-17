@@ -17,6 +17,13 @@ STEER_THRESHOLD = {
   CAR.IMPREZA: 80,
 }
 
+class ECU:
+  CAM = 0
+
+ECU_FINGERPRINT = {
+  ECU.CAM: [290, 356],   # steer torque cmd
+}
+
 DBC = {
   CAR.IMPREZA: dbc_dict('subaru_global_2017', None),
 }

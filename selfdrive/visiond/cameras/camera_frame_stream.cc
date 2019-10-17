@@ -19,7 +19,7 @@ extern "C" {
 #include <libavcodec/avcodec.h>
 }
 
-extern volatile int do_exit;
+extern volatile sig_atomic_t do_exit;
 
 #define FRAME_WIDTH 1164
 #define FRAME_HEIGHT 874

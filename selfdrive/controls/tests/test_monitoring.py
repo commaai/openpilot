@@ -196,5 +196,5 @@ class TestMonitoring(unittest.TestCase):
     self.assertEqual(events_output[int((_redlight_time+0.5)/DT_DMON)][0].name, 'promptDriverDistracted')
 
 if __name__ == "__main__":
-  print 'MAX_TERMINAL_ALERTS', MAX_TERMINAL_ALERTS
+  print('MAX_TERMINAL_ALERTS', MAX_TERMINAL_ALERTS)
   unittest.main()

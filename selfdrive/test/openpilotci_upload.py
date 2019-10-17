@@ -1,10 +1,11 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 import os
 import sys
 import subprocess
-from azure.storage.blob import BlockBlobService
+
 
 def upload_file(path, name):
+  from azure.storage.blob import BlockBlobService  # pylint: disable=no-name-in-module, import-error
   sas_token = os.getenv("TOKEN", None)
   if sas_token is not None:
     service = BlockBlobService(account_name="commadataci", sas_token=sas_token)
@@ -18,5 +19,4 @@ if __name__ == "__main__":
   for f in sys.argv[1:]:
     name = os.path.basename(f)
     url = upload_file(f, name)
-    print url
-
+    print(url)

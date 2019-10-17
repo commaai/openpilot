@@ -204,7 +204,7 @@ static int gm_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   // GAS/REGEN: safety check
   if (addr == 715) {
     int gas_regen = ((GET_BYTE(to_send, 2) & 0x7FU) << 5) + ((GET_BYTE(to_send, 3) & 0xF8U) >> 3);
-    // Disabled message is !engaed with gas
+    // Disabled message is !engaged with gas
     // value that corresponds to max regen.
     if (!current_controls_allowed || !long_controls_allowed) {
       bool apply = GET_BYTE(to_send, 0) & 1U;

@@ -2,8 +2,9 @@ import struct
 from selfdrive.can.libdbc_py import libdbc, ffi
 
 
-class CANPacker(object):
+class CANPacker():
   def __init__(self, dbc_name):
+    dbc_name = dbc_name.encode('utf8')
     self.packer = libdbc.canpack_init(dbc_name)
     self.dbc = libdbc.dbc_lookup(dbc_name)
     self.sig_names = {}
@@ -13,16 +14,16 @@ class CANPacker(object):
     for i in range(num_msgs):
       msg = self.dbc[0].msgs[i]
 
-      name = ffi.string(msg.name)
+      name = ffi.string(msg.name).decode('utf8')
       address = msg.address
       self.name_to_address_and_size[name] = (address, msg.size)
       self.name_to_address_and_size[address] = (address, msg.size)
 
   def pack(self, addr, values, counter):
     values_thing = []
-    for name, value in values.iteritems():
+    for name, value in values.items():
       if name not in self.sig_names:
-        self.sig_names[name] = ffi.new("char[]", name)
+        self.sig_names[name] = ffi.new("char[]", name.encode('utf8'))
 
       values_thing.append({
         'name': self.sig_names[name],

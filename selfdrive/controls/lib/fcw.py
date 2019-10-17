@@ -7,7 +7,7 @@ _FCW_A_ACT_V = [-3., -2.]
 _FCW_A_ACT_BP = [0., 30.]
 
 
-class FCWChecker(object):
+class FCWChecker():
   def __init__(self):
     self.reset_lead(0.0)
 

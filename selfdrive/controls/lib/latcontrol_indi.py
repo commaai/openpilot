@@ -9,7 +9,7 @@ from selfdrive.car import apply_toyota_steer_torque_limits
 from selfdrive.controls.lib.drive_helpers import get_steer_max
 
 
-class LatControlINDI(object):
+class LatControlINDI():
   def __init__(self, CP):
     self.angle_steers_des = 0.
 
@@ -47,7 +47,7 @@ class LatControlINDI(object):
     self.output_steer = 0.
     self.counter = 0
 
-  def update(self, active, v_ego, angle_steers, angle_steers_rate, eps_torque, steer_override, CP, VM, path_plan):
+  def update(self, active, v_ego, angle_steers, angle_steers_rate, eps_torque, steer_override, CP, path_plan):
     # Update Kalman filter
     y = np.matrix([[math.radians(angle_steers)], [math.radians(angle_steers_rate)]])
     self.x = np.dot(self.A_K, self.x) + np.dot(self.K, y)
