@@ -1,7 +1,8 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 import unittest
 import numpy as np
 import libpandasafety_py
+from panda import Panda
 
 MAX_RATE_UP = 2
 MAX_RATE_DOWN = 5
@@ -31,7 +32,7 @@ class TestCadillacSafety(unittest.TestCase):
   @classmethod
   def setUp(cls):
     cls.safety = libpandasafety_py.libpandasafety
-    cls.safety.safety_set_mode(6, 0)
+    cls.safety.safety_set_mode(Panda.SAFETY_CADILLAC, 0)
     cls.safety.init_tests_cadillac()
 
   def _send_msg(self, bus, addr, length):
@@ -183,8 +184,8 @@ class TestCadillacSafety(unittest.TestCase):
 
   def test_fwd_hook(self):
     # nothing allowed
-    buss = range(0x0, 0x3)
-    msgs = range(0x1, 0x800)
+    buss = list(range(0x0, 0x3))
+    msgs = list(range(0x1, 0x800))
 
     for b in buss:
       for m in msgs:

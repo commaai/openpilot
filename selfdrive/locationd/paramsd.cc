@@ -1,17 +1,20 @@
+#include <future>
 #include <iostream>
+
 #include <czmq.h>
 #include <capnp/message.h>
 #include <capnp/serialize-packed.h>
 
-#include "locationd_yawrate.h"
+#include "json11.hpp"
 #include "cereal/gen/cpp/log.capnp.h"
 
 #include "common/swaglog.h"
 #include "common/messaging.h"
 #include "common/params.h"
 #include "common/timing.h"
+
+#include "locationd_yawrate.h"
 #include "params_learner.h"
-#include "json11.hpp"
 
 const int num_polls = 3;
 
@@ -162,7 +165,6 @@ int main(int argc, char *argv[]) {
           zmq_send(live_parameters_sock_raw, bytes.begin(), bytes.size(), ZMQ_DONTWAIT);
 
           // Save parameters every minute
-          // TODO: Save in seperate thread
           if (save_counter % 6000 == 0) {
             json11::Json json = json11::Json::object {
               {"carVin", vin},
@@ -173,7 +175,10 @@ int main(int argc, char *argv[]) {
             };
 
             std::string out = json.dump();
-            write_db_value(NULL, "LiveParameters", out.c_str(), out.length());
+            std::async(std::launch::async,
+                       [out]{
+                         write_db_value(NULL, "LiveParameters", out.c_str(), out.length());
+                       });
           }
         }
       }

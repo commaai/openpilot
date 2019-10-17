@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 import psutil
 import time
 import os
@@ -94,7 +94,7 @@ if __name__ == "__main__":
       for k, stat in stats.items():
         if len(stat['cpu_samples']) <= 0:
           continue
-        for name, samples in stat['cpu_samples'].iteritems():
+        for name, samples in stat['cpu_samples'].items():
           samples = np.array(samples)
           avg = samples.mean()
           c = samples.size

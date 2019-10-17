@@ -125,7 +125,7 @@ def img_from_device(pt_device):
 
 #TODO please use generic img transform below
 def rotate_img(img, eulers, crop=None, intrinsics=eon_intrinsics):
-  import cv2
+  import cv2  # pylint: disable=no-name-in-module, import-error
 
   size = img.shape[:2]
   rot = orient.rot_from_euler(eulers)
@@ -138,8 +138,8 @@ def rotate_img(img, eulers, crop=None, intrinsics=eon_intrinsics):
   warped_quadrangle = np.column_stack((warped_quadrangle_full[:,0]/warped_quadrangle_full[:,2],
                                        warped_quadrangle_full[:,1]/warped_quadrangle_full[:,2])).astype(np.float32)
   if crop:
-    W_border = (size[1] - crop[0])/2
-    H_border = (size[0] - crop[1])/2
+    W_border = (size[1] - crop[0])//2
+    H_border = (size[0] - crop[1])//2
     outside_crop = (((warped_quadrangle[:,0] < W_border) |
                      (warped_quadrangle[:,0] >= size[1] - W_border)) &
                     ((warped_quadrangle[:,1] < H_border) |
@@ -183,7 +183,8 @@ def transform_img(base_img,
                  alpha=1.0,
                  beta=0,
                  blur=0):
-  import cv2
+  import cv2  # pylint: disable=no-name-in-module, import-error
+  cv2.setNumThreads(1)
 
   if yuv:
     base_img = cv2.cvtColor(base_img, cv2.COLOR_YUV2RGB_I420)
@@ -240,7 +241,7 @@ def transform_img(base_img,
 def yuv_crop(frame, output_size, center=None):
   # output_size in camera coordinates so u,v
   # center in array coordinates so row, column
-  import cv2
+  import cv2   # pylint: disable=no-name-in-module, import-error
   rgb = cv2.cvtColor(frame, cv2.COLOR_YUV2RGB_I420)
   if not center:
     center = (rgb.shape[0]/2, rgb.shape[1]/2)

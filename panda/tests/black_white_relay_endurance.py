@@ -1,10 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Loopback test between black panda (+ harness and power) and white/grey panda
 # Tests all buses, including OBD CAN, which is on the same bus as CAN0 in this test.
 # To be sure, the test should be run with both harness orientations
 
-from __future__ import print_function
+
 import os
 import sys
 import time
@@ -40,17 +40,14 @@ def run_test(sleep_duration):
   pandas[0] = Panda(pandas[0])
   pandas[1] = Panda(pandas[1])
 
-  # find out which one is black
-  type0 = pandas[0].get_type()
-  type1 = pandas[1].get_type()
-
   black_panda = None
   other_panda = None
   
-  if type0 == "\x03" and type1 != "\x03":
+  # find out which one is black
+  if pandas[0].is_black() and not pandas[1].is_black():
     black_panda = pandas[0]
     other_panda = pandas[1]
-  elif type0 != "\x03" and type1 == "\x03":
+  elif not pandas[0].is_black() and pandas[1].is_black():
     black_panda = pandas[1]
     other_panda = pandas[0]
   else:
@@ -78,11 +75,11 @@ def run_test(sleep_duration):
 
     if (time.time() - temp_start_time) > 3600*6:
     	# Toggle relay
-    	black_panda.set_safety_mode(Panda.SAFETY_NOOUTPUT)
-    	time.sleep(1)
-	black_panda.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
-    	time.sleep(1)
-	temp_start_time = time.time()
+      black_panda.set_safety_mode(Panda.SAFETY_NOOUTPUT)
+      time.sleep(1)
+      black_panda.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
+      time.sleep(1)
+      temp_start_time = time.time()
 	
 
 def test_buses(black_panda, other_panda, direction, test_array, sleep_duration):
@@ -111,7 +108,7 @@ def test_buses(black_panda, other_panda, direction, test_array, sleep_duration):
       if direction:
         other_panda.can_clear(recv_bus)
       else:
-	black_panda.can_clear(recv_bus)
+	      black_panda.can_clear(recv_bus)
     
     black_panda.can_recv()
     other_panda.can_recv()

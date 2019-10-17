@@ -7,6 +7,7 @@ if [ ! -d "../../pandaextra" ]; then
 fi
 
 export RELEASE=1
+export BUILDER=DEV
 
 # make ST + bootstub
 pushd .

@@ -1,8 +1,5 @@
 import os
 import math
-import numpy as np
-
-# from common.numpy_fast import clip
 from common.realtime import sec_since_boot
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.lateral_mpc import libmpc_py
@@ -19,7 +16,7 @@ def calc_states_after_delay(states, v_ego, steer_angle, curvature_factor, steer_
   return states
 
 
-class PathPlanner(object):
+class PathPlanner():
   def __init__(self, CP):
     self.LP = LanePlanner()
 
@@ -88,7 +85,7 @@ class PathPlanner(object):
     self.angle_steers_des_mpc = float(math.degrees(delta_desired * VM.sR) + angle_offset)
 
     #  Check for infeasable MPC solution
-    mpc_nans = np.any(np.isnan(list(self.mpc_solution[0].delta)))
+    mpc_nans = any(math.isnan(x) for x in self.mpc_solution[0].delta)
     t = sec_since_boot()
     if mpc_nans:
       self.libmpc.init(MPC_COST_LAT.PATH, MPC_COST_LAT.LANE, MPC_COST_LAT.HEADING, CP.steerRateCost)

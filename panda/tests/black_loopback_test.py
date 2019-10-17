@@ -1,10 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Loopback test between two black pandas (+ harness and power)
 # Tests all buses, including OBD CAN, which is on the same bus as CAN0 in this test.
 # To be sure, the test should be run with both harness orientations
 
-from __future__ import print_function
+
 import os
 import sys
 import time
@@ -33,11 +33,8 @@ def run_test(sleep_duration):
   pandas[0] = Panda(pandas[0])
   pandas[1] = Panda(pandas[1])
 
-  # find out the hardware types
-  type0 = pandas[0].get_type()
-  type1 = pandas[1].get_type()
-  
-  if type0 != "\x03" or type1 != "\x03":
+  # find out the hardware types  
+  if not pandas[0].is_black() or not pandas[1].is_black():
     print("Connect two black pandas to run this test!")
     assert False
 

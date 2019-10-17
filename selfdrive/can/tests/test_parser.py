@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 import os
 import unittest
@@ -45,7 +45,7 @@ def dicts_vals_differ(dict1, dict2):
 def run_route(route):
   can = messaging.pub_sock(service_list['can'].port)
 
-  CP = CarInterface.get_params(CAR.CIVIC, {})
+  CP = CarInterface.get_params(CAR.CIVIC)
   signals, checks = get_can_signals(CP)
   parser_old = CANParserOld(DBC[CP.carFingerprint]['pt'], signals, checks, 0, timeout=-1, tcp_addr="127.0.0.1")
   parser_new = CANParserNew(DBC[CP.carFingerprint]['pt'], signals, checks, 0, timeout=-1, tcp_addr="127.0.0.1")
@@ -95,7 +95,7 @@ class TestCanParser(unittest.TestCase):
     for route in self.routes.values():
       route_filename = route + ".bz2"
       if not os.path.isfile(route_filename):
-        with open(route + ".bz2", "w") as f:
+        with open(route + ".bz2", "wb") as f:
           f.write(requests.get(BASE_URL + route_filename).content)
 
   def test_parser_civic(self):

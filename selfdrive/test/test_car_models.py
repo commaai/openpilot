@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 import shutil
 import time
 import zmq
@@ -14,7 +14,7 @@ from selfdrive.services import service_list
 import selfdrive.messaging as messaging
 from common.params import Params
 from common.basedir import BASEDIR
-from common.fingerprints import all_known_cars
+from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.honda.values import CAR as HONDA
 from selfdrive.car.toyota.values import CAR as TOYOTA
 from selfdrive.car.gm.values import CAR as GM
@@ -41,6 +41,8 @@ def wait_for_socket(name, timeout=10.0):
     except zmq.error.Again:
       pass
     time.sleep(0.5)
+  if r is None:
+    sys.exit(-1)
   return r
 
 def get_route_logs(route_name):
@@ -52,10 +54,10 @@ def get_route_logs(route_name):
       r = requests.get(log_url)
 
       if r.status_code == 200:
-        with open(log_path, "w") as f:
+        with open(log_path, "wb") as f:
           f.write(r.content)
       else:
-        print "failed to download test log %s" % route_name
+        print("failed to download test log %s" % route_name)
         sys.exit(-1)
 
 routes = {
@@ -435,7 +437,7 @@ if __name__ == "__main__":
   tested_cars = [keys["carFingerprint"] for route, keys in routes.items()]
   for car_model in all_known_cars():
     if car_model not in tested_cars:
-      print "***** WARNING: %s not tested *****" % car_model
+      print("***** WARNING: %s not tested *****" % car_model)
 
   results = {}
   for route, checks in routes.items():
@@ -454,26 +456,26 @@ if __name__ == "__main__":
       else:
         params.put("Passive", "0")
 
-      print "testing ", route, " ", checks['carFingerprint']
-      print "Preparing processes"
+      print("testing ", route, " ", checks['carFingerprint'])
+      print("Preparing processes")
       manager.prepare_managed_process("radard")
       manager.prepare_managed_process("controlsd")
       manager.prepare_managed_process("plannerd")
-      print "Starting processes"
+      print("Starting processes")
       manager.start_managed_process("radard")
       manager.start_managed_process("controlsd")
       manager.start_managed_process("plannerd")
       time.sleep(2)
 
       # Start unlogger
-      print "Start unlogger"
+      print("Start unlogger")
       if route in non_public_routes:
         unlogger_cmd = [os.path.join(BASEDIR, os.environ['UNLOGGER_PATH']), '%s' % route, '--disable', 'frame,plan,pathPlan,liveLongitudinalMpc,radarState,controlsState,liveTracks,liveMpc,sendcan,carState,carControl', '--no-interactive']
       else:
         unlogger_cmd = [os.path.join(BASEDIR, 'tools/replay/unlogger.py'), '%s' % route, '/tmp', '--disable', 'frame,plan,pathPlan,liveLongitudinalMpc,radarState,controlsState,liveTracks,liveMpc,sendcan,carState,carControl', '--no-interactive']
       unlogger = subprocess.Popen(unlogger_cmd, preexec_fn=os.setsid)
 
-      print "Check sockets"
+      print("Check sockets")
       controls_state_result = wait_for_socket('controlsState', timeout=30)
       radarstate_result = wait_for_socket('radarState', timeout=30)
       plan_result = wait_for_socket('plan', timeout=30)
@@ -485,7 +487,7 @@ if __name__ == "__main__":
 
       carstate_result = wait_for_socket('carState', timeout=30)
 
-      print "Check if everything is running"
+      print("Check if everything is running")
       running = manager.get_running()
       controlsd_running = running['controlsd'].is_alive()
       radard_running = running['radard'].is_alive()
@@ -526,19 +528,20 @@ if __name__ == "__main__":
         params_ok = False
 
       if sockets_ok and params_ok:
-        print "Success"
+        print("Success")
         results[route] = True, failures
         break
       else:
-        print "Failure"
+        print("Failure")
         results[route] = False, failures
 
       time.sleep(2)
 
-  print results
+  for route in results:
+    print(results[route])
   params.put("Passive", "0")   # put back not passive to not leave the params in an unintended state
   if not all(passed for passed, _ in results.values()):
-    print "TEST FAILED"
+    print("TEST FAILED")
     sys.exit(1)
   else:
-    print "TEST SUCESSFUL"
+    print("TEST SUCESSFUL")
