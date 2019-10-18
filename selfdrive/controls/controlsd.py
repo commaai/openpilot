@@ -511,7 +511,7 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
 
   # FIXME: offroad alerts should not be created with negative severity
   connectivity_alert = params.get("Offroad_ConnectivityNeeded", encoding='utf8')
-  internet_needed = connectivity_alert is not None and json.loads(connectivity_alert.replace("'", "\""))["severity"] >= 0
+  internet_needed = connectivity_alert is not None and json.loads(connectivity_alert)["severity"] >= 0
 
   prof = Profiler(False)  # off by default
 
