@@ -185,6 +185,16 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 3060. * CV.LB_TO_KG + STD_CARGO_KG
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
       ret.lateralTuning.pid.kf = 0.00007818594
+      
+    elif candidate == CAR.ALTISH_TSS2:
+      stop_and_go = True
+      ret.safetyParam = 73
+      ret.wheelbase = 2.63906
+      ret.steerRatio = 13.9
+      tire_stiffness_factor = 0.444  # not optimized yet
+      ret.mass = 3060. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
+      ret.lateralTuning.pid.kf = 0.00007818594
 
     elif candidate == CAR.LEXUS_ESH_TSS2:
       stop_and_go = True
