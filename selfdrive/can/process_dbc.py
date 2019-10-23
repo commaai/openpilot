@@ -42,7 +42,7 @@ def main():
             for address, ((msg_name, msg_size), msg_sigs) in sorted(can_dbc.msgs.items()) if msg_sigs]
 
     def_vals = {a: set(b) for a,b in can_dbc.def_vals.items()} #remove duplicates
-    def_vals = [(address, sig) for address, sig in sorted(def_vals.items())]
+    def_vals = sorted(def_vals.items())
 
     if can_dbc.name.startswith(("honda_", "acura_")):
       checksum_type = "honda"

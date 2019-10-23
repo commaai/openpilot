@@ -35,5 +35,5 @@ class CANDefine():
         self.dv[msgname] = {}
 
       # two ways to lookup: address or msg name
-      self.dv[address][sgname] = {v: d for v, d in zip(values, defs)} #build dict
+      self.dv[address][sgname] = dict(zip(values, defs))
       self.dv[msgname][sgname] = self.dv[address][sgname]
