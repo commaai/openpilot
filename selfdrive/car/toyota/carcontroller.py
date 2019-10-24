@@ -142,13 +142,17 @@ class CarController():
       self.last_fault_frame = frame
 
     # Cut steering for 2s after fault
-    if not enabled or (frame - self.last_fault_frame < 200) or abs(CS.angle_steers) > 100 or abs(CS.angle_steers_rate) > 100:
+    if (frame - self.last_fault_frame < 200) or abs(CS.angle_steers) > 100 or abs(CS.angle_steers_rate) > 100:
       apply_steer = 0
       apply_steer_req = 0
     else:
       apply_steer_req = 1
       
     apply_steer = apply_toyota_steer_torque_limits(apply_steer, self.last_steer, CS.steer_torque_motor, SteerLimitParams)
+    
+    if not enabled:
+      apply_steer = 0
+      apply_steer_req = 0
 
     self.steer_angle_enabled, self.ipas_reset_counter = \
       ipas_state_transition(self.steer_angle_enabled, enabled, CS.ipas_active, self.ipas_reset_counter)
