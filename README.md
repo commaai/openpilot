@@ -191,6 +191,8 @@ Download [Throttle_ECU Code](https://github.com/Lukilink/Cruise_ECU).
 
 ![Throttle_ECU](https://i.imgur.com/FgJhgx8.png)
 
+![Throttle_ECU_Wiring](https://ibb.co/K5GZrwS)
+
 ---
 # RADAR
 
