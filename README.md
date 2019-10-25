@@ -109,6 +109,7 @@ Supported Cars
 | Toyota               | Corolla 2017-19            | All                  | Yes     | Yes<sup>2</sup>| 20mph<sup>1</sup>| 0mph           | Toyota            |
 | Toyota               | Corolla 2020               | All                  | Yes     | Yes            | 0mph             | 0mph           | Toyota            |
 | Toyota               | Corolla Hatchback 2019     | All                  | Yes     | Yes            | 0mph             | 0mph           | Toyota            |
+| Toyota               | Corolla Hybrid 2019        | All                  | Yes     | Yes            | 0mph             | 0mph           | Toyota            |
 | Toyota               | Highlander 2017-19         | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           | Toyota            |
 | Toyota               | Highlander Hybrid 2017-19  | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           | Toyota            |
 | Toyota               | Prius 2016                 | TSS-P                | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           | Toyota            |
