@@ -281,6 +281,16 @@ routes = {
     'enableCamera': True,
     'enableDsu': True,
   },
+  "e6a24be49a6cd46e|2019-10-24--13-59-04": {
+    'carFingerprint': TOYOTA.LEXUS_ES_TSS2,
+    'enableCamera': False,
+    'enableDsu': False,
+  },
+  "e6a24be49a6cd46e|2019-10-26--22-38-02": {
+    'carFingerprint': TOYOTA.LEXUS_ES_TSS2,
+    'enableCamera': True,
+    'enableDsu': False,
+  },
   "f49e8041283f2939|2019-05-29--13-48-33": {
     'carFingerprint': TOYOTA.LEXUS_ESH_TSS2,
     'enableCamera': False,

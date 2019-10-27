@@ -94,6 +94,7 @@ Supported Cars
 | Kia                  | Sorento 2018               | All                  | Yes     | Stock          | 0mph             | 0mph           | Custom<sup>6</sup>|
 | Kia                  | Stinger 2018               | SCC + LKAS           | Yes     | Stock          | 0mph             | 0mph           | Custom<sup>6</sup>|
 | Lexus                | CT Hybrid 2017-18          | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           | Toyota            |
+| Lexus                | ES 2019                    | All                  | Yes     | Yes            | 0mph             | 0mph           | Toyota            |
 | Lexus                | ES Hybrid 2019             | All                  | Yes     | Yes            | 0mph             | 0mph           | Toyota            |
 | Lexus                | RX Hybrid 2016-19          | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           | Toyota            |
 | Lexus                | IS 2017-2019               | All                  | Yes     | Stock          | 22mph            | 0mph           | Toyota            |
