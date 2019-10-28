@@ -21,7 +21,7 @@ class CANParser():
     #             - frequency is the frequency at which health should be monitored.
 
     checks = [] if checks is None else checks
-    self.msgs_ck = set([check[0] for check in checks])
+    self.msgs_ck = {check[0] for check in checks}
     self.frqs = dict(checks)
     self.can_valid = False  # start with False CAN assumption
     # list of received msg we want to monitor counter and checksum for
