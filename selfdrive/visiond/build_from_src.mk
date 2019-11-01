@@ -15,6 +15,9 @@ WARN_FLAGS = -Werror=implicit-function-declaration \
 CFLAGS = -I. -std=gnu11 -fPIC -O2 $(WARN_FLAGS)
 CXXFLAGS = -I. -std=c++14 -fPIC -O2 $(WARN_FLAGS)
 
+MESSAGING_FLAGS = -I$(BASEDIR)/selfdrive/messaging
+MESSAGING_LIBS = $(BASEDIR)/selfdrive/messaging/messaging.a
+
 ifeq ($(ARCH),aarch64)
 CFLAGS += -mcpu=cortex-a57
 CXXFLAGS += -mcpu=cortex-a57
@@ -161,7 +164,7 @@ rgb_to_yuv_test: transforms/rgb_to_yuv_test.o clutil.o transforms/rgb_to_yuv.o .
         $(OPENCL_LIBS) \
 
 
-$(OUTPUT): $(OBJS)
+$(OUTPUT): $(OBJS) $(MESSAGING_LIBS)
 	@echo "[ LINK ] $@"
 	$(CXX) -fPIC -o '$@' $^ \
         $(LDFLAGS) \
@@ -190,6 +193,7 @@ $(MODEL_OBJS): %.o: %.dlc
            -Iinclude -I.. -I../.. \
            $(EIGEN_FLAGS) \
            $(ZMQ_FLAGS) \
+           $(MESSAGING_FLAGS) \
            $(CEREAL_CXXFLAGS) \
            $(OPENCL_FLAGS) \
            $(LIBYUV_FLAGS) \
@@ -206,6 +210,7 @@ $(MODEL_OBJS): %.o: %.dlc
 	$(CC) $(CFLAGS) -MMD \
           -Iinclude -I.. -I../.. \
           $(ZMQ_FLAGS) \
+          $(MESSAGING_FLAGS) \
           $(CEREAL_CFLAGS) \
           $(OPENCL_FLAGS) \
           $(LIBYUV_FLAGS) \

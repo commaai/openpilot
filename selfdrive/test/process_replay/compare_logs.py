@@ -12,22 +12,22 @@ else:
 from tools.lib.logreader import LogReader
 
 def save_log(dest, log_msgs):
-  dat = ""
+  dat = b""
   for msg in log_msgs:
     dat += msg.as_builder().to_bytes()
   dat = bz2.compress(dat)
 
-  with open(dest, "w") as f:
+  with open(dest, "wb") as f:
    f.write(dat)
 
 def remove_ignored_fields(msg, ignore):
-  msg = msg.as_builder() 
+  msg = msg.as_builder()
   for key, val in ignore:
     attr = msg
     keys = key.split(".")
     if msg.which() not in key and len(keys) > 1:
       continue
-    
+
     for k in keys[:-1]:
       try:
         attr = getattr(msg, k)

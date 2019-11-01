@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <sys/file.h>
+#include <sys/stat.h>
 
 #include <map>
 #include <string>
@@ -105,6 +106,12 @@ int write_db_value(const char* params_path, const char* key, const char* value,
 
   // Take lock.
   result = flock(lock_fd, LOCK_EX);
+  if (result < 0) {
+    goto cleanup;
+  }
+
+  // change permissions to 0666 for apks
+  result = fchmod(tmp_fd, 0666);
   if (result < 0) {
     goto cleanup;
   }

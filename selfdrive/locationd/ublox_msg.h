@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "messaging.hpp"
 
 #define min(x, y) ((x) <= (y) ? (x) : (y))
 
@@ -144,6 +145,6 @@ namespace ublox {
 
 }
 
-typedef int (*poll_ubloxraw_msg_func)(void *gpsLocationExternal, void *ubloxGnss, void *subscriber, zmq_msg_t *msg);
-typedef int (*send_gps_event_func)(uint8_t msg_cls, uint8_t msg_id, void *s, const void *buf, size_t len, int flags);
+typedef Message * (*poll_ubloxraw_msg_func)(Poller *poller);
+typedef int (*send_gps_event_func)(PubSocket *s, const void *buf, size_t len);
 int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func);

@@ -11,7 +11,6 @@ from opendbc import DBC_PATH
 from common.realtime import Ratekeeper
 from selfdrive.config import Conversions as CV
 import selfdrive.messaging as messaging
-from selfdrive.services import service_list
 from selfdrive.car import crc8_pedal
 from selfdrive.car.honda.hondacan import fix
 from selfdrive.car.honda.values import CAR
@@ -97,16 +96,16 @@ class Plant():
     self.rate = rate
 
     if not Plant.messaging_initialized:
-      Plant.logcan = messaging.pub_sock(service_list['can'].port)
-      Plant.sendcan = messaging.sub_sock(service_list['sendcan'].port)
-      Plant.model = messaging.pub_sock(service_list['model'].port)
-      Plant.live_params = messaging.pub_sock(service_list['liveParameters'].port)
-      Plant.health = messaging.pub_sock(service_list['health'].port)
-      Plant.thermal = messaging.pub_sock(service_list['thermal'].port)
-      Plant.driverMonitoring = messaging.pub_sock(service_list['driverMonitoring'].port)
-      Plant.cal = messaging.pub_sock(service_list['liveCalibration'].port)
-      Plant.controls_state = messaging.sub_sock(service_list['controlsState'].port)
-      Plant.plan = messaging.sub_sock(service_list['plan'].port)
+      Plant.logcan = messaging.pub_sock('can')
+      Plant.sendcan = messaging.sub_sock('sendcan')
+      Plant.model = messaging.pub_sock('model')
+      Plant.live_params = messaging.pub_sock('liveParameters')
+      Plant.health = messaging.pub_sock('health')
+      Plant.thermal = messaging.pub_sock('thermal')
+      Plant.driverMonitoring = messaging.pub_sock('driverMonitoring')
+      Plant.cal = messaging.pub_sock('liveCalibration')
+      Plant.controls_state = messaging.sub_sock('controlsState')
+      Plant.plan = messaging.sub_sock('plan')
       Plant.messaging_initialized = True
 
     self.frame = 0

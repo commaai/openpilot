@@ -15,15 +15,15 @@ WARN_FLAGS = -Werror=implicit-function-declaration \
 CFLAGS = -std=gnu11 -g -fPIC -O2 $(WARN_FLAGS)
 CXXFLAGS = -std=c++11 -g -fPIC -O2 $(WARN_FLAGS)
 
-ZMQ_LIBS = -l:libczmq.a -l:libzmq.a
+MESSAGING_FLAGS = -I$(BASEDIR)/selfdrive/messaging
+MESSAGING_LIBS = $(BASEDIR)/selfdrive/messaging/messaging.a
 
 ifeq ($(ARCH),aarch64)
 CFLAGS += -mcpu=cortex-a57
 CXXFLAGS += -mcpu=cortex-a57
-ZMQ_LIBS += -lgnustl_shared
+EXTRA_LIBS += -lgnustl_shared
 endif
 
-#ZMQ_FLAGS = -I$(PHONELIBS)/zmq/aarch64/include
 
 .PHONY: all
 all: proclogd
@@ -35,18 +35,18 @@ OBJS = proclogd.o \
 
 DEPS := $(OBJS:.o=.d)
 
-proclogd: $(OBJS)
+proclogd: $(OBJS) $(MESSAGING_LIBS)
 	@echo "[ LINK ] $@"
 	$(CXX) -fPIC -o '$@' $^ \
             $(CEREAL_LIBS) \
-            $(ZMQ_LIBS) \
+            $(EXTRA_LIBS) \
             -llog
 
 %.o: %.cc
 	@echo "[ CXX ] $@"
 	$(CXX) $(CXXFLAGS) \
            $(CEREAL_CXXFLAGS) \
-           $(ZMQ_FLAGS) \
+           $(MESSAGING_FLAGS) \
            -I../ \
            -I../../ \
            -c -o '$@' '$<'

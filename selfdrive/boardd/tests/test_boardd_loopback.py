@@ -7,7 +7,6 @@ import time
 
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.messaging import drain_sock, pub_sock, sub_sock
-from selfdrive.services import service_list
 
 def get_test_string():
   return b"test"+os.urandom(10)
@@ -15,8 +14,8 @@ def get_test_string():
 BUS = 0
 
 def main():
-  rcv = sub_sock(service_list['can'].port) # port 8006
-  snd = pub_sock(service_list['sendcan'].port) # port 8017
+  rcv = sub_sock('can') # port 8006
+  snd = pub_sock('sendcan') # port 8017
   time.sleep(0.3) # wait to bind before send/recv
 
   for i in range(10):
