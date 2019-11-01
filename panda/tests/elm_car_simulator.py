@@ -109,9 +109,9 @@ class ELMCarSimulator():
             print("    LIN Reply (%x)" % to_addr, binascii.hexlify(msg))
 
         PHYS_ADDR = 0x80
-        FUNC_ADDR = 0xC0
+        #FUNC_ADDR = 0xC0
         RECV = 0xF1
-        SEND = 0x33 # Car OBD Functional Address
+        #SEND = 0x33 # Car OBD Functional Address
         headers = struct.pack("BBB", PHYS_ADDR | len(msg), RECV, to_addr)
         if not self.__silent:
             print("    Sending LIN", binascii.hexlify(headers+msg),
@@ -172,7 +172,7 @@ class ELMCarSimulator():
 
         while not self.__stop:
             for address, ts, data, src in self.panda.can_recv():
-                if self.__on and src is 0 and len(data) == 8 and data[0] >= 2:
+                if self.__on and src == 0 and len(data) == 8 and data[0] >= 2:
                     if not self.__silent:
                         print("Processing CAN message", src, hex(address), binascii.hexlify(data))
                     self.__can_process_msg(data[1], data[2], address, ts, data, src)

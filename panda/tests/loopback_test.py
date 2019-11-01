@@ -55,7 +55,7 @@ def run_test_w_pandas(pandas, sleep_duration):
 
       # send the characters
       st = get_test_string()
-      st = b"\xaa"+chr(len(st)+3).encode()+st
+      st = bytes([0xaa, len(st) + 3]) + st
       h[ho[0]].kline_send(st, bus=bus, checksum=False)
 
       # check for receive

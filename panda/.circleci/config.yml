@@ -92,6 +92,20 @@ jobs:
           command: |
             docker run language_check /bin/bash -c "cd /panda/tests/language; ./test_language.py"
 
+  linter_python:
+    machine:
+      docker_layer_caching: true
+    steps:
+      - checkout
+      - run:
+          name: Build image
+          command: "docker build -t linter_python -f tests/linter_python/Dockerfile ."
+      - run:
+          name: Run linter python test
+          command: |
+            docker run linter_python /bin/bash -c "cd /panda/tests/linter_python; PYTHONPATH=/ ./flake8_panda.sh"
+            docker run linter_python /bin/bash -c "cd /panda/tests/linter_python; PYTHONPATH=/ ./pylint_panda.sh"
+
 workflows:
   version: 2
   main:
@@ -101,3 +115,4 @@ workflows:
       - build
       - safety_replay
       - language_check
+      - linter_python

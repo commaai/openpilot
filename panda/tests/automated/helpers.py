@@ -2,13 +2,12 @@ import os
 import sys
 import time
 import random
-import binascii
 import subprocess
 import requests
 import _thread
 from functools import wraps
 from panda import Panda
-from nose.tools import timed, assert_equal, assert_less, assert_greater
+from nose.tools import assert_equal
 from parameterized import parameterized, param
 
 SPEED_NORMAL = 500
@@ -50,7 +49,7 @@ def connect_wifi(serial=None):
 
 FNULL = open(os.devnull, 'w')
 def _connect_wifi(dongle_id, pw, insecure_okay=False):
-  ssid = "panda-" + dongle_id.decode("utf8")
+  ssid = "panda-" + dongle_id
 
   r = subprocess.call(["ping", "-W", "4", "-c", "1", "192.168.0.10"], stdout=FNULL, stderr=subprocess.STDOUT)
   if not r:
@@ -69,7 +68,7 @@ def _connect_wifi(dongle_id, pw, insecure_okay=False):
     if sys.platform == "darwin":
       os.system("networksetup -setairportnetwork en0 %s %s" % (ssid, pw))
     else:
-      wlan_interface = subprocess.check_output(["sh", "-c", "iw dev | awk '/Interface/ {print $2}'"]).strip()
+      wlan_interface = subprocess.check_output(["sh", "-c", "iw dev | awk '/Interface/ {print $2}'"]).strip().decode('utf8')
       cnt = 0
       MAX_TRIES = 10
       while cnt < MAX_TRIES:
@@ -87,13 +86,13 @@ def _connect_wifi(dongle_id, pw, insecure_okay=False):
       if "-pair" in wifi_scan[0]:
         os.system("nmcli d wifi connect %s-pair" % (ssid))
         connect_cnt = 0
-        MAX_TRIES = 20
+        MAX_TRIES = 100
         while connect_cnt < MAX_TRIES:
           connect_cnt += 1
           r = subprocess.call(["ping", "-W", "4", "-c", "1", "192.168.0.10"], stdout=FNULL, stderr=subprocess.STDOUT)
           if r:
             print("Waiting for panda to ping...")
-            time.sleep(0.1)
+            time.sleep(0.5)
           else:
             break
         if insecure_okay:

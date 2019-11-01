@@ -1,16 +1,14 @@
-
 import os
 import sys
 import time
 import socket
 import select
-import pytest
 import struct
 
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
-from . import elm_car_simulator
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", ".."))
 from panda import Panda
+from panda.tests import elm_car_simulator
 
 def elm_connect():
     s = socket.create_connection(("192.168.0.10", 35000))
@@ -234,35 +232,35 @@ def test_elm_send_lin_multiline_msg():
 
         send_compare(s, b'0902\r', # headers OFF, Spaces ON
                      b"BUS INIT: OK\r"
-                     "49 02 01 00 00 00 31 \r"
-                     "49 02 02 44 34 47 50 \r"
-                     "49 02 03 30 30 52 35 \r"
-                     "49 02 04 35 42 31 32 \r"
-                     "49 02 05 33 34 35 36 \r\r>")
+                     b"49 02 01 00 00 00 31 \r"
+                     b"49 02 02 44 34 47 50 \r"
+                     b"49 02 03 30 30 52 35 \r"
+                     b"49 02 04 35 42 31 32 \r"
+                     b"49 02 05 33 34 35 36 \r\r>")
 
         send_compare(s, b'ATS0\r', b'OK\r\r>') # Spaces OFF
         send_compare(s, b'0902\r', # Headers OFF, Spaces OFF
                      b"49020100000031\r"
-                     "49020244344750\r"
-                     "49020330305235\r"
-                     "49020435423132\r"
-                     "49020533343536\r\r>")
+                     b"49020244344750\r"
+                     b"49020330305235\r"
+                     b"49020435423132\r"
+                     b"49020533343536\r\r>")
 
         send_compare(s, b'ATH1\r', b'OK\r\r>') # Headers ON
         send_compare(s, b'0902\r', # Headers ON, Spaces OFF
                      b"87F1104902010000003105\r"
-                     "87F11049020244344750E4\r"
-                     "87F11049020330305235BD\r"
-                     "87F11049020435423132B1\r"
-                     "87F11049020533343536AA\r\r>")
+                     b"87F11049020244344750E4\r"
+                     b"87F11049020330305235BD\r"
+                     b"87F11049020435423132B1\r"
+                     b"87F11049020533343536AA\r\r>")
 
         send_compare(s, b'ATS1\r', b'OK\r\r>') # Spaces ON
         send_compare(s, b'0902\r', # Headers ON, Spaces ON
                      b"87 F1 10 49 02 01 00 00 00 31 05 \r"
-                     "87 F1 10 49 02 02 44 34 47 50 E4 \r"
-                     "87 F1 10 49 02 03 30 30 52 35 BD \r"
-                     "87 F1 10 49 02 04 35 42 31 32 B1 \r"
-                     "87 F1 10 49 02 05 33 34 35 36 AA \r\r>")
+                     b"87 F1 10 49 02 02 44 34 47 50 E4 \r"
+                     b"87 F1 10 49 02 03 30 30 52 35 BD \r"
+                     b"87 F1 10 49 02 04 35 42 31 32 B1 \r"
+                     b"87 F1 10 49 02 05 33 34 35 36 AA \r\r>")
     finally:
         sim.stop()
         sim.join()
@@ -322,7 +320,7 @@ def test_elm_panda_safety_mode_KWPFast():
 
     def kline_send(p, x, bus=2):
         p.kline_drain(bus=bus)
-        p._handle.bulkWrite(2, chr(bus).encode()+x)
+        p._handle.bulkWrite(2, bytes([bus]) + x)
         return timed_recv_check(p, bus, x)
 
     def did_send(priority, toaddr, fromaddr, dat, bus=2, checkbyte=None):
@@ -461,7 +459,7 @@ def test_elm_send_can_multimsg():
         sim.can_add_extra_noise(b'\x03\x41\x0D\xFA', addr=0x7E9)# Inject message into the stream
         send_compare(s, b'010D\r',
                      b"7E8 03 41 0D 53 \r"
-                     "7E9 03 41 0D FA \r\r>") # Check it was ignored.
+                     b"7E9 03 41 0D FA \r\r>") # Check it was ignored.
     finally:
         sim.stop()
         sim.join()
@@ -503,28 +501,28 @@ def test_elm_send_can_multiline_msg():
 
         send_compare(s, b'0902\r', # headers OFF, Spaces ON
                      b"014 \r"
-                     "0: 49 02 01 31 44 34 \r"
-                     "1: 47 50 30 30 52 35 35 \r"
-                     "2: 42 31 32 33 34 35 36 \r\r>")
+                     b"0: 49 02 01 31 44 34 \r"
+                     b"1: 47 50 30 30 52 35 35 \r"
+                     b"2: 42 31 32 33 34 35 36 \r\r>")
 
         send_compare(s, b'ATS0\r', b'OK\r\r>') # Spaces OFF
         send_compare(s, b'0902\r', # Headers OFF, Spaces OFF
                      b"014\r"
-                     "0:490201314434\r"
-                     "1:47503030523535\r"
-                     "2:42313233343536\r\r>")
+                     b"0:490201314434\r"
+                     b"1:47503030523535\r"
+                     b"2:42313233343536\r\r>")
 
         send_compare(s, b'ATH1\r', b'OK\r\r>') # Headers ON
         send_compare(s, b'0902\r', # Headers ON, Spaces OFF
                      b"7E81014490201314434\r"
-                     "7E82147503030523535\r"
-                     "7E82242313233343536\r\r>")
+                     b"7E82147503030523535\r"
+                     b"7E82242313233343536\r\r>")
 
         send_compare(s, b'ATS1\r', b'OK\r\r>') # Spaces ON
         send_compare(s, b'0902\r', # Headers ON, Spaces ON
                      b"7E8 10 14 49 02 01 31 44 34 \r"
-                     "7E8 21 47 50 30 30 52 35 35 \r"
-                     "7E8 22 42 31 32 33 34 35 36 \r\r>")
+                     b"7E8 21 47 50 30 30 52 35 35 \r"
+                     b"7E8 22 42 31 32 33 34 35 36 \r\r>")
     finally:
         sim.stop()
         sim.join()

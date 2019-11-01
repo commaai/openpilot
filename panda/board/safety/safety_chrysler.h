@@ -136,6 +136,5 @@ const safety_hooks chrysler_hooks = {
   .rx = chrysler_rx_hook,
   .tx = chrysler_tx_hook,
   .tx_lin = nooutput_tx_lin_hook,
-  .ignition = default_ign_hook,
   .fwd = chrysler_fwd_hook,
 };
