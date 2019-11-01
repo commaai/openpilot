@@ -13,6 +13,7 @@
 #include "drivers/llcan.h"
 #include "drivers/llgpio.h"
 #include "drivers/adc.h"
+#include "drivers/pwm.h"
 
 #include "board.h"
 
@@ -34,6 +35,10 @@
 #include "drivers/can.h"
 
 // ********************* Serial debugging *********************
+
+bool check_started(void) {
+  return current_board->check_ignition() || ignition_can;
+}
 
 void debug_ring_callback(uart_ring *ring) {
   char rcv;
@@ -80,10 +85,10 @@ void started_interrupt_handler(uint8_t interrupt_line) {
 
     #ifdef EON
       // set power savings mode here if on EON build
-      int power_save_state = current_board->check_ignition() ? POWER_SAVE_STATUS_DISABLED : POWER_SAVE_STATUS_ENABLED;
+      int power_save_state = check_started() ? POWER_SAVE_STATUS_DISABLED : POWER_SAVE_STATUS_ENABLED;
       set_power_save_state(power_save_state);
       // set CDP usb power mode everytime that the car starts to make sure EON is charging
-      if (current_board->check_ignition()) {
+      if (check_started()) {
         current_board->set_usb_power_mode(USB_POWER_CDP);
       }
     #endif
@@ -117,7 +122,7 @@ void set_safety_mode(uint16_t mode, int16_t param) {
     switch (mode) {
         case SAFETY_NOOUTPUT:
           set_intercept_relay(false);
-          if(hw_type == HW_TYPE_BLACK_PANDA){
+          if(board_has_obd()){
             current_board->set_can_mode(CAN_MODE_NORMAL);
           }
           can_silent = ALL_CAN_SILENT;
@@ -125,7 +130,7 @@ void set_safety_mode(uint16_t mode, int16_t param) {
         case SAFETY_ELM327:
           set_intercept_relay(false);
           heartbeat_counter = 0U;
-          if(hw_type == HW_TYPE_BLACK_PANDA){
+          if(board_has_obd()){
             current_board->set_can_mode(CAN_MODE_OBD_CAN2);
           }
           can_silent = ALL_CAN_LIVE;
@@ -133,19 +138,12 @@ void set_safety_mode(uint16_t mode, int16_t param) {
         default:
           set_intercept_relay(true);
           heartbeat_counter = 0U;
-          if(hw_type == HW_TYPE_BLACK_PANDA){
+          if(board_has_obd()){
             current_board->set_can_mode(CAN_MODE_NORMAL);
           }
           can_silent = ALL_CAN_LIVE;
           break;
       }
-    if (safety_ignition_hook() != -1) {
-      // if the ignition hook depends on something other than the started GPIO
-      // we have to disable power savings (fix for GM and Tesla)
-      set_power_save_state(POWER_SAVE_STATUS_DISABLED);
-    } else {
-      // power mode is already POWER_SAVE_STATUS_DISABLED and CAN TXs are active
-    }
     can_init_all();
   }
 }
@@ -159,30 +157,21 @@ int get_health_pkt(void *dat) {
     uint32_t can_send_errs_pkt;
     uint32_t can_fwd_errs_pkt;
     uint32_t gmlan_send_errs_pkt;
-    uint8_t started_pkt;
+    uint8_t ignition_line_pkt;
+    uint8_t ignition_can_pkt;
     uint8_t controls_allowed_pkt;
     uint8_t gas_interceptor_detected_pkt;
     uint8_t car_harness_status_pkt;
     uint8_t usb_power_mode_pkt;
+    uint8_t safety_mode_pkt;
   } *health = dat;
 
   health->voltage_pkt = adc_get_voltage();
+  health->current_pkt = current_board->read_current();
 
-  // No current sense on panda black
-  if(hw_type != HW_TYPE_BLACK_PANDA){
-    health->current_pkt = adc_get(ADCCHAN_CURRENT);
-  } else {
-    health->current_pkt = 0;
-  }
-
-  int safety_ignition = safety_ignition_hook();
-  if (safety_ignition < 0) {
-    //Use the GPIO pin to determine ignition
-    health->started_pkt = (uint8_t)(current_board->check_ignition());
-  } else {
-    //Current safety hooks want to determine ignition (ex: GM)
-    health->started_pkt = safety_ignition;
-  }
+  //Use the GPIO pin to determine ignition or use a CAN based logic
+  health->ignition_line_pkt = (uint8_t)(current_board->check_ignition());
+  health->ignition_can_pkt = (uint8_t)(ignition_can);
 
   health->controls_allowed_pkt = controls_allowed;
   health->gas_interceptor_detected_pkt = gas_interceptor_detected;
@@ -191,8 +180,15 @@ int get_health_pkt(void *dat) {
   health->gmlan_send_errs_pkt = gmlan_send_errs;
   health->car_harness_status_pkt = car_harness_status;
   health->usb_power_mode_pkt = usb_power_mode;
+  health->safety_mode_pkt = (uint8_t)(current_safety_mode);
 
   return sizeof(*health);
+}
+
+int get_rtc_pkt(void *dat) {
+  timestamp_t t = rtc_get_time();
+  (void)memcpy(dat, &t, sizeof(t));
+  return sizeof(t);
 }
 
 int usb_cb_ep1_in(void *usbdata, int len, bool hardwired) {
@@ -247,7 +243,76 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, bool hardwired) 
   unsigned int resp_len = 0;
   uart_ring *ur = NULL;
   int i;
+  timestamp_t t;
   switch (setup->b.bRequest) {
+    // **** 0xa0: get rtc time
+    case 0xa0:
+      resp_len = get_rtc_pkt(resp);
+      break;
+    // **** 0xa1: set rtc year
+    case 0xa1:
+      t = rtc_get_time();
+      t.year = setup->b.wValue.w;
+      rtc_set_time(t);
+      break;
+    // **** 0xa2: set rtc month
+    case 0xa2:
+      t = rtc_get_time();
+      t.month = setup->b.wValue.w;
+      rtc_set_time(t);
+      break;
+    // **** 0xa3: set rtc day
+    case 0xa3:
+      t = rtc_get_time();
+      t.day = setup->b.wValue.w;
+      rtc_set_time(t);
+      break;
+    // **** 0xa4: set rtc weekday
+    case 0xa4:
+      t = rtc_get_time();
+      t.weekday = setup->b.wValue.w;
+      rtc_set_time(t);
+      break;
+    // **** 0xa5: set rtc hour
+    case 0xa5:
+      t = rtc_get_time();
+      t.hour = setup->b.wValue.w;
+      rtc_set_time(t);
+      break;
+    // **** 0xa6: set rtc minute
+    case 0xa6:
+      t = rtc_get_time();
+      t.minute = setup->b.wValue.w;
+      rtc_set_time(t);
+      break;
+    // **** 0xa7: set rtc second
+    case 0xa7:
+      t = rtc_get_time();
+      t.second = setup->b.wValue.w;
+      rtc_set_time(t);
+      break;
+    // **** 0xb0: set IR power
+    case 0xb0:
+      if(power_save_status == POWER_SAVE_STATUS_DISABLED){
+        current_board->set_ir_power(setup->b.wValue.w);
+      } else {
+        puts("Setting IR power not allowed in power saving mode\n");
+      }
+      break;
+    // **** 0xb1: set fan power
+    case 0xb1:
+      if(power_save_status == POWER_SAVE_STATUS_DISABLED){
+        current_board->set_fan_power(setup->b.wValue.w);
+      } else {
+        puts("Setting fan power not allowed in power saving mode\n");
+      }
+      break;
+    // **** 0xb2: get fan rpm
+    case 0xb2:
+      resp[0] = (fan_rpm & 0x00FFU);
+      resp[1] = ((fan_rpm & 0xFF00U) >> 8U);
+      resp_len = 2;
+      break;
     // **** 0xc0: get CAN debug info
     case 0xc0:
       puts("can tx: "); puth(can_tx_cnt);
@@ -335,7 +400,7 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, bool hardwired) 
       break;
     // **** 0xdb: set GMLAN (white/grey) or OBD CAN (black) multiplexing mode
     case 0xdb:
-      if(hw_type == HW_TYPE_BLACK_PANDA){
+      if(board_has_obd()){
         if (setup->b.wValue.w == 1U) {
           // Enable OBD CAN
           current_board->set_can_mode(CAN_MODE_OBD_CAN2);
@@ -583,8 +648,8 @@ uint64_t tcnt = 0;
 
 // called once per second
 // cppcheck-suppress unusedFunction ; used in headers not included in cppcheck
-void TIM3_IRQHandler(void) {
-  if (TIM3->SR != 0) {
+void TIM1_BRK_TIM9_IRQHandler(void) {
+  if (TIM9->SR != 0) {
     can_live = pending_can_live;
 
     current_board->usb_power_mode_tick(tcnt);
@@ -602,6 +667,10 @@ void TIM3_IRQHandler(void) {
       puth(can_tx2_q.r_ptr); puts(" "); puth(can_tx2_q.w_ptr); puts("\n");
     #endif
 
+    // Tick fan driver
+    fan_tick();
+    //puts("Fan speed: "); puth((unsigned int) fan_rpm); puts("rpm\n");
+
     // set green LED to be controls allowed
     current_board->set_led(LED_GREEN, controls_allowed);
 
@@ -616,7 +685,7 @@ void TIM3_IRQHandler(void) {
 
     // check heartbeat counter if we are running EON code. If the heartbeat has been gone for a while, go to NOOUTPUT safety mode.
     #ifdef EON
-    if (heartbeat_counter >= (current_board->check_ignition() ? EON_HEARTBEAT_IGNITION_CNT_ON : EON_HEARTBEAT_IGNITION_CNT_OFF)) {
+    if (heartbeat_counter >= (check_started() ? EON_HEARTBEAT_IGNITION_CNT_ON : EON_HEARTBEAT_IGNITION_CNT_OFF)) {
       puts("EON hasn't sent a heartbeat for 0x"); puth(heartbeat_counter); puts(" seconds. Safety is set to NOOUTPUT mode.\n");
       if(current_safety_mode != SAFETY_NOOUTPUT){
         set_safety_mode(SAFETY_NOOUTPUT, 0U);
@@ -627,7 +696,7 @@ void TIM3_IRQHandler(void) {
     // on to the next one
     tcnt += 1U;
   }
-  TIM3->SR = 0;
+  TIM9->SR = 0;
 }
 
 int main(void) {
@@ -675,8 +744,7 @@ int main(void) {
     uart_init(&uart_ring_esp_gps, 115200);
   }
 
-  // there is no LIN on panda black
-  if(hw_type != HW_TYPE_BLACK_PANDA){
+  if(board_has_lin()){
     // enable LIN
     uart_init(&uart_ring_lin1, 10400);
     UART5->CR2 |= USART_CR2_LINEN;
@@ -714,14 +782,13 @@ int main(void) {
     current_board->set_esp_gps_mode(ESP_GPS_DISABLED);
   }
   // only enter power save after the first cycle
-  /*if (current_board->check_ignition()) {
+  /*if (check_started()) {
     set_power_save_state(POWER_SAVE_STATUS_ENABLED);
   }*/
 #endif
-
-  // 48mhz / 65536 ~= 732 / 732 = 1
-  timer_init(TIM3, 732);
-  NVIC_EnableIRQ(TIM3_IRQn);
+  // 1hz
+  timer_init(TIM9, 1464);
+  NVIC_EnableIRQ(TIM1_BRK_TIM9_IRQn);
 
 #ifdef DEBUG
   puts("DEBUG ENABLED\n");

@@ -30,7 +30,7 @@ if __name__ == "__main__":
   baudrate = 460800
 
   print("upping baud rate")
-  msg = add_nmea_checksum("$PUBX,41,1,0007,0003,%d,0" % baudrate)+"\r\n"
+  msg = str.encode(add_nmea_checksum("$PUBX,41,1,0007,0003,%d,0" % baudrate)+"\r\n")
   print(msg)
   ser.write(msg)
   time.sleep(0.1)   # needs a wait for it to actually send

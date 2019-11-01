@@ -2,12 +2,9 @@
 
 import os
 import sys
-from panda import Panda
 import panda.tests.safety.libpandasafety_py as libpandasafety_py
-from panda.tests.safety_replay.helpers import is_steering_msg, get_steer_torque, \
-                                              set_desired_torque_last, package_can_msg, \
-                                              init_segment
-from tools.lib.logreader import LogReader
+from panda.tests.safety_replay.helpers import package_can_msg, init_segment
+from tools.lib.logreader import LogReader  # pylint: disable=import-error
 
 # replay a drive to check for safety violations
 def replay_drive(lr, safety_mode, param):
