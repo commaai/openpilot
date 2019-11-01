@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import unittest
 import numpy as np
-import libpandasafety_py
+import libpandasafety_py  # pylint: disable=import-error
 from panda import Panda
 
 MAX_BRAKE = 255
@@ -34,9 +34,9 @@ class TestHondaSafety(unittest.TestCase):
     to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
     to_send[0].RIR = msg << 21
     to_send[0].RDLR = buttons << 5
-    is_panda_black = self.safety.get_hw_type() == 3 # black_panda
+    has_relay = self.safety.board_has_relay()
     honda_bosch_hardware = self.safety.get_honda_bosch_hardware()
-    bus = 1 if is_panda_black and honda_bosch_hardware else 0
+    bus = 1 if has_relay and honda_bosch_hardware else 0
     to_send[0].RDTR = bus << 4
 
     return to_send

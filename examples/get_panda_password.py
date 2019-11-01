@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import sys
 from panda import Panda
 
 def get_panda_password():

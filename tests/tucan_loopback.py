@@ -33,7 +33,7 @@ def run_test_w_pandas(pandas, sleep_duration):
   print("H", h)
 
   for hh in h:
-    hh.set_controls_allowed(True)
+    hh.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
 
   # test both directions
   for ho in permutations(list(range(len(h))), r=2):
@@ -55,7 +55,7 @@ def run_test_w_pandas(pandas, sleep_duration):
 
       # send the characters
       st = get_test_string()
-      st = b"\xaa"+chr(len(st)+3).encode()+st
+      st = bytes([0xaa, len(st) + 3]) + st
       h[ho[0]].kline_send(st, bus=bus, checksum=False)
 
       # check for receive
@@ -70,8 +70,8 @@ def run_test_w_pandas(pandas, sleep_duration):
       time.sleep(sleep_duration)
 
     # **** test can line loopback ****
-#    for bus, gmlan in [(0, None), (1, False), (2, False), (1, True), (2, True)]:
-for bus, gmlan in [(0, None), (1, None)]:
+    #    for bus, gmlan in [(0, None), (1, False), (2, False), (1, True), (2, True)]:
+    for bus, gmlan in [(0, None), (1, None)]:
       print("\ntest can", bus)
       # flush
       cans_echo = panda0.can_recv()

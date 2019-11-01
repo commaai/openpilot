@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import sys
-import struct
 from Crypto.PublicKey import RSA
 
 def egcd(a, b):

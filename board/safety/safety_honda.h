@@ -156,7 +156,7 @@ static int honda_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   // FORCE CANCEL: safety check only relevant when spamming the cancel button in Bosch HW
   // ensuring that only the cancel button press is sent (VAL 2) when controls are off.
   // This avoids unintended engagements while still allowing resume spam
-  int bus_pt = ((hw_type == HW_TYPE_BLACK_PANDA) && honda_bosch_hardware)? 1 : 0;
+  int bus_pt = ((board_has_relay()) && honda_bosch_hardware)? 1 : 0;
   if ((addr == 0x296) && honda_bosch_hardware &&
       !current_controls_allowed && (bus == bus_pt)) {
     if (((GET_BYTE(to_send, 0) >> 5) & 0x7) != 2) {
@@ -210,8 +210,8 @@ static int honda_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
 
 static int honda_bosch_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
   int bus_fwd = -1;
-  int bus_rdr_cam = (hw_type == HW_TYPE_BLACK_PANDA) ? 2 : 1;  // radar bus, camera side
-  int bus_rdr_car = (hw_type == HW_TYPE_BLACK_PANDA) ? 0 : 2;  // radar bus, car side
+  int bus_rdr_cam = (board_has_relay()) ? 2 : 1;  // radar bus, camera side
+  int bus_rdr_car = (board_has_relay()) ? 0 : 2;  // radar bus, car side
 
   if (bus_num == bus_rdr_car) {
     bus_fwd = bus_rdr_cam;
@@ -231,7 +231,6 @@ const safety_hooks honda_hooks = {
   .rx = honda_rx_hook,
   .tx = honda_tx_hook,
   .tx_lin = nooutput_tx_lin_hook,
-  .ignition = default_ign_hook,
   .fwd = honda_fwd_hook,
 };
 
@@ -240,6 +239,5 @@ const safety_hooks honda_bosch_hooks = {
   .rx = honda_rx_hook,
   .tx = honda_tx_hook,
   .tx_lin = nooutput_tx_lin_hook,
-  .ignition = default_ign_hook,
   .fwd = honda_bosch_fwd_hook,
 };

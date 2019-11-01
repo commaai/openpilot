@@ -11,7 +11,7 @@ def enter_download_mode(device):
 
   try:
     handle.controlWrite(usb1.TYPE_VENDOR | usb1.RECIPIENT_DEVICE, 0xd1, 0, 0, b'')
-  except (usb1.USBErrorIO, usb1.USBErrorPipe) as e:
+  except (usb1.USBErrorIO, usb1.USBErrorPipe):
     print("Device download mode enabled.")
     time.sleep(1)
   else:

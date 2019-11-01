@@ -11,9 +11,6 @@ import time
 import random
 import argparse
 
-from hexdump import hexdump
-from itertools import permutations
-
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 from panda import Panda
 
@@ -42,7 +39,7 @@ def run_test(sleep_duration):
 
   black_panda = None
   other_panda = None
-  
+
   # find out which one is black
   if pandas[0].is_black() and not pandas[1].is_black():
     black_panda = pandas[0]
@@ -69,7 +66,7 @@ def run_test(sleep_duration):
     test_buses(black_panda, other_panda, True, [(0, False, [0]), (1, False, [1]), (2, False, [2]), (1, True, [0])], sleep_duration)
     test_buses(black_panda, other_panda, False, [(0, False, [0]), (1, False, [1]), (2, False, [2]), (0, True, [0, 1])], sleep_duration)
     counter += 1
-    
+
     runtime = time.time() - start_time
     print("Number of cycles:", counter, "Non-zero bus errors:", nonzero_bus_errors, "Zero bus errors:", zero_bus_errors, "Content errors:", content_errors, "Runtime: ", runtime)
 
@@ -80,7 +77,7 @@ def run_test(sleep_duration):
       black_panda.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
       time.sleep(1)
       temp_start_time = time.time()
-	
+
 
 def test_buses(black_panda, other_panda, direction, test_array, sleep_duration):
   global nonzero_bus_errors, zero_bus_errors, content_errors
@@ -94,7 +91,7 @@ def test_buses(black_panda, other_panda, direction, test_array, sleep_duration):
     black_panda.send_heartbeat()
     other_panda.send_heartbeat()
     print("\ntest can: ", send_bus, " OBD: ", obd)
-    
+
     # set OBD on black panda
     black_panda.set_gmlan(True if obd else None)
 
@@ -109,7 +106,7 @@ def test_buses(black_panda, other_panda, direction, test_array, sleep_duration):
         other_panda.can_clear(recv_bus)
       else:
 	      black_panda.can_clear(recv_bus)
-    
+
     black_panda.can_recv()
     other_panda.can_recv()
 
@@ -124,10 +121,10 @@ def test_buses(black_panda, other_panda, direction, test_array, sleep_duration):
 
     # check for receive
     if direction:
-      cans_echo = black_panda.can_recv()
+      _ = black_panda.can_recv()  # cans echo
       cans_loop = other_panda.can_recv()
     else:
-      cans_echo = other_panda.can_recv()
+      _ = other_panda.can_recv()  # cans echo
       cans_loop = black_panda.can_recv()
 
     loop_buses = []
@@ -141,7 +138,7 @@ def test_buses(black_panda, other_panda, direction, test_array, sleep_duration):
       print("  No loop")
       if not os.getenv("NOASSERT"):
         assert False
-    
+
     # test loop buses
     recv_buses.sort()
     loop_buses.sort()
