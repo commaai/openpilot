@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-
-import binascii
 import csv
 import sys
 

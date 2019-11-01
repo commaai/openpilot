@@ -25,7 +25,6 @@ void set_power_save_state(int state) {
       enable = true;
     }
 
-    // Switch CAN transcievers
     current_board->enable_can_transcievers(enable);
 
     // Switch EPS/GPS
@@ -34,16 +33,24 @@ void set_power_save_state(int state) {
     } else {
       current_board->set_esp_gps_mode(ESP_GPS_DISABLED);
     }
-    
-    if(hw_type != HW_TYPE_BLACK_PANDA){
+
+    if(board_has_gmlan()){
       // turn on GMLAN
       set_gpio_output(GPIOB, 14, enable);
       set_gpio_output(GPIOB, 15, enable);
+    }
 
-      // turn on LIN    
+    if(board_has_lin()){
+      // turn on LIN
       set_gpio_output(GPIOB, 7, enable);
       set_gpio_output(GPIOA, 14, enable);
     }
+
+    // Switch off IR and fan when in power saving
+    if(!enable){
+      current_board->set_ir_power(0U);
+      current_board->set_fan_power(0U);
+    }   
 
     power_save_status = state;
   }

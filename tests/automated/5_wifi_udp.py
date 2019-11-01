@@ -3,7 +3,7 @@ import sys
 import time
 from .helpers import time_many_sends, connect_wifi, test_white, panda_type_to_serial
 from panda import Panda, PandaWifiStreaming
-from nose.tools import timed, assert_equal, assert_less, assert_greater
+from nose.tools import assert_less, assert_greater
 
 @test_white
 @panda_type_to_serial

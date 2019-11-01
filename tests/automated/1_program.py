@@ -1,6 +1,4 @@
-import os
-from panda import Panda
-from .helpers import panda_type_to_serial, test_white_and_grey, test_all_pandas, panda_connect_and_init
+from .helpers import test_all_pandas, panda_connect_and_init
 
 @test_all_pandas
 @panda_connect_and_init

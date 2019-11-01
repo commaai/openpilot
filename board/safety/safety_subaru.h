@@ -124,6 +124,5 @@ const safety_hooks subaru_hooks = {
   .rx = subaru_rx_hook,
   .tx = subaru_tx_hook,
   .tx_lin = nooutput_tx_lin_hook,
-  .ignition = default_ign_hook,
   .fwd = subaru_fwd_hook,
 };

@@ -29,7 +29,7 @@ import subprocess
 import sys
 import tempfile
 import time
-import traceback
+#import traceback
 import usb1
 
 __version__ = "1.2"
@@ -44,7 +44,7 @@ class FakePort(object):
 
   @property
   def baudrate(self):
-    return self._baudrate
+    return self.baudrate
 
   @baudrate.setter
   def baudrate(self, x):
@@ -434,7 +434,7 @@ class BaseFirmwareImage(object):
 
     def write_v1_header(self, f, segments):
         f.write(struct.pack('<BBBBI', ESPROM.ESP_IMAGE_MAGIC, len(segments),
-                            self.flash_mode, self.flash_size_freq, self.entrypoint))
+                            self.flash_mode, self.flash_size_freq, self.entrypoint))  # pylint: disable=no-member
 
 
 class ESPFirmwareImage(BaseFirmwareImage):
@@ -864,7 +864,7 @@ def write_mem(esp, args):
 
 
 def dump_mem(esp, args):
-    f = file(args.filename, 'wb')
+    f = open(args.filename, 'wb')
     for i in range(args.size / 4):
         d = esp.read_reg(args.address + (i * 4))
         f.write(struct.pack('<I', d))
@@ -944,7 +944,7 @@ def make_image(args):
     if len(args.segfile) != len(args.segaddr):
         raise FatalError('Number of specified files does not match number of specified addresses')
     for (seg, addr) in zip(args.segfile, args.segaddr):
-        data = file(seg, 'rb').read()
+        data = open(seg, 'rb').read()
         image.add_segment(addr, data)
     image.entrypoint = args.entrypoint
     image.save(args.output)
@@ -1026,7 +1026,7 @@ def read_flash(esp, args):
     t = time.time() - t
     print('\rRead %d bytes at 0x%x in %.1f seconds (%.1f kbit/s)...'
            % (len(data), args.address, t, len(data) / t * 8 / 1000))
-    file(args.filename, 'wb').write(data)
+    open(args.filename, 'wb').write(data)
 
 
 def _verify_flash(flasher, args, flash_params=None):
@@ -1235,7 +1235,7 @@ class AddrFilenamePairAction(argparse.Action):
         for i in range(0,len(values),2):
             try:
                 address = int(values[i],0)
-            except ValueError as e:
+            except ValueError:
                 raise argparse.ArgumentError(self,'Address "%s" must be a number' % values[i])
             try:
                 argfile = open(values[i + 1], 'rb')

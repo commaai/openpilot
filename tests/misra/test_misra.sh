@@ -4,7 +4,7 @@ mkdir /tmp/misra || true
 git clone https://github.com/danmar/cppcheck.git || true
 cd cppcheck
 git fetch
-git checkout ff7dba91e177dfb712477faddb9e91bece7e743c
+git checkout bdd41151ed550e3d240a6dd6847859216b7ad736
 make -j4
 cd ../../../
 
