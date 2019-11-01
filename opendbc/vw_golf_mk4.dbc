@@ -1039,3 +1039,12 @@ BO_ 1324 ADR_1: 8 XXX
  SG_ Fehler_ADR_1 : 12|1@1+ (1,0) [0|0] "" XXX
  SG_ Zaehler_ADR_1 : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ Momentenanforderung_ADR : 0|8@1+ (0.39,0) [0|99] "MDI" XXX
+
+BO_ 210 PQ_HCA: 8 XXX
+ SG_ HCA_Torque : 16|15@1+ (1,0) [0|32767] "" XXX
+ SG_ UNK_Bit : 34|1@0+ (1,0) [0|1] "" XXX
+ SG_ HCA_Torque_VZ : 31|1@0+ (1,0) [0|1] "" XXX
+ SG_ PQ_HCA_BZ : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ PQ_HCA_Checksum : 0|4@1+ (1,0) [0|15] "" XXX
+
+BO_ 1490 VIN_1: 8 XXX
