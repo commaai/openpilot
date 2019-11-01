@@ -4,7 +4,6 @@ import matplotlib
 matplotlib.use('TkAgg')
 
 import sys
-from selfdrive.services import service_list
 import selfdrive.messaging as messaging
 import numpy as np
 import matplotlib.pyplot as plt
@@ -16,8 +15,8 @@ N = 21
 
 def plot_longitudinal_mpc(addr="127.0.0.1"):
   # *** log ***
-  livempc = messaging.sub_sock(service_list['liveLongitudinalMpc'].port, addr=addr, conflate=True)
-  radarstate = messaging.sub_sock(service_list['radarState'].port, addr=addr, conflate=True)
+  livempc = messaging.sub_sock('liveLongitudinalMpc', addr=addr, conflate=True)
+  radarstate = messaging.sub_sock('radarState', addr=addr, conflate=True)
 
   plt.ion()
   fig = plt.figure()

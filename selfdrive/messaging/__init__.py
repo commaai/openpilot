@@ -1,8 +1,16 @@
-import zmq
+import os
+import subprocess
+
+can_dir = os.path.dirname(os.path.abspath(__file__))
+subprocess.check_call(["make"], cwd=can_dir)
+from .messaging_pyx import Context, Poller, SubSocket, PubSocket # pylint: disable=no-name-in-module, import-error
 
 from cereal import log
 from common.realtime import sec_since_boot
 from selfdrive.services import service_list
+
+
+context = Context()
 
 def new_message():
   dat = log.Event.new_message()
@@ -10,101 +18,107 @@ def new_message():
   dat.valid = True
   return dat
 
-def pub_sock(port, addr="*"):
-  context = zmq.Context.instance()
-  sock = context.socket(zmq.PUB)
-  sock.bind("tcp://%s:%d" % (addr, port))
+def pub_sock(endpoint):
+  sock = PubSocket()
+  sock.connect(context, endpoint)
   return sock
 
-def sub_sock(port, poller=None, addr="127.0.0.1", conflate=False, timeout=None):
-  context = zmq.Context.instance()
-  sock = context.socket(zmq.SUB)
-  if conflate:
-    sock.setsockopt(zmq.CONFLATE, 1)
-  sock.connect("tcp://%s:%d" % (addr, port))
-  sock.setsockopt(zmq.SUBSCRIBE, b"")
+def sub_sock(endpoint, poller=None, addr="127.0.0.1", conflate=False, timeout=None):
+  sock = SubSocket()
+  addr = addr.encode('utf8')
+  sock.connect(context, endpoint, addr, conflate)
 
   if timeout is not None:
-    sock.RCVTIMEO = timeout
+    sock.setTimeout(timeout)
 
   if poller is not None:
-    poller.register(sock, zmq.POLLIN)
+    poller.registerSocket(sock)
   return sock
 
 
-def drain_sock_raw_poller(poller, sock, wait_for_one=False):
-  ret = []
-
-  if wait_for_one:
-    try:
-      ret.append(sock.recv())
-    except zmq.error.Again: # Thrown when there is timeout on the socket
-      return ret
-
-  while True:
-    if not poller.poll(0):
-      break # Socket has no more messages
-
-    ret.append(sock.recv())
-
-  return ret
-
 def drain_sock_raw(sock, wait_for_one=False):
+  """Receive all message currently available on the queue"""
   ret = []
   while 1:
-    try:
-      if wait_for_one and len(ret) == 0:
-        dat = sock.recv()
-      else:
-        dat = sock.recv(zmq.NOBLOCK)
-      ret.append(dat)
-    except zmq.error.Again:
+    if wait_for_one and len(ret) == 0:
+      dat = sock.receive()
+    else:
+      dat = sock.receive(non_blocking=True)
+
+    if dat is None:
       break
+
+    ret.append(dat)
+
   return ret
 
 def drain_sock(sock, wait_for_one=False):
+  """Receive all message currently available on the queue"""
   ret = []
   while 1:
-    try:
-      if wait_for_one and len(ret) == 0:
-        dat = sock.recv()
-      else:
-        dat = sock.recv(zmq.NOBLOCK)
-      dat = log.Event.from_bytes(dat)
-      ret.append(dat)
-    except zmq.error.Again:
+    if wait_for_one and len(ret) == 0:
+      dat = sock.receive()
+    else:
+      dat = sock.receive(non_blocking=True)
+
+    if dat is None: # Timeout hit
       break
+
+    dat = log.Event.from_bytes(dat)
+    ret.append(dat)
+
   return ret
 
 
 # TODO: print when we drop packets?
 def recv_sock(sock, wait=False):
+  """Same as drain sock, but only returns latest message. Consider using conflate instead."""
   dat = None
+
   while 1:
-    try:
-      if wait and dat is None:
-        dat = sock.recv()
-      else:
-        dat = sock.recv(zmq.NOBLOCK)
-    except zmq.error.Again:
+    if wait and dat is None:
+      rcv = sock.receive()
+    else:
+      rcv = sock.receive(non_blocking=True)
+
+    if rcv is None: # Timeout hit
       break
+
+    dat = rcv
+
+  if dat is not None:
+    dat = log.Event.from_bytes(dat)
+
+  return dat
+
+def recv_one(sock):
+  dat = sock.receive()
   if dat is not None:
     dat = log.Event.from_bytes(dat)
   return dat
 
-def recv_one(sock):
-  return log.Event.from_bytes(sock.recv())
-
 def recv_one_or_none(sock):
-  try:
-    return log.Event.from_bytes(sock.recv(zmq.NOBLOCK))
-  except zmq.error.Again:
-    return None
+  dat = sock.receive(non_blocking=True)
+  if dat is not None:
+    dat = log.Event.from_bytes(dat)
+  return dat
 
+def recv_one_retry(sock):
+  """Keep receiving until we get a message"""
+  while True:
+    dat = sock.receive()
+    if dat is not None:
+      return log.Event.from_bytes(dat)
+
+def get_one_can(logcan):
+  while True:
+    can = recv_one_retry(logcan)
+    if len(can.can) > 0:
+      return can
 
 class SubMaster():
   def __init__(self, services, ignore_alive=None, addr="127.0.0.1"):
-    self.poller = zmq.Poller()
+    self.poller = Poller()
     self.frame = -1
     self.updated = {s : False for s in services}
     self.rcv_time = {s : 0. for s in services}
@@ -124,7 +138,7 @@ class SubMaster():
     for s in services:
       # TODO: get address automatically from service_list
       if addr is not None:
-        self.sock[s] = sub_sock(service_list[s].port, poller=self.poller, addr=addr, conflate=True)
+        self.sock[s] = sub_sock(s, poller=self.poller, addr=addr, conflate=True)
       self.freq[s] = service_list[s].frequency
 
       data = new_message()
@@ -143,7 +157,7 @@ class SubMaster():
 
   def update(self, timeout=-1):
     msgs = []
-    for sock, _ in self.poller.poll(timeout):
+    for sock in self.poller.poll(timeout):
       msgs.append(recv_one(sock))
     self.update_msgs(sec_since_boot(), msgs)
 
@@ -152,6 +166,9 @@ class SubMaster():
     self.frame += 1
     self.updated = dict.fromkeys(self.updated, False)
     for msg in msgs:
+      if msg is None:
+        continue
+
       s = msg.which()
       self.updated[s] = True
       self.rcv_time[s] = cur_time
@@ -188,7 +205,7 @@ class PubMaster():
   def __init__(self, services):
     self.sock = {}
     for s in services:
-      self.sock[s] = pub_sock(service_list[s].port)
+      self.sock[s] = pub_sock(s)
 
   def send(self, s, dat):
     # accept either bytes or capnp builder

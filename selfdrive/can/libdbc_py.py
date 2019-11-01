@@ -5,7 +5,7 @@ from cffi import FFI
 
 can_dir = os.path.dirname(os.path.abspath(__file__))
 libdbc_fn = os.path.join(can_dir, "libdbc.so")
-subprocess.check_call(["make"], cwd=can_dir)
+subprocess.check_call(["make", "-j3"], cwd=can_dir)  # don't use all the cores to avoid overheating
 
 ffi = FFI()
 ffi.cdef("""
@@ -79,10 +79,9 @@ typedef struct {
 
 void* can_init(int bus, const char* dbc_name,
               size_t num_message_options, const MessageParseOptions* message_options,
-              size_t num_signal_options, const SignalParseOptions* signal_options, bool sendcan,
-              const char* tcp_addr, int timeout);
+              size_t num_signal_options, const SignalParseOptions* signal_options);
 
-int can_update(void* can, uint64_t sec, bool wait);
+void can_update_string(void *can, const char* dat, int len);
 
 size_t can_query_latest(void* can, bool *out_can_valid, size_t out_values_size, SignalValue* out_values);
 

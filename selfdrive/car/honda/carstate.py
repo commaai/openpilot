@@ -354,19 +354,3 @@ class CarState():
 
     # TODO: discover the CAN msg that has the imperial unit bit for all other cars
     self.is_metric = not cp.vl["HUD_SETTING"]['IMPERIAL_UNIT'] if self.CP.carFingerprint in (CAR.CIVIC) else False
-
-# carstate standalone tester
-if __name__ == '__main__':
-  import zmq
-  context = zmq.Context()
-
-  class CarParams():
-    def __init__(self):
-      self.carFingerprint = "HONDA CIVIC 2016 TOURING"
-      self.enableGasInterceptor = 0
-  CP = CarParams()
-  CS = CarState(CP)
-
-  # while 1:
-  #   CS.update()
-  #   time.sleep(0.01)

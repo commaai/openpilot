@@ -1,7 +1,7 @@
 #from common.numpy_fast import clip
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.subaru import subarucan
-from selfdrive.car.subaru.values import CAR, DBC
+from selfdrive.car.subaru.values import DBC
 from selfdrive.can.packer import CANPacker
 
 
@@ -11,10 +11,9 @@ class CarControllerParams():
     self.STEER_STEP = 2                # how often we update the steer cmd
     self.STEER_DELTA_UP = 50           # torque increase per refresh, 0.8s to max
     self.STEER_DELTA_DOWN = 70         # torque decrease per refresh
-    if car_fingerprint == CAR.IMPREZA:
-      self.STEER_DRIVER_ALLOWANCE = 60   # allowed driver torque before start limiting
-      self.STEER_DRIVER_MULTIPLIER = 10   # weight driver torque heavily
-      self.STEER_DRIVER_FACTOR = 1     # from dbc
+    self.STEER_DRIVER_ALLOWANCE = 60   # allowed driver torque before start limiting
+    self.STEER_DRIVER_MULTIPLIER = 10  # weight driver torque heavily
+    self.STEER_DRIVER_FACTOR = 1       # from dbc
 
 
 
@@ -30,7 +29,6 @@ class CarController():
     # Setup detection helper. Routes commands to
     # an appropriate CAN bus number.
     self.params = CarControllerParams(car_fingerprint)
-    print(DBC)
     self.packer = CANPacker(DBC[car_fingerprint]['pt'])
 
   def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert, left_line, right_line):

@@ -24,7 +24,10 @@
 #include "common/util.h"
 #include "common/swaglog.h"
 #include "common/mat.h"
+
+extern "C"{
 #include "common/glutil.h"
+}
 
 #include "common/touch.h"
 #include "common/framebuffer.h"
@@ -34,7 +37,12 @@
 #include "common/params.h"
 
 #include "cereal/gen/c/log.capnp.h"
+
+extern "C"{
 #include "slplay.h"
+}
+
+#include "messaging.hpp"
 
 #define STATUS_STOPPED 0
 #define STATUS_DISENGAGED 1
@@ -198,18 +206,17 @@ typedef struct UIState {
   int img_face;
   int img_map;
 
-  void *ctx;
-
-  void *thermal_sock_raw;
-  void *model_sock_raw;
-  void *controlsstate_sock_raw;
-  void *livecalibration_sock_raw;
-  void *radarstate_sock_raw;
-  void *livempc_sock_raw;
-  void *plus_sock_raw;
-  void *map_data_sock_raw;
-
-  void *uilayout_sock_raw;
+  // Sockets
+  Context *ctx;
+  SubSocket *thermal_sock;
+  SubSocket *model_sock;
+  SubSocket *controlsstate_sock;
+  SubSocket *livecalibration_sock;
+  SubSocket *radarstate_sock;
+  SubSocket *plus_sock;
+  SubSocket *map_data_sock;
+  SubSocket *uilayout_sock;
+  Poller * poller;
 
   int plus_state;
 
@@ -238,11 +245,11 @@ typedef struct UIState {
   GLint line_pos_loc, line_color_loc;
   GLint line_transform_loc;
 
-  unsigned int rgb_width, rgb_height, rgb_stride;
+  int rgb_width, rgb_height, rgb_stride;
   size_t rgb_buf_len;
   mat4 rgb_transform;
 
-  unsigned int rgb_front_width, rgb_front_height, rgb_front_stride;
+  int rgb_front_width, rgb_front_height, rgb_front_stride;
   size_t rgb_front_buf_len;
 
   UIScene scene;
@@ -336,7 +343,7 @@ static void set_do_exit(int sig) {
   do_exit = 1;
 }
 
-static void read_param_bool(bool* param, char* param_name) {
+static void read_param_bool(bool* param, const char* param_name) {
   char *s;
   const int result = read_db_value(NULL, param_name, &s, NULL);
   if (result == 0) {
@@ -345,7 +352,7 @@ static void read_param_bool(bool* param, char* param_name) {
   }
 }
 
-static void read_param_float(float* param, char* param_name) {
+static void read_param_float(float* param, const char* param_name) {
   char *s;
   const int result = read_db_value(NULL, param_name, &s, NULL);
   if (result == 0) {
@@ -354,7 +361,7 @@ static void read_param_float(float* param, char* param_name) {
   }
 }
 
-static void read_param_bool_timeout(bool* param, char* param_name, int* timeout) {
+static void read_param_bool_timeout(bool* param, const char* param_name, int* timeout) {
   if (*timeout > 0){
     (*timeout)--;
   } else {
@@ -363,7 +370,7 @@ static void read_param_bool_timeout(bool* param, char* param_name, int* timeout)
   }
 }
 
-static void read_param_float_timeout(float* param, char* param_name, int* timeout) {
+static void read_param_float_timeout(float* param, const char* param_name, int* timeout) {
   if (*timeout > 0){
     (*timeout)--;
   } else {
@@ -495,19 +502,27 @@ static void ui_init(UIState *s) {
   pthread_mutex_init(&s->lock, NULL);
   pthread_cond_init(&s->bg_cond, NULL);
 
-  s->ctx = zmq_ctx_new();
-
-  s->thermal_sock_raw = sub_sock(s->ctx, "tcp://127.0.0.1:8005");
-  s->model_sock_raw = sub_sock(s->ctx, "tcp://127.0.0.1:8009");
-  s->controlsstate_sock_raw = sub_sock(s->ctx, "tcp://127.0.0.1:8007");
-  s->uilayout_sock_raw = sub_sock(s->ctx, "tcp://127.0.0.1:8060");
-  s->livecalibration_sock_raw = sub_sock(s->ctx, "tcp://127.0.0.1:8019");
-  s->radarstate_sock_raw = sub_sock(s->ctx, "tcp://127.0.0.1:8012");
-  s->livempc_sock_raw = sub_sock(s->ctx, "tcp://127.0.0.1:8035");
-  s->plus_sock_raw = sub_sock(s->ctx, "tcp://127.0.0.1:8037");
+  s->ctx = Context::create();
+  s->thermal_sock = SubSocket::create(s->ctx, "thermal");
+  s->model_sock = SubSocket::create(s->ctx, "model");
+  s->controlsstate_sock = SubSocket::create(s->ctx, "controlsState");
+  s->uilayout_sock = SubSocket::create(s->ctx, "uiLayoutState");
+  s->livecalibration_sock = SubSocket::create(s->ctx, "liveCalibration");
+  s->radarstate_sock = SubSocket::create(s->ctx, "radarState");
+  s->plus_sock = SubSocket::create(s->ctx, "plusFrame");
+  s->poller = Poller::create({
+                              s->thermal_sock,
+                              s->model_sock,
+                              s->controlsstate_sock,
+                              s->uilayout_sock,
+                              s->livecalibration_sock,
+                              s->radarstate_sock,
+                              s->plus_sock
+                             });
 
 #ifdef SHOW_SPEEDLIMIT
-  s->map_data_sock_raw = sub_sock(s->ctx, "tcp://127.0.0.1:8065");
+  s->map_data_sock = SubSock::create(s->ctx, "liveMapData");
+  s->poller.registerSocket(s->map_data_sock);
 #endif
 
   s->ipc_fd = -1;
@@ -660,10 +675,10 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
   s->rgb_front_buf_len = front_bufs.buf_len;
 
   s->rgb_transform = (mat4){{
-    2.0/s->rgb_width, 0.0, 0.0, -1.0,
-    0.0, 2.0/s->rgb_height, 0.0, -1.0,
-    0.0, 0.0, 1.0, 0.0,
-    0.0, 0.0, 0.0, 1.0,
+    2.0f/s->rgb_width, 0.0f, 0.0f, -1.0f,
+    0.0f, 2.0f/s->rgb_height, 0.0f, -1.0f,
+    0.0f, 0.0f, 1.0f, 0.0f,
+    0.0f, 0.0f, 0.0f, 1.0f,
   }};
 
   read_param_float(&s->speed_lim_off, "SpeedLimitOffset");
@@ -789,8 +804,8 @@ static void update_track_data(UIState *s, bool is_mpc, track_vertices_data *pvd)
   bool started = false;
   float off = is_mpc?0.3:0.5;
   float lead_d = scene->lead_d_rel*2.;
-  float path_height = is_mpc?(lead_d>5.)?min(lead_d, 25.)-min(lead_d*0.35, 10.):20.
-                            :(lead_d>0.)?min(lead_d, 50.)-min(lead_d*0.35, 10.):49.;
+  float path_height = is_mpc?(lead_d>5.)?fmin(lead_d, 25.)-fmin(lead_d*0.35, 10.):20.
+                            :(lead_d>0.)?fmin(lead_d, 50.)-fmin(lead_d*0.35, 10.):49.;
   pvd->cnt = 0;
   // left side up
   for (int i=0; i<=path_height; i++) {
@@ -862,8 +877,8 @@ const UIScene *scene = &s->scene;
   bool started = false;
   float off = is_mpc?0.3:0.5;
   float lead_d = scene->lead_d_rel*2.;
-  float path_height = is_mpc?(lead_d>5.)?min(lead_d, 25.)-min(lead_d*0.35, 10.):20.
-                            :(lead_d>0.)?min(lead_d, 50.)-min(lead_d*0.35, 10.):49.;
+  float path_height = is_mpc?(lead_d>5.)?fmin(lead_d, 25.)-fmin(lead_d*0.35, 10.):20.
+                            :(lead_d>0.)?fmin(lead_d, 50.)-fmin(lead_d*0.35, 10.):49.;
   int vi = 0;
   for(int i = 0;i < pvd->cnt;i++) {
     if (pvd->v[i].x < 0 || pvd->v[i].y < 0) {
@@ -973,14 +988,14 @@ static void update_lane_line_data(UIState *s, const float *points, float off, bo
 
 static void update_all_lane_lines_data(UIState *s, const PathData path, model_path_vertices_data *pstart) {
   update_lane_line_data(s, path.points, 0.025*path.prob, false, pstart);
-  float var = min(path.std, 0.7);
+  float var = fmin(path.std, 0.7);
   update_lane_line_data(s, path.points, -var, true, pstart + 1);
   update_lane_line_data(s, path.points, var, true, pstart + 2);
 }
 
 static void ui_draw_lane(UIState *s, const PathData *path, model_path_vertices_data *pstart, NVGcolor color) {
   ui_draw_lane_line(s, pstart, color);
-  float var = min(path->std, 0.7);
+  float var = fmin(path->std, 0.7);
   color.a /= 4;
   ui_draw_lane_line(s, pstart + 1, color);
   ui_draw_lane_line(s, pstart + 2, color);
@@ -1040,7 +1055,7 @@ static void ui_draw_world(UIState *s) {
       if (scene->lead_v_rel < 0) {
         fillAlpha += 255*(-1*(scene->lead_v_rel/speedBuff));
       }
-      fillAlpha = (int)(min(fillAlpha, 255));
+      fillAlpha = (int)(fmin(fillAlpha, 255));
     }
     draw_chevron(s, scene->lead_d_rel+2.7, scene->lead_y_rel, 25,
                   nvgRGBA(201, 34, 49, fillAlpha), nvgRGBA(218, 202, 37, 255));
@@ -1582,16 +1597,9 @@ static void update_status(UIState *s, int status) {
 }
 
 
-void handle_message(UIState *s, void *which) {
-  int err;
-  zmq_msg_t msg;
-  err = zmq_msg_init(&msg);
-  assert(err == 0);
-  err = zmq_msg_recv(&msg, which, 0);
-  assert(err >= 0);
-
+void handle_message(UIState *s, Message * msg) {
   struct capn ctx;
-  capn_init_mem(&ctx, zmq_msg_data(&msg), zmq_msg_size(&msg), 0);
+  capn_init_mem(&ctx, (uint8_t*)msg->getData(), msg->getSize(), 0);
 
   cereal_Event_ptr eventp;
   eventp.p = capn_getp(capn_root(&ctx), 0, 1);
@@ -1765,7 +1773,6 @@ void handle_message(UIState *s, void *which) {
     s->scene.map_valid = datad.mapValid;
   }
   capn_free(&ctx);
-  zmq_msg_close(&msg);
 }
 
 static void ui_update(UIState *s) {
@@ -1842,7 +1849,7 @@ static void ui_update(UIState *s) {
     s->alert_blinked = false;
   }
 
-  zmq_pollitem_t polls[9] = {{0}};
+  zmq_pollitem_t polls[1] = {{0}};
   // Wait for next rgb image from visiond
   while(true) {
     assert(s->ipc_fd >= 0);
@@ -1903,76 +1910,35 @@ static void ui_update(UIState *s) {
   }
   // peek and consume all events in the zmq queue, then return.
   while(true) {
-    int plus_sock_num = 7;
-    int num_polls = 8;
+    bool awake = false;
+    auto polls = s->poller->poll(0);
 
-    polls[0].socket = s->controlsstate_sock_raw;
-    polls[0].events = ZMQ_POLLIN;
-    polls[1].socket = s->livecalibration_sock_raw;
-    polls[1].events = ZMQ_POLLIN;
-    polls[2].socket = s->model_sock_raw;
-    polls[2].events = ZMQ_POLLIN;
-    polls[3].socket = s->radarstate_sock_raw;
-    polls[3].events = ZMQ_POLLIN;
-    polls[4].socket = s->livempc_sock_raw;
-    polls[4].events = ZMQ_POLLIN;
-    polls[5].socket = s->thermal_sock_raw;
-    polls[5].events = ZMQ_POLLIN;
-    polls[6].socket = s->uilayout_sock_raw;
-    polls[6].events = ZMQ_POLLIN;
-
-#ifdef SHOW_SPEEDLIMIT
-    plus_sock_num++;
-    num_polls++;
-    polls[7].socket = s->map_data_sock_raw;
-    polls[7].events = ZMQ_POLLIN;
-#endif
-
-    polls[plus_sock_num].socket = s->plus_sock_raw; // plus_sock should be last
-    polls[plus_sock_num].events = ZMQ_POLLIN;
-
-    int ret = zmq_poll(polls, num_polls, 0);
-    if (ret < 0) {
-      LOGW("poll failed (%d)", ret);
+    if (polls.size() == 0)
       return;
-    }
-    if (ret == 0) {
-      return;
-    }
+      
+    for (auto sock : polls){
+      Message * msg = sock->receive();
 
-    if (polls[0].revents || polls[1].revents || polls[2].revents ||
-        polls[3].revents || polls[4].revents || polls[6].revents ||
-        polls[plus_sock_num].revents) {
-      // awake on any (old) activity
-      set_awake(s, true);
-    }
-
-    if (polls[plus_sock_num].revents) {
-      // plus socket
-      zmq_msg_t msg;
-      err = zmq_msg_init(&msg);
-      assert(err == 0);
-      err = zmq_msg_recv(&msg, s->plus_sock_raw, 0);
-      assert(err >= 0);
-
-      assert(zmq_msg_size(&msg) == 1);
-
-      s->plus_state = ((char*)zmq_msg_data(&msg))[0];
-
-      zmq_msg_close(&msg);
-
-    } else {
-      // zmq messages
-      for (int i=0; i<num_polls - 1; i++) {
-        if (polls[i].revents) {
-          handle_message(s, polls[i].socket);
-        }
+      if (sock != s->thermal_sock){
+        awake = true;
       }
+
+      if (sock == s->plus_sock){
+        s->plus_state = msg->getData()[0];
+      } else {
+        handle_message(s, msg);
+      }
+
+      delete msg;
+    }
+
+    if (awake){
+      set_awake(s, true);
     }
   }
 }
 
-static int vision_subscribe(int fd, VisionPacket *rp, int type) {
+static int vision_subscribe(int fd, VisionPacket *rp, VisionStreamType type) {
   int err;
   LOGW("vision_subscribe type:%d", type);
 
@@ -2013,7 +1979,7 @@ static void* vision_connect_thread(void *args) {
   int err;
   set_thread_name("vision_connect");
 
-  UIState *s = args;
+  UIState *s = (UIState*)args;
   while (!do_exit) {
     usleep(100000);
     pthread_mutex_lock(&s->lock);
@@ -2051,7 +2017,7 @@ static void* light_sensor_thread(void *args) {
   int err;
   set_thread_name("light_sensor");
 
-  UIState *s = args;
+  UIState *s = (UIState*)args;
   s->light_sensor = 0.0;
 
   struct sensors_poll_device_t* device;
@@ -2096,7 +2062,7 @@ fail:
 
 
 static void* bg_thread(void* args) {
-  UIState *s = args;
+  UIState *s = (UIState*)args;
   set_thread_name("bg");
 
   EGLDisplay bg_display;
@@ -2133,7 +2099,7 @@ int is_leon() {
   #define MAXCHAR 1000
   FILE *fp;
   char str[MAXCHAR];
-  char* filename = "/proc/cmdline";
+  const char* filename = "/proc/cmdline";
 
   fp = fopen(filename, "r");
   if (fp == NULL){
@@ -2269,7 +2235,7 @@ int main(int argc, char* argv[]) {
     if (s->volume_timeout > 0) {
       s->volume_timeout--;
     } else {
-      int volume = min(MAX_VOLUME, MIN_VOLUME + s->scene.v_ego / 5);  // up one notch every 5 m/s
+      int volume = fmin(MAX_VOLUME, MIN_VOLUME + s->scene.v_ego / 5);  // up one notch every 5 m/s
       set_volume(s, volume);
     }
 

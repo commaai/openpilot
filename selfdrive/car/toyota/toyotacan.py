@@ -22,12 +22,6 @@ def make_can_msg(addr, dat, alt, cks=False):
   return [addr, 0, dat, alt]
 
 
-def create_video_target(frame, addr):
-  counter = frame & 0xff
-  msg = struct.pack("!BBBBBBB", counter, 0x03, 0xff, 0x00, 0x00, 0x00, 0x00)
-  return make_can_msg(addr, msg, 1, True)
-
-
 def create_ipas_steer_command(packer, steer, enabled, apgs_enabled):
   """Creates a CAN message for the Toyota Steer Command."""
   if steer < 0:

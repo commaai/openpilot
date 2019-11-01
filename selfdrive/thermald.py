@@ -8,13 +8,15 @@ from cereal import log
 from common.basedir import BASEDIR
 from common.params import Params
 from common.realtime import sec_since_boot, DT_TRML
-from common.numpy_fast import clip
+from common.numpy_fast import clip, interp
 from common.filter_simple import FirstOrderFilter
 from selfdrive.version import terms_version, training_version
 from selfdrive.swaglog import cloudlog
 import selfdrive.messaging as messaging
-from selfdrive.services import service_list
 from selfdrive.loggerd.config import get_available_percent
+from selfdrive.pandad import get_expected_version
+
+FW_VERSION = get_expected_version()
 
 ThermalStatus = log.ThermalData.ThermalStatus
 CURRENT_TAU = 15.   # 15s time constant
@@ -94,7 +96,7 @@ _FAN_SPEEDS = [0, 16384, 32768, 65535]
 _BAT_TEMP_THERSHOLD = 45.
 
 
-def handle_fan(max_cpu_temp, bat_temp, fan_speed):
+def handle_fan_eon(max_cpu_temp, bat_temp, fan_speed):
   new_speed_h = next(speed for speed, temp_h in zip(_FAN_SPEEDS, _TEMP_THRS_H) if temp_h > max_cpu_temp)
   new_speed_l = next(speed for speed, temp_l in zip(_FAN_SPEEDS, _TEMP_THRS_L) if temp_l > max_cpu_temp)
 
@@ -113,6 +115,9 @@ def handle_fan(max_cpu_temp, bat_temp, fan_speed):
 
   return fan_speed
 
+def handle_fan_uno(max_cpu_temp, bat_temp, fan_speed):
+  # TODO: implement better fan control
+  return int(interp(max_cpu_temp, [40.0, 80.0], [0, 100]))
 
 def thermald_thread():
   setup_eon_fan()
@@ -120,10 +125,13 @@ def thermald_thread():
   # prevent LEECO from undervoltage
   BATT_PERC_OFF = 10 if LEON else 3
 
+  health_timeout = int(1000 * 2 * DT_TRML)  # 2x the expected health frequency
+
   # now loop
-  thermal_sock = messaging.pub_sock(service_list['thermal'].port)
-  health_sock = messaging.sub_sock(service_list['health'].port)
-  location_sock = messaging.sub_sock(service_list['gpsLocation'].port)
+  thermal_sock = messaging.pub_sock('thermal')
+  health_sock = messaging.sub_sock('health', timeout=health_timeout)
+  location_sock = messaging.sub_sock('gpsLocation')
+
   fan_speed = 0
   count = 0
 
@@ -134,10 +142,12 @@ def thermald_thread():
   thermal_status_prev = ThermalStatus.green
   usb_power = True
   usb_power_prev = True
-  health_sock.RCVTIMEO = int(1000 * 2 * DT_TRML)  # 2x the expected health frequency
+
   current_filter = FirstOrderFilter(0., CURRENT_TAU, DT_TRML)
   health_prev = None
+  fw_version_match_prev = True
   current_connectivity_alert = None
+  time_valid_prev = True
 
   params = Params()
 
@@ -178,7 +188,13 @@ def thermald_thread():
                        msg.thermal.cpu2, msg.thermal.cpu3) / 10.0
     max_comp_temp = max(max_cpu_temp, msg.thermal.mem / 10., msg.thermal.gpu / 10.)
     bat_temp = msg.thermal.bat/1000.
-    fan_speed = handle_fan(max_cpu_temp, bat_temp, fan_speed)
+
+    if health is not None:
+      if health.health.hwType == log.HealthData.HwType.uno:
+        fan_speed = handle_fan_uno(max_cpu_temp, bat_temp, fan_speed)
+      else:
+        fan_speed = handle_fan_eon(max_cpu_temp, bat_temp, fan_speed)
+
     msg.thermal.fanSpeed = fan_speed
 
     # thermal logic with hysterisis
@@ -205,6 +221,16 @@ def thermald_thread():
 
     # Check for last update time and display alerts if needed
     now = datetime.datetime.now()
+
+    # show invalid date/time alert
+    time_valid = now.year >= 2019
+    if time_valid and not time_valid_prev:
+      params.delete("Offroad_InvalidTime")
+    if not time_valid and time_valid_prev:
+      params.put("Offroad_InvalidTime", json.dumps(OFFROAD_ALERTS["Offroad_InvalidTime"]))
+    time_valid_prev = time_valid
+
+    # Show update prompt
     try:
       last_update = datetime.datetime.fromisoformat(params.get("LastUpdateTime", encoding='utf8'))
     except (TypeError, ValueError):
@@ -230,11 +256,13 @@ def thermald_thread():
       params.delete("Offroad_ConnectivityNeededPrompt")
 
     # start constellation of processes when the car starts
-    ignition = health is not None and health.health.started
+    ignition = health is not None and (health.health.ignitionLine or health.health.ignitionCan)
 
     do_uninstall = params.get("DoUninstall") == b"1"
     accepted_terms = params.get("HasAcceptedTerms") == terms_version
     completed_training = params.get("CompletedTrainingVersion") == training_version
+    fw_version = params.get("PandaFirmware", encoding="utf8")
+    fw_version_match = fw_version is None or fw_version.startswith(FW_VERSION)  # don't show alert is no panda is connected (None)
 
     should_start = ignition
 
@@ -246,6 +274,17 @@ def thermald_thread():
 
     # confirm we have completed training and aren't uninstalling
     should_start = should_start and accepted_terms and (passive or completed_training) and (not do_uninstall)
+
+    # check for firmware mismatch
+    should_start = should_start and fw_version_match
+
+    # check if system time is valid
+    should_start = should_start and time_valid
+
+    if fw_version_match and not fw_version_match_prev:
+      params.delete("Offroad_PandaFirmwareMismatch")
+    if not fw_version_match and fw_version_match_prev:
+      params.put("Offroad_PandaFirmwareMismatch", json.dumps(OFFROAD_ALERTS["Offroad_PandaFirmwareMismatch"]))
 
     # if any CPU gets above 107 or the battery gets above 63, kill all processes
     # controls will warn with CPU above 95 or battery above 60
@@ -289,6 +328,7 @@ def thermald_thread():
 
     thermal_status_prev = thermal_status
     usb_power_prev = usb_power
+    fw_version_match_prev = fw_version_match
 
     print(msg)
 
