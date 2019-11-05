@@ -1,7 +1,6 @@
-#include <string>
 #include <vector>
 
-#include "common.h"
+#include "common_dbc.h"
 
 namespace {
 

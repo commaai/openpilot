@@ -1,5 +1,3 @@
-#include <cstdio>
-#include <cstdint>
 #include <cassert>
 #include <cstring>
 
@@ -7,12 +5,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
-
-#include <string>
 #include <algorithm>
-
-#include <capnp/serialize.h>
-#include "cereal/gen/cpp/log.capnp.h"
 
 #include "common.h"
 
