@@ -377,8 +377,8 @@ def manager_thread():
     running_list = ["   running %s %s" % (p, running[p]) for p in running]
     cloudlog.debug('\n'.join(running_list))
 
-    # is this still needed?
-    if params.get("DoUninstall") == "1":
+    # Exit main loop when uninstall is needed
+    if params.get("DoUninstall", encoding='utf8') == "1":
       break
 
 def get_installed_apks():
@@ -555,7 +555,7 @@ def main():
   finally:
     cleanup_all_processes(None, None)
 
-  if params.get("DoUninstall") == "1":
+  if params.get("DoUninstall", encoding='utf8') == "1":
     uninstall()
 
 if __name__ == "__main__":
