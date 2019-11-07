@@ -189,11 +189,10 @@ def thermald_thread():
     max_comp_temp = max(max_cpu_temp, msg.thermal.mem / 10., msg.thermal.gpu / 10.)
     bat_temp = msg.thermal.bat/1000.
 
-    if health is not None:
-      if health.health.hwType == log.HealthData.HwType.uno:
-        fan_speed = handle_fan_uno(max_cpu_temp, bat_temp, fan_speed)
-      else:
-        fan_speed = handle_fan_eon(max_cpu_temp, bat_temp, fan_speed)
+    if health is not None and health.health.hwType == log.HealthData.HwType.uno:
+      fan_speed = handle_fan_uno(max_cpu_temp, bat_temp, fan_speed)
+    else:
+      fan_speed = handle_fan_eon(max_cpu_temp, bat_temp, fan_speed)
 
     msg.thermal.fanSpeed = fan_speed
 
