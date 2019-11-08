@@ -54,9 +54,9 @@ else
 
   OPENCL_LIBS = -lOpenCL
 
-  TF_FLAGS = -I$(EXTERNAL)/tensorflow/include
-  TF_LIBS = -L$(EXTERNAL)/tensorflow/lib -ltensorflow \
-            -Wl,-rpath $(EXTERNAL)/tensorflow/lib
+  #TF_FLAGS = -I$(EXTERNAL)/tensorflow/include
+  #TF_LIBS = -L$(EXTERNAL)/tensorflow/lib -ltensorflow \
+  #          -Wl,-rpath $(EXTERNAL)/tensorflow/lib
 
   SNPE_FLAGS = -I$(PHONELIBS)/snpe/include/
   SNPE_LIBS = -L$(PHONELIBS)/snpe/x86_64-linux-clang/ \
@@ -69,7 +69,7 @@ else
   PLATFORM_OBJS = cameras/camera_frame_stream.o \
                   ../common/visionbuf_cl.o \
                   ../common/visionimg.o \
-                  runners/tfmodel.o
+                  # runners/tfmodel.o
 endif
 
   SSL_FLAGS = -I/usr/include/openssl/
