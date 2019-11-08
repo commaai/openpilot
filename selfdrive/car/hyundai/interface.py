@@ -248,7 +248,11 @@ class CarInterface(CarInterfaceBase):
     ret.doorOpen = not self.CS.door_all_closed
     ret.seatbeltUnlatched = not self.CS.seatbelt
 
-    self.low_speed_alert = ret.vEgo < self.CP.minSteerSpeed
+    # low speed steer alert hysteresis logic (only for cars with steer cut off above 10 m/s)
+    if ret.vEgo < (self.CP.minSteerSpeed + 0.2) and self.CP.minSteerSpeed > 10.:	
+      self.low_speed_alert = True	
+    if ret.vEgo > (self.CP.minSteerSpeed + 0.7):	
+      self.low_speed_alert = False
 
     events = []
     if not ret.gearShifter == GearShifter.drive:
