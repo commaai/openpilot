@@ -7,11 +7,11 @@
 #include <time.h>
 
 #include <pthread.h>
-#include <zmq.h>
 #include <capnp/serialize.h>
 
 #include "cereal/gen/cpp/log.capnp.h"
 
+#include "messaging.hpp"
 #include "common/timing.h"
 #include "common/util.h"
 #include "common/swaglog.h"
@@ -458,8 +458,8 @@ struct __attribute__((packed)) GNSSOemdreSVPolyReportv2 {
 _Static_assert(sizeof(GNSSOemdreSVPolyReportv2) == 271, "error");
 
 
-static void* rawgps_context;
-static void *rawgps_publisher;
+static Context *rawgps_context;
+static PubSocket *rawgps_publisher;
 static int client_id = 0;
 
 static void hexdump(uint8_t* d, size_t len) {
@@ -913,7 +913,7 @@ static void handle_log(uint8_t *ptr, int len) {
 
   auto words = capnp::messageToFlatArray(msg);
   auto bytes = words.asBytes();
-  zmq_send(rawgps_publisher, bytes.begin(), bytes.size(), 0);
+  rawgps_publisher->send((char*)bytes.begin(), bytes.size());
 }
 
 static void handle_event(unsigned char *ptr, int len) {
@@ -1106,11 +1106,8 @@ static void nav_config(int client_id, uint8_t config) {
 void rawgps_init() {
   int err;
 
-
-  rawgps_context = zmq_ctx_new();
-  rawgps_publisher = zmq_socket(rawgps_context, ZMQ_PUB);
-  zmq_bind(rawgps_publisher, "tcp://*:8029");
-
+  rawgps_context = Context::create();
+  rawgps_publisher = PubSocket::create(rawgps_context, "qcomGnss");
 
   bool init_success = Diag_LSM_Init(NULL);
   assert(init_success);
@@ -1166,9 +1163,8 @@ void rawgps_destroy() {
 
   Diag_LSM_DeInit();
 
-  zmq_close(rawgps_publisher);
-  zmq_term(rawgps_context);
-
+  delete rawgps_publisher;
+  delete rawgps_context;
 }
 
 

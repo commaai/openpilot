@@ -3,12 +3,14 @@
 #include <string>
 #include <unistd.h>
 #include <vector>
+#include <cassert>
 #include <string.h>
+#include <signal.h>
 
-#include <czmq.h>
 #include <libyuv.h>
 #include <capnp/serialize.h>
 #include "cereal/gen/cpp/log.capnp.h"
+#include "messaging.hpp"
 
 #include "common/util.h"
 #include "common/timing.h"
@@ -51,26 +53,17 @@ void camera_init(CameraState *s, int camera_id, unsigned int fps) {
 
 void run_frame_stream(DualCameraState *s) {
   int err;
-  zsock_t *recorder_sock = zsock_new_sub(">tcp://127.0.0.1:8002", "");
-  assert(recorder_sock);
-  void *recorder_sock_raw = zsock_resolve(recorder_sock);
+  Context * context = Context::create();
+  SubSocket * recorder_sock = SubSocket::create(context, "frame");
 
   CameraState *const rear_camera = &s->rear;
   auto *tb = &rear_camera->camera_tb;
 
   while (!do_exit) {
-    zmq_msg_t msg;
-    err = zmq_msg_init(&msg);
-    assert(err == 0);
+    Message * msg = recorder_sock->receive();
 
-    err = zmq_msg_recv(&msg, recorder_sock_raw, 0);
-    if(err == -1)
-	    break;
-
-    // make copy due to alignment issues, will be freed on out of scope
-    size_t len = zmq_msg_size(&msg);
-    auto amsg = kj::heapArray<capnp::word>((len / sizeof(capnp::word)) + 1);
-    memcpy(amsg.begin(), (const uint8_t*)zmq_msg_data(&msg), len);
+    auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
+    memcpy(amsg.begin(), msg->getData(), msg->getSize());
 
     capnp::FlatArrayMessageReader cmsg(amsg);
     cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
@@ -100,11 +93,11 @@ void run_frame_stream(DualCameraState *s) {
     clWaitForEvents(1, &map_event);
     clReleaseEvent(map_event);
     tbuffer_dispatch(tb, buf_idx);
+    delete msg;
 
-    err = zmq_msg_close(&msg);
-    assert(err == 0);
   }
-  zsock_destroy(&recorder_sock);
+  delete recorder_sock;
+  delete context;
 }
 
 }  // namespace

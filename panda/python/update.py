@@ -12,7 +12,6 @@ def ensure_st_up_to_date():
 
   panda = None
   panda_dfu = None
-  should_flash_recover = False
 
   while 1:
     # break on normal mode Panda

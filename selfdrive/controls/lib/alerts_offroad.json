@@ -15,5 +15,13 @@
   "Offroad_ConnectivityNeeded": {
     "text": "Connect to internet to check for updates. openpilot won't engage.",
     "severity": 1
+  },
+  "Offroad_PandaFirmwareMismatch": {
+    "text": "Unexpected panda firmware version. System won't start. Reboot your EON to reflash panda.",
+    "severity": 1
+  },
+  "Offroad_InvalidTime": {
+    "text": "Invalid date and time settings, system won't start. Connect to internet to set time.",
+    "severity": 1
   }
 }

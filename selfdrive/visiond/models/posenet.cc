@@ -4,7 +4,7 @@
 
 void posenet_init(PosenetState *s) {
   s->input = (float*)malloc(2*200*532*sizeof(float));
-  s->m = new DefaultRunModel("../../models/posenet.dlc", s->output, sizeof(s->output)/sizeof(float));
+  s->m = new DefaultRunModel("../../models/posenet.dlc", s->output, sizeof(s->output)/sizeof(float), USE_GPU_RUNTIME);
 }
 
 void posenet_push(PosenetState *s, uint8_t *yuv_ptr_y, int yuv_width) {

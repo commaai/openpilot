@@ -6,11 +6,10 @@ from collections import defaultdict
 
 import selfdrive.messaging as messaging
 from common.realtime import sec_since_boot
-from selfdrive.services import service_list
 
 
 def can_printer(bus=0, max_msg=None, addr="127.0.0.1"):
-  logcan = messaging.sub_sock(service_list['can'].port, addr=addr)
+  logcan = messaging.sub_sock('can', addr=addr)
 
   start = sec_since_boot()
   lp = sec_since_boot()

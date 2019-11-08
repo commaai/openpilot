@@ -11,9 +11,6 @@ import time
 import random
 import argparse
 
-from hexdump import hexdump
-from itertools import permutations
-
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 from panda import Panda
 
@@ -33,7 +30,7 @@ def run_test(sleep_duration):
   pandas[0] = Panda(pandas[0])
   pandas[1] = Panda(pandas[1])
 
-  # find out the hardware types  
+  # find out the hardware types
   if not pandas[0].is_black() or not pandas[1].is_black():
     print("Connect two black pandas to run this test!")
     assert False
@@ -66,14 +63,14 @@ def run_test(sleep_duration):
   test_buses(pandas[0], pandas[1], test_array, sleep_duration)
   print("***************** TESTING (1 --> 0) *****************")
   test_buses(pandas[1], pandas[0], test_array, sleep_duration)
-	
+
 
 def test_buses(send_panda, recv_panda, test_array, sleep_duration):
   for send_bus, send_obd, recv_obd, recv_buses in test_array:
     send_panda.send_heartbeat()
     recv_panda.send_heartbeat()
     print("\nSend bus:", send_bus, " Send OBD:", send_obd, " Recv OBD:", recv_obd)
-    
+
     # set OBD on pandas
     send_panda.set_gmlan(True if send_obd else None)
     recv_panda.set_gmlan(True if recv_obd else None)
@@ -92,7 +89,7 @@ def test_buses(send_panda, recv_panda, test_array, sleep_duration):
     time.sleep(0.1)
 
     # check for receive
-    cans_echo = send_panda.can_recv()
+    _ = send_panda.can_recv()  # cans echo
     cans_loop = recv_panda.can_recv()
 
     loop_buses = []
@@ -101,7 +98,7 @@ def test_buses(send_panda, recv_panda, test_array, sleep_duration):
       loop_buses.append(loop[3])
     if len(cans_loop) == 0:
       print("  No loop")
-    
+
     # test loop buses
     recv_buses.sort()
     loop_buses.sort()

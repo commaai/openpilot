@@ -77,10 +77,11 @@ keys = {
   "LiveParameters": [TxType.PERSISTENT],
   "LongitudinalControl": [TxType.PERSISTENT],
   "OpenpilotEnabledToggle": [TxType.PERSISTENT],
+  "PandaFirmware": [TxType.CLEAR_ON_MANAGER_START, TxType.CLEAR_ON_PANDA_DISCONNECT],
+  "PandaDongleId": [TxType.CLEAR_ON_MANAGER_START, TxType.CLEAR_ON_PANDA_DISCONNECT],
   "Passive": [TxType.PERSISTENT],
   "RecordFront": [TxType.PERSISTENT],
   "ReleaseNotes": [TxType.PERSISTENT],
-  "SafetyModelLock": [TxType.PERSISTENT],
   "ShouldDoUpdate": [TxType.CLEAR_ON_MANAGER_START],
   "SpeedLimitOffset": [TxType.PERSISTENT],
   "SubscriberInfo": [TxType.PERSISTENT],
@@ -89,9 +90,11 @@ keys = {
   "UpdateAvailable": [TxType.CLEAR_ON_MANAGER_START],
   "Version": [TxType.PERSISTENT],
   "Offroad_ChargeDisabled": [TxType.CLEAR_ON_MANAGER_START, TxType.CLEAR_ON_PANDA_DISCONNECT],
-  "Offroad_TemperatureTooHigh": [TxType.CLEAR_ON_MANAGER_START],
-  "Offroad_ConnectivityNeededPrompt": [TxType.CLEAR_ON_MANAGER_START],
   "Offroad_ConnectivityNeeded": [TxType.CLEAR_ON_MANAGER_START],
+  "Offroad_ConnectivityNeededPrompt": [TxType.CLEAR_ON_MANAGER_START],
+  "Offroad_TemperatureTooHigh": [TxType.CLEAR_ON_MANAGER_START],
+  "Offroad_PandaFirmwareMismatch": [TxType.CLEAR_ON_MANAGER_START, TxType.CLEAR_ON_PANDA_DISCONNECT],
+  "Offroad_InvalidTime": [TxType.CLEAR_ON_MANAGER_START],
 }
 
 

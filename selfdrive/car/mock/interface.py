@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 from cereal import car
 from selfdrive.config import Conversions as CV
-from selfdrive.services import service_list
 from selfdrive.swaglog import cloudlog
 import selfdrive.messaging as messaging
 from selfdrive.car import gen_empty_fingerprint
@@ -16,15 +15,14 @@ LPG = 2 * 3.1415 * YAW_FR * TS / (1 + 2 * 3.1415 * YAW_FR * TS)
 
 class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController):
-
     self.CP = CP
     self.CC = CarController
 
     cloudlog.debug("Using Mock Car Interface")
 
     # TODO: subscribe to phone sensor
-    self.sensor = messaging.sub_sock(service_list['sensorEvents'].port)
-    self.gps = messaging.sub_sock(service_list['gpsLocation'].port)
+    self.sensor = messaging.sub_sock('sensorEvents')
+    self.gps = messaging.sub_sock('gpsLocation')
 
     self.speed = 0.
     self.prev_speed = 0.

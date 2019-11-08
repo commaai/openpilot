@@ -1,15 +1,8 @@
 from selfdrive.car import apply_toyota_steer_torque_limits
 from selfdrive.car.chrysler.chryslercan import create_lkas_hud, create_lkas_command, \
                                                create_wheel_buttons
-from selfdrive.car.chrysler.values import ECU, CAR
+from selfdrive.car.chrysler.values import ECU, CAR, SteerLimitParams
 from selfdrive.can.packer import CANPacker
-
-class SteerLimitParams:
-  STEER_MAX = 261         # 262 faults
-  STEER_DELTA_UP = 3      # 3 is stock. 100 is fine. 200 is too much it seems
-  STEER_DELTA_DOWN = 3    # no faults on the way down it seems
-  STEER_ERROR_MAX = 80
-
 
 class CarController():
   def __init__(self, dbc_name, car_fingerprint, enable_camera):

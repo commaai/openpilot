@@ -297,7 +297,7 @@ struct HealthData {
   # from can health
   voltage @0 :UInt32;
   current @1 :UInt32;
-  started @2 :Bool;
+  ignitionLine @2 :Bool;
   controlsAllowed @3 :Bool;
   gasInterceptorDetected @4 :Bool;
   startedSignalDetectedDeprecated @5 :Bool;
@@ -308,6 +308,8 @@ struct HealthData {
   hwType @10 :HwType;
   fanSpeedRpm @11 :UInt16;
   usbPowerMode @12 :UsbPowerMode;
+  ignitionCan @13 :Bool;
+  safetyModel @14 :Car.CarParams.SafetyModel;
 
   enum HwType {
     unknown @0;
@@ -1723,6 +1725,7 @@ struct DriverMonitoring {
   rightEyeProb @7 :Float32;
   leftBlinkProb @8 :Float32;
   rightBlinkProb @9 :Float32;
+  irPwr @10 :Float32;
 }
 
 struct Boot {

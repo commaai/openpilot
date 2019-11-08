@@ -2,19 +2,10 @@ from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.hyundai.hyundaican import create_lkas11, create_lkas12, \
                                              create_1191, create_1156, \
                                              create_clu11
-from selfdrive.car.hyundai.values import Buttons
+from selfdrive.car.hyundai.values import Buttons, SteerLimitParams
 from selfdrive.can.packer import CANPacker
 
 
-# Steer torque limits
-
-class SteerLimitParams:
-  STEER_MAX = 255   # 409 is the max, 255 is stock
-  STEER_DELTA_UP = 3
-  STEER_DELTA_DOWN = 7
-  STEER_DRIVER_ALLOWANCE = 50
-  STEER_DRIVER_MULTIPLIER = 2
-  STEER_DRIVER_FACTOR = 1
 
 class CarController():
   def __init__(self, dbc_name, car_fingerprint):

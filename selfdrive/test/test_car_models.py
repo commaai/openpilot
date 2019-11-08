@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import shutil
 import time
-import zmq
 import os
 import sys
 import signal
@@ -10,7 +9,6 @@ import requests
 from cereal import car
 
 import selfdrive.manager as manager
-from selfdrive.services import service_list
 import selfdrive.messaging as messaging
 from common.params import Params
 from common.basedir import BASEDIR
@@ -22,6 +20,7 @@ from selfdrive.car.ford.values import CAR as FORD
 from selfdrive.car.hyundai.values import CAR as HYUNDAI
 from selfdrive.car.chrysler.values import CAR as CHRYSLER
 from selfdrive.car.subaru.values import CAR as SUBARU
+from selfdrive.car.volkswagen.values import CAR as VOLKSWAGEN
 from selfdrive.car.mock.values import CAR as MOCK
 
 
@@ -29,18 +28,17 @@ os.environ['NOCRASH'] = '1'
 
 
 def wait_for_socket(name, timeout=10.0):
-  socket = messaging.sub_sock(service_list[name].port)
+  socket = messaging.sub_sock(name)
   cur_time = time.time()
 
   r = None
   while time.time() - cur_time < timeout:
     print("waiting for %s" % name)
-    try:
-      r = socket.recv(zmq.NOBLOCK)
+    r = socket.receive(non_blocking=True)
+    if r is not None:
       break
-    except zmq.error.Again:
-      pass
     time.sleep(0.5)
+
   if r is None:
     sys.exit(-1)
   return r
@@ -259,6 +257,11 @@ routes = {
     'enableCamera': True,
     'enableDsu': True,
   },
+  "5ceff72287a5c86c|2019-10-19--10-59-02": {
+    'carFingerprint': TOYOTA.COROLLAH_TSS2,
+    'enableCamera': True,
+    'enableDsu': True,
+  },
   "56fb1c86a9a86404|2017-11-10--10-18-43": {
     'carFingerprint': TOYOTA.PRIUS,
     'enableCamera': True,
@@ -379,6 +382,10 @@ routes = {
     'enableCamera': True,
     'enableDsu': False,
   },
+  "76b83eb0245de90e|2019-10-20--15-42-29": {
+    'carFingerprint': VOLKSWAGEN.GOLF,
+    'enableCamera': True,
+  },
   "791340bc01ed993d|2019-03-10--16-28-08": {
     'carFingerprint': SUBARU.IMPREZA,
     'enableCamera': True,
@@ -475,9 +482,9 @@ if __name__ == "__main__":
       # Start unlogger
       print("Start unlogger")
       if route in non_public_routes:
-        unlogger_cmd = [os.path.join(BASEDIR, os.environ['UNLOGGER_PATH']), '%s' % route, '--disable', 'frame,plan,pathPlan,liveLongitudinalMpc,radarState,controlsState,liveTracks,liveMpc,sendcan,carState,carControl', '--no-interactive']
+        unlogger_cmd = [os.path.join(BASEDIR, os.environ['UNLOGGER_PATH']), '%s' % route, '--disable', 'frame,plan,pathPlan,liveLongitudinalMpc,radarState,controlsState,liveTracks,liveMpc,sendcan,carState,carControl,carEvents,carParams', '--no-interactive']
       else:
-        unlogger_cmd = [os.path.join(BASEDIR, 'tools/replay/unlogger.py'), '%s' % route, '/tmp', '--disable', 'frame,plan,pathPlan,liveLongitudinalMpc,radarState,controlsState,liveTracks,liveMpc,sendcan,carState,carControl', '--no-interactive']
+        unlogger_cmd = [os.path.join(BASEDIR, 'tools/replay/unlogger.py'), '%s' % route, '/tmp', '--disable', 'frame,plan,pathPlan,liveLongitudinalMpc,radarState,controlsState,liveTracks,liveMpc,sendcan,carState,carControl,carEvents,carParams', '--no-interactive']
       unlogger = subprocess.Popen(unlogger_cmd, preexec_fn=os.setsid)
 
       print("Check sockets")
@@ -544,9 +551,9 @@ if __name__ == "__main__":
 
   for route in results:
     print(results[route])
-  params.put("Passive", "0")   # put back not passive to not leave the params in an unintended state
+  Params().put("Passive", "0")   # put back not passive to not leave the params in an unintended state
   if not all(passed for passed, _ in results.values()):
     print("TEST FAILED")
     sys.exit(1)
   else:
-    print("TEST SUCESSFUL")
+    print("TEST SUCCESSFUL")

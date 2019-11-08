@@ -8,9 +8,10 @@ from panda.python.isotp import isotp_send, isotp_recv
 # 0x7e0 = Toyota
 # 0x18DB33F1 for Honda?
 
+
 def get_current_data_for_pid(pid):
   # 01 xx = Show current data
-  isotp_send(panda, "\x01"+chr(pid), 0x7e0)
+  isotp_send(panda, b"\x01"+ bytes([pid]), 0x7e0)
   return isotp_recv(panda, 0x7e8)
 
 def get_supported_pids():
@@ -33,15 +34,15 @@ if __name__ == "__main__":
   panda.can_clear(0)
 
   # 09 02 = Get VIN
-  isotp_send(panda, "\x09\x02", 0x7df)
+  isotp_send(panda, b"\x09\x02", 0x7df)
   ret = isotp_recv(panda, 0x7e8)
   hexdump(ret)
-  print("VIN: %s" % ret[2:])
+  print("VIN: %s" % "".join(map(chr, ret[:2])))
 
   # 03 = get DTCS
-  isotp_send(panda, "\x03", 0x7e0)
+  isotp_send(panda, b"\x03", 0x7e0)
   dtcs = isotp_recv(panda, 0x7e8)
-  print("DTCs:", dtcs[2:].encode("hex"))
+  print("DTCs:", "".join(map(chr, dtcs[:2])))
 
   supported_pids = get_supported_pids()
   print("Supported PIDs:",supported_pids)

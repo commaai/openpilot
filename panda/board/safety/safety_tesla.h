@@ -39,9 +39,6 @@ int tesla_gas_prev = 0;
 int tesla_speed = 0;
 int eac_status = 0;
 
-int tesla_ignition_started = 0;
-
-
 void set_gmlan_digital_output(int to_set);
 void reset_gmlan_switch_timeout(void);
 void gmlan_switch_init(int timeout_enable);
@@ -64,13 +61,6 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       // deactivate openpilot
       controls_allowed = 0;
     }
-  }
-
-  // Detect drive rail on (ignition) (start recording)
-  if (addr == 0x348) {
-    // GTW_status
-    int drive_rail_on = GET_BYTE(to_push, 0) & 0x1;
-    tesla_ignition_started = drive_rail_on == 1;
   }
 
   // exit controls on brake press
@@ -183,12 +173,7 @@ static int tesla_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 static void tesla_init(int16_t param) {
   UNUSED(param);
   controls_allowed = 0;
-  tesla_ignition_started = 0;
   gmlan_switch_init(1); //init the gmlan switch with 1s timeout enabled
-}
-
-static int tesla_ign_hook(void) {
-  return tesla_ignition_started;
 }
 
 static int tesla_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
@@ -224,6 +209,5 @@ const safety_hooks tesla_hooks = {
   .rx = tesla_rx_hook,
   .tx = tesla_tx_hook,
   .tx_lin = nooutput_tx_lin_hook,
-  .ignition = tesla_ign_hook,
   .fwd = tesla_fwd_hook,
 };

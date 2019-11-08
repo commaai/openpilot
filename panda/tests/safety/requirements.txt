@@ -1,4 +1,0 @@
-cffi==1.11.4
-numpy==1.14.5
-libusb1==1.6.6
-requests

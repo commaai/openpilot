@@ -1,8 +1,6 @@
-
 import time
 from panda import Panda
 from .helpers import time_many_sends, connect_wifi, test_white, panda_type_to_serial
-from nose.tools import timed, assert_equal, assert_less, assert_greater
 
 @test_white
 @panda_type_to_serial

@@ -10,7 +10,6 @@ const int CADILLAC_MAX_RATE_DOWN = 5;
 const int CADILLAC_DRIVER_TORQUE_ALLOWANCE = 50;
 const int CADILLAC_DRIVER_TORQUE_FACTOR = 4;
 
-bool cadillac_ign = 0;
 int cadillac_cruise_engaged_last = 0;
 int cadillac_rt_torque_last = 0;
 const int cadillac_torque_msgs_n = 4;
@@ -33,11 +32,6 @@ static void cadillac_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     torque_driver_new = to_signed(torque_driver_new, 11);
     // update array of samples
     update_sample(&cadillac_torque_driver, torque_driver_new);
-  }
-
-  // this message isn't all zeros when ignition is on
-  if ((addr == 0x160) && (bus == 0)) {
-    cadillac_ign = GET_BYTES_04(to_push) != 0;
   }
 
   // enter controls on rising edge of ACC, exit controls on ACC off
@@ -118,11 +112,6 @@ static int cadillac_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 static void cadillac_init(int16_t param) {
   UNUSED(param);
   controls_allowed = 0;
-  cadillac_ign = 0;
-}
-
-static int cadillac_ign_hook(void) {
-  return cadillac_ign;
 }
 
 const safety_hooks cadillac_hooks = {
@@ -130,6 +119,5 @@ const safety_hooks cadillac_hooks = {
   .rx = cadillac_rx_hook,
   .tx = cadillac_tx_hook,
   .tx_lin = nooutput_tx_lin_hook,
-  .ignition = cadillac_ign_hook,
   .fwd = default_fwd_hook,
 };

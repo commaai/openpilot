@@ -3,7 +3,7 @@
 Welcome to openpilot
 ======
 
-[openpilot](http://github.com/commaai/openpilot) is an open source driver assistance system. Currently, it performs the functions of Adaptive Cruise Control (ACC) and Lane Keeping Assist System (LKAS) for selected Honda, Toyota, Acura, Lexus, Chevrolet, Hyundai, Kia. It's about on par with Tesla Autopilot and GM Super Cruise, and better than [all other manufacturers](http://www.thedrive.com/tech/5707/the-war-for-autonomous-driving-part-iii-us-vs-germany-vs-japan).
+[openpilot](http://github.com/commaai/openpilot) is an open source driver assistance system. Currently, it performs the functions of Adaptive Cruise Control (ACC) and Automated Lane Centering (ALC) for selected Honda, Toyota, Acura, Lexus, Chevrolet, Hyundai, Kia, Subaru, Volkswagen. It's about on par with Tesla Autopilot and GM Super Cruise, and better than [all other manufacturers](http://www.thedrive.com/tech/5707/the-war-for-autonomous-driving-part-iii-us-vs-germany-vs-japan).
 
 The openpilot codebase has been written to be concise and to enable rapid prototyping. We look forward to your contributions - improving real vehicle automation has never been easier.
 
@@ -29,116 +29,116 @@ Community
 
 openpilot is developed by [comma.ai](https://comma.ai/) and users like you.
 
-We have a [Twitter you should follow](https://twitter.com/comma_ai).
-
-Also, we have a several thousand people community on [Discord](https://discord.comma.ai).
+[Follow us on Twitter](https://twitter.com/comma_ai) and [join our Discord](https://discord.comma.ai).
 
 <table>
   <tr>
-    <td><a href="https://www.youtube.com/watch?v=ICOIin4p70w" title="YouTube" rel="noopener"><img src="https://i.imgur.com/gBTo7yB.png"></a></td>
-    <td><a href="https://www.youtube.com/watch?v=1zCtj3ckGFo" title="YouTube" rel="noopener"><img src="https://i.imgur.com/gNhhcep.png"></a></td>
-    <td><a href="https://www.youtube.com/watch?v=Qd2mjkBIRx0" title="YouTube" rel="noopener"><img src="https://i.imgur.com/tFnSexp.png"></a></td>
-    <td><a href="https://www.youtube.com/watch?v=ju12vlBm59E" title="YouTube" rel="noopener"><img src="https://i.imgur.com/3BKiJVy.png"></a></td>
+    <td><a href="https://www.youtube.com/watch?v=mgAbfr42oI8" title="YouTube" rel="noopener"><img src="https://i.imgur.com/kAtT6Ei.png"></a></td>
+    <td><a href="https://www.youtube.com/watch?v=394rJKeh76k" title="YouTube" rel="noopener"><img src="https://i.imgur.com/lTt8cS2.png"></a></td>
+    <td><a href="https://www.youtube.com/watch?v=1iNOc3cq8cs" title="YouTube" rel="noopener"><img src="https://i.imgur.com/ANnuSpe.png"></a></td>
+    <td><a href="https://www.youtube.com/watch?v=Vr6NgrB-zHw" title="YouTube" rel="noopener"><img src="https://i.imgur.com/Qypanuq.png"></a></td>
   </tr>
   <tr>
-    <td><a href="https://www.youtube.com/watch?v=Z5VY5FzgNt4" title="YouTube" rel="noopener"><img src="https://i.imgur.com/3I9XOK2.png"></a></td>
-    <td><a href="https://www.youtube.com/watch?v=blnhZC7OmMg" title="YouTube" rel="noopener"><img src="https://i.imgur.com/f9IgX6s.png"></a></td>
-    <td><a href="https://www.youtube.com/watch?v=iRkz7FuJsA8" title="YouTube" rel="noopener"><img src="https://i.imgur.com/Vo5Zvmn.png"></a></td>
-    <td><a href="https://www.youtube.com/watch?v=IHjEqAKDqjM" title="YouTube" rel="noopener"><img src="https://i.imgur.com/V9Zd81n.png"></a></td>
+    <td><a href="https://www.youtube.com/watch?v=Ug41KIKF0oo" title="YouTube" rel="noopener"><img src="https://i.imgur.com/3caZ7xM.png"></a></td>
+    <td><a href="https://www.youtube.com/watch?v=NVR_CdG1FRg" title="YouTube" rel="noopener"><img src="https://i.imgur.com/bAZOwql.png"></a></td>
+    <td><a href="https://www.youtube.com/watch?v=tkEvIdzdfUE" title="YouTube" rel="noopener"><img src="https://i.imgur.com/EFINEzG.png"></a></td>
+    <td><a href="https://www.youtube.com/watch?v=_P-N1ewNne4" title="YouTube" rel="noopener"><img src="https://i.imgur.com/gAyAq22.png"></a></td>
   </tr>
 </table>
 
 Hardware
 ------
 
-At the moment openpilot supports the [EON Dashcam DevKit](https://comma.ai/shop/products/eon-dashcam-devkit). A [panda](https://shop.comma.ai/products/panda-obd-ii-dongle) and a [giraffe](https://comma.ai/shop/products/giraffe/) are recommended tools to interface the EON with the car. We'd like to support other platforms as well.
+At the moment openpilot supports the [EON DevKit](https://comma.ai/shop/products/eon-dashcam-devkit). A [car harness](https://comma.ai/shop/products/car-harness) is recommended to connect the EON to the car. We'd like to support other platforms as well.
 
 Install openpilot on a neo device by entering ``https://openpilot.comma.ai`` during NEOS setup.
 
 Supported Cars
 ------
 
-| Make                 | Model (US Market Reference)| Supported Package    | Lateral | Longitudinal   | No Accel Below   | No Steer Below | Giraffe           |
-| ---------------------| ---------------------------| ---------------------| --------| ---------------| -----------------| ---------------|-------------------|
-| Acura                | ILX 2016-18                | AcuraWatch Plus      | Yes     | Yes            | 25mph<sup>1</sup>| 25mph          | Nidec             |
-| Acura                | RDX 2016-18                | AcuraWatch Plus      | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          | Nidec             |
-| Buick<sup>3</sup>    | Regal 2018                 | Adaptive Cruise      | Yes     | Yes            | 0mph             | 7mph           | Custom<sup>6</sup>|
-| Chevrolet<sup>3</sup>| Malibu 2017                | Adaptive Cruise      | Yes     | Yes            | 0mph             | 7mph           | Custom<sup>6</sup>|
-| Chevrolet<sup>3</sup>| Volt 2017-18               | Adaptive Cruise      | Yes     | Yes            | 0mph             | 7mph           | Custom<sup>6</sup>|
-| Cadillac<sup>3</sup> | ATS 2018                   | Adaptive Cruise      | Yes     | Yes            | 0mph             | 7mph           | Custom<sup>6</sup>|
-| Chrysler             | Pacifica 2017-18           | Adaptive Cruise      | Yes     | Stock          | 0mph             | 9mph           | FCA               |
-| Chrysler             | Pacifica Hybrid 2017-18    | Adaptive Cruise      | Yes     | Stock          | 0mph             | 9mph           | FCA               |
-| Chrysler             | Pacifica Hybrid 2019       | Adaptive Cruise      | Yes     | Stock          | 0mph             | 39mph          | FCA               |
-| GMC<sup>3</sup>      | Acadia Denali 2018         | Adaptive Cruise      | Yes     | Yes            | 0mph             | 7mph           | Custom<sup>6</sup>|
-| Holden<sup>3</sup>   | Astra 2017                 | Adaptive Cruise      | Yes     | Yes            | 0mph             | 7mph           | Custom<sup>6</sup>|
-| Honda                | Accord 2018-19             | All                  | Yes     | Stock          | 0mph             | 3mph           | Bosch             |
-| Honda                | Accord Hybrid 2018-19      | All                  | Yes     | Stock          | 0mph             | 3mph           | Bosch             |
-| Honda                | Civic Sedan/Coupe 2016-18  | Honda Sensing        | Yes     | Yes            | 0mph             | 12mph          | Nidec             |
-| Honda                | Civic Sedan/Coupe 2019     | Honda Sensing        | Yes     | Stock          | 0mph             | 2mph           | Bosch             |
-| Honda                | Civic Hatchback 2017-19    | Honda Sensing        | Yes     | Stock          | 0mph             | 12mph          | Bosch             |
-| Honda                | CR-V 2015-16               | Touring              | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          | Nidec             |
-| Honda                | CR-V 2017-19               | Honda Sensing        | Yes     | Stock          | 0mph             | 12mph          | Bosch             |
-| Honda                | CR-V Hybrid 2017-2019      | Honda Sensing        | Yes     | Stock          | 0mph             | 12mph          | Bosch             |
-| Honda                | Fit 2018-19                | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          | Inverted Nidec    |
-| Honda                | Odyssey 2018-19            | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 0mph           | Inverted Nidec    |
-| Honda                | Passport 2019              | All                  | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          | Inverted Nidec    |
-| Honda                | Pilot 2016-18              | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          | Nidec             |
-| Honda                | Pilot 2019                 | All                  | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          | Inverted Nidec    |
-| Honda                | Ridgeline 2017-19          | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          | Nidec             |
-| Hyundai              | Santa Fe 2019              | All                  | Yes     | Stock          | 0mph             | 0mph           | Custom<sup>5</sup>|
-| Hyundai              | Elantra 2017-19            | SCC + LKAS           | Yes     | Stock          | 19mph            | 34mph          | Custom<sup>5</sup>|
-| Hyundai              | Genesis 2018               | All                  | Yes     | Stock          | 19mph            | 34mph          | Custom<sup>5</sup>|
-| Jeep                 | Grand Cherokee 2016-18     | Adaptive Cruise      | Yes     | Stock          | 0mph             | 9mph           | FCA               |
-| Jeep                 | Grand Cherokee 2019        | Adaptive Cruise      | Yes     | Stock          | 0mph             | 39mph          | FCA               |
-| Kia                  | Optima 2019                | SCC + LKAS           | Yes     | Stock          | 0mph             | 0mph           | Custom<sup>5</sup>|
-| Kia                  | Sorento 2018               | All                  | Yes     | Stock          | 0mph             | 0mph           | Custom<sup>5</sup>|
-| Kia                  | Stinger 2018               | SCC + LKAS           | Yes     | Stock          | 0mph             | 0mph           | Custom<sup>5</sup>|
-| Lexus                | CT Hybrid 2017-18          | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           | Toyota            |
-| Lexus                | ES 2019                    | All                  | Yes     | Yes            | 0mph             | 0mph           | Toyota            |
-| Lexus                | ES Hybrid 2019             | All                  | Yes     | Yes            | 0mph             | 0mph           | Toyota            |
-| Lexus                | RX Hybrid 2016-19          | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           | Toyota            |
-| Lexus                | IS 2017-2019               | All                  | Yes     | Stock          | 22mph            | 0mph           | Toyota            |
-| Lexus                | IS Hybrid 2017             | All                  | Yes     | Stock          | 0mph             | 0mph           | Toyota            |
-| Subaru               | Crosstrek 2018-19          | EyeSight             | Yes     | Stock          | 0mph             | 0mph           | Subaru            |
-| Subaru               | Impreza 2019-20            | EyeSight             | Yes     | Stock          | 0mph             | 0mph           | Subaru            |
-| Toyota               | Avalon 2016                | TSS-P                | Yes     | Yes<sup>2</sup>| 20mph<sup>1</sup>| 0mph           | Toyota            |
-| Toyota               | Avalon 2017-18             | All                  | Yes     | Yes<sup>2</sup>| 20mph<sup>1</sup>| 0mph           | Toyota            |
-| Toyota               | Camry 2018-19              | All                  | Yes     | Stock          | 0mph<sup>4</sup> | 0mph           | Toyota            |
-| Toyota               | Camry Hybrid 2018-19       | All                  | Yes     | Stock          | 0mph<sup>4</sup> | 0mph           | Toyota            |
-| Toyota               | C-HR 2017-19               | All                  | Yes     | Stock          | 0mph             | 0mph           | Toyota            |
-| Toyota               | C-HR Hybrid 2017-19        | All                  | Yes     | Stock          | 0mph             | 0mph           | Toyota            |
-| Toyota               | Corolla 2017-19            | All                  | Yes     | Yes<sup>2</sup>| 20mph<sup>1</sup>| 0mph           | Toyota            |
-| Toyota               | Corolla 2020               | All                  | Yes     | Yes            | 0mph             | 0mph           | Toyota            |
-| Toyota               | Corolla Hatchback 2019     | All                  | Yes     | Yes            | 0mph             | 0mph           | Toyota            |
-| Toyota               | Corolla Hybrid 2019        | All                  | Yes     | Yes            | 0mph             | 0mph           | Toyota            |
-| Toyota               | Highlander 2017-19         | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           | Toyota            |
-| Toyota               | Highlander Hybrid 2017-19  | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           | Toyota            |
-| Toyota               | Prius 2016                 | TSS-P                | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           | Toyota            |
-| Toyota               | Prius 2017-19              | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           | Toyota            |
-| Toyota               | Prius Prime 2017-20        | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           | Toyota            |
-| Toyota               | Rav4 2016                  | TSS-P                | Yes     | Yes<sup>2</sup>| 20mph<sup>1</sup>| 0mph           | Toyota            |
-| Toyota               | Rav4 2017-18               | All                  | Yes     | Yes<sup>2</sup>| 20mph<sup>1</sup>| 0mph           | Toyota            |
-| Toyota               | Rav4 2019                  | All                  | Yes     | Yes            | 0mph             | 0mph           | Toyota            |
-| Toyota               | Rav4 Hybrid 2016           | TSS-P                | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           | Toyota            |
-| Toyota               | Rav4 Hybrid 2017-18        | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           | Toyota            |
-| Toyota               | Sienna 2018                | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           | Toyota            |
+| Make                  | Model (US Market Reference)        | Supported Package    | Lateral | Longitudinal   | No Accel Below   | No Steer Below |
+| ----------------------| -----------------------------------| ---------------------| --------| ---------------| -----------------| ---------------|
+| Acura                 | ILX 2016-18                        | AcuraWatch Plus      | Yes     | Yes            | 25mph<sup>1</sup>| 25mph          |
+| Acura                 | RDX 2016-18                        | AcuraWatch Plus      | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          |
+| Buick<sup>3</sup>     | Regal 2018<sup>6</sup>             | Adaptive Cruise      | Yes     | Yes            | 0mph             | 7mph           |
+| Chevrolet<sup>3</sup> | Malibu 2017<sup>6</sup>            | Adaptive Cruise      | Yes     | Yes            | 0mph             | 7mph           |
+| Chevrolet<sup>3</sup> | Volt 2017-18<sup>6</sup>           | Adaptive Cruise      | Yes     | Yes            | 0mph             | 7mph           |
+| Cadillac<sup>3</sup>  | ATS 2018                           | Adaptive Cruise      | Yes     | Yes            | 0mph             | 7mph           |
+| Chrysler              | Pacifica 2017-18<sup>7</sup>       | Adaptive Cruise      | Yes     | Stock          | 0mph             | 9mph           |
+| Chrysler              | Pacifica Hybrid 2017-18<sup>7</sup>| Adaptive Cruise      | Yes     | Stock          | 0mph             | 9mph           |
+| Chrysler              | Pacifica Hybrid 2019<sup>7</sup>   | Adaptive Cruise      | Yes     | Stock          | 0mph             | 39mph          |
+| GMC<sup>3</sup>       | Acadia Denali 2018<sup>6</sup>     | Adaptive Cruise      | Yes     | Yes            | 0mph             | 7mph           |
+| Holden<sup>3</sup>    | Astra 2017<sup>6</sup>             | Adaptive Cruise      | Yes     | Yes            | 0mph             | 7mph           |
+| Honda                 | Accord 2018-19                     | All                  | Yes     | Stock          | 0mph             | 3mph           |
+| Honda                 | Accord Hybrid 2018-19              | All                  | Yes     | Stock          | 0mph             | 3mph           |
+| Honda                 | Civic Sedan/Coupe 2016-18          | Honda Sensing        | Yes     | Yes            | 0mph             | 12mph          |
+| Honda                 | Civic Sedan/Coupe 2019             | Honda Sensing        | Yes     | Stock          | 0mph             | 2mph           |
+| Honda                 | Civic Hatchback 2017-19            | Honda Sensing        | Yes     | Stock          | 0mph             | 12mph          |
+| Honda                 | CR-V 2015-16                       | Touring              | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          |
+| Honda                 | CR-V 2017-19                       | Honda Sensing        | Yes     | Stock          | 0mph             | 12mph          |
+| Honda                 | CR-V Hybrid 2017-2019              | Honda Sensing        | Yes     | Stock          | 0mph             | 12mph          |
+| Honda                 | Fit 2018-19                        | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          |
+| Honda                 | Odyssey 2018-19                    | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 0mph           |
+| Honda                 | Passport 2019                      | All                  | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          |
+| Honda                 | Pilot 2016-18                      | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          |
+| Honda                 | Pilot 2019                         | All                  | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          |
+| Honda                 | Ridgeline 2017-19                  | Honda Sensing        | Yes     | Yes            | 25mph<sup>1</sup>| 12mph          |
+| Hyundai               | Santa Fe 2019<sup>5</sup>          | All                  | Yes     | Stock          | 0mph             | 0mph           |
+| Hyundai               | Elantra 2017-19<sup>5</sup>        | SCC + LKAS           | Yes     | Stock          | 19mph            | 34mph          |
+| Hyundai               | Genesis 2018<sup>5</sup>           | All                  | Yes     | Stock          | 19mph            | 34mph          |
+| Jeep                  | Grand Cherokee 2016-18<sup>7</sup> | Adaptive Cruise      | Yes     | Stock          | 0mph             | 9mph           |
+| Jeep                  | Grand Cherokee 2019<sup>7</sup>    | Adaptive Cruise      | Yes     | Stock          | 0mph             | 39mph          |
+| Kia                   | Optima 2019<sup>5</sup>            | SCC + LKAS           | Yes     | Stock          | 0mph             | 0mph           |
+| Kia                   | Sorento 2018<sup>5</sup>           | All                  | Yes     | Stock          | 0mph             | 0mph           |
+| Kia                   | Stinger 2018<sup>5</sup>           | SCC + LKAS           | Yes     | Stock          | 0mph             | 0mph           |
+| Lexus                 | CT Hybrid 2017-18                  | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
+| Lexus                 | ES Hybrid 2019                     | All                  | Yes     | Yes            | 0mph             | 0mph           |
+| Lexus                 | RX Hybrid 2016-19                  | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
+| Lexus                 | IS 2017-2019                       | All                  | Yes     | Stock          | 22mph            | 0mph           |
+| Lexus                 | IS Hybrid 2017                     | All                  | Yes     | Stock          | 0mph             | 0mph           |
+| Subaru                | Crosstrek 2018-19                  | EyeSight             | Yes     | Stock          | 0mph             | 0mph           |
+| Subaru                | Impreza 2019-20                    | EyeSight             | Yes     | Stock          | 0mph             | 0mph           |
+| Toyota                | Avalon 2016                        | TSS-P                | Yes     | Yes<sup>2</sup>| 20mph<sup>1</sup>| 0mph           |
+| Toyota                | Avalon 2017-18                     | All                  | Yes     | Yes<sup>2</sup>| 20mph<sup>1</sup>| 0mph           |
+| Toyota                | Camry 2018-19                      | All                  | Yes     | Stock          | 0mph<sup>4</sup> | 0mph           |
+| Toyota                | Camry Hybrid 2018-19               | All                  | Yes     | Stock          | 0mph<sup>4</sup> | 0mph           |
+| Toyota                | C-HR 2017-19                       | All                  | Yes     | Stock          | 0mph             | 0mph           |
+| Toyota                | C-HR Hybrid 2017-19                | All                  | Yes     | Stock          | 0mph             | 0mph           |
+| Toyota                | Corolla 2017-19                    | All                  | Yes     | Yes<sup>2</sup>| 20mph<sup>1</sup>| 0mph           |
+| Toyota                | Corolla 2020                       | All                  | Yes     | Yes            | 0mph             | 0mph           |
+| Toyota                | Corolla Hatchback 2019             | All                  | Yes     | Yes            | 0mph             | 0mph           |
+| Toyota                | Corolla Hybrid 2020                | All                  | Yes     | Yes            | 0mph             | 0mph           |
+| Toyota                | Highlander 2017-19                 | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
+| Toyota                | Highlander Hybrid 2017-19          | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
+| Toyota                | Prius 2016                         | TSS-P                | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
+| Toyota                | Prius 2017-19                      | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
+| Toyota                | Prius Prime 2017-20                | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
+| Toyota                | Rav4 2016                          | TSS-P                | Yes     | Yes<sup>2</sup>| 20mph<sup>1</sup>| 0mph           |
+| Toyota                | Rav4 2017-18                       | All                  | Yes     | Yes<sup>2</sup>| 20mph<sup>1</sup>| 0mph           |
+| Toyota                | Rav4 2019                          | All                  | Yes     | Yes            | 0mph             | 0mph           |
+| Toyota                | Rav4 Hybrid 2016                   | TSS-P                | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
+| Toyota                | Rav4 Hybrid 2017-18                | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
+| Toyota                | Sienna 2018                        | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
+| Volkswagen<sup>8</sup>| Golf 2016-19                       | Driver Assistance    | Yes     | Stock          | 0mph             | 0mph           |
 
 <sup>1</sup>[Comma Pedal](https://community.comma.ai/wiki/index.php/Comma_Pedal) is used to provide stop-and-go capability to some of the openpilot-supported cars that don't currently support stop-and-go. Here is how to [build a Comma Pedal](https://medium.com/@jfrux/comma-pedal-building-with-macrofab-6328bea791e8). ***NOTE: The Comma Pedal is not officially supported by [comma.ai](https://comma.ai).*** <br />
 <sup>2</sup>When disconnecting the Driver Support Unit (DSU), otherwise longitudinal control is stock ACC. For DSU locations, see [Toyota Wiki page](https://community.comma.ai/wiki/index.php/Toyota). ***NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB).*** <br />
 <sup>3</sup>[GM installation guide](https://zoneos.com/volt/). ***NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).*** <br />
 <sup>4</sup>28mph for Camry 4CYL L, 4CYL LE and 4CYL SE which don't have Full-Speed Range Dynamic Radar Cruise Control. <br />
-<sup>5</sup>Open sourced [Hyundai Giraffe](https://github.com/commaai/neo/tree/master/giraffe/hyundai) is designed for the 2019 Sante Fe; pinout may differ for other Hyundais. <br />
-<sup>6</sup>Community built Giraffe, find more information [here](https://zoneos.com/shop/). <br />
+<sup>5</sup>Requires a [panda](https://comma.ai/shop/products/panda-obd-ii-dongle) and open sourced [Hyundai Giraffe](https://github.com/commaai/neo/tree/master/giraffe/hyundai), designed for the 2019 Sante Fe; pinout may differ for other Hyundais. <br />
+<sup>6</sup>Requires a [panda](https://comma.ai/shop/products/panda-obd-ii-dongle) and community built giraffe, find more information [here](https://zoneos.com/shop/). <br />
+<sup>7</sup>Requires a [panda](https://comma.ai/shop/products/panda-obd-ii-dongle) and FCA [giraffe](https://comma.ai/shop/products/giraffe) <br />
+<sup>8</sup>Requires a [custom connector](https://community.comma.ai/wiki/index.php/Volkswagen#Integration_at_J533_Gateway) for the [car harness](https://comma.ai/shop/products/car-harness) <br />
 
 Community Maintained Cars
 ------
 
-| Make                 | Model                    | Supported Package    | Lateral | Longitudinal   | No Accel Below   | No Steer Below | Giraffe           |
-| ---------------------| -------------------------| ---------------------| --------| ---------------| -----------------| ---------------|-------------------|
-| Tesla                | Model S 2012-13          | All                  | Yes     | Not yet        | Not applicable   | 0mph           | Custom<sup>7</sup>|
+| Make                 | Model (US Market Reference)        | Supported Package    | Lateral | Longitudinal   | No Accel Below   | No Steer Below |
+| ---------------------| -----------------------------------| ---------------------| --------| ---------------| -----------------| ---------------|
+| Tesla                | Model S 2012-13<sup>9</sup>        | All                  | Yes     | NA             | NA               | 0mph           |
 
 [[Tesla Model S Pull Request]](https://github.com/commaai/openpilot/pull/246) <br />
-<sup>7</sup>Community built Giraffe, find more information here [Community Tesla Giraffe](https://github.com/jeankalud/neo/tree/tesla_giraffe/giraffe/tesla) <br />
+<sup>9</sup>Requires a [panda](https://comma.ai/shop/products/panda-obd-ii-dongle) and community built giraffe, find more information [here](https://github.com/jeankalud/neo/tree/tesla_giraffe/giraffe/tesla). <br />
 
 Community Maintained Cars are not confirmed by comma.ai to meet our [safety model](https://github.com/commaai/openpilot/blob/devel/SAFETY.md). Be extra cautious using them.
 
@@ -149,6 +149,7 @@ In Progress Cars
 - All Kia, Genesis with SCC and LKAS.
 - All Chrysler, Jeep, Fiat with Adaptive Cruise Control and LaneSense.
 - All Subaru with EyeSight.
+- All Volkswagen, Audi, Škoda and SEAT with Adaptive Cruise Control.
 
 How can I add support for my car?
 ------
@@ -203,7 +204,7 @@ It logs the road facing camera, CAN, GPS, IMU, magnetometer, thermal sensors, cr
 The user facing camera is only logged if you explicitly opt-in in settings.
 It does not log the microphone.
 
-By using it, you agree to [our privacy policy](https://community.comma.ai/privacy.html). You understand that use of this software or its related services will generate certain types of user data, which may be logged and stored at the sole discretion of comma.ai. By accepting this agreement, you grant an irrevocable, perpetual, worldwide right to comma.ai for the use of this data.
+By using it, you agree to [our privacy policy](https://my.comma.ai/privacy). You understand that use of this software or its related services will generate certain types of user data, which may be logged and stored at the sole discretion of comma.ai. By accepting this agreement, you grant an irrevocable, perpetual, worldwide right to comma.ai for the use of this data.
 
 Testing on PC
 ------
