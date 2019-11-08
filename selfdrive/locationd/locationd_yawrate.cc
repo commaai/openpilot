@@ -31,7 +31,7 @@ void Localizer::update_state(const Eigen::Matrix<double, 1, 4> &C, const double 
 
 void Localizer::handle_sensor_events(capnp::List<cereal::SensorEventData>::Reader sensor_events, double current_time) {
   for (cereal::SensorEventData::Reader sensor_event : sensor_events){
-    if (sensor_event.getSensor() == 5) {
+    if (sensor_event.getSensor() == 5 && sensor_event.getType() == 16) {
       sensor_data_time = current_time;
       double meas = -sensor_event.getGyroUncalibrated().getV()[0];
       update_state(C_gyro, R_gyro, current_time, meas);

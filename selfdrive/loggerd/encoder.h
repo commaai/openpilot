@@ -8,6 +8,7 @@
 #include <pthread.h>
 
 #include <OMX_Component.h>
+#include <libavformat/avformat.h>
 
 #include "common/cqueue.h"
 #include "common/visionipc.h"
@@ -38,6 +39,7 @@ typedef struct EncoderState {
 
   size_t codec_config_len;
   uint8_t *codec_config;
+  bool wrote_codec_config;
 
   pthread_mutex_t state_lock;
   pthread_cond_t state_cv;
@@ -47,7 +49,7 @@ typedef struct EncoderState {
 
   int num_in_bufs;
   OMX_BUFFERHEADERTYPE** in_buf_headers;
-  
+
   int num_out_bufs;
   OMX_BUFFERHEADERTYPE** out_buf_headers;
 
@@ -55,11 +57,22 @@ typedef struct EncoderState {
   Queue done_out;
 
   void *stream_sock_raw;
+
+  AVFormatContext *ofmt_ctx;
+  AVCodecContext *codec_ctx;
+  AVStream *out_stream;
+  bool remuxing;
+
+  void *zmq_ctx;
+
+  bool downscale;
+  uint8_t *y_ptr2, *u_ptr2, *v_ptr2;
 } EncoderState;
 
-void encoder_init(EncoderState *s, const char* filename, int width, int height, int fps, int bitrate);
-int encoder_encode_frame(EncoderState *s, uint64_t ts,
+void encoder_init(EncoderState *s, const char* filename, int width, int height, int fps, int bitrate, bool h265, bool downscale);
+int encoder_encode_frame(EncoderState *s,
                          const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
+                         int in_width, int in_height,
                          int *frame_segment, VIPCBufExtra *extra);
 void encoder_open(EncoderState *s, const char* path);
 void encoder_rotate(EncoderState *s, const char* new_path, int new_segment);

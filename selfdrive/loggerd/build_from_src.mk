@@ -24,6 +24,9 @@ CXXFLAGS = -std=c++11 -g -fPIC -O2 $(WARN_FLAGS) \
 
 ZMQ_LIBS = -l:libczmq.a -l:libzmq.a
 
+MESSAGING_FLAGS = -I$(BASEDIR)/selfdrive/messaging
+MESSAGING_LIBS = $(BASEDIR)/selfdrive/messaging/messaging.a
+
 ifeq ($(ARCH),aarch64)
 CFLAGS += -mcpu=cortex-a57
 CXXFLAGS += -mcpu=cortex-a57
@@ -78,12 +81,12 @@ YAML_LIBS = $(PHONELIBS)/yaml-cpp/x64/lib/libyaml-cpp.a
 else
 OBJS += encoder.o \
         raw_logger.o
-EXTRA_LIBS = -lcutils -llog
+EXTRA_LIBS = -lcutils -llog -lgnustl_shared
 endif
 
 DEPS := $(OBJS:.o=.d)
 
-loggerd: $(OBJS)
+loggerd: $(OBJS) $(MESSAGING_LIBS)
 	@echo "[ LINK ] $@"
 	$(CXX) -fPIC -o '$@' $^ \
 	      $(LIBYUV_LIBS) \
@@ -104,6 +107,7 @@ loggerd: $(OBJS)
            $(CEREAL_CXXFLAGS) \
            $(LIBYUV_FLAGS) \
            $(ZMQ_FLAGS) \
+           $(MESSAGING_FLAGS) \
            $(OPENMAX_FLAGS) \
            $(YAML_FLAGS) \
            $(BZIP_FLAGS) \

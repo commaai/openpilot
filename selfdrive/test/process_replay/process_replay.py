@@ -3,7 +3,6 @@ import os
 import threading
 import importlib
 import shutil
-import zmq
 
 if "CI" in os.environ:
   tqdm = lambda x: x
@@ -27,9 +26,9 @@ class FakeSocket:
     self.recv_called = threading.Event()
     self.recv_ready = threading.Event()
 
-  def recv(self, block=None):
-    if block == zmq.NOBLOCK:
-      raise zmq.error.Again
+  def receive(self, non_blocking=False):
+    if non_blocking:
+      return None
 
     if self.wait:
       self.recv_called.set()
@@ -57,7 +56,7 @@ class DumbSocket:
       dat.init(s)
       self.data = dat.to_bytes()
 
-  def recv(self, block=None):
+  def receive(self, non_blocking=False):
     return self.data
 
   def send(self, dat):

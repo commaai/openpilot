@@ -1,7 +1,11 @@
 libusb1 == 1.6.6
-hexdump
-pycrypto
-tqdm
+numpy==1.17.2
+hexdump>=3.3
+pycrypto==2.6.1
+tqdm>=4.14.0
 nose
 parameterized
 requests
+flake8==3.7.8
+pylint==2.4.2
+cffi==1.11.4

@@ -1,8 +1,6 @@
-
 import os
 import usb1
 import struct
-import time
 import binascii
 
 # *** DFU mode ***
@@ -116,6 +114,6 @@ class PandaDFU(object):
     self.status()
     try:
       self._handle.controlWrite(0x21, DFU_DNLOAD, 2, 0, b"")
-      stat = str(self._handle.controlRead(0x21, DFU_GETSTATUS, 0, 0, 6))
+      _ = str(self._handle.controlRead(0x21, DFU_GETSTATUS, 0, 0, 6))
     except Exception:
       pass

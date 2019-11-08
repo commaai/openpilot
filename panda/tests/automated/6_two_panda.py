@@ -171,7 +171,7 @@ def test_black_loopback(panda0, panda1):
       time.sleep(0.1)
 
       # check for receive
-      cans_echo = send_panda.can_recv()
+      _ = send_panda.can_recv()  # cans echo
       cans_loop = recv_panda.can_recv()
 
       loop_buses = []

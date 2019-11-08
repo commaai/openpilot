@@ -3,7 +3,6 @@ import matplotlib
 matplotlib.use('TkAgg')
 
 import sys
-from selfdrive.services import service_list
 import selfdrive.messaging as messaging
 import numpy as np
 import matplotlib.pyplot as plt
@@ -58,9 +57,9 @@ def mpc_vwr_thread(addr="127.0.0.1"):
 
 
   # *** log ***
-  livempc = messaging.sub_sock(service_list['liveMpc'].port, addr=addr)
-  model = messaging.sub_sock(service_list['model'].port, addr=addr)
-  path_plan_sock = messaging.sub_sock(service_list['pathPlan'].port, addr=addr)
+  livempc = messaging.sub_sock('liveMpc', addr=addr)
+  model = messaging.sub_sock('model', addr=addr)
+  path_plan_sock = messaging.sub_sock('pathPlan', addr=addr)
 
   while 1:
     lMpc = messaging.recv_sock(livempc, wait=True)

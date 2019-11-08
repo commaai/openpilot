@@ -20,8 +20,10 @@ void white_enable_can_transciever(uint8_t transciever, bool enabled) {
 }
 
 void white_enable_can_transcievers(bool enabled) {
-  for(uint8_t i=1; i<=3U; i++)
+  uint8_t t1 = enabled ? 1U : 2U;  // leave transciever 1 enabled to detect CAN ignition
+  for(uint8_t i=t1; i<=3U; i++) {
     white_enable_can_transciever(i, enabled);
+  }
 }
 
 void white_set_led(uint8_t color, bool enabled) {
@@ -150,6 +152,10 @@ void white_set_can_mode(uint8_t mode){
   }
 }
 
+uint32_t white_read_current(void){
+  return adc_get(ADCCHAN_CURRENT);
+}
+
 uint64_t marker = 0;
 void white_usb_power_mode_tick(uint64_t tcnt){
 
@@ -158,7 +164,7 @@ void white_usb_power_mode_tick(uint64_t tcnt){
   #define CURRENT_THRESHOLD 0xF00U
   #define CLICKS 5U // 5 seconds to switch modes
 
-  uint32_t current = adc_get(ADCCHAN_CURRENT);
+  uint32_t current = white_read_current();
 
   // ~0x9a = 500 ma
   // puth(current); puts("\n");
@@ -215,6 +221,14 @@ void white_usb_power_mode_tick(uint64_t tcnt){
 #else
   UNUSED(tcnt);
 #endif
+}
+
+void white_set_ir_power(uint8_t percentage){
+  UNUSED(percentage);
+}
+
+void white_set_fan_power(uint8_t percentage){
+  UNUSED(percentage);
 }
 
 bool white_check_ignition(void){
@@ -315,5 +329,8 @@ const board board_white = {
   .set_esp_gps_mode = white_set_esp_gps_mode,
   .set_can_mode = white_set_can_mode,
   .usb_power_mode_tick = white_usb_power_mode_tick,
-  .check_ignition = white_check_ignition
+  .check_ignition = white_check_ignition,
+  .read_current = white_read_current,
+  .set_fan_power = white_set_fan_power,
+  .set_ir_power = white_set_ir_power
 };

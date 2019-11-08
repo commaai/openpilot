@@ -15,28 +15,25 @@ WARN_FLAGS = -Werror=implicit-function-declaration \
 
 CFLAGS = -std=gnu11 -g -fPIC -I../ -I../../ -O2 $(WARN_FLAGS) -Wall
 CXXFLAGS = -std=c++11 -g -fPIC -I../ -I../../ -O2 $(WARN_FLAGS) -Wall
-ZMQ_LIBS = -l:libczmq.a -l:libzmq.a
+
+MESSAGING_FLAGS = -I$(BASEDIR)/selfdrive/messaging
+MESSAGING_LIBS = $(BASEDIR)/selfdrive/messaging/messaging.a
+
+EXTRA_LIBS = -lpthread
 
 ifeq ($(ARCH),aarch64)
 CFLAGS += -mcpu=cortex-a57
 CXXFLAGS += -mcpu=cortex-a57
-ZMQ_LIBS += -lgnustl_shared
+EXTRA_LIBS += -llog -luuid -lgnustl_shared
 endif
 
 
 JSON_FLAGS = -I$(PHONELIBS)/json/src
 JSON11_FLAGS = -I$(PHONELIBS)/json11
 
-EXTRA_LIBS = -lpthread
 
 ifeq ($(ARCH),x86_64)
 ZMQ_FLAGS = -I$(BASEDIR)/phonelibs/zmq/x64/include
-ZMQ_LIBS = -L$(BASEDIR)/external/zmq/lib \
-           -l:libczmq.a -l:libzmq.a
-ZMQ_SHARED_LIBS = -L$(BASEDIR)/external/zmq/lib \
-                  -lczmq -lzmq
-else
-EXTRA_LIBS += -llog -luuid
 endif
 
 .PHONY: all
@@ -64,32 +61,28 @@ OBJS = ublox_msg.o \
 
 DEPS := $(OBJS:.o=.d) ubloxd.d ubloxd_test.d
 
-liblocationd.so: $(LOC_OBJS)
+liblocationd.so: $(LOC_OBJS) $(MESSAGING_LIBS)
 	@echo "[ LINK ] $@"
 	$(CXX) -shared -o '$@' $^ \
             $(CEREAL_LIBS) \
-            $(ZMQ_SHARED_LIBS) \
             $(EXTRA_LIBS)
 
-paramsd: $(LOC_OBJS)
+paramsd: $(LOC_OBJS) $(MESSAGING_LIBS)
 	@echo "[ LINK ] $@"
 	$(CXX) -fPIC -o '$@' $^ \
             $(CEREAL_LIBS) \
-            $(ZMQ_LIBS) \
             $(EXTRA_LIBS)
 
-ubloxd: ubloxd.o $(OBJS)
+ubloxd: ubloxd.o $(OBJS) $(MESSAGING_LIBS)
 	@echo "[ LINK ] $@"
 	$(CXX) -fPIC -o '$@' $^ \
             $(CEREAL_LIBS) \
-            $(ZMQ_LIBS) \
             $(EXTRA_LIBS)
 
-ubloxd_test: ubloxd_test.o $(OBJS)
+ubloxd_test: ubloxd_test.o $(OBJS) $(MESSAGING_LIBS)
 	@echo "[ LINK ] $@"
 	$(CXX) -fPIC -o '$@' $^ \
             $(CEREAL_LIBS) \
-            $(ZMQ_LIBS) \
             $(EXTRA_LIBS)
 
 %.o: %.cc
@@ -98,6 +91,7 @@ ubloxd_test: ubloxd_test.o $(OBJS)
           -Iinclude -I.. -I../.. \
            $(CEREAL_CXXFLAGS) \
            $(ZMQ_FLAGS) \
+           $(MESSAGING_FLAGS) \
            $(JSON11_FLAGS) \
            $(JSON_FLAGS) \
            -I../ \
