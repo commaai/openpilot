@@ -7,7 +7,6 @@ from selfdrive.car.hyundai.values import CAR, Buttons, SteerLimitParams
 from selfdrive.can.packer import CANPacker
 
 
-
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 def process_hud_alert(enabled, fingerprint, visual_alert, left_line,
