@@ -10,6 +10,7 @@ def get_powertrain_can_parser(CP):
     # sig_name, sig_address, default
     ("Steer_Torque_Sensor", "Steering_Torque", 0),
     ("Steering_Angle", "Steering_Torque", 0),
+    ("Steer_Torque_Output", "Steering_Torque", 0),
     ("Cruise_On", "CruiseControl", 0),
     ("Cruise_Activated", "CruiseControl", 0),
     ("Brake_Pedal", "Brake_Pedal", 0),
@@ -17,6 +18,7 @@ def get_powertrain_can_parser(CP):
     ("LEFT_BLINKER", "Dashlights", 0),
     ("RIGHT_BLINKER", "Dashlights", 0),
     ("SEATBELT_FL", "Dashlights", 0),
+
     ("FL", "Wheel_Speeds", 0),
     ("FR", "Wheel_Speeds", 0),
     ("RL", "Wheel_Speeds", 0),
@@ -35,12 +37,10 @@ def get_powertrain_can_parser(CP):
   ]
 
   if CP.carFingerprint == CAR.IMPREZA:
-    signals += [
-      ("Units", "Dash_State", 1),
-    ]
     checks += [
       ("BodyInfo", 10),
       ("CruiseControl", 20),
+      ("Units", "Dash_State", 1),
     ]
 
   else:
@@ -90,6 +90,30 @@ def get_camera_can_parser(CP):
       ("Signal5", "ES_LKAS_State", 0),
     ]
 
+  if CP.carFingerprint in [CAR.OUTBACK, CAR.LEGACY]:
+    signals += [
+      ("Brake_On", "ES_CruiseThrottle", 0),
+      ("Button", "ES_CruiseThrottle", 0),
+      ("CloseDistance", "ES_CruiseThrottle", 0),
+      ("Counter", "ES_CruiseThrottle", 0),
+      ("Cruise_Activatedish", "ES_CruiseThrottle", 0),
+      ("DistanceSwap", "ES_CruiseThrottle", 0),
+      ("ES_Error", "ES_CruiseThrottle", 0),
+      ("NEW_SIGNAL_1", "ES_CruiseThrottle", 0),
+      ("Unknown", "ES_CruiseThrottle", 0),
+      ("SET_0_1", "ES_CruiseThrottle", 0),
+      ("SET_0_2", "ES_CruiseThrottle", 0),
+      ("SET_0_3", "ES_CruiseThrottle", 0),
+      ("SET_0_4", "ES_CruiseThrottle", 0),
+      ("SET_1", "ES_CruiseThrottle", 0),
+      ("SET_2", "ES_CruiseThrottle", 0),
+      ("NEW_SIGNAL_9", "ES_CruiseThrottle", 0),
+      ("Standstill", "ES_CruiseThrottle", 0),
+      ("Standstill_2", "ES_CruiseThrottle", 0),
+      ("Throttle_Cruise", "ES_CruiseThrottle", 0),
+      ("Not_Ready_Startup", "ES_DashStatus", 0),
+    ]
+
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
 
 
@@ -103,9 +127,6 @@ class CarState():
     self.prev_left_blinker_on = False
     self.right_blinker_on = False
     self.prev_right_blinker_on = False
-    self.steer_torque_driver = 0
-    self.steer_not_allowed = False
-    self.main_on = False
 
     # vEgo kalman filter
     dt = 0.01
@@ -146,8 +167,8 @@ class CarState():
     self.prev_right_blinker_on = self.right_blinker_on
     self.left_blinker_on = cp.vl["Dashlights"]['LEFT_BLINKER'] == 1
     self.right_blinker_on = cp.vl["Dashlights"]['RIGHT_BLINKER'] == 1
-    self.seatbelt_unlatched = cp.vl["Dashlights"]['SEATBELT_FL'] == 1
     self.steer_torque_driver = cp.vl["Steering_Torque"]['Steer_Torque_Sensor']
+    self.steer_torque_motor = cp.vl["Steering_Torque"]['Steer_Torque_Output']
     self.acc_active = cp.vl["CruiseControl"]['Cruise_Activated']
     self.main_on = cp.vl["CruiseControl"]['Cruise_On']
     self.steer_override = abs(self.steer_torque_driver) > STEER_THRESHOLD[self.car_fingerprint]
@@ -158,13 +179,21 @@ class CarState():
       cp.vl["BodyInfo"]['DOOR_OPEN_FL']])
 
     if self.car_fingerprint == CAR.IMPREZA:
+      self.seatbelt_unlatched = cp.vl["Dashlights"]['SEATBELT_FL'] == 1
       self.v_cruise_pcm = cp_cam.vl["ES_DashStatus"]["Cruise_Set_Speed"] * CV.MPH_TO_KPH
       self.steer_not_allowed = 0
       self.es_distance_msg = copy.copy(cp_cam.vl["ES_Distance"])
       self.es_lkas_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
       # 1 = imperial, 6 = metric
       if cp.vl["Dash_State"]['Units'] == 1:
-        self.v_cruise_pcm *= CV.MPH_TO_KPH     
-    else:
+        self.v_cruise_pcm *= CV.MPH_TO_KPH
+
+    if self.car_fingerprint in [CAR.OUTBACK, CAR.LEGACY]:
+      self.seatbelt_unlatched = False # FIXME: stock ACC disengages on unlatch so this is fine for now, signal is currently missing
       self.v_cruise_pcm = cp_cam.vl["ES_DashStatus"]["Cruise_Set_Speed"]
       self.steer_not_allowed = cp.vl["Steering_Torque"]["LKA_Lockout"]
+      self.button = cp_cam.vl["ES_CruiseThrottle"]["Button"]
+      self.brake_hold = cp_cam.vl["ES_CruiseThrottle"]["Standstill"]
+      self.close_distance = cp_cam.vl["ES_CruiseThrottle"]["CloseDistance"]
+      self.es_accel_msg = copy.copy(cp_cam.vl["ES_CruiseThrottle"])
+      self.ready = not cp_cam.vl["ES_DashStatus"]["Not_Ready_Startup"]
