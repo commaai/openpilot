@@ -7,7 +7,7 @@ from selfdrive.car.honda.hondacan import fix
 from common.realtime import sec_since_boot
 from common.dbc import dbc
 
-class CANParser(object):
+class CANParser():
   def __init__(self, dbc_f, signals, checks=None):
     ### input:
     # dbc_f   : dbc file
@@ -21,7 +21,7 @@ class CANParser(object):
     #             - frequency is the frequency at which health should be monitored.
 
     checks = [] if checks is None else checks
-    self.msgs_ck = set([check[0] for check in checks])
+    self.msgs_ck = {check[0] for check in checks}
     self.frqs = dict(checks)
     self.can_valid = False  # start with False CAN assumption
     # list of received msg we want to monitor counter and checksum for
@@ -73,7 +73,7 @@ class CANParser(object):
         self.ck[msg] = True
         if "CHECKSUM" in out.keys() and msg in self.msgs_ck:
           # remove checksum (half byte)
-          ck_portion = cdat[:-1] + chr(ord(cdat[-1]) & 0xF0)
+          ck_portion = cdat[:-1] + (cdat[-1] & 0xF0).to_bytes(1, 'little')
           # recalculate checksum
           msg_vl = fix(ck_portion, msg)
           # compare recalculated vs received checksum

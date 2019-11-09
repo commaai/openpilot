@@ -1,5 +1,5 @@
-#!/usr/bin/env python
-from __future__ import print_function
+#!/usr/bin/env python3
+
 import os
 import sys
 import time
@@ -29,14 +29,14 @@ def run_test(sleep_duration):
   run_test_w_pandas(pandas, sleep_duration)
 
 def run_test_w_pandas(pandas, sleep_duration):
-  h = list(map(lambda x: Panda(x), pandas))
+  h = list([Panda(x) for x in pandas])
   print("H", h)
 
   for hh in h:
-    hh.set_controls_allowed(True)
+    hh.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
 
   # test both directions
-  for ho in permutations(range(len(h)), r=2):
+  for ho in permutations(list(range(len(h))), r=2):
     print("***************** TESTING", ho)
 
     panda0, panda1 = h[ho[0]], h[ho[1]]
@@ -55,7 +55,7 @@ def run_test_w_pandas(pandas, sleep_duration):
 
       # send the characters
       st = get_test_string()
-      st = b"\xaa"+chr(len(st)+3).encode()+st
+      st = bytes([0xaa, len(st) + 3]) + st
       h[ho[0]].kline_send(st, bus=bus, checksum=False)
 
       # check for receive
@@ -70,8 +70,8 @@ def run_test_w_pandas(pandas, sleep_duration):
       time.sleep(sleep_duration)
 
     # **** test can line loopback ****
-#    for bus, gmlan in [(0, None), (1, False), (2, False), (1, True), (2, True)]:
-for bus, gmlan in [(0, None), (1, None)]:
+    #    for bus, gmlan in [(0, None), (1, False), (2, False), (1, True), (2, True)]:
+    for bus, gmlan in [(0, None), (1, None)]:
       print("\ntest can", bus)
       # flush
       cans_echo = panda0.can_recv()

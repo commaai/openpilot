@@ -1,18 +1,15 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Loopback test between two black pandas (+ harness and power)
 # Tests all buses, including OBD CAN, which is on the same bus as CAN0 in this test.
 # To be sure, the test should be run with both harness orientations
 
-from __future__ import print_function
+
 import os
 import sys
 import time
 import random
 import argparse
-
-from hexdump import hexdump
-from itertools import permutations
 
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 from panda import Panda
@@ -34,10 +31,7 @@ def run_test(sleep_duration):
   pandas[1] = Panda(pandas[1])
 
   # find out the hardware types
-  type0 = pandas[0].get_type()
-  type1 = pandas[1].get_type()
-  
-  if type0 != "\x03" or type1 != "\x03":
+  if not pandas[0].is_black() or not pandas[1].is_black():
     print("Connect two black pandas to run this test!")
     assert False
 
@@ -69,14 +63,14 @@ def run_test(sleep_duration):
   test_buses(pandas[0], pandas[1], test_array, sleep_duration)
   print("***************** TESTING (1 --> 0) *****************")
   test_buses(pandas[1], pandas[0], test_array, sleep_duration)
-	
+
 
 def test_buses(send_panda, recv_panda, test_array, sleep_duration):
   for send_bus, send_obd, recv_obd, recv_buses in test_array:
     send_panda.send_heartbeat()
     recv_panda.send_heartbeat()
     print("\nSend bus:", send_bus, " Send OBD:", send_obd, " Recv OBD:", recv_obd)
-    
+
     # set OBD on pandas
     send_panda.set_gmlan(True if send_obd else None)
     recv_panda.set_gmlan(True if recv_obd else None)
@@ -95,7 +89,7 @@ def test_buses(send_panda, recv_panda, test_array, sleep_duration):
     time.sleep(0.1)
 
     # check for receive
-    cans_echo = send_panda.can_recv()
+    _ = send_panda.can_recv()  # cans echo
     cans_loop = recv_panda.can_recv()
 
     loop_buses = []
@@ -104,7 +98,7 @@ def test_buses(send_panda, recv_panda, test_array, sleep_duration):
       loop_buses.append(loop[3])
     if len(cans_loop) == 0:
       print("  No loop")
-    
+
     # test loop buses
     recv_buses.sort()
     loop_buses.sort()

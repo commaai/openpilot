@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # This file is not used by OpenPilot. Only boardd.cc is used.
 # The python version is slower, but has more options for development.
@@ -12,9 +12,11 @@ import time
 
 import selfdrive.messaging as messaging
 from common.realtime import Ratekeeper
-from selfdrive.services import service_list
 from selfdrive.swaglog import cloudlog
 from selfdrive.boardd.boardd import can_capnp_to_can_list
+from cereal import car
+
+SafetyModel = car.CarParams.SafetyModel
 
 # USB is optional
 try:
@@ -22,13 +24,6 @@ try:
   from usb1 import USBErrorIO, USBErrorOverflow  #pylint: disable=no-name-in-module
 except Exception:
   pass
-
-SAFETY_NOOUTPUT = 0
-SAFETY_HONDA = 1
-SAFETY_TOYOTA = 2
-SAFETY_CHRYSLER = 9
-SAFETY_TOYOTA_NOLIMITS = 0x1336
-SAFETY_ALLOUTPUT = 0x1337
 
 # *** serialization functions ***
 def can_list_to_can_capnp(can_msgs, msgtype='can'):
@@ -41,7 +36,7 @@ def can_list_to_can_capnp(can_msgs, msgtype='can'):
       cc = dat.can[i]
     cc.address = can_msg[0]
     cc.busTime = can_msg[1]
-    cc.dat = str(can_msg[2])
+    cc.dat = bytes(can_msg[2])
     cc.src = can_msg[3]
   return dat
 
@@ -50,13 +45,13 @@ def can_list_to_can_capnp(can_msgs, msgtype='can'):
 def can_health():
   while 1:
     try:
-      dat = handle.controlRead(usb1.TYPE_VENDOR | usb1.RECIPIENT_DEVICE, 0xd2, 0, 0, 0x10)
+      dat = handle.controlRead(usb1.TYPE_VENDOR | usb1.RECIPIENT_DEVICE, 0xd2, 0, 0, 0x16)
       break
     except (USBErrorIO, USBErrorOverflow):
       cloudlog.exception("CAN: BAD HEALTH, RETRYING")
-  v, i, started = struct.unpack("IIB", dat[0:9])
-  # TODO: units
-  return {"voltage": v, "current": i, "started": bool(started)}
+  v, i = struct.unpack("II", dat[0:8])
+  ign_line, ign_can = struct.unpack("BB", dat[20:22])
+  return {"voltage": v, "current": i, "ignition_line": bool(ign_line), "ignition_can": bool(ign_can)}
 
 def __parse_can_buffer(dat):
   ret = []
@@ -71,17 +66,17 @@ def can_send_many(arr):
   for addr, _, dat, alt in arr:
     if addr < 0x800:  # only support 11 bit addr
       snd = struct.pack("II", ((addr << 21) | 1), len(dat) | (alt << 4)) + dat
-      snd = snd.ljust(0x10, '\x00')
+      snd = snd.ljust(0x10, b'\x00')
       snds.append(snd)
   while 1:
     try:
-      handle.bulkWrite(3, ''.join(snds))
+      handle.bulkWrite(3, b''.join(snds))
       break
     except (USBErrorIO, USBErrorOverflow):
       cloudlog.exception("CAN: BAD SEND MANY, RETRYING")
 
 def can_recv():
-  dat = ""
+  dat = b""
   while 1:
     try:
       dat = handle.bulkRead(1, 0x10*256)
@@ -102,10 +97,10 @@ def can_init():
     if device.getVendorID() == 0xbbaa and device.getProductID() == 0xddcc:
       handle = device.open()
       handle.claimInterface(0)
-      handle.controlWrite(0x40, 0xdc, SAFETY_ALLOUTPUT, 0, b'')
+      handle.controlWrite(0x40, 0xdc, SafetyModel.allOutput, 0, b'')
 
   if handle is None:
-    cloudlog.warn("CAN NOT FOUND")
+    cloudlog.warning("CAN NOT FOUND")
     exit(-1)
 
   cloudlog.info("got handle")
@@ -113,10 +108,10 @@ def can_init():
 
 def boardd_mock_loop():
   can_init()
-  handle.controlWrite(0x40, 0xdc, SAFETY_ALLOUTPUT, 0, b'')
+  handle.controlWrite(0x40, 0xdc, SafetyModel.allOutput, 0, b'')
 
-  logcan = messaging.sub_sock(service_list['can'].port)
-  sendcan = messaging.pub_sock(service_list['sendcan'].port)
+  logcan = messaging.sub_sock('can')
+  sendcan = messaging.pub_sock('sendcan')
 
   while 1:
     tsc = messaging.drain_sock(logcan, wait_for_one=True)
@@ -124,17 +119,17 @@ def boardd_mock_loop():
     snd = []
     for s in snds:
       snd += s
-    snd = filter(lambda x: x[-1] <= 2, snd)
-    snd_0 = len(filter(lambda x: x[-1] == 0, snd))
-    snd_1 = len(filter(lambda x: x[-1] == 1, snd))
-    snd_2 = len(filter(lambda x: x[-1] == 2, snd))
+    snd = list(filter(lambda x: x[-1] <= 2, snd))
+    snd_0 = len(list(filter(lambda x: x[-1] == 0, snd)))
+    snd_1 = len(list(filter(lambda x: x[-1] == 1, snd)))
+    snd_2 = len(list(filter(lambda x: x[-1] == 2, snd)))
     can_send_many(snd)
 
     # recv @ 100hz
     can_msgs = can_recv()
-    got_0 = len(filter(lambda x: x[-1] == 0+0x80, can_msgs))
-    got_1 = len(filter(lambda x: x[-1] == 1+0x80, can_msgs))
-    got_2 = len(filter(lambda x: x[-1] == 2+0x80, can_msgs))
+    got_0 = len(list(filter(lambda x: x[-1] == 0+0x80, can_msgs)))
+    got_1 = len(list(filter(lambda x: x[-1] == 1+0x80, can_msgs)))
+    got_2 = len(list(filter(lambda x: x[-1] == 2+0x80, can_msgs)))
     print("sent %3d (%3d/%3d/%3d) got %3d (%3d/%3d/%3d)" %
       (len(snd), snd_0, snd_1, snd_2, len(can_msgs), got_0, got_1, got_2))
     m = can_list_to_can_capnp(can_msgs, msgtype='sendcan')
@@ -154,24 +149,24 @@ def boardd_test_loop():
     cnt += 1
 
 # *** main loop ***
-def boardd_loop(rate=200):
+def boardd_loop(rate=100):
   rk = Ratekeeper(rate)
 
   can_init()
 
   # *** publishes can and health
-  logcan = messaging.pub_sock(service_list['can'].port)
-  health_sock = messaging.pub_sock(service_list['health'].port)
+  logcan = messaging.pub_sock('can')
+  health_sock = messaging.pub_sock('health')
 
   # *** subscribes to can send
-  sendcan = messaging.sub_sock(service_list['sendcan'].port)
+  sendcan = messaging.sub_sock('sendcan')
 
   # drain sendcan to delete any stale messages from previous runs
   messaging.drain_sock(sendcan)
 
   while 1:
-    # health packet @ 1hz
-    if (rk.frame%rate) == 0:
+    # health packet @ 2hz
+    if (rk.frame % (rate // 2)) == 0:
       health = can_health()
       msg = messaging.new_message()
       msg.init('health')
@@ -179,7 +174,8 @@ def boardd_loop(rate=200):
       # store the health to be logged
       msg.health.voltage = health['voltage']
       msg.health.current = health['current']
-      msg.health.started = health['started']
+      msg.health.ignitionLine = health['ignition_line']
+      msg.health.ignitionCan = health['ignition_can']
       msg.health.controlsAllowed = True
 
       health_sock.send(msg.to_bytes())
@@ -201,15 +197,15 @@ def boardd_loop(rate=200):
     rk.keep_time()
 
 # *** main loop ***
-def boardd_proxy_loop(rate=200, address="192.168.2.251"):
+def boardd_proxy_loop(rate=100, address="192.168.2.251"):
   rk = Ratekeeper(rate)
 
   can_init()
 
   # *** subscribes can
-  logcan = messaging.sub_sock(service_list['can'].port, addr=address)
+  logcan = messaging.sub_sock('can', addr=address)
   # *** publishes to can send
-  sendcan = messaging.pub_sock(service_list['sendcan'].port)
+  sendcan = messaging.pub_sock('sendcan')
 
   # drain sendcan to delete any stale messages from previous runs
   messaging.drain_sock(sendcan)

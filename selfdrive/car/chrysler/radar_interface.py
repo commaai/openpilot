@@ -1,10 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import os
 from selfdrive.can.parser import CANParser
 from cereal import car
+from selfdrive.car.interfaces import RadarInterfaceBase
 
-RADAR_MSGS_C = range(0x2c2, 0x2d4+2, 2)  # c_ messages 706,...,724
-RADAR_MSGS_D = range(0x2a2, 0x2b4+2, 2)  # d_ messages
+RADAR_MSGS_C = list(range(0x2c2, 0x2d4+2, 2))  # c_ messages 706,...,724
+RADAR_MSGS_D = list(range(0x2a2, 0x2b4+2, 2))  # d_ messages
 LAST_MSG = max(RADAR_MSGS_C + RADAR_MSGS_D)
 NUMBER_MSGS = len(RADAR_MSGS_C) + len(RADAR_MSGS_D)
 
@@ -45,10 +46,10 @@ def _address_to_track(address):
     return (address - RADAR_MSGS_D[0]) // 2
   raise ValueError("radar received unexpected address %d" % address)
 
-class RadarInterface(object):
+class RadarInterface(RadarInterfaceBase):
   def __init__(self, CP):
     self.pts = {}
-    self.delay = 0.0  # Delay of radar  #TUNE
+    self.delay = 0  # Delay of radar  #TUNE
     self.rcp = _create_radar_can_parser()
     self.updated_messages = set()
     self.trigger_msg = LAST_MSG

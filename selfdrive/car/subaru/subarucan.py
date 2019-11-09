@@ -6,7 +6,6 @@ VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 def subaru_checksum(packer, values, addr):
   dat = packer.make_can_msg(addr, 0, values)[2]
-  dat = [ord(i) for i in dat]
   return (sum(dat[1:]) + (addr >> 8) + addr) & 0xff
 
 def create_steering_control(packer, car_fingerprint, apply_steer, frame, steer_step):

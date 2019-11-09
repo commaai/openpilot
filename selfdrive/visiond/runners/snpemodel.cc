@@ -9,9 +9,17 @@ void PrintErrorStringAndExit() {
   std::exit(EXIT_FAILURE);
 }
 
-SNPEModel::SNPEModel(const char *path, float *output, size_t output_size) {
+SNPEModel::SNPEModel(const char *path, float *output, size_t output_size, int runtime) {
 #ifdef QCOM
-  assert(zdl::SNPE::SNPEFactory::isRuntimeAvailable(zdl::DlSystem::Runtime_t::GPU));
+  zdl::DlSystem::Runtime_t Runtime;
+  if (runtime==USE_GPU_RUNTIME) {
+    Runtime = zdl::DlSystem::Runtime_t::GPU;
+  } else if (runtime==USE_DSP_RUNTIME) {
+    Runtime = zdl::DlSystem::Runtime_t::DSP;
+  } else {
+    Runtime = zdl::DlSystem::Runtime_t::CPU;
+  }
+  assert(zdl::SNPE::SNPEFactory::isRuntimeAvailable(Runtime));
 #endif
   size_t model_size;
   model_data = (uint8_t *)read_file(path, &model_size);
@@ -27,7 +35,7 @@ SNPEModel::SNPEModel(const char *path, float *output, size_t output_size) {
   while (!snpe) {
 #ifdef QCOM
     snpe = snpeBuilder.setOutputLayers({})
-                      .setRuntimeProcessor(zdl::DlSystem::Runtime_t::GPU)
+                      .setRuntimeProcessor(Runtime)
                       .setUseUserSuppliedBuffers(true)
                       .setPerformanceProfile(zdl::DlSystem::PerformanceProfile_t::HIGH_PERFORMANCE)
                       .build();

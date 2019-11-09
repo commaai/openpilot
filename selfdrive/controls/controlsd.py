@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import os
 import gc
 import capnp
@@ -9,9 +9,8 @@ from common.profiler import Profiler
 from common.params import Params, put_nonblocking
 import selfdrive.messaging as messaging
 from selfdrive.config import Conversions as CV
-from selfdrive.services import service_list
 from selfdrive.boardd.boardd import can_list_to_can_capnp
-from selfdrive.car.car_helpers import get_car, get_startup_alert, get_one_can
+from selfdrive.car.car_helpers import get_car, get_startup_alert
 from selfdrive.controls.lib.lane_planner import CAMERA_OFFSET
 from selfdrive.controls.lib.drive_helpers import get_events, \
                                                  create_event, \
@@ -31,6 +30,7 @@ from selfdrive.locationd.calibration_helpers import Calibration, Filter
 
 ThermalStatus = log.ThermalData.ThermalStatus
 State = log.ControlsState.OpenpilotState
+HwType = log.HealthData.HwType
 
 
 def isActive(state):
@@ -87,7 +87,7 @@ def data_sample(CI, CC, sm, can_sock, cal_status, cal_perc, overtemp, free_space
     is_rhd = is_rhd_region(sm['gpsLocation'].latitude, sm['gpsLocation'].longitude)
     driver_status.is_rhd_region = is_rhd
     driver_status.is_rhd_region_checked = True
-    put_nonblocking("IsRHD", str(int(is_rhd)))
+    put_nonblocking("IsRHD", "1" if is_rhd else "0")
 
   # Handle calibration
   if sm.updated['liveCalibration']:
@@ -217,7 +217,7 @@ def state_transition(frame, CS, CP, state, events, soft_disable_timer, v_cruise_
 
 
 def state_control(frame, rcv_frame, plan, path_plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last,
-                  AM, rk, driver_status, LaC, LoC, VM, read_only, is_metric, cal_perc):
+                  AM, rk, driver_status, LaC, LoC, read_only, is_metric, cal_perc):
   """Given the state, this function returns an actuators packet"""
 
   actuators = car.CarControl.Actuators.new_message()
@@ -264,7 +264,7 @@ def state_control(frame, rcv_frame, plan, path_plan, CS, CP, state, events, v_cr
   actuators.gas, actuators.brake = LoC.update(active, CS.vEgo, CS.brakePressed, CS.standstill, CS.cruiseState.standstill,
                                               v_cruise_kph, v_acc_sol, plan.vTargetFuture, a_acc_sol, CP)
   # Steering PID loop and lateral MPC
-  actuators.steer, actuators.steerAngle, lac_log = LaC.update(active, CS.vEgo, CS.steeringAngle, CS.steeringRate, CS.steeringTorqueEps, CS.steeringPressed, CP, VM, path_plan)
+  actuators.steer, actuators.steerAngle, lac_log = LaC.update(active, CS.vEgo, CS.steeringAngle, CS.steeringRate, CS.steeringTorqueEps, CS.steeringPressed, CP, path_plan)
 
   # Send a "steering required alert" if saturation count has reached the limit
   if LaC.sat_flag and CP.steerLimitAlert:
@@ -342,7 +342,7 @@ def data_send(sm, pm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk
     "alertBlinkingRate": AM.alert_rate,
     "alertType": AM.alert_type,
     "alertSound": AM.audible_alert,
-    "awarenessStatus": max(driver_status.awareness, 0.0) if isEnabled(state) else 0.0,
+    "awarenessStatus": max(driver_status.awareness, -0.1) if isEnabled(state) else 1.0,
     "driverMonitoringOn": bool(driver_status.face_detected),
     "canMonoTimes": list(CS.canMonoTimes),
     "planMonoTime": sm.logMonoTime['plan'],
@@ -424,8 +424,11 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
 
   params = Params()
 
-  is_metric = params.get("IsMetric") == "1"
-  passive = params.get("Passive") != "0"
+  is_metric = params.get("IsMetric", encoding='utf8') == "1"
+  passive = params.get("Passive", encoding='utf8') == "1"
+  openpilot_enabled_toggle = params.get("OpenpilotEnabledToggle", encoding='utf8') == "1"
+
+  passive = passive or not openpilot_enabled_toggle
 
   # Pub/Sub Sockets
   if pm is None:
@@ -435,24 +438,25 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
     sm = messaging.SubMaster(['thermal', 'health', 'liveCalibration', 'driverMonitoring', 'plan', 'pathPlan', \
                               'gpsLocation'], ignore_alive=['gpsLocation'])
 
+
   if can_sock is None:
     can_timeout = None if os.environ.get('NO_CAN_TIMEOUT', False) else 100
-    can_sock = messaging.sub_sock(service_list['can'].port, timeout=can_timeout)
+    can_sock = messaging.sub_sock('can', timeout=can_timeout)
 
   # wait for health and CAN packets
   hw_type = messaging.recv_one(sm.sock['health']).health.hwType
-  is_panda_black = hw_type == log.HealthData.HwType.blackPanda
+  has_relay = hw_type in [HwType.blackPanda, HwType.uno]
   print("Waiting for CAN messages...")
-  get_one_can(can_sock)
+  messaging.get_one_can(can_sock)
 
-  CI, CP = get_car(can_sock, pm.sock['sendcan'], is_panda_black)
+  CI, CP = get_car(can_sock, pm.sock['sendcan'], has_relay)
 
   car_recognized = CP.carName != 'mock'
   # If stock camera is disconnected, we loaded car controls and it's not chffrplus
   controller_available = CP.enableCamera and CI.CC is not None and not passive
   read_only = not car_recognized or not controller_available or CP.dashcamOnly
   if read_only:
-    CP.safetyModel = CP.safetyModelPassive
+    CP.safetyModel = car.CarParams.SafetyModel.noOutput
 
   # Write CarParams for radard and boardd safety mode
   params.put("CarParams", CP.to_bytes())
@@ -500,6 +504,8 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
   # controlsd is driven by can recv, expected at 100Hz
   rk = Ratekeeper(100, print_delay_threshold=None)
 
+  internet_needed = params.get("Offroad_ConnectivityNeeded", encoding='utf8') is not None
+
   prof = Profiler(False)  # off by default
 
   while True:
@@ -531,6 +537,8 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
       events.append(create_event('canError', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     if not sounds_available:
       events.append(create_event('soundsUnavailable', [ET.NO_ENTRY, ET.PERMANENT]))
+    if internet_needed:
+      events.append(create_event('internetConnectivityNeeded', [ET.NO_ENTRY, ET.PERMANENT]))
 
     # Only allow engagement with brake pressed when stopped behind another stopped car
     if CS.brakePressed and sm['plan'].vTargetFuture >= STARTING_TARGET_SPEED and not CP.radarOffCan and CS.vEgo < 0.3:
@@ -545,7 +553,7 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
     # Compute actuators (runs PID loops and lateral MPC)
     actuators, v_cruise_kph, driver_status, v_acc, a_acc, lac_log = \
       state_control(sm.frame, sm.rcv_frame, sm['plan'], sm['pathPlan'], CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, AM, rk,
-                    driver_status, LaC, LoC, VM, read_only, is_metric, cal_perc)
+                    driver_status, LaC, LoC, read_only, is_metric, cal_perc)
 
     prof.checkpoint("State Control")
 

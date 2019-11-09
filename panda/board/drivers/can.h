@@ -30,6 +30,9 @@ void can_init_all(void);
 void can_send(CAN_FIFOMailBox_TypeDef *to_push, uint8_t bus_number);
 bool can_pop(can_ring *q, CAN_FIFOMailBox_TypeDef *elem);
 
+// Ignition detected from CAN meessages
+bool ignition_can = false;
+
 // end API
 
 #define ALL_CAN_SILENT 0xFF
@@ -173,7 +176,7 @@ void can_flip_buses(uint8_t bus1, uint8_t bus2){
 
 // TODO: Cleanup with new abstraction
 void can_set_gmlan(uint8_t bus) {
-  if(hw_type != HW_TYPE_BLACK_PANDA){
+  if(board_has_gmlan()){
     // first, disable GMLAN on prev bus
     uint8_t prev_bus = can_num_lookup[3];
     if (bus != prev_bus) {
@@ -226,7 +229,7 @@ void can_set_obd(uint8_t harness_orientation, bool obd){
   } else {
     puts("setting CAN2 to be normal\n");
   }
-  if(hw_type == HW_TYPE_BLACK_PANDA){
+  if(board_has_obd()){
     if(obd != (bool)(harness_orientation == HARNESS_STATUS_NORMAL)){
         // B5,B6: disable normal mode
         set_gpio_mode(GPIOB, 5, MODE_INPUT);
@@ -243,7 +246,7 @@ void can_set_obd(uint8_t harness_orientation, bool obd){
         set_gpio_mode(GPIOB, 13, MODE_INPUT);
     }
   } else {
-    puts("OBD CAN not available on non-black panda\n");
+    puts("OBD CAN not available on this board\n");
   }
 }
 
@@ -298,7 +301,7 @@ void process_can(uint8_t can_number) {
           to_push.RDTR = (CAN->sTxMailBox[0].TDTR & 0xFFFF000FU) | ((CAN_BUS_RET_FLAG | bus_number) << 4);
           to_push.RDLR = CAN->sTxMailBox[0].TDLR;
           to_push.RDHR = CAN->sTxMailBox[0].TDHR;
-          can_send_errs += !can_push(&can_rx_q, &to_push);
+          can_send_errs += can_push(&can_rx_q, &to_push) ? 0U : 1U;
         }
 
         if ((CAN->TSR & CAN_TSR_TERR0) == CAN_TSR_TERR0) {
@@ -329,6 +332,36 @@ void process_can(uint8_t can_number) {
     }
 
     EXIT_CRITICAL();
+  }
+}
+
+void ignition_can_hook(CAN_FIFOMailBox_TypeDef *to_push) {
+
+  int bus = GET_BUS(to_push);
+  int addr = GET_ADDR(to_push);
+  int len = GET_LEN(to_push);
+
+  if (bus == 0) {
+    // GM exception
+    if ((addr == 0x1F1) && (len == 8)) {
+      //Bit 5 is ignition "on"
+      ignition_can = (GET_BYTE(to_push, 0) & 0x20) != 0;
+    }
+    // Tesla exception
+    if ((addr == 0x348) && (len == 8)) {
+      // GTW_status
+      ignition_can = (GET_BYTE(to_push, 0) & 0x1) != 0;
+    }
+    // Cadillac exception
+    if ((addr == 0x160) && (len == 5)) {
+      // this message isn't all zeros when ignition is on
+      ignition_can = GET_BYTES_04(to_push) != 0;
+    }
+    // VW exception
+    if ((addr == 0x3C0) && (len == 4)) {
+     // VW Terminal 15 (ignition-on) state
+     ignition_can  = (GET_BYTE(to_push, 2) & 0x2) != 0;
+    }
   }
 }
 
@@ -365,9 +398,10 @@ void can_rx(uint8_t can_number) {
     }
 
     safety_rx_hook(&to_push);
+    ignition_can_hook(&to_push);
 
     current_board->set_led(LED_BLUE, true);
-    can_send_errs += !can_push(&can_rx_q, &to_push);
+    can_send_errs += can_push(&can_rx_q, &to_push) ? 0U : 1U;
 
     // next
     CAN->RF0R |= CAN_RF0R_RFOM0;
@@ -393,10 +427,9 @@ void can_send(CAN_FIFOMailBox_TypeDef *to_push, uint8_t bus_number) {
       // bus number isn't passed through
       to_push->RDTR &= 0xF;
       if ((bus_number == 3U) && (can_num_lookup[3] == 0xFFU)) {
-        // TODO: why uint8 bro? only int8?
-        gmlan_send_errs += !bitbang_gmlan(to_push);
+        gmlan_send_errs += bitbang_gmlan(to_push) ? 0U : 1U;
       } else {
-        can_fwd_errs += !can_push(can_queues[bus_number], to_push);
+        can_fwd_errs += can_push(can_queues[bus_number], to_push) ? 0U : 1U;
         process_can(CAN_NUM_FROM_BUS_NUM(bus_number));
       }
     }

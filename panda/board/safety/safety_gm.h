@@ -24,7 +24,6 @@ int gm_gas_prev = 0;
 bool gm_moving = false;
 // silence everything if stock car control ECUs are still online
 bool gm_ascm_detected = 0;
-bool gm_ignition_started = 0;
 int gm_rt_torque_last = 0;
 int gm_desired_torque_last = 0;
 uint32_t gm_ts_last = 0;
@@ -39,13 +38,6 @@ static void gm_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     torque_driver_new = to_signed(torque_driver_new, 11);
     // update array of samples
     update_sample(&gm_torque_driver, torque_driver_new);
-  }
-
-  if ((addr == 0x1F1) && (bus_number == 0)) {
-    //Bit 5 should be ignition "on"
-    //Backup plan is Bit 2 (accessory power)
-    bool ign = (GET_BYTE(to_push, 0) & 0x20) != 0;
-    gm_ignition_started = ign;
   }
 
   // sample speed, really only care if car is moving or not
@@ -204,7 +196,7 @@ static int gm_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   // GAS/REGEN: safety check
   if (addr == 715) {
     int gas_regen = ((GET_BYTE(to_send, 2) & 0x7FU) << 5) + ((GET_BYTE(to_send, 3) & 0xF8U) >> 3);
-    // Disabled message is !engaed with gas
+    // Disabled message is !engaged with gas
     // value that corresponds to max regen.
     if (!current_controls_allowed || !long_controls_allowed) {
       bool apply = GET_BYTE(to_send, 0) & 1U;
@@ -224,41 +216,13 @@ static int gm_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 static void gm_init(int16_t param) {
   UNUSED(param);
   controls_allowed = 0;
-  gm_ignition_started = 0;
 }
 
-static int gm_ign_hook(void) {
-  return gm_ignition_started;
-}
-
-// All sending is disallowed.
-// The only difference from "no output" model
-// is using GM ignition hook.
-
-static void gm_passive_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
-  int bus_number = GET_BUS(to_push);
-  int addr = GET_ADDR(to_push);
-
-  if ((addr == 0x1F1) && (bus_number == 0)) {
-    bool ign = (GET_BYTE(to_push, 0) & 0x20) != 0;
-    gm_ignition_started = ign;
-  }
-}
 
 const safety_hooks gm_hooks = {
   .init = gm_init,
   .rx = gm_rx_hook,
   .tx = gm_tx_hook,
   .tx_lin = nooutput_tx_lin_hook,
-  .ignition = gm_ign_hook,
-  .fwd = default_fwd_hook,
-};
-
-const safety_hooks gm_passive_hooks = {
-  .init = gm_init,
-  .rx = gm_passive_rx_hook,
-  .tx = nooutput_tx_hook,
-  .tx_lin = nooutput_tx_lin_hook,
-  .ignition = gm_ign_hook,
   .fwd = default_fwd_hook,
 };

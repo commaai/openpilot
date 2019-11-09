@@ -1,5 +1,5 @@
 # python library to interface with panda
-from __future__ import print_function
+import datetime
 import binascii
 import struct
 import hashlib
@@ -9,12 +9,12 @@ import os
 import time
 import traceback
 import subprocess
-from dfu import PandaDFU
-from esptool import ESPROM, CesantaFlasher
-from flash_release import flash_release
-from update import ensure_st_up_to_date
-from serial import PandaSerial
-from isotp import isotp_send, isotp_recv
+from .dfu import PandaDFU
+from .esptool import ESPROM, CesantaFlasher  # noqa: F401
+from .flash_release import flash_release  # noqa: F401
+from .update import ensure_st_up_to_date  # noqa: F401
+from .serial import PandaSerial  # noqa: F401
+from .isotp import isotp_send, isotp_recv
 
 __version__ = '0.0.9'
 
@@ -23,15 +23,14 @@ BASEDIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
 DEBUG = os.getenv("PANDADEBUG") is not None
 
 # *** wifi mode ***
-
 def build_st(target, mkfile="Makefile"):
   from panda import BASEDIR
   cmd = 'cd %s && make -f %s clean && make -f %s %s >/dev/null' % (os.path.join(BASEDIR, "board"), mkfile, mkfile, target)
   try:
-    output = subprocess.check_output(cmd, stderr=subprocess.STDOUT, shell=True)
-  except subprocess.CalledProcessError as exception:
-    output = exception.output
-    returncode = exception.returncode
+    _ = subprocess.check_output(cmd, stderr=subprocess.STDOUT, shell=True)
+  except subprocess.CalledProcessError:
+    #output = exception.output
+    #returncode = exception.returncode
     raise
 
 def parse_can_buffer(dat):
@@ -46,7 +45,7 @@ def parse_can_buffer(dat):
       address = f1 >> 21
     dddat = ddat[8:8+(f2&0xF)]
     if DEBUG:
-      print("  R %x: %s" % (address, str(dddat).encode("hex")))
+      print("  R %x: %s" % (address, binascii.hexlify(dddat)))
     ret.append((address, f2>>16, dddat, (f2>>4)&0xFF))
   return ret
 
@@ -109,20 +108,25 @@ class WifiHandle(object):
 # *** normal mode ***
 
 class Panda(object):
+
+  # matches cereal.car.CarParams.SafetyModel
   SAFETY_NOOUTPUT = 0
   SAFETY_HONDA = 1
   SAFETY_TOYOTA = 2
-  SAFETY_GM = 3
-  SAFETY_HONDA_BOSCH = 4
-  SAFETY_FORD = 5
-  SAFETY_CADILLAC = 6
-  SAFETY_HYUNDAI = 7
-  SAFETY_TESLA = 8
+  SAFETY_ELM327 = 3
+  SAFETY_GM = 4
+  SAFETY_HONDA_BOSCH = 5
+  SAFETY_FORD = 6
+  SAFETY_CADILLAC = 7
+  SAFETY_HYUNDAI = 8
   SAFETY_CHRYSLER = 9
-  SAFETY_TOYOTA_IPAS = 0x1335
-  SAFETY_TOYOTA_NOLIMITS = 0x1336
-  SAFETY_ALLOUTPUT = 0x1337
-  SAFETY_ELM327 = 0xE327
+  SAFETY_TESLA = 10
+  SAFETY_SUBARU = 11
+  SAFETY_MAZDA = 13
+  SAFETY_VOLKSWAGEN = 15
+  SAFETY_TOYOTA_IPAS = 16
+  SAFETY_ALLOUTPUT = 17
+  SAFETY_GM_ASCM = 18
 
   SERIAL_DEBUG = 0
   SERIAL_ESP = 1
@@ -135,11 +139,12 @@ class Panda(object):
   REQUEST_IN = usb1.ENDPOINT_IN | usb1.TYPE_VENDOR | usb1.RECIPIENT_DEVICE
   REQUEST_OUT = usb1.ENDPOINT_OUT | usb1.TYPE_VENDOR | usb1.RECIPIENT_DEVICE
 
-  HW_TYPE_UNKNOWN = '\x00'
-  HW_TYPE_WHITE_PANDA = '\x01'
-  HW_TYPE_GREY_PANDA = '\x02'
-  HW_TYPE_BLACK_PANDA = '\x03'
-  HW_TYPE_PEDAL = '\x04'
+  HW_TYPE_UNKNOWN = b'\x00'
+  HW_TYPE_WHITE_PANDA = b'\x01'
+  HW_TYPE_GREY_PANDA = b'\x02'
+  HW_TYPE_BLACK_PANDA = b'\x03'
+  HW_TYPE_PEDAL = b'\x04'
+  HW_TYPE_UNO = b'\x05'
 
   def __init__(self, serial=None, claim=True):
     self._serial = serial
@@ -232,7 +237,7 @@ class Panda(object):
   def flash_static(handle, code):
     # confirm flasher is present
     fr = handle.controlRead(Panda.REQUEST_IN, 0xb0, 0, 0, 0xc)
-    assert fr[4:8] == "\xde\xad\xd0\x0d"
+    assert fr[4:8] == b"\xde\xad\xd0\x0d"
 
     # unlock flash
     print("flash: unlocking")
@@ -274,7 +279,7 @@ class Panda(object):
       fn = os.path.join(BASEDIR, "board", fn)
 
     if code is None:
-      with open(fn) as f:
+      with open(fn, "rb") as f:
         code = f.read()
 
     # get version
@@ -364,7 +369,7 @@ class Panda(object):
       pass
 
   def get_version(self):
-    return self._handle.controlRead(Panda.REQUEST_IN, 0xd6, 0, 0, 0x40)
+    return self._handle.controlRead(Panda.REQUEST_IN, 0xd6, 0, 0, 0x40).decode('utf8')
 
   def get_type(self):
     return self._handle.controlRead(Panda.REQUEST_IN, 0xc1, 0, 0, 0x40)
@@ -378,11 +383,14 @@ class Panda(object):
   def is_black(self):
     return self.get_type() == Panda.HW_TYPE_BLACK_PANDA
 
+  def is_uno(self):
+    return self.get_type() == Panda.HW_TYPE_UNO
+
   def get_serial(self):
     dat = self._handle.controlRead(Panda.REQUEST_IN, 0xd0, 0, 0, 0x20)
     hashsig, calc_hash = dat[0x1c:], hashlib.sha1(dat[0:0x1c]).digest()[0:4]
     assert(hashsig == calc_hash)
-    return [dat[0:0x10], dat[0x10:0x10+10]]
+    return [dat[0:0x10].decode("utf8"), dat[0x10:0x10+10].decode("utf8")]
 
   def get_secret(self):
     return self._handle.controlRead(Panda.REQUEST_IN, 0xd0, 1, 0, 0x10)
@@ -429,7 +437,7 @@ class Panda(object):
     self._handle.controlWrite(Panda.REQUEST_OUT, 0xde, bus, int(speed*10), b'')
 
   def set_uart_baud(self, uart, rate):
-    self._handle.controlWrite(Panda.REQUEST_OUT, 0xe4, uart, rate/300, b'')
+    self._handle.controlWrite(Panda.REQUEST_OUT, 0xe4, uart, int(rate/300), b'')
 
   def set_uart_parity(self, uart, parity):
     # parity, 0=off, 1=even, 2=odd
@@ -447,7 +455,7 @@ class Panda(object):
     for addr, _, dat, bus in arr:
       assert len(dat) <= 8
       if DEBUG:
-        print("  W %x: %s" % (addr, dat.encode("hex")))
+        print("  W %x: %s" % (addr, binascii.hexlify(dat)))
       if addr >= 0x800:
         rir = (addr << 3) | transmit | extended
       else:
@@ -479,7 +487,7 @@ class Panda(object):
         break
       except (usb1.USBErrorIO, usb1.USBErrorOverflow):
         print("CAN: BAD RECV, RETRYING")
-	time.sleep(0.1)
+        time.sleep(0.1)
     return parse_can_buffer(dat)
 
   def can_clear(self, bus):
@@ -546,16 +554,16 @@ class Panda(object):
       if len(ret) == 0:
         break
       elif DEBUG:
-        print("kline drain: "+str(ret).encode("hex"))
+        print("kline drain: " + binascii.hexlify(ret))
       bret += ret
     return bytes(bret)
 
   def kline_ll_recv(self, cnt, bus=2):
     echo = bytearray()
     while len(echo) != cnt:
-      ret = str(self._handle.controlRead(Panda.REQUEST_OUT, 0xe0, bus, 0, cnt-len(echo)))
+      ret = self._handle.controlRead(Panda.REQUEST_OUT, 0xe0, bus, 0, cnt-len(echo))
       if DEBUG and len(ret) > 0:
-        print("kline recv: "+ret.encode("hex"))
+        print("kline recv: " + binascii.hexlify(ret))
       echo += ret
     return str(echo)
 
@@ -572,8 +580,8 @@ class Panda(object):
     for i in range(0, len(x), 0xf):
       ts = x[i:i+0xf]
       if DEBUG:
-        print("kline send: "+ts.encode("hex"))
-      self._handle.bulkWrite(2, chr(bus).encode()+ts)
+        print("kline send: " + binascii.hexlify(ts))
+      self._handle.bulkWrite(2, bytes([bus]) + ts)
       echo = self.kline_ll_recv(len(ts), bus=bus)
       if echo != ts:
         print("**** ECHO ERROR %d ****" % i)
@@ -588,3 +596,31 @@ class Panda(object):
 
   def send_heartbeat(self):
     self._handle.controlWrite(Panda.REQUEST_OUT, 0xf3, 0, 0, b'')
+
+  # ******************* RTC *******************
+  def set_datetime(self, dt):
+    self._handle.controlWrite(Panda.REQUEST_OUT, 0xa1, int(dt.year), 0, b'')
+    self._handle.controlWrite(Panda.REQUEST_OUT, 0xa2, int(dt.month), 0, b'')
+    self._handle.controlWrite(Panda.REQUEST_OUT, 0xa3, int(dt.day), 0, b'')
+    self._handle.controlWrite(Panda.REQUEST_OUT, 0xa4, int(dt.isoweekday()), 0, b'')
+    self._handle.controlWrite(Panda.REQUEST_OUT, 0xa5, int(dt.hour), 0, b'')
+    self._handle.controlWrite(Panda.REQUEST_OUT, 0xa6, int(dt.minute), 0, b'')
+    self._handle.controlWrite(Panda.REQUEST_OUT, 0xa7, int(dt.second), 0, b'')
+
+  def get_datetime(self):
+    dat = self._handle.controlRead(Panda.REQUEST_IN, 0xa0, 0, 0, 8)
+    a = struct.unpack("HBBBBBB", dat)
+    return datetime.datetime(a[0], a[1], a[2], a[4], a[5], a[6])
+
+  # ******************* IR *******************
+  def set_ir_power(self, percentage):
+    self._handle.controlWrite(Panda.REQUEST_OUT, 0xb0, int(percentage), 0, b'')
+
+  # ******************* Fan ******************
+  def set_fan_power(self, percentage):
+    self._handle.controlWrite(Panda.REQUEST_OUT, 0xb1, int(percentage), 0, b'')
+
+  def get_fan_rpm(self):
+    dat = self._handle.controlRead(Panda.REQUEST_IN, 0xb2, 0, 0, 2)
+    a = struct.unpack("H", dat)
+    return a[0]

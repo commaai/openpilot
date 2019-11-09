@@ -7,18 +7,16 @@
 #include <time.h>
 
 #include <pthread.h>
-#include <zmq.h>
 #include <capnp/serialize.h>
 
 #include "cereal/gen/cpp/log.capnp.h"
 
+#include "messaging.hpp"
 #include "common/timing.h"
 #include "common/util.h"
 #include "common/swaglog.h"
 
 #include "libdiag.h"
-
-extern volatile int do_exit;
 
 #define NV_GNSS_OEM_FEATURE_MASK 7165
 # define NV_GNSS_OEM_FEATURE_MASK_OEMDRE 1
@@ -376,7 +374,7 @@ struct __attribute__((packed)) GNSSOemdreMeasurement {
   float doppler_acceleration;
   float fine_speed;
   float fine_speed_uncertainty;
-  
+
   uint64_t carrier_phase;
   uint32_t f_count;
 
@@ -428,7 +426,7 @@ struct __attribute__((packed)) GNSSOemdreMeasurementReportv2 {
   uint8_t source;
 
   GNSSOemdreMeasurement measurements[16];
-  
+
 };
 
 _Static_assert(sizeof(GNSSOemdreMeasurementReportv2) == 1851, "error");
@@ -460,8 +458,8 @@ struct __attribute__((packed)) GNSSOemdreSVPolyReportv2 {
 _Static_assert(sizeof(GNSSOemdreSVPolyReportv2) == 271, "error");
 
 
-static void* rawgps_context;
-static void *rawgps_publisher;
+static Context *rawgps_context;
+static PubSocket *rawgps_publisher;
 static int client_id = 0;
 
 static void hexdump(uint8_t* d, size_t len) {
@@ -590,7 +588,7 @@ static void handle_log(uint8_t *ptr, int len) {
     assert(len >= sizeof(GNSSGpsMeasurementReportv0));
     const GNSSGpsMeasurementReportv0* report = (const GNSSGpsMeasurementReportv0*)ptr;
     assert(len >= sizeof(sizeof(GNSSGpsMeasurementReportv0))+sizeof(GNSSGpsMeasurementReportv0_SV) * report->sv_count);
-  
+
     auto lreport = qcomGnss.initMeasurementReport();
     lreport.setSource(cereal::QcomGnss::MeasurementSource::GPS);
     lreport.setFCount(report->f_count);
@@ -646,9 +644,9 @@ static void handle_log(uint8_t *ptr, int len) {
 
 #ifdef RAWGPS_TEST
       // if (sv->measurement_status & (1 << 27)) printf("%d\n", sv->unfiltered_measurement_integral);
-      printf("GPS %03d %d %d 0x%08X    o: %02x go: %02x fs: %02x cn: %02x pd: %02x cs: %02x po: %02x ms: %08x ms2: %08x me: %08x  az: %08x el: %08x  fc: %08x\n", 
+      printf("GPS %03d %d %d 0x%08X    o: %02x go: %02x fs: %02x cn: %02x pd: %02x cs: %02x po: %02x ms: %08x ms2: %08x me: %08x  az: %08x el: %08x  fc: %08x\n",
         sv->sv_id,
-        !!(sv->measurement_status & (1 << 27)), 
+        !!(sv->measurement_status & (1 << 27)),
         sv->unfiltered_measurement_integral, sv->unfiltered_measurement_integral,
         sv->observations,
         sv->good_observations,
@@ -731,9 +729,9 @@ static void handle_log(uint8_t *ptr, int len) {
 
 #ifdef RAWGPS_TEST
       // if (sv->measurement_status & (1 << 27)) printf("%d\n", sv->unfiltered_measurement_integral);
-      printf("GLO %03d %02x %d %d 0x%08X    o: %02x go: %02x fs: %02x cn: %02x pd: %02x cs: %02x po: %02x ms: %08x ms2: %08x me: %08x  az: %08x el: %08x  fc: %08x\n", 
+      printf("GLO %03d %02x %d %d 0x%08X    o: %02x go: %02x fs: %02x cn: %02x pd: %02x cs: %02x po: %02x ms: %08x ms2: %08x me: %08x  az: %08x el: %08x  fc: %08x\n",
         sv->sv_id, sv->frequency_index & 0xff,
-        !!(sv->measurement_status & (1 << 27)), 
+        !!(sv->measurement_status & (1 << 27)),
         sv->unfiltered_measurement_integral, sv->unfiltered_measurement_integral,
         sv->observations,
         sv->good_observations,
@@ -779,7 +777,7 @@ static void handle_log(uint8_t *ptr, int len) {
     lreport.setGpsLeapSecondsUncertainty(report->gps_leap_seconds_uncertainty);
     lreport.setGpsToGlonassTimeBiasMilliseconds(report->gps_to_glonass_time_bias_milliseconds);
     lreport.setGpsToGlonassTimeBiasMillisecondsUncertainty(report->gps_to_glonass_time_bias_milliseconds_uncertainty);
-    
+
     lreport.setGpsWeek(report->gps_week);
     lreport.setGpsMilliseconds(report->gps_milliseconds);
     lreport.setGpsTimeBiasMs(report->gps_time_bias);
@@ -869,7 +867,7 @@ static void handle_log(uint8_t *ptr, int len) {
 
     lreport.setSvId(report->sv_id);
     lreport.setFrequencyIndex(report->frequency_index);
-    
+
     lreport.setHasPosition(report->flags & 1);
     lreport.setHasIono(report->flags & 2);
     lreport.setHasTropo(report->flags & 4);
@@ -915,7 +913,7 @@ static void handle_log(uint8_t *ptr, int len) {
 
   auto words = capnp::messageToFlatArray(msg);
   auto bytes = words.asBytes();
-  zmq_send(rawgps_publisher, bytes.begin(), bytes.size(), 0);
+  rawgps_publisher->send((char*)bytes.begin(), bytes.size());
 }
 
 static void handle_event(unsigned char *ptr, int len) {
@@ -986,7 +984,7 @@ static int oemdre_on(int client_id) {
   int res_len = diag_send_sync(client_id, (unsigned char*)&req_pkt, sizeof(req_pkt),
                                 res_pkt, sizeof(res_pkt));
   GpsOemControlResp *resp = (GpsOemControlResp*)res_pkt;
-  
+
   if (res_len != sizeof(GpsOemControlResp)
       || resp->cmd_code != DIAG_SUBSYS_CMD
       || resp->subsys_id != DIAG_SUBSYS_GPS
@@ -1060,7 +1058,7 @@ static bool nv_write_u32(int client_id, uint16_t nv_id, uint32_t val) {
     .nv_id = nv_id,
   };
   *(uint32_t*)req.data = val;
-  
+
   NvPacket resp = {0};
   int res_len = diag_send_sync(client_id, (unsigned char*)&req, sizeof(req),
                                (unsigned char*)&resp, sizeof(resp));
@@ -1072,7 +1070,7 @@ static bool nv_write_u32(int client_id, uint16_t nv_id, uint32_t val) {
     LOGW("nv_write_u32: diag command failed");
     return false;
   }
-  
+
   if (resp.status != NV_DONE) {
     LOGW("nv_write_u32: write failed: %d", resp.status);
     return false;
@@ -1108,11 +1106,8 @@ static void nav_config(int client_id, uint8_t config) {
 void rawgps_init() {
   int err;
 
-
-  rawgps_context = zmq_ctx_new();
-  rawgps_publisher = zmq_socket(rawgps_context, ZMQ_PUB);
-  zmq_bind(rawgps_publisher, "tcp://*:8029");
-
+  rawgps_context = Context::create();
+  rawgps_publisher = PubSocket::create(rawgps_context, "qcomGnss");
 
   bool init_success = Diag_LSM_Init(NULL);
   assert(init_success);
@@ -1168,9 +1163,8 @@ void rawgps_destroy() {
 
   Diag_LSM_DeInit();
 
-  zmq_close(rawgps_publisher);
-  zmq_term(rawgps_context);
-
+  delete rawgps_publisher;
+  delete rawgps_context;
 }
 
 

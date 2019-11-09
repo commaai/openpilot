@@ -1,7 +1,7 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 import unittest
-import numpy as np
-import libpandasafety_py
+import libpandasafety_py  # pylint: disable=import-error
+from panda import Panda
 
 MAX_BRAKE = 255
 
@@ -9,7 +9,7 @@ class TestHondaSafety(unittest.TestCase):
   @classmethod
   def setUp(cls):
     cls.safety = libpandasafety_py.libpandasafety
-    cls.safety.safety_set_mode(4, 0)
+    cls.safety.safety_set_mode(Panda.SAFETY_HONDA_BOSCH, 0)
     cls.safety.init_tests_honda()
 
   def _send_msg(self, bus, addr, length):
@@ -23,10 +23,11 @@ class TestHondaSafety(unittest.TestCase):
   def test_fwd_hook(self):
     buss = range(0x0, 0x3)
     msgs = range(0x1, 0x800)
-    is_panda_black = self.safety.get_hw_type() == 3  # black panda
-    bus_rdr_cam = 2 if is_panda_black else 1
-    bus_rdr_car = 0 if is_panda_black else 2
-    bus_pt = 1 if is_panda_black else 0
+    #has_relay = self.safety.get_hw_type() == 3  # black panda
+    has_relay = self.safety.board_has_relay()
+    bus_rdr_cam = 2 if has_relay else 1
+    bus_rdr_car = 0 if has_relay else 2
+    bus_pt = 1 if has_relay else 0
 
     blocked_msgs = [0xE4, 0x33D]
     for b in buss:

@@ -1,5 +1,5 @@
-#!/usr/bin/env python
-from __future__ import print_function
+#!/usr/bin/env python3
+
 import os
 import sys
 import struct
@@ -25,7 +25,7 @@ if __name__ == "__main__":
   #  p_in.can_recv()
   #sys.exit(0)
 
-  p_out.set_controls_allowed(True)
+  p_out.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
 
   set_out, set_in = set(), set()
 
@@ -34,7 +34,7 @@ if __name__ == "__main__":
   p_in.can_recv()
 
   BATCH_SIZE = 16
-  for a in tqdm(range(0, 10000, BATCH_SIZE)):
+  for a in tqdm(list(range(0, 10000, BATCH_SIZE))):
     for b in range(0, BATCH_SIZE):
       msg = b"\xaa"*4 + struct.pack("I", a+b)
       if a%1 == 0:
@@ -61,4 +61,4 @@ if __name__ == "__main__":
   if len(set_out - set_in):
     print("MISSING %d" % len(set_out - set_in))
     if len(set_out - set_in) < 256:
-      print(map(hex, sorted(list(set_out - set_in))))
+      print(list(map(hex, sorted(list(set_out - set_in)))))

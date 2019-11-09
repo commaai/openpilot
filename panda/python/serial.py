@@ -5,7 +5,7 @@ class PandaSerial(object):
     self.port = port
     self.panda.set_uart_parity(self.port, 0)
     self.panda.set_uart_baud(self.port, baud)
-    self.buf = ""
+    self.buf = b""
 
   def read(self, l=1):
     tt = self.panda.serial_read(self.port)

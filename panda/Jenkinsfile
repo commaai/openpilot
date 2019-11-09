@@ -46,6 +46,7 @@ pipeline {
         }
       }
     }
+/*
     stage('Test Dev Build (WIFI)') {
       steps {
         lock(resource: "Pandas", inversePrecedence: true, quantity: 1){
@@ -59,6 +60,7 @@ pipeline {
         }
       }
     }
+*/
   }
   post {
     failure {

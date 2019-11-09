@@ -1,5 +1,5 @@
-#!/usr/bin/env python
-from __future__ import print_function
+#!/usr/bin/env python3
+
 import os
 import sys
 import time
@@ -19,9 +19,9 @@ if __name__ == "__main__":
 
       serials = Panda.list()
       if os.getenv("SERIAL"):
-        serials = filter(lambda x: x==os.getenv("SERIAL"), serials)
+        serials = [x for x in serials if x==os.getenv("SERIAL")]
 
-      pandas = list(map(lambda x: Panda(x, claim=claim), serials))
+      pandas = list([Panda(x, claim=claim) for x in serials])
 
       if not len(pandas):
         sys.exit("no pandas found")
@@ -33,16 +33,16 @@ if __name__ == "__main__":
       while True:
         for i, panda in enumerate(pandas):
           while True:
-      	    ret = panda.serial_read(port_number)
-  	    if len(ret) > 0:
-	      sys.stdout.write(setcolor[i] + str(ret) + unsetcolor)
-	      sys.stdout.flush()
-	    else:
-	      break
+            ret = panda.serial_read(port_number)
+            if len(ret) > 0:
+              sys.stdout.write(setcolor[i] + ret.decode('ascii') + unsetcolor)
+              sys.stdout.flush()
+            else:
+              break
           if select.select([sys.stdin], [], [], 0) == ([sys.stdin], [], []):
-	    ln = sys.stdin.readline()
-	    if claim:
-	      panda.serial_write(port_number, ln)
+            ln = sys.stdin.readline()
+            if claim:
+              panda.serial_write(port_number, ln)
           time.sleep(0.01)
     except:
       print("panda disconnected!")

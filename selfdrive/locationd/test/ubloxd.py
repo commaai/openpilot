@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+
 import os
 import serial
 from selfdrive.locationd.test import ublox
@@ -9,7 +10,6 @@ import sys
 from cereal import log
 from common import realtime
 import selfdrive.messaging as messaging
-from selfdrive.services import service_list
 from selfdrive.locationd.test.ephemeris import EphemerisData, GET_FIELD_U
 
 panda = os.getenv("PANDA") is not None   # panda directly connected
@@ -210,7 +210,7 @@ def gen_raw(msg):
     cnos = {}
     for meas in measurements_parsed:
       cnos[meas['svId']] = meas['cno']
-    print 'Carrier to noise ratio for each sat: \n', cnos, '\n'
+    print('Carrier to noise ratio for each sat: \n', cnos, '\n')
   receiverStatus_bools = int_to_bool_list(msg_meta_data['recStat'])
   receiverStatus = {'leapSecValid': receiverStatus_bools[0],
                     'clkReset': receiverStatus_bools[2]}
@@ -254,7 +254,7 @@ def handle_msg(dev, msg, nav_frame_buffer):
         ubloxGnss.send(nav.to_bytes())
 
     else:
-      print "UNKNNOWN MESSAGE:", msg.name()
+      print("UNKNNOWN MESSAGE:", msg.name())
   except ublox.UBloxError as e:
     print(e)
 
@@ -265,12 +265,12 @@ def main(gctx=None):
   global gpsLocationExternal, ubloxGnss
   nav_frame_buffer = {}
   nav_frame_buffer[0] = {}
-  for i in xrange(1,33):
+  for i in range(1,33):
     nav_frame_buffer[0][i] = {}
 
 
-  gpsLocationExternal = messaging.pub_sock(service_list['gpsLocationExternal'].port)
-  ubloxGnss = messaging.pub_sock(service_list['ubloxGnss'].port)
+  gpsLocationExternal = messaging.pub_sock('gpsLocationExternal')
+  ubloxGnss = messaging.pub_sock('ubloxGnss')
 
   dev = init_reader()
   while True:

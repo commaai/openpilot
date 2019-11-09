@@ -1,7 +1,8 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 import unittest
 import numpy as np
-import libpandasafety_py
+import libpandasafety_py  # pylint: disable=import-error
+from panda import Panda
 
 IPAS_OVERRIDE_THRESHOLD = 200
 
@@ -25,7 +26,7 @@ class TestToyotaSafety(unittest.TestCase):
   @classmethod
   def setUp(cls):
     cls.safety = libpandasafety_py.libpandasafety
-    cls.safety.safety_set_mode(0x1335, 66)
+    cls.safety.safety_set_mode(Panda.SAFETY_TOYOTA_IPAS, 66)
     cls.safety.init_tests_toyota()
 
   def _torque_driver_msg(self, torque):
@@ -135,7 +136,7 @@ class TestToyotaSafety(unittest.TestCase):
 
     # test angle cmd too far from actual
     angle_refs = [-10, 10]
-    deltas = range(-2, 3)
+    deltas = list(range(-2, 3))
     expected_results = [False, True, True, True, False]
 
     for a in angle_refs:
@@ -232,8 +233,8 @@ class TestToyotaSafety(unittest.TestCase):
         self.safety.safety_tx_hook(self._ipas_control_msg(a, 1))
         self.safety.set_controls_allowed(1)
         self.safety.safety_rx_hook(self._speed_msg(s))
-        max_delta_up = int(np.interp(s, ANGLE_DELTA_BP, ANGLE_DELTA_V) * 2 / 3. + 1.)
-        max_delta_down = int(np.interp(s, ANGLE_DELTA_BP, ANGLE_DELTA_VU) * 2 / 3. + 1.)
+        #max_delta_up = int(np.interp(s, ANGLE_DELTA_BP, ANGLE_DELTA_V) * 2 / 3. + 1.)
+        #max_delta_down = int(np.interp(s, ANGLE_DELTA_BP, ANGLE_DELTA_VU) * 2 / 3. + 1.)
         self.safety.safety_rx_hook(self._angle_meas_msg(a))
         self.assertTrue(self.safety.get_controls_allowed())
         self.safety.safety_rx_hook(self._angle_meas_msg(a + 150))
