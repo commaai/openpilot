@@ -36,10 +36,12 @@ def get_powertrain_can_parser(CP):
   ]
 
   if CP.carFingerprint == CAR.IMPREZA:
+    signals += [
+      ("Units", "Dash_State", 1),
+    ]
     checks += [
       ("BodyInfo", 10),
       ("CruiseControl", 20),
-      ("Units", "Dash_State", 1),
     ]
 
   if CP.carFingerprint in [CAR.OUTBACK, CAR.LEGACY]:
