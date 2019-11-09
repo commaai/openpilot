@@ -53,7 +53,8 @@ class CarInterface(CarInterfaceBase):
     ret.enableCamera = True
 
     ret.steerRateCost = 0.7
-    tire_stiffness_factor = 1.0
+    ret.transmissionType = car.CarParams.TransmissionType.automatic
+    ret.openpilotLongitudinalControl = False
 
     if candidate in [CAR.IMPREZA]:
       ret.mass = 1568. + STD_CARGO_KG
