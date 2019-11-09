@@ -18,7 +18,6 @@ def get_powertrain_can_parser(CP):
     ("LEFT_BLINKER", "Dashlights", 0),
     ("RIGHT_BLINKER", "Dashlights", 0),
     ("SEATBELT_FL", "Dashlights", 0),
-
     ("FL", "Wheel_Speeds", 0),
     ("FR", "Wheel_Speeds", 0),
     ("RL", "Wheel_Speeds", 0),
@@ -43,7 +42,7 @@ def get_powertrain_can_parser(CP):
       ("Units", "Dash_State", 1),
     ]
 
-  else:
+  if CP.carFingerprint in [CAR.OUTBACK, CAR.LEGACY]:
     signals += [
       ("LKA_Lockout", "Steering_Torque", 0),
     ]
@@ -168,7 +167,6 @@ class CarState():
     self.left_blinker_on = cp.vl["Dashlights"]['LEFT_BLINKER'] == 1
     self.right_blinker_on = cp.vl["Dashlights"]['RIGHT_BLINKER'] == 1
     self.steer_torque_driver = cp.vl["Steering_Torque"]['Steer_Torque_Sensor']
-    self.steer_torque_motor = cp.vl["Steering_Torque"]['Steer_Torque_Output']
     self.acc_active = cp.vl["CruiseControl"]['Cruise_Activated']
     self.main_on = cp.vl["CruiseControl"]['Cruise_On']
     self.steer_override = abs(self.steer_torque_driver) > STEER_THRESHOLD[self.car_fingerprint]
