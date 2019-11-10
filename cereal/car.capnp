@@ -310,7 +310,7 @@ struct CarParams {
   enableCamera @4 :Bool;
   enableDsu @5 :Bool; # driving support unit
   enableApgs @6 :Bool; # advanced parking guidance system
-
+ 
   minEnableSpeed @7 :Float32;
   minSteerSpeed @8 :Float32;
   safetyModel @9 :SafetyModel;
@@ -360,7 +360,8 @@ struct CarParams {
   isPandaBlack @39: Bool;
   dashcamOnly @41: Bool;
   transmissionType @43 :TransmissionType;
-
+  smartDsu @44 :Bool; #SmartDSU Interceptor
+ 
   struct LateralPIDTuning {
     kpBP @0 :List(Float32);
     kpV @1 :List(Float32);
