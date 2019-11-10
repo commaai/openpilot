@@ -26,7 +26,6 @@ class CarController():
     self.car_fingerprint = car_fingerprint
     self.es_distance_cnt = -1
     self.es_lkas_cnt = -1
-    self.counter = 0
     self.button_last = 0
 
     # Setup detection helper. Routes commands to
@@ -45,20 +44,9 @@ class CarController():
     ### STEER ###
 
     if (frame % P.STEER_STEP) == 0:
-      final_steer = actuators.steer if enabled else 0.
-      apply_steer = int(round(final_steer * P.STEER_MAX))
-
+      apply_steer = int(round(actuators.steer * P.STEER_MAX)) if enabled else 0.
       # limits due to driver torque
       apply_steer = apply_std_steer_torque_limits(apply_steer, self.apply_steer_last, CS.steer_torque_driver, P)
-
-      if self.car_fingerprint in (CAR.OUTBACK, CAR.LEGACY):
-        # add noise to prevent lkas fault from constant torque value for over 1s
-        if enabled and apply_steer == self.apply_steer_last:
-          self.counter =+ 1
-          if self.counter == 50:
-            apply_steer = apply_steer - 1
-        else:
-          self.counter = 0
 
       can_sends.append(subarucan.create_steering_control(self.packer, CS.CP.carFingerprint, apply_steer, frame, P.STEER_STEP))
 
