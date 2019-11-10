@@ -246,7 +246,8 @@ class CarInterface(CarInterfaceBase):
     ret.brakeMaxBP = [0.]
     ret.brakeMaxV = [1.]
 
-    ret.enableCamera = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, ECU.CAM) or has_relay
+    ret.smartDsu = 0x2FF in fingerprint[0]
+    ret.enableCamera = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, ECU.CAM) or has_relay or smartDsu
     ret.enableDsu = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, ECU.DSU) or (has_relay and candidate in TSS2_CAR)
     ret.enableApgs = False  # is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, ECU.APGS)
     ret.enableGasInterceptor = 0x201 in fingerprint[0]
@@ -255,6 +256,7 @@ class CarInterface(CarInterfaceBase):
     cloudlog.warning("ECU DSU Simulated: %r", ret.enableDsu)
     cloudlog.warning("ECU APGS Simulated: %r", ret.enableApgs)
     cloudlog.warning("ECU Gas Interceptor: %r", ret.enableGasInterceptor)
+    cloudlog.warning("ECU SmartDSU: %r", ret.smartDsu)
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter.

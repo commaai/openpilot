@@ -242,7 +242,7 @@ class CarController():
     #*** static msgs ***
 
     for (addr, ecu, cars, bus, fr_step, vl) in STATIC_MSGS:
-      if frame % fr_step == 0 and ecu in self.fake_ecus and self.car_fingerprint in cars:
+      if frame % fr_step == 0 and ecu in self.fake_ecus and self.car_fingerprint in cars and not CS.CP.smartDsu:
         can_sends.append(make_can_msg(addr, vl, bus, False))
 
     return can_sends
