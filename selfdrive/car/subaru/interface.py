@@ -53,7 +53,6 @@ class CarInterface(CarInterfaceBase):
     ret.enableCamera = True
 
     ret.steerRateCost = 0.7
-    ret.transmissionType = car.CarParams.TransmissionType.automatic
     ret.openpilotLongitudinalControl = False
 
     if candidate in [CAR.IMPREZA]:
