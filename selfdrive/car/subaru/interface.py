@@ -39,6 +39,7 @@ class CarInterface(CarInterfaceBase):
     ret = car.CarParams.new_message()
 
     ret.carName = "subaru"
+    ret.radarOffCan = False
     ret.carFingerprint = candidate
     ret.carVin = vin
     ret.isPandaBlack = has_relay
