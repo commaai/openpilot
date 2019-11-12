@@ -8,7 +8,7 @@ class CarControllerParams():
   def __init__(self, car_fingerprint):
     self.STEER_MAX = 2047                # max_steer 2047
     self.STEER_STEP = 2                  # how often we update the steer cmd
-    self.STEER_DELTA_UP = 50             # torque increase per refresh, 0.8s to max
+    self.STEER_DELTA_UP = 60             # torque increase per refresh, 0.68s to max
     self.STEER_DELTA_DOWN = 70           # torque decrease per refresh
     if car_fingerprint == CAR.IMPREZA:
       self.STEER_DRIVER_ALLOWANCE = 60   # allowed driver torque before start limiting
@@ -44,9 +44,11 @@ class CarController():
     ### STEER ###
 
     if (frame % P.STEER_STEP) == 0:
-      apply_steer = int(round(actuators.steer * P.STEER_MAX)) if enabled else 0.
-      # limits due to driver torque
-      apply_steer = apply_std_steer_torque_limits(apply_steer, self.apply_steer_last, CS.steer_torque_driver, P)
+      if enabled:
+        # limits due to driver torque
+        apply_steer = apply_std_steer_torque_limits(int(round(actuators.steer * P.STEER_MAX)), self.apply_steer_last, CS.steer_torque_driver, P)
+      else:
+        apply_steer = 0
 
       can_sends.append(subarucan.create_steering_control(self.packer, CS.CP.carFingerprint, apply_steer, frame, P.STEER_STEP))
 
