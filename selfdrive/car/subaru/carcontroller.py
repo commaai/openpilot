@@ -81,8 +81,9 @@ class CarController():
 
     ### ALERTS ###
 
-    if self.es_lkas_cnt != CS.es_lkas_msg["Counter"]:
-      self.es_lkas_cnt = CS.es_lkas_msg["Counter"]
-      can_sends.append(subarucan.create_es_lkas(self.packer, CS.es_lkas_msg, visual_alert, left_line, right_line))
+    if self.car_fingerprint == CAR.IMPREZA:
+      if self.es_lkas_cnt != CS.es_lkas_msg["Counter"]:
+        self.es_lkas_cnt = CS.es_lkas_msg["Counter"]
+        can_sends.append(subarucan.create_es_lkas(self.packer, CS.es_lkas_msg, visual_alert, left_line, right_line))
 
     return can_sends
