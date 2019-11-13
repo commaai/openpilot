@@ -51,13 +51,6 @@ FINGERPRINTS = {
   }],
 }
 
-class ECU:
-  CAM = 0
-
-ECU_FINGERPRINT = {
-  ECU.CAM: [294, 919],                    # HCA_01 Heading Control Assist, LDW_02 Lane Departure Warning
-}
-
 DBC = {
   CAR.GOLF: dbc_dict('vw_mqb_2010', None),
 }
