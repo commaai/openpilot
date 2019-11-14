@@ -176,9 +176,9 @@ class CarInterface(CarInterfaceBase):
 
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
-      ret.longitudinalTuning.kpV = [3.6, 2.4, 1.5]
+      ret.longitudinalTuning.kpV = [0.8, 0.56, 0.38] if ret.enableGasInterceptor else [3.6, 2.4, 1.5]
       ret.longitudinalTuning.kiBP = [0., 35.]
-      ret.longitudinalTuning.kiV = [0.54, 0.36]
+      ret.longitudinalTuning.kiV = [0.16, 0.11] if ret.enableGasInterceptor else [0.54, 0.36]
 
     elif candidate in (CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH):
       stop_and_go = True
@@ -353,8 +353,13 @@ class CarInterface(CarInterfaceBase):
     ret.steerMaxBP = [0.]  # m/s
     ret.steerMaxV = [1.]   # max steer allowed
 
-    ret.gasMaxBP = [0.]  # m/s
-    ret.gasMaxV = [0.6] if ret.enableGasInterceptor else [0.] # max gas allowed
+    if ret.enableGasInterceptor:
+       ret.gasMaxBP = [0., 9., 35]
+       ret.gasMaxV = [0.2, 0.5, 0.7]
+    else:
+       ret.gasMaxBP = [0.]
+       ret.gasMaxV = [0.]
+
     ret.brakeMaxBP = [5., 20.]  # m/s
     ret.brakeMaxV = [1., 0.8]   # max brake allowed
 
