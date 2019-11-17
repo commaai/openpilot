@@ -60,6 +60,9 @@ class CarController():
         else:
           self.counter = 0
 
+       if not enabled:
+        apply_steer = 0.
+
       can_sends.append(subarucan.create_steering_control(self.packer, CS.CP.carFingerprint, apply_steer, frame, P.STEER_STEP))
 
       self.apply_steer_last = apply_steer
