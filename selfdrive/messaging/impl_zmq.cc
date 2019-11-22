@@ -130,7 +130,7 @@ void ZMQPubSocket::connect(Context *context, std::string endpoint){
 
   std::cout << "ZMQ PUB: " << full_endpoint << std::endl;
 
-  assert(zmq_bind(sock, full_endpoint.c_str()) == 0);
+  zmq_bind(sock, full_endpoint.c_str());
 }
 
 int ZMQPubSocket::sendMessage(Message *message){
