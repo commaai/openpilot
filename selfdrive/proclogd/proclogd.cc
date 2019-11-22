@@ -16,7 +16,7 @@
 #include <functional>
 #include <unordered_map>
 
-#include <zmq.h>
+#include "messaging.hpp"
 #include <capnp/serialize.h>
 #include "cereal/gen/cpp/log.capnp.h"
 
@@ -36,10 +36,8 @@ struct ProcCache {
 int main() {
   int err;
 
-  void *context = zmq_ctx_new();
-  void *publisher = zmq_socket(context, ZMQ_PUB);
-  err = zmq_bind(publisher, "tcp://*:8031");
-  assert(err == 0);
+  Context * c = Context::create();
+  PubSocket * publisher = PubSocket::create(c, "procLog");
 
   double jiffy = sysconf(_SC_CLK_TCK);
   size_t page_size = sysconf(_SC_PAGE_SIZE);
@@ -103,7 +101,7 @@ int main() {
 
       std::ifstream smem("/proc/meminfo");
       std::string mem_line;
-      
+
       uint64_t mem_total = 0, mem_free = 0, mem_available = 0, mem_buffers = 0;
       uint64_t mem_cached = 0, mem_active = 0, mem_inactive = 0, mem_shared = 0;
 
@@ -203,7 +201,7 @@ int main() {
           std::string cmdline_s = util::read_file(util::string_format("/proc/%d/cmdline", pid));
           const char* cmdline_p = cmdline_s.c_str();
           const char* cmdline_ep = cmdline_p + cmdline_s.size();
-          
+
           // strip trailing null bytes
           while ((cmdline_ep-1) > cmdline_p && *(cmdline_ep-1) == 0) {
             cmdline_ep--;
@@ -236,10 +234,13 @@ int main() {
 
     auto words = capnp::messageToFlatArray(msg);
     auto bytes = words.asBytes();
-    zmq_send(publisher, bytes.begin(), bytes.size(), 0);
+    publisher->send((char*)bytes.begin(), bytes.size());
 
     usleep(2000000); // 2 secs
   }
+
+  delete c;
+  delete publisher;
 
   return 0;
 }

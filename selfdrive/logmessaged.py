@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import zmq
 from logentries import LogentriesHandler
-from selfdrive.services import service_list
 import selfdrive.messaging as messaging
 
 def main(gctx=None):
@@ -16,7 +15,7 @@ def main(gctx=None):
   sock.bind("ipc:///tmp/logmessage")
 
   # and we publish them
-  pub_sock = messaging.pub_sock(service_list['logMessage'].port)
+  pub_sock = messaging.pub_sock('logMessage')
 
   while True:
     dat = b''.join(sock.recv_multipart())

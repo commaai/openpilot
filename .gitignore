@@ -43,3 +43,6 @@ openpilot
 notebooks
 xx
 
+.coverage*
+htmlcov
+

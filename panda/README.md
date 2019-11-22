@@ -108,6 +108,8 @@ to ensure that the behavior remains unchanged.
     * compiling the code in various configuration and flashing it both through USB and WiFi.
     * Receiving, sending and forwarding CAN messages on all buses, over USB and WiFi.
 
+In addition, we run [Pylint](https://www.pylint.org/) and [Flake8](https://github.com/PyCQA/flake8) linters on all python files within the panda repo.
+
 Hardware
 ------
 

@@ -6,8 +6,8 @@
 #include "runners/run.h"
 
 #include "cereal/gen/cpp/log.capnp.h"
-#include <czmq.h>
 #include <capnp/serialize.h>
+#include "messaging.hpp"
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,8 +37,10 @@ typedef struct MonitoringState {
 
 void monitoring_init(MonitoringState* s, cl_device_id device_id, cl_context context);
 MonitoringResult monitoring_eval_frame(MonitoringState* s, cl_command_queue q, cl_mem yuv_cl, int width, int height);
-void monitoring_publish(void* sock, uint32_t frame_id, const MonitoringResult res);
+void monitoring_publish(PubSocket *sock, uint32_t frame_id, const MonitoringResult res, float ir_target);
 void monitoring_free(MonitoringState* s);
+
+float ir_target_set(float *cur_front_gain, const MonitoringResult res);
 
 #ifdef __cplusplus
 }

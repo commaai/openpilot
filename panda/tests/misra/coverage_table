@@ -9,9 +9,9 @@
 2.6     X (Cppcheck)
 2.7     
 3.1     X (Addon)
-3.2     
+3.2     X (Addon)
 4.1     X (Addon)
-4.2     
+4.2     X (Addon)
 5.1     X (Addon)
 5.2     X (Addon)
 5.3     X (Addon)
@@ -123,7 +123,7 @@
 20.12   
 20.13   X (Addon)
 20.14   X (Addon)
-21.1    
+21.1    X (Addon)
 21.2    
 21.3    X (Addon)
 21.4    X (Addon)
@@ -134,7 +134,7 @@
 21.9    X (Addon)
 21.10   X (Addon)
 21.11   X (Addon)
-21.12   
+21.12   X (Addon)
 22.1    X (Cppcheck)
 22.2    X (Cppcheck)
 22.3    

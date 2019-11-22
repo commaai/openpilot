@@ -2,6 +2,7 @@
 import os
 import subprocess
 from PIL import Image
+from common.params import Params
 import time
 import signal
 
@@ -19,7 +20,9 @@ def snapshot():
   if len(ret) > 0:
     return None
 
-  proc = subprocess.Popen(os.path.join(os.getenv("HOME"), "one/selfdrive/visiond/visiond"), cwd=os.path.join(os.getenv("HOME"), "one/selfdrive/visiond"))
+  front_camera_allowed = int(Params().get("RecordFront"))
+
+  proc = subprocess.Popen(os.path.join(os.getenv("HOME"), "one/selfdrive/visiond/start.py"), cwd=os.path.join(os.getenv("HOME"), "one/selfdrive/visiond"))
   time.sleep(6.0)
 
   ret = None
@@ -28,9 +31,12 @@ def snapshot():
     pic = ipc.get()
     del ipc
 
-    ipc_front = VisionIPC(front=True)
-    fpic = ipc_front.get()
-    del ipc_front
+    if front_camera_allowed:
+      ipc_front = VisionIPC(front=True)
+      fpic = ipc_front.get()
+      del ipc_front
+    else:
+      fpic = None
 
     ret = pic, fpic
   finally:

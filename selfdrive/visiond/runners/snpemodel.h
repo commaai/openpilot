@@ -13,9 +13,13 @@
 
 #include "runmodel.h"
 
+#define USE_CPU_RUNTIME 0
+#define USE_GPU_RUNTIME 1
+#define USE_DSP_RUNTIME 2
+
 class SNPEModel : public RunModel {
 public:
-  SNPEModel(const char *path, float *output, size_t output_size);
+  SNPEModel(const char *path, float *output, size_t output_size, int runtime);
   ~SNPEModel() {
     if (model_data) free(model_data);
   }

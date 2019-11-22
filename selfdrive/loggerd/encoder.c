@@ -27,7 +27,6 @@
 #define ALOG(...) __android_log_print(ANDROID_LOG_VERBOSE, "omxapp", ##__VA_ARGS__)
 
 // encoder: lossey codec using hardware hevc
-
 static void wait_for_state(EncoderState *s, OMX_STATETYPE state) {
   pthread_mutex_lock(&s->state_lock);
   while (s->state != state) {
@@ -60,7 +59,7 @@ static OMX_ERRORTYPE event_handler(OMX_HANDLETYPE component, OMX_PTR app_data, O
   }
 
   pthread_mutex_unlock(&s->state_lock);
-  
+
   return OMX_ErrorNone;
 }
 
@@ -108,7 +107,7 @@ static const char* omx_color_fomat_name(uint32_t format) {
   case OMX_COLOR_Format16bitBGR565: return "OMX_COLOR_Format16bitBGR565";
   case OMX_COLOR_Format18bitRGB666: return "OMX_COLOR_Format18bitRGB666";
   case OMX_COLOR_Format18bitARGB1665: return "OMX_COLOR_Format18bitARGB1665";
-  case OMX_COLOR_Format19bitARGB1666: return "OMX_COLOR_Format19bitARGB1666"; 
+  case OMX_COLOR_Format19bitARGB1666: return "OMX_COLOR_Format19bitARGB1666";
   case OMX_COLOR_Format24bitRGB888: return "OMX_COLOR_Format24bitRGB888";
   case OMX_COLOR_Format24bitBGR888: return "OMX_COLOR_Format24bitBGR888";
   case OMX_COLOR_Format24bitARGB1887: return "OMX_COLOR_Format24bitARGB1887";
@@ -131,11 +130,11 @@ static const char* omx_color_fomat_name(uint32_t format) {
   case OMX_COLOR_FormatRawBayer8bit: return "OMX_COLOR_FormatRawBayer8bit";
   case OMX_COLOR_FormatRawBayer10bit: return "OMX_COLOR_FormatRawBayer10bit";
   case OMX_COLOR_FormatRawBayer8bitcompressed: return "OMX_COLOR_FormatRawBayer8bitcompressed";
-  case OMX_COLOR_FormatL2: return "OMX_COLOR_FormatL2"; 
-  case OMX_COLOR_FormatL4: return "OMX_COLOR_FormatL4"; 
-  case OMX_COLOR_FormatL8: return "OMX_COLOR_FormatL8"; 
-  case OMX_COLOR_FormatL16: return "OMX_COLOR_FormatL16"; 
-  case OMX_COLOR_FormatL24: return "OMX_COLOR_FormatL24"; 
+  case OMX_COLOR_FormatL2: return "OMX_COLOR_FormatL2";
+  case OMX_COLOR_FormatL4: return "OMX_COLOR_FormatL4";
+  case OMX_COLOR_FormatL8: return "OMX_COLOR_FormatL8";
+  case OMX_COLOR_FormatL16: return "OMX_COLOR_FormatL16";
+  case OMX_COLOR_FormatL24: return "OMX_COLOR_FormatL24";
   case OMX_COLOR_FormatL32: return "OMX_COLOR_FormatL32";
   case OMX_COLOR_FormatYUV420PackedSemiPlanar: return "OMX_COLOR_FormatYUV420PackedSemiPlanar";
   case OMX_COLOR_FormatYUV422PackedSemiPlanar: return "OMX_COLOR_FormatYUV422PackedSemiPlanar";
@@ -165,8 +164,7 @@ static const char* omx_color_fomat_name(uint32_t format) {
   }
 }
 
-
-void encoder_init(EncoderState *s, const char* filename, int width, int height, int fps, int bitrate) {
+void encoder_init(EncoderState *s, const char* filename, int width, int height, int fps, int bitrate, bool h265, bool downscale) {
   int err;
 
   memset(s, 0, sizeof(*s));
@@ -175,6 +173,17 @@ void encoder_init(EncoderState *s, const char* filename, int width, int height, 
   s->height = height;
   s->fps = fps;
   mutex_init_reentrant(&s->lock);
+
+  if (!h265) {
+    s->remuxing = true;
+  }
+
+  if (downscale) {
+    s->downscale = true;
+    s->y_ptr2 = malloc(s->width*s->height);
+    s->u_ptr2 = malloc(s->width*s->height/4);
+    s->v_ptr2 = malloc(s->width*s->height/4);
+  }
 
   s->segment = -1;
 
@@ -188,10 +197,13 @@ void encoder_init(EncoderState *s, const char* filename, int width, int height, 
   pthread_mutex_init(&s->state_lock, NULL);
   pthread_cond_init(&s->state_cv, NULL);
 
-  err = OMX_GetHandle(&s->handle, (OMX_STRING)"OMX.qcom.video.encoder.hevc",
-                      s, &omx_callbacks);
-  // err = OMX_GetHandle(&s->handle, (OMX_STRING)"OMX.qcom.video.encoder.avc",
-  //                     s, &omx_callbacks);
+  if (h265) {
+    err = OMX_GetHandle(&s->handle, (OMX_STRING)"OMX.qcom.video.encoder.hevc",
+                        s, &omx_callbacks);
+  } else {
+    err = OMX_GetHandle(&s->handle, (OMX_STRING)"OMX.qcom.video.encoder.avc",
+                        s, &omx_callbacks);
+  }
   assert(err == OMX_ErrorNone);
   // printf("handle: %p\n", s->handle);
 
@@ -203,7 +215,6 @@ void encoder_init(EncoderState *s, const char* filename, int width, int height, 
   err = OMX_GetParameter(s->handle, OMX_IndexParamPortDefinition,
                          (OMX_PTR) &in_port);
   assert(err == OMX_ErrorNone);
-
 
   in_port.format.video.nFrameWidth = s->width;
   in_port.format.video.nFrameHeight = s->height;
@@ -237,44 +248,25 @@ void encoder_init(EncoderState *s, const char* filename, int width, int height, 
   err = OMX_GetParameter(s->handle, OMX_IndexParamPortDefinition,
                          (OMX_PTR)&out_port);
   assert(err == OMX_ErrorNone);
-
   out_port.format.video.nFrameWidth = s->width;
   out_port.format.video.nFrameHeight = s->height;
   out_port.format.video.xFramerate = 0;
   out_port.format.video.nBitrate = bitrate;
-  out_port.format.video.eCompressionFormat = OMX_VIDEO_CodingHEVC;
-  // out_port.format.video.eCompressionFormat = OMX_VIDEO_CodingAVC;
+  if (h265) {
+    out_port.format.video.eCompressionFormat = OMX_VIDEO_CodingHEVC;
+  } else {
+    out_port.format.video.eCompressionFormat = OMX_VIDEO_CodingAVC;
+  }
   out_port.format.video.eColorFormat = OMX_COLOR_FormatUnused;
 
   err = OMX_SetParameter(s->handle, OMX_IndexParamPortDefinition,
                          (OMX_PTR) &out_port);
   assert(err == OMX_ErrorNone);
 
-
   err = OMX_GetParameter(s->handle, OMX_IndexParamPortDefinition,
                          (OMX_PTR) &out_port);
   assert(err == OMX_ErrorNone);
   s->num_out_bufs = out_port.nBufferCountActual;
-
-  // printf("out buf num %d\n", out_port.nBufferSize);
-
-
-  // setup HEVC
-
-  OMX_VIDEO_PARAM_HEVCTYPE hecv_type = {0};
-  hecv_type.nSize = sizeof(hecv_type);
-  hecv_type.nPortIndex = (OMX_U32) PORT_INDEX_OUT;
-  err = OMX_GetParameter(s->handle, (OMX_INDEXTYPE)OMX_IndexParamVideoHevc,
-                         (OMX_PTR) &hecv_type);
-  assert(err == OMX_ErrorNone);
-
-  hecv_type.eProfile = OMX_VIDEO_HEVCProfileMain;
-  hecv_type.eLevel = OMX_VIDEO_HEVCHighTierLevel5;
-
-  err = OMX_SetParameter(s->handle, (OMX_INDEXTYPE)OMX_IndexParamVideoHevc,
-                         (OMX_PTR) &hecv_type);
-  assert(err == OMX_ErrorNone);
-
 
   OMX_VIDEO_PARAM_BITRATETYPE bitrate_type = {0};
   bitrate_type.nSize = sizeof(bitrate_type);
@@ -290,42 +282,41 @@ void encoder_init(EncoderState *s, const char* filename, int width, int height, 
                          (OMX_PTR) &bitrate_type);
   assert(err == OMX_ErrorNone);
 
+  if (h265) {
+    // setup HEVC
+    OMX_VIDEO_PARAM_HEVCTYPE hecv_type = {0};
+    hecv_type.nSize = sizeof(hecv_type);
+    hecv_type.nPortIndex = (OMX_U32) PORT_INDEX_OUT;
+    err = OMX_GetParameter(s->handle, (OMX_INDEXTYPE)OMX_IndexParamVideoHevc,
+                           (OMX_PTR) &hecv_type);
+    assert(err == OMX_ErrorNone);
 
-#if 0
+    hecv_type.eProfile = OMX_VIDEO_HEVCProfileMain;
+    hecv_type.eLevel = OMX_VIDEO_HEVCHighTierLevel5;
+
+    err = OMX_SetParameter(s->handle, (OMX_INDEXTYPE)OMX_IndexParamVideoHevc,
+                           (OMX_PTR) &hecv_type);
+    assert(err == OMX_ErrorNone);
+  } else {
     // setup h264
-  OMX_VIDEO_PARAM_BITRATETYPE bitrate_type = {0};
-  bitrate_type.nSize = sizeof(bitrate_type);
-  bitrate_type.nPortIndex = (OMX_U32) PORT_INDEX_OUT;
-  err = OMX_GetParameter(s->handle, OMX_IndexParamVideoBitrate,
-                         (OMX_PTR) &bitrate_type);
-  assert(err == OMX_ErrorNone);
+    OMX_VIDEO_PARAM_AVCTYPE avc = { 0 };
+    avc.nSize = sizeof(avc);
+    avc.nPortIndex = (OMX_U32) PORT_INDEX_OUT;
+    err = OMX_GetParameter(s->handle, OMX_IndexParamVideoAvc, &avc);
+    assert(err == OMX_ErrorNone);
 
-  bitrate_type.eControlRate = OMX_Video_ControlRateVariable;
-  bitrate_type.nTargetBitrate = 2000000;
+    avc.nBFrames = 0;
+    avc.nPFrames = 15;
 
-  err = OMX_SetParameter(s->handle, OMX_IndexParamVideoBitrate,
-                         (OMX_PTR) &bitrate_type);
-  assert(err == OMX_ErrorNone);
+    avc.eProfile = OMX_VIDEO_AVCProfileBaseline;
+    avc.eLevel = OMX_VIDEO_AVCLevel31;
 
+    avc.nAllowedPictureTypes |= OMX_VIDEO_PictureTypeB;
+    avc.eLoopFilterMode = OMX_VIDEO_AVCLoopFilterEnable;
 
-  OMX_VIDEO_PARAM_AVCTYPE avc = { 0 };
-  avc.nSize = sizeof(avc);
-  avc.nPortIndex = (OMX_U32) PORT_INDEX_OUT;
-  err = OMX_GetParameter(s->handle, OMX_IndexParamVideoAvc, &avc);
-  assert(err == OMX_ErrorNone);
-
-  avc.nBFrames = 0;
-  avc.nPFrames = 20;//avctx->gop_size - 1;
-
-  avc.eProfile = OMX_VIDEO_AVCProfileBaseline;
-  avc.eLevel = OMX_VIDEO_AVCLevel31;
-
-  avc.nAllowedPictureTypes |= OMX_VIDEO_PictureTypeB;
-  avc.eLoopFilterMode = OMX_VIDEO_AVCLoopFilterEnable;
-
-  err = OMX_SetParameter(s->handle, OMX_IndexParamVideoAvc, &avc);
-  assert(err == OMX_ErrorNone);
-#endif
+    err = OMX_SetParameter(s->handle, OMX_IndexParamVideoAvc, &avc);
+    assert(err == OMX_ErrorNone);
+  }
 
 
   // for (int i = 0; ; i++) {
@@ -389,7 +380,6 @@ void encoder_init(EncoderState *s, const char* filename, int width, int height, 
 
 static void handle_out_buf(EncoderState *s, OMX_BUFFERHEADERTYPE *out_buf) {
   int err;
-
   uint8_t *buf_data = out_buf->pBuffer + out_buf->nOffset;
 
   if (out_buf->nFlags & OMX_BUFFERFLAG_CODECCONFIG) {
@@ -410,8 +400,47 @@ static void handle_out_buf(EncoderState *s, OMX_BUFFERHEADERTYPE *out_buf) {
   }
 
   if (s->of) {
-    // printf("write %d flags 0x%x\n", out_buf->nFilledLen, out_buf->nFlags);
+    //printf("write %d flags 0x%x\n", out_buf->nFilledLen, out_buf->nFlags);
     fwrite(buf_data, out_buf->nFilledLen, 1, s->of);
+  }
+
+  if (s->remuxing) {
+    if (!s->wrote_codec_config && s->codec_config_len > 0) {
+      if (s->codec_ctx->extradata_size < s->codec_config_len) {
+        s->codec_ctx->extradata = realloc(s->codec_ctx->extradata, s->codec_config_len + AV_INPUT_BUFFER_PADDING_SIZE);
+      }
+      s->codec_ctx->extradata_size = s->codec_config_len;
+      memcpy(s->codec_ctx->extradata, s->codec_config, s->codec_config_len);
+      memset(s->codec_ctx->extradata + s->codec_ctx->extradata_size, 0, AV_INPUT_BUFFER_PADDING_SIZE);
+
+      err = avcodec_parameters_from_context(s->out_stream->codecpar, s->codec_ctx);
+      assert(err >= 0);
+      err = avformat_write_header(s->ofmt_ctx, NULL);
+      assert(err >= 0);
+
+      s->wrote_codec_config = true;
+    }
+
+    if (out_buf->nTimeStamp > 0) {
+      // input timestamps are in microseconds
+      AVRational in_timebase = {1, 1000000};
+
+      AVPacket pkt;
+      av_init_packet(&pkt);
+      pkt.data = buf_data;
+      pkt.size = out_buf->nFilledLen;
+      pkt.pts = pkt.dts = av_rescale_q_rnd(out_buf->nTimeStamp, in_timebase, s->ofmt_ctx->streams[0]->time_base, AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX);
+      pkt.duration = av_rescale_q(50*1000, in_timebase, s->ofmt_ctx->streams[0]->time_base);
+
+      if (out_buf->nFlags & OMX_BUFFERFLAG_SYNCFRAME) {
+        pkt.flags |= AV_PKT_FLAG_KEY;
+      }
+
+      err = av_write_frame(s->ofmt_ctx, &pkt);
+      if (err < 0) { LOGW("ts encoder write issue"); }
+
+      av_free_packet(&pkt);
+    }
   }
 
   // give omx back the buffer
@@ -419,11 +448,11 @@ static void handle_out_buf(EncoderState *s, OMX_BUFFERHEADERTYPE *out_buf) {
   assert(err == OMX_ErrorNone);
 }
 
-int encoder_encode_frame(EncoderState *s, uint64_t ts,
+int encoder_encode_frame(EncoderState *s,
                          const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
+                         int in_width, int in_height,
                          int *frame_segment, VIPCBufExtra *extra) {
   int err;
-
   pthread_mutex_lock(&s->lock);
 
   if (s->opening) {
@@ -456,10 +485,24 @@ int encoder_encode_frame(EncoderState *s, uint64_t ts,
 
   uint8_t *in_y_ptr = in_buf_ptr;
   int in_y_stride = VENUS_Y_STRIDE(COLOR_FMT_NV12, s->width);
-  int in_uv_stride = VENUS_UV_STRIDE(COLOR_FMT_NV12, s->width); 
+  int in_uv_stride = VENUS_UV_STRIDE(COLOR_FMT_NV12, s->width);
   // uint8_t *in_uv_ptr = in_buf_ptr + (s->width * s->height);
   uint8_t *in_uv_ptr = in_buf_ptr + (in_y_stride * VENUS_Y_SCANLINES(COLOR_FMT_NV12, s->height));
 
+  if (s->downscale) {
+    I420Scale(y_ptr, in_width,
+              u_ptr, in_width/2,
+              v_ptr, in_width/2,
+              in_width, in_height,
+              s->y_ptr2, s->width,
+              s->u_ptr2, s->width/2,
+              s->v_ptr2, s->width/2,
+              s->width, s->height,
+              kFilterNone);
+    y_ptr = s->y_ptr2;
+    u_ptr = s->u_ptr2;
+    v_ptr = s->v_ptr2;
+  }
   err = I420ToNV12(y_ptr, s->width,
                    u_ptr, s->width/2,
                    v_ptr, s->width/2,
@@ -472,7 +515,7 @@ int encoder_encode_frame(EncoderState *s, uint64_t ts,
   in_buf->nFilledLen = VENUS_BUFFER_SIZE(COLOR_FMT_NV12, s->width, s->height);
   in_buf->nFlags = OMX_BUFFERFLAG_ENDOFFRAME;
   in_buf->nOffset = 0;
-  in_buf->nTimeStamp = extra->timestamp_eof/1000LL;
+  in_buf->nTimeStamp = extra->timestamp_eof/1000LL;  // OMX_TICKS, in microseconds
 
   err = OMX_EmptyThisBuffer(s->handle, in_buf);
   assert(err == OMX_ErrorNone);
@@ -508,12 +551,39 @@ void encoder_open(EncoderState *s, const char* path) {
 
   pthread_mutex_lock(&s->lock);
 
-  snprintf(s->vid_path, sizeof(s->vid_path), "%s/%s.hevc", path, s->filename);
-  s->of = fopen(s->vid_path, "wb");
-  assert(s->of);
+  snprintf(s->vid_path, sizeof(s->vid_path), "%s/%s", path, s->filename);
 
-  if (s->codec_config_len > 0) {
-    fwrite(s->codec_config, s->codec_config_len, 1, s->of);
+  if (s->remuxing) {
+    avformat_alloc_output_context2(&s->ofmt_ctx, NULL, NULL, s->vid_path);
+    assert(s->ofmt_ctx);
+
+    s->out_stream = avformat_new_stream(s->ofmt_ctx, NULL);
+    assert(s->out_stream);
+
+    // set codec correctly
+    av_register_all();
+
+    AVCodec *codec = NULL;
+    codec = avcodec_find_encoder(AV_CODEC_ID_H264);
+    assert(codec);
+
+    s->codec_ctx = avcodec_alloc_context3(codec);
+    assert(s->codec_ctx);
+    s->codec_ctx->width = s->width;
+    s->codec_ctx->height = s->height;
+    s->codec_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
+    s->codec_ctx->time_base = (AVRational){ 1, s->fps };
+
+    err = avio_open(&s->ofmt_ctx->pb, s->vid_path, AVIO_FLAG_WRITE);
+    assert(err >= 0);
+
+    s->wrote_codec_config = false;
+  } else {
+    s->of = fopen(s->vid_path, "wb");
+    assert(s->of);
+    if (s->codec_config_len > 0) {
+      fwrite(s->codec_config, s->codec_config_len, 1, s->of);
+    }
   }
 
   // create camera lock file
@@ -558,7 +628,13 @@ void encoder_close(EncoderState *s) {
       s->dirty = false;
     }
 
-    fclose(s->of);
+    if (s->remuxing) {
+      av_write_trailer(s->ofmt_ctx);
+      avio_closep(&s->ofmt_ctx->pb);
+      avformat_free_context(s->ofmt_ctx);
+    } else {
+      fclose(s->of);
+    }
     unlink(s->lock_path);
   }
   s->open = false;
@@ -612,6 +688,12 @@ void encoder_destroy(EncoderState *s) {
 
   err = OMX_FreeHandle(s->handle);
   assert(err == OMX_ErrorNone);
+
+  if (s->downscale) {
+    free(s->y_ptr2);
+    free(s->u_ptr2);
+    free(s->v_ptr2);
+  }
 }
 
 #if 0
@@ -658,7 +740,7 @@ int main() {
   memset(inbuf, 0, w*h*3/2);
 
   for (int i=0; i<20*3+5; i++) {
-    
+
     // fread(inbuf, w*h*3/2, 1, infile);
 
     uint8_t *tmpy = inbuf;
@@ -692,7 +774,7 @@ int main() {
   encoder_rotate(s, "/sdcard/t2");
 
   for (int i=0; i<20*3+5; i++) {
-    
+
     // fread(inbuf, w*h*3/2, 1, infile);
 
     uint8_t *tmpy = inbuf;

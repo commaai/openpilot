@@ -61,7 +61,6 @@ class CarInterface(CarInterfaceBase):
                        candidate == CAR.CADILLAC_CT6
     ret.openpilotLongitudinalControl = ret.enableCamera
     tire_stiffness_factor = 0.444  # not optimized yet
-    ret.safetyModelPassive = car.CarParams.SafetyModel.gmPassive
 
     if candidate == CAR.VOLT:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)

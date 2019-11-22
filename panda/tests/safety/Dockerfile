@@ -14,6 +14,7 @@ RUN pyenv install 3.7.3
 RUN pyenv global 3.7.3
 RUN pyenv rehash
 
-COPY tests/safety/requirements.txt requirements.txt
-RUN pip install -r requirements.txt
+COPY requirements.txt /tmp/
+RUN pip install -r /tmp/requirements.txt
+
 COPY . /panda

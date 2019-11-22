@@ -3,9 +3,9 @@ from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from selfdrive.controls.lib.vehicle_model import VehicleModel
-from selfdrive.car.subaru.values import CAR, FINGERPRINTS, ECU_FINGERPRINT, ECU
+from selfdrive.car.subaru.values import CAR
 from selfdrive.car.subaru.carstate import CarState, get_powertrain_can_parser, get_camera_can_parser
-from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, is_ecu_disconnected
+from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
 ButtonType = car.CarState.ButtonEvent.Type
@@ -48,7 +48,9 @@ class CarInterface(CarInterfaceBase):
     ret.enableCruise = True
     ret.steerLimitAlert = True
 
-    ret.enableCamera = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, ECU.CAM) or has_relay
+    # force openpilot to fake the stock camera, since car harness is not supported yet and old style giraffe (with switches)
+    # was never released
+    ret.enableCamera = True
 
     ret.steerRateCost = 0.7
 

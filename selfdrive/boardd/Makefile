@@ -16,7 +16,8 @@ WARN_FLAGS = -Werror=implicit-function-declaration \
 CFLAGS = -std=gnu11 -g -fPIC -I../ -I../../ -O2 $(WARN_FLAGS)
 CXXFLAGS = -std=c++11 -g -fPIC -I../ -I../../ -O2 $(WARN_FLAGS)
 
-ZMQ_LIBS = -l:libczmq.a -l:libzmq.a -lgnustl_shared
+MESSAGING_FLAGS = -I$(BASEDIR)/selfdrive/messaging
+MESSAGING_LIBS = $(BASEDIR)/selfdrive/messaging/messaging.a
 
 JSON_FLAGS = -I$(PHONELIBS)/json/src
 
@@ -31,13 +32,12 @@ EXTRA_LIBS = -lusb-1.0
 ifeq ($(ARCH),aarch64)
 CFLAGS += -mcpu=cortex-a57
 CXXFLAGS += -mcpu=cortex-a57
+EXTRA_LIBS += -lgnustl_shared
 endif
 
 
 ifeq ($(ARCH),x86_64)
 ZMQ_FLAGS = -I$(PHONELIBS)/zmq/aarch64/include
-ZMQ_LIBS = -L$(BASEDIR)/external/zmq/lib/ \
-           -l:libczmq.a -l:libzmq.a
 EXTRA_LIBS = -lusb-1.0 -lpthread
 CXXFLAGS += -I/usr/include/libusb-1.0
 CFLAGS += -I/usr/include/libusb-1.0
@@ -58,11 +58,10 @@ OBJS = boardd.o \
 
 DEPS := $(OBJS:.o=.d)
 
-boardd: $(OBJS)
+boardd: $(OBJS) $(MESSAGING_LIBS)
 	@echo "[ LINK ] $@"
 	$(CXX) -fPIC -o '$@' $^ \
             $(CEREAL_LIBS) \
-            $(ZMQ_LIBS) \
             $(EXTRA_LIBS)
 
 boardd.o: boardd.cc
@@ -72,6 +71,7 @@ boardd.o: boardd.cc
            $(CEREAL_CFLAGS) \
            $(CEREAL_CXXFLAGS) \
            $(ZMQ_FLAGS) \
+           $(MESSAGING_FLAGS) \
            -I../ \
            -I../../ \
            -c -o '$@' '$<'
@@ -100,6 +100,7 @@ libcan_list_to_can_capnp.a: can_list_to_can_capnp.o $(CEREAL_OBJS)
           -Iinclude -I.. -I../.. \
           $(CEREAL_CXXFLAGS) \
           $(ZMQ_FLAGS) \
+          $(MESSAGING_FLAGS) \
           -c -o '$@' '$<'
 
 .PHONY: clean

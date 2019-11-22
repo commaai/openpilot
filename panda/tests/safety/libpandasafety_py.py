@@ -30,6 +30,8 @@ typedef struct
   uint32_t CNT;
 } TIM_TypeDef;
 
+bool board_has_relay(void);
+
 void set_controls_allowed(bool c);
 bool get_controls_allowed(void);
 void set_long_controls_allowed(bool c);
@@ -94,6 +96,11 @@ void set_subaru_desired_torque_last(int t);
 void set_subaru_rt_torque_last(int t);
 void set_subaru_torque_driver(int min, int max);
 
+void init_tests_volkswagen(void);
+void set_volkswagen_desired_torque_last(int t);
+void set_volkswagen_rt_torque_last(int t);
+void set_volkswagen_torque_driver(int min, int max);
+int get_volkswagen_gas_prev(void);
 
 """)
 
