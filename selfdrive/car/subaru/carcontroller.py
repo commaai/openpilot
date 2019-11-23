@@ -8,7 +8,7 @@ class CarControllerParams():
   def __init__(self, car_fingerprint):
     self.STEER_MAX = 2047                # max_steer 2047
     self.STEER_STEP = 2                  # how often we update the steer cmd
-    self.STEER_DELTA_UP = 50             # torque increase per refresh, 0.8s to max
+    self.STEER_DELTA_UP = 60             # torque increase per refresh, 0.68s to max
     self.STEER_DELTA_DOWN = 70           # torque decrease per refresh
     if car_fingerprint == CAR.IMPREZA:
       self.STEER_DRIVER_ALLOWANCE = 60   # allowed driver torque before start limiting
@@ -26,8 +26,7 @@ class CarController():
     self.car_fingerprint = car_fingerprint
     self.es_distance_cnt = -1
     self.es_lkas_cnt = -1
-    self.counter = 0
-    self.button_last = 0
+    self.fake_button_prev = 0
 
     # Setup detection helper. Routes commands to
     # an appropriate CAN bus number.
@@ -45,36 +44,24 @@ class CarController():
     ### STEER ###
 
     if (frame % P.STEER_STEP) == 0:
-      final_steer = actuators.steer if enabled else 0.
-      apply_steer = int(round(final_steer * P.STEER_MAX))
-
-      # limits due to driver torque
-      apply_steer = apply_std_steer_torque_limits(apply_steer, self.apply_steer_last, CS.steer_torque_driver, P)
-
-      if self.car_fingerprint in (CAR.OUTBACK, CAR.LEGACY):
-        # add noise to prevent lkas fault from constant torque value for over 1s
-        if enabled and apply_steer == self.apply_steer_last:
-          self.counter =+ 1
-          if self.counter == 50:
-            apply_steer = apply_steer - 1
-        else:
-          self.counter = 0
+      if enabled:
+        # limits due to driver torque
+        apply_steer = apply_std_steer_torque_limits(int(round(actuators.steer * P.STEER_MAX)), self.apply_steer_last, CS.steer_torque_driver, P)
+      else:
+        apply_steer = 0
+      self.apply_steer_last = apply_steer
 
       if not enabled:
         apply_steer = 0.
 
       can_sends.append(subarucan.create_steering_control(self.packer, CS.CP.carFingerprint, apply_steer, frame, P.STEER_STEP))
 
-      self.apply_steer_last = apply_steer
+    ### DISENGAGE ###
 
     if self.car_fingerprint == CAR.IMPREZA:
       if self.es_distance_cnt != CS.es_distance_msg["Counter"]:
-        can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, pcm_cancel_cmd))
         self.es_distance_cnt = CS.es_distance_msg["Counter"]
-
-      if self.es_lkas_cnt != CS.es_lkas_msg["Counter"]:
-        can_sends.append(subarucan.create_es_lkas(self.packer, CS.es_lkas_msg, visual_alert, left_line, right_line))
-        self.es_lkas_cnt = CS.es_lkas_msg["Counter"]
+        can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, pcm_cancel_cmd))
 
     # button control
     if (frame % 5) == 0 and self.car_fingerprint in (CAR.OUTBACK, CAR.LEGACY):
@@ -89,10 +76,17 @@ class CarController():
         fake_button = CS.button
 
       # unstick previous mocked button press
-      if self.button_last != 0:
-        fake_button = self.button_last
-      self.button_last = CS.button
+      if fake_button != 0 and fake_button == self.fake_button_prev:
+        fake_button = 0
+      self.fake_button_prev = fake_button
 
       can_sends.append(subarucan.create_es_throttle_control(self.packer, fake_button, CS.es_accel_msg))
+
+    ### ALERTS ###
+
+    if self.car_fingerprint == CAR.IMPREZA:
+      if self.es_lkas_cnt != CS.es_lkas_msg["Counter"]:
+        self.es_lkas_cnt = CS.es_lkas_msg["Counter"]
+        can_sends.append(subarucan.create_es_lkas(self.packer, CS.es_lkas_msg, visual_alert, left_line, right_line))
 
     return can_sends
