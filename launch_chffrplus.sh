@@ -51,7 +51,7 @@ function launch {
 
 
   # handle pythonpath
-  ln -s /data/openpilot /data/pythonpath
+  ln -sfn /data/openpilot /data/pythonpath
   export PYTHONPATH="$PWD"
 
   # start manager
