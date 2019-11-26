@@ -32,7 +32,7 @@ class LatControlINDI():
     self.A_K = A - np.dot(K, C)
     self.x = np.matrix([[0.], [0.], [0.]])
 
-    self.enfore_rate_limit = CP.carName == "toyota"
+    self.enforce_rate_limit = CP.carName == "toyota"
 
     self.RC = CP.lateralTuning.indi.timeConstant
     self.G = CP.lateralTuning.indi.actuatorEffectiveness
@@ -81,7 +81,7 @@ class LatControlINDI():
       delta_u = g_inv * accel_error
 
       # Enforce rate limit
-      if self.enfore_rate_limit:
+      if self.enforce_rate_limit:
         steer_max = float(SteerLimitParams.STEER_MAX)
         new_output_steer_cmd = steer_max * (self.delayed_output + delta_u)
         prev_output_steer_cmd = steer_max * self.output_steer
