@@ -65,7 +65,7 @@ RUN /tmp/install_capnp.sh
 
 RUN git clone --branch v0.6.5 https://github.com/commaai/openpilot-tools.git /tmp/openpilot/tools
 
-ENV PYTHONPATH /tmp/openpilot:${PYTHONPATH}
+ENV PYTHONPATH /tmp/openpilot
 COPY ./.pylintrc /tmp/openpilot/.pylintrc
 COPY ./common /tmp/openpilot/common
 COPY ./cereal /tmp/openpilot/cereal
