@@ -247,7 +247,7 @@ class CarInterface(CarInterfaceBase):
     ret.brakeMaxV = [1.]
 
     ret.smartDsu = 0x2FF in fingerprint[0]
-    ret.enableCamera = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, ECU.CAM) or has_relay or smartDsu
+    ret.enableCamera = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, ECU.CAM) or has_relay or ret.smartDsu
     ret.enableDsu = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, ECU.DSU) or (has_relay and candidate in TSS2_CAR) or ret.smartDsu
     ret.enableApgs = False  # is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, ECU.APGS)
     ret.enableGasInterceptor = 0x201 in fingerprint[0]
