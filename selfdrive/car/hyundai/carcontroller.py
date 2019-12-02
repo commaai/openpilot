@@ -63,7 +63,7 @@ class CarController():
     if not enabled:
       apply_steer = 0
 
-    steer_req = 1 if enabled else 0
+    steer_req = 1 if apply_steer else 0
 
     self.apply_steer_last = apply_steer
 
