@@ -1,6 +1,6 @@
 {
   "Offroad_ChargeDisabled": {
-    "text": "EON charging disabled after car being off for more than 3 days. Turn ignition on to start charging again.",
+    "text": "EON charging disabled after car being off for more than 3 days or car voltage too low. Turn ignition on to start charging again.",
     "severity": 0
   },
   "Offroad_TemperatureTooHigh": {
