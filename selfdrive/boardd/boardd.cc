@@ -57,6 +57,8 @@ bool loopback_can = false;
 cereal::HealthData::HwType hw_type = cereal::HealthData::HwType::UNKNOWN;
 bool is_pigeon = false;
 const uint32_t NO_IGNITION_CNT_MAX = 2 * 60 * 60 * 24 * 3;  // turn off charge after 3 days
+const uint32_t VBATT_START_CHARGING = 11500;
+const uint32_t VBATT_PAUSE_CHARGING = 10500;
 uint32_t no_ignition_cnt = 0;
 bool connected_once = false;
 bool ignition_last = false;
@@ -353,10 +355,18 @@ void can_health(PubSocket *publisher) {
   }
 
 #ifndef __x86_64__
-  if ((no_ignition_cnt > NO_IGNITION_CNT_MAX) && (health.usb_power_mode == (uint8_t)(cereal::HealthData::UsbPowerMode::CDP))) {
+  bool cdp_mode = health.usb_power_mode == (uint8_t)(cereal::HealthData::UsbPowerMode::CDP);
+  bool no_ignition_exp = no_ignition_cnt > NO_IGNITION_CNT_MAX;
+  if ((no_ignition_exp || (health.voltage <  VBATT_PAUSE_CHARGING)) && cdp_mode && !ignition) {
     printf("TURN OFF CHARGING!\n");
     pthread_mutex_lock(&usb_lock);
     libusb_control_transfer(dev_handle, 0xc0, 0xe6, (uint16_t)(cereal::HealthData::UsbPowerMode::CLIENT), 0, NULL, 0, TIMEOUT);
+    pthread_mutex_unlock(&usb_lock);
+  }
+  if (!no_ignition_exp && (health.voltage >  VBATT_START_CHARGING) && !cdp_mode) {
+    printf("TURN ON CHARGING!\n");
+    pthread_mutex_lock(&usb_lock);
+    libusb_control_transfer(dev_handle, 0xc0, 0xe6, (uint16_t)(cereal::HealthData::UsbPowerMode::CDP), 0, NULL, 0, TIMEOUT);
     pthread_mutex_unlock(&usb_lock);
   }
 #endif
