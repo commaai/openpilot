@@ -358,16 +358,16 @@ void can_health(PubSocket *publisher) {
   bool cdp_mode = health.usb_power_mode == (uint8_t)(cereal::HealthData::UsbPowerMode::CDP);
   bool no_ignition_exp = no_ignition_cnt > NO_IGNITION_CNT_MAX;
   if ((no_ignition_exp || (health.voltage <  VBATT_PAUSE_CHARGING)) && cdp_mode && !ignition) {
-     printf("TURN OFF CHARGING!\n");
-     pthread_mutex_lock(&usb_lock);
-     libusb_control_transfer(dev_handle, 0xc0, 0xe6, (uint16_t)(cereal::HealthData::UsbPowerMode::CLIENT), 0, NULL, 0, TIMEOUT);
-     pthread_mutex_unlock(&usb_lock);
+    printf("TURN OFF CHARGING!\n");
+    pthread_mutex_lock(&usb_lock);
+    libusb_control_transfer(dev_handle, 0xc0, 0xe6, (uint16_t)(cereal::HealthData::UsbPowerMode::CLIENT), 0, NULL, 0, TIMEOUT);
+    pthread_mutex_unlock(&usb_lock);
   }
   if (!no_ignition_exp && (health.voltage >  VBATT_START_CHARGING) && !cdp_mode) {
-     printf("TURN ON CHARGING!\n");
-     pthread_mutex_lock(&usb_lock);
-     libusb_control_transfer(dev_handle, 0xc0, 0xe6, (uint16_t)(cereal::HealthData::UsbPowerMode::CDP), 0, NULL, 0, TIMEOUT);
-     pthread_mutex_unlock(&usb_lock);
+    printf("TURN ON CHARGING!\n");
+    pthread_mutex_lock(&usb_lock);
+    libusb_control_transfer(dev_handle, 0xc0, 0xe6, (uint16_t)(cereal::HealthData::UsbPowerMode::CDP), 0, NULL, 0, TIMEOUT);
+    pthread_mutex_unlock(&usb_lock);
   }
 #endif
 
