@@ -362,7 +362,7 @@ void can_health(PubSocket *publisher) {
      pthread_mutex_lock(&usb_lock);
      libusb_control_transfer(dev_handle, 0xc0, 0xe6, (uint16_t)(cereal::HealthData::UsbPowerMode::CLIENT), 0, NULL, 0, TIMEOUT);
      pthread_mutex_unlock(&usb_lock);
-   }
+  }
   if (!no_ignition_exp && (health.voltage >  VBATT_START_CHARGING) && !cdp_mode) {
      printf("TURN ON CHARGING!\n");
      pthread_mutex_lock(&usb_lock);
