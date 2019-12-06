@@ -118,7 +118,8 @@ Supported Cars
 | Toyota                | Rav4 2019                          | All                  | Yes     | Yes            | 0mph             | 0mph           |
 | Toyota                | Rav4 Hybrid 2016                   | TSS-P                | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
 | Toyota                | Rav4 Hybrid 2017-18                | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
-| Toyota                | Sienna 2018                        | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph | Toyota                | Sienna 2020                        | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
+| Toyota                | Sienna 2018                        | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
+| Toyota                | Sienna 2020                        | All                  | Yes     | Yes<sup>2</sup>| 0mph             | 0mph           |
 | Volkswagen<sup>8</sup>| Golf 2016-19                       | Driver Assistance    | Yes     | Stock          | 0mph             | 0mph           |
 
 <sup>1</sup>[Comma Pedal](https://community.comma.ai/wiki/index.php/Comma_Pedal) is used to provide stop-and-go capability to some of the openpilot-supported cars that don't currently support stop-and-go. Here is how to [build a Comma Pedal](https://medium.com/@jfrux/comma-pedal-building-with-macrofab-6328bea791e8). ***NOTE: The Comma Pedal is not officially supported by [comma.ai](https://comma.ai).*** <br />
