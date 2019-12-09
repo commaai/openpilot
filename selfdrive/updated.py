@@ -12,17 +12,16 @@
 # next OP restart. If an update is interrupted or otherwise fails, the
 # OverlayFS upper layer and metadata can be thrown away before trying again.
 
-# TODO: consider impact of SIGINT/SIGTERM and whether we should dismount or finalize or...?
-# TODO: extend with rollback-to-old-version functionality
-# FIXME: Make sure updated is reentry safe (must be able to handle CLI invocation while running as daemon)
+# FIXME: fix issue where git fetch of objects on non-current branches may never get finalized, causes repeat downloads
+# FIXME: make sure updated is reentry safe (must be able to tolerate CLI invocation while running as daemon)
+# FIXME: Handle case of Git being corrupt before we even start (cloudlog git fsck and then re-clone?)
+# TODO: probably have to git fetch while onroad, but can we suppress the reset/clean and future build steps?
+# TODO: test suite to compare merged-to-finalized, even though manual compare looks good now
+# TODO: how to handle on-EON development (changes to the OverlayFS lower layer, maybe a disable OTA updates flag?)
+# TODO: consider impact of SIGINT/SIGTERM and whether we should catch and dismount/finalize/etc?
 # TODO: scons prebuild the update, maybe from manager so it can run offroad-only and be interrupted at onroad
 # TODO: download any required NEOS update in the background
-# TODO: explore doing limited-depth or shallow clones of OP
-# TODO: explore doing git gc
-# TODO: test suite?
-# TODO: Handle case of Git being corrupt before we even start (cloudlog git fsck and then re-clone)
-# TODO: Should we be doing update checks while onroad?
-# TODO: Accommodate on-EON development (changes to the OverlayFS lower layer, maybe a disable OTA updates flag?)
+# TODO: explore doing git gc, and/or limited-depth clones
 
 import os
 import datetime
@@ -39,14 +38,15 @@ from selfdrive.swaglog import cloudlog
 
 STAGING_ROOT = "/data/safe_staging"
 
-OVERLAY_UPPER = STAGING_ROOT + "/upper"
-OVERLAY_METADATA = STAGING_ROOT + "/metadata"
-OVERLAY_MERGED = STAGING_ROOT + "/ovfs_merged_view"
-FINALIZED = STAGING_ROOT + "/finalized"
+OVERLAY_UPPER = os.path.join(STAGING_ROOT, "upper")
+OVERLAY_METADATA = os.path.join(STAGING_ROOT, "metadata")
+OVERLAY_MERGED = os.path.join(STAGING_ROOT, "merged")
+FINALIZED = os.path.join(STAGING_ROOT, "finalized")
 
 NICE_LOW_PRIORITY = ["nice", "-n", "19"]
 SHORT = os.getenv("SHORT") is not None
 
+# Workaround for the EON/termux build of Python having os.link removed.
 ffi = FFI()
 ffi.cdef("int link(const char *oldpath, const char *newpath);")
 libc = ffi.dlopen(None)
@@ -68,8 +68,8 @@ def init_ovfs():
     cloudlog.warn("overlay mount already established -- continuing without init")
   else:
     cloudlog.info("preparing new staging area")
-    if os.path.isfile(f"${BASEDIR}/.update_succeeded"):
-      os.remove(".update_succeeded")
+    if os.path.isfile(os.path.join(BASEDIR, ".update_succeeded")):
+      os.remove(os.path.join(BASEDIR, ".update_succeeded"))
     if os.path.isdir(STAGING_ROOT):
       shutil.rmtree(STAGING_ROOT)
 
@@ -130,16 +130,14 @@ def finalize_from_ovfs():
   inode_map.update(inodes_in_tree(OVERLAY_UPPER))
 
   cloudlog.info("creating finalized version of the overlay")
-  os.chdir(OVERLAY_MERGED)
-
   shutil.rmtree(FINALIZED)
   os.mkdir(FINALIZED)
+  os.chdir(OVERLAY_MERGED)
   for root, dirs, files in os.walk('.', topdown=True):
     for obj_name in dirs:
       dup_ovfs_object(inode_map, os.path.join(root, obj_name), FINALIZED)
     for obj_name in files:
       dup_ovfs_object(inode_map, os.path.join(root, obj_name), FINALIZED)
-
   os.chdir(BASEDIR)  # otherwise umount will fail later with "target is busy"
 
 def run(cmd, cwd=None):
@@ -151,13 +149,13 @@ def attempt_update():
   cloudlog.info("attempting git update inside staging overlay")
   os.chdir(OVERLAY_MERGED)
 
-  # Un-set (whiteout) a flag that prevents the finalized tree from being
+  # Un-set the successful flag to prevent the finalized tree from being
   # activated later if the update fails in some way.
-
-  if os.path.isfile(".update_succeeded"):
-    os.remove(".update_succeeded")
+  if os.path.isfile(os.path.join(FINALIZED, ".update_succeeded")):
+    os.remove(os.path.join(FINALIZED, ".update_succeeded"))
   os.system("sync")
 
+  # FIXME: For correct local caching behavior, need to determine if any objects were downloaded at all
   r = run(NICE_LOW_PRIORITY + ["git", "fetch"], OVERLAY_MERGED)
   cloudlog.info("git fetch success: %s", r)
 
@@ -174,20 +172,17 @@ def attempt_update():
          run(NICE_LOW_PRIORITY + ["git", "submodule", "update"], OVERLAY_MERGED)]
     cloudlog.info("git reset success: %s", '\n'.join(r))
 
-    # Make sure the update succeeded flag lands on disk LAST, only when the
-    # finalized view outside the overlay is guaranteed to be good.
-    cloudlog.info("finalizing view from overlay")
+    # Finalize the update. Make sure the update succeeded flag lands on disk
+    # LAST, only when the finalized view outside the overlay is known good.
     finalize_from_ovfs()
     os.system("sync")
     Path(os.path.join(FINALIZED, ".update_succeeded")).touch()
     os.system("sync")
     cloudlog.info("update successful!")
-
   else:
     cloudlog.info("nothing new from git at this time")
 
 def update_params(with_date=False):
-  # Doesn't depend on git any more, only if _new directory exists
   params = Params()
   if os.path.isfile(os.path.join(FINALIZED, ".update_succeeded")):
     try:
