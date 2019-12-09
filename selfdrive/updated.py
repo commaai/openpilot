@@ -12,7 +12,8 @@
 # next OP restart. If an update is interrupted or otherwise fails, the
 # OverlayFS upper layer and metadata can be thrown away before trying again.
 #
-# The boot-time swap is done by /data/data/com.termux/files/continue.sh.
+# The boot-time swap is done by /data/data/com.termux/files/continue.sh,
+# gated on the existence of $FINALIZED/.update_succeeded.
 
 # FIXME: fix issue where git fetch of objects on non-current branches may never get finalized, causes repeat downloads
 # FIXME: make sure updated is reentry safe (must be able to tolerate CLI invocation while running as daemon)
@@ -98,7 +99,7 @@ def inodes_in_tree(search_dir):
 
 def dup_ovfs_object(inode_map, source_obj, target_dir):
   # Given a relative pathname to copy, and a new target root, duplicate the
-  # source object in the target directory, using hardlinks as applicable.
+  # source object in the target root, using hardlinks for regular files.
   st = os.lstat(source_obj)
   target_obj = os.path.join(target_dir, source_obj)
 
