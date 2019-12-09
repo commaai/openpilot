@@ -139,6 +139,7 @@ def finalize_from_ovfs():
 
   cloudlog.info("creating finalized version of the overlay")
   shutil.rmtree(FINALIZED)
+  os.umask(0o000)
   os.mkdir(FINALIZED)
   os.chdir(OVERLAY_MERGED)
   for root, dirs, files in os.walk('.', topdown=True):
