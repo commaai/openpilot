@@ -74,21 +74,21 @@ def init_ovfs():
     # reinit during development, but need to revisit.
     # cloudlog.warn("overlay mount already established -- continuing without init")
     run(["umount", OVERLAY_MERGED])
-  else:
-    cloudlog.info("preparing new staging area")
-    if os.path.isfile(os.path.join(BASEDIR, ".update_succeeded")):
-      os.remove(os.path.join(BASEDIR, ".update_succeeded"))
-    if os.path.isdir(STAGING_ROOT):
-      shutil.rmtree(STAGING_ROOT)
 
-    for dirname in [STAGING_ROOT, OVERLAY_UPPER, OVERLAY_METADATA, OVERLAY_MERGED, FINALIZED]:
-      os.mkdir(dirname, 0o755)
-    if not os.lstat(BASEDIR).st_dev == os.lstat(STAGING_ROOT).st_dev:
-      cloudlog.error("base and staging directories are on different filesystems, not valid for overlay FS!")
-      exit(1)
+  cloudlog.info("preparing new staging area")
+  if os.path.isfile(os.path.join(BASEDIR, ".update_succeeded")):
+    os.remove(os.path.join(BASEDIR, ".update_succeeded"))
+  if os.path.isdir(STAGING_ROOT):
+    shutil.rmtree(STAGING_ROOT)
 
-    overlay_opts = f"lowerdir={BASEDIR},upperdir={OVERLAY_UPPER},workdir={OVERLAY_METADATA}"
-    run(["mount", "-t", "overlay", "-o", overlay_opts, "none", OVERLAY_MERGED])
+  for dirname in [STAGING_ROOT, OVERLAY_UPPER, OVERLAY_METADATA, OVERLAY_MERGED, FINALIZED]:
+    os.mkdir(dirname, 0o755)
+  if not os.lstat(BASEDIR).st_dev == os.lstat(STAGING_ROOT).st_dev:
+    cloudlog.error("base and staging directories are on different filesystems, not valid for overlay FS!")
+    exit(1)
+
+  overlay_opts = f"lowerdir={BASEDIR},upperdir={OVERLAY_UPPER},workdir={OVERLAY_METADATA}"
+  run(["mount", "-t", "overlay", "-o", overlay_opts, "none", OVERLAY_MERGED])
 
 def inodes_in_tree(search_dir):
   inode_map = {}
