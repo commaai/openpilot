@@ -9,16 +9,28 @@ For a demo of this version of openpilot check the video below:
 
 # Installation
 
-- [ ] TODO describe when Panda flashing is needed, what it does and a link to how this can be done
-- [ ] TODO add a link how to install a custom fork
+## Panda flashing
+
+To get this branch to work, it is required to flash your Panda because:
+- changing acceleration limits and 
+- adapting lane departure warning where it gives you a slight push back into the middle of the lane without needing to be engaged
+- The Panda version is also changed and checked.
+
+More info about Panda flashing can be found [here](https://community.comma.ai/wiki/index.php/Panda_Flashing).
+
+## Installating this fork
+
+More info about how to install this fork can be found [here](https://medium.com/@jfrux/comma-eon-installing-a-fork-of-openpilot-5c2b5c134b4b).
+
+## Branches
+
+- `release3`: this is the default branch that is most up to date with the openpilot 0.6 release branch. Normally you should use this branch.
+- `066-clean`: this is my default branch. When I finishing this, I'll merge this into the `release2` branch.
+- `release2`: this is my old branch, that is compatible with openpilot 0.5.
 
 # Configuration
 
 - [ ] TODO describe how to change/add custom setting in json file
-
-# Branches
-
-- [ ] TODO described relevant branches 
 
 # Features
 
