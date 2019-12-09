@@ -69,7 +69,11 @@ def link(src, dest):
 
 def init_ovfs():
   if os.path.ismount(OVERLAY_MERGED):
-    cloudlog.warn("overlay mount already established -- continuing without init")
+    # Semantics for when and when not to reinit are tricky, what do do when
+    # invoked from CLI when running as daemon already? Err on the side of
+    # reinit during development, but need to revisit.
+    # cloudlog.warn("overlay mount already established -- continuing without init")
+    run(["umount", OVERLAY_MERGED])
   else:
     cloudlog.info("preparing new staging area")
     if os.path.isfile(os.path.join(BASEDIR, ".update_succeeded")):
