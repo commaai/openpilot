@@ -11,10 +11,13 @@
 # If an update succeeds, a flag is set, and the update is swapped in at the
 # next OP restart. If an update is interrupted or otherwise fails, the
 # OverlayFS upper layer and metadata can be thrown away before trying again.
+#
+# The boot-time swap is done by /data/data/com.termux/files/continue.sh.
 
 # FIXME: fix issue where git fetch of objects on non-current branches may never get finalized, causes repeat downloads
 # FIXME: make sure updated is reentry safe (must be able to tolerate CLI invocation while running as daemon)
 # FIXME: Handle case of Git being corrupt before we even start (cloudlog git fsck and then re-clone?)
+# TODO: is "touch all files on release2 after checkout to prevent rebuild" still a thing with scons?
 # TODO: probably have to git fetch while onroad, but can we suppress the reset/clean and future build steps?
 # TODO: test suite to compare merged-to-finalized, even though manual compare looks good now
 # TODO: how to handle on-EON development (changes to the OverlayFS lower layer, maybe a disable OTA updates flag?)
