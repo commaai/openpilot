@@ -10,7 +10,9 @@
 #
 # Need disk space overhead of (git changes)+(openpilot install) in order to
 # run. While we do use hard links for the copy, git reset ends up making a
-# copy of everything.
+# copy of everything. The static portions of the git repo are the largest
+# component by far (610MB vs 115MB for public devel). We could defer the
+# reset until after reboot
 #
 # If an update succeeds, a flag is set, and the update is swapped in at the
 # next OP restart. If an update is interrupted or otherwise fails, the
@@ -143,7 +145,7 @@ def finalize_from_ovfs():
 
   cloudlog.info("creating finalized version of the overlay")
   shutil.rmtree(FINALIZED)
-  os.umask(0o000)
+  os.umask(0o077)
   os.mkdir(FINALIZED)
   os.chdir(OVERLAY_MERGED)
   for root, dirs, files in os.walk('.', topdown=True):
