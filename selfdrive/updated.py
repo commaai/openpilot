@@ -16,9 +16,9 @@
 # gated on the existence of $FINALIZED/.update_succeeded.
 
 # FIXME: fix issue where git fetch of objects on non-current branches may never get finalized, causes repeat downloads
-# FIXME: make sure updated is reentry safe (must be able to tolerate CLI invocation while running as daemon)
+# (INPROG) FIXME: make sure updated is reentry safe (must be able to tolerate CLI invocation while running as daemon)
 # FIXME: Handle case of Git being corrupt before we even start (cloudlog git fsck and then re-clone?)
-# TODO: why does git reset touch all files *sometimes*?
+# (INPROG) TODO: why does git reset touch all files *sometimes*?
 # TODO: is "touch all files on release2 after checkout to prevent rebuild" still a thing with scons?
 # TODO: probably have to git fetch while onroad, but can we suppress the reset/clean and future build steps?
 # TODO: test suite to compare merged-to-finalized, even though manual compare looks good now
@@ -35,6 +35,7 @@ from stat import *
 import shutil
 import time
 from pathlib import Path
+import fcntl
 from cffi import FFI
 
 from common.basedir import BASEDIR
@@ -42,6 +43,8 @@ from common.params import Params
 from selfdrive.swaglog import cloudlog
 
 STAGING_ROOT = "/data/safe_staging"
+OVERLAY_LOCK = "/tmp/safe_staging_overlay.lock"
+UPDATE_LOCK = "/tmp/safe_staging_update.lock"
 
 OVERLAY_UPPER = os.path.join(STAGING_ROOT, "upper")
 OVERLAY_METADATA = os.path.join(STAGING_ROOT, "metadata")
@@ -68,12 +71,15 @@ def link(src, dest):
   # Workaround for the EON/termux build of Python having os.link removed.
   return libc.link(src.encode(), dest.encode())
 
+def run(cmd, cwd=None):
+  return subprocess.check_output(cmd, cwd=cwd, stderr=subprocess.STDOUT, encoding='utf8')
+
+# **** meaty functions ****
+
 def init_ovfs():
   if os.path.ismount(OVERLAY_MERGED):
-    # Semantics for when and when not to reinit are tricky, what do do when
-    # invoked from CLI when running as daemon already? Err on the side of
-    # reinit during development, but need to revisit.
-    # cloudlog.warn("overlay mount already established -- continuing without init")
+    # We had to have the overlay lock to get this far, so this must be a stale
+    # mount from a terminated updated process.
     run(["umount", OVERLAY_MERGED])
 
   cloudlog.info("preparing new staging area")
@@ -105,6 +111,7 @@ def inodes_in_tree(search_dir):
 def dup_ovfs_object(inode_map, source_obj, target_dir):
   # Given a relative pathname to copy, and a new target root, duplicate the
   # source object in the target root, using hardlinks for regular files.
+
   st = os.lstat(source_obj)
   target_obj = os.path.join(target_dir, source_obj)
 
@@ -150,12 +157,15 @@ def finalize_from_ovfs():
       dup_ovfs_object(inode_map, os.path.join(root, obj_name), FINALIZED)
   os.chdir(BASEDIR)  # otherwise umount will fail later with "target is busy"
 
-def run(cmd, cwd=None):
-  return subprocess.check_output(cmd, cwd=cwd, stderr=subprocess.STDOUT, encoding='utf8')
-
-# **** meaty functions ****
-
 def attempt_update():
+  upd_lock_fd = open(UPDATE_LOCK, 'r')
+  try:
+    fcntl.flock(upd_lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+  except OSError:
+    print("couldn't get update lock; is another updated running? going back to sleep...")
+    upd_lock_fd.close()
+    return
+
   cloudlog.info("attempting git update inside staging overlay")
   os.chdir(OVERLAY_MERGED)
 
@@ -192,6 +202,10 @@ def attempt_update():
   else:
     cloudlog.info("nothing new from git at this time")
 
+  fcntl.flock(upd_lock_fd, fcntl.LOCK_UN)
+  upd_lock_fd.close()
+
+
 def update_params(with_date=False):
   params = Params()
   if os.path.isfile(os.path.join(FINALIZED, ".update_succeeded")):
@@ -218,7 +232,13 @@ def main(gctx=None):
     cloudlog.error("updated must be launched as root!")
     exit(1)
 
-  init_ovfs()
+  ov_lock_fd = open(OVERLAY_LOCK, 'r')
+  try:
+    fcntl.flock(ov_lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    init_ovfs()
+  except IOError:
+    print("couldn't get overlay lock; is another updated running? skipping init and continuing in update-only mode...")
+
   update_params()
 
   while True:
