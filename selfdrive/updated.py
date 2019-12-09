@@ -18,6 +18,7 @@
 # FIXME: fix issue where git fetch of objects on non-current branches may never get finalized, causes repeat downloads
 # FIXME: make sure updated is reentry safe (must be able to tolerate CLI invocation while running as daemon)
 # FIXME: Handle case of Git being corrupt before we even start (cloudlog git fsck and then re-clone?)
+# TODO: why does git reset touch all files *sometimes*?
 # TODO: is "touch all files on release2 after checkout to prevent rebuild" still a thing with scons?
 # TODO: probably have to git fetch while onroad, but can we suppress the reset/clean and future build steps?
 # TODO: test suite to compare merged-to-finalized, even though manual compare looks good now
