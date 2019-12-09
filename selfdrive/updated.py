@@ -8,6 +8,10 @@
 # no changes to the BASEDIR install of OP. All update attempts are performed
 # in a disposable staging area provided by OverlayFS.
 #
+# Need disk space overhead of (git changes)+(openpilot install) in order to
+# run. While we do use hard links for the copy, git reset ends up making a
+# copy of everything.
+#
 # If an update succeeds, a flag is set, and the update is swapped in at the
 # next OP restart. If an update is interrupted or otherwise fails, the
 # OverlayFS upper layer and metadata can be thrown away before trying again.
@@ -217,7 +221,6 @@ def main(gctx=None):
     cloudlog.error("updated must be launched as root!")
     exit(1)
 
-  os.umask(0o000)
   init_ovfs()
   update_params()
 
