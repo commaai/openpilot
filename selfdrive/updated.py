@@ -9,25 +9,24 @@
 # in a disposable staging area provided by OverlayFS.
 #
 # If an update succeeds, a flag is set, and the update is swapped in at the
-# next OP restart. If an update is interrupted or otherwise fails, the
-# OverlayFS upper layer and metadata can be thrown away before trying again.
+# next reboot. If an update is interrupted or otherwise fails, the OverlayFS
+# upper layer and metadata can be discarded before trying again.
 #
-# The boot-time swap is done by /data/data/com.termux/files/continue.sh,
+# The swap on boot is triggered by /data/data/com.termux/files/continue.sh,
 # gated on the existence of $FINALIZED/.update_succeeded.
 
-# TODO: design change: need to finalize after reboot as part of the switch process, will fix several issues below
-# (INPROG) FIXME: fix issue where git fetch of objects on non-current branches have to repeat download after reboot
-# (INPROG) FIXME: make sure updated is reentry safe (must be able to tolerate CLI invocation while running as daemon)
+# Short term roadmap:
 # FIXME: Handle case of Git being corrupt before we even start (cloudlog git fsck and then re-clone?)
-# (INPROG) TODO: why does git reset touch all files *sometimes*?
-# TODO: is "touch all files on release2 after checkout to prevent rebuild" still a thing with scons?
-# TODO: probably have to git fetch while onroad, but can we suppress the reset/clean and future build steps?
-# TODO: test suite to compare merged-to-finalized, even though manual compare looks good now
-# (INPROG) TODO: how to handle on-EON development (changes to the OverlayFS lower layer)
+# (INPROG) FIXME: make sure updated is reentry safe (must be able to tolerate CLI invocation while running as daemon)
+# TODO: design change: need to finalize after reboot as part of the switch process, will fix several issues below
 # TODO: consider impact of SIGINT/SIGTERM and whether we should catch and dismount/finalize/etc?
+# TODO: explore doing git gc, and/or limited-depth clones
+
+# Long term roadmap:
+# TODO: test suite to compare merged-to-finalized, even though manual compare looks good now
 # TODO: scons prebuild the update, maybe from manager so it can run offroad-only and be interrupted at onroad
 # TODO: download any required NEOS update in the background
-# TODO: explore doing git gc, and/or limited-depth clones
+
 
 import os
 import datetime
@@ -99,6 +98,8 @@ def init_ovfs():
   run(["mount", "-t", "overlay", "-o", overlay_opts, "none", OVERLAY_MERGED])
 
 def inodes_in_tree(search_dir):
+  # Given a search root, produce a dictionary mapping of inodes to relative
+  # pathnames of regular files (no directories, symlinks, or special files).
   inode_map = {}
   os.chdir(search_dir)
   for root, dirs, files in os.walk('.', topdown=True):
@@ -125,6 +126,7 @@ def dup_ovfs_object(inode_map, source_obj, target_dir):
       os.mkdir(os.path.join(FINALIZED, source_obj), S_IMODE(st[ST_MODE]))
     elif S_ISLNK(st[ST_MODE]):
       os.symlink(os.readlink(source_obj), target_obj)
+      os.chmod(target_obj, S_IMODE(st[ST_MODE]), follow_symlinks=False)
     else:
       # Ran into a FIFO, socket, etc. Should not happen in OP install dir.
       # Ignore without copying for the time being, revisit if necessary.
@@ -133,14 +135,12 @@ def dup_ovfs_object(inode_map, source_obj, target_dir):
     os.utime(target_obj, (st[ST_ATIME], st[ST_MTIME]), follow_symlinks=False)
 
 def finalize_from_ovfs():
-  # Take the current OverlayFS merged view and finalize a separate copy
-  # outside of OverlayFS. If successful, the FINALIZED copy will be swapped
-  # in at BASEDIR when the user chooses to update.
+  # Take the current OverlayFS merged view and finalize a copy outside of
+  # OverlayFS, ready to be swapped-in at BASEDIR.
   #
-  # To speed things up and avoid using lots of extra disk space, the "copy"
-  # is actually done with hardlinks. Some trickery is required, because even
-  # though all files involved are hosted on the same underlying filesystem,
-  # linking directly from OverlayFS appears to cross filesystems.
+  # The "copy" is done with hardlinks, but since the OverlayFS merge looks
+  # like a different filesystem, and hardlinks can't cross filesystems, we
+  # have to link from a pathname in the upper or lower layers.
 
   cloudlog.info("creating overlay inode index")
   inode_map = inodes_in_tree(BASEDIR)
@@ -176,7 +176,6 @@ def attempt_update():
     os.remove(os.path.join(FINALIZED, ".update_succeeded"))
   os.system("sync")
 
-  # FIXME: For correct local caching behavior, need to determine if any objects were downloaded at all
   r = run(NICE_LOW_PRIORITY + ["git", "fetch"], OVERLAY_MERGED)
   cloudlog.info("git fetch success: %s", r)
 
@@ -193,15 +192,15 @@ def attempt_update():
          run(NICE_LOW_PRIORITY + ["git", "submodule", "update"], OVERLAY_MERGED)]
     cloudlog.info("git reset success: %s", '\n'.join(r))
 
-    # Finalize the update. Make sure the update succeeded flag lands on disk
-    # LAST, only when the finalized view outside the overlay is known good.
-    finalize_from_ovfs()
-    os.system("sync")
-    Path(os.path.join(FINALIZED, ".update_succeeded")).touch()
-    os.system("sync")
     cloudlog.info("update successful!")
   else:
     cloudlog.info("nothing new from git at this time")
+
+  # Make sure the update succeeded flag lands on disk LAST, only when the
+  # local git repo and OP install state are in a consistent state.
+  os.system("sync")
+  Path(os.path.join(OVERLAY_MERGED, ".update_succeeded")).touch()
+  os.system("sync")
 
   fcntl.flock(upd_lock_fd, fcntl.LOCK_UN)
   upd_lock_fd.close()
