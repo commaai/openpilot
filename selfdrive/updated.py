@@ -15,14 +15,15 @@
 # The boot-time swap is done by /data/data/com.termux/files/continue.sh,
 # gated on the existence of $FINALIZED/.update_succeeded.
 
-# FIXME: fix issue where git fetch of objects on non-current branches may never get finalized, causes repeat downloads
+# TODO: design change: need to finalize after reboot as part of the switch process, will fix several issues below
+# (INPROG) FIXME: fix issue where git fetch of objects on non-current branches have to repeat download after reboot
 # (INPROG) FIXME: make sure updated is reentry safe (must be able to tolerate CLI invocation while running as daemon)
 # FIXME: Handle case of Git being corrupt before we even start (cloudlog git fsck and then re-clone?)
 # (INPROG) TODO: why does git reset touch all files *sometimes*?
 # TODO: is "touch all files on release2 after checkout to prevent rebuild" still a thing with scons?
 # TODO: probably have to git fetch while onroad, but can we suppress the reset/clean and future build steps?
 # TODO: test suite to compare merged-to-finalized, even though manual compare looks good now
-# TODO: how to handle on-EON development (changes to the OverlayFS lower layer, maybe a disable OTA updates flag?)
+# (INPROG) TODO: how to handle on-EON development (changes to the OverlayFS lower layer)
 # TODO: consider impact of SIGINT/SIGTERM and whether we should catch and dismount/finalize/etc?
 # TODO: scons prebuild the update, maybe from manager so it can run offroad-only and be interrupted at onroad
 # TODO: download any required NEOS update in the background
@@ -204,7 +205,6 @@ def attempt_update():
 
   fcntl.flock(upd_lock_fd, fcntl.LOCK_UN)
   upd_lock_fd.close()
-
 
 def update_params(with_date=False):
   params = Params()
