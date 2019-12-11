@@ -132,7 +132,7 @@ Community Maintained Cars and Features
 [[Tesla Model S Pull Request]](https://github.com/commaai/openpilot/pull/246) <br />
 <sup>8</sup>Requires a [panda](https://comma.ai/shop/products/panda-obd-ii-dongle) and community built giraffe, find more information [here](https://github.com/jeankalud/neo/tree/tesla_giraffe/giraffe/tesla). <br />
 
-Community Maintained Cars and Features are not confirmed by comma to meet our [safety model](SAFETY.md). Be extra cautious using them. They are only available after enabling the toggle in `Settings->Developer->Enable Community Features`.
+Community Maintained Cars and Features are not confirmed by comma to meet our [safety model](SAFETY.md). Be extra cautious using them.
 
 Installation Instructions
 ------
