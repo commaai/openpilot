@@ -124,13 +124,10 @@ Community Maintained Cars and Features
 | Cadillac  | ATS 2018<sup>7</sup>               | Adaptive Cruise   | Yes     | Yes              | 0mph             | 7mph           |
 | GMC       | Acadia Denali 2018<sup>7</sup>     | Adaptive Cruise   | Yes     | Yes              | 0mph             | 7mph           |
 | Holden    | Astra 2017<sup>7</sup>             | Adaptive Cruise   | Yes     | Yes              | 0mph             | 7mph           |
-| Tesla     | Model S 2012-13<sup>8</sup>        | All               | Yes     | NA               | NA               | 0mph           |
 
 <sup>5</sup>When disconnecting the Driver Support Unit (DSU), openpilot longitudinal control will replace stock ACC. For DSU locations, see [Toyota Wiki page](https://community.comma.ai/wiki/index.php/Toyota). ***NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB).*** <br />
 <sup>6</sup>[Comma Pedal](https://community.comma.ai/wiki/index.php/Comma_Pedal) is used to provide stop-and-go capability to some of the openpilot-supported cars that don't currently support stop-and-go. Here is how to [build a Comma Pedal](https://medium.com/@jfrux/comma-pedal-building-with-macrofab-6328bea791e8). ***NOTE: The Comma Pedal is not officially supported by [comma](https://comma.ai).*** <br />
 <sup>7</sup>Requires a [panda](https://comma.ai/shop/products/panda-obd-ii-dongle) and [community built giraffe](https://zoneos.com/volt/). ***NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).*** <br />
-[[Tesla Model S Pull Request]](https://github.com/commaai/openpilot/pull/246) <br />
-<sup>8</sup>Requires a [panda](https://comma.ai/shop/products/panda-obd-ii-dongle) and community built giraffe, find more information [here](https://github.com/jeankalud/neo/tree/tesla_giraffe/giraffe/tesla). <br />
 
 Community Maintained Cars and Features are not confirmed by comma to meet our [safety model](SAFETY.md). Be extra cautious using them.
 
