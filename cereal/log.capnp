@@ -126,6 +126,7 @@ struct FrameData {
   lensErr @13 :Float32;
   lensTruePos @14 :Float32;
   image @6 :Data;
+  gainFrac @15 :Float32;
 
   frameType @7 :FrameType;
   timestampSof @8 :UInt64;
@@ -137,6 +138,7 @@ struct FrameData {
     unknown @0;
     neo @1;
     chffrAndroid @2;
+    front @3;
   }
 
   struct AndroidCaptureResult {
@@ -268,6 +270,7 @@ struct ThermalData {
   mem @4 :UInt16;
   gpu @5 :UInt16;
   bat @6 :UInt32;
+  pa0 @21 :UInt16;
 
   # not thermal
   freeSpace @7 :Float32;
@@ -284,6 +287,9 @@ struct ThermalData {
   thermalStatus @14 :ThermalStatus;
   chargingError @17 :Bool;
   chargingDisabled @18 :Bool;
+
+  memUsedPercent @19 :Int8;
+  cpuPerc @20 :Int8;
 
   enum ThermalStatus {
     green @0;   # all processes run
@@ -310,6 +316,20 @@ struct HealthData {
   usbPowerMode @12 :UsbPowerMode;
   ignitionCan @13 :Bool;
   safetyModel @14 :Car.CarParams.SafetyModel;
+  faultStatus @15 :FaultStatus;
+  powerSaveEnabled @16 :Bool;
+  uptime @17 :UInt32;
+  faults @18 :List(FaultType);
+
+  enum FaultStatus {
+    none @0;
+    faultTemp @1;
+    faultPerm @2;
+  }
+
+  enum FaultType {
+    relayMalfunction @0;
+  }
 
   enum HwType {
     unknown @0;
@@ -509,6 +529,7 @@ struct ControlsState @0x97ff69c53601abf1 {
     delayedOutput @7 :Float32;
     delta @8 :Float32;
     output @9 :Float32;
+    saturated @10 :Bool;
   }
 
   struct LateralPIDState {
@@ -529,6 +550,7 @@ struct ControlsState @0x97ff69c53601abf1 {
     i @2 :Float32;
     output @3 :Float32;
     lqrOutput @4 :Float32;
+    saturated @5 :Bool;
    }
 
 
@@ -552,6 +574,7 @@ struct ModelData {
   settings @5 :ModelSettings;
   leadFuture @7 :LeadData;
   speed @8 :List(Float32);
+  meta @10 :MetaData;
 
   struct PathData {
     points @0 :List(Float32);
@@ -581,6 +604,13 @@ struct ModelData {
     boxProjection @4 :List(Float32);
     yuvCorrection @5 :List(Float32);
     inputTransform @6 :List(Float32);
+  }
+  struct MetaData {
+    engagedProb @0 :Float32;
+    desirePrediction @1 :List(Float32);
+    brakeDisengageProb @2 :Float32;
+    gasDisengageProb @3 :Float32;
+    steerOverrideProb @4 :Float32;
   }
 }
 
@@ -1649,6 +1679,7 @@ struct UiLayoutState {
     home @0;
     music @1;
     nav @2;
+    settings @3;
   }
 }
 
@@ -1725,7 +1756,7 @@ struct DriverMonitoring {
   rightEyeProb @7 :Float32;
   leftBlinkProb @8 :Float32;
   rightBlinkProb @9 :Float32;
-  irPwr @10 :Float32;
+  irPwrDEPRECATED @10 :Float32;
 }
 
 struct Boot {
@@ -1857,5 +1888,6 @@ struct Event {
     thumbnail @66: Thumbnail;
     carEvents @68: List(Car.CarEvent);
     carParams @69: Car.CarParams;
+    frontFrame @70: FrameData;
   }
 }
