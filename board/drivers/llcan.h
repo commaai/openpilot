@@ -19,25 +19,24 @@ void puts(const char *a);
 
 bool llcan_set_speed(CAN_TypeDef *CAN_obj, uint32_t speed, bool loopback, bool silent) {
   // initialization mode
-  CAN_obj->MCR = CAN_MCR_TTCM | CAN_MCR_INRQ;
+  register_set(&(CAN_obj->MCR), CAN_MCR_TTCM | CAN_MCR_INRQ, 0x180FFU);
   while((CAN_obj->MSR & CAN_MSR_INAK) != CAN_MSR_INAK);
 
   // set time quanta from defines
-  CAN_obj->BTR = (CAN_BTR_TS1_0 * (CAN_SEQ1-1)) |
+  register_set(&(CAN_obj->BTR), ((CAN_BTR_TS1_0 * (CAN_SEQ1-1)) |
             (CAN_BTR_TS2_0 * (CAN_SEQ2-1)) |
-            (can_speed_to_prescaler(speed) - 1U);
+            (can_speed_to_prescaler(speed) - 1U)), 0xC37F03FFU);
 
   // silent loopback mode for debugging
   if (loopback) {
-    CAN_obj->BTR |= CAN_BTR_SILM | CAN_BTR_LBKM;
+    register_set_bits(&(CAN_obj->BTR), CAN_BTR_SILM | CAN_BTR_LBKM);
   }
   if (silent) {
-    CAN_obj->BTR |= CAN_BTR_SILM;
+    register_set_bits(&(CAN_obj->BTR), CAN_BTR_SILM);
   }
 
   // reset
-  // cppcheck-suppress redundantAssignment ; it's a register
-  CAN_obj->MCR = CAN_MCR_TTCM | CAN_MCR_ABOM;
+  register_set(&(CAN_obj->MCR), CAN_MCR_TTCM | CAN_MCR_ABOM, 0x180FFU);
 
   #define CAN_TIMEOUT 1000000
   int tmp = 0;
@@ -51,20 +50,25 @@ bool llcan_set_speed(CAN_TypeDef *CAN_obj, uint32_t speed, bool loopback, bool s
 }
 
 void llcan_init(CAN_TypeDef *CAN_obj) {
-  // accept all filter
-  CAN_obj->FMR |= CAN_FMR_FINIT;
+  // Enter init mode
+  register_set_bits(&(CAN_obj->FMR), CAN_FMR_FINIT);
+  
+  // Wait for INAK bit to be set
+  while(((CAN_obj->MSR & CAN_MSR_INAK) == CAN_MSR_INAK)) {}
 
   // no mask
-  CAN_obj->sFilterRegister[0].FR1 = 0;
-  CAN_obj->sFilterRegister[0].FR2 = 0;
-  CAN_obj->sFilterRegister[14].FR1 = 0;
-  CAN_obj->sFilterRegister[14].FR2 = 0;
+  // For some weird reason some of these registers do not want to set properly on CAN2 and CAN3. Probably something to do with the single/dual mode and their different filters.
+  CAN_obj->sFilterRegister[0].FR1 = 0U;
+  CAN_obj->sFilterRegister[0].FR2 = 0U;
+  CAN_obj->sFilterRegister[14].FR1 = 0U;
+  CAN_obj->sFilterRegister[14].FR2 = 0U;
   CAN_obj->FA1R |= 1U | (1U << 14);
 
-  CAN_obj->FMR &= ~(CAN_FMR_FINIT);
+  // Exit init mode, do not wait
+  register_clear_bits(&(CAN_obj->FMR), CAN_FMR_FINIT);
 
   // enable certain CAN interrupts
-  CAN_obj->IER |= CAN_IER_TMEIE | CAN_IER_FMPIE0 |  CAN_IER_WKUIE;
+  register_set_bits(&(CAN_obj->IER), CAN_IER_TMEIE | CAN_IER_FMPIE0 |  CAN_IER_WKUIE);
 
   if (CAN_obj == CAN1) {
     NVIC_EnableIRQ(CAN1_TX_IRQn);
@@ -87,7 +91,7 @@ void llcan_init(CAN_TypeDef *CAN_obj) {
 
 void llcan_clear_send(CAN_TypeDef *CAN_obj) {
   CAN_obj->TSR |= CAN_TSR_ABRQ0;
-  CAN_obj->MSR &= ~(CAN_MSR_ERRI);
+  register_clear_bits(&(CAN_obj->MSR), CAN_MSR_ERRI);
   // cppcheck-suppress selfAssignment ; needed to clear the register
   CAN_obj->MSR = CAN_obj->MSR;
 }

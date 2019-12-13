@@ -3,7 +3,11 @@
 #include "libc.h"
 
 #include "main_declarations.h"
+#include "critical.h"
+#include "faults.h"
 
+#include "drivers/registers.h"
+#include "drivers/interrupts.h"
 #include "drivers/llcan.h"
 #include "drivers/llgpio.h"
 #include "drivers/adc.h"
@@ -129,8 +133,7 @@ uint8_t pedal_checksum(uint8_t *dat, int len) {
 #define CAN_GAS_SIZE 6
 #define COUNTER_CYCLE 0xFU
 
-// cppcheck-suppress unusedFunction ; used in headers not included in cppcheck
-void CAN1_TX_IRQHandler(void) {
+void CAN1_TX_IRQ_Handler(void) {
   // clear interrupt
   CAN->TSR |= CAN_TSR_RQCP0;
 }
@@ -152,8 +155,7 @@ uint32_t current_index = 0;
 #define FAULT_INVALID 6U
 uint8_t state = FAULT_STARTUP;
 
-// cppcheck-suppress unusedFunction ; used in headers not included in cppcheck
-void CAN1_RX0_IRQHandler(void) {
+void CAN1_RX0_IRQ_Handler(void) {
   while ((CAN->RF0R & CAN_RF0R_FMP0) != 0) {
     #ifdef DEBUG
       puts("CAN RX\n");
@@ -216,8 +218,7 @@ void CAN1_RX0_IRQHandler(void) {
   }
 }
 
-// cppcheck-suppress unusedFunction ; used in headers not included in cppcheck
-void CAN1_SCE_IRQHandler(void) {
+void CAN1_SCE_IRQ_Handler(void) {
   state = FAULT_SCE;
   llcan_clear_send(CAN);
 }
@@ -228,8 +229,7 @@ unsigned int pkt_idx = 0;
 
 int led_value = 0;
 
-// cppcheck-suppress unusedFunction ; used in headers not included in cppcheck
-void TIM3_IRQHandler(void) {
+void TIM3_IRQ_Handler(void) {
   #ifdef DEBUG
     puth(TIM3->CNT);
     puts(" ");
@@ -296,6 +296,16 @@ void pedal(void) {
 }
 
 int main(void) {
+  // Init interrupt table
+  init_interrupts(true);
+
+  REGISTER_INTERRUPT(CAN1_TX_IRQn, CAN1_TX_IRQ_Handler, CAN_INTERRUPT_RATE, FAULT_INTERRUPT_RATE_CAN_1)
+  REGISTER_INTERRUPT(CAN1_RX0_IRQn, CAN1_RX0_IRQ_Handler, CAN_INTERRUPT_RATE, FAULT_INTERRUPT_RATE_CAN_1)
+  REGISTER_INTERRUPT(CAN1_SCE_IRQn, CAN1_SCE_IRQ_Handler, CAN_INTERRUPT_RATE, FAULT_INTERRUPT_RATE_CAN_1)
+
+  // Should run at around 732Hz (see init below)
+  REGISTER_INTERRUPT(TIM3_IRQn, TIM3_IRQ_Handler, 1000U, FAULT_INTERRUPT_RATE_TIM3)
+
   disable_interrupts();
 
   // init devices
