@@ -6,20 +6,12 @@ import subprocess
 import multiprocessing
 from cffi import FFI
 
-# Build and load cython module
-import pyximport
-installer = pyximport.install(inplace=True, build_dir='/tmp')
-from common.clock import monotonic_time, sec_since_boot  # pylint: disable=no-name-in-module, import-error
-pyximport.uninstall(*installer)
-assert monotonic_time
-assert sec_since_boot
+from common.common_pyx import sec_since_boot  # pylint: disable=no-name-in-module, import-error
 
 
 # time step for each process
 DT_CTRL = 0.01  # controlsd
-DT_PLAN = 0.05  # mpc
 DT_MDL = 0.05  # model
-DT_RDR = 0.05  # radar
 DT_DMON = 0.1  # driver monitoring
 DT_TRML = 0.5  # thermald and manager
 

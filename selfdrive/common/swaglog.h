@@ -1,7 +1,7 @@
 #ifndef SWAGLOG_H
 #define SWAGLOG_H
 
-#include "common/timing.h"
+#include "selfdrive/common/timing.h"
 
 #define CLOUDLOG_DEBUG 10
 #define CLOUDLOG_INFO 20

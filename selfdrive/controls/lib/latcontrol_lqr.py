@@ -1,15 +1,14 @@
 import numpy as np
 from selfdrive.controls.lib.drive_helpers import get_steer_max
 from common.numpy_fast import clip
+from common.realtime import DT_CTRL
 from cereal import log
 
 
 class LatControlLQR():
-  def __init__(self, CP, rate=100):
-    self.sat_flag = False
+  def __init__(self, CP):
     self.scale = CP.lateralTuning.lqr.scale
     self.ki = CP.lateralTuning.lqr.ki
-
 
     self.A = np.array(CP.lateralTuning.lqr.a).reshape((2,2))
     self.B = np.array(CP.lateralTuning.lqr.b).reshape((2,1))
@@ -19,17 +18,32 @@ class LatControlLQR():
     self.dc_gain = CP.lateralTuning.lqr.dcGain
 
     self.x_hat = np.array([[0], [0]])
-    self.i_unwind_rate = 0.3 / rate
-    self.i_rate = 1.0 / rate
+    self.i_unwind_rate = 0.3 * DT_CTRL
+    self.i_rate = 1.0 * DT_CTRL
 
+    self.sat_count_rate = 1.0 * DT_CTRL
+    self.sat_limit = CP.steerLimitTimer
 
     self.reset()
 
   def reset(self):
     self.i_lqr = 0.0
     self.output_steer = 0.0
+    self.sat_count = 0.0
 
-  def update(self, active, v_ego, angle_steers, angle_steers_rate, eps_torque, steer_override, CP, path_plan):
+  def _check_saturation(self, control, check_saturation, limit):
+    saturated = abs(control) == limit
+
+    if saturated and check_saturation:
+      self.sat_count += self.sat_count_rate
+    else:
+      self.sat_count -= self.sat_count_rate
+
+    self.sat_count = clip(self.sat_count, 0.0, 1.0)
+
+    return self.sat_count > self.sat_limit
+
+  def update(self, active, v_ego, angle_steers, angle_steers_rate, eps_torque, steer_override, rate_limited, CP, path_plan):
     lqr_log = log.ControlsState.LateralLQRState.new_message()
 
     steers_max = get_steer_max(CP, v_ego)
@@ -70,8 +84,12 @@ class LatControlLQR():
       self.output_steer = lqr_output + self.i_lqr
       self.output_steer = clip(self.output_steer, -steers_max, steers_max)
 
+    check_saturation = (v_ego > 10) and not rate_limited and not steer_override
+    saturated = self._check_saturation(self.output_steer, check_saturation, steers_max)
+
     lqr_log.steerAngle = angle_steers_k + path_plan.angleOffset
     lqr_log.i = self.i_lqr
     lqr_log.output = self.output_steer
     lqr_log.lqrOutput = lqr_output
+    lqr_log.saturated = saturated
     return self.output_steer, float(self.angle_steers_des), lqr_log

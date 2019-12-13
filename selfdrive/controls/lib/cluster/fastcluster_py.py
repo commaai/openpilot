@@ -2,11 +2,8 @@ import os
 import numpy as np
 
 from cffi import FFI
-import subprocess
 
 cluster_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)))
-subprocess.check_call(["make", "-j4"], cwd=cluster_dir)
-
 cluster_fn = os.path.join(cluster_dir, "libfastcluster.so")
 
 ffi = FFI()

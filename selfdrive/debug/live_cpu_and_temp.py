@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import numpy as np
 
-from selfdrive.messaging import SubMaster
+from cereal.messaging import SubMaster
 
 def cputime_total(ct):
     return ct.user + ct.nice + ct.system + ct.idle + ct.iowait + ct.irq + ct.softirq

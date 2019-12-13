@@ -52,6 +52,9 @@ class CarInterface(CarInterfaceBase):
     ret.isPandaBlack = has_relay
 
     ret.enableCruise = False
+    # GM port is considered a community feature, since it disables AEB;
+    # TODO: make a port that uses a car harness and it only intercepts the camera
+    ret.communityFeature = True
 
     # Presence of a camera on the object bus is ok.
     # Have to go to read_only if ASCM is online (ACC-enabled cars),
@@ -158,13 +161,13 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalTuning.deadzoneBP = [0.]
     ret.longitudinalTuning.deadzoneV = [0.]
 
-    ret.steerLimitAlert = True
-
     ret.stoppingControl = True
     ret.startAccel = 0.8
 
     ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
     ret.steerRateCost = 1.0
+    ret.steerLimitTimer = 0.4
+    ret.radarTimeStep = 0.0667  # GM radar runs at 15Hz instead of standard 20Hz
     ret.steerControlType = car.CarParams.SteerControlType.torque
 
     return ret
@@ -206,6 +209,7 @@ class CarInterface(CarInterfaceBase):
     # timer resets when the user uses the steering wheel.
     ret.steeringPressed = self.CS.steer_override
     ret.steeringTorque = self.CS.steer_torque_driver
+    ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
     # cruise state
     ret.cruiseState.available = bool(self.CS.main_on)

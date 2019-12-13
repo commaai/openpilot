@@ -8,7 +8,6 @@ from common.basedir import BASEDIR
 CAN_IGNITION_MSGS = {
   'gm': [(0x1F1, 8), (0x160, 5)],
   'tesla' : [(0x348, 8)],
-  'volkswagen' : [(0x3C0, 4)],
 }
 
 def _get_fingerprints():

@@ -5,7 +5,7 @@ import subprocess
 
 
 def upload_file(path, name):
-  from azure.storage.blob import BlockBlobService  # pylint: disable=no-name-in-module, import-error
+  from azure.storage.blob import BlockBlobService
   sas_token = os.getenv("TOKEN", None)
   if sas_token is None:
     sas_token = subprocess.check_output("az storage container generate-sas --account-name commadataci --name openpilotci --https-only --permissions lrw --expiry $(date -u '+%Y-%m-%dT%H:%M:%SZ' -d '+1 hour') --auth-mode login --as-user --output tsv", shell=True).decode().strip("\n")

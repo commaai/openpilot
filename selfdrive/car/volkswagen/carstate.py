@@ -2,14 +2,13 @@ import numpy as np
 from cereal import car
 from common.kalman.simple_kalman import KF1D
 from selfdrive.config import Conversions as CV
-from selfdrive.can.parser import CANParser
-from selfdrive.can.can_define import CANDefine
-from selfdrive.car.volkswagen.values import DBC, BUTTON_STATES
-from selfdrive.car.volkswagen.carcontroller import CarControllerParams
+from opendbc.can.parser import CANParser
+from opendbc.can.can_define import CANDefine
+from selfdrive.car.volkswagen.values import DBC, BUTTON_STATES, CarControllerParams
 
 GEAR = car.CarState.GearShifter
 
-def get_mqb_gateway_can_parser(CP, canbus):
+def get_mqb_pt_can_parser(CP, canbus):
   # this function generates lists for signal, messages and initial values
   signals = [
     # sig_name, sig_address, default
@@ -45,6 +44,9 @@ def get_mqb_gateway_can_parser(CP, canbus):
     ("KBI_MFA_v_Einheit_02", "Einheiten_01", 0),  # MPH vs KMH speed display
     ("KBI_Handbremse", "Kombi_01", 0),            # Manual handbrake applied
     ("TSK_Fahrzeugmasse_02", "Motor_16", 0),      # Estimated vehicle mass from drivetrain coordinator
+    ("ACC_Status_ACC", "ACC_06", 0),              # ACC engagement status
+    ("ACC_Typ", "ACC_06", 0),                     # ACC type (follow to stop, stop&go)
+    ("SetSpeed", "ACC_02", 0),                    # ACC set speed
     ("GRA_Hauptschalter", "GRA_ACC_01", 0),       # ACC button, on/off
     ("GRA_Abbrechen", "GRA_ACC_01", 0),           # ACC button, cancel
     ("GRA_Tip_Setzen", "GRA_ACC_01", 0),          # ACC button, set
@@ -65,8 +67,10 @@ def get_mqb_gateway_can_parser(CP, canbus):
     ("ESP_19", 100),      # From J104 ABS/ESP controller
     ("ESP_05", 50),       # From J104 ABS/ESP controller
     ("ESP_21", 50),       # From J104 ABS/ESP controller
+    ("ACC_06", 50),       # From J428 ACC radar control module
     ("Motor_20", 50),     # From J623 Engine control module
     ("GRA_ACC_01", 33),   # From J??? steering wheel control buttons
+    ("ACC_02", 17),       # From J428 ACC radar control module
     ("Getriebe_11", 20),  # From J743 Auto transmission control module
     ("Gateway_72", 10),   # From J533 CAN gateway (aggregated data)
     ("Motor_14", 10),     # From J623 Engine control module
@@ -76,24 +80,24 @@ def get_mqb_gateway_can_parser(CP, canbus):
     ("Einheiten_01", 1),  # From J??? not known if gateway, cluster, or BCM
   ]
 
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, canbus.gateway)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, canbus.pt)
 
-def get_mqb_extended_can_parser(CP, canbus):
+# A single signal is monitored from the camera CAN bus, and then ignored,
+# so the presence of CAN traffic can be verified with cam_cp.valid.
+
+def get_mqb_cam_can_parser(CP, canbus):
 
   signals = [
     # sig_name, sig_address, default
-    ("ACC_Status_ACC", "ACC_06", 0),                          # ACC engagement status
-    ("ACC_Typ", "ACC_06", 0),                                 # ACC type (follow to stop, stop&go)
-    ("SetSpeed", "ACC_02", 0),                                # ACC set speed
+    ("Kombi_Lamp_Green", "LDW_02", 0),            # Lane Assist status LED
   ]
 
   checks = [
     # sig_address, frequency
-    ("ACC_06", 50),                                           # From J428 ACC radar control module
-    ("ACC_02", 17),                                           # From J428 ACC radar control module
+    ("LDW_02", 10)        # From R242 Driver assistance camera
   ]
 
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, canbus.extended)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, canbus.cam)
 
 def parse_gear_shifter(gear, vals):
   # Return mapping of gearshift position to selected gear.
@@ -123,12 +127,12 @@ class CarState():
                          C=[1., 0.],
                          K=[[0.12287673], [0.29666309]])
 
-  def update(self, gw_cp, ex_cp):
+  def update(self, pt_cp):
     # Update vehicle speed and acceleration from ABS wheel speeds.
-    self.wheelSpeedFL = gw_cp.vl["ESP_19"]['ESP_VL_Radgeschw_02'] * CV.KPH_TO_MS
-    self.wheelSpeedFR = gw_cp.vl["ESP_19"]['ESP_VR_Radgeschw_02'] * CV.KPH_TO_MS
-    self.wheelSpeedRL = gw_cp.vl["ESP_19"]['ESP_HL_Radgeschw_02'] * CV.KPH_TO_MS
-    self.wheelSpeedRR = gw_cp.vl["ESP_19"]['ESP_HR_Radgeschw_02'] * CV.KPH_TO_MS
+    self.wheelSpeedFL = pt_cp.vl["ESP_19"]['ESP_VL_Radgeschw_02'] * CV.KPH_TO_MS
+    self.wheelSpeedFR = pt_cp.vl["ESP_19"]['ESP_VR_Radgeschw_02'] * CV.KPH_TO_MS
+    self.wheelSpeedRL = pt_cp.vl["ESP_19"]['ESP_HL_Radgeschw_02'] * CV.KPH_TO_MS
+    self.wheelSpeedRR = pt_cp.vl["ESP_19"]['ESP_HR_Radgeschw_02'] * CV.KPH_TO_MS
 
     self.vEgoRaw = float(np.mean([self.wheelSpeedFL, self.wheelSpeedFR, self.wheelSpeedRL, self.wheelSpeedRR]))
     v_ego_x = self.v_ego_kf.update(self.vEgoRaw)
@@ -138,40 +142,40 @@ class CarState():
 
     # Update steering angle, rate, yaw rate, and driver input torque. VW send
     # the sign/direction in a separate signal so they must be recombined.
-    self.steeringAngle = gw_cp.vl["LWI_01"]['LWI_Lenkradwinkel'] * (1,-1)[int(gw_cp.vl["LWI_01"]['LWI_VZ_Lenkradwinkel'])]
-    self.steeringRate = gw_cp.vl["LWI_01"]['LWI_Lenkradw_Geschw'] * (1,-1)[int(gw_cp.vl["LWI_01"]['LWI_VZ_Lenkradwinkel'])]
-    self.steeringTorque = gw_cp.vl["EPS_01"]['Driver_Strain'] * (1,-1)[int(gw_cp.vl["EPS_01"]['Driver_Strain_VZ'])]
+    self.steeringAngle = pt_cp.vl["LWI_01"]['LWI_Lenkradwinkel'] * (1,-1)[int(pt_cp.vl["LWI_01"]['LWI_VZ_Lenkradwinkel'])]
+    self.steeringRate = pt_cp.vl["LWI_01"]['LWI_Lenkradw_Geschw'] * (1,-1)[int(pt_cp.vl["LWI_01"]['LWI_VZ_Lenkradwinkel'])]
+    self.steeringTorque = pt_cp.vl["EPS_01"]['Driver_Strain'] * (1,-1)[int(pt_cp.vl["EPS_01"]['Driver_Strain_VZ'])]
     self.steeringPressed = abs(self.steeringTorque) > CarControllerParams.STEER_DRIVER_ALLOWANCE
-    self.yawRate = gw_cp.vl["ESP_02"]['ESP_Gierrate'] * (1,-1)[int(gw_cp.vl["ESP_02"]['ESP_VZ_Gierrate'])] * CV.DEG_TO_RAD
+    self.yawRate = pt_cp.vl["ESP_02"]['ESP_Gierrate'] * (1,-1)[int(pt_cp.vl["ESP_02"]['ESP_VZ_Gierrate'])] * CV.DEG_TO_RAD
 
     # Update gas, brakes, and gearshift.
-    self.gas = gw_cp.vl["Motor_20"]['MO_Fahrpedalrohwert_01'] / 100.0
+    self.gas = pt_cp.vl["Motor_20"]['MO_Fahrpedalrohwert_01'] / 100.0
     self.gasPressed = self.gas > 0
-    self.brake = gw_cp.vl["ESP_05"]['ESP_Bremsdruck'] / 250.0 # FIXME: this is pressure in Bar, not sure what OP expects
-    self.brakePressed = bool(gw_cp.vl["ESP_05"]['ESP_Fahrer_bremst'])
-    self.brakeLights = bool(gw_cp.vl["ESP_05"]['ESP_Status_Bremsdruck'])
+    self.brake = pt_cp.vl["ESP_05"]['ESP_Bremsdruck'] / 250.0 # FIXME: this is pressure in Bar, not sure what OP expects
+    self.brakePressed = bool(pt_cp.vl["ESP_05"]['ESP_Fahrer_bremst'])
+    self.brakeLights = bool(pt_cp.vl["ESP_05"]['ESP_Status_Bremsdruck'])
 
     # Update gear and/or clutch position data.
-    can_gear_shifter = int(gw_cp.vl["Getriebe_11"]['GE_Fahrstufe'])
+    can_gear_shifter = int(pt_cp.vl["Getriebe_11"]['GE_Fahrstufe'])
     self.gearShifter = parse_gear_shifter(can_gear_shifter, self.shifter_values)
 
     # Update door and trunk/hatch lid open status.
-    self.doorOpen = any([gw_cp.vl["Gateway_72"]['ZV_FT_offen'],
-                         gw_cp.vl["Gateway_72"]['ZV_BT_offen'],
-                         gw_cp.vl["Gateway_72"]['ZV_HFS_offen'],
-                         gw_cp.vl["Gateway_72"]['ZV_HBFS_offen'],
-                         gw_cp.vl["Gateway_72"]['ZV_HD_offen']])
+    self.doorOpen = any([pt_cp.vl["Gateway_72"]['ZV_FT_offen'],
+                         pt_cp.vl["Gateway_72"]['ZV_BT_offen'],
+                         pt_cp.vl["Gateway_72"]['ZV_HFS_offen'],
+                         pt_cp.vl["Gateway_72"]['ZV_HBFS_offen'],
+                         pt_cp.vl["Gateway_72"]['ZV_HD_offen']])
 
     # Update seatbelt fastened status.
-    self.seatbeltUnlatched = False if gw_cp.vl["Airbag_02"]["AB_Gurtschloss_FA"] == 3 else True
+    self.seatbeltUnlatched = False if pt_cp.vl["Airbag_02"]["AB_Gurtschloss_FA"] == 3 else True
 
     # Update driver preference for metric. VW stores many different unit
     # preferences, including separate units for for distance vs. speed.
     # We use the speed preference for OP.
-    self.displayMetricUnits = not gw_cp.vl["Einheiten_01"]["KBI_MFA_v_Einheit_02"]
+    self.displayMetricUnits = not pt_cp.vl["Einheiten_01"]["KBI_MFA_v_Einheit_02"]
 
     # Update ACC radar status.
-    accStatus = ex_cp.vl["ACC_06"]['ACC_Status_ACC']
+    accStatus = pt_cp.vl["ACC_06"]['ACC_Status_ACC']
     if accStatus == 1:
       # ACC okay but disabled
       self.accFault = False
@@ -195,35 +199,35 @@ class CarState():
 
     # Update ACC setpoint. When the setpoint is zero or there's an error, the
     # radar sends a set-speed of ~90.69 m/s / 203mph.
-    self.accSetSpeed = ex_cp.vl["ACC_02"]['SetSpeed']
+    self.accSetSpeed = pt_cp.vl["ACC_02"]['SetSpeed']
     if self.accSetSpeed > 90: self.accSetSpeed = 0
 
     # Update control button states for turn signals and ACC controls.
-    self.buttonStates["leftBlinker"] = bool(gw_cp.vl["Gateway_72"]['BH_Blinker_li'])
-    self.buttonStates["leftBlinker"] = bool(gw_cp.vl["Gateway_72"]['BH_Blinker_re'])
-    self.buttonStates["accelCruise"] = bool(gw_cp.vl["GRA_ACC_01"]['GRA_Tip_Hoch'])
-    self.buttonStates["decelCruise"] = bool(gw_cp.vl["GRA_ACC_01"]['GRA_Tip_Runter'])
-    self.buttonStates["cancel"] = bool(gw_cp.vl["GRA_ACC_01"]['GRA_Abbrechen'])
-    self.buttonStates["setCruise"] = bool(gw_cp.vl["GRA_ACC_01"]['GRA_Tip_Setzen'])
-    self.buttonStates["resumeCruise"] = bool(gw_cp.vl["GRA_ACC_01"]['GRA_Tip_Wiederaufnahme'])
-    self.buttonStates["gapAdjustCruise"] = bool(gw_cp.vl["GRA_ACC_01"]['GRA_Verstellung_Zeitluecke'])
+    self.buttonStates["leftBlinker"] = bool(pt_cp.vl["Gateway_72"]['BH_Blinker_li'])
+    self.buttonStates["rightBlinker"] = bool(pt_cp.vl["Gateway_72"]['BH_Blinker_re'])
+    self.buttonStates["accelCruise"] = bool(pt_cp.vl["GRA_ACC_01"]['GRA_Tip_Hoch'])
+    self.buttonStates["decelCruise"] = bool(pt_cp.vl["GRA_ACC_01"]['GRA_Tip_Runter'])
+    self.buttonStates["cancel"] = bool(pt_cp.vl["GRA_ACC_01"]['GRA_Abbrechen'])
+    self.buttonStates["setCruise"] = bool(pt_cp.vl["GRA_ACC_01"]['GRA_Tip_Setzen'])
+    self.buttonStates["resumeCruise"] = bool(pt_cp.vl["GRA_ACC_01"]['GRA_Tip_Wiederaufnahme'])
+    self.buttonStates["gapAdjustCruise"] = bool(pt_cp.vl["GRA_ACC_01"]['GRA_Verstellung_Zeitluecke'])
 
     # Read ACC hardware button type configuration info that has to pass thru
     # to the radar. Ends up being different for steering wheel buttons vs
     # third stalk type controls.
-    self.graHauptschalter = gw_cp.vl["GRA_ACC_01"]['GRA_Hauptschalter']
-    self.graTypHauptschalter = gw_cp.vl["GRA_ACC_01"]['GRA_Typ_Hauptschalter']
-    self.graButtonTypeInfo = gw_cp.vl["GRA_ACC_01"]['GRA_ButtonTypeInfo']
-    self.graTipStufe2 = gw_cp.vl["GRA_ACC_01"]['GRA_Tip_Stufe_2']
+    self.graHauptschalter = pt_cp.vl["GRA_ACC_01"]['GRA_Hauptschalter']
+    self.graTypHauptschalter = pt_cp.vl["GRA_ACC_01"]['GRA_Typ_Hauptschalter']
+    self.graButtonTypeInfo = pt_cp.vl["GRA_ACC_01"]['GRA_ButtonTypeInfo']
+    self.graTipStufe2 = pt_cp.vl["GRA_ACC_01"]['GRA_Tip_Stufe_2']
     # Pick up the GRA_ACC_01 CAN message counter so we can sync to it for
     # later cruise-control button spamming.
-    self.graMsgBusCounter = gw_cp.vl["GRA_ACC_01"]['COUNTER']
+    self.graMsgBusCounter = pt_cp.vl["GRA_ACC_01"]['COUNTER']
 
     # Check to make sure the electric power steering rack is configured to
     # accept and respond to HCA_01 messages and has not encountered a fault.
-    self.steeringFault = not gw_cp.vl["EPS_01"]["HCA_Ready"]
+    self.steeringFault = not pt_cp.vl["EPS_01"]["HCA_Ready"]
 
     # Additional safety checks performed in CarInterface.
-    self.parkingBrakeSet = bool(gw_cp.vl["Kombi_01"]['KBI_Handbremse']) # FIXME: need to include an EPB check as well
-    self.stabilityControlDisabled = gw_cp.vl["ESP_21"]['ESP_Tastung_passiv']
+    self.parkingBrakeSet = bool(pt_cp.vl["Kombi_01"]['KBI_Handbremse']) # FIXME: need to include an EPB check as well
+    self.stabilityControlDisabled = pt_cp.vl["ESP_21"]['ESP_Tastung_passiv']
 
