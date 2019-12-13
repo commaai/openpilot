@@ -3,7 +3,7 @@ import matplotlib
 matplotlib.use('TkAgg')
 
 import sys
-import selfdrive.messaging as messaging
+import cereal.messaging as messaging
 import numpy as np
 import matplotlib.pyplot as plt
 

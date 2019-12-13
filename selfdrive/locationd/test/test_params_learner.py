@@ -6,7 +6,7 @@ import unittest
 from selfdrive.car.honda.interface import CarInterface
 from selfdrive.car.honda.values import CAR
 from selfdrive.controls.lib.vehicle_model import VehicleModel
-from selfdrive.locationd.liblocationd_py import liblocationd  # pylint: disable=no-name-in-module, import-error
+from selfdrive.locationd.liblocationd_py import liblocationd # pylint: disable=no-name-in-module, import-error
 
 
 class TestParamsLearner(unittest.TestCase):

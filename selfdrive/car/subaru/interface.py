@@ -46,13 +46,13 @@ class CarInterface(CarInterfaceBase):
     ret.safetyModel = car.CarParams.SafetyModel.subaru
 
     ret.enableCruise = True
-    ret.steerLimitAlert = True
 
     # force openpilot to fake the stock camera, since car harness is not supported yet and old style giraffe (with switches)
     # was never released
     ret.enableCamera = True
 
     ret.steerRateCost = 0.7
+    ret.steerLimitTimer = 0.4
 
     if candidate in [CAR.IMPREZA]:
       ret.mass = 1568. + STD_CARGO_KG
@@ -124,6 +124,7 @@ class CarInterface(CarInterfaceBase):
     # timer resets when the user uses the steering wheel.
     ret.steeringPressed = self.CS.steer_override
     ret.steeringTorque = self.CS.steer_torque_driver
+    ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
     ret.gas = self.CS.pedal_gas / 255.
     ret.gasPressed = self.CS.user_gas_pressed

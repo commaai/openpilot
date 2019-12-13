@@ -3,7 +3,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.volkswagen.values import CAR, BUTTON_STATES
-from selfdrive.car.volkswagen.carstate import CarState, get_mqb_gateway_can_parser, get_mqb_extended_can_parser
+from selfdrive.car.volkswagen.carstate import CarState, get_mqb_pt_can_parser, get_mqb_cam_can_parser
 from common.params import Params
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
@@ -11,8 +11,8 @@ from selfdrive.car.interfaces import CarInterfaceBase
 GEAR = car.CarState.GearShifter
 
 class CANBUS:
-  gateway = 0
-  extended = 2
+  pt = 0
+  cam = 2
 
 class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController):
@@ -30,8 +30,8 @@ class CarInterface(CarInterfaceBase):
     # *** init the major players ***
     self.CS = CarState(CP, CANBUS)
     self.VM = VehicleModel(CP)
-    self.gw_cp = get_mqb_gateway_can_parser(CP, CANBUS)
-    self.ex_cp = get_mqb_extended_can_parser(CP, CANBUS)
+    self.pt_cp = get_mqb_pt_can_parser(CP, CANBUS)
+    self.cam_cp = get_mqb_cam_can_parser(CP, CANBUS)
 
     # sending if read only is False
     if CarController is not None:
@@ -56,12 +56,11 @@ class CarInterface(CarInterfaceBase):
       ret.enableCruise = True # Stock ACC still controls acceleration and braking
       ret.openpilotLongitudinalControl = False
       ret.steerControlType = car.CarParams.SteerControlType.torque
-      # Steer torque is strongly rate limit and max value is decently high. Off to avoid false positives
-      ret.steerLimitAlert = False
 
       # Additional common MQB parameters that may be overridden per-vehicle
       ret.steerRateCost = 0.5
       ret.steerActuatorDelay = 0.05 # Hopefully all MQB racks are similar here
+      ret.steerLimitTimer = 0.4
       ret.steerMaxBP = [0.]  # m/s
       ret.steerMaxV = [1.]
 
@@ -125,10 +124,12 @@ class CarInterface(CarInterfaceBase):
     ret = car.CarState.new_message()
 
     # Process the most recent CAN message traffic, and check for validity
-    self.gw_cp.update_strings(can_strings)
-    self.ex_cp.update_strings(can_strings)
-    self.CS.update(self.gw_cp, self.ex_cp)
-    ret.canValid = self.gw_cp.can_valid and self.ex_cp.can_valid
+    # The camera CAN has no signals we use at this time, but we process it
+    # anyway so we can test connectivity with can_valid
+    self.pt_cp.update_strings(can_strings)
+    self.cam_cp.update_strings(can_strings)
+    self.CS.update(self.pt_cp)
+    ret.canValid = self.pt_cp.can_valid and self.cam_cp.can_valid
 
     # Wheel and vehicle speed, yaw rate
     ret.wheelSpeeds.fl = self.CS.wheelSpeedFL
@@ -145,6 +146,7 @@ class CarInterface(CarInterfaceBase):
     ret.steeringRate = self.CS.steeringRate
     ret.steeringTorque = self.CS.steeringTorque
     ret.steeringPressed = self.CS.steeringPressed
+    ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
     ret.yawRate = self.CS.yawRate
 
     # Gas, brakes and shifting

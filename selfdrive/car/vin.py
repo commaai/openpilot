@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import selfdrive.messaging as messaging
+import cereal.messaging as messaging
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 
 VIN_UNKNOWN = "0" * 17
@@ -44,6 +44,7 @@ class VinQuery():
     self.responded = False
     self.never_responded = True
     self.dat = b""
+    self.got_vin = False
     self.vin = VIN_UNKNOWN
 
   def check_response(self, msg):
@@ -57,20 +58,24 @@ class VinQuery():
         if self.cnt == self.cnts[self.step]:
           self.responded = True
           self.step += 1
+    if self.step == len(self.cnts):
+      self.got_vin = True
 
   def send_query(self, sendcan):
-    # keep sending VIN qury if ECU isn't responsing.
+    # keep sending VIN query if ECU isn't responsing.
     # sendcan is probably not ready due to the zmq slow joiner syndrome
-    if self.never_responded or (self.responded and self.step < len(self.cnts)):
+    if self.never_responded or (self.responded and not self.got_vin):
       sendcan.send(can_list_to_can_capnp([self.query_ext_msgs[self.step]], msgtype='sendcan'))
       sendcan.send(can_list_to_can_capnp([self.query_nor_msgs[self.step]], msgtype='sendcan'))
       self.responded = False
       self.cnt = 0
 
   def get_vin(self):
-    # only report vin if procedure is finished
-    if self.step == len(self.cnts) and self.cnt == self.cnts[-1]:
-      self.vin = self.dat[3:].decode('utf8')
+    if self.got_vin:
+      try:
+        self.vin = self.dat[3:].decode('utf8')
+      except UnicodeDecodeError:
+        pass  # have seen unexpected non-unicode characters
     return self.vin
 
 
@@ -79,11 +84,13 @@ def get_vin(logcan, sendcan, bus, query_time=1.):
   frame = 0
 
   # 1s max of VIN query time
-  while frame < query_time * 100:
+  while frame < query_time * 100 and not vin_query.got_vin:
     a = messaging.get_one_can(logcan)
 
     for can in a.can:
       vin_query.check_response(can)
+      if vin_query.got_vin:
+        break
 
     vin_query.send_query(sendcan)
     frame += 1

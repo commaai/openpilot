@@ -30,6 +30,7 @@ int main() {
 
   Context * c = Context::create();
   PubSocket * androidLog = PubSocket::create(c, "androidLog");
+  assert(androidLog != NULL);
 
   while (1) {
     log_msg log_msg;

@@ -38,6 +38,7 @@ int main() {
 
   Context * c = Context::create();
   PubSocket * publisher = PubSocket::create(c, "procLog");
+  assert(publisher != NULL);
 
   double jiffy = sysconf(_SC_CLK_TCK);
   size_t page_size = sysconf(_SC_PAGE_SIZE);
