@@ -22,7 +22,7 @@ def tesla_tester():
   body_bus_num = 1 # My TDC to OBD adapter has PT on bus0 BDY on bus1 and CH on bus2
   p.set_can_speed_kbps(body_bus_num, body_bus_speed)
 
-  # Now set the panda from its default of SAFETY_NOOUTPUT (read only) to SAFETY_ALLOUTPUT
+  # Now set the panda from its default of SAFETY_SILENT (read only) to SAFETY_ALLOUTPUT
   # Careful, as this will let us send any CAN messages we want (which could be very bad!)
   print("Setting Panda to output mode...")
   p.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
@@ -37,7 +37,7 @@ def tesla_tester():
 
   #Back to safety...
   print("Disabling output on Panda...")
-  p.set_safety_mode(Panda.SAFETY_NOOUTPUT)
+  p.set_safety_mode(Panda.SAFETY_SILENT)
 
   print("Reading VIN from 0x568. This is painfully slow and can take up to 3 minutes (1 minute per message; 3 messages needed for full VIN)...")
 

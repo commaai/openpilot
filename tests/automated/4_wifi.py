@@ -1,7 +1,11 @@
 import time
 from panda import Panda
-from .helpers import connect_wifi, test_white, test_all_pandas, panda_type_to_serial, panda_connect_and_init
+from .helpers import reset_pandas, connect_wifi, test_white, test_all_pandas, panda_type_to_serial, panda_connect_and_init
 import requests
+
+# Reset the pandas before running tests
+def aaaa_reset_before_tests():
+  reset_pandas()
 
 @test_all_pandas
 @panda_connect_and_init
