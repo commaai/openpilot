@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 import unittest
 import numpy as np
-import libpandasafety_py  # pylint: disable=import-error
 from panda import Panda
+from panda.tests.safety import libpandasafety_py
+from panda.tests.safety.common import test_relay_malfunction, make_msg, test_manually_enable_controls_allowed, test_spam_can_buses
 
 MAX_RATE_UP = 50
 MAX_RATE_DOWN = 70
@@ -13,6 +14,8 @@ RT_INTERVAL = 250000
 
 DRIVER_TORQUE_ALLOWANCE = 60;
 DRIVER_TORQUE_FACTOR = 10;
+
+TX_MSGS = [[0x122, 0], [0x164, 0], [0x221, 0], [0x322, 0]]
 
 def twos_comp(val, bits):
   if val >= 0:
@@ -30,52 +33,43 @@ class TestSubaruSafety(unittest.TestCase):
   @classmethod
   def setUp(cls):
     cls.safety = libpandasafety_py.libpandasafety
-    cls.safety.safety_set_mode(Panda.SAFETY_SUBARU, 0)
+    cls.safety.set_safety_hooks(Panda.SAFETY_SUBARU, 0)
     cls.safety.init_tests_subaru()
-
-  def _send_msg(self, bus, addr, length):
-    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_send[0].RIR = addr << 21
-    to_send[0].RDTR = length
-    to_send[0].RDTR = bus << 4
-    return to_send
 
   def _set_prev_torque(self, t):
     self.safety.set_subaru_desired_torque_last(t)
     self.safety.set_subaru_rt_torque_last(t)
 
   def _torque_driver_msg(self, torque):
-    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_send[0].RIR = 0x119 << 21
-
     t = twos_comp(torque, 11)
+    to_send = make_msg(0, 0x119)
     to_send[0].RDLR = ((t & 0x7FF) << 16)
     return to_send
 
   def _torque_msg(self, torque):
-    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_send[0].RIR = 0x122 << 21
-
+    to_send = make_msg(0, 0x122)
     t = twos_comp(torque, 13)
     to_send[0].RDLR = (t << 16)
     return to_send
+
+  def test_spam_can_buses(self):
+    test_spam_can_buses(self, TX_MSGS)
+
+  def test_relay_malfunction(self):
+    test_relay_malfunction(self, 0x122)
 
   def test_default_controls_not_allowed(self):
     self.assertFalse(self.safety.get_controls_allowed())
 
   def test_enable_control_allowed_from_cruise(self):
-    to_push = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_push[0].RIR = 0x240 << 21
+    to_push = make_msg(0, 0x240)
     to_push[0].RDHR = 1 << 9
-
     self.safety.safety_rx_hook(to_push)
     self.assertTrue(self.safety.get_controls_allowed())
 
   def test_disable_control_allowed_from_cruise(self):
-    to_push = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_push[0].RIR = 0x240 << 21
+    to_push = make_msg(0, 0x240)
     to_push[0].RDHR = 0
-
     self.safety.set_controls_allowed(1)
     self.safety.safety_rx_hook(to_push)
     self.assertFalse(self.safety.get_controls_allowed())
@@ -91,10 +85,7 @@ class TestSubaruSafety(unittest.TestCase):
           self.assertTrue(self.safety.safety_tx_hook(self._torque_msg(t)))
 
   def test_manually_enable_controls_allowed(self):
-    self.safety.set_controls_allowed(1)
-    self.assertTrue(self.safety.get_controls_allowed())
-    self.safety.set_controls_allowed(0)
-    self.assertFalse(self.safety.get_controls_allowed())
+    test_manually_enable_controls_allowed(self)
 
   def test_non_realtime_limit_up(self):
     self.safety.set_subaru_torque_driver(0, 0)
@@ -188,7 +179,7 @@ class TestSubaruSafety(unittest.TestCase):
           fwd_bus = -1 if m in blocked_msgs else 0
 
         # assume len 8
-        self.assertEqual(fwd_bus, self.safety.safety_fwd_hook(b, self._send_msg(b, m, 8)))
+        self.assertEqual(fwd_bus, self.safety.safety_fwd_hook(b, make_msg(b, m, 8)))
 
 
 if __name__ == "__main__":

@@ -72,7 +72,7 @@ def run_test(sleep_duration):
 
     if (time.time() - temp_start_time) > 3600*6:
     	# Toggle relay
-      black_panda.set_safety_mode(Panda.SAFETY_NOOUTPUT)
+      black_panda.set_safety_mode(Panda.SAFETY_SILENT)
       time.sleep(1)
       black_panda.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
       time.sleep(1)

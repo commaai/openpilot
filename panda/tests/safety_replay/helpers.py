@@ -59,11 +59,13 @@ def set_desired_torque_last(safety, mode, torque):
     safety.set_subaru_desired_torque_last(torque)
 
 def package_can_msg(msg):
-  addr_shift = 3 if msg.address >= 0x800 else 21
   rdlr, rdhr = struct.unpack('II', msg.dat.ljust(8, b'\x00'))
 
   ret = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-  ret[0].RIR = msg.address << addr_shift
+  if msg.address >= 0x800:
+    ret[0].RIR = (msg.address << 3) | 5
+  else:
+    ret[0].RIR = (msg.address << 21) | 1
   ret[0].RDTR = len(msg.dat) | ((msg.src & 0xF) << 4)
   ret[0].RDHR = rdhr
   ret[0].RDLR = rdlr

@@ -64,7 +64,7 @@ jobs:
       - run:
           name: Build ESP image
           command: |
-            docker run panda_build /bin/bash -c "cd /panda/boardesp; make user1.bin"
+            docker run panda_build /bin/bash -c "cd /panda/boardesp; ./get_sdk.sh; make user1.bin"
 
   safety_replay:
     machine:
