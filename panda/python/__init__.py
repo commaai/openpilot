@@ -110,7 +110,7 @@ class WifiHandle(object):
 class Panda(object):
 
   # matches cereal.car.CarParams.SafetyModel
-  SAFETY_NOOUTPUT = 0
+  SAFETY_SILENT = 0
   SAFETY_HONDA = 1
   SAFETY_TOYOTA = 2
   SAFETY_ELM327 = 3
@@ -127,6 +127,7 @@ class Panda(object):
   SAFETY_TOYOTA_IPAS = 16
   SAFETY_ALLOUTPUT = 17
   SAFETY_GM_ASCM = 18
+  SAFETY_NOOUTPUT = 19
 
   SERIAL_DEBUG = 0
   SERIAL_ESP = 1
@@ -345,18 +346,25 @@ class Panda(object):
   # ******************* health *******************
 
   def health(self):
-    dat = self._handle.controlRead(Panda.REQUEST_IN, 0xd2, 0, 0, 24)
-    a = struct.unpack("IIIIIBBBB", dat)
+    dat = self._handle.controlRead(Panda.REQUEST_IN, 0xd2, 0, 0, 37)
+    a = struct.unpack("IIIIIIIBBBBBBBBB", dat)
     return {
-      "voltage": a[0],
-      "current": a[1],
-      "can_send_errs": a[2],
-      "can_fwd_errs": a[3],
-      "gmlan_send_errs": a[4],
-      "started": a[5],
-      "controls_allowed": a[6],
-      "gas_interceptor_detected": a[7],
-      "car_harness_status": a[8]
+      "uptime": a[0],
+      "voltage": a[1],
+      "current": a[2],
+      "can_send_errs": a[3],
+      "can_fwd_errs": a[4],
+      "gmlan_send_errs": a[5],
+      "faults": a[6],
+      "ignition_line": a[7],
+      "ignition_can": a[8],
+      "controls_allowed": a[9],
+      "gas_interceptor_detected": a[10],
+      "car_harness_status": a[11],
+      "usb_power_mode": a[12],
+      "safety_mode": a[13],
+      "fault_status": a[14],
+      "power_save_enabled": a[15]
     }
 
   # ******************* control *******************
@@ -370,6 +378,17 @@ class Panda(object):
 
   def get_version(self):
     return self._handle.controlRead(Panda.REQUEST_IN, 0xd6, 0, 0, 0x40).decode('utf8')
+
+  @staticmethod
+  def get_signature_from_firmware(fn):
+    f = open(fn, 'rb')
+    f.seek(-128, 2)  # Seek from end of file
+    return f.read(128)
+
+  def get_signature(self):
+    part_1 = self._handle.controlRead(Panda.REQUEST_IN, 0xd3, 0, 0, 0x40)
+    part_2 = self._handle.controlRead(Panda.REQUEST_IN, 0xd4, 0, 0, 0x40)
+    return part_1 + part_2
 
   def get_type(self):
     return self._handle.controlRead(Panda.REQUEST_IN, 0xc1, 0, 0, 0x40)
@@ -386,6 +405,9 @@ class Panda(object):
   def is_uno(self):
     return self.get_type() == Panda.HW_TYPE_UNO
 
+  def has_obd(self):
+    return (self.is_uno() or self.is_black())
+
   def get_serial(self):
     dat = self._handle.controlRead(Panda.REQUEST_IN, 0xd0, 0, 0, 0x20)
     hashsig, calc_hash = dat[0x1c:], hashlib.sha1(dat[0:0x1c]).digest()[0:4]
@@ -400,6 +422,9 @@ class Panda(object):
   def set_usb_power(self, on):
     self._handle.controlWrite(Panda.REQUEST_OUT, 0xe6, int(on), 0, b'')
 
+  def set_power_save(self, power_save_enabled=0):
+    self._handle.controlWrite(Panda.REQUEST_OUT, 0xe7, int(power_save_enabled), 0, b'')
+
   def set_esp_power(self, on):
     self._handle.controlWrite(Panda.REQUEST_OUT, 0xd9, int(on), 0, b'')
 
@@ -407,7 +432,7 @@ class Panda(object):
     self._handle.controlWrite(Panda.REQUEST_OUT, 0xda, int(bootmode), 0, b'')
     time.sleep(0.2)
 
-  def set_safety_mode(self, mode=SAFETY_NOOUTPUT):
+  def set_safety_mode(self, mode=SAFETY_SILENT):
     self._handle.controlWrite(Panda.REQUEST_OUT, 0xdc, mode, 0, b'')
 
   def set_can_forwarding(self, from_bus, to_bus):
@@ -624,3 +649,7 @@ class Panda(object):
     dat = self._handle.controlRead(Panda.REQUEST_IN, 0xb2, 0, 0, 2)
     a = struct.unpack("H", dat)
     return a[0]
+
+# ****************** Phone *****************
+  def set_phone_power(self, enabled):
+    self._handle.controlWrite(Panda.REQUEST_OUT, 0xb3, int(enabled), 0, b'')

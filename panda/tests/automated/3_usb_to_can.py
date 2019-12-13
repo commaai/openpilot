@@ -2,11 +2,18 @@ import sys
 import time
 from panda import Panda
 from nose.tools import assert_equal, assert_less, assert_greater
-from .helpers import SPEED_NORMAL, SPEED_GMLAN, time_many_sends, test_white_and_grey, panda_type_to_serial, test_all_pandas, panda_connect_and_init
+from .helpers import start_heartbeat_thread, reset_pandas, SPEED_NORMAL, SPEED_GMLAN, time_many_sends, test_white_and_grey, panda_type_to_serial, test_all_pandas, panda_connect_and_init
+
+# Reset the pandas before running tests
+def aaaa_reset_before_tests():
+  reset_pandas()
 
 @test_all_pandas
 @panda_connect_and_init
 def test_can_loopback(p):
+  # Start heartbeat
+  start_heartbeat_thread(p)
+
   # enable output mode
   p.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
 
@@ -40,8 +47,11 @@ def test_can_loopback(p):
 @test_all_pandas
 @panda_connect_and_init
 def test_safety_nooutput(p):
+  # Start heartbeat
+  start_heartbeat_thread(p)
+
   # enable output mode
-  p.set_safety_mode(Panda.SAFETY_NOOUTPUT)
+  p.set_safety_mode(Panda.SAFETY_SILENT)
 
   # enable CAN loopback mode
   p.set_can_loopback(True)
@@ -59,6 +69,9 @@ def test_safety_nooutput(p):
 def test_reliability(p):
   LOOP_COUNT = 100
   MSG_COUNT = 100
+
+  # Start heartbeat
+  start_heartbeat_thread(p)
 
   # enable output mode
   p.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
@@ -95,6 +108,9 @@ def test_reliability(p):
 @test_all_pandas
 @panda_connect_and_init
 def test_throughput(p):
+  # Start heartbeat
+  start_heartbeat_thread(p)
+
   # enable output mode
   p.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
 
@@ -121,6 +137,9 @@ def test_throughput(p):
 def test_gmlan(p):
   if p.legacy:
     return
+
+  # Start heartbeat
+  start_heartbeat_thread(p)
 
   # enable output mode
   p.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
@@ -152,6 +171,9 @@ def test_gmlan(p):
 def test_gmlan_bad_toggle(p):
   if p.legacy:
     return
+
+  # Start heartbeat
+  start_heartbeat_thread(p)
 
   # enable output mode
   p.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
