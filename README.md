@@ -69,8 +69,8 @@ Supported Cars
 | Chrysler  | Pacifica 2017-18<sup>1</sup>       | Adaptive Cruise   | Stock            | 0mph               | 9mph         |
 | Chrysler  | Pacifica Hybrid 2017-18<sup>1</sup>| Adaptive Cruise   | Stock            | 0mph               | 9mph         |
 | Chrysler  | Pacifica Hybrid 2019<sup>1</sup>   | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
-| Genesis  | G80 2018                           | All                  | Yes     | Stock          | 0mph             | 0mph           |
-| Genesis  | G90 2018                           | All                  | Yes     | Stock          | 0mph             | 0mph           |
+| Genesis   | G80 2018                           | All               | Stock            | 0mph               | 0mph          |
+| Genesis   | G90 2018                           | All               | Stock            | 0mph               | 0mph          |
 | Honda     | Accord 2018-19                     | All               | Stock            | 0mph               | 3mph         |
 | Honda     | Accord Hybrid 2018-19              | All               | Stock            | 0mph               | 3mph         |
 | Honda     | Civic Sedan/Coupe 2016-18          | Honda Sensing     | openpilot        | 0mph               | 12mph        |
@@ -85,19 +85,19 @@ Supported Cars
 | Honda     | Pilot 2016-18                      | Honda Sensing     | openpilot        | 25mph<sup>6</sup>  | 12mph        |
 | Honda     | Pilot 2019                         | All               | openpilot        | 25mph<sup>6</sup>  | 12mph        |
 | Honda     | Ridgeline 2017-19                  | Honda Sensing     | openpilot        | 25mph<sup>6</sup>  | 12mph        |
-| Hyundai   | Elantra 2017-19<sup>5</sup>        | SCC + LKAS           | Yes     | Stock          | 19mph            | 34mph          |
-| Hyundai   | Elantra GT/i30 2017-19             | All                  | Yes     | Stock          | 0mph             | 30mph          |
-| Hyundai   | Genesis 2018                       | All                  | Yes     | Stock          | 19mph            | 34mph          |
-| Hyundai   | Ioniq 2017<sup>5</sup>             | All                  | Yes     | Stock          | 0mph             | 34mph          |
-| Hyundai   | Kona 2017-19<sup>5</sup>           | LDWS                 | Yes     | Stock          | 22mph            | 0mph           |
-| Hyundai   | Santa Fe 2019<sup>5</sup>          | All                  | Yes     | Stock          | 0mph             | 0mph           |
+| Hyundai   | Elantra 2017-19<sup>5</sup>        | SCC + LKAS        | Stock            | 19mph              | 34mph          |
+| Hyundai   | Elantra GT/i30 2017-19             | All               | Stock            | 0mph               | 30mph          |
+| Hyundai   | Genesis 2018                       | All               | Stock            | 19mph              | 34mph          |
+| Hyundai   | Ioniq 2017<sup>5</sup>             | All               | Stock            | 0mph               | 34mph          |
+| Hyundai   | Kona 2017-19<sup>5</sup>           | LDWS              | Stock            | 22mph              | 0mph          |
+| Hyundai   | Santa Fe 2019<sup>5</sup>          | All               | Stock            | 0mph               | 0mph          |
 | Jeep      | Grand Cherokee 2016-18<sup>1</sup> | Adaptive Cruise   | Stock            | 0mph               | 9mph         |
 | Jeep      | Grand Cherokee 2019<sup>1</sup>    | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
-| Kia        | Forte 2018<sup>5</sup>             | LKAS                 | Yes     | Stock          | 0mph             | 0mph           |
-| Kia        | Optima 2017<sup>5</sup>            | SCC + LKAS/LDWS      | Yes     | Stock          | 0mph             | 34mph          |
-| Kia        | Optima 2019<sup>5</sup>            | SCC + LKAS           | Yes     | Stock          | 0mph             | 0mph           |
-| Kia        | Sorento 2018<sup>5</sup>           | All                  | Yes     | Stock          | 0mph             | 0mph           |
-| Kia        | Stinger 2018<sup>5</sup>           | SCC + LKAS           | Yes     | Stock          | 0mph             | 0mph           |
+| Kia       | Forte 2018<sup>5</sup>             | LKAS              | Stock            | 0mph               | 0mph          |
+| Kia       | Optima 2017<sup>5</sup>            | SCC + LKAS/LDWS   | Stock            | 0mph               | 34mph          |
+| Kia       | Optima 2019<sup>5</sup>            | SCC + LKAS        | Stock            | 0mph               | 0mph          |
+| Kia       | Sorento 2018<sup>5</sup>           | All               | Stock            | 0mph               | 0mph          |
+| Kia       | Stinger 2018<sup>5</sup>           | SCC + LKAS        | Stock            | 0mph               | 0mph          |
 | Lexus     | CT Hybrid 2017-18                  | All               | Stock<sup>5</sup>| 0mph               | 0mph         |
 | Lexus     | ES Hybrid 2019                     | All               | openpilot        | 0mph               | 0mph         |
 | Lexus     | RX Hybrid 2016-19                  | All               | Stock<sup>5</sup>| 0mph               | 0mph         |
