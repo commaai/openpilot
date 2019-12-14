@@ -37,7 +37,7 @@ class MockApi():
 
   def get(self, *args, **kwargs):
     return MockResponse('{"url": "http://localhost/does/not/exist", "headers": {}}')
-  
+
   def get_token(self):
     return "fake-token"
 
@@ -46,7 +46,6 @@ class MockParams():
     self.params = {
       "DongleId": b"0000000000000000",
       "IsUploadRawEnabled": b"1",
-      "IsUploadVideoOverCellularEnabled": b"1"
     }
 
   def get(self, k):
@@ -62,7 +61,7 @@ class UploaderTestCase(unittest.TestCase):
     uploader.Params = MockParams
     uploader.fake_upload = 1
     uploader.is_on_hotspot = lambda *args: False
-    uploader.is_on_wifi = lambda *args: False
+    uploader.is_on_wifi = lambda *args: True
     self.seg_num = random.randint(1, 300)
     self.seg_format = "2019-04-18--12-52-54--{}"
     self.seg_format2 = "2019-05-18--11-22-33--{}"

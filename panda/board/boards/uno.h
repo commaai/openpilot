@@ -1,6 +1,8 @@
 // ///////////// //
 // Uno + Harness //
 // ///////////// //
+#define BOOTKICK_TIME 3U
+uint8_t bootkick_timer = 0U;
 
 void uno_enable_can_transciever(uint8_t transciever, bool enabled) {
   switch (transciever){
@@ -48,9 +50,38 @@ void uno_set_gps_load_switch(bool enabled) {
   set_gpio_output(GPIOC, 12, enabled);
 }
 
+void uno_set_bootkick(bool enabled){
+  set_gpio_output(GPIOB, 14, !enabled);
+}
+
+void uno_bootkick(void) {
+  bootkick_timer = BOOTKICK_TIME;
+  uno_set_bootkick(true);
+}
+
+void uno_set_phone_power(bool enabled){
+  set_gpio_output(GPIOB, 4, enabled);
+}
+
 void uno_set_usb_power_mode(uint8_t mode) {
-  UNUSED(mode);
-  puts("Setting USB mode makes no sense on UNO\n");
+  bool valid = false;
+  switch (mode) {
+    case USB_POWER_CLIENT:
+      uno_set_phone_power(false);
+      valid = true;
+      break;
+    case USB_POWER_CDP:
+      uno_set_phone_power(true);
+      uno_bootkick();
+      valid = true;
+      break;
+    default:
+      puts("Invalid USB power mode\n");
+      break;
+  }
+  if (valid) {
+    usb_power_mode = mode;
+  }
 }
 
 void uno_set_esp_gps_mode(uint8_t mode) {
@@ -106,12 +137,11 @@ void uno_set_can_mode(uint8_t mode){
   }
 }
 
-void uno_set_bootkick(bool enabled){
-  set_gpio_output(GPIOB, 14, !enabled);
-}
-
-void uno_usb_power_mode_tick(uint64_t tcnt){
-  if(tcnt == 3U){
+void uno_usb_power_mode_tick(uint32_t uptime){
+  UNUSED(uptime);
+  if(bootkick_timer != 0U){
+    bootkick_timer--;
+  } else {
     uno_set_bootkick(false);
   }
 }
@@ -152,6 +182,9 @@ void uno_init(void) {
   set_gpio_mode(GPIOC, 0, MODE_ANALOG);
   set_gpio_mode(GPIOC, 3, MODE_ANALOG);
 
+  // Set default state of GPS
+  current_board->set_esp_gps_mode(ESP_GPS_ENABLED);
+
   // C10: OBD_SBU1_RELAY (harness relay driving output)
   // C11: OBD_SBU2_RELAY (harness relay driving output)
   set_gpio_mode(GPIOC, 10, MODE_OUTPUT);
@@ -168,7 +201,7 @@ void uno_init(void) {
   uno_set_gps_load_switch(true);
 
   // Turn on phone regulator
-  set_gpio_output(GPIOB, 4, 1);
+  uno_set_phone_power(true);
 
   // Initialize IR PWM and set to 0%
   set_gpio_alternate(GPIOB, 7, GPIO_AF2_TIM4);
@@ -212,7 +245,7 @@ void uno_init(void) {
   }
 
   // Bootkick phone
-  uno_set_bootkick(true);
+  uno_bootkick();
 }
 
 const harness_configuration uno_harness_config = {
@@ -243,5 +276,6 @@ const board board_uno = {
   .check_ignition = uno_check_ignition,
   .read_current = uno_read_current,
   .set_fan_power = uno_set_fan_power,
-  .set_ir_power = uno_set_ir_power
+  .set_ir_power = uno_set_ir_power,
+  .set_phone_power = uno_set_phone_power
 };

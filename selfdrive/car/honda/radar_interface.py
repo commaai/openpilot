@@ -2,8 +2,7 @@
 import os
 import time
 from cereal import car
-from selfdrive.can.parser import CANParser
-from common.realtime import DT_RDR
+from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import RadarInterfaceBase
 
 def _create_nidec_can_parser():
@@ -27,8 +26,9 @@ class RadarInterface(RadarInterfaceBase):
     self.radar_fault = False
     self.radar_wrong_config = False
     self.radar_off_can = CP.radarOffCan
+    self.radar_ts = CP.radarTimeStep
 
-    self.delay = int(0.1 / DT_RDR)   # 0.1s delay of radar
+    self.delay = int(round(0.1 / CP.radarTimeStep))   # 0.1s delay of radar
 
     # Nidec
     self.rcp = _create_nidec_can_parser()
@@ -40,7 +40,7 @@ class RadarInterface(RadarInterfaceBase):
     # radard at 20Hz and return no points
     if self.radar_off_can:
       if 'NO_RADAR_SLEEP' not in os.environ:
-        time.sleep(0.05)
+        time.sleep(self.radar_ts)
       return car.RadarData.new_message()
 
     vls = self.rcp.update_strings(can_strings)

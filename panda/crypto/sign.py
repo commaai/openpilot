@@ -6,6 +6,9 @@ import hashlib
 from Crypto.PublicKey import RSA
 import binascii
 
+# increment this to make new hardware not run old versions
+VERSION = 2
+
 rsa = RSA.importKey(open(sys.argv[3]).read())
 
 with open(sys.argv[1], "rb") as f:
@@ -15,6 +18,9 @@ print("signing", len(dat), "bytes")
 
 with open(sys.argv[2], "wb") as f:
   if os.getenv("SETLEN") is not None:
+    # add the version at the end
+    dat += b"VERS" + struct.pack("I", VERSION)
+    # add the length at the beginning
     x = struct.pack("I", len(dat)) + dat[4:]
     # mock signature of dat[4:]
     dd = hashlib.sha1(dat[4:]).digest()

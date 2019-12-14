@@ -1,7 +1,7 @@
 import copy
 from common.kalman.simple_kalman import KF1D
 from selfdrive.config import Conversions as CV
-from selfdrive.can.parser import CANParser
+from opendbc.can.parser import CANParser
 from selfdrive.car.subaru.values import DBC, STEER_THRESHOLD
 
 def get_powertrain_can_parser(CP):

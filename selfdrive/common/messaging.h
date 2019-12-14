@@ -1,4 +1,4 @@
-// the c version of selfdrive/messaging.py
+// the c version of cereal/messaging.py
 
 #include <zmq.h>
 
