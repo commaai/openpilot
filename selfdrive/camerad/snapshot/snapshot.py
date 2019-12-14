@@ -35,7 +35,7 @@ def snapshot():
     return None
 
   proc = subprocess.Popen(os.path.join(BASEDIR, "selfdrive/camerad/camerad"), cwd=os.path.join(BASEDIR, "selfdrive/camerad"))
-  time.sleep(1.0)
+  time.sleep(3.0)
 
   ret = None
   start_time = time.time()
