@@ -18,8 +18,8 @@ def process_hud_alert(enabled, fingerprint, visual_alert, left_line,
 
   # initialize to no line visible
   lane_visible = 1
-  if left_line and right_line:
-    if enabled:
+  if left_line and right_line or hud_alert:
+    if enabled or hud_alert:
       lane_visible = 3
     else:
       lane_visible = 4
@@ -60,7 +60,9 @@ class CarController():
 
     apply_steer = apply_std_steer_torque_limits(apply_steer, self.apply_steer_last, CS.steer_torque_driver, SteerLimitParams)
 
-    if not enabled:
+    # Fix for sharp turns mdps fault and Genesis hard fault at low speed
+    lkas_active = enabled and abs(CS.angle_steers) < 100. and (not self.CS.v_ego < 16.7 or not self.carFingerprint == CAR.GENESIS)
+    if not lkas_active:
       apply_steer = 0
 
     steer_req = 1 if apply_steer else 0
@@ -84,7 +86,7 @@ class CarController():
         can_sends.append(create_1156())
 
     can_sends.append(create_lkas11(self.packer, self.car_fingerprint, apply_steer, steer_req, self.lkas11_cnt,
-                                   enabled, CS.lkas11, hud_alert, lane_visible, left_lane_depart, right_lane_depart,
+                                   lkas_active, CS.lkas11, hud_alert, lane_visible, left_lane_depart, right_lane_depart,
                                    keep_stock=(not self.camera_disconnected)))
 
     if pcm_cancel_cmd:
