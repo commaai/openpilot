@@ -65,7 +65,12 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, bool hardwired) 
       // so it's blocked over wifi
       switch (setup->b.wValue.w) {
         case 0:
+          #ifdef ALLOW_DEBUG
           if (hardwired) {
+          #else
+          // no more bootstub on UNO
+          if (hardwired && hw_type != HW_TYPE_UNO) {
+          #endif
             puts("-> entering bootloader\n");
             enter_bootloader_mode = ENTER_BOOTLOADER_MAGIC;
             NVIC_SystemReset();
@@ -151,7 +156,7 @@ int spi_cb_rx(uint8_t *data, int len, uint8_t *data_out) {
 #define CAN_BL_INPUT 0x1
 #define CAN_BL_OUTPUT 0x2
 
-void CAN1_TX_IRQHandler(void) {
+void CAN1_TX_IRQ_Handler(void) {
   // clear interrupt
   CAN->TSR |= CAN_TSR_RQCP0;
 }
@@ -178,7 +183,7 @@ void bl_can_send(uint8_t *odat) {
   CAN->sTxMailBox[0].TIR = (CAN_BL_OUTPUT << 21) | 1;
 }
 
-void CAN1_RX0_IRQHandler(void) {
+void CAN1_RX0_IRQ_Handler(void) {
   while (CAN->RF0R & CAN_RF0R_FMP0) {
     if ((CAN->sFIFOMailBox[0].RIR>>21) == CAN_BL_INPUT) {
       uint8_t dat[8];
@@ -253,13 +258,19 @@ void CAN1_RX0_IRQHandler(void) {
   }
 }
 
-void CAN1_SCE_IRQHandler(void) {
+void CAN1_SCE_IRQ_Handler(void) {
   llcan_clear_send(CAN);
 }
 
 #endif
 
 void soft_flasher_start(void) {
+  #ifdef PEDAL
+    REGISTER_INTERRUPT(CAN1_TX_IRQn, CAN1_TX_IRQ_Handler, CAN_INTERRUPT_RATE, FAULT_INTERRUPT_RATE_CAN_1)
+    REGISTER_INTERRUPT(CAN1_RX0_IRQn, CAN1_RX0_IRQ_Handler, CAN_INTERRUPT_RATE, FAULT_INTERRUPT_RATE_CAN_1)
+    REGISTER_INTERRUPT(CAN1_SCE_IRQn, CAN1_SCE_IRQ_Handler, CAN_INTERRUPT_RATE, FAULT_INTERRUPT_RATE_CAN_1)
+  #endif
+
   puts("\n\n\n************************ FLASHER START ************************\n");
 
   enter_bootloader_mode = 0;

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 import unittest
 import numpy as np
-import libpandasafety_py  # pylint: disable=import-error
 from panda import Panda
+from panda.tests.safety import libpandasafety_py
+from panda.tests.safety.common import test_relay_malfunction, make_msg, test_manually_enable_controls_allowed, test_spam_can_buses
 
 MAX_RATE_UP = 7
 MAX_RATE_DOWN = 17
@@ -16,6 +17,11 @@ RT_INTERVAL = 250000
 
 DRIVER_TORQUE_ALLOWANCE = 50;
 DRIVER_TORQUE_FACTOR = 4;
+
+TX_MSGS = [[384, 0], [1033, 0], [1034, 0], [715, 0], [880, 0],  # pt bus
+           [161, 1], [774, 1], [776, 1], [784, 1],  # obs bus
+           [789, 2],  # ch bus
+           [0x104c006c, 3], [0x10400060]]  # gmlan
 
 def twos_comp(val, bits):
   if val >= 0:
@@ -33,50 +39,37 @@ class TestGmSafety(unittest.TestCase):
   @classmethod
   def setUp(cls):
     cls.safety = libpandasafety_py.libpandasafety
-    cls.safety.safety_set_mode(Panda.SAFETY_GM, 0)
+    cls.safety.set_safety_hooks(Panda.SAFETY_GM, 0)
     cls.safety.init_tests_gm()
 
-  def _send_msg(self, bus, addr, length):
-    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_send[0].RIR = addr << 21
-    to_send[0].RDTR = length
-    to_send[0].RDTR = bus << 4
-    return to_send
-
   def _speed_msg(self, speed):
-    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_send[0].RIR = 842 << 21
+    to_send = make_msg(0, 842)
     to_send[0].RDLR = speed
     return to_send
 
   def _button_msg(self, buttons):
-    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_send[0].RIR = 481 << 21
+    to_send = make_msg(0, 481)
     to_send[0].RDHR = buttons << 12
     return to_send
 
   def _brake_msg(self, brake):
-    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_send[0].RIR = 241 << 21
+    to_send = make_msg(0, 241)
     to_send[0].RDLR = 0xa00 if brake else 0x900
     return to_send
 
   def _gas_msg(self, gas):
-    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_send[0].RIR = 417 << 21
+    to_send = make_msg(0, 417)
     to_send[0].RDHR = (1 << 16) if gas else 0
     return to_send
 
   def _send_brake_msg(self, brake):
-    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_send[0].RIR = 789 << 21
+    to_send = make_msg(2, 789)
     brake = (-brake) & 0xfff
     to_send[0].RDLR = (brake >> 8) | ((brake &0xff) << 8)
     return to_send
 
   def _send_gas_msg(self, gas):
-    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_send[0].RIR = 715 << 21
+    to_send = make_msg(0, 715)
     to_send[0].RDLR = ((gas & 0x1f) << 27) | ((gas & 0xfe0) << 11)
     return to_send
 
@@ -85,20 +78,22 @@ class TestGmSafety(unittest.TestCase):
     self.safety.set_gm_rt_torque_last(t)
 
   def _torque_driver_msg(self, torque):
-    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_send[0].RIR = 388 << 21
-
     t = twos_comp(torque, 11)
+    to_send = make_msg(0, 388)
     to_send[0].RDHR = (((t >> 8) & 0x7) << 16) | ((t & 0xFF) << 24)
     return to_send
 
   def _torque_msg(self, torque):
-    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_send[0].RIR = 384 << 21
-
     t = twos_comp(torque, 11)
+    to_send = make_msg(0, 384)
     to_send[0].RDLR = ((t >> 8) & 0x7) | ((t & 0xFF) << 8)
     return to_send
+
+  def test_spam_can_buses(self):
+    test_spam_can_buses(self, TX_MSGS)
+
+  def test_relay_malfunction(self):
+    test_relay_malfunction(self, 384)
 
   def test_default_controls_not_allowed(self):
     self.assertFalse(self.safety.get_controls_allowed())
@@ -198,10 +193,7 @@ class TestGmSafety(unittest.TestCase):
           self.assertTrue(self.safety.safety_tx_hook(self._torque_msg(t)))
 
   def test_manually_enable_controls_allowed(self):
-    self.safety.set_controls_allowed(1)
-    self.assertTrue(self.safety.get_controls_allowed())
-    self.safety.set_controls_allowed(0)
-    self.assertFalse(self.safety.get_controls_allowed())
+    test_manually_enable_controls_allowed(self)
 
   def test_non_realtime_limit_up(self):
     self.safety.set_gm_torque_driver(0, 0)
@@ -289,7 +281,7 @@ class TestGmSafety(unittest.TestCase):
     for b in buss:
       for m in msgs:
         # assume len 8
-        self.assertEqual(-1, self.safety.safety_fwd_hook(b, self._send_msg(b, m, 8)))
+        self.assertEqual(-1, self.safety.safety_fwd_hook(b, make_msg(b, m, 8)))
 
 
 if __name__ == "__main__":

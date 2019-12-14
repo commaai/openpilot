@@ -1,11 +1,8 @@
 from cereal import car
 from selfdrive.car import apply_std_steer_torque_limits
-from selfdrive.car.hyundai.hyundaican import create_lkas11, create_lkas12, \
-                                             create_1191, create_1156, \
-                                             create_clu11
+from selfdrive.car.hyundai.hyundaican import create_lkas11, create_clu11
 from selfdrive.car.hyundai.values import CAR, Buttons, SteerLimitParams
-from selfdrive.can.packer import CANPacker
-
+from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
@@ -42,23 +39,19 @@ class CarController():
   def __init__(self, dbc_name, car_fingerprint):
     self.apply_steer_last = 0
     self.car_fingerprint = car_fingerprint
-    self.lkas11_cnt = 0
-    self.clu11_cnt = 0
-    self.last_resume_frame = 0
     self.last_lead_distance = 0
-    # True when giraffe switch 2 is low and we need to replace all the camera messages
-    # otherwise we forward the camera msgs and we just replace the lkas cmd signals
-    self.camera_disconnected = False
-
     self.packer = CANPacker(dbc_name)
+    self.steer_rate_limited = False
+    self.resume_cnt = 0
+    self.last_resume_frame = 0
 
   def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert,
               left_line, right_line, left_lane_depart, right_lane_depart):
 
     ### Steering Torque
-    apply_steer = actuators.steer * SteerLimitParams.STEER_MAX
-
-    apply_steer = apply_std_steer_torque_limits(apply_steer, self.apply_steer_last, CS.steer_torque_driver, SteerLimitParams)
+    new_steer = actuators.steer * SteerLimitParams.STEER_MAX
+    apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.steer_torque_driver, SteerLimitParams)
+    self.steer_rate_limited = new_steer != apply_steer
 
     # Fix for sharp turns mdps fault and Genesis hard fault at low speed
     lkas_active = enabled and abs(CS.angle_steers) < 100. and (not self.CS.v_ego < 16.7 or not self.carFingerprint == CAR.GENESIS)
@@ -75,36 +68,27 @@ class CarController():
 
     can_sends = []
 
-    self.lkas11_cnt = frame % 0x10
+    lkas11_cnt = frame % 0x10
+    clu11_cnt = frame % 0x10
 
-    if self.camera_disconnected:
-      if (frame % 10) == 0:
-        can_sends.append(create_lkas12())
-      if (frame % 50) == 0:
-        can_sends.append(create_1191())
-      if (frame % 7) == 0:
-        can_sends.append(create_1156())
-
-    can_sends.append(create_lkas11(self.packer, self.car_fingerprint, apply_steer, steer_req, self.lkas11_cnt,
-                                   lkas_active, CS.lkas11, hud_alert, lane_visible, left_lane_depart, right_lane_depart,
-                                   keep_stock=(not self.camera_disconnected)))
+    can_sends.append(create_lkas11(self.packer, self.car_fingerprint, apply_steer, steer_req, lkas11_cnt, lkas_active,
+                                   CS.lkas11, hud_alert, lane_visible, left_lane_depart, right_lane_depart, keep_stock=True))
 
     if pcm_cancel_cmd:
-      self.clu11_cnt = frame % 0x10
-      can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.CANCEL, self.clu11_cnt))
+      can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.CANCEL, clu11_cnt))
 
     if CS.stopped:
       # run only first time when the car stopped
       if self.last_lead_distance == 0:
         # get the lead distance from the Radar
         self.last_lead_distance = CS.lead_distance
-        self.clu11_cnt = 0
+        self.resume_cnt = 0
       # when lead car starts moving, create 6 RES msgs
       elif CS.lead_distance > self.last_lead_distance and (frame - self.last_resume_frame) > 5:
-        can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.RES_ACCEL, self.clu11_cnt))
-        self.clu11_cnt += 1
+        can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.RES_ACCEL, clu11_cnt))
+        self.resume_cnt += 1
         # interval after 6 msgs
-        if self.clu11_cnt > 5:
+        if self.resume_cnt > 5:
           self.last_resume_frame = frame
           self.clu11_cnt = 0
     # reset lead distnce after the car starts moving

@@ -1,0 +1,4 @@
+#!/bin/sh
+export LD_LIBRARY_PATH="/data/pythonpath/phonelibs/snpe/aarch64-android-clang3.8/:$LD_LIBRARY_PATH"
+exec ./_modeld
+

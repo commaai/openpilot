@@ -6,7 +6,7 @@ import random
 import time
 
 from selfdrive.boardd.boardd import can_list_to_can_capnp
-from selfdrive.messaging import drain_sock, pub_sock, sub_sock
+from cereal.messaging import drain_sock, pub_sock, sub_sock
 
 def get_test_string():
   return b"test"+os.urandom(10)

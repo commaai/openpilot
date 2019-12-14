@@ -3,9 +3,6 @@ from selfdrive.car.hyundai.values import CAR, CHECKSUM
 
 hyundai_checksum = crcmod.mkCrcFun(0x11D, initCrc=0xFD, rev=False, xorOut=0xdf)
 
-def make_can_msg(addr, dat, alt):
-  return [addr, 0, dat, alt]
-
 def create_lkas11(packer, car_fingerprint, apply_steer, steer_req, cnt, enabled, lkas11, hud_alert,
                                    lane_visible, left_lane_depart, right_lane_depart, keep_stock=False):
   values = {
@@ -54,17 +51,6 @@ def create_lkas11(packer, car_fingerprint, apply_steer, steer_req, cnt, enabled,
   values["CF_Lkas_Chksum"] = checksum
 
   return packer.make_can_msg("LKAS11", 0, values)
-
-def create_lkas12():
-  return make_can_msg(1342, b"\x00\x00\x00\x00\x60\x05", 0)
-
-
-def create_1191():
-  return make_can_msg(1191, b"\x01\x00", 0)
-
-
-def create_1156():
-  return make_can_msg(1156, b"\x08\x20\xfe\x3f\x00\xe0\xfd\x3f", 0)
 
 def create_clu11(packer, clu11, button, cnt):
   values = {
