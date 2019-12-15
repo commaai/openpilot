@@ -1,4 +1,5 @@
 from cereal import car
+from selfdrive.car import make_can_msg
 
 
 GearShifter = car.CarState.GearShifter
@@ -41,16 +42,12 @@ def calc_checksum(data):
   return ~checksum & 0xFF
 
 
-def make_can_msg(addr, dat):
-  return [addr, 0, dat, 0]
-
-
 def create_lkas_hud(packer, gear, lkas_active, hud_alert, hud_count, lkas_car_model):
   # LKAS_HUD 0x2a6 (678) Controls what lane-keeping icon is displayed.
 
   if hud_alert == VisualAlert.steerRequired:
     msg = b'\x00\x00\x00\x03\x00\x00\x00\x00'
-    return make_can_msg(0x2a6, msg)
+    return make_can_msg(0x2a6, msg, 0)
 
   color = 1  # default values are for park or neutral in 2017 are 0 0, but trying 1 1 for 2019
   lines = 1
@@ -100,4 +97,4 @@ def create_wheel_buttons(frame):
   counter = (frame % 10) << 4
   dat = start + counter.to_bytes(1, 'little')
   dat = dat + calc_checksum(dat).to_bytes(1, 'little')
-  return make_can_msg(0x23b, dat)
+  return make_can_msg(0x23b, dat, 0)

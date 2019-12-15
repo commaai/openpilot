@@ -9,7 +9,7 @@ import requests
 from cereal import car
 
 import selfdrive.manager as manager
-import selfdrive.messaging as messaging
+import cereal.messaging as messaging
 from common.params import Params
 from common.basedir import BASEDIR
 from selfdrive.car.fingerprints import all_known_cars
@@ -255,12 +255,12 @@ routes = {
   "5f5afb36036506e4|2019-05-14--02-09-54": {
     'carFingerprint': TOYOTA.COROLLA_TSS2,
     'enableCamera': True,
-    'enableDsu': True,
+    'enableDsu': False,
   },
   "5ceff72287a5c86c|2019-10-19--10-59-02": {
     'carFingerprint': TOYOTA.COROLLAH_TSS2,
     'enableCamera': True,
-    'enableDsu': True,
+    'enableDsu': False,
   },
   "56fb1c86a9a86404|2017-11-10--10-18-43": {
     'carFingerprint': TOYOTA.PRIUS,
@@ -282,12 +282,12 @@ routes = {
   "cdf2f7de565d40ae|2019-04-25--03-53-41": {
     'carFingerprint': TOYOTA.RAV4_TSS2,
     'enableCamera': True,
-    'enableDsu': True,
+    'enableDsu': False,
   },
   "e6a24be49a6cd46e|2019-10-29--10-52-42": {
     'carFingerprint': TOYOTA.LEXUS_ES_TSS2,
     'enableCamera': True,
-    'enableDsu': True,
+    'enableDsu': False,
   },
   "f49e8041283f2939|2019-05-29--13-48-33": {
     'carFingerprint': TOYOTA.LEXUS_ESH_TSS2,
@@ -297,7 +297,7 @@ routes = {
   "f49e8041283f2939|2019-05-30--11-51-51": {
     'carFingerprint': TOYOTA.LEXUS_ESH_TSS2,
     'enableCamera': True,
-    'enableDsu': True,
+    'enableDsu': False,
   },
   "b0f5a01cf604185c|2018-02-01--21-12-28": {
     'carFingerprint': TOYOTA.LEXUS_RXH,

@@ -1,29 +1,28 @@
 #!/usr/bin/env python3.7
 import json
 import os
+import hashlib
 import io
 import random
-import re
 import select
-import subprocess
 import socket
 import time
 import threading
-import traceback
 import base64
 import requests
 import queue
+from collections import namedtuple
 from functools import partial
 from jsonrpc import JSONRPCResponseManager, dispatcher
 from websocket import create_connection, WebSocketTimeoutException, ABNF
 from selfdrive.loggerd.config import ROOT
 
-import selfdrive.messaging as messaging
+import cereal.messaging as messaging
+from common import android
 from common.api import Api
 from common.params import Params
-from selfdrive.services import service_list
+from cereal.services import service_list
 from selfdrive.swaglog import cloudlog
-from functools import reduce
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = os.getenv('HANDLER_THREADS', 4)
@@ -32,13 +31,17 @@ LOCAL_PORT_WHITELIST = set([8022])
 dispatcher["echo"] = lambda s: s
 payload_queue = queue.Queue()
 response_queue = queue.Queue()
+upload_queue = queue.Queue()
+cancelled_uploads = set()
+UploadItem = namedtuple('UploadItem', ['path', 'url', 'headers', 'created_at', 'id'])
 
 def handle_long_poll(ws):
   end_event = threading.Event()
 
   threads = [
     threading.Thread(target=ws_recv, args=(ws, end_event)),
-    threading.Thread(target=ws_send, args=(ws, end_event))
+    threading.Thread(target=ws_send, args=(ws, end_event)),
+    threading.Thread(target=upload_handler, args=(end_event,))
   ] + [
     threading.Thread(target=jsonrpc_handler, args=(end_event,))
     for x in range(HANDLER_THREADS)
@@ -67,18 +70,41 @@ def jsonrpc_handler(end_event):
       pass
     except Exception as e:
       cloudlog.exception("athena jsonrpc handler failed")
-      traceback.print_exc()
       response_queue.put_nowait(json.dumps({"error": str(e)}))
 
+def upload_handler(end_event):
+  while not end_event.is_set():
+    try:
+      item = upload_queue.get(timeout=1)
+      if item.id in cancelled_uploads:
+        cancelled_uploads.remove(item.id)
+        continue
+      _do_upload(item)
+    except queue.Empty:
+      pass
+    except Exception:
+      cloudlog.exception("athena.upload_handler.exception")
+
+def _do_upload(upload_item):
+  with open(upload_item.path, "rb") as f:
+    size = os.fstat(f.fileno()).st_size
+    return requests.put(upload_item.url,
+                        data=f,
+                        headers={**upload_item.headers, 'Content-Length': str(size)},
+                        timeout=10)
+
 # security: user should be able to request any message from their car
-# TODO: add service to, for example, start visiond and take a picture
 @dispatcher.add_method
 def getMessage(service=None, timeout=1000):
   if service is None or service not in service_list:
     raise Exception("invalid service")
-  socket = messaging.sub_sock(service)
-  socket.setTimeout(timeout)
+
+  socket = messaging.sub_sock(service, timeout=timeout)
   ret = messaging.recv_one(socket)
+
+  if ret is None:
+    raise TimeoutError
+
   return ret.to_dict()
 
 @dispatcher.add_method
@@ -87,12 +113,48 @@ def listDataDirectory():
   return files
 
 @dispatcher.add_method
+def reboot():
+  thermal_sock = messaging.sub_sock("thermal", timeout=1000)
+  ret = messaging.recv_one(thermal_sock)
+  if ret is None or ret.thermal.started:
+    raise Exception("Reboot unavailable")
+
+  def do_reboot():
+    time.sleep(2)
+    android.reboot()
+
+  threading.Thread(target=do_reboot).start()
+
+  return {"success": 1}
+
+@dispatcher.add_method
 def uploadFileToUrl(fn, url, headers):
   if len(fn) == 0 or fn[0] == '/' or '..' in fn:
     return 500
-  with open(os.path.join(ROOT, fn), "rb") as f:
-    ret = requests.put(url, data=f, headers=headers, timeout=10)
-  return ret.status_code
+  path = os.path.join(ROOT, fn)
+  if not os.path.exists(path):
+    return 404
+
+  item = UploadItem(path=path, url=url, headers=headers, created_at=int(time.time()*1000), id=None)
+  upload_id = hashlib.sha1(str(item).encode()).hexdigest()
+  item = item._replace(id=upload_id)
+
+  upload_queue.put_nowait(item)
+
+  return {"enqueued": 1, "item": item._asdict()}
+
+@dispatcher.add_method
+def listUploadQueue():
+  return [item._asdict() for item in list(upload_queue.queue)]
+
+@dispatcher.add_method
+def cancelUpload(upload_id):
+  upload_ids = set(item.id for item in list(upload_queue.queue))
+  if upload_id not in upload_ids:
+    return 404
+
+  cancelled_uploads.add(upload_id)
+  return {"success": 1}
 
 def startLocalProxy(global_end_event, remote_ws_uri, local_port):
   try:
@@ -121,7 +183,7 @@ def startLocalProxy(global_end_event, remote_ws_uri, local_port):
 
     return {"success": 1}
   except Exception as e:
-    traceback.print_exc()
+    cloudlog.exception("athenad.startLocalProxy.exception")
     raise e
 
 @dispatcher.add_method
@@ -138,29 +200,25 @@ def getSshAuthorizedKeys():
 
 @dispatcher.add_method
 def getSimInfo():
-  sim_state = subprocess.check_output(['getprop', 'gsm.sim.state'], encoding='utf8').strip().split(',')  # pylint: disable=unexpected-keyword-arg
-  network_type = subprocess.check_output(['getprop', 'gsm.network.type'], encoding='utf8').strip().split(',')  # pylint: disable=unexpected-keyword-arg
-  mcc_mnc = subprocess.check_output(['getprop', 'gsm.sim.operator.numeric'], encoding='utf8').strip() or None  # pylint: disable=unexpected-keyword-arg
+  sim_state = android.getprop("gsm.sim.state").split(",")
+  network_type = android.getprop("gsm.network.type").split(',')
+  mcc_mnc = android.getprop("gsm.sim.operator.numeric") or None
 
-  sim_id_aidl_out = subprocess.check_output(['service', 'call', 'iphonesubinfo', '11'], encoding='utf8')  # pylint: disable=unexpected-keyword-arg
-  sim_id_aidl_lines = sim_id_aidl_out.split('\n')
-  if len(sim_id_aidl_lines) > 3:
-    sim_id_lines = sim_id_aidl_lines[1:4]
-    sim_id_fragments = [re.search(r"'([0-9\.]+)'", line).group(1) for line in sim_id_lines]
-    sim_id = reduce(lambda frag1, frag2: frag1.replace('.', '') + frag2.replace('.', ''), sim_id_fragments)
-  else:
-    sim_id = None
+  sim_id = android.parse_service_call_string(['iphonesubinfo', '11'])
+  cell_data_state = android.parse_service_call_unpack(['phone', '46'], ">q")
+  cell_data_connected = (cell_data_state == 2)
 
   return {
     'sim_id': sim_id,
     'mcc_mnc': mcc_mnc,
     'network_type': network_type,
-    'sim_state': sim_state
+    'sim_state': sim_state,
+    'data_connected': cell_data_connected
   }
 
 @dispatcher.add_method
 def takeSnapshot():
-  from selfdrive.visiond.snapshot.snapshot import snapshot, jpeg_write
+  from selfdrive.camerad.snapshot.snapshot import snapshot, jpeg_write
   ret = snapshot()
   if ret is not None:
     def b64jpeg(x):
@@ -173,7 +231,7 @@ def takeSnapshot():
     return {'jpegBack': b64jpeg(ret[0]),
             'jpegFront': b64jpeg(ret[1])}
   else:
-    raise Exception("not available while visiond is started")
+    raise Exception("not available while camerad is started")
 
 def ws_proxy_recv(ws, local_sock, ssock, end_event, global_end_event):
   while not (end_event.is_set() or global_end_event.is_set()):
@@ -184,10 +242,10 @@ def ws_proxy_recv(ws, local_sock, ssock, end_event, global_end_event):
       pass
     except Exception:
       cloudlog.exception("athenad.ws_proxy_recv.exception")
-      traceback.print_exc()
       break
 
   ssock.close()
+  local_sock.close()
   end_event.set()
 
 def ws_proxy_send(ws, local_sock, signal_sock, end_event):
@@ -208,7 +266,6 @@ def ws_proxy_send(ws, local_sock, signal_sock, end_event):
         ws.send(data, ABNF.OPCODE_BINARY)
     except Exception:
       cloudlog.exception("athenad.ws_proxy_send.exception")
-      traceback.print_exc()
       end_event.set()
 
 def ws_recv(ws, end_event):
@@ -220,7 +277,6 @@ def ws_recv(ws, end_event):
       pass
     except Exception:
       cloudlog.exception("athenad.ws_recv.exception")
-      traceback.print_exc()
       end_event.set()
 
 def ws_send(ws, end_event):
@@ -232,7 +288,6 @@ def ws_send(ws, end_event):
       pass
     except Exception:
       cloudlog.exception("athenad.ws_send.exception")
-      traceback.print_exc()
       end_event.set()
 
 def backoff(retries):
@@ -260,7 +315,6 @@ def main(gctx=None):
     except Exception:
       cloudlog.exception("athenad.main.exception")
       conn_retries += 1
-      traceback.print_exc()
 
     time.sleep(backoff(conn_retries))
 

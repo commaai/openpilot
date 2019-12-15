@@ -1,13 +1,8 @@
 # pylint: skip-file
-import os
-import subprocess
 
-# Cython
-boardd_api_dir = os.path.dirname(os.path.abspath(__file__))
-subprocess.check_call(["make", "boardd_api_impl.so"], cwd=boardd_api_dir)
+# Cython, now uses scons to build
 from selfdrive.boardd.boardd_api_impl import can_list_to_can_capnp
 assert can_list_to_can_capnp
-
 
 def can_capnp_to_can_list(can, src_filter=None):
   ret = []

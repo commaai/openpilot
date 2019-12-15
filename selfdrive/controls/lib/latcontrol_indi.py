@@ -32,7 +32,7 @@ class LatControlINDI():
     self.A_K = A - np.dot(K, C)
     self.x = np.matrix([[0.], [0.], [0.]])
 
-    self.enfore_rate_limit = CP.carName == "toyota"
+    self.enforce_rate_limit = CP.carName == "toyota"
 
     self.RC = CP.lateralTuning.indi.timeConstant
     self.G = CP.lateralTuning.indi.actuatorEffectiveness
@@ -40,14 +40,29 @@ class LatControlINDI():
     self.inner_loop_gain = CP.lateralTuning.indi.innerLoopGain
     self.alpha = 1. - DT_CTRL / (self.RC + DT_CTRL)
 
+    self.sat_count_rate = 1.0 * DT_CTRL
+    self.sat_limit = CP.steerLimitTimer
+
     self.reset()
 
   def reset(self):
     self.delayed_output = 0.
     self.output_steer = 0.
-    self.counter = 0
+    self.sat_count = 0.0
 
-  def update(self, active, v_ego, angle_steers, angle_steers_rate, eps_torque, steer_override, CP, path_plan):
+  def _check_saturation(self, control, check_saturation, limit):
+    saturated = abs(control) == limit
+
+    if saturated and check_saturation:
+      self.sat_count += self.sat_count_rate
+    else:
+      self.sat_count -= self.sat_count_rate
+
+    self.sat_count = clip(self.sat_count, 0.0, 1.0)
+
+    return self.sat_count > self.sat_limit
+
+  def update(self, active, v_ego, angle_steers, angle_steers_rate, eps_torque, steer_override, rate_limited, CP, path_plan):
     # Update Kalman filter
     y = np.matrix([[math.radians(angle_steers)], [math.radians(angle_steers_rate)]])
     self.x = np.dot(self.A_K, self.x) + np.dot(self.K, y)
@@ -81,7 +96,7 @@ class LatControlINDI():
       delta_u = g_inv * accel_error
 
       # Enforce rate limit
-      if self.enfore_rate_limit:
+      if self.enforce_rate_limit:
         steer_max = float(SteerLimitParams.STEER_MAX)
         new_output_steer_cmd = steer_max * (self.delayed_output + delta_u)
         prev_output_steer_cmd = steer_max * self.output_steer
@@ -101,5 +116,7 @@ class LatControlINDI():
       indi_log.delta = float(delta_u)
       indi_log.output = float(self.output_steer)
 
-    self.sat_flag = False
+      check_saturation = (v_ego > 10.) and not rate_limited and not steer_override
+      indi_log.saturated = self._check_saturation(self.output_steer, check_saturation, steers_max)
+
     return float(self.output_steer), float(self.angle_steers_des), indi_log

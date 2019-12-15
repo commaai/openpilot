@@ -18,12 +18,16 @@ const int TOYOTA_MIN_ACCEL = -3000;       // 3.0 m/s2
 
 const int TOYOTA_GAS_INTERCEPTOR_THRESHOLD = 475;  // ratio between offset and gain from dbc file
 
+// allowed DSU messages on bus 0 and 1
+const AddrBus TOYOTA_TX_MSGS[] = {{0x283, 0}, {0x2E6, 0}, {0x2E7, 0}, {0x33E, 0}, {0x344, 0}, {0x365, 0}, {0x366, 0}, {0x4CB, 0},  // DSU bus 0
+                                         {0x128, 1}, {0x141, 1}, {0x160, 1}, {0x161, 1}, {0x470, 1},  // DSU bus 1
+                                         {0x2E4, 0}, {0x411, 0}, {0x412, 0}, {0x343, 0}, {0x1D2, 0}, // LKAS + ACC
+                                         {0x200, 0}};  // interceptor
+
 // global actuation limit states
 int toyota_dbc_eps_torque_factor = 100;   // conversion factor for STEER_TORQUE_EPS in %: see dbc file
 
 // states
-int toyota_giraffe_switch_1 = 0;          // is giraffe switch 1 high?
-int toyota_camera_forwarded = 0;          // should we forward the camera bus?
 int toyota_desired_torque_last = 0;       // last desired steer torque
 int toyota_rt_torque_last = 0;            // last desired torque for real time check
 uint32_t toyota_ts_last = 0;
@@ -87,14 +91,9 @@ static void toyota_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     toyota_gas_prev = gas;
   }
 
-  // msgs are only on bus 2 if panda is connected to frc
-  if (bus == 2) {
-    toyota_camera_forwarded = 1;
-  }
-
-  // 0x2E4 is lkas cmd. If it is on bus 0, then giraffe switch 1 is high
-  if ((addr == 0x2E4) && (bus == 0)) {
-    toyota_giraffe_switch_1 = 1;
+  // 0x2E4 is lkas cmd. If it is on bus 0, then relay is unexpectedly closed
+  if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && (addr == 0x2E4) && (bus == 0)) {
+    relay_malfunction = true;
   }
 }
 
@@ -104,13 +103,16 @@ static int toyota_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   int addr = GET_ADDR(to_send);
   int bus = GET_BUS(to_send);
 
+  if (!addr_allowed(addr, bus, TOYOTA_TX_MSGS, sizeof(TOYOTA_TX_MSGS)/sizeof(TOYOTA_TX_MSGS[0]))) {
+    tx = 0;
+  }
+
+  if (relay_malfunction) {
+    tx = 0;
+  }
+
   // Check if msg is sent on BUS 0
   if (bus == 0) {
-
-    // no IPAS in non IPAS mode
-    if ((addr == 0x266) || (addr == 0x167)) {
-      tx = 0;
-    }
 
     // GAS PEDAL: safety check
     if (addr == 0x200) {
@@ -185,28 +187,26 @@ static int toyota_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
     }
   }
 
-  // 1 allows the message through
   return tx;
 }
 
 static void toyota_init(int16_t param) {
   controls_allowed = 0;
-  toyota_giraffe_switch_1 = 0;
-  toyota_camera_forwarded = 0;
+  relay_malfunction = 0;
   toyota_dbc_eps_torque_factor = param;
 }
 
 static int toyota_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
 
   int bus_fwd = -1;
-  if (toyota_camera_forwarded && !toyota_giraffe_switch_1) {
+  if (!relay_malfunction) {
     if (bus_num == 0) {
       bus_fwd = 2;
     }
     if (bus_num == 2) {
       int addr = GET_ADDR(to_fwd);
       // block stock lkas messages and stock acc messages (if OP is doing ACC)
-      // in TSS2, 0.191 is LTA which we need to block to avoid controls collision
+      // in TSS2, 0x191 is LTA which we need to block to avoid controls collision
       int is_lkas_msg = ((addr == 0x2E4) || (addr == 0x412) || (addr == 0x191));
       // in TSS2 the camera does ACC as well, so filter 0x343
       int is_acc_msg = (addr == 0x343);

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import binascii
 import csv
 import sys
 from panda import Panda
@@ -21,7 +20,7 @@ def can_logger():
       sys.exit(0)
 
   try:
-    outputfile = open('output.csv', 'wb')
+    outputfile = open('output.csv', 'w')
     csvwriter = csv.writer(outputfile)
     #Write Header
     csvwriter.writerow(['Bus', 'MessageID', 'Message', 'MessageLength'])
@@ -35,7 +34,7 @@ def can_logger():
       can_recv = p.can_recv()
 
       for address, _, dat, src  in can_recv:
-        csvwriter.writerow([str(src), str(hex(address)), "0x" + binascii.hexlify(dat), len(dat)])
+        csvwriter.writerow([str(src), str(hex(address)), f"0x{dat.hex()}", len(dat)])
 
         if src == 0:
           bus0_msg_cnt += 1
@@ -44,10 +43,10 @@ def can_logger():
         elif src == 2:
           bus2_msg_cnt += 1
 
-        print("Message Counts... Bus 0: " + str(bus0_msg_cnt) + " Bus 1: " + str(bus1_msg_cnt) + " Bus 2: " + str(bus2_msg_cnt), end='\r')
+        print(f"Message Counts... Bus 0: {bus0_msg_cnt} Bus 1: {bus1_msg_cnt} Bus 2: {bus2_msg_cnt}", end='\r')
 
   except KeyboardInterrupt:
-    print("\nNow exiting. Final message Counts... Bus 0: " + str(bus0_msg_cnt) + " Bus 1: " + str(bus1_msg_cnt) + " Bus 2: " + str(bus2_msg_cnt))
+    print(f"\nNow exiting. Final message Counts... Bus 0: {bus0_msg_cnt} Bus 1: {bus1_msg_cnt} Bus 2: {bus2_msg_cnt}")
     outputfile.close()
 
 if __name__ == "__main__":

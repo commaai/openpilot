@@ -123,8 +123,8 @@ void black_set_can_mode(uint8_t mode){
   }
 }
 
-void black_usb_power_mode_tick(uint64_t tcnt){
-  UNUSED(tcnt);
+void black_usb_power_mode_tick(uint32_t uptime){
+  UNUSED(uptime);
   // Not applicable
 }
 
@@ -146,6 +146,10 @@ void black_set_fan_power(uint8_t percentage){
   UNUSED(percentage);
 }
 
+void black_set_phone_power(bool enabled){
+  UNUSED(enabled);
+}
+
 void black_init(void) {
   common_init_gpio();
 
@@ -157,6 +161,9 @@ void black_init(void) {
   // C3: OBD_SBU2 (orientation detection)
   set_gpio_mode(GPIOC, 0, MODE_ANALOG);
   set_gpio_mode(GPIOC, 3, MODE_ANALOG);
+
+  // Set default state of GPS
+  current_board->set_esp_gps_mode(ESP_GPS_ENABLED);
 
   // C10: OBD_SBU1_RELAY (harness relay driving output)
   // C11: OBD_SBU2_RELAY (harness relay driving output)
@@ -227,5 +234,6 @@ const board board_black = {
   .check_ignition = black_check_ignition,
   .read_current = black_read_current,
   .set_fan_power = black_set_fan_power,
-  .set_ir_power = black_set_ir_power
+  .set_ir_power = black_set_ir_power,
+  .set_phone_power = black_set_phone_power
 };
