@@ -2,7 +2,7 @@
 import os
 import time
 from cereal import car
-from selfdrive.can.parser import CANParser
+from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import RadarInterfaceBase
 from selfdrive.car.hyundai.values import DBC, FEATURES
 
