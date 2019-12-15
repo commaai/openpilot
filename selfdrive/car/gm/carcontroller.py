@@ -5,7 +5,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.gm import gmcan
 from selfdrive.car.gm.values import DBC, SUPERCRUISE_CARS
-from selfdrive.can.packer import CANPacker
+from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
@@ -76,6 +76,7 @@ class CarController():
     self.apply_steer_last = 0
     self.car_fingerprint = car_fingerprint
     self.lka_icon_status_last = (False, False)
+    self.steer_rate_limited = False
 
     # Setup detection helper. Routes commands to
     # an appropriate CAN bus number.
@@ -102,8 +103,9 @@ class CarController():
     if (frame % P.STEER_STEP) == 0:
       lkas_enabled = enabled and not CS.steer_not_allowed and CS.v_ego > P.MIN_STEER_SPEED
       if lkas_enabled:
-        apply_steer = actuators.steer * P.STEER_MAX
-        apply_steer = apply_std_steer_torque_limits(apply_steer, self.apply_steer_last, CS.steer_torque_driver, P)
+        new_steer = actuators.steer * P.STEER_MAX
+        apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.steer_torque_driver, P)
+        self.steer_rate_limited = new_steer != apply_steer
       else:
         apply_steer = 0
 

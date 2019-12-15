@@ -1,93 +1,78 @@
 #!/usr/bin/env python3
 import unittest
 import numpy as np
-import libpandasafety_py  # pylint: disable=import-error
 from panda import Panda
+from panda.tests.safety import libpandasafety_py
+from panda.tests.safety.common import test_relay_malfunction, make_msg, test_manually_enable_controls_allowed, test_spam_can_buses
 
 MAX_BRAKE = 255
 
 INTERCEPTOR_THRESHOLD = 328
+TX_MSGS = [[0xE4, 0], [0x194, 0], [0x1FA, 0], [0x200, 0], [0x30C, 0], [0x33D, 0], [0x39F, 0]]
 
 class TestHondaSafety(unittest.TestCase):
   @classmethod
   def setUp(cls):
     cls.safety = libpandasafety_py.libpandasafety
-    cls.safety.safety_set_mode(Panda.SAFETY_HONDA, 0)
+    cls.safety.set_safety_hooks(Panda.SAFETY_HONDA, 0)
     cls.safety.init_tests_honda()
 
-  def _send_msg(self, bus, addr, length):
-    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_send[0].RIR = addr << 21
-    to_send[0].RDTR = length
-    to_send[0].RDTR = bus << 4
-
-    return to_send
-
   def _speed_msg(self, speed):
-    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_send[0].RIR = 0x158 << 21
+    to_send = make_msg(0, 0x158)
     to_send[0].RDLR = speed
-
     return to_send
 
   def _button_msg(self, buttons, msg):
-    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_send[0].RIR = msg << 21
-    to_send[0].RDLR = buttons << 5
     has_relay = self.safety.board_has_relay()
     honda_bosch_hardware = self.safety.get_honda_bosch_hardware()
     bus = 1 if has_relay and honda_bosch_hardware else 0
-    to_send[0].RDTR = bus << 4
-
+    to_send = make_msg(bus, msg)
+    to_send[0].RDLR = buttons << 5
     return to_send
 
   def _brake_msg(self, brake):
-    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_send[0].RIR = 0x17C << 21
+    to_send = make_msg(0, 0x17C)
     to_send[0].RDHR = 0x200000 if brake else 0
-
     return to_send
 
   def _alt_brake_msg(self, brake):
-    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_send[0].RIR = 0x1BE << 21
+    to_send = make_msg(0, 0x1BE)
     to_send[0].RDLR = 0x10 if brake else 0
-
     return to_send
 
   def _gas_msg(self, gas):
-    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_send[0].RIR = 0x17C << 21
+    to_send = make_msg(0, 0x17C)
     to_send[0].RDLR = 1 if gas else 0
-
     return to_send
 
   def _send_brake_msg(self, brake):
-    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_send[0].RIR = 0x1FA << 21
+    to_send = make_msg(0, 0x1FA)
     to_send[0].RDLR = ((brake & 0x3) << 14) | ((brake & 0x3FF) >> 2)
-
     return to_send
 
   def _send_interceptor_msg(self, gas, addr):
-    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_send[0].RIR = addr << 21
-    to_send[0].RDTR = 6
+    to_send = make_msg(0, addr, 6)
     gas2 = gas * 2
     to_send[0].RDLR = ((gas & 0xff) << 8) | ((gas & 0xff00) >> 8) | \
                       ((gas2 & 0xff) << 24) | ((gas2 & 0xff00) << 8)
-
     return to_send
 
   def _send_steer_msg(self, steer):
-    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_send[0].RIR = 0xE4 << 21
+    to_send = make_msg(0, 0xE4, 6)
     to_send[0].RDLR = steer
-
     return to_send
+
+  def test_spam_can_buses(self):
+    test_spam_can_buses(self, TX_MSGS)
+
+  def test_relay_malfunction(self):
+    test_relay_malfunction(self, 0xE4)
 
   def test_default_controls_not_allowed(self):
     self.assertFalse(self.safety.get_controls_allowed())
+
+  def test_manually_enable_controls_allowed(self):
+    test_manually_enable_controls_allowed(self)
 
   def test_resume_button(self):
     RESUME_BTN = 4
@@ -281,7 +266,7 @@ class TestHondaSafety(unittest.TestCase):
               fwd_bus = -1 if m in blocked_msgs else 0
 
             # assume len 8
-            self.assertEqual(fwd_bus, self.safety.safety_fwd_hook(b, self._send_msg(b, m, 8)))
+            self.assertEqual(fwd_bus, self.safety.safety_fwd_hook(b, make_msg(b, m, 8)))
 
     self.safety.set_long_controls_allowed(True)
     self.safety.set_honda_fwd_brake(False)

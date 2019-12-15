@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 import unittest
 import numpy as np
-import libpandasafety_py  # pylint: disable=import-error
 from panda import Panda
+from panda.tests.safety import libpandasafety_py
+from panda.tests.safety.common import test_relay_malfunction, make_msg, test_manually_enable_controls_allowed, test_spam_can_buses
 
 MAX_RATE_UP = 3
 MAX_RATE_DOWN = 7
@@ -13,6 +14,8 @@ RT_INTERVAL = 250000
 
 DRIVER_TORQUE_ALLOWANCE = 50;
 DRIVER_TORQUE_FACTOR = 2;
+
+TX_MSGS = [[832, 0], [1265, 0]]
 
 def twos_comp(val, bits):
   if val >= 0:
@@ -30,19 +33,11 @@ class TestHyundaiSafety(unittest.TestCase):
   @classmethod
   def setUp(cls):
     cls.safety = libpandasafety_py.libpandasafety
-    cls.safety.safety_set_mode(Panda.SAFETY_HYUNDAI, 0)
+    cls.safety.set_safety_hooks(Panda.SAFETY_HYUNDAI, 0)
     cls.safety.init_tests_hyundai()
 
-  def _send_msg(self, bus, addr, length):
-    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_send[0].RIR = addr << 21
-    to_send[0].RDTR = length
-    to_send[0].RDTR = bus << 4
-    return to_send
-
   def _button_msg(self, buttons):
-    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_send[0].RIR = 1265 << 21
+    to_send = make_msg(0, 1265)
     to_send[0].RDLR = buttons
     return to_send
 
@@ -51,16 +46,20 @@ class TestHyundaiSafety(unittest.TestCase):
     self.safety.set_hyundai_rt_torque_last(t)
 
   def _torque_driver_msg(self, torque):
-    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_send[0].RIR = 897 << 21
+    to_send = make_msg(0, 897)
     to_send[0].RDLR = (torque + 2048) << 11
     return to_send
 
   def _torque_msg(self, torque):
-    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_send[0].RIR = 832 << 21
+    to_send = make_msg(0, 832)
     to_send[0].RDLR = (torque + 1024) << 16
     return to_send
+
+  def test_spam_can_buses(self):
+    test_spam_can_buses(self, TX_MSGS)
+
+  def test_relay_malfunction(self):
+    test_relay_malfunction(self, 832)
 
   def test_default_controls_not_allowed(self):
     self.assertFalse(self.safety.get_controls_allowed())
@@ -76,24 +75,16 @@ class TestHyundaiSafety(unittest.TestCase):
           self.assertTrue(self.safety.safety_tx_hook(self._torque_msg(t)))
 
   def test_manually_enable_controls_allowed(self):
-    self.safety.set_controls_allowed(1)
-    self.assertTrue(self.safety.get_controls_allowed())
-    self.safety.set_controls_allowed(0)
-    self.assertFalse(self.safety.get_controls_allowed())
+    test_manually_enable_controls_allowed(self)
 
   def test_enable_control_allowed_from_cruise(self):
-    to_push = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_push[0].RIR = 1057 << 21
+    to_push = make_msg(0, 1057)
     to_push[0].RDLR = 1 << 13
-
     self.safety.safety_rx_hook(to_push)
     self.assertTrue(self.safety.get_controls_allowed())
 
   def test_disable_control_allowed_from_cruise(self):
-    to_push = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_push[0].RIR = 1057 << 21
-    to_push[0].RDLR = 0
-
+    to_push = make_msg(0, 1057)
     self.safety.set_controls_allowed(1)
     self.safety.safety_rx_hook(to_push)
     self.assertFalse(self.safety.get_controls_allowed())
@@ -176,43 +167,35 @@ class TestHyundaiSafety(unittest.TestCase):
       self.assertTrue(self.safety.safety_tx_hook(self._torque_msg(sign * (MAX_RT_DELTA + 1))))
 
 
-  #def test_spam_cancel_safety_check(self):
-  #  RESUME_BTN = 1
-  #  SET_BTN = 2
-  #  CANCEL_BTN = 4
-  #  BUTTON_MSG = 1265
-  #  self.safety.set_controls_allowed(0)
-  #  self.assertTrue(self.safety.safety_tx_hook(self._button_msg(CANCEL_BTN)))
-  #  self.assertFalse(self.safety.safety_tx_hook(self._button_msg(RESUME_BTN)))
-  #  self.assertFalse(self.safety.safety_tx_hook(self._button_msg(SET_BTN)))
-  #  # do not block resume if we are engaged already
-  #  self.safety.set_controls_allowed(1)
-  #  self.assertTrue(self.safety.safety_tx_hook(self._button_msg(RESUME_BTN)))
+  def test_spam_cancel_safety_check(self):
+    RESUME_BTN = 1
+    SET_BTN = 2
+    CANCEL_BTN = 4
+    self.safety.set_controls_allowed(0)
+    self.assertTrue(self.safety.safety_tx_hook(self._button_msg(CANCEL_BTN)))
+    self.assertFalse(self.safety.safety_tx_hook(self._button_msg(RESUME_BTN)))
+    self.assertFalse(self.safety.safety_tx_hook(self._button_msg(SET_BTN)))
+    # do not block resume if we are engaged already
+    self.safety.set_controls_allowed(1)
+    self.assertTrue(self.safety.safety_tx_hook(self._button_msg(RESUME_BTN)))
 
   def test_fwd_hook(self):
 
     buss = list(range(0x0, 0x3))
     msgs = list(range(0x1, 0x800))
-    hyundai_giraffe_switch_2 = [0, 1]
 
-    self.safety.set_hyundai_camera_bus(2)
-    for hgs in hyundai_giraffe_switch_2:
-      self.safety.set_hyundai_giraffe_switch_2(hgs)
-      blocked_msgs = [832]
-      for b in buss:
-        for m in msgs:
-          if hgs:
-            if b == 0:
-              fwd_bus = 2
-            elif b == 1:
-              fwd_bus = -1
-            elif b == 2:
-              fwd_bus = -1 if m in blocked_msgs else 0
-          else:
-            fwd_bus = -1
+    blocked_msgs = [832]
+    for b in buss:
+      for m in msgs:
+        if b == 0:
+          fwd_bus = 2
+        elif b == 1:
+          fwd_bus = -1
+        elif b == 2:
+          fwd_bus = -1 if m in blocked_msgs else 0
 
-          # assume len 8
-          self.assertEqual(fwd_bus, self.safety.safety_fwd_hook(b, self._send_msg(b, m, 8)))
+        # assume len 8
+        self.assertEqual(fwd_bus, self.safety.safety_fwd_hook(b, make_msg(b, m, 8)))
 
 
 if __name__ == "__main__":

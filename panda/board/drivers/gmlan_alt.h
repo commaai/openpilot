@@ -124,15 +124,15 @@ int get_bit_message(char *out, CAN_FIFOMailBox_TypeDef *to_bang) {
 
 void setup_timer4(void) {
   // setup
-  TIM4->PSC = 48-1;          // tick on 1 us
-  TIM4->CR1 = TIM_CR1_CEN;   // enable
-  TIM4->ARR = 30-1;          // 33.3 kbps
+  register_set(&(TIM4->PSC), (48-1), 0xFFFFU);    // Tick on 1 us
+  register_set(&(TIM4->CR1), TIM_CR1_CEN, 0x3FU); // Enable
+  register_set(&(TIM4->ARR), (30-1), 0xFFFFU);   // 33.3 kbps
 
   // in case it's disabled
   NVIC_EnableIRQ(TIM4_IRQn);
 
   // run the interrupt
-  TIM4->DIER = TIM_DIER_UIE; // update interrupt
+  register_set(&(TIM4->DIER), TIM_DIER_UIE, 0x5F5FU); // Update interrupt
   TIM4->SR = 0;
 }
 
@@ -171,9 +171,9 @@ void reset_gmlan_switch_timeout(void) {
 
 void set_bitbanged_gmlan(int val) {
   if (val != 0) {
-    GPIOB->ODR |= (1U << 13);
+    register_set_bits(&(GPIOB->ODR), (1U << 13));
   } else {
-    GPIOB->ODR &= ~(1U << 13);
+    register_clear_bits(&(GPIOB->ODR), (1U << 13));
   }
 }
 
@@ -187,7 +187,7 @@ int gmlan_fail_count = 0;
 #define REQUIRED_SILENT_TIME 10
 #define MAX_FAIL_COUNT 10
 
-void TIM4_IRQHandler(void) {
+void TIM4_IRQ_Handler(void) {
   if (gmlan_alt_mode == BITBANG) {
     if ((TIM4->SR & TIM_SR_UIF) && (gmlan_sendmax != -1)) {
       int read = get_gpio_input(GPIOB, 12);
@@ -231,8 +231,8 @@ void TIM4_IRQHandler(void) {
       if ((gmlan_sending == gmlan_sendmax) || (gmlan_fail_count == MAX_FAIL_COUNT)) {
         set_bitbanged_gmlan(1); // recessive
         set_gpio_mode(GPIOB, 13, MODE_INPUT);
-        TIM4->DIER = 0;  // no update interrupt
-        TIM4->CR1 = 0;   // disable timer
+        register_clear_bits(&(TIM4->DIER), TIM_DIER_UIE); // No update interrupt
+        register_set(&(TIM4->CR1), 0U, 0x3FU); // Disable timer
         gmlan_sendmax = -1;   // exit
       }
     }
@@ -279,6 +279,8 @@ bool bitbang_gmlan(CAN_FIFOMailBox_TypeDef *to_bang) {
     set_bitbanged_gmlan(1); // recessive
     set_gpio_mode(GPIOB, 13, MODE_OUTPUT);
 
+    // 33kbps
+    REGISTER_INTERRUPT(TIM4_IRQn, TIM4_IRQ_Handler, 40000U, FAULT_INTERRUPT_RATE_GMLAN)
     setup_timer4();
   }
   return gmlan_send_ok;

@@ -1,0 +1,25 @@
+Import('env', 'arch', 'messaging', 'common', 'gpucommon', 'visionipc')
+
+libs = [messaging, common, 'OpenCL', 'SNPE', 'capnp', 'zmq', 'kj', 'yuv', gpucommon, visionipc]
+
+if arch == "aarch64":
+  libs += ['gsl', 'CB', 'gnustl_shared']
+else:
+  libs += ['symphony-cpu', 'pthread']
+
+common = env.Object([
+    "models/commonmodel.c",
+    "runners/snpemodel.cc",
+    "transforms/loadyuv.c",
+    "transforms/transform.c"])
+
+env.Program('_monitoringd', [
+    "monitoringd.cc",
+    "models/monitoring.cc",
+  ]+common, LIBS=libs)
+
+env.Program('_modeld', [
+    "modeld.cc",
+    "models/driving.cc",
+    "models/posenet.cc",
+  ]+common, LIBS=libs)

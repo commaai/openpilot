@@ -67,7 +67,7 @@ def run_test(sleep_duration):
     print("Number of cycles:", counter, "Non-zero bus errors:", nonzero_bus_errors, "Zero bus errors:", zero_bus_errors, "Content errors:", content_errors)
 
     # Toggle relay
-    black_panda.set_safety_mode(Panda.SAFETY_NOOUTPUT)
+    black_panda.set_safety_mode(Panda.SAFETY_SILENT)
     time.sleep(1)
     black_panda.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
     time.sleep(1)
