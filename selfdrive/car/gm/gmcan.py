@@ -1,3 +1,5 @@
+from selfdrive.car import make_can_msg
+
 def create_steering_control(packer, bus, apply_steer, idx, lkas_active):
 
   values = {
@@ -37,7 +39,7 @@ def create_steering_control_ct6(packer, canbus, apply_steer, v_ego, idx, enabled
 
 def create_adas_keepalive(bus):
   dat = b"\x00\x00\x00\x00\x00\x00\x00"
-  return [[0x409, 0, dat, bus], [0x40a, 0, dat, bus]]
+  return [make_can_msg(0x409, dat, bus), make_can_msg(0x40a, dat, bus)]
 
 def create_gas_regen_command(packer, bus, throttle, idx, acc_engaged, at_full_stop):
   values = {
@@ -106,13 +108,13 @@ def create_adas_time_status(bus, tt, idx):
   chksum = 0x1000 - dat[0] - dat[1] - dat[2] - dat[3]
   chksum = chksum & 0xfff
   dat += [0x40 + (chksum >> 8), chksum & 0xff, 0x12]
-  return [0xa1, 0, bytes(dat), bus]
+  return make_can_msg(0xa1, bytes(dat), bus)
 
 def create_adas_steering_status(bus, idx):
   dat = [idx << 6, 0xf0, 0x20, 0, 0, 0]
   chksum = 0x60 + sum(dat)
   dat += [chksum >> 8, chksum & 0xff]
-  return [0x306, 0, bytes(dat), bus]
+  return make_can_msg(0x306, bytes(dat), bus)
 
 def create_adas_accelerometer_speed_status(bus, speed_ms, idx):
   spd = int(speed_ms * 16) & 0xfff
@@ -125,10 +127,10 @@ def create_adas_accelerometer_speed_status(bus, speed_ms, idx):
   dat = [0x08, spd >> 4, ((spd & 0xf) << 4) | (accel >> 8), accel & 0xff, 0]
   chksum = 0x62 + far_range_mode + (idx << 2) + dat[0] + dat[1] + dat[2] + dat[3] + dat[4]
   dat += [(idx << 5) + (far_range_mode << 4) + (near_range_mode << 3) + (chksum >> 8), chksum & 0xff]
-  return [0x308, 0, bytes(dat), bus]
+  return make_can_msg(0x308, bytes(dat), bus)
 
 def create_adas_headlights_status(bus):
-  return [0x310, 0, b"\x42\x04", bus]
+  return make_can_msg(0x310, b"\x42\x04", bus)
 
 def create_lka_icon_command(bus, active, critical, steer):
   if active and steer == 1:
@@ -143,7 +145,7 @@ def create_lka_icon_command(bus, active, critical, steer):
       dat = b"\x40\x40\x18"
   else:
     dat = b"\x00\x00\x00"
-  return [0x104c006c, 0, dat, bus]
+  return make_can_msg(0x104c006c, dat, bus)
 
 # TODO: WIP
 '''
@@ -173,7 +175,7 @@ def create_friction_brake_command_ct6(packer, bus, apply_brake, idx, near_stop, 
 
   dat = packer.make_can_msg("EBCMFrictionBrakeCmd", 0, values)[2]
   # msg is 0x315 but we are doing the panda forwarding
-  return [0x314, 0, dat, 2]
+  return make_can_msg(0x314, dat, 2)
 
 def create_gas_regen_command_ct6(bus, throttle, idx, acc_engaged, at_full_stop):
   cntrs = [0, 7, 10, 13]
@@ -186,6 +188,6 @@ def create_gas_regen_command_ct6(bus, throttle, idx, acc_engaged, at_full_stop):
   chk2 = (0x100 - gas_low - idx) & 0xff
   dat = [(idx << 6) | eng_bit, 0xc2 | full_stop, gas_high, gas_low,
          (1 - eng_bit) | (cntrs[idx] << 1), 0x5d - full_stop, chk1, chk2]
-  return [0x2cb, 0, "".join(map(chr, dat)), bus]
+  return make_can_msg(0x2cb, "".join(map(chr, dat)), bus)
 
 '''

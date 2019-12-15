@@ -2,7 +2,7 @@ from selfdrive.car import apply_toyota_steer_torque_limits
 from selfdrive.car.chrysler.chryslercan import create_lkas_hud, create_lkas_command, \
                                                create_wheel_buttons
 from selfdrive.car.chrysler.values import ECU, CAR, SteerLimitParams
-from selfdrive.can.packer import CANPacker
+from opendbc.can.packer import CANPacker
 
 class CarController():
   def __init__(self, dbc_name, car_fingerprint, enable_camera):
@@ -16,6 +16,7 @@ class CarController():
     self.car_fingerprint = car_fingerprint
     self.alert_active = False
     self.gone_fast_yet = False
+    self.steer_rate_limited = False
 
     self.fake_ecus = set()
     if enable_camera:
@@ -32,9 +33,10 @@ class CarController():
 
     # *** compute control surfaces ***
     # steer torque
-    apply_steer = actuators.steer * SteerLimitParams.STEER_MAX
-    apply_steer = apply_toyota_steer_torque_limits(apply_steer, self.apply_steer_last,
+    new_steer = actuators.steer * SteerLimitParams.STEER_MAX
+    apply_steer = apply_toyota_steer_torque_limits(new_steer, self.apply_steer_last,
                                                    CS.steer_torque_motor, SteerLimitParams)
+    self.steer_rate_limited = new_steer != apply_steer
 
     moving_fast = CS.v_ego > CS.CP.minSteerSpeed  # for status message
     if CS.v_ego > (CS.CP.minSteerSpeed - 0.5):  # for command high bit

@@ -3,7 +3,7 @@ import pygame # pylint: disable=import-error
 from selfdrive.test.longitudinal_maneuvers.plant import Plant
 from selfdrive.car.honda.values import CruiseButtons
 import numpy as np
-import selfdrive.messaging as messaging
+import cereal.messaging as messaging
 import math
 
 CAR_WIDTH = 2.0

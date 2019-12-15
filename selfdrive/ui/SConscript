@@ -1,0 +1,5 @@
+Import('env', 'common', 'messaging', 'gpucommon', 'visionipc', 'cereal')
+
+env.Program('_ui', ['ui.cc', 'slplay.c', '#phonelibs/nanovg/nanovg.c'],
+  LINKFLAGS=['-Wl,-rpath=/system/lib64,-rpath=/system/comma/usr/lib'],
+  LIBS=[common, 'zmq', 'czmq', 'capnp', 'capnp_c', 'm', 'GLESv3', 'EGL', cereal, 'gnustl_shared', 'log', 'utils', 'gui', 'hardware', 'ui', 'json', messaging, 'CB', 'OpenCL', 'gsl', 'adreno_utils', 'OpenSLES', 'cutils', 'uuid', gpucommon, visionipc])
