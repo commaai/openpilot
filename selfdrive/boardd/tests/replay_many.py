@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import os
 import sys
 import time
 import signal
@@ -7,11 +6,7 @@ import traceback
 from panda import Panda
 from multiprocessing import Pool
 
-jungle = "JUNGLE" in os.environ
-if jungle:
-  from panda_jungle import PandaJungle # pylint: disable=import-error
-
-import cereal.messaging as messaging
+import selfdrive.messaging as messaging
 from selfdrive.boardd.boardd import can_capnp_to_can_list
 
 def initializer():
@@ -19,15 +14,11 @@ def initializer():
   source: https://stackoverflow.com/a/44869451 """
   signal.signal(signal.SIGINT, signal.SIG_IGN)
 
-def send_thread(sender_serial):
-  global jungle
+def send_thread(serial):
   try:
-    if jungle:
-      sender = PandaJungle(sender_serial)
-    else:
-      sender = Panda(sender_serial)
-      sender.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
-    sender.set_can_loopback(False)
+    panda = Panda(serial)
+    panda.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
+    panda.set_can_loopback(False)
 
     can_sock = messaging.sub_sock('can')
 
@@ -36,27 +27,25 @@ def send_thread(sender_serial):
       tsc = messaging.recv_one(can_sock)
       snd = can_capnp_to_can_list(tsc.can)
       snd = list(filter(lambda x: x[-1] <= 2, snd))
-      sender.can_send_many(snd)
+      panda.can_send_many(snd)
 
       # Drain panda message buffer
-      sender.can_recv()
+      panda.can_recv()
   except Exception:
     traceback.print_exc()
 
-if __name__ == "__main__":
-  if jungle:
-    serials = PandaJungle.list()
-  else:
-    serials = Panda.list()
-  num_senders = len(serials)
 
-  if num_senders == 0:
-    print("No senders found. Exiting")
+if __name__ == "__main__":
+  serials = Panda.list()
+  num_pandas = len(serials)
+
+  if num_pandas == 0:
+    print("No pandas found. Exiting")
     sys.exit(1)
   else:
-    print("%d senders found. Starting broadcast" % num_senders)
+    print("%d pandas found. Starting broadcast" % num_pandas)
 
-  pool = Pool(num_senders, initializer=initializer)
+  pool = Pool(num_pandas, initializer=initializer)
   pool.map_async(send_thread, serials)
 
   while True:

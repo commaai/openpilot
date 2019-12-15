@@ -34,8 +34,6 @@ bool board_has_relay(void);
 
 void set_controls_allowed(bool c);
 bool get_controls_allowed(void);
-void set_relay_malfunction(bool c);
-bool get_relay_malfunction(void);
 void set_long_controls_allowed(bool c);
 bool get_long_controls_allowed(void);
 void set_gas_interceptor_detected(bool c);
@@ -48,7 +46,7 @@ void reset_angle_control(void);
 void safety_rx_hook(CAN_FIFOMailBox_TypeDef *to_send);
 int safety_tx_hook(CAN_FIFOMailBox_TypeDef *to_push);
 int safety_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd);
-int set_safety_hooks(uint16_t  mode, int16_t param);
+int safety_set_mode(uint16_t  mode, int16_t param);
 
 void init_tests_toyota(void);
 int get_toyota_torque_meas_min(void);
@@ -56,6 +54,7 @@ int get_toyota_torque_meas_max(void);
 int get_toyota_gas_prev(void);
 void set_toyota_torque_meas(int min, int max);
 void set_toyota_desired_torque_last(int t);
+void set_toyota_camera_forwarded(int t);
 void set_toyota_rt_torque_last(int t);
 
 void init_tests_honda(void);
@@ -81,10 +80,13 @@ void init_tests_hyundai(void);
 void set_hyundai_desired_torque_last(int t);
 void set_hyundai_rt_torque_last(int t);
 void set_hyundai_torque_driver(int min, int max);
+void set_hyundai_giraffe_switch_2(int t);
+void set_hyundai_camera_bus(int t);
 
 void init_tests_chrysler(void);
 void set_chrysler_desired_torque_last(int t);
 void set_chrysler_rt_torque_last(int t);
+void set_chrysler_camera_detected(int t);
 int get_chrysler_torque_meas_min(void);
 int get_chrysler_torque_meas_max(void);
 void set_chrysler_torque_meas(int min, int max);

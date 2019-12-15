@@ -1,4 +1,4 @@
-from distutils.core import Extension, setup
+from distutils.core import Extension, setup  # pylint: disable=import-error,no-name-in-module
 
 from Cython.Build import cythonize
 

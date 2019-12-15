@@ -12,9 +12,9 @@ else:
 from cereal import car, log
 from selfdrive.car.car_helpers import get_car
 import selfdrive.manager as manager
-import cereal.messaging as messaging
+import selfdrive.messaging as messaging
 from common.params import Params
-from cereal.services import service_list
+from selfdrive.services import service_list
 from collections import namedtuple
 
 ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'init_callback', 'should_recv_callback'])
@@ -181,8 +181,7 @@ CONFIGS = [
     proc_name="controlsd",
     pub_sub={
       "can": ["controlsState", "carState", "carControl", "sendcan", "carEvents", "carParams"],
-      "thermal": [], "health": [], "liveCalibration": [], "driverMonitoring": [], "plan": [], "pathPlan": [], "gpsLocation": [],
-      "model": [],
+      "thermal":  [], "health": [], "liveCalibration": [], "driverMonitoring": [], "plan": [], "pathPlan": [], "gpsLocation": [],
     },
     ignore=[("logMonoTime", 0), ("valid", True), ("controlsState.startMonoTime", 0), ("controlsState.cumLagMs", 0)],
     init_callback=fingerprint,
@@ -238,7 +237,6 @@ def replay_process(cfg, lr):
   params.manager_start()
   params.put("OpenpilotEnabledToggle", "1")
   params.put("Passive", "0")
-  params.put("CommunityFeaturesToggle", "1")
 
   os.environ['NO_RADAR_SLEEP'] = "1"
   manager.prepare_managed_process(cfg.proc_name)

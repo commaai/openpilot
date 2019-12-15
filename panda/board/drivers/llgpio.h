@@ -15,16 +15,16 @@ void set_gpio_mode(GPIO_TypeDef *GPIO, unsigned int pin, unsigned int mode) {
   uint32_t tmp = GPIO->MODER;
   tmp &= ~(3U << (pin * 2U));
   tmp |= (mode << (pin * 2U));
-  register_set(&(GPIO->MODER), tmp, 0xFFFFFFFFU);
+  GPIO->MODER = tmp;
   EXIT_CRITICAL();
 }
 
 void set_gpio_output(GPIO_TypeDef *GPIO, unsigned int pin, bool enabled) {
   ENTER_CRITICAL();
   if (enabled) {
-    register_set_bits(&(GPIO->ODR), (1U << pin));
+    GPIO->ODR |= (1U << pin);
   } else {
-    register_clear_bits(&(GPIO->ODR), (1U << pin));
+    GPIO->ODR &= ~(1U << pin);
   }
   set_gpio_mode(GPIO, pin, MODE_OUTPUT);
   EXIT_CRITICAL();
@@ -33,9 +33,9 @@ void set_gpio_output(GPIO_TypeDef *GPIO, unsigned int pin, bool enabled) {
 void set_gpio_output_type(GPIO_TypeDef *GPIO, unsigned int pin, unsigned int output_type){
   ENTER_CRITICAL();
   if(output_type == OUTPUT_TYPE_OPEN_DRAIN) {
-    register_set_bits(&(GPIO->OTYPER), (1U << pin));
+    GPIO->OTYPER |= (1U << pin);
   } else {
-    register_clear_bits(&(GPIO->OTYPER), (1U << pin));
+    GPIO->OTYPER &= ~(1U << pin);
   }
   EXIT_CRITICAL();
 }
@@ -45,7 +45,7 @@ void set_gpio_alternate(GPIO_TypeDef *GPIO, unsigned int pin, unsigned int mode)
   uint32_t tmp = GPIO->AFR[pin >> 3U];
   tmp &= ~(0xFU << ((pin & 7U) * 4U));
   tmp |= mode << ((pin & 7U) * 4U);
-  register_set(&(GPIO->AFR[pin >> 3]), tmp, 0xFFFFFFFFU);
+  GPIO->AFR[pin >> 3] = tmp;
   set_gpio_mode(GPIO, pin, MODE_ALTERNATE);
   EXIT_CRITICAL();
 }
@@ -55,7 +55,7 @@ void set_gpio_pullup(GPIO_TypeDef *GPIO, unsigned int pin, unsigned int mode) {
   uint32_t tmp = GPIO->PUPDR;
   tmp &= ~(3U << (pin * 2U));
   tmp |= (mode << (pin * 2U));
-  register_set(&(GPIO->PUPDR), tmp, 0xFFFFFFFFU);
+  GPIO->PUPDR = tmp;
   EXIT_CRITICAL();
 }
 

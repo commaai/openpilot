@@ -33,12 +33,11 @@ class RadarInterfaceBase():
   def __init__(self, CP):
     self.pts = {}
     self.delay = 0
-    self.radar_ts = CP.radarTimeStep
 
   def update(self, can_strings):
     ret = car.RadarData.new_message()
 
     if 'NO_RADAR_SLEEP' not in os.environ:
-      time.sleep(self.radar_ts)  # radard runs on RI updates
+      time.sleep(0.05)  # radard runs on RI updates
 
     return ret

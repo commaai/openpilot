@@ -14,9 +14,9 @@ def main(gctx=None):
   params = Params()
 
   while True:
-    time_wrong = datetime.datetime.now().year < 2019
+    # try network
     ping_failed = subprocess.call(["ping", "-W", "4", "-c", "1", "8.8.8.8"])
-    if ping_failed or time_wrong:
+    if ping_failed:
       time.sleep(60)
       continue
 

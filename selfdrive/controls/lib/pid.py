@@ -35,10 +35,10 @@ class PIController():
   def k_i(self):
     return interp(self.speed, self._k_i[0], self._k_i[1])
 
-  def _check_saturation(self, control, check_saturation, error):
+  def _check_saturation(self, control, override, error):
     saturated = (control < self.neg_limit) or (control > self.pos_limit)
 
-    if saturated and check_saturation and abs(error) > 0.1:
+    if saturated and not override and abs(error) > 0.1:
       self.sat_count += self.sat_count_rate
     else:
       self.sat_count -= self.sat_count_rate
@@ -82,7 +82,10 @@ class PIController():
     if self.convert is not None:
       control = self.convert(control, speed=self.speed)
 
-    self.saturated = self._check_saturation(control, check_saturation, error)
+    if check_saturation:
+      self.saturated = self._check_saturation(control, override, error)
+    else:
+      self.saturated = False
 
     self.control = clip(control, self.neg_limit, self.pos_limit)
     return self.control
