@@ -55,7 +55,6 @@ keys = {
   "CalibrationParams": [TxType.PERSISTENT],
   "CarParams": [TxType.CLEAR_ON_MANAGER_START, TxType.CLEAR_ON_PANDA_DISCONNECT],
   "CarVin": [TxType.CLEAR_ON_MANAGER_START, TxType.CLEAR_ON_PANDA_DISCONNECT],
-  "CommunityFeaturesToggle": [TxType.PERSISTENT],
   "CompletedTrainingVersion": [TxType.PERSISTENT],
   "ControlsParams": [TxType.PERSISTENT],
   "DoUninstall": [TxType.CLEAR_ON_MANAGER_START],
@@ -66,13 +65,12 @@ keys = {
   "GithubSshKeys": [TxType.PERSISTENT],
   "HasAcceptedTerms": [TxType.PERSISTENT],
   "HasCompletedSetup": [TxType.PERSISTENT],
-  "IsLdwEnabled": [TxType.PERSISTENT],
   "IsGeofenceEnabled": [TxType.PERSISTENT],
   "IsMetric": [TxType.PERSISTENT],
   "IsRHD": [TxType.PERSISTENT],
-  "IsTakingSnapshot": [TxType.CLEAR_ON_MANAGER_START],
   "IsUpdateAvailable": [TxType.PERSISTENT],
   "IsUploadRawEnabled": [TxType.PERSISTENT],
+  "IsUploadVideoOverCellularEnabled": [TxType.PERSISTENT],
   "LastUpdateTime": [TxType.PERSISTENT],
   "LimitSetSpeed": [TxType.PERSISTENT],
   "LimitSetSpeedNeural": [TxType.PERSISTENT],
@@ -97,7 +95,6 @@ keys = {
   "Offroad_TemperatureTooHigh": [TxType.CLEAR_ON_MANAGER_START],
   "Offroad_PandaFirmwareMismatch": [TxType.CLEAR_ON_MANAGER_START, TxType.CLEAR_ON_PANDA_DISCONNECT],
   "Offroad_InvalidTime": [TxType.CLEAR_ON_MANAGER_START],
-  "Offroad_IsTakingSnapshot": [TxType.CLEAR_ON_MANAGER_START],
 }
 
 

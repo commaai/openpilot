@@ -333,7 +333,6 @@ class LongitudinalControl(unittest.TestCase):
     params = Params()
     params.put("Passive", "1" if os.getenv("PASSIVE") else "0")
     params.put("OpenpilotEnabledToggle", "1")
-    params.put("CommunityFeaturesToggle", "1")
 
     manager.gctx = {}
     manager.prepare_managed_process('radard')

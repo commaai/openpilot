@@ -155,10 +155,11 @@ class CarInterface(CarInterfaceBase):
     cloudlog.warning("ECU Gas Interceptor: %r", ret.enableGasInterceptor)
 
     ret.enableCruise = not ret.enableGasInterceptor
-    ret.communityFeature = ret.enableGasInterceptor
 
-    # Certain Hondas have an extra steering sensor at the bottom of the steering rack,
-    # which improves controls quality as it removes the steering column torsion from feedback.
+    # Optimized car params: tire_stiffness_factor and steerRatio are a result of a vehicle
+    # model optimization process. Certain Hondas have an extra steering sensor at the bottom
+    # of the steering rack, which improves controls quality as it removes the steering column
+    # torsion from feedback.
     # Tire stiffness factor fictitiously lower if it includes the steering column torsion effect.
     # For modeling details, see p.198-200 in "The Science of Vehicle Dynamics (2014), M. Guiggiani"
 
@@ -182,7 +183,7 @@ class CarInterface(CarInterfaceBase):
     elif candidate in (CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH):
       stop_and_go = True
       if not candidate == CAR.ACCORDH: # Hybrid uses same brake msg as hatch
-        ret.safetyParam = 1  # Accord and CRV 5G use an alternate user brake msg
+        ret.safetyParam = 1 # Accord and CRV 5G use an alternate user brake msg
       ret.mass = 3279. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.83
       ret.centerToFront = ret.wheelbase * 0.39
@@ -212,8 +213,8 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 3572. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.62
       ret.centerToFront = ret.wheelbase * 0.41
-      ret.steerRatio = 16.89  # as spec
-      tire_stiffness_factor = 0.444
+      ret.steerRatio = 16.89         # as spec
+      tire_stiffness_factor = 0.444 # not optimized yet
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
       ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
@@ -222,11 +223,11 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.CRV_5G:
       stop_and_go = True
-      ret.safetyParam = 1  # Accord and CRV 5G use an alternate user brake msg
+      ret.safetyParam = 1 # Accord and CRV 5G use an alternate user brake msg
       ret.mass = 3410. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.66
       ret.centerToFront = ret.wheelbase * 0.41
-      ret.steerRatio = 16.0  # 12.3 is spec end-to-end
+      ret.steerRatio = 16.0   # 12.3 is spec end-to-end
       tire_stiffness_factor = 0.677
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]]
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
@@ -236,11 +237,11 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.CRV_HYBRID:
       stop_and_go = True
-      ret.safetyParam = 1  # Accord and CRV 5G use an alternate user brake msg
+      ret.safetyParam = 1 # Accord and CRV 5G use an alternate user brake msg
       ret.mass = 1667. + STD_CARGO_KG # mean of 4 models in kg
       ret.wheelbase = 2.66
       ret.centerToFront = ret.wheelbase * 0.41
-      ret.steerRatio = 16.0  # 12.3 is spec end-to-end
+      ret.steerRatio = 16.0   # 12.3 is spec end-to-end
       tire_stiffness_factor = 0.677
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]]
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
@@ -254,7 +255,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.53
       ret.centerToFront = ret.wheelbase * 0.39
       ret.steerRatio = 13.06
-      tire_stiffness_factor = 0.75
+      tire_stiffness_factor = 0.75 # not optimized yet
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.06]]
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
       ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
@@ -266,8 +267,8 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 3935. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.68
       ret.centerToFront = ret.wheelbase * 0.38
-      ret.steerRatio = 15.0  # as spec
-      tire_stiffness_factor = 0.444
+      ret.steerRatio = 15.0         # as spec
+      tire_stiffness_factor = 0.444 # not optimized yet
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
       ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
@@ -279,7 +280,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 4471. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 3.00
       ret.centerToFront = ret.wheelbase * 0.41
-      ret.steerRatio = 14.35  # as spec
+      ret.steerRatio = 14.35        # as spec
       tire_stiffness_factor = 0.82
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.45], [0.135]]
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
@@ -289,11 +290,11 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.ODYSSEY_CHN:
       stop_and_go = False
-      ret.mass = 1849.2 + STD_CARGO_KG  # mean of 4 models in kg
-      ret.wheelbase = 2.90
-      ret.centerToFront = ret.wheelbase * 0.41  # from CAR.ODYSSEY
-      ret.steerRatio = 14.35
-      tire_stiffness_factor = 0.82
+      ret.mass = 1849.2 + STD_CARGO_KG # mean of 4 models in kg
+      ret.wheelbase = 2.90 # spec
+      ret.centerToFront = ret.wheelbase * 0.41 # from CAR.ODYSSEY
+      ret.steerRatio = 14.35 # from CAR.ODYSSEY
+      tire_stiffness_factor = 0.82 # from CAR.ODYSSEY
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.45], [0.135]]
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
       ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
@@ -304,9 +305,9 @@ class CarInterface(CarInterfaceBase):
       stop_and_go = False
       ret.mass = 4204. * CV.LB_TO_KG + STD_CARGO_KG # average weight
       ret.wheelbase = 2.82
-      ret.centerToFront = ret.wheelbase * 0.428
-      ret.steerRatio = 17.25  # as spec
-      tire_stiffness_factor = 0.444
+      ret.centerToFront = ret.wheelbase * 0.428 # average weight distribution
+      ret.steerRatio = 17.25         # as spec
+      tire_stiffness_factor = 0.444 # not optimized yet
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.38], [0.11]]
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
       ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
@@ -318,8 +319,8 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 4515. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 3.18
       ret.centerToFront = ret.wheelbase * 0.41
-      ret.steerRatio = 15.59  # as spec
-      tire_stiffness_factor = 0.444
+      ret.steerRatio = 15.59        # as spec
+      tire_stiffness_factor = 0.444 # not optimized yet
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.38], [0.11]]
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
       ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
@@ -361,11 +362,11 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalTuning.deadzoneV = [0.]
 
     ret.stoppingControl = True
+    ret.steerLimitAlert = True
     ret.startAccel = 0.5
 
     ret.steerActuatorDelay = 0.1
     ret.steerRateCost = 0.5
-    ret.steerLimitTimer = 0.8
 
     return ret
 
@@ -380,7 +381,7 @@ class CarInterface(CarInterfaceBase):
     # create message
     ret = car.CarState.new_message()
 
-    ret.canValid = self.cp.can_valid and self.cp_cam.can_valid
+    ret.canValid = self.cp.can_valid
 
     # speeds
     ret.vEgo = self.CS.v_ego
@@ -434,9 +435,6 @@ class CarInterface(CarInterfaceBase):
     ret.doorOpen = not self.CS.door_all_closed
     ret.seatbeltUnlatched = not self.CS.seatbelt
 
-    ret.stockAeb = self.CS.stock_aeb
-    ret.stockFcw = self.CS.stock_fcw
-
     if self.CS.left_blinker_on != self.CS.prev_left_blinker_on:
       be = car.CarState.ButtonEvent.new_message()
       be.type = ButtonType.leftBlinker
@@ -485,6 +483,9 @@ class CarInterface(CarInterfaceBase):
 
     # events
     events = []
+    # wait 1.0s before throwing the alert to avoid it popping when you turn off the car
+    if self.cp_cam.can_invalid_cnt >= 100 and self.CS.CP.carFingerprint not in HONDA_BOSCH and self.CP.enableCamera:
+      events.append(create_event('invalidGiraffeHonda', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
     if self.CS.steer_error:
       events.append(create_event('steerUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
     elif self.CS.steer_warning:
@@ -521,7 +522,7 @@ class CarInterface(CarInterfaceBase):
 
     # it can happen that car cruise disables while comma system is enabled: need to
     # keep braking if needed or if the speed is very low
-    if self.CP.enableCruise and not ret.cruiseState.enabled and (c.actuators.brake <= 0. or not self.CP.openpilotLongitudinalControl):
+    if self.CP.enableCruise and not ret.cruiseState.enabled and c.actuators.brake <= 0.:
       # non loud alert if cruise disbales below 25mph as expected (+ a little margin)
       if ret.vEgo < self.CP.minEnableSpeed + 2.:
         events.append(create_event('speedTooLow', [ET.IMMEDIATE_DISABLE]))
@@ -548,7 +549,7 @@ class CarInterface(CarInterfaceBase):
       # KEEP THIS EVENT LAST! send enable event if button is pressed and there are
       # NO_ENTRY events, so controlsd will display alerts. Also not send enable events
       # too close in time, so a no_entry will not be followed by another one.
-      # TODO: button press should be the only thing that triggers enable
+      # TODO: button press should be the only thing that triggers enble
       if ((cur_time - self.last_enable_pressed) < 0.2 and
           (cur_time - self.last_enable_sent) > 0.2 and
           ret.cruiseState.enabled) or \

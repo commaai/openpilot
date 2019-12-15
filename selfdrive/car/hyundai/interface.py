@@ -52,7 +52,6 @@ class CarInterface(CarInterfaceBase):
 
     ret.steerActuatorDelay = 0.1  # Default delay
     ret.steerRateCost = 0.5
-    ret.steerLimitTimer = 0.4
     tire_stiffness_factor = 1.
 
     if candidate == CAR.SANTA_FE:
@@ -144,6 +143,7 @@ class CarInterface(CarInterfaceBase):
     ret.enableCamera = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, ECU.CAM) or has_relay
     ret.openpilotLongitudinalControl = False
 
+    ret.steerLimitAlert = False
     ret.stoppingControl = False
     ret.startAccel = 0.0
 
@@ -159,7 +159,7 @@ class CarInterface(CarInterfaceBase):
     # create message
     ret = car.CarState.new_message()
 
-    ret.canValid = self.cp.can_valid and self.cp_cam.can_valid
+    ret.canValid = self.cp.can_valid  # TODO: check cp_cam validity
 
     # speeds
     ret.vEgo = self.CS.v_ego

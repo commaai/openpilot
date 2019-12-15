@@ -1,7 +1,7 @@
 import unittest
 
 from cereal import car
-from opendbc.can.packer import CANPacker
+from selfdrive.can.packer import CANPacker
 from selfdrive.car.chrysler import chryslercan
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert

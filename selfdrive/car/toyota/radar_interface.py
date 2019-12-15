@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
 import time
-from opendbc.can.parser import CANParser
+from selfdrive.can.parser import CANParser
 from cereal import car
 from selfdrive.car.toyota.values import NO_DSU_CAR, DBC, TSS2_CAR
 from selfdrive.car.interfaces import RadarInterfaceBase
@@ -35,7 +35,6 @@ class RadarInterface(RadarInterfaceBase):
     self.track_id = 0
 
     self.delay = 0  # Delay of radar
-    self.radar_ts = CP.radarTimeStep
 
     if CP.carFingerprint in TSS2_CAR:
       self.RADAR_A_MSGS = list(range(0x180, 0x190))
@@ -56,7 +55,7 @@ class RadarInterface(RadarInterfaceBase):
 
   def update(self, can_strings):
     if self.no_radar:
-      time.sleep(self.radar_ts)
+      time.sleep(0.05)
       return car.RadarData.new_message()
 
     vls = self.rcp.update_strings(can_strings)

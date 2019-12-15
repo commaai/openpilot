@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 import unittest
 import numpy as np
+import libpandasafety_py  # pylint: disable=import-error
 from panda import Panda
-from panda.tests.safety import libpandasafety_py
-from panda.tests. safety.common import make_msg
 
 IPAS_OVERRIDE_THRESHOLD = 200
 
@@ -27,11 +26,13 @@ class TestToyotaSafety(unittest.TestCase):
   @classmethod
   def setUp(cls):
     cls.safety = libpandasafety_py.libpandasafety
-    cls.safety.set_safety_hooks(Panda.SAFETY_TOYOTA_IPAS, 66)
+    cls.safety.safety_set_mode(Panda.SAFETY_TOYOTA_IPAS, 66)
     cls.safety.init_tests_toyota()
 
   def _torque_driver_msg(self, torque):
-    to_send = make_msg(0, 0x260)
+    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
+    to_send[0].RIR = 0x260 << 21
+
     t = twos_comp(torque, 16)
     to_send[0].RDLR = t | ((t & 0xFF) << 16)
     return to_send
@@ -41,7 +42,9 @@ class TestToyotaSafety(unittest.TestCase):
       self.safety.safety_rx_hook(self._torque_driver_msg(torque))
 
   def _angle_meas_msg(self, angle):
-    to_send = make_msg(0, 0x25)
+    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
+    to_send[0].RIR = 0x25 << 21
+
     t = twos_comp(angle, 12)
     to_send[0].RDLR = ((t & 0xF00) >> 8) | ((t & 0xFF) << 8)
     return to_send
@@ -51,13 +54,17 @@ class TestToyotaSafety(unittest.TestCase):
       self.safety.safety_rx_hook(self._angle_meas_msg(angle))
 
   def _ipas_state_msg(self, state):
-    to_send = make_msg(0, 0x262)
+    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
+    to_send[0].RIR = 0x262 << 21
+
     to_send[0].RDLR = state & 0xF
     return to_send
 
   def _ipas_control_msg(self, angle, state):
     # note: we command 2/3 of the angle due to CAN conversion
-    to_send = make_msg(0, 0x266)
+    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
+    to_send[0].RIR = 0x266 << 21
+
     t = twos_comp(angle, 12)
     to_send[0].RDLR = ((t & 0xF00) >> 8) | ((t & 0xFF) << 8)
     to_send[0].RDLR |= ((state & 0xf) << 4)
@@ -65,7 +72,8 @@ class TestToyotaSafety(unittest.TestCase):
     return to_send
 
   def _speed_msg(self, speed):
-    to_send = make_msg(0, 0xB4)
+    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
+    to_send[0].RIR = 0xb4 << 21
     speed = int(speed * 100 * 3.6)
 
     to_send[0].RDHR = ((speed & 0xFF) << 16) | (speed & 0xFF00)

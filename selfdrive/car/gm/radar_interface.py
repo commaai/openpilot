@@ -3,7 +3,7 @@ from __future__ import print_function
 import math
 import time
 from cereal import car
-from opendbc.can.parser import CANParser
+from selfdrive.can.parser import CANParser
 from selfdrive.car.gm.interface import CanBus
 from selfdrive.car.gm.values import DBC, CAR
 from selfdrive.config import Conversions as CV
@@ -55,11 +55,10 @@ class RadarInterface(RadarInterfaceBase):
 
     self.trigger_msg = LAST_RADAR_MSG
     self.updated_messages = set()
-    self.radar_ts = CP.radarTimeStep
 
   def update(self, can_strings):
     if self.rcp is None:
-      time.sleep(self.radar_ts)   # nothing to do
+      time.sleep(0.05)   # nothing to do
       return car.RadarData.new_message()
 
     vls = self.rcp.update_strings(can_strings)

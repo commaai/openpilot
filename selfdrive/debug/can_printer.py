@@ -4,7 +4,7 @@ import os
 import sys
 from collections import defaultdict
 
-import cereal.messaging as messaging
+import selfdrive.messaging as messaging
 from common.realtime import sec_since_boot
 
 

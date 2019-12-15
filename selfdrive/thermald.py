@@ -3,7 +3,6 @@ import os
 import json
 import copy
 import datetime
-import psutil
 from smbus2 import SMBus
 from cereal import log
 from common.basedir import BASEDIR
@@ -13,7 +12,7 @@ from common.numpy_fast import clip, interp
 from common.filter_simple import FirstOrderFilter
 from selfdrive.version import terms_version, training_version
 from selfdrive.swaglog import cloudlog
-import cereal.messaging as messaging
+import selfdrive.messaging as messaging
 from selfdrive.loggerd.config import get_available_percent
 from selfdrive.pandad import get_expected_version
 
@@ -28,12 +27,9 @@ DAYS_NO_CONNECTIVITY_PROMPT = 4  # send an offroad prompt after 4 days with no i
 with open(BASEDIR + "/selfdrive/controls/lib/alerts_offroad.json") as json_file:
   OFFROAD_ALERTS = json.load(json_file)
 
-def read_tz(x, clip=True):
+def read_tz(x):
   with open("/sys/devices/virtual/thermal/thermal_zone%d/temp" % x) as f:
-    ret = int(f.read())
-    if clip:
-      ret = max(0, ret)
-
+    ret = max(0, int(f.read()))
   return ret
 
 def read_thermal():
@@ -46,7 +42,6 @@ def read_thermal():
   dat.thermal.mem = read_tz(2)
   dat.thermal.gpu = read_tz(16)
   dat.thermal.bat = read_tz(29)
-  dat.thermal.pa0 = read_tz(25)
   return dat
 
 LEON = False
@@ -81,9 +76,7 @@ def set_eon_fan(val):
         # tusb320
         if val == 0:
           bus.write_i2c_block_data(0x67, 0xa, [0])
-          #bus.write_i2c_block_data(0x67, 0x45, [1<<2])
         else:
-          #bus.write_i2c_block_data(0x67, 0x45, [0])
           bus.write_i2c_block_data(0x67, 0xa, [0x20])
           bus.write_i2c_block_data(0x67, 0x8, [(val-1)<<6])
     else:
@@ -127,10 +120,12 @@ def handle_fan_uno(max_cpu_temp, bat_temp, fan_speed):
   return int(interp(max_cpu_temp, [40.0, 80.0], [0, 100]))
 
 def thermald_thread():
+  setup_eon_fan()
+
   # prevent LEECO from undervoltage
   BATT_PERC_OFF = 10 if LEON else 3
 
-  health_timeout = int(1000 * 2.5 * DT_TRML)  # 2.5x the expected health frequency
+  health_timeout = int(1000 * 2 * DT_TRML)  # 2x the expected health frequency
 
   # now loop
   thermal_sock = messaging.pub_sock('thermal')
@@ -153,14 +148,6 @@ def thermald_thread():
   fw_version_match_prev = True
   current_connectivity_alert = None
   time_valid_prev = True
-  should_start_prev = False
-
-  is_uno = (read_tz(29, clip=False) < -1000)
-  if is_uno:
-    handle_fan = handle_fan_uno
-  else:
-    setup_eon_fan()
-    handle_fan = handle_fan_eon
 
   params = Params()
 
@@ -178,10 +165,11 @@ def thermald_thread():
     if health is not None:
       usb_power = health.health.usbPowerMode != log.HealthData.UsbPowerMode.client
 
-    msg.thermal.freeSpace = get_available_percent() / 100.0  # disk space
-    msg.thermal.memUsedPercent = int(round(psutil.virtual_memory().percent))
-    msg.thermal.cpuPerc = int(round(psutil.cpu_percent()))
+    # loggerd is gated based on free space
+    avail = get_available_percent() / 100.0
 
+    # thermal message now also includes free space
+    msg.thermal.freeSpace = avail
     with open("/sys/class/power_supply/battery/capacity") as f:
       msg.thermal.batteryPercent = int(f.read())
     with open("/sys/class/power_supply/battery/status") as f:
@@ -201,7 +189,11 @@ def thermald_thread():
     max_comp_temp = max(max_cpu_temp, msg.thermal.mem / 10., msg.thermal.gpu / 10.)
     bat_temp = msg.thermal.bat/1000.
 
-    fan_speed = handle_fan(max_cpu_temp, bat_temp, fan_speed)
+    if health is not None and health.health.hwType == log.HealthData.HwType.uno:
+      fan_speed = handle_fan_uno(max_cpu_temp, bat_temp, fan_speed)
+    else:
+      fan_speed = handle_fan_eon(max_cpu_temp, bat_temp, fan_speed)
+
     msg.thermal.fanSpeed = fan_speed
 
     # thermal logic with hysterisis
@@ -273,22 +265,20 @@ def thermald_thread():
 
     should_start = ignition
 
+    # have we seen a panda?
+    passive = (params.get("Passive") == "1")
+
     # with 2% left, we killall, otherwise the phone will take a long time to boot
     should_start = should_start and msg.thermal.freeSpace > 0.02
 
     # confirm we have completed training and aren't uninstalling
-    should_start = should_start and accepted_terms and completed_training and (not do_uninstall)
+    should_start = should_start and accepted_terms and (passive or completed_training) and (not do_uninstall)
 
     # check for firmware mismatch
     should_start = should_start and fw_version_match
 
     # check if system time is valid
     should_start = should_start and time_valid
-
-    # don't start while taking snapshot
-    if not should_start_prev:
-      is_taking_snapshot = params.get("IsTakingSnapshot") == b"1"
-      should_start = should_start and (not is_taking_snapshot)
 
     if fw_version_match and not fw_version_match_prev:
       params.delete("Offroad_PandaFirmwareMismatch")
@@ -338,9 +328,8 @@ def thermald_thread():
     thermal_status_prev = thermal_status
     usb_power_prev = usb_power
     fw_version_match_prev = fw_version_match
-    should_start_prev = should_start
 
-    #print(msg)
+    print(msg)
 
     # report to server once per minute
     if (count % int(60. / DT_TRML)) == 0:

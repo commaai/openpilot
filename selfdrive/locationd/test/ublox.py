@@ -720,7 +720,7 @@ class UBlox:
 
       self.dev = PandaSerial(self.panda, 1, self.baudrate)
     elif grey:
-      import cereal.messaging as messaging
+      import selfdrive.messaging as messaging
 
       class BoarddSerial():
         def __init__(self):

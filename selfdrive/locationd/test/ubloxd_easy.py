@@ -5,7 +5,7 @@ from selfdrive.locationd.test import ublox
 from common import realtime
 from selfdrive.locationd.test.ubloxd import gen_raw, gen_solution
 import zmq
-import cereal.messaging as messaging
+import selfdrive.messaging as messaging
 
 
 unlogger = os.getenv("UNLOGGER") is not None   # debug prints

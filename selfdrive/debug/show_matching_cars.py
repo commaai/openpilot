@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from selfdrive.car.fingerprints import eliminate_incompatible_cars, all_known_cars
-import cereal.messaging as messaging
+import selfdrive.messaging as messaging
 
 
 # Prius and Leuxs es 300H
