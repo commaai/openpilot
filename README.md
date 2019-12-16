@@ -118,6 +118,7 @@ Supported Cars
 | Toyota    | Rav4 2019                     | All               | openpilot        | 0mph               | 0mph         |
 | Toyota    | Rav4 Hybrid 2016              | TSS-P             | Stock<sup>4</sup>| 0mph               | 0mph         |
 | Toyota    | Rav4 Hybrid 2017-18           | All               | Stock<sup>4</sup>| 0mph               | 0mph         |
+| Toyota    | Rav4 Hybrid 2019-20           | All               | openpilot        | 0mph               | 0mph         |
 | Toyota    | Sienna 2018                   | All               | Stock<sup>4</sup>| 0mph               | 0mph         |
 | Volkswagen| Golf 2016-19<sup>3</sup>      | Driver Assistance | Stock            | 0mph               | 0mph         |
 
