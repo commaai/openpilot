@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import zmq
 from logentries import LogentriesHandler
-import selfdrive.messaging as messaging
+import cereal.messaging as messaging
 
 def main(gctx=None):
   # setup logentries. we forward log messages to it

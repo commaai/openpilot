@@ -8,7 +8,7 @@ uint8_t car_harness_status = 0U;
 
 struct harness_configuration {
   const bool has_harness;
-  GPIO_TypeDef *GPIO_SBU1;  
+  GPIO_TypeDef *GPIO_SBU1;
   GPIO_TypeDef *GPIO_SBU2;
   GPIO_TypeDef *GPIO_relay_normal;
   GPIO_TypeDef *GPIO_relay_flipped;
@@ -50,28 +50,6 @@ bool harness_check_ignition(void) {
       break;
   }
   return ret;
-}
-
-// TODO: refactor to use harness config
-void harness_setup_ignition_interrupts(void){
-  if(car_harness_status == HARNESS_STATUS_NORMAL){
-    SYSCFG->EXTICR[0] = SYSCFG_EXTICR1_EXTI3_PC;
-    EXTI->IMR |= (1U << 3);
-    EXTI->RTSR |= (1U << 3);
-    EXTI->FTSR |= (1U << 3);
-    puts("setup interrupts: normal\n");
-  } else if(car_harness_status == HARNESS_STATUS_FLIPPED) {
-    SYSCFG->EXTICR[0] = SYSCFG_EXTICR1_EXTI0_PC;
-    EXTI->IMR |= (1U << 0);
-    EXTI->RTSR |= (1U << 0);
-    EXTI->FTSR |= (1U << 0);
-    NVIC_EnableIRQ(EXTI1_IRQn);
-    puts("setup interrupts: flipped\n");
-  } else {
-    puts("tried to setup ignition interrupts without harness connected\n");
-  }
-  NVIC_EnableIRQ(EXTI0_IRQn);
-  NVIC_EnableIRQ(EXTI3_IRQn);
 }
 
 uint8_t harness_detect_orientation(void) {
@@ -117,13 +95,10 @@ void harness_init(void) {
       set_gpio_mode(current_board->harness_config->GPIO_SBU2, current_board->harness_config->pin_SBU2, MODE_INPUT);
     } else {
       set_gpio_mode(current_board->harness_config->GPIO_SBU1, current_board->harness_config->pin_SBU1, MODE_INPUT);
-    }      
+    }
 
     // keep busses connected by default
     set_intercept_relay(false);
-
-    // setup ignition interrupts
-    harness_setup_ignition_interrupts();
   } else {
     puts("failed to detect car harness!\n");
   }

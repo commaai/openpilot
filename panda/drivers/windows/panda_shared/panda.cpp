@@ -277,7 +277,7 @@ bool Panda::esp_reset(uint16_t bootmode = 0) {
 	return this->control_transfer(REQUEST_OUT, 0xda, bootmode, 0, NULL, 0, 0) != -1;
 }
 
-bool Panda::set_safety_mode(PANDA_SAFETY_MODE mode = SAFETY_NOOUTPUT) {
+bool Panda::set_safety_mode(PANDA_SAFETY_MODE mode = SAFETY_SILENT) {
 	return this->control_transfer(REQUEST_OUT, 0xdc, mode, 0, NULL, 0, 0) != -1;
 }
 

@@ -11,7 +11,7 @@
 # - since some messages are published at low frequency, keep this script running for at least 30s,
 #   until all messages are received at least once
 
-import selfdrive.messaging as messaging
+import cereal.messaging as messaging
 
 logcan = messaging.sub_sock('can')
 msgs = {}

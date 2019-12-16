@@ -12,3 +12,4 @@ uint8_t hw_type = 0;
 const board *current_board;
 bool is_enumerated = 0;
 uint32_t heartbeat_counter = 0;
+uint32_t uptime_cnt = 0;

@@ -1,3 +1,11 @@
+// Safety-relevant CAN messages for the Volkswagen MQB platform.
+#define MSG_EPS_01              0x09F
+#define MSG_MOTOR_20            0x121
+#define MSG_ACC_06              0x122
+#define MSG_HCA_01              0x126
+#define MSG_GRA_ACC_01          0x12B
+#define MSG_LDW_02              0x397
+
 const int VOLKSWAGEN_MAX_STEER = 250;               // 2.5 Nm (EPS side max of 3.0Nm with fault if violated)
 const int VOLKSWAGEN_MAX_RT_DELTA = 75;             // 4 max rate up * 50Hz send rate * 250000 RT interval / 1000000 = 50 ; 50 * 1.5 for safety pad = 75
 const uint32_t VOLKSWAGEN_RT_INTERVAL = 250000;     // 250ms between real time checks
@@ -6,25 +14,14 @@ const int VOLKSWAGEN_MAX_RATE_DOWN = 10;            // 5.0 Nm/s available rate o
 const int VOLKSWAGEN_DRIVER_TORQUE_ALLOWANCE = 80;
 const int VOLKSWAGEN_DRIVER_TORQUE_FACTOR = 3;
 
+// MSG_GRA_ACC_01 is allowed on bus 0 and 2 to keep compatibility with gateway and camera integration
+const AddrBus VOLKSWAGEN_TX_MSGS[] = {{MSG_HCA_01, 0}, {MSG_GRA_ACC_01, 0}, {MSG_GRA_ACC_01, 2}, {MSG_LDW_02, 0}};
+
 struct sample_t volkswagen_torque_driver;           // last few driver torques measured
 int volkswagen_rt_torque_last = 0;
 int volkswagen_desired_torque_last = 0;
 uint32_t volkswagen_ts_last = 0;
 int volkswagen_gas_prev = 0;
-
-// Safety-relevant CAN messages for the Volkswagen MQB platform.
-#define MSG_EPS_01              0x09F
-#define MSG_MOTOR_20            0x121
-#define MSG_ACC_06              0x122
-#define MSG_HCA_01              0x126
-#define MSG_GRA_ACC_01          0x12B
-#define MSG_LDW_02              0x397
-#define MSG_KLEMMEN_STATUS_01   0x3C0
-
-static void volkswagen_init(int16_t param) {
-  UNUSED(param); // May use param in the future to indicate MQB vs PQ35/PQ46/NMS vs MLB, or wiring configuration.
-  controls_allowed = 0;
-}
 
 static void volkswagen_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   int bus = GET_BUS(to_push);
@@ -58,12 +55,24 @@ static void volkswagen_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     }
     volkswagen_gas_prev = gas;
   }
+
+  if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && (bus == 0) && (addr == MSG_HCA_01)) {
+    relay_malfunction = true;
+  }
 }
 
 static int volkswagen_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   int addr = GET_ADDR(to_send);
   int bus = GET_BUS(to_send);
   int tx = 1;
+
+  if (!addr_allowed(addr, bus, VOLKSWAGEN_TX_MSGS, sizeof(VOLKSWAGEN_TX_MSGS)/sizeof(VOLKSWAGEN_TX_MSGS[0]))) {
+    tx = 0;
+  }
+
+  if (relay_malfunction) {
+    tx = 0;
+  }
 
   // Safety check for HCA_01 Heading Control Assist torque.
   if (addr == MSG_HCA_01) {
@@ -118,7 +127,7 @@ static int volkswagen_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 
   // FORCE CANCEL: ensuring that only the cancel button press is sent when controls are off.
   // This avoids unintended engagements while still allowing resume spam
-  if ((bus == 2) && (addr == MSG_GRA_ACC_01) && !controls_allowed) {
+  if ((addr == MSG_GRA_ACC_01) && !controls_allowed) {
     // disallow resume and set: bits 16 and 19
     if ((GET_BYTE(to_send, 2) & 0x9) != 0) {
       tx = 0;
@@ -135,31 +144,32 @@ static int volkswagen_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
 
   // NOTE: Will need refactoring for other bus layouts, such as no-forwarding at camera or J533 running-gear CAN
 
-  switch (bus_num) {
-    case 0:
-      // Forward all traffic from J533 gateway to Extended CAN devices.
-      bus_fwd = 2;
-      break;
-    case 2:
-      if ((addr == MSG_HCA_01) || (addr == MSG_LDW_02)) {
-        // OP takes control of the Heading Control Assist and Lane Departure Warning messages from the camera.
+  if (!relay_malfunction) {
+    switch (bus_num) {
+      case 0:
+        // Forward all traffic from J533 gateway to Extended CAN devices.
+        bus_fwd = 2;
+        break;
+      case 2:
+        if ((addr == MSG_HCA_01) || (addr == MSG_LDW_02)) {
+          // OP takes control of the Heading Control Assist and Lane Departure Warning messages from the camera.
+          bus_fwd = -1;
+        } else {
+          // Forward all remaining traffic from Extended CAN devices to J533 gateway.
+          bus_fwd = 0;
+        }
+        break;
+      default:
+        // No other buses should be in use; fallback to do-not-forward.
         bus_fwd = -1;
-      } else {
-        // Forward all remaining traffic from Extended CAN devices to J533 gateway.
-        bus_fwd = 0;
-      }
-      break;
-    default:
-      // No other buses should be in use; fallback to do-not-forward.
-      bus_fwd = -1;
-      break;
+        break;
+    }
   }
-
   return bus_fwd;
 }
 
 const safety_hooks volkswagen_hooks = {
-  .init = volkswagen_init,
+  .init = nooutput_init,
   .rx = volkswagen_rx_hook,
   .tx = volkswagen_tx_hook,
   .tx_lin = nooutput_tx_lin_hook,

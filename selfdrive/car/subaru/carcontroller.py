@@ -2,7 +2,7 @@
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.subaru import subarucan
 from selfdrive.car.subaru.values import DBC
-from selfdrive.can.packer import CANPacker
+from opendbc.can.packer import CANPacker
 
 
 class CarControllerParams():
@@ -25,6 +25,7 @@ class CarController():
     self.car_fingerprint = car_fingerprint
     self.es_distance_cnt = -1
     self.es_lkas_cnt = -1
+    self.steer_rate_limited = False
 
     # Setup detection helper. Routes commands to
     # an appropriate CAN bus number.
@@ -48,8 +49,9 @@ class CarController():
 
       # limits due to driver torque
 
-      apply_steer = int(round(apply_steer))
-      apply_steer = apply_std_steer_torque_limits(apply_steer, self.apply_steer_last, CS.steer_torque_driver, P)
+      new_steer = int(round(apply_steer))
+      apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.steer_torque_driver, P)
+      self.steer_rate_limited = new_steer != apply_steer
 
       lkas_enabled = enabled and not CS.steer_not_allowed
 

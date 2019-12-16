@@ -9,7 +9,7 @@ import struct
 import sys
 from cereal import log
 from common import realtime
-import selfdrive.messaging as messaging
+import cereal.messaging as messaging
 from selfdrive.locationd.test.ephemeris import EphemerisData, GET_FIELD_U
 
 panda = os.getenv("PANDA") is not None   # panda directly connected

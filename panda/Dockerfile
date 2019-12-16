@@ -71,6 +71,8 @@ ENV PYTHONPATH /tmp:$PYTHONPATH
 COPY ./boardesp/get_sdk_ci.sh /tmp/panda/boardesp/
 COPY ./boardesp/python2_make.py /tmp/panda/boardesp/
 
+COPY ./panda_jungle /tmp/panda_jungle
+
 RUN useradd --system -s /sbin/nologin pandauser
 RUN mkdir -p /tmp/panda/boardesp/esp-open-sdk
 RUN chown pandauser /tmp/panda/boardesp/esp-open-sdk

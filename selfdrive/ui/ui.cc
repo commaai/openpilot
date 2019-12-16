@@ -55,11 +55,11 @@ extern "C"{
 #define ALERTSIZE_MID 2
 #define ALERTSIZE_FULL 3
 
+//#define UI_60FPS
+
 #define UI_BUF_COUNT 4
 //#define SHOW_SPEEDLIMIT 1
 //#define DEBUG_TURN
-
-//#define DEBUG_FPS
 
 const int vwp_w = 1920;
 const int vwp_h = 1080;
@@ -122,7 +122,6 @@ typedef struct UIScene {
 
   int transformed_width, transformed_height;
 
-  uint64_t model_ts;
   ModelData model;
 
   float mpc_x[50];
@@ -165,8 +164,6 @@ typedef struct UIScene {
 
   float awareness_status;
 
-  uint64_t started_ts;
-
   // Used to show gps planner status
   bool gps_planner_active;
 } UIScene;
@@ -208,17 +205,15 @@ typedef struct UIState {
 
   // Sockets
   Context *ctx;
-  SubSocket *thermal_sock;
   SubSocket *model_sock;
   SubSocket *controlsstate_sock;
   SubSocket *livecalibration_sock;
   SubSocket *radarstate_sock;
-  SubSocket *plus_sock;
   SubSocket *map_data_sock;
   SubSocket *uilayout_sock;
   Poller * poller;
 
-  int plus_state;
+  int active_app;
 
   // vision state
   bool vision_connected;
@@ -331,7 +326,7 @@ static void set_awake(UIState *s, bool awake) {
 
 static void set_volume(UIState *s, int volume) {
   char volume_change_cmd[64];
-  sprintf(volume_change_cmd, "service call audio 3 i32 3 i32 %d i32 1", volume);
+  sprintf(volume_change_cmd, "service call audio 3 i32 3 i32 %d i32 1 &", volume);
 
   // 5 second timeout at 60fps
   s->volume_timeout = 5 * UI_FREQ;
@@ -503,25 +498,29 @@ static void ui_init(UIState *s) {
   pthread_cond_init(&s->bg_cond, NULL);
 
   s->ctx = Context::create();
-  s->thermal_sock = SubSocket::create(s->ctx, "thermal");
   s->model_sock = SubSocket::create(s->ctx, "model");
   s->controlsstate_sock = SubSocket::create(s->ctx, "controlsState");
   s->uilayout_sock = SubSocket::create(s->ctx, "uiLayoutState");
   s->livecalibration_sock = SubSocket::create(s->ctx, "liveCalibration");
   s->radarstate_sock = SubSocket::create(s->ctx, "radarState");
-  s->plus_sock = SubSocket::create(s->ctx, "plusFrame");
+
+  assert(s->model_sock != NULL);
+  assert(s->controlsstate_sock != NULL);
+  assert(s->uilayout_sock != NULL);
+  assert(s->livecalibration_sock != NULL);
+  assert(s->radarstate_sock != NULL);
+
   s->poller = Poller::create({
-                              s->thermal_sock,
                               s->model_sock,
                               s->controlsstate_sock,
                               s->uilayout_sock,
                               s->livecalibration_sock,
-                              s->radarstate_sock,
-                              s->plus_sock
+                              s->radarstate_sock
                              });
 
 #ifdef SHOW_SPEEDLIMIT
   s->map_data_sock = SubSock::create(s->ctx, "liveMapData");
+  assert(s->map_data_sock != NULL);
   s->poller.registerSocket(s->map_data_sock);
 #endif
 
@@ -1040,10 +1039,8 @@ static void ui_draw_world(UIState *s) {
     return;
   }
 
-  if ((nanos_since_boot() - scene->model_ts) < 1000000000ULL) {
-    // Draw lane edges and vision/mpc tracks
-    ui_draw_vision_lanes(s);
-  }
+  // Draw lane edges and vision/mpc tracks
+  ui_draw_vision_lanes(s);
 
   if (scene->lead_status) {
     // Draw lead car indicator
@@ -1528,7 +1525,7 @@ static void ui_draw_blank(UIState *s) {
 }
 
 static void ui_draw(UIState *s) {
-  if (s->vision_connected && s->plus_state == 0) {
+  if (s->vision_connected && s->active_app == cereal_UiLayoutState_App_home && s->status != STATUS_STOPPED) {
     ui_draw_vision(s);
   } else {
     ui_draw_blank(s);
@@ -1605,7 +1602,12 @@ void handle_message(UIState *s, Message * msg) {
   eventp.p = capn_getp(capn_root(&ctx), 0, 1);
   struct cereal_Event eventd;
   cereal_read_Event(&eventd, eventp);
-  double t = millis_since_boot();
+
+  // Skip messages from previous run
+  if (nanos_since_boot() - eventd.logMonoTime > 1e9) {
+    return;
+  }
+
   if (eventd.which == cereal_Event_controlsState) {
     struct cereal_ControlsState datad;
     cereal_read_ControlsState(&datad, eventd.controlsState);
@@ -1668,14 +1670,16 @@ void handle_message(UIState *s, Message * msg) {
       s->alert_size = ALERTSIZE_FULL;
     }
 
-    if (datad.alertStatus == cereal_ControlsState_AlertStatus_userPrompt) {
-      update_status(s, STATUS_WARNING);
-    } else if (datad.alertStatus == cereal_ControlsState_AlertStatus_critical) {
-      update_status(s, STATUS_ALERT);
-    } else if (datad.enabled) {
-      update_status(s, STATUS_ENGAGED);
-    } else {
-      update_status(s, STATUS_DISENGAGED);
+    if (s->status != STATUS_STOPPED) {
+      if (datad.alertStatus == cereal_ControlsState_AlertStatus_userPrompt) {
+        update_status(s, STATUS_WARNING);
+      } else if (datad.alertStatus == cereal_ControlsState_AlertStatus_critical) {
+        update_status(s, STATUS_ALERT);
+      } else if (datad.enabled) {
+        update_status(s, STATUS_ENGAGED);
+      } else {
+        update_status(s, STATUS_DISENGAGED);
+      }
     }
 
     s->scene.alert_blinkingrate = datad.alertBlinkingRate;
@@ -1717,7 +1721,6 @@ void handle_message(UIState *s, Message * msg) {
           capn_to_f32(capn_get32(extrinsicl, i));
     }
   } else if (eventd.which == cereal_Event_model) {
-    s->scene.model_ts = eventd.logMonoTime;
     s->scene.model = read_model(eventd.model);
     s->model_changed = true;
   } else if (eventd.which == cereal_Event_liveMpc) {
@@ -1738,21 +1741,10 @@ void handle_message(UIState *s, Message * msg) {
       s->scene.mpc_y[i] = capn_to_f32(capn_get32(y_list, i));
     }
     s->livempc_or_radarstate_changed = true;
-  } else if (eventd.which == cereal_Event_thermal) {
-    struct cereal_ThermalData datad;
-    cereal_read_ThermalData(&datad, eventd.thermal);
-
-    if (!datad.started) {
-      update_status(s, STATUS_STOPPED);
-    } else if (s->status == STATUS_STOPPED) {
-      // car is started but controls doesn't have fingerprint yet
-      update_status(s, STATUS_DISENGAGED);
-    }
-
-    s->scene.started_ts = datad.startedTs;
   } else if (eventd.which == cereal_Event_uiLayoutState) {
     struct cereal_UiLayoutState datad;
     cereal_read_UiLayoutState(&datad, eventd.uiLayoutState);
+    s->active_app = datad.activeApp;
     s->scene.uilayout_sidebarcollapsed = datad.sidebarCollapsed;
     s->scene.uilayout_mapenabled = datad.mapEnabled;
 
@@ -1850,20 +1842,30 @@ static void ui_update(UIState *s) {
   }
 
   zmq_pollitem_t polls[1] = {{0}};
-  // Wait for next rgb image from visiond
+  // Take an rgb image from visiond if there is one
   while(true) {
     assert(s->ipc_fd >= 0);
     polls[0].fd = s->ipc_fd;
     polls[0].events = ZMQ_POLLIN;
-    int ret = zmq_poll(polls, 1, 1000);
+    #ifdef UI_60FPS
+      // uses more CPU in both UI and surfaceflinger
+      // 16% / 21%
+      int ret = zmq_poll(polls, 1, 1);
+    #else
+      // 9% / 13% = a 14% savings
+      int ret = zmq_poll(polls, 1, 1000);
+    #endif
     if (ret < 0) {
+      if (errno == EINTR) continue;
+
       LOGW("poll failed (%d)", ret);
       close(s->ipc_fd);
       s->ipc_fd = -1;
       s->vision_connected = false;
       return;
-    } else if (ret == 0)
-      continue;
+    } else if (ret == 0) {
+      break;
+    }
     // vision ipc event
     VisionPacket rp;
     err = vipc_recv(s->ipc_fd, &rp);
@@ -1910,30 +1912,20 @@ static void ui_update(UIState *s) {
   }
   // peek and consume all events in the zmq queue, then return.
   while(true) {
-    bool awake = false;
     auto polls = s->poller->poll(0);
 
     if (polls.size() == 0)
       return;
-      
+
     for (auto sock : polls){
       Message * msg = sock->receive();
+      if (msg == NULL) continue;
 
-      if (sock != s->thermal_sock){
-        awake = true;
-      }
+      set_awake(s, true);
 
-      if (sock == s->plus_sock){
-        s->plus_state = msg->getData()[0];
-      } else {
-        handle_message(s, msg);
-      }
+      handle_message(s, msg);
 
       delete msg;
-    }
-
-    if (awake){
-      set_awake(s, true);
     }
   }
 }
@@ -2162,11 +2154,7 @@ int main(int argc, char* argv[]) {
   const int MAX_VOLUME = LEON ? 15 : 12;
 
   set_volume(s, MIN_VOLUME);
-#ifdef DEBUG_FPS
-  vipc_t1 = millis_since_boot();
-  double t1 = millis_since_boot();
-  int draws = 0, old_draws = 0;
-#endif //DEBUG_FPS
+  int draws = 0;
   while (!do_exit) {
     bool should_swap = false;
     if (!s->vision_connected) {
@@ -2175,6 +2163,7 @@ int main(int argc, char* argv[]) {
       usleep(30 * 1000);
     }
     pthread_mutex_lock(&s->lock);
+    double u1 = millis_since_boot();
 
     // light sensor is only exposed on EONs
     float clipped_brightness = (s->light_sensor*BRIGHTNESS_M) + BRIGHTNESS_B;
@@ -2189,9 +2178,10 @@ int main(int argc, char* argv[]) {
       polls[0].fd = s->touch_fd;
       polls[0].events = ZMQ_POLLIN;
       int ret = zmq_poll(polls, 1, 0);
-      if (ret < 0)
+      if (ret < 0){
+        if (errno == EINTR) continue;
         LOGW("poll failed (%d)", ret);
-      else if (ret > 0) {
+      } else if (ret > 0) {
         // awake on any touch
         int touch_x = -1, touch_y = -1;
         int touched = touch_read(&touch, &touch_x, &touch_y);
@@ -2199,7 +2189,13 @@ int main(int argc, char* argv[]) {
           set_awake(s, true);
         }
       }
+      if (s->status != STATUS_STOPPED) {
+        update_status(s, STATUS_STOPPED);
+      }
     } else {
+      if (s->status == STATUS_STOPPED) {
+        update_status(s, STATUS_DISENGAGED);
+      }
       // Car started, fetch a new rgb image from ipc and peek for zmq events.
       ui_update(s);
       if(!s->vision_connected) {
@@ -2209,27 +2205,19 @@ int main(int argc, char* argv[]) {
         should_swap = true;
       }
     }
+
     // manage wakefulness
     if (s->awake_timeout > 0) {
       s->awake_timeout--;
     } else {
       set_awake(s, false);
     }
+
     // Don't waste resources on drawing in case screen is off or car is not started.
     if (s->awake && s->vision_connected) {
       ui_draw(s);
       glFinish();
       should_swap = true;
-#ifdef DEBUG_FPS
-      draws++;
-      double t2 = millis_since_boot();
-      const double interval = 30.;
-      if(t2 - t1 >= interval * 1000.) {
-        printf("ui draw fps: %.2f\n",((double)(draws - old_draws)) / interval) ;
-        t1 = t2;
-        old_draws = draws;
-      }
-#endif
     }
 
     if (s->volume_timeout > 0) {
@@ -2252,7 +2240,9 @@ int main(int argc, char* argv[]) {
       // if visiond is still running and controlsState times out, display an alert
       if (s->controls_seen && s->vision_connected && strcmp(s->scene.alert_text2, "Controls Unresponsive") != 0) {
         s->scene.alert_size = ALERTSIZE_FULL;
-        update_status(s, STATUS_ALERT);
+        if (s->status != STATUS_STOPPED) {
+          update_status(s, STATUS_ALERT);
+        }
         snprintf(s->scene.alert_text1, sizeof(s->scene.alert_text1), "%s", "TAKE CONTROL IMMEDIATELY");
         snprintf(s->scene.alert_text2, sizeof(s->scene.alert_text2), "%s", "Controls Unresponsive");
         ui_draw_vision_alert(s, s->scene.alert_size, s->status, s->scene.alert_text1, s->scene.alert_text2);
@@ -2276,6 +2266,12 @@ int main(int argc, char* argv[]) {
     // the bg thread needs to be scheduled, so the main thread needs time without the lock
     // safe to do this outside the lock?
     if (should_swap) {
+      double u2 = millis_since_boot();
+      if (u2-u1 > 66) {
+        // warn on sub 15fps
+        LOGW("slow frame(%d) time: %.2f", draws, u2-u1);
+      }
+      draws++;
       eglSwapBuffers(s->display, s->surface);
     }
   }

@@ -15,7 +15,9 @@ a.out
 .*.swp
 .*.swo
 .*.un~
+*.tmp
 *.o
+*.os
 *.so
 *.a
 *.clb
@@ -30,18 +32,22 @@ selfdrive/boardd/boardd
 selfdrive/logcatd/logcatd
 selfdrive/mapd/default_speeds_by_region.json
 selfdrive/proclogd/proclogd
-selfdrive/ui/ui
+selfdrive/ui/_ui
 selfdrive/test/longitudinal_maneuvers/out
 selfdrive/visiond/visiond
 selfdrive/loggerd/loggerd
-selfdrive/sensord/gpsd
-selfdrive/sensord/sensord
+selfdrive/sensord/_gpsd
+selfdrive/sensord/_sensord
+selfdrive/camerad/camerad
+selfdrive/modeld/_modeld
+selfdrive/modeld/_monitoringd
 /src/
 
 one
 openpilot
 notebooks
 xx
+panda_jungle
 
 .coverage*
 htmlcov
