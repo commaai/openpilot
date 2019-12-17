@@ -16,7 +16,7 @@
 #
 # The swap on boot is triggered by /data/data/com.termux/files/continue.sh,
 # gated on the existence of $FINALIZED/.overlay_consistent and also the
-# existence and mtime of $BASEDIR/.overlay_canary.
+# existence and mtime of $BASEDIR/.overlay_init.
 #
 # Other than build byproducts, BASEDIR should not be modified while this
 # service is running. Developers modifying code directly in BASEDIR should
@@ -118,11 +118,11 @@ def init_ovfs():
   run(["git", "config", "core.trustctime", "false"], BASEDIR)
 
   # Leave a timestamped canary in BASEDIR to check at startup. The EON clock
-  # should be correct by the time we get here. If the canary disappears, or
-  # critical mtimes in BASEDIR are newer than the canary, continue.sh assumes
-  # that BASEDIR is being modified or used for local development, and discards
-  # the overlay.
-  Path(os.path.join(BASEDIR, ".overlay_canary")).touch()
+  # should be correct by the time we get here. If the init file disappears, or
+  # critical mtimes in BASEDIR are newer than .overlay_init, continue.sh can
+  # assume that BASEDIR has used for local development or otherwise modified,
+  # and skips the update activation attempt.
+  Path(os.path.join(BASEDIR, ".overlay_init")).touch()
 
   overlay_opts = f"lowerdir={BASEDIR},upperdir={OVERLAY_UPPER},workdir={OVERLAY_METADATA}"
   run(["mount", "-t", "overlay", "-o", overlay_opts, "none", OVERLAY_MERGED])

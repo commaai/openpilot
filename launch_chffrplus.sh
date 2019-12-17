@@ -29,7 +29,7 @@ function launch {
   fi
 
   # Check for NEOS update
-  if [ $(< /VERSION) != "13" ]; then
+  if [ $(< /VERSION) != "14" ]; then
     if [ -f "$DIR/scripts/continue.sh" ]; then
       cp "$DIR/scripts/continue.sh" "/data/data/com.termux/files/continue.sh"
     fi
