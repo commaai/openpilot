@@ -117,6 +117,8 @@ def inodes_in_tree(search_dir):
       full_path_name = os.path.join(root, file_name)
       st = os.lstat(full_path_name)
       if S_ISREG(st[ST_MODE]):
+        # Debugging
+        print(f"adding to inode tree: {st[ST_INO]} - {os.path.relpath(full_path_name, search_dir)}")
         inode_map[st[ST_INO]] = os.path.relpath(full_path_name, search_dir)
   return inode_map
 
@@ -128,7 +130,7 @@ def dup_ovfs_object(inode_map, source_obj, target_dir):
   target_obj = os.path.join(target_dir, source_obj)
 
   # Debugging
-  print(f"dup_ovfs_object: source_obj ${source_obj} target_obj ${target_obj}")
+  print(f"dup_ovfs_object: source_obj {source_obj} target_obj {target_obj}")
 
   if S_ISREG(st[ST_MODE]):
     # Hardlink all regular files; ownership and permissions are shared.
