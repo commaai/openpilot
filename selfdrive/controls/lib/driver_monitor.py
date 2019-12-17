@@ -12,10 +12,14 @@ _DISTRACTED_PRE_TIME_TILL_TERMINAL = 8.
 _DISTRACTED_PROMPT_TIME_TILL_TERMINAL = 6.
 
 _FACE_THRESHOLD = 0.4
-_EYE_THRESHOLD = 0.4
+_EYE_THRESHOLD = 0.6
 _BLINK_THRESHOLD = 0.5 # 0.225
+_BLINK_THRESHOLD_SLACK = 0.65
+_BLINK_THRESHOLD_STRICT = 0.5
 _PITCH_WEIGHT = 1.35 # 1.5  # pitch matters a lot more
 _METRIC_THRESHOLD = 0.4
+_METRIC_THRESHOLD_SLACK = 0.55
+_METRIC_THRESHOLD_STRICT = 0.4
 _PITCH_POS_ALLOWANCE = 0.04 # 0.08  # rad, to not be too sensitive on positive pitch
 _PITCH_NATURAL_OFFSET = 0.12  # 0.1   # people don't seem to look straight when they drive relaxed, rather a bit up
 _YAW_NATURAL_OFFSET = 0.08  # people don't seem to look straight when they drive relaxed, rather a bit to the right (center of car)
@@ -30,6 +34,7 @@ _RECOVERY_FACTOR_MAX = 5. # relative to minus step change
 _RECOVERY_FACTOR_MIN = 1.25 # relative to minus step change
 
 MAX_TERMINAL_ALERTS = 3 # not allowed to engage after 3 terminal alerts
+MAX_TERMINAL_DURATION = 3000 # 30s
 
 # model output refers to center of cropped image, so need to apply the x displacement offset
 RESIZED_FOCAL = 320.0
@@ -40,21 +45,21 @@ class DistractedType():
   BAD_POSE = 1
   BAD_BLINK = 2
 
-def head_orientation_from_descriptor(angles_desc, pos_desc, rpy_calib):
+def face_orientation_from_net(angles_desc, pos_desc, rpy_calib):
   # the output of these angles are in device frame
   # so from driver's perspective, pitch is up and yaw is right
 
-  pitch_prnet = angles_desc[0]
-  yaw_prnet = angles_desc[1]
-  roll_prnet = angles_desc[2]
+  pitch_net = angles_desc[0]
+  yaw_net = angles_desc[1]
+  roll_net = angles_desc[2]
 
   face_pixel_position = ((pos_desc[0] + .5)*W - W + FULL_W, (pos_desc[1]+.5)*H)
   yaw_focal_angle = np.arctan2(face_pixel_position[0] - FULL_W//2, RESIZED_FOCAL)
   pitch_focal_angle = np.arctan2(face_pixel_position[1] - H//2, RESIZED_FOCAL)
 
-  roll = roll_prnet
-  pitch = pitch_prnet + pitch_focal_angle
-  yaw = -yaw_prnet + yaw_focal_angle
+  roll = roll_net
+  pitch = pitch_net + pitch_focal_angle
+  yaw = -yaw_net + yaw_focal_angle
 
   # no calib for roll
   pitch -= rpy_calib[1]
@@ -68,11 +73,13 @@ class DriverPose():
     self.roll = 0.
     self.pitch_offseter = RunningStatFilter(max_trackable=_POSE_OFFSET_MAX_COUNT)
     self.yaw_offseter = RunningStatFilter(max_trackable=_POSE_OFFSET_MAX_COUNT)
+    self.cfactor = 1.
 
 class DriverBlink():
   def __init__(self):
     self.left_blink = 0.
     self.right_blink = 0.
+    self.cfactor = 1.
 
 class DriverStatus():
   def __init__(self):
@@ -87,6 +94,7 @@ class DriverStatus():
     self.driver_distraction_filter = FirstOrderFilter(0., _DISTRACTED_FILTER_TS, DT_DMON)
     self.face_detected = False
     self.terminal_alert_cnt = 0
+    self.terminal_time = 0
     self.step_change = 0.
     self.active_monitoring_mode = True
     self.threshold_prompt = _DISTRACTED_PROMPT_TIME_TILL_TERMINAL / _DISTRACTED_TIME
@@ -140,22 +148,29 @@ class DriverStatus():
     pitch_error *= _PITCH_WEIGHT
     pose_metric = np.sqrt(yaw_error**2 + pitch_error**2)
 
-    if pose_metric > _METRIC_THRESHOLD:
+    if pose_metric > _METRIC_THRESHOLD*pose.cfactor:
       return DistractedType.BAD_POSE
-    elif (blink.left_blink + blink.right_blink)*0.5 > _BLINK_THRESHOLD:
+    elif (blink.left_blink + blink.right_blink)*0.5 > _BLINK_THRESHOLD*blink.cfactor:
       return DistractedType.BAD_BLINK
     else:
       return DistractedType.NOT_DISTRACTED
+
+  def set_policy(self, model_data):
+    ep = min(model_data.meta.engagedProb, 0.8) / 0.8
+    self.pose.cfactor = np.interp(ep, [0, 0.5, 1], [_METRIC_THRESHOLD_STRICT, _METRIC_THRESHOLD, _METRIC_THRESHOLD_SLACK])/_METRIC_THRESHOLD
+    self.blink.cfactor = np.interp(ep, [0, 0.5, 1], [_BLINK_THRESHOLD_STRICT, _BLINK_THRESHOLD, _BLINK_THRESHOLD_SLACK])/_BLINK_THRESHOLD
 
   def get_pose(self, driver_monitoring, cal_rpy, car_speed, op_engaged):
     # 10 Hz
     if len(driver_monitoring.faceOrientation) == 0 or len(driver_monitoring.facePosition) == 0:
       return
 
-    self.pose.roll, self.pose.pitch, self.pose.yaw = head_orientation_from_descriptor(driver_monitoring.faceOrientation, driver_monitoring.facePosition, cal_rpy)
+    self.pose.roll, self.pose.pitch, self.pose.yaw = face_orientation_from_net(driver_monitoring.faceOrientation, driver_monitoring.facePosition, cal_rpy)
     self.blink.left_blink = driver_monitoring.leftBlinkProb * (driver_monitoring.leftEyeProb>_EYE_THRESHOLD)
     self.blink.right_blink = driver_monitoring.rightBlinkProb * (driver_monitoring.rightEyeProb>_EYE_THRESHOLD)
-    self.face_detected = driver_monitoring.faceProb > _FACE_THRESHOLD and not self.is_rhd_region
+    self.face_detected = driver_monitoring.faceProb > _FACE_THRESHOLD and \
+                          abs(driver_monitoring.facePosition[0]) <= 0.4 and abs(driver_monitoring.facePosition[1]) <= 0.45 and \
+                          not self.is_rhd_region
 
     self.driver_distracted = self._is_driver_distracted(self.pose, self.blink)>0
     # first order filters
@@ -163,7 +178,7 @@ class DriverStatus():
 
     # update offseter
     # only update when driver is actively driving the car above a certain speed
-    if self.face_detected and car_speed>_POSE_CALIB_MIN_SPEED and not op_engaged:
+    if self.face_detected and car_speed>_POSE_CALIB_MIN_SPEED and (not op_engaged or not self.driver_distracted):
       self.pose.pitch_offseter.push_and_update(self.pose.pitch)
       self.pose.yaw_offseter.push_and_update(self.pose.yaw)
 
@@ -201,6 +216,7 @@ class DriverStatus():
     if self.awareness <= 0.:
       # terminal red alert: disengagement required
       alert = 'driverDistracted' if self.active_monitoring_mode else 'driverUnresponsive'
+      self.terminal_time += 1
       if awareness_prev > 0.:
         self.terminal_alert_cnt += 1
     elif self.awareness <= self.threshold_prompt:

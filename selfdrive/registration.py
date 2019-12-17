@@ -1,60 +1,12 @@
 import os
 import json
-import binascii
-import subprocess
-import itertools
 
 from datetime import datetime, timedelta
 from selfdrive.swaglog import cloudlog
 from selfdrive.version import version, terms_version, training_version, get_git_commit, get_git_branch, get_git_remote
+from common.android import get_imei, get_serial, get_subscriber_info
 from common.api import api_get
 from common.params import Params
-
-
-def get_imei():
-  ret = subprocess.check_output(["getprop", "oem.device.imeicache"], encoding='utf8').strip()  # pylint: disable=unexpected-keyword-arg
-  if ret == "":
-    ret = "000000000000000"
-  return ret
-
-
-def get_serial():
-  return subprocess.check_output(["getprop", "ro.serialno"], encoding='utf8').strip()  # pylint: disable=unexpected-keyword-arg
-
-
-# TODO: move this to a library
-def parse_service_call(call):
-  ret = subprocess.check_output(call, encoding='utf8').strip()   # pylint: disable=unexpected-keyword-arg
-  if 'Parcel' not in ret:
-    return None
-
-  try:
-    r = b""
-    for line in ret.split("\n")[1:]: # Skip 'Parcel('
-      line_hex = line[14:49].replace(' ', '')
-      r += binascii.unhexlify(line_hex)
-
-    r = r[8:] # Cut off length field
-    r = r.decode('utf_16_be')
-
-    # All pairs of two characters seem to be swapped. Not sure why
-    result = ""
-    for a, b, in itertools.zip_longest(r[::2], r[1::2], fillvalue='\x00'):
-        result += b + a
-
-    result = result.replace('\x00', '')
-
-    return result
-  except Exception:
-    return None
-
-
-def get_subscriber_info():
-  ret = parse_service_call(["service", "call", "iphonesubinfo", "7"])
-  if ret is None or len(ret) < 8:
-    return ""
-  return ret
-
 
 def register():
   params = Params()

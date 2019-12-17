@@ -19,7 +19,9 @@
 
 void detect_board_type(void) {
   #ifdef PANDA
-    // SPI lines floating: white (TODO: is this reliable?)
+    // SPI lines floating: white (TODO: is this reliable? Not really, we have to enable ESP/GPS to be able to detect this on the UART)
+    set_gpio_output(GPIOC, 14, 1);
+    set_gpio_output(GPIOC, 5, 1);
     if((detect_with_pull(GPIOA, 4, PULL_DOWN)) || (detect_with_pull(GPIOA, 5, PULL_DOWN)) || (detect_with_pull(GPIOA, 6, PULL_DOWN)) || (detect_with_pull(GPIOA, 7, PULL_DOWN))){
       hw_type = HW_TYPE_WHITE_PANDA;
       current_board = &board_white;

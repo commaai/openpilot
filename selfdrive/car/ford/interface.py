@@ -56,6 +56,7 @@ class CarInterface(CarInterfaceBase):
     ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.01], [0.005]]     # TODO: tune this
     ret.lateralTuning.pid.kf = 1. / MAX_ANGLE   # MAX Steer angle to normalize FF
     ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
+    ret.steerLimitTimer = 0.8
     ret.steerRateCost = 1.0
     ret.centerToFront = ret.wheelbase * 0.44
     tire_stiffness_factor = 0.5328
@@ -89,7 +90,6 @@ class CarInterface(CarInterfaceBase):
     ret.openpilotLongitudinalControl = False
     cloudlog.warning("ECU Camera Simulated: %r", ret.enableCamera)
 
-    ret.steerLimitAlert = False
     ret.stoppingControl = False
     ret.startAccel = 0.0
 

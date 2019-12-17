@@ -7,11 +7,22 @@ import errno
 import signal
 import subprocess
 import datetime
-from common.spinner import Spinner
 
 from common.basedir import BASEDIR
 sys.path.append(os.path.join(BASEDIR, "pyextra"))
 os.environ['BASEDIR'] = BASEDIR
+
+TOTAL_SCONS_NODES = 1170
+prebuilt = os.path.exists(os.path.join(BASEDIR, 'prebuilt'))
+
+# Create folders needed for msgq
+try:
+  os.mkdir("/dev/shm")
+except FileExistsError:
+  pass
+
+if os.path.isfile('/EON'):
+  os.chmod("/dev/shm", 0o777)
 
 def unblock_stdout():
   # get a non-blocking stdout
@@ -38,34 +49,74 @@ def unblock_stdout():
 
       try:
         sys.stdout.write(dat.decode('utf8'))
-      except (OSError, IOError):
+      except (OSError, IOError, UnicodeDecodeError):
         pass
 
     os._exit(os.wait()[1])
 
+
 if __name__ == "__main__":
   unblock_stdout()
+  from common.spinner import Spinner
+else:
+  from common.spinner import FakeSpinner as Spinner
 
-import glob
-import shutil
-import hashlib
 import importlib
 import traceback
 from multiprocessing import Process
 
-from setproctitle import setproctitle  #pylint: disable=no-name-in-module
+# Run scons
+spinner = Spinner()
+spinner.update("0")
+
+if not prebuilt:
+  for retry in [True, False]:
+    # run scons
+    env = os.environ.copy()
+    env['SCONS_PROGRESS'] = "1"
+    scons = subprocess.Popen(["scons", "-j4"], cwd=BASEDIR, env=env, stderr=subprocess.PIPE)
+
+    # Read progress from stderr and update spinner
+    while scons.poll() is None:
+      try:
+        line = scons.stderr.readline()
+        if line is None:
+          continue
+
+        line = line.rstrip()
+        prefix = b'progress: '
+        if line.startswith(prefix):
+          i = int(line[len(prefix):])
+          if spinner is not None:
+            spinner.update("%d" % (50.0 * (i / TOTAL_SCONS_NODES)))
+        elif len(line):
+          print(line.decode('utf8'))
+      except Exception:
+        pass
+
+    if scons.returncode != 0:
+      if retry:
+        print("scons build failed, make clean")
+        subprocess.check_call(["scons", "-c"], cwd=BASEDIR, env=env)
+      else:
+        raise RuntimeError("scons build failed")
+    else:
+      break
+
+import cereal
+import cereal.messaging as messaging
 
 from common.params import Params
-import cereal
-ThermalStatus = cereal.log.ThermalData.ThermalStatus
-
+import selfdrive.crash as crash
 from selfdrive.swaglog import cloudlog
-import selfdrive.messaging as messaging
 from selfdrive.registration import register
 from selfdrive.version import version, dirty
-import selfdrive.crash as crash
-
 from selfdrive.loggerd.config import ROOT
+from selfdrive.launcher import launcher
+from common import android
+from common.apk import update_apks, pm_apply_packages, start_frame
+
+ThermalStatus = cereal.log.ThermalData.ThermalStatus
 
 # comment out anything you don't want to run
 managed_processes = {
@@ -83,25 +134,26 @@ managed_processes = {
   "proclogd": ("selfdrive/proclogd", ["./proclogd"]),
   "boardd": ("selfdrive/boardd", ["./boardd"]),   # not used directly
   "pandad": "selfdrive.pandad",
-  "ui": ("selfdrive/ui", ["./start.py"]),
+  "ui": ("selfdrive/ui", ["./ui"]),
   "calibrationd": "selfdrive.locationd.calibrationd",
   "paramsd": ("selfdrive/locationd", ["./paramsd"]),
-  "visiond": ("selfdrive/visiond", ["./start.py"]),
-  "sensord": ("selfdrive/sensord", ["./start_sensord.py"]),
-  "gpsd": ("selfdrive/sensord", ["./start_gpsd.py"]),
+  "camerad": ("selfdrive/camerad", ["./camerad"]),
+  "sensord": ("selfdrive/sensord", ["./sensord"]),
+  "gpsd": ("selfdrive/sensord", ["./gpsd"]),
   "updated": "selfdrive.updated",
+  "monitoringd": ("selfdrive/modeld", ["./monitoringd"]),
+  "modeld": ("selfdrive/modeld", ["./modeld"]),
 }
 daemon_processes = {
   "manage_athenad": ("selfdrive.athena.manage_athenad", "AthenadPid"),
 }
-android_packages = ("ai.comma.plus.offroad", "ai.comma.plus.frame")
 
 running = {}
 def get_running():
   return running
 
-# due to qualcomm kernel bugs SIGKILLing visiond sometimes causes page table corruption
-unkillable_processes = ['visiond']
+# due to qualcomm kernel bugs SIGKILLing camerad sometimes causes page table corruption
+unkillable_processes = ['camerad']
 
 # processes to end with SIGINT instead of SIGTERM
 interrupt_processes = []
@@ -127,7 +179,9 @@ car_started_processes = [
   'radard',
   'calibrationd',
   'paramsd',
-  'visiond',
+  'camerad',
+  'modeld',
+  'monitoringd',
   'proclogd',
   'ubloxd',
   'gpsd',
@@ -144,27 +198,6 @@ def register_managed_process(name, desc, car_started=False):
     persistent_processes.append(name)
 
 # ****************** process management functions ******************
-def launcher(proc):
-  try:
-    # import the process
-    mod = importlib.import_module(proc)
-
-    # rename the process
-    setproctitle(proc)
-
-    # create now context since we forked
-    messaging.context = messaging.Context()
-
-    # exec the process
-    mod.main()
-  except KeyboardInterrupt:
-    cloudlog.warning("child %s got SIGINT" % proc)
-  except Exception:
-    # can't install the crash handler becuase sys.excepthook doesn't play nice
-    # with threads, so catch it here.
-    crash.capture_exception()
-    raise
-
 def nativelauncher(pargs, cwd):
   # exec the process
   os.chdir(cwd)
@@ -188,7 +221,8 @@ def start_managed_process(name):
     running[name] = Process(name=name, target=nativelauncher, args=(pargs, cwd))
   running[name].start()
 
-def start_daemon_process(name, params):
+def start_daemon_process(name):
+  params = Params()
   proc, pid_param = daemon_processes[name]
   pid = params.get(pid_param)
 
@@ -203,7 +237,7 @@ def start_daemon_process(name, params):
 
   cloudlog.info("starting daemon %s" % name)
   proc = subprocess.Popen(['python', '-m', proc],
-                         cwd='/',
+                         stdin=open('/dev/null', 'r'),
                          stdout=open('/dev/null', 'w'),
                          stderr=open('/dev/null', 'w'),
                          preexec_fn=os.setpgrp)
@@ -216,7 +250,7 @@ def prepare_managed_process(p):
     # import this python
     cloudlog.info("preimporting %s" % proc)
     importlib.import_module(proc)
-  else:
+  elif os.path.isfile(os.path.join(BASEDIR, proc[0], "Makefile")):
     # build this process
     cloudlog.info("building %s" % (proc,))
     try:
@@ -265,9 +299,6 @@ def kill_managed_process(name):
   cloudlog.info("%s is dead with %d" % (name, running[name].exitcode))
   del running[name]
 
-def pm_apply_packages(cmd):
-  for p in android_packages:
-    system("pm %s %s" % (cmd, p))
 
 def cleanup_all_processes(signal, frame):
   cloudlog.info("caught ctrl-c %s %s" % (signal, frame))
@@ -277,7 +308,6 @@ def cleanup_all_processes(signal, frame):
   for name in list(running.keys()):
     kill_managed_process(name)
   cloudlog.info("everything is dead")
-
 
 # ****************** run loop ******************
 
@@ -309,16 +339,10 @@ def manager_init(should_register=True):
   except OSError:
     pass
 
-def system(cmd):
-  try:
-    cloudlog.info("running %s" % cmd)
-    subprocess.check_output(cmd, stderr=subprocess.STDOUT, shell=True)
-  except subprocess.CalledProcessError as e:
-    cloudlog.event("running failed",
-      cmd=e.cmd,
-      output=e.output[-1024:],
-      returncode=e.returncode)
-
+  # ensure shared libraries are readable by apks
+  os.chmod(BASEDIR, 0o755)
+  os.chmod(os.path.join(BASEDIR, "cereal"), 0o755)
+  os.chmod(os.path.join(BASEDIR, "cereal", "libmessaging_shared.so"), 0o755)
 
 def manager_thread():
   # now loop
@@ -334,7 +358,7 @@ def manager_thread():
 
   # start daemon processes
   for p in daemon_processes:
-    start_daemon_process(p, params)
+    start_daemon_process(p)
 
   # start persistent processes
   for p in persistent_processes:
@@ -342,8 +366,7 @@ def manager_thread():
 
   # start frame
   pm_apply_packages('enable')
-  system("LD_LIBRARY_PATH= appops set ai.comma.plus.offroad SU allow")
-  system("am start -n ai.comma.plus.frame/.MainActivity")
+  start_frame()
 
   if os.getenv("NOBOARD") is None:
     start_managed_process("pandad")
@@ -370,88 +393,27 @@ def manager_thread():
           start_managed_process(p)
     else:
       logger_dead = False
-      for p in car_started_processes:
+      for p in reversed(car_started_processes):
         kill_managed_process(p)
 
     # check the status of all processes, did any of them die?
-    running_list = ["   running %s %s" % (p, running[p]) for p in running]
-    cloudlog.debug('\n'.join(running_list))
+    running_list = ["%s%s\u001b[0m" % ("\u001b[32m" if running[p].is_alive() else "\u001b[31m", p) for p in running]
+    cloudlog.debug(' '.join(running_list))
 
     # Exit main loop when uninstall is needed
     if params.get("DoUninstall", encoding='utf8') == "1":
       break
 
-def get_installed_apks():
-  dat = subprocess.check_output(["pm", "list", "packages", "-f"], encoding='utf8').strip().split("\n")  # pylint: disable=unexpected-keyword-arg
-  ret = {}
-  for x in dat:
-    if x.startswith("package:"):
-      v,k = x.split("package:")[1].split("=")
-      ret[k] = v
-  return ret
-
-def install_apk(path):
-  # can only install from world readable path
-  install_path = "/sdcard/%s" % os.path.basename(path)
-  shutil.copyfile(path, install_path)
-
-  ret = subprocess.call(["pm", "install", "-r", install_path])
-  os.remove(install_path)
-  return ret == 0
-
-def update_apks():
-  # install apks
-  installed = get_installed_apks()
-
-  install_apks = glob.glob(os.path.join(BASEDIR, "apk/*.apk"))
-  for apk in install_apks:
-    app = os.path.basename(apk)[:-4]
-    if app not in installed:
-      installed[app] = None
-
-  cloudlog.info("installed apks %s" % (str(installed), ))
-
-  for app in installed.keys():
-
-    apk_path = os.path.join(BASEDIR, "apk/"+app+".apk")
-    if not os.path.exists(apk_path):
-      continue
-
-    h1 = hashlib.sha1(open(apk_path, 'rb').read()).hexdigest()
-    h2 = None
-    if installed[app] is not None:
-      h2 = hashlib.sha1(open(installed[app], 'rb').read()).hexdigest()
-      cloudlog.info("comparing version of %s  %s vs %s" % (app, h1, h2))
-
-    if h2 is None or h1 != h2:
-      cloudlog.info("installing %s" % app)
-
-      success = install_apk(apk_path)
-      if not success:
-        cloudlog.info("needing to uninstall %s" % app)
-        system("pm uninstall %s" % app)
-        success = install_apk(apk_path)
-
-      assert success
-
-def manager_update():
-  update_apks()
-
-  uninstall = [app for app in get_installed_apks().keys() if app in ("com.spotify.music", "com.waze")]
-  for app in uninstall:
-    cloudlog.info("uninstalling %s" % app)
-    os.system("pm uninstall % s" % app)
-
 def manager_prepare(spinner=None):
-  # build cereal first
-  subprocess.check_call(["make", "-j4"], cwd=os.path.join(BASEDIR, "cereal"))
-
   # build all processes
   os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
+  # Spinner has to start from 70 here
+  total = 100.0 if prebuilt else 50.0
+
   for i, p in enumerate(managed_processes):
     if spinner is not None:
-      spinner.update("%d" % (100.0 * (i + 1) / len(managed_processes),))
+      spinner.update("%d" % ((100.0 - total) + total * (i + 1) / len(managed_processes),))
     prepare_managed_process(p)
 
 def uninstall():
@@ -459,7 +421,7 @@ def uninstall():
   with open('/cache/recovery/command', 'w') as f:
     f.write('--wipe_data\n')
   # IPowerManager.reboot(confirm=false, reason="recovery", wait=true)
-  os.system("service call power 16 i32 0 s16 recovery i32 1")
+  android.reboot(reason="recovery")
 
 def main():
   # the flippening!
@@ -468,29 +430,10 @@ def main():
   # disable bluetooth
   os.system('service call bluetooth_manager 8')
 
-  if os.getenv("NOLOG") is not None:
-    del managed_processes['loggerd']
-    del managed_processes['tombstoned']
-  if os.getenv("NOUPLOAD") is not None:
-    del managed_processes['uploader']
-  if os.getenv("NOVISION") is not None:
-    del managed_processes['visiond']
-  if os.getenv("LEAN") is not None:
-    del managed_processes['uploader']
-    del managed_processes['loggerd']
-    del managed_processes['logmessaged']
-    del managed_processes['logcatd']
-    del managed_processes['tombstoned']
-    del managed_processes['proclogd']
-  if os.getenv("NOCONTROL") is not None:
-    del managed_processes['controlsd']
-    del managed_processes['plannerd']
-    del managed_processes['radard']
-
   # support additional internal only extensions
   try:
     import selfdrive.manager_extensions
-    selfdrive.manager_extensions.register(register_managed_process) # pylint: disable=no-member
+    selfdrive.manager_extensions.register(register_managed_process)  # pylint: disable=no-member
   except ImportError:
     pass
 
@@ -498,6 +441,8 @@ def main():
   params.manager_start()
 
   # set unset params
+  if params.get("CommunityFeaturesToggle") is None:
+    params.put("CommunityFeaturesToggle", "0")
   if params.get("CompletedTrainingVersion") is None:
     params.put("CompletedTrainingVersion", "0")
   if params.get("IsMetric") is None:
@@ -510,8 +455,8 @@ def main():
     params.put("HasCompletedSetup", "0")
   if params.get("IsUploadRawEnabled") is None:
     params.put("IsUploadRawEnabled", "1")
-  if params.get("IsUploadVideoOverCellularEnabled") is None:
-    params.put("IsUploadVideoOverCellularEnabled", "1")
+  if params.get("IsLdwEnabled") is None:
+    params.put("IsLdwEnabled", "1")
   if params.get("IsGeofenceEnabled") is None:
     params.put("IsGeofenceEnabled", "-1")
   if params.get("SpeedLimitOffset") is None:
@@ -535,11 +480,10 @@ def main():
   if params.get("Passive") is None:
     raise Exception("Passive must be set to continue")
 
-  with Spinner() as spinner:
-      spinner.update("0") # Show progress bar
-      manager_update()
-      manager_init()
-      manager_prepare(spinner)
+  update_apks()
+  manager_init()
+  manager_prepare(spinner)
+  spinner.close()
 
   if os.getenv("PREPAREONLY") is not None:
     return

@@ -3,4 +3,12 @@ node_modules
 package-lock.json
 *.pyc
 __pycache__
+.*.swp
+.*.swo
+libcereal*.a
+libmessaging.*
+libmessaging_shared.*
+services.h
+.sconsign.dblite
+libcereal_shared.so
 

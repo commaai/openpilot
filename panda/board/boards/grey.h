@@ -3,10 +3,18 @@
 // ////////// //
 
 // Most hardware functionality is similar to white panda
+
+void grey_init(void) {
+  white_grey_common_init();
+
+  // Set default state of GPS
+  current_board->set_esp_gps_mode(ESP_GPS_ENABLED);
+}
+
 const board board_grey = {
   .board_type = "Grey",
   .harness_config = &white_harness_config,
-  .init = white_init,
+  .init = grey_init,
   .enable_can_transciever = white_enable_can_transciever,
   .enable_can_transcievers = white_enable_can_transcievers,
   .set_led = white_set_led,
@@ -17,5 +25,6 @@ const board board_grey = {
   .check_ignition = white_check_ignition,
   .read_current = white_read_current,
   .set_fan_power = white_set_fan_power,
-  .set_ir_power = white_set_ir_power
+  .set_ir_power = white_set_ir_power,
+  .set_phone_power = white_set_phone_power
 };

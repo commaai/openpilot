@@ -1,6 +1,6 @@
 from cereal import car
 from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD
-from selfdrive.can.parser import CANParser
+from opendbc.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from common.kalman.simple_kalman import KF1D
 
