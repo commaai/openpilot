@@ -54,12 +54,12 @@ class SignalHandler:
     signal.signal(signal.SIGHUP, self.update_now)
 
   def graceful_shutdown(self, signum, frame):
-    cloudlog.info(f"caught {signal.Signals(signum).name}, graceful shutdown in progress")
+    cloudlog.info(f"caught SIGINT/SIGTERM, graceful shutdown in progress")
     self.continue_running = False
 
   def update_now(self, signum, frame):
     # Just returns, having interrupted the sleep() in wait_between_updates()
-    cloudlog.info(f"caught {signal.Signals(signum).name}, running update check immediately")
+    cloudlog.info(f"caught SIGHUP, running update check immediately")
 
 # Workaround for the EON/termux build of Python having os.link removed.
 ffi = FFI()
