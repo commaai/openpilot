@@ -259,33 +259,27 @@ def main(gctx=None):
     raise RuntimeError("couldn't get overlay lock; is another updated running?")
 
   while True:
-    if wait_helper.shutdown:
-      break
-
     time_wrong = datetime.datetime.now().year < 2019
     ping_failed = subprocess.call(["ping", "-W", "4", "-c", "1", "8.8.8.8"])
-    if ping_failed or time_wrong:
-      wait_between_updates(wait_helper.ready_event)
-      continue
-
-    try:
-      # Wait until we have a valid datetime to initialize the overlay
-      if not overlay_init_done:
-        init_ovfs()
-        overlay_init_done = True
-
-      attempt_update()
-
-    except subprocess.CalledProcessError as e:
-      cloudlog.event("update process failed",
-        cmd=e.cmd,
-        output=e.output,
-        returncode=e.returncode)
-      return False
-    except Exception:
-      cloudlog.exception("uncaught updated exception, shouldn't happen")
+    if not (ping_failed or time_wrong):
+      try:
+        # Wait until we have a valid datetime to initialize the overlay
+        if not overlay_init_done:
+          init_ovfs()
+          overlay_init_done = True
+        attempt_update()
+      except subprocess.CalledProcessError as e:
+        cloudlog.event("update process failed",
+          cmd=e.cmd,
+          output=e.output,
+          returncode=e.returncode)
+        return False
+      except Exception:
+        cloudlog.exception("uncaught updated exception, shouldn't happen")
 
     wait_between_updates(wait_helper.ready_event)
+    if wait_helper.shutdown:
+      break
 
   # We've been signaled to shut down
   cloudlog.info("attempting graceful dismount")
