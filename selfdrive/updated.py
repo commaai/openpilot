@@ -234,7 +234,7 @@ def main(gctx=None):
   if not os.geteuid() == 0:
     raise RuntimeError("updated must be launched as root!")
 
-  ov_lock_fd = open(OVERLAY_LOCK, 'r')
+  ov_lock_fd = open(OVERLAY_LOCK, 'w')
   try:
     fcntl.flock(ov_lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
   except IOError:
