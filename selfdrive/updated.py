@@ -76,6 +76,7 @@ libc = ffi.dlopen(None)
 # **** helper functions ****
 
 def wait_between_updates(wait_helper):
+  wait_helper.ready_event.clear()
   if SHORT:
     wait_helper.wait(timeout=10)
   else:
