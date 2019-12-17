@@ -127,6 +127,9 @@ def dup_ovfs_object(inode_map, source_obj, target_dir):
   st = os.lstat(os.path.join(OVERLAY_MERGED, source_obj))
   target_obj = os.path.join(target_dir, source_obj)
 
+  # Debugging
+  print(f"dup_ovfs_object: source_obj ${source_obj} target_obj ${target_obj}")
+
   if S_ISREG(st[ST_MODE]):
     # Hardlink all regular files; ownership and permissions are shared.
     link(inode_map[st[ST_INO]], target_obj)
