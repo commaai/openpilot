@@ -20,6 +20,7 @@
 
 
 import os
+import sys
 import datetime
 import subprocess
 from stat import S_ISREG, S_ISDIR, S_ISLNK, S_IMODE, ST_MODE, ST_INO, ST_UID, ST_GID, ST_ATIME, ST_MTIME
@@ -45,16 +46,15 @@ NICE_LOW_PRIORITY = ["nice", "-n", "19"]
 SHORT = os.getenv("SHORT") is not None
 
 class SignalHandler:
-  continue_running = True  # Reset to False on receipt of SIGINT or SIGTERM
-
   def __init__(self):
     signal.signal(signal.SIGTERM, self.graceful_shutdown)
     signal.signal(signal.SIGINT, self.graceful_shutdown)
     signal.signal(signal.SIGHUP, self.update_now)
 
   def graceful_shutdown(self, signum, frame):
-    cloudlog.info(f"caught SIGINT/SIGTERM, graceful shutdown in progress")
-    self.continue_running = False
+    cloudlog.info(f"caught SIGINT/SIGTERM, dismounting overlay")
+    run(["umount", "-f", OVERLAY_MERGED])
+    sys.exit(0)
 
   def update_now(self, signum, frame):
     # Just returns, having interrupted the sleep() in wait_between_updates()
@@ -234,7 +234,7 @@ def update_params(with_date=False, new_version=False):
 
 def main(gctx=None):
   overlay_init_done = False
-  signal_monitor = SignalHandler()
+  _signal_monitor = SignalHandler()
 
   if not os.geteuid() == 0:
     raise RuntimeError("updated must be launched as root!")
@@ -245,7 +245,7 @@ def main(gctx=None):
   except IOError:
     raise RuntimeError("couldn't get overlay lock; is another updated running?")
 
-  while signal_monitor.continue_running:
+  while True:
     time_wrong = datetime.datetime.now().year < 2019
     ping_failed = subprocess.call(["ping", "-W", "4", "-c", "1", "8.8.8.8"])
     if ping_failed or time_wrong:
@@ -271,8 +271,6 @@ def main(gctx=None):
     wait_between_updates()
 
   # SignalHandler caught SIGINT or SIGTERM
-  run(["umount", OVERLAY_MERGED])
-  cloudlog.info("graceful shutdown complete!")
 
 
 if __name__ == "__main__":
