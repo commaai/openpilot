@@ -256,6 +256,7 @@ def main(gctx=None):
       # Wait until we have a valid datetime to initialize the overlay
       if not overlay_init_done:
         init_ovfs()
+        overlay_init_done = True
 
       attempt_update()
 
