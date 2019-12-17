@@ -91,12 +91,14 @@ def run(cmd, cwd=None):
 
 # **** meaty functions ****
 
-def init_ovfs():
+def dismount_ovfs():
   if os.path.ismount(OVERLAY_MERGED):
-    cloudlog.error("cleaning up stale overlay mount")
-    run(["umount", OVERLAY_MERGED])
+    cloudlog.error("unmounting existing overlay")
+    run(["umount", "-f", OVERLAY_MERGED])
 
+def init_ovfs():
   cloudlog.info("preparing new safe staging area")
+  dismount_ovfs()
   if os.path.isdir(STAGING_ROOT):
     shutil.rmtree(STAGING_ROOT)
 
@@ -273,18 +275,17 @@ def main(gctx=None):
           cmd=e.cmd,
           output=e.output,
           returncode=e.returncode)
-        return False
+        # Keep trying in case the root cause is intermittent
       except Exception:
         cloudlog.exception("uncaught updated exception, shouldn't happen")
+        break
 
     wait_between_updates(wait_helper.ready_event)
     if wait_helper.shutdown:
       break
 
   # We've been signaled to shut down
-  cloudlog.info("attempting graceful dismount")
-  run(["umount", "-f", OVERLAY_MERGED])
-  sys.exit(0)
+  dismount_ovfs()
 
 if __name__ == "__main__":
   # Commit noise to test updates 2259945872394857234978472or2
