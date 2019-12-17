@@ -3,6 +3,8 @@ venv/
 .tags
 .ipynb_checkpoints
 .idea
+.overlay_canary
+.overlay_consistent
 .sconsign.dblite
 .vscode
 model2.png
