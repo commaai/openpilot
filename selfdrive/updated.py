@@ -236,6 +236,7 @@ def update_params(with_date=False, new_version=False):
 
 def main(gctx=None):
   overlay_init_done = False
+  signal_monitor = SignalHandler()
 
   if not os.geteuid() == 0:
     raise RuntimeError("updated must be launched as root!")
@@ -246,7 +247,7 @@ def main(gctx=None):
   except IOError:
     raise RuntimeError("couldn't get overlay lock; is another updated running?")
 
-  while SignalHandler.continue_running:
+  while signal_monitor.continue_running:
     time_wrong = datetime.datetime.now().year < 2019
     ping_failed = subprocess.call(["ping", "-W", "4", "-c", "1", "8.8.8.8"])
     if ping_failed or time_wrong:
