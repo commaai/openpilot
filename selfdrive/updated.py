@@ -117,9 +117,7 @@ def inodes_in_tree(search_dir):
       full_path_name = os.path.join(root, file_name)
       st = os.lstat(full_path_name)
       if S_ISREG(st[ST_MODE]):
-        # Debugging
-        print(f"adding to inode tree: {st[ST_INO]} - {os.path.relpath(full_path_name, search_dir)}")
-        inode_map[st[ST_INO]] = os.path.relpath(full_path_name, search_dir)
+        inode_map[st[ST_INO]] = full_path_name
   return inode_map
 
 def dup_ovfs_object(inode_map, source_obj, target_dir):
