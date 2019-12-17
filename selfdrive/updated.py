@@ -140,7 +140,7 @@ def dup_ovfs_object(inode_map, source_obj, target_dir):
     if S_ISDIR(st[ST_MODE]):
       os.mkdir(os.path.join(FINALIZED, source_obj), S_IMODE(st[ST_MODE]))
     elif S_ISLNK(st[ST_MODE]):
-      os.symlink(os.readlink(source_obj), target_obj)
+      os.symlink(os.readlink(source_full_path), target_obj)
       os.chmod(target_obj, S_IMODE(st[ST_MODE]), follow_symlinks=False)
     else:
       # Ran into a FIFO, socket, etc. Should not happen in OP install dir.
