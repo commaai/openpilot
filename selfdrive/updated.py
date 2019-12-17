@@ -124,7 +124,7 @@ def dup_ovfs_object(inode_map, source_obj, target_dir):
   # Given a relative pathname to copy, and a new target root, duplicate the
   # source object in the target root, using hardlinks for regular files.
 
-  st = os.lstat(source_obj)
+  st = os.lstat(os.path.join(OVERLAY_MERGED, source_obj))
   target_obj = os.path.join(target_dir, source_obj)
 
   if S_ISREG(st[ST_MODE]):
