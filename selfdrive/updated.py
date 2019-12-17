@@ -52,8 +52,8 @@ class SignalHandler:
     signal.signal(signal.SIGHUP, self.update_now)
 
   def graceful_shutdown(self, signum, frame):
-    cloudlog.info(f"caught SIGINT/SIGTERM, dismounting overlay")
-    run(["umount", "-f", OVERLAY_MERGED])
+    # cloudlog.info(f"caught SIGINT/SIGTERM, dismounting overlay")
+    # run(["umount", "-f", OVERLAY_MERGED])
     sys.exit(0)
 
   def update_now(self, signum, frame):
