@@ -75,12 +75,12 @@ libc = ffi.dlopen(None)
 
 # **** helper functions ****
 
-def wait_between_updates(wait_helper):
-  wait_helper.ready_event.clear()
+def wait_between_updates(ready_event):
+  ready_event.clear()
   if SHORT:
-    wait_helper.wait(timeout=10)
+    ready_event.wait(timeout=10)
   else:
-    wait_helper.wait(timeout=60*10)
+    ready_event.wait(timeout=60*10)
 
 def link(src, dest):
   # Workaround for the EON/termux build of Python having os.link removed.
