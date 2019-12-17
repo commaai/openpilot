@@ -173,9 +173,6 @@ def finalize_from_ovfs():
 def attempt_update():
   cloudlog.info("attempting git update inside staging overlay")
 
-  # If this is our first run
-  if os.path.isfile(os.path.join(BASEDIR, ".overlay_consistent")):
-
   # Un-set the validity flag to prevent the finalized tree from being
   # activated later if the update attempt is interrupted.
   if os.path.isfile(os.path.join(FINALIZED, ".overlay_consistent")):
