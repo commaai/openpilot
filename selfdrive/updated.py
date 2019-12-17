@@ -126,31 +126,27 @@ def dup_ovfs_object(inode_map, source_obj, target_dir):
 
   source_full_path = os.path.join(OVERLAY_MERGED, source_obj)
   st = os.lstat(source_full_path)
-  target_obj = os.path.join(target_dir, source_obj)
-
-  # Debugging
-  print(f"dup_ovfs_object: source_obj {source_obj} source_full_path {source_full_path} target_dir {target_dir} target_obj {target_obj}")
+  target_full_path = os.path.join(target_dir, source_obj)
 
   if S_ISREG(st[ST_MODE]):
     # Hardlink all regular files; ownership and permissions are shared.
-    print(f"stat inode to look up: {st[ST_INO]} result: {inode_map[st[ST_INO]]}")
-    link(inode_map[st[ST_INO]], target_obj)
+    link(inode_map[st[ST_INO]], target_full_path)
   else:
     # Recreate all directories and symlinks; copy ownership and permissions.
     if S_ISDIR(st[ST_MODE]):
       os.mkdir(os.path.join(FINALIZED, source_obj), S_IMODE(st[ST_MODE]))
     elif S_ISLNK(st[ST_MODE]):
-      os.symlink(os.readlink(source_full_path), target_obj)
-      os.chmod(target_obj, S_IMODE(st[ST_MODE]), follow_symlinks=False)
+      os.symlink(os.readlink(source_full_path), target_full_path)
+      os.chmod(target_full_path, S_IMODE(st[ST_MODE]), follow_symlinks=False)
     else:
       # Ran into a FIFO, socket, etc. Should not happen in OP install dir.
       # Ignore without copying for the time being; revisit later if needed.
       pass
-    os.chown(target_obj, st[ST_UID], st[ST_GID], follow_symlinks=False)
+    os.chown(target_full_path, st[ST_UID], st[ST_GID], follow_symlinks=False)
 
   # Sync target mtimes to the cached lstat() value from each source object.
   # Restores shared inode mtimes after linking, fixes symlinks and dirs.
-  os.utime(target_obj, (st[ST_ATIME], st[ST_MTIME]), follow_symlinks=False)
+  os.utime(target_full_path, (st[ST_ATIME], st[ST_MTIME]), follow_symlinks=False)
 
 def finalize_from_ovfs():
   # Take the current OverlayFS merged view and finalize a copy outside of
