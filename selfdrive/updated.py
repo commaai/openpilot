@@ -131,7 +131,7 @@ def dup_ovfs_object(inode_map, source_obj, target_dir):
   target_obj = os.path.join(target_dir, source_obj)
 
   # Debugging
-  print(f"dup_ovfs_object: source_obj {source_obj} target_obj {target_obj}")
+  print(f"dup_ovfs_object: source_obj {source_obj} target_dir {target_dir} target_obj {target_obj}")
 
   if S_ISREG(st[ST_MODE]):
     # Hardlink all regular files; ownership and permissions are shared.
@@ -169,10 +169,10 @@ def finalize_from_ovfs():
   os.mkdir(FINALIZED)
   for root, dirs, files in os.walk(OVERLAY_MERGED, topdown=True):
     for obj_name in dirs:
-      relative_path_name = os.path.relpath(os.path.join(root, obj_name), FINALIZED)
+      relative_path_name = os.path.relpath(os.path.join(root, obj_name), OVERLAY_MERGED)
       dup_ovfs_object(inode_map, relative_path_name, FINALIZED)
     for obj_name in files:
-      relative_path_name = os.path.relpath(os.path.join(root, obj_name), FINALIZED)
+      relative_path_name = os.path.relpath(os.path.join(root, obj_name), OVERLAY_MERGED)
       dup_ovfs_object(inode_map, relative_path_name, FINALIZED)
 
 def attempt_update():
