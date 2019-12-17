@@ -169,10 +169,10 @@ def finalize_from_ovfs():
   os.mkdir(FINALIZED)
   for root, dirs, files in os.walk(OVERLAY_MERGED, topdown=True):
     for obj_name in dirs:
-      relative_path_name = os.path.relpath(os.path.join(root, obj_name), OVERLAY_MERGED)
+      relative_path_name = os.path.relpath(os.path.join(root, obj_name), FINALIZED)
       dup_ovfs_object(inode_map, relative_path_name, FINALIZED)
     for obj_name in files:
-      relative_path_name = os.path.relpath(os.path.join(root, obj_name), OVERLAY_MERGED)
+      relative_path_name = os.path.relpath(os.path.join(root, obj_name), FINALIZED)
       dup_ovfs_object(inode_map, relative_path_name, FINALIZED)
 
 def attempt_update():
