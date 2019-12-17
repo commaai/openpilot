@@ -131,7 +131,7 @@ def dup_ovfs_object(inode_map, source_obj, target_dir):
   target_obj = os.path.join(target_dir, source_obj)
 
   # Debugging
-  print(f"dup_ovfs_object: source_obj {source_obj} target_dir {target_dir} target_obj {target_obj}")
+  print(f"dup_ovfs_object: source_obj {source_obj} source_full_path {source_full_path} target_dir {target_dir} target_obj {target_obj}")
 
   if S_ISREG(st[ST_MODE]):
     # Hardlink all regular files; ownership and permissions are shared.
