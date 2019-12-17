@@ -135,6 +135,7 @@ def dup_ovfs_object(inode_map, source_obj, target_dir):
 
   if S_ISREG(st[ST_MODE]):
     # Hardlink all regular files; ownership and permissions are shared.
+    print(f"stat inode to look up: {st[ST_INO]} result: {inode_map[st[ST_INO]]}")
     link(inode_map[st[ST_INO]], target_obj)
   else:
     # Recreate all directories and symlinks; copy ownership and permissions.
