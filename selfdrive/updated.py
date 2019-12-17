@@ -199,7 +199,7 @@ def attempt_update():
     cloudlog.info("git reset success: %s", '\n'.join(r))
     # TODO: scons prebuild in background (offroad only, preferably interruptible if ignition comes on)
     # TODO: NEOS download in background (can and probably should do this outside the overlay)
-    # finalize_from_ovfs()
+    finalize_from_ovfs()
     update_params(with_date=True, new_version=True)
     cloudlog.info("update successful!")
   else:
@@ -270,9 +270,6 @@ def main(gctx=None):
       cloudlog.exception("uncaught updated exception, shouldn't happen")
 
     wait_between_updates()
-
-  # SignalHandler caught SIGINT or SIGTERM
-
 
 if __name__ == "__main__":
   # Commit noise to test updates 22aiwu4ytiuawyeihas;oedfhjas983742
