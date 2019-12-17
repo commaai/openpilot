@@ -35,7 +35,6 @@ from common.params import Params
 from selfdrive.swaglog import cloudlog
 
 STAGING_ROOT = "/data/safe_staging"
-OVERLAY_LOCK = "/tmp/safe_staging_overlay.lock"
 
 OVERLAY_UPPER = os.path.join(STAGING_ROOT, "upper")
 OVERLAY_METADATA = os.path.join(STAGING_ROOT, "metadata")
@@ -234,7 +233,7 @@ def main(gctx=None):
   if not os.geteuid() == 0:
     raise RuntimeError("updated must be launched as root!")
 
-  ov_lock_fd = open(OVERLAY_LOCK, 'w')
+  ov_lock_fd = open('/tmp/safe_staging_overlay.lock', 'w')
   try:
     fcntl.flock(ov_lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
   except IOError:
@@ -271,5 +270,5 @@ def main(gctx=None):
 
 
 if __name__ == "__main__":
-  # Commit noise to test updates 9283597823atrsfdw324323e1y
+  # Commit noise to test updates 9283597823atrsfdw3243225322q3e432
   main()
