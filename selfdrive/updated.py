@@ -99,6 +99,13 @@ def init_ovfs():
   if os.path.isfile(os.path.join(BASEDIR, ".overlay_consistent")):
     os.remove(os.path.join(BASEDIR, ".overlay_consistent"))
 
+  # We sync FS object atimes (which EON doesn't use) and mtimes, but ctimes
+  # are outside user control. Make sure Git is set up to ignore system ctimes,
+  # because they change when we make hard links during finalize. Otherwise,
+  # there is a lot of unnecessary churn. This appears to be a common need on
+  # OSX as well: https://www.git-tower.com/blog/make-git-rebase-safe-on-osx/
+  run(["git", "config", "core.trustctime", "false"], BASEDIR)
+
   # Leave a timestamped canary in BASEDIR to check at startup. If the canary
   # disappears, or critical mtimes in BASEDIR are newer than the canary,
   # continue.sh assumes that BASEDIR is being modified or used for local
