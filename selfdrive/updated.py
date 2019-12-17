@@ -49,7 +49,7 @@ NICE_LOW_PRIORITY = ["nice", "-n", "19"]
 SHORT = os.getenv("SHORT") is not None
 
 class WaitTimeHelper:
-  ready_to_attempt = threading.Event()
+  ready_event = threading.Event()
   shutdown = False
 
   def __init__(self):
@@ -62,11 +62,11 @@ class WaitTimeHelper:
     # so don't actually die until the next convenient opportunity in main().
     cloudlog.info(f"caught SIGINT/SIGTERM, dismounting overlay at next opportunity")
     self.shutdown = True
-    self.ready_to_attempt.set()
+    self.ready_event.set()
 
   def update_now(self, signum, frame):
     cloudlog.info(f"caught SIGHUP, running update check immediately")
-    self.ready_to_attempt.set()
+    self.ready_event.set()
 
 # Workaround for the EON/termux build of Python having os.link removed.
 ffi = FFI()
@@ -264,7 +264,7 @@ def main(gctx=None):
     time_wrong = datetime.datetime.now().year < 2019
     ping_failed = subprocess.call(["ping", "-W", "4", "-c", "1", "8.8.8.8"])
     if ping_failed or time_wrong:
-      wait_between_updates(wait_helper)
+      wait_between_updates(wait_helper.ready_event)
       continue
 
     try:
@@ -284,7 +284,7 @@ def main(gctx=None):
     except Exception:
       cloudlog.exception("uncaught updated exception, shouldn't happen")
 
-    wait_between_updates(wait_helper)
+    wait_between_updates(wait_helper.ready_event)
 
   # We've been signaled to shut down
   cloudlog.info("attempting graceful dismount")
