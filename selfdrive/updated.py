@@ -23,7 +23,6 @@
 # disable this service.
 
 import os
-import sys
 import datetime
 import subprocess
 from stat import S_ISREG, S_ISDIR, S_ISLNK, S_IMODE, ST_MODE, ST_INO, ST_UID, ST_GID, ST_ATIME, ST_MTIME
