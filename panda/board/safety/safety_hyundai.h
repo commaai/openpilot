@@ -57,10 +57,6 @@ static void hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     hyundai_cruise_engaged_last = cruise_engaged;
   }
 
-  // 832 is lkas cmd. If it is on camera bus, then giraffe switch 2 is high
-  if ((addr == 832) && (bus == hyundai_camera_bus) && (hyundai_camera_bus != 0)) {
-    hyundai_giraffe_switch_2 = 1;
-  }
 }
 
 static int hyundai_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
