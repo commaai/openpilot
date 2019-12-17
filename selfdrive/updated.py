@@ -17,7 +17,10 @@
 # The swap on boot is triggered by /data/data/com.termux/files/continue.sh,
 # gated on the existence of $FINALIZED/.overlay_consistent and also the
 # existence and mtime of $BASEDIR/.overlay_canary.
-
+#
+# Other than build byproducts, BASEDIR should not be modified while this
+# service is running. Developers modifying code directly in BASEDIR should
+# disable this service.
 
 import os
 import sys
@@ -25,10 +28,10 @@ import datetime
 import subprocess
 from stat import S_ISREG, S_ISDIR, S_ISLNK, S_IMODE, ST_MODE, ST_INO, ST_UID, ST_GID, ST_ATIME, ST_MTIME
 import shutil
-import time
 import signal
 from pathlib import Path
 import fcntl
+import threading
 from cffi import FFI
 
 from common.basedir import BASEDIR
@@ -45,20 +48,25 @@ FINALIZED = os.path.join(STAGING_ROOT, "finalized")
 NICE_LOW_PRIORITY = ["nice", "-n", "19"]
 SHORT = os.getenv("SHORT") is not None
 
-class SignalHandler:
+class WaitTimeHelper:
+  ready_to_attempt = threading.Event()
+  shutdown = False
+
   def __init__(self):
     signal.signal(signal.SIGTERM, self.graceful_shutdown)
     signal.signal(signal.SIGINT, self.graceful_shutdown)
     signal.signal(signal.SIGHUP, self.update_now)
 
   def graceful_shutdown(self, signum, frame):
-    # cloudlog.info(f"caught SIGINT/SIGTERM, dismounting overlay")
-    # run(["umount", "-f", OVERLAY_MERGED])
-    sys.exit(0)
+    # umount -f doesn't appear effective in avoiding "device busy" on EON,
+    # so don't actually die until the next convenient opportunity in main().
+    cloudlog.info(f"caught SIGINT/SIGTERM, dismounting overlay at next opportunity")
+    self.shutdown = True
+    self.ready_to_attempt.set()
 
   def update_now(self, signum, frame):
-    # Just returns, having interrupted the sleep() in wait_between_updates()
     cloudlog.info(f"caught SIGHUP, running update check immediately")
+    self.ready_to_attempt.set()
 
 # Workaround for the EON/termux build of Python having os.link removed.
 ffi = FFI()
@@ -67,11 +75,11 @@ libc = ffi.dlopen(None)
 
 # **** helper functions ****
 
-def wait_between_updates():
+def wait_between_updates(wait_helper):
   if SHORT:
-    time.sleep(10)
+    wait_helper.wait(timeout=10)
   else:
-    time.sleep(60 * 10)
+    wait_helper.wait(timeout=60*10)
 
 def link(src, dest):
   # Workaround for the EON/termux build of Python having os.link removed.
@@ -106,10 +114,11 @@ def init_ovfs():
   # OSX as well: https://www.git-tower.com/blog/make-git-rebase-safe-on-osx/
   run(["git", "config", "core.trustctime", "false"], BASEDIR)
 
-  # Leave a timestamped canary in BASEDIR to check at startup. If the canary
-  # disappears, or critical mtimes in BASEDIR are newer than the canary,
-  # continue.sh assumes that BASEDIR is being modified or used for local
-  # development, and discards the overlay.
+  # Leave a timestamped canary in BASEDIR to check at startup. The EON clock
+  # should be correct by the time we get here. If the canary disappears, or
+  # critical mtimes in BASEDIR are newer than the canary, continue.sh assumes
+  # that BASEDIR is being modified or used for local development, and discards
+  # the overlay.
   Path(os.path.join(BASEDIR, ".overlay_canary")).touch()
 
   overlay_opts = f"lowerdir={BASEDIR},upperdir={OVERLAY_UPPER},workdir={OVERLAY_METADATA}"
@@ -237,7 +246,7 @@ def update_params(with_date=False, new_version=False):
 
 def main(gctx=None):
   overlay_init_done = False
-  _signal_monitor = SignalHandler()
+  wait_helper = WaitTimeHelper()
 
   if not os.geteuid() == 0:
     raise RuntimeError("updated must be launched as root!")
@@ -249,10 +258,13 @@ def main(gctx=None):
     raise RuntimeError("couldn't get overlay lock; is another updated running?")
 
   while True:
+    if wait_helper.shutdown:
+      break
+
     time_wrong = datetime.datetime.now().year < 2019
     ping_failed = subprocess.call(["ping", "-W", "4", "-c", "1", "8.8.8.8"])
     if ping_failed or time_wrong:
-      wait_between_updates()
+      wait_between_updates(wait_helper)
       continue
 
     try:
@@ -272,7 +284,12 @@ def main(gctx=None):
     except Exception:
       cloudlog.exception("uncaught updated exception, shouldn't happen")
 
-    wait_between_updates()
+    wait_between_updates(wait_helper)
+
+  # We've been signaled to shut down
+  cloudlog.info("attempting graceful dismount")
+  run(["umount", "-f", OVERLAY_MERGED])
+  sys.exit(0)
 
 if __name__ == "__main__":
   # Commit noise to test updates 22a94112341234123412432
