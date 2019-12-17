@@ -161,6 +161,9 @@ interrupt_processes = []
 # processes to end with SIGKILL instead of SIGTERM
 kill_processes = ['sensord', 'paramsd']
 
+# processes to end if thermal conditions exceed Green parameters
+green_temp_processes = ['uploader', 'updated']
+
 persistent_processes = [
   'thermald',
   'logmessaged',
@@ -376,11 +379,13 @@ def manager_thread():
   while 1:
     msg = messaging.recv_sock(thermal_sock, wait=True)
 
-    # uploader is gated based on the phone temperature
+    # heavyweight batch processes are gated on favorable thermal conditions
     if msg.thermal.thermalStatus >= ThermalStatus.yellow:
-      kill_managed_process("uploader")
+      for p in green_temp_processes:
+        kill_managed_process(p)
     else:
-      start_managed_process("uploader")
+      for p in green_temp_processes:
+        start_managed_process(p)
 
     if msg.thermal.freeSpace < 0.05:
       logger_dead = True
