@@ -2,36 +2,27 @@
 
 # Safe Update: A simple service that waits for network access and tries to
 # update every 10 minutes. It's intended to make the OP update process more
-# robust in the face of local Git repository or EON filesystem corruption.
+# robust against Git repository corruption. This service DOES NOT try to fix
+# an already-corrupt BASEDIR Git repo, only prevent it from happening.
 #
 # During normal operation, both onroad and offroad, the update process makes
 # no changes to the BASEDIR install of OP. All update attempts are performed
-# in a disposable staging area provided by OverlayFS.
+# in a disposable staging area provided by OverlayFS. It assumes the deleter
+# process provides enough disk space to carry out the process.
 #
 # If an update succeeds, a flag is set, and the update is swapped in at the
 # next reboot. If an update is interrupted or otherwise fails, the OverlayFS
 # upper layer and metadata can be discarded before trying again.
 #
 # The swap on boot is triggered by /data/data/com.termux/files/continue.sh,
-# gated on the existence of $FINALIZED/.update_succeeded.
-
-# Short term roadmap:
-# FIXME: Handle case of Git being corrupt before we even start (cloudlog git fsck and then re-clone?)
-# (INPROG) FIXME: make sure updated is reentry safe (must be able to tolerate CLI invocation while running as daemon)
-# TODO: design change: need to finalize after reboot as part of the switch process, will fix several issues below
-# TODO: consider impact of SIGINT/SIGTERM and whether we should catch and dismount/finalize/etc?
-# TODO: explore doing git gc, and/or limited-depth clones
-
-# Long term roadmap:
-# TODO: test suite to compare merged-to-finalized, even though manual compare looks good now
-# TODO: scons prebuild the update, maybe from manager so it can run offroad-only and be interrupted at onroad
-# TODO: download any required NEOS update in the background
+# gated on the existence of $FINALIZED/.overlay_consistent and also the
+# existence and mtime of $BASEDIR/.overlay_canary.
 
 
 import os
 import datetime
 import subprocess
-from stat import *  # FIXME: expand to specific imports to silence pylint
+from stat import S_ISREG, S_ISDIR, S_ISLNK, S_IMODE, ST_MODE, ST_INO, ST_UID, ST_GID, ST_ATIME, ST_MTIME
 import shutil
 import time
 import signal
@@ -97,7 +88,7 @@ def init_ovfs():
     cloudlog.error("cleaning up stale overlay mount")
     run(["umount", OVERLAY_MERGED])
 
-  cloudlog.info("preparing new staging area")
+  cloudlog.info("preparing new safe staging area")
   if os.path.isdir(STAGING_ROOT):
     shutil.rmtree(STAGING_ROOT)
 
@@ -106,8 +97,14 @@ def init_ovfs():
   if not os.lstat(BASEDIR).st_dev == os.lstat(OVERLAY_MERGED).st_dev:
     raise RuntimeError("base and overlay merge directories are on different filesystems; not valid for overlay FS!")
 
-  if os.path.isfile(os.path.join(BASEDIR, ".finalized_overlay_valid")):
-    os.remove(os.path.join(BASEDIR, ".finalized_overlay_valid"))
+  if os.path.isfile(os.path.join(BASEDIR, ".overlay_consistent")):
+    os.remove(os.path.join(BASEDIR, ".overlay_consistent"))
+
+  # Leave a timestamped canary in BASEDIR to check at startup. If the canary
+  # disappears, or critical mtimes in BASEDIR are newer than the canary,
+  # continue.sh assumes that BASEDIR is being modified or used for local
+  # development, and discards the overlay.
+  Path(os.path.join(BASEDIR, ".overlay_canary")).touch()
 
   overlay_opts = f"lowerdir={BASEDIR},upperdir={OVERLAY_UPPER},workdir={OVERLAY_METADATA}"
   run(["mount", "-t", "overlay", "-o", overlay_opts, "none", OVERLAY_MERGED])
@@ -116,13 +113,12 @@ def inodes_in_tree(search_dir):
   # Given a search root, produce a dictionary mapping of inodes to relative
   # pathnames of regular files (no directories, symlinks, or special files).
   inode_map = {}
-  os.chdir(search_dir)
-  for root, dirs, files in os.walk('.', topdown=True):
+  for root, dirs, files in os.walk(search_dir, topdown=True):
     for file_name in files:
-      full_name = os.path.join(search_dir, root, file_name)
-      st = os.lstat(full_name)
+      full_path_name = os.path.join(root, file_name)
+      st = os.lstat(full_path_name)
       if S_ISREG(st[ST_MODE]):
-        inode_map[st[ST_INO]] = full_name
+        inode_map[st[ST_INO]] = os.path.relpath(full_path_name, search_dir)
   return inode_map
 
 def dup_ovfs_object(inode_map, source_obj, target_dir):
@@ -166,22 +162,24 @@ def finalize_from_ovfs():
   shutil.rmtree(FINALIZED)
   os.umask(0o077)
   os.mkdir(FINALIZED)
-  os.chdir(OVERLAY_MERGED)
-  for root, dirs, files in os.walk('.', topdown=True):
+  for root, dirs, files in os.walk(OVERLAY_MERGED, topdown=True):
     for obj_name in dirs:
-      dup_ovfs_object(inode_map, os.path.join(root, obj_name), FINALIZED)
+      relative_path_name = os.path.relpath(os.path.join(root, obj_name), OVERLAY_MERGED)
+      dup_ovfs_object(inode_map, relative_path_name, FINALIZED)
     for obj_name in files:
-      dup_ovfs_object(inode_map, os.path.join(root, obj_name), FINALIZED)
-  os.chdir(BASEDIR)  # otherwise umount will fail later with "target is busy"
+      relative_path_name = os.path.relpath(os.path.join(root, obj_name), OVERLAY_MERGED)
+      dup_ovfs_object(inode_map, relative_path_name, FINALIZED)
 
 def attempt_update():
   cloudlog.info("attempting git update inside staging overlay")
-  os.chdir(OVERLAY_MERGED)
+
+  # If this is our first run
+  if os.path.isfile(os.path.join(BASEDIR, ".overlay_consistent")):
 
   # Un-set the validity flag to prevent the finalized tree from being
   # activated later if the update attempt is interrupted.
-  if os.path.isfile(os.path.join(FINALIZED, ".finalized_overlay_valid")):
-    os.remove(os.path.join(FINALIZED, ".finalized_overlay_valid"))
+  if os.path.isfile(os.path.join(FINALIZED, ".overlay_consistent")):
+    os.remove(os.path.join(FINALIZED, ".overlay_consistent"))
   os.system("sync")
 
   r = run(NICE_LOW_PRIORITY + ["git", "fetch"], OVERLAY_MERGED)
@@ -198,8 +196,8 @@ def attempt_update():
          run(NICE_LOW_PRIORITY + ["git", "submodule", "init"], OVERLAY_MERGED),
          run(NICE_LOW_PRIORITY + ["git", "submodule", "update"], OVERLAY_MERGED)]
     cloudlog.info("git reset success: %s", '\n'.join(r))
-    # TODO: scons prebuild
-    # TODO: NEOS background download
+    # TODO: scons prebuild in background (offroad only, preferably interruptible if ignition comes on)
+    # TODO: NEOS download in background (can and probably should do this outside the overlay)
     finalize_from_ovfs()
     update_params(with_date=True, new_version=True)
     cloudlog.info("update successful!")
@@ -210,7 +208,7 @@ def attempt_update():
   # Make sure the validity flag lands on disk LAST, only when the local git
   # repo and OP install are in a consistent state.
   os.system("sync")
-  Path(os.path.join(FINALIZED, ".finalized_overlay_valid")).touch()
+  Path(os.path.join(FINALIZED, ".overlay_consistent")).touch()
   os.system("sync")
 
 def update_params(with_date=False, new_version=False):
@@ -234,17 +232,16 @@ def update_params(with_date=False, new_version=False):
 # **** main loop ****
 
 def main(gctx=None):
+  overlay_init_done = False
+
   if not os.geteuid() == 0:
     raise RuntimeError("updated must be launched as root!")
 
   ov_lock_fd = open(OVERLAY_LOCK, 'r')
   try:
     fcntl.flock(ov_lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    init_ovfs()
   except IOError:
     raise RuntimeError("couldn't get overlay lock; is another updated running?")
-
-  update_params()
 
   while SignalHandler.continue_running:
     time_wrong = datetime.datetime.now().year < 2019
@@ -254,7 +251,12 @@ def main(gctx=None):
       continue
 
     try:
+      # Wait until we have a valid datetime to initialize the overlay
+      if not overlay_init_done:
+        init_ovfs()
+
       attempt_update()
+
     except subprocess.CalledProcessError as e:
       cloudlog.event("update process failed",
         cmd=e.cmd,
