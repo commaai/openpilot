@@ -212,7 +212,7 @@ class LongitudinalMpc():
 
     # Calculate mpc
     t = sec_since_boot()
-    n_its = self.libmpc.run_mpc(self.cur_state, self.mpc_solution, self.a_lead_tau, a_lead, 1.8)
+    n_its = self.libmpc.run_mpc(self.cur_state, self.mpc_solution, self.a_lead_tau, a_lead, self.get_TR())
     duration = int((sec_since_boot() - t) * 1e9)
 
     if not travis:
