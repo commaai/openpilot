@@ -48,10 +48,10 @@ class CarInterface(CarInterfaceBase):
 
     ret.safetyModel = car.CarParams.SafetyModel.toyota
 
-    # pedal
-    ret.enableCruise = not ret.enableGasInterceptor
+    ret.enableCruise = True
 
     ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
+    ret.steerLimitTimer = 0.4
 
     if candidate not in [CAR.PRIUS, CAR.RAV4, CAR.RAV4H]: # These cars use LQR/INDI
       ret.lateralTuning.init('pid')
@@ -247,10 +247,11 @@ class CarInterface(CarInterfaceBase):
     ret.brakeMaxV = [1.]
 
     ret.enableCamera = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, ECU.CAM) or has_relay
-    ret.enableDsu = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, ECU.DSU) or (has_relay and candidate in TSS2_CAR)
+    # In TSS2 cars the camera does long control
+    ret.enableDsu = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, ECU.DSU) and candidate not in TSS2_CAR
     ret.enableApgs = False  # is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, ECU.APGS)
     ret.enableGasInterceptor = 0x201 in fingerprint[0]
-    ret.openpilotLongitudinalControl = ret.enableCamera and ret.enableDsu
+    ret.openpilotLongitudinalControl = ret.enableCamera and (ret.enableDsu or candidate in TSS2_CAR)
     cloudlog.warning("ECU Camera Simulated: %r", ret.enableCamera)
     cloudlog.warning("ECU DSU Simulated: %r", ret.enableDsu)
     cloudlog.warning("ECU APGS Simulated: %r", ret.enableApgs)
@@ -260,7 +261,8 @@ class CarInterface(CarInterfaceBase):
     # to a negative value, so it won't matter.
     ret.minEnableSpeed = -1. if (stop_and_go or ret.enableGasInterceptor) else 19. * CV.MPH_TO_MS
 
-    ret.steerLimitAlert = False
+    # removing the DSU disables AEB and it's considered a community maintained feature
+    ret.communityFeature = ret.enableGasInterceptor or ret.enableDsu
 
     ret.longitudinalTuning.deadzoneBP = [0., 9.]
     ret.longitudinalTuning.deadzoneV = [0., .15]
@@ -288,12 +290,12 @@ class CarInterface(CarInterfaceBase):
     self.cp.update_strings(can_strings)
     self.cp_cam.update_strings(can_strings)
 
-    self.CS.update(self.cp)
+    self.CS.update(self.cp, self.cp_cam)
 
     # create message
     ret = car.CarState.new_message()
 
-    ret.canValid = self.cp.can_valid
+    ret.canValid = self.cp.can_valid and self.cp_cam.can_valid
 
     # speeds
     ret.vEgo = self.CS.v_ego
@@ -329,6 +331,7 @@ class CarInterface(CarInterfaceBase):
     ret.steeringTorque = self.CS.steer_torque_driver
     ret.steeringTorqueEps = self.CS.steer_torque_motor
     ret.steeringPressed = self.CS.steer_override
+    ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
     # cruise state
     ret.cruiseState.enabled = self.CS.pcm_acc_active
@@ -365,29 +368,30 @@ class CarInterface(CarInterfaceBase):
     ret.seatbeltUnlatched = not self.CS.seatbelt
 
     ret.genericToggle = self.CS.generic_toggle
+    ret.stockAeb = self.CS.stock_aeb
 
     # events
     events = []
 
-    if self.cp_cam.can_invalid_cnt >= 100 and self.CP.enableCamera:
-      events.append(create_event('invalidGiraffeToyota', [ET.PERMANENT, ET.NO_ENTRY]))
-    if not ret.gearShifter == GearShifter.drive and self.CP.enableDsu:
+    if self.cp_cam.can_invalid_cnt >= 200 and self.CP.enableCamera:
+      events.append(create_event('invalidGiraffeToyota', [ET.PERMANENT]))
+    if not ret.gearShifter == GearShifter.drive and self.CP.openpilotLongitudinalControl:
       events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if ret.doorOpen:
       events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if ret.seatbeltUnlatched:
       events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if self.CS.esp_disabled and self.CP.enableDsu:
+    if self.CS.esp_disabled and self.CP.openpilotLongitudinalControl:
       events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if not self.CS.main_on and self.CP.enableDsu:
+    if not self.CS.main_on and self.CP.openpilotLongitudinalControl:
       events.append(create_event('wrongCarMode', [ET.NO_ENTRY, ET.USER_DISABLE]))
-    if ret.gearShifter == GearShifter.reverse and self.CP.enableDsu:
+    if ret.gearShifter == GearShifter.reverse and self.CP.openpilotLongitudinalControl:
       events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     if self.CS.steer_error:
       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
-    if self.CS.low_speed_lockout and self.CP.enableDsu:
+    if self.CS.low_speed_lockout and self.CP.openpilotLongitudinalControl:
       events.append(create_event('lowSpeedLockout', [ET.NO_ENTRY, ET.PERMANENT]))
-    if ret.vEgo < self.CP.minEnableSpeed and self.CP.enableDsu:
+    if ret.vEgo < self.CP.minEnableSpeed and self.CP.openpilotLongitudinalControl:
       events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
       if c.actuators.gas > 0.1:
         # some margin on the actuator to not false trigger cancellation while stopping

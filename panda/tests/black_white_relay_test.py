@@ -74,7 +74,7 @@ def run_test(sleep_duration):
       assert False
 
     # Switch off relay
-    black_panda.set_safety_mode(Panda.SAFETY_NOOUTPUT)
+    black_panda.set_safety_mode(Panda.SAFETY_SILENT)
     time.sleep(0.05)
 
     if not test_buses(black_panda, other_panda, (0, False, [0, 2])):

@@ -38,9 +38,6 @@ def main(args):
       print('Extract file failed')
       sys.exit(-3)
 
-    print('Compiling test app...')
-    subprocess.check_call(["make", "ubloxd_test"], cwd=ubloxd_dir)
-
     print('Run regression test - CC parser...')
     if args.valgrind:
       subprocess.check_call(["valgrind", "--leak-check=full", os.path.join(ubloxd_dir, 'ubloxd_test'), stream_file_path, cc_output_dir])
