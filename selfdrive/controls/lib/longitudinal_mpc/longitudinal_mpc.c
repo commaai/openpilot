@@ -68,6 +68,25 @@ void init(double ttcCost, double distanceCost, double accelerationCost, double j
 
 }
 
+void change_tr(double ttcCost, double distanceCost, double accelerationCost, double jerkCost){
+  int    i;
+  const int STEP_MULTIPLIER = 3;
+
+  for (i = 0; i < N; i++) {
+    int f = 1;
+    if (i > 4){
+      f = STEP_MULTIPLIER;
+    }
+    acadoVariables.W[16 * i + 0] = ttcCost * f; // exponential cost for time-to-collision (ttc)
+    acadoVariables.W[16 * i + 5] = distanceCost * f; // desired distance
+    acadoVariables.W[16 * i + 10] = accelerationCost * f; // acceleration
+    acadoVariables.W[16 * i + 15] = jerkCost * f; // jerk
+  }
+  acadoVariables.WN[0] = ttcCost * STEP_MULTIPLIER; // exponential cost for danger zone
+  acadoVariables.WN[4] = distanceCost * STEP_MULTIPLIER; // desired distance
+  acadoVariables.WN[8] = accelerationCost * STEP_MULTIPLIER; // acceleration
+}
+
 void init_with_simulation(double v_ego, double x_l_0, double v_l_0, double a_l_0, double l){
   int i;
 
@@ -112,7 +131,7 @@ void init_with_simulation(double v_ego, double x_l_0, double v_l_0, double a_l_0
   for (i = 0; i < NYN; ++i)  acadoVariables.yN[ i ] = 0.0;
 }
 
-int run_mpc(state_t * x0, log_t * solution, double l, double a_l_0){
+int run_mpc(state_t * x0, log_t * solution, double l, double a_l_0, double TR){
   // Calculate lead vehicle predictions
   int i;
   double t = 0.;
@@ -152,7 +171,7 @@ int run_mpc(state_t * x0, log_t * solution, double l, double a_l_0){
   acadoVariables.x[1] = acadoVariables.x0[1] = x0->v_ego;
   acadoVariables.x[2] = acadoVariables.x0[2] = x0->a_ego;
 
-  acado_preparationStep();
+  acado_preparationStep(TR);
   acado_feedbackStep();
 
   for (i = 0; i <= N; i++){
@@ -164,7 +183,7 @@ int run_mpc(state_t * x0, log_t * solution, double l, double a_l_0){
       solution->j_ego[i] = acadoVariables.u[i];
     }
   }
-  solution->cost = acado_getObjective();
+  solution->cost = acado_getObjective(TR);
 
   // Dont shift states here. Current solution is closer to next timestep than if
   // we shift by 0.2 seconds.

@@ -6,6 +6,7 @@ from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_comma
                                            create_acc_cancel_command, create_fcw_command
 from selfdrive.car.toyota.values import CAR, ECU, STATIC_MSGS, SteerLimitParams
 from opendbc.can.packer import CANPacker
+from common.travis_checker import travis
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
@@ -136,7 +137,7 @@ class CarController():
       self.last_fault_frame = frame
 
     # Cut steering for 2s after fault
-    if not enabled or (frame - self.last_fault_frame < 200):
+    if not enabled or (frame - self.last_fault_frame < 200) or (abs(CS.angle_steers_rate) >= 100 and not travis):
       apply_steer = 0
       apply_steer_req = 0
     else:
