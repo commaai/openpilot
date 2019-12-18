@@ -21,6 +21,11 @@ Table of Contents
 
 ---
 
+devel
+[![Build Status](https://travis-ci.org/commaai/openpilot.svg?branch=devel)](https://travis-ci.org/commaai/openpilot)
+release2
+[![Build Status](https://travis-ci.org/commaai/openpilot.svg?branch=release2)](https://travis-ci.org/commaai/openpilot)
+
 What is openpilot?
 ------
 
