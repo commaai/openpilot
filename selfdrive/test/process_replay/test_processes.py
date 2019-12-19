@@ -17,7 +17,7 @@ segments = [
   "b6e1317e1bfbefa6|2019-07-06--04-05-26--5", # CHRYSLER.JEEP_CHEROKEE
   "7873afaf022d36e2|2019-07-03--18-46-44--0", # SUBARU.IMPREZA
 ]
-# segments.remove("cce908f7eb8db67d|2019-08-02--15-09-51--3")
+segments.remove("cce908f7eb8db67d|2019-08-02--15-09-51--3")
 
 def get_segment(segment_name):
   route_name, segment_num = segment_name.rsplit("--", 1)
