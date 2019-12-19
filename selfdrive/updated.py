@@ -93,7 +93,7 @@ def run(cmd, cwd=None):
 def dismount_ovfs():
   if os.path.ismount(OVERLAY_MERGED):
     cloudlog.error("unmounting existing overlay")
-    run(["umount", "-f", OVERLAY_MERGED])
+    run(["umount", "-l", OVERLAY_MERGED])
 
 def init_ovfs():
   cloudlog.info("preparing new safe staging area")
@@ -211,20 +211,32 @@ def attempt_update():
          run(NICE_LOW_PRIORITY + ["git", "submodule", "init"], OVERLAY_MERGED),
          run(NICE_LOW_PRIORITY + ["git", "submodule", "update"], OVERLAY_MERGED)]
     cloudlog.info("git reset success: %s", '\n'.join(r))
+
+    consistent_file = Path(os.path.join(FINALIZED, ".overlay_consistent"))
+
+    os.system("sync")
+    try:
+      consistent_file.unlink()
+    except FileNotFoundError:
+      pass
+    os.system("sync")
+
     # TODO: scons prebuild in background (offroad only, preferably interruptible if ignition comes on)
     # TODO: NEOS download in background (can and probably should do this outside the overlay)
     finalize_from_ovfs()
+
+    # Make sure the validity flag lands on disk LAST, only when the local git
+    # repo and OP install are in a consistent state.
+    os.system("sync")
+    consistent_file.touch()
+    os.system("sync")
+
     update_params(with_date=True, new_version=True)
     cloudlog.info("update successful!")
   else:
     update_params(with_date=True, new_version=False)
     cloudlog.info("nothing new from git at this time")
 
-  # Make sure the validity flag lands on disk LAST, only when the local git
-  # repo and OP install are in a consistent state.
-  os.system("sync")
-  Path(os.path.join(FINALIZED, ".overlay_consistent")).touch()
-  os.system("sync")
 
 def update_params(with_date=False, new_version=False):
   params = Params()
