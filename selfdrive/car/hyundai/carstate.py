@@ -106,9 +106,9 @@ def get_can_parser(CP):
     signals += [
       ("CUR_GR", "TCU12",0),
     ]
-  elif CP.carFingerprint in FEATURES["use_new_gears"]:
+  elif CP.carFingerprint in FEATURES["use_elect_gears"]:
     signals += [
-      ("Gear_Signal", "NEW11", 0),
+      ("Elect_Gear_Shifter", "ELECT_GEAR", 0),
     ]
   else:
     signals += [
@@ -257,8 +257,8 @@ class CarState():
       else:
         self.gear_shifter = GearShifter.unknown
     # Gear Selecton - This is only compatible with optima hybrid 2017
-    elif self.car_fingerprint in FEATURES["use_new_gears"]:
-      gear = cp.vl["NEW11"]["Gear_Signal"]
+    elif self.car_fingerprint in FEATURES["use_elect_gears"]:
+      gear = cp.vl["ELECT_GEAR"]["Elect_Gear_Shifter"]
       if gear == 5:
         self.gear_shifter = GearShifter.drive
       elif gear == 6:
