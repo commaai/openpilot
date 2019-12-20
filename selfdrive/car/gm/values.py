@@ -98,7 +98,7 @@ DBC = {
   CAR.VOLT: dbc_dict('gm_global_a_powertrain', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
   CAR.MALIBU: dbc_dict('gm_global_a_powertrain', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
   CAR.ACADIA: dbc_dict('gm_global_a_powertrain', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
-  CAR.CADILLAC_ATS: dbc_dict('gm_global_a_powertrain', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
+  CAR.CADILLAC_ATS: dbc_dict('gm_global_a_powertrain_proxy', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis_proxy'),
   CAR.BUICK_REGAL: dbc_dict('gm_global_a_powertrain', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
   CAR.CADILLAC_CT6: dbc_dict('cadillac_ct6_powertrain', 'cadillac_ct6_object', chassis_dbc='cadillac_ct6_chassis'),
 }

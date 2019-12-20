@@ -100,9 +100,9 @@ static void gm_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   // on powertrain bus.
   // 384 = ASCMLKASteeringCmd
   // 715 = ASCMGasRegenCmd
-  if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && (bus == 0) && ((addr == 384) || (addr == 715))) {
-    relay_malfunction = true;
-  }
+  //if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && (bus == 0) && ((addr == 384) || (addr == 715))) {
+  //  relay_malfunction = true;
+  //}
 }
 
 // all commands: gas/regen, friction brake and steering
@@ -131,7 +131,7 @@ static int gm_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   bool current_controls_allowed = controls_allowed && !pedal_pressed;
 
   // BRAKE: safety check
-  if (addr == 789) {
+  if ((addr == 789) || (addr == 788)) {
     int brake = ((GET_BYTE(to_send, 0) & 0xFU) << 8) + GET_BYTE(to_send, 1);
     brake = (0x1000 - brake) & 0xFFF;
     if (!current_controls_allowed || !long_controls_allowed) {
@@ -145,7 +145,7 @@ static int gm_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   }
 
   // LKA STEER: safety check
-  if (addr == 384) {
+  if ((addr == 384) || (addr == 383)) {
     int desired_torque = ((GET_BYTE(to_send, 0) & 0x7U) << 8) + GET_BYTE(to_send, 1);
     uint32_t ts = TIM2->CNT;
     bool violation = 0;

@@ -153,24 +153,24 @@ class CarController():
       if (frame % 4) == 0:
         can_sends.append(gmcan.create_acc_dashboard_command(self.packer_pt, canbus.powertrain, enabled, hud_v_cruise * CV.MS_TO_KPH, hud_show_car))
 
-      # Radar needs to know current speed and yaw rate (50hz),
-      # and that ADAS is alive (10hz)
-      time_and_headlights_step = 10
-      tt = frame * DT_CTRL
+      ## Radar needs to know current speed and yaw rate (50hz),
+      ## and that ADAS is alive (10hz)
+      #time_and_headlights_step = 10
+      #tt = frame * DT_CTRL
 
-      if frame % time_and_headlights_step == 0:
-        idx = (frame // time_and_headlights_step) % 4
-        can_sends.append(gmcan.create_adas_time_status(canbus.obstacle, int((tt - self.start_time) * 60), idx))
-        can_sends.append(gmcan.create_adas_headlights_status(canbus.obstacle))
+      #if frame % time_and_headlights_step == 0:
+      #  idx = (frame // time_and_headlights_step) % 4
+      #  can_sends.append(gmcan.create_adas_time_status(canbus.obstacle, int((tt - self.start_time) * 60), idx))
+      #  can_sends.append(gmcan.create_adas_headlights_status(canbus.obstacle))
 
-      speed_and_accelerometer_step = 2
-      if frame % speed_and_accelerometer_step == 0:
-        idx = (frame // speed_and_accelerometer_step) % 4
-        can_sends.append(gmcan.create_adas_steering_status(canbus.obstacle, idx))
-        can_sends.append(gmcan.create_adas_accelerometer_speed_status(canbus.obstacle, CS.v_ego, idx))
+      #speed_and_accelerometer_step = 2
+      #if frame % speed_and_accelerometer_step == 0:
+      #  idx = (frame // speed_and_accelerometer_step) % 4
+      #  can_sends.append(gmcan.create_adas_steering_status(canbus.obstacle, idx))
+      #  can_sends.append(gmcan.create_adas_accelerometer_speed_status(canbus.obstacle, CS.v_ego, idx))
 
-      if frame % P.ADAS_KEEPALIVE_STEP == 0:
-        can_sends += gmcan.create_adas_keepalive(canbus.powertrain)
+      #if frame % P.ADAS_KEEPALIVE_STEP == 0:
+      #  can_sends += gmcan.create_adas_keepalive(canbus.powertrain)
 
       # Show green icon when LKA torque is applied, and
       # alarming orange icon when approaching torque limit.
