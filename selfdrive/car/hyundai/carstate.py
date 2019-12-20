@@ -55,8 +55,6 @@ def get_can_parser(CP):
 
     ("CF_Lvr_GearInf", "LVR11", 0),        #Transmission Gear (0 = N or P, 1-8 = Fwd, 14 = Rev)
 
-    ("CR_Mdps_DrvTq", "MDPS11", 0),
-
     ("CR_Mdps_StrColTq", "MDPS12", 0),
     ("CF_Mdps_ToiActive", "MDPS12", 0),
     ("CF_Mdps_ToiUnavail", "MDPS12", 0),
@@ -71,7 +69,6 @@ def get_can_parser(CP):
   checks = [
     # address, frequency
     ("MDPS12", 50),
-    ("MDPS11", 100),
     ("TCS15", 10),
     ("TCS13", 50),
     ("CLU11", 50),
@@ -109,9 +106,9 @@ def get_can_parser(CP):
     signals += [
       ("CUR_GR", "TCU12",0),
     ]
-  elif CP.carFingerprint in FEATURES["use_new_gears"]:
+  elif CP.carFingerprint in FEATURES["use_elect_gears"]:
     signals += [
-      ("Gear_Signal", "NEW11", 0),
+      ("Elect_Gear_Shifter", "ELECT_GEAR", 0),
     ]
   else:
     signals += [
@@ -217,7 +214,7 @@ class CarState():
     self.left_blinker_flash = cp.vl["CGW1"]['CF_Gway_TurnSigLh']
     self.right_blinker_on = cp.vl["CGW1"]['CF_Gway_TSigRHSw']
     self.right_blinker_flash = cp.vl["CGW1"]['CF_Gway_TurnSigRh']
-    self.steer_override = abs(cp.vl["MDPS11"]['CR_Mdps_DrvTq']) > STEER_THRESHOLD
+    self.steer_override = abs(cp.vl["MDPS12"]['CR_Mdps_StrColTq']) > STEER_THRESHOLD
     self.steer_state = cp.vl["MDPS12"]['CF_Mdps_ToiActive'] #0 NOT ACTIVE, 1 ACTIVE
     self.steer_error = cp.vl["MDPS12"]['CF_Mdps_ToiUnavail']
     self.brake_error = 0
@@ -260,8 +257,8 @@ class CarState():
       else:
         self.gear_shifter = GearShifter.unknown
     # Gear Selecton - This is only compatible with optima hybrid 2017
-    elif self.car_fingerprint in FEATURES["use_new_gears"]:
-      gear = cp.vl["NEW11"]["Gear_Signal"]
+    elif self.car_fingerprint in FEATURES["use_elect_gears"]:
+      gear = cp.vl["ELECT_GEAR"]["Elect_Gear_Shifter"]
       if gear == 5:
         self.gear_shifter = GearShifter.drive
       elif gear == 6:

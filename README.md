@@ -69,8 +69,8 @@ Supported Cars
 | Chrysler  | Pacifica 2017-18<sup>1</sup>       | Adaptive Cruise   | Stock            | 0mph               | 9mph         |
 | Chrysler  | Pacifica Hybrid 2017-18<sup>1</sup>| Adaptive Cruise   | Stock            | 0mph               | 9mph         |
 | Chrysler  | Pacifica Hybrid 2019<sup>1</sup>   | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
-| Genesis   | G80 2018                           | All               | Stock            | 0mph               | 0mph          |
-| Genesis   | G90 2018                           | All               | Stock            | 0mph               | 0mph          |
+| Genesis   | G80 2018                           | All               | Stock            | 0mph               | 0mph         |
+| Genesis   | G90 2018                           | All               | Stock            | 0mph               | 0mph         |
 | Honda     | Accord 2018-19                     | All               | Stock            | 0mph               | 3mph         |
 | Honda     | Accord Hybrid 2018-19              | All               | Stock            | 0mph               | 3mph         |
 | Honda     | Civic Sedan/Coupe 2016-18          | Honda Sensing     | openpilot        | 0mph               | 12mph        |
@@ -85,19 +85,19 @@ Supported Cars
 | Honda     | Pilot 2016-18                      | Honda Sensing     | openpilot        | 25mph<sup>6</sup>  | 12mph        |
 | Honda     | Pilot 2019                         | All               | openpilot        | 25mph<sup>6</sup>  | 12mph        |
 | Honda     | Ridgeline 2017-19                  | Honda Sensing     | openpilot        | 25mph<sup>6</sup>  | 12mph        |
-| Hyundai   | Elantra 2017-19<sup>5</sup>        | SCC + LKAS        | Stock            | 19mph              | 34mph          |
-| Hyundai   | Elantra GT/i30 2017-19             | All               | Stock            | 0mph               | 30mph          |
-| Hyundai   | Genesis 2018                       | All               | Stock            | 19mph              | 34mph          |
-| Hyundai   | Ioniq 2017<sup>5</sup>             | All               | Stock            | 0mph               | 34mph          |
-| Hyundai   | Kona 2017-19<sup>5</sup>           | LDWS              | Stock            | 22mph              | 0mph          |
-| Hyundai   | Santa Fe 2019<sup>5</sup>          | All               | Stock            | 0mph               | 0mph          |
+| Hyundai   | Elantra 2017-19<sup>5</sup>        | SCC + LKAS        | Stock            | 19mph              | 34mph        |
+| Hyundai   | Elantra GT/i30 2017-19             | All               | Stock            | 0mph               | 30mph        |
+| Hyundai   | Genesis 2018                       | All               | Stock            | 19mph              | 34mph        |
+| Hyundai   | Ioniq 2017<sup>5</sup>             | All               | Stock            | 0mph               | 34mph        |
+| Hyundai   | Kona 2017-19<sup>5</sup>           | LDWS              | Stock            | 22mph              | 0mph         |
+| Hyundai   | Santa Fe 2019<sup>5</sup>          | All               | Stock            | 0mph               | 0mph         |
 | Jeep      | Grand Cherokee 2016-18<sup>1</sup> | Adaptive Cruise   | Stock            | 0mph               | 9mph         |
 | Jeep      | Grand Cherokee 2019<sup>1</sup>    | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
-| Kia       | Forte 2018<sup>5</sup>             | LKAS              | Stock            | 0mph               | 0mph          |
-| Kia       | Optima 2017<sup>5</sup>            | SCC + LKAS/LDWS   | Stock            | 0mph               | 34mph          |
-| Kia       | Optima 2019<sup>5</sup>            | SCC + LKAS        | Stock            | 0mph               | 0mph          |
-| Kia       | Sorento 2018<sup>5</sup>           | All               | Stock            | 0mph               | 0mph          |
-| Kia       | Stinger 2018<sup>5</sup>           | SCC + LKAS        | Stock            | 0mph               | 0mph          |
+| Kia       | Forte 2018<sup>5</sup>             | LKAS              | Stock            | 0mph               | 0mph         |
+| Kia       | Optima 2017<sup>5</sup>            | SCC + LKAS/LDWS   | Stock            | 0mph               | 34mph        |
+| Kia       | Optima 2019<sup>5</sup>            | SCC + LKAS        | Stock            | 0mph               | 0mph         |
+| Kia       | Sorento 2018<sup>5</sup>           | All               | Stock            | 0mph               | 0mph         |
+| Kia       | Stinger 2018<sup>5</sup>           | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Lexus     | CT Hybrid 2017-18                  | All               | Stock<sup>5</sup>| 0mph               | 0mph         |
 | Lexus     | ES Hybrid 2019                     | All               | openpilot        | 0mph               | 0mph         |
 | Lexus     | RX Hybrid 2016-19                  | All               | Stock<sup>5</sup>| 0mph               | 0mph         |
@@ -136,18 +136,18 @@ Supported Cars
 Community Maintained Cars and Features
 ------
 
-| Make      | Model (US Market Reference)        | Supported Package | ACC              | No ACC accel below | No ALC below |
-| ----------| -----------------------------------| ------------------| -----------------| -------------------| -------------|
-| Buick     | Regal 2018<sup>7</sup>             | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
-| Chevrolet | Malibu 2017<sup>7</sup>            | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
-| Chevrolet | Volt 2017-18<sup>7</sup>           | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
-| Cadillac  | ATS 2018<sup>7</sup>               | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
-| GMC       | Acadia Denali 2018<sup>7</sup>     | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
-| Holden    | Astra 2017<sup>7</sup>             | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
+| Make      | Model (US Market Reference)   | Supported Package | ACC              | No ACC accel below | No ALC below |
+| ----------| ------------------------------| ------------------| -----------------| -------------------| -------------|
+| Buick     | Regal 2018<sup>6</sup>        | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
+| Chevrolet | Malibu 2017<sup>6</sup>       | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
+| Chevrolet | Volt 2017-18<sup>6</sup>      | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
+| Cadillac  | ATS 2018<sup>6</sup>          | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
+| GMC       | Acadia Denali 2018<sup>6</sup>| Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
+| Holden    | Astra 2017<sup>6</sup>        | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
 
-<sup>5</sup>When disconnecting the Driver Support Unit (DSU), openpilot ACC will replace stock ACC. For DSU locations, see [Toyota Wiki page](https://community.comma.ai/wiki/index.php/Toyota). ***NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB).*** <br />
-<sup>6</sup>[Comma Pedal](https://community.comma.ai/wiki/index.php/Comma_Pedal) is used to provide stop-and-go capability to some of the openpilot-supported cars that don't currently support stop-and-go. Here is how to [build a Comma Pedal](https://medium.com/@jfrux/comma-pedal-building-with-macrofab-6328bea791e8). ***NOTE: The Comma Pedal is not officially supported by [comma](https://comma.ai).*** <br />
-<sup>7</sup>Requires a [panda](https://comma.ai/shop/products/panda-obd-ii-dongle) and [community built giraffe](https://zoneos.com/volt/). ***NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).*** <br />
+<sup>4</sup>When disconnecting the Driver Support Unit (DSU), openpilot ACC will replace stock ACC. For DSU locations, see [Toyota Wiki page](https://community.comma.ai/wiki/index.php/Toyota). ***NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB).*** <br />
+<sup>5</sup>[Comma Pedal](https://community.comma.ai/wiki/index.php/Comma_Pedal) is used to provide stop-and-go capability to some of the openpilot-supported cars that don't currently support stop-and-go. Here is how to [build a Comma Pedal](https://medium.com/@jfrux/comma-pedal-building-with-macrofab-6328bea791e8). ***NOTE: The Comma Pedal is not officially supported by [comma](https://comma.ai).*** <br />
+<sup>6</sup>Requires a [panda](https://comma.ai/shop/products/panda-obd-ii-dongle) and [community built giraffe](https://zoneos.com/volt/). ***NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).*** <br />
 
 Community Maintained Cars and Features are not verified by comma to meet our [safety model](SAFETY.md). Be extra cautious using them. They are only available after enabling the toggle in `Settings->Developer->Enable Community Features`.
 
@@ -163,7 +163,6 @@ Before placing the device on your windshield, check the state and local laws and
 You will be able to engage openpilot after reviewing the onboarding screens and finishing the calibration procedure.
 
 Limitations of openpilot ALC and LDW
->>>>>>> devel
 ------
 
 openpilot ALC and openpilot LDW do not automatically drive the vehicle or reduce the amount of attention that must be paid to operate your vehicle. The driver must always keep control of the steering wheel and be ready to correct the openpilot ALC action at all times.
@@ -285,8 +284,7 @@ Directory Structure
         ├── locationd       # Soon to be home of precise location
         ├── logcatd         # Android logcat as a service
         ├── loggerd         # Logger and uploader of car data
-        ├── modeld          # Driving model runner
-        ├── monitoringd     # Driver monitoring model runner
+        ├── modeld          # Driving and monitoring model runners
         ├── proclogd        # Logs information from proc
         ├── sensord         # IMU / GPS interface code
         ├── tests           # Unit tests, system tests and a car simulator
