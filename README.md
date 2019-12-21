@@ -4,13 +4,7 @@ HKG Community information
 This is the "Community fork" for Kia, Hyundai and Genesis.
 it is a fork of comma's openpilot: https://github.com/commaai/openpilot. It is open source and inherits MIT license.  By installing this software you accept all responsibility for anything that might occur while you use it.  All contributors to this fork are not liable.  <b>Use at your own risk.</b>
 I am going to try to mintain this fork for the commuinty, if you like it you can support me from here:
-<form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
-<input type="hidden" name="cmd" value="_donations" />
-<input type="hidden" name="business" value="JX92RNKXRPJKN" />
-<input type="hidden" name="currency_code" value="USD" />
-<input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif" border="0" name="submit" title="PayPal - The safer, easier way to pay online!" alt="Donate with PayPal button" />
-<img alt="" border="0" src="https://www.paypal.com/en_SA/i/scr/pixel.gif" width="1" height="1" />
-</form>
+https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=JX92RNKXRPJKN&currency_code=USD&source=url
 
 The port was started by Andrew Frahn of Emmertex, ku7 tech on youtube
 https://www.youtube.com/c/ku7tech
