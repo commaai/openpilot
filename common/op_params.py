@@ -37,8 +37,7 @@ class opParams:
                            'following_distance': {'default': None, 'allowed_types': [type(None), float], 'description': 'None has no effect, while setting this to a float will let you change the TR'},
                            'alca_nudge_required': {'default': True, 'allowed_types': [bool], 'description': ('Whether to wait for applied torque to the wheel (nudge) before making lane changes. '
                                                                                                              'If False, lane change will occur IMMEDIATELY after signaling')},
-                           'alca_min_speed': {'default': 30.0, 'allowed_types': [float, int], 'description': 'The minimum speed allowed for an automatic lane change (in MPH)'},
-                           'min_model_speed': {'default': 20.0, 'allowed_types': [float, int], 'description': 'The minimum speed the model will be allowed to slow down for curves (in MPH)'}}
+                           'alca_min_speed': {'default': 30.0, 'allowed_types': [float, int], 'description': 'The minimum speed allowed for an automatic lane change (in MPH)'}}
 
     self.params = {}
     self.params_file = "/data/op_params.json"
