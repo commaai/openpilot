@@ -9,6 +9,7 @@ from selfdrive.config import Conversions as CV
 import cereal.messaging as messaging
 from cereal import log
 from common.op_params import opParams
+from selfdrive.controls.lane_hugging import LaneHugging
 
 LaneChangeState = log.PathPlan.LaneChangeState
 LaneChangeDirection = log.PathPlan.LaneChangeDirection
@@ -58,6 +59,7 @@ class PathPlanner():
     self.op_params = opParams()
     self.alca_nudge_required = self.op_params.get('alca_nudge_required', default=True)
     self.alca_min_speed = self.op_params.get('alca_min_speed', default=30.0)
+    self.lane_hugging = LaneHugging()
 
   def setup_mpc(self):
     self.libmpc = libmpc_py.libmpc
@@ -211,7 +213,8 @@ class PathPlanner():
 
     plan_send.pathPlan.angleSteers = float(self.angle_steers_des_mpc)
     plan_send.pathPlan.rateSteers = float(rate_desired)
-    plan_send.pathPlan.angleOffset = float(sm['liveParameters'].angleOffsetAverage)
+    # plan_send.pathPlan.angleOffset = float(sm['liveParameters'].angleOffsetAverage)
+    plan_send.pathPlan.angleOffset = self.lane_hugging.modify_offset(float(sm['liveParameters'].angleOffsetAverage), lane_change_direction, self.lane_change_state)
     plan_send.pathPlan.mpcSolutionValid = bool(plan_solution_valid)
     plan_send.pathPlan.paramsValid = bool(sm['liveParameters'].valid)
     plan_send.pathPlan.sensorValid = bool(sm['liveParameters'].sensorValid)
