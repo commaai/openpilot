@@ -61,13 +61,13 @@ class CarController():
 
     lkas_active = enabled and abs(CS.angle_steers) < 100. and CS.lkas_button_on 
     # Fix for sharp turns mdps fault and Genesis hard fault at low speed
-	if CS.v_ego < 16.7 and self.car_fingerprint == CAR.GENESIS and not CS.mdps_bus:
-	  lkas_active = 0
+    if CS.v_ego < 16.7 and self.car_fingerprint == CAR.GENESIS and not CS.mdps_bus:
+      lkas_active = 0
     if CS.left_blinker_on or CS.right_blinker_on and CS.v_ego < 20.11: # Disable steering when blinker on and belwo ALC speed
       self.turning_signal_timer = 100  # Disable for 1.0 Seconds after blinker turned off
-	if self.turning_signal_timer
-	  lkas_active = 0
-	  self.turning_signal_timer -= 1
+    if self.turning_signal_timer
+      lkas_active = 0
+      self.turning_signal_timer -= 1
 
     if not lkas_active:
       apply_steer = 0
@@ -82,33 +82,33 @@ class CarController():
 
     clu11_speed = CS.clu11["CF_Clu_Vanz"]
     enabled_speed = 38 if CS.is_set_speed_in_mph  else 60
-	if clu11_speed > enabled_speed or not lkas_active:
-	  enabled_speed = clu11_speed
+    if clu11_speed > enabled_speed or not lkas_active:
+      enabled_speed = clu11_speed
 
     can_sends = []
 
     lkas11_cnt = frame % 0x10
     clu11_cnt = frame % 0x10
-	mdps12_cnt = frame % 0x100
+    mdps12_cnt = frame % 0x100
     self.scc12_cnt %= 15
 
     can_sends.append(create_lkas11(self.packer, self.car_fingerprint, CS.mdps_bus, apply_steer, steer_req, lkas11_cnt, lkas_active,
                                    CS.lkas11, hud_alert, lane_visible, left_lane_depart, right_lane_depart, keep_stock=True))
     if not CS.mdps_bus:
-	  can_sends.append(create_lkas11(self.packer, self.car_fingerprint, 0, apply_steer, steer_req, lkas11_cnt, lkas_active,
+      can_sends.append(create_lkas11(self.packer, self.car_fingerprint, 0, apply_steer, steer_req, lkas11_cnt, lkas_active,
                                    CS.lkas11, hud_alert, lane_visible, left_lane_depart, right_lane_depart, keep_stock=True))
 
     can_sends.append(create_clu11(self.packer, CS.mdps_bus, CS.clu11, Buttons.NONE, enabled_speed, clu11_cnt))
     if pcm_cancel_cmd and CS.scc_bus:
       can_sends.append(create_clu11(self.packer, CS.scc_bus, CS.clu11, Buttons.CANCEL, clu11_speed, clu11_cnt))
     else:
-	  can_sends.append(create_mdps12(self.packer, self.car_fingerprint, mdps12_cnt, CS.mdps12))
+      can_sends.append(create_mdps12(self.packer, self.car_fingerprint, mdps12_cnt, CS.mdps12))
 
     if CS.scc_bus and frame % 2:
       #can_sends.append(create_scc12(self.packer, apply_accel, enabled, self.scc12_cnt, CS.scc12))
       self.scc12_cnt += 1
 
-	if CS.stopped:
+    if CS.stopped:
       # run only first time when the car stopped
       if self.last_lead_distance == 0:
         # get the lead distance from the Radar
@@ -125,6 +125,5 @@ class CarController():
     # reset lead distnce after the car starts moving
     elif self.last_lead_distance != 0:
       self.last_lead_distance = 0  
-
 
     return can_sends
