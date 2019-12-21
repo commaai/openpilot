@@ -56,8 +56,14 @@ def get_can_parser(CP):
     ("CF_Lvr_GearInf", "LVR11", 0),        #Transmission Gear (0 = N or P, 1-8 = Fwd, 14 = Rev)
 
     ("CR_Mdps_StrColTq", "MDPS12", 0),
+    ("CF_Mdps_Def", "MDPS12", 0),
     ("CF_Mdps_ToiActive", "MDPS12", 0),
     ("CF_Mdps_ToiUnavail", "MDPS12", 0),
+    ("CF_Mdps_MsgCount2", "MDPS12", 0),
+    ("CF_Mdps_Chksum2", "MDPS12", 0),
+    ("CF_Mdps_ToiFlt", "MDPS12", 0),
+    ("CF_Mdps_SErr", "MDPS12", 0),
+    ("CR_Mdps_StrTq", "MDPS12", 0),
     ("CF_Mdps_FailStat", "MDPS12", 0),
     ("CR_Mdps_OutTq", "MDPS12", 0),
 
@@ -138,8 +144,14 @@ def get_can2_parser(CP):
   signals = [
     # sig_name, sig_address, default
     ("CR_Mdps_StrColTq", "MDPS12", 0),
+    ("CF_Mdps_Def", "MDPS12", 0),
     ("CF_Mdps_ToiActive", "MDPS12", 0),
     ("CF_Mdps_ToiUnavail", "MDPS12", 0),
+    ("CF_Mdps_MsgCount2", "MDPS12", 0),
+    ("CF_Mdps_Chksum2", "MDPS12", 0),
+    ("CF_Mdps_ToiFlt", "MDPS12", 0),
+    ("CF_Mdps_SErr", "MDPS12", 0),
+    ("CR_Mdps_StrTq", "MDPS12", 0),
     ("CF_Mdps_FailStat", "MDPS12", 0),
     ("CR_Mdps_OutTq", "MDPS12", 0),
   ]
@@ -385,6 +397,8 @@ class CarState():
         self.gear_shifter = GearShifter.unknown
 
 
-    # save the entire LKAS11 and CLU11
+    # save the entire LKAS11, CLU11, SCC12 and MDPS12
     self.lkas11 = cp_cam.vl["LKAS11"]
     self.clu11 = cp.vl["CLU11"]
+    self.scc12 = cp.vl["SCC12"]
+    self.mdps12 = cp.vl["MDPS12"]
