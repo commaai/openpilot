@@ -229,8 +229,8 @@ class CarInterface(CarInterfaceBase):
     ret.steeringPressed = self.CS.steer_override
 
     # cruise state
-    ret.cruiseState.enabled = self.CS.pcm_acc_status != 0 if self.CP.openpilotLongitudinalControl \
-                              else bool(self.CS.main_on) # most HKG cars has no long control, it is safer and easier
+    # most HKG cars has no long control, it is safer and easier to engage by main on
+    ret.cruiseState.enabled = (self.CS.pcm_acc_status != 0) if self.CP.openpilotLongitudinalControl else bool(self.CS.main_on)
     if self.CS.pcm_acc_status != 0:
       ret.cruiseState.speed = self.CS.cruise_set_speed
     else:
@@ -292,10 +292,10 @@ class CarInterface(CarInterfaceBase):
       (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgoRaw > 0.1)) and self.CP.openpilotLongitudinalControl:
       events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
 
-    if ret.gasPressed:
+    if ret.gasPressed and self.CP.openpilotLongitudinalControl:
       events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
 
-    if self.low_speed_alert:
+    if self.low_speed_alert and not self.CS.mdps_bus :
       events.append(create_event('belowSteerSpeed', [ET.WARNING]))
 
     ret.events = events
