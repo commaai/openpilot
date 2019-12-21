@@ -69,17 +69,17 @@ static int default_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
   if (HKG_forward_BUS1){HKG_bus1 = 1;}
   if (HKG_forward_BUS2){HKG_bus2 = 2;}
 
-  if (bus_num == 0) {
+  if (bus_num == 0 && (HKG_forward_BUS1 || HKG_forward_BUS2)) {
     bus_fwd = (HKG_forward_BUS1 && HKG_forward_BUS2) ? 12 : HKG_forward_BUS1 + HKG_forward_BUS2;
   }
-  if ((bus_num == 1) && HKG_forward_BUS1) {
+  if (bus_num == 1 && HKG_forward_BUS1) {
     bus_fwd = HKG_bus2 * 10;
   }
-  if ((bus_num == 2) && HKG_forward_BUS2) {
+  if (bus_num == 2 && HKG_forward_BUS2) {
     bus_fwd = HKG_bus1 * 10;
   }
     // Code for LKA/LFA/HDA anti-nagging.
-  if (addr == 593) {
+  if (addr == 593 && bus_fwd != -1) {
     uint8_t dat[8];
     int New_Chksum2 = 0;
     for (int i=0; i<8; i++) {
