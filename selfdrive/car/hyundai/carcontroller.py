@@ -49,7 +49,7 @@ class CarController():
     self.resume_cnt = 0
     self.last_resume_frame = 0
     self.turning_signal_timer = 0
-	self.scc12_cnt = 0
+    self.scc12_cnt = 0
 
   def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert,
               left_line, right_line, left_lane_depart, right_lane_depart):
