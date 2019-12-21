@@ -91,8 +91,8 @@ class LongitudinalMpc():
       self.last_cost = cost
 
   def store_lead_data(self):
-    v_lead_retention = 2.0  # seconds
-    v_ego_retention = 1.5
+    v_lead_retention = 2.15  # seconds
+    v_ego_retention = 2.5
 
     if self.lead_data['status']:
       self.df_data['v_leads'] = [sample for sample in self.df_data['v_leads'] if
@@ -119,10 +119,10 @@ class LongitudinalMpc():
     x_vel = [0.0, 1.8627, 3.7253, 5.588, 7.4507, 9.3133, 11.5598, 13.645, 22.352, 31.2928, 33.528, 35.7632, 40.2336]  # velocities
     y_mod = [1.102, 1.12, 1.14, 1.168, 1.21, 1.273, 1.36, 1.411, 1.543, 1.62, 1.664, 1.736, 1.853]  # TRs
 
-    sng_TR = 1.7  # stop and go parameters
+    sng_TR = 1.8  # stop and go parameters
     sng_speed = 15.0 * self.MPH_TO_MS
 
-    if self.car_data['v_ego'] >= sng_speed or self.df_data['v_egos'][-1]['v_ego'] >= self.car_data['v_ego']:  # if above 15 mph OR we're decelerating to a stop, keep shorter TR. when we reaccelerate, use 1.8s and slowly decrease
+    if self.car_data['v_ego'] >= sng_speed or self.df_data['v_egos'][0]['v_ego'] >= self.car_data['v_ego']:  # if above 15 mph OR we're decelerating to a stop, keep shorter TR. when we reaccelerate, use 1.8s and slowly decrease
       TR = interp(self.car_data['v_ego'], x_vel, y_mod)
     else:  # this allows us to get closer to the lead car when stopping, while being able to have smooth stop and go when reaccelerating
       x = [sng_speed / 3.0, sng_speed]  # decrease TR between 5 and 15 mph from 1.8s to defined TR above at 15mph while accelerating
