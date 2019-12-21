@@ -18,9 +18,9 @@ const int GM_DRIVER_TORQUE_FACTOR = 4;
 const int GM_MAX_GAS = 3072;
 const int GM_MAX_REGEN = 1404;
 const int GM_MAX_BRAKE = 350;
-const AddrBus GM_TX_MSGS[] = {{384, 0}, {1033, 0}, {1034, 0}, {715, 0}, {880, 0},  // pt bus
+const AddrBus GM_TX_MSGS[] = {{384, 0}, {383, 0}, {1033, 0}, {1034, 0}, {715, 0}, {714, 0}, {880, 0}, {879, 0},  // pt bus
                               {161, 1}, {774, 1}, {776, 1}, {784, 1},   // obs bus
-                              {789, 2},  // ch bus
+                              {789, 2}, {788, 2},  // ch bus
                               {0x104c006c, 3}, {0x10400060, 3}};  // gmlan
 
 int gm_brake_prev = 0;
@@ -32,7 +32,7 @@ uint32_t gm_ts_last = 0;
 struct sample_t gm_torque_driver;         // last few driver torques measured
 
 static void gm_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
-  int bus = GET_BUS(to_push);
+  //int bus = GET_BUS(to_push);
   int addr = GET_ADDR(to_push);
 
   if (addr == 388) {
@@ -193,7 +193,7 @@ static int gm_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   }
 
   // GAS/REGEN: safety check
-  if (addr == 715) {
+  if ((addr == 715) || (addr == 714)) {
     int gas_regen = ((GET_BYTE(to_send, 2) & 0x7FU) << 5) + ((GET_BYTE(to_send, 3) & 0xF8U) >> 3);
     // Disabled message is !engaged with gas
     // value that corresponds to max regen.

@@ -120,8 +120,8 @@ class CarController():
           canbus.powertrain, apply_steer, idx, lkas_enabled))
 
     ### GAS/BRAKE ###
-
-    if self.car_fingerprint not in SUPERCRUISE_CARS:
+    #if self.car_fingerprint not in SUPERCRUISE_CARS:
+    if True:
       # no output if not enabled, but keep sending keepalive messages
       # treat pedals as one
       final_pedal = actuators.gas - actuators.brake
