@@ -31,7 +31,6 @@ class LongitudinalMpc():
     self.new_lead = False
     self.last_cloudlog_t = 0.0
 
-    self.CS = None
     self.car_data = {'v_ego': 0.0, 'a_ego': 0.0}
     self.lead_data = {'v_lead': None, 'x_lead': None, 'a_lead': None, 'status': False}
     self.df_data = {"v_leads": [], "v_egos": []}  # dynamic follow data
@@ -69,14 +68,14 @@ class LongitudinalMpc():
     self.cur_state[0].v_ego = v
     self.cur_state[0].a_ego = a
 
-  def get_TR(self):
+  def get_TR(self, CS):
     if not self.lead_data['status'] or travis:
       TR = 1.8
     elif self.customTR is not None:
       TR = clip(self.customTR, 0.9, 2.7)
     else:
       self.store_lead_data()
-      TR = self.dynamic_follow()
+      TR = self.dynamic_follow(CS)
 
     if not travis:
       self.change_cost(TR)
@@ -115,7 +114,7 @@ class LongitudinalMpc():
           a_lead = calculated_accel
     return a_lead  # if above doesn't execute, we'll return a_lead from radar
 
-  def dynamic_follow(self):
+  def dynamic_follow(self, CS):
     x_vel = [0.0, 1.8627, 3.7253, 5.588, 7.4507, 9.3133, 11.5598, 13.645, 22.352, 31.2928, 33.528, 35.7632, 40.2336]  # velocities
     y_mod = [1.102, 1.12, 1.14, 1.168, 1.21, 1.273, 1.36, 1.411, 1.543, 1.62, 1.664, 1.736, 1.853]  # TRs
 
@@ -140,13 +139,13 @@ class LongitudinalMpc():
 
     TR += TR_mod
 
-    if self.CS.leftBlinker or self.CS.rightBlinker:
+    if CS.leftBlinker or CS.rightBlinker:
       old_TR = float(TR)
       x = [8.9408, 22.352, 31.2928]  # 20, 50, 70 mph
       y = [1.0, .7, .65]  # reduce TR when changing lanes
       TR *= interp(self.car_data['v_ego'], x, y)
       with open('/data/blinker_debug', 'a') as f:
-        f.write('{}\n'.format([self.CS.leftBlinker, self.CS.rightBlinker, self.car_data['v_ego'], old_TR, TR]))
+        f.write('{}\n'.format([CS.leftBlinker, CS.rightBlinker, self.car_data['v_ego'], old_TR, TR]))
 
     # TR *= self.get_traffic_level()  # modify TR based on last minute of traffic data  # todo: look at getting this to work, a model could be used
 
@@ -176,7 +175,6 @@ class LongitudinalMpc():
 
   def update(self, pm, CS, lead, v_cruise_setpoint):
     v_ego = CS.vEgo
-    self.CS = CS
     self.car_data = {'v_ego': CS.vEgo, 'a_ego': CS.aEgo}
 
     # Setup current mpc state
@@ -213,7 +211,7 @@ class LongitudinalMpc():
 
     # Calculate mpc
     t = sec_since_boot()
-    n_its = self.libmpc.run_mpc(self.cur_state, self.mpc_solution, self.a_lead_tau, a_lead, self.get_TR())
+    n_its = self.libmpc.run_mpc(self.cur_state, self.mpc_solution, self.a_lead_tau, a_lead, self.get_TR(CS))
     duration = int((sec_since_boot() - t) * 1e9)
 
     if not travis:
