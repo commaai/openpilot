@@ -3,7 +3,7 @@ from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
-from selfdrive.car.hyundai.carstate import CarState, get_can_parser, get_camera_parser
+from selfdrive.car.hyundai.carstate import CarState, get_can_parser, get_can2_parser, get_camera_parser
 from selfdrive.car.hyundai.values import ECU, ECU_FINGERPRINT, CAR, FINGERPRINTS
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, is_ecu_disconnected, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
@@ -25,6 +25,7 @@ class CarInterface(CarInterfaceBase):
     # *** init the major players ***
     self.CS = CarState(CP)
     self.cp = get_can_parser(CP)
+    self.cp2 = get_can2_parser(CP)
     self.cp_cam = get_camera_parser(CP)
 
     self.CC = None
@@ -188,9 +189,10 @@ class CarInterface(CarInterfaceBase):
   def update(self, c, can_strings):
     # ******************* do can recv *******************
     self.cp.update_strings(can_strings)
+    self.cp2.update_strings(can_strings)
     self.cp_cam.update_strings(can_strings)
 
-    self.CS.update(self.cp, self.cp_cam)
+    self.CS.update(self.cp, self.cp2, self.cp_cam)
     # create message
     ret = car.CarState.new_message()
 
