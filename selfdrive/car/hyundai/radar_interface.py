@@ -30,7 +30,6 @@ class RadarInterface(RadarInterfaceBase):
     self.trigger_msg = 0x420
     self.track_id = 0
     self.no_radar = CP.carFingerprint in FEATURES["non_scc"]
-    self.scc_bus = 0
 
   def update(self, can_strings):
     if self.no_radar:
@@ -38,21 +37,14 @@ class RadarInterface(RadarInterfaceBase):
         time.sleep(0.05)  # radard runs on RI updates
 
       return car.RadarData.new_message()
-	
-    if self.scc_bus = 1:
-      vls = self.rcp1.update_strings(can_strings)
-    if self.scc_bus = 2:
-      vls = self.rcp2.update_strings(can_strings)
-    else:
-      vls = self.rcp.update_strings(can_strings)
 
     if not self.track_id:
       for i in range(3):
+        vls = self.rcp1.update_strings(can_strings) if i == 1 else self.rcp2.update_strings(can_strings) if i = 2 \
+        else self.rcp.update_strings(can_strings)
         self.updated_messages.update(vls)
         if self.trigger_msg in self.updated_messages:
           break
-        self.scc_bus += 1
-        self.scc_bus %= 3
     else:
       self.updated_messages.update(vls)
 
