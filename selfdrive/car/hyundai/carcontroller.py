@@ -92,10 +92,10 @@ class CarController():
     mdps12_cnt = frame % 0x100
     self.scc12_cnt %= 15
 
-    can_sends.append(create_lkas11(self.packer, self.car_fingerprint, CS.mdps_bus, apply_steer, steer_req, lkas11_cnt, lkas_active,
+    can_sends.append(create_lkas11(self.packer, self.car_fingerprint, 0, apply_steer, steer_req, lkas11_cnt, lkas_active,
                                    CS.lkas11, hud_alert, lane_visible, left_lane_depart, right_lane_depart, keep_stock=True))
-    if not CS.mdps_bus:
-      can_sends.append(create_lkas11(self.packer, self.car_fingerprint, 0, apply_steer, steer_req, lkas11_cnt, lkas_active,
+    if CS.mdps_bus:
+      can_sends.append(create_lkas11(self.packer, self.car_fingerprint, CS.mdps_bus, apply_steer, steer_req, lkas11_cnt, lkas_active,
                                    CS.lkas11, hud_alert, lane_visible, left_lane_depart, right_lane_depart, keep_stock=True))
 
     can_sends.append(create_clu11(self.packer, CS.mdps_bus, CS.clu11, Buttons.NONE, enabled_speed, clu11_cnt))
