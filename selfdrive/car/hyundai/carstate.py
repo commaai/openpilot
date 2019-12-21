@@ -273,9 +273,9 @@ class CarState():
   def update(self, cp, cp2, cp_cam):
     if cp2.vl["MDPS12"]['CR_Mdps_OutTq'] and not self.mdps_bus:
       self.mdps_bus = 1 
-    if cp2.vl["SCC11"]['TauGapSet'] and not self.scc_can and not self.no_radar:
+    if cp2.vl["SCC11"]['TauGapSet'] and not self.scc_bus and not self.no_radar:
       self.scc_bus = 1
-    elif cp_cam.vl["SCC11"]['TauGapSet'] and not self.scc_can and not self.no_radar:
+    elif cp_cam.vl["SCC11"]['TauGapSet'] and not self.scc_bus and not self.no_radar:
       self.scc_bus = 2
     cp_mdps = cp2 if self.mdps_bus else cp
     cp_scc = cp2 if self.scc_bus == 1 else cp_cam if self.scc_bus == 2 else cp
