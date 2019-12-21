@@ -9,7 +9,7 @@ void default_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   int addr = GET_ADDR(to_push);
 
   // check if LKAS connected to Bus0
-  if ((addr == 832) && (bus_num == 0)) {
+  if ((addr == 832) && (bus == 0)) {
     if (HKG_forward_BUS2 != false) {
       HKG_forward_BUS2 = false;
 	}
