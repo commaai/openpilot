@@ -7,6 +7,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
   def __init__(self):
     self.op_params = opParams()
     self.params = None
+    self.sleep_time = 1.0
     print('Welcome to the opParams command line editor!')
     print('Here are your parameters:\n')
     self.run_loop()
@@ -46,11 +47,11 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       return 'error', choice
     else:
       print('\nNot an integer!\n', flush=True)
-      time.sleep(1.5)
+      time.sleep(self.sleep_time)
       return 'retry', choice
     if choice not in range(1, len(self.params) + 3):  # three for add/delete parameter
       print('Not in range!\n', flush=True)
-      time.sleep(1.5)
+      time.sleep(self.sleep_time)
       return 'continue', choice
 
     if choice == len(self.params) + 1:  # add new parameter
@@ -87,7 +88,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
 
     if extra_info and not any([isinstance(new_value, typ) for typ in param_allowed_types]):
       print('The type of data you entered ({}) is not allowed with this parameter!\n'.format(str(type(new_value)).split("'")[1]))
-      time.sleep(1.5)
+      time.sleep(self.sleep_time)
       return
 
     print('\nOld value: {} (type: {})'.format(old_value, str(type(old_value)).split("'")[1]))
@@ -99,7 +100,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       print('\nSaved!\n')
     else:
       print('\nNot saved!\n', flush=True)
-    time.sleep(1.5)
+    time.sleep(self.sleep_time)
 
   def parse_input(self, dat):
     try:
@@ -136,7 +137,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       print('\nDeleted!\n')
     else:
       print('\nNot saved!\n', flush=True)
-    time.sleep(1.5)
+    time.sleep(self.sleep_time)
 
   def add_parameter(self):
     print('Type the name of your new parameter:')
@@ -169,7 +170,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       print('\nSaved!\n')
     else:
       print('\nNot saved!\n', flush=True)
-    time.sleep(1.5)
+    time.sleep(self.sleep_time)
 
 
 opEdit()

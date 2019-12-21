@@ -44,7 +44,7 @@ class opParams:
     self.params_file = "/data/op_params.json"
     self.kegman_file = "/data/kegman.json"
     self.last_read_time = time.time()
-    self.read_timeout = 1.0  # max frequency to read with self.get(...) (sec)
+    self.read_frequency = 10.0  # max frequency to read with self.get(...) (sec)
     self.force_update = False  # replaces values with default params if True, not just add add missing key/value pairs
     self.run_init()  # restores, reads, and updates params
 
@@ -103,7 +103,7 @@ class opParams:
     write_params(self.params, self.params_file)
 
   def get(self, key=None, default=None):  # can specify a default value if key doesn't exist
-    if (time.time() - self.last_read_time) >= self.read_timeout and not travis:  # make sure we aren't reading file too often
+    if (time.time() - self.last_read_time) >= self.read_frequency and not travis:  # make sure we aren't reading file too often
       self.params, read_status = read_params(self.params_file, self.format_default_params())
       self.last_read_time = time.time()
     if key is None:  # get all
