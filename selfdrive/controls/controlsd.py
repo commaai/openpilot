@@ -492,7 +492,11 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
   print("Waiting for CAN messages...")
   messaging.get_one_can(can_sock)
 
-  CI, CP = get_car(can_sock, pm.sock['sendcan'], has_relay)
+  if not travis:
+    CI, CP, candidate = get_car(can_sock, pm.sock['sendcan'], has_relay)
+  else:
+    CI, CP = get_car(can_sock, pm.sock['sendcan'], has_relay)
+    candidate = False
 
   car_recognized = CP.carName != 'mock'
   # If stock camera is disconnected, we loaded car controls and it's not chffrplus
@@ -512,7 +516,7 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
   startup_alert = get_startup_alert(car_recognized, controller_available)
   AM.add(sm.frame, startup_alert, False)
 
-  LoC = LongControl(CP, CI.compute_gb)
+  LoC = LongControl(CP, CI.compute_gb, candidate)
   VM = VehicleModel(CP)
 
   if CP.lateralTuning.which() == 'pid':

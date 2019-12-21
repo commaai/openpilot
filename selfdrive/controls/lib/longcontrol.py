@@ -2,6 +2,7 @@ from cereal import log
 from common.numpy_fast import clip, interp
 from selfdrive.controls.lib.pid import PIController
 from common.travis_checker import travis
+from selfdrive.car.toyota.values import CAR
 
 LongCtrlState = log.ControlsState.LongControlState
 
@@ -57,7 +58,7 @@ def long_control_state_trans(active, long_control_state, v_ego, v_target, v_pid,
 
 
 class LongControl():
-  def __init__(self, CP, compute_gb):
+  def __init__(self, CP, compute_gb, candidate):
     self.long_control_state = LongCtrlState.off  # initialized to off
     self.pid = PIController((CP.longitudinalTuning.kpBP, CP.longitudinalTuning.kpV),
                             (CP.longitudinalTuning.kiBP, CP.longitudinalTuning.kiV),
@@ -69,6 +70,8 @@ class LongControl():
     self.lead_data = {'v_rel': None, 'a_lead': None, 'x_lead': None, 'status': False}
     self.v_ego = 0.0
     self.gas_pressed = False
+    self.candidate = candidate
+    self.toyota_candidates = [attr for attr in dir(CAR) if not attr.startswith("__")]
 
   def reset(self, v_pid):
     """Reset PID controller and change setpoint"""
@@ -76,13 +79,17 @@ class LongControl():
     self.v_pid = v_pid
 
   def dynamic_gas(self, CP):
-    if True:  # CP.enableGasInterceptor:  # if user has pedal (probably Toyota) #todo: make different profiles for different toyotas, and check if toyota or not
+    x, y = [], []
+    if CP.enableGasInterceptor:  # if pedal, todo: make different profiles for different vehicles
+      if self.candidate in [CAR.COROLLA]:
+        x = [0.0, 1.4082, 2.80311, 4.22661, 5.38271, 6.16561, 7.24781, 8.28308, 10.24465, 12.96402, 15.42303, 18.11903, 20.11703, 24.46614, 29.05805, 32.71015, 35.76326]
+        y = [0.2, 0.20443, 0.21592, 0.23334, 0.25734, 0.27916, 0.3229, 0.35, 0.368, 0.377, 0.389, 0.399, 0.411, 0.45, 0.504, 0.558, 0.617]  # todo: this is the average of the above, only above the 8th index (about .75 reduction)
+    elif self.candidate in self.toyota_candidates:
       x = [0.0, 1.4082, 2.80311, 4.22661, 5.38271, 6.16561, 7.24781, 8.28308, 10.24465, 12.96402, 15.42303, 18.11903, 20.11703, 24.46614, 29.05805, 32.71015, 35.76326]
-      # y = [0.2, 0.20443, 0.21592, 0.23334, 0.25734, 0.27916, 0.3229, 0.34784, 0.36765, 0.38, 0.396, 0.409, 0.425, 0.478, 0.55, 0.621, 0.7]
-      # y = [0.175, 0.178, 0.185, 0.195, 0.209, 0.222, 0.249, 0.264, 0.276, 0.283, 0.293, 0.3, 0.31, 0.342, 0.385, 0.428, 0.475]  # todo: elvaluate if this is better
-      y = [0.2, 0.20443, 0.21592, 0.23334, 0.25734, 0.27916, 0.3229, 0.35, 0.368, 0.377, 0.389, 0.399, 0.411, 0.45, 0.504, 0.558, 0.617]  # todo: this is the average of the above, only above the 8th index (about .75 reduction)
-    # else:
-    #   x, y = CP.gasMaxBP, CP.gasMaxV  # if user doesn't have pedal, use stock params
+      y = [0.35, 0.47, 0.43, 0.35, 0.3, 0.3, 0.3229, 0.34784, 0.36765, 0.38, 0.396, 0.409, 0.425, 0.478, 0.55, 0.621, 0.7]
+
+    if not x:
+      x, y = CP.gasMaxBP, CP.gasMaxV  # if unsupported car, use stock. todo: think about disallowing dynamic follow for unsupported cars
 
     gas = interp(self.v_ego, x, y)
 
@@ -129,8 +136,8 @@ class LongControl():
     self.v_ego = v_ego
 
     # Actuation limits
-    if not travis and CP.enableGasInterceptor:
-      self.handle_passable(passable)  # so travis doesn't call vRel... on None
+    if not travis:
+      self.handle_passable(passable)
       gas_max = self.dynamic_gas(CP)
     else:
       gas_max = interp(v_ego, CP.gasMaxBP, CP.gasMaxV)
@@ -144,7 +151,7 @@ class LongControl():
 
     v_ego_pid = max(v_ego, MIN_CAN_SPEED)  # Without this we get jumps, CAN bus reports 0 when speed < 0.3
 
-    if self.long_control_state == LongCtrlState.off:
+    if self.long_control_state == LongCtrlState.off or (self.gas_pressed and not travis):
       self.v_pid = v_ego_pid
       self.pid.reset()
       output_gb = 0.

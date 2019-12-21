@@ -11,6 +11,7 @@ from selfdrive.controls.lib.drive_helpers import MPC_COST_LONG
 from common.op_params import opParams
 from common.numpy_fast import interp, clip
 from common.travis_checker import travis
+from selfdrive.config import Conversions as CV
 
 LOG_MPC = os.environ.get('LOG_MPC', False)
 
@@ -18,7 +19,6 @@ LOG_MPC = os.environ.get('LOG_MPC', False)
 class LongitudinalMpc():
   def __init__(self, mpc_id):
     self.mpc_id = mpc_id
-    self.MPH_TO_MS = 0.44704
     self.op_params = opParams()
 
     self.setup_mpc()
@@ -119,7 +119,7 @@ class LongitudinalMpc():
     y_mod = [1.102, 1.12, 1.14, 1.168, 1.21, 1.273, 1.36, 1.411, 1.543, 1.62, 1.664, 1.736, 1.853]  # TRs
 
     sng_TR = 1.8  # stop and go parameters
-    sng_speed = 15.0 * self.MPH_TO_MS
+    sng_speed = 15.0 * CV.MPH_TO_MS
 
     if self.car_data['v_ego'] >= sng_speed or self.df_data['v_egos'][0]['v_ego'] >= self.car_data['v_ego']:  # if above 15 mph OR we're decelerating to a stop, keep shorter TR. when we reaccelerate, use 1.8s and slowly decrease
       TR = interp(self.car_data['v_ego'], x_vel, y_mod)
@@ -214,9 +214,9 @@ class LongitudinalMpc():
     n_its = self.libmpc.run_mpc(self.cur_state, self.mpc_solution, self.a_lead_tau, a_lead, self.get_TR(CS))
     duration = int((sec_since_boot() - t) * 1e9)
 
-    if not travis:
-      with open('/data/mpc_debug.{}'.format(self.mpc_id), 'a') as f:
-        f.write('{}\n'.format(self.lead_data))
+    # if not travis:
+    #   with open('/data/mpc_debug.{}'.format(self.mpc_id), 'a') as f:
+    #     f.write('{}\n'.format(self.lead_data))
 
     if LOG_MPC:
       self.send_mpc_solution(pm, n_its, duration)
