@@ -20,7 +20,7 @@ class LaneHugging:
     if not travis:
       starting = LaneChangeState.laneChangeStarting
       if self.direction == 'left' and ((lane_change_state == starting and lane_change_direction != LaneChangeDirection.left) or lane_change_state != starting):
-        angle_offset_average = -self.angle_offset  # todo: not totally sure if this needs to be negative or positive lolol, will test and update
+        angle_offset_average = self.angle_offset  # todo: not totally sure if this needs to be negative or positive lolol, will test and update
       elif self.direction == 'right' and ((lane_change_state == starting and lane_change_direction != LaneChangeDirection.right) or lane_change_state != starting):
-        angle_offset_average = self.angle_offset
+        angle_offset_average = -self.angle_offset
     return angle_offset_average
