@@ -104,8 +104,8 @@ class LongControl():
         # current_TR = self.lead_data['x_lead'] / self.v_ego if self.v_ego > 0 else TR
 
         x = [0.0, 0.24588812499999999, 0.432818589, 0.593044697, 0.730381365, 1.050833588, 1.3965, 1.714627481]  # relative velocity mod
-        y = [-(gas / 1.01), -(gas / 1.105), -(gas / 1.243), -(gas / 1.6), -(gas / 2.32), -(gas / 4.8), -(gas / 15), 0]
-        gas_mod = interp(self.lead_data['v_rel'], x, y)
+        y = [gas * 0.9901, gas * 0.905, gas * 0.8045, gas * 0.625, gas * 0.431, gas * 0.2083, gas * .0667, 0]
+        gas_mod = -interp(self.lead_data['v_rel'], x, y)
 
         # x = [0.0, 0.22, 0.44518483, 0.675, 1.0, 1.76361684]  # lead accel mod  # todo: this
         # y = [0.0, (gas * 0.08), (gas * 0.20), (gas * 0.4), (gas * 0.52), (gas * 0.6)]
