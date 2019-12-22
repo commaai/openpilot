@@ -43,7 +43,8 @@ class RadarInterface(RadarInterfaceBase):
         vls = self.rcp1.update_strings(can_strings) if i == 1 else self.rcp2.update_strings(can_strings) if i = 2 \
         else self.rcp.update_strings(can_strings)
         self.updated_messages.update(vls)
-        if self.trigger_msg in self.updated_messages:
+        if self.rcp.vl["SCC11"]['TauGapSet'] and i == 0 or self.rcp1.vl["SCC11"]['TauGapSet'] and i == 1 \
+                                                                     or self.rcp2.vl["SCC11"]['TauGapSet'] and i == 2 :
           break
     else:
       self.updated_messages.update(vls)
