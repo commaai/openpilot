@@ -41,7 +41,7 @@ class RadarInterface(RadarInterfaceBase):
 
     if not self.track_id:
       for i in range(3):
-        vls = self.rcp1.update_strings(can_strings) if i == 1 else self.rcp2.update_strings(can_strings) if i = 2 \
+        vls = self.rcp1.update_strings(can_strings) if i == 1 else self.rcp2.update_strings(can_strings) if i == 2 \
         else self.rcp.update_strings(can_strings)
         self.updated_messages.update(vls)
         if self.rcp.vl["SCC11"]['TauGapSet'] and i == 0 or self.rcp1.vl["SCC11"]['TauGapSet'] and i == 1 \
