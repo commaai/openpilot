@@ -13,6 +13,7 @@ def get_radar_can_parser(CP, bus):
     ("ACC_ObjLatPos", "SCC11", 0),
     ("ACC_ObjDist", "SCC11", 0),
     ("ACC_ObjRelSpd", "SCC11", 0),
+    ("TauGapSet", "SCC11", 0),
   ]
   checks = []
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, bus)
