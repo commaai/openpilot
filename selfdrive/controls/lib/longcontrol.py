@@ -82,8 +82,6 @@ class LongControl():
     x, y = [], []
     if CP.enableGasInterceptor:  # if pedal, todo: make different profiles for different vehicles
       if self.candidate in [CAR.COROLLA]:
-        with open('/data/long_corolla', 'a') as f:
-          f.write('we have liftoff\n')
         x = [0.0, 1.4082, 2.80311, 4.22661, 5.38271, 6.16561, 7.24781, 8.28308, 10.24465, 12.96402, 15.42303, 18.11903, 20.11703, 24.46614, 29.05805, 32.71015, 35.76326]
         y = [0.2, 0.20443, 0.21592, 0.23334, 0.25734, 0.27916, 0.3229, 0.35, 0.368, 0.377, 0.389, 0.399, 0.411, 0.45, 0.504, 0.558, 0.617]  # todo: this is the average of the above, only above the 8th index (about .75 reduction)
     elif self.candidate in self.toyota_candidates:
@@ -94,9 +92,6 @@ class LongControl():
       x, y = CP.gasMaxBP, CP.gasMaxV  # if unsupported car, use stock. todo: think about disallowing dynamic follow for unsupported cars
 
     gas = interp(self.v_ego, x, y)
-
-    with open('/data/lead_data', 'a') as f:
-      f.write(str(self.lead_data) + '\n')
 
     if self.lead_data['status']:  # if lead
       if self.v_ego <= 8.9408:  # if under 20 mph

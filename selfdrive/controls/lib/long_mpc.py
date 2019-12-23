@@ -142,12 +142,9 @@ class LongitudinalMpc():
     TR += TR_mod
 
     if CS.leftBlinker or CS.rightBlinker:
-      old_TR = float(TR)
       x = [8.9408, 22.352, 31.2928]  # 20, 50, 70 mph
       y = [1.0, .65, .55]  # reduce TR when changing lanes
       TR *= interp(self.car_data['v_ego'], x, y)
-      with open('/data/blinker_debug', 'a') as f:
-        f.write('{}\n'.format([CS.leftBlinker, CS.rightBlinker, self.car_data['v_ego'], old_TR, TR]))
 
     # TR *= self.get_traffic_level()  # modify TR based on last minute of traffic data  # todo: look at getting this to work, a model could be used
 
