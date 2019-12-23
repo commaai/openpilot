@@ -257,9 +257,13 @@ def state_control(frame, rcv_frame, plan, path_plan, CS, CP, state, events, v_cr
   # add eventual driver distracted events
   events = driver_status.update(events, driver_engaged, isActive(state), CS.standstill)
 
-  # send FCW alert if triggered by planner
-  if plan.fcw or CS.stockFcw:
+  if plan.fcw:
+    # send FCW alert if triggered by planner
     AM.add(frame, "fcw", enabled)
+
+  elif CS.stockFcw:
+    # send a silent alert when stock fcw triggers, since the car is already beeping
+    AM.add(frame, "fcwStock", enabled)
 
   # State specific actions
 
