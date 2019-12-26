@@ -67,6 +67,9 @@ class Planner():
 
     self.mpc1 = LongitudinalMpc(1)
     self.mpc2 = LongitudinalMpc(2)
+    if not travis:
+      pm = messaging.PubMaster(['smiskolData'])
+      self.mpc1.set_pm(pm)
 
     self.v_acc_start = 0.0
     self.a_acc_start = 0.0
