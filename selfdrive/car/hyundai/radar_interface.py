@@ -6,17 +6,16 @@ from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import RadarInterfaceBase
 from selfdrive.car.hyundai.values import DBC, FEATURES
 
-def get_radar_can_parser(CP, bus):
+def get_radar_can_parser(CP):
   signals = [
     # sig_name, sig_address, default
     ("ACC_ObjStatus", "SCC11", 0),
     ("ACC_ObjLatPos", "SCC11", 0),
     ("ACC_ObjDist", "SCC11", 0),
     ("ACC_ObjRelSpd", "SCC11", 0),
-    ("TauGapSet", "SCC11", 0),
   ]
   checks = []
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, bus)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, CP.sccBus)
 
 
 class RadarInterface(RadarInterfaceBase):
@@ -24,13 +23,11 @@ class RadarInterface(RadarInterfaceBase):
     # radar
     self.pts = {}
     self.delay = 0  # Delay of radar
-    self.rcp = get_radar_can_parser(CP, 0)
-    self.rcp1 = get_radar_can_parser(CP, 1)
-    self.rcp2 = get_radar_can_parser(CP, 2)
     self.updated_messages = set()
     self.trigger_msg = 0x420
     self.track_id = 0
     self.no_radar = CP.carFingerprint in FEATURES["non_scc"]
+    self.rcp = get_radar_can_parser(CP)
 
   def update(self, can_strings):
     if self.no_radar:
@@ -39,16 +36,8 @@ class RadarInterface(RadarInterfaceBase):
 
       return car.RadarData.new_message()
 
-    if not self.track_id:
-      for i in range(3):
-        vls = self.rcp1.update_strings(can_strings) if i == 1 else self.rcp2.update_strings(can_strings) if i == 2 \
-        else self.rcp.update_strings(can_strings)
-        self.updated_messages.update(vls)
-        if self.rcp.vl["SCC11"]['TauGapSet'] and i == 0 or self.rcp1.vl["SCC11"]['TauGapSet'] and i == 1 \
-                                                                     or self.rcp2.vl["SCC11"]['TauGapSet'] and i == 2 :
-          break
-    else:
-      self.updated_messages.update(vls)
+    vls = self.rcp.update_strings(can_strings)
+    self.updated_messages.update(vls)
 
     if self.trigger_msg not in self.updated_messages:
       return None

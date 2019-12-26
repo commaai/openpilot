@@ -79,7 +79,7 @@ class CarController():
     self.apply_steer_last = apply_steer
 
     hud_alert, lane_visible, left_lane_warning, right_lane_warning =\
-            process_hud_alert(enabled, (not self.lkas_button or CS.lkas_button_on), self.car_fingerprint, visual_alert,
+            process_hud_alert(lkas_active, (not self.lkas_button or CS.lkas_button_on), self.car_fingerprint, visual_alert,
             left_line, right_line,left_lane_depart, right_lane_depart)
 
     clu11_speed = CS.clu11["CF_Clu_Vanz"]

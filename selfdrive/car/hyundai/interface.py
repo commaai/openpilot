@@ -183,6 +183,9 @@ class CarInterface(CarInterfaceBase):
     ret.stoppingControl = False
     ret.startAccel = 0.0
 
+    ret.mdpsBus = 1 if 593 in fingerprint[1] else 0
+    ret.sccBus = 1 if 1056 in fingerprint[1] else 2 if 1056 in fingerprint[2] else 0
+
     return ret
 
   # returns a car.CarState

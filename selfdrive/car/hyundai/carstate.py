@@ -55,18 +55,6 @@ def get_can_parser(CP):
 
     ("CF_Lvr_GearInf", "LVR11", 0),        #Transmission Gear (0 = N or P, 1-8 = Fwd, 14 = Rev)
 
-    ("CR_Mdps_StrColTq", "MDPS12", 0),
-    ("CF_Mdps_Def", "MDPS12", 0),
-    ("CF_Mdps_ToiActive", "MDPS12", 0),
-    ("CF_Mdps_ToiUnavail", "MDPS12", 0),
-    ("CF_Mdps_MsgCount2", "MDPS12", 0),
-    ("CF_Mdps_Chksum2", "MDPS12", 0),
-    ("CF_Mdps_ToiFlt", "MDPS12", 0),
-    ("CF_Mdps_SErr", "MDPS12", 0),
-    ("CR_Mdps_StrTq", "MDPS12", 0),
-    ("CF_Mdps_FailStat", "MDPS12", 0),
-    ("CR_Mdps_OutTq", "MDPS12", 0),
-
     ("SAS_Angle", "SAS11", 0),
     ("SAS_Speed", "SAS11", 0),
 
@@ -83,7 +71,29 @@ def get_can_parser(CP):
     ("WHL_SPD11", 50),
     ("SAS11", 100)
   ]
-  if CP.carFingerprint not in FEATURES["non_scc"]:
+  if not CP.mdpsBus:
+    signals += [
+    ("CR_Mdps_StrColTq", "MDPS12", 0),
+    ("CF_Mdps_Def", "MDPS12", 0),
+    ("CF_Mdps_ToiActive", "MDPS12", 0),
+    ("CF_Mdps_ToiUnavail", "MDPS12", 0),
+    ("CF_Mdps_MsgCount2", "MDPS12", 0),
+    ("CF_Mdps_Chksum2", "MDPS12", 0),
+    ("CF_Mdps_ToiFlt", "MDPS12", 0),
+    ("CF_Mdps_SErr", "MDPS12", 0),
+    ("CR_Mdps_StrTq", "MDPS12", 0),
+    ("CF_Mdps_FailStat", "MDPS12", 0),
+    ("CR_Mdps_OutTq", "MDPS12", 0)
+    ]
+    checks += [
+      ("MDPS12", 50)
+    ]
+  if CP.carFingerprint in FEATURES["non_scc"]:
+    signals += [
+      ("CRUISE_LAMP_M", "EMS16", 0),
+      ("CF_Lvr_CruiseSet", "LVR12", 0),
+    ]
+  elif not CP.sccBus:
     signals += [
       ("MainMode_ACC", "SCC11", 0),
       ("VSetDis", "SCC11", 0),
@@ -114,10 +124,9 @@ def get_can_parser(CP):
       ("CR_VSM_Alive", "SCC12", 0),
       ("CR_VSM_ChkSum", "SCC12", 0),
     ]
-  else:
-    signals += [
-      ("CRUISE_LAMP_M", "EMS16", 0),
-      ("CF_Lvr_CruiseSet", "LVR12", 0),
+    checks += [
+      ("SCC11", 50),
+      ("SCC12", 50),
     ]
   if CP.carFingerprint in FEATURES["use_cluster_gears"]:
     signals += [
@@ -141,8 +150,10 @@ def get_can_parser(CP):
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
 def get_can2_parser(CP):
-  signals = [
-    # sig_name, sig_address, default
+  signals = []
+  checks = []
+  if CP.mdpsBus == 1:
+    signals += [
     ("CR_Mdps_StrColTq", "MDPS12", 0),
     ("CF_Mdps_Def", "MDPS12", 0),
     ("CF_Mdps_ToiActive", "MDPS12", 0),
@@ -153,10 +164,12 @@ def get_can2_parser(CP):
     ("CF_Mdps_SErr", "MDPS12", 0),
     ("CR_Mdps_StrTq", "MDPS12", 0),
     ("CF_Mdps_FailStat", "MDPS12", 0),
-    ("CR_Mdps_OutTq", "MDPS12", 0),
-  ]
-  checks = []
-  if CP.carFingerprint not in FEATURES["non_scc"]:
+    ("CR_Mdps_OutTq", "MDPS12", 0)
+    ]
+    checks += [
+      ("MDPS12", 50)
+    ]
+  if CP.carFingerprint not in FEATURES["non_scc"] and CP.sccBus == 1:
     signals += [
       ("MainMode_ACC", "SCC11", 0),
       ("VSetDis", "SCC11", 0),
@@ -185,7 +198,11 @@ def get_can2_parser(CP):
       ("AEB_CmdAct", "SCC12", 0),
       ("AEB_StopReq", "SCC12", 0),
       ("CR_VSM_Alive", "SCC12", 0),
-      ("CR_VSM_ChkSum", "SCC12", 0),
+      ("CR_VSM_ChkSum", "SCC12", 0)
+    ]
+    checks += [
+      ("SCC11", 50),
+      ("SCC12", 50),
     ]
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 1)
 
@@ -211,7 +228,7 @@ def get_camera_parser(CP):
   ]
 
   checks = []
-  if CP.carFingerprint not in FEATURES["non_scc"]:
+  if CP.carFingerprint not in FEATURES["non_scc"] and CP.sccBus == 2:
     signals += [
       ("MainMode_ACC", "SCC11", 0),
       ("VSetDis", "SCC11", 0),
@@ -242,6 +259,10 @@ def get_camera_parser(CP):
       ("CR_VSM_Alive", "SCC12", 0),
       ("CR_VSM_ChkSum", "SCC12", 0),
     ]
+    checks += [
+      ("SCC11", 50),
+      ("SCC12", 50),
+    ]
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
 
 
@@ -266,17 +287,12 @@ class CarState():
     self.left_blinker_flash = 0
     self.right_blinker_on = 0
     self.right_blinker_flash = 0
-    self.no_radar = self.CP.carFingerprint in FEATURES["non_scc"]
-    self.mdps_bus = 0
-    self.scc_bus = 0
+    self.no_radar = CP.carFingerprint in FEATURES["non_scc"]
+    self.mdps_bus = CP.mdpsBus
+    self.scc_bus = CP.sccBus
 
   def update(self, cp, cp2, cp_cam):
-    if cp2.vl["MDPS12"]['CR_Mdps_OutTq'] and not self.mdps_bus:
-      self.mdps_bus = 1 
-    if cp2.vl["SCC11"]['TauGapSet'] and not self.scc_bus and not self.no_radar:
-      self.scc_bus = 1
-    elif cp_cam.vl["SCC11"]['TauGapSet'] and not self.scc_bus and not self.no_radar:
-      self.scc_bus = 2
+
     cp_mdps = cp2 if self.mdps_bus else cp
     cp_scc = cp2 if self.scc_bus == 1 else cp_cam if self.scc_bus == 2 else cp
 
