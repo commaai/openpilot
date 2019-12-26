@@ -1814,6 +1814,10 @@ struct KalmanOdometry {
   rotStd @3 :List(Float32); # std rad/s in device frame
 }
 
+struct SmiskolData {
+  mpcTR @0 :Float32;
+}
+
 struct Event {
   # in nanoseconds?
   logMonoTime @0 :UInt64;
@@ -1889,5 +1893,6 @@ struct Event {
     carEvents @68: List(Car.CarEvent);
     carParams @69: Car.CarParams;
     frontFrame @70: FrameData;
+    smiskolData @71 :SmiskolData;
   }
 }
