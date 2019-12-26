@@ -488,7 +488,7 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
       sm_smiskol = messaging.SubMaster(['radarState', 'smiskolData', 'liveTracks'])
     else:
       sm = messaging.SubMaster(['thermal', 'health', 'liveCalibration', 'driverMonitoring', 'plan', 'pathPlan', \
-                                'model', 'gpsLocation', 'radarState', 'smiskolData', 'liveTracks'], ignore_alive=['gpsLocation'])
+                                'model', 'gpsLocation', 'radarState'], ignore_alive=['gpsLocation'])
 
 
   if can_sock is None:
