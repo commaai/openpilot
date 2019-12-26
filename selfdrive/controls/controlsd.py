@@ -286,7 +286,14 @@ def state_control(frame, rcv_frame, plan, path_plan, CS, CP, state, events, v_cr
   v_acc_sol = plan.vStart + dt * (a_acc_sol + plan.aStart) / 2.0
 
   # Gas/Brake PID loop
-  passable_loc = {'lead_one': passable_state_control['lead_one'], 'gas_pressed': CS.gasPressed, 'has_lead': plan.hasLead}
+  passable_loc = {}
+  if not travis:
+    # passable_loc['lead_one'] = sm['radarState'].leadOne
+    passable_loc['lead_one'] = passable_state_control['lead_one']
+    # passable_loc['mpc_TR'] = sm['smiskolData'].mpcTR
+    # passable_loc['live_tracks'] = {'tracks': sm['liveTracks'], 'updated': sm.updated['liveTracks']}
+    passable_loc['has_lead'] = plan.hasLead
+    passable_loc['gas_pressed'] = CS.gasPressed
   actuators.gas, actuators.brake = LoC.update(active, CS.vEgo, CS.brakePressed, CS.standstill, CS.cruiseState.standstill,
                                               v_cruise_kph, v_acc_sol, plan.vTargetFuture, a_acc_sol, CP, passable_loc)
   # Steering PID loop and lateral MPC
