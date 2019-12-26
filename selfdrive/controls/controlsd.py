@@ -486,7 +486,10 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
   if sm is None:
     sm = messaging.SubMaster(['thermal', 'health', 'liveCalibration', 'driverMonitoring', 'plan', 'pathPlan', \
                               'model', 'gpsLocation'], ignore_alive=['gpsLocation'])
-  sm_smiskol = messaging.SubMaster(['radarState', 'smiskolData', 'liveTracks'])
+  if not travis:
+    sm_smiskol = messaging.SubMaster(['radarState', 'smiskolData', 'liveTracks'])
+  else:
+    sm_smiskol = None
 
 
   if can_sock is None:
@@ -562,7 +565,8 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
   prof = Profiler(False)  # off by default
 
   while True:
-    sm_smiskol.update(0)
+    if not travis:
+      sm_smiskol.update(0)
     start_time = sec_since_boot()
     prof.checkpoint("Ratekeeper", ignore=True)
 
