@@ -143,7 +143,7 @@ class LongControl():
 
   def dynamic_lane_speed(self, v_target, v_target_future, v_cruise, a_target):
     v_cruise *= CV.KPH_TO_MS  # convert to m/s
-    min_tracks = 3
+    min_tracks = 4
     vels = [i * CV.MPH_TO_MS for i in [5, 40, 70]]
     margins = [0.4, 0.55, 0.6]
     track_speed_margin = interp(self.v_ego, vels, margins)
