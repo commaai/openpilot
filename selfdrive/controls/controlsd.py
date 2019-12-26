@@ -239,7 +239,7 @@ def state_transition(frame, CS, CP, state, events, soft_disable_timer, v_cruise_
 
 
 def state_control(frame, rcv_frame, plan, path_plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last,
-                  AM, rk, driver_status, LaC, LoC, read_only, is_metric, cal_perc, last_blinker_frame, passable_state_control):
+                  AM, rk, driver_status, LaC, LoC, read_only, is_metric, cal_perc, last_blinker_frame, sm):
   """Given the state, this function returns an actuators packet"""
 
   actuators = car.CarControl.Actuators.new_message()
@@ -288,8 +288,7 @@ def state_control(frame, rcv_frame, plan, path_plan, CS, CP, state, events, v_cr
   # Gas/Brake PID loop
   passable_loc = {}
   if not travis:
-    # passable_loc['lead_one'] = sm['radarState'].leadOne
-    passable_loc['lead_one'] = passable_state_control['lead_one']
+    passable_loc['lead_one'] = sm['radarState'].leadOne
     # passable_loc['mpc_TR'] = sm['smiskolData'].mpcTR
     # passable_loc['live_tracks'] = {'tracks': sm['liveTracks'], 'updated': sm.updated['liveTracks']}
     passable_loc['has_lead'] = plan.hasLead
@@ -604,13 +603,9 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
       prof.checkpoint("State transition")
 
     # Compute actuators (runs PID loops and lateral MPC)
-    if not travis:
-      passable_state_control = {'lead_one': sm['radarState'].leadOne}
-    else:
-      passable_state_control = {'lead_one': None}
     actuators, v_cruise_kph, driver_status, v_acc, a_acc, lac_log, last_blinker_frame = \
       state_control(sm.frame, sm.rcv_frame, sm['plan'], sm['pathPlan'], CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, AM, rk,
-                    driver_status, LaC, LoC, read_only, is_metric, cal_perc, last_blinker_frame, passable_state_control)
+                    driver_status, LaC, LoC, read_only, is_metric, cal_perc, last_blinker_frame, sm)
 
     prof.checkpoint("State Control")
 
