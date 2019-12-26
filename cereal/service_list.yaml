@@ -75,6 +75,7 @@ thumbnail: [8069, true, 0.2, 1]
 carEvents: [8070, true, 1., 1]
 carParams: [8071, true, 0.02, 1]
 frontFrame: [8072, true, 10.]
+smiskolData: [8073, true, 20.]
 
 testModel: [8040, false, 0.]
 testLiveLocation: [8045, false, 0.]
