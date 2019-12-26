@@ -239,7 +239,7 @@ def state_transition(frame, CS, CP, state, events, soft_disable_timer, v_cruise_
 
 
 def state_control(frame, rcv_frame, plan, path_plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last,
-                  AM, rk, driver_status, LaC, LoC, read_only, is_metric, cal_perc, last_blinker_frame, sm):
+                  AM, rk, driver_status, LaC, LoC, read_only, is_metric, cal_perc, last_blinker_frame, sm_smiskol):
   """Given the state, this function returns an actuators packet"""
 
   actuators = car.CarControl.Actuators.new_message()
@@ -288,9 +288,9 @@ def state_control(frame, rcv_frame, plan, path_plan, CS, CP, state, events, v_cr
   # Gas/Brake PID loop
   passable_loc = {}
   if not travis:
-    passable_loc['lead_one'] = sm['radarState'].leadOne
-    # passable_loc['mpc_TR'] = sm['smiskolData'].mpcTR
-    # passable_loc['live_tracks'] = {'tracks': sm['liveTracks'], 'updated': sm.updated['liveTracks']}
+    passable_loc['lead_one'] = sm_smiskol['radarState'].leadOne
+    passable_loc['mpc_TR'] = sm_smiskol['smiskolData'].mpcTR
+    passable_loc['live_tracks'] = {'tracks': sm_smiskol['liveTracks'], 'updated': sm_smiskol.updated['liveTracks']}
     passable_loc['has_lead'] = plan.hasLead
     passable_loc['gas_pressed'] = CS.gasPressed
   actuators.gas, actuators.brake = LoC.update(active, CS.vEgo, CS.brakePressed, CS.standstill, CS.cruiseState.standstill,
@@ -484,11 +484,9 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
     pm = messaging.PubMaster(['sendcan', 'controlsState', 'carState', 'carControl', 'carEvents', 'carParams'])
 
   if sm is None:
-    if not travis:
-      sm_smiskol = messaging.SubMaster(['radarState', 'smiskolData', 'liveTracks'])
-    else:
-      sm = messaging.SubMaster(['thermal', 'health', 'liveCalibration', 'driverMonitoring', 'plan', 'pathPlan', \
-                                'model', 'gpsLocation', 'radarState'], ignore_alive=['gpsLocation'])
+    sm = messaging.SubMaster(['thermal', 'health', 'liveCalibration', 'driverMonitoring', 'plan', 'pathPlan', \
+                              'model', 'gpsLocation'], ignore_alive=['gpsLocation'])
+  sm_smiskol = messaging.SubMaster(['radarState', 'smiskolData', 'liveTracks'])
 
 
   if can_sock is None:
@@ -564,6 +562,7 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
   prof = Profiler(False)  # off by default
 
   while True:
+    sm_smiskol.update(0)
     start_time = sec_since_boot()
     prof.checkpoint("Ratekeeper", ignore=True)
 
@@ -608,7 +607,7 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
     # Compute actuators (runs PID loops and lateral MPC)
     actuators, v_cruise_kph, driver_status, v_acc, a_acc, lac_log, last_blinker_frame = \
       state_control(sm.frame, sm.rcv_frame, sm['plan'], sm['pathPlan'], CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, AM, rk,
-                    driver_status, LaC, LoC, read_only, is_metric, cal_perc, last_blinker_frame, sm)
+                    driver_status, LaC, LoC, read_only, is_metric, cal_perc, last_blinker_frame, sm_smiskol)
 
     prof.checkpoint("State Control")
 
