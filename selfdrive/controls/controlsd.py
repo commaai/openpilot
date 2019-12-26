@@ -484,8 +484,11 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
     pm = messaging.PubMaster(['sendcan', 'controlsState', 'carState', 'carControl', 'carEvents', 'carParams'])
 
   if sm is None:
-    sm = messaging.SubMaster(['thermal', 'health', 'liveCalibration', 'driverMonitoring', 'plan', 'pathPlan', \
-                              'model', 'gpsLocation', 'radarState', 'smiskolData', 'liveTracks'], ignore_alive=['gpsLocation'])
+    if not travis:
+      sm_smiskol = messaging.SubMaster(['radarState', 'smiskolData', 'liveTracks'])
+    else:
+      sm = messaging.SubMaster(['thermal', 'health', 'liveCalibration', 'driverMonitoring', 'plan', 'pathPlan', \
+                                'model', 'gpsLocation', 'radarState', 'smiskolData', 'liveTracks'], ignore_alive=['gpsLocation'])
 
 
   if can_sock is None:
