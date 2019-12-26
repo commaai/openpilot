@@ -129,7 +129,9 @@ class LongitudinalMpc():
   def dynamic_follow(self, CS):
     # x_vel = [0.0, 1.8627, 3.7253, 5.588, 7.4507, 9.3133, 11.5598, 13.645, 22.352, 31.2928, 33.528, 35.7632, 40.2336]  # velocities
     # y_mod = [1.102, 1.12, 1.14, 1.168, 1.21, 1.273, 1.36, 1.411, 1.543, 1.62, 1.664, 1.736, 1.853]  # TRs
-    x_vel = [0.0, 5.222, 11.164, 14.937, 20.973, 33.975, 42.469]
+    # x_vel = [0.0, 1.8627, 3.7253, 5.588, 7.4507, 9.3133, 11.5598, 13.645, 22.352, 31.2928, 33.528, 35.7632, 40.2336]  # velocities
+    # y_mod = [1.146, 1.162, 1.18, 1.205, 1.243, 1.3, 1.378, 1.424, 1.543, 1.62, 1.664, 1.736, 1.853]  # TRs  #todo: average this and
+    x_vel = [0.0, 5.222, 11.164, 14.937, 20.973, 33.975, 42.469]  # todo: this!
     y_mod = [1.55742, 1.5842153, 1.6392148499999997, 1.68, 1.7325, 1.83645, 1.881]
 
     sng_TR = 1.8  # stop and go parameters
@@ -143,13 +145,13 @@ class LongitudinalMpc():
       TR = interp(self.car_data['v_ego'], x, y)
 
     # Dynamic follow modifications (the secret sauce)
-    x = [-20, -15.655, -11.1702, -7.8235, -4.6665, -2.5663, -1.1843, 0, 1.0107, 1.89, 2.6909]  # relative velocity values
-    y = [0.65, 0.525, 0.44, 0.341, 0.26, 0.159, 0.049, 0, -0.082, -0.18, -0.28]  # modification values
+    x = [-20.0, -15.655, -11.1702, -7.8235, -4.6665, -2.5663, -1.1843, 0.0, 1.3411, 1.89, 2.6909]  # relative velocity values
+    y = [0.65, 0.525, 0.44, 0.341, 0.26, 0.159, 0.049, 0, -0.06, -0.144, -0.224]  # modification values
     TR_mod = interp(self.lead_data['v_lead'] - self.car_data['v_ego'], x, y)
 
-    x = [-4.4704, -1.77, -0.3145, 0, 0.446, 1.3411]  # lead acceleration values
-    y = [0.237, 0.12, 0.027, 0, -0.105, -0.195]  # modification values
-    TR_mod += interp(self.lead_accel_over_time(), x, y)  # todo: test if these modifications are too much
+    x = [-4.4704, -1.77, -0.3145, 0.0, 0.1495, 0.5104, 0.7037, 0.9357]  # lead acceleration values
+    y = [0.237, 0.12, 0.027, 0, -0.006, -0.036, -0.042, -0.045]  # modification values
+    TR_mod += interp(self.lead_accel_over_time(), x, y)
 
     TR += TR_mod
 
