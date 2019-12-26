@@ -31,11 +31,15 @@ class LongitudinalMpc():
     self.new_lead = False
     self.last_cloudlog_t = 0.0
 
+    self.pm = None
     self.car_data = {'v_ego': 0.0, 'a_ego': 0.0}
     self.lead_data = {'v_lead': None, 'x_lead': None, 'a_lead': None, 'status': False}
     self.df_data = {"v_leads": [], "v_egos": []}  # dynamic follow data
     self.last_cost = 0.0
     self.customTR = self.op_params.get('following_distance', None)
+
+  def set_pm(self, pm):
+    self.pm = pm
 
   def send_mpc_solution(self, pm, qp_iterations, calculation_time):
     qp_iterations = max(0, qp_iterations)
@@ -79,7 +83,15 @@ class LongitudinalMpc():
 
     if not travis:
       self.change_cost(TR)
+      self.send_cur_TR(TR)
     return TR
+
+  def send_cur_TR(self, TR):
+    if self.mpc_id == 1 and self.pm is not None:
+      dat = messaging.new_message()
+      dat.init('smiskolData')
+      dat.smiskolData.mpcTR = TR
+      self.pm.send('smiskolData', dat)
 
   def change_cost(self, TR):
     TRs = [0.9, 1.8, 2.7]
