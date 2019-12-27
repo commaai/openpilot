@@ -69,13 +69,16 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       extra_info = True
       param_allowed_types = self.op_params.default_params[chosen_key]['allowed_types']
       param_description = self.op_params.default_params[chosen_key]['description']
+      live = self.op_params.default_params[chosen_key]['live']
 
     old_value = self.params[chosen_key]
     print('Chosen parameter: {}'.format(chosen_key))
     print('Current value: {} (type: {})'.format(old_value, str(type(old_value)).split("'")[1]))
     if extra_info:
       print('\nDescription: {}'.format(param_description))
-      print('Allowed types: {}\n'.format(', '.join([str(i).split("'")[1] for i in param_allowed_types])))
+      print('Allowed types: {}'.format(', '.join([str(i).split("'")[1] for i in param_allowed_types])))
+      if live:
+        print('This parameter supports live tuning! Updates should take affect within 5 seconds.\n')
     print('Enter your new value:')
     new_value = input('>> ')
     if len(new_value) == 0:
