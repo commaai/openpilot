@@ -184,7 +184,7 @@ class CarInterface(CarInterfaceBase):
     ret.startAccel = 0.0
 
     ret.mdpsBus = 1 if 593 in fingerprint[1] else 0
-    ret.sccBus = 1 if 1056 in fingerprint[1] else 2 if 1056 in fingerprint[2] else 0
+    ret.sccBus = 0 if 1056 in fingerprint[0] else 1 if 1056 in fingerprint[1] else 2 if 1056 in fingerprint[2] else -1
 
     return ret
 
