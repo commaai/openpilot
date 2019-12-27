@@ -91,7 +91,7 @@ class LongControl():
 
   def dynamic_gas(self, CP):
     x, y = [], []
-    if CP.enableGasInterceptor and self.candidate in [CAR_TOYOTA.COROLLA]:  # todo: make different profiles for different vehicles
+    if CP.enableGasInterceptor and self.candidate in [CAR_TOYOTA.COROLLA, CAR_TOYOTA.RAV4]:  # todo: make different profiles for different vehicles
       x = [0.0, 1.4082, 2.80311, 4.22661, 5.38271, 6.16561, 7.24781, 8.28308, 10.24465, 12.96402, 15.42303, 18.11903, 20.11703, 24.46614, 29.05805, 32.71015, 35.76326]
       y = [0.2, 0.20443, 0.21592, 0.23334, 0.25734, 0.27916, 0.3229, 0.35, 0.368, 0.377, 0.389, 0.399, 0.411, 0.45, 0.504, 0.558, 0.617]
     # elif self.candidate in self.toyota_candidates:
@@ -111,7 +111,7 @@ class LongControl():
         gas_mod = -interp(self.lead_data['v_rel'], x, y)
 
         x = [0.44704, 1.78816]  # lead accel mod
-        y = [0.0, gas_mod * .6]
+        y = [0.0, gas_mod * .4]  # maximum we can reduce gas_mod is 40 percent of it
         gas_mod -= interp(self.lead_data['a_lead'], x, y)  # reduce the reduction of the above mod (the max this will ouput is the original gas value, it never increases it)
 
         # x = [TR * 0.5, TR, TR * 1.5]  # as lead gets further from car, lessen gas mod  # todo: this
@@ -125,11 +125,11 @@ class LongControl():
       else:
         current_TR = self.lead_data['x_lead'] / self.v_ego
         x = [-1.78816, -0.89408, 0, 1.78816, 2.68224]  # relative velocity mod
-        y = [-gas * 0.35, -gas * 0.25, -gas * 0.075, gas * 0.175, gas * 0.225]
+        y = [-gas * 0.35, -gas * 0.25, -gas * 0.075, gas * 0.1575, gas * 0.2025]
         gas_mod = interp(self.lead_data['v_rel'], x, y)
 
         x = [self.mpc_TR - 0.22, self.mpc_TR, self.mpc_TR + 0.2, self.mpc_TR + 0.4]
-        y = [-gas_mod * 0.36, 0.0, gas_mod * 0.15, gas_mod * 0.45]
+        y = [-gas_mod * 0.36, 0.0, gas_mod * 0.15, gas_mod * 0.4]
         gas_mod -= interp(current_TR, x, y)
 
         gas += gas_mod
