@@ -91,7 +91,7 @@ class LongControl():
 
   def dynamic_gas(self, CP):
     x, y = [], []
-    if CP.enableGasInterceptor and self.candidate in self.toyota_candidates:  # todo: make different profiles for different vehicles
+    if CP.enableGasInterceptor and self.candidate in [CAR_TOYOTA.COROLLA]:  # todo: make different profiles for different vehicles
       x = [0.0, 1.4082, 2.80311, 4.22661, 5.38271, 6.16561, 7.24781, 8.28308, 10.24465, 12.96402, 15.42303, 18.11903, 20.11703, 24.46614, 29.05805, 32.71015, 35.76326]
       y = [0.2, 0.20443, 0.21592, 0.23334, 0.25734, 0.27916, 0.3229, 0.35, 0.368, 0.377, 0.389, 0.399, 0.411, 0.45, 0.504, 0.558, 0.617]
     # elif self.candidate in self.toyota_candidates:
