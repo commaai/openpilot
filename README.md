@@ -1,4 +1,4 @@
-<td><a href="https://www.youtube.com/watch?v=emKcwWaTjyg" title="Youtube" rel="noopener"><img src="https://i.imgur.com/eEX1qmB.png"></a></td>
+<td><a href="https://m.youtube.com/watch?v=L1u6AkSpR98&t=2s" title="Youtube" rel="noopener"><img src="https://i.imgur.com/eEX1qmB.png"></a></td>
 
 Welcome to openpilot 0.6.4 DEVEL with OLD_CAR support and ZORRO CurvatureFactorLearner
 ======
