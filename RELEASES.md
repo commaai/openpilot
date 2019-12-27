@@ -1,4 +1,4 @@
-Stock Additions 0.7 (version 1.1)
+Stock Additions 0.7 (version 0.1)
 ========================
  * Dynamic lane speed is a new feature that reduces your cruising speed if many vehicles around you are significantly slower than you. This works with and without an openpilot-identified lead. Ex.: It will slow you down if traveling in an open lane with cars in adjacent lanes that are slower than you. Or if the lead in front of the lead is slowing down, as well as cars in other lanes far ahead, it will slow you down as well. The most it will slow you down is the average of: (the set speed and the average of the surrounding cars).
  * Dynamic gas tuning. Above 20 mph we take lead acceleration, velocity, and the following distance into account. Possibility of different tuning for different cars in the future. (DYNAMIC GAS NOW ONLY WORKS ON TOYOTA COROLLA)
