@@ -206,6 +206,8 @@ Therefore it is pretty easy to install.
 
 ![enter image description here](https://i.imgur.com/soMhXAJ.png)
 
+![enter image description here](https://i.imgur.com/qrvZv66.jpg)
+
 You may need to fingerprint after you have installed the radar. 
 
 ---
