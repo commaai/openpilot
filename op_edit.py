@@ -18,7 +18,8 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
     while True:
       self.params = self.op_params.get()
       values_list = [self.params[i] if len(str(self.params[i])) < 20 else '{} ... {}'.format(str(self.params[i])[:30], str(self.params[i])[-15:]) for i in self.params]
-      to_print = ['{}. {}: {} (type: {})'.format(idx + 1, i, values_list[idx], str(type(self.params[i])).split("'")[1]) for idx, i in enumerate(self.params)]
+      live = [', live!' if i in self.op_params.default_params and self.op_params.default_params[i]['live'] else '' for i in self.params]
+      to_print = ['{}. {}: {} (type: {}{})'.format(idx + 1, i, values_list[idx], str(type(self.params[i])).split("'")[1], live[idx]) for idx, i in enumerate(self.params)]
       to_print.append('{}. Add new parameter!'.format(len(self.params) + 1))
       to_print.append('{}. Delete parameter!'.format(len(self.params) + 2))
       print('\n'.join(to_print))
@@ -75,10 +76,12 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
     print('Chosen parameter: {}'.format(chosen_key))
     print('Current value: {} (type: {})'.format(old_value, str(type(old_value)).split("'")[1]))
     if extra_info:
-      print('\nDescription: {}'.format(param_description))
-      print('Allowed types: {}'.format(', '.join([str(i).split("'")[1] for i in param_allowed_types])))
+      print('\n- Description: {}'.format(param_description))
+      print('- Allowed types: {}'.format(', '.join([str(i).split("'")[1] for i in param_allowed_types])))
       if live:
-        print('This parameter supports live tuning! Updates should take affect within 5 seconds.\n')
+        print('- This parameter supports live tuning! Updates should take affect within 5 seconds.\n')
+      else:
+        print()
     print('Enter your new value:')
     new_value = input('>> ')
     if len(new_value) == 0:
