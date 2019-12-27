@@ -357,9 +357,9 @@ def data_send(sm, pm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk
     l_lane_change_prob = md.meta.desirePrediction[log.PathPlan.Desire.laneChangeLeft - 1]
     r_lane_change_prob = md.meta.desirePrediction[log.PathPlan.Desire.laneChangeRight - 1]
 
-    camera_offset = op_params.get('camera_offset', 0.06)
-    l_lane_close = left_lane_visible and (sm['pathPlan'].lPoly[3] < (1.08 - camera_offset))
-    r_lane_close = right_lane_visible and (sm['pathPlan'].rPoly[3] > -(1.08 + camera_offset))
+    CAMERA_OFFSET = op_params.get('camera_offset', 0.06)
+    l_lane_close = left_lane_visible and (sm['pathPlan'].lPoly[3] < (1.08 - CAMERA_OFFSET))
+    r_lane_close = right_lane_visible and (sm['pathPlan'].rPoly[3] > -(1.08 + CAMERA_OFFSET))
 
     if ldw_allowed:
       CC.hudControl.leftLaneDepart = bool(l_lane_change_prob > LANE_DEPARTURE_THRESHOLD and l_lane_close)

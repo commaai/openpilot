@@ -73,9 +73,9 @@ class LanePlanner():
 
   def update_d_poly(self, v_ego):
     # only offset left and right lane lines; offsetting p_poly does not make sense
-    camera_offset = op_params.get('camera_offset', 0.06)
-    self.l_poly[3] += camera_offset
-    self.r_poly[3] += camera_offset
+    CAMERA_OFFSET = op_params.get('camera_offset', 0.06)
+    self.l_poly[3] += CAMERA_OFFSET
+    self.r_poly[3] += CAMERA_OFFSET
 
     # Find current lanewidth
     self.lane_width_certainty += 0.05 * (self.l_prob * self.r_prob - self.lane_width_certainty)
