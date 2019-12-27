@@ -26,27 +26,26 @@ def read_params(params_file, default_params):
 
 class opParams:
   def __init__(self):
-    self.default_params = {'camera_offset': {'default': 0.06, 'allowed_types': [float, int], 'description': 'Your camera offset to use in lane_planner.py'},
-                           'awareness_factor': {'default': 2.0, 'allowed_types': [float, int], 'description': 'Multiplier for the awareness times'},
-                           'lane_hug_direction': {'default': None, 'allowed_types': [type(None), str], 'description': "(NoneType, 'left', 'right'): Direction of your lane hugging, if present. None will disable this modification"},
+    self.default_params = {'camera_offset': {'default': 0.06, 'allowed_types': [float, int], 'description': 'Your camera offset to use in lane_planner.py', 'live': True},
+                           'awareness_factor': {'default': 2.0, 'allowed_types': [float, int], 'description': 'Multiplier for the awareness times', 'live': False},
+                           'lane_hug_direction': {'default': None, 'allowed_types': [type(None), str], 'description': "(NoneType, 'left', 'right'): Direction of your lane hugging, if present. None will disable this modification", 'live': False},
                            'lane_hug_angle_offset': {'default': 0.0, 'allowed_types': [float, int], 'description': ('This is the angle your wheel reads when driving straight at highway speeds. '
                                                                                                                     'Used to offset desired angle_steers in latcontrol to help fix lane hugging. '
-                                                                                                                    'Enter absolute value here, direction is determined by parameter \'lane_hug_direction\'')},
-                           'use_car_caching': {'default': True, 'allowed_types': [bool], 'description': 'Whether to use fingerprint caching'},
-                           'force_pedal': {'default': False, 'allowed_types': [bool], 'description': "If openpilot isn't recognizing your comma pedal, set this to True"},
-                           'following_distance': {'default': None, 'allowed_types': [type(None), float], 'description': 'None has no effect, while setting this to a float will let you change the TR'},
+                                                                                                                    'Enter absolute value here, direction is determined by parameter \'lane_hug_direction\''), 'live': False},
+                           'use_car_caching': {'default': True, 'allowed_types': [bool], 'description': 'Whether to use fingerprint caching', 'live': False},
+                           'following_distance': {'default': None, 'allowed_types': [type(None), float], 'description': 'None has no effect, while setting this to a float will let you change the TR', 'live': False},
                            'alca_nudge_required': {'default': True, 'allowed_types': [bool], 'description': ('Whether to wait for applied torque to the wheel (nudge) before making lane changes. '
-                                                                                                             'If False, lane change will occur IMMEDIATELY after signaling')},
-                           'alca_min_speed': {'default': 30.0, 'allowed_types': [float, int], 'description': 'The minimum speed allowed for an automatic lane change (in MPH)'},
-                           'static_steer_ratio': {'default': True, 'allowed_types': [bool], 'description': 'Whether you want openpilot to use the steering ratio in interface.py, or the automatically learned steering ratio. If True, it will use the static value in interface.py'},
-                           'dynamic_lane_speed': {'default': True, 'allowed_types': [bool], 'description': 'Whether you want openpilot to adjust your speed based on surrounding vehicles'},
-                           'min_dynamic_speed': {'default': 20.0, 'allowed_types': [float, int], 'description': 'The minimum speed to allow dynamic lane speed to operate'}}
+                                                                                                             'If False, lane change will occur IMMEDIATELY after signaling'), 'live': False},
+                           'alca_min_speed': {'default': 30.0, 'allowed_types': [float, int], 'description': 'The minimum speed allowed for an automatic lane change (in MPH)', 'live': False},
+                           'static_steer_ratio': {'default': True, 'allowed_types': [bool], 'description': 'Whether you want openpilot to use the steering ratio in interface.py, or the automatically learned steering ratio. If True, it will use the static value in interface.py', 'live': False},
+                           'dynamic_lane_speed': {'default': True, 'allowed_types': [bool], 'description': 'Whether you want openpilot to adjust your speed based on surrounding vehicles', 'live': False},
+                           'min_dynamic_speed': {'default': 20.0, 'allowed_types': [float, int], 'description': 'The minimum speed to allow dynamic lane speed to operate', 'live': False}}
 
     self.params = {}
     self.params_file = "/data/op_params.json"
     self.kegman_file = "/data/kegman.json"
     self.last_read_time = time.time()
-    self.read_frequency = 10.0  # max frequency to read with self.get(...) (sec)
+    self.read_frequency = 5.0  # max frequency to read with self.get(...) (sec)
     self.force_update = False  # replaces values with default params if True, not just add add missing key/value pairs
     self.run_init()  # restores, reads, and updates params
 
@@ -105,13 +104,17 @@ class opParams:
     write_params(self.params, self.params_file)
 
   def get(self, key=None, default=None):  # can specify a default value if key doesn't exist
-    if (time.time() - self.last_read_time) >= self.read_frequency and not travis:  # make sure we aren't reading file too often
-      self.params, read_status = read_params(self.params_file, self.format_default_params())
-      self.last_read_time = time.time()
-    if key is None:  # get all
+    if key is None:
       return self.params
-    else:
-      return self.params[key] if key in self.params else default
+    if not travis and self.default_params[key]['live']:  # if is a live param, we want get updates while openpilot is running
+      if time.time() - self.last_read_time >= self.read_frequency:  # make sure we aren't reading file too often
+        self.params, read_status = read_params(self.params_file, self.format_default_params())
+        if not read_status:
+          time.sleep(0.025)
+          self.params, read_status = read_params(self.params_file, self.format_default_params())  # if the file was being written to, retry once
+        self.last_read_time = time.time()
+
+    return self.params[key] if key in self.params else default
 
   def delete(self, key):
     if key in self.params:
