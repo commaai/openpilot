@@ -171,7 +171,7 @@ class LongControl():
           # favor the average track speed, then weighted average it with our set_speed, if these conditions aren't met, then we just return original values
           # this should work...?
           x = [3, 6, 19]
-          y = [0.275, .375, 0.5]
+          y = [0.325, .4, 0.5]
           track_speed_weight = interp(len(tracks), x, y)
           if self.lead_data['status']:  # if lead, give more weight to surrounding tracks (todo: this if check might need to be flipped, so if not lead...)
             track_speed_weight = clip(1.05 * track_speed_weight, min(y), max(y))
