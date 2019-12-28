@@ -43,7 +43,19 @@ static void hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 	}
   }
   // enter controls on rising edge of ACC, exit controls on ACC off
-  if (addr == 1056) {
+  if ((addr == 1057) && OP_SCC_live) { // for cars with long control
+    hyundai_has_scc = 1;
+    // 2 bits: 13-14
+    int cruise_engaged = (GET_BYTES_04(to_push) >> 13) & 0x3;
+    if (cruise_engaged && !hyundai_cruise_engaged_last) {
+      controls_allowed = 1;
+    }
+    if (!cruise_engaged) {
+      controls_allowed = 0;
+    }
+    hyundai_cruise_engaged_last = cruise_engaged;
+  }
+  else if (addr == 1056) { // for cars without long control
     hyundai_has_scc = 1;
     // first bit
     int cruise_engaged = GET_BYTES_04(to_push) & 0x1; // ACC main_on signal
@@ -56,7 +68,18 @@ static void hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     hyundai_cruise_engaged_last = cruise_engaged;
   }
   // cruise control for car without SCC
-  if ((addr == 608) && (!hyundai_has_scc)) {
+  if ((addr == 871) && (!hyundai_has_scc) && OP_SCC_live) {
+    // first byte
+    int cruise_engaged = (GET_BYTES_04(to_push) & 0xFF);
+    if (cruise_engaged && !hyundai_cruise_engaged_last) {
+      controls_allowed = 1;
+    }
+    if (!cruise_engaged) {
+      controls_allowed = 0;
+    }
+    hyundai_cruise_engaged_last = cruise_engaged;
+  }
+  else if ((addr == 608) && (!hyundai_has_scc)) {
     // bit 25
     int cruise_engaged = (GET_BYTES_04(to_push) >> 25 & 0x1); // ACC main_on signal
     if (cruise_engaged && !hyundai_cruise_engaged_last) {
