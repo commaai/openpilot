@@ -147,11 +147,11 @@ class CarInterface(CarInterfaceBase):
     ret.minEnableSpeed = -1.   # enable is done by stock ACC, so ignore this
 
     ret.longitudinalTuning.kpBP = [0., 5., 35.]
-    ret.longitudinalTuning.kpV = [3.6, 2.4, 1.5]
+    ret.longitudinalTuning.kpV = [2.6, 1.8, 0.9]
     ret.longitudinalTuning.kiBP = [0., 35.]
     ret.longitudinalTuning.kiV = [0.54, 0.36]
-    ret.longitudinalTuning.deadzoneBP = [0., 9.]
-    ret.longitudinalTuning.deadzoneV = [0., .15]
+    ret.longitudinalTuning.deadzoneBP = [0.]
+    ret.longitudinalTuning.deadzoneV = [0.]
 
     ret.centerToFront = ret.wheelbase * 0.4
 
