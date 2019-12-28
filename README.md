@@ -15,6 +15,11 @@ Changes:
 ------
 - <b>  Panda Universal Forwarding(PUF):</b> Panda will auto forwading for all CAN messages if Eon disconnected.
 - <b>  Setup Auto Detection:</b> Openpilot and Panda will detect MDPS, SCC and SAS buses and behaive acordingly.
+- <b>  Turning disable:</b> Openpilot will disable steering while turning signal on, Enable again after 1 second. thank to Ku7
+- <b>  Enable by Cruise button:</b> Only for Car without long control, Openpilot will engage when turn cruise control on. To revert to SET button for enable, change line 54 in selfdrive/car/hyundai/carcontroller.py to:
+```python
+    self.longcontrol = 1
+```
 
 Known issues
 ------
