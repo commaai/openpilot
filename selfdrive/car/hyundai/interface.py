@@ -233,7 +233,7 @@ class CarInterface(CarInterfaceBase):
 
     # cruise state
     # most HKG cars has no long control, it is safer and easier to engage by main on
-    ret.cruiseState.enabled = (self.CS.pcm_acc_status != 0) if self.CP.openpilotLongitudinalControl else bool(self.CS.main_on)
+    ret.cruiseState.enabled = (self.CS.pcm_acc_status != 0) if self.CC.longcontrol else bool(self.CS.main_on)
     if self.CS.pcm_acc_status != 0:
       ret.cruiseState.speed = self.CS.cruise_set_speed
     else:
