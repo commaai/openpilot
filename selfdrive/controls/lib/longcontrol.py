@@ -73,7 +73,7 @@ class LongControl():
 
     self.op_params = opParams()
     self.dynamic_lane_speed_active = self.op_params.get('dynamic_lane_speed', default=True)
-    self.min_dynamic_speed = self.op_params.get('min_dynamic_speed', default=20.) * CV.MPH_TO_MS
+    self.min_dynamic_lane_speed = self.op_params.get('min_dynamic_lane_speed', default=20.) * CV.MPH_TO_MS
     self.candidate = candidate
     self.toyota_candidates = [attr for attr in dir(CAR_TOYOTA) if not attr.startswith("__")]
 
@@ -155,7 +155,7 @@ class LongControl():
     MPC_TIME_STEP = 1 / 20.
     track_tolerance_v = 0.022352
     track_tolerance_y = 1.8288
-    if self.dynamic_lane_speed_active and self.v_ego > self.min_dynamic_speed:
+    if self.dynamic_lane_speed_active and self.v_ego > self.min_dynamic_lane_speed:
       tracks = []
       for track in self.track_data:
         valid = all([True if abs(trk['v_lead'] - track['v_lead']) >= track_tolerance_v else False for trk in tracks])  # radar sometimes reports multiple points for one vehicle, especially semis
