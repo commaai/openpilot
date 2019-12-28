@@ -13,7 +13,12 @@ https://www.youtube.com/c/ku7tech
 
 Changes:
 ------
+- <b>  Panda Universal Forwarding(PUF):</b> Panda will auto forwading for all CAN messages if Eon disconnected.
+- <b>  Setup Auto Detection:</b> Openpilot and Panda will detect MDPS, SCC and SAS buses and behaive acordingly.
 
+Known issues
+------
+LKAS fauls when driver override steering in opposite direction of Openpilot, it cause by Panda safety bolcking LKAS messages.
 
 HKG Supported Cars
 ------
