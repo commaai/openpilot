@@ -370,7 +370,8 @@ struct CarParams {
   radarTimeStep @45: Float32 = 0.05;  # time delta between radar updates, 20Hz is very standard
   communityFeature @46: Bool;  # true if a community maintained feature is detected
   mdpsBus @48: Int8;
-  sccBus @49: Int8;
+  sasBus @49: Int8;
+  sccBus @50: Int8;
 
   struct LateralPIDTuning {
     kpBP @0 :List(Float32);
