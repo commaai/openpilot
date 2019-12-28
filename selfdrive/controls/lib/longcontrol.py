@@ -148,9 +148,9 @@ class LongControl():
 
   def dynamic_lane_speed(self, v_target, v_target_future, v_cruise, a_target):
     v_cruise *= CV.KPH_TO_MS  # convert to m/s
-    min_tracks = 4
+    min_tracks = 2
     vels = [i * CV.MPH_TO_MS for i in [5, 40, 70]]
-    margins = [0.4, 0.55, 0.6]
+    margins = [0.2, 0.3, 0.55]  # [0.4, 0.55, 0.6]
     track_speed_margin = interp(self.v_ego, vels, margins)
     MPC_TIME_STEP = 1 / 20.
     track_tolerance_v = 0.022352
