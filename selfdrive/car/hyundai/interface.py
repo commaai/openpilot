@@ -50,7 +50,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.steerActuatorDelay = 0.1  # Default delay
     ret.steerRateCost = 0.5
-    ret.steerLimitTimer = 0.4
+    ret.steerLimitTimer = 0.8
     tire_stiffness_factor = 1.
 
     if candidate in [CAR.SANTA_FE, CAR.SANTA_FE_1]:
@@ -149,7 +149,7 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalTuning.kpBP = [0., 5., 35.]
     ret.longitudinalTuning.kpV = [2.6, 1.8, 0.9]
     ret.longitudinalTuning.kiBP = [0., 35.]
-    ret.longitudinalTuning.kiV = [0.54, 0.36]
+    ret.longitudinalTuning.kiV = [0.26, 0.18]
     ret.longitudinalTuning.deadzoneBP = [0.]
     ret.longitudinalTuning.deadzoneV = [0.]
 
@@ -180,12 +180,12 @@ class CarInterface(CarInterfaceBase):
     ret.enableCamera = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, ECU.CAM) or has_relay
     ret.openpilotLongitudinalControl = True
 
-    ret.stoppingControl = False
+    ret.stoppingControl = True
     ret.startAccel = 0.0
 
     ret.mdpsBus = 1 if 593 in fingerprint[1] else 0
-    ret.sccBus = 0 if 1056 in fingerprint[0] else 1 if 1056 in fingerprint[1] else 2 if 1056 in fingerprint[2] else -1
     ret.sasBus = 1 if 688 in fingerprint[1] else 0
+    ret.sccBus = 0 if 1056 in fingerprint[0] else 1 if 1056 in fingerprint[1] else 2 if 1056 in fingerprint[2] else -1
 
     return ret
 
