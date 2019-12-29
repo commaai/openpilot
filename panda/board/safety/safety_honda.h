@@ -6,7 +6,7 @@
 //      accel rising edge
 //      brake rising edge
 //      brake > 0mph
-const AddrBus HONDA_N_TX_MSGS[] = {{0xE4, 0}, {0x194, 0}, {0x1FA, 0}, {0x200, 0}, {0x30C, 0}, {0x33D, 0}, {0x39F, 0}};
+const AddrBus HONDA_N_TX_MSGS[] = {{0xE4, 0}, {0x194, 0}, {0x1FA, 0}, {0x200, 0}, {0x30C, 0}, {0x33D, 0}};
 const AddrBus HONDA_BH_TX_MSGS[] = {{0xE4, 0}, {0x296, 1}, {0x33D, 0}};  // Bosch Harness
 const AddrBus HONDA_BG_TX_MSGS[] = {{0xE4, 2}, {0x296, 0}, {0x33D, 2}};  // Bosch Giraffe
 const int HONDA_GAS_INTERCEPTOR_THRESHOLD = 328;  // ratio between offset and gain from dbc file
@@ -216,7 +216,6 @@ static int honda_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
   // fwd from car to camera. also fwd certain msgs from camera to car
   // 0xE4 is steering on all cars except CRV and RDX, 0x194 for CRV and RDX,
   // 0x1FA is brake control, 0x30C is acc hud, 0x33D is lkas hud,
-  // 0x39f is radar hud
   int bus_fwd = -1;
 
   if (!relay_malfunction) {
@@ -227,7 +226,7 @@ static int honda_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
       // block stock lkas messages and stock acc messages (if OP is doing ACC)
       int addr = GET_ADDR(to_fwd);
       bool is_lkas_msg = (addr == 0xE4) || (addr == 0x194) || (addr == 0x33D);
-      bool is_acc_hud_msg = (addr == 0x30C) || (addr == 0x39F);
+      bool is_acc_hud_msg = addr == 0x30C;
       bool is_brake_msg = addr == 0x1FA;
       bool block_fwd = is_lkas_msg ||
                        (is_acc_hud_msg && long_controls_allowed) ||

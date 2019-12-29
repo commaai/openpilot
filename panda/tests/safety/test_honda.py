@@ -8,7 +8,7 @@ from panda.tests.safety.common import test_relay_malfunction, make_msg, test_man
 MAX_BRAKE = 255
 
 INTERCEPTOR_THRESHOLD = 328
-TX_MSGS = [[0xE4, 0], [0x194, 0], [0x1FA, 0], [0x200, 0], [0x30C, 0], [0x33D, 0], [0x39F, 0]]
+TX_MSGS = [[0xE4, 0], [0x194, 0], [0x1FA, 0], [0x200, 0], [0x30C, 0], [0x33D, 0]]
 
 class TestHondaSafety(unittest.TestCase):
   @classmethod
@@ -253,7 +253,7 @@ class TestHondaSafety(unittest.TestCase):
         self.safety.set_long_controls_allowed(l)
         blocked_msgs = [0xE4, 0x194, 0x33D]
         if l:
-          blocked_msgs += [0x30C, 0x39F]
+          blocked_msgs += [0x30C]
           if not f:
             blocked_msgs += [0x1FA]
         for b in buss:
