@@ -58,6 +58,7 @@ def process_hud_alert(enabled, button_on, fingerprint, visual_alert, left_line,
 
 class CarController():
   def __init__(self, dbc_name, car_fingerprint):
+    self.accel_steady = 0
     self.apply_steer_last = 0
     self.car_fingerprint = car_fingerprint
     self.last_lead_distance = 0
