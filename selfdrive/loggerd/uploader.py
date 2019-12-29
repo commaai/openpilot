@@ -134,23 +134,24 @@ class Uploader():
 
         yield (name, key, fn)
 
-  def next_file_to_upload(self, with_raw):
-    upload_files = list(self.gen_upload_files())
-    # try to upload qlog files first
-    for name, key, fn in upload_files:
-      if name in self.immediate_priority:
-        return (key, fn)
-
-    if with_raw:
-      # then upload the full log files, rear and front camera files
+  def next_file_to_upload(self, with_raw, should_upload):
+    if should_upload:
+      upload_files = list(self.gen_upload_files())
+      # try to upload qlog files first
       for name, key, fn in upload_files:
-        if name in self.high_priority:
+        if name in self.immediate_priority:
           return (key, fn)
 
-      # then upload other files
-      for name, key, fn in upload_files:
-        if not name.endswith('.lock') and not name.endswith(".tmp"):
-          return (key, fn)
+      if with_raw:
+        # then upload the full log files, rear and front camera files
+        for name, key, fn in upload_files:
+          if name in self.high_priority:
+            return (key, fn)
+
+        # then upload other files
+        for name, key, fn in upload_files:
+          if not name.endswith('.lock') and not name.endswith(".tmp"):
+            return (key, fn)
 
     return None
 
@@ -244,7 +245,7 @@ def uploader_fn(exit_event):
     if exit_event.is_set():
       return
 
-    d = uploader.next_file_to_upload(with_raw=allow_raw_upload and should_upload)
+    d = uploader.next_file_to_upload(with_raw=allow_raw_upload and should_upload, should_upload=should_upload)
     if d is None:
       time.sleep(5)
       continue
