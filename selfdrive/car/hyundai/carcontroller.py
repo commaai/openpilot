@@ -7,6 +7,23 @@ from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
+# Accel limits
+ACCEL_HYST_GAP = 0.02  # don't change accel command for small oscilalitons within this value
+ACCEL_MAX = 1.5  # 1.5 m/s2
+ACCEL_MIN = -3.0 # 3   m/s2
+ACCEL_SCALE = max(ACCEL_MAX, -ACCEL_MIN)
+
+def accel_hysteresis(accel, accel_steady):
+
+  # for small accel oscillations within ACCEL_HYST_GAP, don't change the accel command
+  if accel > accel_steady + ACCEL_HYST_GAP:
+    accel_steady = accel - ACCEL_HYST_GAP
+  elif accel < accel_steady - ACCEL_HYST_GAP:
+    accel_steady = accel + ACCEL_HYST_GAP
+  accel = accel_steady
+
+  return accel, accel_steady
+
 def process_hud_alert(enabled, button_on, fingerprint, visual_alert, left_line,
                        right_line, left_lane_depart, right_lane_depart):
 
@@ -56,6 +73,20 @@ class CarController():
   def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert,
               left_line, right_line, left_lane_depart, right_lane_depart):
 
+    # *** compute control surfaces ***
+
+    # gas and brake
+    apply_accel = actuators.gas - actuators.brake
+
+    apply_accel, self.accel_steady = accel_hysteresis(apply_accel, self.accel_steady)
+    apply_accel = clip(apply_accel * ACCEL_SCALE, ACCEL_MIN, ACCEL_MAX)
+
+    steering_enabled = enabled
+    if CS.left_blinker_on or CS.right_blinker_on:
+      self.turning_signal_timer = 100  # Disable for 1.0 Seconds after blinker turned off
+    if self.turning_signal_timer or abs(CS.angle_steers) > 100.:
+      steering_enabled = 0
+
     ### Steering Torque
     new_steer = actuators.steer * SteerLimitParams.STEER_MAX
     apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.steer_torque_driver, SteerLimitParams)
@@ -76,6 +107,7 @@ class CarController():
 
     steer_req = 1 if apply_steer else 0
 
+    self.apply_accel_last = apply_accel
     self.apply_steer_last = apply_steer
 
     hud_alert, lane_visible, left_lane_warning, right_lane_warning =\
