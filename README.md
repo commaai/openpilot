@@ -19,6 +19,7 @@ Changes:
 ```python
     self.longcontrol = 1
 ```
+- <b>  Increase driver monitoring timer</b>  
 
 Known issues
 ------
