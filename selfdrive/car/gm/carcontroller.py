@@ -151,7 +151,7 @@ class CarController():
 
       # Send dashboard UI commands (ACC status), 25hz
       if (frame % 4) == 0:
-        can_sends.append(gmcan.create_acc_dashboard_command(self.packer_pt, canbus.powertrain, enabled, hud_v_cruise * CV.MS_TO_KPH, hud_show_car))
+        can_sends.append(gmcan.create_acc_dashboard_command(self.packer_pt, canbus.powertrain, enabled, hud_v_cruise * CV.MS_TO_KPH, hud_show_car, (enabled and CS.user_gas_pressed)))
 
       ## Radar needs to know current speed and yaw rate (50hz),
       ## and that ADAS is alive (10hz)

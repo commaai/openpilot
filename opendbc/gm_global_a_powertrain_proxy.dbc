@@ -185,6 +185,7 @@ BO_ 879 ASCMActiveCruiseControlStatus: 6 K124_ASCM
  SG_ ACCResumeButton : 1|1@0+ (1,0) [0|0] ""  NEO
  SG_ ACCCmdActive : 23|1@0+ (1,0) [0|0] ""  NEO
  SG_ FCWAlert : 41|2@0+ (1,0) [0|3] "" XXX
+ SG_ ThrottleOverride : 3|1@0+ (1,0) [0|1] "" XXX
 
 BO_ 1001 ECMVehicleSpeed: 8 K20_ECM
  SG_ VehicleSpeed : 7|16@0+ (0.01,0) [0|0] "mph"  NEO
