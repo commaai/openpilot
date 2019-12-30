@@ -94,7 +94,6 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       status, new_value = self.parse_input(new_value)
 
       if not status:
-        self.message('Cannot parse input, please try again!')
         continue
 
       if extra_info and not any([isinstance(new_value, typ) for typ in allowed_types]):
@@ -120,6 +119,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       try:
         dat = ast.literal_eval('"{}"'.format(dat))
       except ValueError:
+        self.message('Cannot parse input, please try again!')
         return False, dat
     return True, dat
 
@@ -131,7 +131,6 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       if key == '':
         return
       if not status:
-        self.message('Cannot parse input, try again!')
         continue
       if not isinstance(key, str):
         self.message('Input must be a string!')
@@ -152,6 +151,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       else:
         print('\nNot saved!\n', flush=True)
       time.sleep(self.sleep_time)
+      return
 
   def add_parameter(self):
     while True:
@@ -163,7 +163,6 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       status, key = self.parse_input(key)
 
       if not status:
-        self.message('Cannot parse input, please try again!')
         continue
       if not isinstance(key, str):
         self.message('Input must be a string!')
@@ -173,7 +172,6 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       value = input('>> ').strip()
       status, value = self.parse_input(value)
       if not status:
-        self.message('Cannot parse input, please try again!')
         continue
 
       print('Parameter name: {}'.format(key))
