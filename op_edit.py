@@ -186,6 +186,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
   def message(self, msg):
     print('\n{}\n--------'.format(msg), flush=True)
     time.sleep(self.sleep_time)
+    print()
 
 
 opEdit()
