@@ -8,8 +8,6 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
     self.op_params = opParams()
     self.params = None
     self.sleep_time = 1.0
-    print('Welcome to the opParams command line editor!')
-    print('Here are your parameters:\n')
     self.run_loop()
 
   def run_loop(self):
@@ -17,10 +15,12 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
     print('Here are your parameters:\n')
     while True:
       self.params = self.op_params.get()
+
       values_list = [self.params[i] if len(str(self.params[i])) < 20 else '{} ... {}'.format(str(self.params[i])[:30], str(self.params[i])[-15:]) for i in self.params]
       live = [' (live!)' if i in self.op_params.default_params and self.op_params.default_params[i]['live'] else '' for i in self.params]
+
       to_print = ['{}. {}: {} {}'.format(idx + 1, i, values_list[idx], live[idx]) for idx, i in enumerate(self.params)]
-      to_print.append('{}. Add new parameter!'.format(len(self.params) + 1))
+      to_print.append('\n{}. Add new parameter!'.format(len(self.params) + 1))
       to_print.append('{}. Delete parameter!'.format(len(self.params) + 2))
       print('\n'.join(to_print))
       print('\nChoose a parameter to explore (by integer index): ')
@@ -29,42 +29,40 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       if parsed == 'continue':
         continue
       elif parsed == 'add':
-        if self.add_parameter() == 'error':
-          return
+        self.add_parameter()
       elif parsed == 'change':
-        if self.change_parameter(choice) == 'error':
-          return
+        self.change_parameter(choice)
       elif parsed == 'delete':
-        if self.delete_parameter() == 'error':
-          return
+        self.delete_parameter()
       elif parsed == 'error':
         return
 
   def parse_choice(self, choice):
     if choice.isdigit():
       choice = int(choice)
+      choice -= 1
     elif choice == '':
-      print('Exiting...')
+      print('Exiting opEdit!')
       return 'error', choice
     else:
       print('\nNot an integer!\n', flush=True)
       time.sleep(self.sleep_time)
       return 'retry', choice
-    if choice not in range(1, len(self.params) + 3):  # three for add/delete parameter
+    if choice not in range(1, len(self.params) + 2):  # three for add/delete parameter
       print('Not in range!\n', flush=True)
       time.sleep(self.sleep_time)
       return 'continue', choice
 
-    if choice == len(self.params) + 1:  # add new parameter
+    if choice == len(self.params):  # add new parameter
       return 'add', choice
 
-    if choice == len(self.params) + 2:  # delete parameter
+    if choice == len(self.params) + 1:  # delete parameter
       return 'delete', choice
 
     return 'change', choice
 
   def change_parameter(self, choice):
-    chosen_key = list(self.params)[choice - 1]
+    chosen_key = list(self.params)[choice]
     extra_info = False
     if chosen_key in self.op_params.default_params:
       extra_info = True
@@ -123,31 +121,34 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
     return True, dat
 
   def delete_parameter(self):
-    print('Enter the name of the parameter to delete:')
-    key = input('>> ')
-    status, key = self.parse_input(key)
-    if not status:
-      print('Cannot parse input, exiting!')
-      return 'error'
-    if not isinstance(key, str):
-      print('Input must be a string!')
-      return 'error'
-    if key not in self.params:
-      print("Parameter doesn't exist!")
-      return 'error'
+    while True:
+      print('Enter the name of the parameter to delete:')
+      key = input('>> ')
+      status, key = self.parse_input(key)
+      if key == '':
+        return
+      if not status:
+        self.message('Cannot parse input, try again!')
+        continue
+      if not isinstance(key, str):
+        self.message('Input must be a string!')
+        continue
+      if key not in self.params:
+        self.message("Parameter doesn't exist!")
+        continue
 
-    value = self.params.get(key)
-    print('Parameter name: {}'.format(key))
-    print('Parameter value: {} (type: {})'.format(value, str(type(value)).split("'")[1]))
-    print('Do you want to delete this?')
+      value = self.params.get(key)
+      print('Parameter name: {}'.format(key))
+      print('Parameter value: {} (type: {})'.format(value, str(type(value)).split("'")[1]))
+      print('Do you want to delete this?')
 
-    choice = input('[Y/n]: ').lower()
-    if choice == 'y':
-      self.op_params.delete(key)
-      print('\nDeleted!\n')
-    else:
-      print('\nNot saved!\n', flush=True)
-    time.sleep(self.sleep_time)
+      choice = input('[Y/n]: ').lower()
+      if choice == 'y':
+        self.op_params.delete(key)
+        print('\nDeleted!\n')
+      else:
+        print('\nNot saved!\n', flush=True)
+      time.sleep(self.sleep_time)
 
   def add_parameter(self):
     print('Type the name of your new parameter:')
@@ -180,6 +181,10 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       print('\nSaved!\n')
     else:
       print('\nNot saved!\n', flush=True)
+    time.sleep(self.sleep_time)
+
+  def message(self, msg):
+    print('\n{}\n--------'.format(msg), flush=True)
     time.sleep(self.sleep_time)
 
 
