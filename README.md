@@ -37,4 +37,5 @@ Highlight Features
 6. **Live tuning support**: This has just been added and currently only the `camera_offset` parameter is officially supported.
     - Just start opEdit with the instructions above and pick a parameter. It will let you know if it supports live tuning, if so, updates will take affect within 5 seconds!
     - Alternatively, you can use the new opTune module to live tune quicker and easier! It stays in the parameter edit view so you can more easily experiment with values. opTune show below:
+    
     <img src="gifs/op_tune.gif?raw=true" width="600">
