@@ -5,13 +5,13 @@ This branch is simply stock openpilot with some additions to help it drive as sm
 
 
 Highlight Features
------
+=====
 
-* [Dynamic gas](#dynamic-gas)
-* [Dynamic follow](#dynamic-follow)
-* [Dynamic lane speed (new!)](#dynamic-lane-speed)
-* [(NOT YET ADDED) Two PID loops to control gas and brakes independently](#two-pid-loops)
-* [Custom wheel offset to reduce lane hugging]()
+* [**Dynamic gas**](#dynamic-gas)
+* [**Dynamic follow**](#dynamic-follow)
+* [**Dynamic lane speed (new!)**](#dynamic-lane-speed)
+* [**(NOT YET ADDED) Two PID loops to control gas and brakes independently**](#Two PID loops to control gas and brakes independently)
+* [**Custom wheel offset to reduce lane hugging**]()
 * [**Custom following distance**]()
 * [**Customize this branch (opEdit Parameter class)**]()
 * [**Live tuning support**]()
@@ -26,11 +26,11 @@ Dynamic follow
 -----
 This is my dynamic follow from 0.5, where it changes your TR (following distance) dynamically based on multiple vehicle factors, as well as data from the lead vehicle. [Here's an old write up from a while ago explaining how it works exactly. Some of it might be out of date, but how it functions is the same.](https://github.com/ShaneSmiskol/openpilot/blob/dynamic-follow/README.md) The goal is to essentially smoothen the driving experience and increase safety.
 
-Dynamic lane speed (new!)
+Dynamic lane speed
 -----
 This is a new feature that reduces your cruising speed if many vehicles around you are significantly slower than you. This works with and without an openpilot-identified lead. Ex.: It will slow you down if traveling in an open lane with cars in adjacent lanes that are slower than you. Or if the lead in front of the lead is slowing down, as well as cars in other lanes far ahead. The most it will slow you down is some average of: (the set speed and the average of the surrounding cars) The more the radar points, the more weight goes to the speeds of surrounding vehicles.
 
-(NOT YET ADDED) Two PID loops to control gas and brakes independently
+Two PID loops to control gas and brakes independently
 -----
 If you have a Toyota Corolla with a comma pedal, you'll love this addition. Two longitudinal PID loops are set up in `longcontrol.py` so that one is running with comma pedal tuning to control the gas, and the other is running stock non-pedal tuning for better braking control. In the car, this feels miles better than stock openpilot, and nearly as good as your stock Toyota cruise control before you pulled out your DSU! It won't accelerate up to stopped cars and brake at the last moment anymore.
 
