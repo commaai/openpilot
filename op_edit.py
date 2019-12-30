@@ -18,8 +18,8 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
     while True:
       self.params = self.op_params.get()
       values_list = [self.params[i] if len(str(self.params[i])) < 20 else '{} ... {}'.format(str(self.params[i])[:30], str(self.params[i])[-15:]) for i in self.params]
-      live = [', live!' if i in self.op_params.default_params and self.op_params.default_params[i]['live'] else '' for i in self.params]
-      to_print = ['{}. {}: {} (type: {}{})'.format(idx + 1, i, values_list[idx], str(type(self.params[i])).split("'")[1], live[idx]) for idx, i in enumerate(self.params)]
+      live = [' (live!)' if i in self.op_params.default_params and self.op_params.default_params[i]['live'] else '' for i in self.params]
+      to_print = ['{}. {}: {} {}'.format(idx + 1, i, values_list[idx], live[idx]) for idx, i in enumerate(self.params)]
       to_print.append('{}. Add new parameter!'.format(len(self.params) + 1))
       to_print.append('{}. Delete parameter!'.format(len(self.params) + 2))
       print('\n'.join(to_print))
