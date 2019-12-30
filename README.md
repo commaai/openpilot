@@ -36,3 +36,5 @@ Highlight Features
     A list of parameters that you can change are located [here](https://github.com/ShaneSmiskol/openpilot/blob/stock_additions/common/op_params.py#L29).
 
     Parameters are stored at `/data/op_params.json`
+
+<img src="gifs/op_tune.gif?raw=true" width="800">
