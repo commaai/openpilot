@@ -1,7 +1,10 @@
 from cereal import log
 from common.numpy_fast import clip, interp
-from selfdrive.controls.lib.pid_long import PIController
 from common.travis_checker import travis
+if not travis:
+  from selfdrive.controls.lib.pid_long import PIController
+else:
+  from selfdrive.controls.lib.pid import PIController
 from selfdrive.car.toyota.values import CAR as CAR_TOYOTA
 from selfdrive.config import Conversions as CV
 from common.op_params import opParams
