@@ -26,9 +26,7 @@ Highlight Features
         python op_edit.py
         ```
         Then enter the number for the `following_distance` parameter and set to a float or integer between `0.9` and `2.7`. `None` will use dynamic follow!
-5. **Live tuning**: This has just been added and currently only the `camera_offset` parameter is supported.
-    - Just start opEdit with the instructions below and pick a parameter. It will let you know if it supports live tuning, if so, updates will take affect within 5 seconds!
-6. **Customize this branch (opEdit Parameter class)**: This is a handy tool to change your `opParams` parameters without diving into any json files or code. You can specify parameters to be used in any fork's operation that supports `opParams`. First, ssh in to your EON and make sure you're in `/data/openpilot`, then start `opEdit`:
+5. **Customize this branch (opEdit Parameter class)**: This is a handy tool to change your `opParams` parameters without diving into any json files or code. You can specify parameters to be used in any fork's operation that supports `opParams`. First, ssh in to your EON and make sure you're in `/data/openpilot`, then start `opEdit`:
     ```python
     cd /data/openpilot
     python op_edit.py
@@ -36,5 +34,7 @@ Highlight Features
     A list of parameters that you can change are located [here](https://github.com/ShaneSmiskol/openpilot/blob/stock_additions/common/op_params.py#L29).
 
     Parameters are stored at `/data/op_params.json`
-
-<img src="gifs/op_tune.gif?raw=true" width="600">
+6. **Live tuning support**: This has just been added and currently only the `camera_offset` parameter is officially supported.
+    - Just start opEdit with the instructions above and pick a parameter. It will let you know if it supports live tuning, if so, updates will take affect within 5 seconds!
+    - Alternatively, you can use the new opTune module to live tune quicker and easier! It stays in the parameter edit view so you can more easily experiment with values. opTune show below:
+    <img src="gifs/op_tune.gif?raw=true" width="600">
