@@ -44,7 +44,7 @@ class opTune:
         self.message('The type of data you entered ({}) is not allowed with this parameter!\n'.format(str(type(value)).split("'")[1]))
         continue
       self.op_params.put(param, value)
-      print('Put {} with value: {}! (type: {})\n'.format(param, value, str(type(value)).split("'")[1]))
+      print('Saved {} with value: {}! (type: {})\n'.format(param, value, str(type(value)).split("'")[1]))
 
   def message(self, msg):
     print('\n{}\n--------'.format(msg))

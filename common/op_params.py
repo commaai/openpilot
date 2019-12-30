@@ -39,7 +39,7 @@ class opParams:
                            'static_steer_ratio': {'default': True, 'allowed_types': [bool], 'description': 'Whether you want openpilot to use the steering ratio in interface.py, or the automatically learned steering ratio. If True, it will use the static value in interface.py', 'live': False},
                            'use_dynamic_lane_speed': {'default': True, 'allowed_types': [bool], 'description': 'Whether you want openpilot to adjust your speed based on surrounding vehicles', 'live': False},
                            'min_dynamic_lane_speed': {'default': 10.0, 'allowed_types': [float, int], 'description': 'The minimum speed to allow dynamic lane speed to operate (in MPH)', 'live': False},
-                           'longkiV': {'default': 0.0, 'allowed_types': [float, int], 'description': '', 'live': True}}
+                           'longkiV': {'default': 0.0, 'allowed_types': [float, int], 'description': 'This is a temp parameter', 'live': True}}
 
     self.params = {}
     self.params_file = "/data/op_params.json"
