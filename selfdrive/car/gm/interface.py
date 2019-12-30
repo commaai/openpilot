@@ -307,7 +307,7 @@ class CarInterface(CarInterfaceBase):
       for b in ret.buttonEvents:
         # do enable on both accel and decel buttons
         # The ECM will fault if resume triggers an enable while speed is set to 0 (it is initialized to 70.8 m/s or 158 mph)
-        if b.type == ButtonType.accelCruise and c.hudControl.setSpeed > 0 and c.hudControl.setSpeed < 70 and not b.pressed:
+        if b.type == ButtonType.accelCruise and c.hudControl.setSpeed < 70 and not b.pressed:
           events.append(create_event('buttonEnable', [ET.ENABLE]))
         if b.type == ButtonType.decelCruise and not b.pressed:
           events.append(create_event('buttonEnable', [ET.ENABLE]))
@@ -319,7 +319,7 @@ class CarInterface(CarInterfaceBase):
         if b.type == ButtonType.altButton3 and b.pressed:
           events.append(create_event('buttonCancel', [ET.RESET_V_CRUISE, ET.USER_DISABLE]))
 
-        ret.events = events
+    ret.events = events
 
     # update previous brake/gas pressed
     self.acc_active_prev = self.CS.acc_active

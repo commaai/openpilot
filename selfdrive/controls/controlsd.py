@@ -29,6 +29,7 @@ from selfdrive.controls.lib.gps_helpers import is_rhd_region
 from selfdrive.locationd.calibration_helpers import Calibration, Filter
 
 LANE_DEPARTURE_THRESHOLD = 0.1
+INITIAL_V_CRUISE_KPH = 255
 
 ThermalStatus = log.ThermalData.ThermalStatus
 State = log.ControlsState.OpenpilotState
@@ -166,9 +167,9 @@ def state_transition(frame, CS, CP, state, events, soft_disable_timer, v_cruise_
   # entrance in SOFT_DISABLING state
   soft_disable_timer = max(0, soft_disable_timer - 1)
 
-  # Reset v_cruise_kph to 0
+  # Reset v_cruise_kph to initial value
   if get_events(events, [ET.RESET_V_CRUISE]):
-    v_cruise_kph = 0
+    v_cruise_kph = INITIAL_V_CRUISE_KPH
 
   # DISABLED
   if state == State.disabled:
@@ -531,7 +532,7 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
 
   state = State.disabled
   soft_disable_timer = 0
-  v_cruise_kph = 255
+  v_cruise_kph = INITIAL_V_CRUISE_KPH
   v_cruise_kph_last = 0
   mismatch_counter = 0
   last_blinker_frame = 0
