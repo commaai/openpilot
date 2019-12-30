@@ -1,13 +1,13 @@
 Stock Additions 0.7 (version 0.1)
 ========================
- * Dynamic lane speed is a new feature that reduces your cruising speed if many vehicles around you are significantly slower than you. This works with and without an openpilot-identified lead. Ex.: It will slow you down if traveling in an open lane with cars in adjacent lanes that are slower than you. Or if the lead in front of the lead is slowing down, as well as cars in other lanes far ahead, it will slow you down as well. The most it will slow you down is the average of: (the set speed and the average of the surrounding cars).
- * Dynamic gas tuning. Above 20 mph we take lead acceleration, velocity, and the following distance into account. Possibility of different tuning for different cars in the future. (DYNAMIC GAS NOW ONLY WORKS ON TOYOTA COROLLA)
+ * Dynamic lane speed is a new feature that reduces your cruising speed if many vehicles around you are significantly slower than you. This works with and without an openpilot-identified lead.
+ * Dynamic gas tuning. Above 20 mph we take lead velocity and the following distance into account. Possibility of different tuning for different cars in the future. (DYNAMIC GAS NOW ONLY WORKS ON TOYOTA COROLLA AND RAV4 PEDAL)
  * Dynamic follow tuning, don't get as close when lead is accelerating.
- * Added `static_steer_ratio` parameter, if `True` openpilot will use the steer ratio in your interface file. Default is true, false uses the learned value which can vary through your drives.
- * Added ability to live tune parameters with `op_edit.py`. Currently only the camera offset (`camera_offset`) is supported.
+ * Added static_steer_ratio parameter, if True openpilot will use the steer ratio in your interface file. Default is true, false uses the openpilot learned value which can vary through your drives.
+ * Added ability to live tune parameters with `op_tune.py`. Currently only the camera offset (`camera_offset`) is supported.
  * Some Corolla tuning.
  * Reduce max acceleration.
- * TO NOTE: Dynamic Lane Speed will not work with stopped cars, at any speed. There is also a margin that cars must be traveling within in order to affect your speed. Don't expect anything magical, just minor quality of life improvements.
+ * TO NOTE: Dynamic Lane Speed will not work with stopped cars, at any speed. There is also a margin that cars must be traveling within in order to affect your speed. Don't expect anything magical, just minor quality of drive improvements.
 
 Version 0.7 (2019-12-13)
 ========================
