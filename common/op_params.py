@@ -38,8 +38,9 @@ class opParams:
                                                                                                              'If False, lane change will occur IMMEDIATELY after signaling'), 'live': False},
                            'alca_min_speed': {'default': 30.0, 'allowed_types': [float, int], 'description': 'The minimum speed allowed for an automatic lane change (in MPH)', 'live': False},
                            'static_steer_ratio': {'default': True, 'allowed_types': [bool], 'description': 'Whether you want openpilot to use the steering ratio in interface.py, or the automatically learned steering ratio. If True, it will use the static value in interface.py', 'live': False},
-                           'dynamic_lane_speed': {'default': True, 'allowed_types': [bool], 'description': 'Whether you want openpilot to adjust your speed based on surrounding vehicles', 'live': False},
-                           'min_dynamic_lane_speed': {'default': 10.0, 'allowed_types': [float, int], 'description': 'The minimum speed to allow dynamic lane speed to operate (in MPH)', 'live': False}}
+                           'use_dynamic_lane_speed': {'default': True, 'allowed_types': [bool], 'description': 'Whether you want openpilot to adjust your speed based on surrounding vehicles', 'live': False},
+                           'min_dynamic_lane_speed': {'default': 10.0, 'allowed_types': [float, int], 'description': 'The minimum speed to allow dynamic lane speed to operate (in MPH)', 'live': False},
+                           'longkiV': {'default': 0.0, 'allowed_types': [list], 'description': '', 'live': True}}
 
     self.params = {}
     self.params_file = "/data/op_params.json"
@@ -110,7 +111,7 @@ class opParams:
       if time.time() - self.last_read_time >= self.read_frequency:  # make sure we aren't reading file too often
         self.params, read_status = read_params(self.params_file, self.format_default_params())
         if not read_status:
-          time.sleep(0.025)
+          time.sleep(0.01)
           self.params, read_status = read_params(self.params_file, self.format_default_params())  # if the file was being written to, retry once
         self.last_read_time = time.time()
 

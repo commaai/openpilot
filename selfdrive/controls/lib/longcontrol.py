@@ -1,6 +1,6 @@
 from cereal import log
 from common.numpy_fast import clip, interp
-from selfdrive.controls.lib.pid import PIController
+from selfdrive.controls.lib.pid_long import PIController
 from common.travis_checker import travis
 from selfdrive.car.toyota.values import CAR as CAR_TOYOTA
 from selfdrive.config import Conversions as CV
@@ -72,7 +72,7 @@ class LongControl():
     self.last_output_gb = 0.0
 
     self.op_params = opParams()
-    self.dynamic_lane_speed_active = self.op_params.get('dynamic_lane_speed', default=True)
+    self.use_dynamic_lane_speed = self.op_params.get('use_dynamic_lane_speed', default=True)
     self.min_dynamic_lane_speed = self.op_params.get('min_dynamic_lane_speed', default=20.) * CV.MPH_TO_MS
     self.candidate = candidate
     self.toyota_candidates = [attr for attr in dir(CAR_TOYOTA) if not attr.startswith("__")]
@@ -82,6 +82,7 @@ class LongControl():
     self.track_data = []
     self.mpc_TR = 1.8
     self.v_ego = 0.0
+    self.k_i_last = 0.0
 
 
   def reset(self, v_pid):
@@ -155,7 +156,7 @@ class LongControl():
     MPC_TIME_STEP = 1 / 20.
     track_tolerance_v = 0.022352
     track_tolerance_y = 1.8288
-    if self.dynamic_lane_speed_active and self.v_ego > self.min_dynamic_lane_speed:
+    if self.v_ego > self.min_dynamic_lane_speed:
       tracks = []
       for track in self.track_data:
         valid = all([True if abs(trk['v_lead'] - track['v_lead']) >= track_tolerance_v else False for trk in tracks])  # radar sometimes reports multiple points for one vehicle, especially semis
@@ -200,9 +201,16 @@ class LongControl():
 
     # Actuation limits
     if not travis:
+      k_i = self.op_params.get('longkiV', default=0.0)
+      if k_i != self.k_i_last:
+        self.v_pid = v_ego
+        self.pid.reset()
+        self.k_i_last = k_i
+        self.pid.k_i = k_i
       self.handle_passable(passable)
       gas_max = self.dynamic_gas(CP)
-      v_target, v_target_future, a_target = self.dynamic_lane_speed(v_target, v_target_future, v_cruise, a_target)
+      if self.use_dynamic_lane_speed:
+        v_target, v_target_future, a_target = self.dynamic_lane_speed(v_target, v_target_future, v_cruise, a_target)
     else:
       gas_max = interp(v_ego, CP.gasMaxBP, CP.gasMaxV)
     brake_max = interp(v_ego, CP.brakeMaxBP, CP.brakeMaxV)
