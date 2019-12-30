@@ -83,12 +83,6 @@ class CarController():
     apply_accel, self.accel_steady = accel_hysteresis(apply_accel, self.accel_steady)
     apply_accel = clip(apply_accel * ACCEL_SCALE, ACCEL_MIN, ACCEL_MAX)
 
-    steering_enabled = enabled
-    if CS.left_blinker_on or CS.right_blinker_on:
-      self.turning_signal_timer = 100  # Disable for 1.0 Seconds after blinker turned off
-    if self.turning_signal_timer or abs(CS.angle_steers) > 100.:
-      steering_enabled = 0
-
     ### Steering Torque
     new_steer = actuators.steer * SteerLimitParams.STEER_MAX
     apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.steer_torque_driver, SteerLimitParams)
