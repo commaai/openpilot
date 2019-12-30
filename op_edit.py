@@ -24,7 +24,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       to_print.append('{}. Delete parameter!'.format(len(self.params) + 2))
       print('\n'.join(to_print))
       print('\nChoose a parameter to explore (by integer index): ')
-      choice = input('>> ')
+      choice = input('>> ').strip()
       parsed, choice = self.parse_choice(choice)
       if parsed == 'continue':
         continue
@@ -62,53 +62,56 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
     return 'change', choice
 
   def change_parameter(self, choice):
-    chosen_key = list(self.params)[choice]
-    extra_info = False
-    if chosen_key in self.op_params.default_params:
-      extra_info = True
-      param_allowed_types = self.op_params.default_params[chosen_key]['allowed_types']
-      param_description = self.op_params.default_params[chosen_key]['description']
-      live = self.op_params.default_params[chosen_key]['live']
+    while True:
+      chosen_key = list(self.params)[choice]
+      extra_info = False
+      live = False
+      if chosen_key in self.op_params.default_params:
+        extra_info = True
+        allowed_types = self.op_params.default_params[chosen_key]['allowed_types']
+        description = self.op_params.default_params[chosen_key]['description']
+        live = self.op_params.default_params[chosen_key]['live']
 
-    old_value = self.params[chosen_key]
-    print('Chosen parameter: {}'.format(chosen_key))
-    print('Current value: {} (type: {})'.format(old_value, str(type(old_value)).split("'")[1]))
-    if extra_info:
-      print('\n- Description: {}'.format(param_description))
-      print('- Allowed types: {}'.format(', '.join([str(i).split("'")[1] for i in param_allowed_types])))
-      if live:
-        print('- This parameter supports live tuning! Updates should take affect within 5 seconds.\n')
-        print('It\'s recommended to use the new opTune module! It\'s been streamlined to make live tuning easier and quicker.')
-        print('Just exit out of this and type:')
-        print('python op_tune.py')
-        print('In the directory /data/openpilot\n')
+      old_value = self.params[chosen_key]
+      print('Chosen parameter: {}'.format(chosen_key))
+      print('Current value: {} (type: {})'.format(old_value, str(type(old_value)).split("'")[1]))
+      if extra_info:
+        print('\n- Description: {}'.format(description))
+        print('- Allowed types: {}'.format(', '.join([str(i).split("'")[1] for i in allowed_types])))
+        if live:
+          print('- This parameter supports live tuning! Updates should take affect within 5 seconds.\n')
+          print('It\'s recommended to use the new opTune module! It\'s been streamlined to make live tuning easier and quicker.')
+          print('Just exit out of this and type:')
+          print('python op_tune.py')
+          print('In the directory /data/openpilot\n')
+        else:
+          print()
+      print('Enter your new value:')
+      new_value = input('>> ').strip()
+      if new_value == '':
+        return
+
+      status, new_value = self.parse_input(new_value)
+
+      if not status:
+        self.message('Cannot parse input, please try again!')
+        continue
+
+      if extra_info and not any([isinstance(new_value, typ) for typ in allowed_types]):
+        self.message('The type of data you entered ({}) is not allowed with this parameter!\n'.format(str(type(new_value)).split("'")[1]))
+        continue
+
+      print('\nOld value: {} (type: {})'.format(old_value, str(type(old_value)).split("'")[1]))
+      print('New value: {} (type: {})'.format(new_value, str(type(new_value)).split("'")[1]))
+      print('Do you want to save this?')
+      choice = input('[Y/n]: ').lower().strip()
+      if choice == 'y':
+        self.op_params.put(chosen_key, new_value)
+        print('\nSaved!\n', flush=True)
       else:
-        print()
-    print('Enter your new value:')
-    new_value = input('>> ')
-    if len(new_value) == 0:
-      print('Entered value cannot be empty!')
-      return 'error'
-    status, new_value = self.parse_input(new_value)
-    if not status:
-      print('Cannot parse input, exiting!')
-      return 'error'
-
-    if extra_info and not any([isinstance(new_value, typ) for typ in param_allowed_types]):
-      print('The type of data you entered ({}) is not allowed with this parameter!\n'.format(str(type(new_value)).split("'")[1]))
+        print('\nNot saved!\n', flush=True)
       time.sleep(self.sleep_time)
       return
-
-    print('\nOld value: {} (type: {})'.format(old_value, str(type(old_value)).split("'")[1]))
-    print('New value: {} (type: {})'.format(new_value, str(type(new_value)).split("'")[1]))
-    print('Do you want to save this?')
-    choice = input('[Y/n]: ').lower()
-    if choice == 'y':
-      self.op_params.put(chosen_key, new_value)
-      print('\nSaved!\n')
-    else:
-      print('\nNot saved!\n', flush=True)
-    time.sleep(self.sleep_time)
 
   def parse_input(self, dat):
     try:
@@ -123,7 +126,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
   def delete_parameter(self):
     while True:
       print('Enter the name of the parameter to delete:')
-      key = input('>> ')
+      key = input('>> ').lower()
       status, key = self.parse_input(key)
       if key == '':
         return
@@ -142,7 +145,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       print('Parameter value: {} (type: {})'.format(value, str(type(value)).split("'")[1]))
       print('Do you want to delete this?')
 
-      choice = input('[Y/n]: ').lower()
+      choice = input('[Y/n]: ').lower().strip()
       if choice == 'y':
         self.op_params.delete(key)
         print('\nDeleted!\n')
@@ -151,37 +154,40 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       time.sleep(self.sleep_time)
 
   def add_parameter(self):
-    print('Type the name of your new parameter:')
-    key = input('>> ')
-    if len(key) == 0:
-      print('Entered key cannot be empty!')
-      return 'error'
-    status, key = self.parse_input(key)
-    if not status:
-      print('Cannot parse input, exiting!')
-      return 'error'
-    if not isinstance(key, str):
-      print('Input must be a string!')
-      return 'error'
+    while True:
+      print('Type the name of your new parameter:')
+      key = input('>> ').strip()
+      if key == '':
+        return
 
-    print("Enter the data you'd like to save with this parameter:")
-    value = input('>> ')
-    status, value = self.parse_input(value)
-    if not status:
-      print('Cannot parse input, exiting!')
-      return 'error'
+      status, key = self.parse_input(key)
 
-    print('Parameter name: {}'.format(key))
-    print('Parameter value: {} (type: {})'.format(value, str(type(value)).split("'")[1]))
-    print('Do you want to save this?')
+      if not status:
+        self.message('Cannot parse input, please try again!')
+        continue
+      if not isinstance(key, str):
+        self.message('Input must be a string!')
+        continue
 
-    choice = input('[Y/n]: ').lower()
-    if choice == 'y':
-      self.op_params.put(key, value)
-      print('\nSaved!\n')
-    else:
-      print('\nNot saved!\n', flush=True)
-    time.sleep(self.sleep_time)
+      print("Enter the data you'd like to save with this parameter:")
+      value = input('>> ').strip()
+      status, value = self.parse_input(value)
+      if not status:
+        self.message('Cannot parse input, please try again!')
+        continue
+
+      print('Parameter name: {}'.format(key))
+      print('Parameter value: {} (type: {})'.format(value, str(type(value)).split("'")[1]))
+      print('Do you want to save this?')
+
+      choice = input('[Y/n]: ').lower().strip()
+      if choice == 'y':
+        self.op_params.put(key, value)
+        print('\nSaved!\n', flush=True)
+      else:
+        print('\nNot saved!\n', flush=True)
+      time.sleep(self.sleep_time)
+      return
 
   def message(self, msg):
     print('--------\n{}\n--------'.format(msg), flush=True)

@@ -5,6 +5,7 @@ import ast
 class opTune:
   def __init__(self):
     self.op_params = opParams()
+    self.sleep_time = 1.0
     self.start()
 
   def start(self):
@@ -47,7 +48,9 @@ class opTune:
       print('Saved {} with value: {}! (type: {})\n'.format(param, value, str(type(value)).split("'")[1]))
 
   def message(self, msg):
-    print('\n{}\n--------'.format(msg))
+    print('--------\n{}\n--------'.format(msg), flush=True)
+    time.sleep(self.sleep_time)
+    print()
 
   def parse_input(self, dat):
     dat = dat.replace("'", '"')
