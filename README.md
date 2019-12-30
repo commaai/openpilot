@@ -37,4 +37,4 @@ Highlight Features
 
     Parameters are stored at `/data/op_params.json`
 
-<img src="gifs/op_tune.gif?raw=true" width="800">
+<img src="gifs/op_tune.gif?raw=true" width="600">
