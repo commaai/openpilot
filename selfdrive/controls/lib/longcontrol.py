@@ -173,6 +173,7 @@ class LongControl():
       if average_track_speed < v_target and average_track_speed < v_target_future:
         x = [0, 3, 6, 19]
         y = [.05, 0.2, .4, 0.5]
+        # todo: give less weight to further away tracks, but increase the above!
         track_speed_weight = interp(len(tracks), x, y)
         if self.lead_data['status']:  # if lead, give more weight to surrounding tracks (todo: this if check might need to be flipped, so if not lead...)
           track_speed_weight = clip(1.05 * track_speed_weight, min(y), max(y))
