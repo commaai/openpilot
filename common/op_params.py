@@ -41,6 +41,7 @@ class opParams:
                            'min_dynamic_lane_speed': {'default': 10.0, 'allowed_types': [float, int], 'description': 'The minimum speed to allow dynamic lane speed to operate (in MPH)', 'live': False},
                            'longkiV': {'default': 0.0, 'allowed_types': [float, int], 'description': 'This is a temp parameter', 'live': True}}
 
+    self.to_delete = ['dynamic_lane_speed']
     self.params = {}
     self.params_file = "/data/op_params.json"
     self.kegman_file = "/data/kegman.json"
@@ -84,6 +85,8 @@ class opParams:
       self.params, read_status = read_params(self.params_file, self.format_default_params())
       if read_status:
         to_write = not self.add_default_params()  # if new default data has been added
+        if self.delete_old():  # or if old params have been deleted
+          to_write = True
       else:  # don't overwrite corrupted params, just print to screen
         print("ERROR: Can't read op_params.json file")
     elif os.path.isfile(self.kegman_file):
@@ -98,6 +101,13 @@ class opParams:
       no_params = True  # user's first time running a fork with kegman_conf or op_params
     if to_write or no_params:
       write_params(self.params, self.params_file)
+
+  def delete_old(self):
+    prev_params = self.params
+    for i in self.to_delete:
+      if i in self.params:
+        del self.params[i]
+    return prev_params == self.params
 
   def put(self, key, value):
     self.params.update({key: value})
