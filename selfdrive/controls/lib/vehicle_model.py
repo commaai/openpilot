@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import numpy as np
 from numpy.linalg import solve
+from common.op_params import opParams
+from common.travis_checker import travis
 
 """
 Dynamic bycicle model from "The Science of Vehicle Dynamics (2014), M. Guiggiani"
@@ -106,13 +108,15 @@ class VehicleModel():
 
     self.cF_orig = CP.tireStiffnessFront
     self.cR_orig = CP.tireStiffnessRear
+    self.static_steer_ratio = opParams().get('static_steer_ratio', default=False)
     self.update_params(1.0, CP.steerRatio)
 
   def update_params(self, stiffness_factor, steer_ratio):
     """Update the vehicle model with a new stiffness factor and steer ratio"""
     self.cF = stiffness_factor * self.cF_orig
     self.cR = stiffness_factor * self.cR_orig
-    self.sR = steer_ratio
+    if travis or not self.static_steer_ratio:  # leave sR at CP.steerRatio if static_steer_ratio is True
+      self.sR = steer_ratio
 
   def steady_state_sol(self, sa, u):
     """Returns the steady state solution.

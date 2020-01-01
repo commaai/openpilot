@@ -61,7 +61,6 @@ class PathPlanner():
     self.op_params = opParams()
     self.alca_nudge_required = self.op_params.get('alca_nudge_required', default=True)
     self.alca_min_speed = self.op_params.get('alca_min_speed', default=30.0)
-    self.static_steer_ratio = self.op_params.get('static_steer_ratio', default=False)
     self.lane_hugging = LaneHugging()
 
   def setup_mpc(self):
@@ -79,11 +78,6 @@ class PathPlanner():
     self.angle_steers_des_mpc = 0.0
     self.angle_steers_des_prev = 0.0
     self.angle_steers_des_time = 0.0
-
-  def get_steer_ratio(self, sR):
-    if not travis and self.static_steer_ratio:
-      return self.steer_ratio
-    return sR
 
   def update(self, sm, pm, CP, VM):
     v_ego = sm['carState'].vEgo
@@ -174,7 +168,7 @@ class PathPlanner():
 
     # account for actuation delay
     angle_offset = self.lane_hugging.modify_offset(float(sm['liveParameters'].angleOffset), lane_change_direction, self.lane_change_state)
-    self.cur_state = calc_states_after_delay(self.cur_state, v_ego, angle_steers - angle_offset, curvature_factor, self.get_steer_ratio(VM.sR), CP.steerActuatorDelay)
+    self.cur_state = calc_states_after_delay(self.cur_state, v_ego, angle_steers - angle_offset, curvature_factor, VM.sR, CP.steerActuatorDelay)
 
     v_ego_mpc = max(v_ego, 5.0)  # avoid mpc roughness due to low speed
     self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
