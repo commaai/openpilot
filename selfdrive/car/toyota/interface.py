@@ -63,10 +63,8 @@ class CarInterface(CarInterfaceBase):
     if ret.enableGasInterceptor:
       ret.gasMaxBP = [0., 9., 35]
       ret.gasMaxV = [0.2, 0.5, 0.7]
-      ret.longitudinalTuning.kpV = [i * 1.0 for i in [1.2, 0.8, 0.5]]
-      # ret.longitudinalTuning.kpV = [1.2 * 0.95, 0.8 * 0.925, 0.5 * 0.9]
-      # ret.longitudinalTuning.kiV = [0.18, 0.12]
-      ret.longitudinalTuning.kiV = [0.0, 0.0]
+      ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
+      ret.longitudinalTuning.kiV = [0.18, 0.12]
     else:
       ret.gasMaxBP = [0.]
       ret.gasMaxV = [0.5]
@@ -128,14 +126,14 @@ class CarInterface(CarInterfaceBase):
       stop_and_go = False
       ret.safetyParam = 100
       ret.wheelbase = 2.70
-      ret.steerRatio = 9.5
+      ret.steerRatio = 8.5
       tire_stiffness_factor = 0.444  # not optimized yet
       ret.mass = 2860. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.042]]
-      ret.lateralTuning.pid.kf = 0.00003 * 1.0  # full torque for 20 deg at 80mph means 0.00007818594
-      # if ret.enableGasInterceptor:
-        # ret.longitudinalTuning.kpV = [1.0, 0.66, 0.42]
-        # ret.longitudinalTuning.kiV = [0.135, 0.09]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.05]]
+      ret.lateralTuning.pid.kf = 0.00003  # full torque for 20 deg at 80mph means 0.00007818594
+      if ret.enableGasInterceptor:
+        ret.longitudinalTuning.kpV = [1.2 * 0.925, 0.8 * 0.9125, 0.5 * 0.9]
+        ret.longitudinalTuning.kiV = [0.18 * 1.05, 0.12 * 1.15]
 
     elif candidate == CAR.LEXUS_RXH:
       stop_and_go = True
