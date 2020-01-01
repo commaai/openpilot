@@ -76,7 +76,7 @@ class LongControl():
 
     self.op_params = opParams()
     self.use_dynamic_lane_speed = self.op_params.get('use_dynamic_lane_speed', default=True)
-    self.min_dynamic_lane_speed = self.op_params.get('min_dynamic_lane_speed', default=20.) * CV.MPH_TO_MS
+    self.min_dynamic_lane_speed = max(self.op_params.get('min_dynamic_lane_speed', default=15.), 15.) * CV.MPH_TO_MS
     self.candidate = candidate
     self.toyota_candidates = [attr for attr in dir(CAR_TOYOTA) if not attr.startswith("__")]
 
@@ -147,45 +147,42 @@ class LongControl():
 
   def handle_live_tracks(self, live_tracks):
     self.track_data = []
-    for track in live_tracks['tracks']:
-      self.track_data.append({'v_lead': self.v_ego + track.vRel, 'y_rel': track.yRel})
+    for track in live_tracks:
+      self.track_data.append({'v_lead': self.v_ego + track.vRel, 'y_rel': track.yRel, 'x_lead': track.dRel})
 
   def dynamic_lane_speed(self, v_target, v_target_future, v_cruise, a_target):
     v_cruise *= CV.KPH_TO_MS  # convert to m/s
-    min_tracks = 2
-    vels = [i * CV.MPH_TO_MS for i in [5, 40, 70]]
-    margins = [0.2, 0.3, 0.55]  # [0.4, 0.55, 0.6]
-    track_speed_margin = interp(self.v_ego, vels, margins)
     MPC_TIME_STEP = 1 / 20.
-    track_tolerance_v = 0.022352
-    track_tolerance_y = 1.8288
-    if self.v_ego > self.min_dynamic_lane_speed:
+    track_tolerance_v = 0.05 * CV.MPH_TO_MS
+
+    vels = [i * CV.MPH_TO_MS for i in [5, 40, 70]]
+    margins = [0.4, 0.55, 0.6]
+    track_speed_margin = interp(self.v_ego, vels, margins)  # tracks must be within this times v_ego
+
+    max_TR = 2.0  # the maximum TR we'll allow for each track
+
+    if self.v_ego > self.min_dynamic_lane_speed and len(self.track_data) > 0:
       tracks = []
       for track in self.track_data:
         valid = all([True if abs(trk['v_lead'] - track['v_lead']) >= track_tolerance_v else False for trk in tracks])  # radar sometimes reports multiple points for one vehicle, especially semis
-        # valid_y = all([True if abs(trk['y_rel'] - track['y_rel']) >= track_tolerance_y else False for trk in tracks])
-        if valid:  # or valid_y:
+        if valid:
           tracks.append(track)
-      tracks = [trk['v_lead'] for trk in tracks if (self.v_ego * track_speed_margin) <= trk['v_lead'] <= v_cruise]  # .125, 0.025, 0.02500009536743164, 0.02500009536743164
-      if len(tracks) >= min_tracks:
-        average_track_speed = np.mean(tracks)
-        if average_track_speed < v_target and average_track_speed < v_target_future:
-          # so basically, if there's at least 3 tracks, the speeds of the tracks must be within n% of set speed, if our speed is at least set_speed mph,
-          # if the average speeds of tracks is less than v_target and v_target_future, then get a weight for how many tracks exist, with more tracks, the more we
-          # favor the average track speed, then weighted average it with our set_speed, if these conditions aren't met, then we just return original values
-          # this should work...?
-          x = [3, 6, 19]
-          y = [0.325, .4, 0.5]
-          track_speed_weight = interp(len(tracks), x, y)
-          if self.lead_data['status']:  # if lead, give more weight to surrounding tracks (todo: this if check might need to be flipped, so if not lead...)
-            track_speed_weight = clip(1.05 * track_speed_weight, min(y), max(y))
-          v_ego_v_cruise = (self.v_ego + v_cruise) / 2.0
-          v_target_slow = (v_ego_v_cruise * (1 - track_speed_weight)) + (average_track_speed * track_speed_weight)
-          if v_target_slow < v_target and v_target_slow < v_target_future:  # just a sanity check, don't want to run into any leads if we somehow predict faster velocity
-            a_target_slow = MPC_TIME_STEP * ((v_target_slow - v_target) / 1.0)  # long_mpc runs at 20 hz, so interpolate assuming a_target is 1 second into future? or since long_control is 100hz, should we interpolate using that?
-            a_target = a_target_slow
-            v_target = v_target_slow
-            v_target_future = v_target_slow
+      tracks = [trk for trk in tracks if (self.v_ego * track_speed_margin) <= trk['v_lead'] <= v_cruise]
+      tracks = [trk['v_lead'] for trk in tracks if trk['v_lead'] > 0.0 and (trk['x_lead'] / trk['v_lead']) <= max_TR]
+      average_track_speed = np.mean(tracks)
+      if average_track_speed < v_target and average_track_speed < v_target_future:
+        x = [0, 3, 6, 19]
+        y = [.05, 0.2, .4, 0.5]
+        track_speed_weight = interp(len(tracks), x, y)
+        if self.lead_data['status']:  # if lead, give more weight to surrounding tracks (todo: this if check might need to be flipped, so if not lead...)
+          track_speed_weight = clip(1.05 * track_speed_weight, min(y), max(y))
+        # v_ego_v_cruise = (self.v_ego + v_cruise) / 2.0
+        v_target_slow = (v_cruise * (1 - track_speed_weight)) + (average_track_speed * track_speed_weight)  # average set speed and average of tracks
+        if v_target_slow < v_target and v_target_slow < v_target_future:  # just a sanity check, don't want to run into any leads if we somehow predict faster velocity
+          a_target_slow = MPC_TIME_STEP * ((v_target_slow - v_target) / 1.0)  # long_mpc runs at 20 hz, so interpolate assuming a_target is 1 second into future? or since long_control is 100hz, should we interpolate using that?
+          a_target = a_target_slow
+          v_target = v_target_slow
+          v_target_future = v_target_slow
 
     return v_target, v_target_future, a_target
 

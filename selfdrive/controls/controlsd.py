@@ -295,7 +295,7 @@ def state_control(frame, rcv_frame, plan, path_plan, CS, CP, state, events, v_cr
   if not travis:
     passable_loc['lead_one'] = sm_smiskol['radarState'].leadOne
     passable_loc['mpc_TR'] = sm_smiskol['smiskolData'].mpcTR
-    passable_loc['live_tracks'] = {'tracks': sm_smiskol['liveTracks']}
+    passable_loc['live_tracks'] = sm_smiskol['liveTracks']
     passable_loc['has_lead'] = plan.hasLead
     passable_loc['gas_pressed'] = CS.gasPressed
   actuators.gas, actuators.brake = LoC.update(active, CS.vEgo, CS.brakePressed, CS.standstill, CS.cruiseState.standstill,
