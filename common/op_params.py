@@ -116,7 +116,7 @@ class opParams:
   def get(self, key=None, default=None):  # can specify a default value if key doesn't exist
     if key is None:
       return self.params
-    if not travis and self.default_params[key]['live']:  # if is a live param, we want get updates while openpilot is running
+    if not travis and key in self.default_params and self.default_params[key]['live']:  # if is a live param, we want to get updates while openpilot is running
       if time.time() - self.last_read_time >= self.read_frequency:  # make sure we aren't reading file too often
         self.params, read_status = read_params(self.params_file, self.format_default_params())
         if not read_status:
