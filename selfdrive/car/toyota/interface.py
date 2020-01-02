@@ -194,6 +194,16 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
       ret.lateralTuning.pid.kf = 0.00007818594
 
+    elif candidate == CAR.LEXUS_RX350_TSS2:
+      stop_and_go = True
+      ret.safetyParam = 73
+      ret.wheelbase = 2.79
+      ret.steerRatio = 14.8  # 14.8 is spec end-to-end
+      tire_stiffness_factor = 0.5533  # not optimized yet
+      ret.mass = 4387. * CV.LB_TO_KG + STD_CARGO_KG  # mean between min and max
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
+      ret.lateralTuning.pid.kf = 0.00007818594
+
     elif candidate == CAR.SIENNA:
       stop_and_go = True
       ret.safetyParam = 73
