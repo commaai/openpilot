@@ -144,7 +144,7 @@ static int hyundai_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
     }
 
     // reset to 0 if either controls is not allowed or there's a violation
-    if (violation || !controls_allowed) {
+    if (!controls_allowed) { // a reset worsen the issue of Panda blocking some valid LKAS messages
       hyundai_desired_torque_last = 0;
       hyundai_rt_torque_last = 0;
       hyundai_ts_last = ts;
@@ -165,7 +165,7 @@ static int hyundai_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
     }
   }
 
-  if (addr == 593) {OP_MDPS_live = 150;}  // 1.5 second timeout to reset LKAS button after cancel cmd
+  if (addr == 593) {OP_MDPS_live = 20;}
   if ((addr == 1265) && (GET_BYTES_04(to_send) & 0x7) == 0) {OP_CLU_live = 20;} // only count non-button msg
   if (addr == 1057) {OP_SCC_live = 20;}
 

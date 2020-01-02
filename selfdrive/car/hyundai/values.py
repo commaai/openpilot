@@ -100,7 +100,6 @@ FEATURES = {
   "use_cluster_gears": [CAR.ELANTRA, CAR.KONA, CAR.ELANTRA_GT_I30],     # Use Cluster for Gear Selection, rather than Transmission
   "use_tcu_gears": [CAR.KIA_OPTIMA],                                    # Use TCU Message for Gear Selection
   "use_elect_gears": [CAR.KIA_OPTIMA_H, CAR.IONIQ_EV_LTD],              # Use TCU Message for Gear Selection
-  "non_scc": [CAR.IONIQ, CAR.KONA, CAR.KIA_FORTE, CAR.SANTA_FE_1],      # Car without SCC
 }
 
 DBC = {

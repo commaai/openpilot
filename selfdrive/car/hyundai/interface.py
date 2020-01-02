@@ -270,6 +270,12 @@ class CarInterface(CarInterfaceBase):
     if ret.vEgo > (self.CP.minSteerSpeed + 0.7):	
       self.low_speed_alert = False
 
+    # turning indicator alert logic
+    self.turning_indicator_alert = True if (self.CS.left_blinker_on or self.CS.right_blinker_on) and self.CS.v_ego < 16.7 else False
+
+    # LKAS button alert logic
+    self.lkas_button_alert = True if not self.CC.lkas_button else False
+
     events = []
     if not ret.gearShifter == GearShifter.drive:
       events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.USER_DISABLE]))
@@ -301,6 +307,10 @@ class CarInterface(CarInterfaceBase):
 
     if self.low_speed_alert and not self.CS.mdps_bus :
       events.append(create_event('belowSteerSpeed', [ET.WARNING]))
+    if self.turning_indicator_alert:
+      events.append(create_event('turningIndicatorOn', [ET.WARNING]))
+    if self.lkas_button_alert:
+      events.append(create_event('lkasButtonOff', [ET.WARNING]))
 
     ret.events = events
 

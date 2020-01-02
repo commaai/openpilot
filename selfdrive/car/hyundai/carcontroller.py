@@ -69,7 +69,8 @@ class CarController():
     self.last_resume_frame = 0
     self.turning_signal_timer = 0
     self.scc12_cnt = 0
-    self.lkas_button = 0 #TODO: make auto and fix bug
+    self.lkas_button = 1
+    self.lkas_button_last = 0
     self.longcontrol = 0 #TODO: make auto
 
   def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert,
@@ -88,11 +89,20 @@ class CarController():
     apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.steer_torque_driver, SteerLimitParams)
     self.steer_rate_limited = new_steer != apply_steer
 
-    lkas_active = enabled and abs(CS.angle_steers) < 90. and (not self.lkas_button or CS.lkas_button_on)
+    ### LKAS button to temporarily disable steering
+    if not CS.lkas_error:
+      if CS.lkas_button_on != self.lkas_button_last:
+        self.lkas_button = not self.lkas_button
+      self.lkas_button_last = CS.lkas_button_on
+
+    lkas_active = enabled and abs(CS.angle_steers) < 90. and self.lkas_button
+
     # Fix for sharp turns mdps fault and Genesis hard fault at low speed
     if CS.v_ego < 16.7 and self.car_fingerprint == CAR.GENESIS and not CS.mdps_bus:
       lkas_active = 0
-    if (CS.left_blinker_on or CS.right_blinker_on) and CS.v_ego < 20.: # Disable steering when blinker on and belwo ALC speed
+
+    # Disable steering while turning blinker on and speed below 60 kph
+    if (CS.left_blinker_on or CS.right_blinker_on) and CS.v_ego < 16.7:
       self.turning_signal_timer = 100  # Disable for 1.0 Seconds after blinker turned off
     if self.turning_signal_timer:
       lkas_active = 0
@@ -107,7 +117,7 @@ class CarController():
     self.apply_steer_last = apply_steer
 
     hud_alert, lane_visible, left_lane_warning, right_lane_warning =\
-            process_hud_alert(lkas_active, (not self.lkas_button or CS.lkas_button_on), self.car_fingerprint, visual_alert,
+            process_hud_alert(lkas_active, self.lkas_button, self.car_fingerprint, visual_alert,
             left_line, right_line,left_lane_depart, right_lane_depart)
 
     clu11_speed = CS.clu11["CF_Clu_Vanz"]
@@ -124,14 +134,15 @@ class CarController():
 
     can_sends.append(create_lkas11(self.packer, self.car_fingerprint, 0, apply_steer, steer_req, lkas11_cnt, lkas_active,
                                    CS.lkas11, hud_alert, lane_visible, left_lane_depart, right_lane_depart, keep_stock=True))
-    if CS.mdps_bus: # send lkas12 and clu11 to mdps if it is not on bus 0
-      can_sends.append(create_lkas11(self.packer, self.car_fingerprint, CS.mdps_bus, apply_steer, steer_req, lkas11_cnt, lkas_active,
+    if CS.mdps_bus or CS.scc_bus == 1: # send lkas12 bus 1 if mdps or scc is on bus 1
+      can_sends.append(create_lkas11(self.packer, self.car_fingerprint, 1, apply_steer, steer_req, lkas11_cnt, lkas_active,
                                    CS.lkas11, hud_alert, lane_visible, left_lane_depart, right_lane_depart, keep_stock=True))
+    if CS.mdps_bus: # send clu11 to mdps if it is not on bus 0
       can_sends.append(create_clu11(self.packer, CS.mdps_bus, CS.clu11, Buttons.NONE, enabled_speed, clu11_cnt))
 
     if pcm_cancel_cmd and self.longcontrol:
       can_sends.append(create_clu11(self.packer, CS.scc_bus, CS.clu11, Buttons.CANCEL, clu11_speed, clu11_cnt))
-    elif self.lkas_button: # send mdps12 to LKAS to prevent LKAS error if no cancel cmd
+    else: # send mdps12 to LKAS to prevent LKAS error if no cancel cmd
       can_sends.append(create_mdps12(self.packer, self.car_fingerprint, mdps12_cnt, CS.mdps12))
 
     if CS.scc_bus and self.longcontrol and frame % 2: # send scc12 to car if SCC not on bus 0 and longcontrol enabled
