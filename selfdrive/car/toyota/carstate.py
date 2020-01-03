@@ -25,6 +25,7 @@ def get_can_parser(CP):
     ("STEER_ANGLE", "STEER_ANGLE_SENSOR", 0),
     ("GEAR", "GEAR_PACKET", 0),
     ("BRAKE_PRESSED", "BRAKE_MODULE", 0),
+    ("BRAKE_PRESSED", "BRAKE_MODULE2", 0)
     ("GAS_PEDAL", "GAS_PEDAL", 0),
     ("WHEEL_SPEED_FL", "WHEEL_SPEEDS", 0),
     ("WHEEL_SPEED_FR", "WHEEL_SPEEDS", 0),
@@ -127,7 +128,8 @@ class CarState():
                                     cp.vl["SEATS_DOORS"]['DOOR_OPEN_RL'], cp.vl["SEATS_DOORS"]['DOOR_OPEN_RR']])
     self.seatbelt = not cp.vl["SEATS_DOORS"]['SEATBELT_DRIVER_UNLATCHED']
 
-    self.brake_pressed = cp.vl["BRAKE_MODULE"]['BRAKE_PRESSED']
+    self.brake_pressed = max(cp.vl["BRAKE_MODULE"]['BRAKE_PRESSED'] + cp.vl["BRAKE_MODULE2"]['BRAKE_PRESSED'], 1)
+    
     if self.CP.enableGasInterceptor:
       self.pedal_gas = (cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS'] + cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS2']) / 2.
     else:
