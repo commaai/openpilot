@@ -128,8 +128,8 @@ class CarState():
                                     cp.vl["SEATS_DOORS"]['DOOR_OPEN_RL'], cp.vl["SEATS_DOORS"]['DOOR_OPEN_RR']])
     self.seatbelt = not cp.vl["SEATS_DOORS"]['SEATBELT_DRIVER_UNLATCHED']
 
-    self.brake_pressed = max(cp.vl["BRAKE_MODULE"]['BRAKE_PRESSED'] + cp.vl["BRAKE_MODULE2"]['BRAKE_PRESSED'], 1)
-    
+    self.brake_pressed = min(cp.vl["BRAKE_MODULE"]['BRAKE_PRESSED'] + cp.vl["BRAKE_MODULE2"]['BRAKE_PRESSED'], 1)
+
     if self.CP.enableGasInterceptor:
       self.pedal_gas = (cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS'] + cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS2']) / 2.
     else:
