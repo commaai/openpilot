@@ -48,7 +48,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       print('\nNot an integer!\n', flush=True)
       time.sleep(self.sleep_time)
       return 'retry', choice
-    if choice not in range(1, len(self.params) + 2):  # three for add/delete parameter
+    if choice not in range(0, len(self.params) + 2):  # three for add/delete parameter
       print('Not in range!\n', flush=True)
       time.sleep(self.sleep_time)
       return 'continue', choice
