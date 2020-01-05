@@ -73,7 +73,7 @@ class LongControl():
 
     self.op_params = opParams()
     self.use_dynamic_lane_speed = self.op_params.get('use_dynamic_lane_speed', default=True)
-    self.min_dynamic_lane_speed = max(self.op_params.get('min_dynamic_lane_speed', default=15.), 15.) * CV.MPH_TO_MS
+    self.min_dynamic_lane_speed = max(self.op_params.get('min_dynamic_lane_speed', default=20.), 5.) * CV.MPH_TO_MS
     self.candidate = candidate
     self.toyota_candidates = [attr for attr in dir(CAR_TOYOTA) if not attr.startswith("__")]
 
@@ -142,11 +142,6 @@ class LongControl():
 
     return clip(gas, 0.0, 1.0)
 
-  def handle_live_tracks(self, live_tracks):
-    self.track_data = []
-    for track in live_tracks:
-      self.track_data.append({'v_lead': self.v_ego + track.vRel, 'y_rel': track.yRel, 'x_lead': track.dRel})
-
   def dynamic_lane_speed(self, v_target, v_target_future, v_cruise, a_target):
     v_cruise *= CV.KPH_TO_MS  # convert to m/s
     MPC_TIME_STEP = 1 / 20.
@@ -191,7 +186,9 @@ class LongControl():
     self.lead_data['x_lead'] = passable['lead_one'].dRel
     self.lead_data['status'] = passable['has_lead']  # this fixes radarstate always reporting a lead, thanks to arne
     self.mpc_TR = passable['mpc_TR']
-    self.handle_live_tracks(passable['live_tracks'])
+    self.track_data = []
+    for track in passable['live_tracks']:
+      self.track_data.append({'v_lead': self.v_ego + track.vRel, 'y_rel': track.yRel, 'x_lead': track.dRel})
 
   def update(self, active, v_ego, brake_pressed, standstill, cruise_standstill, v_cruise, v_target, v_target_future, a_target, CP, passable):
     """Update longitudinal control. This updates the state machine and runs a PID loop"""
