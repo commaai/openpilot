@@ -94,7 +94,7 @@ static void toyota_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
   // exit controls on rising edge of brake press
   if (addr == 0x230) {
-    int brake = GET_BYTE(to_push, 3) & 0xFF;
+    int brake = GET_BYTE(to_push, 3) & 0x04;
     if ((brake > 0) && (toyota_brake_prev == 0) && long_controls_allowed) {
       controls_allowed = 0;
     }
