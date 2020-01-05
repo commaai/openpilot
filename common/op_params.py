@@ -38,8 +38,7 @@ class opParams:
                            'alca_min_speed': {'default': 30.0, 'allowed_types': [float, int], 'description': 'The minimum speed allowed for an automatic lane change (in MPH)', 'live': False},
                            'static_steer_ratio': {'default': False, 'allowed_types': [bool], 'description': 'Whether you want openpilot to use the steering ratio in interface.py, or the automatically learned steering ratio. If True, it will use the static value in interface.py', 'live': False},
                            'use_dynamic_lane_speed': {'default': True, 'allowed_types': [bool], 'description': 'Whether you want openpilot to adjust your speed based on surrounding vehicles', 'live': False},
-                           'min_dynamic_lane_speed': {'default': 15.0, 'allowed_types': [float, int], 'description': 'The minimum speed to allow dynamic lane speed to operate (in MPH)', 'live': False},
-                           'longkiV': {'default': 0.0, 'allowed_types': [float, int], 'description': 'This is a temp parameter', 'live': True}}
+                           'min_dynamic_lane_speed': {'default': 15.0, 'allowed_types': [float, int], 'description': 'The minimum speed to allow dynamic lane speed to operate (in MPH)', 'live': False}}
 
     self.params = {}
     self.params_file = "/data/op_params.json"
@@ -47,7 +46,7 @@ class opParams:
     self.last_read_time = time.time()
     self.read_frequency = 5.0  # max frequency to read with self.get(...) (sec)
     self.force_update = False  # replaces values with default params if True, not just add add missing key/value pairs
-    self.to_delete = ['dynamic_lane_speed']
+    self.to_delete = ['dynamic_lane_speed', 'longkiV']
     self.run_init()  # restores, reads, and updates params
 
   def create_id(self):  # creates unique identifier to send with sentry errors. please update uniqueID with op_edit.py to your username!

@@ -1,10 +1,7 @@
 from cereal import log
 from common.numpy_fast import clip, interp
 from common.travis_checker import travis
-if not travis:
-  from selfdrive.controls.lib.pid import PIController
-else:
-  from selfdrive.controls.lib.pid import PIController
+from selfdrive.controls.lib.pid import PIController
 from selfdrive.car.toyota.values import CAR as CAR_TOYOTA
 from selfdrive.config import Conversions as CV
 from common.op_params import opParams
@@ -202,12 +199,6 @@ class LongControl():
 
     # Actuation limits
     if not travis:
-      # k_i = self.op_params.get('longkiV', default=0.0)
-      # if k_i != self.k_i_last:
-      #   self.v_pid = v_ego
-      #   self.pid.reset()
-      #   self.k_i_last = k_i
-      #   self.pid.k_i = k_i
       self.handle_passable(passable)
       gas_max = self.dynamic_gas(CP)
       if self.use_dynamic_lane_speed:
