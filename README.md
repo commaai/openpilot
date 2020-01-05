@@ -93,7 +93,7 @@ Supported Cars
 | Kia       | Stinger 2018<sup>1</sup>      | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Lexus     | CT Hybrid 2017-18             | All               | Stock<sup>4</sup>| 0mph               | 0mph         |
 | Lexus     | ES Hybrid 2019                | All               | openpilot        | 0mph               | 0mph         |
-| Lexus     | ES Hybrid 2016-2018           | All               | Stock<sup>4</sup>| 25mph              | 0mph         |
+| Lexus     | ES Hybrid 2016-2018           | All               | openpilot        | 0mph               | 0mph         |
 | Lexus     | RX Hybrid 2016-19             | All               | Stock<sup>4</sup>| 0mph               | 0mph         |
 | Lexus     | IS 2017-2019                  | All               | Stock            | 22mph              | 0mph         |
 | Lexus     | IS Hybrid 2017                | All               | Stock            | 0mph               | 0mph         |
