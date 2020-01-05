@@ -33,6 +33,7 @@ int toyota_rt_torque_last = 0;            // last desired torque for real time c
 uint32_t toyota_ts_last = 0;
 int toyota_cruise_engaged_last = 0;       // cruise state
 int toyota_gas_prev = 0;
+int toyota_brake_prev = 0;
 struct sample_t toyota_torque_meas;       // last 3 motor torques produced by the eps
 
 
@@ -89,6 +90,15 @@ static void toyota_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       controls_allowed = 0;
     }
     toyota_gas_prev = gas;
+  }
+
+  // exit controls on rising edge of brake press
+  if (addr == 0x230) {
+    int brake = GET_BYTE(to_push, 3) & 0xFF;
+    if ((brake > 0) && (toyota_brake_prev == 0) && long_controls_allowed) {
+      controls_allowed = 0;
+    }
+    toyota_brake_prev = brake;
   }
 
   // 0x2E4 is lkas cmd. If it is on bus 0, then relay is unexpectedly closed
