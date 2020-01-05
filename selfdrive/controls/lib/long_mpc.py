@@ -192,10 +192,6 @@ class LongitudinalMpc():
 
     # Setup current mpc state
     self.cur_state[0].x_ego = 0.0
-    
-    if not travis and CS.cruiseState.enabled and CS.gearShifter == 'drive':
-      with open("/data/set_speed", "a") as f:
-        f.write("{}".format([v_ego, CS.cruiseState.speed, time.time()]))
 
     if lead is not None and lead.status:
       x_lead = lead.dRel
