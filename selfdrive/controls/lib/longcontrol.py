@@ -98,12 +98,8 @@ class LongControl():
         x = [0.0, 1.4082, 2.80311, 4.22661, 5.38271, 6.16561, 7.24781, 8.28308, 10.24465, 12.96402, 15.42303, 18.11903, 20.11703, 24.46614, 29.05805, 32.71015, 35.76326]
         y = [0.234, 0.237, 0.246, 0.26, 0.279, 0.297, 0.332, 0.354, 0.368, 0.377, 0.389, 0.399, 0.411, 0.45, 0.504, 0.558, 0.617]
 
-    # elif self.candidate in self.toyota_candidates:
-    #   x = [0.0, 1.4082, 2.80311, 4.22661, 5.38271, 6.16561, 7.24781, 8.28308, 10.24465, 12.96402, 15.42303, 18.11903, 20.11703, 24.46614, 29.05805, 32.71015, 35.76326]
-    #   y = [0.35, 0.47, 0.43, 0.35, 0.3, 0.3, 0.3229, 0.34784, 0.36765, 0.38, 0.396, 0.409, 0.425, 0.478, 0.55, 0.621, 0.7]
-
     if not x:
-      # x, y = CP.gasMaxBP, CP.gasMaxV  # if unsupported car, use stock. todo: think about disallowing dynamic follow for unsupported cars
+      # x, y = CP.gasMaxBP, CP.gasMaxV  # if unsupported car, use stock.
       return interp(self.v_ego, CP.gasMaxBP, CP.gasMaxV)
 
     gas = interp(self.v_ego, x, y)
@@ -127,11 +123,11 @@ class LongControl():
         y = [new_gas, (new_gas * 0.8 + gas * 0.2), gas]
         gas = interp(self.v_ego, x, y)
       else:
-        current_TR = self.lead_data['x_lead'] / self.v_ego
         x = [-1.78816, -0.89408, 0, 1.78816, 2.68224]  # relative velocity mod
         y = [-gas * 0.35, -gas * 0.25, -gas * 0.075, gas * 0.1575, gas * 0.2025]
         gas_mod = interp(self.lead_data['v_rel'], x, y)
 
+        current_TR = self.lead_data['x_lead'] / self.v_ego
         x = [self.mpc_TR - 0.22, self.mpc_TR, self.mpc_TR + 0.2, self.mpc_TR + 0.4]
         y = [-gas_mod * 0.36, 0.0, gas_mod * 0.15, gas_mod * 0.4]
         gas_mod -= interp(current_TR, x, y)
