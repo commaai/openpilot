@@ -138,8 +138,8 @@ class CarController():
 
     self.lkas11_cnt %= 0x10
     self.scc12_cnt %= 0xF
-    clu11_cnt = frame % 0x10
-    mdps12_cnt = frame % 0x100
+    self.clu11_cnt = frame % 0x10
+    self.mdps12_cnt = frame % 0x100
 
     can_sends.append(create_lkas11(self.packer, self.car_fingerprint, 0, apply_steer, steer_req, self.lkas11_cnt, lkas_active,
                                    CS.lkas11, hud_alert, lane_visible, left_lane_depart, right_lane_depart, keep_stock=True))
