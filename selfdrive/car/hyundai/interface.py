@@ -242,6 +242,11 @@ class CarInterface(CarInterfaceBase):
     ret.cruiseState.available = bool(self.CS.main_on)
     ret.cruiseState.standstill = False
 
+    # Optima only has blinker flash signal
+    if self.CP.carFingerprint in [CAR.KIA_OPTIMA, CAR.KIA_OPTIMA_H]:
+      self.CS.left_blinker_on = self.CS.left_blinker_flash or self.CS.prev_left_blinker_on and self.CC.turning_signal_timer
+      self.CS.right_blinker_on = self.CS.right_blinker_flash or self.CS.prev_right_blinker_on and self.CC.turning_signal_timer
+
     # TODO: button presses
     buttonEvents = []
 
@@ -271,7 +276,7 @@ class CarInterface(CarInterfaceBase):
       self.low_speed_alert = False
 
     # turning indicator alert logic
-    self.turning_indicator_alert = True if (self.CS.left_blinker_on or self.CS.right_blinker_on) and self.CS.v_ego < 16.7 else False
+    self.turning_indicator_alert = True if self.CC.turning_signal_timer and self.CS.v_ego < 16.7 else False
 
     # LKAS button alert logic
     self.lkas_button_alert = True if not self.CC.lkas_button else False

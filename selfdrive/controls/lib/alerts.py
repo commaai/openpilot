@@ -63,13 +63,13 @@ ALERTS = [
       "Steer Unavailable while Turning",
       "",
       AlertStatus.userPrompt, AlertSize.small,
-      Priority.HIGH, VisualAlert.none, AudibleAlert.none, 0., 0., 1.),
+      Priority.HIGH, VisualAlert.none, AudibleAlert.none, 0., 0., .1),
   Alert(
       "lkasButtonOff",
       "LKAS button off",
       "",
       AlertStatus.userPrompt, AlertSize.small,
-      Priority.HIGH, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
+      Priority.HIGH, VisualAlert.none, AudibleAlert.none, 0., 0., .1),
 
   # Miscellaneous alerts
   Alert(
