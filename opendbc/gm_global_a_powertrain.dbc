@@ -149,6 +149,17 @@ BO_ 711 BECMBatteryVoltageCurrent: 6 K17_EBCM
  SG_ HVBatteryVoltage : 31|12@0+ (0.125,0) [0|511.875] "V"  NEO
  SG_ HVBatteryCurrent : 12|13@0- (0.15,0) [-614.4|614.25] "A"  NEO
 
+BO_ 714 PTInterceptorGasRegenCmd: 8 NEO
+  SG_ GasRegenAlwaysOne2 : 9|1@0+ (1,0) [0|1] ""  PT_INTERCEPTOR
+  SG_ GasRegenAlwaysOne : 14|1@0+ (1,0) [0|1] ""  PT_INTERCEPTOR
+  SG_ GasRegenChecksum : 47|24@0+ (1,0) [0|0] ""  PT_INTERCEPTOR
+  SG_ GasRegenCmdActiveInv : 32|1@0+ (1,0) [0|0] ""  PT_INTERCEPTOR
+  SG_ GasRegenFullStopActive : 13|1@0+ (1,0) [0|0] ""  PT_INTERCEPTOR
+  SG_ GasRegenCmdActive : 0|1@0+ (1,0) [0|0] ""  PT_INTERCEPTOR
+  SG_ RollingCounter : 7|2@0+ (1,0) [0|0] ""  PT_INTERCEPTOR
+  SG_ GasRegenAlwaysOne3 : 23|1@0+ (1,0) [0|1] ""  PT_INTERCEPTOR
+  SG_ GasRegenCmd : 22|12@0+ (1,0) [0|0] ""  PT_INTERCEPTOR
+
 BO_ 715 ASCMGasRegenCmd: 8 K124_ASCM
  SG_ GasRegenAlwaysOne2 : 9|1@0+ (1,0) [0|1] ""  NEO
  SG_ GasRegenAlwaysOne : 14|1@0+ (1,0) [0|1] ""  NEO
@@ -176,6 +187,16 @@ BO_ 842 EBCMWheelSpdRear: 4 K17_EBCM
 
 BO_ 869 ASCM_365: 4 K124_ASCM
 
+BO_ 879 PTInterceptorActiveCruiseControlStatus: 6 NEO
+  SG_ ACCLeadCar : 44|1@0+ (1,0) [0|0] "" PT_INTERCEPTOR
+  SG_ ACCAlwaysOne2 : 32|1@0+ (1,0) [0|0] "" PT_INTERCEPTOR
+  SG_ ACCAlwaysOne : 0|1@0+ (1,0) [0|0] "" PT_INTERCEPTOR
+  SG_ ACCSpeedSetpoint : 19|12@0+ (1,0) [0|0] "km/h"  PT_INTERCEPTOR
+  SG_ ACCGapLevel : 21|2@0+ (1,0) [0|0] ""  PT_INTERCEPTOR
+  SG_ ACCResumeButton : 1|1@0+ (1,0) [0|0] ""  PT_INTERCEPTOR
+  SG_ ACCCmdActive : 23|1@0+ (1,0) [0|0] ""  PT_INTERCEPTOR
+  SG_ FCWAlert : 41|2@0+ (1,0) [0|3] "" PT_INTERCEPTOR
+
 BO_ 880 ASCMActiveCruiseControlStatus: 6 K124_ASCM
  SG_ ACCLeadCar : 44|1@0+ (1,0) [0|0] "" Vector__XXX
  SG_ ACCAlwaysOne2 : 32|1@0+ (1,0) [0|0] "" Vector__XXX
@@ -185,6 +206,8 @@ BO_ 880 ASCMActiveCruiseControlStatus: 6 K124_ASCM
  SG_ ACCResumeButton : 1|1@0+ (1,0) [0|0] ""  NEO
  SG_ ACCCmdActive : 23|1@0+ (1,0) [0|0] ""  NEO
  SG_ FCWAlert : 41|2@0+ (1,0) [0|3] "" XXX
+
+BO_ 885 PTInterceptorStatus: 3 PT_INTERCEPTOR
 
 BO_ 1001 ECMVehicleSpeed: 8 K20_ECM
  SG_ VehicleSpeed : 7|16@0+ (0.01,0) [0|0] "mph"  NEO
@@ -210,8 +233,10 @@ BO_ 1912 PSCM_778: 8 K43_PSCM
 BO_ 1930 ASCM_78A: 7 K124_ASCM
 
 BO_TX_BU_ 384 : K124_ASCM,NEO;
+BO_TX_BU_ 879 : NEO, PT_INTERCEPTOR;
 BO_TX_BU_ 880 : NEO,K124_ASCM;
 BO_TX_BU_ 1033 : K124_ASCM,NEO;
+BO_TX_BU_ 714 : NEO, PT_INTERCEPTOR;
 BO_TX_BU_ 715 : NEO,K124_ASCM;
 
 
@@ -223,6 +248,7 @@ CM_ BU_ K17_EBCM "Electronic Brake Control Module";
 CM_ BU_ K20_ECM "Engine Control Module";
 CM_ BU_ K114B_HPCM "Hybrid Powertrain Control Module";
 CM_ BU_ NEO "Comma NEO";
+CM_ BU_ PT_INTERCEPTOR "Powertrain bus ASCM ECU Interceptor";
 CM_ BU_ K124_ASCM "Active Safety Control Module";
 CM_ SG_ 381 MSG17D_AccPower "Need to investigate";
 CM_ SG_ 190 GasPedalAndAcc "ACC baseline is 62";
@@ -244,6 +270,10 @@ VAL_ 452 CruiseState 4 "Standstill" 3 "Faulted" 1 "Active" 0 "Off" ;
 VAL_ 309 PRNDL 3 "Reverse" 2 "Drive" 1 "Neutral" 0 "Park" ;
 VAL_ 309 ESPButton 1 "Active" 0 "Inactive" ;
 VAL_ 384 LKASteeringCmdActive 1 "Active" 0 "Inactive" ;
+VAL_ 879 ACCLeadCar 1 "Present" 0 "Not Present" ;
+VAL_ 879 ACCGapLevel 3 "Far" 2 "Med" 1 "Near" 0 "Inactive" ;
+VAL_ 879 ACCResumeButton 1 "Pressed" 0 "Depressed" ;
+VAL_ 879 ACCCmdActive 1 "Active" 0 "Inactive" ;
 VAL_ 880 ACCLeadCar 1 "Present" 0 "Not Present" ;
 VAL_ 880 ACCGapLevel 3 "Far" 2 "Med" 1 "Near" 0 "Inactive" ;
 VAL_ 880 ACCResumeButton 1 "Pressed" 0 "Depressed" ;
@@ -252,6 +282,8 @@ VAL_ 388 HandsOffSWDetectionMode 2 "Failed" 1 "Enabled" 0 "Disabled" ;
 VAL_ 388 HandsOffSWlDetectionStatus 1 "Hands On" 0 "Hands Off" ;
 VAL_ 388 LKATorqueDeliveredStatus 3 "Failed" 2 "Temp. Limited" 1 "Active" 0 "Inactive" ;
 VAL_ 489 BrakePedalPressed 1 "Pressed" 0 "Depressed" ;
+VAL_ 714 GasRegenCmdActiveInv 1 "Inactive" 0 "Active" ;
+VAL_ 714 GasRegenCmdActive 1 "Active" 0 "Inactive" ;
 VAL_ 715 GasRegenCmdActiveInv 1 "Inactive" 0 "Active" ;
 VAL_ 715 GasRegenCmdActive 1 "Active" 0 "Inactive" ;
 VAL_ 320 Intellibeam 1 "Active" 0 "Inactive" ;

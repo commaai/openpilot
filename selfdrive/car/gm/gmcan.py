@@ -41,7 +41,7 @@ def create_adas_keepalive(bus):
   dat = b"\x00\x00\x00\x00\x00\x00\x00"
   return [make_can_msg(0x409, dat, bus), make_can_msg(0x40a, dat, bus)]
 
-def create_gas_regen_command(packer, bus, throttle, idx, acc_engaged, at_full_stop):
+def create_gas_regen_command(packer, bus, throttle, idx, acc_engaged, at_full_stop, proxy):
   values = {
     "GasRegenCmdActive": acc_engaged,
     "RollingCounter": idx,
@@ -57,10 +57,11 @@ def create_gas_regen_command(packer, bus, throttle, idx, acc_engaged, at_full_st
   values["GasRegenChecksum"] = (((0xff -dat[1]) & 0xff) << 16) | \
                                (((0xff - dat[2]) & 0xff) << 8) | \
                                ((0x100 - dat[3] - idx) & 0xff)
-
+  if proxy:
+    return packer.make_can_msg("PTInterceptorGasRegenCmd", bus, values)
   return packer.make_can_msg("ASCMGasRegenCmd", bus, values)
 
-def create_friction_brake_command(packer, bus, apply_brake, idx, near_stop, at_full_stop):
+def create_friction_brake_command(packer, bus, apply_brake, idx, near_stop, at_full_stop, proxy):
 
   if apply_brake == 0:
     mode = 0x1
@@ -84,9 +85,11 @@ def create_friction_brake_command(packer, bus, apply_brake, idx, near_stop, at_f
     "FrictionBrakeCmd" : -apply_brake
   }
 
+  if proxy:
+    return packer.make_can_msg("ChasInterceptorFrictionBrakeCmd", bus, values)
   return packer.make_can_msg("EBCMFrictionBrakeCmd", bus, values)
 
-def create_acc_dashboard_command(packer, bus, acc_engaged, target_speed_kph, lead_car_in_sight, throttle_override):
+def create_acc_dashboard_command(packer, bus, acc_engaged, target_speed_kph, lead_car_in_sight, proxy):
   # Not a bit shift, dash can round up based on low 4 bits.
   target_speed = int(target_speed_kph * 16) & 0xfff
 
@@ -98,9 +101,10 @@ def create_acc_dashboard_command(packer, bus, acc_engaged, target_speed_kph, lea
     "ACCCmdActive" : acc_engaged,
     "ACCAlwaysOne2" : 1,
     "ACCLeadCar" : lead_car_in_sight
-    "ThrottleOverride" : throttle_override
   }
 
+  if proxy:
+    return packer.make_can_msg("PTInterceptorActiveCruiseControlStatus", bus, values)
   return packer.make_can_msg("ASCMActiveCruiseControlStatus", bus, values)
 
 def create_adas_time_status(bus, tt, idx):

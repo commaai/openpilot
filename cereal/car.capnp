@@ -19,7 +19,6 @@ struct CarEvent @0x9b1657f34caf3ad3 {
   immediateDisable @6 :Bool;
   preEnable @7 :Bool;
   permanent @8 :Bool;
-  resetVCruise @9 :Bool;
 
   enum EventName @0xbaa8c5d505f727de {
     # TODO: copy from error list
@@ -370,6 +369,9 @@ struct CarParams {
   carFw @44 :List(CarFw);
   radarTimeStep @45: Float32 = 0.05;  # time delta between radar updates, 20Hz is very standard
   communityFeature @46: Bool;  # true if a community maintained feature is detected
+  ecuInterceptorBusPt @48: Bool; #Safety/ACC ECU Interceptor is present on the powertrain bus
+  ecuInterceptorBusChas @49: Bool; #Safety/ACC ECU Interceptor is present on the chassis bus
+  ascmDisabled @50: Bool; # ASCM has been removed or unpluged
 
   struct LateralPIDTuning {
     kpBP @0 :List(Float32);

@@ -33,7 +33,7 @@ NS_ :
 
 BS_:
 
-BU_: K182_PACM K43_PSCM K17_EBCM NEO K124_ASCM
+BU_: K182_PACM K43_PSCM K17_EBCM NEO K124_ASCM CHAS_INTERCEPTOR
 
 
 
@@ -48,13 +48,23 @@ BO_ 560 EBCMRegen: 6 K17_EBCM
 BO_ 368 EBCMFrictionBrakeStatus: 8 K17_EBCM
  SG_ FrictionBrakePressure : 23|16@0+ (1,0) [0|0] ""  NEO
 
+BO_ 788 ChasInterceptorFrictionBrakeCmd: 5 NEO
+  SG_ RollingCounter : 33|2@0+ (1,0) [0|0] ""  CHAS_INTERCEPTOR
+  SG_ FrictionBrakeMode : 7|4@0+ (1,0) [0|0] ""  CHAS_INTERCEPTOR
+  SG_ FrictionBrakeChecksum : 23|16@0+ (1,0) [0|0] ""  CHAS_INTERCEPTOR
+  SG_ FrictionBrakeCmd : 3|12@0- (1,0) [0|0] ""  CHAS_INTERCEPTOR
+
 BO_ 789 EBCMFrictionBrakeCmd: 5 K17_EBCM
  SG_ RollingCounter : 33|2@0+ (1,0) [0|0] ""  NEO
  SG_ FrictionBrakeMode : 7|4@0+ (1,0) [0|0] ""  NEO
  SG_ FrictionBrakeChecksum : 23|16@0+ (1,0) [0|0] ""  NEO
  SG_ FrictionBrakeCmd : 3|12@0- (1,0) [0|0] ""  NEO
 
+BO_ 885 ChasInterceptorStatus: 3 CHAS_INTERCEPTOR
+
+
 BO_TX_BU_ 823 : K43_PSCM,NEO;
+BO_TX_BU_ 788 : NEO,CHAS_INTERCEPTOR:
 BO_TX_BU_ 789 : NEO,K17_EBCM;
 
 
@@ -63,6 +73,7 @@ CM_ BU_ K43_PSCM "Power Steering Control Module";
 CM_ BU_ K17_EBCM "Electronic Brake Control Module";
 CM_ BU_ NEO "Comma NEO";
 CM_ BU_ K124_ASCM "Active Safety Control Module";
+CM_ BU_ CHAS_INTERCEPTOR "Chassis bus ASCM ECU Interceptor";
 BA_DEF_  "UseGMParameterIDs" INT 0 0;
 BA_DEF_  "ProtocolType" STRING ;
 BA_DEF_  "BusType" STRING ;

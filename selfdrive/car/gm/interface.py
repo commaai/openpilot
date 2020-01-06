@@ -8,6 +8,7 @@ from selfdrive.car.gm.values import DBC, CAR, ECU, ECU_FINGERPRINT, \
 from selfdrive.car.gm.carstate import CarState, CruiseButtons, get_powertrain_can_parser
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, is_ecu_disconnected, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
+from selfdrive.swaglog import cloudlog
 
 ButtonType = car.CarState.ButtonEvent.Type
 
@@ -56,14 +57,31 @@ class CarInterface(CarInterfaceBase):
     # TODO: make a port that uses a car harness and it only intercepts the camera
     ret.communityFeature = True
 
+    # TODO: Detect and differentiate between ASCM/LKA Only (Bolt)/Supercruise
     # Presence of a camera on the object bus is ok.
     # Have to go to read_only if ASCM is online (ACC-enabled cars),
     # or camera is on powertrain bus (LKA cars without ACC).
-    ret.enableCamera = True
-    #ret.enableCamera = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, ECU.CAM) or \
-    #                   has_relay or \
-    #                   candidate == CAR.CADILLAC_CT6
+    # ECU Interceptors negate the need for read_only
+    # ECU Interceptors send their own status on 885
+    ret.ecuInterceptorBusPT = 885 in fingerprint[0]
+    ret.ecuInterceptorBusChas = 885 in fingerprint[2]
+
+    ret.ascmDisabled = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, ECU.ASCM) or \
+                       has_relay or \
+                       candidate == CAR.CADILLAC_CT6
+    ret.enableCamera = ret.ascmDisabled or ret.ecuInterceptorBusPT
     ret.openpilotLongitudinalControl = ret.enableCamera
+
+    # If an ECU Interceptor is present on the powertrain bus but not on the chassis bus, we are running with stock ACC
+    if ret.ecuInterceptorBusPT:
+      ret.openpilotLongitudinalControl = ret.ecuInterceptorBusChas
+
+    cloudlog.warning("ASCM Disabled: %r", ret.ascmDisabled)
+    cloudlog.warning("ECU Interceptor is present on the powertrain bus: %r", ret.ecuInterceptorBusPT)
+    cloudlog.warning("ECU Interceptor is present on the chassis bus: %r", ret.ecuInterceptorBusChas)
+    cloudlog.warning("ECU Camera Simulated: %r", ret.enableCamera)
+    cloudlog.warning("Open Pilot Longitudinal Control: %r", ret.openpilotLongitudinalControl)
+
     tire_stiffness_factor = 0.444  # not optimized yet
 
     if candidate == CAR.VOLT:
@@ -115,7 +133,7 @@ class CarInterface(CarInterfaceBase):
       ret.centerToFront = ret.wheelbase * 0.4 # guess for tourx
 
     elif candidate == CAR.CADILLAC_ATS:
-      ret.minEnableSpeed = 2 * CV.MPH_TO_MS
+      ret.minEnableSpeed = 18 * CV.MPH_TO_MS
       ret.mass = 1601. + STD_CARGO_KG
       ret.safetyModel = car.CarParams.SafetyModel.gm
       ret.wheelbase = 2.78
@@ -306,18 +324,11 @@ class CarInterface(CarInterfaceBase):
       # handle button presses
       for b in ret.buttonEvents:
         # do enable on both accel and decel buttons
-        # The ECM will fault if resume triggers an enable while speed is set to 0 (it is initialized to 70.8 m/s or 158 mph)
-        if b.type == ButtonType.accelCruise and c.hudControl.setSpeed < 70 and not b.pressed:
-          events.append(create_event('buttonEnable', [ET.ENABLE]))
-        if b.type == ButtonType.decelCruise and not b.pressed:
+        if b.type in [ButtonType.accelCruise, ButtonType.decelCruise] and not b.pressed:
           events.append(create_event('buttonEnable', [ET.ENABLE]))
         # do disable on button down
         if b.type == ButtonType.cancel and b.pressed:
           events.append(create_event('buttonCancel', [ET.USER_DISABLE]))
-        # The ECM independently tracks a ‘speed is set’ state that is reset on main off.
-        # To keep controlsd in sync with the ECM state, generate a RESET_V_CRUISE event on main cruise presses.
-        if b.type == ButtonType.altButton3 and b.pressed:
-          events.append(create_event('buttonCancel', [ET.RESET_V_CRUISE, ET.USER_DISABLE]))
 
     ret.events = events
 

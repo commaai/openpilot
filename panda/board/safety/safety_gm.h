@@ -30,9 +30,10 @@ int gm_rt_torque_last = 0;
 int gm_desired_torque_last = 0;
 uint32_t gm_ts_last = 0;
 struct sample_t gm_torque_driver;         // last few driver torques measured
+bool pt_ecu_interceptor = false;
 
 static void gm_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
-  //int bus = GET_BUS(to_push);
+  int bus = GET_BUS(to_push);
   int addr = GET_ADDR(to_push);
 
   if (addr == 388) {
@@ -96,13 +97,19 @@ static void gm_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     }
   }
 
+  // Check for ASCM ECU Interceptor Status
+  // TODO: Add second check for chas bus interceptor. If only PT bus has an interceptor, we should only allow steering commands
+  if (bus == 0) && (addr == 885) {
+    pt_ecu_interceptor=true
+  }
+
   // Check if ASCM or LKA camera are online
-  // on powertrain bus.
+  // on powertrain bus and if filtered by an ECU Interceptor
   // 384 = ASCMLKASteeringCmd
   // 715 = ASCMGasRegenCmd
-  //if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && (bus == 0) && ((addr == 384) || (addr == 715))) {
-  //  relay_malfunction = true;
-  //}
+  if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && (bus == 0) && ((addr == 384) || (addr == 715)) && !pt_ecu_interceptor) {
+    relay_malfunction = true;
+  }
 }
 
 // all commands: gas/regen, friction brake and steering
