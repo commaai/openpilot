@@ -99,8 +99,8 @@ static void gm_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
   // Check for ASCM ECU Interceptor Status
   // TODO: Add second check for chas bus interceptor. If only PT bus has an interceptor, we should only allow steering commands
-  if (bus == 0) && (addr == 885) {
-    pt_ecu_interceptor=true
+  if ((bus == 0) && (addr == 885)) {
+    pt_ecu_interceptor = true;
   }
 
   // Check if ASCM or LKA camera are online

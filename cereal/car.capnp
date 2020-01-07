@@ -369,7 +369,7 @@ struct CarParams {
   carFw @44 :List(CarFw);
   radarTimeStep @45: Float32 = 0.05;  # time delta between radar updates, 20Hz is very standard
   communityFeature @46: Bool;  # true if a community maintained feature is detected
-  ecuInterceptorBusPt @48: Bool; #Safety/ACC ECU Interceptor is present on the powertrain bus
+  ecuInterceptorBusPT @48: Bool; #Safety/ACC ECU Interceptor is present on the powertrain bus
   ecuInterceptorBusChas @49: Bool; #Safety/ACC ECU Interceptor is present on the chassis bus
   ascmDisabled @50: Bool; # ASCM has been removed or unpluged
 
