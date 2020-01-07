@@ -301,15 +301,15 @@ class CarInterface(CarInterfaceBase):
       # handle button presses
       for b in ret.buttonEvents:
         # do enable on both accel and decel buttons
-        # The ECM will fault if resume triggers an enable while speed is set to 0
-        if b.type == ButtonType.accelCruise and c.hudControl.setSpeed > 0 and not b.pressed:
+        # The ECM will fault if resume triggers an enable while speed is unset (unset is greater than 70 m/s)
+        if b.type == ButtonType.accelCruise and c.hudControl.setSpeed < 70 and not b.pressed:
           events.append(create_event('buttonEnable', [ET.ENABLE]))
         if b.type == ButtonType.decelCruise and not b.pressed:
           events.append(create_event('buttonEnable', [ET.ENABLE]))
         # do disable on button down
         if b.type == ButtonType.cancel and b.pressed:
           events.append(create_event('buttonCancel', [ET.USER_DISABLE]))
-        # The ECM independently tracks a ‘speed is set’ state that is reset on main off.
+        # The ECM independently tracks if speed has been set previously. That state is reset on main off.
         # To keep controlsd in sync with the ECM state, generate a RESET_V_CRUISE event on main cruise presses.
         if b.type == ButtonType.altButton3 and b.pressed:
           events.append(create_event('buttonCancel', [ET.RESET_V_CRUISE, ET.USER_DISABLE]))
