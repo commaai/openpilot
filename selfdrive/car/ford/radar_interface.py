@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from cereal import car
-from selfdrive.can.parser import CANParser
+from opendbc.can.parser import CANParser
 from selfdrive.car.ford.values import DBC
 from selfdrive.config import Conversions as CV
 from selfdrive.car.interfaces import RadarInterfaceBase

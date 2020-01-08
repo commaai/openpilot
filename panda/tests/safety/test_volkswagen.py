@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 import unittest
 import numpy as np
-import libpandasafety_py  # pylint: disable=import-error
 from panda import Panda
+from panda.tests.safety import libpandasafety_py
+from panda.tests.safety.common import test_relay_malfunction, make_msg, test_manually_enable_controls_allowed, test_spam_can_buses
 
 MAX_RATE_UP = 4
 MAX_RATE_DOWN = 10
@@ -14,6 +15,8 @@ RT_INTERVAL = 250000
 DRIVER_TORQUE_ALLOWANCE = 80
 DRIVER_TORQUE_FACTOR = 3
 
+TX_MSGS = [[0x126, 0], [0x12B, 0], [0x12B, 2], [0x397, 0]]
+
 def sign(a):
   if a > 0:
     return 1
@@ -24,24 +27,15 @@ class TestVolkswagenSafety(unittest.TestCase):
   @classmethod
   def setUp(cls):
     cls.safety = libpandasafety_py.libpandasafety
-    cls.safety.safety_set_mode(Panda.SAFETY_VOLKSWAGEN, 0)
+    cls.safety.set_safety_hooks(Panda.SAFETY_VOLKSWAGEN, 0)
     cls.safety.init_tests_volkswagen()
-
-  def _send_msg(self, bus, addr, length):
-    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_send[0].RIR = addr << 21
-    to_send[0].RDTR = length
-    to_send[0].RDTR = bus << 4
-    return to_send
 
   def _set_prev_torque(self, t):
     self.safety.set_volkswagen_desired_torque_last(t)
     self.safety.set_volkswagen_rt_torque_last(t)
 
   def _torque_driver_msg(self, torque):
-    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_send[0].RIR = 0x9F << 21
-
+    to_send = make_msg(0, 0x9F)
     t = abs(torque)
     to_send[0].RDHR = ((t & 0x1FFF) << 8)
     if torque < 0:
@@ -49,9 +43,7 @@ class TestVolkswagenSafety(unittest.TestCase):
     return to_send
 
   def _torque_msg(self, torque):
-    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_send[0].RIR = 0x126 << 21
-
+    to_send = make_msg(0, 0x126)
     t = abs(torque)
     to_send[0].RDLR = (t & 0xFFF) << 16
     if torque < 0:
@@ -59,19 +51,20 @@ class TestVolkswagenSafety(unittest.TestCase):
     return to_send
 
   def _gas_msg(self, gas):
-    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_send[0].RIR = 0x121 << 21
+    to_send = make_msg(0, 0x121)
     to_send[0].RDLR = (gas & 0xFF) << 12
-
     return to_send
 
   def _button_msg(self, bit):
-    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_send[0].RIR = 0x12B << 21
+    to_send = make_msg(2, 0x12B)
     to_send[0].RDLR = 1 << bit
-    to_send[0].RDTR = 2 << 4
-
     return to_send
+
+  def test_spam_can_buses(self):
+    test_spam_can_buses(self, TX_MSGS)
+
+  def test_relay_malfunction(self):
+    test_relay_malfunction(self, 0x126)
 
   def test_prev_gas(self):
     for g in range(0, 256):
@@ -82,18 +75,13 @@ class TestVolkswagenSafety(unittest.TestCase):
     self.assertFalse(self.safety.get_controls_allowed())
 
   def test_enable_control_allowed_from_cruise(self):
-    to_push = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_push[0].RIR = 0x122 << 21
+    to_push = make_msg(0, 0x122)
     to_push[0].RDHR = 0x30000000
-
     self.safety.safety_rx_hook(to_push)
     self.assertTrue(self.safety.get_controls_allowed())
 
   def test_disable_control_allowed_from_cruise(self):
-    to_push = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_push[0].RIR = 0x122 << 21
-    to_push[0].RDHR = 0
-
+    to_push = make_msg(0, 0x122)
     self.safety.set_controls_allowed(1)
     self.safety.safety_rx_hook(to_push)
     self.assertFalse(self.safety.get_controls_allowed())
@@ -130,10 +118,7 @@ class TestVolkswagenSafety(unittest.TestCase):
           self.assertTrue(self.safety.safety_tx_hook(self._torque_msg(t)))
 
   def test_manually_enable_controls_allowed(self):
-    self.safety.set_controls_allowed(1)
-    self.assertTrue(self.safety.get_controls_allowed())
-    self.safety.set_controls_allowed(0)
-    self.assertFalse(self.safety.get_controls_allowed())
+    test_manually_enable_controls_allowed(self)
 
   def test_spam_cancel_safety_check(self):
     BIT_CANCEL = 13
@@ -226,10 +211,10 @@ class TestVolkswagenSafety(unittest.TestCase):
 
 
   def test_fwd_hook(self):
-    buss = list(range(0x0, 0x2))
+    buss = list(range(0x0, 0x3))
     msgs = list(range(0x1, 0x800))
     blocked_msgs_0to2 = []
-    blocked_msgs_2to0 = [0x122, 0x397]
+    blocked_msgs_2to0 = [0x126, 0x397]
     for b in buss:
       for m in msgs:
         if b == 0:
@@ -240,7 +225,7 @@ class TestVolkswagenSafety(unittest.TestCase):
           fwd_bus = -1 if m in blocked_msgs_2to0 else 0
 
         # assume len 8
-        self.assertEqual(fwd_bus, self.safety.safety_fwd_hook(b, self._send_msg(b, m, 8)))
+        self.assertEqual(fwd_bus, self.safety.safety_fwd_hook(b, make_msg(b, m, 8)))
 
 
 if __name__ == "__main__":

@@ -55,6 +55,7 @@ void sensor_loop() {
 
   Context * c = Context::create();
   PubSocket * sensor_events_sock = PubSocket::create(c, "sensorEvents");
+  assert(sensor_events_sock != NULL);
 
   struct sensors_poll_device_t* device;
   struct sensors_module_t* module;

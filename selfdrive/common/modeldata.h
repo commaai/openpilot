@@ -4,6 +4,8 @@
 #define MODEL_PATH_DISTANCE 192
 #define POLYFIT_DEGREE 4
 #define SPEED_PERCENTILES 10
+#define DESIRE_PRED_SIZE 32
+#define OTHER_META_SIZE 4
 
 typedef struct PathData {
   float points[MODEL_PATH_DISTANCE];
@@ -31,6 +33,7 @@ typedef struct ModelData {
   PathData right_lane;
   LeadData lead;
   LeadData lead_future;
+  float meta[OTHER_META_SIZE + DESIRE_PRED_SIZE];
   float speed[SPEED_PERCENTILES];
 } ModelData;
 

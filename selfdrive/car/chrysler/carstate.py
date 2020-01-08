@@ -1,5 +1,5 @@
 from cereal import car
-from selfdrive.can.parser import CANParser
+from opendbc.can.parser import CANParser
 from selfdrive.car.chrysler.values import DBC, STEER_THRESHOLD
 from common.kalman.simple_kalman import KF1D
 

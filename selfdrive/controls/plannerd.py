@@ -8,7 +8,7 @@ from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.planner import Planner
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.controls.lib.pathplanner import PathPlanner
-import selfdrive.messaging as messaging
+import cereal.messaging as messaging
 
 
 def plannerd_thread(sm=None, pm=None):

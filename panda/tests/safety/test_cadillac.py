@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 import unittest
 import numpy as np
-import libpandasafety_py  # pylint: disable=import-error
 from panda import Panda
+from panda.tests.safety import libpandasafety_py
+from panda.tests.safety.common import make_msg, test_manually_enable_controls_allowed, test_spam_can_buses
+
 
 MAX_RATE_UP = 2
 MAX_RATE_DOWN = 5
@@ -15,6 +17,8 @@ DRIVER_TORQUE_ALLOWANCE = 50;
 DRIVER_TORQUE_FACTOR = 4;
 
 IPAS_OVERRIDE_THRESHOLD = 200
+
+TX_MSGS = [[0x151, 2], [0x152, 0], [0x153, 2], [0x154, 0]]
 
 def twos_comp(val, bits):
   if val >= 0:
@@ -32,59 +36,42 @@ class TestCadillacSafety(unittest.TestCase):
   @classmethod
   def setUp(cls):
     cls.safety = libpandasafety_py.libpandasafety
-    cls.safety.safety_set_mode(Panda.SAFETY_CADILLAC, 0)
+    cls.safety.set_safety_hooks(Panda.SAFETY_CADILLAC, 0)
     cls.safety.init_tests_cadillac()
-
-  def _send_msg(self, bus, addr, length):
-    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_send[0].RIR = addr << 21
-    to_send[0].RDTR = length
-    to_send[0].RDTR = bus << 4
-    return to_send
 
   def _set_prev_torque(self, t):
     self.safety.set_cadillac_desired_torque_last(t)
     self.safety.set_cadillac_rt_torque_last(t)
 
   def _torque_driver_msg(self, torque):
-    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_send[0].RIR = 0x164 << 21
-
     t = twos_comp(torque, 11)
+    to_send = make_msg(0, 0x164)
     to_send[0].RDLR = ((t >> 8) & 0x7) | ((t & 0xFF) << 8)
     return to_send
 
   def _torque_msg(self, torque):
-    to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_send[0].RIR = 0x151 << 21
-
+    to_send = make_msg(2, 0x151)
     t = twos_comp(torque, 14)
     to_send[0].RDLR = ((t >> 8) & 0x3F) | ((t & 0xFF) << 8)
     return to_send
+
+  def test_spam_can_buses(self):
+    test_spam_can_buses(self, TX_MSGS)
 
   def test_default_controls_not_allowed(self):
     self.assertFalse(self.safety.get_controls_allowed())
 
   def test_manually_enable_controls_allowed(self):
-    self.safety.set_controls_allowed(1)
-    self.assertTrue(self.safety.get_controls_allowed())
-    self.safety.set_controls_allowed(0)
+    test_manually_enable_controls_allowed(self)
 
   def test_enable_control_allowed_from_cruise(self):
-    to_push = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_push[0].RIR = 0x370 << 21
+    to_push = make_msg(0, 0x370)
     to_push[0].RDLR = 0x800000
-    to_push[0].RDTR = 0
-
     self.safety.safety_rx_hook(to_push)
     self.assertTrue(self.safety.get_controls_allowed())
 
   def test_disable_control_allowed_from_cruise(self):
-    to_push = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
-    to_push[0].RIR = 0x370 << 21
-    to_push[0].RDLR = 0
-    to_push[0].RDTR = 0
-
+    to_push = make_msg(0, 0x370)
     self.safety.set_controls_allowed(1)
     self.safety.safety_rx_hook(to_push)
     self.assertFalse(self.safety.get_controls_allowed())
@@ -190,7 +177,7 @@ class TestCadillacSafety(unittest.TestCase):
     for b in buss:
       for m in msgs:
         # assume len 8
-        self.assertEqual(-1, self.safety.safety_fwd_hook(b, self._send_msg(b, m, 8)))
+        self.assertEqual(-1, self.safety.safety_fwd_hook(b, make_msg(b, m, 8)))
 
 
 if __name__ == "__main__":
