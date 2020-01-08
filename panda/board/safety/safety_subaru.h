@@ -8,7 +8,7 @@ const int SUBARU_MAX_RATE_DOWN = 70;
 const int SUBARU_DRIVER_TORQUE_ALLOWANCE = 60;
 const int SUBARU_DRIVER_TORQUE_FACTOR = 10;
 
-const AddrBus SUBARU_TX_MSGS[] = {{0x122, 0}, {0x164, 0}, {0x221, 0}, {0x322, 0}};
+const AddrBus SUBARU_TX_MSGS[] = {{0x122, 0}, {0x161, 0}, {0x164, 0}, {0x221, 0}, {0x322, 0}};
 
 int subaru_cruise_engaged_last = 0;
 int subaru_rt_torque_last = 0;
