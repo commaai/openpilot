@@ -54,6 +54,8 @@ class PathPlanner():
     self.lane_change_state = LaneChangeState.off
     self.lane_change_timer = 0.0
     self.prev_one_blinker = False
+    self.auto_lca = CP.autoLcaEnabled
+    self.pre_auto_LCA_timer = 0.0
 
   def setup_mpc(self):
     self.libmpc = libmpc_py.libmpc
@@ -102,6 +104,9 @@ class PathPlanner():
       else:
         torque_applied = sm['carState'].steeringTorque < 0 and sm['carState'].steeringPressed
 
+      if self.auto_lca and 3.0 > self.pre_auto_LCA_timer > 2.0 and self.lane_change_state == LaneChangeState.preLaneChange:
+        torque_applied = True # Enable auto LCA only once after 2 sec 
+
       lane_change_prob = self.LP.l_lane_change_prob + self.LP.r_lane_change_prob
 
       # State transitions
@@ -131,6 +136,13 @@ class PathPlanner():
       self.lane_change_timer = 0.0
     else:
       self.lane_change_timer += DT_MDL
+      if self.lane_change_timer > 1.0 and sm['carState'].steeringPressed: # disable if driver override steering after 1 sec
+        self.lane_change_state = LaneChangeState.preLaneChange
+
+    if self.lane_change_state == LaneChangeState.off:
+      self.pre_auto_LCA_timer = 0.0
+    else:
+      self.pre_auto_LCA_timer += DT_MDL
 
     self.prev_one_blinker = one_blinker
 
