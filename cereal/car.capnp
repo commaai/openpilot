@@ -374,6 +374,7 @@ struct CarParams {
   mdpsBus @48: Int8;
   sasBus @49: Int8;
   sccBus @50: Int8;
+  autoLcaEnabled @51: Int8;
 
   struct LateralPIDTuning {
     kpBP @0 :List(Float32);
