@@ -12,7 +12,25 @@ Big thank you goes to @wocsor. He developed the whole thing and modified the cod
 The openpilot codebase has been written to be concise and to enable rapid prototyping. We look forward to your contributions - improving real vehicle automation has never been easier.
 
 OVERVIEW
-=======================
+======================
+
+I think retrofitting and #old_car is the hidden future of openpilot.
+Eon and openpilot, like it is expected to be used, is limited to a few makes and type of cars which are build in 2018-2021.
+In a few years cars will have better selfdriving on stock, than comma can ever deliver - due to better hardware an software.
+All older cars will not be plug and play.
+That's where #old_cars comes in.
+Plus, there is no limitation due to brands or types.
+There are billions of cars which can be upgraded.
+Right now we are using the same actuators in completely different types of cars.
+(Celica 2003, VW Vanagon 1988, Ford E350 1994).
+We upgrade cars from zero assistant to level 2 self driving.
+We make driving safe and chill. That's really impressive!
+Let's see where our journey will end. I can think of like a dev-kit with some actuators and interceptors for easy DIY projects.
+Thank you <@Wocsor> for spending so much effort.
+He is doing fundamental research and hacking! 🚙🚌🚎🚐🏎🚗🚛🚚
+
+HOW TO START
+======================
 
 To make openpilot work in an old car, we need to retrofit actuators from supported cars like toyota corolla 2018. Some small ECU needs to be build DIY.
 
