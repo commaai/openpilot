@@ -79,6 +79,9 @@ class PathPlanner():
 
     angle_offset = sm['liveParameters'].angleOffset
 
+    lca_left = sm['carState'].lcaLeft
+    lca_right = sm['carState'].lcaRight
+
     # Run MPC
     self.angle_steers_des_prev = self.angle_steers_des_mpc
     VM.update_params(sm['liveParameters'].stiffnessFactor, sm['liveParameters'].steerRatio)
@@ -100,11 +103,12 @@ class PathPlanner():
 
       if lane_change_direction == LaneChangeDirection.left:
         torque_applied = sm['carState'].steeringTorque > 0 and sm['carState'].steeringPressed
+        if CP.autoLcaEnabled and 2.5 > self.pre_auto_LCA_timer > 2.0 and not lca_left:
+          torque_applied = True # Enable auto LCA only once after 2 sec 
       else:
         torque_applied = sm['carState'].steeringTorque < 0 and sm['carState'].steeringPressed
-
-      if CP.autoLcaEnabled and 3.0 > self.pre_auto_LCA_timer > 2.0 and self.lane_change_state == LaneChangeState.preLaneChange:
-        torque_applied = True # Enable auto LCA only once after 2 sec 
+        if CP.autoLcaEnabled and 2.5 > self.pre_auto_LCA_timer > 2.0 and not lca_right:
+          torque_applied = True # Enable auto LCA only once after 2 sec 
 
       lane_change_prob = self.LP.l_lane_change_prob + self.LP.r_lane_change_prob
 
