@@ -12,15 +12,23 @@ https://www.youtube.com/c/ku7tech
 
 Changes:
 ------
-- <b>  Panda Universal Forwarding(PUF):</b> Panda will auto forwading for all CAN messages if Eon disconnected.
-- <b>  Setup Auto Detection:</b> Openpilot and Panda will detect MDPS, SCC and SAS buses and behaive acordingly.
-- <b>  Disabling by LKAS button:</b> Openpilot will disable and enable steering by toggling LKAS button.
-- <b>  Turning disable:</b> Openpilot will disable steering while turning signal on and speed below 60 kph, Enable again after 1 second. thank to Ku7
+
+- <b>  Auto LCA:</b> credit to @SiGmAX666: Auto Lane change assist, no need for steering nudge. LCA will abort if driver override steering wheel. To disable Auto LCA,  change line 189 in selfdrive/car/hyundai/interface.py to:
+```python
+    ret.autoLcaEnabled = 0
+```
 - <b>  Enable by Cruise button:</b> Only for Car without long control, Openpilot will engage when turn cruise control on. To revert to SET button for enable, change line 54 in selfdrive/car/hyundai/carcontroller.py to:
 ```python
     self.longcontrol = 1
 ```
+- <b>  Turning disable:</b> thank to Ku7: Openpilot will disable steering while turning signal on and speed below 60 kph, Enable again after 1 second. 
 - <b>  Increase driver monitoring timer</b>  
+- <b>  Disabling by LKAS button:</b> Openpilot will disable and enable steering by toggling LKAS button.
+- <b>  Setup Auto Detection:</b> Openpilot and Panda will detect MDPS, SCC and SAS buses and behaive acordingly.
+- <b>  Panda Universal Forwarding(PUF):</b> Panda will auto forwading for all CAN messages if Eon disconnected.
+
+
+
 
 Known issues
 ------
