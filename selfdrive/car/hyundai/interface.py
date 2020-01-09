@@ -248,6 +248,9 @@ class CarInterface(CarInterfaceBase):
       self.CS.left_blinker_on = self.CS.left_blinker_flash or self.CS.prev_left_blinker_on and self.CC.turning_signal_timer
       self.CS.right_blinker_on = self.CS.right_blinker_flash or self.CS.prev_right_blinker_on and self.CC.turning_signal_timer
 
+    ret.lcaLeft = self.CS.lca_left != 0
+    ret.lcaRight = self.CS.lca_right != 0
+
     # TODO: button presses
     buttonEvents = []
 
