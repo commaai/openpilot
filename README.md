@@ -13,9 +13,9 @@ https://www.youtube.com/c/ku7tech
 Changes:
 ------
 
-- <b>  Auto LCA:</b> credit to @SiGmAX666: Auto Lane change assist, no need for steering nudge. LCA will abort if driver override steering wheel. To disable Auto LCA,  change line 189 in selfdrive/car/hyundai/interface.py to:
+- <b>  Auto LCA:</b> credit to @SiGmAX666: Auto Lane change assist, no need for steering nudge. LCA will abort if driver override steering wheel. To enable Auto LCA(disabled by default),  change line 189 in selfdrive/car/hyundai/interface.py to:
 ```python
-    ret.autoLcaEnabled = 0
+    ret.autoLcaEnabled = 1
 ```
 - <b>  Enable by Cruise button:</b> Only for Car without long control, Openpilot will engage when turn cruise control on. To revert to SET button for enable, change line 54 in selfdrive/car/hyundai/carcontroller.py to:
 ```python
