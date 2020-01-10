@@ -60,7 +60,6 @@ def get_can_parser(CP):
   checks = [
     # address, frequency
     ("TCS15", 10),
-    ("TCS13", 50),
     ("CLU11", 50),
     ("ESP12", 100),
     ("CGW1", 10),
