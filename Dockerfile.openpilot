@@ -17,12 +17,14 @@ RUN apt-get update && apt-get install -y \
     libffi-dev \
     libglew-dev \
     libgles2-mesa-dev \
+    libglfw3-dev \
     libglib2.0-0 \
     liblzma-dev \
     libmysqlclient-dev \
     libomp-dev \
     libopencv-dev \
     libssl-dev \
+    libsqlite3-dev \
     libtool \
     libusb-1.0-0-dev \
     libzmq5-dev \

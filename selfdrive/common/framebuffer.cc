@@ -1,4 +1,3 @@
-
 #include <cstdio>
 #include <cstdlib>
 #include <cassert>
@@ -39,7 +38,6 @@ extern "C" void framebuffer_set_power(FramebufferState *s, int mode) {
 
 extern "C" FramebufferState* framebuffer_init(
     const char* name, int32_t layer, int alpha,
-    EGLDisplay *out_display, EGLSurface *out_surface,
     int *out_w, int *out_h) {
   status_t status;
   int success;
@@ -131,11 +129,14 @@ extern "C" FramebufferState* framebuffer_init(
   const char brightness_level[] = BACKLIGHT_LEVEL;
   write(brightness_fd, brightness_level, strlen(brightness_level));
 
-
-  if (out_display) *out_display = s->display;
-  if (out_surface) *out_surface = s->surface;
   if (out_w) *out_w = w;
   if (out_h) *out_h = h;
 
   return s;
 }
+
+extern "C" void framebuffer_swap(FramebufferState *s) {
+  eglSwapBuffers(s->display, s->surface);
+  assert(glGetError() == GL_NO_ERROR);
+}
+

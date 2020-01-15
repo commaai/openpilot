@@ -1,18 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#ifdef QCOM
-#include <eigen3/Eigen/Dense>
-#else
-#include <Eigen/Dense>
-#endif
-
 #include "common/visionbuf.h"
 #include "common/visionipc.h"
 #include "common/swaglog.h"
 
 #include "models/driving.h"
-#include "models/posenet.h"
 
 volatile sig_atomic_t do_exit = 0;
 
@@ -122,13 +115,26 @@ int main(int argc, char **argv) {
   cl_command_queue q;
   {
     // TODO: refactor this
-    cl_platform_id platform_id = NULL;
+    cl_platform_id platform_id[2];
     cl_uint num_devices;
     cl_uint num_platforms;
 
-    err = clGetPlatformIDs(1, &platform_id, &num_platforms);
+    err = clGetPlatformIDs(sizeof(platform_id)/sizeof(cl_platform_id), platform_id, &num_platforms);
     assert(err == 0);
-    err = clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_DEFAULT, 1,
+    
+    #ifdef QCOM
+      int clPlatform = 0;
+    #else
+      // don't use nvidia on pc, it's broken
+      // TODO: write this nicely
+      int clPlatform = num_platforms-1;
+    #endif
+
+    char cBuffer[1024];
+    clGetPlatformInfo(platform_id[clPlatform], CL_PLATFORM_NAME, sizeof(cBuffer), &cBuffer, NULL);
+    LOGD("got %d opencl platform(s), using %s", num_platforms, cBuffer);
+
+    err = clGetDeviceIDs(platform_id[clPlatform], CL_DEVICE_TYPE_DEFAULT, 1,
                          &device_id, &num_devices);
     assert(err == 0);
 
@@ -141,9 +147,7 @@ int main(int argc, char **argv) {
 
   // init the models
   ModelState model;
-  PosenetState posenet;
   model_init(&model, device_id, context, true);
-  posenet_init(&posenet);
   LOGW("models loaded, modeld starting");
 
   // debayering does a 2x downscale
@@ -213,52 +217,16 @@ int main(int argc, char **argv) {
         // TODO: don't make copies!
         memcpy(yuv_ion.addr, buf->addr, buf_info.buf_len);
 
-        ModelData model_buf =
+        ModelDataRaw model_buf =
             model_eval_frame(&model, q, yuv_cl, buf_info.width, buf_info.height,
                              model_transform, NULL, vec_desire);
         mt2 = millis_since_boot();
 
         model_publish(model_sock, extra.frame_id, model_buf, extra.timestamp_eof);
+        posenet_publish(posenet_sock, extra.frame_id, model_buf, extra.timestamp_eof);
 
         LOGD("model process: %.2fms, from last %.2fms", mt2-mt1, mt1-last);
         last = mt1;
-      }
-
-      // push the frame to the posenet
-      // TODO: This doesn't always have to run
-      double pt1 = 0, pt2 = 0, pt3 = 0;
-      pt1 = millis_since_boot();
-      posenet_push(&posenet, (uint8_t*)buf->addr, buf_info.width);
-      pt2 = millis_since_boot();
-
-      // posenet runs every 5
-      if (extra.frame_id % 5 == 0) {
-        posenet_eval(&posenet);
-
-        // send posenet event
-        {
-          capnp::MallocMessageBuilder msg;
-          cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-          event.setLogMonoTime(nanos_since_boot());
-
-          auto posenetd = event.initCameraOdometry();
-          kj::ArrayPtr<const float> trans_vs(&posenet.output[0], 3);
-          posenetd.setTrans(trans_vs);
-          kj::ArrayPtr<const float> rot_vs(&posenet.output[3], 3);
-          posenetd.setRot(rot_vs);
-          kj::ArrayPtr<const float> trans_std_vs(&posenet.output[6], 3);
-          posenetd.setTransStd(trans_std_vs);
-          kj::ArrayPtr<const float> rot_std_vs(&posenet.output[9], 3);
-          posenetd.setRotStd(rot_std_vs);
-          posenetd.setTimestampEof(extra.timestamp_eof);
-          posenetd.setFrameId(extra.frame_id);
-
-          auto words = capnp::messageToFlatArray(msg);
-          auto bytes = words.asBytes();
-          posenet_sock->send((char*)bytes.begin(), bytes.size());
-        }
-        pt3 = millis_since_boot();
-        LOGD("pre: %.2fms | posenet: %.2fms", (pt2-pt1), (pt3-pt1));
       }
 
     }
@@ -268,9 +236,7 @@ int main(int argc, char **argv) {
   visionstream_destroy(&stream);
 
   delete model_sock;
-  delete posenet_sock;
-
-  posenet_free(&posenet);
+  
   model_free(&model);
 
   LOG("joining live_thread");

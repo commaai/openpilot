@@ -57,7 +57,7 @@ openpilot should preserve all other vehicle's stock features, including, but are
 Supported Hardware
 ------
 
-At the moment, openpilot supports the [EON DevKit](https://comma.ai/shop/products/eon-dashcam-devkit). A [car harness](https://comma.ai/shop/products/car-harness) is recommended to connect the EON to the car. In the future, we'd like to support other platforms as well.
+At the moment, openpilot supports the [EON DevKit](https://comma.ai/shop/products/eon-dashcam-devkit) and the [comma two](https://comma.ai/shop/products/comma-two-devkit). A [car harness](https://comma.ai/shop/products/car-harness) is recommended to connect the EON or comma two to the car. In the future, we'd like to support other platforms as well, like gaming PCs.
 
 Supported Cars
 ------
@@ -158,6 +158,8 @@ Limitations of openpilot ALC and LDW
 ------
 
 openpilot ALC and openpilot LDW do not automatically drive the vehicle or reduce the amount of attention that must be paid to operate your vehicle. The driver must always keep control of the steering wheel and be ready to correct the openpilot ALC action at all times.
+
+While changing lanes, openpilot is not capable of looking next to you or checking your blind spot. Only nudge the wheel to initiate a lane change after you have confirmed it's safe to do so.
 
 Many factors can impact the performance of openpilot ALC and openpilot LDW, causing them to be unable to function as intended. These include, but are not limited to:
 

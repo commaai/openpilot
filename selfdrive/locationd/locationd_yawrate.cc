@@ -40,7 +40,7 @@ void Localizer::handle_sensor_events(capnp::List<cereal::SensorEventData>::Reade
 }
 
 void Localizer::handle_camera_odometry(cereal::CameraOdometry::Reader camera_odometry, double current_time) {
-  double R = 100.0 * pow(camera_odometry.getRotStd()[2], 2);
+  double R = pow(30.0 *camera_odometry.getRotStd()[2], 2);
   double meas = camera_odometry.getRot()[2];
   update_state(C_posenet, R, current_time, meas);
 
@@ -73,7 +73,7 @@ Localizer::Localizer() {
     0, 0, 0, 0,
     0, pow(0.1, 2.0), 0, 0,
     0, 0, 0, 0,
-    0, 0, pow(0.0005 / 100.0, 2.0), 0;
+    0, 0, pow(0.005 / 100.0, 2.0), 0;
   P <<
     pow(100.0, 2.0), 0, 0, 0,
     0, pow(100.0, 2.0), 0, 0,
