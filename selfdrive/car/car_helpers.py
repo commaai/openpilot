@@ -3,6 +3,7 @@ from common.params import Params
 from common.basedir import BASEDIR
 from selfdrive.car.fingerprints import eliminate_incompatible_cars, all_known_cars
 from selfdrive.car.vin import get_vin, VIN_UNKNOWN
+from selfdrive.car.fw_versions import get_fw_versions
 from selfdrive.swaglog import cloudlog
 import cereal.messaging as messaging
 from selfdrive.car import gen_empty_fingerprint
@@ -56,12 +57,14 @@ def only_toyota_left(candidate_cars):
 # BOUNTY: every added fingerprint in selfdrive/car/*/values.py is a $100 coupon code on shop.comma.ai
 # **** for use live only ****
 def fingerprint(logcan, sendcan, has_relay):
-
   if has_relay:
     # Vin query only reliably works thorugh OBDII
-    vin = get_vin(logcan, sendcan, 1)
+    bus = 1
+    addr, vin = get_vin(logcan, sendcan, bus)
+    _, car_fw = get_fw_versions(logcan, sendcan, bus)
   else:
     vin = VIN_UNKNOWN
+    _, car_fw = set(), []
 
   cloudlog.warning("VIN %s", vin)
   Params().put("CarVin", vin)
@@ -108,18 +111,19 @@ def fingerprint(logcan, sendcan, has_relay):
     frame += 1
 
   cloudlog.warning("fingerprinted %s", car_fingerprint)
-  return car_fingerprint, finger, vin
+  return car_fingerprint, finger, vin, car_fw
 
 
 def get_car(logcan, sendcan, has_relay=False):
-
-  candidate, fingerprints, vin = fingerprint(logcan, sendcan, has_relay)
+  candidate, fingerprints, vin, car_fw = fingerprint(logcan, sendcan, has_relay)
 
   if candidate is None:
     cloudlog.warning("car doesn't match any fingerprints: %r", fingerprints)
     candidate = "mock"
 
   CarInterface, CarController = interfaces[candidate]
-  car_params = CarInterface.get_params(candidate, fingerprints, vin, has_relay)
+  car_params = CarInterface.get_params(candidate, fingerprints, has_relay, car_fw)
+  car_params.carVin = vin
+  car_params.carFw = car_fw
 
   return CarInterface(car_params, CarController), car_params

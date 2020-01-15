@@ -20,9 +20,9 @@ _PITCH_WEIGHT = 1.35 # 1.5  # pitch matters a lot more
 _METRIC_THRESHOLD = 0.4
 _METRIC_THRESHOLD_SLACK = 0.55
 _METRIC_THRESHOLD_STRICT = 0.4
-_PITCH_POS_ALLOWANCE = 0.04 # 0.08  # rad, to not be too sensitive on positive pitch
-_PITCH_NATURAL_OFFSET = 0.12  # 0.1   # people don't seem to look straight when they drive relaxed, rather a bit up
-_YAW_NATURAL_OFFSET = 0.08  # people don't seem to look straight when they drive relaxed, rather a bit to the right (center of car)
+_PITCH_POS_ALLOWANCE = 0.12 # rad, to not be too sensitive on positive pitch
+_PITCH_NATURAL_OFFSET = 0.02 # people don't seem to look straight when they drive relaxed, rather a bit up
+_YAW_NATURAL_OFFSET = 0.08 # people don't seem to look straight when they drive relaxed, rather a bit to the right (center of car)
 
 _DISTRACTED_FILTER_TS = 0.25  # 0.6Hz
 
@@ -138,13 +138,13 @@ class DriverStatus():
     if not self.pose_calibrated:
       pitch_error = pose.pitch - _PITCH_NATURAL_OFFSET
       yaw_error = pose.yaw - _YAW_NATURAL_OFFSET
-      # add positive pitch allowance
-      if pitch_error > 0.:
-        pitch_error = max(pitch_error - _PITCH_POS_ALLOWANCE, 0.)
     else:
       pitch_error = pose.pitch - self.pose.pitch_offseter.filtered_stat.mean()
       yaw_error = pose.yaw - self.pose.yaw_offseter.filtered_stat.mean()
 
+    # positive pitch allowance
+    if pitch_error > 0.:
+      pitch_error = max(pitch_error - _PITCH_POS_ALLOWANCE, 0.)
     pitch_error *= _PITCH_WEIGHT
     pose_metric = np.sqrt(yaw_error**2 + pitch_error**2)
 

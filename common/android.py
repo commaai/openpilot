@@ -1,10 +1,15 @@
+import os
 import binascii
 import itertools
 import re
 import struct
 import subprocess
 
+ANDROID = os.path.isfile('/EON')
+
 def getprop(key):
+  if not ANDROID:
+    return ""
   return subprocess.check_output(["getprop", key], encoding='utf8').strip()
 
 def get_imei():
@@ -14,7 +19,10 @@ def get_imei():
   return ret
 
 def get_serial():
-  return getprop("ro.serialno")
+  ret = getprop("ro.serialno")
+  if ret == "":
+    ret = "cccccccc"
+  return ret
 
 def get_subscriber_info():
   ret = parse_service_call_string(["iphonesubinfo", "7"])
@@ -60,6 +68,8 @@ def parse_service_call_string(call):
     return None
 
 def parse_service_call_bytes(call):
+  if not ANDROID:
+    return None
   ret = subprocess.check_output(["service", "call", *call], encoding='utf8').strip()
   if 'Parcel' not in ret:
     return None

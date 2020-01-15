@@ -159,11 +159,11 @@ def get_car_params(msgs, fsm, can_sock):
   _, CP = get_car(can, sendcan)
   Params().put("CarParams", CP.to_bytes())
 
-def radar_rcv_callback(msg, CP):
+def radar_rcv_callback(msg, CP, cfg, fsm):
   if msg.which() != "can":
-    return []
+    return [], False
   elif CP.radarOffCan:
-    return ["radarState", "liveTracks"]
+    return ["radarState", "liveTracks"], True
 
   radar_msgs = {"honda": [0x445], "toyota": [0x19f, 0x22f], "gm": [0x474],
                 "chrysler": [0x2d4]}.get(CP.carName, None)
@@ -173,8 +173,15 @@ def radar_rcv_callback(msg, CP):
 
   for m in msg.can:
     if m.src == 1 and m.address in radar_msgs:
-      return ["radarState", "liveTracks"]
-  return []
+      return ["radarState", "liveTracks"], True
+  return [], False
+
+def calibration_rcv_callback(msg, CP, cfg, fsm):
+  # calibrationd publishes 1 calibrationData every 5 cameraOdometry packets.
+  # should_recv always true to increment frame
+  recv_socks = ["liveCalibration"] if (fsm.frame + 1) % 5 == 0 else []
+  return recv_socks, True
+
 
 CONFIGS = [
   ProcessConfig(
@@ -215,7 +222,7 @@ CONFIGS = [
     },
     ignore=[("logMonoTime", 0), ("valid", True)],
     init_callback=get_car_params,
-    should_recv_callback=None,
+    should_recv_callback=calibration_rcv_callback,
   ),
 ]
 
@@ -263,12 +270,11 @@ def replay_process(cfg, lr):
   log_msgs, msg_queue = [], []
   for msg in tqdm(pub_msgs):
     if cfg.should_recv_callback is not None:
-      recv_socks = cfg.should_recv_callback(msg, CP)
+      recv_socks, should_recv = cfg.should_recv_callback(msg, CP, cfg, fsm)
     else:
       recv_socks = [s for s in cfg.pub_sub[msg.which()] if
                       (fsm.frame + 1) % int(service_list[msg.which()].frequency / service_list[s].frequency) == 0]
-
-    should_recv = bool(len(recv_socks))
+      should_recv = bool(len(recv_socks))
 
     if msg.which() == 'can':
       can_sock.send(msg.as_builder().to_bytes())
