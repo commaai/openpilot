@@ -85,7 +85,6 @@ Message * MSGQSubSocket::receive(bool non_blocking){
   msgq_msg_t msg;
 
   MSGQMessage *r = NULL;
-  r = NULL;
 
   int rc = msgq_msg_recv(&msg, q);
 
@@ -109,15 +108,21 @@ Message * MSGQSubSocket::receive(bool non_blocking){
     }
   }
 
-  if (rc > 0){
-    r = new MSGQMessage;
-    r->takeOwnership(msg.data, msg.size);
-  }
-  errno = msgq_do_exit ? EINTR : 0;
 
   if (!non_blocking){
     std::signal(SIGINT, prev_handler_sigint);
     std::signal(SIGTERM, prev_handler_sigterm);
+  }
+
+  errno = msgq_do_exit ? EINTR : 0;
+
+  if (rc > 0){
+    if (msgq_do_exit){
+      msgq_msg_close(&msg); // Free unused message on exit
+    } else {
+      r = new MSGQMessage;
+      r->takeOwnership(msg.data, msg.size);
+    }
   }
 
   return (Message*)r;
