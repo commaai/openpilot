@@ -10,5 +10,5 @@ libmessaging.*
 libmessaging_shared.*
 services.h
 .sconsign.dblite
-libcereal_shared.so
+libcereal_shared.*
 
