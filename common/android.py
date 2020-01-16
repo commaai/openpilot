@@ -12,9 +12,13 @@ def getprop(key):
     return ""
   return subprocess.check_output(["getprop", key], encoding='utf8').strip()
 
-def get_imei():
-  ret = getprop("oem.device.imeicache")
-  if ret == "":
+def get_imei(slot):
+  slot = str(slot)
+  if slot not in ("0", "1"):
+    raise ValueError("SIM slot must be 0 or 1")
+
+  ret = parse_service_call_string(["iphonesubinfo", "3" ,"i32", str(slot)])
+  if not ret:
     ret = "000000000000000"
   return ret
 
