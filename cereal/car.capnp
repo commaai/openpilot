@@ -369,7 +369,7 @@ struct CarParams {
   carFw @44 :List(CarFw);
   radarTimeStep @45: Float32 = 0.05;  # time delta between radar updates, 20Hz is very standard
   communityFeature @46: Bool;  # true if a community maintained feature is detected
-  smartDsu @47 :Bool; #SmartDSU Interceptor
+  smartDsu @48 :Bool; #SmartDSU Interceptor
 
   struct LateralPIDTuning {
     kpBP @0 :List(Float32);
