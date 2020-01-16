@@ -198,7 +198,7 @@ struct Updater {
     touch_init(&touch);
 
     fb = framebuffer_init("updater", 0x00001000, false,
-                          &display, &surface, &fb_w, &fb_h);
+                          &fb_w, &fb_h);
     assert(fb);
 
     vg = nvgCreateGLES3(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
