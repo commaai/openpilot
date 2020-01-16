@@ -48,7 +48,7 @@ def register():
   try:
     cloudlog.info("getting pilotauth")
     resp = api_get("v2/pilotauth/", method='POST', timeout=15,
-                   imei=get_imei(), serial=get_serial(), public_key=public_key, register_token=register_token)
+                   imei=get_imei(0), imei2=get_imei(1), serial=get_serial(), public_key=public_key, register_token=register_token)
     dongleauth = json.loads(resp.text)
     dongle_id, access_token = dongleauth["dongle_id"], dongleauth["access_token"]
 
