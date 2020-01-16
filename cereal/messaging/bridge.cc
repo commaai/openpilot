@@ -4,6 +4,8 @@
 #include <csignal>
 #include <map>
 
+typedef void (*sighandler_t)(int sig);
+
 #include "services.h"
 
 #include "impl_msgq.hpp"

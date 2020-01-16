@@ -23,8 +23,8 @@
 
 #include "msgq.hpp"
 
-void sigusr1_handler(int signal) {
-  assert(signal == SIGUSR1);
+void sigusr2_handler(int signal) {
+  assert(signal == SIGUSR2);
 }
 
 uint64_t msgq_get_uid(void){
@@ -80,7 +80,7 @@ void msgq_wait_for_subscriber(msgq_queue_t *q){
 int msgq_new_queue(msgq_queue_t * q, const char * path, size_t size){
   assert(size < 0xFFFFFFFF); // Buffer must be smaller than 2^32 bytes
 
-  std::signal(SIGUSR1, sigusr1_handler);
+  std::signal(SIGUSR2, sigusr2_handler);
 
   const char * prefix = "/dev/shm/";
   char * full_path = new char[strlen(path) + strlen(prefix) + 1];
@@ -136,7 +136,7 @@ void msgq_close_queue(msgq_queue_t *q){
 
 
 void msgq_init_publisher(msgq_queue_t * q) {
-  std::cout << "Starting publisher" << std::endl;
+  //std::cout << "Starting publisher" << std::endl;
   uint64_t uid = msgq_get_uid();
 
   *q->write_uid = uid;
@@ -148,6 +148,15 @@ void msgq_init_publisher(msgq_queue_t * q) {
   }
 
   q->write_uid_local = uid;
+}
+
+static void thread_signal(uint32_t tid) {
+  #ifndef SYS_tkill
+    // TODO: this won't work for multithreaded programs
+    kill(tid, SIGUSR2);
+  #else
+    syscall(SYS_tkill, tid, SIGUSR2);
+  #endif
 }
 
 void msgq_init_subscriber(msgq_queue_t * q) {
@@ -173,7 +182,7 @@ void msgq_init_subscriber(msgq_queue_t * q) {
         *q->read_uids[i] = 0;
 
         // Wake up reader in case they are in a poll
-        syscall(SYS_tkill, old_uid & 0xFFFFFFFF, SIGUSR1);
+        thread_signal(old_uid & 0xFFFFFFFF);
       }
 
       continue;
@@ -196,7 +205,7 @@ void msgq_init_subscriber(msgq_queue_t * q) {
     }
   }
 
-  std::cout << "New subscriber id: " << q->reader_id << " uid: " << q->read_uid_local << " " << q->endpoint << std::endl;
+  //std::cout << "New subscriber id: " << q->reader_id << " uid: " << q->read_uid_local << " " << q->endpoint << std::endl;
   msgq_reset_reader(q);
 }
 
@@ -278,8 +287,7 @@ int msgq_msg_send(msgq_msg_t * msg, msgq_queue_t *q){
   // Notify readers
   for (uint64_t i = 0; i < num_readers; i++){
     uint64_t reader_uid = *q->read_uids[i];
-
-    syscall(SYS_tkill, reader_uid & 0xFFFFFFFF, SIGUSR1);
+    thread_signal(reader_uid & 0xFFFFFFFF);
   }
 
   return msg->size;

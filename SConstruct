@@ -46,6 +46,7 @@ else:
     "#phonelibs/capnp-cpp/include",
     "#phonelibs/capnp-c/include",
     "#phonelibs/zmq/x64/include",
+    "#external/tensorflow/include",
   ]
   libpath = [
     "#phonelibs/capnp-cpp/x64/lib",
@@ -55,6 +56,7 @@ else:
     "#phonelibs/zmq/x64/lib",
     "#phonelibs/libyuv/x64/lib",
     "#external/zmq/lib",
+    "#external/tensorflow/lib",
     "#cereal",
     "#selfdrive/common",
     "/usr/lib",
@@ -62,6 +64,7 @@ else:
   ]
 
   rpath = ["phonelibs/capnp-cpp/x64/lib",
+           "external/tensorflow/lib",
            "cereal",
            "selfdrive/common"]
 
@@ -201,11 +204,13 @@ SConscript(['selfdrive/controls/lib/longitudinal_mpc/SConscript'])
 SConscript(['selfdrive/boardd/SConscript'])
 SConscript(['selfdrive/proclogd/SConscript'])
 
+SConscript(['selfdrive/ui/SConscript'])
+SConscript(['selfdrive/loggerd/SConscript'])
+
 if arch == "aarch64":
   SConscript(['selfdrive/logcatd/SConscript'])
-  SConscript(['selfdrive/ui/SConscript'])
   SConscript(['selfdrive/sensord/SConscript'])
-  SConscript(['selfdrive/loggerd/SConscript'])
+  SConscript(['selfdrive/clocksd/SConscript'])
 
 SConscript(['selfdrive/locationd/SConscript'])
 

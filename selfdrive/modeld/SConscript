@@ -1,25 +1,36 @@
 Import('env', 'arch', 'messaging', 'common', 'gpucommon', 'visionipc')
+lenv = env.Clone()
 
 libs = [messaging, common, 'OpenCL', 'SNPE', 'capnp', 'zmq', 'kj', 'yuv', gpucommon, visionipc]
+
+common_src = [
+  "models/commonmodel.c",
+  "runners/snpemodel.cc",
+  "transforms/loadyuv.c",
+  "transforms/transform.c"]
 
 if arch == "aarch64":
   libs += ['gsl', 'CB', 'gnustl_shared']
 else:
   libs += ['symphony-cpu', 'pthread']
 
-common = env.Object([
-    "models/commonmodel.c",
-    "runners/snpemodel.cc",
-    "transforms/loadyuv.c",
-    "transforms/transform.c"])
+  if FindFile('libtensorflow.so', env['LIBPATH']):
+    # for tensorflow support
+    common_src += ['runners/tfmodel.cc']
+    libs += ['tensorflow']
+    # tell runners to use it
+    lenv['CFLAGS'].append("-DUSE_TF_MODEL")
+    lenv['CXXFLAGS'].append("-DUSE_TF_MODEL")
 
-env.Program('_monitoringd', [
+common = lenv.Object(common_src)
+
+lenv.Program('_monitoringd', [
     "monitoringd.cc",
     "models/monitoring.cc",
   ]+common, LIBS=libs)
 
-env.Program('_modeld', [
+lenv.Program('_modeld', [
     "modeld.cc",
     "models/driving.cc",
-    "models/posenet.cc",
   ]+common, LIBS=libs)
+

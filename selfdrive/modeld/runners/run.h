@@ -7,9 +7,12 @@
 #ifdef QCOM
   #define DefaultRunModel SNPEModel
 #else
-#define DefaultRunModel SNPEModel
-  /* #include "tfmodel.h" */
-  /* #define DefaultRunModel TFModel */
+  #ifdef USE_TF_MODEL
+    #include "tfmodel.h"
+    #define DefaultRunModel TFModel
+  #else
+    #define DefaultRunModel SNPEModel
+  #endif
 #endif
 
 #endif
