@@ -197,12 +197,12 @@ void uart_interrupt_handler(uart_ring *q) {
   EXIT_CRITICAL();
 }
 
-void USART1_IRQHandler(void) { uart_interrupt_handler(&uart_ring_esp_gps); }
-void USART2_IRQHandler(void) { uart_interrupt_handler(&uart_ring_debug); }
-void USART3_IRQHandler(void) { uart_interrupt_handler(&uart_ring_lin2); }
-void UART5_IRQHandler(void) { uart_interrupt_handler(&uart_ring_lin1); }
+void USART1_IRQ_Handler(void) { uart_interrupt_handler(&uart_ring_esp_gps); }
+void USART2_IRQ_Handler(void) { uart_interrupt_handler(&uart_ring_debug); }
+void USART3_IRQ_Handler(void) { uart_interrupt_handler(&uart_ring_lin2); }
+void UART5_IRQ_Handler(void) { uart_interrupt_handler(&uart_ring_lin1); }
 
-void DMA2_Stream5_IRQHandler(void) {
+void DMA2_Stream5_IRQ_Handler(void) {
   ENTER_CRITICAL();
 
   // Handle errors
@@ -272,6 +272,13 @@ void uart_set_baud(USART_TypeDef *u, unsigned int baud) {
 }
 
 void uart_init(uart_ring *q, int baud) {
+  // Register interrupts (max data rate: 115200 baud)
+  REGISTER_INTERRUPT(USART1_IRQn, USART1_IRQ_Handler, 150000U, FAULT_INTERRUPT_RATE_UART_1)
+  REGISTER_INTERRUPT(USART2_IRQn, USART2_IRQ_Handler, 150000U, FAULT_INTERRUPT_RATE_UART_2)
+  REGISTER_INTERRUPT(USART3_IRQn, USART3_IRQ_Handler, 150000U, FAULT_INTERRUPT_RATE_UART_3)
+  REGISTER_INTERRUPT(UART5_IRQn, UART5_IRQ_Handler, 150000U, FAULT_INTERRUPT_RATE_UART_5)
+  REGISTER_INTERRUPT(DMA2_Stream5_IRQn, DMA2_Stream5_IRQ_Handler, 100U, FAULT_INTERRUPT_RATE_UART_DMA)   // Called twice per buffer
+
   // Set baud and enable peripheral with TX and RX mode
   uart_set_baud(q->uart, baud);
   q->uart->CR1 = USART_CR1_UE | USART_CR1_TE | USART_CR1_RE;

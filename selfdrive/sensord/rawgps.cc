@@ -1108,6 +1108,7 @@ void rawgps_init() {
 
   rawgps_context = Context::create();
   rawgps_publisher = PubSocket::create(rawgps_context, "qcomGnss");
+  assert(rawgps_publisher != NULL);
 
   bool init_success = Diag_LSM_Init(NULL);
   assert(init_success);

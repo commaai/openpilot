@@ -164,6 +164,9 @@ void gps_init() {
   gps_context = Context::create();
   gps_publisher = PubSocket::create(gps_context, "gpsNMEA");
   gps_location_publisher = PubSocket::create(gps_context, "gpsLocation");
+
+  assert(gps_publisher != NULL);
+  assert(gps_location_publisher != NULL);
 }
 
 void gps_destroy() {
@@ -183,6 +186,7 @@ void* clock_thread(void* args) {
   int err = 0;
 
   PubSocket* clock_publisher = PubSocket::create(gps_context, "clocks");
+  assert(clock_publisher != NULL);
 
   int timerfd = timerfd_create(CLOCK_BOOTTIME, 0);
   assert(timerfd >= 0);

@@ -2,7 +2,7 @@
 
 import os
 import sys
-import panda.tests.safety.libpandasafety_py as libpandasafety_py
+from panda.tests.safety import libpandasafety_py
 from panda.tests.safety_replay.helpers import package_can_msg, init_segment
 from tools.lib.logreader import LogReader  # pylint: disable=import-error
 
@@ -10,7 +10,7 @@ from tools.lib.logreader import LogReader  # pylint: disable=import-error
 def replay_drive(lr, safety_mode, param):
   safety = libpandasafety_py.libpandasafety
 
-  err = safety.safety_set_mode(safety_mode, param)
+  err = safety.set_safety_hooks(safety_mode, param)
   assert err == 0, "invalid safety mode: %d" % safety_mode
 
   if "SEGMENT" in os.environ:
@@ -35,7 +35,7 @@ def replay_drive(lr, safety_mode, param):
           blocked_addrs.add(canmsg.address)
 
           if "DEBUG" in os.environ:
-            print("blocked %d at %f" % (canmsg.address, (msg.logMonoTime - start_t)/(1e9)))
+            print("blocked bus %d msg %d at %f" % (canmsg.src, canmsg.address, (msg.logMonoTime - start_t)/(1e9)))
         tx_controls += safety.get_controls_allowed()
         tx_tot += 1
     elif msg.which() == 'can':

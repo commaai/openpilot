@@ -1,0 +1,2 @@
+Import('env', 'messaging')
+env.Program('logcatd.cc', LIBS=[messaging, 'cutils', 'zmq', 'czmq', 'capnp', 'kj'])

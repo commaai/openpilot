@@ -1,0 +1,5 @@
+Import('env', 'common', 'messaging')
+env.Program('_sensord', 'sensors.cc', LIBS=['hardware', common, 'json', messaging, 'capnp', 'zmq', 'kj'])
+lenv = env.Clone()
+lenv['LIBPATH'] += ['/system/vendor/lib64']
+lenv.Program('_gpsd', ['gpsd.cc', 'rawgps.cc'], LIBS=['hardware', common, 'diag', 'time_genoff', 'json', messaging, 'capnp', 'zmq', 'kj'])

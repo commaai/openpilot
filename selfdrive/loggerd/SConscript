@@ -1,0 +1,6 @@
+Import('env', 'messaging', 'common', 'visionipc')
+env.Program(['loggerd.cc', 'logger.c', 'raw_logger.cc', 'encoder.c'], LIBS=[
+  'zmq', 'czmq', 'capnp', 'kj', 'yaml-cpp', 'z',
+  'avformat', 'avcodec', 'swscale', 'avutil',
+  'OmxVenc', 'OmxCore', 'yuv',
+  'bz2', 'cutils', common, 'json', messaging, visionipc])

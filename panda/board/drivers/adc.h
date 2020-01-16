@@ -9,26 +9,16 @@
 #define ADCCHAN_CURRENT 13
 
 void adc_init(void) {
-  // global setup
-  ADC->CCR = ADC_CCR_TSVREFE | ADC_CCR_VBATE;
-  //ADC1->CR2 = ADC_CR2_ADON | ADC_CR2_EOCS | ADC_CR2_DDS;
-  ADC1->CR2 = ADC_CR2_ADON;
-
-  // long
-  //ADC1->SMPR1 = ADC_SMPR1_SMP10 | ADC_SMPR1_SMP11 | ADC_SMPR1_SMP12 | ADC_SMPR1_SMP13;
-  ADC1->SMPR1 = ADC_SMPR1_SMP12 | ADC_SMPR1_SMP13;
+  register_set(&(ADC->CCR), ADC_CCR_TSVREFE | ADC_CCR_VBATE, 0xC30000U);
+  register_set(&(ADC1->CR2), ADC_CR2_ADON, 0xFF7F0F03U);
+  register_set(&(ADC1->SMPR1), ADC_SMPR1_SMP12 | ADC_SMPR1_SMP13, 0x7FFFFFFU);
 }
 
 uint32_t adc_get(unsigned int channel) {
-  // includes length
-  //ADC1->SQR1 = 0;
+  // Select channel
+  register_set(&(ADC1->JSQR), (channel << 15U), 0x3FFFFFU);
 
-  // select channel
-  ADC1->JSQR = channel << 15;
-
-  //ADC1->CR1 = ADC_CR1_DISCNUM_0;
-  //ADC1->CR1 = ADC_CR1_EOCIE;
-
+  // Start conversion
   ADC1->SR &= ~(ADC_SR_JEOC);
   ADC1->CR2 |= ADC_CR2_JSWSTART;
   while (!(ADC1->SR & ADC_SR_JEOC));

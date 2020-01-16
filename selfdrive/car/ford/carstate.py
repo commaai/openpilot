@@ -1,4 +1,4 @@
-from selfdrive.can.parser import CANParser
+from opendbc.can.parser import CANParser
 from common.numpy_fast import mean
 from selfdrive.config import Conversions as CV
 from selfdrive.car.ford.values import DBC
@@ -79,6 +79,7 @@ class CarState():
     self.pcm_acc_status = cp.vl["Cruise_Status"]['Cruise_State']
     self.main_on = cp.vl["Cruise_Status"]['Cruise_State'] != 0
     self.lkas_state = cp.vl["Lane_Keep_Assist_Status"]['LaActAvail_D_Actl']
+    # TODO: we also need raw driver torque, needed for Assisted Lane Change
     self.steer_override = not cp.vl["Lane_Keep_Assist_Status"]['LaHandsOff_B_Actl']
     self.steer_error = cp.vl["Lane_Keep_Assist_Status"]['LaActDeny_B_Actl']
     self.user_gas = cp.vl["EngineData_14"]['ApedPosScal_Pc_Actl']

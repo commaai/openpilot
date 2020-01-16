@@ -109,6 +109,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
   int cnt = 0;
 
   PubSocket *idx_sock = PubSocket::create(s.ctx, front ? "frontEncodeIdx" : "encodeIdx");
+  assert(idx_sock != NULL);
 
   LoggerHandle *lh = NULL;
 
@@ -567,7 +568,7 @@ int main(int argc, char** argv) {
   Poller * poller = Poller::create();
 
   std::string exe_dir = util::dir_name(util::readlink("/proc/self/exe"));
-  std::string service_list_path = exe_dir + "/../service_list.yaml";
+  std::string service_list_path = exe_dir + "/../../cereal/service_list.yaml";
 
   // subscribe to all services
 
@@ -585,6 +586,8 @@ int main(int argc, char** argv) {
 
     if (should_log) {
       SubSocket * sock = SubSocket::create(s.ctx, name);
+      assert(sock != NULL);
+
       poller->registerSocket(sock);
       socks.push_back(sock);
 

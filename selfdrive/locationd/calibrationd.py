@@ -4,7 +4,7 @@ import os
 import copy
 import json
 import numpy as np
-import selfdrive.messaging as messaging
+import cereal.messaging as messaging
 from selfdrive.locationd.calibration_helpers import Calibration
 from selfdrive.swaglog import cloudlog
 from common.params import Params, put_nonblocking
