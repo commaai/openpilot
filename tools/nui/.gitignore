@@ -1,0 +1,8 @@
+Makefile
+.*.swp
+*.o
+nui
+moc_*
+.qmake.stash
+nui.app/*
+
