@@ -6,6 +6,7 @@ from tqdm import tqdm
 from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
 from selfdrive.swaglog import cloudlog
 from selfdrive.car.fingerprints import FW_VERSIONS
+from selfdrive.car.toyota.values import CAR as TOYOTA
 import panda.python.uds as uds
 
 from cereal import car
@@ -77,6 +78,10 @@ def match_fw_to_car(fw_versions):
       addr = ecu[1:]
 
       found_version = fw_versions.get(addr, None)
+
+      # TODO: RAV4 esp sometimes doesn't show up
+      if ecu_type == Ecu.esp and candidate == TOYOTA.RAV4 and found_version is None:
+        continue
 
       # Allow DSU not being present
       if ecu_type in [Ecu.unknown, Ecu.dsu] and found_version is None:
