@@ -272,6 +272,7 @@ class Plant():
            'INTERCEPTOR_GAS',
            'INTERCEPTOR_GAS2',
            'IMPERIAL_UNIT',
+           'MOTOR_TORQUE',
            ])
     vls = vls_tuple(
            self.speed_sensor(speed),
@@ -304,7 +305,8 @@ class Plant():
            0,  # Brake hold
            0,  # Interceptor feedback
            0,  # Interceptor 2 feedback
-           False
+           False,
+           0,
            )
 
     # TODO: publish each message at proper frequency

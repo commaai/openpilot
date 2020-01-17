@@ -22,7 +22,6 @@
 #define MAZDA_DRIVER_TORQUE_ALLOWANCE 15
 #define MAZDA_DRIVER_TORQUE_FACTOR 1
 
-
 int mazda_cruise_engaged_last = 0;
 int mazda_rt_torque_last = 0;
 int mazda_desired_torque_last = 0;
@@ -30,7 +29,7 @@ uint32_t mazda_ts_last = 0;
 struct sample_t mazda_torque_driver;         // last few driver torques measured
 
 // track msgs coming from OP so that we know what CAM msgs to drop and what to forward
-void mazda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
+static int mazda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   int bus = GET_BUS(to_push);
   int addr = GET_ADDR(to_push);
 
@@ -58,6 +57,7 @@ void mazda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && (bus == MAZDA_CAM) && (addr == MAZDA_WHEEL_SPEED)) {
     relay_malfunction = true;
   }
+  return 1;
 }
 
 static int mazda_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
@@ -146,4 +146,5 @@ const safety_hooks mazda_hooks = {
   .tx = mazda_tx_hook,
   .tx_lin = nooutput_tx_lin_hook,
   .fwd = mazda_fwd_hook,
+  // TODO: add addr safety checks
 };

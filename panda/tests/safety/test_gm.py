@@ -141,15 +141,10 @@ class TestGmSafety(unittest.TestCase):
     self.safety.safety_rx_hook(self._brake_msg(False))
 
   def test_disengage_on_gas(self):
-    for long_controls_allowed in [0, 1]:
-      self.safety.set_long_controls_allowed(long_controls_allowed)
-      self.safety.set_controls_allowed(1)
-      self.safety.safety_rx_hook(self._gas_msg(True))
-      if long_controls_allowed:
-        self.assertFalse(self.safety.get_controls_allowed())
-      else:
-        self.assertTrue(self.safety.get_controls_allowed())
-      self.safety.safety_rx_hook(self._gas_msg(False))
+    self.safety.set_controls_allowed(1)
+    self.safety.safety_rx_hook(self._gas_msg(True))
+    self.assertFalse(self.safety.get_controls_allowed())
+    self.safety.safety_rx_hook(self._gas_msg(False))
 
   def test_allow_engage_with_gas_pressed(self):
     self.safety.safety_rx_hook(self._gas_msg(True))
@@ -159,28 +154,22 @@ class TestGmSafety(unittest.TestCase):
     self.safety.safety_rx_hook(self._gas_msg(False))
 
   def test_brake_safety_check(self):
-    for long_controls_allowed in [0, 1]:
-      self.safety.set_long_controls_allowed(long_controls_allowed)
-      for enabled in [0, 1]:
-        for b in range(0, 500):
-          self.safety.set_controls_allowed(enabled)
-          if abs(b) > MAX_BRAKE or ((not enabled or not long_controls_allowed) and b != 0):
-            self.assertFalse(self.safety.safety_tx_hook(self._send_brake_msg(b)))
-          else:
-            self.assertTrue(self.safety.safety_tx_hook(self._send_brake_msg(b)))
-    self.safety.set_long_controls_allowed(True)
+    for enabled in [0, 1]:
+      for b in range(0, 500):
+        self.safety.set_controls_allowed(enabled)
+        if abs(b) > MAX_BRAKE or (not enabled and b != 0):
+          self.assertFalse(self.safety.safety_tx_hook(self._send_brake_msg(b)))
+        else:
+          self.assertTrue(self.safety.safety_tx_hook(self._send_brake_msg(b)))
 
   def test_gas_safety_check(self):
-    for long_controls_allowed in [0, 1]:
-      self.safety.set_long_controls_allowed(long_controls_allowed)
-      for enabled in [0, 1]:
-        for g in range(0, 2**12-1):
-          self.safety.set_controls_allowed(enabled)
-          if abs(g) > MAX_GAS or ((not enabled or not long_controls_allowed) and g != MAX_REGEN):
-            self.assertFalse(self.safety.safety_tx_hook(self._send_gas_msg(g)))
-          else:
-            self.assertTrue(self.safety.safety_tx_hook(self._send_gas_msg(g)))
-    self.safety.set_long_controls_allowed(True)
+    for enabled in [0, 1]:
+      for g in range(0, 2**12-1):
+        self.safety.set_controls_allowed(enabled)
+        if abs(g) > MAX_GAS or (not enabled and g != MAX_REGEN):
+          self.assertFalse(self.safety.safety_tx_hook(self._send_gas_msg(g)))
+        else:
+          self.assertTrue(self.safety.safety_tx_hook(self._send_gas_msg(g)))
 
   def test_steer_safety_check(self):
     for enabled in [0, 1]:

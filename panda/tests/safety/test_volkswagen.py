@@ -87,16 +87,10 @@ class TestVolkswagenSafety(unittest.TestCase):
     self.assertFalse(self.safety.get_controls_allowed())
 
   def test_disengage_on_gas(self):
-    for long_controls_allowed in [0, 1]:
-      self.safety.set_long_controls_allowed(long_controls_allowed)
-      self.safety.safety_rx_hook(self._gas_msg(0))
-      self.safety.set_controls_allowed(True)
-      self.safety.safety_rx_hook(self._gas_msg(1))
-      if long_controls_allowed:
-        self.assertFalse(self.safety.get_controls_allowed())
-      else:
-        self.assertTrue(self.safety.get_controls_allowed())
-    self.safety.set_long_controls_allowed(True)
+    self.safety.safety_rx_hook(self._gas_msg(0))
+    self.safety.set_controls_allowed(True)
+    self.safety.safety_rx_hook(self._gas_msg(1))
+    self.assertFalse(self.safety.get_controls_allowed())
 
   def test_allow_engage_with_gas_pressed(self):
     self.safety.safety_rx_hook(self._gas_msg(1))

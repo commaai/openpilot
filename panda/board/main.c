@@ -45,6 +45,7 @@ struct __attribute__((packed)) health_t {
   uint32_t uptime_pkt;
   uint32_t voltage_pkt;
   uint32_t current_pkt;
+  uint32_t can_rx_errs_pkt;
   uint32_t can_send_errs_pkt;
   uint32_t can_fwd_errs_pkt;
   uint32_t gmlan_send_errs_pkt;
@@ -170,6 +171,7 @@ int get_health_pkt(void *dat) {
 
   health->controls_allowed_pkt = controls_allowed;
   health->gas_interceptor_detected_pkt = gas_interceptor_detected;
+  health->can_rx_errs_pkt = can_rx_errs;
   health->can_send_errs_pkt = can_send_errs;
   health->can_fwd_errs_pkt = can_fwd_errs;
   health->gmlan_send_errs_pkt = gmlan_send_errs;
@@ -475,12 +477,6 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, bool hardwired) 
         can_init(CAN_NUM_FROM_BUS_NUM(setup->b.wValue.w));
       }
       break;
-    // **** 0xdf: set long controls allowed
-    case 0xdf:
-      if (hardwired) {
-        long_controls_allowed = setup->b.wValue.w & 1U;
-      }
-      break;
     // **** 0xe0: uart read
     case 0xe0:
       ur = get_ring_by_number(setup->b.wValue.w);
@@ -671,7 +667,7 @@ void __attribute__ ((noinline)) enable_fpu(void) {
 #define EON_HEARTBEAT_IGNITION_CNT_ON 5U
 #define EON_HEARTBEAT_IGNITION_CNT_OFF 2U
 
-// called once per second
+// called at 1Hz
 void TIM1_BRK_TIM9_IRQ_Handler(void) {
   if (TIM9->SR != 0) {
     can_live = pending_can_live;
@@ -740,6 +736,9 @@ void TIM1_BRK_TIM9_IRQ_Handler(void) {
     uptime_cnt += 1U;
     safety_mode_cnt += 1U;
     ignition_can_cnt += 1U;
+
+    // synchronous safety check
+    safety_tick(current_hooks);
   }
   TIM9->SR = 0;
 }
