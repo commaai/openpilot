@@ -1,0 +1,3 @@
+wget https://dist.ipfs.io/go-ipfs/v0.4.10/go-ipfs_v0.4.10_linux-amd64.tar.gz
+tar xvf go-ipfs_v0.4.10_linux-amd64.tar.gz
+mv go-ipfs/ipfs .

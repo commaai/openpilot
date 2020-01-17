@@ -1,0 +1,134 @@
+'\" t
+.\"     Title: zmonitor_v2
+.\"    Author: [see the "AUTHORS" section]
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 09/14/2016
+.\"    Manual: CZMQ Manual
+.\"    Source: CZMQ 3.0.2
+.\"  Language: English
+.\"
+.TH "ZMONITOR_V2" "3" "09/14/2016" "CZMQ 3\&.0\&.2" "CZMQ Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+zmonitor_v2 \- socket event monitor (deprecated)
+.SH "SYNOPSIS"
+.sp
+.nf
+//  This code needs backporting to work with ZMQ v3\&.2
+#if (ZMQ_VERSION_MAJOR == 4)
+
+//  Create a new socket monitor
+CZMQ_EXPORT zmonitor_t *
+    zmonitor_new (zctx_t *ctx, void *socket, int events);
+
+//  Destroy a socket monitor
+CZMQ_EXPORT void
+    zmonitor_destroy (zmonitor_t **self_p);
+
+//  Receive a status message from the monitor; if no message arrives within
+//  500 msec, or the call was interrupted, returns NULL\&.
+CZMQ_EXPORT zmsg_t *
+    zmonitor_recv (zmonitor_t *self);
+
+//  Get the ZeroMQ socket, for polling
+CZMQ_EXPORT void *
+    zmonitor_socket (zmonitor_t *self);
+
+//  Enable verbose tracing of commands and activity
+CZMQ_EXPORT void
+    zmonitor_set_verbose (zmonitor_t *self, bool verbose);
+#endif          //  ZeroMQ 4\&.0 or later
+
+// Self test of this class
+CZMQ_EXPORT void
+    zmonitor_v2_test (bool verbose);
+.fi
+.SH "DESCRIPTION"
+.sp
+The zmonitor class provides an API for obtaining socket events such as connected, listen, disconnected, etc\&. Socket events are only available for sockets connecting or bound to ipc:// and tcp:// endpoints\&. This class wraps the ZMQ socket monitor API, see zmq_socket_monitor for details\&. Currently this class requires libzmq v4\&.0 or later and is empty on older versions of libzmq\&.
+.sp
+This class is deprecated in CZMQ v3; it works together with zctx, zsocket, and other deprecated V2 classes\&. New applications should use the V3 zmonitor interface, based on zactor, together with the zsock class for sockets\&.
+.SH "EXAMPLE"
+.PP
+\fBFrom zmonitor_v2_test method\fR. 
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+zctx_t *ctx = zctx_new ();
+assert (ctx);
+bool result;
+
+void *sink = zsocket_new (ctx, ZMQ_PULL);
+assert (sink);
+zmonitor_t *sinkmon = zmonitor_new (ctx,
+                                    sink, ZMQ_EVENT_LISTENING | ZMQ_EVENT_ACCEPTED);
+assert (sinkmon);
+zmonitor_set_verbose (sinkmon, verbose);
+
+//  Check sink is now listening
+int port_nbr = zsocket_bind (sink, "tcp://127\&.0\&.0\&.1:*");
+assert (port_nbr != \-1);
+result = s_check_event (sinkmon, ZMQ_EVENT_LISTENING);
+assert (result);
+
+void *source = zsocket_new (ctx, ZMQ_PUSH);
+assert (source);
+zmonitor_t *sourcemon = zmonitor_new (ctx,
+                                      source, ZMQ_EVENT_CONNECTED | ZMQ_EVENT_DISCONNECTED);
+assert (sourcemon);
+zmonitor_set_verbose (sourcemon, verbose);
+zsocket_connect (source, "tcp://127\&.0\&.0\&.1:%d", port_nbr);
+
+//  Check source connected to sink
+result = s_check_event (sourcemon, ZMQ_EVENT_CONNECTED);
+assert (result);
+
+//  Check sink accepted connection
+result = s_check_event (sinkmon, ZMQ_EVENT_ACCEPTED);
+assert (result);
+
+zmonitor_destroy (&sinkmon);
+zmonitor_destroy (&sourcemon);
+zctx_destroy (&ctx);
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "AUTHORS"
+.sp
+The czmq manual was written by the authors in the AUTHORS file\&.
+.SH "RESOURCES"
+.sp
+Main web site: \m[blue]\fB\%\fR\m[]
+.sp
+Report bugs to the email <\m[blue]\fBzeromq\-dev@lists\&.zeromq\&.org\fR\m[]\&\s-2\u[1]\d\s+2>
+.SH "COPYRIGHT"
+.sp
+Copyright (c) 1991\-2012 iMatix Corporation \-\- http://www\&.imatix\&.com Copyright other contributors as noted in the AUTHORS file\&. This file is part of CZMQ, the high\-level C binding for 0MQ: http://czmq\&.zeromq\&.org This Source Code Form is subject to the terms of the Mozilla Public License, v\&. 2\&.0\&. If a copy of the MPL was not distributed with this file, You can obtain one at http://mozilla\&.org/MPL/2\&.0/\&. LICENSE included with the czmq distribution\&.
+.SH "NOTES"
+.IP " 1." 4
+zeromq-dev@lists.zeromq.org
+.RS 4
+\%mailto:zeromq-dev@lists.zeromq.org
+.RE

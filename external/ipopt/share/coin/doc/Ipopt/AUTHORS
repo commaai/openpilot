@@ -1,0 +1,133 @@
+Main authors:
+
+Andreas Waechter, project leader (IBM)
+Carl Laird (IBM, Carnegie Mellon University)
+
+
+Contributors:
+
+- Yoshiaki Kawajiri (Carnegie Mellon Univeristy):
+  First version of Latex documentation file
+
+  Docs/documentation.tex
+
+- Olaf Schenk (University of Basel):
+  Modifications to the PARDISO interface in the files
+
+  Algorithm/LinearSolvers/IpPardisoSolverInterface.cpp
+  Algorithm/LinearSolvers/IpPardisoSolverInterface.hpp
+
+- Michael Hagemann (University of Basel):
+  MA57 interface
+
+  Algorithm/LinearSolvers/IpMa57SolverInterface.cpp
+  Algorithm/LinearSolvers/IpMa57SolverInterface.hpp
+
+- Damien Hocking (KBC Advanced Technologies)
+  MUMPS interface
+
+  Algorithm/LinearSolvers/IpMumpsSolverInterface.cpp
+  Algorithm/LinearSolvers/IpMumpsSolverInterface.hpp
+
+- Jon Lee (IBM Research)
+  example nl file (writting by hand) for unitTest
+
+  Test/mytoy.nl
+
+- Peter Carbonetto (University of British Columbia)
+  Matlab interface files in directory (and subdirectories of)
+
+  contrib/MatlabInterface
+
+- Rafael de Pelegrini Soares (VRTech Industrial Technologies)
+  and Tong Kewei (Beihang University, Beijing)
+  Java interface files in directory (and subdirectories of)
+
+  contrib/JavaInterface
+
+- Lifeng Chen/Zaiwen Wen (Columbia University)
+  Changes and additions to the implementation of the Chen-Goldfarb
+    penalty function algorithm
+
+  src/contrib/CGPenalty/IpCGPenaltyCq.cpp
+  src/contrib/CGPenalty/IpCGPenaltyCq.hpp
+  src/contrib/CGPenalty/IpCGPenaltyData.cpp
+  src/contrib/CGPenalty/IpCGPenaltyData.hpp
+  src/contrib/CGPenalty/IpCGPenaltyLSAcceptor.cpp
+  src/contrib/CGPenalty/IpCGPenaltyLSAcceptor.hpp
+  src/contrib/CGPenalty/IpCGPenaltyRegOp.cpp
+  src/contrib/CGPenalty/IpCGPenaltyRegOp.hpp
+  src/contrib/CGPenalty/IpCGPerturbationHandler.cpp
+  src/contrib/CGPenalty/IpCGPerturbationHandler.hpp
+  src/contrib/CGPenalty/IpCGSearchDirCalc.cpp
+  src/contrib/CGPenalty/IpCGSearchDirCalc.hpp
+  src/contrib/CGPenalty/IpPiecewisePenalty.cpp
+  src/contrib/CGPenalty/IpPiecewisePenalty.hpp
+
+- Stefan Vigerske (GAMS)
+  Dynamic loading of linear solver shared libraries
+
+  src/contrib/LinearSolverLoader/HSLLoader.c
+  src/contrib/LinearSolverLoader/HSLLoader.h
+  src/contrib/LinearSolverLoader/LibraryHandler.c
+  src/contrib/LinearSolverLoader/LibraryHandler.h
+  src/contrib/LinearSolverLoader/PardisoLoader.c
+  src/contrib/LinearSolverLoader/PardisoLoader.h
+
+- Marcel Roelofs (AIMMS)
+  MSVC project files for Intel Fortran compiler, creating a DLL
+
+  MSVisualStudio/v8-ifort
+
+- Jonathan Hogg (STFC Rutherford Appleton Laboratory)
+  MA77 interface
+
+  src/Algorithm/LinearSolvers/hsl_ma77d.h
+  src/Algorithm/LinearSolvers/IpMa77SolverInterface.hpp
+  src/Algorithm/LinearSolvers/IpMa77SolverInterface.cpp
+
+  MA86 interface
+
+  src/Algorithm/LinearSolvers/hsl_ma86d.h
+  src/Algorithm/LinearSolvers/hsl_mc68i.h
+  src/Algorithm/LinearSolvers/IpMa86SolverInterface.hpp
+  src/Algorithm/LinearSolvers/IpMa86SolverInterface.cpp
+
+  MA97 interface
+
+  src/Algorithm/LinearSolvers/hsl_ma97d.h
+  src/Algorithm/LinearSolvers/IpMa97SolverInterface.hpp
+  src/Algorithm/LinearSolvers/IpMa97SolverInterface.cpp
+
+- Hans Pirnay (RWTH Aachen)
+  Rodrigo Lopez-Negrete (Carnegie Mellon University)
+
+  Sensitivity Based on IPOPT
+
+  contrib/sIPOPT  (formerly called contrib/AsNMPC)
+
+- Jelmer Ypma (University College London)
+  R interface with examples, all files in directory (and subdirectory of)
+
+  contrib/RInterface
+  
+- Tony Kelman (Berkeley)
+  improvements to Matlab interface
+  
+  Ipopt/contrib/MatlabInterface
+
+- Gabriel Hackebeil
+  improved use compound component spaces
+  
+- Nai-Yuan Chiang and Victor M. Zavala Tejeda (Argonne National Laboratory)
+  inertia free curvature test in solution of primal-dual system (full approach)
+
+Contributors of code that is no longer included in Ipopt distribution:
+
+- Yifan Hu (Wolfram): Contributed TAUCS interface, implemented in the files
+
+  PDSystemImpl/PDFullSpace/IpTAUCSSolverInterface.hpp
+  PDSystemImpl/PDFullSpace/IpTAUCSSolverInterface.cpp
+
+  [These files have been removed, since TAUCS is not supported]
+

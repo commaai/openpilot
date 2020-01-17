@@ -1,0 +1,160 @@
+'\" t
+.\"     Title: zproxy_v2
+.\"    Author: [see the "AUTHORS" section]
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 09/14/2016
+.\"    Manual: CZMQ Manual
+.\"    Source: CZMQ 3.0.2
+.\"  Language: English
+.\"
+.TH "ZPROXY_V2" "3" "09/14/2016" "CZMQ 3\&.0\&.2" "CZMQ Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+zproxy_v2 \- run a steerable proxy in the background (deprecated)
+.SH "SYNOPSIS"
+.sp
+.nf
+//  Constructor
+//  Create a new zproxy object\&. You must create the frontend and backend
+//  sockets, configure them, and connect or bind them, before you pass them
+//  to the constructor\&. Do NOT use the sockets again, after passing them to
+//  this method\&.
+CZMQ_EXPORT zproxy_t *
+    zproxy_new (zctx_t *ctx, void *frontend, void *backend);
+
+//  Destructor
+//  Destroy a zproxy object; note this first stops the proxy\&.
+CZMQ_EXPORT void
+    zproxy_destroy (zproxy_t **self_p);
+
+//  Copy all proxied messages to specified endpoint; if this is NULL, any
+//  in\-progress capturing will be stopped\&. You must already have bound the
+//  endpoint to a PULL socket\&.
+CZMQ_EXPORT void
+    zproxy_capture (zproxy_t *self, const char *endpoint);
+
+//  Pauses a zproxy object; a paused proxy will cease processing messages,
+//  causing them to be queued up and potentially hit the high\-water mark on
+//  the frontend socket, causing messages to be dropped, or writing
+//  applications to block\&.
+CZMQ_EXPORT void
+    zproxy_pause (zproxy_t *self);
+
+//  Resume a zproxy object
+CZMQ_EXPORT void
+    zproxy_resume (zproxy_t *self);
+
+// Self test of this class
+CZMQ_EXPORT void
+    zproxy_v2_test (bool verbose);
+.fi
+.SH "DESCRIPTION"
+.sp
+The zproxy class provides an equivalent to the ZMQ steerable proxy, on all versions of ZeroMQ\&.
+.sp
+This class is deprecated in CZMQ v3; it works together with zctx, zsocket, and other deprecated V2 classes\&. New applications should use the V3 zproxy interface, based on zactor, together with the zsock class for sockets\&.
+.SH "EXAMPLE"
+.PP
+\fBFrom zproxy_v2_test method\fR. 
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+zctx_t *ctx = zctx_new ();
+assert (ctx);
+void *frontend = zsocket_new (ctx, ZMQ_PULL);
+assert (frontend);
+int rc = zsocket_bind (frontend, "inproc://frontend");
+assert (rc == 0);
+void *backend = zsocket_new (ctx, ZMQ_PUSH);
+assert (backend);
+rc = zsocket_bind (backend, "inproc://backend");
+assert (rc == 0);
+zproxy_t *proxy = zproxy_new (ctx, frontend, backend);
+assert (proxy);
+
+//  Connect application sockets to proxy
+void *faucet = zsocket_new (ctx, ZMQ_PUSH);
+assert (faucet);
+rc = zsocket_connect (faucet, "inproc://frontend");
+assert (rc == 0);
+void *sink = zsocket_new (ctx, ZMQ_PULL);
+assert (sink);
+rc = zsocket_connect (sink, "inproc://backend");
+assert (rc == 0);
+
+//  Send some messages and check they arrived
+zstr_send (faucet, "Hello");
+char *string = zstr_recv (sink);
+assert (streq (string, "Hello"));
+zstr_free (&string);
+
+//  Check pause/resume functionality
+zproxy_pause (proxy);
+zstr_send (faucet, "World");
+
+zproxy_resume (proxy);
+string = zstr_recv (sink);
+assert (streq (string, "World"));
+zstr_free (&string);
+
+//  Create capture socket, must be a PULL socket
+void *capture = zsocket_new (ctx, ZMQ_PULL);
+assert (capture);
+rc = zsocket_bind (capture, "inproc://capture");
+assert (rc == 0);
+
+//  Switch on capturing, check that it works
+zproxy_capture (proxy, "inproc://capture");
+zstr_send (faucet, "Hello");
+
+string = zstr_recv (sink);
+assert (streq (string, "Hello"));
+zstr_free (&string);
+
+string = zstr_recv (capture);
+assert (streq (string, "Hello"));
+zstr_free (&string);
+zproxy_destroy (&proxy);
+zctx_destroy (&ctx);
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "AUTHORS"
+.sp
+The czmq manual was written by the authors in the AUTHORS file\&.
+.SH "RESOURCES"
+.sp
+Main web site: \m[blue]\fB\%\fR\m[]
+.sp
+Report bugs to the email <\m[blue]\fBzeromq\-dev@lists\&.zeromq\&.org\fR\m[]\&\s-2\u[1]\d\s+2>
+.SH "COPYRIGHT"
+.sp
+Copyright (c) 1991\-2012 iMatix Corporation \-\- http://www\&.imatix\&.com Copyright other contributors as noted in the AUTHORS file\&. This file is part of CZMQ, the high\-level C binding for 0MQ: http://czmq\&.zeromq\&.org This Source Code Form is subject to the terms of the Mozilla Public License, v\&. 2\&.0\&. If a copy of the MPL was not distributed with this file, You can obtain one at http://mozilla\&.org/MPL/2\&.0/\&. LICENSE included with the czmq distribution\&.
+.SH "NOTES"
+.IP " 1." 4
+zeromq-dev@lists.zeromq.org
+.RS 4
+\%mailto:zeromq-dev@lists.zeromq.org
+.RE
