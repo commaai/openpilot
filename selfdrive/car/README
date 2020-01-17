@@ -1,0 +1,38 @@
+In here lies the car abstraction layer, and is part of what you will implement to add a new car
+
+== Car State ==
+
+Implement the following minimal set of sensors:
+  Speed -- best estimate of the speed of the car
+  SteeringAngle -- current angle of the steering wheel
+  ControlSurface -- gas position, brake position, steering torque
+
+Implement the following optional sensors:
+  RadarPoints -- Currently not optional, but could be with VOACC. Data from the radar of the car.
+  WheelSpeeds -- The speed of the 4 wheels of the car. To be used for odometry
+
+Implement the following controls:
+  ControlSurface -- gas position (optional if PCM), brake position, steering torque
+
+If you don't have a pedal interceptor and you use the PCM cruise control:
+  CruiseState -- If system is enabled, and current set speed
+  CruiseControl -- Commands to modify system speed and acceleration
+
+== Car UI ==
+
+I suspect many cars with ACC and LKAS have similar UIs
+
+HUDControl
+
+== Car Buttons ==
+
+Uses an evented protocol
+
+* Blinkers
+* Cruise buttons
+* Other buttons
+
+== Car Errors ==
+
+See capnp for list of errors
+
