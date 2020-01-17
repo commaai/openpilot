@@ -1,0 +1,10 @@
+prefix=/home/batman/one/external/capnp
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: KJ Framework Library
+Description: Basic utility library called KJ
+Version: 0.6.1
+Libs: -L${libdir} -lkj -pthread  -lpthread 
+Cflags: -I${includedir} -pthread  

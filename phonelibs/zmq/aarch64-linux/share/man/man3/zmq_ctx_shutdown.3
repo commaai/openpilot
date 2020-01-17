@@ -1,0 +1,58 @@
+'\" t
+.\"     Title: zmq_ctx_shutdown
+.\"    Author: [see the "AUTHORS" section]
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 02/18/2017
+.\"    Manual: 0MQ Manual
+.\"    Source: 0MQ 4.2.2
+.\"  Language: English
+.\"
+.TH "ZMQ_CTX_SHUTDOWN" "3" "02/18/2017" "0MQ 4\&.2\&.2" "0MQ Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+zmq_ctx_shutdown \- shutdown a 0MQ context
+.SH "SYNOPSIS"
+.sp
+\fBint zmq_ctx_shutdown (void \fR\fB\fI*context\fR\fR\fB);\fR
+.SH "DESCRIPTION"
+.sp
+The \fIzmq_ctx_shutdown()\fR function shall shutdown the 0MQ context \fIcontext\fR\&.
+.sp
+Context shutdown will cause any blocking operations currently in progress on sockets open within \fIcontext\fR to return immediately with an error code of ETERM\&. With the exception of \fIzmq_close()\fR, any further operations on sockets open within \fIcontext\fR shall fail with an error code of ETERM\&.
+.sp
+This function is optional, client code is still required to call the \fBzmq_ctx_term\fR(3) function to free all resources allocated by zeromq\&.
+.SH "RETURN VALUE"
+.sp
+The \fIzmq_ctx_shutdown()\fR function shall return zero if successful\&. Otherwise it shall return \-1 and set \fIerrno\fR to one of the values defined below\&.
+.SH "ERRORS"
+.PP
+\fBEFAULT\fR
+.RS 4
+The provided
+\fIcontext\fR
+was invalid\&.
+.RE
+.SH "SEE ALSO"
+.sp
+\fBzmq\fR(7) \fBzmq_init\fR(3) \fBzmq_ctx_term\fR(3) \fBzmq_close\fR(3) \fBzmq_setsockopt\fR(3)
+.SH "AUTHORS"
+.sp
+This page was written by the 0MQ community\&. To make a change please read the 0MQ Contribution Policy at \m[blue]\fBhttp://www\&.zeromq\&.org/docs:contributing\fR\m[]\&.

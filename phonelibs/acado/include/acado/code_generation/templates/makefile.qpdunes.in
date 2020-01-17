@@ -1,0 +1,42 @@
+UNAME := $(shell uname)
+
+LDLIBS = -lm -lstdc++
+ifeq ($(UNAME), Linux)
+	LDLIBS += -lrt
+endif
+
+CCACHE_APP := $(shell which ccache 2>/dev/null)
+
+CFLAGS = -std=c99 -O3 -finline-functions -I. -I./qpdunes/include -D__SIMPLE_BOUNDS_ONLY__
+CXXFLAGS = -O3 -finline-functions -I. -I./qpdunes/include
+CC     = $(CCACHE_APP) gcc
+CXX    = $(CCACHE_APP) g++
+
+OBJECTS = \
+	./qpdunes/src/dual_qp.o \
+	./qpdunes/src/matrix_vector.o \
+	./qpdunes/src/setup_qp.o \
+	./qpdunes/src/stage_qp_solver_clipping.o \
+	./qpdunes/src/utils.o \
+	@MODULE_NAME@_integrator.o \
+	@MODULE_NAME@_solver.o \
+	@MODULE_NAME@_auxiliary_functions.o
+
+.PHONY: all
+all: lib@MODULE_NAME@_exported_rti.a test
+
+test: ${OBJECTS} test.o
+
+@MODULE_NAME@_solver.o              : @MODULE_NAME@_common.h
+@MODULE_NAME@_integrator.o          : @MODULE_NAME@_common.h
+@MODULE_NAME@_auxiliary_functions.o : @MODULE_NAME@_common.h \
+                              @MODULE_NAME@_auxiliary_functions.h
+test.o                      : @MODULE_NAME@_common.h \
+                              @MODULE_NAME@_auxiliary_functions.h
+
+lib@MODULE_NAME@_exported_rti.a: ${OBJECTS}
+	ar r $@ $?
+
+.PHONY : clean
+clean :
+	-rm -f *.o *.a test qpdunes/src/*.o

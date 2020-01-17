@@ -1,0 +1,8 @@
+git clone https://github.com/jbeder/yaml-cpp.git
+cd yaml-cpp
+git reset --hard 0fdb1b910c1a31db80b7521446166d06cad10813
+
+mkdir build
+cd build
+CXXFLAGS="-fPIC" cmake ..
+make

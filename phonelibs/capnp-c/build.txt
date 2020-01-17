@@ -1,0 +1,16 @@
+#!/bin/bash -e
+
+# on host
+
+HOSTARCH="$(uname -s | tr '[:upper:]' '[:lower:]')"
+
+AR="/opt/android-ndk/toolchains/aarch64-linux-android-4.9/prebuilt/$HOSTARCH-x86_64/bin/aarch64-linux-android-ar"
+CC="/opt/android-ndk/toolchains/aarch64-linux-android-4.9/prebuilt/$HOSTARCH-x86_64/bin/aarch64-linux-android-gcc --sysroot=/opt/android-ndk/platforms/android-21/arch-arm64"
+
+git clone git@github.com:commaai/c-capnproto.git
+cd c-capnproto
+
+$CC -c lib/capn-malloc.c
+$CC -c lib/capn-stream.c
+$CC -c lib/capn.c
+$AR rcs libcapn.a capn-malloc.o capn-stream.o capn.o

@@ -1,0 +1,77 @@
+#ifndef @MODULE_PREFIX@_AUXILIARY_SIM_FUNCTIONS_H
+#define @MODULE_PREFIX@_AUXILIARY_SIM_FUNCTIONS_H
+
+#include "@MODULE_NAME@_common.h"
+#include <stdio.h>
+
+#ifndef __MATLAB__
+#ifdef __cplusplus
+extern "C"
+{
+#endif /* __cplusplus */
+#endif /* __MATLAB__ */
+
+/** Print ACADO code generation notice. */
+void @MODULE_NAME@_printHeader( );
+
+/*
+ * A huge thanks goes to Alexander Domahidi from ETHZ, Switzerland, for 
+ * providing us with the following timing routines.
+ */
+
+#if (defined _WIN32 || defined _WIN64)
+
+/* Use Windows QueryPerformanceCounter for timing. */
+#include <Windows.h>
+
+/** A structure for keeping internal timer data. */
+typedef struct @MODULE_NAME@_timer_
+{
+	LARGE_INTEGER tic;
+	LARGE_INTEGER toc;
+	LARGE_INTEGER freq;
+} @MODULE_NAME@_timer;
+
+
+#elif (defined __APPLE__)
+
+#include "unistd.h"
+#include <mach/mach_time.h>
+
+/** A structure for keeping internal timer data. */
+typedef struct @MODULE_NAME@_timer_
+{
+	uint64_t tic;
+	uint64_t toc;
+	mach_timebase_info_data_t tinfo;
+} @MODULE_NAME@_timer;
+
+#else
+
+/* Use POSIX clock_gettime() for timing on non-Windows machines. */
+#include <time.h>
+
+#include <sys/stat.h>
+#include <sys/time.h>
+
+typedef struct @MODULE_NAME@_timer_
+{
+	struct timeval tic;
+	struct timeval toc;
+} @MODULE_NAME@_timer;
+
+#endif /* (defined _WIN32 || defined _WIN64) */
+
+/** A function for measurement of the current time. */
+void @MODULE_NAME@_tic( @MODULE_NAME@_timer* t );
+
+/** A function which returns the elapsed time. */
+real_t @MODULE_NAME@_toc( @MODULE_NAME@_timer* t );
+
+#ifndef __MATLAB__
+#ifdef __cplusplus
+} /* extern "C" */
+#endif /* __cplusplus */
+#endif /* __MATLAB__ */
+
+#endif /* @MODULE_PREFIX@_AUXILIARY_SIM_FUNCTIONS_H */

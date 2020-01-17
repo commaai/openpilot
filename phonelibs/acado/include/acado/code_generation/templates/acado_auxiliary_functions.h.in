@@ -1,0 +1,119 @@
+#ifndef @MODULE_PREFIX@_AUXILIARY_FUNCTIONS_H
+#define @MODULE_PREFIX@_AUXILIARY_FUNCTIONS_H
+
+#include "@MODULE_NAME@_common.h"
+
+#ifndef __MATLAB__
+#ifdef __cplusplus
+extern "C"
+{
+#endif /* __cplusplus */
+#endif /* __MATLAB__ */
+
+/** Get pointer to the matrix with differential variables. */
+real_t* @MODULE_NAME@_getVariablesX( );
+
+/** Get pointer to the matrix with control variables. */
+real_t* @MODULE_NAME@_getVariablesU( );
+
+#if @MODULE_PREFIX@_NY > 0
+/** Get pointer to the matrix with references/measurements. */
+real_t* @MODULE_NAME@_getVariablesY( );
+#endif
+
+#if @MODULE_PREFIX@_NYN > 0
+/** Get pointer to the vector with references/measurement on the last node. */
+real_t* @MODULE_NAME@_getVariablesYN( );
+#endif
+
+/** Get pointer to the current state feedback vector. Only applicable for NMPC. */
+real_t* @MODULE_NAME@_getVariablesX0( );
+
+/** Print differential variables. */
+void @MODULE_NAME@_printDifferentialVariables( );
+
+/** Print control variables. */
+void @MODULE_NAME@_printControlVariables( );
+
+/** Print ACADO code generation notice. */
+void @MODULE_NAME@_printHeader( );
+
+/*
+ * A huge thanks goes to Alexander Domahidi from ETHZ, Switzerland, for 
+ * providing us with the following timing routines.
+ */
+
+#if !(defined _DSPACE)
+#if (defined _WIN32 || defined _WIN64) && !(defined __MINGW32__ || defined __MINGW64__)
+
+/* Use Windows QueryPerformanceCounter for timing. */
+#include <Windows.h>
+
+/** A structure for keeping internal timer data. */
+typedef struct @MODULE_NAME@_timer_
+{
+	LARGE_INTEGER tic;
+	LARGE_INTEGER toc;
+	LARGE_INTEGER freq;
+} @MODULE_NAME@_timer;
+
+
+#elif (defined __APPLE__)
+
+#include "unistd.h"
+#include <mach/mach_time.h>
+
+/** A structure for keeping internal timer data. */
+typedef struct @MODULE_NAME@_timer_
+{
+	uint64_t tic;
+	uint64_t toc;
+	mach_timebase_info_data_t tinfo;
+} @MODULE_NAME@_timer;
+
+#else
+
+/* Use POSIX clock_gettime() for timing on non-Windows machines. */
+#include <time.h>
+
+#if __STDC_VERSION__ >= 199901L
+/* C99 mode of operation. */
+
+#include <sys/stat.h>
+#include <sys/time.h>
+
+typedef struct @MODULE_NAME@_timer_
+{
+	struct timeval tic;
+	struct timeval toc;
+} @MODULE_NAME@_timer;
+
+#else
+/* ANSI C */
+
+/** A structure for keeping internal timer data. */
+typedef struct @MODULE_NAME@_timer_
+{
+	struct timespec tic;
+	struct timespec toc;
+} @MODULE_NAME@_timer;
+
+#endif /* __STDC_VERSION__ >= 199901L */
+
+#endif /* (defined _WIN32 || defined _WIN64) */
+
+/** A function for measurement of the current time. */
+void @MODULE_NAME@_tic( @MODULE_NAME@_timer* t );
+
+/** A function which returns the elapsed time. */
+real_t @MODULE_NAME@_toc( @MODULE_NAME@_timer* t );
+
+#endif
+
+#ifndef __MATLAB__
+#ifdef __cplusplus
+} /* extern "C" */
+#endif /* __cplusplus */
+#endif /* __MATLAB__ */
+
+#endif /* @MODULE_PREFIX@_AUXILIARY_FUNCTIONS_H */

@@ -1,0 +1,25 @@
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+#include "@FORCES_HEADER@"
+#ifdef __cplusplus
+}
+#endif
+
+/******************************************************************************/
+/*                                                                            */
+/* FORCES interface structures                                                */
+/*                                                                            */
+/******************************************************************************/
+
+@FORCES_PARAMS@ @FORCES_PARAMS_OBJ@;
+@FORCES_OUTPUT@ @FORCES_OUTPUT_OBJ@;
+@FORCES_INFO@   @FORCES_INFO_OBJ@;
+
+void initializeForces( void )
+{
+	memset(&@FORCES_PARAMS_OBJ@, 0, sizeof( @FORCES_PARAMS_OBJ@ ));
+	memset(&@FORCES_OUTPUT_OBJ@, 0, sizeof( @FORCES_OUTPUT_OBJ@ ));
+	memset(&@FORCES_INFO_OBJ@,   0, sizeof( @FORCES_INFO_OBJ@ ));
+}

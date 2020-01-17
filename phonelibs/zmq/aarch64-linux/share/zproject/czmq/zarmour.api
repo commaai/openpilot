@@ -1,0 +1,103 @@
+<class name = "zarmour" state = "stable">
+    <!--
+    Copyright (c) the Contributors as noted in the AUTHORS file.
+    This file is part of CZMQ, the high-level C binding for 0MQ:
+    http://czmq.zeromq.org.
+
+    This Source Code Form is subject to the terms of the Mozilla Public
+    License, v. 2.0. If a copy of the MPL was not distributed with this
+    file, You can obtain one at http://mozilla.org/MPL/2.0/.
+    -->
+    armoured text encoding and decoding
+
+    <constant name = "mode base64 std" value = "0">Standard base 64</constant>
+    <constant name = "mode base64 url" value = "1">URL and filename friendly base 64</constant>
+    <constant name = "mode base32 std" value = "2">Standard base 32</constant>
+    <constant name = "mode base32 hex" value = "3">Extended hex base 32</constant>
+    <constant name = "mode base16" value = "4">Standard base 16</constant>
+    <constant name = "mode z85" value = "5">Z85 from ZeroMQ RFC 32</constant>
+
+    <constructor>
+        Create a new zarmour
+    </constructor>
+
+    <destructor>
+        Destroy the zarmour
+    </destructor>
+
+    <method name = "encode">
+        Encode a stream of bytes into an armoured string. Returns the armoured
+        string, or NULL if there was insufficient memory available to allocate
+        a new string.
+        <argument name = "data" type = "buffer" />
+        <argument name = "size" type = "size" />
+        <return type = "string" fresh = "1" />
+    </method>
+
+    <method name = "decode">
+        Decode an armoured string into a chunk. The decoded output is
+        null-terminated, so it may be treated as a string, if that's what
+        it was prior to encoding.
+        <argument name = "data" type = "string" />
+        <return type = "zchunk" fresh = "1" />
+    </method>
+
+    <method name = "mode">
+        Get the mode property.
+        <return type = "integer" />
+    </method>
+
+    <method name = "mode str">
+        Get printable string for mode.
+        <return type = "string" />
+    </method>
+
+    <method name = "set mode">
+        Set the mode property.
+        <argument name = "mode" type = "integer" />
+    </method>
+
+    <method name = "pad">
+        Return true if padding is turned on.
+        <return type = "boolean" />
+    </method>
+
+    <method name = "set pad">
+        Turn padding on or off. Default is on.
+        <argument name = "pad" type = "boolean" />
+    </method>
+
+    <method name = "pad char">
+        Get the padding character.
+        <return type = "char" />
+    </method>
+
+    <method name = "set pad char">
+        Set the padding character.
+        <argument name = "pad char" type = "char" />
+    </method>
+
+    <method name = "line breaks">
+        Return if splitting output into lines is turned on. Default is off.
+        <return type = "boolean" />
+    </method>
+
+    <method name = "set line breaks">
+        Turn splitting output into lines on or off.
+        <argument name = "line breaks" type = "boolean" />
+    </method>
+
+    <method name = "line length">
+        Get the line length used for splitting lines.
+        <return type = "size" />
+    </method>
+
+    <method name = "set line length">
+        Set the line length used for splitting lines.
+        <argument name = "line length" type = "size" />
+    </method>
+
+    <method name = "print">
+        Print properties of object
+    </method>
+</class>
