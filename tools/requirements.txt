@@ -1,0 +1,11 @@
+aenum
+atomicwrites
+futures
+libarchive
+lru-dict
+matplotlib==2.0.2
+numpy
+opencv-python
+pygame
+hexdump==3.3
+av==0.5.0
