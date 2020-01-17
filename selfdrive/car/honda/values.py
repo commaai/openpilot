@@ -124,12 +124,16 @@ for c in FINGERPRINTS:
 # TODO: Figure out what is relevant
 FW_VERSIONS = {
   CAR.CIVIC: {
-    (Ecu.unknown, 0x18da10f1, None): [b'37805-5AA-L660\x00\x00'],
-    (Ecu.unknown, 0x18da1ef1, None): [b'28101-5CG-A050\x00\x00'],
-    (Ecu.unknown, 0x18da28f1, None): [b'57114-TBA-A550\x00\x00'],
-    (Ecu.eps, 0x18da30f1, None): [b'39990-TBA-A030\x00\x00', b'39990-TBA,A030\x00\x00'],
-    (Ecu.unknown, 0x18da53f1, None): [b'77959-TBA-A030\x00\x00'],
-    (Ecu.unknown, 0x18da60f1, None): [b'78109-TBC-A310\x00\x00'],
+    (Ecu.unknown, 0x18da10f1, None): [b'37805-5AA-L660\x00\x00', b'37805-5AA-A810\x00\x00'],
+    (Ecu.unknown, 0x18da1ef1, None): [b'28101-5CG-A050\x00\x00', b'28101-5CG-A810\x00\x00'],
+    (Ecu.unknown, 0x18da28f1, None): [b'57114-TBA-A550\x00\x00', b'57114-TBA-A570\x00\x00'],
+    (Ecu.eps, 0x18da30f1, None): [
+      b'39990-TBA-A030\x00\x00',
+      b'39990-TBA,A030\x00\x00',
+      b'39990-TBG-A030\x00\x00'
+    ],
+    (Ecu.unknown, 0x18da53f1, None): [b'77959-TBA-A030\x00\x00', b'77959-TBG-A030\x00\x00'],
+    (Ecu.unknown, 0x18da60f1, None): [b'78109-TBC-A310\x00\x00', b'78109-TBH-A530\x00\x00'],
     (Ecu.unknown, 0x18dab0f1, None): [b'36161-TBC-A030\x00\x00'],
     (Ecu.unknown, 0x18daeff1, None): [b'38897-TBA-A020\x00\x00'],
 
@@ -148,7 +152,30 @@ FW_VERSIONS = {
     (Ecu.unknown, 0x18dab0f1, None): [b'36802-TVA-A160\x00\x00'],
     (Ecu.unknown, 0x18dab5f1, None): [b'36161-TVA-A060\x00\x00'],
     (Ecu.unknown, 0x18daeff1, None): [b'38897-TVA-A010\x00\x00'],
-  }
+  },
+  CAR.ACCORD_15: {
+    (Ecu.unknown, 0x18da10f1, None): [b'37805-6A0-A740\x00\x00'],
+    (Ecu.unknown, 0x18da1ef1, None): [b'28101-6A7-A220\x00\x00'],
+    (Ecu.unknown, 0x18daeff1, None): [b'38897-TVA-A230\x00\x00'],
+    (Ecu.unknown, 0x18da2bf1, None): [b'46114-TVA-A060\x00\x00'],
+    (Ecu.unknown, 0x18da60f1, None): [b'78109-TVA-A010\x00\x00'],
+    (Ecu.unknown, 0x18dab5f1, None): [b'36161-TVA-A060\x00\x00'],
+    (Ecu.unknown, 0x18da53f1, None): [b'77959-TVA-A460\x00\x00'],
+    (Ecu.unknown, 0x18da28f1, None): [b'57114-TVA-B050\x00\x00'],
+    (Ecu.unknown, 0x18dab0f1, None): [b'36802-TVA-A160\x00\x00'],
+    (Ecu.eps, 0x18da30f1, None): [b'39990-TVA-A150\x00\x00'],
+  },
+  CAR.CIVIC_BOSCH: {
+    (Ecu.unknown, 0x18da10f1, None): [b'37805-5BB-L640\x00\x00'],
+    (Ecu.unknown, 0x18da1ef1, None): [b'28101-5DJ-A710\x00\x00'],
+    (Ecu.unknown, 0x18daeff1, None): [b'38897-TBA-A110\x00\x00'],
+    (Ecu.eps, 0x18da30f1, None): [b'39990-TBA-C020\x00\x00'],
+    (Ecu.unknown, 0x18da53f1, None): [b'77959-TBA-A060\x00\x00'],
+    (Ecu.unknown, 0x18da28f1, None): [b'57114-TBG-A340\x00\x00'],
+    (Ecu.unknown, 0x18da60f1, None): [b'78109-TBA-A910\x00\x00'],
+    (Ecu.unknown, 0x18dab0f1, None): [b'36802-TBA-A150\x00\x00'],
+    (Ecu.unknown, 0x18dab5f1, None): [b'36161-TBA-A130\x00\x00'],
+  },
 }
 
 DBC = {
